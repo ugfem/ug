@@ -100,7 +100,7 @@ INT              DisposeTopLevel                (MULTIGRID *theMG);
 /* miscellaneous */
 ELEMENT     *FindFather             (VERTEX *vptr);
 INT              FindNeighborElement    (const ELEMENT *theElement, INT Side, ELEMENT **theNeighbor, INT *NeighborSide);
-INT              PointInElement                 (const COORD*, const ELEMENT *theElement);
+INT              PointInElement                 (const DOUBLE*, const ELEMENT *theElement);
 VIRT_HEAP_MGMT *GetGenMGUDM             (void);
 INT              RenumberNodeElem               (MULTIGRID *theMG);
 

@@ -14,9 +14,9 @@
    it has to be included in `all` source files of ug!!! 
 
    The basic types (normally 'short', 'int', 'float' and 'double') are 
-   replaced by 'SHORT', 'INT', 'FLOAT' and 'DOUBLE'. The type 'COORD' 
+   replaced by 'SHORT', 'INT', 'FLOAT' and 'DOUBLE'. The type 'DOUBLE' 
    is used for all Cartesian coordinates of the (x,y[,z])-directions of 
-   the grids and 'SCREEN_COORD' is used for all transformed coordinates 
+   the grids and 'SCREEN_DOUBLE' is used for all transformed coordinates 
    of the graphical interface.
 
    The constant 'ALIGNMENT' has to be set equal to '4' or '8' depending on 

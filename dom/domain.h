@@ -91,7 +91,7 @@
 
 /* function formats */
 typedef INT (*ConfigProcPtr)(INT argc, char **argv);
-typedef INT (*CoeffProcPtr)(COORD *, DOUBLE *);
+typedef INT (*CoeffProcPtr)(DOUBLE *, DOUBLE *);
 typedef INT (*UserProcPtr)(DOUBLE *, DOUBLE *);
 
 /* macros for BVPDescriptor */
@@ -120,8 +120,8 @@ struct BVP_Descriptor
   char name[NAMELEN];                /* name of the BVP                     */
 
   /* domain part */
-  COORD midpoint[DIM];               /* sphere in which the domain lies     */
-  COORD radius;
+  DOUBLE midpoint[DIM];               /* sphere in which the domain lies     */
+  DOUBLE radius;
   INT convex;                        /* 1 if domain is convex, 0 if not     */
   INT nSubDomains;                   /* nb. of subdomains,
                                                                                 exterior not counted                */
@@ -138,7 +138,7 @@ struct mesh
   INT nBndP;                         /* nb. of boundary points              */
   BNDP **theBndPs;                                       /* list of boundary points	            */
   INT nInnP;                         /* nb. of inner nodes                  */
-  COORD **Position;                  /* positions of inner nodes            */
+  DOUBLE **Position;                  /* positions of inner nodes            */
   INT nSubDomains;                   /* nb. of subdomains                   */
   INT *nSides;                       /* nb. of boundary sides per subdomain */
   INT **Side_corners;                /* nb. of side corners                 */
@@ -195,20 +195,20 @@ INT         BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size)
 MESH       *BVP_GenerateMesh      (HEAP *Heap, BVP *theBVP, INT argc, char **argv);
 
 /* functions for BNDP */
-INT         BNDP_Global           (BNDP *theBndP, COORD *global);
-INT         BNDP_BndCond          (BNDP *theBndP, INT *n, INT i, COORD *in, DOUBLE *value, INT *type);
+INT         BNDP_Global           (BNDP *theBndP, DOUBLE *global);
+INT         BNDP_BndCond          (BNDP *theBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *type);
 INT         BNDP_BndPDesc         (BNDP *theBndP, INT *move);
 BNDS*       BNDP_CreateBndS       (HEAP *Heap, BNDP **theBndP, INT n);
-BNDP*       BNDP_CreateBndP       (HEAP *Heap, BNDP *theBndP0, BNDP *theBndP1, COORD lcoord);
+BNDP*       BNDP_CreateBndP       (HEAP *Heap, BNDP *theBndP0, BNDP *theBndP1, DOUBLE lcoord);
 INT         BNDP_Dispose          (HEAP *Heap, BNDP *theBndP);
 INT         BNDP_SaveBndP         (BNDP *theBndP);
 BNDP       *BNDP_LoadBndP         (BVP *theBVP, HEAP *Heap);
 
 /* functions for BNDS */
-INT         BNDS_Global           (BNDS *theBndS, COORD *local, COORD *global);
-INT         BNDS_BndCond          (BNDS *theBndS, COORD *local, COORD *in, DOUBLE *value, INT *type);
+INT         BNDS_Global           (BNDS *theBndS, DOUBLE *local, DOUBLE *global);
+INT         BNDS_BndCond          (BNDS *theBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type);
 INT         BNDS_BndSDesc         (BNDS *theBndS, INT *left, INT *right);
-BNDP*       BNDS_CreateBndP       (HEAP *Heap, BNDS *theBndS, COORD *local);
+BNDP*       BNDS_CreateBndP       (HEAP *Heap, BNDS *theBndS, DOUBLE *local);
 INT         BNDS_Dispose          (HEAP *Heap, BNDS *theBndS);
 
 /* miscellanious */

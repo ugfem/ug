@@ -66,7 +66,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-typedef COORD COORD_VECTOR[DIM];
+typedef DOUBLE DOUBLE_VECTOR[DIM];
 
 /****************************************************************************/
 /*                                                                          */
@@ -80,7 +80,7 @@ typedef COORD COORD_VECTOR[DIM];
 /*                                                                          */
 /****************************************************************************/
 
-static COORD_VECTOR x_quad[4];
+static DOUBLE_VECTOR x_quad[4];
 
 static DOUBLE Rand[54][2] = {
   {189,22.5},
@@ -155,9 +155,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*                                                                          */
 /****************************************************************************/
 
-static INT southBoundary (void *data, COORD *param, COORD *result)
+static INT southBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
@@ -167,9 +167,9 @@ static INT southBoundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT eastBoundary (void *data, COORD *param, COORD *result)
+static INT eastBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
@@ -179,9 +179,9 @@ static INT eastBoundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT northBoundary (void *data, COORD *param, COORD *result)
+static INT northBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
@@ -191,9 +191,9 @@ static INT northBoundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT westBoundary (void *data, COORD *param, COORD *result)
+static INT westBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
@@ -205,7 +205,7 @@ static INT westBoundary (void *data, COORD *param, COORD *result)
 
 static INT InitQuadrilateral (void)
 {
-  COORD radius,MidPoint[2];
+  DOUBLE radius,MidPoint[2];
 
   MidPoint[0] = 0.25*(x_quad[0][0]+x_quad[1][0]+x_quad[2][0]+x_quad[3][0]);
   MidPoint[1] = 0.25*(x_quad[0][1]+x_quad[1][1]+x_quad[2][1]+x_quad[3][1]);
@@ -236,9 +236,9 @@ static INT InitQuadrilateral (void)
 /*                                                                          */
 /****************************************************************************/
 
-static INT diagonal (void *data, COORD *param, COORD *result)
+static INT diagonal (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
@@ -250,7 +250,7 @@ static INT diagonal (void *data, COORD *param, COORD *result)
 
 static INT InitTriangle (void)
 {
-  COORD radius,MidPoint[2];
+  DOUBLE radius,MidPoint[2];
 
   MidPoint[0] = 0.333333*(x_quad[0][0]+x_quad[1][0]+x_quad[2][0]);
   MidPoint[1] = 0.333333*(x_quad[0][1]+x_quad[1][1]+x_quad[2][1]);
@@ -277,9 +277,9 @@ static INT InitTriangle (void)
 /*                                                                          */
 /****************************************************************************/
 
-static INT BottomBoundary (void *data, COORD *param, COORD *result)
+static INT BottomBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
@@ -289,9 +289,9 @@ static INT BottomBoundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT CircleBoundary (void *data, COORD *param, COORD *result)
+static INT CircleBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
 
@@ -305,9 +305,9 @@ static INT CircleBoundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT RightBoundary (void *data, COORD *param, COORD *result)
+static INT RightBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
 
@@ -322,9 +322,9 @@ static INT RightBoundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT TopBoundary (void *data, COORD *param, COORD *result)
+static INT TopBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
 
@@ -339,9 +339,9 @@ static INT TopBoundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT LeftBoundary (void *data, COORD *param, COORD *result)
+static INT LeftBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
@@ -353,7 +353,7 @@ static INT LeftBoundary (void *data, COORD *param, COORD *result)
 
 static INT InitPuncturedDisc (void)
 {
-  COORD radius,MidPoint[2];
+  DOUBLE radius,MidPoint[2];
 
   /* allocate new domain structure */
   MidPoint[0] = MidPoint[1] = 5.0;
@@ -393,9 +393,9 @@ static INT InitPuncturedDisc (void)
 /*                                                                          */
 /****************************************************************************/
 
-static INT Bottom1Boundary (void *data, COORD *param, COORD *result)
+static INT Bottom1Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>10.0)) return(1);
@@ -405,9 +405,9 @@ static INT Bottom1Boundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Bottom2Boundary (void *data, COORD *param, COORD *result)
+static INT Bottom2Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>0.5)) return(1);
@@ -417,9 +417,9 @@ static INT Bottom2Boundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Bottom3Boundary (void *data, COORD *param, COORD *result)
+static INT Bottom3Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>9.5)) return(1);
@@ -429,9 +429,9 @@ static INT Bottom3Boundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Top1Boundary (void *data, COORD *param, COORD *result)
+static INT Top1Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>20.0)) return(1);
@@ -441,9 +441,9 @@ static INT Top1Boundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Right1Boundary (void *data, COORD *param, COORD *result)
+static INT Right1Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>12.0)) return(1);
@@ -453,9 +453,9 @@ static INT Right1Boundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Left1Boundary (void *data, COORD *param, COORD *result)
+static INT Left1Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>11.5)) return(1);
@@ -465,9 +465,9 @@ static INT Left1Boundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT CircleUpperBoundary (void *data, COORD *param, COORD *result)
+static INT CircleUpperBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<0.0)||(lambda>1.0)) return(1);
@@ -477,9 +477,9 @@ static INT CircleUpperBoundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT CircleLowerBoundary (void *data, COORD *param, COORD *result)
+static INT CircleLowerBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
   if ((lambda<1.0)||(lambda>2.0)) return(1);
@@ -491,7 +491,7 @@ static INT CircleLowerBoundary (void *data, COORD *param, COORD *result)
 
 static INT InitCTDisc (void)
 {
-  COORD radius,MidPoint[2];
+  DOUBLE radius,MidPoint[2];
 
   MidPoint[0] = 10; MidPoint[1] = 6.0;
   radius = 10;
@@ -548,9 +548,9 @@ static INT InitCTDisc (void)
  */
 
 /* circleBoundary maps [0.0,1.0] to the upper half circle */
-static INT circleBoundary (void *data, COORD *param, COORD *result)
+static INT circleBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   /* retrieve parameter value */
   lambda = param[0];
@@ -567,9 +567,9 @@ static INT circleBoundary (void *data, COORD *param, COORD *result)
 }
 
 /* circleBoundary maps [0.0,1.0] to the lower half circle */
-static INT circleBoundaryHorizontal (void *data, COORD *param, COORD *result)
+static INT circleBoundaryHorizontal (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   /* retrieve parameter value */
   lambda = param[0];
@@ -586,9 +586,9 @@ static INT circleBoundaryHorizontal (void *data, COORD *param, COORD *result)
 }
 
 /* circleBoundary maps [0.0,1.0] to the lower half circle */
-static INT circleBoundaryVertical (void *data, COORD *param, COORD *result)
+static INT circleBoundaryVertical (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   /* retrieve parameter value */
   lambda = param[0];
@@ -606,7 +606,7 @@ static INT circleBoundaryVertical (void *data, COORD *param, COORD *result)
 
 static INT InitSegment (void)
 {
-  COORD radius,MidPoint[2];
+  DOUBLE radius,MidPoint[2];
 
   /* allocate new domain structure */
   MidPoint[0] = MidPoint[1] = 0.0;
@@ -671,9 +671,9 @@ static INT InitSegment (void)
 /*                                                                          */
 /****************************************************************************/
 
-static INT circleBoundaryUpper (void *data, COORD *param, COORD *result)
+static INT circleBoundaryUpper (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
 
@@ -685,9 +685,9 @@ static INT circleBoundaryUpper (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT circleBoundaryLower (void *data, COORD *param, COORD *result)
+static INT circleBoundaryLower (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
 
@@ -701,8 +701,8 @@ static INT circleBoundaryLower (void *data, COORD *param, COORD *result)
 
 static INT InitCircle (void)
 {
-  COORD_VECTOR MidPoint;
-  COORD radius;
+  DOUBLE_VECTOR MidPoint;
+  DOUBLE radius;
 
   MidPoint[0] = MidPoint[1] = 0.0;
   radius = 1.05;
@@ -727,9 +727,9 @@ static INT InitCircle (void)
 /*                                                                          */
 /****************************************************************************/
 
-static INT southBound (void *data, COORD *param, COORD *result)
+static INT southBound (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
 
@@ -743,9 +743,9 @@ static INT southBound (void *data, COORD *param, COORD *result)
   /* return ok */
   return(0);
 }
-static INT east1 (void *data, COORD *param, COORD *result)
+static INT east1 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
 
@@ -760,9 +760,9 @@ static INT east1 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT east2 (void *data, COORD *param, COORD *result)
+static INT east2 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
 
@@ -777,9 +777,9 @@ static INT east2 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT northBound (void *data, COORD *param, COORD *result)
+static INT northBound (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
 
@@ -793,9 +793,9 @@ static INT northBound (void *data, COORD *param, COORD *result)
   /* return ok */
   return(0);
 }
-static INT west1 (void *data, COORD *param, COORD *result)
+static INT west1 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
 
@@ -810,9 +810,9 @@ static INT west1 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT west2 (void *data, COORD *param, COORD *result)
+static INT west2 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
 
   lambda = param[0];
 
@@ -829,7 +829,7 @@ static INT west2 (void *data, COORD *param, COORD *result)
 
 static INT InitHexagon (void)
 {
-  COORD radius,MidPoint[2];
+  DOUBLE radius,MidPoint[2];
 
   /* allocate new domain structure */
   MidPoint[0] = 0.5;
@@ -862,9 +862,9 @@ static INT InitHexagon (void)
 
 #define MAXSEG 6
 
-static INT unteresWolfgangseeUfer (void *data, COORD *param, COORD *result)
+static INT unteresWolfgangseeUfer (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
   DOUBLE c;
   INT i,j;
 
@@ -885,9 +885,9 @@ static INT unteresWolfgangseeUfer (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT rechtesWolfgangseeUfer (void *data, COORD *param, COORD *result)
+static INT rechtesWolfgangseeUfer (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
   DOUBLE c;
   INT i,j;
 
@@ -908,9 +908,9 @@ static INT rechtesWolfgangseeUfer (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT oberesWolfgangseeUfer (void *data, COORD *param, COORD *result)
+static INT oberesWolfgangseeUfer (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda;
+  DOUBLE lambda;
   DOUBLE c;
   INT i,j;
 
@@ -933,7 +933,7 @@ static INT oberesWolfgangseeUfer (void *data, COORD *param, COORD *result)
 
 static INT InitWolfgangsee (void)
 {
-  COORD radius,MidPoint[2];
+  DOUBLE radius,MidPoint[2];
 
   /* allocate new domain structure */
   MidPoint[0] =115.0;
@@ -979,7 +979,7 @@ static INT InitWolfgangsee (void)
    D*/
 /****************************************************************************/
 
-static INT ReadArgvPosition (char *name, INT argc, char **argv, COORD *pos)
+static INT ReadArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
 {
   INT i;
   char option[OPTIONLEN];

@@ -163,8 +163,8 @@ struct domain {
     ENVDIR d;
 
     /* domain variables
-    COORD MidPoint[DIM];                // point in the middle of domain    
-    COORD radius;                       // defines sphere around MidPoint  
+    DOUBLE MidPoint[DIM];                // point in the middle of domain    
+    DOUBLE radius;                       // defines sphere around MidPoint  
                                         // containing the domain           
     INT numOfSegments;                  // number of boundary segments     
     INT numOfCorners;                   // number of corner points        
@@ -220,9 +220,9 @@ mapping for the upper and lower half circle respectively.
 
 .vb
 // circleBoundary maps [0.0,1.0] to the upper half circle
-static INT circleBoundaryUpper (void *data, COORD *param, COORD *result)
+static INT circleBoundaryUpper (void *data, DOUBLE *param, DOUBLE *result)
 {
-    COORD lambda;
+    DOUBLE lambda;
 
     // retrieve parameter value 
     lambda = param[0];
@@ -239,9 +239,9 @@ static INT circleBoundaryUpper (void *data, COORD *param, COORD *result)
 }
 
 // circleBoundary maps [0.0,1.0] to the lower half circle
-static INT circleBoundaryLower (void *data, COORD *param, COORD *result)
+static INT circleBoundaryLower (void *data, DOUBLE *param, DOUBLE *result)
 {
-    COORD lambda;
+    DOUBLE lambda;
 
     // retrieve parameter value 
     lambda = param[0];
@@ -265,7 +265,7 @@ a domain and the list of boundary segments for that domain.
 .vb
 static INT InitUnitCircle (void)
 {
-    COORD radius,MidPoint[2];
+    DOUBLE radius,MidPoint[2];
 
     // allocate new domain structure 
     MidPoint[0] = MidPoint[1] = 0.0;
@@ -327,7 +327,7 @@ BOUNDARY_SEGMENT - Data structure defining part of the boundary of a domain
 STRUCTURES:
 
 .vb
-typedef INT (*BndSegFuncPtr) (void *,COORD *,COORD *);
+typedef INT (*BndSegFuncPtr) (void *,DOUBLE *,DOUBLE *);
 
 struct boundary_segment {
 
@@ -340,7 +340,7 @@ struct boundary_segment {
     INT segType;                      // segment type, see above            
     INT points[CORNERS_OF_BND_SEG];   // numbers of the vertices (ID)       
     INT resolution;                   // measure for the curvature          
-    COORD alpha[DIM_OF_BND],beta[DIM_OF_BND]; // parameter interval used
+    DOUBLE alpha[DIM_OF_BND],beta[DIM_OF_BND]; // parameter interval used
     BndSegFuncPtr BndSegFunc;         // pointer to definition function     
     void *data;                       // can be used by applic to find data 
 } ;
@@ -433,10 +433,10 @@ to construct an interface to geometry data files, e.g. from a CAD system.
 
 . BndSegFuncPtr - Data type of the functions mapping parameter space to
 `d`-space. The first argument of type 'void *' is the user data pointer from
-the corresponding 'BOUNDARY_SEGMENT'. The second parameter of type 'COORD *'
+the corresponding 'BOUNDARY_SEGMENT'. The second parameter of type 'DOUBLE *'
 provides an array containing the parameters where the boundary segment
 function should be evaluated (one number in 2D, two numbers in 3D). The
-third parameter of type 'COORD *' provides an array where the result can be placed
+third parameter of type 'DOUBLE *' provides an array where the result can be placed
 (x,y values in 2D, x,y,z values in 3D).
 
 MACROS:
@@ -470,7 +470,7 @@ PROBLEM - Data type describing a problem.
 STRUCTURES:
 
 .vb
-typedef INT (*CoeffProcPtr) (COORD *, DOUBLE *);
+typedef INT (*CoeffProcPtr) (DOUBLE *, DOUBLE *);
 typedef INT (*UserProcPtr) (DOUBLE *, DOUBLE *);
 typedef INT (*ConfigProcPtr) (INT argc, char **argv);
 
@@ -527,7 +527,7 @@ make up the problem description.
 Since access to this array is provided through macros (see below) the layout
 is not important. Note that this array is allocated dynamically to the desired length.
 
-. CoeffProcPtr - This function gets a 'COORD' and a 'DOUBLE' array, which are usually
+. CoeffProcPtr - This function gets a 'DOUBLE' and a 'DOUBLE' array, which are usually
 called 'in' and 'out'. These functions are only called by the problem class
 libraries, therefore the length of these arrays and the use of their entries
 is not determined by UG. UG only stores pointers to these user definable functions!
@@ -594,7 +594,7 @@ BOUNDARY_CONDITION - Data type defining a boundary condition.
 STRUCTURES:
 
 .vb
-typedef INT (*BndCondProcPtr) (void *, void *, COORD *, DOUBLE *, INT *);
+typedef INT (*BndCondProcPtr) (void *, void *, DOUBLE *, DOUBLE *, INT *);
 
 struct bndcond {
 
@@ -858,8 +858,8 @@ struct ivertex {               // inner vertex structure
     // variables 
     unsigned INT control;      // object identification, various flags 
     INT id;                    // unique id used for load/store        
-    COORD x[DIM];              // vertex position                        
-    COORD xi[DIM];             // local coordinates in father element    
+    DOUBLE x[DIM];              // vertex position                        
+    DOUBLE xi[DIM];             // local coordinates in father element    
     
     // pointers 
     union vertex *pred,*succ;  // double linked list of vertices        
@@ -873,8 +873,8 @@ struct bvertex {               // boundary vertex structure
     // variables 
     unsigned INT control;      // object identification, various flags 
     INT id;                    // unique id used for load/store        
-    COORD x[DIM];              // vertex position                        
-    COORD xi[DIM];             // local coordinates in father element    
+    DOUBLE x[DIM];              // vertex position                        
+    DOUBLE xi[DIM];             // local coordinates in father element    
     
     // pointers 
     union vertex *pred,*succ;  // double linked list of vertices        
@@ -951,20 +951,20 @@ Access to the double linked list. 'NULL' pointers indicate the end of the list
 in both directions.
 
 .vb
-COORD *CVECT (VERTEX *p);
-COORD XC (VERTEX *p);
-COORD YC (VERTEX *p);
-COORD ZC (VERTEX *p);
+DOUBLE *CVECT (VERTEX *p);
+DOUBLE XC (VERTEX *p);
+DOUBLE YC (VERTEX *p);
+DOUBLE ZC (VERTEX *p);
 .ve
 'CVECT' returns the array of global coordinates (i.e. a pointer) and 'XC', 'YC' and
 'ZC' return the individual components. Accessing the `z`-coordinate in a 2D application
 will not lead to an error message!
 
 .vb
-COORD *LCVECT (VERTEX *p);
-COORD XI (VERTEX *p);
-COORD ETA (VERTEX *p);
-COORD NU (VERTEX *p);
+DOUBLE *LCVECT (VERTEX *p);
+DOUBLE XI (VERTEX *p);
+DOUBLE ETA (VERTEX *p);
+DOUBLE NU (VERTEX *p);
 .ve
 'LCVECT' returns the array of local coordinates with the father element and the other
 macros return the individual components called 'XI', 'ETA' and 'NU'.
@@ -1002,14 +1002,14 @@ structure of the list. See the 'BNDSEGDESC' page for more information
 on that structure.
 
 .vb
-COORD BVLAMBDA (VERTEX *p);
-COORD FIRSTLAMBDA (VERTEX *p);
+DOUBLE BVLAMBDA (VERTEX *p);
+DOUBLE FIRSTLAMBDA (VERTEX *p);
 .ve
 Returns the parameter for the first boundary segment this vertex lies on. Both
 macros do the same thing and 'BVLAMBDA' is provided for compatibility reasons.
 
 .vb
-COORD *FIRSTPVECT (VERTEX *p);
+DOUBLE *FIRSTPVECT (VERTEX *p);
 .ve
 Returns a pointer to the array containing the parameter for the first boundary
 where this vertex lies on. The first boundary segment is accessible
@@ -1076,10 +1076,10 @@ struct vsegment {
 
     unsigned INT control;         // object identification, various flags 
     struct bndsegdesc *segdesc;   // pointer to boundary segment desc     
-    COORD lambda[DIM_OF_BND];     // position of vertex on boundary segmen
+    DOUBLE lambda[DIM_OF_BND];     // position of vertex on boundary segmen
 
     #ifdef __TWODIM__
-    COORD zeta;                   // local coord. of vertex  in father edg
+    DOUBLE zeta;                   // local coord. of vertex  in father edg
                                   // Def.: l = (1-z)*l0 + z*l1            
     #endif
 
@@ -1128,19 +1128,19 @@ Both return a pointer to the 'BNDSEGDESC' structure referenced by the vertex seg
 'BSEG' is the old version and should not be used anymore.
 
 .vb
-COORD *PVECT (VSEGMENT *p);
+DOUBLE *PVECT (VSEGMENT *p);
 .ve 
 
 Returns array of parameter values with respect to the segment given by 'BSEGDESC'.
 
 .vb
-COORD LAMBDA (VSEGMENT *p,INT i);
+DOUBLE LAMBDA (VSEGMENT *p,INT i);
 .ve
 
 Provides access to the individual components of the parameter value.
 
 .vb
-COORD ZETA (VSEGMENT *p);
+DOUBLE ZETA (VSEGMENT *p);
 .ve
 
 Access to 'zeta' component.
@@ -1260,8 +1260,8 @@ void *CONDDATA (BNDSEGDESC *p);
 Returns the 'data' pointer from the 'BOUNDARY_CONDITION' structure.
 
 .vb
-COORD ALPHA (BNDSEGDESC *p, INT i);
-COORD BETA (BNDSEGDESC *p, INT i);
+DOUBLE ALPHA (BNDSEGDESC *p, INT i);
+DOUBLE BETA (BNDSEGDESC *p, INT i);
 .ve
 
 Returns the parameter interval that is used by the functions returned
@@ -2035,7 +2035,7 @@ struct elementside {
     // variables 
     unsigned INT control;               // object identification, various flags 
     struct bndsegdesc *segdesc;         // pointer to boundary segment desc     
-    COORD lambda[MAX_CORNERS_OF_SIDE]   // parameter of side corners            
+    DOUBLE lambda[MAX_CORNERS_OF_SIDE]   // parameter of side corners            
                         [DIM_OF_BND];
     // pointers 
 	struct elementside *pred,*succ;     // double linked list
@@ -2078,7 +2078,7 @@ Returns a pointer to a 'BNDSEGDESC' structure giving access to
 boundary segment and boundary condition information.
 
 .vb
-COORD PARAM (ELEMENTSIDE *p,INT i,INT j);
+DOUBLE PARAM (ELEMENTSIDE *p,INT i,INT j);
 .ve
 
 Returns component 'j' of parameter of corner 'i' with respect to the boundary segment given by 

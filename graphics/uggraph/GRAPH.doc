@@ -58,8 +58,8 @@ MVALUES *CreateMatrixValuePlotProc (const char *name, PreprocessingProcPtr PrePr
    preprocessing function for plotting NodeVector Order.
 
 .vb
-static DOUBLE NodeIndex (const ELEMENT *theElement, const COORD **CornersCoord,
-                         COORD *LocalCoord)
+static DOUBLE NodeIndex (const ELEMENT *theElement, const DOUBLE **CornersCoord,
+                         DOUBLE *LocalCoord)
 .ve
 
 .n    plot function for NodeVector Order.
@@ -99,7 +99,7 @@ static INT ClipPolygon (COORD_POINT *in,  INT nin,
     to 'point' and puts cursor to the end point (not clipping end point);        
 .  'void~UgLine~(COORD_POINT~point1,~COORD_POINT~point2)' - draws line from 'point1' to 'point2' in the colour
     set by 'UgSetColor';
-.   'void~UgStyledLine~(COORD_POINT~point1,~COORD_POINT~point2,~COORD~dash_length,~COORD~space_length~)' - Draw line from point1 to point2 with the specified pattern
+.   'void~UgStyledLine~(COORD_POINT~point1,~COORD_POINT~point2,~DOUBLE~dash_length,~DOUBLE~space_length~)' - Draw line from point1 to point2 with the specified pattern
 .  'void~UgInverseLine~(COORD_POINT~point1,~COORD_POINT~point2)' - draws the line from 'point1' to 'point2'
     using inverse colour;
 .  'void~UgPolyLine~(COORD_POINT~*points,~INT~n)' - draws lines from point 'points[0]'
@@ -308,8 +308,8 @@ struct PlotObjHead {                        // head of all PlotObjs
     INT status;                             // see above
     struct PlotObjType *thePlotObjType;     // type of PlotObj
     MULTIGRID *theMG;                       // the data base
-    COORD theMidPoint[3];                   // MidPoint of covering 2/3D sphere
-    COORD theRadius;                        // radius of covering 2/3D sphere
+    DOUBLE theMidPoint[3];                   // MidPoint of covering 2/3D sphere
+    DOUBLE theRadius;                        // radius of covering 2/3D sphere
     INT clearBeforeDraw;                    // YES or NO
 };
 
@@ -427,8 +427,8 @@ D*/
 struct Cut {
 
     INT status;                             // see above
-    COORD   PlaneNormal[3];                 // normal vector of the plane
-    COORD   PlanePoint[3];                  // point on the plane
+    DOUBLE   PlaneNormal[3];                 // normal vector of the plane
+    DOUBLE   PlanePoint[3];                  // point on the plane
 };
 
 typedef struct Cut                   CUT;
@@ -469,10 +469,10 @@ struct ViewedObj {
     // the view	
     INT status;                             // see above
     INT perspective;                        // YES or NO
-    COORD   ViewPoint[3];                   // Observer Stand
-    COORD   ViewTarget[3];                  // View target point
-    COORD   PlaneMidpoint[3];               // description of projection plane 
-    COORD   PlaneXDir[3], PlaneYDir[3];     // (the infinite extension 
+    DOUBLE   ViewPoint[3];                   // Observer Stand
+    DOUBLE   ViewTarget[3];                  // View target point
+    DOUBLE   PlaneMidpoint[3];               // description of projection plane 
+    DOUBLE   PlaneXDir[3], PlaneYDir[3];     // (the infinite extension 
                                             // touches the ViewTarget)
 };
 

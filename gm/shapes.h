@@ -93,7 +93,7 @@
 								   (x)[2]=CVECT(MYVERTEX(CORNER((e),2)));}
 
 #define COPY_COORDINATES_TRIANGLE(e,n,x)                                     \
-                                  {COORD *cvect;                             \
+                                  {DOUBLE *cvect;                             \
                                    (n) = 3;                                  \
 								   cvect=CVECT(MYVERTEX(CORNER((e),0)));     \
                                    V_DIM_COPY(cvect,x[0]);                   \
@@ -110,7 +110,7 @@
 								   (x)[3]=CVECT(MYVERTEX(CORNER((e),3)));}
 
 #define COPY_COORDINATES_QUADRILATERAL(e,n,x)                                \
-                                  {COORD *cvect;                             \
+                                  {DOUBLE *cvect;                             \
                                    (n) = 4;                                  \
 								   cvect=CVECT(MYVERTEX(CORNER((e),0)));     \
                                    V_DIM_COPY(cvect,x[0]);                   \
@@ -214,7 +214,7 @@
 				                   (x)[3]=CVECT(MYVERTEX(CORNER((e),3)));}
 
 #define COPY_COORDINATES_TETRAHEDRON(e,n,x)                                  \
-                                  {COORD *cvect;                             \
+                                  {DOUBLE *cvect;                             \
                                    (n) = 4;                                  \
 								   cvect=CVECT(MYVERTEX(CORNER((e),0)));     \
                                    V_DIM_COPY(cvect,x[0]);                   \
@@ -234,7 +234,7 @@
                                    (x)[4]=CVECT(MYVERTEX(CORNER((e),4)));}
 
 #define COPY_COORDINATES_PYRAMID(e,n,x)                                      \
-                                  {COORD *cvect;                             \
+                                  {DOUBLE *cvect;                             \
                                    (n) = 5;                                  \
 								   cvect=CVECT(MYVERTEX(CORNER((e),0)));     \
                                    V_DIM_COPY(cvect,x[0]);                   \
@@ -257,7 +257,7 @@
                                    (x)[5]=CVECT(MYVERTEX(CORNER((e),5)));}
 
 #define COPY_COORDINATES_PRISM(e,n,x)                                        \
-                                  {COORD *cvect;                             \
+                                  {DOUBLE *cvect;                             \
                                    (n) = 6;                                  \
 								   cvect=CVECT(MYVERTEX(CORNER((e),0)));     \
                                    V_DIM_COPY(cvect,x[0]);                   \
@@ -284,7 +284,7 @@
 								   (x)[7]=CVECT(MYVERTEX(CORNER((e),7)));}
 
 #define COPY_COORDINATES_HEXAHEDRON(e,n,x)                                   \
-                                  {COORD *cvect;                             \
+                                  {DOUBLE *cvect;                             \
                                    (n) = 8;                                  \
 								   cvect=CVECT(MYVERTEX(CORNER((e),0)));     \
                                    V_DIM_COPY(cvect,x[0]);                   \
@@ -618,11 +618,11 @@
 /*																			*/
 /****************************************************************************/
 
-DOUBLE 		GN 		(INT n, INT i, const COORD *ip_local);
-INT 		GNs 	(INT n, const COORD *ip_local, DOUBLE *result);
-INT 		D_GN 	(INT n, INT i, const COORD *ip_local, DOUBLE *derivative);
-COORD 	   *LMP 	(INT n);
-INT 	    UG_GlobalToLocal   (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);
+DOUBLE 		GN 		(INT n, INT i, const DOUBLE *ip_local);
+INT 		GNs 	(INT n, const DOUBLE *ip_local, DOUBLE *result);
+INT 		D_GN 	(INT n, INT i, const DOUBLE *ip_local, DOUBLE *derivative);
+DOUBLE 	   *LMP 	(INT n);
+INT 	    UG_GlobalToLocal   (INT n, const DOUBLE **Corners, const DOUBLE *EvalPoint, DOUBLE *LocalCoord);
 
 INT LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *result);
 /*****************************************************************************
@@ -700,26 +700,26 @@ DOUBLE	dNds			(INT n, INT i, DOUBLE s, DOUBLE t);
 DOUBLE	dNdt			(INT n, INT i, DOUBLE s, DOUBLE t);
 
 INT 	Derivatives 	(INT n, const DOUBLE *px, const DOUBLE *py, DOUBLE ips, DOUBLE ipt, DOUBLE *dNdx, DOUBLE *dNdy, DOUBLE *detJ);
-INT		Gradients		(INT n, const COORD **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_VECTOR Gradient[MAX_CORNERS_OF_ELEM], DOUBLE *DetJ);
+INT		Gradients		(INT n, const DOUBLE **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_VECTOR Gradient[MAX_CORNERS_OF_ELEM], DOUBLE *DetJ);
 
-INT		L2GDerivative2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint, COORD *Derivative);
+INT		L2GDerivative2d (INT n, const DOUBLE **Corners, const DOUBLE_VECTOR EvalPoint, DOUBLE *Derivative);
 #endif
 
 #ifdef __THREEDIM__						 
-INT GetSkewedUIP (const COORD_VECTOR *theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], const DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
-DOUBLE  N                   (const INT i, const COORD *LocalCoord);
-INT     TetraDerivative     (ELEMENT *theElement, const COORD **theCorners, COORD_VECTOR theGradient[MAX_CORNERS_OF_ELEM]);
-INT     TetraVolume         (const COORD **theCorners, COORD *volume);
-INT     FV_TetInfo          (const COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM]);
-INT 	Side_TetInfo		(COORD **theCorners, INT side, COORD_VECTOR Area, COORD_VECTOR GIP[3]);
-INT     TetraSideNormals    (ELEMENT *theElement, COORD **theCorners, COORD_VECTOR theNormals[MAX_SIDES_OF_ELEM]);
-INT     TetMaxSideAngle     (ELEMENT *theElement, const COORD **theCorners, COORD *MaxAngle);
-INT     TetAngleAndLength   (ELEMENT *theElement, const COORD **theCorners, COORD *Angle, COORD *Length);
-INT     FV_AliTetInfo       (const COORD **CornerPoints, COORD_VECTOR Area[6], DOUBLE_VECTOR conv, COORD_VECTOR GIP[6], COORD_VECTOR LIP[6]);
-INT     FV_TetInfo_for_conv (ELEMENT *theElement, const COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM], COORD_VECTOR conv);
-INT     GFUIP               (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
-INT     GCUIP               (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
-INT     COPYIP              (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
+INT GetSkewedUIP (const DOUBLE_VECTOR *theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], const DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
+DOUBLE  N                   (const INT i, const DOUBLE *LocalCoord);
+INT     TetraDerivative     (ELEMENT *theElement, const DOUBLE **theCorners, DOUBLE_VECTOR theGradient[MAX_CORNERS_OF_ELEM]);
+INT     TetraVolume         (const DOUBLE **theCorners, DOUBLE *volume);
+INT     FV_TetInfo          (const DOUBLE **theCorners, DOUBLE_VECTOR Area[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR GIP[MAX_EDGES_OF_ELEM]);
+INT 	Side_TetInfo		(DOUBLE **theCorners, INT side, DOUBLE_VECTOR Area, DOUBLE_VECTOR GIP[3]);
+INT     TetraSideNormals    (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE_VECTOR theNormals[MAX_SIDES_OF_ELEM]);
+INT     TetMaxSideAngle     (ELEMENT *theElement, const DOUBLE **theCorners, DOUBLE *MaxAngle);
+INT     TetAngleAndLength   (ELEMENT *theElement, const DOUBLE **theCorners, DOUBLE *Angle, DOUBLE *Length);
+INT     FV_AliTetInfo       (const DOUBLE **CornerPoints, DOUBLE_VECTOR Area[6], DOUBLE_VECTOR conv, DOUBLE_VECTOR GIP[6], DOUBLE_VECTOR LIP[6]);
+INT     FV_TetInfo_for_conv (ELEMENT *theElement, const DOUBLE **CornerPoints, DOUBLE_VECTOR Area[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR GIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv);
+INT     GFUIP               (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
+INT     GCUIP               (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
+INT     COPYIP              (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
 #endif
 
 #endif

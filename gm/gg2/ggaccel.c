@@ -62,7 +62,7 @@
 
 static QUADTREETYP *startpointer;
 static MULTIGRID *MG;
-static COORD startwidth;
+static DOUBLE startwidth;
 static SOURCETYP *source;
 static BALTREETYP **q, *btree_rootpointer;
 static int del_edg_fnd;
@@ -184,11 +184,11 @@ static float length_of_edge(FRONTCOMP* edgefc, FRONTCOMP* edgefc_aim)
 /*                                                                          */
 /****************************************************************************/
 
-static COORD length_of_angle (FRONTCOMP* anglefc_ori,
-                              FRONTCOMP* anglefc, FRONTCOMP* anglefc_aim)
+static DOUBLE length_of_angle (FRONTCOMP* anglefc_ori,
+                               FRONTCOMP* anglefc, FRONTCOMP* anglefc_aim)
 {
   VERTEX *theVertex;
-  COORD xc,yc,px,py,sx,sy,angle;
+  DOUBLE xc,yc,px,py,sx,sy,angle;
 
   theVertex = MYVERTEX(FRONTN(anglefc));
   xc = XC(theVertex);
@@ -201,7 +201,7 @@ static COORD length_of_angle (FRONTCOMP* anglefc_ori,
   sy = YC(theVertex) - yc;
 
   /* angle > 180 degrees? */
-  if ((py*sx-px*sy) > SMALLCOORD)                       /* check (py*sx-px*sy)>0 */
+  if ((py*sx-px*sy) > SMALLDOUBLE)                              /* check (py*sx-px*sy)>0 */
   {
     angle = (px*sx+py*sy)/sqrt((sx*sx+sy*sy)*(px*px+py*py));
     angle = 2.0 - angle;
@@ -229,20 +229,20 @@ static COORD length_of_angle (FRONTCOMP* anglefc_ori,
 /* Purpose:   determines whether a node lies within in a triangle plus an   */
 /*            epsilon environment											*/
 /*                                                                          */
-/* Input:     COORD x[3], COORD y[3]: coordinates of the triangle                       */
-/*			  COORD pt[DIM] : coordinates of the node                                               */
+/* Input:     DOUBLE x[3], DOUBLE y[3]: coordinates of the triangle                     */
+/*			  DOUBLE pt[DIM] : coordinates of the node                                              */
 /*                                                                          */
 /* Output:    YES or NO, it depends whether the node is within or out of    */
 /*			  the triangle													*/
 /*                                                                          */
 /****************************************************************************/
 
-static INT PointInTriangle (COORD pt[DIM], COORD x[3], COORD y[3])
+static INT PointInTriangle (DOUBLE pt[DIM], DOUBLE x[3], DOUBLE y[3])
 {
   int i,index;
-  COORD sx,sy,hlp;
-  COORD eps;
-  COORD x_eps[3], y_eps[3];
+  DOUBLE sx,sy,hlp;
+  DOUBLE eps;
+  DOUBLE x_eps[3], y_eps[3];
 
 
   /* Increasing of the search-triangle with eps to find nodes, */
@@ -307,7 +307,7 @@ static INT PointInTriangle (COORD pt[DIM], COORD x[3], COORD y[3])
     sx = x_eps[(i+1)%3] - x_eps[i];
     sy = y_eps[(i+1)%3] - y_eps[i];
     hlp = ((sy*(pt[0]-x_eps[i])-sx*(pt[1]-y_eps[i]))/(sx*sx+sy*sy));
-    if (hlp > SMALLCOORD)
+    if (hlp > SMALLDOUBLE)
       return (NO);
   }
   return (YES);
@@ -328,24 +328,24 @@ static INT PointInTriangle (COORD pt[DIM], COORD x[3], COORD y[3])
 /*                                                                          */
 /* Purpose:   determines whether a node lies within in a circle                         */
 /*                                                                          */
-/* Input:     COORD x, COORD y: coordinates of the middle of the circle         */
-/*			  COORD pt[DIM] : coordinates of the node                                               */
+/* Input:     DOUBLE x, DOUBLE y: coordinates of the middle of the circle       */
+/*			  DOUBLE pt[DIM] : coordinates of the node                                              */
 /*                                                                          */
 /* Output:    YES or NO, it depends whether the node is within or out of    */
 /*			  the triangle													*/
 /*                                                                          */
 /****************************************************************************/
 
-static INT PointInCircle (COORD pt[DIM], COORD x, COORD y, COORD searchrad2)
+static INT PointInCircle (DOUBLE pt[DIM], DOUBLE x, DOUBLE y, DOUBLE searchrad2)
 {
   /* searchrad2 is the squared radius */
 
-  COORD dx,dy;
+  DOUBLE dx,dy;
 
   dx = pt[0] - x;
   dy = pt[1] - y;
 
-  if (searchrad2-(dx*dx+dy*dy)>SMALLCOORD )
+  if (searchrad2-(dx*dx+dy*dy)>SMALLDOUBLE )
     /* check of searchrad2>(dx*dx+dy*dy) */
     return (YES);
   else
@@ -365,14 +365,14 @@ static INT PointInCircle (COORD pt[DIM], COORD x, COORD y, COORD searchrad2)
 /* Input:     QUADTREETYP *q_pointer: pointer at a quadtree structure       */
 /*            SOURCETYP *so: pointer at a source respectivley a left        */
 /*                           inferior corner								*/
-/*			  COORD *wi: the width of one of the four subquadrangles                */
+/*			  DOUBLE *wi: the width of one of the four subquadrangles               */
 /*            FRONTCOMP *new_p: pointer at the new frontcomponent			*/
 /*                                                                          */
 /* Output:    pointer on a quadtree structure                                           */
 /*                                                                          */
 /****************************************************************************/
 
-static QUADTREETYP* search(QUADTREETYP *q_pointer, SOURCETYP *so, COORD *wi,
+static QUADTREETYP* search(QUADTREETYP *q_pointer, SOURCETYP *so, DOUBLE *wi,
                            FRONTCOMP *new_p)
 {
   unsigned char helpc;
@@ -505,8 +505,8 @@ static QUADTREETYP* search(QUADTREETYP *q_pointer, SOURCETYP *so, COORD *wi,
 /*            SOURCETYP *search_sq_ld,*search_sq_ru,*big_search_sq_ld,      */
 /*                      *big_search_sq_ru : coordinates of the different    */
 /*									  sources								*/
-/*            COORD xt[3], COORD yt[3] : coordinates of the sugg. triangle	*/
-/*			  COORD searchradis : radius of the circle around the new       */
+/*            DOUBLE xt[3], DOUBLE yt[3] : coordinates of the sugg. triangle	*/
+/*			  DOUBLE searchradis : radius of the circle around the new       */
 /*									  suggested node to detect also close   */
 /*									  cutting edges							*/
 /*            int *foundpoints, int *ii: reference parameters for number of */
@@ -532,17 +532,17 @@ static void environment_search(INDEPFRONTLIST *theIFL,
                                QUADTREETYP *q_pointer, SOURCETYP* so,
                                FRONTCOMP *thefoundPoints[MAXNPOINTS],
                                FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS],
-                               COORD wi,
+                               DOUBLE wi,
                                SOURCETYP *search_sq_ld, SOURCETYP *search_sq_ru,
                                SOURCETYP *big_search_sq_ld,
                                SOURCETYP *big_search_sq_ru,
-                               COORD xt[3], COORD yt[3],
-                               COORD searchradis, int *foundpoints, int *ii)
+                               DOUBLE xt[3], DOUBLE yt[3],
+                               DOUBLE searchradis, int *foundpoints, int *ii)
 {
   QFCLISTTYP *hn_pointer;
   int i,touch_possible;
   unsigned char helpc;
-  COORD pt[DIM];
+  DOUBLE pt[DIM];
 
 
   for(i=0; i<=3; i++)
@@ -783,13 +783,13 @@ static void environment_search(INDEPFRONTLIST *theIFL,
 /*			  QUADTREETYP *q_place : the inserting place, determined by the */
 /*									 function search()                      */
 /*			  SOURCETYP *src : concerning source							*/
-/*			  COORD wi : width of the subquadrangles of the concerning      */
+/*			  DOUBLE wi : width of the subquadrangles of the concerning      */
 /*				         depth												*/
 /*																			*/
 /****************************************************************************/
 
 static void insert(QFCLISTTYP *p_new, QUADTREETYP *q_place,
-                   SOURCETYP *src, COORD wi)
+                   SOURCETYP *src, DOUBLE wi)
 {
   int lauf;
   unsigned char helpc1, helpc2, helpc3, helpc_qu_flg;
@@ -919,7 +919,7 @@ static void insert(QFCLISTTYP *p_new, QUADTREETYP *q_place,
 /* Input:     QUADTREETYP *q_pointer : pointer at the concerning                        */
 /*									   structure							*/
 /*			  FRONTCOMP *p_del : this frontcomponent shall be deleted               */
-/*			  COORD wi : width of the subquadrangles of the concerning      */
+/*			  DOUBLE wi : width of the subquadrangles of the concerning      */
 /*				         depth												*/
 /*			  SOURCETYP *so : concerning source								*/
 /*			  int *stop, QFCLISTTYP **nd_mem : necessary for deleting               */
@@ -927,7 +927,7 @@ static void insert(QFCLISTTYP *p_new, QUADTREETYP *q_place,
 /*																			*/
 /****************************************************************************/
 
-static void delete_node(QUADTREETYP *q_pointer, FRONTCOMP *p_del, COORD width,
+static void delete_node(QUADTREETYP *q_pointer, FRONTCOMP *p_del, DOUBLE width,
                         SOURCETYP *so, int *stop, QFCLISTTYP **nd_mem)
 {
   unsigned char helpc, hc;
@@ -1164,7 +1164,7 @@ static void InsertQuadtree(FRONTCOMP *pon, int ncomp)
   QFCLISTTYP *p_new;
   int i;
   QUADTREETYP *qz_s;
-  COORD actual_width;
+  DOUBLE actual_width;
 
   srce = (SOURCETYP *)GetMemoryForObject( MG, sizeof(SOURCETYP), ScObj);
   if ( srce == NULL )
@@ -1960,7 +1960,7 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
    INT AccelFCTreeSearch(INDEPFRONTLIST *theIFL,
    FRONTCOMP* thefoundPoints[MAXNPOINTS],
    FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS],
-   COORD xt[3], COORD yt[3], COORD searchradis);
+   DOUBLE xt[3], DOUBLE yt[3], DOUBLE searchradis);
 
    PARAMETERS:
    .  theIFL - pointer to the concerning independant frontlist, in which the new
@@ -1992,8 +1992,8 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
 /****************************************************************************/
 
 int AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOINTS],
-                      FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS], COORD xt[3],
-                      COORD yt[3], COORD searchradis)
+                      FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS], DOUBLE xt[3],
+                      DOUBLE yt[3], DOUBLE searchradis)
 {
   SOURCETYP *srce;
   SOURCETYP *search_sq_ld, *search_sq_ru;

@@ -347,8 +347,8 @@ struct ivertex {                                        /* inner vertex structur
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
-  COORD x[DIM];                                         /* vertex position						*/
-  COORD xi[DIM];                                        /* local coordinates in father element	*/
+  DOUBLE x[DIM];                                        /* vertex position						*/
+  DOUBLE xi[DIM];                                       /* local coordinates in father element	*/
 
         #ifdef ModelP
   DDD_HEADER ddd;
@@ -366,8 +366,8 @@ struct bvertex {                                        /* boundary vertex struc
   /* variables */
   unsigned INT control;                         /* object identification, various flags */
   INT id;                                                       /* unique id used for load/store		*/
-  COORD x[DIM];                                         /* vertex position						*/
-  COORD xi[DIM];                                        /* local coordinates in father element	*/
+  DOUBLE x[DIM];                                        /* vertex position						*/
+  DOUBLE xi[DIM];                                       /* local coordinates in father element	*/
 
         #ifdef ModelP
   DDD_HEADER ddd;
@@ -812,8 +812,8 @@ typedef struct multigrid MULTIGRID;
 /*----------- typedef for functions ----------------------------------------*/
 
 typedef INT (*PreprocessingProcPtr)(const char *, MULTIGRID *);
-typedef DOUBLE (*ElementEvalProcPtr)(const ELEMENT *,const COORD **,COORD *);
-typedef void (*ElementVectorProcPtr)(const ELEMENT *,const COORD **,COORD *,DOUBLE *);
+typedef DOUBLE (*ElementEvalProcPtr)(const ELEMENT *,const DOUBLE **,DOUBLE *);
+typedef void (*ElementVectorProcPtr)(const ELEMENT *,const DOUBLE **,DOUBLE *,DOUBLE *);
 typedef DOUBLE (*MatrixEvalProcPtr)(const MATRIX *);
 
 /*----------- definition of structs ----------------------------------------*/
@@ -1687,7 +1687,7 @@ typedef struct {
   INT corners_of_elem;                                          /* how many corners ?				*/
 
   /* local geometric description of the element */
-  COORD_VECTOR local_corner[MAX_CORNERS_OF_ELEM];               /* local coordinates of the corners of the element */
+  DOUBLE_VECTOR local_corner[MAX_CORNERS_OF_ELEM];                      /* local coordinates of the corners of the element */
 
   /* more size parameters */
   INT edges_of_elem;                                                    /* how many edges ?					*/
@@ -2131,7 +2131,7 @@ INT                     SaveCnomGridAndValues (MULTIGRID *theMG, char *FileName,
 #endif
 
 /* coarse grid manipulations */
-NODE        *InsertInnerNode            (MULTIGRID *theMG, COORD *pos);
+NODE        *InsertInnerNode            (MULTIGRID *theMG, DOUBLE *pos);
 NODE        *InsertBoundaryNode     (MULTIGRID *theMG, BNDP *bndp);
 
 INT             DeleteNodeWithID                (MULTIGRID *theMG, INT id);
@@ -2151,19 +2151,19 @@ NODE            *GetFineNodeOnEdge              (const ELEMENT *theElement, INT 
 /*INT			GetFineSidesTouchingCoarseSide (const ELEMENT *theElement, INT side, INT *nfine, ELEMENT *Elements[MAX_SIDES_TOUCHING], INT Sides[MAX_SIDES_TOUCHING]);*/
 
 /* moving nodes */
-INT         GetMidNodeParam         (NODE * theNode, COORD *lambda);
-INT         GetCenterNodeParam      (NODE * theNode, COORD *lambda);
+INT         GetMidNodeParam         (NODE * theNode, DOUBLE *lambda);
+INT         GetCenterNodeParam      (NODE * theNode, DOUBLE *lambda);
 #ifdef __THREEDIM__
-NODE            GetSideNodeParam        (NODE * theNode, COORD *lambda);
+NODE            GetSideNodeParam        (NODE * theNode, DOUBLE *lambda);
 #endif
-INT         MoveMidNode             (MULTIGRID *theMG, NODE *theNode, COORD lambda);
-INT         MoveCenterNode          (MULTIGRID *theMG, NODE *theNode, COORD *lambda);
+INT         MoveMidNode             (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda);
+INT         MoveCenterNode          (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda);
 #ifdef __THREEDIM__
-INT         MoveSideNode             (MULTIGRID *theMG, NODE *theNode, COORD *lambda);
+INT         MoveSideNode             (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda);
 #endif
-INT         MoveNode                (MULTIGRID *theMG, NODE *theNode, COORD *newPos);
+INT         MoveNode                (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos);
 INT             SmoothMultiGrid                 (MULTIGRID *theMG, INT niter, INT bdryFlag);
-INT         SmoothGrid              (GRID *theGrid, const COORD LimitLocDis, INT *MoveInfo, const INT ForceLevelSet);
+INT         SmoothGrid              (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const INT ForceLevelSet);
 INT         SmoothGridReset         (GRID *theGrid, INT *MoveInfo);
 
 /* handling struct blockvector_description_format (BV_DESC_FORMAT) */
@@ -2198,11 +2198,11 @@ INT         GetAllVectorsOfElement  (GRID *theGrid, ELEMENT *theElement,
 
 /* searching */
 NODE            *FindNodeFromId                 (GRID *theGrid, INT id);
-NODE            *FindNodeFromPosition   (GRID *theGrid, COORD *pos, COORD *tol);
-VECTOR          *FindVectorFromPosition (GRID *theGrid, COORD *pos, COORD *tol);
+NODE            *FindNodeFromPosition   (GRID *theGrid, DOUBLE *pos, DOUBLE *tol);
+VECTOR          *FindVectorFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol);
 ELEMENT         *FindElementFromId              (GRID *theGrid, INT id);
-ELEMENT         *FindElementFromPosition(GRID *theGrid, COORD *pos);
-ELEMENT     *FindElementOnSurface   (MULTIGRID *theMG, COORD *global);
+ELEMENT         *FindElementFromPosition(GRID *theGrid, DOUBLE *pos);
+ELEMENT     *FindElementOnSurface   (MULTIGRID *theMG, DOUBLE *global);
 ELEMENT     *NeighbourElement       (ELEMENT *t, INT side);
 INT          InnerBoundary          (ELEMENT *t, INT side);
 BLOCKVECTOR *FindBV                                     (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf );
@@ -2226,7 +2226,7 @@ void            ListVectorRange                 (MULTIGRID *theMG,              
 LINK            *GetLink                                (NODE *from, NODE *to);
 EDGE            *GetEdge                                (NODE *from, NODE *to);
 INT             GetSons                                 (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);
-INT             VectorPosition                  (VECTOR *theVector, COORD *position);
+INT             VectorPosition                  (VECTOR *theVector, DOUBLE *position);
 INT             VectorInElement                 (ELEMENT *theElement, VECTOR *theVector);
 INT             MinMaxAngle                     (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax);
 

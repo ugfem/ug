@@ -59,8 +59,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    OneSideMove - calculate displacement of the center point along one local coordinate
 
    SYNOPSIS
-   static COORD OneSideMoveCP(COORD *CenterPVertex, COORD *sideMid,
-                         COORD *CenterPointNeEL)
+   static DOUBLE OneSideMoveCP(DOUBLE *CenterPVertex, DOUBLE *sideMid,
+                         DOUBLE *CenterPointNeEL)
 
    PARAMETERS:
    . CenterPVertex    - global coordinates of center vertex to move
@@ -93,16 +93,16 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    LocalMove = 1/2 *(y1/x1) - 1/2
 
    RETURN VALUE:
-   COORD
+   DOUBLE
    .n  LocalMove  - local coordinate of displacement (moving direction is from CenterPVertex to sideMid)
  */
 /***************************************************************/
 
-static COORD OneSideMoveCP(COORD *CenterPVertex, COORD *sideMid,
-                           COORD *CenterPointNeEL)
+static DOUBLE OneSideMoveCP(DOUBLE *CenterPVertex, DOUBLE *sideMid,
+                            DOUBLE *CenterPointNeEL)
 {
-  COORD x1,x2,y1;
-  COORD LocalMove;
+  DOUBLE x1,x2,y1;
+  DOUBLE LocalMove;
 
   V_DIM_EUKLIDNORM_OF_DIFF(sideMid,CenterPVertex,x1);
   V_DIM_EUKLIDNORM_OF_DIFF(CenterPointNeEL,sideMid,x2);
@@ -117,7 +117,7 @@ static COORD OneSideMoveCP(COORD *CenterPVertex, COORD *sideMid,
    NewPosCenterNodeCurved - modify displacement of center node according to a curved boundary
 
    SYNOPSIS
-   static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, COORD *LocCoord)
+   static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, DOUBLE *LocCoord)
 
    PARAMETERS
    .  theElement     - father element of the center node
@@ -136,13 +136,13 @@ static COORD OneSideMoveCP(COORD *CenterPVertex, COORD *sideMid,
  */
 /****************************************************************************/
 
-static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, COORD *LocCoord)
+static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, DOUBLE *LocCoord)
 {
   INT i,j,n,nbn,ncorn,nmoved,found;
   ELEMENT *sonElement;
   NODE *theNode[MAX_SIDES_OF_ELEM],*cornerNode[MAX_CORNERS_OF_SIDE];
   VERTEX *bndVertex[MAX_SIDES_OF_ELEM],*theVertex;
-  COORD lcorn0[DIM],lcorn1[DIM],*lmid,totalLocal,*theCorners[MAX_CORNERS_OF_ELEM];
+  DOUBLE lcorn0[DIM],lcorn1[DIM],*lmid,totalLocal,*theCorners[MAX_CORNERS_OF_ELEM];
   LINK *theLink;
 
 
@@ -197,9 +197,9 @@ static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, COORD *L
     assert(nbn==2);
 
     CORNER_COORDINATES(theElement,ncorn,theCorners);
-    UG_GlobalToLocal(ncorn,(const COORD **)theCorners,
+    UG_GlobalToLocal(ncorn,(const DOUBLE **)theCorners,
                      CVECT(MYVERTEX(cornerNode[0])),lcorn0);
-    UG_GlobalToLocal(ncorn,(const COORD **)theCorners,
+    UG_GlobalToLocal(ncorn,(const DOUBLE **)theCorners,
                      CVECT(MYVERTEX(cornerNode[1])),lcorn1);
     found = FALSE;
     for (i=0; i<DIM; i++)
@@ -279,7 +279,7 @@ static INT MovedNode (ELEMENT *theElement)
 
    SYNOPSIS
    static INT NewPosCenterNode(ELEMENT *fatherElement, ELEMENT *nbElement[MAX_SIDES_OF_ELEM],
-                            NODE *theNode, COORD LimitLocDis, COORD *newPos)
+                            NODE *theNode, DOUBLE LimitLocDis, DOUBLE *newPos)
 
    PARAMETERS
    .  fatherElement     - father element of the center node
@@ -300,13 +300,13 @@ static INT MovedNode (ELEMENT *theElement)
 /****************************************************************************/
 
 static INT NewPosCenterNode(ELEMENT *fatherElement, ELEMENT *nbElement[MAX_SIDES_OF_ELEM],
-                            NODE *theNode, COORD LimitLocDis, COORD *newPos)
+                            NODE *theNode, DOUBLE LimitLocDis, DOUBLE *newPos)
 {
   VERTEX *theVertex;
-  COORD sideMid[DIM],CenterPoint[DIM];
-  COORD *nbCorners[MAX_CORNERS_OF_ELEM],*fatherCorners[MAX_CORNERS_OF_ELEM],CenterPVertex[DIM];
+  DOUBLE sideMid[DIM],CenterPoint[DIM];
+  DOUBLE *nbCorners[MAX_CORNERS_OF_ELEM],*fatherCorners[MAX_CORNERS_OF_ELEM],CenterPVertex[DIM];
   INT i,j,k,coe,fcorn,numOfSides,idim,nmove[DIM],found,co0,co1;
-  COORD localmove,LocMove[DIM],LocCoord[DIM],lcorn0[DIM],lcorn1[DIM];
+  DOUBLE localmove,LocMove[DIM],LocCoord[DIM],lcorn0[DIM],lcorn1[DIM];
 
 
 #ifdef __THREEDIM__
@@ -364,9 +364,9 @@ static INT NewPosCenterNode(ELEMENT *fatherElement, ELEMENT *nbElement[MAX_SIDES
     co0 = CORNER_OF_SIDE(fatherElement,i,0);
     co1 = CORNER_OF_SIDE(fatherElement,i,1);
     /* determine displacement direction in local coordinates of the father element */
-    UG_GlobalToLocal(fcorn,(const COORD **)fatherCorners,
+    UG_GlobalToLocal(fcorn,(const DOUBLE **)fatherCorners,
                      CVECT(MYVERTEX(CORNER(fatherElement,co0))),lcorn0);
-    UG_GlobalToLocal(fcorn,(const COORD **)fatherCorners,
+    UG_GlobalToLocal(fcorn,(const DOUBLE **)fatherCorners,
                      CVECT(MYVERTEX(CORNER(fatherElement,co1))),lcorn1);
     found = FALSE;
     for (idim=0; idim<DIM; idim++)
@@ -397,9 +397,9 @@ static INT NewPosCenterNode(ELEMENT *fatherElement, ELEMENT *nbElement[MAX_SIDES
       printf("father corners %f  %f \n",fatherCorners[3][0],fatherCorners[3][1]);
       printf("father corners %f  %f \n",CVECT(MYVERTEX(CORNER(fatherElement,co0)))[0],
              CVECT(MYVERTEX(CORNER(fatherElement,i)))[1]);
-      UG_GlobalToLocal(fcorn,(const COORD **)fatherCorners,
+      UG_GlobalToLocal(fcorn,(const DOUBLE **)fatherCorners,
                        CVECT(MYVERTEX(CORNER(fatherElement,co0))),lcorn0);
-      UG_GlobalToLocal(fcorn,(const COORD **)fatherCorners,
+      UG_GlobalToLocal(fcorn,(const DOUBLE **)fatherCorners,
                        CVECT(MYVERTEX(CORNER(fatherElement,co1))),lcorn1);
       printf("NewPosCenterNode lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]);
     }
@@ -430,13 +430,13 @@ static INT NewPosCenterNode(ELEMENT *fatherElement, ELEMENT *nbElement[MAX_SIDES
   return(0);
 }
 
-static INT LambdaFromTriangle (ELEMENT *theElement, NODE *cornerNodes[], COORD *lambda)
+static INT LambdaFromTriangle (ELEMENT *theElement, NODE *cornerNodes[], DOUBLE *lambda)
 {
   INT i,j,k,side0,side1,coe,nmove;
   NODE *node0, *node1;
   ELEMENT *nbElement;
-  COORD sideMid[DIM],CenterPointElem[DIM],CenterPointNBElem[DIM];
-  COORD *Corners[MAX_CORNERS_OF_ELEM],localmove0,localmove1;
+  DOUBLE sideMid[DIM],CenterPointElem[DIM],CenterPointNBElem[DIM];
+  DOUBLE *Corners[MAX_CORNERS_OF_ELEM],localmove0,localmove1;
 
   assert(CORNERS_OF_ELEM(theElement)==3);
 
@@ -534,7 +534,7 @@ static INT LambdaFromTriangle (ELEMENT *theElement, NODE *cornerNodes[], COORD *
 
    SYNOPSIS
    static INT LambdaFromQuad (ELEMENT *theElement, VERTEX *centerVertex,
-                           NODE *sidemidNode,NODE *cornerNodes[], COORD *lambda)
+                           NODE *sidemidNode,NODE *cornerNodes[], DOUBLE *lambda)
 
    PARAMETERS
    .  theElement     - father element of the center node
@@ -571,11 +571,11 @@ static INT LambdaFromTriangle (ELEMENT *theElement, NODE *cornerNodes[], COORD *
 
 static INT LambdaFromQuad (ELEMENT *theElement,VERTEX *centerVertex,
                            NODE *sidemidNode,NODE *cornerNodes[],
-                           COORD *lambda)
+                           DOUBLE *lambda)
 {
   VERTEX *CenterVertex,*bndVertex;
-  COORD *CornerPtrs[MAX_CORNERS_OF_ELEM],lcorn0[DIM],lcorn1[DIM],lmid0[DIM],lmid1[DIM];
-  COORD *LocalCoord;
+  DOUBLE *CornerPtrs[MAX_CORNERS_OF_ELEM],lcorn0[DIM],lcorn1[DIM],lmid0[DIM],lmid1[DIM];
+  DOUBLE *LocalCoord;
   INT i,j,k,coe,idim,node_found,coord,curved;
   ELEMENT *sonElement;
   NODE *midNode[2];
@@ -586,9 +586,9 @@ static INT LambdaFromQuad (ELEMENT *theElement,VERTEX *centerVertex,
   LocalCoord = LCVECT(centerVertex);
   /* local coordinates of corner vertices */
   CORNER_COORDINATES(theElement,coe,CornerPtrs);
-  UG_GlobalToLocal(coe,(const COORD **)CornerPtrs,
+  UG_GlobalToLocal(coe,(const DOUBLE **)CornerPtrs,
                    CVECT(MYVERTEX(cornerNodes[0])),lcorn0);
-  UG_GlobalToLocal(coe,(const COORD **)CornerPtrs,
+  UG_GlobalToLocal(coe,(const DOUBLE **)CornerPtrs,
                    CVECT(MYVERTEX(cornerNodes[1])),lcorn1);
 
   /* determine local coordinate of displacement */
@@ -645,9 +645,9 @@ static INT LambdaFromQuad (ELEMENT *theElement,VERTEX *centerVertex,
   /* the two midnodes are not moved vertices, no change for lambda necessary  */
   if (!MOVED(MYVERTEX(midNode[0])) && !MOVED(MYVERTEX(midNode[1]))) return(0);
 
-  UG_GlobalToLocal(coe,(const COORD **)CornerPtrs,
+  UG_GlobalToLocal(coe,(const DOUBLE **)CornerPtrs,
                    CVECT(MYVERTEX(midNode[0])),lmid0);
-  UG_GlobalToLocal(coe,(const COORD **)CornerPtrs,
+  UG_GlobalToLocal(coe,(const DOUBLE **)CornerPtrs,
                    CVECT(MYVERTEX(midNode[1])),lmid1);
   /* determine local coordinate of displacement */
   if (LOCAL_EQUAL(lcorn0[0],lcorn1[0]))
@@ -666,16 +666,16 @@ static INT LambdaFromQuad (ELEMENT *theElement,VERTEX *centerVertex,
   return(0);
 }
 
-static INT DefaultBndElemCenterLocal(NODE *centerNode, COORD *defaultLocal)
+static INT DefaultBndElemCenterLocal(NODE *centerNode, DOUBLE *defaultLocal)
 {
   ELEMENT *fatherElement;
-  COORD global[DIM],*local;
+  DOUBLE global[DIM],*local;
   INT coe,m,j,moved;
   VERTEX *theVertex,*VertexOnEdge[MAX_EDGES_OF_ELEM];
   NODE *theNode;
   EDGE *theEdge;
   DOUBLE fac;
-  COORD *CornerPtrs[MAX_CORNERS_OF_ELEM];
+  DOUBLE *CornerPtrs[MAX_CORNERS_OF_ELEM];
 
   if (NTYPE(centerNode)!=CENTER_NODE) return(1);
   fatherElement = VFATHER(MYVERTEX(centerNode));
@@ -709,7 +709,7 @@ static INT DefaultBndElemCenterLocal(NODE *centerNode, COORD *defaultLocal)
       }
       else
         V_DIM_LINCOMB(1.0,global,fac,CVECT(VertexOnEdge[j]),global);
-    UG_GlobalToLocal(coe,(const COORD **)CornerPtrs,global,defaultLocal);
+    UG_GlobalToLocal(coe,(const DOUBLE **)CornerPtrs,global,defaultLocal);
   }
   else
   {
@@ -725,7 +725,7 @@ static INT DefaultBndElemCenterLocal(NODE *centerNode, COORD *defaultLocal)
              grid (l-1)
 
    SYNOPSIS
-   static INT SmoothGrid (GRID *theGrid, COORD LimitLocDis, INT *MoveInfo)
+   static INT SmoothGrid (GRID *theGrid, DOUBLE LimitLocDis, INT *MoveInfo)
 
    PARAMETERS
    .  theGrid      - resize quadrilaterals and triangles on this grid
@@ -745,14 +745,14 @@ static INT DefaultBndElemCenterLocal(NODE *centerNode, COORD *defaultLocal)
  */
 /****************************************************************************/
 
-INT SmoothGrid (GRID *theGrid, const COORD LimitLocDis, INT *MoveInfo, const INT ForceLevelSet)
+INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const INT ForceLevelSet)
 {
   MULTIGRID *theMG;
   ELEMENT *theElement,*fatherElement,*oppositeElement,*nbElement[MAX_SIDES_OF_ELEM];
   VERTEX *theVertex,*CenterVertex;
   NODE *theNode,*CornerNodes[2],*CenterNodes[2],*node0,*node1;
-  COORD *CornerPtrs[MAX_CORNERS_OF_ELEM],LocalCenter[3]={0.5,0.5,0.5};
-  COORD newPos[DIM],newLocal[DIM],lambda,lambda0,lambda1,lambda_old,x1,x2;
+  DOUBLE *CornerPtrs[MAX_CORNERS_OF_ELEM],LocalCenter[3]={0.5,0.5,0.5};
+  DOUBLE newPos[DIM],newLocal[DIM],lambda,lambda0,lambda1,lambda_old,x1,x2;
   INT i,j,coe,numOfSides,nqsides,curved,coN,ceN,nbn,Eside,nlinks,OnlyRedSons;
   LINK *theLink;
 
@@ -814,7 +814,7 @@ INT SmoothGrid (GRID *theGrid, const COORD LimitLocDis, INT *MoveInfo, const INT
 
     /* calculate new local coordinates of center node */
     CORNER_COORDINATES(fatherElement,coe,CornerPtrs);
-    UG_GlobalToLocal(coe,(const COORD **)CornerPtrs, newPos,newLocal);
+    UG_GlobalToLocal(coe,(const DOUBLE **)CornerPtrs, newPos,newLocal);
 
     /* move node only when necessary */
     if (V2_LOCAL_EQUAL(LCVECT(MYVERTEX(theNode)),newLocal)!=0) continue;
@@ -1034,8 +1034,8 @@ INT SmoothGridReset (GRID *theGrid, INT *MoveInfo)
   ELEMENT *theElement,*fatherElement,*oppositeElement,*nbElement[MAX_SIDES_OF_ELEM];
   VERTEX *theVertex;
   NODE *theNode,*CornerNodes[2],*CenterNodes[2];
-  COORD *CornerPtrs[MAX_CORNERS_OF_ELEM],LocalCenter[3]={0.5,0.5,0.5};
-  COORD newPos[DIM],defaultLocal[DIM],lambda_old,x1,x2;
+  DOUBLE *CornerPtrs[MAX_CORNERS_OF_ELEM],LocalCenter[3]={0.5,0.5,0.5};
+  DOUBLE newPos[DIM],defaultLocal[DIM],lambda_old,x1,x2;
   INT coe,ceN,coN;
   LINK *theLink;
 
@@ -1176,8 +1176,8 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
   ELEMENT *eptr;
   VERTEX *vptr;
   LINK *lptr;
-  COORD *corn[MAX_CORNERS_OF_ELEM],*y,*cvect;
-  COORD x[DIM],old_x[DIM];
+  DOUBLE *corn[MAX_CORNERS_OF_ELEM],*y,*cvect;
+  DOUBLE x[DIM],old_x[DIM];
 
   if (bdryFlag)
   {
@@ -1245,7 +1245,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
           else
           {
             CORNER_COORDINATES(eptr,m,corn);
-            UG_GlobalToLocal(m,(const COORD **)corn,
+            UG_GlobalToLocal(m,(const DOUBLE **)corn,
                              cvect,LCVECT(vptr));
             VFATHER(vptr) = eptr;
           }

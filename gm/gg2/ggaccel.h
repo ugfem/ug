@@ -48,11 +48,11 @@
 /*                                                                          */
 /****************************************************************************/
 
-#define SMALLCOORD      1e-6
-#define MAXCOORD 999.0
+#define SMALLDOUBLE     1e-6
+#define MAXDOUBLE 999.0
 #define EPSI 0.0003
 #define MAXWIDTH 8.0
-#define MAXCOORD 999.0
+#define MAXDOUBLE 999.0
 #define MAXNPOINTS 100
 #define max(A,B)  ((A) > (B) ? (A) : (B))
 #define min(A,B)  ((A) < (B) ? (A) : (B))
@@ -93,8 +93,8 @@ typedef struct quadtree_structure
 typedef struct sourcetyp_structure
 {
   unsigned int control;
-  COORD x;
-  COORD y;
+  DOUBLE x;
+  DOUBLE y;
 }                                       SOURCETYP;
 
 struct edgetree_structure
@@ -117,7 +117,7 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params);
 int AccelFCTreeSearch(INDEPFRONTLIST *theIFL,
                       FRONTCOMP* thefoundPoints[MAXNPOINTS],
                       FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS],
-                      COORD xt[3], COORD yt[3], COORD searchradis);
+                      DOUBLE xt[3], DOUBLE yt[3], DOUBLE searchradis);
 
 FRONTCOMP* AccelBaseTreeSearch(FRONTLIST** myList);
 #endif

@@ -558,8 +558,8 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
   EDGE *theEdge;
   VERTEX *theVertex,*v0,*v1;
   BNDP *bndp;
-  COORD *local,*x[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR bnd_global,global;
+  DOUBLE *local,*x[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR bnd_global,global;
   DOUBLE diff;
   INT n,co0,co1;
 
@@ -594,7 +594,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
       {
         SETMOVED(theVertex,1);
         CORNER_COORDINATES(theElement,n,x);
-        UG_GlobalToLocal(n,(const COORD **)x,global,local);
+        UG_GlobalToLocal(n,(const DOUBLE **)x,global,local);
       }
       else
         V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theElement,co0),
@@ -692,8 +692,8 @@ static INT SideOfNbElement(ELEMENT *theElement, INT side)
 #ifdef __THREEDIM__
 NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 {
-  COORD_VECTOR bnd_global,global,local,bnd_local;
-  COORD *x[MAX_CORNERS_OF_ELEM],*y;
+  DOUBLE_VECTOR bnd_global,global,local,bnd_local;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM],*y;
   VERTEX *theVertex;
   NODE *theNode;
   BNDP *bndp;
@@ -742,7 +742,7 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
         {
           SETMOVED(theVertex,1);
           CORNER_COORDINATES(theElement,n,x);
-          UG_GlobalToLocal(n,(const COORD **)x,global,local);
+          UG_GlobalToLocal(n,(const DOUBLE **)x,global,local);
         }
         else
           V_DIM_COPY(local,LCVECT(theVertex));
@@ -851,13 +851,13 @@ NODE *GetSideNode (ELEMENT *theElement, NODE *theNode0, NODE *theNode1, INT side
 
 NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
 {
-  COORD *global,*local;
+  DOUBLE *global,*local;
   INT n,m,j,moved;
   VERTEX *theVertex,*VertexOnEdge[MAX_EDGES_OF_ELEM];
   NODE *theNode;
   EDGE *theEdge;
   DOUBLE fac;
-  COORD *x[MAX_CORNERS_OF_ELEM];
+  DOUBLE *x[MAX_CORNERS_OF_ELEM];
 
   /* check if moved side nodes exist */
   moved = 0;
@@ -911,7 +911,7 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
       }
       else
         V_DIM_LINCOMB(1.0,global,fac,CVECT(VertexOnEdge[j]),global);
-    UG_GlobalToLocal(n,(const COORD **)x,global,local);
+    UG_GlobalToLocal(n,(const DOUBLE **)x,global,local);
   }
   VFATHER(theVertex) = theElement;
   NFATHER(theNode) = NULL;
@@ -2217,7 +2217,7 @@ INT RenumberMultiGrid (MULTIGRID *theMG)
 static INT LexCompare (NODE **pnode1, NODE **pnode2)
 {
   VERTEX *pv1,*pv2;
-  COORD diff[DIM];
+  DOUBLE diff[DIM];
 
   pv1 = MYVERTEX(*pnode1);
   pv2 = MYVERTEX(*pnode2);
@@ -2496,7 +2496,7 @@ INT FindNeighborElement (const ELEMENT *theElement, INT Side, ELEMENT **theNeigh
    InsertInnerNode - Insert a inner node
 
    SYNOPSIS:
-   NODE *InnerNode (MULTIGRID *theMG, COORD *pos);
+   NODE *InnerNode (MULTIGRID *theMG, DOUBLE *pos);
 
    PARAMETERS:
    .  theMG - multigrid structure
@@ -2512,7 +2512,7 @@ INT FindNeighborElement (const ELEMENT *theElement, INT Side, ELEMENT **theNeigh
    D*/
 /****************************************************************************/
 
-NODE *InsertInnerNode (MULTIGRID *theMG, COORD *pos)
+NODE *InsertInnerNode (MULTIGRID *theMG, DOUBLE *pos)
 {
   GRID *theGrid;
   VERTEX *theVertex;
@@ -2791,7 +2791,7 @@ ELEMENT *FindFather (VERTEX *theVertex)
    MoveMidNode - set new position for a midnode
 
    SYNOPSIS:
-   INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, COORD lambda);
+   INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda);
 
    PARAMETERS:
    .  theMG - pointer to multigrid
@@ -2810,14 +2810,14 @@ ELEMENT *FindFather (VERTEX *theVertex)
    D*/
 /****************************************************************************/
 
-INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, COORD lambda)
+INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda)
 {
   ELEMENT *theElement;
   NODE *Node0,*Node1;
   VERTEX *theVertex;
   BNDP *bndp;
-  COORD *x[MAX_CORNERS_OF_ELEM],*global,*local;
-  COORD_VECTOR bnd_global;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM],*global,*local;
+  DOUBLE_VECTOR bnd_global;
   DOUBLE diff;
   INT n,k,co0,co1,edge;
 
@@ -2857,7 +2857,7 @@ INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, COORD lambda)
     if (diff > MAX_PAR_DIST) {
       SETMOVED(theVertex,1);
       CORNER_COORDINATES(theElement,n,x);
-      UG_GlobalToLocal(n,(const COORD **)x,global,local);
+      UG_GlobalToLocal(n,(const DOUBLE **)x,global,local);
     }
   }
 
@@ -2878,7 +2878,7 @@ INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, COORD lambda)
    MoveCenterNode - set new position for a centernode
 
    SYNOPSIS:
-   INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, COORD *lambda);
+   INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda);
 
    PARAMETERS:
    .  theMG - pointer to multigrid
@@ -2897,12 +2897,12 @@ INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, COORD lambda)
    D*/
 /****************************************************************************/
 
-INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, COORD *lambda)
+INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda)
 {
   VERTEX *theVertex;
   ELEMENT *theElement;
-  COORD *x[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR oldPos,newPos;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR oldPos,newPos;
   INT n,k;
 
   if (NFATHER(theNode) != NULL) {
@@ -2949,7 +2949,7 @@ INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, COORD *lambda)
    MoveSideNode - set new position for a sidenode
 
    SYNOPSIS:
-   INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, COORD *lambda);
+   INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda);
 
    PARAMETERS:
    .  theMG - pointer to multigrid
@@ -2969,14 +2969,14 @@ INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, COORD *lambda)
 /****************************************************************************/
 
 #ifdef __THREEDIM__
-INT MoveSideNode (MULTIGRID *theMG, NODE *theNode, COORD *lambda)
+INT MoveSideNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda)
 {
   ELEMENT *theElement;
   NODE *Node[MAX_CORNERS_OF_SIDE];
   VERTEX *theVertex;
   BNDP *bndp;
-  COORD *x[MAX_CORNERS_OF_ELEM],*global,*local;
-  COORD_VECTOR bnd_global;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM],*global,*local;
+  DOUBLE_VECTOR bnd_global;
   DOUBLE diff;
   INT n,m,k,i,co[MAX_CORNERS_OF_SIDE],side;
 
@@ -3035,7 +3035,7 @@ INT MoveSideNode (MULTIGRID *theMG, NODE *theNode, COORD *lambda)
     if (diff > MAX_PAR_DIST) {
       SETMOVED(theVertex,1);
       CORNER_COORDINATES(theElement,n,x);
-      UG_GlobalToLocal(n,(const COORD **)x,global,local);
+      UG_GlobalToLocal(n,(const DOUBLE **)x,global,local);
     }
   }
 
@@ -3057,7 +3057,7 @@ INT MoveSideNode (MULTIGRID *theMG, NODE *theNode, COORD *lambda)
    MoveNode - Let user enter a new position for an inner node
 
    SYNOPSIS:
-   INT MoveNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
+   INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos)
 
    PARAMETERS:
    .  theMG - pointer to multigrid
@@ -3076,12 +3076,12 @@ INT MoveSideNode (MULTIGRID *theMG, NODE *theNode, COORD *lambda)
    D*/
 /****************************************************************************/
 
-INT MoveNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
+INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos)
 {
   VERTEX *theVertex;
   ELEMENT *theElement;
-  COORD *x[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR oldPos;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR oldPos;
   INT n,k;
 
   /* set k (and theNode) to the level where the node
@@ -3110,7 +3110,7 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
     else
     {
       CORNER_COORDINATES(theElement,n,x);
-      UG_GlobalToLocal(n,(const COORD **)x,newPos,LCVECT(theVertex));
+      UG_GlobalToLocal(n,(const DOUBLE **)x,newPos,LCVECT(theVertex));
       VFATHER(theVertex) = theElement;
     }
   }
@@ -3130,7 +3130,7 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
   return(GM_OK);
 }
 
-INT GetMidNodeParam (NODE * theNode, COORD *lambda)
+INT GetMidNodeParam (NODE * theNode, DOUBLE *lambda)
 {
   *lambda = 0.5;
   return(0);
@@ -3185,8 +3185,8 @@ static INT CheckOrientation (INT n, VERTEX **vertices)
 #ifdef __THREEDIM__
 static INT CheckOrientation (INT n, VERTEX **vertices)
 {
-  COORD_VECTOR diff[3],rot;
-  COORD det;
+  DOUBLE_VECTOR diff[3],rot;
+  DOUBLE det;
   INT i;
 
   /* TODO: this case */
@@ -3420,7 +3420,7 @@ ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList
 
   IFDEBUG(dom,1)
   {
-    COORD *x[MAX_CORNERS_OF_ELEM],global[DIM],fac,diam;
+    DOUBLE *x[MAX_CORNERS_OF_ELEM],global[DIM],fac,diam;
 
     V_DIM_CLEAR(global);
     for (i=0; i<n; i++)
@@ -3783,7 +3783,7 @@ NODE *FindNodeFromId (GRID *theGrid, INT id)
    FindNodeFromPosition - Find node from position
 
    SYNOPSIS:
-   NODE *FindNodeFromPosition (GRID *theGrid, COORD *pos, COORD *tol);
+   NODE *FindNodeFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol);
 
    PARAMETERS:
    .  theGrid - grid level to search
@@ -3800,7 +3800,7 @@ NODE *FindNodeFromId (GRID *theGrid, INT id)
    D*/
 /****************************************************************************/
 
-NODE *FindNodeFromPosition (GRID *theGrid, COORD *pos, COORD *tol)
+NODE *FindNodeFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol)
 {
   NODE *theNode;
   int i,found;
@@ -3821,7 +3821,7 @@ NODE *FindNodeFromPosition (GRID *theGrid, COORD *pos, COORD *tol)
    FindVectorFromPosition - Find vector from position
 
    SYNOPSIS:
-   VECTOR *FindVectorFromPosition (GRID *theGrid, COORD *pos, COORD *tol);
+   VECTOR *FindVectorFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol);
 
    PARAMETERS:
    .  theGrid - grid level to search
@@ -3838,10 +3838,10 @@ NODE *FindNodeFromPosition (GRID *theGrid, COORD *pos, COORD *tol)
    D*/
 /****************************************************************************/
 
-VECTOR *FindVectorFromPosition (GRID *theGrid, COORD *pos, COORD *tol)
+VECTOR *FindVectorFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol)
 {
   VECTOR *theVector;
-  COORD_VECTOR vpos;
+  DOUBLE_VECTOR vpos;
   int i,found;
 
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
@@ -3892,7 +3892,7 @@ ELEMENT *FindElementFromId (GRID *theGrid, INT id)
    PointInElement - Determine whether point is contained in element
 
    SYNOPSIS:
-   INT PointInElement (const COORD *x, const ELEMENT *theElement);
+   INT PointInElement (const DOUBLE *x, const ELEMENT *theElement);
 
    PARAMETERS:
    .  x - coordinates of given point
@@ -3914,7 +3914,7 @@ ELEMENT *FindElementFromId (GRID *theGrid, INT id)
 /****************************************************************************/
 
 #ifdef __TWODIM__
-INT PointInElement (const COORD *x, const ELEMENT *theElement) /* 2D version */
+INT PointInElement (const DOUBLE *x, const ELEMENT *theElement) /* 2D version */
 {
   COORD_POINT point[MAX_CORNERS_OF_ELEM],thePoint;
   int n,i;
@@ -3929,19 +3929,19 @@ INT PointInElement (const COORD *x, const ELEMENT *theElement) /* 2D version */
     point[i].x = XC(MYVERTEX(CORNER(theElement,i)));
     point[i].y = YC(MYVERTEX(CORNER(theElement,i)));
   }
-  thePoint.x = (COORD)x[0];
-  thePoint.y = (COORD)x[1];
+  thePoint.x = (DOUBLE)x[0];
+  thePoint.y = (DOUBLE)x[1];
 
   return(PointInPolygon(point,n,thePoint));
 }
 #endif
 
 #ifdef __THREEDIM__
-INT PointInElement (const COORD *global, const ELEMENT *theElement)
+INT PointInElement (const DOUBLE *global, const ELEMENT *theElement)
 {
-  COORD *x[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR a,b,rot;
-  COORD det;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR a,b,rot;
+  DOUBLE det;
   INT n,i;
 
   CORNER_COORDINATES(theElement,n,x);
@@ -3968,7 +3968,7 @@ INT PointInElement (const COORD *global, const ELEMENT *theElement)
    FindElementFromPosition - Find element containing position
 
    SYNOPSIS:
-   ELEMENT *FindElementFromPosition (GRID *theGrid, COORD *pos)
+   ELEMENT *FindElementFromPosition (GRID *theGrid, DOUBLE *pos)
 
    PARAMETERS:
    .  theGrid - grid level to search
@@ -3984,7 +3984,7 @@ INT PointInElement (const COORD *global, const ELEMENT *theElement)
    D*/
 /****************************************************************************/
 
-ELEMENT *FindElementFromPosition (GRID *theGrid, COORD *pos)
+ELEMENT *FindElementFromPosition (GRID *theGrid, DOUBLE *pos)
 {
   ELEMENT *theElement;
 
@@ -3996,7 +3996,7 @@ ELEMENT *FindElementFromPosition (GRID *theGrid, COORD *pos)
   return(NULL);
 }
 
-ELEMENT *FindElementOnSurface (MULTIGRID *theMG, COORD *global)
+ELEMENT *FindElementOnSurface (MULTIGRID *theMG, DOUBLE *global)
 {
   ELEMENT *t;
   INT k;
@@ -4162,7 +4162,7 @@ void ListGrids (const MULTIGRID *theMG)
   VECTOR *vec;
   MATRIX *mat;
   char c;
-  COORD hmin,hmax,h;
+  DOUBLE hmin,hmax,h;
   INT l,cl,minl,i,soe,eos,coe,side,e;
   INT nn,ne,nt,ns,nvec,nc,free,used,heap;
 
@@ -6186,10 +6186,10 @@ INT MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
 static INT QualityElement (INT type, ELEMENT *element, DOUBLE *angle)
 {
   INT i,j,k,errorcode;
-  COORD *x[MAX_CORNERS_OF_ELEM];
-  COORD delta[3][DIM],s[DIM],t[DIM];
-  COORD help,Scalarprdst,Scalarprd01,Scalarprd02,Scalarprd12;
-  COORD_VECTOR theNormal[MAX_CORNERS_OF_ELEM];
+  DOUBLE *x[MAX_CORNERS_OF_ELEM];
+  DOUBLE delta[3][DIM],s[DIM],t[DIM];
+  DOUBLE help,Scalarprdst,Scalarprd01,Scalarprd02,Scalarprd12;
+  DOUBLE_VECTOR theNormal[MAX_CORNERS_OF_ELEM];
 
   if (type != TETRAHEDRON)
     return (1);

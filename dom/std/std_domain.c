@@ -328,7 +328,7 @@ static BOUNDARY_CONDITION *GetFirstBoundaryCondition (PROBLEM *theProblem)
    CreateDomain	- Create a new DOMAIN data structure
 
    SYNOPSIS:
-   DOMAIN *CreateDomain (char *name, COORD *MidPoint, COORD radius,
+   DOMAIN *CreateDomain (char *name, DOUBLE *MidPoint, DOUBLE radius,
    INT segments, INT corners, INT Convex);
 
    PARAMETERS:
@@ -350,7 +350,7 @@ static BOUNDARY_CONDITION *GetFirstBoundaryCondition (PROBLEM *theProblem)
    D*/
 /****************************************************************************/
 
-DOMAIN *CreateDomain (char *name, COORD *MidPoint, COORD radius, INT segments, INT corners, INT Convex)
+DOMAIN *CreateDomain (char *name, DOUBLE *MidPoint, DOUBLE radius, INT segments, INT corners, INT Convex)
 {
   DOMAIN *newDomain;
   INT i;
@@ -410,7 +410,7 @@ DOMAIN *GetDomain (char *name)
    SYNOPSIS:
    BOUNDARY_SEGMENT *CreateBoundarySegment (char *name
    INT left, INT right,INT id,INT type,INT res,INT *point,
-   COORD *alpha,COORD *beta,BndSegFuncPtr BndSegFunc, void *data);
+   DOUBLE *alpha,DOUBLE *beta,BndSegFuncPtr BndSegFunc, void *data);
 
    PARAMETERS:
    .  name - name of the boundary segment
@@ -438,7 +438,7 @@ DOMAIN *GetDomain (char *name)
 
 BOUNDARY_SEGMENT *CreateBoundarySegment (char *name,
                                          INT left, INT right,INT id,INT type,INT res,INT *point,
-                                         COORD *alpha,COORD *beta,BndSegFuncPtr BndSegFunc, void *data)
+                                         DOUBLE *alpha,DOUBLE *beta,BndSegFuncPtr BndSegFunc, void *data)
 {
   BOUNDARY_SEGMENT *newSegment;
   INT i;
@@ -538,7 +538,7 @@ static BOUNDARY_SEGMENT *GetFirstBoundarySegment (DOMAIN *theDomain)
 
    SYNOPSIS:
    BOUNDARY_SEGMENT *CreateBoundarySegment2D (char *name, int left, int right,
-        int id, int from, int to, int res, COORD alpha, COORD beta,
+        int id, int from, int to, int res, DOUBLE alpha, DOUBLE beta,
         BndSegFuncPtr BndSegFunc, void *data);
 
 
@@ -567,11 +567,11 @@ static BOUNDARY_SEGMENT *GetFirstBoundarySegment (DOMAIN *theDomain)
 /****************************************************************************/
 
 BOUNDARY_SEGMENT *CreateBoundarySegment2D (char *name, int left, int right,
-                                           int id, int from, int to, int res, COORD alpha, COORD beta,
+                                           int id, int from, int to, int res, DOUBLE alpha, DOUBLE beta,
                                            BndSegFuncPtr BndSegFunc, void *data)
 {
   INT pt[3];
-  COORD alp[3],bet[3];
+  DOUBLE alp[3],bet[3];
 
   pt[0] = from;
   pt[1] = to;
@@ -1345,12 +1345,12 @@ static INT GetCommonLinePatchId (PATCH *p0, PATCH *p1)
   return(-1);
 }
 
-BNDP *CreateBndPOnLine (HEAP *Heap, PATCH *p0, PATCH *p1, COORD lcoord)
+BNDP *CreateBndPOnLine (HEAP *Heap, PATCH *p0, PATCH *p1, DOUBLE lcoord)
 {
   BND_PS *bp;
   PATCH *p,*pp;
-  COORD local0[DIM_OF_BND];
-  COORD local1[DIM_OF_BND];
+  DOUBLE local0[DIM_OF_BND];
+  DOUBLE local1[DIM_OF_BND];
   INT k,l,cnt;
 
   if (PATCH_TYPE(p0) != POINT_PATCH_TYPE)
@@ -1446,7 +1446,7 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   STD_BVP *theBVP;
   BND_PS *ps;
   PATCH *p;
-  COORD lc;
+  DOUBLE lc;
   INT j,n,pid;
   int i;
   float pos[DIM_OF_BND];
@@ -1521,7 +1521,7 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 static DOUBLE LengthOfSide (PATCH *p)
 {
   DOUBLE length,step,s;
-  COORD lambda[DIM_OF_BND],x[2][DIM];
+  DOUBLE lambda[DIM_OF_BND],x[2][DIM];
   INT i;
 
   length = 0.0;
@@ -1548,10 +1548,10 @@ static DOUBLE LengthOfSide (PATCH *p)
   return(length);
 }
 
-static DOUBLE MeshSize (CoeffProcPtr coeff, PATCH *p, COORD *lambda)
+static DOUBLE MeshSize (CoeffProcPtr coeff, PATCH *p, DOUBLE *lambda)
 {
   DOUBLE step;
-  COORD global[DIM];
+  DOUBLE global[DIM];
 
   if ((*PARAM_PATCH_BS (p))(PARAM_PATCH_BSD(p),lambda,global))
     return(0.0);
@@ -1569,7 +1569,7 @@ INT GenerateBnodes (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
 {
   INT i,j,n,nside,left,right;
   DOUBLE length,plength,step,step1;
-  COORD lambda[DIM_OF_BND],lambda1,x[DIM];
+  DOUBLE lambda[DIM_OF_BND],lambda1,x[DIM];
   PATCH *p;
   BND_PS *ps;
 
@@ -1715,7 +1715,7 @@ INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
 {
   INT i,j,m,n,nside,left,right;
   DOUBLE length,plength,step,step1;
-  COORD lambda[DIM_OF_BND],lambda1,x[DIM];
+  DOUBLE lambda[DIM_OF_BND],lambda1,x[DIM];
   PATCH *p;
   BND_PS *ps;
 
@@ -1941,7 +1941,7 @@ static INT AddBoundaryElements (INT n, INT m,
 
    SYNOPSIS:
    static INT TriangulatePatch (DOUBLE h, PATCH *thePatch,
-   INT npc, INT *cornerid, COORD local[CORNERS_OF_BND_SEG][DIM-1],
+   INT npc, INT *cornerid, DOUBLE local[CORNERS_OF_BND_SEG][DIM-1],
    INT sideid[CORNERS_OF_BND_SEG][2], INT *siden);
 
    PARAMETERS:
@@ -1969,14 +1969,14 @@ static INT nc,nodeid;
 static INT TriangulatePatch (HEAP *Heap, PATCH *p, BNDP **bndp,
                              INT *sides, INT ***corners, DOUBLE h,
                              INT npc, INT *cornerid,
-                             COORD local[CORNERS_OF_BND_SEG][DIM-1],
+                             DOUBLE local[CORNERS_OF_BND_SEG][DIM-1],
                              INT sideid[CORNERS_OF_BND_SEG][2],
                              INT *siden)
 {
   BND_PS *ps;
   INT i,j,k,left,right,nside;
-  COORD lvect[DIM-1],gvect[DIM],gvect1[DIM];
-  COORD next_local[CORNERS_OF_BND_SEG][DIM-1];
+  DOUBLE lvect[DIM-1],gvect[DIM],gvect1[DIM];
+  DOUBLE next_local[CORNERS_OF_BND_SEG][DIM-1];
   DOUBLE lambda,dist,step;
   INT next_cornerid[CORNERS_OF_BND_SEG];
   INT next_sideid[CORNERS_OF_BND_SEG][2];
@@ -2115,9 +2115,9 @@ static INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
 {
   INT i,j,m,n,nside,left,right,from,to,k;
   DOUBLE length,plength,step,step1;
-  COORD lambda;
-  COORD dist, global[CORNERS_OF_BND_SEG][DIM];
-  COORD local[CORNERS_OF_BND_SEG][DIM-1];
+  DOUBLE lambda;
+  DOUBLE dist, global[CORNERS_OF_BND_SEG][DIM];
+  DOUBLE local[CORNERS_OF_BND_SEG][DIM-1];
   PATCH *p;
   BND_PS *ps;
   BNDP *bp;
@@ -2395,7 +2395,7 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
    BNDS_Global - gets global coordinates of local position
 
    SYNOPSIS:
-   INT BNDS_Local2Global (BNDS *aBndS, COORD *local, COORD *global);
+   INT BNDS_Local2Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global);
 
    PARAMETERS:
    .  aBndS - BNDS structure
@@ -2412,11 +2412,11 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-INT BNDS_Global (BNDS *aBndS, COORD *local, COORD *global)
+INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 {
   BND_PS *ps;
   PATCH *p;
-  COORD lambda[DIM_OF_BND];
+  DOUBLE lambda[DIM_OF_BND];
   INT i,j;
 
   ps = (BND_PS *)aBndS;
@@ -2469,7 +2469,7 @@ INT BNDS_Global (BNDS *aBndS, COORD *local, COORD *global)
    BNDS_BndCond - gets global coordinates of local position
 
    SYNOPSIS:
-   INT BNDS_BndCond (BNDS *aBndS, COORD *local, COORD *in,
+   INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in,
    INT *type, DOUBLE *value);
 
    PARAMETERS:
@@ -2489,11 +2489,11 @@ INT BNDS_Global (BNDS *aBndS, COORD *local, COORD *global)
    D*/
 /****************************************************************************/
 
-INT BNDS_BndCond (BNDS *aBndS, COORD *local, COORD *in, DOUBLE *value, INT *type)
+INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type)
 {
   BND_PS *ps;
   PATCH *p;
-  COORD lambda[DIM_OF_BND],global[DIM];
+  DOUBLE lambda[DIM_OF_BND],global[DIM];
   INT i,j;
 
   PRINTDEBUG(dom,1,(" BndCond loc %f\n",local[0]));
@@ -2577,7 +2577,7 @@ INT BNDS_BndSDesc (BNDS *theBndS, INT *left, INT *right)
    BNDS_CreateBndP - set BNDP of BNDS
 
    SYNOPSIS:
-   BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, COORD *local);
+   BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local);
 
    PARAMETERS:
    .  aBndS - BNDS structure
@@ -2594,11 +2594,11 @@ INT BNDS_BndSDesc (BNDS *theBndS, INT *left, INT *right)
    D*/
 /****************************************************************************/
 
-BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, COORD *local)
+BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 {
   BND_PS *ps,*pp;
   PATCH *p;
-  COORD lambda[DIM_OF_BND];
+  DOUBLE lambda[DIM_OF_BND];
   INT n,i,j;
 
   if (aBndS == NULL)
@@ -2660,7 +2660,7 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, COORD *local)
    BNDP_Global - gets global coordinates of BNDP
 
    SYNOPSIS:
-   INT BNDP_Global (BNDP *aBndP, COORD *global);
+   INT BNDP_Global (BNDP *aBndP, DOUBLE *global);
 
    PARAMETERS:
    .  aBndP - BNDP structure
@@ -2676,13 +2676,13 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, COORD *local)
    D*/
 /****************************************************************************/
 
-INT BNDP_Global (BNDP *aBndP, COORD *global)
+INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
 {
   BND_PS *ps,*pp;
   PATCH *p,*s;
-  COORD lambda[DIM_OF_BND];
+  DOUBLE lambda[DIM_OF_BND];
   INT j,k;
-  COORD pglobal[DIM];
+  DOUBLE pglobal[DIM];
 
   ps = (BND_PS *)aBndP;
   p = currBVP->patches[ps->patch_id];
@@ -2786,7 +2786,7 @@ INT BNDP_BndPDesc (BNDP *theBndP, INT *move)
 {
   BND_PS *ps,*pp;
   PATCH *p;
-  COORD lambda[DIM_OF_BND];
+  DOUBLE lambda[DIM_OF_BND];
   INT n,i,j;
 
   ps = (BND_PS *)theBndP;
@@ -2835,7 +2835,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 {
   BND_PS *bp[4],*bs;
   PATCH *p[4];
-  COORD *lambda[4];
+  DOUBLE *lambda[4];
   INT i,j,k,l,pid;
 
   PRINTDEBUG(dom,1,("Create BNDS:\n"));
@@ -2933,7 +2933,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
    BNDP_CreateBndP - sets BNDP from a two of BNDPs
 
    SYNOPSIS:
-   BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, COORD lcoord);
+   BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord);
 
    PARAMETERS:
    .  aBndP0 - first BNDP
@@ -2949,11 +2949,11 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
    D*/
 /****************************************************************************/
 
-BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, COORD lcoord)
+BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 {
   BND_PS *bp0,*bp1,*bp;
   PATCH *p0,*p1,*p;
-  COORD *lambda0,*lambda1;
+  DOUBLE *lambda0,*lambda1;
   INT i,j,k,l,pid,cnt,cnt1;
 
   bp0 = (BND_PS *)aBndP0;
@@ -3090,7 +3090,7 @@ INT BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size)
 
    SYNOPSIS:
    INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i,
-   COORD *in, DOUBLE *value, INT *type);
+   DOUBLE *in, DOUBLE *value, INT *type);
 
    PARAMETERS:
    .  aBndP - BNDP structure
@@ -3109,12 +3109,12 @@ INT BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size)
    D*/
 /****************************************************************************/
 
-INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, COORD *in, DOUBLE *value, INT *type)
+INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *type)
 {
   BND_PS *ps;
   PATCH *p;
-  COORD global[DIM];
-  COORD *local;
+  DOUBLE global[DIM];
+  DOUBLE *local;
   INT j;
 
   if (i < 0)

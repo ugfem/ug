@@ -111,7 +111,7 @@ RCSID("$Header$",UG_RCS_STRING)
 
 int AddInnerNode (double x, double y, double z)
 {
-  COORD_VECTOR xc;
+  DOUBLE_VECTOR xc;
 
   PRINTDEBUG(dom,1,(" add inner node %4d %6.3lf %6.3lf %6.3lf\n",
                     nodeid,x,y,z));
@@ -170,7 +170,7 @@ int AddTetrahedron (int node0, int node1, int node2, int node3)
    AddBoundaryNode - append a node in the boundary node list of gg3d
 
    SYNOPSIS:
-   static INT AddBoundaryNode (INT nodeid, COORD *global);
+   static INT AddBoundaryNode (INT nodeid, DOUBLE *global);
 
    PARAMETERS:
    .  nodeid - id of the node
@@ -187,7 +187,7 @@ int AddTetrahedron (int node0, int node1, int node2, int node3)
    D*/
 /****************************************************************************/
 
-static INT AddBoundaryNode (INT nodeid, COORD *global)
+static INT AddBoundaryNode (INT nodeid, DOUBLE *global)
 {
   PRINTDEBUG(dom,1,(" add node   %4d    %6.3f %6.3f %6.3f\n",
                     nodeid,global[0],global[1],global[2]));
@@ -271,7 +271,7 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
   VERTEX *theVertex;
   INT sid,i;
   char rulefilename[128];
-  COORD **x;
+  DOUBLE **x;
 
   if (mesh == NULL)
     return(GM_OK);
@@ -288,7 +288,7 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
     #endif
 
   IFDEBUG(dom,1)
-  x = (COORD **) GetTmpMem(MGHEAP(theMG),mesh->nBndP*sizeof(COORD *));
+  x = (DOUBLE **) GetTmpMem(MGHEAP(theMG),mesh->nBndP*sizeof(DOUBLE *));
   for (i=0, theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,0));
        theNode!=NULL; theNode=SUCCN(theNode))
   {

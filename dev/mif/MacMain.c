@@ -422,8 +422,8 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
             {
               reportEvent->Type = DOC_CONTENTCLICK;
               reportEvent->DocContentClick.win                                = (WINDOWID) gw;
-              reportEvent->DocContentClick.MousePosition[0]   = (COORD) MouseLocation[0];
-              reportEvent->DocContentClick.MousePosition[1]   = (COORD) MouseLocation[1];
+              reportEvent->DocContentClick.MousePosition[0]   = (DOUBLE) MouseLocation[0];
+              reportEvent->DocContentClick.MousePosition[1]   = (DOUBLE) MouseLocation[1];
             }
           }
         }

@@ -57,7 +57,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-typedef COORD COORD_VECTOR[DIM];
+typedef DOUBLE DOUBLE_VECTOR[DIM];
 
 #define V3_EUKLIDNORM(A,b)                              (b) = (sqrt((double)((A)[0]*(A)[0]+(A)[1]*(A)[1]+(A)[2]*(A)[2])));
 
@@ -100,9 +100,9 @@ RCSID("$Header$",UG_RCS_STRING)
 /*                                                                          */
 /****************************************************************************/
 
-static INT southBoundary (void *data, COORD *param, COORD *result)
+static INT southBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda1,lambda2;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -119,9 +119,9 @@ static INT southBoundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT eastBoundary (void *data, COORD *param, COORD *result)
+static INT eastBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda1,lambda2;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -138,9 +138,9 @@ static INT eastBoundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT northBoundary (void *data, COORD *param, COORD *result)
+static INT northBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda1,lambda2;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -157,9 +157,9 @@ static INT northBoundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT westBoundary (void *data, COORD *param, COORD *result)
+static INT westBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda1,lambda2;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -176,9 +176,9 @@ static INT westBoundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT frontBoundary (void *data, COORD *param, COORD *result)
+static INT frontBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda1,lambda2;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -195,9 +195,9 @@ static INT frontBoundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT backBoundary (void *data, COORD *param, COORD *result)
+static INT backBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda1,lambda2;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -217,7 +217,7 @@ static INT backBoundary (void *data, COORD *param, COORD *result)
 static INT InitHexahedron (void)
 {
   INT point[CORNERS_OF_BND_SEG];
-  COORD radius,MidPoint[3], alpha[DIM_OF_BND], beta[DIM_OF_BND];
+  DOUBLE radius,MidPoint[3], alpha[DIM_OF_BND], beta[DIM_OF_BND];
 
   /* allocate new domain structure */
   MidPoint[0] = 0.5;
@@ -254,10 +254,10 @@ static INT InitHexahedron (void)
 
 # define RADIUS 1.0
 
-static void ProjectOnBall (COORD x, COORD y, COORD z,
-                           COORD radius, COORD *result)
+static void ProjectOnBall (DOUBLE x, DOUBLE y, DOUBLE z,
+                           DOUBLE radius, DOUBLE *result)
 {
-  COORD d;
+  DOUBLE d;
 
   result[0] = x - 0.5;
   result[1] = y - 0.5;
@@ -272,9 +272,9 @@ static void ProjectOnBall (COORD x, COORD y, COORD z,
   result[2] += 0.5;
 }
 
-static INT southboundary (void *data, COORD *param, COORD *result)
+static INT southboundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda1,lambda2;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -289,9 +289,9 @@ static INT southboundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT eastboundary (void *data, COORD *param, COORD *result)
+static INT eastboundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda1,lambda2;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -306,9 +306,9 @@ static INT eastboundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT northboundary (void *data, COORD *param, COORD *result)
+static INT northboundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda1,lambda2;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -323,9 +323,9 @@ static INT northboundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT westboundary (void *data, COORD *param, COORD *result)
+static INT westboundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda1,lambda2;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -340,9 +340,9 @@ static INT westboundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT frontboundary (void *data, COORD *param, COORD *result)
+static INT frontboundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda1,lambda2;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -357,9 +357,9 @@ static INT frontboundary (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT backboundary (void *data, COORD *param, COORD *result)
+static INT backboundary (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda1,lambda2;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -377,7 +377,7 @@ static INT backboundary (void *data, COORD *param, COORD *result)
 static INT InitBall (void)
 {
   INT point[CORNERS_OF_BND_SEG];
-  COORD radius,MidPoint[3], alpha[DIM_OF_BND], beta[DIM_OF_BND];
+  DOUBLE radius,MidPoint[3], alpha[DIM_OF_BND], beta[DIM_OF_BND];
 
   /* allocate new domain structure */
   MidPoint[0] = 0.5;
@@ -420,9 +420,9 @@ static INT InitBall (void)
 
 /**************************** first quarter *********************************/
 
-static INT Bnd_11 (void *data, COORD *param, COORD *result)
+static INT Bnd_11 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -442,9 +442,9 @@ static INT Bnd_11 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Bnd_12 (void *data, COORD *param, COORD *result)
+static INT Bnd_12 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -464,9 +464,9 @@ static INT Bnd_12 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Bnd_13 (void *data, COORD *param, COORD *result)
+static INT Bnd_13 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -486,9 +486,9 @@ static INT Bnd_13 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Bnd_14 (void *data, COORD *param, COORD *result)
+static INT Bnd_14 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -510,9 +510,9 @@ static INT Bnd_14 (void *data, COORD *param, COORD *result)
 
 /**************************** second quarter *********************************/
 
-static INT Bnd_21 (void *data, COORD *param, COORD *result)
+static INT Bnd_21 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -532,9 +532,9 @@ static INT Bnd_21 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Bnd_22 (void *data, COORD *param, COORD *result)
+static INT Bnd_22 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -554,9 +554,9 @@ static INT Bnd_22 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Bnd_23 (void *data, COORD *param, COORD *result)
+static INT Bnd_23 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -576,9 +576,9 @@ static INT Bnd_23 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Bnd_24 (void *data, COORD *param, COORD *result)
+static INT Bnd_24 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -600,9 +600,9 @@ static INT Bnd_24 (void *data, COORD *param, COORD *result)
 
 /**************************** third quarter *********************************/
 
-static INT Bnd_31 (void *data, COORD *param, COORD *result)
+static INT Bnd_31 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -622,9 +622,9 @@ static INT Bnd_31 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Bnd_32 (void *data, COORD *param, COORD *result)
+static INT Bnd_32 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -644,9 +644,9 @@ static INT Bnd_32 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Bnd_33 (void *data, COORD *param, COORD *result)
+static INT Bnd_33 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -666,9 +666,9 @@ static INT Bnd_33 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Bnd_34 (void *data, COORD *param, COORD *result)
+static INT Bnd_34 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -690,9 +690,9 @@ static INT Bnd_34 (void *data, COORD *param, COORD *result)
 
 /**************************** fourth quarter *********************************/
 
-static INT Bnd_41 (void *data, COORD *param, COORD *result)
+static INT Bnd_41 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -712,9 +712,9 @@ static INT Bnd_41 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Bnd_42 (void *data, COORD *param, COORD *result)
+static INT Bnd_42 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -734,9 +734,9 @@ static INT Bnd_42 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Bnd_43 (void *data, COORD *param, COORD *result)
+static INT Bnd_43 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -756,9 +756,9 @@ static INT Bnd_43 (void *data, COORD *param, COORD *result)
   return(0);
 }
 
-static INT Bnd_44 (void *data, COORD *param, COORD *result)
+static INT Bnd_44 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  COORD lambda,mu,c1,s1,c2,s2;
+  DOUBLE lambda,mu,c1,s1,c2,s2;
 
   lambda = param[0];
   mu     = param[1];
@@ -782,7 +782,7 @@ static INT Bnd_44 (void *data, COORD *param, COORD *result)
 static INT InitTorus (void)
 {
   INT point[CORNERS_OF_BND_SEG];
-  COORD radius,MidPoint[3], alpha[DIM_OF_BND], beta[DIM_OF_BND];
+  DOUBLE radius,MidPoint[3], alpha[DIM_OF_BND], beta[DIM_OF_BND];
 
   /* allocate new domain structure */
   MidPoint[0] = 0.0;

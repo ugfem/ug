@@ -57,9 +57,9 @@
 /*																			*/
 /****************************************************************************/
 
-static COORD ex[3] = {1.0, 0.0, 0.0};
-static COORD ey[3] = {0.0, 1.0, 0.0};
-static COORD ez[3] = {0.0, 0.0, 1.0};
+static DOUBLE ex[3] = {1.0, 0.0, 0.0};
+static DOUBLE ey[3] = {0.0, 1.0, 0.0};
+static DOUBLE ez[3] = {0.0, 0.0, 1.0};
 
 static INT theUgWindowsDirID;
 static INT theUgWinDirID;
@@ -763,14 +763,14 @@ UGWINDOW *GetNextUgWindow (const UGWINDOW *theUgWindow)
 PICTURE *Mouse2Picture (const UGWINDOW *theUgWindow, INT *MousePosition)
 {
   PICTURE *thePicture;
-  COORD a;
+  DOUBLE a;
 
   for (thePicture=GetFirstPicture(theUgWindow); thePicture!=NULL; thePicture=GetNextPicture(thePicture))
   {
-    a = ((COORD)(MousePosition[0]-PIC_GLL(thePicture)[0]))/((COORD)(PIC_GUR(thePicture)[0]-PIC_GLL(thePicture)[0]));
+    a = ((DOUBLE)(MousePosition[0]-PIC_GLL(thePicture)[0]))/((DOUBLE)(PIC_GUR(thePicture)[0]-PIC_GLL(thePicture)[0]));
     if (a>0.0 && a<1.0)
     {
-      a = ((COORD)(MousePosition[1]-PIC_GLL(thePicture)[1]))/((COORD)(PIC_GUR(thePicture)[1]-PIC_GLL(thePicture)[1]));
+      a = ((DOUBLE)(MousePosition[1]-PIC_GLL(thePicture)[1]))/((DOUBLE)(PIC_GUR(thePicture)[1]-PIC_GLL(thePicture)[1]));
       if (a>0.0 && a<1.0)
         return (thePicture);
     }
@@ -1148,7 +1148,7 @@ PLOTOBJTYPE *CreatePlotObjType (const char *PlotObjTypeName, INT size)
 static INT      CheckViewPoint (VIEWEDOBJ *theViewedObj, INT adjust, INT *viewpointcorrect)
 {
   PLOTOBJ *thePlotObj;
-  COORD ViewDirection[3], scalarPrd, help[3];
+  DOUBLE ViewDirection[3], scalarPrd, help[3];
 
   if (theViewedObj == NULL) return (1);
   if (adjust!=YES && adjust!=NO) return (1);
@@ -1188,8 +1188,8 @@ static INT      CheckViewPoint (VIEWEDOBJ *theViewedObj, INT adjust, INT *viewpo
    SetView - Set the view
 
    SYNOPSIS:
-   INT SetView (PICTURE *thePicture, const COORD *viewPoint,
-   const COORD *targetPoint, const COORD *xAxis, const INT *perspective);
+   INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint,
+   const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective);
 
    PARAMETERS:
    .  thePicture - set view of that picture
@@ -1229,13 +1229,13 @@ static INT      CheckViewPoint (VIEWEDOBJ *theViewedObj, INT adjust, INT *viewpo
    D*/
 /****************************************************************************/
 
-INT SetView (PICTURE *thePicture, const COORD *viewPoint, const COORD *targetPoint, const COORD *xAxis, const INT *perspective)
+INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective)
 {
   VIEWEDOBJ *theViewedObj;
   PLOTOBJ *thePlotObj;
-  COORD DefaultVP[3], DefaultVT[3], DefaultVTOld[3], DefaultPMP[3], DefaultPXD[3], DefaultPYD[3], DefaultPJ;
-  COORD ViewDirection[3], ViewDirectionOld[3], CanvasRatio, RotationAxis[3];
-  COORD angle, norm;
+  DOUBLE DefaultVP[3], DefaultVT[3], DefaultVTOld[3], DefaultPMP[3], DefaultPXD[3], DefaultPYD[3], DefaultPJ;
+  DOUBLE ViewDirection[3], ViewDirectionOld[3], CanvasRatio, RotationAxis[3];
+  DOUBLE angle, norm;
   INT ViewedObjNotInit, viewpointcorrect;
 
 
@@ -1252,7 +1252,7 @@ INT SetView (PICTURE *thePicture, const COORD *viewPoint, const COORD *targetPoi
     UserWrite("specify object first\n");
     return (0);
   }
-  CanvasRatio = ABS(((COORD)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1]))/((COORD)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
+  CanvasRatio = ABS(((DOUBLE)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1]))/((DOUBLE)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
 
   /* set values */
   switch (PO_DIM(thePlotObj))
@@ -1446,7 +1446,7 @@ INT SetView (PICTURE *thePicture, const COORD *viewPoint, const COORD *targetPoi
 INT PrintViewSettings (const PICTURE *thePicture)
 {
   const VIEWEDOBJ *theViewedObj;
-  const COORD *obs,*tgt,*pxd;
+  const DOUBLE *obs,*tgt,*pxd;
 
   theViewedObj = PIC_VO(thePicture);
 
@@ -1504,7 +1504,7 @@ INT PrintViewSettings (const PICTURE *thePicture)
 
 INT DisplayViewOfViewedObject (const PICTURE *thePicture)
 {
-  COORD width;
+  DOUBLE width;
   char buffer[128];
 
   UserWrite("-----------------------\n");
@@ -1593,12 +1593,12 @@ INT DisplayViewOfViewedObject (const PICTURE *thePicture)
 
 INT ResizeViewPlane (VIEWEDOBJ *theVO, const INT *Pix_LL_old, const INT *Pix_UR_old, const INT *Pix_LL_new, const INT *Pix_UR_new)
 {
-  COORD delta[3],q[2];
+  DOUBLE delta[3],q[2];
 
   if (VO_STATUS(theVO) == NOT_INIT) return (0);
 
-  q[0] = 1.0/(COORD)(Pix_UR_old[0]-Pix_LL_old[0]);
-  q[1] = 1.0/(COORD)(Pix_UR_old[1]-Pix_LL_old[1]);
+  q[0] = 1.0/(DOUBLE)(Pix_UR_old[0]-Pix_LL_old[0]);
+  q[1] = 1.0/(DOUBLE)(Pix_UR_old[1]-Pix_LL_old[1]);
 
   switch (VO_DIM(theVO))
   {
@@ -1631,7 +1631,7 @@ INT ResizeViewPlane (VIEWEDOBJ *theVO, const INT *Pix_LL_old, const INT *Pix_UR_
    Walk	- Modify the view by walking
 
    SYNOPSIS:
-   INT Walk (PICTURE *thePicture, const COORD *vrsDelta);
+   INT Walk (PICTURE *thePicture, const DOUBLE *vrsDelta);
 
    PARAMETERS:
    .  thePicture - the view of this 'PICTURE' will be changed
@@ -1648,10 +1648,10 @@ INT ResizeViewPlane (VIEWEDOBJ *theVO, const INT *Pix_LL_old, const INT *Pix_UR_
    D*/
 /****************************************************************************/
 
-INT Walk (PICTURE *thePicture, const COORD *vrsDelta)
+INT Walk (PICTURE *thePicture, const DOUBLE *vrsDelta)
 {
   VIEWEDOBJ *theViewedObj;
-  COORD VP[3], XD[3], YD[3], ZD[3];
+  DOUBLE VP[3], XD[3], YD[3], ZD[3];
 
   /* basics */
   if (thePicture == NULL || vrsDelta==NULL) return (1);
@@ -1696,8 +1696,8 @@ INT Walk (PICTURE *thePicture, const COORD *vrsDelta)
    RunAroundTargetPoint	- Modify the view by running around the midpoint
 
    SYNOPSIS:
-   INT RunAroundTargetPoint (PICTURE *thePicture, COORD vrsDirectionAngle,
-   COORD vrsAngle);
+   INT RunAroundTargetPoint (PICTURE *thePicture, DOUBLE vrsDirectionAngle,
+   DOUBLE vrsAngle);
 
    PARAMETERS:
    .  thePicture - the view of this 'PICTURE' will be changed
@@ -1719,10 +1719,10 @@ INT Walk (PICTURE *thePicture, const COORD *vrsDelta)
    D*/
 /****************************************************************************/
 
-INT RunAroundTargetPoint (PICTURE *thePicture, COORD vrsDirectionAngle, COORD vrsAngle)
+INT RunAroundTargetPoint (PICTURE *thePicture, DOUBLE vrsDirectionAngle, DOUBLE vrsAngle)
 {
   VIEWEDOBJ *theViewedObj;
-  COORD VP[3], RotationAxis[3], ViewDirection[3], TurnDirection[3];
+  DOUBLE VP[3], RotationAxis[3], ViewDirection[3], TurnDirection[3];
 
   /* basics */
   if (thePicture == NULL) return (1);
@@ -1758,7 +1758,7 @@ INT RunAroundTargetPoint (PICTURE *thePicture, COORD vrsDirectionAngle, COORD vr
    Zoom	- zoom the view, i.e.: change size of projection plane
 
    SYNOPSIS:
-   INT Zoom (PICTURE *thePicture, COORD factor);
+   INT Zoom (PICTURE *thePicture, DOUBLE factor);
 
    PARAMETERS:
    .  thePicture - change size of projection plane of that 'PICTURE'
@@ -1776,7 +1776,7 @@ INT RunAroundTargetPoint (PICTURE *thePicture, COORD vrsDirectionAngle, COORD vr
    D*/
 /****************************************************************************/
 
-INT Zoom (PICTURE *thePicture, COORD factor)
+INT Zoom (PICTURE *thePicture, DOUBLE factor)
 {
   VIEWEDOBJ *theViewedObj;
 
@@ -1817,8 +1817,8 @@ INT Zoom (PICTURE *thePicture, COORD factor)
    DragProjectionPlane - moves the 'PROJECTIONPLANE'
 
    SYNOPSIS:
-   INT DragProjectionPlane (PICTURE *thePicture, COORD vrsDeltaX,
-   COORD vrsDeltaY);
+   INT DragProjectionPlane (PICTURE *thePicture, DOUBLE vrsDeltaX,
+   DOUBLE vrsDeltaY);
 
    PARAMETERS:
    .  thePicture - of this 'PICTURE'
@@ -1835,10 +1835,10 @@ INT Zoom (PICTURE *thePicture, COORD factor)
    D*/
 /****************************************************************************/
 
-INT DragProjectionPlane (PICTURE *thePicture, COORD vrsDeltaX, COORD vrsDeltaY)
+INT DragProjectionPlane (PICTURE *thePicture, DOUBLE vrsDeltaX, DOUBLE vrsDeltaY)
 {
   VIEWEDOBJ *theViewedObj;
-  COORD DragVector[3], help[3];
+  DOUBLE DragVector[3], help[3];
 
   /* basics */
   if (thePicture == NULL) return (1);
@@ -1880,7 +1880,7 @@ INT DragProjectionPlane (PICTURE *thePicture, COORD vrsDeltaX, COORD vrsDeltaY)
    RotateProjectionPlane -
 
    SYNOPSIS:
-   INT RotateProjectionPlane (PICTURE *thePicture, COORD vrsAngle);
+   INT RotateProjectionPlane (PICTURE *thePicture, DOUBLE vrsAngle);
 
    PARAMETERS:
    .  thePicture - change view of that 'PICTURE'
@@ -1900,10 +1900,10 @@ INT DragProjectionPlane (PICTURE *thePicture, COORD vrsDeltaX, COORD vrsDeltaY)
    D*/
 /****************************************************************************/
 
-INT RotateProjectionPlane (PICTURE *thePicture, COORD vrsAngle)
+INT RotateProjectionPlane (PICTURE *thePicture, DOUBLE vrsAngle)
 {
   VIEWEDOBJ *theViewedObj;
-  COORD ViewDirection[3];
+  DOUBLE ViewDirection[3];
 
   /* basics */
   if (thePicture == NULL) return (1);
@@ -3580,7 +3580,7 @@ static INT InitLinePlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   INT i, ret;
   int iValue;
   float fValue[2];
-  COORD dist;
+  DOUBLE dist;
   char buffer[128];
 
   theLpo = &(thePlotObj->theLpo);

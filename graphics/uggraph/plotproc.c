@@ -88,7 +88,7 @@ RCSID("$Header$",UG_RCS_STRING)
 
    SYNOPSIS:
    static DOUBLE NodeValue (const ELEMENT *theElement,
-   const COORD **CornersCoord, COORD *LocalCoord);
+   const DOUBLE **CornersCoord, DOUBLE *LocalCoord);
 
    PARAMETERS:
    .  theElement - pointer to an element
@@ -124,7 +124,7 @@ static INT PreprocessNodeValue (const char *name, MULTIGRID *theMG)
 }
 
 static DOUBLE NodeValue (const ELEMENT *theElement,
-                         const COORD **CornersCoord, COORD *LocalCoord)
+                         const DOUBLE **CornersCoord, DOUBLE *LocalCoord)
 {
   INT i,n;
   DOUBLE phi;
@@ -143,7 +143,7 @@ static DOUBLE NodeValue (const ELEMENT *theElement,
 
    SYNOPSIS:
    static void NodeVector (const ELEMENT *theElement,
-   const COORD **theCorners, COORD *LocalCoord, DOUBLE *values);
+   const DOUBLE **theCorners, DOUBLE *LocalCoord, DOUBLE *values);
 
    PARAMETERS:
    .  theElement - pointer to an element
@@ -183,8 +183,8 @@ static INT PreprocessNodeVector (const char *name, MULTIGRID *theMG)
   return (0);
 }
 
-static void NodeVector (const ELEMENT *theElement, const COORD **theCorners,
-                        COORD *LocalCoord, DOUBLE *values)
+static void NodeVector (const ELEMENT *theElement, const DOUBLE **theCorners,
+                        DOUBLE *LocalCoord, DOUBLE *values)
 {
   VECTOR *v;
   INT i,j,n;

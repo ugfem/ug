@@ -855,7 +855,7 @@ static OUTPUTDEVICE *InitPSOutputDevice (void)
   PSOutputDevice->UpdateOutput     = UpdatePSOutput;
 
   PSOutputDevice->v.locked                 = 1;
-  PSOutputDevice->PixelRatio       = (COORD) 1.0;
+  PSOutputDevice->PixelRatio       = (DOUBLE) 1.0;
   InitPSPort (PSOutputDevice);
 
   UserWrite("output device 'ps' created\n");

@@ -70,10 +70,10 @@
 #define COPY_SC_TO_SH(p1,p2)			(p2).x=(short)((p1).x);(p2).y=(short)((p1).y)
 #define CP_SUBTRACT(A,B,C)			   {(C).x = (A).x - (B).x;\
 										(C).y = (A).y - (B).y;}
-#define CP_LIMCOMB(a,A,b,B,C)		   {(C).x = (COORD)(a)*(A).x + (COORD)(b)*(B).x;\
-										(C).y = (COORD)(a)*(A).y + (COORD)(b)*(B).y;}
+#define CP_LIMCOMB(a,A,b,B,C)		   {(C).x = (DOUBLE)(a)*(A).x + (DOUBLE)(b)*(B).x;\
+										(C).y = (DOUBLE)(a)*(A).y + (DOUBLE)(b)*(B).y;}
 #define CP_SCALARPRODUCT(A,B,c) 		(c) = (A).x*(B).x + (A).y*(B).y;
-#define CP_EUKLIDNORM(A,b)				(b) = (COORD)sqrt((double)((A).x*(A).x+(A).y*(A).y));
+#define CP_EUKLIDNORM(A,b)				(b) = (DOUBLE)sqrt((double)((A).x*(A).x+(A).y*(A).y));
 
 /* macros for 1D vector operations */
 #define V1_LINCOMB(a,A,b,B,C)		   {(C)[0] = (a)*(A)[0] + (b)*(B)[0];}
@@ -502,8 +502,8 @@
 
 struct coord_point
 {
-	COORD x;
-	COORD y;
+	DOUBLE x;
+	DOUBLE y;
 };
 
 typedef struct coord_point COORD_POINT;
@@ -515,39 +515,39 @@ typedef struct coord_point COORD_POINT;
 /****************************************************************************/
 
 /* general routines */
-INT 		ClipRectangleAgainstRectangle		(const COORD *r1min, const COORD *r1max, COORD *r2min, COORD *r2max);
-INT 		CheckRectagleIntersection			(const COORD *r1min, const COORD *r1max, const COORD *r2min, const COORD *r2max);
-INT 		CheckRectangle						(const COORD *rmin, const COORD *rmax, const COORD minsize);
+INT 		ClipRectangleAgainstRectangle		(const DOUBLE *r1min, const DOUBLE *r1max, DOUBLE *r2min, DOUBLE *r2max);
+INT 		CheckRectagleIntersection			(const DOUBLE *r1min, const DOUBLE *r1max, const DOUBLE *r2min, const DOUBLE *r2max);
+INT 		CheckRectangle						(const DOUBLE *rmin, const DOUBLE *rmax, const DOUBLE minsize);
 INT 		PointInTriangle 					(const COORD_POINT *Points, const COORD_POINT Point);
 INT 		PointInPolygon						(const COORD_POINT *Points, INT n, COORD_POINT Point);
-INT 		PointInPolygonC 					(const COORD_VECTOR_2D *Points, INT n, const COORD_VECTOR_2D Point);
-INT 		PolyArea 							(INT n, COORD_VECTOR_2D *Polygon, COORD *Area);
+INT 		PointInPolygonC 					(const DOUBLE_VECTOR_2D *Points, INT n, const DOUBLE_VECTOR_2D Point);
+INT 		PolyArea 							(INT n, DOUBLE_VECTOR_2D *Polygon, DOUBLE *Area);
 
 
 /* 2D routines */
-INT 		M2_Invert							(COORD *Inverse, const COORD *Matrix);
+INT 		M2_Invert							(DOUBLE *Inverse, const DOUBLE *Matrix);
 DOUBLE		vp									(const DOUBLE x1, const DOUBLE y1, const DOUBLE x2, const DOUBLE y2);
-INT 		V2_Normalize						(COORD *a);
-INT 		V2_Rotate							(COORD *vector, COORD alpha);
+INT 		V2_Normalize						(DOUBLE *a);
+INT 		V2_Rotate							(DOUBLE *vector, DOUBLE alpha);
 DOUBLE		tarea								(DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2);
 DOUBLE		qarea								(DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBLE x3,DOUBLE y3);
-DOUBLE		c_tarea								(const COORD *x0, const COORD *x1, const COORD *x2);
-DOUBLE		c_qarea								(const COORD *x0, const COORD *x1, const COORD *x2, const COORD *x3);
+DOUBLE		c_tarea								(const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2);
+DOUBLE		c_qarea								(const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2, const DOUBLE *x3);
 DOUBLE		ctarea								(DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2);
 DOUBLE		cqarea								(DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBLE x3,DOUBLE y3);
 
 
 /* 3D routines */
-INT 		M3_Invert							(COORD *Inverse, const COORD *Matrix);
-INT 		V3_Normalize						(COORD *a);
-INT 		V3_NormVectorProduct				(const COORD *a, const COORD *b, COORD *result);
-INT 		V3_Rotate							(COORD *vector, const COORD *axis, COORD alpha);
-INT 		V3_Angle							(const COORD *a, const COORD *b, COORD *result);
-INT 		V3_Orthogonalize					(const COORD *a, const COORD *b, COORD *r);
-INT 		V3_Project 							(const COORD *a, const COORD *b, COORD *r);
+INT 		M3_Invert							(DOUBLE *Inverse, const DOUBLE *Matrix);
+INT 		V3_Normalize						(DOUBLE *a);
+INT 		V3_NormVectorProduct				(const DOUBLE *a, const DOUBLE *b, DOUBLE *result);
+INT 		V3_Rotate							(DOUBLE *vector, const DOUBLE *axis, DOUBLE alpha);
+INT 		V3_Angle							(const DOUBLE *a, const DOUBLE *b, DOUBLE *result);
+INT 		V3_Orthogonalize					(const DOUBLE *a, const DOUBLE *b, DOUBLE *r);
+INT 		V3_Project 							(const DOUBLE *a, const DOUBLE *b, DOUBLE *r);
 
 
 /* 4D routines */
-INT 		M4_Invert							(COORD *Inverse, const COORD *Matrix);
+INT 		M4_Invert							(DOUBLE *Inverse, const DOUBLE *Matrix);
 
 #endif

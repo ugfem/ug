@@ -78,10 +78,10 @@ static OUTPUTDEVICE *CurrentOutputDevice;               /* current output device
 static COORD_POINT CurrCursor;                                  /* current cursor position	*/
 static SHORT CurrTextSize;                                              /* current text size		*/
 
-static COORD currClipRegionMaxX;                /* corner of ViewPort having the	*/
-static COORD currClipRegionMaxY;                /*largest values for each component */
-static COORD currClipRegionMinX;                /* corner of ViewPort having the	*/
-static COORD currClipRegionMinY;                /*smallest values for each component*/
+static DOUBLE currClipRegionMaxX;               /* corner of ViewPort having the	*/
+static DOUBLE currClipRegionMaxY;               /*largest values for each component */
+static DOUBLE currClipRegionMinX;               /* corner of ViewPort having the	*/
+static DOUBLE currClipRegionMinY;               /*smallest values for each component*/
 
 static COORD_POINT currClipRegionCorner[4];     /* corners of the view port */
 
@@ -123,20 +123,20 @@ static INT SubtractCoordPoint (COORD_POINT a, COORD_POINT b, COORD_POINT *result
 /*																			*/
 /* Purpose:   Calculate norm of vector a									*/
 /*																			*/
-/* input:	  COORD *a: input vector (a[0],a[1],a[2])						*/
-/*			  COORD *result: output scalar result[0]						*/
+/* input:	  DOUBLE *a: input vector (a[0],a[1],a[2])						*/
+/*			  DOUBLE *result: output scalar result[0]						*/
 /*																			*/
 /* output:	  INT 0: ok                                                                                                     */
 /*			  INT 1: error													*/
 /*																			*/
 /****************************************************************************/
 
-static INT EuklidNormCoordPoint (COORD_POINT a, COORD *result)
+static INT EuklidNormCoordPoint (COORD_POINT a, DOUBLE *result)
 {
-  COORD sum;
+  DOUBLE sum;
 
   sum = a.x*a.x + a.y*a.y;
-  *result = (COORD)sqrt( (float)sum );
+  *result = (DOUBLE)sqrt( (float)sum );
 
   return(0);
 }
@@ -154,7 +154,7 @@ static INT EuklidNormCoordPoint (COORD_POINT a, COORD *result)
 /*																			*/
 /****************************************************************************/
 
-static INT ScalarProductCoordPoint (COORD_POINT a, COORD_POINT b, COORD *result)
+static INT ScalarProductCoordPoint (COORD_POINT a, COORD_POINT b, DOUBLE *result)
 {
   *result = a.x*b.x + a.y*b.y;
 
@@ -174,7 +174,7 @@ static INT ScalarProductCoordPoint (COORD_POINT a, COORD_POINT b, COORD *result)
 /*																			*/
 /****************************************************************************/
 
-static INT LinCombCoordPoint (COORD lambdaa, COORD_POINT a, COORD lambdab, COORD_POINT b, COORD_POINT *result)
+static INT LinCombCoordPoint (DOUBLE lambdaa, COORD_POINT a, DOUBLE lambdab, COORD_POINT b, COORD_POINT *result)
 {
   (*result).x = lambdaa*a.x + lambdab*b.x;
   (*result).y = lambdaa*a.y + lambdab*b.y;
@@ -320,14 +320,14 @@ static INT ClipPoint (COORD_POINT in, SHORT_POINT *out, INT *reject)
 /*																			*/
 /****************************************************************************/
 
-#define SMALL_COORD             1E-30
+#define SMALL_DOUBLE            1E-30
 
 static INT ClipLine (COORD_POINT in1, COORD_POINT in2,
                      SHORT_POINT *out1,SHORT_POINT *out2,
                      INT *reject,INT *side1,INT *side2   )
 {
   INT flags1,flags2,flags3,flags4;
-  COORD dx,dy,slope,invslope;
+  DOUBLE dx,dy,slope,invslope;
 
   flags1 = 0;
   if (in1.y>currClipRegionMaxY) flags1 |= 1;                    /* flag sceme :                                                                                 */
@@ -359,8 +359,8 @@ static INT ClipLine (COORD_POINT in1, COORD_POINT in2,
   /* get differences dx, dy */
   dx = in1.x - in2.x;
   dy = in1.y - in2.y;
-  flags3 = (ABS(dx) < SMALL_COORD);
-  flags3 |= ((ABS(dy) < SMALL_COORD)<<1);
+  flags3 = (ABS(dx) < SMALL_DOUBLE);
+  flags3 |= ((ABS(dy) < SMALL_DOUBLE)<<1);
   switch(flags3)
   {
   case 0 :                      /* line is not parallel to one of the axis	 */
@@ -596,7 +596,7 @@ static INT ClipPolygon (COORD_POINT *in, INT nin,
   INT i,FillupStart,side1,side2,FirstSide,reject,flag,left,leftmark,right,rightmark,orientation;
   SHORT_POINT out1,out2;
   COORD_POINT point[3];
-  COORD norm, lambda, ScalarPrd;
+  DOUBLE norm, lambda, ScalarPrd;
 
   /* initializations */
   *nout = 0;
@@ -814,7 +814,7 @@ void UgLine (COORD_POINT point1, COORD_POINT point2)
    UgStyledLine - Draw line from point1 to point2 with the specified pattern
 
    SYNOPSIS:
-   void UgStyledLine (COORD_POINT point1, COORD_POINT point2, COORD dash_length, COORD space_length );
+   void UgStyledLine (COORD_POINT point1, COORD_POINT point2, DOUBLE dash_length, DOUBLE space_length );
 
    PARAMETERS:
    .  point1 -
@@ -833,7 +833,7 @@ void UgLine (COORD_POINT point1, COORD_POINT point2)
    D*/
 /****************************************************************************/
 
-void UgStyledLine (COORD_POINT point1, COORD_POINT point2, COORD dash_length, COORD space_length )
+void UgStyledLine (COORD_POINT point1, COORD_POINT point2, DOUBLE dash_length, DOUBLE space_length )
 {
   SHORT_POINT out1,out2, end;
   INT reject,dummy;

@@ -476,11 +476,11 @@ static INT CoeffProcElementValuePreProc (const char *name, MULTIGRID *theMG)
   return (1);
 }
 
-static DOUBLE CoeffProcElementValueEvalProc (const ELEMENT *theElement,const COORD **CornersCoord, COORD *LocalCoord)
+static DOUBLE CoeffProcElementValueEvalProc (const ELEMENT *theElement,const DOUBLE **CornersCoord, DOUBLE *LocalCoord)
 {
   INT i,n;
   DOUBLE phi;
-  COORD_VECTOR EvalPoint;
+  DOUBLE_VECTOR EvalPoint;
 
   n = CORNERS_OF_ELEM(theElement);
   V_DIM_CLEAR(EvalPoint)
@@ -561,11 +561,11 @@ static INT CoeffProcElementVectorPreProc (const char *name, MULTIGRID *theMG)
   return (1);
 }
 
-static void CoeffProcElementVectorEvalProc (const ELEMENT *theElement,const COORD **CornersCoord, COORD *LocalCoord, DOUBLE *values)
+static void CoeffProcElementVectorEvalProc (const ELEMENT *theElement,const DOUBLE **CornersCoord, DOUBLE *LocalCoord, DOUBLE *values)
 {
   INT i,n;
   DOUBLE phi;
-  COORD_VECTOR EvalPoint;
+  DOUBLE_VECTOR EvalPoint;
 
   n = CORNERS_OF_ELEM(theElement);
   V_DIM_CLEAR(EvalPoint)
@@ -621,7 +621,7 @@ EVECTOR *CreateElementVectorEvalProcFromCoeffProc (const char *name, CoeffProcPt
 
    SYNOPSIS:
    static DOUBLE NodeIndex (const ELEMENT *theElement,
-   const COORD **CornersCoord, COORD *LocalCoord);
+   const DOUBLE **CornersCoord, DOUBLE *LocalCoord);
 
    PARAMETERS:
    .  theElement - pointer to an element
@@ -654,7 +654,7 @@ static INT PreprocessNodeIndex (const char *name, MULTIGRID *theMG)
   return (0);
 }
 
-static DOUBLE NodeIndex (const ELEMENT *theElement,const COORD **CornersCoord, COORD *LocalCoord)
+static DOUBLE NodeIndex (const ELEMENT *theElement,const DOUBLE **CornersCoord, DOUBLE *LocalCoord)
 {
   int i;
   DOUBLE phi;
@@ -672,7 +672,7 @@ static DOUBLE NodeIndex (const ELEMENT *theElement,const COORD **CornersCoord, C
 
    SYNOPSIS:
    static void GradNodeIndex (const ELEMENT *theElement,
-   const COORD **theCorners, COORD *LocalCoord, DOUBLE *values);
+   const DOUBLE **theCorners, DOUBLE *LocalCoord, DOUBLE *values);
 
    PARAMETERS:
    .  theElement - pointer to an element
@@ -690,7 +690,7 @@ static DOUBLE NodeIndex (const ELEMENT *theElement,const COORD **CornersCoord, C
 
 #ifdef __TWODIM__
 
-static void GradNodeIndex (const ELEMENT *theElement, const COORD **theCorners,  COORD *LocalCoord, DOUBLE *values)
+static void GradNodeIndex (const ELEMENT *theElement, const DOUBLE **theCorners,  DOUBLE *LocalCoord, DOUBLE *values)
 {
   INT i;
   DOUBLE_VECTOR theGradient[MAX_CORNERS_OF_ELEM];
@@ -708,10 +708,10 @@ static void GradNodeIndex (const ELEMENT *theElement, const COORD **theCorners, 
 
 #else
 
-static void GradNodeIndex (const ELEMENT *theElement, const COORD **theCorners, COORD *LocalCoord, DOUBLE *values)
+static void GradNodeIndex (const ELEMENT *theElement, const DOUBLE **theCorners, DOUBLE *LocalCoord, DOUBLE *values)
 {
   INT i;
-  COORD_VECTOR theGradient[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR theGradient[MAX_CORNERS_OF_ELEM];
   DOUBLE v;
 
   TetraDerivative((ELEMENT *)theElement,theCorners,theGradient);

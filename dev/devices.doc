@@ -116,7 +116,7 @@ struct outputdevice {
     long range;                         // # of possible color indices                          
     long spectrumStart;                 // usable range for a continuous                        
     long spectrumEnd;                   // color spectrum                                       
-    COORD PixelRatio;                   // ratio of (physical) hight to width of a pixel        
+    DOUBLE PixelRatio;                   // ratio of (physical) hight to width of a pixel        
 
     // pointers to basic drawing functions 
     void (*Move) (SHORT_POINT);             // move in device coordinates       

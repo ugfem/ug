@@ -127,12 +127,12 @@
 /****************************************************************************/
 
 /* local midpoints */
-static COORD_VECTOR_2D LMP_Triangle 		= {0.33333333333, 0.33333333333};
-static COORD_VECTOR_2D LMP_Quadrilateral	= {0.5, 0.5};
-static COORD_VECTOR_3D LMP_Tetrahedron		= {0.25, 0.25, 0.25};
-static COORD_VECTOR_3D LMP_Pyramid   		= {0.5, 0.5, 0.33333333333333333};
-static COORD_VECTOR_3D LMP_Prism    		= {0.33333333333,0.3333333333,0.5};
-static COORD_VECTOR_3D LMP_Hexahedron		= {0.5, 0.5, 0.5};
+static DOUBLE_VECTOR_2D LMP_Triangle 		= {0.33333333333, 0.33333333333};
+static DOUBLE_VECTOR_2D LMP_Quadrilateral	= {0.5, 0.5};
+static DOUBLE_VECTOR_3D LMP_Tetrahedron		= {0.25, 0.25, 0.25};
+static DOUBLE_VECTOR_3D LMP_Pyramid   		= {0.5, 0.5, 0.33333333333333333};
+static DOUBLE_VECTOR_3D LMP_Prism    		= {0.33333333333,0.3333333333,0.5};
+static DOUBLE_VECTOR_3D LMP_Hexahedron		= {0.5, 0.5, 0.5};
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -662,12 +662,12 @@ INT SurfaceElement (INT dim, INT nc,
    GN - General Shape function for nodes
 
    SYNOPSIS:
-   DOUBLE GN (INT n, INT i, COORD ip_local);
+   DOUBLE GN (INT n, INT i, DOUBLE ip_local);
 
    PARAMETERS:
 .  n - number of corners of the element
 .  i - corner number (corner number [0..n-1])
-.  local - local COORDinates
+.  local - local DOUBLEinates
 
    DESCRIPTION:
    This function finds the value of the shape function i for the reference 
@@ -683,7 +683,7 @@ INT SurfaceElement (INT dim, INT nc,
 D*/   
 /****************************************************************************/
 
-DOUBLE GN (INT n, INT i, const COORD *ip_local)
+DOUBLE GN (INT n, INT i, const DOUBLE *ip_local)
 {
     #ifdef __TWODIM__
     switch (n)
@@ -777,11 +777,11 @@ DOUBLE GN (INT n, INT i, const COORD *ip_local)
    GNs - General Shape function for nodes
 
    SYNOPSIS:
-   INT GNs (INT n, COORD *ip_local, DOUBLE *result)
+   INT GNs (INT n, DOUBLE *ip_local, DOUBLE *result)
 
    PARAMETERS:
 .  n - number of corners of the element
-.  local - local COORDinates
+.  local - local DOUBLEinates
 .  result - vector of values
 
    DESCRIPTION:
@@ -799,7 +799,7 @@ DOUBLE GN (INT n, INT i, const COORD *ip_local)
 D*/   
 /****************************************************************************/
 
-INT GNs (INT n, const COORD *ip_local, DOUBLE *result)
+INT GNs (INT n, const DOUBLE *ip_local, DOUBLE *result)
 {
     #ifdef __TWODIM__
     switch (n)
@@ -877,12 +877,12 @@ INT GNs (INT n, const COORD *ip_local, DOUBLE *result)
    D_GN - General Shape function for nodes
 
    SYNOPSIS:
-   INT D_GN (INT n, INT i, const COORD *ip_local, DOUBLE *derivative);
+   INT D_GN (INT n, INT i, const DOUBLE *ip_local, DOUBLE *derivative);
 
    PARAMETERS:
 .  n - number of corners of the element
 .  i - corner number (corner number [0..n-1])
-.  ip_local - local COORDinates
+.  ip_local - local DOUBLEinates
 .  derivative - derivative
 
    DESCRIPTION:
@@ -895,7 +895,7 @@ INT GNs (INT n, const COORD *ip_local, DOUBLE *result)
 D*/   
 /****************************************************************************/
 
-INT D_GN (INT n, INT i, const COORD *ip_local, DOUBLE *derivative)
+INT D_GN (INT n, INT i, const DOUBLE *ip_local, DOUBLE *derivative)
 {
     #ifdef __TWODIM__
 	switch (n)
@@ -1124,7 +1124,7 @@ INT D_GN (INT n, INT i, const COORD *ip_local, DOUBLE *derivative)
    LMP - local midpoint
 
    SYNOPSIS:
-   COORD *LMP (INT n);
+   DOUBLE *LMP (INT n);
 
    PARAMETERS:
 .  n - number of corners of the element
@@ -1133,12 +1133,12 @@ INT D_GN (INT n, INT i, const COORD *ip_local, DOUBLE *derivative)
    This function gives the local coordinates of the midpoint of an element
       
    RETURN VALUE:
-   COORD *
+   DOUBLE *
 .n          local
 D*/   
 /****************************************************************************/
 
-COORD *LMP (INT n)
+DOUBLE *LMP (INT n)
 {
 #ifdef __TWODIM__
 	switch (n)
@@ -1165,8 +1165,8 @@ COORD *LMP (INT n)
    UG_GlobalToLocal - Transform global coordinates to local
 
    SYNOPSIS:
-   INT UG_GlobalToLocal (INT n, const COORD **Corners, const COORD *EvalPoint, 
-   COORD *LocalCoord);
+   INT UG_GlobalToLocal (INT n, const DOUBLE **Corners, const DOUBLE *EvalPoint, 
+   DOUBLE *LocalCoord);
 
    PARAMETERS:
 .  n - number of corners
@@ -1185,10 +1185,10 @@ COORD *LMP (INT n)
 D*/
 /****************************************************************************/
 
-INT UG_GlobalToLocal (INT n, const COORD **Corners, 
-				   const COORD *EvalPoint, COORD *LocalCoord)
+INT UG_GlobalToLocal (INT n, const DOUBLE **Corners, 
+				   const DOUBLE *EvalPoint, DOUBLE *LocalCoord)
 {
-	COORD_VECTOR tmp,diff,M[DIM],IM[DIM];
+	DOUBLE_VECTOR tmp,diff,M[DIM],IM[DIM];
 	DOUBLE s,IMdet;
 	INT i;
 	
@@ -1387,7 +1387,7 @@ INT Derivatives (INT n, const DOUBLE *px, const DOUBLE *py, DOUBLE ips, DOUBLE i
    determinant of coordinate transformation	
 
    SYNOPSIS:
-   INT Gradients (INT n, const COORD **theCorners, DOUBLE ips, DOUBLE ipt, 
+   INT Gradients (INT n, const DOUBLE **theCorners, DOUBLE ips, DOUBLE ipt, 
    DOUBLE_VECTOR Gradient[MAX_CORNERS_OF_ELEM], DOUBLE *DetJ);
 
    PARAMETERS:
@@ -1411,7 +1411,7 @@ D*/
 /****************************************************************************/
 
 #ifdef __TWODIM__
-INT Gradients (INT n, const COORD **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_VECTOR Gradient[MAX_CORNERS_OF_ELEM], DOUBLE *DetJ)
+INT Gradients (INT n, const DOUBLE **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_VECTOR Gradient[MAX_CORNERS_OF_ELEM], DOUBLE *DetJ)
 {
 	DOUBLE dydt,dyds,dxdt,dxds,detJ;
 	int j;
@@ -1438,8 +1438,8 @@ INT Gradients (INT n, const COORD **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_V
    L2GDerivative2d - Derivative of LOCAL_TO_GLOBAL
 
    SYNOPSIS:
-   INT L2GDerivative2d (INT n, const COORD **Corners,
-   const COORD_VECTOR EvalPoint, COORD *Derivative);
+   INT L2GDerivative2d (INT n, const DOUBLE **Corners,
+   const DOUBLE_VECTOR EvalPoint, DOUBLE *Derivative);
 
    PARAMETERS:
 .  n - corner number  
@@ -1460,10 +1460,10 @@ D*/
 /****************************************************************************/
 
 #ifdef __TWODIM__
-INT L2GDerivative2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint, COORD *Derivative)
+INT L2GDerivative2d (INT n, const DOUBLE **Corners, const DOUBLE_VECTOR EvalPoint, DOUBLE *Derivative)
 {
-	COORD dNds0,dNds1,dNds2,dNds3;
-	COORD dNdt0,dNdt1,dNdt2,dNdt3;
+	DOUBLE dNds0,dNds1,dNds2,dNds3;
+	DOUBLE dNdt0,dNdt1,dNdt2,dNdt3;
 	
 	if (n==3)
 	{
@@ -1506,7 +1506,7 @@ INT L2GDerivative2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint,
    TetraSideNormals - Calculate inner normals of tetrahedra
 
    SYNOPSIS:
-   INT TetraSideNormals (ELEMENT *theElement, COORD **theCorners, COORD_VECTOR theNormals[MAX_SIDES_OF_ELEM]);
+   INT TetraSideNormals (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE_VECTOR theNormals[MAX_SIDES_OF_ELEM]);
 
    PARAMETERS:
 .  theCorners - list of pointers to phys corner vectors
@@ -1523,11 +1523,11 @@ D*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT TetraSideNormals (ELEMENT *theElement, COORD **theCorners, COORD_VECTOR theNormals[MAX_SIDES_OF_ELEM])
+INT TetraSideNormals (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE_VECTOR theNormals[MAX_SIDES_OF_ELEM])
 {
    	ELEMENT e;
-	COORD_VECTOR a, b;
-	COORD h;
+	DOUBLE_VECTOR a, b;
+	DOUBLE h;
 	INT j,k;
 
 	/* TODO: changed MAX_CORNERS_OF_ELEM to 4 and subsequently*/
@@ -1556,7 +1556,7 @@ INT TetraSideNormals (ELEMENT *theElement, COORD **theCorners, COORD_VECTOR theN
    TetMaxSideAngle - Calculate maximal side angle of Tetrahedron
 
    SYNOPSIS:
-   INT TetMaxSideAngle (ELEMENT *theElement, COORD **theCorners, COORD *MaxAngle);
+   INT TetMaxSideAngle (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE *MaxAngle);
 
    PARAMETERS:
 .  theCorners - list of pointers to phys corner vectors
@@ -1573,13 +1573,13 @@ D*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT TetMaxSideAngle (ELEMENT *theElement, const COORD **theCorners, COORD *MaxAngle)
+INT TetMaxSideAngle (ELEMENT *theElement, const DOUBLE **theCorners, DOUBLE *MaxAngle)
 {
-	COORD_VECTOR theNormal[MAX_SIDES_OF_ELEM];
-	COORD max,help;
+	DOUBLE_VECTOR theNormal[MAX_SIDES_OF_ELEM];
+	DOUBLE max,help;
 	INT i;
 
-	if (TetraSideNormals (theElement,(COORD **)theCorners,theNormal)) return (1);
+	if (TetraSideNormals (theElement,(DOUBLE **)theCorners,theNormal)) return (1);
 	max = -1.0;
 	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
 	{
@@ -1598,7 +1598,7 @@ INT TetMaxSideAngle (ELEMENT *theElement, const COORD **theCorners, COORD *MaxAn
    TetAngleAndLength - Calculates side angle and length of edge of Tetrahedron
 
    SYNOPSIS:
-   INT TetAngleAndLength (ELEMENT *theElement, COORD **theCorners, COORD *Angle, COORD *Length);
+   INT TetAngleAndLength (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE *Angle, DOUBLE *Length);
 
    PARAMETERS:
 .  theCorners - list of pointers to phys corner vectors
@@ -1617,10 +1617,10 @@ D*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT TetAngleAndLength (ELEMENT *theElement, const COORD **theCorners, COORD *Angle, COORD *Length)
+INT TetAngleAndLength (ELEMENT *theElement, const DOUBLE **theCorners, DOUBLE *Angle, DOUBLE *Length)
 {
-	COORD_VECTOR theNormals[MAX_SIDES_OF_ELEM],theEdge[MAX_EDGES_OF_ELEM];
-	COORD h;
+	DOUBLE_VECTOR theNormals[MAX_SIDES_OF_ELEM],theEdge[MAX_EDGES_OF_ELEM];
+	DOUBLE h;
 	INT j,k;
 
 	for (j=0; j<EDGES_OF_ELEM(theElement); j++)
@@ -1644,7 +1644,7 @@ INT TetAngleAndLength (ELEMENT *theElement, const COORD **theCorners, COORD *Ang
 		V3_SCALAR_PRODUCT(theNormals[SIDE_WITH_EDGE(theElement,j,0)],theNormals[SIDE_WITH_EDGE(theElement,j,1)],Angle[j])
 		Angle[j] = MAX(Angle[j],-1.0);
 		Angle[j] = MIN(Angle[j], 1.0);
-		Angle[j] = (COORD)acos((double)Angle[j]);
+		Angle[j] = (DOUBLE)acos((double)Angle[j]);
 	}
 	
 	return (0);
@@ -1656,7 +1656,7 @@ INT TetAngleAndLength (ELEMENT *theElement, const COORD **theCorners, COORD *Ang
    TetraDerivative - Calculates gradient of shape function for tetrahedron
 
    SYNOPSIS:
-   INT TetraDerivative (ELEMENT *theElement, COORD **theCorners, COORD_VECTOR theGradient[MAX_CORNERS_OF_ELEM])
+   INT TetraDerivative (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE_VECTOR theGradient[MAX_CORNERS_OF_ELEM])
 
    PARAMETERS:
 .  theCorners - list of pointers to phys corner vectors
@@ -1673,10 +1673,10 @@ D*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT TetraDerivative (ELEMENT *theElement, const COORD **theCorners, COORD_VECTOR theGradient[MAX_CORNERS_OF_ELEM])
+INT TetraDerivative (ELEMENT *theElement, const DOUBLE **theCorners, DOUBLE_VECTOR theGradient[MAX_CORNERS_OF_ELEM])
 {
-	COORD_VECTOR a, b;
-	COORD h;
+	DOUBLE_VECTOR a, b;
+	DOUBLE h;
 	INT j;
 
 	for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
@@ -1700,7 +1700,7 @@ INT TetraDerivative (ELEMENT *theElement, const COORD **theCorners, COORD_VECTOR
    TetraVolume - Calculate volume of tetrahedron
 
    SYNOPSIS:
-   INT TetraVolume (COORD **theCorners, COORD *volume);
+   INT TetraVolume (DOUBLE **theCorners, DOUBLE *volume);
 
    PARAMETERS:
 .  theCorners - list of pointers to phys corner vectors
@@ -1717,9 +1717,9 @@ D*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT TetraVolume (const COORD **theCorners, COORD *volume)
+INT TetraVolume (const DOUBLE **theCorners, DOUBLE *volume)
 {
-	COORD_VECTOR a, b, n;
+	DOUBLE_VECTOR a, b, n;
 
 	/* compute volume of tetrahedron */
 	V3_SUBTRACT(theCorners[0],theCorners[1],a)
@@ -1738,8 +1738,8 @@ INT TetraVolume (const COORD **theCorners, COORD *volume)
    FV_TetInfo - Calculate control volume subsurfaces and global integration points
 
    SYNOPSIS:
-   INT FV_TetInfo (const COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], 
-   COORD_VECTOR GIP[MAX_EDGES_OF_ELEM]);
+   INT FV_TetInfo (const DOUBLE **theCorners, DOUBLE_VECTOR Area[MAX_EDGES_OF_ELEM], 
+   DOUBLE_VECTOR GIP[MAX_EDGES_OF_ELEM]);
 
    PARAMETERS:
 .  theCorners - coordinates of the element corners
@@ -1759,11 +1759,11 @@ D*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT FV_TetInfo (const COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM])
+INT FV_TetInfo (const DOUBLE **theCorners, DOUBLE_VECTOR Area[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR GIP[MAX_EDGES_OF_ELEM])
 {
    	ELEMENT e;
-	COORD_VECTOR emp[MAX_EDGES_OF_ELEM], diff, a, b;
-	COORD sp;
+	DOUBLE_VECTOR emp[MAX_EDGES_OF_ELEM], diff, a, b;
+	DOUBLE sp;
 	INT i;
 
 	/* TODO: changed MAX_EDGES_OF_ELEM to 6 */
@@ -1796,9 +1796,9 @@ INT FV_TetInfo (const COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], 
 /* Purpose:   calc gradient of shape function i 							*/
 /*																			*/
 /* Input:	  int i: corner number [0..3]									*/
-/*			  COORD **Corners: list of ptrs to phys corner vectors			*/
+/*			  DOUBLE **Corners: list of ptrs to phys corner vectors			*/
 /*																			*/
-/* Output:	  COORD **theGradient: list of ptrs to gradients				*/
+/* Output:	  DOUBLE **theGradient: list of ptrs to gradients				*/
 /*																			*/
 /* Return:	  INT 0: ok 													*/
 /*				  1: error													*/
@@ -1806,9 +1806,9 @@ INT FV_TetInfo (const COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], 
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-static INT FindCrossParam3D (COORD *p1, COORD *p2, COORD *p3, COORD *p4, DOUBLE_VECTOR v, COORD *param)
+static INT FindCrossParam3D (DOUBLE *p1, DOUBLE *p2, DOUBLE *p3, DOUBLE *p4, DOUBLE_VECTOR v, DOUBLE *param)
 {
-	COORD M[9], I[9];
+	DOUBLE M[9], I[9];
 	
 	V3_SUBTRACT(p1,p2,M)
 	V3_SUBTRACT(p4,p3,M+3)
@@ -1821,9 +1821,9 @@ static INT FindCrossParam3D (COORD *p1, COORD *p2, COORD *p3, COORD *p4, DOUBLE_
 	return (0);
 }
 
-static INT MirrorAtPlane (const COORD *in, const COORD *pp, const COORD *pn, COORD *out)
+static INT MirrorAtPlane (const DOUBLE *in, const DOUBLE *pp, const DOUBLE *pn, DOUBLE *out)
 {
-	COORD_VECTOR a;
+	DOUBLE_VECTOR a;
 	
 	V3_SUBTRACT(pp,in,a)
 	if (V3_Project(a,pn,out))
@@ -1855,7 +1855,7 @@ static INT SideOfCorners[4][4][4] = {
 
 /* TODO: change to macros of the general element concept */
 
-static COORD_VECTOR TRefCoord[4] = 
+static DOUBLE_VECTOR TRefCoord[4] = 
 {{0.0,0.0,0.0},{1.0,0.0,0.0},{0.0,1.0,0.0},{0.0,0.0,1.0}};
 
 static INT  CornerOfSide[4][3] = {{0,2,1}, {1,2,3}, {2,0,3}, {3,0,1}};
@@ -1897,10 +1897,10 @@ static INT OppositeCorner[4] = {3,0,1,2};
 /* the indices of opposite sides for each corner */
 static INT OppositeSide[4] = {1,2,3,0};
 
-INT FV_AliTetInfo (const COORD **CornerPoints, COORD_VECTOR Area[6], DOUBLE_VECTOR conv, COORD_VECTOR GIP[6], COORD_VECTOR LIP[6])
+INT FV_AliTetInfo (const DOUBLE **CornerPoints, DOUBLE_VECTOR Area[6], DOUBLE_VECTOR conv, DOUBLE_VECTOR GIP[6], DOUBLE_VECTOR LIP[6])
 {
-	COORD sp, alpha, check[2], M[9], Inv[9];
-	COORD_VECTOR a, b, c, d, e, cm, normal, param, EdgeMidPoints[6], SideMidPoints[4];
+	DOUBLE sp, alpha, check[2], M[9], Inv[9];
+	DOUBLE_VECTOR a, b, c, d, e, cm, normal, param, EdgeMidPoints[6], SideMidPoints[4];
 	INT i, help, noutflow, ninflow, outflow[4], inflow[4], OpEdge[3], GrEdge[3], side[3], OpCorner, corner[3], inverted, First;
 	INT BackEdge, FrontEdge, BackCorner[2], FrontCorner[2], EdgeF0B0, EdgeF0B1, EdgeF1B0, EdgeF1B1, flags, changed;
 	
@@ -1985,10 +1985,10 @@ INT FV_AliTetInfo (const COORD **CornerPoints, COORD_VECTOR Area[6], DOUBLE_VECT
 			EdgeF1B0 = EdgeWithCorners[FrontCorner[1]][BackCorner[0]];
 			EdgeF1B1 = EdgeWithCorners[FrontCorner[1]][BackCorner[1]];
 			
-			if (FindCrossParam3D((COORD *)CornerPoints[FrontCorner[0]],
-								 (COORD *)CornerPoints[FrontCorner[1]],
-								 (COORD *)CornerPoints[BackCorner[0]],
-								 (COORD *)CornerPoints[BackCorner[1]],
+			if (FindCrossParam3D((DOUBLE *)CornerPoints[FrontCorner[0]],
+								 (DOUBLE *)CornerPoints[FrontCorner[1]],
+								 (DOUBLE *)CornerPoints[BackCorner[0]],
+								 (DOUBLE *)CornerPoints[BackCorner[1]],
 								 conv,param)) return (1);
 			if (param[0]<0.0 || param[0]>1.0 || param[1]<0.0 || param[1]>1.0)
 				i=i;
@@ -2590,9 +2590,9 @@ INT FV_AliTetInfo (const COORD **CornerPoints, COORD_VECTOR Area[6], DOUBLE_VECT
 /* Purpose:   calc gradient of shape function i 							*/
 /*																			*/
 /* Input:	  int i: corner number [0..3]									*/
-/*			  COORD **Corners: list of ptrs to phys corner vectors			*/
+/*			  DOUBLE **Corners: list of ptrs to phys corner vectors			*/
 /*																			*/
-/* Output:	  COORD **theGradient: list of ptrs to gradients				*/
+/* Output:	  DOUBLE **theGradient: list of ptrs to gradients				*/
 /*																			*/
 /* Return:	  INT 0: ok 													*/
 /*				  1: error													*/
@@ -2600,11 +2600,11 @@ INT FV_AliTetInfo (const COORD **CornerPoints, COORD_VECTOR Area[6], DOUBLE_VECT
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT FV_TetInfo_for_conv (ELEMENT *theElement, const COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM], COORD_VECTOR conv)
+INT FV_TetInfo_for_conv (ELEMENT *theElement, const DOUBLE **CornerPoints, DOUBLE_VECTOR Area[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR GIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv)
 {
-	COORD sp, spn, spz, alpha1, alpha2;
-	COORD_VECTOR a, b, c, normal;
-	COORD_VECTOR EdgeMidPoints[6], SideMidPoints[4];
+	DOUBLE sp, spn, spz, alpha1, alpha2;
+	DOUBLE_VECTOR a, b, c, normal;
+	DOUBLE_VECTOR EdgeMidPoints[6], SideMidPoints[4];
 	INT i, j, help, noutflow, ninflow, outflow[4], inflow[4], edge, inverted, side;
 	
 	/* reset areas and integrationpoints */
@@ -2760,8 +2760,8 @@ INT FV_TetInfo_for_conv (ELEMENT *theElement, const COORD **CornerPoints, COORD_
    Side_TetInfo	- Calculate subsurfaces and integration points on elementside of tetrahedron 
 
    SYNOPSIS:
-   INT Side_TetInfo (COORD **theCorners, INT side, COORD_VECTOR Area, 
-   COORD_VECTOR GIP[3]);
+   INT Side_TetInfo (DOUBLE **theCorners, INT side, DOUBLE_VECTOR Area, 
+   DOUBLE_VECTOR GIP[3]);
 
    PARAMETERS:
 .  theCorners - list of pointers to phys corner vectors
@@ -2784,11 +2784,11 @@ D*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT Side_TetInfo (COORD **theCorners, INT side, COORD_VECTOR Area, COORD_VECTOR GIP[3])
+INT Side_TetInfo (DOUBLE **theCorners, INT side, DOUBLE_VECTOR Area, DOUBLE_VECTOR GIP[3])
 {
    	ELEMENT e;
-	COORD_VECTOR a,b,c;
-	COORD scalarprd;
+	DOUBLE_VECTOR a,b,c;
+	DOUBLE scalarprd;
 	INT i0, i1, i2, i3;
 	
 	SETTAG(&e,4);
@@ -2827,8 +2827,8 @@ INT Side_TetInfo (COORD **theCorners, INT side, COORD_VECTOR Area, COORD_VECTOR 
    GSUIP - Calculate upwind integration point
 
    SYNOPSIS:
-   INT GSUIP (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], 
-   DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
+   INT GSUIP (DOUBLE **theCorners, DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], 
+   DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
 
    PARAMETERS:
 .  theCorners - coordinates of the element corners
@@ -2850,11 +2850,11 @@ D*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT GetSkewedUIP (const COORD_VECTOR *theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], const DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT GetSkewedUIP (const DOUBLE_VECTOR *theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], const DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM])
 {
-	COORD_VECTOR lconv;
-	COORD alpha;
-	COORD M[9],I[9];
+	DOUBLE_VECTOR lconv;
+	DOUBLE alpha;
+	DOUBLE M[9],I[9];
 	INT flags, i;
 
 	V3_SUBTRACT(theCorners[1],theCorners[0],M)
@@ -3029,8 +3029,8 @@ INT GetSkewedUIP (const COORD_VECTOR *theCorners, const COORD_VECTOR LIP[MAX_EDG
    GFUIP - Calculate upwind integration point
 
    SYNOPSIS:
-   INT GFUIP (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], 
-   DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
+   INT GFUIP (DOUBLE **theCorners, DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], 
+   DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
 
    PARAMETERS:
 .  theCorners - coordinates of the element corners
@@ -3052,11 +3052,11 @@ D*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT GFUIP (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT GFUIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM])
 {
-	COORD_VECTOR lconv;
-	COORD sp, min;
-	COORD M[9],I[9];
+	DOUBLE_VECTOR lconv;
+	DOUBLE sp, min;
+	DOUBLE M[9],I[9];
 	INT j, i, ip[MAX_CORNERS_OF_ELEM], n;
 
 	V3_SUBTRACT(theCorners[1],theCorners[0],M)
@@ -3083,7 +3083,7 @@ INT GFUIP (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], 
 		V3_CLEAR(LUIP[i])
 		for (j=0; j<n; j++)
 			V3_ADD(TRefCoord[ip[j]],LUIP[i],LUIP[i])
-		V3_SCALE(1.0/(COORD)n,LUIP[i])
+		V3_SCALE(1.0/(DOUBLE)n,LUIP[i])
 	}
 	
 	return(0);
@@ -3095,8 +3095,8 @@ INT GFUIP (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], 
    GCUIP - Calculate upwind integration point
 
    SYNOPSIS:
-   INT GCUIP (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], 
-   DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
+   INT GCUIP (DOUBLE **theCorners, DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], 
+   DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
 
    PARAMETERS:
 .  theCorners - coordinates of the element corners
@@ -3119,11 +3119,11 @@ D*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT GCUIP (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT GCUIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM])
 {
-	COORD_VECTOR a, lconv, SUIP;
-	COORD alpha, sp, min;
-	COORD M[9],I[9];
+	DOUBLE_VECTOR a, lconv, SUIP;
+	DOUBLE alpha, sp, min;
+	DOUBLE M[9],I[9];
 	INT flags, i, j, k; 
 
 	V3_SUBTRACT(theCorners[1],theCorners[0],M)
@@ -3313,8 +3313,8 @@ INT GCUIP (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], 
    COPYIP - Copy integration points
 
    SYNOPSIS:
-   INT COPYIP (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], 
-   DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
+   INT COPYIP (DOUBLE **theCorners, DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], 
+   DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
 
    PARAMETERS:
 .  theCorners - coordinates of the element corners
@@ -3333,7 +3333,7 @@ D*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT COPYIP (const COORD **theCorners, const COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT COPYIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM])
 {
 	INT i;
 	

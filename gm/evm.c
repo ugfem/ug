@@ -95,8 +95,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    ClipRectangleAgainstRectangle - Clip a rectangle against a rectangle
 
    SYNOPSIS:
-   INT ClipRectangleAgainstRectangle (const COORD *r1min, const COORD *r1max,
-   COORD *r2min, COORD *r2max);
+   INT ClipRectangleAgainstRectangle (const DOUBLE *r1min, const DOUBLE *r1max,
+   DOUBLE *r2min, DOUBLE *r2max);
 
    PARAMETERS:
    .  r1min - lower left corner of rectangle 1
@@ -116,7 +116,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT ClipRectangleAgainstRectangle (const COORD *r1min, const COORD *r1max, COORD *r2min, COORD *r2max)
+INT ClipRectangleAgainstRectangle (const DOUBLE *r1min, const DOUBLE *r1max, DOUBLE *r2min, DOUBLE *r2max)
 {
   if (r2min[0] < r1min[0]) r2min[0] = r1min[0];
   if (r2min[1] < r1min[1]) r2min[1] = r1min[1];
@@ -133,8 +133,8 @@ INT ClipRectangleAgainstRectangle (const COORD *r1min, const COORD *r1max, COORD
    CheckRectagleIntersection - Check if two rectangles intersect
 
    SYNOPSIS:
-   INT CheckRectagleIntersection (const COORD *r1min, const COORD *r1max,
-   const COORD *r2min, const COORD *r2max);
+   INT CheckRectagleIntersection (const DOUBLE *r1min, const DOUBLE *r1max,
+   const DOUBLE *r2min, const DOUBLE *r2max);
 
    PARAMETERS:
    .  r1min - lower left corner of rectangle 1
@@ -152,7 +152,7 @@ INT ClipRectangleAgainstRectangle (const COORD *r1min, const COORD *r1max, COORD
    D*/
 /****************************************************************************/
 
-INT CheckRectagleIntersection (const COORD *r1min, const COORD *r1max, const COORD *r2min, const COORD *r2max)
+INT CheckRectagleIntersection (const DOUBLE *r1min, const DOUBLE *r1max, const DOUBLE *r2min, const DOUBLE *r2max)
 {
   if (r1max[0] < r2min[0]) return(0);
   if (r2max[0] < r1min[0]) return(0);
@@ -167,8 +167,8 @@ INT CheckRectagleIntersection (const COORD *r1min, const COORD *r1max, const COO
    CheckRectangle - Check if rectangle has a minimum size
 
    SYNOPSIS:
-   INT CheckRectangle (const COORD *rmin, const COORD *rmax,
-   const COORD minsize);
+   INT CheckRectangle (const DOUBLE *rmin, const DOUBLE *rmax,
+   const DOUBLE minsize);
 
    PARAMETERS:
    .  rmin - lower left corner
@@ -186,7 +186,7 @@ INT CheckRectagleIntersection (const COORD *r1min, const COORD *r1max, const COO
    D*/
 /****************************************************************************/
 
-INT CheckRectangle (const COORD *rmin, const COORD *rmax, const COORD minsize)
+INT CheckRectangle (const DOUBLE *rmin, const DOUBLE *rmax, const DOUBLE minsize)
 {
   if (rmax[0] <= rmin[0]+minsize) return(1);
   if (rmax[1] <= rmin[1]+minsize) return(1);
@@ -210,8 +210,8 @@ INT CheckRectangle (const COORD *rmin, const COORD *rmax, const COORD minsize)
    .vb
    struct coord_point
    {
-    COORD x;
-    COORD y;
+    DOUBLE x;
+    DOUBLE y;
    };
 
    typedef struct coord_point COORD_POINT;
@@ -229,7 +229,7 @@ INT CheckRectangle (const COORD *rmin, const COORD *rmax, const COORD minsize)
 
 INT PointInTriangle (const COORD_POINT *Points, const COORD_POINT Point)
 {
-  COORD M[9], Inverse[9], rhs[3], lambda[3];
+  DOUBLE M[9], Inverse[9], rhs[3], lambda[3];
 
   /* invert a 3x3 system */
   M[0]=Points[0].x, M[3]=Points[1].x, M[6] =Points[2].x;
@@ -266,8 +266,8 @@ INT PointInTriangle (const COORD_POINT *Points, const COORD_POINT Point)
    .vb
    struct coord_point
    {
-    COORD x;
-    COORD y;
+    DOUBLE x;
+    DOUBLE y;
    };
    .ve
 
@@ -288,7 +288,7 @@ INT PointInTriangle (const COORD_POINT *Points, const COORD_POINT Point)
 
 INT PointInPolygon (const COORD_POINT *Points, INT n, COORD_POINT Point)
 {
-  COORD D[POLYMAX] ,tau[POLYMAX],xa,ya,xe,ye;
+  DOUBLE D[POLYMAX] ,tau[POLYMAX],xa,ya,xe,ye;
   int i, left, right;
 
   assert (n<=POLYMAX);
@@ -322,20 +322,20 @@ INT PointInPolygon (const COORD_POINT *Points, INT n, COORD_POINT Point)
 /*																			*/
 /* Function:  PointInPolygonC												*/
 /*																			*/
-/* Purpose:   decide if Point lies in the polygon of Points with COORD-desc	*/
+/* Purpose:   decide if Point lies in the polygon of Points with DOUBLE-desc	*/
 /*																			*/
-/* input:	  const COORD_VECTOR_2D *Points: polygon						*/
+/* input:	  const DOUBLE_VECTOR_2D *Points: polygon						*/
 /*			  INT n: number of corners										*/
-/*			  const COORD_VECTOR_2D Point									*/
+/*			  const DOUBLE_VECTOR_2D Point									*/
 /*																			*/
 /* return:	  INT 0: lies not in the polygon								*/
 /*				  1: lies in the polygon									*/
 /*																			*/
 /****************************************************************************/
 
-INT PointInPolygonC (const COORD_VECTOR_2D *Points, INT n, const COORD_VECTOR_2D Point)
+INT PointInPolygonC (const DOUBLE_VECTOR_2D *Points, INT n, const DOUBLE_VECTOR_2D Point)
 {
-  COORD tau[POLYMAX],xa,ya,xe,ye;
+  DOUBLE tau[POLYMAX],xa,ya,xe,ye;
   int i, left, right;
 
   assert (n<=POLYMAX);
@@ -369,20 +369,20 @@ INT PointInPolygonC (const COORD_VECTOR_2D *Points, INT n, const COORD_VECTOR_2D
 /* Purpose:   determine area of polygon								                */
 /*																			*/
 /* input:	  INT n: nb of corners of polygon								*/
-/*			  COORD_VECTOR_2D *Polygon: polygon								*/
+/*			  DOUBLE_VECTOR_2D *Polygon: polygon								*/
 /*																			*/
-/* output:	  COORD *Area: area												*/
+/* output:	  DOUBLE *Area: area												*/
 /*																			*/
 /* return:	  INT 0: ok														*/
 /*				  1: error													*/
 /*																			*/
 /****************************************************************************/
 
-INT PolyArea (INT n, COORD_VECTOR_2D *Polygon, COORD *Area)
+INT PolyArea (INT n, DOUBLE_VECTOR_2D *Polygon, DOUBLE *Area)
 {
   INT i;
-  COORD c;
-  COORD_VECTOR_2D a, b;
+  DOUBLE c;
+  DOUBLE_VECTOR_2D a, b;
 
 
   *Area = 0.0;
@@ -411,17 +411,17 @@ INT PolyArea (INT n, COORD_VECTOR_2D *Polygon, COORD *Area)
 
 /****************************************************************************/
 /*D
-   M2_Invert - Calculate inverse of a 2x2 COORD matrix
+   M2_Invert - Calculate inverse of a 2x2 DOUBLE matrix
 
    SYNOPSIS:
-   INT M2_Invert (COORD *Inverse, const COORD *Matrix);
+   INT M2_Invert (DOUBLE *Inverse, const DOUBLE *Matrix);
 
    PARAMETERS:
    .  Inverse - inverse of matrix
    .  Matrix - matrix
 
    DESCRIPTION:
-   This function  calculates inverse of a 2x2 COORD matrix.
+   This function  calculates inverse of a 2x2 DOUBLE matrix.
    The entries of the matrices are given in a linear array with the
    following order -
 
@@ -437,9 +437,9 @@ INT PolyArea (INT n, COORD_VECTOR_2D *Polygon, COORD *Area)
    D*/
 /****************************************************************************/
 
-INT M2_Invert (COORD *Inverse, const COORD *Matrix)
+INT M2_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
 {
-  COORD det;
+  DOUBLE det;
 
   det = Matrix[0]*Matrix[3]-Matrix[1]*Matrix[2];
   if (ABS(det)<SMALL_C) return (1);
@@ -453,17 +453,17 @@ INT M2_Invert (COORD *Inverse, const COORD *Matrix)
 
 /****************************************************************************/
 /*D
-   M3_Invert - Calculate inverse of a 3x3 COORD matrix
+   M3_Invert - Calculate inverse of a 3x3 DOUBLE matrix
 
    SYNOPSIS:
-   INT M3_Invert (COORD *Inverse, const COORD *Matrix);
+   INT M3_Invert (DOUBLE *Inverse, const DOUBLE *Matrix);
 
    PARAMETERS:
    .  Inverse - inverse of matrix
    .  Matrix - matrix
 
    DESCRIPTION:
-   This function calculates inverse of a 3x3 COORD matrix.
+   This function calculates inverse of a 3x3 DOUBLE matrix.
    The entries of the matrices are given in a linear array with the
    following order -
 
@@ -480,9 +480,9 @@ INT M2_Invert (COORD *Inverse, const COORD *Matrix)
    D*/
 /****************************************************************************/
 
-INT M3_Invert (COORD *Inverse, const COORD *Matrix)
+INT M3_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
 {
-  COORD determinant,invdet;
+  DOUBLE determinant,invdet;
   INT i,i1,i2, j,j1,j2;
 
   for (i=0; i<3; i++)
@@ -516,7 +516,7 @@ INT M3_Invert (COORD *Inverse, const COORD *Matrix)
    V2_Normalize	- Normalize a 2D vector
 
    SYNOPSIS:
-   INT V2_Normalize (COORD *a);
+   INT V2_Normalize (DOUBLE *a);
 
    PARAMETERS:
    .  a - input 2D vector (a[0],a[1])
@@ -532,9 +532,9 @@ INT M3_Invert (COORD *Inverse, const COORD *Matrix)
    D*/
 /****************************************************************************/
 
-INT V2_Normalize (COORD *a)
+INT V2_Normalize (DOUBLE *a)
 {
-  COORD norm;
+  DOUBLE norm;
 
   V2_EUKLIDNORM(a,norm);
   if (norm < SMALL_C) return(2);
@@ -548,7 +548,7 @@ INT V2_Normalize (COORD *a)
    V2_Rotate - Rotate vector by angle
 
    SYNOPSIS:
-   INT V2_Rotate (COORD *vector, COORD alpha);
+   INT V2_Rotate (DOUBLE *vector, DOUBLE alpha);
 
    PARAMETERS:
    .  vector - 2D vector
@@ -564,15 +564,15 @@ INT V2_Normalize (COORD *a)
    D*/
 /****************************************************************************/
 
-INT V2_Rotate (COORD *vector, COORD alpha)
+INT V2_Rotate (DOUBLE *vector, DOUBLE alpha)
 {
-  COORD help[2];
-  COORD calpha, salpha;
+  DOUBLE help[2];
+  DOUBLE calpha, salpha;
 
   /* rotate vector */
   help[0] = -vector[1]; help[1] = vector[0];
-  calpha = (COORD)cos((double)alpha);
-  salpha = (COORD)sin((double)alpha);
+  calpha = (DOUBLE)cos((double)alpha);
+  salpha = (DOUBLE)sin((double)alpha);
   V2_LINCOMB(salpha,help,calpha,vector,vector);
 
   return (0);
@@ -664,7 +664,7 @@ DOUBLE qarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBLE
    c_tarea - Compute area of triangle
 
    SYNOPSIS:
-   DOUBLE c_tarea (const COORD *x0, const COORD *x1, const COORD *x2)
+   DOUBLE c_tarea (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2)
 
    PARAMETERS:
    .  x0 - Array with coordinates of first point
@@ -678,7 +678,7 @@ DOUBLE qarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBLE
    DOUBLE area
    D*/
 /****************************************************************************/
-DOUBLE c_tarea (const COORD *x0, const COORD *x1, const COORD *x2)
+DOUBLE c_tarea (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2)
 {
   return(0.5*fabs((x1[_Y_]-x0[_Y_])*(x2[_X_]-x0[_X_])-(x1[_X_]-x0[_X_])*(x2[_Y_]-x0[_Y_])));
 }
@@ -687,7 +687,7 @@ DOUBLE c_tarea (const COORD *x0, const COORD *x1, const COORD *x2)
    c_qarea - Compute area of a convex quadrilateral
 
    SYNOPSIS:
-   DOUBLE c_qarea (const COORD *x0, const COORD *x1, const COORD *x2, const COORD *x3);
+   DOUBLE c_qarea (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2, const DOUBLE *x3);
 
    PARAMETERS:
    .  x0 - Array with coordinates of first point
@@ -702,7 +702,7 @@ DOUBLE c_tarea (const COORD *x0, const COORD *x1, const COORD *x2)
    DOUBLE area
    D*/
 /****************************************************************************/
-DOUBLE c_qarea (const COORD *x0, const COORD *x1, const COORD *x2, const COORD *x3)
+DOUBLE c_qarea (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2, const DOUBLE *x3)
 {
   return( 0.5*fabs( (x3[_Y_]-x1[_Y_])*(x2[_X_]-x0[_X_])-(x3[_X_]-x1[_X_])*(x2[_Y_]-x0[_Y_]) ) );
 }
@@ -775,7 +775,7 @@ DOUBLE cqarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBL
    V3_Normalize	- Normalize vector a 3D vector
 
    SYNOPSIS:
-   INT V3_Normalize (COORD *a);
+   INT V3_Normalize (DOUBLE *a);
 
    PARAMETERS:
    .  a - 3D vector
@@ -790,9 +790,9 @@ DOUBLE cqarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBL
    D*/
 /****************************************************************************/
 
-INT V3_Normalize (COORD *a)
+INT V3_Normalize (DOUBLE *a)
 {
-  COORD norm;
+  DOUBLE norm;
 
   V3_EUKLIDNORM(a,norm);
   if (norm < SMALL_C) return(2);
@@ -806,7 +806,7 @@ INT V3_Normalize (COORD *a)
    V3_NormVectorProduct - Calculate norm of vector product  a x b
 
    SYNOPSIS:
-   INT V3_NormVectorProduct (const COORD *a, const COORD *b, COORD *result);
+   INT V3_NormVectorProduct (const DOUBLE *a, const DOUBLE *b, DOUBLE *result);
 
    PARAMETERS:
    .  a - input vector (a[0],a[1],a[2])
@@ -823,9 +823,9 @@ INT V3_Normalize (COORD *a)
    D*/
 /****************************************************************************/
 
-INT V3_NormVectorProduct (const COORD *a, const COORD *b, COORD *result)
+INT V3_NormVectorProduct (const DOUBLE *a, const DOUBLE *b, DOUBLE *result)
 {
-  COORD VectorPrd[3];
+  DOUBLE VectorPrd[3];
 
   V3_VECTOR_PRODUCT(a,b,VectorPrd);
   V3_EUKLIDNORM(VectorPrd,*result);
@@ -838,7 +838,7 @@ INT V3_NormVectorProduct (const COORD *a, const COORD *b, COORD *result)
    V3_Rotate - Rotate vector around axis by a given angle
 
    SYNOPSIS:
-   INT V3_Rotate (COORD *vector, const COORD *axis, COORD alpha);
+   INT V3_Rotate (DOUBLE *vector, const DOUBLE *axis, DOUBLE alpha);
 
    PARAMETERS:
    .  vector - vector to rotate
@@ -856,18 +856,18 @@ INT V3_NormVectorProduct (const COORD *a, const COORD *b, COORD *result)
    D*/
 /****************************************************************************/
 
-INT V3_Rotate (COORD *vector, const COORD *axis, COORD alpha)
+INT V3_Rotate (DOUBLE *vector, const DOUBLE *axis, DOUBLE alpha)
 {
-  COORD RotationAxis[3], help[3];
-  COORD scalarprd, calpha, salpha;
+  DOUBLE RotationAxis[3], help[3];
+  DOUBLE scalarprd, calpha, salpha;
 
   /* normalize axis */
   V3_COPY(axis,RotationAxis);
   if (V3_Normalize(RotationAxis)) return(1);
 
   /* rotate vector */
-  calpha = (COORD)cos((double)alpha);
-  salpha = (COORD)sin((double)alpha);
+  calpha = (DOUBLE)cos((double)alpha);
+  salpha = (DOUBLE)sin((double)alpha);
   V3_SCALAR_PRODUCT(RotationAxis,vector,scalarprd);
   V3_VECTOR_PRODUCT(RotationAxis,vector,help);
   V3_LINCOMB(calpha,vector,salpha,help,help);
@@ -881,7 +881,7 @@ INT V3_Rotate (COORD *vector, const COORD *axis, COORD alpha)
    V3_Angle - Calculate angle between two vectors
 
    SYNOPSIS:
-   INT V3_Angle (const COORD *a, const COORD *b, COORD *result);
+   INT V3_Angle (const DOUBLE *a, const DOUBLE *b, DOUBLE *result);
 
    PARAMETERS:
    .  a - first vector
@@ -898,9 +898,9 @@ INT V3_Rotate (COORD *vector, const COORD *axis, COORD alpha)
    D*/
 /****************************************************************************/
 
-INT V3_Angle (const COORD *a, const COORD *b, COORD *result)
+INT V3_Angle (const DOUBLE *a, const DOUBLE *b, DOUBLE *result)
 {
-  COORD c, sc, n1, n2;
+  DOUBLE c, sc, n1, n2;
 
   V3_EUKLIDNORM(a,n1)
   V3_EUKLIDNORM(b,n2)
@@ -917,7 +917,7 @@ INT V3_Angle (const COORD *a, const COORD *b, COORD *result)
   else if (c<=-1.0)
     *result = PI;
   else
-    *result = (COORD)acos((double)c);
+    *result = (DOUBLE)acos((double)c);
 
   return (0);
 }
@@ -927,7 +927,7 @@ INT V3_Angle (const COORD *a, const COORD *b, COORD *result)
    V3_Orthogonalize - Orthgonalize a vector w.r.t. to another vector.
 
    SYNOPSIS:
-   INT V3_Orthogonalize (const COORD *a, const COORD *b, COORD *r);
+   INT V3_Orthogonalize (const DOUBLE *a, const DOUBLE *b, DOUBLE *r);
 
    PARAMETERS:
    .  a - vector to orthogonalize
@@ -944,9 +944,9 @@ INT V3_Angle (const COORD *a, const COORD *b, COORD *result)
    D*/
 /****************************************************************************/
 
-INT V3_Orthogonalize (const COORD *a, const COORD *b, COORD *r)
+INT V3_Orthogonalize (const DOUBLE *a, const DOUBLE *b, DOUBLE *r)
 {
-  COORD normb, scprd;
+  DOUBLE normb, scprd;
 
   V3_EUKLIDNORM(b,normb)
   if (normb < SMALL_C)
@@ -965,7 +965,7 @@ INT V3_Orthogonalize (const COORD *a, const COORD *b, COORD *r)
    V3_Project - Project a vector onto another vector.
 
    SYNOPSIS:
-   INT V3_Project (const COORD *a, const COORD *b, COORD *r);
+   INT V3_Project (const DOUBLE *a, const DOUBLE *b, DOUBLE *r);
 
    PARAMETERS:
    .  a - vector to project
@@ -982,9 +982,9 @@ INT V3_Orthogonalize (const COORD *a, const COORD *b, COORD *r)
    D*/
 /****************************************************************************/
 
-INT V3_Project (const COORD *a, const COORD *b, COORD *r)
+INT V3_Project (const DOUBLE *a, const DOUBLE *b, DOUBLE *r)
 {
-  COORD normb, scprd;
+  DOUBLE normb, scprd;
 
   normb = b[0]*b[0]+b[1]*b[1]+b[2]*b[2];
   if (normb==0.0)
@@ -1005,7 +1005,7 @@ INT V3_Project (const COORD *a, const COORD *b, COORD *r)
    M4_Invert - Invert a 4X4 Matrix
 
    SYNOPSIS:
-   INT M4_Invert (COORD *Inverse, const COORD *Matrix);
+   INT M4_Invert (DOUBLE *Inverse, const DOUBLE *Matrix);
 
    PARAMETERS:
    .  Inverse - output of inverted matrix
@@ -1030,9 +1030,9 @@ INT V3_Project (const COORD *a, const COORD *b, COORD *r)
    D*/
 /****************************************************************************/
 
-INT M4_Invert (COORD *Inverse, const COORD *Matrix)
+INT M4_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
 {
-  COORD d,dinv;
+  DOUBLE d,dinv;
   INT i,i1,i2,i3, j,j1,j2,j3,sign;
 
   sign = 0;                     /* no matter which value!!! */

@@ -120,8 +120,8 @@
 #define DO_2cp(p)                                               ((char*)(p))
 #define DO_2s(p)                                                (*((short*)(p)))
 #define DO_2l(p)                                                (*((long*)(p)))
-#define DO_2C(p)                                                (*((COORD*)(p)))
-#define DO_2Cp(p)                                               ((COORD*)(p))
+#define DO_2C(p)                                                (*((DOUBLE*)(p)))
+#define DO_2Cp(p)                                               ((DOUBLE*)(p))
 
 
 /****************************************************************************/
@@ -314,7 +314,7 @@ union Work {
   struct MoveNode_Work theMoveNodeWork;                         /* desc. for moving a node of an obj.		*/
 };
 
-typedef COORD DRAWINGOBJ;
+typedef DOUBLE DRAWINGOBJ;
 
 /* general procedure ptr */
 typedef INT (*GEN_PreProcessProcPtr)(PICTURE *, union Work *);

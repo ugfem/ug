@@ -135,7 +135,7 @@ INT ce_CUTMODE;
 /*																			*/
 /****************************************************************************/
 
-typedef void (*ProjectionProcPtr) (COORD *, COORD_POINT *); 
+typedef void (*ProjectionProcPtr) (DOUBLE *, COORD_POINT *); 
 
 /****************************************************************************/
 /*																			*/
@@ -209,21 +209,21 @@ static INT NoOfViewableSides[64] =  {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4,
 									2,3,3,4,3,4,4,5,3,4,4,5,4,5,5,6};
 
 /* unit vectors */
-static COORD				ex[3] = {1.0, 0.0, 0.0};
-static COORD				ey[3] = {0.0, 1.0, 0.0};
-static COORD				ez[3] = {0.0, 0.0, 1.0};
+static DOUBLE				ex[3] = {1.0, 0.0, 0.0};
+static DOUBLE				ey[3] = {0.0, 1.0, 0.0};
+static DOUBLE				ez[3] = {0.0, 0.0, 1.0};
 
 /*----------- variables describing taransformations --------------------*/
-static COORD					ObsTrafo[16], InvObsTrafo[16];
-static COORD					CutTrafo[16], InvCutTrafo[16];
+static DOUBLE					ObsTrafo[16], InvObsTrafo[16];
+static DOUBLE					CutTrafo[16], InvCutTrafo[16];
 static INT						CUT_CutExisting;
-static COORD					CUT_CutNormal[3];
+static DOUBLE					CUT_CutNormal[3];
 static INT						CUT_CutAtFront;
 static ProjectionProcPtr		OBS_ProjectProc;	
 static INT						OBS_Perspective;
-static COORD  					OBS_PerspCorr[2];
-static COORD					OBS_ViewDirection[3];
-static COORD					OBS_ViewPlaneDist;
+static DOUBLE  					OBS_PerspCorr[2];
+static DOUBLE					OBS_ViewDirection[3];
+static DOUBLE					OBS_ViewPlaneDist;
 
 /*----------- variables describing phys. reactangle (2D) -------------------*/
 static COORD_POINT					PhysRect[4];
@@ -282,7 +282,7 @@ static DOUBLE EE2D_ShrinkFactor;/* shrink factor, 1.0 if normal plot		*/
 #ifdef ModelP
 static DOUBLE EE2D_PartShrinkFactor;
 								/* part. shrink factor, 1.0 if normal plot	*/
-static COORD_VECTOR EE2D_PartMidPoint;
+static DOUBLE_VECTOR EE2D_PartMidPoint;
 #endif
 static INT EE2D_Property;		/* 1 if plot property						*/
 static INT EE2D_NProperty;		/* nb of properties							*/
@@ -300,7 +300,7 @@ static long EE3D_PropertyColor[EE_MAX_PROP+1];	/* colors used			    */
 #ifdef ModelP
 static DOUBLE EE3D_PartShrinkFactor;
 								/* part. shrink factor, 1.0 if normal plot	*/
-static COORD_VECTOR EE3D_PartMidPoint;
+static DOUBLE_VECTOR EE3D_PartMidPoint;
 #endif
 
 
@@ -324,23 +324,23 @@ static NODE *NE_Node;			/* node for insert node work				*/
 static INT ME2D_found;			/* TRUE if an element found					*/
 static ELEMENT *ME2D_elem;		/* pointer to element found					*/
 static INT ME2D_pointIn;		/* TRUE if point specified, rectangle else	*/
-static COORD_VECTOR ME2D_point;	/* point if ME2D_pointIn TRUE				*/
-static COORD ME2D_xmin;			/* search rectangle							*/
-static COORD ME2D_xmax;			/* search rectangle							*/
-static COORD ME2D_ymin;			/* search rectangle							*/
-static COORD ME2D_ymax;			/* search rectangle							*/
+static DOUBLE_VECTOR ME2D_point;	/* point if ME2D_pointIn TRUE				*/
+static DOUBLE ME2D_xmin;			/* search rectangle							*/
+static DOUBLE ME2D_xmax;			/* search rectangle							*/
+static DOUBLE ME2D_ymin;			/* search rectangle							*/
+static DOUBLE ME2D_ymax;			/* search rectangle							*/
 static INT ME2D_rule;			/* rule to be used							*/
 
 /*---------- working variables of 'EXT_MoveNodeEval2d' ---------------------*/
 static MULTIGRID *MN_MG;		/* multigrid pointer						*/
 static NODE *MN_Node;			/* moved node								*/
-static COORD MN_pos[2];			/* new pos of the moved node				*/
-static COORD MN_lambda;			/* new boundary parameter if boundary node 	*/
-static COORD MN_xmin;			/* limits of the picture					*/
-static COORD MN_xmax;			/* limits of the picture					*/
-static COORD MN_ymin;			/* limits of the picture					*/
-static COORD MN_ymax;			/* limits of the picture					*/
-static COORD MN_delta;			/* resolution 								*/
+static DOUBLE MN_pos[2];			/* new pos of the moved node				*/
+static DOUBLE MN_lambda;			/* new boundary parameter if boundary node 	*/
+static DOUBLE MN_xmin;			/* limits of the picture					*/
+static DOUBLE MN_xmax;			/* limits of the picture					*/
+static DOUBLE MN_ymin;			/* limits of the picture					*/
+static DOUBLE MN_ymax;			/* limits of the picture					*/
+static DOUBLE MN_delta;			/* resolution 								*/
 static INT MN_accept;			/* indicates whether correctly moved or not	*/
 static INT MN_MouseMoved;		/* invert links at last pos if TRUE			*/
 static INT MN_LastMousePos[2];	/* store last mouse position				*/
@@ -408,8 +408,8 @@ static DOUBLE MAT_thresh;		/* don't plot entries with |.|<thresh		*/
 
 static BLOCKVECTOR *BV_theBV;	/* current bockvector						*/
 static long BV_color;			/* black for seperating lines of blocks		*/
-static COORD MAT_dash;			/* length of the line segments in dashed lines */
-static COORD MAT_space;			/* gap between line segments in dashed lines*/
+static DOUBLE MAT_dash;			/* length of the line segments in dashed lines */
+static DOUBLE MAT_space;			/* gap between line segments in dashed lines*/
 
 /*---------- working variables of 'EW_ElementBdryEval2D' -------------------*/
 static long EB_ColorGrid;		/* color of the grid plotted with the EScala*/
@@ -422,22 +422,22 @@ static COORD_POINT FE2D_MousePos;
 #define FN2D_INVSIZE			3
 #define FN2D_ACC				3
 
-static COORD	 	*FN2D_pos;
-static COORD		FN2D_xmin;
-static COORD		FN2D_xmax;
-static COORD		FN2D_ymin;
-static COORD		FN2D_ymax;
+static DOUBLE	 	*FN2D_pos;
+static DOUBLE		FN2D_xmin;
+static DOUBLE		FN2D_xmax;
+static DOUBLE		FN2D_ymin;
+static DOUBLE		FN2D_ymax;
 static INT 			FN2D_found;
 
 /*---------- working variables of 'EW_FindVector2D' ------------------------*/
 #define FV2D_INVSIZE			3
 #define FV2D_ACC				3
 
-static COORD_VECTOR	FV2D_pos;
-static COORD		FV2D_xmin;
-static COORD		FV2D_xmax;
-static COORD		FV2D_ymin;
-static COORD		FV2D_ymax;
+static DOUBLE_VECTOR	FV2D_pos;
+static DOUBLE		FV2D_xmin;
+static DOUBLE		FV2D_xmax;
+static DOUBLE		FV2D_ymin;
+static DOUBLE		FV2D_ymax;
 static INT 			FV2D_found;
 
 /*---------- working variables of 'EW_FindElement2D' -----------------------*/
@@ -450,8 +450,8 @@ static COORD_POINT 	FE3D_MousePos;
 /*---------- working variables of 'EW_EScalar2D' ---------------------------*/
 static PreprocessingProcPtr EScalar2D_PreProcess;
 static ElementEvalProcPtr EScalar2D_EvalFct;
-static COORD		EScalar2D_V2C_factor;
-static COORD		EScalar2D_V2C_offset;
+static DOUBLE		EScalar2D_V2C_factor;
+static DOUBLE		EScalar2D_V2C_offset;
 static INT			EScalar2D_mode;
 static INT			EScalar2D_depth;
 static INT			EScalar2D_numOfContours;
@@ -463,8 +463,8 @@ static DOUBLE		EScalar2D_maxValue;
 /*---------- working variables of 'EW_EScalar3D' ---------------------------*/
 static PreprocessingProcPtr EScalar3D_PreProcess;
 static ElementEvalProcPtr EScalar3D_EvalFct;
-static COORD		EScalar3D_V2C_factor;
-static COORD		EScalar3D_V2C_offset;
+static DOUBLE		EScalar3D_V2C_factor;
+static DOUBLE		EScalar3D_V2C_offset;
 static INT			EScalar3D_mode;
 static INT			EScalar3D_depth;
 static INT			EScalar3D_numOfContours;
@@ -475,8 +475,8 @@ static DOUBLE		EScalar3D_maxValue;
 
 /*---------- working variables of 'EW_Line2D' ---------------------------*/
 static ElementEvalProcPtr LINE2D_EvalFct;
-static COORD		LINE2D_V2Y_factor;
-static COORD		LINE2D_V2Y_offset;
+static DOUBLE		LINE2D_V2Y_factor;
+static DOUBLE		LINE2D_V2Y_offset;
 static long			LINE2D_Color;
 static INT			LINE2D_depth;
 static DOUBLE		LINE2D_minValue;
@@ -490,10 +490,10 @@ static COORD_POINT	LINE2D_EndRot;
 #define RASTERPOINTS_MAX		200
 
 static ElementVectorProcPtr EVector_EvalFct;
-static COORD				EVector_rastersize;
+static DOUBLE				EVector_rastersize;
 static INT					EVector_cutvector;
-static COORD				EVector_V2L_factor;
-static COORD				EVector_CutLenFactor;
+static DOUBLE				EVector_V2L_factor;
+static DOUBLE				EVector_CutLenFactor;
 static long 				EVector_ColorCut;
 
 /* 2D */
@@ -501,8 +501,8 @@ static long 				EVector2D_ColorNormal;
 
 /* 3D */
 static INT					EVector3D_projectvector;
-static COORD				EVector3D_V2C_factor;
-static COORD				EVector3D_V2C_offset;
+static DOUBLE				EVector3D_V2C_factor;
+static DOUBLE				EVector3D_V2C_offset;
 
 
 /*---------- working variables of 'GetNode...' routines --------------------*/
@@ -572,9 +572,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-static INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, 
-								  COORD *TP0, COORD *TP1, COORD *TP2, 
-								  COORD *LTP0, COORD *LTP1, COORD *LTP2, 
+static INT PlotContourTriangle3D (ELEMENT *theElement, DOUBLE **CornersOfElem, 
+								  DOUBLE *TP0, DOUBLE *TP1, DOUBLE *TP2, 
+								  DOUBLE *LTP0, DOUBLE *LTP1, DOUBLE *LTP2, 
 								  INT depth, DRAWINGOBJ **theDO);
 
 /****************************************************************************/
@@ -633,7 +633,7 @@ static PLOTOBJHANDLING	*GetPlotObjHandling (char *PlotObjHandlingName)
    PerspectiveProjection - 
 
    SYNOPSIS:
-   static void PerspectiveProjection (COORD *in, COORD_POINT *ScreenPoint);
+   static void PerspectiveProjection (DOUBLE *in, COORD_POINT *ScreenPoint);
 
    PARAMETERS:
 .  in - input vect (3d) to transform
@@ -647,9 +647,9 @@ static PLOTOBJHANDLING	*GetPlotObjHandling (char *PlotObjHandlingName)
 */
 /****************************************************************************/
 
-static void PerspectiveProjection (COORD *in, COORD_POINT *ScreenPoint)
+static void PerspectiveProjection (DOUBLE *in, COORD_POINT *ScreenPoint)
 {
-	COORD k;
+	DOUBLE k;
 
 	k = OBS_ViewPlaneDist/(OBS_ViewPlaneDist-in[2]);
 	(*ScreenPoint).x = k*in[0] + (1-k)*OBS_PerspCorr[0];
@@ -661,7 +661,7 @@ static void PerspectiveProjection (COORD *in, COORD_POINT *ScreenPoint)
    NormalProjection - Project a screen vector parallel onto the (2d) screen
 
    SYNOPSIS:
-   static void NormalProjection (COORD *in, COORD_POINT *ScreenPoint);
+   static void NormalProjection (DOUBLE *in, COORD_POINT *ScreenPoint);
 
    PARAMETERS:
 .  in - input vect (3d) to transform
@@ -675,7 +675,7 @@ static void PerspectiveProjection (COORD *in, COORD_POINT *ScreenPoint)
 */
 /****************************************************************************/
 
-static void NormalProjection (COORD *in, COORD_POINT *ScreenPoint)
+static void NormalProjection (DOUBLE *in, COORD_POINT *ScreenPoint)
 {
 	(*ScreenPoint).x = in[0];
 	(*ScreenPoint).y = in[1];
@@ -705,10 +705,10 @@ static INT BuildObsTrafo (PICTURE *thePicture)
 {
 	VIEWEDOBJ *theViewedObj;
 	PLOTOBJ *thePlotObj;
-	COORD VRS_2_PHS[16], PHS_2_VRS[16], VRS_2_SCS[16];
-	COORD pt[2],cpt[2];
-	COORD ZD[3];
-	COORD *MP, *XD, *YD;
+	DOUBLE VRS_2_PHS[16], PHS_2_VRS[16], VRS_2_SCS[16];
+	DOUBLE pt[2],cpt[2];
+	DOUBLE ZD[3];
+	DOUBLE *MP, *XD, *YD;
 	INT *LL, *UR;
 	
 	theViewedObj = PIC_VO(thePicture);
@@ -803,7 +803,7 @@ static INT BuildObsTrafo (PICTURE *thePicture)
    BuildCutTrafo - Build cut transformation 
 
    SYNOPSIS:
-   static INT BuildCutTrafo (CUT *theCut, COORD *theViewDir);
+   static INT BuildCutTrafo (CUT *theCut, DOUBLE *theViewDir);
 
    PARAMETERS:
 .  theCut - 
@@ -819,11 +819,11 @@ static INT BuildObsTrafo (PICTURE *thePicture)
 */												
 /****************************************************************************/
 
-static INT BuildCutTrafo (CUT *theCut, COORD *theViewDir)
+static INT BuildCutTrafo (CUT *theCut, DOUBLE *theViewDir)
 {
-	COORD XD[3], YD[3], ZD[3];
-	COORD *PN, *PP;
-	COORD scpr;
+	DOUBLE XD[3], YD[3], ZD[3];
+	DOUBLE *PN, *PP;
+	DOUBLE scpr;
 	
 	CUT_CutExisting = 0;
 	if (theCut == NULL) return (1);
@@ -858,10 +858,10 @@ static INT BuildCutTrafo (CUT *theCut, COORD *theViewDir)
 	return (0);
 }
 
-static INT MousePullFrame (PICTURE *thePicture, INT OldMousePos[2], COORD *frame_xmin, COORD *frame_xmax, COORD *frame_ymin, COORD *frame_ymax)
+static INT MousePullFrame (PICTURE *thePicture, INT OldMousePos[2], DOUBLE *frame_xmin, DOUBLE *frame_xmax, DOUBLE *frame_ymin, DOUBLE *frame_ymax)
 {
 	COORD_POINT FrameLL,FrameLR,FrameUR,FrameUL;
-	COORD xmin,xmax,ymin,ymax;
+	DOUBLE xmin,xmax,ymin,ymax;
 	INT MousePos[2],LastMousePos[2];
 	INT status;
 	
@@ -1540,7 +1540,7 @@ static ELEMENT *EW_GetFirstElement_vert_bw_up (MULTIGRID *theMG, INT fromLevel, 
 
    SYNOPSIS:
    static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, 
-   COORD_POINT P3, COORD_POINT P4, COORD *alpha, COORD *beta);
+   COORD_POINT P3, COORD_POINT P4, DOUBLE *alpha, DOUBLE *beta);
 
    PARAMETERS:
 .  P1 -
@@ -1560,10 +1560,10 @@ static ELEMENT *EW_GetFirstElement_vert_bw_up (MULTIGRID *theMG, INT fromLevel, 
 */
 /****************************************************************************/
 
-static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, COORD_POINT P4, COORD *alpha, COORD *beta)
+static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, COORD_POINT P4, DOUBLE *alpha, DOUBLE *beta)
 {
 	INT flags1;
-	COORD determinante, c1, c2;
+	DOUBLE determinante, c1, c2;
 	
 	/* check if one endpoint of line0 coincide with one endpoint of line1 */
 	if (ABS(P1.x - P3.x)<SMALL_C && ABS(P1.y - P3.y)<SMALL_C) return(0);
@@ -1859,7 +1859,7 @@ static INT MarkElements_MGS (MULTIGRID *theMG, INT fromLevel, INT toLevel)
    MarkElements_MGS_On_Line - Mark elements on surface of multigrid on a line
 
    SYNOPSIS:
-   static INT MarkElements_MGS_On_Line (MULTIGRID *theMG, INT fromLevel, INT toLevel, COORD *p1, COORD *p2);
+   static INT MarkElements_MGS_On_Line (MULTIGRID *theMG, INT fromLevel, INT toLevel, DOUBLE *p1, DOUBLE *p2);
 
    PARAMETERS:
 .  theMG - pointer to multigrid
@@ -1877,11 +1877,11 @@ static INT MarkElements_MGS (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 */
 /****************************************************************************/
 
-static INT ElementISLine2D (ELEMENT *theElement, COORD *p1, COORD *p2)
+static INT ElementISLine2D (ELEMENT *theElement, DOUBLE *p1, DOUBLE *p2)
 {
 	INT i, n;
 	COORD_POINT P1, P2, P3, P4;
-	COORD alpha, beta;
+	DOUBLE alpha, beta;
 	
 	P1.x=p1[0]; P1.y=p1[1]; P2.x=p2[0]; P2.y=p2[1];
 	n = CORNERS_OF_ELEM(theElement);
@@ -1895,7 +1895,7 @@ static INT ElementISLine2D (ELEMENT *theElement, COORD *p1, COORD *p2)
 	return (0);
 }
 
-static INT MarkElements_MGS_On_Line (MULTIGRID *theMG, INT fromLevel, INT toLevel, COORD *p1, COORD *p2)
+static INT MarkElements_MGS_On_Line (MULTIGRID *theMG, INT fromLevel, INT toLevel, DOUBLE *p1, DOUBLE *p2)
 {
 	ELEMENT *theElement;
 	INT i;
@@ -3436,7 +3436,7 @@ static INT EW_DoNothing0D (DRAWINGOBJ *q)
 static INT Draw2D (DRAWINGOBJ *q)
 {
 	INT j, n, centered, end, mode;
-	COORD help[2],norm;
+	DOUBLE help[2],norm;
 	COORD_POINT a, b, point[MAX_POINTS_OF_POLY];
 	long color;
 	
@@ -3660,7 +3660,7 @@ static INT Draw2D (DRAWINGOBJ *q)
 
 static INT NW_SelectNode2D (DRAWINGOBJ *q)
 {
-	COORD help[2];
+	DOUBLE help[2];
 	COORD_POINT a, point[4];
 	
 	V2_TRAFOM3_V2(FN2D_pos,ObsTrafo,help);
@@ -3717,7 +3717,7 @@ static INT NW_SelectNode2D (DRAWINGOBJ *q)
 static INT Draw3D (DRAWINGOBJ *q)
 {
 	INT j, n, centered, end, mode;
-	COORD help[3];
+	DOUBLE help[3];
 	COORD_POINT a, b, point[MAX_POINTS_OF_POLY];
 	long color;
 	
@@ -3928,7 +3928,7 @@ static INT Draw3D (DRAWINGOBJ *q)
 static INT EW_SelectElement2D (DRAWINGOBJ *q)
 {
 	INT j, n, end, found;
-	COORD help[3];
+	DOUBLE help[3];
 	COORD_POINT point[MAX_POINTS_OF_POLY];
 	
 	end = 0;
@@ -4431,7 +4431,7 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
 	MULTIGRID *theMG;
 	GRID *theGrid;
 	COORD_POINT point0,point1;
-	COORD x0[2],x1[2],help[2];
+	DOUBLE x0[2],x1[2],help[2];
 	DOUBLE d;
 	INT mtp,n;
 
@@ -4483,7 +4483,7 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
 	
 	/* compute size of squares in pixel coordinates */
 	x0[0] = 0.0;			x0[1] = 0.0;
-	x1[0] = 1.0/(COORD)n;	x1[1] = 0.0;
+	x1[0] = 1.0/(DOUBLE)n;	x1[1] = 0.0;
 	V2_TRAFOM3_V2(x0,ObsTrafo,help); (*OBS_ProjectProc)(help,&point0);
 	V2_TRAFOM3_V2(x1,ObsTrafo,help); (*OBS_ProjectProc)(help,&point1);
 	
@@ -4505,9 +4505,9 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
 }
 
 static INT PlotMatrixEntry (
-				COORD rowi, COORD coli,
-				COORD row, COORD col,
-				COORD w, COORD h,
+				DOUBLE rowi, DOUBLE coli,
+				DOUBLE row, DOUBLE col,
+				DOUBLE w, DOUBLE h,
 				DOUBLE value, DOUBLE printvalue,
 				DRAWINGOBJ **DOhandle)
 {
@@ -4583,19 +4583,19 @@ static INT PlotMatrixEntry (
 }
 
 static PlotPointBlockMatrixEntry (
-				COORD rowi, COORD coli,
-				COORD row, COORD col,
+				DOUBLE rowi, DOUBLE coli,
+				DOUBLE row, DOUBLE col,
 				INT nr, INT nc,
 				const DOUBLE *values,
 				DOUBLE *min, DOUBLE *max,
 				DRAWINGOBJ **DOhandle)
 {
 	DOUBLE value,printvalue;
-	COORD w,h;
+	DOUBLE w,h;
 	INT i,j;
 	
-	w = 1.0/(COORD)nc;
-	h = 1.0/(COORD)nr;
+	w = 1.0/(DOUBLE)nc;
+	h = 1.0/(DOUBLE)nr;
 	
 	for (i=0; i<nr; i++)
 		for (j=0; j<nc; j++)
@@ -5009,7 +5009,7 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 				nodes++;
 			}
 			if (nodes > 0)
-				V2_SCALE(1.0/(COORD)nodes,EE2D_PartMidPoint)
+				V2_SCALE(1.0/(DOUBLE)nodes,EE2D_PartMidPoint)
 		}
 	}
 	#endif
@@ -5022,8 +5022,8 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 		    EE2D_Property = 1;
 			for (i=0; i<=EE2D_NProperty; i++)
 			EE2D_PropertyColor[i] = theOD->spectrumStart 
-			  + i*(COORD)(theOD->spectrumEnd - theOD->spectrumStart)
-				/ (COORD)EE2D_NProperty;
+			  + i*(DOUBLE)(theOD->spectrumEnd - theOD->spectrumStart)
+				/ (DOUBLE)EE2D_NProperty;
 		}
 		else
 		{
@@ -5084,8 +5084,8 @@ static INT EW_PreProcess_PlotGridAfter2D (PICTURE *thePicture, WORK *theWork)
 
 static DRAWINGOBJ * InvertRefinementMark2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
-	COORD *x[MAX_CORNERS_OF_ELEM];
-	COORD_VECTOR MidPoint,sidemid[MAX_SIDES_OF_ELEM];
+	DOUBLE *x[MAX_CORNERS_OF_ELEM];
+	DOUBLE_VECTOR MidPoint,sidemid[MAX_SIDES_OF_ELEM];
 	INT i,coe,mark,side;
 	
 	GetRefinementMark (theElement,&mark,&side);
@@ -5101,7 +5101,7 @@ static DRAWINGOBJ * InvertRefinementMark2D (ELEMENT *theElement, DRAWINGOBJ *the
 	V2_CLEAR(MidPoint)
 	for (i=0; i<coe; i++)
 		V2_ADD(MidPoint,x[i],MidPoint)
-	V2_SCALE(1.0/(COORD)coe,MidPoint)
+	V2_SCALE(1.0/(DOUBLE)coe,MidPoint)
 	
 	for (i=0; i<coe; i++)
 		V2_LINCOMB(0.5,x[i],0.5,x[(i+1)%coe],sidemid[i]);
@@ -5203,7 +5203,7 @@ static INT EW_PreProcess_MarkElement2D (PICTURE *thePicture, WORK *theWork)
 	struct GridPlotObj2D *theGpo;
 	OUTPUTDEVICE *theOD;
 	MULTIGRID *theMG;
-	COORD_VECTOR point;
+	DOUBLE_VECTOR point;
 	INT OldMousePos[2],status;
 	
 	theGpo = &(PIC_PO(thePicture)->theGpo);
@@ -5270,8 +5270,8 @@ static INT EW_PreProcess_MarkElement2D (PICTURE *thePicture, WORK *theWork)
 
 static INT EW_MarkElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
-	COORD help[2],*corner;
-	COORD_VECTOR cm;
+	DOUBLE help[2],*corner;
+	DOUBLE_VECTOR cm;
 	COORD_POINT a;
 	INT i,coe;
 	
@@ -5439,7 +5439,7 @@ static INT EW_PreProcess_SelectElement2D (PICTURE *thePicture, WORK *theWork)
 static INT EW_BndOfElemEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, n;
-	COORD *x[MAX_CORNERS_OF_ELEM];
+	DOUBLE *x[MAX_CORNERS_OF_ELEM];
 	
 	if (OBJT(theElement)==BEOBJ)
 	{
@@ -5515,9 +5515,9 @@ static INT EW_PreProcess_VecMatBnd2D (PICTURE *thePicture, WORK *theWork)
 
 static INT EW_BndEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
-	COORD alpha,beta,delta,lambda;
+	DOUBLE alpha,beta,delta,lambda;
 	INT res;
-	COORD_VECTOR x0,x1;
+	DOUBLE_VECTOR x0,x1;
 	long Color;
 	BNDS *theSide;
 	INT i,j,left,right;
@@ -5545,7 +5545,7 @@ static INT EW_BndEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		alpha  = 0.0;
 		beta   = 1.0;
 		res    = BND_Resolution;
-		delta  = (beta - alpha) / ((COORD)res);
+		delta  = (beta - alpha) / ((DOUBLE)res);
 
 		/* plot boundary with resolution */
 		lambda = alpha;
@@ -5765,7 +5765,7 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
 static INT VW_MatEval (VECTOR *vec, DRAWINGOBJ *theDO)
 {
 	MATRIX *mat;
-	COORD_VECTOR mypos,nbpos;
+	DOUBLE_VECTOR mypos,nbpos;
 	long color;
 	
 	if (!VM_Type[VTYPE(vec)])
@@ -5855,7 +5855,7 @@ static INT VW_MatEval (VECTOR *vec, DRAWINGOBJ *theDO)
 
 static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
 {
-	COORD_VECTOR mypos;
+	DOUBLE_VECTOR mypos;
 	INT markertype,cycle,gen,line;
 	long color;
 	char setchar;
@@ -6000,8 +6000,8 @@ static INT EXT_PreProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
 	GRID *theGrid;
 	VERTEX *theVertex;
 	NODE *theNode;
-	COORD pt[2],pos[2],del;
-	COORD deltaScreen[2],zeroScreen[2],deltaVector[2],zeroVector[2];
+	DOUBLE pt[2],pos[2],del;
+	DOUBLE deltaScreen[2],zeroScreen[2],deltaVector[2],zeroVector[2];
 	INT k;
 	
 	theGpo = &(PIC_PO(thePicture)->theGpo);
@@ -6073,9 +6073,9 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
 {
 	VERTEX *theVertex,*nbVertex;
 	LINK *theLink;
-	COORD nbpos[2];
-	COORD pos[2];
-	COORD len,l,la,le,dl,bestDist2;
+	DOUBLE nbpos[2];
+	DOUBLE pos[2];
+	DOUBLE len,l,la,le,dl,bestDist2;
 	INT MousePos[2];
 	ELEMENT *theElement;
 	BNDS *theSide;
@@ -6289,7 +6289,7 @@ static INT NW_PreProcess_SelectNode2D (PICTURE *thePicture, WORK *theWork)
 	struct GridPlotObj2D *theGpo;
 	OUTPUTDEVICE *theOD;
 	MULTIGRID *theMG;
-	COORD x,y;
+	DOUBLE x,y;
 	INT mode,status,OldMousePos[2];
 
 	theGpo = &(PIC_PO(thePicture)->theGpo);
@@ -6379,7 +6379,7 @@ static INT VW_PreProcess_SelectVector2D (PICTURE *thePicture, WORK *theWork)
 	struct VecMatPlotObj2D *theVmo;
 	OUTPUTDEVICE *theOD;
 	MULTIGRID *theMG;
-	COORD x,y;
+	DOUBLE x,y;
 	INT status,OldMousePos[2];
 
 	theVmo = &(PIC_PO(thePicture)->theVmo);
@@ -6425,7 +6425,7 @@ static INT VW_SelectVectorEval2D (VECTOR *theVector, DRAWINGOBJ *theDO)
 
 static INT VW_SelectVector2D (DRAWINGOBJ *q)
 {
-	COORD help[2];
+	DOUBLE help[2];
 	COORD_POINT a, point[4];
 	
 	if (!VM_Type[VTYPE(WOP_Vector)]) return (0);
@@ -6485,7 +6485,7 @@ static INT VW_SelectVector2D (DRAWINGOBJ *q)
 static INT InvertElementSelection2D (PICTURE *thePicture, WORK *theWork)
 {
 	ELEMENT *theElement;
-	COORD_VECTOR help;
+	DOUBLE_VECTOR help;
 	COORD_POINT points[4];
 	INT i, j;
 	
@@ -6522,7 +6522,7 @@ static INT InvertElementSelection2D (PICTURE *thePicture, WORK *theWork)
 static INT InvertNodeSelection2D (PICTURE *thePicture, WORK *theWork)
 {
 	NODE *theNode;
-	COORD_VECTOR help;
+	DOUBLE_VECTOR help;
 	COORD_POINT a, point[4];
 	INT i;
 	
@@ -6563,7 +6563,7 @@ static INT EW_PostProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 {
 	OUTPUTDEVICE *theOD;
 	struct LinePlotObj2D *theLpo;
-	COORD_VECTOR p;
+	DOUBLE_VECTOR p;
 	DRAWINGOBJ *theDO;
 	
 	theOD  = PIC_OUTPUTDEV(thePicture);
@@ -6686,7 +6686,7 @@ static INT GEN_PostProcess_Line_FR (PICTURE *thePicture, WORK *theWork)
 
 static INT PlotVecMatData2D (PICTURE *thePicture, VECTOR *vec)
 {
-	COORD_VECTOR pos, nbpos, help;
+	DOUBLE_VECTOR pos, nbpos, help;
 	COORD_POINT a,b;
 	VECTOR *nbvec;
 	MATRIX *mat;
@@ -6778,7 +6778,7 @@ static INT InvertVectorSelectionOrPlotVMData2D (PICTURE *thePicture, WORK *theWo
 	MULTIGRID *theMG;
 	GRID *theGrid;
 	VECTOR *theVector;
-	COORD_VECTOR pos,help;
+	DOUBLE_VECTOR pos,help;
 	COORD_POINT a, point[4];
 	INT i;
 	
@@ -6845,8 +6845,8 @@ static INT InvertVectorSelectionOrPlotVMData2D (PICTURE *thePicture, WORK *theWo
 static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, j;
-	COORD *x[MAX_CORNERS_OF_ELEM];
-	COORD_VECTOR MidPoint, help;
+	DOUBLE *x[MAX_CORNERS_OF_ELEM];
+	DOUBLE_VECTOR MidPoint, help;
 	INT coe,rule;
 	void *data;
 
@@ -6950,7 +6950,7 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		V2_CLEAR(MidPoint)
 		for (i=0; i<coe; i++)
 			V2_ADD(MidPoint,x[i],MidPoint)
-		V2_SCALE(1.0/(COORD)i,MidPoint)
+		V2_SCALE(1.0/(DOUBLE)i,MidPoint)
 					
 		if (EE2D_Property)
 		{
@@ -7031,7 +7031,7 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		V2_CLEAR(MidPoint)
 		for (i=0; i<coe; i++)
 			V2_ADD(MidPoint,x[i],MidPoint)
-		V2_SCALE(1.0/(COORD)i,MidPoint)
+		V2_SCALE(1.0/(DOUBLE)i,MidPoint)
 		
 		DO_2c(theDO) = DO_TEXT; DO_inc(theDO) 
 		DO_2l(theDO) = EE2D_Color[COLOR_ELEMID]; DO_inc(theDO);
@@ -7062,7 +7062,7 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 static INT EW_ElementBdryEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, n;
-	COORD *x[MAX_CORNERS_OF_ELEM];
+	DOUBLE *x[MAX_CORNERS_OF_ELEM];
 	
 	/* get coordinates of corners of the element */
 	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -7360,7 +7360,7 @@ static INT EW_PreProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 
    SYNOPSIS:
    static INT PlotColorTriangle2D (ELEMENT *theElement, 
-   COORD **CornersOfElem, COORD *TP0, COORD *TP1, COORD *TP2, 
+   DOUBLE **CornersOfElem, DOUBLE *TP0, DOUBLE *TP1, DOUBLE *TP2, 
    INT depth, DRAWINGOBJ **PtrDO);
 
    PARAMETERS:
@@ -7382,9 +7382,9 @@ static INT EW_PreProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 */
 /****************************************************************************/
 
-static INT PlotColorTriangle2D (ELEMENT *theElement, const COORD **CornersOfElem, const COORD *TP0, const COORD *TP1, const COORD *TP2, INT depth, DRAWINGOBJ **PtrDO)
+static INT PlotColorTriangle2D (ELEMENT *theElement, const DOUBLE **CornersOfElem, const DOUBLE *TP0, const DOUBLE *TP1, const DOUBLE *TP2, INT depth, DRAWINGOBJ **PtrDO)
 {
-	COORD_VECTOR EvalPoint, LocalCoord, MP0, MP1, MP2;
+	DOUBLE_VECTOR EvalPoint, LocalCoord, MP0, MP1, MP2;
 	INT i;
 	long Color;
 	DOUBLE value;
@@ -7435,8 +7435,8 @@ static INT PlotColorTriangle2D (ELEMENT *theElement, const COORD **CornersOfElem
 
    SYNOPSIS:
    static INT PlotColorQuadrilateral2D (ELEMENT *theElement,
-   COORD **CornersOfElem, COORD *QP0, COORD *QP1, COORD *QP2,
-   COORD *QP3, INT depth, DRAWINGOBJ **PtrDO);
+   DOUBLE **CornersOfElem, DOUBLE *QP0, DOUBLE *QP1, DOUBLE *QP2,
+   DOUBLE *QP3, INT depth, DRAWINGOBJ **PtrDO);
 
    PARAMETERS:
 .  theElement - 
@@ -7458,9 +7458,9 @@ static INT PlotColorTriangle2D (ELEMENT *theElement, const COORD **CornersOfElem
 */
 /****************************************************************************/
 	
-static INT PlotColorQuadrilateral2D (ELEMENT *theElement, const COORD **CornersOfElem, const COORD *QP0, const COORD *QP1, const COORD *QP2, const COORD *QP3, INT depth, DRAWINGOBJ **PtrDO)
+static INT PlotColorQuadrilateral2D (ELEMENT *theElement, const DOUBLE **CornersOfElem, const DOUBLE *QP0, const DOUBLE *QP1, const DOUBLE *QP2, const DOUBLE *QP3, INT depth, DRAWINGOBJ **PtrDO)
 {
-	COORD_VECTOR EVP, LocalCoord, MP0, MP1, MP2, MP3;
+	DOUBLE_VECTOR EVP, LocalCoord, MP0, MP1, MP2, MP3;
 	INT i;
 	long Color;
 	DOUBLE value;
@@ -7512,7 +7512,7 @@ static INT PlotColorQuadrilateral2D (ELEMENT *theElement, const COORD **CornersO
    PointOnLine2D - Cals point between two points with contourValue
 
    SYNOPSIS:
-   static INT PointOnLine2D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, const COORD *vec0, const COORD *vec1, COORD *p);
+   static INT PointOnLine2D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, const DOUBLE *vec0, const DOUBLE *vec1, DOUBLE *p);
    
    PARAMETERS:
 .  contourValue - 
@@ -7532,7 +7532,7 @@ static INT PlotColorQuadrilateral2D (ELEMENT *theElement, const COORD **CornersO
 */
 /****************************************************************************/
 
-static INT PointOnLine2D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, const COORD *vec0, const COORD *vec1, COORD *p)
+static INT PointOnLine2D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, const DOUBLE *vec0, const DOUBLE *vec1, DOUBLE *p)
 {
 	DOUBLE alpha;
 
@@ -7560,7 +7560,7 @@ static INT PointOnLine2D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, con
 
    SYNOPSIS:
    static INT PlotContourTriangle2D (ELEMENT *theElement, 
-   COORD **CornersOfElem, COORD *TP0, COORD *TP1, COORD *TP2, 
+   DOUBLE **CornersOfElem, DOUBLE *TP0, DOUBLE *TP1, DOUBLE *TP2, 
    INT depth, DRAWINGOBJ **PtrDO);
 
    PARAMETER:
@@ -7582,9 +7582,9 @@ static INT PointOnLine2D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, con
 */
 /****************************************************************************/
 
-static INT PlotContourTriangle2D (ELEMENT *theElement, const COORD **CornersOfElem, const COORD *TP0, const COORD *TP1, const COORD *TP2, INT depth, DRAWINGOBJ **PtrDO)
+static INT PlotContourTriangle2D (ELEMENT *theElement, const DOUBLE **CornersOfElem, const DOUBLE *TP0, const DOUBLE *TP1, const DOUBLE *TP2, INT depth, DRAWINGOBJ **PtrDO)
 {
-	COORD_VECTOR LocalCoord, MP0, MP1, MP2, PointMid, Point[3];
+	DOUBLE_VECTOR LocalCoord, MP0, MP1, MP2, PointMid, Point[3];
 	INT i, j, n, min, max;
 	long Color;
 	DOUBLE v0, v1, v2, vmin, vmax;
@@ -7592,13 +7592,13 @@ static INT PlotContourTriangle2D (ELEMENT *theElement, const COORD **CornersOfEl
 	if (depth<=0)
 	{
 		/* get values at the corners */ 	
-		if (UG_GlobalToLocal(3,CornersOfElem,(COORD *)TP0,LocalCoord)) 
+		if (UG_GlobalToLocal(3,CornersOfElem,(DOUBLE *)TP0,LocalCoord)) 
 		  return (1);
 		v0	= (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-		if (UG_GlobalToLocal(3,CornersOfElem,(COORD *)TP1,LocalCoord))
+		if (UG_GlobalToLocal(3,CornersOfElem,(DOUBLE *)TP1,LocalCoord))
 		  return (1);
 		v1	= (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-		if (UG_GlobalToLocal(3,CornersOfElem,(COORD *)TP2,LocalCoord)) 
+		if (UG_GlobalToLocal(3,CornersOfElem,(DOUBLE *)TP2,LocalCoord)) 
 		  return (1);
 		v2	= (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
 		vmin = MIN(v0,v1); vmin = MIN(vmin,v2);
@@ -7680,8 +7680,8 @@ static INT PlotContourTriangle2D (ELEMENT *theElement, const COORD **CornersOfEl
 
    SYNOPSIS:
    static INT PlotContourQuadrilateral2D (ELEMENT *theElement,
-   COORD **CornersOfElem, COORD *QP0, COORD *QP1, COORD *QP2,
-   COORD *QP3, INT depth, DRAWINGOBJ **PtrDO);
+   DOUBLE **CornersOfElem, DOUBLE *QP0, DOUBLE *QP1, DOUBLE *QP2,
+   DOUBLE *QP3, INT depth, DRAWINGOBJ **PtrDO);
 
    PARAMETERS:
 .  theElement - 
@@ -7703,9 +7703,9 @@ static INT PlotContourTriangle2D (ELEMENT *theElement, const COORD **CornersOfEl
 */
 /****************************************************************************/
 	
-static INT PlotContourQuadrilateral2D (ELEMENT *theElement, const COORD **CornersOfElem, const COORD *QP0, const COORD *QP1, const COORD *QP2, const COORD *QP3, INT depth, DRAWINGOBJ **PtrDO)
+static INT PlotContourQuadrilateral2D (ELEMENT *theElement, const DOUBLE **CornersOfElem, const DOUBLE *QP0, const DOUBLE *QP1, const DOUBLE *QP2, const DOUBLE *QP3, INT depth, DRAWINGOBJ **PtrDO)
 {
-	COORD_VECTOR EVP, LocalCoord, MP0, MP1, MP2, MP3, PointMid, Point[4];
+	DOUBLE_VECTOR EVP, LocalCoord, MP0, MP1, MP2, MP3, PointMid, Point[4];
 	INT i, j, n, min, max;
 	long Color;
 	DOUBLE v0, v1, v2, v3, vmin, vmax;
@@ -7715,16 +7715,16 @@ static INT PlotContourQuadrilateral2D (ELEMENT *theElement, const COORD **Corner
 	if (depth<=0)
 	{
 		/* get values at the corners */ 	
-		if (UG_GlobalToLocal(4,CornersOfElem,(COORD *)QP0,LocalCoord)) 
+		if (UG_GlobalToLocal(4,CornersOfElem,(DOUBLE *)QP0,LocalCoord)) 
 		  return (1);
 		v0	= (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-		if (UG_GlobalToLocal(4,CornersOfElem,(COORD *)QP1,LocalCoord)) 
+		if (UG_GlobalToLocal(4,CornersOfElem,(DOUBLE *)QP1,LocalCoord)) 
 		  return (1);
 		v1	= (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-		if (UG_GlobalToLocal(4,CornersOfElem,(COORD *)QP2,LocalCoord)) 
+		if (UG_GlobalToLocal(4,CornersOfElem,(DOUBLE *)QP2,LocalCoord)) 
 		  return (1);
 		v2	= (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-		if (UG_GlobalToLocal(4,CornersOfElem,(COORD *)QP3,LocalCoord)) 
+		if (UG_GlobalToLocal(4,CornersOfElem,(DOUBLE *)QP3,LocalCoord)) 
 		  return (1);
 		v3	= (*EScalar2D_EvalFct)(theElement,CornersOfElem,LocalCoord);
 		vmin = MIN(v0,v1); vmin = MIN(vmin,v2); vmin = MIN(vmin,v3);
@@ -7844,7 +7844,7 @@ static INT EW_EScalar2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, n, found;
 	COORD_POINT corners[MAX_CORNERS_OF_ELEM];
-	const COORD *x[MAX_CORNERS_OF_ELEM];
+	const DOUBLE *x[MAX_CORNERS_OF_ELEM];
 	DRAWINGOBJ *p, *range;
 	
 	n = CORNERS_OF_ELEM(theElement);
@@ -7955,10 +7955,10 @@ static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, n, m, found;
 	COORD_POINT P1, P2;
-	const COORD *x[MAX_CORNERS_OF_ELEM];
+	const DOUBLE *x[MAX_CORNERS_OF_ELEM];
 	DRAWINGOBJ *range;
-	COORD alpha[MAX_CORNERS_OF_ELEM], beta;
-	COORD_VECTOR LocalCoord, P[MAX_CORNERS_OF_ELEM], PEval, A, B;
+	DOUBLE alpha[MAX_CORNERS_OF_ELEM], beta;
+	DOUBLE_VECTOR LocalCoord, P[MAX_CORNERS_OF_ELEM], PEval, A, B;
 	DOUBLE v;
 	#ifdef __DO_HEAP_USED__
 	DRAWINGOBJ *p;
@@ -8014,7 +8014,7 @@ static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		m = POW(2,LINE2D_depth);
 		for (i=1; i<=m; i++)
 		{
-			beta = (COORD)i/(COORD)m;
+			beta = (DOUBLE)i/(DOUBLE)m;
 			V2_LINCOMB(1.0-beta,P[0],beta,P[1],PEval)
 			if (UG_GlobalToLocal(n,x,PEval,LocalCoord)) return (1);
 			v = (*LINE2D_EvalFct)(theElement,x,LocalCoord);
@@ -8178,8 +8178,8 @@ static INT EW_PreProcess_EVector2D (PICTURE *thePicture, WORK *theWork)
    FindRasterPoints2D - Find rasterpoints in 2D	
 
    SYNOPSIS:
-   static INT FindRasterPoints2D (COORD RasterSize, COORD **Polygon, 
-   INT Number, COORD_VECTOR *RasterPoints, INT *RPNumber);
+   static INT FindRasterPoints2D (DOUBLE RasterSize, DOUBLE **Polygon, 
+   INT Number, DOUBLE_VECTOR *RasterPoints, INT *RPNumber);
 
    PARAMETERS:
 .  RssterSize -
@@ -8198,11 +8198,11 @@ static INT EW_PreProcess_EVector2D (PICTURE *thePicture, WORK *theWork)
 */
 /****************************************************************************/
 
-static INT FindRasterPoints2D (COORD RasterSize, const COORD **Polygon, INT Number, COORD_VECTOR *RasterPoints, INT *RPNumber)
+static INT FindRasterPoints2D (DOUBLE RasterSize, const DOUBLE **Polygon, INT Number, DOUBLE_VECTOR *RasterPoints, INT *RPNumber)
 {
 	INT i, j, k, i0, i1, j0, j1, c0, c1;
-	COORD xmin, xmax, ymin, ymax;
-	COORD diff[MAX_POINTS_OF_POLY][2], test[2];
+	DOUBLE xmin, xmax, ymin, ymax;
+	DOUBLE diff[MAX_POINTS_OF_POLY][2], test[2];
 	
 	*RPNumber = 0;
 	if (Number<2) return (0);
@@ -8229,15 +8229,15 @@ static INT FindRasterPoints2D (COORD RasterSize, const COORD **Polygon, INT Numb
 			c0 = c1 = 0;
 			for (k=0; k<Number; k++)
 			{
-				test[0] = RasterSize*(COORD)(i) - Polygon[k][0];
-				test[1] = RasterSize*(COORD)(j) - Polygon[k][1];
+				test[0] = RasterSize*(DOUBLE)(i) - Polygon[k][0];
+				test[1] = RasterSize*(DOUBLE)(j) - Polygon[k][1];
 				if (diff[k][0]*test[1]>=diff[k][1]*test[0]) c0++;
 				if (diff[k][0]*test[1]<=diff[k][1]*test[0]) c1++;
 			}
 			if (c0==Number || c1==Number)
 			{
-				RasterPoints[*RPNumber][0] = RasterSize*(COORD)(i);
-				RasterPoints[*RPNumber][1] = RasterSize*(COORD)(j);
+				RasterPoints[*RPNumber][0] = RasterSize*(DOUBLE)(i);
+				RasterPoints[*RPNumber][1] = RasterSize*(DOUBLE)(j);
 				(*RPNumber)++;
 			}
 			if (*RPNumber>=RASTERPOINTS_MAX)
@@ -8292,10 +8292,10 @@ static INT EW_EVectorPreProcess_PlotGridBefore2D (PICTURE *thePicture, WORK *the
 static INT EW_EVector2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, nr, n, found;
-	COORD_VECTOR LocalCoord, Poly[MAX_POINTS_OF_POLY], RasterPoint[RASTERPOINTS_MAX];
+	DOUBLE_VECTOR LocalCoord, Poly[MAX_POINTS_OF_POLY], RasterPoint[RASTERPOINTS_MAX];
 	COORD_POINT corners[MAX_CORNERS_OF_ELEM];
-	const COORD *x[MAX_CORNERS_OF_ELEM];
-	COORD norm;
+	const DOUBLE *x[MAX_CORNERS_OF_ELEM];
+	DOUBLE norm;
 	long Color;
 	DOUBLE min, max;
 	DOUBLE_VECTOR Arrow;
@@ -8661,16 +8661,16 @@ static INT CornerIndexHEX (INT NodeOrder, INT i[8], INT icon[8][3])
 	return (0);	
 }
 
-static DefinePolygon (COORD_VECTOR *Poly, INT Number)
+static DefinePolygon (DOUBLE_VECTOR *Poly, INT Number)
 {
 	int i,j,n;
-	COORD Center[3], rad[6][3],  MaxCos, Cos, Direction[3], tmp;
+	DOUBLE Center[3], rad[6][3],  MaxCos, Cos, Direction[3], tmp;
 	
 	Center[0]=Center[1]=Center[2]=0.0;
 	/* define center of mass of polygon */
 	for (i=0; i<Number; ++i)
 		V3_ADD(Poly[i],Center,Center)
-	V3_SCALE(1.0/(COORD)Number,Center)
+	V3_SCALE(1.0/(DOUBLE)Number,Center)
 	
 	for (i=0; i<Number; ++i)
 	{
@@ -8728,8 +8728,8 @@ static DefinePolygon (COORD_VECTOR *Poly, INT Number)
    GetPolyElemSideISHalfSpace -  Get polygon
 
    SYNOPSIS:
-   static INT GetPolyElemSideISHalfSpace (COORD **Corners, 
-   COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Poly, 
+   static INT GetPolyElemSideISHalfSpace (DOUBLE **Corners, 
+   DOUBLE *CutZCoord, INT NodeOrder, INT side, DOUBLE_VECTOR *Poly, 
    INT *Number);
 
    PARAMETERS:
@@ -8751,10 +8751,10 @@ static DefinePolygon (COORD_VECTOR *Poly, INT Number)
 */												
 /****************************************************************************/
 
-static INT GetPolyElemSideISHalfSpaceTET (ELEMENT *theElement, COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Poly, INT *Number)
+static INT GetPolyElemSideISHalfSpaceTET (ELEMENT *theElement, DOUBLE **Corners, DOUBLE *CutZCoord, INT NodeOrder, INT side, DOUBLE_VECTOR *Poly, INT *Number)
 {
 	INT i, j, count1, count2, count3;
-	COORD *x[MAX_CORNERS_OF_SIDE], Z[MAX_CORNERS_OF_SIDE];
+	DOUBLE *x[MAX_CORNERS_OF_SIDE], Z[MAX_CORNERS_OF_SIDE];
 	
 	/* get corners of the element side */
 	count1 = 0;
@@ -8810,16 +8810,16 @@ static INT GetPolyElemSideISHalfSpaceTET (ELEMENT *theElement, COORD **Corners, 
 /*																			*/
 /* Input :	  all you need													*/
 /*																			*/
-/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/* Output:	  DOUBLE_VECTOR *Poly, INT *Number: output polygon				*/
 /* Return:	  INT 0: ok 													*/
 /*			  INT 1: an error occurred										*/
 /*																			*/
 /****************************************************************************/
 
-static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Poly, INT *Number)
+static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, DOUBLE **Corners, DOUBLE *CutZCoord, INT NodeOrder, INT side, DOUBLE_VECTOR *Poly, INT *Number)
 {
 	INT i, j, count1, count2, order[4], ordercon[4][2], ncorners;
-	COORD *x[4], Z[4];  /* 4=number of corners of hexahedron side */
+	DOUBLE *x[4], Z[4];  /* 4=number of corners of hexahedron side */
 	
 	/* get corners of the element side */
 	ncorners = CORNERS_OF_SIDE(theElement,side);
@@ -9050,16 +9050,16 @@ static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, COORD **Corners, 
 /*																			*/
 /* Input :	  all you need													*/
 /*																			*/
-/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/* Output:	  DOUBLE_VECTOR *Poly, INT *Number: output polygon				*/
 /* Return:	  INT 0: ok 													*/
 /*			  INT 1: an error occurred										*/
 /*																			*/
 /****************************************************************************/
 
-static INT GetPolyElemSideISHalfSpacePRI (ELEMENT *theElement, COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Poly, INT *Number)
+static INT GetPolyElemSideISHalfSpacePRI (ELEMENT *theElement, DOUBLE **Corners, DOUBLE *CutZCoord, INT NodeOrder, INT side, DOUBLE_VECTOR *Poly, INT *Number)
 {
 	INT i, j, count1, count2, order[4], ordercon[4][2], ncorners;
-	COORD *x[4], Z[4];  /* 4=number of corners of hexahedron side */
+	DOUBLE *x[4], Z[4];  /* 4=number of corners of hexahedron side */
 	
 	/* get corners of the element side */
 	ncorners = CORNERS_OF_SIDE(theElement,side);
@@ -9290,17 +9290,17 @@ static INT GetPolyElemSideISHalfSpacePRI (ELEMENT *theElement, COORD **Corners, 
 /*																			*/
 /* Input :	  all you need													*/
 /*																			*/
-/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/* Output:	  DOUBLE_VECTOR *Poly, INT *Number: output polygon				*/
 /*																			*/ 
 /* Return:	  INT 0: ok 													*/
 /*			  INT 1: an error occurred										*/
 /*																			*/
 /****************************************************************************/
 
-static INT GetPolyElemSideISHalfSpaceHEX (ELEMENT *theElement, COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Poly, INT *Number)
+static INT GetPolyElemSideISHalfSpaceHEX (ELEMENT *theElement, DOUBLE **Corners, DOUBLE *CutZCoord, INT NodeOrder, INT side, DOUBLE_VECTOR *Poly, INT *Number)
 {
 	INT i, j, count1, count2, order[4], ordercon[4][2];
-	COORD *x[4], Z[4];  /* 4=number of corners of hexahedron side */
+	DOUBLE *x[4], Z[4];  /* 4=number of corners of hexahedron side */
 	
 	/* get corners of the element side */
 	count1 = 0;
@@ -9446,17 +9446,17 @@ static INT GetPolyElemSideISHalfSpaceHEX (ELEMENT *theElement, COORD **Corners, 
 /*																			*/
 /* Input :	  all you need													*/
 /*																			*/
-/* Output:	  COORD_VECTOR *Line, INT *Number: output polygon: 0 or 2		*/ 
+/* Output:	  DOUBLE_VECTOR *Line, INT *Number: output polygon: 0 or 2		*/ 
 /*																	        */
 /* Return:	  INT 0: ok 													*/
 /*			  INT 1: an error occurred										*/
 /*																			*/
 /****************************************************************************/
 
-static INT GetLineElemSideISCutPlaneTET (ELEMENT *theElement, COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Line, INT *Number)
+static INT GetLineElemSideISCutPlaneTET (ELEMENT *theElement, DOUBLE **Corners, DOUBLE *CutZCoord, INT NodeOrder, INT side, DOUBLE_VECTOR *Line, INT *Number)
 {
 	INT i, j, c;
-	COORD *x[MAX_CORNERS_OF_SIDE], Z[MAX_CORNERS_OF_SIDE];
+	DOUBLE *x[MAX_CORNERS_OF_SIDE], Z[MAX_CORNERS_OF_SIDE];
 	
 	/* get corners of the element side */
 	c = 0;
@@ -9496,17 +9496,17 @@ static INT GetLineElemSideISCutPlaneTET (ELEMENT *theElement, COORD **Corners, C
 /*																			*/
 /* Input :	  all you need													*/
 /*																			*/
-/* Output:	  COORD_VECTOR *Line, INT *Number: output polygon: 0 or 2		*/ 
+/* Output:	  DOUBLE_VECTOR *Line, INT *Number: output polygon: 0 or 2		*/ 
 /*																			*/
 /* Return:	  INT 0: ok 													*/
 /*			  INT 1: an error occurred										*/
 /*																			*/
 /****************************************************************************/
 
-static INT GetLineElemSideISCutPlaneHEX (ELEMENT* theElement, COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Line, INT *Number)
+static INT GetLineElemSideISCutPlaneHEX (ELEMENT* theElement, DOUBLE **Corners, DOUBLE *CutZCoord, INT NodeOrder, INT side, DOUBLE_VECTOR *Line, INT *Number)
 {
 	INT i, j, c, order[4], ordercon[4][2];
-	COORD *x[4], Z[4];
+	DOUBLE *x[4], Z[4];
 	
 	/* get corners of the element side */
 	c = 0;
@@ -9557,8 +9557,8 @@ static INT GetLineElemSideISCutPlaneHEX (ELEMENT* theElement, COORD **Corners, C
    GetPolyElemISCutPlane - Get polygon
 
    SYNOPSIS:
-   static INT GetPolyElemISCutPlane (COORD **CornerDC, 
-   COORD *CutZCoord, INT NodeOrder, COORD_VECTOR *Poly, INT *Number);
+   static INT GetPolyElemISCutPlane (DOUBLE **CornerDC, 
+   DOUBLE *CutZCoord, INT NodeOrder, DOUBLE_VECTOR *Poly, INT *Number);
 
    PARAMETERS:
 .  CornerDC -
@@ -9587,17 +9587,17 @@ static INT GetLineElemSideISCutPlaneHEX (ELEMENT* theElement, COORD **Corners, C
 /*																			*/
 /* Input :	  all you need													*/
 /*																			*/
-/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/* Output:	  DOUBLE_VECTOR *Poly, INT *Number: output polygon				*/
 /*																			*/
 /* Return:	  INT 0: ok 													*/
 /*			  INT 1: an error occurred										*/
 /*																			*/
 /****************************************************************************/
 
-static INT GetPolyElemISCutPlaneTET (COORD **CornerDC, COORD *CutZCoord, INT NodeOrder, COORD_VECTOR *Poly, INT *Number)
+static INT GetPolyElemISCutPlaneTET (DOUBLE **CornerDC, DOUBLE *CutZCoord, INT NodeOrder, DOUBLE_VECTOR *Poly, INT *Number)
 {
 	INT i, j, count1, count2;
-	COORD *x[MAX_CORNERS_OF_ELEM], Z[MAX_CORNERS_OF_ELEM];
+	DOUBLE *x[MAX_CORNERS_OF_ELEM], Z[MAX_CORNERS_OF_ELEM];
 	
 	/* get corners of the element side */
 	count1 = 0;
@@ -9716,17 +9716,17 @@ static INT GetPolyElemISCutPlaneTET (COORD **CornerDC, COORD *CutZCoord, INT Nod
 /*																			*/
 /* Input :	  all you need													*/
 /*																			*/
-/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/* Output:	  DOUBLE_VECTOR *Poly, INT *Number: output polygon				*/
 /*																			*/
 /* Return:	  INT 0: ok 													*/
 /*			  INT 1: an error occurred										*/
 /*																			*/
 /****************************************************************************/
 
-static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT NodeOrder, COORD_VECTOR *Poly, INT *Number)
+static INT GetPolyElemISCutPlanePYR (DOUBLE **CornerDC, DOUBLE *CutZCoord, INT NodeOrder, DOUBLE_VECTOR *Poly, INT *Number)
 {
 	INT i, j, k, count1, count2, order[5], ordercon[5][4];
-	COORD *x[MAX_CORNERS_OF_ELEM], Z[MAX_CORNERS_OF_ELEM];
+	DOUBLE *x[MAX_CORNERS_OF_ELEM], Z[MAX_CORNERS_OF_ELEM];
 	
 	/* get corners of the element side */
 	count1 = 0;
@@ -10084,17 +10084,17 @@ static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT Nod
 /*																			*/
 /* Input :	  all you need													*/
 /*																			*/
-/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/* Output:	  DOUBLE_VECTOR *Poly, INT *Number: output polygon				*/
 /*																			*/
 /* Return:	  INT 0: ok 													*/
 /*			  INT 1: an error occurred										*/
 /*																			*/
 /****************************************************************************/
 
-static INT GetPolyElemISCutPlanePRI (COORD **CornerDC, COORD *CutZCoord, INT NodeOrder, COORD_VECTOR *Poly, INT *Number)
+static INT GetPolyElemISCutPlanePRI (DOUBLE **CornerDC, DOUBLE *CutZCoord, INT NodeOrder, DOUBLE_VECTOR *Poly, INT *Number)
 {
 	INT i, j, k, count1, count2, count3, order[8], ordercon[8][4];
-	COORD *x[MAX_CORNERS_OF_ELEM], Z[MAX_CORNERS_OF_ELEM];
+	DOUBLE *x[MAX_CORNERS_OF_ELEM], Z[MAX_CORNERS_OF_ELEM];
 	
 	/* get corners of the element side */
 	count1 = 0;
@@ -10147,17 +10147,17 @@ static INT GetPolyElemISCutPlanePRI (COORD **CornerDC, COORD *CutZCoord, INT Nod
 /*																			*/
 /* Input :	  all you need													*/
 /*																			*/
-/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/* Output:	  DOUBLE_VECTOR *Poly, INT *Number: output polygon				*/
 /*																			*/
 /* Return:	  INT 0: ok 													*/
 /*			  INT 1: an error occurred										*/
 /*																			*/
 /****************************************************************************/
 
-static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT NodeOrder, COORD_VECTOR *Poly, INT *Number)
+static INT GetPolyElemISCutPlaneHEX (DOUBLE **CornerDC, DOUBLE *CutZCoord, INT NodeOrder, DOUBLE_VECTOR *Poly, INT *Number)
 {
 	INT i, j, count1, count2, order[8], ordercon[8][3];
-	COORD *x[MAX_CORNERS_OF_ELEM], Z[MAX_CORNERS_OF_ELEM];
+	DOUBLE *x[MAX_CORNERS_OF_ELEM], Z[MAX_CORNERS_OF_ELEM];
 	
 	/* get corners of the element side */
 	count1 = 0;
@@ -10616,9 +10616,9 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, j, NodeOrder, n;
-	COORD *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
-	COORD_VECTOR Polygon[MAX_POINTS_OF_POLY];
-	COORD_VECTOR sx[MAX_CORNERS_OF_ELEM], MidPoint;
+	DOUBLE *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
+	DOUBLE_VECTOR Polygon[MAX_POINTS_OF_POLY];
+	DOUBLE_VECTOR sx[MAX_CORNERS_OF_ELEM], MidPoint;
 	INT Viewable[MAX_SIDES_OF_ELEM];
 	
 	DO_2c(theDO) = DO_NO_INST;
@@ -11056,8 +11056,8 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 static INT EW_ECutBnd3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, NodeOrder, n;
-	COORD *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
-	COORD_VECTOR Line[2];
+	DOUBLE *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
+	DOUBLE_VECTOR Line[2];
 	
 	DO_2c(theDO) = DO_NO_INST;
 
@@ -11144,7 +11144,7 @@ static INT EW_ECutBnd3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 static INT EW_SelectElement3D (DRAWINGOBJ *q)
 {
 	INT j, n, end, found;
-	COORD help[3];
+	DOUBLE help[3];
 	COORD_POINT point[MAX_POINTS_OF_POLY];
 	
 	end = found = 0;
@@ -11260,11 +11260,11 @@ static INT EW_SelectElement3D (DRAWINGOBJ *q)
 
 static void CalcViewableSides (ELEMENT *theElement)
 {
-	COORD_VECTOR Vector, Vector01, Vector02, Vector03, ViewDirection;
+	DOUBLE_VECTOR Vector, Vector01, Vector02, Vector03, ViewDirection;
 	INT Viewablility;
 	INT i,j;
-	COORD *x[MAX_CORNERS_OF_ELEM], xc[3], xcs[3];
-	COORD ScalarPrd;
+	DOUBLE *x[MAX_CORNERS_OF_ELEM], xc[3], xcs[3];
+	DOUBLE ScalarPrd;
 
 	/* load corners of the element */
 	for( i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -11578,7 +11578,7 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
    CompareTriangles - Test, whether an elements side hides another elements side
 
    SYNOPSIS:
-   static INT CompareTriangles (COORD_VECTOR Triangle[2][3], 
+   static INT CompareTriangles (DOUBLE_VECTOR Triangle[2][3], 
    COORD_POINT ScreenPoint[2][3]);
 
    PARAMETERS:
@@ -11596,11 +11596,11 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 */
 /****************************************************************************/
 
-/* static INT CompareTriangles (COORD_VECTOR Triangle[2][3], COORD_POINT ScreenPoint[2][3]) */
-static INT CompareTriangles (COORD_VECTOR Triangle[2][4], COORD_POINT ScreenPoint[2][4])
+/* static INT CompareTriangles (DOUBLE_VECTOR Triangle[2][3], COORD_POINT ScreenPoint[2][3]) */
+static INT CompareTriangles (DOUBLE_VECTOR Triangle[2][4], COORD_POINT ScreenPoint[2][4])
 {
-	COORD alpha, beta, z[2];
-	COORD lambda[3], rhs[3], M[9], Inverse[9];
+	DOUBLE alpha, beta, z[2];
+	DOUBLE lambda[3], rhs[3], M[9], Inverse[9];
 	int i, i1, j, j1;
 
 	/* decide if sides of triangle are crossing */
@@ -11628,14 +11628,14 @@ static INT CompareTriangles (COORD_VECTOR Triangle[2][4], COORD_POINT ScreenPoin
 	for (i=0; i<2; i++) 
 	{
 		/* now invert a 3x3 system */
-		M[0]=(COORD)ScreenPoint[i][0].x, M[3]=(COORD)ScreenPoint[i][1].x, M[6] =(COORD)ScreenPoint[i][2].x;
-		M[1]=(COORD)ScreenPoint[i][0].y, M[4]=(COORD)ScreenPoint[i][1].y, M[7] =(COORD)ScreenPoint[i][2].y;
+		M[0]=(DOUBLE)ScreenPoint[i][0].x, M[3]=(DOUBLE)ScreenPoint[i][1].x, M[6] =(DOUBLE)ScreenPoint[i][2].x;
+		M[1]=(DOUBLE)ScreenPoint[i][0].y, M[4]=(DOUBLE)ScreenPoint[i][1].y, M[7] =(DOUBLE)ScreenPoint[i][2].y;
 		M[2]=1.0,						 M[5]=1.0,						  M[8] =1.0;
 
 		if (M3_Invert(Inverse, M)) continue;
 		j=1-i;
-		rhs[0] =(COORD) ((ScreenPoint[j][0].x + ScreenPoint[j][1].x + ScreenPoint[j][2].x)/3.0);
-		rhs[1] =(COORD) ((ScreenPoint[j][0].y + ScreenPoint[j][1].y + ScreenPoint[j][2].y)/3.0);
+		rhs[0] =(DOUBLE) ((ScreenPoint[j][0].x + ScreenPoint[j][1].x + ScreenPoint[j][2].x)/3.0);
+		rhs[1] =(DOUBLE) ((ScreenPoint[j][0].y + ScreenPoint[j][1].y + ScreenPoint[j][2].y)/3.0);
 		rhs[2] = 1.0;
 		M3_TIMES_V3(Inverse,rhs,lambda)
 		
@@ -11653,10 +11653,10 @@ static INT CompareTriangles (COORD_VECTOR Triangle[2][4], COORD_POINT ScreenPoin
 	return (0);
 }
 
-static INT CompareQuadrilaterals (COORD_VECTOR Triangle[2][4], COORD_POINT ScreenPoint[2][4], INT Corners[2])
+static INT CompareQuadrilaterals (DOUBLE_VECTOR Triangle[2][4], COORD_POINT ScreenPoint[2][4], INT Corners[2])
 {
-	COORD alpha, beta, z[2], Xmax[2], Xmin[2], Ymax[2], Ymin[2];
-	COORD lambda[3], rhs[3], M[9], Inverse[9];
+	DOUBLE alpha, beta, z[2], Xmax[2], Xmin[2], Ymax[2], Ymin[2];
+	DOUBLE lambda[3], rhs[3], M[9], Inverse[9];
 	int i, i1, j, j1;
 
 	/* decide if sides of triangle are crossing */
@@ -11684,14 +11684,14 @@ static INT CompareQuadrilaterals (COORD_VECTOR Triangle[2][4], COORD_POINT Scree
 	
 	for (i=0; i<2; i++) 
 	{
-		Xmax[i]=Xmin[i]=(COORD)ScreenPoint[i][0].x;
-		Ymax[i]=Ymin[i]=(COORD)ScreenPoint[i][0].y;
+		Xmax[i]=Xmin[i]=(DOUBLE)ScreenPoint[i][0].x;
+		Ymax[i]=Ymin[i]=(DOUBLE)ScreenPoint[i][0].y;
 		for (j=0; j<Corners[i]; ++j)
 		{
-			Xmax[i] = MAX(Xmax[i],(COORD)ScreenPoint[i][j].x);
-			Xmin[i] = MIN(Xmin[i],(COORD)ScreenPoint[i][j].x);
-			Ymax[i] = MAX(Ymax[i],(COORD)ScreenPoint[i][j].y);
-			Ymin[i] = MIN(Ymin[i],(COORD)ScreenPoint[i][j].y);
+			Xmax[i] = MAX(Xmax[i],(DOUBLE)ScreenPoint[i][j].x);
+			Xmin[i] = MIN(Xmin[i],(DOUBLE)ScreenPoint[i][j].x);
+			Ymax[i] = MAX(Ymax[i],(DOUBLE)ScreenPoint[i][j].y);
+			Ymin[i] = MIN(Ymin[i],(DOUBLE)ScreenPoint[i][j].y);
 		}
 	}	
 	for (i=0; i<2; i++) 
@@ -11705,13 +11705,13 @@ static INT CompareQuadrilaterals (COORD_VECTOR Triangle[2][4], COORD_POINT Scree
 		/* compare Z-components.                                     */
 		/* Do this as in the case of comparing trisngles.            */
 		
-			M[0]=(COORD)ScreenPoint[i][0].x, M[3]=(COORD)ScreenPoint[i][1].x, M[6] =(COORD)ScreenPoint[i][2].x;
-			M[1]=(COORD)ScreenPoint[i][0].y, M[4]=(COORD)ScreenPoint[i][1].y, M[7] =(COORD)ScreenPoint[i][2].y;
+			M[0]=(DOUBLE)ScreenPoint[i][0].x, M[3]=(DOUBLE)ScreenPoint[i][1].x, M[6] =(DOUBLE)ScreenPoint[i][2].x;
+			M[1]=(DOUBLE)ScreenPoint[i][0].y, M[4]=(DOUBLE)ScreenPoint[i][1].y, M[7] =(DOUBLE)ScreenPoint[i][2].y;
 			M[2]=1.0,			 M[5]=1.0,			  M[8] =1.0;
 		
 			if (M3_Invert(Inverse, M)) continue;
-			rhs[0] =(COORD) ScreenPoint[j][0].x;
-			rhs[1] =(COORD) ScreenPoint[j][0].y;
+			rhs[0] =(DOUBLE) ScreenPoint[j][0].x;
+			rhs[1] =(DOUBLE) ScreenPoint[j][0].y;
 			rhs[2] = 1.0;
 			M3_TIMES_V3(Inverse,rhs,lambda)
 			
@@ -11754,9 +11754,9 @@ static INT CompareElements (const void *ElementHandle0,
 {
 	ELEMENT *theElement[2];
 	INT i, j, k, i1, k1, b0, b1, found, view0, view1, num0, num1, NCorners[2];
-	COORD radius[2], norm, alpha, beta[2], scale;
-	COORD *Corners[2][8];
-	COORD_VECTOR VectorMid[2], ViewDir[2], Vector0, Vector1, Triangle[2][4];
+	DOUBLE radius[2], norm, alpha, beta[2], scale;
+	DOUBLE *Corners[2][8];
+	DOUBLE_VECTOR VectorMid[2], ViewDir[2], Vector0, Vector1, Triangle[2][4];
 	COORD_POINT ScreenPoints[2][4];
 	
 	theElement[0] = *((ELEMENT **)ElementHandle0);
@@ -11783,7 +11783,7 @@ static INT CompareElements (const void *ElementHandle0,
 			Corners[j][i] = CVECT(MYVERTEX(CORNER(theElement[j],i)));
 			V3_ADD(Corners[j][i],VectorMid[j],VectorMid[j])
 		}
-		scale = (COORD)(1.0/(COORD)CORNERS_OF_ELEM(theElement[j])); 
+		scale = (DOUBLE)(1.0/(DOUBLE)CORNERS_OF_ELEM(theElement[j])); 
 		V3_SCALE(scale,VectorMid[j])
 	}
 	
@@ -11980,9 +11980,9 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 static INT OrderNodes (MULTIGRID *theMG, DOUBLE ShrinkFactor)
 {
 	ELEMENT *theElement;
-	COORD z[MAX_CORNERS_OF_ELEM], zm;
+	DOUBLE z[MAX_CORNERS_OF_ELEM], zm;
 	INT i, j, order[MAX_CORNERS_OF_ELEM], imax, jm,jj;
-	COORD_VECTOR MidPoint, help;
+	DOUBLE_VECTOR MidPoint, help;
 
 	/* check if nodes are allready ordered w.r.t current cut */
 	/*...*/
@@ -12152,7 +12152,7 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 				nodes++;
 			}
 			if (nodes > 0)
-				V3_SCALE(1.0/(COORD)nodes,EE3D_PartMidPoint)
+				V3_SCALE(1.0/(DOUBLE)nodes,EE3D_PartMidPoint)
 		}
 	}
 	#endif
@@ -12192,8 +12192,8 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 		    EE3D_Property = 1;
 			for (i=0; i<=EE3D_NProperty; i++)
 			EE3D_PropertyColor[i] = theOD->spectrumStart 
-			  + i*(COORD)(theOD->spectrumEnd - theOD->spectrumStart)
-				/ (COORD)EE3D_NProperty;
+			  + i*(DOUBLE)(theOD->spectrumEnd - theOD->spectrumStart)
+				/ (DOUBLE)EE3D_NProperty;
 		}
 		else
 		{
@@ -12639,7 +12639,7 @@ static INT EW_PreProcess_EVector3D_FR (PICTURE *thePicture, WORK *theWork)
 
    SYNOPSIS:
    static INT PlotColorTriangle3D (ELEMENT *theElement, 
-   COORD **CornersOfElem, COORD *TP0, COORD *TP1, COORD *TP2, 
+   DOUBLE **CornersOfElem, DOUBLE *TP0, DOUBLE *TP1, DOUBLE *TP2, 
    INT depth, DRAWINGOBJ **theDO);
 
    PARAMETERS:
@@ -12661,10 +12661,10 @@ static INT EW_PreProcess_EVector3D_FR (PICTURE *thePicture, WORK *theWork)
 */
 /****************************************************************************/
 
-static INT PlotColorTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *TP0, COORD *TP1, COORD *TP2, 
-COORD *LP0, COORD *LP1, COORD *LP2, INT depth, DRAWINGOBJ **theDO)
+static INT PlotColorTriangle3D (ELEMENT *theElement, DOUBLE **CornersOfElem, DOUBLE *TP0, DOUBLE *TP1, DOUBLE *TP2, 
+DOUBLE *LP0, DOUBLE *LP1, DOUBLE *LP2, INT depth, DRAWINGOBJ **theDO)
 {
-	COORD_VECTOR EvalPoint, LocalCoord, MP0, MP1, MP2, LMP0, LMP1, LMP2;
+	DOUBLE_VECTOR EvalPoint, LocalCoord, MP0, MP1, MP2, LMP0, LMP1, LMP2;
 	INT i;
 	long Color;
 	DOUBLE value;
@@ -12677,7 +12677,7 @@ COORD *LP0, COORD *LP1, COORD *LP2, INT depth, DRAWINGOBJ **theDO)
 			LocalCoord[i]= (LP0[i]+LP1[i]+LP2[i])/3.0;
 		}
 		value = (*EScalar3D_EvalFct)(theElement,
-									 (const COORD **)CornersOfElem,LocalCoord);
+									 (const DOUBLE **)CornersOfElem,LocalCoord);
 		Color = (long)(EScalar3D_V2C_factor*value+EScalar3D_V2C_offset);
 		Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
 		Color = MAX(Color,WOP_OutputDevice->spectrumStart);
@@ -12717,8 +12717,8 @@ COORD *LP0, COORD *LP1, COORD *LP2, INT depth, DRAWINGOBJ **theDO)
 
    SYNOPSIS:
    static INT PlotColorQuadrilateral3D (ELEMENT *theElement,
-   COORD **CornersOfElem, COORD *QP0, COORD *QP1, COORD *QP2, 
-   COORD *QP3, INT depth, DRAWINGOBJ **theDO);
+   DOUBLE **CornersOfElem, DOUBLE *QP0, DOUBLE *QP1, DOUBLE *QP2, 
+   DOUBLE *QP3, INT depth, DRAWINGOBJ **theDO);
 
    PARAMETERS:
 .  theElement -
@@ -12740,10 +12740,10 @@ COORD *LP0, COORD *LP1, COORD *LP2, INT depth, DRAWINGOBJ **theDO)
 */
 /****************************************************************************/
 
-static INT PlotColorQuadrilateral3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *QP0, COORD *QP1, COORD *QP2, COORD *QP3, 
-COORD *LQP0, COORD *LQP1, COORD *LQP2, COORD *LQP3,INT depth, DRAWINGOBJ **theDO)
+static INT PlotColorQuadrilateral3D (ELEMENT *theElement, DOUBLE **CornersOfElem, DOUBLE *QP0, DOUBLE *QP1, DOUBLE *QP2, DOUBLE *QP3, 
+DOUBLE *LQP0, DOUBLE *LQP1, DOUBLE *LQP2, DOUBLE *LQP3,INT depth, DRAWINGOBJ **theDO)
 {
-	COORD_VECTOR EVP, LEVP, MP0, MP1, MP2, MP3, LMP0, LMP1, LMP2, LMP3;
+	DOUBLE_VECTOR EVP, LEVP, MP0, MP1, MP2, MP3, LMP0, LMP1, LMP2, LMP3;
 	INT i;
 	long Color;
 	DOUBLE value;
@@ -12756,7 +12756,7 @@ COORD *LQP0, COORD *LQP1, COORD *LQP2, COORD *LQP3,INT depth, DRAWINGOBJ **theDO
 	{
 		/* get values */		
 		value = (*EScalar3D_EvalFct)(theElement,
-									 (const COORD **)CornersOfElem,LEVP);
+									 (const DOUBLE **)CornersOfElem,LEVP);
 		Color = (long)(EScalar3D_V2C_factor*value+EScalar3D_V2C_offset);
 		Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
 		Color = MAX(Color,WOP_OutputDevice->spectrumStart);
@@ -12802,10 +12802,10 @@ COORD *LQP0, COORD *LQP1, COORD *LQP2, COORD *LQP3,INT depth, DRAWINGOBJ **theDO
 /*                                                                          */
 /****************************************************************************/
 
-static INT PlotColorContourPolygon3D(INT key, INT n, ELEMENT *theElement, COORD **CornersOfElem, COORD_VECTOR Poly[MAX_POINTS_OF_POLY], COORD_VECTOR PolyLoc[MAX_POINTS_OF_POLY],INT depth, DRAWINGOBJ **theDO)
+static INT PlotColorContourPolygon3D(INT key, INT n, ELEMENT *theElement, DOUBLE **CornersOfElem, DOUBLE_VECTOR Poly[MAX_POINTS_OF_POLY], DOUBLE_VECTOR PolyLoc[MAX_POINTS_OF_POLY],INT depth, DRAWINGOBJ **theDO)
 {
 	int i;
-	COORD CM[3], LCM[3], Tr[3][3], LTr[3][3];
+	DOUBLE CM[3], LCM[3], Tr[3][3], LTr[3][3];
 	
 	/* center of mass of polygon */
 	CM[0]=CM[1]=CM[2]=LCM[0]=LCM[1]=LCM[2]=0.0;
@@ -12813,8 +12813,8 @@ static INT PlotColorContourPolygon3D(INT key, INT n, ELEMENT *theElement, COORD 
 		V3_ADD(Poly[i], CM, CM)
 		V3_ADD(PolyLoc[i],LCM,LCM)
 	}
-	V3_SCALE(1.0/(COORD)n,CM)
-	V3_SCALE(1.0/(COORD)n,LCM)
+	V3_SCALE(1.0/(DOUBLE)n,CM)
+	V3_SCALE(1.0/(DOUBLE)n,LCM)
 	
 	/* plot each of the triangles */
 	for (i=0; i<n; ++i)
@@ -12846,7 +12846,7 @@ static INT PlotColorContourPolygon3D(INT key, INT n, ELEMENT *theElement, COORD 
 
    SYNOPSIS:
    static INT PointOnLine3D (DOUBLE contourValue, DOUBLE value0, 
-   DOUBLE value1, COORD_VECTOR vec0, COORD_VECTOR vec1, COORD_VECTOR p);
+   DOUBLE value1, DOUBLE_VECTOR vec0, DOUBLE_VECTOR vec1, DOUBLE_VECTOR p);
 
    PARAMETERS:
 .  contourValue -
@@ -12866,7 +12866,7 @@ static INT PlotColorContourPolygon3D(INT key, INT n, ELEMENT *theElement, COORD 
 */
 /****************************************************************************/
 
-static INT PointOnLine3D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, COORD_VECTOR vec0, COORD_VECTOR vec1, COORD_VECTOR p)
+static INT PointOnLine3D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, DOUBLE_VECTOR vec0, DOUBLE_VECTOR vec1, DOUBLE_VECTOR p)
 {
 	DOUBLE alpha;
 
@@ -12894,9 +12894,9 @@ static INT PointOnLine3D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, COO
 
    SYNOPSIS:
    static INT PlotContourTriangle3D (ELEMENT *theElement, 
-   COORD **CornersOfElem, 
-   COORD *TP0, COORD *TP1, COORD *TP2, 
-   COORD *LTP0, COORD *LTP1, COORD *LTP2, 
+   DOUBLE **CornersOfElem, 
+   DOUBLE *TP0, DOUBLE *TP1, DOUBLE *TP2, 
+   DOUBLE *LTP0, DOUBLE *LTP1, DOUBLE *LTP2, 
    INT depth, DRAWINGOBJ **theDO);
 
    PARAMETERS:
@@ -12918,12 +12918,12 @@ static INT PointOnLine3D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, COO
 */
 /****************************************************************************/
 
-static INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, 
-								  COORD *TP0, COORD *TP1, COORD *TP2, 
-								  COORD *LTP0, COORD *LTP1, COORD *LTP2, 
+static INT PlotContourTriangle3D (ELEMENT *theElement, DOUBLE **CornersOfElem, 
+								  DOUBLE *TP0, DOUBLE *TP1, DOUBLE *TP2, 
+								  DOUBLE *LTP0, DOUBLE *LTP1, DOUBLE *LTP2, 
 								  INT depth, DRAWINGOBJ **theDO)
 {
-	COORD_VECTOR MP0, MP1, MP2, LMP0, LMP1, LMP2,PointMid, Point[3];
+	DOUBLE_VECTOR MP0, MP1, MP2, LMP0, LMP1, LMP2,PointMid, Point[3];
 	INT i, j, n, min, max;
 	long Color;
 	DOUBLE v0, v1, v2, vmin, vmax;
@@ -12932,11 +12932,11 @@ static INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem,
 	{
 		/* get values at the corners */ 	
 		v0	= (*EScalar3D_EvalFct)(theElement,
-								   (const COORD **)CornersOfElem,LTP0);
+								   (const DOUBLE **)CornersOfElem,LTP0);
 		v1	= (*EScalar3D_EvalFct)(theElement,
-								   (const COORD **)CornersOfElem,LTP1);
+								   (const DOUBLE **)CornersOfElem,LTP1);
 		v2	= (*EScalar3D_EvalFct)(theElement,
-								   (const COORD **)CornersOfElem,LTP2);
+								   (const DOUBLE **)CornersOfElem,LTP2);
 		vmin = MIN(v0,v1); vmin = MIN(vmin,v2);
 		vmax = MAX(v0,v1); vmax = MAX(vmax,v2);
 
@@ -13013,8 +13013,8 @@ static INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem,
 
    SYNOPSIS:
    static INT PlotContourQuadrilateral3D (ELEMENT *theElement, 
-   COORD **CornersOfElem, COORD *QP0, COORD *QP1, COORD *QP2, 
-   COORD *QP3, INT depth, DRAWINGOBJ **theDO);
+   DOUBLE **CornersOfElem, DOUBLE *QP0, DOUBLE *QP1, DOUBLE *QP2, 
+   DOUBLE *QP3, INT depth, DRAWINGOBJ **theDO);
 
    PARAMETERS:
 .  theElement -
@@ -13035,9 +13035,9 @@ static INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem,
 */
 /****************************************************************************/
 
-static INT PlotContourQuadrilateral3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *QP0, COORD *QP1, COORD *QP2, COORD *QP3, INT depth, DRAWINGOBJ **theDO)
+static INT PlotContourQuadrilateral3D (ELEMENT *theElement, DOUBLE **CornersOfElem, DOUBLE *QP0, DOUBLE *QP1, DOUBLE *QP2, DOUBLE *QP3, INT depth, DRAWINGOBJ **theDO)
 {
-	COORD_VECTOR EVP, LocalCoord, MP0, MP1, MP2, MP3, PointMid, Point[4];
+	DOUBLE_VECTOR EVP, LocalCoord, MP0, MP1, MP2, MP3, PointMid, Point[4];
 	INT i, j, n, min, max, coe;
 	long Color;
 	DOUBLE v0, v1, v2, v3, vmin, vmax;
@@ -13048,22 +13048,22 @@ static INT PlotContourQuadrilateral3D (ELEMENT *theElement, COORD **CornersOfEle
 	if (depth<=0)
 	{
 		/* get values at the corners */ 	
-		if (UG_GlobalToLocal(coe,(const COORD **)CornersOfElem,QP0,LocalCoord))
+		if (UG_GlobalToLocal(coe,(const DOUBLE **)CornersOfElem,QP0,LocalCoord))
 		  return (1);
 		v0	= (*EScalar3D_EvalFct)(theElement,
-								   (const COORD **)CornersOfElem,LocalCoord);
-		if (UG_GlobalToLocal(coe,(const COORD **)CornersOfElem,QP1,LocalCoord))
+								   (const DOUBLE **)CornersOfElem,LocalCoord);
+		if (UG_GlobalToLocal(coe,(const DOUBLE **)CornersOfElem,QP1,LocalCoord))
 		  return (1);
 		v1	= (*EScalar3D_EvalFct)(theElement,
-								   (const COORD **)CornersOfElem,LocalCoord);
-		if (UG_GlobalToLocal(coe,(const COORD **)CornersOfElem,QP2,LocalCoord))
+								   (const DOUBLE **)CornersOfElem,LocalCoord);
+		if (UG_GlobalToLocal(coe,(const DOUBLE **)CornersOfElem,QP2,LocalCoord))
 		  return (1);
 		v2	= (*EScalar3D_EvalFct)(theElement,
-								   (const COORD **)CornersOfElem,LocalCoord);
-		if (UG_GlobalToLocal(coe,(const COORD **)CornersOfElem,QP3,LocalCoord))
+								   (const DOUBLE **)CornersOfElem,LocalCoord);
+		if (UG_GlobalToLocal(coe,(const DOUBLE **)CornersOfElem,QP3,LocalCoord))
 		  return (1);
 		v3	= (*EScalar3D_EvalFct)(theElement,
-								   (const COORD **)CornersOfElem,LocalCoord);
+								   (const DOUBLE **)CornersOfElem,LocalCoord);
 		vmin = MIN(v0,v1); vmin = MIN(vmin,v2); vmin = MIN(vmin,v3);
 		vmax = MAX(v0,v1); vmax = MAX(vmax,v2); vmax = MAX(vmin,v3);
 
@@ -13170,8 +13170,8 @@ static INT PlotContourQuadrilateral3D (ELEMENT *theElement, COORD **CornersOfEle
 static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, n, NodeOrder;
-	COORD_VECTOR Poly[MAX_POINTS_OF_POLY], PolyLoc[MAX_POINTS_OF_POLY];
-	COORD *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
+	DOUBLE_VECTOR Poly[MAX_POINTS_OF_POLY], PolyLoc[MAX_POINTS_OF_POLY];
+	DOUBLE *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
 	DRAWINGOBJ *range;
 	
 	DO_2c(theDO) = DO_NO_INST;
@@ -13221,7 +13221,7 @@ static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	/* Find local coordinates of polygon verticies */
 	for (i=0; i<n; ++i)
 	  if (UG_GlobalToLocal(CORNERS_OF_ELEM(theElement),
-						  (const COORD **)x,Poly[i],PolyLoc[i])) 
+						  (const DOUBLE **)x,Poly[i],PolyLoc[i])) 
 		PrintErrorMessage('W',"EW_EScalar3D",
                           "could not compute global coordinates");
 	
@@ -13272,8 +13272,8 @@ static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
    FindRasterPoints3D - Find rasterpoints in 3D	
 
    SYNOPSIS:
-   static INT FindRasterPoints3D (COORD RasterSize, COORD_VECTOR *Polygon, 
-   INT Number, COORD_VECTOR *RasterPoints, INT *RPNumber);
+   static INT FindRasterPoints3D (DOUBLE RasterSize, DOUBLE_VECTOR *Polygon, 
+   INT Number, DOUBLE_VECTOR *RasterPoints, INT *RPNumber);
 
    PARAMETERS:
 .  Rastersize -
@@ -13292,11 +13292,11 @@ static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 */
 /****************************************************************************/
 
-static INT FindRasterPoints3D (COORD RasterSize, COORD_VECTOR *Polygon, INT Number, COORD_VECTOR *RasterPoints, INT *RPNumber)
+static INT FindRasterPoints3D (DOUBLE RasterSize, DOUBLE_VECTOR *Polygon, INT Number, DOUBLE_VECTOR *RasterPoints, INT *RPNumber)
 {
 	INT i, j, k, i0, i1, j0, j1, c0, c1;
-	COORD xmin, xmax, ymin, ymax;
-	COORD diff[MAX_POINTS_OF_POLY][2], test[2];
+	DOUBLE xmin, xmax, ymin, ymax;
+	DOUBLE diff[MAX_POINTS_OF_POLY][2], test[2];
 	
 	*RPNumber = 0;
 	if (Number<2) return (0);
@@ -13323,15 +13323,15 @@ static INT FindRasterPoints3D (COORD RasterSize, COORD_VECTOR *Polygon, INT Numb
 			c0 = c1 = 0;
 			for (k=0; k<Number; k++)
 			{
-				test[0] = RasterSize*(COORD)(i) - Polygon[k][0];
-				test[1] = RasterSize*(COORD)(j) - Polygon[k][1];
+				test[0] = RasterSize*(DOUBLE)(i) - Polygon[k][0];
+				test[1] = RasterSize*(DOUBLE)(j) - Polygon[k][1];
 				if (diff[k][0]*test[1]>=diff[k][1]*test[0]) c0++;
 				if (diff[k][0]*test[1]<=diff[k][1]*test[0]) c1++;
 			}
 			if (c0==Number || c1==Number)
 			{
-				RasterPoints[*RPNumber][0] = RasterSize*(COORD)(i);
-				RasterPoints[*RPNumber][1] = RasterSize*(COORD)(j);
+				RasterPoints[*RPNumber][0] = RasterSize*(DOUBLE)(i);
+				RasterPoints[*RPNumber][1] = RasterSize*(DOUBLE)(j);
 				RasterPoints[(*RPNumber)++][2] = 0.0;
 			}
 			if (*RPNumber==RASTERPOINTS_MAX)
@@ -13357,9 +13357,9 @@ static INT FindRasterPoints3D (COORD RasterSize, COORD_VECTOR *Polygon, INT Numb
 static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, n, NodeOrder, nr;
-	COORD_VECTOR LocalCoord, Poly[MAX_POINTS_OF_POLY], Poly2[MAX_POINTS_OF_POLY], RasterPoint[RASTERPOINTS_MAX];
-	COORD *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
-	COORD scprd, norm, value;
+	DOUBLE_VECTOR LocalCoord, Poly[MAX_POINTS_OF_POLY], Poly2[MAX_POINTS_OF_POLY], RasterPoint[RASTERPOINTS_MAX];
+	DOUBLE *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
+	DOUBLE scprd, norm, value;
 	long Color;
 	DOUBLE min, max;
 	DOUBLE_VECTOR Arrow;
@@ -13421,9 +13421,9 @@ static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	min = MAX_D; max = -MAX_D;
 	for (i=0; i<nr; i++)
 	{
-		if (UG_GlobalToLocal(CORNERS_OF_ELEM(theElement),(const COORD **)x,
+		if (UG_GlobalToLocal(CORNERS_OF_ELEM(theElement),(const DOUBLE **)x,
 							RasterPoint[i],LocalCoord)) return (1);
-		(*EVector_EvalFct)(theElement,(const COORD **)x,LocalCoord,Arrow);
+		(*EVector_EvalFct)(theElement,(const DOUBLE **)x,LocalCoord,Arrow);
 		V3_SCALE(EVector_V2L_factor,Arrow)
 				
 		/* find color and size of arrow, define its endpoint on the cutplane */
@@ -14873,8 +14873,8 @@ INT DragPicture (PICTURE *thePicture, INT *OldMousePos)
 {
 	VIEWEDOBJ *theViewedObj;
 	COORD_POINT FrameLL,FrameLR,FrameUR,FrameUL;
-	COORD oldpos[2],pos[2],shift[2];
-	COORD xmin,xmax,ymin,ymax;
+	DOUBLE oldpos[2],pos[2],shift[2];
+	DOUBLE xmin,xmax,ymin,ymax;
 	INT LastMousePos[2],MousePos[2];
 	INT theViewDim,MouseMoved,rejected;
 
@@ -15009,9 +15009,9 @@ D*/
 INT ZoomPicture (PICTURE *thePicture, INT *OldMousePos)
 {
 	VIEWEDOBJ *theViewedObj;
-	COORD MidPoint[2],pos[2];
-	COORD xmin,xmax,ymin,ymax;
-	COORD CanvasRatio,FrameRatio,factor;
+	DOUBLE MidPoint[2],pos[2];
+	DOUBLE xmin,xmax,ymin,ymax;
+	DOUBLE CanvasRatio,FrameRatio,factor;
 	INT status,theViewDim;
 
 	if (thePicture==NULL)	return (1);
@@ -15055,12 +15055,12 @@ INT ZoomPicture (PICTURE *thePicture, INT *OldMousePos)
 		V2_COPY(pos,VO_PMP(theViewedObj));
 		
 		/* zoom factor */
-		CanvasRatio = fabs(((COORD)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1]))/((COORD)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
+		CanvasRatio = fabs(((DOUBLE)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1]))/((DOUBLE)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
 		FrameRatio  = (ymax-ymin) / (xmax-xmin);
 		if (FrameRatio>CanvasRatio)
-			factor = fabs((ymax-ymin)/((COORD)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1])));
+			factor = fabs((ymax-ymin)/((DOUBLE)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1])));
 		else
-			factor = fabs((xmax-xmin)/((COORD)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
+			factor = fabs((xmax-xmin)/((DOUBLE)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
 		V2_SCALE(factor,VO_PXD(theViewedObj))
 		V2_SCALE(factor,VO_PYD(theViewedObj))
 	}

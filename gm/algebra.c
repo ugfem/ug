@@ -2816,7 +2816,7 @@ INT VectorInElement (ELEMENT *theElement, VECTOR *theVector)
    VectorPosition - Calc coordinate position of vector
 
    SYNOPSIS:
-   INT VectorPosition (VECTOR *theVector, COORD *position);
+   INT VectorPosition (VECTOR *theVector, DOUBLE *position);
 
    PARAMETERS:
    .  theVector - a given vector
@@ -2833,7 +2833,7 @@ INT VectorInElement (ELEMENT *theElement, VECTOR *theVector)
    D*/
 /****************************************************************************/
 
-INT VectorPosition (VECTOR *theVector, COORD *position)
+INT VectorPosition (VECTOR *theVector, DOUBLE *position)
 {
   INT i, j;
   EDGE *theEdge;
@@ -3207,8 +3207,8 @@ INT MaxNextVectorClass (GRID *theGrid, ELEMENT *theElement)
 
 static INT LexCompare (VECTOR **pvec1, VECTOR **pvec2)
 {
-  COORD_VECTOR pv1,pv2;
-  COORD diff[DIM];
+  DOUBLE_VECTOR pv1,pv2;
+  DOUBLE diff[DIM];
 
   if (SkipV)
   {
@@ -3536,13 +3536,13 @@ static VECTOR *FeedbackVertexVectors (GRID *theGrid, VECTOR *LastVector, INT *nb
 
 #ifdef __TWODIM__
 
-static COORD_VECTOR mypos;
+static DOUBLE_VECTOR mypos;
 static INT sense;
 
 static INT SensCompare (MATRIX **MatHandle1, MATRIX **MatHandle2)
 {
-  COORD dx1,dy1,dx2,dy2;
-  COORD_VECTOR pos1,pos2;
+  DOUBLE dx1,dy1,dx2,dy2;
+  DOUBLE_VECTOR pos1,pos2;
 
   VectorPosition(MDEST(*MatHandle1),pos1);
   VectorPosition(MDEST(*MatHandle2),pos2);
@@ -5131,8 +5131,8 @@ static INT LexAlgDep (GRID *theGrid, const char *data)
   MULTIGRID *theMG;
   VECTOR *theVector,*NBVector;
   MATRIX *theMatrix;
-  COORD_VECTOR pos,nbpos;
-  COORD diff[DIM];
+  DOUBLE_VECTOR pos,nbpos;
+  DOUBLE diff[DIM];
   INT i,order,res;
   INT Sign[DIM],Order[DIM],xused,yused,zused,error,SpecialTreatSkipVecs;
   char ord[3];
@@ -5306,8 +5306,8 @@ static INT StrongLexAlgDep (GRID *theGrid, const char *data)
   MULTIGRID *theMG;
   VECTOR *theVector,*NBVector;
   MATRIX *theMatrix;
-  COORD_VECTOR pos,nbpos;
-  COORD diff[DIM];
+  DOUBLE_VECTOR pos,nbpos;
+  DOUBLE diff[DIM];
   INT i,order,res;
   INT Sign[DIM],Order[DIM],xused,yused,zused,error,SpecialTreatSkipVecs;
   char ord[3];

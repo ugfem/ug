@@ -160,7 +160,7 @@ struct outputdevice {
   long range;                                                   /* # of possible color indices							*/
   long spectrumStart;                                   /* usable range for a continuous						*/
   long spectrumEnd;                                             /* color spectrum										*/
-  COORD PixelRatio;                                             /* ratio of (physical) hight to width of a pixel		*/
+  DOUBLE PixelRatio;                                            /* ratio of (physical) hight to width of a pixel		*/
   short signx;                                                  /* direction of increasing x-coordinates				*/
   short signy;                                                  /* direction of increasing y-coordinates				*/
 

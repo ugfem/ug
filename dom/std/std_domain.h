@@ -46,7 +46,7 @@
 /*																			*/
 /****************************************************************************/
 
-typedef COORD COORD_BND_VECTOR[DIM_OF_BND];
+typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 
 #define POINT_PATCH_TYPE                 0
 #define LINE_PATCH_TYPE                  1
@@ -100,7 +100,7 @@ typedef COORD COORD_BND_VECTOR[DIM_OF_BND];
 
 /*----------- typedef for functions ----------------------------------------*/
 
-typedef INT (*BndSegFuncPtr)(void *,COORD *,COORD *);
+typedef INT (*BndSegFuncPtr)(void *,DOUBLE *,DOUBLE *);
 
 
 /*----------- definition of structs ----------------------------------------*/
@@ -111,8 +111,8 @@ struct domain {
   ENVDIR d;
 
   /* domain variables */
-  COORD MidPoint[DIM];                                  /* point in the middle of domain	*/
-  COORD radius;                                                 /* defines sphere around MidPoint	*/
+  DOUBLE MidPoint[DIM];                                 /* point in the middle of domain	*/
+  DOUBLE radius;                                                /* defines sphere around MidPoint	*/
   /* containing the domain			*/
   INT numOfSegments;                                            /* number of boundary segments		*/
   INT numOfCorners;                                             /* number of corner points			*/
@@ -130,7 +130,7 @@ struct boundary_segment {
   INT segType;                                            /* segment type, see above			*/
   INT points[CORNERS_OF_BND_SEG];         /* numbers of the vertices (ID)		*/
   INT resolution;                                         /* measure for the curvature			*/
-  COORD alpha[DIM_OF_BND],beta[DIM_OF_BND];               /* parameter interval used*/
+  DOUBLE alpha[DIM_OF_BND],beta[DIM_OF_BND];              /* parameter interval used*/
   BndSegFuncPtr BndSegFunc;                       /* pointer to definition function     */
   void *data;                                             /* can be used by applic to find data */
 } ;
@@ -143,7 +143,7 @@ struct boundary_segment {
 
 /*----------- typedef for functions ----------------------------------------*/
 
-typedef INT (*BndCondProcPtr)(void *, void *, COORD *, DOUBLE *, INT *);
+typedef INT (*BndCondProcPtr)(void *, void *, DOUBLE *, DOUBLE *, INT *);
 
 /*----------- definition of structs ----------------------------------------*/
 
@@ -187,8 +187,8 @@ struct std_BoundaryValueProblem
   struct problem *Problem;           /* problem pointer                     */
 
   /* domain part */
-  COORD MidPoint[DIM];               /* sphere in which the domain lies     */
-  COORD radius;
+  DOUBLE MidPoint[DIM];               /* sphere in which the domain lies     */
+  DOUBLE radius;
   INT domConvex;                     /* 1 if domain is convex, 0 if not     */
   INT numOfSubdomains;               /* nb. of subdomains,
                                                                                 exterior not counted                */
@@ -257,7 +257,7 @@ struct linear_patch {
   INT id;                           /* unique id used for load/store        */
 
   INT corners;                      /* number of corners                    */
-  COORD pos[MAX_CORNERS_OF_LINEAR_PATCH][DIM];   /* position              */
+  DOUBLE pos[MAX_CORNERS_OF_LINEAR_PATCH][DIM];   /* position              */
 
   /* fields for boundary condition */
   BndCondProcPtr BndCond;                   /* function defining boundary condition */
@@ -271,7 +271,7 @@ struct parameter_patch {
 
   INT left,right;                                       /* id of left and right subdomain       */
   INT points[CORNERS_OF_BND_SEG];   /* ids of points                        */
-  COORD range[2][DIM_OF_BND];       /* parameter range                      */
+  DOUBLE range[2][DIM_OF_BND];       /* parameter range                      */
 
   BndSegFuncPtr BndSegFunc;                     /* pointer to definition function           */
   void *bs_data;                                        /* can be used by applic to find data   */
@@ -327,19 +327,19 @@ typedef struct bnd_ps BND_PS;
 /****************************************************************************/
 
 /* domain definition */
-DOMAIN                     *CreateDomain                        (char *name, COORD *MidPoint,
-                                                                 COORD radius, INT segments,
+DOMAIN                     *CreateDomain                        (char *name, DOUBLE *MidPoint,
+                                                                 DOUBLE radius, INT segments,
                                                                  INT corners, INT Convex);
 DOMAIN *GetDomain                           (char *name);
 BOUNDARY_SEGMENT   *CreateBoundarySegment       (char *name, INT left, INT right,
                                                  INT id, INT type, INT res,
                                                  INT *point,
-                                                 COORD *alpha, COORD *beta,
+                                                 DOUBLE *alpha, DOUBLE *beta,
                                                  BndSegFuncPtr BndSegFunc,
                                                  void *data);
 BOUNDARY_SEGMENT   *CreateBoundarySegment2D     (char *name, int left, int right,
                                                  int id, int from, int to, int res,
-                                                 COORD alpha, COORD beta,
+                                                 DOUBLE alpha, DOUBLE beta,
                                                  BndSegFuncPtr BndSegFunc,
                                                  void *data);
 

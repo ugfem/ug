@@ -769,7 +769,7 @@ static OUTPUTDEVICE *InitMetaOutputDevice (void)
   MetaOutputDevice->UpdateOutput   = UpdateMetaOutput;
 
   MetaOutputDevice->v.locked               = 1;
-  MetaOutputDevice->PixelRatio     = (COORD) 1.0;
+  MetaOutputDevice->PixelRatio     = (DOUBLE) 1.0;
   InitMetaPort (MetaOutputDevice);
 
   UserWrite("output device 'meta' created\n");

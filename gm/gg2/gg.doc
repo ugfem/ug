@@ -118,7 +118,7 @@
    'fem' library in the 'cook' problem.
    
 .vb   
-    static INT MeshCook (COORD *in, DOUBLE *out)
+    static INT MeshCook (DOUBLE *in, DOUBLE *out)
     {
 	    DOUBLE x,y,a,b,c;
 	

@@ -978,10 +978,10 @@ static char RCS_ID("$Header$",UG_RCS_STRING) ;
 
 static INT ShortestInteriorEdge (ELEMENT *theElement)
 {
-  COORD *Corners[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM];
+  DOUBLE *Corners[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR MidPoints[MAX_EDGES_OF_ELEM];
   INT i, flags;
-  COORD Dist_0_5, Dist_1_3, Dist_2_4;
+  DOUBLE Dist_0_5, Dist_1_3, Dist_2_4;
 
   /* get physical position of the corners */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -1038,10 +1038,10 @@ static INT ShortestInteriorEdge (ELEMENT *theElement)
 
 static INT MinimalSideAngle (ELEMENT *theElement)
 {
-  COORD *Corners[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM];
+  DOUBLE *Corners[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR MidPoints[MAX_EDGES_OF_ELEM];
   INT i,j,k,l,imin;
-  COORD MaxAngle,Max,Min;
+  DOUBLE MaxAngle,Max,Min;
 
   /* get physical position of the corners */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -1108,10 +1108,10 @@ static INT MinimalSideAngle (ELEMENT *theElement)
 
 static INT MinimalSideEntry (ELEMENT *theElement)
 {
-  COORD *Corners[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM];
+  DOUBLE *Corners[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR MidPoints[MAX_EDGES_OF_ELEM];
   INT i,j,k,l,imin;
-  COORD Angle[MAX_EDGES_OF_ELEM],Length[MAX_EDGES_OF_ELEM],Max,Min,help;
+  DOUBLE Angle[MAX_EDGES_OF_ELEM],Length[MAX_EDGES_OF_ELEM],Max,Min,help;
 
   /* get physical position of the corners */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -1139,7 +1139,7 @@ static INT MinimalSideEntry (ELEMENT *theElement)
       for (l=0; l<EDGES_OF_ELEM(theElement); l++)
         if (Angle[l]>PI/2.0)
         {
-          help = ABS(Length[l]*(COORD)(cos((double)Angle[l])/sin((double)Angle[l])));
+          help = ABS(Length[l]*(DOUBLE)(cos((double)Angle[l])/sin((double)Angle[l])));
           Max = MAX(Max,help);
         }
     }
@@ -1152,7 +1152,7 @@ static INT MinimalSideEntry (ELEMENT *theElement)
       for (i=0; i<EDGES_OF_ELEM(theElement); i++)
         if (Angle[l]>PI/2.0)
         {
-          help = ABS(Length[l]*(COORD)(cos((double)Angle[l])/sin((double)Angle[l])));
+          help = ABS(Length[l]*(DOUBLE)(cos((double)Angle[l])/sin((double)Angle[l])));
           Max = MAX(Max,help);
         }
     }
@@ -1189,10 +1189,10 @@ static INT MinimalSideEntry (ELEMENT *theElement)
 
 static INT BestLaplaceMMatrix (ELEMENT *theElement)
 {
-  COORD *Corners[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM];
+  DOUBLE *Corners[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR MidPoints[MAX_EDGES_OF_ELEM];
   INT i,j,k,l,imin,TBFR,refrule;
-  COORD Angle[MAX_EDGES_OF_ELEM],Length[MAX_EDGES_OF_ELEM],sum,Min;
+  DOUBLE Angle[MAX_EDGES_OF_ELEM],Length[MAX_EDGES_OF_ELEM],sum,Min;
 
   /* get physical position of the corners */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -1219,7 +1219,7 @@ static INT BestLaplaceMMatrix (ELEMENT *theElement)
         return (FULL_REFRULE_0_5);
       for (l=0; l<EDGES_OF_ELEM(theElement); l++)
         if (Angle[l]>PI/2.0)
-          sum += ABS(Length[l]*(COORD)cos((double)Angle[l])/(COORD)sin((double)Angle[l]));
+          sum += ABS(Length[l]*(DOUBLE)cos((double)Angle[l])/(DOUBLE)sin((double)Angle[l]));
     }
     for (k=0; k<2; k++)
     {
@@ -1229,7 +1229,7 @@ static INT BestLaplaceMMatrix (ELEMENT *theElement)
         return (FULL_REFRULE_0_5);
       for (i=0; i<EDGES_OF_ELEM(theElement); i++)
         if (Angle[l]>PI/2.0)
-          sum += ABS(Length[l]*(COORD)cos((double)Angle[l])/(COORD)sin((double)Angle[l]));
+          sum += ABS(Length[l]*(DOUBLE)cos((double)Angle[l])/(DOUBLE)sin((double)Angle[l]));
     }
     if (sum<Min)
     {
@@ -1279,10 +1279,10 @@ static INT BestLaplaceMMatrix (ELEMENT *theElement)
 
 static INT MaxPerpendicular (ELEMENT *theElement)
 {
-  COORD *Corners[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM],a,b,c;
+  DOUBLE *Corners[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR MidPoints[MAX_EDGES_OF_ELEM],a,b,c;
   INT i,j,imin,TBFR,refrule;
-  COORD sprd,Max;
+  DOUBLE sprd,Max;
 
   /* get physical position of the corners */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -1353,10 +1353,10 @@ static INT MaxPerpendicular (ELEMENT *theElement)
 
 static INT MaxRightAngle (ELEMENT *theElement)
 {
-  COORD *Corners[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM],a,b;
+  DOUBLE *Corners[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR MidPoints[MAX_EDGES_OF_ELEM],a,b;
   INT i,j,imin,TBFR,refrule;
-  COORD sprd,Min;
+  DOUBLE sprd,Min;
 
   /* get physical position of the corners */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -1425,10 +1425,10 @@ static INT MaxRightAngle (ELEMENT *theElement)
 
 static INT MaxArea (ELEMENT *theElement)
 {
-  COORD *Corners[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM],a,b,c;
+  DOUBLE *Corners[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR MidPoints[MAX_EDGES_OF_ELEM],a,b,c;
   INT i,j,imin,TBFR,refrule;
-  COORD norm,Max;
+  DOUBLE norm,Max;
 
   /* get physical position of the corners */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -1495,18 +1495,18 @@ static INT MaxArea (ELEMENT *theElement)
 
 static INT Alignment (ELEMENT *theElement)
 {
-  COORD *Corners[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM], help, MidPoint;
+  DOUBLE *Corners[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR MidPoints[MAX_EDGES_OF_ELEM], help, MidPoint;
   DOUBLE_VECTOR Velocity;
   INT i, imax;
-  COORD Dist_0_5, Dist_1_3, Dist_2_4, max;
+  DOUBLE Dist_0_5, Dist_1_3, Dist_2_4, max;
 
   /* get physical position of the corners */
   V3_CLEAR(MidPoint)
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     Corners[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
-  (*theDirectionElemEval)(theElement,(const COORD **)Corners,
-                          (COORD *)LMP(CORNERS_OF_ELEM(theElement)),
+  (*theDirectionElemEval)(theElement,(const DOUBLE **)Corners,
+                          (DOUBLE *)LMP(CORNERS_OF_ELEM(theElement)),
                           Velocity);
 
   /* get physical position of the midpoints of the edges */
@@ -1556,10 +1556,10 @@ static INT Alignment (ELEMENT *theElement)
 
 static INT YAlignment (ELEMENT *theElement)
 {
-  COORD *Corners[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR MidPoints[MAX_EDGES_OF_ELEM], help;
+  DOUBLE *Corners[MAX_CORNERS_OF_ELEM];
+  DOUBLE_VECTOR MidPoints[MAX_EDGES_OF_ELEM], help;
   INT i, imax;
-  COORD Dist_0_5, Dist_1_3, Dist_2_4, max;
+  DOUBLE Dist_0_5, Dist_1_3, Dist_2_4, max;
 
   /* get physical position of the corners */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)

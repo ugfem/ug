@@ -1065,7 +1065,7 @@ static void data_f_hel_info (HELEMENT *el, F_HEL_INFO *f_hel_info)
 static void data_f_scalar (HELEMENT *el, int j, double *coord, double *val)
 {
   int dim,i ;
-  COORD_VECTOR LocCoord;
+  DOUBLE_VECTOR LocCoord;
 
   dim = el->mesh->f_data->dimension_of_value;
   if (dim!=1)
@@ -1122,7 +1122,7 @@ static void data_f_scalar (HELEMENT *el, int j, double *coord, double *val)
 static void data_f_vector (HELEMENT *el, int j, double *coord, double *val)
 {
   int dim,i ;
-  COORD_VECTOR LocCoord;
+  DOUBLE_VECTOR LocCoord;
 
   dim = el->mesh->f_data->dimension_of_value;
 

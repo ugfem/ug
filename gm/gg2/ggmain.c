@@ -71,7 +71,7 @@
 #define MAXNPOINTS 100          /* static heap size for the points in a square round the new FC          */
 #define BARYCENTER      0.1666  /* factor for calculating the barycenter of the new created triangle */
 #define ROOT3           1.7321  /* square root (3)                                                                                                       */
-#define SMALLCOORD      1e-6
+#define SMALLDOUBLE     1e-6
 
 /* flags for different checks */
 #define CHECKNEAR               (1<<0)
@@ -125,7 +125,7 @@ static INT ElemID;
 static INT equilateral;
 static INT plotfront;
 static CoeffProcPtr nominal_h;
-static COORD searchradius,searchradius2;
+static DOUBLE searchradius,searchradius2;
 
 static MG_GGDATA *myMGdata;
 
@@ -147,7 +147,7 @@ static INT FcObj;
 
 static DOUBLE H_global;
 
-static INT GlobalMeshsize (COORD *in, DOUBLE *out)
+static INT GlobalMeshsize (DOUBLE *in, DOUBLE *out)
 {
   /* outvalue is just the constant global meshsize */
   out[0] = H_global;
@@ -155,11 +155,11 @@ static INT GlobalMeshsize (COORD *in, DOUBLE *out)
   return(0);
 }
 
-static INT IsPointLeftOfFC (COORD xP,COORD yP, FRONTCOMP *theFC)
+static INT IsPointLeftOfFC (DOUBLE xP,DOUBLE yP, FRONTCOMP *theFC)
 {
   VERTEX *theVertex;
-  COORD *cvect,xIn,yIn,xOut,yOut,xTest,yTest;
-  COORD cosIn,cosOut;
+  DOUBLE *cvect,xIn,yIn,xOut,yOut,xTest,yTest;
+  DOUBLE cosIn,cosOut;
   INT sideIn,sideOut;
 
   cvect = CVECT(MYVERTEX(FRONTN(theFC)));
@@ -175,8 +175,8 @@ static INT IsPointLeftOfFC (COORD xP,COORD yP, FRONTCOMP *theFC)
 
   /* side.. = FALSE: xTest right of ..,
             = TRUE:  xTest left  of ..   */
-  sideIn  = ((yTest*xIn-xTest*yIn)   > SMALLCOORD);
-  sideOut = ((yTest*xOut-xTest*yOut) > SMALLCOORD);
+  sideIn  = ((yTest*xIn-xTest*yIn)   > SMALLDOUBLE);
+  sideOut = ((yTest*xOut-xTest*yOut) > SMALLDOUBLE);
 
   if (sideIn==sideOut)
   {
@@ -192,7 +192,7 @@ static INT IsPointLeftOfFC (COORD xP,COORD yP, FRONTCOMP *theFC)
     cosIn  = (xTest*xIn+yTest*yIn)/sqrt((xIn*xIn+yIn*yIn)*(xTest*xTest+yTest*yTest));
     cosOut = (xTest*xOut+yTest*yOut)/sqrt((xOut*xOut+yOut*yOut)*(xTest*xTest+yTest*yTest));
 
-    if ((-cosIn) - cosOut > SMALLCOORD)
+    if ((-cosIn) - cosOut > SMALLDOUBLE)
     {
       if (sideIn)
         return (YES);
@@ -224,7 +224,7 @@ static INT IsPointLeftOfFC (COORD xP,COORD yP, FRONTCOMP *theFC)
 static INT DetermineOrientation (FRONTLIST *theFL)
 {
   FRONTCOMP *theFC;
-  COORD np,dx1,dx2,dy1,dy2,*x0,*x1,*x2;
+  DOUBLE np,dx1,dx2,dy1,dy2,*x0,*x1,*x2;
   double anglesum,arg;
 
   if (NFC(theFL)<3)
@@ -416,7 +416,7 @@ static FRONTCOMP *ChooseFCminangle (INDEPFRONTLIST *theIFL, FRONTLIST **myFLHand
   VERTEX *theVertex;
   FRONTCOMP *theFC,*bestFC;
   FRONTLIST *theFL,*myList;
-  COORD xc,yc,px,py,sx,sy,minangle,angle;
+  DOUBLE xc,yc,px,py,sx,sy,minangle,angle;
 
   /* return FC with minimal inner angle */
 
@@ -436,7 +436,7 @@ static FRONTCOMP *ChooseFCminangle (INDEPFRONTLIST *theIFL, FRONTLIST **myFLHand
       sy = YC(theVertex) - yc;
 
       /* angle > 180 degrees? */
-      if ((py*sx-px*sy) > SMALLCOORD)                           /* check (py*sx-px*sy)>0 */
+      if ((py*sx-px*sy) > SMALLDOUBLE)                                  /* check (py*sx-px*sy)>0 */
         if (theFC==LASTFC(theFL))
           break;
         else
@@ -463,7 +463,7 @@ static FRONTCOMP *ChooseFCminside (INDEPFRONTLIST *theIFL, FRONTLIST **myFLHandl
   VERTEX *theVertex;
   FRONTCOMP *theFC,*shortestFC;
   FRONTLIST *theFL,*myList;
-  COORD xc,yc,sxc,syc,mindist2,dist2;
+  DOUBLE xc,yc,sxc,syc,mindist2,dist2;
 
   /* return FC with shortest edge to SUCCFC */
 
@@ -516,11 +516,11 @@ static FRONTCOMP *ChooseFCminside (INDEPFRONTLIST *theIFL, FRONTLIST **myFLHandl
 /*                                                                          */
 /****************************************************************************/
 
-static FRONTCOMP *NearerNeighbour (FRONTCOMP *theFC, COORD xt3, COORD yt3)
+static FRONTCOMP *NearerNeighbour (FRONTCOMP *theFC, DOUBLE xt3, DOUBLE yt3)
 {
   VERTEX *theVertex;
-  COORD xPQ,yPQ,xPR,yPR,xQ,yQ,xR,yR,xP2P,yP2P,xP2Q,yP2Q,xP1P,yP1P,xP1R,yP1R;
-  COORD succdistance2,preddistance2,succedgecos,prededgecos,succdenominator,preddenominator;
+  DOUBLE xPQ,yPQ,xPR,yPR,xQ,yQ,xR,yR,xP2P,yP2P,xP2Q,yP2Q,xP1P,yP1P,xP1R,yP1R;
+  DOUBLE succdistance2,preddistance2,succedgecos,prededgecos,succdenominator,preddenominator;
 
 
   /* calculation of the succ point distance to the inner node */
@@ -540,7 +540,7 @@ static FRONTCOMP *NearerNeighbour (FRONTCOMP *theFC, COORD xt3, COORD yt3)
   yP2Q = yQ - YC(theVertex);
 
   succdenominator = sqrt((xP2Q*xP2Q+yP2Q*yP2Q)*(xP2P*xP2P+yP2P*yP2P));
-  /* (fabs(succdenominator)<SMALLCOORD) would mean points are "identical" */
+  /* (fabs(succdenominator)<SMALLDOUBLE) would mean points are "identical" */
 
   succedgecos= ((xP2Q*xP2P)+(yP2Q*yP2P))/succdenominator;
 
@@ -561,7 +561,7 @@ static FRONTCOMP *NearerNeighbour (FRONTCOMP *theFC, COORD xt3, COORD yt3)
   yP1R = yR  - YC(theVertex);
 
   preddenominator = sqrt((xP1P*xP1P+yP1P*yP1P)*(xP1R*xP1R+yP1R*yP1R));
-  /* (fabs(preddenominator)<SMALLCOORD) would mean points are "identical" */
+  /* (fabs(preddenominator)<SMALLDOUBLE) would mean points are "identical" */
 
   prededgecos=((xP1P*xP1R)+(yP1P*yP1R))/preddenominator;
 
@@ -600,7 +600,7 @@ static FRONTCOMP *NearerNeighbour (FRONTCOMP *theFC, COORD xt3, COORD yt3)
 /*                                                                          */
 /****************************************************************************/
 
-static INT IsBetweenVectors (COORD x1,COORD y1,COORD xb,COORD yb,COORD x2,COORD y2)
+static INT IsBetweenVectors (DOUBLE x1,DOUBLE y1,DOUBLE xb,DOUBLE yb,DOUBLE x2,DOUBLE y2)
 {
   if (((xb*y1-yb*x1)<SMALL_C) && ((xb*y2-yb*x2)>SMALL_C))       /* right of 1 and left of 2, SMALL_C means numerical O */
     return (YES);
@@ -608,11 +608,11 @@ static INT IsBetweenVectors (COORD x1,COORD y1,COORD xb,COORD yb,COORD x2,COORD 
     return (NO);
 }
 
-static FRONTCOMP *CutNeighbour (FRONTCOMP *theFC, COORD xt[3], COORD yt[3])
+static FRONTCOMP *CutNeighbour (FRONTCOMP *theFC, DOUBLE xt[3], DOUBLE yt[3])
 {
   VERTEX *theVertex;
-  COORD xQ,yQ,xR,yR,xP1Q,yP1Q,xP2R,yP2R,xP1P,yP1P,xP2P,yP2P,xP1P2,yP1P2;
-  COORD xP1minusP2,yP1minusP2;
+  DOUBLE xQ,yQ,xR,yR,xP1Q,yP1Q,xP2R,yP2R,xP1P,yP1P,xP2P,yP2P,xP1P2,yP1P2;
+  DOUBLE xP1minusP2,yP1minusP2;
   DOUBLE projection1,projection2;
   INT intersectPred,intersectSucc;
 
@@ -683,12 +683,12 @@ static FRONTCOMP *CutNeighbour (FRONTCOMP *theFC, COORD xt[3], COORD yt[3])
 /*                                                                           */
 /*****************************************************************************/
 
-static INT Point_In_Triangle (COORD pt[DIM], COORD x[3], COORD y[3])
+static INT Point_In_Triangle (DOUBLE pt[DIM], DOUBLE x[3], DOUBLE y[3])
 {
   INT i,index;
-  COORD sx,sy,hlp;
-  COORD eps;
-  COORD x_eps[3], y_eps[3];
+  DOUBLE sx,sy,hlp;
+  DOUBLE eps;
+  DOUBLE x_eps[3], y_eps[3];
 
   eps = myPars->epsi;
 
@@ -751,20 +751,20 @@ static INT Point_In_Triangle (COORD pt[DIM], COORD x[3], COORD y[3])
     sy = y_eps[(i+1)%3] - y_eps[i];
 
     hlp = ((sy*(pt[0]-x_eps[i])-sx*(pt[1]-y_eps[i]))/(sx*sx+sy*sy));
-    if (hlp > SMALLCOORD)
+    if (hlp > SMALLDOUBLE)
       return (NO);
   }
   return (YES);
 }
 
-static INT Point_In_Circle (COORD pt[DIM], COORD x, COORD y, COORD searchrad2)
+static INT Point_In_Circle (DOUBLE pt[DIM], DOUBLE x, DOUBLE y, DOUBLE searchrad2)
 {
-  COORD dx,dy;
+  DOUBLE dx,dy;
 
   dx = pt[0] - x;
   dy = pt[1] - y;
 
-  if (searchrad2-(dx*dx+dy*dy)>SMALLCOORD )        /* check of searchrad2>(dx*dx+dy*dy) */
+  if (searchrad2-(dx*dx+dy*dy)>SMALLDOUBLE )        /* check of searchrad2>(dx*dx+dy*dy) */
     return (YES);
   else
     return (NO);
@@ -785,12 +785,12 @@ static INT Point_In_Circle (COORD pt[DIM], COORD x, COORD y, COORD searchrad2)
 /****************************************************************************/
 
 static INT AssemblePointsInTriangleOrCircle (INDEPFRONTLIST *theIFL,
-                                             FRONTCOMP *thefoundPoints[MAXNPOINTS], COORD x[3], COORD y[3], COORD radius)
+                                             FRONTCOMP *thefoundPoints[MAXNPOINTS], DOUBLE x[3], DOUBLE y[3], DOUBLE radius)
 {
   VERTEX *theVertex;
   FRONTLIST *theFL;
   FRONTCOMP *thecompFC;
-  COORD rad2;
+  DOUBLE rad2;
   INT foundpoints;
 
   rad2 = radius*radius;
@@ -832,20 +832,20 @@ static INT AssemblePointsInTriangleOrCircle (INDEPFRONTLIST *theIFL,
 /****************************************************************************/
 
 static INT FCinsideOrNear (INDEPFRONTLIST *theIFL,FRONTCOMP *theFC,FRONTCOMP *theProposedFC, FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS],
-                           COORD xt[3],COORD yt[3], FRONTCOMP **newFChandle, INT checkoptions)
+                           DOUBLE xt[3],DOUBLE yt[3], FRONTCOMP **newFChandle, INT checkoptions)
 {
   VERTEX *theVertex;
   NODE *BaseNode1,*BaseNode2,*PropNode;
   FRONTCOMP *thefoundPoints[MAXNPOINTS],*thenewFC;
-  COORD normalx,normaly,relx,rely,xM,yM;
+  DOUBLE normalx,normaly,relx,rely,xM,yM;
   DOUBLE deltaP,minimaldist;
   INT i,foundpoints;
 
   /* variables for epsilon begin !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-  COORD x_eps[3],y_eps[3];
-  COORD eps,mz,mn,m,xoffs,yoffs,hilfx,hilfy;
-  const COORD smallcoordpos = 10e-6;
-  const COORD smallcoordneg = -10e-6;
+  DOUBLE x_eps[3],y_eps[3];
+  DOUBLE eps,mz,mn,m,xoffs,yoffs,hilfx,hilfy;
+  const DOUBLE smallcoordpos = 10e-6;
+  const DOUBLE smallcoordneg = -10e-6;
 
 
   /* triangle += epsilon begin !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
@@ -1105,23 +1105,23 @@ static INT FCinsideOrNear (INDEPFRONTLIST *theIFL,FRONTCOMP *theFC,FRONTCOMP *th
 /****************************************************************************/
 
 static FRONTCOMP *FrontLineIntersection (INDEPFRONTLIST *theIFL,FRONTCOMP *theFC,FRONTCOMP *theProposedFC,
-                                         FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS], COORD xt[3],COORD yt[3])
+                                         FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS], DOUBLE xt[3],DOUBLE yt[3])
 {
   NODE *theNode,*BaseNode;
   VERTEX *theVertex;
   FRONTLIST *theFL;
   FRONTCOMP *thecompFC,*thedistFC1;
-  COORD xM,yM,xR,yR,xQ,yQ,lambda1,lambda2;
-  COORD xMQ,yMQ,xMR,yMR,denominator;
-  COORD lambdacomp = MAX_C;
+  DOUBLE xM,yM,xR,yR,xQ,yQ,lambda1,lambda2;
+  DOUBLE xMQ,yMQ,xMR,yMR,denominator;
+  DOUBLE lambdacomp = MAX_C;
   INT j = 0;
 
   /* variables for epsilon begin !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
   INT i;
-  COORD x_eps[3],y_eps[3];
-  COORD eps,mz,mn,m,xoffs,yoffs,hilfx,hilfy;
-  const COORD smallcoordpos = 10e-6;
-  const COORD smallcoordneg = -10e-6;
+  DOUBLE x_eps[3],y_eps[3];
+  DOUBLE eps,mz,mn,m,xoffs,yoffs,hilfx,hilfy;
+  const DOUBLE smallcoordpos = 10e-6;
+  const DOUBLE smallcoordneg = -10e-6;
 
 
 
@@ -1334,13 +1334,13 @@ static FRONTCOMP *FrontLineIntersection (INDEPFRONTLIST *theIFL,FRONTCOMP *theFC
 
       /* check if the AF intersects with the triangle */
       denominator = (yR-yQ)*(xt[2]-xM)-(xR-xQ)*(yt[2]-yM);
-      if (fabs(denominator)<SMALLCOORD)
+      if (fabs(denominator)<SMALLDOUBLE)
       {
         j++;
         continue;                               /* lines are parallel */
       }
 
-      if (fabs(xt[2]-xM)<SMALLCOORD)
+      if (fabs(xt[2]-xM)<SMALLDOUBLE)
       {
         lambda2 = (xR-xM)/(xR-xQ);
         lambda1 = (yR-yM - lambda2*(yR-yQ)) / (yt[2]-yM);
@@ -1356,7 +1356,7 @@ static FRONTCOMP *FrontLineIntersection (INDEPFRONTLIST *theIFL,FRONTCOMP *theFC
          lambda2 parametrizes the cut on the edge from thecompFC to its succ */
       if (lambda1 <= 1.15 && lambda1 >= 0 && lambda2 <= 1.0 && lambda2 >= 0.0)
       {
-        if (lambda1 - lambdacomp < SMALLCOORD)                           /* check of lambda1 < lambdacomp */
+        if (lambda1 - lambdacomp < SMALLDOUBLE)                           /* check of lambda1 < lambdacomp */
           /* take this edge only if (xM,yM) lies left of the other front */
           if (IsPointLeftOfFC(xM,yM,theIntersectfoundPoints[j]))
           {
@@ -1389,13 +1389,13 @@ static FRONTCOMP *FrontLineIntersection (INDEPFRONTLIST *theIFL,FRONTCOMP *theFC
 
         /* check if the AF intersects with the triangle */
         denominator = (yR-yQ)*(xt[2]-xM)-(xR-xQ)*(yt[2]-yM);
-        if (fabs(denominator)<SMALLCOORD)
+        if (fabs(denominator)<SMALLDOUBLE)
           if (thecompFC==LASTFC(theFL))
             break;
           else
             continue;                                           /* lines are parallel */
 
-        if (fabs(xt[2]-xM)<SMALLCOORD)
+        if (fabs(xt[2]-xM)<SMALLDOUBLE)
         {
           lambda2 = (xR-xM)/(xR-xQ);
           lambda1 = (yR-yM - lambda2*(yR-yQ)) / (yt[2]-yM);
@@ -1411,7 +1411,7 @@ static FRONTCOMP *FrontLineIntersection (INDEPFRONTLIST *theIFL,FRONTCOMP *theFC
            lambda2 parametrizes the cut on the edge from thecompFC to its succ */
         if (lambda1 <= 1.15 && lambda1 >= 0 && lambda2 <= 1.0 && lambda2 >= 0.0)
         {
-          if (lambda1 - lambdacomp < SMALLCOORD)                         /* check of lambda1 < lambdacomp */
+          if (lambda1 - lambdacomp < SMALLDOUBLE)                         /* check of lambda1 < lambdacomp */
             /* take this edge only if (xM,yM) lies left of the other front */
             if (IsPointLeftOfFC(xM,yM,thecompFC))
             {
@@ -1467,10 +1467,10 @@ static FRONTCOMP *FrontLineIntersection (INDEPFRONTLIST *theIFL,FRONTCOMP *theFC
 
     /* find the FC for creating the triangle */
 
-    if ((xMQ*xMQ+yMQ*yMQ)-(xMR*xMR+yMR*yMR) > SMALLCOORD)              /* check (xMQ*xMQ+yMQ*yMQ) > (xMR*xMR+yMR*yMR) */
+    if ((xMQ*xMQ+yMQ*yMQ)-(xMR*xMR+yMR*yMR) > SMALLDOUBLE)              /* check (xMQ*xMQ+yMQ*yMQ) > (xMR*xMR+yMR*yMR) */
     {
       /* lies R left of P1P2? */
-      if ((xMR*(yt[0]-yt[1])-yMR*(xt[0]-xt[1])) > SMALLCOORD)
+      if ((xMR*(yt[0]-yt[1])-yMR*(xt[0]-xt[1])) > SMALLDOUBLE)
         return (SUCCFC(thedistFC1));                                    /* return R */
       else
         return (thedistFC1);                                                    /* return Q */
@@ -1478,7 +1478,7 @@ static FRONTCOMP *FrontLineIntersection (INDEPFRONTLIST *theIFL,FRONTCOMP *theFC
     else
     {
       /* lies Q left of P1P2? */
-      if ((xMQ*(yt[0]-yt[1])-yMQ*(xt[0]-xt[1])) > SMALLCOORD)
+      if ((xMQ*(yt[0]-yt[1])-yMQ*(xt[0]-xt[1])) > SMALLDOUBLE)
         return (thedistFC1);                                                    /* return R */
       else
         return (SUCCFC(thedistFC1));                                    /* return Q */
@@ -1504,7 +1504,7 @@ static FRONTCOMP *FrontLineIntersection (INDEPFRONTLIST *theIFL,FRONTCOMP *theFC
 static INT ContainedIn (FRONTLIST *FL1, FRONTLIST *FL2)
 {
   FRONTCOMP *testFC,*theFC;
-  COORD dx,dy,y1cut,y2cut,x1cut,*testc,*thec,*thesc;
+  DOUBLE dx,dy,y1cut,y2cut,x1cut,*testc,*thec,*thesc;
   INT ncut;
 
   /* check wether one arbitrary point of the second list is contained in the first one */
@@ -1527,15 +1527,15 @@ static INT ContainedIn (FRONTLIST *FL1, FRONTLIST *FL2)
       dx = thesc[0] - thec[0];
       dy = thesc[1] - thec[1];
 
-      if (fabs(dy)>SMALLCOORD)
+      if (fabs(dy)>SMALLDOUBLE)
       {
         x1cut = y1cut * dx/dy;
 
-        if ((x1cut+thec[0])-(testc[0]) > SMALLCOORD )                          /* check (x1cut+thec[0]) > testc[0] */
+        if ((x1cut+thec[0])-(testc[0]) > SMALLDOUBLE )                          /* check (x1cut+thec[0]) > testc[0] */
           ncut++;
       }
       else
-      if (thec[0]-testc[0]>SMALLCOORD)
+      if (thec[0]-testc[0]>SMALLDOUBLE)
         ncut++;
     }
 
@@ -2004,12 +2004,12 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
 /*                                                                          */
 /****************************************************************************/
 
-static INT CalcNewPoint (FRONTLIST *myFL,FRONTCOMP *theFC, COORD xt[3], COORD yt[3])
+static INT CalcNewPoint (FRONTLIST *myFL,FRONTCOMP *theFC, DOUBLE xt[3], DOUBLE yt[3])
 {
   VERTEX *theVertex;
-  COORD pos[2];
+  DOUBLE pos[2];
   DOUBLE norm,meshsize,hight;
-  COORD xP1minusP2,yP1minusP2;
+  DOUBLE xP1minusP2,yP1minusP2;
 
   /* calculation of the coordinates of the inner node for triangulation */
   theVertex = MYVERTEX(FRONTN(theFC));
@@ -2074,7 +2074,7 @@ static FRONTCOMP *CreateOrSelectFC (
   FRONTCOMP *theFC,
   FRONTCOMP *theProposedFC,
   FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS],
-  COORD xt[3], COORD yt[3],
+  DOUBLE xt[3], DOUBLE yt[3],
   INT checkoptions,
   INT recursiondepth,
   ELEMENT_CONTEXT *theElementContext)
@@ -2082,7 +2082,7 @@ static FRONTCOMP *CreateOrSelectFC (
   FRONTCOMP *thenewFC;
   NODE *theNode;
   VERTEX *theVertex;
-  COORD_VECTOR pos;
+  DOUBLE_VECTOR pos;
 
   if (recursiondepth > 20)
   {
@@ -2323,7 +2323,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
   FRONTLIST *myList;
   FRONTCOMP *theFC,*thesuccFC,*thenewFC;
   FRONTCOMP *the_old_succ;
-  COORD xt[3],yt[3];
+  DOUBLE xt[3],yt[3];
   INT printelem,FlgForAccel;
   FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS];
   ELEMENT_CONTEXT theElementContext;

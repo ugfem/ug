@@ -178,8 +178,8 @@
 struct Cut {
 
   INT status;                                                           /* see above									*/
-  COORD PlaneNormal[3];                                         /* normal vector of the plane					*/
-  COORD PlanePoint[3];                                          /* point on the plane							*/
+  DOUBLE PlaneNormal[3];                                        /* normal vector of the plane					*/
+  DOUBLE PlanePoint[3];                                         /* point on the plane							*/
 };
 
 /*---------------------------- PlotObj head ---------------------------------*/
@@ -189,8 +189,8 @@ struct PlotObjHead {                                            /* head of all P
   INT status;                                                           /* see above									*/
   struct PlotObjType *thePlotObjType;           /* type of PlotObj								*/
   MULTIGRID *theMG;                                                     /* the data base								*/
-  COORD theMidPoint[3];                                         /* MidPoint of covering 2/3D sphere                     */
-  COORD theRadius;                                                      /* radius of covering 2/3D sphere				*/
+  DOUBLE theMidPoint[3];                                        /* MidPoint of covering 2/3D sphere                     */
+  DOUBLE theRadius;                                                     /* radius of covering 2/3D sphere				*/
   INT clearBeforeDraw;                                          /* YES or NO									*/
   char name[NAMESIZE];
 };
@@ -247,9 +247,9 @@ struct ElemVectorPlotObj2D {
   EVECTOR *EvalFct;                                                     /* evaluation proceedure						*/
   INT PlotGrid;                                                         /* plot grid together with scalar field			*/
   DOUBLE max;                                                           /* range										*/
-  COORD RasterSize;                                                     /* size of raster used for arrows				*/
+  DOUBLE RasterSize;                                                    /* size of raster used for arrows				*/
   INT CutVectors;                                                        /* YES or NO									*/
-  COORD CutLenFactor;                                                   /* vector will be cut if longer then                    */
+  DOUBLE CutLenFactor;                                                  /* vector will be cut if longer then                    */
   /*	'CutLenFactor*RasterSize'					*/
 };
 
@@ -297,10 +297,10 @@ struct LinePlotObj2D {
   /* data for 2D-View of line field */
   EVALUES *EvalFct;                                                     /* evaluation proceedure						*/
   DOUBLE min, max;                                                      /* range										*/
-  COORD_VECTOR left, right;                                     /* line in 2D physical space					*/
+  DOUBLE_VECTOR left, right;                                    /* line in 2D physical space					*/
   INT depth;                                                                    /* depth of recoursive subdevision of elements	*/
   DOUBLE color;                                                         /* value between 0 and 1 specifiing the color   */
-  COORD aspectratio;                                                    /* ratio of the picture							*/
+  DOUBLE aspectratio;                                                   /* ratio of the picture							*/
 };
 
 /*----------- application dimension 3 PlotObjs -----------------------------*/
@@ -335,10 +335,10 @@ struct ElemVectorPlotObj3D {
   struct Cut theCut;                                                    /* description of the cut						*/
   EVECTOR *EvalFct;                                                     /* evaluation proceedure						*/
   DOUBLE max;                                                           /* range										*/
-  COORD RasterSize;                                                     /* size of raster used for arrows				*/
+  DOUBLE RasterSize;                                                    /* size of raster used for arrows				*/
   INT CutVector;                                                        /* YES or NO									*/
   INT ProjectVector;                                                    /* YES or NO									*/
-  COORD CutLenFactor;                                                   /* vector will be cut if longer then                    */
+  DOUBLE CutLenFactor;                                                  /* vector will be cut if longer then                    */
   /*	'CutLenFactor*RasterSize'					*/
 };
 
@@ -389,10 +389,10 @@ struct ViewedObj {
   /* the view */
   INT status;                                                           /* see above									*/
   INT perspective;                                                      /* YES or NO									*/
-  COORD ViewPoint[3];                                           /* Observer Stand								*/
-  COORD ViewTarget[3];                                          /* View target point							*/
-  COORD PlaneMidpoint[3];                                       /* description of projection plane (the infinite*/
-  COORD PlaneXDir[3], PlaneYDir[3];             /* extension touches the ViewTarget)			*/
+  DOUBLE ViewPoint[3];                                          /* Observer Stand								*/
+  DOUBLE ViewTarget[3];                                         /* View target point							*/
+  DOUBLE PlaneMidpoint[3];                                      /* description of projection plane (the infinite*/
+  DOUBLE PlaneXDir[3], PlaneYDir[3];            /* extension touches the ViewTarget)			*/
 };
 
 struct PICture {
@@ -475,14 +475,14 @@ INT                             InvalidateUgWindowsOfMG                 (MULTIGR
 /*INT                   CopyViewedObjToPicture			(PICTURE *thePicture, VIEWEDOBJ *theViewedObj);*/
 
 /* initializing/changing view */
-INT                     SetView                                                 (PICTURE *thePicture, const COORD *viewPoint, const COORD *targetPoint, const COORD *xAxis, const INT *perspective);
+INT                     SetView                                                 (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective);
 INT                             PrintViewSettings                               (const PICTURE *thePicture);
 INT                     DisplayViewOfViewedObject               (const PICTURE *thePicture);
-INT                     Walk                                                    (PICTURE *thePicture, const COORD *vrsDelta);
-INT                     RunAroundTargetPoint                    (PICTURE *thePicture, COORD vrsDirectionAngle, COORD vrsAngle);
-INT                     Zoom                                                    (PICTURE *thePicture, COORD factor);
-INT                     DragProjectionPlane                     (PICTURE *thePicture, COORD vrsDeltaX, COORD vrsDeltaY);
-INT                     RotateProjectionPlane                   (PICTURE *thePicture, COORD vrsAngle);
+INT                     Walk                                                    (PICTURE *thePicture, const DOUBLE *vrsDelta);
+INT                     RunAroundTargetPoint                    (PICTURE *thePicture, DOUBLE vrsDirectionAngle, DOUBLE vrsAngle);
+INT                     Zoom                                                    (PICTURE *thePicture, DOUBLE factor);
+INT                     DragProjectionPlane                     (PICTURE *thePicture, DOUBLE vrsDeltaX, DOUBLE vrsDeltaY);
+INT                     RotateProjectionPlane                   (PICTURE *thePicture, DOUBLE vrsAngle);
 
 /* operations on PlotObjs */
 INT                     SpecifyPlotObjOfViewedObject    (PICTURE *thePicture, MULTIGRID *theMG, const char *PlotObjTypeName, INT argc, char **argv);
