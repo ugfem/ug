@@ -780,6 +780,9 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char * type, char *c
         cg_element[i].nbid[j] = ID(NBELEM(theElement,j));
       else
         cg_element[i].nbid[j] = -1;
+#if (DIM==2)
+    cg_element[i].subdomain = SUBDOMAIN(theElement);
+#endif
   }
   if (Write_CG_Elements((int)n,cg_element)) return (1);
 
@@ -1091,6 +1094,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     theSonElem[i] = CreateElement(upGrid,SonData->tag,type,SonNodeList,theElement);
     if (theSonElem[i]==NULL) return (1);
     SETECLASS(theSonElem[i],ref->refclass);
+    SETSUBDOMAIN(theSonElem[i],SUBDOMAIN(theElement));
   }
 #ifdef __TWODIM__
   for (i=0; i<theRule->nsons; i++) SET_SON(theElement,i,theSonElem[i]);
@@ -1294,6 +1298,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
     SETREFINECLASS(theElement,NO_CLASS);
     SETMARK(theElement,0);
     SETMARKCLASS(theElement,NO_CLASS);
+    SETSUBDOMAIN(theElement,cg_element[ID(theElement)].subdomain);
   }
 
   /* are we ready ? */

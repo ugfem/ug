@@ -213,6 +213,9 @@ struct mgio_cg_element {
   int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
   int nhe;                                                                              /* nb of he_elements of this element		*/
   /* if 0 element not refined					*/
+#if (MGIO_DIM==2)
+  int subdomain;                                                                /* id of subdomain							*/
+#endif
 };
 
 struct mgio_refinement {
