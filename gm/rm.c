@@ -3571,6 +3571,8 @@ static int FReadRule (FILE *stream, REFRULE *theRule)
 
 
 #ifdef __THREEDIM__
+
+#ifdef TET_RULESET
 /****************************************************************************/
 /*
    CorrectRuleXX -
@@ -3627,6 +3629,81 @@ static int CorrectRule53 (REFRULE *theRule)
 
   return (0);
 }
+
+
+static int      CheckVolumes(REFRULE *Rule)
+{
+  INT i,j,k,tag;
+  DOUBLE sp;
+  DOUBLE_VECTOR coords [MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM];
+  DOUBLE_VECTOR coord;
+  DOUBLE_VECTOR p[MAX_CORNERS_OF_ELEM];
+
+  /* this function work only for TETRAHEDRA!!! */
+  tag = TETRAHEDRON;
+
+  /* reset coords */
+  for (i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)
+    V3_CLEAR(coords[i])
+
+    /* compute coordinates of corners */
+    for (i=0,j=0; i<CORNERS_OF_REF(tag); i++,j++)
+      V3_COPY(LOCAL_COORD_OF_REF(tag,i),coords[j])
+
+      /* compute coordinates of midnodes */
+      for (i=0; i<EDGES_OF_REF(tag); i++,j++)
+      {
+        V3_CLEAR(coord)
+        for (k=0; k<CORNERS_OF_EDGE; k++)
+          V3_ADD(LOCAL_COORD_OF_REF(tag,CORNER_OF_EDGE_REF(tag,i,k)),coord,coord)
+          V3_SCALE(1.0/CORNERS_OF_EDGE,coord)
+          V3_COPY(coord,coords[j]);
+      }
+
+  /* compute coordinates of sidenodes */
+  for (i=0; i<SIDES_OF_REF(tag); i++,j++)
+  {
+    V3_CLEAR(coord)
+    for (k=0; k<CORNERS_OF_SIDE_REF(tag,i); k++)
+      V3_ADD(LOCAL_COORD_OF_REF(tag,CORNER_OF_SIDE_REF(tag,i,k)),coord,coord)
+      V3_SCALE(1.0/CORNERS_OF_SIDE_REF(tag,i),coord)
+      V3_COPY(coord,coords[j]);
+  }
+
+  /* compute coordinates of center node */
+  V3_CLEAR(coord)
+  for (i=0; i<CORNERS_OF_REF(tag); i++)
+  {
+    V3_ADD(LOCAL_COORD_OF_REF(tag,i),coord,coord)
+  }
+  V3_SCALE(1.0/CORNERS_OF_REF(tag),coord)
+  V3_COPY(coord,coords[j]);
+
+  if (0)
+    for (i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)
+    {
+      UserWriteF("CheckVolumes(): i=%d x=%.8f y=%.8f z=%.8f\n",
+                 i,coords[i][0],coords[i][1],coords[i][2]);
+    }
+
+  /* check the son volumes being really greater than zero */
+  for (i=0; i<NSONS_OF_RULE(Rule); i++)
+  {
+    for (k=1; k<4; k++)
+      V3_SUBTRACT(coords[SON_CORNER_OF_RULE(Rule,i,k)],coords[SON_CORNER_OF_RULE(Rule,i,0)],p[k])
+
+      V3_VECTOR_PRODUCT(p[1],p[2],p[0])
+      V3_SCALAR_PRODUCT(p[0],p[3],sp)
+
+      if (sp<=0.0)
+      {
+        UserWriteF("negative volume=%f for son=%d rule=%d\n",sp,i,MARK_OF_RULE(Rule));
+      }
+  }
+
+  return(0);
+}
+#endif
 
 /****************************************************************************/
 /*D
@@ -3738,9 +3815,19 @@ static INT InitRuleManager3D (void)
     fclose(stream);
   }
 
+  for (i=0; i<nRules; i++)
+  {
+    CheckVolumes(Rules+i);
+  }
+
   /* bug fix */
   CorrectRule41(&Rules[41]);
   CorrectRule53(&Rules[53]);
+
+  for (i=0; i<nRules; i++)
+  {
+    CheckVolumes(Rules+i);
+  }
 
         #ifdef ModelP
   Broadcast(Rules,nRules*sizeof(REFRULE));
