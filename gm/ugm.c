@@ -1499,6 +1499,7 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
   EDGE *pe;
   LINK *link0,*link1;
   VECTOR *pv;
+  INT part;
 
   /* check if edge exists already */
   if( (pe = GetEdge(from, to)) != NULL )
@@ -1536,10 +1537,16 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
   NBNODE(link1) = from;
   SET_NO_OF_ELEM(pe,1);
   SETEDGENEW(pe,1);
+  SETEDSUBDOM(pe,NSUBDOM(from));
   if (NSUBDOM(from) != NSUBDOM(to))
     SETEDSUBDOM(pe,0);
-  else
-    SETEDSUBDOM(pe,NSUBDOM(from));
+  else {
+    if ((OBJT(MYVERTEX(from)) == BVOBJ) && (OBJT(MYVERTEX(to)) == BVOBJ)) {
+      if (BNDP_BndEDesc(V_BNDP(MYVERTEX(from)),
+                        V_BNDP(MYVERTEX(to)),&part) == 0)
+        SETEDSUBDOM(pe,0);
+    }
+  }
 
   /* create vector if */
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC) && with_vector)
@@ -7913,12 +7920,8 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
       SETSUBDOMAIN(theElement,id);
       SETUSED(theElement,1);
       fifo_in(&myfifo,(void *)theElement);
-      /*if (nbid==0) continue;
-         theNeighbor = NBELEM(theElement,i);
-         assert(theNeighbor!=NULL);
-         SETSUBDOMAIN(theNeighbor,nbid);
-         SETUSED(theNeighbor,1);
-         fifo_in(&myfifo,(void *)theNeighbor);*/
+      PRINTDEBUG(gm,1,("elem %3d sid %d\n",
+                       ID(theElement),SUBDOMAIN(theElement)));
     }
 
   /* set subdomain id for all elements */
@@ -7935,8 +7938,6 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
       fifo_in(&myfifo,(void *)theNeighbor);
     }
   }
-  ReleaseTmpMem(theHeap);
-
   if (SetEdgeAndNodeSubdomainFromElements(theGrid))
     REP_ERR_RETURN (GM_ERROR);
 

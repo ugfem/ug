@@ -546,7 +546,7 @@ BLOCKVECTOR *FindBV( const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT 
 
 static INT GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side)
 {
-  NODE *nd;
+  NODE *nd,*n0,*n1;
   EDGE *ed;
   ELEMENT *elem;
   VERTEX *v0,*v1;
@@ -610,22 +610,23 @@ static INT GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side)
 
   case EDOBJ :
     ed = (EDGE*)obj;
+    n0 = NBNODE(LINK0(ed));
+    n1 = NBNODE(LINK1(ed));
+    v0 = MYVERTEX(n0);
+    v1 = MYVERTEX(n1);
+    if ((OBJT(v0)==BVOBJ) && (OBJT(v1)==BVOBJ))
+      if (BNDP_BndEDesc(V_BNDP(v0),V_BNDP(v1),&part) == 0)
+        return(part);
     subdom = EDSUBDOM(ed);
-    if (subdom>0)
-    {
-      part = s2p[subdom];
-    }
-    else
-    {
-      /* it is a boundary edge: ask domain module */
-      v0 = MYVERTEX(NBNODE(LINK0(ed)));
-      v1 = MYVERTEX(NBNODE(LINK1(ed)));
-      ASSERT(OBJT(v0)==BVOBJ);
-      ASSERT(OBJT(v1)==BVOBJ);
-      if (BNDP_BndEDesc(V_BNDP(v0),V_BNDP(v1),&part))
-        REP_ERR_RETURN(-4);
-    }
-    break;
+    if (subdom > 0)
+      return(s2p[subdom]);
+    subdom = NSUBDOM(n0);
+    if (subdom > 0)
+      return(s2p[subdom]);
+    subdom = NSUBDOM(n1);
+    if (subdom > 0)
+      return(s2p[subdom]);
+    REP_ERR_RETURN(-4);
 
   default : REP_ERR_RETURN (-5);
   }
