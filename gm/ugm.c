@@ -2752,11 +2752,18 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   if (me==master)
         #endif
   if (insertMesh)
+  {
     if (InsertMesh(theMG,&mesh))
     {
       DisposeMultiGrid(theMG);
       return(NULL);
     }
+    if (FixCoarseGrid(theMG))
+    {
+      DisposeMultiGrid(theMG);
+      return(NULL);
+    }
+  }
   /* return ok */
   return(theMG);
 }
