@@ -181,7 +181,7 @@ void SocketWriteCmd (int sockfd, int cmd)
 }
 
 
-void SocketWriteInt (int sockfd, int val)
+void SocketWriteINT (int sockfd, INT val)
 {
   if (write(sockfd, (char *)&val, sizeof(val)) < 0)
   {
@@ -190,9 +190,9 @@ void SocketWriteInt (int sockfd, int val)
 }
 
 
-void SocketWriteIntN (int sockfd, int *val, int nval)
+void SocketWriteINTN (int sockfd, INT *val, int nval)
 {
-  if (write(sockfd, (char *)val, nval*sizeof(int)) < 0)
+  if (write(sockfd, (char *)val, nval*sizeof(INT)) < 0)
   {
     fprintf(stderr, "ug: write error on socket.\n");
   }
@@ -245,11 +245,11 @@ INT SocketReadINT (int sockfd)
 }
 
 
-void SocketReadIntN (int sockfd, int *val, int nval)
+void SocketReadINTN (int sockfd, INT *val, int nval)
 {
   INT n;
 
-  n = SocketRead(sockfd, (char *)val, nval*sizeof(int));
+  n = SocketRead(sockfd, (char *)val, nval*sizeof(INT));
 }
 
 

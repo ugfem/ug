@@ -108,7 +108,8 @@ static INT InitUgDaemon (int argc, char **argv)
 
 static void ExecInitScreen (int sockfd)
 {
-  int i, n, argc, len, error;
+  INT len;
+  int i, n, argc, error;
   char **argv;
 
   n = read(sockfd, (char *)&argc, sizeof(int));
@@ -151,12 +152,12 @@ static void ExecOpenOutput (int sockfd)
   winID = (*theOutputDevice->OpenOutput)(buf, x, y, width, height,
                                          Global_LL, Global_UR, Local_LL, Local_UR, &error);
 
-  SocketWriteIntN(sockfd, Global_LL, 2);
-  SocketWriteIntN(sockfd, Global_UR, 2);
-  SocketWriteIntN(sockfd, Local_LL, 2);
-  SocketWriteIntN(sockfd, Local_UR, 2);
-  SocketWriteInt(sockfd, error);
-  SocketWriteInt(sockfd, winID);
+  SocketWriteINTN(sockfd, Global_LL, 2);
+  SocketWriteINTN(sockfd, Global_UR, 2);
+  SocketWriteINTN(sockfd, Local_LL, 2);
+  SocketWriteINTN(sockfd, Local_UR, 2);
+  SocketWriteINT(sockfd, error);
+  SocketWriteINT(sockfd, winID);
 }
 
 
@@ -261,12 +262,12 @@ static void ug_frontend (int sockfd)
     {
       INT pos[2];
       MousePosition(pos);
-      SocketWriteIntN(sockfd, pos, 2);
+      SocketWriteINTN(sockfd, pos, 2);
       break;
     }
 
     case DC_MouseStillDown :
-      SocketWriteInt(sockfd, MouseStillDown());
+      SocketWriteINT(sockfd, MouseStillDown());
       break;
 
     case DC_GetNextUGEvent :
@@ -284,11 +285,11 @@ static void ug_frontend (int sockfd)
       SocketWriteLong(sockfd, theOutputDevice->yellow);
       SocketWriteLong(sockfd, theOutputDevice->darkyellow);
       SocketWriteLong(sockfd, theOutputDevice->magenta);
-      SocketWriteInt(sockfd, theOutputDevice->hasPalette);
+      SocketWriteINT(sockfd, theOutputDevice->hasPalette);
       SocketWriteLong(sockfd, theOutputDevice->spectrumStart);
       SocketWriteLong(sockfd, theOutputDevice->spectrumEnd);
-      SocketWriteInt(sockfd, theOutputDevice->signx);
-      SocketWriteInt(sockfd, theOutputDevice->signy);
+      SocketWriteINT(sockfd, theOutputDevice->signx);
+      SocketWriteINT(sockfd, theOutputDevice->signy);
 
       /*
                                       SocketWrite(sockfd, (char *)theOutputDevice, sizeof(OUTPUTDEVICE));

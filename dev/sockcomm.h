@@ -110,14 +110,14 @@ int SocketReadString (int, char *, int);
 
 
 void SocketWriteCmd (int, int);
-void SocketWriteInt (int, int);
-void SocketWriteIntN (int, int *, int);
+void SocketWriteINT (int, INT);
+void SocketWriteINTN (int, INT *, int);
 void SocketWriteLong (int, long);
 void SocketWriteString (int, char *);
 void SocketWriteData (int, const char *, int);
 
 INT SocketReadINT (int);
-void SocketReadIntN (int, int *, int);
+void SocketReadINTN (int, INT *, int);
 long SocketReadLong (int);
 
 

@@ -62,7 +62,7 @@
 
 
 #define BUFSTART    ptr=buf
-#define BUFINT(i)   *(int *)ptr=(int)(i); ptr+=sizeof(int)
+#define BUFINT(i)   *(INT *)ptr=(INT)(i); ptr+=sizeof(INT)
 #define BUFLONG(i)   *(long *)ptr=(long)(i); ptr+=sizeof(long)
 #define BUFPOINT(p) BUFINT((p).x); BUFINT((p).y)
 #define BUFTEXT(t)  { int l=strlen(t); BUFINT(l); memcpy(ptr,(t),l); ptr+=l; }
@@ -397,10 +397,10 @@ WINDOWID Remote_OpenOutput (const char *title, INT x, INT y, INT width, INT heig
   /* ... now the OpenOutput function is called on remote side */
 
 
-  SocketReadIntN(theSocket, Global_LL, 2);
-  SocketReadIntN(theSocket, Global_UR, 2);
-  SocketReadIntN(theSocket, Local_LL, 2);
-  SocketReadIntN(theSocket, Local_UR, 2);
+  SocketReadINTN(theSocket, Global_LL, 2);
+  SocketReadINTN(theSocket, Global_UR, 2);
+  SocketReadINTN(theSocket, Local_LL, 2);
+  SocketReadINTN(theSocket, Local_UR, 2);
   *error     = SocketReadINT(theSocket);
   win        = (WINDOWID)SocketReadINT(theSocket);
 
@@ -576,13 +576,13 @@ INT GetScreenSize (INT size[2])
 
 INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
 {
-  int len;
+  INT len;
 
   SocketWriteCmd(theSocket, DC_GetNextUGEvent);
   /*
           SocketWriteData(theSocket, theEvent, sizeof(EVENT));
    */
-  SocketWriteInt(theSocket, Eventmask);
+  SocketWriteINT(theSocket, Eventmask);
 
   len = SocketReadINT(theSocket);
   if (len==0)
@@ -730,7 +730,7 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
   /* now the socket connection is ready. */
 
   SocketWriteCmd(theSocket, DC_InitScreen);
-  SocketWriteInt(theSocket, *argcp);
+  SocketWriteINT(theSocket, (INT)*argcp);
   for(i=0; i<*argcp; i++)
     SocketWriteData(theSocket, argv[i], strlen(argv[i]));
 
@@ -797,7 +797,7 @@ void WriteString (const char *s)
 void MousePosition (INT *point)
 {
   SocketWriteCmd(theSocket, DC_MousePosition);
-  SocketReadIntN(theSocket, point, 2);
+  SocketReadINTN(theSocket, point, 2);
 }
 
 
