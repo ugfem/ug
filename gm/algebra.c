@@ -544,7 +544,7 @@ BLOCKVECTOR *FindBV( const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT 
    D*/
 /****************************************************************************/
 
-static INT GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side)
+INT GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side)
 {
   NODE *nd,*n0,*n1;
   EDGE *ed;
@@ -632,6 +632,22 @@ static INT GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side)
   }
   return (part);
 }
+
+#ifdef ModelP
+INT GetVectorSize (GRID *theGrid, INT VectorObjType, GEOM_OBJECT *object)
+{
+  MULTIGRID *mg;
+  INT part,vtype;
+
+  mg = MYMG(theGrid);
+  part = GetDomainPart(BVPD_S2P_PTR(MG_BVPD(mg)),object,NOSIDE);
+  if (part < 0)
+    REP_ERR_RETURN(-1);
+  vtype = FMT_PO2T(MGFORMAT(mg),part,VectorObjType);
+
+  return(FMT_S_VEC_TP(MGFORMAT(mg),vtype));
+}
+#endif
 
 /****************************************************************************/
 /*D
