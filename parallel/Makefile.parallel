@@ -25,8 +25,9 @@ LIBDIR = ../lib
 
 ####################################################################
 
+# $(CHACO) is set to ON or OFF in ug.conf
 
-all: include DDDIF DDDOBJ ppif_all
+all: include DDDIF DDDOBJ ppif_all $(CHACO)
 
 include:
 	ln -s ../include include
@@ -37,6 +38,12 @@ DDDIF:
 DDDOBJ:
 	cd dddobj; make -f Makefile.dddobj; cd ..;
 
+ON:
+	echo "creating chaco"
+	cd chaco; make -f Makefile.chaco; cd ..;
+
+OFF:
+	echo "no chaco"
 
 ####################################################################
 
@@ -44,6 +51,7 @@ DDDOBJ:
 clean: ppif_clean
 	cd dddif; make -f Makefile.dddif clean; cd ..;
 	cd dddobj; make -f Makefile.dddobj clean; cd ..;
+	cd chaco; make -f Makefile.chaco clean; cd ..;
 
 
 ####################################################################
