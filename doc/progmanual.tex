@@ -1,4 +1,4 @@
-\documentstyle[epsf,twoside]{ugart}
+\documentstyle[epsf,twoside,titlepage]{ugart}
 
 % Voreinstellungen
 \input{const.tex}
@@ -11,10 +11,50 @@
 \newcommand{\sectitle}{\mbox{}}
 \setcounter{page}{0}
 
-\title{UG Version 3.0 Programming manual\\
-       Dated: \today}
+\title{UG Version 3.1 Programming Manual}
 \author{The UG Group}
+
 \maketitle
+
+
+\section*{Introduction}
+
+The UG Manual consists of three parts:
+\\[5mm]  
+The {\em Programming Manual} gives an overview on the program, it
+explains the submodules and all data structures and it contains
+all commands which are needed for running an application.
+\\[5mm]  
+The {\em Reference Manual} contains a list of all 
+functions in the ug library which can be called in the Problem Classes.
+\\[5mm]
+The {\em Application and Problem Class Documentation} gives examples
+of applications of the ug library.
+\\[5mm]
+The manuals are created with the tool {\tt doctext} and the content is 
+identical with the man pages. All man pages can be displayed on screen 
+with the commands {\tt xugman} resp. {\tt ugman}.
+\\[5mm]
+We hope that this documentation helps the reader to use UG 
+and to implement own applications.
+\\[1cm]
+The documentation team
+\\[1cm]
+Peter Bastian\\
+Gabi Beddies\\
+Reinhard Haag\\
+Ingo Heppner\\
+Wolfgang Hoffmann\\
+Klaus Johannsen\\
+Stefan Lang\\
+Bernd Maar\\
+George Mazurkevich\\
+Niclas Neu\ss\\
+Henrik Rentz-Reichart\\
+Christian Wieners\\
+Christian Wrobel
+
+\newpage
 {
 \small
 \tableofcontents
