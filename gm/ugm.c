@@ -1773,16 +1773,17 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
     SET_CORNER(pe,i,nodes[i]);
 
   /* create edges */
-  for (i=0; i<EDGES_OF_ELEM(pe); i++) {
-    if (GetEdge(nodes[CORNER_OF_EDGE(pe,i,0)],
-                nodes[CORNER_OF_EDGE(pe,i,1)]) != NULL) {
+  for (i=0; i<EDGES_OF_ELEM(pe); i++)
+  {
+    if (GetEdge(nodes[CORNER_OF_EDGE(pe,i,0)],nodes[CORNER_OF_EDGE(pe,i,1)])!=NULL)
+    {
+      CreateEdge(theGrid,nodes[CORNER_OF_EDGE(pe,i,0)],nodes[CORNER_OF_EDGE(pe,i,1)],FALSE);
       continue;
     }
-    else {
-      if ((ed=CreateEdge(theGrid,
-                         nodes[CORNER_OF_EDGE(pe,i,0)],
-                         nodes[CORNER_OF_EDGE(pe,i,1)],
-                         FALSE)) == NULL) {
+    else
+    {
+      if ((ed=CreateEdge(theGrid,nodes[CORNER_OF_EDGE(pe,i,0)],nodes[CORNER_OF_EDGE(pe,i,1)],FALSE)) == NULL)
+      {
         DisposeElement(theGrid,pe,TRUE);
         return(NULL);
       }
