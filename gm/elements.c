@@ -163,6 +163,7 @@ static char rcsid[] = "$Header$";
     INT side_with_edge[MAX_EDGES_OF_ELEM][MAX_SIDES_OF_EDGE];
     INT corner_of_side_inv[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_ELEM];
     INT edges_of_corner[MAX_CORNERS_OF_ELEM][MAX_EDGES_OF_ELEM];
+        INT corner_of_oppedge[MAX_EDGES_OF_ELEM][MAX_CORNERS_OF_EDGE];
 
    } GENERAL_ELEMENT;
    .ve
@@ -208,7 +209,7 @@ static char rcsid[] = "$Header$";
 static INT ProcessElementDescription (GENERAL_ELEMENT *el)
 {
   INT p_count, tag;
-  INT i,j,k,n;
+  INT i,j,k,l,n;
 
   tag = el->tag;
   p_count = 0;
@@ -311,6 +312,28 @@ static INT ProcessElementDescription (GENERAL_ELEMENT *el)
           break;
         }
     }
+
+  /* corner_of_oppedge(i,j) : i is a number of an edge, j is a number of a corner
+     of an edge, then corner_of_oppedge(i,j) gives the corner of the edge opposite
+     to the specified edge or -1 if there is no opposite edge						*/
+  for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+    for (j=0; j<MAX_CORNERS_OF_EDGE; j++)
+      el->corner_of_oppedge[i][j] = -1;
+  if (tag==4)
+    for (i=0; i<el->edges_of_elem; i++)
+      for (j=0; j<el->edges_of_elem; j++)
+      {
+        n=1;
+        for (k=0; k<el->corners_of_edge; k++)
+          for (l=0; l<el->corners_of_edge; l++)
+            if (el->corner_of_edge[i][k]==el->corner_of_edge[j][l])
+              n=0;
+        if (n)
+        {
+          el->corner_of_oppedge[i][0] = el->corner_of_edge[j][0];
+          el->corner_of_oppedge[i][1] = el->corner_of_edge[j][1];
+        }
+      }
 
   /* make description globally available */
   element_descriptors[tag] = el;
