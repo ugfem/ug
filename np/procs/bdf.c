@@ -874,18 +874,25 @@ output:         /* output */
 static INT TimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
 {
   NP_BDF *bdf;
+  NP_T_ASSEMBLE *tass;
 
   /* get numprocs ... */
-  bdf = (NP_BDF *) ts;
+  bdf  = (NP_BDF *) ts;
+  tass = bdf->tsolver.tass;
+
+  /* release tassemble */
+  if (tass->TAssembleFinal != NULL)
+    if ( (*tass->TAssembleFinal)(tass,0,level,res) )
+      REP_ERR_RETURN(1);
 
   /* free XDATA_DESCs here */
-  FreeVD(ts->nlass.base.mg,0,level,bdf->y_0);
-  FreeVD(ts->nlass.base.mg,0,level,bdf->y_m1);
-  FreeVD(ts->nlass.base.mg,0,level,bdf->b);
+  if (FreeVD(ts->nlass.base.mg,0,level,bdf->y_0)) REP_ERR_RETURN(1);
+  if (FreeVD(ts->nlass.base.mg,0,level,bdf->y_m1)) REP_ERR_RETURN(1);
+  if (FreeVD(ts->nlass.base.mg,0,level,bdf->b)) REP_ERR_RETURN(1);
 
   if (bdf->TimeControl != NULL) {
     if ((*bdf->TimeControl->PostProcess)(bdf->TimeControl,res))
-      return(1);
+      REP_ERR_RETURN(1);
   }
 
   return(0);
