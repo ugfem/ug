@@ -1333,16 +1333,6 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
 
   theFather = EFATHER(theElement);
   s = 0;
-  if (me == 1 && theElement!=NULL)
-  {
-    printf("elementlist e=" EID_FMTX , EID_PRTX(theElement));
-    if(PREDE(theElement)!=NULL)
-      printf(" pred=" EID_FMTX , EID_PRTX(PREDE(theElement)));
-    else printf(" pred==NULL");
-    if(SUCCE(theElement)!=NULL)
-      printf(" succ=" EID_FMTX "\n" , EID_PRTX(SUCCE(theElement)));
-    else printf(" succ==NULL\n");
-  }
   if ((prio = pinfo->prio_elem) != PrioMaster)
   {
     old = EPRIO(theElement);
@@ -1352,9 +1342,6 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
     SETEPRIO(theElement,prio);
     if (theFather != NULL)
     {
-      if (me == 1 && ID(theFather)==9)
-        printf("e=" EID_FMTX "\n", EID_PRTX(theElement));
-
       if (theElement == SON(theFather,oldwhere))
       {
         Next = NULL;
@@ -1367,11 +1354,6 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
       After = SON(theFather,where);
       if (After == NULL) SET_SON(theFather,where,theElement);
       GRID_LINKX_ELEMENT(theGrid,theElement,prio,After);
-      if (me == 1 && ID(theFather)==9)
-        if (SON(theFather,oldwhere)!=NULL)
-          printf("masterson=" EID_FMTX "\n", EID_PRTX(SON(theFather,oldwhere)));
-        else
-          printf("masterson=NULL\n");
     }
     else
       GRID_LINK_ELEMENT(theGrid,theElement,prio);
