@@ -101,6 +101,7 @@ static INT AVSCommand (INT argc, char **argv)
   char filename[NAMESIZE];      /* file name for output file				*/
   FILE *stream;                                 /* the output file pointer					*/
 
+  EVALUES *zcoord;                              /* use scalar as z coordinate in 2D only	*/
   INT ns;                                               /* number of scalar eval procs				*/
   INT nv;                                               /* number of vector eval procs				*/
   EVALUES *es[MAXVARIABLES];            /* pointers to scalar eval function desc	*/
@@ -122,6 +123,7 @@ static INT AVSCommand (INT argc, char **argv)
   DOUBLE x,y,z;                                 /* scalar values							*/
   DOUBLE vval[DIM];                             /* result of vector evaluation function		*/
   time_t ltime;
+  double scaling=1.0;
 
 
   /* get current multigrid */
@@ -134,8 +136,27 @@ static INT AVSCommand (INT argc, char **argv)
 
   /* scan options */
   ns = nv = ns_cell = nv_cell = 0;
+  zcoord = NULL;
   for(i=1; i<argc; i++)
   {
+    if (strncmp(argv[i],"scale",5)==0) {
+      sscanf(argv[i],"scale %s", s);
+      sscanf(s,"%lg",&scaling);
+      continue;
+    }
+
+    if (strncmp(argv[i],"zcoord",6)==0) {
+      sscanf(argv[i],"zcoord %s", s);
+      zcoord = GetElementValueEvalProc(s);
+      if (zcoord==NULL)
+      {
+        sprintf(buf,"could not find scalar eval proc %s\n",s);
+        PrintErrorMessage('E',"avs:",buf);
+        break;
+      }
+      continue;
+    }
+
     if (strncmp(argv[i],"ns",2)==0) {
       if (ns>=MAXVARIABLES)
       {
@@ -273,6 +294,12 @@ static INT AVSCommand (INT argc, char **argv)
   /* of nodes in point block form */
   /********************************/
 
+  if (DIM==2 && zcoord!=NULL)
+  {
+    pre    = zcoord->PreprocessProc;
+    if (pre!=NULL) pre("zcoord->v.name",mg);
+  }
+
   /* clear USED flag in vertices on all levels */
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
@@ -283,16 +310,33 @@ static INT AVSCommand (INT argc, char **argv)
     {
       if (NSONS(el)>0) continue;                        /* process finest level elements only */
       for (i=0; i<CORNERS_OF_ELEM(el); i++)
+        CornersCoord[i] = CVECT(MYVERTEX(CORNER(el,i)));         /* x,y,z of corners */
+      for (i=0; i<CORNERS_OF_ELEM(el); i++)
       {
         vx = MYVERTEX(CORNER(el,i));
         if (USED(vx)) continue;                         /* we have this one already */
         SETUSED(vx,1);                                          /* tag vector as visited */
+
+        /* get local coordinate of corner */
+        LocalCornerCoordinates(DIM,TAG(el),i,local);
+        for (j=0; j<DIM; j++) LocalCoord[j] = local[j];
+
         x = XC(vx);
         y = YC(vx);
         if (DIM==3)
+        {
           z = ZC(vx);
+        }
         else
-          z = 0.0;
+        {
+          if (zcoord!=NULL)
+          {
+            eval_s = zcoord->EvalProc;
+            z = scaling*eval_s(el,(const COORD **)CornersCoord,LocalCoord);
+          }
+          else
+            z = 0.0;
+        }
         fprintf(stream,"%d %lg %lg %lg\n",ID(vx),x,y,z);
       }
     }
