@@ -241,7 +241,7 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
   if (idata[0] != VECSKIP(pv)) {
     printf(PFMT "ERROR:"
            " VECSKIP not matches vec="
-           VINDEX_FMTX " %d master %d\n",
+           VINDEX_FMTX " %d master %d\n",me,
            VINDEX_PRTX(pv),VECSKIP(pv),idata[0]);
     pcheck++;
     ASSERT(0);
@@ -249,14 +249,14 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
   if (idata[1] != VCLASS(pv)) {
     printf(PFMT "ERROR:"
            " VCLASS not matches vec="
-           VINDEX_FMTX " %d master %d\n",
+           VINDEX_FMTX " %d master %d\n",me,
            VINDEX_PRTX(pv),VCLASS(pv),idata[1]);
     ASSERT(0);
   }
   if (idata[2] != VNCLASS(pv)) {
     printf(PFMT "ERROR:"
            " VNCLASS not matches vec="
-           VINDEX_FMTX " %d master %d\n",
+           VINDEX_FMTX " %d master %d\n",me,
            VINDEX_PRTX(pv),VNCLASS(pv),idata[2]);
     pcheck++;
     ASSERT(0);
@@ -264,7 +264,7 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
   if (idata[3] != NEW_DEFECT(pv)) {
     printf(PFMT "ERROR:"
            " NEW_DEFECT not matches vec="
-           VINDEX_FMTX " %d master %d\n",
+           VINDEX_FMTX " %d master %d\n",me,
            VINDEX_PRTX(pv),NEW_DEFECT(pv),idata[3]);
     pcheck++;
     ASSERT(0);
@@ -272,7 +272,7 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
   if (idata[4] != FINE_GRID_DOF(pv)) {
     printf(PFMT "ERROR:"
            " FINE_GRID_DOF not matches vec="
-           VINDEX_FMTX " %d master %d\n",
+           VINDEX_FMTX " %d master %d\n",me,
            VINDEX_PRTX(pv),FINE_GRID_DOF(pv),idata[4]);
     pcheck++;
     ASSERT(0);
@@ -280,7 +280,7 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
   if (idata[5] != VTYPE(pv)) {
     printf(PFMT "ERROR:"
            " VTYPE not matches vec="
-           VINDEX_FMTX " %d master %d\n",
+           VINDEX_FMTX " %d master %d\n",me,
            VINDEX_PRTX(pv),VTYPE(pv),idata[5]);
     pcheck++;
     ASSERT(0);
@@ -288,7 +288,7 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
   if (idata[6] != VOTYPE(pv)) {
     printf(PFMT "ERROR:"
            " VOTYPE not matches vec="
-           VINDEX_FMTX " %d master %d\n",
+           VINDEX_FMTX " %d master %d\n",me,
            VINDEX_PRTX(pv),VOTYPE(pv),idata[6]);
     pcheck++;
     ASSERT(0);
@@ -296,7 +296,7 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
   if (idata[7] != VDATATYPE(pv)) {
     printf(PFMT "ERROR:"
            " VDATATYPE not matches vec="
-           VINDEX_FMTX " %d master %d\n",
+           VINDEX_FMTX " %d master %d\n",me,
            VINDEX_PRTX(pv),VDATATYPE(pv),idata[7]);
     pcheck++;
     ASSERT(0);
@@ -304,7 +304,7 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
   if (idata[8] != VNEW(pv)) {
     printf(PFMT "ERROR:"
            " VNEW not matches vec="
-           VINDEX_FMTX " %d master %d\n",
+           VINDEX_FMTX " %d master %d\n",me,
            VINDEX_PRTX(pv),VNEW(pv),idata[8]);
     pcheck++;
     ASSERT(0);
@@ -312,7 +312,7 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
   if (idata[9] != VECTORSIDE(pv)) {
     printf(PFMT "ERROR:"
            " VECTORSIDE not matches vec="
-           VINDEX_FMTX " %d master %d\n",
+           VINDEX_FMTX " %d master %d\n",me,
            VINDEX_PRTX(pv),VECTORSIDE(pv),idata[9]);
     pcheck++;
     ASSERT(0);
@@ -320,7 +320,7 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
   if (idata[10] != VPART(pv)) {
     printf(PFMT "ERROR:"
            " VPART not matches vec="
-           VINDEX_FMTX " %d master %d\n",
+           VINDEX_FMTX " %d master %d\n",me,
            VINDEX_PRTX(pv),VPART(pv),idata[10]);
     pcheck++;
     ASSERT(0);
