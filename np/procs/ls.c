@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 #include "devices.h"
 #include "general.h"
@@ -56,7 +57,7 @@
 /****************************************************************************/
 
 #define ABS_LIMIT 1e-10
-
+#define MAX_RESTART 20
 #ifdef ModelP
 #include "ppif.h"
 #define CSTART()    clock_start=CurrentTime()
@@ -175,6 +176,29 @@ typedef struct
   VECDATA_DESC *q;
 
 } NP_BCGS;
+
+typedef struct
+{
+  NP_LINEAR_SOLVER ls;
+
+  NP_ITER *Iter;
+
+  INT maxiter;
+  INT baselevel;
+  INT display;
+  INT restart;
+
+  DOUBLE rho, omega;
+  VEC_SCALAR weight;
+  VECDATA_DESC *c;
+  VECDATA_DESC *r;
+  VECDATA_DESC *p;
+  VECDATA_DESC *s;
+  VECDATA_DESC *t;
+  VECDATA_DESC *q;
+  VECDATA_DESC *w;
+  VECDATA_DESC *v[MAX_RESTART+1];
+} NP_GMRES;
 
 typedef struct
 {
@@ -1717,6 +1741,541 @@ static INT BCGSConstruct (NP_BASE *theNP)
 
 /****************************************************************************/
 /*D
+   gmres - numproc for the gmres method
+
+   DESCRIPTION:
+   This numproc executes the generalized mimimum residual method.
+
+   .vb
+   npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>]
+       [$red <sc double list>] [$abslimit <sc double list>]
+       $m <maxit> $I <iteration> [$d {full|red|no}]
+       [$p <con>] [$t <tmp>]
+           [$R <restart>] [$w <sc double list>];
+   .ve
+
+   .  $x~<sol> - solution vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $red~<sc~double~list> - reduction factor
+   .  $abslimit~<sc~double~list> - absolute limit for the defect (default 1E-10)
+   .  $m~<maxit> - maximal number of iterations
+   .  $I~<iteration> - iteration numproc
+   .  $d~{full|red|no} - display modus
+   .  $p~<con> - conjugate vector
+   .  $t~<tmp> - temporaty vector
+   .  $R~<restart> - restart index
+   .  $w~<sc~double~list> - weighting factor
+
+   'npexecute <name> [$i] [$d] [$r] [$s] [$p];'
+
+   .  $i - preprocess
+   .  $d - replace right hand side by the defect
+   .  $r - compute the residuum of the defect
+   .  $s - solve
+   .  $p - postprocess
+
+   SEE ALSO:
+   ls
+   D*/
+/****************************************************************************/
+
+static INT GMRESInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_GMRES *np;
+  INT i;
+
+  np = (NP_GMRES *) theNP;
+  if (sc_read (np->weight,NULL,"weight",argc,argv))
+    for (i=0; i<MAX_VEC_COMP; i++) np->weight[i] = 1.0;
+  for (i=0; i<MAX_VEC_COMP; i++) np->weight[i] *= np->weight[i];
+  np->c = ReadArgvVecDesc(theNP->mg,"c",argc,argv);
+  np->r = ReadArgvVecDesc(theNP->mg,"r",argc,argv);
+  np->p = ReadArgvVecDesc(theNP->mg,"p",argc,argv);
+  np->s = ReadArgvVecDesc(theNP->mg,"s",argc,argv);
+  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+  np->q = ReadArgvVecDesc(theNP->mg,"q",argc,argv);
+  np->w = ReadArgvVecDesc(theNP->mg,"w",argc,argv);
+  if (ReadArgvINT("m",&(np->maxiter),argc,argv))
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (ReadArgvINT("R",&(np->restart),argc,argv))
+    np->restart = 0;
+  if (np->restart<0)
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+  for (i=0; i<=MAX_RESTART; i++) np->v[i] = NULL;
+  np->display = ReadArgvDisplay(argc,argv);
+  np->baselevel = 0;
+  np->Iter = (NP_ITER *)
+             ReadArgvNumProc(theNP->mg,"I",ITER_CLASS_NAME,argc,argv);
+
+  return (NPLinearSolverInit(&np->ls,argc,argv));
+}
+
+static INT GMRESDisplay (NP_BASE *theNP)
+{
+  NP_GMRES *np;
+  INT i;
+
+  np = (NP_GMRES *) theNP;
+  NPLinearSolverDisplay(&np->ls);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"m",(int)np->maxiter);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"R",(int)np->restart);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"baselevel",(int)np->baselevel);
+  if (np->Iter != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"Iter",ENVITEM_NAME(np->Iter));
+  else
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"Iter","---");
+  if (np->display == PCR_NO_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
+  else if (np->display == PCR_RED_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
+  else if (np->display == PCR_FULL_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
+  if (np->c != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"c",ENVITEM_NAME(np->c));
+  if (np->r != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"r",ENVITEM_NAME(np->r));
+  if (np->p != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"p",ENVITEM_NAME(np->p));
+  for (i=0; i<=MAX_RESTART; i++) if (np->v[i] != NULL)
+      if (i<10)
+        UserWriteF("v[%d]            = %-35.32s\n",
+                   i,ENVITEM_NAME(np->v[i]));
+      else
+        UserWriteF("v[%d]           = %-35.32s\n",
+                   i,ENVITEM_NAME(np->v[i]));
+  if (np->s != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"s",ENVITEM_NAME(np->s));
+  if (np->t != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+  if (np->q != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"q",ENVITEM_NAME(np->q));
+  if (np->w != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"w",ENVITEM_NAME(np->w));
+  if (np->p != NULL)
+    if (sc_disp(np->weight,np->p,"weight")) REP_ERR_RETURN (1);
+
+  return (0);
+}
+
+static INT GMRESPreProcess (NP_LINEAR_SOLVER *theNP, INT level,
+                            VECDATA_DESC *x, VECDATA_DESC *b,
+                            MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+  NP_GMRES *np;
+  INT i;
+  np = (NP_GMRES *) theNP;
+
+  np->baselevel = MIN(*baselevel,level);
+
+  if (np->Iter!=NULL)
+    if (np->Iter->PreProcess != NULL)
+      if ((*np->Iter->PreProcess)(np->Iter,level,x,b,A,baselevel,result))
+        REP_ERR_RETURN(1);
+
+  if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->c))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->r))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->p))
+    NP_RETURN(1,result[0]);
+  for (i=0; i<=np->restart; i++)
+    if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->v[i]))
+      NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->s))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->t))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->q))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->w))
+    NP_RETURN(1,result[0]);
+
+  return(0);
+}
+
+static INT GMRESPostProcess (NP_LINEAR_SOLVER *theNP, INT level,
+                             VECDATA_DESC *x, VECDATA_DESC *b,
+                             MATDATA_DESC *A, INT *result)
+{
+  NP_GMRES *np;
+  INT i;
+
+  np = (NP_GMRES *) theNP;
+  FreeVD(np->ls.base.mg,np->baselevel,level,np->c);
+  FreeVD(np->ls.base.mg,np->baselevel,level,np->r);
+  FreeVD(np->ls.base.mg,np->baselevel,level,np->p);
+  for (i=0; i<=np->restart; i++)
+    FreeVD(np->ls.base.mg,np->baselevel,level,np->v[i]);
+  FreeVD(np->ls.base.mg,np->baselevel,level,np->s);
+  FreeVD(np->ls.base.mg,np->baselevel,level,np->t);
+  FreeVD(np->ls.base.mg,np->baselevel,level,np->q);
+  FreeVD(np->ls.base.mg,np->baselevel,level,np->w);
+
+  if (np->Iter!=NULL) {
+    if (np->Iter->PostProcess == NULL) return(0);
+    return((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result));
+  }
+  else
+    return (0);
+
+  return(0);
+}
+
+#ifdef ModelP
+static INT l_vector_makeinconsistent (GRID *g, const VECDATA_DESC *x)
+{
+  VECTOR *v;
+  INT vc,i,type,mask,n,m;
+  const SHORT *Comp;
+
+  if (VD_IS_SCALAR(x)) {
+    mask = VD_SCALTYPEMASK(x);
+    vc = VD_SCALCMP(x);
+    for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+      if ((mask & VDATATYPE(v)) &&
+          (DDD_InfoPriority(PARHDR(v)) != PrioMaster))
+        VVALUE(v,vc) = 0.0;
+  }
+  else
+    for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v)) {
+      type = VTYPE(v);
+      n = VD_NCMPS_IN_TYPE(x,type);
+      if (n == 0) continue;
+      if (DDD_InfoPriority(PARHDR(v)) != PrioMaster) continue;
+      Comp = VD_CMPPTR_OF_TYPE(x,type);
+      for (i=0; i<n; i++)
+        VVALUE(v,Comp[i]) = 0.0;
+    }
+
+  return(NUM_OK);
+}
+
+static INT a_vector_makeinconsistent (MULTIGRID *mg, INT fl, INT tl,
+                                      const VECDATA_DESC *x)
+{
+  INT level;
+
+  for (level=fl; level<=tl; level++)
+    if (l_vector_makeinconsistent(GRID_ON_LEVEL(mg,level),x))
+      REP_ERR_RETURN(NUM_ERROR);
+
+  return (NUM_OK);
+}
+#endif
+
+static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
+                        VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                        VEC_SCALAR abslimit, VEC_SCALAR reduction,
+                        LRESULT *lresult)
+{
+  NP_GMRES *np;
+  VEC_SCALAR defect2reach,rnorm,scal;
+  INT i,bl,PrintID;
+  char text[DISPLAY_WIDTH+4];
+  double ti;
+  int ii;
+  DOUBLE H[MAX_RESTART+1][MAX_RESTART];
+  DOUBLE Hsq[MAX_RESTART*MAX_RESTART];
+  DOUBLE s[MAX_RESTART+1];
+  DOUBLE cs[MAX_RESTART];
+  DOUBLE sn[MAX_RESTART];
+  DOUBLE y[MAX_RESTART];
+  DOUBLE lambda;
+  DOUBLE tol;
+  INT k,j;
+  INT it,i1,i2,ncomp,*result;
+  MULTIGRID *theMG;
+    #ifdef ModelP
+  double clock_start;
+    #else
+  clock_t clock_start;
+    #endif
+  /* store passed reduction and abslimit */
+  for (i=0; i<VD_NCOMP(x); i++) {
+    NPLS_red(theNP)[i] = reduction[i];
+    NPLS_abs(theNP)[i] = abslimit[i];
+  }
+  result = &lresult->error_code;
+  np = (NP_GMRES *) theNP;
+  bl = np->baselevel;
+  if (np->Iter->Iter == NULL)
+    NP_RETURN(1,lresult->error_code);
+  theMG = theNP->base.mg;
+  ncomp = VD_NCOMP(x);
+
+  /* print defect */
+  CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
+  if (np->display > PCR_NO_DISPLAY)
+    if (PreparePCR(x,np->display,text,&PrintID))
+      NP_RETURN(1,lresult->error_code);
+  CSTART(); ti=0; ii=0;
+  for (i=0; i<VD_NCOMP(x); i++)
+    lresult->first_defect[i] = lresult->last_defect[i];
+  if (sc_mul_check(defect2reach,lresult->first_defect,reduction,b))
+    NP_RETURN(1,lresult->error_code);
+
+  /* Compute the tolerance */
+  tol = 0.0;
+  for (j=0; j<ncomp; j++) tol += defect2reach[j]*defect2reach[j];
+  tol = sqrt(tol);
+
+  if (np->display > PCR_NO_DISPLAY)
+    if (DoPCR(PrintID,lresult->first_defect,PCR_CRATE))
+      NP_RETURN(1,lresult->error_code);
+  if (sc_cmp(lresult->first_defect,abslimit,b)) lresult->converged = 1;
+  else lresult->converged = 0;
+  lresult->number_of_linear_iterations = 0;
+
+  /* GMRES outer loop */
+  for (it=0; it<np->maxiter; it++) {
+    if (lresult->converged) break;
+
+    if (s_ddot(theMG,bl,level,b,b,rnorm) !=NUM_OK)
+      NP_RETURN(1,result[0]);
+    lambda = 0.0;
+    for (j=0; j<ncomp; j++) lambda += rnorm[j];
+    printf("res %12.8f\n",lambda);
+    if (s_dcopy(theMG,bl,level,np->s,b)!= NUM_OK)
+      NP_RETURN(1,lresult->error_code);
+
+    /* Solve preconditioner for the initial residual */
+    if (a_dset(theMG,bl,level,np->r,EVERY_CLASS,0.0) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if ((*np->Iter->Iter)(np->Iter,level,np->r,np->s,A,
+                          &lresult->error_code))
+      REP_ERR_RETURN (1);
+    /* form the norm of the initial residual */
+                #ifdef ModelP
+    if (s_dcopy(theMG,bl,level,np->s,np->r)!= NUM_OK)
+      NP_RETURN(1,lresult->error_code);
+    if (a_vector_makeinconsistent(theMG,bl,level,np->s) != NUM_OK)
+      NP_RETURN(1,lresult->error_code);
+    if (s_ddot(theMG,bl,level,np->s,np->r,rnorm) !=NUM_OK)
+      NP_RETURN(1,result[0]);
+                #else
+    if (s_ddot(theMG,bl,level,np->r,np->r,rnorm) !=NUM_OK)
+      NP_RETURN(1,result[0]);
+                #endif
+
+    lambda = 0.0;
+    for (j=0; j<ncomp; j++) lambda += rnorm[j];
+    if (lambda <= 0.0) NP_RETURN(1,result[0]);
+    lambda = 1.0/sqrt(lambda);
+
+    /* copy the initial residual into v[0] */
+    if (s_dcopy(theNP->base.mg,bl,level,np->v[0],np->r) != NUM_OK)
+      NP_RETURN(1,lresult->error_code);
+
+    /* scale v[0] = r/norm(r) */
+    for (j=0; j<ncomp; j++) rnorm[j] = lambda;
+    if (a_dscale(theMG,bl,level,np->v[0],EVERY_CLASS,rnorm) != NUM_OK)
+      NP_RETURN(1,result[0]);
+
+    /* form s = norm(r)*e1 */
+    for (j=0; j<=MAX_RESTART; j++) s[j] = 0.0;
+    s[0] = 1.0/lambda;
+
+    /* GMRES inner loop */
+    for (i=0; i<np->restart; i++) {
+      printf("#####################################\n");
+      printf("#### GMRES inner loop: i=%i\n",i);
+      printf("####   s[0]: %12.8f\n",s[0]);
+      lresult->number_of_linear_iterations++;
+      /* Matrix-vector mutliply: A*v[i] */
+      if (s_dmatmul_set(theMG,bl,level,np->s,A,np->v[i],EVERY_CLASS))
+        NP_RETURN(1,lresult->error_code);
+      /* preconditioner solve: Mw = A*v[i] */
+      if (a_dset(theMG,bl,level,np->w,EVERY_CLASS,0.0) != NUM_OK)
+        NP_RETURN(1,result[0]);
+      if ((*np->Iter->Iter)(np->Iter,level,np->w,np->s,A,
+                            &lresult->error_code))
+        REP_ERR_RETURN (1);
+
+      /* form a column of the upper Hessenberg matrix / Arnoldi
+             process */
+      for (k=0; k<=i; k++) {
+        /* form an entry of the upper Hessenberg matrix */
+                            #ifdef ModelP
+        if (s_dcopy(theMG,bl,level,np->s,np->w)!= NUM_OK)
+          NP_RETURN(1,lresult->error_code);
+        if (a_vector_makeinconsistent(theMG,bl,level,np->s) != NUM_OK)
+          NP_RETURN(1,lresult->error_code);
+        if (s_ddot(theMG,bl,level,np->s,np->v[k],rnorm) !=NUM_OK)
+          NP_RETURN(1,result[0]);
+                                #else
+        if (s_ddot(theMG,bl,level,np->w,np->v[k],rnorm) !=NUM_OK)
+          NP_RETURN(1,result[0]);
+                                #endif
+        lambda = 0.0;
+        for (j=0; j<ncomp; j++) lambda += rnorm[j];
+        H[k][i] = lambda;
+        printf("#### H[k,i]: %8.4f \n",H[k][i]);
+
+        /* update the vector w  = w-h[k,i]*v */
+        for (j=0; j<ncomp; j++) scal[j] = -lambda;
+        if (a_daxpy(theMG,bl,level,np->w,EVERY_CLASS,scal,np->v[k])
+            != NUM_OK)
+          NP_RETURN(1,result[0]);
+      }                   /* k */
+
+      /* form H[i+1][i] = norm(w) */
+                        #ifdef ModelP
+      if (s_dcopy(theMG,bl,level,np->s,np->w)!= NUM_OK)
+        NP_RETURN(1,lresult->error_code);
+      if (a_vector_makeinconsistent(theMG,bl,level,np->s) != NUM_OK)
+        NP_RETURN(1,lresult->error_code);
+      if (s_ddot(theMG,bl,level,np->s,np->w,rnorm) !=NUM_OK)
+        NP_RETURN(1,result[0]);
+                        #else
+      if (s_ddot(theMG,bl,level,np->w,np->w,rnorm) !=NUM_OK)
+        NP_RETURN(1,result[0]);
+                        #endif
+      lambda = 0.0;
+      for (j=0; j<ncomp; j++) lambda += rnorm[j];
+      lambda = sqrt(lambda);
+      H[i+1][i] = lambda;
+      printf("####norm(w): %8.4f \n",H[i+1][i]);
+
+      /* set v[i+1] = w/H[i+1][i] */ /* #### check scaling #### */
+      if (s_dcopy(theNP->base.mg,bl,level,np->v[i+1],np->w)!= NUM_OK)
+        NP_RETURN(1,lresult->error_code);
+      for (j=0; j<ncomp; j++) rnorm[j] = 1.0/lambda;
+      if (a_dscale(theMG,bl,level,np->v[i+1],EVERY_CLASS,rnorm)!=NUM_OK)
+        NP_RETURN(1,result[0]);
+
+      /* apply Givens rotations */
+      for (k=0; k<i; k++) {
+        lambda   =  cs[k]*H[k][i] + sn[k]*H[k+1][i];
+        H[k+1][i] = -sn[k]*H[k][i] + cs[k]*H[k+1][i];
+        H[k][i]   = lambda;
+      }                   /* k */
+
+      /* construct next Givens rotation in a numerically stable manner */
+      if (H[i+1][i] == 0.0) {
+        cs[i] = 1.0;
+        sn[i] = 0.0;
+      } else if (ABS(H[i+1][i]) > ABS(H[i][i])) {
+        lambda = H[i][i] / H[i+1][i];
+        sn[i] = 1.0 / sqrt(1.0 + lambda*lambda);
+        cs[i] = lambda*sn[i];
+      } else {
+        lambda = H[i+1][i] / H[i][i];
+        cs[i] = 1.0 / sqrt(1.0 + lambda*lambda);
+        sn[i] = lambda*cs[i];
+      }
+
+      /* form the (recursively computed) residual norm */
+      lambda   = cs[i]*s[i];
+      s[i+1]   = -sn[i]*s[i];
+      s[i]     = lambda;
+      H[i][i]   = cs[i]*H[i][i] + sn[i]*H[i+1][i];
+      H[i+1][i] = 0.0;
+      printf("####      i: %12i\n",i);
+      printf("#### MAXRES: %12i\n",MAX_RESTART);
+      printf("####   s[i]: %12.8f\n",s[i]);
+      printf("#### s[i+1]: %12.8f \n",s[i+1]);
+      printf("####  cs[i]: %12.8f \n",cs[i]);
+      printf("####  sn[i]: %12.8f\n",sn[i]);
+      printf("#### H[i,i]: %12.8f\n",H[i][i]);
+      printf("####    TOL: %12.8f\n", tol);
+      /* if the error is sufficiently small,
+         perform the update and exit */
+      printf("#### abs(s[i+1]): %12.8f\n",fabs(s[i+1]));
+      printf("####         TOL: %12.8f\n",tol);
+      if (fabs(s[i+1]) < tol) break;
+    }             /* end: GMRES inner loop:i */
+
+    /* ensure i is the proper value */
+    if (i>=np->restart) i=np->restart-1;
+    printf("#####################################\n");
+    /* solve the upper Hessenberg system */
+    for (i1=0; i1<=i; i1++)
+      for (i2=0; i2<=i; i2++)
+        Hsq[i1*(i+1)+i2] = H[i1][i2];
+    for (i1=0; i1<=i; i1++) {
+      printf("% i  @@@@ ",i1);
+      for (i2=0; i2<=i; i2++)
+        printf("%12.8f ",Hsq[i1*(i+1)+i2]);
+      printf("\n");
+    }
+
+    if (SolveFullMatrix(i+1,y,Hsq,s)) {
+      UserWriteF("GMRESSolver: decompostion failed");
+      NP_RETURN(1,lresult->error_code);
+    }
+    printf("y ");
+    for (i2=0; i2<=i; i2++)
+      printf("%12.8f ",y[i2]);
+    printf("\n");
+    printf("s ");
+    for (i2=0; i2<=i; i2++)
+      printf("%12.8f ",s[i2]);
+    printf("\n");
+    /* Perform a full matrix-vector multiply
+       (NOT THE COEFFICIENT MATRIX!) */
+    /*x = x + V(:,1:i)*y; */
+
+    if (s_dset(theMG,bl,level,np->c,0.0)!= NUM_OK)
+      NP_RETURN(1,lresult->error_code);
+
+    for (i1=0; i1<=i; i1++) {
+      for (j=0; j<ncomp; j++) scal[j] = y[i1];
+      if (a_daxpy(theMG,bl,level,np->c,EVERY_CLASS,scal,np->v[i1])
+          != NUM_OK)
+        NP_RETURN(1,lresult->error_code);
+    }
+    if (a_daxpy(theMG,bl,level,x,EVERY_CLASS,Factor_One,np->c) != NUM_OK)
+      NP_RETURN(1,lresult->error_code);
+    if (s_dmatmul_minus(theMG,bl,level,b,A,np->c,EVERY_CLASS) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (LinearResiduum(theNP,bl,level,x,b,A,lresult))
+      NP_RETURN(1,lresult->error_code);
+    if (np->display > PCR_NO_DISPLAY)
+      if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE))
+        NP_RETURN(1,lresult->error_code);
+    if (sc_cmp(lresult->last_defect,abslimit,b) ||
+        sc_cmp(lresult->last_defect,defect2reach,b))
+      lresult->converged = 1;
+
+  }       /* end: GMRES outer loop:it*/
+  CSTOP(ti,ii);
+
+  if (np->display > PCR_NO_DISPLAY) {
+    if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE))
+      NP_RETURN(1,lresult->error_code);
+    if (PostPCR(PrintID,":ls:avg"))
+      NP_RETURN(1,lresult->error_code);
+    if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1)))
+      NP_RETURN(1,lresult->error_code);
+    UserWriteF("LS  : L=%2d N=%2d TSOLVE=%10.4lg TIT=%10.4lg\n",level,
+               lresult->number_of_linear_iterations,ti,
+               ti/lresult->number_of_linear_iterations);
+  }
+
+  return (0);
+}
+
+static INT GMRESConstruct (NP_BASE *theNP)
+{
+  NP_GMRES *np;
+
+  theNP->Init = GMRESInit;
+  theNP->Display = GMRESDisplay;
+  theNP->Execute = NPLinearSolverExecute;
+
+  np = (NP_GMRES *) theNP;
+  np->ls.PreProcess = GMRESPreProcess;
+  np->ls.Defect = LinearDefect;
+  np->ls.Residuum = LinearResiduum;
+  np->ls.Solver = GMRESSolver;
+  np->ls.PostProcess = GMRESPostProcess;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
    sqcg - numproc for the squared cg method
 
    DESCRIPTION:
@@ -1970,7 +2529,7 @@ static INT SQCGConstruct (NP_BASE *theNP)
    npinit base $red 1e-8 $m 50 $I lu $display no $abslimit 0;
    npinit sm $n 1 $mode ff $limit 0 $bl 0 $gamma 1 $display no;
    npinit lmgc $S sm sm base $T transfer $n1 1 $n2 1 $g 1 $b @:BL;
-   npinit lin $red 1e-8 $m 100 $I lmgc $display no $abslimit 0;
+   npinit lin $red 1e-8 $m 100 $I lmgc $display no $absimit 0;
    npinit dc $A mat $DC dcmat $x x $b b $red 0 $m 20 $LS lin $display full;
    npinit cdeq $A mat $b b $x x $v @:VELO $p 1 $d 0 $m fu $a 1;
    npex cdeq;
@@ -2162,6 +2721,8 @@ INT InitLinearSolver ()
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".bcg",sizeof(NP_BCG),BCGConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".bcgs",sizeof(NP_BCGS),BCGSConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".gmres",sizeof(NP_GMRES),GMRESConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".sqcg",sizeof(NP_SQCG),SQCGConstruct))
     REP_ERR_RETURN (__LINE__);
