@@ -594,6 +594,7 @@ gridpathes		./grids/                                             # search grids 
 protocoldir		../../../ug31results/ns/paramruns/results/           # write protocols into this dir
 logfilesdir		../../../ug31results/ns/paramruns/results/           # write logfiles into this dir
 metafilesdir	../../../ug31results/ns/paramruns/results/           # write metafiles into this dir
+arraypaths      ./paramruns
 
 -clear > vector matrix userdata
 clear            # clear or assign a constant value to a user defined symbol
@@ -821,4 +822,63 @@ tnl                  # time solver
 npinit $n <new sym> $o <old sym> $t <temp sym> $d {NO|RED|FULL} $m <maxit> 
        $l <linear solver> $r <assemble> $Rel_Limit <sc double list> $Damp <sc double list> ??????
 
+-array > crar wrar rear saar loar clar
+array: family of commands to handle arrays of double. The commands are:
+  crar $n <name> {$n_i}+ # create array of specified size
+  dear $n <name>         # delete array
+  wrar $n <name> {$n_i}+ $v <value> # write array[n_1][n_2]...[n_k] := <value>
+  rear $n <name> {$n_i}+ # read array[n_1][n_2]...[n_k] to ':ARRAY_VALUE'
+  clar $n <name>         # clear array, all entries := 0.0
+  saar $n <name>         # save array to file '<name>.array'
+  loar $n <name>         # load array from file '<name>.array'
+
+-crar > array create dear saar loar wrar rear clar
+crar             # create a new array structure
+crar $n <name> {$<n_i>}+
+
+  $n <name> # name of the array structure
+  {$<n_i>}+ # list of extension in the i.th dimension
+            # 1 <= i <= 'AR_NVAR_MAX'
+
+-dear > array delete free dispose crar saar loar wrar rear clar
+dear             # delete an array structure
+dear $n <name>
+  $n <name> # name of the array structure
+
+-saar > array save store file defaults crar dear loar wrar rear clar
+saar             # save array to file <name>.array
+                 # path in the defaults file under 'arraypaths'
+saar $n <name>
+  $n <name> # name of the array structure
+
+-loar > array load restore file defaults crar dear saar wrar rear clar
+loar             # load array from file <name>.array
+                 # path in the defaults file under 'arraypaths'
+loar $n <name>
+  $n <name> # name of the array structure
+
+-wrar > array write store crar dear saar loar rear clar
+wrar             # write value to a single array entry
+wrar $n <name> {$<n_i>}+ $v <value>
+
+  $n <name> # name of the array structure
+  {$<n_i>}+ # list of the coordinates of the array entry;
+            # dimension of the array as created;
+            # index 0 <= n_i < allocated extension
+  <value>   # double value to be stored
+
+-rear > array read restore crar dear saar loar wrar clar
+rear             # read value of a single array entry and
+                 # store it in the environment variable :ARRAY_VALUE
+rear $n <name> {$<n_i>}+
+
+  $n <name> # name of the array structure
+  {$<n_i>}+ # list of the coordinates of the array entry;
+            # dimension of the array as created;
+            # index 0 <= n_i < allocated extension
+
+-clar > array clear reset init crar dear saar loar wrar rear
+clar             # clear array; set all entries to 0.0
+clar $n <name>
+  $n <name> # name of the array structure
 
