@@ -2470,7 +2470,7 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
     /* check next args for subm */
     while ((opt+1<argc) && (strncmp(argv[opt+1],"sub",3)==0))
     {
-      INT ns;
+      int ns;
 
       opt++;
       if (MT_NSUB(mt)>=MAX_SUB) {
