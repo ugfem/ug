@@ -3087,14 +3087,14 @@ INT PrepareAlgebraModification (MULTIGRID *theMG)
   j = theMG->topLevel;
   for (k=0; k<=j; k++)
   {
-    for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,k)); theElement!=NULL; theElement=SUCCE(theElement))
+    for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,k)); theElement!=NULL; theElement=SUCCE(theElement))
     {
       SETUSED(theElement,0);
       SETEBUILDCON(theElement,0);
     }
-    for (theVector=FIRSTVECTOR(GRID_ON_LEVEL(theMG,k)); theVector!= NULL; theVector=SUCCVC(theVector))
+    for (theVector=PFIRSTVECTOR(GRID_ON_LEVEL(theMG,k)); theVector!= NULL; theVector=SUCCVC(theVector))
       SETVBUILDCON(theVector,0);
-    for (theVector=FIRSTVECTOR(GRID_ON_LEVEL(theMG,k)); theVector!= NULL; theVector=SUCCVC(theVector))
+    for (theVector=PFIRSTVECTOR(GRID_ON_LEVEL(theMG,k)); theVector!= NULL; theVector=SUCCVC(theVector))
     {
       SETVNEW(theVector,0);
       for (theMatrix=VSTART(theVector); theMatrix!=NULL; theMatrix = MNEXT(theMatrix))
