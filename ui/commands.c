@@ -55,6 +55,7 @@
 #include "fileopen.h"
 #include "ugenv.h"
 #include "debug.h"
+#include "heaps.h"              /* for MEM declaration */
 #include "general.h"
 
 /* devices module */
@@ -2313,10 +2314,15 @@ static INT ConfigureCommand (INT argc, char **argv)
    .  $d~<domain>            - one of the enroled domains
    .  $p~<problem>           - one of the problems enroled for <domain>
    .  $f~<format>            - one of the enroled formats matching with <problem>
-   .  $h~<heapsize>          - the heapsize to be allocated
+   .  $h~<heapsize>          - the heapsize to be allocated in byte (or use suffix
+        "K" for kilobyte, "M" for megabyte, "G" for gigabyte)
 
-   EXAMPLE:
+   EXAMPLES:
    'new $d unit square $p TestProblem $f nc $h 30000000;'
+
+   'new $d unit square $p TestProblem $f nc $h 30000K;'
+
+   'new $d unit square $p TestProblem $f nc $h 30M;'
    D*/
 /****************************************************************************/
 
@@ -2340,7 +2346,8 @@ static INT ConfigureCommand (INT argc, char **argv)
    .  $d <domain>            - one of the enroled domains
    .  $p <problem>           - one of the problems enroled for <domain>
    .  $f <format>            - one of the enroled formats matching with <problem>
-   .  $h <heapsize>          - the heapsize to be allocated
+   .  $h <heapsize>          - the heapsize to be allocated in byte (or use suffix
+        "K" for kilobyte, "M" for megabyte, "G" for gigabyte)
 
    RETURN VALUE:
    INT
@@ -2352,8 +2359,8 @@ static INT ConfigureCommand (INT argc, char **argv)
 static INT NewCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  char Multigrid[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE];
-  unsigned long heapSize;
+  char Multigrid[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE], lastchar;
+  MEM heapSize;
   INT i,bopt,fopt,hopt;
 
   /* get multigrid name */
@@ -2390,6 +2397,16 @@ static INT NewCommand (INT argc, char **argv)
         PrintHelp("new",HELPITEM," (cannot read heapsize specification)");
         return(PARAMERRORCODE);
       }
+      lastchar = argv[i][strlen(argv[i])-1];
+      /* check for [kK]ilobyte-notation */
+      if ( lastchar=='k' || lastchar=='K' )
+        heapSize *= (MEM)1024;
+      /* check for [mM]igabyte-notation */
+      if ( lastchar=='m' || lastchar=='M' )
+        heapSize *= (MEM)1024 * 1024;
+      /* check for [gG]igabyte-notation */
+      if ( lastchar=='g' || lastchar=='G' )
+        heapSize *= (MEM)1024 * 1024 * 1024;
       hopt = TRUE;
       break;
 
