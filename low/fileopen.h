@@ -51,13 +51,24 @@
 /* return constants for filetype() */
 enum FileTypes { FT_UNKNOWN, FT_FILE, FT_DIR, FT_LINK };
 
-#define fileopen(fname,mode)    fopen(ConvertFileName(fname),mode)
+#define fileopen(fname,mode)            fopen(ConvertFileName(fname),mode)
+#define fileopen_r(fname,mode,r)        fopen_r(ConvertFileName(fname),mode,r)
+
+enum DIRWALK_ERR
+{
+  PATH_INVALID    = 1,
+  PATH_NO_DIR,
+  NAME_TOO_LONG,
+  NOT_IMPLEMENTED
+};
 
 /****************************************************************************/
 /*																			*/
 /* data structures exported by the corresponding source file				*/
 /*																			*/
 /****************************************************************************/
+
+typedef void (*ProcessFileProc)(const char *fname);
 
 /****************************************************************************/
 /*																			*/
@@ -78,11 +89,14 @@ const char      *ConvertFileName                        (const char *fname);
 #endif
 size_t          filesize                    (const char *fname);
 int             filetype                    (const char *fname);
+INT                     DirWalk                                         (const char *dir, ProcessFileProc fcn);
 INT                     ReadSearchingPaths                      (const char *filename, const char *pathsvar);
 int                     DirCreateUsingSearchPaths       (const char *fname, const char *paths);
 FILE            *FileOpenUsingSearchPaths       (const char *fname, const char *mode, const char *pathsvar);
 FILE            *FileOpenUsingSearchPath        (const char *fname, const char *mode, const char *path);
+FILE            *FileOpenUsingSearchPath_r      (const char *fname, const char *mode, const char *path, int rename);
 int             FileTypeUsingSearchPaths        (const char *fname, const char *pathsvar);
+FILE            *fopen_r                                        (const char *fname, const char *mode, int rename);
 
 INT                     InitFileOpen                            (void);
 

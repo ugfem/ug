@@ -29,14 +29,17 @@
 
 
 /* standard C library */
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
 
 /* first compiler header for __MACINTOSH__ definition iff */
 #include "compiler.h"
 
 /* includes for filesize(), filetype() */
 #ifdef __MACINTOSH__
+#include <unistd.h>
 #include <stat.h>
 /* NB: On Macs the structs of <types.h> are defined locally in <stat.h> */
 #else
@@ -48,10 +51,18 @@
 /* low module */
 #include "defaults.h"
 #include "general.h"
+#include "debug.h"
 #include "ugenv.h"
 
 #include "fileopen.h"
 
+
+/* #defines and typedefs to encapsulate implementation dependent stuff */
+#ifndef __MACINTOSH__
+        #include <dirent.h>
+typedef struct dirent DIRENT;
+        #define D_NAME(d)               ((d)->d_name)
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -68,6 +79,8 @@
 
 #define SEPERATOR                       " \t"
 
+#define MAX_PATH_LEN            1024
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -83,7 +96,7 @@ typedef struct
   /* env item */
   ENVVAR v;
 
-  INT nPaths;                           /* number of paths stored						*/
+  INT nPaths;                                   /* number of paths stored						*/
   PATH path[1];                         /* begin of path list							*/
 
 } PATHS;
@@ -98,6 +111,8 @@ static INT thePathsDirID;
 static INT thePathsVarID;
 
 static char fullpath[MAXPATHLENGTH];
+
+REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -143,7 +158,7 @@ static PATHS *GetPaths (const char *name)
 
 /****************************************************************************/
 /*D
-        ConvertFileName - like ANSI-C 'fopen' but convert UNIX-style paths to machine format
+        ConvertFileName - convert UNIX-style file paths to machine format
 
         SYNOPSIS:
         const char *ConvertFileName (const char *fname)
@@ -267,9 +282,6 @@ size_t filesize (const char *fname)
   return((size_t)fstat.st_size);
 }
 
-
-
-
 /****************************************************************************/
 /*D
         filetype - get type of a file with given name
@@ -292,7 +304,6 @@ size_t filesize (const char *fname)
         fopen, fileopen, filesize
    D*/
 /****************************************************************************/
-
 
 int filetype (const char *fname)
 {
@@ -325,8 +336,71 @@ int filetype (const char *fname)
   return(FT_UNKNOWN);
 }
 
+/****************************************************************************/
+/*D
+        DirWalk - loop the names of files in a directory and call
+                                a ProcessFileProc for each
 
+        SYNOPSIS:
+        INT DirWalk (const char *dir, ProcessFileProc fcn)
 
+    PARAMETERS:
+   .   dir - UNIX-style path
+   .   fcn - will be called with UNIX-style full path for each file in dir
+
+        DESCRIPTION:
+    This functon loops the names of files in a directory and calls
+        a user specified ProcessFileProc for each.
+
+        RETURN VALUE:
+        INT
+   .n      0: success
+   .n      PATH_INVALID: dir is no path to a directory
+   .n      NAME_TOO_LONG: full file path exceeds buffer length
+   D*/
+/****************************************************************************/
+
+INT DirWalk (const char *dir, ProcessFileProc fcn)
+{
+#ifndef __MACINTOSH__
+  DIR *dfd = opendir(dir);
+  ft = filetype(dir);
+
+  if (ft!=FT_DIR)
+    REP_ERR_RETURN (PATH_NO_DIR)
+    if (!dfd)
+      REP_ERR_RETURN (PATH_INVALID)
+      else
+      {
+        DIRENT *dp;
+        while ((dp=readdir(dfd))!=NULL)
+        {
+          char name[MAX_PATH_LEN];
+
+          if (strcmp(D_NAME(dp),".")==0
+              ||
+              strcmp(D_NAME(dp),"..")==0)
+            /* skip current and up dir */
+            continue;
+
+          if (strlen(dir)+strlen(D_NAME(dp))+2 > sizeof(name))
+            REP_ERR_RETURN (NAME_TOO_LONG)
+            else
+            {
+              strcpy(name,dir);
+              strcat(name,D_NAME(dp));
+              (*fcn)(name);
+            }
+
+        }
+      }
+  closedir(dfd);
+  return 0;
+
+#else
+  REP_ERR_RETURN (NOT_IMPLEMENTED);
+#endif
+}
 
 /****************************************************************************/
 /*D
@@ -565,7 +639,47 @@ FILE *FileOpenUsingSearchPath (const char *fname, const char *mode, const char *
   return (NULL);
 }
 
+/****************************************************************************/
+/*D
+        FileOpenUsingSearchPath - try to open a file in the specified path
 
+        SYNOPSIS:
+        FILE *FileOpenUsingSearchPath (const char *fname, const char *mode, const char *path)
+
+    PARAMETERS:
+   .   fname - open file with this name
+   .   mode - see ANSI-C 'fopen'
+   .   path - path to which fname is to be appended
+
+        DESCRIPTION:
+        Try to open a file in the specified path.
+
+        RETURN VALUE:
+        FILE *
+   .n   pointer to file opened, 'NULL' if error
+
+        SEE ALSO:
+        FileOpenUsingSearchPaths, fileopen
+   D*/
+/****************************************************************************/
+
+FILE *FileOpenUsingSearchPath_r (const char *fname, const char *mode, const char *path, int rename)
+{
+  FILE *theFile;
+  char fullname[MAXPATHLENGTH];
+
+  if (strlen(path)+strlen(fname)>MAXPATHLENGTH)
+    return (NULL);
+
+  strcpy(fullname,path);
+  strcat(fullname,"/");
+  strcat(fullname,fname);
+
+  if ((theFile=fileopen_r(fullname,mode,rename))!=NULL)
+    return (theFile);
+
+  return (NULL);
+}
 
 /****************************************************************************/
 /*D
@@ -628,6 +742,29 @@ int FileTypeUsingSearchPaths (const char *fname, const char *paths)
   return (FT_UNKNOWN);
 }
 
+FILE *fopen_r (const char *fname, const char *mode, int do_rename)
+{
+  FILE *f;
+
+  if (do_rename && (f=fopen(fname,"r"))!=NULL)
+  {
+    time_t Time;
+    struct stat fstat;
+    char new_fname[128];
+
+    fclose(f);
+
+    strcpy(new_fname,fname);
+    /*time(&Time);*/
+    if (stat(fname, &fstat)<0)
+      return(FT_UNKNOWN);
+    Time = fstat.st_mtime;
+    strftime(new_fname+strlen(fname),64,"%y%m%d%H%M",localtime(&Time));
+
+    rename(fname,new_fname);                    /* don't check success? */
+  }
+  return fopen(fname,mode);
+}
 
 /****************************************************************************/
 /*D
