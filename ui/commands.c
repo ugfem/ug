@@ -1638,9 +1638,14 @@ FILE *GetProtocolFile (void)
    DESCRIPTION:
    This command opens a log file where all shell output is saved.
 
-   'logon <logfilename>'
+   'logon <logfilename> [$p] [$e] [$a] [$f] [$r]'
 
    .   <filename>  - name of logfile
+   .   $p			- write log to open protocol file
+   .   $e			- extend filename with numbers of processors (parallel only)
+   .   $a			- extend filename with processor id (parallel only)
+   .   $f			- force (close open logfile iff)
+   .   $r			- rename existing logfile using current date (<oldname> --> <oldname>YYMMDDhhmm)
 
    KEYWORDS:
    protocol, file, open, output
@@ -1653,10 +1658,10 @@ FILE *GetProtocolFile (void)
 static INT LogOnCommand (INT argc, char **argv)
 {
   char logfile[NAMESIZE];
-  INT i,rv,popt,pext,meext;
+  INT i,rv,popt,pext,meext,rename;
 
   /* check options */
-  popt = pext = meext = FALSE;
+  popt = pext = meext = rename = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -1683,6 +1688,10 @@ static INT LogOnCommand (INT argc, char **argv)
 
     case 'f' :
       CloseLogFile();
+      break;
+
+    case 'r' :
+      rename = TRUE;
       break;
 
     default :
@@ -1717,7 +1726,7 @@ static INT LogOnCommand (INT argc, char **argv)
     return (OKCODE);
         #endif
 
-  rv = OpenLogFile(logfile);
+  rv = OpenLogFile(logfile,rename);
   switch (rv)
   {
   case 0 :
