@@ -8058,7 +8058,8 @@ static INT NW_NodesEval2D (NODE *theNode, DRAWINGOBJ *theDO)
 		DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO) 
 		DO_2s(theDO) = EE2D_TEXTSIZE; DO_inc(theDO);
 		V2_COPY(CVECT(MYVERTEX(theNode)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
-		sprintf(DO_2cp(theDO),"%d",(int)VTYPE(NVECTOR(theNode))); 
+		if (NVECTOR(theNode) != NULL)
+		    sprintf(DO_2cp(theDO),"%d",(int)VTYPE(NVECTOR(theNode))); 
 		DO_inc_str(theDO);
 	}
 
