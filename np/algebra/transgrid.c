@@ -1516,7 +1516,7 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat)
                   continue;
                 cm = GetMatrix(iv,jv);
                 if (cm == NULL)
-                  cm = CreateExtraConnection(FineGrid,iv,jv);
+                  cm = CreateExtraConnection(CoarseGrid,iv,jv);
                 if (cm !=NULL)
                   MVALUE(cm,mc) += imvalue * mvalue * MVALUE(jm,0);
                 else                                   /* connection not in pattern */
@@ -2123,6 +2123,7 @@ INT CreateStandardNodeRestProl (GRID *FineGrid, INT ncomp)
       GNs(n,LCVECT(theVertex),c);
       for (l=0; l<n; l++)
       {
+        if (c[l] == 0.0) continue;
         vc = NVECTOR(CORNER(theElement,l));
         im = GetIMatrix(vf,vc);
         if (im==NULL) {
