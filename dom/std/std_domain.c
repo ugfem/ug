@@ -2085,6 +2085,12 @@ static INT TriangulatePatch (HEAP *Heap, PATCH *p, BNDP **bndp,
   else if (((siden[npc-1] > 1) && (siden[1] == 1)) ||
            ((siden[npc-1] == 1) && (siden[1] > 1))   )
   {
+    if ((siden[npc-2] > 1) && (siden[1] == 1) && (siden[0] == 1))
+    {
+      UserWrite("TriangulatePatch: this case is not implemented\n");
+      return(1);
+    }
+
     /* swap sides */
     for (k=0; k<npc; k++)
     {
@@ -2543,10 +2549,6 @@ INT BNDS_BndCond (BNDS *aBndS, COORD *local, COORD *in, DOUBLE *value, INT *type
       in[i] = global[i];
     return((*(currBVP->GeneralBndCond))(NULL,NULL,in,value,type));
   }
-
-  PRINTDEBUG(dom,1,(" BndS loc %f %f\n",lambda[0],lambda[1]));
-  /*(*PARAM_PATCH_BC(p))(PARAM_PATCH_BCD(p),NULL,lambda,value,type);*/
-  PRINTDEBUG(dom,1,(" BndCOnd %f  %d\n",value[0],type[0]));
 
   if (in == NULL)
     return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,lambda,value,type));
@@ -3186,11 +3188,6 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, COORD *in, DOUBLE *value, INT *typ
       in[i] = global[i];
     return((*(currBVP->GeneralBndCond))(NULL,NULL,in,value,type));
   }
-
-  PRINTDEBUG(dom,1,(" BndP loc %f %f\n",lambda[0],lambda[1]));
-  /*(*PARAM_PATCH_BC(p))(PARAM_PATCH_BCD(p),NULL,lambda,value,type);*/
-  PRINTDEBUG(dom,1,(" BndCOnd %f  %d\n",value[0],type[0]));
-  return(0);
 
   if (in == NULL)
     return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,lambda,value,type));
