@@ -2166,9 +2166,20 @@ static INT CheckLocalElementKeys (ELEMENT *theElement, MGIO_REFINEMENT *ref, INT
       {
         if ( ref->mycornersonkey[j] != KeyForObject((KEY_OBJECT *)SONNODE(corner_node)) )
         {
-          printf(PFMT " IO_Loc: son corner relation, element: " EID_FMTX ", corner[%d]: " ID_FMTX " soncorner: " ID_FMTX ":exp.key %d does not match\n",
-                 me,EID_PRTX(theElement),j,ID_PRTX(corner_node),ID_PRTX(SONNODE(corner_node)),ref->mycornersonkey[j]);
-          assert(0);
+          if ( ref->mycornersonkey[j] != -1 )
+          {
+            printf(PFMT " IO_Loc: son corner relation, element: " EID_FMTX ", corner[%d]: " ID_FMTX " soncorner: " ID_FMTX ":exp.key %d does not match\n",
+                   me,EID_PRTX(theElement),j,ID_PRTX(corner_node),ID_PRTX(SONNODE(corner_node)),ref->mycornersonkey[j]);
+            assert(0);
+          }
+          else
+          {
+            IFDEBUG(gm,1)
+            printf(PFMT " IO_Loc NOTE: son corner relation, element: " EID_FMTX ", corner[%d]: " ID_FMTX " soncorner: " ID_FMTX " wasn't here at save time\n",
+                   me,EID_PRTX(theElement),j,ID_PRTX(corner_node),ID_PRTX(SONNODE(corner_node)));
+            ENDDEBUG
+          }
+
         }
       }
       /* you cannot expect that the sonnodes are already existing
