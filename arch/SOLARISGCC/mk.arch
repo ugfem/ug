@@ -4,7 +4,12 @@
 #	for SUN Sparc 5 Workstations (SOLARIS 5.3)
 #
 #   for mpi: -lmpi -lsocket -lnsl
-
+#
+#   for fvwm (window manager): add to .Xresources: Xug3*input: true
+#   set LD_LIBRARY_PATH /usr/X11/lib:/usr/openwin/lib
+#   -R/usr/local/X11/lib:/usr/openwin/lib   for  static linking of
+#                                           shared libraries (in parallel)
+#
 ARCH_TYPE     = __SUN__
 
 ARCH_MAKE     = make
