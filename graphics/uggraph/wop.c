@@ -62,6 +62,14 @@
 #include "xbc.h"
 #endif
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -226,6 +234,19 @@ INT ce_ELEMORD;
 
 /* miscellanea */
 #define SMALL  1E-10
+
+extern INT n_offset[TAGS];
+extern INT father_offset[TAGS];
+extern INT sons_offset[TAGS];
+extern INT nb_offset[TAGS];
+extern INT evector_offset[TAGS];
+extern INT svector_offset[TAGS];
+extern INT side_offset[TAGS];
+extern INT data_offset[TAGS];
+
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+        control_entries[MAX_CONTROL_ENTRIES];
 
 /****************************************************************************/
 /*                                                                          */
@@ -930,7 +951,7 @@ static INT BulletDraw3D (DRAWINGOBJ *q);
 D*/										
 /****************************************************************************/
 
-PLOTOBJHANDLING	*CreatePlotObjHandling (char *PlotObjTypeName)
+PLOTOBJHANDLING * NS_PREFIX CreatePlotObjHandling (char *PlotObjTypeName)
 {
 	PLOTOBJHANDLING *poh;
 	INT i;
@@ -4099,7 +4120,7 @@ static INT EW_DoNothing0D (DRAWINGOBJ *q)
    */
 /****************************************************************************/
 
-INT Draw2D (DRAWINGOBJ *q)
+INT NS_PREFIX Draw2D (DRAWINGOBJ *q)
 {
 	INT j, n, centered, end, mode;
 	DOUBLE help[2],norm;
@@ -4687,7 +4708,7 @@ static INT NW_SelectNode2D (DRAWINGOBJ *q)
 */												
 /****************************************************************************/
 
-INT Draw3D (DRAWINGOBJ *q)
+INT NS_PREFIX Draw3D (DRAWINGOBJ *q)
 {
 	INT j, n, centered, end, mode;
 	DOUBLE help[3], intensity;
@@ -10984,7 +11005,7 @@ static INT CornerIndexHEX (INT NodeOrder, INT i[8], INT icon[8][3])
 	return (0);	
 }
 
-static DefinePolygon (DOUBLE_VECTOR *Poly, INT Number)
+static int DefinePolygon (DOUBLE_VECTOR *Poly, INT Number)
 {
 	int i,j,n;
 	DOUBLE Center[3], rad[6][3],  MaxCos, Cos, Direction[3], tmp;
@@ -20497,7 +20518,7 @@ INT SetDoFramePicture (INT mode)
 D*/
 /****************************************************************************/
 
-INT DrawPictureFrame (PICTURE *thePicture, INT mode)
+INT NS_PREFIX DrawPictureFrame (PICTURE *thePicture, INT mode)
 {
 	OUTPUTDEVICE *theOD;
 	long color;
@@ -20562,7 +20583,7 @@ INT DrawPictureFrame (PICTURE *thePicture, INT mode)
 D*/
 /****************************************************************************/
 
-INT ErasePicture (PICTURE *thePicture)
+INT NS_PREFIX ErasePicture (PICTURE *thePicture)
 {
 	COORD_POINT p[4];	
 	
@@ -21739,7 +21760,7 @@ static INT WorkRC(void)
 D*/
 /****************************************************************************/
 
-INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
+INT NS_PREFIX WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 {
 	INT i, error;
 

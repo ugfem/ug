@@ -44,6 +44,14 @@
 
 #include "xbc.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -116,7 +124,7 @@ static INT SetDeviceInfo (void)
    D*/
 /****************************************************************************/
 
-PICTURE *CreatePicture (const char *PictureName, UGWINDOW *theUgWindow, const INT *Global_LL, const INT *Global_UR)
+PICTURE * NS_PREFIX CreatePicture (const char *PictureName, UGWINDOW *theUgWindow, const INT *Global_LL, const INT *Global_UR)
 {
   PICTURE *thePicture;
   INT sign;
@@ -174,7 +182,7 @@ PICTURE *CreatePicture (const char *PictureName, UGWINDOW *theUgWindow, const IN
    D*/
 /****************************************************************************/
 
-INT DisposePicture (PICTURE *thePicture)
+INT NS_PREFIX DisposePicture (PICTURE *thePicture)
 {
   UGWINDOW *theUgWindow;
 
@@ -242,7 +250,7 @@ void ResetToolBoxState (UGWINDOW *ugw)
    D*/
 /****************************************************************************/
 
-UGWINDOW *CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *UgWindowName, INT rename, INT x, INT y, INT width, INT height)
+UGWINDOW * NS_PREFIX CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *UgWindowName, INT rename, INT x, INT y, INT width, INT height)
 {
   UGWINDOW *theWindow;
   WINDOWID winID;
@@ -464,7 +472,7 @@ INT UpdateUgWindow (UGWINDOW *theUgWindow, const PICTURE *EvalPicture)
    D*/
 /****************************************************************************/
 
-INT DisposeUgWindow (UGWINDOW *theUgWindow)
+INT NS_PREFIX DisposeUgWindow (UGWINDOW *theUgWindow)
 {
   OUTPUTDEVICE *OutputDevice;
 
@@ -541,7 +549,7 @@ PICTURE *GetUgPicture (const UGWINDOW *theUgWindow, const char *name)
    D*/
 /****************************************************************************/
 
-PICTURE *GetFirstPicture (const UGWINDOW *theUgWindow)
+PICTURE * NS_PREFIX GetFirstPicture (const UGWINDOW *theUgWindow)
 {
   ENVITEM *thePicture;
 
@@ -573,7 +581,7 @@ PICTURE *GetFirstPicture (const UGWINDOW *theUgWindow)
    D*/
 /****************************************************************************/
 
-PICTURE *GetNextPicture (const PICTURE *thePicture)
+PICTURE * NS_PREFIX GetNextPicture (const PICTURE *thePicture)
 {
   ENVITEM *theNextPicture;
 
@@ -800,7 +808,7 @@ UGWINDOW *GetUgWindow (const char *name)
    D*/
 /****************************************************************************/
 
-UGWINDOW *GetFirstUgWindow (void)
+UGWINDOW * NS_PREFIX GetFirstUgWindow (void)
 {
   ENVITEM *theUgWindow;
 
@@ -833,7 +841,7 @@ UGWINDOW *GetFirstUgWindow (void)
    D*/
 /****************************************************************************/
 
-UGWINDOW *GetNextUgWindow (const UGWINDOW *theUgWindow)
+UGWINDOW * NS_PREFIX GetNextUgWindow (const UGWINDOW *theUgWindow)
 {
   ENVITEM *theNextUgWindow;
 
@@ -1120,7 +1128,7 @@ INT MovePictureToNewWindow (PICTURE *pic)
    D*/
 /****************************************************************************/
 
-PLOTOBJTYPE *GetPlotObjType (const char *PlotObjTypeName)
+PLOTOBJTYPE * NS_PREFIX GetPlotObjType (const char *PlotObjTypeName)
 {
   if (ChangeEnvDir("/PlotObjTypes")==NULL) return(NULL);
   return((PLOTOBJTYPE*) SearchEnv(PlotObjTypeName,".",thePlotObjTypesVarID,SEARCHALL));
@@ -1543,8 +1551,8 @@ static INT SetDefaultVP3D (PLOTOBJ *thePO, DOUBLE *DefaultVP)
   return (0);
 }
 
-INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective,
-             INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal, DOUBLE *scale)
+INT NS_PREFIX SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective,
+                       INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal, DOUBLE *scale)
 {
   VIEWEDOBJ *theViewedObj;
   PLOTOBJ *thePlotObj;
