@@ -1,5 +1,37 @@
 ---------------------------
 
+CHANGES 1.8.10 -> 1.8.11
+
+---------------------------
+971010 kb
+added error checks for various calls to PPIF.
+	- in several modules, PPIF functions had been called
+	  without checking for error conditions afterwards.
+	  Now, error checking has been added which will HARD_EXIT
+	  after PPIF reports an error.
+971010 kb
+fixed bug ('semantical problem') in xfer/unpack.c.
+	- during calls to AddDataScatter and other handlers,
+	  the order of calls for two or more incoming copies of one
+	  distributed DDD object could be: 1.XFER_REJECT, 2.XFER_NEW ...
+	  This was wrong, because the first handler call should be
+	  for the XFER_NEW object, the following calls for the
+	  XFER_REJECT objects. This has been fixed now for all handlers
+	  which get a 'newness'-argument.
+971009 kb
+added documentation.
+	- using the inline documentation and much additional texts
+	  (which are currently not in the distribution), a postscript
+	  file is generated (doc/ddd_doc.ps). This contains the
+	  reference manual, user's manual, tutorial, error-list,
+	  and implementation details ('inside ddd'). Currently,
+	  only the reference manual is in a fairly advanced state.
+971009 kb
+added DDD_XferWithAddData().
+	- this function returns a boolean value telling the caller
+	  if additional data will be really sent or just discarded.
+---------------------------
+
 CHANGES 1.8.9 -> 1.8.10
 
 ---------------------------

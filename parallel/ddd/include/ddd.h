@@ -47,7 +47,7 @@
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.10"
+#define DDD_VERSION    "1.8.11"
 
 
 /****************************************************************************/
@@ -428,7 +428,10 @@ typedef int (*ComProcXPtr)(DDD_OBJ _FPTR, void *, DDD_PROC _FPTR, DDD_PRIO _FPTR
 
 /**
         DDD Library class.
-        This is the DOKU for the single-instance DDD class.
+        Construct one single instance of the class in order to use
+        the functionality of the DDD library.
+
+        \todoTBC
  */
 
 class DDD_Library
@@ -526,7 +529,10 @@ private:
 
 /**
         DDD Object class.
-        This is the DOKU for the DDD object class.
+        Each distributed object (\ie, DDD object) will have to inherit
+        from #DDD_Object#.
+
+        \todoTBC
  */
 
 class DDD_Object
@@ -573,13 +579,13 @@ public:
 
   // DDD Handlers as virtual functions
   // TODO: is this general enough?
-  virtual void HandlerLDATACONSTRUCTOR (void) { }
+  //virtual void HandlerLDATACONSTRUCTOR (void) { }
   //virtual void HandlerDESTRUCTOR       (void) { }
   //virtual void HandlerDELETE           (void) { }
-  virtual void HandlerUPDATE           (void) { }
+  //virtual void HandlerUPDATE           (void) { }
   //virtual void HandlerOBJMKCONS        (int) { }
   //virtual void HandlerSETPRIORITY      (DDD_PRIO) { }
-  virtual void HandlerXFERCOPY         (DDD_PROC, DDD_PRIO) { }
+  //virtual void HandlerXFERCOPY         (DDD_PROC, DDD_PRIO) { }
   //virtual void HandlerXFERDELETE       (void) { }
   //virtual void HandlerXFERGATHER       (int, DDD_TYPE, void *) { }
   //virtual void HandlerXFERSCATTER      (int, DDD_TYPE, void *, int) { }
@@ -595,7 +601,10 @@ private:
 
 /**
         DDD ObjectOf template class.
-        This is the DOKU for the DDD ObjectOf template class.
+        This template class simplifies the usage of the base class
+   #DDD_Object#.
+
+        \todoTBC
  */
 
 template<class T>
@@ -628,7 +637,11 @@ DDD_TYPE DDD_ObjectOf<T>::_dddtype = 0;
 
 /**
         DDD IndexObject class.
-        This is the DOKU for the DDD IndexObject class.
+        For objects stored in arrays, it is more convenient to
+        use the #DDD_IndexObject# class instead of the common
+        base class #DDD_Object#.
+
+        \todoTBC
  */
 
 class DDD_IndexObject : public DDD_Object
@@ -652,7 +665,10 @@ private:
 
 /**
         DDD IndexObjectOf template class.
-        This is the DOKU for the DDD IndexObjectOf template class.
+        This template class simplifies the usage of its base class
+   #DDD_IndexObject#.
+
+        \todoTBC
  */
 
 template<class T>
@@ -687,6 +703,8 @@ DDD_TYPE DDD_IndexObjectOf<T>::_dddtype = 0;
 /**
         DDD Communicator class.
         Base class for all communicator classes.
+
+        \todoTBC
  */
 
 class DDD_Communicator
@@ -697,7 +715,11 @@ class DDD_Communicator
 
 /**
         DDD GatherScatter class.
-        This is the DOKU for the DDD GatherScatter class.
+        This communicator specifies two member functions for packing
+        and unpacking data for one distributed DDD object inside a
+        \ddd{interface}.
+
+        \todoTBC
  */
 
 class DDD_GatherScatter : public DDD_Communicator
@@ -710,7 +732,12 @@ public:
 
 /**
         DDD GatherScatterX class.
-        This is the DOKU for the DDD GatherScatterX class.
+        This communicator specifies two member functions for packing
+        and unpacking data for one distributed DDD object inside a
+        \ddd{interface}.
+        The handler functions #Gather# and #Scatter# take eXtended arguments.
+
+        \todoTBC
  */
 
 class DDD_GatherScatterX : public DDD_Communicator
@@ -723,7 +750,10 @@ public:
 
 /**
         DDD Exec class.
-        This is the DOKU for the DDD Exec class.
+        This communicator is used for local execution of a single
+        function for each object inside a \ddd{interface}.
+
+        \todoTBC
  */
 
 class DDD_Exec : public DDD_Communicator
@@ -735,7 +765,11 @@ public:
 
 /**
         DDD ExecX class.
-        This is the DOKU for the DDD ExecX class.
+        This communicator is used for local execution of a single
+        function for each object inside a \ddd{interface}.
+        The member function #Exec# takes eXtended arguments.
+
+        \todoTBC
  */
 
 class DDD_ExecX : public DDD_Communicator
@@ -749,7 +783,10 @@ public:
 
 /**
         DDD Interface class.
-        This is the DOKU for the DDD Interface class.
+        This is the abstraction of distributed-graph overlap at processor
+        borders.
+
+        \todoTBC
  */
 
 class DDD_Interface
@@ -983,6 +1020,7 @@ void     DDD_IFAExecLocalX(DDD_IF _FPTR,DDD_ATTR _FPTR,                        E
 #define DDD_XferDeleteObj F77SYM(ddd_xferdeleteobj,DDD_XFERDELETEOBJ)
 #endif
 #ifdef C_FRONTEND
+int      DDD_XferWithAddData (void);
 void     DDD_XferAddData (int _FPTR, DDD_TYPE _FPTR);
 void     DDD_XferAddDataX (int _FPTR, DDD_TYPE _FPTR, size_t sizes[]);
 #endif

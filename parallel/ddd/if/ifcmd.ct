@@ -87,7 +87,7 @@
 
 #define FIND_ATTR \
 	ifAttr = ifHead->ifAttr;                          \
-	while ((ifAttr!=NULL) && (ifAttr->attr!=attr))    \
+	while ((ifAttr!=NULL) && (ifAttr->attr!=aAttr))   \
 	{                                                 \
 		ifAttr = ifAttr->next;                        \
 	}                                                 \
@@ -127,7 +127,7 @@
 		defined DDD interface. It has to be issued on all processors.
 
 		The communication is carried out one-directional, dependent
-		on parameter {\em dir}. In case of #IF_FORWARD# information
+		on parameter {\em aDir}. In case of #IF_FORWARD# information
 		will flow from object set A to object set B, in case of #IF_BACKWARD#
 		it will be vice versa (see \funk{IFDefine}).
 		}*/
@@ -154,7 +154,7 @@
 	Both communication procedures should have the
 	following declaration:
 
-	#int (*ComProcPtr) (DDD_HDR obj, void *data)#
+	#int (*ComProcPtr) (DDD_OBJ obj, void *data)#
 	}*/
 #endif
 
@@ -168,11 +168,11 @@
 	#endif
 
 /*{
-@param ifId   the \ddd{Interface} to be used.
+@param aIF   the \ddd{Interface} to be used.
 }*/
 #ifdef IF_WITH_ATTR
 	/*{
-	@param attr  the \ddd{Attribute} which specifies the sub-interface.
+	@param aAttr  the \ddd{Attribute} which specifies the sub-interface.
 	}*/
 #endif
 #ifdef IF_EXECLOCAL
@@ -182,11 +182,11 @@
 #else
 	#ifdef IF_ONEWAY
 		/*{
-		@param dir   the communication direction (#IF_FORWARD# or #IF_BACKWARD#)
+		@param aDir  the communication direction (#IF_FORWARD# or #IF_BACKWARD#)
 		}*/
 	#endif
 	/*{
-	@param itemSize  amount of data for each object in the interface (number of bytes)
+	@param aSize  amount of data for each object in the interface (number of bytes)
 	}*/
 #endif
 /*{
@@ -196,10 +196,10 @@
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 void IF_FUNCNAME (
 #ifdef C_FRONTEND
-	DDD_IF ifId,
+	DDD_IF aIF,
 #endif
 	#ifdef IF_WITH_ATTR
-		DDD_ATTR attr,
+		DDD_ATTR aAttr,
 	#endif
 	#ifdef IF_EXECLOCAL
 		#ifdef IF_WITH_XARGS
@@ -209,9 +209,9 @@ void IF_FUNCNAME (
 		#endif
 	#else
 		#ifdef IF_ONEWAY
-			int dir,
+			int aDir,
 		#endif
-		size_t itemSize,
+		size_t aSize,
 #ifdef C_FRONTEND
 		#ifdef IF_WITH_XARGS
 			ComProcXPtr Gather, ComProcXPtr Scatter)
@@ -229,16 +229,16 @@ void IF_FUNCNAME (
 	#endif
 {
 	#ifdef CPP_FRONTEND
-		DDD_IF ifId     = _id;
+		DDD_IF aIF     = _id;
 		//ComProcPtr Scatter = GatherScatter->Scatter;
 		//ComProcPtr Gather  = GatherScatter->Gather;
 	#endif
 #endif
 
 #ifdef F_FRONTEND
-void IF_FUNCNAME (DDD_IF *_ifId,
+void IF_FUNCNAME (DDD_IF *_aIF,
 	#ifdef IF_WITH_ATTR
-		DDD_ATTR *_attr,
+		DDD_ATTR *_aAttr,
 	#endif
 	#ifdef IF_EXECLOCAL
 		#ifdef IF_WITH_XARGS
@@ -248,9 +248,9 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 		#endif
 	#else
 		#ifdef IF_ONEWAY
-			int *_dir,
+			int *_aDir,
 		#endif
-		size_t *_itemSize,
+		size_t *_aSize,
 		#ifdef IF_WITH_XARGS
 			ComProcXPtr Gather, ComProcXPtr Scatter)
 		#else
@@ -259,15 +259,15 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 	#endif
 {
 	/* in F_FRONTEND, copy call-by-ref params into variables */
-	DDD_IF ifId     = *_ifId;
+	DDD_IF aIF     = *_aIF;
 	#ifdef IF_WITH_ATTR
-	DDD_ATTR attr   = *_attr;
+	DDD_ATTR aAttr   = *_aAttr;
 	#endif
 	#ifndef IF_EXECLOCAL
 		#ifdef IF_ONEWAY
-		int    dir      = *_dir;
+		int    aDir      = *_aDir;
 		#endif
-		size_t itemSize = *_itemSize;
+		size_t aSize = *_aSize;
 	#endif
 #endif  /* F_FRONTEND */
 
@@ -277,7 +277,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 
 
 	/* prohibit using standard interface (IF0) */
-	if (ifId==STD_INTERFACE)
+	if (aIF==STD_INTERFACE)
 	{
 		DDD_PrintError('E', 4300,
 			CONCAT("cannot use standard interface in ",IF_FUNCNAME));
@@ -288,13 +288,13 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 	/* shortcuts can only be used without extended handler arguments */
 	#ifndef IF_WITH_XARGS
 		/* if shortcut tables are invalid -> recompute */
-		IFCheckShortcuts(ifId);
+		IFCheckShortcuts(aIF);
 	#endif
 
 
 #ifdef IF_EXECLOCAL
 
-	ForIF(ifId,ifHead)
+	ForIF(aIF,ifHead)
 	{
 		#ifdef IF_WITH_ATTR
 			IF_ATTR	    *ifAttr;
@@ -317,7 +317,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 	*/
 
 	/* allocate storage for in and out buffers */
-	ForIF(ifId,ifHead)
+	ForIF(aIF,ifHead)
 	{
 		#ifdef IF_WITH_ATTR
 			IF_ATTR	    *ifAttr;
@@ -335,17 +335,17 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 		#endif
 
 		#ifdef IF_EXCHANGE
-			IFGetMem(ifHead, itemSize, PART->nItems, PART->nItems);
+			IFGetMem(ifHead, aSize, PART->nItems, PART->nItems);
 		#endif
 
 		#ifdef IF_ONEWAY
-			if (dir==IF_FORWARD) {
+			if (aDir==IF_FORWARD) {
 				nOut = PART->nAB; nIn = PART->nBA;
 			}
 			else {
 				nOut = PART->nBA; nIn = PART->nAB;
 			}
-			IFGetMem(ifHead, itemSize, nIn+PART->nABA, nOut+PART->nABA);
+			IFGetMem(ifHead, aSize, nIn+PART->nABA, nOut+PART->nABA);
 		#endif
 
 		/* STAT_SETCOUNT(20,STAT_GETCOUNT(20)+ifHead->nItems);
@@ -360,11 +360,11 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 
 
 	/* init communication, initiate receives */
-	recv_mesgs = IFInitComm(ifId);
+	recv_mesgs = IFInitComm(aIF);
 
 
 	/* build messages using gather-handler and send them away */
-	ForIF(ifId,ifHead)
+	ForIF(aIF,ifHead)
 	{
 		char   *buffer;
 		#ifdef IF_WITH_ATTR
@@ -387,22 +387,22 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 
 		#ifdef IF_EXCHANGE
 			/* exchange BA and AB during send */
-			buffer= COMM_LOOP(Gather, D_BA(PART), buffer, itemSize, PART->nBA);
-			buffer= COMM_LOOP(Gather, D_AB(PART), buffer, itemSize, PART->nAB);
+			buffer= COMM_LOOP(Gather, D_BA(PART), buffer, aSize, PART->nBA);
+			buffer= COMM_LOOP(Gather, D_AB(PART), buffer, aSize, PART->nAB);
 		#endif
 
 		#ifdef IF_ONEWAY
-			if (dir==IF_FORWARD) {
+			if (aDir==IF_FORWARD) {
 				nOut = PART->nAB;  datOut = D_AB(PART);
 			}
 			else {
 				nOut = PART->nBA;  datOut = D_BA(PART);
 			}
 
-			buffer= COMM_LOOP(Gather, datOut, buffer, itemSize, nOut);
+			buffer= COMM_LOOP(Gather, datOut, buffer, aSize, nOut);
 		#endif
 
-		buffer= COMM_LOOP(Gather, D_ABA(PART), buffer, itemSize, PART->nABA);
+		buffer= COMM_LOOP(Gather, D_ABA(PART), buffer, aSize, PART->nABA);
 
 		IFInitSend(ifHead);
 	}
@@ -413,12 +413,20 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 	for(tries=0; tries<MAX_TRIES && recv_mesgs>0; tries++)
 	{
 		/* poll receive calls */
-		ForIF(ifId,ifHead)
+		ForIF(aIF,ifHead)
 		{
 			if ((! BufferIsEmpty(ifHead->bufIn)) && ifHead->msgIn!=-1)
 			{
 				int error = InfoARecv(ifHead->vc, ifHead->msgIn);
-				/* TODO complete error handling */
+				if (error==-1)
+				{
+					sprintf(cBuffer,
+							"PPIF's InfoARecv() failed for recv to proc=%d in IF-Comm",
+						ifHead->proc);
+					DDD_PrintError('E', 4221, cBuffer);
+					HARD_EXIT;
+				}
+
 				if (error==1)
 				{
 					char     *buffer;
@@ -437,7 +445,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 					#ifdef CtrlTimeoutsDetailed
 					printf("%4d: IFCTRL %02d received msg    from "
 						"%4d after %10ld, size %ld\n",
-						me, ifId, ifHead->proc,
+						me, aIF, ifHead->proc,
 						(unsigned long)tries,
 						(unsigned long)BufferLen(ifHead->bufIn));
 					#endif
@@ -454,24 +462,24 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 					/* get data using scatter-handler */
 					#ifdef IF_EXCHANGE
 						buffer = COMM_LOOP(Scatter,
-									D_AB(PART), buffer, itemSize, PART->nAB);
+									D_AB(PART), buffer, aSize, PART->nAB);
 						buffer = COMM_LOOP(Scatter,
-									D_BA(PART), buffer, itemSize, PART->nBA);
+									D_BA(PART), buffer, aSize, PART->nBA);
 					#endif
 
 					#ifdef IF_ONEWAY
-						if (dir==IF_FORWARD) {
+						if (aDir==IF_FORWARD) {
 							nIn  = PART->nBA;  datIn = D_BA(PART);
 						}
 						else {
 							nIn  = PART->nAB;  datIn = D_AB(PART);
 						}
 
-						buffer = COMM_LOOP(Scatter, datIn, buffer, itemSize, nIn);
+						buffer = COMM_LOOP(Scatter, datIn, buffer, aSize, nIn);
 					#endif
 
 					buffer = COMM_LOOP(Scatter,
-						D_ABA(PART), buffer, itemSize, PART->nABA);
+						D_ABA(PART), buffer, aSize, PART->nABA);
 				}
 			}
 		}
@@ -480,10 +488,10 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 	/* finally poll send completion */
 	if (recv_mesgs>0)
 	{
-		sprintf(cBuffer, CONCAT("receive-timeout for IF %02d in ",IF_FUNCNAME), ifId);
+		sprintf(cBuffer, CONCAT("receive-timeout for IF %02d in ",IF_FUNCNAME), aIF);
 		DDD_PrintError('E', 4200, cBuffer);
 
-		ForIF(ifId,ifHead)
+		ForIF(aIF,ifHead)
 		{
 			if ((! BufferIsEmpty(ifHead->bufIn)) && ifHead->msgIn!=-1)
 			{
@@ -498,15 +506,15 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 	{
 		#ifdef CtrlTimeouts
 		printf("%4d: IFCTRL %02d received msg  all after %10ld tries\n",
-			me, ifId, (unsigned long)tries);
+			me, aIF, (unsigned long)tries);
 		#endif
 
-		if (! IFPollSend(ifId))
+		if (! IFPollSend(aIF))
 		{
-			sprintf(cBuffer, CONCAT("send-timeout for IF %02d in ",IF_FUNCNAME), ifId);
+			sprintf(cBuffer, CONCAT("send-timeout for IF %02d in ",IF_FUNCNAME), aIF);
 			DDD_PrintError('E', 4210, cBuffer);
 
-			ForIF(ifId,ifHead)
+			ForIF(aIF,ifHead)
 			{
 				if ((! BufferIsEmpty(ifHead->bufOut)) && ifHead->msgOut!=-1)
 				{
@@ -521,7 +529,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 
 
 	/* free memory */
-	IFExitComm(ifId);
+	IFExitComm(aIF);
 
 	/*STAT_TIMER1(60);*/
 

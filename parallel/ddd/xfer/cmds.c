@@ -885,14 +885,8 @@ static void XferInitCopyInfo (DDD_HDR hdr,
     /* call application handler for xfer of dependent objects */
     if (desc->handlerXFERCOPY)
     {
-                        #if defined(C_FRONTEND) || defined(F_FRONTEND)
       DDD_OBJ obj = HDR2OBJ(hdr,desc);
       desc->handlerXFERCOPY(_FADR obj, _FADR dest, _FADR prio);
-                        #endif
-
-                        #ifdef CPP_FRONTEND
-      CallHandler(hdr, XFERCOPY) (dest, prio);
-                        #endif
     }
 
     /* theXIAddData might be changed during handler execution */
@@ -917,14 +911,8 @@ static void XferInitCopyInfo (DDD_HDR hdr,
     /* call application handler for xfer of dependent objects */
     if (desc->handlerXFERCOPY)
     {
-                        #if defined(C_FRONTEND) || defined(F_FRONTEND)
       DDD_OBJ obj = HDR2OBJ(hdr,desc);
       desc->handlerXFERCOPY(_FADR obj, _FADR dest, _FADR prio);
-                        #endif
-
-                        #ifdef CPP_FRONTEND
-      CallHandler(hdr, XFERCOPY) (dest, prio);
-                        #endif
     }
 
     /* theXIAddData might be changed during handler execution */
@@ -1214,6 +1202,35 @@ void DDD_XferAddDataX (int cnt, DDD_TYPE typ, size_t *sizes)
   }
 
   theXIAddData->addLen += xa->addLen;
+}
+#endif
+
+
+#ifdef C_FRONTEND
+/**
+        Tell application if additional data will be sent.
+        If the application issues a \funk{XferCopyObj} command
+        with the local processor as the destination processor,
+        no object copy will be created. Therefore, also additional
+        data objects will not be sent and the corresponding
+   #XFER_GATHER#/#XFER_SCATTER# handlers will not be called.
+        This function returns a boolean value indicating whether
+        the last \funk{XferCopyObj}-command will need the specification
+        of additional data objects.
+
+        The application program may use this function in order to
+        avoid unnecessary work, \eg, for counting the number of
+        additional data objects.
+
+   @return #TRUE# if additional data objects will be gathered, sent
+                and scattered; #FALSE# otherwise.
+ */
+int DDD_XferWithAddData (void)
+{
+  /* if theXIAddData==NULL, the XferAddData-functions will
+     do nothing -> the Gather/Scatter-handlers will not be
+     called. */
+  return(theXIAddData!=NULL);
 }
 #endif
 

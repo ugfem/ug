@@ -182,14 +182,25 @@ void DDD_GetChannels (int nPartners)
   }
 
 
-  /* TODO error handling in case InfoAConn returns error */
   while (nConn>0)
   {
     for(i=0; i<nPartners; i++)
     {
       if (theProcFlags[i])
       {
-        if (InfoAConn(theTopology[theProcArray[i]])==1)
+        int ret = InfoAConn(theTopology[theProcArray[i]]);
+        if (ret==-1)
+        {
+          sprintf(cBuffer,
+                  "PPIF's InfoAConn() failed for connect to proc=%d"
+                  " in DDD_GetChannels",
+                  theProcArray[i]);
+          DDD_PrintError('E', 1530, cBuffer);
+          HARD_EXIT;
+        }
+
+
+        if (ret==1)
         {
           theProcFlags[i] = FALSE;
           nConn--;

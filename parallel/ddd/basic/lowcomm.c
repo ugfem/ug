@@ -393,7 +393,15 @@ static int LC_PollSend (void)
     if (md->msgState==MSTATE_COMM)
     {
       error = InfoASend(VCHAN_TO(md->proc), md->msgId);
-      /* TODO complete error handling */
+      if (error==-1)
+      {
+        sprintf(cBuffer,
+                "PPIF's InfoASend() failed for send to proc=%d in LowComm",
+                md->proc);
+        DDD_PrintError('E', 6640, cBuffer);
+        HARD_EXIT;
+      }
+
       if (error==1)
       {
         /* free message buffer */
@@ -444,7 +452,15 @@ static int LC_PollRecv (void)
     if (md->msgState==MSTATE_COMM)
     {
       error = InfoARecv(VCHAN_TO(md->proc), md->msgId);
-      /* TODO complete error handling */
+      if (error==-1)
+      {
+        sprintf(cBuffer,
+                "PPIF's InfoARecv() failed for recv from proc=%d in LowComm",
+                md->proc);
+        DDD_PrintError('E', 6641, cBuffer);
+        HARD_EXIT;
+      }
+
       if (error==1)
       {
         LC_MsgRecv(md);
@@ -475,7 +491,7 @@ static int LC_PollRecv (void)
 
 static void LC_FreeSendQueue (void)
 {
-  MSG_DESC *md, *next;
+  MSG_DESC *md, *next=NULL;
 
   for(md=LC_SendQueue; md!=NULL; md=next)
   {
@@ -499,7 +515,7 @@ static void LC_FreeSendQueue (void)
 
 static void LC_FreeRecvQueue (void)
 {
-  MSG_DESC *md, *next;
+  MSG_DESC *md, *next=NULL;
 
   for(md=LC_RecvQueue; md!=NULL; md=next)
   {

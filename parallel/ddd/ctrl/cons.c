@@ -370,7 +370,7 @@ static int ConsCheckGlobalCpl (void)
 static int Cons2CheckSingleMsg (LC_MSGHANDLE xm, DDD_HDR *locObjs)
 {
   CONS_INFO    *theCplBuf;
-  int i, inext, j, nItems;
+  int i, inext=0, j, nItems;
   int error_cnt = 0;
 
 

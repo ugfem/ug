@@ -101,8 +101,12 @@ int IFInitComm (DDD_IF ifId)
         RecvASync(ifHead->vc,
                   BufferMem(ifHead->bufIn), BufferLen(ifHead->bufIn),
                   &error);
+      if (ifHead->msgIn==0)
+      {
+        DDD_PrintError('E', 4225, "PPIF's RecvASync() failed in IF-Comm");
+        HARD_EXIT;
+      }
 
-      /* TODO error abfrage */
       recv_mesgs++;
     }
   }
@@ -148,8 +152,12 @@ void IFInitSend (IF_PROC *ifHead)
       SendASync(ifHead->vc,
                 BufferMem(ifHead->bufOut), BufferLen(ifHead->bufOut),
                 &error);
+    if (ifHead->msgOut==0)
+    {
+      DDD_PrintError('E', 4226, "PPIF's SendASync() failed in IF-Comm");
+      HARD_EXIT;
+    }
 
-    /* TODO error abfrage */
     send_mesgs++;
   }
 }
@@ -174,8 +182,17 @@ int IFPollSend (DDD_IF ifId)
       if ((! BufferIsEmpty(ifHead->bufOut)) && ifHead->msgOut!=-1)
       {
         int error = InfoASend(ifHead->vc, ifHead->msgOut);
-        /* TODO complete error handling */
-        if (error==1) {
+        if (error==-1)
+        {
+          sprintf(cBuffer,
+                  "PPIF's InfoASend() failed for send to proc=%d in IF-Comm",
+                  ifHead->proc);
+          DDD_PrintError('E', 4220, cBuffer);
+          HARD_EXIT;
+        }
+
+        if (error==1)
+        {
           send_mesgs--;
           ifHead->msgOut=-1;
 
@@ -230,7 +247,7 @@ char *IFCommLoopObj (ComProcPtr LoopProc,
 #ifdef F_FRONTEND
     error = (*LoopProc)(obj+i, buffer);
 #endif
-    /* TODO error abfrage */
+    /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
   }
 
   return(buffer);
@@ -249,7 +266,7 @@ char *IFCommLoopObjGather (DDD_GatherScatter& gs,
   for(i=0; i<nItems; i++, buffer+=itemSize)
   {
     error = gs.Gather(obj[i], buffer);
-    /* TODO error abfrage */
+    /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
   }
 
   return(buffer);
@@ -266,7 +283,7 @@ char *IFCommLoopObjScatter (DDD_GatherScatter& gs,
   for(i=0; i<nItems; i++, buffer+=itemSize)
   {
     error = gs.Scatter(obj[i], buffer);
-    /* TODO error abfrage */
+    /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
   }
 
   return(buffer);
@@ -292,7 +309,7 @@ void IFExecLoopObj (ExecProcPtr LoopProc, IFObjPtr *obj, int nItems)
 #ifdef F_FRONTEND
     error = (*LoopProc)(obj+i);
 #endif
-    /* TODO error abfrage */
+    /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
   }
 }
 
@@ -326,7 +343,7 @@ char *IFCommLoopCpl (ComProcPtr LoopProc,
 #ifdef F_FRONTEND
     error = (*LoopProc)((IFObjPtr *) &(OBJ_INDEX(cpl[i]->obj)), buffer);
 #endif
-    /* TODO error abfrage */
+    /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
   }
 
   return(buffer);
@@ -369,7 +386,7 @@ char *IFCommLoopCplX (ComProcXPtr LoopProc,
                         (DDD_PRIO *) &(cpl[i]->prio));
 #endif
 
-    /* TODO error abfrage */
+    /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
   }
 
   return(buffer);
@@ -400,7 +417,7 @@ void IFExecLoopCplX (ExecProcXPtr LoopProc, COUPLING **cpl, int nItems)
                         (DDD_PROC *) &(cpl[i]->proc),
                         (DDD_PRIO *) &(cpl[i]->prio));
 #endif
-    /* TODO error abfrage */
+    /* TODO: check error-value from IF-LoopProc and issue warning or HARD_EXIT */
   }
 }
 
@@ -408,5 +425,6 @@ void IFExecLoopCplX (ExecProcXPtr LoopProc, COUPLING **cpl, int nItems)
 
 
 #endif  /* for debugging */
+
 
 /****************************************************************************/

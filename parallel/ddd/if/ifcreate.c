@@ -572,10 +572,30 @@ static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
 
 
 /****************************************************************************/
+/*                                                                          */
+/*  DDD_IFDefine                                                            */
+/*                                                                          */
+/****************************************************************************/
 
 /**
         Definition of a DDD Interface.
-        PDH.
+
+        This function defines a new \ddd{interface}. Its argument list contains
+        three arrays: the first one specifies a subset of the global DDD object set,
+        the second and third ones specify a subset of all DDD priorities.
+        After the initial creation of the new interface its ID is returned.
+
+        During all following DDD operations ({\bf Identify}- as well as
+        {\bf Transfer}-operations) the interface will be kept consistent, and can
+        be used for communication via \funk{IFExchange} and
+        \funk{IFOneway} and analogous functions.
+
+   @param nO  number of entries in array {\it O[\ ]} (as specified with second argument).
+   @param O   array of DDD type IDs; the new interface will only contain objects with one of these types.
+   @param nA  number of entries in array {\it A[\ ]} (as specified with forth argument).
+   @param A   first array of DDD priorities; the object set A from the new interface will only contain objects with one of these priorities.
+   @param nB  number of entries in array {\it B[\ ]} (as specified with sixth argument).
+   @param B   second array of DDD priorities; the object set B from the new interface will only contain objects with one of these priorities.
  */
 
 #ifdef C_FRONTEND
@@ -874,24 +894,45 @@ static void IFDisplay (DDD_IF i)
 }
 
 
+/****************************************************************************/
+/*                                                                          */
+/*  DDD_IFDisplay                                                           */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+        Display overview of single DDD interface.
+        This function displays an overview table for one DDD-interface,
+        its definition parameters and the current number of constituing objects
+        on the calling processor.
+
+        For each neighbour processor corresponding
+        to that interface a relation line is displayed, which contains
+        the overall number of objects inside the interface, the number of
+        oneway relations outwards, the number of oneway relations inwards,
+        the number of exchange relations and the neighbour processor number.
+
+   @param aIF  the \ddd{interface} ID.
+ */
+
 #ifdef C_FRONTEND
-void DDD_IFDisplay (DDD_IF ifId)
+void DDD_IFDisplay (DDD_IF aIF)
 {
 #endif
 #ifdef CPP_FRONTEND
 void DDD_Interface::Display (void)
 {
-  DDD_IF ifId = _id;
+  DDD_IF aIF = _id;
 #endif
 #ifdef F_FRONTEND
-void DDD_IFDisplay (DDD_IF *_ifId)
+void DDD_IFDisplay (DDD_IF *_aIF)
 {
-  DDD_IF ifId = *_ifId;
+  DDD_IF aIF = *_aIF;
 #endif
 
-if (ifId>=nIFs)
+if (aIF>=nIFs)
 {
-  sprintf(cBuffer, "invalid IF %02d in DDD_IFDisplay", ifId);
+  sprintf(cBuffer, "invalid IF %02d in DDD_IFDisplay", aIF);
   DDD_PrintError('W', 4050, cBuffer);
   return;
 }
@@ -900,11 +941,31 @@ if (ifId>=nIFs)
 sprintf(cBuffer, "|\n| DDD_IF-Info for proc=%03d\n", me);
 DDD_PrintLine(cBuffer);
 
-IFDisplay(ifId);
+IFDisplay(aIF);
 
 DDD_PrintLine("|\n");
 }
 
+
+
+/****************************************************************************/
+/*                                                                          */
+/*  DDD_IFDisplayAll                                                        */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+        Display overview of all DDD interfaces.
+        This function displays an overview table containing all DDD-interfaces,
+        their definition parameters and the current number of constituing objects
+        on the calling processor.
+
+        For each interface and each neighbour processor corresponding
+        to that interface a relation line is displayed, which contains
+        the overall number of objects inside the interface, the number of
+        oneway relations outwards, the number of oneway relations inwards,
+        the number of exchange relations and the neighbour processor number.
+ */
 
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
 void DDD_IFDisplayAll (void)

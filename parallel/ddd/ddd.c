@@ -493,8 +493,8 @@ DDD_PROC DDD_Library::InfoMe (void)
         Get master processor number.
         This function returns the processor number of the
         master processor. Processor numbers are always
-        integer numbers between $0$ and \funk{InfoProcs}.
-        Usually, processor $0$ is the master processor.
+        integer numbers between 0 and \funk{InfoProcs}.
+        Usually, processor 0 is the master processor.
 
    @return  master processor number
  */

@@ -507,23 +507,28 @@ extern VChannelPtr *theTopology;
 
 #ifdef CPP_FRONTEND
 
-class DDD_ObjPtr
-{
-public:
+/* not used up to now
+   class DDD_ObjPtr
+   {
+        public:
 
-  // access to DDD_HEADER of DDD_Object
-  DDD_HDR operator-> ()  { return &(_obj->_hdr); }
+                // access to DDD_HEADER of DDD_Object
+                DDD_HDR operator-> ()  { return &(_obj->_hdr); }
 
-  // access to DDD_Object itself
-  DDD_Object* operator* ()  { return _obj; }
+                // access to DDD_Object itself
+                DDD_Object* operator* ()  { return _obj; }
 
-private:
-  DDD_Object*  _obj;
-};
+        private:
+                DDD_Object*  _obj;
+   };
 
-#define HdrPtr   DDD_ObjPtr
+   #define HdrPtr   DDD_ObjPtr
 
-#define CallHandler(o,hname)     ((*o)->Handler ## hname)
+
+   #define CallHandler(o,hname)     ((*o)->Handler ## hname)
+
+ */
+
 
 #endif
 

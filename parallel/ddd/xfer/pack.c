@@ -526,6 +526,9 @@ static void XferPackSingleMsg (XFERMSG *msg)
      */
     /*STAT_RESET3;*/
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+    /* NOTE: object memory is copied _completely_, i.e., also LDATA-
+       components are copied into message and sent to destination.
+       then, on the receiving processor the data is sorted out... */
     memcpy(currObj, obj, xi->size);
     copyhdr = OBJ2HDR(currObj,desc);
 #else

@@ -1443,7 +1443,7 @@ void DDD_TypeDisplay (DDD_TYPE *idf)
         case EL_OBJPTR :
           sprintf(cBuffer, "%sobj pointer (refs %s, offset %d)\n",
                   cBuffer,
-                  theTypeDefs[e->reftype].name,e->msgoffset);
+                  theTypeDefs[EDESC_REFTYPE(e)].name,e->msgoffset);
           break;
         default :
 #ifdef F_FRONTEND

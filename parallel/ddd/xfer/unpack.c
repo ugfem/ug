@@ -1178,7 +1178,7 @@ static void LocalizeSymTab (LC_MSGHANDLE xm,
 }
 
 
-static void LocalizeNewObjects (LC_MSGHANDLE xm)
+static void LocalizeObjects (LC_MSGHANDLE xm, int required_newness)
 {
 	SYMTAB_ENTRY *theSymTab;
 	OBJTAB_ENTRY *theObjTab;
@@ -1193,10 +1193,9 @@ static void LocalizeNewObjects (LC_MSGHANDLE xm)
 	theObjects = (char *)        LC_GetPtr(xm, xferGlobals.objmem_id);
 
 
-	/* convert pointers to TOTALNEW objects */
 	for(i=0; i<lenObjTab; i++)         /* for all message items */
 	{
-		if (theObjTab[i].is_new==TOTALNEW)
+		if (required_newness==TOTALNEW && theObjTab[i].is_new==TOTALNEW)
 		{
 			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
 			DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
@@ -1209,36 +1208,16 @@ static void LocalizeNewObjects (LC_MSGHANDLE xm)
 					theSymTab);
 			}
 		}
-	}
-}
 
 
-static void LocalizeKnownObjects (LC_MSGHANDLE xm)
-{
-	SYMTAB_ENTRY *theSymTab;
-	OBJTAB_ENTRY *theObjTab;
-	char         *theObjects;
-	int          i;
-	int          lenObjTab = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
+		#ifdef MERGE_MODE_IN_TESTZUSTAND
 
-	#ifdef MERGE_MODE_IN_TESTZUSTAND
-
-	/* get table addresses inside message buffer */
-	theSymTab = (SYMTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.symtab_id);
-	theObjTab = (OBJTAB_ENTRY *) LC_GetPtr(xm, xferGlobals.objtab_id);
-	theObjects = (char *)        LC_GetPtr(xm, xferGlobals.objmem_id);
-
-
-	/* convert pointers to non-TOTALNEW objects */
-	for(i=0; i<lenObjTab; i++)         /* for all message items */
-	{
-		/*
-			implemented merge_mode for Localize. references from all copies
-			will be merged into the local copy. 960813 KB
-		*/
-
-		if (theObjTab[i].is_new!=TOTALNEW)
+		if (required_newness!=TOTALNEW && theObjTab[i].is_new!=TOTALNEW)
 		{
+			/*
+				implemented merge_mode for Localize. references from all copies
+				will be merged into the local copy. 960813 KB
+			*/
 			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
 			DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 
@@ -1256,11 +1235,10 @@ static void LocalizeKnownObjects (LC_MSGHANDLE xm)
 					theSymTab);
 			}
 		}
+
+		#endif
 	}
-
-	#endif
 }
-
 
 
 
@@ -1298,13 +1276,12 @@ static void CallUpdateHandler (LC_MSGHANDLE xm)
 
 
 
-static void UnpackAddData (LC_MSGHANDLE xm)
+static void UnpackAddData (LC_MSGHANDLE xm, int required_newness)
 {
 	SYMTAB_ENTRY *theSymTab;
 	OBJTAB_ENTRY *theObjTab;
 	char         *theObjects;
 	int          i;
-	char         *data;
 	int          lenSymTab = (int) LC_GetTableLen(xm, xferGlobals.symtab_id);
 	int          lenObjTab = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
 
@@ -1320,38 +1297,53 @@ static void UnpackAddData (LC_MSGHANDLE xm)
 	{
 		if (theObjTab[i].addLen>0)
 		{
-			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
-			DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
-			int       newness;
+			int       newness = -1;
 
-			/*
-			printf("%4d: scatter %d/%d, addLen=%d, objadr=%08x gid=%08x\n",
-				me,i,lenObjTab,theObjTab[i].addLen,obj,theObjTab[i].gid);
-			fflush(stdout);
-			*/
-
-
-			switch (theObjTab[i].is_new)
+			if (required_newness==TOTALNEW)
 			{
-				case OTHERMSG:   newness=XFER_REJECT;   break;
-				case NOTNEW:     newness=XFER_REJECT;   break;
-				case PARTNEW:    newness=XFER_UPGRADE;  break;
-				case PRUNEDNEW:  newness=XFER_UPGRADE;  break;
-/* TODO: for PRUNEDNEW we should merge prios; might be
-	XFER_DOWNGRADE... */
-				case TOTALNEW:   newness=XFER_NEW;      break;
+				if (theObjTab[i].is_new==TOTALNEW)
+				{
+					newness = XFER_NEW;
+				}
+			}
+			else
+			{
+				if (theObjTab[i].is_new!=TOTALNEW)
+				{
+					switch (theObjTab[i].is_new)
+					{
+						case OTHERMSG:   newness=XFER_REJECT;   break;
+						case NOTNEW:     newness=XFER_REJECT;   break;
+						case PARTNEW:    newness=XFER_UPGRADE;  break;
+						case PRUNEDNEW:  newness=XFER_UPGRADE;  break;
+		/* TODO: for PRUNEDNEW we should merge prios; might be XFER_DOWNGRADE... */
+					}
+				}
 			}
 
-			/*
-				compute begin of data section. theObjTab[i].size is equal to
-				desc->len for fixed sized objects and different for variable
-				sized objects
-			*/
-			data = (char *)(theObjects +
-					theObjTab[i].offset +
-					CEIL(theObjTab[i].size));
+			if (newness!=-1)
+			{
+				TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
+				DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
+				char      *data;
+			
+				/*
+				printf("%4d: scatter %d/%d, addLen=%d, objadr=%08x gid=%08x\n",
+					me,i,lenObjTab,theObjTab[i].addLen,obj,theObjTab[i].gid);
+				fflush(stdout);
+				*/
 
-			PutDepData(data, desc, obj, theSymTab, newness);
+				/*
+					compute begin of data section. theObjTab[i].size is equal to
+					desc->len for fixed sized objects and different for variable
+					sized objects
+				*/
+				data = (char *)(theObjects +
+						theObjTab[i].offset +
+						CEIL(theObjTab[i].size));
+
+				PutDepData(data, desc, obj, theSymTab, newness);
+			}
 		}
 	}
 }
@@ -1416,7 +1408,7 @@ static void CallSetPriorityHandler (LC_MSGHANDLE xm)
 
 
 
-static void CallObjMkConsHandler (LC_MSGHANDLE xm)
+static void CallObjMkConsHandler (LC_MSGHANDLE xm, int required_newness)
 {
 	OBJTAB_ENTRY *theObjTab;
 	int          lenObjTab = (int) LC_GetTableLen(xm, xferGlobals.objtab_id);
@@ -1431,34 +1423,38 @@ static void CallObjMkConsHandler (LC_MSGHANDLE xm)
 	/* initialize new objects corresponding to application: consistency */
 	for(i=0; i<lenObjTab; i++)         /* for all message items */
 	{
-		if (theObjTab[i].is_new==TOTALNEW ||
-			theObjTab[i].is_new==PRUNEDNEW ||
-			theObjTab[i].is_new==PARTNEW ||
-			theObjTab[i].is_new==NOTNEW)
+		int  newness = -1;
+
+		if (required_newness==TOTALNEW)
 		{
-			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
-			DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
-			int     newness;
-
-			assert(theObjTab[i].is_new!=OTHERMSG);
-
+			if (theObjTab[i].is_new==TOTALNEW)
+			{
+				newness = XFER_NEW;
+			}
+		}
+		else
+		{
 			switch (theObjTab[i].is_new)
 			{
 				case NOTNEW:    newness=XFER_REJECT;   break;
 				case PARTNEW:   newness=XFER_UPGRADE;  break;
-				case TOTALNEW:  newness=XFER_NEW;      break;
 				case PRUNEDNEW: newness=XFER_UPGRADE;  break;
-/* TODO: for PRUNEDNEW we should merge prios; might be
-	XFER_DOWNGRADE... */
+		/* TODO: for PRUNEDNEW we should merge prios; might be XFER_DOWNGRADE... */
 			}
+		}
 
+		if (newness!=-1)
+		{
+			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
+			DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
+
+			assert(theObjTab[i].is_new!=OTHERMSG);
 
     		/* call application handler for object consistency */
 			if (desc->handlerOBJMKCONS)
 	     		desc->handlerOBJMKCONS(_FADR obj, _FADR newness);
 		}
 	}
-
 
 	/*STAT_INCTIMER4(23);*/
 }
@@ -1713,9 +1709,17 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 		LocalizeSymTab(theMsgs[i], unionObjTab, lenObjTab,
 			localCplObjs, nLocalCplObjs);
 
+
+	/*
+		TODO. perhaps the following loops across all messages
+		should be split up even further. (i.e., XFER_NEW,
+		then XFER_UPGRADE, then XFER_REJECT).
+	*/
+	
+
 	/* unpack all messages and update local topology */
-	for(i=0; i<nRecvMsgs; i++) LocalizeNewObjects(theMsgs[i]);
-	for(i=0; i<nRecvMsgs; i++) LocalizeKnownObjects(theMsgs[i]);
+	for(i=0; i<nRecvMsgs; i++) LocalizeObjects(theMsgs[i],  TOTALNEW);
+	for(i=0; i<nRecvMsgs; i++) LocalizeObjects(theMsgs[i], !TOTALNEW);
 
 	/*
 		at this point all new objects are established,
@@ -1733,7 +1737,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 		4. update consistency
 	*/
 
-	/* for PARTNEW objects */
+	/* for NOTNEW,PARTNEW,PRUNEDNEW objects */
 	for(i=0; i<nRecvMsgs; i++)
 		CallSetPriorityHandler(theMsgs[i]);
 
@@ -1742,12 +1746,12 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 		CallUpdateHandler(theMsgs[i]);
 
 	/* for all incoming objects */
-	for(i=0; i<nRecvMsgs; i++)
-		UnpackAddData(theMsgs[i]);
+	for(i=0; i<nRecvMsgs; i++) UnpackAddData(theMsgs[i],  TOTALNEW);
+	for(i=0; i<nRecvMsgs; i++) UnpackAddData(theMsgs[i], !TOTALNEW);
 
 	/* for PARTNEW and TOTALNEW objects */
-	for(i=0; i<nRecvMsgs; i++)
-		CallObjMkConsHandler(theMsgs[i]);
+	for(i=0; i<nRecvMsgs; i++) CallObjMkConsHandler(theMsgs[i],  TOTALNEW);
+	for(i=0; i<nRecvMsgs; i++) CallObjMkConsHandler(theMsgs[i], !TOTALNEW);
 
 
 
