@@ -746,7 +746,7 @@ static INT InterpolateCorrection (NP_TRANSFER *theNP, INT level,
     result[0] =
       (*np->intcor)(GRID_ON_LEVEL(NP_MG(theNP),level),to,from,damp);
     #ifdef ModelP
-  if (np->meanvalue)
+  if (np->meanvalue || level <= 0)
     if (l_vector_meanvalue(GRID_ON_LEVEL(NP_MG(theNP),level),to)
         != NUM_OK) NP_RETURN(1,result[0]);
         #endif
