@@ -368,7 +368,7 @@ static INT JacobiPreProcess  (NP_ITER *theNP, INT level,
     result[0] = __LINE__;
     return (1);
   }
-  if (l_matrix_consistent(theGrid,np->L,FALSE) != NUM_OK) {
+  if (l_matrix_consistent(theGrid,np->L,MAT_DIAG_CONS) != NUM_OK) {
     result[0] = __LINE__;
     return (1);
   }
@@ -464,7 +464,7 @@ static INT GSPreProcess  (NP_ITER *theNP, INT level,
     result[0] = __LINE__;
     return (1);
   }
-  if (l_matrix_consistent(theGrid,np->L,TRUE) != NUM_OK) {
+  if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS) != NUM_OK) {
     result[0] = __LINE__;
     return (1);
   }
@@ -481,6 +481,11 @@ static INT GSStep (NP_SMOOTHER *theNP, INT level,
                    INT *result)
 {
     #ifdef ModelP
+  if (l_vector_collect(GRID_ON_LEVEL(theNP->iter.base.mg,level),b)!=NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+
   if (l_lgs(GRID_ON_LEVEL(theNP->iter.base.mg,level),x,L,b) != NUM_OK) {
     result[0] = __LINE__;
     return (1);
@@ -589,7 +594,7 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
     return (1);
   }
         #ifdef ModelP
-  if (l_matrix_consistent(theGrid,np->smoother.L,TRUE) != NUM_OK) {
+  if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) {
     result[0] = __LINE__;
     return (1);
   }
@@ -611,7 +616,7 @@ static INT ILUStep (NP_SMOOTHER *theNP, INT level,
                     INT *result)
 {
     #ifdef ModelP
-  if (l_vector_collect(GRID_ON_LEVEL(theNP->iter.base.mg,level),b) != NUM_OK) {
+  if (l_vector_collect(GRID_ON_LEVEL(theNP->iter.base.mg,level),b)!=NUM_OK) {
     result[0] = __LINE__;
     return (1);
   }
@@ -696,7 +701,7 @@ static INT LUPreProcess (NP_ITER *theNP, INT level,
     return (1);
   }
         #ifdef ModelP
-  if (l_matrix_consistent(theGrid,np->L,TRUE) != NUM_OK) {
+  if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS) != NUM_OK) {
     result[0] = __LINE__;
     return (1);
   }
