@@ -478,6 +478,7 @@ void ConstructConsistentGrid (GRID *theGrid)
 				
 				theElement = VFATHER(theVertex);
 				if (theElement == NULL) continue;
+				HEAPFAULT(theElement);
 				CORNER_COORDINATES(theElement,n,x);			
 				UG_GlobalToLocal(n,(const DOUBLE **)x,
 								 CVECT(theVertex),LCVECT(theVertex));

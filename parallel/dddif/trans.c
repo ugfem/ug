@@ -199,7 +199,7 @@ static int Scatter_GhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pr
 {
   ELEMENT *theElement = (ELEMENT *)obj;
   ELEMENT *SonList[MAX_SONS];
-  INT i;
+  INT i,j;
 
   switch (*(int *)data)
   {
@@ -220,6 +220,15 @@ static int Scatter_GhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pr
       while (SonList[i] != NULL)
       {
         if (PARTITION(SonList[i]) == me) return(0);
+        i++;
+      }
+      i = 0;
+      while (SonList[i] != NULL)
+      {
+        for (j=0; j<CORNERS_OF_ELEM(SonList[i]); j++)
+          if (theElement ==
+              VFATHER(MYVERTEX(CORNER(SonList[i],j))))
+            VFATHER(MYVERTEX(CORNER(SonList[i],j))) = NULL;
         i++;
       }
     }
@@ -278,7 +287,7 @@ static int Scatter_VHGhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
 {
   ELEMENT *theElement = (ELEMENT *)obj;
   ELEMENT *SonList[MAX_SONS];
-  INT i;
+  INT i,j;
 
   /* if element is needed after transfer here */
   if ((*(int *)data) == GC_Keep) return(0);
@@ -294,10 +303,18 @@ static int Scatter_VHGhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
     if (PARTITION(SonList[i]) == me) return(0);
     i++;
   }
-
   /* element is not needed on me any more */
   if ((*(int *)data) == GC_Delete)
   {
+    i = 0;
+    while (SonList[i] != NULL)
+    {
+      for (j=0; j<CORNERS_OF_ELEM(SonList[i]); j++)
+        if (theElement ==
+            VFATHER(MYVERTEX(CORNER(SonList[i],j))))
+          VFATHER(MYVERTEX(CORNER(SonList[i],j))) = NULL;
+      i++;
+    }
     XFEREDELETE(theElement);
     return(0);
   }
@@ -312,8 +329,6 @@ static int ComputeGhostCmds (MULTIGRID *theMG)
 
   return(0);
 }
-
-
 
 /****************************************************************************/
 
@@ -434,6 +449,18 @@ static void XferGridWithOverlap (GRID *theGrid)
         /* element isn't needed */
         PRINTDEBUG(dddif,2,("%d: XferGridWithOverlap(): XferDel elem=%d to p=%d prio=%d\n",
                             me,EGID(theElement),PARTITION(theElement),PrioHGhost));
+
+        if (NSONS(theElement) > 0) {
+          i = 0;
+          while (SonList[i] != NULL)
+          {
+            for (j=0; j<CORNERS_OF_ELEM(SonList[i]); j++)
+              if (theElement ==
+                  VFATHER(MYVERTEX(CORNER(SonList[i],j))))
+                VFATHER(MYVERTEX(CORNER(SonList[i],j))) = NULL;
+            i++;
+          }
+        }
         XFEREDELETE(theElement);
       }
     }
