@@ -118,21 +118,26 @@ INT ce_CUTMODE;
 #define CORNER_OF_SIDE0(t,s,c) (element_descriptors[t]->corner_of_side[(s)][(c)])
 
 /* Macros for ordering elements */
-#define NCUT                10
-#define SENTINEL            -3.40E38
-#define BT(i)               (OE_BoxTab[i])
-#define BCOUNT(i)           (OE_BE_Data[i].count)
-#define HIDDEN_BY(i)        (OE_BE_Data[i].hiddenBy)
-#define LEFT_SON(i)         (OE_BE_Data[i].leftSon)
-#define RIGHT_SON(i)        (OE_BE_Data[i].rightSon)
-#define U1(i)               (OE_BE_Data[i].u1)
-#define V1(i)               (OE_BE_Data[i].v1)
-#define U2(i)               (OE_BE_Data[i].u2)
-#define V2(i)               (OE_BE_Data[i].v2)
-#define U_LEFT_TREE(i)      (OE_BE_Data[i].uLeftTree)
-#define V_LEFT_TREE(i)      (OE_BE_Data[i].vLeftTree)
-#define U_RIGHT_TREE(i)     (OE_BE_Data[i].uRightTree)
-#define V_RIGHT_TREE(i)     (OE_BE_Data[i].vRightTree)
+#define NCUT                  10
+#define INFINITY              1.79E308
+#define SENTINEL              -INFINITY
+#define BT(i)                 (OE_BoxTab[i])
+#define BCOUNT(i)             (OE_BE_Data[i].count)
+#define HIDDEN_BY(i)          (OE_BE_Data[i].hiddenBy)
+#define VIEWABLE_BSIDE(i)     (OE_BE_Data[i].viewableBSide)
+#define HIDDEN_BSIDE(i)       (OE_BE_Data[i].hiddenBSide)
+#define LEFT_SON(i)           (OE_BE_Data[i].leftSon)
+#define RIGHT_SON(i)          (OE_BE_Data[i].rightSon)
+#define U1(i)                 (OE_BE_Data[i].u1)
+#define V1(i)                 (OE_BE_Data[i].v1)
+#define U2(i)                 (OE_BE_Data[i].u2)
+#define V2(i)                 (OE_BE_Data[i].v2)
+#define U_LEFT_TREE(i)        (OE_BE_Data[i].uLeftTree)
+#define V_LEFT_TREE(i)        (OE_BE_Data[i].vLeftTree)
+#define U_RIGHT_TREE(i)       (OE_BE_Data[i].uRightTree)
+#define V_RIGHT_TREE(i)       (OE_BE_Data[i].vRightTree)
+#define Z_MIN(i)              (OE_BE_Data[i].zMin)
+#define Z_MAX(i)              (OE_BE_Data[i].zMax)
 
 /* pixel resolution for inserting boundary nodes */
 #define SMALLPIX 			4
@@ -163,14 +168,18 @@ typedef struct IList{
 } ILIST;
 
 typedef struct {
-	INT        count;
-	ILIST      *hiddenBy;
-	INT        leftSon;
-	INT        rightSon;
-	COORD      u1, v1;
-	COORD      u2, v2;
-	COORD      uLeftTree, vLeftTree;
-	COORD      uRightTree, vRightTree;
+	INT          count;
+	ILIST        *hiddenBy;
+	INT          viewableBSide;
+	INT          hiddenBSide;
+	INT          leftSon;
+	INT          rightSon;
+	DOUBLE       u1, v1;
+	DOUBLE       u2, v2;
+	DOUBLE       uLeftTree, vLeftTree;
+	DOUBLE       uRightTree, vRightTree;
+	DOUBLE       zMin;
+	DOUBLE       zMax;
 } BE_DATA;
 
 /****************************************************************************/
@@ -304,8 +313,8 @@ static RotObsTrafoProcPtr InitRotObsTrafo3d;
 
 /*---------- variables use by OrderElements etc ----------------------------*/
 static VIEWEDOBJ			*OE_ViewedObj;
-static COORD                *OE_zMin;
-static COORD                *OE_zMax;
+static DOUBLE               *OE_zMin;
+static DOUBLE               *OE_zMax;
 INT                         OE_OrderStrategy;
 static INT                  OE_nBndElem;
 static MAP                  *OE_Map;
@@ -313,7 +322,6 @@ static BE_DATA              *OE_BE_Data;
 static INT                  *OE_BoxTab;
 static HEAP                 *OE_Heap;
 static INT                  OE_QueryBox;
-static ILIST                **OE_CurrLink;
 static INT                  OE_nCompareElements;
 
 /*---------- variables use by GetFirst/NextElement... ----------------------*/
@@ -4431,6 +4439,7 @@ static INT GEN_PostProcess_Scalar_FR (PICTURE *thePicture, WORK *theWork)
 	Broadcast(&GEN_FR_min,sizeof(double));
 	Broadcast(&GEN_FR_max,sizeof(double));
 	#endif
+
 	if (GEN_FR_min>GEN_FR_max)
 	{
 		UserWrite("findrange failed\n");
@@ -4968,6 +4977,11 @@ static INT GEN_PostProcess_Matrix_FR (PICTURE *thePicture, WORK *theWork)
 	struct FindRange_Work *FR_Work;
 	DOUBLE m,l;
 	
+    #ifdef ModelP
+	Broadcast(&GEN_FR_min,sizeof(double));
+	Broadcast(&GEN_FR_max,sizeof(double));
+	#endif
+
 	FR_Work = W_FINDRANGE_WORK(theWork);
 	
 	if (GEN_FR_min>GEN_FR_max)
@@ -5021,6 +5035,10 @@ static INT GEN_PostProcess_Vector_FR (PICTURE *thePicture, WORK *theWork)
 	
 	FR_Work = W_FINDRANGE_WORK(theWork);
 	
+	#ifdef ModelP
+	Broadcast(&GEN_FR_max,sizeof(double));
+	#endif
+
 	/* postprocess findrange */
 		FR_Work->min = 0.0;
 	if (FR_Work->zoom>0.0)
@@ -7034,7 +7052,9 @@ static INT EW_PostProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 	struct LinePlotObj2D *theLpo;
 	DOUBLE_VECTOR p;
 	DRAWINGOBJ *theDO;
-	
+
+	if (me != master) return(0);
+
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theLpo = &(PIC_PO(thePicture)->theLpo);
 	
@@ -7123,6 +7143,11 @@ static INT GEN_PostProcess_Line_FR (PICTURE *thePicture, WORK *theWork)
 	
 	FR_Work = W_FINDRANGE_WORK(theWork);
 	
+	#ifdef ModelP
+	Broadcast(&GEN_FR_min,sizeof(double));
+	Broadcast(&GEN_FR_max,sizeof(double));
+	#endif
+
 	if (GEN_FR_min>GEN_FR_max)
 	{
 		UserWrite("findrange failed\n");
@@ -13098,7 +13123,7 @@ static INT CompareElements (const void *ElementHandle0,
 
 /*------ used by OrderFathersNNS --------------------------------------------*/
 
-static COORD ZCoordInEyeSystem(DOUBLE *p)
+static DOUBLE ZCoordInEyeSystem(DOUBLE *p)
 {
 	return (p[0]*(VO_VT(OE_ViewedObj)[0]-VO_VP(OE_ViewedObj)[0]) +
             p[1]*(VO_VT(OE_ViewedObj)[1]-VO_VP(OE_ViewedObj)[1]) +
@@ -13144,17 +13169,17 @@ static INT CompareZCoord(const void *p, const void *q)
 static INT OrderFathersNNS (ELEMENT **table, HEAP *heap, INT n)
 {
     INT i, j, k, ok;
-    COORD min, max, t;
+    DOUBLE min, max, t;
     ELEMENT *p, *q;
     
 	/* allocate arrays for z coordinates */
     Mark(heap, FROM_TOP);
-	if ((OE_zMin = (COORD *)GetMem(heap, n*sizeof(COORD), FROM_TOP)) == NULL) {
+	if ((OE_zMin = (DOUBLE *)GetMem(heap, n*sizeof(DOUBLE), FROM_TOP)) == NULL) {
 		Release(heap,FROM_TOP);
 		UserWrite("ERROR: could not allocate memory from the MGHeap\n");
 		return 1;
 	}
-	if ((OE_zMax = (COORD *)GetMem(heap, n*sizeof(COORD), FROM_TOP)) == NULL) {
+	if ((OE_zMax = (DOUBLE *)GetMem(heap, n*sizeof(DOUBLE), FROM_TOP)) == NULL) {
 		Release(heap,FROM_TOP);
 		UserWrite("ERROR: could not allocate memory from the MGHeap\n");
 		return 1;
@@ -13202,110 +13227,91 @@ static INT OrderFathersNNS (ELEMENT **table, HEAP *heap, INT n)
 	return 0;
 }
 
-/*----- used by OrderFathersXSH --------------------------------------------*/
-
 /****************************************************************************/
 /*
    CompareElementsXSH - Test, whether an element hides another 
 
    SYNOPSIS:
-   static INT CompareElementsXSH (ELEMENT *p, ELEMENT *q);
+   static INT CompareElementsXSH (INT mu, INT nu);
 
    PARAMETERS:
-.  p - 
-.  q - 
+.  mu - index to element0
+.  nu - index to element1
 
    DESCRIPTION:
-   This function tests, whether an element hides another. It is derived
-   from CompareElements, but ignores elements that have a common side.
-   Sphere test is also discarded.
+   This function tests, whether a (boundary) element hides another one
+   significantly. (derived from CompareElements)
 
    RETURN VALUE:
    INT
-.n     1 whenelement0 hides element1
-.n      -1 when element1 hides element0
-.n     0 when elements do not hide each other.
+.n     1 when element0 hides element1 significantly
+.n    -1 when element1 hides element0 significantly
+.n     0 when elements do not significantly hide each other.
 */
 /****************************************************************************/
 
-static INT CompareElementsXSH(ELEMENT *p, ELEMENT *q)
+static INT CompareElementsXSH(INT mu, INT nu)
 {
-	ELEMENT *theElement[2];
-	INT i, j, k, i1, k1, b0, b1, found, view0, view1, num0, num1, NCorners[2];
-	DOUBLE *Corners[2][8];
-	DOUBLE_VECTOR Triangle[2][4];
-	COORD_POINT ScreenPoints[2][4];
-	
-	theElement[0] = p;
-	theElement[1] = q;
+	ELEMENT *p, *q;
+	INT i, j, k, l, found, nCorners[2];
+	DOUBLE *corners[2][8];
+	DOUBLE_VECTOR side[2][4];
+	COORD_POINT projection[2][4];
 
-	OE_nCompareElements++;
+	/* ignore if boundary sides don't fit */
+	if (Z_MAX(mu) <= Z_MIN(nu) && !(VIEWABLE_BSIDE(mu) && HIDDEN_BSIDE(nu)))
+		return 0;
+	if (Z_MAX(nu) <= Z_MIN(mu) && !(VIEWABLE_BSIDE(nu) && HIDDEN_BSIDE(mu)))
+		return 0;
+	if (!(VIEWABLE_BSIDE(mu) && HIDDEN_BSIDE(nu)) &&
+		!(VIEWABLE_BSIDE(nu) && HIDDEN_BSIDE(mu)))
+		return 0;
+
+	p = OE_Map[mu].elem;
+	q = OE_Map[nu].elem;
 
 	/* ignore if elements have a common side */
-	for (i=0; i<SIDES_OF_ELEM(theElement[0]); i++)
-		if( NBELEM(theElement[0],i) == theElement[1] )
+	for (i=0; i<SIDES_OF_ELEM(p); i++)
+		if( NBELEM(p, i) == q )
 			return 0;
 
-	/* do some initializing */ 
-	for (j=0; j<2; ++j)
-		for (i=0; i<CORNERS_OF_ELEM(theElement[j]); i++)
-			Corners[j][i] = CVECT(MYVERTEX(CORNER(theElement[j],i)));
+	OE_nCompareElements++;
+	
+	/* copy corner vectors */
+	for (i = 0; i < CORNERS_OF_ELEM(p); i++)
+		corners[0][i] =  CVECT(MYVERTEX(CORNER(p, i)));
+	for (i = 0; i < CORNERS_OF_ELEM(q); i++)
+		corners[1][i] =  CVECT(MYVERTEX(CORNER(q, i)));
 
-	/* determine the viewable sides and its numbers */
-	view0  = VSIDES(theElement[0]);
-	view1  = VSIDES(theElement[1]);
-	num0   = NoOfViewableSides[view0];
-	num1   = NoOfViewableSides[view1];
-	
-	/* use visible or unvisible sides, depending on which are less */
-	b0 = (num0>2);
-	b1 = (num1>2);
-	if (b0) num0 = SIDES_OF_ELEM(theElement[0]) - num0;
-	if (b1) num1 = SIDES_OF_ELEM(theElement[1]) - num1;
-	
-	NCorners[0] = CORNERS_OF_SIDE(theElement[0],0);
-	NCorners[1] = CORNERS_OF_SIDE(theElement[1],0);
-	
-	/* test the tetrahedrons by testing triangles */
-	i1=0;
-	for (i=0; i<num0; i++)
-	{
-		/* determine triangle of theElement0 */
-		while( ((view0>>i1)&1) == b0) i1++;
-		for (j=0; j<CORNERS_OF_SIDE(theElement[0],i1); j++)
-		{
-			
-			V3_TRAFOM4_V3(Corners[0][CORNER_OF_SIDE(theElement[0],i1,j)],ObsTrafo,Triangle[0][j])
-			(*OBS_ProjectProc)(Triangle[0][j],&(ScreenPoints[0][j]));
+	/* compare boundary sides */
+	for (i = 0; i < SIDES_OF_ELEM(p); i++) {
+		if (NBELEM(p, i) != NULL) continue;
+		nCorners[0] =  CORNERS_OF_SIDE(p, i);
+		for (j = 0; j < nCorners[0]; j++) {
+			V3_TRAFOM4_V3(corners[0][CORNER_OF_SIDE(p, i, j)], ObsTrafo, side[0][j]);
+			(*OBS_ProjectProc)(side[0][j], &(projection[0][j]));
 		}
-	
-		/* determine triangle of theElement1 and compare triangles */
-		k1=0;
-		for (k=0; k<num1; k++)
-		{
-			while ( ((view1>>k1)&1) == b1 ) k1++;
-			for (j=0; j<CORNERS_OF_SIDE(theElement[1],k1); j++)
-			{
-				V3_TRAFOM4_V3(Corners[1][CORNER_OF_SIDE(theElement[1],k1,j)],ObsTrafo,Triangle[1][j])
-				(*OBS_ProjectProc)(Triangle[1][j],&(ScreenPoints[1][j]));
+		for (k = 0; k < SIDES_OF_ELEM(q); k++) {
+			if (NBELEM(q, k) != NULL) continue;
+			nCorners[1] = CORNERS_OF_SIDE(q, k);
+			for (l = 0; l < nCorners[1]; l++) {
+				V3_TRAFOM4_V3(corners[1][CORNER_OF_SIDE(q, k, l)], ObsTrafo, side[1][l]);
+				(*OBS_ProjectProc)(side[1][l], &(projection[1][l]));
 			}
-			if ((NCorners[0]==3)&&(NCorners[1]==3))
-			   	found = CompareTriangles(Triangle,ScreenPoints);
+			if ((nCorners[0] == 3) && (nCorners[1] == 3))
+				found = CompareTriangles(side, projection);
 			else
-				found = CompareQuadrilaterals (Triangle,ScreenPoints,NCorners);
+				found = CompareQuadrilaterals(side, projection, nCorners);
 			if (found)
-				return (found);
-			k1++;
+				return found;
 		}
-		i1++;
 	}
-
-	return(0);	
+	return 0;
 }
 
 /* -------------------------------------------------------------------------- */
 
-static INT CompareIDs (const void *p, const void *q)
+static INT CompareIDs(void *p, void *q)
 {
     INT a, b;
 
@@ -13322,9 +13328,25 @@ static INT CompareIDs (const void *p, const void *q)
 /*
    BSort1, BSort2 - build auxilliary data structure for OrderFathersXSH
 
-   DESCRIPTION: These functions build the tree of boxes
+   SYNOPSIS:
+   static void BSort1(INT   left, INT right,
+			    	  INT   *root,
+				      DOUBLE *u1Tree, DOUBLE *v1Tree, 
+                      DOUBLE *u2Tree, DOUBLE *v2Tree)
+
+   PARAMETERS:
+   left    - index to leftmost node of subtree
+   right   - index to rightmost node of subtree
+   root    - index to root of subtree (output)
+   u1Tree  - minimal value of u1 in subtree (output)
+   v1Tree  - maximal          v1
+   u2Tree  - minimal          u2
+   v2Tree  - maximal          v2
+
+   DESCRIPTION: These functions build the tree of boxes to quickly find
+   elements whose 2D bounding boxes overlap. 
    (c.f. The Visual Computer (1987) 3:236-249)
-   
+  
    RETURN VALUE:
 .n     none
 */
@@ -13332,16 +13354,16 @@ static INT CompareIDs (const void *p, const void *q)
 
 static void BSort2(INT left, INT right,
 				   INT *root,
-				   COORD *u1Tree, COORD *v1Tree,
-				   COORD *u2Tree, COORD *v2Tree);   /* forward */
+				   DOUBLE *u1Tree, DOUBLE *v1Tree,
+				   DOUBLE *u2Tree, DOUBLE *v2Tree);   /* forward */
 
 static void BSort1(INT   left, INT right,
 				   INT   *root,
-				   COORD *u1Tree, COORD *v1Tree, 
-                   COORD *u2Tree, COORD *v2Tree)
+				   DOUBLE *u1Tree, DOUBLE *v1Tree, 
+                   DOUBLE *u2Tree, DOUBLE *v2Tree)
 {
 	INT i, j, h, k, l, r, middle;
-    COORD key, u2LeftTree, v2LeftTree, u2RightTree, v2RightTree;
+    DOUBLE key, u2LeftTree, v2LeftTree, u2RightTree, v2RightTree;
 
 	/* find median, 1st pass quicksort */
 	middle = (left+right)/2;
@@ -13439,11 +13461,11 @@ static void BSort1(INT   left, INT right,
 
 static void BSort2(INT left, INT right,
 				   INT *root,
-				   COORD *u1Tree, COORD *v1Tree,
-				   COORD *u2Tree, COORD *v2Tree)
+				   DOUBLE *u1Tree, DOUBLE *v1Tree,
+				   DOUBLE *u2Tree, DOUBLE *v2Tree)
 {
 	INT i, j, h, k, l, r, middle;
-    COORD key, u1LeftTree, v1LeftTree, u1RightTree, v1RightTree;
+    DOUBLE key, u1LeftTree, v1LeftTree, u1RightTree, v1RightTree;
 
 	/* find median, 1st pass quicksort */
 	middle = (left+right)/2;
@@ -13540,14 +13562,22 @@ static void BSort2(INT left, INT right,
 
 /****************************************************************************/
 /*
-   TestPrecedence - 
+   TestPrecedence - test if elements hide each other and remember
+                    precedence
+
+   SYNOPSIS:
+   static void TestPrecedence(INT i, INT j)
+
+   PARAMETERS:
+   i - index to element0
+   j - index to element1
 
    DESCRIPTION:
-   Compares (boundary) elements whose 2D bounding boxes overlap. If one
-   hides the other remember precedence.
+   Compares (boundary) elements element0 and element1. If one hides the
+   other remember precedence.
 
    RETURN VALUE:
-.n     none
+.n    none
 */
 /****************************************************************************/
 
@@ -13556,12 +13586,16 @@ static void TestPrecedence(INT i, INT j)
 	ILIST *h;
 	INT cmp;
 
-	cmp = CompareElementsXSH(OE_Map[i].elem, OE_Map[j].elem);
+	cmp = CompareElementsXSH(i, j);
 	if (cmp == 1)
 	{
 		BCOUNT(i)++;
 		h = HIDDEN_BY(j);
 		HIDDEN_BY(j) = (ILIST *)GetMem(OE_Heap, sizeof(ILIST), FROM_TOP);
+		if (HIDDEN_BY(j) == NULL) {
+			UserWrite("Insufficient Memory: coarse grid ordering may be incorrect\n");
+			return;
+		}
 		HIDDEN_BY(j)->index = i;
 		HIDDEN_BY(j)->next = h;
 	}
@@ -13569,6 +13603,10 @@ static void TestPrecedence(INT i, INT j)
 		BCOUNT(j)++;
 		h = HIDDEN_BY(i);
 		HIDDEN_BY(i) = (ILIST *)GetMem(OE_Heap, sizeof(ILIST), FROM_TOP);
+		if (HIDDEN_BY(i) == NULL) {
+			UserWrite("Insufficient Memory: coarse grid ordering may be incorrect\n");
+			return;
+		}
 		HIDDEN_BY(i)->index = j;
 		HIDDEN_BY(i)->next = h;
 	}
@@ -13576,7 +13614,13 @@ static void TestPrecedence(INT i, INT j)
 
 /****************************************************************************/
 /*
-   BSearch1, BSearch2 - 
+   BSearch1 - find elements whose 2D bounding boxes overlap
+
+   SYNOPSIS:
+   static void BSearch1(INT root)
+
+   PARAMETERS:
+   root - index to root of box tree
 
    DESCRIPTION:
    find all elements whose bounding boxes of 2D projection overlap the 
@@ -13624,6 +13668,7 @@ static void BSearch2(INT root)
 	}
 }
 
+/* ------------------------------------------------------------------------- */
 
 static INT Id2Index(INT id)
 {
@@ -13663,7 +13708,8 @@ static INT Id2Index(INT id)
    RETURN VALUE:
    INT
 .n    0 if ok
-.n    1 if error occured.
+.n    1 if cycle detected
+.n    2 if insufficient memory
 */
 /****************************************************************************/
 
@@ -13671,9 +13717,10 @@ static INT OrderFathersXSH(GRID *grid, HEAP *heap, ELEMENT **table)
 {
 	ELEMENT *p, *q;
 	ILIST *h;
-    COORD minx, maxx, miny, maxy, dummy;
+    DOUBLE minx, maxx, miny, maxy, minz, maxz, dummy;
     COORD_POINT t;
-    DOUBLE temp[3];
+    DOUBLE *corner[8];
+	DOUBLE_VECTOR temp;
     INT i, j, k, count, root, pos, lastBegin, newBegin;
 
     /* count boundary elements */
@@ -13687,6 +13734,11 @@ static INT OrderFathersXSH(GRID *grid, HEAP *heap, ELEMENT **table)
 	OE_Map     = (MAP *)     GetMem(heap, OE_nBndElem*sizeof(MAP),     FROM_TOP);
     OE_BE_Data = (BE_DATA *) GetMem(heap, OE_nBndElem*sizeof(BE_DATA), FROM_TOP);
     OE_BoxTab  = (INT *)     GetMem(heap, OE_nBndElem*sizeof(INT),     FROM_TOP);
+	
+	if (OE_Map == NULL || OE_BE_Data == NULL || OE_BoxTab == NULL) {
+		UserWrite("Insufficient Memory: can't order coarse grid\n");
+		return 2;
+	}
 
     /* init inner elements & copy boundary elements */
     i = 0;
@@ -13710,40 +13762,54 @@ static INT OrderFathersXSH(GRID *grid, HEAP *heap, ELEMENT **table)
 	/* sort map */
 	qsort((void *)OE_Map, OE_nBndElem, sizeof(MAP), CompareIDs);
 
-	/* init boundary elements */
+	/* begin boundary element init */
 	for (i = 0; i < OE_nBndElem; i++) 
 	{
 		p = OE_Map[i].elem;
 
-		/* set counters */
+		/* copy corner vectors */
+		for (j = 0; j < CORNERS_OF_ELEM(p); j++)
+			corner[j] = CVECT(MYVERTEX(CORNER(p, j)));
+
 		count = 0;
-        for (j = 0; j < SIDES_OF_ELEM(p); j++) {
-				q = NBELEM(p, j);
-				if (q != NULL && !VIEWABLE(p, j))
+		VIEWABLE_BSIDE(i) = 0;
+		HIDDEN_BSIDE(i)   = 0;
+		minx = miny = minz =  INFINITY;
+		maxx = maxy = maxz = -INFINITY;
+
+        /* set counters and bounding boxes and test boundary sides */
+		for (j = 0; j < SIDES_OF_ELEM(p); j++) {
+			if (NBELEM(p, j) != NULL) {
+				if (!VIEWABLE(p, j))
 					count++;
+			}
+			else {
+				if (VIEWABLE(p, j))
+					VIEWABLE_BSIDE(i) = 1;
+				else
+					HIDDEN_BSIDE(i) = 1;
+				for (k = 0; k < CORNERS_OF_SIDE(p, j); k++) {
+					V3_TRAFOM4_V3(corner[CORNER_OF_SIDE(p, j, k)], ObsTrafo, temp);
+					minz = MIN(minz, temp[2]);
+					maxz = MAX(maxz, temp[2]);
+					(*OBS_ProjectProc)(temp, &t);
+					minx = MIN(minx, t.x);
+					miny = MIN(miny, t.y);
+					maxx = MAX(maxx, t.x);
+					maxy = MAX(maxy, t.y);
+				}
+			}
 		}
 		BCOUNT(i) = count;
-
-		/* clear list of elems this one is hidden by */
-		HIDDEN_BY(i) = NULL;
-
-		/* set bounding boxes */
-        V3_TRAFOM4_V3(CVECT(MYVERTEX(CORNER(p, 0))), ObsTrafo, temp);
-        (*OBS_ProjectProc)(temp, &t);
-        minx = maxx = t.x;
-		miny = maxy = t.y;
-		for (j = 1; j < CORNERS_OF_ELEM(p); j++) {
-			V3_TRAFOM4_V3(CVECT(MYVERTEX(CORNER(p, j))), ObsTrafo, temp);
-            (*OBS_ProjectProc)(temp, &t);
-            if (t.x < minx) minx = t.x;
-            if (t.x > maxx) maxx = t.x;
-			if (t.y < miny) miny = t.y;
-			if (t.y > maxy) maxy = t.y;
-		}
 		U1(i) = minx;
         V1(i) = maxx;
         U2(i) = miny;
 		V2(i) = maxy;
+		Z_MIN(i) = minz;
+		Z_MAX(i) = maxz;
+
+		/* clear list of elems this one is hidden by */
+		HIDDEN_BY(i) = NULL;
 	}
 
     /* build box tree */
@@ -13859,9 +13925,9 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 	HEAP *theHeap;
 	ELEMENT **table, *theElement;
 	GRID *theGrid;
+	INT i, res;
 	WOP_MG_DATA *myMGdata;
 	MEM offset;
-	INT i;
     clock_t start, stop;
 
 	/* check if multigrid is already ordered */
@@ -13909,8 +13975,24 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 	switch (OE_OrderStrategy) /* select order strategy */
 	{
 	case 0:
-		if (OrderFathersXSH(theGrid, theHeap, table)) return (1);
+		res = OrderFathersXSH(theGrid, theHeap, table);
+		switch (res) 
+		{
+		case 0:
+			break;
+		case 1:
+			UserWrite("Cycle detected while ordering coarse grid.\n");
+			UserWrite("Falling back on slow method ... \n");
+			i=0;
+			for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
+				table[i++] = theElement;
+			SelectionSort((void *)table,i,sizeof(*table),CompareElements);
+			break;
+		case 2:
+			return 1;
+		}
 		break;
+
 	case 1:
 		i=0;
 		for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
@@ -16231,7 +16313,6 @@ void PWorkGEN_Execute()
 			}
 	}
 
-      /* handle communication */
 	/* execute or send own and received DOs */
 
 	if (me == master) { 
@@ -16589,7 +16670,6 @@ static INT WorkEW()
 
 #endif
 }
-
 
 /****************************************************************************/
 /*
