@@ -52,6 +52,10 @@ static INT theLGMDomainVarID;
 static INT theProblemDirID;
 static INT theProblemVarID;
 
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
+
+
 /****************************************************************************/
 /*D
    CreateProblem -  Create a new PROBLEM structure

@@ -34,8 +34,10 @@
 #include "lgm_transfer.h"
 #include "heaps.h"
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
+
 
 static FILE *stream;
 static INT lgmdomainpathes_set;
