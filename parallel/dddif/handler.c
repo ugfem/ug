@@ -65,8 +65,8 @@
     if (f!=NULL)                                     \
     {                                                \
       if (CheckNSons(f,m))                         \
-        printf(PFMT "inserted elem=" EID_FMTX    \
-               "\n",me,EID_PRTX(e));                \
+        UserWriteF(PFMT "inserted elem=" EID_FMTX\
+                   "\n",me,EID_PRTX(e));                \
     }                                                \
 }
 #else
@@ -114,8 +114,8 @@ void PrintSons (ELEMENT *theElement)
   if (GetAllSons(theElement,SonList)) ASSERT(0);
   for (i=0; SonList[i] != NULL; )
   {
-    printf(PFMT "elem=" EID_FMTX " son[%d]=" EID_FMTX "\n",
-           me,EID_PRTX(theElement),i,EID_PRTX(SonList[i]));
+    UserWriteF(PFMT "elem=" EID_FMTX " son[%d]=" EID_FMTX "\n",
+               me,EID_PRTX(theElement),i,EID_PRTX(SonList[i]));
     i++;
   }
 }
@@ -131,8 +131,8 @@ int CheckNSons (ELEMENT *theElement, char *buffer)
   nsons = NSONS(theElement);
   if(i != nsons)
   {
-    printf(PFMT "%s: elem=" EID_FMTX " ERROR nsons=%d NSONS=%d\n\n",
-           me,buffer,EID_PRTX(theElement),i,nsons);
+    UserWriteF(PFMT "%s: elem=" EID_FMTX " ERROR nsons=%d NSONS=%d\n\n",
+               me,buffer,EID_PRTX(theElement),i,nsons);
     if (1) PrintSons(theElement);
     fflush(stdout);
     return(1);
