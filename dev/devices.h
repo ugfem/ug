@@ -61,7 +61,6 @@
 #define NMARKERS                                        11
 
 /* tool numbers */
-#define nboftools                               7
 #define arrowTool                               0
 #define crossTool                               1
 #define choiceTool                              2
@@ -69,15 +68,13 @@
 #define handTool                                4
 #define heartTool                               5
 #define gnoedelTool                     6
+#define nboftools                               7
 
-/* tool names */
-#define arrowToolName                   "pointer tool"
-#define crossToolName                   "insert bn tool"
-#define choiceToolName                  "move nd tool"
-#define circleToolName                  "insert in tool"
-#define handToolName                    "select nd tool"
-#define heartToolName                   "select el tool"
-#define gnoedelToolName                 "mark red tool"
+/* toolbox text len */
+#define INFO_SIZE                               128
+#define INFO_LEN                                127
+
+#define NO_TOOL_CHOSEN                  -1              /* possible return value of WhichTool */
 
 /* text position */
 #define TEXT_NOT_CENTERED               0
@@ -205,6 +202,8 @@ typedef struct {                                        /* no event             
 
   /* data */
   INT InterfaceEvent;                           /* 1 if the interface event was handled         */
+  WINDOWID GraphWinActive;                      /* WINDOWID if a uggraphwin is active,0 else*/
+  INT Mouse[2];                                         /* current mouse coord (rel. to window)		*/
 } NO_UGEVENT;
 
 typedef struct {                                        /* go away event for terminal window		*/
@@ -265,6 +264,7 @@ typedef struct {                                        /* change tool event for
   /* data */
   WINDOWID win;                                         /* the window								*/
   INT Tool;                                                     /* change to that tool						*/
+  INT MousePosition[2];                         /* mouse position                                                       */
 } DOC_CHANGETOOL_EVENT;
 
 typedef struct {                                        /* content click event for view                         */
@@ -344,7 +344,7 @@ void              MousePosition                         (INT *ScreenCoord);
 INT               MouseStillDown                        (void);
 
 /* tool name handling */
-INT                       SetToolName                           (INT tool, const char *name);
-const char   *GetToolName                               (INT tool);
+void              DrawInfoBox                           (WINDOWID win, const char *info);
+INT                       WhichTool                                     (WINDOWID win, const INT mouse[2], INT *tool);
 
 #endif

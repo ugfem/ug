@@ -96,8 +96,6 @@ static OUTPUTDEVICE *defaultOuputDevice=NULL;   /* console graphical outp.	*/
 static INT theOutputDevDirID;                   /* env type for Output Device dir	*/
 static INT theOutputDevVarID;                   /* env type for Output Device vars	*/
 
-static char ToolName[nboftools][NAMESIZE]; /* array of tool names			*/
-
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -615,68 +613,6 @@ INT GetMuteLevel (void)
 
 /****************************************************************************/
 /*D
-   SetToolName - set a tools name
-
-   SYNOPSIS:
-   INT SetToolName (INT tool, const char *name)
-
-   PARAMETERS:
-   .  tool - tool id
-   .  name - name string
-
-   DESCRIPTION:
-   This function sets a tools name.
-
-   RETURN VALUE:
-   INT
-   .n   0 ok
-   .n           1 wrong tool id
-   .n   2 name too long
-   D*/
-/****************************************************************************/
-
-INT SetToolName (INT tool, const char *name)
-{
-  if (tool>nboftools)
-    return (1);
-  if (strlen(name)>NAMELEN)
-    return (2);
-
-  strcpy(ToolName[tool],name);
-
-  return (0);
-}
-
-/****************************************************************************/
-/*D
-   GetToolName - get a tools name
-
-   SYNOPSIS:
-   const char *GetToolName (INT tool)
-
-   PARAMETERS:
-   .  tool - tool id
-
-   DESCRIPTION:
-   This function returns a tools name.
-
-   RETURN VALUE:
-   INT
-   .n   NULL error
-   .n      else string pointer
-   D*/
-/****************************************************************************/
-
-const char *GetToolName (INT tool)
-{
-  if (tool>nboftools)
-    return (NULL);
-
-  return (ToolName[tool]);
-}
-
-/****************************************************************************/
-/*D
    InitDevices - Initialize all devices at startup
 
    SYNOPSIS:
@@ -704,15 +640,6 @@ INT InitDevices (int *argcp, char **argv)
   ENVITEM *dev;
   INT error=0,i;
   char sv[32];
-
-  /* init tool names */
-  strcpy(ToolName[arrowTool],arrowToolName);
-  strcpy(ToolName[crossTool],crossToolName);
-  strcpy(ToolName[choiceTool],choiceToolName);
-  strcpy(ToolName[circleTool],circleToolName);
-  strcpy(ToolName[handTool],handToolName);
-  strcpy(ToolName[heartTool],heartToolName);
-  strcpy(ToolName[gnoedelTool],gnoedelToolName);
 
   /* install the /Output Devices directory */
   if (ChangeEnvDir("/")==NULL)
