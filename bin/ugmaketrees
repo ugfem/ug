@@ -167,7 +167,7 @@ then
 		exit 1;
 	fi
 
-	for i in diff2d cd fem ns2d
+	for i in diff2d cd fe ns sc
 	do
 		if test -d ../$i
 		then

@@ -118,6 +118,10 @@ then
 	echo "         debug flag";
 	echo "             DEBUG (set DEBUG_MODE = ON)";
 	echo "             NODEBUG (set DEBUG_MODE = OFF)";
+
+	echo "         optimization flag";
+	echo "             OPTIM (set OPTIM_MODE = ON)";
+	echo "             NOOPTIM (set OPTIM_MODE = OFF)";
 	exit 1;
 fi
 

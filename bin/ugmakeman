@@ -172,6 +172,10 @@ then
 	doctext -quotefmt -mpath $UGROOT/../ns/man/mane -ext e -heading ns/pclib *.c *.h
 	cd $UGROOT/../ns/appl2d
 	doctext -quotefmt -mpath $UGROOT/../ns/man/mane -ext e -heading ns/appl2d *.c *.h
+	cd $UGROOT/../ns/tpclib
+	doctext -quotefmt -mpath $UGROOT/../ns/man/mane -ext e -heading ns/tpclib *.c *.h
+	cd $UGROOT/../ns/tappl2d
+	doctext -quotefmt -mpath $UGROOT/../ns/man/mane -ext e -heading ns/tappl2d *.c *.h
 	cd $UGROOT/../ns/appl3d
 	doctext -quotefmt -mpath $UGROOT/../ns/man/mane -ext e -heading ns/appl3d *.c *.h
 
