@@ -235,7 +235,7 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
   PRINTDEBUG(dddif,1,(PFMT " VectorXferCopy(): v=" VINDEX_FMTX " proc=%d "
                       "prio=%d vtype=%d\n",me,VINDEX_PRTX(pv),proc,prio,VTYPE(pv)))
 
-#ifdef __OVERLAP2__
+#if defined __OVERLAP2__ || defined USE_FAMG
   flag = 1;             /* for overlap 2 ghost-matrices are required too */
 #else
   flag = (!GHOSTPRIO(prio));
@@ -275,6 +275,15 @@ void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data)
   MATRIX  *mat;
   INT nmat = 0;
 
+#ifdef USE_FAMG
+  /* VOBJECT(vec) may be NULL */
+  if( VOBJECT(vec)==NULL )
+    PRINTDEBUG(dddif,3,(PFMT " VectorGatherMatX(): v=" VINDEX_FMTX
+                        " cnt=%d type=%d veobj=%d vtype=%d\n",
+                        me,VINDEX_PRTX(vec),cnt,type_id,
+                        OBJT(vec),VTYPE(vec)))
+    else
+#endif
   PRINTDEBUG(dddif,3,(PFMT " VectorGatherMatX(): v=" VINDEX_FMTX
                       " VOBJID=%d cnt=%d type=%d veobj=%d vtype=%d\n",
                       me,VINDEX_PRTX(vec),ID(VOBJECT(vec)),cnt,type_id,
@@ -324,7 +333,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
                       " cnt=%d type=%d veobj=%d vtype=%d\n",\
                       me,VINDEX_PRTX(vec),cnt,type_id,OBJT(vec),VTYPE(vec)))
 
-#ifndef __OVERLAP2__
+#if !(defined __OVERLAP2__ || defined USE_FAMG)
   if (GHOSTPRIO(prio))
   {
     PRINTDEBUG(dddif,4,(PFMT " VectorScatterConnX(): v=" VINDEX_FMTX
@@ -353,7 +362,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
       continue;
     }
 
-#ifndef __OVERLAP2__
+#if !(defined __OVERLAP2__ || defined USE_FAMG)
     if (GHOST(MDEST(mcopy)))
     {
       /* destination vector has only prio Ghost on this processor */
@@ -715,7 +724,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
   }
 
   /* dispose connections for geom levels not for amg levels */
-#ifndef __OVERLAP2__
+#if !(defined __OVERLAP2__ || define USE_FAMG)
   if (level>=0)
     if (GHOSTPRIO(new))
     {
@@ -2272,9 +2281,13 @@ void ddd_HandlerInit (INT handlerSet)
   DDD_SetHandlerXFERSCATTERX     (TypeVector, VectorScatterConnX);
   DDD_SetHandlerOBJMKCONS        (TypeVector, VectorObjMkCons);
   DDD_SetHandlerSETPRIORITY      (TypeVector, VectorPriorityUpdate);
+#ifdef USE_FAMG
+  DDD_SetHandlerDELETE           (TypeVector, VectorDelete);
+#else
   /* TODO: not used
           DDD_SetHandlerDELETE           (TypeVector, VectorDelete);
    */
+#endif
 
   DDD_SetHandlerUPDATE           (TypeIVertex, VertexUpdate);
   DDD_SetHandlerSETPRIORITY      (TypeIVertex, VertexPriorityUpdate);

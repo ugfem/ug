@@ -13208,7 +13208,7 @@ static INT LB4Command (INT argc, char **argv)
 }
 #endif /* CHACOT */
 
-#ifdef __OVERLAP2__
+#ifdef USE_FAMG
 static INT pamgCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -14535,7 +14535,7 @@ INT InitCommands ()
   if (CreateCommand("dlb_eval",           DLB_EvalCommand                             )==NULL) return (__LINE__);
         #endif
 
-#ifdef __OVERLAP2__
+#ifdef USE_FAMG
   if (CreateCommand("pamg",           pamgCommand                     )==NULL) return(__LINE__);
   if (CreateCommand("pamgcheck",      pamgCheckCommand                )==NULL) return(__LINE__);
 #endif

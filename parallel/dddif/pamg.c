@@ -42,7 +42,7 @@
 #include "debug.h"
 #include "ugdevices.h"
 
-#ifdef __OVERLAP2__
+#ifdef USE_FAMG
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -89,10 +89,111 @@ static INT pamgerrors;  /* only temp. for pamg check */
 
 /****************************************************************************/
 
+/* TODO:remove*/
+void printall(GRID *grid, char *text)
+{
+  VECTOR *v;
+  for( v=PFIRSTVECTOR(grid); v!=NULL; v = SUCCVC(v))
+  {
+    int *pl = DDD_InfoProcList(PARHDR(v));
+    int n;
+
+    if( pl==NULL)
+    {
+      printf("%d pamgDo %s: %x "VINDEX_FMTX " keine pl\n",me,text,v,VINDEX_PRTX(v));
+    }
+    else
+    {
+      for(n=0; pl[2*n]!=-1; n++)
+        ;
+
+      switch(n)
+      {
+      case 0 :
+        printf("%d pamgDo %s: %x "VINDEX_FMTX " KEINE pl???\n",me,text,v,VINDEX_PRTX(v));
+        break;
+      case 1 :
+        printf("%d pamgDo %s: %x "VINDEX_FMTX " %d %d\n",me,text,v,VINDEX_PRTX(v),pl[0],pl[1]);
+        break;
+      case 2 :
+        printf("%d pamgDo %s: %x "VINDEX_FMTX " %d %d, %d %d\n",me,text,v,VINDEX_PRTX(v),pl[0],pl[1],pl[2],pl[3]);
+        break;
+      case 3 :
+        printf("%d pamgDo %s: %x "VINDEX_FMTX " %d %d, %d %d, %d %d\n",me,text,v,VINDEX_PRTX(v),pl[0],pl[1],pl[2],pl[3],pl[4],pl[5]);
+        break;
+      default :
+        printf("%d pamgDo %s: %x "VINDEX_FMTX " hat %d pl Eintraege????\n",me,text,v,VINDEX_PRTX(v),n);
+      }
+    }
+  }
+}
+
+
+INT pamgDoQQQQQQQQ( MULTIGRID *theMG, INT level )
+{
+  GRID *grid = GRID_ON_LEVEL(theMG,level);
+  VECTOR *v;
+  MATRIX *m;
+  int offset=sizeof(MATRIX)-sizeof(DOUBLE);
+
+  DDD_XferBegin();
+  for( v=PFIRSTVECTOR(grid); PRIO(v) != PrioBorder && PRIO(v) != PrioMaster; v = SUCCVC(v))
+  {
+    /* Usually a ghost vector has no matrix. Create a diag matrix for it */
+    if( VSTART(v) == NULL )
+    {
+      if ((m=CreateConnection(grid,v,v))==NULL)
+      {
+        PrintErrorMessage('F',"pamgDo","out of memory for new connection");
+        abort();
+      }
+      memset(m+offset,0,MSIZE(m)-offset);
+    }
+    DDD_XferPrioChange( PARHDR((NODE*)VOBJECT(v)), PrioBorder );                     /* TODO: cancel this line; its only for beauty in checks */
+    DDD_XferPrioChange( PARHDR(v), PrioBorder );
+  }
+  /* elements with old ghostprios cause errors in check; but that's ok */
+  DDD_XferEnd();
+
+#ifndef __OVERLAP2__
+  /* then diagonal matrices must be created also for border vectors */
+  for( /*continue the previous loop*/ ; v!=NULL; v = SUCCVC(v))
+  {
+    /* Usually a border vector has no matrix. Create a diag matrix for it. */
+    if( VSTART(v) == NULL )
+    {
+      assert(PRIO(v)==PrioBorder);                      /* a master has always a matrix */
+      if ((m=CreateConnection(grid,v,v))==NULL)
+      {
+        PrintErrorMessage('F',"pamgDo","out of memory for new connection");
+        abort();
+      }
+      memset(m+offset,0,MSIZE(m)-offset);
+    }
+  }
+
+#endif
+
+  return 0;
+}
+
+/* neuer Versuch */
 INT pamgDo( MULTIGRID *theMG, INT level )
 {
   GRID *grid = GRID_ON_LEVEL(theMG,level);
   VECTOR *v;
+  MATRIX *m;
+  int offset=sizeof(MATRIX)-sizeof(DOUBLE);
+
+  DDD_XferBegin();
+  for( v=PFIRSTVECTOR(grid); v!=NULL; v = SUCCVC(v))
+  {
+    if( VSTART(v)==NULL )
+      DDD_XferDeleteObj(PARHDR(v));
+  }
+  /* elements with old ghostprios cause errors in check; but that's ok */
+  DDD_XferEnd();
+  assert(!DDD_ConsCheck());
 
   DDD_XferBegin();
   for( v=PFIRSTVECTOR(grid); PRIO(v) != PrioBorder && PRIO(v) != PrioMaster; v = SUCCVC(v))
@@ -103,6 +204,7 @@ INT pamgDo( MULTIGRID *theMG, INT level )
   /* elements with old ghostprios cause errors in check; but that's ok */
   DDD_XferEnd();
 
+  assert(!DDD_ConsCheck());
   return 0;
 }
 
@@ -112,7 +214,11 @@ static int CountMatrices (DDD_OBJ obj)
   MATRIX *m, *m2;
   int i=0;
 
-  for( m=MNEXT(VSTART(v)); m!=NULL; m = MNEXT(m) )
+  m=VSTART(v);
+  if(m==NULL)
+    return 0;                   /* here is no matrix */
+
+  for( m=MNEXT(m); m!=NULL; m = MNEXT(m) )
     for( m2=VSTART(MDEST(m)); m2!=NULL; m2 = MNEXT(m2),i++ )
       ;
 
@@ -131,9 +237,11 @@ static int Gather_pamgCheck (DDD_OBJ obj, void *data)
   i=1;          /* keep first free for length */
   buf[i++] = (DDD_GID)DDD_InfoGlobalId(PARHDR(v));
   buf[i++] = (DDD_GID)me;
-  for( m=MNEXT(VSTART(v)); m!=NULL; m = MNEXT(m) )
-    for( m2=VSTART(MDEST(m)); m2!=NULL; m2 = MNEXT(m2) )
-      buf[i++] = DDD_InfoGlobalId(PARHDR(MDEST(m2)));
+  m=VSTART(v);
+  if(m!=NULL)
+    for( m=MNEXT(m); m!=NULL; m = MNEXT(m) )
+      for( m2=VSTART(MDEST(m)); m2!=NULL; m2 = MNEXT(m2) )
+        buf[i++] = DDD_InfoGlobalId(PARHDR(MDEST(m2)));
   buf[0] = (DDD_GID)i;
   ASSERT(i <= MaximumMatrices+3);
 
@@ -168,9 +276,11 @@ static int Scatter_pamgCheck (DDD_OBJ obj, void *data)
   INT i, nr_local_gids, sender_gid, sender_pe;
 
   nr_local_gids=0;
-  for( m=MNEXT(VSTART(v)); m!=NULL; m = MNEXT(m) )
-    for( m2=VSTART(MDEST(m)); m2!=NULL; m2 = MNEXT(m2) )
-      loc_gids[nr_local_gids++] = DDD_InfoGlobalId(PARHDR(MDEST(m2)));
+  m=VSTART(v);
+  if(m!=NULL)
+    for( m=MNEXT(VSTART(v)); m!=NULL; m = MNEXT(m) )
+      for( m2=VSTART(MDEST(m)); m2!=NULL; m2 = MNEXT(m2) )
+        loc_gids[nr_local_gids++] = DDD_InfoGlobalId(PARHDR(MDEST(m2)));
 
   /*qsort( loc_gid, nr_local_gids, sizeof(DDD_GID), sort_Gids); makes only sense for bisection search */
 
@@ -213,6 +323,6 @@ INT pamgCheckDo( MULTIGRID *theMG, INT level )
 
   return 0;
 }
-#endif /* __OVERLAP2__ */
+#endif /* USE_FAMG */
 
 #endif  /* ModelP */

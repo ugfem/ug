@@ -339,7 +339,7 @@ INT             CheckInterfaces                         (GRID *theGrid);
 void    memmgr_Init             (void);
 void    memmgr_Report   (void);
 
-#ifdef __OVERLAP2__
+#ifdef USE_FAMG
 INT pamgDo( MULTIGRID *theMG, INT level );
 INT pamgCheckDo( MULTIGRID *theMG, INT level );
 #endif
