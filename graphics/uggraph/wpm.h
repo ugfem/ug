@@ -287,6 +287,19 @@ struct VecMatPlotObj2D {
   SYMBOL *ms;                                                                   /* NULL or matrix symbol						*/
 };
 
+struct LinePlotObj2D {
+
+  struct PlotObjHead theHead;                           /* the head                                                                     */
+
+  /* data for 2D-View of line field */
+  EVALUES *EvalFct;                                                     /* evaluation proceedure						*/
+  DOUBLE min, max;                                                      /* range										*/
+  COORD_VECTOR left, right;                                     /* line in 2D physical space					*/
+  INT depth;                                                                    /* depth of recoursive subdevision of elements	*/
+  DOUBLE color;                                                         /* value between 0 and 1 specifiing the color   */
+  COORD aspectratio;                                                    /* ratio of the picture							*/
+};
+
 /*----------- application dimension 3 PlotObjs -----------------------------*/
 
 struct DomainPlotObj3D {
@@ -347,6 +360,7 @@ union PlotObj {
   struct ElemVectorPlotObj2D theEvpo;
   struct GridPlotObj2D theGpo;
   struct VecMatPlotObj2D theVmo;
+  struct LinePlotObj2D theLpo;
 #endif
 
 #ifdef __THREEDIM__

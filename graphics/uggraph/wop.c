@@ -393,6 +393,19 @@ static DOUBLE EScalar3D_minValue;
 static DOUBLE EScalar3D_maxValue;
 
 
+/*---------- working variables of 'EW_Line2D' ---------------------------*/
+static ElementEvalProcPtr LINE2D_EvalFct;
+static COORD LINE2D_V2Y_factor;
+static COORD LINE2D_V2Y_offset;
+static long LINE2D_Color;
+static INT LINE2D_depth;
+static DOUBLE LINE2D_minValue;
+static DOUBLE LINE2D_maxValue;
+static COORD_POINT LINE2D_Begin;
+static COORD_POINT LINE2D_End;
+static COORD_POINT LINE2D_BeginRot;
+static COORD_POINT LINE2D_EndRot;
+
 /*---------- working variables of 'EW_EVector3D' ---------------------------*/
 #define RASTERPOINTS_MAX                200
 
@@ -1426,6 +1439,283 @@ static ELEMENT *EW_GetFirstElement_vert_bw_up (MULTIGRID *theMG, INT fromLevel, 
 
 /****************************************************************************/
 /*
+   CalcCrossingPoint - Calculate crossing point of two lines
+
+   SYNOPSIS:
+   static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2,
+   COORD_POINT P3, COORD_POINT P4, COORD *alpha, COORD *beta);
+
+   PARAMETERS:
+   .  P1 -
+   .  P2 -
+   .  P3 -
+   .  P4 -
+   .  alpha -
+   .  beta -
+
+   DESCRIPTION:
+   This function calculates crossing point of two lines.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, COORD_POINT P4, COORD *alpha, COORD *beta)
+{
+  INT flags1;
+  COORD determinante, c1, c2;
+
+  /* check if one endpoint of line0 coincide with one endpoint of line1 */
+  if (ABS(P1.x - P3.x)<SMALL_C && ABS(P1.y - P3.y)<SMALL_C) return(0);
+  if (ABS(P1.x - P4.x)<SMALL_C && ABS(P1.y - P4.y)<SMALL_C) return(0);
+  if (ABS(P2.x - P3.x)<SMALL_C && ABS(P2.y - P3.y)<SMALL_C) return(0);
+  if (ABS(P2.x - P4.x)<SMALL_C && ABS(P2.y - P4.y)<SMALL_C) return(0);
+
+  flags1 = 0;
+  if (ABS(P1.x - P2.x)<SMALL_C) flags1 |= 1;
+  if (ABS(P1.y - P2.y)<SMALL_C) flags1 |= 2;
+  if (ABS(P3.x - P4.x)<SMALL_C) flags1 |= 4;
+  if (ABS(P3.y - P4.y)<SMALL_C) flags1 |= 8;
+
+  switch (flags1)
+  {
+  case (0) :
+    /* the natural case */
+    determinante = (P2.y-P1.y)*(P4.x-P3.x) - (P2.x-P1.x)*(P4.y-P3.y);
+    if (ABS(determinante)<SMALL_C)
+    {
+      /* the lines are parallel */
+      /* check if P1 (or P2) is on line1 */
+      c1 = (P1.y-P3.y)/(P4.y-P3.y);
+      c2 = (P2.y-P3.y)/(P4.y-P3.y);
+      if (ABS((1.0-c1)*P3.x + c1*P4.x - P1.x)<SMALL_C)
+      {
+        if (((c1<=0.0) && (c2<=0.0)) || ((1.0<=c1) && (1.0<=c2)))
+          return (0);
+        if (0.0<c1 && c1<1.0)
+        {
+          *beta = c1;
+          *alpha = 0.0;
+          return (1);
+        }
+        if (0.0<c2 && c2<1.0)
+        {
+          *beta = c2;
+          *alpha = 1.0;
+          return (1);
+        }
+
+        /* line1 is contained in line0: calculate position of P3 on line0 */
+        c1 = (P3.y-P1.y)/(P2.y-P1.y);
+        if (c1<=0.0 || 1.0<=c1)
+          /* this is impossible! */
+          return (0);
+        *alpha = c1;
+        *beta = 0.0;
+      }
+      return (0);
+    }
+    else
+    {
+      /* the lines are not parallel */
+      *alpha = ((P4.x-P3.x)*(P3.y-P1.y) - (P4.y-P3.y)*(P3.x-P1.x))/determinante;
+      *beta  = ((P2.x-P1.x)*(P3.y-P1.y) - (P2.y-P1.y)*(P3.x-P1.x))/determinante;
+      if (0.0<*alpha && *alpha<1.0 && 0.0<*beta && *beta<1.0)
+        return (1);
+      return (0);
+    }
+  case (1) :
+    /* line0 is vertical */
+    *beta = (P1.x-P3.x)/(P4.x-P3.x);
+    *alpha = (((1.0-(*beta))*P3.y + (*beta)*P4.y)-P1.y)/(P2.y-P1.y);
+    if (0.0<*alpha && *alpha<1.0 && 0.0<*beta && *beta<1.0)
+      return (1);
+    return (0);
+  case (2) :
+    /* line0 is horizontal */
+    *beta = (P1.y-P3.y)/(P4.y-P3.y);
+    *alpha = (((1.0-(*beta))*P3.x + (*beta)*P4.x)-P1.x)/(P2.x-P1.x);
+    if (0.0<*alpha && *alpha<1.0 && 0.0<*beta && *beta<1.0)
+      return (1);
+    return (0);
+  case (3) :
+    /* line0 is degenerated */
+    *beta = (P1.y-P3.y)/(P4.y-P3.y);
+    if (ABS((1.0-(*beta))*P3.x + (*beta)*P4.x - P1.x)<SMALL_C)
+      if (0.0<*beta && *beta<1.0)
+      {
+        *alpha = 0.5;
+        return (1);
+      }
+    return (0);
+  case (4) :
+    /* line1 is vertical */
+    *alpha = (P3.x-P1.x)/(P2.x-P1.x);
+    *beta  = (((1.0-(*alpha))*P1.y + (*alpha)*P2.y)-P3.y)/(P4.y-P3.y);
+    if (0.0<*alpha && *alpha<1.0 && 0.0<*beta && *beta<1.0)
+      return (1);
+    return (0);
+  case (5) :
+    /* both lines are vertical */
+    if (ABS(P1.x - P3.x)<SMALL_C)
+    {
+      c1 = (P1.y-P3.y)/(P4.y-P3.y);
+      if (0.0<c1 && c1<1.0)
+      {
+        *alpha = 0.0;
+        *beta  = c1;
+        return (1);
+      }
+      c2 = (P2.y-P3.y)/(P4.y-P3.y);
+      if (0.0<c2 && c2<1.0)
+      {
+        *alpha = 1.0;
+        *beta  = c2;
+        return (1);
+      }
+      c1 = (P3.y-P1.y)/(P2.y-P1.y);
+      if (0.0<c1 && c1<1.0)
+      {
+        *alpha = c1;
+        *beta  = 0.0;
+        return (1);
+      }
+      c2 = (P4.y-P1.y)/(P2.y-P1.y);
+      if (0.0<c2 && c2<1.0)
+      {
+        *alpha = c2;
+        *beta  = 1.0;
+        return (1);
+      }
+      /* impossible case */
+      return (0);
+    }
+    return (0);
+  case (6) :
+    /* line0 is horizontal, line1 is vertical */
+    *alpha = (P3.x-P1.x)/(P2.x-P1.x);
+    *beta  = (P1.y-P3.y)/(P4.y-P3.y);
+    if (0.0<*alpha && *alpha<1.0 && 0.0<*beta && *beta<1.0)
+      return (1);
+    return (0);
+  case (7) :
+    /* line0 is degenerated, line1 is vertical */
+    if (ABS(P1.x - P3.x)<SMALL_C)
+    {
+      *alpha = 0.5;
+      *beta  = (P1.y-P3.y)/(P4.y-P3.y);
+      if ( 0.0<*beta && *beta<1.0)
+        return (1);
+    }
+    return (0);
+  case (8) :
+    /* line1 is horizontal */
+    *alpha = (P3.y-P1.y)/(P2.y-P1.y);
+    *beta  = (((1.0-(*alpha))*P1.x + (*alpha)*P2.x)-P3.x)/(P4.x-P3.x);
+    if (0.0<*alpha && *alpha<1.0 && 0.0<*beta && *beta<1.0)
+      return (1);
+    return (0);
+  case (9) :
+    /* line0 is vertical, line1 is horizontal */
+    *alpha = (P3.y-P1.y)/(P2.y-P1.y);
+    *beta  = (P1.x-P3.x)/(P4.x-P3.x);
+    if (0.0<*alpha && *alpha<1.0 && 0.0<*beta && *beta<1.0)
+      return (1);
+    return (0);
+  case (10) :
+    /* both lines are horizontal */
+    if (ABS(P1.y - P3.y)<SMALL_C)
+    {
+      c1 = (P1.x-P3.x)/(P4.x-P3.x);
+      if (0.0<c1 && c1<1.0)
+      {
+        *alpha = 0.0;
+        *beta  = c1;
+        return (1);
+      }
+      c2 = (P2.x-P3.x)/(P4.x-P3.x);
+      if (0.0<c2 && c2<1.0)
+      {
+        *alpha = 1.0;
+        *beta  = c2;
+        return (1);
+      }
+      c1 = (P3.x-P1.x)/(P2.x-P1.x);
+      if (0.0<c1 && c1<1.0)
+      {
+        *alpha = c1;
+        *beta  = 0.0;
+        return (1);
+      }
+      c2 = (P4.x-P1.x)/(P2.x-P1.x);
+      if (0.0<c2 && c2<1.0)
+      {
+        *alpha = c2;
+        *beta  = 1.0;
+        return (1);
+      }
+      /* impossible case */
+      return (0);
+    }
+    return (0);
+  case (11) :
+    /* line0 is degenerated, line1 is horizontal */
+    if (ABS(P1.y - P3.y)<SMALL_C)
+    {
+      *alpha = 0.5;
+      *beta  = (P1.x-P3.x)/(P4.x-P3.x);
+      if ( 0.0<*beta && *beta<1.0)
+        return (1);
+    }
+    return (0);
+  case (12) :
+    /* line1 is degenerated */
+    *alpha = (P3.y-P1.y)/(P2.y-P1.y);
+    if (ABS((1.0-(*alpha))*P1.x + (*alpha)*P2.x - P3.x)<SMALL_C)
+      if (0.0<*alpha && *alpha<1.0)
+      {
+        *beta = 0.5;
+        return (1);
+      }
+    return (0);
+  case (13) :
+    /* line0 is vertical, lin1 is degenerated */
+    if (ABS(P1.x - P3.x)<SMALL_C)
+    {
+      *alpha = (P3.y-P1.y)/(P2.y-P1.y);
+      *beta  = 0.5;
+      if ( 0.0<*alpha && *alpha<1.0)
+        return (1);
+    }
+    return (0);
+  case (14) :
+    /* line0 is horizontal, lin1 is degenerated */
+    if (ABS(P1.y - P3.y)<SMALL_C)
+    {
+      *alpha = (P3.x-P1.x)/(P2.x-P1.x);
+      *beta  = 0.5;
+      if ( 0.0<*alpha && *alpha<1.0)
+        return (1);
+    }
+    return (0);
+  case (15) :
+    /* both lines are degenerated */
+    if (ABS(P1.x - P3.x)<SMALL_C && ABS(P1.y - P3.y)<SMALL_C)
+    {
+      *alpha = 0.5;
+      *beta  = 0.5;
+      return (1);
+    }
+    return (0);
+  }
+  return (-1);
+}
+
+/****************************************************************************/
+/*
    MarkElements_MGS - Mark elements on surface of multigrid
 
    SYNOPSIS:
@@ -1463,6 +1753,71 @@ static INT MarkElements_MGS (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 
   for (theElement=FIRSTELEMENT(theMG->grids[toLevel]); theElement!=NULL; theElement=SUCCE(theElement))
     SETUSED(theElement,1);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
+   MarkElements_MGS_On_Line - Mark elements on surface of multigrid on a line
+
+   SYNOPSIS:
+   static INT MarkElements_MGS_On_Line (MULTIGRID *theMG, INT fromLevel, INT toLevel, COORD *p1, COORD *p2);
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+   .  fromLevel -
+   .  toLevel -
+   .  p1, p2 - begin and end of the line
+
+   DESCRIPTION:
+   This function marks elements on surface of multigrid lying on a line.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT ElementISLine2D (ELEMENT *theElement, COORD *p1, COORD *p2)
+{
+  INT i, n;
+  COORD_POINT P1, P2, P3, P4;
+  COORD alpha, beta;
+
+  P1.x=p1[0]; P1.y=p1[1]; P2.x=p2[0]; P2.y=p2[1];
+  n = CORNERS_OF_ELEM(theElement);
+  P3.x=CVECT(MYVERTEX(CORNER(theElement,n-1)))[0]; P3.y=CVECT(MYVERTEX(CORNER(theElement,n-1)))[1];
+  for (i=0; i<n; i++)
+  {
+    P4.x=CVECT(MYVERTEX(CORNER(theElement,i)))[0]; P4.y=CVECT(MYVERTEX(CORNER(theElement,i)))[1];
+    if (CalcCrossingPoint(P1,P2,P3,P4,&alpha,&beta)) return (1);
+    P3.x=P4.x; P3.y=P4.y;
+  }
+  return (0);
+}
+
+static INT MarkElements_MGS_On_Line (MULTIGRID *theMG, INT fromLevel, INT toLevel, COORD *p1, COORD *p2)
+{
+  ELEMENT *theElement;
+  INT i;
+
+  fromLevel = MAX(fromLevel,0);
+  toLevel = MIN(toLevel,CURRENTLEVEL(theMG));
+
+  for (i=fromLevel; i<toLevel; i++)
+    for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+      if (NSONS(theElement)==0 && ElementISLine2D(theElement,p1,p2))
+        SETUSED(theElement,1);
+      else
+        SETUSED(theElement,0);
+
+  for (theElement=FIRSTELEMENT(theMG->grids[toLevel]); theElement!=NULL; theElement=SUCCE(theElement))
+    if (ElementISLine2D(theElement,p1,p2))
+      SETUSED(theElement,1);
+    else
+      SETUSED(theElement,0);
 
   return (0);
 }
@@ -3779,9 +4134,9 @@ static INT GEN_PostProcess_Scalar_FR (PICTURE *thePicture, WORK *theWork)
 
 /****************************************************************************/
 /*																			*/
-/* Function:  EW_PostProcess_EVector_FR                                                                         */
+/* Function:  GEN_PostProcess_Line_FR	                                                                        */
 /*																			*/
-/* Purpose:   postprocess for findrange of vector plot						*/
+/* Purpose:   postprocess for findrange of scalar plot						*/
 /*																			*/
 /* Input:	  PICTURE *thePicture, WORK *theWork							*/
 /*																			*/
@@ -3790,22 +4145,42 @@ static INT GEN_PostProcess_Scalar_FR (PICTURE *thePicture, WORK *theWork)
 /*																			*/
 /****************************************************************************/
 
-static INT GEN_PostProcess_Vector_FR (PICTURE *thePicture, WORK *theWork)
+static INT GEN_PostProcess_Line_FR (PICTURE *thePicture, WORK *theWork)
 {
   struct FindRange_Work *FR_Work;
+  DOUBLE m,l;
+  INT i;
 
   FR_Work = W_FINDRANGE_WORK(theWork);
 
+  if (GEN_FR_min>GEN_FR_max)
+  {
+    UserWrite("findrange failed\n");
+    return (0);
+  }
+
   /* postprocess findrange */
-  FR_Work->min = 0.0;
-  if (FR_Work->zoom>0.0)
-    FR_Work->max = GEN_FR_max*FR_Work->zoom;
-  else
-    FR_Work->max = GEN_FR_max;
+  if (FR_Work->symmetric==YES)
+  {
+    GEN_FR_max = MAX(ABS(GEN_FR_min),ABS(GEN_FR_max));
+    GEN_FR_min = -GEN_FR_max;
+  }
+  if (FR_Work->zoom!=1.0)
+  {
+    m = 0.5*(GEN_FR_max + GEN_FR_min);
+    l = 0.5*(GEN_FR_max - GEN_FR_min);
+    GEN_FR_min = m - FR_Work->zoom*l;
+    GEN_FR_max = m + FR_Work->zoom*l;
+  }
+  FR_Work->min = GEN_FR_min;
+  FR_Work->max = GEN_FR_max;
 
   /* store if */
   if (GEN_FR_put == YES)
-    PIC_PO(thePicture)->theEvpo.max = FR_Work->max;
+  {
+    PIC_PO(thePicture)->theLpo.min = GEN_FR_min;
+    PIC_PO(thePicture)->theLpo.max = GEN_FR_max;
+  }
 
   return (0);
 }
@@ -4041,6 +4416,39 @@ static INT GEN_PostProcess_Matrix_FR (PICTURE *thePicture, WORK *theWork)
     PIC_PO(thePicture)->theMpo.min = GEN_FR_min;
     PIC_PO(thePicture)->theMpo.max = GEN_FR_max;
   }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  EW_PostProcess_EVector_FR                                                                         */
+/*																			*/
+/* Purpose:   postprocess for findrange of vector plot						*/
+/*																			*/
+/* Input:	  PICTURE *thePicture, WORK *theWork							*/
+/*																			*/
+/* Return:	  INT 0: ok                                                                                                     */
+/*			  INT 1: an error occurred										*/
+/*																			*/
+/****************************************************************************/
+
+static INT GEN_PostProcess_Vector_FR (PICTURE *thePicture, WORK *theWork)
+{
+  struct FindRange_Work *FR_Work;
+
+  FR_Work = W_FINDRANGE_WORK(theWork);
+
+  /* postprocess findrange */
+  FR_Work->min = 0.0;
+  if (FR_Work->zoom>0.0)
+    FR_Work->max = GEN_FR_max*FR_Work->zoom;
+  else
+    FR_Work->max = GEN_FR_max;
+
+  /* store if */
+  if (GEN_FR_put == YES)
+    PIC_PO(thePicture)->theEvpo.max = FR_Work->max;
 
   return (0);
 }
@@ -5825,6 +6233,79 @@ static INT InvertNodeSelection2D (PICTURE *thePicture, WORK *theWork)
 }
 
 /****************************************************************************/
+/*
+   /* Function: InvertNodeSelection2D                                                                                   */
+/*																			*/
+/* Purpose:   invert node selection                                                                             */
+/*																			*/
+/* Input:	  PICTURE *thePicture, WORK *theWork							*/
+/*																			*/
+/* Output:	  INT 0: ok                                                                                                     */
+/*				  1: error													*/
+/*																			*/
+/****************************************************************************/
+
+static INT EW_PostProcess_Line2D (PICTURE *thePicture, WORK *theWork)
+{
+  OUTPUTDEVICE *theOD;
+  struct LinePlotObj2D *theLpo;
+  COORD_VECTOR p;
+  DRAWINGOBJ *theDO;
+
+  theOD  = PIC_OUTPUTDEV(thePicture);
+  theLpo = &(PIC_PO(thePicture)->theLpo);
+
+  /* draw y-axis */
+  theDO = WOP_DrawingObject;
+  DO_2c(theDO) = DO_LINE; DO_inc(theDO)
+  DO_2l(theDO) = theOD->black; DO_inc(theDO);
+  p[0] = 0.0; p[1] = 0.0;
+  V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+  p[0] = 0.0; p[1] = theLpo->aspectratio;
+  V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+  Draw2D(WOP_DrawingObject);
+
+  if (LINE2D_V2Y_offset<0.0)
+  {
+    /* draw x-axis */
+    theDO = WOP_DrawingObject;
+    DO_2c(theDO) = DO_LINE; DO_inc(theDO)
+    DO_2l(theDO) = theOD->red; DO_inc(theDO);
+    p[0] = 0.0; p[1] = 0.0;
+    V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    p[0] = 1.0; p[1] = 0.0;
+    V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    Draw2D(WOP_DrawingObject);
+  }
+  else if (LINE2D_V2Y_offset>theLpo->aspectratio)
+  {
+    /* draw x-axis */
+    theDO = WOP_DrawingObject;
+    DO_2c(theDO) = DO_LINE; DO_inc(theDO)
+    DO_2l(theDO) = theOD->red; DO_inc(theDO);
+    p[0] = 0.0; p[1] = theLpo->aspectratio;
+    V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    p[0] = 1.0; p[1] = theLpo->aspectratio;
+    V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    Draw2D(WOP_DrawingObject);
+  }
+  else
+  {
+    /* draw zero-axis */
+    theDO = WOP_DrawingObject;
+    DO_2c(theDO) = DO_LINE; DO_inc(theDO)
+    DO_2l(theDO) = theOD->black; DO_inc(theDO);
+    p[0] = 0.0; p[1] = LINE2D_V2Y_offset;
+    V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    p[0] = 1.0; p[1] = LINE2D_V2Y_offset;
+    V2_COPY(p,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+    Draw2D(WOP_DrawingObject);
+  }
+
+  return (0);
+}
+
+/****************************************************************************/
 /*																			*/
 /* Function:  PlotVecMatData2D				                                                                */
 /*																			*/
@@ -5928,6 +6409,8 @@ static INT PlotVecMatData2D (PICTURE *thePicture, VECTOR *vec)
 
 static INT InvertVectorSelectionOrPlotVMData2D (PICTURE *thePicture, WORK *theWork)
 {
+  MULTIGRID *theMG;
+  GRID *theGrid;
   VECTOR *theVector;
   COORD_VECTOR pos,help;
   COORD_POINT a, point[4];
@@ -5935,6 +6418,8 @@ static INT InvertVectorSelectionOrPlotVMData2D (PICTURE *thePicture, WORK *theWo
 
   UgSetTextSize(VM_VECMAT_TEXTSIZE);
   UgSetColor(VM_VecMatColor);
+  theMG  = PO_MG(PIC_PO(thePicture));
+  theGrid = GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
 
   /* evaluate and execute */
   if (SELECTIONMODE(WOP_MG)==vectorSelection)
@@ -5961,6 +6446,11 @@ static INT InvertVectorSelectionOrPlotVMData2D (PICTURE *thePicture, WORK *theWo
         UgInversePolygon(point,4);
       }
     }
+
+  /* reset indices of vectors */
+  i = 1;
+  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector))
+    VINDEX(theVector) = i++;
 
   return (0);
 }
@@ -6273,6 +6763,66 @@ static INT EW_PreProcess_EScalar2D (PICTURE *thePicture, WORK *theWork)
   if (theEspo->EvalFct->PreprocessProc!=NULL)
     if ((*theEspo->EvalFct->PreprocessProc)(ENVITEM_NAME(theEspo->EvalFct),theMG))
       return (1);;
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
+   EW_PreProcess_Line2D - Initialize for line plot
+
+   SYNOPSIS:
+   static INT EW_PreProcess_Line2D (PICTURE *thePicture, WORK *theWork);
+
+   PARAMETERS:
+   .  thePicture -
+   .  theWork -
+
+   DESCRIPTION:
+   This function initializes for line plot.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT EW_PreProcess_Line2D (PICTURE *thePicture, WORK *theWork)
+{
+  struct LinePlotObj2D *theLpo;
+  OUTPUTDEVICE *theOD;
+  MULTIGRID *theMG;
+  INT i;
+
+  theLpo = &(PIC_PO(thePicture)->theLpo);
+  theOD  = PIC_OUTPUTDEV(thePicture);
+  theMG  = PO_MG(PIC_PO(thePicture));
+
+  /* set value->color fct, eval fct */
+  if (theLpo->max - theLpo->min <= 0.0)
+    if (W_ID(theWork) != FINDRANGE_WORK)
+    {
+      UserWrite("maxValue has to be larger than minValue\n");
+      return (1);
+    }
+  LINE2D_EvalFct    = theLpo->EvalFct->EvalProc;
+  LINE2D_V2Y_factor = theLpo->aspectratio/(theLpo->max - theLpo->min);
+  LINE2D_V2Y_offset = - LINE2D_V2Y_factor * theLpo->min;
+  LINE2D_depth      = theLpo->depth;
+  LINE2D_Color      = (long)theOD->spectrumStart + theLpo->color*(theOD->spectrumEnd - theOD->spectrumStart);
+  LINE2D_Begin.x    = theLpo->left[0];  LINE2D_Begin.y      = theLpo->left[1];
+  LINE2D_End.x      = theLpo->right[0]; LINE2D_End.y                = theLpo->right[1];
+  LINE2D_BeginRot.x = theLpo->left[0];  LINE2D_BeginRot.y   = 1.0001*theLpo->left[1];
+  LINE2D_EndRot.x   = theLpo->right[0]; LINE2D_EndRot.y     = 1.0001*theLpo->right[1];
+
+  /* mark suface elements on boundary */
+  if (MarkElements_MGS_On_Line(theMG,0,CURRENTLEVEL(theMG),theLpo->left,theLpo->right)) return (1);
+
+  /* prepare evaluation routine */
+  if (theLpo->EvalFct->PreprocessProc!=NULL)
+    if ((*theLpo->EvalFct->PreprocessProc)(ENVITEM_NAME(theLpo->EvalFct),theMG))
+      return (1);
 
   return (0);
 }
@@ -6836,6 +7386,117 @@ static INT EW_EScalar2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 
 /****************************************************************************/
 /*
+   EW_LineElement2D	- line plot
+
+   SYNOPSIS:
+   static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO);
+
+   PARAMETERS:
+   .  theElement -
+   .  theDO -
+
+   DESCRIPTION:
+   This function plots line plot.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
+{
+  INT i, n, m, found;
+  COORD_POINT P1, P2;
+  const COORD *x[MAX_CORNERS_OF_ELEM];
+  DRAWINGOBJ *p, *range;
+  COORD alpha[MAX_CORNERS_OF_ELEM], beta;
+  COORD_VECTOR LocalCoord, P[MAX_CORNERS_OF_ELEM], PEval, A, B;
+  DOUBLE v;
+
+  n = CORNERS_OF_ELEM(theElement);
+
+  /* get coordinates of corners of the element */
+  n = CORNERS_OF_ELEM(theElement);
+  for (i=0; i<n; i++)
+    x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
+
+  /* draw polygon with depth */
+  LINE2D_minValue = MAX_D; LINE2D_maxValue = -MAX_D;
+  found = 0;
+  P1.x=x[n-1][0]; P1.y=x[n-1][1];
+  for (i=0; i<n; i++)
+  {
+    P2.x=x[i][0]; P2.y=x[i][1];
+    if (CalcCrossingPoint(LINE2D_Begin,LINE2D_End,P1,P2,alpha+found,&beta))
+    {
+      P[found][0] = (1.0-beta)*P1.x + beta*P2.x;
+      P[found][1] = (1.0-beta)*P1.y + beta*P2.y;
+      found++;
+    }
+    P1.x=P2.x; P1.y=P2.y;
+  }
+  if (found!=2)
+  {
+    found = 0;
+    P1.x=x[n-1][0]; P1.y=x[n-1][1];
+    for (i=0; i<n; i++)
+    {
+      P2.x=x[i][0]; P2.y=x[i][1];
+      if (CalcCrossingPoint(LINE2D_BeginRot,LINE2D_EndRot,P1,P2,alpha+found,&beta))
+      {
+        P[found][0] = (1.0-beta)*P1.x + beta*P2.x;
+        P[found][1] = (1.0-beta)*P1.y + beta*P2.y;
+        found++;
+      }
+      P1.x=P2.x; P1.y=P2.y;
+    }
+  }
+  if (found==2)
+  {
+    DO_2c(theDO) = DO_RANGE; DO_inc(theDO); range = theDO; DO_inc_n(theDO,2);
+
+    if (GlobalToLocal2d(n,x,P[0],LocalCoord)) return (1);
+    v = (*LINE2D_EvalFct)(theElement,x,LocalCoord);
+    LINE2D_minValue = MIN(LINE2D_minValue,v);       LINE2D_maxValue = MAX(LINE2D_maxValue,v);
+    A[0] = alpha[0];
+    A[1] = LINE2D_V2Y_factor*v + LINE2D_V2Y_offset;
+    m = POW(2,LINE2D_depth);
+    for (i=1; i<=m; i++)
+    {
+      beta = (COORD)i/(COORD)m;
+      V2_LINCOMB(1.0-beta,P[0],beta,P[1],PEval)
+      if (GlobalToLocal2d(n,x,PEval,LocalCoord)) return (1);
+      v = (*LINE2D_EvalFct)(theElement,x,LocalCoord);
+      LINE2D_minValue = MIN(LINE2D_minValue,v);       LINE2D_maxValue = MAX(LINE2D_maxValue,v);
+
+      B[0] = (1.0-beta)*alpha[0] + beta*alpha[1] ;
+      B[1] = LINE2D_V2Y_factor*v + LINE2D_V2Y_offset;
+      DO_2c(theDO) = DO_LINE; DO_inc(theDO)
+      DO_2l(theDO) = LINE2D_Color; DO_inc(theDO);
+      V2_COPY(A,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      V2_COPY(B,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+
+      V2_COPY(B,A)
+    }
+
+    DO_2C(range) = LINE2D_minValue; DO_inc(range);
+    DO_2C(range) = LINE2D_maxValue;
+
+  }
+  DO_2c(theDO) = DO_NO_INST;
+
+#ifdef __DO_HEAP_USED__
+  n = (INT)theDO - (INT)p;
+  Heap_Used_Min = MIN(Heap_Used_Min,n);
+  Heap_Used_Max = MAX(Heap_Used_Max,n);
+#endif
+  return (0);
+}
+
+/****************************************************************************/
+/*
    EW_PreProcess_EScalar2D_FR - Initialize for findrange of scalar plot
 
    SYNOPSIS:
@@ -6858,6 +7519,40 @@ static INT EW_EScalar2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 static INT EW_PreProcess_EScalar2D_FR (PICTURE *thePicture, WORK *theWork)
 {
   if (EW_PreProcess_EScalar2D (thePicture,theWork))
+    return (1);
+
+  /* reset min and max values */
+  GEN_FR_put = W_FINDRANGE_WORK(theWork)->put;
+  GEN_FR_min = MAX_D;
+  GEN_FR_max = -MAX_D;
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
+   EW_PreProcess_Line2D_FR - Initialize for findrange of line plot
+
+   SYNOPSIS:
+   static INT EW_PreProcess_Line2D_FR (PICTURE *thePicture, WORK *theWork);
+
+   PARAMETERS:
+   .  thePicture -
+   .  theWork -
+
+   DESCRIPTION:
+   This function initializes for findrange of scalar plot.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT EW_PreProcess_Line2D_FR (PICTURE *thePicture, WORK *theWork)
+{
+  if (EW_PreProcess_Line2D (thePicture,theWork))
     return (1);
 
   /* reset min and max values */
@@ -8112,283 +8807,6 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
     NewShellBegin = ActualPosition;
   }
   return (0);
-}
-
-/****************************************************************************/
-/*
-   CalcCrossingPoint - Calculate crossing point of two lines
-
-   SYNOPSIS:
-   static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2,
-   COORD_POINT P3, COORD_POINT P4, COORD *alpha, COORD *beta);
-
-   PARAMETERS:
-   .  P1 -
-   .  P2 -
-   .  P3 -
-   .  P4 -
-   .  alpha -
-   .  beta -
-
-   DESCRIPTION:
-   This function calculates crossing point of two lines.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
-/****************************************************************************/
-
-static INT CalcCrossingPoint (COORD_POINT P1, COORD_POINT P2, COORD_POINT P3, COORD_POINT P4, COORD *alpha, COORD *beta)
-{
-  INT flags1;
-  COORD determinante, c1, c2;
-
-  /* check if one endpoint of line0 coincide with one endpoint of line1 */
-  if (ABS(P1.x - P3.x)<SMALL_C && ABS(P1.y - P3.y)<SMALL_C) return(0);
-  if (ABS(P1.x - P4.x)<SMALL_C && ABS(P1.y - P4.y)<SMALL_C) return(0);
-  if (ABS(P2.x - P3.x)<SMALL_C && ABS(P2.y - P3.y)<SMALL_C) return(0);
-  if (ABS(P2.x - P4.x)<SMALL_C && ABS(P2.y - P4.y)<SMALL_C) return(0);
-
-  flags1 = 0;
-  if (ABS(P1.x - P2.x)<SMALL_C) flags1 |= 1;
-  if (ABS(P1.y - P2.y)<SMALL_C) flags1 |= 2;
-  if (ABS(P3.x - P4.x)<SMALL_C) flags1 |= 4;
-  if (ABS(P3.y - P4.y)<SMALL_C) flags1 |= 8;
-
-  switch (flags1)
-  {
-  case (0) :
-    /* the natural case */
-    determinante = (P2.y-P1.y)*(P4.x-P3.x) - (P2.x-P1.x)*(P4.y-P3.y);
-    if (ABS(determinante)<SMALL_C)
-    {
-      /* the lines are parallel */
-      /* check if P1 (or P2) is on line1 */
-      c1 = (P1.y-P3.y)/(P4.y-P3.y);
-      c2 = (P2.y-P3.y)/(P4.y-P3.y);
-      if (ABS((1.0-c1)*P3.x + c1*P4.x - P1.x)<SMALL_C)
-      {
-        if (((c1<=0.0) && (c2<=0.0)) || ((1.0<=c1) && (1.0<=c2)))
-          return (0);
-        if (0.0<c1 && c1<1.0)
-        {
-          *beta = c1;
-          *alpha = 0.0;
-          return (1);
-        }
-        if (0.0<c2 && c2<1.0)
-        {
-          *beta = c2;
-          *alpha = 1.0;
-          return (1);
-        }
-
-        /* line1 is contained in line0: calculate position of P3 on line0 */
-        c1 = (P3.y-P1.y)/(P2.y-P1.y);
-        if (c1<=0.0 || 1.0<=c1)
-          /* this is impossible! */
-          return (0);
-        *alpha = c1;
-        *beta = 0.0;
-      }
-      return (0);
-    }
-    else
-    {
-      /* the lines are not parallel */
-      *alpha = ((P4.x-P3.x)*(P3.y-P1.y) - (P4.y-P3.y)*(P3.x-P1.x))/determinante;
-      *beta  = ((P2.x-P1.x)*(P3.y-P1.y) - (P2.y-P1.y)*(P3.x-P1.x))/determinante;
-      if (0.0<*alpha && *alpha<1.0 && 0.0<*beta && *beta<1.0)
-        return (1);
-      return (0);
-    }
-  case (1) :
-    /* line0 is vertical */
-    *beta = (P1.x-P3.x)/(P4.x-P3.x);
-    *alpha = (((1.0-(*beta))*P3.y + (*beta)*P4.y)-P1.y)/(P2.y-P1.y);
-    if (0.0<*alpha && *alpha<1.0 && 0.0<*beta && *beta<1.0)
-      return (1);
-    return (0);
-  case (2) :
-    /* line0 is horizontal */
-    *beta = (P1.y-P3.y)/(P4.y-P3.y);
-    *alpha = (((1.0-(*beta))*P3.x + (*beta)*P4.x)-P1.x)/(P2.x-P1.x);
-    if (0.0<*alpha && *alpha<1.0 && 0.0<*beta && *beta<1.0)
-      return (1);
-    return (0);
-  case (3) :
-    /* line0 is degenerated */
-    *beta = (P1.y-P3.y)/(P4.y-P3.y);
-    if (ABS((1.0-(*beta))*P3.x + (*beta)*P4.x - P1.x)<SMALL_C)
-      if (0.0<*beta && *beta<1.0)
-      {
-        *alpha = 0.5;
-        return (1);
-      }
-    return (0);
-  case (4) :
-    /* line1 is vertical */
-    *alpha = (P3.x-P1.x)/(P2.x-P1.x);
-    *beta  = (((1.0-(*alpha))*P1.y + (*alpha)*P2.y)-P3.y)/(P4.y-P3.y);
-    if (0.0<*alpha && *alpha<1.0 && 0.0<*beta && *beta<1.0)
-      return (1);
-    return (0);
-  case (5) :
-    /* both lines are vertical */
-    if (ABS(P1.x - P3.x)<SMALL_C)
-    {
-      c1 = (P1.y-P3.y)/(P4.y-P3.y);
-      if (0.0<c1 && c1<1.0)
-      {
-        *alpha = 0.0;
-        *beta  = c1;
-        return (1);
-      }
-      c2 = (P2.y-P3.y)/(P4.y-P3.y);
-      if (0.0<c2 && c2<1.0)
-      {
-        *alpha = 1.0;
-        *beta  = c2;
-        return (1);
-      }
-      c1 = (P3.y-P1.y)/(P2.y-P1.y);
-      if (0.0<c1 && c1<1.0)
-      {
-        *alpha = c1;
-        *beta  = 0.0;
-        return (1);
-      }
-      c2 = (P4.y-P1.y)/(P2.y-P1.y);
-      if (0.0<c2 && c2<1.0)
-      {
-        *alpha = c2;
-        *beta  = 1.0;
-        return (1);
-      }
-      /* impossible case */
-      return (0);
-    }
-    return (0);
-  case (6) :
-    /* line0 is horizontal, line1 is vertical */
-    *alpha = (P3.x-P1.x)/(P2.x-P1.x);
-    *beta  = (P1.y-P3.y)/(P4.y-P3.y);
-    if (0.0<*alpha && *alpha<1.0 && 0.0<*beta && *beta<1.0)
-      return (1);
-    return (0);
-  case (7) :
-    /* line0 is degenerated, line1 is vertical */
-    if (ABS(P1.x - P3.x)<SMALL_C)
-    {
-      *alpha = 0.5;
-      *beta  = (P1.y-P3.y)/(P4.y-P3.y);
-      if ( 0.0<*beta && *beta<1.0)
-        return (1);
-    }
-    return (0);
-  case (8) :
-    /* line1 is horizontal */
-    *alpha = (P3.y-P1.y)/(P2.y-P1.y);
-    *beta  = (((1.0-(*alpha))*P1.x + (*alpha)*P2.x)-P3.x)/(P4.x-P3.x);
-    if (0.0<*alpha && *alpha<1.0 && 0.0<*beta && *beta<1.0)
-      return (1);
-    return (0);
-  case (9) :
-    /* line0 is vertical, line1 is horizontal */
-    *alpha = (P3.y-P1.y)/(P2.y-P1.y);
-    *beta  = (P1.x-P3.x)/(P4.x-P3.x);
-    if (0.0<*alpha && *alpha<1.0 && 0.0<*beta && *beta<1.0)
-      return (1);
-    return (0);
-  case (10) :
-    /* both lines are horizontal */
-    if (ABS(P1.y - P3.y)<SMALL_C)
-    {
-      c1 = (P1.x-P3.x)/(P4.x-P3.x);
-      if (0.0<c1 && c1<1.0)
-      {
-        *alpha = 0.0;
-        *beta  = c1;
-        return (1);
-      }
-      c2 = (P2.x-P3.x)/(P4.x-P3.x);
-      if (0.0<c2 && c2<1.0)
-      {
-        *alpha = 1.0;
-        *beta  = c2;
-        return (1);
-      }
-      c1 = (P3.x-P1.x)/(P2.x-P1.x);
-      if (0.0<c1 && c1<1.0)
-      {
-        *alpha = c1;
-        *beta  = 0.0;
-        return (1);
-      }
-      c2 = (P4.x-P1.x)/(P2.x-P1.x);
-      if (0.0<c2 && c2<1.0)
-      {
-        *alpha = c2;
-        *beta  = 1.0;
-        return (1);
-      }
-      /* impossible case */
-      return (0);
-    }
-    return (0);
-  case (11) :
-    /* line0 is degenerated, line1 is horizontal */
-    if (ABS(P1.y - P3.y)<SMALL_C)
-    {
-      *alpha = 0.5;
-      *beta  = (P1.x-P3.x)/(P4.x-P3.x);
-      if ( 0.0<*beta && *beta<1.0)
-        return (1);
-    }
-    return (0);
-  case (12) :
-    /* line1 is degenerated */
-    *alpha = (P3.y-P1.y)/(P2.y-P1.y);
-    if (ABS((1.0-(*alpha))*P1.x + (*alpha)*P2.x - P3.x)<SMALL_C)
-      if (0.0<*alpha && *alpha<1.0)
-      {
-        *beta = 0.5;
-        return (1);
-      }
-    return (0);
-  case (13) :
-    /* line0 is vertical, lin1 is degenerated */
-    if (ABS(P1.x - P3.x)<SMALL_C)
-    {
-      *alpha = (P3.y-P1.y)/(P2.y-P1.y);
-      *beta  = 0.5;
-      if ( 0.0<*alpha && *alpha<1.0)
-        return (1);
-    }
-    return (0);
-  case (14) :
-    /* line0 is horizontal, lin1 is degenerated */
-    if (ABS(P1.y - P3.y)<SMALL_C)
-    {
-      *alpha = (P3.x-P1.x)/(P2.x-P1.x);
-      *beta  = 0.5;
-      if ( 0.0<*alpha && *alpha<1.0)
-        return (1);
-    }
-    return (0);
-  case (15) :
-    /* both lines are degenerated */
-    if (ABS(P1.x - P3.x)<SMALL_C && ABS(P1.y - P3.y)<SMALL_C)
-    {
-      *alpha = 0.5;
-      *beta  = 0.5;
-      return (1);
-    }
-    return (0);
-  }
-  return (-1);
 }
 
 /****************************************************************************/
@@ -11079,6 +11497,59 @@ INT InitWOP (void)
   /* insertbndnode work */
   POH_NBCYCLES(thePOH,INSERTBNDNODE_WORK) = 0;
 
+
+
+
+  /* create WorkHandling for 'Line' */
+  if ((thePOH=CreatePlotObjHandling ("Line"))        == NULL) return (__LINE__);
+
+  /* draw work */
+  POH_NBCYCLES(thePOH,DRAW_WORK) = 1;
+
+  theWP = POH_WORKPROGS(thePOH,DRAW_WORK,0);
+  WP_WORKMODE(theWP) = ELEMENTWISE;
+  theEWW = WP_ELEMWISE(theWP);
+  theEWW->EW_PreProcessProc                               = EW_PreProcess_Line2D;
+  theEWW->EW_GetFirstElementProcProc              = EW_GetFirstElement_vert_fw_up_Proc;
+  theEWW->EW_GetNextElementProcProc               = EW_GetNextElement_vert_fw_up_Proc;
+  theEWW->EW_EvaluateProc                                 = EW_LineElement2D;
+  theEWW->EW_ExecuteProc                                  = Draw2D;
+  theEWW->EW_PostProcessProc                              = EW_PostProcess_Line2D;
+
+  /* findrange work */
+  POH_NBCYCLES(thePOH,FINDRANGE_WORK) = 1;
+
+  theWP = POH_WORKPROGS(thePOH,FINDRANGE_WORK,0);
+  WP_WORKMODE(theWP) = ELEMENTWISE;
+  theEWW = WP_ELEMWISE(theWP);
+  theEWW->EW_PreProcessProc                               = EW_PreProcess_Line2D_FR;
+  theEWW->EW_GetFirstElementProcProc              = EW_GetFirstElement_vert_fw_up_Proc;
+  theEWW->EW_GetNextElementProcProc               = EW_GetNextElement_vert_fw_up_Proc;
+  theEWW->EW_EvaluateProc                                 = EW_LineElement2D;
+  theEWW->EW_ExecuteProc                                  = FindRange2D;
+  theEWW->EW_PostProcessProc                              = GEN_PostProcess_Line_FR;
+
+
+  /* selectnode work */
+  POH_NBCYCLES(thePOH,SELECTNODE_WORK) = 0;
+
+  /* selectelement work */
+  POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 0;
+
+  /* selectvector work */
+  POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 0;
+
+  /* markelement work */
+  POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
+
+  /* insertnode work */
+  POH_NBCYCLES(thePOH,INSERTNODE_WORK) = 0;
+
+  /* movenode work */
+  POH_NBCYCLES(thePOH,MOVENODE_WORK) = 0;
+
+  /* insertbndnode work */
+  POH_NBCYCLES(thePOH,INSERTBNDNODE_WORK) = 0;
 
 
         #endif

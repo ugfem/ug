@@ -109,7 +109,7 @@ PICTURE *CreatePicture (const char *PictureName, UGWINDOW *theUgWindow, const IN
   /* allocate Image envItem */
   if (ChangeEnvDir("/UgWindows") == NULL) return (NULL);
   if (ChangeEnvDir(ENVITEM_NAME(theUgWindow)) == NULL) return (NULL);
-  if (strlen(PictureName)>=NAMESIZE || strlen(PictureName)<=1) return (NULL);
+  if (strlen(PictureName)>=NAMESIZE || strlen(PictureName)<1) return (NULL);
   if ((thePicture = (PICTURE *) MakeEnvItem(PictureName,thePicVarID,sizeof(PICTURE))) == NULL)
   {
     UserWrite("error: cannot create picture\n");
@@ -3286,6 +3286,225 @@ static INT DisplayVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj)
   return (0);
 }
 
+/****************************************************************************/
+/*
+   InitLinePlotObject_2D	- Initialization of 2D line object
+
+   SYNOPSIS:
+   static INT InitLinePlotObject_2D (PLOTOBJ *thePlotObj, INT argc,
+   char **argv);
+
+   PARAMETERS:
+   .  thePlotObj -
+   .  argc -
+   .  argv -
+
+   DESCRIPTION:
+   This function makes an initialization of 2D line object.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if error occured.
+ */
+/****************************************************************************/
+
+static INT InitLinePlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
+{
+  BVP_DESC theBVPDesc;
+  struct LinePlotObj2D *theLpo;
+  INT i, ret;
+  int iValue;
+  float fValue[2];
+  COORD dist;
+  char buffer[128];
+
+  theLpo = &(thePlotObj->theLpo);
+  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  PO_MIDPOINT(thePlotObj)[0] = PO_MIDPOINT(thePlotObj)[1] = 0.5;
+  PO_RADIUS(thePlotObj) = 0.70711;
+  ret = ACTIVE;
+
+  /* defaults */
+  if (PO_STATUS(thePlotObj)==NOT_INIT)
+  {
+    theLpo->min                                                             = 0.0;
+    theLpo->max                                                             = 1.0;
+    theLpo->left[0] = theLpo->left[1]               = 0.0;
+    theLpo->right[0] = theLpo->right[1]     = 1.0;
+    theLpo->color                                                   = 0.0;
+    theLpo->aspectratio                                             = 1.0;
+  }
+
+  /* set from option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='f')
+    {
+      if (sscanf(argv[i],"f %g",fValue)!=1)
+        break;
+      theLpo->min = fValue[0];
+      break;
+    }
+
+  /* set to option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='t')
+    {
+      if (sscanf(argv[i],"t %g",fValue)!=1)
+        break;
+      theLpo->max = fValue[0];
+      break;
+    }
+  if (theLpo->min >= theLpo->max )
+  {
+    UserWrite("minValue is bigger than maxValue\n");
+    ret = NOT_ACTIVE;
+  }
+
+  /* set left option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='l')
+    {
+      if (sscanf(argv[i],"l %g %g",fValue,fValue+1)!=2)
+        break;
+      V2_COPY(fValue,theLpo->left)
+      break;
+    }
+
+  /* set right option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='r')
+    {
+      if (sscanf(argv[i],"r %g %g",fValue,fValue+1)!=2)
+        break;
+      V2_COPY(fValue,theLpo->right)
+      break;
+    }
+  V2_EUKLIDNORM_OF_DIFF(theLpo->left,theLpo->right,dist)
+  if (dist==0.0)
+  {
+    UserWrite("left and right have to be different\n");
+    ret = NOT_ACTIVE;
+  }
+
+  /* set color option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='c')
+    {
+      if (sscanf(argv[i],"c %g",fValue)!=1)
+        break;
+      theLpo->color = fValue[0];
+      break;
+    }
+  if (theLpo->color<0.0 || theLpo->color>1.0)
+  {
+    UserWrite("color is not valid\n");
+    ret = NOT_ACTIVE;
+  }
+
+  /* set aspectratio option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='a')
+    {
+      if (sscanf(argv[i],"a %g",fValue)!=1)
+        break;
+      theLpo->aspectratio = fValue[0];
+      break;
+    }
+  if (theLpo->aspectratio<=0.0)
+  {
+    UserWrite("aspect ratio is not valid\n");
+    ret = NOT_ACTIVE;
+  }
+
+  /* set depth option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='d')
+    {
+      if (sscanf(argv[i],"d %d",&iValue)!=1)
+        break;
+      theLpo->depth = iValue;
+      break;
+    }
+  if (theLpo->depth<0 || theLpo->depth>4)
+  {
+    UserWrite("depth is not valid\n");
+    ret = NOT_ACTIVE;
+  }
+
+  /* get plot procedure */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='e')
+    {
+      if (sscanf(argv[i],"e %s",buffer)!=1)
+        break;
+      if (strlen(buffer)>=NAMESIZE) break;
+      theLpo->EvalFct = GetElementValueEvalProc(buffer);
+      break;
+    }
+  if (theLpo->EvalFct == NULL)
+  {
+    UserWrite("cannot find plot procedure\n");
+    ret = NOT_ACTIVE;
+  }
+
+  /* midpoint and radius */
+  PO_MIDPOINT(thePlotObj)[0] = 0.5; PO_MIDPOINT(thePlotObj)[1] = 0.5*theLpo->aspectratio;
+  PO_RADIUS(thePlotObj) = 0.5 * SQRT(1.0 + theLpo->aspectratio*theLpo->aspectratio);
+
+  return (ret);
+}
+
+/****************************************************************************/
+/*
+   DisplayLinePlotObject_2D - Display content of 2D line object
+
+   SYNOPSIS:
+   static INT DisplayLinePlotObject_2D (PLOTOBJ *thePlotObj);
+
+   PARAMETERS:
+   .  thePlotObj -
+
+   DESCRIPTION:
+   This function displays content of 2D line object.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if error occured.
+ */
+/****************************************************************************/
+
+static INT DisplayLinePlotObject_2D (PLOTOBJ *thePlotObj)
+{
+  struct LinePlotObj2D *theLpo;
+  char buffer[128];
+
+  theLpo = &(thePlotObj->theLpo);
+
+  /* print content */
+  if (theLpo->EvalFct != NULL)
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theLpo->EvalFct));
+  else
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc","---");
+  UserWrite(buffer);
+
+  sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"Range",(float)theLpo->min,(float)theLpo->max);
+  UserWrite(buffer);
+  sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"left",(float)theLpo->left[0],(float)theLpo->left[1]);
+  UserWrite(buffer);
+  sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"right",(float)theLpo->right[0],(float)theLpo->right[1]);
+  UserWrite(buffer);
+  sprintf(buffer,DISPLAY_PO_FORMAT_SF,"color",(float)theLpo->color);
+  UserWrite(buffer);
+  sprintf(buffer,DISPLAY_PO_FORMAT_SF,"asp. ratio",(float)theLpo->aspectratio);
+  UserWrite(buffer);
+  sprintf(buffer,DISPLAY_PO_FORMAT_SI,"Depth",(int)theLpo->depth);
+  UserWrite(buffer);
+
+  return (0);
+}
+
 #endif
 
 #ifdef __THREEDIM__
@@ -3961,6 +4180,11 @@ INT InitPlotObjTypes (void)
   thePOT->Dimension                               = TYPE_2D;
   thePOT->SetPlotObjProc                  = InitVecMat_2D;
   thePOT->DispPlotObjProc                 = DisplayVecMat_2D;
+
+  if ((thePOT=GetPlotObjType("Line")) == NULL) return (1);
+  thePOT->Dimension                               = TYPE_2D;
+  thePOT->SetPlotObjProc                  = InitLinePlotObject_2D;
+  thePOT->DispPlotObjProc                 = DisplayLinePlotObject_2D;
         #endif
 
         #ifdef __THREEDIM__
