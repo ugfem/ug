@@ -187,13 +187,19 @@ INT InitNumerics ()
     return (err);
   }
 
+  /* init projection num procs */
+  if ((err=InitProject())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
   /* init amg solver */
   if ((err=InitAMGSolver())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }
 
-  /* init amg solver */
+  /* init order numproc */
   if ((err=InitOrder())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
