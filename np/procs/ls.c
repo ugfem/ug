@@ -419,7 +419,7 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
             #endif
       REP_ERR_INC;
                 #ifndef Debug
-      return (res->error_code);
+      REP_ERR_RETURN (1);
             #endif
     }
   }
