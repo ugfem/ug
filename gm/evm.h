@@ -274,7 +274,7 @@ INT 		ClipRectangleAgainstRectangle		(const COORD *r1min, const COORD *r1max, CO
 INT 		CheckRectagleIntersection			(const COORD *r1min, const COORD *r1max, const COORD *r2min, const COORD *r2max);
 INT 		CheckRectangle						(const COORD *rmin, const COORD *rmax, const COORD minsize);
 INT 		PointInTriangle 					(const COORD_POINT *Points, const COORD_POINT Point);
-INT 		PointInPolygon						(const COORD_POINT *Points, INT n, const COORD_POINT Point);
+INT 		PointInPolygon						(const COORD_POINT *Points, INT n, COORD_POINT Point);
 INT 		PointInPolygonC 					(const COORD_VECTOR_2D *Points, INT n, const COORD_VECTOR_2D Point);
 INT 		PolyArea 							(INT n, COORD_VECTOR_2D *Polygon, COORD *Area);
 

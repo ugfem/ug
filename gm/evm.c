@@ -285,7 +285,7 @@ INT PointInTriangle (const COORD_POINT *Points, const COORD_POINT Point)
 
 #define POLYMAX         8
 
-INT PointInPolygon (const COORD_POINT *Points, INT n, const COORD_POINT Point)
+INT PointInPolygon (const COORD_POINT *Points, INT n, COORD_POINT Point)
 {
   COORD D[POLYMAX] ,tau[POLYMAX],xa,ya,xe,ye;
   int i, left, right;
