@@ -129,7 +129,7 @@
 #define MAX_SONS_DIM CONCAT(MAX_SONS_,DIM,D)
 
 /* max fine grid nodes of an element */
-#define MAX_REFINED_CORNERS_DIM (MAX_CORNERS_OF_ELEM_DIM+MAX_NEW_CORNERS_DIM)
+#define MAX_REFINED_CORNERS_DIM (MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM)
 
 #define IS_REFINED(e)           (REFINE(e)!=NO_REFINEMENT)
 #define LEAFELEM(e)                     (!IS_REFINED(e))
@@ -250,6 +250,20 @@
 #define SON_PATH_OF_RULE(r,s)           (r->sons[s].path)
 #define SON_PATH(s)                                     (s->path)
 
+/* macros for referencing of sons paths */
+/* 4 high bits for no of neighbours to be passed */
+#define PATHDEPTHMASK 0xF0000000
+#define PATHDEPTHSHIFT 28
+#define PATHDEPTH(i)                            (((i) & PATHDEPTHMASK)>>PATHDEPTHSHIFT)
+#define SETPATHDEPTH(i,val)             (i) = ((i)&(~PATHDEPTHMASK))|(((val)<<PATHDEPTHSHIFT)&PATHDEPTHMASK)
+
+/* 3 bits at position n for element side */
+#define NEXTSIDEMASK 0x00000007
+#define NEXTSIDE(i,n)                           (((i) & (NEXTSIDEMASK<<(3*(n))))>>(3*(n)))
+#define SETNEXTSIDE(i,n,val)            (i) = ((i)&(~(NEXTSIDEMASK<<(3*(n)))))|(((val)&NEXTSIDEMASK)<<(3*(n)))
+
+#define MAX_PATH_DEPTH                          (PATHDEPTHSHIFT/3)
+
 #define NOCLASS(c)                                      (c == 0)
 #define YELLOWCLASS(c)                          (c & 1)
 #define GREENCLASS(c)                           (c & 2)
@@ -338,7 +352,8 @@ extern FULLREFRULEPTR theFullRefRule;
 /*																			*/
 /****************************************************************************/
 
-INT ShowRefRule (INT tag, INT nb);
+INT ShowRefRule         (INT tag, INT nb);
+INT ShowRefRuleX        (INT tag, INT nb, PrintfProcPtr Printf);
 
 INT                     InitRuleManager                 (void);
 INT                     Patterns2Rules                  (ELEMENT *theElement,INT pattern);
