@@ -1091,7 +1091,6 @@ INT sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const c
   INT nDOUBLEs[NVECTYPES];
   DOUBLE theDOUBLEs[MAX_VEC_COMP][NVECTYPES];
   double lfValue;
-  char value1[VALUELEN];
 
   if (theVD != NULL)
   {
@@ -1101,13 +1100,16 @@ INT sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const c
   }
   if (strlen(name)>=OPTIONLEN-1) REP_ERR_RETURN (1);
 
-  if (ReadArgvChar(name,value1,argc,argv))
-    return (2);
-
-  if (sscanf(value1,expandfmt(CONCAT5("%",OPTIONLENSTR,"[a-zA-Z0-9_] %",VALUELENSTR,"[ -~]")),option,value)!=2)
-    return(2);
-  if (strstr(option,name)==NULL)
-    return(2);
+  /* find input string */
+  found = FALSE;
+  for (i=0; i<argc; i++)
+    if (sscanf(argv[i],expandfmt(CONCAT5("%",OPTIONLENSTR,"[a-zA-Z0-9_] %",VALUELENSTR,"[ -~]")),option,value)==2)
+      if (strcmp(option,name) == 0)
+      {
+        found = TRUE;
+        break;
+      }
+  if (!found) return(2);
 
   /* read from value string */
   err = ReadVecTypeDOUBLEs(fmt,value,MAX_VEC_COMP,nDOUBLEs,theDOUBLEs);
@@ -1148,6 +1150,7 @@ INT sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const c
 
   return (NUM_OK);
 }
+
 
 /****************************************************************************/
 /*D
