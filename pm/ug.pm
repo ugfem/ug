@@ -174,41 +174,99 @@ sub ug
 		# command 'start'
 		if ($command eq "start")
 		{
-			my ($model,$seq,$pre,@name);
-			if(@in!=5)
+			my ($exec,$appl,$e,$r,$amp,$model,$a_mode,$m_mode,$p_mode,$r_mode,$pre,@name);
+			if(@in!=7)
         	{   
-        	    die 'ERROR: usage: ug "start", "p"=>"program", "x"=>[0|1];'."\n";
+        	    die 'ERROR: usage: ug "start", "p"=>"program", "x"=>[0|1], "n"=><# of procs>;'."\n";
         	} 
-			-e $argv{'p'} or die "ERROR: programm '$argv{'p'}' does not exist\n";
-			$model=`strings $argv{'p'} | grep 'Model:'`;
-			$seq=1; if ($model=~/parallel/) { $seq=0; }
-			if ($seq)
-			{
-                @name=split /\//,$argv{'p'};
-				$pre ="################# start ################\n";
-				$pre.="sequential application: $name[@name-1]\n";
-				$pre.="########################################\n";
-				$argv{'x'}==0 || $argv{'x'}==1 or die "ERROR: wrong specification of 'x'-option\n";
-			
-				if ($argv{'x'}==1) { $ui="-ui c"; }
-				else { $ui="-ui cn"; }
-        		open2(*OUT,*IN,"$argv{'p'} $ui -perl");
-				IN->autoflush(1); OUT->autoflush(1);
-				if ($print) { $pre.=out(0); }
-				else { out(0); }
-				return $pre;
-			}
-			else
-			{
-				module('cluster') or die "cannot find module 'cluster'\n";
-                @name=split /\//,$argv{'p'};
-				$pre ="################# start ################\n";
-				$pre.="parallel application: $name[@name-1]\n";
-				$pre.="########################################\n";
-				$print and print $pre;
+			-e $argv{'p'} or die "ERROR: program '$argv{'p'}' does not exist\n";
+			$argv{'n'}>0 or die "ERROR: nb of processors out of range\n"; 
+			$argv{'x'}==0 || $argv{'x'}==1 or die "ERROR: wrong specification of 'x'-option\n";
+            @name=split /\//,$argv{'p'}; $appl=$name[@name-1];
+			if ($argv{'x'}==1) { $ui="-ui cn"; } else { $ui="-ui cn"; }
 
-				die;
+			# determine appl-mode
+			$model=`strings $argv{'p'} | grep 'Model:'`;
+			$a_mode='s'; if ($model=~/parallel/) { $a_mode='p'; }
+
+			# determine module_mode
+			$m_mode='s'; if (module('ugp')) { require ugp; $m_mode='p'; $ui="-ui cn"; } 
+
+			# determin procs-mode
+			$p_mode='s'; if ($argv{'n'}>1) { $p_mode='p'; }
+
+			$amp=$a_mode.$m_mode.$p_mode; $r_mode=0;
+			SWITCH:
+			{
+				if ($amp eq 'sss')
+				{
+					# classic sequential
+					$pre ="################# start ################\n";
+					$pre.="application: $appl\n";
+					$pre.="mode: running sequential\n";
+					$pre.="########################################\n";
+					$exec="$argv{'p'} $ui -perl";
+					last SWITCH;
+				}
+				if ($amp eq 'ssp')
+				{
+					die "ERROR: cannot run sequential code on $argv{'n'} processors\n";
+					last SWITCH;
+				}
+				if ($amp eq 'sps')
+				{
+					# run sequential code on parallel machine: one processor
+					$pre ="################# start ################\n";
+					$pre.="application: $appl\n";
+					$pre.="mode: running sequential code on one\n";
+					$pre.="      processor of parallel machine\n";
+					$pre.="########################################\n";
+					($e,$exec)=ugp::run('n'=>$argv{'n'},'p'=>"$argv{'p'} $ui -perl",'b'=>0,'r'=>0);
+					last SWITCH;
+				}
+				if ($amp eq 'spp')
+				{
+					die "ERROR: cannot run sequential code on $argv{'n'} processors\n";
+					last SWITCH;
+				}
+				if ($amp eq 'pss')
+				{
+					die "ERROR: cannot run classic parallel on one processor: module 'ugp.pm' missing\n";
+					last SWITCH;
+				}
+				if ($amp eq 'psp')
+				{
+					die "ERROR: cannot run classic parallel: module 'ugp.pm' missing\n";
+					last SWITCH;
+				}
+				if ($amp eq 'pps')
+				{
+					# parallel code on one processor
+					$pre ="################# start ################\n";
+					$pre.="application: $appl\n";
+					$pre.="mode: running parallel code on one\n";
+					$pre.="      processor of parallel machine\n";
+					$pre.="########################################\n";
+					($e,$exec)=ugp::run('n'=>$argv{'n'},'p'=>"$argv{'p'} $ui -perl",'b'=>0,'r'=>0);
+					last SWITCH;
+				}
+				if ($amp eq 'ppp')
+				{
+					# classic parallel
+					$pre ="################# start ################\n";
+					$pre.="application: $appl\n";
+					$pre.="mode: running parallel on $argv{'n'} procs\n";
+					$pre.="########################################\n";
+					($e,$exec)=ugp::run('n'=>$argv{'n'},'p'=>"$argv{'p'} $ui -perl",'b'=>0,'r'=>0);
+					last SWITCH;
+				}
 			}
+
+			# run ug 
+        	open2(*OUT,*IN,$exec);
+			IN->autoflush(1); OUT->autoflush(1);
+			if ($print) { $pre.=out(0); } else { out(0); }
+			return $pre;
 		}
 	
 		# command 'ug' 
