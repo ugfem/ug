@@ -90,7 +90,8 @@
 #define BASE_PATH_SIZE          512
 
 #ifndef __MACINTOSH__
-        #define ConvertFileName(fname)          fname
+        #define ConvertUNIX_2_MachinePath(fname)                fname
+        #define ConvertMachine_2_UNIXPath(fname)                fname
 #endif
 
 /****************************************************************************/
@@ -172,10 +173,10 @@ static PATHS *GetPaths (const char *name)
 
 /****************************************************************************/
 /*D
-        ConvertFileName - convert UNIX-style file paths to machine format
+        ConvertUNIX_2_MachinePath - convert UNIX-style file paths to machine format
 
         SYNOPSIS:
-        const char *ConvertFileName (const char *fname)
+        const char *ConvertUNIX_2_MachinePath (const char *fname)
 
 
     PARAMETERS:
@@ -186,7 +187,7 @@ static PATHS *GetPaths (const char *name)
         is defined (Apple Macintosh computer) the UNIX-sytle path is converted to
         Macintosh-style.
 
-        For other platforms 'ConvertFileName' returns 'fname' (macro).
+        For other platforms 'ConvertUNIX_2_MachinePath' returns 'fname' (macro).
 
         RETURN VALUE:
         char *
@@ -197,7 +198,7 @@ static PATHS *GetPaths (const char *name)
 #ifdef __MACINTOSH__
 
 /* Macintosh computers */
-static const char *ConvertFileName (const char *fname)
+static const char *ConvertUNIX_2_MachinePath (const char *fname)
 {
   static char fullpath[MAXPATHLENGTH];
   int pos;
@@ -266,6 +267,52 @@ static const char *ConvertFileName (const char *fname)
   return (fullpath);
 }
 
+static const char* ConvertMachine_2_UNIXPath (const char* fname)
+{
+  static char fullpath[MAXPATHLENGTH];
+  int pos;
+
+  /* something to convert? */
+  if (strchr(fname,':')==NULL)
+    return (fname);
+
+  pos = 0;
+  while ((*fname!='\0') && (pos<MAXPATHLENGTH-2))
+    switch (fname[0])
+    {
+    case ':' :
+      if (fname[1]==':')
+      {
+        /* "::" */
+
+        fullpath[pos++] = '.';
+        fullpath[pos++] = '.';
+        fullpath[pos++] = '/';
+        fname++;
+      }
+      else
+      {
+        /* ":" */
+        if (fullpath[pos]!='/')
+          fullpath[pos++] = '/';
+        fname++;
+      }
+      break;
+
+    default :
+      fullpath[pos++] = *(fname++);
+    }
+
+  if (pos>=MAXPATHLENGTH)
+    /* filename too long */
+    return (NULL);
+
+  /* 0-terminate string */
+  fullpath[pos] = '\0';
+
+  return (fullpath);
+}
+
 #endif
 
 const char *BasedConvertedFilename (const char *fname)
@@ -286,12 +333,12 @@ const char *BasedConvertedFilename (const char *fname)
     strcat(based_filename,fname);
     SimplifyPath(based_filename);
     PRINTDEBUG(low,1,("BasedConvertedFilename: based_filename= '%s'\n",based_filename));
-    return ConvertFileName(based_filename);
+    return ConvertUNIX_2_MachinePath(based_filename);
   }
   else
   {
     PRINTDEBUG(low,1,("BasedConvertedFilename: filename not based= '%s'\n",fname));
-    return ConvertFileName(fname);
+    return ConvertUNIX_2_MachinePath(fname);
   }
 }
 
@@ -586,6 +633,10 @@ INT DirWalk (const char *dir, ProcessFileProc fcn)
   return 0;
 
 #elif macintosh
+
+#define pstrlen(s)              ((s)[0])                /* length of pascal string */
+
+  const char *cb_dir = BasedConvertedFilename(dir);
   CInfoPBRec cipbr;                                                     /* local parameter block */
   HFileInfo       *fpb = (HFileInfo *)&cipbr;           /* two pointers */
   DirInfo *dpb = (DirInfo *) &cipbr;
@@ -593,13 +644,21 @@ INT DirWalk (const char *dir, ProcessFileProc fcn)
   OSErr err;
   short idx;
   char dirname[1024];
+  char parentdir[1024];
   short volID;
   long dirID;
+  int len;
 
-  /* copy dir to dirname and delete trailing ':' */
+  /* omit leading single ":" (which means "./") */
+  if (cb_dir[0]==':' && cb_dir[1]!=':')
+    cb_dir++;
+
+  /* copy dir to dirname and delete trailing ':' (but not "::") */
   /* dir is const, thats why we don't modify it directly */
-  if (dir[strlen(dir)-1]==':') strncpy(dirname,dir,strlen(dir)-1);
-  else strcpy(dirname,dir);
+  strcpy(dirname,cb_dir);
+  len = strlen(dirname);
+  if (len>1 && dirname[len-1]==':' && dirname[len-2]!=':')
+    dirname[len-1] = '\0';
 
   /* first, get volume reference number via PBHGetVInfo... */
   hpb.ioNamePtr = c2pstr((char *)dirname);
@@ -617,8 +676,9 @@ INT DirWalk (const char *dir, ProcessFileProc fcn)
   /* next, get directory ID via PBGetCatInfo... */
   fpb->ioVRefNum = 0;
   /* partial pathname, and buffer to receive name */
-  if (dir[strlen(dir)-1]==':') strncpy(dirname,dir,strlen(dir)-1);
-  else strcpy(dirname,dir);
+  strcpy(dirname,cb_dir);
+  if (len>1 && dirname[len-1]==':' && dirname[len-2]!=':')
+    dirname[len-1] = '\0';
   fpb->ioNamePtr = c2pstr((char *)dirname);
   fpb->ioDirID = 0;                                             /* search from working directory */
   fpb->ioFDirIndex = 0;                                 /* gimme info about the named directory */
@@ -644,10 +704,13 @@ INT DirWalk (const char *dir, ProcessFileProc fcn)
   dirID = dpb->ioDrDirID;               /* get directory ID for subsequent searching */
 
   /* return if path is not a directory */
-  if (dpb->ioFlAttrib & 16) REP_ERR_RETURN (PATH_NO_DIR)
+  if (!(dpb->ioFlAttrib & ioDirMask)) REP_ERR_RETURN (PATH_NO_DIR)
 
-    /* now loop through files using PBGetCatInfo... */
-    fpb->ioVRefNum = volID;
+    /* save parent directory */
+    strcpy(parentdir,p2cstr(fpb->ioNamePtr));
+
+  /* now loop through files using PBGetCatInfo... */
+  fpb->ioVRefNum = volID;
   for( idx=1; TRUE; idx++) {
     char name[MAX_PATH_LEN];
 
@@ -657,13 +720,23 @@ INT DirWalk (const char *dir, ProcessFileProc fcn)
     err = PBGetCatInfo( &cipbr, FALSE );
     if (err) break;                                     /* exit when no more entries */
 
-    if (strlen(dirname)+strlen(p2cstr(fpb->ioNamePtr))+2 > sizeof(name))
+    if (strlen(parentdir)+pstrlen(fpb->ioNamePtr)+2 > sizeof(name))
       REP_ERR_RETURN (NAME_TOO_LONG)
       else
       {
-        strcpy(name,dirname);
-        strcat(name,p2cstr(fpb->ioNamePtr));
-        (*fcn)(name);
+        if (parentdir[0]!='\0')
+        {
+          /* parentdir is not empty */
+          strcpy(name,parentdir);
+          if (name[strlen(name)-1]!=':')
+            strcat(name,":");
+          strcat(name,p2cstr(fpb->ioNamePtr));
+        }
+        else
+          strcpy(name,p2cstr(fpb->ioNamePtr));
+
+        /* hrr 980901: subtract BasePath first? */
+        (*fcn)(ConvertMachine_2_UNIXPath(name));
       }
 
   }
