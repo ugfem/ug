@@ -832,6 +832,13 @@ else
     return (error);
   }
 
+  /* init ppm device */
+  if (InitPPMDevice()!=0)
+  {
+    SetHiWrd(error,__LINE__);
+    return (error);
+  }
+
   /* create struct and fill stringvars */
   if (MakeStruct(":Devices")!=0)
   {

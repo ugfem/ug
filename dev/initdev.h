@@ -60,4 +60,7 @@ INT InitMeta (void);
 /* metafile device */
 INT InitPostScript (void);
 
+/* ppm device */
+INT InitPPMDevice(void);
+
 #endif
