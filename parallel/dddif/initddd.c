@@ -327,6 +327,7 @@ static void ddd_DeclareTypes (void)
 
 static void ddd_DefineTypes (void)
 {
+  INT size;
   VECTOR v;
   NODE n;
   struct ivertex iv;
@@ -463,6 +464,10 @@ static void ddd_DefineTypes (void)
 
   /* 2. DDD data objects (without DDD_HEADER) */
 
+  /* NOTE: the size of matrix objects computed by the DDD Typemanager
+     will not be the real size ued by DDD. this size has to be computed
+     by MSIZE(mat). this is relevant only in gather/scatter of matrices
+     in handler.c. */
   DDD_TypeDefine(TypeMatrix, &m,
                  EL_GDATA,  ELDEF(m.control),
                  EL_LDATA,  ELDEF(m.next),
@@ -496,7 +501,8 @@ static void ddd_DefineTypes (void)
                    EL_OBJPTR, ELDEF(e.vector), TypeVector,
                    EL_CONTINUE);
 
-  DDD_TypeDefine(TypeEdge, &e, EL_END, &e+1);
+  size = sizeof(EDGE) - ((dddctrl.edgeData) ? 0 : sizeof(VECTOR*));
+  DDD_TypeDefine(TypeEdge, &e, EL_END, ((char *)&e)+size);
 }
 
 
