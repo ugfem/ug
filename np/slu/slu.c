@@ -55,13 +55,9 @@
 #include "iter.h"
 #include "slu.h"
 
-#ifdef __cplusplus
-#ifdef __TWODIM__
-//using namespace UG2d;
-#else
-//using namespace UG3d;
-#endif
-#endif
+#include "namespace.h"
+
+USING_UG_NAMESPACES
 
 extern void    SLU_GetStat (float *ftime, float *fflops, float *stime, float *sflops);
 extern int     lsame_ (char *, char *);
