@@ -427,7 +427,13 @@ static void ddd_DefineTypes (void)
                  /* TODO muss father LDATA oder OBJPTR sein?     */
                  /* LDATA, father ist nur lokal gueltig und      */
                  /* ist abhaengig von vertikaler Lastverteilung  */
+                #ifdef __TWODIM__
+                 /* TODO: ref-typ muss eigentlich {TypeTrElem,TypeTrBElem} sein! */
+                 EL_OBJPTR, ELDEF(iv.father), TypeTrElem,
+                #endif
+                #ifdef __THREEDIM__
                  EL_LDATA,  ELDEF(iv.father),
+                #endif
 
                 #ifdef TOPNODE
                  /* TODO topnode wirklich OBJPTR? */
@@ -458,7 +464,13 @@ static void ddd_DefineTypes (void)
                  /* TODO muss father LDATA oder OBJPTR sein?     */
                  /* LDATA, father ist nur lokal gueltig und      */
                  /* ist abhaengig von vertikaler Lastverteilung  */
+                #ifdef __TWODIM__
+                 /* TODO: ref-typ muss eigentlich {TypeTrElem,TypeTrBElem} sein! */
+                 EL_OBJPTR, ELDEF(bv.father), TypeTrElem,
+                #endif
+                #ifdef __THREEDIM__
                  EL_LDATA,  ELDEF(bv.father),
+                #endif
 
                 #ifdef TOPNODE
                  /* TODO topnode wirklich OBJPTR?, Nooeee! */
@@ -513,7 +525,6 @@ static void ddd_DefineTypes (void)
   ddd_InitGenericElement(QUADRILATERAL, TypeQuBElem, Boundary);
         #endif /* TWODIM */
 
-
         #ifdef __THREEDIM__
   ddd_InitGenericElement(TETRAHEDRON, TypeTeElem,  Inside);
   ddd_InitGenericElement(TETRAHEDRON, TypeTeBElem, Boundary);
@@ -524,8 +535,6 @@ static void ddd_DefineTypes (void)
   ddd_InitGenericElement(HEXAHEDRON,  TypeHeElem,  Inside);
   ddd_InitGenericElement(HEXAHEDRON,  TypeHeBElem, Boundary);
         #endif /* THREEDIM */
-
-
 
   /* 2. DDD data objects (without DDD_HEADER) */
 
