@@ -67,6 +67,7 @@ typedef struct
 
   char name[NAMELEN];
   INT n;
+  INT repeat;
   DOUBLE list[LIST_MAX_ENTRIES];
   DOUBLE regular_step;
 
@@ -239,6 +240,7 @@ INT List_Display (NP_BASE *theNP)
 }
 
 /****************************************************************************/
+
 static INT List_Construct (NP_BASE *theNP)
 {
   NP_ORDERED_LIST *np;
@@ -251,6 +253,72 @@ static INT List_Construct (NP_BASE *theNP)
   np->PreProcess                                          = List_PreProcess;
   np->GetListEntry_Index                          = List_GetListEntry_Index;
   np->GetListEntry_NextHigherEntry        = List_GetListEntry_NextHigherEntry;
+  np->PostProcess                                         = List_PostProcess;
+
+  return(0);
+}
+
+INT Table_Init (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_LIST *np = (NP_LIST *)theNP;
+  FILE *file;
+  INT i,le,cmp;
+  float a;
+  char buffer[NAMESIZE];
+
+  np = (NP_LIST *)theNP;
+  if (ReadArgvINT("n",&(np->n),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  np->repeat = ReadArgvOption("R",argc,argv);
+  if (np->n<0 || np->n>LIST_MAX_ENTRIES) {
+    UserWriteF("ERROR in initialization of list:"
+               " n is limited to [0,%d]\n",LIST_MAX_ENTRIES);
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+  }
+  if (ReadArgvChar ("f",np->name,argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  file = fileopen(np->name,"r");
+  for (i=0; i<np->n; i++) {
+    fscanf(file,"%f",&a);
+    np->list[i] = a;
+  }
+
+  return (NP_ACTIVE);
+}
+
+static INT Table_GetListEntry_Index (NP_ORDERED_LIST *theNP,
+                                     INT n, DOUBLE *Entry, INT *result)
+{
+  NP_LIST *np = (NP_LIST *)theNP;
+
+  if (np->repeat)
+    while (n >= np->n)
+      n-=np->n;
+
+  if (n<0 || n>=np->n)
+  {
+    *Entry = 0.0;
+    *result = 0;
+  }
+  else
+  {
+    *Entry = np->list[n];
+    *result = 1;
+  }
+
+  return(0);
+}
+
+static INT Table_Construct (NP_BASE *theNP)
+{
+  NP_ORDERED_LIST *np;
+
+  theNP->Init = Table_Init;
+  theNP->Display = List_Display;
+  theNP->Execute = NULL;
+
+  np = (NP_ORDERED_LIST *)theNP;
+  np->PreProcess                                          = List_PreProcess;
+  np->GetListEntry_Index                          = Table_GetListEntry_Index;
+  np->GetListEntry_NextHigherEntry        = NULL;
   np->PostProcess                                         = List_PostProcess;
 
   return(0);
@@ -282,6 +350,9 @@ INT InitDb (void)
   if (MakeStruct(":DB")!=0) return (__LINE__);
 
   if (CreateClass(ORDERED_LIST_CLASS_NAME ".list",sizeof(NP_LIST),List_Construct))
+    return (__LINE__);
+
+  if (CreateClass(ORDERED_LIST_CLASS_NAME ".table",sizeof(NP_LIST),Table_Construct))
     return (__LINE__);
 
   return (0);
