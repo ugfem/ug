@@ -1930,6 +1930,7 @@ NODE            *FindNodeFromPosition   (GRID *theGrid, COORD *pos, COORD *tol);
 VECTOR          *FindVectorFromPosition (GRID *theGrid, COORD *pos, COORD *tol);
 ELEMENT         *FindElementFromId              (GRID *theGrid, INT id);
 ELEMENT         *FindElementFromPosition(GRID *theGrid, COORD *pos);
+ELEMENT     *FindElementOnSurface   (MULTIGRID *theMG, COORD *global);
 BLOCKVECTOR *FindBV                                     (const GRID *grid, BV_DESC *bvd, const BV_DESC_FORMAT *bvdf );
 
 /* list */
