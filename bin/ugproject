@@ -38,11 +38,11 @@ appl2 ()
 	then
 		ugmake simple
 	fi
-    if test -d $UGROOT/../diff2da
+    if test -d $UGROOT/../diff2d
 	then
 		ugmake diff2da
 	fi
-    if test -d $UGROOT/../cda
+    if test -d $UGROOT/../cd
 	then
 		ugmake cda
 	fi

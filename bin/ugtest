@@ -4,7 +4,7 @@ cd $UGROOT/../simple
 time simple simple.scr
 cd $UGROOT/../diff2d/appl
 time diff2da square.scr
-time cd $UGROOT/../cd/appl
+cd $UGROOT/../cd/appl
 time cd3d cd.init
 cd $UGROOT/../fem/appl
 time fem2d cook.scr
