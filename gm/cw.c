@@ -105,6 +105,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {1,VNEW_CE,             VECTOR_CW,      VNEW_SHIFT,             VNEW_LEN                },
   {1,VCNEW_CE,            VECTOR_CW,      VCNEW_SHIFT,            VCNEW_LEN               },
   {1,VCNB_CE,                     VECTOR_CW,      VCNB_SHIFT,                     VCNB_LEN                },
+  {1,VCCUT_CE,            VECTOR_CW,      VCCUT_SHIFT,            VCCUT_LEN               },
 
   {1,MOFFSET_CE,          MATRIX_CW,      MOFFSET_SHIFT,          MOFFSET_LEN     },
   {1,MROOTTYPE_CE,        MATRIX_CW,      MROOTTYPE_SHIFT,        MROOTTYPE_LEN   },
@@ -163,7 +164,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {1,EDGEPATTERN_CE,      FLAG_CW,        EDGEPATTERN_SHIFT,      EDGEPATTERN_LEN },
   {1,SIDEPATTERN_CE,      FLAG_CW,        SIDEPATTERN_SHIFT,      SIDEPATTERN_LEN },
   {1,MARKCLASS_CE,        FLAG_CW,        MARKCLASS_SHIFT,        MARKCLASS_LEN   }
-}; /* last entry used: 66 for BVDOWNTYPE_CE */
+}; /* last entry used: 68 for VCCUT */
 
 /****************************************************************************/
 /*                                                                          */
