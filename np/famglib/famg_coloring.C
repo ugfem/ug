@@ -41,17 +41,18 @@ extern "C"
 $Header$
 */
 
-FAMGColor FAMGMyColor;		// the color of this PE
-
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
 
+FAMGColor MyColor;		// the color of this PE
 static DDD_PROC Nb[FAMGColorMaxNb];	// list of all neighbor PE's
 static int NrNb = 0;				// number of valid entries in Nb
 static int *helpNbPtr= NULL;
+
+typedef int(*ColoringFunction)(int guess);
 
 static int MarkOverlap1( DDD_OBJ obj)
 // Mark the borders with dist 1 to core partition with VCFLAG:=1.
@@ -184,20 +185,20 @@ static int ColorCompare( const void *c1, const void *c2 )
     return(0);
 }
 
-inline double CalculateWeight_cm2( int penr )
+inline double CalculateWeight_cm2( int penr, int guess )
 {
-	srand(penr+1);
+	srand((penr+1)*guess);
 	return rand() / (double)(1<<15);
 }	
 
-inline double CalculateWeight_cm3( int penr )
+inline double CalculateWeight_cm3( int penr, int guess )
 {
-	srand(penr+1);
+	srand((penr+1)*guess);
 	return NrNb + rand() / (double)(1<<15);
 }	
 
 
-int ConstructColoring_cm2( void )
+int ConstructColoring_cm2( int guess )
 // Weight = rand(pe)
 // according to 
 //		Robert K. Gjertsen jr., Mark T. Jones and Paul E. Plassmann
@@ -222,7 +223,7 @@ int ConstructColoring_cm2( void )
 	msgid MsgOutId[FAMGColorMaxNb];			// id of async send's
 	msgid MsgInId[FAMGColorMaxNb];			// id of async recv's
 	
-	MyWeight = CalculateWeight_cm2( me );
+	MyWeight = CalculateWeight_cm2( me, guess );
 	PRINTDEBUG(np,2,(PFMT " MyWeight %g\n", me, MyWeight));
 
 	if( NrNb > FAMGColorMaxNb )
@@ -242,7 +243,7 @@ int ConstructColoring_cm2( void )
 		//
 		// calculate weight for neighbor
 		//
-		NbWeight = CalculateWeight_cm2( Nb[i] );
+		NbWeight = CalculateWeight_cm2( Nb[i], guess );
 		PRINTDEBUG(np,2,(PFMT " PE %d has weight %g\n", me, Nb[i], NbWeight));
 		
 		ch = NbCh[i];
@@ -352,28 +353,28 @@ int ConstructColoring_cm2( void )
 	//
 	// determine the smallest unused color for me
 	//
-	FAMGMyColor = -1;		// start guess
+	MyColor = -1;		// start guess
 	for( i = 0; i < NrWait; i++ )
-		if( NbColor[i] != FAMGMyColor )
+		if( NbColor[i] != MyColor )
 		{
-			FAMGMyColor++;	// next guess
-			if( NbColor[i] != FAMGMyColor )
+			MyColor++;	// next guess
+			if( NbColor[i] != MyColor )
 				break;		// use the first gap in the color sequence
 		}
 	if( i == NrWait )		// no gap found
-		FAMGMyColor++;		// introduce a new color
+		MyColor++;		// introduce a new color
 	
-	PRINTDEBUG(np,2,(PFMT " my color %d\n", me, FAMGMyColor));
+	PRINTDEBUG(np,2,(PFMT " my color %d\n", me, MyColor));
 	
 	//
-	// send FAMGMyColor to all neighbors with less weight
+	// send MyColor to all neighbors with less weight
 	//
 	for( i = 0; i < NrSend; i++ )
 	{
-		MsgOutId[i] = SendASync( NbCh[SendQueue[i]], &FAMGMyColor, sizeof FAMGMyColor, &res );
+		MsgOutId[i] = SendASync( NbCh[SendQueue[i]], &MyColor, sizeof MyColor, &res );
 		if( res != 0 )
 		{
-			cout << "ConstructColoring(): error "<<res<<" in SendASync FAMGMyColor for PE "<<Nb[SendQueue[i]]<<endl<<fflush;
+			cout << "ConstructColoring(): error "<<res<<" in SendASync MyColor for PE "<<Nb[SendQueue[i]]<<endl<<fflush;
 			abort();
 		}
 		assert(MsgOutId[i]!=-1);
@@ -445,7 +446,7 @@ int ConstructColoring_cm2( void )
 	return 0;
 }
 
-int ConstructColoring_cm3( void )
+int ConstructColoring_cm3( int guess )
 // Weight = NrNb + rand(pe)
 // according to 
 //		Robert K. Gjertsen jr., Mark T. Jones and Paul E. Plassmann
@@ -467,7 +468,7 @@ int ConstructColoring_cm3( void )
 	msgid MsgInId[FAMGColorMaxNb];			// id of async recv's
 	
 		
-	MyWeight = CalculateWeight_cm3( me );
+	MyWeight = CalculateWeight_cm3( me, guess );
 	PRINTDEBUG(np,2,(PFMT " MyWeight %g\n", me, MyWeight));
 
 	if( NrNb > FAMGColorMaxNb )
@@ -637,18 +638,18 @@ int ConstructColoring_cm3( void )
 	//
 	// determine the smallest unused color for me
 	//
-	FAMGMyColor = -1;		// start guess
+	MyColor = -1;		// start guess
 	for( i = 0; i < NrWait; i++ )
-		if( NbColor[i] != FAMGMyColor )
+		if( NbColor[i] != MyColor )
 		{
-			FAMGMyColor++;	// next guess
-			if( NbColor[i] != FAMGMyColor )
+			MyColor++;	// next guess
+			if( NbColor[i] != MyColor )
 				break;		// use the first gap in the color sequence
 		}
 	if( i == NrWait )		// no gap found
-		FAMGMyColor++;		// introduce a new color
+		MyColor++;		// introduce a new color
 	
-	PRINTDEBUG(np,2,(PFMT " my color %d\n", me, FAMGMyColor));
+	PRINTDEBUG(np,2,(PFMT " my color %d\n", me, MyColor));
 	
 	//
 	// check if first sends are finished
@@ -677,14 +678,14 @@ int ConstructColoring_cm3( void )
 		}
 	
 	//
-	// send FAMGMyColor to all neighbors with less weight
+	// send MyColor to all neighbors with less weight
 	//
 	for( i = 0; i < NrSend; i++ )
 	{
-		MsgOutId[i] = SendASync( NbCh[SendQueue[i]], &FAMGMyColor, sizeof FAMGMyColor, &res );
+		MsgOutId[i] = SendASync( NbCh[SendQueue[i]], &MyColor, sizeof MyColor, &res );
 		if( res != 0 )
 		{
-			cout << "ConstructColoring(): error "<<res<<" in SendASync FAMGMyColor for PE "<<Nb[SendQueue[i]]<<endl<<fflush;
+			cout << "ConstructColoring(): error "<<res<<" in SendASync MyColor for PE "<<Nb[SendQueue[i]]<<endl<<fflush;
 			abort();
 		}
 		assert(MsgOutId[i]!=-1);
@@ -756,22 +757,54 @@ int ConstructColoring_cm3( void )
 	return 0;
 }
 
-int ConstructColoring( int OrderingFunctionType )
+int ConstructColoring( int OrderingFunctionType, FAMGColor &myColor, FAMGColor &maxColor )
 {
+	FAMGColor BestMyColor, BestMaxColor, maxcolor;
+	int guess;
+	ColoringFunction cm;
+
+	if( OrderingFunctionType == 1 )
+	{
+		myColor = me;
+		maxColor = procs-1;
+		return 0;
+	}
+
 	switch( OrderingFunctionType )
 	{
-		case 1:
-			FAMGMyColor = me;
-			return 0;
 		case 2:
-			return ConstructColoring_cm2();
+			cm = ConstructColoring_cm2;
+			break;
 		case 3:
-			return ConstructColoring_cm3();
+			cm = ConstructColoring_cm3;
+			break;
 		default:
-			cout << "ConstructColoring(): unknown ordering function type" << endl << fflush;
+			cout << "ConstructColoring(): unknown ordering function type " << OrderingFunctionType << endl << fflush;
 			abort();
 	}
-	return 1;		// dummy to avoid compiler warnings
+
+	// now we try different colorings and pick the best one
+	BestMaxColor = 99999;
+	for( guess = 1; (guess <= 10) && (BestMaxColor > 2); guess++ )
+	{
+		if( cm(guess) )
+			RETURN(1);
+
+		maxcolor = UG_GlobalMaxINT((int)MyColor);
+
+		if( maxcolor < BestMaxColor )
+		{
+			BestMaxColor = maxcolor;
+			BestMyColor = MyColor;
+
+		}
+                cout<<me<<": COLORGUESS "<<guess<<" MyColor "<<MyColor<<" max.col "<<maxcolor<<endl;
+	}
+
+	myColor = BestMyColor;
+	maxColor = BestMaxColor;
+
+	return 0;
 }
 
 #endif

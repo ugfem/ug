@@ -33,10 +33,8 @@
 
 typedef int FAMGColor;
 
-extern FAMGColor FAMGMyColor;
-
 int ConstructColoringGraph( DDD_ATTR grid_attr, int OrderingFunctionType );
-int ConstructColoring( int OrderingFunctionType );
+int ConstructColoring( int OrderingFunctionType, FAMGColor &myColor, FAMGColor &maxColor );
 
 #endif // ModelP
 

@@ -95,7 +95,7 @@ INT l_force_consistence (GRID *g, const VECDATA_DESC *x);
 INT l_vector_collectAll (GRID *g, const VECDATA_DESC *x);
 
 // Class FAMGGrid
- 
+
 
 #ifdef FAMG_SPARSE_BLOCK
 void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVector &cgdefect) const
@@ -877,9 +877,7 @@ void FAMGGrid::Stencil()
 	nn = matrix->GetN();
 	nl = matrix->GetNLinks();
 	ostrstream ostr; 
-#ifdef ModelP
-	ostr << me << ": ";
-#endif
+	
 	ostr << "unknowns: " << nn << "\t";
 	ostr << "avg. stencil: " << (double)nl/(double)nn;
 #ifdef	USE_UG_DS
@@ -1333,7 +1331,8 @@ int FAMGGrid::ConstructTransfer()
 	
 	VECTOR *vec;
 	FAMGNode *nodei;
-	int BorderCycles, NrNbPe;
+	int NrNbPe;
+	FAMGColor MyColor, BorderCycles;
 	
 	GraphColorTime = CURRENT_TIME;
 
@@ -1343,22 +1342,21 @@ int FAMGGrid::ConstructTransfer()
 		FAMGReleaseHeap(FAMG_FROM_BOTTOM);
 		RETURN(1);
 	}
-		
-	if( ConstructColoring( FAMGGetParameter()->GetColoringMethod() ) )
+
+	if( ConstructColoring( FAMGGetParameter()->GetColoringMethod(), MyColor, BorderCycles ) )
 	{
-		cout << "FAMGGrid::ConstructTransfer(): ERROR ;in Noloring the graph"<<endl<<fflush;
+		cout << "FAMGGrid::ConstructTransfer(): ERROR in Coloring the graph"<<endl<<fflush;
 		FAMGReleaseHeap(FAMG_FROM_BOTTOM);
 		RETURN(1);
 	}
 		
 	GraphColorTime = CURRENT_TIME - GraphColorTime;
-	BorderCycles = UG_GlobalMaxINT((int)FAMGMyColor);
-	cout <<me<<": level = "<<level<<" my color = "<<FAMGMyColor<<" max. color = "<<BorderCycles<<" ColoringMethod = "<<FAMGGetParameter()->GetColoringMethod()<<" NrNbPe = "<<NrNbPe<<endl;
+	cout <<me<<": level = "<<level<<" my color = "<<MyColor<<" max. color = "<<BorderCycles<<" ColoringMethod = "<<FAMGGetParameter()->GetColoringMethod()<<" NrNbPe = "<<NrNbPe<<endl;
 
 	BorderTime = CURRENT_TIME_LONG;
 	for ( int color = 0; color <= BorderCycles; color++)
 	{
-		if( FAMGMyColor == color )
+		if( MyColor == color )
 		{
 		    if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 		    if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
@@ -1449,11 +1447,12 @@ int FAMGGrid::ConstructTransfer()
     }
 
     if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
-    
+      
 #ifdef ModelP
 	// update the ghost and border nodes
 //prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
 	CommunicateNodeStatus();
+
 #endif
 	
     nf = graph->GetNF();
@@ -1883,7 +1882,62 @@ ASSERT(!DDD_ConsCheck());
     DDD_ObjMgrEnd();
     #endif
 	DDD_XferEnd();
-	
+
+	// In some cases ghost vectors are left. They disturb the calculations 
+	// and must be removed here.
+	// I see 2 alternatives:
+	//	A) Delete this ghosts
+	//	B) Change ghosts to border
+	// B) would be a little faster, because it needs the little cheaper Prio-environment 
+	// instead of the Xfer-environment, but it produces in the moment an 
+	// inconsistent data structure w.r.t. blasm.c.
+	if(OverlapForLevel0)
+	{
+		DDD_XferBegin();
+	  	#ifdef DDDOBJMGR
+		DDD_ObjMgrBegin();
+	   	#endif
+
+		VECTOR *mastervec = FIRSTVECTOR(mygrid);
+		for( vec=PFIRSTVECTOR(mygrid); vec!=mastervec; vec=SUCCVC(vec))
+			DDD_XferDeleteObj(PARHDR(vec));
+    		#ifdef DDDOBJMGR
+		DDD_ObjMgrEnd();
+		#endif
+		DDD_XferEnd();
+	}
+
+	#ifdef DIAGMATWORKSAFTERPRIOCHANGE
+	// The following piece of code would be a (little) faster alternative to the above part. 
+	// But unfortunately even after adding the diagoanl matrix entry (if needed) 
+	// blasm.c doesn't work (can not find a consistent diagonal matrix entry).
+	// Thus omit it.
+	if(OverlapForLevel0)
+	{
+		VECTOR *tmpvec, *mastervec = FIRSTVECTOR(mygrid);
+		MATRIX *mat;
+
+		DDD_PrioBegin();
+		for( vec=PFIRSTVECTOR(mygrid); vec!=mastervec; )
+		{
+			if( VSTART(vec) == NULL || MDEST(VSTART(vec))!=vec )
+			{
+				if((mat=CreateConnection(mygrid, vec, vec))==NULL)
+				{
+					cerr << me <<": ERROR: Cannot create diagonal connection for former ghost\n"<<endl<<fflush;
+					abort();
+				}
+				memset(mat+sizeof(MATRIX)-sizeof(DOUBLE), 0, MSIZE(mat));
+			}
+			// note: DDD_PrioChange changes immediately the vectorlist; since tmpvec is necessary
+			tmpvec = vec;
+			vec = SUCCVC(vec);
+			DDD_PrioChange(PARHDR(tmpvec),PrioBorder);
+		}
+		DDD_PrioEnd();
+	}
+	#endif
+
 	FAMGReleaseHeap(FAMG_FROM_BOTTOM);
 	
 //CountOverlap (mygrid);	// TODO: remove; only for testing
