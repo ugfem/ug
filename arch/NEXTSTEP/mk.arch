@@ -13,11 +13,11 @@ ARCH_AR       = ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = true
 
-ARCH_LIBS     = -lm
+ARCH_LIBS     = -lNeXT_s -lsys_s
 
 # this is standard UNIX, so define _POSIX_SOURCE
 # (_NEXT_SOURCE is for funky NEXTSTEP applications)
-ARCH_CFLAGS   = -D_POSIX_SOURCE -g -Wall
+ARCH_CFLAGS   = -D_POSIX_SOURCE -g -no-precomp
 ARCH_C++FLAGS =
 ARCH_LFLAGS   = -L../pclib -L/usr/local/lib 
 ARCH_ARFLAGS  = ru
