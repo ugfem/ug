@@ -6341,6 +6341,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
         #if defined __THREEDIM__ && defined NETGEN_SUPPORT
   INT smooth;
   DOUBLE h;
+  INT coeff;
         #endif
 
         #ifdef ModelP
@@ -6508,8 +6509,11 @@ static INT MakeGridCommand  (INT argc, char **argv)
       smooth = 0;
     if (ReadArgvDOUBLE("h",&h,argc,argv))
       h = 1.0;
+    if(h<0)
+      if (ReadArgvINT("c",&coeff,argc,argv))
+        coeff = 0;
 
-    if (GenerateGrid3d(theMG,mesh,h,smooth,ReadArgvOption("d",argc,argv)))
+    if (GenerateGrid3d(theMG,mesh,h,smooth,ReadArgvOption("d",argc,argv),coeff))
     {
       PrintErrorMessage('E',"makegrid","execution failed");
       Release(MGHEAP(theMG),FROM_TOP);
