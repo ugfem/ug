@@ -1497,7 +1497,7 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat)
       if (VDATATYPE(v)&rmask)
         for (m=VSTART(v); m!=NULL; m=MNEXT(m)) {
           w = MDEST(m);
-          if (!(VDATATYPE(v)&cmask))
+          if (!(VDATATYPE(w)&cmask))
             continue;
           mvalue = MVALUE(m,mc);
           for (im=VISTART(v); im!= NULL; im = NEXT(im)) {
@@ -1541,13 +1541,15 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat)
     }
     for (v=FIRSTVECTOR(FineGrid); v!=NULL; v=SUCCVC(v)) {
       vtype = VTYPE(v);
+      vncomp = MD_ROWS_IN_MTYPE(Mat,mtype);
+      if (vncomp == 0) continue;
       for (m=VSTART(v); m!=NULL; m=MNEXT(m)) {
         w = MDEST(m);
-        mtype = MTP(vtype,VTYPE(w));
-        mptr = MVALUEPTR(m,0);
-        mcomp = MD_MCMPPTR_OF_MTYPE(Mat,mtype);
-        vncomp = MD_ROWS_IN_MTYPE(Mat,mtype);
         wncomp = MD_COLS_IN_MTYPE(Mat,mtype);
+        if (wncomp == 0) continue;
+        mtype = MTP(vtype,VTYPE(w));
+        mcomp = MD_MCMPPTR_OF_MTYPE(Mat,mtype);
+        mptr = MVALUEPTR(m,0);
         for (im=VISTART(v); im!= NULL; im = NEXT(im)) {
           iv = MDEST(im);
           ivtype = VTYPE(iv);
@@ -1607,9 +1609,9 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat)
     }
   }
         #ifdef ModelP
-  if (DOWNGRID(CoarseGrid) != NULL)
-    if (l_ghostmatrix_collect(CoarseGrid,Mat))
-      return(NUM_ERROR);
+  /*	if (DOWNGRID(CoarseGrid) != NULL)
+      if (l_ghostmatrix_collect(CoarseGrid,Mat))
+              return(NUM_ERROR);*/
         #endif
 
   return(NUM_OK);
