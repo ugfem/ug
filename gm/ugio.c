@@ -2300,7 +2300,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
   }             /* else if (me < nparfiles) */
   theHeap = MGHEAP(theMG);
-  MarkTmpMem(theHeap,&MarkKey);
+  MarkKey = GetCoarseGridMarkKey();
   if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (CreateNewLevel(theMG,0)==NULL)                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   theHeap = MGHEAP(theMG);
