@@ -68,6 +68,9 @@
 #include "misc.h"
 #include "algebra.h"
 #include "dlmgr.h"
+#ifdef DYNAMIC_MEMORY_ALLOCMODEL
+#include "mgheapmgr.h"
+#endif
 
 #ifdef ModelP
 #include "parallel.h"
@@ -111,6 +114,14 @@ static INT ce_VCSTRONG;
 #define VCSTRONG_LEN                                    1
 #define VCSTRONG(p)                                             CW_READ(p,ce_VCSTRONG)
 #define SETVCSTRONG(p,n)                                CW_WRITE(p,ce_VCSTRONG,n)
+
+/* define this to determine copy element using the node/link relations */
+/* otherwise the vector/matric relation is used                        */
+/* in DYNAMIC_MEMORY_ALLOCMODEL mode this is forces otherwise          */
+/* it optional (s.l. 980826)                                           */
+#ifdef DYNAMIC_MEMORY_ALLOCMODEL
+#define COMPUTE_COPIES_GEOMETRIC
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -1675,9 +1686,11 @@ static INT DisposeConnectionFromElementInNeighborhood (GRID *theGrid, ELEMENT *t
   if (Depth < 0) RETURN (GM_ERROR);
 
   /* create connection at that depth */
+        #ifndef DYNAMIC_MEMORY_ALLOCMODEL
   if(!EBUILDCON(theElement))
-    if (DisposeConnectionFromElement(theGrid,theElement))
-      RETURN (GM_ERROR);
+        #endif
+  if (DisposeConnectionFromElement(theGrid,theElement))
+    RETURN (GM_ERROR);
   SETEBUILDCON(theElement,1);
 
   /* dispose connection in neighborhood */
@@ -1697,6 +1710,24 @@ INT DisposeConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
   Depth = (INT)(floor(0.5*(double)FMT_CONN_DEPTH_MAX(MGFORMAT(MYMG(theGrid)))));
   return(DisposeConnectionFromElementInNeighborhood(theGrid,theElement,Depth));
 }
+
+INT DisposeConnectionsFromMultiGrid (MULTIGRID *theMG)
+{
+  INT i;
+  GRID    *theGrid;
+  ELEMENT *theElement;
+
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,i);
+    for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      if (DisposeConnectionsInNeighborhood(theGrid,theElement))
+        REP_ERR_RETURN(1);
+  }
+
+  return(0);
+}
+
 
 INT     DisposeElementFromElementList (GRID *theGrid, NODE *theNode,
                                        ELEMENT *theElement)
@@ -3100,10 +3131,10 @@ INT CreateAlgebra (MULTIGRID *theMG)
       }
       MG_COARSE_FIXED(theMG) = TRUE;
 
-      /* now connections */
-      if (GridCreateConnection(g))
-        REP_ERR_RETURN (1);
     }
+    /* now connections */
+    if (MGCreateConnection(theMG))
+      REP_ERR_RETURN (1);
   }
 
     #ifdef ModelP
@@ -3115,7 +3146,11 @@ INT CreateAlgebra (MULTIGRID *theMG)
                  Gather_VectorVNew,Scatter_VectorVNew);
   DDD_IFOneway(VectorAllIF,IF_FORWARD,sizeof(INT),
                Gather_VectorVNew,Scatter_GhostVectorVNew);
-    #endif
+    #else
+        #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  MGCreateConnection(theMG);
+        #endif
+        #endif
 
   SetSurfaceClasses(theMG);
 
@@ -3150,6 +3185,13 @@ INT MGCreateConnection (MULTIGRID *theMG)
 
   if (!MG_COARSE_FIXED(theMG))
     RETURN (1);
+
+        #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  if (theMG->bottomtmpmem) return(0);
+  usefreelistmemory = 0;
+  if (Mark(MGHEAP(theMG),FROM_BOTTOM,&freelist_end_mark)) REP_ERR_RETURN(1);
+  theMG->bottomtmpmem = 1;
+        #endif
 
   for (i=0; i<=theMG->topLevel; i++)
   {
@@ -4122,6 +4164,55 @@ static int Scatter_GhostVectorVClass (DDD_OBJ obj, void *data)
 }
 #endif
 
+#define COMPUTE_COPIES_GEOMETRIC
+
+INT PropagateVectorClass (GRID *theGrid, INT vclass)
+{
+  VECTOR *theVector;
+
+        #ifndef COMPUTE_COPIES_GEOMETRIC
+  MATRIX *theMatrix;
+
+  /* set vector classes in the algebraic neighborhood to vclass-1 */
+  /* use matrices to determine next vectors!!!!!                   */
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
+       theVector=SUCCVC(theVector))
+    if ((VCLASS(theVector)==vclass)&&(VSTART(theVector)!=NULL))
+      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
+           theMatrix=MNEXT(theMatrix))
+        if ((VCLASS(MDEST(theMatrix))<vclass)
+            &&(CEXTRA(MMYCON(theMatrix))!=1))
+          SETVCLASS(MDEST(theMatrix),vclass-1);
+        #else
+  VECTOR  *NbVector;
+  NODE    *theNode;
+  LINK    *theLink;
+
+  /* set vector classes in the algebraic neighborhood to vclass-1 */
+  /* use links to determine next vectors!!!!!                      */
+  for (theNode=FIRSTNODE(theGrid); theNode!=NULL;
+       theNode=SUCCN(theNode))
+  {
+    theVector = NVECTOR(theNode);
+    if ((VCLASS(theVector)==vclass)&&(START(theNode)!=NULL))
+      for (theLink=START(theNode); theLink!=NULL;
+           theLink=NEXT(theLink))
+      {
+        NbVector = NVECTOR(NBNODE(theLink));
+        assert(NbVector!=NULL);
+
+        if (VCLASS(NbVector)<vclass)
+          SETVCLASS(NbVector,vclass-1);
+      }
+  }
+        #endif
+
+  /* only for this values valid */
+  assert(vclass==3 || vclass==2);
+
+  return(0);
+}
+
 INT PropagateVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
@@ -4136,14 +4227,7 @@ INT PropagateVectorClasses (GRID *theGrid)
     #endif
 
   /* set vector classes in the algebraic neighborhood to 2 */
-  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
-       theVector=SUCCVC(theVector))
-    if ((VCLASS(theVector)==3)&&(VSTART(theVector)!=NULL))
-      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
-           theMatrix=MNEXT(theMatrix))
-        if ((VCLASS(MDEST(theMatrix))<3)&&
-            (CEXTRA(MMYCON(theMatrix))!=1))
-          SETVCLASS(MDEST(theMatrix),2);
+  if (PropagateVectorClass(theGrid,3)) REP_ERR_RETURN(1);
 
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses(): 2. communication\n",
@@ -4154,14 +4238,7 @@ INT PropagateVectorClasses (GRID *theGrid)
     #endif
 
   /* set vector classes in the algebraic neighborhood to 1 */
-  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
-       theVector=SUCCVC(theVector))
-    if ((VCLASS(theVector)==2)&&(VSTART(theVector)!=NULL))
-      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
-           theMatrix=MNEXT(theMatrix))
-        if ((VCLASS(MDEST(theMatrix))<2)&&
-            (CEXTRA(MMYCON(theMatrix))!=1))
-          SETVCLASS(MDEST(theMatrix),1);
+  if (PropagateVectorClass(theGrid,2)) REP_ERR_RETURN(1);
 
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses(): 3. communication\n",
@@ -4323,6 +4400,54 @@ static int Scatter_GhostVectorVNClass (DDD_OBJ obj, void *data)
 }
 #endif
 
+
+INT PropagateNextVectorClass (GRID *theGrid, INT vnclass)
+{
+  VECTOR *theVector;
+
+        #ifndef COMPUTE_COPIES_GEOMETRIC
+  MATRIX *theMatrix;
+
+  /* set vector classes in the algebraic neighborhood to vnclass-1 */
+  /* use matrices to determine next vectors!!!!!                   */
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
+       theVector=SUCCVC(theVector))
+    if ((VNCLASS(theVector)==vnclass)&&(VSTART(theVector)!=NULL))
+      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
+           theMatrix=MNEXT(theMatrix))
+        if ((VNCLASS(MDEST(theMatrix))<vnclass)
+            &&(CEXTRA(MMYCON(theMatrix))!=1))
+          SETVNCLASS(MDEST(theMatrix),vnclass-1);
+        #else
+  VECTOR  *NbVector;
+  NODE    *theNode;
+  LINK    *theLink;
+
+  /* set vector classes in the algebraic neighborhood to vnclass-1 */
+  /* use links to determine next vectors!!!!!                      */
+  for (theNode=FIRSTNODE(theGrid); theNode!=NULL;
+       theNode=SUCCN(theNode))
+  {
+    theVector = NVECTOR(theNode);
+    if ((VNCLASS(theVector)==vnclass)&&(START(theNode)!=NULL))
+      for (theLink=START(theNode); theLink!=NULL;
+           theLink=NEXT(theLink))
+      {
+        NbVector = NVECTOR(NBNODE(theLink));
+        assert(NbVector!=NULL);
+
+        if (VNCLASS(NbVector)<vnclass)
+          SETVNCLASS(NbVector,vnclass-1);
+      }
+  }
+        #endif
+
+  /* only for this values valid */
+  assert(vnclass==3 || vnclass==2);
+
+  return(0);
+}
+
 INT PropagateNextVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
@@ -4335,15 +4460,7 @@ INT PropagateNextVectorClasses (GRID *theGrid)
                   Gather_VectorVNClass, Scatter_VectorVNClass);
     #endif
 
-  /* set vector classes in the algebraic neighborhood to 2 */
-  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
-       theVector=SUCCVC(theVector))
-    if ((VNCLASS(theVector)==3)&&(VSTART(theVector)!=NULL))
-      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
-           theMatrix=MNEXT(theMatrix))
-        if ((VNCLASS(MDEST(theMatrix))<3)
-            &&(CEXTRA(MMYCON(theMatrix))!=1))
-          SETVNCLASS(MDEST(theMatrix),2);
+  if (PropagateNextVectorClass(theGrid,3)) REP_ERR_RETURN(1);
 
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 2. communication\n",me))
@@ -4352,15 +4469,7 @@ INT PropagateNextVectorClasses (GRID *theGrid)
                   Gather_VectorVNClass, Scatter_VectorVNClass);
     #endif
 
-  /* set vector classes in the algebraic neighborhood to 1 */
-  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
-       theVector=SUCCVC(theVector))
-    if ((VNCLASS(theVector)==2)&&(VSTART(theVector)!=NULL))
-      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
-           theMatrix=MNEXT(theMatrix))
-        if ((VNCLASS(MDEST(theMatrix))<2)
-            &&(CEXTRA(MMYCON(theMatrix)) !=1))
-          SETVNCLASS(MDEST(theMatrix),1);
+  if (PropagateNextVectorClass(theGrid,2)) REP_ERR_RETURN(1);
 
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 3. communication\n",me))
@@ -7740,6 +7849,20 @@ INT DisposeIMatricesInGrid (GRID *theGrid)
   }
 
   return (0);
+}
+
+INT DisposeIMatricesInMultiGrid (MULTIGRID *theMG)
+{
+  INT i;
+  GRID *theGrid;
+
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,i);
+    if (DisposeIMatricesInGrid(theGrid)) REP_ERR_RETURN(1);
+  }
+
+  return(0);
 }
 
 /****************************************************************************/

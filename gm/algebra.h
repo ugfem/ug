@@ -137,6 +137,7 @@ INT             InsertedElementCreateConnection (GRID *theGrid, ELEMENT *theElem
 INT             DisposeConnectionFromVector     (GRID *theGrid, VECTOR *theVector);
 INT             DisposeConnectionFromElement    (GRID *theGrid, ELEMENT *theElement);
 INT             DisposeConnectionsInNeighborhood(GRID *theGrid, ELEMENT *theElement);
+INT                     DisposeConnectionsFromMultiGrid (MULTIGRID *theMG);
 #ifdef __THREEDIM__
 INT             DisposeDoubledSideVector                (GRID *theGrid, ELEMENT *Elem0, INT Side0, ELEMENT *Elem1, INT Side1);
 #endif
