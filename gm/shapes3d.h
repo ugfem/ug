@@ -69,8 +69,8 @@ typedef INT (*UpwindProcPtr)(COORD **, COORD_VECTOR *,DOUBLE_VECTOR *, COORD_VEC
 /*																			*/
 /****************************************************************************/
 
-DOUBLE  N                                       (const INT i, const COORD_VECTOR LocalCoord);
-INT     GlobalToLocal3d         (const COORD **Corners, const COORD_VECTOR EvalPoint, COORD_VECTOR LocalCoord);
+DOUBLE  N                                       (const INT i, const COORD *LocalCoord);
+INT     GlobalToLocal3d         (const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);
 INT     TetraDerivative         (const COORD **theCorners, COORD_VECTOR theGradient[MAX_CORNERS_OF_ELEM]);
 INT     TetraVolume             (const COORD **theCorners, COORD *volume);
 INT     FV_TetInfo                      (const COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM]);
