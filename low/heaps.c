@@ -262,6 +262,10 @@ void *GetMem (HEAP *theHeap, MEM n, INT mode)
        in order to remember size of allocated memory chunk there */
     n += ALIGNMENT;
 
+    /* if n is smaller than sizeof(BLOCK) then DisposeMem will fail:
+       there won't be enough room for the next and previous pointer */
+    if (n<sizeof(BLOCK)) n=sizeof(BLOCK);
+
     /* find first BLOCK that fits */
     for (theBlock=theHeap->heapptr; theBlock->next!=theHeap->heapptr;
          theBlock=theBlock->next)
