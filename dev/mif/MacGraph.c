@@ -481,6 +481,8 @@ static void InitMacPort ()
   MacOutputDevice->range                          = 256;
   MacOutputDevice->spectrumStart          = 3;
   MacOutputDevice->spectrumEnd            = 254;
+  MacOutputDevice->signx                          = 1;
+  MacOutputDevice->signy                          = -1;
 
   /* init pointers to basic drawing functions */
   MacOutputDevice->Move                           = MacMove;
@@ -702,7 +704,7 @@ static INT ActivateMacWin (GRAPH_WINDOW *gw, INT tool)
 /* Purpose:   get tool from mouselocation									*/
 /*																			*/
 /* Input:	  WindowPtr *theWindow: get tool of THIS MacWindow				*/
-/*			  INT *MouseLocation: É                                                                                 */
+/*			  INT *MouseLocation: Š                                                                                 */
 /*																			*/
 /* Output:	  INT *ChosenToolPtr: chosen tool								*/
 /*																			*/
