@@ -633,7 +633,6 @@ INT GlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint,
   if (x_dot_y(xst,xst)<SMALL_C)
   {
     a = x_dot_normal_to_y(xs,xt);
-    assert (fabs(a)>SMALL_C);
 
     LocalCoord[0] =  x_dot_normal_to_y(x0,xt) / a;
     LocalCoord[1] = -x_dot_normal_to_y(x0,xs) / a;                      /* xddny = -nxdy */
@@ -644,8 +643,6 @@ INT GlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint,
   /* case 2: xs || xst --- this is the case of a trapezoid, side 0 parallel side 2 */
   if (fabs(xsdnxst)<SMALL_C)
   {
-    assert (fabs(xtdnxst)>SMALL_C);
-
     LocalCoord[1] = x_dot_normal_to_y(x0,xst) / xtdnxst;
 
     set_x_plus_ay(aux1,x0,-LocalCoord[1],xt);
@@ -659,8 +656,6 @@ INT GlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint,
   /* case 3: xt || xst --- this is the case of a trapezoid, side 1 parallel side 3 */
   if (fabs(xtdnxst)<SMALL_C)
   {
-    assert (fabs(xsdnxst)>SMALL_C);
-
     LocalCoord[0] = x_dot_normal_to_y(x0,xst) / xsdnxst;
 
     set_x_plus_ay(aux1,x0,-LocalCoord[0],xs);
@@ -683,14 +678,14 @@ INT GlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint,
   t1 = -a + c;
   t2 = -a - c;
 
-  if ((-1.0-SMALL_C<=t1) && (t1<=1.0+SMALL_C))
+  if ((-1.1<=t1) && (t1<=1.1))
   {
     LocalCoord[1] = t1;
 
     set_x_plus_ay(aux1,x0,-t1,xt);
     LocalCoord[0] = x_dot_normal_to_y(aux1,xst) / xsdnxst;
   }
-  else if ((-1.0-SMALL_C<=t2) && (t2<=1.0+SMALL_C))
+  else if ((-1.1<=t2) && (t2<=1.1))
   {
     LocalCoord[1] = t2;
 
@@ -700,7 +695,7 @@ INT GlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR EvalPoint,
   else
     return (4);
 
-  if ((-1.0-10*SMALL_C<=LocalCoord[0]) && (LocalCoord[0]<=1.0+10*SMALL_C))
+  if ((-1.1<=LocalCoord[0]) && (LocalCoord[0]<=1.1))
     return (0);
   else
     return (5);
@@ -792,8 +787,6 @@ INT specialGlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR Eva
   if (x_dot_y(xst,xst)<SMALL_C)
   {
     a = x_dot_normal_to_y(xs,xt);
-    assert (fabs(a)>SMALL_C);
-
     LocalCoord[0] =  x_dot_normal_to_y(x0,xt) / a;
     LocalCoord[1] = -x_dot_normal_to_y(x0,xs) / a;                      /* xddny = -nxdy */
 
@@ -803,8 +796,6 @@ INT specialGlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR Eva
   /* case 2: xs || xst --- this is the case of a trapezoid, side 0 parallel side 2 */
   if (fabs(xsdnxst)<SMALL_C)
   {
-    assert (fabs(xtdnxst)>SMALL_C);
-
     LocalCoord[1] = x_dot_normal_to_y(x0,xst) / xtdnxst;
 
     set_x_plus_ay(aux1,x0,-LocalCoord[1],xt);
@@ -818,8 +809,6 @@ INT specialGlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR Eva
   /* case 3: xt || xst --- this is the case of a trapezoid, side 1 parallel side 3 */
   if (fabs(xtdnxst)<SMALL_C)
   {
-    assert (fabs(xsdnxst)>SMALL_C);
-
     LocalCoord[0] = x_dot_normal_to_y(x0,xst) / xsdnxst;
 
     set_x_plus_ay(aux1,x0,-LocalCoord[0],xs);
