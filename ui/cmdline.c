@@ -278,6 +278,7 @@ static int Str1inStr2 (const char *name1, const char *name2)
    .n      NULL if not found or ambiguos
    D*/
 /********************************************************************************/
+
 COMMAND *SearchUgCmd (const char *cmdName)
 {
   ENVDIR *currentDir;
@@ -293,12 +294,13 @@ COMMAND *SearchUgCmd (const char *cmdName)
   currentDir = GetCurrentDir();
 
   /* loop in current directory */
-  theItem = currentDir->down;
   Cmd = NULL;
-  while (theItem!=NULL)
-  {
+  for (theItem=currentDir->down; theItem!=NULL; theItem=theItem->v.next)
     if (theItem->v.type == theCommandVarID)
-      if (Str1inStr2(cmdName,ENVITEM_NAME(theItem)))
+      if (strcmp(cmdName,ENVITEM_NAME(theItem))==0)
+        return ((COMMAND *) theItem);
+      else if (Str1inStr2(cmdName,ENVITEM_NAME(theItem)))
+      {
         if (Cmd!=NULL)
         {
           UserWriteF(" '%s' ambiguos:\n",cmdName);
@@ -311,8 +313,7 @@ COMMAND *SearchUgCmd (const char *cmdName)
         }
         else
           Cmd = (COMMAND *) theItem;
-    theItem = theItem->v.next;
-  }
+      }
 
   return (Cmd);
 }
