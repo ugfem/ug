@@ -1,0 +1,6 @@
+Makefile.in
+.deps
+.libs
+*.lo
+*.la
+semantic.cache
