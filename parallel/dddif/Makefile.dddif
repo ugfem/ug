@@ -10,7 +10,8 @@
 # include configuration and all makefile macro definitions
 include ../../ug.conf
 
-OBJECTS = initddd.o memmgr.o handler.o test.o debugger.o lbrcb.o gridcons.o
+OBJECTS = initddd.o memmgr.o handler.o test.o debugger.o lbrcb.o \
+			gridcons.o support.o
 
 # local C compiler flags
 LCFLAGS = -I../../include
