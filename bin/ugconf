@@ -320,6 +320,7 @@ if `diff $UGROOT/ug.conf.old.1 $UGROOT/ug.conf.new.1 >/dev/null `
 then
 	echo "nothing changed by these parameters."
 	rm $UGROOT/ug.conf.old.1 $UGROOT/ug.conf.new.1
+	rm $UGROOT/ug.conf.new
 	exit 0;
 fi
 rm $UGROOT/ug.conf.old.1 $UGROOT/ug.conf.new.1
