@@ -58,10 +58,6 @@ typedef struct { double r, i; } doublecomplex;
 #define z_eq(a, b)  ( (a)->r == (b)->r && (a)->i == (b)->i )
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Prototypes for functions in dcomplex.c */
 void z_div(doublecomplex *, doublecomplex *, doublecomplex *);
 double z_abs(doublecomplex *);     /* exact */
@@ -70,10 +66,6 @@ void z_exp(doublecomplex *, doublecomplex *);
 void d_cnjg(doublecomplex *r, doublecomplex *z);
 double d_imag(doublecomplex *);
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
 

@@ -93,10 +93,6 @@ typedef struct {
 #define FIRSTCOL_OF_SNODE(i)    (xsup[i])
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern void    superlu_abort_and_exit(char*);
 extern void    *superlu_malloc (int);
 extern int     *intMalloc (int);
@@ -124,9 +120,5 @@ extern void    SetStat (SuperLUStat_t *SuperLUStat);
 extern void    SLU_GetStat (float *ftime, float *fflops, float *stime, float *sflops);
 extern void    print_panel_seg(int, int, int, int, int *, int *);
 extern void    check_repfnz(int, int, int, int *);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* __SUPERLU_UTIL */
