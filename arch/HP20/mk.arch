@@ -1,7 +1,7 @@
 #
 #	ARCH MAKEFILE OPTIONS
 #
-#	for HP Workstations (HPUX 10)
+#	for HP Workstations (HPUX 10.20)
 #
 
 ARCH_TYPE     = __HP__
