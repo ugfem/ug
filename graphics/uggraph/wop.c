@@ -8740,7 +8740,7 @@ static INT EW_PreProcess_EScalar3D (PICTURE *thePicture, WORK *theWork)
 
   /* prepare evaluation routine */
   if (theEspo->EvalFct->PreprocessProc != NULL)
-    if ((*theEspo->EvalFct->PreprocessProc)(theMG)) return (1);
+    if ((*theEspo->EvalFct->PreprocessProc)(ENVITEM_NAME(theEspo->EvalFct),theMG)) return (1);
 
   return (0);
 }
@@ -8795,7 +8795,7 @@ static INT EW_PreProcess_EScalar3D_FR (PICTURE *thePicture, WORK *theWork)
 
   /* prepare evaluation routine */
   if (theEspo->EvalFct->PreprocessProc != NULL)
-    if ((*theEspo->EvalFct->PreprocessProc)(theMG)) return (1);
+    if ((*theEspo->EvalFct->PreprocessProc)(ENVITEM_NAME(theEspo->EvalFct),theMG)) return (1);
 
   /* reset min and max values */
   GEN_FR_put = W_FINDRANGE_WORK(theWork)->put;
@@ -8854,7 +8854,7 @@ static INT EW_PreProcess_EVector3D (PICTURE *thePicture, WORK *theWork)
 
   /* prepare evaluation routine */
   if (theEvpo->EvalFct->PreprocessProc!=NULL)
-    if ((*theEvpo->EvalFct->PreprocessProc)(theMG)) return (1);;
+    if ((*theEvpo->EvalFct->PreprocessProc)(ENVITEM_NAME(theEvpo->EvalFct),theMG)) return (1);;
 
   return (0);
 }
