@@ -1,0 +1,184 @@
+#!/bin/sh
+if test "$1" = "-help"
+then
+	echo "usage: $0 [<ugmodule>] [makeoptions]";
+	echo "purpose: compile by calling \"make\" with the right Makefile[.<ugmodule>]";
+	echo "Options are";
+	echo " <ugmodule>: the module which you want to compile";
+	echo "             where <ugmodule> is one of ug, dev, meta, xif, gm";
+	echo "             graph, low, numerics, ui, gg2, gg3, dom, std, netgen";
+	echo "             diff2d, diff2da,cd, cda, fem, fema, ns2d, ns2da, simple";
+	echo "             scalar, scalar2d, scalar3d, tools";
+	echo " <makeoptions>: the options which you want to pass to \"make\"";
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+# if no parameter is specified make in current directory
+if test $# -eq 0 
+then
+	if test `ls Makefile*|wc -l` -eq 1 
+	then
+		make -f `ls Makefile*`;
+		exit 0;
+	else
+		echo "$0: Makefile not found or not unique!"; 
+		exit 1;
+	fi
+fi
+
+if test $# -eq 2 
+then
+	if test "$2" = "appl"
+	then
+	    ugmake $1;
+	    ugmake;
+		exit 0;
+	fi
+fi
+
+NPROC=2
+
+# if parameter are specified make the specified module
+if test $# -ge 1 
+then
+	# check whether first  option is ug module 
+	case $1 in
+	ug)
+		cd $UGROOT
+		ugpmake np
+		ugpmake gm
+		ugpmake ui
+		ugpmake dom
+		ugpmake low
+		ugpmake dddif
+		ugmake ug
+		;;
+	dom | low | ui)
+		setenv NPROC $NPROC;
+		cd $UGROOT/$1
+		;;
+	np)
+		ugpmake algebra;			
+		ugpmake udm;			
+		ugpmake fields;			
+		ugpmake procs;			
+		setenv NPROC 1;
+		;;
+	graphics)
+		cd $UGROOT/$1
+		;;
+	parallel)
+		cd $UGROOT/$1
+		;;
+	dev)
+		ugpmake meta
+		ugpmake xif
+		ugpmake ps
+		ugpmake sif
+		cd $UGROOT/$1
+		;;
+	gm)
+		ugpmake gg2 
+		ugpmake gg3
+		cd $UGROOT/$1
+		;;
+	meta | xif | ps | sif)
+		setenv NPROC $NPROC;
+		cd $UGROOT/dev/$1
+		;;
+	udm | algebra | procs | field)
+		setenv NPROC $NPROC;
+		cd $UGROOT/np/$1
+		;;
+	std)
+		cd $UGROOT/dom/$1
+		;;
+	gg2 | gg3)
+		setenv NPROC $NPROC;
+		cd $UGROOT/gm/$1
+		;;
+	netgen)
+		cd $UGROOT/gm/gg3/$1
+		;;
+	uggraph | grape)
+		cd $UGROOT/graphics/$1
+		;;
+	dddif)
+		setenv NPROC $NPROC;
+		cd $UGROOT/parallel/$1
+		;;
+	ddd)
+		cd $UGROOT/parallel/dddobj
+		;;
+	chaco)
+		cd $UGROOT/parallel/chaco
+		;;
+	links)
+		ugmakelinks;
+		exit 0;
+		;;
+	man)
+		ugmakeman;
+		exit 0;
+		;;
+	simple)
+		cd $UGROOT/../simple;
+		;;
+	diff2d)
+		cd $UGROOT/../diff2d/pclib;
+		;;
+	diff2da)
+		cd $UGROOT/../diff2d/appl;
+		;;
+	ns)
+		cd $UGROOT/../ns/pclib;
+		;;
+	ns2d)
+		cd $UGROOT/../ns/appl2d;
+		;;
+	ns3d)
+		cd $UGROOT/../ns/appl3d;
+		;;
+	fe)
+		cd $UGROOT/../fe/appl;
+		;;
+	sc)
+		cd $UGROOT/../sc/pclib;
+		;;
+	sc2d)
+		cd $UGROOT/../sc/appl2d;
+		;;
+	sc3d)
+		cd $UGROOT/../sc/appl3d;
+		;;
+	tools)
+		cd $UGROOT/tools;
+		;;
+	df)
+		cd $UGROOT/../df/gen;
+		;;
+	*)
+		echo "target $1 not found";
+		exit 1;
+		;;
+	esac;
+
+	# call make with the right makefile
+	if test `ls Makefile*|wc -l` -eq 1 
+	then
+		shift;
+		make -f `ls Makefile*` $*;
+		exit $?;
+	else
+		echo "$0: Makefile not found or not unique in $PWD!"; 
+		exit 1;
+	fi
+fi
+
+exit 0;
