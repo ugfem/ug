@@ -869,7 +869,7 @@ static INT LambdaOrthoBnd2D(const ELEMENT *fatherElement, const INT edge, const 
   *lambda = midLambda;
 
   if (iter > 40)
-    printf ("iter %d, midnode-id %ld, midlambda %f, lambda %f,  area %f\n",
+    printf ("iter %d, midnode-id %d, midlambda %f, lambda %f,  area %f\n",
             iter,ID(MidNode),midLambda,*lambda,area);
   return(0);
 }

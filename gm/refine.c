@@ -4311,7 +4311,7 @@ INT NS_PREFIX Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, I
 				{
 					printf("Connect_Sons_of_ElementSide(): "
 						   "ERROR Sorttables[%d][%d]"\
-						   " eNodePtr=%x nbNodePtr=%x\n",
+						   " eNodePtr=%p nbNodePtr=%p\n",
 						   i,j,Entry->nodeptr[j],NbEntry->nodeptr[j]);
 					/*				assert(0);*/
 				}
