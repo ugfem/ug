@@ -292,6 +292,7 @@ int BalanceGridRCB (MULTIGRID *theMG, int level)
   LB_INFO *lbinfo;
   ELEMENT *e;
   int i, son;
+  INT MarkKey;
 
   /* distributed grids cannot be redistributed by this function */
 
@@ -303,13 +304,13 @@ int BalanceGridRCB (MULTIGRID *theMG, int level)
       return (1);
     }
 
-    Mark(theHeap,FROM_TOP);
+    Mark(theHeap,FROM_TOP,&MarkKey);
     lbinfo = (LB_INFO *)
-             GetMem(theHeap, NT(theGrid)*sizeof(LB_INFO), FROM_TOP);
+             GetMemUsingKey(theHeap, NT(theGrid)*sizeof(LB_INFO), FROM_TOP, MarkKey);
 
     if (lbinfo==NULL)
     {
-      Release(theHeap,FROM_TOP);
+      Release(theHeap,FROM_TOP,MarkKey);
       UserWrite("ERROR in BalanceGridRCB: could not allocate memory from the MGHeap\n");
       return (1);
     }
@@ -334,7 +335,7 @@ int BalanceGridRCB (MULTIGRID *theMG, int level)
     }
     ENDDEBUG
 
-    Release(theHeap,FROM_TOP);
+    Release(theHeap,FROM_TOP,MarkKey);
   }
 
   return 0;
