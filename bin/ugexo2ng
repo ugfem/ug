@@ -43,7 +43,10 @@ $EPS_LOC   = 10e-6;
 $DIM = 3;
 
 $HUGE = 9999999999999.9;
-$EPS_PROJ = 100;
+$EPS_PROJ = 0.1;
+
+$TYPE_LINE = 4;
+$TYPE_SURF = 3;
 
 ###############################################################################
 # read exodusII file
@@ -1031,14 +1034,154 @@ sub Line_Callback
 }
 
 
+sub modify_node_coord
+{
+	my($node,%obj) = @_;
+
+	if (!defined($cdf{bndcoord}{$node}{mod_coord}))
+	{
+#		printf("node=%d lprojection %.16e %.16e %.16e %d %d alpha=%lf\n",
+#			$node,$obj{p_proj}->[0],$obj{p_proj}->[1],$obj{p_proj}->[2],
+#			$newid,$obj{seg},$obj{alpha});
+		for ($i=0; $i<$DIM; $i++)
+		{
+			$cdf{coord}{$node+$i*$cdf{num_nodes}} = $obj{p_proj}->[$i];
+		}
+
+#		printf ("new coords node %d\n",$node);
+		$cdf{bndcoord}{$node}{mod_coord} = 0;
+	}
+	else
+	{
+        for ($i=0; $i<$DIM; $i++)
+        {
+            if ($cdf{coord}{$node+$i*$cdf{num_nodes}} - $obj{p_proj}->[$i] > $EPS_PROJ)
+			{
+				die ("modify_node_coord(): error node %d coord%d=%s proj_coord=%s\n",
+					$node,$i,$cdf{coord}{$node+$i*$cdf{num_nodes}},$obj{p_proj}->[$i]);
+			}
+        }
+	}
+
+	return;
+}
+
+
+sub proj_node_onto_surf
+{
+	my($node,$newid) = @_;
+	my ($robj,%obj);
+
+
+# 					printf("projecting node=%d onto lgm-surf %d\n",$node,$newid);
+	for ($i=0; $i<$DIM; $i++)
+	{
+		$p[$i] = $cdf{coord}{$node+$i*$cdf{num_nodes}};
+	}
+# 					printf("node=%d coord %lf %lf %lf\n",$node,$p[0],$p[1],$p[2]);
+	$ttree = sprintf("ttree%d",$newid);
+#  					printf("ttree=%s ttree=%s count=%d huge=$HUGE\n",$lgm{$ttree},$ttree,$count,$HUGE);
+
+	$local0 = $local1 = 2.0;
+	$d = BBT_TreePointDistance($lgm{$ttree},\@p,\$robj,\&Tri_Callback,$HUGE);
+
+#  					printf ("node=%d surfdist=%lf\n",$node,$d);
+	if ($d < $HUGE)
+	{
+		%obj = %$robj;
+#						printf("node=%d sprojection %.16e %.16e %.16e %d %d loc0=%e loc1=%e test=%e\n",
+#							$node,$obj{p_proj}->[0],$obj{p_proj}->[1],$obj{p_proj}->[2],
+#							$newid,$obj{tri},$obj{loc0}),$obj{loc1},$obj{test};
+#						printf ("local0=%e local1=%e\n",$local0,$local1);
+		# modify node coordinates
+		if ($d > 0.0)
+		{
+			modify_node_coord($node,%obj);
+		}
+	}
+	else
+	{
+# 						printf "Surf projection failed node=$node surf=$newid\n";
+		die "Surf projection failed node=$node surf=$newid\n";
+	}
+#					printf("\n");
+
+	$cdf{bndcoord}{$node}{tri}
+		{$cdf{bndcoord}{$node}{nsurf}} = $obj{tri};
+
+	$cdf{bndcoord}{$node}{loc0}
+		{$cdf{bndcoord}{$node}{nsurf}} = $obj{loc0};
+	$cdf{bndcoord}{$node}{loc1}
+		{$cdf{bndcoord}{$node}{nsurf}} = $obj{loc1};
+
+	$cdf{bndcoord}{$node}{sdist}
+		{$cdf{bndcoord}{$node}{nsurf}} = $d;
+
+	$cdf{bndcoord}{$node}{nsurf}++;
+}
+
+
+sub proj_node_onto_line
+{
+	my($node,$newid) = @_;
+	my ($robj,%obj);
+
+#	printf("projecting node=%d onto lgm-line %d\n",$node,$newid);
+	for ($i=0; $i<$DIM; $i++)
+	{
+		$p[$i] = $cdf{coord}{$node+$i*$cdf{num_nodes}};
+	}
+#	printf("node=%d coord %lf %lf %lf\n",$node,$p[0],$p[1],$p[2]);
+	$ltree = sprintf("ltree%d",$newid);
+# 	printf("ltree=%s ltree=%s count=%d huge=$HUGE\n",$lgm{$ltree},$ltree,$count,$HUGE);
+
+	$d = BBT_TreePointDistance($lgm{$ltree},\@p,\$robj,\&Line_Callback,$HUGE);
+
+# 	printf ("node=%d linedist=%lf\n",$node,$d);
+	if ($d < $HUGE)
+	{
+		%obj = %$robj;
+#		printf("node=%d lprojection %.16e %.16e %.16e %d %d alpha=%lf\n",
+#			$node,$obj{p_proj}->[0],$obj{p_proj}->[1],$obj{p_proj}->[2],
+#			$newid,$obj{seg},$obj{alpha});
+
+		# modify node coordinates
+		if ($d > 0.0)
+		{
+			modify_node_coord($node,%obj);
+		}
+	}
+	else
+	{
+# 		printf "Line projection failed node=$node line=$newid\n";
+		die "Line projection failed node=$node line=$newid\n";
+	}
+#					printf("\n");
+	$cdf{bndcoord}{$node}{seg}
+		{$cdf{bndcoord}{$node}{nline}} = $obj{seg};
+	$cdf{bndcoord}{$node}{alpha}
+		{$cdf{bndcoord}{$node}{nline}} = $obj{alpha};
+	$cdf{bndcoord}{$node}{ldist}
+		{$cdf{bndcoord}{$node}{nline}} = $d;
+	
+	$cdf{bndcoord}{$node}{nline}++;
+}
+
+
 sub	bnd_node
 {
+	my($do_type) = @_;
+
 	LOOP: foreach $nns (1 .. $cdf{num_node_sets})
 	{
 #		print "$cdf{ns_prop1}{$nns}\n";
 		if ( $cdf{ns_prop1}{$nns} =~/\A($num)($int)/ )
 		{
 			$type = $1;
+			if ($type != $do_type)
+			{
+				next LOOP;
+			}
 			$id = sprintf "%d",$2;
 #			printf "%d\n", $cdf{ns_prop1}{$nns};
 			$ns = sprintf "node_ns%d",$nns; 
@@ -1053,10 +1196,8 @@ LOOP:		foreach $np (1 .. $cdf{$numns}{1})
 				$cdf{bndcoord}{$node}{bnd} = 1;
 
 				# node on surface
-				if ($type == 3)
+				if ($type == $TYPE_SURF)
 				{
-					my ($robj,%obj);
-
 					if (!defined($map{surfacemap}{$id}))
 					{
 						die "no newid for surface id $id\n";
@@ -1070,54 +1211,12 @@ LOOP:		foreach $np (1 .. $cdf{$numns}{1})
 					$cdf{bndcoord}{$node}{surf}
 						{$cdf{bndcoord}{$node}{nsurf}} = $newid;
 
-
-# 					printf("projecting node=%d onto lgm-surf %d\n",$node,$newid);
-					for ($i=0; $i<$DIM; $i++)
-					{
-						$p[$i] = $cdf{coord}{$node+$i*$cdf{num_nodes}};
-					}
-# 					printf("node=%d coord %lf %lf %lf\n",$node,$p[0],$p[1],$p[2]);
-   					$ttree = sprintf("ttree%d",$newid);
-#  					printf("ttree=%s ttree=%s count=%d huge=$HUGE\n",$lgm{$ttree},$ttree,$count,$HUGE);
-
-					$local0 = $local1 = 2.0;
- 					$d = BBT_TreePointDistance($lgm{$ttree},\@p,\$robj,\&Tri_Callback,$HUGE);
-
-#  					printf ("node=%d surfdist=%lf\n",$node,$d);
-					if ($d < $HUGE)
-					{
-						%obj = %$robj;
-#						printf("node=%d sprojection %.16e %.16e %.16e %d %d loc0=%e loc1=%e test=%e\n",
-#							$node,$obj{p_proj}->[0],$obj{p_proj}->[1],$obj{p_proj}->[2],
-#							$newid,$obj{tri},$obj{loc0}),$obj{loc1},$obj{test};
-#						printf ("local0=%e local1=%e\n",$local0,$local1);
-					}
-					else
-					{
-# 						printf "Surf projection failed node=$node surf=$newid\n";
- 						die "Surf projection failed node=$node surf=$newid\n";
-					}
-#					printf("\n");
-
-					$cdf{bndcoord}{$node}{tri}
-						{$cdf{bndcoord}{$node}{nsurf}} = $obj{tri};
-
-					$cdf{bndcoord}{$node}{loc0}
-						{$cdf{bndcoord}{$node}{nsurf}} = $obj{loc0};
-					$cdf{bndcoord}{$node}{loc1}
-						{$cdf{bndcoord}{$node}{nsurf}} = $obj{loc1};
-
-					$cdf{bndcoord}{$node}{sdist}
-						{$cdf{bndcoord}{$node}{nsurf}} = $d;
-
-					$cdf{bndcoord}{$node}{nsurf}++;
+					proj_node_onto_surf($node,$newid);
 				}
 
 				# node on line
-				if ($type == 4)
+				if ($type == $TYPE_LINE)
 				{
-					my ($robj,%obj);
-
 					$newid = $map{linemap}{$id}; 
 
 					if (!defined($cdf{bndcoord}{$node}{nline}))
@@ -1127,39 +1226,7 @@ LOOP:		foreach $np (1 .. $cdf{$numns}{1})
 					$cdf{bndcoord}{$node}{line}
 						{$cdf{bndcoord}{$node}{nline}} = $newid;
 
-#					printf("projecting node=%d onto lgm-line %d\n",$node,$newid);
-					for ($i=0; $i<$DIM; $i++)
-					{
-						$p[$i] = $cdf{coord}{$node+$i*$cdf{num_nodes}};
-					}
-#					printf("node=%d coord %lf %lf %lf\n",$node,$p[0],$p[1],$p[2]);
-  					$ltree = sprintf("ltree%d",$newid);
-# 					printf("ltree=%s ltree=%s count=%d huge=$HUGE\n",$lgm{$ltree},$ltree,$count,$HUGE);
-
- 					$d = BBT_TreePointDistance($lgm{$ltree},\@p,\$robj,\&Line_Callback,$HUGE);
-
-# 					printf ("node=%d linedist=%lf\n",$node,$d);
-					if ($d < $HUGE)
-					{
-						%obj = %$robj;
-#						printf("node=%d lprojection %.16e %.16e %.16e %d %d alpha=%lf\n",
-#							$node,$obj{p_proj}->[0],$obj{p_proj}->[1],$obj{p_proj}->[2],
-#							$newid,$obj{seg},$obj{alpha});
-					}
-					else
-					{
-# 						printf "Line projection failed node=$node line=$newid\n";
- 						die "Line projection failed node=$node line=$newid\n";
-					}
-#					printf("\n");
-					$cdf{bndcoord}{$node}{seg}
-						{$cdf{bndcoord}{$node}{nline}} = $obj{seg};
-					$cdf{bndcoord}{$node}{alpha}
-						{$cdf{bndcoord}{$node}{nline}} = $obj{alpha};
-					$cdf{bndcoord}{$node}{ldist}
-						{$cdf{bndcoord}{$node}{nline}} = $d;
-					
-					$cdf{bndcoord}{$node}{nline}++;
+					proj_node_onto_line($node,$newid);
 				}
 			}
 		}
@@ -1197,7 +1264,13 @@ sub bnd_elem
 
 sub comp_bnddata
 {
-	bnd_node();
+	# project points associated with bnd lines
+	bnd_node($TYPE_LINE);
+
+	# project points associated with bnd surfaces
+	bnd_node($TYPE_SURF);
+
+	# select element sides associated with bnd sides
 	bnd_elem();
 }
 
