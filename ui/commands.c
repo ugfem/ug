@@ -4355,7 +4355,7 @@ static INT MarkCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   ELEMENT *theElement;
   char rulename[32];
-  INT i,j,l,mode,rv,Rule;
+  INT i,j,l,mode,rv,Rule,sid;
   DOUBLE_VECTOR global;
   DOUBLE x,y;
   long nmarked;
@@ -4482,6 +4482,21 @@ static INT MarkCommand (INT argc, char **argv)
 
     UserWriteF("all elements in y < %f marked for refinement\n",
                (float) y);
+
+    return(OKCODE);
+  }
+
+  if (ReadArgvINT("S",&sid,argc, argv)==0)
+  {
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+            if (SUBDOMAIN(theElement) == sid)
+              MarkForRefinement(theElement,Rule,NULL);
+
+    UserWriteF("all elements in subdomain %d marked for refinement\n",sid);
 
     return(OKCODE);
   }
@@ -7907,6 +7922,7 @@ static INT SetViewCommand (INT argc, char **argv)
   perspective = NULL;
   CutPoint = CutNormal = NULL;
   RemoveCut = NO;
+  vscale = 1.0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
