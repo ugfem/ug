@@ -3261,7 +3261,7 @@ INT BNDP_SaveBndP (BNDP *theBndP, FILE *stream)
    D*/
 /****************************************************************************/
 
-BNDP *BNDP_LoadBndP (HEAP *Heap, FILE *stream)
+BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap, FILE *stream)
 {
   return(NULL);
 }
