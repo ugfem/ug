@@ -2279,198 +2279,194 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
   }
 
   case GREEN_CLASS :
-#ifdef ModelP
   case RED_CLASS :
-#endif
-    {
-      /* determine sonnodes of side */
-      NODE *SideNodes[MAX_SIDE_NODES];
-      INT corner[MAX_CORNERS_OF_SIDE];
-      INT n,nodes;
-
-      /* determine nodes of sons on side of element */
-      GetSonSideNodes(theElement,side,&nodes,SideNodes);
-
-      /* sort side nodes in descending adress order */
-      qsort(SideNodes,MAX_SIDE_NODES,sizeof(NODE *),compare_node);
-
-      IFDEBUG(gm,3)
-      UserWriteF("After qsort:\n");
-      for (i=0; i<MAX_SIDE_NODES; i++) UserWriteF(" %8d",i);
-      UserWriteF("\n");
-      for (i=0; i<MAX_SIDE_NODES; i++)
-        if (SideNodes[i]!=NULL) UserWriteF(" %x",SideNodes[i]);
-        else UserWriteF(" %8d",0);
-      UserWriteF("\n");
-      ENDDEBUG
-
-      /* determine sonnode on side */
-      /*			for (i=0; i<NSONS(theElement); i++) */
-      for (i=0; SonList[i]!=NULL; i++)
-      {
-        n = 0;
-
-        for (j=0; j<MAX_CORNERS_OF_SIDE; j++)
-          corner[j] = -1;
-
-        IFDEBUG(gm,4)
-        UserWriteF("son=%d\n",i);
-        ENDDEBUG
-
-        /* soncorners on side */
-        for (j=0; j<CORNERS_OF_ELEM(SonList[i]); j++)
-        {
-          NODE *nd;
-
-          nd = CORNER(SonList[i],j);
-          if (bsearch(&nd,SideNodes, nodes,sizeof(NODE *),
-                      compare_node))
-          {
-            corner[n] = j;
-            n++;
-          }
-        }
-        assert(n<5);
-
-        IFDEBUG(gm,4)
-        UserWriteF("\n nodes on side n=%d:",n);
-        for (j=0; j<MAX_CORNERS_OF_SIDE; j++)
-          UserWriteF(" %d",corner[j]);
-        ENDDEBUG
-
-
-        IFDEBUG(gm,0)
-        if (n==3) assert(TAG(SonList[i])!=HEXAHEDRON);
-        if (n==4) assert(TAG(SonList[i])!=TETRAHEDRON);
-        ENDDEBUG
-
-        /* sonside on side */
-                                #ifdef __TWODIM__
-        assert(n<=2);
-        if (n==2)
-        {
-          if (corner[0]+1 == corner[1])
-            SonSides[nsons] = corner[0];
-          else
-          {
-            /* TODO: find proper assert			assert(corner[1] == CORNERS_OF_ELEM(theElement)-1); */
-            SonSides[nsons] = corner[1];
-          }
-          SonList[nsons] = SonList[i];
-          nsons++;
-        }
-                                #endif
-                                #ifdef __THREEDIM__
-        if (n==3 || n==4)
-        {
-          INT edge0,edge1,sonside,side0,side1;
-
-          /* determine side number */
-          edge0 = edge1 = -1;
-          edge0 = EDGE_WITH_CORNERS(SonList[i],corner[0],corner[1]);
-          edge1 = EDGE_WITH_CORNERS(SonList[i],corner[1],corner[2]);
-          /* corners are not stored in local side numbering,    */
-          /* therefore corner[x]-corner[y] might be the diagonal  */
-          if (n==4 && edge0==-1)
-            edge0 = EDGE_WITH_CORNERS(SonList[i],corner[0],
-                                      corner[3]);
-          if (n==4 && edge1==-1)
-            edge1 = EDGE_WITH_CORNERS(SonList[i],corner[1],
-                                      corner[3]);
-          assert(edge0!=-1 && edge1!=-1);
-
-          sonside = -1;
-          for (side0=0; side0<MAX_SIDES_OF_EDGE; side0++)
-          {
-            for (side1=0; side1<MAX_SIDES_OF_EDGE; side1++)
-            {
-              IFDEBUG(gm,5)
-              UserWriteF("edge0=%d side0=%d SIDE_WITH_EDGE=%d\n",
-                         edge0, side0,
-                         SIDE_WITH_EDGE(SonList[i],edge0,side0));
-              UserWriteF("edge1=%d side1=%d SIDE_WITH_EDGE=%d\n",
-                         edge1, side1,
-                         SIDE_WITH_EDGE(SonList[i],edge1,side1));
-              ENDDEBUG
-              if (SIDE_WITH_EDGE(SonList[i],edge0,side0) ==
-                  SIDE_WITH_EDGE(SonList[i],edge1,side1))
-              {
-                sonside = SIDE_WITH_EDGE(SonList[i],edge0,side0);
-                break;
-              }
-            }
-            if (sonside != -1) break;
-          }
-          assert(sonside != -1);
-          IFDEBUG(gm,4)
-          UserWriteF(" son[%d]=%x with sonside=%d on eside=%d\n",
-                     i,SonList[i],sonside,side);
-          ENDDEBUG
-
-          IFDEBUG(gm,3)
-          INT k;
-          ELEMENT *Nb;
-
-          for (k=0; k<SIDES_OF_ELEM(SonList[i]); k++)
-          {
-            Nb = NBELEM(SonList[i],k);
-            if (Nb!=NULL)
-            {
-              INT j;
-              for (j=0; j<SIDES_OF_ELEM(Nb); j++)
-              {
-                if (NBELEM(Nb,j)==SonList[i]) break;
-              }
-              if (j<SIDES_OF_ELEM(Nb))
-                UserWriteF(" sonside=%d has backptr to son "
-                           "Nb=%x Nbside=%d\n",k,Nb,j);
-            }
-          }
-          ENDDEBUG
-
-          ASSERT(CORNERS_OF_SIDE(SonList[i],sonside) == n);
-
-          SonSides[nsons] = sonside;
-          SonList[nsons] = SonList[i];
-          nsons++;
-        }
-                                #endif
-      }
-                        #ifndef ModelP
-      assert(nsons>0 && nsons<6);
-                        #endif
-
-      IFDEBUG(gm,3)
-      UserWriteF(" nsons on side=%d\n",nsons);
-      ENDDEBUG
-
-      *Sons_of_Side = nsons;
-      break;
-    }
-
-#ifndef ModelP
-  case RED_CLASS :
-
   {
-    SONDATA *sondata;
+    /* determine sonnodes of side */
+    NODE *SideNodes[MAX_SIDE_NODES];
+    INT corner[MAX_CORNERS_OF_SIDE];
+    INT n,nodes;
 
+    /* determine nodes of sons on side of element */
+    GetSonSideNodes(theElement,side,&nodes,SideNodes);
+
+    /* sort side nodes in descending adress order */
+    qsort(SideNodes,MAX_SIDE_NODES,sizeof(NODE *),compare_node);
+
+    IFDEBUG(gm,3)
+    UserWriteF("After qsort:\n");
+    for (i=0; i<MAX_SIDE_NODES; i++) UserWriteF(" %8d",i);
+    UserWriteF("\n");
+    for (i=0; i<MAX_SIDE_NODES; i++)
+      if (SideNodes[i]!=NULL) UserWriteF(" %x",SideNodes[i]);
+      else UserWriteF(" %8d",0);
+    UserWriteF("\n");
+    ENDDEBUG
+
+    /* determine sonnode on side */
+    /*			for (i=0; i<NSONS(theElement); i++) */
     for (i=0; SonList[i]!=NULL; i++)
     {
-      sondata = SON_OF_RULE(MARK2RULEADR(theElement,
-                                         MARK(theElement)),i);
+      n = 0;
 
-      for (j=0; j<SIDES_OF_ELEM(SonList[i]); j++)
-        if (SON_NB(sondata,j) == FATHER_SIDE_OFFSET+side)
+      for (j=0; j<MAX_CORNERS_OF_SIDE; j++)
+        corner[j] = -1;
+
+      IFDEBUG(gm,4)
+      UserWriteF("son=%d\n",i);
+      ENDDEBUG
+
+      /* soncorners on side */
+      for (j=0; j<CORNERS_OF_ELEM(SonList[i]); j++)
+      {
+        NODE *nd;
+
+        nd = CORNER(SonList[i],j);
+        if (bsearch(&nd,SideNodes, nodes,sizeof(NODE *),
+                    compare_node))
         {
-          SonSides[nsons] = j;
-          SonList[nsons] = SonList[i];
-          nsons ++;
+          corner[n] = j;
+          n++;
         }
+      }
+      assert(n<5);
+
+      IFDEBUG(gm,4)
+      UserWriteF("\n nodes on side n=%d:",n);
+      for (j=0; j<MAX_CORNERS_OF_SIDE; j++)
+        UserWriteF(" %d",corner[j]);
+      ENDDEBUG
+
+
+      IFDEBUG(gm,0)
+      if (n==3) assert(TAG(SonList[i])!=HEXAHEDRON);
+      if (n==4) assert(TAG(SonList[i])!=TETRAHEDRON);
+      ENDDEBUG
+
+      /* sonside on side */
+                                #ifdef __TWODIM__
+      assert(n<=2);
+      if (n==2)
+      {
+        if (corner[0]+1 == corner[1])
+          SonSides[nsons] = corner[0];
+        else
+        {
+          /* TODO: find proper assert			assert(corner[1] == CORNERS_OF_ELEM(theElement)-1); */
+          SonSides[nsons] = corner[1];
+        }
+        SonList[nsons] = SonList[i];
+        nsons++;
+      }
+                                #endif
+                                #ifdef __THREEDIM__
+      if (n==3 || n==4)
+      {
+        INT edge0,edge1,sonside,side0,side1;
+
+        /* determine side number */
+        edge0 = edge1 = -1;
+        edge0 = EDGE_WITH_CORNERS(SonList[i],corner[0],corner[1]);
+        edge1 = EDGE_WITH_CORNERS(SonList[i],corner[1],corner[2]);
+        /* corners are not stored in local side numbering,      */
+        /* therefore corner[x]-corner[y] might be the diagonal  */
+        if (n==4 && edge0==-1)
+          edge0 = EDGE_WITH_CORNERS(SonList[i],corner[0],
+                                    corner[3]);
+        if (n==4 && edge1==-1)
+          edge1 = EDGE_WITH_CORNERS(SonList[i],corner[1],
+                                    corner[3]);
+        assert(edge0!=-1 && edge1!=-1);
+
+        sonside = -1;
+        for (side0=0; side0<MAX_SIDES_OF_EDGE; side0++)
+        {
+          for (side1=0; side1<MAX_SIDES_OF_EDGE; side1++)
+          {
+            IFDEBUG(gm,5)
+            UserWriteF("edge0=%d side0=%d SIDE_WITH_EDGE=%d\n",
+                       edge0, side0,
+                       SIDE_WITH_EDGE(SonList[i],edge0,side0));
+            UserWriteF("edge1=%d side1=%d SIDE_WITH_EDGE=%d\n",
+                       edge1, side1,
+                       SIDE_WITH_EDGE(SonList[i],edge1,side1));
+            ENDDEBUG
+            if (SIDE_WITH_EDGE(SonList[i],edge0,side0) ==
+                SIDE_WITH_EDGE(SonList[i],edge1,side1))
+            {
+              sonside = SIDE_WITH_EDGE(SonList[i],edge0,side0);
+              break;
+            }
+          }
+          if (sonside != -1) break;
+        }
+        assert(sonside != -1);
+        IFDEBUG(gm,4)
+        UserWriteF(" son[%d]=%x with sonside=%d on eside=%d\n",
+                   i,SonList[i],sonside,side);
+        ENDDEBUG
+
+        IFDEBUG(gm,3)
+        INT k;
+        ELEMENT *Nb;
+
+        for (k=0; k<SIDES_OF_ELEM(SonList[i]); k++)
+        {
+          Nb = NBELEM(SonList[i],k);
+          if (Nb!=NULL)
+          {
+            INT j;
+            for (j=0; j<SIDES_OF_ELEM(Nb); j++)
+            {
+              if (NBELEM(Nb,j)==SonList[i]) break;
+            }
+            if (j<SIDES_OF_ELEM(Nb))
+              UserWriteF(" sonside=%d has backptr to son "
+                         "Nb=%x Nbside=%d\n",k,Nb,j);
+          }
+        }
+        ENDDEBUG
+
+        ASSERT(CORNERS_OF_SIDE(SonList[i],sonside) == n);
+
+        SonSides[nsons] = sonside;
+        SonList[nsons] = SonList[i];
+        nsons++;
+      }
+                                #endif
     }
+                        #ifndef ModelP
+    assert(nsons>0 && nsons<6);
+                        #endif
+
+    IFDEBUG(gm,3)
+    UserWriteF(" nsons on side=%d\n",nsons);
+    ENDDEBUG
+
     *Sons_of_Side = nsons;
     break;
   }
-#endif
+
+    /* case RED_CLASS:  */
+    if (0)              /* old style */
+    {
+      SONDATA *sondata;
+
+      for (i=0; SonList[i]!=NULL; i++)
+      {
+        sondata = SON_OF_RULE(MARK2RULEADR(theElement,
+                                           MARK(theElement)),i);
+
+        for (j=0; j<SIDES_OF_ELEM(SonList[i]); j++)
+          if (SON_NB(sondata,j) == FATHER_SIDE_OFFSET+side)
+          {
+            SonSides[nsons] = j;
+            SonList[nsons] = SonList[i];
+            nsons ++;
+          }
+      }
+      *Sons_of_Side = nsons;
+      break;
+    }
 
   default :
     RETURN(GM_FATAL);
@@ -2750,7 +2746,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
                "ERROR Sorttables[%d][%d]"\
                " eNodePtr=%x nbNodePtr=%x\n",
                i,j,Entry->nodeptr[j],NbEntry->nodeptr[j]);
-        assert(0);
+        /*				assert(0);*/
       }
   }
         #endif
