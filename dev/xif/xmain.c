@@ -211,7 +211,7 @@ INT GetNextUGEvent_CUI (EVENT *theEvent, INT EventMask)
   if (EventMask==TERM_CMDKEY) return(0);
 
   /* read in a string from the user and store it in event structure */
-  gets(theEvent->TermString.String);
+  fgets(theEvent->TermString.String,INPUTBUFFERLEN,stdin);
   theEvent->Type = TERM_STRING;
 
   /* ready */
