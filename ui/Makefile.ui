@@ -16,7 +16,7 @@ include ../machines/mk.$(ARCHDIR)
 include ../ug.conf
 
 # local C compiler flags
-LCFLAGS = -I../low -I../dev -I../dom -I../gm -I../numerics -I../graph -I../gg
+LCFLAGS = -I../low -I../dddif -I../dev -I../dom -I../gm -I../numerics -I../graph -I../gg
 
 # object files for both dimensions
 OBJECTS = uginterface.o initui.o cmdint.o cmdline.o commands.o helpmsg.o

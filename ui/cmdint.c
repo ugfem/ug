@@ -73,7 +73,6 @@
 #define BUFSIZE                         32
 #define MAXREPEAT                       16
 #define MAXTOKENLENGTH          64
-#define MAXCMDSIZE                      512
 #define MAXSTRINGSIZE           256
 #define EXECUTEBUFSIZE          32000
 #define PROGRAMBUFSIZE          8000
@@ -158,6 +157,10 @@ static char stringBuffer[MAXSTRINGSIZE];
 
 /* for output during execute */
 static int mutelevel=0;
+
+#ifdef ModelP
+static char execCmdBuffer[MAXCMDSIZE];
+#endif
 
 /* data for CVS */
 static char rcsid[] = "$Header$";
@@ -2143,7 +2146,12 @@ static INT InterpretString()
         return(8510);                           /* syntax error */
       }
 
+            #ifdef ModelP
+      sprintf(execCmdBuffer,"set %s = %s",buffer,stringBuffer);                   /* set cmd */
+      error = ParExecCommand(execCmdBuffer);
+                        #else
       error = SetStringVar(buffer,stringBuffer);
+                        #endif
 
       if (error!=0)
         return (error);
@@ -2324,7 +2332,12 @@ static INT InterpretString()
           WriteLogFile("\n");
         }
       }
+                        #ifdef ModelP
+      error = ParExecCommand(cmdBuffer);
+      /*			if ((gresult==CMD_EXIT)||(gresult==CMD_DISASTROUS)) return(DONE); */
+                        #else
       error = ExecCommand(cmdBuffer);
+                        #endif
       if ((error!=QUITCODE) && dontexit)
       {
         SetStringValue(":cmdstatus",error);
@@ -2350,15 +2363,31 @@ static INT InterpretString()
       {
       case NUMBERID :
         sprintf(valueStr,"%-.14lg",(double)result.ro.value);
+                                        #ifdef ModelP
+        sprintf(execCmdBuffer,"set %s %s",buffer,valueStr);
+        error = ParExecCommand(execCmdBuffer);
+                                        #else
         error = SetStringVar(buffer,valueStr);
+                                        #endif
         break;
 
       case ALPHAID :
+                                        #ifdef ModelP
+        sprintf(execCmdBuffer,"set %s %s",buffer,result.so.sptr);
+        error = ParExecCommand(execCmdBuffer);
+                                        #else
         error = SetStringVar(buffer,result.so.sptr);
+                                        #endif
         break;
 
       case LSTRINGID :
+                                        #ifdef ModelP
+        sprintf(execCmdBuffer,"set %s ",buffer);
+        strncat(execCmdBuffer,result.lo.sptr,result.lo.length);
+        error = ParExecCommand(execCmdBuffer);
+                                        #else
         error = SetnStringVar(buffer,result.lo.sptr,result.lo.length);
+                                        #endif
       }
 
       if (error)
@@ -2398,8 +2427,13 @@ void CommandLoop (int argc, char **argv)
 {
   INT error;
   int i,j,k,kerr;
-  char c,inpLine[256],errLine[256],spcLine[256], ver[100];
+  char c,inpLine[MAXCMDSIZE],errLine[256],spcLine[256], ver[100];
   char *strStart;
+
+        #ifdef ModelP
+  if (me==master)
+  {
+        #endif
 
   strcpy(ver,VERSION);
   for (i=0; i<100; i++)
@@ -2419,7 +2453,7 @@ void CommandLoop (int argc, char **argv)
 
   UserWrite(ver);
 
-  if (argc<2)
+  if (argc<2 || argv[1][1] == 's')
   {
     doneFlag = 0;
     while (!doneFlag)
@@ -2530,6 +2564,74 @@ void CommandLoop (int argc, char **argv)
       i++;
     }
   }
+
+        #ifdef ModelP
+}
+else
+{
+  if (argc<2 || argv[1][1] == 's')
+  {
+    doneFlag = 0;
+    while (!doneFlag)
+    {
+      if (doneFlag) break;
+      error=ParExecCommand(inpLine);
+      if (error==QUITCODE)
+        doneFlag=1;
+    }
+  }
+  /* TODO: control this might be wrong in batch mode */
+  else
+  {
+    i = 1;     /* first argument */
+    while (i<argc)
+    {
+      /* execute batch file */
+      if ((argv[i][0]!='-')&&(argv[i][1]!='s'))
+      {
+        sprintf(inpLine,"execute %s\n",argv[i]);
+        InterpretCommand(inpLine);         /* execute command line argument */
+        InterpretCommand("quit\n");        /* end program */
+        i++;
+        continue;
+      }
+      /* set command from command line */
+      if ((argv[i][0]=='-')&&(argv[i][1]=='S'))
+      {
+        if (i+1<argc)
+        {
+          sprintf(inpLine,"set %s\n",(argv[i+1]));
+          InterpretCommand(inpLine);
+          i++;
+        }
+        else
+        {
+          UserWrite("Error in command line option -S\n");
+        }
+        i++;
+        continue;
+      }
+      /* logon command from command line */
+      if ((argv[i][0]=='-')&&(argv[i][1]=='L'))
+      {
+        if (i+1<argc)
+        {
+          sprintf(inpLine,"logon %s\n",(argv[i+1]));
+          InterpretCommand(inpLine);
+          i++;
+        }
+        else
+        {
+          UserWrite("Error in command line option -L\n");
+        }
+        i++;
+        continue;
+      }
+      i++;
+    }
+  }
+}
+        #endif
 }
 
 /****************************************************************************/

@@ -377,12 +377,16 @@ COMMAND *ReplaceCommand (const char *name, CommandProcPtr cmdProc)
 
 INT ExecCommand (char *cmdLine)
 {
-  char *s,*token,commandstr[NAMESIZE];
+  char *s,*token,commandstr[NAMESIZE],*cmdptr,cmd[OPTIONBUFFERLEN];
   int i,j,error;
   COMMAND *commandItem;
 
   optionCount = 0;
   s = optionBuffer;
+        #ifdef ModelP
+  strncpy(cmd,cmdLine,OPTIONBUFFERLEN);
+  cmdptr = cmd;
+        #endif
   token = strtok(cmdLine,OPTIONSEP);
   while (token!=NULL)
   {
@@ -414,6 +418,24 @@ INT ExecCommand (char *cmdLine)
 
   commandItem = GetCommand(commandstr);
   if (commandItem==NULL) return(1);
+  else
+  {
+        #ifdef ModelP
+    /* TODO: introduces a mask sign to hide option sign $, the $ has to be masked */
+    /*		 context sensitve in the command interpreter						  */
+    /* if string which is assigned in SetCommand has options need to send  whole string */
+    /* in options[0], this excludes the only Option $r									*/
+    if (strcmp(commandstr,"set") == 0)
+    {
+      if (optionCount>1 && strcmp(options[1],"r")!=0)
+      {
+        optionCount = 1;
+        error=(*commandItem->cmdProc)(optionCount,&cmdptr);
+        return(error);
+      }
+    }
+        #endif
+  }
   error=(*commandItem->cmdProc)(optionCount,options);
   if (error==PARAMERRORCODE)
     UserWrite("ERROR: invalid parameters\n");

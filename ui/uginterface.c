@@ -39,6 +39,8 @@
 #include "wpm.h"
 #include "wop.h"
 #include "uginterface.h"
+#include "cmdint.h"
+#include "debug.h"
 
 /****************************************************************************/
 /*																			*/
@@ -915,15 +917,40 @@ INT UserInterrupt (const char *text)
 {
   INT Code,EventMask,mutelevel;
   char buffer[128];
+        #ifdef ModelP
+  int status;
+  int fanout=1;
+        #endif
+
+        #ifndef STDIF
+    #ifdef ModelP
+  if (me == master)
+  {
+    #endif
 
   EventMask = TERM_CMDKEY;
 
   Code = ProcessEvent(buffer,EventMask);
 
+        #ifdef ModelP
+  /* if UserInterrupt called in InterpretString() then the interrupt  */
+  /* is related to the master only !!									*/
+  /* TODO: check this condition in newer releases						*/
+  if (strcmp(text,"InterpretString")==0) fanout=0;
+
+  if (fanout) Broadcast(&Code,sizeof(INT));
+        #endif
+
   if (Code==PE_INTERRUPT)
   {
     if (text==NULL)
+    {
+                        #ifdef ModelP
+      status = YES;
+      if (fanout) Broadcast(&status,sizeof(int));
+                        #endif
       return (YES);
+    }
     else
     {
       mutelevel = GetMuteLevel();
@@ -933,17 +960,93 @@ INT UserInterrupt (const char *text)
       UserWrite(buffer);
       UserRead(buffer);
       if (buffer[0]=='y')
+      {
+                #ifdef ModelP
+        status = YES;
+        if (fanout) Broadcast(&status,sizeof(int));
+                                #endif
         return (YES);
+      }
       else
       {
+                #ifdef ModelP
+        status = NO;
+        if (fanout) Broadcast(&status,sizeof(int));
+                                #endif
         SetMuteLevel(mutelevel);
         return (NO);
       }
     }
   }
+    #ifdef ModelP
+}
+else
+{
+  Broadcast(&Code,sizeof(INT));
+  if (Code==PE_INTERRUPT)
+  {
+    Broadcast(&status,sizeof(int));
+    return (status);
+  }
+}
+    #endif
+        #endif /* STDIF */
 
   return (NO);
 }
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  ParExecCommand                                                */
+/*                                                                          */
+/* Purpose:   Broadcast a command line string to all processors, execute    */
+/*            command on each processor and collect global status after     */
+/*            termination.                                                  */
+/*                                                                          */
+/* Input:     pointer to the command line string                            */
+/*                                                                          */
+/* Output:    maximum of all return values on the different processors      */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef ModelP
+
+int ParExecCommand (char *s)
+{
+  int error;
+  int l,n;
+
+  PRINTDEBUG(ui,2,("%d: ParExecCommand(%.30s)...\n",me,s))
+
+  /* broadcast command line to all processors */
+  PRINTDEBUG(ui,2,("%d:         Broadcast(%.30s)...\n",me,s))
+  s[MAXCMDSIZE-1] = (char) 0;
+  Broadcast(s,MAXCMDSIZE);
+
+  /* execute command on each processor */
+  PRINTDEBUG(ui,2,("%d:         ExecCommand(%.30s)...\n",me,s))
+  error = ExecCommand(s);
+
+  /* collect result code */
+  PRINTDEBUG(ui,2,("%d:         (Get)Concentrate(%.30s)...\n",me,s))
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,&n,sizeof(int));
+    error = MAX(error,n);
+  }
+  Concentrate(&error,sizeof(int));
+
+  /* fanout error code */
+  PRINTDEBUG(ui,2,("%d:         Broadcast(%d)...\n",me,error))
+  Broadcast(&error,sizeof(int));
+
+  PRINTDEBUG(ui,2,("%d: ...end ParExecCommand(%.30s)...\n",me,s))
+
+  /* return global status */
+  return(error);
+}
+
+#endif
 
 /****************************************************************************/
 /*D
