@@ -48,7 +48,7 @@
 /****************************************************************************/
 
 #define MAX_NODAL_VECTORS       20
-#define MAX_NODAL_VALUES        60
+#define MAX_NODAL_VALUES        68
 
 #define MAXVD                           10
 #define MAXMD                           5
