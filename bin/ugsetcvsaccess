@@ -12,7 +12,7 @@ then
 	exit 1;
 fi
 
-DEFAULT=ug,df,klaus,stefan
+DEFAULT=ug,df,klaus,stefan,christia
 DEFAULT_CORE=birken,wieners,stefan,klaus,df,peter,henrik,ug,volker
 ERRORFILE=$UGROOT/bin/cvsaccess
 #UG=`dirname $UGROOT`
@@ -44,6 +44,9 @@ cvs admin -abirken parallel/dddif 2>> $ERRORFILE;
 
 echo "cvs admin -abirken parallel/ppif";
 cvs admin -abirken parallel/ppif 2>> $ERRORFILE;
+
+echo "cvs admin -achris np/famglib";
+cvs admin -achris np/famglib 2>> $ERRORFILE;
 
 if test `grep failed $ERRORFILE | wc -l` -ge 1
 then 
