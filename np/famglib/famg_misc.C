@@ -49,7 +49,10 @@ void FAMGError(ostrstream &OutputString)
 	assert(OutputString.pcount()<FAMG_IOBUFFFER_LEN-20);
 	ostr << "Error !" << OutputString.rdbuf() << '\0';
 	UserWrite( ostr.str() );
-#else	
+#else
+	#ifdef ModelP
+		cerr << me << ": ";
+	#endif
     cerr << "Error ! " << OutputString.rdbuf() << flush;
 #endif
 }
@@ -63,6 +66,9 @@ void FAMGWarning(ostrstream &OutputString)
 	ostr << "Warning !" << OutputString.rdbuf() << '\0';
 	UserWrite( ostr.str() );
 #else	
+	#ifdef ModelP
+		cerr << me << ": ";
+	#endif
     cerr  << "Warning !" << OutputString.rdbuf() << flush;
 #endif
 }
@@ -76,6 +82,9 @@ void FAMGWrite(ostrstream &OutputString)
 	ostr << OutputString.rdbuf() << '\0';
 	UserWrite( ostr.str() );
 #else	
+	#ifdef ModelP
+		cout << me << ": ";
+	#endif
 	cout << OutputString.rdbuf() << flush;
 #endif
 }
