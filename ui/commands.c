@@ -10442,60 +10442,6 @@ static INT InitScreenSize (void)
   return (0);
 }
 
-#ifdef __THREEDIM__
-
-/****************************************************************************/
-/*D
-   checkparity - check parity of elements (3d only)
-
-   DESCRIPTION:
-   This command sets the refresh status FALSE.
-   It calls the function 'CheckParityOfElements'.
-
-   'checkparity'
-   D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   CheckParityCommand - Set refresh status FALSE
-
-   SYNOPSIS:
-   static INT CheckParityCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function sets refresh status FALSE.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
-/****************************************************************************/
-
-static INT CheckParityCommand (INT argc, char **argv)
-{
-  MULTIGRID *theMG;
-
-  /* current multigrid */
-  theMG = currMG;
-  if (theMG==NULL)
-  {
-    PrintErrorMessage('E',"checkparity","no current multigrid\n");
-    return (CMDERRORCODE);
-  }
-
-  if (CheckParityOfElements(theMG)) return (CMDERRORCODE);
-
-  return(OKCODE);
-}
-
-#endif
-
 #ifdef ModelP
 
 /****************************************************************************/
@@ -10814,9 +10760,6 @@ INT InitCommands ()
   if (CreateCommand("keylist",            ListCommandKeysCommand                  )==NULL) return (__LINE__);
   if (CreateCommand("refreshon",          RefreshOnCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("refreshoff",         RefreshOffCommand                               )==NULL) return (__LINE__);
-        #ifdef __THREEDIM__
-  if (CreateCommand("checkparity",        CheckParityCommand                              )==NULL) return (__LINE__);
-        #endif
 
   /* debugging */
         #ifdef Debug
