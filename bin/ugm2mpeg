@@ -100,7 +100,7 @@ if ("$ARCH" == "SGI") then
 	set file = `echo $base $fe | awk '{printf "%s.%04d",$1,$2}'`
 	rm -f $file.rgb
 	echo ugv $base -f $fs $fe -p
-	ugv $base -f $fs $fe -p
+	ugv $base -f $fs $fe -p -s 480 480
 	while (! -f $file.rgb )
 		sleep 2
 	end
@@ -127,7 +127,7 @@ if ("$ARCH" == "SGI") then
 	  sgitopnm $file | ppmtoyuvsplit $outname
 	  echo removing $file
 	  sleep 1
-	  rm -f $file
+#	  rm -f $file
 	  @ iin += $fi
 	  @ iout++
 	end

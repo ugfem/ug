@@ -74,6 +74,9 @@ then
 	dddif)
 		cd $UGROOT/parallel/$1
 		;;
+	ddd)
+		cd $UGROOT/parallel/dddobj
+		;;
 	simple)
 		cd $UGROOT/../simple;
 		;;
