@@ -6358,7 +6358,7 @@ static INT CheckCommand (INT argc, char **argv)
   {
     theGrid = GRID_ON_LEVEL(theMG,level);
 
-    CheckLists(theGrid);
+    /*		CheckLists(theGrid);*/
     fflush(stdout);
   }
         #endif
@@ -11030,8 +11030,10 @@ static INT LB4Command (INT argc, char **argv)
      if (copt) CloseOnlyTags(theMG);
    */
 
-  error = Balance_CCPTM(theMG,minlevel,cluster_depth,threshold,Const,n,c,
-                        strategy,eigen,loc,dims,weights,coarse,mode,iopt);
+  /*        error = Balance_CCPTM(theMG,minlevel,cluster_depth,threshold,Const,n,c,
+                                          strategy,eigen,loc,dims,weights,coarse,mode,iopt);
+
+   */
   if (error>0) return(CMDERRORCODE);
 
   return(OKCODE);
