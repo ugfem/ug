@@ -3708,16 +3708,38 @@ static int WriteMatrix (char *name, int n, int *ia, int *ja, double *a)
   return(0);
 }
 
+static int WriteMatrixfmt (char *name, int n, int *ia, int *ja, double *a,
+                           int inc)
+{
+  int i;
+
+  FILE *stream = fileopen(name,"w");
+  if (stream == NULL) return(1);
+  fprintf(stream,"%d %d",n,ia[n]+inc);
+  for (i=0; i<=n; i++) {
+    if ((i%10) == 0) fprintf(stream,"\n");
+    fprintf(stream,"%6d",ia[i]+inc);
+  }
+  for (i=0; i<ia[n]; i++) {
+    if ((i%3) == 0) fprintf(stream,"\n");
+    fprintf(stream,"%6d %18.9lf",ja[i]+inc,a[i]);
+  }
+  fprintf(stream,"\n");
+  fclose(stream);
+
+  return(0);
+}
+
 static INT ConvertCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   GRID *theGrid;
   HEAP *theHeap;
   MATDATA_DESC *A;
-  int n,nn,*ia,*ja;
+  int n,nn,*ia,*ja,inc;
   double *a,*r;
   char name[32];
-  INT i,j,MarkKey;
+  INT i,j,MarkKey,symmetric;
 
   theMG = GetCurrentMultigrid();
   if (theMG==NULL) {
@@ -3731,6 +3753,8 @@ static INT ConvertCommand (INT argc, char **argv)
   }
   theHeap = MGHEAP(theMG);
   MarkTmpMem(theHeap,&MarkKey);
+  symmetric = ReadArgvOption("symmetric",argc,argv);
+  inc = ReadArgvOption("inc",argc,argv);
   if (ReadArgvChar("r",name,argc,argv) == 0) {
     if (ReadMatrixDimensions(name,&n,&nn)) {
       PrintErrorMessage('E',"convert",
@@ -3753,13 +3777,21 @@ static INT ConvertCommand (INT argc, char **argv)
       return(CMDERRORCODE);
     }
   }
-  else if (ConvertMatrix(theGrid,MGHEAP(theMG),MarkKey,A,&n,&ia,&ja,&a)) {
+  else if (ConvertMatrix(theGrid,MGHEAP(theMG),MarkKey,A,symmetric,
+                         &n,&ia,&ja,&a)) {
     PrintErrorMessage('E',"convert","could not read matrix");
     ReleaseTmpMem(MGHEAP(theMG),MarkKey);
     return(CMDERRORCODE);
   }
   if (ReadArgvChar("f",name,argc,argv) == 0)
-    if (WriteMatrix(name,n,ia,ja,a)) {
+    if (ReadArgvOption("fmt",argc,argv)) {
+      if (WriteMatrixfmt(name,n,ia,ja,a,inc)) {
+        PrintErrorMessage('E',"convert","could write matrix");
+        ReleaseTmpMem(MGHEAP(theMG),MarkKey);
+        return(CMDERRORCODE);
+      }
+    }
+    else if (WriteMatrix(name,n,ia,ja,a)) {
       PrintErrorMessage('E',"convert","could write matrix");
       ReleaseTmpMem(MGHEAP(theMG),MarkKey);
       return(CMDERRORCODE);
