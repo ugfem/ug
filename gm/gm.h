@@ -667,6 +667,7 @@ union element {
     #ifdef __THREEDIM__
   struct tetrahedron te;
   struct pyramid py;
+  struct prism pr;
   struct hexahedron he;
         #endif
 } ;
