@@ -181,6 +181,67 @@ EVALUES *GetElementValueEvalProc (const char *name)
 }
 
 /****************************************************************************/
+/*D
+   GetFirstElementValueEvalProc - Get the first element eval proc
+
+   SYNOPSIS:
+   EVALUES *GetFirstElementValueEvalProc (void);
+
+   PARAMETERS:
+
+   DESCRIPTION:
+   This function gets the first element eval proc.
+
+   RETURN VALUE:
+   EVALUES *
+   .n      pointer to EVALUES
+   .n      NULL if there is no
+   D*/
+/****************************************************************************/
+
+EVALUES *GetFirstElementValueEvalProc (void)
+{
+  ENVITEM *theEvalProc;
+
+  if ((theEvalProc=(ENVITEM*)ChangeEnvDir("/ElementEvalProcs")) == NULL) return (NULL);
+
+  for (theEvalProc=ENVITEM_DOWN(theEvalProc); theEvalProc!=NULL; theEvalProc=NEXT_ENVITEM(theEvalProc))
+    if (ENVITEM_TYPE(theEvalProc) == theElemValVarID)
+      return ((EVALUES*)theEvalProc);
+  return (NULL);
+}
+
+/****************************************************************************/
+/*D
+   GetNextElementValueEvalProc - Get the next element eval proc
+
+   SYNOPSIS:
+   EVALUES *GetNextElementValueEvalProc (EVALUES *EvalProc);
+
+   PARAMETERS:
+   .  EvalProc -
+
+   DESCRIPTION:
+   This function gets the next 'EVALUES' in the element-eval-proc-list
+
+   RETURN VALUE:
+   EVALUES *
+   .n      pointer to EVALUES *
+   .n      NULL if there is no
+   D*/
+/****************************************************************************/
+
+EVALUES *GetNextElementValueEvalProc (EVALUES *EvalProc)
+{
+  ENVITEM *theEvalProc;
+
+  for (theEvalProc=EvalProc->v.next; theEvalProc!=NULL; theEvalProc=theEvalProc->v.next )
+    if (theEvalProc->d.type == theElemValVarID)
+      return ((EVALUES*)theEvalProc);
+  return (NULL);
+}
+
+/****************************************************************************/
 /*
    CreateElementVectorEvalProc - Create element vector plot proceedure in evironement
 
@@ -249,6 +310,67 @@ EVECTOR *GetElementVectorEvalProc (const char *name)
 {
   if (ChangeEnvDir("/ElementVectorEvalProcs")==NULL) return(NULL);
   return((EVECTOR*) SearchEnv(name,".",theElemVectorVarID,SEARCHALL));
+}
+
+/****************************************************************************/
+/*D
+   GetFirstElementVectorEvalProc - Get the first element evec proc
+
+   SYNOPSIS:
+   EVECTOR *GetFirstElementVectorEvalProc (void);
+
+   PARAMETERS:
+
+   DESCRIPTION:
+   This function gets the first element evec proc.
+
+   RETURN VALUE:
+   EVECTOR *
+   .n      pointer to EVECTOR
+   .n      NULL if there is no
+   D*/
+/****************************************************************************/
+
+EVECTOR *GetFirstElementVectorEvalProc (void)
+{
+  ENVITEM *theEvecProc;
+
+  if ((theEvecProc=(ENVITEM*)ChangeEnvDir("/ElementVectorEvalProcs")) == NULL) return (NULL);
+
+  for (theEvecProc=ENVITEM_DOWN(theEvecProc); theEvecProc!=NULL; theEvecProc=NEXT_ENVITEM(theEvecProc))
+    if (ENVITEM_TYPE(theEvecProc) == theElemVectorVarID)
+      return ((EVECTOR*)theEvecProc);
+  return (NULL);
+}
+
+/****************************************************************************/
+/*D
+   GetNextElementValueEvalProc - Get the next element evec proc
+
+   SYNOPSIS:
+   EVALUES *GetNextElementVectorEvalProc (EVALUES *EvecProc);
+
+   PARAMETERS:
+   .  EvecProc -
+
+   DESCRIPTION:
+   This function gets the next 'EVALUES' in the element-evec-proc-list
+
+   RETURN VALUE:
+   EVECTOR *
+   .n      pointer to EVECTOR *
+   .n      NULL if there is no
+   D*/
+/****************************************************************************/
+
+EVECTOR *GetNextElementVectorEvalProc (EVECTOR *EvecProc)
+{
+  ENVITEM *theEvecProc;
+
+  for (theEvecProc=EvecProc->v.next; theEvecProc!=NULL; theEvecProc=theEvecProc->v.next )
+    if (theEvecProc->d.type == theElemVectorVarID)
+      return ((EVECTOR*)theEvecProc);
+  return (NULL);
 }
 
 /****************************************************************************/
