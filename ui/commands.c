@@ -4030,13 +4030,15 @@ static INT DeleteElementCommand (INT argc, char **argv)
 
 static INT RefineCommand (INT argc, char **argv)
 {
-  MULTIGRID *theMG;
+  MULTIGRID       *theMG;
   INT i,mode,mark,rv;
-  EVECTOR *theElemEvalDirection;
+  INT seq = 0;
+  EVECTOR         *theElemEvalDirection;
 
         #ifdef ModelP
-  if (!CONTEXT(me)) {
-    PRINTDEBUG(ui,0,("%2d: RefineCommand(): me not in Context," \
+  if (!CONTEXT(me))
+  {
+    PRINTDEBUG(ui,0,("%2d: RefineCommand(): me not in Context,"
                      " grid not refined\n",me))
     return (OKCODE);
   }
@@ -4059,30 +4061,39 @@ static INT RefineCommand (INT argc, char **argv)
     case 'a' :
       mark = MARK_ALL;
       break;
-    case 'g' :
-      mode = mode | GM_COPY_ALL;
-      break;
-    case 'h' :
-      mode = mode | GM_REFINE_NOT_CLOSED;
-      break;
-    case 'x' :
-      mode = mode | GM_USE_HEXAHEDRA;
-      break;
+
             #ifdef __THREEDIM__
     case 'd' :
-      if (sscanf(argv[i],"d %s",buffer)==1)
+      if (sscanf(argv[i],"a %s",buffer)==1)
         theElemEvalDirection = GetElementVectorEvalProc(buffer);
       if (theElemEvalDirection==NULL)
         UserWrite("direction eval fct not found: taking shortest interior edge\n");
       break;
                         #endif
+
+    case 'g' :
+      mode = mode | GM_COPY_ALL;
+      break;
+
+    case 'h' :
+      mode = mode | GM_REFINE_NOT_CLOSED;
+      break;
+
+    case 's' :
+      seq = 1;
+
+    case 'x' :
+      mode = mode | GM_USE_HEXAHEDRA;
+      break;
+
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("refine",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
 
-  if (mark == MARK_ALL) {
+  if (mark == MARK_ALL)
+  {
     INT l,nmarked;
     ELEMENT *theElement;
 
@@ -4090,7 +4101,8 @@ static INT RefineCommand (INT argc, char **argv)
 
     for (l=TOPLEVEL(theMG); l<=TOPLEVEL(theMG); l++)
       for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
-           theElement!=NULL; theElement=SUCCE(theElement)) {
+           theElement!=NULL; theElement=SUCCE(theElement))
+      {
         if (EstimateHere(theElement))
           if ((rv = MarkForRefinement(theElement,
                                       RED,NULL))!=0)
@@ -4109,7 +4121,7 @@ static INT RefineCommand (INT argc, char **argv)
   SetAlignmentPtr (theMG, theElemEvalDirection);
         #endif
 
-  rv = RefineMultiGrid(theMG,mode);
+  rv = RefineMultiGrid(theMG,mode,seq);
 
   InvalidatePicturesOfMG(theMG);
   InvalidateUgWindowsOfMG(theMG);
@@ -4169,7 +4181,7 @@ static INT FixCoarseGridCommand (INT argc, char **argv)
   }
 
     #ifdef ModelP
-  ddd_test(0, currMG);         /* WARNING: will disappear! */
+  ddd_test("0", currMG);         /* WARNING: will disappear! */
         #endif
 
   return(OKCODE);
@@ -7923,6 +7935,36 @@ static INT WalkCommand (INT argc, char **argv)
    D*/
 /****************************************************************************/
 
+/****************************************************************************/
+/*
+   WalkAroundCommand - let the observer walk on a sphere around the target point
+
+   SYNOPSIS:
+   static INT WalkAroundCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   This function lets the observer walk on a sphere around
+   the target point in the current picture. (3D ONLY)
+   It lets the observer walk on a sphere around the target point in the current picture.
+
+   walkaround <viewplane angle> <rotation angle>
+
+   .  <viewplane~angle>      - this angle runs in the view plane math pos from the x-axis and defines
+   .n                        - together with the target-observer direction a plane
+
+   .  <rotation~angle>       - the observer will be rotated around the target point in the above plane
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
 static INT WalkAroundCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
@@ -10060,8 +10102,52 @@ static INT RefreshOffCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*D
-   system - calls system routine
+/*
+   MachineTestCommand - perform a machine test
+
+   SYNOPSIS:
+   static INT MachineTestCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   This function tests interesting machine parameters.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT MachineTestCommand (INT argc, char **argv)
+{
+  /* determine parameters of memory */
+        #ifdef ModelP
+  if (me == master)
+        #endif
+  MemoryParameters();
+
+        #ifdef ModelP
+  /* determine performance of network */
+  /*	NetworkPerformance(); */
+        #endif
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*
+   SystemCommand - calls system routine
+
+   SYNOPSIS:
+   static INT SystemCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
 
    DESCRIPTION:
    This function calls a system routine.
@@ -11519,9 +11605,10 @@ INT InitCommands ()
   if (CreateCommand("keylist",            ListCommandKeysCommand                  )==NULL) return (__LINE__);
   if (CreateCommand("refreshon",          RefreshOnCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("refreshoff",         RefreshOffCommand                               )==NULL) return (__LINE__);
+  if (CreateCommand("machinetest",        MachineTestCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("system",                     SystemCommand                                   )==NULL) return (__LINE__);
 
-  /* debugging */
+  /* commands for debugging */
         #ifdef Debug
   if (CreateCommand("debug",                      DebugCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("reperr",             RepErrCommand                               )==NULL) return (__LINE__);
