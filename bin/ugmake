@@ -73,37 +73,13 @@ then
 	diff2da)
 		cd $UGROOT/../diff2d/appl;
 		;;
-	ns2d)
-		cd $UGROOT/../ns2d/pclib;
-		;;
-	ns2da)
-		cd $UGROOT/../ns2d/appl;
-		;;
-	cd)
-		cd $UGROOT/../cd/pclib;
-		;;
-	cda)
-		cd $UGROOT/../cd/appl;
-		;;
-	fem)
-		cd $UGROOT/../fem/pclib;
-		;;
-	fema)
-		cd $UGROOT/../fem/appl;
-		;;
-	scalar)
-		cd $UGROOT/../scalar/pclib;
-		;;
-	scalar2d)
-		cd $UGROOT/../scalar/appl2d;
-		;;
-	scalar3d)
-		cd $UGROOT/../scalar/appl3d;
-		;;
 	ns)
 		cd $UGROOT/../ns/pclib;
 		;;
 	ns2d)
+		cd $UGROOT/../ns/appl2d;
+		;;
+	ns3d)
 		cd $UGROOT/../ns/appl2d;
 		;;
 	fe)

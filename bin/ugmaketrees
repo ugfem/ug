@@ -51,7 +51,7 @@ then
 		exit 1;
 	fi
 
-	for i in diff2d cd fem ns2d
+	for i in diff2d fe ns sc
 	do 
 		if test -d ../$i
 		then
@@ -74,20 +74,21 @@ then
 				ugmkdir manb;
 			fi
 
-			if test "$i" = "cd"
+			if test "$i" = "sc"
 			then
 				ugmkdir manc;
 			fi
 
-			if test "$i" = "fem"
+			if test "$i" = "fe"
 			then
 				ugmkdir mand;
 			fi
 
-			if test "$i" = "ns2d"
+			if test "$i" = "ns"
 			then
 				ugmkdir mane;
 			fi
+
 			cd ..;
 		else 
 			echo "no directory $i";
@@ -128,12 +129,17 @@ then
           ugmkdir uggraph;
           cd ..;
 	ugmkdir low;
-	ugmkdir numerics;
+	ugmkdir np;
+          cd np;
+          ugmkdir udm;
+          ugmkdir algebra;
+          ugmkdir procs;
+          cd ..;	   
 	ugmkdir overview;
 	ugmkdir ui;
 
 	cd ..;
-	for i in cd diff2d fem ns2d
+	for i in diff2d fe ns sc
 	do
 		ugmkdir $i;
 		cd $i;

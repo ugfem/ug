@@ -42,37 +42,34 @@ appl2 ()
 	then
 		ugmake diff2da
 	fi
-    if test -d $UGROOT/../cd
+    if test -d $UGROOT/../fe
 	then
-		ugmake cda
+		ugmake fe
 	fi
-    if test -d $UGROOT/../fem
+    if test -d $UGROOT/../ns
 	then
-		ugmake fema
+		ugmake ns
+		ugmake ns2d
 	fi
-    if test -d $UGROOT/../ns2d
+    if test -d $UGROOT/../sc
 	then
-		ugmake ns2da
-	fi
-    if test -d $UGROOT/../scalar
-	then
-		ugmake scalar2d
+		ugmake sc2d
 	fi
 }
 
 appl3 () 
 {
-    if test -d $UGROOT/../cd
+    if test -d $UGROOT/../fe
 	then
-		ugmake cda 
+		ugmake fe
 	fi
-    if test -d $UGROOT/../fem
+    if test -d $UGROOT/../sc
 	then
-		ugmake fema
+		ugmake sc3d
 	fi
-    if test -d $UGROOT/../scalar
+    if test -d $UGROOT/../ns
 	then
-		ugmake scalar3d
+		ugmake ns3d
 	fi
 }
 
@@ -121,17 +118,17 @@ fi
 # clean 2d opjects
 
 ugmake ug -i ifdef
-if test -d $UGROOT/../cd
+if test -d $UGROOT/../fe
 then
-	ugmake cda -i ifdef
+	ugmake fe -i ifdef
 fi
-if test -d $UGROOT/../fem
+if test -d $UGROOT/../sc
 then
-	ugmake fem -i ifdef
+	ugmake sc -i clean
 fi
-if test -d $UGROOT/../scalar
+if test -d $UGROOT/../ns
 then
-	ugmake scalar -i clean
+	ugmake ns -i clean
 fi
 
 ( ug3 );
@@ -140,6 +137,7 @@ fi
 # restore ug.conf
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
 
+ugmake tools
 ugmake ug -i ifdef
 
-echo "simple, diff2da, ns2da, cd2d, cd3d, fem2d, fem3d, scalar2d, scalar3d created"
+echo "simple, diff2da, ns2d, ns3d, fe2d, fe3d, sc2d, sc3d created"

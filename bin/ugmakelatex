@@ -151,24 +151,16 @@ then
 	done
 	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/low -quotefmt *.doc
 
-	# generate numerics man pages
-	cd $UGROOT/numerics;
-	for i in *.c *.h
-	do 
-		if test "$i" = "basics.c" -o "$i" = "mgsolver.c" -o "$i" = "nlsolver.c" -o "$i" = "smoother.c" -o "$i" = "tnlsolve.c" -o "$i" = "ew.c"
-		then
-			doctext -latex -heading ug/numerics -quotefmt $i
-			mv [a-z][a-z].3 $UGROOT/doc/ug3/ug/commands; 
-			mv [a-z][a-z][a-z]*.3 $UGROOT/doc/ug3/ug/commands; 
-			for j in *.3
-			do 
-				mv $j $UGROOT/doc/ug3/ug/numerics;
-			done
-		else
-			doctext -latex -mpath $UGROOT/doc/ug3/ug/numerics  -heading ug/numerics -quotefmt $i
-		fi
-	done
-	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/numerics -quotefmt *.doc
+	# generate np man pages
+	cd $UGROOT/np;
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/np -quotefmt *.doc
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/np -heading ug/np -quotefmt *.c *.h
+	cd $UGROOT/np/udm;
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/np -heading ug/np/udm -quotefmt *.c *.h
+	cd $UGROOT/np/algebra;
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/np -heading ug/np/algebra -quotefmt *.c *.h
+	cd $UGROOT/np/procs;
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/commands -heading ug/np/procs -quotefmt *.c *.h
 
 	# generate ui man pages
 	cd $UGROOT/ui;
@@ -207,29 +199,23 @@ then
 	cd $UGROOT/../diff2d/appl
 	doctext -latex -mpath $UGROOT/doc/ug3/diff2d/appl -heading diff2d/appl -quotefmt *.c *.h
 
-	#generate man pages for cd
-	cd $UGROOT/../cd
-	doctext -latex -mpath $UGROOT/doc/ug3/cd/overview -heading cd -quotefmt *.doc
-	cd $UGROOT/../cd/pclib
-	doctext -latex -mpath $UGROOT/doc/ug3/cd/pclib -heading cd/pclib -quotefmt *.c *.h
-	cd $UGROOT/../cd/appl
-	doctext -latex -mpath $UGROOT/doc/ug3/cd/appl -heading cd/appl -quotefmt *.c *.h
+	#generate man pages for fe
+	cd $UGROOT/../fe
+	doctext -latex -mpath $UGROOT/doc/ug3/fe/overview -heading fe -quotefmt *.doc
+	cd $UGROOT/../fe/pclib
+	doctext -latex -mpath $UGROOT/doc/ug3/fe/pclib -heading fe/pclib -quotefmt *.c *.h
+	cd $UGROOT/../fe/appl
+	doctext -latex -mpath $UGROOT/doc/ug3/fe/appl -heading fe/appl -quotefmt *.c *.h
 
-	#generate man pages for fem
-	cd $UGROOT/../fem
-	doctext -latex -mpath $UGROOT/doc/ug3/fem/overview -heading fem -quotefmt *.doc
-	cd $UGROOT/../fem/pclib
-	doctext -latex -mpath $UGROOT/doc/ug3/fem/pclib -heading fem/pclib -quotefmt *.c *.h
-	cd $UGROOT/../fem/appl
-	doctext -latex -mpath $UGROOT/doc/ug3/fem/appl -heading fem/appl -quotefmt *.c *.h
-
-	#generate man pages for ns2d
-	cd $UGROOT/../ns2d
-	doctext -latex -mpath $UGROOT/doc/ug3/ns2d/overview -heading ns2d -quotefmt *.doc
-	cd $UGROOT/../ns2d/pclib
-	doctext -latex -mpath $UGROOT/doc/ug3/ns2d/pclib -heading ns2d/pclib -quotefmt *.c *.h
-	cd $UGROOT/../ns2d/appl
-	doctext -latex -mpath $UGROOT/doc/ug3/ns2d/appl -heading ns2d/appl -quotefmt *.c *.h
+	#generate man pages for ns
+	cd $UGROOT/../ns
+	doctext -latex -mpath $UGROOT/doc/ug3/ns/overview -heading ns -quotefmt *.doc
+	cd $UGROOT/../ns/pclib
+	doctext -latex -mpath $UGROOT/doc/ug3/ns/pclib -heading ns/pclib -quotefmt *.c *.h
+	cd $UGROOT/../ns/appl2d
+	doctext -latex -mpath $UGROOT/doc/ug3/ns/appl -heading ns/appl2d -quotefmt *.c *.h
+	cd $UGROOT/../ns/appl3d
+	doctext -latex -mpath $UGROOT/doc/ug3/ns/appl -heading ns/appl3d -quotefmt *.c *.h
 
 	echo "$0: latex pages for ug created!";
 	exit 0;
