@@ -544,7 +544,7 @@ static int Gather_VectorComp (DDD_OBJ obj, void *data)
 	type = VTYPE(pv);
 	Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
 	for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
-	  ((DOUBLE *)data)[i] = VVALUE(pv,Comp[i]);
+		((DOUBLE *)data)[i] = VVALUE(pv,Comp[i]);
 
 	return(0);
 }
@@ -567,12 +567,12 @@ static int Scatter_VectorComp (DDD_OBJ obj, void *data)
 	Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
 	vecskip = VECSKIP(pv);
 	if (vecskip == 0)
-	  for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
-		VVALUE(pv,Comp[i]) += ((DOUBLE *)data)[i]; 
+		for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+			VVALUE(pv,Comp[i]) += ((DOUBLE *)data)[i]; 
 	else
-	  for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
-		if (!(vecskip & (1<<i)))				
-		  VVALUE(pv,Comp[i]) += ((DOUBLE *)data)[i]; 
+		for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+			if (!(vecskip & (1<<i)))				
+				VVALUE(pv,Comp[i]) += ((DOUBLE *)data)[i]; 
 
 	return(0);
 }
@@ -625,15 +625,15 @@ INT a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 
 	m = 0;
 	for (tp=0; tp<NVECTYPES; tp++)
-	  m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+		m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
 	if ((fl==0) && (tl==TOPLEVEL(mg)))
-	  DDD_IFExchange(BorderVectorSymmIF, m * sizeof(DOUBLE),
-					  Gather_VectorComp, Scatter_VectorComp);
+		DDD_IFExchange(BorderVectorSymmIF, m * sizeof(DOUBLE),
+					   Gather_VectorComp, Scatter_VectorComp);
 	else
-	  for (level=fl; level<=tl; level++) 
-		DDD_IFAExchange(BorderVectorSymmIF, level, m * sizeof(DOUBLE),
-						Gather_VectorComp, Scatter_VectorComp);
+		for (level=fl; level<=tl; level++) 
+			DDD_IFAExchange(BorderVectorSymmIF, level, m * sizeof(DOUBLE),
+							Gather_VectorComp, Scatter_VectorComp);
 
 	return (NUM_OK);
 }
@@ -740,11 +740,10 @@ static int Gather_VectorCompCollect (DDD_OBJ obj, void *data)
 
 	type = VTYPE(pv);
 	Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
-	for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
-	  {
+	for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++) {
 		((DOUBLE *)data)[i] = VVALUE(pv,Comp[i]);
 		VVALUE(pv,Comp[i]) = 0.0;
-	  }
+	}
 
 	return(0);
 }
@@ -808,6 +807,103 @@ INT a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 	  for (level=fl; level<=tl; level++) 
 		DDD_IFAOneway(BorderVectorIF, level, IF_FORWARD, m * sizeof(DOUBLE),
 					  Gather_VectorCompCollect, Scatter_VectorComp);
+
+	return (NUM_OK);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   a_vector_vecskip - checks vecskip flags
+
+   SYNOPSIS:
+   INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
+
+   PARAMETERS:
+.  mg - pointer to multigrid 
+.  fl - from level
+.  tl - from level
+.  x - vector data descriptor
+
+   DESCRIPTION:
+   This function checks the vecskip flags and exchanges Dirichlet values.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK      if ok
+.n    NUM_ERROR   if error occurrs
+D*/
+/****************************************************************************/
+
+#ifdef ModelP
+static int Gather_VectorVecskip (DDD_OBJ obj, void *data)
+{
+	VECTOR *pv = (VECTOR *)obj;
+	INT i,type;
+	const SHORT *Comp;	
+
+	((DOUBLE *) data)[0] = VECSKIP(pv);
+	if (VECSKIP(pv) == 0) return(0);
+	if (VD_IS_SCALAR(ConsVector)) {
+		if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
+			((DOUBLE *)data)[1] = VVALUE(pv,VD_SCALCMP(ConsVector));
+		return(0);
+	}
+   
+	type = VTYPE(pv);
+	Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
+	for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+		((DOUBLE *)data)[i+1] = VVALUE(pv,Comp[i]);
+
+	return(0);
+}
+ 
+static int Scatter_VectorVecskip (DDD_OBJ obj, void *data)
+{
+	VECTOR *pv = (VECTOR *)obj;
+	INT i,type;
+	unsigned INT vecskip;
+	const SHORT *Comp;	
+
+	vecskip = ((DOUBLE *) data)[0];
+	if (vecskip == 0) return(0);
+
+	if (VD_IS_SCALAR(ConsVector)) {
+  	    if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
+		    if (vecskip)
+			    VVALUE(pv,VD_SCALCMP(ConsVector)) = ((DOUBLE *)data)[1];
+
+		return(0);
+	}
+	type = VTYPE(pv);
+	Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
+	for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+		if ((vecskip & (1<<i))) {				
+			VVALUE(pv,Comp[i]) = ((DOUBLE *)data)[i+1]; 
+			VECSKIP(pv) |= (1<<i);
+		}
+
+	return(0);
+}
+
+INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
+{
+    INT level,tp,m; 
+
+    ConsVector = (VECDATA_DESC *)x;
+
+	m = 0;
+	for (tp=0; tp<NVECTYPES; tp++)
+		m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+
+	m++;
+	if ((fl==0) && (tl==TOPLEVEL(mg)))
+		DDD_IFExchange(BorderVectorSymmIF, m * sizeof(DOUBLE),
+					   Gather_VectorVecskip, Scatter_VectorVecskip);
+	else
+		for (level=fl; level<=tl; level++) 
+			DDD_IFAExchange(BorderVectorSymmIF, level, m * sizeof(DOUBLE),
+							Gather_VectorVecskip, Scatter_VectorVecskip);
 
 	return (NUM_OK);
 }
