@@ -590,6 +590,40 @@ struct pyramid {
   BNDS *bnds[5];                        /* only on bnd, NULL if interior side	*/
 } ;
 
+struct prism {
+
+  /* variables */
+  unsigned INT control;                         /* object identification, various flags */
+  INT id;                                                       /* unique id used for load/store		*/
+  unsigned INT flag;                            /* additional flags for elements		*/
+  INT property;                                 /* we need more bits ...				*/
+
+        #ifdef ModelP
+  DDD_HEADER ddd;
+  INT ptmp;
+        #endif
+
+  /* pointers */
+  union element *pred, *succ;           /* doubly linked list of elements		*/
+  struct node *n[6];                                    /* corners of that element				*/
+  union element *father;                        /* father element on coarser grid		*/
+  union element *sons[1];                       /* element tree                                                 */
+  union element *nb[5];                         /* dual graph							*/
+
+  /* WARNING: the allocation of the vector pointer depends on the format      */
+  /* void *ptr[11] would be possible too:                                     */
+  /* if there are no element vectors, the sides will be ptr[0],ptr[1], ..     */
+  /* Use the macros to find the correct address!                              */
+
+  /* associated vector */
+  VECTOR *vector;                                       /* associated vector					*/
+
+  /* associated vector */
+  VECTOR *sidevector[5];                        /* associated vectors for sides			*/
+
+  BNDS *bnds[5];                        /* only on bnd, NULL if interior side	*/
+};
+
 struct hexahedron {
 
   /* variables */
