@@ -235,6 +235,16 @@ int FAMGMultiGrid::Construct()
 //prm(-1,0);
 //prv(-level-1,0);
 
+// for debugging: print some consistent and inconsistent matrices:
+//GRID *tmpgrid = cg->GetugGrid();
+//int tmplevel = GLEVEL(tmpgrid);
+//MATDATA_DESC *tmpA = ((FAMGugMatrix*)cg->GetMatrix())->GetMatDesc();
+//MATDATA_DESC *tmpACons = ((FAMGugMatrix*)cg->GetConsMatrix())->GetMatDesc();
+//prvGeom(tmplevel,0); primGeom(tmplevel+1); prmGeom(tmplevel,MD_SCALCMP(tmpA));
+//if (dmatcopy(MYMG(tmpgrid),tmplevel,tmplevel,ALL_VECTORS,tmpACons,tmpA) != NUM_OK) assert(0);
+//if (l_matrix_consistent(tmpgrid,tmpACons,MAT_CONS) != NUM_OK) assert(0);
+//prvGeom(tmplevel,0); primGeom(tmplevel+1); prmGeom(tmplevel,MD_SCALCMP(tmpACons));
+
 #ifdef ModelP
 		cout << me << ": ";
 		nnc = cg->GetNrMasterVectors();	// we are interested only in the master vectors

@@ -234,6 +234,180 @@ void prv( int level, int x_nr )
 #endif
 }
 
+
+void prmGeom(int level, int comp)
+// for debugging
+{
+#ifdef USE_UG_DS
+	VECTOR *v;
+	MATRIX *m;
+	
+	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
+
+#ifdef ModelP 
+	printf(PFMT,me);
+#endif		
+	printf("Matrix on level %d: component %d\n", GLEVEL(g), comp);
+	for (v=PFIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+	{
+#ifdef ModelP 
+		printf(PFMT"(P%d)",me,PRIO(v));
+#endif		
+		printf("v%d[%4d] ", KeyForObject((KEY_OBJECT *)v),VINDEX(v));
+		for (m=VSTART(v); m!=NULL; m = MNEXT(m))
+		{
+			printf("\t%g(->%d[%d])",MVALUE(m,comp),KeyForObject((KEY_OBJECT *)MDEST(m)),VINDEX(MDEST(m)));
+		}
+		printf("\n");
+	}
+#else
+	FAMGSystem &sys = *FAMG_GetSystem();
+	FAMGGrid &grid = *sys.GetMultiGrid(0)->GetGrid(level);
+
+	FAMGMatrix &M = *grid.GetMatrix();
+	int n = grid.GetN(), end;
+    
+	FAMGMatrixPtr matij;
+
+	printf("Matrix:\n");
+    for(int i = 0; i < n; i++)
+    {
+		printf("v[%4d] ", i);
+		end = 1;
+		for( matij=M.GetStart(i); end; end=matij.GetNext() )
+		{
+			printf("\t%g(->%d)", matij.GetData(),matij.GetIndex());
+		}
+		printf("\n");
+	}
+#endif
+}
+
+void primGeom(int level)
+// for debugging
+{
+#ifdef USE_UG_DS
+	VECTOR *v;
+	MATRIX *m;
+	FAMGTransferEntry *trans;
+	
+	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
+
+#ifdef ModelP 
+	printf(PFMT,me);
+#endif		
+	printf("Interpolation Matrix on level %d:\n", GLEVEL(g));
+	for (v=PFIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+	{
+#ifdef ModelP 
+		printf(PFMT"(P%d)",me,PRIO(v));
+#endif		
+		printf("v%d[%4d] %c ", KeyForObject((KEY_OBJECT *)v),VINDEX(v), VCCOARSE(v)?'C':'F' );
+		for (m=VISTART(v); m!=NULL; m = MNEXT(m))
+		{
+			trans = (FAMGTransferEntry*)m;
+			printf("\tP=%g(->%d[%d]) R=%g", trans->GetProlongation(),KeyForObject((KEY_OBJECT *)MDEST(m)),VINDEX(MDEST(m)),trans->GetRestriction());
+		}
+		printf("\n");
+	}
+#else
+	FAMGSystem &sys = *FAMG_GetSystem();
+	FAMGGrid &grid = *sys.GetMultiGrid(0)->GetGrid(level);
+	FAMGTransferEntry *transij, *resji;
+	FAMGTransfer *trans;
+	FAMGMatrix *matrix;
+	int n = grid.GetN(), i, j;
+    double resval;
+	
+	trans = grid.GetTransfer();
+	matrix = grid.GetMatrix();
+	printf("Interpolation Matrix:\n");
+    for(i = 0; i < n; i++)
+    {
+		printf("v[%4d] ", i);
+		if (matrix->GetType(i)) // FG Node
+		{
+			for(transij = trans->GetRow(i)->GetNext(); transij != NULL; transij = transij->GetNext())
+			{
+				j = transij->GetId();
+				resval = -99.99;
+				for(resji = trans->GetRow(j)->GetNext(); resji != NULL; resji = resji->GetNext())
+				{
+					if( resji->GetId() == i )
+					{
+						resval = resji->GetData();
+							break;
+					}
+				}
+				printf("\tP=%g(->%d) R=%g", transij->GetData(),j,resval);
+			}
+		}
+		else
+		{
+			printf("\tP=%g R=%g", 1.0, 1.0);
+		}
+		printf("\n");
+	}
+#endif
+}
+
+void prvGeom( int level, int x_nr )
+/* for calling from a debugger */
+{
+#ifdef USE_UG_DS
+	register VECTOR *v;
+	DOUBLE pos[DIM];
+	
+	GRID *g = GRID_ON_LEVEL(GetCurrentMultigrid(), level);
+	
+#ifdef ModelP 
+	printf(PFMT,me);
+#endif		
+	printf("Vector on level %d:\n",GLEVEL(g));
+    for (v=PFIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+    {
+		VectorPosition(v,pos);
+#ifdef ModelP 
+		printf(PFMT"(P%d)",me,PRIO(v));
+#endif
+		printf( "K %d ", KeyForObject((KEY_OBJECT *)v) );
+		if(VOBJECT(v)==NULL)
+		{
+			printf("x= ---- y= ---- ");
+#ifdef __THREEDIM__
+			printf("z= ---- ");
+#endif
+		}
+		else
+		{
+			printf("x=%5.2f y=%5.2f ",pos[0],pos[1]);
+#ifdef __THREEDIM__
+			printf("z=%5.2f ",pos[2]);
+#endif
+		}
+		printf("  index = %d %c ", VINDEX( v ) , VCCOARSE(v)?'C':'F' );
+		printf("u[%d]=%15.8f GID %08x",x_nr,VVALUE(v,x_nr), GID(v));
+		//printf("   cl %d %d sk ",VCLASS(v),VNCLASS(v));
+		//for (int j=0; j<ncomp; j++)
+		//	printf("%d ",((VECSKIP(v) & (1<<j))!=0));
+		printf("\n");
+	}
+	return;
+#else
+	FAMGSystem &sys = *FAMG_GetSystem();
+	FAMGGrid &grid = *sys.GetMultiGrid(0)->GetGrid(level);
+
+	double *vec = grid.GetVector(x_nr);
+	int n = grid.GetN();
+    
+	printf("Vector:\n");
+    for(int i = 0; i < n; i++)
+    {
+		printf("vec[%4d] = %g\n", i, vec[i]);
+	}
+#endif
+}
+
 int FAMGGrid::AnalyseNodeSimple(FAMGNode* nodei, FAMGPaList *&palist)
 {
     FAMGPaList *pl;
@@ -1103,7 +1277,7 @@ int FAMGGraph::EliminateDirichletNodes(FAMGGrid *gridptr)
 	
 	list = GetList();
 
-	if( list->GetData() == 0 )
+	if( list!=NULL && list->GetData() == 0 )
 	{	// there may be Dirichlet nodes
 	
 		// We need the following complicated procedure because UpdateNeighborsFG
@@ -1284,6 +1458,15 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 	VECTOR *vec;
 	MATRIX *mat;
 
+	// set the correct weights etc. for all nodes (incl. border)
+    for(i = 0; i < n; i++)
+    {
+        nodei = graph->GetNode(i);
+		nodei->CountNewLinks(gridptr, graph);
+		nodei->CountNewCG(graph);
+		nodei->ComputeTotalWeight();
+	}
+
 #ifdef FAMG_INNER_FIRST
 	int ghostfound;
 
@@ -1297,9 +1480,13 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 
 		// put Dirichlet vectors into the list
 		if( VECSKIP(vec) )
+		{
 			// a Dirichlet vector was found
-			if(InsertNode(gridptr, nodei))
+			if(Insert(nodei))
 				RETURN(0);
+
+			continue;
+		}
 
 		// vec lies in the border of the core partition if he has a ghost or border neighbor
 		ghostfound = 0;
@@ -1312,11 +1499,11 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 
 		if( !ghostfound )
 			// a ghost neighbor was not found
-			if(InsertNode(gridptr, nodei))
+			if(Insert(nodei))
 				RETURN(0);
     }
 #elif defined FAMG_SINGLESTEP
-	// put all nodes into the list
+	// put all master nodes into the list
     for(i = 0; i < n; i++)
     {
         nodei = graph->GetNode(i);
@@ -1325,7 +1512,7 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 		if( IS_FAMG_GHOST(vec) )
 			continue; // take only master vectors 
 
-		if(InsertNode(gridptr, nodei))
+		if(Insert(nodei))
 			return 0;
     }
 #else
@@ -1341,9 +1528,13 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 			continue; // only master vectors can be in border the of the core partition
 		// put Dirichlet vectors into the list
 		if( VECSKIP(vec) )
+		{
 			// a Dirichlet vector was found
-			if(InsertNode(gridptr, nodei))
+			if(Insert(nodei))
 				return 0;
+
+			continue;
+		}
 
 		// vec lies in the border of the core partition if he has a ghost or border neighbor
 		for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
@@ -1352,7 +1543,7 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 		
 		if( mat != NULL )
 			// a ghost neighbor was found
-			if(InsertNode(gridptr, nodei))
+			if(Insert(nodei))
 				return 0;
     }
 #endif // FAMG_INNER_FIRST
@@ -1379,7 +1570,7 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
     for(i = 0; i < n; i++)
     {
         nodei = graph->GetNode(i);
-		if(InsertNode(gridptr, nodei))
+		if(Insert(nodei))
 			return 0;
     }
 #endif

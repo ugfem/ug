@@ -175,7 +175,7 @@ public:
   // in parallel the (partly) consistent stiffness matrix
   void SetConsMatrix(FAMGMatrixAlg *cm);
 #ifdef ModelP
-  void CommunicateNodeStatus();
+  int CommunicateNodeStatus();
   void ConstructOverlap();
   INT GetNrMasterVectors() const {
     return NVEC_PRIO(GetugGrid(),PrioMaster);
@@ -322,5 +322,9 @@ inline void **FAMGGrid::GetNode() const {
 void prv( int level, int x_nr );
 void prim(int level);
 void prm(int level, int comp = 0);
+void prvGeom( int level, int x_nr );
+void primGeom(int level);
+void prmGeom(int level, int comp = 0);
 void printlist( FAMGGraph *graph);
+void printlistGeom( FAMGGraph *graph);
 #endif

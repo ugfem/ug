@@ -255,16 +255,25 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 	FAMGVectorEntry fvec;
 	const FAMGTransfer &transfer = *GetTransfer();
 	FAMGTransferEntry *transfg;
-	
+#ifdef PROTOCOLNUMERIC
+	DOUBLE d1, d2, d3;
+#endif
+
 #ifdef ModelP
 	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
 #endif
 	
 #ifdef PROTOCOLNUMERIC
-    cout<<"FAMGGrid::Restriction: defect before JacobiSmoothFG "<<fgdefect*fgdefect<<endl;
-    cout<<"FAMGGrid::Restriction: sol before JacobiSmoothFG "<<fgsolution*fgsolution<<endl;
-    cout<<"FAMGGrid::Restriction: defect*sol before JacobiSmoothFG "<<fgdefect*fgsolution<<endl;
+	d1 = fgdefect*fgdefect;
+    d2 = fgsolution*fgsolution;
+   	d3 = fgdefect*fgsolution;
+	if( me == master)
+	{
+	    cout<<"FAMGGrid::Restriction: defect before JacobiSmoothFG "<<d1<<endl;
+    	cout<<"FAMGGrid::Restriction: sol before JacobiSmoothFG "<<d2<<endl;
+    	cout<<"FAMGGrid::Restriction: defect*sol before JacobiSmoothFG "<<d3<<endl;
+	}
 #endif
 	
 	// jacobi smoothing for the fine nodes
@@ -275,9 +284,15 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 #endif
 	
 #ifdef PROTOCOLNUMERIC
-    cout<<"FAMGGrid::Restriction: defect after JacobiSmoothFG "<<fgdefect*fgdefect<<endl;
-    cout<<"FAMGGrid::Restriction: sol after JacobiSmoothFG "<<fgsolution*fgsolution<<endl;
-    cout<<"FAMGGrid::Restriction: defect*sol after JacobiSmoothFG "<<fgdefect*fgsolution<<endl;
+    d1 = fgdefect*fgdefect;
+	d2 = fgsolution*fgsolution;
+    d3 = fgdefect*fgsolution;
+	if( me == master)
+	{
+    	cout<<"FAMGGrid::Restriction: defect after JacobiSmoothFG "<<d1<<endl;
+	    cout<<"FAMGGrid::Restriction: sol after JacobiSmoothFG "<<d2<<endl;
+    	cout<<"FAMGGrid::Restriction: defect*sol after JacobiSmoothFG "<<d3<<endl;
+	}
 #endif
 	
 	// correct defect
@@ -287,9 +302,15 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 		assert(0);
 #endif
 #ifdef PROTOCOLNUMERIC
-    cout<<"FAMGGrid::Restriction: defect after defect "<<fgdefect*fgdefect<<endl;
-    cout<<"FAMGGrid::Restriction: sol after defect "<<fgsolution*fgsolution<<endl;
-    cout<<"FAMGGrid::Restriction: defect*sol after defect "<<fgdefect*fgsolution<<endl;
+    d1 = fgdefect*fgdefect;
+    d2 = fgsolution*fgsolution;
+    d3 = fgdefect*fgsolution;
+	if( me == master)
+	{
+    	cout<<"FAMGGrid::Restriction: defect after defect "<<d1<<endl;
+		cout<<"FAMGGrid::Restriction: sol after defect "<<d2<<endl;
+		cout<<"FAMGGrid::Restriction: defect*sol after defect "<<d3<<endl;
+	}
 #endif
 		
     cgdefect = 0.0;
@@ -308,7 +329,9 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 #endif
 	
 #ifdef PROTOCOLNUMERIC
-    cout<<"FAMGGrid::Restriction: defect after gridtransfer "<<cgdefect*cgdefect<<endl;
+    d1 = cgdefect*cgdefect;
+	if( me == master)
+    	cout<<"FAMGGrid::Restriction: defect after gridtransfer "<<d1<<endl;
 #endif
 	
     return;
@@ -323,7 +346,9 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 	const FAMGTransfer &transfer = *GetTransfer();
 	FAMGTransferEntry *transfg;
 	register double sum;
-	
+#ifdef PROTOCOLNUMERIC
+	DOUBLE d1, d2, d3;
+#endif
 	
     #ifdef ModelP
 	// distribute master values to V(H)Ghosts
@@ -362,7 +387,9 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 			cgdefect[cvec] = 0.0;
 	}
 	#endif
-    cout<<"FAMGGrid::Prolongation: 1*cgsol before prolongation "<<cgdefect*cgsol<<endl;
+	d1 = cgdefect*cgsol;
+	if ( me == master )
+	    cout<<"FAMGGrid::Prolongation: 1*cgsol before prolongation "<<d1<<endl;
 #endif
 	
 	FAMGVectorIter fiter(GetGridVector());
@@ -383,9 +410,15 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 #endif
 
 #ifdef PROTOCOLNUMERIC
-    cout<<"FAMGGrid::Prolongation: defect after prolongation "<<fgdefect*fgdefect<<endl;
-    cout<<"FAMGGrid::Prolongation: sol after prolongation "<<fgsol*fgsol<<endl;
-    cout<<"FAMGGrid::Prolongation: defect*sol after prolongation "<<fgdefect*fgsol<<endl;
+	d1 = fgdefect*fgdefect;
+    d2 = fgsol*fgsol;
+	d3 = fgdefect*fgsol;
+	if ( me == master )
+	{
+	    cout<<"FAMGGrid::Prolongation: defect after prolongation "<<d1<<endl;
+    	cout<<"FAMGGrid::Prolongation: sol after prolongation "<<d2<<endl;
+  		cout<<"FAMGGrid::Prolongation: defect*sol after prolongation "<<d3<<endl;
+	}
 #endif
 	
 	// prepare defect for jacobi smoothing
@@ -396,9 +429,15 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 #endif
 	
 #ifdef PROTOCOLNUMERIC
-    cout<<"FAMGGrid::Prolongation: defect after defect "<<fgdefect*fgdefect<<endl;
-    cout<<"FAMGGrid::Prolongation: sol after defect "<<fgsol*fgsol<<endl;
-    cout<<"FAMGGrid::Prolongation: defect*sol after defect "<<fgdefect*fgsol<<endl;
+	d1 = fgdefect*fgdefect;
+    d2 = fgsol*fgsol;
+	d3 = fgdefect*fgsol;
+	if ( me == master )
+	{
+    	cout<<"FAMGGrid::Prolongation: defect after defect "<<d1<<endl;
+    	cout<<"FAMGGrid::Prolongation: sol after defect "<<d2<<endl;
+    	cout<<"FAMGGrid::Prolongation: defect*sol after defect "<<d3<<endl;
+	}
 #endif
 
 	if(c == NULL)
@@ -422,8 +461,13 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
         fgsol = 0.0;
 
 #ifdef PROTOCOLNUMERIC
-	    cout<<"FAMGGrid::Prolongation: sol after update "<<(*c)*(*c)<<endl;
-    	cout<<"FAMGGrid::Prolongation: defect*c after update "<<fgdefect*(*c)<<endl;
+		d1 = (*c)*(*c);
+    	d2 = fgdefect*(*c);
+		if ( me == master )
+		{
+	    	cout<<"FAMGGrid::Prolongation: sol after update "<<d1<<endl;
+    		cout<<"FAMGGrid::Prolongation: defect*c after update "<<d2<<endl;
+		}
 #endif
 
 		// jacobi smoothing for the fine nodes
@@ -434,9 +478,15 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 #endif
 
 #ifdef PROTOCOLNUMERIC
-	    cout<<"FAMGGrid::Prolongation: defect after smoothing "<<fgdefect*fgdefect<<endl;
-    	cout<<"FAMGGrid::Prolongation: sol after smoothing "<<fgsol*fgsol<<endl;
-	    cout<<"FAMGGrid::Prolongation: defect*sol after smoothing "<<fgdefect*fgsol<<endl;
+		d1 = fgdefect*fgdefect;
+		d2 = fgsol*fgsol;
+		d3 = fgdefect*fgsol;
+		if ( me == master )
+		{
+	    	cout<<"FAMGGrid::Prolongation: defect after smoothing "<<d1<<endl;
+    		cout<<"FAMGGrid::Prolongation: sol after smoothing "<<d2<<endl;
+	    	cout<<"FAMGGrid::Prolongation: defect*sol after smoothing "<<d3<<endl;
+		}
 #endif
 
 		// defect is computed in ug (Lmgc)
@@ -1373,9 +1423,8 @@ int FAMGGrid::ConstructTransfer()
 	if( level == 0 )
 	{
 		if (graph->EliminateDirichletNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
-		CommunicateNodeStatus();
+		if (CommunicateNodeStatus()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 	}
-	if( graph->InsertHelplist() ) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 
 	finished = 0;
 
@@ -1386,7 +1435,8 @@ int FAMGGrid::ConstructTransfer()
 	while( !finished )
 	{
 		#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
-		cout<<me<<": #"<<step<<endl; printlist(graph);
+		//cout<<me<<": #"<<step<<endl; printlist(graph);
+cout<<me<<": #"<<step<<endl; printlistGeom(graph);
 		#endif
 
 		// taken from FAMGGrid::EliminateNodes
@@ -1449,7 +1499,7 @@ int FAMGGrid::ConstructTransfer()
 				//   should be avoided. 
 				graph->Remove(nodei);
 				nodei->ComputeTotalWeight();
-				if(graph->Insert(nodei)) RETURN(1);
+				if(graph->Insert(nodei)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);} 
 				choice[MIN_data] = DUMMY_DATA;
 				choice[MIN_pe] = DUMMY_PE;
 				choice[xCOORD] = DUMMY_COORD;
@@ -1471,7 +1521,9 @@ int FAMGGrid::ConstructTransfer()
 		#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
 		cout << me<<": "<<step<<"! choice vor "<< choice[MIN_data] <<" node "<<nodei->GetId()<<endl;
 		#endif
+
 		FAMG_GlobalBestChoice ( choice );
+
 		#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
 		cout << me<<": "<<step<<"! choice nach "<< choice[MIN_data]<<" pe "<<choice[MIN_pe] <<endl;
 		#endif
@@ -1486,22 +1538,20 @@ int FAMGGrid::ConstructTransfer()
 				cout << me<<": "<<step<<"! el "<<nodei->GetId()<<" w= "<<choice[MIN_data]<<" x= "<<choice[xCOORD]<<" y= "<<choice[yCOORD]<<endl;
 				#endif
 				graph->Remove(nodei);
-				if(nodei->Eliminate(this)) RETURN(1);
-				if(nodei->UpdateNeighborsFG(this)) RETURN(1); 
-				if(graph->InsertHelplist()) RETURN(1);
+				if(nodei->Eliminate(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);} 
+				if(nodei->UpdateNeighborsFG(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);} 
+				if(graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);} 
 			}
 
-
-			CommunicateNodeStatus();
-			if(graph->InsertHelplist()) RETURN(1);
+			if(CommunicateNodeStatus()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);} 
 		}
 
 		step++;
 	}
 
-	if(graph->InsertHelplist()) RETURN(1);
+	if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 	if (graph->RemainingNodes(this, 1)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
-	CommunicateNodeStatus();
+	if (CommunicateNodeStatus()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 
 #else // FAMG_SINGLESTEP
 
@@ -1509,21 +1559,19 @@ int FAMGGrid::ConstructTransfer()
 	if( level == 0 )
 	{
 		if (graph->EliminateDirichletNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
-		CommunicateNodeStatus();
+		if (CommunicateNodeStatus()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 	}
 	
 #ifdef FAMG_INNER_FIRST
-	if( graph->InsertHelplist() )
-		RETURN(1);
+	if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 
-	if (graph->EliminateNodes(this))
-		RETURN(1);
+	if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 
 	// let undecided nodes in the list; perhaps they can be eliminated
 	// in the border step; if not they become coarse there
-	//if (graph->RemainingNodes(this)) RETURN(1);
+	//if (graph->RemainingNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);} 
 
-	CommunicateNodeStatus();
+	if (CommunicateNodeStatus()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 	
 	// put the undecided nodes from the core partition into the list
     for(i = 0; i < n; i++)
@@ -1535,11 +1583,15 @@ int FAMGGrid::ConstructTransfer()
 		{
 			vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
 			if( IS_FAMG_MASTER(vec) ) // only master vectors can be in border the of the core partition
-				if(graph->InsertNode(this, nodei))
+			{
+				graph->Remove(nodei);
+				nodei->ComputeTotalWeight();
+				if(graph->Insert(nodei))	// weights etc. are already calculated!
 				{
 					FAMGReleaseHeap(FAMG_FROM_BOTTOM);
 					RETURN(1);
 				}
+			}
 		}
 	}
 #endif // FAMG_INNER_FIRST
@@ -1573,13 +1625,12 @@ int FAMGGrid::ConstructTransfer()
 	{
 		if( MyColor == color )
 		{
-		    if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 		    if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+		    if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
     		if (graph->RemainingNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 		}
 		
-//prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
-		CommunicateNodeStatus();
+		if (CommunicateNodeStatus()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 	}	
 	BorderTime = CURRENT_TIME_LONG - BorderTime;
 
@@ -1594,11 +1645,15 @@ int FAMGGrid::ConstructTransfer()
 		{
 			vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
 			if( IS_FAMG_MASTER(vec) ) // only master vectors can be in border the of the core partition
-				if(graph->InsertNode(this, nodei))
+			{
+				graph->Remove(nodei);
+				nodei->ComputeTotalWeight();
+				if(graph->Insert(nodei))	// weights etc. are already calculated!
 				{
 					FAMGReleaseHeap(FAMG_FROM_BOTTOM);
 					RETURN(1);
 				}
+			}
 		}
     }
 #endif //FAMG_INNER_FIRST
@@ -1650,12 +1705,9 @@ int FAMGGrid::ConstructTransfer()
 #else
 		
         tmpmatrix = (FAMGMatrixAlg *) FAMGGetMem(sizeof(FAMGMatrixAlg),FAMG_FROM_BOTTOM);
-        if(tmpmatrix == NULL)
-			RETURN(1);
-        if(tmpmatrix->Init2(n))
-			RETURN(1);
-        if(tmpmatrix->TmpMatrix(matrix,transfer,graph))
-			RETURN(1);
+        if(tmpmatrix == NULL) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+        if(tmpmatrix->Init2(n)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+        if(tmpmatrix->TmpMatrix(matrix,transfer,graph)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 #endif
 #ifdef FAMG_SPARSE_BLOCK
  
@@ -1671,8 +1723,7 @@ int FAMGGrid::ConstructTransfer()
 
 #ifdef ModelP
 	// update the ghost and border nodes
-	//prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
-	CommunicateNodeStatus();
+	if (CommunicateNodeStatus()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 
 #endif
 #endif // #if !(defined ModelP && defined FAMG_INNER_FIRST)
@@ -1695,8 +1746,6 @@ int FAMGGrid::ConstructTransfer()
 #endif
 		<< endl;
 		
-//prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
-
 #ifdef UG_DRAW
     /* test */
     PICTURE *thePic;
@@ -1997,7 +2046,7 @@ static int SendToMaster( DDD_OBJ obj)
 	return 0;
 }
 
-#ifdef FAMG_SINGLESTEP
+#ifdef FAMG_FULL_OVERLAP
 static int SendToOverlap1FULL( DDD_OBJ obj)
 // every master sends itself and its neighbors to each processor where it is a border and a neighbor has a master copy
 // the reason: on that processor the vector is in overlap1 and must extend with its neighbors the overlap2
@@ -2028,7 +2077,7 @@ static int SendToOverlap1FULL( DDD_OBJ obj)
 
 	return 0;
 }
-#endif // FAMG_SINGLESTEP
+#endif // FAMG_FULL_OVERLAP
 
 static int SendToOverlap1( DDD_OBJ obj)
 // every master sends itself and its neighbors to each processor where it is a border and a neighbor has a master copy
@@ -2135,7 +2184,8 @@ ASSERT(!DDD_ConsCheck());
     #endif
 	DDD_XferEnd();
 	
-#ifdef FAMG_SINGLESTEP
+#ifdef FAMG_FULL_OVERLAP
+
 	int equal = 0, step = 0;
 	int minvec, maxvec;
 
@@ -2171,7 +2221,7 @@ ASSERT(!DDD_ConsCheck());
     DDD_ObjMgrEnd();
     #endif
 	DDD_XferEnd();
-#endif // FAMG_SINGLESTEP
+#endif // FAMG_FULL_OVERLAP
 
 	// In some cases ghost vectors are left. They disturb the calculations 
 	// and must be removed here.
@@ -2456,21 +2506,24 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 				RETURN(1);
 			}
 
-#ifdef Debug
+#ifdef CHECKPALIST_IN_SCATTER
 			// check that palist is part of node->GetPaList()
 			int foundpa = 0;
 			FAMGPaList *nodepalist;
 		
-			//if( palist->GetNp() == 0 ) cout <<me<<": check "<<node->GetId()<<": 0 np"<<endl;
-			//else if( palist->GetNp() == 1 ) cout <<me<<": check "<<node->GetId()<<": 1 pa "<<palist->GetPa(0)<<endl;
-			//else if( palist->GetNp() == 2 ) cout <<me<<": check "<<node->GetId()<<": 2 pa "<<palist->GetPa(0)<<" "<<palist->GetPa(1)<<endl;
+			if( palist->GetNp() == 0 ) cout <<me<<": check "<<node->GetId()<<": 0 np"<<endl;
+			else if( palist->GetNp() == 1 ) cout <<me<<": check "<<node->GetId()<<": 1 pa "<<palist->GetPa(0)<<endl;
+			else if( palist->GetNp() == 2 ) cout <<me<<": check "<<node->GetId()<<": 2 pa "<<palist->GetPa(0)<<" "<<palist->GetPa(1)<<endl;
 
-			for( nodepalist = node->GetPaList(); !foundpa && nodepalist!=NULL; nodepalist = nodepalist->GetNext() )
+			nodepalist = node->GetPaList();
+			if( nodepalist == NULL ) {cout <<me<<":    no nodepalist"<<endl;}
+
+			for( ; !foundpa && nodepalist!=NULL; nodepalist = nodepalist->GetNext() )
 			{
 			
-				//if( nodepalist->GetNp() == 0 ) cout <<me<<":    0 np"<<endl;
-				//else if( nodepalist->GetNp() == 1 ) cout <<me<<":    1 pa "<<nodepalist->GetPa(0)<<endl;
-				//else if( nodepalist->GetNp() == 2 ) cout <<me<<":    2 pa "<<nodepalist->GetPa(0)<<" "<<nodepalist->GetPa(1)<<endl;
+				if( nodepalist->GetNp() == 0 ) cout <<me<<":    0 np"<<endl;
+				else if( nodepalist->GetNp() == 1 ) cout <<me<<":    1 pa "<<nodepalist->GetPa(0)<<endl;
+				else if( nodepalist->GetNp() == 2 ) cout <<me<<":    2 pa "<<nodepalist->GetPa(0)<<" "<<nodepalist->GetPa(1)<<endl;
 
 				if( palist->GetNp() == 1 )
 				{
@@ -2499,9 +2552,10 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 				}
 			}
 
-			assert(foundpa);
+			//assert(foundpa);
+			if(!foundpa){cout<<me<<": not foundpa!!!!!"<<endl;}
 
-#endif // Debug
+#endif // CHECKPALIST_IN_SCATTER
 
 			Communication_Graph->UpdateNSons(palist, node->GetPaList(), Communication_Grid);
 			Communication_Graph->ClearPaList(node->GetPaList());		
@@ -2611,7 +2665,7 @@ int PrintLocal(char *text)
 }
 
 
-void FAMGGrid::CommunicateNodeStatus()
+int FAMGGrid::CommunicateNodeStatus()
 {
 	PRINTDEBUG(np,1,("%d: FAMGGrid::CommunicateNodeStatus\n",me));
 	Communication_Graph = GetGraph();	// set global variable to pass the graph to the Handlers
@@ -2630,6 +2684,8 @@ void FAMGGrid::CommunicateNodeStatus()
 	#endif
 	
 	DDD_IFAExecLocal( BorderVectorSymmIF, GRID_ATTR(mygrid), Local_ClearNodeFlag );
+
+	return (Communication_Graph->InsertHelplist());	// put nodes moved to helplist by UpdateNeighborsFG back to list
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2826,4 +2882,107 @@ void printlist(FAMGGraph *graph)
 	}
 	cout<<endl<<flush;
 }
+
+
+void ppalGeom( FAMGNode *node, FAMGGraph *graph )
+{
+	FAMGPaList *palist = node->GetPaList();
+
+	cout << " PaList = ";
+	while( palist!=NULL )
+	{
+		cout << "(";
+		for( int i=0; i<palist->GetNp(); i++ )
+		{
+			if( i!=0 )
+				cout << ";";
+
+			FAMGNode *n = graph->GetNode(palist->GetPa(i));
+			VECTOR *vec = ((FAMGugVectorEntryRef*)(n->GetVec().GetPointer()))->myvector();
+			cout << KeyForObject((KEY_OBJECT *)vec)<<" ["<<n->GetId()<<"]";
+		}
+		cout << ")";
+		cout << "A"<<palist->GetApprox()<<"L"<<palist->GetNewLinks()<<"C"<<palist->GetNewCG();
+		cout << "T"<<palist->TotalWeight();
+		palist = palist->GetNext();
+	}
+	//cout << "\n";	
+}
+
+
+void printlistGeom(FAMGGraph *graph)
+{
+	FAMGList *list;
+	FAMGNode *n;
+	VECTOR *vec;
+	int i;
+
+	list = graph->GetList();
+	#ifdef ModelP
+	cout << me << ": ";
+	#endif
+	cout << "LISTE: "<<endl;
+	while(list!=NULL)
+	{
+		#ifdef ModelP
+		cout << me << ": ";
+		#endif
+		cout<<"   data " << list->GetData()<<" first="<<list->GetFirst()->GetId()<<" last="<<list->GetLast()->GetId()<<endl<<flush;
+		n = list->GetFirst();
+		while( n!=NULL)
+		{
+			vec = ((FAMGugVectorEntryRef*)(n->GetVec().GetPointer()))->myvector();
+			#ifdef ModelP
+			cout << me << ": ";
+			#endif
+			cout<<"       "<<KeyForObject((KEY_OBJECT *)vec)<<" ["<<n->GetId()<<"]";
+			if(n->GetPred()!=NULL)
+				cout<<" pred= "<<n->GetPred()->GetId();
+			if(n->GetSucc()!=NULL)
+				cout<<" succ= "<<n->GetSucc()->GetId();
+			cout << " NSon "<< n->GetNSons();
+			ppalGeom(n,graph);
+			cout<<endl<<flush;
+			n = n->GetSucc();
+		}
+		list = list->GetSucc();
+	}
+	#ifdef ModelP
+	cout << me << ": ";
+	#endif
+	cout <<"helplist:";
+	n=graph->GetHelpList();
+	while(n!=NULL)
+	{
+		vec = ((FAMGugVectorEntryRef*)(n->GetVec().GetPointer()))->myvector();
+		cout<<" "<<KeyForObject((KEY_OBJECT *)vec)<<" ["<<n->GetId()<<"]";
+		ppalGeom(n,graph);
+		n = n->GetSucc();
+	}
+	cout<<endl<<flush;
+
+	#ifdef ModelP
+	cout << me << ": ";
+	#endif
+	cout << "Vector list:"<<endl;
+	for( i=graph->GetN()-1; i >= 0; i-- )
+	{
+		n = graph->GetNode(i);
+		vec = ((FAMGugVectorEntryRef*)(n->GetVec().GetPointer()))->myvector();
+
+		#ifdef ModelP
+		cout << me << ": ";
+		#endif
+		cout << KeyForObject((KEY_OBJECT *)vec)<<" ["<<n->GetId()<<"]";
+		cout << " NSon "<< n->GetNSons();
+		if( n->IsCGNode() ) cout << " C ";
+		else if( n->IsFGNode() ) cout << " F ";
+		else if( n->IsUndecidedNode() ) cout << " U ";
+		cout << "Dat "<< n->GetData();
+
+		ppalGeom(n,graph);
+		cout<<endl<<flush;
+	}
+}
+
 #endif
