@@ -87,7 +87,7 @@ enum GhostCmds { GC_Keep, GC_ToMaster, GC_Delete };
 /****************************************************************************/
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
 /****************************************************************************/

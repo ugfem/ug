@@ -35,6 +35,7 @@
 #include <stdio.h>
 #endif
 
+#include "general.h"
 #include "ppif.h"
 #include "compiler.h"
 #include "memmgr.h"
@@ -54,6 +55,10 @@
 #ifndef MIN
 #define MIN(x,y) (((x)<(y)) ? (x) : (y))
 #endif
+
+
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
 /****************************************************************************/

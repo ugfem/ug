@@ -4,6 +4,11 @@
 #include "cmdint.h"
 /*#include "../util/smalloc.h"*/
 
+
+/* RCS_ID
+   $Header$
+ */
+
 #define Heap HEAP
 
 /*#define __DEBUG__*/

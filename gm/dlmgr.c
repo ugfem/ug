@@ -35,12 +35,18 @@
 /*                                                                          */
 /****************************************************************************/
 
+
 #include "dlmgr.h"
 #include "gm.h"
 
 #ifdef ModelP
 #include "parallel.h"
 #endif
+
+
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
+
 
 /* element */
 #define OTYPE  ELEMENT

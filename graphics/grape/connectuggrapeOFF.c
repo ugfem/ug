@@ -41,6 +41,12 @@
 #include "general.h"
 #include "connectuggrape.h"
 
+
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
+
+
+
 int CallGrape (MULTIGRID *theMG)
 {
   UserWrite("Grape library not included!\nIf Grape is available set GRAPE=ON in ug.conf and recompile.\n");

@@ -2,5 +2,10 @@
 // vi: set et ts=4 sw=2 sts=2:
 /* header file for smalloc.c */
 
+
+/* RCS_ID
+   $Header$
+ */
+
 double *cmalloc(unsigned int n);
 int cfree(char *ptr);

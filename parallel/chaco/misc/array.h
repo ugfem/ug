@@ -2,6 +2,11 @@
 // vi: set et ts=4 sw=2 sts=2:
 /* header file for array.c */
 
+
+/* RCS_ID
+   $Header$
+ */
+
 /* exported functions */
 void merge_goals(double *merged_goal, double *goal, int ndims, int part_type);
 int partition_type(int xlen, int ylen, int ndims, int *array2proc,

@@ -79,6 +79,11 @@
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
+
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
+
+
 /****************************************************************************/
 /*																			*/
 /* forward declarations of functions used before they are defined			*/

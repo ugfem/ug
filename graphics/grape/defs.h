@@ -1,6 +1,11 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 
+
+/* RCS_ID
+   $Header$
+ */
+
 #define LIST_LEN 200
 
 #define MAXTAG 8

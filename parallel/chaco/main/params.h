@@ -3,6 +3,11 @@
 #define NAME_LENGTH     80      /* Maximum length of file name */
 #define LINE_LENGTH     500     /* Maximum length of line in input file */
 
+
+/* RCS_ID
+   $Header$
+ */
+
 #define MAXDIMS         3       /* Most cuts allowed at one time */
 #define MAXSETS         8       /* 2^MAXSECTION */
 #define MAXDIMS_TOT     11      /* Maximum total number of bisections */

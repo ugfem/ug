@@ -2,6 +2,11 @@
 // vi: set et ts=4 sw=2 sts=2:
 /* f2c.h  --  Standard Fortran to C header file */
 
+
+/* RCS_ID
+   $Header$
+ */
+
 /**  barf  [ba:rf]  2.  "He suggested using FORTRAN, and everybody barfed."
 
         - From The Shogakukan DICTIONARY OF NEW ENGLISH (Second edition) */

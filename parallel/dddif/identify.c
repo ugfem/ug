@@ -85,7 +85,7 @@
 /****************************************************************************/
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /* temp node flag for Identification
    static INT ce_NIDENT;

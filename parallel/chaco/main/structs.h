@@ -14,6 +14,11 @@ struct vtx_data {
 };
 
 
+/* RCS_ID
+   $Header$
+ */
+
+
 /* Doubly linked list to hold coarsened graphs */
 struct graphlist {
   struct vtx_data **graph;              /* current graph */
