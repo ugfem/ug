@@ -195,8 +195,8 @@ DOMAIN *GetDomain (char *name)
 
    PARAMETERS:
    .  name - name of the boundary segment
-   .  left - id of left boundary segment
-   .  right - id of right boundary segment
+   .  left - id of left subdomain
+   .  right - id of right subdomain
    .  id - id of this boundary segment
    .  type - type of the boundary segment
    .  res  - resolution of the boundary segment
@@ -997,8 +997,8 @@ FORMAT *GetFormat (char *name)
 
    PARAMETERS:
    .  name - name of the boundary segment
-   .  left - name of the left segment
-   .  right - name of the right segment
+   .  left - id of the left subdomain
+   .  right - id of the right subdomain
    .  id -
    .  from -
    .  to -
