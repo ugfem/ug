@@ -141,8 +141,7 @@ sub gnuplot
 					$a[$j]='"'.$name.'"';
 					$s=$_[$k++];
 					open(TMP,">$name");
-					for ($i=0; $i<@$s; $i++)  { if ($$s[$i] ne float $$s[$i]) {die "ERROR: array contains invalid value '$$s[$i]'\n" } } 
-					for ($i=0; $i<@$s; $i+=2) { print TMP "$$s[$i] $$s[$i+1]\n"; }
+					for ($i=0; $i<@$s; $i+=2) { if ($$s[$i] eq '' || $$s[$i+1] eq '') {print TMP "\n"; next; } print TMP "$$s[$i] $$s[$i+1]\n"; }
 					close(TMP);
 				}
 			}
