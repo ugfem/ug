@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "general.h"
+#include "debug.h"
 
 #include "gm.h"
 #include "ugenv.h"
@@ -40,6 +41,7 @@
 
 #include "formats.h"
 #include "pcr.h"
+#include "numproc.h"
 #include "np.h"
 
 /****************************************************************************/
@@ -80,6 +82,8 @@
 /*																			*/
 /****************************************************************************/
 
+REP_ERR_FILE;
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -94,7 +98,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    ReadArgvDOUBLE - Read command strings
 
    SYNOPSIS:
-   INT ReadArgvDOUBLE (char *name, DOUBLE *a, INT argc, char **argv);
+   INT ReadArgvDOUBLE (const char *name, DOUBLE *a, INT argc, char **argv);
 
    PARAMETERS:
    .  name - name of the argument
@@ -112,7 +116,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT ReadArgvDOUBLE (char *name, DOUBLE *a, INT argc, char **argv)
+INT ReadArgvDOUBLE (const char *name, DOUBLE *a, INT argc, char **argv)
 {
   INT i;
   char option[OPTIONLEN];
@@ -130,7 +134,7 @@ INT ReadArgvDOUBLE (char *name, DOUBLE *a, INT argc, char **argv)
       }
     }
 
-  return (1);
+  REP_ERR_RETURN (1);
 }
 
 /****************************************************************************/
@@ -138,7 +142,7 @@ INT ReadArgvDOUBLE (char *name, DOUBLE *a, INT argc, char **argv)
    ReadArgvINT - Read command strings
 
    SYNOPSIS:
-   INT ReadArgvINT (char *name, INT *j, INT argc, char **argv);
+   INT ReadArgvINT (const char *name, INT *j, INT argc, char **argv);
 
    PARAMETERS:
    .  name - name of the argument
@@ -156,7 +160,7 @@ INT ReadArgvDOUBLE (char *name, DOUBLE *a, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-INT ReadArgvINT (char *name, INT *j, INT argc, char **argv)
+INT ReadArgvINT (const char *name, INT *j, INT argc, char **argv)
 {
   INT i;
   char option[OPTIONLEN];
@@ -174,7 +178,7 @@ INT ReadArgvINT (char *name, INT *j, INT argc, char **argv)
       }
     }
 
-  return (1);
+  REP_ERR_RETURN (1);
 }
 
 /****************************************************************************/
@@ -182,7 +186,7 @@ INT ReadArgvINT (char *name, INT *j, INT argc, char **argv)
    ReadArgvChar - Read command strings
 
    SYNOPSIS:
-   INT ReadArgvChar (char *name, char *buffer, INT argc, char **argv);
+   INT ReadArgvChar (const char *name, char *buffer, INT argc, char **argv);
 
    PARAMETERS:
    .  name - name of the argument
@@ -200,7 +204,7 @@ INT ReadArgvINT (char *name, INT *j, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-INT ReadArgvChar (char *name, char *buffer, INT argc, char **argv)
+INT ReadArgvChar (const char *name, char *buffer, INT argc, char **argv)
 {
   INT i;
   char option[OPTIONLEN];
@@ -219,7 +223,7 @@ INT ReadArgvChar (char *name, char *buffer, INT argc, char **argv)
       }
     }
 
-  return (1);
+  REP_ERR_RETURN (1);
 }
 
 /****************************************************************************/
@@ -238,7 +242,7 @@ INT ReadArgvChar (char *name, char *buffer, INT argc, char **argv)
 
    RETURN VALUE:
    INT
-   .n    PCR_NO_DISPLAY     no display
+   .n    PCR_NO_DISPLAY     no display (default if not specified)
    .n    PCR_RED_DISPLAY    reduced display
    .n    PCR_FULL_DISPLAY   full display
    D*/
@@ -270,7 +274,7 @@ INT ReadArgvDisplay (INT argc, char **argv)
    ReadArgvOption - Read command strings
 
    SYNOPSIS:
-   INT ReadArgvOption (char *name, INT argc, char **argv);
+   INT ReadArgvOption (const char *name, INT argc, char **argv);
 
    PARAMETERS:
    .  name - name of the argument
@@ -287,7 +291,7 @@ INT ReadArgvDisplay (INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-INT ReadArgvOption (char *name, INT argc, char **argv)
+INT ReadArgvOption (const char *name, INT argc, char **argv)
 {
   INT i;
   char option[OPTIONLEN];
@@ -311,7 +315,7 @@ INT ReadArgvOption (char *name, INT argc, char **argv)
    ReadArgvPosition - Read command strings
 
    SYNOPSIS:
-   INT ReadArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos);
+   INT ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE *pos);
 
    PARAMETERS:
    .  name - name of the argument
@@ -329,7 +333,7 @@ INT ReadArgvOption (char *name, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-INT ReadArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
+INT ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE *pos)
 {
   INT i;
   char option[OPTIONLEN];
@@ -351,7 +355,7 @@ INT ReadArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
       }
     }
 
-  return(1);
+  REP_ERR_RETURN(1);
 }
 
 /****************************************************************************/
@@ -359,7 +363,7 @@ INT ReadArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
    ReadArgvVecDesc - Read command strings
 
    SYNOPSIS:
-   VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, char *name,
+   VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
                                   INT argc, char **argv);
 
    PARAMETERS:
@@ -371,7 +375,13 @@ INT ReadArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
    DESCRIPTION:
    This function reads a symbol name from the command strings and returns
    a pointer to the corresponding vector descriptor.
+
+   CAUTION: If no template is specified the first vector template is used.
+
    This call locks the vector descriptor for dynamic allocation.
+
+   SYNTAX:
+   $s <vec desc name>[/<template name>]
 
    RETURN VALUE:
    VECDATA_DESC *
@@ -380,19 +390,29 @@ INT ReadArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
    D*/
 /****************************************************************************/
 
-VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, char *name,
+VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
                                INT argc, char **argv)
 {
   VECDATA_DESC *vd;
-  char value[VALUELEN];
+  char value[VALUELEN],vdname[NAMESIZE],tname[NAMESIZE];
+  INT res;
 
   if (ReadArgvChar(name,value,argc,argv))
-    return (NULL);
+    REP_ERR_RETURN (NULL);
 
-  vd = GetVecDataDescByName(theMG,value);
+  res = sscanf(value,expandfmt(CONCAT5("%",NAMELENSTR,"[a-zA-Z0-9_] / %",NAMELENSTR,"[a-zA-Z0-9_]")),vdname,tname);
+  vd = GetVecDataDescByName(theMG,vdname);
   if (vd == NULL)
-    vd = CreateVecDescOfTemplate (theMG,value,NULL);
-  if (vd != NULL) VM_LOCKED(vd) = 1;
+  {
+    if (res==2)
+      vd = CreateVecDescOfTemplate (theMG,vdname,tname);
+    else
+      /* taking default template */
+      vd = CreateVecDescOfTemplate (theMG,vdname,NULL);
+  }
+  if (vd == NULL) REP_ERR_RETURN (NULL);
+
+  VM_LOCKED(vd) = 1;
 
   return(vd);
 }
@@ -402,7 +422,7 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, char *name,
    ReadArgvMatDesc - Read command strings
 
    SYNOPSIS:
-   MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, char *name,
+   MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, const char *name,
    INT argc, char **argv);
 
    PARAMETERS:
@@ -423,20 +443,29 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, char *name,
    D*/
 /****************************************************************************/
 
-MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, char *name,
+MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, const char *name,
                                INT argc, char **argv)
 {
   MATDATA_DESC *md;
-  char value[VALUELEN];
+  char value[VALUELEN],mdname[NAMESIZE],tname[NAMESIZE];
+  INT res;
 
   if (ReadArgvChar(name,value,argc,argv))
-    return (NULL);
+    REP_ERR_RETURN (NULL);
 
-  md = GetMatDataDescByName(theMG,value);
+  res = sscanf(value,"%s/%s",mdname,tname);
+  md = GetMatDataDescByName(theMG,mdname);
   if (md == NULL)
-    md = CreateMatDescOfTemplate (theMG,value,NULL);
+  {
+    if (res==2)
+      md = CreateMatDescOfTemplate (theMG,mdname,tname);
+    else
+      /* taking default template */
+      md = CreateMatDescOfTemplate (theMG,mdname,NULL);
+  }
+  if (md == NULL) REP_ERR_RETURN (NULL);
 
-  if (md != NULL) VM_LOCKED(md) = 1;
+  VM_LOCKED(md) = 1;
 
   return(md);
 }
@@ -446,7 +475,7 @@ MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, char *name,
    ReadArgvNumProc - Read command strings
 
    SYNOPSIS:
-   NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, char *name, char *class,
+   NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, char *class,
    INT argc, char **argv);
 
    PARAMETERS:
@@ -467,13 +496,13 @@ MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, char *name,
    D*/
 /****************************************************************************/
 
-NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, char *name, char *class,
+NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, const char *class,
                           INT argc, char **argv)
 {
   char value[VALUELEN];
 
   if (ReadArgvChar(name,value,argc,argv))
-    return (NULL);
+    REP_ERR_RETURN (NULL);
 
   return(GetNumProcByName(theMG,value,class));
 }
@@ -530,18 +559,18 @@ INT ReadVecTypeINTs (char *str, INT n, INT nINT[MAXVECTORS], INT theINTs[][MAXVE
   else if ((s=strstr(tok,"si"))!=NULL)
     typetok[SIDEVECTOR] = s+2;
                 #endif
-  else return (1);
+  else REP_ERR_RETURN (1);
 
   for (type=0; type<MAXVECTORS; type++)
     if (typetok[type]!=NULL)
       for (tok=strtok(typetok[type],COMPSEP); tok!=NULL; tok=strtok(NULL,COMPSEP))
       {
-        if (nINT[type]>=n) return (2);
+        if (nINT[type]>=n) REP_ERR_RETURN (2);
 
         if (sscanf(tok,"%d",&iValue)!=1)
-          return (3);
-        else
-          theINTs[nINT[type]++][type] = (INT) iValue;
+          REP_ERR_RETURN (3)
+          else
+            theINTs[nINT[type]++][type] = (INT) iValue;
       }
 
   return (NUM_OK);
@@ -607,18 +636,18 @@ INT ReadVecTypeDOUBLEs (char *str, INT n, INT nDOUBLE[MAXVECTORS], DOUBLE theDOU
       for (tok=strtok(typetok[type],COMPSEP); tok!=NULL; tok=strtok(NULL,COMPSEP))
       {
         found++;
-        if (nDOUBLE[type]>=n) return (2);
+        if (nDOUBLE[type]>=n) REP_ERR_RETURN (2);
 
         if (sscanf(tok,"%lf",&lfValue)!=1)
-          return (3);
-        else
-          theDOUBLEs[nDOUBLE[type]++][type] = (DOUBLE) lfValue;
+          REP_ERR_RETURN (3)
+          else
+            theDOUBLEs[nDOUBLE[type]++][type] = (DOUBLE) lfValue;
       }
 
   if (notypetok!=NULL)
   {
     if (found)
-      return (NUM_ERROR);
+      REP_ERR_RETURN (NUM_ERROR);
 
     /* there is only one token witout type label */
 
@@ -627,9 +656,9 @@ INT ReadVecTypeDOUBLEs (char *str, INT n, INT nDOUBLE[MAXVECTORS], DOUBLE theDOU
     for (tok=strtok(notypetok,COMPSEP); tok!=NULL; tok=strtok(NULL,COMPSEP))
       found++;
     if (found!=1)
-      return (NUM_ERROR);
-    else
-      return (NUM_TYPE_MISSING);
+      REP_ERR_RETURN (NUM_ERROR)
+      else
+        REP_ERR_RETURN (NUM_TYPE_MISSING);
   }
 
   return (NUM_OK);
@@ -673,7 +702,7 @@ INT ReadVecTypeOrder (char *str, INT n, INT MaxPerType, INT *nOrder, INT theOrde
   ni = 0;
   for (token=strtok(str,COMPSEP); token!=NULL; token=strtok(NULL,COMPSEP))
   {
-    if (ni>=n) return (1);
+    if (ni>=n) REP_ERR_RETURN (1);
 
     if              ((sscanf(token,"nd%d",&iValue)==1) && (iValue<MaxPerType))
       theOrder[ni++] = NODEVECTOR*MaxPerType + (INT) iValue;
@@ -685,10 +714,72 @@ INT ReadVecTypeOrder (char *str, INT n, INT MaxPerType, INT *nOrder, INT theOrde
     else if ((sscanf(token,"si%d",&iValue)==1) && (iValue<MaxPerType))
       theOrder[ni++] = SIDEVECTOR*MaxPerType + (INT) iValue;
                 #endif
-    else return (2);
+    else REP_ERR_RETURN (2);
   }
 
   *nOrder = ni;
+
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*
+   ReadVecTypeNUMPROCs - Read a number of NUMPROCs from the input string
+
+   SYNOPSIS:
+   INT ReadVecTypeNUMPROCs (char *str, INT n, INT nNUMPROC[MAXVECTORS],
+   NUM_PROC *theNUMPROCs[][MAXVECTORS]);
+
+   PARAMETERS:
+   .  str - input string
+   .  n - maximal number of blocks
+   .  nNUMPROC[MAXVECTORS] - number per vector type
+   .  theNUMPROCs[][MAXVECTORS] - array to store the numprocs
+
+   DESCRIPTION:
+   This function reads a number of NUMPROCs from the input string.
+   It is used to read the different smoothers per block in an
+   equation block smoother.
+
+   SEE ALSO:
+   ebgs
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    else if error occured.
+ */
+/****************************************************************************/
+
+INT ReadVecTypeNUMPROCs (MULTIGRID *theMG, char *str, char *class_name, INT n, INT nNUMPROC[MAXVECTORS], NP_BASE *theNUMPROCs[][MAXVECTORS])
+{
+  char *s,*tok,*typetok[MAXVECTORS];
+  INT type;
+
+  for (type=0; type<MAXVECTORS; type++) {nNUMPROC[type] = 0; typetok[type] = NULL;}
+
+  for (tok=strtok(str,TYPESEP); tok!=NULL; tok=strtok(NULL,TYPESEP))
+    if ((s=strstr(tok,"nd"))!=NULL)
+      typetok[NODEVECTOR] = s+2;
+    else if ((s=strstr(tok,"ed"))!=NULL)
+      typetok[EDGEVECTOR] = s+2;
+    else if ((s=strstr(tok,"el"))!=NULL)
+      typetok[ELEMVECTOR] = s+2;
+                #ifdef __THREEDIM__
+  else if ((s=strstr(tok,"si"))!=NULL)
+    typetok[SIDEVECTOR] = s+2;
+                #endif
+  else REP_ERR_RETURN (1);
+
+  for (type=0; type<MAXVECTORS; type++)
+    if (typetok[type]!=NULL)
+      for (tok=strtok(typetok[type],COMPSEP); tok!=NULL; tok=strtok(NULL,COMPSEP))
+      {
+        if (nNUMPROC[type]>=n) REP_ERR_RETURN (2);
+
+        if ((theNUMPROCs[nNUMPROC[type]++][type]=GetNumProcByName(theMG,tok,class_name))==NULL)
+          REP_ERR_RETURN (3);
+      }
 
   return (NUM_OK);
 }
@@ -769,7 +860,7 @@ INT sc_mul_check (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z, const VE
     x[i] = y[i] * z[i];
     if (x[i] == 0.0) x[i] = z[i];
   }
-  return (0);
+  return (NUM_OK);
 }
 
 /****************************************************************************/
@@ -815,7 +906,7 @@ INT sc_read (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name, INT argc
 
   if (theVD != NULL)
     offset = VD_OFFSETPTR(theVD);
-  if (strlen(name)>=OPTIONLEN-1) return (1);
+  if (strlen(name)>=OPTIONLEN-1) REP_ERR_RETURN (1);
 
   /* find input string */
   found = FALSE;
@@ -826,7 +917,7 @@ INT sc_read (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name, INT argc
         found = TRUE;
         break;
       }
-  if (!found) return (2);
+  if (!found) REP_ERR_RETURN (2);
 
   /* read from value string */
   err = ReadVecTypeDOUBLEs(value,MAX_VEC_COMP,nDOUBLEs,theDOUBLEs);
@@ -835,26 +926,26 @@ INT sc_read (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name, INT argc
     {
       /* iff no type is specified in the value string, scan one value for all */
       if (sscanf(value,"%lf",&lfValue)!=1)
-        return (3);
+        REP_ERR_RETURN (3);
       for (n=0; n<MAX_VEC_COMP; n++)
         x[n] = lfValue;
       return (NUM_OK);
     }
     else
-      return (NUM_ERROR);
+      REP_ERR_RETURN (NUM_ERROR);
 
   /* fill x and check consistency with VECDATA_DESC */
   for (n=0, type=0; type<NVECTYPES; type++)
   {
     if (theVD!=NULL)
       if (n!=offset[type])
-        return (4);
+        REP_ERR_RETURN (4);
     for (i=0; i<nDOUBLEs[type]; i++)
       x[n++] = theDOUBLEs[i][type];
   }
   if (theVD!=NULL)
     if (n!=offset[type])
-      return (4);
+      REP_ERR_RETURN (4);
 
   return (NUM_OK);
 }
