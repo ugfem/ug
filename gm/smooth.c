@@ -1864,6 +1864,12 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
   DOUBLE *corn[MAX_CORNERS_OF_ELEM],*y,*cvect;
   DOUBLE x[DIM],old_x[DIM];
 
+    #ifdef ModelP
+  if (me > 0)
+    if (FIRSTVECTOR(theGrid) != NULL)
+      assert(0);
+    #endif
+
   if (bdryFlag) {
     PrintErrorMessage('E',"SmoothMultiGrid",
                       "Smoothing boundary nodes not implemented");
