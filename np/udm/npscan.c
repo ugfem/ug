@@ -128,7 +128,7 @@ INT ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE *pos)
   for (i=0; i<argc; i++)
     if (argv[i][0]==name[0])
     {
-      if (sscanf(argv[i],"%s %f %f %f",option,&x,&y,&z)!=DIM+1)
+      if (sscanf(argv[i],"%s %f %f %f",option,&x,&y,&z)<DIM+1)
         continue;
       if (strcmp(option,name) == 0)
       {
