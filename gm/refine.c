@@ -95,14 +95,13 @@
 #include "identify.h"
 #include "pargm.h"
 #include "cmdint.h"
-#endif
 
 /* TODO: temporarily included to make vecskips consistent for df */
-/* 
+ 
 #include "udm.h"
 INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
-*/
 
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -5880,8 +5879,14 @@ DDD_CONSCHECK;
 	/* now really manipulate the next finer level */		
 	START_TIMER(gridadaptl_timer)
 
+	#ifdef DDDOBJMGR
+	DDD_ObjMgrBegin();
+	#endif
 	if (level<toplevel || newlevel)
 		if (AdaptLocalGrid(theGrid,nadapted)!=GM_OK)				RETURN(GM_FATAL);
+	#ifdef DDDOBJMGR
+	DDD_ObjMgrEnd();
+	#endif
 
 		DDD_XferEnd();
 
