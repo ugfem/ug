@@ -363,6 +363,7 @@ int filetype (const char *fname)
 INT DirWalk (const char *dir, ProcessFileProc fcn)
 {
 #ifndef __MACINTOSH__
+#ifndef __CC__
   DIR *dfd = opendir(dir);
   int ft = filetype(dir);
 
@@ -396,10 +397,10 @@ INT DirWalk (const char *dir, ProcessFileProc fcn)
       }
   closedir(dfd);
   return 0;
-
-#else
-  REP_ERR_RETURN (NOT_IMPLEMENTED);
 #endif
+#endif
+
+  REP_ERR_RETURN (NOT_IMPLEMENTED);
 }
 
 /****************************************************************************/
