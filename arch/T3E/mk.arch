@@ -19,7 +19,9 @@ ARCH_LIBS     = -lc -lm
 ARCH_FLIBS    =
 
 #-hinline2,scalar2 or -hinline3,scalar3 or -g -or -O2, -happrentice
-ARCH_CFLAGS   = -g
+ARCH_CFLAGS   = 
+ARCH_NOOPTIM  = -g
+ARCH_OPTIM    = -O2
 ARCH_FFLAGS   = -g
 ARCH_C++FLAGS = -g
 #ARCH_LFLAGS   = -L /opt/ctl/mpt/mpt/lib # -g
