@@ -45,7 +45,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define DIO_VERSION                                     "DATA_IO_1.4"
+#define DIO_VERSION                                     "DATA_IO_1.5"
 
 #define __DIO_USE_IN_UG__
 #define DIO_DIM                 3
@@ -92,6 +92,7 @@ struct dio_general {
   char version[DIO_NAMELEN];                    /* version of i/o						*/
   char mgfile[DIO_NAMELEN];                     /* corresponding multigrid file                 */
   double time;                                          /* time, -1.0 means no time specified!  */
+  double dt;                                                    /* next (not previous) time-step                */
   int magic_cookie;                                     /* identification with mg-file			*/
 
   /* information about data stored */

@@ -285,8 +285,10 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
   /* write time to shell */
   sprintf(buffer,"%12.4lE",bdf->t_0);
   SetStringVar("TIME",buffer);
+  SetStringVar(":BDF:TIME",buffer);
   sprintf(buffer,"%12.4lE",bdf->dt);
   SetStringVar("TIMESTEP",buffer);
+  SetStringVar(":BDF:DT",buffer);
 
   /* statistics init */
   bdf->number_of_nonlinear_iterations = 0;
@@ -1146,9 +1148,15 @@ static INT BDFConstruct (NP_BASE *theNP)
 
 INT InitBDFSolver (void)
 {
-  if (CreateClass (T_SOLVER_CLASS_NAME ".bdf",
-                   sizeof(NP_BDF), BDFConstruct))
-    return (__LINE__);
+  INT error=0;
+
+  if (MakeStruct(":BDF")!=0)
+  {
+    SetHiWrd(error,__LINE__);
+    return (1);
+  }
+
+  if (CreateClass (T_SOLVER_CLASS_NAME ".bdf",sizeof(NP_BDF), BDFConstruct)) return (__LINE__);
 
   return (0);
 }

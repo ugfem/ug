@@ -214,6 +214,7 @@ int     Read_DT_General (DIO_GENERAL *dio_general)
   if (Bio_Read_string(dio_general->version)) return (1);
   if (Bio_Read_string(dio_general->mgfile)) return (1);
   if (Bio_Read_mdouble(1,&(dio_general->time))) return (1);
+  if (Bio_Read_mdouble(1,&(dio_general->dt))) return (1);
   if (Bio_Read_mint(2,intList)) return (1);
   dio_general->magic_cookie       = intList[0];
   dio_general->nVD                        = intList[1];
@@ -271,6 +272,7 @@ int     Write_DT_General (DIO_GENERAL *dio_general)
   if (Bio_Write_string(dio_general->version)) return (1);
   if (Bio_Write_string(dio_general->mgfile)) return (1);
   if (Bio_Write_mdouble(1,&(dio_general->time))) return (1);
+  if (Bio_Write_mdouble(1,&(dio_general->dt))) return (1);
   intList[0] = dio_general->magic_cookie;
   intList[1] = dio_general->nVD;
   if (Bio_Write_mint(2,intList)) return (1);
