@@ -14,7 +14,7 @@ ARCH_POSTLINK = true    # strip $(APPL).px
 
 ARCH_LIBS     = -lm
 
-ARCH_CFLAGS   = # -g 
+ARCH_CFLAGS   = -g 
 ARCH_C++FLAGS =
 ARCH_LFLAGS   = 
 ARCH_ARFLAGS  = ru
