@@ -3487,7 +3487,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
 
   if (level <= np->baselevel) {
     if ((*np->BaseSolver->Residuum)
-          (np->BaseSolver,np->baselevel,level,c,b,A,&lresult))
+          (np->BaseSolver,MIN(level,np->baselevel),level,c,b,A,&lresult))
       REP_ERR_RETURN(1);
     IFDEBUG(np,4)
     dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
