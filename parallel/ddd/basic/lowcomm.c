@@ -1111,7 +1111,7 @@ int LC_Connect (LC_MSGTYPE mtyp)
   /* create array of receive message handles */
   if (nRecvs>0)
   {
-    theRecvArray = (LC_MSGHANDLE *)AllocTmpReq(sizeof(LC_MSGHANDLE)*nRecvs, TMEM_LOWCOMM);
+    theRecvArray = (LC_MSGHANDLE *)AllocTmpReq(sizeof(LC_MSGHANDLE)*nRecvs, TMEM_ANY);
   }
 
 
@@ -1218,7 +1218,7 @@ void LC_Cleanup (void)
   if (theRecvArray!=NULL)
   {
     size_t size = sizeof(LC_MSGHANDLE)*nRecvs;
-    FreeTmpReq(theRecvArray,size,TMEM_LOWCOMM);
+    FreeTmpReq(theRecvArray,size,TMEM_ANY);
     theRecvArray=NULL;
   }
 

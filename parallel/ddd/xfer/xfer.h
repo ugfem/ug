@@ -79,8 +79,8 @@
 #define _PRINTSAME    , indent, fp
 
 /* map memory allocation calls */
-/* activate this to allocate memory from freelists
-   /*
+/* activate this to allocate memory from freelists */
+/*
    #ifdef XferMemFromHeap
  */
 #define OO_Allocate  xfer_AllocHeap

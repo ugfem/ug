@@ -1029,10 +1029,6 @@ void DDD_Interface::DisplayAll (void)
 
 static void IFRebuildAll (void)
 {
-  /*
-     DDD_ConsCheck();
-   */
-
   /* create standard interface */
   if (! IS_OK(IFCreateFromScratch(NULL, STD_INTERFACE)))
   {
