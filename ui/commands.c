@@ -2682,12 +2682,40 @@ static INT SaveCommand (INT argc, char **argv)
  */
 /****************************************************************************/
 
+static INT ReadSaveDataInput (MULTIGRID *theMG, INT argc, char **argv, char *VDSym, char EvalChar, VECDATA_DESC **theVD, EVALUES **theEVal, EVECTOR **theEVec)
+{
+  INT i;
+
+  /* init */
+  *theVD = NULL; *theEVal = NULL; *theEVec = NULL;
+
+  /* read VecDesc */
+  *theVD = ReadArgvVecDesc(theMG,VDSym,argc,argv);
+  if (*theVD!=NULL) return (1);
+
+  /* get plot procedure */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]==EvalChar)
+    {
+      if (sscanf(argv[i]+1," %s",buffer)!=1) break;
+      if (strlen(buffer)>=NAMESIZE) break;
+      *theEVal = GetElementValueEvalProc(buffer);
+      if (*theEVal!=NULL) return (2);
+      *theEVec = GetElementVectorEvalProc(buffer);
+      if (*theEVec!=NULL) return (3);
+    }
+
+  return (0);
+}
+
 static INT SaveDataCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   char FileName[NAMESIZE];
   VECDATA_DESC *theVDList[5];
-  INT n;
+  EVALUES *theEValues[5];
+  EVECTOR *theEVector[5];
+  INT n,ret;
 
   theMG = currMG;
   if (theMG==NULL) {PrintErrorMessage('E',"savedata","no open multigrid"); return (CMDERRORCODE);}
@@ -2695,16 +2723,16 @@ static INT SaveDataCommand (INT argc, char **argv)
   /* scan filename */
   if (sscanf(argv[0],expandfmt(CONCAT3(" savedata %",NAMELENSTR,"[ -~]")),FileName)!=1) { PrintErrorMessage('E',"save","cannot read filename"); return (CMDERRORCODE);}
 
-  /* get vecdatadesc */
+  /* get input */
   n=0;
-  if ((theVDList[n]=ReadArgvVecDesc(theMG,"a",argc,argv))!=NULL)
-    if ((theVDList[++n]=ReadArgvVecDesc(theMG,"b",argc,argv))!=NULL)
-      if ((theVDList[++n]=ReadArgvVecDesc(theMG,"c",argc,argv))!=NULL)
-        if ((theVDList[++n]=ReadArgvVecDesc(theMG,"d",argc,argv))!=NULL)
-          if ((theVDList[++n]=ReadArgvVecDesc(theMG,"e",argc,argv))!=NULL)
-            n++;
+  ret = ReadSaveDataInput (theMG,argc,argv,"a",'A',theVDList+0,theEValues+0,theEVector+0);        if (ret) n++;
+  ret = ReadSaveDataInput (theMG,argc,argv,"b",'B',theVDList+1,theEValues+1,theEVector+1);        if (ret) n++;
+  ret = ReadSaveDataInput (theMG,argc,argv,"c",'C',theVDList+2,theEValues+2,theEVector+2);        if (ret) n++;
+  ret = ReadSaveDataInput (theMG,argc,argv,"d",'D',theVDList+3,theEValues+3,theEVector+3);        if (ret) n++;
+  ret = ReadSaveDataInput (theMG,argc,argv,"e",'E',theVDList+4,theEValues+4,theEVector+4);        if (ret) n++;
+
   if (n<=0) return (PARAMERRORCODE);
-  if (SaveData(theMG,FileName,n,theVDList)) return (PARAMERRORCODE);
+  if (SaveData(theMG,FileName,n,theVDList,theEValues,theEVector)) return (PARAMERRORCODE);
 
   return(OKCODE);
 }
