@@ -1185,6 +1185,20 @@ static INT BuildObsTrafo (PICTURE *thePicture)
 		default:
 			RETURN(1);
 	}
+    #if defined (ModelP) && defined (__TWODIM__)
+    /* fix for wrong parallelization of commands like walk, walkaround */
+    /* this is only a quick fix! Better replace if (me!=master) on     */ 
+    /* command level with if (!CONTEXT(me)), and test all commands     */
+    /* (s.l. 000508)                                                   */
+    if (BulletDim == 3)
+    {
+        Broadcast(OBS_ViewDirection,3*sizeof(DOUBLE));
+        Broadcast(&OBS_ViewPlaneDist,sizeof(DOUBLE));
+        Broadcast(ObsTrafo,16*sizeof(DOUBLE));
+        Broadcast(InvObsTrafo,16*sizeof(DOUBLE));
+    }
+    #endif
+
 	M4_COPY(ObsTrafo,VO_TRAFO(theViewedObj));
 	M4_COPY(InvObsTrafo,VO_INVTRAFO(theViewedObj));
 	
