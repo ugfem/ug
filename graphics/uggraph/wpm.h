@@ -240,6 +240,9 @@ struct MatrixPlotObj {
   MATDATA_DESC *Matrix;                                         /* matrix                                                               */
   DOUBLE dash;                                                          /* length of the line segments in dashed lines */
   DOUBLE space;                                                         /* gap between line segments in dashed lines*/
+  INT i2v;                                                                      /* use table index --> vector					*/
+  VECTOR **i2v_table;                                                   /* optional table index --> vector				*/
+  size_t i2v_size;                                                      /* table size									*/
 };
 
 struct LinePlotObj {
@@ -496,6 +499,7 @@ struct UgWindow {
 
 typedef INT (*DispPlotObjProcPtr)(union PlotObj *thePlotObj);
 typedef INT (*SetPlotObjProcPtr)(union PlotObj *thePlotObj, INT argc, char **argv);
+typedef INT (*UnsetPlotObjProcPtr)(union PlotObj *thePlotObj);
 
 struct PlotObjType {
 
@@ -503,6 +507,7 @@ struct PlotObjType {
 
   INT Dimension;                                                                /* see above								*/
   SetPlotObjProcPtr SetPlotObjProc;                             /* proc for initializing the PlotObj		*/
+  UnsetPlotObjProcPtr UnsetPlotObjProc;                 /* proc for deconstructing the PlotObj		*/
   DispPlotObjProcPtr DispPlotObjProc;                   /* proc for displaying the PlotObj			*/
 };
 

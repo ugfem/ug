@@ -184,6 +184,16 @@ INT DisposePicture (PICTURE *thePicture)
   if ((theUgWindow = PIC_UGW(thePicture)) == NULL) return (1);
   if (UGW_NPIC(theUgWindow) <= 0) return (1);
 
+  /* deconstruct plotobject */
+  {
+    PLOTOBJTYPE *pot = PO_POT(PIC_PO(thePicture));
+
+    if (pot!=NULL)
+      if (pot->UnsetPlotObjProc!=NULL)
+        if ((*pot->UnsetPlotObjProc)(PIC_PO(thePicture)))
+          return (1);
+  }
+
   /* dispose image */
   if (ChangeEnvDir("/UgWindows") == NULL) return (0);
   if (ChangeEnvDir(UGW_NAME(theUgWindow)) == NULL) return (0);
@@ -1211,6 +1221,12 @@ PLOTOBJTYPE *CreatePlotObjType (const char *PlotObjTypeName, INT size)
   if (pot==NULL)
     return (NULL);
 
+  /* init */
+  pot->Dimension                  = 0;
+  pot->SetPlotObjProc             = NULL;
+  pot->UnsetPlotObjProc   = NULL;
+  pot->DispPlotObjProc    = NULL;
+
   return (pot);
 }
 
@@ -1459,7 +1475,7 @@ static INT SetDefaultVP3D (PLOTOBJ *thePO, DOUBLE *DefaultVP)
   GRID *theGrid;
   NODE *theNode;
   DOUBLE_VECTOR d,xmax1,xmax2,xmin1,xmin2,xmed;
-  DOUBLE M[DIM*DIM],MInv[DIM*DIM],diff, scpr, norm;
+  DOUBLE M[DIM*DIM],MInv[DIM*DIM],diff, norm;
   INT i,j;
 
   if (thePO==NULL) return (1);
@@ -2645,10 +2661,13 @@ INT DisplayObject (PLOTOBJ *thePlotObj)
    .    $t~<to>				- to value
    .    $T~<thresh>			- supress entries smaller than <thresh>
    .    $l~0|1					- logarithmic scale off/on
-   .    $B~0|1~<dash>~<space>	- block vectors off/on
+   .    $BV~0|1~<dash>~<space>	- block vectors off/on
    .    $r~0|1					- size relative to diagonal entry off/on
    .    $C~0|1					- regular entries off/on
    .    $E~0|1					- extra entries off/on
+   .    $i2v^0|1				- use vector index to node list off/on
+                                                                (dynamic info shows values and exact entry
+                                                                but CAUTION: list my be quite large)
 
    KEYWORDS:
    graphics, plot, window, picture, plotobject, matdesc
@@ -2731,8 +2750,12 @@ static INT InitMatrixPlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
       iValue = 0;
       fValue = 0.0;
       f2Value = 0.0;
-      if (sscanf(argv[i],"BV %d %f %f",&iValue,&fValue,&f2Value)==0)
+      if (sscanf(argv[i],"BV %d %f %f",&iValue,&fValue,&f2Value)!=3)
+      {
+        PrintErrorMessage('E',"Matrix","specify 1|0 and two floats with BV option");
         break;
+      }
+
       if (iValue==1)
         theMpo->BV = YES;
       else if (iValue==0)
@@ -2748,6 +2771,18 @@ static INT InitMatrixPlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
         theMpo->rel = YES;
       else if (iValue==0)
         theMpo->rel = NO;
+      break;
+
+    case 'i' :
+      if (sscanf(argv[i],"i2v %d",&iValue)!=1)
+        break;
+      if (theMpo->i2v_table!=NULL)
+        return (PutFreelistMemory(MGHEAP(PO_MG(thePlotObj)),theMpo->i2v_table,theMpo->i2v_size));
+      theMpo->i2v_table = NULL;
+      if (iValue==1)
+        theMpo->i2v = YES;
+      else if (iValue==0)
+        theMpo->i2v = NO;
       break;
 
     case 'C' :
@@ -2826,6 +2861,7 @@ static INT DisplayMatrixPlotObject (PLOTOBJ *thePlotObj)
   UserWriteF(DISPLAY_PO_FORMAT_SS,"rel values",(theMpo->rel) ? "YES" : "NO");
   UserWriteF(DISPLAY_PO_FORMAT_SF,"Thresh",(float)theMpo->thresh);
   UserWriteF(DISPLAY_PO_FORMAT_SS,"BV blocks",(theMpo->BV) ? "YES" : "NO");
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"ind to vec",BOOL_2_YN(theMpo->i2v));
 
   /* print procedure name */
   if (theMpo->EvalFct!=NULL)
@@ -2835,6 +2871,16 @@ static INT DisplayMatrixPlotObject (PLOTOBJ *thePlotObj)
   if (theMpo->Matrix!=NULL)
     UserWriteF(DISPLAY_PO_FORMAT_SS,"Matrix",ENVITEM_NAME(theMpo->Matrix));
 #endif
+
+  return (0);
+}
+
+static INT DisposeMatrixPlotObject (PLOTOBJ *thePlotObj)
+{
+  struct MatrixPlotObj *theMpo = &(thePlotObj->theMpo);
+
+  if (theMpo->i2v_table!=NULL)
+    return (PutFreelistMemory(MGHEAP(PO_MG(thePlotObj)),theMpo->i2v_table,theMpo->i2v_size));
 
   return (0);
 }
@@ -5245,6 +5291,7 @@ INT InitPlotObjTypes (void)
   thePOT->Dimension                               = TYPE_2D;
   thePOT->SetPlotObjProc                  = InitMatrixPlotObject;
   thePOT->DispPlotObjProc                 = DisplayMatrixPlotObject;
+  thePOT->UnsetPlotObjProc                = DisposeMatrixPlotObject;
 
   if ((thePOT=GetPlotObjType("Line")) == NULL) return (1);
   thePOT->Dimension                               = TYPE_2D;
