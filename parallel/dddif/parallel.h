@@ -276,6 +276,7 @@ INT             CheckInterfaces                         (GRID *theGrid);
 void    SetGhostObjectPriorities    (GRID *theGrid);
 
 /* from trans.c */
+int             TransferGrid                            (MULTIGRID *theMG);
 int             TransferGridFromLevel           (MULTIGRID *theMG, INT level);
 void    AMGAgglomerate                          (MULTIGRID *theMG);
 

@@ -553,6 +553,10 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
   return 0;
 }
 
+int TransferGrid (MULTIGRID *theMG)
+{
+  TransferGridFromLevel(theMG,0);
+}
 
 /****************************************************************************/
 

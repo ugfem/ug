@@ -152,17 +152,17 @@ INT compare_gid (const void *e0, const void *e1)
   return(0);
 }
 
-#ifdef Debug
-static void ResetIdentFlags (GRID *UpGrid)
+static void ResetIdentFlags (GRID *Grid)
 {
   NODE *theNode;
   EDGE *theEdge;
   LINK *theLink;
 
   /* clear all IDENT flags */
-  for (theNode=FIRSTNODE(UpGrid); theNode!=NULL; theNode=SUCCN(theNode))
+  for (theNode=FIRSTNODE(Grid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     SETNIDENT(theNode,CLEAR);
+    SETUSED(theNode,0);
 
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
     {
@@ -172,7 +172,6 @@ static void ResetIdentFlags (GRID *UpGrid)
   }
 
 }
-#endif
 
 #ifdef Debug
 static INT Print_Identify_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
@@ -381,6 +380,10 @@ static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
   }
   else
         #endif
+
+  /* return if not needed any more */
+  if (!USED(theNode)) return;
+
   /* return if already identified */
   if (NIDENT(theNode) == IDENT) return;
 
@@ -564,7 +567,7 @@ static INT IdentifyEdge (GRID *theGrid,
         #endif
         #ifdef __THREEDIM__
   /* identification of sonedges is done in Identify_SonNodesAndSonEdges() */
-  if (NTYPE(Nodes[0])==CORNER_NODE && NTYPE(Nodes[1])==CORNER_NODE)
+  if (CORNERTYPE(Nodes[0]) && CORNERTYPE(Nodes[1]))
   {
     EDGE *FatherEdge;
     FatherEdge = GetEdge((NODE *)NFATHER(Nodes[0]),(NODE *)NFATHER(Nodes[1]));
@@ -583,6 +586,7 @@ static INT IdentifyEdge (GRID *theGrid,
   }
   else
         #endif
+
   /* edge locked -> already identified */
   if (EDIDENT(theEdge) == IDENT) return(0);
 
@@ -706,7 +710,11 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
 
                         #ifdef __THREEDIM__
       if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
+      {
         IdentifySideVector(theElement,theNeighbor,SonList[j],SonSides[j]);
+        /* this is not debugged */
+        assert(0);
+      }
                         #endif
     }
   }
@@ -737,10 +745,8 @@ INT     IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel
                 #endif
 
     /* check control word flags for ident on upper level */
-                #ifdef Debug
     if (debug != 1)
       ResetIdentFlags(GRID_ON_LEVEL(theMG,l+1));
-                #endif
 
     for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
          theElement=SUCCE(theElement))
