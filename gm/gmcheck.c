@@ -357,12 +357,12 @@ static INT CheckNode (ELEMENT *theElement, NODE* theNode, INT i)
 		return(nerrors++);
 	}
 
-if (VOBJECT(NVECTOR(theNode)) == NULL)
-{
-	UserWriteF(PFMT " node=" ID_FMTX " has vector" ID_FMTX "  with VOBJ=NULL\n",
-		me,ID_PRTX(theNode),ID_PRTX(NVECTOR(theNode)));
-	return(nerrors++);
-}
+	if (NVECTOR(theNode)!=NULL && VOBJECT(NVECTOR(theNode)) == NULL)
+	{
+		UserWriteF(PFMT " node=" ID_FMTX " has vector" ID_FMTX "  with VOBJ=NULL\n",
+			me,ID_PRTX(theNode),ID_PRTX(NVECTOR(theNode)));
+		return(nerrors++);
+	}
 
 	switch (NTYPE(theNode))
 	{
