@@ -2579,6 +2579,7 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->PlotNodes               = NO;
     theGpo->PlotRefMarks    = NO;
     theGpo->PlotIndMarks    = NO;
+    theGpo->Subdomain       = NO;
   }
 
   /* color mode */
@@ -2633,6 +2634,19 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     }
   if (theGpo->ShrinkFactor<=0.0 || theGpo->ShrinkFactor>1.0)
     return (NOT_ACTIVE);
+
+  /* set subdomain-color option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='S')
+    {
+      if (sscanf(argv[i],"S %d",&iValue)!=1)
+        break;
+      if (iValue==1)
+        theGpo->Subdomain = YES;
+      else if (iValue==0)
+        theGpo->Subdomain = NO;
+      break;
+    }
 
   /* set refinement mark option */
   for (i=1; i<argc; i++)
@@ -2745,6 +2759,12 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"BND","YES");
   else
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"BND","NO");
+  UserWrite(buffer);
+
+  if (theGpo->Subdomain == YES)
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"SubDom","YES");
+  else
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"SubDom","NO");
   UserWrite(buffer);
 
   if (theGpo->PlotNodes == YES)

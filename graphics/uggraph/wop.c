@@ -243,6 +243,7 @@ static INT GE_fromLevel,GE_toLevel;
 
 /* defines 2D */
 #define EE2D_TEXTSIZE                   (8*TextFactor)
+#define EE2D_MAX_SUBDOM         100
 
 #define COLOR_BND                       (RED_CLASS+3)
 #define COLOR_ELEMID            (RED_CLASS+4)
@@ -263,7 +264,9 @@ static long EE2D_ColorRefMark;  /* color of refinement marks				*/
 static INT EE2D_IndMark;                /* 1 if plot indicator marks				*/
 static long EE2D_ColorIndMark;  /* color of indicator marks	                        */
 static DOUBLE EE2D_ShrinkFactor; /* shrink factor, 1.0 if normal plot		*/
-
+static INT EE2D_SubDomain;              /* 1 if plot subdomains						*/
+static INT EE2D_NSubDomain;             /* nb of if plot subdomains					*/
+static long EE2D_SubdomColor[EE2D_MAX_SUBDOM];  /* colors used				*/
 
 /* 3D */
 static INT EE3D_Elem2Plot[10];          /* 1 if element has to be plotted			*/
@@ -4692,6 +4695,8 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
   struct GridPlotObj2D *theGpo;
   OUTPUTDEVICE *theOD;
   MULTIGRID *theMG;
+  BVP_DESC theBVPDesc;
+  INT i;
 
   theGpo = &(PIC_PO(thePicture)->theGpo);
   theOD  = PIC_OUTPUTDEV(thePicture);
@@ -4754,6 +4759,22 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
   if (theGpo->PlotElemID == YES)
     EE2D_ElemID                             = 1;
   EE2D_ShrinkFactor                               = theGpo->ShrinkFactor;
+  EE2D_SubDomain                                  = theGpo->Subdomain;
+  if (EE2D_SubDomain)
+  {
+    if (BVP_SetBVPDesc(MG_BVP(theMG),&theBVPDesc)) return (1);
+    EE2D_NSubDomain = BVPD_NSUBDOM(theBVPDesc);
+    if (EE2D_NSubDomain>1 && EE2D_NSubDomain<EE2D_MAX_SUBDOM)
+    {
+      for (i=1; i<=EE2D_NSubDomain; i++)
+        EE2D_SubdomColor[i] = theOD->spectrumStart + i*(COORD)(theOD->spectrumEnd - theOD->spectrumStart)/(COORD)EE2D_NSubDomain;
+    }
+    else
+    {
+      EE2D_SubDomain = 0;
+      UserWrite("too many or too less subdomains, switch back to standard mode\n");
+    }
+  }
 
   /* mark surface elements */
   EE2D_MaxLevel = CURRENTLEVEL(theMG);
@@ -6531,7 +6552,21 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   /* store viewable sides on drawing obj */
   if (EE2D_ShrinkFactor==1.0)
   {
-    if (LEVEL(theElement)<EE2D_MaxLevel)
+    if (EE2D_SubDomain)
+    {
+      DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO);
+      DO_2c(theDO) = coe; DO_inc(theDO) ;
+      if (PROP(theElement)<1 || PROP(theElement)>EE2D_NSubDomain) return (1);
+      DO_2l(theDO) = EE2D_SubdomColor[(int)PROP(theElement)];
+      DO_inc(theDO);
+      DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
+      for (j=0; j<coe; j++)
+      {
+        V2_COPY(x[j],DO_2Cp(theDO));
+        DO_inc_n(theDO,2);
+      }
+    }
+    else if (LEVEL(theElement)<EE2D_MaxLevel)
     {
       if (((EE2D_NoColor[COLOR_LOWER_LEVEL] && !EE2D_IndMark)) ||
           (((rule != RED) && EE2D_IndMark)) )
@@ -6589,7 +6624,22 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
       V2_ADD(MidPoint,x[i],MidPoint)
       V2_SCALE(1.0/(COORD)i,MidPoint)
 
-      if (LEVEL(theElement)<EE2D_MaxLevel)
+      if (EE2D_SubDomain)
+      {
+        DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO);
+        DO_2c(theDO) = coe; DO_inc(theDO) ;
+        if (PROP(theElement)<1 || PROP(theElement)>EE2D_NSubDomain) return (1);
+        DO_2l(theDO) = EE2D_SubdomColor[(int)PROP(theElement)];
+        DO_inc(theDO);
+        DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
+        for (j=0; j<coe; j++)
+        {
+          V2_LINCOMB(EE2D_ShrinkFactor,x[j],1.0-EE2D_ShrinkFactor,MidPoint,help)
+          V2_COPY(help,DO_2Cp(theDO));
+          DO_inc_n(theDO,2);
+        }
+      }
+      else if (LEVEL(theElement)<EE2D_MaxLevel)
       {
         if (((EE2D_NoColor[COLOR_LOWER_LEVEL] && !EE2D_IndMark)) ||
             (((rule != RED) && EE2D_IndMark)) )
