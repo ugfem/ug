@@ -683,11 +683,15 @@ void VectorDelete (DDD_OBJ obj)
   if (VOTYPE(pv)==NODEVEC)
   {
     if( VOBJECT(pv)!=NULL && level>=0 )                 /* borders may have no node object on this pe */
+    {
       if(DisposeNode(theGrid,(NODE *)VOBJECT(pv)))                      /* dispose implicitely the vector */
         ASSERT(0);
-      else
+    }
+    else
+    {
       if (DisposeVector(theGrid, pv))                   /* vector without node; on algebraic levels the nodes are only used jointly from level 0 and may not be disposed from levels<0 ! */
         ASSERT(0);
+    }
   }
   else
   {
