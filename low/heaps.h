@@ -31,6 +31,11 @@
 #include "compiler.h"
 #endif
 
+#if defined __NECSX4__ && defined _MALLOC64
+#define MEM_SIZE_ULL
+#include "stdlib.h" /* for the patched malloc */
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -95,7 +100,11 @@
 /*                                                                          */
 /****************************************************************************/
 
+#ifdef MEM_SIZE_ULL
+typedef unsigned long long MEM;
+#else
 typedef unsigned long MEM;
+#endif
 
 /****************************************************************************/
 /* structs and typedefs for the simple and general heap management          */
