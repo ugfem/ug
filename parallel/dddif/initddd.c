@@ -92,7 +92,7 @@ DDD_TYPE TypeEdge;
 DDD_TYPE TypeElementSide;
 
 /* DDD interfaces needed for distributed computation */
-DDD_IF ElementIF, BorderNodeIF, OuterNodeIF, VertexIF;
+DDD_IF ElementIF, BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, VertexIF;
 DDD_IF VectorIF;
 
 
@@ -532,30 +532,35 @@ static void ddd_IfInit (void)
   int A[8];
   int B[8];
 
-  O[0] = TypeTrElem;
-  O[1] = TypeTrBElem;
+  O[0] = TypeTrElem; O[1] = TypeTrBElem;
   A[0] = PrioMaster;
   B[0] = PrioGhost;
   ElementIF = DDD_IFDefine(2,O,1,A,1,B);
 
   O[0] = TypeNode;
-  A[0] = PrioMaster;
+  A[0] = PrioBorder;
   B[0] = PrioMaster;
   BorderNodeIF = DDD_IFDefine(1,O,1,A,1,B);
+
+  O[0] = TypeNode;
+  A[0] = PrioMaster; A[1] = PrioBorder;
+  B[0] = PrioMaster; B[1] = PrioBorder;
+  BorderNodeSymmIF = DDD_IFDefine(1,O,2,A,2,B);
 
   O[0] = TypeNode;
   A[0] = PrioMaster;
   B[0] = PrioGhost;
   OuterNodeIF = DDD_IFDefine(1,O,1,A,1,B);
 
-  O[0] = TypeIVertex;
-  O[1] = TypeBVertex;
+  O[0] = TypeIVertex; O[1] = TypeBVertex;
   A[0] = PrioVertex;
-  VertexIF = DDD_IFDefine(2,O,1,A,1,A);
+  B[0] = PrioVertex;
+  VertexIF = DDD_IFDefine(2,O,1,A,1,B);
 
   O[0] = TypeVector;
   A[0] = PrioVector;
-  VectorIF = DDD_IFDefine(1,O,1,A,1,A);
+  B[0] = PrioVector;
+  VectorIF = DDD_IFDefine(1,O,1,A,1,B);
 }
 #endif
 

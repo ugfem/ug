@@ -474,6 +474,19 @@ int BalanceGrid (MULTIGRID *theMG)
   DDD_XferEnd();
 
 
+  /* set priorities of border nodes */
+  /* TODO this is an extra communication. eventually integrate this
+              with grid distribution phase. */
+  {
+    int g;
+    for(g=TOPLEVEL(theMG); g>=0; g--)
+    {
+      GRID *grid = GRID_ON_LEVEL(theMG,g);
+      dddif_SetBorderPriorities(grid);
+    }
+  }
+
+
   if (me==master)
   {
     Release(theHeap,FROM_TOP);

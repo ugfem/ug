@@ -77,6 +77,7 @@
 /* RCS string */
 RCSID("$Header$",UG_RCS_STRING)
 
+
 /****************************************************************************/
 /*                                                                          */
 /* routines                                                                 */
@@ -105,7 +106,7 @@ void *memmgr_AllocOMEM (size_t size, int ddd_type, int prio, int attr)
 {
   void   *buffer;
 
-  buffer = (void *)GetMemoryLocal(dddctrl.currMG, size, UGTYPE(ddd_type));
+  buffer = GetFreelistMemory(MGHEAP(dddctrl.currMG), size);
 
   printf("%4d: memmgr_AllocOMem: size=%05d ddd_type=%02d prio=%d attr=%d\n",
          me,size,ddd_type,prio,attr);
@@ -118,7 +119,7 @@ void memmgr_FreeOMEM (void *buffer, size_t size, int ddd_type)
 {
   printf("%d: memmgr_FreeOMEM(): buffer=%x, ddd_type=%d\n", me, buffer, ddd_type);
 
-  PutFreeObjectLocal(dddctrl.currMG, buffer, size, UGTYPE(ddd_type));
+  PutFreelistMemory(MGHEAP(dddctrl.currMG), buffer, size);
 }
 
 

@@ -88,16 +88,6 @@
 RCSID("$Header$",UG_RCS_STRING)
 
 
-/* dieses flag dient dazu, die prioritaet des gesendeten elements bis
-	an den node-vector durchzureichen, um zu entscheiden, ob dieser
-	geschickt werden soll oder nicht. zur behebung dieser haesslichkeit
-	muss entweder ddd um senden gleicher objekte mit verschiedenen
-	prioritaeten erweitert werden (wird im zuge der Xfer-umgestaltung in
-	der naechsten version geschehen) oder ein flag im node-cw eingefuehrt
-	werden, das diese aufgabe uebernimmt.
-*/
-static DDD_PRIO ganz_haesslicher_fix;
-
 
 /****************************************************************************/
 /*																			*/
@@ -777,7 +767,7 @@ void NodeXferCopy (DDD_OBJ obj, int proc, int prio)
 	DDD_XferCopyObj(PARHDRV(MYVERTEX(node)), proc, PrioVertex);
 
 	/* copy vector if defined */
-	if (dddctrl.nodeData && ganz_haesslicher_fix==PrioMaster)
+	if (dddctrl.nodeData && prio==PrioMaster)
 	  {
 		vec = NVECTOR(node);
 		Size = sizeof(VECTOR)-sizeof(DOUBLE)+dddctrl.currMG->theFormat->VectorSizes[VTYPE(vec)];
@@ -1039,7 +1029,6 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 		PRINTDEBUG(dddif,2,("%2d: ElementXferCopy():  e=%x Xfer n=%x i=%d\n",\
 				me, pe, node, i))
 
-ganz_haesslicher_fix = prio;
 		DDD_XferCopyObj(PARHDR(node), proc, prio);
 	}
 

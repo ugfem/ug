@@ -60,12 +60,11 @@
 enum Priorities
 {
   PrioNone     = 0,
-  PrioGhost    = 5,
-  PrioMaster   = 7,
-  PrioElement  = 10,
-  PrioNode     = 11,
-  PrioVertex   = 12,
-  PrioVector   = 13
+  PrioGhost    = 2,
+  PrioBorder   = 3,
+  PrioMaster   = 4,
+  PrioVertex   = 10,
+  PrioVector   = 11
 };
 
 
@@ -147,7 +146,7 @@ extern DDD_TYPE TypeEdge;
 extern DDD_TYPE TypeElementSide;
 
 /* DDD Interfaces */
-extern DDD_IF BorderNodeIF, OuterNodeIF;
+extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF;
 
 
 /* DDD Global Controls */
@@ -204,6 +203,9 @@ void ddd_HandlerInit (INT);
 
 /* from lbrcb.c */
 int BalanceGrid (MULTIGRID *);
+
+/* from gridcons.c */
+void dddif_SetBorderPriorities (GRID *);
 
 
 #endif /* ModelP */
