@@ -293,6 +293,8 @@ static INT BE_TimeStep (NP_T_STEP *tstep, INT level, DOUBLE t0, VECDATA_DESC *so
 
     /* update result */
     tstep_result->number_of_nonlinear_iterations += nlresult.number_of_nonlinear_iterations;
+    if (nlresult.number_of_nonlinear_iterations==0) tstep_result->jumped=1;
+    else tstep_result->jumped=0;
     tstep_result->number_of_linear_iterations += nlresult.total_linear_iterations;
     tstep_result->max_linear_iterations = MAX(tstep_result->max_linear_iterations,nlresult.max_linear_iterations);
     tstep_result->exec_time += nlresult.exec_time;

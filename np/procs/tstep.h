@@ -61,6 +61,7 @@
 struct tstep_result {
 
   INT converged;                            /* error code                       */
+  INT jumped;                                                           /* 1 if nothing had to be done      */
   INT number_of_nonlinear_iterations;       /* number of nonlin. iterations     */
   INT number_of_linear_iterations;          /* number of lin. iterations        */
   INT max_linear_iterations;                /* max lin/nonlin iterations        */
