@@ -247,7 +247,7 @@ typedef NODE *ELEMENTCONTEXT[MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM];
 /*																			*/
 /****************************************************************************/
 
-
+REFINEINFO refine_info;	/* information used by the estimator and refine     */ 
 
 /****************************************************************************/
 /*																			*/
@@ -332,6 +332,47 @@ void MakeRefMarkandMarkClassConsistent (int level)
 }
 #endif
 
+
+/****************************************************************************/
+/*																			*/
+/* Function:  SetRefineInfo													*/
+/*																			*/
+/* Purpose:   fill refineinfo structure										*/
+/*																			*/
+/* Param:	  MULTIGRID *theMG												*/
+/*																			*/
+/* return:	  INT GM_OK: ok 												*/
+/*			  INT GM_ERROR: error											*/
+/*																			*/
+/****************************************************************************/
+
+INT SetRefineInfo(MULTIGRID *theMG)
+{
+	if (MultiGridStatus(theMG,1,0,0,0) != GM_OK)	return(GM_ERROR);	
+
+	return(GM_OK);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  TestRefineInfo												*/
+/*																			*/
+/* Purpose:   test entries of refineinfo structure							*/
+/*																			*/
+/* Param:	  MULTIGRID *theMG												*/
+/*																			*/
+/* return:	  INT GM_OK: MG can be refined									*/
+/*			  INT GM_ERROR: MG refinement will lead to heap overflow		*/
+/*																			*/
+/****************************************************************************/
+
+INT TestRefineInfo(MULTIGRID *theMG)
+{
+	if (PREDNEW(REFINEINFO(theMG)) > PREDMAX(REFINEINFO(theMG)))
+		return(GM_ERROR);
+	else
+		return(GM_OK);
+}
 
 /****************************************************************************/
 /*																			*/
@@ -428,7 +469,7 @@ static INT InitClosureFIFO (void)
 	fifo_first=fifo_last=fifo_insertfirst=fifo_insertlast=NULL;
 	first = 1;
 	fifoloop = 0;
-	UserWriteF("Using FIFO: loop %d\n",fifoloop);
+	if (0) UserWriteF("Using FIFO: loop %d\n",fifoloop);
 
 	return (GM_OK);
 }
@@ -1464,8 +1505,7 @@ INT GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 		while (SUCCE(son) != NULL)
 		{
 			if (EFATHER(SUCCE(son)) == theElement
-				&& DDD_InfoPriority(PARHDRE(son))==
-				   DDD_InfoPriority(PARHDRE(SUCCE(son)))
+				&& EPRIO(son)==EPRIO(SUCCE(son))
 				)
 			{
 				SonList[SonID++] = SUCCE(son);
@@ -1511,8 +1551,7 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 		{
 			if (EFATHER(SUCCE(son)) == theElement
 				#ifdef ModelP
-				&& DDD_InfoPriority(PARHDRE(son))==
-				   DDD_InfoPriority(PARHDRE(SUCCE(son)))
+				&& EPRIO(son)==EPRIO(SUCCE(son))
 				#endif
 				)
 			{
@@ -1535,7 +1574,7 @@ assert(0);
 	/* TODO: really ugly more than quick fix */
 	/* ghost elements have not all sons, search through element list */
 	/* has not 0(n) complexity !!! */
-	if (DDD_InfoPriority(PARHDRE(theElement)) == PrioGhost)
+	if (EHGHOST(theElement))
 	{
 		ELEMENT *theSon;
 
@@ -2145,7 +2184,12 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 		{
 			/* we need a midpoint node */
 			if (MidNodes[i]!=NULL) continue;
-			MidNodes[i] = GetMidNode(theElement,i);
+            Node0 = CORNER(theElement,Corner0);
+            Node1 = CORNER(theElement,Corner1);
+            if ((theEdge = GetEdge(Node0,Node1))==NULL)
+                RETURN(GM_FATAL);
+            MidNodes[i] = MIDNODE(theEdge);
+/*			MidNodes[i] = GetMidNode(theElement,i); */
 			if (MidNodes[i] == NULL)
 			{
 				MidNodes[i] = CreateMidNode(theGrid,theElement,i);
@@ -2628,7 +2672,7 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 
     /* TODO: quick fix */
 	#ifdef ModelP
-	if (DDD_InfoPriority(PARHDRE(theElement)) == PrioGhost)
+	if (EHGHOST(theElement))
 		markclass = GREEN_CLASS;
 	#endif
 
@@ -3004,9 +3048,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
 	/* master elements only connect to master elements     */
 	/* ghost elements connect to ghost and master elements */
 	#ifdef ModelP
-	if (DDD_InfoPriority(PARHDRE(theElement)) == PrioMaster &&
-	    DDD_InfoPriority(PARHDRE(theNeighbor)) == PrioGhost)
-
+	if (EMASTER(theElement) && EHGHOST(theNeighbor))
 		return(GM_OK);
 	#endif
 
@@ -4466,8 +4508,8 @@ static int RefineGrid (GRID *theGrid)
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 	{
 		#ifdef ModelP
-		INT prio;
-		if ((prio = DDD_InfoPriority(PARHDRE(theElement))) == PrioMaster)
+		INT prio = EPRIO(theElement);
+		if (EMASTERPRIO(prio))
 		{
 		#endif
 		if (REF_TYPE_CHANGES(theElement)||
@@ -4550,8 +4592,8 @@ static int RefineGrid (GRID *theGrid)
 		}
 		else
 		{
-			INT prio;
-			if ((prio = DDD_InfoPriority(PARHDRE(theElement))) == PrioGhost)
+			INT prio = EPRIO(theElement);
+			if (EHGHOSTPRIO(prio))
 			 	SETREFINE(theElement,MARK(theElement));
 			SETREFINECLASS(theElement,MARKCLASS(theElement));
 			SETUSED(theElement,0);
@@ -4592,9 +4634,8 @@ static INT CreateGridOverlap (MULTIGRID *theMG, INT FromLevel)
 			 theElement!=NULL; 
 			 theElement=SUCCE(theElement))
 		{ 
-			
-			if (!IS_REFINED(theElement) ||
-				(prio = DDD_InfoPriority(PARHDRE(theElement))) == PrioGhost)
+			prio = EPRIO(theElement);
+			if (!IS_REFINED(theElement) || EHGHOSTPRIO(prio))
 			{
 				SETUSED(theElement,0);
 				continue;
@@ -4607,8 +4648,8 @@ static INT CreateGridOverlap (MULTIGRID *theMG, INT FromLevel)
 			ASSERT(theSon != NULL);
 				if (theNeighbor == NULL) continue;
 
-				if ((prio = DDD_InfoPriority(PARHDRE(theNeighbor))) == 
-						PrioGhost)
+				prio = EPRIO(theNeighbor);
+				if (EHGHOSTPRIO(prio))
 				{
 					PRINTDEBUG(gm,1,("%d: EID=%d side=%d NbID=%d "
 						"NbPARTITION=%d\n",me,
@@ -4696,10 +4737,9 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 			 theElement!=NULL; 
 			 theElement=SUCCE(theElement))
 
-			INT prio;
+			INT prio = EPRIO(theElement);
 			prio = EPRIO(theNeighbor);
-			if (USED(theElement) == 0 ||
-				(prio = DDD_InfoPriority(PARHDRE(theElement))) == PrioMaster) 
+			if (USED(theElement) == 0 || EMASTERPRIO(prio)) 
 				continue;
 
 			PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
@@ -4719,8 +4759,8 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 
 				if (NBELEM(theElement,i) == NULL)       continue;
 /*
-				if ((prio = DDD_InfoPriority(PARHDRE(NBELEM(theElement,i))))
-					== PrioGhost)						continue;
+				prio = EPRIO(NBELEM(theElement,i));
+				if (EHGHOSTPRIO(prio))					continue;
 
 				if (Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,
 						Sons_of_Side_List,SonSides,1)!=GM_OK) RETURN(GM_FATAL);
@@ -4763,13 +4803,30 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 /*																			*/
 	int level,toplevel,nrefined;
 	int newlevel;
-INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
+	NODE *theNode;
 	GRID *theGrid, *FinerGrid;
 	ELEMENT *theElement;
 
 	DEBUG_TIME(0);
 
 /*
+	
+	/* set info for refinement prediction */
+			PREDNEW0(REFINEINFO(theMG)), PREDNEW1(REFINEINFO(theMG)),
+			PREDMAX(REFINEINFO(theMG)));
+		SetRefineInfo(theMG);
+
+		UserWriteF("refinetest: predicted_new=%9.0f predicted_max=%9.0f\n",
+			PREDNEW(REFINEINFO(theMG)), PREDMAX(REFINEINFO(theMG)));
+			UserWriteF("Too much marked elements: "
+				"Number of marked elements would cause heap overflow\n");
+			return(GM_ERROR);
+		}
+	}
+	
+	/* TODO: delete special debug */ debugelem = NULL;
+
+	/* set flags for different modes */
 	
 	/* set Get_Sons_of_ElementSideProc */
 	Get_Sons_of_ElementSideProc = Get_Sons_of_ElementSide;
