@@ -11,7 +11,7 @@
 
 # These are the environment dependent variables from ug.conf
 ENV_CFLAGS = $(MODEL_ENV_CFLAGS)
-ENV_LFLAGS = $(MODEL_ENV_LFLAGS)
+ENV_LFLAGS = $(MODEL_ENV_LFLAGS) $(GRAPE_ENV_LFLAGS)
 
 
 # library name suffixes
