@@ -120,10 +120,11 @@
 
 #define IS_REFINED(e)           (REFINE(e)!=NO_REFINEMENT)
 #define LEAFELEM(e)                     (!IS_REFINED(e))
-#define ELEMENT_TO_MARK(e)  ((NSONS(e)>1) ? NULL :               \
-                             (ECLASS(e) == RED_CLASS) ? e :       \
-                             (ECLASS(EFATHER(e)) == RED_CLASS) ?  \
-                             EFATHER(e) : EFATHER(EFATHER(e)))
+#define ELEMENT_TO_MARK(e)  ((IS_REFINED(e)) ? NULL :                                         \
+                             (ECLASS(e) == RED_CLASS) ? e :                                    \
+                             (ECLASS(EFATHER(e)) == RED_CLASS) ?  EFATHER(e) :                 \
+                             (ECLASS(EFATHER(EFATHER(e))) == RED_CLASS) ? EFATHER(EFATHER(e)) :\
+                             EFATHER(EFATHER(EFATHER(e))))
 
 
 /* indices of rules in rule array */
