@@ -38,6 +38,8 @@
 #include "commands.h"
 #include "heaps.h"
 #include "general.h"
+#include "pixel.h"
+
 #ifdef ModelP
 #include "ppif.h"
 #endif

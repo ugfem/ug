@@ -35,7 +35,7 @@
 #include "ugdevices.h"
 #include "initdev.h"
 #include "general.h"
-#include "bullet.h"
+#include "pixel.h"
 
 USING_UG_NAMESPACE
 
