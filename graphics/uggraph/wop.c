@@ -4274,7 +4274,9 @@ static INT FindRange2D (DRAWINGOBJ *q)
 				DO_inc(q)
 				GEN_FR_min = MIN(GEN_FR_min,DO_2C(q)); DO_inc(q);
 				GEN_FR_max = MAX(GEN_FR_max,DO_2C(q)); DO_inc(q);
+                #ifndef ModelP
 				end = 1;
+                #endif
 				break;
 			case DO_LINE:
 				DO_inc_LINE(q,2);
@@ -4321,6 +4323,11 @@ static INT FindRange2D (DRAWINGOBJ *q)
 			case DO_SURRPOLYGON:
 				DO_inc_SURRPOLYGON(q,2);
 				break;
+            #ifdef ModelP
+			case DO_END_TOKEN:
+				end = 1;
+				break;
+            #endif
 			default:
 				RETURN(1);
 		}
@@ -4366,6 +4373,9 @@ static INT FindRange3D (DRAWINGOBJ *q)
 				DO_inc(q)
 				GEN_FR_min = MIN(GEN_FR_min,DO_2C(q)); DO_inc(q);
 				GEN_FR_max = MAX(GEN_FR_max,DO_2C(q)); DO_inc(q);
+                #ifndef ModelP
+				end = 1;
+                #endif
 				break;
 			case DO_LINE:
 				DO_inc_LINE(q,3);
@@ -4412,6 +4422,11 @@ static INT FindRange3D (DRAWINGOBJ *q)
 			case DO_SURRPOLYGON:
 				DO_inc_SURRPOLYGON(q,3);
 				break;
+            #ifdef ModelP
+			case DO_END_TOKEN:
+				end = 1;
+				break;
+            #endif
 			default:
 				RETURN(1);
 		}
@@ -8480,7 +8495,7 @@ static INT EW_EScalar2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	
 	DO_2c(theDO) = DO_NO_INST;
 
-        #ifdef ModelP
+    #ifdef ModelP
 	WOP_DObjPnt = theDO;
 	#endif
 
