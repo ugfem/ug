@@ -36,6 +36,7 @@
 #include "compiler.h"
 #include "heaps.h"
 #include "misc.h"
+#include "debug.h"
 
 /****************************************************************************/
 /*                                                                          */
@@ -122,6 +123,7 @@ INT InitHeaps ()
 HEAP *NewHeap (INT type, MEM size, void *buffer)
 {
   HEAP *theHeap;
+  INT i;
 
   /* check size */
   if (buffer==NULL) return(NULL);
@@ -131,6 +133,7 @@ HEAP *NewHeap (INT type, MEM size, void *buffer)
   theHeap = (HEAP *) buffer;
   theHeap->type = type;
   theHeap->size = size;
+  theHeap->freelistmem = 0;
   theHeap->topStackPtr = theHeap->bottomStackPtr = 0;
   theHeap->heapptr = (BLOCK *) CEIL(((MEM)theHeap)+sizeof(HEAP));
   theHeap->used = ((MEM)theHeap->heapptr)-((MEM)theHeap);
@@ -140,10 +143,15 @@ HEAP *NewHeap (INT type, MEM size, void *buffer)
   theHeap->heapptr->next = theHeap->heapptr;
   theHeap->heapptr->previous = theHeap->heapptr;
 
+  /* initialize free lists */
+  for (i=0; i<MAXFREEOBJECTS; i++)
+  {
+    theHeap->SizeOfFreeObjects[i] = -1;;
+    theHeap->freeObjects[i] = NULL;
+  }
   /* return heap structure */
   return(theHeap);
 }
-
 
 /****************************************************************************/
 /*D
@@ -448,7 +456,140 @@ void DisposeMem (HEAP *theHeap, void *buffer)
 
 /****************************************************************************/
 /*D
-   Mark    - Mark heap position for future release
+   GetFreelistMemory - Get an object from free list if possible
+
+   SYNOPSIS:
+   void *GetFreelistMemory (HEAP *theHeap, INT size);
+
+   PARAMETERS:
+   .  theHeap - pointer to Heap
+   .  size - size of the object
+   .  type - type of the requested object
+
+   DESCRIPTION:
+   This function gets an object of type `type` from free list if possible,
+   otherwise it allocates memory from the heap using 'GetMem'.
+
+   RETURN VALUE:
+   void *
+   .n   pointer to an object of the requested type
+   .n   NULL if object of requested type is not available
+   D*/
+/****************************************************************************/
+
+void *GetFreelistMemory (HEAP *theHeap, INT size)
+{
+  void **ptr, *obj;
+  INT i,j,k,l;
+
+  if (size == 0)
+    return(NULL);
+  obj = NULL;
+
+  /* 'ptr' will be set equal to 'theHeap->freeObjects[k]' but with	        */
+  /* different interpretation: void ** instead of void *. 'ptr'			*/
+  /* points to the first two bytes of the object (i.e. unsigned INT ctrl	*/
+  /* and INT id) but will be interpreted as a void * pointer, witch points*/
+  /* to the next free object.                                                                                   */
+
+  i = (size / ALIGNMENT);
+  for (j=0; j<MAXFREEOBJECTS; j++)
+  {
+    k = (i + j) % MAXFREEOBJECTS;
+    l = theHeap->SizeOfFreeObjects[k];
+    if (l == size)
+    {
+      if (theHeap->freeObjects[k] != NULL)
+      {
+        ptr = (void **) theHeap->freeObjects[k];
+        theHeap->freeObjects[k] = ptr[0];
+        obj = (void *) ptr;
+        theHeap->freelistmem -= size;
+      }
+      break;
+    }
+    if(l == -1)
+      break;
+  }
+
+  if (obj == NULL)
+    obj = GetMem(theHeap,size,FROM_BOTTOM);
+
+  ASSERT(obj != NULL);
+
+  if (obj != NULL)
+    memset(obj,0,size);
+
+  return(obj);
+}
+
+/****************************************************************************/
+/*D
+   PutFreelistMemory - Put an object in the free list
+
+   SYNOPSIS:
+   INT PutFreelistMemory (HEAP *theHeap, void *object, INT size);
+
+   PARAMETERS:
+   .  theHeap - pointer to Heap
+   .  object - object to insert in free list
+   .  size - size of the object
+
+   DESCRIPTION:
+   This function puts an object in the free list.
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   1 when error occured.
+   D*/
+/****************************************************************************/
+
+INT PutFreelistMemory (HEAP *theHeap, void *object, INT size)
+{
+  void **ptr;
+  INT i,j,k,l;
+
+  memset(object,0,size);
+  ((int *)object)[1] = -1;
+  ptr = (void **) object;
+
+  /* 'ptr' will be set equal to 'object' but with different inter-		*/
+  /* pretation: void ** instead of void *. 'ptr' points to the first		*/
+  /* two bytes of the object (i.e. unsigned INT ctrl	and INT id) but         */
+  /* will be interpreted as a void * pointer, witch will be set equal   */
+  /* to 'theHeap->freeObjects[k]' i.e. the first free object.			    */
+
+  i = (size / ALIGNMENT);
+  for (j=0; j<MAXFREEOBJECTS; j++)
+  {
+    k = (i + j) % MAXFREEOBJECTS;
+    l = theHeap->SizeOfFreeObjects[k];
+    if (l == size)
+    {
+      ptr[0] = theHeap->freeObjects[k];
+      theHeap->freeObjects[k] = object;
+      theHeap->freelistmem += size;
+      return(0);
+    }
+    if(l == -1)
+    {
+      theHeap->SizeOfFreeObjects[k] = size;
+      ptr[0] = theHeap->freeObjects[k];
+      theHeap->freeObjects[k] = object;
+      theHeap->freelistmem += size;
+      return(0);
+    }
+  }
+
+  /* MAXFREEOBJECTS to small! */
+
+  RETURN(1);
+}
+
+/****************************************************************************/
+/*D
+   Mark - Mark heap position for future release
 
    SYNOPSIS:
    INT Mark (HEAP *theHeap, INT mode);
@@ -492,7 +633,6 @@ INT Mark (HEAP *theHeap, INT mode)
   }
   return(1);
 }
-
 
 /****************************************************************************/
 /*D
@@ -579,7 +719,7 @@ MEM HeapSize (const HEAP *theHeap)
    HeapUsed - Get used memory of heap
 
    SYNOPSIS:
-   MEM HeapSize (const HEAP *theHeap)
+   MEM HeapUsed (const HEAP *theHeap)
 
    PARAMETERS:
    .  theHeap - heap to get used memory of heap
@@ -596,6 +736,30 @@ MEM HeapSize (const HEAP *theHeap)
 MEM HeapUsed (const HEAP *theHeap)
 {
   return(theHeap->used);
+}
+
+/****************************************************************************/
+/*D
+   HeapFreelistUsed - Get memory of heap in freelists
+
+   SYNOPSIS:
+   MEM HeapFreelistUsed (const HEAP *theHeap)
+
+   PARAMETERS:
+   .  theHeap - heap to get used memory of heap
+
+   DESCRIPTION:
+   This function gets the used memory of heap which is available in the freelists.
+
+   RETURN VALUE:
+   MEM
+   .n    theHeap->freelistmem
+   D*/
+/****************************************************************************/
+
+MEM HeapFreelistUsed (const HEAP *theHeap)
+{
+  return(theHeap->freelistmem);
 }
 
 /****************************************************************************/
