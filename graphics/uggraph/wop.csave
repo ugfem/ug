@@ -14438,7 +14438,11 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 		EE3D_NProperty = procs;
 		#endif
 
-		if (EE3D_NProperty>0 && EE3D_NProperty<EE_MAX_PROP)
+		if (EE3D_NProperty>0 
+			#ifndef ModelP
+			&& EE3D_NProperty<EE_MAX_PROP
+			#endif
+			)
 		{
 		    EE3D_Property = 1;
 			for (i=0; i<=EE3D_NProperty; i++)
