@@ -669,7 +669,7 @@ void VectorObjMkCons (DDD_OBJ obj, int newness)
 /* Output:	  void															*/
 /*																			*/
 /****************************************************************************/
-
+#ifdef USE_FAMG
 void VectorDelete (DDD_OBJ obj)
 {
   VECTOR          *pv                     = (VECTOR *)obj;
@@ -682,10 +682,12 @@ void VectorDelete (DDD_OBJ obj)
   /* remove vector from its object */
   if (VOTYPE(pv)==NODEVEC)
   {
-#ifdef USE_FAMG
-    if( VOBJECT(pv)!=NULL )             /* borders may have no node object on this pe */
-#endif
-    NVECTOR((NODE *)VOBJECT(pv))  = NULL;
+    if( VOBJECT(pv)!=NULL && level>=0 )                 /* borders may have no node object on this pe */
+      if(DisposeNode(theGrid,(NODE *)VOBJECT(pv)))                      /* dispose implicitely the vector */
+        ASSERT(0);
+      else
+      if (DisposeVector(theGrid, pv))                   /* vector without node; on algebraic levels the nodes are only used jointly from level 0 and may not be disposed from levels<0 ! */
+        ASSERT(0);
   }
   else
   {
@@ -693,11 +695,8 @@ void VectorDelete (DDD_OBJ obj)
                         "implemented yet\n", me, VTYPE(pv)))
     assert(0);
   }
-
-  /* dispose vector itself */
-  if (DisposeVector(theGrid, pv))
-    ASSERT(0);
 }
+#endif
 
 void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
@@ -954,6 +953,9 @@ void NodeObjMkCons (DDD_OBJ obj, int newness)
       break;
 
     case (MID_NODE) :
+                                #ifdef USE_FAMG
+      break;                           /* TODO remove if possible; reason for this fix: aborts in famg_strukt1-3 */
+                                #endif
       ASSERT(OBJT(NFATHER(theNode)) == EDOBJ);
       MIDNODE((EDGE *)NFATHER(theNode)) = theNode;
       break;
