@@ -298,7 +298,42 @@ BNDP *BNDP_LoadBndP_Ext (void)
 
 INT BNDS_Global (BNDS *theBndS, DOUBLE *local, DOUBLE *global)
 {
-  return(1);
+  BS *bs = (BS *) theBndS;
+  INT k;
+
+  if (bs->n == 2)
+  {
+    BP *b0 = &(bs->bp[0]);
+    BP *b1 = &(bs->bp[1]);
+
+    for (k=0; k<DIM; k++)
+      global[k] = (1.0 - local[0]) * b0->x[k] + local[0] * b1->x[k];
+  }
+  else if (bs->n ==3)
+  {
+    BP *b0 = &(bs->bp[0]);
+    BP *b1 = &(bs->bp[1]);
+    BP *b2 = &(bs->bp[2]);
+
+    for (k=0; k<DIM; k++)
+      global[k] = (1.0 - local[0] - local[1]) * b0->x[k]
+                  + local[0] * b1->x[k] + local[1] * b2->x[k];
+  }
+  else if (bs->n == 4)
+  {
+    BP *b0 = &(bs->bp[0]);
+    BP *b1 = &(bs->bp[1]);
+    BP *b2 = &(bs->bp[2]);
+    BP *b3 = &(bs->bp[3]);
+
+    for (k=0; k<DIM; k++)
+      global[k] = (1.0 - local[0]) * (1.0 - local[1]) * b0->x[k]
+                  + local[0] * (1.0 - local[1]) * b1->x[k]
+                  + (1.0 - local[0]) * local[1] * b2->x[k]
+                  + local[0] * local[1] * b3->x[k];
+  }
+
+  return(0);
 }
 
 INT BNDS_BndCond (BNDS *theBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value,
@@ -320,47 +355,15 @@ BNDP* BNDS_CreateBndP (HEAP *Heap, BNDS *theBndS, DOUBLE *local)
 {
   BS *bs = (BS *) theBndS;
   BP *bp = (BP *) GetFreelistMemory(Heap,sizeof(BP));
-  INT k;
 
   ASSERT(bp != NULL);
 
-  if (bs->n ==2)
-  {
-    BP *b0 = &(bs->bp[0]);
-    BP *b1 = &(bs->bp[1]);
-
-    for (k=0; k<DIM; k++)
-      bp->x[k] = (1.0 - local[0]) * b0->x[k] + local[0] * b1->x[k];
-  }
-  else if (bs->n ==3)
-  {
-    BP *b0 = &(bs->bp[0]);
-    BP *b1 = &(bs->bp[1]);
-    BP *b2 = &(bs->bp[2]);
-
-    for (k=0; k<DIM; k++)
-      bp->x[k] = (1.0 - local[0] - local[1]) * b0->x[k]
-                 + local[0] * b1->x[k] + local[1] * b2->x[k];
-  }
-  else if (bs->n == 4)
-  {
-    BP *b0 = &(bs->bp[0]);
-    BP *b1 = &(bs->bp[1]);
-    BP *b2 = &(bs->bp[2]);
-    BP *b3 = &(bs->bp[3]);
-
-    for (k=0; k<DIM; k++)
-      bp->x[k] = (1.0 - local[0]) * (1.0 - local[1]) * b0->x[k]
-                 + local[0] * (1.0 - local[1]) * b1->x[k]
-                 + (1.0 - local[0]) * local[1] * b2->x[k]
-                 + local[0] * local[1] * b3->x[k];
-  }
+  BNDS_Global(theBndS,local,bp->x);
   bp->id = bs->id;
   bp->segment = bs->segment;
   bp->property = bs->property;
 
   return((BNDP *)bp);
-  return(NULL);
 }
 
 BVP *BVP_GetFirst (void)
@@ -423,6 +426,15 @@ INT InitGeometry (HEAP *Heap, GEOMETRY *G)
           for (k=0; k<G->C[i].bs[j]->n; k++)
             memcpy(&(G->C[i].bs[j]->bp[k]),
                    G->P[G->C[i].P[faces[j][k]]].bp,sizeof(BP));
+
+
+          for (k=0; k<G->C[i].bs[j]->n; k++) {
+            PRINTDEBUG(dom,5,("C %d bs[%d]= %d bp %d\n",
+                              G->C[i].id,j,
+                              G->C[i].bs[j]->id,
+                              G->C[i].bs[j]->bp[k].id));
+          }
+
         }
         else
           G->C[i].bs[j] = NULL;
