@@ -324,7 +324,7 @@ static ID_ENTRY *FreeIdEntry (ID_ENTRY *item)
   ID_ENTRY *next = item->next;
 
   /* TODO use chunks and freelists */
-  FreeTmp(item);
+  FreeTmp(item,0);
 
   return(next);
 }
@@ -622,7 +622,7 @@ static void ResolveDependencies (
     }
   }
 
-  FreeTmp(refd);
+  FreeTmp(refd,0);
 
 
   for(i=0; i<nTupels; i++)
@@ -671,7 +671,7 @@ static void CleanupLOI (ID_TUPEL *tupels, int nTupels)
       next = rby->next;
 
       /* TODO use freelists */
-      FreeTmp(rby);
+      FreeTmp(rby,0);
     }
   }
 }
@@ -930,7 +930,10 @@ static int InitComm (int nPartners)
   for(plist=thePLists, i=0; i<nPartners; i++, plist=plist->next)
     partners[i] = plist->proc;
 
-  DDD_GetChannels(nPartners);
+  if (! IS_OK(DDD_GetChannels(nPartners)))
+  {
+    return(FALSE);
+  }
 
 
   /* initiate asynchronous receives and sends */
@@ -943,7 +946,7 @@ static int InitComm (int nPartners)
                              plist->msgout, sizeof(MSGITEM)*plist->entries, &err);
   }
 
-  return TRUE;
+  return(TRUE);
 }
 
 
@@ -1121,7 +1124,10 @@ void DDD_Library::IdentifyEnd (void)
   /* initiate comm-channels and send/receive calls */
   STAT_RESET1;
   if (!InitComm(cnt))
+  {
+    DDD_PrintError('E', 3074, ERR_ID_ABORT_END);
     HARD_EXIT;
+  }
 
 
   /*
@@ -1177,7 +1183,7 @@ void DDD_Library::IdentifyEnd (void)
         }
 
         /* free indexmap (=tupel) array */
-        FreeTmp(plist->indexmap);
+        FreeTmp(plist->indexmap,0);
 
         /* mark plist as finished */
         plist->msgin=NULL;
@@ -1208,8 +1214,8 @@ void DDD_Library::IdentifyEnd (void)
     while(InfoASend(VCHAN_TO(plist->proc), plist->idout)!=1)
       ;
 
-    FreeTmp(plist->local_ids);
-    FreeTmp(plist);
+    FreeTmp(plist->local_ids,0);
+    FreeTmp(plist,0);
 
     /* now, the plist->first list isn't needed anymore, free */
     FreeIdEntryList(plist->first);
