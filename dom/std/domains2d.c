@@ -139,9 +139,13 @@ static DOUBLE Rand[54][2] = {
   {189,22.5}
 };
 
-static DOUBLE kiel[79][2] = {
+static DOUBLE kiel[83][2] = {
   {1.,.46},
+  {1.,.7},
   {1.,1.},
+  {.75,1.},
+  {.5,1.},
+  {.25,1.},
   {0.,1.},
   {0.,.87},
   {.03,.88},
@@ -1356,7 +1360,7 @@ static INT kiel_right (void *data, DOUBLE *param, DOUBLE *result)
   DOUBLE c;
   INT i,j;
 
-  if ((lambda<20.0)||(lambda>40.0)) return(1);
+  if ((lambda<20.0)||(lambda>60.0)) return(1);
   c=lambda-floor(lambda);
   i=(INT)ceil(lambda);
   j=(INT)floor(lambda);
@@ -1382,6 +1386,22 @@ static INT kiel_upper (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
+static INT kiel_left (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda = param[0];
+  DOUBLE c;
+  INT i,j;
+
+  if ((lambda<60.0)||(lambda>82.0)) return(1);
+  c=lambda-floor(lambda);
+  i=(INT)ceil(lambda);
+  j=(INT)floor(lambda);
+  result[0] = (1.0-c)*kiel[j][0] + c*kiel[i][0];
+  result[1] = (1.0-c)*kiel[j][1] + c*kiel[i][1];
+
+  return(0);
+}
+
 static INT InitKiel (void)
 {
   DOUBLE radius,MidPoint[2];
@@ -1389,16 +1409,18 @@ static INT InitKiel (void)
   /* allocate new domain structure */
   MidPoint[0] =0.5;
   MidPoint[1] =0.5;
-  radius =2;
-  if (CreateDomain("Kiel",MidPoint,radius,3,3,NO)==NULL)
+  radius =1;
+  if (CreateDomain("Kiel",MidPoint,radius,4,4,NO)==NULL)
     return(1);
 
   if (CreateBoundarySegment2D("kiel_lower",1,0,0,0,1,20,0.0,20.0,
                               kiel_lower,NULL)==NULL) return(1);
   if (CreateBoundarySegment2D("kiel_right",1,0,1,1,2,20,20.0,40.0,
                               kiel_right,NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("kiel_upper",1,0,2,2,0,20,40.0,78.0,
+  if (CreateBoundarySegment2D("kiel_upper",1,0,2,2,3,20,40.0,60.0,
                               kiel_upper,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("kiel_left" ,1,0,3,3,0,20,60.0,82.0,
+                              kiel_left,NULL)==NULL) return(1);
 
   return(0);
 }
