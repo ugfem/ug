@@ -383,8 +383,8 @@ int FAMGGraph::Init(FAMGGrid *gridptr)
     nrvec = gridptr->GetN();
     nf = 0;
 
-    //node = (FAMGNode *) FAMGGetMem(n*sizeof(FAMGNode), FAMG_FROM_BOTTOM);
-    node = new FAMGNode[nrvec];
+    node = (FAMGNode *) FAMGGetMem(nrvec*sizeof(FAMGNode), FAMG_FROM_BOTTOM);
+    //node = new FAMGNode[nrvec];
     if (node == NULL)
 		return 1;
     
