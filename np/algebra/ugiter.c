@@ -31,14 +31,14 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "algebra.h"
 #include "compiler.h"
-#include "misc.h"
+#include "disctools.h"
 #include "debug.h"
 #include "devices.h"
-#include "gm.h"
-#include "algebra.h"
-#include "debug.h"
 #include "general.h"
+#include "gm.h"
+#include "misc.h"
 #include "pargm.h"
 
 #include "np.h"
