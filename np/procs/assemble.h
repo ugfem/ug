@@ -438,6 +438,10 @@ struct np_t_assemble {
 
   NP_BASE base;                              /* inherits base class             */
 
+  /* data (optional) */
+  DOUBLE dtc;                                /* time step suggestion            */
+  DOUBLE dt;                                 /* time step                       */
+
   /* functions */
   INT (*TAssemblePreProcess)                     /* call at begin of timestep           */
     (struct np_t_assemble *,                 /* pointer to (derived) object     */
