@@ -69,14 +69,11 @@
 #define MARK2PAT(e,r)           (RefRules[TAG(e)][r].pat)
 #define MARK2PATTERN(e,m)       (RefRules[TAG(e)][m].pattern)
 
-/* TODO: delete this
- #define PATTERNOFELEM(e)	((dim==2)?(EDGEPATTERN(e)):((SIDEPATTERN(e)<<6) | EDGEPATTERN(e))) */
-/* #define PATTERN2RULE(e,p)	(Pattern2Rule[TAG(e)][(p)]) */
 #define PATTERN2RULE(e,p)       (Patterns2Rules((e),(p)))
 #define RULE2MARK(e,r)          (RefRules[TAG(e)][r].mark)
-/* TODO: delete this */
-/* #define PATTERN2MARK(e,p)	(((Patterns2Rules((e),(p)))>=0)?(RefRules[TAG(e)][Pattern2Rule[TAG(e)][p]].mark):-1) */
 #define PATTERN2MARK(e,p)       (((PATTERN2RULE(e,p))>=0) ? (RefRules[TAG(e)][PATTERN2RULE(e,p)].mark) : -1)
+
+#define NODE_OF_RULE(e,m,i)     (MARK2RULEADR(e,m)->sonandnode[i][0]!=-1)
 
 /* dimension dependent MAX_CORNERS_OF_ELEM */
 #define MAX_CORNERS_OF_ELEM_2D  4
@@ -111,8 +108,6 @@
 #define LEAFELEM(e)             (NSONS(e)==0)
 
 /* indices of rules in rule array */
-#define NO_REF          0
-
 #define T_NOREF                         0
 #define T_COPY                  1
 #define T_RED                           2

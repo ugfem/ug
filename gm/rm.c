@@ -129,7 +129,7 @@ static REFRULE TriangleRules[18] = {
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* T_COPY */
-  {TRIANGLE,T_COPY,REGULAR_CLASS|IRREGULAR_CLASS,1,
+  {TRIANGLE,T_COPY,RED_CLASS|GREEN_CLASS,1,
    {0,0,0,0},0,
    {{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1}},
    {{4,0,1,-1},{4,1,2,-1},{4,2,0,-1},{-1,-1,-1,-1},
@@ -141,7 +141,7 @@ static REFRULE TriangleRules[18] = {
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* T_RED */
-  {TRIANGLE,T_RED,REGULAR_CLASS|IRREGULAR_CLASS,4,
+  {TRIANGLE,T_RED,RED_CLASS|GREEN_CLASS,4,
    {1,1,1,0},(1<<3)-1,
    {{0,1},{1,2},{0,2},{-1,-1},{-1,-1}},
    {{3,0,3,0},{3,3,1,0},{3,1,4,0},{3,4,2,0},
@@ -154,7 +154,7 @@ static REFRULE TriangleRules[18] = {
 
 
   /* T_BISECT_1 edge 0 bisected */
-  {TRIANGLE,T_BISECT_1_0,REGULAR_CLASS|IRREGULAR_CLASS,2,
+  {TRIANGLE,T_BISECT_1_0,RED_CLASS|GREEN_CLASS,2,
    {1,0,0,0},1,
    {{0,1},{-1,-1},{-1,-1},{-1,-1},{-1,-1}},
    {{3,0,3,-1},{3,3,1,-1},{ 1, 3, 2,-1},{4,1,2,-1},
@@ -166,7 +166,7 @@ static REFRULE TriangleRules[18] = {
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* T_BISECT_1 edge 1 bisected */
-  {TRIANGLE,T_BISECT_1_1,REGULAR_CLASS|IRREGULAR_CLASS,2,
+  {TRIANGLE,T_BISECT_1_1,RED_CLASS|GREEN_CLASS,2,
    {0,1,0,0},1<<1,
    {{-1,-1},{0,2},{-1,-1},{-1,-1},{-1,-1}},
    {{3,1,4,-1},{3,4,2,-1},{ 1, 4, 0,-1},{4,0,1,-1},
@@ -178,7 +178,7 @@ static REFRULE TriangleRules[18] = {
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* T_BISECT_1 edge 2 bisected */
-  {TRIANGLE,T_BISECT_1_2,REGULAR_CLASS|IRREGULAR_CLASS,2,
+  {TRIANGLE,T_BISECT_1_2,RED_CLASS|GREEN_CLASS,2,
    {0,0,1,0},1<<2,
    {{-1,-1},{-1,-1},{0,2},{-1,-1},{-1,-1}},
    {{3,2,5,-1},{3,5,0,-1},{ 1, 5, 1,-1},{4,0,1,-1},
@@ -191,7 +191,7 @@ static REFRULE TriangleRules[18] = {
 
 
   /* T_BISECT_2_T1 edge 2 not bisected */
-  {TRIANGLE,T_BISECT_2_T1_2,REGULAR_CLASS|IRREGULAR_CLASS,3,
+  {TRIANGLE,T_BISECT_2_T1_2,RED_CLASS|GREEN_CLASS,3,
    {1,1,0,0},(1<<2)-1,
    {{0,1},{1,2},{-1,-1},{-1,-1},{-1,-1}},
    {{1,3,2,-1},{1,3,4,-1},{ 3, 0, 3,-1},{ 3, 3, 1,-1},
@@ -203,7 +203,7 @@ static REFRULE TriangleRules[18] = {
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* T_BISECT_2_T1 edge 0 not bisected */
-  {TRIANGLE,T_BISECT_2_T1_0,REGULAR_CLASS|IRREGULAR_CLASS,3,
+  {TRIANGLE,T_BISECT_2_T1_0,RED_CLASS|GREEN_CLASS,3,
    {0,1,1,0},6,
    {{-1,-1},{0,2},{1,2},{-1,-1},{-1,-1}},
    {{1,0,4,-1},{1,4,5,-1},{4,0,1,-1},{3,1,4,-1},
@@ -215,7 +215,7 @@ static REFRULE TriangleRules[18] = {
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* T_BISECT_2_T1 edge 1 not bisected */
-  {TRIANGLE,T_BISECT_2_T1_1,REGULAR_CLASS|IRREGULAR_CLASS,3,
+  {TRIANGLE,T_BISECT_2_T1_1,RED_CLASS|GREEN_CLASS,3,
    {1,0,1,0},5,
    {{0,1},{-1,-1},{1,2},{-1,-1},{-1,-1}},
    {{1,3,5,-1},{1,1,5,-1},{3,0,3,-1},{3,3,1,-1},
@@ -227,7 +227,7 @@ static REFRULE TriangleRules[18] = {
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* T_BISECT_2_T2 edge 1 not bisected */
-  {TRIANGLE,T_BISECT_2_T2_1,REGULAR_CLASS|IRREGULAR_CLASS,3,
+  {TRIANGLE,T_BISECT_2_T2_1,RED_CLASS|GREEN_CLASS,3,
    {1,0,1,0},5,
    {{0,1},{-1,-1},{0,2},{-1,-1},{-1,-1}},
    {{1,3,5,-1},{1,3,2,-1},{3,0,3,-1},{3,3,1,-1},
@@ -239,7 +239,7 @@ static REFRULE TriangleRules[18] = {
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* T_BISECT_2_T2 edge 2 not bisected */
-  {TRIANGLE,T_BISECT_2_T2_2,REGULAR_CLASS|IRREGULAR_CLASS,3,
+  {TRIANGLE,T_BISECT_2_T2_2,RED_CLASS|GREEN_CLASS,3,
    {1,1,0,0},3,
    {{0,1},{0,2},{-1,-1},{-1,-1},{-1,-1}},
    {{1,3,4,-1},{1,4,0,-1},{3,0,3,-1},{3,3,1,-1},
@@ -251,7 +251,7 @@ static REFRULE TriangleRules[18] = {
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* T_BISECT_2_T2 edge 0 not bisected */
-  {TRIANGLE,T_BISECT_2_T2_0,REGULAR_CLASS|IRREGULAR_CLASS,3,
+  {TRIANGLE,T_BISECT_2_T2_0,RED_CLASS|GREEN_CLASS,3,
    {0,1,1,0},6,
    {{-1,-1},{1,2},{0,2},{-1,-1},{-1,-1}},
    {{1,4,5,-1},{1,5,1,-1},{4,0,1,-1},{3,1,4,-1},
@@ -263,7 +263,7 @@ static REFRULE TriangleRules[18] = {
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* T_BISECT_2_Q edge 0 not bisected */
-  {TRIANGLE,T_BISECT_2_Q_0,REGULAR_CLASS|IRREGULAR_CLASS,2,
+  {TRIANGLE,T_BISECT_2_Q_0,RED_CLASS|GREEN_CLASS,2,
    {0,1,1,0},6,
    {{-1,-1},{0,2},{0,3},{-1,-1},{-1,-1}},
    {{1,4,5,-1},{4,0,1,-1},{3,1,4,-1},{3,4,2,-1},
@@ -275,7 +275,7 @@ static REFRULE TriangleRules[18] = {
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* T_BISECT_2_Q edge 1 not bisected */
-  {TRIANGLE,T_BISECT_2_Q_1,REGULAR_CLASS|IRREGULAR_CLASS,2,
+  {TRIANGLE,T_BISECT_2_Q_1,RED_CLASS|GREEN_CLASS,2,
    {1,0,1,0},5,
    {{0,1},{-1,-1},{0,2},{-1,-1},{-1,-1}},
    {{1,3,5,-1},{3,0,3,-1},{3,3,1,-1},{4,1,2,-1},
@@ -287,7 +287,7 @@ static REFRULE TriangleRules[18] = {
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* T_BISECT_2_Q edge 2 not bisected */
-  {TRIANGLE,T_BISECT_2_Q_2,REGULAR_CLASS|IRREGULAR_CLASS,2,
+  {TRIANGLE,T_BISECT_2_Q_2,RED_CLASS|GREEN_CLASS,2,
    {1,1,0,0},3,
    {{0,1},{0,2},{-1,-1},{-1,-1},{-1,-1}},
    {{1,3,4,-1},{3,0,3,-1},{3,3,1,-1},{3,1,4,-1},
@@ -299,7 +299,7 @@ static REFRULE TriangleRules[18] = {
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* T_BISECT_3 edge 0 */
-  {TRIANGLE,T_BISECT_3_0,REGULAR_CLASS|IRREGULAR_CLASS,4,
+  {TRIANGLE,T_BISECT_3_0,RED_CLASS|GREEN_CLASS,4,
    {1,1,1,0},7,
    {{0,1},{3,2},{0,2},{-1,-1},{-1,-1}},
    {{1,3,4,-1},{1,3,2,-1},{1,3,5,-1},{3,0,3,-1},
@@ -311,7 +311,7 @@ static REFRULE TriangleRules[18] = {
                              {TRIANGLE,{3,1,4,-1},{20,21, 2,-1},0}}},
 
   /* T_BISECT_3 edge 1 */
-  {TRIANGLE,T_BISECT_3_1,REGULAR_CLASS|IRREGULAR_CLASS,4,
+  {TRIANGLE,T_BISECT_3_1,RED_CLASS|GREEN_CLASS,4,
    {1,1,1,0},7,
    {{0,1},{0,2},{1,2},{-1,-1},{-1,-1}},
    {{1,4,0,-1},{1,4,3,-1},{1,4,5,-1},{3,0,3,-1},
@@ -323,7 +323,7 @@ static REFRULE TriangleRules[18] = {
                              {TRIANGLE,{3,1,4,-1},{20,21, 0,-1},0}}},
 
   /* T_BISECT_3 edge 2 */
-  {TRIANGLE,T_BISECT_3_2,REGULAR_CLASS|IRREGULAR_CLASS,4,
+  {TRIANGLE,T_BISECT_3_2,RED_CLASS|GREEN_CLASS,4,
    {1,1,1,0},7,
    {{0,1},{2,2},{1,2},{-1,-1},{-1,-1}},
    {{1,5,3,-1},{1,5,1,-1},{1,5,4,-1},{3,0,3,-1},
@@ -352,7 +352,7 @@ static REFRULE QuadrilateralRules[17] =
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* Q_COPY */
-  {QUADRILATERAL,Q_COPY,REGULAR_CLASS|IRREGULAR_CLASS,1,
+  {QUADRILATERAL,Q_COPY,RED_CLASS|GREEN_CLASS,1,
    {0,0,0,0},0,
    {{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1}},
    {{4,0,1,-1},{4,1,2,-1},{4,2,3,-1},{4,3,0,-1},
@@ -364,7 +364,7 @@ static REFRULE QuadrilateralRules[17] =
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* Q_RED */
-  {QUADRILATERAL,Q_RED,REGULAR_CLASS|IRREGULAR_CLASS,4,
+  {QUADRILATERAL,Q_RED,RED_CLASS|GREEN_CLASS,4,
    {1,1,1,1,1},(1<<5)-1,
    {{0,1},{1,2},{2,3},{3,0},{0,2}},
    {{3,0,4,-1},{3,4,1,-1},{3,1,5,-1},{3,5,2,-1},
@@ -376,7 +376,7 @@ static REFRULE QuadrilateralRules[17] =
                              {QUADRILATERAL,{7,8,6,3},{ 0, 2,22,23},-1}}},
 
   /* Q_CLOSE_1 edge 0 and 1 bisected */
-  {QUADRILATERAL,Q_CLOSE_1_0,REGULAR_CLASS|IRREGULAR_CLASS,3,
+  {QUADRILATERAL,Q_CLOSE_1_0,RED_CLASS|GREEN_CLASS,3,
    {1,1,0,0,1},3+16,
    {{0,1},{1,2},{-1,-1},{-1,-1},{0,2}},
    {{1,4,8,-1},{1,5,8,-1},{1,3,8,-1},{3,0,4,-1},
@@ -388,7 +388,7 @@ static REFRULE QuadrilateralRules[17] =
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* Q_CLOSE_1 edge 1 and 2 bisected */
-  {QUADRILATERAL,Q_CLOSE_1_1,REGULAR_CLASS|IRREGULAR_CLASS,3,
+  {QUADRILATERAL,Q_CLOSE_1_1,RED_CLASS|GREEN_CLASS,3,
    {0,1,1,0,1},6+16,
    {{-1,-1},{0,2},{1,3},{-1,-1},{0,3}},
    {{1,0,8,-1},{1,5,8,-1},{1,6,8,-1},{4,0,1,-1},
@@ -400,7 +400,7 @@ static REFRULE QuadrilateralRules[17] =
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* Q_CLOSE_1 edge 2 and 3 bisected */
-  {QUADRILATERAL,Q_CLOSE_1_2,REGULAR_CLASS|IRREGULAR_CLASS,3,
+  {QUADRILATERAL,Q_CLOSE_1_2,RED_CLASS|GREEN_CLASS,3,
    {0,0,1,1,1},12+16,
    {{-1,-1},{-1,-1},{1,3},{0,3},{0,2}},
    {{1,1,8,-1},{1,6,8,-1},{1,7,8,-1},{4,0,1,-1},
@@ -412,7 +412,7 @@ static REFRULE QuadrilateralRules[17] =
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* Q_CLOSE_1 edge 0 and 3 bisected */
-  {QUADRILATERAL,Q_CLOSE_1_3,REGULAR_CLASS|IRREGULAR_CLASS,3,
+  {QUADRILATERAL,Q_CLOSE_1_3,RED_CLASS|GREEN_CLASS,3,
    {1,0,0,1,1},9+16,
    {{0,1},{-1,-1},{-1,-1},{0,3},{0,2}},
    {{1,4,8,-1},{1,2,8,-1},{1,7,8,-1},{3,0,4,-1},
@@ -424,7 +424,7 @@ static REFRULE QuadrilateralRules[17] =
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* Q_BLUE edge 0 and 2 bisected */
-  {QUADRILATERAL,Q_BLUE_0,REGULAR_CLASS|IRREGULAR_CLASS,2,
+  {QUADRILATERAL,Q_BLUE_0,RED_CLASS|GREEN_CLASS,2,
    {1,0,1,0,0},5,
    {{0,1},{-1,-1},{0,2},{-1,-1},{-1,-1}},
    {{1,4,6,-1},{3,0,4,-1},{3,4,1,-1},{4,1,2,-1},
@@ -436,7 +436,7 @@ static REFRULE QuadrilateralRules[17] =
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* Q_BLUE edge 1 and 3 bisected */
-  {QUADRILATERAL,Q_BLUE_1,REGULAR_CLASS|IRREGULAR_CLASS,2,
+  {QUADRILATERAL,Q_BLUE_1,RED_CLASS|GREEN_CLASS,2,
    {0,1,0,1,0},10,
    {{-1,-1},{0,2},{-1,-1},{0,3},{-1,-1}},
    {{1,5,7,-1},{4,0,1,-1},{3,1,5,-1},{3,5,2,-1},
@@ -448,7 +448,7 @@ static REFRULE QuadrilateralRules[17] =
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* Q_CLOSE_2 edge 0 bisected */
-  {QUADRILATERAL,Q_CLOSE_2_0,REGULAR_CLASS|IRREGULAR_CLASS,3,
+  {QUADRILATERAL,Q_CLOSE_2_0,RED_CLASS|GREEN_CLASS,3,
    {1,0,0,0,1},1+16,
    {{0,1},{-1,-1},{-1,-1},{-1,-1},{0,2}},
    {{1,4,8,-1},{1,2,8,-1},{1,3,8,-1},{3,0,4,-1},
@@ -460,7 +460,7 @@ static REFRULE QuadrilateralRules[17] =
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* Q_CLOSE_2 edge 1 bisected */
-  {QUADRILATERAL,Q_CLOSE_2_1,REGULAR_CLASS|IRREGULAR_CLASS,3,
+  {QUADRILATERAL,Q_CLOSE_2_1,RED_CLASS|GREEN_CLASS,3,
    {0,1,0,0,1},2+16,
    {{-1,-1},{0,2},{-1,-1},{-1,-1},{0,3}},
    {{1,0,8,-1},{1,5,8,-1},{1,3,8,-1},{4,0,1,-1},
@@ -472,7 +472,7 @@ static REFRULE QuadrilateralRules[17] =
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* Q_CLOSE_2 edge 2 bisected */
-  {QUADRILATERAL,Q_CLOSE_2_2,REGULAR_CLASS|IRREGULAR_CLASS,3,
+  {QUADRILATERAL,Q_CLOSE_2_2,RED_CLASS|GREEN_CLASS,3,
    {0,0,1,0,1},4+16,
    {{-1,-1},{-1,-1},{1,3},{-1,-1},{0,2}},
    {{1,0,8,-1},{1,1,8,-1},{1,6,8,-1},{4,0,1,-1},
@@ -484,7 +484,7 @@ static REFRULE QuadrilateralRules[17] =
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* Q_CLOSE_2 edge 3 bisected */
-  {QUADRILATERAL,Q_CLOSE_2_3,REGULAR_CLASS|IRREGULAR_CLASS,3,
+  {QUADRILATERAL,Q_CLOSE_2_3,RED_CLASS|GREEN_CLASS,3,
    {0,0,0,1,1},8+16,
    {{-1,-1},{-1,-1},{-1,-1},{0,3},{0,2}},
    {{1,1,8,-1},{1,2,8,-1},{1,7,8,-1},{4,0,1,-1},
@@ -496,7 +496,7 @@ static REFRULE QuadrilateralRules[17] =
                              {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}},
 
   /* Q_CLOSE_3 edge 0 not bisected */
-  {QUADRILATERAL,Q_CLOSE_3_0,REGULAR_CLASS|IRREGULAR_CLASS,4,
+  {QUADRILATERAL,Q_CLOSE_3_0,RED_CLASS|GREEN_CLASS,4,
    {0,1,1,1,0},14,
    {{-1,-1},{0,2},{1,2},{0,3},{-1,-1}},
    {{1,7,5,-1},{1,5,6,-1},{1,6,7,-1},{4,0,1,-1},
@@ -508,7 +508,7 @@ static REFRULE QuadrilateralRules[17] =
                              {TRIANGLE,{7,6,3,-1},{ 1,22,23,-1},-1}}},
 
   /* Q_CLOSE_3 edge 1 not bisected */
-  {QUADRILATERAL,Q_CLOSE_3_1,REGULAR_CLASS|IRREGULAR_CLASS,4,
+  {QUADRILATERAL,Q_CLOSE_3_1,RED_CLASS|GREEN_CLASS,4,
    {1,0,1,1,0},13,
    {{0,1},{-1,-1},{1,2},{0,2},{-1,-1}},
    {{1,7,4,-1},{1,4,6,-1},{1,6,7,-1},{3,0,4,-1},
@@ -520,7 +520,7 @@ static REFRULE QuadrilateralRules[17] =
                              {QUADRILATERAL,{4,1,2,6},{20,21,22, 1},-1}}},
 
   /* Q_CLOSE_3 edge 2 not bisected */
-  {QUADRILATERAL,Q_CLOSE_3_2,REGULAR_CLASS|IRREGULAR_CLASS,4,
+  {QUADRILATERAL,Q_CLOSE_3_2,RED_CLASS|GREEN_CLASS,4,
    {1,1,0,1,0},11,
    {{0,1},{2,2},{-1,-1},{0,2},{-1,-1}},
    {{1,7,4,-1},{1,4,5,-1},{1,5,7,-1},{3,0,4,-1},
@@ -532,7 +532,7 @@ static REFRULE QuadrilateralRules[17] =
                              {QUADRILATERAL,{7,5,2,3},{ 1,21,22,23},-1}}},
 
   /* Q_CLOSE_3 edge 3 not bisected */
-  {QUADRILATERAL,Q_CLOSE_3_3,REGULAR_CLASS|IRREGULAR_CLASS,4,
+  {QUADRILATERAL,Q_CLOSE_3_3,RED_CLASS|GREEN_CLASS,4,
    {1,1,1,0,0},7,
    {{0,1},{2,2},{0,2},{-1,-1},{-1,-1}},
    {{1,6,4,-1},{1,4,5,-1},{1,5,6,-1},{3,0,4,-1},
@@ -622,7 +622,7 @@ static REFRULE PyramidRules[2] =
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1}}},
 
   /* PYR_COPY */
-  {PYRAMID,1,COPY_CLASS,1,
+  {PYRAMID,1,YELLOW_CLASS,1,
    {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},0,
    {{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},
                     {-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},
@@ -695,7 +695,7 @@ static REFRULE HexahedronRules[3] =
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1}}},
 
   /* HEX_COPY */
-  {HEXAHEDRON,1,COPY_CLASS,1,
+  {HEXAHEDRON,1,YELLOW_CLASS,1,
    {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},0,
    {{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},
                     {-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},
@@ -729,7 +729,7 @@ static REFRULE HexahedronRules[3] =
                     {-1,{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1},-1}}},
 
   /* HEX_RED */
-  {HEXAHEDRON,2,REGULAR_CLASS,8,
+  {HEXAHEDRON,2,RED_CLASS,8,
    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},(1<<19)-1,
 
    /* sonandnode */
@@ -791,27 +791,6 @@ RCSID("$Header$",UG_RCS_STRING)
 /* forward declarations of functions used before they are defined			*/
 /*																			*/
 /****************************************************************************/
-
-
-/****************************************************************************/
-/*																			*/
-/* Function:  IsAllowedToRefine                                                                                         */
-/*																			*/
-/* Purpose:   determine whether element is allowed to be refined            */
-/*																			*/
-/* Param:	  ELEMENT *theElement: element to look after					*/
-/*																			*/
-/* return:	  INT 1: element can be refined                                                                 */
-/*				  0: element cannot be refined                                                          */
-/*																			*/
-/****************************************************************************/
-
-INT IsAllowedToRefine (const ELEMENT *theElement)
-{
-  if (REFINECLASS(theElement)==RED) return (FALSE);
-  return (TRUE);
-}
-
 
 #ifdef __THREEDIM__
 /****************************************************************************/
@@ -1458,7 +1437,7 @@ static INT YAlignment (ELEMENT *theElement)
 /*																			*/
 /* Param:	  ELEMENT *theElement: element to refine						*/
 /*			  INT type: type of refinement mark:							*/
-/*						REGULAR_MARK										*/
+/*						RED_MARK										*/
 /*																			*/
 /* return:	  INT 1: element has been marked								*/
 /*				  0: element cannot be marked								*/
@@ -1470,7 +1449,7 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
   INT side;
 
   /* regulary refined elements can not be be marked */
-  if (REFINECLASS(theElement)==RED) return(GM_ERROR);
+  if (!LEAFELEM(theElement)) return(GM_ERROR);
 
   SETCOARSEN(theElement,0);
 
@@ -1489,54 +1468,54 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
       {
       case UNREFINE :
         SETCOARSEN(theElement,1);
-        SETMARK(theElement,NO_REF);
+        SETMARK(theElement,NO_REFINEMENT);
         SETMARKCLASS(theElement,0);
         break;
 
       case NO_REFINEMENT :
-        SETMARK(theElement,NO_REF);
+        SETMARK(theElement,NO_REFINEMENT);
         SETMARKCLASS(theElement,0);
         break;
 
       case COPY :
         SETMARK(theElement,T_COPY);
-        SETMARKCLASS(theElement,RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
 
       case RED :
         SETMARK(theElement,T_RED);
-        SETMARKCLASS(theElement,RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
 
       /* TODO: these marks must be introduced first
          case BISECTION_3:
               if (side<0) return (GM_ERROR);
               SETMARK(theElement,TRI_BISECT_3+side%3);
-              SETMARKCLASS(theElement,RED);
+              SETMARKCLASS(theElement,RED_CLASS);
               break;
 
          case BISECTION_1:
               if (side<0) return (GM_ERROR);
               SETMARK(theElement,TRI_BISECT_1+side%3);
-              SETMARKCLASS(theElement,RED);
+              SETMARKCLASS(theElement,RED_CLASS);
               break;
 
          case BISECTION_2_Q:
               if (side<0) return (GM_ERROR);
               SETMARK(theElement,TRI_BISECT_2_Q+side%3);
-              SETMARKCLASS(theElement,RED);
+              SETMARKCLASS(theElement,RED_CLASS);
               break;
 
          case BISECTION_2_T1:
               if (side<0) return (GM_ERROR);
               SETMARK(theElement,TRI_BISECT_2_T1+side%3);
-              SETMARKCLASS(theElement,RED);
+              SETMARKCLASS(theElement,RED_CLASS);
               break;
 
          case BISECTION_2_T2:
               if (side<0) return (GM_ERROR);
               SETMARK(theElement,TRI_BISECT_2_T2+side%3);
-              SETMARKCLASS(theElement,RED);
+              SETMARKCLASS(theElement,RED_CLASS);
               break;
        */
 
@@ -1551,22 +1530,22 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
       case UNREFINE :
         SETCOARSEN(theElement,1);
         SETMARKCLASS(theElement,0);
-        SETMARK(theElement,NO_REF);
+        SETMARK(theElement,NO_REFINEMENT);
         break;
 
       case NO_REFINEMENT :
-        SETMARK(theElement,NO_REF);
+        SETMARK(theElement,NO_REFINEMENT);
         SETMARKCLASS(theElement,0);
         break;
 
       case COPY :
         SETMARK(theElement,Q_COPY);
-        SETMARKCLASS(theElement,RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
 
       case RED :
         SETMARK(theElement,Q_RED);
-        SETMARKCLASS(theElement,RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
 
       /* TODO: these mark must be introduced first */
@@ -1576,7 +1555,7 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
           SETMARK(theElement,Q_BLUE_0);
         else
           SETMARK(theElement,Q_BLUE_1);
-        SETMARKCLASS(theElement,RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
 
       default :
@@ -1600,21 +1579,21 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
       switch(rule)
       {
       case (UNREFINE) :
-        SETMARK(theElement,NO_REF);
+        SETMARK(theElement,NO_REFINEMENT);
         SETMARKCLASS(theElement,0);
         SETCOARSEN(theElement,1);
         break;
       case (NO_REFINEMENT) :
-        SETMARK(theElement,NO_REF);
+        SETMARK(theElement,NO_REFINEMENT);
         SETMARKCLASS(theElement,0);
         break;
       case (COPY) :
         SETMARK(theElement,TET_COPY);
-        SETMARKCLASS(theElement,RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
       case (RED) :
         SETMARK(theElement,(*theFullRefRule)(theElement));
-        SETMARKCLASS(theElement,RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
       default :
         return(GM_ERROR);
@@ -1625,21 +1604,21 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
       switch(rule)
       {
       case (UNREFINE) :
-        SETMARK(theElement,NO_REF);
+        SETMARK(theElement,NO_REFINEMENT);
         SETMARKCLASS(theElement,0);
         SETCOARSEN(theElement,1);
         break;
       case (NO_REFINEMENT) :
-        SETMARK(theElement,NO_REF);
+        SETMARK(theElement,NO_REFINEMENT);
         SETMARKCLASS(theElement,0);
         break;
       case (COPY) :
         SETMARK(theElement,PYR_COPY);
-        SETMARKCLASS(theElement,RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
       case (RED) :
         SETMARK(theElement,PYR_RED);
-        SETMARKCLASS(theElement,RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
       default :
         return(GM_ERROR);
@@ -1650,21 +1629,21 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
       switch(rule)
       {
       case (UNREFINE) :
-        SETMARK(theElement,NO_REF);
+        SETMARK(theElement,NO_REFINEMENT);
         SETMARKCLASS(theElement,0);
         SETCOARSEN(theElement,1);
         break;
       case (NO_REFINEMENT) :
-        SETMARK(theElement,NO_REF);
+        SETMARK(theElement,NO_REFINEMENT);
         SETMARKCLASS(theElement,0);
         break;
       case (COPY) :
         SETMARK(theElement,HEXA_COPY);
-        SETMARKCLASS(theElement,RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
       case (RED) :
         SETMARK(theElement,HEXA_RED);
-        SETMARKCLASS(theElement,RED);
+        SETMARKCLASS(theElement,RED_CLASS);
         break;
       default :
         return(GM_ERROR);
@@ -1804,7 +1783,7 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
     return(Pattern2Rule[TAG(theElement)][pattern]);
 
   case (PYRAMID) :
-    if (MARKCLASS(theElement) == RED) { assert(0); return(-1);}
+    if (MARKCLASS(theElement) == RED_CLASS) { assert(0); return(-1);}
 
     /* no further red or green refinement of pyramid so far */
     return(0);
@@ -1820,7 +1799,7 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
     break;
 
   case (HEXAHEDRON) :
-    if (MARKCLASS(theElement) != RED) return(0);
+    if (MARKCLASS(theElement) != RED_CLASS) return(0);
     switch (pattern) {
     /* copy rule */
     case (0) :
@@ -1896,7 +1875,7 @@ static INT PrintEdgeData (struct edgedata theEdgeData)
 {
   char buffer[128];
 
-  sprintf(buffer,"typ=%d from=%2d to=%2d side=%d",(int)theEdgeData.type
+  sprintf(buffer,"typ=%d from=%2d to=%2d side=%2d",(int)theEdgeData.type
           ,(int)theEdgeData.from
           ,(int)theEdgeData.to
           ,(int)theEdgeData.side);
@@ -1987,7 +1966,7 @@ INT ShowRefRule (INT tag, INT nb)
   {
     sprintf(buffer,"   newnode %2d: sonandnode[%2d][0]=%2d",i,i,(int)theRule->sonandnode[i][0]);
     UserWrite(buffer);
-    sprintf(buffer,"  [%2d][1]=%d\n",i,(int)theRule->sonandnode[i][1]);
+    sprintf(buffer,"  [%2d][1]=%2d\n",i,(int)theRule->sonandnode[i][1]);
     UserWrite(buffer);
   }
   UserWrite("\n");
@@ -2184,7 +2163,7 @@ INT InitRuleManager3D (void)
   {
     Rules[i] = Empty_Rule;
     Rules[i].mark = i;
-    Rules[i].class = REGULAR_CLASS|IRREGULAR_CLASS;
+    Rules[i].class = RED_CLASS|GREEN_CLASS;
     if (FReadRule(stream,Rules+i)) return (__LINE__);
   }
 
