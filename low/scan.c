@@ -36,8 +36,8 @@
 #include "general.h"
 #include "debug.h"
 #include "ugenv.h"
-#include "scan.h"
 #include "misc.h"
+#include "scan.h"
 
 /****************************************************************************/
 /*																			*/
