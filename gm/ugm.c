@@ -7974,12 +7974,9 @@ INT FixCoarseGrid (MULTIGRID *theMG)
     REP_ERR_RETURN (GM_ERROR);
 
   /* set this flag here because it is checked by CreateAlgebra */
-  MG_COARSE_FIXED(theMG) = TRUE;
-  if (CreateAlgebra(GRID_ON_LEVEL(theMG,0)) != GM_OK)
-  {
-    MG_COARSE_FIXED(theMG) = FALSE;
+  if (CreateAlgebra(theMG) != GM_OK)
     REP_ERR_RETURN (GM_ERROR);
-  }
+
   ReleaseTmpMem(MGHEAP(theMG));
 
   return (GM_OK);

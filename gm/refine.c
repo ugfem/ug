@@ -330,6 +330,8 @@ static INT TriSectionEdge[64][2] =
 /* the indices of the edges of each side */
 static INT  CondensedEdgeOfSide[4] = {0x07,0x32,0x2C,0x19};
 
+REP_ERR_FILE;
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -4996,13 +4998,10 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 				RETURN(GM_FATAL);
 		}
 	}
-
-	/* TODO: set EBUILDCON only where necessary */
-    #ifndef __EXCHANGE_CONNECTIONS__
-	MGCreateConnection(theMG);
 	#endif
 	REFINE_MULTIGRID_LIST(1,theMG,"END RefineMultiGrid():\n","","");
-	#endif
+
+/*
 	if (hFlag)
 	/* set grid status of grid 0 */
 	RESETGSTATUS(GRID_ON_LEVEL(theMG,0),GRID_CHANGED);

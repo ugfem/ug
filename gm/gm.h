@@ -987,6 +987,7 @@ struct multigrid {
   INT elemIdCounter;                                    /* count objects in that multigrid		*/
   INT topLevel;                                         /* depth of the element tree			*/
   INT currentLevel;                                     /* level we are working on				*/
+  INT fullrefineLevel;                          /* last level with complete surface     */
   INT bottomLevel;                                      /* bottom level for AMG                 */
   BVP *theBVP;                                          /* pointer to BndValProblem				*/
   BVP_DESC theBVPD;                                     /* description of BVP-properties		*/
@@ -1254,6 +1255,8 @@ enum GM_CE {
   VNEW_CE,
   VCCUT_CE,
   VCCOARSE_CE,
+  NEW_DEFECT_CE,
+  FINE_GRID_DOF_CE,
   MOFFSET_CE,
   MROOTTYPE_CE,
   MDESTTYPE_CE,
@@ -1356,9 +1359,6 @@ enum GM_CE {
 /*																			*/
 /****************************************************************************/
 
-#define NEW_DEFECT(v)    (VCLASS(v)>=2)
-#define FINE_GRID_DOF(v) ((VCLASS(v)>=2)&&(VNCLASS(v)<=1))
-
 /****************************************************************************/
 /*																			*/
 /* macros for VECTORs														*/
@@ -1427,6 +1427,16 @@ enum GM_CE {
 #define VCCOARSE_LEN                            1
 #define VCCOARSE(p)                                     CW_READ_STATIC(p,VCCOARSE_,VECTOR_)
 #define SETVCCOARSE(p,n)                        CW_WRITE_STATIC(p,VCCOARSE_,VECTOR_,n)
+
+#define FINE_GRID_DOF_SHIFT             20
+#define FINE_GRID_DOF_LEN                       1
+#define FINE_GRID_DOF(p)                        CW_READ_STATIC(p,FINE_GRID_DOF_,VECTOR_)
+#define SETFINE_GRID_DOF(p,n)           CW_WRITE_STATIC(p,FINE_GRID_DOF_,VECTOR_,n)
+
+#define NEW_DEFECT_SHIFT                        21
+#define NEW_DEFECT_LEN                          1
+#define NEW_DEFECT(p)                           CW_READ_STATIC(p,NEW_DEFECT_,VECTOR_)
+#define SETNEW_DEFECT(p,n)                      CW_WRITE_STATIC(p,NEW_DEFECT_,VECTOR_,n)
 
 #ifdef ModelP
 #define XFERVECTOR_SHIFT                        20
@@ -2374,6 +2384,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define TOPLEVEL(p)                     ((p)->topLevel)
 #define BOTTOMLEVEL(p)                  ((p)->bottomLevel)
 #define CURRENTLEVEL(p)                 ((p)->currentLevel)
+#define FULLREFINELEVEL(p)              ((p)->fullrefineLevel)
 #define MGFORMAT(p)                     ((p)->theFormat)
 #define DATAFORMAT(p)                   ((p)->theFormat)
 #define MG_BVP(p)                               ((p)->theBVP)

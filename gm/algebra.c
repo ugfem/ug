@@ -2646,7 +2646,7 @@ INT GridCreateConnection (GRID *theGrid)
    CreateAlgebra - Creates the algebra for a grid
 
    SYNOPSIS:
-   INT CreateAlgebra (GRID *theGrid);
+   INT CreateAlgebra (MULTIGRID *theGrid);
 
    PARAMETERS:
    .  theGrid - pointer to grid
@@ -2661,8 +2661,27 @@ INT GridCreateConnection (GRID *theGrid)
    D*/
 /****************************************************************************/
 
-INT CreateAlgebra (GRID *g)
+static INT SetSurfaceClasses (MULTIGRID *theMG)
 {
+  VECTOR *v;
+  INT level,fullrefine;
+
+  fullrefine = TOPLEVEL(theMG);
+  for (level=TOPLEVEL(theMG); level>=BOTTOMLEVEL(theMG); level--)
+    for (v=FIRSTVECTOR(GRID_ON_LEVEL(theMG,level)); v!= NULL; v=SUCCVC(v)) {
+      SETNEW_DEFECT(v,(VCLASS(v)>=2));
+      SETFINE_GRID_DOF(v,((VCLASS(v)>=2)&&(VNCLASS(v)<=1)));
+      if (FINE_GRID_DOF(v))
+        fullrefine = level;
+    }
+  FULLREFINELEVEL(theMG) = fullrefine;
+
+  return(0);
+}
+
+INT CreateAlgebra (MULTIGRID *theMG)
+{
+  GRID *g;
   FORMAT *fmt;
   VECTOR *vec;
   ELEMENT *elem;
@@ -2671,77 +2690,82 @@ INT CreateAlgebra (GRID *g)
   EDGE *ed;
   INT side;
 
-  /* check necessary conditions */
-  if (GLEVEL(g)!=0)
-    REP_ERR_RETURN (GM_ERROR);
+  if (MG_COARSE_FIXED(theMG) == FALSE) {
 
-  if (!MG_COARSE_FIXED(MYMG(g)))
-    REP_ERR_RETURN (GM_ERROR);
+    g = GRID_ON_LEVEL(theMG,0);
+    if (TOPLEVEL(theMG) != 0)
+      REP_ERR_RETURN (GM_ERROR);
 
-  if (NVEC(g)>0)
-    return(0);
+    if (NVEC(g)>0)
+      return(0);
 
-  fmt = MGFORMAT(MYMG(g));
+    fmt = MGFORMAT(MYMG(g));
 
-  /* loop nodes and edges */
-  for (nd=FIRSTNODE(g); nd!=NULL; nd=SUCCN(nd))
-  {
-    ASSERT(NVECTOR(nd)==NULL);
-
-    /* node vector */
-    if (FMT_USES_OBJ(fmt,NODEVEC))
-    {
-      if (CreateVector (g,NODEVEC,(GEOM_OBJECT *)nd,&vec))
-        REP_ERR_RETURN (GM_ERROR);
-      NVECTOR(nd) = vec;
-    }
-
-    /* edge vectors */
-    if (FMT_USES_OBJ(fmt,EDGEVEC))
-      for (li=START(nd); li!=NULL; li=NEXT(li))
+    /* loop nodes and edges */
+    for (nd=FIRSTNODE(g); nd!=NULL; nd=SUCCN(nd)) {
+      /* node vector */
+      if (FMT_USES_OBJ(fmt,NODEVEC))
       {
-        ed = MYEDGE(li);
-        if (li==LINK0(ed))                                                      /* to avoid double access of edges */
-        {
-          ASSERT(EDVECTOR(ed)==NULL);
-
-          if (CreateVector (g,EDGEVEC,(GEOM_OBJECT *)ed,&vec))
-            REP_ERR_RETURN (GM_ERROR);
-          EDVECTOR(ed) = vec;
-        }
+        ASSERT(NVECTOR(nd)==NULL);
+        if (CreateVector (g,NODEVEC,(GEOM_OBJECT *)nd,&vec))
+          REP_ERR_RETURN (GM_ERROR);
+        NVECTOR(nd) = vec;
       }
-  }
+      /* edge vectors */
+      if (FMT_USES_OBJ(fmt,EDGEVEC))
+        for (li=START(nd); li!=NULL; li=NEXT(li)) {
+          ed = MYEDGE(li);
+          if (li==LINK0(ed))                               /* to avoid double access of edges */
+          {
+            ASSERT(EDVECTOR(ed)==NULL);
 
-  /* loop elements and element sides */
-  for (elem=FIRSTELEMENT(g); elem!=NULL; elem=SUCCE(elem))
-  {
-    /* to tell GridCreateConnection to build connections */
-    SETEBUILDCON(elem,1);
-
-    /* element vector */
-    if (FMT_USES_OBJ(fmt,ELEMVEC))
-    {
-      ASSERT(EVECTOR(elem)==NULL);
-
-      if (CreateVector (g,ELEMVEC,(GEOM_OBJECT *)elem,&vec))
-        REP_ERR_RETURN (GM_ERROR);
-      SET_EVECTOR(elem,vec);
+            if (CreateVector (g,EDGEVEC,(GEOM_OBJECT *)ed,&vec))
+              REP_ERR_RETURN (GM_ERROR);
+            EDVECTOR(ed) = vec;
+          }
+        }
     }
 
-    /* side vectors */
-    if (FMT_USES_OBJ(fmt,SIDEVEC))
-      for (side=0; side<SIDES_OF_ELEM(elem); side++)
-        if (SVECTOR(elem,side)==NULL)
-        {
-          if (CreateSideVector (g,side,(GEOM_OBJECT *)elem,&vec))
-            REP_ERR_RETURN (GM_ERROR);
-          SET_SVECTOR(elem,side,vec);
-        }
+    /* loop elements and element sides */
+    for (elem=FIRSTELEMENT(g); elem!=NULL; elem=SUCCE(elem))
+    {
+      /* to tell GridCreateConnection to build connections */
+      SETEBUILDCON(elem,1);
+
+      /* element vector */
+      if (FMT_USES_OBJ(fmt,ELEMVEC))
+      {
+        ASSERT(EVECTOR(elem)==NULL);
+
+        if (CreateVector (g,ELEMVEC,(GEOM_OBJECT *)elem,&vec))
+          REP_ERR_RETURN (GM_ERROR);
+        SET_EVECTOR(elem,vec);
+      }
+
+      /* side vectors */
+      if (FMT_USES_OBJ(fmt,SIDEVEC))
+        for (side=0; side<SIDES_OF_ELEM(elem); side++)
+          if (SVECTOR(elem,side)==NULL)
+          {
+            if (CreateSideVector (g,side,(GEOM_OBJECT *)elem,&vec))
+              REP_ERR_RETURN (GM_ERROR);
+            SET_SVECTOR(elem,side,vec);
+          }
+    }
+    MG_COARSE_FIXED(theMG) = TRUE;
+
+    /* now connections */
+    if (GridCreateConnection(g))
+      REP_ERR_RETURN (1);
   }
 
-  /* now connections */
-  if (GridCreateConnection(g))
-    REP_ERR_RETURN (1);
+        #ifdef ModelP
+    #ifndef __EXCHANGE_CONNECTIONS__
+  MGCreateConnection(theMG);
+        #endif
+        #endif
+
+  SetSurfaceClasses(theMG);
 
   return(GM_OK);
 }
