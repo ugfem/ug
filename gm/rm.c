@@ -2379,6 +2379,9 @@ ELEMENT *ELEMENT_TO_MARK (ELEMENT *theElement)
 {
   if (IS_REFINED(theElement)) return(NULL);
 
+  PRINTDEBUG(gm,4,(PFMT "ELEMENT_TO_MARK() called for e=" EID_FMTX "\n",
+                   me,EID_PRTX(theElement)))
+
   while (ECLASS(theElement) != RED_CLASS)
   {
     theElement = EFATHER(theElement);
