@@ -126,10 +126,10 @@
 /* macros for communication buffer */
 #define FFMAX_TRIES     50000000  /* max. number of tries til timeout in communication */
 
+#define FF_LINES_NR -100
 #define FF_CROSS_NR -101
 
 #ifdef ModelP
-#define FF_LINES_NR -100
 
 #define FFCommBufferBV(bv)      ((FFCommBuffer*)BVUSERDATA(bv))
 #define FFVChannelIn(bv)    (FFCommBufferBV(bv)->vcin)
