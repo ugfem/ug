@@ -19,10 +19,10 @@ ARCH_LIBS     = -lm
 ARCH_FLIBS     = -lf
 
 
-ARCH_CFLAGS   = -nx -g -Mallow_spacing -Xc # -O1 -g -Mnoperfmon -Mvect
+ARCH_CFLAGS   = -nx -O1 -Mallow_spacing -Xc # -O1 -g -Mnoperfmon -Mvect
 ARCH_C++FLAGS =
 ARCH_FFLAGS =
-ARCH_LFLAGS   = -nx # -Mdebug -Mframe -O0
+ARCH_LFLAGS   = -nx -Knoieee -Ktrap=fp -Ktrap=align # -Mdebug -Mframe -O0
 ARCH_ARFLAGS  = ru
 
 ARCH_XINCLUDES =
