@@ -434,13 +434,17 @@ static int CloseGrid (GRID *theGrid)
                         #ifdef __THREEDIM__
       for (i=0; i<SIDES_OF_ELEM(theElement); i++)
       {
+#ifdef TET_RULESET
         if (CORNERS_OF_SIDE(theElement,i)==4)
         {
-          /* set SIDEPATTERN if side has node */
-          if(SIDE_IN_PATTERN(theElement,myPattern,i))
-            SETSIDEPATTERN(theElement,
-                           SIDEPATTERN(theElement) | 1<<i);
-        }
+#endif
+        /* set SIDEPATTERN if side has node */
+        if(SIDE_IN_PATTERN(theElement,myPattern,i))
+          SETSIDEPATTERN(theElement,
+                         SIDEPATTERN(theElement) | 1<<i);
+#ifdef TET_RULESET
+      }
+#endif
       }
                         #endif
     }
@@ -700,12 +704,21 @@ FIFOSTART:
     ENDDEBUG
 
                 #ifdef __THREEDIM__
-    if (TAG(theElement)==TETRAHEDRON && MARKCLASS(theElement) == RED_CLASS)
+    if (TAG(theElement)==TETRAHEDRON && MARKCLASS(theElement)==RED_CLASS)
     {
-      Mark = (*theFullRefRule)(theElement);
-      assert( Mark==FULL_REFRULE_0_5 ||
-              Mark==FULL_REFRULE_1_3 ||
-              Mark==FULL_REFRULE_2_4);
+#ifndef TET_RULESET
+      if ((Mark==TET_RED || Mark==TET_RED_0_5 ||
+           Mark==TET_RED_1_3))
+#endif
+      {
+        PRINTDEBUG(gm,5,("FullRefRule() call with mark=%d\n",Mark))
+
+        /* choose best tet_red rule according to (*theFullRefRule)() */
+        Mark = (*theFullRefRule)(theElement);
+        assert( Mark==FULL_REFRULE_0_5 ||
+                Mark==FULL_REFRULE_1_3 ||
+                Mark==FULL_REFRULE_2_4);
+      }
     }
                 #endif
 
@@ -2254,11 +2267,11 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 
   IFDEBUG(gm,2)
   UserWriteF("    Get_Sons_of_ElementSide():"
-             " tag=%d, refineclass=%d markclass=%d refine=%d mark=%d coarse=%d"
-             " used=%d nsons=%d needsons=%d\n",
-             TAG(theElement),REFINECLASS(theElement),MARKCLASS(theElement),
+             " id=%d tag=%d, refineclass=%d markclass=%d refine=%d mark=%d coarse=%d"
+             " used=%d nsons=%d side=%d needsons=%d\n",
+             ID(theElement),TAG(theElement),REFINECLASS(theElement),MARKCLASS(theElement),
              REFINE(theElement),MARK(theElement),COARSEN(theElement),
-             USED(theElement),NSONS(theElement),NeedSons);
+             USED(theElement),NSONS(theElement),side,NeedSons);
   ENDDEBUG
 
         #ifdef __TWODIM__
@@ -3555,10 +3568,35 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
           break;
         }
       }
+
       else
       {
-        /* this side has sidenode and all midnodes */
-        assert(0);
+        /* create the four side edges */
+        for (j=0; j<nedges; j++)
+        {
+          node0 = 2*j+1;
+          if (theSideNodes[node0] == NULL) break;
+
+          sons[nelem].tag = PYRAMID;
+          sons[nelem].corners[pyrNode0] = theSideNodes[node0%(2*nedges)];
+          sons[nelem].corners[pyrNode1] = theSideNodes[(node0+1)%(2*nedges)];
+          sons[nelem].corners[pyrNode2] = theSideNodes[(node0+2)%(2*nedges)];
+          sons[nelem].corners[pyrNode3] = theNode;
+
+          sons[nelem].nb[pyrSideNode0Node1] = sides[(j)%nedges];
+          sons[nelem].nb[pyrSideNode1Node2] = sides[(j+1)%nedges];
+          if (j == 2)
+            sons[nelem].nb[pyrSideNode2Node3] = nelem-2;
+          else
+            sons[nelem].nb[pyrSideNode2Node3] = nelem+1;
+          if (j == 0)
+            sons[nelem].nb[pyrSideNode0Node3] = nelem+2;
+          else
+            sons[nelem].nb[pyrSideNode0Node3] = nelem-1;
+          nelem++;
+
+        }
+        ASSERT(j==nedges);
       }
 
       break;
