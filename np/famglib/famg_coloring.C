@@ -53,42 +53,90 @@ static DDD_PROC Nb[FAMGColorMaxNb];	// list of all neighbor PE's
 static int NrNb = 0;				// number of valid entries in Nb
 static int *helpNbPtr= NULL;
 
-static int DetermineNbs( DDD_OBJ obj)
-// relevant are only the vectors which are at the border 
-// (this may be the border of the core partition or the direct neighbors
-//  of them in the overlap)
-// the grid already must have the correct overlap
+static int MarkOverlap1( DDD_OBJ obj)
+// Mark the borders with dist 1 to core partition with VCFLAG:=1.
+// Together with the masters they form the overlap1.
 {
 	VECTOR *vec = (VECTOR *)obj;
-	int *proclist, found, myStatus;
 	MATRIX *mat;
 	
-	// search for neighbor vector with inverse IS_FAMG_MASTER status
-	myStatus = IS_FAMG_MASTER(vec);
+	if( IS_FAMG_MASTER(vec) )
+		return 0;	// skip master vectors
+	
+	// search for a master in the neighborhood
 	mat = VSTART(vec);
 	assert( mat!=NULL );
-	found = 0;
 	for( mat=MNEXT(mat); mat != NULL; mat = MNEXT(mat) )	// skip diagonal entry
-		if( IS_FAMG_MASTER(MDEST(mat)) != myStatus )
+	{
+		if( IS_FAMG_MASTER(MDEST(mat)) )
+		{	// master-neighbor found; thus v is in overlap1
+			SETVCFLAG(vec,1);
+			return 0;
+		}
+	}
+			
+	SETVCFLAG(vec,0);
+	return 0;
+}
+
+static int DetermineNbs( DDD_OBJ obj)
+// Relevant are only the borders which are in the overlap1 or overlap2.
+// The grid already must have the correct overlap.
+// For the proof refer to the thesis of Christian Wrobel.
+{
+	VECTOR *vec = (VECTOR *)obj;
+	int *proclist, found;
+	MATRIX *mat;
+	
+	if( IS_FAMG_MASTER(vec) )
+		return 0;	// skip master
+	
+	// now vec is border
+	// borders within overlap 1 have VCFLAG==1
+	// borders in overlap2 without overlap1 must have a neighbor with VCFLAG==1
+	
+	if( VCFLAG(vec) == 0 )
+	{
+		// search for a neighbor with VCFLAG==1
+		mat = VSTART(vec);
+		assert( mat!=NULL );
+		found = 0;
+		for( mat=MNEXT(mat); mat != NULL; mat = MNEXT(mat) )	// skip diagonal entry
 		{
-			found = 1;
+			if ( VCFLAG(MDEST(mat)) == 1 )
+			{
+				found = 1;
+				break;
+			}
+		}
+		if( !found )
+		{
+			PRINTDEBUG(np,2,("%d: "VINDEX_FMTX" is border and not in overlap2\n", me,VINDEX_PRTX(vec)));
+			return 0;	// vec has dist > 2 (is not in overlap2)
+		}
+	}
+	// else: vec is border in overlap1
+	
+	// now vec is in overlap2 (includes overlap1)
+	
+	// determine the pe on which vec has its master copy
+	PRINTDEBUG(np,2,("%d: "VINDEX_FMTX" in overlap2 and has copies: ", me,VINDEX_PRTX(vec)));
+	proclist = DDD_InfoProcList(PARHDR(vec));
+	for( proclist += 2; proclist[0] != -1; proclist += 2 )	// skip entry for myself
+	{
+		if( proclist[1] == PrioMaster )
+		{
+			helpNbPtr[proclist[0]] = 1;
+			PRINTDEBUG(np,2,("%dM ",proclist[0]));
 			break;
 		}
-	if( !found )
-	{
-		PRINTDEBUG(np,2,("%d: "VINDEX_FMTX" is not at the border\n", me,VINDEX_PRTX(vec)));
-		return 0;
-	}
-	// now vec has found a neighbor with inverse IS_FAMG_MASTER status; thus vec is at the border
-	
-	PRINTDEBUG(np,2,("%d: "VINDEX_FMTX" at border and has copies: ", me,VINDEX_PRTX(vec)));
-	proclist = DDD_InfoProcList(PARHDR(vec));
-	for( proclist += 2; *proclist != -1; proclist += 2 )
-	{
-		helpNbPtr[*proclist] = 1;
-		PRINTDEBUG(np,2,("%d ",*proclist));
+		else
+		{
+			PRINTDEBUG(np,2,("%dB ",proclist[0]));
+		}
 	}
 	PRINTDEBUG(np,2,("\n"));
+	
 	return 0;
 }
 
@@ -109,6 +157,7 @@ int ConstructColoringGraph( DDD_ATTR grid_attr, int OrderingFunctionType )
 	helpNbPtr = helpNb;
 	
 	// determine the neighboring PE's
+	DDD_IFAExecLocal( BorderVectorSymmIF, grid_attr, MarkOverlap1 );
 	DDD_IFAExecLocal( BorderVectorSymmIF, grid_attr, DetermineNbs );
 	
 	NrNb = 0;
