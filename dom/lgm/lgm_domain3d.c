@@ -27,6 +27,11 @@
 /*																			*/
 /****************************************************************************/
 
+#undef OCC_GEOMETRY
+#ifdef OCC_GEOMETRY
+#include "occ/occ_geom.hh"
+#endif
+
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -70,6 +75,12 @@ USING_UG_NAMESPACES
 #define BNDP2LGM(p)                                                     ((LGM_BNDP*)(p))
 #define BNDS2LGM(p)                                                     ((LGM_BNDS*)(p))
 
+#ifdef OCC_GEOMETRY
+extern int *LineMap;
+extern int *SurfMap;
+extern OCC_GEOM occ_geom;
+#endif
+
 
 static char buffer[LGM_BUFFERLEN];
 
@@ -97,7 +108,7 @@ static DOUBLE cosAngle;         /* Winkel zwischen Inputdreiecken */
 static DOUBLE Triangle_Angle2 = 40.0;
 static DOUBLE EPS = 0.1;
 
-INT NS_PREFIX Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);
+/* INT NS_PREFIX Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);*/
 INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE *n);
 
 static INT Get_NBNDS_Per_Subdomain              (HEAP *Heap, LGM_DOMAIN *theDomain, INT **sizes, DOUBLE h);
@@ -6323,6 +6334,20 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
     global[0] = (globalp1[0] + globalp2[0]) / 2;
     global[1] = (globalp1[1] + globalp2[1]) / 2;
     global[2] = (globalp1[2] + globalp2[2]) / 2;
+#ifdef OCC_GEOMETRY
+    int i = LGM_LINE_ID(theLine);
+    double ppt[3],dist,err;
+    //cout << "P  " << global[0] << " " << global[1] << " " << global[2] << endl;
+    err = occ_geom.ProjectPointOnEdge(LineMap[i],global,global,&dist);
+    //cout << "PP " << global[0] << " " << global[1] << " " << global[2] << " " << dist << endl;
+    if (err != 0)
+    {
+      assert(0);
+    }
+    midp[0] = global[0];
+    midp[1] = global[1];
+    midp[2] = global[2];
+#endif
                 #else
     Line_Global2Local(theLine, globalp1, &local1);
     Line_Global2Local(theLine, globalp2, &local2);
@@ -6453,6 +6478,20 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
       {
         LGM_BNDP_SURFACE(theBndP,LGM_BNDP_N(theBndP)) = theNewSurface;
                                 #ifdef NO_PROJECT
+#ifdef OCC_GEOMETRY
+        int i = LGM_SURFACE_ID(theNewSurface);
+        double ppt[3],dist,err;
+        //cout << "P  " << global[0] << " " << global[1] << " " << global[2] << endl;
+        err = occ_geom.ProjectPointOnFace(SurfMap[i],global,global,&dist);
+        //cout << "PP " << global[0] << " " << global[1] << " " << global[2] << " " << dist << endl;
+        if (err != 0)
+        {
+          assert(0);
+        }
+        midp[0] = global[0];
+        midp[1] = global[1];
+        midp[2] = global[2];
+#endif
         LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[0] = midp[0];
         LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[1] = midp[1];
         LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[2] = midp[2];
@@ -6473,12 +6512,14 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
   }
 
   /* check */
+#ifndef OCC_GEOMETRY
   if(E_Distance(globalp1, global)<SMALL)
     assert(E_Distance(globalp1, global)>SMALL);
   if(E_Distance(globalp2, global)<SMALL)
     assert(E_Distance(globalp2, global)>SMALL);
   if(E_Distance(globalp1, globalp2)<SMALL)
     assert(E_Distance(globalp1, globalp2)>SMALL);
+#endif
 
   return((BNDP *)theBndP);
 

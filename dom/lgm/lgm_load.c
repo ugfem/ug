@@ -33,6 +33,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#undef OCC_GEOMETRY
+#ifdef OCC_GEOMETRY
+#include "occ/occ_geom.hh"
+#endif
+
 #include "ugdevices.h"
 #include "lgm_domain.h"
 #include "lgm_load.h"
@@ -70,6 +75,9 @@ USING_UG_NAMESPACES
 /*																			*/
 /****************************************************************************/
 
+#ifdef OCC_GEOMETRY
+#define OCC_DIST 1e-2
+#endif
 
 
 /****************************************************************************/
@@ -99,6 +107,11 @@ typedef int (*ReadSurfaceProc)(int i, LGM_SURFACE_INFO *surface_info);
 LGM_LINE        **LinePtrArray          = NULL;
 #if (LGM_DIM==3)
 LGM_SURFACE     **SurfacePtrArray       = NULL;
+#endif
+#ifdef OCC_GEOMETRY
+int *LineMap = NULL;
+int *SurfMap = NULL;
+OCC_GEOM occ_geom;
 #endif
 
 /****************************************************************************/
@@ -366,6 +379,95 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
 
 #if (LGM_DIM==3)
 
+#ifdef OCC_GEOMETRY
+int CompareLine (int i, int k)
+{
+  double ppt[3],dist;
+  int npoint = 0;
+  LGM_LINE *line = LGM_LINE_ID_2_LINE(i);
+  assert(line != NULL);
+  LGM_POINT *p;
+
+  int j;
+  for (j=0; j<LGM_LINE_NPOINT(line); j++)
+  {
+    int err;
+    p = LGM_LINE_POINT(line,j);
+    err = occ_geom.ProjectPointOnEdge(k,LGM_POINT_POS(p),ppt,&dist);
+    if (err == 0)
+    {
+      if (dist < OCC_DIST)
+        npoint++;
+      else
+      {
+        return(0);
+      }
+    }
+    else
+    {
+      return(0);
+    }
+  }
+
+  if (npoint == LGM_LINE_NPOINT(line))
+  {
+    return(1);
+  }
+  return(0);
+}
+
+int CompareSurface (int i, int k)
+{
+  int nline = 0;
+  LGM_SURFACE *surf = LGM_SURFACE_ID_2_SURFACE(i);
+  int lines = LGM_SURFACE_NLINE(surf);
+
+  int j;
+  // compare lines
+  for (j=0; j<LGM_SURFACE_NLINE(surf); j++)
+  {
+    int lineid = LineMap[LGM_LINE_ID(LGM_SURFACE_LINE(surf,j))];
+    int found = 0;
+
+    TopExp_Explorer edge_exp;
+    for (edge_exp.Init(occ_geom.faces(k),TopAbs_EDGE); edge_exp.More(); edge_exp.Next())
+    {
+      TopoDS_Edge edge = TopoDS::Edge(edge_exp.Current());
+      int edgeid = (occ_geom.edges).FindIndex(edge);
+      assert(edgeid > 0);
+      if (edgeid == lineid)
+      {
+        nline++;
+        found = 1;
+        break;
+      }
+    }
+    if (!found) return(0);
+  }
+  if (nline != lines) return(0);
+
+  // compare point
+  LGM_POINT *p = LGM_SURFACE_POINT(surf,0);
+
+  double ppt[3],dist;
+  int err = occ_geom.ProjectPointOnFace(k,LGM_POINT_POS(p),ppt,&dist);
+  if (err == 0)
+  {
+    if (dist < OCC_DIST)
+      return(1);
+    else
+      return(0);
+  }
+  else
+  {
+    return(0);
+  }
+
+  return(0);
+}
+#endif
+
+
 LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT DomainVarID, INT MarkKey)
 {
   LGM_DOMAIN *theDomain;
@@ -382,6 +484,14 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   LGM_LINE_INFO theLineInfo;
   char *p;
 
+#ifdef OCC_GEOMETRY
+  occ_geom.Import_Geometry("geometry.iges");
+  occ_geom.PrintFile();
+  occ_geom.ConstructSolid();
+  occ_geom.Build_IndexedMaps();
+  occ_geom.List_ExtentOfMaps();
+#endif
+
   if (LGM_VERBOSE) UserWrite("\nlgm geometry:\n");
   /* set transfer functions */
   p = filename + strlen(filename) - 4;
@@ -397,13 +507,15 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   }
   else if (strcmp(p,".ans")==0)
   {
-    ReadDomain              = LGM_ANSYS_ReadDomain;
-    ReadSizes               = LGM_ANSYS_ReadSizes;
-    ReadSubDomain           = LGM_ANSYS_ReadSubDomain;
-    ReadSurface             = LGM_ANSYS_ReadSurface;
-    ReadLines               = LGM_ANSYS_ReadLines;
-    ReadPoints              = LGM_ANSYS_ReadPoints;
-    ReadMesh                        = LGM_ANSYS_ReadMesh;
+    /*
+                    ReadDomain              = LGM_ANSYS_ReadDomain;
+                    ReadSizes               = LGM_ANSYS_ReadSizes;
+                    ReadSubDomain           = LGM_ANSYS_ReadSubDomain;
+                    ReadSurface             = LGM_ANSYS_ReadSurface;
+                    ReadLines               = LGM_ANSYS_ReadLines;
+                    ReadPoints              = LGM_ANSYS_ReadPoints;
+                    ReadMesh                    = LGM_ANSYS_ReadMesh;
+     */
   }
   else
   {
@@ -487,8 +599,12 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   /* allocate lines */
   if (LGM_VERBOSE) UserWrite("Reading lines.");
   if ((LinePtrList=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL) return (NULL);
-        #ifdef ModelP
+        #if defined(ModelP) || defined(OCC_GEOMETRY)
   if ((LinePtrArray=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL) return (NULL);
+        #ifdef OCC_GEOMETRY
+  if ((LineMap=(int*)GetFreelistMemory(theHeap,sizeof(int)*theDomInfo.nPolyline)) == NULL)
+    return (NULL);
+        #endif
         #endif
 
   for (i=0; i<theDomInfo.nPolyline; i++)
@@ -514,8 +630,10 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     id = pi[0];
     LGM_LINE_END(LinePtrList[i]) = id;
     LGM_LINE_ID(LinePtrList[i])  = i;
-                #ifdef ModelP
+                #if defined(ModelP)
     PRINTDEBUG(dom,3,(PFMT "LGM_LoadDomain(): i=%d lineptr=%x\n",me,i,LinePtrList[i]));
+                #endif
+                #if defined(ModelP) || defined(OCC_GEOMETRY)
     LinePtrArray[i] = LinePtrList[i];
                 #endif
   }
@@ -525,9 +643,13 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   /* allocate surfaces */
   if ((SurfacePtrList=(LGM_SURFACE**)GetFreelistMemory(theHeap,sizeof(LGM_SURFACE*)*theDomInfo.nSurface)) == NULL)
     return (NULL);
-        #ifdef ModelP
+        #if defined(ModelP) || defined(OCC_GEOMETRY)
   if ((SurfacePtrArray=(LGM_SURFACE**)GetFreelistMemory(theHeap,sizeof(LGM_SURFACE*)*theDomInfo.nSurface)) == NULL)
     return (NULL);
+        #ifdef OCC_GEOMETRY
+  if ((SurfMap=(int*)GetFreelistMemory(theHeap,sizeof(int)*theDomInfo.nSurface)) == NULL)
+    return (NULL);
+        #endif
         #endif
   for (i=0; i<theDomInfo.nSurface; i++)
   {
@@ -578,8 +700,10 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
           theSurfaceInfo.Triangle[j].neighbor[k];
       }
     }
-                #ifdef ModelP
+                #if defined(ModelP)
     PRINTDEBUG(dom,3,(PFMT "LGM_LoadDomain(): i=%d surfaceptr=%x\n",me,i,SurfacePtrList[i]));
+                #endif
+                #if defined(ModelP) || defined(OCC_GEOMETRY)
     SurfacePtrArray[i] = SurfacePtrList[i];
                 #endif
   }
@@ -683,6 +807,53 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
       }
     }
   }
+
+        #ifdef OCC_GEOMETRY
+  {
+    int i,k;
+    for (i=0; i<theDomInfo.nPolyline; i++) LineMap[i] = 0;
+    for (i=0; i<theDomInfo.nSurface; i++) SurfMap[i] = 0;
+
+    // map lines
+    for (i=0; i<theDomInfo.nPolyline; i++)
+    {
+      for (k=1; k<=occ_geom.edges.Extent(); k++)
+      {
+        if (CompareLine(i,k))
+        {
+          LineMap[i] = k;
+          cout << "LGM Line " << i << " IS OCC Curve " << k << endl;
+        }
+      }
+    }
+    //map surfaces
+    for (i=0; i<theDomInfo.nSurface; i++)
+    {
+      for (k=1; k<=occ_geom.faces.Extent(); k++)
+      {
+        if (CompareSurface(i,k))
+        {
+          SurfMap[i] = k;
+          cout << "LGM Surf " << i << " IS OCC Face " << k << endl;
+        }
+      }
+    }
+    k = 0;
+    for (i=0; i<theDomInfo.nPolyline; i++)
+      if (LineMap[i] > 0) k++;
+    if (k != theDomInfo.nPolyline)
+    {
+      cout << "OCC_GEOM: Matched " << k << " from " << theDomInfo.nPolyline << " LGM Lines" << endl;
+    }
+    k = 0;
+    for (i=0; i<theDomInfo.nSurface; i++)
+      if (SurfMap[i] > 0) k++;
+    if (k != theDomInfo.nSurface)
+    {
+      cout << "OCC_GEOM: Matched " << k << " from " << theDomInfo.nSurface << " LGM Surfs" << endl;
+    }
+  }
+        #endif
 
   /* OS_CHANGED */
         #ifdef LGM_ACCELERATE
