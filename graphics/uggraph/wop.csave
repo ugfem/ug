@@ -17693,7 +17693,7 @@ INT ErasePicture (PICTURE *thePicture)
    ConnectWopTree - connects the tree for communicating DOs
 
    SYNOPSIS:
-   void ConnectWopTree() 
+   void ConnectWopTree(void) 
 
    PARAMETERS:
    none
@@ -17707,7 +17707,7 @@ INT ErasePicture (PICTURE *thePicture)
 */
 /****************************************************************************/
 
-void ConnectWopTree()  
+void ConnectWopTree(void)  
 {
 	INT i, k;
 	
@@ -17804,7 +17804,7 @@ void NumberOfDesc()
    PWorkGEN_Init - Initialisation for PWorkXX_Evaluate and PWorkXX_Execute
 
    SYNOPSIS:
-   void PWorkGEN_Init()
+   void PWorkGEN_Init(void)
 
    PARAMETERS:
    none
@@ -17814,7 +17814,7 @@ void NumberOfDesc()
 */
 /****************************************************************************/
 
-void PWorkGEN_Init()
+void PWorkGEN_Init(void)
 {
 	int i;
 
@@ -17847,7 +17847,7 @@ void PWorkGEN_Init()
    PWorkGEN_Quit - test for end of PWorkXX_Evaluate / PWorkXX_Execute loop
 
    SYNOPSIS:
-   INT PWorkGEN_Quit()
+   INT PWorkGEN_Quit(void)
 
    PARAMETERS:
    none
@@ -17859,7 +17859,7 @@ void PWorkGEN_Init()
 */
 /****************************************************************************/
 
-INT PWorkGEN_Quit()
+INT PWorkGEN_Quit(void)
 {
 	INT i, quit;
 
@@ -17875,7 +17875,7 @@ INT PWorkGEN_Quit()
    PWorkGEN_Execute - executes and communicates DOs
 
    SYNOPSIS:
-   void PWorkGEN_Execute()
+   void PWorkGEN_Execute(void)
 
    PARAMETERS:
    none
@@ -17885,7 +17885,7 @@ INT PWorkGEN_Quit()
 */
 /****************************************************************************/
 
-void PWorkGEN_Execute()
+void PWorkGEN_Execute(void)
 {
 	INT i;
 	DRAWINGOBJ *p;
@@ -17945,7 +17945,7 @@ void PWorkGEN_Execute()
    PWorkEW_Evaluate - evaluates elementwise
 
    SYNOPSIS:
-   void PWorkEW_Evaluate()
+   void PWorkEW_Evaluate(void)
 
    DESCRIPTION:
    Evaluates DOs in packets of the following format:
@@ -17965,7 +17965,7 @@ void PWorkGEN_Execute()
 */
 /****************************************************************************/
 
-void PWorkEW_Evaluate()
+void PWorkEW_Evaluate(void)
 {
 	INT i;
 	DRAWINGOBJ *p, *p1;
@@ -18031,7 +18031,7 @@ void PWorkEW_Evaluate()
 */
 /****************************************************************************/
 
-void PWorkEW_Execute_3D()
+void PWorkEW_Execute_3D(void)
 {
 	INT i, k, t, min;
 
@@ -18146,7 +18146,7 @@ void PWorkEW_Execute_3D()
 */
 /****************************************************************************/
 
-void PWorkEW_Evaluate_3D()
+void PWorkEW_Evaluate_3D(void)
 {
 	INT i;
 	DRAWINGOBJ *p, *p1, *p2;
@@ -18212,7 +18212,7 @@ void PWorkEW_Evaluate_3D()
    PWorkNW_Evaluate - evaluates nodewise
 
    SYNOPSIS:
-   void PWorkNW_Evaluate()
+   void PWorkNW_Evaluate(void)
 
    DESCRIPTION:
    see PWorkEW_Evaluate
@@ -18225,7 +18225,7 @@ void PWorkEW_Evaluate_3D()
 */
 /****************************************************************************/
 
-void PWorkNW_Evaluate()
+void PWorkNW_Evaluate(void)
 {
 	INT i;
 	DRAWINGOBJ *p, *p1;
@@ -18264,7 +18264,7 @@ void PWorkNW_Evaluate()
    PWorkVW_Evaluate - evaluates vectorwise
 
    SYNOPSIS:
-   void PWorkVW_Evaluate()
+   void PWorkVW_Evaluate(void)
 
    DESCRIPTION:
    see PWorkEW_Evaluate
@@ -18277,7 +18277,7 @@ void PWorkNW_Evaluate()
 */
 /****************************************************************************/
 
-void PWorkVW_Evaluate()
+void PWorkVW_Evaluate(void)
 {
 	INT i;
 	DRAWINGOBJ *p, *p1;
@@ -18439,7 +18439,7 @@ static INT WOP_Init(INT WOP_WorkMode)
    WorkEW - does work elementwise
 
    SYNOPSIS:
-   INT WorkEW()
+   INT WorkEW(void)
 
    PARAMETERS:
    none
@@ -18456,7 +18456,7 @@ static INT WOP_Init(INT WOP_WorkMode)
 */
 /****************************************************************************/
 
-static INT WorkEW()
+static INT WorkEW(void)
 {
 #ifndef ModelP   /*** Sequential Version ***/
   
@@ -18538,7 +18538,7 @@ static INT WorkEW()
    WorkNW - does work nodewise
 
    SYNOPSIS:
-   INT WorkNW()
+   INT WorkNW(void)
 
    PARAMETERS:
    none
@@ -18554,7 +18554,7 @@ static INT WorkEW()
 */
 /****************************************************************************/
 
-static INT WorkNW()
+static INT WorkNW(void)
 {
 #ifndef ModelP
 
@@ -18617,7 +18617,7 @@ oops:
    WorkVW - does work vectorwise
 
    SYNOPSIS:
-   INT WorkVW()
+   INT WorkVW(void)
 
    PARAMETERS:
    none
@@ -18633,7 +18633,7 @@ oops:
 */
 /****************************************************************************/
 
-static INT WorkVW()
+static INT WorkVW(void)
 {
 #ifndef ModelP
 
@@ -18691,7 +18691,7 @@ oops:
 }
 
 
-static INT WorkET()
+static INT WorkET(void)
 {
 	INT end;
 
@@ -18704,7 +18704,7 @@ static INT WorkET()
 	return (0);
 }
 
-static INT WorkRC()
+static INT WorkRC(void)
 {
 	if ((*WOP_RECURSIVE_EvaluateProc)(WOP_DrawingObject,WOP_GEN_ExecuteProc))                   return (1);
 	return (0);

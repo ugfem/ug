@@ -26,4 +26,4 @@ clean:
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
 
-xmc: extract all clean
+xmc: extract $(UG_LIB) clean
