@@ -241,10 +241,10 @@ static INT							GE_fromLevel,GE_toLevel;
 #define COLOR_REG			RED_CLASS
 #define COLOR_LOWER_LEVEL	(RED_CLASS+1)
 #define COLOR_EDGE			(RED_CLASS+2)
+#define EE_MAX_PROP		    100
 
 /* defines 2D */
 #define EE2D_TEXTSIZE			(8*TextFactor)
-#define EE2D_MAX_SUBDOM		100
 
 #define COLOR_BND			(RED_CLASS+3)
 #define COLOR_ELEMID		(RED_CLASS+4)
@@ -272,7 +272,7 @@ static COORD_VECTOR EE2D_PartMidPoint;
 #endif
 static INT EE2D_Property;		/* 1 if plot property						*/
 static INT EE2D_NProperty;		/* nb of properties							*/
-static long EE2D_PropertyColor[EE2D_MAX_SUBDOM];	/* colors used			*/
+static long EE2D_PropertyColor[EE_MAX_PROP+1];	/* colors used			    */
 
 /* 3D */
 static INT	EE3D_Elem2Plot[10];	/* 1 if element has to be plotted			*/
@@ -280,6 +280,9 @@ static long EE3D_NoColor[10];	/* 1 if no color (background color) used	*/
 static long EE3D_Color[10];		/* colors used								*/
 static INT EE3D_MaxLevel;		/* level considered to be the top level 	*/
 static DOUBLE EE3D_ShrinkFactor;/* shrink factor, 1.0 if normal plot		*/
+static INT EE3D_Property;		/* 1 if plot property						*/
+static INT EE3D_NProperty;		/* nb of properties							*/
+static long EE3D_PropertyColor[EE_MAX_PROP+1];	/* colors used			    */
 #ifdef ModelP
 static DOUBLE EE3D_PartShrinkFactor;
 								/* part. shrink factor, 1.0 if normal plot	*/
@@ -4788,20 +4791,23 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 				V2_SCALE(1.0/(COORD)nodes,EE2D_PartMidPoint)
 	}
 	#endif
+	EE2D_Property = 0;
 	if (theGpo->ElemColored==2)
 	{
 		EE2D_NProperty = MG_NPROPERTY(theMG);
-		EE2D_Property = 1;
-		if (EE2D_NProperty>1 && EE2D_NProperty<EE2D_MAX_SUBDOM)
+		if (EE2D_NProperty>0 && EE2D_NProperty<EE_MAX_PROP)
 		{
-			for (i=1; i<=EE2D_NProperty; i++)
-			EE2D_PropertyColor[i] = theOD->spectrumStart + i*(COORD)(theOD->spectrumEnd - theOD->spectrumStart)/(COORD)EE2D_NProperty;
+		    EE2D_Property = 1;
+			for (i=0; i<=EE2D_NProperty; i++)
+			EE2D_PropertyColor[i] = theOD->spectrumStart 
+			  + i*(COORD)(theOD->spectrumEnd - theOD->spectrumStart)
+				/ (COORD)EE2D_NProperty;
 		}
 		else
 		{
 			theGpo->ElemColored = 1;
 			EE2D_Property = 0;
-			UserWrite("too many or too less subdomains, switch back to standard mode\n");
+			UserWrite("wrong NProperty, switch back to standard mode\n");
 		}
 	}
 	
@@ -9982,7 +9988,16 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 			{
 				if (!Viewable[i]) continue;
-				if (EE3D_NoColor[COLOR_LOWER_LEVEL])
+			    if (EE3D_Property)
+				{
+				  DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
+				  DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO) 
+				  if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
+					return (1);
+				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+				  DO_inc(theDO);
+				}			  
+				else if (EE3D_NoColor[COLOR_LOWER_LEVEL])
 				{
 					DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO) 
@@ -10004,8 +10019,16 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 			{
 				if (!Viewable[i]) continue;
-	
-				if (EE3D_NoColor[ECLASS(theElement)])
+				if (EE3D_Property)
+				{
+				  DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
+				  DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO) 
+				  if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
+					return (1);
+				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+				  DO_inc(theDO);
+				}			  
+				else if (EE3D_NoColor[ECLASS(theElement)])
 				{
 					DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO) 
@@ -10131,7 +10154,16 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 			/* store on drawing object */
 			if (LEVEL(theElement)<EE3D_MaxLevel)
 			{
-				if (EE3D_NoColor[COLOR_LOWER_LEVEL])
+			    if (EE3D_Property)
+				{
+				  DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
+				  DO_2c(theDO) = n; DO_inc(theDO);
+				  if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
+					return (1);
+				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+				  DO_inc(theDO);
+				}			  
+				else if (EE3D_NoColor[COLOR_LOWER_LEVEL])
 				{
 					DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = n; DO_inc(theDO) 
@@ -10151,7 +10183,16 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 			}
 			else
 			{
-				if (EE3D_NoColor[ECLASS(theElement)])
+			    if (EE3D_Property)
+				{
+				  DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
+				  DO_2c(theDO) = n; DO_inc(theDO);
+				  if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
+					return (1);
+				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+				  DO_inc(theDO);
+				}			  
+				else if (EE3D_NoColor[ECLASS(theElement)])
 				{
 					DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO) 
 					DO_2c(theDO) = n; DO_inc(theDO) 
@@ -11364,6 +11405,7 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 	struct GridPlotObj3D *theGpo;
 	OUTPUTDEVICE *theOD;
 	MULTIGRID *theMG;
+	INT i;
 	
 	theGpo = &(PIC_PO(thePicture)->theGpo);
 	theOD  = PIC_OUTPUTDEV(thePicture);
@@ -11443,6 +11485,25 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 	EE3D_MaxLevel = CURRENTLEVEL(theMG);
 	if (MarkElements3D(theMG,0,CURRENTLEVEL(theMG))) return (1);
 	
+	EE3D_Property = 0;
+	if (theGpo->ElemColored==2)
+	{
+		EE3D_NProperty = MAX(1,TOPLEVEL(theMG));
+		if (EE3D_NProperty>0 && EE3D_NProperty<EE_MAX_PROP)
+		{
+		    EE3D_Property = 1;
+			for (i=0; i<=EE3D_NProperty; i++)
+			EE3D_PropertyColor[i] = theOD->spectrumStart 
+			  + i*(COORD)(theOD->spectrumEnd - theOD->spectrumStart)
+				/ (COORD)EE3D_NProperty;
+		}
+		else
+		{
+			theGpo->ElemColored = 1;
+			UserWrite("wrong NProperty, switch back to standard mode\n");
+		}
+	}
+
 	return (0);
 }
 	

@@ -3883,14 +3883,12 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   for (i=1; i<argc; i++)
     if (argv[i][0]=='c')
     {
-      if (sscanf(argv[i],"c %d",&iValue)!=1)
-        break;
-      if (iValue==1)
-        theGpo->ElemColored = YES;
-      else if (iValue==0)
-        theGpo->ElemColored = NO;
+      if (sscanf(argv[i],"c %d",&iValue)!=1) break;
+      theGpo->ElemColored = iValue;
       break;
     }
+  if (theGpo->ElemColored<0 || theGpo->ElemColored>2) return (NOT_ACTIVE);
+
   for (i=1; i<argc; i++)
   {
     if (argv[i][0]=='w')
@@ -3949,11 +3947,8 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
         #ifdef ModelP
   UserWriteF(DISPLAY_PO_FORMAT_SF,"PartShrinkFactor",(float)theGpo->PartShrinkFactor);
         #endif
-  if (theGpo->ElemColored == YES)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"COLORED","YES");
-  else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"COLORED","NO");
-  UserWrite(buffer);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"COLORED",(int)theGpo->ElemColored);
+
   switch (theGpo->WhichElem)
   {
   case PO_COPY :
