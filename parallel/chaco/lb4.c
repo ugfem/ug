@@ -1606,53 +1606,7 @@ stage1: /* compute total number of clusters or error */
 	/* transfer load */
 	/* error = LoadTransfer(mg,ne,elements,element_limit,channel_limit,iter);*/
 
-/****************/
-/* from lbrcb.c */
-
-	/* start physical transfer */
-	ddd_HandlerInit(HSET_XFER);
-	DDD_XferBegin();
-	if (me==master)
-	{
-		/* send all grids */
-		int  g;
-		for(g=TOPLEVEL(mg); g>=0; g--)
-		{
-			GRID *grid = GRID_ON_LEVEL(mg,g);
-			if (NT(grid)>0) XferGridWithOverlap(grid);
-		}
-	}
-
-	DDD_XferEnd();
-
-    /* remove all connections for vectors with PrioGhost */
-    {
-        int  g;
-        for(g=TOPLEVEL(mg); g>=0; g--)
-        {
-            GRID *grid = GRID_ON_LEVEL(mg,g);
-            VECTOR *vec;
-
-            for(vec=PRIO_LASTVECTOR(grid,PrioGhost); vec!=NULL; vec=PREDVC(vec))
-            {
-                DisposeConnectionFromVector(grid, vec);
-            }
-        }
-    }
-
-	/* set priorities of border nodes */
-	/* TODO this is an extra communication. eventually integrate this
-		    with grid distribution phase. */
-	{
-		int  g;
-		for(g=TOPLEVEL(mg); g>=0; g--)
-		{
-			GRID *grid = GRID_ON_LEVEL(mg,g);
-			dddif_SetBorderPriorities(grid);
-		}
-	}
-
-/****************/
+	TransferGridFromCoarse(mg);
 
 mem_err: /* if memory error has occured leave everything unchanged */
 	if (!MEM_OK) Release(MGHEAP(mg),FROM_BOTTOM);
