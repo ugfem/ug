@@ -522,7 +522,7 @@ static NODE *CreateNode (GRID *theGrid)
   SETLEVEL(pn,theGrid->level);
         #ifdef ModelP
   DDD_AttrSet(PARHDR(pn),theGrid->level);
-  DDD_PrioritySet(PARHDR(pn),PrioNode);
+  DDD_PrioritySet(PARHDR(pn),PrioMaster);
         #endif
   ID(pn) = (theGrid->mg->nodeIdCounter)++;
   START(pn) = NULL;

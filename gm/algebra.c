@@ -557,7 +557,7 @@ VECTOR *CreateVector (GRID *theGrid, INT VectorType, GEOM_OBJECT *object)
   if (ds == 0)
     return (NULL);
   Size = sizeof(VECTOR)-sizeof(DOUBLE)+ds;
-  pv = GetMemoryForObject(theMG,Size,VEOBJ);
+  pv = (VECTOR *)GetMemoryForObject(theMG,Size,VEOBJ);
   if (pv==NULL)
     return(NULL);
 
@@ -5908,7 +5908,7 @@ MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
   Size = sizeof(MATRIX)-sizeof(DOUBLE)+ds;
   if (MSIZEMAX<Size) return (NULL);
   assert (Size % ALIGNMENT == 0);
-  pm = GetMemoryForObject (theMG,Size,MAOBJ);
+  pm = (MATRIX *)GetMemoryForObject (theMG,Size,MAOBJ);
   if (pm==NULL)
     return (NULL);
 
