@@ -139,6 +139,13 @@ static DOUBLE UGI_Mval[LOCAL_DIM*LOCAL_DIM];
 static DOUBLE InvMat[MAX_SINGLE_MAT_COMP];
 static DOUBLE PivMat[MAX_SINGLE_MAT_COMP];
 static DOUBLE CorMat[MAX_SINGLE_MAT_COMP];
+static DOUBLE A[LOCAL_DIM*LOCAL_DIM];
+static DOUBLE AI[LOCAL_DIM*LOCAL_DIM];
+static DOUBLE B[LOCAL_DIM*LOCAL_DIM];
+static DOUBLE C[LOCAL_DIM*LOCAL_DIM];
+static DOUBLE S[LOCAL_DIM*LOCAL_DIM];
+static DOUBLE BAIB[LOCAL_DIM*LOCAL_DIM];
+static DOUBLE K[LOCAL_DIM*LOCAL_DIM];
 #endif
 
 REP_ERR_FILE;
@@ -6866,6 +6873,7 @@ static INT ElementJAC (GRID *g, const VECDATA_DESC *v,
   DOUBLE check,nrm;
   INT cnt,m,i,j,k,l,ncomp,vcnt,vtype,wtype,wncomp,n,mm;
   const SHORT *Comp,*VComp;
+        #ifndef macintosh
   DOUBLE A[LOCAL_DIM*LOCAL_DIM];
   DOUBLE AI[LOCAL_DIM*LOCAL_DIM];
   DOUBLE B[LOCAL_DIM*LOCAL_DIM];
@@ -6873,6 +6881,7 @@ static INT ElementJAC (GRID *g, const VECDATA_DESC *v,
   DOUBLE S[LOCAL_DIM*LOCAL_DIM];
   DOUBLE BAIB[LOCAL_DIM*LOCAL_DIM];
   DOUBLE K[LOCAL_DIM*LOCAL_DIM];
+        #endif
   DOUBLE omega = 1.0 - 1.0 / vdamp;
 
   t = NULL;
