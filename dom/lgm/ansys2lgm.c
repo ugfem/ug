@@ -898,10 +898,11 @@ INT ReadAnsysFile(char *filename)
 
 	INT help1,ofs0,ofs1,ofs2,ofs3,i,helpi,intwert,helpint,h,h2,j,indize,nnn,dummy, nmofnds;
 	
-	ansysfilepathes_set = 0;
-	
-	if (ReadSearchingPaths(DEFAULTSFILENAME,"ansysfilepathes")==0)
+	if(ansysfilepathes_set != 1) /*wenn noch nicht gesetzt*/
+	{
+		if (ReadSearchingPaths(DEFAULTSFILENAME,"ansysfilepathes")==0)
 		ansysfilepathes_set = 1;
+	}
 
 	
 	dummy=0;
@@ -5341,6 +5342,9 @@ static fpos_t filepossurface;*/
 int LGM_ANSYS_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info)
 {
 	INT ret_val;
+	char helpstring[50];
+	INT i;
+
 	TmpMemArray = NULL;
 	ExchangeVar_2_Pointer = &ExchangeVar_2;
 	ExchangeVar_1_Pointer = &ExchangeVar_1;
@@ -5368,7 +5372,22 @@ int LGM_ANSYS_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_in
     
     /***************************************************************************/
     /*Setzen der Domaininfowerten analog zu LGM_ReadDomain in lgm_transfer3d.c*/
-    
+	i=0;
+	while(filename[i] != '.' )
+	{
+		helpstring[i] = filename[i];
+		i++;
+	}
+
+   	helpstring[i] = '.';
+	i++;
+   	helpstring[i] = 'l'; 
+	i++;
+   	helpstring[i] = 'g'; 
+	i++;
+   	helpstring[i] = 'm'; 
+	i++;
+   	helpstring[i] = '\0'; 
     strcpy(domain_info->Name,filename);
     
 
