@@ -5010,7 +5010,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, INT mode, const INT *order, const INT 
   INT i,entries,nm;
   HEAP *theHeap;
   INT takeSkip, takeNonSkip;
-  INT MarkKey;
+  INT MarkKey,nn;
 
   theMG   = MYMG(theGrid);
   entries = NVEC(theGrid);
@@ -5018,7 +5018,12 @@ INT LexOrderVectorsInGrid (GRID *theGrid, INT mode, const INT *order, const INT 
   /* calculate the diameter of the bounding rectangle of the domain */
   theBVP = MG_BVP(theMG);
   theBVPDesc = MG_BVPD(MYMG(theGrid));
-  InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / BVPD_RADIUS(theBVPDesc);
+  nn=NN(GRID_ON_LEVEL(theMG,0));
+#ifdef ModelP
+  nn=UG_GlobalSumINT(nn);
+#endif
+  InvMeshSize = POW2(GLEVEL(theGrid)) * pow(nn,1.0/DIM) / BVPD_RADIUS(theBVPDesc);
+  assert(InvMeshSize>0.0);
 
   /* allocate memory for the node list */
   if (which==0) return (99);
