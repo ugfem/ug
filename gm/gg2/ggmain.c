@@ -58,6 +58,7 @@
 #include "refine.h"
 #include "algebra.h"
 #include "evm.h"
+#include "cw.h"
 
 /* TODO: hierarchy conflict due to UserRead, UserInterrupt */
 #include "uginterface.h"
