@@ -12442,7 +12442,7 @@ static INT RefreshOnCommand (INT argc, char **argv)
     #ifdef ModelP
   UserWrite("refreshon: not implemented in parallel\n");
     #else
-  if (argv[1][0] == 'b') {
+  if (argc >= 2 && argv[1][0] == 'b') {
     sscanf(argv[1],"b %lf", &factor);
     SetRefreshState(ON, YES, factor);
   }
