@@ -350,7 +350,7 @@ INT CreateVecDescCmd (MULTIGRID *theMG, INT argc, char **argv)
   char *token,template[NAMESIZE];
 
   if (ReadArgvChar("t",template,argc,argv))
-    template == NULL;
+    template = NULL;
 
   token = strtok(argv[0],BLANKS);
   token = strtok(NULL,BLANKS);
@@ -431,7 +431,7 @@ INT CreateMatDescCmd (MULTIGRID *theMG, INT argc, char **argv)
   char *token,template[NAMESIZE];
 
   if (ReadArgvChar("t",template,argc,argv))
-    template == NULL;
+    template = NULL;
   token = strtok(argv[0],BLANKS);
   token = strtok(NULL,BLANKS);
   while (token!=NULL) {
