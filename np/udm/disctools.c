@@ -99,7 +99,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 CoeffProcPtr MG_GetCoeffFct (const MULTIGRID *theMG, INT n)
 {
-  const BVP *myBVP;
+  BVP *myBVP;
   const BVP_DESC *BVP_desc;
   CoeffProcPtr cpp;
 
