@@ -1191,23 +1191,23 @@ static INT BuildObsTrafo (PICTURE *thePicture)
 		default:
 			RETURN(1);
 	}
-    #if defined (ModelP) && defined (__TWODIM__)
-    /* fix for wrong parallelization of commands like walk, walkaround */
-    /* this is only a quick fix! Better replace if (me!=master) on     */ 
-    /* command level with if (!CONTEXT(me)), and test all commands     */
-    /* (s.l. 000508)                                                   */
-    if (BulletDim == 3)
-    {
-        Broadcast(OBS_ViewDirection,3*sizeof(DOUBLE));
-        Broadcast(&OBS_ViewPlaneDist,sizeof(DOUBLE));
-        Broadcast(ObsTrafo,16*sizeof(DOUBLE));
-        Broadcast(InvObsTrafo,16*sizeof(DOUBLE));
-    }
-    #endif
+	#if defined (ModelP) && defined (__TWODIM__)
+	/* fix for wrong parallelization of commands like walk, walkaround */
+	/* this is only a quick fix! Better replace if (me!=master) on     */
+	/* command level with if (!CONTEXT(me)), and test all commands     */
+	/* (s.l. 000508)												   */
+	if (BulletDim == 3)
+	{
+		Broadcast(OBS_ViewDirection,3*sizeof(DOUBLE));
+		Broadcast(&OBS_ViewPlaneDist,sizeof(DOUBLE));
+		Broadcast(ObsTrafo,16*sizeof(DOUBLE));
+		Broadcast(InvObsTrafo,16*sizeof(DOUBLE));
+	}
+	#endif
 
 	M4_COPY(ObsTrafo,VO_TRAFO(theViewedObj));
 	M4_COPY(InvObsTrafo,VO_INVTRAFO(theViewedObj));
-	
+
 	return (0);
 }
 	
@@ -2961,7 +2961,14 @@ static EW_GetFirstElementProcPtr EW_GetFirstElement_HGrid_Proc (VIEWEDOBJ *theVi
 	INT level,i,j;
 
 	for (i=0; i<MAXLEVEL; i++) EE2D_GRID[i]=NULL;
+	#ifdef __TWODIM__
+	if (CURRENTLEVEL(VO_MG(theViewedObj))>0)
+		EE2D_ZScale					= VO_PO(theViewedObj)->theHGpo.ZMax/CURRENTLEVEL(VO_MG(theViewedObj));
+	else
+		EE2D_ZScale					= 1;
+	#endif
 	level = (INT)(theViewedObj->ViewPoint[2]/EE2D_ZScale);	
+	level = (INT)(theViewedObj->ViewPoint[2]);	
 	level = MAX(0,level);
 	level = MIN(CURRENTLEVEL(VO_MG(theViewedObj)),level);
 	j=0;
@@ -6960,6 +6967,7 @@ static INT EW_PreProcess_HPlotElements2D (PICTURE *thePicture, WORK *theWork)
 	EE2D_ElemID 					= theGpo->PlotElemID;
 	EE2D_Subdom 					= theGpo->PlotSubdomain;
 	EE2D_ShrinkFactor				= theGpo->ShrinkFactor;
+	EE2D_EdgeColor					= theGpo->EdgeColor;
 	if (CURRENTLEVEL(theMG)>0)
 		EE2D_ZScale					= theGpo->ZMax/CURRENTLEVEL(theMG);
 	else
@@ -23481,9 +23489,19 @@ D*/
 INT NS_DIM_PREFIX DrawUgPicture (PICTURE *thePicture)
 {
 	WORK theWork;
-	
+	#ifdef STAT_OUT
+	DOUBLE plot_begin,plot_end;
+
+	plot_begin = CURRENT_TIME;
+	#endif
+
 	theWork.WorkID = DRAW_WORK;
     if (WorkOnPicture(thePicture,&theWork)) return (1);
+
+	#ifdef STAT_OUT
+	plot_end = CURRENT_TIME;
+	UserWriteF("PLOT: t_plot=%.2lf\n",plot_end-plot_begin);
+	#endif
 	
 	return (0);
 }
@@ -23491,13 +23509,23 @@ INT NS_DIM_PREFIX DrawUgPicture (PICTURE *thePicture)
 INT NS_DIM_PREFIX BulletDrawUgPicture(PICTURE *thePicture, DOUBLE zOffsetFactor)
 {
 	WORK theWork;
-	
+	#ifdef STAT_OUT
+	DOUBLE plot_begin,plot_end;
+
+	plot_begin = CURRENT_TIME;
+	#endif
+
 	do_bullet = 1;
 
 	theWork.WorkID = DRAW_WORK;
     if (BulletDrawWork(thePicture,&theWork,zOffsetFactor)) return (1);
 	
 	do_bullet = 0;
+
+	#ifdef STAT_OUT
+	plot_end = CURRENT_TIME;
+	UserWriteF("PLOT: t_plot=%.2lf\n",plot_end-plot_begin);
+	#endif
 
 	return (0);
 }
