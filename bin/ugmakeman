@@ -96,7 +96,16 @@ then
 	cd $UGROOT/np/algebra;
 	doctext -quotefmt -mpath $UGROOT/man/man5 -ext 5 -heading ug/np/algebra *.c *.h
 	cd $UGROOT/np/procs;
-	doctext -quotefmt -mpath $UGROOT/man/man1 -ext 1 -heading ug/np/procs *.c *.h
+	for i in *.c *.h
+	do
+		doctext -quotefmt -ext 1 -heading ug/np/procs $i
+		mv [a-z][a-z].1 $UGROOT/man/man1; 
+		mv [a-z][a-z][a-z]*.1 $UGROOT/man/man1; 
+		for j in *.1
+		do 
+			mv $j $UGROOT/man/man8/`echo $j|sed 's/\.1/\.8/'`;
+		done
+	done
 
 	# generate ui man pages
 	cd $UGROOT/ui;

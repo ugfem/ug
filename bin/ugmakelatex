@@ -160,7 +160,16 @@ then
 	cd $UGROOT/np/algebra;
 	doctext -latex -mpath $UGROOT/doc/ug3/ug/np -heading ug/np/algebra -quotefmt *.c *.h
 	cd $UGROOT/np/procs;
-	doctext -latex -mpath $UGROOT/doc/ug3/ug/commands -heading ug/np/procs -quotefmt *.c *.h
+	for i in *.c *.h
+	do
+		doctext -latex -heading ug/np/procs $i
+		mv [a-z][a-z].3 $UGROOT/doc/ug3/ug/commands;
+		mv [a-z][a-z][a-z]*.3 $UGROOT/doc/ug3/ug/commands;
+		for j in *.3
+		do 
+			mv $j $UGROOT/doc/ug3/ug/np
+		done
+	done
 
 	# generate ui man pages
 	cd $UGROOT/ui;
