@@ -135,6 +135,7 @@ extern int Debugdddif;
 extern int Debugdev;
 extern int Debuggm;
 extern int Debuggraph;
+extern int Debuggui;
 extern int Debuglow;
 extern int Debugdom;
 extern int Debugmachines;
