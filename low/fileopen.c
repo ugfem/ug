@@ -315,22 +315,25 @@ int filetype (const char *fname)
   if (stat(fname, &fstat)<0)
     return(FT_UNKNOWN);
 
+        #ifdef __CC__
   switch (fstat.st_mode & _S_IFMT)
   {
-#ifdef __CC__
   case _S_IFREG :   return FT_FILE;
   case _S_IFDIR :   return FT_DIR;
 #ifdef S_IFLNK
   case _S_IFLNK :   return FT_LINK;
 #endif
+  }
 #else
+  switch (fstat.st_mode & S_IFMT)
+  {
   case S_IFREG :   return FT_FILE;
   case S_IFDIR :   return FT_DIR;
 #ifdef S_IFLNK
   case S_IFLNK :   return FT_LINK;
 #endif
-#endif
   }
+#endif
   return(FT_UNKNOWN);
 }
 
