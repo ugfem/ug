@@ -10,47 +10,52 @@ include $(UGROOT)/ug.conf
 
 # lex and yacc
 LEX = flex 
-YACC = bison -b y -p ng
-#YACC_OPTIONS = -v
+YACC = bison -b y
+
+# prefix to use instead of 'yy'
+PARSERPREFIX = ng
+
+# prepare commandlines for different parser name
+LFLAGS = -P$(PARSERPREFIX)
+LEX_OUTPUT_ROOT = lex.$(PARSERPREFIX)
+YFLAGS = -p $(PARSERPREFIX)
 
 # local C compiler flags
 LCFLAGS  = -I$(UGROOT)/include -DUSED_WITH_UG
 
-# name of resulting parser
-PNAME = ngin
-
 # object files
-OBJECTS = $(PNAME)-lex.o $(PNAME)-yacc.o ng.o
+OBJECTS = ngin-lex.o ngin-yacc.o ng.o
 
 # main rule
 NPIN : $(OBJECTS) 
 	$(ARCH_AR) $(ARCH_ARFLAGS) ../../../lib/libdomL3.a $(OBJECTS)
 
 
-# rule: generate object file from lex&yacc-generated source files
-$(PNAME)-lex.o: $(PNAME)-lex.c $(PNAME)-yacc.h 
+# generic rules stolen from automake 1.8 (thus portable)
+.l.c:
+	$(LEX) $(LFLAGS) $<
+	sed '/^#/ s|$(LEX_OUTPUT_ROOT)\.c|$@|' $(LEX_OUTPUT_ROOT).c >$@
+	rm -f $(LEX_OUTPUT_ROOT).c
 
-# rule: generate object file from &yacc-generated source files
-$(PNAME)-yacc.o: $(PNAME)-yacc.c $(PNAME)-yacc.h 
-
-
-
-# rule: generate source files using yacc, this rule won't be used except when
-#       changing grammar rules in .y file
-# rule: generate source files using lex, this rule won't be used except when
-#       changing token specification in .l file
-PARSER:
-	$(YACC) $(YACC_OPTIONS) -d $(PNAME).y
-	sed 's/yy/ng/g' y.tab.c > $(PNAME)-yacc.c
-	rm y.tab.c
-	sed 's/yy/ng/g' y.tab.h > $(PNAME)-yacc.h
-	rm y.tab.h
-	$(LEX) $(PNAME).l
-	sed 's/yy/ng/g' lex.yy.c > foo
-	sed '1,5d' foo > $(PNAME)-lex.c
-	rm foo
-	rm lex.yy.c
-
+.y.c:
+	$(YACC) $(YFLAGS) $<
+	if test -f y.tab.h; then \
+	  to=`echo "$*_H" | sed \
+                -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/' \
+                -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'`; \
+	  sed "/^#/ s/Y_TAB_H/$$to/g" y.tab.h >$*.ht; \
+	  rm -f y.tab.h; \
+	  if cmp -s $*.ht $*.h; then \
+	    rm -f $*.ht ;\
+	  else \
+	    mv $*.ht $*.h; \
+	  fi; \
+	fi
+	if test -f y.output; then \
+	  mv y.output $*.output; \
+	fi
+	sed '/^#/ s|y\.tab\.c|$@|' y.tab.c >$@t && mv $@t $@
+	rm -f y.tab.c
 
 # default rule
 .c.o:
@@ -61,5 +66,4 @@ clean:
 	rm -f *.o
 
 cleanall: clean
-	rm -f $(PNAME)-lex.c $(PNAME)-yacc.c $(PNAME)-yacc.h
-
+	rm -f ngin-lex.c ngin-yacc.c ngin-yacc.h
