@@ -74,7 +74,7 @@ UItarget: include
 
 # targets for MODEL, exactly one will be chosen
 
-SEQUENTIAL:
+SEQUENTIALtarget:
 
 PARALLELtarget: include
 	cd parallel; $(ARCH_MAKE) -f Makefile.parallel
