@@ -11854,11 +11854,12 @@ static INT PTestCommand (INT argc, char **argv)
 static INT ContextCommand (INT argc, char **argv)
 {
   INT proc = INT_MAX;
-  INT flag_all, flag_empty;
+  INT flag_all, flag_empty, flag_invert;
 
 
   flag_all   = ReadArgvOption("a", argc, argv);
   flag_empty = ReadArgvOption("e", argc, argv);
+  flag_invert= ReadArgvOption("i", argc, argv);
 
   ReadArgvINT("context", &proc, argc, argv);
   if (proc<0 || proc>=procs)
@@ -11886,6 +11887,11 @@ static INT ContextCommand (INT argc, char **argv)
     {
       if (me==0)
         UserWriteF("context: invalid option combination\n");
+    }
+
+    if (flag_invert)
+    {
+      int p; for(p=0; p<procs; p++) CONTEXT(p) = 1-CONTEXT(p);
     }
   }
 
