@@ -1011,18 +1011,20 @@ INT MDmatchesMT (const MATDATA_DESC *md, const MAT_TEMPLATE *mt)
 
 INT MDmatchesVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt)
 {
-  INT rt,ct,mt;
+  INT rt,ct,mt,nr,nc;
 
   for (rt=0; rt<NVECTYPES; rt++)
     for (ct=0; ct<NVECTYPES; ct++)
     {
-      if (VT_COMP(vt,rt)*VT_COMP(vt,ct)==0)
-        continue;
+      nr = VT_COMP(vt,rt);
+      nc = VT_COMP(vt,ct);
+      if (nr*nc==0)
+        nr = nc = 0;
 
       mt = MTP(rt,ct);
-      if (MD_ROWS_IN_MTYPE(md,mt)!=VT_COMP(vt,rt))
+      if (MD_ROWS_IN_MTYPE(md,mt)!=nr)
         return (NO);
-      if (MD_COLS_IN_MTYPE(md,mt)!=VT_COMP(vt,ct))
+      if (MD_COLS_IN_MTYPE(md,mt)!=nc)
         return (NO);
     }
 
@@ -2283,12 +2285,13 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
           REP_ERR_RETURN(1);
 
         /* check next arg for storage allocation */
-        if (sscanf(argv[opt+1],"alloc %d",&ns)==1)
-        {
-          opt++;
-          for (type=0; type<NMATTYPES; type++)
-            MatStorageNeeded[type] += ns*SUBM_RCOMP(subm,type)*SUBM_CCOMP(subm,type);
-        }
+        if (opt+1<argc)
+          if (sscanf(argv[opt+1],"alloc %d",&ns)==1)
+          {
+            opt++;
+            for (type=0; type<NMATTYPES; type++)
+              MatStorageNeeded[type] += ns*SUBM_RCOMP(subm,type)*SUBM_CCOMP(subm,type);
+          }
         continue;                               /* while ((opt+1<argc) && (strncmp(argv[opt+1],"sub",3)==0)) */
       }
 
