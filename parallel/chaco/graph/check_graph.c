@@ -12,6 +12,9 @@
 
 /* Check graph for errors */
 
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
+
 static int is_an_edge();
 
 int check_graph(graph, nvtxs, nedges)
@@ -111,7 +114,7 @@ int nedges;                     /* number of edges */
   else using_ewgts = 0;
   narcs = 0;
   max=vmax=vmin=0;
-  vmin=64;
+  min=vmin=64;
 
   for (i=1; i<=nvtxs; i++) {
     narcs += graph[i]->nedges - 1;
