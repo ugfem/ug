@@ -1,0 +1,36 @@
+#!/bin/sh
+if test $# -ge 2 -o $# -eq 0
+then
+	echo "usage: $0 [<filename>]";
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then 
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+# if one parameter is specified create new pvm context
+if test $# -eq 1
+then
+
+# extract revelevant info
+# this done using a pipe with filters and sorters
+# cat file to stout
+cat $1 | \
+\
+# get interesting lines
+grep IdentObjectHdr | \
+\
+# remove pvm output prefix
+sed 's/^\[.*\][ ]*//' | \
+\
+# remove processor number
+sed 's/[0-9]*:[ ]*//' | \
+\
+# sort lines and write to file
+sort > $1.id
+
+fi
+
