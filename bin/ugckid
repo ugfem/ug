@@ -1,5 +1,5 @@
 #!/bin/sh
-if test $# -ge 2 -o $# -eq 0
+if test $# -eq 0
 then
 	echo "usage: $0 [<filename>]";
 	exit 1;
@@ -11,14 +11,13 @@ then
 	exit 1;
 fi
 
-# if one parameter is specified create new pvm context
-if test $# -eq 1
-then
+# set path to bin dir
+BINPATH=$UGROOT/bin
 
-# extract revelevant info
+# extract relevant info
 # this done using a pipe with filters and sorters
-# cat file to stout
-cat $1 | \
+# cat files matching $1* to stout
+cat $1* | \
 \
 # get interesting lines
 grep IdentObjectHdr | \
@@ -27,10 +26,10 @@ grep IdentObjectHdr | \
 sed 's/^\[.*\][ ]*//' | \
 \
 # remove processor number
-sed 's/[0-9]*:[ ]*//' | \
+sed 's/^[0-9]*:[ ]*//' | \
 \
-# sort lines and write to file
-sort > $1.id
-
-fi
+# sort lines 
+sort | \
+# sort IdentHdr and ProcList fields and write to file
+awk -f $BINPATH/ugckid.awk - > $1.id
 
