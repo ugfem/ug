@@ -133,10 +133,6 @@ extern DDD_TYPE TypeBndP;
 extern DDD_TYPE TypeEdge;
 extern DDD_TYPE TypeBndS;
 
-/* DDD Interfaces */
-extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF;
-extern DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF;
-
 
 
 /* DDD Global Controls */
