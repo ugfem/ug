@@ -164,7 +164,8 @@ INT GetFreeOBJT ()
 {
   INT i;
 
-  for (i=0; i<MAXOBJECTS; i++)
+  /* skip predefined object types, they cannot be re-allocated */
+  for (i=NPREDEFOBJ; i<MAXOBJECTS; i++)
     if (!READ_FLAG(UsedOBJT,1<<i))
       break;
 
@@ -200,6 +201,10 @@ INT GetFreeOBJT ()
 INT ReleaseOBJT (INT type)
 {
   if (type>=MAXOBJECTS)
+    RETURN (GM_ERROR);
+
+  /* we cannot release predefined object types! */
+  if (type<NPREDEFOBJ)
     RETURN (GM_ERROR);
 
   CLEAR_FLAG(UsedOBJT,1<<type);
