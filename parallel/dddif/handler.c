@@ -1424,15 +1424,12 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
                       " cnt=%d newness=%d\n",
                       me,EID_PRTX(pe),cnt,newness))
 
-  /* if element is not new do nothing */
-  /* TODO: this is old, delete
-     if (newness != XFER_NEW) return; */
-
   /* XFER_REJECT:   only case where edges must not be unpacked */
-  /* XFER_NEW:      there are still no edges -> unpack         */
-  /* XFER_UPGRADE:  new MIDNODE pointers might be non NULL     */
   /* this is not correct, since newness XFER_REJECT might have */
   /* non NULL midnode pointers in the edges (971007 s.l.)      */
+  /* XFER_REJECT:  new MIDNODE pointers might be non NULL     */
+  /* XFER_NEW:      there are still no edges -> unpack         */
+  /* XFER_UPGRADE:  new MIDNODE pointers might be non NULL     */
   /* if (newness == XFER_REJECT) return; */
 
   /* retrieve edges from message */
@@ -1458,16 +1455,6 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
     else
       enew = GetEdge(NBNODE(LINK0(ecopy)),
                      NBNODE(LINK1(ecopy)));
-
-    /* TODO: not needed due to newness */
-    /* TODO: dirty bug fix             */
-    /* set element counter explicitly  */
-    /*
-                    if (NBELEM(pe,i)==NULL)
-                            SET_NO_OF_ELEM(enew,1);
-                    else
-                            SET_NO_OF_ELEM(enew,2);
-     */
 
     PRINTDEBUG(dddif,5,(PFMT " ElemScatterEdge(): elem=" EID_FMTX
                         " create edge=%x for n0=" EID_FMTX " n1=" ID_FMTX "\n",
@@ -1501,10 +1488,6 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
 #endif
 
     /* copy midnode pointer */
-    /* TODO: delete
-                    MIDNODE(enew) = MIDNODE(ecopy);
-                    if (MIDNODE(enew) != NULL)
-     */
     if (MIDNODE(ecopy) != NULL)
     {
       VERTEX                  *theVertex;
