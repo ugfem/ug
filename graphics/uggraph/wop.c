@@ -7618,7 +7618,7 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
 	if (EE2D_IndMark)
-	  GetRefinementMark ((const ELEMENT *)theElement,&rule,&data);
+	  GetRefinementMark (theElement,&rule,&data);
 
 	/* store viewable sides on drawing obj */
 	if (EE2D_Property)
@@ -13027,7 +13027,18 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 	while (ActualPosition < nsons)
 	{
 		if (LastShellBegin == NewShellBegin) {
-			UserWrite("OrderSons failed\n");
+			UserWrite("OrderSons failed for element:\n");
+			UserWriteF("NSONS=%d REFINECLASS=%d REFINE=%d\n",
+				NSONS(theElement),REFINECLASS(theElement),REFINE(theElement));
+			UserWriteF("ELEMPATTERN=");
+			for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+			{
+				EDGE *theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
+										CORNER_OF_EDGE_PTR(theElement,i,1));
+				assert(theEdge!=NULL);
+				UserWriteF("%d",(MIDNODE(theEdge)!=NULL));
+			}
+			UserWriteF("\n");
 			for (i=0; i<nsons; i++)
 				table[i] = SonList[i];
 			return(0);

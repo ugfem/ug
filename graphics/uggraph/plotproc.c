@@ -243,7 +243,7 @@ static DOUBLE RefMarks (const ELEMENT *theElement,
 {
   INT rule,side;
 
-  GetRefinementMark(theElement,&rule,(void *)&side);
+  GetRefinementMark((ELEMENT *)theElement,&rule,(void *)&side);
 
   switch (rule) {
   case RED :           return( 1.0);
