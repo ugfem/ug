@@ -74,4 +74,29 @@ F"ur rhs2 wird die L"osung berechnet und danach das AMG weggeworfen.
 Die einzige Bedingung an Matrix2 ist, da"s sie das gleiche n besitzt. nl kann
 sich "andern.
 
+Fuer UG Version:
+================
 
+Konfigurieren:
+in ug/gm/gm.h
+	USE_FAMG aktivieren
+	__INTERPOLATION_MATRIX__ aktivieren
+in ug/low/heaps.h: DYNAMIC_MEMORY_ALLOCMODEL deaktivieren (bringt uns auch keinen Gewinn)
+in ug/np/famglib:
+	famg_algebra.h: ONLY_ONE_ALGEBRA_DS aktivieren
+
+uebersetzen: in ug/np/famglib: ugmake (braucht C++)
+ganzes UG neu uebersetzen
+
+fuer parallele Version (nur fuer UG)
+====================================
+
+2. Matrix im Format
+Interpolationsmatrix braucht 2 Komponenten
+ddd/dddi.h: MAX_TRIES <MAXINT>
+dddif/handler.c: Z. 950 (case MIDNODE) break
+-DDDDOBJMGR aktivieren
+
+Beispielanwendungen:
+   fe/ff/aniso.scr
+   cd/appl/scripts/famgcd.scr
