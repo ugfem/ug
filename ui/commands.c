@@ -9523,6 +9523,12 @@ static INT SetViewCommand (INT argc, char **argv)
     /* capitals for cut definition */
 
     case 'C' :
+      if (!PO_USESCUT(PIC_PO(thePic)))
+      {
+        PrintErrorMessage('E',"setview","plot object does not use a cut");
+        return(PARAMERRORCODE);
+      }
+
       /* set default cut */
       V3_COPY(PO_MIDPOINT(PIC_PO(thePic)),PlanePoint);
       V3_CLEAR(PlaneNormal);
@@ -9531,6 +9537,12 @@ static INT SetViewCommand (INT argc, char **argv)
       break;
 
     case 'R' :
+      if (!PO_USESCUT(PIC_PO(thePic)))
+      {
+        PrintErrorMessage('E',"setview","plot object does not use a cut");
+        return(PARAMERRORCODE);
+      }
+
       RemoveCut = YES;
       break;
 
