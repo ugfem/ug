@@ -258,16 +258,16 @@ static int Gather_VHGhostCmd (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO p
       }
     }
 
-    if (LEVEL(theElement) > 0)
-    {
-      ASSERT(theFather != NULL);
+    /* wrong:		if (LEVEL(theElement) > 0)
+                    {
+                            ASSERT(theFather != NULL);
 
-      if (PARTITION(theFather) == proc)
-      {
-        *((int *)data) = GC_Keep;
-        return (0);
-      }
-    }
+                            if (PARTITION(theFather) == proc)
+                            {
+       *((int *)data) = GC_Keep;
+                                    return (0);
+                            }
+                    } */
     return (0);
   }
 
