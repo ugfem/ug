@@ -109,6 +109,7 @@
 #define MAX_SONS_DIM CONCAT(MAX_SONS_,DIM,D)
 
 #define LEAFELEM(e)             (NSONS(e)==0)
+#define IS_REFINED(e)   (REFINE(theElement)!=NO_REFINEMENT)
 
 /* indices of rules in rule array */
 #define T_NOREF                         0
