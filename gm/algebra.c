@@ -677,7 +677,7 @@ static INT InsertBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *insertBV, BLOCKVECT
         PREDVC(BVFIRSTVECTOR(insertBV)) = NULL;
         SUCCVC(BVLASTVECTOR(insertBV)) = BVFIRSTVECTOR(BVSUCC(insertBV));
         PREDVC(BVFIRSTVECTOR(BVSUCC(insertBV))) = BVLASTVECTOR(insertBV);
-        FIRSTVECTOR(theGrid) = BVFIRSTVECTOR(insertBV);
+        SFIRSTVECTOR(theGrid) = BVFIRSTVECTOR(insertBV);
       }
     }
     else
@@ -977,14 +977,17 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
 #endif
 
   /* now remove vector from vector list */
-  if (PREDVC(theVector)!=NULL)
-    SUCCVC(PREDVC(theVector)) = SUCCVC(theVector);
-  else
-    FIRSTVECTOR(theGrid) = SUCCVC(theVector);
-  if (SUCCVC(theVector)!=NULL)
-    PREDVC(SUCCVC(theVector)) = PREDVC(theVector);
-  else
-    LASTVECTOR(theGrid) = PREDVC(theVector);
+  GRID_UNLINK_VECTOR(theGrid,theVector)
+  /* TODO: delete this
+          if (PREDVC(theVector)!=NULL)
+                  SUCCVC(PREDVC(theVector)) = SUCCVC(theVector);
+          else
+                  FIRSTVECTOR(theGrid) = SUCCVC(theVector);
+          if (SUCCVC(theVector)!=NULL)
+                  PREDVC(SUCCVC(theVector)) = PREDVC(theVector);
+          else
+                  LASTVECTOR(theGrid) = PREDVC(theVector);
+   */
 
   /* reset count flags */
   SETVCOUNT(theVector,0);
@@ -3038,7 +3041,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
   SUCCVC(table[entries-1])  = NULL;
   PREDVC(table[0]) = NULL;
 
-  FIRSTVECTOR(theGrid) = table[0];
+  SFIRSTVECTOR(theGrid) = table[0];
   LASTVECTOR(theGrid)  = table[entries-1];
 
 
@@ -3401,7 +3404,7 @@ INT ShellOrderVectors (GRID *theGrid, VECTOR *seed)
     SUCCVC(theVector) = succVector;
     succVector = theVector;
   }
-  FIRSTVECTOR(theGrid) = succVector;
+  SFIRSTVECTOR(theGrid) = succVector;
   PREDVC(succVector)   = NULL;
 
   /* check # members of succ list */
@@ -3780,7 +3783,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     SUCCVC(theVector) = succVector;
     succVector = theVector;
   }
-  FIRSTVECTOR(theGrid) = succVector;
+  SFIRSTVECTOR(theGrid) = succVector;
   PREDVC(succVector)   = NULL;
 
   /* set pointers in BLOCKVECTORs */
@@ -4501,7 +4504,7 @@ static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT verboselevel)
     SUCCVC(theVector) = succVector;
     succVector = theVector;
   }
-  FIRSTVECTOR(theGrid) = succVector;
+  SFIRSTVECTOR(theGrid) = succVector;
   PREDVC(succVector)   = NULL;
 
   /* set pointers in BLOCKVECTORs */
@@ -4702,7 +4705,7 @@ INT RevertVecOrder (GRID *theGrid)
   {
     SWAP(PREDVC(vec),SUCCVC(vec),tmp);
   }
-  SWAP(FIRSTVECTOR(theGrid),LASTVECTOR(theGrid),tmp);
+  SWAP(SFIRSTVECTOR(theGrid),LASTVECTOR(theGrid),tmp);
 
   /* also change the blockvectors */
   for (bv=GFIRSTBV(theGrid); bv!=NULL; bv=BVSUCC(bv))
@@ -5810,7 +5813,7 @@ INT MoveVector (GRID *theGrid, VECTOR *moveVector, VECTOR *destVector, INT after
 
   /* take vector out of list */
   if (PREDVC(moveVector)!=NULL) SUCCVC(PREDVC(moveVector))      = SUCCVC(moveVector);
-  else FIRSTVECTOR(theGrid)            = SUCCVC(moveVector);
+  else SFIRSTVECTOR(theGrid)           = SUCCVC(moveVector);
   if (SUCCVC(moveVector)!=NULL) PREDVC(SUCCVC(moveVector))      = PREDVC(moveVector);
   else LASTVECTOR(theGrid)             = PREDVC(moveVector);
 
@@ -5828,7 +5831,7 @@ INT MoveVector (GRID *theGrid, VECTOR *moveVector, VECTOR *destVector, INT after
     else
     {
       if (PREDVC(destVector)!=NULL) SUCCVC(PREDVC(destVector))      = moveVector;
-      else FIRSTVECTOR(theGrid)            = moveVector;
+      else SFIRSTVECTOR(theGrid)           = moveVector;
       PREDVC(moveVector) = PREDVC(destVector);
       SUCCVC(moveVector) = destVector;
       PREDVC(destVector) = moveVector;
@@ -5838,9 +5841,9 @@ INT MoveVector (GRID *theGrid, VECTOR *moveVector, VECTOR *destVector, INT after
   {
     if (after)
     {
-      SUCCVC(moveVector) = FIRSTVECTOR(theGrid);
+      SUCCVC(moveVector) = SFIRSTVECTOR(theGrid);
       PREDVC(moveVector) = NULL;
-      FIRSTVECTOR(theGrid) = moveVector;
+      SFIRSTVECTOR(theGrid) = moveVector;
       if (SUCCVC(moveVector)!=NULL) PREDVC(SUCCVC(moveVector)) = moveVector;
     }
     else
