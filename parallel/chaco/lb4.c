@@ -296,7 +296,7 @@ static CLUSTER *new_cluster (void)
 
 	if (total_cnt>=MAXCLUSTERS)
 	{
-		printf( PFMT "new_cluster(): increase MAXCLUSTERS in lb4.c\n" );
+		printf( PFMT "new_cluster(): increase MAXCLUSTERS in lb4.c\n",me);
 		PrintErrorMessage('E',"new_cluster","increase MAXCLUSTERS in lb4.c\n");
 		return(NULL);
 	}
