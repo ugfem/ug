@@ -178,6 +178,8 @@ static CONTROL_ENTRY_PREDEF ce_predefines[MAX_CONTROL_ENTRIES] = {
 
   CE_INIT(CE_LOCKED,      NODE_,                  NSUBDOM_,               CW_NDOBJ),
   CE_INIT(CE_LOCKED,      NODE_,                  NPROP_,                 CW_NDOBJ),
+  CE_INIT(CE_LOCKED,      NODE_,                  NCLASS_,                CW_NDOBJ),
+  CE_INIT(CE_LOCKED,      NODE_,                  NNCLASS_,               CW_NDOBJ),
   CE_INIT(CE_LOCKED,      NODE_,                  MODIFIED_,              (CW_NDOBJ | CW_GROBJ)),
   CE_INIT(CE_LOCKED,      NODE_,                  NTYPE_,                 CW_NDOBJ),
 
