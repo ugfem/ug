@@ -26,7 +26,7 @@ use POSIX;
 use vars qw ($real $LGM $VRT $CEL $INP $NG %VERT %BN $SSideOfElement %LGM_VERT);
 use vars qw (%POL $EPS_POINT $EPS_LINE $EPS_TRI $STAR_PROJ %P_PROJ %L_PROJ);
 use vars qw (%S_TRI %T_PROJ $STAT @TMP $SSideOfTriangle $EPS_LOC %DONE);
-use vars qw ($HUGE $DIM $P_TREE $T_TREE $L_TREE $EPS_PROJ);
+use vars qw ($HUGE $DIM $P_TREE $T_TREE $L_TREE $EPS_PROJ $TRIPROJECT_FLAG);
 
 $real='[+-]*\d+\.*\d*[eE][+-]\d+|[+-]*\d+\.\d*|\d+|[+-]\d+';
 
@@ -34,6 +34,7 @@ $real='[+-]*\d+\.*\d*[eE][+-]\d+|[+-]*\d+\.\d*|\d+|[+-]\d+';
 
 $HUGE = 9999999999999.9;
 $DIM = 3;
+$TRIPROJECT_FLAG=0;
 
 #######################################################################
 ###  epsilon (local !!!!)											###
@@ -300,6 +301,7 @@ sub Line_Callback
 		$pv[$i]=$x->[$i]-$obj->{p1}->[$i];
 	}
 
+
 	if(Mod(@a) < $EPS_POINT){
 		die"EPS_POINT is too large. Length of segment between p1-p2 is smaller than EPS_POINT.\n";
 	}
@@ -407,17 +409,44 @@ sub Triangle_Callback
 	$tmp = $obj->{p2}; @p2 = @$tmp;
 
 	## point lies not inside extruded triangle area
-	if(!(GetLocalCoordinates(\@p0,\@p1,\@p2,$x,$dummy,$dummy))){
-		return $HUGE;
+	if(!(GetLocalCoordinates(\@p0,\@p1,\@p2,$x,$dummy,$dummy)))
+	{
+		if($TRIPROJECT_FLAG)
+		{
+			## check whether point lies near edge of triangle
+			my(%lobj,$dist,$min);	
+	
+			$min=1000000;
+			for($i=0; $i<3; $i++)
+			{
+				if($i==0){
+					$lobj{p1} = $obj->{p0};
+					$lobj{p2} = $obj->{p1};
+				}elsif($i==1){
+					$lobj{p1} = $obj->{p1};
+						$lobj{p2} = $obj->{p2};
+				}elsif($i==2){
+					$lobj{p1} = $obj->{p2};
+					$lobj{p2} = $obj->{p0};
+				}
+				$dist = Line_Callback($x,\%lobj);	
+				if($dist<$EPS_LINE && $dist<$min){ 
+					$min=$dist;
+					$obj->{p_proj}=$lobj{p_proj};
+				}
+			}
+	
+			if($min>=$EPS_LINE){ return $HUGE}
+			else{return $dist}
+		}
+		return($HUGE);
 	}
 	
-
 	for($i=0; $i<$DIM; $i++){
 		$a[$i]=$x->[$i]-$p0[$i];
 		$b[$i]=$x->[$i]-$p1[$i];
 		$c[$i]=$x->[$i]-$p2[$i];
 	}
-
 
 	## norms ##
 	$ma=Mod(@a);
@@ -532,7 +561,6 @@ sub Triangle_Callback
 		## user display: processed bn ##
 		display_processed($#keys,$v);
 
-		
 		## Get distances to objects ##
 		FindLgmPointsAndProject(\$BN{$v},$v,\$np,\$p[0],\$mdist_p);
 		FindLgmLinesAndProject(\$BN{$v},$v,\$line,\$p[1],\$mdist_l);
@@ -542,9 +570,17 @@ sub Triangle_Callback
 		$mdist_p *=0.8;
 		$mdist_l *=0.9;
 
-
 		## Get minimum distances ##
 		$min=mmin($mdist_p,$mdist_l,$mdist_t);
+
+		## point may lie over an edge of two adjacing triangles, it is
+		## not caught by the triangle extrusion case
+		if($min>$EPS_PROJ){
+			$TRIPROJECT_FLAG=1;
+			FindLgmTrianglesAndProject(\$BN{$v},$v,\$tri,\$p[2],\$p0,\$p1,\$p2,\$mdist_t);
+			$TRIPROJECT_FLAG=0;
+			$min=$mdist_t;
+		}
 
 		if($min>$EPS_PROJ){
 			die"Point $BN{$v} lies too far away from object. Min distance: $min$!\n"
@@ -831,14 +867,6 @@ sub GetLocalCoordinates
 	$sp[1]=Spat(\@p,\@b,\@n);
 	$sp[2]=Spat(\@c,\@q,\@n);
 
-	## TODO: not needed
-	## check, whether point lies inside triangle ##
-	#for($i=0;$i<3;$i++){
-	#	if( ($sp[$i]/$mcp) < (0-$EPS_LOC) ){
-	#		return 0;
-	#	}
-	#}
-	
 	## Get relationship vol of one triangle/vol of whole triangle ##
 	$sum=0;
 	for($i=0;$i<3;$i++){
