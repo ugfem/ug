@@ -28,6 +28,9 @@
 /****************************************************************************/
 
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
 #include "devices.h"
 #include "ugenv.h"
@@ -44,6 +47,9 @@
 #include "assemble.h"
 
 #include "project.h"
+#include "shapes.h"
+#include "evm.h"
+#include "gm.h"
 
 /****************************************************************************/
 /*																			*/
@@ -159,30 +165,262 @@ static INT Prj_Display (NP_BASE *theNP)
 
   Project_Display(&np->prj);
 
-
   return (0);
 }
 
 
 /* Projection for Laplace-Equation */
 
-
-static INT ProjectLaplaceNeumann (NP_PROJECT *theNP, INT fl, INT tl,
-                                  VECDATA_DESC *x, INT *result)
+static INT ProjectionVectorLN (NP_PROJECT *theNP, INT fl, INT tl,
+                               INT index, VECDATA_DESC *t, INT *result)
 {
-  MULTIGRID *theMG ;
+  NP_PRJ    *np    = (NP_PRJ *) theNP;
+  MULTIGRID *theMG = theNP->base.mg;
+
+  if (index != 0)
+    NP_RETURN(1,result[0]);
+
+  /* assign t to the one-vector */
+
+  if (dset(theMG,fl,tl,ALL_VECTORS,t,1.0) != NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  return(0);
+}
+
+
+/*  Old and false Projection for Plate-Equation  */
+
+static INT ProjectionVectorPL1 (NP_PROJECT *theNP, INT fl, INT tl,
+                                INT index, VECDATA_DESC *t, INT *result)
+{
+  NP_PRJ    *np    = (NP_PRJ *) theNP;
+  MULTIGRID *theMG = theNP->base.mg;
+  VECTOR *v;
+  DOUBLE_VECTOR pos;
+  INT lev,vtype,ncomp,comp;
+
+  for (lev=fl; lev<=tl; lev++)
+    for (v=FIRSTVECTOR(GRID_ON_LEVEL(theMG,lev)); v!=NULL; v=SUCCVC(v)) {
+      vtype = VTYPE(v);
+      ncomp = VD_NCMPS_IN_TYPE(t,vtype);
+      if (ncomp == 0) continue;
+      VectorPosition(v,pos);
+      comp = VD_CMP_OF_TYPE(t,vtype,0);
+      switch(index)
+      {
+      case 0 :
+        VVALUE(v,comp) = 1.0 ;
+        continue;
+      case 1 :
+        VVALUE(v,comp) = pos[0] ;
+        continue;
+      case 2 :
+        VVALUE(v,comp) = pos[1] ;
+        continue;
+      case 3 :
+        VVALUE(v,comp) = pos[0]*pos[0] ;
+        continue;
+      case 4 :
+        VVALUE(v,comp) = pos[0]*pos[1] ;
+        continue;
+      case 5 :
+        VVALUE(v,comp) = pos[1]*pos[1] ;
+        continue;
+      }
+    }
+  return(0);
+}
+
+
+/* modified projection for the plate-equation */
+/* the node and middle point are differently valued */
+
+static Normale(INT n, INT i, DOUBLE **x, DOUBLE_VECTOR normal)
+{
+  DOUBLE s ;
+  DOUBLE_VECTOR y;
+
+  V2_SUBTRACT(x[(i+1)%n],x[i],y);
+  s = 0.0 ;
+  s = sqrt(y[0]*y[0] + y[1]* y[1]);
+  V2_SCALE(1.0/s,y);
+  V2_SUBTRACT(x[(i+1)%n],x[(i+2)%n],normal);
+  V2_SCALAR_PRODUCT(normal,y,s);
+  V2_LINCOMB(1.0,normal,-s,y,normal);
+  s = 0.0 ;
+  s = sqrt(normal[0]*normal[0] + normal[1]* normal[1] );
+  V2_SCALE(1.0/s,normal);
+
+  return(0);
+
+}
+
+
+#define ORIENTATION(n,s,pos)         (((pos)[(s)][0]>(pos)[((s)+1)%n][0]) ?        \
+                                      1.0 :                                 \
+                                      ( ((pos)[(s)][0]==(pos)[((s)+1)%n][0])    \
+                                        ?                                    \
+                                        ( ((pos)[(s)][1]>(pos)[((s)+1)%n][1])    \
+                                                                               ? 1.0 : -1.0 )                      \
+                                        : -1.0 ) )
+
+
+static INT ProjectionVectorPL (NP_PROJECT *theNP, INT fl, INT tl,
+                               INT index, VECDATA_DESC *t, INT *result)
+{
+  NP_PRJ    *np    = (NP_PRJ *) theNP;
+  MULTIGRID *theMG = theNP->base.mg;
+  ELEMENT *theElement;
+  VECTOR *v;
+  DOUBLE_VECTOR pos ;
+  DOUBLE_VECTOR normal;
+  DOUBLE s;
+  INT lev,vtype,ncomp,comp,side,n;
+  DOUBLE *x_pos[3] ;
+
+  for (lev=fl; lev<=tl; lev++) {
+    for (v=FIRSTVECTOR(GRID_ON_LEVEL(theMG,lev)); v!=NULL; v=SUCCVC(v)) {
+      if (VTYPE(v) == 1) continue;
+      vtype = VTYPE(v);
+      ncomp = VD_NCMPS_IN_TYPE(t,vtype);
+      comp = VD_CMP_OF_TYPE(t,vtype,0);
+      if (ncomp == 0) continue;
+      VectorPosition(v,pos);
+      switch(index)
+      {
+      case 0 :
+        VVALUE(v,comp) = 1.0 ;
+        continue;
+      case 1 :
+        VVALUE(v,comp) = pos[0] ;
+        continue;
+      case 2 :
+        VVALUE(v,comp) = pos[1] ;
+        continue;
+      case 3 :
+        VVALUE(v,comp) = pos[0]*pos[0] ;
+        continue;
+      case 4 :
+        VVALUE(v,comp) = pos[0]*pos[1] ;
+        continue;
+      case 5 :
+        VVALUE(v,comp) = pos[1]*pos[1] ;
+        continue;
+      }
+    }
+    for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,lev)); theElement!=NULL;
+         theElement=SUCCE(theElement))
+      for (side=0; side<EDGES_OF_ELEM(theElement); side++) {
+        v = EDVECTOR(GetEdge(CORNER(theElement,
+                                    CORNER_OF_EDGE(theElement,side,0)),
+                             CORNER(theElement,
+                                    CORNER_OF_EDGE(theElement,side,1))));
+        CORNER_COORDINATES(theElement,n,x_pos);
+        VectorPosition(v,pos);
+        s = ORIENTATION(n,side,x_pos);
+        comp = VD_CMP_OF_TYPE(t,EDGEVEC,0);
+        Normale(n,side,x_pos,normal);
+
+        switch(index)
+        {
+        case 0 :
+          VVALUE(v,comp) = 0.0;
+          continue;
+        case 1 :
+          VVALUE(v,comp) = normal[0] * s ;
+          continue;
+        case 2 :
+          VVALUE(v,comp) = normal[1] * s ;
+          continue;
+        case 3 :
+          VVALUE(v,comp) = 2* pos[0]* normal[0] * s ;
+          continue;
+        case 4 :
+          VVALUE(v,comp) = (pos[1]* normal[0] + pos[0]* normal[1]) * s ;
+          continue;
+        case 5 :
+          VVALUE(v,comp) =  2* pos[1]* normal[1] * s ;
+          continue;
+        }
+      }
+  }
+
+  return(0);
+}
+
+
+
+/* Projection for Elasticity-Equation */
+
+static INT ProjectionVectorEL (NP_PROJECT *theNP, INT fl, INT tl,
+                               INT index, VECDATA_DESC *t, INT *result)
+{
+  NP_PRJ    *np    = (NP_PRJ *) theNP;
+  MULTIGRID *theMG = theNP->base.mg;
+  VECTOR *v;
+  DOUBLE_VECTOR pos;
+  INT lev,vtype,ncomp,comp;
+
+  for (lev=fl; lev<=tl; lev++)
+    for (v=FIRSTVECTOR(GRID_ON_LEVEL(theMG,lev)); v!=NULL; v=SUCCVC(v)) {
+      vtype = VTYPE(v);
+      ncomp = VD_NCMPS_IN_TYPE(t,vtype);
+      if (ncomp == 0) continue;
+      ASSERT(ncomp == DIM);
+      VectorPosition(v,pos);
+      comp = VD_CMP_OF_TYPE(t,vtype,0);
+
+      switch(index)
+      {
+      case 0 :
+        VVALUE(v,comp) = 1 ;
+        VVALUE(v,comp+1) = 0 ;
+        VVALUE(v,comp+2) = 0 ;
+        continue;
+      case 1 :
+        VVALUE(v,comp) = 0 ;
+        VVALUE(v,comp+1) = 1 ;
+        VVALUE(v,comp+2) = 0 ;
+        continue ;
+      case 2 :
+        VVALUE(v,comp) = 0 ;
+        VVALUE(v,comp+1) = 0 ;
+        VVALUE(v,comp+2) = 1 ;
+        continue;
+      case 3 :
+        VVALUE(v,comp) = - pos[1] ;
+        VVALUE(v,comp+1) = pos[0] ;
+        VVALUE(v,comp+2) = 0 ;
+        continue ;
+      case 4 :
+        VVALUE(v,comp) = pos[2] ;
+        VVALUE(v,comp+1) = 0 ;
+        VVALUE(v,comp+2) = - pos[0] ;
+        continue ;
+      case 5 :
+        VVALUE(v,comp) = 0 ;
+        VVALUE(v,comp+1) = - pos[2] ;
+        VVALUE(v,comp+2) = pos[1] ;
+        continue ;
+      }
+
+    }
+  return(0);
+}
+
+static INT Projection (NP_PROJECT *theNP, INT fl, INT tl,
+                       VECDATA_DESC *x, INT *result)
+{
+  NP_PRJ    *np    = (NP_PRJ *) theNP;
+  MULTIGRID *theMG = theNP->base.mg;
   DOUBLE a0,a1;
-  NP_PRJ *np ;
-
-  np = (NP_PRJ *) theNP ;
-
-  theMG = theNP->base.mg;
+  INT i;
 
   /* assign x, if extern evaluable */
 
   if ((theNP->x) != NULL)
     x = theNP->x ;
-
 
   np->t = NULL;
   np->b = NULL;
@@ -191,18 +429,20 @@ static INT ProjectLaplaceNeumann (NP_PROJECT *theNP, INT fl, INT tl,
     NP_RETURN(1,result[0]);
   if (AllocVDFromVD(theMG,fl,tl,x,&np->b))
     NP_RETURN(1,result[0]);
-  if (dset(theMG,fl,tl,ALL_VECTORS,np->t,1.0) != NUM_OK)
-    NP_RETURN(1,result[0]);
-  if ((*np->Assemble->NLAssembleDefect)
-        (np->Assemble,fl,tl,np->t,np->b,NULL,result))
-    RETURN(1);
-  if (ddot(theMG,fl,tl,ON_SURFACE,np->t,np->b,&a0) != NUM_OK)
-    return(1);
-  if (ddot(theMG,fl,tl,ON_SURFACE,x,np->b,&a1) != NUM_OK)
-    return(1);
-  ASSERT(a0 != 0.0);
-  if (daxpy(theMG,fl,tl,ALL_VECTORS,x,-a1/a0,np->t) != NUM_OK)
-    return(1);
+  for (i=0; i<theNP->dim; i++) {
+    if ((*theNP->ProjectionVector)(theNP,fl,tl,i,np->t,result))
+      NP_RETURN(1,result[0]);
+    if ((*np->Assemble->NLAssembleDefect)
+          (np->Assemble,fl,tl,np->t,np->b,NULL,result))
+      RETURN(1);
+    if (ddot(theMG,fl,tl,ON_SURFACE,np->t,np->b,&a0) != NUM_OK)
+      return(1);
+    if (ddot(theMG,fl,tl,ON_SURFACE,x,np->b,&a1) != NUM_OK)
+      return(1);
+    ASSERT(a0 != 0.0);
+    if (daxpy(theMG,fl,tl,ALL_VECTORS,x,-a1/a0,np->t) != NUM_OK)
+      return(1);
+  }
   FreeVD(theMG,fl,tl,np->t);
   FreeVD(theMG,fl,tl,np->b);
 
@@ -219,95 +459,14 @@ static INT PLN_Construct (NP_BASE *theNP)
 
   np = (NP_PROJECT *) theNP;
   np->PreProcess = NULL;
-  np->Project = ProjectLaplaceNeumann;
+  np->Project = Projection ;
+  np->ProjectionVector = ProjectionVectorLN ;
   np->PostProcess = NULL;
 
-  return(0);
-}
-
-/*  Projection for Plate-Equation  */
-
-static INT PlateNeumannKernel (MULTIGRID *mg, INT fl, INT tl, VECDATA_DESC *t, INT m)
-{
-  VECTOR *v;
-  DOUBLE_VECTOR pos;
-  INT lev,vtype,ncomp,comp;
-
-  if (m == 0)
-    return(dset(mg,fl,tl,ALL_VECTORS,t,1.0));
-
-  for (lev=fl; lev<=tl; lev++)
-    for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); v!=NULL; v=SUCCVC(v)) {
-      vtype = VTYPE(v);
-      ncomp = VD_NCMPS_IN_TYPE(t,vtype);
-      if (ncomp == 0) continue;
-      /*			ASSERT(ncomp == DIM); */
-      VectorPosition(v,pos);
-      comp = VD_CMP_OF_TYPE(t,vtype,0);
-      if (m == 1)
-        VVALUE(v,comp) = pos[0];
-      if (m == 2)
-        VVALUE(v,comp) = pos[1];
-      if (m == 3)
-        VVALUE(v,comp) = pos[0]*pos[0];
-      if (m == 4)
-        VVALUE(v,comp) = pos[0]*pos[1];
-      if (m == 5)
-        VVALUE(v,comp) = pos[1]*pos[1];
-    }
-  return(0);
-}
-
-
-static INT ProjectPlateNeumann  (NP_PROJECT *theNP,
-                                 INT fl, INT tl,
-                                 VECDATA_DESC *x, INT *result)
-{
-  /*    NP_NL_ASSEMBLE *Assemble ;  */
-  MULTIGRID *theMG ;
-  DOUBLE a0,a1;
-  INT i;
-  NP_PRJ *np ;
-
-  np = (NP_PRJ *) theNP ;
-  theMG = theNP->base.mg;
-
-
-  /* assign x, if extern evaluable */
-
-  if ((theNP->x) != NULL)
-    x = theNP->x ;
-
-
-  np->t = NULL;
-  np->b = NULL;
-
-  if (AllocVDFromVD(theMG,fl,tl,x,&np->t))
-    NP_RETURN(1,result[0]);
-  if (AllocVDFromVD(theMG,fl,tl,x,&np->b))
-    NP_RETURN(1,result[0]);
-  for (i=0; i<6; i++) {
-    /* setzen */
-
-    if (PlateNeumannKernel(theMG,fl,tl,np->t,i) != NUM_OK)
-      return(1);
-
-    if ((*np->Assemble->NLAssembleDefect)(np->Assemble,fl,tl,np->t,np->b,NULL,result))
-      RETURN(1);
-    if (ddot(theMG,fl,tl,ON_SURFACE,np->t,np->b,&a0) != NUM_OK)
-      return(1);
-    if (ddot(theMG,fl,tl,ON_SURFACE,x,np->b,&a1) != NUM_OK)
-      return(1);
-    ASSERT(a0 != 0.0);
-    if (daxpy(theMG,fl,tl,ALL_VECTORS,x,-a1/a0,np->t) != NUM_OK)
-      return(1);
-  }
-  FreeVD(theMG,fl,tl,np->t);
-  FreeVD(theMG,fl,tl,np->b);
+  np->dim = 1;
 
   return(0);
 }
-
 
 static INT PPN_Construct (NP_BASE *theNP)
 {
@@ -319,117 +478,12 @@ static INT PPN_Construct (NP_BASE *theNP)
 
   np = (NP_PROJECT *) theNP;
   np->PreProcess = NULL;
-  np->Project = ProjectPlateNeumann;
+  np->Project = Projection;
+  np->ProjectionVector = ProjectionVectorPL ;
   np->PostProcess = NULL;
 
-  return(0);
-}
-
-
-/* Projection for Plate-Equation */
-
-static INT ElasticityNeumannKernel (MULTIGRID *mg, INT fl, INT tl,
-                                    VECDATA_DESC *t, INT m)
-{
-  VECTOR *v;
-  DOUBLE_VECTOR pos;
-  INT lev,vtype,ncomp,comp;
-
-  for (lev=fl; lev<=tl; lev++)
-    for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); v!=NULL; v=SUCCVC(v)) {
-      vtype = VTYPE(v);
-      ncomp = VD_NCMPS_IN_TYPE(t,vtype);
-      if (ncomp == 0) continue;
-      ASSERT(ncomp == DIM);
-      VectorPosition(v,pos);
-      comp = VD_CMP_OF_TYPE(t,vtype,0);
-
-      if (m == 0)
-      {
-        VVALUE(v,comp) = 1 ;
-        VVALUE(v,comp+1) = 0 ;
-        VVALUE(v,comp+2) = 0 ;
-      }
-      if (m == 1)
-      {
-        VVALUE(v,comp) = 0 ;
-        VVALUE(v,comp+1) = 1 ;
-        VVALUE(v,comp+2) = 0 ;
-      }
-      if (m == 2)
-      {
-        VVALUE(v,comp) = 0 ;
-        VVALUE(v,comp+1) = 0 ;
-        VVALUE(v,comp+2) = 1 ;
-      }
-      if (m == 3)
-      {
-        VVALUE(v,comp) = - pos[1] ;
-        VVALUE(v,comp+1) = pos[0] ;
-        VVALUE(v,comp+2) = 0 ;
-      }
-      if (m == 4)
-      {
-        VVALUE(v,comp) = pos[2] ;
-        VVALUE(v,comp+1) = 0 ;
-        VVALUE(v,comp+2) = - pos[0] ;
-      }
-      if (m == 3)
-      {
-        VVALUE(v,comp) = 0 ;
-        VVALUE(v,comp+1) = - pos[2] ;
-        VVALUE(v,comp+2) = pos[1] ;
-      }
-
-    }
-  return(0);
-}
-
-
-static INT ProjectElasticityNeumann  (NP_PROJECT *theNP,
-                                      INT fl, INT tl,
-                                      VECDATA_DESC *x, INT *result)
-{
-  /*    NP_NL_ASSEMBLE *Assemble ; */
-  MULTIGRID *theMG ;
-  DOUBLE a0,a1;
-  INT i;
-  NP_PRJ *np ;
-
-  np = (NP_PRJ *) theNP ;
-  theMG = theNP->base.mg;
-
-
-  /* assign x, if extern evaluable */
-
-  if ((theNP->x) != NULL)
-    x = theNP->x ;
-
-  np->t = NULL;
-  np->b = NULL;
-
-  if (AllocVDFromVD(theMG,fl,tl,x,&np->t))
-    NP_RETURN(1,result[0]);
-  if (AllocVDFromVD(theMG,fl,tl,x,&np->b))
-    NP_RETURN(1,result[0]);
-  for (i=0; i<6; i++) {
-    /* setzen */
-
-    if (ElasticityNeumannKernel(theMG,fl,tl,np->t,i) != NUM_OK)
-      return(1);
-
-    if ((*np->Assemble->NLAssembleDefect)(np->Assemble,fl,tl,np->t,np->b,NULL,result))
-      RETURN(1);
-    if (ddot(theMG,fl,tl,ON_SURFACE,np->t,np->b,&a0) != NUM_OK)
-      return(1);
-    if (ddot(theMG,fl,tl,ON_SURFACE,x,np->b,&a1) != NUM_OK)
-      return(1);
-    ASSERT(a0 != 0.0);
-    if (daxpy(theMG,fl,tl,ALL_VECTORS,x,-a1/a0,np->t) != NUM_OK)
-      return(1);
-  }
-  FreeVD(theMG,fl,tl,np->t);
-  FreeVD(theMG,fl,tl,np->b);
+  /*	np->dim = 6; */
+  np->dim = 3;
 
   return(0);
 }
@@ -444,8 +498,11 @@ static INT PEN_Construct (NP_BASE *theNP)
 
   np = (NP_PROJECT *) theNP;
   np->PreProcess = NULL;
-  np->Project = ProjectElasticityNeumann;
+  np->Project = Projection ;
+  np->ProjectionVector = ProjectionVectorEL;
   np->PostProcess = NULL;
+
+  np->dim = 6;
 
   return(0);
 }

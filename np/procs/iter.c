@@ -52,6 +52,7 @@
 #include "transfer.h"
 #include "ls.h"
 #include "iter.h"
+#include "project.h"
 #include "disctools.h"
 #include "block.h"
 
@@ -375,9 +376,30 @@ typedef struct
   FLOAT *FMat;                                          /* float-matrix							*/
   DOUBLE *DMat;                                         /* double-matrix						*/
   INT mem;                                                      /* memory used temporary (bytes)		*/
+
   DOUBLE *Vec;                                          /* vector								*/
 
 } NP_EX;
+
+typedef struct
+{
+  NP_SMOOTHER smoother;
+
+  NP_PROJECT *project;
+
+  VECDATA_DESC *p;
+  VECDATA_DESC *t;
+
+  INT mem;                                                          /* memory used temporary (bytes)    */
+  INT nv;                                                           /* nb. vectors					    */
+  INT bw;                                                           /* bandwidth					    */
+  INT fmode;                                                    /* apply float-matrix			        */
+  INT optimizeBand;                                         /* 1 for optimization of bandwidth	*/
+  FLOAT *FMat;                                              /* float-matrix						*/
+  DOUBLE *DMat;                                             /* double-matrix					*/
+  DOUBLE *Vec;                                              /* vector						    */
+
+} NP_EXPRJ;
 
 /****************************************************************************/
 /*																			*/
@@ -5344,6 +5366,449 @@ static INT EXConstruct (NP_BASE *theNP)
 
 /****************************************************************************/
 /*D
+   exact-solver - numproc for exact solver for Neumann-Boundary
+
+   DESCRIPTION:
+   This numproc executes exact solver for a Neumann_boundary-Probelm,
+   which extend the global stiffness-matrix with the projection
+   to the solution-space.
+
+   A_neu = (A_stiff , A_project)^t ; b_neu = (b_stiff , 0_project)
+
+   x_exact = (A_neu^t * A_neu)^(-1) * (A_neu^t * b_neu)
+
+   .vb
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>]
+       $P projection ;
+   .ve
+
+   .  $c~<cor> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $P projection - connect the projection
+
+   'npexecute <name> [$i] [$s] [$p];'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+   D*/
+/****************************************************************************/
+
+static INT EXPRJInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_EXPRJ *np = (NP_EXPRJ *) theNP;
+
+  np->project = (NP_PROJECT *)
+                ReadArgvNumProc(theNP->mg,"P",PROJECT_CLASS_NAME,argc,argv);
+
+  np->p = ReadArgvVecDesc(theNP->mg,"p",argc,argv);
+  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+
+  return (SmootherInit(theNP,argc,argv));
+}
+
+static INT EXPRJDisplay (NP_BASE *theNP)
+{
+  NP_EXPRJ *np = (NP_EXPRJ *) theNP;
+
+  if (np->p != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"p",ENVITEM_NAME(np->p));
+
+  if (np->t != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+
+  if (np->project != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"Project",ENVITEM_NAME(np->project));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"Project","---");
+
+  return (0);
+}
+
+static INT EXPRJSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  NP_EXPRJ *np = (NP_EXPRJ *) theNP;
+  MULTIGRID *theMG = NP_MG(theNP);
+  GRID *theGrid = NP_GRID(theNP,level);
+  HEAP *theHeap = MGHEAP(NP_MG(theNP));
+  DOUBLE *a, *r, *a_neu, *r_neu, *inv_a_neu, *x_neu;
+  DOUBLE *ev[6];
+  VECTOR *v;
+  MATRIX *m;
+  SHORT *Mcomp;
+  INT rtype, ctype, rcomp, ccomp, i, j, k, n, vtype, comp, ncomp;
+  INT n0,n1,d;
+  DOUBLE a0, a1 ;
+  INT l,MarkKey;
+  /* store passed XXXDATA_DESCs */
+
+  NPIT_A(theNP) = A;
+  NPIT_c(theNP) = x;
+  NPIT_b(theNP) = b;
+
+  MarkTmpMem(theHeap,&MarkKey);
+  if (AllocVDFromVD(theMG,level,level,x,&np->p))
+    NP_RETURN(1,result[0]);
+  d = np->project->dim;
+
+  /* Counting the Rows */
+
+  n = 0;
+  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+    VINDEX(v) = n;
+    rtype = VTYPE(v);
+    rcomp = MD_ROWS_IN_RT_CT(A,rtype,rtype);
+    n += rcomp;
+  }
+  n0 = n ;
+  n1 = n + d;
+
+  a = (DOUBLE *)GetTmpMem(theHeap,sizeof(DOUBLE) * n0 * n1,MarkKey);
+  for (i=0; i<n0*n1; i++)
+    a[i] = 0.0;
+
+  r = (DOUBLE *)GetTmpMem(theHeap,sizeof(DOUBLE) * n1,MarkKey);
+  for (i=0; i<n1; i++)
+    r[i] = 0.0;
+
+  for (j=0; j<d; j++) {
+    ev[j] = (DOUBLE *)GetTmpMem(theHeap,sizeof(DOUBLE) * n0,MarkKey);
+    for (i=0; i<n0; i++)
+      ev[j][i] = 0.0;
+
+    if ((*np->project->ProjectionVector)
+          (np->project,level,level,j,np->p,result))
+      NP_RETURN(1,result[0]);
+    n = 0;
+    for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+      vtype = VTYPE(v);
+      ncomp = VD_NCMPS_IN_TYPE(np->p,vtype);
+      if (ncomp == 0) continue;
+      comp =  VD_CMP_OF_TYPE(np->p,vtype,0);
+      for (l=0; l<ncomp; l++) {
+        ev[j][n] = VVALUE(v,comp+l);
+        n++;
+      }
+    }
+
+    if (j!=0) {
+      for (k=0 ; k<j ; k++) {
+        a0=0.0;
+        a1=0.0;
+        for (l=0 ; l<n0 ; l++) {
+          a1 += ev[k][l] * ev[j][l] ;
+          a0 += ev[k][l] * ev[k][l] ;
+        }
+        for (l=0 ; l<n0 ; l++) {
+          ev[j][l] = ev[j][l] - (a1 / a0) * ev[k][l] ;
+        }
+      }
+    }
+  }
+
+  IFDEBUG(np,4)
+  {
+    for (j=0; j<d; j++) {
+      UserWriteF("%d-ten Eigenvektor : \n",j);
+      for (l = 0 ; l < n0 ; l++)
+        UserWriteF("%f \n",ev[j][l]);
+    }
+  }
+  ENDDEBUG
+
+    n = 0;
+  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+    vtype = VTYPE(v);
+    ncomp = VD_NCMPS_IN_TYPE(b,vtype);
+    if (ncomp == 0) continue;
+    comp =  VD_CMP_OF_TYPE(b,vtype,0);
+    for (j=0; j<ncomp; j++) {
+      r[n] = VVALUE(v,comp+j);
+      n++;
+    }
+  }
+
+  for (i=0 ; i<d ; i++) {
+    a0=0.0;
+    a1=0.0;
+    for (k=0 ; k<n0 ; k++) {
+      a1 += ev[i][k] * r[k] ;
+      a0 += ev[i][k] * ev[i][k] ;
+    }
+    for (k=0 ; k<n0 ; k++) {
+      r[k] = r[k] - (a1 / a0 ) * ev[i][k] ;
+    }
+  }
+
+  n = 0;
+  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+    vtype = VTYPE(v);
+    ncomp = VD_NCMPS_IN_TYPE(b,vtype);
+    if (ncomp == 0) continue;
+    comp =  VD_CMP_OF_TYPE(b,vtype,0);
+    for (j=0; j<ncomp; j++) {
+      VVALUE(v,comp+j) = r[n] ;
+      n++;
+    }
+  }
+
+  IFDEBUG(np,1)
+  {
+    DOUBLE norm,norm2;
+
+
+    IFDEBUG(np,4)
+    UserWrite("global matrix at the beginning of EXProjSmoother \n");
+    PrintMatrix(theGrid,A,3,3);
+    UserWrite("right hand side at the beginning of EXProjSmoother \n");
+    PrintVector(theGrid,b,3,3);
+    UserWrite("global solution at the beginning of EXProjSmoother \n");
+    PrintVector(theGrid,x,3,3);
+    ENDDEBUG
+
+    /* calculate the test-vector p with the stiffness-matrix A :
+       t = A * p  ; norm = (t,t) = t * t   */
+
+    if (AllocVDFromVD(theMG,level,level,x,&np->t))
+      NP_RETURN(1,result[0]);
+
+    for (i=0; i<d; i++) {
+      if ((*np->project->ProjectionVector)
+            (np->project,level,level,i,np->p,result))
+        NP_RETURN(1,result[0]);
+
+      IFDEBUG(np,2)
+      UserWriteF("Projektionsvektor %d : \n",i);
+      PrintVector(theGrid,np->p,3,3);
+      ENDDEBUG
+
+      if (dmatmul(theMG,level,level,ALL_VECTORS,np->t,A,np->p)!= NUM_OK)
+        NP_RETURN(1,result[0]);
+      if (ddot(theMG,level,level,ON_SURFACE,np->t,np->t,&norm) != NUM_OK)
+        NP_RETURN(1,result[0]);
+      UserWriteF("Norm zu A vom %d-ten Eigenvektor : %f \n",i,(float)norm);
+      if (ddot(theMG,level,level,ON_SURFACE,np->p,b,&norm2) != NUM_OK)
+        NP_RETURN(1,result[0]);
+      UserWriteF("Norm zu b vom %d-ten Eigenvektor : %f \n",i,(float)norm2);
+    }
+    FreeVD(theMG,level,level,np->t);
+  }
+  ENDDEBUG
+
+    n = 0;
+  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+    vtype = VTYPE(v);
+    ncomp = VD_NCMPS_IN_TYPE(b,vtype);
+    if (ncomp == 0) continue;
+    comp =  VD_CMP_OF_TYPE(b,vtype,0);
+    for (j=0; j<ncomp; j++) {
+      r[n] = VVALUE(v,comp+j);
+      n++;
+    }
+  }
+  for (i=0; i<d; i++) {
+    if ((*np->project->ProjectionVector)
+          (np->project,level,level,i,np->p,result))
+      NP_RETURN(1,result[0]);
+    n = 0;
+    for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+      vtype = VTYPE(v);
+      ncomp = VD_NCMPS_IN_TYPE(np->p,vtype);
+      if (ncomp == 0) continue;
+      comp =  VD_CMP_OF_TYPE(np->p,vtype,0);
+      for (j=0; j<ncomp; j++) {
+        a[(n0+i)*n0+n] = VVALUE(v,comp+j);
+        n++;
+      }
+    }
+  }
+
+  /* stiffness matrix of the Neumannproblem */
+
+  n = 0;
+  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+    rtype = VTYPE(v);
+    rcomp = MD_ROWS_IN_RT_CT(A,rtype,rtype);
+    for (i=0; i<rcomp; i++) {
+      for (m=VSTART(v); m!=NULL; m=MNEXT(m)) {
+        ctype = MDESTTYPE(m);
+        ccomp = MD_COLS_IN_RT_CT(A,rtype,ctype);
+        if (ccomp == 0) continue;
+        Mcomp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
+        k = VINDEX(MDEST(m));
+        for (j=0; j<ccomp; j++) {
+          a[n0*n+k+j] = MVALUE(m,Mcomp[i*ccomp+j]);
+        }
+      }
+      n++;
+    }
+  }
+
+  /* Printing of the modified matrix and the modified right hand side */
+
+  IFDEBUG(np,4)
+  UserWriteF("A \n");
+  for (i=0; i<n0+d; i++)
+  {
+    for (j=0; j<n0; j++)
+      UserWriteF("%8.3lf",a[i*n0+j]);
+    UserWriteF("\n");
+  }
+  UserWriteF("\n");
+
+  UserWriteF("b \n");
+  for (i=0; i<n0+d; i++)
+  {
+    UserWriteF("%8.3lf",r[i]);
+  }
+  UserWriteF("\n");
+  ENDDEBUG
+
+    a_neu = (DOUBLE *)GetTmpMem(theHeap,sizeof(DOUBLE) * n0 * n0,MarkKey);
+
+  for (i=0; i<n0; i++)
+    for (j=0; j<n0; j++)
+      a_neu[i*n0+j] = 0.0 ;
+
+  r_neu = (DOUBLE *)GetTmpMem(theHeap,sizeof(DOUBLE) * n0,MarkKey);
+
+  for (i=0; i<n0; i++)
+    r_neu[i] = 0.0 ;
+
+  /* Calculating of the new stiffness matrix */
+
+  for (i=0; i<n0; i++)
+    for (j=0; j<n0; j++)
+      for (k=0; k<n1; k++)
+        a_neu[i*n0+j] += a[j+n0*k] * a[i+n0*k] ;
+
+
+  /* Calculating of the new right hand side */
+
+  for (i=0; i<n0; i++)
+    for (j=0; j<n1; j++)
+      r_neu[i] +=  a[i+n0*j] * r[j] ;
+
+
+
+  /* Printing of the new stiffness matrix and new right hand side */
+
+  IFDEBUG(np,4)
+  UserWriteF("A_neu \n");
+  for (i=0; i<n0; i++)
+  {
+    for (j=0; j<n0; j++)
+      UserWriteF("%8.3lf",a_neu[i*n0+j]);
+    UserWriteF("\n");
+  }
+  UserWriteF("\n");
+
+  UserWriteF("b_neu \n");
+  for (i=0; i<n0; i++)
+  {
+    UserWriteF("%8.3lf",r_neu[i]);
+  }
+  UserWriteF("\n");
+  ENDDEBUG
+
+
+  /* Solving the equation-system :  a_neu * x = b_neu */
+
+  /* Calculating of the inverse */
+
+    inv_a_neu = (DOUBLE *)GetTmpMem(theHeap,sizeof(DOUBLE) * n0 * n0,MarkKey);
+
+  for (i=0; i<n0; i++)
+    for (j=0; j<n0; j++)
+      inv_a_neu[i*n0+j] = 0.0 ;
+
+  {
+    DOUBLE * rhs_tmp = (DOUBLE *)GetTmpMem(theHeap,sizeof(DOUBLE) * n,MarkKey);
+    INT    * ipv_tmp = (INT *)   GetTmpMem(theHeap,sizeof(DOUBLE) * n,MarkKey);
+    InvertFullMatrix_gen(n0, a_neu, inv_a_neu,rhs_tmp,ipv_tmp);
+  }
+
+  IFDEBUG(np,4)
+  UserWriteF("inv_a_neu \n");   /* Printing of the inverse matrix */
+  for (i=0; i<n0; i++)
+  {
+    for (j=0; j<n0; j++)
+      UserWriteF("%8.3lf",inv_a_neu[i*n0+j]);
+    UserWriteF("\n");
+  }
+  UserWriteF("\n");
+  ENDDEBUG
+
+    x_neu = (DOUBLE *)GetTmpMem(theHeap,sizeof(DOUBLE) * n0,MarkKey);
+
+  for (i=0; i<n0; i++)
+    x_neu[i] = 0.0 ;
+
+  /* Solving : x = inv_a_neu * r_neu */
+
+  for (i=0; i<n0; i++)
+    for (j=0; j<n0; j++)
+      x_neu[i] +=  inv_a_neu[i*n0+j] * r_neu[j] ;
+
+
+  IFDEBUG(np,4)
+  UserWriteF("x_neu \n");
+  for (i=0; i<n0; i++)
+    UserWriteF("%8.3lf",x_neu[i]);
+  UserWriteF("\n");
+
+  ENDDEBUG
+
+  /* Saving of the solution x_neu into the VECDATA_DESC-Structur */
+
+    n = 0;
+  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+    vtype = VTYPE(v);
+    ncomp = VD_NCMPS_IN_TYPE(x,vtype);
+    if (ncomp == 0) continue;
+    comp =  VD_CMP_OF_TYPE(x,vtype,0);
+    for (j=0; j<ncomp; j++) {
+      VVALUE(v,comp+j) = x_neu[n] ;
+      n++;
+    }
+  }
+
+  ReleaseTmpMem(theHeap,MarkKey);
+  FreeVD(theMG,level,level,np->p);
+
+  /* damp */
+  if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,x,np->smoother.damp)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  /* update defect */
+    #ifdef ModelP
+  if (l_vector_consistent(theGrid,x) != NUM_OK) NP_RETURN(1,result[0]);
+    #endif
+  if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,x)!= NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  return (0);
+}
+
+static INT EXPRJConstruct (NP_BASE *theNP)
+{
+  NP_ITER *np;
+
+  theNP->Init     = EXPRJInit;
+  theNP->Display  = EXPRJDisplay;
+  theNP->Execute  = NPIterExecute;
+
+  np = (NP_ITER *) theNP;
+  np->PreProcess  = NULL;
+  np->Iter                = EXPRJSmoother;
+  np->PostProcess = NULL;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
    calibrate - numproc for additive linear multigrid cycle
 
    DESCRIPTION:
@@ -5594,11 +6059,13 @@ INT InitIter ()
   strcpy(LU_reg[REG_NEVER],       "never");
   strcpy(LU_reg[REG_IF_SING],     "ifsing");
 
-  if (CreateClass(ITER_CLASS_NAME ".jac",sizeof(NP_SMOOTHER),JacobiConstruct))
+  if (CreateClass(ITER_CLASS_NAME ".jac",sizeof(NP_SMOOTHER),
+                  JacobiConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".gs",sizeof(NP_SMOOTHER),GSConstruct))
     REP_ERR_RETURN (__LINE__);
-  if (CreateClass(ITER_CLASS_NAME ".bcgss",sizeof(NP_BCGSSMOOTHER),BCGSSConstruct))
+  if (CreateClass(ITER_CLASS_NAME ".bcgss",sizeof(NP_BCGSSMOOTHER),
+                  BCGSSConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".sgs",sizeof(NP_SGS),SGSConstruct))
     REP_ERR_RETURN (__LINE__);
@@ -5606,7 +6073,8 @@ INT InitIter ()
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ts",sizeof(NP_TS),TSConstruct))
     REP_ERR_RETURN (__LINE__);
-  if (CreateClass(ITER_CLASS_NAME ".sor",sizeof(NP_SMOOTHER),SORConstruct))
+  if (CreateClass(ITER_CLASS_NAME ".sor",sizeof(NP_SMOOTHER),
+                  SORConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".sbgs",sizeof(NP_SBGS),SBGSConstruct))
     REP_ERR_RETURN (__LINE__);
@@ -5616,7 +6084,8 @@ INT InitIter ()
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".filu",sizeof(NP_ILU),FILUConstruct))
     REP_ERR_RETURN (__LINE__);
-  if (CreateClass(ITER_CLASS_NAME ".thilu",sizeof(NP_THILU),THILUConstruct))
+  if (CreateClass(ITER_CLASS_NAME ".thilu",sizeof(NP_THILU),
+                  THILUConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".spilu",sizeof(NP_ILU),SPILUConstruct))
     REP_ERR_RETURN (__LINE__);
@@ -5628,9 +6097,13 @@ INT InitIter ()
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".lmgc",sizeof(NP_LMGC),LmgcConstruct))
     REP_ERR_RETURN (__LINE__);
-  if (CreateClass(ITER_CLASS_NAME ".addmgc",sizeof(NP_LMGC),AddmgcConstruct))
+  if (CreateClass(ITER_CLASS_NAME ".addmgc",sizeof(NP_LMGC),
+                  AddmgcConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ex",sizeof(NP_EX),EXConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".exprj",sizeof(NP_EXPRJ),
+                  EXPRJConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".calibrate",sizeof(NP_CALIBRATE),
                   CalibrateConstruct))

@@ -63,19 +63,31 @@ struct np_project {
     (struct np_project *,                    /* pointer to (derived) object     */
     INT *);                                      /* result                          */
   INT (*Project)
-    (struct np_project *,                       /* pointer to (derived) object     */
+    (struct np_project *,                    /* pointer to (derived) object     */
     INT,                                         /* from level                      */
     INT,                                         /* from level                      */
     VECDATA_DESC *,                              /* vector                          */
     INT *);                                      /* result                          */
-  INT (*PostProcess)
-    (struct np_project *,                  /* pointer to (derived) object     */
+  INT (*ProjectionVector)
+    (struct np_project *,                    /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* from level                      */
+    INT,                                         /* index                           */
+    VECDATA_DESC *,                              /* vector                          */
     INT *);                                      /* result                          */
+  INT (*PostProcess)
+    (struct np_project *,                    /* pointer to (derived) object     */
+    INT *);                                      /* result                          */
+
+  INT dim;                                   /* dimension reduction             */
+                                             /* (linear case)                   */
+
 };
 typedef struct np_project NP_PROJECT;
 
 typedef INT (*PreProcessProject)(NP_PROJECT *, INT *);
 typedef INT (*Project)(NP_PROJECT *, INT, INT, VECDATA_DESC *,INT *);
+typedef INT (*ProjectionVector)(NP_PROJECT *, INT, INT, INT, VECDATA_DESC *,INT *);
 typedef INT (*PostProcessProject)(NP_PROJECT *, INT *);
 
 /****************************************************************************/
