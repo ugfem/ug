@@ -6249,7 +6249,7 @@ static INT CheckCommand (INT argc, char **argv)
     switch (argv[i][0])
     {
     case 'a' :
-      checkgeom = checkalgebra = checklists = TRUE;
+      checkgeom = checkalgebra = checklists = checknp = TRUE;
                                 #ifdef ModelP
       checkif = TRUE;
                                 #endif
