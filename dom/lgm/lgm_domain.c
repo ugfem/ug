@@ -381,7 +381,7 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
     return(NULL);
   }
 
-  return((BNDP *)BNDP_InsertBndP(Heap,aBVP,global));
+  return(BNDP_InsertBndP(Heap,aBVP,global));
         #endif
 
   return (NULL);
@@ -412,6 +412,7 @@ INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
 #ifdef __THREEDIM__
 INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
 {
+#ifdef NO_PROJECT
   INT i,j;
   LGM_BNDP *theBndP;
 
@@ -421,6 +422,9 @@ INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
       theBndP->Surf[i].global[j]=global[j];
 
   return (0);
+#else
+  return (1);
+#endif
 }
 #endif
 
