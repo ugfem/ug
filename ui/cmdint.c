@@ -2748,11 +2748,13 @@ void SetDoneFlag (void)
 INT InitCommandInterpreter (void)
 {
   char size[256];
+  int ival;
 
   /* get cmdintbufsize from defaults file */
   if (GetDefaultValue(DEFAULTSFILENAME,"cmdintbufsize",size)==0)
   {
-    sscanf(size," %d ",&cmdintbufsize);
+    sscanf(size," %d ",&ival);
+    cmdintbufsize = ival;
   }
 
   /* alloc command buffer */
