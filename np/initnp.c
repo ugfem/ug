@@ -45,6 +45,7 @@
 #include "newton.h"
 #include "ts.h"
 #include "bdf.h"
+#include "ew.h"
 
 #include "initnp.h"
 #include "numproc.h"
