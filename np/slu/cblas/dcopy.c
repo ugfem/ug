@@ -18,8 +18,8 @@
 
 #include "f2c.h"
 
-/* Subroutine */ int dcopy_(integer *n, doublereal *dx, integer *incx,
-                            doublereal *dy, integer *incy)
+/* Subroutine */ int dcopy_slu(integer *n, doublereal *dx, integer *incx,
+                               doublereal *dy, integer *incy)
 {
 
 
@@ -102,4 +102,4 @@ L40:
     /* L50: */
   }
   return 0;
-} /* dcopy_ */
+} /* dcopy_slu */

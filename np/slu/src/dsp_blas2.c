@@ -163,11 +163,11 @@ sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
           SGEMV(ftcs2, &nrow, &nsupc, &alpha, &Lval[luptr+nsupc],
                 &nsupr, &x[fsupc], &incx, &beta, &work[0], &incy);
 #else
-          dtrsv_("L", "N", "U", &nsupc, &Lval[luptr], &nsupr,
-                 &x[fsupc], &incx);
+          dtrsv_slu("L", "N", "U", &nsupc, &Lval[luptr], &nsupr,
+                    &x[fsupc], &incx);
 
-          dgemv_("N", &nrow, &nsupc, &alpha, &Lval[luptr+nsupc],
-                 &nsupr, &x[fsupc], &incx, &beta, &work[0], &incy);
+          dgemv_slu("N", &nrow, &nsupc, &alpha, &Lval[luptr+nsupc],
+                    &nsupr, &x[fsupc], &incx, &beta, &work[0], &incy);
 #endif
 #else
           dlsolve ( nsupr, nsupc, &Lval[luptr], &x[fsupc]);
@@ -211,8 +211,8 @@ sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
           STRSV(ftcs3, ftcs2, ftcs2, &nsupc, &Lval[luptr], &nsupr,
                 &x[fsupc], &incx);
 #else
-          dtrsv_("U", "N", "N", &nsupc, &Lval[luptr], &nsupr,
-                 &x[fsupc], &incx);
+          dtrsv_slu("U", "N", "N", &nsupc, &Lval[luptr], &nsupr,
+                    &x[fsupc], &incx);
 #endif
 #else
           dusolve ( nsupr, nsupc, &Lval[luptr], &x[fsupc] );
@@ -264,8 +264,8 @@ sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
           STRSV(ftcs1, ftcs2, ftcs3, &nsupc, &Lval[luptr], &nsupr,
                 &x[fsupc], &incx);
 #else
-          dtrsv_("L", "T", "U", &nsupc, &Lval[luptr], &nsupr,
-                 &x[fsupc], &incx);
+          dtrsv_slu("L", "T", "U", &nsupc, &Lval[luptr], &nsupr,
+                    &x[fsupc], &incx);
 #endif
         }
       }
@@ -299,8 +299,8 @@ sp_dtrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
           STRSV( ftcs1, ftcs2, ftcs3, &nsupc, &Lval[luptr], &nsupr,
                  &x[fsupc], &incx);
 #else
-          dtrsv_("U", "T", "N", &nsupc, &Lval[luptr], &nsupr,
-                 &x[fsupc], &incx);
+          dtrsv_slu("U", "T", "N", &nsupc, &Lval[luptr], &nsupr,
+                    &x[fsupc], &incx);
 #endif
         }
       }       /* for k ... */

@@ -106,10 +106,10 @@ dsnode_bmod (
     SGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr,
            &lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #else
-    dtrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr,
-            &lusup[ufirst], &incx );
-    dgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr,
-            &lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
+    dtrsv_slu( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr,
+               &lusup[ufirst], &incx );
+    dgemv_slu( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr,
+               &lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #endif
 #else
     dlsolve ( nsupr, nsupc, &lusup[luptr], &lusup[ufirst] );

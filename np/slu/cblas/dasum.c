@@ -18,7 +18,7 @@
 
 #include "f2c.h"
 
-doublereal dasum_(integer *n, doublereal *dx, integer *incx)
+doublereal dasum_slu(integer *n, doublereal *dx, integer *incx)
 {
 
 
@@ -96,4 +96,4 @@ L40:
 L60:
   ret_val = dtemp;
   return ret_val;
-} /* dasum_ */
+} /* dasum_slu */

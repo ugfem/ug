@@ -163,8 +163,8 @@ dgsrfs(char *trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
   extern int SCOPY(int *, double *, int *, double *, int *);
   extern int SSAXPY(int *, double *, double *, int *, double *, int *);
 #else
-  extern int dcopy_(int *, double *, int *, double *, int *);
-  extern int daxpy_(int *, double *, double *, int *, double *, int *);
+  extern int dcopy_slu(int *, double *, int *, double *, int *);
+  extern int daxpy_slu(int *, double *, double *, int *, double *, int *);
 #endif
 
   Astore = A->Store;
@@ -272,7 +272,7 @@ dgsrfs(char *trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 #ifdef _CRAY
       SCOPY(&A->nrow, Bptr, &ione, work, &ione);
 #else
-      dcopy_(&A->nrow, Bptr, &ione, work, &ione);
+      dcopy_slu(&A->nrow, Bptr, &ione, work, &ione);
 #endif
       sp_dgemv(trans, ndone, A, Xptr, ione, done, work, ione);
 
@@ -326,8 +326,8 @@ dgsrfs(char *trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
         SAXPY(&A->nrow, &done, work, &ione,
               &Xmat[j*ldx], &ione);
 #else
-        daxpy_(&A->nrow, &done, work, &ione,
-               &Xmat[j*ldx], &ione);
+        daxpy_slu(&A->nrow, &done, work, &ione,
+                  &Xmat[j*ldx], &ione);
 #endif
         lstres = berr[j];
         ++count;

@@ -18,7 +18,7 @@
 
 #include "f2c.h"
 
-integer idamax_(integer *n, doublereal *dx, integer *incx)
+integer idamax_slu(integer *n, doublereal *dx, integer *incx)
 {
 
 
@@ -88,4 +88,4 @@ L30:
     ;
   }
   return ret_val;
-} /* idamax_ */
+} /* idamax_slu */

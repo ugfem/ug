@@ -18,7 +18,7 @@
 
 #include "f2c.h"
 
-doublereal dznrm2_(integer *n, doublecomplex *x, integer *incx)
+doublereal dznrm2_slu(integer *n, doublecomplex *x, integer *incx)
 {
 
 
@@ -104,4 +104,4 @@ doublereal dznrm2_(integer *n, doublecomplex *x, integer *incx)
 
   /*     End of DZNRM2. */
 
-} /* dznrm2_ */
+} /* dznrm2_slu */

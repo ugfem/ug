@@ -18,9 +18,9 @@
 
 #include "f2c.h"
 
-/* Subroutine */ int dger_(integer *m, integer *n, doublereal *alpha,
-                           doublereal *x, integer *incx, doublereal *y, integer *incy,
-                           doublereal *a, integer *lda)
+/* Subroutine */ int dger_slu(integer *m, integer *n, doublereal *alpha,
+                              doublereal *x, integer *incx, doublereal *y, integer *incy,
+                              doublereal *a, integer *lda)
 {
 
 
@@ -190,4 +190,4 @@
 
   /*     End of DGER  . */
 
-} /* dger_ */
+} /* dger_slu */

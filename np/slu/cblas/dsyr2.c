@@ -18,9 +18,9 @@
 
 #include "f2c.h"
 
-/* Subroutine */ int dsyr2_(char *uplo, integer *n, doublereal *alpha,
-                            doublereal *x, integer *incx, doublereal *y, integer *incy,
-                            doublereal *a, integer *lda)
+/* Subroutine */ int dsyr2_slu(char *uplo, integer *n, doublereal *alpha,
+                               doublereal *x, integer *incx, doublereal *y, integer *incy,
+                               doublereal *a, integer *lda)
 {
 
 
@@ -272,4 +272,4 @@
 
   /*     End of DSYR2 . */
 
-} /* dsyr2_ */
+} /* dsyr2_slu */

@@ -18,7 +18,7 @@
 
 #include "f2c.h"
 
-doublereal dnrm2_(integer *n, doublereal *x, integer *incx)
+doublereal dnrm2_slu(integer *n, doublereal *x, integer *incx)
 {
 
 
@@ -91,4 +91,4 @@ doublereal dnrm2_(integer *n, doublereal *x, integer *incx)
 
   /*     End of DNRM2. */
 
-} /* dnrm2_ */
+} /* dnrm2_slu */

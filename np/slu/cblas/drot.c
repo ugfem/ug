@@ -18,8 +18,8 @@
 
 #include "f2c.h"
 
-/* Subroutine */ int drot_(integer *n, doublereal *dx, integer *incx,
-                           doublereal *dy, integer *incy, doublereal *c, doublereal *s)
+/* Subroutine */ int drot_slu(integer *n, doublereal *dx, integer *incx,
+                              doublereal *dy, integer *incy, doublereal *c, doublereal *s)
 {
 
 
@@ -84,4 +84,4 @@ L20:
     /* L30: */
   }
   return 0;
-} /* drot_ */
+} /* drot_slu */

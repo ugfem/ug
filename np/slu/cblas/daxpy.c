@@ -18,8 +18,8 @@
 
 #include "f2c.h"
 
-/* Subroutine */ int daxpy_(integer *n, doublereal *da, doublereal *dx,
-                            integer *incx, doublereal *dy, integer *incy)
+/* Subroutine */ int daxpy_slu(integer *n, doublereal *da, doublereal *dx,
+                               integer *incx, doublereal *dy, integer *incy)
 {
 
 
@@ -102,4 +102,4 @@ L40:
     /* L50: */
   }
   return 0;
-} /* daxpy_ */
+} /* daxpy_slu */

@@ -18,9 +18,9 @@
 
 #include "f2c.h"
 
-/* Subroutine */ int dsymv_(char *uplo, integer *n, doublereal *alpha,
-                            doublereal *a, integer *lda, doublereal *x, integer *incx, doublereal
-                            *beta, doublereal *y, integer *incy)
+/* Subroutine */ int dsymv_slu(char *uplo, integer *n, doublereal *alpha,
+                               doublereal *a, integer *lda, doublereal *x, integer *incx, doublereal
+                               *beta, doublereal *y, integer *incy)
 {
 
 
@@ -308,4 +308,4 @@
 
   /*     End of DSYMV . */
 
-} /* dsymv_ */
+} /* dsymv_slu */

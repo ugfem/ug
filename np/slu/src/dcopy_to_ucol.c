@@ -36,7 +36,7 @@
 #include "util.h"
 
 int
-dcopy_to_ucol(
+dcopy_sluto_ucol(
   int jcol,                       /* in */
   int nseg,                       /* in */
   int        *segrep,              /* in */

@@ -18,8 +18,8 @@
 
 #include "f2c.h"
 
-/* Subroutine */ int dscal_(integer *n, doublereal *da, doublereal *dx,
-                            integer *incx)
+/* Subroutine */ int dscal_slu(integer *n, doublereal *da, doublereal *dx,
+                               integer *incx)
 {
 
 
@@ -91,4 +91,4 @@ L40:
     /* L50: */
   }
   return 0;
-} /* dscal_ */
+} /* dscal_slu */

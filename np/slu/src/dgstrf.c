@@ -368,8 +368,8 @@ dgstrf (char *refact, SuperMatrix *A, double diag_pivot_thresh,
                                   jcol, &Glu)) != 0) return;
 
         /* Copy the U-segments to ucol[*] */
-        if ((*info = dcopy_to_ucol(jj, nseg, segrep, &repfnz[k],
-                                   perm_r, &dense[k], &Glu)) != 0)
+        if ((*info = dcopy_sluto_ucol(jj, nseg, segrep, &repfnz[k],
+                                      perm_r, &dense[k], &Glu)) != 0)
           return;
 
         if ( *info = dpivotL(jj, diag_pivot_thresh, &usepr, perm_r,

@@ -18,7 +18,7 @@
 
 #include "f2c.h"
 
-doublereal dzasum_(integer *n, doublecomplex *zx, integer *incx)
+doublereal dzasum_slu(integer *n, doublecomplex *zx, integer *incx)
 {
 
 
@@ -76,4 +76,4 @@ L20:
   }
   ret_val = stemp;
   return ret_val;
-} /* dzasum_ */
+} /* dzasum_slu */

@@ -18,8 +18,8 @@
 
 #include "f2c.h"
 
-doublereal ddot_(integer *n, doublereal *dx, integer *incx, doublereal *dy,
-                 integer *incy)
+doublereal ddot_slu(integer *n, doublereal *dx, integer *incx, doublereal *dy,
+                    integer *incy)
 {
 
 
@@ -105,4 +105,4 @@ L40:
 L60:
   ret_val = dtemp;
   return ret_val;
-} /* ddot_ */
+} /* ddot_slu */
