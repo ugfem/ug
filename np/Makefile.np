@@ -21,6 +21,12 @@ all: $(MODULES) Makefile.np
 $(UG_LIB): $(OBJECTS) 
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 
+ar: 
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
+	cd procs; make -f Makefile.procs ar; cd ..;
+	cd algebra; make -f Makefile.algebra ar; cd ..;
+	cd udm; make -f Makefile.udm ar; cd ..;
+
 PROCS:
 	cd procs; make -f Makefile.procs; cd ..;
 

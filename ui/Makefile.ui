@@ -15,6 +15,9 @@ OBJECTS = uginterface.o initui.o cmdint.o cmdline.o \
 $(UG_LIB) : $(OBJECTS) Makefile.ui
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 
+ar : 
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
+
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $<
 
