@@ -90,6 +90,8 @@ typedef struct
   INT predictorder;                                              /* 0,1 are allowed					*/
   INT nested;                                                            /* use nested iteration                        */
   INT nlinterpolate;                                             /* nonlinear interpolation			*/
+  INT Break;                                                     /* break after error estimator         */
+  INT Continue;                                              /* continue after error estimator  */
   DOUBLE tstart;                                                 /* start time                          */
   DOUBLE dtstart;                                                /* time step to begin with			*/
   DOUBLE dtmin;                                                  /* smallest time step allowed		*/
@@ -333,6 +335,10 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
     g_0   = -(dt_0+dt_p1)/dt_0;
     g_m1  = dt_p1*dt_p1/(dt_0*dt_0+dt_0*dt_p1);
 
+    if (bdf->Continue) {
+      nlinterpolate = bdf->nlinterpolate - 1;
+      goto Continue;
+    }
     /* determine level where to predict to new time step */
     if (bdf->nested) low = MIN(bdf->baselevel,level);
     else low = level;
@@ -443,6 +449,8 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
         if (bdf->error->PostProcess != NULL)
           if ((*bdf->error->PostProcess)(bdf->error,level,res))
             NP_RETURN(1,res[0]);
+        if (bdf->Break) return(0);
+Continue:
         if (eresult.refine + eresult.coarse > 0) {
           if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL) != GM_OK)
             NP_RETURN(1,res[0]);
@@ -734,6 +742,8 @@ static INT BDFExecute (NP_BASE *theNP, INT argc , char **argv)
     PrintErrorMessage('E',"BDFExecute","no solver num proc");
     return (1);
   }
+  bdf->Break = ReadArgvOption("Break",argc,argv);
+  bdf->Continue = ReadArgvOption("Continue",argc,argv);
 
   /* call preprocess function, allocates vectors ! */
   if (ReadArgvOption("pre",argc,argv)) {
