@@ -54,10 +54,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-#define ZTYP         FLOAT            /* type for z buffer                  */
-#define ZEPS         (5*FLT_EPSILON)  /* eps for ZTYP                       */
-#define FAR_AWAY     -1E30            /* a large negative number from ZTYP  */
-
 #define DM_ROWS      8                /* dither matrix rows, power of 2     */
 #define DM_COLS      8                /* dither matrix cols, power of 2     */
 #define DM_ENTRIES   (DM_ROWS*DM_COLS)
@@ -266,7 +262,7 @@ static void MergeBuffers(void *buffer1, void *buffer2)
    .  none
 
    DESCRIPTION:
-   BulletPlot plots the pixel buffer via the output devices PlotPixelBuffer
+   BulletPlot plots the pixel buffer via the output device's PlotPixelBuffer
    method. The parallel version first merges the buffers from all procs.
 
    RETURN VALUE:
@@ -299,7 +295,7 @@ void BulletPlot(void)
   if (me == master)
 #endif
   (*OutputDevice->PlotPixelBuffer)(PBuffer, data, NbPixels,
-                                   (int)XShift, (int)YShift, (int)Width, (int)Height);
+                                   XShift, YShift, Width, Height);
 }
 
 /*****************************************************************************
@@ -336,7 +332,10 @@ static void DrawLine(POINT p1, DOUBLE z1, POINT p2, DOUBLE z2, char c)
   DOUBLE m1, m2, X, Y, Z, dz, zt;
   INT x, y, dx, dy;
 
-  if (p1.x == p2.x && p1.y == p2.y) return;
+  if (p1.x == p2.x && p1.y == p2.y) {
+    DrawPoint(p1.x, p1.y, z1, c);
+    return;
+  }
 
   dx = p2.x - p1.x;
   dy = p2.y - p1.y;
@@ -383,23 +382,24 @@ static void DrawSpan(INT x1, INT x2, INT y, DOUBLE z, DOUBLE dz, DOUBLE i, char 
 {
   char *pp;
   ZTYP *pz;
-  INT *pd, x;
+  INT *pd, x, threshold;
 
   if (y < 0 || y >= Height) return;
 
   pp = P_BUFFER(y)+x1;
   pz = Z_BUFFER(y)+x1;
   pd = DitherMatrix[y & (DM_ROWS-1)];
+  threshold = (INT)(0.5+DM_ENTRIES*i);
 
   if (x1 <= x2) {
     for (x = x1; x <= x2; x++) {
       if (x >= 0 && x < Width) {
 #ifdef __THREEDIM__
         if (z >= *pz) {
-          if (pd[x & (DM_COLS-1)] >= (INT)(DM_ENTRIES*i+0.5))
-            *pp = (char)OutputDevice->black;
-          else
+          if (pd[x & (DM_COLS-1)] < threshold)
             *pp = c;
+          else
+            *pp = (char)OutputDevice->black;;
           *pz = z;
         }
 #else
@@ -418,10 +418,10 @@ static void DrawSpan(INT x1, INT x2, INT y, DOUBLE z, DOUBLE dz, DOUBLE i, char 
       if (x >= 0 && x < Width) {
 #ifdef __THREEDIM__
         if (z >= *pz) {
-          if (pd[x & (DM_COLS-1)] >= (INT)(DM_ENTRIES*i+0.5))
-            *pp = (char)OutputDevice->black;
-          else
+          if (pd[x & (DM_COLS-1)] < threshold)
             *pp = c;
+          else
+            *pp = (char)OutputDevice->black;
           *pz = z;
         }
 #else
@@ -551,7 +551,7 @@ void BulletLine(DOUBLE *point1, DOUBLE *point2, long color)
 #else
   zz1 = zz2 = 0.0;
 #endif
-  DrawLine(pp1, zz1, pp2, zz2, (char)color);
+  DrawLine(pp1, zz1, pp2, zz2, color);
 }
 
 /****************************************************************************/
@@ -577,7 +577,7 @@ void BulletLine(DOUBLE *point1, DOUBLE *point2, long color)
 void BulletPolyLine(DOUBLE *points, INT nb, long color)
 {
   DOUBLE *p0, *p1;
-  INT i, j;
+  INT i;
 
   p0 = points;
   for (i = 0; i < nb-1; i++) {
@@ -638,6 +638,6 @@ void BulletPolygon(DOUBLE *points, INT nb, DOUBLE intensity, long color)
     z2   = 0.0;
 #endif
     points -= 2;
-    DrawTriangle(p0, z0, p1, z1, p2, z2, intensity, (char)color);
+    DrawTriangle(p0, z0, p1, z1, p2, z2, intensity, color);
   }
 }

@@ -4686,16 +4686,32 @@ static INT BulletDraw3D (DRAWINGOBJ *q)
 				DO_inc(q)
 				color = DO_2l(q); DO_inc(q);
 				V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,3);
-				(*OBS_ProjectProc)(p1,(COORD_POINT *)&a); a[3] = p1[3];
+				(*OBS_ProjectProc)(p1,(COORD_POINT *)&a); a[2] = p1[2];
 				V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,p2); DO_inc_n(q,3);
-				(*OBS_ProjectProc)(p2,(COORD_POINT *)&b); b[3] = p2[3];
+				(*OBS_ProjectProc)(p2,(COORD_POINT *)&b); b[2] = p2[2];
 				BulletLine(a,b,color);
 				break;
 			case DO_STYLED_LINE:
 				DO_inc_n(q,10);
 				break;
 			case DO_ARROW:
-				DO_inc_n(q,8);
+				DO_inc(q);
+				color = DO_2l(q); DO_inc(q);
+				V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo, p1); DO_inc_n(q,3);
+				(*OBS_ProjectProc)(p1,(COORD_POINT *)points);
+				V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo, p1); DO_inc_n(q,3);
+				(*OBS_ProjectProc)(p1,(COORD_POINT *)(points+9));
+				points[3] = ARR_ALPHA*points[9]  + (1.0-ARR_ALPHA)*points[0];
+				points[4] = ARR_ALPHA*points[10] + (1.0-ARR_ALPHA)*points[1];
+				a[0] = points[9]-points[3]; a[1] = points[10]-points[4];
+				points[6]  = points[3] + ARR_COS*a[0] - ARR_SIN*a[1];
+				points[7]  = points[4] + ARR_SIN*a[0] + ARR_COS*a[1];
+				points[12] = points[3] + ARR_COS*a[0] + ARR_SIN*a[1];
+				points[13] = points[4] - ARR_SIN*a[0] + ARR_COS*a[1];
+				points[15] = points[3]; points[16] = points[4];
+				points[2] = points[5]  = points[8]  = points[11] 
+						  = points[14] = points[17] = -FAR_AWAY;
+				BulletPolyLine(points, 6, color);
 				break;
 			case DO_DEPEND:
 				DO_inc_DEPEND(q,3);
@@ -17334,11 +17350,12 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
    OrderElements - order elements w.r.t. the viewed object
   
    SYNOPSIS:
-   static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo);
+   static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo, INT bullet);
 
    PARAMETERS:
 .  mg - pointer to multigrid 
 .  vo - the viewed object
+.  bullet - whether we use the bullet plotter
 
    DESCRIPTION:
    This function orders elements w.r.t. the viewed object.
@@ -20320,10 +20337,11 @@ static void PWorkVW_Evaluate(void)
    WOP_Init - Initialize next WOP Cycle
 
    SYNOPSIS:
-   INT WOP_Init(INT WOP_WorkMode)
+   INT WOP_Init(INT WOP_WorkMode, INT work_type, INT bullet)
 
    PARAMETERS:
 .  WOP_WorkMode - the work mode which needs to be initialized
+.  work_type    - the type of work to initialize for
 .  bullet       - whether to init for bullet plotter
 
    DESCRIPTION:
@@ -20337,7 +20355,7 @@ static void PWorkVW_Evaluate(void)
 D*/
 /****************************************************************************/
 
-static INT WOP_Init(INT WOP_WorkMode, INT bullet)
+static INT WOP_Init(INT WOP_WorkMode, INT work_type, INT bullet)
 {
 	switch (WOP_WorkMode)
 	{
@@ -20350,7 +20368,8 @@ static INT WOP_Init(INT WOP_WorkMode, INT bullet)
 					if (OrderElements_2D(WOP_MG,WOP_ViewedObj /*,bullet */))
 				#endif
 				#ifdef __THREEDIM__
-					if (OrderElements_3D(WOP_MG,WOP_ViewedObj,bullet))
+					if (work_type != FINDRANGE_WORK)
+						if (OrderElements_3D(WOP_MG,WOP_ViewedObj,bullet))
 				#endif
 				{
 					UserWrite("ording of elements failed\n");
@@ -20833,7 +20852,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 		WOP_WorkMode = WP_WORKMODE(WOP_WorkProcs);
 
 		/* initialize */
-		if (WOP_Init(WOP_WorkMode, NO)!=0) return 1;
+		if (WOP_Init(WOP_WorkMode, W_ID(theWork), NO)!=0) return 1;
 
 		/* work */
 		if (WOP_GEN_PreProcessProc!=NULL)
@@ -20978,7 +20997,7 @@ static INT BulletDrawWork(PICTURE *thePicture, WORK *theWork, DOUBLE zOffsetFact
 		WOP_WorkMode = WP_WORKMODE(WOP_WorkProcs);
 
 		/* initialize */
-		if (WOP_Init(WOP_WorkMode, YES)!=0) return 1;
+		if (WOP_Init(WOP_WorkMode, DRAW_WORK, YES)!=0) return 1;
 
 		/* work */
 		if (WOP_GEN_PreProcessProc!=NULL)
