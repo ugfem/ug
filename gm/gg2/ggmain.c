@@ -1950,7 +1950,11 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
 
   /* plot */
 
+        #ifdef ModelP
+  if (ID(theElement)==ElemID)
+        #else
   if ((ID(theElement)==ElemID) || (UserInterrupt(NULL)))
+        #endif
   {
     sprintf(buffer,"zoom current element (ID=%ld) (y/n)? ",ID(theElement));
     UserWrite(buffer);
