@@ -61,6 +61,7 @@
 #include "devices.h"
 
 #include "switch.h"
+#include "dlmgr.h"
 #include "gm.h"
 #include "ugm.h"
 #include "evm.h"

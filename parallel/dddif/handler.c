@@ -42,6 +42,7 @@
 #include "domain.h"
 #include "parallel.h"
 #include "heaps.h"
+#include "dlmgr.h"
 #include "ugm.h"
 #include "algebra.h"
 #include "general.h"

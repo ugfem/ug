@@ -57,4 +57,25 @@
 #define HDR(OTYPE)      CAT(HDR,OTYPE)
 #endif
 
+/* define header prototypes */
+#define UNLINK(OTYPE)    void CAT(GRID_UNLINK_, OTYPE ) (GRID *Grid, OTYPE *Object)
+#define LINK(OTYPE)      void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
+#define INIT(OTYPE)      void CAT3(GRID_INIT_,OTYPE,_LIST(GRID *Grid))
+
+LINK(ELEMENT);
+UNLINK(ELEMENT);
+INIT(ELEMENT);
+
+LINK(NODE);
+UNLINK(NODE);
+INIT(NODE);
+
+LINK(VERTEX);
+UNLINK(VERTEX);
+INIT(VERTEX);
+
+LINK(VECTOR);
+UNLINK(VECTOR);
+INIT(VECTOR);
+
 #endif /* __DLMGR_H__ */

@@ -58,6 +58,7 @@
 #include "evm.h"
 #include "gm.h"
 #include "misc.h"
+#include "dlmgr.h"
 #include "algebra.h"
 #include "ugm.h"
 #include "elements.h"

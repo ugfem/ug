@@ -35,7 +35,10 @@
 
 #ifdef ModelP
 
+/*
 void CAT(GRID_UNLINK_, OTYPE ) (GRID *Grid, OTYPE *Object)
+*/
+UNLINK(OTYPE)
 	{
 		INT Prio = DDD_InfoPriority( CAT(HDR(OTYPE),(Object)) );
 		INT listpart = PRIO2LISTPART( CAT(OTYPE,_LIST) ,Prio);
@@ -166,7 +169,10 @@ void CAT(GRID_UNLINK_, OTYPE ) (GRID *Grid, OTYPE *Object)
 
 #else
 
+/*
 void CAT(GRID_UNLINK_,OTYPE) (GRID *Grid, OTYPE *Object)
+*/
+UNLINK(OTYPE)
 {                                                           
 	if (PRED(Object)!=NULL)                                 
 		SUCC(PRED(Object)) = SUCC(Object);                  
@@ -185,7 +191,10 @@ void CAT(GRID_UNLINK_,OTYPE) (GRID *Grid, OTYPE *Object)
 
 #ifdef ModelP
 
+/*
 void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
+*/
+LINK(OTYPE)
 	{
 		INT listpart = PRIO2LISTPART(CAT(OTYPE,_LIST),Prio);
 		INT listpartprev = listpart;
@@ -313,7 +322,10 @@ void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
 
 #else
 
+/*
 void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
+*/
+LINK(OTYPE)
 	{
 		OTYPE *after;
 
@@ -333,7 +345,10 @@ void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
 #endif
 
 #ifdef ModelP
+/*
 void CAT3(GRID_INIT_,OTYPE,_LIST(GRID *Grid)) 
+*/
+INIT(OTYPE)
 	{
 		INT i;
 		for (i=0; i<=LASTPART_OF_LIST(OTYPE); i++){
@@ -342,7 +357,10 @@ void CAT3(GRID_INIT_,OTYPE,_LIST(GRID *Grid))
 		}
 	}
 #else
+/*
 void CAT3(GRID_INIT_,OTYPE,_LIST(GRID *Grid))
+*/
+INIT(OTYPE)
     {
 		CAT(FIRST,OTYPE(Grid)) = CAT(LAST,OTYPE(Grid)) = NULL;
 	}
