@@ -15371,7 +15371,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
 			pos+=2;
 		}
 	if (pos == 0) {
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap,MarkKey);
 		return 1;                 /* give up, if untractable cycle */
 	}
 
@@ -15424,7 +15424,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
 						}
 				}
 			}
-			Release(heap, FROM_TOP);
+			ReleaseTmpMem(heap,MarkKey);
 			return 1;                  /* give up, if untractable cycle */
 
 		resolved:
@@ -15651,10 +15651,11 @@ static INT Insert(INT *htab, INT gid)
    CollectGraphs - collect graphs describing remote sons 
 
    SYNOPSIS:
-   static INT CollectGraphs(INT level)
+   static INT CollectGraphs (GRID *theGrid, INT MarkKey);
 
    PARAMETERS:
-   levl - multigrid level
+   theGrid - pointer to grid
+   MarkKey - key for tempory memory
 
    DESCRIPTION:
    If not all sons of a father elements are on the same processor, this
@@ -15706,7 +15707,9 @@ static int GatherGraphs(DDD_OBJ obj, void *data)
 	}
 	*d1 = d - d1;
 }
-	
+
+static INT MarkParKey;
+
 static int ScatterGraphs(DDD_OBJ obj, void *data)
 {
 	ELEMENT *p;
@@ -15720,7 +15723,8 @@ static int ScatterGraphs(DDD_OBJ obj, void *data)
 
 	/* allocate & init memory, if necessary */
 	if (SH_LINK(p) == NULL)
-		if ((SH_LINK(p) = (SH_DATA *)GetTmpMem(OE_Heap, sizeof(SH_DATA), MarkKey)) == NULL) {
+		if ((SH_LINK(p) = (SH_DATA *)GetTmpMem(OE_Heap, sizeof(SH_DATA), 
+											   MarkParKey)) == NULL) {
 			OE_Error =1;
 			return 0;
 		}
@@ -15735,7 +15739,8 @@ static int ScatterGraphs(DDD_OBJ obj, void *data)
 	while (d-d1 < n) {
 		gid = *d;  d++;
 		i = Insert(HTAB(p), gid); 
-		if ((GR_LINK(p)[i] = (GR_DATA *)GetTmpMem(OE_Heap, sizeof(GR_DATA), MarkKey)) == NULL) {
+		if ((GR_LINK(p)[i] = (GR_DATA *)GetTmpMem(OE_Heap, sizeof(GR_DATA), 
+												  MarkParKey)) == NULL) {
 			OE_Error = 1;
 			return 0;
 		}
@@ -15743,7 +15748,8 @@ static int ScatterGraphs(DDD_OBJ obj, void *data)
 		CNT(p, i)      = *d;  d++;
 		NAD(p, i) = na = *d;  d++;
 		if (na > 0) {
-			if ((ADJACENT(p, i) = (INT *)GetTmpMem(OE_Heap, na*sizeof(INT), MarkKey)) == NULL) {
+			if ((ADJACENT(p, i) = (INT *)GetTmpMem(OE_Heap, na*sizeof(INT), 
+												   MarkParKey)) == NULL) {
 				OE_Error = 1;
 				return 0;
 			}
@@ -15755,9 +15761,10 @@ static int ScatterGraphs(DDD_OBJ obj, void *data)
 	}
 }
 
-static INT CollectGraphs (GRID *theGrid)
+static INT CollectGraphs (GRID *theGrid, INT MarkKey)
 {
 	OE_Error = 0;
+	MarkParKey = MarkKey;
 	DDD_IFAOneway(ElementVIF, GRID_ATTR(theGrid), 
 				  IF_BACKWARD, GLEN*sizeof(INT),
 				  GatherGraphs, ScatterGraphs);
@@ -15769,10 +15776,11 @@ static INT CollectGraphs (GRID *theGrid)
    OrderRemoteSons - order sons that are scattered over several procs
 
    SYNOPSIS:
-   static INT OrderRemoteSons(ELEMENT *p)
+   static INT OrderRemoteSons (ELEMENT *p, INT MarkKey);
 
    PARAMETERS:
    p - pointer to master father element
+   MarkKey - key for memory allocation
  
    DESCRIPTION:
    The sons of p, described by the graph attached to p, are ordered.
@@ -15784,8 +15792,7 @@ static INT CollectGraphs (GRID *theGrid)
 */
 /****************************************************************************/
 
-
-static INT OrderRemoteSons(ELEMENT *p)
+static INT OrderRemoteSons (ELEMENT *p, INT MarkKey)
 {
 	ELEMENT *sonList[MAX_SONS], *son, *nbElem, *pel[HT_LEN];
 	INT i, j, k, l, pos, lastBegin, newBegin, na, cnt, pid, wanted,
@@ -16445,7 +16452,7 @@ static INT OrderHirarchically(MULTIGRID *mg)
 			MarkTmpMem(heap,&MarkKey);
 	
 			/* collect graphs describing remote sons */
-			if (CollectGraphs(grid)) {
+			if (CollectGraphs(grid,MarkKey)) {
 				ReleaseTmpMem(heap,MarkKey);
 				return 1;
 			}
@@ -16454,7 +16461,7 @@ static INT OrderHirarchically(MULTIGRID *mg)
 			grid = GRID_ON_LEVEL(mg,i);
 			for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
 				if (SH_LINK(p) != NULL)
-				    if (OrderRemoteSons(p)) {
+				    if (OrderRemoteSons(p,MarkKey)) {
 						err = 1;
 						break;
 					}
@@ -16542,7 +16549,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	}
 	Broadcast(&err, sizeof(err));
 	if (err) {
-		Release(heap, MarkKeyMaster);
+		ReleaseTmpMem(heap, MarkKeyMaster);
 		UserWrite("OrderCoarseGrid(): out of mem 2\n");
 		return 1;
 	}
