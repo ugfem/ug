@@ -586,7 +586,7 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
       if (dset(theMG,bl,level,ALL_VECTORS,np->e[i],0.0)) NP_RETURN(1,ewresult->error_code);
       for (j=0; j<New; j++)
         if (daxpy(theMG,bl,level,ALL_VECTORS,np->e[i],E[j][i],ev[j]) != NUM_OK) NP_RETURN(1,ewresult->error_code);
-      dnrm2(theMG,bl,level,ON_SURFACE,np->e[i],&norm);
+      ddotw(theMG,bl,level,ON_SURFACE,np->e[i],np->e[i],np->weight,&norm); norm=sqrt(norm);
       dscal(theMG,bl,level,ALL_VECTORS,np->e[i],1.0/norm);
     }
 
