@@ -99,6 +99,7 @@ typedef struct
   DOUBLE vRedLimit;                          /* stop if vectReduction<vRedLimit */
   DOUBLE mRedLimit;                          /* stop if matReduction<mRedLimit  */
   INT levelLimit;                            /* stop if -level>levelLimit       */
+  INT symmetric;                             /* symmetric stiffness matrix      */
 
   INT explicitFlag;                          /* clear only by npexecute         */
   INT hold;                                  /* no clear in postprocess         */

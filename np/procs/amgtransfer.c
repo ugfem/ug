@@ -279,13 +279,6 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
       REP_ERR_RETURN(NP_NOT_ACTIVE);
     }
   }
-
-  if (np->MarkStrong==NULL)
-  {
-    PrintErrorMessage('E',"NPAMGTransferInit","no $strong... definition");
-    REP_ERR_RETURN(NP_NOT_ACTIVE);
-  }
-
   /* specification of coarsen procedure */
   if (ReadArgvChar("C",buffer,argc,argv) == 1) {
     PrintErrorMessage('E',"NPAMGTransferInit","no $C ... definition");
@@ -569,7 +562,6 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     UserWriteF(DISPLAY_NP_AMG_FORMAT,0,(int)theGrid->nVector,
                (int)theGrid->nCon,0);
   }
-  AssembleTotalDirichletBoundary(theGrid,A,x,b);
   /* coarsen until criteria are fulfilled */
   while (theMG->bottomLevel>np->levelLimit) {
     level=theMG->bottomLevel;
@@ -655,7 +647,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       if ((DOUBLE)2*newGrid->nCon/(DOUBLE)nVect > np->mRedLimit)
         break;
   };
-  for (level=-1; level>= theMG->bottomLevel; level--)
+  for (level=0; level>= theMG->bottomLevel; level--)
     if (AssembleDirichletBoundary (GRID_ON_LEVEL(theMG,level),A,x,b))
       REP_ERR_RETURN(1);
 
