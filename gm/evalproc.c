@@ -676,11 +676,8 @@ static DOUBLE NodeIndex (const ELEMENT *theElement,const COORD **CornersCoord, C
 
   phi = 0.0;
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-        #ifdef __TWODIM__
-    phi += N(CORNERS_OF_ELEM(theElement),i,LocalCoord[0],LocalCoord[1])*VINDEX(NVECTOR(CORNER(theElement,i)));
-        #else
-    phi += N(i,LocalCoord)*VINDEX(NVECTOR(CORNER(theElement,i)));
-        #endif
+    phi += GN(CORNERS_OF_ELEM(theElement),i,LocalCoord)
+           * VINDEX(NVECTOR(CORNER(theElement,i)));
   return(phi);
 }
 
