@@ -947,7 +947,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   INT i,j,n,m,maxSubDomains,ncorners,nlines,nsides,free;
 #       ifdef __THREEDIM__
   PATCH **lines;
-  INT k;
+  INT k,err;
 #       endif
 
   theBVP = (STD_BVP *)BVP_GetByName(name);
@@ -1137,6 +1137,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   lines = (PATCH **)GetTmpMem(Heap,ncorners*ncorners*sizeof(PATCH *));
   if (lines == NULL)
     return(NULL);
+  err = 0;
   for (i=0; i<ncorners; i++)
     for (j=i+1; j<ncorners; j++)
     {
@@ -1172,6 +1173,45 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
             k++;
           }
       LINE_PATCH_N(thePatch) = k;
+
+      for (n=0; n<LINE_PATCH_N(thePatch); n++)
+        PRINTDEBUG(dom,1,(" pid %d cid %d %d",
+                          LINE_PATCH_PID(thePatch,n),
+                          LINE_PATCH_CID0(thePatch,n),
+                          LINE_PATCH_CID1(thePatch,n)));
+      PRINTDEBUG(dom,1,("\n"));
+
+      IFDEBUG(dom,0)
+      if (k == 2)
+      {
+        INT o0,o1,s0,s1;
+
+        s0 = LINE_PATCH_PID(thePatch,0);
+        s1 = LINE_PATCH_PID(thePatch,1);
+        o0 = (LINE_PATCH_CID0(thePatch,0) == ((LINE_PATCH_CID1(thePatch,0)+1)%(2*DIM_OF_BND)));
+        o1 = (LINE_PATCH_CID0(thePatch,1) == ((LINE_PATCH_CID1(thePatch,1)+1)%(2*DIM_OF_BND)));
+        if (o0 != o1) {
+          if ((PARAM_PATCH_LEFT(sides[s0]) !=
+               PARAM_PATCH_LEFT(sides[s1]))
+              || ((PARAM_PATCH_RIGHT(sides[s0]) !=
+                   PARAM_PATCH_RIGHT(sides[s1])))) {
+            PRINTDEBUG(dom,0,("patch %d and patch %d:"
+                              "orientation not maches\n",s0,s1));
+            err++;
+          }
+        }
+        else {
+          if ((PARAM_PATCH_LEFT(sides[s0]) !=
+               PARAM_PATCH_RIGHT(sides[s1]))
+              || ((PARAM_PATCH_RIGHT(sides[s0]) !=
+                   PARAM_PATCH_LEFT(sides[s1])))) {
+            PRINTDEBUG(dom,0,("patch %d and patch %d:"
+                              "orientation not maches\n",s0,s1));
+            err++;
+          }
+        }
+      }
+      ENDDEBUG
       if (free==k)
         PATCH_STATE(thePatch) = PATCH_FREE;
       else if (free==0)
@@ -1182,14 +1222,9 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
       PRINTDEBUG(dom,1,("lines id %d type %d n %d\n",
                         PATCH_ID(thePatch),PATCH_TYPE(thePatch),
                         LINE_PATCH_N(thePatch)));
-      for (n=0; n<LINE_PATCH_N(thePatch); n++)
-        PRINTDEBUG(dom,1,(" pid %d cid %d %d",
-                          LINE_PATCH_PID(thePatch,n),
-                          LINE_PATCH_CID0(thePatch,n),
-                          LINE_PATCH_CID1(thePatch,n)));
-      PRINTDEBUG(dom,1,("\n"));
     }
         #endif
+  ASSERT(err == 0);
 
   m = ncorners + nlines;
   theBVP->sideoffset = m;
