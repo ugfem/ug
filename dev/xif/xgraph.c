@@ -830,7 +830,7 @@ static int get_component_shift(unsigned long mask)
  */
 /****************************************************************************/
 
-void InitXPort (OUTPUTDEVICE *thePort)
+static void InitXPort (OUTPUTDEVICE *thePort)
 {
   Colormap default_cmap;
   int i,j,Private;
@@ -1158,7 +1158,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
  */
 /****************************************************************************/
 
-int InitControls (Window win)
+int NS_PREFIX InitControls (Window win)
 {
   int i;
 
@@ -1208,7 +1208,7 @@ int InitControls (Window win)
  */
 /****************************************************************************/
 
-INT WhichTool (WINDOWID win, const INT mouse[2], INT *tool)
+INT NS_PREFIX WhichTool (WINDOWID win, const INT mouse[2], INT *tool)
 {
   GraphWindow *gwin;
   int xx,yy,w,h,i;
@@ -1242,7 +1242,7 @@ INT WhichTool (WINDOWID win, const INT mouse[2], INT *tool)
 /*																			*/
 /****************************************************************************/
 
-int DrawRegion (GraphWindow *gwin, int x, int y)
+int NS_PREFIX DrawRegion (GraphWindow *gwin, int x, int y)
 {
   int xx,yy;
 
@@ -1254,7 +1254,7 @@ int DrawRegion (GraphWindow *gwin, int x, int y)
   return(1);
 }
 
-void DrawInfoBox (WINDOWID win, const char *info)
+void NS_PREFIX DrawInfoBox (WINDOWID win, const char *info)
 {
   GraphWindow *gwin;
   XRectangle rect;
@@ -1313,7 +1313,7 @@ void DrawInfoBox (WINDOWID win, const char *info)
 /*																			*/
 /****************************************************************************/
 
-GraphWindow *WhichGW (Window win)
+GraphWindow *NS_PREFIX WhichGW (Window win)
 {
   GraphWindow *g;
 
@@ -1335,7 +1335,7 @@ GraphWindow *WhichGW (Window win)
 /*																			*/
 /****************************************************************************/
 
-void SetCurrentGW (GraphWindow *g)
+void NS_PREFIX SetCurrentGW (GraphWindow *g)
 {
   gw = g;
 }
@@ -1354,7 +1354,7 @@ void SetCurrentGW (GraphWindow *g)
 /*																			*/
 /****************************************************************************/
 
-int GraphOpen (GraphWindow *gw, char *window_name, int x, int y, int width, int height)
+static int GraphOpen (GraphWindow *gw, char *window_name, int x, int y, int width, int height)
 {
   int i;
   unsigned int border_width = DEFAULTBORDER;
@@ -1498,7 +1498,7 @@ int GraphOpen (GraphWindow *gw, char *window_name, int x, int y, int width, int 
 /*																			*/
 /****************************************************************************/
 
-WINDOWID X11_OpenOutput (const char *title, INT rename, INT x, INT y, INT width, INT height, INT *Global_LL, INT *Global_UR, INT *Local_LL, INT *Local_UR, INT *error)
+static WINDOWID X11_OpenOutput (const char *title, INT rename, INT x, INT y, INT width, INT height, INT *Global_LL, INT *Global_UR, INT *Local_LL, INT *Local_UR, INT *error)
 {
   GraphWindow *gw;
 
@@ -1557,7 +1557,7 @@ WINDOWID X11_OpenOutput (const char *title, INT rename, INT x, INT y, INT width,
 /*																			*/
 /****************************************************************************/
 
-INT X11_CloseOutput (WINDOWID win)
+static INT X11_CloseOutput (WINDOWID win)
 {
   GraphWindow *old,*g;
 
@@ -1598,7 +1598,7 @@ INT X11_CloseOutput (WINDOWID win)
 /*																			*/
 /****************************************************************************/
 
-INT X11_ActivateOutput (WINDOWID win)
+static INT X11_ActivateOutput (WINDOWID win)
 {
   XRectangle rect;
 
@@ -1628,7 +1628,7 @@ INT X11_ActivateOutput (WINDOWID win)
 /*																			*/
 /****************************************************************************/
 
-INT X11_UpdateOutput (WINDOWID win, INT tool)
+static INT X11_UpdateOutput (WINDOWID win, INT tool)
 {
   int x,y,w,h,i;
   int lw,ts;
@@ -1759,7 +1759,7 @@ INT X11_UpdateOutput (WINDOWID win, INT tool)
  */
 /****************************************************************************/
 
-OUTPUTDEVICE *InitXOutputDevice (void)
+OUTPUTDEVICE *NS_PREFIX InitXOutputDevice (void)
 {
   /* create output device */
   if ((X11OutputDevice=CreateOutputDevice("screen"))==NULL) return(NULL);
@@ -1798,7 +1798,7 @@ OUTPUTDEVICE *InitXOutputDevice (void)
  */
 /****************************************************************************/
 
-void MousePosition (INT *ScreenPoint)
+void NS_PREFIX MousePosition (INT *ScreenPoint)
 {
   XEvent report;
   int where_x,where_y;
@@ -1881,7 +1881,7 @@ static Bool callback (Display *d, XEvent *report, char *arg)
   return(True);
 }
 
-INT MouseStillDown (void)
+INT NS_PREFIX MouseStillDown (void)
 {
   XEvent report;
   int where_x,where_y;

@@ -33,6 +33,10 @@
 #ifndef __XGRAPH__
 #define __XGRAPH__
 
+#include "namespace.h"
+
+START_UG_NAMESPACE
+
 /****************************************************************************/
 /*                                                                                                                                                      */
 /* defines in the following order                                                                                       */
@@ -114,5 +118,7 @@ int                     InitControls            (Window win);
 int                     DrawRegion                      (GraphWindow *gwin, int x, int y);
 GraphWindow     *WhichGW                        (Window win);
 void                    SetCurrentGW            (GraphWindow *g);
+
+END_NAMESPACE
 
 #endif

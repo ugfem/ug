@@ -151,7 +151,7 @@ int cui = 0;                                /* reset toggle for cui         */
  */
 /****************************************************************************/
 
-INT GetScreenSize (INT size[2])
+INT NS_PREFIX GetScreenSize (INT size[2])
 {
   size[0] = display_width;
   size[1] = display_height;
@@ -199,9 +199,9 @@ static Bool callback (Display *d, XEvent *report, char *arg)
  */
 /****************************************************************************/
 
-INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask);
+static INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask);
 
-INT GetNextUGEvent_CUI (EVENT *theEvent, INT EventMask)
+static INT GetNextUGEvent_CUI (EVENT *theEvent, INT EventMask)
 {
   char *s;
   int cmdKey, onlyCmdKey;
@@ -228,7 +228,7 @@ INT GetNextUGEvent_CUI (EVENT *theEvent, INT EventMask)
   return(0);
 }
 
-INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask)
+static INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask)
 {
   XEvent report;
   XWindowAttributes xwa;
@@ -526,7 +526,7 @@ INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask)
   return(0);
 }
 
-INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
+INT NS_PREFIX GetNextUGEvent (EVENT *theEvent, INT EventMask)
 {
   if (CUI_ON) GetNextUGEvent_CUI (theEvent,EventMask);
   else if (!NUI_ON) GetNextUGEvent_XUI (theEvent,EventMask);
@@ -556,7 +556,7 @@ INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
  */
 /****************************************************************************/
 
-OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
+OUTPUTDEVICE * NS_PREFIX InitScreen (int *argcp, char **argv, INT *error)
 {
   OUTPUTDEVICE *d;
   static char buf[128];
@@ -666,7 +666,7 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 
 
 
-void ExitScreen (void)
+void NS_PREFIX ExitScreen ()
 {}
 
 
@@ -689,7 +689,7 @@ void ExitScreen (void)
  */
 /****************************************************************************/
 
-void WriteString (const char *s)
+void NS_PREFIX WriteString (const char *s)
 {
   if (CUI_ON)
   {
