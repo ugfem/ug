@@ -120,7 +120,6 @@ static INT doangle;     /* if TRUE MakeElement uses accelerator with angletree		
 static INT doEdge;      /* if TRUE MakeElement uses smallest edge without accelerator*/
 static INT doAngle;     /* if TRUE MakeElement uses smallest angle without accelerator*		*/
 
-static INT SmallHoleCompleted;
 static INT ElemID;
 static INT equilateral;
 static INT plotfront;
@@ -282,74 +281,74 @@ static INT HandleSubdomain (INDEPFRONTLIST *theIFL, NODE **Nodes,
 {
   MULTIGRID *theMG;
   NODE **NodeHandle;
+  INT *SideFlag;
   FRONTLIST *theFL;
-  INT i,j,id,id1,cnt;
+  INT i,j,id,cnt,orientation,oldside,gcnt;
 
   theMG = MYMG(MYGRID(theIFL));
 
   NodeHandle = (NODE **) GetMem(theMG->theHeap,n*sizeof(NODE*),FROM_TOP);
   if (NodeHandle==NULL) return (1);
+  SideFlag = (INT *) GetMem(theMG->theHeap,n*sizeof(INT),FROM_TOP);
+  if (SideFlag==NULL) return (1);
+  for (i=0; i<n; i++) SideFlag[i] = 0;
 
-  for (i=0; i<n; i++)
-    PRINTDEBUG(dom,1,(" side %d %d    nid %ld pos %f %f\n",
-                      node_id[i][0],node_id[i][1],ID(Nodes[i]),
-                      XC(MYVERTEX(Nodes[i])),
-                      YC(MYVERTEX(Nodes[i]))));
-
+  gcnt = 0;
   cnt = 0;
+  orientation = 1;                      /* counterclockwise */
+  oldside = -1;
   id = node_id[0][0];
+  SideFlag[0] = 1;
   NodeHandle[0] = Nodes[id];
-  for (i=0; i<n; i++)
+  while (1)
   {
-    PRINTDEBUG(dom,1,("  cnt %d n %d nid %ld pos %f %f\n",
-                      cnt,n,ID(NodeHandle[cnt]),
-                      XC(MYVERTEX(NodeHandle[cnt])),
-                      YC(MYVERTEX(NodeHandle[cnt]))));
-    id1 = i;
-    if (NodeHandle[cnt] != Nodes[node_id[id1][0]])
-    {
-      for (j=0; j<n; j++)
-        if (NodeHandle[cnt] == Nodes[node_id[j][0]])
-          break;
-      if (j == n)
-        RETURN(1);
-      id1 = j;
-    }
+    /* new node */
+    PRINTDEBUG(dom,1,("  cnt nid %ld \n",ID(NodeHandle[cnt])));
+    for (j=0; j<n; j++)
+      if (NodeHandle[cnt] == Nodes[node_id[j][0]] && j!=oldside)
+      {
+        orientation = 1;
+        break;
+      }
+      else if (NodeHandle[cnt]==Nodes[node_id[j][1]] && j!=oldside)
+      {
+        orientation = 0;
+        break;
+      }
+    if (j==n) return(1);
+    SideFlag[j] = 1;
     cnt++;
-    if (node_id[id1][1] == id)
+
+    /* check if closed */
+    if (node_id[j][orientation] == id)
     {
-      /* the info for the current closed boundary is now complete */
       theFL = CreateFrontList(theIFL);
       if (CreateFrontComp (theFL, NULL, cnt, NodeHandle)==NULL)
       {
-        PrintErrorMessage('E',"HandleSubdomain",
-                          "no storage for FC list");
+        PrintErrorMessage('E',"HandleSubdomain","no storage for FC list");
         return (1);
       }
-      if (DetermineOrientation (theFL))
-        return (2);
-      if (i<n-2)
-      {
-        cnt = 0;
-        for (id1=0; id1<n; j++)
-        {
-          for (j=0; j<cnt; j++)
-            if (NodeHandle[j] == Nodes[node_id[id1][0]])
-              break;
-          if (j == cnt)
-            break;
-        }
-        id = node_id[id1][0];
-        NodeHandle[0] = Nodes[id];
-      }
-      else
-        return(0);
+      if (DetermineOrientation (theFL)) return (2);
+      gcnt += cnt;
+      if (gcnt>=n) break;
+
+      PRINTDEBUG(dom,1,("......\n"));
+
+      for (i=0; i<n; i++) if (SideFlag[i]==0) break;
+      if (i==n) return (1);
+      cnt = 0;
+      id = node_id[i][0];
+      NodeHandle[0] = Nodes[id];
+      SideFlag[i] = 1;
+      j = -1;
     }
     else
-      NodeHandle[cnt] = Nodes[node_id[id1][1]];
+      NodeHandle[cnt] = Nodes[node_id[j][orientation]];
+    oldside = j;
   }
 
-  RETURN (1);
+  PRINTDEBUG(dom,1,("------\n"));
+  return (0);
 }
 
 /****************************************************************************/
@@ -378,7 +377,8 @@ static INT AssembleFrontLists (MULTIGRID *theMG, MESH *mesh)
   Nodes = (NODE **) GetTmpMem(MGHEAP(theMG),numOfBndP*sizeof(NODE *));
   if (Nodes == NULL)
     return(1);
-  for (i=0, theNode=LASTNODE(theGrid); theNode!=NULL; theNode=PREDN(theNode))
+
+  for (i=0, theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     PRINTDEBUG(dom,1,("  nid %ld \n",ID(theNode)));
     if (V_BNDP(MYVERTEX(theNode)) != mesh->theBndPs[i])
@@ -1650,6 +1650,9 @@ static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myLi
   if (SUCCFC(SUCCFC(theFC))==PREDFC(theFC))
   {
     *FlgForAccel = FINALCASE;
+    *disp_FC = NULL;
+    *disp_FL = myList;
+    return (0);
 
   }       /* last element of an IFL */
 
@@ -1938,26 +1941,11 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
     NeighborSide[i] = theElementContext->Neighbourside[i];
   }
 
-
-  /*	i++
-            ID(Neighbor[i])*/
-
-
   InsertElement (MYMG(theGrid),n,Node,Neighbor,NeighborSide);
   /* alternativ O(N*N): InsertElement (MYMG(theGrid),n,Node,NULL,NULL);*/
 
-
-  /* TODO: repair this:
-     InsertElement (MYMG(theGrid),n,Node,Neighbor); */
-
-  theElement = FIRSTELEMENT(theGrid);
+  theElement = LASTELEMENT(theGrid);
   theElementContext->thenewElement = theElement;
-
-  /*
-          i++
-            ID(NBELEM(theElement,i) oder NULL*/
-
-
 
   /* plot */
 
@@ -2152,7 +2140,7 @@ static FRONTCOMP *CreateOrSelectFC (
   if (InsertInnerNode (MYMG(theGrid),pos) != GM_OK)
     return(NULL);
 
-  thenewFC = CreateFrontComp (myList, theFC, 1, &FIRSTNODE(theGrid));
+  thenewFC = CreateFrontComp (myList, theFC, 1, &LASTNODE(theGrid));
   if (thenewFC==NULL)
   {
     PrintErrorMessage('E',"CreateOrSelectFC","no storage for new FC");
@@ -2378,23 +2366,12 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
     return (2);
   }
 
-  /* are all nodes BNodes? */
-  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-    if (OBJT(MYVERTEX(theNode))==IVOBJ)
-    {
-      PrintErrorMessage('E',"GenerateGrid","there are inner nodes in the grid");
-      return (3);
-    }
-
   /* are there already indep front lists? */
-
   if (STARTIFL(myMGdata)!=NULL)
   {
     PrintErrorMessage('E',"GenerateGrid","there exist already independent front lists");
     return (4);
   }
-
-  SmallHoleCompleted = NO;
 
   if (AssembleFrontLists (theMG,mesh)!=0)
   {
@@ -2478,7 +2455,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
 
         if (printelem)
         {
-          sprintf(buffer,"ELEMID %ld done\n",ID(FIRSTELEMENT(theGrid)));
+          sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
           UserWrite(buffer);
         }
       }                   /* while */
@@ -2531,16 +2508,17 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
           return (1);
 
         debug++;
-        if (debug==18)
+        if (debug==17)
           debug=debug;
         if (debug==19)
           debug=debug;
+
         if(FL_FC_Disposer(disp_FC, disp_FL))
           return (1);
 
         if (printelem)
         {
-          sprintf(buffer,"ELEMID %ld done\n",ID(FIRSTELEMENT(theGrid)));
+          sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
           UserWrite(buffer);
         }
       }                           /* while */
@@ -2597,7 +2575,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
 
         if (printelem)
         {
-          sprintf(buffer,"ELEMID %ld done\n",ID(FIRSTELEMENT(theGrid)));
+          sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
           UserWrite(buffer);
         }
       }                           /* while */

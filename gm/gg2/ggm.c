@@ -124,8 +124,7 @@ INDEPFRONTLIST *CreateIndepFrontList (GRID *theGrid)
 {
   INDEPFRONTLIST *ipfl;
 
-  ipfl = (INDEPFRONTLIST *)GetMemoryForObject(theGrid->mg,
-                                              sizeof(INDEPFRONTLIST),IflObj);
+  ipfl = GetMemoryForObject(theGrid->mg,sizeof(INDEPFRONTLIST),IflObj);
   if (ipfl==NULL) return(NULL);
 
   /* initialize data */
@@ -168,8 +167,7 @@ FRONTLIST *CreateFrontList (INDEPFRONTLIST *myIFL)
 {
   FRONTLIST *pfl;
 
-  pfl = (FRONTLIST *)GetMemoryForObject(MYGRID(myIFL)->mg,
-                                        sizeof(FRONTLIST),FlObj);
+  pfl = GetMemoryForObject(MYGRID(myIFL)->mg,sizeof(FRONTLIST),FlObj);
   if (pfl==NULL) return(NULL);
 
   /* initialize data */
@@ -224,7 +222,7 @@ FRONTCOMP *CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, int ncomp, NODE
 
   if  ( ncomp == 1 )
   {
-    pfc = (FRONTCOMP *)GetMemoryForObject(theMG,sizeof(FRONTCOMP),FcObj);
+    pfc = GetMemoryForObject(theMG,sizeof(FRONTCOMP),FcObj);
     if (pfc==NULL) return(NULL);
 
     /* initialize data */
