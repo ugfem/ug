@@ -2494,19 +2494,23 @@ void CommandLoop (int argc, char **argv)
   /* print version */
   UserWrite(ver);
 
+
+  /* reset doneFlag */
+  doneFlag=FALSE;
+
+
   /* execute init script */
   if (GetDefaultValue(DEFAULTSFILENAME,"initscript",buffer)==0)
   {
     strcpy(inpLine,"execute ");
     strcat(inpLine,buffer);
-    InterpretCommand(inpLine);
+    error = InterpretCommand(inpLine);
+    if (error==QUITCODE)
+      doneFlag=TRUE;
   }
 
-  /* TODO: delete this old code
-     if (argc<2 || argv[1][1] == 's') */
   if (argc<2 || strcmp(argv[1],"-sz")==0)
   {
-    doneFlag = 0;
     while (!doneFlag)
     {
       WriteString(PROMPT);
@@ -2519,7 +2523,7 @@ void CommandLoop (int argc, char **argv)
       if ((error=InterpretCommand(inpLine))!=DONE)
       {
         if (error==QUITCODE)
-          doneFlag=1;
+          doneFlag=TRUE;
         else
         {
           UserWrite("Error position: ");
@@ -2616,13 +2620,20 @@ void CommandLoop (int argc, char **argv)
 }
 else
 {
+  /* reset doneFlag */
+  doneFlag = FALSE;
+
+  /* read init script */
   if (GetDefaultValue(DEFAULTSFILENAME,"initscript",inpLine)==0)
-    ParExecCommand(inpLine);
-  /* TODO: delete this old code
-     if (argc<2 || argv[1][1] == 's')  */
+  {
+    error = ParExecCommand(inpLine);
+    if (error==QUITCODE)
+      doneFlag=TRUE;
+  }
+
+
   if (argc<2 || strcmp(argv[1],"-sz")==0)
   {
-    doneFlag = FALSE;
     while (!doneFlag)
     {
       if (doneFlag) break;
@@ -2634,15 +2645,15 @@ else
   /* TODO: control this might be wrong in batch mode */
   else
   {
-    i = 1;     /* first argument */
+    i = 1;             /* first argument */
     while (i<argc)
     {
       /* execute batch file */
       if ((argv[i][0]!='-')&&(argv[i][1]!='s'))
       {
         sprintf(inpLine,"execute %s\n",argv[i]);
-        InterpretCommand(inpLine);         /* execute command line argument */
-        InterpretCommand("quit\n");        /* end program */
+        InterpretCommand(inpLine);                 /* execute command line argument */
+        InterpretCommand("quit\n");                /* end program */
         i++;
         continue;
       }
@@ -2680,9 +2691,10 @@ else
 }
         #endif
 
-
-  /* TODO: this should be put in a ExitUg() function, called by the application. KB 960823 */
-  ExitDevices();
+  /* call ExitUg() at the end of CommandLoop in order to avoid that
+     the application programmer will forget to call it at the end of
+     the application. */
+  ExitUg();
 }
 
 /****************************************************************************/
