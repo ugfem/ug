@@ -13,7 +13,7 @@ then
 fi
 
 DEFAULT=ug
-DEFAULT_CORE=birken,wieners,stefan,klaus,peter,henrik,ug,volker
+DEFAULT_CORE=birken,wieners,stefan,klaus,df,peter,henrik,ug,volker
 ERRORFILE=$UGROOT/bin/cvsaccess
 #UG=`dirname $UGROOT`
 UG=$UGROOT
@@ -48,12 +48,12 @@ cd dom;
 cvs admin -e std 2>> $ERRORFILE;
 cvs admin -awieners,peter std 2>> $ERRORFILE;
 cvs admin -e lgm 2>> $ERRORFILE;
-cvs admin -aklaus,stefan,ug,christop lgm 2>> $ERRORFILE;
+cvs admin -aklaus,df,stefan,ug,christop lgm 2>> $ERRORFILE;
 cvs admin -adirk lgm/ansys* 2>> $ERRORFILE;
 
 
 cd $UGROOT;
-cvs admin -awieners,stefan,klaus gm 2>> $ERRORFILE;
+cvs admin -awieners,stefan,klaus,df gm 2>> $ERRORFILE;
 cvs admin -achristop gm/gg3 2>> $ERRORFILE;
 
 cd $UGROOT;
@@ -63,7 +63,7 @@ cd $UGROOT;
 cvs admin -a$DEFAULT_CORE low 2>> $ERRORFILE;
 
 cd $UGROOT;
-cvs admin -awieners,peter,klaus np 2>> $ERRORFILE;
+cvs admin -awieners,peter,klaus,df np 2>> $ERRORFILE;
 cvs admin -astefan np/procs/bdf.c np/procs/error.c 2>> $ERRORFILE;
 
 cd $UGROOT;
