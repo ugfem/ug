@@ -641,6 +641,14 @@ INT InitDevices (int *argcp, char **argv)
 #       ifdef ModelP
   INT with_defaultOuputDevice;
 #       endif
+  char buffer[256];
+  int ival;
+
+  /* get default mutelevel from defaults file */
+  if (GetDefaultValue(DEFAULTSFILENAME,"mutelevel",buffer)==0) {
+    sscanf(buffer," %d ",&ival);
+    SetMuteLevel ((INT) ival);
+  }
 
   /* install the /Output Devices directory */
   if (ChangeEnvDir("/")==NULL)
