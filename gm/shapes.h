@@ -240,7 +240,7 @@
   else if ((n) == 5) LOCAL_TO_GLOBAL_PYRAMID((x),(local),(global))        \
   else if ((n) == 8) LOCAL_TO_GLOBAL_HEXAHEDRON((x),(local),(global))}
 
-#define AREA_OF_TETARHEDRON(x,area)  {DOUBLE detJ; DOUBLE_VECTOR a,b,c;    \
+#define AREA_OF_TETRAHEDRON(x,area)  {DOUBLE detJ; DOUBLE_VECTOR a,b,c;    \
 									  V3_SUBTRACT((x)[1],(x)[0],a);        \
 									  V3_SUBTRACT((x)[2],(x)[0],b);        \
 									  V3_VECTOR_PRODUCT(a,b,c);            \
@@ -260,7 +260,7 @@
 									  V3_SCALAR_PRODUCT(b,c,detJ);         \
 									  (area) = ABS(detJ)/6.0 + ar;}
 
-#define AREA_OF_HEXAHEDRON(x,area)   {DOUBLE detJ,a; DOUBLE_VECTOR a,b,c;  \
+#define AREA_OF_HEXAHEDRON(x,area)   {DOUBLE detJ,ar; DOUBLE_VECTOR a,b,c; \
 									  V3_SUBTRACT((x)[1],(x)[0],a);        \
 									  V3_SUBTRACT((x)[2],(x)[0],b);        \
 									  V3_VECTOR_PRODUCT(a,b,c);            \
@@ -298,10 +298,10 @@
 									  V3_SCALAR_PRODUCT(a,c,detJ);         \
 									  (area) = ABS(detJ)/6.0 + ar;}
 
-#define AREA_OF_ELEMENT(n,x,area)                     \
- {if ((n) == 4)      AREA_OF_TETRHEDRON((x),(area))   \
-  else if ((n) == 5) AREA_OF_PYRAMID((x),(area))      \
-  else if ((n) == 8) AREA_OF_HEXAHEDRON((x),(area))}
+#define AREA_OF_ELEMENT(n,x,area)                        \
+ {if ((n) == 4)      {AREA_OF_TETRAHEDRON((x),(area));}  \
+  else if ((n) == 5) {AREA_OF_PYRAMID((x),(area));}      \
+  else if ((n) == 8) {AREA_OF_HEXAHEDRON((x),(area));}}
 
 #endif
 
