@@ -67,8 +67,6 @@ REP_ERR_FILE;
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-#undef __DEBUG_NEWTON__
-
 /* variables for timing measurement		*/
 static int defect_c, newton_c, linear_c;
 static double defect_t, newton_t, linear_t;
@@ -257,10 +255,10 @@ static INT NonLinearDefect (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x,
     REP_ERR_RETURN(error);
   }
 
-        #ifdef __DEBUG_NEWTON__
+  IFDEBUG(np,1)
   UserWrite("---- After computation of nonlinear defect\n");
   ListVectorRange(mg,0,level,0,1000,FALSE,TRUE);
-        #endif
+  ENDDEBUG
 
   /* compute norm of defect */
   if ((*newton->solve->Residuum)(newton->solve,0,level,newton->v,newton->d,newton->J,&lr)) {
@@ -370,6 +368,8 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
   /* dynamic XDATA_DESC allocation */
   if (AllocMDFromVD(mg,0,level,x,x,&(newton->J))) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
+  if (ass->A == NULL)
+    ass->A = newton->J;
   if (AllocVDFromVD(mg,0,level,x,  &(newton->v))) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
   if (AllocVDFromVD(mg,0,level,x,  &(newton->d))) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
   if (AllocVDFromVD(mg,0,level,x,  &(newton->s))) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
@@ -473,16 +473,18 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     }
 
     /* if linear solver did not converge, return here */
-    if ((newton->linearRate < 2) && (!lr.converged)) {
+    if (!lr.converged) {
       UserWrite("\nLinear solver did not converge in Newton method\n");
-      res->error_code = 0;                   /* no error but exit */
-      goto exit;
+      if (newton->linearRate < 2) {
+        res->error_code = 0;                     /* no error but exit */
+        goto exit;
+      }
     }
 
-                #ifdef __DEBUG_NEWTON__
+    IFDEBUG(np,1)
     UserWrite("---- After linear solver\n");
     ListVectorRange(mg,0,level,0,1000,FALSE,TRUE);
-                #endif
+    ENDDEBUG
 
     /* linear solver statistics */
     res->total_linear_iterations += lr.number_of_linear_iterations;

@@ -106,28 +106,111 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*D
-   NP_ITER - type definition for iterations
+   NP_TRANSFER - type definition for grid transfer
 
    DESCRIPTION:
-   This numproc type is used for the description of linear iterations.
-   It can be called by the given interface from a linear solver.
+   This numproc type is used for the description of grid transfers.
+   It can be called by the given interface from a muligrid solver.
    Initializing the data is optional; it can be done with
 
-   'INT NPIterInit (NP_ITER *theNP, INT argc , char **argv);'
+   'INT NPTransferInit (NP_TRANSFER *theNP, INT argc , char **argv);'
 
    This routine returns 'EXECUTABLE' if the initizialization is complete
    and  'ACTIVE' else.
    The data they can be displayed and the num proc can be executed by
 
-   'INT NPIterDisplay (NP_ITER *theNP);'
-   'INT NPIterExecute (NP_BASE *theNP, INT argc , char **argv);'
+   'INT NPTransferDisplay (NP_TRANSFER *theNP);'
+   'INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv);'
 
    .vb
 
+   struct np_transfer {
 
-   ..... fill in data structure here when the realizition is finished
+        NP_BASE base;                        // inherits base class
 
+        // data (optinal, necessary for calling the generic execute routine)
+    VECDATA_DESC *x;                     // solution
+    VECDATA_DESC *c;                     // correction
+    VECDATA_DESC *b;                     // defect
+    MATDATA_DESC *A;                     // matrix
+        VEC_SCALAR damp;                     // damping factor
 
+        // functions
+        INT (*PreProcess)
+             (struct np_transfer *,          // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+        INT (*PreProcessSolution)
+             (struct np_transfer *,          // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  VECDATA_DESC *,                // solution vector
+                  INT *);                        // result
+        INT (*PreProcessProject)
+             (struct np_transfer *,          // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  INT *);                        // result
+    INT (*InterpolateCorrection)
+             (struct np_transfer *,          // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // destination vector
+                  VECDATA_DESC *,                // source vector
+                  MATDATA_DESC *,                // matrix
+                  VEC_SCALAR,                    // damping factor
+                  INT *);                        // result
+    INT (*RestrictDefect)
+             (struct np_transfer *,          // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // destination vector
+                  VECDATA_DESC *,                // source vector
+                  MATDATA_DESC *,                // matrix
+                  VEC_SCALAR,                    // damping factor
+                  INT *);                        // result
+    INT (*InterpolateNewVectors)
+             (struct np_transfer *,          // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  VECDATA_DESC *,                // solution vector
+                  INT *);                        // result
+    INT (*ProjectSolution)
+             (struct np_transfer *,          // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  VECDATA_DESC *,                // solution vector
+                  INT *);                        // result
+    INT (*AdaptCorrection)
+             (struct np_transfer *,          // pointer to (derived) object
+                  INT,                           // level
+                  VECDATA_DESC *,                // correction vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+        INT (*PostProcess)
+             (struct np_transfer *,          // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  VECDATA_DESC *,                // solution vector
+                  VECDATA_DESC *,                // defect vector
+                  MATDATA_DESC *,                // matrix
+                  INT *);                        // result
+        INT (*PostProcessProject)
+             (struct np_transfer *,          // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  INT *);                        // result
+        INT (*PostProcessSolution)
+             (struct np_transfer *,          // pointer to (derived) object
+                  INT,                           // from level
+                  INT,                           // to level
+                  VECDATA_DESC *,                // solution vector
+                  INT *);                        // result
+   };
+   typedef struct np_transfer NP_TRANSFER;
    .ve
 
    SEE ALSO:
@@ -648,6 +731,7 @@ static INT TransferConstruct (NP_BASE *theNP)
   np->AdaptCorrection = AdaptCorrection;
   np->PostProcess = TransferPostProcess;
   np->PostProcessProject = NULL;
+  np->PostProcessSolution = NULL;
 
   return(0);
 }

@@ -128,6 +128,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
         // data (optinal, necessary for calling the generic execute routine)
     VECDATA_DESC *x;                     // solution
     VECDATA_DESC *o;                     // old solution
+    MATDATA_DESC *J;                     // last Jacobi matrix
 
         // functions
         INT (*PreProcess)
@@ -146,6 +147,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
                   DOUBLE *,                      // time step
                   VECDATA_DESC *,                // solution vector
                   VECDATA_DESC *,                // old solution vector
+          MATDATA_DESC *,                // last Jacobi matrix
                   ERESULT *);                    // result
         INT (*PostProcess)
              (struct np_error *,             // pointer to (derived) object
@@ -164,6 +166,7 @@ INT NPErrorInit (NP_ERROR *np, INT argc , char **argv)
 {
   np->x = ReadArgvVecDesc(np->base.mg,"x",argc,argv);
   np->o = ReadArgvVecDesc(np->base.mg,"o",argc,argv);
+  np->J = ReadArgvMatDesc(np->base.mg,"J",argc,argv);
 
   if (np->x == NULL)
     return(NP_ACTIVE);
@@ -180,6 +183,8 @@ INT NPErrorDisplay (NP_ERROR *np)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(np->x));
   if (np->o != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"o",ENVITEM_NAME(np->o));
+  if (np->J != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"J",ENVITEM_NAME(np->J));
   UserWrite("\n");
 
   return(0);
@@ -241,7 +246,7 @@ INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
       PrintErrorMessage('E',"NPErrorExecute","no time step");
       return (1);
     }
-    if ((*np->TimeError)(np,level,Time,&step,np->x,np->o,&eresult)) {
+    if ((*np->TimeError)(np,level,Time,&step,np->x,np->o,np->J,&eresult)) {
       UserWriteF("NPErrorExecute: PreProcess failed, error code %d\n",
                  eresult.error_code);
       return (1);
@@ -474,6 +479,10 @@ static INT IndicatorInit (NP_BASE *theNumProc, INT argc, char **argv)
   if (ReadArgvDOUBLE("coarse",&(theNP->coarse),argc,argv))
     theNP->coarse = 0.0;
 
+  theNP->project = ReadArgvOption("p",argc,argv);
+  theNP->update = ReadArgvOption("r",argc,argv);
+  theNP->interpolate = ReadArgvOption("i",argc,argv);
+
   return (NPErrorInit(&theNP->error,argc,argv));
 }
 
@@ -490,7 +499,10 @@ static INT IndicatorDisplay (NP_BASE *theNumProc)
   if (theNP->refine < 1.0)
     UserWriteF("%-16.13s = %-12.9lf\n","refine",theNP->refine);
   if (theNP->coarse > 0.0)
-    UserWriteF("%-16.13s = %-12.9lf\n","refine",theNP->coarse);
+    UserWriteF("%-16.13s = %-12.9lf\n","coarse",theNP->coarse);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"p",(int)theNP->project);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"r",(int)theNP->update);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"i",(int)theNP->interpolate);
 
   return(0);
 }
@@ -530,6 +542,13 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x,
   return(0);
 }
 
+static INT TimeIndicator (NP_ERROR *theNP, INT level, DOUBLE t,
+                          DOUBLE *dt, VECDATA_DESC *x,
+                          VECDATA_DESC *o, MATDATA_DESC *A, ERESULT *eresult)
+{
+  return(Indicator(theNP,level,x,eresult));
+}
+
 static INT IndicatorExecute (NP_BASE *theNumProc, INT argc, char **argv)
 {
   NP_INDICATOR *theNP;
@@ -562,7 +581,7 @@ static INT IndicatorConstruct (NP_BASE *theNP)
   np = (NP_ERROR *) theNP;
   np->PreProcess = NULL;
   np->Error = Indicator;
-  np->TimeError = NULL;
+  np->TimeError = TimeIndicator;
   np->PostProcess = NULL;
 
   return(0);

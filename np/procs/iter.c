@@ -187,6 +187,7 @@ typedef struct
   NP_SMOOTHER smoother;
 
   VEC_SCALAR beta;
+  VEC_SCALAR mindiag;
 
 } NP_ILU;
 
@@ -1728,6 +1729,8 @@ static INT ILUInit (NP_BASE *theNP, INT argc , char **argv)
 
   for (i=0; i<MAX_VEC_COMP; i++) np->beta[i] = 0.0;
   sc_read(np->beta,np->smoother.iter.b,"beta",argc,argv);
+  for (i=0; i<MAX_VEC_COMP; i++) np->mindiag[i] = 0.0;
+  sc_read(np->mindiag,np->smoother.iter.b,"mindiag",argc,argv);
 
   return (SmootherInit(theNP,argc,argv));
 }
@@ -1738,7 +1741,10 @@ static INT ILUDisplay (NP_BASE *theNP)
 
   SmootherDisplay(theNP);
   np = (NP_ILU *) theNP;
-  if (sc_disp(np->beta,np->smoother.iter.b,"beta")) REP_ERR_RETURN (1);
+  if (sc_disp(np->beta,np->smoother.iter.b,"beta"))
+    REP_ERR_RETURN (1);
+  if (sc_disp(np->mindiag,np->smoother.iter.b,"mindiag"))
+    REP_ERR_RETURN (1);
 
   return (0);
 }
@@ -1758,6 +1764,9 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
         #ifdef ModelP
   if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
         #endif
+  if (np->mindiag[0] > 0.0)
+    if (l_shift_diagonal(theGrid,np->smoother.L,np->mindiag) != NUM_OK)
+      NP_RETURN(1,result[0]);
   if (l_ilubthdecomp(theGrid,np->smoother.L,np->beta,NULL,NULL,NULL)
       !=NUM_OK) {
     PrintErrorMessage('E',"ILUPreProcess","decomposition failed");

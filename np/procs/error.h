@@ -64,6 +64,7 @@ struct np_error {
   /* data (optinal, necessary for calling the generic execute routine)    */
   VECDATA_DESC *x;                       /* solution                        */
   VECDATA_DESC *o;                       /* old solution                    */
+  MATDATA_DESC *J;                       /* last Jacobi matrix              */
 
   /* functions */
   INT (*PreProcess)
@@ -82,6 +83,7 @@ struct np_error {
     DOUBLE *,                                    /* time step                       */
     VECDATA_DESC *,                              /* solution vector                 */
     VECDATA_DESC *,                              /* old solution vector             */
+    MATDATA_DESC *,                              /* last Jacobi matrix              */
     ERESULT *);                                  /* result                          */
   INT (*PostProcess)
     (struct np_error *,                      /* pointer to (derived) object     */
@@ -95,7 +97,8 @@ typedef INT (*PreProcessErrorProcPtr)                                       \
 typedef INT (*ErrorProcPtr)                                                 \
   (NP_ERROR *, INT, VECDATA_DESC *, VECDATA_DESC *, ERESULT *);
 typedef INT (*TimeErrorProcPtr)                                             \
-  (NP_ERROR *, INT, DOUBLE, DOUBLE *, VECDATA_DESC *, VECDATA_DESC *, ERESULT *);
+  (NP_ERROR *, INT, DOUBLE, DOUBLE *, VECDATA_DESC *, VECDATA_DESC *,        \
+  MATDATA_DESC *, ERESULT *);
 typedef INT (*PostProcessErrorProcPtr)                                      \
   (NP_ERROR *, INT, INT *);
 

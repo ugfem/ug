@@ -458,13 +458,19 @@ static INT RayleighQuotientQ (MULTIGRID *theMG,
       return(1);
 
 
-  IFDEBUG(np,2)
+  IFDEBUG(np,3)
+
 
   UserWrite("M level\n");
   PrintMatrix(GRID_ON_LEVEL(theMG,tl),M,3,3);
   UserWrite("M surface\n");
   /*PrintSMatrix(theMG,M);*/
 
+  ENDDEBUG
+
+
+
+  IFDEBUG(np,2)
 
   if (l_ddot(GRID_ON_LEVEL(theMG,tl),t,EVERY_CLASS,x,scal1) != NUM_OK)
     return(1);
@@ -726,7 +732,7 @@ static INT Rayleigh (NP_EW_SOLVER *theNP, INT level,
 
   PRINTDEBUG(np,1,("a0 %f a1 %f ",a[0],a[1]));
 
-  if (a[1] <= ABS(a[0]) * VERY_SMALL)
+  if (ABS(a[1]) <= ABS(a[0]) * VERY_SMALL)
     NP_RETURN(1,result[0]);
   *q = a[0] / a[1];
 
@@ -783,6 +789,12 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
                                         ev[i],np->t,np->M,
                                         &ewresult->error_code))
         return(1);
+      if (ew[i] < 0.0) {
+        for (j=0; j<VD_NCOMP(np->r); j++)
+          scal[j] = -1.0;
+        if (a_dscale(theMG,bl,level,np->t,EVERY_CLASS,scal))
+          NP_RETURN(1,ewresult->error_code);
+      }
     }
     else {
       if (s_dset(theMG,0,level,np->t,0.0))
@@ -798,9 +810,9 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
     if (np->display == PCR_FULL_DISPLAY)
       UserWriteF("Rayleigh quotient %lf\n",rq);
     if (np->Orthogonalize) {
-      if (a[1] <= 0.0) NP_RETURN(1,ewresult->error_code);
+      if (ABS(a[1]) <= VERY_SMALL) NP_RETURN(1,ewresult->error_code);
       for (j=0; j<VD_NCOMP(np->r); j++)
-        scal[j] = 1.0 / sqrt(a[1]);
+        scal[j] = 1.0 / sqrt(ABS(a[1]));
     }
     else {
       if (a[0] <= 0.0) NP_RETURN(1,ewresult->error_code);
@@ -833,6 +845,12 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
                                           ev[i],np->t,
                                           np->M,&ewresult->error_code))
           return(1);
+        if (ew[i] < 0.0) {
+          for (j=0; j<VD_NCOMP(np->r); j++)
+            scal[j] = -1.0;
+          if (a_dscale(theMG,bl,level,np->t,EVERY_CLASS,scal))
+            NP_RETURN(1,ewresult->error_code);
+        }
       }
       else {
         if (s_dset(theMG,0,level,np->t,0.0))
@@ -964,9 +982,9 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
       if (np->display == PCR_FULL_DISPLAY)
         UserWriteF("Rayleigh quotient %lf\n",rq);
       if (np->Orthogonalize) {
-        if (a[1] <= 0.0) NP_RETURN(1,ewresult->error_code);
+        if (ABS(a[1]) <= VERY_SMALL) NP_RETURN(1,ewresult->error_code);
         for (j=0; j<VD_NCOMP(np->r); j++)
-          scal[j] = 1.0 / sqrt(a[1]);
+          scal[j] = 1.0 / sqrt(ABS(a[1]));
       }
       else {
         if (a[0] <= 0.0) NP_RETURN(1,ewresult->error_code);

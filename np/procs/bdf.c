@@ -35,6 +35,7 @@
 
 #include "devices.h"
 #include "general.h"
+#include "debug.h"
 #include "ugstruct.h"
 #include "gm.h"
 #include "scan.h"
@@ -47,6 +48,7 @@
 #include "nls.h"
 #include "assemble.h"
 #include "transfer.h"
+#include "error.h"
 #include "ts.h"
 #include "bdf.h"
 
@@ -59,6 +61,8 @@
 /*        macros                                                            */
 /*                                                                          */
 /****************************************************************************/
+
+REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -85,6 +89,7 @@ typedef struct
   INT order;                                                             /* 1,2 are allowed					*/
   INT predictorder;                                              /* 0,1 are allowed					*/
   INT nested;                                                            /* use nested iteration                        */
+  INT nlinterpolate;                                             /* nonlinear interpolation			*/
   DOUBLE tstart;                                                 /* start time                          */
   DOUBLE dtstart;                                                /* time step to begin with			*/
   DOUBLE dtmin;                                                  /* smallest time step allowed		*/
@@ -92,6 +97,7 @@ typedef struct
   DOUBLE dtscale;                                                /* scaling factor applied after ste*/
   DOUBLE rhogood;                                                /* threshold for step doubling		*/
   NP_TRANSFER *trans;                                            /* uses transgrid for nested iter  */
+  NP_ERROR *error;                       /* error indicator                 */
 
   /* statistics */
   INT number_of_nonlinear_iterations;       /* number of iterations             */
@@ -295,9 +301,10 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   DOUBLE Factor[MAX_VEC_COMP];
   INT n_unk;
   INT i,k;
-  INT low;
+  INT low,nlinterpolate;
   INT verygood,bad;
   NLRESULT nlresult;
+  ERESULT eresult;
   MULTIGRID *mg;
   char buffer[128];
 
@@ -329,6 +336,10 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
     /* determine level where to predict to new time step */
     if (bdf->nested) low = MIN(bdf->baselevel,level);
     else low = level;
+
+    /* grid adaption ? */
+    if (bdf->error != NULL) nlinterpolate = bdf->nlinterpolate;
+    else nlinterpolate = 0;
 
     /* predict to new time step on level low */
     a_dcopy(mg,0,low,bdf->y_p1,EVERY_CLASS,bdf->y_0);
@@ -416,6 +427,45 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
         if ( (*tass->TAssembleSolution)(tass,k+1,k+1,bdf->t_p1,bdf->y_p1,res) )
           return(__LINE__);
       }
+      else if (nlinterpolate > 0) {
+        if (bdf->error->PreProcess != NULL)
+          if ((*bdf->error->PreProcess)(bdf->error,level,res))
+            NP_RETURN(1,res[0]);
+        if (bdf->error->TimeError == NULL)
+          NP_RETURN(1,res[0]);
+        if ((*bdf->error->TimeError)
+              (bdf->error,level,bdf->t_p1,&dt_0,bdf->y_p1,bdf->y_0,
+              bdf->tsolver.nlass.A,&eresult))
+          NP_RETURN(1,res[0]);
+        if (bdf->error->PostProcess != NULL)
+          if ((*bdf->error->PostProcess)(bdf->error,level,res))
+            NP_RETURN(1,res[0]);
+        if (eresult.refine + eresult.coarse > 0) {
+          if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL) != GM_OK)
+            NP_RETURN(1,res[0]);
+          level = TOPLEVEL(mg);
+          k = level - 1;
+          if (bdf->trans->PreProcessSolution != NULL)
+            if ((*bdf->trans->PreProcessSolution)
+                  (bdf->trans,0,level,bdf->y_p1,res))
+              NP_RETURN(1,res[0]);
+          if ((*bdf->trans->InterpolateNewVectors)
+                (bdf->trans,0,level,bdf->y_m1,res))
+            NP_RETURN(1,res[0]);
+          if ((*bdf->trans->InterpolateNewVectors)
+                (bdf->trans,0,level,bdf->y_0,res))
+            NP_RETURN(1,res[0]);
+          if ((*bdf->trans->InterpolateNewVectors)
+                (bdf->trans,0,level,bdf->y_p1,res))
+            NP_RETURN(1,res[0]);
+          if (bdf->trans->PostProcessSolution != NULL)
+            if ((*bdf->trans->PostProcessSolution)
+                  (bdf->trans,0,level,bdf->y_p1,res))
+              NP_RETURN(1,res[0]);
+          nlinterpolate--;
+        }
+        else nlinterpolate = 0;
+      }
     }
     if (bdf->trans->PostProcessProject!=NULL)
       if ((*bdf->trans->PostProcessProject)(bdf->trans,0,level,res))
@@ -425,9 +475,6 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
     if (!nlresult.converged) continue;                  /* start again with smaller time step   */
     else break;                                                                 /* exit while loop						*/
   }
-
-  /* LATER: In the adaptive case now iterate: adapt grid & time step, solve again */
-
   if ( (*tass->TAssemblePostProcess)(tass,0,level,
                                      bdf->t_p1,bdf->t_0,bdf->t_m1,
                                      bdf->y_p1,bdf->y_0,bdf->y_m1,res) )
@@ -518,6 +565,7 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
   /* read other numprocs */
   bdf->trans = (NP_TRANSFER *) ReadArgvNumProc(base->mg,"T",TRANSFER_CLASS_NAME,argc,argv);
   if (bdf->trans == NULL) return(NP_NOT_ACTIVE);
+  bdf->error = (NP_ERROR *) ReadArgvNumProc(base->mg,"E",ERROR_CLASS_NAME,argc,argv);
 
   /* set configuration parameters */
   if (ReadArgvINT("baselevel",&(bdf->baselevel),argc,argv))
@@ -547,6 +595,9 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
     bdf->nested=0;
   }
   if ((bdf->nested<0)||(bdf->nested>1)) return(NP_NOT_ACTIVE);
+  if (ReadArgvINT("nlinterpolate",&(bdf->nlinterpolate),argc,argv))
+    bdf->nlinterpolate=0;
+  if (bdf->nlinterpolate<0) return(NP_NOT_ACTIVE);
 
   if (ReadArgvDOUBLE("tstart",&(bdf->tstart),argc,argv))
     bdf->tstart = 0.0;
@@ -612,10 +663,20 @@ static INT BDFDisplay (NP_BASE *theNumProc)
   NPTSolverDisplay(&bdf->tsolver);
 
   UserWrite("\nBDF data:\n");
+  if (bdf->trans != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"T",ENVITEM_NAME(bdf->trans));
+  else
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"T","---");
+  if (bdf->error != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"E",ENVITEM_NAME(bdf->error));
+  else
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"E","---");
   UserWriteF(DISPLAY_NP_FORMAT_SF,"t_m1",(float)bdf->t_m1);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"t_0",(float)bdf->t_0);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"t_p1",(float)bdf->t_p1);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"dt",(float)bdf->dt);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"nested",(int)bdf->nested);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"nlinterpolate",(int)bdf->nlinterpolate);
   if (bdf->y_p1 != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"y_p1",ENVITEM_NAME(bdf->y_p1));
   if (bdf->y_0  != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"y_0 ",ENVITEM_NAME(bdf->y_0 ));
   if (bdf->y_m1 != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"y_m1",ENVITEM_NAME(bdf->y_m1));

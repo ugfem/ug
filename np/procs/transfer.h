@@ -143,6 +143,12 @@ struct np_transfer {
     INT,                                         /* from level                      */
     INT,                                         /* to level                        */
     INT *);                                      /* result                          */
+  INT (*PostProcessSolution)
+    (struct np_transfer *,                   /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    VECDATA_DESC *,                              /* solution vector                 */
+    INT *);                                      /* result                          */
 };
 typedef struct np_transfer NP_TRANSFER;
 
@@ -164,6 +170,10 @@ typedef INT (*ProjectSolutionProcPtr)                                       \
 typedef INT (*PostProcessTransferProcPtr)                                   \
   (NP_TRANSFER *, INT, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *,  \
   INT *);
+typedef INT (*PostProcessSolutionProcPtr)                                   \
+  (NP_TRANSFER *, INT, INT, VECDATA_DESC *, INT *);
+typedef INT (*PostProcessProjectProcPtr)                                    \
+  (NP_TRANSFER *, INT, INT, INT *);
 
 /****************************************************************************/
 /*																			*/
