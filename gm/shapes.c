@@ -51,7 +51,7 @@
 
 #define SMALL_DET      1e-50
 #define SMALL_DIFF     1e-4
-#define MAX_ITER       20
+#define MAX_ITER       20 
 
 /* some useful abbreviations */
 #define Xi  ((DOUBLE)ip_local[0])
@@ -1148,14 +1148,14 @@ COORD *LMP (INT n)
 
 /****************************************************************************/
 /*D
-   LocalToGlobal?d - Transform local coordinates to global 	 
+   LocalToGlobal - Transform local coordinates to global 	 
 
    SYNOPSIS:
-   INT LocalToGlobal?d (INT n, const COORD **Corners, 
+   INT LocalToGlobal (INT n, const COORD **Corners, 
    const COORD *EvalPoint, COORD *GlobalCoord);
 
    PARAMETERS:
-.  n - corner number (3 or 4) 
+.  n - number of corners
 .  Corners - coordinates of corners
 .  EvalPoint - local coordinates
 .  GlobalCoord - resulting global coordinates
@@ -1171,42 +1171,20 @@ COORD *LMP (INT n)
 D*/
 /****************************************************************************/
 
-#ifdef __TWODIM__
-INT LocalToGlobal2d (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *GlobalCoord)
+INT LocalToGlobal (INT n, const COORD **Corners, 
+				   const COORD *EvalPoint, COORD *GlobalCoord)
 {
-	if (n==3)
-	  LOCAL_TO_GLOBAL_TRIANGLE(Corners,EvalPoint,GlobalCoord)
-	else if (n==4)
-	  LOCAL_TO_GLOBAL_QUADRILATERAL(Corners,EvalPoint,GlobalCoord)
-	else
-	  return (1);
+    LOCAL_TO_GLOBAL(n,Corners,EvalPoint,GlobalCoord);
 
 	return (0);
 }
-#endif
-
-#ifdef __THREEDIM__
-INT LocalToGlobal3d (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *GlobalCoord)
-{
-	if (n==4)
-	  LOCAL_TO_GLOBAL_TETRAHEDRON(Corners,EvalPoint,GlobalCoord)
-	else if (n==5)
-	  LOCAL_TO_GLOBAL_PYRAMID(Corners,EvalPoint,GlobalCoord)
-	else if (n==8)
-	  LOCAL_TO_GLOBAL_HEXAHEDRON(Corners,EvalPoint,GlobalCoord)
-	else
-	  return (1);
-
-	return (0);
-}
-#endif
 
 /****************************************************************************/
 /*D
-   GlobalToLocal?d - Transform global coordinates to local
+   GlobalToLocal - Transform global coordinates to local
 
    SYNOPSIS:
-   INT GlobalToLocal?d (INT n, const COORD **Corners, const COORD *EvalPoint, 
+   INT GlobalToLocal (INT n, const COORD **Corners, const COORD *EvalPoint, 
    COORD *LocalCoord);
 
    PARAMETERS:
@@ -1226,25 +1204,24 @@ INT LocalToGlobal3d (INT n, const COORD **Corners, const COORD *EvalPoint, COORD
 D*/
 /****************************************************************************/
 
-#ifdef __TWODIM__						 
-INT GlobalToLocal2d (INT n, const COORD **Corners, 
-					 const COORD *EvalPoint, COORD *LocalCoord)
+INT GlobalToLocal (INT n, const COORD **Corners, 
+				   const COORD *EvalPoint, COORD *LocalCoord)
 {
 	COORD_VECTOR tmp,diff,M[DIM],IM[DIM];
-	DOUBLE s;
+	DOUBLE s,IMdet;
 	INT i;
 	
 	V_DIM_SUBTRACT(EvalPoint,Corners[0],diff);
-	if (n == 3)
+	if (n == DIM+1)
 	  {
-		TRANSFORMATION_OF_TRIANGLE(Corners,M);
-		M_DIM_INVERT(M,IM);
+		TRANSFORMATION(DIM+1,Corners,LocalCoord,M);
+		M_DIM_INVERT(M,IM,IMdet);
 		MM_TIMES_V_DIM(IM,diff,LocalCoord);	
 		return(0);
 	  }
 	V_DIM_CLEAR(LocalCoord);
 	TRANSFORMATION(n,Corners,LocalCoord,M);
-	M_DIM_INVERT(M,IM);
+	M_DIM_INVERT(M,IM,IMdet);
 	MM_TIMES_V_DIM(IM,diff,LocalCoord);	
 	for (i=0; i<MAX_ITER; i++)
 	  {
@@ -1254,51 +1231,13 @@ INT GlobalToLocal2d (INT n, const COORD **Corners,
 		if (s <= SMALL_DIFF) 
 			return (0);
 		TRANSFORMATION(n,Corners,LocalCoord,M);
-		M_DIM_INVERT(M,IM);
+		M_DIM_INVERT(M,IM,IMdet);
 		MM_TIMES_V_DIM(IM,diff,tmp);
 		V_DIM_SUBTRACT(LocalCoord,tmp,LocalCoord);
 	  }
 
 	return(1);
 }
-#endif
-
-#ifdef __THREEDIM__						 
-INT GlobalToLocal3d (INT n, const COORD **Corners, 
-					 const COORD *EvalPoint, COORD *LocalCoord)
-{
-	COORD_VECTOR tmp,diff,M[DIM],IM[DIM];
-	DOUBLE s;
-	INT i;
-	
-	V_DIM_SUBTRACT(EvalPoint,Corners[0],diff);
-	if (n == 4)
-	  {
-		TRANSFORMATION_OF_TETRAHEDRON(Corners,M);
-		M_DIM_INVERT(M,IM);
-		MM_TIMES_V_DIM(IM,diff,LocalCoord);	
-		return(0);
-	  }
-	V_DIM_CLEAR(LocalCoord);
-	TRANSFORMATION(n,Corners,LocalCoord,M);
-	M_DIM_INVERT(M,IM);
-	MM_TIMES_V_DIM(IM,diff,LocalCoord);	
-	for (i=0; i<MAX_ITER; i++)
-	  {
-		LOCAL_TO_GLOBAL (n,Corners,LocalCoord,tmp);
-		V_DIM_SUBTRACT(tmp,EvalPoint,diff);
-		V_DIM_EUKLIDNORM(diff,s);
-		if (s <= SMALL_DIFF) 
-			return (0);
-		TRANSFORMATION(n,Corners,LocalCoord,M);
-		M_DIM_INVERT(M,IM);
-		MM_TIMES_V_DIM(IM,diff,tmp);
-		V_DIM_SUBTRACT(LocalCoord,tmp,LocalCoord);
-	  }
-
-	return(1);
-}
-#endif
 
 /****************************************************************************/
 /*D
