@@ -2350,7 +2350,6 @@ static INT InitFour_cr (void)
 /*                                                                          */
 /****************************************************************************/
 
-
 static INT south0skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda;
@@ -2643,7 +2642,6 @@ static INT west5skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-
 static INT north6_11skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda;
@@ -2679,8 +2677,6 @@ static INT north6_13skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   return(0);
 }
-
-
 
 static INT south6_31skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
@@ -2718,8 +2714,6 @@ static INT south6_33skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-
-
 static INT north6_41skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda;
@@ -2755,8 +2749,6 @@ static INT north6_43skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   return(0);
 }
-
-
 
 static INT south6_51skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
@@ -2794,7 +2786,6 @@ static INT south6_53skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-
 static INT north6_3skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda;
@@ -2818,7 +2809,6 @@ static INT west6_2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 
   return(0);
 }
-
 
 static INT east6_4skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
@@ -2856,6 +2846,7 @@ static INT east6_2skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
+/* */
 static INT south6_1skBoundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda;
@@ -2868,19 +2859,19 @@ static INT south6_1skBoundary (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-static const INT skin_sd2p[8] = {0,0,0,0,0,0,0,3};
-
-static const INT skin_sg2p[52] = {0,0,0,1,1,0,1,1,1,1,0,1,1,0,1,1,
-                                  1,1,0,1,1,0,0,0,3,2,2,2,2,3,3,2,
-                                  2,2,2,2,2,3,3,2,2,2,2,3,
-                                  2,2,2,2,2,2,2,2};
+static const INT skin_sd2p[8] = {0,0,0,0,0,0,0,0};
+static const INT skin_sg2p[52] = {0,0,0,1,1,0,1,1,1,1,
+                                  0,1,1,0,1,1,1,1,0,1,
+                                  1,0,0,0,0,2,2,2,2,0,
+                                  0,2,2,2,2,2,2,0,0,2,
+                                  2,2,2,0,2,2,2,2,2,2,
+                                  2,2};
 static const INT skin_pt2p[52] = {0,1,1,0,1,1,1,1,1,1,
                                   1,1,1,1,1,1,1,1,1,1,
                                   0,1,1,0,3,3,3,3,3,3,
                                   3,3,3,3,3,3,3,3,3,3,
                                   3,3,3,3,2,2,2,2,2,2,
                                   2,2};
-
 
 static const DOMAIN_PART_INFO skin_dpi = {skin_sd2p,skin_sg2p,skin_pt2p};
 
