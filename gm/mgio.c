@@ -1221,7 +1221,7 @@ int CloseMGFile ()
  */
 /****************************************************************************/
 
-int MGIO_Init (void)
+int MGIO_Init ()
 {
 
 #ifdef __MGIO_USE_IN_UG__

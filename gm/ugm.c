@@ -2437,11 +2437,11 @@ if (0)
 					SET_NBELEM(theNeighbor,j,NULL);
 					break;
 				}
-			assert(j<SIDES_OF_ELEM(theNeighbor)
-					#ifdef ModelP
-					|| EGHOST(theElement)
-					#endif
-					);
+            #ifdef ModelP
+			ASSERT(j<SIDES_OF_ELEM(theNeighbor) || EGHOST(theElement));
+			#else
+			ASSERT(j<SIDES_OF_ELEM(theNeighbor));
+            #endif
 		}
 	}
 	
@@ -3293,12 +3293,14 @@ ELEMENT *FindFather (VERTEX *theVertex)
 		if (OBJT(theVertex) == BVOBJ)
 			return(theElement);
 
+	#ifndef ModelP
     if (OBJT(theElement)==BEOBJ)
     {
         for (theNode=TOPNODE(theVertex);theNode!=0;theNode=NFATHER(theNode))
             if (NTYPE(theNode)==CENTER_NODE) return(theElement);
     }
-	
+	#endif
+
 	return(NULL);
 }
 
