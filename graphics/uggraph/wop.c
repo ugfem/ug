@@ -905,7 +905,7 @@ static INT ElementISLine (ELEMENT *theElement, DOUBLE *p1, DOUBLE *p2);
    CreatePlotObjHandling - Allocate a new PLOTOBJHANDLING
 
    SYNOPSIS:
-   static PLOTOBJHANDLING	*CreatePlotObjHandling (char *PlotObjTypeName)
+   PLOTOBJHANDLING	*CreatePlotObjHandling (char *PlotObjTypeName)
 
    PARAMETERS:
 .  PlotObjTypeName - the name
@@ -920,7 +920,7 @@ static INT ElementISLine (ELEMENT *theElement, DOUBLE *p1, DOUBLE *p2);
 D*/										
 /****************************************************************************/
 
-static PLOTOBJHANDLING	*CreatePlotObjHandling (char *PlotObjTypeName)
+PLOTOBJHANDLING	*CreatePlotObjHandling (char *PlotObjTypeName)
 {
 	PLOTOBJHANDLING *poh;
 	INT i;
@@ -3898,7 +3898,7 @@ static INT EW_DoNothing0D (DRAWINGOBJ *q)
    Draw2D - Draw content of a 2D drawing object 
 
    SYNOPSIS:
-   static INT Draw2D (DRAWINGOBJ *q)
+   INT Draw2D (DRAWINGOBJ *q)
 
    PARAMETERS:
 .  q - the drawing object
@@ -3915,7 +3915,7 @@ static INT EW_DoNothing0D (DRAWINGOBJ *q)
    */
 /****************************************************************************/
 
-static INT Draw2D (DRAWINGOBJ *q)
+INT Draw2D (DRAWINGOBJ *q)
 {
 	INT j, n, centered, end, mode;
 	DOUBLE help[2],norm;
@@ -4409,7 +4409,7 @@ static INT NW_SelectNode2D (DRAWINGOBJ *q)
    Draw3D - Draw content of a 3D drawing object	
 
    SYNOPSIS:
-   static INT Draw3D (DRAWINGOBJ *q);
+   INT Draw3D (DRAWINGOBJ *q);
 
    PARAMETERS:
 .  q - the drawing object
@@ -4424,7 +4424,7 @@ static INT NW_SelectNode2D (DRAWINGOBJ *q)
 */												
 /****************************************************************************/
 
-static INT Draw3D (DRAWINGOBJ *q)
+INT Draw3D (DRAWINGOBJ *q)
 {
 	INT j, n, centered, end, mode;
 	DOUBLE help[3], intensity;

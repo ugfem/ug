@@ -500,4 +500,7 @@ INT             DrawPictureFrame                (PICTURE *thePicture, INT mode);
 INT             ErasePicture                    (PICTURE *thePicture);
 INT                     SetOrderStrategy                (INT OrderStrategy);
 
+PLOTOBJHANDLING *CreatePlotObjHandling (char *PlotObjTypeName);
+INT             Draw2D                                  (DRAWINGOBJ *q);
+INT             Draw3D                                  (DRAWINGOBJ *q);
 #endif
