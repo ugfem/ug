@@ -44,6 +44,7 @@
 #ifdef ModelP
 #include "ppif.h"
 #include "ddd.h"
+#include "dimension.h"
 #endif
 
 /****************************************************************************/
@@ -243,8 +244,7 @@ enum Priorities
 #define EDID_FMTX    "%08x"
 #define EDID_FFMTX   EDID_FMTX
 #define EDID_PRTX(x) (x)
-#endif
-
+#else
 #ifdef __THREEDIM__
 #define EDID_FMT     "%08x"
 #define EDID_FFMT    EDID_FMT
@@ -255,6 +255,9 @@ enum Priorities
 #define EDID_FMTX    "%x/%08x/%d"
 #define EDID_FFMTX   EDID_FMTX
 #define EDID_PRTX(x) x,GID(x),PRIO(x)
+#else
+#error ****   Define either __TWODIM__ or __THREEDIM__  ****
+#endif
 #endif
 
 
