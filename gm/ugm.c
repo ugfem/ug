@@ -215,7 +215,7 @@ void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
 {
   void *obj = GetMemoryLocal(theMG, size, type);
 
-  if (type!=NOOBJ)
+  if (obj!=NULL && type!=NOOBJ)
   {
     /* link this object to DDD management */
     if (HAS_DDDHDR(type))
@@ -1344,6 +1344,7 @@ ELEMENT *CreateBoundaryElement (GRID *theGrid, ELEMENT *after, INT tag)
   SETLEVEL(pe,theGrid->level);
         #ifdef ModelP
   DDD_AttrSet(PARHDRE(pe),theGrid->level);
+  DDD_PrioritySet(PARHDRE(pe),PrioMaster);
         #endif
   SETEBUILDCON(pe,1);
         #ifdef __THREEDIM__
@@ -1468,6 +1469,7 @@ ELEMENT *CreateInnerElement (GRID *theGrid, ELEMENT *after, INT tag)
   SETLEVEL(pe,theGrid->level);
         #ifdef ModelP
   DDD_AttrSet(PARHDRE(pe),theGrid->level);
+  DDD_PrioritySet(PARHDRE(pe),PrioMaster);
         #endif
   SETEBUILDCON(pe,1);
         #ifdef __THREEDIM__
@@ -6639,10 +6641,10 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
                   if (thePatch == VS_PATCH(vs))
                     break;
                 if (vs == NULL)
-                  *NodeError |= (i<<k);
+                  *NodeError |= (1<<k);
               }
               else
-                *NodeError |= (i<<(k+CORNERS_OF_ELEM(theElement)));
+                *NodeError |= (1<<(k+CORNERS_OF_ELEM(theElement)));
             }
           }
           else
@@ -6921,10 +6923,10 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
                   if (thePatch == VS_PATCH(vs))
                     break;
                 if (vs == NULL)
-                  *NodeError |= (i<<k);
+                  *NodeError |= (1<<k);
               }
               else
-                *NodeError |= (i<<(k+MAX_CORNERS_OF_ELEM));
+                *NodeError |= (1<<(k+MAX_CORNERS_OF_ELEM));
             }
           }
           else
