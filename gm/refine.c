@@ -413,6 +413,57 @@ void MakeRefMarkandMarkClassConsistent (int level)
 }
 #endif
 
+#ifdef ModelP
+/****************************************************************************/
+/*																			*/
+/* Function:  CheckPartitioning												*/
+/*																			*/
+/* Purpose:   check whether all master copies of elements which may be      */
+/*            involved in next refinement step have master copies of the    */
+/*            sons (if existing) at the same processor.                     */
+/*																			*/
+/* Param:	  MULTIGRID *theMG												*/
+/*																			*/
+/* return:	  INT GM_OK: ok 												*/
+/*			  INT GM_ERROR: error											*/
+/*																			*/
+/****************************************************************************/
+
+INT CheckPartitioning (MULTIGRID *theMG)
+{
+	INT i;
+	ELEMENT *theElement;
+	GRID	*theGrid;
+
+	/* reset used flags */
+	for (i=TOPLEVEL(theMG); i>=0; i--)
+	{
+		theGrid = GRID_ON_LEVEL(theMG,i);
+		for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
+			 theElement=SUCCE(theElement))
+		{
+			SETUSED(theElement,0);
+		}
+	}
+
+	/* set flags on leaf elements */
+	for (i=TOPLEVEL(theMG); i>=0; i--)
+	{
+		theGrid = GRID_ON_LEVEL(theMG,i);
+		for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
+			 theElement=SUCCE(theElement))
+		{
+			if (LEAFELEM(theElement))
+				SETUSED(theElement,1);
+		}
+	}
+
+	/* drop flags to elements which has to be tested */
+
+	return(GM_OK);
+}
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* Function:  SetRefineInfo													*/
@@ -4903,7 +4954,8 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 #ifdef ModelP
 /* parameters for CheckGrid() */
 #define GHOSTS	1
-			
+#define GEOM	1
+#define ALG		0
 #define LIST	1
 #define IF 		1
 
@@ -4911,7 +4963,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 /****************************************************************************/
 /*
    CheckConsistency - 
-void CheckConsistency(MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, INT *check)
+	IFDEBUG(gm,debugstart)
 		printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,(*check)++,level);
 		Debuggm = GHOSTS;
 		CheckGrid(theGrid,GEOM,ALG,LIST,IF);
@@ -4923,6 +4975,7 @@ void CheckConsistency(MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, 
 
 
 /****************************************************************************/
+/*
    CheckMultiGrid - 
    SYNOPSIS:
 /*																			*/
