@@ -901,8 +901,6 @@ static INT InitTorus (void)
 /*                                                                          */
 /****************************************************************************/
 
-
-
 static INT ZylFront1 (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1,lambda2;
@@ -911,7 +909,7 @@ static INT ZylFront1 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>0.4 || lambda2<0.0 || lambda2>0.075 ) return(1);
+  if ( lambda1<0.0 || lambda1>0.400001 || lambda2<0.0 || lambda2>0.0750001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = 0.0;
@@ -930,7 +928,7 @@ static INT ZylFront2 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>0.4 || lambda2<0.075 || lambda2>0.2 ) return(1);
+  if ( lambda1<0.0 || lambda1>0.4000001 || lambda2<0.074999 || lambda2>0.20001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = 0.0;
@@ -949,7 +947,7 @@ static INT ZylFront3 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>0.4 || lambda2<0.2 || lambda2>0.33 ) return(1);
+  if ( lambda1<0.0 || lambda1>0.40001 || lambda2<0.2 || lambda2>0.330001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = 0.0;
@@ -968,7 +966,7 @@ static INT ZylFront4 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>0.4 || lambda2<0.33 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.0 || lambda1>0.400001 || lambda2<0.33 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = 0.0;
@@ -987,7 +985,7 @@ static INT ZylFront5 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.4 || lambda1>0.5 || lambda2<0.0 || lambda2>0.075 ) return(1);
+  if ( lambda1<0.4 || lambda1>0.5 || lambda2<0.0 || lambda2>0.0750001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = 0.0;
@@ -1006,7 +1004,7 @@ static INT ZylFront6 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.4 + 0.1*lambda2;
@@ -1030,7 +1028,7 @@ static INT ZylFront7 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.4;
@@ -1054,7 +1052,7 @@ static INT ZylFront8 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.4;
@@ -1078,7 +1076,7 @@ static INT ZylFront9 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.4 + 0.1*lambda2;
@@ -1102,7 +1100,7 @@ static INT ZylFront10 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.4 || lambda1>0.5 || lambda2<0.33 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.4 || lambda1>0.5 || lambda2<0.33 || lambda2>0.4100001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -1122,7 +1120,7 @@ static INT ZylFront11 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.5 || lambda1>0.6 || lambda2<0.0 || lambda2>0.075 ) return(1);
+  if ( lambda1<0.5 || lambda1>0.6000001 || lambda2<0.0 || lambda2>0.0750001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -1142,7 +1140,7 @@ static INT ZylFront12 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.5 + 0.1*lambda2;
@@ -1166,7 +1164,7 @@ static INT ZylFront13 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.6;
@@ -1190,7 +1188,7 @@ static INT ZylFront14 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.6;
@@ -1214,7 +1212,7 @@ static INT ZylFront15 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.5 + 0.1*lambda2;
@@ -1238,7 +1236,7 @@ static INT ZylFront16 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.5 || lambda1>0.6 || lambda2<0.33 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.5 || lambda1>0.6000001 || lambda2<0.33 || lambda2>0.4100001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -1258,7 +1256,7 @@ static INT ZylFront17 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.0 || lambda2>0.075 ) return(1);
+  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.0 || lambda2>0.0750001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -1278,7 +1276,7 @@ static INT ZylFront18 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.075 || lambda2>0.2 ) return(1);
+  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.074999 || lambda2>0.200001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -1298,7 +1296,7 @@ static INT ZylFront19 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.2 || lambda2>0.33 ) return(1);
+  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.2 || lambda2>0.330001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -1318,7 +1316,7 @@ static INT ZylFront20 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.33 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.33 || lambda2>0.4100001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -1338,7 +1336,7 @@ static INT ZylBack1 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>0.4 || lambda2<0.0 || lambda2>0.075 ) return(1);
+  if ( lambda1<0.0 || lambda1>0.400001 || lambda2<0.0 || lambda2>0.07500001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = 0.41;
@@ -1357,7 +1355,7 @@ static INT ZylBack2 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>0.4 || lambda2<0.075 || lambda2>0.2 ) return(1);
+  if ( lambda1<0.0 || lambda1>0.400001 || lambda2<0.074999 || lambda2>0.200001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = 0.41;
@@ -1376,7 +1374,7 @@ static INT ZylBack3 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>0.4 || lambda2<0.2 || lambda2>0.33 ) return(1);
+  if ( lambda1<0.0 || lambda1>0.400001 || lambda2<0.2 || lambda2>0.330001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = 0.41;
@@ -1395,7 +1393,7 @@ static INT ZylBack4 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>0.4 || lambda2<0.33 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.0 || lambda1>0.400001 || lambda2<0.33 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = 0.41;
@@ -1414,7 +1412,7 @@ static INT ZylBack5 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.4 || lambda1>0.5 || lambda2<0.0 || lambda2>0.075 ) return(1);
+  if ( lambda1<0.4 || lambda1>0.5 || lambda2<0.0 || lambda2>0.07500001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = 0.41;
@@ -1433,7 +1431,7 @@ static INT ZylBack6 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.4 + 0.1*lambda2;
@@ -1457,7 +1455,7 @@ static INT ZylBack7 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.4;
@@ -1481,7 +1479,7 @@ static INT ZylBack8 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.4;
@@ -1505,7 +1503,7 @@ static INT ZylBack9 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.4 + 0.1*lambda2;
@@ -1529,7 +1527,7 @@ static INT ZylBack10 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.4 || lambda1>0.5 || lambda2<0.33 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.4 || lambda1>0.5 || lambda2<0.33 || lambda2>0.410001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -1549,7 +1547,7 @@ static INT ZylBack11 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.5 || lambda1>0.6 || lambda2<0.0 || lambda2>0.075 ) return(1);
+  if ( lambda1<0.5 || lambda1>0.600001 || lambda2<0.0 || lambda2>0.0750001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -1569,7 +1567,7 @@ static INT ZylBack12 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.5 + 0.1*lambda2;
@@ -1593,7 +1591,7 @@ static INT ZylBack13 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.6;
@@ -1617,7 +1615,7 @@ static INT ZylBack14 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.6;
@@ -1641,7 +1639,7 @@ static INT ZylBack15 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>1.0 ) REP_ERR_RETURN(1);
 
   /* fill result */
   px = 0.5 + 0.1*lambda2;
@@ -1665,7 +1663,7 @@ static INT ZylBack16 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.5 || lambda1>0.6 || lambda2<0.33 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.5 || lambda1>0.600001 || lambda2<0.33 || lambda2>0.410001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -1685,7 +1683,7 @@ static INT ZylBack17 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.0 || lambda2>0.075 ) return(1);
+  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.0 || lambda2>0.0750001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -1705,7 +1703,7 @@ static INT ZylBack18 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.075 || lambda2>0.2 ) return(1);
+  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.074999 || lambda2>0.200001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -1725,7 +1723,7 @@ static INT ZylBack19 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.2 || lambda2>0.33 ) return(1);
+  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.2 || lambda2>0.3300001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -1745,7 +1743,7 @@ static INT ZylBack20 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.33 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.33 || lambda2>0.410001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = lambda1;
@@ -1765,7 +1763,7 @@ static INT ZylSouth1 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>0.4 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.0 || lambda1>0.400001 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = lambda2;
@@ -1784,7 +1782,7 @@ static INT ZylSouth2 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.4 || lambda1>0.5 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.4 || lambda1>0.5 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = lambda2;
@@ -1803,7 +1801,7 @@ static INT ZylSouth3 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.5 || lambda1>0.6 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.5 || lambda1>0.6000001 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = lambda2;
@@ -1822,7 +1820,7 @@ static INT ZylSouth4 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = lambda2;
@@ -1841,7 +1839,7 @@ static INT ZylNorth1 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>0.4 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.0 || lambda1>0.400001 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = lambda2;
@@ -1860,7 +1858,7 @@ static INT ZylNorth2 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.4 || lambda1>0.5 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.4 || lambda1>0.5 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = lambda2;
@@ -1879,7 +1877,7 @@ static INT ZylNorth3 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.5 || lambda1>0.6 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.5 || lambda1>0.6000001 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = lambda2;
@@ -1898,7 +1896,7 @@ static INT ZylNorth4 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.6 || lambda1>2.5 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = lambda1;
   result[1] = lambda2;
@@ -1917,7 +1915,7 @@ static INT ZylWest1 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>0.075 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.0 || lambda1>0.07500001 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = 0.0;
   result[1] = lambda2;
@@ -1936,7 +1934,7 @@ static INT ZylWest2 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.075 || lambda1>0.2 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.074999 || lambda1>0.2000001 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = 0.0;
   result[1] = lambda2;
@@ -1955,7 +1953,7 @@ static INT ZylWest3 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.2 || lambda1>0.33 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.2 || lambda1>0.330001 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = 0.0;
   result[1] = lambda2;
@@ -1974,7 +1972,7 @@ static INT ZylWest4 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.33 || lambda1>0.41 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.33 || lambda1>0.4100001 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = 0.0;
   result[1] = lambda2;
@@ -1993,7 +1991,7 @@ static INT ZylEast1 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>0.075 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.0 || lambda1>0.0750001 || lambda2<0.0 || lambda2>0.4100001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = 2.5;
   result[1] = lambda2;
@@ -2012,7 +2010,7 @@ static INT ZylEast2 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.075 || lambda1>0.2 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.074999 || lambda1>0.200001 || lambda2<0.0 || lambda2>0.4100001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = 2.5;
   result[1] = lambda2;
@@ -2031,7 +2029,7 @@ static INT ZylEast3 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.2 || lambda1>0.33 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.2 || lambda1>0.330001 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = 2.5;
   result[1] = lambda2;
@@ -2050,7 +2048,7 @@ static INT ZylEast4 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.33 || lambda1>0.41 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.33 || lambda1>0.410001 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
   /* fill result */
   result[0] = 2.5;
   result[1] = lambda2;
@@ -2069,7 +2067,7 @@ static INT Zyl1 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = 0.5 + 0.05*cos(PI*0.25*lambda1);
@@ -2088,7 +2086,7 @@ static INT Zyl2 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = 0.5 + 0.05*cos(PI*0.25 + PI*0.25*lambda1);
@@ -2107,7 +2105,7 @@ static INT Zyl3 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = 0.5 + 0.05*cos(PI*0.5 + PI*0.25*lambda1);
@@ -2126,7 +2124,7 @@ static INT Zyl4 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = 0.5 + 0.05*cos(0.75*PI + PI*0.25*lambda1);
@@ -2145,7 +2143,7 @@ static INT Zyl5 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = 0.5 + 0.05*cos(PI + PI*0.25*lambda1);
@@ -2164,7 +2162,7 @@ static INT Zyl6 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = 0.5 + 0.05*cos(1.25*PI + PI*0.25*lambda1);
@@ -2183,7 +2181,7 @@ static INT Zyl7 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = 0.5 + 0.05*cos(1.5*PI + PI*0.25*lambda1);
@@ -2202,7 +2200,7 @@ static INT Zyl8 (void *data, DOUBLE *param, DOUBLE *result)
   lambda2 = param[1];
 
   /* check range */
-  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.41 ) return(1);
+  if ( lambda1<0.0 || lambda1>1.0 || lambda2<0.0 || lambda2>0.410001 ) REP_ERR_RETURN(1);
 
   /* fill result */
   result[0] = 0.5 + 0.05*cos(1.75*PI + PI*0.25*lambda1);
@@ -2224,355 +2222,355 @@ static INT InitCylinder (void)
   MidPoint[1] = 0.205;
   MidPoint[2] = 0.205;
   radius = 1.6;
-  if (CreateDomain("Cylinder",MidPoint,radius,64,64,NO)==NULL) return(1);
+  if (CreateDomain("Cylinder",MidPoint,radius,64,64,NO)==NULL) REP_ERR_RETURN(1);
 
   /* allocate the boundary segments */
   alpha[0]=0.0; alpha[1]=0.0;
   beta[0] =0.4; beta[1] =0.075;
   point[0]=0; point[1]=5; point[2]=6; point[3]=1;
   if (CreateBoundarySegment("zylfront1",1,0,0,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront1,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront1,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.075;
   beta[0] =0.4; beta[1] =0.2;
   point[0]=1; point[1]=6; point[2]=7; point[3]=2;
   if (CreateBoundarySegment("zylfront2",1,0,1,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront2, NULL)==NULL) return(1);
+                            alpha,beta,ZylFront2, NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.2;
   beta[0] =0.4; beta[1] =0.33;
   point[0]=2; point[1]=7; point[2]=8; point[3]=3;
   if (CreateBoundarySegment("zylfront3",1,0,2,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront3,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront3,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.33;
   beta[0] =0.4; beta[1] =0.41;
   point[0]=3; point[1]=8; point[2]=9; point[3]=4;
   if (CreateBoundarySegment("zylfront4",1,0,3,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront4,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront4,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.4; alpha[1]=0.0;
   beta[0] =0.5; beta[1] =0.075;
   point[0]=5; point[1]=13; point[2]=14; point[3]=6;
   if (CreateBoundarySegment("zylfront5",1,0,4,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront5,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront5,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.0;
   beta[0] =1.0; beta[1] =1.0;
   point[0]=6; point[1]=11; point[2]=15; point[3]=14;
   if (CreateBoundarySegment("zylfront6",0,1,5,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront6,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront6,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=6; point[1]=11; point[2]=10; point[3]=7;
   if (CreateBoundarySegment("zylfront7",1,0,6,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront7,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront7,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=7; point[1]=10; point[2]=12; point[3]=8;
   if (CreateBoundarySegment("zylfront8",1,0,7,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront8,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront8,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=8; point[1]=12; point[2]=16; point[3]=17;
   if (CreateBoundarySegment("zylfront9",1,0,8,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront9,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront9,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.4; alpha[1]=0.33;
   beta[0] =0.5; beta[1] =0.41;
   point[0]=8; point[1]=17; point[2]=18; point[3]=9;
   if (CreateBoundarySegment("zylfront10",1,0,9,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront10,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront10,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.5; alpha[1]=0.0;
   beta[0] =0.6; beta[1] =0.075;
   point[0]=13; point[1]=22; point[2]=23; point[3]=14;
   if (CreateBoundarySegment("zylfront11",1,0,10,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront11,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront11,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.0;
   beta[0] =1.0; beta[1] =1.0;
   point[0]=14; point[1]=15; point[2]=19; point[3]=23;
   if (CreateBoundarySegment("zylfront12",0,1,11,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront12,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront12,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=23; point[1]=19; point[2]=21; point[3]=24;
   if (CreateBoundarySegment("zylfront13",0,1,12,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront13,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront13,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=24; point[1]=21; point[2]=20; point[3]=25;
   if (CreateBoundarySegment("zylfront14",0,1,13,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront14,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront14,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=17; point[1]=16; point[2]=20; point[3]=25;
   if (CreateBoundarySegment("zylfront15",1,0,14,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront15,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront15,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.5; alpha[1]=0.33;
   beta[0] =0.6; beta[1] =0.41;
   point[0]=17; point[1]=25; point[2]=26; point[3]=18;
   if (CreateBoundarySegment("zylfront16",1,0,15,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront16,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront16,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.6; alpha[1]=0.0;
   beta[0] =2.5; beta[1] =0.075;
   point[0]=22; point[1]=27; point[2]=28; point[3]=23;
   if (CreateBoundarySegment("zylfront17",1,0,16,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront17,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront17,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.6; alpha[1]=0.075;
   beta[0] =2.5; beta[1] =0.2;
   point[0]=23; point[1]=28; point[2]=29; point[3]=24;
   if (CreateBoundarySegment("zylfront18",1,0,17,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront18,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront18,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.6; alpha[1]=0.2;
   beta[0] =2.5; beta[1] =0.33;
   point[0]=24; point[1]=29; point[2]=30; point[3]=25;
   if (CreateBoundarySegment("zylfront19",1,0,18,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront19,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront19,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.6; alpha[1]=0.33;
   beta[0] =2.5; beta[1] =0.41;
   point[0]=25; point[1]=30; point[2]=31; point[3]=26;
   if (CreateBoundarySegment("zylfront20",1,0,19,NON_PERIODIC,1,point,
-                            alpha,beta,ZylFront20,NULL)==NULL) return(1);
+                            alpha,beta,ZylFront20,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.0;
   beta[0] =0.4; beta[1] =0.075;
   point[0]=32; point[1]=37; point[2]=38; point[3]=33;
   if (CreateBoundarySegment("zylback1",0,1,20,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack1,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack1,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.075;
   beta[0] =0.4; beta[1] =0.2;
   point[0]=33; point[1]=38; point[2]=39; point[3]=34;
   if (CreateBoundarySegment("zylback2",0,1,21,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack2, NULL)==NULL) return(1);
+                            alpha,beta,ZylBack2, NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.2;
   beta[0] =0.4; beta[1] =0.33;
   point[0]=34; point[1]=39; point[2]=40; point[3]=35;
   if (CreateBoundarySegment("zylback3",0,1,22,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack3,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack3,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.33;
   beta[0] =0.4; beta[1] =0.41;
   point[0]=35; point[1]=40; point[2]=41; point[3]=36;
   if (CreateBoundarySegment("zylback4",0,1,23,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack4,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack4,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.4; alpha[1]=0.0;
   beta[0] =0.5; beta[1] =0.075;
   point[0]=37; point[1]=45; point[2]=46; point[3]=38;
   if (CreateBoundarySegment("zylback5",0,1,24,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack5,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack5,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.0;
   beta[0] =1.0; beta[1] =1.0;
   point[0]=38; point[1]=43; point[2]=47; point[3]=46;
   if (CreateBoundarySegment("zylback6",1,0,25,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack6,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack6,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=38; point[1]=43; point[2]=42; point[3]=39;
   if (CreateBoundarySegment("zylback7",0,1,26,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack7,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack7,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=39; point[1]=42; point[2]=44; point[3]=40;
   if (CreateBoundarySegment("zylback8",0,1,27,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack8,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack8,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=40; point[1]=44; point[2]=48; point[3]=49;
   if (CreateBoundarySegment("zylback9",0,1,28,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack9,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack9,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.4; alpha[1]=0.33;
   beta[0] =0.5; beta[1] =0.41;
   point[0]=40; point[1]=49; point[2]=50; point[3]=41;
   if (CreateBoundarySegment("zylback10",0,1,29,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack10,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack10,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.5; alpha[1]=0.0;
   beta[0] =0.6; beta[1] =0.075;
   point[0]=45; point[1]=54; point[2]=55; point[3]=46;
   if (CreateBoundarySegment("zylback11",0,1,30,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack11,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack11,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.0;
   beta[0] =1.0; beta[1] =1.0;
   point[0]=46; point[1]=47; point[2]=51; point[3]=55;
   if (CreateBoundarySegment("zylback12",1,0,31,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack12,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack12,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=55; point[1]=51; point[2]=53; point[3]=56;
   if (CreateBoundarySegment("zylback13",1,0,32,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack13,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack13,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=56; point[1]=53; point[2]=52; point[3]=57;
   if (CreateBoundarySegment("zylback14",1,0,33,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack14,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack14,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=49; point[1]=48; point[2]=52; point[3]=57;
   if (CreateBoundarySegment("zylback15",0,1,34,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack15,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack15,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.5; alpha[1]=0.33;
   beta[0] =0.6; beta[1] =0.41;
   point[0]=49; point[1]=57; point[2]=58; point[3]=50;
   if (CreateBoundarySegment("zylback16",0,1,35,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack16,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack16,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.6; alpha[1]=0.0;
   beta[0] =2.5; beta[1] =0.075;
   point[0]=54; point[1]=59; point[2]=60; point[3]=55;
   if (CreateBoundarySegment("zylback17",0,1,36,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack17,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack17,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.6; alpha[1]=0.075;
   beta[0] =2.5; beta[1] =0.2;
   point[0]=55; point[1]=60; point[2]=61; point[3]=56;
   if (CreateBoundarySegment("zylback18",0,1,37,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack18,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack18,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.6; alpha[1]=0.2;
   beta[0] =2.5; beta[1] =0.33;
   point[0]=56; point[1]=61; point[2]=62; point[3]=57;
   if (CreateBoundarySegment("zylback19",0,1,38,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack19,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack19,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.6; alpha[1]=0.33;
   beta[0] =2.5; beta[1] =0.41;
   point[0]=57; point[1]=62; point[2]=63; point[3]=58;
   if (CreateBoundarySegment("zylback20",0,1,39,NON_PERIODIC,1,point,
-                            alpha,beta,ZylBack20,NULL)==NULL) return(1);
+                            alpha,beta,ZylBack20,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.0;
   beta[0] =0.4; beta[1] =0.41;
   point[0]=0; point[1]=5; point[2]=37; point[3]=32;
   if (CreateBoundarySegment("zylsouth1",0,1,40,NON_PERIODIC,1,point,
-                            alpha,beta,ZylSouth1,NULL)==NULL) return(1);
+                            alpha,beta,ZylSouth1,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.4; alpha[1]=0.0;
   beta[0] =0.5; beta[1] =0.41;
   point[0]=5; point[1]=13; point[2]=45; point[3]=37;
   if (CreateBoundarySegment("zylsouth2",0,1,41,NON_PERIODIC,1,point,
-                            alpha,beta,ZylSouth2,NULL)==NULL) return(1);
+                            alpha,beta,ZylSouth2,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.5; alpha[1]=0.0;
   beta[0] =0.6; beta[1] =0.41;
   point[0]=13; point[1]=22; point[2]=54; point[3]=45;
   if (CreateBoundarySegment("zylsouth3",0,1,42,NON_PERIODIC,1,point,
-                            alpha,beta,ZylSouth3,NULL)==NULL) return(1);
+                            alpha,beta,ZylSouth3,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.6; alpha[1]=0.0;
   beta[0] =2.5; beta[1] =0.41;
   point[0]=22; point[1]=27; point[2]=59; point[3]=54;
   if (CreateBoundarySegment("zylsouth4",0,1,43,NON_PERIODIC,1,point,
-                            alpha,beta,ZylSouth4,NULL)==NULL) return(1);
+                            alpha,beta,ZylSouth4,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.0;
   beta[0] =0.4; beta[1] =0.41;
   point[0]=4; point[1]=9; point[2]=41; point[3]=36;
   if (CreateBoundarySegment("zylnorth1",1,0,44,NON_PERIODIC,1,point,
-                            alpha,beta,ZylNorth1,NULL)==NULL) return(1);
+                            alpha,beta,ZylNorth1,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.4; alpha[1]=0.0;
   beta[0] =0.5; beta[1] =0.41;
   point[0]=9; point[1]=18; point[2]=50; point[3]=41;
   if (CreateBoundarySegment("zylnorth2",1,0,45,NON_PERIODIC,1,point,
-                            alpha,beta,ZylNorth2,NULL)==NULL) return(1);
+                            alpha,beta,ZylNorth2,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.5; alpha[1]=0.0;
   beta[0] =0.6; beta[1] =0.41;
   point[0]=18; point[1]=26; point[2]=58; point[3]=50;
   if (CreateBoundarySegment("zylnorth3",1,0,46,NON_PERIODIC,1,point,
-                            alpha,beta,ZylNorth3,NULL)==NULL) return(1);
+                            alpha,beta,ZylNorth3,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.6; alpha[1]=0.0;
   beta[0] =2.5; beta[1] =0.41;
   point[0]=26; point[1]=31; point[2]=63; point[3]=58;
   if (CreateBoundarySegment("zylnorth4",1,0,47,NON_PERIODIC,1,point,
-                            alpha,beta,ZylNorth4,NULL)==NULL) return(1);
+                            alpha,beta,ZylNorth4,NULL)==NULL) REP_ERR_RETURN(1);
 
 
   alpha[0]=0.0; alpha[1]=0.0;
   beta[0] =0.075; beta[1] =0.41;
   point[0]=0; point[1]=1; point[2]=33; point[3]=32;
   if (CreateBoundarySegment("zylwest1",1,0,48,NON_PERIODIC,1,point,
-                            alpha,beta,ZylWest1,NULL)==NULL) return(1);
+                            alpha,beta,ZylWest1,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.075; alpha[1]=0.0;
   beta[0] =0.2; beta[1] =0.41;
   point[0]=1; point[1]=2; point[2]=34; point[3]=33;
   if (CreateBoundarySegment("zylwest2",1,0,49,NON_PERIODIC,1,point,
-                            alpha,beta,ZylWest2,NULL)==NULL) return(1);
+                            alpha,beta,ZylWest2,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.2; alpha[1]=0.0;
   beta[0] =0.33; beta[1] =0.41;
   point[0]=2; point[1]=3; point[2]=35; point[3]=34;
   if (CreateBoundarySegment("zylwest3",1,0,50,NON_PERIODIC,1,point,
-                            alpha,beta,ZylWest3,NULL)==NULL) return(1);
+                            alpha,beta,ZylWest3,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.33; alpha[1]=0.0;
   beta[0] =0.41; beta[1] =0.41;
   point[0]=3; point[1]=4; point[2]=36; point[3]=35;
   if (CreateBoundarySegment("zylwest4",1,0,51,NON_PERIODIC,1,point,
-                            alpha,beta,ZylWest4,NULL)==NULL) return(1);
+                            alpha,beta,ZylWest4,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.0;
   beta[0] =0.075; beta[1] =0.41;
   point[0]=27; point[1]=28; point[2]=60; point[3]=59;
   if (CreateBoundarySegment("zyleast1",0,1,52,NON_PERIODIC,1,point,
-                            alpha,beta,ZylEast1,NULL)==NULL) return(1);
+                            alpha,beta,ZylEast1,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.075; alpha[1]=0.0;
   beta[0] =0.2; beta[1] =0.41;
   point[0]=28; point[1]=29; point[2]=61; point[3]=60;
   if (CreateBoundarySegment("zyleast2",0,1,53,NON_PERIODIC,1,point,
-                            alpha,beta,ZylEast2,NULL)==NULL) return(1);
+                            alpha,beta,ZylEast2,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.2; alpha[1]=0.0;
   beta[0] =0.33; beta[1] =0.41;
   point[0]=29; point[1]=30; point[2]=62; point[3]=61;
   if (CreateBoundarySegment("zyleast3",0,1,54,NON_PERIODIC,1,point,
-                            alpha,beta,ZylEast3,NULL)==NULL) return(1);
+                            alpha,beta,ZylEast3,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.33; alpha[1]=0.0;
   beta[0] =0.41; beta[1] =0.41;
   point[0]=30; point[1]=31; point[2]=63; point[3]=62;
   if (CreateBoundarySegment("zyleast4",0,1,55,NON_PERIODIC,1,point,
-                            alpha,beta,ZylEast4,NULL)==NULL) return(1);
+                            alpha,beta,ZylEast4,NULL)==NULL) REP_ERR_RETURN(1);
 
   alpha[0]=0.0; alpha[1]=0.0;
   beta[0] =1.0; beta[1] =0.41;
   point[0]=21; point[1]=20; point[2]=52; point[3]=53;
   if (CreateBoundarySegment("z1",1,0,56,NON_PERIODIC,20,point,
-                            alpha,beta,Zyl1,NULL)==NULL) return(1);
+                            alpha,beta,Zyl1,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=20; point[1]=16; point[2]=48; point[3]=52;
   if (CreateBoundarySegment("z2",1,0,57,NON_PERIODIC,20,point,
-                            alpha,beta,Zyl2,NULL)==NULL) return(1);
+                            alpha,beta,Zyl2,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=16; point[1]=12; point[2]=44; point[3]=48;
   if (CreateBoundarySegment("z3",1,0,58,NON_PERIODIC,20,point,
-                            alpha,beta,Zyl3,NULL)==NULL) return(1);
+                            alpha,beta,Zyl3,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=12; point[1]=10; point[2]=42; point[3]=44;
   if (CreateBoundarySegment("z4",1,0,59,NON_PERIODIC,20,point,
-                            alpha,beta,Zyl4,NULL)==NULL) return(1);
+                            alpha,beta,Zyl4,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=10; point[1]=11; point[2]=43; point[3]=42;
   if (CreateBoundarySegment("z5",1,0,60,NON_PERIODIC,20,point,
-                            alpha,beta,Zyl5,NULL)==NULL) return(1);
+                            alpha,beta,Zyl5,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=11; point[1]=15; point[2]=47; point[3]=43;
   if (CreateBoundarySegment("z6",1,0,61,NON_PERIODIC,20,point,
-                            alpha,beta,Zyl6,NULL)==NULL) return(1);
+                            alpha,beta,Zyl6,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=15; point[1]=19; point[2]=51; point[3]=47;
   if (CreateBoundarySegment("z7",1,0,62,NON_PERIODIC,20,point,
-                            alpha,beta,Zyl7,NULL)==NULL) return(1);
+                            alpha,beta,Zyl7,NULL)==NULL) REP_ERR_RETURN(1);
 
   point[0]=19; point[1]=21; point[2]=53; point[3]=51;
   if (CreateBoundarySegment("z8",1,0,63,NON_PERIODIC,20,point,
-                            alpha,beta,Zyl8,NULL)==NULL) return(1);
+                            alpha,beta,Zyl8,NULL)==NULL) REP_ERR_RETURN(1);
 
   /* return ok */
   return(0);
