@@ -460,6 +460,9 @@ extern "C" {
 #ifdef __T3D__
 #undef __MWCW__
 
+#include <time.h>       /* for rtclock()   */
+#include <unistd.h>     /* for _SC_CLK_TCK */
+
 /* basic types */
 #define SHORT  short
 #define INT    int
