@@ -9241,8 +9241,21 @@ static INT PlotCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
   WORK myWork,*theWork;
+  INT i;
+  extern INT OE_OrderStrategy;
 
-  NO_OPTION_CHECK(argc,argv);
+  /* set ordering strategy for coarse grid */
+  OE_OrderStrategy = 0;
+
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'o' :
+      sscanf(argv[i],"o %d", &OE_OrderStrategy);
+      break;
+    default :
+      break;
+    }
 
   theWork = &myWork;
 
