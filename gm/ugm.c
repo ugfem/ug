@@ -3242,8 +3242,8 @@ INT DisposeAMGLevel (MULTIGRID *theMG)
     return(1);
 
   /* clear level */
-  while (FIRSTVECTOR(theGrid)!=NULL)
-    if (DisposeVector(theGrid,FIRSTVECTOR(theGrid)))
+  while (PFIRSTVECTOR(theGrid)!=NULL)
+    if (DisposeVector(theGrid,PFIRSTVECTOR(theGrid)))
       return(1);
 
   /* remove from grids array */
