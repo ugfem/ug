@@ -201,17 +201,23 @@ static INT StandardRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
     if (VOTYPE(v) != EDGEVEC) continue;
     theEdge = (EDGE *)VOBJECT(v);
     theNode = NBNODE(LINK0(theEdge));
-    vc = NVECTOR(theNode);
+    if (NTYPE(theNode) == MID_NODE)
+      vc = EDVECTOR(NFATHEREDGE(theNode));
+    else if (NTYPE(theNode) == CORNER_NODE)
+      vc = NVECTOR(NFATHER(theNode));
     vecskip = VECSKIP(vc);
     for (j=0; j<edcomp; j++)
       if (!(vecskip & (1<<j)))
-        VVALUE(vc,fromComp[j]) += 0.5 * damp[j] * VVALUE(v,edComp[j]);
+        VVALUE(vc,toComp[j]) += 0.5 * damp[j] * VVALUE(v,edComp[j]);
     theNode = NBNODE(LINK1(theEdge));
-    vc = NVECTOR(theNode);
+    if (NTYPE(theNode) == MID_NODE)
+      vc = EDVECTOR(NFATHEREDGE(theNode));
+    else if (NTYPE(theNode) == CORNER_NODE)
+      vc = NVECTOR(NFATHER(theNode));
     vecskip = VECSKIP(vc);
     for (j=0; j<edcomp; j++)
       if (!(vecskip & (1<<j)))
-        VVALUE(vc,fromComp[j]) += 0.5 * damp[j] * VVALUE(v,edComp[j]);
+        VVALUE(vc,toComp[j]) += 0.5 * damp[j] * VVALUE(v,edComp[j]);
   }
 
   return (NUM_OK);
@@ -321,13 +327,19 @@ static INT StandardIntCorNodeVector (GRID *FineGrid, const VECDATA_DESC *to, con
     if (VOTYPE(v) != EDGEVEC) continue;
     theEdge = (EDGE *)VOBJECT(v);
     theNode = NBNODE(LINK0(theEdge));
-    vc = NVECTOR(theNode);
+    if (NTYPE(theNode) == MID_NODE)
+      vc = EDVECTOR(NFATHEREDGE(theNode));
+    else if (NTYPE(theNode) == CORNER_NODE)
+      vc = NVECTOR(NFATHER(theNode));
     vecskip = VECSKIP(vc);
     for (j=0; j<edcomp; j++)
       if (!(vecskip & (1<<j)))
         VVALUE(v,edComp[j]) += 0.5 * damp[j] * VVALUE(vc,fromComp[j]);
     theNode = NBNODE(LINK1(theEdge));
-    vc = NVECTOR(theNode);
+    if (NTYPE(theNode) == MID_NODE)
+      vc = EDVECTOR(NFATHEREDGE(theNode));
+    else if (NTYPE(theNode) == CORNER_NODE)
+      vc = NVECTOR(NFATHER(theNode));
     vecskip = VECSKIP(vc);
     for (j=0; j<edcomp; j++)
       if (!(vecskip & (1<<j)))
@@ -429,11 +441,17 @@ static INT StandardIntNewNodeVector (GRID *FineGrid, const VECDATA_DESC *Cor)
     if (VOTYPE(v) != EDGEVEC) continue;
     theEdge = (EDGE *)VOBJECT(v);
     theNode = NBNODE(LINK0(theEdge));
-    vc = NVECTOR(theNode);
+    if (NTYPE(theNode) == MID_NODE)
+      vc = EDVECTOR(NFATHEREDGE(theNode));
+    else if (NTYPE(theNode) == CORNER_NODE)
+      vc = NVECTOR(NFATHER(theNode));
     for (j=0; j<edcomp; j++)
       VVALUE(v,edComp[j]) += 0.5 * VVALUE(vc,Comp[j]);
     theNode = NBNODE(LINK1(theEdge));
-    vc = NVECTOR(theNode);
+    if (NTYPE(theNode) == MID_NODE)
+      vc = EDVECTOR(NFATHEREDGE(theNode));
+    else if (NTYPE(theNode) == CORNER_NODE)
+      vc = NVECTOR(NFATHER(theNode));
     for (j=0; j<edcomp; j++)
       VVALUE(v,edComp[j]) += 0.5 * VVALUE(vc,Comp[j]);
   }
@@ -1541,6 +1559,9 @@ INT InterpolateNewVectorsByMatrix (GRID *FineGrid, const VECDATA_DESC *sol)
     vncomp = VD_NCMPS_IN_TYPE(sol,vtype);
     vptr = VVALUEPTR(v,VD_CMP_OF_TYPE(sol,vtype,0));
     vecskip = VECSKIP(v);
+
+    vecskip = 0;
+
     if (vecskip == 0)
     {
       for (i=0; i<vncomp; i++)
