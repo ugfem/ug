@@ -93,6 +93,23 @@
 /*																			*/
 /****************************************************************************/
 
+int Get_h(double *in, double *out) {
+  return (0);
+}
+int AllMemElements(int nelements){
+  return (0);
+}
+int AllMemInnerPoints(int npoints){
+  return (0);
+}
+int AddInnerNode(double x, double y, double z){
+  return (0);
+}
+int AddTetrahedron (int node0, int node1, int node2, int node3){
+  return (0);
+}
+
+
 int PrintMGFileInfo (char *filename, int *magic_cookie)
 {
   MGIO_MG_GENERAL mg_general;
