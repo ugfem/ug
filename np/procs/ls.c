@@ -43,6 +43,7 @@
 #include "numproc.h"
 #include "pcr.h"
 #include "np.h"
+#include "transgrid.h"
 
 #include "iter.h"
 #include "ls.h"
@@ -107,8 +108,13 @@ typedef struct
   NP_LS ls;
 
   DOUBLE rho;
+  INT restart;
+  INT count;
+  INT basecg;
   VECDATA_DESC *p;
   VECDATA_DESC *t;
+  VECDATA_DESC* ccor;
+  VECDATA_DESC* csol;
 
 } NP_CG;
 
@@ -607,12 +613,17 @@ static INT EnergyResiduum (NP_LINEAR_SOLVER *theNP, INT bl, INT level,
   if (ddotx(theNP->base.mg,bl, level,ON_SURFACE, temp, x, err))
     NP_RETURN(1,lresult->error_code);
 
+  /*ABS is necessary, because residuum is computed for the solution.
+     In this case, the value at the dirichlet nodes is not zero und thus
+     A = MAT does not represent a(.,.) */
+
   lresult->last_defect[0] = 0.0;
   for (i=0; i<VD_NCOMP(x); i++)
     lresult->last_defect[0] += err[i];
-  lresult->last_defect[0] = sqrt((DOUBLE) lresult->last_defect[0]);
+  lresult->last_defect[0] = sqrt((DOUBLE) ABS(lresult->last_defect[0]));
+  lresult->last_defect[0] /= sqrt((DOUBLE) VD_NCOMP(x));
   for(i=1; i<VD_NCOMP(x); i++)
-    lresult->last_defect[i] = lresult->last_defect[0];
+    lresult->last_defect[i] =  lresult->last_defect[0];
 
   FreeVD(theNP->base.mg,bl,level, temp);
 
@@ -669,7 +680,14 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VE
     if (dset(NP_MG(theNP),level,level,ALL_VECTORS,np->c,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
     if ((*np->Iter->Iter)(np->Iter,level,np->c,b,A,&lresult->error_code)) REP_ERR_RETURN (1);
     if ((*np->Update)(np,level,x,np->c,b,A,&lresult->error_code)) REP_ERR_RETURN (1);
-    if (LinearResiduum(theNP,bl,level,x,b,A,lresult)) REP_ERR_RETURN(1);
+    if (np->ls.Residuum == EnergyResiduum) {
+      if((np->ls.Residuum)(theNP,bl,level,np->c,b,A,lresult))
+        REP_ERR_RETURN(1);
+    }
+    else {
+      if (LinearResiduum(theNP,bl,level,x,b,A,lresult))
+        REP_ERR_RETURN(1);
+    }
     if (np->display > PCR_NO_DISPLAY)
       if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE_SD)) NP_RETURN(1,lresult->error_code);
     if (sc_cmp(lresult->last_defect,abslimit,b) || sc_cmp(lresult->last_defect,defect2reach,b))
@@ -910,6 +928,18 @@ static INT CGInit (NP_BASE *theNP, INT argc , char **argv)
   np = (NP_CG *) theNP;
   np->p = ReadArgvVecDesc(theNP->mg,"p",argc,argv);
   np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+  /* included */
+  np->ccor   = ReadArgvVecDesc(theNP->mg,"ccor",argc,argv);
+  np->csol   = ReadArgvVecDesc(theNP->mg,"csol",argc,argv);
+
+  if (ReadArgvINT("r",&(np->restart),argc,argv))
+    np->restart = 0;
+
+  if (np->restart<0)
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+
+  np->basecg = ReadArgvOption("base",argc,argv);
+  np->count = 0;
 
   return (LinearSolverInit(theNP,argc,argv));
 }
@@ -981,6 +1011,136 @@ static INT CGUpdate (NP_LS *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *c,
   return(0);
 }
 
+static INT SubspaceEntering(MULTIGRID* theMG,INT fl,INT tl,  VECDATA_DESC* csol, VECDATA_DESC* cor,
+                            INT fast)
+{
+  VECTOR* vec;
+  INT level;
+  DOUBLE fricCoeff;
+
+  if(GetStringValueDouble("fe:fricCoeff", &fricCoeff))
+    fricCoeff = 0.0;
+
+  for(level = tl; level >= fl; level--)
+    for(vec = FIRSTVECTOR(GRID_ON_LEVEL(theMG, level)); vec != NULL; vec=SUCCVC(vec))
+    {
+      SHORT vtype    = VTYPE(vec);
+      SHORT *csolptr = VD_CMPPTR_OF_TYPE(csol, vtype);
+      SHORT *corptr  = VD_CMPPTR_OF_TYPE(cor, vtype);
+      SHORT scmp     = VD_NCMPS_IN_TYPE(csol, vtype);
+      SHORT j, nonlin;
+
+      if(scmp == 0)
+        continue;
+      ASSERT(scmp == VD_NCMPS_IN_TYPE(cor, vtype));
+
+      if(! (VCLASS((vec)) >= ACTIVE_CLASS && VNCLASS((vec)) < ACTIVE_CLASS) )
+        continue;
+
+      nonlin = (CRITBIT(vec, 0) && (fricCoeff > 0.0));
+      for(j=0; j<scmp; j++)
+        if(CRITBIT(vec, j) || !fast || nonlin)
+        {
+          VVALUE(vec, csolptr[j]) += VVALUE(vec, corptr[j]);
+          VVALUE(vec, corptr[j]) = 0.0;
+        }
+
+    }
+  return(0);
+}
+
+static INT CGUpdateProject (NP_LS *theNP, INT level,
+                            VECDATA_DESC *x, VECDATA_DESC *c,
+                            VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  NP_CG *np;
+  MULTIGRID *theMG;
+  DOUBLE lambda, linear;
+  INT ncomp;
+  VECDATA_DESC* ct = NULL;
+
+  np = (NP_CG *) theNP;
+  theMG = theNP->ls.base.mg;
+  ncomp = VD_NCOMP(x);
+
+  /* Still nonlinear ? - do only update */
+
+  if(GetStringValueDouble("fe:CriticalSetFixed", &linear))
+    linear = 1.0;
+  if(np->basecg)
+    if(GetStringValueDouble("fe:baselinear", &linear))
+      linear = 1.0;
+#ifdef ModelP
+  linear = UG_GlobalMinINT(linear);
+#endif
+
+  if((linear == 0.0) && (np->csol != NULL))
+  {
+    if (dadd(theNP->ls.base.mg,theNP->baselevel,level,ALL_VECTORS,x,c) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    np->count = -2;
+    return(0);
+  }
+
+  if (AllocVDFromVD(theMG,theNP->baselevel,level,x,&np->t))
+    NP_RETURN(1,result[0]);
+  /* included */
+  if(np->csol != NULL)   /*included*/
+  {     /*subspace entering */
+    if (AllocVDFromVD(theMG,theNP->baselevel,level,c,&ct))
+      NP_RETURN(1,result[0]);
+    if (dcopy(theMG,theNP->baselevel,level,ALL_VECTORS,ct,c)!= NUM_OK)
+      REP_ERR_RETURN(1);
+    if (SubspaceEntering(theMG,theNP->baselevel,level, np->csol,c, TRUE))
+      NP_RETURN(1,result[0]);
+  }
+  np->count++;
+  if(((np->restart == np->count) && np->count) || np->count == -1)
+  {
+    if (dset(NP_MG(theNP),theNP->baselevel,level,ALL_VECTORS,np->p,0.0)!= NUM_OK)
+      REP_ERR_RETURN(1);
+    np->rho = 1.0;
+    np->count = 0;
+    if (theNP->display >= PCR_FULL_DISPLAY)
+      UserWriteF("      CG restarted\n");
+  }
+  if (dmatmul(theMG,theNP->baselevel,level,ALL_VECTORS,np->t,A,c)!=NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (dadd(theMG,theNP->baselevel,level,ALL_VECTORS,b,np->t))
+    NP_RETURN(1,result[0]);
+  if (ddot(theMG,theNP->baselevel,level,ON_SURFACE,c,b,&lambda) !=NUM_OK)
+    NP_RETURN(1,result[0]);
+  if((c != np->p) || np->csol == NULL )
+    if (dscal(theMG,theNP->baselevel,level,ALL_VECTORS,np->p,lambda / np->rho)!= NUM_OK)
+      NP_RETURN(1,result[0]);
+  np->rho = lambda;
+  if((c != np->p) || np->csol == NULL )       /*included*/
+    if (dadd(theMG,theNP->baselevel,level,ALL_VECTORS,np->p,c)!= NUM_OK)
+      NP_RETURN(1,result[0]);
+  if (dmatmul(theMG,theNP->baselevel,level,ALL_VECTORS,np->t,A,np->p) != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (ddot(theMG,theNP->baselevel,level,ON_SURFACE,np->t,np->p,&lambda) != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (lambda == 0.0)
+    NP_RETURN(1,result[0]);
+  if (daxpy(theMG,theNP->baselevel,level,ALL_VECTORS,x,np->rho / lambda,np->p)!= NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (daxpy(theMG,theNP->baselevel,level,ALL_VECTORS,b,- np->rho / lambda,np->t)!= NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (FreeVD(theNP->ls.base.mg,theNP->baselevel,level,np->t)) REP_ERR_RETURN(1);
+  if (theNP->display == PCR_FULL_DISPLAY)
+    UserWriteF("      rho %-.4g \n",np->rho);
+
+  if(np->csol != NULL)
+  {
+    if (dcopy(theMG,theNP->baselevel,level,ALL_VECTORS,c,ct)!= NUM_OK)
+      REP_ERR_RETURN(1);
+    if (FreeVD(theNP->ls.base.mg,theNP->baselevel,level,ct))
+      REP_ERR_RETURN(1);
+  }
+  return(0);
+}
+
 static INT CGClose (NP_LS *theNP, INT level, INT *result)
 {
   NP_CG *np;
@@ -1008,6 +1168,28 @@ static INT CGConstruct (NP_BASE *theNP)
 
   np->Prepare = CGPrepare;
   np->Update = CGUpdate;
+  np->Close = CGClose;
+
+  return(0);
+}
+
+static INT CGPConstruct (NP_BASE *theNP)
+{
+  NP_LS *np;
+
+  theNP->Init = CGInit;
+  theNP->Display = CGDisplay;
+  theNP->Execute = NPLinearSolverExecute;
+
+  np = (NP_LS *) theNP;
+  np->ls.PreProcess = LinearSolverPreProcess;
+  np->ls.Defect = LinearDefect;
+  np->ls.Residuum = LinearResiduum;
+  np->ls.Solver = LinearSolver;
+  np->ls.PostProcess = LinearSolverPostProcess;
+
+  np->Prepare = CGPrepare;
+  np->Update = CGUpdateProject;
   np->Close = CGClose;
 
   return(0);
@@ -3370,6 +3552,8 @@ INT InitLinearSolver ()
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".ls",sizeof(NP_LS),LSConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".cg",sizeof(NP_CG),CGConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".cgp",sizeof(NP_CG),CGPConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".cr",sizeof(NP_CR),CRConstruct))
     REP_ERR_RETURN (__LINE__);

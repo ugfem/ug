@@ -35,6 +35,14 @@
 
 #include "np.h"
 
+#define CRIT_OFFSET                     (20)
+#define CRITBIT(vec, n)                 VECSKIPBIT((vec), (CRIT_OFFSET+(n)))
+#define SETCRITBIT(vec, n)              SETVECSKIPBIT((vec), (CRIT_OFFSET+(n)))
+#define CLEARCRITBIT(vec, n)            CLEAR_FLAG(VECSKIP(vec),(1 << (CRIT_OFFSET + (n))))
+#define CHANGEBIT(vec)                  VECSKIPBIT((vec), (CRIT_OFFSET-1))
+#define SETCHANGEBIT(vec)               SETVECSKIPBIT((vec), (CRIT_OFFSET-1))
+#define CLEARCHANGEBIT(vec)             CLEAR_FLAG(VECSKIP(vec),(1 << (CRIT_OFFSET -1)));
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
