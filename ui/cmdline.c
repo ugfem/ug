@@ -378,9 +378,12 @@ COMMAND *ReplaceCommand (const char *name, CommandProcPtr cmdProc)
 
 INT ExecCommand (char *cmdLine)
 {
-  char *s,*token,commandstr[NAMESIZE],*cmdptr,cmd[OPTIONBUFFERLEN];
+  char *s,*token,commandstr[NAMESIZE];
   int i,j,error;
   COMMAND *commandItem;
+        #ifdef ModelP
+  char cmd[OPTIONBUFFERLEN],*cmdptr;
+        #endif
 
   optionCount = 0;
   s = optionBuffer;
