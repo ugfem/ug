@@ -397,19 +397,19 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
 
   ncomp = VD_ncmps_in_otype(theVD,NODEVEC);
   if (ncomp <= 0)
-    return(1);
+    RETURN(1);
 
   /* toplevel */
   toplevel = TOPLEVEL(theMG);
   if (toplevel<0)
-    return(1);
+    RETURN(1);
 
   if (project)
     for (k=toplevel-1; k>=0; k--)
       if (StandardProject (GRID_ON_LEVEL(theMG,k),
                            (const VECDATA_DESC *)theVD,
                            (const VECDATA_DESC *)theVD))
-        return(1);
+        RETURN(1);
 
   /* count the number of red surface elements */
   nel = 0;
@@ -423,9 +423,18 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
       }
 
   MarkTmpMem(MGHEAP(theMG),&MarkKey);
+        #ifdef ModelP
+  if (nel == 0)
+    List = NULL;
+  else
+  {
+        #endif
   List = (DOUBLE*) GetTmpMem(MGHEAP(theMG),nel*sizeof(DOUBLE),MarkKey);
   if (List == NULL)
-    return(-1);
+    RETURN(-1);
+        #ifdef ModelP
+}
+        #endif
 
   max = 0.0;
   min = 1e20;
@@ -493,9 +502,9 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
         #endif
 
   if (SetStringValue("indicator:mfr",(DOUBLE)mfr))
-    return (-1);
+    RETURN (-1);
   if (SetStringValue("indicator:mfc",(DOUBLE)mfc))
-    return (-1);
+    RETURN (-1);
 
   /* print result */
   if (mfr + mfc > 0)
