@@ -205,7 +205,7 @@ static INT TriSectionEdge[64][2] = {  {-1,-1},{-1,-1},{-1,-1},{ 1, 0},{-1,-1},{ 
 static INT  CondensedEdgeOfSide[4] = {0x07,0x32,0x2C,0x19};
 
 /* TODO: delete this */
-static INT newstyle = 1;
+static INT newstyle = 0;
 
 /* RCS string */
 RCSID("$Header$",UG_RCS_STRING)
@@ -639,22 +639,6 @@ FIFOSTART:
 			}
 		}
 
-		/* TODO: why here swap from NOREFRULE to COPY_REFRULE */
-if (0) 
-		if (MARKCLASS(theElement)==RED_CLASS && Mark==NO_REFINEMENT)
-		{
-			if (0) UserWriteF("CloseGrid(): MARKCLASS=RED_CLASS && Mark==NO_REFINEMENT -> set Mark=COPY!\n");
-			UserWriteF("   Switching MARKCLASS=%d for MARK=%d of EID=%d to GREEN_CLASS\n",MARKCLASS(theElement),MARK(theElement),ID(theElement));
-			Mark = COPY;
-		}
-		/* TODO: delete or better  ... && MyPattern != 0 ?? */
-if (0) 
-		if (MARKCLASS(theElement)!=RED_CLASS && Mark!=NO_REFINEMENT) {
-			SETMARKCLASS(theElement,GREEN_CLASS);
-			IFDEBUG(gm,1)
-			UserWriteF("   Switching MARKCLASS=%d for MARK=%d of EID=%d to GREEN_CLASS\n",MARKCLASS(theElement),MARK(theElement),ID(theElement));
-			ENDDEBUG
-		}
 		if (Mark)
 			cnt++;
 		SETMARK(theElement,Mark);
@@ -751,11 +735,9 @@ if (0)
 			if (ADDPATTERN(MyEdge) == 0) {
 				/* for hexhedra and pyramids Patterns2Rules returns 0 for not red elements */
 				/* switch to mark COPY, because COPY rule refines no edges                 */
-/* TODO: delete this
-				if (MARK(theElement) == NO_REFINEMENT) 
-*/
-				if (DIM==3 && TAG(theElement) != TETRAHEDRON)
-				{
+				if (DIM==3 && TAG(theElement) != TETRAHEDRON) {
+
+					/* set to no-empty rule, e.g. COPY rule */
 					SETMARK(theElement,COPY);
 
 					/* no existing edge node renew green refinement */
@@ -763,26 +745,13 @@ if (0)
 						SETUPDATE_GREEN(theElement,1);
 					}
 				}
-				/* tetrahedra have a complete rule set */
-if (1) ;
+				/* tetrahedra in 3D and 2D elements have a complete rule set */
 				else if (MARK(theElement) == NO_REFINEMENT) {
-					printf("   ERROR: green tetrahedron with no rule! EID=%d TAG=%d "\
+					IFDEBUG(gm,2)
+					UserWriteF("   ERROR: green tetrahedron with no rule! EID=%d TAG=%d "\
 						"REFINECLASS=%d REFINE=%d MARKCLASS=%d  MARK=%d\n",ID(theElement),\
 						TAG(theElement),REFINECLASS(theElement),REFINE(theElement),MARKCLASS(theElement),MARK(theElement));
-		{
-		INT MyEdgePattern,i;
-
-		MyEdgePattern = 0;
-		for (i=EDGES_OF_ELEM(theElement)-1; i>=0; i--)
-		{
-			MyEdge=GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
-			MyEdgePattern = (MyEdgePattern<<1) | PATTERN(MyEdge);
-			printf("%d",PATTERN(MyEdge));
-		}
-			printf(" Pattern=%d\n",MyEdgePattern);
-		}
-					fflush(stdout);
-					if (0) SETMARK(theElement,COPY);
+					ENDDEBUG
 				}					
 
 				SETMARKCLASS(theElement,GREEN_CLASS);
@@ -797,19 +766,12 @@ if (1) ;
 		}
 
 		#ifdef __THREEDIM__
-		/* element marked as green don't look further */
-/* TODO: delete this
-		if (MARKCLASS(theElement)==GREEN_CLASS) continue;
-*/
-
 		/* if side node exists element needs to be green */
 		for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
 			ELEMENT *theNeighbor;
 
 			theNeighbor = NBELEM(theElement,i);
-/* TODO: delete
-			if (theNeighbor==NULL || MARKCLASS(theNeighbor)!=RED_CLASS) continue;
-*/
+
 			if (theNeighbor==NULL) continue;
 
 			for (j=0; j<SIDES_OF_ELEM(theNeighbor); j++) {
@@ -1430,11 +1392,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 					ASSERT(j<SIDES_OF_ELEM(theNeighbor));
 					if (NODE_OF_RULE(theNeighbor,MARK(theNeighbor),
 									 EDGES_OF_ELEM(theNeighbor)+j))
-/* TODO: delete this
-						(!NODE_OF_RULE(theNeighbor,REFINE(theNeighbor),EDGES_OF_ELEM(theNeighbor)+j) ||
-						 USED(theNeighbor)==1))
-*/
-							toCreate = 1;
+						toCreate = 1;
 				}
 			}
 		}
@@ -1520,22 +1478,6 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 
 				SideNodes[i] = theNode;
 			}
-
-/***** TODO: delete */
-			if (0 && REFINE(theNeighbor)!=NO_REFINEMENT && !REF_TYPE_CHANGES(theNeighbor) &&
-					 (DIM!=3 || TAG(theNeighbor)!=HEXAHEDRON || MARKCLASS(theNeighbor)!=GREEN_CLASS))
-			{
-				/* get the side node */
-				nbrule = MARK2RULEADR(theNeighbor,Refine);
-				for (j=0; j<SIDES_OF_ELEM(theNeighbor); j++) {
-					if (NBELEM(theNeighbor,j) == theElement) break;			
-				}
-				ASSERT(j<SIDES_OF_ELEM(theNeighbor));
-				GetSons(theNeighbor,NeighborSonList);
-				theNeighbor = NeighborSonList[SON_OF_NODE_OF_RULE(nbrule,EDGES_OF_ELEM(theNeighbor)+j)];
-				SideNodes[i] = CORNER(theNeighbor,SONNODE_OF_NODE_OF_RULE(nbrule,EDGES_OF_ELEM(theNeighbor)+j));
-			}
-/******/
 
 			if (SideNodes[i] == NULL) {
 
@@ -1708,7 +1650,12 @@ INT SonSideNodes (ELEMENT *theElement, INT side, INT *nodes, NODE *SideNodes[MAX
 
 	/* determine mid nodes */
 	for (i=0; i<nedges; i++) {
+		#ifdef __TWODIM__
+		theEdge = GetEdge(NFATHER(SideNodes[i]),NFATHER(SideNodes[i+1]));
+		#endif
+		#ifdef __THREEDIM__
 		theEdge = GetEdge(NFATHER(SideNodes[i]),NFATHER(SideNodes[(i+1)%nedges]));
+		#endif
 		assert(theEdge != NULL);
 
 		IFDEBUG(gm,4)
@@ -1803,12 +1750,12 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 		USED(theElement),NSONS(theElement),NeedSons);
 	ENDDEBUG
 
+	#ifdef __TWODIM__
+	markclass = RED_CLASS;
+	#endif
+	#ifdef __THREEDIM__
 	markclass = MARKCLASS(theElement);
-
-/*
-	if (0 && MARKCLASS(theElement)==GREEN_CLASS && TAG(theElement)==TETRAHEDRON)
-		markclass = RED_CLASS;
-*/
+	#endif
 
 	/* select sons to connect */
 	switch (markclass) {
@@ -1980,8 +1927,13 @@ INT Sort_Node_Ptr (INT n,NODE **nodes)
 
 	switch (n) {
 
+		#ifdef __TWODIM__
+		case 2:
+		#endif
+		#ifdef __THREEDIM__
 		case 3:
 		case 4:
+		#endif
 			for (i=0; i<n; i++) {
 				max = i;
 				for (j=i+1; j<n; j++) 
@@ -2143,8 +2095,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 			UserWriteF("Connect_Sons_of_ElementSide(): ERROR Sorttables[%d]"\
 						" eNodes=%d nbNodes=%d\n",i,Entry->nodes,NbEntry->nodes);
 		for (j=0; j<Entry->nodes; j++)
-			if (1 || Entry->nodeptr[j] != NbEntry->nodeptr[j])
-				UserWriteF("Connect_Sons_of_ElementSide(): ERROR Sorttables[%d][%d]"\
+			UserWriteF("Connect_Sons_of_ElementSide(): ERROR Sorttables[%d][%d]"\
 							" eNodePtr=%x nbNodePtr=%x\n",i,j,Entry->nodeptr[j],NbEntry->nodeptr[j]);
 		UserWriteF("\n");
 	}
@@ -2851,7 +2802,6 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 		}
 	}
 
-	/* init outer side relations of son elements */
 if(!newstyle)
 	for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
 		for (j=0; j<5; j++) {
@@ -3688,13 +3638,6 @@ static int RefineGrid (GRID *theGrid)
 		UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),ECLASS(theElement),REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),COARSEN(theElement));
 	ENDDEBUG
 	
-if (0) {
-	/* reset coarse flags */
-	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
-		SETCOARSEN(theElement,0);
-	}
-}
-
 	return(GM_OK);
 }
 
