@@ -656,6 +656,9 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     if (np->display != PCR_NO_DISPLAY)
       UserWrite(" [d]\n");
   }
+  else
+  if (a_vector_vecskip(theMG,*fl,tl,x) != NUM_OK)
+    NP_RETURN(1,result[0]);
 
   if (np->mode == SCALEDMG_MODE)
   {
