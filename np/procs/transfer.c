@@ -38,6 +38,7 @@
 #include "gm.h"
 #include "pcr.h"
 #include "np.h"
+#include "disctools.h"
 
 #include "transfer.h"
 
@@ -66,6 +67,7 @@ typedef struct
 {
   NP_TRANSFER transfer;
 
+  NP_TRANSFER *amg;                            /* reference to algebraic mg     */
   TransGridProcPtr res;
   TransGridProcPtr intcor;
   InterpolateNewVectorsProcPtr intnew;
@@ -519,6 +521,8 @@ static INT TransferInit (NP_BASE *theNP, INT argc , char **argv)
     }
   np->L = ReadArgvMatDesc(theNP->mg,"B",argc,argv);
   np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+  np->amg = (NP_TRANSFER *)
+            ReadArgvNumProc(theNP->mg,"amg",TRANSFER_CLASS_NAME,argc,argv);
 
   return (NPTransferInit(&np->transfer,argc,argv));
 }
@@ -561,6 +565,8 @@ static INT TransferDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"L",ENVITEM_NAME(np->L));
   if (np->t != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+  if (np->amg != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"amg",ENVITEM_NAME(np->amg));
 
   return (0);
 }
@@ -578,6 +584,21 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 
   np = (NP_STANDARD_TRANSFER *) theNP;
   theMG = theNP->base.mg;
+
+  if (np->amg != NULL) {
+    if (*fl == 0)
+      if (np->amg->PreProcess(np->amg,fl,0,x,b,A,result))
+        REP_ERR_RETURN(1);
+        #ifdef ModelP
+    if (a_vector_vecskip(theMG,*fl,tl,x) != NUM_OK)
+      NP_RETURN(1,result[0]);
+        #endif
+    for (i=*fl; i<=tl; i++)
+      if (AssembleDirichletBoundary (GRID_ON_LEVEL(theMG,i),A,x,b))
+        NP_RETURN(1,result[0]);
+    if (np->display != PCR_NO_DISPLAY)
+      UserWrite(" [d]\n");
+  }
 
   if (np->mode == SCALEDMG_MODE)
   {
@@ -724,6 +745,13 @@ static INT TransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                                 VECDATA_DESC *x, VECDATA_DESC *b,
                                 MATDATA_DESC *A, INT *result)
 {
+  NP_STANDARD_TRANSFER *np;
+
+  np = (NP_STANDARD_TRANSFER *) theNP;
+  if (np->amg != NULL)
+    if (np->amg->PostProcess(np->amg,fl,0,x,b,A,result))
+      REP_ERR_RETURN(1);
+
   return(0);
 }
 
