@@ -50,32 +50,52 @@
 #define FIRSTPART_OF_LIST               0
 #define LASTPART_OF_LIST(OTYPE) ((CAT(OTYPE,PRIOS)) -1)
 
+/* define DDD_HDR macros */
 #define HDRELEMENT      PARHDRE
 #define HDRNODE         PARHDR
 #define HDRVERTEX       PARHDRV
 #define HDRVECTOR       PARHDR
 #define HDR(OTYPE)      CAT(HDR,OTYPE)
+
+/* define macros for formatted output */
+#define ELEMENTFMT      EID_
+#define NODEFMT         ID_
+#define VERTEXFMT       VID_
+#define VECTORFMT       VINDEX_
+#define FORMAT(t)       CAT(t,FMT)
+
 #endif
+
+/* define Object COUNTER macros */
+#define COUNTELEMENT    NT
+#define COUNTNODE               NN
+#define COUNTVERTEX             NV
+#define COUNTVECTOR             NVEC
 
 /* define header prototypes */
 #define UNLINK(OTYPE)    void CAT(GRID_UNLINK_, OTYPE ) (GRID *Grid, OTYPE *Object)
 #define LINK(OTYPE)      void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
 #define INIT(OTYPE)      void CAT3(GRID_INIT_,OTYPE,_LIST(GRID *Grid))
+#define CHECK(OTYPE)     void CAT3(GRID_CHECK_,OTYPE,_LIST(GRID *Grid))
 
 LINK(ELEMENT);
 UNLINK(ELEMENT);
 INIT(ELEMENT);
+CHECK(ELEMENT);
 
 LINK(NODE);
 UNLINK(NODE);
 INIT(NODE);
+CHECK(NODE);
 
 LINK(VERTEX);
 UNLINK(VERTEX);
 INIT(VERTEX);
+CHECK(VERTEX);
 
 LINK(VECTOR);
 UNLINK(VECTOR);
 INIT(VECTOR);
+CHECK(VECTOR);
 
 #endif /* __DLMGR_H__ */

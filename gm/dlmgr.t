@@ -35,9 +35,6 @@
 
 #ifdef ModelP
 
-/*
-void CAT(GRID_UNLINK_, OTYPE ) (GRID *Grid, OTYPE *Object)
-*/
 UNLINK(OTYPE)
 	{
 		INT Prio = DDD_InfoPriority( CAT(HDR(OTYPE),(Object)) );
@@ -47,16 +44,33 @@ UNLINK(OTYPE)
 
 		IFDEBUG(gm,1) 
 			printf("%d: GRID_UNLINK_" STR(OTYPE) "():" STR(OTYPE) 
-				" has listpart=%d for prio=%dn",me,listpart,Prio);
+				" has listpart=%d for prio=%d\n",me,listpart,Prio);
 			fflush(stdout);
 		ENDDEBUG 
 
 		if (listpart<0 || listpart>LASTPART_OF_LIST(OTYPE)) {
-			printf("%d: GRID_UNLINK_" STR(OTYPE) "(): ERROR " STR(OTYPE)
+			printf(PFMT " GRID_UNLINK_" STR(OTYPE) "(): ERROR " STR(OTYPE)
 				" has no valid listpart=%d for prio=%d\n",me,listpart,Prio);
 			fflush(stdout);
 			ASSERT(0);
 		}
+
+		IFDEBUG(gm,2)
+		{
+			INT n = 0;
+			printf(PFMT " GRID_UNLINK_" STR(OTYPE)  "_LIST before is:\n",me);
+
+			for (Object1 = CAT(PFIRST,OTYPE(Grid));
+				 Object1 != NULL;
+				 Object1 = SUCC(Object1))
+			{
+				n++;	
+				printf(PFMT " nob=%d o=" CAT(FORMAT(OTYPE),FMTX) "\n",
+					me,n,CAT(FORMAT(OTYPE),PRTX(Object1)));
+	 		}
+			CAT(PRINT_LIST_STARTS_,OTYPE)(Grid,CAT(OTYPE,PRIOS));
+		}
+		ENDDEBUG
 
 		switch (listpart) {
 
@@ -147,31 +161,51 @@ UNLINK(OTYPE)
 		}
 		SUCC(Object) = PRED(Object) = NULL;
 
+	/* decrement counter */
+	CAT(COUNT,OTYPE(Grid))--;
+	ASSERT(CAT(COUNT,OTYPE(Grid))>=0);
+
+	IFDEBUG(gm,2)
 	/* debug loop in list */
 	{
 		INT n = 0;
-		for (Object1 = CAT(LISTPART_FIRST,OTYPE(Grid,FIRSTPART_OF_LIST));
+
+		printf(PFMT " GRID_UNLINK_" STR(OTYPE)  "_LIST after is:\n",me);
+
+		for (Object1 = CAT(PFIRST,OTYPE(Grid));
 			 Object1 != NULL;
 			 Object1 = SUCC(Object1))
 		{
 			n++;	
+			printf(PFMT " nob=%d o=" CAT(FORMAT(OTYPE),FMTX) "\n",
+				me,n,CAT(FORMAT(OTYPE),PRTX(Object1)));
 			if (n>10000) {
-				printf("%d: GRID_UNLINK_" STR(OTYPE) "():" STR(OTYPE) 
-					" has loop listpart=%d for prio=%d\n",me,listpart,Prio);
+				printf("%d: GRID_UNLINK_" STR(OTYPE) "(): LOOPERROR " STR(OTYPE) 
+					" has listpart=%d for prio=%d\n",me,listpart,Prio);
 				fflush(stdout);
 				assert(0);
 			}
-		
 		}
 
+		CAT(PRINT_LIST_STARTS_,OTYPE)(Grid,CAT(OTYPE,PRIOS));
+
+		/* object number error detection */
+		if (n != CAT(COUNT,OTYPE(Grid)))
+		{
+			printf(PFMT " Object=" CAT(FORMAT(OTYPE),FMTX) "\n",
+				me,CAT(FORMAT(OTYPE),PRTX(Object)));
+			printf("%d: GRID_UNLINK_" STR(OTYPE) "(): COUNTERERROR " STR(OTYPE) 
+					" has listpart=%d for prio=%d n=%d count=%d\n",
+					me,listpart,Prio,n,CAT(COUNT,OTYPE(Grid)));
+			fflush(stdout);
+			assert(0);
+		}
 	}
+	ENDDEBUG
 }
 
 #else
 
-/*
-void CAT(GRID_UNLINK_,OTYPE) (GRID *Grid, OTYPE *Object)
-*/
 UNLINK(OTYPE)
 {                                                           
 	if (PRED(Object)!=NULL)                                 
@@ -186,14 +220,14 @@ UNLINK(OTYPE)
 		CAT(LAST,OTYPE(Grid)) = PRED(Object);                 
 	    if (PRED(Object)!=NULL) SUCC(PRED(Object)) = NULL;  
 	}                                                       
+
+	/* decrement counter */
+	CAT(COUNT,OTYPE(Grid))--;
 }
 #endif
 
 #ifdef ModelP
 
-/*
-void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
-*/
 LINK(OTYPE)
 	{
 		INT listpart = PRIO2LISTPART(CAT(OTYPE,_LIST),Prio);
@@ -207,7 +241,7 @@ LINK(OTYPE)
 
 		IFDEBUG(gm,1) 
 			printf("%d: GRID_LINK_" STR(OTYPE) "():" STR(OTYPE) 
-				" has listpart=%d for prio=%d %xn",me,listpart,Prio,Object);
+				" has listpart=%d for prio=%d obj=%x\n",me,listpart,Prio,Object);
 			fflush(stdout);
 		ENDDEBUG 
 
@@ -300,21 +334,35 @@ LINK(OTYPE)
 					SUCC(Object1) = Object;
 				break;
 		}
+
+	/* increment counter */
+	CAT(COUNT,OTYPE(Grid))++;
+
 	/* debug loop in list */
 	{
 		INT n = 0;
-		for (Object1 = CAT(LISTPART_FIRST,OTYPE(Grid,FIRSTPART_OF_LIST));
+		for (Object1 = CAT(PFIRST,OTYPE(Grid));
 			 Object1 != NULL;
 			 Object1 = SUCC(Object1))
 		{
 			n++;	
 			if (n>10000) {
-				printf("%d: GRID_LINK_" STR(OTYPE) "():" STR(OTYPE) 
-					" has loop listpart=%d for prio=%d\n",me,listpart,Prio);
+				printf("%d: GRID_LINK_" STR(OTYPE) "(): LOOPERROR " STR(OTYPE) 
+					" has listpart=%d for prio=%d\n",me,listpart,Prio);
 				fflush(stdout);
 				assert(0);
 			}
 		
+		}
+
+		/* object number error detection */
+		if (n != CAT(COUNT,OTYPE(Grid)))
+		{
+			printf("%d: GRID_LINK_" STR(OTYPE) "(): COUNTERERROR " STR(OTYPE) 
+					" has listpart=%d for prio=%d n=%d count=%d\n",
+					me,listpart,Prio,n,CAT(COUNT,OTYPE(Grid)));
+			fflush(stdout);
+			assert(0);
 		}
 
 	}
@@ -322,52 +370,145 @@ LINK(OTYPE)
 
 #else
 
-/*
-void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
-*/
 LINK(OTYPE)
-	{
-		OTYPE *after;
+{
+	OTYPE *after;
 
-		after = CAT(LAST,OTYPE(Grid));
-		SUCC(Object) = NULL;
-		if (after==NULL) {
-			PRED(Object) = NULL;
-			CAT(LAST,OTYPE(Grid)) = Object;
-			CAT(FIRST,OTYPE(Grid)) = Object;
-		}
-		else {
-			PRED(Object) = after;
-			CAT(LAST,OTYPE(Grid)) = Object;
-			SUCC(after) = Object;
-		}
+	after = CAT(LAST,OTYPE(Grid));
+	SUCC(Object) = NULL;
+	if (after==NULL) {
+		PRED(Object) = NULL;
+		CAT(LAST,OTYPE(Grid)) = Object;
+		CAT(FIRST,OTYPE(Grid)) = Object;
 	}
+	else {
+		PRED(Object) = after;
+		CAT(LAST,OTYPE(Grid)) = Object;
+		SUCC(after) = Object;
+	}
+
+	/* increment counter */
+	CAT(COUNT,OTYPE(Grid))++;
+
+}
 #endif
 
 #ifdef ModelP
-/*
-void CAT3(GRID_INIT_,OTYPE,_LIST(GRID *Grid)) 
-*/
 INIT(OTYPE)
+{
+	INT i;
+	for (i=0; i<=LASTPART_OF_LIST(OTYPE); i++)
 	{
-		INT i;
-		for (i=0; i<=LASTPART_OF_LIST(OTYPE); i++){
-			CAT(LISTPART_FIRST,OTYPE(Grid,i)) = NULL;
-			CAT(LISTPART_LAST,OTYPE(Grid,i)) = NULL;
-		}
+		CAT(LISTPART_FIRST,OTYPE(Grid,i)) = NULL;
+		CAT(LISTPART_LAST,OTYPE(Grid,i)) = NULL;
 	}
+	CAT(COUNT,OTYPE(Grid)) = 0;
+}
 #else
-/*
-void CAT3(GRID_INIT_,OTYPE,_LIST(GRID *Grid))
-*/
 INIT(OTYPE)
-    {
-		CAT(FIRST,OTYPE(Grid)) = CAT(LAST,OTYPE(Grid)) = NULL;
-	}
+{
+	CAT(FIRST,OTYPE(Grid)) = CAT(LAST,OTYPE(Grid)) = NULL;
+	CAT(COUNT,OTYPE(Grid)) = 0;
+}
 #endif
 			
 #ifdef ModelP
-/* TODO: define this */
-#define GRID_CHECK_OBJECT_LIST(Grid,OTYPE)
+CAT(PRINT_LIST_STARTS_,OTYPE) (GRID *Grid, INT prios)
+{
+	if (prios==2)
+	{
+		printf (PFMT "  fg=%x fg=%x fm=%x lm=%x\n",me,
+			CAT(LISTPART_FIRST,OTYPE(Grid,0)),
+			CAT(LISTPART_LAST,OTYPE(Grid,0)),
+			CAT(LISTPART_FIRST,OTYPE(Grid,1)),
+			CAT(LISTPART_LAST,OTYPE(Grid,1)));
+	}
+	else
+	{
+		printf (PFMT "  fg=%x fg=%x fb=%x lb=%x fm=%x lm=%x\n",me,
+			CAT(LISTPART_FIRST,OTYPE(Grid,0)),
+			CAT(LISTPART_LAST,OTYPE(Grid,0)),
+			CAT(LISTPART_FIRST,OTYPE(Grid,1)),
+			CAT(LISTPART_LAST,OTYPE(Grid,1)),
+			CAT(LISTPART_FIRST,OTYPE(Grid,2)),
+			CAT(LISTPART_LAST,OTYPE(Grid,2)));
+	}
+}
+
+CHECK(OTYPE)
+{
+	INT   i,objs = 0;
+	OTYPE *Object;
+
+	printf (PFMT " GRID_CHECK_" STR(OTYPE) "_LIST:\n",me);
+
+	CAT(PRINT_LIST_STARTS_,OTYPE)(Grid,CAT(OTYPE,PRIOS));
+
+	for (Object = CAT(PFIRST,OTYPE(Grid));
+		 Object != NULL;
+		 Object = SUCC(Object))
+	{
+		objs++;
+	}
+	if (objs != CAT(COUNT,OTYPE(Grid)))
+	{
+		printf(PFMT "  ERROR: %d objs in list, but counter=%d\n",
+			me,objs,CAT(COUNT,OTYPE(Grid)));
+	}
+
+	for (i=FIRSTPART_OF_LIST;
+		 i<=LASTPART_OF_LIST(OTYPE);
+		 i++)
+	{
+		INT prio = LISTPART2PRIO(CAT(OTYPE,_LIST),i);
+
+		objs = 0;
+		for (Object = CAT(LISTPART_LAST,OTYPE(Grid,i));
+			 Object != NULL;
+			 Object = PRED(Object))
+		{
+			objs++;
+			if (prio != DDD_InfoPriority(HDR(OTYPE)(Object))) 
+			{
+				printf(PFMT "  ERROR nob=%d o=" CAT(FORMAT(OTYPE),FMTX) 
+					" WRONG LIST\n",
+					me,objs,CAT(FORMAT(OTYPE),PRTX(Object)));
+			}
+
+			if (Object == CAT(LISTPART_FIRST,OTYPE(Grid,i)))
+			{
+				if (i>FIRSTPART_OF_LIST)
+				{
+					INT listpartprev = i;
+					OTYPE *Object1;
+
+					do {
+						listpartprev--;
+						Object1=CAT(LISTPART_LAST,OTYPE(Grid,listpartprev));
+					}
+					while (listpartprev>FIRSTPART_OF_LIST && Object1==NULL);
+
+					if (Object1 != NULL)
+						if (CAT(LISTPART_FIRST,OTYPE(Grid,i))!= 
+							SUCC(Object1))
+						{
+							printf(PFMT "  ERROR: first pointer of listpart=%d"
+								" dead\n",me,i);
+						}
+				}
+
+				printf(PFMT "  listpart=%d prio=%d has nobjs=%d\n",me,i,prio,objs);
+			}
+		}
+	}
+}
+#else
+CHECK(OTYPE)
+{
+}
 #endif
 
+/* undefine used macros to allow redefinition */
+#undef OTYPE
+#undef PRED
+#undef SUCC

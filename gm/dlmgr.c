@@ -47,27 +47,18 @@
 #define PRED   PREDE
 #define SUCC   SUCCE
 #include "dlmgr.t"
-#undef OTYPE
-#undef PRED
-#undef SUCC
 
 /* node */
 #define OTYPE  NODE
 #define PRED   PREDN
 #define SUCC   SUCCN
 #include "dlmgr.t"
-#undef OTYPE
-#undef PRED
-#undef SUCC
 
 /* vertex */
 #define OTYPE  VERTEX
 #define PRED   PREDV
 #define SUCC   SUCCV
 #include "dlmgr.t"
-#undef OTYPE
-#undef PRED
-#undef SUCC
 
 /* vertex */
 #define OTYPE  VECTOR
