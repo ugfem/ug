@@ -4599,10 +4599,10 @@ static INT SetAutoDamp_Test (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDA
     sum=ABS(MVALUE(VSTART(v),comp)*MVALUE(VSTART(v),comp+3)-MVALUE(VSTART(v),comp+1)*MVALUE(VSTART(v),comp+2))/sum;
     if (sum<0.5)
     {
-      /* UserWriteF("regularizing %e: ",sum); */
-      if (sum<VVALUE(v,advcomp[0])) UserWriteF("c ");
-      if (sum<VVALUE(v,advcomp[1])) UserWriteF("p ");
-      /* UserWriteF("\n"); */
+      /* UserWriteF("regularizing %e: ",sum);
+         if (sum<VVALUE(v,advcomp[0])) UserWriteF("c ");
+         if (sum<VVALUE(v,advcomp[1])) UserWriteF("p ");
+         UserWriteF("\n"); */
       VVALUE(v,advcomp[0])=MIN(sum,VVALUE(v,advcomp[0]));
       VVALUE(v,advcomp[1])=MIN(sum,VVALUE(v,advcomp[1]));
     }
