@@ -7619,7 +7619,7 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
     {
     case 'w' :
       wopt=1;
-      if (sscanf(argv[i],expandfmt(CONCAT3("w %",NAMELENSTR,"[a-zA-Z0-9_]")),task.win_name)!=1)
+      if (sscanf(argv[i],expandfmt(CONCAT3("w %",NAMELENSTR,"[a-zA-Z0-9_.]")),task.win_name)!=1)
       {
         PrintErrorMessage('E',"openppic","specify a window name with w option");
         return (PARAMERRORCODE);
