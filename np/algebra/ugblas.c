@@ -73,6 +73,44 @@
 
 #define MATARRAYSIZE 512
 
+/* macros to define VEC_SCALAR, VECDATA_DESC and MATDATA_DESC components */
+#define DEFINE_VS_CMPS(a)				register DOUBLE a##0,a##1,a##2
+#define DEFINE_VD_CMPS(x)				register INT x##0,x##1,x##2
+#define DEFINE_MD_CMPS(m)				register INT m##00,m##01,m##02,m##10,m##11,m##12,m##20,m##21,m##22
+
+/* macros to set VEC_SCALAR components */
+#define SET_VS_CMP_1(a,A,off,tp)		{a##0 = (A)[(off)[tp]];}
+#define SET_VS_CMP_2(a,A,off,tp)		{a##0 = (A)[(off)[tp]]; a##1 = (A)[(off)[tp]+1];}
+#define SET_VS_CMP_3(a,A,off,tp)		{a##0 = (A)[(off)[tp]]; a##1 = (A)[(off)[tp]+1]; a##2 = (A)[(off)[tp]+2];}
+
+/* macros to set VECDATA_DESC components */
+#define SET_VD_CMP_1(x,v,tp)			{x##0 = VD_CMP_OF_TYPE(v,tp,0);}
+#define SET_VD_CMP_2(x,v,tp)			{x##0 = VD_CMP_OF_TYPE(v,tp,0); x##1 = VD_CMP_OF_TYPE(v,tp,1);}
+#define SET_VD_CMP_3(x,v,tp)			{x##0 = VD_CMP_OF_TYPE(v,tp,0); x##1 = VD_CMP_OF_TYPE(v,tp,1); x##2 = VD_CMP_OF_TYPE(v,tp,2);}
+
+#define SET_VD_CMP_N(x,v,tp)			switch (VD_NCMPS_IN_TYPE(v,tp)) {case 1: SET_VD_CMP_1(x,v,tp); break; \
+																		 case 2: SET_VD_CMP_2(x,v,tp); break; \
+																		 case 3: SET_VD_CMP_3(x,v,tp); break;}
+
+/* macros to set MATDATA_DESC components */
+#define SET_MD_CMP_11(m,M,rt,ct)		{m##00 = MD_MCMP_OF_RT_CT(M,rt,ct,0);}
+#define SET_MD_CMP_12(m,M,rt,ct)		{m##00 = MD_MCMP_OF_RT_CT(M,rt,ct,0); m##01 = MD_MCMP_OF_RT_CT(M,rt,ct,1);}
+#define SET_MD_CMP_13(m,M,rt,ct)		{m##00 = MD_MCMP_OF_RT_CT(M,rt,ct,0); m##01 = MD_MCMP_OF_RT_CT(M,rt,ct,1); m##02 = MD_MCMP_OF_RT_CT(M,rt,ct,2);}
+#define SET_MD_CMP_21(m,M,rt,ct)		{m##00 = MD_MCMP_OF_RT_CT(M,rt,ct,0); m##10 = MD_MCMP_OF_RT_CT(M,rt,ct,1);}
+#define SET_MD_CMP_22(m,M,rt,ct)		{m##00 = MD_MCMP_OF_RT_CT(M,rt,ct,0); m##01 = MD_MCMP_OF_RT_CT(M,rt,ct,1); \
+										 m##10 = MD_MCMP_OF_RT_CT(M,rt,ct,2); m##11 = MD_MCMP_OF_RT_CT(M,rt,ct,3);}
+#define SET_MD_CMP_23(m,M,rt,ct)		{m##00 = MD_MCMP_OF_RT_CT(M,rt,ct,0); m##01 = MD_MCMP_OF_RT_CT(M,rt,ct,1); m##02 = MD_MCMP_OF_RT_CT(M,rt,ct,2); \
+										 m##10 = MD_MCMP_OF_RT_CT(M,rt,ct,3); m##11 = MD_MCMP_OF_RT_CT(M,rt,ct,4); m##12 = MD_MCMP_OF_RT_CT(M,rt,ct,5);}
+#define SET_MD_CMP_31(m,M,rt,ct)		{m##00 = MD_MCMP_OF_RT_CT(M,rt,ct,0); \
+										 m##10 = MD_MCMP_OF_RT_CT(M,rt,ct,1); \
+										 m##20 = MD_MCMP_OF_RT_CT(M,rt,ct,2);}
+#define SET_MD_CMP_32(m,M,rt,ct)		{m##00 = MD_MCMP_OF_RT_CT(M,rt,ct,0); m##01 = MD_MCMP_OF_RT_CT(M,rt,ct,1); \
+										 m##10 = MD_MCMP_OF_RT_CT(M,rt,ct,2); m##11 = MD_MCMP_OF_RT_CT(M,rt,ct,3); \
+										 m##20 = MD_MCMP_OF_RT_CT(M,rt,ct,4); m##21 = MD_MCMP_OF_RT_CT(M,rt,ct,5);}
+#define SET_MD_CMP_33(m,M,rt,ct)		{m##00 = MD_MCMP_OF_RT_CT(M,rt,ct,0); m##01 = MD_MCMP_OF_RT_CT(M,rt,ct,1); m##02 = MD_MCMP_OF_RT_CT(M,rt,ct,2); \
+										 m##10 = MD_MCMP_OF_RT_CT(M,rt,ct,3); m##11 = MD_MCMP_OF_RT_CT(M,rt,ct,4); m##12 = MD_MCMP_OF_RT_CT(M,rt,ct,5); \
+										 m##20 = MD_MCMP_OF_RT_CT(M,rt,ct,6); m##21 = MD_MCMP_OF_RT_CT(M,rt,ct,7); m##22 = MD_MCMP_OF_RT_CT(M,rt,ct,8);}
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -92,12 +130,6 @@
 /*																			*/
 /****************************************************************************/
 
-static INT cx0,cx1,cx2,cy0,cy1,cy2;
-static INT m00,m01,m02,m10,m11,m12,m20,m21,m22;
-static INT mc00,mc01,mc02,mc10,mc11,mc12,mc20,mc21,mc22;
-static DOUBLE a0,a1,a2;
-static DOUBLE s0,s1,s2;
-
 #ifdef ModelP
 static VECDATA_DESC *ConsVector;
 static MATDATA_DESC *ConsMatrix;
@@ -115,276 +147,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /* forward declarations of functions used before they are defined			*/
 /*																			*/
 /****************************************************************************/
-
-/****************************************************************************/
-/*
-   INT SetA - some functions to assign values to the global variables of this file	
-
-   SYNOPSIS:
-   static INT SetA (const DOUBLE *A, const SHORT *offset, INT type, SHORT n);
-   PARAMETERS:
-.  A - DOUBLE value per type vector component 
-.  offset - array of length NVECTYPES
-.  type - vector type
-.  n - number of components of this type
-
-   DESCRIPTION:
-   This function assigns values to the global variables.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    else if error occured.
-*/
-/****************************************************************************/
-
-static INT SetA (const DOUBLE *A, const SHORT *offset, INT type, SHORT n)
-{
-	switch (n)
-	{
-		case 1: a0 = A[offset[type]];						 						  return NUM_OK;
-		case 2: a0 = A[offset[type]]; a1 = A[offset[type]+1];						  return NUM_OK;
-		case 3: a0 = A[offset[type]]; a1 = A[offset[type]+1]; a2 = A[offset[type]+2]; return NUM_OK;
-	}
-	
-	return (1);
-}
-
-/****************************************************************************/
-/*
-   INT SetXComp - some functions to assign values to the global variables of this file	
-
-   SYNOPSIS:
-   static INT SetXComp (const VECDATA_DESC *vec, INT vtype);
-
-   PARAMETERS:
-.  vec - description containing the values
-.  vtype - the vector type
-
-   DESCRIPTION:
-   This function assigns values to the global variables.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    else if error occured.
-*/
-/****************************************************************************/
-
-static INT SetXComp (const VECDATA_DESC *vec, INT vtype)
-{
-	switch (VD_NCMPS_IN_TYPE(vec,vtype))
-	{
-		case 1: cx0 = VD_CMP_OF_TYPE(vec,vtype,0);
-				return (0);
-		case 2: cx0 = VD_CMP_OF_TYPE(vec,vtype,0); 
-				cx1 = VD_CMP_OF_TYPE(vec,vtype,1);
-				return (0);
-		case 3: cx0 = VD_CMP_OF_TYPE(vec,vtype,0);
-				cx1 = VD_CMP_OF_TYPE(vec,vtype,1);
-				cx2 = VD_CMP_OF_TYPE(vec,vtype,2);
-				return (0);
-	}
-	
-	return (1);
-}
-
-/****************************************************************************/
-/*
-   INT SetYComp - some functions to assign values to the global variables of this file	
-
-   SYNOPSIS:
-   static INT SetYComp (const VECDATA_DESC *vec, INT vtype);
-
-   PARAMETERS:
-.  vec - description containing the values
-.  vtype - the vector type
-
-   DESCRIPTION:
-   This function assigns values to the global variables.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    else if error occured.
-*/
-/****************************************************************************/
-
-static INT SetYComp (const VECDATA_DESC *vec, INT vtype)
-{
-	switch (VD_NCMPS_IN_TYPE(vec,vtype))
-	{
-		case 1: cy0 = VD_CMP_OF_TYPE(vec,vtype,0);
-				return (0);
-		case 2: cy0 = VD_CMP_OF_TYPE(vec,vtype,0); 
-				cy1 = VD_CMP_OF_TYPE(vec,vtype,1);
-				return (0);
-		case 3: cy0 = VD_CMP_OF_TYPE(vec,vtype,0);
-				cy1 = VD_CMP_OF_TYPE(vec,vtype,1);
-				cy2 = VD_CMP_OF_TYPE(vec,vtype,2);
-				return (0);
-	}
-	
-	return (1);
-}
-
-/****************************************************************************/
-/*
-   INT SetMComp - some functions to assign values to the global variables of this file	
-
-   SYNOPSIS:
-   static INT SetMComp (const MATDATA_DESC *mat, INT rtype, INT ctype, SHORT kind);
-
-   PARAMETERS:
-.  mat - description
-.  rtype - row type
-.  ctype -column type
-.  kind - see 'ugblas.h' for possible types
-
-   DESCRIPTION:
-   This function assigns values to the global variables.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    else if error occured.
-*/
-/****************************************************************************/
-
-static INT SetMComp (const MATDATA_DESC *mat, INT rtype, INT ctype, SHORT kind)
-{
-	switch (kind)
-	{
-		case R1C1: m00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   return NUM_OK;
-		case R1C2: m00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   m01 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   return NUM_OK;
-		case R1C3: m00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   m01 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   m02 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 2);
-				   return NUM_OK;
-		
-		case R2C1: m00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   m10 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   return NUM_OK;
-		case R2C2: m00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   m01 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   m10 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 2);
-				   m11 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 3);
-				   return NUM_OK;
-		case R2C3: m00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   m01 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   m02 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 2);
-				   m10 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 3);
-				   m11 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 4);
-				   m12 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 5);
-				   return NUM_OK;
-		
-		case R3C1: m00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   m10 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   m20 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 2);
-				   return NUM_OK;
-		case R3C2: m00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0); 
-				   m01 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   m10 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 2);
-				   m11 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 3);
-				   m20 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 4); 
-				   m21 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 5);
-				   return NUM_OK;
-		case R3C3: m00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0); 
-				   m01 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   m02 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 2);
-				   m10 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 3);
-				   m11 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 4);
-				   m12 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 5);
-				   m20 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 6);
-				   m21 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 7);
-				   m22 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 8);
-				   return NUM_OK;
-	}
-	
-	return (1);
-}
-
-/****************************************************************************/
-/*
-   INT SetMCComp - some functions to assign values to the global variables of this file	
-
-   SYNOPSIS:
-	static INT SetMCComp (const MATDATA_DESC *mat, INT rtype, INT ctype, SHORT kind)
-
-   PARAMETERS:
-.  mat - description
-.  rtype - row type
-.  ctype -column type
-.  kind - see 'ugblas.h' for possible types
-
-   DESCRIPTION:
-   This function assigns values to the global variables.
-
-   RETURN VALUE:
-   INT
-.n    NUM_OK if ok
-.n    else if error occured.
-*/
-/****************************************************************************/
-
-static INT SetMCComp (const MATDATA_DESC *mat, INT rtype, INT ctype, SHORT kind)
-{
-	switch (kind)
-	{
-		case R1C1: mc00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   return NUM_OK;
-		case R1C2: mc00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   mc01 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   return NUM_OK;
-		case R1C3: mc00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   mc01 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   mc02 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 2);
-				   return NUM_OK;
-		
-		case R2C1: mc00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   mc10 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   return NUM_OK;
-		case R2C2: mc00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   mc01 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   mc10 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 2);
-				   mc11 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 3);
-				   return NUM_OK;
-		case R2C3: mc00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   mc01 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   mc02 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 2);
-				   mc10 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 3);
-				   mc11 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 4);
-				   mc12 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 5);
-				   return NUM_OK;
-		
-		case R3C1: mc00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   mc10 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   mc20 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 2);
-				   return NUM_OK;
-		case R3C2: mc00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   mc01 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   mc10 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 2);
-				   mc11 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 3);
-				   mc20 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 4);
-				   mc21 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 5);
-				   return NUM_OK;
-		case R3C3: mc00 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 0);
-				   mc01 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 1);
-				   mc02 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 2);
-				   mc10 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 3);
-				   mc11 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 4);
-				   mc12 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 5);
-				   mc20 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 6);
-				   mc21 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 7);
-				   mc22 = MD_MCMP_OF_RT_CT(mat, rtype, ctype, 8);
-				   return NUM_OK;
-	}
-	
-	return (1);
-}
 
 /****************************************************************************/
 /*D
@@ -1460,7 +1222,8 @@ INT l_dset (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 	register SHORT i;
 	register SHORT ncomp;
 	register INT vtype;
-		
+	DEFINE_VD_CMPS(cx);
+	
 	first_v = FIRSTVECTOR(g);
 	
 	for (vtype=0; vtype<NVECTYPES; vtype++)
@@ -1468,19 +1231,19 @@ INT l_dset (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						VVALUE(v,cx0) = a;
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a;}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a; VVALUE(v,cx2) = a;}
 					break;
@@ -1527,25 +1290,26 @@ INT a_dset (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DO
 	register SHORT ncomp;
 	register INT vtype;
 	INT lev;
-		
+	DEFINE_VD_CMPS(cx);
+
 	for (vtype=0; vtype<NVECTYPES; vtype++)
 		if (VD_ISDEF_IN_TYPE(x,vtype))
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						VVALUE(v,cx0) = a;
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a;}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a; VVALUE(v,cx2) = a;}
 					break;
@@ -1592,13 +1356,14 @@ INT s_dset (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE a)
 	register SHORT ncomp;
 	register INT vtype;
 	INT lev;
-		
+	DEFINE_VD_CMPS(cx);
+
 	for (vtype=0; vtype<NVECTYPES; vtype++)
 		if (VD_ISDEF_IN_TYPE(x,vtype))
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						VVALUE(v,cx0) = a;
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -1606,7 +1371,7 @@ INT s_dset (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE a)
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a;}
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -1614,7 +1379,7 @@ INT s_dset (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE a)
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a; VVALUE(v,cx2) = a;}
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -1665,7 +1430,8 @@ INT l_dsetrandom (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 	register SHORT ncomp;
 	register INT vtype;
 	DOUBLE scale;
-	
+	DEFINE_VD_CMPS(cx);
+
 	if (a<=0.0) return (NUM_ERROR);
 	scale = a/(DOUBLE)RAND_MAX;
 		
@@ -1676,19 +1442,19 @@ INT l_dsetrandom (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						VVALUE(v,cx0) = scale*(DOUBLE)rand();
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{VVALUE(v,cx0) = scale*(DOUBLE)rand(); VVALUE(v,cx1) = scale*(DOUBLE)rand();}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{VVALUE(v,cx0) = scale*(DOUBLE)rand(); VVALUE(v,cx1) = scale*(DOUBLE)rand(); VVALUE(v,cx2) = scale*(DOUBLE)rand();}
 					break;
@@ -1733,7 +1499,8 @@ INT l_dsetnonskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 	register SHORT i;
 	register SHORT ncomp;
 	register INT vtype,vskip;
-	
+	DEFINE_VD_CMPS(cx);
+
 	first_v = FIRSTVECTOR(g);
 	
 	for (vtype=0; vtype<NVECTYPES; vtype++)
@@ -1741,20 +1508,20 @@ INT l_dsetnonskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						if (!(VECSKIP(v)&(1<<0)))
 							VVALUE(v,cx0) = a;
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{vskip = VECSKIP(v); if (!(vskip&(1<<0))) VVALUE(v,cx0) = a; if (!(vskip&(1<<1))) VVALUE(v,cx1) = a;}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{vskip = VECSKIP(v); if (!(vskip&(1<<0))) VVALUE(v,cx0) = a; if (!(vskip&(1<<1))) VVALUE(v,cx1) = a; if (!(vskip&(1<<2))) VVALUE(v,cx2) = a;}
 					break;
@@ -1807,26 +1574,27 @@ INT a_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xcl
 	register SHORT ncomp;
 	register INT vtype,vskip;
 	INT lev;
-		
+	DEFINE_VD_CMPS(cx);
+
 	for (vtype=0; vtype<NVECTYPES; vtype++)
 		if (VD_ISDEF_IN_TYPE(x,vtype))
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						if (!(VECSKIP(v)&(1<<0)))
 							VVALUE(v,cx0) = a;
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						{vskip = VECSKIP(v); if (!(vskip&(1<<0))) VVALUE(v,cx0) = a; if (!(vskip&(1<<1))) VVALUE(v,cx1) = a;}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						{vskip = VECSKIP(v); if (!(vskip&(1<<0))) VVALUE(v,cx0) = a; if (!(vskip&(1<<1))) VVALUE(v,cx1) = a; if (!(vskip&(1<<2))) VVALUE(v,cx2) = a;}
 					break;
@@ -1877,13 +1645,14 @@ INT s_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE 
 	register SHORT ncomp;
 	register INT vtype,vskip;
 	INT lev;
-	
+	DEFINE_VD_CMPS(cx);
+
 	for (vtype=0; vtype<NVECTYPES; vtype++)
 		if (VD_ISDEF_IN_TYPE(x,vtype))
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						if (!(VECSKIP(v)&(1<<0)))
 							VVALUE(v,cx0) = a;
@@ -1893,7 +1662,7 @@ INT s_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE 
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{vskip = VECSKIP(v); if (!(vskip&(1<<0))) VVALUE(v,cx0) = a; if (!(vskip&(1<<1))) VVALUE(v,cx1) = a;}
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -1901,7 +1670,7 @@ INT s_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE 
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{vskip = VECSKIP(v); if (!(vskip&(1<<0))) VVALUE(v,cx0) = a; if (!(vskip&(1<<1))) VVALUE(v,cx1) = a; if (!(vskip&(1<<2))) VVALUE(v,cx2) = a;}
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -1959,7 +1728,8 @@ INT l_dsetskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 	register SHORT i;
 	register SHORT ncomp;
 	register INT vtype,vskip;
-	
+	DEFINE_VD_CMPS(cx);
+
 	first_v = FIRSTVECTOR(g);
 	
 	for (vtype=0; vtype<NVECTYPES; vtype++)
@@ -1967,20 +1737,20 @@ INT l_dsetskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						if ((VECSKIP(v)&(1<<0)))
 							VVALUE(v,cx0) = a;
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{vskip = VECSKIP(v); if ((vskip&(1<<0))) VVALUE(v,cx0) = a; if ((vskip&(1<<1))) VVALUE(v,cx1) = a;}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{vskip = VECSKIP(v); if ((vskip&(1<<0))) VVALUE(v,cx0) = a; if ((vskip&(1<<1))) VVALUE(v,cx1) = a; if ((vskip&(1<<2))) VVALUE(v,cx2) = a;}
 					break;
@@ -2039,7 +1809,8 @@ INT l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFu
 	register SHORT i;
 	register SHORT ncomp;
 	register INT vtype;
-	
+	DEFINE_VD_CMPS(cx);
+
 #ifndef NDEBUG
 	/* check maximal block size */
 	maxsmallblock = 0;
@@ -2063,7 +1834,7 @@ INT l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFu
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 					{
 						if (VectorPosition(v,Point)) return (NUM_ERROR);
@@ -2073,7 +1844,7 @@ INT l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFu
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 					{
 						if (VectorPosition(v,Point)) return (NUM_ERROR);
@@ -2084,7 +1855,7 @@ INT l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFu
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 					{
 						if (VectorPosition(v,Point)) return (NUM_ERROR);
@@ -2139,7 +1910,9 @@ INT l_dcopy (GRID *g, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y)
 	register SHORT i;
 	register SHORT ncomp;
 	register INT vtype,err;
-	
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
@@ -2153,22 +1926,22 @@ INT l_dcopy (GRID *g, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y)
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						VVALUE(v,cx0) = VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1); VVALUE(v,cx2) = VVALUE(v,cy2);}
 					break;
@@ -2190,7 +1963,9 @@ INT l_dcopy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const VEC
 	register SHORT i;
 	register SHORT ncomp;
 	register INT vtype,err;
-	
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
@@ -2205,22 +1980,22 @@ INT l_dcopy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const VEC
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
 					L_VLOOP__TYPE_CLASS2(v,first_v,end_v,vtype,xclass)
 						VVALUE(v,cx0) = VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
 					L_VLOOP__TYPE_CLASS2(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
 					L_VLOOP__TYPE_CLASS2(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1); VVALUE(v,cx2) = VVALUE(v,cy2);}
 					break;
@@ -2269,7 +2044,9 @@ INT a_dcopy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, c
 	register SHORT i;
 	register SHORT ncomp;
 	INT lev,vtype,err;
-	
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
@@ -2281,22 +2058,22 @@ INT a_dcopy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, c
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						VVALUE(v,cx0) = VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1); VVALUE(v,cx2) = VVALUE(v,cy2);}
 					break;
@@ -2344,7 +2121,9 @@ INT s_dcopy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VECDATA
 	register SHORT i;
 	register SHORT ncomp;
 	INT lev,vtype,err;
-	
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
@@ -2356,8 +2135,8 @@ INT s_dcopy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VECDATA
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						VVALUE(v,cx0) = VVALUE(v,cy0);
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -2365,8 +2144,8 @@ INT s_dcopy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VECDATA
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1);}
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -2374,8 +2153,8 @@ INT s_dcopy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VECDATA
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1); VVALUE(v,cx2) = VVALUE(v,cy2);}
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -2426,6 +2205,8 @@ INT l_dscale (GRID *g, const VECDATA_DESC *x, INT xclass, const DOUBLE *a)
 	register SHORT ncomp;
 	register INT vtype;
 	const SHORT *aoff;
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
 
 	aoff = VD_OFFSETPTR(x);	
 	first_v = FIRSTVECTOR(g);
@@ -2435,22 +2216,22 @@ INT l_dscale (GRID *g, const VECDATA_DESC *x, INT xclass, const DOUBLE *a)
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						VVALUE(v,cx0) *= a0;
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{VVALUE(v,cx0) *= a0; VVALUE(v,cx1) *= a1;}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{VVALUE(v,cx0) *= a0; VVALUE(v,cx1) *= a1; VVALUE(v,cx2) *= a2;}
 					break;
@@ -2475,6 +2256,8 @@ INT l_dscale_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const DO
 	register SHORT ncomp;
 	register INT vtype;
 	const SHORT *aoff;
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
 
 	aoff = VD_OFFSETPTR(x);	
 	first_v = BVFIRSTVECTOR(theBV);
@@ -2485,22 +2268,22 @@ INT l_dscale_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const DO
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS2(v,first_v,end_v,vtype,xclass)
 						VVALUE(v,cx0) *= a0;
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS2(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) *= a0; VVALUE(v,cx1) *= a1;}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS2(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) *= a0; VVALUE(v,cx1) *= a1; VVALUE(v,cx2) *= a2;}
 					break;
@@ -2545,7 +2328,8 @@ INT s_dscale (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE *a)
 	register SHORT ncomp;
 	INT lev,vtype;
 	const SHORT *spoff;
-	
+	DEFINE_VD_CMPS(cx);
+
   	spoff = VD_OFFSETPTR(x);				
 	
 	for (vtype=0; vtype<NVECTYPES; vtype++)
@@ -2556,7 +2340,7 @@ INT s_dscale (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE *a)
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						VVALUE(v,cx0) *= value[0];
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -2564,7 +2348,7 @@ INT s_dscale (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE *a)
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{VVALUE(v,cx0) *= value[0]; VVALUE(v,cx1) *= value[1];}
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -2572,7 +2356,7 @@ INT s_dscale (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE *a)
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{VVALUE(v,cx0) *= value[0]; VVALUE(v,cx1) *= value[1]; VVALUE(v,cx2) *= value[2];}
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -2629,6 +2413,9 @@ INT a_dscale (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,
 	register INT vtype;
 	INT lev;
 	const SHORT *aoff;
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
+
 
 	aoff = VD_OFFSETPTR(x);	
 	
@@ -2637,22 +2424,22 @@ INT a_dscale (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						VVALUE(v,cx0) *= a0;
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						{VVALUE(v,cx0) *= a0; VVALUE(v,cx1) *= a1;}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						{VVALUE(v,cx0) *= a0; VVALUE(v,cx1) *= a1; VVALUE(v,cx2) *= a2;}
 					break;
@@ -2703,6 +2490,9 @@ INT l_daxpy (GRID *g, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const 
 	register SHORT ncomp;
 	register INT vtype,err;
 	const SHORT *aoff;
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
 
 #ifndef NDEBUG
 	/* check consistency */
@@ -2718,25 +2508,25 @@ INT l_daxpy (GRID *g, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const 
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						VVALUE(v,cx0) += a0*VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1); VVALUE(v,cx2) += a2*VVALUE(v,cy2);}
 					break;
@@ -2761,6 +2551,9 @@ INT l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const DOU
 	register SHORT ncomp;
 	register INT vtype,err;
 	const SHORT *aoff;
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
 
 #ifndef NDEBUG
 	/* check consistency */
@@ -2777,25 +2570,25 @@ INT l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const DOU
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS2(v,first_v,end_v,vtype,xclass)
 						VVALUE(v,cx0) += a0*VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS2(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS2(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1); VVALUE(v,cx2) += a2*VVALUE(v,cy2);}
 					break;
@@ -2850,7 +2643,10 @@ INT a_daxpy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, c
 	register INT vtype;
 	INT lev,err;
 	const SHORT *aoff;
-	
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
@@ -2864,25 +2660,25 @@ INT a_daxpy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, c
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						VVALUE(v,cx0) += a0*VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1); VVALUE(v,cx2) += a2*VVALUE(v,cy2);}
 					break;
@@ -2935,7 +2731,10 @@ INT s_daxpy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const DOUBLE 
 	register INT vtype;
 	INT lev,err;
 	const SHORT *aoff;
-	
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
@@ -2949,9 +2748,9 @@ INT s_daxpy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const DOUBLE 
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						VVALUE(v,cx0) += a0*VVALUE(v,cy0);
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -2959,9 +2758,9 @@ INT s_daxpy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const DOUBLE 
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1);}
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -2969,9 +2768,9 @@ INT s_daxpy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const DOUBLE 
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1); VVALUE(v,cx2) += a2*VVALUE(v,cy2);}
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -3027,7 +2826,10 @@ INT l_dxdy (GRID *g, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const V
 	register SHORT ncomp;
 	register INT vtype,err;
 	const SHORT *aoff;
-	
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
@@ -3042,26 +2844,26 @@ INT l_dxdy (GRID *g, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const V
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 						 VVALUE(v,cx1) = a1*VVALUE(v,cx1)+(1.0-a1)*VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 						 VVALUE(v,cx1) = a1*VVALUE(v,cx1)+(1.0-a1)*VVALUE(v,cy1);
@@ -3119,7 +2921,10 @@ INT a_dxdy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, co
 	register INT vtype;
 	INT lev,err;
 	const SHORT *aoff;
-		
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
@@ -3133,26 +2938,26 @@ INT a_dxdy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, co
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						{VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 						 VVALUE(v,cx1) = a1*VVALUE(v,cx1)+(1.0-a1)*VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						{VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 						 VVALUE(v,cx1) = a1*VVALUE(v,cx1)+(1.0-a1)*VVALUE(v,cy1);
@@ -3209,6 +3014,9 @@ INT s_dxdy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const DOUBLE *
 	register INT vtype;
 	INT lev,err;
 	const SHORT *aoff;
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
 
 #ifndef NDEBUG
 	/* check consistency */
@@ -3223,9 +3031,9 @@ INT s_dxdy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const DOUBLE *
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -3233,9 +3041,9 @@ INT s_dxdy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const DOUBLE *
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 						 VVALUE(v,cx1) = a1*VVALUE(v,cx1)+(1.0-a1)*VVALUE(v,cy1);}
@@ -3245,9 +3053,9 @@ INT s_dxdy (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const DOUBLE *
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 						 VVALUE(v,cx1) = a1*VVALUE(v,cx1)+(1.0-a1)*VVALUE(v,cy1);
@@ -3310,7 +3118,9 @@ INT l_ddot (const GRID *g, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC
 	register SHORT ncomp;
 	INT vtype,err;
 	const SHORT *spoff;
-	
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
@@ -3333,22 +3143,22 @@ INT l_ddot (const GRID *g, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1); value[2] += VVALUE(v,cx2) * VVALUE(v,cy2);}
 					break;
@@ -3407,7 +3217,9 @@ INT a_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xcla
 	register SHORT ncomp;
 	INT lev,vtype,err;
 	const SHORT *spoff;
-	
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
@@ -3428,22 +3240,22 @@ INT a_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xcla
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
 					A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
 						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1); value[2] += VVALUE(v,cx2) * VVALUE(v,cy2);}
 					break;
@@ -3500,7 +3312,9 @@ INT s_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VE
 	register SHORT ncomp;
 	INT lev,vtype,err;
 	const SHORT *spoff;
-	
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency(x,y))!=NUM_OK)
@@ -3521,8 +3335,8 @@ INT s_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VE
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -3530,8 +3344,8 @@ INT s_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VE
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1);}
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -3539,8 +3353,8 @@ INT s_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VE
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
 					S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,vtype)
 						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1); value[2] += VVALUE(v,cx2) * VVALUE(v,cy2);}
 					S_FINE_VLOOP__TYPE(tl,v,mg,vtype)
@@ -3600,7 +3414,8 @@ INT l_mean (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *sp)
 	register SHORT ncomp;
 	INT vtype;
 	const SHORT *spoff;
-		
+	DEFINE_VD_CMPS(cx);
+
   	spoff = VD_OFFSETPTR(x);				
 
 	/* clear sp */
@@ -3619,19 +3434,19 @@ INT l_mean (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *sp)
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						value[0] += VVALUE(v,cx0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{value[0] += VVALUE(v,cx0); value[1] += VVALUE(v,cx1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					L_VLOOP__TYPE_CLASS(v,first_v,vtype,xclass)
 						{value[0] += VVALUE(v,cx0); value[1] += VVALUE(v,cx1); value[2] += VVALUE(v,cx2);}
 					break;
@@ -3788,7 +3603,8 @@ INT l_dmatset (GRID *g, const MATDATA_DESC *M, DOUBLE a)
 	INT rtype,ctype;
 	register SHORT i;
 	register SHORT nr;
-	
+	DEFINE_MD_CMPS(m);
+
 	first_v = FIRSTVECTOR(g);
 	
 	for (rtype=0; rtype<NVECTYPES; rtype++)
@@ -3797,46 +3613,46 @@ INT l_dmatset (GRID *g, const MATDATA_DESC *M, DOUBLE a)
 				switch (MAT_RCKIND(M,rtype,ctype))
 				{
 					case R1C1:
-						SetMComp(M,rtype,ctype,R1C1);
+						SET_MD_CMP_11(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							MVALUE(m,m00) = a;
 						break;
 					
 					case R1C2:
-						SetMComp(M,rtype,ctype,R1C2);
+						SET_MD_CMP_12(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;}
 						break;
 					
 					case R1C3:
-						SetMComp(M,rtype,ctype,R1C3);
+						SET_MD_CMP_13(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;}
 						break;
 					
 					case R2C1:
-						SetMComp(M,rtype,ctype,R2C1);
+						SET_MD_CMP_21(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = a;
 							 MVALUE(m,m10) = a;}
 						break;
 					
 					case R2C2:
-						SetMComp(M,rtype,ctype,R2C2);
+						SET_MD_CMP_22(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a;}
 						break;
 					
 					case R2C3:
-						SetMComp(M,rtype,ctype,R2C3);
+						SET_MD_CMP_23(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a; MVALUE(m,m12) = a;}
 						break;
 					
 					case R3C1:
-						SetMComp(M,rtype,ctype,R3C1);
+						SET_MD_CMP_31(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = a;
 							 MVALUE(m,m10) = a;
@@ -3844,7 +3660,7 @@ INT l_dmatset (GRID *g, const MATDATA_DESC *M, DOUBLE a)
 						break;
 					
 					case R3C2:
-						SetMComp(M,rtype,ctype,R3C2);
+						SET_MD_CMP_32(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a;
@@ -3852,7 +3668,7 @@ INT l_dmatset (GRID *g, const MATDATA_DESC *M, DOUBLE a)
 						break;
 					
 					case R3C3:
-						SetMComp(M,rtype,ctype,R3C3);
+						SET_MD_CMP_33(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a; MVALUE(m,m12) = a;
@@ -3876,6 +3692,7 @@ INT l_dmatset_SB (BLOCKVECTOR *dest, BLOCKVECTOR *source,const MATDATA_DESC *M, 
 	INT rtype,ctype,first_index,last_index;
 	register SHORT i;
 	register SHORT nr;
+	DEFINE_MD_CMPS(m);
 	
 	first_v = BVFIRSTVECTOR(dest);
 	end_v = BVENDVECTOR(dest);
@@ -3888,28 +3705,28 @@ INT l_dmatset_SB (BLOCKVECTOR *dest, BLOCKVECTOR *source,const MATDATA_DESC *M, 
 				switch (MAT_RCKIND(M,rtype,ctype))
 				{
 					case R1C1:
-						SetMComp(M,rtype,ctype,R1C1);
+						SET_MD_CMP_11(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE2(v,first_v,end_v,m,rtype,ctype)
 							if (MDESTINDEX(m)>=first_index && MDESTINDEX(m)<=last_index)
 								MVALUE(m,m00) = a;
 						break;
 					
 					case R1C2:
-						SetMComp(M,rtype,ctype,R1C2);
+						SET_MD_CMP_12(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE2(v,first_v,end_v,m,rtype,ctype)
 							if (MDESTINDEX(m)>=first_index && MDESTINDEX(m)<=last_index)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;}
 						break;
 					
 					case R1C3:
-						SetMComp(M,rtype,ctype,R1C3);
+						SET_MD_CMP_13(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE2(v,first_v,end_v,m,rtype,ctype)
 							if (MDESTINDEX(m)>=first_index && MDESTINDEX(m)<=last_index)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;}
 						break;
 					
 					case R2C1:
-						SetMComp(M,rtype,ctype,R2C1);
+						SET_MD_CMP_21(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE2(v,first_v,end_v,m,rtype,ctype)
 							if (MDESTINDEX(m)>=first_index && MDESTINDEX(m)<=last_index)
 							{MVALUE(m,m00) = a;
@@ -3917,7 +3734,7 @@ INT l_dmatset_SB (BLOCKVECTOR *dest, BLOCKVECTOR *source,const MATDATA_DESC *M, 
 						break;
 					
 					case R2C2:
-						SetMComp(M,rtype,ctype,R2C2);
+						SET_MD_CMP_22(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE2(v,first_v,end_v,m,rtype,ctype)
 							if (MDESTINDEX(m)>=first_index && MDESTINDEX(m)<=last_index)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;
@@ -3925,7 +3742,7 @@ INT l_dmatset_SB (BLOCKVECTOR *dest, BLOCKVECTOR *source,const MATDATA_DESC *M, 
 						break;
 					
 					case R2C3:
-						SetMComp(M,rtype,ctype,R2C3);
+						SET_MD_CMP_23(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE2(v,first_v,end_v,m,rtype,ctype)
 							if (MDESTINDEX(m)>=first_index && MDESTINDEX(m)<=last_index)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;
@@ -3933,7 +3750,7 @@ INT l_dmatset_SB (BLOCKVECTOR *dest, BLOCKVECTOR *source,const MATDATA_DESC *M, 
 						break;
 					
 					case R3C1:
-						SetMComp(M,rtype,ctype,R3C1);
+						SET_MD_CMP_31(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE2(v,first_v,end_v,m,rtype,ctype)
 							if (MDESTINDEX(m)>=first_index && MDESTINDEX(m)<=last_index)
 							{MVALUE(m,m00) = a;
@@ -3942,7 +3759,7 @@ INT l_dmatset_SB (BLOCKVECTOR *dest, BLOCKVECTOR *source,const MATDATA_DESC *M, 
 						break;
 					
 					case R3C2:
-						SetMComp(M,rtype,ctype,R3C2);
+						SET_MD_CMP_32(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE2(v,first_v,end_v,m,rtype,ctype)
 							if (MDESTINDEX(m)>=first_index && MDESTINDEX(m)<=last_index)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;
@@ -3951,7 +3768,7 @@ INT l_dmatset_SB (BLOCKVECTOR *dest, BLOCKVECTOR *source,const MATDATA_DESC *M, 
 						break;
 					
 					case R3C3:
-						SetMComp(M,rtype,ctype,R3C3);
+						SET_MD_CMP_33(m,M,rtype,ctype);
 						L_MLOOP__RCTYPE2(v,first_v,end_v,m,rtype,ctype)
 							if (MDESTINDEX(m)>=first_index && MDESTINDEX(m)<=last_index)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;
@@ -4002,6 +3819,7 @@ INT s_dmatset (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M, DOUBLE a)
 	register SHORT i;
 	register SHORT nr;
 	INT lev;
+	DEFINE_MD_CMPS(m);
 	
 	for (rtype=0; rtype<NVECTYPES; rtype++)
 		for (ctype=0; ctype<NVECTYPES; ctype++)
@@ -4009,7 +3827,7 @@ INT s_dmatset (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M, DOUBLE a)
 				switch (MAT_RCKIND(M,rtype,ctype))
 				{
 					case R1C1:
-						SetMComp(M,rtype,ctype,R1C1);
+						SET_MD_CMP_11(m,M,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							MVALUE(m,m00) = a;
 						S_FINE_MLOOP__RCTYPE(tl,v,mg,m,rtype,ctype)
@@ -4017,7 +3835,7 @@ INT s_dmatset (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M, DOUBLE a)
 						break;
 					
 					case R1C2:
-						SetMComp(M,rtype,ctype,R1C2);
+						SET_MD_CMP_12(m,M,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;}
 						S_FINE_MLOOP__RCTYPE(tl,v,mg,m,rtype,ctype)
@@ -4025,7 +3843,7 @@ INT s_dmatset (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M, DOUBLE a)
 						break;
 					
 					case R1C3:
-						SetMComp(M,rtype,ctype,R1C3);
+						SET_MD_CMP_13(m,M,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;}
 						S_FINE_MLOOP__RCTYPE(tl,v,mg,m,rtype,ctype)
@@ -4033,7 +3851,7 @@ INT s_dmatset (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M, DOUBLE a)
 						break;
 					
 					case R2C1:
-						SetMComp(M,rtype,ctype,R2C1);
+						SET_MD_CMP_21(m,M,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = a;
 							 MVALUE(m,m10) = a;}
@@ -4043,7 +3861,7 @@ INT s_dmatset (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M, DOUBLE a)
 						break;
 					
 					case R2C2:
-						SetMComp(M,rtype,ctype,R2C2);
+						SET_MD_CMP_22(m,M,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a;}
@@ -4053,7 +3871,7 @@ INT s_dmatset (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M, DOUBLE a)
 						break;
 					
 					case R2C3:
-						SetMComp(M,rtype,ctype,R2C3);
+						SET_MD_CMP_23(m,M,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a; MVALUE(m,m12) = a;}
@@ -4063,7 +3881,7 @@ INT s_dmatset (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M, DOUBLE a)
 						break;
 					
 					case R3C1:
-						SetMComp(M,rtype,ctype,R3C1);
+						SET_MD_CMP_31(m,M,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = a;
 							 MVALUE(m,m10) = a;
@@ -4075,7 +3893,7 @@ INT s_dmatset (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M, DOUBLE a)
 						break;
 					
 					case R3C2:
-						SetMComp(M,rtype,ctype,R3C2);
+						SET_MD_CMP_32(m,M,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a;
@@ -4087,7 +3905,7 @@ INT s_dmatset (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M, DOUBLE a)
 						break;
 					
 					case R3C3:
-						SetMComp(M,rtype,ctype,R3C3);
+						SET_MD_CMP_33(m,M,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a; MVALUE(m,m12) = a;
@@ -4141,6 +3959,8 @@ INT l_dmatcopy (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 	INT rtype,ctype;
 	register SHORT i;
 	register SHORT nr;
+	DEFINE_MD_CMPS(m);
+	DEFINE_MD_CMPS(mc);
 	
 #ifndef NDEBUG
 	for (rtype=0; rtype<NVECTYPES; rtype++)
@@ -4167,53 +3987,53 @@ INT l_dmatcopy (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 				switch (MAT_RCKIND(M1,rtype,ctype))
 				{
 					case R1C1:
-						SetMComp(M1,rtype,ctype,R1C1);
-						SetMCComp(M2,rtype,ctype,R1C1);
+						SET_MD_CMP_11(m,M1,rtype,ctype);
+						SET_MD_CMP_11(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							MVALUE(m,m00) = MVALUE(m,mc00);
 						break;
 					
 					case R1C2:
-						SetMComp(M1,rtype,ctype,R1C2);
-						SetMCComp(M2,rtype,ctype,R1C2);
+						SET_MD_CMP_12(m,M1,rtype,ctype);
+						SET_MD_CMP_12(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01);}
 						break;
 					
 					case R1C3:
-						SetMComp(M1,rtype,ctype,R1C3);
-						SetMCComp(M2,rtype,ctype,R1C3);
+						SET_MD_CMP_13(m,M1,rtype,ctype);
+						SET_MD_CMP_13(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01); MVALUE(m,m02) = MVALUE(m,mc02);}
 						break;
 					
 					case R2C1:
-						SetMComp(M1,rtype,ctype,R2C1);
-						SetMCComp(M2,rtype,ctype,R2C1);
+						SET_MD_CMP_21(m,M1,rtype,ctype);
+						SET_MD_CMP_21(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00);
 							 MVALUE(m,m10) = MVALUE(m,mc10);}
 						break;
 					
 					case R2C2:
-						SetMComp(M1,rtype,ctype,R2C2);
-						SetMCComp(M2,rtype,ctype,R2C2);
+						SET_MD_CMP_22(m,M1,rtype,ctype);
+						SET_MD_CMP_22(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11);}
 						break;
 					
 					case R2C3:
-						SetMComp(M1,rtype,ctype,R2C3);
-						SetMCComp(M2,rtype,ctype,R2C3);
+						SET_MD_CMP_23(m,M1,rtype,ctype);
+						SET_MD_CMP_23(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01); MVALUE(m,m02) = MVALUE(m,mc02);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11); MVALUE(m,m12) = MVALUE(m,mc12);}
 						break;
 					
 					case R3C1:
-						SetMComp(M1,rtype,ctype,R3C1);
-						SetMCComp(M2,rtype,ctype,R3C1);
+						SET_MD_CMP_31(m,M1,rtype,ctype);
+						SET_MD_CMP_31(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00);
 							 MVALUE(m,m10) = MVALUE(m,mc10);
@@ -4221,8 +4041,8 @@ INT l_dmatcopy (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 						break;
 					
 					case R3C2:
-						SetMComp(M1,rtype,ctype,R3C2);
-						SetMCComp(M2,rtype,ctype,R3C2);
+						SET_MD_CMP_32(m,M1,rtype,ctype);
+						SET_MD_CMP_32(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11);
@@ -4230,8 +4050,8 @@ INT l_dmatcopy (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 						break;
 					
 					case R3C3:
-						SetMComp(M1,rtype,ctype,R3C3);
-						SetMCComp(M2,rtype,ctype,R3C3);
+						SET_MD_CMP_33(m,M1,rtype,ctype);
+						SET_MD_CMP_33(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01); MVALUE(m,m02) = MVALUE(m,mc02);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11); MVALUE(m,m12) = MVALUE(m,mc12);
@@ -4284,6 +4104,8 @@ INT s_dmatcopy (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MAT
 	register SHORT i;
 	register SHORT nr;
 	INT lev;
+	DEFINE_MD_CMPS(m);
+	DEFINE_MD_CMPS(mc);
 		
 #ifndef NDEBUG
 	for (rtype=0; rtype<NVECTYPES; rtype++)
@@ -4308,8 +4130,8 @@ INT s_dmatcopy (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MAT
 				switch (MAT_RCKIND(M1,rtype,ctype))
 				{
 					case R1C1:
-						SetMComp(M1,rtype,ctype,R1C1);
-						SetMCComp(M2,rtype,ctype,R1C1);
+						SET_MD_CMP_11(m,M1,rtype,ctype);
+						SET_MD_CMP_11(mc,M2,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							MVALUE(m,m00) = MVALUE(m,mc00);
 						S_FINE_MLOOP__RCTYPE(tl,v,mg,m,rtype,ctype)
@@ -4317,8 +4139,8 @@ INT s_dmatcopy (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MAT
 						break;
 					
 					case R1C2:
-						SetMComp(M1,rtype,ctype,R1C2);
-						SetMCComp(M2,rtype,ctype,R1C2);
+						SET_MD_CMP_12(m,M1,rtype,ctype);
+						SET_MD_CMP_12(mc,M2,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01);}
 						S_FINE_MLOOP__RCTYPE(tl,v,mg,m,rtype,ctype)
@@ -4326,8 +4148,8 @@ INT s_dmatcopy (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MAT
 						break;
 					
 					case R1C3:
-						SetMComp(M1,rtype,ctype,R1C3);
-						SetMCComp(M2,rtype,ctype,R1C3);
+						SET_MD_CMP_13(m,M1,rtype,ctype);
+						SET_MD_CMP_13(mc,M2,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01); MVALUE(m,m02) = MVALUE(m,mc02);}
 						S_FINE_MLOOP__RCTYPE(tl,v,mg,m,rtype,ctype)
@@ -4335,8 +4157,8 @@ INT s_dmatcopy (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MAT
 						break;
 					
 					case R2C1:
-						SetMComp(M1,rtype,ctype,R2C1);
-						SetMCComp(M2,rtype,ctype,R2C1);
+						SET_MD_CMP_21(m,M1,rtype,ctype);
+						SET_MD_CMP_21(mc,M2,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00);
 							 MVALUE(m,m10) = MVALUE(m,mc10);}
@@ -4346,8 +4168,8 @@ INT s_dmatcopy (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MAT
 						break;
 					
 					case R2C2:
-						SetMComp(M1,rtype,ctype,R2C2);
-						SetMCComp(M2,rtype,ctype,R2C2);
+						SET_MD_CMP_22(m,M1,rtype,ctype);
+						SET_MD_CMP_22(mc,M2,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11);}
@@ -4357,8 +4179,8 @@ INT s_dmatcopy (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MAT
 						break;
 					
 					case R2C3:
-						SetMComp(M1,rtype,ctype,R2C3);
-						SetMCComp(M2,rtype,ctype,R2C3);
+						SET_MD_CMP_23(m,M1,rtype,ctype);
+						SET_MD_CMP_23(mc,M2,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01); MVALUE(m,m02) = MVALUE(m,mc02);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11); MVALUE(m,m12) = MVALUE(m,mc12);}
@@ -4368,8 +4190,8 @@ INT s_dmatcopy (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MAT
 						break;
 					
 					case R3C1:
-						SetMComp(M1,rtype,ctype,R3C1);
-						SetMCComp(M2,rtype,ctype,R3C1);
+						SET_MD_CMP_31(m,M1,rtype,ctype);
+						SET_MD_CMP_31(mc,M2,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00);
 							 MVALUE(m,m10) = MVALUE(m,mc10);
@@ -4381,8 +4203,8 @@ INT s_dmatcopy (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MAT
 						break;
 					
 					case R3C2:
-						SetMComp(M1,rtype,ctype,R3C2);
-						SetMCComp(M2,rtype,ctype,R3C2);
+						SET_MD_CMP_32(m,M1,rtype,ctype);
+						SET_MD_CMP_32(mc,M2,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11);
@@ -4394,8 +4216,8 @@ INT s_dmatcopy (MULTIGRID *mg, INT fl, INT tl, const MATDATA_DESC *M1, const MAT
 						break;
 					
 					case R3C3:
-						SetMComp(M1,rtype,ctype,R3C3);
-						SetMCComp(M2,rtype,ctype,R3C3);
+						SET_MD_CMP_33(m,M1,rtype,ctype);
+						SET_MD_CMP_33(mc,M2,rtype,ctype);
 						S_BELOW_MLOOP__RCTYPE(lev,fl,tl,v,mg,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01); MVALUE(m,m02) = MVALUE(m,mc02);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11); MVALUE(m,m12) = MVALUE(m,mc12);
@@ -4449,6 +4271,8 @@ INT l_dmattranspose (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 	INT rtype,ctype;
 	register SHORT i;
 	register SHORT nr;
+	DEFINE_MD_CMPS(m);
+	DEFINE_MD_CMPS(mc);
 	
 #ifndef NDEBUG
 	for (rtype=0; rtype<NVECTYPES; rtype++)
@@ -4475,53 +4299,53 @@ INT l_dmattranspose (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 				switch (MAT_RCKIND(M1,rtype,ctype))
 				{
 					case R1C1:
-						SetMComp(M1,rtype,ctype,R1C1);
-						SetMCComp(M2,rtype,ctype,R1C1);
+						SET_MD_CMP_11(m,M1,rtype,ctype);
+						SET_MD_CMP_11(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							MVALUE(m,m00) = MVALUE(MADJ(m),mc00);
 						break;
 					
 					case R1C2:
-						SetMComp(M1,rtype,ctype,R1C2);
-						SetMCComp(M2,rtype,ctype,R1C2);
+						SET_MD_CMP_12(m,M1,rtype,ctype);
+						SET_MD_CMP_12(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(MADJ(m),mc00); MVALUE(m,m01) = MVALUE(MADJ(m),mc01);}
 						break;
 					
 					case R1C3:
-						SetMComp(M1,rtype,ctype,R1C3);
-						SetMCComp(M2,rtype,ctype,R1C3);
+						SET_MD_CMP_13(m,M1,rtype,ctype);
+						SET_MD_CMP_13(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(MADJ(m),mc00); MVALUE(m,m01) = MVALUE(MADJ(m),mc01); MVALUE(m,m02) = MVALUE(MADJ(m),mc02);}
 						break;
 					
 					case R2C1:
-						SetMComp(M1,rtype,ctype,R2C1);
-						SetMCComp(M2,rtype,ctype,R2C1);
+						SET_MD_CMP_21(m,M1,rtype,ctype);
+						SET_MD_CMP_21(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(MADJ(m),mc00);
 							 MVALUE(m,m10) = MVALUE(MADJ(m),mc10);}
 						break;
 					
 					case R2C2:
-						SetMComp(M1,rtype,ctype,R2C2);
-						SetMCComp(M2,rtype,ctype,R2C2);
+						SET_MD_CMP_22(m,M1,rtype,ctype);
+						SET_MD_CMP_22(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(MADJ(m),mc00); MVALUE(m,m01) = MVALUE(MADJ(m),mc01);
 							 MVALUE(m,m10) = MVALUE(MADJ(m),mc10); MVALUE(m,m11) = MVALUE(MADJ(m),mc11);}
 						break;
 					
 					case R2C3:
-						SetMComp(M1,rtype,ctype,R2C3);
-						SetMCComp(M2,rtype,ctype,R2C3);
+						SET_MD_CMP_23(m,M1,rtype,ctype);
+						SET_MD_CMP_23(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(MADJ(m),mc00); MVALUE(m,m01) = MVALUE(MADJ(m),mc01); MVALUE(m,m02) = MVALUE(MADJ(m),mc02);
 							 MVALUE(m,m10) = MVALUE(MADJ(m),mc10); MVALUE(m,m11) = MVALUE(MADJ(m),mc11); MVALUE(m,m12) = MVALUE(MADJ(m),mc12);}
 						break;
 					
 					case R3C1:
-						SetMComp(M1,rtype,ctype,R3C1);
-						SetMCComp(M2,rtype,ctype,R3C1);
+						SET_MD_CMP_31(m,M1,rtype,ctype);
+						SET_MD_CMP_31(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(MADJ(m),mc00);
 							 MVALUE(m,m10) = MVALUE(MADJ(m),mc10);
@@ -4529,8 +4353,8 @@ INT l_dmattranspose (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 						break;
 					
 					case R3C2:
-						SetMComp(M1,rtype,ctype,R3C2);
-						SetMCComp(M2,rtype,ctype,R3C2);
+						SET_MD_CMP_32(m,M1,rtype,ctype);
+						SET_MD_CMP_32(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(MADJ(m),mc00); MVALUE(m,m01) = MVALUE(MADJ(m),mc01);
 							 MVALUE(m,m10) = MVALUE(MADJ(m),mc10); MVALUE(m,m11) = MVALUE(MADJ(m),mc11);
@@ -4538,8 +4362,8 @@ INT l_dmattranspose (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 						break;
 					
 					case R3C3:
-						SetMComp(M1,rtype,ctype,R3C3);
-						SetMCComp(M2,rtype,ctype,R3C3);
+						SET_MD_CMP_33(m,M1,rtype,ctype);
+						SET_MD_CMP_33(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(MADJ(m),mc00); MVALUE(m,m01) = MVALUE(MADJ(m),mc01); MVALUE(m,m02) = MVALUE(MADJ(m),mc02);
 							 MVALUE(m,m10) = MVALUE(MADJ(m),mc10); MVALUE(m,m11) = MVALUE(MADJ(m),mc11); MVALUE(m,m12) = MVALUE(MADJ(m),mc12);
@@ -4587,6 +4411,8 @@ INT l_dmatadd (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 	INT rtype,ctype;
 	register SHORT i;
 	register SHORT nr;
+	DEFINE_MD_CMPS(m);
+	DEFINE_MD_CMPS(mc);
 	
 #ifndef NDEBUG
 	for (rtype=0; rtype<NVECTYPES; rtype++)
@@ -4613,53 +4439,53 @@ INT l_dmatadd (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 				switch (MAT_RCKIND(M1,rtype,ctype))
 				{
 					case R1C1:
-						SetMComp(M1,rtype,ctype,R1C1);
-						SetMCComp(M2,rtype,ctype,R1C1);
+						SET_MD_CMP_11(m,M1,rtype,ctype);
+						SET_MD_CMP_11(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							MVALUE(m,m00) += MVALUE(m,mc00);
 						break;
 					
 					case R1C2:
-						SetMComp(M1,rtype,ctype,R1C2);
-						SetMCComp(M2,rtype,ctype,R1C2);
+						SET_MD_CMP_12(m,M1,rtype,ctype);
+						SET_MD_CMP_12(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) += MVALUE(m,mc00); MVALUE(m,m01) += MVALUE(m,mc01);}
 						break;
 					
 					case R1C3:
-						SetMComp(M1,rtype,ctype,R1C3);
-						SetMCComp(M2,rtype,ctype,R1C3);
+						SET_MD_CMP_13(m,M1,rtype,ctype);
+						SET_MD_CMP_13(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) += MVALUE(m,mc00); MVALUE(m,m01) += MVALUE(m,mc01); MVALUE(m,m02) += MVALUE(m,mc02);}
 						break;
 					
 					case R2C1:
-						SetMComp(M1,rtype,ctype,R2C1);
-						SetMCComp(M2,rtype,ctype,R2C1);
+						SET_MD_CMP_21(m,M1,rtype,ctype);
+						SET_MD_CMP_21(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) += MVALUE(m,mc00);
 							 MVALUE(m,m10) += MVALUE(m,mc10);}
 						break;
 					
 					case R2C2:
-						SetMComp(M1,rtype,ctype,R2C2);
-						SetMCComp(M2,rtype,ctype,R2C2);
+						SET_MD_CMP_22(m,M1,rtype,ctype);
+						SET_MD_CMP_22(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) += MVALUE(m,mc00); MVALUE(m,m01) += MVALUE(m,mc01);
 							 MVALUE(m,m10) += MVALUE(m,mc10); MVALUE(m,m11) += MVALUE(m,mc11);}
 						break;
 					
 					case R2C3:
-						SetMComp(M1,rtype,ctype,R2C3);
-						SetMCComp(M2,rtype,ctype,R2C3);
+						SET_MD_CMP_23(m,M1,rtype,ctype);
+						SET_MD_CMP_23(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) += MVALUE(m,mc00); MVALUE(m,m01) += MVALUE(m,mc01); MVALUE(m,m02) += MVALUE(m,mc02);
 							 MVALUE(m,m10) += MVALUE(m,mc10); MVALUE(m,m11) += MVALUE(m,mc11); MVALUE(m,m12) += MVALUE(m,mc12);}
 						break;
 					
 					case R3C1:
-						SetMComp(M1,rtype,ctype,R3C1);
-						SetMCComp(M2,rtype,ctype,R3C1);
+						SET_MD_CMP_31(m,M1,rtype,ctype);
+						SET_MD_CMP_31(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) += MVALUE(m,mc00);
 							 MVALUE(m,m10) += MVALUE(m,mc10);
@@ -4667,8 +4493,8 @@ INT l_dmatadd (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 						break;
 					
 					case R3C2:
-						SetMComp(M1,rtype,ctype,R3C2);
-						SetMCComp(M2,rtype,ctype,R3C2);
+						SET_MD_CMP_32(m,M1,rtype,ctype);
+						SET_MD_CMP_32(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) += MVALUE(m,mc00); MVALUE(m,m01) += MVALUE(m,mc01);
 							 MVALUE(m,m10) += MVALUE(m,mc10); MVALUE(m,m11) += MVALUE(m,mc11);
@@ -4676,8 +4502,8 @@ INT l_dmatadd (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 						break;
 					
 					case R3C3:
-						SetMComp(M1,rtype,ctype,R3C3);
-						SetMCComp(M2,rtype,ctype,R3C3);
+						SET_MD_CMP_33(m,M1,rtype,ctype);
+						SET_MD_CMP_33(mc,M2,rtype,ctype);
 						L_MLOOP__RCTYPE(v,first_v,m,rtype,ctype)
 							{MVALUE(m,m00) += MVALUE(m,mc00); MVALUE(m,m01) += MVALUE(m,mc01); MVALUE(m,m02) += MVALUE(m,mc02);
 							 MVALUE(m,m10) += MVALUE(m,mc10); MVALUE(m,m11) += MVALUE(m,mc11); MVALUE(m,m12) += MVALUE(m,mc12);
@@ -4731,6 +4557,10 @@ INT l_dmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M
 	register SHORT i,j,xc,yc,mc;
 	register SHORT nr,nc;
 	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+	DEFINE_VS_CMPS(s);
+	DEFINE_MD_CMPS(m);
 	
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
@@ -4768,15 +4598,15 @@ INT l_dmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M
 	for (rtype=0; rtype<NVECTYPES; rtype++)
 		if (VD_ISDEF_IN_TYPE(x,rtype))
 		{
-			SetXComp(x,rtype);
+			SET_VD_CMP_N(cx,x,rtype);
 			
 			for (ctype=0; ctype<NVECTYPES; ctype++)
 				if (MD_ISDEF_IN_RT_CT(M,rtype,ctype))
 					switch (MAT_RCKIND(M,rtype,ctype))
 					{
 						case R1C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_11(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -4788,8 +4618,8 @@ INT l_dmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M
 							break;
 						
 						case R1C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_12(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -4801,8 +4631,8 @@ INT l_dmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M
 							break;
 							
 						case R1C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_13(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -4814,8 +4644,8 @@ INT l_dmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M
 							break;
 						
 						case R2C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_21(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -4828,8 +4658,8 @@ INT l_dmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M
 							break;
 						
 						case R2C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_22(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -4842,8 +4672,8 @@ INT l_dmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M
 							break;
 						
 						case R2C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_23(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -4856,8 +4686,8 @@ INT l_dmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M
 							break;
 						
 						case R3C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_31(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -4871,8 +4701,8 @@ INT l_dmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M
 							break;
 						
 						case R3C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_32(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -4886,8 +4716,8 @@ INT l_dmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M
 							break;
 						
 						case R3C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_33(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -5050,7 +4880,11 @@ INT l_dmatmul_minus (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_D
 	register SHORT i,j,xc,yc,mc;
 	register SHORT nr,nc;
 	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
-	
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+	DEFINE_VS_CMPS(s);
+	DEFINE_MD_CMPS(m);
+
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
 		return (err);
@@ -5087,15 +4921,15 @@ INT l_dmatmul_minus (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_D
 	for (rtype=0; rtype<NVECTYPES; rtype++)
 		if (VD_ISDEF_IN_TYPE(x,rtype))
 		{
-			SetXComp(x,rtype);
+			SET_VD_CMP_N(cx,x,rtype);
 			
 			for (ctype=0; ctype<NVECTYPES; ctype++)
 				if (MD_ISDEF_IN_RT_CT(M,rtype,ctype))
 					switch (MAT_RCKIND(M,rtype,ctype))
 					{
 						case R1C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_11(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -5107,8 +4941,8 @@ INT l_dmatmul_minus (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_D
 							break;
 						
 						case R1C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_12(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -5120,8 +4954,8 @@ INT l_dmatmul_minus (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_D
 							break;
 							
 						case R1C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_13(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -5133,8 +4967,8 @@ INT l_dmatmul_minus (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_D
 							break;
 						
 						case R2C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_21(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -5147,8 +4981,8 @@ INT l_dmatmul_minus (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_D
 							break;
 						
 						case R2C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_22(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -5161,8 +4995,8 @@ INT l_dmatmul_minus (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_D
 							break;
 						
 						case R2C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_23(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -5175,8 +5009,8 @@ INT l_dmatmul_minus (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_D
 							break;
 						
 						case R3C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_31(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -5190,8 +5024,8 @@ INT l_dmatmul_minus (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_D
 							break;
 						
 						case R3C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_32(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -5205,8 +5039,8 @@ INT l_dmatmul_minus (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_D
 							break;
 						
 						case R3C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_33(m,M,rtype,ctype);
 							L_VLOOP__TYPE_CLASS(v,first_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -5417,7 +5251,11 @@ INT s_dmatmul (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const MATDA
 	register SHORT i,j,xc,yc,mc;
 	register SHORT nr,nc;
 	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
-	
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+	DEFINE_VS_CMPS(s);
+	DEFINE_MD_CMPS(m);
+
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
 		return (err);
@@ -5466,15 +5304,15 @@ INT s_dmatmul (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const MATDA
 	for (rtype=0; rtype<NVECTYPES; rtype++)
 		if (VD_ISDEF_IN_TYPE(x,rtype))
 		{
-			SetXComp(x,rtype);
+			SET_VD_CMP_N(cx,x,rtype);
 			
 			for (ctype=0; ctype<NVECTYPES; ctype++)
 				if (MD_ISDEF_IN_RT_CT(M,rtype,ctype))
 					switch (MAT_RCKIND(M,rtype,ctype))
 					{
 						case R1C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_11(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = 0.0;
@@ -5494,8 +5332,8 @@ INT s_dmatmul (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const MATDA
 							break;
 						
 						case R1C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_12(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = 0.0;
@@ -5515,8 +5353,8 @@ INT s_dmatmul (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const MATDA
 							break;
 							
 						case R1C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_13(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = 0.0;
@@ -5536,8 +5374,8 @@ INT s_dmatmul (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const MATDA
 							break;
 						
 						case R2C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_21(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = 0.0;
@@ -5559,8 +5397,8 @@ INT s_dmatmul (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const MATDA
 							break;
 						
 						case R2C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_22(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = 0.0;
@@ -5582,8 +5420,8 @@ INT s_dmatmul (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const MATDA
 							break;
 						
 						case R2C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_23(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = 0.0;
@@ -5605,8 +5443,8 @@ INT s_dmatmul (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const MATDA
 							break;
 						
 						case R3C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_31(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -5630,8 +5468,8 @@ INT s_dmatmul (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const MATDA
 							break;
 						
 						case R3C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_32(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -5655,8 +5493,8 @@ INT s_dmatmul (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const MATDA
 							break;
 						
 						case R3C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_33(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -5747,7 +5585,11 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 	register SHORT i,j,xc,yc,mc;
 	register SHORT nr,nc;
 	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
-	
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+	DEFINE_VS_CMPS(s);
+	DEFINE_MD_CMPS(m);
+
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)
 		return (err);
@@ -5796,15 +5638,15 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 	for (rtype=0; rtype<NVECTYPES; rtype++)
 		if (VD_ISDEF_IN_TYPE(x,rtype))
 		{
-			SetXComp(x,rtype);
+			SET_VD_CMP_N(cx,x,rtype);
 			
 			for (ctype=0; ctype<NVECTYPES; ctype++)
 				if (MD_ISDEF_IN_RT_CT(M,rtype,ctype))
 					switch (MAT_RCKIND(M,rtype,ctype))
 					{
 						case R1C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_11(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = 0.0;
@@ -5824,8 +5666,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 						
 						case R1C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_12(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = 0.0;
@@ -5845,8 +5687,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 							
 						case R1C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_13(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = 0.0;
@@ -5866,8 +5708,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 						
 						case R2C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_21(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = 0.0;
@@ -5889,8 +5731,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 						
 						case R2C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_22(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = 0.0;
@@ -5912,8 +5754,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 						
 						case R2C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_23(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = 0.0;
@@ -5935,8 +5777,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 						
 						case R3C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_31(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -5960,8 +5802,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 						
 						case R3C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_32(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -5985,8 +5827,8 @@ INT s_dmatmul_minus (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 							break;
 						
 						case R3C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_33(m,M,rtype,ctype);
 							S_BELOW_VLOOP__TYPE(lev,fl,tl,v,mg,rtype)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -6171,7 +6013,8 @@ INT dsetB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 	register SHORT ncomp;
 	register INT vtype;
 	VECTOR *first_v;
-	
+	DEFINE_VD_CMPS(cx);
+
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
 
@@ -6180,19 +6023,19 @@ INT dsetB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						VVALUE(v,cx0) = a;
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a;}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a; VVALUE(v,cx2) = a;}
 					break;
@@ -6246,6 +6089,7 @@ INT dsetG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, con
 	register INT vtype;
 	BLOCKVECTOR *bv;
 	VECTOR *first_v;
+	DEFINE_VD_CMPS(cx);
 
 	/* find blockvector in the grid */
 	if ( (bv = FindBV( grid, bvd, bvdf )) == NULL )
@@ -6259,19 +6103,19 @@ INT dsetG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, con
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						VVALUE(v,cx0) = a;
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a;}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) = a; VVALUE(v,cx1) = a; VVALUE(v,cx2) = a;}
 					break;
@@ -6419,6 +6263,7 @@ INT dsetfuncB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, SetFunc
 	register SHORT ncomp;
 	register INT vtype;
 	VECTOR *first_v;
+	DEFINE_VD_CMPS(cx);
 
 	first_v = BVFIRSTVECTOR( bv );
 	end_v   = BVENDVECTOR( bv );
@@ -6439,7 +6284,7 @@ ENDDEBUG
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
 						if (VectorPosition(v,Point)) return (NUM_ERROR);
@@ -6449,7 +6294,7 @@ ENDDEBUG
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
 						if (VectorPosition(v,Point)) return (NUM_ERROR);
@@ -6460,7 +6305,7 @@ ENDDEBUG
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
 						if (VectorPosition(v,Point)) return (NUM_ERROR);
@@ -6530,6 +6375,7 @@ INT dsetfuncG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf,
 	register INT vtype;
 	BLOCKVECTOR *bv;
 	VECTOR *first_v;
+	DEFINE_VD_CMPS(cx);
 
 IFDEBUG(np,0)
 	/* check maximal block size */
@@ -6554,7 +6400,7 @@ ENDDEBUG
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
 						if (VectorPosition(v,Point)) return (NUM_ERROR);
@@ -6564,7 +6410,7 @@ ENDDEBUG
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
 						if (VectorPosition(v,Point)) return (NUM_ERROR);
@@ -6575,7 +6421,7 @@ ENDDEBUG
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
 						if (VectorPosition(v,Point)) return (NUM_ERROR);
@@ -6750,6 +6596,8 @@ INT dcopyB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const VECD
 	register SHORT ncomp;
 	register INT vtype;
 	VECTOR *first_v;
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
 
 #ifndef NDEBUG
 	INT err;
@@ -6767,22 +6615,22 @@ INT dcopyB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const VECD
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						VVALUE(v,cx0) = VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1); VVALUE(v,cx2) = VVALUE(v,cy2);}
 					break;
@@ -6839,6 +6687,8 @@ INT dcopyG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, co
 	VECTOR *first_v;
 	BLOCKVECTOR *bv;
 	INT err;
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
 
 #ifndef NDEBUG
 	/* check consistency */
@@ -6858,22 +6708,22 @@ INT dcopyG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, co
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						VVALUE(v,cx0) = VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) = VVALUE(v,cy0); VVALUE(v,cx1) = VVALUE(v,cy1); VVALUE(v,cx2) = VVALUE(v,cy2);}
 					break;
@@ -7016,7 +6866,9 @@ INT dscaleB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const DOU
 	register SHORT ncomp;
 	register INT vtype;
 	VECTOR *first_v;
-	
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
+
 	aoff = VD_OFFSETPTR(x);
 
 	first_v = BVFIRSTVECTOR( bv );
@@ -7027,22 +6879,22 @@ INT dscaleB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const DOU
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						VVALUE(v,cx0) *= a0;
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) *= a0; VVALUE(v,cx1) *= a1;}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) *= a0; VVALUE(v,cx1) *= a1; VVALUE(v,cx2) *= a2;}
 					break;
@@ -7099,7 +6951,9 @@ INT dscaleG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, c
 	VECTOR *first_v;
 	BLOCKVECTOR *bv;
 	const SHORT *aoff;
-	
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
+
 	aoff = VD_OFFSETPTR(x);
 
 	/* find blockvector in the grid */
@@ -7114,22 +6968,22 @@ INT dscaleG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, c
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						VVALUE(v,cx0) *= a0;
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) *= a0; VVALUE(v,cx1) *= a1;}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) *= a0; VVALUE(v,cx1) *= a1; VVALUE(v,cx2) *= a2;}
 					break;
@@ -7399,7 +7253,10 @@ INT daxpyB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const DOUB
 	register SHORT ncomp;
 	register INT vtype,err;
 	const SHORT *aoff;
-	
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+
 #ifndef NDEBUG
 	/* check consistency */
 	if ( (err = VecCheckConsistency( x, y )) != NUM_OK )
@@ -7416,25 +7273,25 @@ INT daxpyB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const DOUB
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						VVALUE(v,cx0) += a0*VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1); VVALUE(v,cx2) += a2*VVALUE(v,cy2);}
 					break;
@@ -7495,6 +7352,9 @@ INT daxpyG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, co
 	register INT vtype;
 	BLOCKVECTOR *bv;
 	const SHORT *aoff;
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
 
 #ifndef NDEBUG
 	/* check consistency */
@@ -7516,25 +7376,25 @@ INT daxpyG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, co
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						VVALUE(v,cx0) += a0*VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) += a0*VVALUE(v,cy0); VVALUE(v,cx1) += a1*VVALUE(v,cy1); VVALUE(v,cx2) += a2*VVALUE(v,cy2);}
 					break;
@@ -7684,7 +7544,10 @@ INT dxdyB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const DOUBL
 	register SHORT ncomp;
 	register INT vtype,err;
 	const SHORT *aoff;
-	
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+
 #ifndef NDEBUG
 	/* check consistency */
 	if ( (err = VecCheckConsistency( x, y )) != NUM_OK )
@@ -7700,26 +7563,26 @@ INT dxdyB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const DOUBL
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 						 VVALUE(v,cx1) = a1*VVALUE(v,cx1)+(1.0-a1)*VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 						 VVALUE(v,cx1) = a1*VVALUE(v,cx1)+(1.0-a1)*VVALUE(v,cy1);
@@ -7783,7 +7646,10 @@ INT dxdyG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, con
 	VECTOR *first_v;
 	BLOCKVECTOR *bv;
 	const SHORT *aoff;
-	
+	DEFINE_VS_CMPS(a);
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+
 #ifndef NDEBUG
 	/* check consistency */
 	if ((err = VecCheckConsistency( x, y ))!=NUM_OK)
@@ -7804,26 +7670,26 @@ INT dxdyG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, con
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
+					SET_VS_CMP_1(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
+					SET_VS_CMP_2(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 						 VVALUE(v,cx1) = a1*VVALUE(v,cx1)+(1.0-a1)*VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
-					SetA(a,aoff,vtype,VD_NCMPS_IN_TYPE(x,vtype));
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
+					SET_VS_CMP_3(a,a,aoff,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{VVALUE(v,cx0) = a0*VVALUE(v,cx0)+(1.0-a0)*VVALUE(v,cy0);
 						 VVALUE(v,cx1) = a1*VVALUE(v,cx1)+(1.0-a1)*VVALUE(v,cy1);
@@ -7975,6 +7841,8 @@ INT ddotB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const VECDA
 	register SHORT ncomp;
 	INT vtype,err;
 	const SHORT *spoff;
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
 
 #ifndef NDEBUG
 	/* check consistency */
@@ -8001,15 +7869,15 @@ INT ddotB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const VECDA
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
 						value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
@@ -8018,8 +7886,8 @@ INT ddotB (const BLOCKVECTOR *bv, const VECDATA_DESC *x, INT xclass, const VECDA
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 					{
 						value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
@@ -8084,6 +7952,8 @@ INT ddotG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, con
 	INT vtype,err;
 	BLOCKVECTOR *bv;
 	const SHORT *spoff;
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
 
 #ifndef NDEBUG
 	/* check consistency */
@@ -8114,22 +7984,22 @@ INT ddotG (const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, con
 			switch (VD_NCMPS_IN_TYPE(x,vtype))
 			{
 				case 1:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_1(cx,x,vtype);
+					SET_VD_CMP_1(cy,y,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
 					break;
 				
 				case 2:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_2(cx,x,vtype);
+					SET_VD_CMP_2(cy,y,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1);}
 					break;
 				
 				case 3:
-					SetXComp(x,vtype);
-					SetYComp(y,vtype);
+					SET_VD_CMP_3(cx,x,vtype);
+					SET_VD_CMP_3(cy,y,vtype);
 					BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,vtype,xclass)
 						{value[0] += VVALUE(v,cx0) * VVALUE(v,cy0); value[1] += VVALUE(v,cx1) * VVALUE(v,cy1); value[2] += VVALUE(v,cx2) * VVALUE(v,cy2);}
 					break;
@@ -8459,6 +8329,7 @@ INT dmatsetB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 	INT rtype,ctype;
 	register SHORT i;
 	register SHORT nr;
+	DEFINE_MD_CMPS(m);
 	
 	first_v = BVFIRSTVECTOR( bv_row );
 	end_v   = BVENDVECTOR( bv_row );
@@ -8469,46 +8340,46 @@ INT dmatsetB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 				switch (MAT_RCKIND(M,rtype,ctype))
 				{
 					case R1C1:
-						SetMComp(M,rtype,ctype,R1C1);
+						SET_MD_CMP_11(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							MVALUE(m,m00) = a;
 						break;
 					
 					case R1C2:
-						SetMComp(M,rtype,ctype,R1C2);
+						SET_MD_CMP_12(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;}
 						break;
 					
 					case R1C3:
-						SetMComp(M,rtype,ctype,R1C3);
+						SET_MD_CMP_13(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;}
 						break;
 					
 					case R2C1:
-						SetMComp(M,rtype,ctype,R2C1);
+						SET_MD_CMP_21(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a;
 							 MVALUE(m,m10) = a;}
 						break;
 					
 					case R2C2:
-						SetMComp(M,rtype,ctype,R2C2);
+						SET_MD_CMP_22(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a;}
 						break;
 					
 					case R2C3:
-						SetMComp(M,rtype,ctype,R2C3);
+						SET_MD_CMP_23(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a; MVALUE(m,m12) = a;}
 						break;
 					
 					case R3C1:
-						SetMComp(M,rtype,ctype,R3C1);
+						SET_MD_CMP_31(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a;
 							 MVALUE(m,m10) = a;
@@ -8516,7 +8387,7 @@ INT dmatsetB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 						break;
 					
 					case R3C2:
-						SetMComp(M,rtype,ctype,R3C2);
+						SET_MD_CMP_32(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a;
@@ -8524,7 +8395,7 @@ INT dmatsetB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 						break;
 					
 					case R3C3:
-						SetMComp(M,rtype,ctype,R3C3);
+						SET_MD_CMP_33(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a; MVALUE(m,m12) = a;
@@ -8580,6 +8451,7 @@ INT dmatsetG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 	register SHORT i;
 	register SHORT nr;
 	BLOCKVECTOR *bv_row;
+	DEFINE_MD_CMPS(m);
 
 	/* find row-blockvector in the grid */
 	if ( (bv_row = FindBV( grid, bvd_row, bvdf )) == NULL )
@@ -8594,46 +8466,46 @@ INT dmatsetG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 				switch (MAT_RCKIND(M,rtype,ctype))
 				{
 					case R1C1:
-						SetMComp(M,rtype,ctype,R1C1);
+						SET_MD_CMP_11(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							MVALUE(m,m00) = a;
 						break;
 					
 					case R1C2:
-						SetMComp(M,rtype,ctype,R1C2);
+						SET_MD_CMP_12(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;}
 						break;
 					
 					case R1C3:
-						SetMComp(M,rtype,ctype,R1C3);
+						SET_MD_CMP_13(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;}
 						break;
 					
 					case R2C1:
-						SetMComp(M,rtype,ctype,R2C1);
+						SET_MD_CMP_21(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a;
 							 MVALUE(m,m10) = a;}
 						break;
 					
 					case R2C2:
-						SetMComp(M,rtype,ctype,R2C2);
+						SET_MD_CMP_22(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a;}
 						break;
 					
 					case R2C3:
-						SetMComp(M,rtype,ctype,R2C3);
+						SET_MD_CMP_23(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a; MVALUE(m,m12) = a;}
 						break;
 					
 					case R3C1:
-						SetMComp(M,rtype,ctype,R3C1);
+						SET_MD_CMP_31(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a;
 							 MVALUE(m,m10) = a;
@@ -8641,7 +8513,7 @@ INT dmatsetG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 						break;
 					
 					case R3C2:
-						SetMComp(M,rtype,ctype,R3C2);
+						SET_MD_CMP_32(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a;
@@ -8649,7 +8521,7 @@ INT dmatsetG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 						break;
 					
 					case R3C3:
-						SetMComp(M,rtype,ctype,R3C3);
+						SET_MD_CMP_33(m,M,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = a; MVALUE(m,m01) = a; MVALUE(m,m02) = a;
 							 MVALUE(m,m10) = a; MVALUE(m,m11) = a; MVALUE(m,m12) = a;
@@ -8803,6 +8675,8 @@ INT dmatcopyB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_
 	INT rtype,ctype;
 	register SHORT i;
 	register SHORT nr;
+	DEFINE_MD_CMPS(m);
+	DEFINE_MD_CMPS(mc);
 	
 #ifndef NDEBUG
 	for (rtype=0; rtype<NVECTYPES; rtype++)
@@ -8830,53 +8704,53 @@ INT dmatcopyB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_
 				switch (MAT_RCKIND(M1,rtype,ctype))
 				{
 					case R1C1:
-						SetMComp(M1,rtype,ctype,R1C1);
-						SetMCComp(M2,rtype,ctype,R1C1);
+						SET_MD_CMP_11(m,M1,rtype,ctype);
+						SET_MD_CMP_11(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							MVALUE(m,m00) = MVALUE(m,mc00);
 						break;
 					
 					case R1C2:
-						SetMComp(M1,rtype,ctype,R1C2);
-						SetMCComp(M2,rtype,ctype,R1C2);
+						SET_MD_CMP_12(m,M1,rtype,ctype);
+						SET_MD_CMP_12(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01);}
 						break;
 					
 					case R1C3:
-						SetMComp(M1,rtype,ctype,R1C3);
-						SetMCComp(M2,rtype,ctype,R1C3);
+						SET_MD_CMP_13(m,M1,rtype,ctype);
+						SET_MD_CMP_13(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01); MVALUE(m,m02) = MVALUE(m,mc02);}
 						break;
 					
 					case R2C1:
-						SetMComp(M1,rtype,ctype,R2C1);
-						SetMCComp(M2,rtype,ctype,R2C1);
+						SET_MD_CMP_21(m,M1,rtype,ctype);
+						SET_MD_CMP_21(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00);
 							 MVALUE(m,m10) = MVALUE(m,mc10);}
 						break;
 					
 					case R2C2:
-						SetMComp(M1,rtype,ctype,R2C2);
-						SetMCComp(M2,rtype,ctype,R2C2);
+						SET_MD_CMP_22(m,M1,rtype,ctype);
+						SET_MD_CMP_22(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11);}
 						break;
 					
 					case R2C3:
-						SetMComp(M1,rtype,ctype,R2C3);
-						SetMCComp(M2,rtype,ctype,R2C3);
+						SET_MD_CMP_23(m,M1,rtype,ctype);
+						SET_MD_CMP_23(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01); MVALUE(m,m02) = MVALUE(m,mc02);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11); MVALUE(m,m12) = MVALUE(m,mc12);}
 						break;
 					
 					case R3C1:
-						SetMComp(M1,rtype,ctype,R3C1);
-						SetMCComp(M2,rtype,ctype,R3C1);
+						SET_MD_CMP_31(m,M1,rtype,ctype);
+						SET_MD_CMP_31(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00);
 							 MVALUE(m,m10) = MVALUE(m,mc10);
@@ -8884,8 +8758,8 @@ INT dmatcopyB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_
 						break;
 					
 					case R3C2:
-						SetMComp(M1,rtype,ctype,R3C2);
-						SetMCComp(M2,rtype,ctype,R3C2);
+						SET_MD_CMP_32(m,M1,rtype,ctype);
+						SET_MD_CMP_32(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11);
@@ -8893,8 +8767,8 @@ INT dmatcopyB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_
 						break;
 					
 					case R3C3:
-						SetMComp(M1,rtype,ctype,R3C3);
-						SetMCComp(M2,rtype,ctype,R3C3);
+						SET_MD_CMP_33(m,M1,rtype,ctype);
+						SET_MD_CMP_33(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01); MVALUE(m,m02) = MVALUE(m,mc02);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11); MVALUE(m,m12) = MVALUE(m,mc12);
@@ -8954,6 +8828,8 @@ INT dmatcopyG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col,
 	register SHORT i;
 	register SHORT nr;
 	BLOCKVECTOR *bv_row;
+	DEFINE_MD_CMPS(m);
+	DEFINE_MD_CMPS(mc);
 
 #ifndef NDEBUG
 	for (rtype=0; rtype<NVECTYPES; rtype++)
@@ -8985,53 +8861,53 @@ INT dmatcopyG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col,
 				switch (MAT_RCKIND(M1,rtype,ctype))
 				{
 					case R1C1:
-						SetMComp(M1,rtype,ctype,R1C1);
-						SetMCComp(M2,rtype,ctype,R1C1);
+						SET_MD_CMP_11(m,M1,rtype,ctype);
+						SET_MD_CMP_11(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							MVALUE(m,m00) = MVALUE(m,mc00);
 						break;
 					
 					case R1C2:
-						SetMComp(M1,rtype,ctype,R1C2);
-						SetMCComp(M2,rtype,ctype,R1C2);
+						SET_MD_CMP_12(m,M1,rtype,ctype);
+						SET_MD_CMP_12(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01);}
 						break;
 					
 					case R1C3:
-						SetMComp(M1,rtype,ctype,R1C3);
-						SetMCComp(M2,rtype,ctype,R1C3);
+						SET_MD_CMP_13(m,M1,rtype,ctype);
+						SET_MD_CMP_13(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01); MVALUE(m,m02) = MVALUE(m,mc02);}
 						break;
 					
 					case R2C1:
-						SetMComp(M1,rtype,ctype,R2C1);
-						SetMCComp(M2,rtype,ctype,R2C1);
+						SET_MD_CMP_21(m,M1,rtype,ctype);
+						SET_MD_CMP_21(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00);
 							 MVALUE(m,m10) = MVALUE(m,mc10);}
 						break;
 					
 					case R2C2:
-						SetMComp(M1,rtype,ctype,R2C2);
-						SetMCComp(M2,rtype,ctype,R2C2);
+						SET_MD_CMP_22(m,M1,rtype,ctype);
+						SET_MD_CMP_22(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11);}
 						break;
 					
 					case R2C3:
-						SetMComp(M1,rtype,ctype,R2C3);
-						SetMCComp(M2,rtype,ctype,R2C3);
+						SET_MD_CMP_23(m,M1,rtype,ctype);
+						SET_MD_CMP_23(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01); MVALUE(m,m02) = MVALUE(m,mc02);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11); MVALUE(m,m12) = MVALUE(m,mc12);}
 						break;
 					
 					case R3C1:
-						SetMComp(M1,rtype,ctype,R3C1);
-						SetMCComp(M2,rtype,ctype,R3C1);
+						SET_MD_CMP_31(m,M1,rtype,ctype);
+						SET_MD_CMP_31(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00);
 							 MVALUE(m,m10) = MVALUE(m,mc10);
@@ -9039,8 +8915,8 @@ INT dmatcopyG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col,
 						break;
 					
 					case R3C2:
-						SetMComp(M1,rtype,ctype,R3C2);
-						SetMCComp(M2,rtype,ctype,R3C2);
+						SET_MD_CMP_32(m,M1,rtype,ctype);
+						SET_MD_CMP_32(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11);
@@ -9048,8 +8924,8 @@ INT dmatcopyG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col,
 						break;
 					
 					case R3C3:
-						SetMComp(M1,rtype,ctype,R3C3);
-						SetMCComp(M2,rtype,ctype,R3C3);
+						SET_MD_CMP_33(m,M1,rtype,ctype);
+						SET_MD_CMP_33(mc,M2,rtype,ctype);
 						BLOCK_L_MLOOP__RCTYPE(v,first_v,end_v,bvd_col,bvdf,m,rtype,ctype)
 							{MVALUE(m,m00) = MVALUE(m,mc00); MVALUE(m,m01) = MVALUE(m,mc01); MVALUE(m,m02) = MVALUE(m,mc02);
 							 MVALUE(m,m10) = MVALUE(m,mc10); MVALUE(m,m11) = MVALUE(m,mc11); MVALUE(m,m12) = MVALUE(m,mc12);
@@ -9262,7 +9138,11 @@ INT dmatmulB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 	register SHORT i,j,xc,yc,mc;
 	register SHORT nr,nc;
 	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
-	
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+	DEFINE_VS_CMPS(s);
+	DEFINE_MD_CMPS(m);
+
 #ifndef NDEBUG
 	if ( (err = MatmulCheckConsistency(x,M,y)) != NUM_OK )
 		return err;
@@ -9300,15 +9180,15 @@ INT dmatmulB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 	for (rtype=0; rtype<NVECTYPES; rtype++)
 		if (VD_ISDEF_IN_TYPE(x,rtype))
 		{
-			SetXComp(x,rtype);
+			SET_VD_CMP_N(cx,x,rtype);
 			
 			for (ctype=0; ctype<NVECTYPES; ctype++)
 				if (MD_ISDEF_IN_RT_CT(M,rtype,ctype))
 					switch (MAT_RCKIND(M,rtype,ctype))
 					{
 						case R1C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_11(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -9323,8 +9203,8 @@ INT dmatmulB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 							break;
 						
 						case R1C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_12(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -9339,8 +9219,8 @@ INT dmatmulB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 							break;
 							
 						case R1C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_13(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -9355,8 +9235,8 @@ INT dmatmulB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 							break;
 						
 						case R2C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_21(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -9372,8 +9252,8 @@ INT dmatmulB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 							break;
 						
 						case R2C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_22(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -9389,8 +9269,8 @@ INT dmatmulB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 							break;
 						
 						case R2C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_23(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -9406,8 +9286,8 @@ INT dmatmulB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 							break;
 						
 						case R3C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_31(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -9424,8 +9304,8 @@ INT dmatmulB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 							break;
 						
 						case R3C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_32(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -9442,8 +9322,8 @@ INT dmatmulB (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_F
 							break;
 						
 						case R3C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_33(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -9534,7 +9414,11 @@ INT dmatmulG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 	register SHORT nr,nc;
 	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
 	BLOCKVECTOR *bv_row;
-	
+	DEFINE_VS_CMPS(s);
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+	DEFINE_MD_CMPS(m);
+
 #ifndef NDEBUG
 	if ( (err = MatmulCheckConsistency(x,M,y)) != NUM_OK )
 		return err;
@@ -9576,15 +9460,15 @@ INT dmatmulG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 	for (rtype=0; rtype<NVECTYPES; rtype++)
 		if (VD_ISDEF_IN_TYPE(x,rtype))
 		{
-			SetXComp(x,rtype);
+			SET_VD_CMP_N(cx,x,rtype);
 			
 			for (ctype=0; ctype<NVECTYPES; ctype++)
 				if (MD_ISDEF_IN_RT_CT(M,rtype,ctype))
 					switch (MAT_RCKIND(M,rtype,ctype))
 					{
 						case R1C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_11(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -9599,8 +9483,8 @@ INT dmatmulG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 							break;
 						
 						case R1C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_12(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -9615,8 +9499,8 @@ INT dmatmulG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 							break;
 							
 						case R1C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_13(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -9631,8 +9515,8 @@ INT dmatmulG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 							break;
 						
 						case R2C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_21(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -9648,8 +9532,8 @@ INT dmatmulG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 							break;
 						
 						case R2C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_22(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -9665,8 +9549,8 @@ INT dmatmulG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 							break;
 						
 						case R2C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_23(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -9682,8 +9566,8 @@ INT dmatmulG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 							break;
 						
 						case R3C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_31(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -9700,8 +9584,8 @@ INT dmatmulG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 							break;
 						
 						case R3C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_32(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -9718,8 +9602,8 @@ INT dmatmulG (const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bvd_col, 
 							break;
 						
 						case R3C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_33(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -9937,7 +9821,11 @@ INT dmatmul_minusB ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV
 	register SHORT i,j,xc,yc,mc;
 	register SHORT nr,nc;
 	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
-	
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+	DEFINE_VS_CMPS(s);
+	DEFINE_MD_CMPS(m);
+
 #ifndef NDEBUG
 	if ( (err = MatmulCheckConsistency(x,M,y)) != NUM_OK )
 		return err;
@@ -9975,15 +9863,15 @@ INT dmatmul_minusB ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV
 	for (rtype=0; rtype<NVECTYPES; rtype++)
 		if (VD_ISDEF_IN_TYPE(x,rtype))
 		{
-			SetXComp(x,rtype);
+			SET_VD_CMP_N(cx,x,rtype);
 			
 			for (ctype=0; ctype<NVECTYPES; ctype++)
 				if (MD_ISDEF_IN_RT_CT(M,rtype,ctype))
 					switch (MAT_RCKIND(M,rtype,ctype))
 					{
 						case R1C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_11(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -9998,8 +9886,8 @@ INT dmatmul_minusB ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV
 							break;
 						
 						case R1C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_12(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -10014,8 +9902,8 @@ INT dmatmul_minusB ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV
 							break;
 							
 						case R1C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_13(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -10030,8 +9918,8 @@ INT dmatmul_minusB ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV
 							break;
 						
 						case R2C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_21(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -10047,8 +9935,8 @@ INT dmatmul_minusB ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV
 							break;
 						
 						case R2C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_22(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -10064,8 +9952,8 @@ INT dmatmul_minusB ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV
 							break;
 						
 						case R2C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_23(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -10081,8 +9969,8 @@ INT dmatmul_minusB ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV
 							break;
 						
 						case R3C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_31(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -10099,8 +9987,8 @@ INT dmatmul_minusB ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV
 							break;
 						
 						case R3C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_32(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -10117,8 +10005,8 @@ INT dmatmul_minusB ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV
 							break;
 						
 						case R3C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_33(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -10209,7 +10097,11 @@ INT dmatmul_minusG ( const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 	register SHORT nr,nc;
 	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
 	BLOCKVECTOR *bv_row;
-	
+	DEFINE_VD_CMPS(cx);
+	DEFINE_VD_CMPS(cy);
+	DEFINE_VS_CMPS(s);
+	DEFINE_MD_CMPS(m);
+
 #ifndef NDEBUG
 	if ( (err = MatmulCheckConsistency(x,M,y)) != NUM_OK )
 		return err;
@@ -10251,15 +10143,15 @@ INT dmatmul_minusG ( const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 	for (rtype=0; rtype<NVECTYPES; rtype++)
 		if (VD_ISDEF_IN_TYPE(x,rtype))
 		{
-			SetXComp(x,rtype);
+			SET_VD_CMP_N(cx,x,rtype);
 			
 			for (ctype=0; ctype<NVECTYPES; ctype++)
 				if (MD_ISDEF_IN_RT_CT(M,rtype,ctype))
 					switch (MAT_RCKIND(M,rtype,ctype))
 					{
 						case R1C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_11(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -10274,8 +10166,8 @@ INT dmatmul_minusG ( const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 							break;
 						
 						case R1C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_12(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -10290,8 +10182,8 @@ INT dmatmul_minusG ( const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 							break;
 							
 						case R1C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R1C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_13(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = 0.0;
@@ -10306,8 +10198,8 @@ INT dmatmul_minusG ( const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 							break;
 						
 						case R2C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_21(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -10323,8 +10215,8 @@ INT dmatmul_minusG ( const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 							break;
 						
 						case R2C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_22(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -10340,8 +10232,8 @@ INT dmatmul_minusG ( const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 							break;
 						
 						case R2C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R2C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_23(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = 0.0;
@@ -10357,8 +10249,8 @@ INT dmatmul_minusG ( const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 							break;
 						
 						case R3C1:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C1);
+							SET_VD_CMP_1(cy,y,ctype);
+							SET_MD_CMP_31(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -10375,8 +10267,8 @@ INT dmatmul_minusG ( const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 							break;
 						
 						case R3C2:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C2);
+							SET_VD_CMP_2(cy,y,ctype);
+							SET_MD_CMP_32(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -10393,8 +10285,8 @@ INT dmatmul_minusG ( const GRID *grid, const BV_DESC *bvd_row, const BV_DESC *bv
 							break;
 						
 						case R3C3:
-							SetYComp(y,ctype);
-							SetMComp(M,rtype,ctype,R3C3);
+							SET_VD_CMP_3(cy,y,ctype);
+							SET_MD_CMP_33(m,M,rtype,ctype);
 							BLOCK_L_VLOOP__TYPE_CLASS(v,first_v,end_v,rtype,xclass)
 							{
 								s0 = s1 = s2 = 0.0;
@@ -10898,3 +10790,4 @@ INT l_matflset (GRID *g, INT f)
 	
 	return (0);
 }
+

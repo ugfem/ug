@@ -33,6 +33,7 @@
 
 #include "compiler.h"
 #include "misc.h"
+#include "debug.h"
 #include "devices.h"
 #include "gm.h"
 #include "algebra.h"
@@ -58,6 +59,53 @@
 
 #define V_BVNUMBER(v,n)         (VINDEX(v)/n)
 
+/* macros to define VEC_SCALAR, VECDATA_DESC and MATDATA_DESC components */
+#define DEFINE_VS_CMPS(a)                               register DOUBLE a ## 0,a ## 1,a ## 2
+#define DEFINE_VD_CMPS(x)                               register INT x ## 0,x ## 1,x ## 2
+#define DEFINE_MD_CMPS(m)                               register INT m ## 00,m ## 01,m ## 02,m ## 10,m ## 11,m ## 12,m ## 20,m ## 21,m ## 22
+
+/* macros to set VECDATA_DESC and MATDATA_DESC components */
+#define SET_YCMP_1(y,v,tp,cp)                   {y ## 0 = (VD_CMPPTR_OF_TYPE(v,tp))[0];}
+#define SET_YCMP_2(y,v,tp,cp)                   {cp=VD_CMPPTR_OF_TYPE(v,tp); y ## 0 = (cp)[0]; y ## 1 = (cp)[1];}
+#define SET_YCMP_3(y,v,tp,cp)                   {cp=VD_CMPPTR_OF_TYPE(v,tp); y ## 0 = (cp)[0]; y ## 1 = (cp)[1]; y ## 2 = (cp)[2];}
+
+#define SET_MCMP_11(m,M,rt,ct,cp)               {m ## 00 = MD_MCMPPTR_OF_RT_CT(M,rt,ct)[0];}
+#define SET_MCMP_12(m,M,rt,ct,cp)               {cp = MD_MCMPPTR_OF_RT_CT(M,rt,ct); \
+                                                 m ## 00 = (cp)[0]; m ## 01 = (cp)[1];}
+#define SET_MCMP_13(m,M,rt,ct,cp)               {cp = MD_MCMPPTR_OF_RT_CT(M,rt,ct); \
+                                                 m ## 00 = (cp)[0]; m ## 01 = (cp)[1]; m ## 02 = (cp)[2];}
+#define SET_MCMP_21(m,M,rt,ct,cp)               {cp = MD_MCMPPTR_OF_RT_CT(M,rt,ct); \
+                                                 m ## 00 = (cp)[0]; \
+                                                 m ## 10 = (cp)[1];}
+#define SET_MCMP_22(m,M,rt,ct,cp)               {cp = MD_MCMPPTR_OF_RT_CT(M,rt,ct); \
+                                                 m ## 00 = (cp)[0]; m ## 01 = (cp)[1]; \
+                                                 m ## 10 = (cp)[2]; m ## 11 = (cp)[3];}
+#define SET_MCMP_23(m,M,rt,ct,cp)               {cp = MD_MCMPPTR_OF_RT_CT(M,rt,ct); \
+                                                 m ## 00 = (cp)[0]; m ## 01 = (cp)[1]; m ## 02 = (cp)[2]; \
+                                                 m ## 10 = (cp)[3]; m ## 11 = (cp)[4]; m ## 12 = (cp)[5];}
+#define SET_MCMP_31(m,M,rt,ct,cp)               {cp = MD_MCMPPTR_OF_RT_CT(M,rt,ct); \
+                                                 m ## 00 = (cp)[0]; \
+                                                 m ## 10 = (cp)[1]; \
+                                                 m ## 20 = (cp)[2];}
+#define SET_MCMP_32(m,M,rt,ct,cp)               {cp = MD_MCMPPTR_OF_RT_CT(M,rt,ct); \
+                                                 m ## 00 = (cp)[0]; m ## 01 = (cp)[1]; \
+                                                 m ## 10 = (cp)[2]; m ## 11 = (cp)[3]; \
+                                                 m ## 20 = (cp)[4]; m ## 21 = (cp)[5];}
+#define SET_MCMP_33(m,M,rt,ct,cp)               {cp = MD_MCMPPTR_OF_RT_CT(M,rt,ct); \
+                                                 m ## 00 = (cp)[0]; m ## 01 = (cp)[1]; m ## 02 = (cp)[2]; \
+                                                 m ## 10 = (cp)[3]; m ## 11 = (cp)[4]; m ## 12 = (cp)[5]; \
+                                                 m ## 20 = (cp)[6]; m ## 21 = (cp)[7]; m ## 22 = (cp)[8];}
+
+#define SET_CMPS_11(y,v,m,M,rt,ct,cp)   SET_MCMP_11(m,M,rt,ct,cp); SET_YCMP_1(y,v,ct,cp);
+#define SET_CMPS_12(y,v,m,M,rt,ct,cp)   SET_MCMP_12(m,M,rt,ct,cp); SET_YCMP_2(y,v,ct,cp);
+#define SET_CMPS_13(y,v,m,M,rt,ct,cp)   SET_MCMP_13(m,M,rt,ct,cp); SET_YCMP_3(y,v,ct,cp);
+#define SET_CMPS_21(y,v,m,M,rt,ct,cp)   SET_MCMP_21(m,M,rt,ct,cp); SET_YCMP_1(y,v,ct,cp);
+#define SET_CMPS_22(y,v,m,M,rt,ct,cp)   SET_MCMP_22(m,M,rt,ct,cp); SET_YCMP_2(y,v,ct,cp);
+#define SET_CMPS_23(y,v,m,M,rt,ct,cp)   SET_MCMP_23(m,M,rt,ct,cp); SET_YCMP_3(y,v,ct,cp);
+#define SET_CMPS_31(y,v,m,M,rt,ct,cp)   SET_MCMP_31(m,M,rt,ct,cp); SET_YCMP_1(y,v,ct,cp);
+#define SET_CMPS_32(y,v,m,M,rt,ct,cp)   SET_MCMP_32(m,M,rt,ct,cp); SET_YCMP_2(y,v,ct,cp);
+#define SET_CMPS_33(y,v,m,M,rt,ct,cp)   SET_MCMP_33(m,M,rt,ct,cp); SET_YCMP_3(y,v,ct,cp);
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -79,9 +127,7 @@
 
 static INT StoreInverse=TRUE;
 
-static INT cy0,cy1,cy2;
-static INT m00,m01,m02,m10,m11,m12,m20,m21,m22;
-static DOUBLE s0,s1,s2;
+REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -91,47 +137,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /* some functions to assign values to the global variables of this file		*/
 /*																			*/
 /****************************************************************************/
-
-static INT SetYComp (const SHORT *cmp, SHORT n)
-{
-  switch (n)
-  {
-  case 1 : cy0 = cmp[0];                                              return (0);
-  case 2 : cy0 = cmp[0]; cy1 = cmp[1];                        return (0);
-  case 3 : cy0 = cmp[0]; cy1 = cmp[1]; cy2 = cmp[2]; return (0);
-  }
-
-  return (1);
-}
-
-static INT SetMComp (const SHORT *cmp, SHORT kind)
-{
-  switch (kind)
-  {
-  case R1C1 : m00 = cmp[0];                                                         return (0);
-  case R1C2 : m00 = cmp[0]; m01 = cmp[1];                           return (0);
-  case R1C3 : m00 = cmp[0]; m01 = cmp[1]; m02 = cmp[2]; return (0);
-
-  case R2C1 : m00 = cmp[0];
-    m10 = cmp[1];                                                         return (0);
-  case R2C2 : m00 = cmp[0]; m01 = cmp[1];
-    m10 = cmp[2]; m11 = cmp[3];                           return (0);
-  case R2C3 : m00 = cmp[0]; m01 = cmp[1]; m02 = cmp[2];
-    m10 = cmp[3]; m11 = cmp[4]; m12 = cmp[5]; return (0);
-
-  case R3C1 : m00 = cmp[0];
-    m10 = cmp[1];
-    m20 = cmp[2];                                                         return (0);
-  case R3C2 : m00 = cmp[0]; m01 = cmp[1];
-    m10 = cmp[2]; m11 = cmp[3];
-    m20 = cmp[4]; m21 = cmp[5];                           return (0);
-  case R3C3 : m00 = cmp[0]; m01 = cmp[1]; m02 = cmp[2];
-    m10 = cmp[3]; m11 = cmp[4]; m12 = cmp[5];
-    m20 = cmp[6]; m21 = cmp[7]; m22 = cmp[8]; return (0);
-  }
-
-  return (1);
-}
 
 /****************************************************************************/
 /*																			*/
@@ -430,6 +435,10 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
   register SHORT n,nc;
   register DOUBLE sum;
   DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat;
+  DEFINE_VS_CMPS(s);
+  DEFINE_VD_CMPS(cy);
+  DEFINE_MD_CMPS(m);
+  register SHORT *tmpptr;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -482,8 +491,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
         switch (MAT_RCKIND(M,rtype,ctype))
         {
         case R1C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C1);
+          SET_CMPS_11(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -492,8 +500,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R1C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C2);
+          SET_CMPS_12(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -502,8 +509,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R1C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C3);
+          SET_CMPS_13(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -512,8 +518,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R2C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C1);
+          SET_CMPS_21(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -523,8 +528,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R2C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C2);
+          SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -534,8 +538,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R2C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C3);
+          SET_CMPS_23(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -545,8 +548,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R3C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C1);
+          SET_CMPS_31(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -557,8 +559,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R3C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C2);
+          SET_CMPS_32(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -569,8 +570,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R3C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C3);
+          SET_CMPS_33(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -735,6 +735,10 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
   register SHORT n,nc;
   register DOUBLE sum;
   DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat;
+  DEFINE_VS_CMPS(s);
+  DEFINE_VD_CMPS(cy);
+  DEFINE_MD_CMPS(m);
+  register SHORT *tmpptr;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -786,8 +790,7 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
         switch (MAT_RCKIND(M,rtype,ctype))
         {
         case R1C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C1);
+          SET_CMPS_11(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -796,8 +799,7 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R1C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C2);
+          SET_CMPS_12(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -806,8 +808,7 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R1C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C3);
+          SET_CMPS_13(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -816,8 +817,7 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R2C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C1);
+          SET_CMPS_21(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -827,8 +827,7 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R2C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C2);
+          SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -838,8 +837,7 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R2C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C3);
+          SET_CMPS_23(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -849,8 +847,7 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R3C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C1);
+          SET_CMPS_31(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -861,8 +858,7 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R3C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C2);
+          SET_CMPS_32(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -873,8 +869,7 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
           break;
 
         case R3C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C3);
+          SET_CMPS_33(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -993,6 +988,10 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
   register SHORT n,nc;
   register DOUBLE sum;
   DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat;
+  DEFINE_VS_CMPS(s);
+  DEFINE_VD_CMPS(cy);
+  DEFINE_MD_CMPS(m);
+  register SHORT *tmpptr;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -1070,8 +1069,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
           switch (MAT_RCKIND(M,rtype,ctype))
           {
           case R1C1 :
-            SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-            SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C1);
+            SET_CMPS_11(cy,v,m,M,rtype,ctype,tmpptr);
             s0 = 0.0;
             for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
               if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (V_BVNUMBER(w,maxBVmembers)<bvn))
@@ -1080,8 +1078,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
             break;
 
           case R1C2 :
-            SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-            SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C2);
+            SET_CMPS_12(cy,v,m,M,rtype,ctype,tmpptr);
             s0 = 0.0;
             for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
               if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (V_BVNUMBER(w,maxBVmembers)<bvn))
@@ -1090,8 +1087,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
             break;
 
           case R1C3 :
-            SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-            SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C3);
+            SET_CMPS_13(cy,v,m,M,rtype,ctype,tmpptr);
             s0 = 0.0;
             for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
               if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (V_BVNUMBER(w,maxBVmembers)<bvn))
@@ -1100,8 +1096,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
             break;
 
           case R2C1 :
-            SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-            SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C1);
+            SET_CMPS_21(cy,v,m,M,rtype,ctype,tmpptr);
             s0 = s1 = 0.0;
             for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
               if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (V_BVNUMBER(w,maxBVmembers)<bvn))
@@ -1111,8 +1106,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
             break;
 
           case R2C2 :
-            SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-            SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C2);
+            SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
             s0 = s1 = 0.0;
             for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
               if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (V_BVNUMBER(w,maxBVmembers)<bvn))
@@ -1122,8 +1116,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
             break;
 
           case R2C3 :
-            SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-            SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C3);
+            SET_CMPS_23(cy,v,m,M,rtype,ctype,tmpptr);
             s0 = s1 = 0.0;
             for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
               if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (V_BVNUMBER(w,maxBVmembers)<bvn))
@@ -1133,8 +1126,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
             break;
 
           case R3C1 :
-            SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-            SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C1);
+            SET_CMPS_31(cy,v,m,M,rtype,ctype,tmpptr);
             s0 = s1 = s2 = 0.0;
             for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
               if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (V_BVNUMBER(w,maxBVmembers)<bvn))
@@ -1145,8 +1137,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
             break;
 
           case R3C2 :
-            SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-            SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C2);
+            SET_CMPS_32(cy,v,m,M,rtype,ctype,tmpptr);
             s0 = s1 = s2 = 0.0;
             for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
               if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (V_BVNUMBER(w,maxBVmembers)<bvn))
@@ -1157,8 +1148,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
             break;
 
           case R3C3 :
-            SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-            SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C3);
+            SET_CMPS_33(cy,v,m,M,rtype,ctype,tmpptr);
             s0 = s1 = s2 = 0.0;
             for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
               if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (V_BVNUMBER(w,maxBVmembers)<bvn))
@@ -1352,6 +1342,10 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
   DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat;
   const DOUBLE *tdmp;
   const SHORT *offset;
+  DEFINE_VS_CMPS(s);
+  DEFINE_VD_CMPS(cy);
+  DEFINE_MD_CMPS(m);
+  register SHORT *tmpptr;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -1408,8 +1402,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
         switch (MAT_RCKIND(M,rtype,ctype))
         {
         case R1C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C1);
+          SET_CMPS_11(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -1418,8 +1411,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
           break;
 
         case R1C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C2);
+          SET_CMPS_12(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -1428,8 +1420,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
           break;
 
         case R1C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C3);
+          SET_CMPS_13(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -1438,8 +1429,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
           break;
 
         case R2C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C1);
+          SET_CMPS_21(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -1449,8 +1439,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
           break;
 
         case R2C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C2);
+          SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -1460,8 +1449,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
           break;
 
         case R2C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C3);
+          SET_CMPS_23(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -1471,8 +1459,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
           break;
 
         case R3C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C1);
+          SET_CMPS_31(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -1483,8 +1470,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
           break;
 
         case R3C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C2);
+          SET_CMPS_32(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -1495,8 +1481,7 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
           break;
 
         case R3C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C3);
+          SET_CMPS_33(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -2357,6 +2342,9 @@ INT l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const 
   DOUBLE *Rest;
   SHORT *RestComp;
   INT flag;
+
+  if (t==NULL)
+    REP_ERR_RETURN (1);
 
   /* consistency check: diagonal blocks are supposed to be square matrices,
      t should be at least of same size */
@@ -3675,6 +3663,10 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
   register SHORT n,nc;
   register DOUBLE sum;
   DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
+  DEFINE_VS_CMPS(s);
+  DEFINE_VD_CMPS(cy);
+  DEFINE_MD_CMPS(m);
+  register SHORT *tmpptr;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -3748,8 +3740,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
         switch (MAT_RCKIND(M,rtype,ctype))
         {
         case R1C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C1);
+          SET_CMPS_11(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -3758,8 +3749,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R1C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C2);
+          SET_CMPS_12(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -3768,8 +3758,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R1C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C3);
+          SET_CMPS_13(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -3778,8 +3767,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R2C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C1);
+          SET_CMPS_21(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -3789,8 +3777,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R2C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C2);
+          SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -3800,8 +3787,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R2C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C3);
+          SET_CMPS_23(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -3811,8 +3797,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R3C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C1);
+          SET_CMPS_31(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -3823,8 +3808,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R3C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C2);
+          SET_CMPS_32(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -3835,8 +3819,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R3C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C3);
+          SET_CMPS_33(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -3885,8 +3868,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
         switch (MAT_RCKIND(M,rtype,ctype))
         {
         case R1C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C1);
+          SET_CMPS_11(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -3895,8 +3877,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R1C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C2);
+          SET_CMPS_12(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -3905,8 +3886,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R1C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C3);
+          SET_CMPS_13(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -3915,8 +3895,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R2C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C1);
+          SET_CMPS_21(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -3926,8 +3905,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R2C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C2);
+          SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -3937,8 +3915,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R2C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C3);
+          SET_CMPS_23(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -3948,8 +3925,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R3C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C1);
+          SET_CMPS_31(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -3960,8 +3936,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R3C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C2);
+          SET_CMPS_32(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -3972,8 +3947,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
           break;
 
         case R3C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C3);
+          SET_CMPS_33(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -4172,6 +4146,10 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
   register SHORT n,nc;
   register DOUBLE sum;
   DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
+  DEFINE_VS_CMPS(s);
+  DEFINE_VD_CMPS(cy);
+  DEFINE_MD_CMPS(m);
+  register SHORT *tmpptr;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -4252,8 +4230,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
         switch (MAT_RCKIND(M,rtype,ctype))
         {
         case R1C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C1);
+          SET_CMPS_11(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -4262,8 +4239,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R1C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C2);
+          SET_CMPS_12(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -4272,8 +4248,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R1C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C3);
+          SET_CMPS_13(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -4282,8 +4257,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R2C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C1);
+          SET_CMPS_21(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -4293,8 +4267,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R2C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C2);
+          SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -4304,8 +4277,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R2C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C3);
+          SET_CMPS_23(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -4315,8 +4287,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R3C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C1);
+          SET_CMPS_31(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -4327,8 +4298,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R3C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C2);
+          SET_CMPS_32(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -4339,8 +4309,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R3C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C3);
+          SET_CMPS_33(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -4391,8 +4360,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
         switch (MAT_RCKIND(M,rtype,ctype))
         {
         case R1C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C1);
+          SET_CMPS_11(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -4401,8 +4369,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R1C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C2);
+          SET_CMPS_12(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -4411,8 +4378,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R1C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C3);
+          SET_CMPS_13(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -4421,8 +4387,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R2C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C1);
+          SET_CMPS_21(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -4432,8 +4397,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R2C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C2);
+          SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -4443,8 +4407,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R2C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C3);
+          SET_CMPS_23(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -4454,8 +4417,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R3C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C1);
+          SET_CMPS_31(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -4466,8 +4428,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R3C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C2);
+          SET_CMPS_32(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -4478,8 +4439,7 @@ INT l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATD
           break;
 
         case R3C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C3);
+          SET_CMPS_33(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (V_BVNUMBER(w,maxBVmembers)==bvn) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -4565,6 +4525,10 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
   register SHORT n,nc,nr;
   register DOUBLE sum;
   DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat;
+  DEFINE_VS_CMPS(s);
+  DEFINE_VD_CMPS(cy);
+  DEFINE_MD_CMPS(m);
+  register SHORT *tmpptr;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -4646,8 +4610,7 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
         switch (MAT_RCKIND(M,rtype,ctype))
         {
         case R1C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C1);
+          SET_CMPS_11(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype)
@@ -4659,8 +4622,7 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
           break;
 
         case R1C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C2);
+          SET_CMPS_12(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype)
@@ -4672,8 +4634,7 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
           break;
 
         case R1C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C3);
+          SET_CMPS_13(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype)
@@ -4685,8 +4646,7 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
           break;
 
         case R2C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C1);
+          SET_CMPS_21(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype)
@@ -4699,8 +4659,7 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
           break;
 
         case R2C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C2);
+          SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype)
@@ -4713,8 +4672,7 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
           break;
 
         case R2C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C3);
+          SET_CMPS_23(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype)
@@ -4727,8 +4685,7 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
           break;
 
         case R3C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C1);
+          SET_CMPS_31(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype)
@@ -4742,8 +4699,7 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
           break;
 
         case R3C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C2);
+          SET_CMPS_32(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype)
@@ -4757,8 +4713,7 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
           break;
 
         case R3C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C3);
+          SET_CMPS_33(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype)
@@ -5289,6 +5244,10 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
   register SHORT n,nc;
   register DOUBLE sum;
   DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
+  DEFINE_VS_CMPS(s);
+  DEFINE_VD_CMPS(cy);
+  DEFINE_MD_CMPS(m);
+  register SHORT *tmpptr;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -5386,8 +5345,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
         switch (MAT_RCKIND(M,rtype,ctype))
         {
         case R1C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C1);
+          SET_CMPS_11(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -5396,8 +5354,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R1C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C2);
+          SET_CMPS_12(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -5406,8 +5363,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R1C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C3);
+          SET_CMPS_13(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -5416,8 +5372,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R2C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C1);
+          SET_CMPS_21(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -5427,8 +5382,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R2C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C2);
+          SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -5438,8 +5392,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R2C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C3);
+          SET_CMPS_23(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -5449,8 +5402,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R3C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C1);
+          SET_CMPS_31(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -5461,8 +5413,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R3C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C2);
+          SET_CMPS_32(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -5473,8 +5424,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R3C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C3);
+          SET_CMPS_33(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex>VINDEX(w)))
@@ -5532,8 +5482,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
         switch (MAT_RCKIND(M,rtype,ctype))
         {
         case R1C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C1);
+          SET_CMPS_11(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -5542,8 +5491,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R1C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C2);
+          SET_CMPS_12(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -5552,8 +5500,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R1C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R1C3);
+          SET_CMPS_13(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -5562,8 +5509,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R2C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C1);
+          SET_CMPS_21(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -5573,8 +5519,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R2C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C2);
+          SET_CMPS_22(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -5584,8 +5529,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R2C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R2C3);
+          SET_CMPS_23(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -5595,8 +5539,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R3C1 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C1);
+          SET_CMPS_31(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -5607,8 +5550,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R3C2 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C2);
+          SET_CMPS_32(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
@@ -5619,8 +5561,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
           break;
 
         case R3C3 :
-          SetYComp(VD_CMPPTR_OF_TYPE(v,ctype),VD_NCMPS_IN_TYPE(v,ctype));
-          SetMComp(MD_MCMPPTR_OF_RT_CT(M,rtype,ctype),R3C3);
+          SET_CMPS_33(cy,v,m,M,rtype,ctype,tmpptr);
           s0 = s1 = s2 = 0.0;
           for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
             if (((VTYPE(w=MDEST(mat))==ctype) && (VCLASS(w)>=ACTIVE_CLASS)) && (myindex<VINDEX(w)))
