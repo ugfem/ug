@@ -11232,8 +11232,11 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 	i=0;
 	for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
 		table[i++] = theElement;
+#	ifndef ModelP
 	if (i!=NT(theGrid)) return (1);
-	SelectionSort((void *)table,theGrid->nElem,sizeof(*table),CompareElements);
+#	endif
+
+	SelectionSort((void *)table,i,sizeof(*table),CompareElements);
 	if (PutAtStartOfList(theGrid,i,table)!=GM_OK) return (1);	
 
 	/* now order level 1 to toplevel hirarchically */
@@ -11442,12 +11445,13 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 	EE3D_ShrinkFactor				= theGpo->ShrinkFactor;
 	#ifdef ModelP
 	{
-		GRID *theGrid;
+		GRID *theGrid = GRID_ON_LEVEL(theMG,0);
 		NODE *theNode;
 		INT  nodes = 0;
 
 		EE3D_PartShrinkFactor			= theGpo->PartShrinkFactor;
 		if (EE3D_PartShrinkFactor < 1.0)
+		{
 			nodes = 0;
 			V3_CLEAR(EE3D_PartMidPoint)
 			for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
@@ -11456,6 +11460,7 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 			}
 			if (nodes > 0)
 				V3_SCALE(1.0/(COORD)nodes,EE3D_PartMidPoint)
+		}
 	}
 	#endif
 	
