@@ -268,6 +268,7 @@ static const char *ConvertFileName (const char *fname)
 
 const char *BasedConvertedFilename (const char *fname)
 {
+  PRINTDEBUG(low,2,("BasedConvertedFilename: fname= '%s'\n",fname));
   if (fname[0]!='/' && fname[0]!='~')                   /* use BasePath only if no absolute path specified */
   {
     static char based_filename[MAXPATHLENGTH];
@@ -900,23 +901,30 @@ char *SimplifyPath (char *path)
   const char *pf;
   char       *pt;
 
+  PRINTDEBUG(low,2,("SimplifyPath: original path= '%s'\n",path));
+
   /* cancel ./ (not first one) */
   pf = pt = strchr(path,'/');
   if (pf!=NULL)
   {
-    for (; *pf; pf++,pt++)
+    while (*pf)
     {
       if (pf[0]=='.' && pf[1]=='/')
         if (*(pf-1)=='/')
         {
           /* eat ./ */
           pf += 2;
+          continue;
         }
       if (pt!=pf)
         *pt = *pf;
+      pf++;
+      pt++;
     }
     *pt = '\0';
   }
+
+  PRINTDEBUG(low,2,("SimplifyPath: path= '%s'\n",path));
 
   /* cancel ../ where possible */
   pf = pt = path;
