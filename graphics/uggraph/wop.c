@@ -256,7 +256,9 @@ static COORD MN_xmax;                   /* limits of the picture					*/
 static COORD MN_ymin;                   /* limits of the picture					*/
 static COORD MN_ymax;                   /* limits of the picture					*/
 static COORD MN_delta;                  /* resolution                                                           */
-static INT MN_moved;                    /* indicates whether moved or not			*/
+static INT MN_accept;                   /* indicates whether correctly moved or not	*/
+static INT MN_MouseMoved;               /* invert links at last pos if TRUE			*/
+static INT MN_LastMousePos[2];  /* store last mouse position				*/
 
 /*---------- working variables of 'EXT_BndEval2d' --------------------------*/
 #define BE_TEXTSIZE                     10
@@ -291,10 +293,13 @@ static INT VM_Order;                    /* plot order								*/
 static long VM_OrderStart;              /* spectrum start for order					*/
 static float VM_OrderDelta;             /* spectrum increment for order				*/
 static INT VM_Dependency;               /* plot dependencies						*/
+static VECTOR *VM_LastVector;   /* preceding vector							*/
+static INT VM_ConnectVectors;   /* connect vectors to show order			*/
+static long VM_ConnectColor;    /* color of vector order connections		*/
 static INT VM_VecData;                  /* plot vector data							*/
 static INT VM_MatData;                  /* plot matrix data							*/
-static TYPE_VEC_DESC *VM_tvd;   /* vector descriptor						*/
-static TYPE_MAT_DESC *VM_tmd;   /* matrix descriptor						*/
+static VECDATA_DESC *VM_tvd;    /* vector descriptor						*/
+static MATDATA_DESC *VM_tmd;    /* matrix descriptor						*/
 static long VM_VecMatColor;             /* color of vector matrix data				*/
 
 /*---------- working variables of 'EW_ElementBdryEval2D' -------------------*/
@@ -319,7 +324,7 @@ static INT FN2D_found;
 #define FV2D_INVSIZE                    3
 #define FV2D_ACC                                3
 
-static COORD            *FV2D_pos;
+static COORD_VECTOR FV2D_pos;
 static COORD FV2D_xmin;
 static COORD FV2D_xmax;
 static COORD FV2D_ymin;
@@ -4646,6 +4651,7 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
 
   /* set globals for eval function */
   VM_Marker                                       = theVmo->Marker;
+  VN_MarkerColor[0]                       = theOD->magenta;
   VN_MarkerColor[1]                       = theOD->black;
   VN_MarkerColor[2]                       = theOD->yellow;
   VN_MarkerColor[3]                       = theOD->red;
@@ -4660,11 +4666,15 @@ static INT VW_VecMatPreProcess (PICTURE *thePicture, WORK *theWork)
   VM_IdxColor                                     = theOD->blue;
   VM_Order                                        = theVmo->Order;
   VM_Dependency                           = theVmo->Dependency;
-  VM_VecData                                      = theVmo->VecData;
-  VM_MatData                                      = theVmo->MatData;
-  VM_tvd                                          = &(theVmo->vec);
-  VM_tmd                                          = &(theVmo->mat);
+  VM_ConnectVectors                       = theVmo->ConnectVectors;
+  VM_ConnectColor                         = theOD->red;
+  VM_VecData                                      = (theVmo->vs!=NULL);
+  VM_MatData                                      = (theVmo->ms!=NULL);
+  VM_tvd                                          = SYM_VEC_DESC(theVmo->vs);
+  VM_tmd                                          = SYM_MAT_DESC(theVmo->ms);
   VM_VecMatColor                          = theOD->red;
+
+  VM_LastVector                           = NULL;
 
   if (VM_Order)
   {
@@ -4696,7 +4706,21 @@ static INT VW_MatEval (VECTOR *vec, DRAWINGOBJ *theDO)
 
   VectorPosition(vec,mypos);
 
-  if (VM_Dependency)
+  if (VM_ConnectVectors)
+  {
+    if (VM_LastVector!=NULL)
+    {
+      VectorPosition(VM_LastVector,nbpos);
+
+      DO_2c(theDO) = DO_LINE; DO_inc(theDO)
+      DO_2l(theDO) = VM_ConnectColor; DO_inc(theDO);
+      V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+
+    }
+    VM_LastVector = vec;
+  }
+  else if (VM_Dependency)
   {
     /* plot dependencies */
     for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
@@ -4722,13 +4746,17 @@ static INT VW_MatEval (VECTOR *vec, DRAWINGOBJ *theDO)
         }
       }
   }
-  else if (VM_Connections)
+  else if (VM_Connections || VM_MExtra)
   {
     /* plot connections */
     for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
       if (VM_Type[VTYPE(MDEST(mat))])
       {
-        if (CEXTRA(MMYCON(mat)) && !VM_MExtra) continue;
+        if (CEXTRA(MMYCON(mat)))
+        {
+          if (!VM_MExtra) continue;
+        }
+        else if (!VM_Connections) continue;
 
         VectorPosition(MDEST(mat),nbpos);
 
@@ -4990,7 +5018,10 @@ static INT EXT_PreProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
   MN_ymin = MIN(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
   MN_ymax = MAX(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
   MN_MG   = theMG;
-  MN_moved= FALSE;
+  MN_accept= FALSE;
+  MN_MouseMoved = FALSE;
+  MN_LastMousePos[0] = W_INSERTNODE_WORK(theWork)->PixelX;
+  MN_LastMousePos[1] = W_INSERTNODE_WORK(theWork)->PixelY;
 
   /* get physical position */
   pt[0] = W_INSERTNODE_WORK(theWork)->PixelX;
@@ -5049,28 +5080,51 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
   COORD nbpos[2];
   COORD npos[2],apos[2],epos[2];
   COORD len,l,la,le,dl,dist2,bestDist2,sdl;
-  INT ScreenPoint[2];
+  INT MousePos[2];
 
   if (MouseStillDown())
   {
-    MousePosition(ScreenPoint);
+    MousePosition(MousePos);
+
+    if (V2_ISEQUAL(MousePos,MN_LastMousePos))
+    {
+      DO_2c(theDO) = DO_NO_INST;
+      return (0);
+    }
 
     /* inside picture? */
-    if ((ScreenPoint[0]<MN_xmin) || (ScreenPoint[0]>MN_xmax))
+    if ((MousePos[0]<MN_xmin) || (MousePos[0]>MN_xmax))
     {
       DO_2c(theDO) = DO_NO_INST;
-      MN_moved = FALSE;
+      MN_accept = FALSE;
       return (0);
     }
-    if ((ScreenPoint[1]<MN_ymin) || (ScreenPoint[1]>MN_ymax))
+    if ((MousePos[1]<MN_ymin) || (MousePos[1]>MN_ymax))
     {
       DO_2c(theDO) = DO_NO_INST;
-      MN_moved = FALSE;
+      MN_accept = FALSE;
       return (0);
     }
 
+    V2_COPY(MousePos,MN_LastMousePos);
+
+    if (MN_MouseMoved)
+    {
+      /* plot links at last postion inverse */
+      for (theLink=START(MN_Node); theLink!=NULL; theLink=NEXT(theLink))
+        if (!EXTRA(MYEDGE(theLink)))
+        {
+          nbVertex = MYVERTEX(NBNODE(theLink));
+          nbpos[0] = XC(nbVertex);        nbpos[1] = YC(nbVertex);
+          DO_2c(theDO) = DO_INVERSE_LINE; DO_inc(theDO)
+          V2_COPY(MN_pos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+          V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+        }
+    }
+    MN_MouseMoved = TRUE;
+
     /* mouse position in the physical system */
-    V2_TRAFOM3_V2(ScreenPoint,InvObsTrafo,MN_pos);
+    V2_TRAFOM3_V2(MousePos,InvObsTrafo,MN_pos);
 
     theVertex = MYVERTEX(MN_Node);
 
@@ -5121,9 +5175,15 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
         V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
       }
 
-    DO_2c(theDO) = DO_WAIT; DO_inc(theDO)
+    DO_2c(theDO) = DO_NO_INST;
 
-    /* plot links inverse a second time */
+    MN_accept = TRUE;
+
+    return (0);
+  }
+  if (MN_MouseMoved)
+  {
+    /* plot links at last postion inverse */
     for (theLink=START(MN_Node); theLink!=NULL; theLink=NEXT(theLink))
       if (!EXTRA(MYEDGE(theLink)))
       {
@@ -5133,12 +5193,7 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
         V2_COPY(MN_pos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
         V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
       }
-
     DO_2c(theDO) = DO_NO_INST;
-
-    MN_moved = TRUE;
-
-    return (0);
   }
   *end = TRUE;
   return (0);
@@ -5148,7 +5203,7 @@ static INT EXT_PostProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
 {
   VERTEX *theVertex;
 
-  if (!MN_moved)
+  if (!MN_accept)
     return (0);
 
   /* now we have to calculate the moved positions */
@@ -5478,9 +5533,9 @@ static INT PlotVecMatData2D (PICTURE *thePicture, VECTOR *vec)
 
   rt = VTYPE(vec);
   if (VM_MatData)
-    nlines = MDT_NROWCOMP(VM_tmd,rt,rt);
+    nlines = MD_ROWS_IN_RT_CT(VM_tmd,rt,rt);
   else
-    nlines = VDT_DESCNCOMP(VM_tvd,rt);
+    nlines = VD_NCMPS_IN_TYPE(VM_tvd,rt);
   a.y += PIC_SIGN_Y(thePicture) * 0.5*nlines * VM_VECMAT_TEXTSIZE*VM_LINEFAC;
 
   for (line=0; line<nlines; line++)
@@ -5489,15 +5544,15 @@ static INT PlotVecMatData2D (PICTURE *thePicture, VECTOR *vec)
     if (VM_MatData)
     {
       mat = VSTART(vec);
-      nc = MDT_NCOLCOMP(VM_tmd,rt,rt);
+      nc = MD_COLS_IN_RT_CT(VM_tmd,rt,rt);
       for (i=0; i<nc; i++)
-        n += sprintf(buffer+n,"%9.2e ",MVALUE(mat,MDT_DESCCOMP(VM_tmd,rt,rt,line*nc+i)));
+        n += sprintf(buffer+n,"%9.2e ",MVALUE(mat,MD_MCMP_OF_RT_CT(VM_tmd,rt,rt,line*nc+i)));
       buffer[--n] = '\0';                               /* cut off last blank */
     }
     if (VM_VecData && VM_MatData)
       n += sprintf(buffer+n,"   ");
     if (VM_VecData)
-      n += sprintf(buffer+n,"%9.2e",VVALUE(vec,VDT_DESCCOMP(VM_tvd,rt,line)));
+      n += sprintf(buffer+n,"%9.2e",VVALUE(vec,VD_CMP_OF_TYPE(VM_tvd,rt,line)));
 
     UgCenteredText(a,buffer,TEXT_REGULAR);
 
@@ -5522,12 +5577,12 @@ static INT PlotVecMatData2D (PICTURE *thePicture, VECTOR *vec)
       for (line=0; line<nlines; line++)
       {
         n = 0;
-        nc = MDT_NCOLCOMP(VM_tmd,rt,ct);
+        nc = MD_COLS_IN_RT_CT(VM_tmd,rt,ct);
         for (i=0; i<nc; i++)
-          n += sprintf(buffer+n,"%9.2e ",MVALUE(mat,MDT_DESCCOMP(VM_tmd,rt,ct,line*nc+i)));
+          n += sprintf(buffer+n,"%9.2e ",MVALUE(mat,MD_MCMP_OF_RT_CT(VM_tmd,rt,ct,line*nc+i)));
         buffer[--n] = '\0';                                     /* cut off last blank */
         if (VM_VecData)
-          n += sprintf(buffer+n,"   %9.2e",VVALUE(nbvec,VDT_DESCCOMP(VM_tvd,ct,line)));
+          n += sprintf(buffer+n,"   %9.2e",VVALUE(nbvec,VD_CMP_OF_TYPE(VM_tvd,ct,line)));
 
         UgCenteredText(b,buffer,TEXT_REGULAR);
 
@@ -10267,11 +10322,11 @@ INT InitWOP (void)
   PLOTOBJHANDLING *thePOH;
   WORKPROCS *theWP;
   ELEMWISEWORK *theEWW;
-  EXTERNWORK *theEXW;
 
         #ifdef __TWODIM__
   NODEWISEWORK *theNWW;
   VECTORWISEWORK *theVWW;
+  EXTERNWORK *theEXW;
 
   /* create WorkHandling for 'Grid' */
   if ((thePOH=CreatePlotObjHandling ("Grid"))     == NULL) return (__LINE__);
