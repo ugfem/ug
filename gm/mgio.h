@@ -45,7 +45,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define MGIO_VERSION                                    "UG_IO_2.3"
+#define MGIO_VERSION                                    "UG_IO_2.4"
 
 #define __MGIO_USE_IN_UG__
 #define MGIO_DIM                        3
@@ -259,7 +259,7 @@ struct mgio_cg_element_seq {
   int ge;                                                                               /* id of general element					*/
   int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of nodes (data reference)			*/
   int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
-  int side_on_bnd;                                      /* side lies on bnd (used bitwise)              */
+  int se_on_bnd;                                        /* side/edge lies on bnd (used bitwise)         */
   int nref;                                                                             /* nb of refinements for this element		*/
   /* if 0 element not refined					*/
   int subdomain;                                                                /* id of subdomain							*/
@@ -277,7 +277,7 @@ struct mgio_cg_element {
   int ge;                                                                               /* id of general element					*/
   int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of nodes (data reference)			*/
   int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
-  int side_on_bnd;                                      /* side lies on bnd (used bitwise)              */
+  int se_on_bnd;                                        /* side/edge lies on bnd (used bitwise)         */
   int nref;                                                                             /* nb of refinements for this element		*/
   /* if 0 element not refined					*/
   int subdomain;                                                                /* id of subdomain							*/

@@ -935,7 +935,8 @@ int Read_pinfo (int ge, MGIO_PARINFO *pinfo)
 {
   int i,m,s,np;
   char buffer[28];
-  static int nb;
+#if (MGIO_DEBUG>0)
+  static int nb=0;
 
   if (Bio_Read_string(buffer)) return (1);
   if(strcmp(buffer,"PINFO_BEGIN")!=0)
@@ -945,6 +946,7 @@ int Read_pinfo (int ge, MGIO_PARINFO *pinfo)
     assert(0);
   }
   nb++;
+#endif
 
   s=0;
   m = 3+6*lge[ge].nCorner;
@@ -1004,7 +1006,9 @@ int Write_pinfo (int ge, MGIO_PARINFO *pinfo)
 {
   int i,s,np;
 
+#if (MGIO_DEBUG>0)
   if (Bio_Write_string("PINFO_BEGIN")) return (1);
+#endif
 
   s=0;
   intList[s++] = pinfo->prio_elem;
@@ -1086,7 +1090,7 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
       pe->cornerid[j] = intList[s++];
     for (j=0; j<lge[pe->ge].nSide; j++)
       pe->nbid[j] = intList[s++];
-    pe->side_on_bnd = intList[s++];
+    pe->se_on_bnd = intList[s++];
     pe->subdomain = intList[s++];
 
     if (MGIO_PARFILE)
@@ -1153,7 +1157,7 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
       intList[s++] = pe->cornerid[j];
     for (j=0; j<lge[pe->ge].nSide; j++)
       intList[s++] = pe->nbid[j];
-    intList[s++] = pe->side_on_bnd;
+    intList[s++] = pe->se_on_bnd;
     intList[s++] = pe->subdomain;
     MGIO_CHECK_INTSIZE(s);
     if (Bio_Write_mint(s,intList)) return (1);
