@@ -499,7 +499,8 @@ static void IFDrawText (const char *s, INT mode)
   if (mode==TEXT_REGULAR)
   {
     XDrawString(display,gw->win,gw->gc,gw->x,gw->y,s,strlen(s));
-    XDrawString(display,gw->pixmap,gw->gc,gw->x,gw->y,s,strlen(s));
+    if (!gw->backing_store)
+      XDrawString(display,gw->pixmap,gw->gc,gw->x,gw->y,s,strlen(s));
   }
   else
   {
@@ -531,7 +532,8 @@ static void IFCenteredText (SHORT_POINT point, const char *s, INT mode)
   if (mode==TEXT_REGULAR)
   {
     XDrawString(display,gw->win,gw->gc,((int)point.x)-w/2,((int)point.y)+ts/2,s,strlen(s));
-    XDrawString(display,gw->pixmap,gw->gc,((int)point.x)-w/2,((int)point.y)+ts/2,s,strlen(s));
+    if (!gw->backing_store)
+      XDrawString(display,gw->pixmap,gw->gc,((int)point.x)-w/2,((int)point.y)+ts/2,s,strlen(s));
   }
   else
   {
