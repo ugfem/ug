@@ -53,9 +53,57 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define LINEAR_PATCH_TYPE                2
 #define PARAMETRIC_PATCH_TYPE            3
 
+/* macros for DOMAIN_PART_INFO */
+#define DPI_SD2P_PTR(p)                                 ((p)->sd2part)
+#define DPI_SD2P(p,sd)                                  ((p)->sd2part[sd])
+#define DPI_SG2P_PTR(p)                                 ((p)->sg2part)
+#define DPI_SG2P(p,sg)                                  ((p)->sg2part[sg])
+#define DPI_LN2P_PTR(p)                                 ((p)->ln2part)
+#define DPI_LN2P(p,c0,c1)                               ((p)->ln2part[c0][c1])
+#define DPI_PT2P_PTR(p)                                 ((p)->pt2part)
+#define DPI_PT2P(p,pt)                                  ((p)->pt2part[pt])
+
+/* macros for DOMAIN */
+#define DOMAIN_MIDPOINT(p)                              ((p)->MidPoint)
+#define DOMAIN_RADIUS(p)                                ((p)->radius)
+#define DOMAIN_CONVEX(p)                                ((p)->domConvex)
+#define DOMAIN_NSEGMENT(p)                              ((p)->numOfSegments)
+#define DOMAIN_NCORNER(p)                               ((p)->numOfCorners)
+#define DOMAIN_NPARTS(p)                                ((p)->nParts)
+#define DOMAIN_PARTINFO(p)                              ((p)->dpi)
+
+/* macros for STD_BVP */
 #define MAX_CORNERS_OF_LINEAR_PATCH      DIM
 #undef  CORNERS_OF_BND_SEG
 #define CORNERS_OF_BND_SEG               2*DIM_OF_BND
+
+#define STD_BVP_NAME(p)                                 ENVITEM_NAME(p)
+
+#define STD_BVP_DOMAIN(p)                               ((p)->Domain)
+#define STD_BVP_PROBLEM(p)                              ((p)->Problem)
+
+#define STD_BVP_MIDPOINT(p)                             ((p)->MidPoint)
+#define STD_BVP_RADIUS(p)                               ((p)->radius)
+#define STD_BVP_CONVEX(p)                               ((p)->domConvex)
+
+#define STD_BVP_NCORNER(p)                              ((p)->ncorners)
+#define STD_BVP_NSIDES(p)                               ((p)->nsides)
+#define STD_BVP_SIDEOFFSET(p)                   ((p)->sideoffset)
+#define STD_BVP_PATCHES(p)                              ((p)->patches)
+#define STD_BVP_PATCH(p,i)                              ((p)->patches[i])
+
+#define STD_BVP_NSUBDOM(p)                              ((p)->numOfSubdomains)
+#define STD_BVP_NDOMPART(p)                             ((p)->nDomainParts)
+#define STD_BVP_S2P_PTR(p)                              ((p)->s2p)
+#define STD_BVP_S2P(p,s)                                ((p)->s2p[s])
+#define STD_BVP_NPATCH(p)                               ((p)->nPatch)
+#define STD_BVP_NCOEFFPROC(p)                   ((p)->numOfCoeffFct)
+#define STD_BVP_NUSERPROC(p)                    ((p)->numOfUserFct)
+#define STD_BVP_CONFIGPROC(p)                   ((p)->ConfigProc)
+#define STD_BVP_COEFFPROC(p,i)                  ((CoeffProcPtr)((p)->CU_ProcPtr[i]))
+#define STD_BVP_USERPROC(p,i)                   ((UserProcPtr)((p)->CU_ProcPtr[i+STD_BVP_NCOEFFPROC(p)]))
+
+#define GetSTD_BVP(p)                           ((STD_BVP *)(p))
 
 /****************************************************************************/
 /*																			*/
@@ -68,6 +116,8 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define POINT_PATCH_N(p)        (p)->po.npatches
 #define POINT_PATCH_PID(p,i)    (p)->po.pop[i].patch_id
 #define POINT_PATCH_CID(p,i)    (p)->po.pop[i].corner_id
+#define LINE_PATCH_C0(p)                ((p)->li.c0)
+#define LINE_PATCH_C1(p)                ((p)->li.c1)
 #define LINE_PATCH_N(p)         (p)->li.npatches
 #define LINE_PATCH_PID(p,i)     (p)->li.lop[i].patch_id
 #define LINE_PATCH_CID0(p,i)    (p)->li.lop[i].corner_id[0]
@@ -110,6 +160,17 @@ typedef INT (*BndSegFuncPtr)(void *,DOUBLE *,DOUBLE *);
 
 /*----------- definition of structs ----------------------------------------*/
 
+typedef struct {
+
+  const INT *sd2part;                                           /* table subdomain to part			*/
+  const INT *sg2part;                                           /* table segment   to part			*/
+#       ifdef __THREEDIM__
+  const INT **ln2part;                                  /* table line	   to part			*/
+#       endif
+  const INT *pt2part;                                           /* table point	   to part			*/
+
+} DOMAIN_PART_INFO;
+
 struct domain {
 
   /* fields for environment directory */
@@ -122,6 +183,10 @@ struct domain {
   INT numOfSegments;                                            /* number of boundary segments		*/
   INT numOfCorners;                                             /* number of corner points			*/
   INT domConvex;                                                /* is the domain convex?			*/
+
+  /* description of domain parts */
+  INT nParts;                                                           /* number of parts in the domain	*/
+  const DOMAIN_PART_INFO *dpi;                  /* domain part info					*/
 };
 
 struct boundary_segment {
@@ -205,11 +270,14 @@ struct std_BoundaryValueProblem
   struct problem *Problem;           /* problem pointer                     */
 
   /* domain part */
-  DOUBLE MidPoint[DIM];               /* sphere in which the domain lies     */
+  DOUBLE MidPoint[DIM];              /* sphere in which the domain lies     */
   DOUBLE radius;
   INT domConvex;                     /* 1 if domain is convex, 0 if not     */
   INT numOfSubdomains;               /* nb. of subdomains,
                                                                                 exterior not counted                */
+  INT nDomainParts;                                      /* number of parts in the domain		*/
+  INT *s2p;                                                      /* pointer to table subbdom --> part	*/
+
   /* boundary decription */
   INT ncorners;
   INT nsides;
@@ -265,6 +333,8 @@ struct line_patch {
   INT id;                           /* unique id used for load/store        */
 
   INT npatches;                     /* number of patches                    */
+  INT c0;                                                       /* corner 0 of line						*/
+  INT c1;                                                       /* corner 1 of line						*/
   struct line_on_patch lop[1];      /* reference to surface                 */
 };
 #endif
@@ -344,6 +414,10 @@ typedef struct bnd_ps BND_PS;
 /****************************************************************************/
 
 /* domain definition */
+DOMAIN                     *CreateDomainWithParts       (char *name, DOUBLE *MidPoint,
+                                                         DOUBLE radius, INT segments,
+                                                         INT corners, INT Convex,
+                                                         INT nParts, const DOMAIN_PART_INFO *dpi);
 DOMAIN                     *CreateDomain                        (char *name, DOUBLE *MidPoint,
                                                                  DOUBLE radius, INT segments,
                                                                  INT corners, INT Convex);
@@ -381,5 +455,8 @@ BVP   *CreateBoundaryValueProblem (char *BVPname, BndCondProcPtr theBndCond,
                                    int numOfCoeffFct, CoeffProcPtr coeffs[],
                                    int numOfUserFct, UserProcPtr userfct[]);
 BVP       *CreateBVP                              (char *BVP, char *Domain, char *Problem);
+
+/* scanning of coordinates */
+INT   ReadAndPrintArgvPosition    (char *name, INT argc, char **argv, DOUBLE *pos);
 
 #endif

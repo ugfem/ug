@@ -47,7 +47,6 @@
 /* domain module */
 #include "std_domain.h"
 
-/* TODO: this violates the subsystem hierarchy */
 #include "scan.h"
 
 /****************************************************************************/
@@ -75,6 +74,8 @@
 /*        in the corresponding include file!)                               */
 /*                                                                          */
 /****************************************************************************/
+
+typedef DOUBLE DOUBLE_VECTOR[DIM];
 
 /****************************************************************************/
 /*                                                                          */
@@ -1758,7 +1759,7 @@ static INT ZylBack20 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylSouth1 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -1777,7 +1778,7 @@ static INT ZylSouth1 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylSouth2 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -1796,7 +1797,7 @@ static INT ZylSouth2 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylSouth3 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -1815,7 +1816,7 @@ static INT ZylSouth3 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylSouth4 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -1834,7 +1835,7 @@ static INT ZylSouth4 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylNorth1 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -1853,7 +1854,7 @@ static INT ZylNorth1 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylNorth2 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -1872,7 +1873,7 @@ static INT ZylNorth2 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylNorth3 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -1891,7 +1892,7 @@ static INT ZylNorth3 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylNorth4 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -1910,7 +1911,7 @@ static INT ZylNorth4 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylWest1 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -1929,7 +1930,7 @@ static INT ZylWest1 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylWest2 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -1948,7 +1949,7 @@ static INT ZylWest2 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylWest3 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -1967,7 +1968,7 @@ static INT ZylWest3 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylWest4 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -1986,7 +1987,7 @@ static INT ZylWest4 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylEast1 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -2005,7 +2006,7 @@ static INT ZylEast1 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylEast2 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -2024,7 +2025,7 @@ static INT ZylEast2 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylEast3 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -2043,7 +2044,7 @@ static INT ZylEast3 (void *data, DOUBLE *param, DOUBLE *result)
 
 static INT ZylEast4 (void *data, DOUBLE *param, DOUBLE *result)
 {
-  DOUBLE lambda1,lambda2, px, pz, qx, qz;
+  DOUBLE lambda1,lambda2;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -2735,8 +2736,6 @@ static INT south7Boundary (void *data, DOUBLE *param, DOUBLE *result)
   result[1] = (1.0 - lambda1)*py + lambda1*qy;
   result[2] = 0.0;
 
-
-
   /* return ok */
   return(0);
 }
@@ -2974,7 +2973,6 @@ static INT east1Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2;
 
-
   lambda1 = param[0];
   lambda2 = param[1];
 
@@ -2993,7 +2991,6 @@ static INT east1Boundary (void *data, DOUBLE *param, DOUBLE *result)
 static INT east2Boundary (void *data, DOUBLE *param, DOUBLE *result)
 {
   DOUBLE lambda1, lambda2;
-  double d;
 
   lambda1 = param[0];
   lambda2 = param[1];
@@ -3648,42 +3645,42 @@ INT STD_BVP_Configure (INT argc, char **argv)
   theDomain = GetDomain(DomainName);
 
   if (strcmp(DomainName,"Hexahedron") == 0) {
-    if (ReadArgvPosition("x0",argc,argv,x_hex[0])) {
+    if (ReadAndPrintArgvPosition("x0",argc,argv,x_hex[0])) {
       x_hex[0][0] = 0.0;
       x_hex[0][1] = 0.0;
       x_hex[0][2] = 0.0;
     }
-    if (ReadArgvPosition("x1",argc,argv,x_hex[1])) {
+    if (ReadAndPrintArgvPosition("x1",argc,argv,x_hex[1])) {
       x_hex[1][0] = 1.0;
       x_hex[1][1] = 0.0;
       x_hex[1][2] = 0.0;
     }
-    if (ReadArgvPosition("x2",argc,argv,x_hex[2])) {
+    if (ReadAndPrintArgvPosition("x2",argc,argv,x_hex[2])) {
       x_hex[2][0] = 1.0;
       x_hex[2][1] = 1.0;
       x_hex[2][2] = 0.0;
     }
-    if (ReadArgvPosition("x3",argc,argv,x_hex[3])) {
+    if (ReadAndPrintArgvPosition("x3",argc,argv,x_hex[3])) {
       x_hex[3][0] = 0.0;
       x_hex[3][1] = 1.0;
       x_hex[3][2] = 0.0;
     }
-    if (ReadArgvPosition("x4",argc,argv,x_hex[4])) {
+    if (ReadAndPrintArgvPosition("x4",argc,argv,x_hex[4])) {
       x_hex[4][0] = 0.0;
       x_hex[4][1] = 0.0;
       x_hex[4][2] = 1.0;
     }
-    if (ReadArgvPosition("x5",argc,argv,x_hex[5])) {
+    if (ReadAndPrintArgvPosition("x5",argc,argv,x_hex[5])) {
       x_hex[5][0] = 1.0;
       x_hex[5][1] = 0.0;
       x_hex[5][2] = 1.0;
     }
-    if (ReadArgvPosition("x6",argc,argv,x_hex[6])) {
+    if (ReadAndPrintArgvPosition("x6",argc,argv,x_hex[6])) {
       x_hex[6][0] = 1.0;
       x_hex[6][1] = 1.0;
       x_hex[6][2] = 1.0;
     }
-    if (ReadArgvPosition("x7",argc,argv,x_hex[7])) {
+    if (ReadAndPrintArgvPosition("x7",argc,argv,x_hex[7])) {
       x_hex[7][0] = 0.0;
       x_hex[7][1] = 1.0;
       x_hex[7][2] = 1.0;

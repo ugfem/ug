@@ -58,14 +58,14 @@
 /*                                                                          */
 /****************************************************************************/
 
-#define OPTIONLEN                       32
-
 /****************************************************************************/
 /*                                                                          */
 /* data structures used in this source file (exported data structures are   */
 /*        in the corresponding include file!)                               */
 /*                                                                          */
 /****************************************************************************/
+
+typedef DOUBLE DOUBLE_VECTOR[DIM];
 
 /****************************************************************************/
 /*                                                                          */
@@ -1157,22 +1157,22 @@ INT STD_BVP_Configure (INT argc, char **argv)
 
   if (strcmp(DomainName,"Quadrilateral") == 0)
   {
-    if (ReadArgvPosition("x0",argc,argv,x_quad[0]))
+    if (ReadAndPrintArgvPosition("x0",argc,argv,x_quad[0]))
     {
       x_quad[0][0] = 0.0;
       x_quad[0][1] = 0.0;
     }
-    if (ReadArgvPosition("x1",argc,argv,x_quad[1]))
+    if (ReadAndPrintArgvPosition("x1",argc,argv,x_quad[1]))
     {
       x_quad[1][0] = 1.0;
       x_quad[1][1] = 0.0;
     }
-    if (ReadArgvPosition("x2",argc,argv,x_quad[2]))
+    if (ReadAndPrintArgvPosition("x2",argc,argv,x_quad[2]))
     {
       x_quad[2][0] = 1.0;
       x_quad[2][1] = 1.0;
     }
-    if (ReadArgvPosition("x3",argc,argv,x_quad[3]))
+    if (ReadAndPrintArgvPosition("x3",argc,argv,x_quad[3]))
     {
       x_quad[3][0] = 0.0;
       x_quad[3][1] = 1.0;
@@ -1182,32 +1182,32 @@ INT STD_BVP_Configure (INT argc, char **argv)
   }
   else if (strcmp(DomainName,"Two") == 0)
   {
-    if (ReadArgvPosition("x0",argc,argv,x_quad[0]))
+    if (ReadAndPrintArgvPosition("x0",argc,argv,x_quad[0]))
     {
       x_quad[0][0] = 0.0;
       x_quad[0][1] = 0.0;
     }
-    if (ReadArgvPosition("x1",argc,argv,x_quad[1]))
+    if (ReadAndPrintArgvPosition("x1",argc,argv,x_quad[1]))
     {
       x_quad[1][0] = 1.0;
       x_quad[1][1] = 0.0;
     }
-    if (ReadArgvPosition("x2",argc,argv,x_quad[2]))
+    if (ReadAndPrintArgvPosition("x2",argc,argv,x_quad[2]))
     {
       x_quad[2][0] = 1.0;
       x_quad[2][1] = 1.0;
     }
-    if (ReadArgvPosition("x3",argc,argv,x_quad[3]))
+    if (ReadAndPrintArgvPosition("x3",argc,argv,x_quad[3]))
     {
       x_quad[3][0] = 0.0;
       x_quad[3][1] = 1.0;
     }
-    if (ReadArgvPosition("x4",argc,argv,x_quad[4]))
+    if (ReadAndPrintArgvPosition("x4",argc,argv,x_quad[4]))
     {
       x_quad[4][0] = 2.0;
       x_quad[4][1] = 0.0;
     }
-    if (ReadArgvPosition("x5",argc,argv,x_quad[5]))
+    if (ReadAndPrintArgvPosition("x5",argc,argv,x_quad[5]))
     {
       x_quad[5][0] = 2.0;
       x_quad[5][1] = 1.0;
@@ -1215,17 +1215,17 @@ INT STD_BVP_Configure (INT argc, char **argv)
   }
   else if (strcmp(DomainName,"Triangle") == 0)
   {
-    if (ReadArgvPosition("x0",argc,argv,x_quad[0]))
+    if (ReadAndPrintArgvPosition("x0",argc,argv,x_quad[0]))
     {
       x_quad[0][0] = 0.0;
       x_quad[0][1] = 0.0;
     }
-    if (ReadArgvPosition("x1",argc,argv,x_quad[1]))
+    if (ReadAndPrintArgvPosition("x1",argc,argv,x_quad[1]))
     {
       x_quad[1][0] = 1.0;
       x_quad[1][1] = 0.0;
     }
-    if (ReadArgvPosition("x2",argc,argv,x_quad[2]))
+    if (ReadAndPrintArgvPosition("x2",argc,argv,x_quad[2]))
     {
       x_quad[2][0] = 1.0;
       x_quad[2][1] = 1.0;
@@ -1233,7 +1233,7 @@ INT STD_BVP_Configure (INT argc, char **argv)
   }
   else if (strcmp(DomainName,"Punctured Disc") == 0)
   {
-    if (ReadArgvPosition("x0",argc,argv,x_quad[0]))
+    if (ReadAndPrintArgvPosition("x0",argc,argv,x_quad[0]))
     {
       x_quad[0][0] = 0.0;
       x_quad[0][1] = 0.0;

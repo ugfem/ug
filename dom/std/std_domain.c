@@ -53,6 +53,9 @@
 #include "std_domain.h"
 #include "domain.h"
 
+/* TODO: hierarchy conflict */
+#include "evm.h"
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -66,22 +69,9 @@
 #define SMALL_DIFF   SMALL_C*100
 #define RESOLUTION   100
 
+#define OPTIONLEN                       32
+
 #define DEFAULTDOMMEMORY 50000
-
-#define STD_BVP_NAME(p)                         ENVITEM_NAME(p)
-#define STD_BVP_MIDPOINT(p)                     ((p)->MidPoint)
-#define STD_BVP_RADIUS(p)                       ((p)->radius)
-#define STD_BVP_CONVEX(p)                       ((p)->domConvex)
-#define STD_BVP_NCORNER(p)                      ((p)->nCorner)
-#define STD_BVP_NSUBDOM(p)                      ((p)->nSubDomain)
-#define STD_BVP_NPATCH(p)                       ((p)->nPatch)
-#define STD_BVP_NCOEFFPROC(p)           ((p)->nCoeffFct)
-#define STD_BVP_NUSERPROC(p)            ((p)->nUserFct)
-#define STD_BVP_CONFIGPROC(p)           ((p)->ConfigProblem)
-#define STD_BVP_COEFFPROC(p,i)          (CoeffProcPtr)((p)->CoeffF[i])
-#define STD_BVP_USERPROC(p,i)           (UserProcPtr)((p)->UserF[i])
-
-#define GetSTD_BVP(p)              ((STD_BVP *)(p))
 
 #define V2_LINCOMB(a,A,b,B,C)              {(C)[0] = (a)*(A)[0] + (b)*(B)[0];\
                                             (C)[1] = (a)*(A)[1] + (b)*(B)[1];}
@@ -125,6 +115,8 @@ static INT theLinSegVarID;                  /* env type for linear segment vars	
 static INT theBVPDirID;                         /* env type for BVP dir					*/
 
 static STD_BVP *currBVP;
+
+REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -326,6 +318,66 @@ static BOUNDARY_CONDITION *GetFirstBoundaryCondition (PROBLEM *theProblem)
 
 /****************************************************************************/
 /*D
+   CreateDomainWithParts	- Create a new DOMAIN data structure with part description
+
+   SYNOPSIS:
+   DOMAIN *CreateDomainWithParts (char *name, DOUBLE *MidPoint, DOUBLE radius,
+   INT segments, INT corners, INT Convex, INT nParts, const DOMAIN_PART_INFO *dpi);
+
+   PARAMETERS:
+   .  name - name of the domain
+   .  MidPoint - coordinates of some inner point
+   .  radius - radius of a circle, containing the domain
+   .  segments - number of the boundary segments
+   .  corners - number of corners
+   .  Convex - 0, if convex, 1 - else
+   .  nParts - number of parts in the domain
+   .  dpi - description of the parts for lines, segments, points
+
+   DESCRIPTION:
+   This function allocates and initializes a new DOMAIN data structure in the
+   /domains directory in the environment.
+   Additinally domain parts will defined.
+
+   RETURN VALUE:
+   DOMAIN *
+   .n     pointer to a DOMAIN
+   .n     NULL if out of memory.
+   D*/
+/****************************************************************************/
+
+DOMAIN *CreateDomainWithParts (char *name, DOUBLE *MidPoint, DOUBLE radius, INT segments, INT corners, INT Convex,
+                               INT nParts, const DOMAIN_PART_INFO *dpi)
+{
+  DOMAIN *newDomain;
+  INT i;
+
+  /* change to /domains directory */
+  if (ChangeEnvDir("/Domains")==NULL)
+    return (NULL);
+
+  /* allocate new domain structure */
+  newDomain = (DOMAIN *) MakeEnvItem (name,theDomainDirID,sizeof(DOMAIN));
+  if (newDomain==NULL) return(NULL);
+
+  /* fill in data */
+  for( i = 0 ; i < DIM ; i++)
+    DOMAIN_MIDPOINT(newDomain)[i] = MidPoint[i];
+  DOMAIN_RADIUS(newDomain)        = radius;
+  DOMAIN_NSEGMENT(newDomain)      = segments;
+  DOMAIN_NCORNER(newDomain)       = corners;
+  DOMAIN_CONVEX(newDomain)        = Convex;
+  DOMAIN_NPARTS(newDomain)        = nParts;
+  DOMAIN_PARTINFO(newDomain)      = dpi;
+
+  if (ChangeEnvDir(name)==NULL) return(NULL);
+  UserWrite("domain "); UserWrite(name); UserWrite(" installed\n");
+
+  return(newDomain);
+}
+
+/****************************************************************************/
+/*D
    CreateDomain	- Create a new DOMAIN data structure
 
    SYNOPSIS:
@@ -353,29 +405,7 @@ static BOUNDARY_CONDITION *GetFirstBoundaryCondition (PROBLEM *theProblem)
 
 DOMAIN *CreateDomain (char *name, DOUBLE *MidPoint, DOUBLE radius, INT segments, INT corners, INT Convex)
 {
-  DOMAIN *newDomain;
-  INT i;
-
-  /* change to /domains directory */
-  if (ChangeEnvDir("/Domains")==NULL)
-    return (NULL);
-
-  /* allocate new domain structure */
-  newDomain = (DOMAIN *) MakeEnvItem (name,theDomainDirID,sizeof(DOMAIN));
-  if (newDomain==NULL) return(NULL);
-
-  /* fill in data */
-  for( i = 0 ; i < DIM ; i++)
-    newDomain->MidPoint[i] = MidPoint[i];
-  newDomain->radius = radius;
-  newDomain->numOfSegments = segments;
-  newDomain->numOfCorners = corners;
-  newDomain->domConvex = Convex;
-
-  if (ChangeEnvDir(name)==NULL) return(NULL);
-  UserWrite("domain "); UserWrite(name); UserWrite(" installed\n");
-
-  return(newDomain);
+  return(CreateDomainWithParts(name,MidPoint,radius,segments,corners,Convex,1,NULL));
 }
 
 /****************************************************************************/
@@ -718,6 +748,8 @@ BVP *CreateBoundaryValueProblem (char *BVPName, BndCondProcPtr theBndCond,
   for (i=0; i<numOfUserFct; i++)
     theBVP->CU_ProcPtr[i+numOfCoeffFct] = (void*)(userfct[i]);
 
+  STD_BVP_S2P_PTR(theBVP) = NULL;
+
   theBVP->Domain = NULL;
   theBVP->Problem = NULL;
   theBVP->ConfigProc = STD_BVP_Configure;
@@ -761,6 +793,7 @@ BVP *CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
       theProblem->CU_ProcPtr[i+theProblem->numOfCoeffFct];
   theBVP->numOfCoeffFct = theProblem->numOfCoeffFct;
   theBVP->numOfUserFct = theProblem->numOfUserFct;
+  STD_BVP_S2P_PTR(theBVP) = NULL;
 
   theBVP->Domain = theDomain;
   theBVP->Problem = theProblem;
@@ -891,6 +924,7 @@ static INT CreateCornerPoints (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp)
   return(0);
 }
 
+/* domain interface function: for description see domain.h */
 BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
 {
   STD_BVP *theBVP;
@@ -990,6 +1024,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
                       PATCH_ID(thePatch),PATCH_TYPE(thePatch),
                       LINEAR_PATCH_LEFT(thePatch),
                       LINEAR_PATCH_RIGHT(thePatch)));
+    /* TODO: why this here??? (CVS-merge mess-up?) */
     if (theProblem != NULL) {
       UserWrite("Use CreateBoundaryValueProblem!");
       return(NULL);
@@ -1095,6 +1130,8 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
         return (NULL);
       PATCH_TYPE(thePatch) = LINE_PATCH_TYPE;
       PATCH_ID(thePatch) = nlines;
+      LINE_PATCH_C0(thePatch) = i;
+      LINE_PATCH_C1(thePatch) = j;
       k = 0;
       for (n=0; n<POINT_PATCH_N(corners[i]); n++)
         for (m=0; m<POINT_PATCH_N(corners[j]); m++)
@@ -1175,35 +1212,40 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
                       BND_PATCH_ID((BND_PS*)(Mesh->theBndPs[i]))));
 
   currBVP = theBVP;
+
+  /* allocate s2p table */
+  STD_BVP_NDOMPART(theBVP) = DOMAIN_NPARTS(theDomain);
+  STD_BVP_S2P_PTR(theBVP) = (INT*)GetFreelistMemory(Heap,(1+STD_BVP_NSUBDOM(theBVP))*sizeof(INT));
+  if (STD_BVP_S2P_PTR(theBVP)==NULL)
+    return (NULL);
+
+  /* fill number of parts */
+  if (DOMAIN_NPARTS(theDomain)>1)
+  {
+    const DOMAIN_PART_INFO *dpi;
+
+    /* transfer from part info (NB: STD_BVP_NSUBDOM only counts inner subdomains) */
+    dpi = DOMAIN_PARTINFO(theDomain);
+    for (i=0; i<=STD_BVP_NSUBDOM(theBVP); i++)
+      STD_BVP_S2P(theBVP,i) = DPI_SD2P(dpi,i);
+  }
+  else
+  {
+    /* 0 for each subdomnain by default */
+    for (i=0; i<STD_BVP_NSUBDOM(theBVP); i++)
+      STD_BVP_S2P(theBVP,i) = 0;
+  }
+
   return ((BVP*)theBVP);
 }
 
+/* domain interface function: for description see domain.h */
 INT BVP_Dispose (BVP *theBVP)
 {
   return (0);
 }
 
-/****************************************************************************/
-/*D
-   BVP_GetFirst - Return a pointer to the first STD_BVP
-
-   SYNOPSIS:
-   BVP *BVP_GetFirst (void);
-
-   PARAMETERS:
-   .  void
-
-   DESCRIPTION:
-   This function returns a pointer to the first BVP in the /STD_BVP
-   directory.
-
-   RETURN VALUE:
-   BVP *
-   .n   pointer to BVP
-   .n   NULL if not found.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BVP *BVP_GetFirst (void)
 {
   ENVDIR *theSBVPDir;
@@ -1216,79 +1258,18 @@ BVP *BVP_GetFirst (void)
   return (theBVP);
 }
 
-/****************************************************************************/
-/*D
-   BVP_GetNext - Return a pointer to the next multigrid
-
-   SYNOPSIS:
-   BVP *BVP_GetNext (BVP *theBVP);
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-
-   DESCRIPTION:
-   This function returns a pointer to the next BVP in the /STD_BVP
-   directory.
-
-   RETURN VALUE:
-   BVP *
-   .n   pointer to BVP
-   .n   NULL if not found.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BVP *BVP_GetNext (BVP *theBVP)
 {
   if (theBVP==NULL) return (NULL);
   return ((BVP *) NEXT_ENVITEM(theBVP));
 }
 
-/****************************************************************************/
-/*D
-   BVP_GetByName - get pointer to BVP by name
-
-   SYNOPSIS:
-   BVP *BVP_GetByName (char *name);
-
-   PARAMETERS:
-   .  name - name of file
-   .  argc, argv - command parameters
-
-   DESCRIPTION:
-   This function gives the pointer to the BVP by its <name>.
-
-   RETURN VALUE:
-   BVP *
-   .n   pointer to BVP
-   .n   NULL if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BVP *BVP_GetByName (char *name)
 {
   return((BVP *) SearchEnv(name,"/BVP",theBVPDirID,theBVPDirID));
 }
-
-/****************************************************************************/
-/*D
-   BVP_SetBVPDesc - set BVP-descriptor
-
-   SYNOPSIS:
-   INT BVP_SetBVPDesc (BVP *theBVP, BVP_DESC *theBVPDesc);
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  theBVPDesc - descriptor to set
-
-   DESCRIPTION:
-   This function sets the BVP descriptor according to the BVP.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
 
 INT BVP_SetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
 {
@@ -1299,44 +1280,26 @@ INT BVP_SetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
   theBVP = GetSTD_BVP(aBVP);
 
   /* general part */
-  strcpy(theBVPDesc->name,ENVITEM_NAME(theBVP));
+  strcpy(BVPD_NAME(theBVPDesc),ENVITEM_NAME(theBVP));
 
   /* the domain part */
   for (i=0; i<DIM; i++)
-    theBVPDesc->midpoint[i] = theBVP->MidPoint[i];
-  theBVPDesc->radius              = theBVP->radius;
-  theBVPDesc->convex              = theBVP->domConvex;
-  theBVPDesc->nSubDomains         = theBVP->numOfSubdomains;
-  theBVPDesc->numOfCoeffFct       = theBVP->numOfCoeffFct;
-  theBVPDesc->numOfUserFct        = theBVP->numOfUserFct;
-  theBVPDesc->ConfigProc          = theBVP->ConfigProc;
+    BVPD_MIDPOINT(theBVPDesc)[i] = theBVP->MidPoint[i];
+  BVPD_RADIUS(theBVPDesc)         = theBVP->radius;
+  BVPD_CONVEX(theBVPDesc)         = theBVP->domConvex;
+  BVPD_NSUBDOM(theBVPDesc)        = theBVP->numOfSubdomains;
+  BVPD_NPARTS(theBVPDesc)         = theBVP->nDomainParts;
+  BVPD_S2P_PTR(theBVPDesc)        = STD_BVP_S2P_PTR(theBVP);
+  BVPD_NCOEFFF(theBVPDesc)        = theBVP->numOfCoeffFct;
+  BVPD_NUSERF(theBVPDesc)         = theBVP->numOfUserFct;
+  BVPD_CONFIG(theBVPDesc)         = theBVP->ConfigProc;
 
   currBVP = theBVP;
 
   return (0);
 }
 
-/****************************************************************************/
-/*D
-   BVP_SetCoeffFct - set coefficient function(s)
-
-   SYNOPSIS:
-   INT BVP_SetCoeffFct (BVP *theBVP, INT n, CoeffProcPtr *CoeffFct);
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  n - nb. of coefficient function or -1 for all
-
-   DESCRIPTION:
-   This function one or all coefficient functions.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BVP_SetCoeffFct (BVP *aBVP, INT n, CoeffProcPtr *CoeffFct)
 {
   STD_BVP *theBVP;
@@ -1356,27 +1319,7 @@ INT BVP_SetCoeffFct (BVP *aBVP, INT n, CoeffProcPtr *CoeffFct)
   return (0);
 }
 
-/****************************************************************************/
-/*D
-   BVP_SetUserFct - set coefficient function(s)
-
-   SYNOPSIS:
-   INT BVP_SetUserFct (BVP *theBVP, INT n, UserProcPtr *UserFct);
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  n - nb. of user function or -1 for all
-
-   DESCRIPTION:
-   This function gives one or all user functions.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BVP_SetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
 {
   STD_BVP *theBVP;
@@ -1396,27 +1339,7 @@ INT BVP_SetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
   return (0);
 }
 
-/****************************************************************************/
-/*D
-   BVP_Check - check consistency of BVP
-
-   SYNOPSIS:
-   INT BVP_Check (BVP *aBVP);
-
-   PARAMETERS:
-   .  aBVP - BVP structure
-   .  CheckResult - 0 if ok, 1 if error detected
-
-   DESCRIPTION:
-   This function checks consistency of BVP
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BVP_Check (BVP *aBVP)
 {
   UserWrite("BVP_Check: not implemented\n");
@@ -1424,28 +1347,7 @@ INT BVP_Check (BVP *aBVP)
   return (0);
 }
 
-/****************************************************************************/
-/*D
-   BVP_InsertBndP - sets a BNDP from command input
-
-   SYNOPSIS:
-   BNDP *BVP_InsertBndP (HEAP *Heap, BVP *theBVP, INT argc, char **argv);
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  argc, argv - command parameters
-   .  theBndP - the BNDP to set
-
-   DESCRIPTION:
-   This function sets a BNDP from command input parameters.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 static INT GetNumberOfPatches(PATCH *p)
 {
   switch (PATCH_TYPE(p))
@@ -1481,15 +1383,24 @@ static INT GetPatchId (PATCH *p, INT i)
   return(-1);
 }
 
-static INT GetNumberOfCommonPatches (PATCH *p0, PATCH *p1)
+static INT GetNumberOfCommonPatches (PATCH *p0, PATCH *p1, INT *Pid)
 {
-  INT i,j,cnt;
+  INT i,j,cnt,np0,np1,pid;
 
   cnt = 0;
-  for (i=0; i<GetNumberOfPatches(p0); i++)
-    for (j=0; j<GetNumberOfPatches(p1); j++)
-      if (GetPatchId(p0,i) == GetPatchId(p1,j))
+  np0 = GetNumberOfPatches(p0);
+  np1 = GetNumberOfPatches(p1);
+  for (i=0; i<np0; i++)
+  {
+    pid = GetPatchId(p0,i);
+    for (j=0; j<np1; j++)
+      if (pid == GetPatchId(p1,j))
+      {
+        if (!cnt)
+          *Pid = pid;
         cnt++;
+      }
+  }
 
   return(cnt);
 }
@@ -1519,7 +1430,7 @@ static INT GetCommonLinePatchId (PATCH *p0, PATCH *p1)
   else if (PATCH_TYPE(p1) == LINE_PATCH_TYPE)
     return(PATCH_ID(p1));
 
-  cnt = GetNumberOfCommonPatches(p0,p1);
+  cnt = GetNumberOfCommonPatches(p0,p1,&i);
 
   if (cnt < 1)
     return(-1);
@@ -1560,7 +1471,7 @@ static BNDP *CreateBndPOnLine (HEAP *Heap, PATCH *p0, PATCH *p1, DOUBLE lcoord)
   for (l=0; l<GetNumberOfPatches(p1); l++)
     PRINTDEBUG(dom,1,("    bp pid %d\n",GetPatchId(p1,l)));
 
-  cnt = GetNumberOfCommonPatches(p0,p1);
+  cnt = GetNumberOfCommonPatches(p0,p1,&k);
 
   if (cnt < 2)
     return(NULL);
@@ -1663,6 +1574,8 @@ static BNDP *CreateBndPOnLine (HEAP *Heap, PATCH *p0, PATCH *p1, DOUBLE lcoord)
 }
 #endif
 
+/* domain interface function: for description see domain.h */
+/* TODO: syntax for manpages??? */
 BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 {
   STD_BVP *theBVP;
@@ -2615,28 +2528,7 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 /****************************************************************************/
 /****************************************************************************/
 
-/****************************************************************************/
-/*D
-   BNDS_Global - gets global coordinates of local position
-
-   SYNOPSIS:
-   INT BNDS_Local2Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global);
-
-   PARAMETERS:
-   .  aBndS - BNDS structure
-   .  local - local coordinate on BNDS
-   .  global - global coordinate
-
-   DESCRIPTION:
-   This function gets global coordinates of local position on BNDS
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 static INT PatchGlobal (PATCH *p, DOUBLE *lambda, DOUBLE *global)
 {
   if (PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE)
@@ -2713,31 +2605,7 @@ INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
   return(1);
 }
 
-/****************************************************************************/
-/*D
-   BNDS_BndCond - gets global coordinates of local position
-
-   SYNOPSIS:
-   INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in,
-   INT *type, DOUBLE *value);
-
-   PARAMETERS:
-   .  aBndS - BNDS structure
-   .  local - local coordinate on BNDS
-   .  time - time parameter or NULL
-   .  type - type of bnd cond
-   .  value - values
-
-   DESCRIPTION:
-   This function gets bnd conditions of local position on BNDS
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type)
 {
   BND_PS *ps;
@@ -2803,50 +2671,81 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,in,value,type));
 }
 
-INT BNDS_BndSDesc (BNDS *theBndS, INT *left, INT *right)
+static INT SideIsCooriented (BND_PS *ps)
+{
+#       ifdef __TWODIM__
+  if (BND_LOCAL(ps,1)[0]>BND_LOCAL(ps,0)[0])
+    return (YES);
+  else
+    return (NO);
+#       endif
+
+#       ifdef __THREEDIM__
+  INT i, n;
+  DOUBLE vp, x0[2], x1[2];
+
+  n = BND_N(ps);
+  for (i=0; i<n; i++)
+  {
+    V2_SUBTRACT(BND_LOCAL(ps,(i+1)%n), BND_LOCAL(ps,i), x0);
+    V2_SUBTRACT(BND_LOCAL(ps,(i+n-1)%n), BND_LOCAL(ps,i), x1);
+    V2_VECTOR_PRODUCT(x0, x1, vp);
+    if (vp>SMALL_C)
+      return (NO);
+  }
+  return (YES);
+#       endif
+}
+
+/* domain interface function: for description see domain.h */
+INT BNDS_BndSDesc (BNDS *theBndS, INT *id, INT *nbid, INT *part)
 {
   BND_PS *ps;
   PATCH *p;
+  INT left,right;
 
   ps = (BND_PS *)theBndS;
   p = currBVP->patches[ps->patch_id];
 
+  /* fill part from segment */
+  if (STD_BVP_NDOMPART(currBVP)>1)
+  {
+    *part = DPI_SG2P(DOMAIN_PARTINFO(STD_BVP_DOMAIN(currBVP)),
+                     PATCH_ID(p)-STD_BVP_SIDEOFFSET(currBVP));                                          /* <-- this expression yields the segment id */
+  }
+  else
+    /* default is 0 */
+    *part = 0;
+
   if (PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE) {
-    *left = PARAM_PATCH_LEFT(p);
-    *right = PARAM_PATCH_RIGHT(p);
-    return(0);
+    left = PARAM_PATCH_LEFT(p);
+    right = PARAM_PATCH_RIGHT(p);
   }
   else if (PATCH_TYPE(p) == LINEAR_PATCH_TYPE) {
-    *left = LINEAR_PATCH_LEFT(p);
-    *right = LINEAR_PATCH_RIGHT(p);
-    return(0);
+    left = LINEAR_PATCH_LEFT(p);
+    right = LINEAR_PATCH_RIGHT(p);
+  }
+  else
+    return(1);
+
+  /* check orientation */
+  if (SideIsCooriented(ps))
+  {
+    /* patch and side are co-oriented */
+    *id = left;
+    *nbid = right;
+  }
+  else
+  {
+    /* patch and side are anti-oriented */
+    *id = right;
+    *nbid = left;
   }
 
-  return(1);
+  return(0);
 }
 
-/****************************************************************************/
-/*D
-   BNDS_CreateBndP - set BNDP of BNDS
-
-   SYNOPSIS:
-   BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local);
-
-   PARAMETERS:
-   .  aBndS - BNDS structure
-   .  local - local coordinate on BNDS
-   .  size - size used for aBndP
-
-   DESCRIPTION:
-   This function sets a boundary point (BNDP) of the BNDS
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 {
   BND_PS *ps,*pp;
@@ -2906,27 +2805,7 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 /****************************************************************************/
 /****************************************************************************/
 
-/****************************************************************************/
-/*D
-   BNDP_Global - gets global coordinates of BNDP
-
-   SYNOPSIS:
-   INT BNDP_Global (BNDP *aBndP, DOUBLE *global);
-
-   PARAMETERS:
-   .  aBndP - BNDP structure
-   .  global - global coordinate
-
-   DESCRIPTION:
-   This function gets global coordinates of BNDP
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
 {
   BND_PS *ps;
@@ -3007,75 +2886,103 @@ INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
   return(1);
 }
 
-/****************************************************************************/
-/*D
-   BNDP_BndPDesc - sets descriptor for BNDP
-
-   SYNOPSIS:
-   INT BNDP_BndPDesc (BNDP *theBndP, INT *move);
-
-   PARAMETERS:
-   .  aBndP - BNDP structure
-   .  move
-
-   DESCRIPTION:
-   This function sets the descriptor for a BNDP
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
-INT BNDP_BndPDesc (BNDP *theBndP, INT *move)
+/* domain interface function: for description see domain.h */
+INT BNDP_BndPDesc (BNDP *theBndP, INT *move, INT *part)
 {
   BND_PS *ps;
   PATCH *p;
 
   ps = (BND_PS *)theBndP;
-  p = currBVP->patches[ps->patch_id];
+  p = STD_BVP_PATCH(currBVP,ps->patch_id);
+
+  /* default part is 0 */
+  *part = 0;
 
   switch (PATCH_TYPE(p))
   {
   case PARAMETRIC_PATCH_TYPE :
   case LINEAR_PATCH_TYPE :
+    if (STD_BVP_NDOMPART(currBVP)>1)
+      *part = DPI_SG2P(DOMAIN_PARTINFO(STD_BVP_DOMAIN(currBVP)),
+                       PATCH_ID(p)-STD_BVP_SIDEOFFSET(currBVP));                                                        /* <-- this expression yields the segment id */
     *move = DIM_OF_BND;
     return(0);
+
   case POINT_PATCH_TYPE :
+    if (STD_BVP_NDOMPART(currBVP)>1)
+      *part = DPI_PT2P(DOMAIN_PARTINFO(STD_BVP_DOMAIN(currBVP)),
+                       PATCH_ID(p));                                                                                                            /* <-- this expression yields the corner id */
     *move = 0;
     return(0);
-      #ifdef __THREEDIM__
+
+#               ifdef __THREEDIM__
   case LINE_PATCH_TYPE :
+    if (STD_BVP_NDOMPART(currBVP)>1)
+      *part = DPI_LN2P(DOMAIN_PARTINFO(STD_BVP_DOMAIN(currBVP)),
+                       LINE_PATCH_C0(p),LINE_PATCH_C1(p));
     *move = 1;
     return(0);
-      #endif
+#               endif
   }
 
   return(1);
 }
 
-/****************************************************************************/
-/*D
-   BNDP_CreateBndS - sets BNDS from a nb of BNDPs
+/* domain interface function: for description see domain.h */
+INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
+{
+  BND_PS *bp0,*bp1;
+  PATCH *p,*p0,*p1;
+  INT pid,cnt;
 
-   SYNOPSIS:
-   BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n);
+  bp0 = (BND_PS *)aBndP0;
+  p0  = currBVP->patches[bp0->patch_id];
+  bp1 = (BND_PS *)aBndP1;
+  p1  = currBVP->patches[bp1->patch_id];
 
-   PARAMETERS:
-   .  aBndP - ptr to list of BNDP structures
-   .  n - nb of BNDPs
+  if ((bp0 == NULL) || (bp1 == NULL))
+    REP_ERR_RETURN(1);
 
-   DESCRIPTION:
-   This function sets a BNDS from n BNDPs
+  /* default part is 0 */
+  *part = 0;
 
-   RETURN VALUE:
-   BNDS *
-   .n   pointer
-   .n   NULL if the points describe an inner side
-   D*/
-/****************************************************************************/
+  if (STD_BVP_NDOMPART(currBVP)==1)
+    return (0);
 
+  /* find common patch(es) of boundary points */
+  cnt = GetNumberOfCommonPatches(p0,p1,&pid);
+  if (cnt == 0)
+    REP_ERR_RETURN (1);
+
+    #ifdef __THREEDIM__
+  if (cnt > 1)
+  {
+    pid = GetCommonLinePatchId (p0,p1);
+    ASSERT((pid<currBVP->ncorners) || (pid>=currBVP->sideoffset));
+    p = STD_BVP_PATCH(currBVP,pid);
+
+    *part = DPI_LN2P(DOMAIN_PARTINFO(STD_BVP_DOMAIN(currBVP)),
+                     LINE_PATCH_C0(p),LINE_PATCH_C1(p));
+    return (0);
+  }
+    #endif
+
+  p = STD_BVP_PATCH(currBVP,pid);
+  switch (PATCH_TYPE(p))
+  {
+  case PARAMETRIC_PATCH_TYPE :
+  case LINEAR_PATCH_TYPE :
+    *part = DPI_SG2P(DOMAIN_PARTINFO(STD_BVP_DOMAIN(currBVP)),
+                     PATCH_ID(p)-STD_BVP_SIDEOFFSET(currBVP));                                                  /* <-- this expression yields the segment id */
+    break;
+  default :
+    REP_ERR_RETURN (1);
+  }
+
+  return (0);
+}
+
+/* domain interface function: for description see domain.h */
 BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 {
   BND_PS *bp[4],*bs;
@@ -3102,6 +3009,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
     #ifdef __TWODIM__
   if (n!=2)
     return(NULL);
+  /* find common patch of boundary points */
   for (i=0; i<GetNumberOfPatches(p[0]); i++)
     for (j=0; j<GetNumberOfPatches(p[1]); j++)
     {
@@ -3176,27 +3084,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   return((BNDS *)bs);
 }
 
-/****************************************************************************/
-/*D
-   BNDP_CreateBndP - sets BNDP from a two of BNDPs
-
-   SYNOPSIS:
-   BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord);
-
-   PARAMETERS:
-   .  aBndP0 - first BNDP
-   .  aBndP1 - second BNDP
-
-   DESCRIPTION:
-   This function sets a BNDP from two BNDPs
-
-   RETURN VALUE:
-   BNDS *
-   .n   pointer
-   .n   NULL if the points describe an inner point
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 {
   BND_PS *bp0,*bp1,*bp;
@@ -3224,7 +3112,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
   for (l=0; l<GetNumberOfPatches(p1); l++)
     PRINTDEBUG(dom,1,("    bp pid %d\n",GetPatchId(p1,l)));
 
-  cnt = GetNumberOfCommonPatches(p0,p1);
+  cnt = GetNumberOfCommonPatches(p0,p1,&i);
   if (cnt == 0)
     return(NULL);
 
@@ -3335,31 +3223,7 @@ INT BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size)
   return(0);
 }
 
-/****************************************************************************/
-/*D
-   BNDP_BndCond - gets global coordinates of local position
-
-   SYNOPSIS:
-   INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i,
-   DOUBLE *in, DOUBLE *value, INT *type);
-
-   PARAMETERS:
-   .  aBndP - BNDP structure
-   .  n - number of BNDS
-   .  in - input vector
-   .  type - type of bnd cond
-   .  value - values
-
-   DESCRIPTION:
-   This function gets bnd conditions of local position on BNDS
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *type)
 {
   BND_PS *ps;
@@ -3427,6 +3291,7 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
   return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,in,value,type));
 }
 
+/* domain interface function: for description see domain.h */
 INT BNDP_Dispose (HEAP *Heap, BNDP *theBndP)
 {
   BND_PS *ps;
@@ -3438,6 +3303,7 @@ INT BNDP_Dispose (HEAP *Heap, BNDP *theBndP)
   return(PutFreelistMemory(Heap,ps,BND_SIZE(ps)));
 }
 
+/* domain interface function: for description see domain.h */
 INT BNDS_Dispose (HEAP *Heap, BNDS *theBndS)
 {
   BND_PS *ps;
@@ -3450,7 +3316,6 @@ INT BNDS_Dispose (HEAP *Heap, BNDS *theBndS)
 }
 
 /* the following interface functions are not available in std_domain.c */
-
 INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv)
 {
   UserWrite("ERROR: std domain cannot be saved\n");
@@ -3462,27 +3327,7 @@ BVP *BVP_Load (char *name, INT argc, char **argv)
   return (NULL);
 }
 
-/****************************************************************************/
-/*D
-   BNDP_SaveBndP - save a BNDP
-
-   SYNOPSIS:
-   INT BNDP_SaveBndP (BNDP *theBndP, FILE *stream);
-
-   PARAMETERS:
-   .  theBndP - BNDP
-   .  stream - file
-
-   DESCRIPTION:
-   This function saves a BNDP on a file.
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BNDP_SaveBndP (BNDP *BndP)
 {
   BND_PS *bp;
@@ -3505,28 +3350,7 @@ INT BNDP_SaveBndP (BNDP *BndP)
   return(0);
 }
 
-/****************************************************************************/
-/*D
-   BVP_LoadBndP - load a BNDP
-
-   SYNOPSIS:
-   BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap, FILE *stream);
-
-   PARAMETERS:
-   .  theBndP - BNDP
-   .  Heap - heap
-   .  stream - file
-
-   DESCRIPTION:
-   This function loads a BNDP with the format given by BVP_SaveBndP.
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 {
   BND_PS *bp;
@@ -3547,6 +3371,29 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
   }
 
   return((BNDP *)bp);
+}
+
+INT ReadAndPrintArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
+{
+  INT i;
+  char option[OPTIONLEN];
+  float x,y;
+
+  for (i=0; i<argc; i++)
+    if (argv[i][0]==name[0])
+    {
+      if (sscanf(argv[i],"%s %f %f",option,&x,&y)!=3)
+        continue;
+      if (strcmp(option,name) == 0)
+      {
+        pos[0] = x;
+        pos[1] = y;
+        UserWriteF("set %s to (%f,%f)\n",name,x,y);
+        return(0);
+      }
+    }
+
+  return(1);
 }
 
 /****************************************************************************/
