@@ -4986,13 +4986,16 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
    ConnectGridOverlap - 
 	ELEMENT	*theElement;
 	ELEMENT	*theNeighbor;
-	INT		i,l;
+	INT		i,j,l,Sons_of_Side,prio;
+	ELEMENT *Sons_of_Side_List[MAX_SONS];
 
 	for (theElement=PFIRSTELEMENT(theGrid);theElement!=NULL;theElement=SUCCE(theElement))
+	{
+		prio = EPRIO(theElement);
 
 		/* connect only FROM hgost copies */
 		if (!IS_REFINED(theElement) || !EHGHOSTPRIO(prio)) continue;
-		INT prio = EPRIO(theElement);
+
 		PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
 							me,DDD_InfoGlobalId(PARHDRE(theElement)),
 							theElement,ID(theElement),
@@ -5003,10 +5006,6 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 			if (OBJT(theElement)==BEOBJ
 				&& SIDE_ON_BND(theElement,i)
 				&& !INNER_BOUNDARY(theElement,i))	continue;
-
-			INT j,Sons_of_Side,prio;
-			ELEMENT *Sons_of_Side_List[MAX_SONS];
-			INT SonSides[MAX_SIDE_NODES];
 
 			theNeighbor = NBELEM(theElement,i);
 			if (theNeighbor == NULL)       continue;
@@ -5026,7 +5025,6 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 					me,i,NSONS(theElement),Sons_of_Side);
 				for (j=0; j<Sons_of_Side; j++)
 					UserWriteF(PFMT "            son=%08x/%x sonside=%d\n",
-				INT j;
 						me,EGID(Sons_of_Side_List[j]),
 						Sons_of_Side_List[j],SonSides[j]);
 				printf("%d:         connecting ghostelements:\n",me);
@@ -5040,6 +5038,23 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 		/* yellow_class specific code:                             */
 		/* check whether is a valid ghost, which as in minimum one */
 		/* master element as neighbor                              */
+		/* TODO: move this functionality to ComputeCopies          */
+		/* and the extra Xfer env around ConnectGridOverlap()      */
+		/* can be deleted (s.l. 971029)                            */
+		IFDEBUG(gm,0)
+			for (i=0; i<Sons_of_Side; i++)
+				for (j=0; j<SIDES_OF_ELEM(theSon); j++)
+				{
+				theSon = Sons_of_Side_List[i];
+				if (!ok)
+				{
+					if (ECLASS(theSon) == YELLOW_CLASS)
+					{
+						UserWriteF(PFMT "ConnectGridOverlap(): disposing useless yellow ghost  e=" EID_FMTX 
+					UserWriteF(PFMT "ConnectGridOverlap(): ERROR e=" EID_FMTX 
+						"this ghost is useless!\n",me,EID_PRTX(theSon));
+	return(GM_OK);
+		ENDDEBUG
 
 
 
