@@ -101,8 +101,8 @@
 #define NP_BGS_MD_Ab(p,cb)            (&((p)->MD_Ab[cb]))
 #define NP_BGS_VD_rb(p,b)             (&((p)->VD_rb[b]))
 #define NP_BGS_VD_tb(p,b)             (&((p)->VD_tb[b]))
-#define NP_BGS_COMPS_A(p)                       ((p)->COMP_A)
-#define NP_BGS_COMPS_r(p)                       ((p)->COMP_r)
+#define NP_BGS_COMPS_A(p)                     ((p)->COMP_A)
+#define NP_BGS_COMPS_r(p)                     ((p)->COMP_r)
 
 /****************************************************************************/
 /*																			*/
@@ -169,24 +169,23 @@ typedef struct
   NP_SMOOTHER smoother;
 
   /* abstract memory description */
-  MATDATA_DESC *FF;
-  MATDATA_DESC *FF3D;
-  MATDATA_DESC *LU;
-  VECDATA_DESC *aux;
-  VECDATA_DESC *aux3D;
-  VECDATA_DESC *aux2;
-  VECDATA_DESC *aux3;
-  VECDATA_DESC *aux4;
-  VECDATA_DESC *aux5;
-  VECDATA_DESC *aux6;
-  VECDATA_DESC *tv;
-  VECDATA_DESC *t;              /* temp. vector for the update of the correction */
+  MATDATA_DESC *FF;                     /* frequency filtered matrix */
+  MATDATA_DESC *FF3D;                   /* frequency filtered matrix; only for 3D */
+  VECDATA_DESC *aux;                    /* auxiliary vector */
+  VECDATA_DESC *aux3D;          /* auxiliary vector; only for 3D */
+  VECDATA_DESC *aux2;                   /* auxiliary vector; only for checks */
+  VECDATA_DESC *aux3;                   /* auxiliary vector; only for checks */
+  VECDATA_DESC *aux4;                   /* auxiliary vector; only for checks */
+  VECDATA_DESC *aux5;                   /* auxiliary vector; only for checks */
+  VECDATA_DESC *aux6;                   /* auxiliary vector; only for checks */
+  VECDATA_DESC *tv;                     /* testvector */
+  VECDATA_DESC *t;                      /* temp. vector for the update of the correction */
 
   /* configuration */
-  DOUBLE meshwidth;
-  DOUBLE wave_nr_rel;
-  DOUBLE wave_nr_rel3D;
-  INT all_freq;
+  DOUBLE meshwidth;                     /* meshwidth of the grid */
+  DOUBLE wave_nr_rel;                   /* wavenumber for the testing frequency */
+  DOUBLE wave_nr_rel3D;         /* wavenumber for the testing frequency; only for 3D */
+  INT all_freq;                         /* flag; TRUE == smooth for all relevant frequencies */
   INT display;
 #ifdef __BLOCK_VECTOR_DESC__
   BV_DESC_FORMAT bvdf;
@@ -1906,23 +1905,20 @@ static INT LUConstruct (NP_BASE *theNP)
    This numproc solves an equation with the tangential frequency filtering method.
 
    .vb
-   npinit $x <sol sym> $b <rhs sym> $c <cor sym> $aux <temp sym> $A <mat sym>
-       $FF <FF-mat sym> $FF3D <3D FF-mat sym> $LU <LU mat sym>
-           $tv <testvector sym> $aux3D <3D temp sym>
+   npinit $FF <FF-mat sym> $FF3D <3D FF-mat sym> $L <LU mat sym> $aux <temp sym>
+           $tv <testvector sym> $aux3D <3D temp sym> $t <update for correction sym>
+           $display {no|red|full} $wr all $wr3D 0
            $aux2 <temp2 sym> $aux3 <temp3 sym> $aux4 <temp4 sym>
-           $aux5 <temp5 sym> $aux6 <temp6 sym> $display {no|red|full} $wr all $wr3D 0
+           $aux5 <temp5 sym> $aux6 <temp6 sym>
    .ve
 
-   .  $x~<sol~sym> - symbol for the solution vector
-   .  $b~<rhs~sym> - symbol for the right hand side vector
-   .  $c~<cor~sym> - symbol for the correction vector
-   .  $aux~<temp~sym> - symbol for a temporary vector
-   .  $A~<mat~sym> - symbol for the stiffness matrix
    .  $FF~<FF-mat~sym> - symbol for the frequency filtered matrix
    .  $FF3D~<3D~FF-mat~sym> - symbol for an additional frequency filtered matrix for 3D
-   .  $LU~<LU-mat~sym> - symbol for the LU decomposed matrix
+   .  $L~<LU-mat~sym> - symbol for the LU decomposed matrix
    .  $tv~<testvector~sym> - symbol for the testvector
+   .  $aux~<temp~sym> - symbol for a temporary vector
    .  $aux3D~<3D~temp~sym> - additional temporary symbol for the testvector for 3D
+   .  $t~<update~for~correction~sym> - temp. vector
    .  $aux2~<temp2~sym> - symbol for a further temporary vector
    .  $aux3~<temp3~sym> - symbol for a further temporary vector
    .  $aux4~<temp4~sym> - symbol for a further temporary vector
@@ -1932,20 +1928,24 @@ static INT LUConstruct (NP_BASE *theNP)
    .  $wr - relative frequency [0..1] for 2D OR 'all' for the whole logarithmic sequence of frequencies
    .  $wr3D - relative frequency [0..1] for 3D
 
-   'npexecute <name> [$i] [$f]'
-
-   .  $i - computes the defect in the vector 'b' before solving and prepares data structures.
-   .  $f - frees all temporary allocated memory and repairs modified grid structure after solving.
-   .  $e - absolute value of defect that is considered as a converged solution
-
-   `CAUTION:` tff modifies the vector 'b'.
-
    EXAMPLE:
    .vb
-   npcreate tff $t tff $f scalar_1_5;
-   scnp tff;
-   npinit $x x $b b $c c $aux aux $A MAT $FF FF $LU LU $tv tv $aux2 aux2 $aux3 aux3;
-   npexecute tff $i $f;
+   TFF as smoother:
+        npcreate smooth $c tff;
+        npinit smooth $wr 0.5 $wr3D 0.5 $display full;
+
+        npcreate ls_iter $c lmgc;
+        npinit ls_iter $S smooth smooth basesolver $T transfer
+                        $b @BASELEVEL $n1 1 $n2 1 $g 1;
+
+   TFF as solver:
+        npcreate ls_iter $c tff;
+        npinit ls_iter $wr ALL $wr3D -1.0 $display full;
+
+        npcreate mgs $c ls;
+        npinit mgs $A MAT $x sol $b rhs $m 8 $abslimit 1e-8 $red 1e-30
+                $I ls_iter $display full;
+
    .ve
    D*/
 /****************************************************************************/
@@ -2146,11 +2146,13 @@ static INT TFFDisplay (NP_BASE *theNP)
 
    DESCRIPTION:
    This function prepares a tangential frequency filtering iteration:
-   set the grid on the current level as the grid on which to compute,
-   determine the meshwidth of this grid, construct the linewise (and in
-   3D additional planewise) blockvector decomposition, computes the
-   defect and store it on the right hand side and disposes all connections
-   consisting of matrixvalues 0.
+   allocate temporarily the neccessary data descriptors,
+   determine the meshwidth of the grid, construct the linewise (and in
+   3D additional planewise) blockvector decomposition, puts the dirichlet
+   values on the right hand side and disposes all connections
+   consisting entirely of matrixvalues 0, if only one testfrequency should be
+   considered calculate the TFF decomposition of the stiffnes matrix in
+   smoothers matrix L.
 
    Points must be ordered lexicographic, boundary nodes at the end of the
    list. The grid must be a square.
@@ -2344,6 +2346,36 @@ static INT TFFPreProcess (NP_ITER *theNP, INT level,
 #endif
 }
 
+/****************************************************************************/
+/*D
+   TFFPostProcess - Prepare tangential frequency filtering solver
+
+   SYNOPSIS:
+   static INT TFFPostProcess (NP_ITER *theNP, INT level,
+                                                                VECDATA_DESC *x, VECDATA_DESC *b,
+                                                                MATDATA_DESC *A, INT *result);
+
+   PARAMETERS:
+   .  theNP - pointer to numproc
+   .  level - gridlevel to be postprocessed
+   .  x - solution vector
+   .  b - defect vector
+   .  A - stiffness matrix
+   .  result - return value of the function
+
+   DESCRIPTION:
+   This function postprocesses a tangential frequency filtering iteration:
+   Free all temporarily allocated data descriptors, free all 'BLOCKVECTOR's
+   in the grid and rebuild the 0-connections freed in the preprocess.
+   Then proceed with SmootherPostProcess.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
 static INT TFFPostProcess (NP_ITER *theNP, INT level,
                            VECDATA_DESC *x, VECDATA_DESC *b,
                            MATDATA_DESC *A, INT *result)
@@ -2375,7 +2407,44 @@ static INT TFFPostProcess (NP_ITER *theNP, INT level,
 }
 
 
-/* similiar tp Smoother */
+/****************************************************************************/
+/*D
+   TFFIter - Perform one tangential frequency filtering iteration
+
+   SYNOPSIS:
+   static INT TFFIter (NP_ITER *theNP, INT level,
+                                        VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                                        INT *result);
+
+   PARAMETERS:
+   .  theNP - pointer to numproc
+   .  level - gridlevel to be postprocessed
+   .  x - correction or correction-update vector
+   .  b - defect vector
+   .  A - stiffness matrix
+   .  result - return value of the function
+
+   DESCRIPTION:
+   This function performs one tangential frequency filtering iteration.
+   It makes a difference using it as solver or as smoothing iteration.
+
+   As smoothing iteration:
+   Give at the '$wr' (and $wr3D in 3D) a certain relatively wavenumber in the
+   range 0..1. Then the defect 'b' will be updated and the correction-update
+   is returned in 'x'.
+
+   As solver iteration:
+   Give 'ALL' as '$wr' argument. For each absolute wavenumber 1..(1/h)/2
+   a TFF step is performed and the defect 'b' will be updated and the
+   correction is returned in 'x'. According to '$display' option after
+   each TFF step the defect and convergence rate is printed.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
 static INT TFFIter (NP_ITER *theNP, INT level,
                     VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
                     INT *result)
@@ -2385,7 +2454,7 @@ static INT TFFIter (NP_ITER *theNP, INT level,
   BV_DESC bvd;
   GRID *theGrid;
   INT i,j;
-  DOUBLE end_wave, wavenr;
+  DOUBLE end_wave, wavenr, start_norm, new_norm;
 
 
   np = (NP_TFF *) theNP;
@@ -2422,6 +2491,10 @@ static INT TFFIter (NP_ITER *theNP, INT level,
 
     /* alloc temp. for correction update (in x!) */
     if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPTFF_t(np))) NP_RETURN(1,result[0]);
+
+    if ( NPTFF_DISPLAY(np) != PCR_NO_DISPLAY )
+      if(eunormBS( GFIRSTBV(theGrid), VD_SCALCMP( b ), &new_norm ) ) NP_RETURN(1,result[0]);
+
     end_wave = 1.0 / NPTFF_MESHWIDTH(np) - 0.5;             /* rounding */
     for ( wavenr = 1.0; wavenr < end_wave; wavenr *= 2.0 )
     {                   /* wave 1.0 ... (1/h)/2 */
@@ -2461,10 +2534,18 @@ static INT TFFIter (NP_ITER *theNP, INT level,
       /* defect -= A * corr_update */
       dmatmul_minusBS( GFIRSTBV(theGrid), &bvd, NPTFF_BVDF(np),
                        VD_SCALCMP( b ), MD_SCALCMP( A ), VD_SCALCMP( NPTFF_t(np) ));
+
+      if ( NPTFF_DISPLAY(np) != PCR_NO_DISPLAY )
+      {
+        start_norm = new_norm;
+        if(eunormBS( GFIRSTBV(theGrid), VD_SCALCMP( b ), &new_norm ) ) NP_RETURN(1,result[0]);
+
+        UserWriteF( "Wnr plane = %4g Wnr line = %4g new defect = %12lg conv. rate = %12lg\n", wavenr, wavenr, new_norm, new_norm/start_norm );
+
+      }
     }
 
     FreeVD(theNP->base.mg,level,level,NPTFF_t(np));
-
   }
 
   return (0);
