@@ -15,7 +15,7 @@ ARCH_AR       = ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = true
 
-ARCH_LIBS     = -lc -lm
+ARCH_LIBS     = -lm
 ARCH_FLIBS    =
 
 #-hinline2,scalar2 or -hinline3,scalar3 or -g -or -O2, -happrentice
@@ -30,5 +30,5 @@ ARCH_LFLAGS   =  -L /opt/ctl/mpt/mpt/lib -L/opt/ctl/craylibs/craylibs -lsma -g #
 ARCH_ARFLAGS  = ru
 
 ARCH_XINCLUDES = -I /usr/include
-ARCH_XLIBS     = -L /usr/lib -lX11 -lXt -lXaw -lXmu -lXext -lSM -lICE
+ARCH_XLIBS     = -L /usr/lib -lXaw -lXt -lXmu -lX11 -lXext -lSM -lICE
 
