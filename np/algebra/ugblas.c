@@ -389,7 +389,7 @@ static int Scatter_VectorComp (DDD_OBJ obj, void *data)
  */
 /****************************************************************************/
 
-INT l_vector_consistent (GRID *g, const VECDATA_DESC *x)
+INT NS_DIM_PREFIX l_vector_consistent (GRID *g, const VECDATA_DESC *x)
 {
   INT tp,m;
 
