@@ -56,6 +56,9 @@
 #include "uginterface.h" /* for UserInterrupt                */
 #include "scan.h"
 #include "pcr.h"
+#ifdef DYNAMIC_MEMORY_ALLOCMODEL
+#include "ugm.h"
+#endif
 
 #include "amg_header.h"
 #include "amg_low.h"
@@ -186,7 +189,11 @@ static MULTIGRID *amgMG;
 
 static void *amgmalloc (size_t n)
 {
+        #ifndef DYNAMIC_MEMORY_ALLOCMODEL
   return(GetMem(MGHEAP(amgMG),n,FROM_BOTTOM));
+        #else
+  return(GetMem(MGHEAP(amgMG),n,FROM_TOP));
+        #endif
 }
 
 static INT AMGSolverPreProcess (NP_LINEAR_SOLVER *theNP, INT level,
@@ -218,7 +225,11 @@ static INT AMGSolverPreProcess (NP_LINEAR_SOLVER *theNP, INT level,
   theGrid = GRID_ON_LEVEL(theMG,level);
 
   /* mark heap for use by amg */
+        #ifndef DYNAMIC_MEMORY_ALLOCMODEL
   Mark(MGHEAP(theMG),FROM_BOTTOM,&amg_MarkKey);
+        #else
+  Mark(MGHEAP(theMG),FROM_TOP,&amg_MarkKey);
+        #endif
   mark_counter++;
 
   /* initialize sp package */
@@ -360,7 +371,11 @@ else
 
 exit: /* error */
   if (mark_counter>0) {
+                #ifndef DYNAMIC_MEMORY_ALLOCMODEL
     Release(MGHEAP(theMG),FROM_BOTTOM,amg_MarkKey);
+                #else
+    Release(MGHEAP(theMG),FROM_TOP,amg_MarkKey);
+                #endif
     mark_counter--;
   }
   return(1);
@@ -579,7 +594,11 @@ static INT AMGSolverPostProcess (NP_LINEAR_SOLVER *theNP,
                                  INT *result)
 {
   if (mark_counter>0) {
+                #ifndef DYNAMIC_MEMORY_ALLOCMODEL
     Release(MGHEAP(theNP->base.mg),FROM_BOTTOM,amg_MarkKey);
+                #else
+    Release(MGHEAP(theNP->base.mg),FROM_TOP,amg_MarkKey);
+                #endif
     mark_counter--;
   }
 
