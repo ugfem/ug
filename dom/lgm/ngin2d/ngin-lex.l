@@ -46,15 +46,15 @@ KEY_TEND        	;
 [ \t]+              ;
 [\n]                {noline++;}
 {COMMENT}           ;
-{KEY_INT}			{yylval.ival=atol((const char *)yytext); return (INT_VALUE);}
-{KEY_DOUBLE}		{yylval.dval=strtod((const char *)yytext,NULL); return (DOUBLE_VALUE);}
+{KEY_INT}			{nglval.ival=atol((const char *)yytext); return (INT_VALUE);}
+{KEY_DOUBLE}		{nglval.dval=strtod((const char *)yytext,NULL); return (DOUBLE_VALUE);}
 {KEY_INODE}			{return (INODE);}
 {KEY_BNODE}			{return (BNODE);}
 {KEY_LINE}			{return (LINE);}
 {KEY_ELEM}			{return (ELEM);}
 {KEY_SIDE}			{return (SIDE);}
 {KEY_TEND}			{return (TEND);}
-.                   {yyerror(NULL);}
+.                   {ngerror(NULL);}
 
 %%
 

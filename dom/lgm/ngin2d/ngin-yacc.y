@@ -180,12 +180,12 @@ Id:
 %%
 
 
-yywrap (char *s)
+ngwrap (char *s)
 {
     return (1);
 }
 
-yyerror (char *s)
+ngerror (char *s)
 {
 	int line;
 	char text[128];
@@ -194,12 +194,3 @@ yyerror (char *s)
     NG_Print(ERROR_PREFIX "'%s', line %d\n",text,line);
     ngbreak();
 }
-
-
-
-
-
-
-
-
-

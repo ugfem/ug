@@ -1,29 +1,93 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/* A Bison parser, made by GNU Bison 1.875a.  */
 
-/*  A Bison parser, made from ngin.y
-   by  GNU Bison version 1.25
- */
+/* Skeleton parser for Yacc-like parsing with Bison,
+   Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003 Free Software Foundation, Inc.
 
-#define YYBISON 1  /* Identify Bison output.  */
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2, or (at your option)
+   any later version.
 
-#define ngparse ngparse
-#define nglex nglex
-#define ngerror ngerror
-#define nglval nglval
-#define ngchar ngchar
-#define ngdebug ngdebug
-#define ngnerrs ngnerrs
-#define DOUBLE_VALUE    258
-#define INT_VALUE       259
-#define INODE   260
-#define BNODE   261
-#define LINE    262
-#define ELEM    263
-#define SIDE    264
-#define TEND    265
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-#line 1 "ngin.y"
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330,
+   Boston, MA 02111-1307, USA.  */
+
+/* As a special exception, when this file is copied by Bison into a
+   Bison output file, you may use that output file without restriction.
+   This special exception was added by the Free Software Foundation
+   in version 1.24 of Bison.  */
+
+/* Written by Richard Stallman by simplifying the original so called
+   ``semantic'' parser.  */
+
+/* All symbols defined below should begin with yy or YY, to avoid
+   infringing on user name space.  This should be done even for local
+   variables, as they might otherwise be expanded by user macros.
+   There are some unavoidable exceptions within include files to
+   define necessary library symbols; they are noted "INFRINGES ON
+   USER NAME SPACE" below.  */
+
+/* Identify Bison output.  */
+#define YYBISON 1
+
+/* Skeleton name.  */
+#define YYSKELETON_NAME "yacc.c"
+
+/* Pure parsers.  */
+#define YYPURE 0
+
+/* Using locations.  */
+#define YYLSP_NEEDED 0
+
+/* If NAME_PREFIX is specified substitute the variables and functions
+   names.  */
+#define yyparse ngparse
+#define yylex   nglex
+#define yyerror ngerror
+#define yylval  nglval
+#define yychar  ngchar
+#define yydebug ngdebug
+#define yynerrs ngnerrs
+
+
+/* Tokens.  */
+#ifndef YYTOKENTYPE
+# define YYTOKENTYPE
+/* Put the tokens into the symbol table, so that GDB and other debuggers
+   know about them.  */
+enum yytokentype {
+  DOUBLE_VALUE = 258,
+  INT_VALUE = 259,
+  INODE = 260,
+  BNODE = 261,
+  LINE = 262,
+  ELEM = 263,
+  SIDE = 264,
+  TEND = 265
+};
+#endif
+#define DOUBLE_VALUE 258
+#define INT_VALUE 259
+#define INODE 260
+#define BNODE 261
+#define LINE 262
+#define ELEM 263
+#define SIDE 264
+#define TEND 265
+
+
+
+
+/* Copy the first part of user declarations.  */
+#line 1 "ngin-yacc.y"
 
 /****************************************************************************/
 /*                                                                          */
@@ -49,11 +113,6 @@
 
 #include "ng2d.h"
 
-#include "namespace.h"
-
-USING_UG_NAMESPACES
-
-
 #define alloca(p)               malloc(p)
 #define SP_COPY(d,s)    {(d)->surf_id=(s)->surf_id; \
                          (d)->tri_id=(s)->tri_id; \
@@ -67,16 +126,26 @@ static INNER_NODE InnerNode;
 static ELEM_SIDE ElemSide;
 static NG_ELEMENT Elem;
 
-int ngerror (char *s);
-int nglex (void);
-int NP_Error (int *line, char *text);
-void ngbreak (void);
 
 
 
-#line 43 "ngin.y"
-typedef union
-{
+
+/* Enabling traces.  */
+#ifndef YYDEBUG
+# define YYDEBUG 0
+#endif
+
+/* Enabling verbose error messages.  */
+#ifdef YYERROR_VERBOSE
+# undef YYERROR_VERBOSE
+# define YYERROR_VERBOSE 1
+#else
+# define YYERROR_VERBOSE 0
+#endif
+
+#if ! defined (YYSTYPE) && ! defined (YYSTYPE_IS_DECLARED)
+#line 44 "ngin-yacc.y"
+typedef union YYSTYPE {
   /* put RCS string here in order to get it into yacc-generated header file
      static char RCS_ID("$Header: /hosts/dom/cvs/df/gen/problems/dfcfg/dfcfg.y,v 1.1
      1998/02/20 16:58:46 birken Exp $",UG_RCS_STRING);
@@ -93,952 +162,1251 @@ typedef union
   ELEM_SIDE *es;
   NG_ELEMENT *el;
 } YYSTYPE;
-#include <stdio.h>
-
-#ifndef __cplusplus
-#ifndef __STDC__
-#define const
-#endif
-#endif
-
-
-
-#define YYFINAL         50
-#define YYFLAG          -32768
-#define YYNTBASE        11
-
-#define YYTRANSLATE(x) ((unsigned)(x) <= 265 ? ngtranslate[x] : 29)
-
-static const char ngtranslate[] = {     0,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-                                        2,     2,     2,     2,     2,     1,     2,     3,     4,     5,
-                                        6,     7,     8,     9,    10};
-
-#if YYDEBUG != 0
-static const short ngprhs[] = {     0,
-                                    0,     4,     7,     9,    12,    13,    14,    20,    22,    25,
-                                    29,    34,    40,    45,    51,    55,    57,    60,    65,    67,
-                                    70,    71,    72,    80,    82,    85,    89,    91,    93};
-
-static const short ngrhs[] = {    21,
-                                  19,    12,     0,    21,    12,     0,    13,     0,    12,    13,
-                                  0,     0,     0,     8,    14,    16,    15,    10,     0,    17,
-                                  0,    17,    18,     0,    17,    18,    18,     0,    17,    18,
-                                  18,    18,     0,    17,    18,    18,    18,    18,     0,    28,
-                                  28,    28,    28,     0,    28,    28,    28,    28,    28,     0,
-                                  9,    28,    28,     0,    20,     0,    19,    20,     0,     5,
-                                  27,    27,    10,     0,    22,     0,    21,    22,     0,     0,
-                                  0,     6,    27,    27,    23,    25,    24,    10,     0,    26,
-                                  0,    25,    26,     0,     7,    28,    27,     0,     4,     0,
-                                  3,     0,     4,     0};
-
-#endif
-
-#if YYDEBUG != 0
-static const short ngrline[] = { 0,
-                                 75,    77,    79,    81,    83,    87,    91,    92,    94,    95,
-                                 96,    97,    99,   108,   118,   126,   128,   130,   138,   140,
-                                 142,   149,   151,   152,   158,   164,   171,   173,   175};
+/* Line 191 of yacc.c.  */
+#line 165 "ngin-yacc.c"
+# define yystype YYSTYPE /* obsolescent; will be withdrawn */
+# define YYSTYPE_IS_DECLARED 1
+# define YYSTYPE_IS_TRIVIAL 1
 #endif
 
 
-#if YYDEBUG != 0 || defined (YYERROR_VERBOSE)
 
-static const char * const ngtname[] = {   "$","error","$undefined.","DOUBLE_VALUE",
-                                          "INT_VALUE","INODE","BNODE","LINE","ELEM","SIDE","TEND","Grid","ElemList","Elem",
-                                          "@1","@2","ElemSpec","InnerElemSpec","ElemSide","InnerNodeList","InnerNode",
-                                          "BndNodeList","BndNode","@3","@4","BndSpec","LinePosition","Coord","Id", NULL};
-#endif
-
-static const short ngr1[] = {     0,
-                                  11,    11,    12,    12,    14,    15,    13,    16,    16,    16,
-                                  16,    16,    17,    17,    18,    19,    19,    20,    21,    21,
-                                  23,    24,    22,    25,    25,    26,    27,    27,    28};
-
-static const short ngr2[] = {     0,
-                                  3,     2,     1,     2,     0,     0,     5,     1,     2,     3,
-                                  4,     5,     4,     5,     3,     1,     2,     4,     1,     2,
-                                  0,     0,     7,     1,     2,     3,     1,     1,     1};
-
-static const short ngdefact[] = {     0,
-                                      0,     0,    19,    28,    27,     0,     0,     5,     2,     3,
-                                      0,    16,    20,    21,     0,     0,     4,     1,    17,     0,
-                                      0,    29,     6,     8,     0,     0,    22,    24,    18,     0,
-                                      0,     9,     0,     0,     0,    25,     7,     0,    10,     0,
-                                      26,    23,    15,    11,    13,    12,    14,     0,     0,     0};
-
-static const short ngdefgoto[] = {    48,
-                                      9,    10,    16,    30,    23,    24,    32,    11,    12,     2,
-                                      3,    20,    35,    27,    28,     6,    25};
-
-static const short ngpact[] = {     6,
-                                    3,    13,-32768,-32768,-32768,     3,     3,-32768,     5,-32768,
-                                    15,-32768,-32768,-32768,     3,    20,-32768,     5,-32768,    18,
-                                    16,-32768,-32768,    21,    20,    20,    18,-32768,-32768,    17,
-                                    20,    21,    20,     3,    19,-32768,-32768,    20,    21,    20,
-                                    -32768,-32768,-32768,    21,    20,-32768,-32768,    31,    32,-32768};
-
-static const short ngpgoto[] = {-32768,
-                                22,    -4,-32768,-32768,-32768,-32768,   -28,-32768,    23,-32768,
-                                33,-32768,-32768,-32768,     9,    -6,   -23};
+/* Copy the second part of user declarations.  */
 
 
-#define YYLAST          36
+/* Line 214 of yacc.c.  */
+#line 177 "ngin-yacc.c"
+
+#if ! defined (yyoverflow) || YYERROR_VERBOSE
+
+/* The parser invokes alloca or malloc; define the necessary symbols.  */
+
+# if YYSTACK_USE_ALLOCA
+#  define YYSTACK_ALLOC alloca
+# else
+#  ifndef YYSTACK_USE_ALLOCA
+#   if defined (alloca) || defined (_ALLOCA_H)
+#    define YYSTACK_ALLOC alloca
+#   else
+#    ifdef __GNUC__
+#     define YYSTACK_ALLOC __builtin_alloca
+#    endif
+#   endif
+#  endif
+# endif
+
+# ifdef YYSTACK_ALLOC
+/* Pacify GCC's `empty if-body' warning. */
+#  define YYSTACK_FREE(Ptr) do { /* empty */; } while (0)
+# else
+#  if defined (__STDC__) || defined (__cplusplus)
+#   include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
+#   define YYSIZE_T size_t
+#  endif
+#  define YYSTACK_ALLOC malloc
+#  define YYSTACK_FREE free
+# endif
+#endif /* ! defined (yyoverflow) || YYERROR_VERBOSE */
 
 
-static const short ngtable[] = {    14,
-                                    15,    33,    34,    39,    17,     4,     5,    38,    21,    40,
-                                    44,     1,     8,    17,    43,    46,    45,     7,     1,     7,
-                                    8,    47,     8,    22,    26,    29,    37,    41,    42,    31,
-                                    49,    50,    18,    19,    13,    36};
+#if (! defined (yyoverflow) \
+  && (! defined (__cplusplus) \
+  || (YYSTYPE_IS_TRIVIAL)))
 
-static const short ngcheck[] = {     6,
-                                     7,    25,    26,    32,     9,     3,     4,    31,    15,    33,
-                                     39,     6,     8,    18,    38,    44,    40,     5,     6,     5,
-                                     8,    45,     8,     4,     7,    10,    10,    34,    10,     9,
-                                     0,     0,    11,    11,     2,    27};
-/* -*-C-*-  Note some compilers choke on comments on `#line' lines.  */
-#line 3 "/usr/share/bison.simple"
-
-/* Skeleton output parser for bison,
-   Copyright (C) 1984, 1989, 1990 Free Software Foundation, Inc.
-
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
-
-/* As a special exception, when this file is copied by Bison into a
-   Bison output file, you may use that output file without restriction.
-   This special exception was added by the Free Software Foundation
-   in version 1.24 of Bison.  */
-
-#ifndef alloca
-#ifdef __GNUC__
-#define alloca __builtin_alloca
-#else /* not GNU C.  */
-#if (!defined (__STDC__) && defined (sparc)) || defined (__sparc__) || defined (__sparc) || defined (__sgi)
-#include <alloca.h>
-#else /* not sparc */
-#if defined (MSDOS) && !defined (__TURBOC__)
-#include <malloc.h>
-#else /* not MSDOS, or __TURBOC__ */
-#if defined(_AIX)
-#include <malloc.h>
- #pragma alloca
-#else /* not MSDOS, __TURBOC__, or _AIX */
-#ifdef __hpux
-#ifdef __cplusplus
-extern "C" {
-  void *alloca (unsigned int);
+/* A type that is properly aligned for any stack member.  */
+union yyalloc
+{
+  short yyss;
+  YYSTYPE yyvs;
 };
-#else /* not __cplusplus */
-void *alloca ();
-#endif /* not __cplusplus */
-#endif /* __hpux */
-#endif /* not _AIX */
-#endif /* not MSDOS, or __TURBOC__ */
-#endif /* not sparc.  */
-#endif /* not GNU C.  */
-#endif /* alloca not defined.  */
 
-/* This is the parser code that is written into each bison parser
-   when the %semantic_parser declaration is not specified in the grammar.
-   It was written by Richard Stallman by simplifying the hairy parser
-   used when %semantic_parser is specified.  */
+/* The size of the maximum gap between one aligned stack and the next.  */
+# define YYSTACK_GAP_MAXIMUM (sizeof (union yyalloc) - 1)
 
-/* Note: there must be only one dollar sign in this file.
-   It is replaced by the list of actions, each action
-   as one case of the switch.  */
+/* The size of an array large to enough to hold all stacks, each with
+   N elements.  */
+# define YYSTACK_BYTES(N) \
+  ((N) * (sizeof (short) + sizeof (YYSTYPE))                         \
+   + YYSTACK_GAP_MAXIMUM)
 
-#define ngerrok         (ngerrstatus = 0)
-#define ngclearin       (ngchar = YYEMPTY)
-#define YYEMPTY         -2
+/* Copy COUNT objects from FROM to TO.  The source and destination do
+   not overlap.  */
+# ifndef YYCOPY
+#  if 1 < __GNUC__
+#   define YYCOPY(To, From, Count) \
+  __builtin_memcpy (To, From, (Count) * sizeof (*(From)))
+#  else
+#   define YYCOPY(To, From, Count)              \
+  do                                        \
+  {                                       \
+    register YYSIZE_T yyi;                \
+    for (yyi = 0; yyi < (Count); yyi++)   \
+      (To)[yyi] = (From)[yyi];            \
+  }                                       \
+  while (0)
+#  endif
+# endif
+
+/* Relocate STACK from its old location to the new one.  The
+   local variables YYSIZE and YYSTACKSIZE give the old and new number of
+   elements in the stack, and YYPTR gives the new location of the
+   stack.  Advance YYPTR to a properly aligned location for the next
+   stack.  */
+# define YYSTACK_RELOCATE(Stack)                                        \
+  do                                                                  \
+  {                                                                 \
+    YYSIZE_T yynewbytes;                                            \
+    YYCOPY (&yyptr->Stack, Stack, yysize);                          \
+    Stack = &yyptr->Stack;                                          \
+    yynewbytes = yystacksize * sizeof (*Stack) + YYSTACK_GAP_MAXIMUM; \
+    yyptr += yynewbytes / sizeof (*yyptr);                          \
+  }                                                                 \
+  while (0)
+
+#endif
+
+#if defined (__STDC__) || defined (__cplusplus)
+typedef signed char yysigned_char;
+#else
+typedef short yysigned_char;
+#endif
+
+/* YYFINAL -- State number of the termination state. */
+#define YYFINAL  8
+/* YYLAST -- Last index in YYTABLE.  */
+#define YYLAST   38
+
+/* YYNTOKENS -- Number of terminals. */
+#define YYNTOKENS  11
+/* YYNNTS -- Number of nonterminals. */
+#define YYNNTS  19
+/* YYNRULES -- Number of rules. */
+#define YYNRULES  30
+/* YYNRULES -- Number of states. */
+#define YYNSTATES  50
+
+/* YYTRANSLATE(YYLEX) -- Bison symbol number corresponding to YYLEX.  */
+#define YYUNDEFTOK  2
+#define YYMAXUTOK   265
+
+#define YYTRANSLATE(YYX)                                                \
+  ((unsigned int) (YYX) <= YYMAXUTOK ? yytranslate[YYX] : YYUNDEFTOK)
+
+/* YYTRANSLATE[YYLEX] -- Bison symbol number corresponding to YYLEX.  */
+static const unsigned char yytranslate[] =
+{
+  0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+  2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
+  5,     6,     7,     8,     9,    10
+};
+
+#if YYDEBUG
+/* YYPRHS[YYN] -- Index of the first RHS symbol of rule number YYN in
+   YYRHS.  */
+static const unsigned char yyprhs[] =
+{
+  0,     0,     3,     7,    10,    12,    15,    16,    17,    23,
+  25,    28,    32,    37,    43,    48,    54,    58,    60,    63,
+  68,    70,    73,    74,    75,    83,    85,    88,    92,    94,
+  96
+};
+
+/* YYRHS -- A `-1'-separated list of the rules' RHS. */
+static const yysigned_char yyrhs[] =
+{
+  12,     0,    -1,    22,    20,    13,    -1,    22,    13,    -1,
+  14,    -1,    13,    14,    -1,    -1,    -1,     8,    15,    17,
+  16,    10,    -1,    18,    -1,    18,    19,    -1,    18,    19,
+  19,    -1,    18,    19,    19,    19,    -1,    18,    19,    19,
+  19,    19,    -1,    29,    29,    29,    29,    -1,    29,    29,
+  29,    29,    29,    -1,     9,    29,    29,    -1,    21,    -1,
+  20,    21,    -1,     5,    28,    28,    10,    -1,    23,    -1,
+  22,    23,    -1,    -1,    -1,     6,    28,    28,    24,    26,
+  25,    10,    -1,    27,    -1,    26,    27,    -1,     7,    29,
+  28,    -1,     4,    -1,     3,    -1,     4,    -1
+};
+
+/* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
+static const unsigned char yyrline[] =
+{
+  0,    76,    76,    77,    80,    81,    84,    87,    84,    93,
+  94,    95,    96,    97,   100,   108,   119,   127,   128,   131,
+  139,   140,   143,   149,   143,   153,   158,   165,   172,   173,
+  176
+};
+#endif
+
+#if YYDEBUG || YYERROR_VERBOSE
+/* YYTNME[SYMBOL-NUM] -- String name of the symbol SYMBOL-NUM.
+   First, the terminals, then, starting at YYNTOKENS, nonterminals. */
+static const char *const yytname[] =
+{
+  "$end", "error", "$undefined", "DOUBLE_VALUE", "INT_VALUE", "INODE",
+  "BNODE", "LINE", "ELEM", "SIDE", "TEND", "$accept", "Grid", "ElemList",
+  "Elem", "@1", "@2", "ElemSpec", "InnerElemSpec", "ElemSide",
+  "InnerNodeList", "InnerNode", "BndNodeList", "BndNode", "@3", "@4",
+  "BndSpec", "LinePosition", "Coord", "Id", 0
+};
+#endif
+
+# ifdef YYPRINT
+/* YYTOKNUM[YYLEX-NUM] -- Internal token number corresponding to
+   token YYLEX-NUM.  */
+static const unsigned short yytoknum[] =
+{
+  0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
+  265
+};
+# endif
+
+/* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
+static const unsigned char yyr1[] =
+{
+  0,    11,    12,    12,    13,    13,    15,    16,    14,    17,
+  17,    17,    17,    17,    18,    18,    19,    20,    20,    21,
+  22,    22,    24,    25,    23,    26,    26,    27,    28,    28,
+  29
+};
+
+/* YYR2[YYN] -- Number of symbols composing right hand side of rule YYN.  */
+static const unsigned char yyr2[] =
+{
+  0,     2,     3,     2,     1,     2,     0,     0,     5,     1,
+  2,     3,     4,     5,     4,     5,     3,     1,     2,     4,
+  1,     2,     0,     0,     7,     1,     2,     3,     1,     1,
+  1
+};
+
+/* YYDEFACT[STATE-NAME] -- Default rule to reduce with in state
+   STATE-NUM when YYTABLE doesn't specify something else to do.  Zero
+   means the default is an error.  */
+static const unsigned char yydefact[] =
+{
+  0,     0,     0,     0,    20,    29,    28,     0,     1,     0,
+  6,     3,     4,     0,    17,    21,    22,     0,     0,     5,
+  2,    18,     0,     0,    30,     7,     9,     0,     0,    23,
+  25,    19,     0,     0,    10,     0,     0,     0,    26,     8,
+  0,    11,     0,    27,    24,    16,    12,    14,    13,    15
+};
+
+/* YYDEFGOTO[NTERM-NUM]. */
+static const yysigned_char yydefgoto[] =
+{
+  -1,     2,    11,    12,    18,    32,    25,    26,    34,    13,
+  14,     3,     4,    22,    37,    29,    30,     7,    27
+};
+
+/* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
+   STATE-NUM.  */
+#define YYPACT_NINF -34
+static const yysigned_char yypact[] =
+{
+  11,     3,    21,    14,   -34,   -34,   -34,     3,   -34,     3,
+  -34,    16,   -34,     7,   -34,   -34,   -34,     3,    22,   -34,
+  16,   -34,    18,    17,   -34,   -34,    19,    22,    22,    18,
+  -34,   -34,    20,    22,    19,    22,     3,    23,   -34,   -34,
+  22,    19,    22,   -34,   -34,   -34,    19,    22,   -34,   -34
+};
+
+/* YYPGOTO[NTERM-NUM].  */
+static const yysigned_char yypgoto[] =
+{
+  -34,   -34,    24,    -6,   -34,   -34,   -34,   -34,   -33,   -34,
+  25,   -34,    28,   -34,   -34,   -34,     5,    -7,   -24
+};
+
+/* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
+   positive, shift that token.  If negative, reduce the rule which
+   number is the opposite.  If zero, do what YYDEFACT says.
+   If YYTABLE_NINF, syntax error.  */
+#define YYTABLE_NINF -1
+static const unsigned char yytable[] =
+{
+  16,    41,    17,    35,    36,    19,     5,     6,    46,    40,
+  23,    42,     9,    48,    19,    10,    45,     1,    47,     9,
+  1,     8,    10,    49,    10,    28,    24,    31,    33,    43,
+  39,    15,     0,    44,    38,     0,     0,    20,    21
+};
+
+static const yysigned_char yycheck[] =
+{
+  7,    34,     9,    27,    28,    11,     3,     4,    41,    33,
+  17,    35,     5,    46,    20,     8,    40,     6,    42,     5,
+  6,     0,     8,    47,     8,     7,     4,    10,     9,    36,
+  10,     3,    -1,    10,    29,    -1,    -1,    13,    13
+};
+
+/* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
+   symbol of state STATE-NUM.  */
+static const unsigned char yystos[] =
+{
+  0,     6,    12,    22,    23,     3,     4,    28,     0,     5,
+  8,    13,    14,    20,    21,    23,    28,    28,    15,    14,
+  13,    21,    24,    28,     4,    17,    18,    29,     7,    26,
+  27,    10,    16,     9,    19,    29,    29,    25,    27,    10,
+  29,    19,    29,    28,    10,    29,    19,    29,    19,    29
+};
+
+#if ! defined (YYSIZE_T) && defined (__SIZE_TYPE__)
+# define YYSIZE_T __SIZE_TYPE__
+#endif
+#if ! defined (YYSIZE_T) && defined (size_t)
+# define YYSIZE_T size_t
+#endif
+#if ! defined (YYSIZE_T)
+# if defined (__STDC__) || defined (__cplusplus)
+#  include <stddef.h> /* INFRINGES ON USER NAME SPACE */
+#  define YYSIZE_T size_t
+# endif
+#endif
+#if ! defined (YYSIZE_T)
+# define YYSIZE_T unsigned int
+#endif
+
+#define yyerrok         (yyerrstatus = 0)
+#define yyclearin       (yychar = YYEMPTY)
+#define YYEMPTY         (-2)
 #define YYEOF           0
-#define YYACCEPT        return (0)
-#define YYABORT         return (1)
-#define YYERROR         goto ngerrlab1
-/* Like YYERROR except do call ngerror.
-   This remains here temporarily to ease the
-   transition to the new meaning of YYERROR, for GCC.
+
+#define YYACCEPT        goto yyacceptlab
+#define YYABORT         goto yyabortlab
+#define YYERROR         goto yyerrlab1
+
+
+/* Like YYERROR except do call yyerror.  This remains here temporarily
+   to ease the transition to the new meaning of YYERROR, for GCC.
    Once GCC version 2 has supplanted version 1, this can go.  */
-#define YYFAIL          goto ngerrlab
-#define YYRECOVERING()  (!!ngerrstatus)
-#define YYBACKUP(token, value) \
+
+#define YYFAIL          goto yyerrlab
+
+#define YYRECOVERING()  (!!yyerrstatus)
+
+#define YYBACKUP(Token, Value)                                  \
   do                                                              \
-    if (ngchar == YYEMPTY && nglen == 1)                          \
-    { ngchar = (token), nglval = (value);                       \
-      ngchar1 = YYTRANSLATE (ngchar);                           \
+    if (yychar == YYEMPTY && yylen == 1)                          \
+    {                                                           \
+      yychar = (Token);                                         \
+      yylval = (Value);                                         \
+      yytoken = YYTRANSLATE (yychar);                           \
       YYPOPSTACK;                                               \
-      goto ngbackup;                                            \
+      goto yybackup;                                            \
     }                                                           \
     else                                                          \
-    { ngerror ("syntax error: cannot back up"); YYERROR; }      \
+    {                                                           \
+      yyerror ("syntax error: cannot back up");\
+      YYERROR;                                                  \
+    }                                                           \
   while (0)
 
 #define YYTERROR        1
 #define YYERRCODE       256
 
-#ifndef YYPURE
-#define YYLEX           nglex()
+/* YYLLOC_DEFAULT -- Compute the default location (before the actions
+   are run).  */
+
+#ifndef YYLLOC_DEFAULT
+# define YYLLOC_DEFAULT(Current, Rhs, N)         \
+  Current.first_line   = Rhs[1].first_line;      \
+  Current.first_column = Rhs[1].first_column;    \
+  Current.last_line    = Rhs[N].last_line;       \
+  Current.last_column  = Rhs[N].last_column;
 #endif
 
-#ifdef YYPURE
-#ifdef YYLSP_NEEDED
+/* YYLEX -- calling `yylex' with the right arguments.  */
+
 #ifdef YYLEX_PARAM
-#define YYLEX           nglex(&nglval, &nglloc, YYLEX_PARAM)
+# define YYLEX yylex (YYLEX_PARAM)
 #else
-#define YYLEX           nglex(&nglval, &nglloc)
+# define YYLEX yylex ()
 #endif
-#else /* not YYLSP_NEEDED */
-#ifdef YYLEX_PARAM
-#define YYLEX           nglex(&nglval, YYLEX_PARAM)
+
+/* Enable debugging if requested.  */
+#if YYDEBUG
+
+# ifndef YYFPRINTF
+#  include <stdio.h> /* INFRINGES ON USER NAME SPACE */
+#  define YYFPRINTF fprintf
+# endif
+
+# define YYDPRINTF(Args)                        \
+  do {                                            \
+    if (yydebug)                                  \
+      YYFPRINTF Args;                             \
+  } while (0)
+
+# define YYDSYMPRINT(Args)                      \
+  do {                                            \
+    if (yydebug)                                  \
+      yysymprint Args;                            \
+  } while (0)
+
+# define YYDSYMPRINTF(Title, Token, Value, Location)            \
+  do {                                                            \
+    if (yydebug)                                                  \
+    {                                                           \
+      YYFPRINTF (stderr, "%s ", Title);                         \
+      yysymprint (stderr,                                       \
+                  Token, Value);        \
+      YYFPRINTF (stderr, "\n");                                 \
+    }                                                           \
+  } while (0)
+
+/*------------------------------------------------------------------.
+| yy_stack_print -- Print the state stack from its BOTTOM up to its |
+| TOP (cinluded).                                                   |
+   `------------------------------------------------------------------*/
+
+#if defined (__STDC__) || defined (__cplusplus)
+static void
+yy_stack_print (short *bottom, short *top)
 #else
-#define YYLEX           nglex(&nglval)
+static void
+yy_stack_print (bottom, top)
+short *bottom;
+short *top;
 #endif
-#endif /* not YYLSP_NEEDED */
+{
+  YYFPRINTF (stderr, "Stack now");
+  for (/* Nothing. */; bottom <= top; ++bottom)
+    YYFPRINTF (stderr, " %d", *bottom);
+  YYFPRINTF (stderr, "\n");
+}
+
+# define YY_STACK_PRINT(Bottom, Top)                            \
+  do {                                                            \
+    if (yydebug)                                                  \
+      yy_stack_print ((Bottom), (Top));                           \
+  } while (0)
+
+
+/*------------------------------------------------.
+| Report that the YYRULE is going to be reduced.  |
+   `------------------------------------------------*/
+
+#if defined (__STDC__) || defined (__cplusplus)
+static void
+yy_reduce_print (int yyrule)
+#else
+static void
+yy_reduce_print (yyrule)
+int yyrule;
 #endif
+{
+  int yyi;
+  unsigned int yylineno = yyrline[yyrule];
+  YYFPRINTF (stderr, "Reducing stack by rule %d (line %u), ",
+             yyrule - 1, yylineno);
+  /* Print the symbols being reduced, and their result.  */
+  for (yyi = yyprhs[yyrule]; 0 <= yyrhs[yyi]; yyi++)
+    YYFPRINTF (stderr, "%s ", yytname [yyrhs[yyi]]);
+  YYFPRINTF (stderr, "-> %s\n", yytname [yyr1[yyrule]]);
+}
 
-/* If nonreentrant, generate the variables here */
+# define YY_REDUCE_PRINT(Rule)          \
+  do {                                    \
+    if (yydebug)                          \
+      yy_reduce_print (Rule);             \
+  } while (0)
 
-#ifndef YYPURE
+/* Nonzero means print parse trace.  It is left uninitialized so that
+   multiple parsers can coexist.  */
+int yydebug;
+#else /* !YYDEBUG */
+# define YYDPRINTF(Args)
+# define YYDSYMPRINT(Args)
+# define YYDSYMPRINTF(Title, Token, Value, Location)
+# define YY_STACK_PRINT(Bottom, Top)
+# define YY_REDUCE_PRINT(Rule)
+#endif /* !YYDEBUG */
 
-int ngchar;                     /*  the lookahead symbol		*/
-YYSTYPE nglval;                 /*  the semantic value of the		*/
-                                /*  lookahead symbol			*/
 
-#ifdef YYLSP_NEEDED
-YYLTYPE nglloc;                 /*  location data for the lookahead	*/
-                                /*  symbol				*/
-#endif
-
-int ngnerrs;                    /*  number of parse errors so far       */
-#endif  /* not YYPURE */
-
-#if YYDEBUG != 0
-int ngdebug;                    /*  nonzero means print parse trace	*/
-/* Since this is uninitialized, it does not stop multiple parsers
-   from coexisting.  */
-#endif
-
-/*  YYINITDEPTH indicates the initial size of the parser's stacks	*/
-
+/* YYINITDEPTH -- initial size of the parser's stacks.  */
 #ifndef YYINITDEPTH
-#define YYINITDEPTH 200
+# define YYINITDEPTH 200
 #endif
 
-/*  YYMAXDEPTH is the maximum size the stacks can grow to
-    (effective only if the built-in stack extension method is used).  */
+/* YYMAXDEPTH -- maximum size the stacks can grow to (effective only
+   if the built-in stack extension method is used).
+
+   Do not make this value too large; the results are undefined if
+   SIZE_MAX < YYSTACK_BYTES (YYMAXDEPTH)
+   evaluated with infinite-precision integer arithmetic.  */
 
 #if YYMAXDEPTH == 0
-#undef YYMAXDEPTH
+# undef YYMAXDEPTH
 #endif
 
 #ifndef YYMAXDEPTH
-#define YYMAXDEPTH 10000
+# define YYMAXDEPTH 10000
 #endif
 
-#ifndef YYPARSE_RETURN_TYPE
-#define YYPARSE_RETURN_TYPE int
-#endif
 
-/* Prevent warning if -Wstrict-prototypes.  */
-#ifdef __GNUC__
-YYPARSE_RETURN_TYPE ngparse (void);
-#endif
 
-#if __GNUC__ > 1                /* GNU C and GNU C++ define this.  */
-#define __ng_memcpy(TO,FROM,COUNT)      __builtin_memcpy(TO,FROM,COUNT)
-#else                           /* not GNU C or C++ */
-#ifndef __cplusplus
+#if YYERROR_VERBOSE
 
-/* This is the most reliable way to avoid incompatibilities
-   in available built-in functions on various systems.  */
-static void
-__ng_memcpy (to, from, count)
-char *to;
-char *from;
-int count;
+# ifndef yystrlen
+#  if defined (__GLIBC__) && defined (_STRING_H)
+#   define yystrlen strlen
+#  else
+/* Return the length of YYSTR.  */
+static YYSIZE_T
+#   if defined (__STDC__) || defined (__cplusplus)
+yystrlen (const char *yystr)
+#   else
+yystrlen (yystr)
+const char *yystr;
+#   endif
 {
-  register char *f = from;
-  register char *t = to;
-  register int i = count;
+  register const char *yys = yystr;
 
-  while (i-- > 0)
-    *t++ = *f++;
+  while (*yys++ != '\0')
+    continue;
+
+  return yys - yystr - 1;
+}
+#  endif
+# endif
+
+# ifndef yystpcpy
+#  if defined (__GLIBC__) && defined (_STRING_H) && defined (_GNU_SOURCE)
+#   define yystpcpy stpcpy
+#  else
+/* Copy YYSRC to YYDEST, returning the address of the terminating '\0' in
+   YYDEST.  */
+static char *
+#   if defined (__STDC__) || defined (__cplusplus)
+yystpcpy (char *yydest, const char *yysrc)
+#   else
+yystpcpy (yydest, yysrc)
+char *yydest;
+const char *yysrc;
+#   endif
+{
+  register char *yyd = yydest;
+  register const char *yys = yysrc;
+
+  while ((*yyd++ = *yys++) != '\0')
+    continue;
+
+  return yyd - 1;
+}
+#  endif
+# endif
+
+#endif /* !YYERROR_VERBOSE */
+
+
+
+#if YYDEBUG
+/*--------------------------------.
+| Print this symbol on YYOUTPUT.  |
+   `--------------------------------*/
+
+#if defined (__STDC__) || defined (__cplusplus)
+static void
+yysymprint (FILE *yyoutput, int yytype, YYSTYPE *yyvaluep)
+#else
+static void
+yysymprint (yyoutput, yytype, yyvaluep)
+FILE *yyoutput;
+int yytype;
+YYSTYPE *yyvaluep;
+#endif
+{
+  /* Pacify ``unused variable'' warnings.  */
+  (void) yyvaluep;
+
+  if (yytype < YYNTOKENS)
+  {
+    YYFPRINTF (yyoutput, "token %s (", yytname[yytype]);
+# ifdef YYPRINT
+    YYPRINT (yyoutput, yytoknum[yytype], *yyvaluep);
+# endif
+  }
+  else
+    YYFPRINTF (yyoutput, "nterm %s (", yytname[yytype]);
+
+  switch (yytype)
+  {
+  default :
+    break;
+  }
+  YYFPRINTF (yyoutput, ")");
 }
 
-#else /* __cplusplus */
+#endif /* ! YYDEBUG */
+/*-----------------------------------------------.
+| Release the memory associated to this symbol.  |
+   `-----------------------------------------------*/
 
-/* This is the most reliable way to avoid incompatibilities
-   in available built-in functions on various systems.  */
+#if defined (__STDC__) || defined (__cplusplus)
 static void
-__ng_memcpy (char *to, char *from, int count)
+yydestruct (int yytype, YYSTYPE *yyvaluep)
+#else
+static void
+yydestruct (yytype, yyvaluep)
+int yytype;
+YYSTYPE *yyvaluep;
+#endif
 {
-  register char *f = from;
-  register char *t = to;
-  register int i = count;
+  /* Pacify ``unused variable'' warnings.  */
+  (void) yyvaluep;
 
-  while (i-- > 0)
-    *t++ = *f++;
+  switch (yytype)
+  {
+
+  default :
+    break;
+  }
 }
 
-#endif
-#endif
 
-#line 196 "/usr/share/bison.simple"
-
-/* The user can define YYPARSE_PARAM as the name of an argument to be passed
-   into ngparse.  The argument should have type void *.
-   It should actually point to an object.
-   Grammar actions can access the variable by casting it
-   to the proper pointer type.  */
+/* Prevent warnings from -Wmissing-prototypes.  */
 
 #ifdef YYPARSE_PARAM
-#ifdef __cplusplus
-#define YYPARSE_PARAM_ARG void *YYPARSE_PARAM
-#define YYPARSE_PARAM_DECL
-#else /* not __cplusplus */
-#define YYPARSE_PARAM_ARG YYPARSE_PARAM
-#define YYPARSE_PARAM_DECL void *YYPARSE_PARAM;
-#endif /* not __cplusplus */
-#else /* not YYPARSE_PARAM */
-#define YYPARSE_PARAM_ARG
-#define YYPARSE_PARAM_DECL
-#endif /* not YYPARSE_PARAM */
-
-YYPARSE_RETURN_TYPE
-ngparse(YYPARSE_PARAM_ARG)
-YYPARSE_PARAM_DECL
-{
-  register int ngstate;
-  register int ngn;
-  register short *ngssp;
-  register YYSTYPE *ngvsp;
-  int ngerrstatus;      /*  number of tokens to shift before error messages enabled */
-  int ngchar1 = 0;              /*  lookahead token as an internal (translated) token number */
-
-  short ngssa[YYINITDEPTH];     /*  the state stack			*/
-  YYSTYPE ngvsa[YYINITDEPTH];   /*  the semantic value stack		*/
-
-  short *ngss = ngssa;          /*  refer to the stacks thru separate pointers */
-  YYSTYPE *ngvs = ngvsa;        /*  to allow ngoverflow to reallocate them elsewhere */
-
-#ifdef YYLSP_NEEDED
-  YYLTYPE nglsa[YYINITDEPTH];   /*  the location stack			*/
-  YYLTYPE *ngls = nglsa;
-  YYLTYPE *nglsp;
-
-#define YYPOPSTACK   (ngvsp--, ngssp--, nglsp--)
+# if defined (__STDC__) || defined (__cplusplus)
+int yyparse (void *YYPARSE_PARAM);
+# else
+int yyparse ();
+# endif
+#else /* ! YYPARSE_PARAM */
+#if defined (__STDC__) || defined (__cplusplus)
+int yyparse (void);
 #else
-#define YYPOPSTACK   (ngvsp--, ngssp--)
+int yyparse ();
 #endif
+#endif /* ! YYPARSE_PARAM */
 
-  int ngstacksize = YYINITDEPTH;
 
-#ifdef YYPURE
-  int ngchar;
-  YYSTYPE nglval;
-  int ngnerrs;
-#ifdef YYLSP_NEEDED
-  YYLTYPE nglloc;
+
+/* The lookahead symbol.  */
+int yychar;
+
+/* The semantic value of the lookahead symbol.  */
+YYSTYPE yylval;
+
+/* Number of syntax errors so far.  */
+int yynerrs;
+
+
+
+/*----------.
+| yyparse.  |
+   `----------*/
+
+#ifdef YYPARSE_PARAM
+# if defined (__STDC__) || defined (__cplusplus)
+int yyparse (void *YYPARSE_PARAM)
+# else
+int yyparse (YYPARSE_PARAM)
+void *YYPARSE_PARAM;
+# endif
+#else /* ! YYPARSE_PARAM */
+#if defined (__STDC__) || defined (__cplusplus)
+int
+yyparse (void)
+#else
+int
+yyparse ()
+
 #endif
 #endif
+{
 
-  YYSTYPE ngval;                /*  the variable used to return		*/
-                                /*  semantic values from the action	*/
-                                /*  routines				*/
+  register int yystate;
+  register int yyn;
+  int yyresult;
+  /* Number of tokens to shift before error messages enabled.  */
+  int yyerrstatus;
+  /* Lookahead token as an internal (translated) token number.  */
+  int yytoken = 0;
 
-  int nglen;
+  /* Three stacks and their tools:
+     `yyss': related to states,
+     `yyvs': related to semantic values,
+     `yyls': related to locations.
 
-#if YYDEBUG != 0
-  if (ngdebug)
-    fprintf(stderr, "Starting parse\n");
-#endif
+     Refer to the stacks thru separate pointers, to allow yyoverflow
+     to reallocate them elsewhere.  */
 
-  ngstate = 0;
-  ngerrstatus = 0;
-  ngnerrs = 0;
-  ngchar = YYEMPTY;             /* Cause a token to be read.  */
+  /* The state stack.  */
+  short yyssa[YYINITDEPTH];
+  short *yyss = yyssa;
+  register short *yyssp;
+
+  /* The semantic value stack.  */
+  YYSTYPE yyvsa[YYINITDEPTH];
+  YYSTYPE *yyvs = yyvsa;
+  register YYSTYPE *yyvsp;
+
+
+
+#define YYPOPSTACK   (yyvsp--, yyssp--)
+
+  YYSIZE_T yystacksize = YYINITDEPTH;
+
+  /* The variables used to return semantic value and location from the
+     action routines.  */
+  YYSTYPE yyval;
+
+
+  /* When reducing, the number of symbols on the RHS of the reduced
+     rule.  */
+  int yylen;
+
+  YYDPRINTF ((stderr, "Starting parse\n"));
+
+  yystate = 0;
+  yyerrstatus = 0;
+  yynerrs = 0;
+  yychar = YYEMPTY;             /* Cause a token to be read.  */
 
   /* Initialize stack pointers.
      Waste one element of value and location stack
      so that they stay on the same level as the state stack.
      The wasted elements are never initialized.  */
 
-  ngssp = ngss - 1;
-  ngvsp = ngvs;
-#ifdef YYLSP_NEEDED
-  nglsp = ngls;
-#endif
+  yyssp = yyss;
+  yyvsp = yyvs;
 
-  /* Push a new state, which is found in  ngstate  .  */
+  goto yysetstate;
+
+  /*------------------------------------------------------------.
+  | yynewstate -- Push a new state, which is found in yystate.  |
+     `------------------------------------------------------------*/
+yynewstate:
   /* In all cases, when you get here, the value and location stacks
-     have just been pushed. so pushing a state here evens the stacks.  */
-ngnewstate:
+     have just been pushed. so pushing a state here evens the stacks.
+   */
+  yyssp++;
 
-  *++ngssp = ngstate;
+yysetstate:
+  *yyssp = yystate;
 
-  if (ngssp >= ngss + ngstacksize - 1)
+  if (yyss + yystacksize - 1 <= yyssp)
   {
-    /* Give user a chance to reallocate the stack */
-    /* Use copies of these so that the &'s don't force the real ones into memory. */
-    YYSTYPE *ngvs1 = ngvs;
-    short *ngss1 = ngss;
-#ifdef YYLSP_NEEDED
-    YYLTYPE *ngls1 = ngls;
-#endif
-
     /* Get the current used size of the three stacks, in elements.  */
-    int size = ngssp - ngss + 1;
+    YYSIZE_T yysize = yyssp - yyss + 1;
 
-#ifdef ngoverflow
-    /* Each stack pointer address is followed by the size of
-       the data in use in that stack, in bytes.  */
-#ifdef YYLSP_NEEDED
-    /* This used to be a conditional around just the two extra args,
-       but that might be undefined if ngoverflow is a macro.  */
-    ngoverflow("parser stack overflow",
-               &ngss1, size * sizeof (*ngssp),
-               &ngvs1, size * sizeof (*ngvsp),
-               &ngls1, size * sizeof (*nglsp),
-               &ngstacksize);
-#else
-    ngoverflow("parser stack overflow",
-               &ngss1, size * sizeof (*ngssp),
-               &ngvs1, size * sizeof (*ngvsp),
-               &ngstacksize);
-#endif
-
-    ngss = ngss1; ngvs = ngvs1;
-#ifdef YYLSP_NEEDED
-    ngls = ngls1;
-#endif
-#else /* no ngoverflow */
-      /* Extend the stack our own way.  */
-    if (ngstacksize >= YYMAXDEPTH)
+#ifdef yyoverflow
     {
-      ngerror("parser stack overflow");
-      return 2;
+      /* Give user a chance to reallocate the stack. Use copies of
+         these so that the &'s don't force the real ones into
+         memory.  */
+      YYSTYPE *yyvs1 = yyvs;
+      short *yyss1 = yyss;
+
+
+      /* Each stack pointer address is followed by the size of the
+         data in use in that stack, in bytes.  This used to be a
+         conditional around just the two extra args, but that might
+         be undefined if yyoverflow is a macro.  */
+      yyoverflow ("parser stack overflow",
+                  &yyss1, yysize * sizeof (*yyssp),
+                  &yyvs1, yysize * sizeof (*yyvsp),
+
+                  &yystacksize);
+
+      yyss = yyss1;
+      yyvs = yyvs1;
     }
-    ngstacksize *= 2;
-    if (ngstacksize > YYMAXDEPTH)
-      ngstacksize = YYMAXDEPTH;
-    ngss = (short *) alloca (ngstacksize * sizeof (*ngssp));
-    __ng_memcpy ((char *)ngss, (char *)ngss1, size * sizeof (*ngssp));
-    ngvs = (YYSTYPE *) alloca (ngstacksize * sizeof (*ngvsp));
-    __ng_memcpy ((char *)ngvs, (char *)ngvs1, size * sizeof (*ngvsp));
-#ifdef YYLSP_NEEDED
-    ngls = (YYLTYPE *) alloca (ngstacksize * sizeof (*nglsp));
-    __ng_memcpy ((char *)ngls, (char *)ngls1, size * sizeof (*nglsp));
-#endif
-#endif /* no ngoverflow */
+#else /* no yyoverflow */
+# ifndef YYSTACK_RELOCATE
+    goto yyoverflowlab;
+# else
+    /* Extend the stack our own way.  */
+    if (YYMAXDEPTH <= yystacksize)
+      goto yyoverflowlab;
+    yystacksize *= 2;
+    if (YYMAXDEPTH < yystacksize)
+      yystacksize = YYMAXDEPTH;
 
-    ngssp = ngss + size - 1;
-    ngvsp = ngvs + size - 1;
-#ifdef YYLSP_NEEDED
-    nglsp = ngls + size - 1;
-#endif
+    {
+      short *yyss1 = yyss;
+      union yyalloc *yyptr =
+        (union yyalloc *) YYSTACK_ALLOC (YYSTACK_BYTES (yystacksize));
+      if (! yyptr)
+        goto yyoverflowlab;
+      YYSTACK_RELOCATE (yyss);
+      YYSTACK_RELOCATE (yyvs);
 
-#if YYDEBUG != 0
-    if (ngdebug)
-      fprintf(stderr, "Stack size increased to %d\n", ngstacksize);
-#endif
+#  undef YYSTACK_RELOCATE
+      if (yyss1 != yyssa)
+        YYSTACK_FREE (yyss1);
+    }
+# endif
+#endif /* no yyoverflow */
 
-    if (ngssp >= ngss + ngstacksize - 1)
+    yyssp = yyss + yysize - 1;
+    yyvsp = yyvs + yysize - 1;
+
+
+    YYDPRINTF ((stderr, "Stack size increased to %lu\n",
+                (unsigned long int) yystacksize));
+
+    if (yyss + yystacksize - 1 <= yyssp)
       YYABORT;
   }
 
-#if YYDEBUG != 0
-  if (ngdebug)
-    fprintf(stderr, "Entering state %d\n", ngstate);
-#endif
+  YYDPRINTF ((stderr, "Entering state %d\n", yystate));
 
-  goto ngbackup;
-ngbackup:
+  goto yybackup;
+
+  /*-----------.
+  | yybackup.  |
+     `-----------*/
+yybackup:
 
   /* Do appropriate processing given the current state.  */
   /* Read a lookahead token if we need one and don't already have one.  */
-  /* ngresume: */
+  /* yyresume: */
 
   /* First try to decide what to do without reference to lookahead token.  */
 
-  ngn = ngpact[ngstate];
-  if (ngn == YYFLAG)
-    goto ngdefault;
+  yyn = yypact[yystate];
+  if (yyn == YYPACT_NINF)
+    goto yydefault;
 
   /* Not known => get a lookahead token if don't already have one.  */
 
-  /* ngchar is either YYEMPTY or YYEOF
-     or a valid token in external form.  */
-
-  if (ngchar == YYEMPTY)
+  /* YYCHAR is either YYEMPTY or YYEOF or a valid lookahead symbol.  */
+  if (yychar == YYEMPTY)
   {
-#if YYDEBUG != 0
-    if (ngdebug)
-      fprintf(stderr, "Reading a token: ");
-#endif
-    ngchar = YYLEX;
+    YYDPRINTF ((stderr, "Reading a token: "));
+    yychar = YYLEX;
   }
 
-  /* Convert token to internal form (in ngchar1) for indexing tables with */
-
-  if (ngchar <= 0)              /* This means end of input. */
+  if (yychar <= YYEOF)
   {
-    ngchar1 = 0;
-    ngchar = YYEOF;             /* Don't call YYLEX any more */
-
-#if YYDEBUG != 0
-    if (ngdebug)
-      fprintf(stderr, "Now at end of input.\n");
-#endif
+    yychar = yytoken = YYEOF;
+    YYDPRINTF ((stderr, "Now at end of input.\n"));
   }
   else
   {
-    ngchar1 = YYTRANSLATE(ngchar);
-
-#if YYDEBUG != 0
-    if (ngdebug)
-    {
-      fprintf (stderr, "Next token is %d (%s", ngchar, ngtname[ngchar1]);
-      /* Give the individual parser a way to print the precise meaning
-         of a token, for further debugging info.  */
-#ifdef YYPRINT
-      YYPRINT (stderr, ngchar, nglval);
-#endif
-      fprintf (stderr, ")\n");
-    }
-#endif
+    yytoken = YYTRANSLATE (yychar);
+    YYDSYMPRINTF ("Next token is", yytoken, &yylval, &yylloc);
   }
 
-  ngn += ngchar1;
-  if (ngn < 0 || ngn > YYLAST || ngcheck[ngn] != ngchar1)
-    goto ngdefault;
-
-  ngn = ngtable[ngn];
-
-  /* ngn is what to do for this token type in this state.
-     Negative => reduce, -ngn is rule number.
-     Positive => shift, ngn is new state.
-       New state is final state => don't bother to shift,
-       just return success.
-     0, or most negative number => error.  */
-
-  if (ngn < 0)
+  /* If the proper action on seeing token YYTOKEN is to reduce or to
+     detect an error, take that action.  */
+  yyn += yytoken;
+  if (yyn < 0 || YYLAST < yyn || yycheck[yyn] != yytoken)
+    goto yydefault;
+  yyn = yytable[yyn];
+  if (yyn <= 0)
   {
-    if (ngn == YYFLAG)
-      goto ngerrlab;
-    ngn = -ngn;
-    goto ngreduce;
+    if (yyn == 0 || yyn == YYTABLE_NINF)
+      goto yyerrlab;
+    yyn = -yyn;
+    goto yyreduce;
   }
-  else if (ngn == 0)
-    goto ngerrlab;
 
-  if (ngn == YYFINAL)
+  if (yyn == YYFINAL)
     YYACCEPT;
 
   /* Shift the lookahead token.  */
-
-#if YYDEBUG != 0
-  if (ngdebug)
-    fprintf(stderr, "Shifting token %d (%s), ", ngchar, ngtname[ngchar1]);
-#endif
+  YYDPRINTF ((stderr, "Shifting token %s, ", yytname[yytoken]));
 
   /* Discard the token being shifted unless it is eof.  */
-  if (ngchar != YYEOF)
-    ngchar = YYEMPTY;
+  if (yychar != YYEOF)
+    yychar = YYEMPTY;
 
-  *++ngvsp = nglval;
-#ifdef YYLSP_NEEDED
-  *++nglsp = nglloc;
-#endif
+  *++yyvsp = yylval;
 
-  /* count tokens shifted since error; after three, turn off error status.  */
-  if (ngerrstatus) ngerrstatus--;
 
-  ngstate = ngn;
-  goto ngnewstate;
+  /* Count tokens shifted since error; after three, turn off error
+     status.  */
+  if (yyerrstatus)
+    yyerrstatus--;
 
-  /* Do the default action for the current state.  */
-ngdefault:
+  yystate = yyn;
+  goto yynewstate;
 
-  ngn = ngdefact[ngstate];
-  if (ngn == 0)
-    goto ngerrlab;
 
-  /* Do a reduction.  ngn is the number of a rule to reduce with.  */
-ngreduce:
-  nglen = ngr2[ngn];
-  if (nglen > 0)
-    ngval = ngvsp[1-nglen]; /* implement default value of the action */
+  /*-----------------------------------------------------------.
+  | yydefault -- do the default action for the current state.  |
+     `-----------------------------------------------------------*/
+yydefault:
+  yyn = yydefact[yystate];
+  if (yyn == 0)
+    goto yyerrlab;
+  goto yyreduce;
 
-#if YYDEBUG != 0
-  if (ngdebug)
+
+  /*-----------------------------.
+  | yyreduce -- Do a reduction.  |
+     `-----------------------------*/
+yyreduce:
+  /* yyn is the number of a rule to reduce with.  */
+  yylen = yyr2[yyn];
+
+  /* If YYLEN is nonzero, implement the default value of the action:
+     `$$ = $1'.
+
+     Otherwise, the following line sets YYVAL to garbage.
+     This behavior is undocumented and Bison
+     users should not rely upon it.  Assigning to YYVAL
+     unconditionally makes the parser a bit smaller, and it avoids a
+     GCC warning that YYVAL may be used uninitialized.  */
+  yyval = yyvsp[1-yylen];
+
+
+  YY_REDUCE_PRINT (yyn);
+  switch (yyn)
   {
-    int i;
-
-    fprintf (stderr, "Reducing via rule %d (line %d), ",
-             ngn, ngrline[ngn]);
-
-    /* Print the symbols being reduced, and their result.  */
-    for (i = ngprhs[ngn]; ngrhs[i] > 0; i++)
-      fprintf (stderr, "%s ", ngtname[ngrhs[i]]);
-    fprintf (stderr, " -> %s\n", ngtname[ngr1[ngn]]);
-  }
-#endif
-
-
-  switch (ngn) {
-
-  case 5 :
-#line 84 "ngin.y"
+  case 6 :
+#line 84 "ngin-yacc.y"
     {
       Elem.n_c=Elem.n_s=0;
       ;
-      break;
     }
-  case 6 :
-#line 87 "ngin.y"
+    break;
+
+  case 7 :
+#line 87 "ngin-yacc.y"
     {
       if (PutElement(&Elem)) YYABORT;
       ;
-      break;
     }
-  case 13 :
-#line 100 "ngin.y"
-    {
-      Elem.subdom=(int)ngvsp[-3].ival;
-      Elem.c_id[0]=(int)ngvsp[-2].ival;
-      Elem.c_id[1]=(int)ngvsp[-1].ival;
-      Elem.c_id[2]=(int)ngvsp[0].ival;
-      Elem.n_c=3;
-      ngval.el=&Elem;
-      ;
-      break;
-    }
+    break;
+
   case 14 :
-#line 108 "ngin.y"
+#line 100 "ngin-yacc.y"
     {
-      Elem.subdom=(int)ngvsp[-4].ival;
-      Elem.c_id[0]=(int)ngvsp[-3].ival;
-      Elem.c_id[1]=(int)ngvsp[-2].ival;
-      Elem.c_id[2]=(int)ngvsp[-1].ival;
-      Elem.c_id[3]=(int)ngvsp[0].ival;
-      Elem.n_c=4;
-      ngval.el=&Elem;
+      Elem.subdom=(int)yyvsp[-3].ival;
+      Elem.c_id[0]=(int)yyvsp[-2].ival;
+      Elem.c_id[1]=(int)yyvsp[-1].ival;
+      Elem.c_id[2]=(int)yyvsp[0].ival;
+      Elem.n_c=3;
+      yyval.el=&Elem;
       ;
-      break;
     }
+    break;
+
   case 15 :
-#line 119 "ngin.y"
+#line 108 "ngin-yacc.y"
     {
-      Elem.side[Elem.n_s].c_id[0]=(int)ngvsp[-1].ival;
-      Elem.side[Elem.n_s].c_id[1]=(int)ngvsp[0].ival;
-      ngval.es=&(Elem.side[Elem.n_s]);
+      Elem.subdom=(int)yyvsp[-4].ival;
+      Elem.c_id[0]=(int)yyvsp[-3].ival;
+      Elem.c_id[1]=(int)yyvsp[-2].ival;
+      Elem.c_id[2]=(int)yyvsp[-1].ival;
+      Elem.c_id[3]=(int)yyvsp[0].ival;
+      Elem.n_c=4;
+      yyval.el=&Elem;
+      ;
+    }
+    break;
+
+  case 16 :
+#line 119 "ngin-yacc.y"
+    {
+      Elem.side[Elem.n_s].c_id[0]=(int)yyvsp[-1].ival;
+      Elem.side[Elem.n_s].c_id[1]=(int)yyvsp[0].ival;
+      yyval.es=&(Elem.side[Elem.n_s]);
       Elem.n_s++;
       ;
-      break;
     }
-  case 18 :
-#line 131 "ngin.y"
+    break;
+
+  case 19 :
+#line 131 "ngin-yacc.y"
     {
-      InnerNode.global[0]=ngvsp[-2].dval;
-      InnerNode.global[1]=ngvsp[-1].dval;
-      ngval.in=&InnerNode;
+      InnerNode.global[0]=yyvsp[-2].dval;
+      InnerNode.global[1]=yyvsp[-1].dval;
+      yyval.in=&InnerNode;
       PutInnerNode(&InnerNode);
       ;
-      break;
     }
-  case 21 :
-#line 143 "ngin.y"
+    break;
+
+  case 22 :
+#line 143 "ngin-yacc.y"
     {
       BndNode.n_lp=0;
-      BndNode.global[0]=ngvsp[-1].dval;
-      BndNode.global[1]=ngvsp[0].dval;
-      ngval.bs=&BndNode;
+      BndNode.global[0]=yyvsp[-1].dval;
+      BndNode.global[1]=yyvsp[0].dval;
+      yyval.bs=&BndNode;
       ;
-      break;
     }
-  case 22 :
-#line 149 "ngin.y"
-    {PutBndNode(&BndNode);;
-     break;}
-  case 24 :
-#line 153 "ngin.y"
-    {
-      LP_COPY(&(BndNode.lp[BndNode.n_lp]),ngvsp[0].lp);
-      BndNode.n_lp++;
-      ngval.bs=&BndNode;
-      ;
-      break;
-    }
+    break;
+
+  case 23 :
+#line 149 "ngin-yacc.y"
+    {PutBndNode(&BndNode);;}
+    break;
+
   case 25 :
-#line 158 "ngin.y"
+#line 153 "ngin-yacc.y"
     {
-      LP_COPY(&(BndNode.lp[BndNode.n_lp]),ngvsp[0].lp);
+      LP_COPY(&(BndNode.lp[BndNode.n_lp]),yyvsp[0].lp);
       BndNode.n_lp++;
-      ngval.bs=&BndNode;
+      yyval.bs=&BndNode;
       ;
-      break;
     }
+    break;
+
   case 26 :
-#line 165 "ngin.y"
+#line 158 "ngin-yacc.y"
     {
-      LinePos.line_id=(int)ngvsp[-1].ival;
-      LinePos.local=(float)ngvsp[0].dval;
-      ngval.lp=&LinePos;
+      LP_COPY(&(BndNode.lp[BndNode.n_lp]),yyvsp[0].lp);
+      BndNode.n_lp++;
+      yyval.bs=&BndNode;
       ;
-      break;
     }
+    break;
+
   case 27 :
-#line 172 "ngin.y"
-    {ngval.dval=(double)ngvsp[0].ival;;
-     break;}
-  case 29 :
-#line 176 "ngin.y"
-    {ngval.ival=ngvsp[0].ival;;
-     break;}
-  }
-  /* the action file gets copied in in place of this dollarsign */
-#line 498 "/usr/share/bison.simple"
-
-  ngvsp -= nglen;
-  ngssp -= nglen;
-#ifdef YYLSP_NEEDED
-  nglsp -= nglen;
-#endif
-
-#if YYDEBUG != 0
-  if (ngdebug)
-  {
-    short *ssp1 = ngss - 1;
-    fprintf (stderr, "state stack now");
-    while (ssp1 != ngssp)
-      fprintf (stderr, " %d", *++ssp1);
-    fprintf (stderr, "\n");
-  }
-#endif
-
-  *++ngvsp = ngval;
-
-#ifdef YYLSP_NEEDED
-  nglsp++;
-  if (nglen == 0)
-  {
-    nglsp->first_line = nglloc.first_line;
-    nglsp->first_column = nglloc.first_column;
-    nglsp->last_line = (nglsp-1)->last_line;
-    nglsp->last_column = (nglsp-1)->last_column;
-    nglsp->text = 0;
-  }
-  else
-  {
-    nglsp->last_line = (nglsp+nglen-1)->last_line;
-    nglsp->last_column = (nglsp+nglen-1)->last_column;
-  }
-#endif
-
-  /* Now "shift" the result of the reduction.
-     Determine what state that goes to,
-     based on the state we popped back to
-     and the rule number reduced by.  */
-
-  ngn = ngr1[ngn];
-
-  ngstate = ngpgoto[ngn - YYNTBASE] + *ngssp;
-  if (ngstate >= 0 && ngstate <= YYLAST && ngcheck[ngstate] == *ngssp)
-    ngstate = ngtable[ngstate];
-  else
-    ngstate = ngdefgoto[ngn - YYNTBASE];
-
-  goto ngnewstate;
-
-ngerrlab:   /* here on detecting error */
-
-  if (! ngerrstatus)
-  /* If not already recovering from an error, report this error.  */
-  {
-    ++ngnerrs;
-
-#ifdef YYERROR_VERBOSE
-    ngn = ngpact[ngstate];
-
-    if (ngn > YYFLAG && ngn < YYLAST)
+#line 165 "ngin-yacc.y"
     {
-      int size = 0;
-      char *msg;
-      int x, count;
+      LinePos.line_id=(int)yyvsp[-1].ival;
+      LinePos.local=(float)yyvsp[0].dval;
+      yyval.lp=&LinePos;
+      ;
+    }
+    break;
 
-      count = 0;
-      /* Start X at -ngn if nec to avoid negative indexes in ngcheck.  */
-      for (x = (ngn < 0 ? -ngn : 0);
-           x < (sizeof(ngtname) / sizeof(char *)); x++)
-        if (ngcheck[x + ngn] == x)
-          size += strlen(ngtname[x]) + 15, count++;
-      msg = (char *) malloc(size + 15);
-      if (msg != 0)
+  case 28 :
+#line 172 "ngin-yacc.y"
+    {yyval.dval=(double)yyvsp[0].ival;;}
+    break;
+
+  case 30 :
+#line 176 "ngin-yacc.y"
+    {yyval.ival=yyvsp[0].ival;;}
+    break;
+
+
+  }
+
+  /* Line 999 of yacc.c.  */
+#line 1195 "ngin-yacc.c"
+
+  yyvsp -= yylen;
+  yyssp -= yylen;
+
+
+  YY_STACK_PRINT (yyss, yyssp);
+
+  *++yyvsp = yyval;
+
+
+  /* Now `shift' the result of the reduction.  Determine what state
+     that goes to, based on the state we popped back to and the rule
+     number reduced by.  */
+
+  yyn = yyr1[yyn];
+
+  yystate = yypgoto[yyn - YYNTOKENS] + *yyssp;
+  if (0 <= yystate && yystate <= YYLAST && yycheck[yystate] == *yyssp)
+    yystate = yytable[yystate];
+  else
+    yystate = yydefgoto[yyn - YYNTOKENS];
+
+  goto yynewstate;
+
+
+  /*------------------------------------.
+  | yyerrlab -- here on detecting error |
+     `------------------------------------*/
+yyerrlab:
+  /* If not already recovering from an error, report this error.  */
+  if (!yyerrstatus)
+  {
+    ++yynerrs;
+#if YYERROR_VERBOSE
+    yyn = yypact[yystate];
+
+    if (YYPACT_NINF < yyn && yyn < YYLAST)
+    {
+      YYSIZE_T yysize = 0;
+      int yytype = YYTRANSLATE (yychar);
+      char *yymsg;
+      int yyx, yycount;
+
+      yycount = 0;
+      /* Start YYX at -YYN if negative to avoid negative indexes in
+         YYCHECK.  */
+      for (yyx = yyn < 0 ? -yyn : 0;
+           yyx < (int) (sizeof (yytname) / sizeof (char *)); yyx++)
+        if (yycheck[yyx + yyn] == yyx && yyx != YYTERROR)
+          yysize += yystrlen (yytname[yyx]) + 15, yycount++;
+      yysize += yystrlen ("syntax error, unexpected ") + 1;
+      yysize += yystrlen (yytname[yytype]);
+      yymsg = (char *) YYSTACK_ALLOC (yysize);
+      if (yymsg != 0)
       {
-        strcpy(msg, "parse error");
+        char *yyp = yystpcpy (yymsg, "syntax error, unexpected ");
+        yyp = yystpcpy (yyp, yytname[yytype]);
 
-        if (count < 5)
+        if (yycount < 5)
         {
-          count = 0;
-          for (x = (ngn < 0 ? -ngn : 0);
-               x < (sizeof(ngtname) / sizeof(char *)); x++)
-            if (ngcheck[x + ngn] == x)
+          yycount = 0;
+          for (yyx = yyn < 0 ? -yyn : 0;
+               yyx < (int) (sizeof (yytname) / sizeof (char *));
+               yyx++)
+            if (yycheck[yyx + yyn] == yyx && yyx != YYTERROR)
             {
-              strcat(msg, count == 0 ? ", expecting `" : " or `");
-              strcat(msg, ngtname[x]);
-              strcat(msg, "'");
-              count++;
+              const char *yyq = ! yycount ? ", expecting " : " or ";
+              yyp = yystpcpy (yyp, yyq);
+              yyp = yystpcpy (yyp, yytname[yyx]);
+              yycount++;
             }
         }
-        ngerror(msg);
-        free(msg);
+        yyerror (yymsg);
+        YYSTACK_FREE (yymsg);
       }
       else
-        ngerror ("parse error; also virtual memory exceeded");
+        yyerror ("syntax error; also virtual memory exhausted");
     }
     else
 #endif /* YYERROR_VERBOSE */
-    ngerror("parse error");
+    yyerror ("syntax error");
   }
 
-  goto ngerrlab1;
-ngerrlab1:   /* here on error raised explicitly by an action */
 
-  if (ngerrstatus == 3)
+
+  if (yyerrstatus == 3)
   {
-    /* if just tried and failed to reuse lookahead token after an error, discard it.  */
+    /* If just tried and failed to reuse lookahead token after an
+       error, discard it.  */
 
-    /* return failure if at end of input */
-    if (ngchar == YYEOF)
+    /* Return failure if at end of input.  */
+    if (yychar == YYEOF)
+    {
+      /* Pop the error token.  */
+      YYPOPSTACK;
+      /* Pop the rest of the stack.  */
+      while (yyss < yyssp)
+      {
+        YYDSYMPRINTF ("Error: popping", yystos[*yyssp], yyvsp, yylsp);
+        yydestruct (yystos[*yyssp], yyvsp);
+        YYPOPSTACK;
+      }
+      YYABORT;
+    }
+
+    YYDSYMPRINTF ("Error: discarding", yytoken, &yylval, &yylloc);
+    yydestruct (yytoken, &yylval);
+    yychar = YYEMPTY;
+
+  }
+
+  /* Else will try to reuse lookahead token after shifting the error
+     token.  */
+  goto yyerrlab1;
+
+
+  /*----------------------------------------------------.
+  | yyerrlab1 -- error raised explicitly by an action.  |
+     `----------------------------------------------------*/
+yyerrlab1:
+  yyerrstatus = 3;      /* Each real token shifted decrements this.  */
+
+  for (;;)
+  {
+    yyn = yypact[yystate];
+    if (yyn != YYPACT_NINF)
+    {
+      yyn += YYTERROR;
+      if (0 <= yyn && yyn <= YYLAST && yycheck[yyn] == YYTERROR)
+      {
+        yyn = yytable[yyn];
+        if (0 < yyn)
+          break;
+      }
+    }
+
+    /* Pop the current state because it cannot handle the error token.  */
+    if (yyssp == yyss)
       YYABORT;
 
-#if YYDEBUG != 0
-    if (ngdebug)
-      fprintf(stderr, "Discarding token %d (%s).\n", ngchar, ngtname[ngchar1]);
-#endif
+    YYDSYMPRINTF ("Error: popping", yystos[*yyssp], yyvsp, yylsp);
+    yydestruct (yystos[yystate], yyvsp);
+    yyvsp--;
+    yystate = *--yyssp;
 
-    ngchar = YYEMPTY;
+    YY_STACK_PRINT (yyss, yyssp);
   }
 
-  /* Else will try to reuse lookahead token
-     after shifting the error token.  */
-
-  ngerrstatus = 3;              /* Each real token shifted decrements this */
-
-  goto ngerrhandle;
-
-ngerrdefault:  /* current state does not do anything special for the error token. */
-
-#if 0
-  /* This is wrong; only states that explicitly want error tokens
-     should shift them.  */
-  ngn = ngdefact[ngstate];  /* If its default is to accept any token, ok.  Otherwise pop it.*/
-  if (ngn) goto ngdefault;
-#endif
-
-ngerrpop:   /* pop the current state because it cannot handle the error token */
-
-  if (ngssp == ngss) YYABORT;
-  ngvsp--;
-  ngstate = *--ngssp;
-#ifdef YYLSP_NEEDED
-  nglsp--;
-#endif
-
-#if YYDEBUG != 0
-  if (ngdebug)
-  {
-    short *ssp1 = ngss - 1;
-    fprintf (stderr, "Error: state stack now");
-    while (ssp1 != ngssp)
-      fprintf (stderr, " %d", *++ssp1);
-    fprintf (stderr, "\n");
-  }
-#endif
-
-ngerrhandle:
-
-  ngn = ngpact[ngstate];
-  if (ngn == YYFLAG)
-    goto ngerrdefault;
-
-  ngn += YYTERROR;
-  if (ngn < 0 || ngn > YYLAST || ngcheck[ngn] != YYTERROR)
-    goto ngerrdefault;
-
-  ngn = ngtable[ngn];
-  if (ngn < 0)
-  {
-    if (ngn == YYFLAG)
-      goto ngerrpop;
-    ngn = -ngn;
-    goto ngreduce;
-  }
-  else if (ngn == 0)
-    goto ngerrpop;
-
-  if (ngn == YYFINAL)
+  if (yyn == YYFINAL)
     YYACCEPT;
 
-#if YYDEBUG != 0
-  if (ngdebug)
-    fprintf(stderr, "Shifting error token, ");
+  YYDPRINTF ((stderr, "Shifting error token, "));
+
+  *++yyvsp = yylval;
+
+
+  yystate = yyn;
+  goto yynewstate;
+
+
+  /*-------------------------------------.
+  | yyacceptlab -- YYACCEPT comes here.  |
+     `-------------------------------------*/
+yyacceptlab:
+  yyresult = 0;
+  goto yyreturn;
+
+  /*-----------------------------------.
+  | yyabortlab -- YYABORT comes here.  |
+     `-----------------------------------*/
+yyabortlab:
+  yyresult = 1;
+  goto yyreturn;
+
+#ifndef yyoverflow
+  /*----------------------------------------------.
+  | yyoverflowlab -- parser overflow comes here.  |
+     `----------------------------------------------*/
+yyoverflowlab:
+  yyerror ("parser stack overflow");
+  yyresult = 2;
+  /* Fall through.  */
 #endif
 
-  *++ngvsp = nglval;
-#ifdef YYLSP_NEEDED
-  *++nglsp = nglloc;
+yyreturn:
+#ifndef yyoverflow
+  if (yyss != yyssa)
+    YYSTACK_FREE (yyss);
 #endif
-
-  ngstate = ngn;
-  goto ngnewstate;
+  return yyresult;
 }
-#line 180 "ngin.y"
+
+
+#line 180 "ngin-yacc.y"
 
 
 
-int ngwrap (char *s)
+ngwrap (char *s)
 {
   return (1);
 }
 
-int ngerror (char *s)
+ngerror (char *s)
 {
   int line;
   char text[128];
