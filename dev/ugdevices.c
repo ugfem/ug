@@ -506,15 +506,19 @@ else
    D*/
 /****************************************************************************/
 
+#define VAR_ARG_BUFLEN 512
+
 int UserWriteF (const char *format, ...)
 {
-  char buffer[256];
+  char buffer[VAR_ARG_BUFLEN];
   va_list args;
+  int count;
 
   /* initialize args */
   va_start(args,format);
 
-  vsprintf(buffer,format,args);
+  count = vsprintf(buffer,format,args);
+  assert(count<VAR_ARG_BUFLEN-1);
 
         #ifdef ModelP
   if (me==master)
