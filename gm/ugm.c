@@ -6181,155 +6181,91 @@ INT RemoveVectorFromSelection (MULTIGRID *theMG, VECTOR *theVector)
    D*/
 /****************************************************************************/
 
-#ifdef __TWODIM__
-static INT QualityElement (int n, DOUBLE *xc, DOUBLE *yc, DOUBLE *lmin, DOUBLE *lmax)
+static INT GetAngle(DOUBLE *angle,DOUBLE *n1, DOUBLE *n2)
 {
-  int i;
-  DOUBLE x1,x2,y1,y2,w,c,s,l,x,y;
+  DOUBLE norm1,norm2,s;
 
-  for (i=0; i<n; i++)
-  {
-    x1 = xc[(i+1)%n]-xc[i];
-    x2 = xc[(i+n-1)%n]-xc[i];
-    y1 = yc[(i+1)%n]-yc[i];
-    y2 = yc[(i+n-1)%n]-yc[i];
-    l = sqrt(x1*x1+y1*y1);
-    if (l<SMALL_D) RETURN(1);
-    c = x1/l; s = -y1/l;
-    x = c*x2-s*y2;
-    y = s*x2+c*y2;
-    if (fabs(x)<=SMALL_D)
-    {
-      if (y>=0) w=90.0;else w = 270.0;
-    }
-    else
-    {
-      if (x>=0)
-      {
-        w = atan(y/x)/PI*180.0;
-        if (w<0) w = w+360.0;
-      }
-      else
-      {
-        x = -x;
-        w = 180.0-(atan(y/x)/PI*180.0);
-      }
-    }
-    if (w>*lmax) *lmax = w;
-    if (w<*lmin) *lmin = w;
-  }
-  return (0);
+  V_DIM_EUKLIDNORM(n1,norm1);
+  V_DIM_EUKLIDNORM(n2,norm2);
+
+  if ((norm1<SMALL_D)||(norm2<SMALL_D))
+    return(1);
+
+  s=V_DIM_SP(n1,n2)/(norm1*norm2);
+  s=MIN(1,s); s=MAX(-1,s);
+
+  *angle=acos(s);
+  return(0);
 }
 
-INT MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
+static INT SetNormal(DOUBLE *n, DOUBLE **x, INT nc)
 {
-  int i,n;
-  DOUBLE x[4],y[4];
+  DOUBLE v[DIM],w[DIM];
 
-  n = TAG(theElement);
-  for (i=0; i<n; i++)
-  {
-    x[i] = XC(MYVERTEX(CORNER(theElement,i)));
-    y[i] = YC(MYVERTEX(CORNER(theElement,i)));
-  }
-  if (QualityElement(n,x,y,amin,amax)) RETURN(GM_ERROR);
-  return(GM_OK);
-}
-#endif
+        #ifdef __TWODIM__
+  if (nc!=2) return(1);
+  V_DIM_SUBTRACT(x[1],x[0],v);
+  n[0] = v[1];
+  n[1] = -v[0];
+        #endif
 
-#ifdef __THREEDIM__
-static INT QualityElement (INT type, ELEMENT *element, DOUBLE *angle)
-{
-  INT i,j,k,errorcode;
-  DOUBLE *x[MAX_CORNERS_OF_ELEM];
-  DOUBLE delta[3][DIM],s[DIM],t[DIM];
-  DOUBLE help,Scalarprdst,Scalarprd01,Scalarprd02,Scalarprd12;
-  DOUBLE_VECTOR theNormal[MAX_CORNERS_OF_ELEM];
-
-  if (type != TETRAHEDRON)
-    return (1);
-
-  /* load geometrical data of the corners */
-  for (i=0; i<CORNERS_OF_ELEM(element); i++)
-    x[i] = CVECT(MYVERTEX(CORNER(element,i)));
-
-  /* calculate all corner-angles */
-  for (i=0; i<CORNERS_OF_ELEM(element); i++)
-  {
-    /* calculate the normalized differencevectors d[] */
-    for (j=0; j<(CORNERS_OF_ELEM(element)-1); j++)
-      for(k=0; k<DIM; k++)
-        delta[j][k] = x[(i+j+1)%CORNERS_OF_ELEM(element)][k] - x[i][k];
-    if ((errorcode=V3_Normalize(delta[0]))!=0) return(errorcode);
-    if ((errorcode=V3_Normalize(delta[1]))!=0) return(errorcode);
-    if ((errorcode=V3_Normalize(delta[2]))!=0) return(errorcode);
-
-    /* calculate necessary scalarproducts */
-    V3_SCALAR_PRODUCT(delta[0],delta[1],Scalarprd01);
-    V3_SCALAR_PRODUCT(delta[0],delta[2],Scalarprd02);
-    V3_SCALAR_PRODUCT(delta[1],delta[2],Scalarprd12);
-
-    /* calculate angle */
-    V3_LINCOMB(1.0,delta[1],-1.0*Scalarprd01,delta[0],s);
-    V3_LINCOMB(1.0,delta[2],-1.0*Scalarprd02,delta[0],t);
-    if ((errorcode=V3_Normalize(s))!=0) return(errorcode);
-    if ((errorcode=V3_Normalize(t))!=0) return(errorcode);
-    V3_SCALAR_PRODUCT(s,t,Scalarprdst);
-    if (Scalarprdst<-1.0) Scalarprdst=-1.0;
-    if (Scalarprdst> 1.0) Scalarprdst= 1.0;
-    angle[i] = (DOUBLE)acos((float)(Scalarprdst));
-
-    V3_LINCOMB(1.0,delta[2],-1.0*Scalarprd12,delta[1],s);
-    V3_LINCOMB(1.0,delta[0],-1.0*Scalarprd01,delta[1],t);
-    if ((errorcode=V3_Normalize(s))!=0) return(errorcode);
-    if ((errorcode=V3_Normalize(t))!=0) return(errorcode);
-    V3_SCALAR_PRODUCT(s,t,Scalarprdst);
-    if (Scalarprdst<-1.0) Scalarprdst=-1.0;
-    if (Scalarprdst> 1.0) Scalarprdst= 1.0;
-    angle[i] += (DOUBLE)acos((float)(Scalarprdst));
-
-    V3_LINCOMB(1.0,delta[0],-1.0*Scalarprd02,delta[2],s);
-    V3_LINCOMB(1.0,delta[1],-1.0*Scalarprd12,delta[2],t);
-    if ((errorcode=V3_Normalize(s))!=0) return(errorcode);
-    if ((errorcode=V3_Normalize(t))!=0) return(errorcode);
-    V3_SCALAR_PRODUCT(s,t,Scalarprdst);
-    if (Scalarprdst<-1.0) Scalarprdst=-1.0;
-    if (Scalarprdst> 1.0) Scalarprdst= 1.0;
-    angle[i] += (DOUBLE)acos((float)(Scalarprdst));
-    angle[i] -= PI;
-
-    /* normalize sperical angle to unit spere */
-    angle[i] /= 4*PI;
-  }
-  if (TetraSideNormals (element,x,theNormal)) return (2);
-  for (i=0; i<EDGES_OF_ELEM(element); i++)
-  {
-    V3_SCALAR_PRODUCT(theNormal[SIDE_WITH_EDGE(element,i,0)],theNormal[SIDE_WITH_EDGE(element,i,1)],help);
-    help = MAX(help,-1.0);
-    help = MIN(help, 1.0);
-    angle[CORNERS_OF_ELEM(element)+i] = 180.0/PI*acos(-help);
-  }
+        #ifdef __THREEDIM__
+  /* this is the primitive form, it would be better to take a fit */
+  if (nc<3) return(1);
+  V_DIM_SUBTRACT(x[1],x[0],v);
+  V_DIM_SUBTRACT(x[nc-1],x[0],w);
+  V3_VECTOR_PRODUCT(v,w,n);
+        #endif
 
   return(0);
 }
 
 INT MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
 {
-  DOUBLE angle[MAX_CORNERS_OF_ELEM+MAX_EDGES_OF_ELEM];
-  INT i;
+  INT error,i,j,s1,s2,tag;
+  DOUBLE angle,*x[MAX_CORNERS_OF_SIDE],n1[DIM],n2[DIM];
 
-  if (QualityElement(TETRAHEDRON,theElement,angle) != 0) return(GM_ERROR);
-
-  *amin = MAX_D; *amax = -MAX_D;
-  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+  error=GM_OK;
+  tag=TAG(theElement);
+  for (s1=0; s1<SIDES_OF_TAG(tag); s1++)
   {
-    *amax = MAX(*amax,angle[i]);
-    *amin = MIN(*amin,angle[i]);
+    /* get corner coordinates of side and evaluate normal */
+    for (i=0; i<CORNERS_OF_SIDE_TAG(tag,s1); i++)
+      x[i]=CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_SIDE_TAG(tag,s1,i))));
+
+    if (SetNormal(n1,x,CORNERS_OF_SIDE_TAG(tag,s1))!=0) {
+      error=GM_ERROR; continue;
+    }
+
+    for (s2=s1+1; s2<SIDES_OF_TAG(tag); s2++)
+#ifdef __TWODIM__
+      if ((CORNER_OF_SIDE_TAG(tag,s1,0)==CORNER_OF_SIDE_TAG(tag,s2,1)) ||
+          (CORNER_OF_SIDE_TAG(tag,s1,1)==CORNER_OF_SIDE_TAG(tag,s2,0)))
+#endif
+#ifdef __THREEDIM__
+      if (EDGE_OF_TWO_SIDES_TAG(tag,s1,s2)!=-1)
+#endif
+    {
+      /* get corner coordinates of side and evaluate normal */
+      for (i=0; i<CORNERS_OF_SIDE_TAG(tag,s2); i++)
+        x[i]=CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_SIDE_TAG(tag,s2,i))));
+
+      if (SetNormal(n2,x,CORNERS_OF_SIDE_TAG(tag,s2))!=0) {
+        error=GM_ERROR; continue;
+      }
+
+      if (GetAngle(&angle,n1,n2)!=0) {
+        error=GM_ERROR; continue;
+      }
+
+      *amax = MAX(*amax,angle);
+      *amin = MIN(*amin,angle);
+    }
   }
 
-  return(GM_OK);
+  return(error);
 }
-#endif
+
 
 /****************************************************************************/
 /*D

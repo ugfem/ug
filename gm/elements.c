@@ -721,8 +721,12 @@ static INT PreProcessElementDescription (GENERAL_ELEMENT *el)
     for (j=0; j<el->sides_of_elem; j++)
       for (k=0; k<el->edges_of_side[i]; k++)
         for (l=0; l<el->edges_of_side[j]; l++)
-          if (el->edge_of_side[k][i] == el->edge_of_side[k][i])
-            el->edge_of_two_sides[i][j] = el->edge_of_side[k][i];
+          if (el->edge_of_side[i][k] == el->edge_of_side[j][l])
+          {
+            assert( (i==j) || (el->edge_of_two_sides[i][j]==-1) ||
+                    (el->edge_of_two_sides[i][j]==el->edge_of_side[i][k]) );
+            el->edge_of_two_sides[i][j] = el->edge_of_side[i][k];
+          }
 #endif
 
   /* make description globally available */
