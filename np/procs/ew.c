@@ -1344,11 +1344,21 @@ static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT New,
   i = np->idefect;
   if (PreparePCR(np->r,np->display,text,&PrintID))
     NP_RETURN(1,ewresult->error_code);
+  i = np->idefect;
   if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
-                                    ev[np->idefect],np->t,
+                                    ev[i],np->t,
                                     np->M,&ewresult->error_code))
     NP_RETURN(1,ewresult->error_code);
-  if (RayleighDefect(theMG,np->r,np->t,rq,defect))
+  if (dmatmul (theMG,0,level,ON_SURFACE,np->t,np->M,ev[i])
+      != NUM_OK)
+    NP_RETURN(1,ewresult->error_code);
+  if (daxpy(theMG,bl,level,ON_SURFACE,np->t,-ew[i],np->r))
+    NP_RETURN(1,ewresult->error_code);
+    #ifdef ModelP
+  if (a_vector_collect(NP_MG(theNP),0,level,np->t) != NUM_OK)
+    NP_RETURN(1,ewresult->error_code);
+    #endif
+  if (dnrm2x(theMG,bl,level,ON_SURFACE,np->t,defect))
     NP_RETURN(1,ewresult->error_code);
   if (sc_mul(defect2reach,defect,reduction,np->t))
     NP_RETURN(1,ewresult->error_code);
