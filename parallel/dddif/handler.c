@@ -48,6 +48,8 @@
 #include "ugm.h"
 #include "algebra.h"
 #include "general.h"
+#include "rm.h"
+#include "refine.h"
 
 /****************************************************************************/
 /*																			*/
@@ -912,8 +914,8 @@ void ElementLDataConstructor (DDD_OBJ obj)
 	int         level = DDD_InfoAttr(PARHDRE(pe));
 	GRID        *theGrid = GetGridOnDemand(dddctrl.currMG,level);
 
-	PRINTDEBUG(dddif,2,("%2d: ElementUpdate(): e=%x EOBJ=%d l=%d\n",\
-		me,pe,OBJT(pe),level))
+	PRINTDEBUG(dddif,2,("%2d: ElementLDataConsX(): pe=%08x/%x eID=%d EOBJ=%d l=%d\n",\
+		me,DDD_InfoGlobalId(PARHDRE(pe)),pe,ID(pe),OBJT(pe),level))
 
 	after = LASTELEMENT(theGrid);
 	SETLEVEL(pe,level);
@@ -1006,8 +1008,8 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 	NODE	 *node;
 
 	PRINTDEBUG(dddif,1,("%d: ElementXferCopy(): "\
-		"pe=%08x/%x proc=%d prio=%d EOBJT=%d\n", me,\
-		DDD_InfoGlobalId(PARHDRE(pe)), pe, proc, prio, OBJT(pe)))
+		"pe=%08x/%x eID=%d proc=%d prio=%d EOBJT=%d\n", me,\
+		DDD_InfoGlobalId(PARHDRE(pe)),pe,ID(pe), proc, prio, OBJT(pe)))
 
 	/* add element sides */
 	/* must be done before any XferCopyObj-call! herein */
@@ -1029,8 +1031,6 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 	/* or directly after XferCopyObj-call */
 	DDD_XferAddData(EDGES_OF_ELEM(pe), TypeEdge);
 
-
-	
 	/* copy corner nodes */
 	for(i=0; i<CORNERS_OF_ELEM(pe); i++)
 	{
@@ -1038,6 +1038,7 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 
 		PRINTDEBUG(dddif,2,("%2d: ElementXferCopy():  e=%x Xfer n=%x i=%d\n",\
 				me, pe, node, i))
+
 ganz_haesslicher_fix = prio;
 		DDD_XferCopyObj(PARHDR(node), proc, PrioNode);
 	}
@@ -1270,6 +1271,17 @@ void ElementObjMkCons(DDD_OBJ obj)
 	{
 		for (i=0; i<SIDES_OF_ELEM(pe); i++) VOBJECT(SVECTOR(pe,i)) = (void*)pe;
 	}
+
+	/* connect with father */
+	{
+	ELEMENT *father = EFATHER(pe);
+	if (father != NULL) {
+		assert(NSONS(father)<NSONS_OF_RULE(MARK2RULEADR(father,REFINE(father))));
+		SET_SON(father,NSONS(father),pe);
+		SETNSONS(father,NSONS(father)+1);
+	}
+	}
+
 }
 
 
