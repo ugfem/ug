@@ -4148,80 +4148,46 @@ static INT InitChannel (void)
 {
   DOUBLE radius,MidPoint[2];
 
-  /* allocate new domain structure */
   MidPoint[0] = MidPoint[1] = 0.5;
-  radius = 0.55;
+  radius = 1;
 
-  if (CreateDomainWithParts(
-        "Channel",                              /* name of the new
-                                                   domain         */
-        MidPoint,radius,                        /* circle containing the
-                                                   domain   */
-        49,                                     /* number of boundary
-                                                   segments    */
-        49,                                     /* number of corners
-                                                 */
-        NO,                                     /* true if domain is
-                                                   convex       */
-        3,
-        &channelp1cr_dpi)==NULL)
+  if (CreateDomainWithParts("Channel",MidPoint,radius,49,49,NO,3,
+                            &channelp1cr_dpi)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(
-        QUOTE(NAME(0)),                      /* name of the boundary
-                                                segment         */
-        1,                                   /* number of left subdomain
-                                              */
-        0,                                   /* number of right
-                                                subdomain            */
-        0,                                   /* number of segment,
-                                                starting with 0   */
-        0,                                   /* number of corner where
-                                                segment starts*/
-        1,                                   /* number of corner where
-                                                segment ends  */
-        1,                                   /* resolution, use 1 for
-                                                straight line  */
-        0.0,                                 /* begin of parameter
-                                                interval          */
-        1.0,                                 /* end of parameter
-                                                interval            */
-        NAME(0),                             /* function mapping
-                                                parameter to world  */
-        NULL                                 /* user defined pointer to
-                                                be supplied  */
-        )==NULL) return(1);
-
-  if (CreateBoundarySegment2D(QUOTE(NAME(1)),1,2, 1,1,2,
+  if (CreateBoundarySegment2D(QUOTE(NAME(0)),1,0, 0,0,1,
+                              1,0.0,1.0,NAME(0),NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D(QUOTE(NAME(1)),1,0, 1,1,2,
                               1,0.0,1.0,NAME(1),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(2)),1,2, 2,2,3,
+  if (CreateBoundarySegment2D(QUOTE(NAME(2)),1,0, 2,2,3,
                               1,0.0,1.0,NAME(2),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(3)),1,2, 3,3,4,
+  if (CreateBoundarySegment2D(QUOTE(NAME(3)),1,0, 3,3,4,
                               1,0.0,1.0,NAME(3),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(4)),1,2, 4,4,5,
+  if (CreateBoundarySegment2D(QUOTE(NAME(4)),1,0, 4,4,5,
                               1,0.0,1.0,NAME(4),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(5)),1,2, 5,5,6,
+  if (CreateBoundarySegment2D(QUOTE(NAME(5)),1,0, 5,5,6,
                               1,0.0,1.0,NAME(5),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(6)),1,2, 6,6,7,
+  if (CreateBoundarySegment2D(QUOTE(NAME(6)),1,0, 6,6,7,
                               1,0.0,1.0,NAME(6),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(7)),1,2, 7,7,8,
+  if (CreateBoundarySegment2D(QUOTE(NAME(7)),1,0, 7,7,8,
                               1,0.0,1.0,NAME(7),NULL)==NULL)
     return(1);
   if (CreateBoundarySegment2D(QUOTE(NAME(8)),1,0, 8,8,9,
                               1,0.0,1.0,NAME(8),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(9)),1,3, 9,9,10,
+  if (CreateBoundarySegment2D(QUOTE(NAME(9)),1,0, 9,9,10,
                               1,0.0,1.0,NAME(9),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(10)),1,3, 10,10,11,
+  if (CreateBoundarySegment2D(QUOTE(NAME(10)),1,0, 10,10,11,
                               1,0.0,1.0,NAME(10),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(11)),1,3, 11,11,12,
+  if (CreateBoundarySegment2D(QUOTE(NAME(11)),1,0, 11,11,12,
                               1,0.0,1.0,NAME(11),NULL)==NULL)
     return(1);
   if (CreateBoundarySegment2D(QUOTE(NAME(12)),1,0, 12,12,13,
@@ -4230,34 +4196,34 @@ static INT InitChannel (void)
   if (CreateBoundarySegment2D(QUOTE(NAME(13)),1,0, 13,13,14,
                               1,0.0,1.0,NAME(13),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(14)),1,4, 14,14,15,
+  if (CreateBoundarySegment2D(QUOTE(NAME(14)),1,0, 14,14,15,
                               1,0.0,1.0,NAME(14),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(15)),1,4, 15,15,16,
+  if (CreateBoundarySegment2D(QUOTE(NAME(15)),1,0, 15,15,16,
                               1,0.0,1.0,NAME(15),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(16)),1,4, 16,16,17,
+  if (CreateBoundarySegment2D(QUOTE(NAME(16)),1,0, 16,16,17,
                               1,0.0,1.0,NAME(16),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(17)),1,4, 17,17,18,
+  if (CreateBoundarySegment2D(QUOTE(NAME(17)),1,0, 17,17,18,
                               1,0.0,1.0,NAME(17),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(18)),1,4, 18,18,19,
+  if (CreateBoundarySegment2D(QUOTE(NAME(18)),1,0, 18,18,19,
                               1,0.0,1.0,NAME(18),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(19)),1,4, 19,19,20,
+  if (CreateBoundarySegment2D(QUOTE(NAME(19)),1,0, 19,19,20,
                               1,0.0,1.0,NAME(19),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(20)),1,4, 20,20,21,
+  if (CreateBoundarySegment2D(QUOTE(NAME(20)),1,0, 20,20,21,
                               1,0.0,1.0,NAME(20),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(21)),1,4, 21,21,22,
+  if (CreateBoundarySegment2D(QUOTE(NAME(21)),1,0, 21,21,22,
                               1,0.0,1.0,NAME(21),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(22)),1,4, 22,22,23,
+  if (CreateBoundarySegment2D(QUOTE(NAME(22)),1,0, 22,22,23,
                               1,0.0,1.0,NAME(22),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(23)),1,4, 23,23,24,
+  if (CreateBoundarySegment2D(QUOTE(NAME(23)),1,0, 23,23,24,
                               1,0.0,1.0,NAME(23),NULL)==NULL)
     return(1);
   if (CreateBoundarySegment2D(QUOTE(NAME(24)),1,0, 24,24,25,
@@ -4271,79 +4237,76 @@ static INT InitChannel (void)
   if (CreateBoundarySegment2D("Segment26", 2,0, 26,26,27,
                               1,0.0,1.0,NAME(26),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment27",1,2, 27,28,27,
+  if (CreateBoundarySegment2D("Segment27",0,2, 27,28,27,
                               1,0.0,1.0,NAME(7),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment28",1,2, 28,29,28,
+  if (CreateBoundarySegment2D("Segment28",0,2, 28,29,28,
                               1,0.0,1.0,NAME(6),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment29",1,2, 29,30,29,
+  if (CreateBoundarySegment2D("Segment29",0,2, 29,30,29,
                               1,0.0,1.0,NAME(5), NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment30",1,2, 30,31,30,
+  if (CreateBoundarySegment2D("Segment30",0,2, 30,31,30,
                               1,0.0,1.0,NAME(4),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment31",1,2, 31,32,31,
+  if (CreateBoundarySegment2D("Segment31",0,2, 31,32,31,
                               1,0.0,1.0,NAME(3),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment32",1,2, 32,33,32,
+  if (CreateBoundarySegment2D("Segment32",0,2, 32,33,32,
                               1,0.0,1.0,NAME(2),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment33",1,2, 33,26,33,
+  if (CreateBoundarySegment2D("Segment33",0,2, 33,26,33,
                               1,0.0,1.0,NAME(1),NULL)==NULL)
     return(1);
 
-  /* nun zu SD 3 */
+  /* Subdomain 3 */
   if (CreateBoundarySegment2D(QUOTE(NAME(34)),3,0, 34,34,35,
                               1,0.0,1.0,NAME(34),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment35",1,3, 35,36,35,
+  if (CreateBoundarySegment2D("Segment35",0,3, 35,36,35,
                               1,0.0,1.0,NAME(11),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment36",1,3, 36,37,36,
+  if (CreateBoundarySegment2D("Segment36",0,3, 36,37,36,
                               1,0.0,1.0,NAME(10),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment37",1,3, 37,34,37,
+  if (CreateBoundarySegment2D("Segment37",0,3, 37,34,37,
                               1,0.0,1.0,NAME(9),NULL)==NULL)
     return(1);
 
-  /* und nun zu SD 4 */
+  /* Subdomain 4 */
   if (CreateBoundarySegment2D("Segment38",4,0, 38,38,39,
                               1,0.0,1.0,NAME(38),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment39",1,4, 39,40,39,
+  if (CreateBoundarySegment2D("Segment39",0,4, 39,40,39,
                               1,0.0,1.0,NAME(23),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment40",1,4, 40,41,40,
+  if (CreateBoundarySegment2D("Segment40",0,4, 40,41,40,
                               1,0.0,1.0,NAME(22),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment41",1,4, 41,42,41,
+  if (CreateBoundarySegment2D("Segment41",0,4, 41,42,41,
                               1,0.0,1.0,NAME(21),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment42",1,4, 42,43,42,
+  if (CreateBoundarySegment2D("Segment42",0,4, 42,43,42,
                               1,0.0,1.0,NAME(20),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D(QUOTE(NAME(43)),1,4, 43,44,43,
+  if (CreateBoundarySegment2D(QUOTE(NAME(43)),0,4, 43,44,43,
                               1,0.0,1.0,NAME(19),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment44",1,4, 44,45,44,
+  if (CreateBoundarySegment2D("Segment44",0,4, 44,45,44,
                               1,0.0,1.0,NAME(18),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment45",1,4, 45,46,45,
+  if (CreateBoundarySegment2D("Segment45",0,4, 45,46,45,
                               1,0.0,1.0,NAME(17),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment46",1,4, 46,47,46,
+  if (CreateBoundarySegment2D("Segment46",0,4, 46,47,46,
                               1,0.0,1.0,NAME(16),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment47",1,4, 47,48,47,
+  if (CreateBoundarySegment2D("Segment47",0,4, 47,48,47,
                               1,0.0,1.0,NAME(15),NULL)==NULL)
     return(1);
-  if (CreateBoundarySegment2D("Segment48",1,4, 48,38,48,
+  if (CreateBoundarySegment2D("Segment48",0,4, 48,38,48,
                               1,0.0,1.0,NAME(14),NULL)==NULL)
     return(1);
-  /* allocate the boundary segments, segment allocation must */
-  /* immediately follow the domain definition. */
-  /* return ok */
 
   return(0);
 }
@@ -4478,10 +4441,6 @@ static INT InitChannelNoParts (void)
   if (CreateBoundarySegment2D(QUOTE(NAME(38)),4,0, 28,14,24,
                               1,0.0,1.0,NAME(38),NULL)==NULL)
     return(1);
-
-  /* allocate the boundary segments, segment allocation must                            */
-  /* immediately follow the domain definition.							*/
-  /* return ok */
 
   return(0);
 }
