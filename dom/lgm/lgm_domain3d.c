@@ -2253,7 +2253,7 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
   h = 0.0;
   D = 1;
   coeff = 0;
-  SURFACE_ADAPT = 0;
+  SURFACE_ADAPT = 1;
   cosAngle = 0.94;
   SAVE_SURFACE = 0;
   for (i=1; i<argc; i++)
@@ -3292,8 +3292,14 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
         Point = PointList[i];
         if(Compare_Points(&Point, global)==1)
         {
+                                        #ifdef NO_PROJECT
+          LGM_BNDP_GLOBAL(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[i])))[0] = global[0];
+          LGM_BNDP_GLOBAL(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[i])))[1] = global[1];
+          LGM_BNDP_GLOBAL(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[i])))[2] = global[2];
+                                        #else
           LGM_BNDP_LOCAL(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[i])))[0] = local[0];
           LGM_BNDP_LOCAL(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[i])))[1] = local[1];
+                                        #endif
           LGM_BNDP_SURFACE(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[i]))) = theSurface;
           LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[i]))++;
           break;
@@ -3307,9 +3313,14 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
       local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,1);
       Surface_Local2Global(theSurface,global,local);
       ID = LGM_SURFDISC_MESH_ID(LGM_SURFACE_DISC(theSurface), j);
-
+                        #ifdef NO_PROJECT
+      LGM_BNDP_GLOBAL(BNDP2LGM(theMesh->theBndPs[ID]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[ID])))[0] = global[0];
+      LGM_BNDP_GLOBAL(BNDP2LGM(theMesh->theBndPs[ID]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[ID])))[1] = global[1];
+      LGM_BNDP_GLOBAL(BNDP2LGM(theMesh->theBndPs[ID]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[ID])))[2] = global[2];
+                        #else
       LGM_BNDP_LOCAL(BNDP2LGM(theMesh->theBndPs[ID]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[ID])))[0] = local[0];
       LGM_BNDP_LOCAL(BNDP2LGM(theMesh->theBndPs[ID]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[ID])))[1] = local[1];
+                        #endif
       LGM_BNDP_SURFACE(BNDP2LGM(theMesh->theBndPs[ID]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[ID]))) = theSurface;
       LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[ID]))++;
     }
@@ -5113,16 +5124,23 @@ INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
-  DOUBLE *local;
+  DOUBLE *local, *g;
+  INT k;
+
   theBndP = BNDP2LGM(aBndP);
   theSurface = LGM_BNDP_SURFACE(theBndP,0);
 
   assert(LGM_BNDP_N(theBndP));
   if(theSurface==NULL)
     assert(0);
+        #ifdef NO_PROJECT
+  g = LGM_BNDP_GLOBAL(theBndP,0);
+  for(k=0; k<3; k++)
+    global[k] = g[k];
+        #else
   local = LGM_BNDP_LOCAL(theBndP,0);
   Surface_Local2Global (theSurface,global,local);
-
+        #endif
   return (0);
 }
 
@@ -5131,13 +5149,20 @@ static INT BNDP_Globali (BNDP *aBndP, DOUBLE *global, INT i)
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
-  DOUBLE *local;
+  DOUBLE *local, *g;
+  INT k;
 
   theBndP = BNDP2LGM(aBndP);
   theSurface = LGM_BNDP_SURFACE(theBndP,i);
 
+        #ifdef NO_PROJECT
+  g = LGM_BNDP_GLOBAL(theBndP,i);
+  for(k=0; k<3; k++)
+    global[k] = g[k];
+        #else
   local = LGM_BNDP_LOCAL(theBndP,i);
   Surface_Local2Global (theSurface,global,local);
+        #endif
 
   return (0);
 }
@@ -5147,8 +5172,8 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
-  DOUBLE global[DOM_PARAM_OFFSET],*local;
-  INT ilocal=0;
+  DOUBLE global[DOM_PARAM_OFFSET],*local, *g;
+  INT ilocal=0, k;
 
   /* general */
   theBndP = BNDP2LGM(aBndP);
@@ -5161,8 +5186,14 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
     return (2);
 
   /* global coordinates */
+        #ifdef NO_PROJECT
+  g = LGM_BNDP_GLOBAL(theBndP,i);
+  for(k=0; k<3; k++)
+    global[k] = g[k];
+        #else
   local = LGM_BNDP_LOCAL(theBndP,i);
   Surface_Local2Global(theSurface,global,local);
+        #endif
 
   /* get values */
   if (in!=NULL)
@@ -5367,13 +5398,24 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   theBndS = (LGM_BNDS *)GetFreelistMemory(Heap,sizeof(LGM_BNDS));
   LGM_BNDS_SURFACE(theBndS) = theSurface;
 
+        #ifdef NO_PROJECT
+  LGM_BNDS_GLOBAL(theBndS,0,0) = LGM_BNDP_GLOBAL(theBndP1,i0)[0];
+  LGM_BNDS_GLOBAL(theBndS,0,1) = LGM_BNDP_GLOBAL(theBndP1,i0)[1];
+  LGM_BNDS_GLOBAL(theBndS,0,2) = LGM_BNDP_GLOBAL(theBndP1,i0)[2];
+  LGM_BNDS_GLOBAL(theBndS,1,0) = LGM_BNDP_GLOBAL(theBndP1,j0)[0];
+  LGM_BNDS_GLOBAL(theBndS,1,1) = LGM_BNDP_GLOBAL(theBndP1,j0)[1];
+  LGM_BNDS_GLOBAL(theBndS,1,2) = LGM_BNDP_GLOBAL(theBndP1,j0)[2];
+  LGM_BNDS_GLOBAL(theBndS,2,0) = LGM_BNDP_GLOBAL(theBndP1,k0)[0];
+  LGM_BNDS_GLOBAL(theBndS,2,1) = LGM_BNDP_GLOBAL(theBndP1,k0)[1];
+  LGM_BNDS_GLOBAL(theBndS,2,2) = LGM_BNDP_GLOBAL(theBndP1,k0)[2];
+        #else
   LGM_BNDS_LOCAL(theBndS,0,0) = LGM_BNDP_LOCAL(theBndP1,i0)[0];
   LGM_BNDS_LOCAL(theBndS,0,1) = LGM_BNDP_LOCAL(theBndP1,i0)[1];
   LGM_BNDS_LOCAL(theBndS,1,0) = LGM_BNDP_LOCAL(theBndP2,j0)[0];
   LGM_BNDS_LOCAL(theBndS,1,1) = LGM_BNDP_LOCAL(theBndP2,j0)[1];
   LGM_BNDS_LOCAL(theBndS,2,0) = LGM_BNDP_LOCAL(theBndP3,k0)[0];
   LGM_BNDS_LOCAL(theBndS,2,1) = LGM_BNDP_LOCAL(theBndP3,k0)[1];
-
+        #endif
   /* lege Richtung fuer die BNDS fest */
 
   V_DIM_CLEAR(nv);
@@ -5638,25 +5680,6 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
   BNDP_Global(aBndP0,globalp1);
   BNDP_Global(aBndP1,globalp2);
 
-  /* print information about the 2 BndP's */
-  /*	printf("%s\n", "BNDP_CreateBndP");
-          printf("%20.12lf %20.12lf %20.12lf\n", globalp1[0], globalp1[1], globalp1[2]);
-          printf("%d\n", LGM_BNDP_NLINE(theBndP1));
-          for(i=0;i<LGM_BNDP_NLINE(theBndP1);i++)
-                  printf("%20.12lf %20.12lf\n", LGM_BNDP_LINE_LEFT(theBndP1, i), LGM_BNDP_LINE_RIGHT(theBndP1, i));
-          printf("%d\n", LGM_BNDP_N(theBndP1));
-          for(i=0;i<LGM_BNDP_N(theBndP1);i++)
-                  printf("%20.12lf %20.12lf\n",	LGM_BNDP_LOCAL(theBndP1,i)[0],
-                                                                                  LGM_BNDP_LOCAL(theBndP1,i)[1]);
-          printf("%20.12lf %20.12lf %20.12lf\n", globalp2[0], globalp2[1], globalp2[2]);
-          printf("%d\n", LGM_BNDP_NLINE(theBndP2));
-          for(i=0;i<LGM_BNDP_NLINE(theBndP2);i++)
-                  printf("%20.12lf %20.12lf\n", LGM_BNDP_LINE_LEFT(theBndP2, i), LGM_BNDP_LINE_RIGHT(theBndP2, i));
-          printf("%d\n", LGM_BNDP_N(theBndP2));
-          for(i=0;i<LGM_BNDP_N(theBndP2);i++)
-                  printf("%20.12lf %20.12lf\n",	LGM_BNDP_LOCAL(theBndP2,i)[0],
-                                                                                  LGM_BNDP_LOCAL(theBndP2,i)[1]);*/
-
   /* check */
   assert(E_Distance(globalp1, globalp2)>SMALL);
 
@@ -5700,8 +5723,8 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
           l2 = LGM_BNDP_LINE(theBndP2, j);
           if((    (ABS(LGM_BNDP_LINE_RIGHT(theBndP1, i) - localp2)<SMALL)
                   ||  (ABS(LGM_BNDP_LINE_LEFT (theBndP2, j) - localp1)<SMALL) )
-             || (    (ABS(LGM_BNDP_LINE_LEFT (theBndP1, i) - localp2)<SMALL)
-                     ||  (ABS(LGM_BNDP_LINE_RIGHT(theBndP2, j) - localp1)<SMALL) ))
+             || ((ABS(LGM_BNDP_LINE_LEFT (theBndP1, i) - localp2)<SMALL)
+                 ||  (ABS(LGM_BNDP_LINE_RIGHT(theBndP2, j) - localp1)<SMALL) ))
           {
             theLine = LGM_BNDP_LINE(theBndP1, i);
             found++;
@@ -5789,8 +5812,14 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
                                                   }*/
           Line_Global2Local(theLine, global, local);
           LGM_BNDP_SURFACE(theBndP,LGM_BNDP_N(theBndP)) = Surfaces[i];
+                                        #ifdef NO_PROJECT
+          LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[0] = midp[0];
+          LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[1] = midp[1];
+          LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[2] = midp[2];
+                                        #else
           LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[0] = - (DOUBLE) LGM_LINE_ID(theLine) - 2.0;
           LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[1] = local[0];
+                                        #endif
           LGM_BNDP_N(theBndP)++;
         }
     ASSERT(max==LGM_BNDP_N(theBndP));
@@ -5822,8 +5851,14 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
     if( Check_Local_Coord(theNewSurface, local) )
     {
       LGM_BNDP_SURFACE(theBndP,LGM_BNDP_N(theBndP)) = theNewSurface;
+                        #ifdef NO_PROJECT
+      LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[0] = midp[0];
+      LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[1] = midp[1];
+      LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[2] = midp[2];
+                        #else
       LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[0] = local[0];
       LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[1] = local[1];
+                        #endif
       LGM_BNDP_N(theBndP)++;
 
       if( (local[0]<0.0) || (local[1]<0.0) )
@@ -5868,7 +5903,7 @@ INT BNDP_SaveBndP (BNDP *aBndP)
   INT i;
   LGM_BNDP *theBndP;
   int n;
-  double d[2], e;
+  double d[3], e;
 
   theBndP = BNDP2LGM(aBndP);
   /* the lines */
@@ -5893,9 +5928,16 @@ INT BNDP_SaveBndP (BNDP *aBndP)
   {
     n = LGM_SURFACE_ID(LGM_BNDP_SURFACE(theBndP,i));
     if (Bio_Write_mint(1,&n)) return (1);
+                #ifdef NO_PROJECT
+    d[0] = LGM_BNDP_GLOBAL(theBndP,i)[0];
+    d[1] = LGM_BNDP_GLOBAL(theBndP,i)[1];
+    d[2] = LGM_BNDP_GLOBAL(theBndP,i)[2];
+    if (Bio_Write_mdouble(3,d)) return (1);
+                #else
     d[0] = LGM_BNDP_LOCAL(theBndP,i)[0];
     d[1] = LGM_BNDP_LOCAL(theBndP,i)[1];
     if (Bio_Write_mdouble(2,d)) return (1);
+                #endif
   }
   return(0);
 }
@@ -5907,7 +5949,7 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
   LGM_SURFACE *theSurface;
   LGM_LINE *theLine;
   int i,id, nline, nsurf;
-  double local[2], left, right;
+  double local[2], global[3], left, right;
   LGM_BNDP *theBndP;
 
   theDomain = BVP2LGM(theBVP);
@@ -5944,10 +5986,18 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
     for (theSurface=FirstSurface(theDomain); theSurface!=NULL; theSurface=NextSurface(theDomain))
       if (LGM_SURFACE_ID(theSurface)==id) break;
     if (theSurface==NULL) return (NULL);
+                #ifdef NO_PROJECT
+    if (Bio_Read_mdouble(3,global)) return (NULL);
+    LGM_BNDP_SURFACE(theBndP,i) = theSurface;
+    LGM_BNDP_GLOBAL(theBndP,i)[0] = global[0];
+    LGM_BNDP_GLOBAL(theBndP,i)[1] = global[1];
+    LGM_BNDP_GLOBAL(theBndP,i)[2] = global[2];
+                #else
     if (Bio_Read_mdouble(2,local)) return (NULL);
     LGM_BNDP_SURFACE(theBndP,i) = theSurface;
     LGM_BNDP_LOCAL(theBndP,i)[0] = local[0];
     LGM_BNDP_LOCAL(theBndP,i)[1] = local[1];
+                #endif
   }
 
   return((BNDP *)theBndP);
@@ -5983,6 +6033,17 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   if (LGM_SURFACE_BNDCOND(theSurface)==NULL)
     return (2);
 
+        #ifdef NO_PROJECT
+  global0[0] = LGM_BNDS_GLOBAL(theBndS,0,0);
+  global0[1] = LGM_BNDS_GLOBAL(theBndS,0,1);
+  global0[2] = LGM_BNDS_GLOBAL(theBndS,0,2);
+  global1[0] = LGM_BNDS_GLOBAL(theBndS,1,0);
+  global1[1] = LGM_BNDS_GLOBAL(theBndS,1,1);
+  global1[2] = LGM_BNDS_GLOBAL(theBndS,1,2);
+  global2[0] = LGM_BNDS_GLOBAL(theBndS,2,0);
+  global2[1] = LGM_BNDS_GLOBAL(theBndS,2,1);
+  global2[2] = LGM_BNDS_GLOBAL(theBndS,2,2);
+        #else
   loc0[0] =  LGM_BNDS_LOCAL(theBndS,0,0);
   loc0[1] =  LGM_BNDS_LOCAL(theBndS,0,1);
   loc1[0] =  LGM_BNDS_LOCAL(theBndS,1,0);
@@ -5993,7 +6054,7 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   Surface_Local2Global (theSurface,global0,loc0);
   Surface_Local2Global (theSurface,global1,loc1);
   Surface_Local2Global (theSurface,global2,loc2);
-
+        #endif
   global[0] = (1-local[0]-local[1]) * global0[0] + local[0] * global1[0] + local[1] * global2[0];
   global[1] = (1-local[0]-local[1]) * global0[1] + local[0] * global1[1] + local[1] * global2[1];
   global[2] = (1-local[0]-local[1]) * global0[2] + local[0] * global1[2] + local[1] * global2[2];
@@ -6069,6 +6130,17 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
   theBndS = BNDS2LGM(aBndS);
   theSurface = LGM_BNDS_SURFACE(theBndS);
 
+        #ifdef NO_PROJECT
+  global0[0] = LGM_BNDS_GLOBAL(theBndS,0,0);
+  global0[1] = LGM_BNDS_GLOBAL(theBndS,0,1);
+  global0[2] = LGM_BNDS_GLOBAL(theBndS,0,2);
+  global1[0] = LGM_BNDS_GLOBAL(theBndS,1,0);
+  global1[1] = LGM_BNDS_GLOBAL(theBndS,1,1);
+  global1[2] = LGM_BNDS_GLOBAL(theBndS,1,2);
+  global2[0] = LGM_BNDS_GLOBAL(theBndS,2,0);
+  global2[1] = LGM_BNDS_GLOBAL(theBndS,2,1);
+  global2[2] = LGM_BNDS_GLOBAL(theBndS,2,2);
+        #else
   loc0[0] =  LGM_BNDS_LOCAL(theBndS,0,0);
   loc0[1] =  LGM_BNDS_LOCAL(theBndS,0,1);
   loc1[0] =  LGM_BNDS_LOCAL(theBndS,1,0);
@@ -6079,23 +6151,29 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
   Surface_Local2Global (theSurface,global0,loc0);
   Surface_Local2Global (theSurface,global1,loc1);
   Surface_Local2Global (theSurface,global2,loc2);
+        #endif
 
   global[0] = local[0] * global0[0] + local[1] * global1[0] + (1-local[0]-local[1]) * global2[0];
   global[1] = local[0] * global0[1] + local[1] * global1[1] + (1-local[0]-local[1]) * global2[1];
   global[2] = local[0] * global0[2] + local[1] * global1[2] + (1-local[0]-local[1]) * global2[2];
 
-  V_DIM_CLEAR(nv);
-  GetLocalKoord(theSurface,global,loc, nv);
-
   /*theBndP = (LGM_BNDP *)GetFreelistMemory(Heap,sizeof(LGM_BNDP));*/
   theBndP = (LGM_BNDP *)malloc(sizeof(LGM_BNDP));
   LGM_BNDP_N(theBndP) = 1;
   LGM_BNDP_SURFACE(theBndP,0) = theSurface;
-  LGM_BNDP_LOCAL(theBndP,0)[0] = loc[0];                /* TODO */
+
+        #ifdef NO_PROJECT
+  LGM_BNDP_GLOBAL(theBndP,0)[0] = global[0];
+  LGM_BNDP_GLOBAL(theBndP,0)[1] = global[1];
+  LGM_BNDP_GLOBAL(theBndP,0)[2] = global[2];
+        #else
+  V_DIM_CLEAR(nv);
+  GetLocalKoord(theSurface,global,loc, nv);
+  LGM_BNDP_LOCAL(theBndP,0)[0] = loc[0];                        /* TODO */
   LGM_BNDP_LOCAL(theBndP,0)[1] = loc[1];
+        #endif
 
   return((BNDP *)theBndP);
-
 }
 
 

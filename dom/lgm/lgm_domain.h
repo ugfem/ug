@@ -270,13 +270,16 @@
 #define LGM_BNDP_LINEPTR(p)                                     ((p)->Line)
 
 #define LGM_BNDP_LOCAL(p,i)                                     ((p)->Surf[(i)].local)
+#define LGM_BNDP_GLOBAL(p,i)                            ((p)->Surf[(i)].global)
 #define LGM_BNDP_SURFACE_GSURFACE(p)            ((p).theSurf)
 #define LGM_BNDP_SURFACE_LOCAL(p)                       ((p).local)
+#define LGM_BNDP_SURFACE_GLOBAL(p)                      ((p).global)
 
 /* macros for LGM_BNDS */
 #define LGM_BNDS_N(p)                                           ((p)->nn)
 #define LGM_BNDS_SURFACE(p)                                     ((p)->theSurf)
 #define LGM_BNDS_LOCAL(p,i,j)                           ((p)->local[(i)][(j)])
+#define LGM_BNDS_GLOBAL(p,i,j)                          ((p)->global[(i)][(j)])
 #define LGM_BNDS_TRIANGLE(p,i)                          ((p)->triangle[(i)])
 
 
@@ -417,6 +420,8 @@ typedef struct lgm_bnds LGM_BNDS;
 /*	3D structures															*/
 /*						                            */
 /****************************************************************************/
+
+#define NO_PROJECT
 
 struct lgm_point {
 
@@ -571,14 +576,18 @@ struct lgm_bndp_line {
 struct lgm_bndp_surf {
 
   struct lgm_surface *theSurf;                  /* surface										*/
-  DOUBLE local[2];                                              /* local coordinate								*/
+        #ifdef NO_PROJECT
+  DOUBLE global[3];                                                     /* global coordinate								*/
+        #else
+  DOUBLE local[2];                                                      /* local coordinate								*/
+    #endif
 };
 
 struct lgm_bndp {
 
   INT nlines;                                                           /* number of lines								*/
   struct lgm_bndp_line *Line;                           /* line(s)										*/
-  INT nsurf;                            /* number of surfaces                                   */
+  INT nsurf;                                /* number of surfaces                                       */
   struct lgm_bndp_surf *Surf;           /* surface(s)					                */
 };
 
@@ -592,7 +601,11 @@ struct lgm_bnds {
 
   INT nn;
   struct lgm_surface *theSurf;                  /* surface										*/
+        #ifdef NO_PROJECT
+  DOUBLE global[3][3];                                  /* global coordinates							*/
+        #else
   DOUBLE local[3][2];                                           /* local coordinates							*/
+        #endif
 };
 
 

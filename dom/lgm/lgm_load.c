@@ -693,8 +693,11 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
       LGM_BNDP_SURFACE((LGM_BNDP*)(theMesh->theBndPs[i]),j) = theSurface;
 
       /* add the local coordinates: thereby triangleId is added*/
+                        #ifdef NO_PROJECT
+                        #else
       (LGM_BNDP_LOCAL((LGM_BNDP*)(theMesh->theBndPs[i]),j))[0] = ((lgm_mesh_info.BndP_Cor_TriaID)[i])[j] +  (((lgm_mesh_info.BndP_lcoord)[i])[j])[0];
       (LGM_BNDP_LOCAL((LGM_BNDP*)(theMesh->theBndPs[i]),j))[1] = ((lgm_mesh_info.BndP_Cor_TriaID)[i])[j] +  (((lgm_mesh_info.BndP_lcoord)[i])[j])[1];
+                        #endif
     }
 
     /*add LineIDs, And localCoordinates of the bndp_line_relations . . .*/
