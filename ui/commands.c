@@ -79,10 +79,11 @@
 #endif
 
 /* numerics module */
-#include "num.h"
+#include "np.h"
 #include "formats.h"
 #include "disctools.h"
 #include "data_io.h"
+#include "npcheck.h"
 
 /* graph module */
 #include "wpm.h"
@@ -5969,7 +5970,7 @@ static INT ExtraConnectionCommand (INT argc, char **argv)
    'CheckGrid' one or more of 'CheckGeometry' 'CheckAlgebra', 'CheckLists'
    and 'CheckInterfaces'. Default check is 'CheckGeometry'.
 
-   'check {$a | $g | $c | $l | $i}*'
+   'check {$a | $g | $c | $l | $i}* [$n]'
 
    .  $a - all possible checks are done
    .  $g - check the geometric part of data structures (default)
@@ -5986,7 +5987,7 @@ static INT CheckCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   GRID *theGrid;
-  INT checkgeom,checkalgebra,checklists,checkbvp;
+  INT checkgeom,checkalgebra,checklists,checkbvp,checknp;
         #ifdef ModelP
   INT checkif;
         #endif
@@ -6001,7 +6002,7 @@ static INT CheckCommand (INT argc, char **argv)
 
   /* set default options */
   checkgeom = TRUE;
-  checkalgebra = checklists = checkbvp = FALSE;
+  checkalgebra = checklists = checkbvp = checknp = FALSE;
         #ifdef ModelP
   checkif = FALSE;
         #endif
@@ -6039,10 +6040,16 @@ static INT CheckCommand (INT argc, char **argv)
       checkbvp = TRUE;
       break;
 
+    case 'n' :
+      checknp = TRUE;
+      break;
+
     default :
-      sprintf(buffer,"(invalid option '%s')",argv[i]);
-      PrintHelp("check",HELPITEM,buffer);
-      return (PARAMERRORCODE);
+      if (!checknp) {
+        sprintf(buffer,"(invalid option '%s')",argv[i]);
+        PrintHelp("check",HELPITEM,buffer);
+        return (PARAMERRORCODE);
+      }
     }
   err = 0;
 
@@ -6066,6 +6073,9 @@ static INT CheckCommand (INT argc, char **argv)
     UserWrite("]\n");
   }
   UserWrite("\n");
+
+  if (checknp)
+    CheckNP(theMG,argc,argv);
 
   if (err)
     return (CMDERRORCODE);
