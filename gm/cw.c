@@ -34,9 +34,6 @@
 #include "refine.h"
 #include "cw.h"
 
-
-
-
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -93,53 +90,57 @@ CONTROL_WORD control_words[MAX_CONTROL_WORDS] = {
 
 CONTROL_ENTRY control_entries[MAX_CONTROL_ENTRIES];
 
-predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
-  {1,VTYPE_CE,            VECTOR_CW,      VTYPE_SHIFT,            VTYPE_LEN               },
-  {1,VBUILDCON_CE,        VECTOR_CW,      VBUILDCON_SHIFT,        VBUILDCON_LEN   },
-  {1,VCFLAG_CE,           VECTOR_CW,      VCFLAG_SHIFT,           VCFLAG_LEN              },
-  {1,VCUSED_CE,           VECTOR_CW,      VCUSED_SHIFT,           VCUSED_LEN              },
-  {1,VCOUNT_CE,           VECTOR_CW,      VCOUNT_SHIFT,           VCOUNT_LEN              },
-  {1,VECTORSIDE_CE,       VECTOR_CW,      VECTORSIDE_SHIFT,       VECTORSIDE_LEN  },
-  {1,VCLASS_CE,           VECTOR_CW,      VCLASS_SHIFT,           VCLASS_LEN      },
-  {1,VDATATYPE_CE,        VECTOR_CW,      VDATATYPE_SHIFT,        VDATATYPE_LEN   },
-  {1,VNCLASS_CE,          VECTOR_CW,      VNCLASS_SHIFT,          VNCLASS_LEN     },
-  {1,VNEW_CE,             VECTOR_CW,      VNEW_SHIFT,             VNEW_LEN        },
-  {1,VCNEW_CE,            VECTOR_CW,      VCNEW_SHIFT,            VCNEW_LEN       },
-  {1,VCNB_CE,                     VECTOR_CW,      VCNB_SHIFT,                     VCNB_LEN                },
-  {1,VCCUT_CE,            VECTOR_CW,      VCCUT_SHIFT,            VCCUT_LEN               },
+/* the first entry gives the status: 0 unused,
+                                     1 used,
+                                     2 locked (do not modify) */
 
-  {1,MOFFSET_CE,          MATRIX_CW,      MOFFSET_SHIFT,          MOFFSET_LEN             },
-  {1,MROOTTYPE_CE,        MATRIX_CW,      MROOTTYPE_SHIFT,        MROOTTYPE_LEN   },
-  {1,MDESTTYPE_CE,        MATRIX_CW,      MDESTTYPE_SHIFT,        MDESTTYPE_LEN   },
-  {1,MDIAG_CE,            MATRIX_CW,      MDIAG_SHIFT,            MDIAG_LEN               },
-  {1,MTYPE_CE,            MATRIX_CW,      MTYPE_SHIFT,            MTYPE_LEN               },
-  {1,MUSED_CE,            MATRIX_CW,      MUSED_SHIFT,            MUSED_LEN               },
-  {1,MSIZE_CE,            MATRIX_CW,      MSIZE_SHIFT,            MSIZE_LEN               },
-  {1,MNEW_CE,             MATRIX_CW,      MNEW_SHIFT,             MNEW_LEN                },
-  {1,CEXTRA_CE,           MATRIX_CW,      CEXTRA_SHIFT,           CEXTRA_LEN              },
-  {1,MDOWN_CE,            MATRIX_CW,      MDOWN_SHIFT,            MDOWN_LEN               },
-  {1,MUP_CE,              MATRIX_CW,      MUP_SHIFT,              MUP_LEN                 },
+predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
+  {2,VTYPE_CE,            VECTOR_CW,      VTYPE_SHIFT,            VTYPE_LEN               },
+  {2,VBUILDCON_CE,        VECTOR_CW,      VBUILDCON_SHIFT,        VBUILDCON_LEN   },
+  {2,VCFLAG_CE,           VECTOR_CW,      VCFLAG_SHIFT,           VCFLAG_LEN              },
+  {2,VCUSED_CE,           VECTOR_CW,      VCUSED_SHIFT,           VCUSED_LEN              },
+  {2,VCOUNT_CE,           VECTOR_CW,      VCOUNT_SHIFT,           VCOUNT_LEN              },
+  {2,VECTORSIDE_CE,       VECTOR_CW,      VECTORSIDE_SHIFT,       VECTORSIDE_LEN  },
+  {2,VCLASS_CE,           VECTOR_CW,      VCLASS_SHIFT,           VCLASS_LEN      },
+  {2,VDATATYPE_CE,        VECTOR_CW,      VDATATYPE_SHIFT,        VDATATYPE_LEN   },
+  {2,VNCLASS_CE,          VECTOR_CW,      VNCLASS_SHIFT,          VNCLASS_LEN     },
+  {2,VNEW_CE,             VECTOR_CW,      VNEW_SHIFT,             VNEW_LEN        },
+  {2,VCNEW_CE,            VECTOR_CW,      VCNEW_SHIFT,            VCNEW_LEN       },
+  {2,VCNB_CE,                     VECTOR_CW,      VCNB_SHIFT,                     VCNB_LEN                },
+  {2,VCCUT_CE,            VECTOR_CW,      VCCUT_SHIFT,            VCCUT_LEN               },
+
+  {2,MOFFSET_CE,          MATRIX_CW,      MOFFSET_SHIFT,          MOFFSET_LEN             },
+  {2,MROOTTYPE_CE,        MATRIX_CW,      MROOTTYPE_SHIFT,        MROOTTYPE_LEN   },
+  {2,MDESTTYPE_CE,        MATRIX_CW,      MDESTTYPE_SHIFT,        MDESTTYPE_LEN   },
+  {2,MDIAG_CE,            MATRIX_CW,      MDIAG_SHIFT,            MDIAG_LEN               },
+  {2,MTYPE_CE,            MATRIX_CW,      MTYPE_SHIFT,            MTYPE_LEN               },
+  {2,MUSED_CE,            MATRIX_CW,      MUSED_SHIFT,            MUSED_LEN               },
+  {2,MSIZE_CE,            MATRIX_CW,      MSIZE_SHIFT,            MSIZE_LEN               },
+  {2,MNEW_CE,             MATRIX_CW,      MNEW_SHIFT,             MNEW_LEN                },
+  {2,CEXTRA_CE,           MATRIX_CW,      CEXTRA_SHIFT,           CEXTRA_LEN              },
+  {2,MDOWN_CE,            MATRIX_CW,      MDOWN_SHIFT,            MDOWN_LEN               },
+  {2,MUP_CE,              MATRIX_CW,      MUP_SHIFT,              MUP_LEN                 },
 
   {1,BVDOWNTYPE_CE,       BLOCKVECTOR_CW, BVDOWNTYPE_SHIFT,       BVDOWNTYPE_LEN  },
 
-  {1,OBJ_CE,              GENERAL_CW,     OBJ_SHIFT,              OBJ_LEN                 },
-  {1,USED_CE,             GENERAL_CW,     USED_SHIFT,             USED_LEN                },
-  {1,TAG_CE,              GENERAL_CW,     TAG_SHIFT,              TAG_LEN                 },
-  {1,LEVEL_CE,            GENERAL_CW,     LEVEL_SHIFT,            LEVEL_LEN               },
-  {1,THEFLAG_CE,          GENERAL_CW,     THEFLAG_SHIFT,          THEFLAG_LEN             },
+  {2,OBJ_CE,              GENERAL_CW,     OBJ_SHIFT,              OBJ_LEN                 },
+  {2,USED_CE,             GENERAL_CW,     USED_SHIFT,             USED_LEN                },
+  {2,TAG_CE,              GENERAL_CW,     TAG_SHIFT,              TAG_LEN                 },
+  {2,LEVEL_CE,            GENERAL_CW,     LEVEL_SHIFT,            LEVEL_LEN               },
+  {2,THEFLAG_CE,          GENERAL_CW,     THEFLAG_SHIFT,          THEFLAG_LEN             },
 
-  {1,VERTEX_GEN,          VERTEX_CW,      GENERAL_SHIFT,          GENERAL_LEN             },
-  {1,MOVE_CE,             VERTEX_CW,      MOVE_SHIFT,             MOVE_LEN                },
-  {1,MOVED_CE,            VERTEX_CW,      MOVED_SHIFT,            MOVED_LEN               },
-  {1,ONEDGE_CE,           VERTEX_CW,      ONEDGE_SHIFT,           ONEDGE_LEN              },
-  {1,ONSIDE_CE,           VERTEX_CW,      ONSIDE_SHIFT,           ONSIDE_LEN              },
-  {1,ONNBSIDE_CE,         VERTEX_CW,      ONNBSIDE_SHIFT,         ONNBSIDE_LEN    },
+  {2,VERTEX_GEN,          VERTEX_CW,      GENERAL_SHIFT,          GENERAL_LEN             },
+  {2,MOVE_CE,             VERTEX_CW,      MOVE_SHIFT,             MOVE_LEN                },
+  {2,MOVED_CE,            VERTEX_CW,      MOVED_SHIFT,            MOVED_LEN               },
+  {2,ONEDGE_CE,           VERTEX_CW,      ONEDGE_SHIFT,           ONEDGE_LEN              },
+  {2,ONSIDE_CE,           VERTEX_CW,      ONSIDE_SHIFT,           ONSIDE_LEN              },
+  {2,ONNBSIDE_CE,         VERTEX_CW,      ONNBSIDE_SHIFT,         ONNBSIDE_LEN    },
 
-  {1,NODE_GEN,            NODE_CW,        GENERAL_SHIFT,          GENERAL_LEN             },
-  {1,CLASS_CE,            NODE_CW,        CLASS_SHIFT,            CLASS_LEN               },
-  {1,NPROP_CE,            NODE_CW,        NPROP_SHIFT,            NPROP_LEN               },
-  {1,MODIFIED_CE,         NODE_CW,        MODIFIED_SHIFT,         MODIFIED_LEN    },
-  {1,NTYPE_CE,            NODE_CW,        NTYPE_SHIFT,            NTYPE_LEN               },
+  {2,NODE_GEN,            NODE_CW,        GENERAL_SHIFT,          GENERAL_LEN             },
+  {2,CLASS_CE,            NODE_CW,        CLASS_SHIFT,            CLASS_LEN               },
+  {2,NPROP_CE,            NODE_CW,        NPROP_SHIFT,            NPROP_LEN               },
+  {2,MODIFIED_CE,         NODE_CW,        MODIFIED_SHIFT,         MODIFIED_LEN    },
+  {2,NTYPE_CE,            NODE_CW,        NTYPE_SHIFT,            NTYPE_LEN               },
 
   {1,LINK_GEN,            LINK_CW,        GENERAL_SHIFT,          GENERAL_LEN             },
   {1,LOFFSET_CE,          LINK_CW,        LOFFSET_SHIFT,          LOFFSET_LEN             },
@@ -253,7 +254,7 @@ INT InitPredefinedControlEntries (void)
         return(__LINE__);
       }
       cw = control_words+pce->control_word;
-      ce->used = 1;
+      ce->used = predefines[i].used;
       ce->control_word = pce->control_word;
       ce->offset_in_word = pce->offset_in_word;
       ce->length = pce->length;
@@ -409,6 +410,10 @@ INT FreeControlEntry (INT ce_id)
   if ((ce_id<0)||(ce_id>=MAX_CONTROL_ENTRIES)) return(GM_ERROR);
   ce = control_entries+ce_id;
   cw = control_words+ce->control_word;
+
+  /* check if locked */
+  if (ce->used == 2)
+    return(GM_ERROR);
 
   /* free used bits */
   cw->used_mask &= ce->xor_mask;
