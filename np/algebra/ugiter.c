@@ -127,6 +127,10 @@
 
 static INT StoreInverse=TRUE;
 
+/* large matrix for l_pgs */
+/* (Macintosh does not support local data >32k) */
+static DOUBLE UGI_Mval[LOCAL_DIM*LOCAL_DIM];
+
 REP_ERR_FILE;
 
 /* RCS string */
@@ -5938,7 +5942,7 @@ static DOUBLE CheckNorm (MULTIGRID *theMG, INT level,
   dmatmul_minus(theMG,0,level,ALL_VECTORS,t,A,x);
   dnrm2(theMG,0,level,ON_SURFACE,t,&nrm);
 
-  FreeVD(theMG,0,level,t);
+  if (FreeVD(theMG,0,level,t)) REP_ERR_RETURN(1);
 
   return (nrm);
 }
@@ -5950,9 +5954,9 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
   ELEMENT *theElement;
   VECTOR *vec,*vlist[MAX_DEPTH],*w;
   MATRIX *mat;
-  DOUBLE Mval[LOCAL_DIM*LOCAL_DIM],vval[LOCAL_DIM],dval[LOCAL_DIM];
+  DOUBLE vval[LOCAL_DIM],dval[LOCAL_DIM];
   DOUBLE check,nrm;
-  INT cnt,m,i,j,k,l,ncomp,vcnt,vtype,wtype,wncomp;
+  INT cnt,m,i,k,l,ncomp,vcnt,vtype,wtype,wncomp;
   const SHORT *Comp,*VComp;
 
   t = NULL;
@@ -5968,7 +5972,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
       if (ECLASS(theElement) == YELLOW_CLASS) continue;
       cnt = GetAllVectorsOfElementOfType(theElement,vlist,v);
       ASSERT(cnt <= MAX_DEPTH);
-      m = GetVlistMValues(cnt,vlist,M,Mval);
+      m = GetVlistMValues(cnt,vlist,M,UGI_Mval);
       if (m != GetVlistVValues(cnt,vlist,d,dval)) {
         UserWriteF("l_pgs: wrong dimension %d in local system %d\n",
                    m,GetVlistVValues(cnt,vlist,d,dval));
@@ -5991,7 +5995,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
         }
         vcnt += ncomp;
       }
-      if (SolveFullMatrix(m,vval,Mval,dval)) {
+      if (SolveFullMatrix(m,vval,UGI_Mval,dval)) {
         UserWriteF("l_pgs: solving on local patch failed\n");
         REP_ERR_RETURN (__LINE__);
       }
@@ -6010,7 +6014,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
       if (ECLASS(theElement) == YELLOW_CLASS) continue;
       cnt = GetAllVectorsOfElementOfType(theElement,vlist,v);
       ASSERT(cnt <= MAX_DEPTH);
-      m = GetVlistMValues(cnt,vlist,M,Mval);
+      m = GetVlistMValues(cnt,vlist,M,UGI_Mval);
       if (m != GetVlistVValues(cnt,vlist,d,dval)) {
         UserWriteF("l_pgs: wrong dimension %d in local system %d\n",
                    m,GetVlistVValues(cnt,vlist,d,dval));
@@ -6033,7 +6037,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
         }
         vcnt += ncomp;
       }
-      if (SolveFullMatrix(m,vval,Mval,dval)) {
+      if (SolveFullMatrix(m,vval,UGI_Mval,dval)) {
         UserWriteF("l_pgs: solving on local patch failed\n");
         REP_ERR_RETURN (__LINE__);
       }
@@ -6053,7 +6057,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
           vlist[cnt++] = w;
           if (cnt >= depth) break;
         }
-      m = GetVlistMValues(cnt,vlist,M,Mval);
+      m = GetVlistMValues(cnt,vlist,M,UGI_Mval);
       if (m != GetVlistVValues(cnt,vlist,d,dval)) {
         UserWriteF("l_pgs: wrong dimension %d in local system %d\n",
                    m,GetVlistVValues(cnt,vlist,d,dval));
@@ -6076,7 +6080,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
         }
         vcnt += ncomp;
       }
-      if (SolveFullMatrix(m,vval,Mval,dval)) {
+      if (SolveFullMatrix(m,vval,UGI_Mval,dval)) {
         UserWriteF("l_pgs: solving on local patch failed\n");
         REP_ERR_RETURN (__LINE__);
       }
@@ -6100,7 +6104,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
           vlist[cnt++] = w;
           if (cnt >= depth) break;
         }
-      m = GetVlistMValues(cnt,vlist,M,Mval);
+      m = GetVlistMValues(cnt,vlist,M,UGI_Mval);
       if (m != GetVlistVValues(cnt,vlist,d,dval)) {
         UserWriteF("l_pgs: wrong dimension %d in local system %d\n",
                    m,GetVlistVValues(cnt,vlist,d,dval));
@@ -6123,7 +6127,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
         }
         vcnt += ncomp;
       }
-      if (SolveFullMatrix(m,vval,Mval,dval)) {
+      if (SolveFullMatrix(m,vval,UGI_Mval,dval)) {
         UserWriteF("l_pgs: solving on local patch failed\n");
         REP_ERR_RETURN (__LINE__);
       }
@@ -6154,7 +6158,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
         vlist[cnt++] = w;
         if (cnt >= depth) break;
       }
-    m = GetVlistMValues(cnt,vlist,M,Mval);
+    m = GetVlistMValues(cnt,vlist,M,UGI_Mval);
     if (m != GetVlistVValues(cnt,vlist,d,dval)) {
       UserWriteF("l_pgs: wrong dimension %d in local system %d\n",
                  m,GetVlistVValues(cnt,vlist,d,dval));
@@ -6178,7 +6182,7 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
       }
       vcnt += ncomp;
     }
-    if (SolveFullMatrix(m,vval,Mval,dval)) {
+    if (SolveFullMatrix(m,vval,UGI_Mval,dval)) {
       UserWriteF("l_pgs: solving on local patch failed\n");
       REP_ERR_RETURN (__LINE__);
     }

@@ -324,7 +324,7 @@ static INT NewtonPostProcess (NP_NL_SOLVER *solve, INT level, VECDATA_DESC *x, I
   NP_NEWTON *newton;
 
   newton = (NP_NEWTON *) solve;
-  FreeMD(solve->base.mg,0,level,newton->J);
+  if (FreeMD(solve->base.mg,0,level,newton->J)) REP_ERR_RETURN(1);
 
   return(0);
 }
@@ -662,7 +662,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
         /* break iteration */
         UserWrite("line search not accepted, Newton diverged\n");
         res->error_code = 0;
-        FreeVD(mg,0,level,newton->s);
+        if (FreeVD(mg,0,level,newton->s)) REP_ERR_RETURN(1);
         goto exit;
 
       case 2 :
@@ -697,7 +697,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
         /*default: accept */
       }
-    FreeVD(mg,0,level,newton->s);
+    if (FreeVD(mg,0,level,newton->s)) REP_ERR_RETURN(1);
 
     /* print norm of defect */
     if (DoPCR(PrintID,defect,PCR_CRATE)) {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
@@ -763,11 +763,11 @@ exit:
   if (PostPCR(PrintID,NULL))                              {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
 
   /* deallocate local XDATA_DESCs */
-  FreeVD(mg,0,level,newton->d);
-  FreeVD(mg,0,level,newton->v);
+  if (FreeVD(mg,0,level,newton->d)) REP_ERR_RETURN(1);
+  if (FreeVD(mg,0,level,newton->v)) REP_ERR_RETURN(1);
   if (newton->lineSearch == 3) {
-    FreeVD(mg,0,level,newton->dold);
-    FreeVD(mg,0,level,newton->dsave);
+    if (FreeVD(mg,0,level,newton->dold)) REP_ERR_RETURN(1);
+    if (FreeVD(mg,0,level,newton->dsave)) REP_ERR_RETURN(1);
   }
   if (res->error_code==0)
     return (0);
