@@ -1,7 +1,7 @@
 /****************************************************************************/
 /*D
    
-NP - numerical procedures
+num_proc - numerical procedures
 
 DESCRIPTION:
 
@@ -10,15 +10,15 @@ Execute functions.
 
 struct np_base {
 
-    /* data */
-    ENVVAR v;							/* is an environment variable		*/
-    MULTIGRID *mg;						/* associated multigrid				*/
-    INT status;							/* has a status, NO type and size...*/
+    // data 
+    ENVVAR v;							// is an environment variable		
+    MULTIGRID *mg;						// associated multigrid				
+    INT status;							// has a status, NO type and size...
 
-    /* functions */
-    INT	(*Init) (struct np_base *, INT, char **); /* initializing routine   */
-    INT (*Display) (struct np_base *);                   /* Display routine */
-    INT (*Execute) (struct np_base *, INT, char **);     /* Execute routine */
+    // functions 
+    INT	(*Init) (struct np_base *, INT, char **); // initializing routine   
+    INT (*Display) (struct np_base *);                   // Display routine 
+    INT (*Execute) (struct np_base *, INT, char **);     // Execute routine 
 };
 typedef struct np_base NP_BASE;
 
@@ -26,117 +26,117 @@ The derived classes are defined in the headers
 iter.h, ls.h, nls.h, assemble.h, error.h, transfer.h, e. g.
 
 typedef struct {
-	INT error_code;                     /* error code                       */
-	INT converged;                      /* error code                       */
-	VEC_SCALAR first_defect;            /* first defect                     */
-	VEC_SCALAR last_defect;             /* last defect                      */
-	INT number_of_linear_iterations;    /* number of iterations             */
+	INT error_code;                     // error code                       
+	INT converged;                      // error code                       
+	VEC_SCALAR first_defect;            // first defect                     
+	VEC_SCALAR last_defect;             // last defect                      
+	INT number_of_linear_iterations;    // number of iterations             
 } LRESULT;
 
 struct np_linear_solver {
-	NP_BASE base;                        /* inherits base class             */
+	NP_BASE base;                        // inherits base class             
 
-	/* data (optinal, necessary for calling the generic execute routine)    */
-    VECDATA_DESC *x;                     /* solution                        */
-    VECDATA_DESC *b;                     /* defect                          */
-    MATDATA_DESC *A;                     /* matrix                          */
-	VEC_SCALAR reduction;                /* reduction factor                */
-	VEC_SCALAR abslimit;                 /* absolute limit for the defect   */
+	// data (optinal, necessary for calling the generic execute routine)    
+    VECDATA_DESC *x;                     // solution                        
+    VECDATA_DESC *b;                     // defect                          
+    MATDATA_DESC *A;                     // matrix                          
+	VEC_SCALAR reduction;                // reduction factor                
+	VEC_SCALAR abslimit;                 // absolute limit for the defect   
 	
-	/* functions */
+	// functions 
 	INT (*PreProcess)  
-	     (struct np_linear_solver *,     /* pointer to (derived) object     */
-		  INT,                           /* level                           */ 
-		  VECDATA_DESC *,                /* solution vector                 */ 
-		  VECDATA_DESC *,                /* defect vector                   */ 
-		  MATDATA_DESC *,                /* matrix                          */ 
-		  INT *,                         /* baselevel used by the solver    */ 
-		  INT *);                        /* result                          */ 
-    INT (*Defect)                        /* b := b - Ax                     */
-	     (struct np_linear_solver *,     /* pointer to (derived) object     */ 
-		  INT,                           /* level                           */ 
-		  VECDATA_DESC *,                /* solution vector                 */ 
-		  VECDATA_DESC *,                /* defect vector                   */ 
-		  MATDATA_DESC *,                /* matrix                          */ 
-		  INT *);                        /* result                          */ 
-    INT (*Residuum)                      /* computes norm of the defect     */
-	     (struct np_linear_solver *,     /* pointer to (derived) object     */ 
-		  INT,                           /* level                           */ 
-		  VECDATA_DESC *,                /* solution vector                 */ 
-		  VECDATA_DESC *,                /* defect vector                   */ 
-		  MATDATA_DESC *,                /* matrix                          */ 
-		  LRESULT *);                    /* result structure                */ 
-    INT (*Solver)                        /* b := b - Ax                     */
-	     (struct np_linear_solver *,     /* pointer to (derived) object     */ 
-		  INT,                           /* level                           */ 
-		  VECDATA_DESC *,                /* solution vector                 */ 
-		  VECDATA_DESC *,                /* defect vector                   */ 
-		  MATDATA_DESC *,                /* matrix                          */ 
-		  VEC_SCALAR,                    /* reduction factor                */
-		  VEC_SCALAR,                    /* absolute limit for the defect   */
-		  LRESULT *);                    /* result structure                */ 
+	     (struct np_linear_solver *,     // pointer to (derived) object     
+		  INT,                           // level                            
+		  VECDATA_DESC *,                // solution vector                  
+		  VECDATA_DESC *,                // defect vector                    
+		  MATDATA_DESC *,                // matrix                           
+		  INT *,                         // baselevel used by the solver     
+		  INT *);                        // result                           
+    INT (*Defect)                        // b := b - Ax                     
+	     (struct np_linear_solver *,     // pointer to (derived) object      
+		  INT,                           // level                            
+		  VECDATA_DESC *,                // solution vector                  
+		  VECDATA_DESC *,                // defect vector                    
+		  MATDATA_DESC *,                // matrix                           
+		  INT *);                        // result                           
+    INT (*Residuum)                      // computes norm of the defect     
+	     (struct np_linear_solver *,     // pointer to (derived) object      
+		  INT,                           // level                            
+		  VECDATA_DESC *,                // solution vector                  
+		  VECDATA_DESC *,                // defect vector                    
+		  MATDATA_DESC *,                // matrix                           
+		  LRESULT *);                    // result structure                 
+    INT (*Solver)                        // b := b - Ax                     
+	     (struct np_linear_solver *,     // pointer to (derived) object      
+		  INT,                           // level                            
+		  VECDATA_DESC *,                // solution vector                  
+		  VECDATA_DESC *,                // defect vector                    
+		  MATDATA_DESC *,                // matrix                           
+		  VEC_SCALAR,                    // reduction factor                
+		  VEC_SCALAR,                    // absolute limit for the defect   
+		  LRESULT *);                    // result structure                 
 	INT (*PostProcess) 
-	     (struct np_linear_solver *,     /* pointer to (derived) object     */ 
-		  INT,                           /* level                           */ 
-		  VECDATA_DESC *,                /* solution vector                 */ 
-		  VECDATA_DESC *,                /* defect vector                   */ 
-		  MATDATA_DESC *,                /* matrix                          */ 
-		  INT *);                        /* result                          */ 
+	     (struct np_linear_solver *,     // pointer to (derived) object      
+		  INT,                           // level                            
+		  VECDATA_DESC *,                // solution vector                  
+		  VECDATA_DESC *,                // defect vector                    
+		  MATDATA_DESC *,                // matrix                           
+		  INT *);                        // result                           
 };
 typedef struct np_linear_solver NP_LINEAR_SOLVER;
 
 struct np_assemble {
 
-	NP_BASE base;                        /* inherits base class             */
+	NP_BASE base;                        // inherits base class             
 
-	/* data (optinal, necessary for calling the generic execute routine)    */
-    VECDATA_DESC *x;                     /* solution                        */
-    VECDATA_DESC *c;                     /* correction                      */
-    VECDATA_DESC *b;                     /* defect                          */
-    MATDATA_DESC *A;                     /* matrix                          */
+	// data (optinal, necessary for calling the generic execute routine)    
+    VECDATA_DESC *x;                     // solution                        
+    VECDATA_DESC *c;                     // correction                      
+    VECDATA_DESC *b;                     // defect                          
+    MATDATA_DESC *A;                     // matrix                          
 	
-	/* functions */
+	// functions 
 	INT (*PreProcess)  
-	     (struct np_assemble *,          /* pointer to (derived) object     */
-		  INT,                           /* level                           */ 
-		  VECDATA_DESC *,                /* solution vector                 */ 
-		  VECDATA_DESC *,                /* defect vector                   */ 
-		  MATDATA_DESC *,                /* matrix                          */ 
-		  INT *);                        /* result                          */ 
+	     (struct np_assemble *,          // pointer to (derived) object     
+		  INT,                           // level                            
+		  VECDATA_DESC *,                // solution vector                  
+		  VECDATA_DESC *,                // defect vector                    
+		  MATDATA_DESC *,                // matrix                           
+		  INT *);                        // result                           
     INT (*Assemble)        
-	     (struct np_assemble *,          /* pointer to (derived) object     */
-		  INT,                           /* level                           */ 
-		  VECDATA_DESC *,                /* solution vector                 */ 
-		  VECDATA_DESC *,                /* defect vector                   */ 
-		  MATDATA_DESC *,                /* matrix                          */ 
-		  INT *);                        /* result                          */ 
+	     (struct np_assemble *,          // pointer to (derived) object     
+		  INT,                           // level                            
+		  VECDATA_DESC *,                // solution vector                  
+		  VECDATA_DESC *,                // defect vector                    
+		  MATDATA_DESC *,                // matrix                           
+		  INT *);                        // result                           
     INT (*AssembleSolution)        
-	     (struct np_assemble *,          /* pointer to (derived) object     */
-		  INT,                           /* level                           */ 
-		  VECDATA_DESC *,                /* solution vector                 */ 
-		  INT *);                        /* result                          */ 
+	     (struct np_assemble *,          // pointer to (derived) object     
+		  INT,                           // level                            
+		  VECDATA_DESC *,                // solution vector                  
+		  INT *);                        // result                           
     INT (*AssembleDefect)        
-	     (struct np_assemble *,          /* pointer to (derived) object     */
-		  INT,                           /* level                           */ 
-		  VECDATA_DESC *,                /* solution vector                 */ 
-		  VECDATA_DESC *,                /* defect vector                   */ 
-		  MATDATA_DESC *,                /* matrix                          */ 
-		  INT *);                        /* result                          */ 
+	     (struct np_assemble *,          // pointer to (derived) object     
+		  INT,                           // level                            
+		  VECDATA_DESC *,                // solution vector                  
+		  VECDATA_DESC *,                // defect vector                    
+		  MATDATA_DESC *,                // matrix                           
+		  INT *);                        // result                           
     INT (*AssembleMatrix)        
-	     (struct np_assemble *,          /* pointer to (derived) object     */
-		  INT,                           /* level                           */ 
-		  VECDATA_DESC *,			     /* current solution	(initial)	*/
-		  VECDATA_DESC *,			     /* defect for current solution     */
-		  VECDATA_DESC *,			     /* correction to be computed  		*/
-		  MATDATA_DESC *,                /* matrix                          */ 
-		  INT *);                        /* result                          */ 
+	     (struct np_assemble *,          // pointer to (derived) object     
+		  INT,                           // level                            
+		  VECDATA_DESC *,			     // current solution	(initial)	
+		  VECDATA_DESC *,			     // defect for current solution     
+		  VECDATA_DESC *,			     // correction to be computed  		
+		  MATDATA_DESC *,                // matrix                           
+		  INT *);                        // result                           
 	INT (*PostProcess) 
-	     (struct np_assemble *,          /* pointer to (derived) object     */
-		  INT,                           /* level                           */ 
-		  VECDATA_DESC *,                /* solution vector                 */ 
-		  VECDATA_DESC *,                /* defect vector                   */ 
-		  MATDATA_DESC *,                /* matrix                          */ 
-		  INT *);                        /* result                          */ 
+	     (struct np_assemble *,          // pointer to (derived) object     
+		  INT,                           // level                            
+		  VECDATA_DESC *,                // solution vector                  
+		  VECDATA_DESC *,                // defect vector                    
+		  MATDATA_DESC *,                // matrix                           
+		  INT *);                        // result                           
 };
 typedef struct np_assemble NP_ASSEMBLE;
 
@@ -174,9 +174,9 @@ typedef INT (*ConstructorProcPtr)   (NP_BASE *);
 
 typedef struct
 {
-	ENVVAR v;						/* class name							*/
-	INT size;                       /* size of the object                   */
-	ConstructorProcPtr Construct;	/* construct one object of this class 	*/
+	ENVVAR v;						// class name							
+	INT size;                       // size of the object                   
+	ConstructorProcPtr Construct;	// construct one object of this class
 } NP_CONSTRUCTOR;
 
 For example
@@ -229,14 +229,14 @@ of this name).
 
 VECDATA_DESCs and MATDATA_DESCs not used in the script but required in
 num procs can be alloccated dynamicly. We explain the concept for a 
-vector v:
+vector v.
 
 In 'npinit' a temporary vector can be specified for debugging purpose.
 Thus, the init routine tries to get the vector by calling 'ReadArgvVecDesc'.
 If the vector is not specified (the general case), 'ReadArgvVecDesc' returns
 NULL.
 
-In 'npexecute', the vector can be allocated by AllocVDFromVD(...,x,v):
+In 'npexecute', the vector can be allocated by AllocVDFromVD(...,x,v).
 
    if v == NULL, it returns a free VECDATA_DESC, or if there is no
    free vector, it creates a new vector. Then, the vector is allocated.
@@ -304,11 +304,11 @@ MAT, sol and rhs will be created by 'npinit mgs' and locked.
 .vb
 mgs --> | Alloc vec00
         | --> lmgc | Alloc vec01
-		|     	   | --> transfer
+        |          | --> transfer 
         |          | --> smooth
         |          | Free vec01
         |          | --> basesolver | Alloc vec01
-	    |                           | --> smooth
+        |                           | --> smooth
         |                           | Free vec01
         | Free vec00
 .ve                                    
