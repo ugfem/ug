@@ -260,9 +260,13 @@
 #define LGM_BNDP_LINE(p,i)                                      ((p)->Line[(i)].theLine)
 #define LGM_BNDP_LINE_LEFT(p,i)                         ((p)->Line[(i)].local_left)
 #define LGM_BNDP_LINE_RIGHT(p,i)                        ((p)->Line[(i)].local_right)
+#define LGM_BNDP_LINE_GLOBALLEFT(p,i)           ((p)->Line[(i)].global_left)
+#define LGM_BNDP_LINE_GLOBALRIGHT(p,i)          ((p)->Line[(i)].global_right)
 #define LGM_BNDP_LINE_GLINE(p)                          ((p).theLine)
 #define LGM_BNDP_LOCAL_LEFT(p)                          ((p).local_left)
 #define LGM_BNDP_LOCAL_RIGHT(p)                         ((p).local_right)
+#define LGM_BNDP_GLOBAL_LEFT(p)                         ((p).global_left)
+#define LGM_BNDP_GLOBAL_RIGHT(p)                        ((p).global_right)
 #define LGM_BNDP_N(p)                                           ((p)->nsurf)
 #define LGM_BNDP_SURFACES(p,i)                          ((p)->Surf[(i)])
 #define LGM_BNDP_SURFACE(p,i)                           ((p)->Surf[(i)].theSurf)
@@ -569,8 +573,13 @@ struct lgm_domain {
 struct lgm_bndp_line {
 
   struct lgm_line *theLine;                             /* line										*/
-  DOUBLE local_left;                                            /* local coordinate of the left neighbor		*/
-  DOUBLE local_right;                                           /* local coordinate of the right neighbor		*/
+        #ifdef NO_PROJECT
+  DOUBLE global_left[3];                                /* global coordinate of the left neighbor	*/
+  DOUBLE global_right[3];                               /* global coordinate of the right neighbor	*/
+        #else
+  DOUBLE local_left;                                            /* local coordinate of the left neighbor	*/
+  DOUBLE local_right;                                           /* local coordinate of the right neighbor	*/
+        #endif
 };
 
 struct lgm_bndp_surf {

@@ -725,9 +725,12 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
       LGM_BNDP_LINE((LGM_BNDP*)(theMesh->theBndPs[i]),j) = theLine;
 
       /* add the local coordinates */
+                                #ifdef NO_PROJECT
+      /* ... */
+                                #else
       LGM_BNDP_LINE_LEFT((LGM_BNDP*)(theMesh->theBndPs[i]),j) = ((lgm_mesh_info.BndP_lcoord_left)[i])[j];
       LGM_BNDP_LINE_RIGHT((LGM_BNDP*)(theMesh->theBndPs[i]),j) = ((lgm_mesh_info.BndP_lcoord_right)[i])[j];
-
+                                #endif
     }
 
   }

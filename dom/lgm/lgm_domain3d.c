@@ -517,7 +517,7 @@ INT Line_Local2GlobalNew (LGM_LINE *theLine, DOUBLE *global, DOUBLE local)
 
 INT Line_Global2Local (LGM_LINE *theLine, DOUBLE *global, DOUBLE *local)
 {
-  DOUBLE slocal, start[3], end[3], lambda[3], globalnew[3], d;
+  DOUBLE slocal, start[3], end[3], lambda[3], globalnew[3], d, n[3], len, lam, p[3], gl[3], new[3], dist, min_dist;
   INT i, j, ilocal, id[3], r, l, lambda_counter;
 
   *local = -1.0;
@@ -562,10 +562,10 @@ INT Line_Global2Local (LGM_LINE *theLine, DOUBLE *global, DOUBLE *local)
                 +    (global[2]-globalnew[2])*(global[2]-globalnew[2]))>SMALL)
           printf("%s\n", "Line_Global2Local ist falsch");
 
-        return(0);
       }
     }
   }
+
   return(0);
 }
 
@@ -3107,6 +3107,7 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
   INT *nRef, *newID, *nRefLines;
   INT size,a,flag, dummy;
   DOUBLE global[3],local[2], line_local, local_left, local_right, local1, local2, g[3], g1[3];
+  DOUBLE global_left[3], global_right[3];
   LGM_POINT *PointList, Point;
   INT npoints, npsurface, nPointList, nbndpoints, ID;
   LINEPOINT *help;
@@ -3340,8 +3341,25 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
         Point = PointList[i];
         if(Compare_Points(&Point, global)==1)
         {
+                                        #ifdef NO_PROJECT
+          if(local_left>-SMALL)
+            Line_Local2GlobalNew(theLine, global_left, local_left);
+          else
+            global_left[0] = global_left[1] = global_left[2] = -1e200;
+          if(local_right<12345677890.0)
+            Line_Local2GlobalNew(theLine, global_right, local_right);
+          else
+            global_left[0] = global_left[1] = global_left[2] = 1e200;
+          LGM_BNDP_LINE_GLOBALLEFT(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i])))[0] = global_left[0];
+          LGM_BNDP_LINE_GLOBALLEFT(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i])))[1] = global_left[1];
+          LGM_BNDP_LINE_GLOBALLEFT(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i])))[2] = global_left[2];
+          LGM_BNDP_LINE_GLOBALRIGHT(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i])))[0] = global_right[0];
+          LGM_BNDP_LINE_GLOBALRIGHT(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i])))[1] = global_right[1];
+          LGM_BNDP_LINE_GLOBALRIGHT(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i])))[2] = global_right[2];
+                                        #else
           LGM_BNDP_LINE_LEFT(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i]))) = local_left;
           LGM_BNDP_LINE_RIGHT(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i]))) = local_right;
+                                        #endif
           LGM_BNDP_LINE(BNDP2LGM(theMesh->theBndPs[i]),LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i]))) = theLine;
           LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i]))++;
           break;
@@ -5660,7 +5678,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
   LGM_LINE *theLine, *Lines[MAX_LINES], *l1, *l2;
   INT i,j, k,count,size, max, ilocal, ilocal1, flag, flag1, nlines, found, iold, jold, mi;
   DOUBLE globalp1[3],globalp2[3],global[3],global1[3],g[3],local[2], slocal[2], nv[3], local1, local2, min_d, globalnew[3], d, midp[3], newlocal;
-  DOUBLE localp1, localp2, av, bv, cv, dv, ev, fv, gv, hv, aw, bw, cw, dw;
+  DOUBLE localp1, localp2, av, bv, cv, dv, ev, fv, gv, hv, aw, bw, cw, dw, n[3], len, value;
 
   theBndP1 = BNDP2LGM(aBndP0);
   theBndP2 = BNDP2LGM(aBndP1);
@@ -5691,8 +5709,12 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
     for (j=0; j<LGM_BNDP_NLINE(theBndP2); j++)
       if (LGM_BNDP_LINE(theBndP1,i)==LGM_BNDP_LINE(theBndP2,j))
       {
+                                #ifdef NO_PROJECT
+        /* nothing to do */
+                                #else
         Line_Global2Local(LGM_BNDP_LINE(theBndP1, i), globalp1, &localp1);
         Line_Global2Local(LGM_BNDP_LINE(theBndP2, j), globalp2, &localp2);
+                                #endif
         /* teste, ob BndP's benachbart sind */
         if(LGM_LINE_BEGIN(LGM_BNDP_LINE(theBndP1, i))==LGM_LINE_END(LGM_BNDP_LINE(theBndP1, i)))
         {
@@ -5702,16 +5724,16 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
         else
         {
           /* line not cyclic */
-          av = LGM_BNDP_LINE_LEFT(theBndP1, i);
-          bv = LGM_BNDP_LINE_RIGHT(theBndP1, i);
-          cv = LGM_BNDP_LINE_LEFT(theBndP2, j);
-          dv = LGM_BNDP_LINE_RIGHT(theBndP2, j);
-          ev = ABS(LGM_BNDP_LINE_RIGHT(theBndP1, i) - localp2);
-          fv = ABS(LGM_BNDP_LINE_LEFT (theBndP2, j) - localp1);
-          gv = ABS(LGM_BNDP_LINE_LEFT (theBndP1, i) - localp2);
-          hv = ABS(LGM_BNDP_LINE_RIGHT(theBndP2, j) - localp1);
-          l1 = LGM_BNDP_LINE(theBndP1, i);
-          l2 = LGM_BNDP_LINE(theBndP2, j);
+                                        #ifdef NO_PROJECT
+          if( (E_Distance(LGM_BNDP_LINE_GLOBALRIGHT(theBndP1, i), globalp2)<SMALL)
+              ||  (E_Distance(LGM_BNDP_LINE_GLOBALLEFT (theBndP2, j), globalp1)<SMALL)
+              ||  (E_Distance(LGM_BNDP_LINE_GLOBALLEFT (theBndP1, i), globalp2)<SMALL)
+              ||  (E_Distance(LGM_BNDP_LINE_GLOBALRIGHT(theBndP2, j), globalp1)<SMALL) )
+          {
+            theLine = LGM_BNDP_LINE(theBndP1, i);
+            found++;
+          }
+                                        #else
           if((    (ABS(LGM_BNDP_LINE_RIGHT(theBndP1, i) - localp2)<SMALL)
                   ||  (ABS(LGM_BNDP_LINE_LEFT (theBndP2, j) - localp1)<SMALL) )
              || ((ABS(LGM_BNDP_LINE_LEFT (theBndP1, i) - localp2)<SMALL)
@@ -5720,6 +5742,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
             theLine = LGM_BNDP_LINE(theBndP1, i);
             found++;
           }
+                                        #endif
         }
       }
   if(found>1)
@@ -5727,12 +5750,17 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 
   if(found==1)                                  /* projeziere auf die Linie */
   {
+                #ifdef NO_PROJECT
+    global[0] = (globalp1[0] + globalp2[0]) / 2;
+    global[1] = (globalp1[1] + globalp2[1]) / 2;
+    global[2] = (globalp1[2] + globalp2[2]) / 2;
+                #else
     Line_Global2Local(theLine, globalp1, &local1);
     Line_Global2Local(theLine, globalp2, &local2);
     global[0] = global[1] = global[2] = 0.0;
     Find_Midpoint(theLine, globalp1, globalp2, global, &local1, &local2);
     Line_Global2Local(theLine, global, &newlocal);
-
+                #endif
     theBndP = (LGM_BNDP*)GetFreelistMemory(Heap,sizeof(LGM_BNDP));
     if(theBndP==NULL)
     {
@@ -5757,10 +5785,32 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
     for(i=0; i<LGM_BNDP_NLINE(theBndP2); i++)
       if(LGM_BNDP_LINE(theBndP2, i)==theLine)
         jold = i;
-    aw = LGM_BNDP_LINE_LEFT (theBndP1, iold);
-    bw = LGM_BNDP_LINE_RIGHT(theBndP1, iold);
-    cw = LGM_BNDP_LINE_LEFT (theBndP2, jold);
-    dw = LGM_BNDP_LINE_RIGHT(theBndP2, jold);
+                #ifdef NO_PROJECT
+    V_DIM_SUBTRACT(globalp2, globalp1, n);
+    V_DIM_EUKLIDNORM(n,len);
+    V_DIM_SCALE(1/len, n);
+    value = n[0] * (global[0] - globalp1[0]) +
+            n[1] * (global[1] - globalp1[1]) +
+            n[2] * (global[2] - globalp1[2]);
+    if(value>0.0)
+    {
+      LGM_BNDP_LINE_GLOBALLEFT (theBndP, 0)[0] = globalp1[0];
+      LGM_BNDP_LINE_GLOBALLEFT (theBndP, 0)[1] = globalp1[1];
+      LGM_BNDP_LINE_GLOBALLEFT (theBndP, 0)[2] = globalp1[2];
+      LGM_BNDP_LINE_GLOBALRIGHT(theBndP, 0)[0] = globalp2[0];
+      LGM_BNDP_LINE_GLOBALRIGHT(theBndP, 0)[1] = globalp2[1];
+      LGM_BNDP_LINE_GLOBALRIGHT(theBndP, 0)[2] = globalp2[2];
+    }
+    else
+    {
+      LGM_BNDP_LINE_GLOBALLEFT (theBndP, 0)[0] = globalp2[0];
+      LGM_BNDP_LINE_GLOBALLEFT (theBndP, 0)[1] = globalp2[1];
+      LGM_BNDP_LINE_GLOBALLEFT (theBndP, 0)[2] = globalp2[2];
+      LGM_BNDP_LINE_GLOBALRIGHT(theBndP, 0)[0] = globalp1[0];
+      LGM_BNDP_LINE_GLOBALRIGHT(theBndP, 0)[1] = globalp1[1];
+      LGM_BNDP_LINE_GLOBALRIGHT(theBndP, 0)[2] = globalp1[2];
+    }
+                #else
     if( (local1<newlocal) && (newlocal<local2) )
     {
       LGM_BNDP_LINE_LEFT(theBndP, 0) = local1;
@@ -5771,6 +5821,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
       LGM_BNDP_LINE_LEFT(theBndP, 0) = local2;
       LGM_BNDP_LINE_RIGHT(theBndP, 0) = local1;
     }
+                #endif
 
     max = 0;
     for(i=0; i<count; i++)
@@ -5789,13 +5840,13 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
       for(j=0; j<LGM_SURFACE_NLINE(Surfaces[i]); j++)
         if(LGM_SURFACE_LINE(Surfaces[i], j)==theLine)
         {
-          Line_Global2Local(theLine, global, local);
           LGM_BNDP_SURFACE(theBndP,LGM_BNDP_N(theBndP)) = Surfaces[i];
                                         #ifdef NO_PROJECT
           LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[0] = midp[0];
           LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[1] = midp[1];
           LGM_BNDP_GLOBAL(theBndP,LGM_BNDP_N(theBndP))[2] = midp[2];
                                         #else
+          Line_Global2Local(theLine, global, local);
           LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[0] = - (DOUBLE) LGM_LINE_ID(theLine) - 2.0;
           LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[1] = local[0];
                                         #endif
@@ -5886,7 +5937,7 @@ INT BNDP_SaveBndP (BNDP *aBndP)
   INT i;
   LGM_BNDP *theBndP;
   int n;
-  double d[3], e;
+  double d[3], e, *global;
 
   theBndP = BNDP2LGM(aBndP);
   /* the lines */
@@ -5900,10 +5951,17 @@ INT BNDP_SaveBndP (BNDP *aBndP)
   {
     n = LGM_LINE_ID(LGM_BNDP_LINE(theBndP,i));
     if (Bio_Write_mint(1,&n)) return (1);
+                #ifdef NO_PROJECT
+    global =  LGM_BNDP_LINE_GLOBALLEFT(theBndP,i);
+    if (Bio_Write_mdouble(3,global)) return (1);
+    global =  LGM_BNDP_LINE_GLOBALRIGHT(theBndP,i);
+    if (Bio_Write_mdouble(3,global)) return (1);
+                #else
     e = LGM_BNDP_LINE_LEFT(theBndP,i);
     if (Bio_Write_mdouble(1,&e)) return (1);
     e = LGM_BNDP_LINE_RIGHT(theBndP,i);
     if (Bio_Write_mdouble(1,&e)) return (1);
+                #endif
   }
 
   /* the surfaces */
@@ -5956,11 +6014,24 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
     for (theLine=FirstLine(theDomain); theLine!=NULL; theLine=NextLine(theDomain))
       if (LGM_LINE_ID(theLine)==id) break;
     if (theLine==NULL) return (NULL);
+
+                #ifdef NO_PROJECT
+    if (Bio_Read_mdouble(3,global)) return (NULL);
+    LGM_BNDP_LINE_GLOBALLEFT(theBndP,i)[0] = global[0];
+    LGM_BNDP_LINE_GLOBALLEFT(theBndP,i)[1] = global[1];
+    LGM_BNDP_LINE_GLOBALLEFT(theBndP,i)[2] = global[2];
+    if (Bio_Read_mdouble(3,global)) return (NULL);
+    LGM_BNDP_LINE_GLOBALRIGHT(theBndP,i)[0] = global[0];
+    LGM_BNDP_LINE_GLOBALRIGHT(theBndP,i)[1] = global[1];
+    LGM_BNDP_LINE_GLOBALRIGHT(theBndP,i)[2] = global[2];
+    LGM_BNDP_LINE(theBndP,i) = theLine;
+                #else
     if (Bio_Read_mdouble(1,&left)) return (NULL);
     if (Bio_Read_mdouble(1,&right)) return (NULL);
     LGM_BNDP_LINE(theBndP,i) = theLine;
     LGM_BNDP_LINE_LEFT(theBndP,i) = left;
     LGM_BNDP_LINE_RIGHT(theBndP,i) = right;
+                #endif
   }
 
   for (i=0; i<nsurf; i++)
@@ -5993,12 +6064,13 @@ INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
   LGM_BNDP *theBndP1, *theBndP2, *theBndP3;
   LGM_SURFACE *theSurface;
   INT mi;
-  DOUBLE nv[3];
+  DOUBLE nv[3], loc0[2], loc1[2], loc2[2], global0[3], global1[3], global2[3];
 
   /* global coordinates */
   theBndS = BNDS2LGM(aBndS);
   theSurface = LGM_BNDS_SURFACE(theBndS);
 
+        #ifdef NO_PROJECT
   global[0] =     (1.0 - local[0] - local[1] ) * LGM_BNDS_GLOBAL(theBndS,0,0)
               +   (      local[0]            ) * LGM_BNDS_GLOBAL(theBndS,1,0)
               +   (                 local[1] ) * LGM_BNDS_GLOBAL(theBndS,2,0);
@@ -6008,9 +6080,27 @@ INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
   global[2] =     (1.0 - local[0] - local[1] ) * LGM_BNDS_GLOBAL(theBndS,0,2)
               +   (      local[0]            ) * LGM_BNDS_GLOBAL(theBndS,1,2)
               +   (                 local[1] ) * LGM_BNDS_GLOBAL(theBndS,2,2);
-        #ifdef NO_PROJECT
-  /* nothing to do */
         #else
+  loc0[0] =  LGM_BNDS_LOCAL(theBndS,0,0);
+  loc0[1] =  LGM_BNDS_LOCAL(theBndS,0,1);
+  loc1[0] =  LGM_BNDS_LOCAL(theBndS,1,0);
+  loc1[1] =  LGM_BNDS_LOCAL(theBndS,1,1);
+  loc2[0] =  LGM_BNDS_LOCAL(theBndS,2,0);
+  loc2[1] =  LGM_BNDS_LOCAL(theBndS,2,1);
+
+  Surface_Local2Global (theSurface,global0,loc0);
+  Surface_Local2Global (theSurface,global1,loc1);
+  Surface_Local2Global (theSurface,global2,loc2);
+  global[0] =     (1.0 - local[0] - local[1] ) * global0[0]
+              +   (      local[0]            ) * global1[0]
+              +   (                 local[1] ) * global2[0];
+  global[1] =     (1.0 - local[0] - local[1] ) * global0[1]
+              +   (      local[0]            ) * global1[1]
+              +   (                 local[1] ) * global2[1] ;
+  global[2] =     (1.0 - local[0] - local[1] ) * global0[2]
+              +   (      local[0]            ) * global1[2]
+              +   (                 local[1] ) * global2[2];
+
   V_DIM_CLEAR(nv);
   mi = GetLocalKoord(theSurface,global,local, nv);
   if(mi!=-1)
