@@ -52,6 +52,9 @@
 #include "db.h"
 #include "fas.h"
 #include "nliter.h"
+#include "order.h"
+#include "tstep.h"
+#include "project.h"
 
 #include "initnp.h"
 #include "numproc.h"
