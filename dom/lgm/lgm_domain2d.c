@@ -909,13 +909,14 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
     for (j=0; j<LGM_BNDP_N(theBndP2); j++)
       if (LGM_BNDP_LINE(theBndP1,i)==LGM_BNDP_LINE(theBndP2,j))
       {
+        loc1 = LGM_BNDP_LOCAL(theBndP1,i);
+        loc2 = LGM_BNDP_LOCAL(theBndP2,j);
+        if (ABS(loc1-loc2)>1.0) continue;
         theLine = LGM_BNDP_LINE(theBndP1,i);
         count++;
         i0=i; j0=j;
       }
   if (count!=1) return (NULL);
-  loc1 = LGM_BNDP_LOCAL(theBndP1,i0);
-  loc2 = LGM_BNDP_LOCAL(theBndP2,j0);
   k = (loc1<loc2) ? floor(loc1) : floor(loc2);
   if (loc1-k>1.0 || loc2-k>1.0) return (NULL);
   if ((theBndS = (LGM_BNDS *)GetFreelistMemory(Heap,sizeof(LGM_BNDS)))==NULL)
