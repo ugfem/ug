@@ -55,6 +55,7 @@ static long RedColor; /* Red  */
 static VECTOR *GlobalVec1;
 static VECTOR *GlobalVec2;
 static INT GlobalIds;
+static INT LineWidth;
 static INT VecCoordComp;
 static long ColorTable[8];
 
@@ -106,6 +107,7 @@ struct FAMGPlotObject
 	struct PlotObjHead theHead;    /* the head */
 	int level;
 	int ids;
+	int LineWidth;					// LineWidth used for plotting: for X11 uses 1 (default), for postscript uses 2
 	VECDATA_DESC *CoordVec;			// vector to hold the coordinate info for the node
 #ifdef ModelP
 	int DrawBorder;					// if 1, also border vectors are plotted
@@ -131,6 +133,11 @@ static INT SetFAMGGraph (PLOTOBJ *thePlotObj, INT argc, char **argv)
     if(i > 0) theObj->ids = 1;
     else theObj->ids = 0;
    
+	if (ReadArgvINT("linewidth",&i,argc,argv))
+		theObj->LineWidth = 1;
+	else
+		theObj->LineWidth = i;
+	
 #ifdef ModelP
     if (ReadArgvINT("b",&i,argc,argv))
     	theObj->DrawBorder = 0;
@@ -212,6 +219,7 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
     GlobalVec1 = FIRSTVECTOR(grid);
     GlobalVec2 = FIRSTVECTOR(grid);
     GlobalIds = theObj->ids;
+    LineWidth = theObj->LineWidth;
 
 	VecCoordComp = -1;		// dummy to indicate "no vector for coordinates"
     if( (theObj->CoordVec != NULL) && ( level < 0 ) ) 
@@ -271,10 +279,10 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
     MATRIX *mat, *imat;
 	long VectorColor;
 
-    UgSetLineWidth(1);
-
     if(vec == NULL)
 		goto EvalFAMGGraph1_finish;
+
+    UgSetLineWidth(LineWidth);
 
 #ifdef ModelP
 	if( !IS_FAMG_MASTER(vec) )
@@ -334,7 +342,7 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
         DO_2l(theDO) = VectorColor; DO_inc(theDO);
         DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO); 
         DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO); 
-        DO_2s(theDO) = CircleSize - 2; DO_inc(theDO);
+        DO_2s(theDO) = CircleSize + 2; DO_inc(theDO);
         V2_COPY(mypos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
         sprintf(DO_2cp(theDO),"%d",VINDEX(vec));
         DO_inc_str(theDO);
@@ -375,10 +383,10 @@ static INT EvalFAMGGraph2 (DRAWINGOBJ *theDO, VECTOR *vec)
     VECTOR *nbvec;
     MATRIX *mat, *imat;
 
-    UgSetLineWidth(1);
-
     if(vec == NULL)
 		goto EvalFAMGGraph2_finish;
+
+    UgSetLineWidth(LineWidth);
 
 	if( VecCoordComp == -1 )
 	{
