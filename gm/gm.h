@@ -160,6 +160,17 @@
 #define DEBUG_MODE "OFF"
 #endif
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* "hard" switches for interpolation matrix and block-vectors               */
@@ -3333,5 +3344,9 @@ INT             KeyForObject                                            (KEY_OBJ
 
 /* TODO: remove the following functions after the code will never need any debugging */
 char *PrintElementInfo (ELEMENT *theElement,INT full);
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif
