@@ -5949,8 +5949,8 @@ static INT EXT_PostProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
     edge = ONEDGE(theVertex);
     theElement = VFATHER(theVertex);
     if (MoveMidNode (MN_MG,
-                     CORNER(theElement,CORNER_ON_EDGE(theElement,edge,0)),
-                     CORNER(theElement,CORNER_ON_EDGE(theElement,edge,1)),
+                     CORNER(theElement,CORNER_OF_EDGE(theElement,edge,0)),
+                     CORNER(theElement,CORNER_OF_EDGE(theElement,edge,1)),
                      MN_Node,MN_lambda))
       return (1);
   }
