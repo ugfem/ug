@@ -276,7 +276,7 @@ static INT north2Boundary (void *data, DOUBLE *param, DOUBLE *result)
 
 static const INT two_sd2p[3] = {0,0,3};
 static const INT two_sg2p[8] = {0,1,0,0,3,3,3,2};
-static const INT two_pt2p[8] = {0,1,1,0,3,3,3,3};
+static const INT two_pt2p[8] = {0,1,1,0,3,3,2,2};
 static const DOMAIN_PART_INFO two_dpi = {two_sd2p,two_sg2p,two_pt2p};
 
 static INT InitTwo (void)
@@ -453,7 +453,7 @@ static INT InitPuncturedDisc (void)
 
   /* allocate new domain structure */
   MidPoint[0] = MidPoint[1] = 5.0;
-  radius = 5.0;
+  radius = 7.5;
   if (CreateDomain("Punctured Disc",
                    MidPoint,radius,5,5,NO)==NULL) return(1);
 
@@ -1203,7 +1203,7 @@ static INT InitWolfgangsee (void)
   /* allocate new domain structure */
   MidPoint[0] =115.0;
   MidPoint[1] =70.0;
-  radius =110.0;
+  radius =150.0;
   if (CreateDomain(
         "Wolfgangsee",                                          /* name of the new domain           */
         MidPoint,radius,                                        /* circle containing the domain	*/
