@@ -2511,7 +2511,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
       SETSUBDOMAIN(theElement,cge->subdomain);
       for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
       {
-        SETNSUBDOM(CORNER(theElement,j),cge->subdomain);
+        theNode = CORNER(theElement,j);
+        if (OBJT(MYVERTEX(theNode))==BVOBJ) SETNSUBDOM(theNode,0);
+        else SETNSUBDOM(theNode,cge->subdomain);
         ID(CORNER(theElement,j)) = cge->cornerid[j];
       }
       for (j=0; j<EDGES_OF_ELEM(theElement); j++)
