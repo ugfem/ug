@@ -10058,7 +10058,8 @@ INT InitUGManager ()
 /* TODO: entfernen nach Debuggphase */
 char *PrintElementInfo (ELEMENT *theElement,INT full)
 {
-  char out[2000],tmp[200];
+  static char out[2000];
+  char tmp[200];
   char etype[10];
   char ekind[8];
   int i,j;
@@ -10067,7 +10068,7 @@ char *PrintElementInfo (ELEMENT *theElement,INT full)
   if (theElement==NULL)
   {
     printf( "PrintElementInfo: element == NULL\n");
-    return 0;
+    return (NULL);
   }
 
   if (DIM==2)
