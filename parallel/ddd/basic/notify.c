@@ -68,11 +68,12 @@ enum NotifyTypes {MYSELF,KNOWN,DUMMY,UNKNOWN};
 
 
 typedef struct {
-  DDD_PROC from, to;               /* source and destination processors */
-  size_t size;                     /* message size */
-  unsigned short flag;             /* one of NotifyTypes */
+  short from, to;                       /* source and destination processor */
+  unsigned short flag;                  /* one of NotifyTypes */
+  size_t size;                          /* message size */
 } NOTIFY_INFO;
 
+#define PROC_INVALID_TEMP   -1
 
 
 /****************************************************************************/
@@ -151,15 +152,8 @@ static int sort_XferInfos (const void *e1, const void *e2)
   ci1 = (NOTIFY_INFO *)e1;
   ci2 = (NOTIFY_INFO *)e2;
 
-  /* PROC_INVALID is less than all 'real' processor numbers */
-  if (ci1->to==PROC_INVALID && ci2->to!=PROC_INVALID) return(-1);
-  if (ci1->to!=PROC_INVALID && ci2->to==PROC_INVALID) return(1);
-
-  if (ci1->to!=PROC_INVALID && ci2->to!=PROC_INVALID)
-  {
-    if (ci1->to < ci2->to) return(-1);
-    if (ci1->to > ci2->to) return(1);
-  }
+  if (ci1->to < ci2->to) return(-1);
+  if (ci1->to > ci2->to) return(1);
 
   if (ci1->from < ci2->from) return(-1);
   if (ci1->from == ci2->from) return(0);
@@ -213,7 +207,7 @@ NOTIFY_INFO *NotifyPrepare (void)
 
   /* dummy Info if there is no message to be send */
   allInfos[0].from = me;
-  allInfos[0].to   = PROC_INVALID;
+  allInfos[0].to   = PROC_INVALID_TEMP;
   allInfos[0].size = 0;
   allInfos[0].flag = DUMMY;
   lastInfo = 1;
@@ -263,7 +257,7 @@ int NotifyTwoWave (NOTIFY_INFO *allInfos, int lastInfo)
   i = j = 0;
   unknownInfos = lastInfo;
   myInfos = 0;
-  while (i<lastInfo && allInfos[j].to==PROC_INVALID)
+  while (i<lastInfo && allInfos[j].to==PROC_INVALID_TEMP)
   {
     if (allInfos[j].from==allInfos[i].to)
     {

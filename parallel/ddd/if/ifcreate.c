@@ -134,10 +134,10 @@ static void DisposeIFAttr (IF_ATTR *ifr)
 
 
 
-static int sort_int (const void *e1, const void *e2)
+static int sort_type (const void *e1, const void *e2)
 {
-  if (*(int *)e1 < *(int *)e2) return(-1);
-  if (*(int *)e1 == *(int *)e2) return(0);
+  if (*(DDD_TYPE *)e1 < *(DDD_TYPE *)e2) return(-1);
+  if (*(DDD_TYPE *)e1 == *(DDD_TYPE *)e2) return(0);
   return(1);
 }
 
@@ -617,7 +617,7 @@ theIF[nIFs].nPrioB     = nB;
 memcpy(theIF[nIFs].O, O, nO*sizeof(DDD_TYPE));
 memcpy(theIF[nIFs].A, A, nA*sizeof(DDD_PRIO));
 memcpy(theIF[nIFs].B, B, nB*sizeof(DDD_PRIO));
-if (nO>1) qsort(theIF[nIFs].O, nO, sizeof(DDD_TYPE), sort_int);
+if (nO>1) qsort(theIF[nIFs].O, nO, sizeof(DDD_TYPE), sort_type);
 if (nA>1) qsort(theIF[nIFs].A, nA, sizeof(DDD_PRIO), sort_prio);
 if (nB>1) qsort(theIF[nIFs].B, nB, sizeof(DDD_PRIO), sort_prio);
 
