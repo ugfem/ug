@@ -141,6 +141,7 @@ int PrintMGFileInfo (char *filename, int *magic_cookie)
   }
   printf("Version:        %s\n",mg_general.version);
   printf("Identification: %s\n",mg_general.ident);
+  printf("Magic Cookie:   %d\n",(int)mg_general.magic_cookie);
   printf("\n");
   printf("Dimension:      %d\n",mg_general.dim);
   printf("BVP:            %s\n",mg_general.DomainName);
@@ -201,6 +202,7 @@ int PrintDataFileInfo (char *filename, int *magic_cookie)
   printf("Version:        %s\n",dio_general.version);
   printf("MG File:        %s\n",dio_general.mgfile);
   printf("Time:           %f\n",(float)dio_general.time);
+  printf("Magic Cookie:   %d\n",(int)dio_general.magic_cookie);
   printf("\n");
   printf("# VecData:      %d\n",dio_general.nVD);
   printf("\n");
@@ -263,17 +265,17 @@ int main (int argc, char **argv)
   if (nmg==0 || ndata==0) return (0);
 
   /* check consistency */
-  printf("\n############# consistency  #############\n\n");
-  printf("           |");
+  printf("\n####################### consistency  #######################\n\n");
+  printf("                          |");
   for (j=0; j<ndata; j++)
-    printf("%15s",argv[datalist[j]]);
-  printf("\n------------");
+    printf("%-30s",argv[datalist[j]]);
+  printf("\n-------------------------");
   for (j=0; j<ndata; j++)
-    printf("---------------");
+    printf("------------------------------");
   printf("\n");
   for (i=0; i<nmg; i++)
   {
-    printf("%10s |",argv[mglist[i]]);
+    printf("%-25s |",argv[mglist[i]]);
     for (j=0; j<ndata; j++)
       if (mgmc[i]==datamc[j])
         printf("       C       ");
