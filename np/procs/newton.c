@@ -105,6 +105,7 @@ typedef struct
   DOUBLE linMinRed[MAX_VEC_COMP];      /* minimum reduction for linear solver		*/
   DOUBLE scale[MAX_VEC_COMP];       /* scaling of components						*/
   DOUBLE divFactor[MAX_VEC_COMP];         /* divergence factor for nonlin iteration	*/
+  INT noLastDef;                                        /* no defect check after last iteration			*/
 
   /* and XDATA_DESCs */
   MATDATA_DESC *J;                              /* the Matrix to be solved						*/
@@ -532,7 +533,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
       UserWrite("\nLinear solver did not converge in Newton method\n");
       if (newton->linearRate < 2) {
         res->error_code = 0;                     /* no error but exit */
-        goto exit;
+        goto exit;                         /* or goto exit2 ??? */
       }
     }
 
@@ -619,6 +620,11 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
       dcopy(mg,0,level,ALL_VECTORS,x,newton->s);
       daxpy(mg,0,level,ALL_VECTORS,x,-la,newton->v);
 
+      if (newton->maxit==r && newton->noLastDef) {
+        res->error_code = 0;
+        if (FreeVD(mg,0,level,newton->s)) REP_ERR_RETURN(1);
+        goto exit2;
+      }
       if (NonLinearDefect(mg,level,FALSE,x,newton,ass,defect,&error)!=0)
       {
         res->error_code = __LINE__;
@@ -745,6 +751,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   res->number_of_line_searches = defect_c;
   for (i=0; i<n_unk; i++) res->last_defect[i] = defect[i];
   if (!res->converged) UserWriteF("NL SOLVER: desired convergence not reached\n");
+exit2:
   UserWriteF("AVG EXEC TIMES: DEF[%2d]=%10.4g JAC[%2d]=%10.4g LIN[%2d]=%10.4g\n",
              defect_c,defect_t/defect_c,newton_c,newton_t/newton_c,linear_c,linear_t/linear_c);
   res->exec_time = defect_t+newton_t+linear_t;
@@ -864,6 +871,8 @@ static INT NewtonInit (NP_BASE *base, INT argc, char **argv)
       PrintErrorMessage('E',"NewtonInit","divfac must be in )1,inf(");
       REP_ERR_RETURN(NP_NOT_ACTIVE);
     }
+  /* set noLastDef option */
+  newton->noLastDef = ReadArgvOption("noLastDef",argc,argv);
 
   /* set display option */
   newton->displayMode = ReadArgvDisplay(argc,argv);
