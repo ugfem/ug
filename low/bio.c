@@ -193,7 +193,7 @@ static int ASCII_Read_mint (int n, int *intList)
   int i;
 
   for (i=0; i<n; i++)
-    if (fscanf(stream,"%d ",intList+i)!=1) return (1);
+    if (fscanf(stream,"%d\n",intList+i)!=1) return (1);
   return (0);
 }
 
@@ -203,7 +203,7 @@ static int ASCII_Write_mint (int n, int *intList)
 
   for (i=0; i<n; i++)
   {
-    m = fprintf(stream,"%d ",intList[i]);
+    m = fprintf(stream,"%d\n",intList[i]);
     if (m<0) return (1);
     n_byte += m;
   }
@@ -215,7 +215,7 @@ static int ASCII_Read_mdouble (int n, double *doubleList)
   int i;
 
   for (i=0; i<n; i++)
-    if (fscanf(stream,"%lg ",doubleList+i)!=1) return (1);
+    if (fscanf(stream,"%lg\n",doubleList+i)!=1) return (1);
   return (0);
 }
 
@@ -225,7 +225,7 @@ static int ASCII_Write_mdouble (int n, double *doubleList)
 
   for (i=0; i<n; i++)
   {
-    m = fprintf(stream,"%lg ",doubleList[i]);
+    m = fprintf(stream,"%lg\n",doubleList[i]);
     if (m<0) return (1);
     n_byte += m;
   }
@@ -236,7 +236,7 @@ static int ASCII_Read_string (char *string)
 {
   int i,len;
 
-  if (fscanf(stream,"%d ",&len)!=1) return (1);
+  if (fscanf(stream,"%d\n",&len)!=1) return (1);
   for (i=0; i<len; i++)
   {
     string[i] = fgetc(stream);
@@ -256,7 +256,7 @@ static int ASCII_Write_string (char *string)
   int i,m,len;
 
   len = strlen(string);
-  m = fprintf(stream,"%d ",len);
+  m = fprintf(stream,"%d\n",len);
   if (m<0) return (1);
   n_byte += m;
   for (i=0; i<len; i++)
