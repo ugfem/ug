@@ -17,14 +17,15 @@ ARCH_POSTLINK = true
 ARCH_LIBS     = -lm -lc
 ARCH_PLIBS    = /usr/lib/libV3.a
 
-ARCH_CFLAGS   = -z -Aa +w2 -D_HPUX_SOURCE -O
+#ARCH_CFLAGS   = -y -z -Aa +w2 -D_HPUX_SOURCE -g -p
+#ARCH_CFLAGS   =  +O2 +Onolimit -z -Aa +w2 -D_HPUX_SOURCE  -p
+ARCH_CFLAGS   =  -g -z -Aa +w2 -D_HPUX_SOURCE  -p
 ARCH_C++FLAGS = -y -Aa -g
-ARCH_LFLAGS   = -z /opt/langtools/lib/end.o 
+ARCH_LFLAGS   = -z +O2 -p /opt/langtools/lib/end.o
 ARCH_ARFLAGS  = ru
 
-ARCH_XINCLUDES = -I/usr/contrib/X11R6/include   
-ARCH_XLIBS     = -L/usr/contrib/X11R6/lib -lX11 -lXt -lXaw -lXmu -lXext
+ARCH_XINCLUDES = -I/usr/include/X11R6 -I/usr/contrib/X11R6/include
+ARCH_XLIBS     = -L/usr/lib/X11R6 -L/usr/contrib/X11R6/lib -lX11 -lXt -lXaw -lXmu -lXext
 
 ARCH_ARFLAGS  = ru
-
 
