@@ -1583,6 +1583,8 @@ static INT DeleteStructCommand (INT argc, char **argv)
    D*/
 /****************************************************************************/
 
+#define PROTOCOL_SEP '%'
+
 static INT ProtocolCommand (INT argc, char **argv)
 {
   INT i,from;
@@ -1599,7 +1601,7 @@ static INT ProtocolCommand (INT argc, char **argv)
 
   for (i=1; i<argc; i++)
   {
-    if (argv[i][0]!='%')
+    if (argv[i][0]!=PROTOCOL_SEP)
     {
       PrintErrorMessage('E',"protocol","protocol options have to begin with %");
       return (PARAMERRORCODE);
@@ -1629,7 +1631,7 @@ static INT ProtocolCommand (INT argc, char **argv)
       return (PARAMERRORCODE);
     }
     /* write options not followed by a \ */
-    while ((i+1<argc) && (argv[i+1][0]!='\\'))
+    while ((i+1<argc) && (argv[i+1][0]!=PROTOCOL_SEP))
       fprintf(protocolFile," $%s",(argv[++i]));
   }
 
