@@ -140,7 +140,7 @@ static DOUBLE Rand[54][2] = {
 };
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /****************************************************************************/
@@ -789,8 +789,6 @@ static INT oberesWolfgangseeUfer (void *data, COORD *param, COORD *result)
 static INT InitWolfgangsee (void)
 {
   COORD radius,MidPoint[2];
-
-  INT i;
 
   /* allocate new domain structure */
   MidPoint[0] =115.0;

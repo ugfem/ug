@@ -125,7 +125,7 @@ static INT theBVPDirID;                         /* env type for BVP dir					*/
 static STD_BVP *currBVP;
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
