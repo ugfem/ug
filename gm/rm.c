@@ -3056,11 +3056,13 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
     IFDEBUG(gm,0)
     int tetrarule;
     if (pattern<0 || pattern>1023)
-      PRINTDEBUG(gm,0,("Pattern2Rule(): ERROR pattern=%d\n",pattern))
+      PRINTDEBUG(gm,0,(PFMT "Pattern2Rule(): ERROR elem=" EID_FMTX
+                       " pattern=%d\n",me,EID_PRTX(theElement),pattern))
       assert(pattern>=0 && pattern<=1023);
     tetrarule = Pattern2Rule[TAG(theElement)][pattern];
     if (tetrarule<0 || tetrarule>MaxRules[TETRAHEDRON])
-      PRINTDEBUG(gm,0,("Pattern2Rule(): ERROR pattern=%d rule=%d\n",pattern,tetrarule))
+      PRINTDEBUG(gm,0,(PFMT "Pattern2Rule(): ERROR elem=" EID_FMTX
+                       " pattern=%d rule=%d\n",me,EID_PRTX(theElement),pattern,tetrarule))
       assert(tetrarule>=0 && tetrarule<=MaxRules[TETRAHEDRON]);
     ENDDEBUG
 
@@ -3936,6 +3938,7 @@ static int      CheckVolumes(REFRULE *Rule)
       if (sp<=0.0)
       {
         UserWriteF("negative volume=%f for son=%d rule=%d\n",sp,i,MARK_OF_RULE(Rule));
+        assert(0);
       }
   }
 
@@ -4051,11 +4054,6 @@ static INT InitRuleManager3D (void)
     }
 
     fclose(stream);
-  }
-
-  for (i=0; i<nRules; i++)
-  {
-    CheckVolumes(Rules+i);
   }
 
   /* bug fix */
