@@ -794,8 +794,8 @@ void NodeGatherEdge (DDD_OBJ n, int cnt, DDD_TYPE type_id, void *Data)
 
 	data = (char *)Data;
 
-	PRINTDEBUG(dddif,3,("%2d:NodeGatherEdge(): n=%x cnt=%d type=%d ndobj=%d\n",
-		me,node,cnt,type_id,OBJT(node)))
+	PRINTDEBUG(dddif,3,("%2d:NodeGatherEdge(): n=%x/%08x cnt=%d type=%d ndobj=%d\n",
+		me,node,DDD_InfoGlobalId(PARHDR(node)),cnt,type_id,OBJT(node)))
 
 	/* copy edge(s) of node */
 	for (link=START(node); link!=NULL; link=NEXT(link))
@@ -806,8 +806,10 @@ void NodeGatherEdge (DDD_OBJ n, int cnt, DDD_TYPE type_id, void *Data)
 		switch (XFERLINK(link))
 		{
 		case COPY:
-				PRINTDEBUG(dddif,4,("%2d:NodeGatherEdge():   n=%x copy "
-					"link=%x\n",me,node,link))
+				PRINTDEBUG(dddif,4,("%2d:NodeGatherEdge():   n=%x/%08x copy "
+					"link=%x nbnode=%x/%08x\n",
+					me,node,DDD_InfoGlobalId(PARHDR(node)),link,
+					NBNODE(link), DDD_InfoGlobalId(PARHDR(NBNODE(link)))))
 				memcpy(data,MYEDGE(link),sizeof(EDGE));
 				data += CEIL(sizeof(EDGE));
 
@@ -844,7 +846,7 @@ void NodeScatterEdge (DDD_OBJ n, int cnt, DDD_TYPE type_id, void *Data)
 	grid->nEdge+=cnt;
 
 	PRINTDEBUG(dddif,3,("%2d:NodeScatterEdge(): n=%x cnt=%d type=%d "
-		"ndobj=%d\n",me,node,cnt,type_id,OBJT(node)))
+		"ndobj=%d\n",me,node,DDD_InfoGlobalId(PARHDR(node)),cnt,type_id,OBJT(node)))
 
 	edge = (EDGE *)GetMem(dddctrl.currMG->theHeap,sizeof(EDGE),FROM_BOTTOM);
 	PRINTDEBUG(dddif,4,("%2d:NodeScatterEdge(): n=%x edge=%x size=%d\n",
@@ -1142,8 +1144,8 @@ static void ElemGatherEdge (ELEMENT *pe, int cnt, char *data)
 	INT	i;
 	INT	size = sizeof(EDGE) - ((dddctrl.edgeData)? 0 : sizeof(VECTOR*));
 
-	PRINTDEBUG(dddif,3,("%2d:  ElemGatherEdge(): pe=%08x/%x cnt=%d size=%d\n",
-				me,DDD_InfoGlobalId(PARHDRE(pe)),pe,cnt,size))
+	PRINTDEBUG(dddif,3,("%2d:  ElemGatherEdge(): pe=" EID_FMTE " cnt=%d size=%d\n",
+				me,EID_PRTE(pe),cnt,size))
 
 	/* copy edges into message */
 	for (i=0; i<EDGES_OF_ELEM(pe); i++)
@@ -1155,11 +1157,12 @@ static void ElemGatherEdge (ELEMENT *pe, int cnt, char *data)
 		data += CEIL(size);
 
 		
-		PRINTDEBUG(dddif,4,("%2d:  ElemGatherEdge(): pe=%x i=%d n1=%08x "
-			"n2=%08x nmid=%08x\n",
-			me,pe,i,(edge->links[0].nbnode),edge->links[1].nbnode,edge->midnode))
+		PRINTDEBUG(dddif,2,("%2d:  ElemGatherEdge(): pe=%x i=%d n1=" ID_FMT
+			" n2=" ID_FMT " nmid=%08x\n",
+			me,pe,i,
+			ID_PRT(edge->links[0].nbnode),ID_PRT(edge->links[1].nbnode),edge->midnode))
 /*
-		PRINTDEBUG(dddif,4,("%2d:  ElemGatherEdge(): pe=%x i=%d n1=%08x "
+		PRINTDEBUG(dddif,2,("%2d:  ElemGatherEdge(): pe=%x i=%d n1=%08x "
 			"n2=%08x nmid=%08x\n",
 				me,pe,i,DDD_InfoGlobalId(PARHDR(edge->links[0].nbnode)),
 				DDD_InfoGlobalId(PARHDR(edge->links[1].nbnode)),
@@ -1177,8 +1180,8 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data)
 	GRID	*theGrid = GetGridOnDemand(dddctrl.currMG,level);
 
 
-	PRINTDEBUG(dddif,3,("%2d:  ElemScatterEdge(): pe=%08x/%x cnt=%d\n",
-			me,DDD_InfoGlobalId(PARHDRE(pe)),pe,cnt))
+	PRINTDEBUG(dddif,3,("%2d:  ElemScatterEdge(): pe=" EID_FMTE " cnt=%d\n",
+			me,EID_PRTE(pe),cnt))
 
 	/* retrieve edges from message */
 	for (i=0; i<cnt; i++)
@@ -1186,7 +1189,7 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data)
 		EDGE *enew, *ecopy = (EDGE *)data;
 		data += CEIL(size);
 
-		PRINTDEBUG(dddif,4,("%2d:  ElemScatterEdge(): pe=%x i=%d n1=%08x "
+		PRINTDEBUG(dddif,2,("%2d:  ElemScatterEdge(): pe=%x i=%d n1=%08x "
 			"n2=%08x midnode=%08x\n",
 			me,pe,i,NBNODE(LINK0(ecopy)),ecopy->links[1].nbnode,ecopy->midnode))
 
