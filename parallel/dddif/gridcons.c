@@ -89,13 +89,19 @@
 				    SETPRIO(EDVECTOR(e),prio);                               \
 		}
 
-#define CHECK_OBJECT_PRIO(o,prio,master,ghost,id,s)                          \
+#define CHECK_OBJECT_PRIO(o,prio,master,ghost,id,s,_nerr_)                   \
 	if (USED(o)==1 && ! master (o))                                          \
+	{                                                                        \
 			UserWriteF("MASTER %s=" id ## _FMTX " has WRONG prio=%d\n",      \
 				s, id ## _PRTX(o),prio(o));                                  \
+			_nerr_++;                                                        \
+	}                                                                        \
 	if (USED( o )==0 && ! ghost ( o ))                                       \
+	{                                                                        \
 			UserWriteF("GHOST %s=" id ## _FMTX " has WRONG prio=%d\n",       \
-				s, id ## _PRTX( o ),prio(o));
+				s, id ## _PRTX( o ),prio(o));                                \
+			_nerr_++;                                                        \
+	}
 
 
 /****************************************************************************/
@@ -647,9 +653,10 @@ INT ListProcList (int *proclist, int uniqueTag)
 INT CheckVectorPrio (ELEMENT *theElement, VECTOR *theVector)
 {
 	INT nmaster;
+	INT nerrors = 0;
 
 	/* check vector prio */
-	CHECK_OBJECT_PRIO(theVector,PRIO,MASTER,GHOST,ID,"Vector")
+	CHECK_OBJECT_PRIO(theVector,PRIO,MASTER,GHOST,VINDEX,"Vector",nerrors)
 
 	/* master copy has to be unique */
 	if ((nmaster = CheckProcListCons(PROCLIST(theVector),PrioMaster)) > 1)	
@@ -658,17 +665,19 @@ INT CheckVectorPrio (ELEMENT *theElement, VECTOR *theVector)
 			ID_PRTX(theVector),nmaster);
 		ListProcList(PROCLIST(theVector),PrioMaster);
 		UserWriteF("\n");
+		nerrors++;
 	}
 
-	return(0);
+	return(nerrors);
 }
 
 INT CheckNodePrio (ELEMENT *theElement, NODE *theNode)
 {
 	INT nmaster;
+	INT nerrors = 0;
 
 	/* check node prio */
-	CHECK_OBJECT_PRIO(theNode,PRIO,MASTER,GHOST,ID,"NODE")
+	CHECK_OBJECT_PRIO(theNode,PRIO,MASTER,GHOST,ID,"NODE",nerrors)
 
 	/* master copy has to be unique */
 	if ((nmaster = CheckProcListCons(PROCLIST(theNode),PrioMaster)) > 1)	
@@ -677,22 +686,24 @@ INT CheckNodePrio (ELEMENT *theElement, NODE *theNode)
 			ID_PRTX(theNode),nmaster);
 		ListProcList(PROCLIST(theNode),PrioMaster);
 		UserWriteF("\n");
+		nerrors++;
 	}
 
 	if (dddctrl.nodeData)
-		CheckVectorPrio(theElement,NVECTOR(theNode));
+		nerrors += CheckVectorPrio(theElement,NVECTOR(theNode));
 
-	return(0);
+	return(nerrors);
 }
 
 
 INT CheckEdgePrio (ELEMENT *theElement, EDGE *theEdge)
 {
 	INT nmaster;
+	INT nerrors = 0;
 
 	#ifdef __THREEDIM__
 	/* check edge prio */
-	CHECK_OBJECT_PRIO(theEdge,PRIO,MASTER,GHOST,ID,"EDGE")
+	CHECK_OBJECT_PRIO(theEdge,PRIO,MASTER,GHOST,ID,"EDGE",nerrors)
 
 	/* master copy has to be unique */
 	if ((nmaster = CheckProcListCons(PROCLIST(theEdge),PrioMaster)) > 1)	
@@ -701,19 +712,21 @@ INT CheckEdgePrio (ELEMENT *theElement, EDGE *theEdge)
 			EDID_PRTX(theEdge),nmaster);
 		ListProcList(PROCLIST(theEdge),PrioMaster);
 		UserWriteF("\n");
+		nerrors++;
 	}
 	#endif
 
 	if (dddctrl.edgeData)
 	    if (EDVECTOR(theEdge) != NULL)
-		    CheckVectorPrio(theElement,EDVECTOR(theEdge));
+		    nerrors += CheckVectorPrio(theElement,EDVECTOR(theEdge));
 
-	return(0);
+	return(nerrors);
 }
 
 INT CheckElementPrio (ELEMENT *theElement)
 {
 	INT		i,nmaster,prio;
+	INT		nerrors = 0;
 	NODE	*theNode;
 	EDGE	*theEdge;
 	ELEMENT *SonList[MAX_SONS];
@@ -722,11 +735,13 @@ INT CheckElementPrio (ELEMENT *theElement)
 	{
 		UserWriteF(PFMT "#FATAL# MASTER ELEM=" EID_FMTX " has WRONG part=%d prio=%d\n",
 			me,EID_PRTX(theElement),PARTITION(theElement),EPRIO(theElement));
+		nerrors++;
 	}
 	if (PARTITION(theElement)!=me && !EGHOST(theElement))
 	{
 		UserWriteF(PFMT "#FATAL# GHOST ELEM=" EID_FMTX " has WRONG part=%d prio=%d\n",
 			me,EID_PRTX(theElement),PARTITION(theElement),EPRIO(theElement));
+		nerrors++;
 
 		/* test ghost prio */
 		prio = 0;
@@ -742,19 +757,20 @@ INT CheckElementPrio (ELEMENT *theElement)
 			UserWriteF(PFMT "ERROR GHOST ELEM=" EID_FMTX 
 				" has WRONG prio=%d should be prio=%d\n",
 				me,EID_PRTX(theElement),EPRIO(theElement),prio);
+			nerrors++;
 		}
 	}
 
 	/* check element prio */
-	CHECK_OBJECT_PRIO(theElement,EPRIO,EMASTER,EGHOST,EID,"ELEM")
+	CHECK_OBJECT_PRIO(theElement,EPRIO,EMASTER,EGHOST,EID,"ELEM",nerrors)
 
 	if (dddctrl.elemData)
-		CheckVectorPrio(theElement,EVECTOR(theElement));
+		nerrors += CheckVectorPrio(theElement,EVECTOR(theElement));
 
 	if (dddctrl.sideData)
 	{
 		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-			CheckVectorPrio(theElement,SVECTOR(theElement,i));
+			nerrors += CheckVectorPrio(theElement,SVECTOR(theElement,i));
 	}
 
 	/* master copy has to be unique */
@@ -764,12 +780,13 @@ INT CheckElementPrio (ELEMENT *theElement)
 			EID_PRTX(theElement),nmaster);
 		ListProcList(EPROCLIST(theElement),PrioMaster);
 		UserWriteF("\n");
+		nerrors++;
 	}
 
 	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
 	{
 		theNode = CORNER(theElement,i);
-		CheckNodePrio(theElement,theNode);
+		nerrors += CheckNodePrio(theElement,theNode);
 	}
 
 	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
@@ -777,10 +794,10 @@ INT CheckElementPrio (ELEMENT *theElement)
 		theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
 						  CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
 		ASSERT(theEdge != NULL);
-		CheckEdgePrio(theElement,theEdge);
+		nerrors += CheckEdgePrio(theElement,theEdge);
 	}
 
-	return (0);
+	return (nerrors);
 }
 
 INT CheckInterfaces(GRID *theGrid)
@@ -790,7 +807,7 @@ INT CheckInterfaces(GRID *theGrid)
 	NODE	*theNode;
 	EDGE	*theEdge;
 	VECTOR	*theVector;
-	int		errors = 0;
+	int		nerrors = 0;
 
 	/* reset USED flag of all grid objects  */
 	/* set USED flag of master grid objects */
@@ -835,13 +852,13 @@ INT CheckInterfaces(GRID *theGrid)
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
 		 theElement=SUCCE(theElement))
 	{
-		errors += CheckElementPrio(theElement);
+		nerrors += CheckElementPrio(theElement);
 	}
 
 	/* check ddd interface consistency */
-	errors += DDD_ConsCheck();
+	nerrors += DDD_ConsCheck();
 
-	return(errors);
+	return(nerrors);
 }
 
 /****************************************************************************/
