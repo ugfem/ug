@@ -57,10 +57,6 @@
 /*                                                                          */
 /****************************************************************************/
 
-/* limits for XDATA_DESC handling */
-#define MAX_SUB                         5
-#define SYMNAMESIZE                     16
-
 #define MAX_PRINT_SYM           5
 
 /* format for PrintVectorData and PrintMatrixData */
@@ -73,85 +69,11 @@
 #define LIST_SEP                        " \t,"
 #define IN_PARTS                        "in"
 
-/* macros for SUBVEC */
-#define SUBV_NAME(s)            ((s)->Name)
-#define SUBV_NCOMPS(s)          ((s)->Comp)
-#define SUBV_NCOMP(s,tp)        ((s)->Comp[tp])
-#define SUBV_COMP(s,tp,i)       ((s)->Comps[tp][i])
-
-/* macros for SUBMAT */
-#define SUBM_NAME(s)            ((s)->Name)
-#define SUBM_RCOMPS(s)          ((s)->RComp)
-#define SUBM_CCOMPS(s)          ((s)->CComp)
-#define SUBM_RCOMP(s,tp)        ((s)->RComp[tp])
-#define SUBM_CCOMP(s,tp)        ((s)->CComp[tp])
-#define SUBM_COMP(s,tp,i)       ((s)->Comps[tp][i])
-
-/* macros for VEC_TEMPLATE */
-#define VF_COMPS(vt)            ((vt)->Comp)
-#define VF_COMP(vt,tp)          ((vt)->Comp[tp])
-#define VF_COMPNAMES(vt)        ((vt)->CompNames)
-#define VF_COMPNAME(vt,i)       ((vt)->CompNames[i])
-#define VF_SUB(vt,i)            ((vt)->SubVec[i])
-#define VF_NSUB(vt)                     ((vt)->nsub)
-
-/* macros for MAT_TEMPLATE */
-#define MF_RCOMPS(mt)           ((mt)->RComp)
-#define MF_RCOMP(mt,tp)         ((mt)->RComp[tp])
-#define MF_CCOMPS(mt)           ((mt)->CComp)
-#define MF_CCOMP(mt,tp)         ((mt)->CComp[tp])
-#define MF_COMPNAMES(mt)        ((mt)->CompNames)
-#define MF_COMPNAME(mt,i)       ((mt)->CompNames[i])
-#define MF_SUB(mt,i)            ((mt)->SubMat[i])
-#define MF_NSUB(mt)                     ((mt)->nsub)
-
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
 /*																			*/
 /****************************************************************************/
-
-typedef struct {
-
-  char Name[SYMNAMESIZE];
-  SHORT Comp[NVECTYPES];
-  SHORT Comps[NVECTYPES][MAX_VEC_COMP];
-
-} SUBVEC;
-
-typedef struct {
-
-  char Name[SYMNAMESIZE];
-  SHORT RComp[NMATTYPES];
-  SHORT CComp[NMATTYPES];
-  SHORT Comps[NMATTYPES][MAX_MAT_COMP];
-
-} SUBMAT;
-
-typedef struct {
-
-  ENVITEM v;
-
-  SHORT Comp[NVECTYPES];
-  char CompNames[MAX_VEC_COMP];
-
-  SHORT nsub;
-  SUBVEC  *SubVec[MAX_SUB];
-
-} VEC_TEMPLATE;
-
-typedef struct {
-
-  ENVITEM v;
-
-  SHORT RComp[NMATTYPES];
-  SHORT CComp[NMATTYPES];
-  char CompNames[2*MAX_MAT_COMP];
-
-  SHORT nsub;
-  SUBMAT  *SubMat[MAX_SUB];
-
-} MAT_TEMPLATE;
 
 /****************************************************************************/
 /*																			*/
@@ -446,7 +368,7 @@ static INT PrintTypeMatrixData (INT type, void *data, const char *indent, char *
   return(0);
 }
 
-static VEC_TEMPLATE *GetVectorTemplate (FORMAT *theFmt, const char *template)
+VEC_TEMPLATE *GetVectorTemplate (const FORMAT *theFmt, const char *template)
 {
   ENVITEM *item,*dir;
   VEC_TEMPLATE *first;
@@ -556,7 +478,7 @@ VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
         k++;
       }
     }
-    svd = CreateSubVecDesc(theMG,vd,buffer,SUBV_NCOMPS(subv),SubComp,SubName);
+    svd = CreateSubVecDesc(theMG,buffer,SUBV_NCOMPS(subv),SubComp,SubName);
     if (svd == NULL) {
       PrintErrorMessage('E',"CreateVecDescOfTemplate",
                         "cannot create subvector descriptor");
@@ -590,7 +512,7 @@ INT CreateVecDescCmd (MULTIGRID *theMG, INT argc, char **argv)
   return (NUM_OK);
 }
 
-static MAT_TEMPLATE *GetMatrixTemplate (FORMAT *theFmt, const char *template)
+MAT_TEMPLATE *GetMatrixTemplate (const FORMAT *theFmt, const char *template)
 {
   ENVITEM *item,*dir;
   MAT_TEMPLATE *first;
@@ -694,6 +616,8 @@ MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
       nc = SUBM_RCOMP(subm,type)*SUBM_CCOMP(subm,type);
       for (j=0; j<nc; j++)
       {
+        ASSERT(k<MAX_MAT_COMP);
+
         cmp = offset[type]+SUBM_COMP(subm,type,j);
         SubComp[k] = Comp[cmp];
         SubName[2*k]   = MF_COMPNAME(mt,2*cmp);
@@ -701,7 +625,7 @@ MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
         k++;
       }
     }
-    smd = CreateSubMatDesc(theMG,md,buffer,SUBM_RCOMPS(subm),SUBM_CCOMPS(subm),SubComp,SubName);
+    smd = CreateSubMatDesc(theMG,buffer,SUBM_RCOMPS(subm),SUBM_CCOMPS(subm),SubComp,SubName);
     if (smd == NULL) {
       PrintErrorMessage('E',"CreateMatDescOfTemplate",
                         "cannot create submatrix descriptor");
@@ -816,20 +740,20 @@ static MAT_TEMPLATE *CreateMatTemplate (const char *name)
 
 /****************************************************************************/
 /*D
-        VDsubDescFromVT - create a VECDATA_DESC as a sub descriptor given by a vector template
+        VDsubDescFromVT - create a VECDATA_DESC as a sub descriptor from a vector template
 
         SYNOPSIS:
-        INT VDsubDescFromVT (const VECDATA_DESC *vd, const char *tplt, const char *sub, VECDATA_DESC **subvd)
+        INT VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, VECDATA_DESC **subvd)
 
     PARAMETERS:
    .   vd			- make a sub desc of this VECDATA_DESC
-   .   tplt		- name of a template to be taken
-   .   sub			- name of the subv of the template tplt
+   .   vt			- template containing sub descriptor
+   .   sub			- index of sub descriptor in template
    .   subvd		- handle to created sub descriptor
 
         DESCRIPTION:
         This function creates a sub descriptor to a given VECDATA_DESC according to the given
-        subv of a template.
+        sub descriptor of a template.
 
         RETURN VALUE:
         INT
@@ -838,10 +762,9 @@ static MAT_TEMPLATE *CreateMatTemplate (const char *name)
    D*/
 /****************************************************************************/
 
-INT VDsubDescFromVT (const VECDATA_DESC *vd, const char *tplt, const char *sub, VECDATA_DESC **subvd)
+INT VDsubDescFromVT (const VECDATA_DESC *vd, const VEC_TEMPLATE *vt, INT sub, VECDATA_DESC **subvd)
 {
   FORMAT *fmt;
-  VEC_TEMPLATE *vt;
   SUBVEC *subv;
   SHORT SubComp[MAX_VEC_COMP];
   const SHORT *offset,*Comp;
@@ -850,18 +773,7 @@ INT VDsubDescFromVT (const VECDATA_DESC *vd, const char *tplt, const char *sub, 
 
   fmt = MGFORMAT(VD_MG(vd));
 
-  vt = GetVectorTemplate(fmt,tplt);
-  if (vt==NULL)
-    REP_ERR_RETURN (1);
-
-  for (i=0; i<VF_NSUB(vt); i++)
-    if (strcmp(SUBV_NAME(VF_SUB(vt,i)),sub)==0)
-      break;
-
-  if (i>=VF_NSUB(vt))
-    REP_ERR_RETURN (1);
-
-  subv = VF_SUB(vt,i);
+  subv = VF_SUB(vt,sub);
   offset = VD_OFFSETPTR(vd);
   Comp = VM_COMPPTR(vd);
 
@@ -882,7 +794,7 @@ INT VDsubDescFromVT (const VECDATA_DESC *vd, const char *tplt, const char *sub, 
       k++;
     }
   }
-  *subvd = CreateSubVecDesc(VD_MG(vd),vd,NULL,SUBV_NCOMPS(subv),SubComp,SubName);
+  *subvd = CreateSubVecDesc(VD_MG(vd),NULL,SUBV_NCOMPS(subv),SubComp,SubName);
   if (*subvd == NULL)
     REP_ERR_RETURN (1);
 
@@ -891,15 +803,15 @@ INT VDsubDescFromVT (const VECDATA_DESC *vd, const char *tplt, const char *sub, 
 
 /****************************************************************************/
 /*D
-        MDsubDescFromVT - create a MATDATA_DESC as a sub descriptor given by a vector template
+        MDsubDescFromVT - create a MATDATA_DESC as a sub descriptor from a vector template
 
         SYNOPSIS:
-        INT MDsubDescFromVT (const MATDATA_DESC *md, const char *tplt, const char *sub, MATDATA_DESC **submd)
+        INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, MATDATA_DESC **submd)
 
     PARAMETERS:
    .   md			- make a sub desc of this MATDATA_DESC
-   .   tplt		- name of a vector template to be taken
-   .   sub			- name of the subv of the template tplt
+   .   vt			- template containing sub descriptor
+   .   sub			- index of sub descriptor in template
    .   submd		- handle to created sub descriptor
 
         DESCRIPTION:
@@ -913,10 +825,9 @@ INT VDsubDescFromVT (const VECDATA_DESC *vd, const char *tplt, const char *sub, 
    D*/
 /****************************************************************************/
 
-INT MDsubDescFromVT (const MATDATA_DESC *md, const char *tplt, const char *sub, MATDATA_DESC **submd)
+INT MDsubDescFromVT (const MATDATA_DESC *md, const VEC_TEMPLATE *vt, INT sub, MATDATA_DESC **submd)
 {
   FORMAT *fmt;
-  VEC_TEMPLATE *vt;
   SUBVEC *subv;
   SHORT SubComp[MAX_MAT_COMP];
   const SHORT *offset,*Comp;
@@ -927,18 +838,7 @@ INT MDsubDescFromVT (const MATDATA_DESC *md, const char *tplt, const char *sub, 
 
   fmt = MGFORMAT(MD_MG(md));
 
-  vt = GetVectorTemplate(fmt,tplt);
-  if (vt==NULL)
-    REP_ERR_RETURN (1);
-
-  for (i=0; i<VF_NSUB(vt); i++)
-    if (strcmp(SUBV_NAME(VF_SUB(vt,i)),sub)==0)
-      break;
-
-  if (i>=VF_NSUB(vt))
-    REP_ERR_RETURN (1);
-
-  subv = VF_SUB(vt,i);
+  subv = VF_SUB(vt,sub);
   offset = MD_OFFSETPTR(md);
   Comp = VM_COMPPTR(md);
 
@@ -969,78 +869,8 @@ INT MDsubDescFromVT (const MATDATA_DESC *md, const char *tplt, const char *sub, 
     }
   }
 
-  *submd = CreateSubMatDesc(MD_MG(md),md,NULL,RComp,RComp,SubComp,SubName);
+  *submd = CreateSubMatDesc(MD_MG(md),NULL,RComp,RComp,SubComp,SubName);
   if (*submd == NULL)
-    REP_ERR_RETURN (1);
-
-  return (0);
-}
-
-/****************************************************************************/
-/*D
-        VDinterfaceDesc - an interface VECDATA_DESC is created
-
-        SYNOPSIS:
-        INT VDinterfaceDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
-
-    PARAMETERS:
-   .   vd			- make a sub desc of this VECDATA_DESC
-   .   vds			- an existing sub desc of vd
-   .   vdi			- handle to new interface desc
-
-        DESCRIPTION:
-        This function creates a sub descriptor to a given VECDATA_DESC such that all components
-        from cd are taken of types in which vds is defined but where vds is a true subset of vd.
-
-        RETURN VALUE:
-        INT
-   .n   0: ok
-   .n      n: if an error occured
-   D*/
-/****************************************************************************/
-
-INT VDinterfaceDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
-{
-  SHORT SubComp[MAX_VEC_COMP],SubNCmp[NVECTYPES];
-  INT i,j,k,n,ns,nc,tp,cmp;
-  char SubName[MAX_VEC_COMP];
-
-  k = 0;
-  for (tp=0; tp<NVECTYPES; tp++)
-    if (VD_ISDEF_IN_TYPE(vds,tp))
-    {
-      if (!VD_ISDEF_IN_TYPE(vd,tp))
-        REP_ERR_RETURN (1);
-
-      n  = VD_NCMPS_IN_TYPE(vd,tp);
-      ns = VD_NCMPS_IN_TYPE(vds,tp);
-      if (ns<n)
-      {
-        /* copy all components from vd not contained in vds */
-        n  = VD_NCMPS_IN_TYPE(vd,tp);
-        ns = VD_NCMPS_IN_TYPE(vds,tp);
-        nc = 0;
-        for (i=0; i<n; i++)
-        {
-          cmp = VD_CMP_OF_TYPE(vds,tp,i);
-          for (j=0; j<ns; j++)
-            if (VD_CMP_OF_TYPE(vds,tp,j)==cmp)
-              break;
-          if (j<ns) continue;
-
-          SubComp[k] = cmp;
-          SubName[k] = VM_COMP_NAME(vd,VD_OFFSET(vd,tp)+i);
-          k++;
-          nc++;
-        }
-        SubNCmp[tp] = nc;
-      }
-      else if (ns!=n)
-        REP_ERR_RETURN (1);
-    }
-
-  *vdi = CreateSubVecDesc(VD_MG(vd),vd,NULL,SubNCmp,SubComp,SubName);
-  if (*vdi == NULL)
     REP_ERR_RETURN (1);
 
   return (0);
