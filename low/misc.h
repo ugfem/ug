@@ -1,17 +1,17 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*                                                                              */
+/*                                                                          */
 /* File:      misc.h                                                        */
 /*                                                                          */
 /* Purpose:   header for misc.c                                             */
 /*                                                                          */
-/* Author:      Henrik Rentz-Reichert                                       */
-/*              Institut fuer Computeranwendungen                           */
-/*              Universitaet Stuttgart                                      */
-/*              Pfaffenwaldring 27                                          */
-/*              70569 Stuttgart                                             */
-/*              internet: ug@ica3.uni-stuttgart.de                          */
+/* Author:    Henrik Rentz-Reichert                                         */
+/*            Institut fuer Computeranwendungen                             */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            internet: ug@ica3.uni-stuttgart.de                            */
 /*                                                                          */
 /* History:   23.02.95 ug3-version                                          */
 /*                                                                          */
@@ -147,9 +147,9 @@ namespace UG3d {
 #define STR_SWITCH_END                          }
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* definition of exported global variables                                                                      */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 extern int UG_math_error;

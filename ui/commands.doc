@@ -1,6 +1,5 @@
 /***********************************************************/
-/*D
-	Commands - user commands for the ug shell script
+/** \page commands Commands - User commands for the ug shell script
 	
 	DESCRIPTION:	
 	Commands are used on the shell or in a script to perform ug functions
@@ -81,8 +80,1083 @@ INT InitCommands ()
     SEE ALSO:
 	'interpreter', 'unixcommands'
 
-D*/
+*/
 
 
+/****************************************************************************/
+/*! \page quit quit - Quits UG
+
+   DESCRIPTION:
+   This command quits the program and closes the shell.
+
+   'quit'
+   
+   KEYWORDS:
+   exit, terminate, bye
+*/
+/****************************************************************************/
 
 
+/****************************************************************************/
+/** \page   exitug  exitug - Exits UG
+
+   DESCRIPTION:
+   This command exits the current application and closes the shell.
+
+   'exitug'
+   
+   KEYWORDS:
+   terminate, bye, tschuess
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page mute mute - Set mutelevel
+
+   DESCRIPTION:
+   This command sets a mutelevel. 
+   The default value is 0 and all skript lines will be printed on the shell.
+   This will be suppressed by mutelevel -1.
+   Smaller muteleveles should reduce the output further.
+   A mutelevel of -1000 supresses all output to shell.
+
+   'mute \<value>'
+.   \<value> - integer which gives the mutelevel
+
+   REMARK:
+   Formally, this is not an ug command, 'mute' is checked in 
+   'InterpretString'.
+   
+   KEYWORDS:
+   verbose, quiet, silent
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   help help - Print help for a command or keyword
+
+   DESCRIPTION:
+   This command prints help for a given helpitem, e.g. a command. The helpitem
+   is looked up case insensitive. Command names can be abbreviated as if they
+   where called from the shell window.
+
+   help [[\<helpitem>] $k]
+
+.   no~option      - this is  equivalent to 'help help'
+.   \<helpitem>     - print help for \<helpitem> (string)
+.   $k             - search for keyword \<helpitem> (multiple occurence)
+
+   EXAMPLE:
+   'help PlotObj'
+   
+   prints help for the plotobject command.
+   
+   'help plot $k'
+
+   prints a list of all commands which are relevant for plotting
+   (openwindow, setview, zoom ...)
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   checkhelp checkhelp - Check wether all commands in /menu have a help item
+
+   DESCRIPTION:
+   This function checks wether for all commands in /menu a help item exists.
+   It also checks wether for all num proc types a help item exists.
+   
+   It prints all commands and num proc types for which help does NOT exist.
+ 
+   It calls the funtion 'CheckHelp'.
+
+   EXAMPLE:
+   'checkhelp'
+   
+   KEYWORDS:
+   check
+*/
+/****************************************************************************/
+
+
+/****************************************************************************/
+/** \page   cmfn cmfn - Creates a metafile name
+
+   DESCRIPTION:
+   This command creates a metafile names.
+   It creates a string containing the name of a metafile name for
+   animation by xugv.
+
+   'cmfn \<name> \<var>'
+
+.  \<name> - first part of the metafile names
+.  \<var> - the contents of var will be appended to the name
+
+   EXAMPLE:
+.vb
+frame="
+    cmfn film step;
+    openwindow 0 0 820 420 $d meta $n \@film;
+    openpicture $s 10 10 800 400 $n framepic;
+    setplotobject EScalar $e S2 $m COLOR $d 0 $f 0.0 $t 1.0;
+    setview;
+    zoom 0.4;
+    plot;
+    closewindow;
+";
+step = 0;
+steps = 100;
+\@frame;
+repeat {
+    print "STEP ", step;
+    \@mysolve; 
+    step=step+1;
+    \@frame;
+    if (step==steps) break;
+}
+.ve
+
+   This runs 'mysolve' 100 times and 
+   creates metafiles 'film.0000', 'film.0001', 'film.0002', ... 'film.0100'.
+   
+   KEYWORDS:
+   movie, film
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   readclock readclock - Print execution time
+
+   DESCRIPTION:
+   This command is for measuring the time used.
+   It prints the execution time since the last 'resetclock' to
+   string variable ':CLOCK'.
+
+   'readclock'   
+   
+   KEYWORDS:
+   time, stopwatch, clock
+   
+   SEE ALSO:
+   resetclock;
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   resetclock resetclock - Start the time mesuring
+
+   DESCRIPTION:
+   This command starts the time mesuring. 
+   It sets the global variable 'Time0' to zero.
+
+   'resetclock'
+   
+   KEYWORDS:
+   time, stopwatch, clock
+   
+ * \sa readclock
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   date date - Prints the date
+
+   DESCRIPTION:
+   This command prints the date to the shell resp. 
+   writes it in the string variable ':date'.
+
+   'date [$s] [$S]'
+
+.  no~option - print the date to the shell
+.  $s  		 -  put in the string variable ':date'.
+.  $S   	 -  use short format of the form yy.mm.dd
+   
+   KEYWORDS:
+   time, calendar
+   
+   SEE ALSO:
+   'resetclock', 'readclock'
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   ls ls - Lists the content of an environment directory.
+
+   DESCRIPTION:
+   This command lists the content of an environment directory.
+
+   'ls [\<path>]'
+
+.  no~option - lists the content of the current directory.
+.  \<path>    - contains the relative or absolute path in UNIX-style
+   
+   KEYWORDS:
+   environment, directory, list
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page cd  cd - Change the current environment directory.
+
+   DESCRIPTION:
+   This command changes the current environment directory.
+   It uses the function 'ChangeEnvDir'.
+
+   'cd [\<path>]'
+
+.  no~option - cd to root (cd /)
+.  \<path>	 - \<path> contains the relative or absolute path in UNIX-style
+   
+   KEYWORDS:
+   environment, directory, working
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   pwd pwd - Print the current environment directory
+
+   DESCRIPTION:
+   This command print the current environment directory to the shell.
+   It uses the function 'CangeEnvDir'.
+
+   'pwd'
+   
+   KEYWORDS:
+   environment, directory, working
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   envinfo envinfo - Print total size and used memory
+
+   DESCRIPTION:
+   This command prints total size and used memory of the emvironment to shell.
+
+   'envinfo'
+   
+   KEYWORDS:
+   environment, size, heap, memory
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   set set - Set (or print) a string variable struct	
+
+   DESCRIPTION:
+   This command sets (or prints) a string variable struct.
+   If it is not existing it is also created.
+   It sets or prints the contents of a struct or struct directory.
+
+   'set {\<struct> \<value>} | {[\<structdir> | \<struct>] [$r]}'
+
+.  \<struct>~\<value>   			- assign \<value> (just a string of arbitrary length) to \<struct>
+.  [\<structdir>|\<struct>]~[$r]  - display contents of \<struct> or \<structdir> 
+.n                                (default: current struct dir)
+.  $r        					- specifies the directory, its contents is listed recursively
+   
+   KEYWORDS:
+   variable, create, set, assign, value, struct, show, display, print
+
+  \sa structpath
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   dv dv - Delete an existing string variable
+
+   DESCRIPTION:
+   This command deletes an existing string variable from the environment.
+
+   dv \<variable name>
+
+.  \<variable name>    - \<variable name> consists of a complete path related to the
+                        current struct dir or the structure root directory in the environment
+   
+   KEYWORDS:
+   variable, remove, delete
+
+   SEE ALSO:
+   def, structpath, dv
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   ms ms  - Create a structure
+
+   DESCRIPTION:
+   This commands creates a new string variable struct.
+   It calls the function 'MakeStruct'.
+
+   'ms \<structdir>'
+
+.  \<structdir>     - the \<structdir> consists of a complete path related to the
+                     current struct dir or the string variable root in the environment
+   
+   KEYWORDS:
+   variable, create, struct
+
+   SEE ALSO:
+   'structpath'
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page cs  cs  - Change to a struct directory
+ *
+   DESCRIPTION:
+   This commands changes to a struct directory.
+   It calls the function 'ChangeStructDir'.
+
+   'cs \<structdir>'
+
+.  \<structdir>   - the \<structdir> consists of a complete path related to the
+                   current struct dir or the string variable root in the environment
+   
+   KEYWORDS:
+   variable, struct, change
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   pws  pws  - Print the current struct path
+
+   DESCRIPTION:
+   This commands calls the function 'GetStructPathName' and 
+   prints the result to the shell.
+
+   'pws'
+   
+   KEYWORDS:
+   variable, print, display, show, struct
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   ds ds  - Deletes a struct 
+
+   DESCRIPTION:
+   This commands calls the function 'DeleteStruct' to remove a struct.
+
+   'ds \<structdir>'
+
+.  \<structdir>   - the \<structdir> consists of a complete path related to the
+.n                 current struct dir or the string variable root in the environment
+   
+   KEYWORDS:
+   variable, delete, remove, struct
+   
+   SEE ALSO:
+   dv, structpath
+
+*/
+/****************************************************************************/
+
+	
+/****************************************************************************/
+/** \page protocol protocol - Print strings to the protocol file
+
+   DESCRIPTION:
+   This command prints strings to protocol file.
+   It writes formatted output to the open protocol file.
+
+   'protocol {$i[ ]\<verbatim text> | $n[ ]\<verbatim text> | $t[ ]\<verbatim text> | $f}*'
+
+.   $%i   - append \<verbatim text> to protocol file
+.   $%n   - write a line feed and append \<verbatim text> to protocol file
+.   $%t   - write a tab and append \<verbatim text> to protocol file
+.n          NOTE: the first space (if there) following the option character is skipped
+.   $%f   - flush the file buffer
+
+   EXAMPLE:
+.vb
+x = exp(1);
+protoOn exp.proto;
+protocol $%i the value of exp(1) is $%t \@x;
+protocol $%n you can use $s in protocol;
+protoOff 
+.ve
+
+Then, the file 'exp.proto' will consist of the string
+.vb
+"the value of exp(1) is\t2.7182818\nyou can use $s in protocol"
+.ve
+   
+   KEYWORDS:
+   protocol, file, output, format
+  
+   SEE ALSO:
+  'protoOn', 'protoOff'
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   protoOn protoOn - Open protocol file where specially formatted output is saved
+  
+   DESCRIPTION:
+   This command opens protocol file where specially formatted output is saved.
+
+   'protoOn \<filename> [$r[!] | $a]'
+
+.   \<filename>  - name of the protocol file      
+.    $r!        - if a file named \<filename> exist already, rename it to \<filename>.saved
+.n                break if the renaming fails
+.   $r          - like above but proceed even if renaming fails
+.   $a          - append to existing file named \<filename>
+   
+   KEYWORDS:
+   protocol, file, open, output, format
+
+   SEE ALSO:
+   'protoOff', 'protocol'
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   protoOff - close protocol file 
+  
+   DESCRIPTION:
+   This command closes the protocol file.
+
+   'protoOff'
+   
+   KEYWORDS:
+   protocol, file, close, output, format
+
+   SEE ALSO:
+   'protoOn', 'protocol'
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page logon logon - open log file where all shell output is saved
+  
+   DESCRIPTION:
+   This command opens a log file where all shell output is saved.
+
+   'logon \<logfilename> [$p] [$e] [$a] [$f] [$r [0|1]]'
+
+.   \<filename>  - name of logfile
+.   $p			- write log to open protocol file
+.   $e			- extend filename with numbers of processors (parallel only)
+.   $a			- extend filename with processor id (parallel only)
+.   $f			- force (close open logfile iff)
+.   $r~[0|1]	- 0: replace (default), 1: rename existing log file (using modification date)
+   
+   KEYWORDS:
+   protocol, file, open, output
+
+   SEE ALSO:
+   'logoff'    
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page logoff logoff - close logfile
+  
+   DESCRIPTION:
+   This command closes the logfile.
+
+   'logoff $p'
+   
+.  $p - logging is detached from open protocol file
+
+   KEYWORDS:
+   protocol, file, close, output
+
+ * \sa logon
+ *
+ */
+/****************************************************************************/
+
+/****************************************************************************/
+/* \page cnom cnom - write a cnom output file	
+
+   DESCRIPTION:
+   This function writes data in a format suitable for the program cnom 2.0
+   written by Susanne Kroemker of the IWR, Heidelberg.
+   
+   'cnom ...'
+   
+   KEYWORDS:
+   file, open, output, data
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   configure - configure a BVP
+
+   DESCRIPTION:
+   This command configures the BPV, calling BVP_Configure.
+   The arguments depend on the domain module.
+
+   'configure \<BVP name> ...'
+
+   EXAMPLE:
+   'configure test $d Quadrilateral $P 2 1.1 1.3'
+
+   In the 2D standard domain module, the BVP test will be coupled with
+   a quadrilateral with corners (0,0), (1,0), (1.1,1.3) and (0,1).
+   
+   KEYWORDS:
+   boundary value problem, change
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   close - close current multigrid
+
+   DESCRIPTION:
+   This command closes the current (or all) open multigrid(s),
+   frees their heaps and closes all the pictures belonging to them,
+   calling 'DisposeMultiGrid' and 'DisposePicture'.
+
+   'close [$a]'
+
+.   $a  - close all multigrids
+   
+   KEYWORDS:
+   multigrid, close
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   new - allocate a new multigrid
+
+   DESCRIPTION:
+   This command allocates a new multigrid, using the function 'CreateMultiGrid'. 
+   It allocates heap and a new multigrid structure.
+   The specification of the boundary value problem must be supplied by
+   the user with the functions 'CreateProblem' and 'CreateDomain'.
+   It also creates the corner vertices and nodes of the domain.
+
+   'new [\<mgname>] $b \<boundary value problem> $f \<format> $h \<heapsize> [$n] [$e]'
+
+.  \<mgname>               		- the name of the multigrid (default is 'untitled-\<nb>')
+.  $b~\<boundary~value~problem>	- a boundary value problem
+.  $f~\<format>            		- one of the enroled formats matching with \<boundary value problem>
+.  $n							- do not use optimezed insert element function
+.  $e							- empty grid (no vertices, no elements)
+.  $h~\<heapsize>          		- the heapsize to be allocated in byte (or use suffix 
+			            	      "K" for kilobyte, "M" for megabyte, "G" for gigabyte)
+
+   EXAMPLES:
+   'new $p TestProblem $f nc $h 30000000;'
+   
+   'new $b TestProblem $f nc $h 30000K;'
+   
+   'new $b TestProblem $f nc $h 30M;'
+   
+   KEYWORDS:
+   multigrid, new, create
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   open - load a new multigrid from a data file	
+
+   DESCRIPTION:
+   This command loads a new multigrid, using the function 'LoadMultiGrid'. 
+   Usually, this file should be generated by the 'save' command. 
+   It allocates the heap and a new multigrid structure.
+   The specification of the problem and the domain must be supplied by
+   the user with the functions 'CreateProblem' and 'CreateDomain'.
+
+   'open \<filename> [$t \<type>] [$m \<mg name>] [$b \<problem>] [$f \<format>] [$h \<heapsize>]'
+
+.  \<filename>             		- the name of the multigrid file (the fule name will be composed
+									to: \<filename>.ug.mg.\<type>
+.  $t~\<type>					- file was saved with type: asc (default) or bin
+.  \<mg~name>					- grid will be created with this name
+.  $p~\<boundary~value~problem>	- a boundary value problem
+									(overrides saved one)
+.  $f~\<format>            		- one of the enroled formats matching with \<boundary value problem>
+									(overrides saved one)
+.  $h~\<heapsize>          		- the heapsize to be allocated
+									(overrides saved one)
+   
+   KEYWORDS:
+   multigrid, new, open, file
+
+   SEE ALSO:
+   'new', 'save'
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   save - save a multigrid structure in a file
+
+   DESCRIPTION:
+   This command writes the current multigrid structure in a file. 
+
+   'save [\<name>] [$t \<type>] [$r [0|1]] [$c \<comment>]'
+
+.  \<name>                  - name to save with (default is the mgname)
+.n								if name is ending in .scr a script file is saved which
+								will generate the surface of the grid as level 0 on execution
+.  $t~\<type>			   - type can be asc (default> or bin. asc and bin can be opened with
+								the open command
+.  $c~\<comment>            - optionally specify a comment string
+.  $r~[0|1]                - 0: replace (default), 1: rename existing mg file (using modification date)
+   
+   KEYWORDS:
+   multigrid, save, write, data, file, output
+
+   SEE ALSO:
+   'open'
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   savedomain - save domain structure in a file
+
+   DESCRIPTION:
+   This command saves the domain structure of the current multigrid in a file.
+   All arguments are passed to the current domain module interface function.
+
+   'savedomain ...'
+   
+   SEE ALSO:
+   'open'
+   
+   KEYWORDS:
+   multigrid, domain, save, write, data, file, output
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page average  average, freeaverage
+ *
+   average, freeaverage - average result of a plot proc to nodal vector
+
+   DESCRIPTION:
+   The average command takes a plot procedure (scalar or vector), allocates
+   a vec data desc with nodal components and computes a conforming
+   approximation of the function via a box-volume weighted average.
+   The vec data desc will be given the same name as the plot procedure. The
+   freeaverage command is called with same arguments and deallocates the vec data
+   descs. The vec data descs are not locked!
+
+   'average {$ns \<scalar plot proc> [$s \<sym>] | $nv \<vector plot proc> [$s \<sym>]}*'
+   'freeaverage {$ns \<scalar plot proc> [$s \<sym>] | $nv \<vector plot proc> [$s \<sym>]}*'
+
+   EXAMPLE:
+.vb
+average $nv uwTrans $s sol $nv unTrans $s sol;
+savedata air3d $t xdr $n \@step $T \@TIME $a sol $b uwTrans $c unTrans;
+freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
+.ve
+
+
+   KEYWORDS:
+   file, output
+
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   savedata - save multigrid data in a file
+
+   DESCRIPTION:
+   This function saves multigrid data from the current multigrid in a file.
+   The multigrid has to be saved before.
+
+   'savedata \<filename> [$t \<type>] [$n \<number>] [$T \<time>] [$r [0|1]] [$a \<vd name> [$b \<vd name>[$c \<vd name>[$d \<vd name>[$e \<vd name>]]]]]'
+   
+.  \<filename>		- the filename will be composed to \<filename>.ug.data.\<type>
+.  $t~\<type>		- type can be asc (default) or bin
+.  $n~\<number>		- picture number for movie
+.  $T~\<time>		- assign this time level
+.  $a~\<vd name>...	- read data from this vec data descriptors
+.  $r~[0|1]			- 0: replace (default), 1: rename existing data file (using modification date)
+   
+   KEYWORDS:
+   multigrid, save, write, data, file, output
+
+   SEE ALSO:
+   'save'
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   loaddata - load multigrid data from a file
+
+   DESCRIPTION:
+   This function loads multigrid data from a file. 
+
+   'loaddata \<filename> [$t \<type>] [$n \<number>] [$f [$h \<heapsize>]] [$a \<vd name> [$b \<vd name>[$c \<vd name>[$d \<vd name>[$e \<vd name>]]]]]'
+   
+.  \<filename>		- the filename will be composed to \<filename>.ug.data.\<type>
+.  $t~\<type>		- type can be asc (default) or bin
+.  $n~\<number>		- picture number of movie
+.  $f				- open or reopen multigrid corresponding to data file
+.  $h~\<heapsize>    - the heapsize to be allocated
+									(overrides saved one)
+.  $a~\<vd name>...	- save data to this vec data descriptors
+.  $r 				- read data in current multigrid
+   
+   KEYWORDS:
+   multigrid, load, read, file, data
+
+   SEE ALSO:
+   'save'
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page changemc  changemc - change magic cookie of multigrid
+
+   DESCRIPTION:
+   This function changes the magic cookie of multigrid.
+
+   'changemc \<mc>'
+   
+.  \<mc>				- new magic cookie
+   
+   KEYWORDS:
+   multigrid, load, read, file, data
+
+   SEE ALSO:
+   'save'
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   level - select another current level
+
+   DESCRIPTION:
+   This command changes another current level of the current multigrid.
+
+   level \<level> | + | -
+
+.  \<level> - go to level \<level>
+.  +       - go to the next finer level 
+.  -       - go to the next coarser level 
+   
+   KEYWORDS:
+   multigrid, current
+*/ 
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   renumber - reassign the object IDs in the multigrid	
+
+
+   DESCRIPTION:
+   This command reassigns the object IDs in the multigrid 
+   subsequently to fill the gaps, calling the function 'RenumberMultiGrid'.
+
+   'renumber'
+   
+   KEYWORDS:
+   multigrid, id
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page wplist  wplist - List information on all windows and pictures
+
+   DESCRIPTION:
+   This command lists information on all windows and pictures, calling
+   the functions 'ListWindowPictureHeader', 'ListPicture' and 
+   'ListUGWindow'.
+
+   'wplist'
+   
+   KEYWORDS:
+   graphics, plot, window, list, display, show
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   mglist - list information on all multigrids
+
+   DESCRIPTION:
+   This command lists information on all multigrids, calling
+   the functions 'ListMultiGridHeader' and 'ListMultiGrid'.
+
+   'mglist [$s]'
+
+.  $s - short format for less information
+   
+   KEYWORDS:
+   multigrid, list, display, show
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   glist - list information on the current multigrid
+
+   DESCRIPTION:
+   This command lists information on the current multigrid, calling
+   the function 'ListGrids'.
+
+   'glist'
+   
+   KEYWORDS:
+   multigrid, list, display, show
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   nlist - list information on specified nodes
+
+   DESCRIPTION:
+   This command lists information on specified nodes, calling
+   the functions 'ListNodeRange' and 'ListNodeSelection'.
+
+   'nlist {$s | $i \<fromID> [\<toID>] | $g \<global id> | $k \<key>} [$d] [$b] [$n] [$v] [$a]'
+
+.  $s  - list info for the selected nodes
+.  $i  - list info for nodes with an ID in the range \<fromID> through \<toID>
+         if \<fromID> is omitted only the node with \<fromID> is listed
+.  $g \<glob. id>- list info for node with global id (only for ModelP)
+.  $k \<key>     - list info for node with key
+
+.  $d  - up to version 2.3 ONLY: list also user data space
+.  $b  - print additional info for boundary nodes
+.  $n  - list also neighbours of each node
+.  $v  - print extended info (verbose mode)
+.  $a  - list all nodes
+   
+   KEYWORDS:
+   multigrid, node, link, list, display, show
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page elist - list information on specified elements
+
+   DESCRIPTION:
+   This command lists information on specified elements, calling
+   the functions 'ListElementRange' and 'ListElementSelection'.
+
+   'elist $s | {$i \<fromID> [\<toID>]} [$d] [$b] [$n] [$v] [$a]'
+
+.  $s  - list info for the selected elements
+.  $i  - list info for elements with an ID in the range \<fromID> through \<toID>
+         if \<fromID> is omitted only the element with \<fromID> is listed
+.  $g \<glob. id>- list info for element with global id (only for ModelP)
+.  $k \<key>     - list info for element with key
+
+.  $d  - up to version 2.3 ONLY: list also user data space
+.  $b  - print additional info for boundary elements
+.  $n  - list also neighbours of each element
+.  $v  - print extended info (verbose mode)
+.  $l  - list only elements of current level
+.  $a  - list all elements
+   
+   KEYWORDS:
+   multigrid, element, list, display, show
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   slist - list information on all selected nodes or elements
+
+   DESCRIPTION:
+   This command lists information on selected nodes or elements, calling
+   the functions 'ListNodeSelection', 'ListElementSelection'.
+   (Listing of selected vectors is not implemented.)
+
+   'slist [$d] [$b] [$n] [$v]'
+
+.   $d  - up to version 2.3 ONLY: list also user data space
+.   $b  - print additional info for boundary nodes/elements
+.   $n  - list also neighbours of each node/element
+.   $v  - print extended info (verbose mode)
+   
+   KEYWORDS:
+   multigrid, selection, list, display, show
+
+   SEE ALSO:
+   'select'
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   rlist - list rule records of element type for refinement
+
+   DESCRIPTION:
+   This command lists the rule record of a refinement rule for an element type,
+   if an integer is given or all records for this element type, if all-option is set.
+
+   'rlist [tri|qua|tet|hex] {[rulenumber] | [$a]}'
+
+.  $a  - list all rules for element type
+   
+   KEYWORDS:
+   multigrid, element, rule, type, list, display, show
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   vmlist - list information on specified vectors and matrices
+
+   DESCRIPTION:
+   This command lists information on specified vectors and matrices, calling
+   the functions 'ListVectorRange' and 'ListVectorSelection'.
+
+   'vmlist {$s | $i \<fromID> [\<toID>] | $g \<global id> | $k \<key>} [$t \<dt-list>] [$m] [$d] [$a] [$l \<f> \<t>] [$pos 0|1] [$obj 0|1]'
+
+.  $s			- list info for the selected vectors
+.  $i			- list info for vectors with an ID in the range \<fromID> through \<toID>
+       			  if \<fromID> is omitted only the vector with \<fromID> is listed
+.  $g \<glob. id>- list info for vector with global id (only for ModelP)
+.  $k \<key>     - list info for vector with key
+.  $t~\<dt-list>	- list only vectors of specified data types (list of chars, no seperator)
+
+.  $m			- list also the associated matrix entries
+.  $d			- list also the user data
+.  $skip~0|1	- show skip flags (default 0)
+.  $a			- list all vectors
+.  $l \<f> \<t>   - process levels f \<= l \<= t
+.  $pos~0|1		- show vector positions (default 1)
+.  $obj~0|1		- show vector object related info (default 1)
+   
+   KEYWORDS:
+   multigrid, vector, matrix, userdata, list, display, show
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page convert Convert Command
+
+Convert a matrix into a sparse format
+   
+   DESCRIPTION: 
+   This command converts a matrix into a sparse format,
+   prints it out or svae it to a file.
+   
+   `convert \<mat> [$p] [$f \<name>]`
+.  \<mat> - matrix symbol
+.  p - print on shell
+*/                                                                          
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   in - insert an inner node and vertex
+
+   DESCRIPTION:
+   This command inserts an inner node and the corresponding vertex
+   into a multigrid with only level 0, calling the function
+   'InsertInnerNode'.
+
+   'in \<x> \<y> [\<z>]'
+
+.  \<x>~\<y>~[\<z>] - specify as much coordinates as the space has dimensions
+   
+   KEYWORDS:
+   multigrid, insert, create, node, edit
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   bn - insert a boundary node and vertex
+
+   DESCRIPTION:
+   This command inserts an boundary node and the corresponding vertex
+   into a multigrid with only level 0, calling the function
+   'InsertBoubdaryNode'. The options are passed to the domain module function BVP_InsertBndP.
+
+   'bn...'
+
+   for the domain module std .... is
+   '\<Id> \<s> [\<t>]'
+.  \<Id>        	- insert a boundary node on the patch with \<Id>
+.  \<s>~[\<t>]    - specify as much patch coordinates as the boundary has dimensions
+   
+   KEYWORDS:
+   multigrid, insert, create, node, edit
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   gn - insertion of a boundary/inner node and vertex from global coordinates
+
+   DESCRIPTION:
+   This command inserts a boundary node if a position can be found matching the
+   global point with prescribed or default accuracy. Otherwise an inner node
+   is inserted at the global position.
+   CAUTION: some domain module maybe does not support insertion of boundary
+   nodes from global coordinates!
+   
+   'gn \<x> \<y> [\<z>] [$r \<res>]'
+   
+.  \<x>~\<y>~[\<z>]		- global coordinates 
+.  $r~\<res>				- resolution
+
+   KEYWORDS:
+   multigrid, insert, create, node, edit
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   deln - delete a node and vertex
+
+   DESCRIPTION:
+   This command deletes a node and the corresponding vertex
+   of the current multigrid, calling the function 'DeleteNode'.
+
+   'deln \<Id> | $s'
+
+.  \<Id>  - ID of the node to be deleted
+.  $s    - delete ALL nodes from the selection
+   
+   KEYWORDS:
+   multigrid, delete, remove, node, edit
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   move - move a node and vertex
+
+   DESCRIPTION:
+   This command moves a node and the corresponding vertex 
+   of the current multigrid to a new position, 
+   calling the functions 'MoveInnerNode' and 'MoveBoundaryNode'.
+
+   'move {\<Id> | $s} {$i \<x> \<y> [\<z>] | $b \<SegId> \<s> [\<t>]}'
+
+.  \<Id>                - Id of the node to be moved
+.  $i~\<x>~\<y>~[\<z>]    - specify as much coordinates as the space has dimensions
+.  $b~\<Id>~\<s>~[\<t>]   - in the current implementation (domain module dependent)
+		 				 boundary nodes can not be moved
+   
+   KEYWORDS:
+   multigrid, move, node, edit
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   ie - insert an element
+
+   DESCRIPTION:
+   This command inserts an element into a multigrid with only level 0, 
+   calling the function 'InsertElement'.
+
+
+   'ie {\<Id>}+ | $s'
+
+.  {\<Id>}+  - specify at least three (2d) or four (3d) corner nodes, the corresponding (unique) element will be created
+.  $s 		- taking selected nodes 
+   
+   KEYWORDS:
+   multigrid, insert, create, element, edit
+*/
+/****************************************************************************/
+
+/****************************************************************************/
+/** \page   dele - delete an element
+
+   DESCRIPTION:
+   This command deletes the specified  element of a multigrid 
+   with only level 0, calling the function 'DeleteElement'.
+
+   'dele \<Id> | $s'
+
+.  \<Id> - ID of the element to be deleted
+.  $s   - delete all elements from the selection
+   
+   KEYWORDS:
+   multigrid, delete, remove, element, edit
+*/
+/****************************************************************************/

@@ -1,17 +1,17 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  std_domain.c													*/
-/*																			*/
-/* Purpose:   standard ug domain description                                                            */
-/*																			*/
-/* Author:	  Klaus Johannsen / Christian Wieners	                                                */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70550 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de								*/
+/*                                                                          */
+/* File:      std_domain.c                                                  */
+/*                                                                          */
+/* Purpose:   standard ug domain description                                */
+/*                                                                          */
+/* Author:    Klaus Johannsen / Christian Wieners                           */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70550 Stuttgart                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
 /*																			*/
 /* History:   Feb 18 1996 begin, ug version 3.1								*/
 /*            Sep 12 1996 ug version 3.4                                                                */
@@ -1480,7 +1480,7 @@ static INT M_BNDS_Dispose (HEAP *Heap, BNDS *theBndS)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    CreateProblem -  Create a new PROBLEM structure
 
    SYNOPSIS:
@@ -1489,28 +1489,28 @@ static INT M_BNDS_Dispose (HEAP *Heap, BNDS *theBndS)
    int numOfUserFct, UserProcPtr userfct[]);
 
    PARAMETERS:
-   .  domain - name of the domain
-   .  name - name of the problem
-   .  id - identification number for the problem
-   .  config - pointer to the configuration function
-   .  numOfCoefficients - number of coefficient functions
-   .  coeffs[] - pointer to coefficient functions
-   .  numOfUserFct - number of user coefficient functions
-   .  userfct[] - pointer to user coefficient functions
+ * @param  domain - name of the domain
+ * @param  name - name of the problem
+ * @param  id - identification number for the problem
+ * @param  config - pointer to the configuration function
+ * @param  numOfCoefficients - number of coefficient functions
+ * @param  coeffs[] - pointer to coefficient functions
+ * @param  numOfUserFct - number of user coefficient functions
+ * @param  userfct[] - pointer to user coefficient functions
 
    DESCRIPTION:
    This function allocates and initializes a new PROBLEM structure in the /domains/domain directory.
 
-   RETURN VALUE:
+ * @return <ul>
    PROBLEM *
-   .n    pointer to new PROBLEM
-   .n    NULL if out of memory.
-   D*/
+ *   <li>    pointer to new PROBLEM
+ *   <li>    NULL if out of memory.
+ */
 /****************************************************************************/
 
-PROBLEM *CreateProblem (char *domain,char *name, int id, ConfigProcPtr config,
-                        int numOfCoefficients, CoeffProcPtr coeffs[],
-                        int numOfUserFct,          UserProcPtr userfct[])
+PROBLEM* NS_PREFIX CreateProblem (char *domain,char *name, int id, ConfigProcPtr config,
+                                  int numOfCoefficients, CoeffProcPtr coeffs[],
+                                  int numOfUserFct,          UserProcPtr userfct[])
 
 {
   PROBLEM *newProblem;
@@ -1545,16 +1545,16 @@ PROBLEM *CreateProblem (char *domain,char *name, int id, ConfigProcPtr config,
    PROBLEM *GetProblem (const char * domain, const char *name);
 
    PARAMETERS:
-   .  domain - name of the domain
-   .  name - name of the problem
+ * @param  domain - name of the domain
+ * @param  name - name of the problem
 
    DESCRIPTION:
    This function searches a problem structure in the /domains/domain directory.
 
-   RETURN VALUE:
+ * @return <ul>
    PROBLEM *
-   .n      pointer to PROBLEM
-   .n      NULL if not found or error.
+ *   <li>      pointer to PROBLEM
+ *   <li>      NULL if not found or error.
  */
 /****************************************************************************/
 
@@ -1565,7 +1565,7 @@ static PROBLEM *GetProblem (const char * domain, const char *name)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    CreateBoundaryCondition - Allocate a new BNDCOND structure
 
    SYNOPSIS:
@@ -1573,23 +1573,23 @@ static PROBLEM *GetProblem (const char * domain, const char *name)
    BndCondProcPtr theBndCond, void *Data);
 
    PARAMETERS:
-   .  name - name of the boundary condition
-   .  id - identification number of condition
-   .  theBndCond - the boundary conditions
-   .  Data - user defined data
+ * @param  name - name of the boundary condition
+ * @param  id - identification number of condition
+ * @param  theBndCond - the boundary conditions
+ * @param  Data - user defined data
 
    DESCRIPTION:
    This function allocates and initializes a new BNDCOND structure in the previously allocated
    PROBLEM structure
 
-   THE RETURN VALUE:
+   THE  * @return <ul>
    BOUNDARY_CONDITION *
-   .n      pointer to
-   .n      0 if  out of memory.
-   D*/
+ *   <li>      pointer to
+ *   <li>      0 if  out of memory.
+ */
 /****************************************************************************/
 
-BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id, BndCondProcPtr theBndCond, void *Data)
+BOUNDARY_CONDITION *NS_PREFIX CreateBoundaryCondition (char *name, INT id, BndCondProcPtr theBndCond, void *Data)
 {
   BOUNDARY_CONDITION *newBndCond;
 
@@ -1613,15 +1613,15 @@ BOUNDARY_CONDITION *CreateBoundaryCondition (char *name, INT id, BndCondProcPtr 
    static BOUNDARY_CONDITION *GetNextBoundaryCondition (BOUNDARY_CONDITION *theBCond);
 
    PARAMETERS:
-   .  theBCond - the boundary condition
+ * @param  theBCond - the boundary condition
 
    DESCRIPTION:
    This function gets next BNDCOND structure
 
-   THE RETURN VALUE:
+   THE  * @return <ul>
    BOUNDARY_CONDITION *
-   .n      pointer to BOUNDARY_CONDITION
-   .n      NULL if not found or error.
+ *   <li>      pointer to BOUNDARY_CONDITION
+ *   <li>      NULL if not found or error.
  */
 /****************************************************************************/
 static BOUNDARY_CONDITION *GetNextBoundaryCondition (BOUNDARY_CONDITION *theBCond)
@@ -1645,15 +1645,15 @@ static BOUNDARY_CONDITION *GetNextBoundaryCondition (BOUNDARY_CONDITION *theBCon
    static BOUNDARY_CONDITION *GetFirstBoundaryCondition (PROBLEM *theProblem);
 
    PARAMETERS:
-   .  theProblem - pointer to PROBLEM
+ * @param  theProblem - pointer to PROBLEM
 
    DESCRIPTION:
    This function gets the first BNDCOND structure of a problem
 
-   THE RETURN VALUE:
+   THE  * @return <ul>
    BOUNDARY_CONDITION *
-   .n      pointer to BOUNDARY_CONDITION
-   .n      NULL if not found or error.
+ *   <li>      pointer to BOUNDARY_CONDITION
+ *   <li>      NULL if not found or error.
  */
 /****************************************************************************/
 static BOUNDARY_CONDITION *GetFirstBoundaryCondition (PROBLEM *theProblem)
@@ -1669,7 +1669,7 @@ static BOUNDARY_CONDITION *GetFirstBoundaryCondition (PROBLEM *theProblem)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    CreateDomainWithParts	- Create a new DOMAIN data structure with part description
 
    SYNOPSIS:
@@ -1677,25 +1677,25 @@ static BOUNDARY_CONDITION *GetFirstBoundaryCondition (PROBLEM *theProblem)
    INT segments, INT corners, INT Convex, INT nParts, const DOMAIN_PART_INFO *dpi);
 
    PARAMETERS:
-   .  name - name of the domain
-   .  MidPoint - coordinates of some inner point
-   .  radius - radius of a circle, containing the domain
-   .  segments - number of the boundary segments
-   .  corners - number of corners
-   .  Convex - 0, if convex, 1 - else
-   .  nParts - number of parts in the domain
-   .  dpi - description of the parts for lines, segments, points
+ * @param  name - name of the domain
+ * @param  MidPoint - coordinates of some inner point
+ * @param  radius - radius of a circle, containing the domain
+ * @param  segments - number of the boundary segments
+ * @param  corners - number of corners
+ * @param  Convex - 0, if convex, 1 - else
+ * @param  nParts - number of parts in the domain
+ * @param  dpi - description of the parts for lines, segments, points
 
    DESCRIPTION:
    This function allocates and initializes a new DOMAIN data structure in the
    /domains directory in the environment.
    Additinally domain parts will defined.
 
-   RETURN VALUE:
+ * @return <ul>
    DOMAIN *
-   .n     pointer to a DOMAIN
-   .n     NULL if out of memory.
-   D*/
+ *   <li>     pointer to a DOMAIN
+ *   <li>     NULL if out of memory.
+ */
 /****************************************************************************/
 
 DOMAIN * NS_PREFIX CreateDomainWithParts (char *name, DOUBLE *MidPoint, DOUBLE radius, INT segments, INT corners, INT Convex,
@@ -1729,7 +1729,7 @@ DOMAIN * NS_PREFIX CreateDomainWithParts (char *name, DOUBLE *MidPoint, DOUBLE r
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    CreateDomain	- Create a new DOMAIN data structure
 
    SYNOPSIS:
@@ -1737,22 +1737,22 @@ DOMAIN * NS_PREFIX CreateDomainWithParts (char *name, DOUBLE *MidPoint, DOUBLE r
    INT segments, INT corners, INT Convex);
 
    PARAMETERS:
-   .  name - name of the domain
-   .  MidPoint - coordinates of some inner point
-   .  radius - radius of a circle, containing the domain
-   .  segments - number of the boundary segments
-   .  corners - number of corners
-   .  Convex - 0, if convex, 1 - else
+ * @param  name - name of the domain
+ * @param  MidPoint - coordinates of some inner point
+ * @param  radius - radius of a circle, containing the domain
+ * @param  segments - number of the boundary segments
+ * @param  corners - number of corners
+ * @param  Convex - 0, if convex, 1 - else
 
    DESCRIPTION:
    This function allocates and initializes a new DOMAIN data structure in the
    /domains directory in the environment.
 
-   RETURN VALUE:
+ * @return <ul>
    DOMAIN *
-   .n     pointer to a DOMAIN
-   .n     NULL if out of memory.
-   D*/
+ *   <li>     pointer to a DOMAIN
+ *   <li>     NULL if out of memory.
+ */
 /****************************************************************************/
 
 DOMAIN * NS_PREFIX CreateDomain (char *name, DOUBLE *MidPoint, DOUBLE radius, INT segments, INT corners, INT Convex)
@@ -1768,16 +1768,16 @@ DOMAIN * NS_PREFIX CreateDomain (char *name, DOUBLE *MidPoint, DOUBLE radius, IN
    DOMAIN *GetDomain (char *name);
 
    PARAMETERS:
-   .  name - name of the domain
+ * @param  name - name of the domain
 
    DESCRIPTION:
    This function searches the environment for a domain with the name `name`
    and return a pointer to the domain structure.
 
-   RETURN VALUE:
+ * @return <ul>
    DOMAIN *
-   .n     pointer to a DOMAIN
-   .n     NULL if not found or error.
+ *   <li>     pointer to a DOMAIN
+ *   <li>     NULL if not found or error.
  */
 /****************************************************************************/
 
@@ -1787,7 +1787,7 @@ DOMAIN * NS_PREFIX GetDomain (char *name)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    CreateBoundarySegment - Create a new BOUNDARY_SEGMENT
 
    SYNOPSIS:
@@ -1796,27 +1796,27 @@ DOMAIN * NS_PREFIX GetDomain (char *name)
    DOUBLE *alpha,DOUBLE *beta,BndSegFuncPtr BndSegFunc, void *data);
 
    PARAMETERS:
-   .  name - name of the boundary segment
-   .  left - id of left subdomain
-   .  right - id of right subdomain
-   .  id - id of this boundary segment
-   .  type - type of the boundary segment
-   .  res  - resolution of the boundary segment
-   .  point - the endpoints of the boundary segment
-   .  alpha - list where the parameter interval begins
-   .  beta - list where the parameter interval ends
-   .  BndSegFunc - function mapping parameters
-   .  data - user defined space
+ * @param  name - name of the boundary segment
+ * @param  left - id of left subdomain
+ * @param  right - id of right subdomain
+ * @param  id - id of this boundary segment
+ * @param  type - type of the boundary segment
+ * @param  res  - resolution of the boundary segment
+ * @param  point - the endpoints of the boundary segment
+ * @param  alpha - list where the parameter interval begins
+ * @param  beta - list where the parameter interval ends
+ * @param  BndSegFunc - function mapping parameters
+ * @param  data - user defined space
 
    DESCRIPTION:
    This function allocates and initializes a new BOUNDARY_SEGMENT for the previously
    allocated DOMAIN structure.
 
-   RETURN VALUE:
+ * @return <ul>
    BOUNDARY_SEGMENT *
-   .n     Pointer to a BOUNDARY_SEGMENT
-   .n     NULL if out of memory.
-   D*/
+ *   <li>     Pointer to a BOUNDARY_SEGMENT
+ *   <li>     NULL if out of memory.
+ */
 /****************************************************************************/
 
 BOUNDARY_SEGMENT * NS_PREFIX CreateBoundarySegment (char *name,
@@ -1857,15 +1857,15 @@ BOUNDARY_SEGMENT * NS_PREFIX CreateBoundarySegment (char *name,
    static BOUNDARY_SEGMENT *GetNextBoundarySegment (BOUNDARY_SEGMENT *theBSeg);
 
    PARAMETERS:
-   .  theBSeg - pointer to a boundary segment
+ * @param  theBSeg - pointer to a boundary segment
 
    DESCRIPTION:
    This function gets the next boundary segment of a domain.
 
-   RETURN VALUE:
+ * @return <ul>
    BOUNDARY_SEGMENT *
-   .n     pointer to next BOUNDARY_SEGMENT
-   .n     NULL if no more found.
+ *   <li>     pointer to next BOUNDARY_SEGMENT
+ *   <li>     NULL if no more found.
  */
 /****************************************************************************/
 
@@ -1890,15 +1890,15 @@ static BOUNDARY_SEGMENT *GetNextBoundarySegment (BOUNDARY_SEGMENT *theBSeg)
    static BOUNDARY_SEGMENT *GetFirstBoundarySegment (DOMAIN *theDomain);
 
    PARAMETERS:
-   .  theDomain - pointer to the domain structure
+ * @param  theDomain - pointer to the domain structure
 
    DESCRIPTION:
    This function returns the first boundary segment of a domain.
 
-   RETURN VALUE:
+ * @return <ul>
    BOUNDARY_SEGMENT *
-   .n     pointer to a BOUNDARY_SEGMENT
-   .n     NULL if not found or error.
+ *   <li>     pointer to a BOUNDARY_SEGMENT
+ *   <li>     NULL if not found or error.
  */
 /****************************************************************************/
 
@@ -1926,32 +1926,32 @@ static BOUNDARY_SEGMENT *GetFirstBoundarySegment (DOMAIN *theDomain)
 
 
    PARAMETERS:
-   .  name - name of the boundary segment
-   .  left - id of the left subdomain
-   .  right - id of the right subdomain
-   .  id -
-   .  from -
-   .  to -
-   .  res -
-   .  alpha -
-   .  beta -
-   .  BndSegFunc -
-   .  data -
+ * @param  name - name of the boundary segment
+ * @param  left - id of the left subdomain
+ * @param  right - id of the right subdomain
+ * @param  id -
+ * @param  from -
+ * @param  to -
+ * @param  res -
+ * @param  alpha -
+ * @param  beta -
+ * @param  BndSegFunc -
+ * @param  data -
 
    DESCRIPTION:
    This function defines CreateBoundarySegment2D for old style 2D definitions
    (they were not dimension independent)
 
-   RETURN VALUE:
+ * @return <ul>
    BOUNDARY_SEGMENT *
-   .n     pointer to
-   .n     NULL if object not available.
+ *   <li>     pointer to
+ *   <li>     NULL if object not available.
  */
 /****************************************************************************/
 
-BOUNDARY_SEGMENT *CreateBoundarySegment2D (char *name, int left, int right,
-                                           int id, int from, int to, int res, DOUBLE alpha, DOUBLE beta,
-                                           BndSegFuncPtr BndSegFunc, void *data)
+BOUNDARY_SEGMENT *NS_PREFIX CreateBoundarySegment2D (char *name, int left, int right,
+                                                     int id, int from, int to, int res, DOUBLE alpha, DOUBLE beta,
+                                                     BndSegFuncPtr BndSegFunc, void *data)
 {
   INT pt[3];
   DOUBLE alp[3],bet[3];
@@ -1966,40 +1966,30 @@ BOUNDARY_SEGMENT *CreateBoundarySegment2D (char *name, int left, int right,
 }
 
 /****************************************************************************/
-/*D
-   CreateLinearSegment - Create a new LINEAR_SEGMENT
-
-   SYNOPSIS:
-   LINEAR_SEGMENT *CreateLinearSegment (char *name,
-   INT left, INT right,INT id,
-   INT n, INT *point,
-   DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM])
-
-
-   PARAMETERS:
-   .  name - name of the boundary segment
-   .  left - id of left subdomain
-   .  right - id of right subdomain
-   .  id - id of this boundary segment
-   .  n - number of corners
-   .  point - the endpoints of the boundary segment
-   .  x - coordinates
-
-   DESCRIPTION:
-   This function allocates and initializes a new LINER_SEGMENT
-   for the previously allocated DOMAIN structure.
-
-   RETURN VALUE:
-   LINEAR_SEGMENT *
-   .n     Pointer to a LINEAR_SEGMENT
-   .n     NULL if out of memory.
-   D*/
+/** \brief  Create a new LINEAR_SEGMENT
+ *
+ * @param  name - name of the boundary segment
+ * @param  left - id of left subdomain
+ * @param  right - id of right subdomain
+ * @param  id - id of this boundary segment
+ * @param  n - number of corners
+ * @param  point - the endpoints of the boundary segment
+ * @param  x - coordinates
+ *
+ * This function allocates and initializes a new LINEAR_SEGMENT
+ * for the previously allocated DOMAIN structure.
+ *
+ * @return <ul>
+ *   <li>     Pointer to a LINEAR_SEGMENT </li>
+ *   <li>     NULL if out of memory. </li>
+ * </ul>
+ */
 /****************************************************************************/
 
-LINEAR_SEGMENT *CreateLinearSegment (char *name,
-                                     INT left, INT right,INT id,
-                                     INT n, INT *point,
-                                     DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM])
+LINEAR_SEGMENT* NS_PREFIX CreateLinearSegment (char *name,
+                                               INT left, INT right,INT id,
+                                               INT n, INT *point,
+                                               DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM])
 {
   LINEAR_SEGMENT *newSegment;
   INT i,k;
@@ -2052,31 +2042,31 @@ static LINEAR_SEGMENT *GetFirstLinearSegment (DOMAIN *theDomain)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    CreateBVP - Create BoundaryValueProblem from Domain and Problem
 
    SYNOPSIS:
    BVP *CreateBVP (char *BVP, char *Domain, char *Problem);
 
    PARAMETERS:
-   .  BVP - name of BVP to be created
-   .  Domain - name of domain
-   .  Problem - name of Problem
+ * @param  BVP - name of BVP to be created
+ * @param  Domain - name of domain
+ * @param  Problem - name of Problem
 
    DESCRIPTION:
    This function creates a BoundaryValueProblem from the already created
    structures domain and problem
 
-   RETURN VALUE:
+ * @return <ul>
    BVP *
-   .n     pointer BoundaryValueProblem
-   .n     NULL if not creatable.
-   D*/
+ *   <li>     pointer BoundaryValueProblem
+ *   <li>     NULL if not creatable.
+ */
 /****************************************************************************/
 
-BVP *Create_MarcBVP (char *BVPName, BndCondProcPtr theBndCond,
-                     int numOfCoeffFct, CoeffProcPtr coeffs[],
-                     int numOfUserFct, UserProcPtr userfct[])
+BVP *NS_PREFIX Create_MarcBVP (char *BVPName, BndCondProcPtr theBndCond,
+                               int numOfCoeffFct, CoeffProcPtr coeffs[],
+                               int numOfUserFct, UserProcPtr userfct[])
 {
   STD_BVP *theBVP;
   INT i,n;
@@ -2114,9 +2104,9 @@ BVP *Create_MarcBVP (char *BVPName, BndCondProcPtr theBndCond,
   return ((BVP*)theBVP);
 }
 
-BVP *CreateBoundaryValueProblem (char *BVPName, BndCondProcPtr theBndCond,
-                                 int numOfCoeffFct, CoeffProcPtr coeffs[],
-                                 int numOfUserFct, UserProcPtr userfct[])
+BVP *NS_PREFIX CreateBoundaryValueProblem (char *BVPName, BndCondProcPtr theBndCond,
+                                           int numOfCoeffFct, CoeffProcPtr coeffs[],
+                                           int numOfUserFct, UserProcPtr userfct[])
 {
   STD_BVP *theBVP;
   INT i,n;
@@ -2154,7 +2144,7 @@ BVP *CreateBoundaryValueProblem (char *BVPName, BndCondProcPtr theBndCond,
   return ((BVP*)theBVP);
 }
 
-BVP *CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
+BVP *NS_PREFIX CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
 {
   STD_BVP *theBVP;
   DOMAIN *theDomain;
@@ -2252,7 +2242,7 @@ static INT Problem_Configure (INT argc, char **argv)
   return (0);
 }
 
-BVP *CreateBVP_Problem (char *BVPName, char *DomainName, char *ProblemName)
+BVP *NS_PREFIX CreateBVP_Problem (char *BVPName, char *DomainName, char *ProblemName)
 {
   STD_BVP *theBVP;
   DOMAIN *theDomain;
@@ -2301,7 +2291,7 @@ BVP *CreateBVP_Problem (char *BVPName, char *DomainName, char *ProblemName)
   return ((BVP*)theBVP);
 }
 
-const char *GetBVP_DomainName (const BVP *aBVP)
+const char *NS_PREFIX GetBVP_DomainName (const BVP *aBVP)
 {
   const STD_BVP *theBVP = (const STD_BVP *)aBVP;
 
@@ -2311,7 +2301,7 @@ const char *GetBVP_DomainName (const BVP *aBVP)
   return ENVITEM_NAME(theBVP->Domain);
 }
 
-const char *GetBVP_ProblemName (const BVP *aBVP)
+const char *NS_PREFIX GetBVP_ProblemName (const BVP *aBVP)
 {
   const STD_BVP *theBVP = (const STD_BVP *)aBVP;
 
@@ -2357,25 +2347,25 @@ static INT GetPatchId (PATCH *p, INT i)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    BVP_CreateMesh - sets a BNDP from command input
 
    SYNOPSIS:
    MESH *BVP_CreateMesh (HEAP *Heap, BVP *theBVP);
 
    PARAMETERS:
-   .  theBVP - BVP structure
-   .  i - number of boundary point
-   .  theBndP - the BNDP to set
+ * @param  theBVP - BVP structure
+ * @param  i - number of boundary point
+ * @param  theBndP - the BNDP to set
 
    DESCRIPTION:
    This function sets a BNDP from command input parameters
 
-   RETURN VALUE:
+ * @return <ul>
    INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
+ *   <li>   0 if ok
+ *   <li>   1 if error.
+ */
 /****************************************************************************/
 
 static BNDP *CreateBndPOnPoint (HEAP *Heap, PATCH *p)
@@ -3777,27 +3767,19 @@ static INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
 #endif
 
 /****************************************************************************/
-/*D
-   AddBoundaryElements - decompose a strip into triangles
-
-   SYNOPSIS:
-   static INT AddBoundaryElements (INT n, INT m,
-   INT c0, INT c1, INT c2, INT c3,
-   INT s0, INT s1, INT s2, INT s3);
-
-   PARAMETERS:
-   .  n,m - stripe with n+1 nodes on the bottom and m+1 nodes on the top
-   .  c0,c1,c2,c3 - corner node ids
-   .  s0,s1,s2,s3 - side node ids
-
-   DESCRIPTION:
-   This function splits a stripe into triangles an calls 'AddBoundaryElements'.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured
-   D*/
+/** \brief  Decompose a strip into triangles
+ *
+ * @param  n,m - stripe with n+1 nodes on the bottom and m+1 nodes on the top
+ * @param  c0,c1,c2,c3 - corner node ids
+ * @param  s0,s1,s2,s3 - side node ids
+ *
+ * This function splits a stripe into triangles and calls AddBoundaryElements().
+ *
+ * @return <ul>
+ *   <li>    0 if ok </li>
+ *   <li>    1 if error occured </li>
+ * </ul>
+ */
 /****************************************************************************/
 
 static INT AddBoundaryElement (INT n, INT *nodelist,
@@ -3889,7 +3871,7 @@ static INT AddBoundaryElements (INT n, INT m,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    TriangulatePatch - decompose a patch into stripes
 
    SYNOPSIS:
@@ -3898,23 +3880,23 @@ static INT AddBoundaryElements (INT n, INT m,
    INT sideid[CORNERS_OF_BND_SEG][2], INT *siden);
 
    PARAMETERS:
-   .  h - maximal length of an edge of the boundary triangles
-   .  thePatch - poiter to a patch
-   .  npc - number of corner nodes of the patch
-   .  cornerid - ids of the corner nodes
-   .  local - local coordinates of the corners
-   .  sideid - ids of the nodes on the edges of the patch
-   .  siden - number of nodes on the edges of the patch
+ * @param  h - maximal length of an edge of the boundary triangles
+ * @param  thePatch - poiter to a patch
+ * @param  npc - number of corner nodes of the patch
+ * @param  cornerid - ids of the corner nodes
+ * @param  local - local coordinates of the corners
+ * @param  sideid - ids of the nodes on the edges of the patch
+ * @param  siden - number of nodes on the edges of the patch
 
    DESCRIPTION:
    This function splits the patch into stripes and calls
    'AddBoundaryElements' to decompose the stripes into triangles.
 
-   RETURN VALUE:
+ * @return <ul>
    INT
-   .n    0 if ok
-   .n    1 if error occured
-   D*/
+ *   <li>    0 if ok
+ *   <li>    1 if error occured
+ */
 /****************************************************************************/
 
 static INT nc,nodeid;
@@ -5558,23 +5540,15 @@ INT NS_PREFIX ReadAndPrintArgvPosition (char *name, INT argc, char **argv, DOUBL
 }
 
 /****************************************************************************/
-/*D
-   InitDom - Create and initialize the std_domain
-
-   SYNOPSIS:
-   INT InitDom ();
-
-   PARAMETERS:
-   .  void - no argument
-
-   DESCRIPTION:
-   This function creates the environments domain, problem and BVP.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 when error occured.
-   D*/
+/** \brief Create and initialize the std_domain
+ *
+ * This function creates the environments domain, problem and BVP.
+ *
+ * @return <ul>
+ *   <li>   0 if ok
+ *   <li>   1 when error occured.
+ * </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX InitDom (void)

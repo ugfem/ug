@@ -14,7 +14,7 @@ matrix structure. You can have different numbers of degrees of freedom
 in nodes, edges, sides
 and elements of a three-dimensional mesh. Therefore the data structure
 can be used e.g. also for non-conforming or mixed finite element discretizations.
-To structure the data you can group vectors by using 'BLOCKVECTOR's; this
+To structure the data you can group vectors by using BLOCKVECTORs; this
 yields blockmatrices too.
 
 UGs refinement module can refine and coarsen a given mesh structure. In
@@ -36,22 +36,22 @@ a side consists of one edge and two nodes in that case.
 The TeX version of this page contains a graphical representation of the data 
 structure.
 
-Size limitations of the data structure are described in a seperate page 'LIMITS'.
+Size limitations of the data structure are described in a seperate page LIMITS.
 
 All data types have names with uppercase letters. Now we give a brief description
 of all data types for which a seperate page is provided.
 
 . DOMAIN - Structure that describes a two- or threedimensional domain.
 
-. BOUNDARY_SEGMENT - A 'DOMAIN' is constructed from several 'BOUNDARY_SEGMENT' objects.
+. BOUNDARY_SEGMENT - A DOMAIN is constructed from several BOUNDARY_SEGMENT objects.
 UG can handle also `internal` boundaries, e.g. for material interfaces.
 
 . PROBLEM - Stores references to user defined coefficient functions. The purpose
 of these functions depends on the problem class library. A problem corresponds 
-to a 'DOMAIN' and provides a 'BOUNDARY_CONDITION' for each 'BOUNDARY_SEGMENT'
+to a DOMAIN and provides a BOUNDARY_CONDITION for each BOUNDARY_SEGMENT
 besides the coefficient functions. There may be several problems defined on a domain.
 
-. BOUNDARY_CONDITION - For each 'BOUNDARY_SEGMENT' a corresponding 'BOUNDARY_CONDITION'
+. BOUNDARY_CONDITION - For each BOUNDARY_SEGMENT a corresponding BOUNDARY_CONDITION
 object must be allocated.
 
 . FORMAT - This structure parametrizes the data structure. The format determines
@@ -63,74 +63,74 @@ type from which other objects can be reached locally. The variable element
 concept allows several element types (e.g. triangles and quadrilaterals) in one mesh.
 Elements give you access to the corresponding nodes and to neighboring elements.
 
-. NODE - Corners of the elements are described by the 'NODE' structure. Only the
+. NODE - Corners of the elements are described by the NODE structure. Only the
 information that is different per level is stored here. E.g. geometric information 
-for a node e.g. is stored only once in a 'VERTEX' object. Several 'NODE' objects share
-share one 'VERTEX' if they are at the same position on different levels.
+for a node e.g. is stored only once in a VERTEX object. Several NODE objects share
+share one VERTEX if they are at the same position on different levels.
 
-. VERTEX - Geometric data of a 'NODE'. This contains x,y (,z), i.e global
+. VERTEX - Geometric data of a NODE. This contains x,y (,z), i.e global
 coordinates, the position in the coarser grid level (local coordinates) and
-boundary information if the node is on the boundary (see 'VSEGMENT').
+boundary information if the node is on the boundary (see VSEGMENT).
 
-. LINK - The mesh structure implies a neighbor relationship on the 'NODE'
+. LINK - The mesh structure implies a neighbor relationship on the NODE
 objects (the `mesh graph`). 
 Since the mesh is unstructured a linked list must be used to provide
-references to all neighbors. The 'LINK' data type forms that list and each
-'LINK' object represents one neighbor.
+references to all neighbors. The LINK data type forms that list and each
+LINK object represents one neighbor.
 
-. EDGE - The 'LINK' structure represents a directed edge of the mesh graph from
-some node `a` to node `b`. The 'LINK' from node `b` to node `a` must always exist
-since the neighbor relation is symmetric and therefore the two 'LINK' objects
-are combined to form an (undirected) 'EDGE' object.
+. EDGE - The LINK structure represents a directed edge of the mesh graph from
+some node `a` to node `b`. The LINK from node `b` to node `a` must always exist
+since the neighbor relation is symmetric and therefore the two LINK objects
+are combined to form an (undirected) EDGE object.
 
-. SELECTION_OBJECT - This is an union of 'ELEMENT', 'NODE' and 'VECTOR', the
+. SELECTION_OBJECT - This is an union of ELEMENT, NODE and VECTOR, the
 objects that can be selected by mouse or by the select command.
 
-. GEOM_OBJECT - This is an union of 'ELEMENT', 'NODE' and 'EDGE', the basic
+. GEOM_OBJECT - This is an union of ELEMENT, NODE and EDGE, the basic
 geometric objects.
 
 . VECTOR - This structure is part of UGs sparse matrix data structure. Degrees
 of freedom (and additional values) associated with `one geometric object` 
-('ELEMENT', 'NODE', 'EDGE' and also sides in 3D for which there is no extra data type)  
-are stored in a 'VECTOR' object. In each 'VECTOR' starts a list of 'MATRIX' objects
+(ELEMENT, NODE, EDGE and also sides in 3D for which there is no extra data type)  
+are stored in a VECTOR object. In each VECTOR starts a list of MATRIX objects
 representing the rows of the global stiffness matrix corresponding to all
-degrees of freedom in the 'VECTOR'.
+degrees of freedom in the VECTOR.
 
 . MATRIX - Contains all matrix entries coupling the degrees of freedom
-in two 'VECTOR' objects. 'MATRIX' objects come in pairs connecting two
-'VECTOR' objects in both directions. If the 'VECTOR' objects are identical (which is
-the case for diagonal entries) then there is only one 'MATRIX'.
-The graph induced by the 'MATRIX'-'VECTOR'
+in two VECTOR objects. MATRIX objects come in pairs connecting two
+VECTOR objects in both directions. If the VECTOR objects are identical (which is
+the case for diagonal entries) then there is only one MATRIX.
+The graph induced by the MATRIX-VECTOR
 structure is completely independent from the mesh graph represented by the
-'LINK'-'NODE' structure.
+LINK-NODE structure.
 
-. BLOCKVECTOR - Gives you the facility to structure a 'VECTOR'-list. The
-'VECTOR'-list itself remains unchanged but additional data is inserted
-in the grid. The substructuring can be hierarchical. Each 'VECTOR' sublist
-described by a 'BLOCKVECTOR' can be processed by itself. Via the
-'BLOCKVECTOR' structure there is also a blockmatrix structure induced to
-the 'MATRIX' structure but without any additional memory need.
+. BLOCKVECTOR - Gives you the facility to structure a VECTOR-list. The
+VECTOR-list itself remains unchanged but additional data is inserted
+in the grid. The substructuring can be hierarchical. Each VECTOR sublist
+described by a BLOCKVECTOR can be processed by itself. Via the
+BLOCKVECTOR structure there is also a blockmatrix structure induced to
+the MATRIX structure but without any additional memory need.
 
-. CONNECTION - The two (or one, s.a.) 'MATRIX' objects connecting two 'VECTOR' objects
-are combined to a 'CONNECTION' object. This is similar to the combination of two
-'LINK' objects in an 'EDGE'.
+. CONNECTION - The two (or one, s.a.) MATRIX objects connecting two VECTOR objects
+are combined to a CONNECTION object. This is similar to the combination of two
+LINK objects in an EDGE.
 
 . GRID - All objects allocated on one grid level can be accessed via the
-'GRID' structure.
+GRID structure.
 
-. MULTIGRID - Several grid levels are combined to form a 'MULTIGRID' structure.
-It also provides access to the data structure parameters ('FORMAT'), the
-geometry ('DOMAIN') and the problem description ('PROBLEM'). The 'MULTIGRID'
-structure is basically an environment item (see 'ENVIRONMENT'). Several
-'MULTIGRID' objects can be handled simultaneously by the grid manager module.
+. MULTIGRID - Several grid levels are combined to form a MULTIGRID structure.
+It also provides access to the data structure parameters (FORMAT), the
+geometry (DOMAIN) and the problem description (PROBLEM). The MULTIGRID
+structure is basically an environment item (see ENVIRONMENT). Several
+MULTIGRID objects can be handled simultaneously by the grid manager module.
 
 `IMPORTANT:` The access to all components of the data types is realized with
 macros. Through the use of macros the data structure can be changed without
 changing the code that uses it. 
 
-SEE ALSO:
+\sa
 
-'LIMITS', all data types mentioned above.
+LIMITS, all data types mentioned above.
 
 .p DataStructure.eps
 .cb
@@ -139,52 +139,28 @@ Graphical representation of the data structure with references.
 
 D*/
 
-/*! \struct domain
+/** \struct domain
 
- \brief Data type describing a domain.
-
-STRUCTURES:
-
-.vb
-struct domain {
-
-    /* fields for environment directory
-    ENVDIR d;
-
-    /* domain variables
-    DOUBLE MidPoint[DIM];                // point in the middle of domain    
-    DOUBLE radius;                       // defines sphere around MidPoint  
-                                        // containing the domain           
-    INT numOfSegments;                  // number of boundary segments     
-    INT numOfCorners;                   // number of corner points        
-    INT domConvex;                      // is the domain convex?        
-} ;
-
-typedef struct domain DOMAIN;
-.ve
-
-DESCRIPTION:
-
-The 'DOMAIN' structure describes a two- or three-dimensional domain. This geometry
+The DOMAIN structure describes a two- or three-dimensional domain. This geometry
 information is used by UG when it refines a grid, i.e. complex geometries are approximated
-better when the grid is refined. The 'DOMAIN' structure is a directory in the
-environment tree (see 'ENVIRONMENT' in the 'ug/low' section). 
+better when the grid is refined. The DOMAIN structure is a directory in the
+environment tree (see ENVIRONMENT in the ug/low section). 
 
 A domain is made up of one or several `boundary segments` which are defined by the
-'BOUNDARY_SEGMENT' (see that page) structure. 
-The 'BOUNDARY_SEGMENT' objects are stored in the environment
-tree in the corresponding 'DOMAIN'. The points where boundary segments join are
-called corners of the domain. For each corner a 'NODE' is automatically created.
+BOUNDARY_SEGMENT (see that page) structure. 
+The BOUNDARY_SEGMENT objects are stored in the environment
+tree in the corresponding DOMAIN. The points where boundary segments join are
+called corners of the domain. For each corner a NODE is automatically created.
 
-Domains are created with the function 'CreateDomain'.
+Domains are created with the function CreateDomain.
 
-. d - Makes the 'DOMAIN' an environment directory. 'd' stores also the name of
+. d - Makes the DOMAIN an environment directory. d stores also the name of
 the domain.
 
 . MidPoint,radius -  Defines a ball which should contain the domain. This information
 is used in the graphics module to initialize the view with a reasonable transformation.
 
-. numOfSegments -  Gives the number of 'BOUNDARY_SEGMENT' structures that
+. numOfSegments -  Gives the number of BOUNDARY_SEGMENT structures that
 will define the domain. 
 
 . numOfCorners - Number of corners defined by the domain.
@@ -193,8 +169,8 @@ will define the domain.
 
 MACROS:
 
-The components of the 'DOMAIN' structure are only read internally. The
-user only creates domains with the function 'CreateDomain'. Therefore
+The components of the DOMAIN structure are only read internally. The
+user only creates domains with the function CreateDomain. Therefore
 no access macros are provided.
 
 EXAMPLES:
@@ -204,7 +180,7 @@ domain. The domain is the unit circle defined by two boundary segments, the
 upper half circle and the lower half circle. Therefore the domain has two
 corners, two boundary segments and one subdomain (the domain itself).
 
-The following two functions of type 'BndSegFuncPtr' define the
+The following two functions of type BndSegFuncPtr define the
 mapping for the upper and lower half circle respectively.
 
 .vb
@@ -247,8 +223,8 @@ static INT circleBoundaryLower (void *data, DOUBLE *param, DOUBLE *result)
 }
 .ve
 
-The following function 'InitUnitCircle' uses the functions
-'CreateDomain' and 'CreateBoundarySegment2D' in order to create
+The following function InitUnitCircle uses the functions
+CreateDomain and CreateBoundarySegment2D in order to create
 a domain and the list of boundary segments for that domain.
 
 .vb
@@ -301,38 +277,20 @@ static INT InitUnitCircle (void)
 }
 .ve
 
-For a 3D example see e.g. the application 'appl3d'.
+For a 3D example see e.g. the application appl3d.
 
-SEE ALSO:
-
-'BOUNDARY_SEGMENT', 'CreateDomain', 'CreateBoundarySegment2D', 'CreateBoundarySegment'.
+\sa BOUNDARY_SEGMENT, CreateDomain, CreateBoundarySegment2D, CreateBoundarySegment
 
 */
 
 
 /*! \struct boundary_segment
-BOUNDARY_SEGMENT - Data structure defining part of the boundary of a domain
+ \brief Data structure defining part of the boundary of a domain
 
 STRUCTURES:
 
 .vb
 typedef INT (*BndSegFuncPtr) (void *,DOUBLE *,DOUBLE *);
-
-struct boundary_segment {
-
-    // fields for environment directory
-    ENVVAR v;
-
-    // fields for boundary segment
-    INT left,right;                   // number of left and right subdomain 
-    INT id;                           // unique id of that segment          
-    INT segType;                      // segment type, see above            
-    INT points[CORNERS_OF_BND_SEG];   // numbers of the vertices (ID)       
-    INT resolution;                   // measure for the curvature          
-    DOUBLE alpha[DIM_OF_BND],beta[DIM_OF_BND]; // parameter interval used
-    BndSegFuncPtr BndSegFunc;         // pointer to definition function     
-    void *data;                       // can be used by applic to find data 
-} ;
 
 typedef struct boundary_segment BOUNDARY_SEGMENT;
 .ve
@@ -340,7 +298,7 @@ typedef struct boundary_segment BOUNDARY_SEGMENT;
 DESCRIPTION:
 
 A domain for UG is described as a set of boundary segments defined
-by the 'BOUNDARY_SEGMENT' structure. Each boundary segment is a mapping
+by the BOUNDARY_SEGMENT structure. Each boundary segment is a mapping
 from `d`-1 dimensional parameter space to `d` dimensional eucledian space.
 The parameter space is an interval [a,b] in two dimensions or a rectangle
 [a,b]x[c,d] in three dimensional applications.
@@ -377,11 +335,11 @@ segments` can be defined in order to divide the domain into `subdomains`
 having different materials for example. The subdomains are numbered consecutively
 beginning with 1. By default the exterior of the domain has number 0.
 
-Boundary segments are created with the function 'CreateBoundarySegment2D'
-and 'CreateBoundarySegment'.
+Boundary segments are created with the function CreateBoundarySegment2D
+and CreateBoundarySegment.
 
-. v - The 'BOUNDARY_SEGMENT' structure is an environment variable (see 'ENVIRONMENT'),
-therefore it has the 'ENVVAR' 'v' as its first component. 'v' stores also the
+. v - The BOUNDARY_SEGMENT structure is an environment variable (see ENVIRONMENT),
+therefore it has the ENVVAR v as its first component. v stores also the
 name of the boundary segment.
 
 . left,right - Numbers of left and right subdomain. The right subdomain is where the
@@ -396,7 +354,7 @@ points to the right subdomain.
 
 . id - Number of the boundary segment beginning with zero.
 
-. segType - Type of boundary segment. Currently only 'NON_PERIODIC' is
+. segType - Type of boundary segment. Currently only NON_PERIODIC is
 allowed. Later periodic boundary segments will be implemented.
 
 . points - Mapping of local numbers of corners to global numbers. Remember, all
@@ -413,33 +371,31 @@ straight lines 1 is sufficient.
 c=alpha[1], d=beta[1] in the figure above.
 
 . BndSegFunc - Pointer to a C function describing the mapping from parameter
-space to the `d`-space. This function must be of type 'BndSegFuncPtr'.
+space to the `d`-space. This function must be of type BndSegFuncPtr.
 (see below).
 
 . data - User defined pointer. This pointer is passed as the first
-argument to the 'BndSegFunc' of the segment. This pointer can be used
+argument to the BndSegFunc of the segment. This pointer can be used
 to construct an interface to geometry data files, e.g. from a CAD system.
 
 . BndSegFuncPtr - Data type of the functions mapping parameter space to
-`d`-space. The first argument of type 'void *' is the user data pointer from
-the corresponding 'BOUNDARY_SEGMENT'. The second parameter of type 'DOUBLE *'
+`d`-space. The first argument of type void * is the user data pointer from
+the corresponding BOUNDARY_SEGMENT. The second parameter of type DOUBLE *
 provides an array containing the parameters where the boundary segment
 function should be evaluated (one number in 2D, two numbers in 3D). The
-third parameter of type 'DOUBLE *' provides an array where the result can be placed
+third parameter of type DOUBLE * provides an array where the result can be placed
 (x,y values in 2D, x,y,z values in 3D).
 
 MACROS:
 
-The components of the 'BOUNDARY_SEGMENT' structure are accessed through
-the 'BNDSEGDESC' structure, see that man page.
+The components of the BOUNDARY_SEGMENT structure are accessed through
+the BNDSEGDESC structure, see that man page.
 
 EXAMPLES:
 
-For an example how a domain is defined see the 'DOMAIN' page.
+For an example how a domain is defined see the DOMAIN page.
 
-SEE ALSO:
-
-'DOMAIN', 'CreateDomain', 'CreateBoundarySegment2D', 'CreateBoundarySegment'.
+\sa DOMAIN, CreateDomain, CreateBoundarySegment2D, CreateBoundarySegment.
 
 
 .p bndseg2d.eps
@@ -455,8 +411,6 @@ D*/
 
 /*! \struct problem
 
- \brief Data type describing a problem.
-
 STRUCTURES:
 
 .vb
@@ -464,72 +418,40 @@ typedef INT (*CoeffProcPtr) (DOUBLE *, DOUBLE *);
 typedef INT (*UserProcPtr) (DOUBLE *, DOUBLE *);
 typedef INT (*ConfigProcPtr) (INT argc, char **argv);
 
-struct problem {
-
-    // fields for environment directory
-    ENVDIR d;
-   
-    // fields for problem
-    INT problemID;              // used to identify problem type    
-    ConfigProcPtr ConfigProblem;// procedure to reinitialize problem
-    INT numOfCoeffFct;          // # of coefficient functions      
-    INT numOfUserFct;           // # of User functions              
-    void * CU_ProcPtr[1];       // coefficient functions      
-};
 
 typedef struct problem PROBLEM ;
 .ve
 
 DESCRIPTION:
 
-The 'PROBLEM' data type is used to give a complete description
+The PROBLEM data type is used to give a complete description
 of the pde to be solved. Since this is a UG data type and UG is
 independent of the pde to be solved it must be a very general mechanism.
 The abstraction is that a problem is completely described by
 (1) The domain, (2) the pde, (3) coefficient functions for the pde
 and (4) boundary conditions. The first two items are handled easily.
-When creating a 'PROBLEM' then the name of a 'DOMAIN' has to be passed
+When creating a PROBLEM then the name of a DOMAIN has to be passed
 as a parameter (see example below). The pde to be solved is determined
 by the problem class library that is linked to the UG library. In order
 to be sure that a problem description and the problem class library
 are intended for the same pde, each problem class library exports
 in identification number that has to coincide with the
 number given in the problem description. Problems are created by
-the function 'CreateProblem'.
+the function CreateProblem.
 
-. d - The problem is an environment directory. This directory is a subdirectory
-of the domain where this problem corresponds to. 'd' also contains the
-name of the problem.
-
-. problemID - Problem class identification number. This number is used to determine
-that the problem description coincides with the pde solved by the
-problem class library.
-
-. ConfigProblem - Pointer to a user definable function that is executed when the 'reinit'
-command is given in the UG shell.
-
-. numOfCoeffFct,numOfUserFct - User definable coefficient functions come in two flavours.
-They are either of type 'CoeffProcPtr' or of type 'UserProcPtr'.
-'numOfCoeffFct' and 'numOfUserFct' give the number of functions of each type that
-make up the problem description. 
-
-. CU_ProcPtr - Array that stores the pointers to coefficient and user functions.
-Since access to this array is provided through macros (see below) the layout
-is not important. Note that this array is allocated dynamically to the desired length.
-
-. CoeffProcPtr - This function gets a 'DOUBLE' and a 'DOUBLE' array, which are usually
-called 'in' and 'out'. These functions are only called by the problem class
+. CoeffProcPtr - This function gets a DOUBLE and a DOUBLE array, which are usually
+called in and out. These functions are only called by the problem class
 libraries, therefore the length of these arrays and the use of their entries
 is not determined by UG. UG only stores pointers to these user definable functions!
 
-. UserProcPtr - Same as a 'CoeffProcPtr' but both arrays are of type 'DOUBLE *'.
+. UserProcPtr - Same as a CoeffProcPtr but both arrays are of type DOUBLE *.
 
 . ConfigProcPtr - Problem configuration function which is called be the UG command
-'reinit'. Parameters 'argc', 'argv' are those passed to the function implementing
-the 'reinit' command. This function can be used to change a parameter in the
+reinit. Parameters argc, argv are those passed to the function implementing
+the reinit command. This function can be used to change a parameter in the
 problem description from the shell. E.g. the Reynolds number is a parameter in a
 Navier-Stokes calculation. One could write a configuration functions that reads
-the Reynolds number from the command line of the 'reinit' command or from
+the Reynolds number from the command line of the reinit command or from
 a UG shell variable.
 
 
@@ -558,23 +480,23 @@ Returns the number of user functions in the problem description.
 .vb
 CoeffProcPtr COEFFFUNC (PROBLEM *p,INT i); 
 .ve
-Returns a pointer to the 'i'-th coefficient function of the problem.
-The meaning of coefficient function 'i' is determined by the problem class
+Returns a pointer to the i-th coefficient function of the problem.
+The meaning of coefficient function i is determined by the problem class
 library.
 
 .vb
 UserProcPtr USERFUNC (PROBLEM *p,INT i);
 .ve
-Returns a pointer to the 'i'-th user function of the problem.
-The meaning of user function 'i' is determined by the problem class
+Returns a pointer to the i-th user function of the problem.
+The meaning of user function i is determined by the problem class
 library.
 
 EXAMPLES:
 
-For a detailed example see the 'diff2d' and 'cd3d' description.
+For a detailed example see the diff2d and cd3d description.
 
-SEE ALSO:
-'BOUNDARY_CONDITION', 'CreateProblem', 'CreateBoundaryCondition'.
+\sa
+BOUNDARY_CONDITION, CreateProblem, CreateBoundaryCondition.
 
 */
 
@@ -607,37 +529,37 @@ conditions. This is done in the same way as a domain is defined.
 For each boundary segment there must be a corresponding boundary
 condition function that specifies the boundary conditions along that
 segment. The same parametrization is used for the boundary segment function
-and the boundary condition function. The 'BOUNDARY_CONDITION' data structure
+and the boundary condition function. The BOUNDARY_CONDITION data structure
 stores a pointer to that function and some additional information.
 
-Boundary conditions are created with the function 'CreateBoundaryCondition'.
+Boundary conditions are created with the function CreateBoundaryCondition.
 
-. v - A 'BOUNDARY_CONDITION' is an environment variable which is stored
-in the directory given by the corresponding 'PROBLEM' object. 'v' stores
+. v - A BOUNDARY_CONDITION is an environment variable which is stored
+in the directory given by the corresponding PROBLEM object. v stores
 also the name of the boundary condition.
 
 . id - Number of the corresponding boundary segment. Boundary segments
-and boundary conditions with the same id are accessible via a 'BNDSEGDESC'
+and boundary conditions with the same id are accessible via a BNDSEGDESC
 structure.
 
-. BndCond - Pointer to a function of type 'BndCondProcPtr' defining the
+. BndCond - Pointer to a function of type BndCondProcPtr defining the
 boundary condition for a segment.
 
-. data - user definable pointer that is passed as first argument to 'BndCond'
+. data - user definable pointer that is passed as first argument to BndCond
 when it is called.
 
 MACROS:
 
-The components of the 'BOUNDARY_CONDITION' structure are only accessible
-through the 'BNDSEGDESC' structure during computations. See the MACROS
+The components of the BOUNDARY_CONDITION structure are only accessible
+through the BNDSEGDESC structure during computations. See the MACROS
 section there.
 
 EXAMPLES:
 
-For detailed examples see the 'appl2d' and 'appl3d' description.
+For detailed examples see the appl2d and appl3d description.
 
-SEE ALSO:
-'PROBLEM', 'CreateBoundaryCondition'.
+\sa
+PROBLEM, CreateBoundaryCondition.
 
 D*/
 
@@ -645,40 +567,40 @@ D*/
 
  * \brief Data type that describes parameters of the UG data structure
 
-The 'FORMAT' data type is used to describe parameters of the UG data structure.
+The FORMAT data type is used to describe parameters of the UG data structure.
 Several different formats can be defined at initialization time or later. Which format
-is used for a 'MULTIGRID' can be specified when it is created or loaded from
-file. Each problem class defines at least one format. 'FORMAT' objects
-are created with the 'CreateFormat' function.
+is used for a MULTIGRID can be specified when it is created or loaded from
+file. Each problem class defines at least one format. FORMAT objects
+are created with the CreateFormat function.
 
 . d - The format is an environment directory. This directory will contain a list
-of 'SYMBOL' objects. 'd' also stores the name of the format.
+of SYMBOL objects. d also stores the name of the format.
 
-. sVertex - Size of user data space in each 'VERTEX' in bytes.
+. sVertex - Size of user data space in each VERTEX in bytes.
 
-. sMultiGrid - Size of user data space in the 'MULTIGRID' structure in bytes.
+. sMultiGrid - Size of user data space in the MULTIGRID structure in bytes.
 
-. VectorSizes - Array giving the number of 'DOUBLE' values to be allocated
-for the 'VECTOR' per geometrical object. The number of 'DOUBLE's can be different
-in nodes, edges, sides and elements. 'VectorSizes[NODEVECTOR]' specifies
-the number of 'DOUBLE's in a node of the grid. 'EDGEVECTOR', 'SIDEVECTOR'
-and 'ELEMVECTOR' are used for the other geometric objects. If a number of 'DOUBLE's
+. VectorSizes - Array giving the number of DOUBLE values to be allocated
+for the VECTOR per geometrical object. The number of DOUBLEs can be different
+in nodes, edges, sides and elements. VectorSizes[NODEVECTOR] specifies
+the number of DOUBLEs in a node of the grid. EDGEVECTOR, SIDEVECTOR
+and ELEMVECTOR are used for the other geometric objects. If a number of DOUBLEs
 is requested in a vector of a geometric object that is not allowed
-to have degrees of freedom (determined by 'ug.conf' file during
-compilation - see 'makefiles') an error is returned by the 'CreateFormat' function.
+to have degrees of freedom (determined by ug.conf file during
+compilation - see makefiles) an error is returned by the CreateFormat function.
 
-. MatrixSizes - Array determining the number of 'DOUBLE' values in a 'MATRIX' 
-coupling of one 'VECTOR' with another. Since the number of degrees
-of freedom in a 'VECTOR' depends on the geometrical object its is associated with -
-in other words the 'VTYPE' - the 'MATRIX'
-size depends on the type of source and destination 'VECTOR'. The memory requirements
-are assumed to be symmetric, that is a 'MATRIX' from a node vector to an edge
+. MatrixSizes - Array determining the number of DOUBLE values in a MATRIX 
+coupling of one VECTOR with another. Since the number of degrees
+of freedom in a VECTOR depends on the geometrical object its is associated with -
+in other words the VTYPE - the MATRIX
+size depends on the type of source and destination VECTOR. The memory requirements
+are assumed to be symmetric, that is a MATRIX from a node vector to an edge
 vector needs the same memory as that from an edge vector to a node vector.
 Therefore in 2D there are 3 vector types and 6 different matrix sizes and
 in 3D there are 4 vector types and 10 different matrix sizes.
-A mapping of  source and destination vector type to an index in the 'MatrixSizes'
-array is provided by the array 'MatrixType' exported by 'algebra.h'.
-E. g. 'MatrixType[NODEVECTOR][EDGEVECTOR]' provides the index for node-edge
+A mapping of  source and destination vector type to an index in the MatrixSizes
+array is provided by the array MatrixType exported by algebra.h.
+E. g. MatrixType[NODEVECTOR][EDGEVECTOR] provides the index for node-edge
 matrices.
 
 . ConnectionDepth - Consider an element `e` of a mesh (in 2D or 3D). All neighbors of that
@@ -686,10 +608,10 @@ element are said to have distance 1 from `e` and these elements form a set calle
 All elements having distance 1 from any element in E(`e`,1) form the set E(`e`,2). Consequently
 the set containing only the element `e` is called E(`e`,0). Therefore it makes sense
 to call E(`e`,d) the `set of elements having distance d from e`.
-UG generates the 'MATRIX' objects automatically from the mesh by coupling all
+UG generates the MATRIX objects automatically from the mesh by coupling all
 degrees of freedom in `e` with those of all elements up to distance `d` from `e`.
 The distance `d` depends again on the position of source and destination vector as
-in the 'MatrixSize' component.
+in the MatrixSize component.
 
 . MaxConnectionDepth,NeighborhoodDepth - These numbers are computed internally
 and need not be specified nor are they useful from outside.
@@ -717,7 +639,7 @@ MACROS:
 
 The fields of this data structure are accessed only internally. The user
 creates these data structures at initialization time with the function
-'CreateFormat'.
+CreateFormat.
 
 EXAMPLES:
 
@@ -726,8 +648,8 @@ nodes of the mesh and and all nodes within on element are coupled.
 This format is suitable for standard conforming (bi-)linear basis
 functions.
 
-First we define 'DOUBLE' arrays with four and two entries which
-will be allocated in each 'NODE' and 'MATRIX' respectively, i.e.
+First we define DOUBLE arrays with four and two entries which
+will be allocated in each NODE and MATRIX respectively, i.e.
 we can represent four finite element functions and we store
 two global stiffness matrices.
 
@@ -737,8 +659,8 @@ typedef DOUBLE FullScalarNodeData[4];
 typedef DOUBLE FullScalarLinkData[2];
 .ve
 
-The following two functions of type 'ConversionProcPtr' are used
-to print the contents of a 'VECTOR' and a 'MATRIX' on the screen.
+The following two functions of type ConversionProcPtr are used
+to print the contents of a VECTOR and a MATRIX on the screen.
 
 .vb
 // the print functions
@@ -763,9 +685,9 @@ static INT PrintFullScalarLinkData (void *data, const char *indent, char *s)
 .ve
 
 Fortunately creating a format is simplified by the two data structures
-'VectorDescriptor' and 'MatrixDescriptor' which are explained in the page
-for 'CreateFormat'.  The following function 'InitFullScalarFormat' now
-creates a 'FORMAT' object in UGs environment.
+VectorDescriptor and MatrixDescriptor which are explained in the page
+for CreateFormat.  The following function InitFullScalarFormat now
+creates a FORMAT object in UGs environment.
 
 .vb
 // now enrol the format description in ug
@@ -788,7 +710,7 @@ INT InitFullScalarFormat (void)
     md[0].depth = 0; // only within one element !
     md[0].print = PrintFullScalarLinkData;
 
-    // create format 'full scalar' 
+    // create format full scalar 
     newFormat = CreateFormat("full scalar", // name of the format
                    0,0,                     // no user data in vertex and multigrid 
                    (ConversionProcPtr)NULL, // no print function for vertex data
@@ -803,7 +725,7 @@ INT InitFullScalarFormat (void)
 }
 .ve
 
-@sa 'CreateFormat'
+@sa CreateFormat
 
 */
 
@@ -855,13 +777,13 @@ typedef union vertex VERTEX;
 
 DESCRIPTION:
 
-The 'VERTEX' structure stores the level independent information of
-a 'NODE'. If several 'NODE's on different levels of the 'MULTIGRID' structure
-are at the same position then they share a common 'VERTEX' object.
-The 'VERTEX' is a union of inner vertex 'ivertex' and boundary vertex 'bvertex'.
-The 'bvertex' has all of the 'ivertex' plus some extra information where
+The VERTEX structure stores the level independent information of
+a NODE. If several NODEs on different levels of the MULTIGRID structure
+are at the same position then they share a common VERTEX object.
+The VERTEX is a union of inner vertex ivertex and boundary vertex bvertex.
+The bvertex has all of the ivertex plus some extra information where
 the vertex is on the boundary of the domain. In the code one always works with
-pointers of type 'VERTEX *' and accesses the components through the macros described
+pointers of type VERTEX * and accesses the components through the macros described
 below.
 
 . control - As in almost all UG objects this word is used bitwise for various
@@ -872,25 +794,25 @@ purposes (see section below).
 . x - Vector with `global` coordinates.
 
 . xi - Vector with `local` coordinates. This is used to represent the multigrid
-hierarchy. The 'father' component points to an 'ELEMENT' of the next coarser
-grid level and 'xi' gives the position of the 'VERTEX' within this element in
-the local coordinate system of the 'ELEMENT'. In this way also loosely coupled
+hierarchy. The father component points to an ELEMENT of the next coarser
+grid level and xi gives the position of the VERTEX within this element in
+the local coordinate system of the ELEMENT. In this way also loosely coupled
 grids can be represented although the grid refinement algorithm is currently
 not able to produce such grids. The solvers however would work
 also on much more general multigrid hierarchies.
 
-. pred,succ - Pointers realizing a double linked list of 'VERTEX' objects per level.
-The beginning of this list is in the 'GRID' structure.
+. pred,succ - Pointers realizing a double linked list of VERTEX objects per level.
+The beginning of this list is in the GRID structure.
 
 . data - pointer to a data space of user definable size. The size is defined in
-the 'FORMAT' definition.
+the FORMAT definition.
 
-. father - Pointer to an 'ELEMENT' of the next coarser level. This component is
-used for multigrid interpolation and restriction (see also 'xi' component above).
-For the vertices in the coarsest grid (level 0) this pointer is 'NULL'.
+. father - Pointer to an ELEMENT of the next coarser level. This component is
+used for multigrid interpolation and restriction (see also xi component above).
+For the vertices in the coarsest grid (level 0) this pointer is NULL.
 
-. topnode - If several 'NODES' share this 'VERTEX' then this pointer refers
-to the 'NODE' on the highest level. This pointer will probably `not` be supported
+. topnode - If several NODES share this VERTEX then this pointer refers
+to the NODE on the highest level. This pointer will probably `not` be supported
 in the next version, its use is not recommended!
 
 MACROS:
@@ -898,13 +820,13 @@ MACROS:
 .vb
 INT ID (VERTEX *p);
 .ve
-Returns 'VERTEX' id.
+Returns VERTEX id.
 
 .vb
 VERTEX *PREDV (VERTEX *p);
 VERTEX *SUCCV (VERTEX *p);
 .ve
-Access to the double linked list. 'NULL' pointers indicate the end of the list
+Access to the double linked list. NULL pointers indicate the end of the list
 in both directions.
 
 .vb
@@ -913,8 +835,8 @@ DOUBLE XC (VERTEX *p);
 DOUBLE YC (VERTEX *p);
 DOUBLE ZC (VERTEX *p);
 .ve
-'CVECT' returns the array of global coordinates (i.e. a pointer) and 'XC', 'YC' and
-'ZC' return the individual components. Accessing the `z`-coordinate in a 2D application
+CVECT returns the array of global coordinates (i.e. a pointer) and XC, YC and
+ZC return the individual components. Accessing the `z`-coordinate in a 2D application
 will not lead to an error message!
 
 .vb
@@ -923,8 +845,8 @@ DOUBLE XI (VERTEX *p);
 DOUBLE ETA (VERTEX *p);
 DOUBLE NU (VERTEX *p);
 .ve
-'LCVECT' returns the array of local coordinates with the father element and the other
-macros return the individual components called 'XI', 'ETA' and 'NU'.
+LCVECT returns the array of local coordinates with the father element and the other
+macros return the individual components called XI, ETA and NU.
 
 .vb
 void *VDATA (VERTEX *p);
@@ -934,14 +856,14 @@ Returns the pointer to user data space.
 .vb
 ELEMENT *VFATHER (VERTEX *p);
 .ve
-Returns the pointer an 'ELEMENT' of the next coarser grid level containing the 
-given 'VERTEX'. A 'NULL' pointer indicates that the 'VERTEX' is on level 0, the
+Returns the pointer an ELEMENT of the next coarser grid level containing the 
+given VERTEX. A NULL pointer indicates that the VERTEX is on level 0, the
 coarsest level.
 
 .vb
 NODE *TOPNODE (VERTEX *p);
 .ve
-Returns pointer to the highest 'NODE' using that 'VERTEX'. The use of this
+Returns pointer to the highest NODE using that VERTEX. The use of this
 component is not recommended since it will not be supported in the future.
 
 CONTROL WORDS:
@@ -969,7 +891,7 @@ void SETTHEFLAG (VERTEX *p, INT n);
 -----------------------------------------------------------------------------
 .ve
 
-`Macros specific to the 'VERTEX' structure`
+`Macros specific to the VERTEX structure`
 .vb
 Macro name                            Pos Len Purpose
 -----------------------------------------------------------------------------
@@ -1019,11 +941,11 @@ typedef struct node NODE;
 
 DESCRIPTION:
 
-Each node of the mesh is represented by a 'NODE' structure. When a mesh is refined
-then new 'NODE' objects are allocated on the new grid level
-even at those positions where nodes were already in the coarse mesh. However, 'NODE's
-at the same position share a common 'VERTEX' structure.
-A node provides access to all neighboring nodes via the 'LINK' structure. There
+Each node of the mesh is represented by a NODE structure. When a mesh is refined
+then new NODE objects are allocated on the new grid level
+even at those positions where nodes were already in the coarse mesh. However, NODEs
+at the same position share a common VERTEX structure.
+A node provides access to all neighboring nodes via the LINK structure. There
 is `no` access from a node to all the elements having the node as a corner!
 
 . control - As in almost all UG objects this word is used bitwise for various
@@ -1031,21 +953,21 @@ purposes.
 
 . id - Each node is assigned a unique identification number when it is created.
 
-. index - The 'index' indicates the position of the node in the node list. 
+. index - The index indicates the position of the node in the node list. 
 This component is provided mainly for compatibility reasons.
 
 . pred,succ - All nodes of one grid level are in a double linked list.
 
-. start - Points to the first element of the 'LINK' list. The 'LINK' list
+. start - Points to the first element of the LINK list. The LINK list
 provides access to all neighbors of the node.
 
 . father,son - All nodes at the same position in the multigrid structure, i.e.
-sharing a common 'VERTEX' are connected by a double linked list providing access to
-the node on the next coarser ('father') and finer ('son') grid levels.
+sharing a common VERTEX are connected by a double linked list providing access to
+the node on the next coarser (father) and finer (son) grid levels.
 
-. myvertex - Pointer to the 'VERTEX' associated with the node.
+. myvertex - Pointer to the VERTEX associated with the node.
 
-. vector - Pointer to a 'VECTOR' containing degrees of freedom associated with the node.
+. vector - Pointer to a VECTOR containing degrees of freedom associated with the node.
 
 MACROS:
 
@@ -1066,7 +988,7 @@ Returns the index of the node in the node list.
 LINK *START (NODE *p);
 .ve
 
-Returns pointer to the first element of the 'LINK' list of a node.
+Returns pointer to the first element of the LINK list of a node.
 
 .vb
 NODE *NFATHER (NODE *p);
@@ -1077,13 +999,13 @@ NODE *SONNODE (NODE *p);
 VERTEX *MYVERTEX (NODE *p);
 .ve
 
-Returns a pointer to the 'VERTEX' of a node.
+Returns a pointer to the VERTEX of a node.
 
 .vb
 VECTOR *NVECTOR (NODE *p);
 .ve
 
-Returns a pointer to the 'VECTOR' associated with a node.
+Returns a pointer to the VECTOR associated with a node.
 
 CONTROL WORDS:
 
@@ -1108,7 +1030,7 @@ void SETTHEFLAG (NODE *p, INT n);
 -----------------------------------------------------------------------------
 .ve
 
-`Macros for the 'NODE' structure`
+`Macros for the NODE structure`
 
 .vb
 Macro name                            Pos Len Purpose
@@ -1128,9 +1050,9 @@ void SETNPROP (NODE *p, INT n);               element property.
 -----------------------------------------------------------------------------
 .ve
 
-SEE ALSO:
+\sa
 
-'VERTEX', 'LINK', 'VECTOR', 'GRID'.
+VERTEX, LINK, VECTOR, GRID.
 
 D*/
 
@@ -1153,19 +1075,19 @@ typedef struct link LINK;
 
 DESCRIPTION:
 
-The 'LINK' structures form a single linked list starting in each 'NODE'.
+The LINK structures form a single linked list starting in each NODE.
 Two nodes are said to be neighbors if they are connected by an edge `in the mesh`.
 Note that this is only the geometric neighborship, which can be different from the
 algebraic neighborship derived from the non-zero structure of the global stiffness matrix.
-Each 'LINK' provides a pointer to one neighbor of the 'NODE' where the list
+Each LINK provides a pointer to one neighbor of the NODE where the list
 starts. The neighbor relationship is symmetric, therefore if node `a` is a neighbor
 of node `b` then `a` occurs in the list of `b` and vice versa. These two link structures
-are then combined in an 'EDGE' structure.
+are then combined in an EDGE structure.
 
 . control - As in almost all UG objects this word is used bitwise for various
 purposes.
 
-. next - pointer to next 'LINK' object.
+. next - pointer to next LINK object.
 
 . nbnode - Pointer to neighboring node.
 
@@ -1175,28 +1097,28 @@ MACROS:
 NODE *NBNODE (LINK *p);
 .ve 
 
-Returns pointer to a neighboring node that is stored in the 'LINK'.
+Returns pointer to a neighboring node that is stored in the LINK.
 
 .vb
 LINK *NEXT (LINK *p);
 .ve
 
-Returns pointer to next 'LINK' in the list. As usual a 'NULL' pointer indicates
+Returns pointer to next LINK in the list. As usual a NULL pointer indicates
 the end of the list.
 
 .vb
 EDGE *MYEDGE (LINK *p);
 .ve
 
-Provides access to the 'EDGE' where this given 'LINK' is part of. 
+Provides access to the EDGE where this given LINK is part of. 
 
 .vb
 LINK *REVERSE (LINK *p);
 .ve
 
-Macro that provides fast access to the 'LINK' in the reverse direction.
-If the given 'LINK' connects node `a` with node `b`, then 'REVERSE'
-provides the 'LINK' in the list of node `b` pointing to `a`.
+Macro that provides fast access to the LINK in the reverse direction.
+If the given LINK connects node `a` with node `b`, then REVERSE
+provides the LINK in the list of node `b` pointing to `a`.
 
 CONTROL WORDS:
 
@@ -1215,7 +1137,7 @@ void SETTHEFLAG (LINK *p, INT n);
 -----------------------------------------------------------------------------
 .ve
 
-`Macros for the 'LINK' structure`
+`Macros for the LINK structure`
 
 .vb
 Macro name                            Pos Len Purpose
@@ -1225,9 +1147,9 @@ void SETLOFFSET (LINK *p, INT n);             1 if second LINK of EDGE
 -----------------------------------------------------------------------------
 .ve
 
-SEE ALSO:
+\sa
 
-'EDGE', 'NODE'.
+EDGE, NODE.
 
 D*/
 
@@ -1251,20 +1173,20 @@ typedef struct edge EDGE;
 
 DESCRIPTION:
 
-The 'EDGE' data type combines 'LINK' structures to form an `undirected`
-connection of two 'NODE's. An 'EDGE' represents an edge of the mesh.
-Degrees of freedom can be associated with 'EDGE's as it is necessary in
+The EDGE data type combines LINK structures to form an `undirected`
+connection of two NODEs. An EDGE represents an edge of the mesh.
+Degrees of freedom can be associated with EDGEs as it is necessary in
 quadratic, non-conforming or mixed finite elements.
 
-. links - Array of two 'LINK's. In that way 'LINK's are always allocated pairwise
+. links - Array of two LINKs. In that way LINKs are always allocated pairwise
 and in consecutive memory locations. This allows to switch easily from a given
-'LINK' to the 'LINK' in reverse direction or to the 'EDGE'.
+LINK to the LINK in reverse direction or to the EDGE.
 
 . midnode - In 3D a pointer to the node created on the midpoint of an edge is
 needed during refinement (This is because many elements share an edge in 3D).
 
-. vector - Pointer to a 'VECTOR' structure of appropriate size declared in the
-'FORMAT'.
+. vector - Pointer to a VECTOR structure of appropriate size declared in the
+FORMAT.
 
 MACROS:
 
@@ -1272,13 +1194,13 @@ MACROS:
 LINK *LINK0 (EDGE *p);
 .ve
 
-Pointer to first 'LINK' of an 'EDGE'.
+Pointer to first LINK of an EDGE.
 
 .vb
 LINK *LINK1 (EDGE *p);
 .ve
 
-Pointer to second 'LINK' of an 'EDGE'.
+Pointer to second LINK of an EDGE.
 
 .vb
 NODE *MIDNODE (EDGE *p);
@@ -1291,7 +1213,7 @@ that has been created on the given edge).
 VECTOR *EDVECTOR (EDGE *p);
 .ve
 
-Returns pointer to the 'VECTOR' associated with the given 'EDGE'.
+Returns pointer to the VECTOR associated with the given EDGE.
 
 CONTROL WORDS:
 
@@ -1313,7 +1235,7 @@ void SETTHEFLAG (EDGE *p, INT n);
 -----------------------------------------------------------------------------
 .ve
 
-`Macros for the 'EDGE' structure`
+`Macros for the EDGE structure`
 
 .vb
 Macro name                            Pos Len Purpose
@@ -1335,9 +1257,9 @@ void SETEDGENEW (EDGE *p, INT n);             last refinement step. 3D only!
 -----------------------------------------------------------------------------
 .ve
 
-SEE ALSO:
+\sa
 
-'LINK'
+LINK
 
 D*/
 
@@ -1442,11 +1364,11 @@ DESCRIPTION:
 
 UG provides a flexible element concept, i.e. there may be different
 types of elements in a mesh (currently limited to 8). All element types are derived
-from the 'generic_element' where the 'refs' array is allocated to the
+from the generic_element where the refs array is allocated to the
 appropriate length. Data types for the currently implemented three different
 elements triangle, quadrilateral and tetrahedron are provided only
-for illustration and debugging purposes. Internally only the 'generic_element'
-is used. The 'TAG' field in the control word is used to identify the
+for illustration and debugging purposes. Internally only the generic_element
+is used. The TAG field in the control word is used to identify the
 element type at run-time, therefore the limitation to eight element types.
 Memory requirements are also higher for elements having at least one
 side on the boundary because additional pointers to boundary information
@@ -1462,17 +1384,17 @@ purposes.
 . id - Each element has a unique id.
 
 . flag - A lot of information requiring only a small number of bits must be stored
-for each element. Therefore a second control word, the 'flag', has been introduced.
-The 'flag' is also used bitwise.
+for each element. Therefore a second control word, the flag, has been introduced.
+The flag is also used bitwise.
 
-. property - Since 'control' and 'flag' were full, a third word had to be introduced that
+. property - Since control and flag were full, a third word had to be introduced that
 can be used bitwise. A part of this word stores the element property, which is simple
 a number per element. This number can be used to distinguish different materials
 for example.
 
 . pred,succ - All elements of a grid level are connected by a double linked list.
 
-. n - Array of pointers to the corner 'NODE's of an element.
+. n - Array of pointers to the corner NODEs of an element.
 
 . father - Pointer to element on the next coarser grid level that created 
 the given element during refinement.
@@ -1480,17 +1402,17 @@ the given element during refinement.
 . sons - Array of pointers to elements on the next finer grid level that
 have been created by refining the given element. In 2D all sons
 are directly accessible, in 3D only one pointer is stored and a complete
-list of sons is constructed by the function 'GetSons'.
+list of sons is constructed by the function GetSons.
 
 . nb - Array of pointers to neighboring elements. There are as many neighbors
 as the element has sides.
 
-. vector - Pointer to 'VECTOR' that is associated with the element. Whether degrees
+. vector - Pointer to VECTOR that is associated with the element. Whether degrees
 of freedom are allowed to be associated with elements is determined at compile-time
 through appropriate makefile switches.
 
-. sidevector - Array of pointers to 'VECTOR's associated with the sides of an element.
-This option is available only in 3D. Whether 'VECTOR's are allowed in sides is determined
+. sidevector - Array of pointers to VECTORs associated with the sides of an element.
+This option is available only in 3D. Whether VECTORs are allowed in sides is determined
 through switches in the makefiles at compile-time.
 
 MACROS:
@@ -1500,7 +1422,7 @@ INT SIDES_OF_ELEM (ELEMENT *p);
 .ve
 
 Returns the number of sides of a given element. In 2D the number of sides and number
-of edges of an element coincide. The 'nb', 'sidevector' and 'side'
+of edges of an element coincide. The nb, sidevector and side
 arrays are of this size.
 
 .vb
@@ -1514,7 +1436,7 @@ of edges of an element coincide.
 INT CORNERS_OF_ELEM (ELEMENT *p);
 .ve
 
-Returns the number of corners of a given element. This is also the size of the 'n'
+Returns the number of corners of a given element. This is also the size of the n
 array.
 
 .vb
@@ -1522,22 +1444,22 @@ INT SONS_OF_ELEM (ELEMENT *p);
 .ve
 
 Returns the maximum number of sons possible for a given element. This is the
-size of the 'sons' array in 2D. The actual number of sons depends on the refinement
-rule that has been applied to the element and is given by the 'NSONS' macro
+size of the sons array in 2D. The actual number of sons depends on the refinement
+rule that has been applied to the element and is given by the NSONS macro
 (see CONTROL WORDS section below).
 
 .vb
 INT EDGES_OF_SIDE (ELEMENT *p,INT i);
 .ve
 
-Returns the number of edges of side 'i' of the given element. In 2D a side has always one
+Returns the number of edges of side i of the given element. In 2D a side has always one
 edge since edges and sides coincide.
 
 .vb
 INT CORNERS_OF_SIDE (ELEMENT *p,INT i);
 .ve
 
-Returns the number of corners of side 'i' of the given element.
+Returns the number of corners of side i of the given element.
 
 .vb
 #define CORNERS_OF_EDGE 2
@@ -1555,55 +1477,55 @@ scheme within edges and sides to the numbering scheme within the element.`
 INT EDGE_OF_SIDE (ELEMENT *p,INT s,INT e);
 .ve
 
-Returns the number of edge 'e' of side 's' within the element 'p'.
+Returns the number of edge e of side s within the element p.
 
 .vb
 INT CORNER_OF_SIDE (ELEMENT *p,INT s,INT c);
 .ve
 
-Returns the number of corner 'c' of side 's' within the element 'p'.
+Returns the number of corner c of side s within the element p.
 
 .vb
 INT CORNER_OF_EDGE (ELEMENT *p,INT e,INT c);
 .ve
 
-Returns the number of corner 'c' of edge 'e' within the element 'p'.
+Returns the number of corner c of edge e within the element p.
 
 .vb
 INT EDGE_WITH_CORNERS (ELEMENT *p,INT c0,INT c1);
 .ve
 
-Returns the number of the edge (with respect to numbering in the element 'p')
-that connects corners with numbers 'c0' and 'c1' (with respect to numbering in
-element 'p').
+Returns the number of the edge (with respect to numbering in the element p)
+that connects corners with numbers c0 and c1 (with respect to numbering in
+element p).
 
 .vb
 INT SIDE_WITH_EDGE (ELEMENT *p,INT e,INT k);
 .ve
 
-'SIDE_WITH_EDGE(p,e,0)' and 'SIDE_WITH_EDGE(p,e,1)' delivers the numbers
-of the two sides (with respect to numbering in 'p') that share edge number 'e'
+SIDE_WITH_EDGE(p,e,0) and SIDE_WITH_EDGE(p,e,1) delivers the numbers
+of the two sides (with respect to numbering in p) that share edge number e
 (also with respect to the element).
 
 .vb
 INT CORNER_OF_SIDE_INV (ELEMENT *p,INT s,INT c);
 .ve
 
-When 'c' is the number of a corner and 's' is the number of a side
+When c is the number of a corner and s is the number of a side
 (both with respect to numbering in the element) then 
-'CORNER_OF_SIDE_INV' returns the number of corner 'c' with respect
-to the numbering in side 's' or '-1' if 's' does not contain corner 'c'.
+CORNER_OF_SIDE_INV returns the number of corner c with respect
+to the numbering in side s or -1 if s does not contain corner c.
 
 .vb
 INT EDGES_OF_CORNER (ELEMENT *p,INT c,INT k);
 .ve
 
-If 'c' is the number of a corner with respect to numbering within
-the element then 'EDGES_OF_CORNER(p,c,k)' returns all numbers
-of edges (with respect to 'p') that are connected to corner 'c'.
-Since this number is variable a value of '-1' identifies an invalid entry.
-The edges are numbered consecutively, i.e. if a '-1' is encountered
-larger values of 'k' (less than 'EDGES_OF_ELEM(p)') will lead also to '-1').
+If c is the number of a corner with respect to numbering within
+the element then EDGES_OF_CORNER(p,c,k) returns all numbers
+of edges (with respect to p) that are connected to corner c.
+Since this number is variable a value of -1 identifies an invalid entry.
+The edges are numbered consecutively, i.e. if a -1 is encountered
+larger values of k (less than EDGES_OF_ELEM(p)) will lead also to -1).
 
 .vb
 INT SUCCE (ELEMENT *p);
@@ -1616,8 +1538,8 @@ Return pointers to next and previous element of the double linked list of elemen
 NODE *CORNER (ELEMENT *p,INT i);
 .ve
 
-Returns a pointer to corner 'i' of element 'p'. 'i' should be less than
-'CORNERS_OF_ELEM(p)'.
+Returns a pointer to corner i of element p. i should be less than
+CORNERS_OF_ELEM(p).
 
 .vb
 ELEMENT *EFATHER (ELEMENT *p);
@@ -1629,22 +1551,22 @@ Returns a pointer to the father element.
 ELEMENT *SON (ELEMENT *p,INT i);
 .ve
 
-Returns a pointer to son 'i' of 'p' in the element hierarchy. In 3D only 'i'=0 is
-allowed and the function 'GetSons' should be used instead. 'i' should be
-smaller than 'NSONS(p)'.
+Returns a pointer to son i of p in the element hierarchy. In 3D only i=0 is
+allowed and the function GetSons should be used instead. i should be
+smaller than NSONS(p).
 
 .vb
 ELEMENT *NBELEM (ELEMENT *p,INT i);
 .ve
 
-Returns a pointer to neighboring element over side 'i'. 'i' should be less
-than 'SIDES_OF_ELEM(p)'.
+Returns a pointer to neighboring element over side i. i should be less
+than SIDES_OF_ELEM(p).
 
 .vb
 VECTOR *EVECTOR (ELEMENT *p);
 .ve
 
-Returns a pointer to the 'VECTOR' associated with the element. This
+Returns a pointer to the VECTOR associated with the element. This
 pointer is only available if the appropriate switches in the makefiles
 have been set for element vectors.
 
@@ -1652,8 +1574,8 @@ have been set for element vectors.
 VECTOR *SVECTOR (ELEMENT *p,INT i);
 .ve
 
-Returns a pointer to the 'VECTOR' associated with the side 'i'
-of element 'p'. 'i' must be less than 'SIDES_OF_ELEM(p)'. This
+Returns a pointer to the VECTOR associated with the side i
+of element p. i must be less than SIDES_OF_ELEM(p). This
 pointer is only available if the appropriate switches in the makefiles
 have been set for side vectors.
 
@@ -1685,7 +1607,7 @@ void SETTHEFLAG (ELEMENT *p, INT n);          changed during last refinement
 -----------------------------------------------------------------------------
 .ve
 
-`Macros for the 'ELEMENT' structure in 'control'`
+`Macros for the ELEMENT structure in control`
 
 .vb
 Macro name                            Pos Len Purpose
@@ -1702,11 +1624,11 @@ void SETNEWEL (ELEMENT *p,INT n);             reset. Do not use it!
 -----------------------------------------------------------------------------
 .ve
 
-`Macros for the 'ELEMENT' structure in 'flag' are all for internal use only`
+`Macros for the ELEMENT structure in flag are all for internal use only`
 
 
 
-`Macros for the 'ELEMENT' structure in 'property'`
+`Macros for the ELEMENT structure in property`
 
 .vb
 Macro name                            Pos Len Purpose
@@ -1716,9 +1638,9 @@ void SETPROP (ELEMENT *p,INT n);
 -----------------------------------------------------------------------------
 .ve
 
-SEE ALSO:
+\sa
 
-'ELEMENT SIDE', 'NODE', 'VECTOR'.
+ELEMENT SIDE, NODE, VECTOR.
 
 */
 
@@ -1727,14 +1649,14 @@ SEE ALSO:
  \brief Data type for unknowns in sparse matrix structure
 
 
-The 'VECTOR' data type is part of the sparse matrix vector data structure.
-A 'VECTOR' stores a user definable number of 'DOUBLE' values (see 'FORMAT') and
+The VECTOR data type is part of the sparse matrix vector data structure.
+A VECTOR stores a user definable number of DOUBLE values (see FORMAT) and
 is associated with a geometric object of the mesh (nodes, edges, sides and elements).
-The size of the 'VECTOR' can be specified differently for each type of
-geometric object, but not (yet) for each individual 'VECTOR' object.
+The size of the VECTOR can be specified differently for each type of
+geometric object, but not (yet) for each individual VECTOR object.
 Since there are four different geometric objects that can have degrees
 of freedom, there are four different `vector types`. The vector type
-is stored in the control word (see 'VTYPE' macro) and can have the
+is stored in the control word (see VTYPE macro) and can have the
 following values
 
 .vb
@@ -1744,7 +1666,7 @@ following values
     ELEMVECTOR
 .ve
 
-The 'VECTOR' provides access to the rows of the sparse matrix belonging to
+The VECTOR provides access to the rows of the sparse matrix belonging to
 all degrees of freedom stored in the vector.
 
 . control - Used bitwise (see below).
@@ -1753,20 +1675,20 @@ all degrees of freedom stored in the vector.
 
 . pred,succ - Realizes double linked list.
 
-. index - Reflects position of the 'VECTOR' in the double linked list.
+. index - Reflects position of the VECTOR in the double linked list.
 
-. skip - Used bitwise to identify components of a 'VECTOR' that have Dirichlet boundary 
+. skip - Used bitwise to identify components of a VECTOR that have Dirichlet boundary 
 conditions. These components have to be treated differently in some parts of the solver.
 
-. start - Points to first element of the 'MATRIX' list of a 'VECTOR'. This
+. start - Points to first element of the MATRIX list of a VECTOR. This
 list represents the rows of the matrix belonging to degrees of freedom in
-the given 'VECTOR'.
+the given VECTOR.
 
 . block_descr - Describes the position of this vector in the hierarchy of
-'BLOCKVECTOR's. Only used for 'BLOCKVECTOR' mechanism.
+BLOCKVECTORs. Only used for BLOCKVECTOR mechanism.
 	
 . value - Array of double values. This array is allocated dynamically with the
-size specified in the 'FORMAT' structure.
+size specified in the FORMAT structure.
 
 MACROS:
 
@@ -1774,20 +1696,20 @@ MACROS:
 void *VOBJECT (VECTOR *v);
 .ve
 
-Returns a pointer to the object to which the 'VECTOR' belongs.
+Returns a pointer to the object to which the VECTOR belongs.
 
 .vb
 VECTOR *PREDVC (VECTOR *v);
 VECTOR *SUCCVC (VECTOR *v);
 .ve
 
-Access to next and previous 'VECTOR' in the double linked list.
+Access to next and previous VECTOR in the double linked list.
 
 .vb
 INT VINDEX (VECTOR *v);
 .ve
 
-Position of the 'VECTOR' in the doubl linked list. This is useful for
+Position of the VECTOR in the doubl linked list. This is useful for
 the implementation of some iterative schemes.
 
 .vb
@@ -1801,32 +1723,32 @@ void SETVECSKIPBIT (VECTOR *v,INT n);
 .ve
 
 ????
-Macros to modify the skip flags. 'VECSKIP' returns value of the skip word. Since it is
+Macros to modify the skip flags. VECSKIP returns value of the skip word. Since it is
 a macro it can also be used for assigning a value to the skip word, e.g.
-'VECSKIP(v)=0' will reset all bits in the skip word. 'VECSKIPBIT' returns true
-if the 'n' th bit of the skip word is set. 'SETVECSKIPBIT' sets the 'n'th
+VECSKIP(v)=0 will reset all bits in the skip word. VECSKIPBIT returns true
+if the n th bit of the skip word is set. SETVECSKIPBIT sets the nth
 bit of the skip word to 1.
 
 .vb
 MATRIX *VSTART (VECTOR *v);
 .ve
 
-Returns a pointer to the first element of the 'MATRIX' list. The first
-'MATRIX' in the list is the diagonal matrix block coupling degrees
-of freedom in 'v' with itself.
+Returns a pointer to the first element of the MATRIX list. The first
+MATRIX in the list is the diagonal matrix block coupling degrees
+of freedom in v with itself.
 
 .vb
 DOUBLE VVALUE (VECTOR *v,INT n);
 .ve
 
-'VVALUE' returns the 'n'th component of the value field. 'VVALUE' is a macro and can
-also be used for assignment, i.e. 'VVALUE(v,1)=0.0' is a valid statement.
+VVALUE returns the nth component of the value field. VVALUE is a macro and can
+also be used for assignment, i.e. VVALUE(v,1)=0.0 is a valid statement.
 
 .vb
 DOUBLE *VVALUEPTR (VECTOR *v,INT n);
 .ve
 
-Returns a pointer to the 'n'th component of the value array.
+Returns a pointer to the nth component of the value array.
 
 .vb
 NODE *VMYNODE (VECTOR *v);
@@ -1850,16 +1772,16 @@ void SETVDOWN(VECTOR *p,INT n);
 BV_DESC VBVD (VECTOR *v);
 .ve
 
-Returns the whole information about the position of this 'VECTOR' in the
-hierarchy of 'BLOCKVECTOR's. This macro should only be applied if the
-'BLOCKVECTOR' mechanism is in use.
+Returns the whole information about the position of this VECTOR in the
+hierarchy of BLOCKVECTORs. This macro should only be applied if the
+BLOCKVECTOR mechanism is in use.
 
 .vb
 INT VMATCH (VECTOR *v, BV_DESC *bvd, BV_DESC_FORMAT *bvdf);
 .ve
 
-Returns true if the 'VECTOR' belongs to the 'BLOCKVECTOR' given in the
-blockvector description ('BV_DESC').
+Returns true if the VECTOR belongs to the BLOCKVECTOR given in the
+blockvector description (BV_DESC).
 
 .vb
 CAST_NVECTOR (VECTOR *p);
@@ -1872,7 +1794,7 @@ CAST_EVECTOR (VECTOR *p);
 
 CONTROL WORDS:
 
-`General macros in 'control' word`
+`General macros in control word`
 
 .vb
 Macro name                            Pos Len Purpose
@@ -1891,7 +1813,7 @@ void SETTHEFLAG (VECTOR *p, INT n);
 -----------------------------------------------------------------------------
 .ve
 
-`Macros for the 'VECTOR' structure in 'control'`
+`Macros for the VECTOR structure in control`
 
 .vb
 Macro name                            Pos Len Purpose
@@ -1934,19 +1856,19 @@ SETVCNEW (VECTOR *v, INT n);                  connection in refinement
 /*! \struct matrix
  \brief Data type realizing sparse matrix structure
 
-The 'MATRIX' data type is part of UGs sparse matrix vector data structure.
-A 'MATRIX' stores all the matrix entries coupling two 'VECTOR's (which can be identical - this
+The MATRIX data type is part of UGs sparse matrix vector data structure.
+A MATRIX stores all the matrix entries coupling two VECTORs (which can be identical - this
 is the case for diagonal entries).
-The number of entries in a 'MATRIX' depends on the geometrical position
-of the source and destination 'VECTOR', i.e. a 'MATRIX' coupling
-a 'VECTOR' in 'NODE' with a 'VECTOR' in another 'NODE' can have a different
-size than a 'MATRIX' coupling a 'VECTOR' in a 'NODE' with a
-'VECTOR' in an 'EDGE'.
-The 'MATRIX' structure forms a single linked list that contains all
-couplings of the 'VECTOR' where the list starts (see the 'VSTART' macro
+The number of entries in a MATRIX depends on the geometrical position
+of the source and destination VECTOR, i.e. a MATRIX coupling
+a VECTOR in NODE with a VECTOR in another NODE can have a different
+size than a MATRIX coupling a VECTOR in a NODE with a
+VECTOR in an EDGE.
+The MATRIX structure forms a single linked list that contains all
+couplings of the VECTOR where the list starts (see the VSTART macro
 there). The list `always` starts with the diagonal element.
-Except for diagonal 'MATRIX' entries two 'MATRIX' objects are combined to
-build a 'CONNECTION' object.
+Except for diagonal MATRIX entries two MATRIX objects are combined to
+build a CONNECTION object.
 
 MACROS:
 
@@ -1954,66 +1876,66 @@ MACROS:
 MATRIX *MINC (MATRIX *m);
 .ve
 
-Adds 'sizeof(MATRIX)' to 'm' (of course the dynamic size of 'm').
+Adds sizeof(MATRIX) to m (of course the dynamic size of m).
 
 .vb
 MATRIX *MDEC (MATRIX *m);
 .ve
 
-Subtracts 'sizeof(MATRIX)' to 'm' (of course the dynamic size of 'm').
+Subtracts sizeof(MATRIX) to m (of course the dynamic size of m).
 
 .vb
 MATRIX *MNEXT (MATRIX *m);
 .ve
 
-Returns pointer to next 'MATRIX' in the list.
+Returns pointer to next MATRIX in the list.
 
 .vb
 VECTOR *MDEST (MATRIX *m);
 .ve
 
-Returns pointer to destination 'VECTOR', i.e. the column 'VECTOR'. If 'm' is an element
-of the 'MATRIX' list of some 'VECTOR' `a` and 'MDEST(m)='`b`, then 'm' contains
+Returns pointer to destination VECTOR, i.e. the column VECTOR. If m is an element
+of the MATRIX list of some VECTOR `a` and MDEST(m)=`b`, then m contains
 all the matrix entries of rows belonging `a` and columns belonging to `b`.
  
 .vb
 MATRIX *MADJ (MATRIX *m);
 .ve
 
-Returns a pointer to the transposed 'MATRIX', i.e. if 'm' couples 'VECTOR'
-`a` with 'VECTOR' `b`, then 'MADJ(m)' couples `b` with `a`.
+Returns a pointer to the transposed MATRIX, i.e. if m couples VECTOR
+`a` with VECTOR `b`, then MADJ(m) couples `b` with `a`.
 
 .vb
 CONNECTION *MMYCON (MATRIX *m);
 .ve
 
-Returns a pointer to the 'CONNECTION' where 'm' is part of.
+Returns a pointer to the CONNECTION where m is part of.
 
 .vb
 DOUBLE MVALUE (MATRIX *m,INT n);
 .ve
 
-Returns the 'n'th value of the 'MATRIX' 'm'. The number of entries is
-defined in the 'FORMAT' structure. 'MVALUE' is a macro and can also
-be used for assignment, i.e. 'MVALUE(m,n)=0.0' is a valid
+Returns the nth value of the MATRIX m. The number of entries is
+defined in the FORMAT structure. MVALUE is a macro and can also
+be used for assignment, i.e. MVALUE(m,n)=0.0 is a valid
 statement.
 
 .vb
 DOUBLE *MVALUEPTR (MATRIX *m,INT n);
 .ve
 
-Returns a pointer to the 'n'th entry of the 'MATRIX' 'm'.
+Returns a pointer to the nth entry of the MATRIX m.
 
 .vb
 MDESTINDEX (MATRIX *m);
 .ve
 
-Returns the 'index' component of the destination 'VECTOR'.
+Returns the index component of the destination VECTOR.
 
 
 CONTROL WORDS:
 
-`General macros in 'control' word`
+`General macros in control word`
 
 .vb
 Macro name                            Pos Len Purpose
@@ -2032,7 +1954,7 @@ void SETTHEFLAG (MATRIX *p, INT n);
 -----------------------------------------------------------------------------
 .ve
 
-`Macros for the 'MATRIX' structure in 'control'`
+`Macros for the MATRIX structure in control`
 
 .vb
 Macro name                            Pos Len Purpose
@@ -2048,7 +1970,7 @@ SETMDESTTYPE (MATRIX *p,INT n);               VECTOR
 
 MDIAG (MATRIX *p);                    5   1   True if MATRIX is the diagonal
 SETMDIAG (MATRIX *p,INT n);                   entry. This is the first in
-                                              the 'MATRIX' list of a 'VECTOR'.
+                                              the MATRIX list of a VECTOR.
 
 MTYPE (MATRIX *p);                    6   6   Number identifying source and
 SETMTYPE (MATRIX *p,INT n);                   dest position in a compact form
@@ -2079,7 +2001,7 @@ SETMUP (MATRIX *p,INT n);
 */
 
 /*D
-CONNECTION - Data type combing one or two 'MATRIX' structures
+CONNECTION - Data type combing one or two MATRIX structures
 
 STRUCTURES:
 
@@ -2089,10 +2011,10 @@ typedef struct matrix CONNECTION;
 
 DESCRIPTION:
 
-The 'CONNECTION' data type consists of two 'MATRIX' objects stored consecutively
+The CONNECTION data type consists of two MATRIX objects stored consecutively
 in memory. If it is a diagonal entry of the stiffness matrix it consists of only
-`one` 'MATRIX'. Since the 'MATRIX' objects size is determined at run-time the
-'CONNECTION' is defined as a 'MATRIX'.
+`one` MATRIX. Since the MATRIX objects size is determined at run-time the
+CONNECTION is defined as a MATRIX.
 
 MACROS:
 
@@ -2101,17 +2023,17 @@ MATRIX *CMATRIX0 (CONNECTION *c);
 MATRIX *CMATRIX1 (CONNECTION *c);
 .ve
 
-Pointer to first and second matrix of a 'CONNECTION'.
+Pointer to first and second matrix of a CONNECTION.
 
 .vb
 void SETCUSED (CONNECTION *c, INT n);
 .ve
 
-Executes 'MUSED' macro for both 'MATRIX' objects of a 'CONNECTION'. 
+Executes MUSED macro for both MATRIX objects of a CONNECTION. 
 
-SEE ALSO:
+\sa
 
-'MATRIX', 'VECTOR'.
+MATRIX, VECTOR.
 
 D*/
 
@@ -2121,49 +2043,49 @@ D*/
  \brief Data type for substructuring a VECTOR list
 
 
-The 'BLOCKVECTOR' data structure realizes a mechanism to substructure a
-'VECTOR' list as it is part of the sparse matrix vector data structure.
-A 'BLOCKVECTOR' gives access to a sublist of the 'VECTOR' list, i.e. all
-members of a 'BLOCKVECTOR' must be placed consecutively in the 'VECTOR' list.
-A further consequence of this fact is that in most cases the 'VECTOR' list
-must be reordered such that all 'VECTOR's forming a block are consecutive
-before the 'BLOCKVECTOR' structure can be built. But apart from reordering
-the 'VECTOR' list is not influenced by the 'BLOCKVECTOR' structure thus all
+The BLOCKVECTOR data structure realizes a mechanism to substructure a
+VECTOR list as it is part of the sparse matrix vector data structure.
+A BLOCKVECTOR gives access to a sublist of the VECTOR list, i.e. all
+members of a BLOCKVECTOR must be placed consecutively in the VECTOR list.
+A further consequence of this fact is that in most cases the VECTOR list
+must be reordered such that all VECTORs forming a block are consecutive
+before the BLOCKVECTOR structure can be built. But apart from reordering
+the VECTOR list is not influenced by the BLOCKVECTOR structure thus all
 existing functions can be used furthermore without any changes.
 
-To represent a sequence of sublists the 'BLOCKVECTOR's form a double
-linked list that is anchored in a 'GRID' structure. It is not necessary
-(but recommended) that all 'VECTOR's of a grid belong to a 'BLOCKVECTOR'.
+To represent a sequence of sublists the BLOCKVECTORs form a double
+linked list that is anchored in a GRID structure. It is not necessary
+(but recommended) that all VECTORs of a grid belong to a BLOCKVECTOR.
 
-The 'VECTOR' list represented by a 'BLOCKVECTOR' can be substructured further.
-The corresponding 'BLOCKVECTOR' list is anchored in the parent 'BLOCKVECTOR'.
+The VECTOR list represented by a BLOCKVECTOR can be substructured further.
+The corresponding BLOCKVECTOR list is anchored in the parent BLOCKVECTOR.
 In this way a `tree-like hierarchical data structure` is realized representing
 a natural parent-child relationship. All technical terms concerning tree-like
 data structures can easily be translated. 
 
-Furthermore a blockmatrix structure is induced by the 'BLOCKVECTOR' structure
-without any additional amount of memory: 2 'BLOCKVECTOR's, considered as
+Furthermore a blockmatrix structure is induced by the BLOCKVECTOR structure
+without any additional amount of memory: 2 BLOCKVECTORs, considered as
 row- and column-blockvector, determine a blockmatrix in the natural way.
 Such a blockmatrix describes consequently how the column-blockvector
 influences the row-blockvector. Notice: some macros for the
-data structure 'MATRIX' are not useful or have a different semantic for a 
-blockmatrix; this are the macros 'MNEXT' (provides not the next matrix element
-of the blockmatrix but of the whole matrix), 'MADJ' (the returned matrix
+data structure MATRIX are not useful or have a different semantic for a 
+blockmatrix; this are the macros MNEXT (provides not the next matrix element
+of the blockmatrix but of the whole matrix), MADJ (the returned matrix
 element belongs not necessary to the blockmatrix; it holds only if the
 blockmatrix lies on the diagonal).
 
 . control - Used bitwise (see below).
 
-. number - Number describing the position in a 'BLOCKVECTOR' list. Should be
+. number - Number describing the position in a BLOCKVECTOR list. Should be
 unique within each list.
 
 . pred,succ - Realizes double linked list.
 
-. first_vec - Pointer in the 'VECTOR' list to the first 'VECTOR' belonging the this 'BLOCKVECTOR'.
+. first_vec - Pointer in the VECTOR list to the first VECTOR belonging the this BLOCKVECTOR.
 
-. end_vec - Pointer to the first 'VECTOR' `after` the 'VECTOR' sublist
-represented by this 'BLOCKVECTOR'. Is 'NULL' if the 'BLOCKVECTOR' represents
-the tail of the 'VECTOR' list.
+. end_vec - Pointer to the first VECTOR `after` the VECTOR sublist
+represented by this BLOCKVECTOR. Is NULL if the BLOCKVECTOR represents
+the tail of the VECTOR list.
 
 . first_son,last_son - Start and end of blockvector list on next level
 
@@ -2184,30 +2106,30 @@ INT BVDOWNTYPE ( BLOCKVECTOR *bv );
 void SETBVDOWNTYPE ( BLOCKVECTOR *bv, INT n );
 .ve
 
-Reads resp. sets the 'BLOCKVECTOR' type: is BVDOWNTYPEBV if there is a further
-level of 'BLOCKVECTOR's else is BVDOWNTYPEVECTOR, i.e. the 'BLOCKVECTOR' is
-the last one in the hierarchy and the next "level" is the 'VECTOR' sublist itself.
+Reads resp. sets the BLOCKVECTOR type: is BVDOWNTYPEBV if there is a further
+level of BLOCKVECTORs else is BVDOWNTYPEVECTOR, i.e. the BLOCKVECTOR is
+the last one in the hierarchy and the next "level" is the VECTOR sublist itself.
 
 .vb
 BLOCKNUMBER BVNUMBER ( BLOCKVECTOR *bv );
 .ve
 
-Number of the 'BLOCKVECTOR'.
+Number of the BLOCKVECTOR.
 
 .vb
 BLOCKVECTOR *BVPRED ( BLOCKVECTOR *bv );
 BLOCKVECTOR *BVSUCC ( BLOCKVECTOR *bv );
 .ve
 
-Access to next and previous 'BLOCKVECTOR' in the double linked list.
+Access to next and previous BLOCKVECTOR in the double linked list.
 
 .vb
 VECTOR *BVFIRSTVECTOR ( BLOCKVECTOR *bv );
 VECTOR *BVENDVECTOR ( BLOCKVECTOR *bv );
 .ve
 
-Access to the first and the successor of the last 'VECTOR' in the sublist
-represented by this 'BLOCKVECTOR'.
+Access to the first and the successor of the last VECTOR in the sublist
+represented by this BLOCKVECTOR.
 
 .vb
 VECTOR *BVDOWNVECTOR ( BLOCKVECTOR *bv );
@@ -2221,19 +2143,19 @@ BLOCKVECTOR *BVDOWNBVEND ( BLOCKVECTOR *bv );
 .ve
 
 Use only if BV_IS_LEAF_BV(bv)==FALSE! Returns the first resp. last member
-of the 'BLOCKVECTOR' list on the next level (down the tree).
+of the BLOCKVECTOR list on the next level (down the tree).
 
 .vb
 INT BV_IS_LEAF_BV ( BLOCKVECTOR *bv );
 .ve
 
-Returns true if the 'BLOCKVECTOR' is a leaf in the tree-like 'BLOCKVECTOR'
+Returns true if the BLOCKVECTOR is a leaf in the tree-like BLOCKVECTOR
 hierarchy, i.e. if BVDOWNTYPE(bv)==BVDOWNTYPEVECTOR.
 
 
 CONTROL WORDS:
 
-`General macros in 'control' word`
+`General macros in control word`
 
 .vb
 Macro name                            Pos Len Purpose
@@ -2252,7 +2174,7 @@ void SETTHEFLAG (BLOCKVECTOR *p, INT n);
 -----------------------------------------------------------------------------
 .ve
 
-`Macros for the 'BLOCKVECTOR' structure in 'control'`
+`Macros for the BLOCKVECTOR structure in control`
 
 .vb
 Macro name                            Pos Len Purpose
@@ -2260,18 +2182,18 @@ Macro name                            Pos Len Purpose
 BVDOWNTYPE ( BLOCKVECTOR *bv );       0   1   Type of BLOCKVECTOR:
 SETBVDOWNTYPE ( BLOCKVECTOR *bv, INT n );     BVDOWNTYPEVECTOR if object is 
                                               a leaf in the tree-like 
-                                              'BLOCKVECTOR' hierarchy,
+                                              BLOCKVECTOR hierarchy,
                                               BVDOWNTYPEBV else.
 -----------------------------------------------------------------------------
 .ve
 
 RELATED~FUNCTIONS:
 
-. CreateBlockvector - Allocates a new 'BLOCKVECTOR' (from the multigrids memory).
+. CreateBlockvector - Allocates a new BLOCKVECTOR (from the multigrids memory).
 
-. DisposeBlockvector - Returns an unused 'BLOCKVECTOR' to the multigrids memory.
+. DisposeBlockvector - Returns an unused BLOCKVECTOR to the multigrids memory.
 
-. FreeAllBV - Disposes all 'BLOCKVECTOR's related to one grid.
+. FreeAllBV - Disposes all BLOCKVECTORs related to one grid.
 
 . FreeBVList - Disposes blockvector-list and all its sons.
 
@@ -2281,17 +2203,17 @@ RELATED~FUNCTIONS:
 
 . CreateBVDomainHalfening - Creates a recursive domain halfening decomposition.
 
-. blas~routines~for~'BLOCKVECTOR' - ~
+. blas~routines~for~BLOCKVECTOR - ~
 
 EXAMPLES:
 
-Let a stripewise decomposition be given and the 'BLOCKVECTOR's ordered
+Let a stripewise decomposition be given and the BLOCKVECTORs ordered
 ascendend resp. their numbers. Then the following code fragments
-set the 'IND' component of the 'VECTOR's of all 'BLOCKVECTOR's the the
-number of their 'BLOCKVECTOR'. The result is a 'VECTOR' list containing
+set the IND component of the VECTORs of all BLOCKVECTORs the the
+number of their BLOCKVECTOR. The result is a VECTOR list containing
 in the IND component the sequence "0,0,...0,1,1,...1,2,2,...,2,3,3,..., ...".
 
-First using the direct access to the 'BLOCKVECTOR' list of the grid:~
+First using the direct access to the BLOCKVECTOR list of the grid:~
 .vb
     BLOCKVECTOR *bv;
 
@@ -2299,7 +2221,7 @@ First using the direct access to the 'BLOCKVECTOR' list of the grid:~
         dsetBS( bv, IND, (DOUBLE)BVNUMBER( bv ) );
 .ve
 
-The second variant uses a 'BV_DESC' instead of the pointer:~
+The second variant uses a BV_DESC instead of the pointer:~
 .vb
     BV_DESC my_bvd;
     INT i, found;
@@ -2322,7 +2244,7 @@ CreateBVStripe, CreateBVDomainHalfening , blas_routines.
 
 
 /*D
-BLOCKLEVEL - Data type for a level number in a 'BLOCKVECTOR' hierarchy
+BLOCKLEVEL - Data type for a level number in a BLOCKVECTOR hierarchy
 
 STRUCTURES:
 
@@ -2332,7 +2254,7 @@ typedef unsigned char BLOCKLEVEL;
 
 DESCRIPTION:
 
-To handle a levelnumber in a 'BLOCKVECTOR' hierarchy use this data type.
+To handle a levelnumber in a BLOCKVECTOR hierarchy use this data type.
 To save memory this type is designed to be as small as possible: more
 than a few dozens of levels will never occure.
 
@@ -2344,17 +2266,17 @@ CONSTANTS:
 MAX_BV_LEVEL = UCHAR_MAX
 .ve
 
-Largest admissible 'BLOCKVECTOR' level number.
+Largest admissible BLOCKVECTOR level number.
 
-SEE ALSO:
+\sa
 
-'BLOCKVECTOR', 'BV_DESC', 'BV_DESC_FORMAT', 'BLOCKNUMBER'.
+BLOCKVECTOR, BV_DESC, BV_DESC_FORMAT, BLOCKNUMBER.
 
 D*/
 
 
 /*D
-BLOCKNUMBER - Data type for the position of 'BLOCKVECTOR' in a 'BLOCKVECTOR' list
+BLOCKNUMBER - Data type for the position of BLOCKVECTOR in a BLOCKVECTOR list
 
 STRUCTURES:
 
@@ -2364,7 +2286,7 @@ typedef unsigned SHORT BLOCKNUMBER;
 
 DESCRIPTION:
 
-To handle a number of a 'BLOCKVECTOR' in a 'BLOCKVECTOR' list use this
+To handle a number of a BLOCKVECTOR in a BLOCKVECTOR list use this
 data type. To save memory this type is designed to be small, since more
 than MAX_BV_NUMBER will never occure.
 
@@ -2377,17 +2299,17 @@ NO_BLOCKVECTOR = ((BLOCKNUMBER)~0)
 .ve
 
 Number to indicate "there is no blockvector";
-largest number of type 'BLOCKNUMBER'.
+largest number of type BLOCKNUMBER.
 
 .vb
 MAX_BV_NUMBER = (NO_BLOCKVECTOR - 1)
 .ve
 
-Largest admissible 'BLOCKVECTOR' number.
+Largest admissible BLOCKVECTOR number.
 
-SEE ALSO:
+\sa
 
-'BLOCKVECTOR', 'BV_DESC', 'BV_DESC_FORMAT', 'BLOCKLEVEL'.
+BLOCKVECTOR, BV_DESC, BV_DESC_FORMAT, BLOCKLEVEL.
 
 D*/
 
@@ -2403,16 +2325,16 @@ typedef unsigned INT BVD_ENTRY_TYPE
 
 DESCRIPTION:
 
-A component of this type in the 'BV_DESC' struct-type stores a sequence
-of blockvector numbers bitwise. For details refer to 'BV_DESC'.
+A component of this type in the BV_DESC struct-type stores a sequence
+of blockvector numbers bitwise. For details refer to BV_DESC.
 
-If you need more memory than 'BVD_ENTRY_TYPE' offers enlarge the type to
-'unsigned long'. But remember: Every 'VECTOR' contains such a
-'BVD_ENTRY_TYPE'. So choose this type as small as possible.
+If you need more memory than BVD_ENTRY_TYPE offers enlarge the type to
+unsigned long. But remember: Every VECTOR contains such a
+BVD_ENTRY_TYPE. So choose this type as small as possible.
  
-SEE ALSO:
+\sa
 
-'BLOCKVECTOR', 'BV_DESC', 'BV_DESC_FORMAT', 'BLOCKNUMBER'.
+BLOCKVECTOR, BV_DESC, BV_DESC_FORMAT, BLOCKNUMBER.
 
 D*/
 
@@ -2426,8 +2348,8 @@ struct blockvector_description
 {
     BVD_ENTRY_TYPE entry;    // sequence of block levels according to
                              // a certain blockvector_description_format
-    BLOCKLEVEL current;      // levels 0..'current'-1 currently valid
-    BLOCKLEVEL read;         // level 'read' is next to be read
+    BLOCKLEVEL current;      // levels 0..current-1 currently valid
+    BLOCKLEVEL read;         // level read is next to be read
 };
 
 typedef struct blockvector_description BV_DESC;
@@ -2435,34 +2357,34 @@ typedef struct blockvector_description BV_DESC;
 
 DESCRIPTION:
 
-To specify a 'BLOCKVECTOR' you can describe the "path" through the hierarchy
-of 'BLOCKVECTOR's from the root to the certain 'BLOCKVECTOR'. Since each
-'BLOCKVECTOR' has a unique number within the list in which it is stored
+To specify a BLOCKVECTOR you can describe the "path" through the hierarchy
+of BLOCKVECTORs from the root to the certain BLOCKVECTOR. Since each
+BLOCKVECTOR has a unique number within the list in which it is stored
 you can describe the path in terms of the blockvector number beeing traversed
-during the walk. And such a sequence of blocknumbers is managed by 'BV_DESC'.
+during the walk. And such a sequence of blocknumbers is managed by BV_DESC.
 
-Since each 'VECTOR' contains a 'BV_DESC' this data structure should be as
+Since each VECTOR contains a BV_DESC this data structure should be as
 small as possible. To achieve this goal, the blockvector numbers are not
 stored as an array of BLOCKNUMBER (which would be the simpliest way to do
-the task) but they are stored bitwise: the bits of the storage 'entry' are
+the task) but they are stored bitwise: the bits of the storage entry are
 broken up into packets each containing one blockvector number. The size
-of all packets must be equal and is given in a 'BV_DESC_FORMAT' structure
+of all packets must be equal and is given in a BV_DESC_FORMAT structure
 (see there for more information). The aim is to have packets as small as
 possible but large enough to hold the largest occuring number; this gives you
 the maximum possible number of packets and thus of blockvector levels you can
 process.
 
 The "packets" are stored beginning from the lowest bits. The next "packet"
-in which a number can be stored is given by 'current'. The masks necessary
-to access the different "packets" are provided by a 'BV_DESC_FORMAT'
-structure. Thus each function working on a 'BV_DESC' needs also a
-'BV_DESC_FORMAT'. Be sure to use always the same format for a certain
-'BV_DESC' after the first use.
+in which a number can be stored is given by current. The masks necessary
+to access the different "packets" are provided by a BV_DESC_FORMAT
+structure. Thus each function working on a BV_DESC needs also a
+BV_DESC_FORMAT. Be sure to use always the same format for a certain
+BV_DESC after the first use.
 
 . entry - Contains the pure information about the sequence of blockvector numbers.
 
-. current - Number of levels currently stored in 'entry'. The levels
-are counted 0..'current'-1.
+. current - Number of levels currently stored in entry. The levels
+are counted 0..current-1.
 
 . read - Number of level next to be read. Used for a sequential reading of
 the level numbers.
@@ -2475,7 +2397,7 @@ BVD_MAX_ENTRIES = (sizeof(BVD_ENTRY_TYPE)*CHAR_BIT)
 
 Maximum number of entries in a BVD; NOTE: the actual available
 number of entries depends on the range of each entry given in a
-'BV_DESC_FORMAT'.
+BV_DESC_FORMAT.
 
 
 MACROS:
@@ -2484,30 +2406,30 @@ MACROS:
 BLOCKLEVEL BVD_NR_ENTRIES ( BV_DESC *bvd );
 .ve
 
-The number of stored 'BLOCKVECTOR' numbers. 0 means no entry stored.
+The number of stored BLOCKVECTOR numbers. 0 means no entry stored.
 
 .vb
 void BVD_INIT ( BV_DESC *bvd );
 .ve
 
-Initializes a 'BV_DESC'. Be sure to call this macro before the first use.
+Initializes a BV_DESC. Be sure to call this macro before the first use.
 
 .vb
 INT BVD_PUSH_ENTRY ( BV_DESC *bvd, BLOCKNUMBER bnr, BV_DESC_FORMAT *bvdf );
 void BVD_DISCARD_LAST_ENTRY ( BV_DESC *bvd );
 .ve
 
-Use the macro 'BVD_PUSH_ENTRY' to add a further number to the already stored sequence
+Use the macro BVD_PUSH_ENTRY to add a further number to the already stored sequence
 of blockvector numbers. The return value of this macro is the value of the
-corresponding call to the internal function 'PushEntry'.
+corresponding call to the internal function PushEntry.
 
-The macro 'BVD_DISCARD_LAST_ENTRY' removes the latest blockvector number from
+The macro BVD_DISCARD_LAST_ENTRY removes the latest blockvector number from
 the stored sequence.
 
 With this 2 macros a "stack" mechanism is realized, where the
 number of the root-blockvector is at the bottom of the stack and the number
 for the next level is pushed at the top of stack. Note: the traditionally
-"pop" corresponds to 'BVD_DISCARD_LAST_ENTRY' but the value is thrown away
+"pop" corresponds to BVD_DISCARD_LAST_ENTRY but the value is thrown away
 because you usually do not need the previous "pushed" value.
 
 .vb
@@ -2515,11 +2437,11 @@ void BVD_INIT_SEQ_READ ( BV_DESC *bvd );
 BLOCKNUMBER BVD_READ_NEXT_ENTRY ( BV_DESC *bvd, BV_DESC_FORMAT *bvdf );
 .ve
 
-This 2 macros allow a sequential reading of the stored 'BLOCKNUMBER's.
-'BVD_INIT_SEQ_READ' must be called before the first reading access. After
-this each call to 'BVD_READ_NEXT_ENTRY' returns the next 'BLOCKNUMBER'
+This 2 macros allow a sequential reading of the stored BLOCKNUMBERs.
+BVD_INIT_SEQ_READ must be called before the first reading access. After
+this each call to BVD_READ_NEXT_ENTRY returns the next BLOCKNUMBER
 starting with the first stored number. You can call this macro as often
-as you want; after the last stored number everytime 'NO_BLOCKVECTOR'
+as you want; after the last stored number everytime NO_BLOCKVECTOR
 is returned.
 
 .vb
@@ -2529,18 +2451,18 @@ void BVD_GET_ENTRY ( BV_DESC *bvd, BLOCKLEVEL level, BV_DESC_FORMAT *bvdf );
 .ve
 
 This 2 macros give you random access to the single "packets"
-(i.e. blocknumbers). The 'level' must be within the range described in 'bvdf'.
+(i.e. blocknumbers). The level must be within the range described in bvdf.
 
 .vb
 INT BVD_IS_SUB_BLOCK ( BV_DESC *bvd_a, BV_DESC *bvd_b, BV_DESC_FORMAT *bvdf );
 .ve
 
-Returns true if 'bvd_a' is a subblock of 'bvd_b', i.e. all the entries in
-'bvd_b' must be same as in 'bvd_a'.
+Returns true if bvd_a is a subblock of bvd_b, i.e. all the entries in
+bvd_b must be same as in bvd_a.
 
 EXAMPLES:
 
-Let always a pointer 'my_bvdf' to a 'BV_DESC_FORMAT' be given.
+Let always a pointer my_bvdf to a BV_DESC_FORMAT be given.
 
 To store a sequence of numbers use:~
 .vb
@@ -2565,15 +2487,15 @@ To read this sequence again use:~
         // there were stored less than 3 numbers
 .ve
 
-SEE ALSO:
+\sa
 
-'BLOCKVECTOR', 'BV_DESC_FORMAT', 'BLOCKNUMBER', 'BLOCKLEVEL', 'BVD_ENTRY_TYPE'.
+BLOCKVECTOR, BV_DESC_FORMAT, BLOCKNUMBER, BLOCKLEVEL, BVD_ENTRY_TYPE.
 
 D*/
 
 
 /*D
-BV_DESC_FORMAT - Data type for defining the storage pattern used in 'BV_DESC'
+BV_DESC_FORMAT - Data type for defining the storage pattern used in BV_DESC
 
 STRUCTURES:
 .vb
@@ -2590,37 +2512,37 @@ typedef struct blockvector_description_format BV_DESC_FORMAT;
 
 DESCRIPTION:
 
-As in the description of 'BV_DESC' explained a sequence of 'BLOCKNUMBER's
-is stored bitwise in 'BV_DESC'. For each number a certain number of bits
+As in the description of BV_DESC explained a sequence of BLOCKNUMBERs
+is stored bitwise in BV_DESC. For each number a certain number of bits
 is reserved forming one "packet". This "packets" are stored consecutively
 in the memory.
 
-Every function working with a 'BV_DESC' needs the corresponding
-'BV_DESC_FORMAT' to interpret the memory correctly. Be sure to use for
-a certain 'BV_DESC' always the same format; otherwise the consistency
+Every function working with a BV_DESC needs the corresponding
+BV_DESC_FORMAT to interpret the memory correctly. Be sure to use for
+a certain BV_DESC always the same format; otherwise the consistency
 of the data will be corrupted. Sure, it would be more safe to store
-the format with the 'BV_DESC' together, but the memory demand would be too
+the format with the BV_DESC together, but the memory demand would be too
 big.
 
 The following variables are used to manage the handling of the "packets".
-They are used internally by 'BV_DESC', a user has not to care about them.
+They are used internally by BV_DESC, a user has not to care about them.
 
 . bits - The number of bits to be used for each blocknumber entry.
 
 . max_level - The maximum number of entries that can be stored. This quantity
-depends on the constant 'BVD_MAX_ENTRIES' defined with 'BV_DESC'.
+depends on the constant BVD_MAX_ENTRIES defined with BV_DESC.
 
 . level_mask - This array contains the masks to isolate the entry for
-a certain level; count 0..'max_level'-1.
+a certain level; count 0..max_level-1.
 
 . neg_digit_mask - This array contains the masks to clear the entry for
-a certain level; count 0..'max_level'-1. This masks are the precomputed
-complements of 'level_mask'.
+a certain level; count 0..max_level-1. This masks are the precomputed
+complements of level_mask.
 
 PREDEFINED VARIABLES:
 
 Often used formats are predefined. You can give their adresses directly to
-the called function working with a 'BV_DESC' without any initialization.
+the called function working with a BV_DESC without any initialization.
 
 .  DH_bvdf  - Useful for domain halfening methods (up to 4 blocks per level).
 
@@ -2630,8 +2552,8 @@ EXAMPLES:
 
 If your desires are fulfilled by one of the predefined variables, simple use
 it. For example if you want to have only one blockvector level (e.g. for
-stripewise domain decomposition) use 'one_level_bvdf' for setting up a
-'BV_DESC':~
+stripewise domain decomposition) use one_level_bvdf for setting up a
+BV_DESC:~
 .vb
     BV_DESC my_bvd;
 
@@ -2641,7 +2563,7 @@ stripewise domain decomposition) use 'one_level_bvdf' for setting up a
     // work on with my_bvd
 .ve
 
-To create a customized format use 'InitBVDF'. For example to create
+To create a customized format use InitBVDF. For example to create
 a format for managing a octree-like structure (that is subdividing a
 3D cube into 8 subcubes) you can use the following command:~
 .vb
@@ -2650,9 +2572,9 @@ a format for managing a octree-like structure (that is subdividing a
    InitBVDF( &my_bvdf, 8 );
 .ve
 
-SEE ALSO:
+\sa
 
-'BLOCKVECTOR', 'BV_DESC', 'BVD_ENTRY_TYPE', 'InitBVDF'.
+BLOCKVECTOR, BV_DESC, BVD_ENTRY_TYPE, InitBVDF.
 
 D*/
 
@@ -2661,7 +2583,7 @@ D*/
 
  \brief Data type giving access to all objects on a grid level
 
-The 'GRID' data type provides access to all objects defined on a grid level.
+The GRID data type provides access to all objects defined on a grid level.
 All the pointers to the first list elements are there.
 
 . control - used bitwise as usual.
@@ -2669,39 +2591,39 @@ All the pointers to the first list elements are there.
 . status - A word storing status information. This can be used also by the
 problem class, e.g. to store whether the grid level is assembled or not.
 
-. level - Level within the 'MULTIGRID' structure.
+. level - Level within the MULTIGRID structure.
 
-. nVert - Number of 'VERTEX' objects used on that grid level.
+. nVert - Number of VERTEX objects used on that grid level.
 
-. nNode - Number of 'NODE' objects used on that grid level.
+. nNode - Number of NODE objects used on that grid level.
 
-. nElem - Number of 'ELEMENT' objects used on that grid level.
+. nElem - Number of ELEMENT objects used on that grid level.
 
-. nEdge - Number of 'EDGE' objects used on that grid level.
+. nEdge - Number of EDGE objects used on that grid level.
 
-. nVector - Number of 'VECTOR' objects used on that grid level.
+. nVector - Number of VECTOR objects used on that grid level.
 
-. nCon - Number of 'CONNECTION' objects used on that grid level.
+. nCon - Number of CONNECTION objects used on that grid level.
 
 . elements,lastelement - Pointers to first and last element of the
-'ELEMENT' list.
+ELEMENT list.
 
-. vertices,lastvertex - Pointers to first and last 'VERTEX' of that grid level.
+. vertices,lastvertex - Pointers to first and last VERTEX of that grid level.
 
-. firstNode,lastNode - Pointers to first and last 'NODE' on that level.
+. firstNode,lastNode - Pointers to first and last NODE on that level.
 
-. firstVector,lastVector - Pointers to first and last 'VECTOR'
+. firstVector,lastVector - Pointers to first and last VECTOR
 on that grid level.
 
 . firstblockvector,lastblockvector - Pointer to the first and last
-'BLOCKVECTOR' on the first level. Valid only if the 'BLOCKVECTOR'
-mechanism is used, otherwise they are 'NULL'.
+BLOCKVECTOR on the first level. Valid only if the BLOCKVECTOR
+mechanism is used, otherwise they are NULL.
 
 . coarser,finer - Pointers to finer and coarser grid levels within
-the 'MULTIGRID' structure. A 'NULL' pointer indicates that
+the MULTIGRID structure. A NULL pointer indicates that
 a grid level does not exist.
 
-. mg - Pointer to corresponding 'MULTIGRID' structure.
+. mg - Pointer to corresponding MULTIGRID structure.
 
 MACROS:
 
@@ -2709,7 +2631,7 @@ MACROS:
 INT GLEVEL (GRID *p);
 .ve
 
-Returns the level of the 'GRID' within the 'MULTIGRID' structure.
+Returns the level of the GRID within the MULTIGRID structure.
 
 .vb
 INT GSTATUS (GRID *p);
@@ -2723,42 +2645,42 @@ void SETGSTATUS (GRID *p,n);
 void RESETGSTATUS (GRID *p,n);
 .ve
 
-Set or reset all bits that are 1 in the mask 'n'.
+Set or reset all bits that are 1 in the mask n.
 
 .vb
 ELEMENT *FIRSTELEMENT (GRID *p);
 ELEMENT *LASTELEMENT (GRID *p);
 .ve
 
-Return pointers to first and last 'ELEMENT'.
+Return pointers to first and last ELEMENT.
 
 .vb
 VERTEX *FIRSTVERTEX (GRID *p);
 VERTEX *LASTVERTEX (GRID *p);
 .ve
 
-Return pointers to first and last 'VERTEX' of the 'GRID'.
+Return pointers to first and last VERTEX of the GRID.
 
 .vb
 NODE *FIRSTNODE (GRID *p);
 NODE *LASTNODE (GRID *p);
 .ve
 
-Return pointer to first and last 'NODE' on that grid level.
+Return pointer to first and last NODE on that grid level.
 
 .vb
 VECTOR *FIRSTVECTOR (GRID *p);
 VECTOR *LASTVECTOR (GRID *p);
 .ve
 
-Return pointer to first and last 'VECTOR' of that grid level.
+Return pointer to first and last VECTOR of that grid level.
 
 .vb
 BLOCKVECTOR *GFIRSTBV(GRID *p);
 BLOCKVECTOR *GLASTBV(GRID *p);
 .ve
 
-Return pointer to first and last 'BLOCKVECTOR' of that grid level.
+Return pointer to first and last BLOCKVECTOR of that grid level.
 
 .vb
 GRID *UPGRID (GRID *p);
@@ -2771,7 +2693,7 @@ Return pointer to finer and coarser grid levels.
 MULTIGRID *MYMG (GRID *p);
 .ve
 
-Return pointer to associated 'MULTIGRID' structure.
+Return pointer to associated MULTIGRID structure.
 
 .vb
 INT NV (GRID *p);
@@ -2783,7 +2705,7 @@ INT NVEC (GRID *p);
 INT NC (GRID *p);
 .ve
 
-Return number of 'VERTEX' ('NV'), 'NODE' ('NN'), 'ELEMENT' ('NT'), 'EDGE' ('NE'), 'VECTOR' ('NVEC') and 'CONNECTION' ('NC') objects allocated on that grid level.
+Return number of VERTEX (NV), NODE (NN), ELEMENT (NT), EDGE (NE), VECTOR (NVEC) and CONNECTION (NC) objects allocated on that grid level.
 
 CONTROL WORDS:
 
@@ -2801,49 +2723,49 @@ Data type providing access to all information about the complete
 multigrid hierarchy, problem description and memory management information.
 This is the root of all.
 
-. v - The 'MULTIGRID' is an environment item, i.e. it resides in the environment
-tree. 'v' stores also the name of the 'MULTIGRID' as it is declared in the 'new'
-and 'open' commands.
+. v - The MULTIGRID is an environment item, i.e. it resides in the environment
+tree. v stores also the name of the MULTIGRID as it is declared in the new
+and open commands.
 
 . vertIdCounter,nodeIdCounter,elemIdCounter - Counters used to assign unique
-identification numbers to 'VERTEX', 'NODE' and 'ELEMENT' objects. The counter
+identification numbers to VERTEX, NODE and ELEMENT objects. The counter
 wraps around after 2 to the power of 32 objects have been allocated!
 
-. topLevel - Finest grid level currently allocated in the 'MULTIGRID'.
+. topLevel - Finest grid level currently allocated in the MULTIGRID.
 
-. currentLevel - Any number between 0 and 'topLevel'. The 'currentLevel'
+. currentLevel - Any number between 0 and topLevel. The currentLevel
 is used by many commands that work on a grid level as default value. It can
-be changed with the 'level' command from the UG shell. 
+be changed with the level command from the UG shell. 
 
-. theDomain - Pointer to a 'DOMAIN' structure that is to be used for the
-mesh described by the 'MULTIGRID'.
+. theDomain - Pointer to a DOMAIN structure that is to be used for the
+mesh described by the MULTIGRID.
 
-. theFormat - Pointer to a 'FORMAT' structure describing all parameters
+. theFormat - Pointer to a FORMAT structure describing all parameters
 of the UG data structure that can be selected at run-time.  Especially
 there are a lot of user definable data spaces in the basic objects.
 
-. theProblem - Pointer to a 'PROBLEM' structure giving access to the
+. theProblem - Pointer to a PROBLEM structure giving access to the
 user defined coefficient functions and boundary conditions that are
 appropriate for the selected problem class.
 
-. numOfSegments - Number of 'BNDSEGDESC' structures accessible in the 'segments'
-array. This corresponds to the number of boundary segments in 'theDomain'.
+. numOfSegments - Number of BNDSEGDESC structures accessible in the segments
+array. This corresponds to the number of boundary segments in theDomain.
 
 . numOfSegments - Number of subdomains, used for the grid generator.
 
-. segments - Array of 'BNDSEGDESC' structures. Index `i` in that array corresponds
+. segments - Array of BNDSEGDESC structures. Index `i` in that array corresponds
 to boundary segment `i`.
 
-. corners - Array of pointers to 'VERTEX' structures that are allocated at the
-`corners` of 'theDomain'. 
+. corners - Array of pointers to VERTEX structures that are allocated at the
+`corners` of theDomain. 
 
-. numOfCorners - Number of corners of 'theDomain'. This is also the size of the
-'corners' array.
+. numOfCorners - Number of corners of theDomain. This is also the size of the
+corners array.
 
-. theHeap - Pointer to a 'HEAP' structure allocated for that 'MULTIGRID'. The size
-of this heap is selected with the 'open' or 'new' commands.
+. theHeap - Pointer to a HEAP structure allocated for that MULTIGRID. The size
+of this heap is selected with the open or new commands.
 
-. grids - Array of pointers to 'GRID' structures representing the individual
+. grids - Array of pointers to GRID structures representing the individual
 levels of the multigrid hierarchy.
 
 . freeObjects - List of free objects sorted by object number. Memory management in
@@ -2851,21 +2773,21 @@ UG is such that new memory for an object is only allocated when no free object o
 is available. If an object is no longer needed (e.g. when coarsening a mesh) it is
 inserted in the appropriate list of free objects.
 
-. freeVectors,freeConnections - List of free 'VECTOR' and 'CONNECTION'
-objects sorted by type. Same comment as for 'freeObjects' applies.
+. freeVectors,freeConnections - List of free VECTOR and CONNECTION
+objects sorted by type. Same comment as for freeObjects applies.
 
-. Selection - Array of pointers to selection objects ('VECTOR's, 'NODE's or 'ELEMENT's)
+. Selection - Array of pointers to selection objects (VECTORs, NODEs or ELEMENTs)
 that have been selected with the mouse in the graphical user interface or by the select command.
 
-. NbOfSelections - Number of objects in the selection buffer ('Selection').
+. NbOfSelections - Number of objects in the selection buffer (Selection).
 
 . SelectionMode - Indicates type of objects in the selection buffer. Currently
-'nodeSelection', 'elementSelection' and 'vectorSelection' is possible.
+nodeSelection, elementSelection and vectorSelection is possible.
 
 . GenData - Management of general user data space in multigrid. At initialisation time
 different modules can (pre)allocate storage which will (actually) be allocated in
 each multigrid when it is opened. Storage is allocated and addressed by calls of
-'DefineMGUDBlock' and 'GetMGUDBlockDescriptor' resp. See also the macros below.
+DefineMGUDBlock and GetMGUDBlockDescriptor resp. See also the macros below.
 
 MACROS:
 
@@ -2873,7 +2795,7 @@ MACROS:
 INT MGSTATUS (MULTIGRID *mg);
 .ve 
 
-Return multigrid status. This is a macro, so assignment 'MGSTATUS(mg)=0' is
+Return multigrid status. This is a macro, so assignment MGSTATUS(mg)=0 is
 also allowed.
 
 .vb
@@ -2896,45 +2818,45 @@ DOMAIN *MGDOMAIN (MULTIGRID *mg);
 FORMAT *MGFORMAT (MULTIGRID *mg);
 PROBLEM *MGPROBLEM (MULTIGRID *mg);
 .ve
-Returns pointer to 'DOMAIN', 'FORMAT' and 'PROBLEM' associated with the 'MULTIGRID'.
+Returns pointer to DOMAIN, FORMAT and PROBLEM associated with the MULTIGRID.
 
 .vb
 BOUNDARY_SEGMENT *MG_GEOM_SEGMENT (MULTIGRID *mg,INT i);
 .ve
 
-Returns a pointer to the 'i'th boundary segment of the domain.
+Returns a pointer to the ith boundary segment of the domain.
 
 .vb
 BNDSEGDESC *MGBNDSEGDESC (MULTIGRID *mg,INT i);
 .ve
 
-Returns a pointer to the 'i'th 'BNDSEGDESC' structure of the 'segments' array.
+Returns a pointer to the ith BNDSEGDESC structure of the segments array.
 
 .vb
 INT MGNOOFSEG (MULTIGRID *mg);
 .ve
 
-Returns number of boundary segments of the domain associated with the 'MULTIGRID'.
+Returns number of boundary segments of the domain associated with the MULTIGRID.
 
 .vb
 VERTEX *MGVERTEX (MULTIGRID *mg,k);
 .ve
-Returns a pointer to the 'k'th corner 'VERTEX' of the domain.
+Returns a pointer to the kth corner VERTEX of the domain.
 
 .vb
 INT MGNOOFCORNERS (MULTIGRID *mg);
 .ve
-Returns the number of corners of the domain associated with the 'MULTIGRID'.
+Returns the number of corners of the domain associated with the MULTIGRID.
 
 .vb
 HEAP *MGHEAP (MULTIGRID *mg);
 .ve
-Returns a pointer to the multigrids 'HEAP'.
+Returns a pointer to the multigrids HEAP.
 
 .vb
 GRID *GRID_ON_LEVEL (MULTIGRID *mg,INT i);
 .ve
-Returns a pointer to the 'i'th grid level of the 'MULTIGRID'.
+Returns a pointer to the ith grid level of the MULTIGRID.
 
 .vb
 INT SELECTIONSIZE (MULTIGRID *mg);
@@ -2945,7 +2867,7 @@ Returns number of objects in the selection buffer and type of these objects.
 .vb
 GEOM_OBJECT *SELECTIONOBJECT (MULTIGRID *mg,INT i);
 .ve
-Returns a pointer to the 'i'th object in the selection buffer.
+Returns a pointer to the ith object in the selection buffer.
 
 .vb
 char *MGNAME (MULTIGRID *mg);
@@ -2956,7 +2878,7 @@ Returns the name of the multigrid from the environment item.
 HEAP *MG_USER_HEAP(MULTIGRID *mg);
 .ve
 Returns the multigrid user data heap pointer. The heapsize is determined by the
-'FORMAT' definition.
+FORMAT definition.
 
 .vb
 void *GEN_MGUD(MULTIGRID *mg);
@@ -2975,8 +2897,8 @@ MEM OFFSET_IN_MGUD(INT BlockID);
 Returns the offset of a previously allocated block in the general multigrid
 user data.
 
-Example':'
-.n  'GEN_MGUD_ADR(myMG,OFFSET_IN_MGUD(myBlock))' will yield the desired memory address
+Example:
+.n  GEN_MGUD_ADR(myMG,OFFSET_IN_MGUD(myBlock)) will yield the desired memory address
 
 \sa DOMAIN, PROBLEM, FORMAT, GRID, HEAP, GEOM_OBJECT.
 
@@ -2991,7 +2913,7 @@ typedef union geom_object GEOM_OBJECT;
 
 	DESCRIPTION:
 	This data type unifies all data types that can have references to a 
-	'VECTOR' structure. This type is never used for allocation.
+	VECTOR structure. This type is never used for allocation.
 
     MACROS:
     No macros are provided to for that data type.
@@ -3004,16 +2926,16 @@ DESCRIPTION:
 
 There are some constants defining limitations of the data structure.
 They are explained here. The actual value of the definition should
-be extracted from the source code via the 'uggrep' shell script
+be extracted from the source code via the uggrep shell script
 provided with UG.
 
-`In file 'gm.h'`
+`In file gm.h`
 
-. MAXLEVEL - Maximum number of grid levels allowed in 'MULTIGRID'.
+. MAXLEVEL - Maximum number of grid levels allowed in MULTIGRID.
 
 . MAXOBJECTS - Maximum number of different objects in free list.
 
-. MAXSELECTION - Size of the selection buffer in 'MULTIGRID'.
+. MAXSELECTION - Size of the selection buffer in MULTIGRID.
 
 . MAX_SIDES_OF_ELEM - Maximum number of sides of an element (of any type).
 
@@ -3034,21 +2956,21 @@ provided with UG.
 . MAX_SIDES_TOUCHING - Maximum number of sides on the next finer mesh that make up
 a side on the coarser mesh.
 
-. MAXMATRICES - Maximum number of 'MATRIX' types with different size.
+. MAXMATRICES - Maximum number of MATRIX types with different size.
 
-. MAXCONNECTIONS - Maximum number of different 'CONNECTION' types.
+. MAXCONNECTIONS - Maximum number of different CONNECTION types.
 
-. MSIZEMAX - Maximum size of a 'MATRIX' object in bytes.
+. MSIZEMAX - Maximum size of a MATRIX object in bytes.
 
 . NO_OF_ELEM_MAX - Maximum number of elements touching the same edge.
 
-`In file 'switch.h'`
+`In file switch.h`
 
 . DIM_MAX - Maximum space dimension (is 3).
 
-. DIM_OF_BND_MAX - Maximum dimension of boundary (is 'DIM_MAX-1').
+. DIM_OF_BND_MAX - Maximum dimension of boundary (is DIM_MAX-1).
 
-. MAXVECTORS - Maximum number of different 'VECTOR' types.
+. MAXVECTORS - Maximum number of different VECTOR types.
 
 D*/
 
@@ -3069,7 +2991,7 @@ estimator calls the function
 INT MarkForRefinement (ELEMENT *theElement, INT rule, INT side);
 .ve
 
-where 'rule' is one of the following rules
+where rule is one of the following rules
 
 .vb
 NO_REFINEMENT
@@ -3084,34 +3006,34 @@ BISECTION_3
 UNREFINE 
 .ve
 
-and 'side' is some orientation necessary for those rules
+and side is some orientation necessary for those rules
 that are not invariant under rotation (e.g. the edge to bisect).
-The 'RED' rule selects standard isotropic refinement independent
+The RED rule selects standard isotropic refinement independent
 of the element type. Triangles are subdivided in four triangles
 by connecting the edge midpoints, quadrilaterals are subdivided
 by connecting edge midpoints with the centroid and tetrahedral
 elements are subdivided using the refinement strategy of J. Bey.
-For 'RED' refinement the side information is arbitrary.
+For RED refinement the side information is arbitrary.
 
-The 'MarkForRefinement' function may only be called for those elements
+The MarkForRefinement function may only be called for those elements
 where 
 
 .vb
 INT EstimateHere (ELEMENT *theElement);
 .ve
 
-returns true. 'EstimateHere' is true for the leave elements of the element
+returns true. EstimateHere is true for the leave elements of the element
 hierarchy, i.e. those elements that are not further refined. Care
 must be taken when the estimator for an element needs also information
 on the solution in neighboring elements (see e.g. the implementation
-of the error estimator in the 'diff2d' package). 
+of the error estimator in the diff2d package). 
 
-After the desired elements have been tagged for refinement the 'refine'
+After the desired elements have been tagged for refinement the refine
 of the UG command language is used to actually refine the elements.
 
 EXAMPLE:
 
-The following function selects all (possible) elements in a 'MULTIGRID' for refinement and
+The following function selects all (possible) elements in a MULTIGRID for refinement and
 returns the number of elements selected for refinement.
 
 .vb
@@ -3145,9 +3067,9 @@ static INT MarkAll (MULTIGRID *theMG)
 }
 .ve
 
-SEE ALSO:
+\sa
 
-'MarkForRefinement', 'EstimateHere', 'refine'.
+MarkForRefinement, EstimateHere, refine.
 
 REFERENCES:
 

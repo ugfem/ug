@@ -240,7 +240,7 @@ typedef struct mesh MESH;
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BVP_GetFirst - Return a pointer to the first BVP
 
    SYNOPSIS:
@@ -257,11 +257,11 @@ typedef struct mesh MESH;
    BVP *
    .n   pointer to BVP
    .n   NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BVP_GetNext - Return a pointer to the next BVP
 
    SYNOPSIS:
@@ -278,11 +278,11 @@ typedef struct mesh MESH;
    BVP *
    .n   pointer to BVP
    .n   NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BVP_Save - save a BVP
 
    SYNOPSIS:
@@ -300,11 +300,11 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BVP_Load - load a BVP
 
    SYNOPSIS:
@@ -321,11 +321,11 @@ typedef struct mesh MESH;
    BVP *
    .n   pointer to BVP
    .n   NULL if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BVP_GetByName - get pointer to BVP by name
 
    SYNOPSIS:
@@ -341,7 +341,7 @@ typedef struct mesh MESH;
    BVP *
    .n   pointer to BVP
    .n   NULL if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
@@ -369,7 +369,7 @@ typedef struct mesh MESH;
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BVP_Dispose - dispose a BVP
 
    SYNOPSIS:
@@ -385,32 +385,13 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
-/****************************************************************************/
-/*D
-   BVP_SetBVPDesc - set BVP-descriptor
 
-   SYNOPSIS:
-   INT BVP_SetBVPDesc (BVP *theBVP, BVP_DESC *theBVPDesc)
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  theBVPDesc - descriptor to set
-
-   DESCRIPTION:
-   This function sets the BVP descriptor according to the BVP.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BVP_SetCoeffFct - set coefficient function(s)
 
    SYNOPSIS:
@@ -427,11 +408,11 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BVP_SetUserFct - set coefficient function(s)
 
    SYNOPSIS:
@@ -448,11 +429,11 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BVP_Check - check consistency of BVP
 
    SYNOPSIS:
@@ -469,7 +450,7 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 
@@ -480,7 +461,7 @@ typedef struct mesh MESH;
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BVP_InsertBndP - sets a BNDP from command input
 
    SYNOPSIS:
@@ -499,11 +480,11 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDP_SaveInsertedBndP - write command to insert this BNDP
 
    SYNOPSIS:
@@ -521,7 +502,7 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
@@ -531,7 +512,7 @@ typedef struct mesh MESH;
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDP_Global - return global coordinates of BNDP
 
    SYNOPSIS:
@@ -548,11 +529,11 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDP_Move - change global coordinates of free boundary point
 
    SYNOPSIS:
@@ -571,11 +552,11 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDP_BndCond - gets bnd conditions for a BNDP
 
    SYNOPSIS:
@@ -597,11 +578,11 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDP_SurfaceId - gets surface ids for a BNDP
 
    SYNOPSIS:
@@ -618,11 +599,11 @@ typedef struct mesh MESH;
 
    RETURN VALUE:
    INT surface id
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDP_BndPDesc - sets descriptor for BNDP
 
    SYNOPSIS:
@@ -640,11 +621,11 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDP_BndEDesc - sets descriptor for BNDE (boundary edge)
 
    SYNOPSIS:
@@ -662,11 +643,11 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDP_CreateBndS - creates a BNDS from a nb of BNDPs
 
    SYNOPSIS:
@@ -684,11 +665,11 @@ typedef struct mesh MESH;
    BNDS *
    .n   pointer
    .n   NULL if the points describe an inner side
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDP_CreateBndP - sets BNDP from a two of BNDPs
 
    SYNOPSIS:
@@ -706,11 +687,11 @@ typedef struct mesh MESH;
    BNDS *
    .n   pointer
    .n   NULL if the points describe an inner point
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDP_Dispose - dispose a BNDP
 
    SYNOPSIS:
@@ -727,11 +708,11 @@ typedef struct mesh MESH;
    INT
    .n      0 if ok
    .n      1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDP_SaveBndP - save a BNDP
 
    SYNOPSIS:
@@ -748,11 +729,11 @@ typedef struct mesh MESH;
    INT
    .n      0 if ok
    .n      1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BVP_LoadBndP - load a BNDP
 
    SYNOPSIS:
@@ -771,7 +752,7 @@ typedef struct mesh MESH;
    INT
    .n      0 if ok
    .n      1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 
@@ -782,7 +763,7 @@ typedef struct mesh MESH;
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDS_Global - gets global coordinates of local position on BNDS
 
    SYNOPSIS:
@@ -800,11 +781,11 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDS_BndCond - gets bnd conditions of local position on BNDS
 
    SYNOPSIS:
@@ -825,11 +806,11 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDS_BndSDesc - sets descriptor for BNDS
 
    SYNOPSIS:
@@ -849,11 +830,11 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDS_CreateBndP - create BNDP on BNDS
 
    SYNOPSIS:
@@ -872,11 +853,11 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 
 /****************************************************************************/
-/*D
+/** \brief
    BNDS_Dispose - dispose BNDS
 
    SYNOPSIS:
@@ -893,7 +874,7 @@ typedef struct mesh MESH;
    INT
    .n   0 if ok
    .n   1 if error.
-   D*/
+ */
 /****************************************************************************/
 BVP        *BVP_GetNext           (BVP *theBVP);
 INT         BVP_Save              (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv);
@@ -901,7 +882,24 @@ BVP        *BVP_Load              (char *name, INT argc, char **argv);
 BVP        *BVP_GetByName         (char *name);
 BVP        *BVP_Init              (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey);
 INT         BVP_Dispose           (BVP *theBVP);
+
+/****************************************************************************/
+/** \brief Set BVP-descriptor
+ *
+   .  theBVP - BVP structure
+   .  theBVPDesc - descriptor to set
+
+   This function sets the BVP descriptor according to the BVP.
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   1 if error.
+ */
+/****************************************************************************/
 INT         BVP_SetBVPDesc        (BVP *theBVP, BVP_DESC *theBVPDesc);
+
+
 INT         BVP_SetCoeffFct       (BVP *theBVP, INT n, CoeffProcPtr *CoeffFct);
 INT         BVP_SetUserFct        (BVP *theBVP, INT n, UserProcPtr *UserFct);
 INT             BVP_Check                         (BVP *aBVP);

@@ -7,6 +7,11 @@
  * \ingroup std
  */
 
+/** \addtogroup std
+ *
+ * @{
+ */
+
 /****************************************************************************/
 /*                                                                          */
 /* File:      std_domain.h                                                  */
@@ -32,9 +37,9 @@
  */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* auto include mechanism and other include files                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __STD_DOMAIN__
@@ -60,13 +65,13 @@ namespace UG3d {
 #endif
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* defines in the following order                                                                                       */
-/*                                                                                                                                                      */
-/*                compile time constants defining static data size (i.e. arrays)        */
-/*                other constants                                                                                                       */
-/*                macros                                                                                                                        */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*    compile time constants defining static data size (i.e. arrays)        */
+/*    other constants                                                       */
+/*    macros                                                                */
+/*                                                                          */
 /****************************************************************************/
 
 typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
@@ -82,7 +87,8 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define MARC_1_PATCH_TYPE                5
 #define MARC_2_PATCH_TYPE                6
 
-/* macros for DOMAIN_PART_INFO */
+/** @name  Macros for DOMAIN_PART_INFO */
+/*@{*/
 #define DPI_SD2P_PTR(p)                                 ((p)->sd2part)
 #define DPI_SD2P(p,sd)                                  ((p)->sd2part[sd])
 #define DPI_SG2P_PTR(p)                                 ((p)->sg2part)
@@ -91,8 +97,10 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define DPI_LN2P(p,c0,c1)                               ((p)->ln2part[c0][c1])
 #define DPI_PT2P_PTR(p)                                 ((p)->pt2part)
 #define DPI_PT2P(p,pt)                                  ((p)->pt2part[pt])
+/*@}*/
 
-/* macros for DOMAIN */
+/** @name Macros for DOMAIN */
+/*@{*/
 #define DOMAIN_MIDPOINT(p)                              ((p)->MidPoint)
 #define DOMAIN_RADIUS(p)                                ((p)->radius)
 #define DOMAIN_CONVEX(p)                                ((p)->domConvex)
@@ -100,8 +108,10 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define DOMAIN_NCORNER(p)                               ((p)->numOfCorners)
 #define DOMAIN_NPARTS(p)                                ((p)->nParts)
 #define DOMAIN_PARTINFO(p)                              ((p)->dpi)
+/*@}*/
 
-/* macros for STD_BVP */
+/** @name Macros for STD_BVP */
+/*@{*/
 #define MAX_CORNERS_OF_LINEAR_PATCH      DIM
 #undef  CORNERS_OF_BND_SEG
 #define CORNERS_OF_BND_SEG               2*DIM_OF_BND
@@ -136,13 +146,16 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define STD_BVP_USERPROC(p,i)                   ((UserProcPtr)((p)->CU_ProcPtr[i+STD_BVP_NCOEFFPROC(p)]))
 
 #define GetSTD_BVP(p)                           ((STD_BVP *)(p))
+/*@}*/
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* macros for boundary segments                                                                                         */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* macros for boundary segments                                             */
+/*                                                                          */
 /****************************************************************************/
 
+/** @name Macros for boundary segments */
+/*@{*/
 #define SEG_LEFT(p)                                             ((p)->left)
 #define SEG_RIGHT(p)                                    ((p)->right)
 #define SEG_ID(p)                                               ((p)->id)
@@ -156,13 +169,16 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define SEG_TO(p,i)                                             ((p)->beta[i])
 #define SEG_FUNC(p)                                             ((p)->BndSegFunc)
 #define SEG_DATA(p)                                             ((p)->data)
+/*@}*/
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* macros for patches                                                                                                           */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* macros for patches                                                       */
+/*                                                                          */
 /****************************************************************************/
 
+/** @name Macros for patches */
+/*@{*/
 #define PATCH_FIXED                             0
 #define PATCH_BND_OF_FREE               1
 #define PATCH_FREE                              2
@@ -206,271 +222,537 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 
 #define IF_MARC(p) \
   if (PATCH_TYPE(currBVP->patches[BND_PATCH_ID(p)]) >= MARC_0_PATCH_TYPE)
+/*@}*/
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* data structures exported by the corresponding source file                            */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* data structures exported by the corresponding source file                */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* domain definition data structures                                                                            */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* domain definition data structures                                        */
+/*                                                                          */
 /****************************************************************************/
 
 /*----------- typedef for functions ----------------------------------------*/
-
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 typedef INT (*BndSegFuncPtr)(void *,DOUBLE *,DOUBLE *);
 
 
 /*----------- definition of structs ----------------------------------------*/
 
+/** \todo Please doc me! */
 typedef struct {
 
-  const INT *sd2part;                                           /* table subdomain to part                      */
-  const INT *sg2part;                                           /* table segment   to part                      */
-#       ifdef __THREEDIM__
-  const INT **ln2part;                                  /* table line      to part                      */
-#       endif
-  const INT *pt2part;                                           /* table point     to part                      */
+  /** \brief Table subdomain to part */
+  const INT *sd2part;
+
+  /** \brief Table segment to part */
+  const INT *sg2part;
+
+# ifdef __THREEDIM__
+  /** \brief Table line to part */
+  const INT **ln2part;
+# endif
+
+  /** \brief Table point to part */
+  const INT *pt2part;
 
 } DOMAIN_PART_INFO;
 
+/** \brief Data type describing a domain. */
 struct domain {
 
-  /* fields for environment directory */
+  /** \brief Fields for environment directory */
   ENVDIR d;
 
-  /* domain variables */
-  DOUBLE MidPoint[DIM];                                 /* point in the middle of domain        */
-  DOUBLE radius;                                                /* defines sphere around MidPoint       */
-  /* containing the domain                        */
-  INT numOfSegments;                                            /* number of boundary segments          */
-  INT numOfCorners;                                             /* number of corner points                      */
-  INT domConvex;                                                /* is the domain convex?                        */
+  /** \brief A point in the middle of the domain */
+  DOUBLE MidPoint[DIM];
 
-  /* description of domain parts */
-  INT nParts;                                                           /* number of parts in the domain        */
-  const DOMAIN_PART_INFO *dpi;                  /* domain part info                                     */
+  /** \brief Defines sphere around MidPoint containing the domain */
+  DOUBLE radius;
+
+  /** \brief Number of boundary segments */
+  INT numOfSegments;
+
+  /** \brief Number of corner points */
+  INT numOfCorners;
+
+  /** \brief Is the domain convex? */
+  INT domConvex;
+
+  /** @name Description of domain parts */
+  /*@{*/
+
+  /** \brief Number of parts in the domain */
+  INT nParts;
+
+  /** \brief Domain part info */
+  const DOMAIN_PART_INFO *dpi;
+  /*@}*/
 };
 
+/** \brief Data structure defining part of the boundary of a domain */
 struct boundary_segment {
 
-  /* fields for environment directory */
+  /** \brief Field for environment directory */
   ENVVAR v;
 
-  /* fields for boundary segment */
-  INT left,right;                                         /* number of left and right subdomain */
-  INT id;                                                         /* unique id of that segment                  */
-  INT segType;                                            /* segment type, see above                    */
-  INT points[CORNERS_OF_BND_SEG];         /* numbers of the vertices (ID)               */
-  INT resolution;                                         /* measure for the curvature                  */
-  DOUBLE alpha[DIM_OF_BND],beta[DIM_OF_BND];              /* parameter interval used*/
-  BndSegFuncPtr BndSegFunc;                       /* pointer to definition function     */
-  void *data;                                             /* can be used by applic to find data */
+  /** @name Fields for boundary segment */
+  /*@{*/
+  /** \brief Number of left and right subdomain */
+  INT left,right;
+
+  /** \brief Unique id of that segment */
+  INT id;
+
+  /** \brief Segment type, see above
+   *
+   * \todo See where???*/
+  INT segType;
+
+  /** \brief Numbers of the vertices (ID) */
+  INT points[CORNERS_OF_BND_SEG];
+
+  /** \brief Measure for the curvature */
+  INT resolution;
+
+  /** \brief Parameter interval used*/
+  DOUBLE alpha[DIM_OF_BND],beta[DIM_OF_BND];
+
+  /** \brief Pointer to definition function */
+  BndSegFuncPtr BndSegFunc;
+
+  /** \brief Can be used by application to find data */
+  void *data;
+  /*@}*/
 };
 
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct linear_segment {
 
-  /* fields for environment directory */
+  /** \brief Field for environment directory */
   ENVVAR v;
 
   /* fields for boundary segment */
-  INT left,right;                                         /* number of left and right subdomain */
-  INT id;                                                         /* unique id of that segment                  */
-  INT n;                                  /* number of corners                  */
-  INT points[MAX_CORNERS_OF_LINEAR_PATCH];       /* numbers of the vertices (ID)*/
-  DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM_OF_BND];            /* coordinates  */
+  /** \brief  Number of left and right subdomain */
+  INT left,right;
+
+  /** \brief  Unique id of that segment                  */
+  INT id;
+
+  /** \brief  Number of corners                  */
+  INT n;
+
+  /** \brief  Numbers of the vertices (ID)*/
+  INT points[MAX_CORNERS_OF_LINEAR_PATCH];
+
+  /** \brief  Coordinates  */
+  DOUBLE x[MAX_CORNERS_OF_LINEAR_PATCH][DIM_OF_BND];
 };
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* problem data structure                                                                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* problem data structure                                                   */
+/*                                                                          */
 /****************************************************************************/
 
 /*----------- typedef for functions ----------------------------------------*/
 
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 typedef INT (*BndCondProcPtr)(void *, void *, DOUBLE *, DOUBLE *, INT *);
 
 /*----------- definition of structs ----------------------------------------*/
 
+/** \brief Data type describing a problem. */
 struct problem {
 
-  /* fields for environment directory */
+  /** \brief Field for environment directory
+   *
+   * The problem is an environment directory. This directory is a subdirectory
+   * of the domain where this problem corresponds to. d also contains the
+   * name of the problem.
+   */
   ENVDIR d;
 
   /* fields for problem */
-  INT problemID;                                /* used to identify problem type                        */
-  ConfigProcPtr ConfigProblem;      /* procedure to reinitialize problem                */
-  INT numOfCoeffFct;                            /* number of coefficient functions                      */
-  INT numOfUserFct;                             /* number of User functions                                     */
-  void *CU_ProcPtr[1];                  /* coefficient functions                                        */
+  /** \brief Used to identify problem type
+   *
+   * Problem class identification number. This number is used to determine
+   * that the problem description coincides with the pde solved by the
+   * problem class library.
+   */
+  INT problemID;
+
+  /** \brief Procedure to reinitialize problem
+   *
+   * Pointer to a user definable function that is executed when the reinit
+   * command is given in the UG shell.
+   */
+  ConfigProcPtr ConfigProblem;
+
+  /** \brief Number of coefficient functions
+   *
+   *  User definable coefficient functions come in two flavours.
+   * They are either of type CoeffProcPtr or of type UserProcPtr.
+   * numOfCoeffFct and numOfUserFct give the number of functions of each type that
+   * make up the problem description.
+   */
+  INT numOfCoeffFct;
+
+  /** \brief Number of User functions
+   *
+   * User definable coefficient functions come in two flavours.
+   * They are either of type CoeffProcPtr or of type UserProcPtr.
+   * numOfCoeffFct and numOfUserFct give the number of functions of each type that
+   * make up the problem description.
+   */
+  INT numOfUserFct;
+
+  /** \brief Coefficient functions
+   *
+   *  Array that stores the pointers to coefficient and user functions.
+   * Since access to this array is provided through macros (see below) the layout
+   * is not important. Note that this array is allocated dynamically to the desired length.
+   */
+  void *CU_ProcPtr[1];
 };
 
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct bndcond {
 
-  /* fields for environment variable */
+  /** \brief Field for environment variable */
   ENVVAR v;
 
   /* fields for boundary condition */
-  INT id;                                               /* corresponds to boundary segment id !         */
-  BndCondProcPtr BndCond;               /* function defining boundary condition         */
-  void *data;                                   /* additional data for bnd cond                         */
+  /** \brief Corresponds to boundary segment id ! */
+  INT id;
+
+  /** \brief Function defining boundary condition */
+  BndCondProcPtr BndCond;
+
+  /** \brief Additional data for bnd cond */
+  void *data;
 };
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* BoundaryValueProblem data structure                                                                          */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* BoundaryValueProblem data structure                                      */
+/*                                                                          */
 /****************************************************************************/
-
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct std_BoundaryValueProblem
 {
-  /* fields for environment directory */
+  /** \brief Fields for environment directory */
   ENVDIR d;
 
   /* init */
   INT type;
-  struct domain *Domain;             /* domain pointer                      */
-  struct problem *Problem;           /* problem pointer                     */
 
-  char bnd_file[NAMESIZE];               /* file name for boundary infos        */
-  char mesh_file[NAMESIZE];              /* file name for meshinfos             */
+  /** \brief Domain pointer                      */
+  struct domain *Domain;
 
-  /* domain part */
-  DOUBLE MidPoint[DIM];              /* sphere in which the domain lies     */
+  /** \brief Problem pointer                     */
+  struct problem *Problem;
+
+  /** \brief File name for boundary infos        */
+  char bnd_file[NAMESIZE];
+
+  /** \brief File name for meshinfos             */
+  char mesh_file[NAMESIZE];
+
+  /** @name Domain part */
+  /*@{*/
+  /** \brief Center of a sphere containing the domain */
+  DOUBLE MidPoint[DIM];
+
+  /** \brief Radius of a sphere containing the domain */
   DOUBLE radius;
-  INT domConvex;                     /* 1 if domain is convex, 0 if not     */
-  INT numOfSubdomains;               /* nb. of subdomains,
-                                                                                exterior not counted                */
-  INT nDomainParts;                                      /* number of parts in the domain               */
-  INT *s2p;                                                      /* pointer to table subbdom --> part   */
 
-  /* boundary decription */
+  /** \brief 1 if domain is convex, 0 if not     */
+  INT domConvex;
+
+  /** \brief Number of subdomains, exterior not counted                */
+  INT numOfSubdomains;
+
+  /** \brief Number of parts in the domain               */
+  INT nDomainParts;
+
+  /** \brief Pointer to table subbdom --> part   */
+  INT *s2p;
+  /*@}*/
+
+  /** @name Boundary decription */
+  /*@{*/
   INT ncorners;
   INT nsides;
   INT sideoffset;
-  union patch **patches;                     /* list of patches                             */
 
-  /* problem part */
-  ConfigProcPtr ConfigProc;          /* configuration function              */
-  INT numOfCoeffFct;                 /* nb. of coefficient functions        */
-  INT numOfUserFct;                  /* nb. of user functions               */
+  /** \brief list of patches */
+  union patch **patches;
+  /*@}*/
 
-  BndCondProcPtr GeneralBndCond;     /* general bnd. cond. (if exists)      */
-  void *CU_ProcPtr[1];                       /* coefficient functions                           */
+  /** @name Problem part */
+  /*@{*/
+  /** \brief Configuration function              */
+  ConfigProcPtr ConfigProc;
+
+  /** \brief Number of coefficient functions        */
+  INT numOfCoeffFct;
+
+  /** \brief Number of user functions               */
+  INT numOfUserFct;
+
+  /** \brief General bnd. cond. (if exists)      */
+  BndCondProcPtr GeneralBndCond;
+
+  /** \brief Coefficient functions                           */
+  void *CU_ProcPtr[1];
+  /*@}*/
 };
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* Patch data structure                                                                                                         */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* Patch data structure                                                     */
+/*                                                                          */
 /****************************************************************************/
-
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct generic_patch {
 
-  INT type;                         /* patch type                           */
-  INT state;                        /* fixed/bnd of free/free               */
-  INT id;                           /* unique id used for load/store        */
+
+  /** \brief Patch type */
+  INT type;
+
+  /** \brief Fixed/bnd of free/free */
+  INT state;
+
+  /** \brief Unique id used for load/store */
+  INT id;
 };
 
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct point_on_patch {
 
   INT patch_id;
   INT corner_id;
 };
-
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct point_patch {
 
-  INT type;                         /* patch type                           */
-  INT state;                        /* fixed/bnd of free/free               */
-  INT id;                           /* unique id used for load/store        */
+  /** \brief Patch type */
+  INT type;
 
-  INT npatches;                     /* number of patches                    */
-  struct point_on_patch pop[1];     /* reference to surface                 */
+  /** \brief Fixed/bnd of free/free */
+  INT state;
+
+  /** \brief Unique id used for load/store */
+  INT id;
+
+  /** \brief Number of patches */
+  INT npatches;
+
+  /** \brief Reference to surface */
+  struct point_on_patch pop[1];
 };
 
 #ifdef __THREEDIM__
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct line_on_patch {
 
   INT patch_id;
   INT corner_id[2];
 };
-
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct line_patch {
 
-  INT type;                         /* patch type                           */
-  INT state;                        /* fixed/bnd of free/free               */
-  INT id;                           /* unique id used for load/store        */
+  /** \brief Patch type */
+  INT type;
 
-  INT npatches;                     /* number of patches                    */
-  INT c0;                                                       /* corner 0 of line                                             */
-  INT c1;                                                       /* corner 1 of line                                             */
-  struct line_on_patch lop[1];      /* reference to surface                 */
+  /** \brief Fixed/bnd of free/free */
+  INT state;
+
+  /** \brief Unique id used for load/store */
+  INT id;
+
+  /** \brief Number of patches */
+  INT npatches;
+
+  /** \brief Corner 0 of line */
+  INT c0;
+
+  /** \brief Corner 1 of line */
+  INT c1;
+
+  /** \brief Reference to surface */
+  struct line_on_patch lop[1];
 };
 #endif
-
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct linear_patch {
 
-  INT type;                         /* patch type                           */
-  INT state;                        /* fixed/bnd of free/free               */
-  INT id;                           /* unique id used for load/store        */
+  /** \brief Patch type */
+  INT type;
 
-  INT left,right;                                       /* id of left and right subdomain       */
-  INT corners;                      /* number of corners                    */
-  INT points[MAX_CORNERS_OF_LINEAR_PATCH];    /* ids of points              */
-  DOUBLE pos[MAX_CORNERS_OF_LINEAR_PATCH][DIM];   /* position               */
+  /** \brief Fixed/bnd of free/free */
+  INT state;
+
+  /** \brief Unique id used for load/store */
+  INT id;
+
+  /** \brief Id of left and right subdomain */
+  INT left,right;
+
+  /** \brief Number of corners */
+  INT corners;
+
+  /** \brief Ids of points */
+  INT points[MAX_CORNERS_OF_LINEAR_PATCH];
+
+  /** \brief Position */
+  DOUBLE pos[MAX_CORNERS_OF_LINEAR_PATCH][DIM];
 };
-
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct parameter_patch {
 
-  INT type;                         /* patch type                           */
-  INT state;                        /* fixed/bnd of free/free               */
-  INT id;                           /* unique id used for load/store        */
+  /** \brief Patch type */
+  INT type;
 
-  INT left,right;                                       /* id of left and right subdomain       */
-  INT resolution;                                       /* measure for curvature                                */
-  INT points[CORNERS_OF_BND_SEG];   /* ids of points                        */
-  DOUBLE range[2][DIM_OF_BND];      /* parameter range                      */
+  /** \brief Fixed/bnd of free/free */
+  INT state;
 
-  BndSegFuncPtr BndSegFunc;                     /* pointer to definition function           */
-  void *bs_data;                                        /* can be used by applic to find data   */
+  /** \brief Unique id used for load/store */
+  INT id;
 
-  /* fields for boundary condition */
-  BndCondProcPtr BndCond;                   /* function defining boundary condition */
-  void *bc_data;                                    /* additional data for bnd cond             */
+  /** \brief Id of left and right subdomain */
+  INT left,right;
+
+  /** \brief Measure for curvature */
+  INT resolution;
+
+  /** \brief Ids of points */
+  INT points[CORNERS_OF_BND_SEG];
+
+  /** \brief Parameter range */
+  DOUBLE range[2][DIM_OF_BND];
+
+  /** \brief Pointer to definition function */
+  BndSegFuncPtr BndSegFunc;
+
+  /** \brief Can be used by applic to find data */
+  void *bs_data;
+
+  /** @name Fields for boundary condition */
+  /*@{*/
+  /** \brief Function defining boundary condition */
+  BndCondProcPtr BndCond;
+
+  /** \brief Additional data for bnd cond */
+  void *bc_data;
+  /*@}*/
 };
 
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct marc_0_patch {
 
-  INT type;                         /* patch type                           */
-  INT state;                        /* fixed/bnd of free/free               */
-  INT id;                           /* unique id used for load/store        */
+  /** \brief Patch type                           */
+  INT type;
 
-  DOUBLE pos[3];                        /* position                             */
+  /** \brief Fixed/bnd of free/free               */
+  INT state;
+
+  /** \brief Unique id used for load/store        */
+  INT id;
+
+  /** \brief Position                             */
+  DOUBLE pos[3];
 };
 
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct marc_1_patch {
 
-  INT type;                         /* patch type                           */
-  INT state;                        /* fixed/bnd of free/free               */
-  INT id;                           /* unique id used for load/store        */
+  /** \brief Patch type                           */
+  INT type;
 
-  INT p[2];                             /* line between two points              */
+  /** \brief Fixed/bnd of free/free               */
+  INT state;
+
+  /** \brief Unique id used for load/store        */
+  INT id;
+
+  /** \brief Line between two points              */
+  INT p[2];
 };
 
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct marc_2_patch {
 
-  INT type;                         /* patch type                           */
-  INT state;                        /* fixed/bnd of free/free               */
-  INT id;                           /* unique id used for load/store        */
+  /** \brief Patch type                           */
+  INT type;
 
-  INT c;                                /* bnd cond                             */
-  INT p[3];                             /* triangle of three points             */
+  /** \brief Fixed/bnd of free/free               */
+  INT state;
+
+  /** \brief Unique id used for load/store        */
+  INT id;
+
+  /** \brief Bnd cond                             */
+  INT c;
+
+  /** \brief Triangle of three points             */
+  INT p[3];
 };
 
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 union patch {
   struct generic_patch ge;
   struct point_patch po;
@@ -484,25 +766,51 @@ union patch {
   struct marc_2_patch m2;
 } ;
 
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct bnd_ps {
 
-  INT patch_id;                     /* associated patch                     */
-  void *data;                                           /* e.g. global coordiantes, pointers... */
-  INT n;                            /* number of arguments                  */
-  COORD_BND_VECTOR local[1];        /* parameter range                      */
-};
+  /** \brief Associated patch                     */
+  INT patch_id;
 
+  /** \brief E.g. global coordiantes, pointers... */
+  void *data;
+
+  /** \brief Number of arguments                  */
+  INT n;
+
+  /** \brief Parameter range                      */
+  COORD_BND_VECTOR local[1];
+};
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct marc_bndp {
 
-  INT patch_id;                     /* associated patch                     */
-  DOUBLE pos[3];                                /* position                             */
+  /** \brief Associated patch                     */
+  INT patch_id;
+
+  /** \brief Position                             */
+  DOUBLE pos[3];
 };
 
+/** \brief ???
+ *
+ * \todo Please doc me!
+ */
 struct marc_bnds {
 
-  INT patch_id;                     /* associated patch                     */
-  INT n;                                /* number of corners                    */
-  struct marc_bndp p[1];                /* corners                              */
+  /** \brief associated patch */
+  INT patch_id;
+
+  /** \brief number of corners */
+  INT n;
+
+  /** \brief corners */
+  struct marc_bndp p[1];
 };
 
 /*----------- typedef for structs ------------------------------------------*/
@@ -529,21 +837,21 @@ typedef struct marc_bndp M_BNDP;
 typedef struct marc_bnds M_BNDS;
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* definition of exported global variables                                                                      */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* function declarations                                                                                                        */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* function declarations                                                    */
+/*                                                                          */
 /****************************************************************************/
 
-#       ifdef __THREEDIM__
+# ifdef __THREEDIM__
 INT RepairMesh (HEAP *Heap, INT MarkKey, MESH *mesh);
 INT CheckPrisms (INT *corner, INT n0, INT n1 , INT n2, INT n3);
-#       endif
+# endif
 void SetBVPType(INT type);
 
 /* domain definition */
@@ -602,5 +910,7 @@ INT   ReadAndPrintArgvPosition    (char *name, INT argc, char **argv, DOUBLE *po
 #ifdef __cplusplus
 }  /* namespace UG{2|3}d */
 #endif
+
+/** @} */
 
 #endif
