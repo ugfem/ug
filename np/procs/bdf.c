@@ -52,6 +52,8 @@
 #include "transfer.h"
 #include "error.h"
 #include "ts.h"
+#include "db.h"
+
 #include "bdf.h"
 
 /****************************************************************************/
@@ -85,6 +87,7 @@ typedef struct
   DOUBLE t_p1;                                                   /* time t_k+1                                  */
   DOUBLE t_0;                                                        /* time t_k                                        */
   DOUBLE t_m1;                                                   /* time t_k-1                                  */
+  NP_DATA_BASE *TimeControl;             /* list for time steps             */
 
   /* parameters (to be set with init function */
   INT baselevel;                                                 /* for nested iteration		    */
@@ -270,6 +273,9 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
+  void *data;
+  INT n;
+  DOUBLE *ddata;
   char buffer[128];
 
   /* get numprocs ... */
@@ -277,9 +283,23 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
   tass = bdf->tsolver.tass;
 
   /* initialize bdf local variables */
-  /* initialize bdf local variables */
-  bdf->dt = bdf->dtstart;
   bdf->step = 0;
+  if (bdf->TimeControl == NULL) {
+    bdf->dt = bdf->dtstart;
+  }
+  else {
+    if ((*bdf->TimeControl->PreProcess)(bdf->TimeControl,res))
+      return(1);
+    if ((*bdf->TimeControl->GetSize)(bdf->TimeControl,&n,res))
+      return(1);
+    if (n < 2)
+      NP_RETURN(1,*res);
+    if ((*bdf->TimeControl->GetData)(bdf->TimeControl,0,&data,res))
+      return(1);
+    ddata = (DOUBLE *)data;
+    bdf->dtstart = ddata[0];
+    bdf->dt = ddata[1] - bdf->dtstart;
+  }
   bdf->t_0 = bdf->tstart;
   bdf->t_m1 = - bdf->dt;
 
@@ -323,7 +343,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1,qfm_dt,dtfactor,dt_old;
   DOUBLE Factor[MAX_VEC_COMP];
   INT n_unk;
-  INT i,k,mg_changed,changed,ret;
+  INT n,i,k,mg_changed,changed,ret;
   INT low,llow,nlinterpolate,last_number_of_nonlinear_iterations;
   INT verygood,bad;
   NLRESULT nlresult;
@@ -331,6 +351,8 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   MULTIGRID *mg;
   char buffer[128];
   static INT qfm;
+  void *data;
+  DOUBLE *ddata;
   char text[DISPLAY_WIDTH+4];                           /* display text					*/
 
   /* get numprocs ... */
@@ -629,6 +651,21 @@ Continue:
                          bdf->step,bdf->t_0,bdf->dt,bdf->exec_time,bdf->number_of_nonlinear_iterations,
                          bdf->total_linear_iterations,bdf->max_linear_iterations,qfm);*/
 
+
+  if (bdf->TimeControl != NULL) {
+    if ((*bdf->TimeControl->GetSize)(bdf->TimeControl,&n,res))
+      return(1);
+    if (bdf->step+1 < n) {
+      if ((*bdf->TimeControl->GetData)(bdf->TimeControl,bdf->step+1,
+                                       &data,res))
+        return(1);
+      ddata = (DOUBLE *)data;
+      bdf->t_p1 = ddata[0];
+      bdf->dt = bdf->t_p1 - bdf->t_0;
+      goto output;
+    }
+  }
+
   /* chose new dt for next time step */
   dt_old = bdf->dt;
   if ((bdf->optnlsteps) && (nlresult.converged))
@@ -713,7 +750,8 @@ Continue:
     }
   }
 
-  /* output */
+
+output:         /* output */
   if (bdf->displayMode != PCR_NO_DISPLAY)
   {
     UserWriteF("\n");
@@ -766,6 +804,11 @@ static INT TimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
   FreeVD(ts->nlass.base.mg,0,level,bdf->y_m1);
   FreeVD(ts->nlass.base.mg,0,level,bdf->b);
 
+  if (bdf->TimeControl != NULL) {
+    if ((*bdf->TimeControl->PostProcess)(bdf->TimeControl,res))
+      return(1);
+  }
+
   return(0);
 }
 
@@ -812,6 +855,7 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
   {
     UserWrite("no indicator active\n");
   }
+  bdf->TimeControl = (NP_DATA_BASE *) ReadArgvNumProc(base->mg,"TimeControl",DATA_BASE_CLASS_NAME,argc,argv);
 
   /* set configuration parameters */
   if (ReadArgvINT("baselevel",&(bdf->baselevel),argc,argv))
@@ -867,31 +911,28 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
   if (ReadArgvDOUBLE("tstart",&(bdf->tstart),argc,argv))
     bdf->tstart = 0.0;
   if (ReadArgvDOUBLE("dtstart",&(bdf->dtstart),argc,argv))
-  {
-    UserWrite("dtstart must be specified\n");
-    return(NP_NOT_ACTIVE);
-  }
+    if (bdf->TimeControl == NULL) {
+      UserWrite("dtstart must be specified\n");
+      return(NP_NOT_ACTIVE);
+    }
   if ((bdf->dtstart<0.0)) return(NP_NOT_ACTIVE);
 
   if (ReadArgvDOUBLE("dtmin",&(bdf->dtmin),argc,argv))
-  {
-    bdf->dtmin = bdf->dtstart;
-    return(NP_NOT_ACTIVE);
-  }
+    if (bdf->TimeControl == NULL) {
+      bdf->dtmin = bdf->dtstart;
+      return(NP_NOT_ACTIVE);
+    }
   if ((bdf->dtmin<0.0)) return(NP_NOT_ACTIVE);
 
   if (ReadArgvDOUBLE("dtmax",&(bdf->dtmax),argc,argv))
-  {
-    bdf->dtmax = bdf->dtstart;
-    return(NP_NOT_ACTIVE);
-  }
+    if (bdf->TimeControl == NULL) {
+      bdf->dtmax = bdf->dtstart;
+      return(NP_NOT_ACTIVE);
+    }
   if ((bdf->dtmax<0.0)) return(NP_NOT_ACTIVE);
 
   if (ReadArgvDOUBLE("dtscale",&(bdf->dtscale),argc,argv))
-  {
-    UserWrite("dtscale must be specified\n");
-    return(NP_NOT_ACTIVE);
-  }
+    bdf->dtscale = 1.0;
   if ((bdf->dtscale<0.0)) return(NP_NOT_ACTIVE);
 
   if (ReadArgvDOUBLE("rhogood",&(bdf->rhogood),argc,argv))
@@ -948,6 +989,9 @@ static INT BDFDisplay (NP_BASE *theNumProc)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"T",ENVITEM_NAME(bdf->trans));
   else
     UserWriteF(DISPLAY_NP_FORMAT_SS,"T","---");
+  if (bdf->TimeControl != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"TimeControl",
+               ENVITEM_NAME(bdf->TimeControl));
   if (bdf->error != NULL)
   {
     UserWriteF(DISPLAY_NP_FORMAT_SS,"E",ENVITEM_NAME(bdf->error));
