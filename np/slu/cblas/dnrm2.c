@@ -17,6 +17,7 @@
  */
 
 #include "f2c.h"
+#include <math.h>
 
 doublereal dnrm2_slu(integer *n, doublereal *x, integer *incx)
 {
@@ -25,9 +26,6 @@ doublereal dnrm2_slu(integer *n, doublereal *x, integer *incx)
   /* System generated locals */
   integer i__1, i__2;
   doublereal ret_val, d__1;
-
-  /* Builtin functions */
-  double sqrt(doublereal);
 
   /* Local variables */
   static doublereal norm, scale, absxi;
