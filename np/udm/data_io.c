@@ -149,7 +149,7 @@ MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *D
     nparfiles = 1;
     if (DTIO_filetype(FileName) == FT_DIR)
     {
-      sprintf(buf,"/data.%06d",(int)me);
+      sprintf(buf,"/data.%04d",(int)me);
       strcat(FileName,buf);
       if (Read_OpenDTFile (FileName))                                                                         {nparfiles = -1;}
       else
