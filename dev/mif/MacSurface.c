@@ -46,7 +46,6 @@
 
 /* standard C includes */
 #include <string.h>
-#include <strings.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdlib.h>
