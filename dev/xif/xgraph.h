@@ -90,6 +90,7 @@ typedef struct graphwindow {
   Pixmap icon_pixmap;                                           /* icon to use					*/
   XTextProperty icon_name;                                      /* icons name					*/
   XTextProperty window_name;                                    /* windows name                                 */
+  int backing_store;
 } GraphWindow ;
 
 

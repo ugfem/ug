@@ -369,14 +369,16 @@ int ShellOpen (ShellWindow *sh)
                                 WhitePixel(display,screen_num));
         #endif /* USE_XAW */
 
-  /* use backing store for shell window */
+  /* use backing store for window if possible */
   {
     XSetWindowAttributes attr;
     unsigned long mask;
 
-    attr.backing_store = Always;
-    mask = CWBackingStore;
-    XChangeWindowAttributes(display, sh->win, mask, &attr);
+    if (DoesBackingStore(DefaultScreenOfDisplay(display))) {
+      attr.backing_store = Always;
+      mask = CWBackingStore;
+      XChangeWindowAttributes(display, sh->win, mask, &attr);
+    }
   }
 
   /* generate icon, needed for properties */

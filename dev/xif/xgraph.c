@@ -53,6 +53,7 @@
 #include "initdev.h"
 #include "general.h"
 #include "debug.h"
+#include "commands.h"
 
 /* Xif includes */
 #include "xmain.h"
@@ -82,6 +83,8 @@
 
 #define NTOOLS                  7                               /* this is the number of tools		*/
 
+#define LITTLE_ENDIAN   (*(char *) &WhichEndian)
+
 /* bitmaps for icons */
 #include "view-icon"
 #include "tool0"
@@ -106,6 +109,8 @@ static ncolors=0;                                               /* number of ent
 static unsigned long pixels[CSIZE];     /* array to free color cells		*/
 static OUTPUTDEVICE *X11OutputDevice;   /* outputdevice that has been initi */
 static GraphWindow *windowList=NULL;    /* list of our windows				*/
+static Visual *default_visual;
+static int default_depth;
 
 static Pixmap tools[NTOOLS];                    /* bitmaps for toolbox				*/
 static Cursor cursors[NTOOLS];                  /* id in cursor font				*/
@@ -113,6 +118,8 @@ static Cursor cursors[NTOOLS];                  /* id in cursor font				*/
 int MoveMouse = 1;                                              /* some local vars for mouse ops	*/
 int StoredMousePos = 0;
 int MouseX,MouseY;
+
+static int WhichEndian = 1;             /* to get byte order                */
 
 /* pixmaps for shading patterns */
 static Pixmap pattern[NO_PATTERNS];
@@ -151,7 +158,8 @@ static void IFMove (SHORT_POINT point)
 static void IFDraw (SHORT_POINT point)
 {
   XDrawLine(display,gw->win,gw->gc,gw->x,gw->y,(int)point.x,(int)point.y);
-  XDrawLine(display,gw->pixmap,gw->gc,gw->x,gw->y,(int)point.x,(int)point.y);
+  if (!gw->backing_store)
+    XDrawLine(display,gw->pixmap,gw->gc,gw->x,gw->y,(int)point.x,(int)point.y);
   gw->x = (int) point.x;
   gw->y = (int) point.y;
 }
@@ -159,7 +167,8 @@ static void IFDraw (SHORT_POINT point)
 static void IFPolyline (SHORT_POINT *points, INT n)
 {
   XDrawLines(display,gw->win,gw->gc,(XPoint *)points,n,CoordModeOrigin);
-  XDrawLines(display,gw->pixmap,gw->gc,(XPoint *)points,n,CoordModeOrigin);
+  if (!gw->backing_store)
+    XDrawLines(display,gw->pixmap,gw->gc,(XPoint *)points,n,CoordModeOrigin);
 }
 
 static void IFInversePolyline (SHORT_POINT *points, INT n)
@@ -177,7 +186,8 @@ static void IFInversePolyline (SHORT_POINT *points, INT n)
   XSetFunction(display,gw->gc,GXinvert);
   XSetPlaneMask(display,gw->gc,0x00000001);
   XDrawLines(display,gw->win,gw->gc,(XPoint *)points,n,CoordModeOrigin);
-  XDrawLines(display,gw->pixmap,gw->gc,(XPoint *)points,n,CoordModeOrigin);
+  if (!gw->backing_store)
+    XDrawLines(display,gw->pixmap,gw->gc,(XPoint *)points,n,CoordModeOrigin);
   XSetFunction(display,gw->gc,function);
   XSetPlaneMask(display,gw->gc,plane_mask);
 }
@@ -185,7 +195,8 @@ static void IFInversePolyline (SHORT_POINT *points, INT n)
 static void IFPolygon (SHORT_POINT *points, INT n)
 {
   XFillPolygon(display,gw->win,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
-  XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
+  if (!gw->backing_store)
+    XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
 }
 
 static void IFShadedPolygon(SHORT_POINT *points, INT n, DOUBLE intensity)
@@ -197,7 +208,8 @@ static void IFShadedPolygon(SHORT_POINT *points, INT n, DOUBLE intensity)
   XSetFillStyle(display, gw->gc, FillOpaqueStippled);
   XSetStipple(display, gw->gc, pattern[s]);
   XFillPolygon(display,gw->win,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
-  XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
+  if (!gw->backing_store)
+    XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
   XSetFillStyle(display, gw->gc, FillSolid);
   XSetBackground(display,gw->gc,ctab[X11OutputDevice->white].pixel);
 }
@@ -217,7 +229,8 @@ static void IFInversePolygon (SHORT_POINT *points, INT n)
   XSetFunction(display,gw->gc,GXinvert);
   XSetPlaneMask(display,gw->gc,0x00000073);
   XFillPolygon(display,gw->win,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
-  XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
+  if (!gw->backing_store)
+    XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
   XSetFunction(display,gw->gc,function);
   XSetPlaneMask(display,gw->gc,plane_mask);
 }
@@ -231,9 +244,11 @@ static void IFErasePolygon (SHORT_POINT *points, INT n)
   XFillPolygon(display,gw->win,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
   XDrawLines(display,gw->win,gw->gc,(XPoint *)points,n,CoordModeOrigin);
   XDrawLine(display,gw->win,gw->gc,(int)points[n-1].x,(int)points[n-1].y,(int)points[0].x,(int)points[0].y);
-  XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
-  XDrawLines(display,gw->pixmap,gw->gc,(XPoint *)points,n,CoordModeOrigin);
-  XDrawLine(display,gw->pixmap,gw->gc,(int)points[n-1].x,(int)points[n-1].y,(int)points[0].x,(int)points[0].y);
+  if (!gw->backing_store) {
+    XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
+    XDrawLines(display,gw->pixmap,gw->gc,(XPoint *)points,n,CoordModeOrigin);
+    XDrawLine(display,gw->pixmap,gw->gc,(int)points[n-1].x,(int)points[n-1].y,(int)points[0].x,(int)points[0].y);
+  }
   XSetForeground(display,gw->gc,gcv.foreground);
 }
 
@@ -252,69 +267,85 @@ static void Marker (short n, short s, SHORT_POINT point)
   {
   case 0 :
     XDrawRectangle(display, gw->win, gw->gc, left, top, s, s);
-    XDrawRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
+    if (!gw->backing_store)
+      XDrawRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
     break;
   case 1 :
     XDrawRectangle(display, gw->win, gw->gc, left, top, s, s);
-    XDrawRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
+    if (!gw->backing_store)
+      XDrawRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
     break;
   case 2 :
     XFillRectangle(display, gw->win, gw->gc, left, top, s, s);
-    XFillRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
+    if (!gw->backing_store)
+      XFillRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
     break;
   case 3 :
     XDrawArc( display, gw->win, gw->gc, left, top, s, s, 0, 360*64);
-    XDrawArc( display, gw->pixmap, gw->gc, left, top, s, s, 0, 360*64);
+    if (!gw->backing_store)
+      XDrawArc( display, gw->pixmap, gw->gc, left, top, s, s, 0, 360*64);
     break;
   case 4 :
     XDrawArc( display, gw->win, gw->gc, left, top, s, s, 0, 360*64);
-    XDrawArc( display, gw->pixmap, gw->gc, left, top, s, s, 0, 360*64);
+    if (!gw->backing_store)
+      XDrawArc( display, gw->pixmap, gw->gc, left, top, s, s, 0, 360*64);
     break;
   case 5 :
     XFillArc( display, gw->win, gw->gc, left, top, s+1, s+1, 0, 360*64);
-    XFillArc( display, gw->pixmap, gw->gc, left, top, s+1, s+1, 0, 360*64);
+    if (!gw->backing_store)
+      XFillArc( display, gw->pixmap, gw->gc, left, top, s+1, s+1, 0, 360*64);
     break;
   case 6 :
     XDrawLine( display, gw->win, gw->gc, x, y+s/2, x+s/2, y);
     XDrawLine( display, gw->win, gw->gc, x+s/2, y, x, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x, y-s/2, x-s/2, y);
     XDrawLine( display, gw->win, gw->gc, x-s/2, y, x, y+s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
-    XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
-    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    if (!gw->backing_store) {
+      XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
+      XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
+      XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
+      XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    }
     break;
   case 7 :
     XDrawLine( display, gw->win, gw->gc, x, y+s/2, x+s/2, y);
     XDrawLine( display, gw->win, gw->gc, x+s/2, y, x, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x, y-s/2, x-s/2, y);
     XDrawLine( display, gw->win, gw->gc, x-s/2, y, x, y+s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
-    XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
-    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    if (!gw->backing_store) {
+      XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
+      XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
+      XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
+      XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    }
     break;
   case 8 :
     XDrawLine( display, gw->win, gw->gc, x, y+s/2, x+s/2, y);
     XDrawLine( display, gw->win, gw->gc, x+s/2, y, x, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x, y-s/2, x-s/2, y);
     XDrawLine( display, gw->win, gw->gc, x-s/2, y, x, y+s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
-    XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
-    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    if (!gw->backing_store) {
+      XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
+      XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
+      XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
+      XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    }
     break;
   case 9 :
     XDrawLine( display, gw->win, gw->gc, x, y+s/2, x, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x-s/2, y, x+s/2, y);
-    XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x, y-s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x+s/2, y);
+    if (!gw->backing_store) {
+      XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x, y-s/2);
+      XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x+s/2, y);
+    }
     break;
   case 10 :
     XDrawLine( display, gw->win, gw->gc, x-s/2, y+s/2, x+s/2, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x-s/2, y-s/2, x+s/2, y+s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y+s/2, x+s/2, y-s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y-s/2, x+s/2, y+s/2);
+    if (!gw->backing_store) {
+      XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y+s/2, x+s/2, y-s/2);
+      XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y-s/2, x+s/2, y+s/2);
+    }
     break;
   }
 }
@@ -355,32 +386,38 @@ static void InvMarker (short n, short s, SHORT_POINT point)
   case EMPTY_SQUARE_MARKER :
     XSetPlaneMask(display,gw->gc,0x00000001);
     XDrawRectangle(display, gw->win, gw->gc, left, top, s, s);
-    XDrawRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
+    if (!gw->backing_store)
+      XDrawRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
     break;
   case GRAY_SQUARE_MARKER :
     XSetPlaneMask(display,gw->gc,0x00000001);
     XDrawRectangle(display, gw->win, gw->gc, left, top, s, s);
-    XDrawRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
+    if (!gw->backing_store)
+      XDrawRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
     break;
   case FILLED_SQUARE_MARKER :
     XSetPlaneMask(display,gw->gc,0x00000073);
     XFillRectangle(display, gw->win, gw->gc, left, top, s, s);
-    XFillRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
+    if (!gw->backing_store)
+      XFillRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
     break;
   case EMPTY_CIRCLE_MARKER :
     XSetPlaneMask(display,gw->gc,0x00000001);
     XDrawArc( display, gw->win, gw->gc, left, top, s, s, 0, 360*64);
-    XDrawArc( display, gw->pixmap, gw->gc, left, top, s, s, 0, 360*64);
+    if (!gw->backing_store)
+      XDrawArc( display, gw->pixmap, gw->gc, left, top, s, s, 0, 360*64);
     break;
   case GRAY_CIRCLE_MARKER :
     XSetPlaneMask(display,gw->gc,0x00000001);
     XDrawArc( display, gw->win, gw->gc, left, top, s, s, 0, 360*64);
-    XDrawArc( display, gw->pixmap, gw->gc, left, top, s, s, 0, 360*64);
+    if (!gw->backing_store)
+      XDrawArc( display, gw->pixmap, gw->gc, left, top, s, s, 0, 360*64);
     break;
   case FILLED_CIRCLE_MARKER :
     XSetPlaneMask(display,gw->gc,0x00000073);
     XFillArc( display, gw->win, gw->gc, left, top, s+1, s+1, 0, 360*64);
-    XFillArc( display, gw->pixmap, gw->gc, left, top, s+1, s+1, 0, 360*64);
+    if (!gw->backing_store)
+      XFillArc( display, gw->pixmap, gw->gc, left, top, s+1, s+1, 0, 360*64);
     break;
   case EMPTY_RHOMBUS_MARKER :
     XSetPlaneMask(display,gw->gc,0x00000001);
@@ -388,10 +425,12 @@ static void InvMarker (short n, short s, SHORT_POINT point)
     XDrawLine( display, gw->win, gw->gc, x+s/2, y, x, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x, y-s/2, x-s/2, y);
     XDrawLine( display, gw->win, gw->gc, x-s/2, y, x, y+s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
-    XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
-    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    if (!gw->backing_store) {
+      XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
+      XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
+      XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
+      XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    }
     break;
   case GRAY_RHOMBUS_MARKER :
     XSetPlaneMask(display,gw->gc,0x00000001);
@@ -399,10 +438,12 @@ static void InvMarker (short n, short s, SHORT_POINT point)
     XDrawLine( display, gw->win, gw->gc, x+s/2, y, x, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x, y-s/2, x-s/2, y);
     XDrawLine( display, gw->win, gw->gc, x-s/2, y, x, y+s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
-    XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
-    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    if (!gw->backing_store) {
+      XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
+      XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
+      XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
+      XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    }
     break;
   case FILLED_RHOMBUS_MARKER :
     XSetPlaneMask(display,gw->gc,0x00000001);
@@ -410,24 +451,30 @@ static void InvMarker (short n, short s, SHORT_POINT point)
     XDrawLine( display, gw->win, gw->gc, x+s/2, y, x, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x, y-s/2, x-s/2, y);
     XDrawLine( display, gw->win, gw->gc, x-s/2, y, x, y+s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
-    XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
-    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    if (!gw->backing_store) {
+      XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x+s/2, y);
+      XDrawLine( display, gw->pixmap, gw->gc, x+s/2, y, x, y-s/2);
+      XDrawLine( display, gw->pixmap, gw->gc, x, y-s/2, x-s/2, y);
+      XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x, y+s/2);
+    }
     break;
   case PLUS_MARKER :
     XSetPlaneMask(display,gw->gc,0x00000001);
     XDrawLine( display, gw->win, gw->gc, x, y+s/2, x, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x-s/2, y, x+s/2, y);
-    XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x, y-s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x+s/2, y);
+    if (!gw->backing_store) {
+      XDrawLine( display, gw->pixmap, gw->gc, x, y+s/2, x, y-s/2);
+      XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y, x+s/2, y);
+    }
     break;
   case CROSS_MARKER :
     XSetPlaneMask(display,gw->gc,0x00000001);
     XDrawLine( display, gw->win, gw->gc, x-s/2, y+s/2, x+s/2, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x-s/2, y-s/2, x+s/2, y+s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y+s/2, x+s/2, y-s/2);
-    XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y-s/2, x+s/2, y+s/2);
+    if (!gw->backing_store) {
+      XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y+s/2, x+s/2, y-s/2);
+      XDrawLine( display, gw->pixmap, gw->gc, x-s/2, y-s/2, x+s/2, y+s/2);
+    }
     break;
   }
   /* restore values */
@@ -465,7 +512,8 @@ static void IFDrawText (const char *s, INT mode)
     XSetFunction(display,gw->gc,GXinvert);
     XSetPlaneMask(display,gw->gc,0x00000001);
     XDrawString(display,gw->win,gw->gc,gw->x,gw->y,s,strlen(s));
-    XDrawString(display,gw->pixmap,gw->gc,gw->x,gw->y,s,strlen(s));
+    if (!gw->backing_store)
+      XDrawString(display,gw->pixmap,gw->gc,gw->x,gw->y,s,strlen(s));
     XSetFunction(display,gw->gc,function);
     XSetPlaneMask(display,gw->gc,plane_mask);
   }
@@ -496,7 +544,8 @@ static void IFCenteredText (SHORT_POINT point, const char *s, INT mode)
     XSetFunction(display,gw->gc,GXinvert);
     XSetPlaneMask(display,gw->gc,0x00000001);
     XDrawString(display,gw->win,gw->gc,((int)point.x)-w/2,((int)point.y)+ts/2,s,strlen(s));
-    XDrawString(display,gw->pixmap,gw->gc,((int)point.x)-w/2,((int)point.y)+ts/2,s,strlen(s));
+    if (!gw->backing_store)
+      XDrawString(display,gw->pixmap,gw->gc,((int)point.x)-w/2,((int)point.y)+ts/2,s,strlen(s));
     XSetFunction(display,gw->gc,function);
     XSetPlaneMask(display,gw->gc,plane_mask);
   }
@@ -565,6 +614,121 @@ static void IFFlush (void)
   return;
 }
 
+static void IFPlotPixelBuffer(void *buffer, void *data, INT len, int x, int y, int w, int h)
+{
+  HEAP *heap;
+  XImage *image;
+  unsigned char *p;
+  unsigned long pixel;
+  int bitmap_pad;
+  INT mem_allocated, key, i;
+
+  unsigned char  *q0;
+  unsigned short *q1;
+  unsigned int   *q2;
+
+  /* how many bits per pixel do we need? */
+  if (default_depth <= 8)
+    bitmap_pad = 8;
+  else if (default_depth <= 16)
+    bitmap_pad = 16;
+  else
+    bitmap_pad = 32;
+
+  /* allocate mem for XImage data if necessary */
+  mem_allocated = NO;
+  if (bitmap_pad == 8)
+    data = buffer;
+  else if (data == NULL) {
+    heap = GetCurrentMultigrid()->theHeap;
+    MarkTmpMem(heap, &key);
+    if ((data = GetTmpMem(heap, len * bitmap_pad/8, key)) == NULL) {
+      UserWrite("IFPlotPixelBuffer: Sorry, not enough memory to build XImage.\n");
+      ReleaseTmpMem(heap, key);
+      return;
+    }
+    mem_allocated = YES;
+  }
+
+  /*  Convert pixel buffer to XImage data:                                         */
+  /*  We have to copy the 8, 16 or 32 lower bits of a pixel value to to a portion  */
+  /*  of memory of the same size keeping the clients byte order. Only 8 bit chars  */
+  /*  are assumed.                                                                 */
+
+  p = buffer;
+  switch(bitmap_pad)
+  {
+  case 8 :
+    for (i=0; i<len; i++)
+      *p++ = ctab[*p].pixel;
+    break;
+
+  case 16 :
+    if (sizeof(*q1) == 2) {
+      q1 = data;
+      for (i=0; i<len; i++)
+        *q1++ = ctab[*p++].pixel;
+    }
+    else {
+      q0 = data;
+      if (LITTLE_ENDIAN)
+        for (i=0; i<len; i++) {
+          pixel = ctab[*p++].pixel;
+          *q0++ = pixel & 0x00FF;
+          *q0++ = pixel >> 8;
+        }
+      else
+        for (i=0; i<len; i++) {
+          pixel = ctab[*p++].pixel;
+          *q0++ = pixel >> 8;
+          *q0++ = pixel & 0x00FF;
+        }
+    }
+    break;
+
+  case 32 :
+    if (sizeof(*q1) == 4) {
+      q1 = data;
+      for (i=0; i<len; i++)
+        *q1++ = ctab[*p++].pixel;
+    }
+    else if (sizeof(*q2) == 4) {
+      q2 = data;
+      for (i=0; i<len; i++)
+        *q2++ = ctab[*p++].pixel;
+    }
+    else {
+      q0 = data;
+      if (LITTLE_ENDIAN)
+        for (i=0; i<len; i++) {
+          pixel = ctab[*p++].pixel;
+          *q0++ = pixel & 0x000000FF;
+          *q0++ = (pixel & 0x0000FF00) >> 8;
+          *q0++ = (pixel & 0x00FF0000) >> 16;
+          *q0++ = pixel >> 24;
+        }
+      else
+        for (i=0; i<len; i++) {
+          pixel = ctab[*p++].pixel;
+          *q0++ = pixel >> 24;
+          *q0++ = (pixel & 0x00FF0000) >> 16;
+          *q0++ = (pixel & 0x0000FF00) >> 8;
+          *q0++ = pixel & 0x000000FF;
+        }
+    }
+  }
+
+  /* allocate XImage and write it to the screen */
+  image = XCreateImage(display, default_visual, default_depth, ZPixmap, 0, data, w, h, bitmap_pad, 0);
+  XPutImage(display, gw->win, gw->gc, image, 0, 0, x, y, w, h);
+  if (!gw->backing_store)
+    XPutImage(display, gw->pixmap, gw->gc, image, 0, 0, x, y, w, h);
+  image->data = NULL;
+  XDestroyImage(image);
+
+  if (mem_allocated) ReleaseTmpMem(heap, key);
+}
+
 /****************************************************************************/
 /*
    InitXPort - implement basic drawing functions by X11
@@ -585,8 +749,6 @@ static void IFFlush (void)
 
 void InitXPort (OUTPUTDEVICE *thePort)
 {
-  int default_depth;
-  Visual *default_visual;
   XColor exact_def;
   Colormap default_cmap;
   XVisualInfo visual_info;
@@ -857,6 +1019,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
   /* init pointers to miscellaneous functions */
   thePort->GetPaletteEntry        = IFGetPaletteEntry;
   thePort->Flush                          = IFFlush;
+  thePort->PlotPixelBuffer    = IFPlotPixelBuffer;
 }
 
 /*==========================================================================*/
@@ -1010,7 +1173,8 @@ void DrawInfoBox (WINDOWID win, const char *info)
   w = XTextWidth(gwin->font_info,info,strlen(info));
   ts = gwin->font_height;
   XDrawString(display,gwin->win,gwin->gc,x-w/2,y+ts/2,info,strlen(info));
-  XDrawString(display,gwin->pixmap,gwin->gc,x-w/2,y+ts/2,info,strlen(info));
+  if (!gw->backing_store)
+    XDrawString(display,gwin->pixmap,gwin->gc,x-w/2,y+ts/2,info,strlen(info));
   /* restore clipping region */
   rect.x = 0;
   rect.y = 0;
@@ -1124,25 +1288,29 @@ int GraphOpen (GraphWindow *gw, char *window_name, int x, int y, int width, int 
                                 x,y,width,height,border_width,ctab[X11OutputDevice->black].pixel,
                                 ctab[X11OutputDevice->white].pixel);
 
-  /* use backing store for window */
+  /* use backing store for window if possible */
   {
     XSetWindowAttributes attr;
     unsigned long mask;
 
-    attr.backing_store = Always;
-    mask = CWBackingStore;
-    XChangeWindowAttributes(display, gw->win, mask, &attr);
+    if (gw->backing_store = DoesBackingStore(DefaultScreenOfDisplay(display))) {
+      attr.backing_store = Always;
+      mask = CWBackingStore;
+      XChangeWindowAttributes(display, gw->win, mask, &attr);
+    }
   }
 
-  /* create a pixmap with white background	*/
-  gw->pixmap_depth=DefaultDepth(display,screen_num);
-  gw->pixmap_width=gw->window_width;
-  gw->pixmap_height=gw->window_height;
-  gw->pixmap=XCreatePixmap(display,gw->win,gw->pixmap_width,gw->pixmap_height,gw->pixmap_depth);
-  gw->gc=XCreateGC(display,gw->win, valuemask,&values);
-  XSetForeground(display,gw->gc,ctab[X11OutputDevice->white].pixel);
-  XFillRectangle(display,gw->pixmap,gw->gc,0,0,gw->pixmap_width,gw->pixmap_height);                                              XFreeGC(display,gw->gc);
-
+  if (!gw->backing_store) {
+    /* create a pixmap with white background	*/
+    gw->pixmap_depth=DefaultDepth(display,screen_num);
+    gw->pixmap_width=gw->window_width;
+    gw->pixmap_height=gw->window_height;
+    gw->pixmap=XCreatePixmap(display,gw->win,gw->pixmap_width,gw->pixmap_height,gw->pixmap_depth);
+    gw->gc=XCreateGC(display,gw->win, valuemask,&values);
+    XSetForeground(display,gw->gc,ctab[X11OutputDevice->white].pixel);
+    XFillRectangle(display,gw->pixmap,gw->gc,0,0,gw->pixmap_width,gw->pixmap_height);
+    XFreeGC(display,gw->gc);
+  }
 
   /* generate icon, needed for properties */
   gw->icon_pixmap = XCreateBitmapFromData(display,gw->win,view_icon_bits,view_icon_width,
@@ -1367,21 +1535,23 @@ INT X11_UpdateOutput (WINDOWID win, INT tool)
   fg = gcv.foreground;
   bg = gcv.background;
 
-  /* check window and pixmap size */
-  if((gwin->window_width!=gwin->pixmap_width)||(gwin->window_height!=gwin->pixmap_height))
-  {             /* window size has changed, create a new empty pixmap with the new size */
-    XFreePixmap(display,gwin->pixmap);
-    gwin->pixmap_width=gwin->window_width;
-    gwin->pixmap_height=gwin->window_height;
-    gwin->pixmap=XCreatePixmap(display,gwin->win,gwin->pixmap_width,gwin->pixmap_height,gwin->pixmap_depth);
-    XSetForeground(display,gwin->gc,ctab[X11OutputDevice->white].pixel);
-    XFillRectangle(display,gwin->pixmap,gwin->gc,0,0,gwin->pixmap_width,gwin->pixmap_height);
-    XSetForeground(display,gwin->gc,ctab[X11OutputDevice->black].pixel);
-  }
-  else
-  {             /* no changes in size */
-    XClearWindow(display,gwin->win);
-    XCopyArea(display, gwin->pixmap, gwin->win,gwin->gc, 0, 0,gwin->pixmap_width,gwin->pixmap_height,0,0);
+  if (!gw->backing_store) {
+    /* check window and pixmap size */
+    if((gwin->window_width!=gwin->pixmap_width)||(gwin->window_height!=gwin->pixmap_height))
+    {                   /* window size has changed, create a new empty pixmap with the new size */
+      XFreePixmap(display,gwin->pixmap);
+      gwin->pixmap_width=gwin->window_width;
+      gwin->pixmap_height=gwin->window_height;
+      gwin->pixmap=XCreatePixmap(display,gwin->win,gwin->pixmap_width,gwin->pixmap_height,gwin->pixmap_depth);
+      XSetForeground(display,gwin->gc,ctab[X11OutputDevice->white].pixel);
+      XFillRectangle(display,gwin->pixmap,gwin->gc,0,0,gwin->pixmap_width,gwin->pixmap_height);
+      XSetForeground(display,gwin->gc,ctab[X11OutputDevice->black].pixel);
+    }
+    else
+    {                   /* no changes in size */
+      XClearWindow(display,gwin->win);
+      XCopyArea(display, gwin->pixmap, gwin->win,gwin->gc, 0, 0,gwin->pixmap_width,gwin->pixmap_height,0,0);
+    }
   }
 
   /* set clipping to whole window */
@@ -1411,7 +1581,8 @@ INT X11_UpdateOutput (WINDOWID win, INT tool)
   {
     x = gwin->window_width-(NTOOLS-i)*CONTROLSIZE;
     XCopyPlane(display,tools[i],gwin->win,gwin->gc,0,0,w,h,x,y,1);
-    XCopyPlane(display,tools[i],gwin->pixmap,gwin->gc,0,0,w,h,x,y,1);
+    if (!gw->backing_store)
+      XCopyPlane(display,tools[i],gwin->pixmap,gwin->gc,0,0,w,h,x,y,1);
   }
 
   /* highlite active tool */
@@ -1435,7 +1606,8 @@ INT X11_UpdateOutput (WINDOWID win, INT tool)
   y = gwin->window_height-CONTROLSIZE-1;
   w = gwin->window_width;
   XDrawLine(display,gwin->win,gwin->gc,0,y,w-1,y);
-  XDrawLine(display,gwin->pixmap,gwin->gc,0,y,w-1,y);
+  if (!gw->backing_store)
+    XDrawLine(display,gwin->pixmap,gwin->gc,0,y,w-1,y);
 
   /* restore GC */
   gcv.line_width = lw;
