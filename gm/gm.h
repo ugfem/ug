@@ -723,9 +723,9 @@ struct blockvector
 typedef struct blockvector BLOCKVECTOR;
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* unstructured grid data structures                                                                            */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* unstructured grid data structures                                        */
+/*                                                                          */
 /****************************************************************************/
 
 /*----------- typedef for functions ----------------------------------------*/
@@ -737,16 +737,16 @@ typedef struct blockvector BLOCKVECTOR;
 struct ivertex {
 
   /* variables */
-  /* object identification, various flags */
+  /** \brief Object identification, various flags */
   unsigned INT control;
 
-  /* unique id used for load/store                */
+  /** \brief Unique id used for load/store */
   INT id;
 
-  /* vertex position                                              */
+  /** \brief Vertex position                                              */
   DOUBLE x[DIM];
 
-  /* local coordinates in father element  */
+  /** \brief Local coordinates in father element  */
   DOUBLE xi[DIM];
 
 #ifdef ModelP
@@ -755,13 +755,13 @@ struct ivertex {
 #endif
 
   /* pointers */
-  /* double linked list of vertices */
+  /** \brief Doubly linked list of vertices */
   union vertex *pred,*succ;
 
-  /* associated user data structure */
+  /** \brief Associated user data structure */
   void *data;
 
-  /* father element */
+  /** \brief Father element */
   union element *father;
 
 #ifdef TOPNODE
@@ -783,10 +783,10 @@ struct bvertex {
   /** \brief Unique id used for load/store */
   INT id;
 
-  /** \brief vertex position */
+  /** \brief Vertex position */
   DOUBLE x[DIM];
 
-  /** \brief local coordinates in father element  */
+  /** \brief Local coordinates in father element  */
   DOUBLE xi[DIM];
 
 #ifdef ModelP
@@ -794,13 +794,13 @@ struct bvertex {
 #endif
 
   /* pointers */
-  /** \brief double linked list of vertices               */
+  /** \brief Doubly linked list of vertices               */
   union vertex *pred,*succ;
 
-  /** \brief associated user data structure */
+  /** \brief Associated user data structure */
   void *data;
 
-  /** \brief father element */
+  /** \brief Father element */
   union element *father;
 
 #ifdef TOPNODE
@@ -811,7 +811,7 @@ struct bvertex {
   struct node *topnode;
 #endif
 
-  /** \brief pointer boundary point decriptor */
+  /** \brief Pointer to boundary point decriptor */
   BNDP *bndp;
 };
 
@@ -831,10 +831,10 @@ struct elementlist {
 struct node {
 
   /* variables */
-  /** \brief object identification, various flags */
+  /** \brief Object identification, various flags */
   unsigned INT control;
 
-  /** \brief unique id used for load/store                */
+  /** \brief Unique id used for load/store                */
   INT id;
 
 #ifdef ModelP
@@ -842,29 +842,29 @@ struct node {
 #endif
 
   /* pointers */
-  /** \brief double linked list of nodes per level*/
+  /** \brief Doubly linked list of nodes per level*/
   struct node *pred,*succ;
 
-  /** \brief list of links                                                */
+  /** \brief List of links                                                */
   struct link *start;
 
-  /** \brief node or edge on coarser level (NULL if none) */
+  /** \brief Node or edge on coarser level (NULL if none) */
   union geom_object *father;
 
-  /** \brief node on finer level (NULL if none)   */
+  /** \brief Node on finer level (NULL if none)   */
   struct node *son;
 
-  /** \brief corresponding vertex structure               */
+  /** \brief Corresponding vertex structure               */
   union vertex *myvertex;
 
-  /** \brief associated vector
+  /** \brief Associated vector
    *
    * WARNING: the allocation of the vector pointer depends on the format */
   VECTOR *vector;
 
-  /** \brief associated data pointer
+  /** \brief Associated data pointer
    *
-   * WARNING: the allocation of the data pointer depends on the format */
+   * WARNING: The allocation of the data pointer depends on the format */
   void *data;
 };
 
@@ -1979,7 +1979,7 @@ enum LV_ID_TYPES {
 #define MROOTTYPE(p)                            CW_READ_STATIC(p,MROOTTYPE_,MATRIX_)
 #define SETMROOTTYPE(p,n)                       CW_WRITE_STATIC(p,MROOTTYPE_,MATRIX_,n)
 #if (MAXVTYPES > POW2(MROOTTYPE_LEN))
-        #error  *** MROOTTYPE_LEN too small ***
+#error  *** MROOTTYPE_LEN too small ***
 #endif
 
 #define MDESTTYPE_SHIFT                         3
@@ -2483,12 +2483,20 @@ enum GM_OBJECTS {
 /****************************************************************************/
 
 /* TAG values */
-#define TRIANGLE                3
-#define QUADRILATERAL   4
-#define TETRAHEDRON     4
-#define PYRAMID                 5
-#define PRISM           6
-#define HEXAHEDRON              7
+//#define TRIANGLE                3
+//#define QUADRILATERAL   4
+//#define TETRAHEDRON     4
+//#define PYRAMID                 5
+//#define PRISM           6
+//#define HEXAHEDRON              7
+
+enum {TRIANGLE = 3,
+      QUADRILATERAL = 4};
+
+enum {TETRAHEDRON = 4,
+      PYRAMID = 5,
+      PRISM = 6,
+      HEXAHEDRON = 7};
 
 /* control word offsets */
 #define ELEMENT_OFFSET                                  0
