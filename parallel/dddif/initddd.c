@@ -736,12 +736,11 @@ int InitParallel (int *argc, char ***argv)
 
   /* initialize context */
   /* TODO: malloc() should be replaced by HEAPs or ddd_memmgr */
-  dddctrl.context = (DDD_PROC *)malloc(sizeof(DDD_PROC)*procs);
+  dddctrl._context = (INT *)malloc(sizeof(INT)*procs);
 
-  /* initial context is master processor only */
+  /* initial context is all processors */
   for(i=0; i<procs; i++)
-    dddctrl.context[i] = 0;
-  dddctrl.context[master] = 1;
+    dddctrl._context[i] = 1;
 
 
   /* initialize type mapping arrays */
@@ -784,8 +783,8 @@ int InitParallel (int *argc, char ***argv)
 void ExitParallel (void)
 {
   /* free memory allocated by InitParallel */
-  if (dddctrl.context!=NULL)
-    free(dddctrl.context);
+  if (dddctrl._context!=NULL)
+    free(dddctrl._context);
 
   DDD_Exit();
 }

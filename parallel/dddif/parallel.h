@@ -88,7 +88,7 @@ enum HandlerSets
 #define UGTYPE(t)          (dddctrl.ugtypes[(t)])
 #define DDDTYPE(t)         (dddctrl.types[(t)])
 #define HAS_DDDHDR(t)      (dddctrl.dddObj[(t)])
-#define CONTEXT(p)         (dddctrl.context[(p)])
+#define CONTEXT(p)         (dddctrl._context[(p)])
 
 #define DDD_DOMAIN_DATA    DDD_USER_DATA+1
 #define DDD_EXTRA_DATA     DDD_USER_DATA+2
@@ -155,7 +155,7 @@ typedef struct
   int allTypesDefined;
 
   /* context information, will be allocated with size=procs */
-  DDD_PROC  *context;
+  INT  *_context;
 } DDD_CTRL;
 
 extern DDD_CTRL dddctrl;
