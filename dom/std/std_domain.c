@@ -2594,7 +2594,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
                           LINE_PATCH_CID1(thePatch,n)));
       PRINTDEBUG(dom,1,("\n"));
 
-      IFDEBUG(dom,0)
+      IFDEBUG(dom,10)
       if (k == 2)
       {
         INT o0,o1,s0,s1;
@@ -4408,6 +4408,9 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
     return((*(currBVP->GeneralBndCond))(NULL,NULL,in,value,type));
   }
 
+  /* give segment-id information similar to GeneralBndCond */
+  type[0] = PATCH_ID(p) - currBVP->sideoffset;
+
   if (local2lambda(ps,local,lambda))
     return (1);
 
@@ -4548,7 +4551,7 @@ static INT BndPointGlobal (BNDP *aBndP, DOUBLE *global)
                       ps->local[0][0],
                       ps->local[0][1]));
     if ((*PARAM_PATCH_BS (s))(PARAM_PATCH_BSD(s),ps->local[0],global))
-      return(1);
+      REP_ERR_RETURN(1);
     PRINTDEBUG(dom,1,(" bndp n %d %d loc %f %f gl %f %f %f\n",
                       POINT_PATCH_N(p),
                       POINT_PATCH_PID(p,0),
@@ -4559,7 +4562,7 @@ static INT BndPointGlobal (BNDP *aBndP, DOUBLE *global)
     {
       s = currBVP->patches[POINT_PATCH_PID(p,j)];
       if ((*PARAM_PATCH_BS (s))(PARAM_PATCH_BSD(s),ps->local[j],pglobal))
-        return(1);
+        REP_ERR_RETURN(1);
       PRINTDEBUG(dom,1,(" bndp    j %d %d loc %f %f gl %f %f %f\n",j,
                         POINT_PATCH_PID(p,j),
                         ps->local[j][0],
@@ -4567,14 +4570,14 @@ static INT BndPointGlobal (BNDP *aBndP, DOUBLE *global)
                         pglobal[0],pglobal[1],pglobal[2]));
       for (k=0; k<DIM; k++)
         if (ABS(pglobal[k] - global[k]) > SMALL_DIFF)
-          return(1);
+          REP_ERR_RETURN(1);
     }
     return(0);
       #ifdef __THREEDIM__
   case LINE_PATCH_TYPE :
     s = currBVP->patches[LINE_PATCH_PID(p,0)];
     if ((*PARAM_PATCH_BS (s))(PARAM_PATCH_BSD(s),ps->local[0],global))
-      return(1);
+      REP_ERR_RETURN(1);
     PRINTDEBUG(dom,1,(" bndp    n %d %d loc %f %f gl %f %f %f\n",
                       POINT_PATCH_N(p),
                       LINE_PATCH_PID(p,0),
@@ -4593,13 +4596,13 @@ static INT BndPointGlobal (BNDP *aBndP, DOUBLE *global)
                         pglobal[0],pglobal[1],pglobal[2]));
       for (k=0; k<DIM; k++)
         if (ABS(pglobal[k] - global[k]) > SMALL_DIFF)
-          return(1);
+          REP_ERR_RETURN(1);
     }
     return(0);
       #endif
   }
 
-  return(1);
+  REP_ERR_RETURN(1);
 }
 
 /* domain interface function: for description see domain.h */

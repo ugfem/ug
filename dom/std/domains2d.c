@@ -4686,24 +4686,24 @@ static INT InitChannelNoParts (void)
   radius = 1.05;
 
   if (CreateDomain(
-        "ChannelNoParts",                       /* name of the new domain                               */
+        "ChannelNoParts",               /* name of the new domain                               */
         MidPoint,radius,                /* circle containing the domain			*/
-        NO_OF_SEG+3,                                    /* number of boundary segments                  */
-        NO_OF_SEG,                                      /* number of corners					*/
-        NO                                                              /* true if domain is convex				*/
+        NO_OF_SEG+3,                            /* number of boundary segments                  */
+        NO_OF_SEG,                              /* number of corners					*/
+        NO                                                      /* true if domain is convex				*/
         )==NULL) return(1);
   if (CreateBoundarySegment2D(
-        QUOTE(NAME(0)),                                 /* name of the boundary segment                 */
-        1,                                                              /* number of left subdomain				*/
-        0,                                                              /* number of right subdomain			*/
-        0,                                                              /* number of segment, starting with 0	*/
-        0,                                                              /* number of corner where segment starts*/
-        1,                                                              /* number of corner where segment ends  */
-        1,                                                      /* resolution, use 1 for straight line  */
-        0.0,                                                    /* begin of parameter interval			*/
-        1.0,                                                    /* end of parameter interval			*/
-        NAME(0),                                        /* function mapping parameter to world  */
-        NULL                                                    /* user defined pointer to be supplied  */
+        QUOTE(NAME(0)),                         /* name of the boundary segment                 */
+        1,                                                      /* number of left subdomain				*/
+        0,                                                      /* number of right subdomain			*/
+        0,                                                      /* number of segment, starting with 0	*/
+        0,                                                      /* number of corner where segment starts*/
+        1,                                                      /* number of corner where segment ends  */
+        1,                                              /* resolution, use 1 for straight line  */
+        0.0,                                            /* begin of parameter interval			*/
+        1.0,                                            /* end of parameter interval			*/
+        NAME(0),                                /* function mapping parameter to world  */
+        NULL                                            /* user defined pointer to be supplied  */
         )==NULL) return(1);
   if (CreateBoundarySegment2D(QUOTE(NAME(1)),1,2, 1,1,2,
                               1,0.0,1.0,NAME(1),NULL)==NULL)
