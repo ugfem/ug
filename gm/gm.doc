@@ -2702,9 +2702,8 @@ struct multigrid {
     union geom_object *Selection[MAXSELECTION]; // pointer to selec. objects
     
     // user data 
-    VIRT_HEAP_MGMT *IndivMGUDM;     // individual user data space management
-    void *GenData;                  // general user data space              
-    void *IndivData;                // individual user data space           
+	void *GenData;					// general user data space
+	HEAP *UserHeap;					// user heap
 } ;
 
 typedef struct multigrid MULTIGRID;
@@ -2777,8 +2776,10 @@ with the mouse in the graphical user interface.
 . SelectionMode - Indicates type of objects in the selection buffer. Currently
 'nodeSelection'  and 'elementSelection' is possible.
 
-. IndivMGUDM,GenData,IndivData - Management of user data space in multigrid.
-Will be updated soon.
+. GenData - Management of general user data space in multigrid. At initialisation time
+different modules can (pre)allocate storage which will (actually) be allocated in
+each multigrid when it is opened. Storage is allocated and addressed by calls of
+'DefineMGUDBlock' and 'GetMGUDBlockDescriptor' resp. See also the macros below.
 
 MACROS:
 
@@ -2795,7 +2796,7 @@ INT NIDCNT (MULTIGRID *mg);
 INT EIDCNT (MULTIGRID *mg);
 .ve
 
-Access to values if the vertex, node and element id counters.
+Access to values of the vertex, node and element id counters.
 
 .vb
 INT TOPLEVEL (MULTIGRID *mg);
@@ -2872,6 +2873,36 @@ char *MGNAME (MULTIGRID *mg);
 .ve
 
 Returns the name of the multigrid from the environment item.
+
+.vb
+HEAP *MG_USER_HEAP(MULTIGRID *mg);
+.ve
+
+Returns the multigrid user data heap pointer. The heapsize is determined by the
+'FORMAT' definition.
+
+.vb
+void *GEN_MGUD(MULTIGRID *mg);
+.ve
+
+Returns the address of the gemeral multigrid user data.
+
+.vb
+void *GEN_MGUD_ADR(MULTIGRID *mg, MEM offset);
+.ve
+
+Returns the address of a block with a certain offset (in bytes)
+in the gemeral multigrid user data. To be used in conjunction with
+
+.vb
+MEM OFFSET_IN_MGUD(INT BlockID);
+.ve
+
+Returns the offset of a previously allocated block in the general multigrid
+user data.
+
+Example':'
+.n  'GEN_MGUD_ADR(myMG,OFFSET_IN_MGUD(myBlock))' will yield the desired memory address
 
 SEE ALSO:
 
