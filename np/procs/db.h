@@ -92,9 +92,6 @@ typedef INT (*PostProcessDataBase)(NP_ORDERED_LIST *, INT *);
 /*																			*/
 /****************************************************************************/
 
-INT     InitOL (void);
-INT OL_Init (NP_BASE *theNP, INT argc, char **argv);
-INT OL_Display (NP_BASE *theNP);
-
+INT InitDb (void);
 
 #endif

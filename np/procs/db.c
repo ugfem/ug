@@ -182,7 +182,7 @@ static INT List_GetListEntry_NextHigherEntry (NP_ORDERED_LIST *theNP, DOUBLE val
   return(0);
 }
 
-INT List_Init (NP_BASE *theNP, INT argc, char **argv)
+static INT List_Init (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_LIST *np;
   INT i,le,cmp;
@@ -222,7 +222,7 @@ INT List_Init (NP_BASE *theNP, INT argc, char **argv)
   return (NP_ACTIVE);
 }
 
-INT List_Display (NP_BASE *theNP)
+static INT List_Display (NP_BASE *theNP)
 {
   NP_LIST *np;
   INT i;
@@ -258,7 +258,7 @@ static INT List_Construct (NP_BASE *theNP)
   return(0);
 }
 
-INT Table_Init (NP_BASE *theNP, INT argc, char **argv)
+static INT Table_Init (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_LIST *np = (NP_LIST *)theNP;
   FILE *file;
