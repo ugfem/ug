@@ -577,7 +577,7 @@ int FAMGGrid::InitLevel0(const class FAMGSystem &system)
 	
     matrix = system.GetMatrix();
     Consmatrix = system.GetConsMatrix();
-    tmpmatrix = matrix;
+    tmpmatrix = Consmatrix;
 	
 #ifdef FAMG_ILU
     decomp = NULL;
@@ -650,7 +650,7 @@ int FAMGGrid::Init(int nn, const FAMGGrid& grid_pattern)
 	mygridvector = NULL; // aendern
 #endif
 	
-    tmpmatrix = matrix;
+    tmpmatrix = Consmatrix;
     transfer = NULL;
 	
 #ifdef FAMG_ILU
@@ -719,7 +719,7 @@ void FAMGGrid::Deconstruct()
 #else
 	assert(0);
     father = NULL;
-    tmpmatrix = matrix;
+    tmpmatrix = GetConsMatrix();
 #endif
 	
 #ifdef FAMG_ILU
