@@ -75,6 +75,7 @@ int Debuggraph              =       0;
 int Debuglow                =       0;
 int Debugmachines   =       0;
 int Debugnumerics   =       0;
+int Debugnp         =       0;
 int Debugui                 =       0;      /* temporary setting for debugging ModelP */
 
 int rep_err_count;

@@ -99,6 +99,7 @@ extern int Debuglow;
 extern int Debugdom;
 extern int Debugmachines;
 extern int Debugnumerics;
+extern int Debugnp;
 extern int Debugui;
 
 /* for reporting of erros (using the REP_ERR_RETURN-macro) */
