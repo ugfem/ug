@@ -285,7 +285,7 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
   {
     /* get Coefficientfunctions */
     if (BVP_SetCoeffFct(MG_BVP(theMG),-1,Coefficients))
-      return (NULL);
+      return (0);
     LOCAL_H = Coefficients[coeff];
   }
 
