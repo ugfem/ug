@@ -365,6 +365,8 @@ extern "C" {
 /*                                                                          */
 /****************************************************************************/
 
+#define ARCH_VERSION "ARCH_1_0"
+
 /* limits of the basic types */
 #define MAX_S            SHRT_MAX
 #define MAX_I            INT_MAX
