@@ -2225,9 +2225,10 @@ static INT OpenCommand (INT argc, char **argv)
    'save [<name>] [$t <type>] [$c <comment>]'
 
    .  <name>                  - name to save with (default is the mgname)
-   .  $t~<type>			   - type can be asc (default>, bin or scr. asc and bin can be opend with
-                                                                the open command, scr can be executed as script (surface will be saved
-                                                                as level 0)
+   .n								if name is ending in .scr a script file is saved which
+                                                                will generate the surface of the grid as level 0 on execution
+   .  $t~<type>			   - type can be asc (default> or bin. asc and bin can be opened with
+                                                                the open command
    .  $c~<comment>            - optionally specify a comment string
 
    KEYWORDS:
