@@ -1116,28 +1116,35 @@ static int sort_MatArray (const void *e1, const void *e2)
   return (NUM_OK);
 }
 
+
 static int CountAndSortMatrices (DDD_OBJ obj)
 {
   VECTOR *pv = (VECTOR *)obj;
   MATRIX *m;
   int n, j;
 
-  if (PRIO(pv) != PrioVGhost)
-    return(0);
-
   /* sort MATRIX-list according to gid of destination vector */
+  if (VSTART(pv) == NULL)
+    return(0);
   n = 0;
-  if (VSTART(pv)!=NULL)
-  {
-    ASSERT(MDEST(VSTART(pv))==pv);
+  ASSERT(MDEST(VSTART(pv))==pv);
 
-    for (m=VSTART(pv); m!=NULL; m=MNEXT(m))
-      MatArrayRemote[n++] = m;
+  for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
+    MatArrayRemote[n++] = m;
+  if (n>1) {
+    qsort(MatArrayRemote,MIN(n,MATARRAYSIZE),
+          sizeof(MATRIX *),sort_MatArray);
+    m=VSTART(pv);
+    for(j=0; j<n; j++) {
+      MNEXT(m) = MatArrayRemote[j];
+      m = MNEXT(m);
+    }
+    MNEXT(m)=NULL;
   }
-  if (n>1)
-    qsort(MatArrayRemote,MIN(n,MATARRAYSIZE),sizeof(MATRIX *),sort_MatArray);
-  if (MaximumInconsMatrices < n)
-    MaximumInconsMatrices = n;
+  n++;
+  if (PRIO(pv) == PrioVGhost)
+    if (MaximumInconsMatrices < n)
+      MaximumInconsMatrices = n;
 
   return(0);
 }

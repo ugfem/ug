@@ -428,9 +428,11 @@ static INT GenerateNewGrid(GRID *theGrid)
                          DDD_InfoGlobalId(PARHDR(vect)),
                          DDD_InfoNCopies(PARHDR(vect))));
         while (*proclist != -1) {
-          if (GHOSTPRIO(proclist[1])) continue;
-          PRINTDEBUG(np,1,("%d: pl %d\n",me,*proclist));
-          DDD_IdentifyObject(PARHDR(newVect),*proclist,PARHDR(vect));
+          if (!GHOSTPRIO(proclist[1])) {
+            PRINTDEBUG(np,1,("%d: pl %d\n",me,*proclist));
+            DDD_IdentifyObject(PARHDR(newVect),*proclist,
+                               PARHDR(vect));
+          }
           proclist += 2;
         }
         PRINTDEBUG(np,1,(" prio %d, attr %d\n",
