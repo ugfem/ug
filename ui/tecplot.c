@@ -122,64 +122,6 @@ static INT get_offset (INT n)
   return(offset);
 }
 
-static INT GloballyUniqueIDs (MULTIGRID *theMG)
-{
-  GRID *theGrid;
-  VERTEX *theVertex;
-  NODE *theNode;
-  ELEMENT *theElement;
-  INT nv,nn,ne;
-  INT ov,on,oe;
-  int k,j;
-
-  nv = ne = nn = 0;
-
-  j = theMG->topLevel;
-  for (k=0; k<=j; k++)
-  {
-    theGrid = GRID_ON_LEVEL(theMG,k);
-
-    /* vertices */
-    for (theVertex=FIRSTVERTEX(theGrid); theVertex!=NULL; theVertex=SUCCV(theVertex))
-      ID(theVertex) = nv++;
-
-    /* nodes */
-    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-      ID(theNode) = nn++;
-
-    /* elements */
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-      ID(theElement) = ne++;
-  }
-
-  theMG->vertIdCounter = nv;
-  theMG->nodeIdCounter = nn;
-  theMG->elemIdCounter = ne;
-
-  ov = get_offset(nv);
-  on = get_offset(nn);
-  oe = get_offset(ne);
-
-  for (k=0; k<=j; k++)
-  {
-    theGrid = GRID_ON_LEVEL(theMG,k);
-
-    /* vertices */
-    for (theVertex=FIRSTVERTEX(theGrid); theVertex!=NULL; theVertex=SUCCV(theVertex))
-      ID(theVertex) += ov;
-
-    /* nodes */
-    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-      ID(theNode) += on;
-
-    /* elements */
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-      ID(theElement) += oe;
-  }
-
-  return(0);
-}
-
 static INT TPL_GlobalSumINT (INT i)
 {
   int l;
@@ -349,7 +291,26 @@ static INT TecplotCommand (INT argc, char **argv)
   gnumElements = TPL_GlobalSumINT(numElements);
   on=get_offset(numNodes);
   oe=get_offset(numElements);
-  GloballyUniqueIDs(mg);   /* renumber objects */
+
+  /* clear VCFLAG on all levels */
+  for (k=0; k<=TOPLEVEL(mg); k++)
+    for (vc=FIRSTVECTOR(GRID_ON_LEVEL(mg,k)); vc!=NULL; vc=SUCCVC(vc))
+      SETVCFLAG(vc,0);
+
+  /* number in unique way */
+  for (k=0; k<=TOPLEVEL(mg); k++)
+    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
+    {
+      if (!EstimateHere(el)) continue;                          /* process finest level elements only */
+      for (i=0; i<CORNERS_OF_ELEM(el); i++)
+      {
+        vc = NVECTOR(CORNER(el,i));
+        if (VCFLAG(vc)) continue;                       /* we have this one already */
+
+        VINDEX(vc) += on;                                       /* add offset */
+        SETVCFLAG(vc,1);                                        /* tag vector as visited */
+      }
+    }
     #else
   gnumNodes = numNodes;
   gnumElements = numElements;
@@ -426,7 +387,7 @@ static INT TecplotCommand (INT argc, char **argv)
         }
         sprintf(it,"\n");
         strcpy(item+ic,it); ic+=strlen(it);
-        pfile_tagged_puts(pf,item,counter+on);
+        pfile_tagged_puts(pf,item,counter+on); ic=0;
         counter++;
       }
     }
