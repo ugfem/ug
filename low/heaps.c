@@ -842,6 +842,31 @@ MEM HeapUsed (const HEAP *theHeap)
 
 /****************************************************************************/
 /*D
+   HeapFree - Get free memory of heap (without free lists)
+
+   SYNOPSIS:
+   MEM HeapFree (const HEAP *theHeap)
+
+   PARAMETERS:
+   .  theHeap - heap to get free memory of heap
+
+   DESCRIPTION:
+   This function gets the free memory of heap. The free momory in the free lists is
+   not taken into account
+
+   RETURN VALUE:
+   MEM
+   .n    theHeap->size-theHeap->used
+   D*/
+/****************************************************************************/
+
+MEM HeapFree (const HEAP *theHeap)
+{
+  return(theHeap->size-theHeap->used);
+}
+
+/****************************************************************************/
+/*D
    HeapFreelistUsed - Get memory of heap in freelists
 
    SYNOPSIS:
@@ -862,6 +887,30 @@ MEM HeapUsed (const HEAP *theHeap)
 MEM HeapFreelistUsed (const HEAP *theHeap)
 {
   return(theHeap->freelistmem);
+}
+
+/****************************************************************************/
+/*D
+   HeapTotalFree - Get memory of heap in freelists
+
+   SYNOPSIS:
+   MEM HeapTotalFree (const HEAP *theHeap)
+
+   PARAMETERS:
+   .  theHeap - heap to get used memory of heap
+
+   DESCRIPTION:
+   This function gets the used memory of heap which is available in the freelists.
+
+   RETURN VALUE:
+   MEM
+   .n    theHeap->size-theHeap->used+theHeap->freelistmem
+   D*/
+/****************************************************************************/
+
+MEM HeapTotalFree (const HEAP *theHeap)
+{
+  return(theHeap->size-theHeap->used+theHeap->freelistmem);
 }
 
 /****************************************************************************/
