@@ -78,7 +78,7 @@ static double h_global;
 
 static INT ntriangle;
 
-static CoeffProcPtr LOCAL_H[1];
+static CoeffProcPtr LOCAL_H;
 
 /* RCS string */
 RCSID("$Header$",UG_RCS_STRING)
@@ -161,16 +161,17 @@ INT GenerateSurfaceGrid (LGM_SURFACE *aSurface, DOUBLE h, INT smooth,INT display
 
 int Get_Local_h(double *in, double *out)
 {
-  (*LOCAL_H[0])(in, out);
+  (*LOCAL_H)(in, out);
   return(0);
 }
 
-INT InitSurface(CoeffProcPtr *Coeff)
+INT InitSurface(CoeffProcPtr Coeff)
 {
   char rulefilename[128];
   if (GetDefaultValue(DEFAULTSFILENAME,"netgentrianglerules",rulefilename))
     strcpy(rulefilename,"triangle.rls");
-  LOCAL_H[0] = Coeff[0];
+  /*	LOCAL_H[0] = Coeff[coeff];*/
+  LOCAL_H = Coeff;
     #ifdef _NETGEN
   InitSurfaceNetgen(rulefilename);
     #endif

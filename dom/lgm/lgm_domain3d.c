@@ -1877,7 +1877,7 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
   for(i=0; i<nsp*nsp; i++)
     LGM_SURFACE_DISC(theSurface)->triangle[i] = (INT *)  GetTmpMem(Heap,4*sizeof(INT));
 
-  InitSurface(Coefficients);
+  InitSurface(LOCAL_H);
 
   LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)) = 0;
   LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)) = 0;
