@@ -125,24 +125,28 @@ static INT StandardRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
   ELEMENT *theElement;
   VERTEX *theVertex;
   NODE *theNode;
+  EDGE *theEdge;
   VECTOR *v,*vc;
   DOUBLE c[MAX_CORNERS_OF_ELEM],s[MAX_SINGLE_VEC_COMP];
-  const SHORT *toComp,*fromComp;
-  INT i,j,n,ncomp,vecskip,dt;
+  const SHORT *toComp,*fromComp,*edComp;
+  INT i,j,n,ncomp,edcomp,vecskip,dt;
 
   CoarseGrid = DOWNGRID(FineGrid);
 
   toComp    = VD_ncmp_cmpptr_of_otype_mod(to,NODEVEC,&ncomp,NON_STRICT);
   fromComp  = VD_cmpptr_of_otype_mod(from,NODEVEC,NON_STRICT);
+  edComp   = VD_ncmp_cmpptr_of_otype(to,EDGEVEC,&edcomp);
   if (ncomp <= 0)
     return(NUM_ERROR);
   if (ncomp>MAX_SINGLE_VEC_COMP)
     return (NUM_BLOCK_TOO_LARGE);
+  if (ncomp < edcomp)
+    return(NUM_ERROR);
 
   /* reset coarser defect at positions where a new defect is restricted */
   dt = VD_DATA_TYPES(to);
   for (v=PFIRSTVECTOR(CoarseGrid); v!= NULL; v=SUCCVC(v))
-    if ((VOTYPE(v)==NODEVEC) && V_IN_DATATYPE(v,dt))
+    if (V_IN_DATATYPE(v,dt))
       if (VNCLASS(v)>=NEWDEF_CLASS)
         for (i=0; i<ncomp; i++)
           VVALUE(v,toComp[i]) = 0.0;
@@ -187,6 +191,23 @@ static INT StandardRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
     }
   }
 
+  for (v=PFIRSTVECTOR(FineGrid); v!= NULL; v=SUCCVC(v)) {
+    if (VOTYPE(v) != EDGEVEC) continue;
+    theEdge = (EDGE *)VOBJECT(v);
+    theNode = NBNODE(LINK0(theEdge));
+    vc = NVECTOR(theNode);
+    vecskip = VECSKIP(vc);
+    for (j=0; j<edcomp; j++)
+      if (!(vecskip & (1<<j)))
+        VVALUE(vc,fromComp[j]) += 0.5 * damp[j] * VVALUE(v,edComp[j]);
+    theNode = NBNODE(LINK1(theEdge));
+    vc = NVECTOR(theNode);
+    vecskip = VECSKIP(vc);
+    for (j=0; j<edcomp; j++)
+      if (!(vecskip & (1<<j)))
+        VVALUE(vc,fromComp[j]) += 0.5 * damp[j] * VVALUE(v,edComp[j]);
+  }
+
   return (NUM_OK);
 }
 
@@ -222,22 +243,26 @@ static INT StandardIntCorNodeVector (GRID *FineGrid, const VECDATA_DESC *to, con
   ELEMENT *theElement;
   VERTEX *theVertex;
   NODE *theNode;
+  EDGE *theEdge;
   VECTOR *v,*vc,*cvec[MAX_CORNERS_OF_ELEM];
   DOUBLE c[MAX_CORNERS_OF_ELEM];
-  const SHORT *toComp,*fromComp;
-  INT i,j,n,ncomp,vecskip,skip,dt;
+  const SHORT *toComp,*fromComp,*edComp;
+  INT i,j,n,ncomp,edcomp,vecskip,skip,dt;
 
   CoarseGrid = DOWNGRID(FineGrid);
 
   toComp   = VD_ncmp_cmpptr_of_otype_mod(to,NODEVEC,&ncomp,NON_STRICT);
+  edComp   = VD_ncmp_cmpptr_of_otype(to,EDGEVEC,&edcomp);
   fromComp = VD_cmpptr_of_otype_mod(from,NODEVEC,NON_STRICT);
   if (ncomp <= 0)
+    return(NUM_ERROR);
+  if (ncomp < edcomp)
     return(NUM_ERROR);
 
   /* reset fine to field */
   dt = VD_DATA_TYPES(to);
   for (v=FIRSTVECTOR(FineGrid); v!= NULL; v=SUCCVC(v))
-    if ((VOTYPE(v)==NODEVEC) && V_IN_DATATYPE(v,dt))
+    if (V_IN_DATATYPE(v,dt))
       for (i=0; i<ncomp; i++)
         VVALUE(v,toComp[i]) = 0.0;
 
@@ -283,6 +308,26 @@ static INT StandardIntCorNodeVector (GRID *FineGrid, const VECDATA_DESC *to, con
     }
   }
 
+  if (edcomp <= 0)
+    return (NUM_OK);
+
+  for (v=PFIRSTVECTOR(FineGrid); v!= NULL; v=SUCCVC(v)) {
+    if (VOTYPE(v) != EDGEVEC) continue;
+    theEdge = (EDGE *)VOBJECT(v);
+    theNode = NBNODE(LINK0(theEdge));
+    vc = NVECTOR(theNode);
+    vecskip = VECSKIP(vc);
+    for (j=0; j<edcomp; j++)
+      if (!(vecskip & (1<<j)))
+        VVALUE(v,edComp[j]) += 0.5 * damp[j] * VVALUE(vc,fromComp[j]);
+    theNode = NBNODE(LINK1(theEdge));
+    vc = NVECTOR(theNode);
+    vecskip = VECSKIP(vc);
+    for (j=0; j<edcomp; j++)
+      if (!(vecskip & (1<<j)))
+        VVALUE(v,edComp[j]) += 0.5 * damp[j] * VVALUE(vc,fromComp[j]);
+  }
+
   return (NUM_OK);
 }
 
@@ -315,15 +360,19 @@ static INT StandardIntNewNodeVector (GRID *FineGrid, const VECDATA_DESC *Cor)
   ELEMENT *theElement;
   VERTEX *theVertex;
   NODE *theNode;
+  EDGE *theEdge;
   VECTOR *v,*vc,*cvec[MAX_CORNERS_OF_ELEM];
   DOUBLE c[MAX_CORNERS_OF_ELEM];
-  const SHORT *Comp;
-  INT i,j,n,ncomp,dt;
+  const SHORT *Comp,*edComp;
+  INT i,j,n,ncomp,edcomp,dt;
 
   CoarseGrid = DOWNGRID(FineGrid);
 
   Comp   = VD_ncmp_cmpptr_of_otype_mod(Cor,NODEVEC,&ncomp,NON_STRICT);
+  edComp   = VD_ncmp_cmpptr_of_otype(Cor,EDGEVEC,&edcomp);
   if (ncomp <= 0)
+    return(NUM_ERROR);
+  if (ncomp < edcomp)
     return(NUM_ERROR);
 
   /* interpolate values to all fine node vectors */
@@ -366,6 +415,23 @@ static INT StandardIntNewNodeVector (GRID *FineGrid, const VECDATA_DESC *Cor)
     }
   }
 
+  if (edcomp <= 0)
+    return (NUM_OK);
+
+  for (v=PFIRSTVECTOR(FineGrid); v!= NULL; v=SUCCVC(v)) {
+    if (!VNEW(v)) continue;
+    if (VOTYPE(v) != EDGEVEC) continue;
+    theEdge = (EDGE *)VOBJECT(v);
+    theNode = NBNODE(LINK0(theEdge));
+    vc = NVECTOR(theNode);
+    for (j=0; j<edcomp; j++)
+      VVALUE(v,edComp[j]) += 0.5 * VVALUE(vc,Comp[j]);
+    theNode = NBNODE(LINK1(theEdge));
+    vc = NVECTOR(theNode);
+    for (j=0; j<edcomp; j++)
+      VVALUE(v,edComp[j]) += 0.5 * VVALUE(vc,Comp[j]);
+  }
+
   return (NUM_OK);
 }
 
@@ -403,6 +469,13 @@ INT StandardRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC
 
   if (DOWNGRID(FineGrid)==NULL)
     return (NUM_NO_COARSER_GRID);
+
+  if (0 < VD_NCMPS_IN_TYPE(to,EDGEVEC))
+    if (VD_NCMPS_IN_TYPE(to,EDGEVEC) <= VD_NCMPS_IN_TYPE(to,NODEVEC)) {
+      rv = StandardRestrictNodeVector(FineGrid,to,from,
+                                      (const DOUBLE *)damp);
+      return (rv);
+    }
 
   offset = VD_OFFSETPTR(to);
   fmt = MGFORMAT(MYMG(FineGrid));
@@ -471,6 +544,12 @@ INT StandardInterpolateCorrection (GRID *FineGrid, const VECDATA_DESC *to, const
   if (DOWNGRID(FineGrid)==NULL)
     return (NUM_NO_COARSER_GRID);
 
+  if (0 < VD_NCMPS_IN_TYPE(to,EDGEVEC))
+    if (VD_NCMPS_IN_TYPE(to,EDGEVEC) < VD_NCMPS_IN_TYPE(to,NODEVEC)) {
+      rv=StandardIntCorNodeVector(FineGrid,to,from,(const DOUBLE *)damp);
+      return (rv);
+    }
+
   offset = VD_OFFSETPTR(to);
   fmt = MGFORMAT(MYMG(FineGrid));
 
@@ -534,6 +613,12 @@ INT StandardInterpolateNewVectors (GRID *FineGrid, const VECDATA_DESC *Sol)
 
   if (DOWNGRID(FineGrid)==NULL)
     return (NUM_NO_COARSER_GRID);
+
+  if (0 < VD_NCMPS_IN_TYPE(Sol,EDGEVEC))
+    if (VD_NCMPS_IN_TYPE(Sol,EDGEVEC) < VD_NCMPS_IN_TYPE(Sol,NODEVEC)) {
+      rv = StandardIntNewNodeVector(FineGrid,Sol);
+      return (rv);
+    }
 
   fmt = MGFORMAT(MYMG(FineGrid));
 
@@ -1310,7 +1395,7 @@ static INT InterpolateCorrectionByMatrix_General (GRID *FineGrid, const VECDATA_
     }
     if (damp[0] != 1.0)
       if (dscalx(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
-                 ALL_VECTORS,to, damp))
+                 ALL_VECTORS,to,(DOUBLE*)damp))
         return (NUM_ERROR);
 
     return (NUM_OK);
@@ -1363,7 +1448,7 @@ static INT InterpolateCorrectionByMatrix_General (GRID *FineGrid, const VECDATA_
 
   if (CheckDamp(VD_NCOMP(to),damp))
     if (dscalx(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
-               ALL_VECTORS,to,damp))
+               ALL_VECTORS,to,(DOUBLE*)damp))
       return (NUM_ERROR);
 
   return (NUM_OK);
@@ -2347,9 +2432,8 @@ INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const MATDATA_
     for (mij=VSTART(vi); mij!=NULL; mij=MNEXT(mij))
     {
       /*
-                              if (CEXTRA(mij)) continue;
+            if (CEXTRA(mij)) continue;
        */
-
       Dfine = &(MVALUE(mij,A));
       for (i=0; i<n; i++)
         for (j=0; j<n; j++) {
