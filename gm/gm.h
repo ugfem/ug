@@ -2239,23 +2239,23 @@ enum LV_ID_TYPES {
 /* object identification */
 enum GM_OBJECTS {
 
-  MGOBJ,                                                /* multigrid object                             */
-  IVOBJ,                                                /* inner vertex                                         */
-  BVOBJ,                                                /* boundary vertex                                      */
-  IEOBJ,                                                /* inner element                                        */
-  BEOBJ,                                                /* boundary element                             */
-  EDOBJ,                                                /* edge object                                          */
-  NDOBJ,                                                /* node object                                          */
-  GROBJ,                                                /* grid object                                          */
+  MGOBJ,                            /*!< Multigrid object                             */
+  IVOBJ,                            /*!< Inner vertex                                         */
+  BVOBJ,                            /*!< Boundary vertex                                      */
+  IEOBJ,                            /*!< Inner element                                        */
+  BEOBJ,                            /*!< Boundary element                             */
+  EDOBJ,                            /*!< Edge object                                          */
+  NDOBJ,                            /*!< Node object                                          */
+  GROBJ,                            /*!< Grid object                                          */
 
   /* object numbers for algebra */
-  VEOBJ,                                                /* vector object                                        */
-  MAOBJ,                                                /* matrix object                                        */
-  BLOCKVOBJ,                        /* blockvector object               */
+  VEOBJ,                            /*!< Vector object                                        */
+  MAOBJ,                            /*!< Matrix object                                        */
+  BLOCKVOBJ,                        /*!< Blockvector object               */
 
-  NPREDEFOBJ,                                           /* no of predefined objects             */
+  NPREDEFOBJ,                       /*!< Number of predefined objects             */
 
-  NOOBJ = -1
+  NOOBJ = -1                        /*!< No object */
 };
 #define LIOBJ           EDOBJ           /* link and edge are identified                 */
 #define COOBJ           MAOBJ           /* connection and matrix are identified         */
@@ -3317,6 +3317,12 @@ INT             KeyForObject                                            (KEY_OBJ
 
 /** \todo remove the following functions after the code will never need any debugging */
 char *PrintElementInfo (ELEMENT *theElement,INT full);
+
+/** \todo This is a static function in standard UG.  Dune calls it at the
+    moment, so I made it nonstatic. */
+#ifdef __cplusplus
+INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid);
+#endif
 
 #ifdef __cplusplus
 }  /* namespace UG{2|3}d */
