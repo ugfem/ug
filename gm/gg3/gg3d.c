@@ -1388,7 +1388,6 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
       stream = fopen(name,"r+");
       if (stream==NULL)
       {
-        fclose(stream);
         printf("%s %d %s\n", "Subdomain ", subdomain, "not triangulated, do now");
 
         if(SAVE)
