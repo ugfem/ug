@@ -1955,11 +1955,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 		{
 			/* we need a midpoint node */
 			if (MidNodes[i]!=NULL) continue;
-			Node0 = CORNER(theElement,Corner0);
-			Node1 = CORNER(theElement,Corner1);
-			if ((theEdge = GetEdge(Node0,Node1))==NULL)
-				RETURN(GM_FATAL);
-			MidNodes[i] = MIDNODE(theEdge);
+			MidNodes[i] = GetMidNode(theElement,i);
 			if (MidNodes[i] == NULL)
 			{
 				MidNodes[i] = CreateMidNode(theGrid,theElement,i);

@@ -678,6 +678,34 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
 D*/
 /****************************************************************************/
 
+NODE *GetMidNode (ELEMENT *theElement, INT edge)
+{
+	ELEMENT *theFather;
+	EDGE *theEdge;
+	NODE *theNode;
+	VERTEX *theVertex;
+
+	HEAPFAULT(theElement);
+	theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,edge,0)),
+					  CORNER(theElement,CORNER_OF_EDGE(theElement,edge,1)));
+	if (theEdge == NULL) return(NULL);
+	theNode = MIDNODE(theEdge);
+	if (theNode == NULL) return(NULL);
+	theVertex = MYVERTEX(theNode);
+	if (VFATHER(theVertex) == NULL) {
+		VFATHER(theVertex) = theElement;
+		SETONEDGE(theVertex,edge);
+		V_DIM_LINCOMB(0.5,
+					  LOCAL_COORD_OF_ELEM(theElement,
+										  CORNER_OF_EDGE(theElement,edge,0)),
+					  0.5,
+					  LOCAL_COORD_OF_ELEM(theElement,
+										  CORNER_OF_EDGE(theElement,edge,1)),
+					  LCVECT(theVertex));
+	}
+	return(theNode);
+}
+
 static INT SideOfNbElement(ELEMENT *theElement, INT side)
 {
    ELEMENT *nb;
@@ -686,6 +714,9 @@ static INT SideOfNbElement(ELEMENT *theElement, INT side)
 
    nb = NBELEM(theElement,side);	
    if (nb == NULL) return(MAX_SIDES_OF_ELEM);
+
+   for (j=0; j<SIDES_OF_ELEM(nb); j++) 
+	   if (NBELEM(nb,j) == theElement) return(j);
 
    n = CORNERS_OF_SIDE(theElement,side);
    for (i=0; i<n; i++) 
@@ -788,18 +819,23 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 
 NODE *GetSideNode (ELEMENT *theElement, INT side)
 {
+    ELEMENT *theFather;
 	NODE *theNode;
 	NODE *MidNodes[MAX_EDGES_OF_SIDE];
+	VERTEX *theVertex;
 	LINK *theLink0,*theLink1,*theLink2,*theLink3;
-	INT i,j,n;
+	DOUBLE fac,*local;
+	INT i,j,n,m;
 
-	n = EDGES_OF_SIDE(theElement,side);
-	for (i=0; i<n; i++) {
-		theNode = MIDNODE(GetEdge(
-		CORNER_OF_EDGE_PTR(theElement,EDGE_OF_SIDE(theElement,side,i),0),
-		CORNER_OF_EDGE_PTR(theElement,EDGE_OF_SIDE(theElement,side,i),1)));
-		if (theNode == NULL) return(NULL);
-		MidNodes[i] = theNode;
+	m = EDGES_OF_SIDE(theElement,side);
+	n = 0;
+	for (i=0; i<m; i++) {
+		theNode = GetMidNode(theElement,EDGE_OF_SIDE(theElement,side,i));
+		if (theNode != NULL) 
+		    MidNodes[n++] = theNode;
+		#ifndef ModelP
+		else return(NULL);
+		#endif
 	}
 	if (n == 4) {
 		for (theLink0=START(MidNodes[0]); theLink0!=NULL; 
@@ -819,9 +855,30 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
 						 theLink3=NEXT(theLink3)) { 
 						if (theNode != NBNODE(theLink3))
 							continue;
-						ASSERT((ONSIDE(MYVERTEX(theNode)) == side) ||
-							   (ONNBSIDE(MYVERTEX(theNode)) == side));
-						return(theNode); 
+						theVertex = MYVERTEX(theNode);
+						theFather = VFATHER(theVertex);
+						if (theFather == theElement) 
+							assert(ONSIDE(theVertex) == side);
+						else if (theFather == NBELEM(theElement,side)) 
+							SETONNBSIDE(theVertex,side);
+						else if (theFather == NULL) {
+						    VFATHER(theVertex) = theElement;
+							SETONSIDE(theVertex,side);
+							SETONNBSIDE(theVertex,
+										SideOfNbElement(theElement,side));
+							fac = 1.0 / n;
+							local = LCVECT(theVertex);
+							V_DIM_CLEAR(local);
+							for (i=0; i<n; i++) {
+							  V_DIM_LINCOMB(1.0,local,fac,
+											LOCAL_COORD_OF_ELEM(theElement,
+											CORNER_OF_SIDE(theElement,side,i)),
+											local);
+							}
+						}
+						else
+							assert(0);
+						return(theNode);
 					}
 				}
 			}
@@ -841,17 +898,82 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
 					 theLink2=NEXT(theLink2)) {
 					if (theNode != NBNODE(theLink2))
 						continue;
-					ASSERT((ONSIDE(MYVERTEX(theNode)) == side) ||
-						   (ONNBSIDE(MYVERTEX(theNode)) == side));
-					return(theNode); 
+					theVertex = MYVERTEX(theNode);
+					theFather = VFATHER(theVertex);
+					if (theFather == theElement) {
+					    assert(ONSIDE(theVertex) == side);
+						return(theNode); 
+					}
+					else if (theFather == NBELEM(theElement,side)) {
+					    SETONNBSIDE(theVertex,side);
+						return(theNode); 
+					}
+					else if (theFather == NULL) {
+					    VFATHER(theVertex) = theElement;
+						SETONSIDE(theVertex,side);
+						SETONNBSIDE(theVertex,
+									SideOfNbElement(theElement,side));
+						fac = 1.0 / n;
+						local = LCVECT(theVertex);
+						V_DIM_CLEAR(local);
+						for (i=0; i<n; i++) {
+						  V_DIM_LINCOMB(1.0,local,fac,
+										LOCAL_COORD_OF_ELEM(theElement,
+		   								CORNER_OF_SIDE(theElement,side,i)),
+										local);
+						}
+						return(theNode); 
+					}
 				}
 			}
 		}
 	}
+    #ifdef ModelP
+	else if (n == 2) {
+		for (theLink0=START(MidNodes[0]); theLink0!=NULL; 
+			 theLink0=NEXT(theLink0)) {
+			theNode = NBNODE(theLink0);
+			if (NTYPE(theNode) != SIDE_NODE)
+				continue;
+			for (theLink1=START(MidNodes[1]); theLink1!=NULL; 
+				 theLink1=NEXT(theLink1)) {
+				if (theNode != NBNODE(theLink1))
+					continue;
+				theVertex = MYVERTEX(theNode);
+				theFather = VFATHER(theVertex);
+				if (theFather == theElement) {
+				    if (ONSIDE(theVertex) == side)
+					    return(theNode);
+				}
+				else if (theFather == NBELEM(theElement,side)) {
+				    SETONNBSIDE(theVertex,side);
+					return(theNode);
+				}
+			}
+		}		
+	}
+	else if (n == 1) {
+		for (theLink0=START(MidNodes[0]); theLink0!=NULL; 
+			 theLink0=NEXT(theLink0)) {
+			theNode = NBNODE(theLink0);
+			if (NTYPE(theNode) != SIDE_NODE)
+				continue;
+			theVertex = MYVERTEX(theNode);
+			theFather = VFATHER(theVertex);
+			if (theFather == theElement) {
+			    if (ONSIDE(theVertex) == side)
+				    return(theNode);
+			}
+			else if (theFather == NBELEM(theElement,side)) {
+			    SETONNBSIDE(theVertex,side);
+				return(theNode);
+			}
+		}		
+	}
+    #endif
 
 	return(NULL);
 }
-
 
 INT GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
 {
@@ -958,6 +1080,11 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
 				V_DIM_LINCOMB(0.5,diff,1.0,global,global);
 			}
 		UG_GlobalToLocal(n,(const DOUBLE **)x,global,local);		
+		LOCAL_TO_GLOBAL(n,x,local,diff);
+
+		printf("diff %f %f\n",global[0]-diff[0],global[1]-diff[1]);
+
+		SETMOVED(theVertex,1);
 	}
 	VFATHER(theVertex) = theElement;
 	SETNFATHER(theNode,NULL);
@@ -2203,7 +2330,6 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 	INT		i,j,k,l,m,n,o,edge,tag;
 	DOUBLE	fac,*local;
 	NODE	*theNode;
-	NODE	*MidNodes[MAX_NEW_CORNERS_DIM];
 	VERTEX	*theVertex;
 	EDGE	*theEdge;
 	BNDS	*bnds;
@@ -2313,6 +2439,36 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 			}
 		}
 	
+	#ifdef __THREEDIM__
+	/* reset VFATHER of sidenodes */
+	for (j=0; j<SIDES_OF_ELEM(theElement); j++) {
+		theNode = GetSideNode(theElement,j);
+	    if (theNode == NULL) continue;
+		theVertex = MYVERTEX(theNode);
+		if (VFATHER(MYVERTEX(theNode)) == theElement) {
+			ELEMENT *theNb = NBELEM(theElement,j);
+
+			VFATHER(theVertex) = theNb;
+			if (theNb != NULL) {
+				/* calculate new local coords */
+				k = ONNBSIDE(theVertex);
+				SETONSIDE(theVertex,k);
+				m = CORNERS_OF_SIDE(theNb,k);
+				local = LCVECT(theVertex);
+				fac = 1.0 / m;
+				V_DIM_CLEAR(local);
+				for (o=0; o<m; o++) {
+					l = CORNER_OF_SIDE(theNb,k,o);
+					V_DIM_LINCOMB(1.0,local,1.0,
+								  LOCAL_COORD_OF_ELEM(theNb,l),local);
+				}
+				V_DIM_SCALE(fac,local);
+			}
+		}
+		SETONNBSIDE(theVertex,MAX_SIDES_OF_ELEM);
+	}
+	#endif
+
 	for (j=0; j<EDGES_OF_ELEM(theElement); j++)
 	{
 		theEdge=GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)),
@@ -2329,12 +2485,9 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 		/* edit VFATHER of midnode */
 		if (MIDNODE(theEdge) != NULL)
 		{
-			MidNodes[j] = MIDNODE(theEdge);
-
-			#ifdef __TWODIM__
 			theVertex = MYVERTEX(MIDNODE(theEdge));
-			if (VFATHER(theVertex) == theElement)
-			{
+			if (VFATHER(theVertex) == theElement) {
+                #ifdef __TWODIM__
 				theFather = NBELEM(theElement,j);
 				VFATHER(theVertex) = theFather;
 				if (theFather != NULL)
@@ -2352,83 +2505,13 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 								  LCVECT(theVertex));
 					SETONEDGE(theVertex,j);
 				}
+			    #endif
+                #ifdef __THREEDIM__
+				VFATHER(theVertex) = NULL;
+			    #endif
 			}
-			#endif
-			#ifdef __THREEDIM__
-			VFATHER(MYVERTEX(MIDNODE(theEdge))) = NULL;
-			#endif
-		}
-		else
-			MidNodes[j] = NULL;
-	}
-
-	#ifdef __THREEDIM__
-	/* reset VFATHER of sidenodes */
-	for (j=0; j<SIDES_OF_ELEM(theElement); j++)
-	{
-		NODE *theNode0 = MidNodes[EDGE_OF_SIDE(theElement,j,0)];
-		NODE *theNode1 = MidNodes[EDGE_OF_SIDE(theElement,j,2)];
-
-		/* consider all cases here, because theNode0 or theNode1 may be NULL, */
-		/* but SideNode may exist                                             */
-		if (theNode0==NULL || theNode1==NULL)
-		{
-			theNode0 = theNode1 = NULL;
-			for (i=0; i<EDGES_OF_SIDE(theElement,j); i++)
-			{
-				NODE *MidNode = MidNodes[EDGE_OF_SIDE(theElement,j,i)];
-
-				if (MidNode != NULL)
-				{
-					if (theNode0 == NULL)
-						theNode0 = MidNode;
-					else
-					{
-						theNode1 = MidNode;
-						break;
-					}
-				}
-			}
-			if (theNode0==NULL || theNode1==NULL || theNode0==theNode1)
-				theNode0 = theNode1 = NULL;
-		}
-
-		theNode = NULL;
-
-		if (theNode0!=NULL && theNode1!=NULL)
-			theNode = GetSideNode(theElement,j);
-
-		if (theNode!=NULL && VFATHER(MYVERTEX(theNode))==theElement)
-		{
-			ELEMENT *theNb = NBELEM(theElement,j);
-
-			theVertex = MYVERTEX(theNode);
-			VFATHER(theVertex) = theNb;
-
-			if (theNb != NULL)
-			{
-				/* calculate new local coords */
-				k = ONNBSIDE(theVertex);
-				SETONNBSIDE(theVertex,ONSIDE(theVertex));
-				SETONSIDE(theVertex,k);
-
-				m = CORNERS_OF_SIDE(theNb,k);
-				local = LCVECT(theVertex);
-				fac = 1.0 / m;
-				V_DIM_CLEAR(local);
-				for (o=0; o<m; o++)
-				{
-					l = CORNER_OF_SIDE(theNb,k,o);
-					V_DIM_LINCOMB(1.0,local,1.0,
-								  LOCAL_COORD_OF_ELEM(theNb,l),local);
-				}
-				V_DIM_SCALE(fac,local);
-			}
-			else
-				SETONNBSIDE(theVertex,MAX_SIDES_OF_ELEM);
 		}
 	}
-	#endif
 
 	if (NELIST_DEF_IN_GRID(theGrid)) 
 	    for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
@@ -6756,8 +6839,8 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 		V_DIM_EUKLIDNORM_OF_DIFF(global1,global,diff);
 		if (diff > MAX_PAR_DIST) {
 		    UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX "/%d vertex=" VID_FMTX
-			" VFATHER=%x local and global coordinates don't match\n",me,EID_PRTX(theElement),ID_PRTX(theNode),
-			NTYPE(theNode),VID_PRTX(theVertex),theFather);
+			" VFATHER=%x diff %f local and global coordinates don't match\n",me,EID_PRTX(theElement),ID_PRTX(theNode),
+			NTYPE(theNode),VID_PRTX(theVertex),theFather,diff);
 			nerrors++;
 		}
 	}
