@@ -101,7 +101,7 @@
 /*  n_node = 100*8 (8 max_node_of_elem) 100 probably elements per node)				*/
 /*#define PROCLISTSIZE      (ELEMPROCLISTSIZE*MAX_SONS * 2) size not enough and change to static variable; Christian Wrobel 980128 */
 #define PROCLISTSIZE_VALUE      (ELEMPROCLISTSIZE*MAX_SONS * MAX(13,(int)(2.0+log((double)procs))))
-#define PROCLISTSIZE            proc_list_size
+#define PROCLISTSIZE proc_list_size
 
 /* orphan condition for elements */
 #define EORPHAN(e)              (EFATHER(e)==NULL || THEFLAG(e))
