@@ -729,7 +729,7 @@ FIFOSTART:
 /* TODO: delete this
 				if (MARK(theElement) == NO_REFINEMENT) 
 */
-				if (TAG(theElement) != TETRAHEDRON)
+				if (DIM==3 && TAG(theElement) != TETRAHEDRON)
 				{
 					SETMARK(theElement,COPY);
 
@@ -739,7 +739,7 @@ FIFOSTART:
 					}
 				}
 				/* tetrahedra have a complete rule set */
-				else if (TAG(theElement)==TETRAHEDRON && MARK(theElement) == NO_REFINEMENT) {
+				else if (MARK(theElement) == NO_REFINEMENT) {
 					printf("   ERROR: green tetrahedron with no rule! EID=%d TAG=%d \
 						REFINECLASS=%d REFINE=%d MARKCLASS=%d  MARK=%d\n",ID(theElement),\
 						TAG(theElement),REFINECLASS(theElement),REFINE(theElement),MARKCLASS(theElement),MARK(theElement));
