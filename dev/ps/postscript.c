@@ -126,7 +126,7 @@ static void PSMoveTo (SHORT_POINT point)
 
 static void PSDrawTo (SHORT_POINT point)
 {
-  fprintf(currPSF,"%g %g moveto %g %g lineto stroke\n",
+  fprintf(currPSF,"%g %g M %g %g S\n",
           TRFMX(PScp),TRFMY(PScp),TRFMX(point),TRFMY(point));
   PScp.x = point.x; PScp.y = point.y;
   return;
@@ -142,8 +142,8 @@ static void PSCircle (SHORT_POINT point, short r)
   xr = TRFMX(aux);
   yr = TRFMY(aux);
   r  = sqrt(xr*xr+yr*yr);
-  fprintf(currPSF,"newpath\n");
-  fprintf(currPSF,"%g %g moveto\n",TRFMX(point)+r,TRFMY(point));
+  fprintf(currPSF,"N\n");
+  fprintf(currPSF,"%g %g M\n",TRFMX(point)+r,TRFMY(point));
   fprintf(currPSF,"%g %g %g %g %g arc\n",TRFMX(point),TRFMY(point),(float)r,(float)0,(float)360);
 
   fprintf(currPSF,"stroke\n");
@@ -161,11 +161,11 @@ static void PSFilledCircle (SHORT_POINT point, short r)
   xr = TRFMX(aux);
   yr = TRFMY(aux);
   r  = sqrt(xr*xr+yr*yr);
-  fprintf(currPSF,"newpath\n");
+  fprintf(currPSF,"N\n");
   fprintf(currPSF,"%g %g moveto\n",TRFMX(point)+r,TRFMY(point));
   fprintf(currPSF,"%g %g %g %g %g arc\n",TRFMX(point),TRFMY(point),(float)r,(float)0,(float)360);
 
-  fprintf(currPSF,"closepath fill\n");
+  fprintf(currPSF,"C\n");
 
   return;
 }
@@ -174,10 +174,10 @@ static void PSPolyline (SHORT_POINT *points, INT nb)
 {
   int i;
 
-  fprintf(currPSF,"newpath\n");
-  fprintf(currPSF,"%g %g moveto\n",TRFMX(points[0]),TRFMY(points[0]));
+  fprintf(currPSF,"N\n");
+  fprintf(currPSF,"%g %g M\n",TRFMX(points[0]),TRFMY(points[0]));
   for (i=1; i<nb; i++)
-    fprintf(currPSF,"%g %g lineto\n",TRFMX(points[i]),TRFMY(points[i]));
+    fprintf(currPSF,"%g %g L\n",TRFMX(points[i]),TRFMY(points[i]));
   fprintf(currPSF,"stroke\n");
 
   return;
@@ -187,11 +187,11 @@ static void PSPolygon (SHORT_POINT *points, INT nb)
 {
   int i;
 
-  fprintf(currPSF,"newpath\n");
-  fprintf(currPSF,"%g %g moveto\n",TRFMX(points[0]),TRFMY(points[0]));
+  fprintf(currPSF,"N\n");
+  fprintf(currPSF,"%g %g M\n",TRFMX(points[0]),TRFMY(points[0]));
   for (i=1; i<nb; i++)
-    fprintf(currPSF,"%g %g lineto\n",TRFMX(points[i]),TRFMY(points[i]));
-  fprintf(currPSF,"closepath fill\n");
+    fprintf(currPSF,"%g %g L\n",TRFMX(points[i]),TRFMY(points[i]));
+  fprintf(currPSF,"C\n");
 
   return;
 }
@@ -210,7 +210,7 @@ static void PSGrayForeground (void)
 {
   if (PScc==GRAY_CC) return;
 
-  fprintf(currPSF,"%.3f %.3f %.3f setrgbcolor\n",GRAY,GRAY,GRAY);
+  fprintf(currPSF,"%.3f %.3f %.3f R\n",GRAY,GRAY,GRAY);
   PScc = GRAY_CC;
   return;
 }
@@ -219,7 +219,7 @@ static void PSForeground (long index)
 {
   if (PScc==index) return;
 
-  fprintf(currPSF,"%.3f %.3f %.3f setrgbcolor\n",(float)red[index],(float)green[index],(float)blue[index]);
+  fprintf(currPSF,"%.3f %.3f %.3f R\n",(float)red[index],(float)green[index],(float)blue[index]);
   PScc = index;
   return;
 }
@@ -357,7 +357,7 @@ static void PrintPSString (const char *s)
 
 static void PSText (const char *s, INT mode)
 {
-  fprintf(currPSF,"%g %g moveto\n",TRFMX(PScp),TRFMY(PScp));
+  fprintf(currPSF,"%g %g M\n",TRFMX(PScp),TRFMY(PScp));
   if (landscape) fprintf(currPSF,"90 rotate\n");
   PrintPSString(s);
   fprintf(currPSF," show newpath\n");
@@ -414,7 +414,7 @@ static void PSSetPaletteEntry (long index, short r, short g, short b)
   red[index]   = ((float)r)/255.0;
   green[index] = ((float)g)/255.0;
   blue[index]  = ((float)b)/255.0;
-  fprintf(currPSF,"%.3f %.3f %.3f setrgbcolor\n",(float)red[index],(float)green[index],(float)blue[index]);
+  fprintf(currPSF,"%.3f %.3f %.3f R\n",(float)red[index],(float)green[index],(float)blue[index]);
   PScc = index;
   return;
 }
@@ -430,7 +430,7 @@ static void PSSetPalette (long x, long count, short *r, short *g, short *b)
     green[i] = ((float)g[i-x])/255.0;
     blue[i]  = ((float)b[i-x])/255.0;
   }
-  fprintf(currPSF,"%.3f %.3f %.3f setrgbcolor\n",(float)red[x],(float)green[x],(float)blue[x]);
+  fprintf(currPSF,"%.3f %.3f %.3f R\n",(float)red[x],(float)green[x],(float)blue[x]);
   PScc = (unsigned char) x;
   return;
 }
@@ -589,6 +589,16 @@ static INT WritePSHeader (FILE *file, const char *title, INT x, INT y, INT w, IN
   fprintf(file,"1 setlinecap\n");
 
   fprintf(file,"/%s findfont %d scalefont setfont\n", PS_DEFAULT_FONT, PS_FONT_FACTOR);
+
+  fprintf(file,"\n");
+
+  /* defines */
+  fprintf(file,"/M {moveto} def\n");
+  fprintf(file,"/S {lineto stroke} def\n");
+  fprintf(file,"/L {lineto} def\n");
+  fprintf(file,"/C {closepath fill} def\n");
+  fprintf(file,"/N {newpath} def\n");
+  fprintf(file,"/R {setrgbcolor} def\n");
 
   fprintf(file,"\n");
 
