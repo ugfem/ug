@@ -29,7 +29,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#ifndef __MWCW__
 #include <rpc/rpc.h>    /* to include xdr.h in a portable way */
+#endif
 
 #include "general.h"
 
@@ -72,8 +74,9 @@ typedef int (*RW_string_proc)(char *string);
 static FILE *stream;
 static int n_byte;
 static fpos_t pos;
+#ifndef __MWCW__
 static XDR xdrs;
-
+#endif
 
 /* low level read/write functions */
 static RW_mint_proc Read_mint, Write_mint;
@@ -94,6 +97,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /* debug i/o																*/
 /*																			*/
 /****************************************************************************/
+#ifndef __MWCW__
 
 static int XDR_Read_mint (int n, int *intList)
 {
@@ -180,7 +184,7 @@ static int XDR_Write_string (char *string)
 
   return (0);
 }
-
+#endif
 /****************************************************************************/
 /*																			*/
 /* ascii i/o																*/
@@ -225,7 +229,7 @@ static int ASCII_Write_mdouble (int n, double *doubleList)
 
   for (i=0; i<n; i++)
   {
-    m = fprintf(stream,"%lg\n",doubleList[i]);
+    m = fprintf(stream,"%g\n",doubleList[i]);
     if (m<0) return (1);
     n_byte += m;
   }
@@ -350,6 +354,7 @@ int Bio_Initialize (FILE *file, int mode, char rw)
 
   switch (mode)
   {
+                #ifndef __MWCW__
   case BIO_XDR :
     if (rw=='r') xdrstdio_create(&xdrs,file,XDR_DECODE);
     else if (rw=='w') xdrstdio_create(&xdrs,file,XDR_ENCODE);
@@ -361,6 +366,7 @@ int Bio_Initialize (FILE *file, int mode, char rw)
     Write_mdouble = XDR_Write_mdouble;
     Write_string = XDR_Write_string;
     break;
+                #endif
   case BIO_ASCII :
     Read_mint       = ASCII_Read_mint;
     Read_mdouble = ASCII_Read_mdouble;
