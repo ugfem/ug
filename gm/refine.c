@@ -362,6 +362,7 @@ static INT No_Green_Update;				/* counter for green refinements	*/
 static INT Green_Marks;					/* green refined element counter	*/
 static INT refine_seq = 0;				/* 0/1: do/do not parallel part		*/
 static INT fifoloop = 0;				/* counter for FIFO loops			*/
+static INT total_adapted = 0;           /* count of adapted elements        */
 
 #ifdef STAT_OUT
 /* timing variables */
@@ -6178,7 +6179,6 @@ if (GetVecDataDescByName(theMG,"sol") != NULL)
 INT AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest)
 {
 	INT level,toplevel,nrefined,nadapted;
-	INT total_adapted = 0; /* count of adapted elements */
 	INT newlevel;
 	NODE *theNode;
 	GRID *theGrid, *FinerGrid;
