@@ -271,11 +271,6 @@ static void InheritPartitionBottomTop (ELEMENT *e)
 
   if (GetSons(e,SonList) != GM_OK) assert(0);
 
-        #ifdef __TWODIM__
-  /* set property field to visulaize partition */
-  SETPROP(e,PARTITION(e)+1);
-        #endif
-
   for(i=0; i<SONS_OF_ELEM(e); i++)
   {
     ELEMENT *son = SonList[i];
