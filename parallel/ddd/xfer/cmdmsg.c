@@ -336,6 +336,12 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
              (OBJ_GID(localCplObjs[iLCO]) < unionGidTab[k]))
       {
         SET_OBJ_RESENT(localCplObjs[iLCO], 0);
+
+#                               if DebugCmdMsg<=0
+        printf("%4d: PruneDelCmds. %08x without resent.\n", me, OBJ_GID(localCplObjs[iLCO]));
+        fflush(stdout);
+#                               endif
+
         iLCO++;
       }
 
@@ -344,7 +350,7 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
         SET_OBJ_RESENT(localCplObjs[iLCO], 1);
 
 #                               if DebugCmdMsg<=1
-        printf("%4d: PruneDelCmds. %08x will be resent.\n", me, unionGidTab[k]);
+        printf("%4d: PruneDelCmds. %08x will be resent.\n", me, OBJ_GID(localCplObjs[iLCO]));
         fflush(stdout);
 #                               endif
 
@@ -356,6 +362,12 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
     while (iLCO<nLCO)
     {
       SET_OBJ_RESENT(localCplObjs[iLCO], 0);
+
+#                       if DebugCmdMsg<=0
+      printf("%4d: PruneDelCmds. %08x without resent.\n", me, OBJ_GID(localCplObjs[iLCO]));
+      fflush(stdout);
+#                       endif
+
       iLCO++;
     }
 

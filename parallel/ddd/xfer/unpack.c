@@ -484,8 +484,16 @@ printf("%4d: PutDepData   chunk %d, item %d/%d\n", me, j, i, addCnt); fflush(std
 printf("%4d: PutDepData   XFERSCATTER ...\n", me); fflush(stdout);
 */
 			if (desc->handlerXFERSCATTER)
+			{
+				#if defined(C_FRONTEND) || defined(F_FRONTEND)
 				desc->handlerXFERSCATTER(_FADR obj,
 					_FADR addCnt, _FADR addTyp, (void *)chunk, _FADR newness);
+				#endif
+				#ifdef CPP_FRONTEND
+				CallHandler(desc,XFERSCATTER) (HParam(obj)
+					addCnt, addTyp, (void *)chunk, newness);
+				#endif
+			}
 /*
 printf("%4d: PutDepData   XFERSCATTER ok\n", me); fflush(stdout);
 */
@@ -517,8 +525,16 @@ printf("%4d: PutDepData   XFERSCATTER ok\n", me); fflush(stdout);
 		
 			/* scatter data via handler */
 			if (desc->handlerXFERSCATTERX)
+			{
+				#if defined(C_FRONTEND) || defined(F_FRONTEND)
 				desc->handlerXFERSCATTERX(_FADR obj,
 					_FADR addCnt, _FADR addTyp, table, _FADR newness);
+				#endif
+				#ifdef CPP_FRONTEND
+				CallHandler(desc,XFERSCATTERX) (HParam(obj)
+					addCnt, addTyp, table, newness);
+				#endif
+			}
 		}
 
 
@@ -664,7 +680,7 @@ static void AcceptObjFromMsg (
 	     		desc->handlerLDATACONSTRUCTOR(newcopy);
 #endif
 #ifdef CPP_FRONTEND
-	     		CallHandler(desc,ote->hdr,LDATACONSTRUCTOR) ();
+	     		CallHandler(desc,LDATACONSTRUCTOR) (HParamOnly(newcopy));
 #endif
 #ifdef F_FRONTEND
 			desc->handlerLDATACONSTRUCTOR(&newcopy);
@@ -1259,13 +1275,14 @@ static void CallUpdateHandler (LC_MSGHANDLE xm)
 			/* call application handler for object updating */
 			if (desc->handlerUPDATE)
 			{
-				#if defined(C_FRONTEND) || defined(F_FRONTEND)
 				DDD_OBJ  obj   = HDR2OBJ(theObjTab[i].hdr, desc);
+
+				#if defined(C_FRONTEND) || defined(F_FRONTEND)
 	     		desc->handlerUPDATE(_FADR obj);
 				#endif
 
 				#ifdef CPP_FRONTEND
-				CallHandler(desc,theObjTab[i].hdr,UPDATE) ();
+				CallHandler(desc,UPDATE) (HParamOnly(obj));
 				#endif
 			}
 		}
@@ -1388,14 +1405,20 @@ static void CallSetPriorityHandler (LC_MSGHANDLE xm)
 		/*	&& (theObjTab[i].oldprio != theObjTab[i].prio) */  )
 		{
 			TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
-			DDD_OBJ   obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 
     		/* call application handler for object consistency */
 			if (desc->handlerSETPRIORITY)
 			{
 				/* restore old priority in object */
+				DDD_OBJ obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 				OBJ_PRIO(theObjTab[i].hdr) = theObjTab[i].oldprio;
+
+				#if defined(C_FRONTEND) || defined(F_FRONTEND)
 				desc->handlerSETPRIORITY(_FADR obj, _FADR (theObjTab[i].prio));
+				#endif
+				#ifdef CPP_FRONTEND
+				CallHandler(desc,SETPRIORITY) (HParam(obj) theObjTab[i].prio);
+				#endif
 
 				/* restore new priority */
 				OBJ_PRIO(theObjTab[i].hdr) = theObjTab[i].prio;
@@ -1450,7 +1473,14 @@ static void CallObjMkConsHandler (LC_MSGHANDLE xm, int required_newness)
 
     		/* call application handler for object consistency */
 			if (desc->handlerOBJMKCONS)
+			{
+				#if defined(C_FRONTEND) || defined(F_FRONTEND)
 	     		desc->handlerOBJMKCONS(_FADR obj, _FADR newness);
+				#endif
+				#ifdef CPP_FRONTEND
+				CallHandler(desc,OBJMKCONS) (HParam(obj) newness);
+				#endif
+			}
 		}
 	}
 

@@ -1,5 +1,35 @@
 ---------------------------
 
+CHANGES 1.8.16 -> 1.8.17
+
+---------------------------
+980505 kb
+bugfix in DDD_XferObjIsResent().
+---------------------------
+
+CHANGES 1.8.15 -> 1.8.16
+
+---------------------------
+980427 kb
+added new error control feature for Ident-module.
+	- when using MPI on workstations, messages with different lengths
+	  can be sent and received. This results in quiet error situations,
+	  when the number of Identify-calls on pairs of processors is not
+	  equal. Now, the overall length of each message is sent as first
+	  data item, so that DDD can check this value and abort with an
+	  error, if necessary. Thus, many errors might be detected now
+	  which could previously lead to a lot of follow-up errors.
+980427 kb
+additions for CPP_FRONTEND.
+	- now, the c++demo application is running with DDD and CPP_FRONTEND.
+	- the calling of DDD Handlers has been reworked. Virtual member
+	  function calls are avoided completely (an option to use them
+	  will be implemented in the future).
+	- the application programmer has to provide a DELETE-handler for
+	  each class derived from DDD_Object, which only contains a 
+	  'delete this'. This should be automated in future versions.
+---------------------------
+
 CHANGES 1.8.14 -> 1.8.15
 
 ---------------------------

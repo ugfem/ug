@@ -48,7 +48,7 @@
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.15"
+#define DDD_VERSION    "1.8.17"
 
 
 /****************************************************************************/
@@ -315,15 +315,19 @@ typedef unsigned int DDD_ATTR;
 
 #ifdef CPP_FRONTEND
 typedef unsigned int DDD_INDEX;
-#endif
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 typedef char           * DDD_OBJ;
+class DDD_Object;  // forward declaration
+typedef DDD_Object     * DDD_HDR;
+#endif
+#ifdef C_FRONTEND
+typedef char           * DDD_OBJ;
+typedef DDD_HEADER     * DDD_HDR;
 #endif
 #ifdef F_FRONTEND
 typedef int DDD_OBJ;
+typedef DDD_HEADER     * DDD_HDR;
 #endif
 
-typedef DDD_HEADER     * DDD_HDR;
 typedef unsigned int DDD_OPTION;
 
 
@@ -365,7 +369,10 @@ enum Handlers {
 /* handler prototypes */
 
 /* handlers related to certain DDD_TYPE (i.e., member functions) */
-#if defined(C_FRONTEND) || defined(F_FRONTEND)
+#if defined(C_FRONTEND) || \
+  defined(F_FRONTEND) || \
+  (defined(CPP_FRONTEND) && ! defined(WITH_VIRTUAL_HANDLERS))
+
 typedef void (*HandlerLDATACONSTRUCTOR)(DDD_OBJ _FPTR);
 typedef void (*HandlerDESTRUCTOR)(DDD_OBJ _FPTR);
 typedef void (*HandlerDELETE)(DDD_OBJ _FPTR);
@@ -381,24 +388,6 @@ typedef void (*HandlerXFERSCATTERX)(DDD_OBJ _FPTR, int _FPTR, DDD_TYPE _FPTR, ch
 #endif
 #if defined(C_FRONTEND)
 typedef void (*HandlerXFERCOPYMANIP)(DDD_OBJ _FPTR);
-#endif
-
-#if defined(CPP_FRONTEND)
-class DDD_Object;  // forward declaration
-
-typedef void (DDD_Object::*HandlerLDATACONSTRUCTOR)();
-typedef void (DDD_Object::*HandlerDESTRUCTOR)();
-typedef void (DDD_Object::*HandlerDELETE)();
-typedef void (DDD_Object::*HandlerUPDATE)();
-typedef void (DDD_Object::*HandlerOBJMKCONS)(int);
-typedef void (DDD_Object::*HandlerSETPRIORITY)(DDD_PRIO);
-typedef void (DDD_Object::*HandlerXFERCOPY)(DDD_PROC, DDD_PRIO);
-typedef void (DDD_Object::*HandlerXFERDELETE)();
-typedef void (DDD_Object::*HandlerXFERGATHER)(int, DDD_TYPE, void *);
-typedef void (DDD_Object::*HandlerXFERSCATTER)(int, DDD_TYPE, void *, int);
-typedef void (DDD_Object::*HandlerXFERGATHERX)(int, DDD_TYPE, char **);
-typedef void (DDD_Object::*HandlerXFERSCATTERX)(int, DDD_TYPE, char **, int);
-typedef void (DDD_Object::*HandlerXFERCOPYMANIP)();
 #endif
 
 
@@ -470,6 +459,30 @@ typedef int (*ComProcXPtr)(DDD_OBJ _FPTR, void *, DDD_PROC _FPTR, DDD_PRIO _FPTR
 #ifdef CPP_FRONTEND
 
 /**
+        DDD Type class.
+        Each DDD object has a previously specified DDD_Type.
+
+        \todoTBC
+ */
+
+// currently not used!
+class DDD_Type
+{
+public:
+  DDD_Type (DDD_TYPE type)  {
+    _dddtype = type;
+  }
+
+  void ChangeName (char*);
+  void Display();
+
+private:
+  DDD_TYPE _dddtype;
+};
+
+
+
+/**
         DDD Library class.
         Construct one single instance of the class in order to use
         the functionality of the DDD library.
@@ -501,8 +514,6 @@ public:
   void LineOutRegister (void (*func)(char *s));
 
   // from TypeManager
-  /* TODO, class DDD_Type with derived classes DDD_TypeStruct/Index?? */
-  // for struct-like objects
   DDD_TYPE TypeDeclareStruct (char* n="");
   DDD_TYPE TypeDeclare (char* n="")
   {
@@ -519,10 +530,11 @@ public:
   // for struct- or array-like objects
   void TypeDefine (DDD_TYPE, ...);
   void TypeChangeName (DDD_TYPE, char*);
-  void TypeDisplay (DDD_TYPE);
+  void TypeDisplay(DDD_TYPE);
   int InfoTypes (void);
   int InfoHdrOffset (DDD_TYPE);
 
+                #ifndef WITH_VIRTUAL_HANDLERS
   // handler registration
   void SetHandlerLDATACONSTRUCTOR (DDD_TYPE, HandlerLDATACONSTRUCTOR);
   void SetHandlerDESTRUCTOR       (DDD_TYPE, HandlerDESTRUCTOR);
@@ -536,7 +548,7 @@ public:
   void SetHandlerXFERSCATTER      (DDD_TYPE, HandlerXFERSCATTER);
   void SetHandlerXFERGATHERX      (DDD_TYPE, HandlerXFERGATHERX);
   void SetHandlerXFERSCATTERX     (DDD_TYPE, HandlerXFERSCATTERX);
-  void SetHandlerXFERCOPYMANIP    (DDD_TYPE, HandlerXFERCOPYMANIP);
+                #endif
 
   // from PrioManager
   void PrioMergeDefault (DDD_TYPE, int);
@@ -551,6 +563,10 @@ public:
   // Transfer
   void XferBegin (void);
   void XferEnd (void);
+
+  // Join
+  void JoinBegin (void);
+  void JoinEnd (void);
 
   /* TODO some are missing here */
 
@@ -584,7 +600,7 @@ public:
   DDD_Object (DDD_TYPE, DDD_PRIO, DDD_ATTR a=0);
   void Init (DDD_TYPE, DDD_PRIO, DDD_ATTR a=0);
   DDD_Object ();
-  virtual ~DDD_Object ();
+  ~DDD_Object ();
 
 
   // object properties
@@ -620,22 +636,24 @@ public:
   friend void DDD_Library::ddd_TypeMgrInit (void);
 
 
+                #ifdef WITH_VIRTUAL_HANDLERS
   // DDD Handlers as virtual functions
-  // TODO: is this general enough?
-  //virtual void HandlerLDATACONSTRUCTOR (void) { }
-  //virtual void HandlerDESTRUCTOR       (void) { }
-  //virtual void HandlerDELETE           (void) { }
-  //virtual void HandlerUPDATE           (void) { }
-  //virtual void HandlerOBJMKCONS        (int) { }
-  //virtual void HandlerSETPRIORITY      (DDD_PRIO) { }
-  //virtual void HandlerXFERCOPY         (DDD_PROC, DDD_PRIO) { }
-  //virtual void HandlerXFERDELETE       (void) { }
-  //virtual void HandlerXFERGATHER       (int, DDD_TYPE, void *) { }
-  //virtual void HandlerXFERSCATTER      (int, DDD_TYPE, void *, int) { }
-  //virtual void HandlerXFERGATHERX      (int, DDD_TYPE, char **) { }
-  //virtual void HandlerXFERSCATTERX     (int, DDD_TYPE, char **, int) { }
+  virtual void HandlerLDATACONSTRUCTOR (void) { }
+  virtual void HandlerDESTRUCTOR       (void) { }
+  virtual void HandlerDELETE           (void) { }
+  virtual void HandlerUPDATE           (void) { }
+  virtual void HandlerOBJMKCONS        (int) { }
+  virtual void HandlerSETPRIORITY      (DDD_PRIO) { }
+  virtual void HandlerXFERCOPY         (DDD_PROC, DDD_PRIO) { }
+  virtual void HandlerXFERDELETE       (void) { }
+  virtual void HandlerXFERGATHER       (int, DDD_TYPE, void *) { }
+  virtual void HandlerXFERSCATTER      (int, DDD_TYPE, void *, int) { }
+  virtual void HandlerXFERGATHERX      (int, DDD_TYPE, char **) { }
+  virtual void HandlerXFERSCATTERX     (int, DDD_TYPE, char **, int) { }
+                #endif
 
-private:
+  //protected:
+public:            // currently open to public, make protected later
   DDD_HEADER _hdr;
 };
 
@@ -691,7 +709,7 @@ class DDD_IndexObject : public DDD_Object
 {
 public:
   DDD_IndexObject (DDD_TYPE, DDD_INDEX, DDD_PRIO, DDD_ATTR a=0);
-  virtual ~DDD_IndexObject() {}
+  ~DDD_IndexObject() {}
 
   DDD_INDEX Index()    {
     return _index;
@@ -1075,6 +1093,7 @@ void     DDD_XferEnd (void);
 void     DDD_XferCopyObj (_OBJREF, DDD_PROC _FPTR, DDD_PRIO _FPTR);
 void     DDD_XferCopyObjX (_OBJREF, DDD_PROC _FPTR, DDD_PRIO _FPTR, size_t _FPTR);
 void     DDD_XferDeleteObj (_OBJREF);
+void     DDD_XferPrioChange (_OBJREF, DDD_PRIO _FPTR);
 #endif
 
 

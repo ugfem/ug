@@ -814,7 +814,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
   while ((i<MAX_ELEMDESC) &&
          ((argtyp= FTYPE va_arg(ap, int FTYPE))!=EL_END) && (argtyp!=EL_CONTINUE))
   {
-    HandlerGetRefType arg_rt_handler;
+    HandlerGetRefType arg_rt_handler = NULL;
 
     /* get the pointer to the object (no special treatment for fortran	*/
     /* needed )															*/
@@ -1499,7 +1499,7 @@ static void InitHandlers (TYPE_DESC *desc)
   desc->handlerXFERSCATTER = NULL;
   desc->handlerXFERGATHERX = NULL;
   desc->handlerXFERSCATTERX = NULL;
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+#if defined(C_FRONTEND)
   desc->handlerXFERCOPYMANIP = NULL;
 #endif
 #ifdef F_FRONTEND
@@ -1545,7 +1545,7 @@ static void InitHandlers (TYPE_DESC *desc)
 #define HDLR_NAME XFERSCATTERX
 #include "handler.ct"
 
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+#if defined(C_FRONTEND)
 #define HDLR_NAME XFERCOPYMANIP
 #include "handler.ct"
 #endif
@@ -1670,7 +1670,7 @@ while ((idx = FTYPE va_arg(ap, int FTYPE)) != HANDLER_END)
     desc->handlerXFERSCATTERX =
       va_arg(ap, HandlerXFERSCATTERX);
     break;
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+#if defined(C_FRONTEND)
   case HANDLER_XFERCOPYMANIP :
     desc->handlerXFERCOPYMANIP =
       va_arg(ap, HandlerXFERCOPYMANIP);

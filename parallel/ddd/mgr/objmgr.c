@@ -430,7 +430,7 @@ void DDD_HdrConstructor (DDD_HDR aHdr, DDD_TYPE aType,
 DDD_Object::DDD_Object (void)
 {
   /* invalidate this DDD_HDR */
-  MarkHdrInvalid(&_hdr);
+  MarkHdrInvalid(this);
 }
 
 
@@ -444,7 +444,7 @@ DDD_Object::DDD_Object (DDD_TYPE aType, DDD_PRIO aPrio, DDD_ATTR aAttr)
 
 void DDD_Object::Init (DDD_TYPE aType, DDD_PRIO aPrio, DDD_ATTR aAttr)
 {
-  DDD_HDR aHdr = &_hdr;
+  DDD_HDR aHdr = this;
 
   if (! IsHdrInvalid(aHdr))
   {
@@ -578,7 +578,7 @@ void DDD_HdrDestructor (DDD_HDR hdr)
 #ifdef CPP_FRONTEND
 DDD_Object::~DDD_Object (void)
 {
-  DDD_HDR hdr = &_hdr;
+  DDD_HDR hdr = this;
 #endif
 COUPLING   *cpl;
 int objIndex, xfer_active = XferActive();

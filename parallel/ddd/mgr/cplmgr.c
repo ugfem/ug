@@ -592,7 +592,7 @@ int *DDD_InfoProcList (DDD_HDR hdr)
 #ifdef CPP_FRONTEND
 int *DDD_Object::InfoProcList (void)
 {
-  DDD_HDR hdr = &_hdr;
+  DDD_HDR hdr = this;
 #endif
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 COUPLING *cpl;

@@ -884,7 +884,13 @@ static void XferInitCopyInfo (DDD_HDR hdr,
     if (desc->handlerXFERCOPY)
     {
       DDD_OBJ obj = HDR2OBJ(hdr,desc);
+
+                        #if defined(C_FRONTEND) || defined(F_FRONTEND)
       desc->handlerXFERCOPY(_FADR obj, _FADR dest, _FADR prio);
+                        #endif
+                        #ifdef CPP_FRONTEND
+      CallHandler(desc,XFERCOPY) (HParam(obj) dest, prio);
+                        #endif
     }
 
     /* theXIAddData might be changed during handler execution */
@@ -927,7 +933,13 @@ static void XferInitCopyInfo (DDD_HDR hdr,
     if (desc->handlerXFERCOPY)
     {
       DDD_OBJ obj = HDR2OBJ(hdr,desc);
+
+                        #if defined(C_FRONTEND) || defined(F_FRONTEND)
       desc->handlerXFERCOPY(_FADR obj, _FADR dest, _FADR prio);
+                        #endif
+                        #ifdef CPP_FRONTEND
+      CallHandler(desc,XFERCOPY) (HParam(obj) dest, prio);
+                        #endif
     }
 
     /* theXIAddData might be changed during handler execution */
@@ -998,7 +1010,7 @@ void DDD_XferCopyObj (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
 #ifdef CPP_FRONTEND
 void DDD_Object::XferCopyObj (DDD_PROC proc, DDD_PRIO prio)
 {
-  DDD_HDR hdr = &_hdr;
+  DDD_HDR hdr = this;
 #endif
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 TYPE_DESC *desc =  &(theTypeDefs[OBJ_TYPE(hdr)]);
@@ -1279,7 +1291,7 @@ void DDD_Object::XferDeleteObj (void)
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 {
         #ifdef CPP_FRONTEND
-  DDD_HDR hdr = &_hdr;
+  DDD_HDR hdr = this;
         #endif
   TYPE_DESC *desc =  &(theTypeDefs[OBJ_TYPE(hdr)]);
   XIDelCmd  *dc = NewXIDelCmd(SLLNewArgs);
@@ -1300,7 +1312,14 @@ void DDD_Object::XferDeleteObj (void)
 
   /* call application handler for deletion of dependent objects */
   if (desc->handlerXFERDELETE!=NULL)
+  {
+                #if defined(C_FRONTEND) || defined(F_FRONTEND)
     desc->handlerXFERDELETE(HDR2OBJ(hdr,desc));
+                #endif
+                #ifdef CPP_FRONTEND
+    CallHandler(desc,XFERDELETE) (HParamOnly(HDR2OBJ(hdr,desc)));
+                #endif
+  }
 }
 #endif
 
@@ -1444,7 +1463,6 @@ int DDD_XferObjIsResent (DDD_HDR hdr)
   {
     return(XFER_RESENT_ERROR);
   }
-
 
   if (OBJ_RESENT(hdr))
     return(XFER_RESENT_TRUE);

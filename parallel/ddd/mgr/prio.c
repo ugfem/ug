@@ -99,7 +99,7 @@ void DDD_PrioritySet (DDD_HDR hdr, DDD_PRIO prio)
 #ifdef CPP_FRONTEND
 void DDD_Object::PrioritySet (DDD_PRIO prio)
 {
-  DDD_HDR hdr = &_hdr;
+  DDD_HDR hdr = this;
 #endif
 
 /* check input parameters */

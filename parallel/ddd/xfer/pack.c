@@ -321,8 +321,16 @@ static int GetDepData (char *data,
 
       /* then all records should be gathered via handler */
       if (desc->handlerXFERGATHER)
+      {
+                                #if defined(C_FRONTEND) || defined(F_FRONTEND)
         desc->handlerXFERGATHER(_FADR obj,
                                 _FADR xa->addCnt, _FADR xa->addTyp, (void *)chunk);
+                                #endif
+                                #ifdef CPP_FRONTEND
+        CallHandler(desc,XFERGATHER) (HParam(obj)
+                                      xa->addCnt, xa->addTyp, (void *)chunk);
+                                #endif
+      }
 
       if (xa->addTyp<DDD_USER_DATA || xa->addTyp>DDD_USER_DATA_MAX)
       {
@@ -359,8 +367,16 @@ static int GetDepData (char *data,
 
       /* then all records should be gathered via handler */
       if (desc->handlerXFERGATHERX)
+      {
+                                #if defined(C_FRONTEND) || defined(F_FRONTEND)
         desc->handlerXFERGATHERX(_FADR obj,
                                  _FADR xa->addCnt, _FADR xa->addTyp, table1);
+                                #endif
+                                #ifdef CPP_FRONTEND
+        CallHandler(desc,XFERGATHERX) (HParam(obj)
+                                       xa->addCnt, xa->addTyp, table1);
+                                #endif
+      }
 
       /* convert pointer table into offset table */
       table2 = (int *)table1;
@@ -549,7 +565,7 @@ static void XferPackSingleMsg (XFERMSG *msg)
             obj-copy inside the message. this handler should
             be removed in future DDD versions.
      */
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+                #if defined(C_FRONTEND)
     if (desc->handlerXFERCOPYMANIP)
     {
       /*
@@ -568,7 +584,7 @@ static void XferPackSingleMsg (XFERMSG *msg)
       /* adjust new description according to new type */
       desc = &(theTypeDefs[OBJ_TYPE((DDD_HDR)(currObj+offset))]);
     }
-#endif
+                #endif
 
     /* build symbol table portion from object copy */
     actSym += BuildSymTab(desc, obj, (char *)currObj, &(theSymTab[actSym]));

@@ -56,6 +56,8 @@
   "Identify: no Ident-calls from proc %d, expected %d"
 #define ERR_ID_DIFF_N_IDENT \
   "Identify: %d Ident-calls from proc %d, expected %d"
+#define ERR_ID_DIFF_N_OBJECTS \
+  "Identify: %d identified objects from proc %d, expected %d"
 #define ERR_ID_ERRORS \
   "found errors in IdentifyEnd()"
 #define ERR_ID_OK \

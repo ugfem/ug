@@ -305,7 +305,7 @@ typedef struct _TYPE_DESC
   HandlerXFERSCATTER handlerXFERSCATTER;
   HandlerXFERGATHERX handlerXFERGATHERX;
   HandlerXFERSCATTERX handlerXFERSCATTERX;
-#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+#if defined(C_FRONTEND)
   HandlerXFERCOPYMANIP handlerXFERCOPYMANIP;
 #endif
 #ifdef F_FRONTEND
@@ -403,14 +403,46 @@ extern VChannelPtr *theTopology;
 /*                                                                          */
 /****************************************************************************/
 
+
+/* internal access of DDD_HEADER members */
+
+#ifdef CPP_FRONTEND
+#define ACCESS_HDR(o,c)   ((o)->_hdr.c)
+#else
+#define ACCESS_HDR(o,c)   ((o)->c)
+#endif
+
+
+/* type of object */
+#define OBJ_TYPE(o)     ACCESS_HDR(o,typ)
+
+/* priority of object */
+#define OBJ_PRIO(o)     ACCESS_HDR(o,prio)
+
+/* attr of object */
+#define OBJ_ATTR(o)     ACCESS_HDR(o,attr)
+
+/* global id of object */
+#define OBJ_GID(o)      ACCESS_HDR(o,gid)
+
+/* get index into global object table */
+#define OBJ_INDEX(o)    ACCESS_HDR(o,myIndex)
+
+/* internal flags of object */
+#define OBJ_FLAGS(o)    ACCESS_HDR(o,flags)
+
+
+/****************************************************************************/
+
 /* usage of flags in DDD_HEADER */
 #define MASK_OBJ_PRUNED 0x00000001
-#define OBJ_PRUNED(c) (((int)((c)->flags))&MASK_OBJ_PRUNED)
-#define SET_OBJ_PRUNED(c,d) ((c)->flags) = (((c)->flags)&(~MASK_OBJ_PRUNED))|((d)&MASK_OBJ_PRUNED)
+#define OBJ_PRUNED(c) (((int)(OBJ_FLAGS(c)))&MASK_OBJ_PRUNED)
+#define SET_OBJ_PRUNED(c,d) (OBJ_FLAGS(c)) = ((OBJ_FLAGS(c))&(~MASK_OBJ_PRUNED))|((d)&MASK_OBJ_PRUNED)
 
-#define MASK_OBJ_RESENT 0x00000002
-#define OBJ_RESENT(c) (((int)((c)->flags))&MASK_OBJ_RESENT)
-#define SET_OBJ_RESENT(c,d) ((c)->flags) = (((c)->flags)&(~MASK_OBJ_RESENT))|((d)&MASK_OBJ_RESENT)
+#define MASK_OBJ_RESENT  0x00000002
+#define SHIFT_OBJ_RESENT 1
+#define OBJ_RESENT(c) ((((int)(OBJ_FLAGS(c)))&MASK_OBJ_RESENT)>>SHIFT_OBJ_RESENT)
+#define SET_OBJ_RESENT(c,d) (OBJ_FLAGS(c)) = ((OBJ_FLAGS(c))&(~MASK_OBJ_RESENT))|(((d)<<SHIFT_OBJ_RESENT)&MASK_OBJ_RESENT)
 
 
 /* usage of flags in COUPLING */
@@ -435,29 +467,6 @@ extern VChannelPtr *theTopology;
                                      sizeof(DDD_HEADER)))
 #define OBJ_OBJ(hd)       HDR2OBJ(hd,&theTypeDefs[OBJ_TYPE(hd)])
 #endif
-
-
-/****************************************************************************/
-
-/* internal access of DDD_HEADER members */
-
-/* type of object */
-#define OBJ_TYPE(o)     ((o)->typ)
-
-/* priority of object */
-#define OBJ_PRIO(o)     ((o)->prio)
-
-/* attr of object */
-#define OBJ_ATTR(o)    ((o)->attr)
-
-/* global id of object */
-#define OBJ_GID(o)      ((o)->gid)
-
-/* get index into global object table */
-#define OBJ_INDEX(o)    ((o)->myIndex)
-
-/* internal flags of object */
-#define OBJ_FLAGS(o)    ((o)->flags)
 
 
 /****************************************************************************/
@@ -529,18 +538,20 @@ extern VChannelPtr *theTopology;
    };
 
    #define HdrPtr   DDD_ObjPtr
-
-
-   #define CallHandler(desc,o,hname)     ((*o)->Handler ## hname)
-
  */
 
+#define CallHandler(desc,hname)     (desc->handler ## hname)
+#define HParam(obj)                 obj,
+#define HParamOnly(obj)             obj
 
 #endif
 
 
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
-#define HdrPtr   DDD_HDR
+/*
+   #define HdrPtr   DDD_HDR
+ */
+
 #endif
 
 
