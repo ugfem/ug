@@ -43,6 +43,8 @@
 #include <unistd.h>
 #include <stat.h>
 #include <Files.h>
+#include <TextUtils.h>
+#include <Errors.h>
 /* NB: On Macs the structs of <types.h> are defined locally in <stat.h> */
 #else
 #include <sys/stat.h>
