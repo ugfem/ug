@@ -91,6 +91,7 @@
 #include "tool4"
 #include "tool5"
 #include "tool6"
+#include "shades.ct"
 
 /****************************************************************************/
 /*																			*/
@@ -112,6 +113,9 @@ static Cursor cursors[NTOOLS];                  /* id in cursor font				*/
 int MoveMouse = 1;                                              /* some local vars for mouse ops	*/
 int StoredMousePos = 0;
 int MouseX,MouseY;
+
+/* pixmaps for shading patterns */
+static Pixmap pattern[NO_PATTERNS];
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -184,6 +188,18 @@ static void IFPolygon (SHORT_POINT *points, INT n)
   XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
 }
 
+static void IFShadedPolygon(SHORT_POINT *points, INT n, DOUBLE intensity)
+{
+  int s;
+
+  s = (int)(0.5 + intensity * (DOUBLE)(NO_PATTERNS-1));
+  XSetFillStyle(display, gw->gc, FillOpaqueStippled);
+  XSetStipple(display, gw->gc, pattern[s]);
+  XFillPolygon(display,gw->win,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
+  XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
+  XSetFillStyle(display, gw->gc, FillSolid);
+}
+
 static void IFInversePolygon (SHORT_POINT *points, INT n)
 {
   XGCValues values_return;
@@ -207,6 +223,7 @@ static void IFInversePolygon (SHORT_POINT *points, INT n)
 static void IFErasePolygon (SHORT_POINT *points, INT n)
 {
   XGCValues gcv;
+
   XGetGCValues(display, gw->gc, GCForeground|GCBackground, &gcv);
   XSetForeground(display,gw->gc,gcv.background);
   XFillPolygon(display,gw->win,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
@@ -612,6 +629,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
     ctab[1].green = 0;
     ctab[1].blue = 0;
     thePort->black                          = 1;
+    thePort->gray               = 1;
     thePort->white                          = 0;
     thePort->red                            = 1;
     thePort->green                          = 1;
@@ -646,6 +664,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
       }
     }
     thePort->black = 63;
+    thePort->gray = 48;
     thePort->white = 0;
     thePort->red = 36;
     thePort->green = 27;
@@ -680,6 +699,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
       }
     }
     thePort->black = 15;
+    thePort->gray = 13;
     thePort->white = 0;
     thePort->red = 11;
     thePort->green = 9;
@@ -706,6 +726,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
     /* fixed colors */
     i = 0;
     ctab[i].red = 0xFFFF; ctab[i].green = 0xFFFF; ctab[i].blue = 0xFFFF; i++;
+    ctab[i].red = 0xD000; ctab[i].green = 0xD000; ctab[i].blue = 0xD000; i++;
     ctab[i].red = 0xFFFF; ctab[i].green = 0xFFFF; ctab[i].blue = 0x0   ; i++;
     ctab[i].red = 0xFFFF; ctab[i].green = 0x0       ; ctab[i].blue = 0xFFFF; i++;
     ctab[i].red = 0xFFFF; ctab[i].green = 0x0       ; ctab[i].blue = 0x0   ; i++;
@@ -745,19 +766,20 @@ void InitXPort (OUTPUTDEVICE *thePort)
       ctab[i].red = r; ctab[i].green = g; ctab[i].blue = b; i++;
     }
 
-    thePort->black = 7;
+    thePort->black = 8;
+    thePort->gray = 1;
     thePort->white = 0;
-    thePort->red = 3;
-    thePort->green = 5;
-    thePort->blue = 6;
-    thePort->cyan = 4;
-    thePort->yellow = 1;
-    thePort->darkyellow = 9;
-    thePort->magenta = 2;
-    thePort->orange = 8;
+    thePort->red = 4;
+    thePort->green = 6;
+    thePort->blue = 7;
+    thePort->cyan = 5;
+    thePort->yellow = 2;
+    thePort->darkyellow = 10;
+    thePort->magenta = 3;
+    thePort->orange = 9;
     thePort->hasPalette = 1;
     thePort->range = i;
-    thePort->spectrumStart = 10;
+    thePort->spectrumStart = 11;
     thePort->spectrumEnd = i-1;
 
     ncolors = i;
@@ -787,6 +809,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
     ctab[1].green = 0;
     ctab[1].blue = 0;
     thePort->black                          = 1;
+    thePort->gray               = 1;
     thePort->white                          = 0;
     thePort->red                            = 1;
     thePort->green                          = 1;
@@ -811,6 +834,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
   thePort->Polyline               = IFPolyline;
   thePort->InversePolyline= IFInversePolyline;
   thePort->Polygon                = IFPolygon;
+  thePort->ShadedPolygon  = IFShadedPolygon;
   thePort->InversePolygon = IFInversePolygon;
   thePort->ErasePolygon   = IFErasePolygon;
   thePort->Polymark               = IFPolymark;
@@ -861,6 +885,8 @@ void InitXPort (OUTPUTDEVICE *thePort)
 
 int InitControls (Window win)
 {
+  int i;
+
   /* make bitmaps from included files */
   tools[0] = XCreateBitmapFromData(display,win,tool0_bits,tool0_width,tool0_height);
   tools[1] = XCreateBitmapFromData(display,win,tool1_bits,tool1_width,tool1_height);
@@ -879,10 +905,12 @@ int InitControls (Window win)
   cursors[5] = XCreateFontCursor(display,XC_heart);
   cursors[6] = XCreateFontCursor(display,XC_box_spiral);
 
-  return(0);
+  /* make stipples for shading */
+  for (i = 0; i < NO_PATTERNS; i++)
+    pattern[i] = XCreateBitmapFromData(display, win, pattern_data[i],
+                                       PATTERN_SIZE, PATTERN_SIZE);
+  return 0;
 }
-
-
 
 /****************************************************************************/
 /*

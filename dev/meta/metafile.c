@@ -68,6 +68,7 @@
 #define opSetPalette            14
 #define opInvPolygon            15
 #define opErasePolygon          16
+#define opShadedPolygon     21
 
 /* The following macro is only valid for long and short data types */
 
@@ -247,6 +248,30 @@ static void MetaPolygon (SHORT_POINT *points, INT nb)
   currMW->data++;
   MEMCPYS(currMW->data,n);
 
+  for (i=0; i<n; i++)
+    MEMCPYS(currMW->data,points[i].x);
+  for (i=0; i<n; i++)
+    MEMCPYS(currMW->data,points[i].y);
+  currMW->itemCounter++;
+  currMW->blockUsed += size1;
+  return;
+}
+
+static void MetaShadedPolygon(SHORT_POINT *points, INT nb, DOUBLE intensity)
+{
+  int i,size1;
+  short n, s;
+
+  n = (short)nb;
+  if (n<2) return;
+  size1 = 5+n*4;
+  if (currMW->blockUsed+size1>METABUFFERSIZE) flush_block();
+
+  *currMW->data = opShadedPolygon;
+  currMW->data++;
+  MEMCPYS(currMW->data,n);
+  s = (short)(0.5 + 1000.0*intensity);
+  MEMCPYS(currMW->data,s);
   for (i=0; i<n; i++)
     MEMCPYS(currMW->data,points[i].x);
   for (i=0; i<n; i++)
@@ -483,6 +508,7 @@ static void InitMetaPort (OUTPUTDEVICE *thePort)
   thePort->DrawText               = MetaDrawText;
   thePort->CenteredText   = MetaCenteredText;
   thePort->ClearViewPort  = MetaClearViewPort;
+  thePort->ShadedPolygon  = MetaShadedPolygon;
 
   /* init pointers to set functions */
   thePort->SetLineWidth   = MetaSetLineWidth;
@@ -499,6 +525,7 @@ static void InitMetaPort (OUTPUTDEVICE *thePort)
 
   /* fill port */
   thePort->black = 255;
+  thePort->gray = 1;
   thePort->white = 0;
   thePort->red = 254;
   thePort->green = 128;
@@ -523,7 +550,7 @@ static void InitMetaPort (OUTPUTDEVICE *thePort)
 
   /* fixed colors */
   red[i] = 255; green[i] = 255; blue[i++] = 255;        /* 0 = white */
-  red[i] = 255; green[i] = 0      ; blue[i++] = 255;            /* 1 = magenta */
+  red[i] = 180; green[i] = 180; blue[i++] = 180;        /* 1 = gray  */
 
   /* color spectrum */
   r = g = 0; b = max;

@@ -196,6 +196,19 @@ static void PSPolygon (SHORT_POINT *points, INT nb)
   return;
 }
 
+static void PSShadedPolygon(SHORT_POINT *points, INT nb, DOUBLE intensity)
+{
+  int i;
+
+  fprintf(currPSF,"%6.5f I\n",intensity);
+  fprintf(currPSF,"N\n");
+  fprintf(currPSF,"%g %g M\n",TRFMX(points[0]),TRFMY(points[0]));
+  for (i=1; i<nb; i++)
+    fprintf(currPSF,"%g %g L\n",TRFMX(points[i]),TRFMY(points[i]));
+  fprintf(currPSF,"C\n");
+  PScc = -1;
+}
+
 static void PSInversePolygon (SHORT_POINT *points, INT nb)
 {
   return;
@@ -489,6 +502,7 @@ static void InitPSPort (OUTPUTDEVICE *thePort)
   thePort->Draw                   = PSDrawTo;
   thePort->Polyline               = PSPolyline;
   thePort->Polygon                = PSPolygon;
+  thePort->ShadedPolygon  = PSShadedPolygon;
   thePort->InversePolygon = PSInversePolygon;
   thePort->ErasePolygon   = PSErasePolygon;
   thePort->Polymark               = PSPolymark;
@@ -512,6 +526,7 @@ static void InitPSPort (OUTPUTDEVICE *thePort)
 
   /* fill port */
   thePort->black = 255;
+  thePort->gray = 1;
   thePort->white = 0;
   thePort->red = 254;
   thePort->green = 128;
@@ -536,7 +551,7 @@ static void InitPSPort (OUTPUTDEVICE *thePort)
 
   /* fixed colors */
   red[i] = 255; green[i] = 255; blue[i++] = 255;        /* 0 = white */
-  red[i] = 255; green[i] = 0      ; blue[i++] = 255;            /* 1 = magenta */
+  red[i] = 180; green[i] = 180; blue[i++] = 180;    /* 1 = gray  */
 
   /* color spectrum */
   r = g = 0; b = max;
@@ -566,7 +581,8 @@ static void InitPSPort (OUTPUTDEVICE *thePort)
     g -= delta;
     red[i] = r; green[i] = g; blue[i++] = b;
   }                                                             /* 254 = red */
-  red[i] = 0; green[i] = 0  ; blue[i++] = 0;                    /* 255 = black */
+
+  red[i] = 0  ; green[i] = 0  ; blue[i++] = 0;          /* 255 = black */
 
   for (j=0; j<i; j++)
   {
@@ -617,6 +633,7 @@ static INT WritePSHeader (FILE *file, const char *title, INT x, INT y, INT w, IN
   fprintf(file,"/N {newpath} def\n");
   fprintf(file,"/R {setrgbcolor} def\n");
   fprintf(file,"/W {setlinewidth} def\n");
+  fprintf(file,"/I {dup dup currentrgbcolor 4 -2 roll mul 4 -2 roll mul 4 -2 roll mul R} def\n");
 
   fprintf(file,"\n");
 
