@@ -20691,7 +20691,7 @@ INT InitWOP (void)
 				return (__LINE__);
 		
 		/* flag in MG status to indicated elements have been ordered */
-		if (AllocateControlEntry(MULTIGRID_STATUS,ELEMORD_LEN,&ce_ELEMORD) != GM_OK)
+		if (AllocateControlEntry(MULTIGRID_STATUS_CE,ELEMORD_LEN,&ce_ELEMORD) != GM_OK)
 			return (__LINE__);
 		
 		/* create WorkHandling for 'VecMat' */
