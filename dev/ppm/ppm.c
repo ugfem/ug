@@ -28,9 +28,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
-#include <string.h>
-#include <assert.h>
 
 #include "defaults.h"
 #include "fileopen.h"
@@ -57,12 +54,14 @@
 /****************************************************************************/
 
 typedef struct {
-  FILE* ppm_file;
-  /* more ? */
+  FILE  *file;
+  INT header_length;
+  INT width;
+  INT height;
 } PPM_WINDOW;
 
 static OUTPUTDEVICE *ppm_OutputDevice;
-static FILE         *ppm_File;
+static PPM_WINDOW   *ppm_Window;
 
 /* color tables */
 static short RedTab[COLORS];
@@ -152,12 +151,7 @@ static void ppm_Flush(void) {
   return;
 }
 
-/****************************************************************************/
-/*																			*/
-/*                             misc functions                                   */
-/*																			*/
-/****************************************************************************/
-
+/* setup color map */
 static void ppm_SetNewPalette(long x, long count, short *r, short *g, short *b)
 {
   INT i;
@@ -170,34 +164,29 @@ static void ppm_SetNewPalette(long x, long count, short *r, short *g, short *b)
   RedTab[1] = GreenTab[1] = BlueTab[1] = 0xD0;         /* set gray */
 }
 
-static void ppm_PlotPixelBuffer(void *buffer, void *data, INT len, int x, int y, int w, int h)
+/****************************************************************************/
+/*																			*/
+/*                 copy the pixel buffer to the ppm file                    */
+/*																			*/
+/****************************************************************************/
+
+static void ppm_PlotPixelBuffer(void *buffer, void *data, INT len,
+                                int x, int y, int w, int h)
 {
   unsigned char *p;
-  INT i;
+  int i, j;
+  long offset;
 
-#define RAW  /* undef for ascii ppm format */
-
-  /* write header */
-#ifdef RAW
-  fputs("P6\n", ppm_File);
-#else
-  fputs("P3\n", ppm_File);
-#endif
-  fputs("# CREATOR: ug ppm device\n", ppm_File);
-  fprintf(ppm_File, "%d %d\n", w, h);
-  fputs("255\n", ppm_File);
-
-  /* write pixel data */
-  p = (unsigned char *)buffer;
-  for (i = 1; i <= len; i++) {
-#ifdef RAW
-    fputc(RedTab[*p], ppm_File);
-    fputc(GreenTab[*p], ppm_File);
-    fputc(BlueTab[*p++], ppm_File);
-#else
-    fprintf(ppm_File, "%3d %3d %3d", RedTab[*p], GreenTab[*p], BlueTab[*p++]);
-    if (i % 5 == 0) fputc('\n', ppm_File);else fputc(' ', ppm_File);
-#endif
+  p = buffer;
+  offset = ppm_Window->header_length + 3 * (y*ppm_Window->width + x);
+  for (j = 0; j < h; j++) {
+    fseek(ppm_Window->file, offset, SEEK_SET);
+    for (i = 0; i < w; i++) {
+      fputc(RedTab  [*p],   ppm_Window->file);
+      fputc(GreenTab[*p],   ppm_Window->file);
+      fputc(BlueTab [*p++], ppm_Window->file);
+    }
+    offset += 3 * ppm_Window->width;
   }
 }
 
@@ -214,7 +203,9 @@ static WINDOWID ppm_OpenWindow(const char *title, INT rename,
 {
   PPM_WINDOW *ppm_window;
   FILE *file;
-  char ppm_path[160];
+  char ppm_path[160], header[32];
+  char white[3] = {255, 255, 255};
+  INT i, n;
 
   /* allocate ppm window structure */
   *error = 0;
@@ -233,13 +224,27 @@ static WINDOWID ppm_OpenWindow(const char *title, INT rename,
     *error = 1;
     return 0;
   }
-  ppm_File = ppm_window->ppm_file = file;
+  ppm_window->file = file;
 
   /* fill in devices coordinate system */
   Global_LL[0] = 0; Global_LL[1] = height;
   Global_UR[0] = width; Global_UR[1] = height;
   Local_LL[0] = 0; Local_LL[1] = height;
   Local_UR[0] = width; Local_UR[1] = 0;
+
+  ppm_window->width  = ++width;
+  ppm_window->height = ++height;
+
+  /* write the ppm file header */
+  sprintf(header, "P6\n%d %d\n255\n", width, height);
+  n = ppm_window->header_length = strlen(header);
+  fwrite(header, 1, n, file);
+
+  /* make a plain white canvas */
+  for (i = 0; i < width*height; i++)
+    fwrite(white, 3, 1, file);
+
+  ppm_Window = ppm_window;
 
   return ((WINDOWID)ppm_window);
 }
@@ -249,7 +254,7 @@ static INT ppm_CloseWindow(WINDOWID win)
   PPM_WINDOW *ppm_window;
 
   ppm_window = (PPM_WINDOW *)win;
-  fclose(ppm_window->ppm_file);
+  fclose(ppm_window->file);
   free(ppm_window);
 
   return 0;
@@ -257,7 +262,7 @@ static INT ppm_CloseWindow(WINDOWID win)
 
 static INT ppm_SetOutput(WINDOWID win)
 {
-  ppm_File = ((PPM_WINDOW *)win)->ppm_file;
+  ppm_Window = (PPM_WINDOW *)win;
   return 0;
 }
 
