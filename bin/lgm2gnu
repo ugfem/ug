@@ -1,0 +1,65 @@
+#!/usr/bin/perl -w
+
+@ARGV==1 or die "usage: lgm2gnu <geometry>\n";
+$real='[+-]*\d+\.*\d*e[+-]\d+|[+-]*\d+\.\d*|\d+';
+open(IN,$ARGV[0]);
+$l=0;
+while($line=<IN>)
+{
+	if ($line=~/points:/)
+	{
+		$n[$l]=0;
+		$line=~s/line\s*\d+:\s*left=\d+;\s*right=\d+;\s*points:\s*//g;
+		while(1)
+		{
+			if ($line=~/(\d+)\s*/)
+			{
+				$lp[$l][$n[$l]++]=$1;			
+				$line=~s/\d+\s*//;
+			}
+			else
+			{
+				last;
+			}
+		}
+		$l++;
+	}
+	if ($line=~/Point-Info/) {last;}
+}
+$m=0;
+while($line=<IN>)
+{
+	if ($line=~/\s*($real)\s+($real)/)
+	{
+		$p[$m][0]=$1; $p[$m][1]=$2;
+		$m++;
+	}
+}
+close(IN);
+
+for ($i=0; $i<$l; $i++)
+{
+	for ($j=0; $j<$n[$i]; $j++)
+	{
+		$idx=$lp[$i][$j];
+		print "$p[$idx][0] $p[$idx][1];\n";
+	}
+	print "\n";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
