@@ -90,6 +90,9 @@ extern INT SideEdgesOfEdge[MAX_EDGES_OF_ELEM][2][2];
 extern INT NextEdgeToSIP[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_SIDE][2];
 extern INT SideOf2Edges[MAX_EDGES_OF_ELEM][MAX_EDGES_OF_ELEM];
 extern INT EdgeOf2Sides[MAX_SIDES_OF_ELEM][MAX_SIDES_OF_ELEM];
+extern INT CornerOfSideAndEdge[MAX_SIDES_OF_ELEM][MAX_EDGES_OF_ELEM];
+extern INT SideOfCorners[MAX_CORNERS_OF_ELEM][MAX_CORNERS_OF_ELEM][MAX_CORNERS_OF_ELEM];
+
 /***************************************************************************
 *																		   *
 *							  Extern functions							   *

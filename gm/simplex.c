@@ -97,6 +97,11 @@ INT CornerOfSide[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_SIDE] = {{0,2,1}, {1,2,3}, {2
 /* gives the position of specified corner on specified side or -1 if it does not ly on that side */
 INT CornerOfSideInv[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_ELEM]  = {{0,2,1,-1}, {-1,0,1,2}, {1,-1,0,2}, {1,2,-1,0}};
 
+INT CornerOfSideAndEdge[MAX_SIDES_OF_ELEM][MAX_EDGES_OF_ELEM] = {{ 2, 0, 1,-1,-1,-1},
+                                                                 {-1, 3,-1,-1, 2, 1},
+                                                                 {-1,-1, 3, 2,-1, 0},
+                                                                 { 3,-1,-1, 1, 0,-1}};
+
 /* The indices of the corner opposite to three corners. */
 INT CornerOppCorners[MAX_CORNERS_OF_ELEM][MAX_CORNERS_OF_ELEM][MAX_CORNERS_OF_ELEM] =
 { {{-1,-1,-1,-1}, {-1,-1, 3, 2}, {-1, 3,-1, 1}, {-1, 2, 1,-1}},
@@ -104,6 +109,12 @@ INT CornerOppCorners[MAX_CORNERS_OF_ELEM][MAX_CORNERS_OF_ELEM][MAX_CORNERS_OF_EL
   {{-1, 3,-1, 1}, { 3,-1,-1, 0}, {-1,-1,-1,-1}, { 1, 0,-1,-1}},
   {{-1, 2, 1,-1}, { 2,-1, 0,-1}, { 1, 0,-1,-1}, {-1,-1,-1,-1}} };
 
+
+INT SideOfCorners[MAX_CORNERS_OF_ELEM][MAX_CORNERS_OF_ELEM][MAX_CORNERS_OF_ELEM] =
+{ {{-1,-1,-1,-1}, {-1,-1, 0, 3}, {-1, 0,-1, 2}, {-1, 3, 2,-1}},
+  {{-1,-1, 0, 3}, {-1,-1,-1,-1}, { 0,-1,-1, 1}, { 3,-1, 1,-1}},
+  {{-1, 0,-1, 2}, { 0,-1,-1, 1}, {-1,-1,-1,-1}, { 2, 1,-1,-1}},
+  {{-1, 3, 2,-1}, { 3,-1, 1,-1}, { 2, 1,-1,-1}, {-1,-1,-1,-1}} };
 
 /* The indices of the corners of each edge and its opposite edge */
 /* dont change order !											 */
