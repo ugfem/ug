@@ -191,6 +191,10 @@ static void ScaleIntoWindow (PRect *win, int n, PRect *rect)
     rect[i].llx = (rect[i].llx*scale_factor) + win->llx;
     rect[i].lly = (rect[i].lly*scale_factor) + win->lly;
   }
+
+  /* reduce window size to optimum */
+  win->sx = xmax*scale_factor;
+  win->sy = ymax*scale_factor;
 }
 
 
@@ -373,8 +377,12 @@ static double Place (PRectPtr *order, int n, PRect *win)
   }
   scale_factor = scale_factor*scale_factor;
 
+
+
   /* eval-function is percentage of empty area in window */
   eval_func = 1.0 - area_sum*scale_factor/(win->sx*win->sy);
+
+  eval_func += (1.0-(area_sum/(xmax*ymax))) * 0.05;
 
   /* add optimization for input-order */
   eval_func += (input_order_dist*INPUT_ORDER_WEIGHT);
@@ -457,7 +465,7 @@ int placer_Exec (INT *win_geom, int n, DOUBLE *rect_defs, INT *geom)
         sol_best = sol_last;
         CopyOrder(MAX_ORDER, best_order, order);
 
-        printf("placer: new best in iteration %d: sol=%f\n",
+        printf("openppic: found new best in iteration %d: sol=%f\n",
                i, sol_best);
       }
     }
@@ -499,6 +507,11 @@ int placer_Exec (INT *win_geom, int n, DOUBLE *rect_defs, INT *geom)
     real->picLL[i][1] = FTOI(dy+mirror_y-(rect[i].lly+rect[i].sy));
     real->picUR[i][0] = FTOI(dx+rect[i].llx+rect[i].sx);
     real->picUR[i][1] = FTOI(dy+mirror_y-rect[i].lly);
+
+    real->winLL[0] = task->winLL[0];
+    real->winLL[1] = task->winLL[1];
+    real->winUR[0] = task->winLL[0] + FTOI(win.sx);
+    real->winUR[1] = task->winLL[1] + FTOI(win.sy);
 #else
     geom[k]   = FTOI(rect[i].llx);
     geom[k+1] = FTOI(mirror_y-(rect[i].lly+rect[i].sy));

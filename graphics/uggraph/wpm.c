@@ -357,7 +357,7 @@ INT OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task)
   if (PlacePictures(task,&real)) return (1);
 
   /* realize pictures */
-  theWin = CreateUgWindow(theOutputDevice,task->win_name,task->winLL[0],task->winLL[1],task->winUR[0]-task->winLL[0],task->winUR[1]-task->winLL[1]);
+  theWin = CreateUgWindow(theOutputDevice,task->win_name,real.winLL[0],real.winLL[1],real.winUR[0]-real.winLL[0],real.winUR[1]-real.winLL[1]);
   if (theWin==NULL) return (1);
   for (i=0; i<task->n; i++)
   {
