@@ -53,6 +53,9 @@
 /*																			*/
 /****************************************************************************/
 
+/* if FF_PARALLEL_SIMULATION is defined, special functions from fe/ff are linked */
+/*#define FF_PARALLEL_SIMULATION*/
+
 /* return codes of the numerics routines									*/
 #define NUM_OK                                  0       /* everything ok						*/
 #define NUM_OUT_OF_MEM                  1       /* could not allocate mem (for connect.)*/
