@@ -35,6 +35,7 @@
 #include "compiler.h"
 #include "misc.h"
 #include "general.h"
+#include "ugstruct.h"
 
 /* graph module */
 #include "wpm.h"

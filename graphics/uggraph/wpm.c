@@ -35,6 +35,7 @@
 
 #include "compiler.h"
 #include "misc.h"
+#include "ugstruct.h"
 #include "evm.h"
 #include "gm.h"
 #include "num.h"
