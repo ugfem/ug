@@ -1347,7 +1347,7 @@ static INT DisplayCutPlane (const CUT *theCut)
 /****************************************************************************/
 
 INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective,
-             INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal)
+             INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal, DOUBLE vscale)
 {
   VIEWEDOBJ *theViewedObj;
   PLOTOBJ *thePlotObj;
@@ -1370,6 +1370,7 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
     UserWrite("specify object first\n");
     return (0);
   }
+  if (vscale<=0.0) vscale=1.0;
   CanvasRatio = ABS(((DOUBLE)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1]))/((DOUBLE)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
 
   /* set values */
@@ -1388,11 +1389,11 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
       if (CanvasRatio >= 1.0)
       {
         V2_SCALE(PO_RADIUS(thePlotObj),DefaultPXD)
-        V2_SCALE(PO_RADIUS(thePlotObj)*CanvasRatio,DefaultPYD)
+        V2_SCALE(PO_RADIUS(thePlotObj)*CanvasRatio/vscale,DefaultPYD)
       }
       else
       {
-        V2_SCALE(PO_RADIUS(thePlotObj)/CanvasRatio,DefaultPXD)
+        V2_SCALE(PO_RADIUS(thePlotObj)/CanvasRatio*vscale,DefaultPXD)
         V2_SCALE(PO_RADIUS(thePlotObj),DefaultPYD)
       }
     }
@@ -1899,7 +1900,7 @@ INT Walk (PICTURE *thePicture, const DOUBLE *vrsDelta)
   default :
     return (1);
   }
-  if (SetView(thePicture,VP,NULL,NULL,NULL,NO,NULL,NULL)) return (1);
+  if (SetView(thePicture,VP,NULL,NULL,NULL,NO,NULL,NULL,1.0)) return (1);
 
   return (0);
 }
@@ -1961,7 +1962,7 @@ INT RunAroundTargetPoint (PICTURE *thePicture, DOUBLE vrsDirectionAngle, DOUBLE 
     return (0);
   }
   V3_ADD(VO_VT(theViewedObj),ViewDirection,VP)
-  if (SetView(thePicture,VP,NULL,NULL,NULL,NO,NULL,NULL)) return (1);
+  if (SetView(thePicture,VP,NULL,NULL,NULL,NO,NULL,NULL,1.0)) return (1);
 
   return (0);
 }
@@ -2321,7 +2322,7 @@ INT SpecifyPlotObjOfViewedObject (PICTURE *thePicture, MULTIGRID *theMG, const c
     if (viewpointcorrect && VO_STATUS(theViewedObj)==ACTIVE)
       VO_STATUS(theViewedObj) = ACTIVE;
   }
-  if (SetView(thePicture,NULL,NULL,NULL,NULL,NO,NULL,NULL)) return (1);
+  if (SetView(thePicture,NULL,NULL,NULL,NULL,NO,NULL,NULL,1.0)) return (1);
 
   return (0);
 }

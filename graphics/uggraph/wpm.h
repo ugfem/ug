@@ -531,7 +531,7 @@ void                    ResetToolBoxState                               (UGWINDO
 
 /* initializing/changing view */
 INT                     SetView                                                 (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective,
-                                                                                 INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal);
+                                                                                 INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal, DOUBLE vscale);
 INT                             CopyView                                                (const PICTURE *mypic, INT all, INT cut);
 INT                             PrintViewSettings                               (const PICTURE *thePicture);
 INT                     DisplayViewOfViewedObject               (const PICTURE *thePicture);
