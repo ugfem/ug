@@ -41,6 +41,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "general.h"
+
 #include "amg_header.h"
 #include "amg_low.h"
 #include "amg_sp.h"
@@ -68,6 +70,7 @@
 /*																			*/
 /****************************************************************************/
 
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
 /****************************************************************************/
@@ -82,10 +85,6 @@
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
-
-/* RCS_ID
-   $Header$
- */
 
 /* our linear system */
 static AMG_MATRIX *A0;
@@ -113,8 +112,8 @@ static double u0 (double x, double y)
 #define EPS 1.0E-6
 #define NU  16
 
-#define CHECKER_XL      0.1
-#define CHECKER_YL      0.1
+#define CHECKER_XL      0.1047197551
+#define CHECKER_YL      0.1047197551
 #define CHECKER_K1      1000.0
 #define CHECKER_K2      0.001
 #define CHECKER_K3      10.0
@@ -554,7 +553,7 @@ int main (int argc, char *argv[])
   sc.n1=2;
   sc.n2=2;
   sc.gamma=1;
-  sc.omega_p[0]=1.8;
+  sc.omega_p[0]=1.6;
   sc.smoother=AMG_SSOR;
   sc.omega[0]=1.0;
 
