@@ -590,9 +590,6 @@ VECTOR *CreateVector (GRID *theGrid, INT VectorType, GEOM_OBJECT *object)
 
   GRID_LINK_VECTOR(theGrid,pv,PrioMaster);
 
-  /* counters */
-  theGrid->nVector++;
-
   return (pv);
 }
 
@@ -1010,8 +1007,6 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
   if (PutFreeObject(theGrid->mg,theVector,Size,VEOBJ))
     RETURN(1);
 
-  theGrid->nVector--;
-
   return(0);
 }
 
@@ -1184,9 +1179,9 @@ INT DisposeConnection (GRID *theGrid, CONNECTION *theConnection)
   else
     PutFreeObject(MYMG(theGrid),Matrix,2*MSIZE(Matrix),COOBJ);
 
-  /* return ok */
   theGrid->nCon--;
 
+  /* return ok */
   return(0);
 }
 
@@ -2429,7 +2424,8 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
   char buffer[256], msg[128];
   INT ReturnCode;
 
-  sprintf(msg,"error in connection between element %lu and %lu: ",(long)ID(Elem0),(long)ID(Elem1));
+  sprintf(msg,"ERROR: missing connection between element %lu and %lu: ",
+          (long)ID(Elem0),(long)ID(Elem1));
 
   ReturnCode = GM_OK;
   cnt0 = GetAllVectorsOfElement(theGrid,Elem0,vec0);
@@ -2442,15 +2438,36 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
         if (MatSize[mtype] > 0)
           if (ActDepth <= ConDepth[mtype])
           {
+            /* check connection in both directions */
             theCon = GetConnection(vec0[i],vec0[j]);
             if (theCon==NULL)
             {
               UserWrite(msg);
-              sprintf(buffer,"vec0[%d] to vec0[%d]\n",i,j);
+              sprintf(buffer,"vec0[%d]=" VINDEX_FMTX
+                      " to vec0[%d]=" VINDEX_FMTX "\n",
+                      i,VINDEX_PRT(vec0[i]),
+                      j,VINDEX_PRT(vec0[j]));
               UserWrite(buffer);
               ReturnCode = GM_ERROR;
             }
-            else SETCUSED(theCon,1);
+            else
+            {
+              theCon = GetConnection(vec0[j],vec0[i]);
+              if (theCon==NULL)
+              {
+                UserWrite(msg);
+                sprintf(buffer,"vec0[%d]=" VINDEX_FMTX
+                        " to vec0[%d]=" VINDEX_FMTX "\n",
+                        j,VINDEX_PRTX(vec0[j]),
+                        i,VINDEX_PRTX(vec0[i]));
+                UserWrite(buffer);
+                ReturnCode = GM_ERROR;
+              }
+              else
+              {
+                SETCUSED(theCon,1);
+              }
+            }
           }
       }
     return (ReturnCode);
@@ -2464,18 +2481,36 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
       if (MatSize[mtype] > 0)
         if (ActDepth <= ConDepth[mtype])
         {
+          /* check connection in both directions */
           theCon = GetConnection(vec0[i],vec1[j]);
           if (theCon==NULL)
           {
             UserWrite(msg);
-            sprintf(buffer,"vec0[%d] to vec1[%d]\n",i,j);
+            sprintf(buffer,"vec0[%d]=" VINDEX_FMTX
+                    " to vec1[%d]=" VINDEX_FMTX "\n",
+                    i,VINDEX_PRTX(vec0[i]),
+                    j,VINDEX_PRTX(vec1[j]));
             UserWrite(buffer);
             ReturnCode = GM_ERROR;
           }
-          else SETCUSED(theCon,1);
+          else
+          {
+            theCon = GetConnection(vec1[j],vec0[i]);
+            if (theCon == NULL)
+            {
+              UserWrite(msg);
+              sprintf(buffer,"vec1[%d]=" VINDEX_FMTX
+                      " to vec0[%d]=%x/" VINDEX_FMTX "\n",
+                      j,VINDEX_PRTX(vec1[j]),
+                      i,VINDEX_PRTX(vec0[i]));
+              UserWrite(buffer);
+              ReturnCode = GM_ERROR;
+            }
+            else
+              SETCUSED(theCon,1);
+          }
         }
     }
-
   return (ReturnCode);
 }
 
@@ -2569,8 +2604,13 @@ INT CheckConnections (GRID *theGrid)
 
   errors = 0;
 
-  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-    if (ElementCheckConnection(theGrid,theElement)!=NULL) errors++;
+  for (theElement=FIRSTELEMENT(theGrid);
+       theElement!=NULL;
+       theElement=SUCCE(theElement))
+  {
+    if (ElementCheckConnection(theGrid,theElement)!=NULL)
+      errors++;
+  }
 
   if (errors>0) return(GM_ERROR);else return(GM_OK);
 }
@@ -2739,8 +2779,11 @@ INT CheckAlgebra (GRID *theGrid)
   }
 
   /* check USED flag */
-  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector)) {
-    if (USED(theVector) != 1) {
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL;
+       theVector=SUCCVC(theVector))
+  {
+    if (USED(theVector) != 1)
+    {
       UserWriteF("%d: vector ID=%d NOT referenced by an geom_object: vtype=%d, objptr=%x",
                  me, ID(theVector), VTYPE(theVector), VOBJECT(theVector));
       if (VOBJECT(theVector) != NULL)
@@ -2754,6 +2797,71 @@ INT CheckAlgebra (GRID *theGrid)
 
   /* check validity of all defined connections */
   errors += CheckConnections(theGrid);
+
+  /* reset flags in connections */
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL;
+       theVector=SUCCVC(theVector))
+  {
+    MATRIX  *theMatrix;
+
+    for (theMatrix=VSTART(theVector); theMatrix!=NULL;
+         theMatrix = MNEXT(theMatrix)) SETCUSED(MMYCON(theMatrix),0);
+  }
+
+  /* set flags in connections */
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
+       theVector=SUCCVC(theVector))
+  {
+    MATRIX  *theMatrix;
+
+    for (theMatrix=VSTART(theVector); theMatrix!=NULL;
+         theMatrix = MNEXT(theMatrix)) SETMUSED(MADJ(theMatrix),1);
+  }
+
+  /* check matrices and connections */
+  for (theVector=PFIRSTVECTOR(theGrid);
+       theVector!=NULL;
+       theVector=SUCCVC(theVector))
+  {
+    MATRIX  *theMatrix;
+                #ifdef ModelP
+    INT prio = DDD_InfoPriority(PARHDR(theVector));
+                #endif
+
+    for (theMatrix=VSTART(theVector);
+         theMatrix!=NULL;
+         theMatrix = MNEXT(theMatrix))
+    {
+      MATRIX *Adj = MADJ(theMatrix);
+
+      if (MDEST(Adj) != theVector)
+      {
+        UserWriteF(PFMT "ERROR: dest=%x of adj matrix "
+                   " unequal vec=" VINDEX_FMTX "\n",
+                   me, MDEST(Adj),VINDEX_PRTX(theVector));
+      }
+
+                        #ifdef ModelP
+      if (prio != PrioGhost)
+                        #endif
+      if (MUSED(theMatrix) != 1)
+      {
+        UserWriteF(PFMT "ERROR: connection dead vec=" VINDEX_FMTX
+                   " vecto=" VINDEX_FMTX " con=%x mat=%x\n",
+                   me,VINDEX_PRTX(theVector),VINDEX_PRTX(MDEST(theMatrix)),
+                   MMYCON(theMatrix),theMatrix);
+      }
+
+                        #ifdef ModelP
+      if (prio == PrioGhost)
+      {
+        UserWriteF(PFMT "ERROR: ghost vector has matrix vec="
+                   VINDEX_FMTX " con=%x mat=%x\n",
+                   me,VINDEX_PRTX(theVector),MMYCON(theMatrix),theMatrix);
+      }
+                        #endif
+    }
+  }
 
   if (errors>0) return(GM_ERROR);else return(GM_OK);
 }
