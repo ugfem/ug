@@ -3060,7 +3060,7 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 			INT n,nodes;
 
 			/* determine nodes of sons on side of element */ 
-			GetSonSideNodes(theElement,side,&nodes,SideNodes,0);
+			GetSonSideNodes(theElement,side,&nodes,SideNodes,ioflag);
 
 			/* sort side nodes in descending adress order */
 			qsort(SideNodes,MAX_SIDE_NODES,sizeof(NODE *),compare_node);
