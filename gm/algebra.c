@@ -3704,7 +3704,7 @@ INT CheckAlgebra (GRID *theGrid)
       }
 
                         #ifdef ModelP
-      if (HGHOSTPRIO(prio))
+      if (GHOSTPRIO(prio) && !CEXTRA(MMYCON(theMatrix)))
       {
         errors++;
         UserWriteF(PFMT "ERROR: ghost vector has matrix vec="
