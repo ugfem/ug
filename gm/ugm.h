@@ -82,6 +82,9 @@
 /* init */
 INT              InitUGManager                  (void);
 
+/* mark key for temp mem during coarse grid construction */
+INT GetCoarseGridMarkKey (void);
+
 /* object handling */
 INT              GetFreeOBJT                    (void);
 INT              ReleaseOBJT                    (INT type);
