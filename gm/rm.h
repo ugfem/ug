@@ -58,7 +58,7 @@
 /* -> recompile rm.c refine.c ugm.c gmcheck.c ../ui/commands.c        */
 /* touch rm.c refine.c ugm.c gmcheck.c ../ui/commands.c; ugmake gm; ugmake ui */
 
-#define TET_RULESET
+/*#define TET_RULESET*/
 
 
 /* defines for edge types */

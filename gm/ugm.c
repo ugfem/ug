@@ -5173,7 +5173,7 @@ static INT NdElPtrArray_Update(INT *MIndex, INT *MBlock, ELEMENT *theElement, MU
   return(0);
 }
 
-ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, INT *NbgSdList)
+ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, INT *NbgSdList, INT *bnds_flag)
 {
   MULTIGRID *theMG;
   INT i,j,k,m,rv,found,tag,ElementType;
@@ -5326,20 +5326,27 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
 
     /* all vertices of side[i] are on the boundary now */
 
-    /* We now assume, that side[i] is on the boundary if and only if */
-    /* there is one boundary segment containing the three nodes.        */
-    /* That means, one should not define elements at the boundary	*/
-    /* with a boundary side covering more than one segment.			*/
+    /* We now assume, that:                                         */
+    /* if bnds_flag!=NULL && bnds_flag[i]!=0 there has to be a bnds */
+    /* so, if not -->error                                          */
+    /* or: if bnds_flag==NULL, the domain decides weather there     */
+    /* should be a bnds or not (never an error)                     */
 
     for (j=0; j<m; j++)
       bndp[j] = V_BNDP(sideVertex[j]);
 
-    bnds[i] = BNDP_CreateBndS(MGHEAP(theMG),bndp,m);
-
-    if (bnds[i] != NULL)
+    if (bnds_flag==NULL)
+    {
+      bnds[i] = BNDP_CreateBndS(MGHEAP(theMG),bndp,m);
+      if (bnds[i] != NULL) ElementType = BEOBJ;
+    }
+    else if (bnds_flag[i]!=0)
+    {
+      bnds[i] = BNDP_CreateBndS(MGHEAP(theMG),bndp,m);
+      assert(bnds[i]!=NULL);
       ElementType = BEOBJ;
+    }
   }
-
   /**********************************************************************/
   /* here begins the revised(03/97) part of InsertElement ...	        */
   /* documentation see ftp://ftp.ica3.uni-stuttgart.de/pub/text/dirk.   */
@@ -5505,7 +5512,7 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
    D*/
 /****************************************************************************/
 
-ELEMENT *InsertElementFromIDs (GRID *theGrid, INT n, INT *idList)
+ELEMENT *InsertElementFromIDs (GRID *theGrid, INT n, INT *idList, INT *bnds_flag)
 {
   MULTIGRID *theMG;
   NODE *Node[MAX_CORNERS_OF_ELEM],*theNode;
@@ -5554,7 +5561,7 @@ ELEMENT *InsertElementFromIDs (GRID *theGrid, INT n, INT *idList)
     return(NULL);
   }
 
-  return (InsertElement(GRID_ON_LEVEL(theMG,0),n,Node,NULL,NULL));
+  return (InsertElement(GRID_ON_LEVEL(theMG,0),n,Node,NULL,NULL,bnds_flag));
 }
 
 /****************************************************************************/
@@ -5766,7 +5773,7 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
           Nodes[l] = ListNode;
         }
       }
-      theElement = InsertElement (theGrid,n,Nodes,NULL,NULL);
+      theElement = InsertElement (theGrid,n,Nodes,NULL,NULL,NULL);
     }
 
   return(GM_OK);

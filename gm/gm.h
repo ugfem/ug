@@ -2618,8 +2618,8 @@ NODE        *InsertBoundaryNode     (GRID *theGrid, BNDP *bndp);
 
 INT             DeleteNodeWithID                (GRID *theGrid, INT id);
 INT             DeleteNode                              (GRID *theGrid, NODE *theNode);
-ELEMENT     *InsertElementFromIDs       (GRID *theGrid, INT n, INT  *idList);
-ELEMENT     *InsertElement                      (GRID *theGrid, INT n, NODE **NodeList, ELEMENT **ElemList, INT *NbgSdList);
+ELEMENT     *InsertElementFromIDs       (GRID *theGrid, INT n, INT  *idList, INT *bnds_flag);
+ELEMENT     *InsertElement                      (GRID *theGrid, INT n, NODE **NodeList, ELEMENT **ElemList, INT *NbgSdList, INT *bnds_flag);
 INT         InsertMesh              (MULTIGRID *theMG, MESH *theMesh);
 INT             DeleteElementWithID     (MULTIGRID *theMG, INT id);
 INT             DeleteElement                   (MULTIGRID *theMG, ELEMENT *theElement);
