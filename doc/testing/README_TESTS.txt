@@ -2,7 +2,9 @@ Defining and running tests.
 
 1. Defining tests
 
-(i)  There is a file in ".../UG" called "DartTestFiles" which includes the paths
+(i)  Adding an entry in "DartTestFiles
+
+     There is a file in ".../UG" called "DartTestFiles" which includes the paths
      to the libraries or executables to test. The syntax for an entry is:
 
      <Build Directory Identifier>:<Build Directory>
@@ -15,7 +17,9 @@ Defining and running tests.
      There is one entry per line. The build directory is a relative path. The
      Build Directory Identifier has to be unique!
 
-(ii) In the build directory given in (i) there has to be a file called
+(ii) Adding test in "TestCases"
+
+     In the build directory given in (i) there has to be a file called
      "TestCases" which includes the tests that should be run. The syntax for
      an entry is:
         
@@ -38,6 +42,33 @@ Defining and running tests.
      UGlib1::::UGlib,PC-SEQ-2-LGM_DOMAIN-DEBUG-OPTIM
      UGlib2::::UGlib,PCGCOV-SEQ-3-LGM_DOMAIN-DEBUG-OPTIM
 
+(iii)Adding the target "make build" in the Makefile
+
+	    
+     The Makefile which resides in the build directory given in (i) there has
+     to be a target called "make build".
+
+     Example: UG libraries
+
+     clean: $(MODEL_TARGET)_clean
+        rm -f $(OBJECTS)
+        cd low && make -f Makefile.low clean
+        cd dev && make -f Makefile.dev clean
+        cd dom && make -f Makefile.dom clean
+        cd gm && make -f Makefile.gm clean
+        cd np && make -f Makefile.np clean
+        cd graphics && make -f Makefile.graphics clean
+        cd ui && make -f Makefile.ui clean
+
+     clean_all: clean
+        rm -rf include
+
+     all: include $(MODULES) $(OBJECTS)
+        make $(UG_LIB)
+        $(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
+        echo "libug, libdom and libdev compiled"
+
+     build: clean_all all
 
 
 

@@ -16,8 +16,8 @@ Follow this command by checking out the source code:
 
 2. Installing Dart
 
-You have to install Dart by copiing the downloaded directory "Dart" anywhere
-to your system. It is necessary not to delete the subdirectory "Source"!
+You have to install Dart by copying the downloaded directory "Dart" anywhere
+to your system. Do NOT delete the subdirectory "Source"!
 
 
 
@@ -42,7 +42,7 @@ First of all you need an installation of Tcl and ssh on your system because
 the configure/build/test cycle is driven by Tcl scripts and the data is
 copied to the Dart server via scp.
 The only thing left to do is defining tests. There are several tests 
-predefined and when you want to add your own tests. For further information
+predefined, extend by new lines if you want to add your own tests. For further information
 see the README_TESTS.txt file.
 
 

@@ -74,7 +74,7 @@ b) Modify the paragraph "Commands for the build/test/submit cycle"
 # Commands for the build/test/submit cycle
 ConfigureCommand: ---
 CMakeCommand: 
-MakeCommand: ugpart
+MakeCommand: make build
 CVSCommand: 
 TclshCommand: 
 JavaCommand: 
@@ -100,19 +100,14 @@ script.
 
 4. Prepare the directories needed on the server
 
-Modify the script ".../UG/ug/bin/ug_dart_co" that it fits to your cvs server
-and directory tree. Then simply type "ug_dart_co Server" to generate the UG
-directory and checkout the file "DartConfiguration.tcl.proto" which contains
-the Dart configuration. Now one has to the create the other subdirectories of 
-/.../UG" by typing "ug_dart_tree".
-These steps have to be done only once!
+Checkout the UG source from the cvs repository. This has to be done only once!
 
 
 
 
 5. Configure Dart
 
-Simply run "ug_dart_conf.pl Server" to create the "DartConfiguration.tcl" file
+Simply run "ug_dart_conf.pl" to create the "DartConfiguration.tcl" file
 using "DartConfiguration.tcl.proto".
 
 

@@ -80,6 +80,13 @@ purpose: running all scripts which are necessary for a complete dart
 
 
 
+1.5 ug_dart_cron (tcsh script)
+
+usage: ug_dart_cron
+
+purpose: This script is called by the cron job running on the dart client.
+	 It calls ug_dart.pl -e all -t Nightly.
+
 
 
 2. Server side
