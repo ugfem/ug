@@ -6,7 +6,7 @@ use Exporter;
 $VERSION = 1.0;
 @ISA = qw(Exporter);
 
-@EXPORT = qw(ug);
+@EXPORT = qw(ug float);
 @EXPORT_OK = qw();
 %EXPORT_TAGS = qw();
 
@@ -157,6 +157,12 @@ sub ug
 		submit $cmd;
 		return out($print);
 	}
+}
+sub float
+{
+	my $real='[+-]?\d*\.?\d*[eE]?[+-]?\d*';
+	$_[0]=~/($real)/;
+	return $1;
 }
 
 1;
