@@ -147,7 +147,7 @@ void ConstructConsistentGrid (GRID *theGrid)
 
 	DEBUG_TIME(0);
 
-    #ifdef __TWODIM__
+#ifdef __TWODIM__
 	/* this is the simplest fix for VFATHER zombies  */
 	/* just reset all VFATHER pointers and set them  */
 	/* only by master nodes of this or upper levels. */
@@ -175,11 +175,30 @@ void ConstructConsistentGrid (GRID *theGrid)
 			}
 */
 	}
-	#endif
+#endif
 
-	/* reconstruct VFATHER pointers */
+	/* reconstruct VFATHER pointers and                */
+	/* make ghost neighborships symmetric (only for 3d)*/
 	for (theElement = PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 	{
+		#ifdef __THREEDIM__
+		if (EVGHOST(theElement))
+		{
+			ELEMENT *NbElement; 
+
+			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+			{
+				NbElement = NBELEM(theElement,i);
+				for (j=0; j<SIDES_OF_ELEM(NbElement); j++)
+				{
+					if (NBELEM(NbElement,j) == theElement) break;
+				}
+				if (j>=SIDES_OF_ELEM(NbElement))
+					SET_NBELEM(theElement,i,NULL);
+			}
+		}
+		#endif
+
 		theFather = EFATHER(theElement);
 
 		/* no reconstruction of VFATHER possible */
