@@ -656,7 +656,7 @@ int InitPPIF (int *argcp, char ***argvp)
 
   /* assemble command line options */
   for (i=1; i<*argcp; i++)
-    if (strncmp((*argvp)[i],"-n",1)==0)
+    if (strncmp((*argvp)[i],"-n",2)==0)
     {
       if (i+1>=*argcp)
       {
