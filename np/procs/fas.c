@@ -40,6 +40,7 @@
 #include "general.h"
 #include "debug.h"
 #include "gm.h"
+#include "shapes.h"
 #include "scan.h"
 #include "misc.h"
 #include "numproc.h"
@@ -256,7 +257,7 @@ static INT RestrictSolNodeVector (GRID *FineGrid, const VECDATA_DESC *to, const 
    D*/
 /****************************************************************************/
 
-INT RestrictValue (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
+static INT RestrictValue (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
 {
   FORMAT *fmt;
   INT vtype,rv,otype;
@@ -700,7 +701,8 @@ INT FasStep (NP_FAS *fas, NP_NL_ASSEMBLE *ass, INT level,
     if (StandardRestrict (g,fas->d,fas->d,Factor_One))
       return (1);
 
-    if (dcopy (mg,level-1,level-1,ALL_VECTORS,fas->v,fas->l)) ;
+    if (dcopy (mg,level-1,level-1,ALL_VECTORS,fas->v,fas->l))
+      return (1);
 
     /* recursiv call */
     for (i=0; i<fas->gamma; i++)
