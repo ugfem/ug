@@ -210,6 +210,8 @@ INT EvaluateFVGeometry                          (const ELEMENT *e, FVElementGeom
 /* upwinding procedures */
 INT GetFullUpwindShapes                         (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC]);
 INT GetSkewedUpwindShapes                       (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC]);
+INT GetLPSUpwindShapes                          (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC]);
+INT GetMWSUpwindShapes                          (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC]);
 INT GetMJRawRegularUpwindShapes         (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF],
                                          DOUBLE NodalShape[MAXF][MAXNC], DOUBLE IPShape[MAXF][MAXF]);
 INT GetMJRawPositiveUpwindShapes        (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF],

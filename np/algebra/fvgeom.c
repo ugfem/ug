@@ -796,11 +796,10 @@ INT Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const
     V2_SUBTRACT(x[next],x[side],v);                                                                     /* vector from xs to xn */
     V2_COPY(v,M[0]);                                                                                                    /* transposed coefficient matrix for cut of lines */
     V2_COPY(vel,M[1]);
-    det = M[0][0]*M[1][1]-M[1][0]*M[0][1];
-    if (det==0.0)
-      continue;
     /* lines are parallel */
     M2_INVERT(M,MI,det);                                                                                        /* inverse */
+    if (det==0.0)
+      continue;
 
     V2_SUBTRACT(pt,x[side],r);                                                                                  /* right hand side */
     MT2_TIMES_V2(MI,r,coeff);                                                                                   /* solve for coefficients */
@@ -898,6 +897,162 @@ INT GetSkewedUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPV
 
     GetNodeNextToCut(tag,x,SCVF_GIP(FVG_SCVF(geo,ip)),IPVel[ip],&corn);
     Shape[ip][corn] = 1.0;
+  }
+  return (0);
+}
+/****************************************************************************/
+/*D
+   GetLPSUpwindShapes - compute shape functions for linear profile skewed upwinding
+
+   SYNOPSIS:
+   INT GetLPSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
+
+   PARAMETERS:
+   .  geo - finite volume element geometry
+   .  IPVel - velocity vectors at integration points
+   .  Shape - resulting shape functions
+
+   DESCRIPTION:
+   This function computes the shape functions for linear profile skewed upwinding. A linear interpolation
+   between the nodes of the upwind element boundary is performed.
+
+   RETURN VALUES:
+   0 when o.k.
+
+   __LINE__ if an error occured.
+   D*/
+/****************************************************************************/
+
+INT GetLPSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
+{
+  const DOUBLE_VECTOR *x;
+  DOUBLE_VECTOR y;
+  const ELEMENT *elem;
+  INT ip,co0,co1,corn,sd,side,tag;
+  DOUBLE d0, d1;
+  x = FVG_GCOPTR(geo);
+  tag = FVG_TAG(geo);
+  elem = FVG_ELEM(geo);
+
+  for (ip=0; ip<FVG_NSCVF(geo); ip++)
+  {
+    for (corn=0; corn<FVG_NSCV(geo); corn++)
+      Shape[ip][corn] = 0.0;
+
+    if (V2_ISZERO(IPVel[ip]))
+      continue;
+
+    /* find upwind point on element side */
+    for (sd=0; sd<SIDES_OF_TAG(tag); sd++)
+      if (SideIsCut(tag,x,SCVF_GIP(FVG_SCVF(geo,ip)),IPVel[ip],sd,y))
+      {
+        side = sd;
+        break;
+      }
+#ifdef __TWODIM__
+    co0 = CORNER_OF_SIDE(elem,side,0);
+    co1 = CORNER_OF_SIDE(elem,side,1);
+    V_DIM_EUKLIDNORM_OF_DIFF(FVG_GCO(geo,co0),y,d0);
+    V_DIM_EUKLIDNORM_OF_DIFF(FVG_GCO(geo,co1),y,d1);
+    Shape[ip][co0] = d1/(d0+d1);
+    Shape[ip][co1] = d0/(d0+d1);
+#else
+    PrintErrorMessage('E',"GetLPSUpwindShapes","3D not implemented yet");
+    return(__LINE__);
+#endif
+  }
+  return (0);
+}
+/****************************************************************************/
+/*D
+   GetMWSUpwindShapes - compute shape functions for mass weighted skewed upwinding
+
+   SYNOPSIS:
+   INT GetMWSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
+
+   PARAMETERS:
+   .  geo - finite volume element geometry
+   .  IPVel - velocity vectors at integration points
+   .  Shape - resulting shape functions
+
+   DESCRIPTION:
+   This function computes the shape functions for mass weighted skewed upwinding. Only the nodes
+   of the upwind elementside of the ip are considered.
+
+   RETURN VALUES:
+   0 when o.k.
+
+   __LINE__ if an error occured.
+   D*/
+/****************************************************************************/
+
+INT GetMWSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
+{
+  SubControlVolumeFace *scvf;
+  INT from,to,ip,nip,corn,nco;
+  DOUBLE massflow[MAXF],dimlessflow[MAXF],vel,len;
+
+
+#ifdef __THREEDIM__
+  PrintErrorMessage('E',"GetMWSUpwindShapes","3D not implemented yet");
+  return(__LINE__);
+#endif
+
+  nip = FVG_NSCVF(geo);
+  nco = FVG_NSCV(geo);
+  /* calculate mass fluxes at the ips */
+  for (ip=0; ip<nip; ip++)
+  {
+    scvf = (SubControlVolumeFace*) FVG_SCVF(geo,ip);
+    V_DIM_SCALAR_PRODUCT(SCVF_NORMAL(scvf),IPVel[ip],massflow[ip]);
+    V_DIM_SCALAR_PRODUCT(IPVel[ip],IPVel[ip],vel);
+    V_DIM_SCALAR_PRODUCT(SCVF_NORMAL(FVG_SCVF(geo,ip)),SCVF_NORMAL(FVG_SCVF(geo,ip)),len);
+    dimlessflow[ip] = massflow[ip]/sqrt(vel*len);
+    if (fabs(dimlessflow[ip])<=SMALL_C)
+    {
+      massflow[ip] = dimlessflow[ip] = 0.;
+    }
+  }
+
+  for (ip=0; ip<nip; ip++)
+  {
+    for (corn=0; corn<nco; corn++)
+      Shape[ip][corn] = 0.0;
+
+    scvf = (SubControlVolumeFace*) FVG_SCVF(geo,ip);
+    from = SCVF_FROM(scvf);
+    to   = SCVF_TO(scvf);
+
+    /* dimensionless flux is small */
+    if (dimlessflow[ip]==0.)
+    {
+      /* use linear combination of from and to node */
+      Shape[ip][from] = Shape[ip][to] = 0.5;
+      continue;
+    }
+
+    if (massflow[ip]>0.)
+    {
+      Shape[ip][from] = MIN(MAX(0,(massflow[ip]-massflow[(ip-1+nip)%nip])/massflow[ip]),1);
+      if (massflow[(ip-1+nip)%nip]>0)
+      {
+        Shape[ip][(from-1+nco)%nco] = MIN(MAX(0,massflow[(ip-1+nip)%nip]/massflow[ip]),1)
+                                      *MIN(MAX(0,(massflow[(ip-1+nip)%nip]-massflow[(ip-2+nip)%nip])/massflow[(ip-1+nip)%nip]),1);
+        Shape[ip][from] +=  MIN(MAX(0,massflow[(ip-1+nip)%nip]/massflow[ip]),1)
+                           *MIN(MAX(0,massflow[(ip-2+nip)%nip]/massflow[(ip-1+nip)%nip]),1);
+      }
+    }
+    else
+    {
+      Shape[ip][to] = MIN(MAX(0,(massflow[ip]-massflow[(ip+1)%nip])/massflow[ip]),1);
+      if (massflow[(ip+1)%nip]<0)
+      {
+        Shape[ip][(to+1)%nco] = MIN(MAX(0,massflow[(ip+1)%nip]/massflow[ip]),1)
+                                *MIN(MAX(0,(massflow[(ip+1)%nip]-massflow[(ip+2)%nip])/massflow[(ip+1)%nip]),1);
+        Shape[ip][to] +=  MIN(MAX(0,massflow[(ip+1)%nip]/massflow[ip]),1)
+                         *MIN(MAX(0,massflow[(ip+2)%nip]/massflow[(ip+1)%nip]),1);
+      }
+    }
   }
   return (0);
 }
