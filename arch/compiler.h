@@ -243,6 +243,30 @@ extern "C" {
 
 /****************************************************************************/
 /*                                                                          */
+/* Definitions for Sun                                                      */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __SUN__
+#undef __MWCW__
+
+/* basic types */
+#define SHORT  short
+#define INT    int
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD float
+
+/* memory */
+#define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
+#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
+
+#endif
+
+
+/****************************************************************************/
+/*                                                                          */
 /* Definitions for DEC                                                                                  */
 /*                                                                          */
 /****************************************************************************/
