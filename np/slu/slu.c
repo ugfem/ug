@@ -163,7 +163,6 @@ typedef struct {
   INT Annz;                                     /* nonzeros of A								*/
   double rpg;                                   /* growth rate of pivot element					*/
   double rcond;                         /* reciprocal condition number					*/
-  INT MarkKey;                  /* key for heap management						*/
   INT display;
 
   SuperMatrix A,L,U,B,X;    /* SuperLU specific stuff                                           */
@@ -190,8 +189,9 @@ REP_ERR_FILE;
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-INT SLU_MarkKey;
-HEAP *SLU_Heap;
+static INT SLU_MarkKey_nb;
+static INT SLU_MarkKey[2];
+static HEAP *SLU_Heap;
 
 /****************************************************************************/
 /*																			*/
@@ -339,7 +339,7 @@ int WriteVector (INT n, SuperMatrix *B, GRID *theGrid, VECDATA_DESC *x)
 
 void *SLU_Malloc (int size)
 {
-  return((void*)GetTmpMem(SLU_Heap,size,SLU_MarkKey));
+  return((void*)GetTmpMem(SLU_Heap,size,SLU_MarkKey[SLU_MarkKey_nb]));
 }
 
 static INT SLU_Output (theNP)
@@ -395,9 +395,9 @@ static INT SLUPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_D
   void *work;
 
   /* init heap management */
-  MarkTmpMem(theHeap,&np->MarkKey);
-  SLU_MarkKey=np->MarkKey;
+  SLU_MarkKey_nb=0;
   SLU_Heap=theHeap;
+  MarkTmpMem(SLU_Heap,&(SLU_MarkKey[SLU_MarkKey_nb]));
 
   /* control parameters */
   *fact='E'; *equed='B'; *trans='N'; *refact='N';
@@ -451,8 +451,12 @@ static INT SLUIter (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b,
 
   /* solve */
   if (ReadVector(np->n,&np->B,theGrid,b)) REP_ERR_RETURN(1);
+  SLU_MarkKey_nb=1;
+  MarkTmpMem(SLU_Heap,&(SLU_MarkKey[SLU_MarkKey_nb]));
   dgssvx(fact,trans,refact,&np->A,&np->iparam,np->perm_c,np->perm_r,np->etree,equed,np->R,np->C,&np->L,&np->U,work,0,
          &np->B,&np->X,&np->rpg,&np->rcond,&np->ferr,&np->berr,&np->mem_usage,&info);
+  ReleaseTmpMem(SLU_Heap,SLU_MarkKey[SLU_MarkKey_nb]);
+  SLU_MarkKey_nb=0;
   if (info!=0) REP_ERR_RETURN(1);
   if (WriteVector(np->n,&np->X,theGrid,x)) REP_ERR_RETURN(1);
 
@@ -467,9 +471,7 @@ static INT SLUPostProcess (NP_ITER *theNP, INT level,VECDATA_DESC *x, VECDATA_DE
   NP_SLU *np;
 
   np = (NP_SLU *) theNP;
-  if (SLU_MarkKey!=np->MarkKey) REP_ERR_RETURN(1);
-  if (SLU_Heap!=MGHEAP(NP_MG(theNP))) REP_ERR_RETURN(1);
-  ReleaseTmpMem(SLU_Heap,np->MarkKey);
+  ReleaseTmpMem(SLU_Heap,SLU_MarkKey[SLU_MarkKey_nb]);
 
   return(0);
 }
