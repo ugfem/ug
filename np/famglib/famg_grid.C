@@ -1355,25 +1355,28 @@ static int Gather_NodeStatus (DDD_OBJ obj, void *data)
 			msgtype = FAMG_TYPE_FINE;
 			buffer += sizeof(msgtype);
 			
-			char &NumberEntries = *(char*)buffer;
-			buffer += sizeof(NumberEntries);
+			int &NumberEntries = *(int*)buffer;
 			NumberEntries = 0;
 			
+			// prepare array offsets into the buffer
+			buffer = (char*)data + CEIL(sizeof(msgtype)+sizeof(int));	// round up to achive alignment
+			DDD_GID *pgid = (DDD_GID*)buffer;
+			double *prolongation = (double*)(buffer+CEIL(FAMGMAXPARENTS*sizeof(DDD_GID)));
+			double *restriction = prolongation+FAMGMAXPARENTS*sizeof(double);
 			FAMGTransferEntry *trans;
 			
 			for ( MATRIX *imat=VISTART(vec); imat!= NULL; imat = MNEXT(imat) )
 			{
-				*(DDD_GID*)buffer = DDD_InfoGlobalId(PARHDR(MDEST(imat)));
-				buffer += sizeof(DDD_GID);
+				pgid[NumberEntries] = DDD_InfoGlobalId(PARHDR(MDEST(imat)));
 				
 				trans = (FAMGTransferEntry*)imat;	// dirty cast
 				
-				((double*)buffer)[0] = (double)trans->GetProlongation();
-				((double*)buffer)[1] = (double)trans->GetRestriction();
-		    	PRINTDEBUG(np,1,("%d: Gather_NodeStatus:      ->"VINDEX_FMTX" P=%g R=%g\n",me,VINDEX_PRTX(MDEST(imat)),((double*)buffer)[0],((double*)buffer)[1] ));
-				buffer += 2*sizeof(double);
+				prolongation[NumberEntries] = (double)trans->GetProlongation();
+				restriction[NumberEntries] = (double)trans->GetRestriction();
+		    	PRINTDEBUG(np,1,("%d: Gather_NodeStatus:      ->"VINDEX_FMTX" P=%g R=%g\n",me,VINDEX_PRTX(MDEST(imat)),prolongation[NumberEntries],restriction[NumberEntries] ));
 
 				NumberEntries++;
+				assert(NumberEntries<=FAMGMAXPARENTS);
 			}
 		}
 		else
@@ -1428,27 +1431,29 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 	else if( msgtype == FAMG_TYPE_FINE )
 	{
 		double prolongations[FAMGMAXPARENTS], restrictions[FAMGMAXPARENTS];
-		int np, parents[FAMGMAXPARENTS], pos = 0;
+		int np, parents[FAMGMAXPARENTS], bp, pos = 0;
 		DDD_GID pgid;
 		MATRIX *mat;	
 		
-		np = *(char*)buffer;		// fetch number of parents from buffer
-		buffer += sizeof(char);
+		np = *(int*)buffer;		// fetch number of parents from buffer
 		
 	    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus: Fine "VINDEX_FMTX" %d parents\n",me,VINDEX_PRTX(vec), np));
 		
-		for( ; np-- > 0; )	// process parent nodes
+		// prepare array offsets into the buffer
+		DDD_GID *buffer_gid  = (DDD_GID *)((char*)data + CEIL(sizeof(msgtype)+sizeof(int))); // round up to achive alignment
+		double *buffer_prolo = (double *)((char*)buffer_gid+CEIL(FAMGMAXPARENTS*sizeof(DDD_GID)));
+		double *buffer_restr = buffer_prolo+FAMGMAXPARENTS;
+
+		for( bp=0; bp<np; bp++)	// process parent nodes
 		{
-			pgid = *(DDD_GID*)buffer;	// fetch GID of a parent node from buffer
-			buffer += sizeof(DDD_GID);
+			pgid = buffer_gid[bp];	// fetch GID of a parent node from buffer
 			
-		    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus:     -> GID %08x P=%g R=%g\n",me,pgid,((double*)buffer)[0],((double*)buffer)[1]));
+		    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus:     -> GID %08x P=%g R=%g\n",me,pgid,buffer_prolo[bp],buffer_restr[bp]));
 			for( mat = MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat) )
 				if( DDD_InfoGlobalId(PARHDR(MDEST(mat)))==pgid )
 					break;
 			if( mat==NULL )
 			{
-				buffer += 2*sizeof(double);	// skip buffer
 				continue; // this parent node is not on this processor
 				// is skippping OK  ?????????
 			}
@@ -1456,13 +1461,12 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 			assert( pos<FAMGMAXPARENTS );
 			
 			parents[pos] = VINDEX(MDEST(mat));
-			prolongations[pos] = ((double*)buffer)[0];
-			restrictions[pos] = ((double*)buffer)[1];
-			buffer += 2*sizeof(double);
+			prolongations[pos] = buffer_prolo[bp];	// TODO: avoid the almost unneccessary copying of the doubles but consider: pos and bp may be different!
+			restrictions[pos] = buffer_restr[bp];
 		    PRINTDEBUG(np,1,("%d: Scatter_NodeStatus:     -> "VINDEX_FMTX" P=%g R=%g\n",me,VINDEX_PRTX(MDEST(mat)),prolongations[pos],restrictions[pos]));
 			pos++;
 		}
-		
+
 		// put the values for the parent nodes into the node
 		FAMGPaList *palist = NULL;
 		if(Communication_Graph->SavePaList(palist,pos,parents,prolongations,restrictions,1.0))
@@ -1493,8 +1497,8 @@ void FAMGGrid::CommunicateNodeStatus()
 	Communication_Graph = GetGraph();	// set global variable to pass the graph to the Handlers
 	Communication_Grid = this;			// set global variable to pass the grid to the Handlers
 	
-	int size = sizeof(FAMG_MSG_TYPE) + sizeof(char) + 
-				FAMGMAXPARENTS * ( sizeof(DDD_GID) + 2 * sizeof(double) );
+	int size = CEIL(sizeof(FAMG_MSG_TYPE) + sizeof(char)) + 
+				CEIL(FAMGMAXPARENTS * ( sizeof(DDD_GID)) + 2 * sizeof(double) );
 	size = CEIL(size);
 	
 DDD_IFRefreshAll(); // ????????/// only temp
