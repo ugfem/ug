@@ -1525,7 +1525,7 @@ static INT TransferSurfaces2Mesh (HEAP *Heap, LGM_SURFACE *theSurface, MESH *the
   return (0);
 }
 
-#ifdef NETGEN_SUPPORT
+#ifdef _NETGEN
 
 static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h)
 {
