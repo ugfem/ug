@@ -33,6 +33,7 @@
 #include <assert.h>
 
 #include "compiler.h"
+#include "devices.h"
 #include "misc.h"
 #include "gm.h"
 #include "algebra.h"
@@ -41,6 +42,7 @@
 #include "shapes.h"
 #include "debug.h"
 #include "general.h"
+#include "block.h"
 
 #include "np.h"
 #include "disctools.h"
@@ -509,7 +511,7 @@ INT StandardInterpolateNewVectors (GRID *FineGrid, const VECDATA_DESC *Sol)
    StandardProject - project node values on lower levels
 
    SYNOPSIS:
-   INT StandardProject (GRID *FineGrid, const VECDATA_DESC *to,
+   INT StandardProject (GRID *CoarseGrid, const VECDATA_DESC *to,
    const VECDATA_DESC *from);
 
    PARAMETERS:
@@ -1451,4 +1453,429 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat)
 
   return (NUM_OK);
 }
-#endif
+
+
+/****************************************************************************/
+/*D
+   ScaledMGRestrictNodeVector - restriction for diagonally scaled mg
+
+   SYNOPSIS:
+   static INT ScaledMGRestrictNodeVector (GRID *FineGrid, const VEC_DESC *to,
+   const VEC_DESC *from, const MAT_DESC *Amat, const DOUBLE *damp);
+
+   PARAMETERS:
+   .  FineGrid - pointer to grid
+   .  to - type vector descriptor
+   .  from  - type vector descriptor
+   .  Amat - matrix to compute weights
+   .  damp - damping factor for every component
+
+   DESCRIPTION:
+   This function restricts defect of fine node vectors with NEWDEFECT_CLASS
+   to the next coarser grid.
+   First, it resets all components to zero. It considers the VECSKIP-flags.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured.
+   D*/
+/****************************************************************************/
+
+static INT ScaledMGRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
+{
+  GRID *CoarseGrid;
+  NODE *theNode;
+  VECTOR *v,*vc;
+  const SHORT *toComp,*fromComp;
+  INT i,k,ncomp,vecskip;
+  INT mtype;
+  MATRIX *im;
+
+  CoarseGrid = DOWNGRID(FineGrid);
+
+  ncomp    = VD_NCMPS_IN_TYPE(to,NODEVECTOR);
+  if (ncomp == 0) return(NUM_ERROR);
+  if (ncomp>MAX_SINGLE_VEC_COMP) return (NUM_BLOCK_TOO_LARGE);
+  toComp   = VD_CMPPTR_OF_TYPE(to,NODEVECTOR);
+  fromComp = VD_CMPPTR_OF_TYPE(from,NODEVECTOR);
+  mtype    = MTP(NODEVECTOR,NODEVECTOR);
+
+  /* reset coarser defect at positions where a new defect is restricted */
+  for (v=FIRSTVECTOR(CoarseGrid); v!= NULL; v=SUCCVC(v))
+    if (VTYPE(v)==NODEVECTOR)
+      if (VNCLASS(v)>=NEWDEF_CLASS)
+        for (i=0; i<ncomp; i++)
+          VVALUE(v,toComp[i]) = 0.0;
+
+  /* compute contributions to all coarse node vectors */
+  for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
+  {
+    v = NVECTOR(theNode);
+    if (VCLASS(v)<NEWDEF_CLASS) continue;
+
+    for (im=VISTART(v); im!=NULL; im=MNEXT(im))
+    {
+      vc = MDEST(im);
+      vecskip = VECSKIP(vc);
+      for (i=0; i<ncomp; i++)
+        if (!(vecskip & (1<<i)))
+          for (k=0; k<ncomp; k++) VVALUE(vc,toComp[i]) += MVALUE(im,i*ncomp+k)*VVALUE(v,fromComp[k]);
+    }
+  }
+
+  return (NUM_OK);
+}
+
+
+/****************************************************************************/
+/*D
+   ScaledMGRestrict - Matrix dependent restriction of fine vectors with NEWDEFECT_CLASS
+
+   SYNOPSIS:
+   INT ScaledMGRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from,
+   const MATDATA_DESC *Mat, const DOUBLE *damp);
+
+   PARAMETERS:
+   .  FineGrid - pointer to grid
+   .  to - type vector descriptor
+   .  from  - type vector descriptor
+   .  Mat - fine grid matrix
+   .  damp - damping factor for every component
+
+   DESCRIPTION:
+   This function restricts defect of fine vectors with NEWDEFECT_CLASS,
+   considers the VECSKIP-flags.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured.
+   D*/
+/****************************************************************************/
+
+INT ScaledMGRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC *from, const DOUBLE *damp)
+{
+  INT vtype,rv;
+  const SHORT *offset;
+
+  if (DOWNGRID(FineGrid)==NULL)
+    return (NUM_NO_COARSER_GRID);
+
+  offset = VD_OFFSETPTR(to);
+
+  for (vtype=0; vtype<NVECTYPES; vtype++)
+    if (VD_ISDEF_IN_TYPE(to,vtype))
+      switch (vtype)
+      {
+      case ELEMVECTOR :
+        PrintErrorMessage('E',"MatDepRestrict","only node vector is implemented");
+        return(NUM_ERROR);
+      case NODEVECTOR :
+        if ((rv=ScaledMGRestrictNodeVector(FineGrid,to,from,damp+offset[vtype]))!=NUM_OK)
+          return (rv);
+        break;
+      case EDGEVECTOR :
+        PrintErrorMessage('E',"MatDepRestrict","only node vector is implemented");
+        return(NUM_ERROR);
+      case SIDEVECTOR :
+        PrintErrorMessage('E',"MatDepRestrict","only node vector is implemented");
+        return(NUM_ERROR);
+      }
+
+  return (NUM_OK);
+}
+
+
+
+
+/****************************************************************************/
+/*D
+   InstallScaledRestrictionMatrix - compute restriction matrix for scaled mg
+
+   SYNOPSIS:
+   INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat);
+
+   PARAMETERS:
+   .  FineGrid - pointer to fine grid equations
+   .  Mat - matrix to be computed
+
+   DESCRIPTION:
+   This function computes the modified restriction matrix used in diagonally
+   scaled multigrid algorithm.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured.
+   D*/
+/****************************************************************************/
+
+INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOUBLE cut)
+{
+  NODE *theNode;
+  VECTOR *vf,*vc;
+  INT i,j,k,n,l,ncomp,vecskip,A,mtype;
+  SHORT comps[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
+  DOUBLE Dcoarseinv[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
+  DOUBLE Q[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
+  DOUBLE F[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
+  DOUBLE *Dfine,*Dcoarse;
+  MATRIX *im;
+  ELEMENT *theElement;
+  VERTEX *theVertex;
+  DOUBLE c[MAX_CORNERS_OF_ELEM],s;
+        #ifdef _LOCAL_DEBUG_
+  VECTOR *v;
+        #endif
+
+  /* we handle only node vectors here ! */
+  mtype    = MTP(NODEVECTOR,NODEVECTOR);
+  ncomp    = MD_ROWS_IN_MTYPE(Mat,mtype);
+  if (ncomp == 0) return(NUM_ERROR);
+  if (ncomp>MAX_SINGLE_VEC_COMP) return (NUM_BLOCK_TOO_LARGE);
+
+  /* check matrix format and get components */
+  if (MD_ROWS_IN_MTYPE(Mat,mtype)!=ncomp) return(NUM_ERROR);
+  if (MD_COLS_IN_MTYPE(Mat,mtype)!=ncomp) return(NUM_ERROR);
+  A = MD_MCMP_OF_MTYPE(Mat,mtype,0);
+  for (i=0; i<ncomp*ncomp; i++) {
+    if (MD_MCMP_OF_MTYPE(Mat,mtype,i)!=A+i)
+    {
+      PrintErrorMessage('E',"InstallRestrictionMatrix","matrix format incorrect");
+      return(NUM_ERROR);
+    }
+    comps[i] = A+i;
+  }
+
+  /* compute contributions of fine node to coarse nodes */
+  for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
+  {
+    vf = NVECTOR(theNode);
+    if (VCLASS(vf)<NEWDEF_CLASS) continue;
+
+    /* fine grid diagonal block */
+    Dfine = &(MVALUE(VSTART(vf),A));
+
+    if (NFATHER(theNode)!=NULL)             /* This node is also in the coarse grid */
+    {
+      vc = NVECTOR(NFATHER(theNode));
+
+      /* compute Q = D(vc)(D(vf))^{-1} */
+      Dcoarse = &(MVALUE(VSTART(vc),A));
+      if (InvertSmallBlock(ncomp,comps,Dcoarse,Dcoarseinv)!=NUM_OK)
+        return (NUM_ERROR);
+      for (i=0; i<ncomp; i++)
+        for (j=0; j<ncomp; j++) {
+          Q[i*ncomp+j] = 0.0;
+          for (k=0; k<ncomp; k++)
+            Q[i*ncomp+j] += Dcoarseinv[i*ncomp+k]*Dfine[k*ncomp+j];
+        }
+
+      /* apply filter ! */
+      for (i=0; i<ncomp; i++)
+        for (j=0; j<ncomp; j++)
+        {
+          Q[i*ncomp+j] = MAX(0.0,MIN(cut,Q[i*ncomp+j]));
+        }
+
+      /* allocate restriction matrix entry */
+      im = GetIMatrix(vf,vc);
+      if (im==NULL) {
+        im = CreateIMatrix(FineGrid,vf,vc);
+        if (im==NULL) {
+          UserWrite("Could not create interpolation matrix\n");
+          return(NUM_ERROR);
+        }
+      }
+      for (i=0; i<ncomp*ncomp; i++) MVALUE(im,i) = Q[i];
+
+    }
+    else             /* This node is only in fine grid */
+    {
+      theVertex  = MYVERTEX(theNode);
+      theElement = VFATHER(theVertex);
+      n = CORNERS_OF_ELEM(theElement);
+      GNs(n,LCVECT(theVertex),c);
+      for (l=0; l<n; l++)
+      {
+        /* for all corners */
+        vc = NVECTOR(CORNER(theElement,l));
+        vecskip = VECSKIP(vc);
+
+        /* copy fine and eliminate dirichlet nodes in fine matrix ! */
+        for (i=0; i<ncomp*ncomp; i++) F[i] = Dfine[i];
+        for (i=0; i<ncomp; i++)
+          if ((vecskip & (1<<i)))
+            for (j=0; j<ncomp; j++)
+              if (i==j) F[i] = 1.0;else F[i] = 0.0;
+
+        /* compute Q = D(vc)^{-1}(D(vf)) */
+        Dcoarse = &(MVALUE(VSTART(vc),A));
+        if (InvertSmallBlock(ncomp,comps,Dcoarse,Dcoarseinv)!=NUM_OK)
+          return (NUM_ERROR);
+        for (i=0; i<ncomp; i++) {
+          if (!(vecskip & (1<<i))) s=1;else s=0;
+          for (j=0; j<ncomp; j++) {
+            Q[i*ncomp+j] = 0.0;
+            for (k=0; k<ncomp; k++)
+              Q[i*ncomp+j] += s*Dcoarseinv[i*ncomp+k]*F[k*ncomp+j];
+          }
+        }
+
+        /* apply filter ! */
+        for (i=0; i<ncomp; i++)
+          for (j=0; j<ncomp; j++)
+          {
+            Q[i*ncomp+j] = MAX(0.0,MIN(cut,Q[i*ncomp+j]));
+          }
+
+        /* allocate restriction matrix entry */
+        im = GetIMatrix(vf,vc);
+        if (im==NULL) {
+          im = CreateIMatrix(FineGrid,vf,vc);
+          if (im==NULL) {
+            UserWrite("Could not create interpolation matrix\n");
+            return(NUM_ERROR);
+          }
+        }
+        for (i=0; i<ncomp*ncomp; i++) MVALUE(im,i) = Q[i]*c[l];
+      }
+    }
+  }
+
+        #ifdef _LOCAL_DEBUG_
+  sprintf(buffer,"---- LEVEL %d ----\n",GLEVEL(FineGrid)); UserWrite(buffer);
+  for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
+  {
+    sprintf(buffer,"*NODE (%12.4lg,%12.4lg) %ld\n",(DOUBLE)XC(MYVERTEX(theNode)),
+            (DOUBLE)YC(MYVERTEX(theNode)),ID(theNode));
+    UserWrite(buffer);
+
+    v = NVECTOR(theNode);
+    for (im=VISTART(v); im!=NULL; im=MNEXT(im))
+    {
+      vc = MDEST(im);
+      vecskip = VECSKIP(vc);
+      for (i=0; i<ncomp; i++)
+      {
+        sprintf(buffer," DEST (%12.4lg,%12.4lg) %5ld, ",
+                (DOUBLE)XC(MYVERTEX(VMYNODE(vc))),(DOUBLE)YC(MYVERTEX(VMYNODE(vc))),ID(VMYNODE(vc)));
+        UserWrite(buffer);
+        for (k=0; k<ncomp*ncomp; k++)
+        {
+          sprintf(buffer," %12.4lE",MVALUE(im,k)); UserWrite(buffer);
+        }
+        UserWrite("\n");
+      }
+    }
+  }
+        #endif
+
+  return (NUM_OK);
+}
+
+
+
+/****************************************************************************/
+/*D
+   DiagonalScaleSystem - scale system of equations by point-block-diagonal
+
+   SYNOPSIS:
+   INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const VECDATA_DESC *rhs);
+
+   PARAMETERS:
+   .  FineGrid - pointer to grid
+   .  Mat - matrix
+   .  rhs - right hand side
+
+   DESCRIPTION:
+   Scales Ax=b to DAx=Db, where D is the inverse of the diagonal blocks of A.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured.
+   D*/
+/****************************************************************************/
+
+INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const VECDATA_DESC *rhs)
+{
+  NODE *theNode;
+  INT A,b,n,i,j,k,mtype;
+  VECTOR *vi;
+  MATRIX *mij;
+  SHORT comps[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
+  DOUBLE Dfineinv[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
+  DOUBLE Q[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
+  DOUBLE r[MAX_SINGLE_VEC_COMP];
+  DOUBLE *Dfine,*bfine;
+
+  /* check assumptions */
+  if (!VD_ISDEF_IN_TYPE(rhs,NODEVECTOR)) return(NUM_ERROR);
+  mtype = MTP(NODEVECTOR,NODEVECTOR);
+  if (!MD_ISDEF_IN_MTYPE(Mat,mtype)) return(NUM_ERROR);
+
+  n = VD_NCMPS_IN_TYPE(rhs,NODEVECTOR);
+  if (MD_ROWS_IN_MTYPE(Mat,mtype)!=n) return(NUM_ERROR);
+  if (MD_COLS_IN_MTYPE(Mat,mtype)!=n) return(NUM_ERROR);
+
+  b = VD_CMP_OF_TYPE(rhs,NODEVECTOR,0);
+  A = MD_MCMP_OF_MTYPE(Mat,mtype,0);
+
+  for (i=0; i<n; i++)
+    if (VD_CMP_OF_TYPE(rhs,NODEVECTOR,i)!=b+i)
+    {
+      PrintErrorMessage('E',"ScaleSystem","vector format incorrect");
+      return(NUM_ERROR);
+    }
+  for (i=0; i<n*n; i++) {
+    if (MD_MCMP_OF_MTYPE(Mat,mtype,i)!=A+i)
+    {
+      PrintErrorMessage('E',"ScaleSystem","matrix format incorrect");
+      return(NUM_ERROR);
+    }
+    comps[i] = A+i;
+  }
+
+  /* scale system by point block diagonal */
+  for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
+  {
+    /* get vector */
+    vi = NVECTOR(theNode);
+
+    /* invert diagonal block */
+    Dfine = &(MVALUE(VSTART(vi),A));
+    if (InvertSmallBlock(n,comps,Dfine,Dfineinv)!=NUM_OK) return (NUM_ERROR);
+
+    /* multiply row from left */
+    for (mij=VSTART(vi); mij!=NULL; mij=MNEXT(mij))
+    {
+      if (CEXTRA(mij)) continue;
+
+      Dfine = &(MVALUE(mij,A));
+      for (i=0; i<n; i++)
+        for (j=0; j<n; j++) {
+          Q[i*n+j] = 0.0;
+          for (k=0; k<n; k++)
+            Q[i*n+j] += Dfineinv[i*n+k]*Dfine[k*n+j];
+        }
+      for (i=0; i<n*n; i++) Dfine[i] = Q[i];
+    }
+
+    /* and the right hand side */
+    bfine = &(VVALUE(vi,b));
+    for (i=0; i<n; i++) {
+      r[i] = 0;
+      for (j=0; j<n; j++)
+        r[i] += Dfineinv[i*n+j]*bfine[j];
+    }
+    for (i=0; i<n; i++) bfine[i] = r[i];
+
+  }
+
+  return(NUM_OK);
+}
+
+
+#endif /* interpolation matrix is defined */

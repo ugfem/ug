@@ -32,6 +32,7 @@
 #include "evm.h"
 #include "shapes.h"
 #include "quadrature.h"
+#include "devices.h"
 #include "general.h"
 
 /****************************************************************************/
