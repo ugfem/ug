@@ -106,7 +106,7 @@ typedef struct
   INT maxLineSearch;                            /* maximum number of line search steps			*/
   DOUBLE rhoReass;                              /* reassemble if nonlin conv worth than this    */
   DOUBLE lambda;                                /* nonlinear damp factor in $step and $nmg_step */
-  DOUBLE linMinRed;                             /* minimum reduction for linear solver			*/
+  DOUBLE linMinRed[MAX_VEC_COMP];         /* minimum reduction for linear solver			*/
 
   /* and XDATA_DESCs */
   MATDATA_DESC *J;                              /* the Matrix to be solved						*/
@@ -251,7 +251,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   DOUBLE s, sprime, s2reach, sred;              /* combined defect norm					*/
   INT reassemble=1;                                             /* adaptive computation of jacobian		*/
   VEC_SCALAR linred;                                            /* parameters for linear solver			*/
-  DOUBLE red_factor;                                            /* convergence factor for linear iter	*/
+  DOUBLE red_factor[MAX_VEC_COMP];              /* convergence factor for linear iter	*/
   DOUBLE la;                                                            /* damping factor in line search		*/
   DOUBLE rho[MAX_LINE_SEARCH+1];                /* reduction factors of linesearch		*/
   DOUBLE rhomin;                                                /* best reduction if !accept			*/
@@ -265,6 +265,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   /* get status */
   newton = (NP_NEWTON *) nls;      /* cast from abstract base class to final class*/
   mg = nls->base.mg;
+  UG_math_error = 0;
 
   /* fill result variable with error condition */
   res->error_code = 0;
@@ -357,7 +358,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   }
 
   /* initialize reduction factor for linear solver */
-  red_factor = newton->linMinRed;
+  for (i=0; i<n_unk; i++) red_factor[i] = newton->linMinRed[i];
   reassemble = 1;
 
   /* do newton iterations */
@@ -394,7 +395,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
     /* solve linear system */
     CSTART();
-    for (i=0; i<n_unk; i++) linred[i] = red_factor;
+    for (i=0; i<n_unk; i++) linred[i] = red_factor[i];
     if (newton->solve->PreProcess!=NULL)
       if ((*newton->solve->PreProcess)(newton->solve,level,newton->v,newton->d,newton->J,&bl,&error)) {
         UserWriteF("NewtonSolver: solve->PreProcess failed, error code %d\n",error);
@@ -537,11 +538,14 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     if (sc_cmp(defect,defect2reach,newton->d)) {res->converged=1; break;}
 
     /* compute new reduction factor, assuming quadratic convergence */
-    red_factor = MIN((sprime/s)*(sprime/s),newton->linMinRed);
-    if (newton->linearRate == 1)
-      red_factor = MIN(sprime/s,newton->linMinRed);
-    if (newton->linearRate == 2)
-      red_factor = newton->linMinRed;
+    for (i=0; i<n_unk; i++)
+    {
+      red_factor[i] = MIN((sprime/s)*(sprime/s),newton->linMinRed[i]);
+      if (newton->linearRate == 1)
+        red_factor[i] = MIN(sprime/s,newton->linMinRed[i]);
+      if (newton->linearRate == 2)
+        red_factor[i] = newton->linMinRed[i];
+    }
 
     /* accept new iterate */
     s = sprime;
@@ -586,6 +590,7 @@ exit:
 static INT NewtonInit (NP_BASE *base, INT argc, char **argv)
 {
   NP_NEWTON *newton;                                            /* object pointer						*/
+  INT i;
 
   newton = (NP_NEWTON *) base;
 
@@ -647,12 +652,16 @@ static INT NewtonInit (NP_BASE *base, INT argc, char **argv)
     PrintErrorMessage('E',"NewtonInit","lambda must be in (-2,2)");
     REP_ERR_RETURN(NP_NOT_ACTIVE);
   }
-  if (ReadArgvDOUBLE("linminred",&(newton->linMinRed),argc,argv))
-    newton->linMinRed = 0.001;
-  if ((newton->linMinRed<0.0)||(newton->linMinRed>=1.0)) {
-    PrintErrorMessage('E',"NewtonInit","linminred must be in (0,1)");
-    REP_ERR_RETURN(NP_NOT_ACTIVE);
-  }
+  if (sc_read(newton->linMinRed,newton->s,"linminred",argc,argv))
+    for (i=0; i<MAX_VEC_COMP; i++)
+      newton->linMinRed[i] = 0.001;
+
+  for (i=0; i<MAX_VEC_COMP; i++)
+    if ((newton->linMinRed[i]<0.0)||(newton->linMinRed[i]>=1.0))
+    {
+      PrintErrorMessage('E',"NewtonInit","linminred must be in (0,1)");
+      REP_ERR_RETURN(NP_NOT_ACTIVE);
+    }
   /* set display option */
   newton->displayMode = ReadArgvDisplay(argc,argv);
 
@@ -693,7 +702,7 @@ static INT NewtonDisplay (NP_BASE *theNumProc)
   UserWriteF(DISPLAY_NP_FORMAT_SI,"linrate",(int)newton->linearRate);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"line",(int)newton->lineSearch);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"lsteps",(int)newton->maxLineSearch);
-  UserWriteF(DISPLAY_NP_FORMAT_SF,"linminred",(float)newton->linMinRed);
+  if (sc_disp(newton->linMinRed,newton->s,"linMinRed")) REP_ERR_RETURN (1);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"lambda",(float)newton->lambda);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"rhoreass",(float)newton->rhoReass);
 
