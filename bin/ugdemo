@@ -26,6 +26,7 @@ fi
 if test -x $UGROOT/../sc/appl2d/scalar2d
 then
         echo "pm2d: Poros media equation 2d";   
+        echo "tu2d: Scalar tutorial script 2d";   
 fi
 if test -x $UGROOT/../fe/appl/fe2d
 then
@@ -100,6 +101,10 @@ then
         er2d)
 			cd $UGROOT/../fe/appl
 			ugrun fe2d $PROC emden.scr
+			;;
+        tu2d)
+			cd $UGROOT/../sc/appl2d
+			ugrun scalar2d $PROC tutorial.scr
 			;;
         *)
                 echo "target $1 not found";
