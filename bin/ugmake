@@ -56,7 +56,7 @@ then
 	meta | xif | ps | sif)
 		cd $UGROOT/dev/$1
 		;;
-	udm | algebra | procs)
+	udm | algebra | procs | field)
 		cd $UGROOT/np/$1
 		;;
 	std)

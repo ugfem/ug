@@ -26,6 +26,7 @@ ar:
 	cd procs; make -f Makefile.procs ar; cd ..;
 	cd algebra; make -f Makefile.algebra ar; cd ..;
 	cd udm; make -f Makefile.udm ar; cd ..;
+	cd field; make -f Makefile.field ar; cd ..;
 
 PROCS:
 	cd procs; make -f Makefile.procs; cd ..;
