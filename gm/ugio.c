@@ -874,7 +874,7 @@ static INT IO_GetSideNode (ELEMENT *theElement, INT side, NODE **theNode, INT *n
 
 static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT *refinement)
 {
-  INT i,j,n,nedge,type,sonRefined,n0,n1,Sons_of_Side,Sons_of_Side_List[MAX_SONS];
+  INT i,j,l_entry,r_index,nedge,type,sonRefined,n0,n1,Sons_of_Side,Sons_of_Side_List[MAX_SONS];
   ELEMENT *theSonElem[MAX_SONS];
   ELEMENT *SonList[MAX_SONS];
   NODE *NodeList[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
@@ -899,39 +899,38 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   upGrid = UPGRID(theGrid);
 
   /* insert nodes */
-  n=0;
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
   {
-    NodeList[n] = SONNODE(CORNER(theElement,i));
-    if (NodeList[n]==NULL)
+    NodeList[i] = SONNODE(CORNER(theElement,i));
+    if (NodeList[i]==NULL)
     {
-      NodeList[n] = CreateSonNode(upGrid,CORNER(theElement,i));
-      if (NodeList[n]==NULL) return (1);
-      ID(NodeList[i]) = ref->newcornerid[n];
+      NodeList[i] = CreateSonNode(upGrid,CORNER(theElement,i));
+      if (NodeList[i]==NULL) return (1);
+      ID(NodeList[i]) = ref->newcornerid[i];
     }
-    n++;
   }
 
   nedge = EDGES_OF_ELEM(theElement);
+  l_entry = r_index = CORNERS_OF_ELEM(theElement);
   for (i=0; i<nedge; i++)
   {
     if (theRule->pattern[i]!=1)
     {
-      NodeList[n++]==NULL;
+      NodeList[l_entry++]==NULL;
       continue;
     }
     n0 = CORNER_OF_EDGE(theElement,i,0);
     n1 = CORNER_OF_EDGE(theElement,i,1);
     theEdge = GetEdge(CORNER(theElement,n0),CORNER(theElement,n1));
     if (theEdge==NULL) return (1);
-    NodeList[n] = MIDNODE(theEdge);
-    if (NodeList[n]==NULL)
+    NodeList[l_entry] = MIDNODE(theEdge);
+    if (NodeList[l_entry]==NULL)
     {
-      NodeList[n] = CreateMidNode(upGrid,theElement,i);
-      if (NodeList[n]==NULL) return (1);
-      ID(NodeList[i]) = ref->newcornerid[n];
+      NodeList[l_entry] = CreateMidNode(upGrid,theElement,i);
+      if (NodeList[l_entry]==NULL) return (1);
+      ID(NodeList[l_entry]) = ref->newcornerid[r_index];
     }
-    n++;
+    l_entry++; r_index++;
   }
 
 #ifdef __THREEDIM__
@@ -939,28 +938,28 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   {
     if (theRule->pattern[i+nedge]!=1)
     {
-      NodeList[n++]==NULL;
+      NodeList[l_entry++]==NULL;
       continue;
     }
-    if (IO_GetSideNode(theElement,i,&(NodeList[n]),&nbside)) return (1);
-    if (NodeList[n]==NULL)
+    if (IO_GetSideNode(theElement,i,&(NodeList[l_entry]),&nbside)) return (1);
+    if (NodeList[l_entry]==NULL)
     {
-      NodeList[n] = CreateSideNode(upGrid,theElement,i);
-      if (NodeList[n]==NULL) return (1);
-      ID(NodeList[i]) = ref->newcornerid[n];
+      NodeList[l_entry] = CreateSideNode(upGrid,theElement,i);
+      if (NodeList[l_entry]==NULL) return (1);
+      ID(NodeList[l_entry]) = ref->newcornerid[r_index];
     }
     else
-      SETONNBSIDE(MYVERTEX(NodeList[n]),nbside);
-    n++;
+      SETONNBSIDE(MYVERTEX(NodeList[l_entry]),nbside);
+    l_entry++; r_index++;
   }
 #endif
 
   if (theRule->pattern[CENTER_NODE_INDEX(theElement)]==1)
   {
-    NodeList[n] = CreateCenterNode(upGrid,theElement);
-    if (NodeList[n]==NULL) return (1);
-    ID(NodeList[i]) = ref->newcornerid[n];
-    n++;
+    NodeList[l_entry] = CreateCenterNode(upGrid,theElement);
+    if (NodeList[l_entry]==NULL) return (1);
+    ID(NodeList[l_entry]) = ref->newcornerid[r_index];
+    l_entry++;
   }
 
   /* insert elements */
@@ -1016,7 +1015,13 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   /* call recoursively */
   for (i=0; i<theRule->nsons; i++)
     if (sonRefined & (1<<i))
+    {
       if (InsertLocalTree (upGrid,theSonElem[i],NULL)) return (1);
+    }
+    else
+    {
+      SETREFINE(theSonElem[i],NO_REFINEMENT);
+    }
 
   return (0);
 }
@@ -1260,7 +1265,8 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   for (i=0; i<TOPLEVEL(theMG); i++)
     for (theElement = FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
     {
-      SETREFINE(theElement,REFINE(theElement)-rr_general.RefRuleOffset[TAG(theElement)]);
+      if (REFINE(theElement)!=NO_REFINEMENT)
+        SETREFINE(theElement,REFINE(theElement)-rr_general.RefRuleOffset[TAG(theElement)]);
       SETMARK(theElement,0);
       SETMARKCLASS(theElement,NO_CLASS);
     }
