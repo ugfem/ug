@@ -1611,6 +1611,8 @@ INT ScaledMGRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC
    D*/
 /****************************************************************************/
 
+#undef _LOCAL_DEBUG_
+
 INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOUBLE cut)
 {
   NODE *theNode;
@@ -1627,23 +1629,24 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
   DOUBLE c[MAX_CORNERS_OF_ELEM],s;
         #ifdef _LOCAL_DEBUG_
   VECTOR *v;
+  char buffer[128];
         #endif
 
   /* we handle only node vectors here ! */
   mtype    = MTP(NODEVECTOR,NODEVECTOR);
   ncomp    = MD_ROWS_IN_MTYPE(Mat,mtype);
-  if (ncomp == 0) return(NUM_ERROR);
-  if (ncomp>MAX_SINGLE_VEC_COMP) return (NUM_BLOCK_TOO_LARGE);
+  if (ncomp == 0) return(__LINE__);
+  if (ncomp>MAX_SINGLE_VEC_COMP) return (__LINE__);
 
   /* check matrix format and get components */
-  if (MD_ROWS_IN_MTYPE(Mat,mtype)!=ncomp) return(NUM_ERROR);
-  if (MD_COLS_IN_MTYPE(Mat,mtype)!=ncomp) return(NUM_ERROR);
+  if (MD_ROWS_IN_MTYPE(Mat,mtype)!=ncomp) return(__LINE__);
+  if (MD_COLS_IN_MTYPE(Mat,mtype)!=ncomp) return(__LINE__);
   A = MD_MCMP_OF_MTYPE(Mat,mtype,0);
   for (i=0; i<ncomp*ncomp; i++) {
     if (MD_MCMP_OF_MTYPE(Mat,mtype,i)!=A+i)
     {
       PrintErrorMessage('E',"InstallRestrictionMatrix","matrix format incorrect");
-      return(NUM_ERROR);
+      return(__LINE__);
     }
     comps[i] = A+i;
   }
@@ -1662,9 +1665,12 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
       vc = NVECTOR(NFATHER(theNode));
 
       /* compute Q = D(vc)(D(vf))^{-1} */
-      Dcoarse = &(MVALUE(VSTART(vc),A));
+      Dcoarse = &(MVALUE(VSTART(vc),0));
       if (InvertSmallBlock(ncomp,comps,Dcoarse,Dcoarseinv)!=NUM_OK)
-        return (NUM_ERROR);
+      {
+        UserWriteF("ncomp=%d, comps[0]=%d, Dcoarse=%lf\n",ncomp,comps[0],*Dcoarse);
+        return (__LINE__);
+      }
       for (i=0; i<ncomp; i++)
         for (j=0; j<ncomp; j++) {
           Q[i*ncomp+j] = 0.0;
@@ -1685,7 +1691,7 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
         im = CreateIMatrix(FineGrid,vf,vc);
         if (im==NULL) {
           UserWrite("Could not create interpolation matrix\n");
-          return(NUM_ERROR);
+          return(__LINE__);
         }
       }
       for (i=0; i<ncomp*ncomp; i++) MVALUE(im,i) = Q[i];
@@ -1711,9 +1717,9 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
               if (i==j) F[i] = 1.0;else F[i] = 0.0;
 
         /* compute Q = D(vc)^{-1}(D(vf)) */
-        Dcoarse = &(MVALUE(VSTART(vc),A));
+        Dcoarse = &(MVALUE(VSTART(vc),0));
         if (InvertSmallBlock(ncomp,comps,Dcoarse,Dcoarseinv)!=NUM_OK)
-          return (NUM_ERROR);
+          return (__LINE__);
         for (i=0; i<ncomp; i++) {
           if (!(vecskip & (1<<i))) s=1;else s=0;
           for (j=0; j<ncomp; j++) {
@@ -1736,7 +1742,7 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
           im = CreateIMatrix(FineGrid,vf,vc);
           if (im==NULL) {
             UserWrite("Could not create interpolation matrix\n");
-            return(NUM_ERROR);
+            return(__LINE__);
           }
         }
         for (i=0; i<ncomp*ncomp; i++) MVALUE(im,i) = Q[i]*c[l];
@@ -1799,13 +1805,14 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
    D*/
 /****************************************************************************/
 
-INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const VECDATA_DESC *rhs)
+INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const MATDATA_DESC *ConsMat, const VECDATA_DESC *rhs)
 {
   NODE *theNode;
-  INT A,b,n,i,j,k,mtype;
+  INT A,ConsA,b,n,i,j,k,mtype;
   VECTOR *vi;
   MATRIX *mij;
   SHORT comps[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
+  SHORT ConsComps[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
   DOUBLE Dfineinv[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
   DOUBLE Q[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
   DOUBLE r[MAX_SINGLE_VEC_COMP];
@@ -1815,13 +1822,17 @@ INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const VECDATA_
   if (!VD_ISDEF_IN_TYPE(rhs,NODEVECTOR)) return(NUM_ERROR);
   mtype = MTP(NODEVECTOR,NODEVECTOR);
   if (!MD_ISDEF_IN_MTYPE(Mat,mtype)) return(NUM_ERROR);
+  if (!MD_ISDEF_IN_MTYPE(ConsMat,mtype)) return(NUM_ERROR);
 
   n = VD_NCMPS_IN_TYPE(rhs,NODEVECTOR);
   if (MD_ROWS_IN_MTYPE(Mat,mtype)!=n) return(NUM_ERROR);
   if (MD_COLS_IN_MTYPE(Mat,mtype)!=n) return(NUM_ERROR);
+  if (MD_ROWS_IN_MTYPE(ConsMat,mtype)!=n) return(NUM_ERROR);
+  if (MD_COLS_IN_MTYPE(ConsMat,mtype)!=n) return(NUM_ERROR);
 
   b = VD_CMP_OF_TYPE(rhs,NODEVECTOR,0);
   A = MD_MCMP_OF_MTYPE(Mat,mtype,0);
+  ConsA = MD_MCMP_OF_MTYPE(ConsMat,mtype,0);
 
   for (i=0; i<n; i++)
     if (VD_CMP_OF_TYPE(rhs,NODEVECTOR,i)!=b+i)
@@ -1837,16 +1848,24 @@ INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const VECDATA_
     }
     comps[i] = A+i;
   }
+  for (i=0; i<n*n; i++) {
+    if (MD_MCMP_OF_MTYPE(ConsMat,mtype,i)!=ConsA+i)
+    {
+      PrintErrorMessage('E',"ScaleSystem","matrix format incorrect");
+      return(NUM_ERROR);
+    }
+    ConsComps[i] = ConsA+i;
+  }
 
-  /* scale system by point block diagonal */
+  /* scale system by (consistent !) point block diagonal */
   for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {
     /* get vector */
     vi = NVECTOR(theNode);
 
-    /* invert diagonal block */
-    Dfine = &(MVALUE(VSTART(vi),A));
-    if (InvertSmallBlock(n,comps,Dfine,Dfineinv)!=NUM_OK) return (NUM_ERROR);
+    /* invert consistent diagonal block */
+    Dfine = &(MVALUE(VSTART(vi),0));
+    if (InvertSmallBlock(n,ConsComps,Dfine,Dfineinv)!=NUM_OK) return (NUM_ERROR);
 
     /* multiply row from left */
     for (mij=VSTART(vi); mij!=NULL; mij=MNEXT(mij))
