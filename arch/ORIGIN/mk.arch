@@ -19,10 +19,14 @@ ARCH_LIBS     = -lm
 ARCH_PLIBS    =
 ARCH_FLIBS    = -lftn
 
+# define shell used for executing makefile commands
+SHELL = /bin/sh
 
 # add -mips2 for invoking R4000 specific extensions
-ARCH_CFLAGS   = -mips2 -g # -g -O2
-ARCH_C++FLAGS = -mips2 -g # -g -O2
+ARCH_CFLAGS   = -fullwarn -mips2 -g
+ARCH_C++FLAGS = -fullwarn -mips2 -O -g
+ARCH_NOOPTIM  = -g
+ARCH_OPTIM    = -O2 -g3
 ARCH_LFLAGS   = -mips2
 ARCH_FFLAGS   = -Wf,
 ARCH_ARFLAGS  = ru
