@@ -344,8 +344,8 @@ static int WriteElementData(STREAM *stream, MULTIGRID *mg,
     for (j = 0; j < DIM; j++)
       lc[j] += lo[j];
   }
-  for (i = 0; j < DIM; j++)
-    lc[j] /= (double)CORNERS_OF_ELEM(e);
+  for (i = 0; i < DIM; i++)
+    lc[i] /= (double)CORNERS_OF_ELEM(e);
   for (i = 0; i < no_es; i++) {
     eval_s = se[i].eval->EvalProc;
     s = eval_s(e, cc, lc);
@@ -746,7 +746,7 @@ static void IE_Callback(BT_OBJECT *o, void *d)
   ELEMENT *e;
   DOUBLE *x[MAX_CORNERS_OF_ELEM];
   DOUBLE_VECTOR global;
-  int i, j, n;
+  int i, j, k, n;
   QUADRATURE *quadrature;
 
   const int order = 2;
@@ -765,10 +765,9 @@ static void IE_Callback(BT_OBJECT *o, void *d)
     if (PointInsideElement(data->p, data->nc, global)) {
       for (i = 0; i < data->no_es; i++)
         VVALUE(EVECTOR(e), data->es[i]) += data->scalar[i] * Q_WEIGHT(quadrature, j);
-      for (i = 0; i < data->no_ev; i++) {
-        VVALUE(EVECTOR(e), data->ev[i]+0) += data->vector[i][0] * Q_WEIGHT(quadrature, j);
-        VVALUE(EVECTOR(e), data->ev[i]+1) += data->vector[i][1] * Q_WEIGHT(quadrature, j);
-      }
+      for (i = 0; i < data->no_ev; i++)
+        for (k = 0; k < DIM; k++)
+          VVALUE(EVECTOR(e), data->ev[i]+k) += data->vector[i][k] * Q_WEIGHT(quadrature, j);
     }
   }
 }
