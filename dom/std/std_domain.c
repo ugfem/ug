@@ -3214,22 +3214,106 @@ BVP *BVP_Load (char *name, INT argc, char **argv)
   return (NULL);
 }
 
-INT BVP_SaveBndP (BNDP *theBndP, char *data, INT *data_size)
+/****************************************************************************/
+/*D
+   BNDP_SaveBndP - save a BNDP
+
+   SYNOPSIS:
+   INT BNDP_SaveBndP (BNDP *theBndP, FILE *stream);
+
+   PARAMETERS:
+   .  theBndP - BNDP
+   .  stream - file
+
+   DESCRIPTION:
+   This function saves a BNDP
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error.
+   D*/
+/****************************************************************************/
+
+INT BNDP_SaveBndP (BNDP *theBndP, FILE *stream)
 {
   return(1);
 }
 
-BNDP *BVP_LoadBndP (HEAP *Heap, char *data, INT *data_size)
+/****************************************************************************/
+/*D
+   BVP_LoadBndP - load a BNDP
+
+   SYNOPSIS:
+   INT BVP_SaveBndP (BVP *theBVP, BNDP *theBndP, char *data, INT *size);
+
+   PARAMETERS:
+   .  Heap - heap
+   .  stream - file
+
+   DESCRIPTION:
+   This function saves a BNDP
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error.
+   D*/
+/****************************************************************************/
+
+BNDP *BNDP_LoadBndP (HEAP *Heap, FILE *stream)
 {
   return(NULL);
 }
 
-INT BVP_SaveBndS (HEAP *Heap, BNDS *theBndS, char *data, INT *data_size)
+/****************************************************************************/
+/*D
+   BNDS_SaveBndS - save BNDS
+
+   SYNOPSIS:
+   INT BNDS_SaveBndS (BNDS *theBndS, FILE *stream);
+
+   PARAMETERS:
+   .  theBndS - BNDS struct
+   .  stream - file
+
+   DESCRIPTION:
+   This function saves a BNDS
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   1 if error.
+   D*/
+/****************************************************************************/
+
+INT BNDS_SaveBndS (BNDS *theBndS, FILE *stream)
 {
   return(1);
 }
 
-BNDS *BVP_LoadBndS (HEAP *Heap, char *data, INT *data_size)
+/****************************************************************************/
+/*D
+   BNDS_LoadBndS - load BNDS
+
+   SYNOPSIS:
+   BNDS *BNDS_LoadBndS (HEAP *Heap, char *data, INT *data_size);
+
+   PARAMETERS:
+   .  Heap - heap
+   .  stream - file
+
+   DESCRIPTION:
+   This function loads a BNDS
+
+   RETURN VALUE:
+   BNDS *
+   .n   ptr to BNDS.
+   .n   NULL if error.
+   D*/
+/****************************************************************************/
+
+BNDS *BNDS_LoadBndS (HEAP *Heap, FILE *stream)
 {
   return(NULL);
 }
