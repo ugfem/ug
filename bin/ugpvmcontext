@@ -1,0 +1,47 @@
+#!/bin/sh
+if test $# -ge 2 -o "$1" = "-help"
+then
+	echo "usage: $0 <expression> [<applicationpath>]";
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then 
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+# if no parameter is specified show ep and wd pathes
+if test $# -eq 0
+then
+
+echo current executable path and working directory for pvm is:
+grep '^* ep' $HOME/hosts
+
+fi
+
+
+# if one parameter is specified create new pvm context
+if test $# -eq 1
+then
+
+# kill pvm daemon
+PVMD_PID=`ps -edalf | grep pvmd3 | grep -v grep | awk '{ print $4 }' -`
+echo killing pvmd \(PID:$PVMD_PID\)
+kill $PVMD_PID
+
+# edit pvm hosts file 
+echo reconfiguring hosts file to path=$1
+UGAPPLNEW=`echo $1|sed 's#\/#\\\/#g'`
+#sed 's/^setenv UGAPPL.*$/setenv UGAPPL '$UGAPPLNEW' /' $HOME/.tcshrc > $HOME/.tcshrc.tmp
+sed 's/^* ep.*$/* ep='$UGAPPLNEW' wd='$UGAPPLNEW'/' $HOME/hosts > $HOME/hosts.tmp
+mv $HOME/hosts.tmp $HOME/hosts
+	
+# restart pvmd
+echo restarting pvmd
+pvmd3 $HOME/hosts & 
+PVMD_PID=`ps -edalf | grep pvmd3 | grep -v grep | awk '{ print $4 }' -`
+echo restarted pvmd \(PID:$PVMD_PID\)
+
+fi
+
