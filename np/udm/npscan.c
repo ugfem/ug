@@ -505,13 +505,13 @@ MATDATA_DESC *ReadArgvMatDescX (MULTIGRID *theMG, const char *name,
    ReadArgvNumProc - Read command strings
 
    SYNOPSIS:
-   NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, char *class,
+   NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, char *npclass,
    INT argc, char **argv);
 
    PARAMETERS:
    .  theMG - pointer to a multigrid
    .  name - name of the argument
-   .  class - name of the class
+   .  npclass - name of the class
    .  argc - argument counter
    .  argv - argument vector
 

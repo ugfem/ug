@@ -436,12 +436,12 @@ VEC_TEMPLATE *GetVectorTemplate (const FORMAT *theFmt, const char *theTmplt)
 
         SYNOPSIS:
         VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
-                                                                           const char *name, const char *template)
+                                                                           const char *name, const char *theTmplt)
 
     PARAMETERS:
    .   theMG		- multigrid
    .   name		- name of the VECDATA_DESC
-   .   template	- template name (if NULL a template called "name" is taken)
+   .   theTmplt	- template name (if NULL a template called "name" is taken)
 
         DESCRIPTION:
         Create a VECDATA_DESC according to a given template created with the format
@@ -575,12 +575,12 @@ MAT_TEMPLATE *GetMatrixTemplate (const FORMAT *theFmt, const char *theTmplt)
 
         SYNOPSIS:
         MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
-                                                                           const char *name, const char *template)
+                                                                           const char *name, const char *theTmplt)
 
     PARAMETERS:
    .   theMG		- multigrid
    .   name		- name of the VECDATA_DESC
-   .   template	- template name (if NULL a template called "name" is taken)
+   .   theTmplt	- template name (if NULL a template called "name" is taken)
 
         DESCRIPTION:
         Create a MATDATA_DESC according to a given template created with the format
