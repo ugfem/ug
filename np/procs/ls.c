@@ -646,12 +646,19 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VE
 
   if (np->display > PCR_NO_DISPLAY)
   {
-    if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) NP_RETURN(1,lresult->error_code);
-    if (PostPCR(PrintID,":ls:avg")) NP_RETURN(1,lresult->error_code);
-    if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1))) NP_RETURN(1,lresult->error_code);
-    UserWriteF("LS  : L=%2d N=%2d TSOLVE=%10.4lg TIT=%10.4lg\n",level,
-               lresult->number_of_linear_iterations,ti,
-               ti/lresult->number_of_linear_iterations);
+    if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE))
+      NP_RETURN(1,lresult->error_code);
+    if (PostPCR(PrintID,":ls:avg"))
+      NP_RETURN(1,lresult->error_code);
+    if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1)))
+      NP_RETURN(1,lresult->error_code);
+    if (lresult->number_of_linear_iterations == 0)
+      UserWriteF("LS  : L=%2d N=%2d TSOLVE=%10.4lg TIT=%10.4lg\n",level,
+                 lresult->number_of_linear_iterations,ti,
+                 ti/lresult->number_of_linear_iterations);
+    else
+      UserWriteF("LS  : L=%2d N=%2d TSOLVE=%10.4lg\n",level,
+                 lresult->number_of_linear_iterations,ti);
   }
 
   return (0);
