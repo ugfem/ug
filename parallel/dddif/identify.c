@@ -403,7 +403,7 @@ static INT Identify_by_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
   ASSERT(*proclist!=-1);
 
 #ifdef Debug
-  IFDEBUG(graph,1)
+  IFDEBUG(dddif,1)
   Print_Identify_ObjectList(IdentObjectHdr,nobject,proclist,skiptag,
                             IdentHdr,nident);
   ENDDEBUG
