@@ -92,3 +92,43 @@ the function
 In script file course/appl/couplex2/couplex2.scr you can see when
 "makeperiodic" is called. The SetPeriodicBoundaryInfoProcPtr call is
 done in the separate application command "setperiodic".
+
+
+
+UG/ug/np:
+--------
+
+Q: How to compile UG/ug/np in sparse format to compute large coupled
+   systems?
+
+A: 
+The following text describes how to make UG to accept up to 180 components
+in every vector descriptor. Be aware that this has not been completely tested
+yet. Use it on your own risk!
+
+1. In 'ug/gm/gm.h', set MSIZEMAX to 4294967295U in the '#else' section of
+   '#ifndef __XXL_MSIZE__'. (The old value is 10000000.)
+
+2. Redefine 'SHORT' from 'short' to 'int' for all the architectures in
+   'ug/arch/compiler.h'. (DEC, LINUXAXP, LINUXIA64, NECSX4, SR2201 - Can
+   'int' be too short? - INT is defined to be 'long'.)
+
+3. You may reset 'MAX_SUB' in 'ug/np/udm/formats.h'. The default value is
+   12. This macro should determine the maximal number of subcomponents
+   declared in the 'format' command. We set it now to 180.
+
+4. Redefine A_REASONABLE_NUMBER in 'ug/np/udm/udm.c' from 100 to 180.
+   (A better way would be perhaps to delete lines 2656-2657 in this file
+   - the only lines where this macro occures. These contain merely
+   ASSERT's and do not influence the functionality of the code principally.)
+
+5. In 'ug/np/udm/udm.h', make the following changes:
+   a) set MAX_SINGLE_VEC_COMP and MAX_VEC_COMP to 180. (The old value is 40.)
+   b) set MAX_SINGLE_MAT_COMP to 32400 (= 180 * 180). (The old value is 1600 =
+      40 * 40.)
+   c) set MAX_MAT_COMP and MAX_MAT_COMP_TOTAL to 64800 (= 2 * 180 * 180).
+      (The old value is 7000.)
+   There can be conflicts with the default names of components (cf.
+   DEFAULT_NAMES in this file), but they should not lead to problems.
+
+
