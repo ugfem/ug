@@ -966,15 +966,9 @@ struct generic_element {            /* no difference between inner and bndel*/
 
 #ifdef ModelP
   DDD_HEADER ddd;
-
-  /* stores parition information                  */
-  INT ptmp;
-
-  /* stores cluster pointer                               */
-  INT ptmp1;
-
-  /* stores number of descendents */
-  INT ptmp2;
+  INT lb1;                              /* stores partition information         */
+  INT lb2;                              /* stores cluster pointer               */
+  INT lb3;                              /* stores number of descendents         */
 #endif
 
   /* pointers */
@@ -997,9 +991,9 @@ struct triangle {
 
         #ifdef ModelP
   DDD_HEADER ddd;
-  INT ptmp;                                             /* stores parition information                  */
-  INT ptmp1;                                            /* stores cluster pointer                               */
-  INT ptmp2;                                            /* stores number of descendents                 */
+  INT lb1;                                      /* stores partition information         */
+  INT lb2;                                      /* stores cluster pointer               */
+  INT lb3;                                      /* stores number of descendents         */
         #endif
 
   /* pointers */
@@ -1037,9 +1031,9 @@ struct quadrilateral {
 
         #ifdef ModelP
   DDD_HEADER ddd;
-  INT ptmp;                                             /* stores parition information                  */
-  INT ptmp1;                                            /* stores cluster pointer                               */
-  INT ptmp2;                                            /* stores number of descendents                 */
+  INT lb1;                                      /* stores partition information         */
+  INT lb2;                                      /* stores cluster pointer               */
+  INT lb3;                                      /* stores number of descendents         */
         #endif
 
   /* pointers */
@@ -1077,7 +1071,9 @@ struct tetrahedron {
 
         #ifdef ModelP
   DDD_HEADER ddd;
-  INT ptmp;
+  INT lb1;                                      /* stores partition information         */
+  INT lb2;                                      /* stores cluster pointer               */
+  INT lb3;                                      /* stores number of descendents         */
         #endif
 
   /* pointers */
@@ -1118,7 +1114,9 @@ struct pyramid {
 
         #ifdef ModelP
   DDD_HEADER ddd;
-  INT ptmp;
+  INT lb1;                                      /* stores partition information         */
+  INT lb2;                                      /* stores cluster pointer               */
+  INT lb3;                                      /* stores number of descendents         */
         #endif
 
   /* pointers */
@@ -1159,7 +1157,9 @@ struct prism {
 
         #ifdef ModelP
   DDD_HEADER ddd;
-  INT ptmp;
+  INT lb1;                                      /* stores partition information         */
+  INT lb2;                                      /* stores cluster pointer               */
+  INT lb3;                                      /* stores number of descendents         */
         #endif
 
   /* pointers */
@@ -1200,7 +1200,9 @@ struct hexahedron {
 
         #ifdef ModelP
   DDD_HEADER ddd;
-  INT ptmp;
+  INT lb1;                                      /* stores partition information         */
+  INT lb2;                                      /* stores cluster pointer               */
+  INT lb3;                                      /* stores number of descendents         */
         #endif
 
   /* pointers */
@@ -2584,7 +2586,7 @@ enum {TETRAHEDRON = 4,
 
 /* parallel macros */
 #ifdef ModelP
-#define PARTITION(p)                    ((p)->ge.ptmp)
+#define PARTITION(p)                    ((p)->ge.lb1)
 #define PARHDRE(p)                      (&((p)->ge.ddd))
 #endif
 

@@ -192,7 +192,9 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
                  EL_GDATA,  ELDEF(ge->id),
                  EL_GDATA,  ELDEF(ge->flag),
                  EL_GDATA,  ELDEF(ge->property),
-                 EL_GDATA,  ELDEF(ge->ptmp),
+                 EL_GDATA,  ELDEF(ge->lb1),
+                 EL_GDATA,  ELDEF(ge->lb2),
+                 EL_GDATA,  ELDEF(ge->lb3),
                  EL_LDATA,  ELDEF(ge->pred),
                  EL_LDATA,  ELDEF(ge->succ),
                  EL_CONTINUE);
