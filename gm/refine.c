@@ -1565,31 +1565,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 				else
 				{
 					/* allocate the sidenode */
-					/* TODO: this is dependent on element numbering */
-					switch (i)
-					{
-						case (0):
-						Node0 = theElementContext[8];   Node1 = theElementContext[10];
-						break;
-						case (1):
-						Node0 = theElementContext[8];   Node1 = theElementContext[16];
-						break;
-						case (2):
-						Node0 = theElementContext[9];   Node1 = theElementContext[17];
-						break;
-						case (3):
-						Node0 = theElementContext[10];   Node1 = theElementContext[18];
-						break;
-						case (4):
-						Node0 = theElementContext[11];   Node1 = theElementContext[19];
-						break;
-						case (5):
-						Node0 = theElementContext[16];   Node1 = theElementContext[18];
-						break;
-					}
-					assert ((Node0!=NULL)&&(Node1!=NULL));
-
-					if ((SideNodes[i] = CreateSideNode(theGrid,theElement,Node0,Node1,NULL)) == NULL) {assert(0);return(GM_FATAL);}
+					if ((SideNodes[i] = CreateSideNode(theGrid,theElement,i)) == NULL) {assert(0);return(GM_FATAL);}
 				}
 				assert (SideNodes[i]!=NULL);
 				for (j=0; j<EDGES_OF_SIDE(theElement,i); j++)
