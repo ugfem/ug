@@ -55,6 +55,7 @@
 #include "debug.h"
 #ifdef ModelP
 #include "pargm.h"
+#include "parallel.h"
 #endif
 
 #include "np.h"
@@ -511,7 +512,7 @@ static int Gather_ProjectVectorComp (DDD_OBJ obj, void *data)
 	if (VTYPE(pv) == NODEVECTOR) {
 	    theNode = SONNODE(VMYNODE(pv));
 		if (theNode != NULL)
-		    if (DDD_InfoPriority(PARHDR(NVECTOR(theNode))) == PrioMaster) 
+		    if (MASTER(NVECTOR(theNode)))
 			    ((INT *)data)[0] = 0;
 	}
 	if (((INT *)data)[0])
@@ -930,7 +931,7 @@ int DDD_InfoPrioCopies (DDD_HDR hdr)
 	proclist = DDD_InfoProcList(hdr);
 	n = 0;
 	for(i=2; proclist[i]>=0; i+=2)
-	    if ((DDD_PRIO)proclist[i+1]!=PrioGhost)
+	    if (!GHOSTPRIO(proclist[i+1]))
 		    n++;
 
 	return(n);
@@ -1183,7 +1184,7 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 					for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
 							;
 				    if (((DDD_PROC)proclist[i])==proc &&
-						((DDD_PRIO)proclist[i+1]!=PrioGhost))
+						(!GHOSTPRIO(proclist[i+1])))
 					{
 						*msgbuf = MVALUE(m,mc);
 						msgbuf++;
@@ -1204,7 +1205,7 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 		for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
 		  ;
 		if (((DDD_PROC)proclist[i])==proc &&
-			((DDD_PRIO)proclist[i+1]!=PrioGhost))
+			(!GHOSTPRIO(proclist[i+1])))
 		{
 			mtype = MTP(vtype,MDESTTYPE(m));
 			Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
@@ -1249,8 +1250,8 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
 					for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; 
 						i+=2)
 						;
-				    if (((DDD_PROC)proclist[i])==proc &&
-						((DDD_PRIO)proclist[i+1]!=PrioGhost))
+					if (((DDD_PROC)proclist[i])==proc &&
+						(!GHOSTPRIO(proclist[i+1])))
 					{
 						*msgbuf = MVALUE(m,mc);
 						msgbuf++;
@@ -1273,9 +1274,8 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
 		proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
 		for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
 		  ;
-
 		if (((DDD_PROC)proclist[i])==proc &&
-			((DDD_PRIO)proclist[i+1]!=PrioGhost))
+			(!GHOSTPRIO(proclist[i+1])))
 		{
 			mtype = MTP(vtype,MDESTTYPE(m));
 			Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
@@ -1327,9 +1327,8 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 					for(i=2; proclist[i]>=0 &&
 						((DDD_PROC)proclist[i])!=proc; i+=2)
 					    ;
-
 					if (((DDD_PROC)proclist[i])==proc &&
-						((DDD_PRIO)proclist[i+1]!=PrioGhost))
+						(!GHOSTPRIO(proclist[i+1])))
 					{
 						DDD_GID dest = DDD_InfoGlobalId(PARHDR(MDEST(m)));
 
@@ -1361,9 +1360,8 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 			proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
 			for (i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
 			    ; 
-
 			if (((DDD_PROC)proclist[i])==proc &&
-				((DDD_PRIO)proclist[i+1]!=PrioGhost))
+				(!GHOSTPRIO(proclist[i+1])))
 			{
 				DDD_GID dest = DDD_InfoGlobalId(PARHDR(MDEST(m)));
 
@@ -1391,7 +1389,7 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 			for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
 			    ;
 			if (((DDD_PROC)proclist[i])==proc &&
-			    ((DDD_PRIO)proclist[i+1]!=PrioGhost))
+				(!GHOSTPRIO(proclist[i+1])))
 			{
 				DDD_GID dest = DDD_InfoGlobalId(PARHDR(MDEST(m)));
 
@@ -1429,7 +1427,7 @@ static int ClearOffDiagCompOfCopies (GRID *theGrid, const MATDATA_DESC *M)
 	if (MD_IS_SCALAR(M)) {
 	    for (v=FIRSTVECTOR(theGrid); v!=NULL; v=PREDVC(v)) {
 		    if (VSTART(v) == NULL) continue;
-			if (DDD_InfoPriority(PARHDR(v)) != PrioMaster) continue;
+			if (!MASTER(v)) continue;
 			if (MD_SCAL_RTYPEMASK(M)  & VDATATYPE(v)) {
 			    if (VECSKIP(v) != 0) continue;
 				mc = MD_SCALCMP(M);
@@ -1444,7 +1442,7 @@ static int ClearOffDiagCompOfCopies (GRID *theGrid, const MATDATA_DESC *M)
 
 	for (v=FIRSTVECTOR(theGrid); v!=NULL; v=PREDVC(v)) {
 	    if (VSTART(v) == NULL) continue;
-		if (DDD_InfoPriority(PARHDR(v)) != PrioMaster) continue;
+		if (!MASTER(v)) continue;
 		vtype = VTYPE(v);
 		vecskip = VECSKIP(v);
 		rcomp = MD_ROWS_IN_MTYPE(M,MTP(vtype,vtype));
@@ -1481,16 +1479,14 @@ static int CountAndSortInconsMatrices (DDD_OBJ obj)
 	nLocal=nRemote=0;
 	if (VSTART(pv)!=NULL)
 	{
-		assert(MDEST(VSTART(pv))==pv);
+		ASSERT(MDEST(VSTART(pv))==pv);
 
 		for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
 		{
 			int i, *proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
-			for(i=2; proclist[i]>=0 && proclist[i+1]==PrioGhost; i+=2)
+			for(i=0; proclist[i]>=0 && GHOSTPRIO(proclist[i+1]); i+=2)
 				;
-
-			assert(MDEST(m)!=pv);
-			assert(proclist[1]==PrioMaster || proclist[1]==PrioBorder);
+			ASSERT(MDEST(m)!=pv);
 
 			if (proclist[i]<0)
 			{
