@@ -382,9 +382,11 @@ static INT file_positions (FILE *f)
   do {
     fgets(theLine, MAX_LEN, f);
 
+
+    theLine[41] = ' ';
     theLine[40] = theLine[34];
     theLine[39] = theLine[33];
-    theLine[38] = ' ';
+    theLine[38] = 'e';
     theLine[37] = theLine[32];
     theLine[36] = theLine[31];
     theLine[35] = theLine[30];
@@ -424,13 +426,21 @@ static INT file_positions (FILE *f)
     theLine[1] = theLine[1];
     theLine[0] = theLine[0];
 
+    for (j=1; j<40; j++) {
+      if ((theLine[j] == '-')&&(theLine[j+1] == 'e')) {
+        theLine[j] = 'e';
+        theLine[j+1] = '-';
+      }
+    }
+
     if (sscanf(theLine,"%d %lg %lg %lg",&id,c,c+1,c+2) != 1+DIM)
       return(0);
 
     nPPatch++;
-
-    /* printf("%d %f %f %f nP %d\n",id,c[0],c[1],c[2],nPPatch); */
-
+    /*jjj
+                    printf("point %4d %9.6f %9.6f %9.6f r %6.3f\n",
+                                    id,c[0],c[1],c[2],c[0]*c[0]+c[1]*c[1]);
+     */
   } while (!feof(f));
 
   return(1);
@@ -796,6 +806,13 @@ static INT file_positions_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey)
     theLine[2] = theLine[2];
     theLine[1] = theLine[1];
     theLine[0] = theLine[0];
+
+    for (j=1; j<40; j++) {
+      if ((theLine[j] == '-')&&(theLine[j+1] == 'e')) {
+        theLine[j] = 'e';
+        theLine[j+1] = '-';
+      }
+    }
 
     if (sscanf(theLine,"%d %lg %lg %lg",&id,c,c+1,c+2) != 1+DIM)
       return(0);
