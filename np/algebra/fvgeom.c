@@ -1069,15 +1069,18 @@ INT AFVGeometry (const ELEMENT *theElement, FVElementGeometry *geo, DOUBLE_VECTO
 {
   SubControlVolumeFace *scvf;
   SD_VALUES *sdv;
-  DOUBLE_VECTOR deriv,ScvfNormal[MAXE],ScvfGip[MAXE],ScvfLip[MAXE];
-  DOUBLE_VECTOR emp[MAXE],edge[MAXS];
-  DOUBLE_VECTOR b;
+  DOUBLE_VECTOR deriv;
   const DOUBLE *CornerPtrs[MAXNC];
-  DOUBLE fact1,fact2;
-  INT i,j,ninflow,inflow[MAXE],noutflow,outflow[MAXE];
+  INT i,j;
   INT coe,eoe;
+    #ifdef __TWODIM__
+  DOUBLE fact1,fact2;
+  DOUBLE_VECTOR b;
+  DOUBLE_VECTOR emp[MAXE],edge[MAXS];
+  INT outflow[MAXE],noutflow,ninflow,inflow[MAXE];
+        #endif
     #ifdef __THREEDIM__
-  DOUBLE_VECTOR gradients[MAXNC];
+  DOUBLE_VECTOR ScvfLip[MAXE],ScvfGip[MAXE],ScvfNormal[MAXE];
     #endif
 
   if (V_DIM_ISZERO(Convection))

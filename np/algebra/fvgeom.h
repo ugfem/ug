@@ -213,6 +213,10 @@ INT AFVGeometry                                         (const ELEMENT *theEleme
 /* shape functions and their derivatives */
 INT EvaluateShapesAndDerivatives        (FVElementGeometry *geo, INT flags);
 
+/* intersect polygon with line */
+INT Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const DOUBLE_VECTOR pt,
+                 INT *Side, DOUBLE lambda[DIM_OF_BND]);
+
 /* init */
 INT InitFiniteVolumeGeom                        (void);
 
