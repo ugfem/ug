@@ -102,7 +102,8 @@
 #define LGM_PROBLEM_USERF(p,i)                          (UserProcPtr)(p)->CU_ProcPtr[(i)+LGM_PROBLEM_NCOEFF(p)]
 #define LGM_PROBLEM_SETUSERF(p,i,q)                     (p)->CU_ProcPtr[(i)+LGM_PROBLEM_NCOEFF(p)]=(void*)(q)
 #define LGM_PROBLEM_BNDCOND(p)                          ((p)->BndCond)
-
+#define LGM_DOMAIN_S2P_PTR(p)                           ((p)->s2p)
+#define LGM_DOMAIN_S2P(p,s)                                     ((p)->s2p[s])
 
 #if (LGM_DIM==2)
 
@@ -138,6 +139,7 @@
 #define LGM_DOMAIN_MIDPOINT(p)                          ((p)->midpoint)
 #define LGM_DOMAIN_DOMDATA(p)                           ((p)->DomainData)
 #define LGM_DOMAIN_NSUBDOM(p)                           ((p)->nSubDomain)
+#define LGM_DOMAIN_NPART(p)                                     ((p)->nDomParts)
 #define LGM_DOMAIN_NPOINT(p)                            ((p)->nPoint)
 #define LGM_DOMAIN_SUBDOM(p,i)                          ((p)->theSubdom[(i)])
 
@@ -226,6 +228,9 @@
 #define LGM_DOMAIN_NPOINT(p)                            ((p)->nPoint)
 #define LGM_DOMAIN_NSUBDOM(p)                           ((p)->nSubDomain)
 #define LGM_DOMAIN_SUBDOM(p,i)                          ((p)->theSubdom[(i)])
+#define LGM_DOMAIN_NPART(p)                                     ((p)->nDomParts)
+#define LGM_DOMAIN_S2P_PTR(p)                           ((p)->s2p)
+#define LGM_DOMAIN_S2P(p,s)                                     ((p)->s2p[s])
 
 /* macros for LGM_BNDP */
 #define LGM_BNDP_N(p)                                           ((p)->n)
@@ -322,6 +327,8 @@ struct lgm_domain {
   INT convex;                                                           /* 0 (no) or 1 (yes)							*/
   float radius, midpoint[LGM_DIM];              /* sphere of which domain is a subset			*/
   INT nSubDomain;                                               /* nb. of subdomains							*/
+  INT nDomParts;                                                /* nb. of domain parts							*/
+  INT *s2p;                                                             /* pointer to table subbdom --> part			*/
   INT nPoint;                                                           /* nb. of points								*/
   struct lgm_dom_data *DomainData;              /* data for domain								*/
 
@@ -478,6 +485,8 @@ struct lgm_domain {
   INT convex;                                                           /* 0 (no) or 1 (yes)							*/
   float radius, midpoint[LGM_DIM];              /* sphere of which domain is a subset			*/
   INT nSubDomain;                                               /* nb. of subdomains							*/
+  INT nDomParts;                                                /* nb. of domain parts							*/
+  INT *s2p;                                                             /* pointer to table subbdom --> part			*/
   INT nPoint;                                                           /* nb. of points								*/
   struct lgm_dom_data *DomainData;              /* data for domain								*/
 

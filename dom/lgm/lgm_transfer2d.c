@@ -73,7 +73,7 @@ static FILE *stream;
 static INT lgmdomainpathes_set;
 
 
-int SkipBTN (void)
+static int SkipBTN (void)
 {
   int c;
 
@@ -88,7 +88,7 @@ int SkipBTN (void)
   return (0);
 }
 
-int ReadCommentLine (char *comment)
+static int ReadCommentLine (char *comment)
 {
   char buffer[256];
 

@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:	  lgm_domain2d.c												*/
+/* File:	  lgm_domain.c													*/
 /*																			*/
 /* Purpose:   source for lgm_domain                                                                             */
 /*																			*/
@@ -215,35 +215,13 @@ BVP *BVP_GetNext (BVP *theBVP)
   return ((BVP *) NEXT_ENVITEM(theBVP));
 }
 
-/****************************************************************************/
-/*
-   BVP_Init - create a lgm-domain and return a mesh
-
-   SYNOPSIS:
-   INT BVP_Init (char *name, HEAP *Heap, MESH *Mesh);
-
-   PARAMETERS:
-   .  filename - name of file
-   .  theHeap - heap
-
-   DESCRIPTION:
-   function creates a lgm-domain representaion reading the file <filename>.lgm
-   and returns a mesh
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if error.
-
-   SEE ALSO:
- */
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
 {
   LGM_DOMAIN *theDomain;
   LGM_PROBLEM *theProblem;
   BndCondProcPtr BndCond;
+  INT i;
 
   if ((theDomain = (LGM_DOMAIN *)BVP_GetByName(name))==NULL)
   {
@@ -282,33 +260,19 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   Mesh->ElementLevel = NULL;
   Mesh->ElementPrio = NULL;
 
+  /* allocate s2p table */
+  LGM_DOMAIN_NPART(theDomain) = 1;
+  LGM_DOMAIN_S2P_PTR(theDomain) = (INT*)GetFreelistMemory(Heap,LGM_DOMAIN_NSUBDOM(theDomain)*sizeof(INT));
+  if (LGM_DOMAIN_S2P_PTR(theDomain)==NULL)
+    return (NULL);
+  /* HRR_TODO: fill number of parts */
+  for (i=0; i<LGM_DOMAIN_NSUBDOM(theDomain); i++)
+    LGM_DOMAIN_S2P(theDomain,i) = 0;
+
   return ((BVP *)theDomain);
 }
 
-/****************************************************************************/
-/*
-   BVP_Init - create a lgm-domain and return a mesh
-
-   SYNOPSIS:
-   INT BVP_Init (char *name, HEAP *Heap, MESH *Mesh);
-
-   PARAMETERS:
-   .  filename - name of file
-   .  theHeap - heap
-
-   DESCRIPTION:
-   function creates a lgm-domain representaion reading the file <filename>.lgm
-   and returns a mesh
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if error.
-
-   SEE ALSO:
- */
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BVP_Dispose (BVP *theBVP)
 {
   LGM_DOMAIN *theDomain;
@@ -321,27 +285,7 @@ INT BVP_Dispose (BVP *theBVP)
   return (0);
 }
 
-/****************************************************************************/
-/*D
-   BVP_Load - load a BVP
-
-   SYNOPSIS:
-   BVP *BVP_Load (char *name, INT argc, char **argv);
-
-   PARAMETERS:
-   .  name - name of file
-   .  argc, argv - command parameters
-
-   DESCRIPTION:
-   This function loads a BVP from file named <name>.
-
-   RETURN VALUE:
-   BVP *
-   .n   pointer to BVP
-   .n   NULL if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BVP *BVP_Load (char *name, INT argc, char **argv)
 {
   return (NULL);
@@ -383,14 +327,16 @@ INT BVP_SetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
   /* the domain part */
   for (i=0; i<DIM; i++)
     theBVPDesc->midpoint[i] = LGM_DOMAIN_MIDPOINT(theDomain)[i];
-  theBVPDesc->radius              = LGM_DOMAIN_RADIUS(theDomain);
-  theBVPDesc->convex              = LGM_DOMAIN_CONVEX(theDomain);
-  theBVPDesc->nSubDomains         = LGM_DOMAIN_NSUBDOM(theDomain);
+  BVPD_RADIUS(theBVPDesc)         = LGM_DOMAIN_RADIUS(theDomain);
+  BVPD_CONVEX(theBVPDesc)         = LGM_DOMAIN_CONVEX(theDomain);
+  BVPD_NSUBDOM(theBVPDesc)        = LGM_DOMAIN_NSUBDOM(theDomain);
+  BVPD_NPARTS(theBVPDesc)         = LGM_DOMAIN_NPART(theDomain);
+  BVPD_S2P_PTR(theBVPDesc)        = LGM_DOMAIN_S2P_PTR(theDomain);
   theProblem                                      = LGM_DOMAIN_PROBLEM(theDomain);
   if (theProblem==NULL) return (1);
-  theBVPDesc->numOfCoeffFct       = LGM_PROBLEM_NCOEFF(theProblem);
-  theBVPDesc->numOfUserFct        = LGM_PROBLEM_NUSERF(theProblem);
-  theBVPDesc->ConfigProc          = LGM_PROBLEM_CONFIG(theProblem);
+  BVPD_NCOEFFF(theBVPDesc)        = LGM_PROBLEM_NCOEFF(theProblem);
+  BVPD_NUSERF(theBVPDesc)         = LGM_PROBLEM_NUSERF(theProblem);
+  BVPD_CONFIG(theBVPDesc)         = LGM_PROBLEM_CONFIG(theProblem);
 
   return (0);
 }
@@ -520,54 +466,13 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   return (NULL);
 }
 
-/****************************************************************************/
-/*D
-   BNDP_SaveInsertedBndP - write command to insert this BNDP
-
-   SYNOPSIS:
-   INT BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size);
-
-   PARAMETERS:
-   .  theBndP - BNDP structure
-   .  data - string to store command
-   .  max_data_size - maximal datasize to use
-
-   DESCRIPTION:
-   This function writes a command to string which inserts the BNDP.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size)
 {
   return (1);
 }
 
-/****************************************************************************/
-/*D
-   BNDS_Dispose - dispose BNDS
-
-   SYNOPSIS:
-   INT BNDS_Dispose (HEAP *Heap, BNDS *theBndS);
-
-   PARAMETERS:
-   .  Heap - heap
-   .  theBndS - BNDS struct
-
-   DESCRIPTION:
-   This function disposes a BNDS
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BNDS_Dispose (HEAP *Heap, BNDS *aBndS)
 {
   LGM_BNDS *theBndS;

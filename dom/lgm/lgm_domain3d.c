@@ -35,11 +35,14 @@
 
 #include "compiler.h"
 #include "heaps.h"
+#include "bio.h"
 #include "domain.h"
 #include "general.h"
 #include "misc.h"
 #include "lgm_domain.h"
 #include "lgm_load.h"
+
+#include "devices.h"
 
 /****************************************************************************/
 /*																			*/
@@ -69,6 +72,9 @@ static INT LineInfoId;
 static INT LGM_DEBUG = 0;
 static SMALL = 0.001;
 static INT VAR_H = 1;
+
+INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);
+INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);
 
 /* data for CVS */
 /*static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -292,9 +298,8 @@ INT SetDomainSize (LGM_DOMAIN *theDomain)
   return (0);
 }
 
-INT PrintDomainInfo (LGM_DOMAIN *aDomain)
+static INT PrintDomainInfo (LGM_DOMAIN *aDomain)
 {
-  INT i,j,k;
 
   printf("********* domain-info *********\n");
 
@@ -310,9 +315,9 @@ INT PrintDomainInfo (LGM_DOMAIN *aDomain)
   return (0);
 }
 
-INT PrintSubdomainInfo (LGM_DOMAIN *aDomain)
+static INT PrintSubdomainInfo (LGM_DOMAIN *aDomain)
 {
-  INT i,j,k;
+  INT i;
   LGM_SUBDOMAIN *aSubdom;
 
   printf("********* subdomain-info *********\n");
@@ -325,10 +330,9 @@ INT PrintSubdomainInfo (LGM_DOMAIN *aDomain)
   return (0);
 }
 
-INT PrintSurfaceInfo (LGM_SURFACE *aSurface)
+static INT PrintSurfaceInfo (LGM_SURFACE *aSurface)
 {
-  INT i,j,k;
-  DOUBLE local[2],global[3];
+  INT i;
 
   printf("********* surface-info *********\n");
   printf("%s %d\n","SurfaceId: ",SurfaceInfoId);
@@ -417,10 +421,11 @@ INT Line_Local2Global (LGM_LINE *theLine, DOUBLE *global, INT i)
   return(0);
 }
 
-INT PrintLineInfo (LGM_LINE *aLine)
+static INT PrintLineInfo (LGM_LINE *aLine)
 {
-  INT i,j,k;
+  INT i;
   DOUBLE global[3];
+
   printf("********* line-info *********\n");
   printf("%s %d\n","LineId: ",LineInfoId);
   LineInfoId++;
@@ -441,12 +446,10 @@ INT PrintLineInfo (LGM_LINE *aLine)
   return (0);
 }
 
-INT PrintMeshInfo (MESH *mesh)
+static INT PrintMeshInfo (MESH *mesh)
 {
   INT i,j,k;
   DOUBLE global[3];
-  INT index,n,type[3];
-  DOUBLE value[3];
 
   printf("********* mesh-info *********\n");
   printf("\n");
@@ -501,55 +504,14 @@ INT PrintMeshInfo (MESH *mesh)
   return (0);
 }
 
-/****************************************************************************/
-/*D
-   BVP_Save - save a BVP
-
-   SYNOPSIS:
-   INT BVP_Save (BVP *theBVP, char *name, char argc, char **argv);
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  name - name of file
-   .  argc, argv - command parameters
-
-   DESCRIPTION:
-   This function saves a BVP to file named <name>.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv)
 {
   UserWrite("SORRY: not implemented yet\n");
   return (1);
 }
 
-/****************************************************************************/
-/*D
-   BVP_Check - check consistency of BVP
-
-   SYNOPSIS:
-   INT BVP_Check (BVP *aBVP);
-
-   PARAMETERS:
-   .  aBVP - BVP structure
-   .  CheckResult - 0 if ok, 1 if error detected
-
-   DESCRIPTION:
-   This function checks consistency of BVP
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BVP_Check (BVP *aBVP)
 {
   UserWrite("BVP_Check: not implemented\n");
@@ -567,22 +529,22 @@ static INT DiscretizeLines                              (HEAP *Heap, LGM_DOMAIN 
 static INT TransferLines2Mesh                   (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DOUBLE h);
 static INT TransferSurfaces2Mesh                (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h);
 
+/* domain interface function: for description see domain.h */
 MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 {
   LGM_DOMAIN *theDomain;
-  LGM_SUBDOMAIN *theSubdom;
   LGM_SURFACE *theSurface;
   LGM_LINE *theLine;
   MESH *mesh;
-  INT i,j,n,nBNDP_on_Domain;
+  INT i,j;
   INT *BNDS_Per_Subdom, *p;
   float fValue;
   int iValue;
   DOUBLE h;
   INT coeff;
-  INT np,old;
-  INT id,*newId;
+  INT old;
   INT npoints,npsurface;
+
   old = 0;
   /* read h-option */
   h = 0.0;
@@ -766,7 +728,6 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 
 static INT InnerPointsPerSurfaceSegment (LGM_SURFACE *theSurface, DOUBLE h, INT i, INT *n)
 {
-  DOUBLE d;
   INT j,npointsall,innerpoints;
 
   npointsall = LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface));
@@ -782,7 +743,7 @@ static INT InnerPointsPerSurfaceSegment (LGM_SURFACE *theSurface, DOUBLE h, INT 
 
 static INT Get_NBNDS_Per_Subdomain (HEAP *Heap, LGM_DOMAIN *theDomain, INT **sizes, DOUBLE h)
 {
-  INT i,*p,n,pn;
+  INT i,*p,n;
   LGM_SURFACE *theSurface;
 
   /* get heap for information */
@@ -809,10 +770,7 @@ static INT Get_NBNDS_Per_Subdomain (HEAP *Heap, LGM_DOMAIN *theDomain, INT **siz
 
 static INT Get_NBNDP (LGM_DOMAIN *theDomain, INT *nBND, DOUBLE h)
 {
-  LGM_SURFACE *theSurface;
-  LGM_LINE *theLine;
-  INT i,pn,n;
-  DOUBLE d;
+  INT n;
 
   /*	n = LGM_DOMAIN_NPOINT(theDomain);
           for (theSurface=FirstSurface(theDomain); theSurface!=NULL; theSurface=NextSurface(theDomain))
@@ -839,12 +797,10 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
 {
   LGM_SURFACE *theSurface;
   LGM_LINE *theLine;
-  LGM_TRIANGLE *theTriangle;
-  LGM_BNDP *theBndP,*testBndP;
-  INT ii, i,j,n,m,id;
+  LGM_BNDP *theBndP;
+  INT i,j,n;
   INT *nRef, *newID;
-  INT size,a,b,flag;
-  DOUBLE local1,local2;
+  INT size,flag;
   DOUBLE global[3],local[2];
 
   /* get number of corners and number of references to them */
@@ -1004,10 +960,10 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
 
 INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
 {
-  INT i,j,test,min,mi;
-  DOUBLE *p0,*p1,*p2,e0[3],e1[3],e2[3],eps;
+  INT i,min,mi;
+  DOUBLE *p0,*p1,*p2,e0[3],e1[3],e2[3];
   DOUBLE n0[3],n1[3],n2[3],p[3],np[3],hp[3],l;
-  DOUBLE a[9],b[3],c[3];
+  DOUBLE a[9];
   DOUBLE aa[4],bb[2],cc[2];
   DOUBLE lam[3],small;
   min = 10000000.0;
@@ -1488,10 +1444,9 @@ static INT TransferLines2Mesh (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh,
 {
   LGM_SURFACE *theSurface;
   LGM_LINE *theLine, *aLine;
-  LGM_BNDP *theBndPList, *theBndP;
-  INT i,j,ni,nl,offset,count,count1,*nRef,size,help;
+  LGM_BNDP *theBndP;
+  INT i,j,ni,nl,offset,count,count1,*nRef,size;
   DOUBLE local[2],global[3];
-  INT loop,ii;
 
   offset = theMesh->nBndP;
 
@@ -1621,9 +1576,8 @@ static INT DiscretizeLines (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DO
   LGM_SURFACE *theSurface;
   LGM_LINE *theLine, *aLine;
   LGM_BNDP *theBndPList, *theBndP;
-  INT i,j,ni,nl,offset,count,count1,*nRef,size,help;
+  INT i,j,ni,nl,offset,count,count1,*nRef,size;
   DOUBLE local[2],global[3];
-  INT loop,ii;
 
   offset = theMesh->nBndP;
   for (theLine=FirstLine(theDomain); theLine!=NULL; theLine=NextLine(theDomain))
@@ -1759,14 +1713,10 @@ static INT DiscretizeLines (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DO
 
 static INT TransferSurfaces2Mesh (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h)
 {
-  INT i,n,ni,j,k,offset,nils,id,ls_offset;
-  LGM_BNDP *theBndPList, *theBndP;
+  INT i,j,offset,id;
+  LGM_BNDP *theBndPList;
   DOUBLE global[3],globalbndp[3],local[2];
-  INT ii,oldline,newline,direction,a,b;
-  INT nnew[5],*pi;
-  INT *oldId,nsp,aksp;
-  INT *newId,nId[3],oldnb,newpoints,oldpoints,size;
-  LGM_POINT **ptrlst;
+  INT *newId,newpoints,oldpoints,size;
   DOUBLE small;
 
   /* insert new points into the mesh */
@@ -2234,7 +2184,7 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
 
 INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
 {
-  INT ilocal,ilocal1,id;
+  INT ilocal,ilocal1;
   DOUBLE slocal[2];
   ilocal = floor(local[0]);
   ilocal1 = floor(local[1]);
@@ -2262,15 +2212,12 @@ INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local
   return (0);
 }
 
+/* domain interface function: for description see domain.h */
 INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
-  DOUBLE slocal[2],*local;
-  INT ilocal,ilocal1,id;
-  INT a;
-  LGM_POINT *test;
-  DOUBLE b;
+  DOUBLE *local;
   theBndP = BNDP2LGM(aBndP);
   theSurface = LGM_BNDP_SURFACE(theBndP,0);
 
@@ -2279,15 +2226,14 @@ INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
 
   return (0);
 }
-INT BNDP_Globali (BNDP *aBndP, DOUBLE *global, INT i)
+
+/* domain interface function: for description see domain.h */
+static INT BNDP_Globali (BNDP *aBndP, DOUBLE *global, INT i)
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
-  DOUBLE slocal[2],*local;
-  INT ilocal,ilocal1,id;
-  INT a;
-  LGM_POINT *test;
-  DOUBLE b;
+  DOUBLE *local;
+
   theBndP = BNDP2LGM(aBndP);
   theSurface = LGM_BNDP_SURFACE(theBndP,i);
 
@@ -2297,13 +2243,13 @@ INT BNDP_Globali (BNDP *aBndP, DOUBLE *global, INT i)
   return (0);
 }
 
+/* domain interface function: for description see domain.h */
 INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *type)
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
-  DOUBLE slocal[2];
-  INT ilocal,ilocal1;
   DOUBLE global[DIM],*local;
+  INT ilocal=0;
 
   /* general */
   theBndP = BNDP2LGM(aBndP);
@@ -2335,9 +2281,9 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
   return (0);
 }
 
+/* domain interface function: for description see domain.h */
 INT BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
 {
-  LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
 
   part[0] = 0;
@@ -2348,16 +2294,30 @@ INT BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
     *move=0;                                            /* Point on the Boundary of the surface */
 
   *move=0;
+
+  /* HRR_TODO: assign part */
+  *part = 0;
+
   return(0);
 }
 
+/* domain interface function: for description see domain.h */
+INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
+{
+  /* HRR_TODO: assign part */
+  *part = 0;
+
+  return(0);
+}
+
+/* domain interface function: for description see domain.h */
 BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 {
-  INT i,j,k, l,i0,j0,k0,count, ilocal,ilocal1, ready, found, direction;
+  INT i,j,k,i0,j0,k0,count, ilocal,ilocal1, found, direction;
   LGM_BNDP *theBndP1, *theBndP2, *theBndP3;
-  LGM_SURFACE *theSurface, *s1,*s2,*s3;
+  LGM_SURFACE *theSurface;
   LGM_BNDS *theBndS;
-  DOUBLE loc, loc1[2], loc2[2], loc3[2], local[2], slocal[2];
+  DOUBLE loc1[2], loc2[2], loc3[2], local[2], slocal[2];
   DOUBLE globalp0[3],globalp1[3],globalp2[3], global[3];
   DOUBLE small, sp;
   DOUBLE A[3], B[3], BNDP_NV[3], Surface_NV[3];
@@ -2490,12 +2450,12 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   return((BNDS *)theBndS);
 }
 
+/* domain interface function: for description see domain.h */
 BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 {
   LGM_BNDP *theBndP1, *theBndP2, *theBndP;
   LGM_SURFACE *theSurface,*s;
-  DOUBLE loc[2], loc1[2], loc2[2];
-  INT i,j,count,k,size, max, ilocal, ilocal1;
+  INT i,j,count,size, max, ilocal, ilocal1;
   DOUBLE globalp1[3],globalp2[3],global[3],local[2], slocal[2];
   DOUBLE small;
 
@@ -2560,6 +2520,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
   return (NULL);
 }
 
+/* domain interface function: for description see domain.h */
 INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
 {
   LGM_BNDP *theBndP;
@@ -2573,6 +2534,7 @@ INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
   return (PutFreelistMemory(Heap,theBndP,size));
 }
 
+/* domain interface function: for description see domain.h */
 INT BNDP_SaveBndP (BNDP *aBndP)
 {
   INT i;
@@ -2594,6 +2556,7 @@ INT BNDP_SaveBndP (BNDP *aBndP)
   return(0);
 }
 
+/* domain interface function: for description see domain.h */
 BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 {
   LGM_DOMAIN *theDomain;
@@ -2622,12 +2585,11 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
   return((BNDP *)theBndP);
 }
 
+/* domain interface function: for description see domain.h */
 INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 {
   LGM_BNDS *theBndS;
   LGM_SURFACE *theSurface;
-  DOUBLE loc[2], slocal[2];
-  INT ilocal,ilocal1;
 
   /* global coordinates */
   theBndS = BNDS2LGM(aBndS);
@@ -2638,6 +2600,7 @@ INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
   return(0);
 }
 
+/* domain interface function: for description see domain.h */
 INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type)
 {
   LGM_BNDS *theBndS;
@@ -2687,6 +2650,7 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   return (0);
 }
 
+/* domain interface function: for description see domain.h */
 INT BNDS_BndSDesc (BNDS *aBndS, INT *left, INT *right, INT *part)
 {
   LGM_BNDS *theBndS;
@@ -2706,9 +2670,14 @@ INT BNDS_BndSDesc (BNDS *aBndS, INT *left, INT *right, INT *part)
     *right = LGM_SURFACE_LEFT(theSurface);
     *left = LGM_SURFACE_RIGHT(theSurface);
   }
+
+  /* HRR_TODO: assign part */
+  *part = 0;
+
   return(0);
 }
 
+/* domain interface function: for description see domain.h */
 BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 {
   LGM_BNDS *theBndS;

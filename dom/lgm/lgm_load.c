@@ -188,6 +188,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   LGM_DOMAIN_DOMDATA(theDomain)           = NULL;       /* to fill later */
   strcpy(LGM_DOMAIN_PROBLEMNAME(theDomain),theDomInfo.ProblemName);
   LGM_DOMAIN_PROBLEM(theDomain)           = NULL;
+  LGM_DOMAIN_S2P_PTR(theDomain)           = NULL;
 
   /* read sizes */
   if ((lgm_sizes.Subdom_nLine=(int*)GetTmpMem(theHeap,sizeof(int)*(theDomInfo.nSubDomain+1))) == NULL) return (NULL);

@@ -271,29 +271,6 @@ INT SetDomainSize (LGM_DOMAIN *theDomain)
 /****************************************************************************/
 /****************************************************************************/
 
-
-/****************************************************************************/
-/*D
-   BVP_GenerateMesh - generate a mesh
-
-   SYNOPSIS:
-   MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv);
-
-   PARAMETERS:
-   .  Heap - heap
-   .  aBVP - BVP structure
-   .  argc, argv - command parameters
-
-   DESCRIPTION:
-   This function creates a mesh for aBVP.
-
-   RETURN VALUE:
-   MESH *
-   .n   ptr to mesh if ok
-   .n   NULL if error.
-   D*/
-/****************************************************************************/
-
 static INT PrintMeshInfo (MESH *mesh)
 {
   INT i,j,k;
@@ -336,6 +313,7 @@ static INT DiscretizeLine                       (HEAP *Heap, LGM_LINE *theLine, 
 static INT Get_NBNDP                            (LGM_DOMAIN *theDomain, INT *nBND, DOUBLE h);
 static INT DiscretizeDomain             (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DOUBLE h);
 
+/* domain interface function: for description see domain.h */
 MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 {
   LGM_DOMAIN *theDomain;
@@ -668,6 +646,7 @@ static INT DiscretizeLine2 (HEAP *Heap, LGM_LINE *theLine, MESH *theMesh, DOUBLE
   return (0);
 }
 
+/* domain interface function: for description see domain.h */
 INT BVP_Check (BVP *aBVP)
 {
   INT i,j,k,ret,at_begin,at_left,flags;
@@ -805,27 +784,7 @@ INT BVP_Check (BVP *aBVP)
 /****************************************************************************/
 /****************************************************************************/
 
-/****************************************************************************/
-/*D
-   BNDP_Global - gets global coordinates of BNDP
-
-   SYNOPSIS:
-   INT BNDP_Global (BNDP *aBndP, DOUBLE *global);
-
-   PARAMETERS:
-   .  aBndP - BNDP structure
-   .  global - global coordinate
-
-   DESCRIPTION:
-   This function gets global coordinates of BNDP
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
 {
   LGM_LINE *theLine;
@@ -855,38 +814,13 @@ INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
   return(0);
 }
 
-/****************************************************************************/
-/*D
-   BNDP_BndCond - gets global coordinates of local position
-
-   SYNOPSIS:
-   INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i,
-   DOUBLE *time, DOUBLE *value, INT *type);
-
-   PARAMETERS:
-   .  aBndS - BNDS structure
-   .  local - local coordinate on BNDS
-   .  time - time parameter or NULL
-   .  type - type of bnd cond
-   .  value - values
-
-   DESCRIPTION:
-   This function gets bnd conditions of local position on BNDS
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   .n   2 if no boundary condition.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *type)
 {
   LGM_LINE *theLine;
   LGM_BNDP *theBndP;
   DOUBLE slocal;
-  INT ilocal;
+  INT ilocal=0;
   DOUBLE global[DIM];
 
   /* general */
@@ -930,27 +864,7 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
   return (0);
 }
 
-/****************************************************************************/
-/*D
-   BNDP_BndPDesc - sets descriptor for BNDP
-
-   SYNOPSIS:
-   INT BNDP_BndPDesc (BNDP *theBndP, INT *move);
-
-   PARAMETERS:
-   .  aBndP - BNDP structure
-   .  move
-
-   DESCRIPTION:
-   This function sets the descriptor for a BNDP
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
 {
   LGM_LINE *theLine;
@@ -969,30 +883,22 @@ INT BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
   if (ilocal==LGM_LINE_NPOINT(theLine)-1 || ilocal==0) *move=0;
   else *move=1;
 
+  /* HRR_TODO: assign part */
+  *part = 0;
+
   return(0);
 }
 
-/****************************************************************************/
-/*D
-   BNDP_CreateBndS - sets BNDS from a nb of BNDPs
+/* domain interface function: for description see domain.h */
+INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
+{
+  /* HRR_TODO: assign part */
+  *part = 0;
 
-   SYNOPSIS:
-   BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n);
+  return(0);
+}
 
-   PARAMETERS:
-   .  aBndP - ptr to list of BNDP structures
-   .  n - nb of BNDPs
-
-   DESCRIPTION:
-   This function sets a BNDS from n BNDPs
-
-   RETURN VALUE:
-   BNDS *
-   .n   pointer
-   .n   NULL if the points describe an inner side
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 {
   INT i,j,i0,j0,count,k;
@@ -1025,27 +931,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   return((BNDS *)theBndS);
 }
 
-/****************************************************************************/
-/*D
-   BNDP_CreateBndP - sets BNDP from a two of BNDPs
-
-   SYNOPSIS:
-   BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord);
-
-   PARAMETERS:
-   .  aBndP0 - first BNDP
-   .  aBndP1 - second BNDP
-
-   DESCRIPTION:
-   This function sets a BNDP from two BNDPs
-
-   RETURN VALUE:
-   BNDS *
-   .n   pointer
-   .n   NULL if the points describe an inner point
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
 {
   LGM_BNDP *theBndP1, *theBndP2, *theBndP;
@@ -1082,27 +968,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
   return (NULL);
 }
 
-/****************************************************************************/
-/*D
-   BNDP_Dispose - dispose a BNDP
-
-   SYNOPSIS:
-   INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP);
-
-   PARAMETERS:
-   .  Heap - heap
-   .  aBndP - BNDP
-
-   DESCRIPTION:
-   This function disposes a BNDP
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
 {
   LGM_BNDP *theBndP;
@@ -1115,27 +981,7 @@ INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
   return (PutFreelistMemory(Heap,theBndP,size));
 }
 
-/****************************************************************************/
-/*D
-   BNDP_SaveBndP - save a BNDP
-
-   SYNOPSIS:
-   INT BNDP_SaveBndP (BNDP *theBndP, FILE *stream);
-
-   PARAMETERS:
-   .  theBndP - BNDP
-   .  stream - file
-
-   DESCRIPTION:
-   This function saves a BNDP
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BNDP_SaveBndP (BNDP *aBndP)
 {
   INT i;
@@ -1157,27 +1003,7 @@ INT BNDP_SaveBndP (BNDP *aBndP)
   return(0);
 }
 
-/****************************************************************************/
-/*D
-   BVP_LoadBndP - load a BNDP
-
-   SYNOPSIS:
-   INT BVP_SaveBndP (BVP *theBVP, BNDP *theBndP, char *data, INT *size);
-
-   PARAMETERS:
-   .  Heap - heap
-   .  stream - file
-
-   DESCRIPTION:
-   This function saves a BNDP
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 {
   LGM_DOMAIN *theDomain;
@@ -1212,28 +1038,7 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
 /****************************************************************************/
 /****************************************************************************/
 
-/****************************************************************************/
-/*D
-   BNDS_Global - gets global coordinates of local position
-
-   SYNOPSIS:
-   INT BNDS_Local2Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global);
-
-   PARAMETERS:
-   .  aBndS - BNDS structure
-   .  local - local coordinate on BNDS
-   .  global - global coordinate
-
-   DESCRIPTION:
-   This function gets global coordinates of local position on BNDS
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 {
   LGM_BNDS *theBndS;
@@ -1265,32 +1070,7 @@ INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
   return(0);
 }
 
-/****************************************************************************/
-/*D
-   BNDS_BndCond - gets bndcond coordinates of local position
-
-   SYNOPSIS:
-   INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type),
-   INT *type, DOUBLE *value);
-
-   PARAMETERS:
-   .  aBndS - BNDS structure
-   .  local - local coordinate on BNDS
-   .  time - time parameter or NULL
-   .  type - type of bnd cond
-   .  value - values
-
-   DESCRIPTION:
-   This function gets bnd conditions of local position on BNDS
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   .n   2 if no boundary condition.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type)
 {
   LGM_BNDS *theBndS;
@@ -1313,65 +1093,48 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   return (0);
 }
 
-/****************************************************************************/
-/*D
-   BNDS_BndCond - gets info about BNDS
+static INT SideIsCooriented (LGM_BNDS *theBndS)
+{
+  if (LGM_BNDS_LOCAL(theBndS,1)>LGM_BNDS_LOCAL(theBndS,0))
+    return (YES);
+  else
+    return (NO);
+}
 
-   SYNOPSIS:
-   INT BNDS_BndSDesc (BNDS *theBndS, INT *left, INT *right);
-
-   PARAMETERS:
-   .  theBndS - BNDS structure
-   .  left - left subdomain
-   .  right - right subdomain
-
-   DESCRIPTION:
-   This function gets bnd conditions of local position on BNDS
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
-INT BNDS_BndSDesc (BNDS *aBndS, INT *left, INT *right, INT *part)
+/* domain interface function: for description see domain.h */
+INT BNDS_BndSDesc (BNDS *aBndS, INT *id, INT *nbid, INT *part)
 {
   LGM_BNDS *theBndS;
   LGM_LINE *theLine;
+  INT left,right;
 
   theBndS = BNDS2LGM(aBndS);
   theLine = LGM_BNDS_LINE(theBndS);
 
-  part[0] = 0;
-  *left = LGM_LINE_LEFT(theLine);
-  *right = LGM_LINE_RIGHT(theLine);
+  left = LGM_LINE_LEFT(theLine);
+  right = LGM_LINE_RIGHT(theLine);
+
+  /* check orientation */
+  if (SideIsCooriented(theBndS))
+  {
+    /* patch and side are co-oriented */
+    *id = left;
+    *nbid = right;
+  }
+  else
+  {
+    /* patch and side are anti-oriented */
+    *id = right;
+    *nbid = left;
+  }
+
+  /* HRR_TODO: assign part */
+  *part = 0;
 
   return(0);
 }
 
-/****************************************************************************/
-/*D
-   BNDS_CreateBndP - set BNDP of BNDS
-
-   SYNOPSIS:
-   BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local);
-
-   PARAMETERS:
-   .  aBndS - BNDS structure
-   .  local - local coordinate on BNDS
-   .  size - size used for aBndP
-
-   DESCRIPTION:
-   This function sets a boundary point (BNDP) of the BNDS
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 {
   LGM_BNDS *theBndS;
@@ -1391,28 +1154,7 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
   return((BNDP *)theBndP);
 }
 
-/****************************************************************************/
-/*D
-   BVP_Save - save a BVP
-
-   SYNOPSIS:
-   INT BVP_Save (BVP *theBVP, char *name, char argc, char **argv);
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  name - name of file
-   .  argc, argv - command parameters
-
-   DESCRIPTION:
-   This function saves a BVP to file named <name>.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
-   D*/
-/****************************************************************************/
-
+/* domain interface function: for description see domain.h */
 INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv)
 {
   LGM_DOMAIN *lgm_domain;

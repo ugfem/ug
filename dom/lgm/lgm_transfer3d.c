@@ -27,9 +27,9 @@
 
 #include "compiler.h"
 #include "fileopen.h"
-#include "fileopen.h"
 #include "defaults.h"
 #include "misc.h"
+#include "devices.h"
 #include "lgm_domain.h"
 #include "lgm_transfer.h"
 
@@ -40,7 +40,7 @@ static FILE *stream;
 static INT lgmdomainpathes_set;
 static INT LGM_DEBUG = 0;
 
-int SkipBTN (void)
+static int SkipBTN (void)
 {
   int c;
 
@@ -55,7 +55,7 @@ int SkipBTN (void)
   return (0);
 }
 
-int ReadCommentLine (char *comment)
+static int ReadCommentLine (char *comment)
 {
   char buffer[256];
 
@@ -96,8 +96,7 @@ static fpos_t filepossurface;
 
 int LGM_ReadDomain (char *filename, LGM_DOMAIN_INFO *domain_info)
 {
-  int i,k,n,i0,i1,i2,i3;
-  float f[3];
+  int i,i0,i1,i2;
   char buffer[256];
 
   /* open file */
@@ -232,8 +231,7 @@ int LGM_ReadDomain (char *filename, LGM_DOMAIN_INFO *domain_info)
 
 int LGM_ReadSizes (LGM_SIZES *lgm_sizes)
 {
-  char buffer[256];
-  int i,j,line_i,surface_i,i0,i1,i2,i3;
+  int i,line_i,surface_i,i0,i1,i2;
 
 
   for (i=0; i<=nSubdomain; i++) lgm_sizes->Subdom_nSurf[i] = 0;
@@ -326,8 +324,7 @@ int LGM_ReadSizes (LGM_SIZES *lgm_sizes)
 
 int LGM_ReadLines (int dummy, LGM_LINE_INFO *line_info)
 {
-  char buffer[256];
-  int i,j,n,i1,i2,i3;
+  int i,n;
 
   if(dummy == 0)
     if (fsetpos(stream, &fileposline))
@@ -358,8 +355,7 @@ int LGM_ReadLines (int dummy, LGM_LINE_INFO *line_info)
 
 int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
 {
-  char buffer[256];
-  int i,j,k,n,surface_i,i1,i2,i3,nsurface;
+  int i,n,surface_i,i1,i2,i3;
 
   /* read subdomain information */
   if (fsetpos(stream, &filepossurface))
@@ -423,7 +419,7 @@ int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
 
 int LGM_ReadPoints (LGM_POINT_INFO *lgm_point_info)
 {
-  int n,i,j;
+  int n;
   float f[3];
 
   if (SkipBTN())
@@ -448,8 +444,7 @@ int LGM_ReadPoints (LGM_POINT_INFO *lgm_point_info)
 
 int LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
 {
-  char buffer[256];
-  int i,j,k,n,i1,i2,i3;
+  int i,k,n,i1,i2,i3;
 
   if(dummy == 0)
     if (fsetpos(stream, &filepossurface))
