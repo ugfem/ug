@@ -107,6 +107,7 @@ ELEMENT     *FindFather             (VERTEX *vptr);
 INT              FindNeighborElement    (const ELEMENT *theElement, INT Side, ELEMENT **theNeighbor, INT *NeighborSide);
 INT              PointInElement                 (const DOUBLE*, const ELEMENT *theElement);
 VIRT_HEAP_MGMT *GetGenMGUDM             (void);
+INT             CheckOrientation                (INT n, VERTEX **vertices);
 
 NODE        *CreateSonNode          (GRID *theGrid, NODE *FatherNode);
 NODE            *CreateMidNode                  (GRID *theGrid, ELEMENT *theElement, INT edge);

@@ -1376,6 +1376,11 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
         ID(NodeList[i]) = ref->newcornerid[r_index];
       }
     }
+    else if (ID(NodeList[i]) != ref->newcornerid[r_index])
+    {
+      printf("WARNING: inconsistent CORNER-node-ids(elem=%d): %d != %d\n",ID(theElement),(int)ID(NodeList[i]),(int)ref->newcornerid[r_index]);
+      printf("pos: %f %f\n",(float)CVECT(MYVERTEX(NodeList[i]))[0],(float)CVECT(MYVERTEX(NodeList[i]))[1]);
+    }
     SETNTYPE(NodeList[i],CORNER_NODE);
     r_index++;
   }
@@ -1419,7 +1424,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     }
     else if (ID(NodeList[i]) != ref->newcornerid[r_index])
     {
-      printf("WARNING: inconsistent node-ids: %d != %d\n",(int)ID(NodeList[i]),(int)ref->newcornerid[r_index]);
+      printf("WARNING: inconsistent EDGE-node-ids(elem=%d): %d != %d\n",ID(theElement),(int)ID(NodeList[i]),(int)ref->newcornerid[r_index]);
       printf("pos: %f %f\n",(float)CVECT(MYVERTEX(NodeList[i]))[0],(float)CVECT(MYVERTEX(NodeList[i]))[1]);
     }
     SETNTYPE(NodeList[i],MID_NODE);

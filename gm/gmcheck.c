@@ -508,7 +508,7 @@ static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT
 	EDGE	*theEdge;
 	ELEMENT *NbElement,*theFather;
 	ELEMENT *SonList[MAX_SONS];
-	VERTEX	*theVertex;
+	VERTEX	*theVertex,*Vertices[MAX_CORNERS_OF_ELEM];
 	DOUBLE  *x[MAX_CORNERS_OF_ELEM];
 	DOUBLE_VECTOR center;
 	
@@ -628,6 +628,15 @@ static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT
 			UserWriteF(PFMT "elem=" EID_FMTX " edge=%d n0=" ID_FMTX " n1=" 
 				ID_FMTX " edgeptr=NULL\n",
 				me,EID_PRTX(theElement),i,ID_PRTX(theNode),ID_PRTX(theNode1));
+	}
+	
+	/* check orientation */
+	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+		Vertices[i] = MYVERTEX(CORNER(theElement,i));
+	if (!CheckOrientation(CORNERS_OF_ELEM(theElement),Vertices))
+	{
+			UserWriteF(PFMT "elem=" EID_FMTX " wrong orientation",me,EID_PRTX(theElement));
+			nerrors++;
 	}
 
 	/* check father information */

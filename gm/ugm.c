@@ -4589,7 +4589,7 @@ INT GetMidNodeParam (NODE * theNode, DOUBLE *lambda)
 
 #ifdef __TWODIM__
 
-static INT CheckOrientation (INT n, VERTEX **vertices)
+INT CheckOrientation (INT n, VERTEX **vertices)
 {
   int i;
   DOUBLE x1,x2,y1,y2;
@@ -4612,7 +4612,7 @@ static INT CheckOrientation (INT n, VERTEX **vertices)
 #endif
 
 #ifdef __THREEDIM__
-static INT CheckOrientation (INT n, VERTEX **vertices)
+INT CheckOrientation (INT n, VERTEX **vertices)
 {
   DOUBLE_VECTOR diff[3],rot;
   DOUBLE det;

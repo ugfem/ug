@@ -818,6 +818,8 @@ int Read_CG_Points (int n, MGIO_CG_POINT *cg_point)
       cgp->level = intList[0];
       cgp->prio =  intList[1];
     }
+    if (i==226 || i==207)
+      printf("NODE(%d): %f %f",i,(float)cgp->position[0],(float)cgp->position[1]);
   }
 
   return (0);
@@ -863,6 +865,8 @@ int Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
       intList[1] = cgp->prio;
       if (Bio_Write_mint(2,intList)) return (1);
     }
+    if (i==226 || i==207)
+      printf("NODE(%d): %f %f",i,(float)cgp->position[0],(float)cgp->position[1]);
   }
 
   return (0);
@@ -1112,6 +1116,8 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
  */
 /****************************************************************************/
 
+static INT count;
+
 int Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
 {
   int j,k,s,tag;
@@ -1166,6 +1172,16 @@ int Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
         }
       }
   }
+
+  if (count==430)
+  {
+    printf("ELEMENT 430:");
+    for (j=0; j<pr->nnewcorners; j++)
+      printf(" %d",pr->newcornerid[j]);
+    printf("\n");
+  }
+
+  count++;
 
   return (0);
 }
@@ -1240,6 +1256,15 @@ int Write_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
       }
   }
 
+  if (count==430)
+  {
+    printf("ELEMENT 430:");
+    for (j=0; j<pr->nnewcorners; j++)
+      printf(" %d",pr->newcornerid[j]);
+    printf("\n");
+  }
+
+  count++;
 
   return (0);
 }
