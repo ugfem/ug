@@ -2939,8 +2939,8 @@ INT MarkForRefinementX (ELEMENT *e, INT fl, INT tl, INT rule, void *data)
 
   assert(ECLASS(t)==RED_CLASS);
 
-  if (rule==RED && LEVEL(t)<tl) return(MarkForRefinement(t,rule,data));
-  if (rule==COARSE && LEVEL(t)>fl) return(MarkForRefinement(t,rule,data));
+  if (rule==RED && LEVEL(t)<tl) return(MarkForRefinement(e,rule,data));
+  if (rule==COARSE && LEVEL(t)>fl) return(MarkForRefinement(e,rule,data));
 
   return(GM_ERROR);
 }
