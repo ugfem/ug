@@ -62,6 +62,7 @@ typedef struct
   NP_BASE base;
 
   VECDATA_DESC *x;
+  DOUBLE value;
 
 } NP_CLEAR_VEC;
 
@@ -70,6 +71,7 @@ typedef struct
   NP_BASE base;
 
   MATDATA_DESC *A;
+  DOUBLE value;
 
 } NP_CLEAR_MAT;
 
@@ -147,6 +149,9 @@ static INT CV_Init (NP_BASE *theNP, INT argc, char **argv)
   if (np->x == NULL)
     return (NP_NOT_ACTIVE);
 
+  if (ReadArgvDOUBLE("value",&np->value,argc,argv))
+    np->value = 0.0;
+
   return (NP_EXECUTABLE);
 }
 
@@ -158,6 +163,7 @@ static INT CV_Display (NP_BASE *theNP)
   UserWrite("symbolic user data:\n");
   if (theCV->x != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(theCV->x));
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"value",(float)theCV->value);
 
   return (0);
 }
@@ -171,7 +177,7 @@ static INT CV_Execute (NP_BASE *theNP, INT argc, char **argv)
   if (theCV->x == NULL) return(1);
 
   cl = CURRENTLEVEL(NP_MG(theNP));
-  if (dset(NP_MG(theNP),0,cl,ALL_VECTORS,theCV->x,0.0))
+  if (dset(NP_MG(theNP),0,cl,ALL_VECTORS,theCV->x,theCV->value))
     return (1);
 
   return (0);
@@ -220,6 +226,9 @@ static INT CM_Init (NP_BASE *theNP, INT argc, char **argv)
   if (np->A == NULL)
     return (NP_NOT_ACTIVE);
 
+  if (ReadArgvDOUBLE("value",&np->value,argc,argv))
+    np->value = 0.0;
+
   return (NP_EXECUTABLE);
 }
 
@@ -228,9 +237,11 @@ static INT CM_Display (NP_BASE *theNP)
   NP_CLEAR_MAT *theCM;
 
   theCM   = (NP_CLEAR_MAT*)theNP;
+
   UserWrite("symbolic user data:\n");
   if (theCM->A != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"A",ENVITEM_NAME(theCM->A));
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"value",(float)theCM->value);
 
   return (0);
 }
@@ -242,7 +253,7 @@ static INT CM_Execute (NP_BASE *theNP, INT argc, char **argv)
   theCM   = (NP_CLEAR_MAT*)theNP;
   if (theCM->A == NULL) return(1);
 
-  if (dmatset(NP_MG(theNP),0,CURRENTLEVEL(NP_MG(theNP)),ALL_VECTORS,theCM->A,0.0))
+  if (dmatset(NP_MG(theNP),0,CURRENTLEVEL(NP_MG(theNP)),ALL_VECTORS,theCM->A,theCM->value))
     return (1);
 
   return (0);
