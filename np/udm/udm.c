@@ -1026,9 +1026,10 @@ INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
    LockVD - protect vector against removal or deallocation
 
    SYNOPSIS:
-   INT LockVD (VECDATA_DESC *vd)
+   INT LockVD (MULTIGRID *theMG, VECDATA_DESC *vd);
 
    PARAMETERS:
+   .  theMG - multigrid pointer
    .  vd - vector descriptor
 
    DESCRIPTION:
@@ -1041,9 +1042,16 @@ INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
  */
 /****************************************************************************/
 
-INT LockVD (VECDATA_DESC *vd)
+INT LockVD (MULTIGRID *theMG, VECDATA_DESC *vd)
 {
+  INT tp,j;
+
   VM_LOCKED(vd) = VM_IS_LOCKED;
+
+  for (tp=0; tp<NVECTYPES; tp++)
+    for (j=0; j<VD_NCMPS_IN_TYPE(vd,tp); j++)
+      SET_DR_VEC_FLAG(theMG,tp,VD_CMP_OF_TYPE(vd,tp,j));
+
   return (0);
 }
 

@@ -318,7 +318,7 @@ INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
                    const MATDATA_DESC *template_desc, MATDATA_DESC **new_desc);
 
 /* locking of vector and matrix descriptors */
-INT LockVD (VECDATA_DESC *vd);
+INT LockVD (MULTIGRID *theMG, VECDATA_DESC *vd);
 INT LockMD (MATDATA_DESC *md);
 
 /* */

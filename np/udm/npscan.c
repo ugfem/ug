@@ -235,7 +235,7 @@ VECDATA_DESC *ReadArgvVecDescX (MULTIGRID *theMG, const char *name,
   }
   if (vd == NULL) return(NULL);
 
-  if (LockVD(vd)) REP_ERR_RETURN (NULL);
+  if (LockVD(theMG,vd)) REP_ERR_RETURN (NULL);
 
   return(vd);
 }

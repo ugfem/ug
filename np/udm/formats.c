@@ -480,7 +480,7 @@ VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
                       "cannot create vector descriptor");
     REP_ERR_RETURN(NULL);
   }
-  if (LockVD(vd)) REP_ERR_RETURN(NULL);
+  if (LockVD(theMG,vd)) REP_ERR_RETURN(NULL);
 
   /* now create sub vec descs */
   offset = VD_OFFSETPTR(vd);
@@ -509,7 +509,7 @@ VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
                         "cannot create subvector descriptor");
       REP_ERR_RETURN(NULL);
     }
-    if (LockVD(svd)) REP_ERR_RETURN(NULL);
+    if (LockVD(theMG,svd)) REP_ERR_RETURN(NULL);
   }
 
   return (vd);
