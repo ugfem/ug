@@ -42,14 +42,42 @@
 /*                                                                          */
 /****************************************************************************/
 
-#define MAX_NODAL_VECTORS 20
-#define MAX_NODAL_VALUES  60
+#define MAX_NODAL_VECTORS       20
+#define MAX_NODAL_VALUES        60
+
+#define MAXVD                           10
+#define MAXMD                           5
+
+#define MVMD_NVD(p)                     ((p)->nvd)
+#define MVMD_NMD(p)                     ((p)->nmd)
+#define MVMD_VD(p,j)            ((p)->vdlist[j])
+#define MVMD_MD(p,j)            ((p)->mdlist[j])
+
+#define MVMD_TYPES(p)           ((p)->types)
+#define MVMD_TYPE(p,i)          (MVMD_TYPES(p)[i])
+#define MVMD_VDSUBSEQ(p,i)      ((p)->vdsubseq[i])
+#define MVMD_MDSUBSEQ(p,i)      ((p)->mdsubseq[i])
 
 /****************************************************************************/
 /*                                                                          */
 /* data structures exported by the corresponding source file                */
 /*                                                                          */
 /****************************************************************************/
+
+typedef struct {
+
+  /* to be filled before call of PrepareElementMultipleVMPtrs */
+  INT nvd;
+  const VECDATA_DESC *vdlist[MAXVD];
+  INT nmd;
+  const MATDATA_DESC *mdlist[MAXMD];
+
+  /* filled by PrepareElementMultipleVMPtrs */
+  INT types[NVECTYPES];
+  INT vdsubseq[MAXVD];
+  INT mdsubseq[MAXMD];
+
+} MVM_DESC;
 
 /****************************************************************************/
 /*                                                                          */
@@ -84,6 +112,14 @@ INT GetElementVVMPtrs           (ELEMENT *theElement, const VECDATA_DESC *theTVD
                                  const VECDATA_DESC *theTVD2, const MATDATA_DESC *theTMD,
                                  DOUBLE **vptr1, DOUBLE **vptr2, DOUBLE **mptr,
                                  INT *vecskip);
+
+/* CAUTION: the next two fcts. follow other conventions than GetElementVVMPtrs... */
+INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd);
+INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
+                              DOUBLE **vptrlist[MAXVD],
+                              DOUBLE **mptrlist[MAXMD],
+                              INT *vecskip);
+
 INT ClearVecskipFlags           (GRID *theGrid);
 INT GetElementDirichletFlags    (ELEMENT *theElement, const VECDATA_DESC *theTVD,
                                  INT *vecskip);
