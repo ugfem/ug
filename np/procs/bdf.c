@@ -502,10 +502,14 @@ Continue:
         else {
           mg_changed = 0;
           for (i=0; i<=level; i++)
-            if (GSTATUS(GRID_ON_LEVEL(mg,i)) & GRID_CHANGED)
+            if (GSTATUS(GRID_ON_LEVEL(mg,i),GSTATUS_BDF))
+            {
+              RESETGSTATUS(GRID_ON_LEVEL(mg,i),GSTATUS_BDF);
               mg_changed = 1;
+            }
         }
-        if (mg_changed) {
+        if (mg_changed)
+        {
           k = level - 1;
           if (bdf->trans->PreProcessSolution != NULL)
             if ((*bdf->trans->PreProcessSolution)
