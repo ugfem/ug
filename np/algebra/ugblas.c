@@ -1040,6 +1040,60 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 	return(0);
 }
 
+static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
+											DDD_PROC proc, DDD_PRIO prio)
+{
+	VECTOR *pv = (VECTOR *)obj;
+	MATRIX *m;
+	DOUBLE *msgbuf = (DOUBLE *)data;
+	INT i, *proclist,mc,vtype,mtype,masc;
+	const SHORT *Comp;	
+
+	if (VSTART(pv) == NULL) return(0);
+	if (MD_IS_SCALAR(ConsMatrix)) {
+		if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv)) {
+		    mc = MD_SCALCMP(ConsMatrix);
+			masc =MD_SCAL_CTYPEMASK(ConsMatrix);
+			for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
+				if (masc  & VDATATYPE(MDEST(m))) {
+					if (XFERMATX(m)==0) break;
+					proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
+					for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
+							;
+				    if (((DDD_PROC)proclist[i])==proc &&
+						((DDD_PRIO)proclist[i+1]!=PrioGhost)) {
+					  *msgbuf = MVALUE(m,mc);
+					  msgbuf++;
+					}
+					MVALUE(m,mc) = 0.0;
+				}
+		}
+		return(0);
+	}
+
+	vtype = VTYPE(pv);
+	for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
+		if (XFERMATX(m)==0) break;
+		proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
+		for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
+		  ;
+		if (((DDD_PROC)proclist[i])==proc &&
+			((DDD_PRIO)proclist[i+1]!=PrioGhost)) {
+			mtype = MTP(vtype,MDESTTYPE(m));
+			Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
+			for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
+					 *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++) 
+				msgbuf[i] = MVALUE(m,Comp[i]);
+			msgbuf+MaxBlockSize;
+		}
+		for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
+				 *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++) 
+			MVALUE(m,Comp[i]) = 0.0;
+	}
+
+	return(0);
+}
+
 static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 									  DDD_PROC proc, DDD_PRIO prio)
 {
@@ -1111,41 +1165,41 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 	return(0);
 }
 
-static int Scatter_OffDiagMasterMatrixComp (DDD_OBJ obj, void *data,
-											DDD_PROC proc, DDD_PRIO prio)
+static int ClearOffDiagCompOfCopies (GRID *theGrid, const MATDATA_DESC *M)
 {
-	VECTOR *pv = (VECTOR *)obj;
+	VECTOR *v;
 	MATRIX *m;
-	DOUBLE *msgbuf = (DOUBLE *)data;
-	INT   i,j,k, *proclist,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
+	INT   i,j,k,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
 	const SHORT *Comp;	
 
-	if (VSTART(pv) == NULL) return(0);
-	if (me == master)
-		return(Scatter_OffDiagMatrixComp(obj,data,proc,prio));
-
-	PRINTDEBUG(np,1,("%2d: Scatter_OffDiagMasterMatrixComp\n",me));
-
-	if (MD_IS_SCALAR(ConsMatrix)) {
-		if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv)) {
-		    if (VECSKIP(pv) != 0) return(0);
-			mc = MD_SCALCMP(ConsMatrix);
-			masc =MD_SCAL_CTYPEMASK(ConsMatrix);
-			for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
-			    if (masc  & VDATATYPE(MDEST(m))) 
-					MVALUE(m,mc) = 0.0;
+	if (MD_IS_SCALAR(M)) {
+	    for (v=FIRSTVECTOR(theGrid); v!=NULL; v=PREDVC(v)) {
+		    if (VSTART(v) == NULL) continue;
+			if (DDD_InfoPriority(PARHDR(v)) != PrioMaster) continue;
+			if (MD_SCAL_RTYPEMASK(M)  & VDATATYPE(v)) {
+			    if (VECSKIP(v) != 0) continue;
+				mc = MD_SCALCMP(M);
+				masc =MD_SCAL_CTYPEMASK(M);
+				for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
+				    if (masc  & VDATATYPE(MDEST(m))) 
+					    MVALUE(m,mc) = 0.0;
+			}
 		}
 		return(0);
 	}
 
-	vtype = VTYPE(pv);
-	vecskip = VECSKIP(pv);
-	rcomp = MD_ROWS_IN_MTYPE(ConsMatrix,MTP(vtype,vtype));
-	for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
+	for (v=FIRSTVECTOR(theGrid); v!=NULL; v=PREDVC(v)) {
+	    if (VSTART(v) == NULL) continue;
+		if (DDD_InfoPriority(PARHDR(v)) != PrioMaster) continue;
+		vtype = VTYPE(v);
+		vecskip = VECSKIP(v);
+		rcomp = MD_ROWS_IN_MTYPE(M,MTP(vtype,vtype));
+		for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m)) {
 		mtype = MTP(vtype,MDESTTYPE(m));
-		Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
-		for (j=0; j<MD_COLS_IN_MTYPE(ConsMatrix,mtype)*rcomp; j++)
+		Comp = MD_MCMPPTR_OF_MTYPE(M,mtype);
+		for (j=0; j<MD_COLS_IN_MTYPE(M,mtype)*rcomp; j++)
 			MVALUE(m,Comp[j]) = 0.0;
+		}
 	}
 
 	return(0);
@@ -1236,7 +1290,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 	/* TODO: make consistency of diags and off-diags in one communication! */
 
-	DDD_IFAExchange(BorderVectorSymmIF, GLEVEL(g), MaxBlockSize * sizeof(DOUBLE),
+	DDD_IFAExchange(BorderVectorSymmIF, GLEVEL(g), MaxBlockSize*sizeof(DOUBLE),
 					Gather_DiagMatrixComp, Scatter_DiagMatrixComp);
 
     if (mode == MAT_DIAG_CONS) return (NUM_OK);
@@ -1251,12 +1305,11 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 		DDD_IFAExchangeX(BorderVectorSymmIF, GLEVEL(g),
 						 MaxBlockSize*MaximumInconsMatrices*sizeof(DOUBLE),
 						 Gather_OffDiagMatrixComp, Scatter_OffDiagMatrixComp);
-    else if (mode == MAT_MASTER_CONS)
- 	/* TODO: use smaller interface! */
-		DDD_IFAExchangeX(BorderVectorSymmIF, GLEVEL(g),
-						 MaxBlockSize*MaximumInconsMatrices*sizeof(DOUBLE),
-						 Gather_OffDiagMatrixComp, 
-						 Scatter_OffDiagMasterMatrixComp);
+    else if (mode == MAT_MASTER_CONS) 
+		DDD_IFAOnewayX(BorderVectorIF,GLEVEL(g),IF_FORWARD,
+					   MaxBlockSize*MaximumInconsMatrices*sizeof(DOUBLE),
+					   Gather_OffDiagMatrixCompCollect,
+					   Scatter_OffDiagMatrixComp);
 
 	return (NUM_OK);
 }
