@@ -14620,7 +14620,7 @@ void PWorkVW_Evaluate()
 D*/
 /****************************************************************************/
 
-INT WOP_Init(INT WOP_WorkMode)
+static INT WOP_Init(INT WOP_WorkMode)
 {
 	switch (WOP_WorkMode)
 	{
@@ -14742,7 +14742,7 @@ INT WOP_Init(INT WOP_WorkMode)
 */
 /****************************************************************************/
 
-INT WorkEW()
+static INT WorkEW()
 {
 #ifndef ModelP
   
@@ -14800,7 +14800,7 @@ INT WorkEW()
 */
 /****************************************************************************/
 
-INT WorkNW()
+static INT WorkNW()
 {
 #ifndef ModelP
 
@@ -14858,7 +14858,7 @@ INT WorkNW()
 */
 /****************************************************************************/
 
-INT WorkVW()
+static INT WorkVW()
 {
 #ifndef ModelP
 
@@ -14895,7 +14895,7 @@ INT WorkVW()
 }
 
 
-INT WorkET()
+static INT WorkET()
 {
 	INT end;
 
@@ -14905,11 +14905,13 @@ INT WorkET()
 		if ((*WOP_EXT_EvaluateProc)(WOP_DrawingObject,&end))                    return (1);
 		if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))                          return (1);
 	}
+	return (0);
 }
 
-INT WorkRC()
+static INT WorkRC()
 {
 	if ((*WOP_RECURSIVE_EvaluateProc)(WOP_DrawingObject,WOP_GEN_ExecuteProc))                   return (1);
+	return (0);
 }
 
 /****************************************************************************/
@@ -14938,7 +14940,7 @@ D*/
 
 INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 {
-	INT i, end, error;
+	INT i, error;
 
 #ifdef __DO_HEAP_USED__
 	char buffer[128];
