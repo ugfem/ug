@@ -1894,7 +1894,7 @@ INT         InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COOR
 INT             DeleteNodeWithID                (MULTIGRID *theMG, INT id);
 INT             DeleteNode                              (MULTIGRID *theMG, NODE *theNode);
 INT             InsertElementFromIDs    (MULTIGRID *theMG, INT n, INT  *idList);
-INT             InsertElement                   (MULTIGRID *theMG, INT n, NODE **NodeList);
+INT             InsertElement                   (MULTIGRID *theMG, INT n, NODE **NodeList, ELEMENT **ElemList);
 INT             DeleteElementWithID     (MULTIGRID *theMG, INT id);
 INT             DeleteElement                   (MULTIGRID *theMG, ELEMENT *theElement);
 

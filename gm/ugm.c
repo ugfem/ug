@@ -126,6 +126,9 @@ RCSID("$Header$",UG_RCS_STRING)
 /*																			*/
 /****************************************************************************/
 
+static VERTEX *CreateBoundaryVertex     (GRID *theGrid, VERTEX *after);
+static VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after);
+static VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex);
 static NODE *CreateNode (GRID *theGrid);
 
 static INT DisposeNode (GRID *theGrid, NODE *theNode);
@@ -388,7 +391,7 @@ INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type)
    CreateVertexSegment - Return pointer to a new vertex segment structure
 
    SYNOPSIS:
-   VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex);
+   static VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex);
 
    PARAMETERS:
    .  theGrid - grid of corresponding vertex
@@ -404,7 +407,7 @@ INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type)
    D*/
 /****************************************************************************/
 
-VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex)
+static VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex)
 {
   VSEGMENT *vs;
   INT i;
@@ -432,7 +435,7 @@ VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex)
    CreateBoundaryVertex - Return pointer to a new boundary vertex structure
 
    SYNOPSIS:
-   VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after);
+   static VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after);
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
@@ -449,7 +452,7 @@ VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex)
    D*/
 /****************************************************************************/
 
-VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after)
+static VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after)
 {
   VERTEX *pv;
   INT ds;
@@ -510,7 +513,7 @@ VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after)
    CreateInnerVertex - Return pointer to a new inner vertex structure
 
    SYNOPSIS:
-   VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after);
+   static VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after);
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
@@ -527,7 +530,7 @@ VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after)
    D*/
 /****************************************************************************/
 
-VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after)
+static VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after)
 {
   VERTEX *pv;
   INT ds;
@@ -3575,7 +3578,7 @@ static INT CheckOrientation (INT n, VERTEX **vertices)
 }
 #endif
 
-INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
+INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList)
 {
   GRID             *theGrid;
   INT i,j,k,l,m,found,num,tag,ElementType;
@@ -3753,17 +3756,53 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
   }
 
   /* find neighboring elements */
-
-  /* for all sides of the element to be created */
-  for (i=0; i<SIDES_OF_REF(n); i++)
-  {
-    for(j=0; j<CORNERS_OF_SIDE_REF(n,i); j++ )
-      sideNode[j] = Node[CORNER_OF_SIDE_REF(n,i,j)];
-
-    /* for all neighbouring elements allready inserted */
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
-         theElement=SUCCE(theElement))
+  if (ElemList == NULL)
+    /* for all sides of the element to be created */
+    for (i=0; i<SIDES_OF_REF(n); i++)
     {
+      for(j=0; j<CORNERS_OF_SIDE_REF(n,i); j++ )
+        sideNode[j] = Node[CORNER_OF_SIDE_REF(n,i,j)];
+
+      /* for all neighbouring elements allready inserted */
+      for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
+           theElement=SUCCE(theElement))
+      {
+        /* for all sides of the neighbour element */
+        for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+        {
+          num = 0;
+          /* for all corners of the side of the neighbour */
+          for (m=0; m<CORNERS_OF_SIDE(theElement,j); m++)
+          {
+            NeighborNode = CORNER(theElement,
+                                  CORNER_OF_SIDE(theElement,j,m));
+            /* for all corners of the side of the
+                   element to be created */
+            for (k=0; k<CORNERS_OF_SIDE_REF(n,i); k++)
+              if(NeighborNode==sideNode[k])
+              {
+                num++;
+                break;
+              }
+          }
+          if(num==CORNERS_OF_SIDE_REF(n,i))
+          {
+            if (NBELEM(theElement,j)!=NULL)
+            {
+              PrintErrorMessage('E',"InsertElement",
+                                "neighbor relation inconsistent");
+              RETURN(GM_ERROR);
+            }
+            Neighbor[i] = theElement;
+            NeighborSide[i] = j;
+          }
+        }
+      }
+    }
+  else
+    for (i=0; i<SIDES_OF_REF(n); i++)
+    {
+      theElement = ElemList[i];
       /* for all sides of the neighbour element */
       for (j=0; j<SIDES_OF_ELEM(theElement); j++)
       {
@@ -3774,7 +3813,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
           NeighborNode = CORNER(theElement,
                                 CORNER_OF_SIDE(theElement,j,m));
           /* for all corners of the side of the
-             element to be created */
+                 element to be created */
           for (k=0; k<CORNERS_OF_SIDE_REF(n,i); k++)
             if(NeighborNode==sideNode[k])
             {
@@ -3786,7 +3825,8 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
         {
           if (NBELEM(theElement,j)!=NULL)
           {
-            PrintErrorMessage('E',"InsertElement","neighbor relation inconsistent");
+            PrintErrorMessage('E',"InsertElement",
+                              "neighbor relation inconsistent");
             RETURN(GM_ERROR);
           }
           Neighbor[i] = theElement;
@@ -3794,7 +3834,6 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
         }
       }
     }
-  }
 
   /* create element */
   theElement = CreateElement(theGrid,tag,ElementType,Node,NULL);
@@ -3923,11 +3962,12 @@ INT InsertElementFromIDs (MULTIGRID *theMG, INT n, INT *idList)
   }
   if (found!=n)
   {
-    PrintErrorMessage('E',"InsertElementFromIDs","could not find all nodes");
+    PrintErrorMessage('E',"InsertElementFromIDs",
+                      "could not find all nodes");
     RETURN(GM_ERROR);
   }
 
-  return (InsertElement(theMG,n,Node));
+  return (InsertElement(theMG,n,Node,NULL));
 }
 
 /****************************************************************************/
@@ -4771,9 +4811,9 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
         #endif
   PATCH_DESC thePatchDesc;
 
-  if (ECLASS(theElement)==COPY_CLASS) strcpy(etype,"COPY ");
-  if (ECLASS(theElement)==IRREGULAR_CLASS) strcpy(etype,"IRREG");
-  if (ECLASS(theElement)==REGULAR_CLASS) strcpy(etype,"REGUL");
+  if (ECLASS(theElement)==YELLOW_CLASS) strcpy(etype,"COPY ");
+  if (ECLASS(theElement)==GREEN_CLASS) strcpy(etype,"IRREG");
+  if (ECLASS(theElement)==RED_CLASS) strcpy(etype,"REGUL");
   sprintf(buffer,"ELEMID=%9ld %5s CTRL=%8lx CTRL2=%8lx REFINE=%2d MARK=%2d LEVEL=%2d",(long)ID(theElement),etype,
           (long)CTRL(theElement),(long)FLAG(theElement),REFINE(theElement),MARK(theElement),LEVEL(theElement));
   UserWrite(buffer);
@@ -5281,7 +5321,7 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
   *SideError = 0;
   *NodeError = 0;
   n = SIDES_OF_ELEM(theElement);
-  if (ECLASS(theElement)!=YELLOW)
+  if (ECLASS(theElement)!=YELLOW_CLASS)
     for (i=0; i<n; i++)
     {
       NbElement = NBELEM(theElement,i);
@@ -5563,7 +5603,7 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
   *EdgeError = 0;
   *ESonError = 0;
   *NSonError = 0;
-  if (ECLASS(theElement)!=YELLOW)
+  if (ECLASS(theElement)!=YELLOW_CLASS)
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
     {
       NbElement = NBELEM(theElement,i);

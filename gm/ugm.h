@@ -88,9 +88,6 @@ INT              PutFreeObjectLocal             (MULTIGRID *theMG, void *object,
 #endif
 
 /* create basic objects */
-VERTEX          *CreateBoundaryVertex   (GRID *theGrid, VERTEX *after);
-VERTEX          *CreateInnerVertex              (GRID *theGrid, VERTEX *after);
-VSEGMENT        *CreateVertexSegment    (GRID *theGrid, VERTEX *vertex);
 EDGE        *CreateEdge             (GRID *theGrid, NODE *from, NODE *to, INT with_vector);
 ELEMENT     *CreateElement          (GRID *theGrid, INT tag, INT objtype,
                                      NODE **nodes, ELEMENT *after);
