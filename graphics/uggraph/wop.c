@@ -4520,9 +4520,9 @@ static INT LineDraw2D (DRAWINGOBJ *q)
 			case DO_LINE:
 				DO_inc(q)
 				DO_inc(q);
-				fprintf (LINE_GnuStream,"%f %f;\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
+				fprintf (LINE_GnuStream,"%e %e;\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
 				DO_inc_n(q,2);
-				fprintf (LINE_GnuStream,"%f %f;\n\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
+				fprintf (LINE_GnuStream,"%e %e;\n\n",(float)DO_2Cp(q)[0],(float)DO_2Cp(q)[1]);
 				DO_inc_n(q,2);
 				break;
 			default:
