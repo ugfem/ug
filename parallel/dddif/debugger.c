@@ -86,7 +86,7 @@ void ddd_pstat (int cmd)
 
   case 'b' :
     buggy(dddctrl.currMG);
-    UserWrite("BUGGY: aborted\n");
+    UserWrite("BUGGY: returning control to caller\n");
     break;
   }
 }
@@ -158,7 +158,30 @@ static void buggy_ElemShow (ELEMENT *e)
 }
 
 
-static void buggy_ElemSearch (MULTIGRID *theMG, DDD_GID gid)
+static void buggy_NodeShow (NODE *n)
+{
+  int i;
+
+  printf("%4d:    ID=%06d LEVEL=%02d\n", me,
+         ID(n), LEVEL(n));
+
+  if (NFATHER(n))
+    printf("%4d:    father=%08x\n", me,
+           DDD_InfoGlobalId(PARHDR(NFATHER(n))));
+
+  if (PREDN(n))
+    printf("%4d:    pred=%08x\n", me,
+           DDD_InfoGlobalId(PARHDR(PREDN(n))));
+
+  if (SUCCN(n))
+    printf("%4d:    succ=%08x\n", me,
+           DDD_InfoGlobalId(PARHDR(SUCCN(n))));
+}
+
+
+
+
+static void buggy_Search (MULTIGRID *theMG, DDD_GID gid)
 {
   int level;
 
@@ -166,6 +189,9 @@ static void buggy_ElemSearch (MULTIGRID *theMG, DDD_GID gid)
   {
     GRID *theGrid = GRID_ON_LEVEL(theMG,level);
     ELEMENT *e;
+    NODE    *n;
+
+    /* search for element */
     for(e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
     {
       if (DDD_InfoGlobalId(PARHDRE(e))==gid)
@@ -174,6 +200,19 @@ static void buggy_ElemSearch (MULTIGRID *theMG, DDD_GID gid)
                me, gid, e, level);
         buggy_ShowCopies(PARHDRE(e));
         buggy_ElemShow(e);
+      }
+    }
+
+
+    /* search for node */
+    for(n=FIRSTNODE(theGrid); n!=NULL; n=SUCCN(n))
+    {
+      if (DDD_InfoGlobalId(PARHDR(n))==gid)
+      {
+        printf("%4d: NODE gid=%08x, adr=%08x, level=%d\n",
+               me, gid, n, level);
+        buggy_ShowCopies(PARHDR(n));
+        buggy_NodeShow(n);
       }
     }
   }
@@ -357,7 +396,7 @@ void buggy (MULTIGRID *theMG)
         break;
 
       default :
-        buggy_ElemSearch(theMG, gid);
+        buggy_Search(theMG, gid);
         /*
                                                 bug_ghost(target, gid);
                                                 bug_side(target, gid);
