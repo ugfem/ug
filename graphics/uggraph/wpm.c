@@ -1586,12 +1586,12 @@ INT CopyView (const PICTURE *mypic, INT all, INT cut)
   {
     if (!all)
       theUGW = myUGW;
-    for (pic=GetFirstPicture(myUGW); pic!=NULL; pic=GetNextPicture(pic))
+    for (pic=GetFirstPicture(theUGW); pic!=NULL; pic=GetNextPicture(pic))
     {
       if (pic==mypic) continue;
 
       vo = PIC_VO(pic);
-      if ((PO_DIM(VO_PO(vo))==myViewDim) && (PO_MG(PIC_PO(mypic))==myMG))
+      if ((PO_DIM(VO_PO(vo))==myViewDim) && (PO_MG(PIC_PO(pic))==myMG))
       {
         /* same multigrid and same dimension */
         switch (myViewDim)
@@ -2402,6 +2402,36 @@ INT DisplayObject (PLOTOBJ *thePlotObj)
 }
 
 /****************************************************************************/
+/*D
+   Matrix - plot object to show matrix entries in row/column style
+
+   DESCRIPTION:
+   The Matrix plot object shows the stiffness matrix (any mat data desc)
+   in row/column style. The infobox shows the (row,column) index of the
+   entry the mouse is pointing to. Colors indicate the size of the entries
+   ('findrange'!). Zero entries are suppressed. If it is magnified enough the
+   value of the entries is printed.
+
+   Mandatory options are:~
+   .    $e~<mat~eval~proc>		- either specify <mat eval proc>
+   .    $M~<matdata~desc>		- or			 <matdata desc>
+
+   Possible options:~
+   .    $f~<from>				- from value
+   .    $t~<to>				- to value
+   .    $T~<thresh>			- supress entries smaller than <thresh>
+   .    $l~0|1					- logarithmic scale off/on
+   .    $B~0|1~<dash>~<space>	- block vectors off/on
+   .    $r~0|1					- size relative to diagonal entry off/on
+   .    $C~0|1					- regular entries off/on
+   .    $E~0|1					- extra entries off/on
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, matdesc
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
 /*																			*/
 /* Function:  InitMatrixPlotObject											*/
 /*																			*/
@@ -2606,6 +2636,31 @@ static INT DisplayMatrixPlotObject (PLOTOBJ *thePlotObj)
    .n     0 if ok
    .n     1 if error occured.
  */
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   Grid2D - plot object for multigrid
+
+   DESCRIPTION:
+   The Grid plot object shows the multigrid with its elements.
+
+   Possible options:~
+   .    $c~0|1					- use color off/on
+   .    $w~c|i|r|a				- show copy/irregular/regular/all elements
+   .    $b~0|1					- show boundary off/on
+   .    $r~0|1					- show refinement marks off/on
+   .    $i~0|1					- show error indicator marks off/on
+                                                                (only with r and c option off)
+   .    $e~0|1					- show element IDs off/on
+   .    $n~0|1					- show node IDs off/on
+   .    $m~0|1					- plot node markers off/on
+   .    $s~<shrink>			- factor to shrink elements
+   .    $p~<shrink>			- parallel only: factor to shrink processor partition
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, multigrid, elements
+   D*/
 /****************************************************************************/
 
 static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
@@ -2885,6 +2940,70 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
  */
 /****************************************************************************/
 
+/****************************************************************************/
+/*D
+   VecMat2D - plot object for vector and matrix data (stencils)
+
+   DESCRIPTION:
+   The VecMat plot object shows vector and matrix data using stencils.
+
+   Possible options:~
+   .   $t~[nd][ed][el]		- display only specified vector types and their connections
+   .   $o~0|1|2|3               - show VECTOR/BLOCKVECTOR order (see also below)
+   .   $m~0|1                   - plot markers for vectors, meaning depending on order mode, see below
+   .   $i~0|1                   - plot indices for vectors, meaning depending on order mode, see below
+   .n							if order = 0 (default)
+   .n							  marker:
+   .n							    circle:    node-vector
+   .n							    rhombus:   edge-vector
+   .n							    square:    elem-vector
+   .n							  color:
+   .n							    magenta:   VCLASS 0
+   .n							    black:     VCLASS 1
+   .n							    yellow:    VCLASS 2
+   .n							    red:       VCLASS 3
+   .n							  index: the position of the vector in the vector list
+
+   .n							if order = 1
+   .n							  marker:
+   .n							    filled circles
+   .n							  color: indicates the BLOCKVECTOR a VECTOR belongs to
+   .n							  index: indicates BLOCKVECTOR number
+
+   .n							if order = 2 (fitting well for orderv or lineorderv)
+   .n							  marker:
+   .n							    circle:    FIRST-set
+   .n							    rhombus:   LAST-set
+   .n							    square:    CUT-set
+   .n							  color: indicates the cycle in which the vector was found
+   .n							  index: indicates gen (FCL) and cycle number (e.g. F1)
+
+   .n							if order = 3 (fitting well for lineorderv)
+   .n							  marker:
+   .n							    circle:    FIRST-set
+   .n							    rhombus:   LAST-set
+   .n							    square:    CUT-set
+   .n							  color: indicates the line in which the vector was found
+   .n							  index: indicates gen (FCL), cycle number, line number and
+   .n							         number in line (e.g. F_1,12^3)
+
+   .   $d~0|1                   - show dependencies indicated by arrows
+   .   $c~0|1                   - also show connections (black)
+   .   $e~0|1                   - also show extra connections (cyan)
+   .   $C~0|1                   - visualize doubly linked vector list ($e and $c are reset to 0)
+                                                        vectors are connected by lines in the order they appear in the list
+   .   $b~0|1                   - also plot boundary
+   .   $M~[<matdata~desc>] - plot user data of <matdata desc> for the selected vectors
+   .n							and their neighbours. If <matdata desc> is omitted no matrix
+   .n							data will be plotted
+   .   $V~[<vecdata~desc>] - plot user data of <vecdata desc> for the selected vectors.
+   .n							If <vecdata desc> is omitted no vector data will be plotted
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, vecdesc, matdesc, stencils, order
+   D*/
+/****************************************************************************/
+
 static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
   BVP_DESC theBVPDesc;
@@ -3162,6 +3281,31 @@ static INT DisplayVecMat_2D (PLOTOBJ *thePlotObj)
  */
 /****************************************************************************/
 
+/****************************************************************************/
+/*D
+   EScalar2D - plot object for scalar grid functions
+
+   DESCRIPTION:
+   The EScalar plot object shows a contour or color plot of a scalar grid function.
+
+   Mandatory options are:~
+   .    $e~<vec~eval~proc>		- either specify <vec eval proc>
+   .    $s~<vecdata~desc>		- or			 <vecdata desc> (standard eval proc, nodal values only)
+
+   Possible options:~
+   .    $f~<from>				- from value
+   .    $t~<to>				- to value
+   .    $d~<depth>				- integer for recursive depth (default 0,
+                                                          CAUTION: may slow down dramatically!)
+   .    $m COLOR|CONTOURS_EQ	- mode: color or equidistant contour lines
+   .    $n~<levels>			- number of levels for contour lines
+   .    $g~0|1					- show grid off/on
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, vecdesc, function
+   D*/
+/****************************************************************************/
+
 static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
   BVP_DESC theBVPDesc;
@@ -3392,6 +3536,30 @@ static INT DisplayScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj)
  */
 /****************************************************************************/
 
+/****************************************************************************/
+/*D
+   EVector2D - plot object for (two-)vector grid functions
+
+   DESCRIPTION:
+   The EVector plot object shows a vector plot of a grid function. The vectors
+   are plotted in a regular raster.
+
+   Mandatory options are:~
+   .    $e~<vec~eval~proc>		- either specify <vec eval proc>
+   .    $s~<vecdata~desc>		- or			 <vecdata desc> (standard eval proc, nodal values only)
+
+   Possible options:~
+   .    $t~<to>				- to value
+   .    $r~<raster>			- raster size
+   .    $l~<cut~len>			- cut off len relative to raster size (default 1 to avoid overlap)
+   .    $c~0|1					- cut off vectors off/on
+   .    $g~0|1					- show grid off/on
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, vecdesc, function
+   D*/
+/****************************************************************************/
+
 static INT InitVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
   BVP_DESC theBVPDesc;
@@ -3586,6 +3754,33 @@ static INT DisplayVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj)
    .n     0 if ok
    .n     1 if error occured.
  */
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   Line - plot object to show a section through a 2D scalar grid function
+
+   DESCRIPTION:
+   The Line plot object shows a section through a 2D scalar grid function.
+
+   Mandatory options are:~
+   .    $e~<vec~eval~proc>		- either specify <vec eval proc>
+   .    $s~<vecdata~desc>		- or			 <vecdata desc> (standard eval proc, nodal values only)
+
+   Possible options:~
+   .    $f~<from>				- from value
+   .    $t~<to>				- to value
+   .    $d~<depth>				- integer for recursive depth (default 0,
+                                                          CAUTION: may slow down dramatically!)
+   .    $a~<ratio>				- use anisotropic scaling of x- and y-axis
+   .    $c~<value>				- use this color
+   .    $l~<x>~<y>				- starting point
+   .    $r~<x>~<y>				- end point
+   .    $Ly~0|1				- use logarithmic scaale for values off/on
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, vecdesc, section
+   D*/
 /****************************************************************************/
 
 static INT InitLinePlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
@@ -3909,6 +4104,27 @@ static INT DisplayDomainPlotObject_3D (PLOTOBJ *thePlotObj)
  */
 /****************************************************************************/
 
+/****************************************************************************/
+/*D
+   VecMat3D - plot object for vector and matrix data (stencils)
+
+   DESCRIPTION:
+   The VecMat plot object shows vector and matrix data using stencils.
+
+   Possible options:~
+   .   $t~[nd][ed][el][sd]	- display only specified vector types and their connections
+   .   $i~0|1                   - plot indices for vectors
+   .   $M~[<matdata~desc>] - plot user data of <matdata desc> for the selected vectors
+   .n							and their neighbours. If <matdata desc> is omitted no matrix
+   .n							data will be plotted
+   .   $V~[<vecdata~desc>] - plot user data of <vecdata desc> for the selected vectors.
+   .n							If <vecdata desc> is omitted no vector data will be plotted
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, vecdesc, matdesc, stencils, order
+   D*/
+/****************************************************************************/
+
 static INT InitVecMat_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
   BVP_DESC theBVPDesc;
@@ -4081,6 +4297,28 @@ static INT DisplayVecMat_3D (PLOTOBJ *thePlotObj)
    .n     0 if ok
    .n     1 if error occured.
  */
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   Grid3D - plot object for multigrid
+
+   DESCRIPTION:
+   The Grid plot object shows the multigrid with its elements.
+
+   Possible options:~
+   .    $c~0|1					- use color off/on
+   .    $w~c|i|r|a				- show copy/irregular/regular/all elements
+   .    $n[i]~0|1				- plot node markers (and IDs)
+   .    $v[i]~0|1				- plot vector markers (and indices)
+   .    $t~<type~list>			- only vectors of specified types
+   .    <type~list>			- a list composed by any of nd, ed, el, si, seperated by blanks
+   .    $s~<shrink>			- factor to shrink elements
+   .    $p~<shrink>			- parallel only: factor to shrink processor partition
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, multigrid, elements
+   D*/
 /****************************************************************************/
 
 static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
@@ -4300,6 +4538,30 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
  */
 /****************************************************************************/
 
+/****************************************************************************/
+/*D
+   EScalar3D - plot object for scalar grid functions
+
+   DESCRIPTION:
+   The EScalar plot object shows a contour or color plot of a scalar grid function.
+
+   Mandatory options are:~
+   .    $e~<vec~eval~proc>		- either specify <vec eval proc>
+   .    $s~<vecdata~desc>		- or			 <vecdata desc> (standard eval proc, nodal values only)
+
+   Possible options:~
+   .    $f~<from>				- from value
+   .    $t~<to>				- to value
+   .    $d~<depth>				- integer for recursive depth (default 0,
+                                                          CAUTION: may slow down dramatically!)
+   .    $m COLOR|CONTOURS_EQ	- mode: color or equidistant contour lines
+   .    $n~<levels>			- number of levels for contour lines
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, vecdesc, function
+   D*/
+/****************************************************************************/
+
 static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
   BVP_DESC theBVPDesc;
@@ -4493,6 +4755,30 @@ static INT DisplayScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj)
 /*																			*/
 /* Output:	  INT NOT_INIT, NOT_ACTIVE or ACTIVE							*/
 /*																			*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   EVector3D - plot object for (three-)vector grid functions
+
+   DESCRIPTION:
+   The EVector plot object shows a vector plot of a grid function. The vectors
+   are plotted in a regular raster.
+
+   Mandatory options are:~
+   .    $e~<vec~eval~proc>		- either specify <vec eval proc>
+   .    $s~<vecdata~desc>		- or			 <vecdata desc> (standard eval proc, nodal values only)
+
+   Possible options:~
+   .    $t~<to>				- to value
+   .    $r~<raster>			- raster size
+   .    $l~<cut~len>			- cut off len relative to raster size (default 1 to avoid overlap)
+   .    $c~0|1					- cut off vectors off/on
+   .    $p~0|1					- project vector off/on (?)
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, vecdesc, function
+   D*/
 /****************************************************************************/
 
 static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
