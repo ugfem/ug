@@ -64,7 +64,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define VERSION         "This is ug 3.1 from $Date$\n"
+#define VERSION         "This is ug 3.2 from $Date$\n"
 
 /* for interpreter */
 #define DONE                            0
