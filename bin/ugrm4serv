@@ -52,6 +52,7 @@ rm -f ugprep4serv ugmakeman ugrecurse ugsetcvsaccess ugmakealiases;
 
 if test $# -ge 1 -o "$1" = "-help"
 then
+	rm -r -f  ${UGROOT}/include
 	cd ${UGROOT}/doc
 	gzip applmanual.ps
 	gzip progmanual.ps
@@ -71,5 +72,7 @@ then
 	tar cvf $1.tar $1
 	gzip $1.tar
 	mv $1 ../UG
+	cp gm.h ${UGROOT}/gm 
+	cp ruler3.cc ${UGROOT}/gm/gg3/netgen/meshing
     cd ..
 fi
