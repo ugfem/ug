@@ -11,8 +11,8 @@ include $(UGROOT)/ug.conf
 
 OBJECTS = ugblas.o ugiter.o transgrid.o block.o quadrature.o fvgeom.o fegeom.o
 
-all : $(OBJECTS) Makefile.algebra
-	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
+$(UG_LIB) : $(OBJECTS) Makefile.algebra
+	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
 
 .SUFFIXES: .o .c
 
