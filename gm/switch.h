@@ -23,12 +23,12 @@
 #define __SWITCH__
 
 
-#ifndef __COMPILER__
-#include "compiler.h"
+#ifndef __GENERAL__
+#include "general.h"
 #endif
 
-#ifdef __MWCW__
-#include "MWCW.cmdlinedefs"
+#ifndef __COMPILER__
+#include "compiler.h"
 #endif
 
 /*D
