@@ -634,7 +634,7 @@ void SelectionSort (void *base, INT n, INT size, int (*cmp)(const void *, const 
     ReadMemSizeFromString - Convert a (memory)size specification from String to MEM (long int)
 
    SYNOPSIS:
-   INT ReadMemSizeFromString( char *s, MEM *mem_size );
+   INT ReadMemSizeFromString (const char *s, MEM *mem_size );
 
    PARAMETERS:
    .  s - input string
@@ -657,34 +657,66 @@ void SelectionSort (void *base, INT n, INT size, int (*cmp)(const void *, const 
         2 invalid unit specifier
 
    SEE ALSO:
-   MEM
+   MEM, WriteMemSizeToString
    D*/
 /****************************************************************************/
 
-INT ReadMemSizeFromString( char *s, MEM *mem_size )
+INT ReadMemSizeFromString (const char *s, MEM *mem_size )
 {
-  unsigned long mem;
+  float mem;
 
-  if (sscanf( s, "%lu",&mem)!=1)
+  if (sscanf( s, "%e",&mem)!=1)
     return(1);
 
   switch( s[strlen(s)-1] )
   {
   case 'k' : case 'K' :             /* check for [kK]ilobyte-notation */
-    *mem_size = (MEM)mem * (MEM)KBYTE;
+    *mem_size = floor(mem * KBYTE);
     return(0);
   case 'm' : case 'M' :             /* check for [mM]egabyte-notation */
-    *mem_size = (MEM)mem * (MEM)MBYTE;
+    *mem_size = floor(mem * MBYTE);
     return(0);
   case 'g' : case 'G' :             /* check for [gG]igabyte-notation */
-    *mem_size = (MEM)mem * (MEM)GBYTE;
+    *mem_size = floor(mem * GBYTE);
     return(0);
   case '0' : case '1' : case '2' : case '3' : case '4' : case '5' : case '6' : case '7' : case '8' : case '9' :     /* no recognized mem unit character recognized */
-    *mem_size = (MEM)mem;
+    *mem_size = floor(mem * 1);
     return(0);
   default :              /* unknown mem unit character */
     return(2);
   }
+}
+
+/****************************************************************************/
+/*D
+    WriteMemSizeToString - Convert a (memory)size MEM to string
+
+   SYNOPSIS:
+   INT WriteMemSizeToString (MEM mem_size, char *s)
+
+   PARAMETERS:
+   .  s - input string
+   .  mem_size - the specified mem size in byte
+
+   DESCRIPTION:
+   This function writes a MEM size in MBytes to string in a format that is recognized by
+   WriteMemSizeToString.
+
+   RETURN VALUE:
+   INT: 0 ok
+
+   SEE ALSO:
+   MEM, ReadMemSizeFromString
+   D*/
+/****************************************************************************/
+
+INT WriteMemSizeToString (MEM mem_size, char *s)
+{
+  float mem = mem_size;
+
+  /* write mem size in units of MByte */
+  sprintf(s, "%g M",mem/MBYTE);
+  return 0;
 }
 
 

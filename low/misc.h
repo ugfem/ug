@@ -173,7 +173,9 @@ int                     matherr                         (struct exception *x);
 DOUBLE nec_clock( void );
 #endif
 
-INT             ReadMemSizeFromString   ( char *s, MEM *mem_size );
+INT             ReadMemSizeFromString   (const char *s, MEM *mem_size);
+INT                     WriteMemSizeToString    (MEM mem_size, char *s);
+
 INT                     MemoryParameters        (void);
 
 #endif
