@@ -14,7 +14,7 @@ UGLIBS      = $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a \
               $(UGROOT)/lib/libdom$(UG_DOMSUFFIX).a \
 			  $(UGROOT)/lib/libgrape$(GRAPE)$(DIM).a \
 			  $(UGROOT)/lib/libgg$(DIM).a \
-              $(UGROOT)/lib/libdev.a \
+              $(UGROOT)/lib/libdev$(IF).a \
 			  $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a
 
 OBJECTS = xugv.o m2ps.o 
