@@ -2758,11 +2758,13 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
       DisposeMultiGrid(theMG);
       return(NULL);
     }
-    if (FixCoarseGrid(theMG))
-    {
-      DisposeMultiGrid(theMG);
-      return(NULL);
-    }
+    ASSERT(mesh.mesh_status!=MESHSTAT_NOTINIT);
+    if (mesh.mesh_status==MESHSTAT_MESH)
+      if (FixCoarseGrid(theMG))
+      {
+        DisposeMultiGrid(theMG);
+        return(NULL);
+      }
   }
   /* return ok */
   return(theMG);
