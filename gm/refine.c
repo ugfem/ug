@@ -1053,7 +1053,7 @@ static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data)
 static INT ExchangeClosureInfo (GRID *theGrid)
 {
 	/* exchange sidepattern of edges */
-	DDD_IFAOneway(ElementIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+	DDD_IFAOneway(ElementVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
 		Gather_ElementClosureInfo, Scatter_ElementClosureInfo);
 
 	return(GM_OK);
@@ -1253,7 +1253,15 @@ static INT CorrectElementSidePattern (ELEMENT *theElement, ELEMENT *theNeighbor,
 	for (j=0; j<SIDES_OF_ELEM(theNeighbor); j++)
 		if (NBELEM(theNeighbor,j) == theElement)
 			break;
+	#ifdef ModelP
+	if (j >= SIDES_OF_ELEM(theNeighbor))
+	{
+		ASSERT(EGHOST(theElement) && EGHOST(theNeighbor));
+		return(GM_OK);
+	}
+	#else
 	ASSERT(j<SIDES_OF_ELEM(theNeighbor));
+	#endif
 
 	/* side is triangle or quadrilateral */
 	switch (CORNERS_OF_SIDE(theElement,i))
@@ -1471,7 +1479,7 @@ static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data)
 static INT ExchangeAddPatterns (GRID *theGrid)
 {
 	/* exchange addpatterns of edges */
-	DDD_IFAOneway(ElementIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+	DDD_IFAOneway(ElementVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
 		Gather_AddEdgePattern, Scatter_AddEdgePattern);
 
 	return(GM_OK);
@@ -1603,7 +1611,15 @@ static INT BuildGreenClosure (GRID *theGrid)
 				if (NBELEM(theNeighbor,j) == theElement)
 					break;
 
+			#ifdef ModelP
+			if (j >= SIDES_OF_ELEM(theNeighbor))
+			{
+				ASSERT(EGHOST(theElement) && EGHOST(theNeighbor));
+				continue;
+			}
+			#else
 			ASSERT(j<SIDES_OF_ELEM(theNeighbor));
+			#endif
 
 			if (NODE_OF_RULE(theNeighbor,MARK(theNeighbor),
 				EDGES_OF_ELEM(theNeighbor)+j))
@@ -1690,7 +1706,7 @@ static int Gather_ElementInfo (DDD_OBJ obj, void *Data)
                                                                              \
 		_mark0 = macro(elem0); _mark1 = macro(elem1);                        \
 		_pat0 = MARK2PAT(elem0,_mark0); _pat1 = MARK2PAT(elem1,_mark1);      \
-		if (_pat0 != _pat1)                                                  \
+		if ((_pat0 & ((1<<10)-1)) != (_pat1 & ((1<<10)-1)))                  \
 			COMPARE_MACRO(elem0,elem1,macro,print)                           \
 	}
 #else
@@ -1751,7 +1767,7 @@ static int Scatter_ElementInfo (DDD_OBJ obj, void *Data)
 static INT CheckElementInfo (GRID *theGrid)
 {
 	/* exchange element info */
-	DDD_IFAOneway(ElementIF,GRID_ATTR(theGrid),IF_FORWARD,
+	DDD_IFAOneway(ElementVHIF,GRID_ATTR(theGrid),IF_FORWARD,
 		CEIL(sizeof(struct generic_element))+2*sizeof(INT),
 		Gather_ElementInfo, Scatter_ElementInfo);
 
@@ -5152,6 +5168,7 @@ if (0)
 		return(GM_OK);
 	}
 #endif
+
 	/* set up information in refine_info */
 	if (TOPLEVEL(theMG) == 0)
 		SETREFINESTEP(REFINEINFO(theMG),0);
