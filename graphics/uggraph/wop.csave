@@ -48,6 +48,7 @@
 #include "num.h"
 #include "shapes.h"
 #include "general.h"
+#include "debug.h"
 #ifdef ModelP
 #include "parallel.h"
 #include "ppif.h"
@@ -106,9 +107,12 @@ INT ce_CUTMODE;
 #define CM_INTERSECT					1
 #define CM_INFRONT						2
 
-/* Macros for PYRAMIDS and HEXAHEDRONS */
-#define GETBITS(x,p)     (((x)>>((p)+1-(3)))&~(~0<<(3)))
-#define SETBITS(x,p,y)   (((y)<<((p)+1-(3)))|(x))
+/* Macros for Node order */
+#define NODE_ORDER(p) 		   ((TAG(theElement) == TETRAHEDRON) ? \
+								NORDER(theElement) : (p)->ge.property)
+#define SET_NODE_ORDER(p,n)    ((p)->ge.property = n)
+#define GETBITS(x,p)           (((x)>>((p)+1-(3)))&~(~0<<(3)))
+#define SETBITS(x,p,y)         (((y)<<((p)+1-(3)))|(x))
 #define CORNER_OF_SIDE0(t,s,c) (element_descriptors[t]->corner_of_side[(s)][(c)])
 
 /* pixel resolution for inserting boundary nodes */
@@ -764,7 +768,7 @@ static INT BuildObsTrafo (PICTURE *thePicture)
 			break;
 			
 		default:
-			return (1);
+			RETURN(1);
 	}
 	
 	return (0);
@@ -2652,7 +2656,7 @@ static INT MarkNodes_OfMarkedElem (MULTIGRID *theMG, INT fromLevel, INT toLevel,
 						SETUSED(CORNER(theElement,j),1);
 			break;
 		default:
-			return (1);
+			RETURN(1);
 	}
 	
 	/* only marks on surface count */
@@ -2838,7 +2842,7 @@ static NODE *NW_GetNextNode_leave_fw (NODE *theNode)
 		}
 		else
 			theNode=TOPNODE(theVertex);
-		assert(theNode!=NULL);
+		ASSERT(theNode!=NULL);
 		while (LEVEL(theNode)>GNode_toLevel && theNode!=NULL) theNode=NFATHER(theNode);
 		if (theNode==NULL) return (NULL);
 	}
@@ -3372,7 +3376,7 @@ static INT EW_DoNothing0D (DRAWINGOBJ *q)
 				DO_inc_SURRPOLYGON(q,0);
 				break;
 			default:
-				return (1);
+				RETURN(1);
 		}
 		
 	}
@@ -3596,7 +3600,7 @@ static INT Draw2D (DRAWINGOBJ *q)
 				UgPolymark(point,n);
 				break;
 			default:
-				return (1);
+				RETURN(1);
 		}
 	}
 	
@@ -3852,7 +3856,7 @@ static INT Draw3D (DRAWINGOBJ *q)
 				UgPolymark(point,n);
 				break;
 			default:
-				return (1);
+				RETURN(1);
 		}
 	}
 	
@@ -3865,7 +3869,7 @@ static INT Draw3D (DRAWINGOBJ *q)
 /*																			*/
 /* Purpose:   find element in 2D drawing object 							*/
 /*																			*/
-/* Input:	  DRAWINGOBJ *q: the drawing object							*/
+/* Input:	  DRAWINGOBJ *q: the drawing object							    */
 /*																			*/
 /* Output:	  INT 0: ok 													*/
 /*				  1: error													*/
@@ -3946,7 +3950,7 @@ static INT EW_SelectElement2D (DRAWINGOBJ *q)
 				found = PointInPolygon(point,j,FE2D_MousePos);
 				break;
 			default:
-				return (1);
+				RETURN(1);
 		}
 		
 	}
@@ -4050,7 +4054,7 @@ static INT FindRange2D (DRAWINGOBJ *q)
 				DO_inc_SURRPOLYGON(q,2);
 				break;
 			default:
-				return (1);
+				RETURN(1);
 		}
 		
 	}
@@ -4135,7 +4139,7 @@ static INT FindRange3D (DRAWINGOBJ *q)
 				DO_inc_SURRPOLYGON(q,3);
 				break;
 			default:
-				return (1);
+				RETURN(1);
 		}
 		
 	}
@@ -5413,7 +5417,7 @@ static INT NW_PreProcess_PlotNodes2D (PICTURE *thePicture, WORK *theWork)
 			mode = MARKMODE_REG;
 			break;
 		default:
-			return (1);
+			RETURN(1);
 	}
 	if (MarkNodes_OfMarkedElem(theMG,0,CURRENTLEVEL(theMG),mode)) return (1);
 	
@@ -6045,7 +6049,7 @@ static INT NW_PreProcess_SelectNode2D (PICTURE *thePicture, WORK *theWork)
 			mode = MARKMODE_REG;
 			break;
 		default:
-			return (1);
+			RETURN(1);
 	}
 	if (MarkNodes_OfMarkedElem(theMG,0,CURRENTLEVEL(theMG),mode)) return (1);
 	
@@ -8137,7 +8141,60 @@ static INT SideCornerIndexPYR (ELEMENT *theElement, INT side, INT NodeOrder, INT
 			cornercon[3][0] = corner[0]; cornercon[3][1] = corner[2];
 			break;
 		default:
-			return(1);
+			RETURN(1);
+	}
+	   
+	j = 0;
+	for (k=0; k<CORNERS_OF_ELEM(theElement); ++k)
+	{
+		b = GETBITS(NodeOrder, 3*k+2);
+		if ((ncorners==3)&&(b!=corner[0])&&(b!=corner[1])&&(b!=corner[2])) continue;
+		if ((ncorners==4)&&(b!=corner[0])&&(b!=corner[1])&&(b!=corner[2])&&(b!=corner[3])) continue;
+		i[j] = b;
+		++j;
+	}
+	
+	for (k=0; k<ncorners; ++k)
+	{
+		for (j=0; j<ncorners; ++j)
+		   if (corner[k]==i[j]) break;
+		   
+		for (n=0; n<ncorners; ++n)
+		   if (cornercon[k][0]==i[n]) break;
+		icon[j][0] = n;
+		for (n=0; n<ncorners; ++n)
+		   if (cornercon[k][1]==i[n]) break;
+		icon[j][1] = n;
+	}
+	return (0);	
+}
+
+static INT SideCornerIndexPRI (ELEMENT *theElement, INT side, INT NodeOrder, INT i[4], INT icon[4][2])
+{
+	INT k, corner[4], b,j,n, cornercon[4][2], ncorners;
+
+	ncorners = CORNERS_OF_SIDE(theElement,side);
+
+	/* get corner number of this side */
+	for (k=0; k<ncorners; ++k)  
+	   corner[k] = CORNER_OF_SIDE(theElement,side,k);
+	   
+	/* init the corner connection field */
+	switch (ncorners) {
+		case (3):
+			cornercon[0][0] = corner[1]; cornercon[0][1] = corner[2];
+			cornercon[1][0] = corner[0]; cornercon[1][1] = corner[2];
+			cornercon[2][0] = corner[0]; cornercon[2][1] = corner[1];
+			cornercon[3][0] = -1; cornercon[3][1] = -1;
+			break;
+		case (4):
+			cornercon[0][0] = corner[1]; cornercon[0][1] = corner[3];
+			cornercon[1][0] = corner[0]; cornercon[1][1] = corner[2];
+			cornercon[2][0] = corner[1]; cornercon[2][1] = corner[3];
+			cornercon[3][0] = corner[0]; cornercon[3][1] = corner[2];
+			break;
+		default:
+			RETURN(1);
 	}
 	   
 	j = 0;
@@ -8237,6 +8294,37 @@ static INT CornerIndexPYR (INT NodeOrder, INT i[8], INT icon[8][4])
 	return (0);	
 }
 
+static INT PRCornerOrder[6][3] = {{1,2,3},{0,2,4},{0,1,5},{0,4,5},{1,3,5},{2,3,4}};
+
+static INT CornerIndexPRI (INT NodeOrder, INT i[8], INT icon[8][4])
+{
+	INT k,j,n,c;
+	
+	for (k=0; k<6; ++k)
+		i[k] = GETBITS(NodeOrder, 3*k+2);
+		
+	for (k=0; k<6; ++k)
+	{
+		for (j=0; j<6; ++j)
+			if (i[j] == k) break;
+			
+		for (n=0; n<6; ++n)
+			if (PRCornerOrder[k][0]==i[n]) break;
+		ASSERT(n!=6);
+		icon[j][0] = n;
+		for (n=0; n<6; ++n)
+			if (PRCornerOrder[k][1]==i[n]) break;
+		ASSERT(n!=6);
+		icon[j][1] = n;
+		for (n=0; n<6; ++n)
+			if (PRCornerOrder[k][2]==i[n]) break;
+		ASSERT(n!=6);
+		icon[j][2] = n;
+		icon[j][3] = -1;
+	}
+	return (0);	
+}
+
 
 /* TODO: this is not the fine way, better use general element concept */
 static INT ECornerOrder[8][3] = {{1,3,4},{0,2,5},{1,3,6},{0,2,7},
@@ -8286,6 +8374,7 @@ static DefinePolygon (COORD_VECTOR *Poly, INT Number)
 	}
 	
 	MaxCos = -1;
+	n = Number - 1;
 	for (j=1; j<Number; ++j){
 		V3_SCALAR_PRODUCT(rad[0],rad[j],Cos)
 		MaxCos = MAX(Cos,MaxCos);
@@ -8406,7 +8495,6 @@ static INT GetPolyElemSideISHalfSpaceTET (ELEMENT *theElement, COORD **Corners, 
 	return (1);
 }
 
-
 /****************************************************************************/
 /*																			*/
 /* Function:  GetPolyElemSideISHalfSpacePYR									*/
@@ -8452,7 +8540,7 @@ static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, COORD **Corners, 
 					switch (count2)
 					{
 						case (0):
-							return (1);
+							RETURN(1);
 						case (1):
 						case (2):
 						case (3):
@@ -8464,7 +8552,7 @@ static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, COORD **Corners, 
 							*Number = 3;
 							return (0);
 						default:
-							return (1);
+							RETURN(1);
 						break;
 					}
 				case (1):
@@ -8492,7 +8580,7 @@ static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, COORD **Corners, 
 							*Number = 4;
 							return (0);
 						default:
-							return (1);
+							RETURN(1);
 						break;
 					}
 				case (2):
@@ -8509,7 +8597,7 @@ static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, COORD **Corners, 
 							*Number = 3;
 							return (0);
 						default:
-							return (1);
+							RETURN(1);
 						break;
 					}
 				case (3):
@@ -8518,7 +8606,7 @@ static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, COORD **Corners, 
 						case (0):
 							return (0);
 						default:
-							return (1);
+							RETURN(1);
 						break;
 					}
 			}
@@ -8531,7 +8619,7 @@ static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, COORD **Corners, 
 					{
 						case (0):
 						case (1):
-							return (1);
+							RETURN(1);
 						case (2):
 						case (3):
 						case (4):
@@ -8546,14 +8634,14 @@ static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, COORD **Corners, 
 							*Number = 4;
 							return (0);
 						default:
-							return (1);
+							RETURN(1);
 						break;
 					}
 				case (1):
 					switch (count2)
 					{
 						case (0):
-							return (1);
+							RETURN(1);
 						case (1):
 							V3_COPY(x[1], Poly[0])
 							V3_COPY(x[2], Poly[1])
@@ -8583,7 +8671,7 @@ static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, COORD **Corners, 
 							*Number = 5;
 							return (0);
 						default:
-							return (1);
+							RETURN(1);
 						break;
 					}
 				case (2):
@@ -8611,7 +8699,7 @@ static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, COORD **Corners, 
 							*Number = 4;
 							return (0);
 						default:
-							return (1);
+							RETURN(1);
 						break;
 					}
 				case (3):
@@ -8626,7 +8714,7 @@ static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, COORD **Corners, 
 							*Number = 3;
 							return (0);
 						default:
-							return (1);
+							RETURN(1);
 						break;
 					}
 				case (4):
@@ -8635,16 +8723,256 @@ static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, COORD **Corners, 
 						case (0):	
 							return (0);
 						default:
-							return (1);
+							RETURN(1);
 						break;
 					}
 			}
 			break;
 		default:
-			return(1);
+			RETURN(1);
 	}
 	
-	return (1);
+	RETURN(1);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  GetPolyElemSideISHalfSpacePRI									*/
+/*																			*/
+/* Purpose:   get polygon being the intersection of an elementside of an	*/
+/*			  pyrism and the half space behind cut plane					*/
+/*																			*/
+/* Input :	  all you need													*/
+/*																			*/
+/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/* Return:	  INT 0: ok 													*/
+/*			  INT 1: an error occurred										*/
+/*																			*/
+/****************************************************************************/
+
+static INT GetPolyElemSideISHalfSpacePRI (ELEMENT *theElement, COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Poly, INT *Number)
+{
+	INT i, j, count1, count2, order[4], ordercon[4][2], ncorners;
+	COORD *x[4], Z[4];  /* 4=number of corners of hexahedron side */
+	
+	/* get corners of the element side */
+	ncorners = CORNERS_OF_SIDE(theElement,side);
+	count1 = 0;
+	count2 = 0;
+	SideCornerIndexPRI (theElement, side, NodeOrder, order, ordercon); 
+	for (i=0; i<ncorners; i++) 
+	{
+		j = order[i];
+		x[i] = Corners[j];
+		Z[i] = CutZCoord[j];
+		if (Z[i] > SMALL_C)
+			count1++;
+		if (Z[i] < -SMALL_C)
+			count2++;
+	}
+	
+	*Number = 0;
+	switch (ncorners) {
+		case (3):
+			switch (count1)
+			{
+				case (0):
+					switch (count2)
+					{
+						case (0):
+							RETURN(1);
+						case (1):
+						case (2):
+						case (3):
+							V3_COPY(x[0], Poly[0])
+							V3_COPY(x[1], Poly[1])
+							i = 0;
+							if (ordercon[1][0]==0) i = 1;
+							V3_COPY(x[ordercon[1][i]], Poly[2])
+							*Number = 3;
+							return (0);
+						default:
+							RETURN(1);
+						break;
+					}
+				case (1):
+					switch (count2)
+					{
+						case (0):
+							return (0);
+						case (1):
+							V3_COPY(x[1], Poly[0])
+							V3_COPY(x[2], Poly[1])
+							i = 0;
+							if (ordercon[0][0] == 1) i = 1;	
+							V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[2])				
+							*Number = 3;
+							return (0);
+						case (2):
+							V3_COPY(x[1], Poly[0])
+							V3_COPY(x[2], Poly[1])
+							i = 0;
+							if (ordercon[0][0] == 1) i = 1;	
+							V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[2])				
+							i = 0;
+							if (ordercon[0][0] == 2) i = 1;
+							V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[3])				
+							*Number = 4;
+							return (0);
+						default:
+							RETURN(1);
+						break;
+					}
+				case (2):
+					switch (count2)
+					{
+						case (0):
+							return (0);
+						case (1):
+							V3_COPY(x[2], Poly[0])
+							i = 0;
+							V3_LINCOMB(Z[ordercon[2][i]]/(Z[ordercon[2][i]]-Z[2]), x[2], -Z[2]/(Z[ordercon[2][i]]-Z[2]), x[ordercon[2][i]], Poly[1])
+							i = 1;
+							V3_LINCOMB(Z[ordercon[2][i]]/(Z[ordercon[2][i]]-Z[2]), x[2], -Z[2]/(Z[ordercon[2][i]]-Z[2]), x[ordercon[2][i]], Poly[2])
+							*Number = 3;
+							return (0);
+						default:
+							RETURN(1);
+						break;
+					}
+				case (3):
+					switch (count2)
+					{
+						case (0):
+							return (0);
+						default:
+							RETURN(1);
+						break;
+					}
+			}
+			break;
+		case (4):
+			switch (count1)
+			{
+				case (0):
+					switch (count2)
+					{
+						case (0):
+						case (1):
+							RETURN(1);
+						case (2):
+						case (3):
+						case (4):
+							V3_COPY(x[0], Poly[0])
+							V3_COPY(x[1], Poly[1])
+							i = 0;
+							if (ordercon[1][0]==0) i = 1;
+							V3_COPY(x[ordercon[1][i]], Poly[2])
+							i = 0;
+							if (ordercon[0][0]==1) i = 1;
+							V3_COPY(x[ordercon[0][i]], Poly[3])
+							*Number = 4;
+							return (0);
+						default:
+							RETURN(1);
+						break;
+					}
+				case (1):
+					switch (count2)
+					{
+						case (0):
+							RETURN(1);
+						case (1):
+							V3_COPY(x[1], Poly[0])
+							V3_COPY(x[2], Poly[1])
+							V3_COPY(x[3], Poly[2])
+							*Number = 3;
+							return (0);
+						case (2):
+							V3_COPY(x[1], Poly[0])
+							i = 0;
+							if (ordercon[0][0] == 1) i = 1;	
+							V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[1])				
+							V3_COPY(x[ordercon[0][i]], Poly[2])
+							i = 0;
+							if (ordercon[1][0] == 0) i = 1;
+							V3_COPY(x[ordercon[1][i]], Poly[3])
+							*Number = 4;
+							return (0);
+						case (3):
+							V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][0]]), x[ordercon[0][0]], -Z[ordercon[0][0]]/(Z[0]-Z[ordercon[0][0]]), x[0], Poly[0])				
+							V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][1]]), x[ordercon[0][1]], -Z[ordercon[0][1]]/(Z[0]-Z[ordercon[0][1]]), x[0], Poly[1])				
+							V3_COPY(x[ordercon[0][1]], Poly[2])
+							V3_COPY(x[ordercon[0][0]], Poly[4])
+							i = ordercon[0][1];
+							j = 0;
+							if (ordercon[i][0] == 0) j = 1;
+							V3_COPY(x[ordercon[i][j]], Poly[3])
+							*Number = 5;
+							return (0);
+						default:
+							RETURN(1);
+						break;
+					}
+				case (2):
+					switch (count2)
+					{
+						case (0):
+							return (0);
+						case (1):
+							V3_COPY(x[2], Poly[0])
+							V3_COPY(x[3], Poly[1])
+							i = 0;
+							if (ordercon[3][0] == 2) i = 1;
+							V3_LINCOMB(Z[ordercon[3][i]]/(Z[ordercon[3][i]]-Z[3]), x[3], -Z[3]/(Z[ordercon[3][i]]-Z[3]), x[ordercon[3][i]], Poly[2])
+							*Number = 3;
+							return (0);
+						case (2):
+							i = 0;
+							if (ordercon[0][0] == 1) i = 1;
+							V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[0])				
+							V3_COPY(x[ordercon[0][i]], Poly[1]);
+							i = 0;
+							if (ordercon[1][0] == 0) i = 1;
+							V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[3])				
+							V3_COPY(x[ordercon[1][i]],Poly[2]);
+							*Number = 4;
+							return (0);
+						default:
+							RETURN(1);
+						break;
+					}
+				case (3):
+					switch (count2)
+					{
+						case (0):
+							return (0);
+						case (1):
+							for (i=0; i<2; ++i)
+								V3_LINCOMB(Z[ordercon[3][i]]/(Z[ordercon[3][i]]-Z[3]), x[3], -Z[3]/(Z[ordercon[3][i]]-Z[3]), x[ordercon[3][i]], Poly[i])
+							V3_COPY(x[3], Poly[2])
+							*Number = 3;
+							return (0);
+						default:
+							RETURN(1);
+						break;
+					}
+				case (4):
+					switch (count2)
+					{		
+						case (0):	
+							return (0);
+						default:
+							RETURN(1);
+						break;
+					}
+			}
+			break;
+		default:
+			RETURN(1);
+	}
+	
+	RETURN(1);
 }
 
 /****************************************************************************/
@@ -8691,7 +9019,7 @@ static INT GetPolyElemSideISHalfSpaceHEX (ELEMENT *theElement, COORD **Corners, 
 			{
 				case (0):
 				case (1):
-					return (1);
+					RETURN(1);
 				case (2):
 				case (3):
 				case (4):
@@ -8706,14 +9034,14 @@ static INT GetPolyElemSideISHalfSpaceHEX (ELEMENT *theElement, COORD **Corners, 
 					*Number = 4;
 					return (0);
 				default:
-					return (1);
+					RETURN(1);
 				break;
 			}
 		case (1):
 			switch (count2)
 			{
 				case (0):
-					return (1);
+					RETURN(1);
 				case (1):
 					V3_COPY(x[1], Poly[0])
 					V3_COPY(x[2], Poly[1])
@@ -8743,7 +9071,7 @@ static INT GetPolyElemSideISHalfSpaceHEX (ELEMENT *theElement, COORD **Corners, 
 					*Number = 5;
 					return (0);
 				default:
-					return (1);
+					RETURN(1);
 				break;
 			}
 		case (2):
@@ -8771,7 +9099,7 @@ static INT GetPolyElemSideISHalfSpaceHEX (ELEMENT *theElement, COORD **Corners, 
 					*Number = 4;
 					return (0);
 				default:
-					return (1);
+					RETURN(1);
 				break;
 			}
 		case (3):
@@ -8786,7 +9114,7 @@ static INT GetPolyElemSideISHalfSpaceHEX (ELEMENT *theElement, COORD **Corners, 
 					*Number = 3;
 					return (0);
 				default:
-					return (1);
+					RETURN(1);
 				break;
 			}
 		case (4):
@@ -8795,12 +9123,12 @@ static INT GetPolyElemSideISHalfSpaceHEX (ELEMENT *theElement, COORD **Corners, 
 				case (0):	
 					return (0);
 				default:
-					return (1);
+					RETURN(1);
 				break;
 			}
 	}
 	
-	return (1);
+	RETURN(1);
 }
 
 /****************************************************************************/
@@ -8877,9 +9205,10 @@ static INT GetLineElemSideISCutPlaneHEX (ELEMENT* theElement, COORD **Corners, C
 	/* get corners of the element side */
 	c = 0;
 	switch (TAG(theElement)) {
+	    case (PRISM): 
 		case (PYRAMID): SideCornerIndexPYR (theElement, side, NodeOrder, order, ordercon); break;
 		case (HEXAHEDRON): SideCornerIndexHEX (theElement, side, NodeOrder, order, ordercon); break;
-		default: return(1);
+		default: RETURN(1);
 	}
 	for (i=0; i<CORNERS_OF_SIDE(theElement,side); i++)
 	{
@@ -8986,7 +9315,7 @@ static INT GetPolyElemISCutPlaneTET (COORD **CornerDC, COORD *CutZCoord, INT Nod
 			switch (count2)
 			{
 				case (0):
-					return (1);
+					RETURN(1);
 				case (1):
 					V3_COPY(x[0], Poly[0])
 					V3_COPY(x[1], Poly[1])
@@ -9026,7 +9355,7 @@ static INT GetPolyElemISCutPlaneTET (COORD **CornerDC, COORD *CutZCoord, INT Nod
 					*Number = 3;
 					return (0);
 				default:
-					return (1);
+					RETURN(1);
 				break;
 			}
 		case (2):
@@ -9048,7 +9377,7 @@ static INT GetPolyElemISCutPlaneTET (COORD **CornerDC, COORD *CutZCoord, INT Nod
 					*Number = 4;
 					return (0);
 				default:
-					return (1);
+					RETURN(1);
 				break;
 			}
 		case (3):
@@ -9063,13 +9392,13 @@ static INT GetPolyElemISCutPlaneTET (COORD **CornerDC, COORD *CutZCoord, INT Nod
 					*Number = 3;
 					return (0);
 				default:
-					return (1);
+					RETURN(1);
 			}
 		case (4):
 			return (0);
 	}
 	
-	return (1);
+	RETURN(1);
 }
 
 /****************************************************************************/
@@ -9116,12 +9445,10 @@ static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT Nod
 			switch (count2)
 			{
 				case (0):
-					assert(0);
-					return (1);
+					RETURN(1);
 				case (1):
 					if (ordercon[4][3]==-1) {
-						assert(0);
-						return(1);
+						RETURN(1);
 					}
 					V3_COPY(x[0],Poly[0])
 					V3_COPY(x[1],Poly[1])
@@ -9139,24 +9466,21 @@ static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT Nod
 						return(0);
 					}
 					else {
-						assert(0);
-						return(1);
+						RETURN(1);
 					}
 				case (3):
 				case (4):
 				case (5):
 					return (0);
 				default:
-					assert(0);
-					return(1);
+					RETURN(1);
 			}
 		case (1):
 			switch (count2)
 			{
 				case (0):
 					if (ordercon[0][3]==-1) {
-						assert(0);
-						return(1);
+						RETURN(1);
 					}
 					else 
 						V3_COPY(x[1], Poly[0])
@@ -9175,8 +9499,7 @@ static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT Nod
 						return (0);					
 					}
 					else {
-						assert(0);
-						return(1);
+						RETURN(1);
 					}
 				case (2):
 					V3_COPY(x[1], Poly[0])
@@ -9192,7 +9515,7 @@ static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT Nod
 						i++;
 						if (ordercon[0][i]==1 || ordercon[0][i]==2) i++;
 						if (ordercon[0][i]==1 || ordercon[0][i]==2) i++;
-						assert(i<4);
+						ASSERT(i<4);
 						V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[3])
 						*Number = 4;
 						DefinePolygon (Poly, *Number);
@@ -9205,7 +9528,7 @@ static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT Nod
 					V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[1])
 					i++;
 					if (ordercon[0][i]==1) i++;
-					assert(i<3);
+					ASSERT(i<3);
 					V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[2])
 					if (ordercon[0][3]==-1) {
 						*Number = 3;
@@ -9213,7 +9536,7 @@ static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT Nod
 					else {
 						i++;
 						if (ordercon[0][i]==1) i++;
-						assert(i<4);
+						ASSERT(i<4);
 						V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[3])
 						*Number = 4;
 						DefinePolygon (Poly, *Number);
@@ -9237,16 +9560,14 @@ static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT Nod
 					}
 					return (0);					
 				default:
-					assert(0);
-					return (1);
+					RETURN(1);
 			}
 		case (2):
 			switch (count2)
 			{
 				case (0):
 					if (ordercon[0][3]!=-1 || ordercon[1][3]!=-1) {
-						assert(0);
-						return(1);
+						RETURN(1);
 					}
 					else 
 						V3_COPY(x[2], Poly[0])
@@ -9349,13 +9670,12 @@ static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT Nod
 						V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
 						j++;
 					}
-					assert(j>3 && j<6);
+					ASSERT(j>3 && j<6);
 					*Number = j;
 					if (*Number>3) DefinePolygon (Poly, *Number);
 					return (0);				
 				default:
-					assert(0);
-					return (1);
+					RETURN(1);
 				break;
 			}
 		case (3):
@@ -9413,8 +9733,7 @@ static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT Nod
 					if (*Number>3) DefinePolygon (Poly, *Number);
 					return (0);
 				default:
-					assert(0);
-					return (1);
+					RETURN(1);
 			}
 		case (4):
 			switch (count2)
@@ -9439,18 +9758,78 @@ static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT Nod
 					}
 					return (0);				
 				default:
-					assert(0);
-					return (1);
+					RETURN(1);
 			}
 		case (5):
 			return(0);
 		default:
-			assert(0);
-			return(1);
+			RETURN(1);
 	}
 	
-	assert(0);
-	return (1);
+	RETURN(1);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  GetPolyElemISCutPlanePRI										*/
+/*																			*/
+/* Purpose:   get polygon being the intersection of a prism and the	    	*/
+/*			  cut plane 													*/
+/*																			*/
+/* Input :	  all you need													*/
+/*																			*/
+/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/*																			*/
+/* Return:	  INT 0: ok 													*/
+/*			  INT 1: an error occurred										*/
+/*																			*/
+/****************************************************************************/
+
+static INT GetPolyElemISCutPlanePRI (COORD **CornerDC, COORD *CutZCoord, INT NodeOrder, COORD_VECTOR *Poly, INT *Number)
+{
+	INT i, j, k, count1, count2, count3, order[8], ordercon[8][4];
+	COORD *x[MAX_CORNERS_OF_ELEM], Z[MAX_CORNERS_OF_ELEM];
+	
+	/* get corners of the element side */
+	count1 = 0;
+	count2 = 0;
+	CornerIndexPRI (NodeOrder, order, ordercon);
+	for (i=0; i<6; i++) 
+	{
+		j = order[i];
+		x[i] = CornerDC[j]; 
+		Z[i] = CutZCoord[j];
+		if (Z[i] > SMALL_C)
+			count1++;
+		if (Z[i] < -SMALL_C)
+			count2++;
+	}
+	
+	/* build the polygon */
+	count3 = 6 - count1 - count2;
+	*Number = count3;
+	for (i=0; i < *Number; i++)
+		V3_COPY(x[count1+i], Poly[i]);
+	if (*Number == 4)
+		DefinePolygon (Poly, *Number);
+	if (*Number > 2)
+		return(0);
+	if ((count1 == 0) || (count2 == 0))
+		if (count3 < 3) {
+			*Number = 0;
+			return(0);
+		}
+	for (k=0; k<count1; k++) 
+		for (i=0 ; i<4; i++) {
+			if (ordercon[k][i] < count1+count3) continue;
+			j = ordercon[k][i];
+			V3_LINCOMB(Z[k]/(Z[k]-Z[j]),x[j],-Z[j]/(Z[k]-Z[j]),x[k],Poly[*Number]);
+			(*Number)++;
+		}
+	if (*Number > 3) DefinePolygon (Poly, *Number);
+	if (*Number < 3) *Number = 0;
+
+	return (0);
 }
 
 /****************************************************************************/
@@ -9462,8 +9841,8 @@ static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT Nod
 /*																			*/
 /* Input :	  all you need													*/
 /*																			*/
-/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/																		
-/*																			*/																		
+/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/*																			*/
 /* Return:	  INT 0: ok 													*/
 /*			  INT 1: an error occurred										*/
 /*																			*/
@@ -9500,7 +9879,7 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 				case (1):
 				case (2):
 				case (3):
-					return (1);
+					RETURN(1);
 				case (4):
 					for (i=0; i<4; ++i)
 						V3_COPY(x[i], Poly[i])
@@ -9508,7 +9887,7 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 					DefinePolygon (Poly, *Number);
 					return (0);
 				case (5):
-					return (1);					
+					RETURN(1);					
 				case (6):
 				case (7):
 				case (8):
@@ -9521,7 +9900,7 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 				case (1):
 				case (2):
 				case (3):
-					return (1);
+					RETURN(1);
 				case (4):
 					V3_COPY(x[1], Poly[0])
 					V3_COPY(x[2], Poly[1])
@@ -9553,7 +9932,7 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 					*Number = 3;
 					return (0);
 				default:
-					return (1);
+					RETURN(1);
 				break;
 			}
 		case (2):
@@ -9561,7 +9940,7 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 			{
 				case (0):
 				case (1):
-					return (1);
+					RETURN(1);
 				case (2):
 					V3_COPY(x[2],Poly[0])
 					V3_COPY(x[3],Poly[1])
@@ -9633,12 +10012,12 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 						++j;
 						V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
 					}
-					assert(j==3);
+					ASSERT(j==3);
 					*Number = 4;
 					DefinePolygon (Poly, *Number);
 					return (0);				
 				default:
-					return (1);
+					RETURN(1);
 				break;
 			}
 		case (3):
@@ -9647,7 +10026,7 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 				case (0):
 				case (1):
 				case (2):
-					return (1);
+					RETURN(1);
 				case (3):
 				case (4):
 				case (5):
@@ -9667,12 +10046,12 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 						++j;
 						V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
 					}
-					assert(j==4);						
+					ASSERT(j==4);						
 					*Number = 5;
 					DefinePolygon (Poly, *Number);
 					return (0);
 				default:
-					return (1);
+					RETURN(1);
 			}
 		case (4):
 			switch (count2)
@@ -9792,7 +10171,7 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 					DefinePolygon (Poly, *Number);
 					return (0);
 				default:
-					return (1);
+					RETURN(1);
 			}
 		case (5):
 			switch (count2)
@@ -9847,7 +10226,7 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 					if (*Number>3) DefinePolygon (Poly, *Number);
 					return (0);
 				default:
-					return (1);
+					RETURN(1);
 			}
 		case (6):
 			switch (count2)
@@ -9881,7 +10260,7 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 					if (*Number>3) DefinePolygon (Poly, *Number);
 					return (0);										
 				default:
-					return (1);
+					RETURN(1);
 			}
 		case (7):
 			switch (count2)
@@ -9898,18 +10277,18 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 					if (*Number>3) DefinePolygon (Poly, *Number);
 					return (0);														
 				default:
-					return (1);
+					RETURN(1);
 			}
 		case (8):
 			return (0);
 	}
 	
-	return (1);
+	RETURN(1);
 }
 
 /****************************************************************************/
 /*
-   EW_ElementEval3D - Evaluate geometry of TetraHedron	
+   EW_ElementEval3D - Evaluate geometry of Tetrahedron	
 
    SYNOPSIS:
    static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO);
@@ -9919,7 +10298,7 @@ static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT Nod
 .  theDO - 
 
    DESCRIPTION:
-   This function evaluates geometry of TetraHedron.
+   This function evaluates geometry of Tetrahedron.
 
    RETURN VALUE:
    INT
@@ -10114,19 +10493,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		}	
 		
 		/* get node order */
-		switch (TAG(theElement)) {
-          case (TETRAHEDRON):
-            NodeOrder = NORDER(theElement);
-		    break;
-          case (PYRAMID):
-            NodeOrder = theElement->py.property;
-            break;
-          case (HEXAHEDRON):
-            NodeOrder = theElement->he.property;
-            break;
-          default:
-            return(1);
-        }
+		NodeOrder = NODE_ORDER(theElement);
         
 		/* plot that parts of the viewable sides of the element lying behind cut plane */
 		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
@@ -10143,12 +10510,16 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
                 if (GetPolyElemSideISHalfSpacePYR (theElement,x,z,NodeOrder,i,Polygon,&n))
                   return(1);
                 break;
+              case (PRISM):
+                if (GetPolyElemSideISHalfSpacePRI (theElement,x,z,NodeOrder,i,Polygon,&n))
+                  return(1);
+                break;
               case (HEXAHEDRON):
                 if (GetPolyElemSideISHalfSpaceHEX (theElement,x,z,NodeOrder,i,Polygon,&n))
                   return(1);
                 break;
               default:
-                return(1);
+                RETURN(1);
             }
             
 			if (n<=2) continue;
@@ -10238,12 +10609,16 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
                 if (GetPolyElemISCutPlanePYR(x,z,NodeOrder,Polygon,&n))
                   return(1);
                 break;
+              case (PRISM):
+                if (GetPolyElemISCutPlanePRI(x,z,NodeOrder,Polygon,&n))
+                  return(1);
+                break;
               case (HEXAHEDRON):
                 if (GetPolyElemISCutPlaneHEX(x,z,NodeOrder,Polygon,&n))
                   return(1);
                 break;
               default:
-                return(1);
+                RETURN(1);
             }
             
 			/* store on drawing object */
@@ -10382,19 +10757,8 @@ static INT EW_ECutBnd3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		}
 		
 		/* get node order */
-		switch (TAG(theElement)) {
-          case (TETRAHEDRON):
-            NodeOrder = NORDER(theElement);
-		    break;
-          case (PYRAMID):
-		    NodeOrder = theElement->py.property;
-            break;
-          case (HEXAHEDRON):
-		    NodeOrder = theElement->he.property;
-            break;
-          default:
-            return(1);
-        }
+		NodeOrder = NODE_ORDER(theElement);
+
         /* plot boundary side intersection with cut-plane */
 		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 		{
@@ -10410,12 +10774,16 @@ static INT EW_ECutBnd3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
                 if (GetLineElemSideISCutPlaneHEX(theElement,x,z,NodeOrder,i,Line,&n))
                   return (1);
                 break;
+              case (PRISM):
+                if (GetLineElemSideISCutPlaneHEX(theElement,x,z,NodeOrder,i,Line,&n))
+                  return (1);
+                break;
               case (HEXAHEDRON):
                 if (GetLineElemSideISCutPlaneHEX(theElement,x,z,NodeOrder,i,Line,&n))
                   return (1);
                 break;
 			  default:
-                return(1);
+                RETURN(1);
             }
             if (n<2) continue;
 			
@@ -11333,7 +11701,9 @@ static INT OrderNodes (MULTIGRID *theMG, DOUBLE ShrinkFactor)
 					SETCUTMODE(theElement,CM_INTERSECT);
 			}
 			
-			if (TAG(theElement)==HEXAHEDRON || TAG(theElement)==PYRAMID)
+			if (TAG(theElement)==HEXAHEDRON || 
+				TAG(theElement)==PRISM || 
+				TAG(theElement)==PYRAMID)
 			{
 				/* Sort nodes: z[order[0]] >= z[order[1]] >= ... z[order[7]] */
 				for (i=0; i<CORNERS_OF_ELEM(theElement); ++i)
@@ -11356,19 +11726,15 @@ static INT OrderNodes (MULTIGRID *theMG, DOUBLE ShrinkFactor)
 				}
 				
 				/* set node order */
-				switch (TAG(theElement)) {
-					case (PYRAMID):
-						theElement->py.property = 0; break;
-					case (HEXAHEDRON):
-						theElement->he.property = 0; break;
-					default: return(1);
+				if (TAG(theElement) != TETRAHEDRON)
+				{
+					SET_NODE_ORDER(theElement,0);
+					for (i=0; i<CORNERS_OF_ELEM(theElement); ++i)
+						SET_NODE_ORDER(theElement,
+									   SETBITS(NODE_ORDER(theElement),
+											   3*i+2,order[i])); 
 				}
-				for (i=0; i<CORNERS_OF_ELEM(theElement); ++i)
-					switch (TAG(theElement)) {
-						case(PYRAMID): theElement->py.property = SETBITS(theElement->py.property,3*i+2,order[i]); break;
-						case(HEXAHEDRON): theElement->he.property = SETBITS(theElement->he.property,3*i+2,order[i]); break;
-						default: return(1);
-					}
+
 				if (z[order[0]] < -SMALL_C)	
 					SETCUTMODE(theElement,CM_BEHIND);
 				else if (z[order[CORNERS_OF_ELEM(theElement)-1]] > SMALL_C)
@@ -11379,8 +11745,6 @@ static INT OrderNodes (MULTIGRID *theMG, DOUBLE ShrinkFactor)
 			}
 		}
 	}
-	/* store the theCut to which nodes are ordered */
-	/*...*/
 
 	return(0);
 }
@@ -12488,20 +12852,8 @@ static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	DO_2c(theDO) = DO_NO_INST;
 	
 	/* get node order */
-	switch (TAG(theElement)) {
-      case (TETRAHEDRON):
-        NodeOrder = NORDER(theElement);
-        break;
-      case (PYRAMID):
-        NodeOrder = theElement->py.property;
-        break;
-      case (HEXAHEDRON):
-        NodeOrder = theElement->he.property;
-        break;
-      default:
-        return(1);
-    }
-		
+	NodeOrder = NODE_ORDER(theElement);
+
 	/* get coordinates of corners of the element and their z coordinates in cut system */
 	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
 	{
@@ -12519,12 +12871,16 @@ static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
         if (GetPolyElemISCutPlanePYR(x,z,NodeOrder,Poly,&n))
           return(1);
         break;
+      case (PRISM):
+        if (GetPolyElemISCutPlanePRI(x,z,NodeOrder,Poly,&n))
+          return(1);
+        break;
       case (HEXAHEDRON):
         if (GetPolyElemISCutPlaneHEX(x,z,NodeOrder,Poly,&n))
           return(1);
         break;
       default:
-        return(1);
+        RETURN(1);
     }
     
 	if (n<=2) return (0);
@@ -12675,20 +13031,8 @@ static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	DOUBLE_VECTOR Arrow;
 	
 	/* get node order */
-	switch (TAG(theElement)) {
-      case (TETRAHEDRON):
-        NodeOrder = NORDER(theElement);
-        break;
-      case (PYRAMID):
-        NodeOrder = theElement->py.property;
-        break;
-      case (HEXAHEDRON):
-        NodeOrder = theElement->he.property;
-        break;
-      default:
-        return(1);
-    }
-		
+	NodeOrder = NODE_ORDER(theElement);
+     		
 	/* get coordinates of corners of the element and their z coordinates in cut system */
 	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
 	{
@@ -12706,12 +13050,16 @@ static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
         if (GetPolyElemISCutPlanePYR(x,z,NodeOrder,Poly,&n))
           return(1);
         break;
+      case (PRISM):
+        if (GetPolyElemISCutPlanePRI(x,z,NodeOrder,Poly,&n))
+          return(1);
+        break;
       case (HEXAHEDRON):
         if (GetPolyElemISCutPlaneHEX(x,z,NodeOrder,Poly,&n))
           return(1);
         break;
       default:
-        return(1);
+        RETURN(1);
     }
 
 	if (n<=2)
