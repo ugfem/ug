@@ -2573,7 +2573,15 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
     strcat(filename,buf);
     if (Read_OpenMGFile (filename))                                                                         {nparfiles = -1;}
     else
-    if (Read_MG_General(&mg_general))                                                               {CloseMGFile (); nparfiles = -1;}
+    if (Read_MG_General(&mg_general))
+    {
+      CloseMGFile ();
+      nparfiles = -1;
+#ifdef ModelP
+      assert(0);
+#endif
+    }
+
     nparfiles = mg_general.nparfiles;
     if (mg_general.nparfiles>procs)                                                                         {UserWrite("ERROR: too many processors needed\n");CloseMGFile (); nparfiles = -1;}
     assert(mg_general.me == me);
@@ -2583,7 +2591,14 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   {
     if (Read_OpenMGFile (filename))                                                                         {nparfiles = -1;}
     else
-    if (Read_MG_General(&mg_general))                                                               {CloseMGFile (); nparfiles = -1;}
+    if (Read_MG_General(&mg_general))
+    {
+      CloseMGFile ();
+      nparfiles = -1;
+#ifdef ModelP
+      assert(0);
+#endif
+    }
   }
   else
     nparfiles = -1;

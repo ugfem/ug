@@ -300,7 +300,7 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
   mg_general->VectorTypes = intList[7];
   mg_general->me                  = intList[8];
   mg_general->nparfiles   = intList[9];
-  if (intList[10]!=MGIO_DEBUG) assert(0);                /* check debug-level of file: 0: no debug information */
+  if (intList[10]!=MGIO_DEBUG) return (1);                /* check debug-level of file: 0: no debug information */
 
   /* init global parameters */
   nparfiles                               = mg_general->nparfiles;
