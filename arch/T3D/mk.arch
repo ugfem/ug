@@ -15,15 +15,14 @@
 ARCH_TYPE     = __T3D__
 
 ARCH_MAKE     = make
-ARCH_CC       = cc
-ARCH_LINK     = /opt/mpp/bin/mppld
+ARCH_CC       = cc -Tcray-t3d
+ARCH_LINK     = /mpp/bin/mppld
 ARCH_F77      = cf77
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = true
 
-ARCH_LIBS     = -L/opt/mpp/lib -lc -lm -ll
-
+ARCH_LIBS     = -L/opt/ctl/craylibs_m/2.0.3.0 -lc -lm -lsma -lu -lsci -lf
 ARCH_CFLAGS   = -I /usr/include/mpp -g   # -g 
 #ARCH_CFLAGS  = -hinline3,scalar3
 #ARCH_CFLAGS  = -g
