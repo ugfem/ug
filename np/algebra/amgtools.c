@@ -46,7 +46,10 @@
 #include "np.h"
 #include "ugm.h"
 #include "fifo.h"
+#ifdef ModelP
+#include "pargm.h"
 #include "parallel.h"
+#endif
 
 #include "amgtools.h"
 
