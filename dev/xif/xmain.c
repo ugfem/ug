@@ -197,7 +197,7 @@ static Bool callback (Display *d, XEvent *report, char *arg)
  */
 /****************************************************************************/
 
-INT GetNextUGEvent_SIF (EVENT *theEvent, INT EventMask)
+INT GetNextUGEvent_CUI (EVENT *theEvent, INT EventMask)
 {
   char *s;
   int cmdKey, onlyCmdKey;
@@ -217,7 +217,7 @@ INT GetNextUGEvent_SIF (EVENT *theEvent, INT EventMask)
   return(0);
 }
 
-INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
+INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask)
 {
   XEvent report;
   XWindowAttributes xwa;
@@ -512,6 +512,13 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
   }
         #endif
 
+  return(0);
+}
+
+INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
+{
+  if (CUI_ON) GetNextUGEvent_CUI (theEvent,EventMask);
+  else GetNextUGEvent_XUI (theEvent,EventMask);
   return(0);
 }
 
