@@ -4761,9 +4761,9 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
         l1 = LGM_BNDP_LINE(theBndP1, i);
         l2 = LGM_BNDP_LINE(theBndP2, j);
         if((    (ABS(LGM_BNDP_LINE_RIGHT(theBndP1, i) - localp2)<SMALL)
-                &&  (ABS(LGM_BNDP_LINE_LEFT (theBndP2, j) - localp1)<SMALL) )
+                ||  (ABS(LGM_BNDP_LINE_LEFT (theBndP2, j) - localp1)<SMALL) )
            || (    (ABS(LGM_BNDP_LINE_LEFT (theBndP1, i) - localp2)<SMALL)
-                   &&  (ABS(LGM_BNDP_LINE_RIGHT(theBndP2, j) - localp1)<SMALL) ))
+                   ||  (ABS(LGM_BNDP_LINE_RIGHT(theBndP2, j) - localp1)<SMALL) ))
         {
           theLine = LGM_BNDP_LINE(theBndP1, i);
           found++;
@@ -4809,15 +4809,11 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
     dw = LGM_BNDP_LINE_RIGHT(theBndP2, jold);
     if( (local1<newlocal) && (newlocal<local2) )
     {
-      LGM_BNDP_LINE_RIGHT(theBndP1, iold) = newlocal;
-      LGM_BNDP_LINE_LEFT (theBndP2, jold) = newlocal;
       LGM_BNDP_LINE_LEFT(theBndP, 0) = local1;
       LGM_BNDP_LINE_RIGHT(theBndP, 0) = local2;
     }
     if( (local1>newlocal) && (newlocal>local2) )
     {
-      LGM_BNDP_LINE_RIGHT(theBndP2, jold) = newlocal;
-      LGM_BNDP_LINE_LEFT (theBndP1, iold) = newlocal;
       LGM_BNDP_LINE_LEFT(theBndP, 0) = local2;
       LGM_BNDP_LINE_RIGHT(theBndP, 0) = local1;
     }
