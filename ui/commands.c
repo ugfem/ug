@@ -385,6 +385,8 @@ static INT ExitUgCommand (INT argc, char **argv)
   ExitUg();
 
   exit(0);
+
+  return 0;
 }
 
 /****************************************************************************/
@@ -1668,14 +1670,14 @@ FILE *GetProtocolFile (void)
    DESCRIPTION:
    This command opens a log file where all shell output is saved.
 
-   'logon <logfilename> [$p] [$e] [$a] [$f] [$r]'
+   'logon <logfilename> [$p] [$e] [$a] [$f] [$r [0|1]]'
 
    .   <filename>  - name of logfile
    .   $p			- write log to open protocol file
    .   $e			- extend filename with numbers of processors (parallel only)
    .   $a			- extend filename with processor id (parallel only)
    .   $f			- force (close open logfile iff)
-   .   $r			- rename existing logfile using current date (<oldname> --> <oldname>YYMMDDhhmm)
+   .   $r~[0|1]	- 0: replace (default), 1: rename existing log file (using modification date)
 
    KEYWORDS:
    protocol, file, open, output
@@ -1786,7 +1788,9 @@ static INT LogOnCommand (INT argc, char **argv)
    DESCRIPTION:
    This command closes the logfile.
 
-   'logoff'
+   'logoff $p'
+
+   .  $p - logging is detached from open protocol file
 
    KEYWORDS:
    protocol, file, close, output
@@ -2317,7 +2321,7 @@ static INT OpenCommand (INT argc, char **argv)
    DESCRIPTION:
    This command writes the current multigrid structure in a file.
 
-   'save [<name>] [$t <type>] [$c <comment>]'
+   'save [<name>] [$t <type>] [$r [0|1]] [$c <comment>]'
 
    .  <name>                  - name to save with (default is the mgname)
    .n								if name is ending in .scr a script file is saved which
@@ -2325,6 +2329,7 @@ static INT OpenCommand (INT argc, char **argv)
    .  $t~<type>			   - type can be asc (default> or bin. asc and bin can be opened with
                                                                 the open command
    .  $c~<comment>            - optionally specify a comment string
+   .  $r~[0|1]                - 0: replace (default), 1: rename existing mg file (using modification date)
 
    KEYWORDS:
    multigrid, save, write, data, file, output
@@ -2442,13 +2447,14 @@ static INT SaveDomainCommand (INT argc, char **argv)
    This function saves multigrid data from the current multigrid in a file.
    The multigrid has to be saved before.
 
-   'savedata <filename> [$t <type>] [$n <number>] [$T <time>] [$a <vd name> [$b <vd name>[$c <vd name>[$d <vd name>[$e <vd name>]]]]]'
+   'savedata <filename> [$t <type>] [$n <number>] [$T <time>] [$r [0|1]] [$a <vd name> [$b <vd name>[$c <vd name>[$d <vd name>[$e <vd name>]]]]]'
 
    .  <filename>		- the filename will be composed to <filename>.ug.data.<type>
    .  $t~<type>		- type can be asc (default) or bin
    .  $n~<number>		- picture number for movie
    .  $T~<time>		- assign this time level
    .  $a~<vd name>...	- read data from this vec data descriptors
+   .  $r~[0|1]			- 0: replace (default), 1: rename existing data file (using modification date)
 
    KEYWORDS:
    multigrid, save, write, data, file, output
@@ -2592,11 +2598,14 @@ static INT SaveDataCommand (INT argc, char **argv)
    DESCRIPTION:
    This function loads multigrid data from a file.
 
-   'loaddata <filename> [$t <type>] [$n <number>] [$T <time>] [$a <vd name> [$b <vd name>[$c <vd name>[$d <vd name>[$e <vd name>]]]]]'
+   'loaddata <filename> [$t <type>] [$n <number>] [$f [$h <heapsize>]] [$a <vd name> [$b <vd name>[$c <vd name>[$d <vd name>[$e <vd name>]]]]]'
 
    .  <filename>		- the filename will be composed to <filename>.ug.data.<type>
    .  $t~<type>		- type can be asc (default) or bin
    .  $n~<number>		- picture number of movie
+   .  $f				- open or reopen multigrid corresponding to data file
+   .  $h~<heapsize>    - the heapsize to be allocated
+                                                                        (overrides saved one)
    .  $a~<vd name>...	- save data to this vec data descriptors
 
    KEYWORDS:
@@ -3480,6 +3489,61 @@ static INT RuleListCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
+static INT PrintValueCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  VECDATA_DESC *theVD;
+  double val;
+  char name[NAMESIZE];
+  char value[VALUELEN];
+  int found = FALSE;
+  int idx;
+  int n;
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"printvalue","no open multigrid");
+    return (CMDERRORCODE);
+  }
+  if (sscanf(argv[0],"printvalue %s %d",name,&n)!=2)
+  {
+    PrintErrorMessage('E',"printvalue","could not scan vec desc and selection number");
+    return (PARAMERRORCODE);
+  }
+  theVD = GetVecDataDescByName(theMG,name);
+  if (theVD==NULL)
+  {
+    PrintErrorMessageF('E',"printvalue","vec desc '%s' not found",name);
+    return (PARAMERRORCODE);
+  }
+
+  if ((SELECTIONMODE(theMG)==vectorSelection) && (SELECTIONSIZE(theMG)>n))
+  {
+    VECTOR *vec = (VECTOR *)SELECTIONOBJECT(theMG,n);
+    if (VD_ISDEF_IN_TYPE(theVD,VTYPE(vec)))
+    {
+      val = VVALUE(vec,VD_CMP_OF_TYPE(theVD,VTYPE(vec),0));
+      idx = VINDEX(vec);
+      found = TRUE;
+    }
+  }
+  if (found)
+    sprintf(buffer,"%.10e",val);
+  else
+    sprintf(buffer,"---");
+
+  UserWriteF("value 0 of %s in vec %d = %s\n",name,idx,buffer);
+  if (ReadArgvChar("s",value,argc,argv)==0)
+    if (SetStringVar(value,buffer))
+    {
+      PrintErrorMessageF('E',"printvalue","coul not write onto string var '%s'",value);
+      return (PARAMERRORCODE);
+    }
+
+  return OKCODE;
+}
+
 /****************************************************************************/
 /*D
    vmlist - list information on specified vectors and matrices
@@ -3554,6 +3618,23 @@ static INT VMListCommand (INT argc, char **argv)
       else if (ReadArgvOption("I",argc,argv))
         PrintIMatrix(theGrid,theVD,vclass,vnclass);
             #endif
+      else if (ReadArgvOption("s",argc,argv))
+      {
+        /* get selection list */
+        if ((SELECTIONMODE(theMG)==vectorSelection) && (SELECTIONSIZE(theMG)>=1))
+        {
+          VECTOR **vlist = malloc((SELECTIONSIZE(theMG)+1)*sizeof(VECTOR*));
+          if (vlist!=NULL)
+          {
+            int i;
+            for (i=0; i<SELECTIONSIZE(theMG); i++)
+              vlist[i] = (VECTOR *)SELECTIONOBJECT(theMG,i);
+            vlist[SELECTIONSIZE(theMG)] = NULL;
+            PrintVectorListX(vlist,theVD,vclass,vnclass,UserWriteF);
+            free(vlist);
+          }
+        }
+      }
       else
         PrintVector(theGrid,theVD,vclass,vnclass);
       return(OKCODE);
@@ -3993,8 +4074,6 @@ static INT InsertBoundaryNodeCommand (INT argc, char **argv)
   if (me!=master) return (OKCODE);
         #endif
 
-  NO_OPTION_CHECK(argc,argv);
-
   theMG = currMG;
   if (theMG==NULL)
   {
@@ -4019,6 +4098,137 @@ static INT InsertBoundaryNodeCommand (INT argc, char **argv)
   InvalidateUgWindowsOfMG(theMG);
 
   return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   gn - insertion of a boundary/inner node and vertex from global coordinates
+
+   DESCRIPTION:
+   This command inserts a boundary node if a position can be found matching the
+   global point with prescribed or default accuracy. Otherwise an inner node
+   is inserted at the global position.
+   CAUTION: some domain module maybe does not support insertion of boundary
+   nodes from global coordinates!
+
+   'gn <x> <y> [<z>] [$r <res>]'
+
+   .  <x>~<y>~[<z>]		- global coordinates
+   .  $r~<res>				- resolution
+
+   KEYWORDS:
+   multigrid, insert, create, node, edit
+   D*/
+/****************************************************************************/
+
+static INT InsertGlobalNodeCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  BNDP *bndp;
+  int i;
+  int ropt = FALSE;
+  int err = OKCODE;
+  DOUBLE resolution;
+  INT n = 2;
+  INT my_argc = 0;
+  char **my_argv;
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"gn","no open multigrid");
+    return (CMDERRORCODE);
+  }
+
+  /* assemble command line for bn */
+  if (ReadArgvDOUBLE("r",&resolution,argc,argv)==0)
+  {
+    ropt = TRUE;
+    n++;
+  }
+  my_argv = (char**)malloc(n*sizeof(char*));
+  if (my_argv==NULL)
+    return CMDERRORCODE;
+  my_argv[my_argc] = StrDup(argv[0]);
+  if (my_argv[my_argc]==NULL)
+  {
+    err = CMDERRORCODE;
+    goto Exit_gn;
+  }
+  my_argv[my_argc][0] = 'b';                    /* gn --> bn */
+  my_argc++;
+
+  my_argv[my_argc] = StrDup("g");
+  if (my_argv[my_argc]==NULL)
+  {
+    err = CMDERRORCODE;
+    goto Exit_gn;
+  }
+  my_argc++;
+
+  if (ropt)
+  {
+    char r_opt[64];
+    sprintf(r_opt,"$r %g",resolution);
+    my_argv[my_argc] = StrDup(r_opt);
+    if (my_argv[my_argc]==NULL)
+    {
+      err = CMDERRORCODE;
+      goto Exit_gn;
+    }
+    my_argc++;
+  }
+  ASSERT(n==my_argc);
+
+  /* try inserting a boundary node */
+  bndp = BVP_InsertBndP (MGHEAP(theMG),MG_BVP(theMG),my_argc,my_argv);
+  if (bndp == NULL)
+  {
+    float x[DIM_MAX];
+    DOUBLE xc[DIM];
+
+    /* failed: try inserting an inner node */
+    if (sscanf(argv[0],"gn %f %f %f",x,x+1,x+2)!=DIM)
+    {
+      PrintErrorMessageF('E',"gn","specify %d global coordinates",(int)DIM);
+      err = PARAMERRORCODE;
+      goto Exit_gn;
+    }
+    for (i=0; i<DIM; i++)
+      xc[i] = x[i];
+
+    /* NB: toplevel=0 is checked by InsertInnerNode() */
+    if (InsertInnerNode(GRID_ON_LEVEL(theMG,0),xc)==NULL)
+    {
+      PrintErrorMessage('E',"gn","inserting an inner node failed");
+      err = CMDERRORCODE;
+      goto Exit_gn;
+    }
+    UserWrite("  ### gn: inserted a in\n");
+  }
+  else if (InsertBoundaryNode(GRID_ON_LEVEL(theMG,0),bndp)==NULL)
+  {
+    PrintErrorMessage('E',"gn","inserting a boundary node failed");
+    err =  CMDERRORCODE;
+    goto Exit_gn;
+  }
+  else
+    UserWrite("  ### gn: inserted a bn\n");
+
+  InvalidatePicturesOfMG(theMG);
+  InvalidateUgWindowsOfMG(theMG);
+
+Exit_gn:
+  for (i=0; i<my_argc; i++)
+    if (my_argv[i]!=NULL)
+      free(my_argv[i]);
+  free(my_argv);
+
+  return err;
 }
 
 /****************************************************************************/
@@ -4316,6 +4526,16 @@ static INT InsertElementCommand (INT argc, char **argv)
           }
           theNodes[nNodes] = theNode;
         }
+      else
+      {
+        PrintErrorMessage('E',"ie","objects other than nodes are in the selection");
+        return (PARAMERRORCODE);
+      }
+      if (nNodes==0)
+      {
+        PrintErrorMessage('E',"ie","no nodes are in the selection");
+        return (PARAMERRORCODE);
+      }
       break;
 
     default :
@@ -6196,7 +6416,7 @@ static INT FindCommand (INT argc, char **argv)
       if (theNode==NULL)
       {
         PrintErrorMessage('W',"find","no node is matching");
-        return (OKCODE);
+        return (CMDERRORCODE);
       }
       isNode = TRUE;
       break;
@@ -6213,7 +6433,7 @@ static INT FindCommand (INT argc, char **argv)
       if (theVector==NULL)
       {
         PrintErrorMessage('W',"find","no vector is matching");
-        return (OKCODE);
+        return (CMDERRORCODE);
       }
       isVector = TRUE;
       break;
@@ -6223,7 +6443,7 @@ static INT FindCommand (INT argc, char **argv)
       if (theElement==NULL)
       {
         PrintErrorMessage('W',"find","no element is matching");
-        return (OKCODE);
+        return (CMDERRORCODE);
       }
       isElement = TRUE;
       break;
@@ -7477,6 +7697,7 @@ static INT ScreenSizeCommand (INT argc, char **argv)
    .  <dh>~<dv>              - the width and height resp. of the plotting region of the window
    .  $d~<output~device>     - specify the name of an output device (default: screen)
    .  $n~<window~name>       - optionally you can specify the window name
+   .  $r~[0|1]               - if not default device: 0: replace (default), 1: rename existing graphics file (using modification date)
 
    SEE ALSO:
    'closewindow', 'openpicture', 'closepicture'
@@ -7801,7 +8022,7 @@ static INT DrawTextCommand (INT argc, char **argv)
   theWin = GetCurrentUgWindow();
   if (theWin==NULL)
   {
-    PrintErrorMessage('E',"drawtext","there's no window draw text");
+    PrintErrorMessage('E',"drawtext","there's no window to draw text");
     return (CMDERRORCODE);
   }
 
@@ -7987,21 +8208,14 @@ static INT OpenPictureCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   openplacedpictures - open a new picture
+   openppic - open a new window with placed pictures
 
    DESCRIPTION:
-   This command opens a picture on a window
-   (these will be the current window and picture resp. then).
-   It calls the function 'CreatePicture'.
+   ???
 
-   'openpicture [$w <window name>] [$s <h> <v> <dh> <dv>] [$n <picture name>]'
+   'openppic ??? [$R [0|1]]'
 
-   .  $w~<window~name>       - open a picture on this window (default: current window)
-   .  $s~<h>~<v>~<dh>~<dv>   - specify the location and size in the 'standardRefSys' with
-                                                        the origin located in the lower left corner of the parent window
-   .n                           (default: picture size = parent window size)
-
-   .  $n~<picture~name>      - optionally you can specify the picture name
+   .  $R~[0|1]               - if not default device: 0: replace (default), 1: rename existing graphics file (using modification date)
 
    KEYWORDS:
    graphics, plot, window, picture, open, create
@@ -8056,7 +8270,7 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
       ropt=1;
       if (sscanf(argv[i],expandfmt(CONCAT3("r %",NAMELENSTR,"[a-zA-Z0-9_:]")),rarray)!=1)
       {
-        PrintErrorMessage('E',"openppic","specify an array name with q option");
+        PrintErrorMessage('E',"openppic","specify an array name with r option");
         return (PARAMERRORCODE);
       }
       break;
@@ -8082,12 +8296,12 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
     case 'd' :
       if (sscanf(argv[i],expandfmt(CONCAT3("d %",NAMELENSTR,"[a-zA-Z0-9_-]")),devname)!=1)
       {
-        PrintErrorMessage('E',"openwindow","specify device name with d option");
+        PrintErrorMessage('E',"openppic","specify device name with d option");
         return (PARAMERRORCODE);
       }
       if ((theOutDev=GetOutputDevice(devname))==NULL)
       {
-        PrintErrorMessageF('E',"openwindow","there is no device named '%s'",devname);
+        PrintErrorMessageF('E',"openppic","there is no device named '%s'",devname);
         return (PARAMERRORCODE);
       }
       break;
@@ -13353,6 +13567,7 @@ INT InitCommands ()
   if (CreateCommand("check",                      CheckCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("in",                         InsertInnerNodeCommand                  )==NULL) return (__LINE__);
   if (CreateCommand("bn",                         InsertBoundaryNodeCommand               )==NULL) return (__LINE__);
+  if (CreateCommand("gn",                         InsertGlobalNodeCommand                 )==NULL) return (__LINE__);
   if (CreateCommand("deln",                       DeleteNodeCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("move",                       MoveNodeCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("ie",                         InsertElementCommand                    )==NULL) return (__LINE__);
@@ -13370,6 +13585,7 @@ INT InitCommands ()
   if (CreateCommand("elist",                      EListCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("slist",                      SelectionListCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("rlist",                      RuleListCommand                                 )==NULL) return (__LINE__);
+  if (CreateCommand("printvalue",         PrintValueCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("vmlist",             VMListCommand                                   )==NULL) return (__LINE__);
   if (CreateCommand("convert",        ConvertCommand                  )==NULL) return(__LINE__);
   if (CreateCommand("quality",            QualityCommand                                  )==NULL) return (__LINE__);
