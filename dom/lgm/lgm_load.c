@@ -764,7 +764,8 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
       (LGM_BNDP_LINE_GLOBALLEFT((LGM_BNDP*)(theMesh->theBndPs[i]),j))[2] = global_cooordinate[2];
 
       /*right point*/
-      if( ((lgm_mesh_info.BndP_lcoord_right)[i])[j] == 12345677890.0 )
+      /*if( ((lgm_mesh_info.BndP_lcoord_right)[i])[j] == 12345677890.0 )*/
+      if( ((lgm_mesh_info.BndP_lcoord_right)[i])[j] > 1234567789.0 )
       {
         /*special case*/
         global_cooordinate[0] = MAXFLOAT;
