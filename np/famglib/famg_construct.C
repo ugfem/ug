@@ -998,6 +998,7 @@ int FAMGGraph::EliminateDirichletNodes(FAMGGrid *gridptr)
 			{
 				// vec has at least 1 Dirichlet component
 				assert(node->GetPaList()->GetNp()==0);	// node should have no parents because he can be eliminated directly (dirichlet node!)
+				assert(node->GetPaList()->GetNext()==NULL);	// ... and furthermore this should be the onlyiest elimination under consideration
 	            if(node->Eliminate(gridptr)) return 1;
     	        if(node->UpdateNeighborsFG(gridptr)) return 1; 
         	    // if(InsertHelplist()) return 1; // should be superflouos here because no nodes were put into the helplist

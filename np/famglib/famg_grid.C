@@ -977,6 +977,9 @@ int FAMGGrid::ConstructTransfer()
 #ifdef ModelP
 	// in parallel now only the nodes in the border of the core partition are in the list
 	
+	// communicate the results of the previous EliminateDirichletNodes
+	CommunicateNodeStatus();
+	
 	VECTOR *vec;
 	MATRIX *mat;
 	FAMGNode *nodei;
