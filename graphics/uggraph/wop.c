@@ -7211,7 +7211,11 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 			DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
 			DO_2c(theDO) = coe; DO_inc(theDO) ;
 			if (PROP(theElement)<1 || PROP(theElement)>EE2D_NProperty) return (1);
+			#ifndef ModelP
 			DO_2l(theDO) = EE2D_PropertyColor[(int)PROP(theElement)];
+			#else
+			DO_2l(theDO) = EE2D_PropertyColor[me+1];
+			#endif
 			DO_inc(theDO);
 			DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
 			for (j=0; j<coe; j++)
@@ -11081,7 +11085,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	INT i, j, NodeOrder, n;
 	DOUBLE *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
 	DOUBLE_VECTOR Polygon[MAX_POINTS_OF_POLY];
-	DOUBLE_VECTOR sx[MAX_CORNERS_OF_ELEM], MidPoint;
+	DOUBLE_VECTOR sx[MAX_CORNERS_OF_ELEM], MidPoint, help;
 	INT Viewable[MAX_SIDES_OF_ELEM];
 	
 	DO_2c(theDO) = DO_NO_INST;
@@ -11148,7 +11152,11 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				  DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO) 
 				  if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
 					return (1);
+				  #ifndef ModelP
 				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+				  #else
+				  DO_2l(theDO) = EE3D_PropertyColor[PARTITION(theElement)+1]; 
+				  #endif
 				  DO_inc(theDO);
 				}			  
 				else if (EE3D_NoColor[COLOR_LOWER_LEVEL])
@@ -11163,11 +11171,21 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 					DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
 				}
 				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+				#ifdef ModelP
+				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
+				{
+					V3_LINCOMB(EE3D_PartShrinkFactor,x[CORNER_OF_SIDE(theElement,i,j)],
+						1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
+					V3_COPY(help,DO_2Cp(theDO));
+					DO_inc_n(theDO,3);
+				}
+				#else
 				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 				{
 					V3_COPY(x[CORNER_OF_SIDE(theElement,i,j)],DO_2Cp(theDO));
 					DO_inc_n(theDO,3);
 				}
+				#endif
 			}
 		else
 			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
@@ -11179,7 +11197,11 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				  DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO) 
 				  if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
 					return (1);
+				  #ifndef ModelP
 				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+				  #else
+				  DO_2l(theDO) = EE3D_PropertyColor[PARTITION(theElement)+1]; 
+				  #endif
 				  DO_inc(theDO);
 				}			  
 				else if (EE3D_NoColor[ECLASS(theElement)])
@@ -11194,11 +11216,21 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 					DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
 				}
 				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
+				#ifdef ModelP
+				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
+				{
+					V3_LINCOMB(EE3D_PartShrinkFactor,x[CORNER_OF_SIDE(theElement,i,j)],
+						1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
+					V3_COPY(help,DO_2Cp(theDO));
+					DO_inc_n(theDO,3);
+				}
+				#else
 				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 				{
 					V3_COPY(x[CORNER_OF_SIDE(theElement,i,j)],DO_2Cp(theDO));
 					DO_inc_n(theDO,3);
 				}
+				#endif
 				
 				/* inverse if selected */
 				if (IsElementSelected(GElem_MG,theElement))
@@ -11306,7 +11338,11 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				  DO_2c(theDO) = n; DO_inc(theDO);
 				  if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
 					return (1);
+				  #ifndef ModelP
 				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+				  #else
+				  DO_2l(theDO) = EE3D_PropertyColor[PARTITION(theElement)+1]; 
+				  #endif
 				  DO_inc(theDO);
 				}			  
 				else if (EE3D_NoColor[COLOR_LOWER_LEVEL])
@@ -11335,7 +11371,11 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				  DO_2c(theDO) = n; DO_inc(theDO);
 				  if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
 					return (1);
+				  #ifndef ModelP
 				  DO_2l(theDO) = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+				  #else
+				  DO_2l(theDO) = EE3D_PropertyColor[PARTITION(theElement)+1]; 
+				  #endif
 				  DO_inc(theDO);
 				}			  
 				else if (EE3D_NoColor[ECLASS(theElement)])
@@ -12649,7 +12689,12 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 	EE3D_Property = 0;
 	if (theGpo->ElemColored==2)
 	{
+		#ifndef ModelP
 		EE3D_NProperty = MAX(1,TOPLEVEL(theMG));
+		#else
+		EE3D_NProperty = procs;
+		#endif
+
 		if (EE3D_NProperty>0 && EE3D_NProperty<EE_MAX_PROP)
 		{
 		    EE3D_Property = 1;
