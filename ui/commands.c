@@ -5294,12 +5294,9 @@ static INT OrderVectorsCommand (INT argc, char **argv)
   }
 
   if (dep==NULL)
-  {
-    PrintErrorMessage('E',"orderv","the d option is mandatory");
-    return (PARAMERRORCODE);
-  }
+    UserWrite("WARNING: no depency option specified\n");
 
-  if (dep_opt==NULL)
+  if (dep!=NULL && dep_opt==NULL)
   {
     PrintErrorMessage('E',"orderv","the o option is mandatory");
     return (PARAMERRORCODE);
