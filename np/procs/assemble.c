@@ -86,6 +86,26 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*D
+   assemble - ug offers several classes of assmbling 'num_proc's
+
+   DESCRIPTION:
+   The classes defined in ug are:~
+   .  NP_ASSEMBLE - type definition for assembling
+   .  NP_NL_ASSEMBLE - type definition for nonlinear assembling
+   .  NP_LOCAL_ASSEMBLE - type definition for local assembling
+   .  NP_T_ASSEMBLE - type definition for time dependent assembling
+
+   For realizations of assembling num_procs (which are defined in the problem
+   classes) try typing
+   .n     help assemble $k
+
+   SEE ALSO:
+   'num_proc', 'NP_ASSEMBLE', 'NP_NL_ASSEMBLE', 'NP_LOCAL_ASSEMBLE', 'NP_T_ASSEMBLE'
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
    NP_ASSEMBLE - type definition for assembling
 
    DESCRIPTION:
@@ -139,7 +159,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    .ve
 
    SEE ALSO:
-   num_proc
+   'num_proc', 'NP_NL_ASSEMBLE', 'NP_LOCAL_ASSEMBLE', 'NP_T_ASSEMBLE'
    D*/
 /****************************************************************************/
 
@@ -309,7 +329,7 @@ INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
    .ve
 
    SEE ALSO:
-   num_proc
+   'num_proc', 'NP_ASSEMBLE', 'NP_LOCAL_ASSEMBLE', 'NP_T_ASSEMBLE'
    D*/
 /****************************************************************************/
 
@@ -508,7 +528,7 @@ INT NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
    .ve
 
    SEE ALSO:
-   num_proc
+   'num_proc', 'NP_ASSEMBLE', 'NP_NL_ASSEMBLE', 'NP_T_ASSEMBLE'
    D*/
 /****************************************************************************/
 
@@ -717,7 +737,7 @@ INT NPLocalAssembleConstruct (NP_ASSEMBLE *np)
    .ve
 
    SEE ALSO:
-   num_proc
+   'num_proc', 'NP_ASSEMBLE', 'NP_NL_ASSEMBLE', 'NP_LOCAL_ASSEMBLE'
    D*/
 /****************************************************************************/
 
