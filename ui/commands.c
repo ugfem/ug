@@ -88,6 +88,7 @@
 /* graph module */
 #include "wpm.h"
 #include "wop.h"
+#include "graph.h"
 #include "connectuggrape.h"
 
 /* user interface module */
@@ -315,6 +316,9 @@ MULTIGRID *GetCurrentMultigrid (void)
 INT SetCurrentMultigrid (MULTIGRID *theMG)
 {
   MULTIGRID *mg;
+
+  if (ResetPrintingFormat())
+    REP_ERR_RETURN(CMDERRORCODE);
 
   mg = GetFirstMultigrid();
   if (mg==theMG)
@@ -1976,6 +1980,9 @@ static INT CloseCommand (INT argc, char **argv)
   PICTURE *thePic,*NextPic,*currPic;
   INT i,closeonlyfirst;
 
+  if (ResetPrintingFormat())
+    REP_ERR_RETURN(CMDERRORCODE);
+
   closeonlyfirst = TRUE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -2074,7 +2081,7 @@ static INT CloseCommand (INT argc, char **argv)
 static INT NewCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  char Multigrid[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE], lastchar;
+  char Multigrid[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE];
   MEM heapSize;
   INT i,bopt,fopt,hopt,IEopt;
 
@@ -2426,7 +2433,7 @@ static INT ReadSaveDataInput (MULTIGRID *theMG, INT argc, char **argv, char *VDS
   *theVD = NULL; *theEVal = NULL; *theEVec = NULL;
 
   /* read VecDesc */
-  *theVD = ReadArgvVecDesc(theMG,VDSym,argc,argv);
+  *theVD = ReadArgvVecDescX(theMG,VDSym,argc,argv,NO);
   if (*theVD!=NULL) return (1);
 
   /* get plot procedure */
@@ -2769,7 +2776,7 @@ static INT RenumberMGCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (RenumberMultiGrid(theMG,NULL,NULL,NULL,NULL,NULL,NULL,NULL)!=GM_OK)
+  if (RenumberMultiGrid(theMG,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0)!=GM_OK)
   {
     PrintErrorMessage('E',"renumber","renumbering of the mg failed");
     return (CMDERRORCODE);
@@ -2965,7 +2972,7 @@ static INT NListCommand (INT argc, char **argv)
   }
 
   /* check options */
-  idopt = 0;
+  idopt = LV_ID;
   dataopt = boundaryopt = neighbouropt = verboseopt = mode = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -2997,14 +3004,14 @@ static INT NListCommand (INT argc, char **argv)
 #ifdef ModelP
     case 'g' :
       mode = DO_ID;
-      idopt = 1;
+      idopt = LV_GID;
       res = sscanf(argv[i]," g %s",buff);
       fromN = toN = (DDD_GID) strtol(buff, NULL, 0);
       break;
 #endif
     case 'k' :
       mode = DO_ID;
-      idopt = 2;
+      idopt = LV_KEY;
       res = sscanf(argv[i]," k %s",buff);
       fromN = toN = (INT) strtol(buff, NULL, 0);
       break;
@@ -3124,7 +3131,7 @@ static INT EListCommand (INT argc, char **argv)
   }
 
   /* check options */
-  idopt = 0;
+  idopt = LV_ID;
   dataopt = boundaryopt = neighbouropt = verboseopt = levelopt = mode = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -3156,14 +3163,14 @@ static INT EListCommand (INT argc, char **argv)
 #ifdef ModelP
     case 'g' :
       mode = DO_ID;
-      idopt = 1;
+      idopt = LV_GID;
       res = sscanf(argv[i]," g %s",buff);
       fromE = toE = (DDD_GID) strtol(buff, NULL, 0);
       break;
 #endif
     case 'k' :
       mode = DO_ID;
-      idopt = 2;
+      idopt = LV_KEY;
       res = sscanf(argv[i]," k %s",buff);
       fromE = toE = (INT) strtol(buff, NULL, 0);
       break;
@@ -3417,7 +3424,7 @@ static INT RuleListCommand (INT argc, char **argv)
    This command lists information on specified vectors and matrices, calling
    the functions 'ListVectorRange' and 'ListVectorSelection'.
 
-   'vmlist {$s | $i <fromID> [<toID>] | $g <global id> | $k <key>} [$m] [$d] [$a] [$l <f> <t>]'
+   'vmlist {$s | $i <fromID> [<toID>] | $g <global id> | $k <key>} [$m] [$d] [$a] [$l <f> <t>] [$pos 0|1] [$obj 0|1]'
 
    .  $s			- list info for the selected vectors
    .  $i			- list info for vectors with an ID in the range <fromID> through <toID>
@@ -3427,8 +3434,11 @@ static INT RuleListCommand (INT argc, char **argv)
 
    .  $m			- list also the associated matrix entries
    .  $d			- list also the user data
+   .  $skip~0|1	- show skip flags (default 0)
    .  $a			- list all vectors
    .  $l <f> <t>   - process levels f <= l <= t
+   .  $pos~0|1		- show vector positions (default 1)
+   .  $obj~0|1		- show vector object related info (default 1)
 
    KEYWORDS:
    multigrid, vector, matrix, userdata, list, display, show
@@ -3438,8 +3448,9 @@ static INT RuleListCommand (INT argc, char **argv)
 static INT VMListCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
+  FORMAT *theFormat;
   GRID *theGrid;
-  INT i,fl,tl,fromV,toV,res,mode,idopt,dataopt,matrixopt,vclass,vnclass;
+  INT i,j,fl,tl,fromV,toV,res,mode,idopt,dataopt,matrixopt,vclass,vnclass,datatypes,modifiers;
   VECDATA_DESC *theVD;
   MATDATA_DESC *theMD;
   char value[VALUELEN];
@@ -3462,6 +3473,7 @@ static INT VMListCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
   theGrid = GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
+  theFormat = MGFORMAT(theMG);
 
   if (ReadArgvINT("vclass",&vclass,argc,argv))
     vclass = 3;
@@ -3492,9 +3504,26 @@ static INT VMListCommand (INT argc, char **argv)
       return(OKCODE);
     }
   }
+  modifiers = LV_MOD_DEFAULT;
+  if (ReadArgvINT("skip",&j,argc,argv)==0)
+    if (j)
+      SET_FLAG(modifiers,LV_SKIP);
+    else
+      CLEAR_FLAG(modifiers,LV_SKIP);
+  if (ReadArgvINT("pos",&j,argc,argv)==0)
+    if (j)
+      SET_FLAG(modifiers,LV_POS);
+    else
+      CLEAR_FLAG(modifiers,LV_POS);
+  if (ReadArgvINT("obj",&j,argc,argv)==0)
+    if (j)
+      SET_FLAG(modifiers,LV_VO_INFO);
+    else
+      CLEAR_FLAG(modifiers,LV_VO_INFO);
 
   /* check options */
-  idopt = 0;
+  datatypes = 0;
+  idopt = LV_ID;
   dataopt = matrixopt = mode = FALSE;
   fl = tl = CURRENTLEVEL(theMG);
   for (i=1; i<argc; i++)
@@ -3527,19 +3556,22 @@ static INT VMListCommand (INT argc, char **argv)
 #ifdef ModelP
     case 'g' :
       mode = DO_ID;
-      idopt = 1;
+      idopt = LV_GID;
       res = sscanf(argv[i]," g %s",buff);
       fromV = toV = (DDD_GID) strtol(buff, NULL, 0);
       break;
 #endif
     case 'k' :
       mode = DO_ID;
-      idopt = 2;
+      idopt = LV_KEY;
       res = sscanf(argv[i]," k %s",buff);
       fromV = toV = (INT) strtol(buff, NULL, 0);
       break;
 
     case 's' :
+      if (strcmp(argv[i],"skip")==0)
+        /* handled by ReadArgvINT */
+        break;
       if (mode!=FALSE)
       {
         PrintErrorMessage('E',"vmlist","specify either the a, s or i option");
@@ -3577,8 +3609,20 @@ static INT VMListCommand (INT argc, char **argv)
       dataopt = TRUE;
       break;
 
+    case 't' :
+      for (j=0; j<NVECTYPES; j++)
+        if (FMT_S_VEC_TP(theFormat,j)>0)
+          if (strchr(argv[i]+1,FMT_VTYPE_NAME(theFormat,j))!=NULL)
+            datatypes |= BITWISE_TYPE(j);
+      break;
+
     case 'm' :
       matrixopt = TRUE;
+      break;
+
+    case 'p' :
+    case 'o' :
+      /* handled by ReadArgvINT */
       break;
 
     default :
@@ -3586,22 +3630,26 @@ static INT VMListCommand (INT argc, char **argv)
       PrintHelp("vmlist",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
+  if (datatypes==0)
+    /* default */
+    for (j=0; j<NVECTYPES; j++)
+      datatypes |= BITWISE_TYPE(j);
 
   switch (mode)
   {
   case DO_ID :
-    ListVectorRange(theMG,fl,tl,fromV,toV,idopt,matrixopt,dataopt);
+    ListVectorRange(theMG,fl,tl,fromV,toV,idopt,matrixopt,dataopt,datatypes,modifiers);
     break;
 
   case DO_ALL :
-    ListVectorRange(theMG,fl,tl,0,MAX_I,idopt,matrixopt,dataopt);
+    ListVectorRange(theMG,fl,tl,0,MAX_I,idopt,matrixopt,dataopt,datatypes,modifiers);
     break;
 
   case DO_SELECTION :
     if (SELECTIONMODE(theMG)==elementSelection)
-      ListVectorOfElementSelection(theMG,matrixopt,dataopt);
+      ListVectorOfElementSelection(theMG,matrixopt,dataopt,modifiers);
     else
-      ListVectorSelection(theMG,matrixopt,dataopt);
+      ListVectorSelection(theMG,matrixopt,dataopt,modifiers);
     break;
 
   default :
@@ -4845,7 +4893,7 @@ static INT SmoothGridCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   DOUBLE LimitLocDis;
-  INT i,GridReset,lev,FirstSurLev,lowLevel;
+  INT i,GridReset,FirstSurLev,lowLevel;
   INT bnd_num,bnd[10],fl,option,dummy;
   float fValue;
 
@@ -5122,7 +5170,7 @@ static INT OrderNodesCommand (INT argc, char **argv)
     }
 
   /* first we renumber the multigrid (to have node-IDs coinciding with lists) */
-  if (RenumberMultiGrid(theMG,NULL,NULL,NULL,NULL,NULL,NULL,NULL)!=GM_OK)
+  if (RenumberMultiGrid(theMG,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0)!=GM_OK)
   {
     PrintErrorMessage('E',"ordernodes","renumbering of the mg failed");
     return (CMDERRORCODE);
@@ -5923,7 +5971,7 @@ static INT FindCommand (INT argc, char **argv)
       ListNode(theMG,theNode,FALSE,FALSE,FALSE,FALSE);
 
     if (isVector)
-      ListVector(theMG,theVector,FALSE,FALSE);
+      ListVector(theMG,theVector,FALSE,FALSE,LV_MOD_DEFAULT);
 
     if (isElement)
       ListElement(theMG,theElement,FALSE,FALSE,FALSE,FALSE);
@@ -6591,6 +6639,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
   MULTIGRID *theMG;
   INT i,Single_Mode,display;
   MESH *mesh;
+  INT MarkKey;
 #ifdef __TWODIM__
   CoeffProcPtr coeff;
   GG_ARG args;
@@ -6627,11 +6676,11 @@ static INT MakeGridCommand  (INT argc, char **argv)
   }
   if (MG_COARSE_FIXED(theMG)) {
     MG_COARSE_FIXED(theMG) = FALSE;
-    MarkTmpMem(MGHEAP(theMG));
+    MarkTmpMem(MGHEAP(theMG),&MarkKey);
     if ((MGNDELEMPTRARRAY(theMG) =
-           GetTmpMem(MGHEAP(theMG),NDELEM_BLKS_MAX*sizeof(ELEMENT**)))==NULL)
+           GetTmpMem(MGHEAP(theMG),NDELEM_BLKS_MAX*sizeof(ELEMENT**),MarkKey))==NULL)
     {
-      ReleaseTmpMem(MGHEAP(theMG));
+      ReleaseTmpMem(MGHEAP(theMG),MarkKey);
       PrintErrorMessage('E',"makegrid","ERROR: could not allocate memory from the MGHeap");
       return (CMDERRORCODE);
     }
@@ -6660,10 +6709,10 @@ static INT MakeGridCommand  (INT argc, char **argv)
     DisposeMultiGrid(theMG);
     return (CMDERRORCODE);
   }
-  mesh = BVP_GenerateMesh (MGHEAP(theMG),MG_BVP(theMG),argc,argv);
+  mesh = BVP_GenerateMesh (MGHEAP(theMG),MG_BVP(theMG),argc,argv,MarkKey);
   if (mesh == NULL)
   {
-    ReleaseTmpMem(MGHEAP(theMG));
+    ReleaseTmpMem(MGHEAP(theMG),MarkKey);
     return (CMDERRORCODE);
   }
   else
@@ -6773,7 +6822,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
     if (GenerateGrid(theMG, &args, &params, mesh, coeff, Single_Mode, display))
     {
       PrintErrorMessage('E',"makegrid","execution failed");
-      ReleaseTmpMem(MGHEAP(theMG));
+      ReleaseTmpMem(MGHEAP(theMG),MarkKey);
       return (CMDERRORCODE);
     }
     if (SmoothMultiGrid(theMG,smooth,GM_KEEP_BOUNDARY_NODES)!=GM_OK)
@@ -6797,7 +6846,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
     if (GenerateGrid3d(theMG,mesh,h,smooth,ReadArgvOption("d",argc,argv),coeff))
     {
       PrintErrorMessage('E',"makegrid","execution failed");
-      ReleaseTmpMem(MGHEAP(theMG));
+      ReleaseTmpMem(MGHEAP(theMG),MarkKey);
       return (CMDERRORCODE);
     }
 #endif
@@ -7368,6 +7417,7 @@ static INT DrawTextCommand (INT argc, char **argv)
   char winname[NAMESIZE],text[NAMESIZE];
   COORD_POINT pos;
   INT i,mode,centeropt,size;
+  float x,y;
 
         #ifdef ModelP
   if (me!=master) return (OKCODE);
@@ -7380,11 +7430,12 @@ static INT DrawTextCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (sscanf(argv[0],expandfmt(CONCAT3("drawtext %f %f %",NAMELENSTR,"[ -~]")),&pos.x,&pos.y,text)!=3)
+  if (sscanf(argv[0],expandfmt(CONCAT3("drawtext %f %f %",NAMELENSTR,"[ -~]")),&x,&y,text)!=3)
   {
     PrintErrorMessage('E',"drawtext","specify position with two integers and then the text");
     return (CMDERRORCODE);
   }
+  pos.x = x; pos.y = y;
 
   /* check options */
   centeropt = FALSE;
@@ -9315,6 +9366,72 @@ static INT RotModeCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   setpalette - switch palette of default device
+
+   DESCRIPTION:
+   This command switches the palette of the default device.
+
+   'setpalette c|bw|g [$d <device>]'
+   .  $d~<device>     - specify the name of an output device (default: screen)
+
+   KEYWORDS:
+   graphics, plot, window, picture, device
+   D*/
+/****************************************************************************/
+
+static INT SetPaletteCommand (INT argc, char **argv)
+{
+  OUTPUTDEVICE *theOutDev;
+  INT i,palette;
+  char plt,devname[NAMESIZE];
+
+  if (sscanf(argv[0],"setpalette %c",&plt)!=1)
+  {
+    PrintHelp("setpalette",HELPITEM," (specify c|bw|g)");
+    return(PARAMERRORCODE);
+  }
+  switch (plt)
+  {
+  case 'c' : palette = COLOR_PALETTE; break;
+  case 'b' : palette = BLACK_WHITE_PALETTE; break;
+  case 'g' : palette = GRAY_PALETTE; break;
+  default :
+    PrintHelp("setpalette",HELPITEM," (specify c|bw|g)");
+    return(PARAMERRORCODE);
+  }
+
+  /* check options */
+  theOutDev  = GetDefaultOutputDevice();
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'd' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("d %",NAMELENSTR,"[a-zA-Z0-9_-]")),devname)!=1)
+      {
+        PrintErrorMessage('E',"setpalette","specify device name with d option");
+        return (PARAMERRORCODE);
+      }
+      if ((theOutDev=GetOutputDevice(devname))==NULL)
+      {
+        PrintErrorMessageF('E',"setpalette","there is no device named '%s'",devname);
+        return (PARAMERRORCODE);
+      }
+      break;
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintHelp("setpalette",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
+
+  if (UgSetPalette(theOutDev,palette))
+    REP_ERR_RETURN(CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
    clear - assign a value to a symbolic vector
 
    DESCRIPTION:
@@ -9425,6 +9542,56 @@ static INT ClearCommand (INT argc, char **argv)
     if (dset(theMG,fl,tl,ALL_VECTORS,theVD,value)!=NUM_OK)
       return (CMDERRORCODE);
   }
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   makevdsub - make a sub descriptor for a vector descriptor
+
+   DESCRIPTION:
+   This function makes a sub descriptor for a vector descriptor.
+
+   'makevdsub <vd> $sub <vt> <sub>'
+
+   .  <vd>				- existing descriptor
+   .  $sub~<vt>~<sub>	- template and name of sub of this template
+
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, descriptor
+   D*/
+/****************************************************************************/
+
+static INT MakeVDsubCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  VECDATA_DESC *theVD,*subVD;
+  VEC_TEMPLATE *vt;
+  INT sub;
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"makevdsub","no current multigrid");
+    return(CMDERRORCODE);
+  }
+
+  theVD = ReadArgvVecDescX(theMG,"makevdsub",argc,argv,NO);
+
+  if (theVD == NULL) {
+    PrintErrorMessage('E',"makevdsub","could not read data descriptor");
+    return (PARAMERRORCODE);
+  }
+  vt = ReadArgvVecTemplateSub(MGFORMAT(theMG),"sub",argc,argv,&sub);
+  if (vt==NULL)
+    REP_ERR_RETURN(PARAMERRORCODE);
+
+  if (VDsubDescFromVT(theVD,vt,sub,&subVD))
+    REP_ERR_RETURN(CMDERRORCODE);
+
+  UserWriteF("sub descriptor '%s' for '%s' created\n",ENVITEM_NAME(subVD),ENVITEM_NAME(theVD));
+
   return (OKCODE);
 }
 
@@ -9672,7 +9839,7 @@ static INT CopyCommand (INT argc, char **argv)
     return(PARAMERRORCODE);
   }
 
-  from = ReadArgvVecDesc(theMG,"f",argc,argv);
+  from = ReadArgvVecDescX(theMG,"f",argc,argv,NO);
   to = ReadArgvVecDesc(theMG,"t",argc,argv);
 
   if (from == NULL) {
@@ -9820,7 +9987,7 @@ static INT InterpolateCommand (INT argc, char **argv)
     return(CMDERRORCODE);
   }
 
-  theVD = ReadArgvVecDesc(theMG,"interpolate",argc,argv);
+  theVD = ReadArgvVecDescX(theMG,"interpolate",argc,argv,NO);
 
   if (theVD == NULL) {
     PrintErrorMessage('E',"interpolate","could not read symbol");
@@ -10227,7 +10394,7 @@ static INT NumProcDisplayCommand (INT argc, char **argv)
       {
         PrintErrorMessage('W',"npdisplay","no class specified\n");
         UserWrite("enroled classes are:\n");
-        if (MGListNPClasses(theMG,UserWriteF))
+        if (MGListNPClasses(theMG))
           return (CMDERRORCODE);
         return (OKCODE);
       }
@@ -10246,13 +10413,13 @@ static INT NumProcDisplayCommand (INT argc, char **argv)
   }
   if (Class)
   {
-    if (MGListNPsOfClass(theMG,ClassName,UserWriteF))
+    if (MGListNPsOfClass(theMG,ClassName))
       return (CMDERRORCODE);
     return (OKCODE);
   }
   if (All)
   {
-    if (MGListAllNPs(theMG,UserWriteF))
+    if (MGListAllNPs(theMG))
       return (CMDERRORCODE);
     return (OKCODE);
   }
@@ -10276,8 +10443,7 @@ static INT NumProcDisplayCommand (INT argc, char **argv)
       return (CMDERRORCODE);
     }
   }
-  UserWriteF("contents of num proc '%s':\n",ENVITEM_NAME(theNumProc));
-  if ((err=((*theNumProc->Display)(theNumProc)))!=0)
+  if ((err=ListNumProc(theNumProc))!=0)
   {
     PrintErrorMessageF('E',"npdisplay","execution of '%s' failed (error code %d)",theNumProcName,err);
     return (CMDERRORCODE);
@@ -10584,7 +10750,7 @@ static INT SymListCommand (INT argc, char **argv)
   VECDATA_DESC *vd;
   MATDATA_DESC *md;
   char name[NAMESIZE];
-  INT res;
+  INT i,res,modifiers;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -10593,61 +10759,58 @@ static INT SymListCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (argc!=2)
-  {
-    PrintErrorMessage('E',"symlist","specify one option with symlist");
-    return (PARAMERRORCODE);
-  }
+  /* first get modifiers */
+  modifiers = 0;
+  if (ReadArgvOption("scal",argc,argv))
+    SET_FLAG(modifiers,SCAL_PROP);
+  if (ReadArgvOption("alloc",argc,argv))
+    SET_FLAG(modifiers,ALLOC_STAT);
 
-  switch (argv[1][0])
-  {
-  case 'V' :
-    res = sscanf(argv[1],"V %s",name);
-    if (res!=1)
+  /* scan V and M options */
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
     {
-      /* print all vectors */
-      for (vd = GetFirstVector(theMG); vd != NULL; vd = GetNextVector(vd))
+    case 'V' :
+      res = sscanf(argv[1],"V %s",name);
+      if (res!=1)
       {
-        DisplayVecDataDesc(vd,buffer);
-        UserWrite(buffer);
-      }
-      return (OKCODE);
-    }
-    for (vd = GetFirstVector(theMG); vd != NULL; vd = GetNextVector(vd))
-      if (strcmp(ENVITEM_NAME(vd),name)==0)
-      {
-        DisplayVecDataDesc(vd,buffer);
-        UserWrite(buffer);
+        /* print all vectors */
+        for (vd = GetFirstVector(theMG); vd != NULL; vd = GetNextVector(vd))
+        {
+          DisplayVecDataDesc(vd,modifiers,buffer);
+          UserWrite(buffer);
+        }
         return (OKCODE);
       }
-    break;
+      vd = GetVecDataDescByName(theMG,name);
+      if (vd!=NULL)
+      {
+        DisplayVecDataDesc(vd,modifiers,buffer);
+        UserWrite(buffer);
+      }
+      break;
 
-  case 'M' :
-    res = sscanf(argv[1],"M %s",name);
-    if (res!=1)
-    {
-      /* print all matrices */
-      for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md))
+    case 'M' :
+      res = sscanf(argv[1],"M %s",name);
+      if (res!=1)
+      {
+        /* print all matrices */
+        for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md))
+        {
+          DisplayMatDataDesc(md,buffer);
+          UserWrite(buffer);
+        }
+        return (OKCODE);
+      }
+      md = GetMatDataDescByName(theMG,name);
+      if (md!=NULL)
       {
         DisplayMatDataDesc(md,buffer);
         UserWrite(buffer);
-      }
-      return (OKCODE);
-    }
-    for (md = GetFirstMatrix(theMG); md != NULL; md = GetNextMatrix(md))
-      if (strcmp(ENVITEM_NAME(md),name)==0)
-      {
-        DisplayMatDataDesc(md,buffer);
-        UserWrite(buffer);
         return (OKCODE);
       }
-    break;
-
-  default :
-    sprintf(buffer,"(invalid option '%s')",argv[1]);
-    PrintHelp("symlist",HELPITEM,buffer);
-    return (PARAMERRORCODE);
-  }
+      break;
+    }
 
   return (OKCODE);
 }
@@ -11708,19 +11871,10 @@ static INT DebugCommand (INT argc, char **argv)
 #ifdef Debug
 static INT RepErrCommand (INT argc, char **argv)
 {
-  INT i;
-
   NO_OPTION_CHECK(argc,argv);
 
-  if (rep_err_count==0)
-    UserWrite("no errors are reported\n");
-  else
-  {
-    UserWrite("reported errors are:\n\n");
+  PrintRepErrStack(UserWriteF);
 
-    for (i=0; i<rep_err_count; i++)
-      UserWriteF("%2d: File: %20s, Line: %5d\n",i,rep_err_file[i],rep_err_line[i]);
-  }
   return (OKCODE);
 }
 #endif
@@ -12697,6 +12851,7 @@ INT InitCommands ()
   if (CreateCommand("updateDoc",          UpdateDocumentCommand                   )==NULL) return (__LINE__);
   if (CreateCommand("rotmode",            RotModeCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("cmfn",                       CreateMetafileNameCommand               )==NULL) return (__LINE__);
+  if (CreateCommand("setpalette",         SetPaletteCommand                               )==NULL) return (__LINE__);
 
   /* commands for problem management */
   if (CreateCommand("reinit",             ReInitCommand                                   )==NULL) return (__LINE__);
@@ -12710,7 +12865,8 @@ INT InitCommands ()
 
   /* vectors and matrices */
   if (CreateCommand("clear",                      ClearCommand                                    )==NULL) return (__LINE__);
-  if (CreateCommand("mflops",         MFLOPSCommand                    )==NULL) return (__LINE__);
+  if (CreateCommand("mflops",         MFLOPSCommand                   )==NULL) return (__LINE__);
+  if (CreateCommand("makevdsub",      MakeVDsubCommand                )==NULL) return (__LINE__);
 
   if (CreateCommand("rand",                       RandCommand                                             )==NULL) return (__LINE__);
   if (CreateCommand("copy",                       CopyCommand                                             )==NULL) return (__LINE__);
