@@ -118,7 +118,7 @@ static const INT *Order,*Sign;
 static DOUBLE InvMeshSize;
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -549,7 +549,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
   COORD *local,*x[MAX_CORNERS_OF_ELEM];
   COORD_VECTOR bnd_global,global;
   DOUBLE diff;
-  INT n,i,co0,co1,moved,size;
+  INT n,co0,co1;
 
   co0 = CORNER_OF_EDGE(theElement,edge,0);
   co1 = CORNER_OF_EDGE(theElement,edge,1);
@@ -1379,11 +1379,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   HEAP *theHeap,*theUserHeap;
   MULTIGRID *theMG;
   GRID *theGrid;
-  VERTEX *theVertex,**pv;
-  NODE *pn;
-  INT i,j,k,n,ds,l,FatalError,size;
-  COORD cvect[DIM];
-  DOUBLE pardist;
+  INT i,ds;
   BVP *theBVP;
   BVP_DESC theBVPDesc;
   MESH mesh;
@@ -1934,7 +1930,6 @@ INT DisposeTopLevel (MULTIGRID *theMG)
 
 INT DisposeGrid (GRID *theGrid)
 {
-  INT l;
   MULTIGRID *theMG;
 
   if (theGrid == NULL)
@@ -1956,11 +1951,11 @@ INT DisposeGrid (GRID *theGrid)
     if (DisposeVertex(theGrid,FIRSTVERTEX(theGrid)))
       return(4);
 
+  theMG = MYMG(theGrid);
+
   /* level 0 can not be deleted */
   if (GLEVEL(theGrid) > 0)
     return(DisposeTopLevel(theMG));
-
-  theMG = MYMG(theGrid);
 
   /* remove from grids array */
   theMG->grids[0] = NULL;
@@ -2151,7 +2146,7 @@ static int LinkCompare (LINK **LinkHandle1, LINK **LinkHandle2)
 
 /****************************************************************************/
 /*D
-   OrderNodesInGrid - reorder double linked ŒNODEŒ list
+   OrderNodesInGrid - reorder double linked ÔNODEÔ list
 
    SYNOPSIS:
    INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign);
@@ -2780,10 +2775,10 @@ INT MoveMidNode (MULTIGRID *theMG,
   VERTEX *theVertex;
   ELEMENT *theElement;
   BNDP *bndp;
-  COORD *x[MAX_CORNERS_OF_ELEM],*lambda0,*lambda1,*global,*local;
+  COORD *x[MAX_CORNERS_OF_ELEM],*global,*local;
   COORD_VECTOR bnd_global;
   DOUBLE diff;
-  INT n,k,i,co0,co1,edge,size;
+  INT n,k,co0,co1,edge;
 
   if ((lambda<0) || (lambda>1))
   {
@@ -3048,13 +3043,11 @@ static INT CheckOrientation (INT n, VERTEX **vertices)
 ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT *NbgSdList)
 {
   GRID             *theGrid;
-  INT i,j,k,l,m,found,num,tag,ElementType;
+  INT i,j,k,m,found,num,tag,ElementType;
   INT NeighborSide[MAX_SIDES_OF_ELEM];
   NODE             *sideNode[MAX_CORNERS_OF_SIDE],*NeighborNode;
   VERTEX           *Vertex[MAX_CORNERS_OF_ELEM],*sideVertex[MAX_CORNERS_OF_SIDE];
   ELEMENT          *theElement,*Neighbor[MAX_SIDES_OF_ELEM];
-  COORD param[MAX_SIDES_OF_ELEM][MAX_CORNERS_OF_SIDE][DIM_OF_BND];
-  COORD        *plambda[MAX_CORNERS_OF_SIDE];
   BNDS         *bnds[MAX_SIDES_OF_ELEM];
   BNDP         *bndp[MAX_CORNERS_OF_ELEM];
         #ifdef __TWODIM__
@@ -3995,7 +3988,7 @@ void ListGrids (const MULTIGRID *theMG)
   MATRIX *mat;
   char c;
   COORD hmin,hmax,h;
-  INT l,cl,minl,i,soe,eos,coe,nside,side,e;
+  INT l,cl,minl,i,soe,eos,coe,side,e;
   INT nn,ne,nt,ns,nvec,nc,free,used,heap;
 
   cl = CURRENTLEVEL(theMG);
@@ -4402,16 +4395,33 @@ void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT dataopt, INT bopt, I
 void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, INT nbopt, INT vopt)
 {
   char etype[10];
-  int i,j,k;
+  char ekind[8];
+  int i,j;
         #ifdef __THREEDIM__
   ELEMENT *SonList[MAX_SONS];
         #endif
-  BNDS *bnds;
 
-  if (ECLASS(theElement)==YELLOW_CLASS) strcpy(etype,"YELLOW ");
-  if (ECLASS(theElement)==GREEN_CLASS) strcpy(etype,"GREEN  ");
-  if (ECLASS(theElement)==RED_CLASS) strcpy(etype,"RED    ");
-  sprintf(buffer,"ELEMID=%9ld %5s CTRL=%8lx CTRL2=%8lx REFINE=%2d MARK=%2d LEVEL=%2d",(long)ID(theElement),etype,
+  if (DIM==2)
+    switch (TAG(theElement))
+    {
+    case TRIANGLE :                  strcpy(etype,"TRI"); break;
+    case QUADRILATERAL :             strcpy(etype,"QUA"); break;
+    }
+  else
+    switch (TAG(theElement))
+    {
+    case TETRAHEDRON :               strcpy(ekind,"TET"); break;
+    case PYRAMID :                   strcpy(ekind,"PYR"); break;
+    case PRISM :                             strcpy(ekind,"PRI"); break;
+    case HEXAHEDRON :                strcpy(ekind,"HEX"); break;
+    }
+  switch (ECLASS(theElement))
+  {
+  case YELLOW_CLASS :              strcpy(etype,"YELLOW "); break;
+  case GREEN_CLASS :               strcpy(etype,"GREEN  "); break;
+  case RED_CLASS :                 strcpy(etype,"RED    "); break;
+  }
+  sprintf(buffer,"ELEMID=%9ld %5s %5s CTRL=%8lx CTRL2=%8lx REFINE=%2d MARK=%2d LEVEL=%2d",(long)ID(theElement),ekind,etype,
           (long)CTRL(theElement),(long)FLAG(theElement),REFINE(theElement),MARK(theElement),LEVEL(theElement));
   UserWrite(buffer);
   if (COARSEN(theElement)) UserWrite(" COARSEN");
@@ -5767,7 +5777,7 @@ INT AddVectorToSelection (MULTIGRID *theMG, VECTOR *theVector)
 
   g = (SELECTION_OBJECT *) theVector;
   for (i=0; i<SELECTIONSIZE(theMG); i++)
-    if (SELECTIONOBJECT(theMG,i)==g) RETURN(GM_ERROR);
+    if (SELECTIONOBJECT(theMG,i)==g) return(GM_ERROR);
 
   if (SELECTIONSIZE(theMG)>=MAXSELECTION) RETURN(GM_ERROR);
 
