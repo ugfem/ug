@@ -168,9 +168,9 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge);
 #endif
 
 #ifdef __TWODIM__
-#define MIN_COORD(a,b) (((*a)[0]< (*b)[0]) ? (a) : (((*a)[1] < (*b)[1]) ? (a) : (b)))
+#define MIN_COORD(a,b) (((*a)[0]< (*b)[0]) ? (a) : (((*a)[0] > (*b)[0]) ? (b) : (((*a)[1] < (*b)[1]) ? (a) : (b))))
 #else
-#define MIN_COORD(a,b) (((*a)[0]< (*b)[0]) ? (a) : (((*a)[1] < (*b)[1]) ? (a) : (((*a)[2] < (*b)[2]) ? (a) : (b))))
+#define MIN_COORD(a,b) (((*a)[0]< (*b)[0]) ? (a) : (((*a)[0] > (*b)[0]) ? (b) : (((*a)[1] < (*b)[1]) ? (a) : (((*a)[1] > (*b)[1]) ? (b) : (((*a)[2] < (*b)[2]) ? (a) : (b))))))
 #endif
 
 #ifdef __TWODIM__
@@ -342,6 +342,7 @@ void *GetMemoryForObjectNew (HEAP *theHeap, INT size, INT type)
     case MAOBJ :
     case VEOBJ :
     case GROBJ :
+    case BLOCKVOBJ :
       break;
     default : assert(0);
     }
@@ -440,6 +441,7 @@ INT PutFreeObjectNew (HEAP *theHeap, void *object, INT size, INT type)
   case MAOBJ :
   case VEOBJ :
   case GROBJ :
+  case BLOCKVOBJ :
     break;
   default : assert(0);
   }
@@ -1477,7 +1479,7 @@ NODE *GetCenterNode (ELEMENT *theElement)
 /*			  NULL	: could not allocate									*/
 /*																			*/
 /****************************************************************************/
-/*  #define MOVE_MIDNODE */
+/* #define MOVE_MIDNODE */
 NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex)
 {
   DOUBLE *global,*local;
@@ -12793,9 +12795,9 @@ static INT ListPeriodicNodeAndVec (GRID *g, INT vgid)
     cv = CVECT(MYVERTEX(n));
 
                 #ifdef __TWODIM__
-    sprintf(pbuf+strlen(pbuf),"LEVEL %d c %g %g ",GLEVEL(g),cv[1],cv[0]);
+    sprintf(pbuf+strlen(pbuf),"LEVEL %d c %g %g ",GLEVEL(g),cv[0],cv[1]);
                 #else
-    sprintf(pbuf+strlen(pbuf),"c %g %g %g ",cv[1],cv[0],cv[2]);
+    sprintf(pbuf+strlen(pbuf),"c %g %g %g ",cv[0],cv[1],cv[2]);
                 #endif
     sprintf(pbuf+strlen(pbuf),"v=%08x/%d  ",GID(NVECTOR(n)),PRIO(NVECTOR(n)));
     proclist = PROCLIST(NVECTOR(n));
