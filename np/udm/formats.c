@@ -522,27 +522,45 @@ static INT PrintSideSideMatrixData (void *data, const char *indent, char *s)
 #endif
 
 
-static VEC_FORMAT *GetVectorTemplate (MULTIGRID *theMG, char *template)
+static VEC_FORMAT *GetVectorTemplate (MULTIGRID *theMG, const char *template)
 {
   ENVITEM *item,*dir;
+  VEC_FORMAT *first;
 
   if (ChangeEnvDir("/Formats") == NULL) REP_ERR_RETURN (NULL);
   dir = (ENVITEM *)ChangeEnvDir(ENVITEM_NAME(MGFORMAT(theMG)));
   if (dir == NULL) REP_ERR_RETURN (NULL);
   if (template != NULL)
+  {
     for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
       if (ENVITEM_TYPE(item) == theVecVarID)
         if (strcmp(ENVITEM_NAME(item),template)==0)
           return ((VEC_FORMAT *)item);
+
+    PrintErrorMessage('W',"GetVectorTemplate","specified template not found");
+  }
+
+  /* no (or nonexisting) template specified: just take first vector template */
   for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
     if (ENVITEM_TYPE(item) == theVecVarID)
-      return ((VEC_FORMAT *)item);
+    {
+      first = (VEC_FORMAT*) item;
+
+      /* check if there are further vector templates */
+      for (item = NEXT_ENVITEM(item); item != NULL; item = NEXT_ENVITEM(item))
+        if (ENVITEM_TYPE(item) == theVecVarID)
+        {
+          PrintErrorMessage('W',"GetVectorTemplate","taking first of several vector templates");
+          break;
+        }
+      return (first);
+    }
 
   REP_ERR_RETURN (NULL);
 }
 
 VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
-                                       char *name, char *template)
+                                       const char *name, const char *template)
 {
   VECDATA_DESC *vd,*svd;
   VEC_FORMAT *vf;
@@ -624,27 +642,44 @@ INT CreateVecDescCmd (MULTIGRID *theMG, INT argc, char **argv)
   return (NUM_OK);
 }
 
-static MAT_FORMAT *GetMatrixTemplate (MULTIGRID *theMG, char *template)
+static MAT_FORMAT *GetMatrixTemplate (MULTIGRID *theMG, const char *template)
 {
   ENVITEM *item,*dir;
+  MAT_FORMAT *first;
 
   if (ChangeEnvDir("/Formats") == NULL) REP_ERR_RETURN (NULL);
   dir = (ENVITEM *)ChangeEnvDir(ENVITEM_NAME(MGFORMAT(theMG)));
   if (dir == NULL) REP_ERR_RETURN (NULL);
   if (template != NULL)
+  {
     for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
       if (ENVITEM_TYPE(item) == theMatVarID)
         if (strcmp(ENVITEM_NAME(item),template)==0)
           return ((MAT_FORMAT *)item);
+
+    PrintErrorMessage('W',"GetMatrixTemplate","specified template not found");
+  }
+
+  /* no (or nonexisting) template specified: just take first matrix template */
   for (item=ENVITEM_DOWN(dir); item != NULL; item = NEXT_ENVITEM(item))
     if (ENVITEM_TYPE(item) == theMatVarID)
-      return ((MAT_FORMAT *)item);
+    {
+      first = (MAT_FORMAT *)item;
+
+      for (item = NEXT_ENVITEM(item); item != NULL; item = NEXT_ENVITEM(item))
+        if (ENVITEM_TYPE(item) == theMatVarID)
+        {
+          PrintErrorMessage('W',"GetMatrixTemplate","taking first of several matrix templates");
+          break;
+        }
+      return (first);
+    }
 
   REP_ERR_RETURN (NULL);
 }
 
 MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
-                                       char *name, char *template)
+                                       const char *name, const char *template)
 {
   MATDATA_DESC *md,*smd;
   MAT_FORMAT *mf;
@@ -728,18 +763,17 @@ INT CreateMatDescCmd (MULTIGRID *theMG, INT argc, char **argv)
   return (NUM_OK);
 }
 
-static VEC_FORMAT *CreateVecTemplate (char *name, INT n)
+static VEC_FORMAT *CreateVecTemplate (const char *name, INT n)
 {
   VEC_FORMAT *vf;
-  char buffer[NAMESIZE],*token;
+  char *token;
   INT j;
 
+  if (name == NULL) REP_ERR_RETURN (NULL);
   if (ChangeEnvDir("/newformat")==NULL)
     REP_ERR_RETURN(NULL);
 
-  if (name == NULL) sprintf(buffer,"vt%02d",n);
-  else strcpy(buffer,name);
-  vf = (VEC_FORMAT *) MakeEnvItem (buffer,theVecVarID,sizeof(VEC_FORMAT));
+  vf = (VEC_FORMAT *) MakeEnvItem (name,theVecVarID,sizeof(VEC_FORMAT));
   if (vf==NULL) REP_ERR_RETURN (NULL);
   VF_NSUB(vf) = 0;
   token = DEFAULT_NAMES;
@@ -749,17 +783,15 @@ static VEC_FORMAT *CreateVecTemplate (char *name, INT n)
   return (vf);
 }
 
-static MAT_FORMAT *CreateMatTemplate (char *name, INT n)
+static MAT_FORMAT *CreateMatTemplate (const char *name, INT n)
 {
   MAT_FORMAT *mf;
-  char buffer[NAMESIZE];
   INT j;
 
+  if (name == NULL) REP_ERR_RETURN (NULL);
   if (ChangeEnvDir("/newformat")==NULL)
     REP_ERR_RETURN(NULL);
-  if (name == NULL) sprintf(buffer,"mt%02d",n);
-  else strcpy(buffer,name);
-  mf = (MAT_FORMAT *) MakeEnvItem (buffer,theMatVarID,sizeof(MAT_FORMAT));
+  mf = (MAT_FORMAT *) MakeEnvItem (name,theMatVarID,sizeof(MAT_FORMAT));
   if (mf==NULL) REP_ERR_RETURN (NULL);
   MF_NSUB(mf) = 0;
   for (j=0; j<2*MAX_MAT_COMP; j++)
@@ -777,24 +809,28 @@ static MAT_FORMAT *CreateMatTemplate (char *name, INT n)
         It also creates templates for vector and matrix descriptors.
 
    .vb
-        newformat <format_name> [$V <vec_size>: {<n_vec>|<template>*}]
+        newformat <format_name> [$V <vec_size>: <template> <n_vec>
                               [$comp <comp_names> {$sub <sub_name> <comps>}*]]
                             [$M <mat_size>: {<n_mat>|<template>*}
+                              [$comp <comp_names> {$sub <sub_name> <nrows>x<ncols> <comps>}*]
                               [$d <mtype> <depth>]]
-                            [$I <mat_size>] [$N] [$e <size>] [$n <size>]
+                            [$I <mat_size>]
+                            [$NE]
+                            [$e <size>]
+                            [$n <size>]
    .ve
 
    .   V - vector
    .   M - matrix
    .   I - interpolation matrix
-   .   N - node element list
+   .   NE - node element list
    .   e - element data
    .   n - node data
 
         EXAMPLE:
    .vb
-    newformat scalar  $V n1: 4
-                      $M n1xn1: 1;
+    newformat scalar  $V n1: vec 4
+                      $M n1xn1: mat 1;
 
         createvector sol rhs;
         creatematrix MAT;
@@ -818,8 +854,7 @@ INT CreateFormatCmd (INT argc, char **argv)
   INT edata,ndata,nodeelementlist;
   SHORT offset[NMATOFFSETS],ConnDepth[NMATTYPES],ImatTypes[NVECTYPES];
   SHORT VecStorageNeeded[NVECTYPES],MatStorageNeeded[NMATTYPES];
-  char formatname[NAMESIZE],*names,*token,tp,rt,ct,*p;
-  char buffer[NAMESIZE];
+  char formatname[NAMESIZE],tpltname[NAMESIZE],*names,*token,tp,rt,ct,*p;
   int n,nr,nc,depth;
 
   /* scan name of format */
@@ -854,29 +889,40 @@ INT CreateFormatCmd (INT argc, char **argv)
     switch (argv[i][0])
     {
     case 'V' :
-      /* create a vector template */
-      vf = CreateVecTemplate(NULL,nvec++);
-      if (vf == NULL) {
-        PrintErrorMessage('E',"newformat",
-                          "could not allocate environment storage");
-        REP_ERR_RETURN (2);
-      }
-
       /* find name seperator */
       if ((names=strchr(argv[i],NAMESEP))==NULL)
       {
-        PrintErrorMessage('E',"newformat","seperate names by a colon ':' from the description");
+        PrintErrorMessageF('E',"newformat","seperate names by a colon ':' from the description (in '$%s')",argv[i]);
         REP_ERR_RETURN (1);
       }
       *(names++) = '\0';
+
+      /* create a vector template with default name */
+      if (sscanf(names,"%d",&n) == 1)
+      {
+        PrintErrorMessageF('E',"newformat","specifying a number only is not\n"
+                           "supported anymore: see man pages (in '$%s')",argv[i]);
+        REP_ERR_RETURN (1);
+      }
+      if (sscanf(names,"%s",tpltname) != 1)
+      {
+        PrintErrorMessageF('E',"newformat","no default name specified (in '$%s')",argv[i]);
+        REP_ERR_RETURN (1);
+      }
+      vf = CreateVecTemplate(tpltname,nvec++);
+      if (vf == NULL) {
+        PrintErrorMessageF('E',"newformat",
+                           "could not allocate environment storage (in '$%s')",argv[i]);
+        REP_ERR_RETURN (2);
+      }
 
       /* read types and sizes */
       token = strtok(argv[i]+1,BLANKS);
       for (type=0; type<NVECTYPES; type++) VF_COMP(vf,type) = 0;
       while (token!=NULL) {
         if (sscanf(token,"%c%d",&tp,&n)!=2) {
-          PrintErrorMessage('E',"newformat",
-                            "could not scan type and size");
+          PrintErrorMessageF('E',"newformat",
+                             "could not scan type and size (in '$%s')",argv[i]);
           REP_ERR_RETURN (1);
         }
         switch (tp) {
@@ -885,12 +931,12 @@ INT CreateFormatCmd (INT argc, char **argv)
         case 'e' : type = ELEMVECTOR; break;
         case 's' : type = SIDEVECTOR; break;
         default :
-          PrintErrorMessage('E',"newformat","specify n,k,e,s for the type (or change config to include type)");
+          PrintErrorMessageF('E',"newformat","specify n,k,e,s for the type (in '$%s')",argv[i]);
           REP_ERR_RETURN (1);
         }
         if (VF_COMP(vf,type) !=0 ) {
-          PrintErrorMessage('E',"newformat",
-                            "double vector type specification");
+          PrintErrorMessageF('E',"newformat",
+                             "double vector type specification (in '$%s')",argv[i]);
           REP_ERR_RETURN (1);
         }
         VF_COMP(vf,type) = n;
@@ -902,28 +948,28 @@ INT CreateFormatCmd (INT argc, char **argv)
         if (strncmp(argv[i+1],"comp",4)==0) {
           i++;
           if (sscanf(argv[i],"comp %s",VF_COMPNAMES(vf))!=1) {
-            PrintErrorMessage('E',"newformat",
-                              "no vector comp names specified with comp option");
+            PrintErrorMessageF('E',"newformat",
+                               "no vector comp names specified with comp option (in '$%s')",argv[i]);
             REP_ERR_RETURN (1);
           }
           ConstructVecOffsets(VF_COMPS(vf),offset);
           if (strlen(VF_COMPNAMES(vf))!=offset[NVECTYPES]) {
-            PrintErrorMessage('E',"newformat",
-                              "number of vector comp names != number of comps");
+            PrintErrorMessageF('E',"newformat",
+                               "number of vector comp names != number of comps (in '$%s')",argv[i]);
             REP_ERR_RETURN (1);
           }
           /* check next args for subv */
           while ((i+1<argc) && (strncmp(argv[i+1],"sub",3)==0)) {
             i++;
             if (VF_NSUB(vf)>=MAX_SUB) {
-              PrintErrorMessage('E',"newformat",
-                                "max number of vector subs exceeded");
+              PrintErrorMessageF('E',"newformat",
+                                 "max number of vector subs exceeded (in '$%s')",argv[i]);
               REP_ERR_RETURN (1);
             }
             subv = AllocEnvMemory(sizeof(SUBVEC));
             if (subv == NULL) {
-              PrintErrorMessage('E',"newformat",
-                                "could not allocate environment storage");
+              PrintErrorMessageF('E',"newformat",
+                                 "could not allocate environment storage (in '$%s')",argv[i]);
               REP_ERR_RETURN (2);
             }
             memset(subv,0,sizeof(SUBVEC));
@@ -932,8 +978,8 @@ INT CreateFormatCmd (INT argc, char **argv)
             /* subv name */
             token = strtok(argv[i]+3,BLANKS);
             if (token==NULL) {
-              PrintErrorMessage('E',"newformat",
-                                "specify name of subv");
+              PrintErrorMessageF('E',"newformat",
+                                 "specify name of subv (in '$%s')",argv[i]);
               REP_ERR_RETURN (1);
             }
             strcpy(SUBV_NAME(subv),token);
@@ -942,13 +988,13 @@ INT CreateFormatCmd (INT argc, char **argv)
             for (type=0; type<NVECTYPES; type++) nsc[type] = 0;
             while ((token=strtok(NULL,BLANKS))!=NULL) {
               if (strlen(token)!=1) {
-                PrintErrorMessage('E',"newformat",
-                                  "specify one char per subv comp");
+                PrintErrorMessageF('E',"newformat",
+                                   "specify one char per subv comp (in '$%s')",argv[i]);
                 REP_ERR_RETURN (1);
               }
               if (strchr(VF_COMPNAMES(vf),*token)==NULL) {
-                PrintErrorMessage('E',"newformat",
-                                  "wrong subv comp");
+                PrintErrorMessageF('E',"newformat",
+                                   "wrong subv comp");
                 REP_ERR_RETURN (1);
               }
               n = strchr(VF_COMPNAMES(vf),*token)
@@ -956,8 +1002,8 @@ INT CreateFormatCmd (INT argc, char **argv)
               for (type=0; type<NVECTYPES; type++)
                 if (n<offset[type+1]) break;
               if (nsc[type]>=MAX_VEC_COMP) {
-                PrintErrorMessage('E',"newformat",
-                                  "max number of subv comps exceeded");
+                PrintErrorMessageF('E',"newformat",
+                                   "max number of subv comps exceeded (in '$%s')",argv[i]);
                 REP_ERR_RETURN (1);
               }
               SUBV_COMP(subv,type,nsc[type]++) = n-offset[type];
@@ -968,23 +1014,21 @@ INT CreateFormatCmd (INT argc, char **argv)
         }
 
       /* read names of templates */
-      if (sscanf(names,"%d",&n) == 1)
+      if (sscanf(names,"%s %d",tpltname,&n) != 2)
       {
-        /* compute storage needed */
-        for (type=0; type<NVECTYPES; type++)
-          VecStorageNeeded[type] += n * VF_COMP(vf,type);
-      }
-      else
-      {
-        /* no storage reservation for special (named) templates */
+        /* old style: template list (should be avoided) */
+        n = 1;
         token = strtok(names,BLANKS);
+        token = strtok(NULL,BLANKS);                                    /* skip first (we already have that as default) */
         while (token!=NULL) {
+          n++;
           vv = CreateVecTemplate(token,nvec++);
           if (vv == NULL) {
-            PrintErrorMessage('E',"newformat",
-                              "could not allocate environment storage");
+            PrintErrorMessageF('E',"newformat",
+                               "could not allocate environment storage (in '$%s')",argv[i]);
             REP_ERR_RETURN (2);
           }
+          /* everything but the name is as in the default template vf */
           for (type=0; type<NVECTYPES; type++)
             VF_COMP(vv,type) = VF_COMP(vf,type);
           for (j=0; j<MAX_VEC_COMP; j++)
@@ -995,23 +1039,38 @@ INT CreateFormatCmd (INT argc, char **argv)
           token = strtok(NULL,BLANKS);
         }
       }
+      /* compute storage needed */
+      for (type=0; type<NVECTYPES; type++)
+        VecStorageNeeded[type] += n * VF_COMP(vf,type);
       break;
 
     case 'M' :
-      /* create a matrix template */
-      mf = CreateMatTemplate(NULL,nmat++);
-      if (mf == NULL) {
-        PrintErrorMessage('E',"newformat",
-                          "could not allocate environment storage");
-        REP_ERR_RETURN (2);
-      }
       /* find name seperator */
       if ((names=strchr(argv[i],NAMESEP))==NULL) {
-        PrintErrorMessage('E',"newformat",
-                          "seperate names by a colon ':' from the description");
+        PrintErrorMessageF('E',"newformat",
+                           "seperate names by a colon ':' from the description (in '$%s')",argv[i]);
         REP_ERR_RETURN (1);
       }
       *(names++) = '\0';
+
+      /* create a matrix template with default name */
+      if (sscanf(names,"%d",&n) == 1)
+      {
+        PrintErrorMessageF('E',"newformat","specifying a number only is not\n"
+                           "supported anymore: see man pages (in '$%s')",argv[i]);
+        REP_ERR_RETURN (1);
+      }
+      if (sscanf(names,"%s",tpltname) != 1)
+      {
+        PrintErrorMessageF('E',"newformat","no default name specified (in '$%s')",argv[i]);
+        REP_ERR_RETURN (1);
+      }
+      mf = CreateMatTemplate(tpltname,nmat++);
+      if (mf == NULL) {
+        PrintErrorMessageF('E',"newformat",
+                           "could not allocate environment storage (in '$%s')",argv[i]);
+        REP_ERR_RETURN (2);
+      }
 
       /* read types and sizes */
       token = strtok(argv[i]+1,BLANKS);
@@ -1019,8 +1078,8 @@ INT CreateFormatCmd (INT argc, char **argv)
         MF_RCOMP(mf,type) = MF_CCOMP(mf,type) = 0;
       while (token!=NULL) {
         if (sscanf(token,"%c%dx%c%d",&rt,&nr,&ct,&nc)!=4) {
-          PrintErrorMessage('E',"newformat",
-                            "could not scan type and size");
+          PrintErrorMessageF('E',"newformat",
+                             "could not scan type and size (in '$%s')",argv[i]);
           REP_ERR_RETURN (1);
         }
         switch (rt)
@@ -1030,7 +1089,7 @@ INT CreateFormatCmd (INT argc, char **argv)
         case 'e' : rtype = ELEMVECTOR; break;
         case 's' : rtype = SIDEVECTOR; break;
         default :
-          PrintErrorMessage('E',"newformat","specify n,k,e,s for the row type");
+          PrintErrorMessageF('E',"newformat","specify n,k,e,s for the row type (in '$%s')",argv[i]);
           REP_ERR_RETURN (1);
         }
         switch (ct)
@@ -1040,13 +1099,13 @@ INT CreateFormatCmd (INT argc, char **argv)
         case 'e' : ctype = ELEMVECTOR; break;
         case 's' : ctype = SIDEVECTOR; break;
         default :
-          PrintErrorMessage('E',"newformat","specify n,k,e,s for the col type");
+          PrintErrorMessageF('E',"newformat","specify n,k,e,s for the col type (in '$%s')",argv[i]);
           REP_ERR_RETURN (1);
         }
         type = MTP(rtype,ctype);
         if (MF_RCOMP(mf,type) !=0 ) {
-          PrintErrorMessage('E',"newformat",
-                            "double matrix type specification");
+          PrintErrorMessageF('E',"newformat",
+                             "double matrix type specification (in '$%s')",argv[i]);
           REP_ERR_RETURN (1);
         }
         MF_RCOMP(mf,type) = nr;
@@ -1058,29 +1117,29 @@ INT CreateFormatCmd (INT argc, char **argv)
         if (strncmp(argv[i+1],"comp",4) == 0) {
           i++;
           if (sscanf(argv[i],"comp %s",MF_COMPNAMES(mf))!=1) {
-            PrintErrorMessage('E',"newformat",
-                              "no matrix comp names specified with comp option");
+            PrintErrorMessageF('E',"newformat",
+                               "no matrix comp names specified with comp option (in '$%s')",argv[i]);
             REP_ERR_RETURN (1);
           }
           ConstructMatOffsets(MF_RCOMPS(mf),
                               MF_CCOMPS(mf),offset);
           if (strlen(MF_COMPNAMES(mf))!=2*offset[NMATTYPES]) {
-            PrintErrorMessage('E',"newformat",
-                              "number of matrix comp names != number of comps");
+            PrintErrorMessageF('E',"newformat",
+                               "number of matrix comp names != number of comps (in '$%s')",argv[i]);
             REP_ERR_RETURN (1);
           }
           /* check next args for subm */
           while ((i+1<argc) && (strncmp(argv[i+1],"sub",3)==0)) {
             i++;
             if (MF_NSUB(mf)>=MAX_SUB) {
-              PrintErrorMessage('E',"newformat",
-                                "max number of matrix subs exceeded");
+              PrintErrorMessageF('E',"newformat",
+                                 "max number of matrix subs exceeded (in '$%s')",argv[i]);
               REP_ERR_RETURN (1);
             }
             subm = AllocEnvMemory(sizeof(SUBMAT));
             if (subm == NULL) {
-              PrintErrorMessage('E',"newformat",
-                                "could not allocate environment storage");
+              PrintErrorMessageF('E',"newformat",
+                                 "could not allocate environment storage (in '$%s')",argv[i]);
               REP_ERR_RETURN (2);
             }
             memset(subm,0,sizeof(SUBMAT));
@@ -1090,8 +1149,8 @@ INT CreateFormatCmd (INT argc, char **argv)
             /* subm name */
             token = strtok(argv[i]+3,BLANKS);
             if (token==NULL) {
-              PrintErrorMessage('E',"newformat",
-                                "specify name of subm");
+              PrintErrorMessageF('E',"newformat",
+                                 "specify name of subm (in '$%s')",argv[i]);
               REP_ERR_RETURN (1);
             }
             strcpy(SUBM_NAME(subm),token);
@@ -1101,22 +1160,22 @@ INT CreateFormatCmd (INT argc, char **argv)
             while ((token=strtok(NULL,BLANKS))!=NULL) {
               /* scan size */
               if (sscanf(token,"%dx%d",&nr,&nc)!=2) {
-                PrintErrorMessage('E',"newformat",
-                                  "specify size of subm");
+                PrintErrorMessageF('E',"newformat",
+                                   "specify size of subm (in '$%s')",argv[i]);
                 REP_ERR_RETURN (1);
               }
               while ((token=strtok(NULL,BLANKS))!=NULL) {
                 if (strlen(token)!=2) {
-                  PrintErrorMessage('E',"newformat",
-                                    "specify two chars per subm comp");
+                  PrintErrorMessageF('E',"newformat",
+                                     "specify two chars per subm comp (in '$%s')",argv[i]);
                   REP_ERR_RETURN (1);
                 }
                 for (p=MF_COMPNAMES(mf); *p!='\0'; p+=2)
                   if ((p[0]==token[0])&&(p[1]==token[1]))
                     break;
                 if (*p=='\0') {
-                  PrintErrorMessage('E',"newformat",
-                                    "wrong subm comp");
+                  PrintErrorMessageF('E',"newformat",
+                                     "wrong subm comp (in '$%s')",argv[i]);
                   REP_ERR_RETURN (1);
                 }
                 n = (p - MF_COMPNAMES(mf))/2;
@@ -1124,15 +1183,15 @@ INT CreateFormatCmd (INT argc, char **argv)
                   if (n<offset[type+1]) break;
 
                 if (nsc[type]>=MAX_MAT_COMP) {
-                  PrintErrorMessage('E',"newformat",
-                                    "max number of subm comps exceeded");
+                  PrintErrorMessageF('E',"newformat",
+                                     "max number of subm comps exceeded (in '$%s')",argv[i]);
                   REP_ERR_RETURN (1);
                 }
                 if (nsc[type]==0)
                   currtype = type;
                 else if (type!=currtype) {
-                  PrintErrorMessage('E',"newformat",
-                                    "wrong comp type for subm");
+                  PrintErrorMessageF('E',"newformat",
+                                     "wrong comp type for subm (in '$%s')",argv[i]);
                   REP_ERR_RETURN (1);
                 }
                 SUBM_COMP(subm,type,nsc[type]++) = n-offset[type];
@@ -1145,23 +1204,21 @@ INT CreateFormatCmd (INT argc, char **argv)
         }
 
       /* read names of templates */
-      if (sscanf(names,"%d",&n) == 1)
+      if (sscanf(names,"%s %d",tpltname,&n) != 2)
       {
-        /* compute storage needed */
-        for (type=0; type<NMATTYPES; type++)
-          MatStorageNeeded[type] += n*MF_RCOMP(mf,type)*MF_CCOMP(mf,type);
-      }
-      else
-      {
-        /* no storage reservation for special (named) templates */
+        /* old style: template list (should be avoided) */
+        n = 1;
         token = strtok(names,BLANKS);
+        token = strtok(NULL,BLANKS);                                    /* skip first (we already have that as default) */
         while (token!=NULL) {
+          n++;
           mm = CreateMatTemplate(token,nmat++);
           if (mm == NULL) {
-            PrintErrorMessage('E',"newformat",
-                              "could not allocate environment storage");
+            PrintErrorMessageF('E',"newformat",
+                               "could not allocate environment storage (in '$%s')",argv[i]);
             REP_ERR_RETURN (2);
           }
+          /* everything but the name is as in the default template vf */
           for (type=0; type<NMATTYPES; type++) {
             MF_RCOMP(mm,type) = MF_RCOMP(mf,type);
             MF_CCOMP(mm,type) = MF_CCOMP(mf,type);
@@ -1174,12 +1231,15 @@ INT CreateFormatCmd (INT argc, char **argv)
           token = strtok(NULL,BLANKS);
         }
       }
+      /* compute storage needed */
+      for (type=0; type<NMATTYPES; type++)
+        MatStorageNeeded[type] += n*MF_RCOMP(mf,type)*MF_CCOMP(mf,type);
       break;
 
     case 'd' :
       if (sscanf(argv[i],"d %cx%c%d",&rt,&ct,&depth)!=3)
       {
-        PrintErrorMessage('E',"newformat","could not read connection depth");
+        PrintErrorMessageF('E',"newformat","could not read connection depth (in '$%s')",argv[i]);
         REP_ERR_RETURN (1);
       }
       switch (rt)
@@ -1189,7 +1249,7 @@ INT CreateFormatCmd (INT argc, char **argv)
       case 'e' : rtype = ELEMVECTOR; break;
       case 's' : rtype = SIDEVECTOR; break;
       default :
-        PrintErrorMessage('E',"newformat","specify n,k,e,s for the row type");
+        PrintErrorMessageF('E',"newformat","specify n,k,e,s for the row type (in '$%s')",argv[i]);
         REP_ERR_RETURN (1);
       }
       switch (ct)
@@ -1199,7 +1259,7 @@ INT CreateFormatCmd (INT argc, char **argv)
       case 'e' : ctype = ELEMVECTOR; break;
       case 's' : ctype = SIDEVECTOR; break;
       default :
-        PrintErrorMessage('E',"newformat","specify n,k,e,s for the col type");
+        PrintErrorMessageF('E',"newformat","specify n,k,e,s for the col type (in '$%s')",argv[i]);
         REP_ERR_RETURN (1);
       }
       ConnDepth[MTP(rtype,ctype)] = depth;
@@ -1212,7 +1272,7 @@ INT CreateFormatCmd (INT argc, char **argv)
       {
         if (sscanf(token,"%c%d",&tp,&n)!=2)
         {
-          PrintErrorMessage('E',"newformat","could not scan type and size");
+          PrintErrorMessageF('E',"newformat","could not scan type and size (in '$%s')",argv[i]);
           REP_ERR_RETURN (1);
         }
         switch (tp)
@@ -1222,7 +1282,7 @@ INT CreateFormatCmd (INT argc, char **argv)
         case 'e' : type = ELEMVECTOR; break;
         case 's' : type = SIDEVECTOR; break;
         default :
-          PrintErrorMessage('E',"newformat","specify n,k,e,s for the type (or change config to include type)");
+          PrintErrorMessageF('E',"newformat","specify n,k,e,s for the type  (in '$%s')",argv[i]);
           REP_ERR_RETURN (1);
         }
         ImatTypes[type] = n;
@@ -1246,8 +1306,7 @@ INT CreateFormatCmd (INT argc, char **argv)
       break;
 
     default :
-      sprintf(buffer,"(invalid option '%s')",argv[i]);
-      PrintErrorMessage('E',"newformat",buffer);
+      PrintErrorMessageF('E',"newformat","(invalid option '%s')",argv[i]);
       REP_ERR_RETURN (1);
     }
 
