@@ -515,12 +515,18 @@ INT InitHelpMsg (void)
   NHelpFiles = 0;
 
   /* get application help files */
-  if (GetDefaultValue(DEFAULTSFILENAME,"helpfiles",buffer)!=0)
+  if (GetDefaultValue(DEFAULTSFILENAME,"helpfiles",buffer))
   {
     PrintErrorMessageF('W',"InitHelpMsg","could not read 'helpfiles' in defaults file '%s'",DEFAULTSFILENAME);
   }
   else
   {
+    if (ExpandCShellVars(buffer)==NULL)
+    {
+      PrintErrorMessageF('W',"InitHelpMsg","could not expand shell variables in 'helpfiles' of defaults file '%s'",DEFAULTSFILENAME);
+      return (__LINE__);
+    }
+
     /* open help files */
     token = strtok(buffer,FILENAMESEP);
     while (token!=NULL)
