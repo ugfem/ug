@@ -339,7 +339,7 @@
 /* REMARK: TOPNODE no more available since 970411
    because of problems in parallelisation
    to use it in serial version uncomment define
-   #define TOPNODE(p)		(p)->iv.topnode
+   #define TOPNODE(p)		((p)->iv.topnode)
  */
 
 /* modes for LexOrderVectorsInGrid */
@@ -421,7 +421,7 @@ struct format {
   /* both derived from po2t					*/
   INT MaxType;                                  /* largest type used						*/
   /* derived from VectorSizes					*/
-} ;
+};
 
 typedef struct {
   int tp;                                               /* abstract type is described here	                */
@@ -560,7 +560,7 @@ struct ivertex {                                        /* inner vertex structur
           to use it in serial version uncomment define TOPNODE */
   struct node *topnode;                         /* highest node where defect is valid	*/
         #endif
-} ;
+};
 
 struct bvertex {                                        /* boundary vertex structure			*/
 
@@ -586,17 +586,17 @@ struct bvertex {                                        /* boundary vertex struc
         #endif
 
   BNDP *bndp;                                       /* pointer boundary point decriptor		*/
-} ;
+};
 
 union vertex {                                          /* only used to define pointer to vertex*/
   struct ivertex iv;
   struct bvertex bv;
-} ;
+};
 
 struct elementlist {
   union element *el;
   struct elementlist *next;
-} ;
+};
 
 struct node {                                           /* level dependent part of a vertex     */
 
@@ -623,7 +623,7 @@ struct node {                                           /* level dependent part 
 
   /* WARNING: the allocation of the data pointer depends on the format        */
   void *data;                                       /* associated data pointer              */
-} ;
+};
 
 struct link {
 
@@ -631,7 +631,7 @@ struct link {
   unsigned INT control;                         /* object identification, various flags */
   struct link *next;                                    /* ptr to next link                                     */
   struct node *nbnode;                          /* ptr to neighbor node                                 */
-} ;
+};
 
 
 struct edge {                                           /* undirected edge of the grid graph	*/
@@ -649,7 +649,7 @@ struct edge {                                           /* undirected edge of th
 
   /* associated vector */
   VECTOR *vector;                                       /* associated vector					*/
-} ;
+};
 
 struct generic_element {            /* no difference between inner and bndel*/
 
@@ -669,7 +669,7 @@ struct generic_element {            /* no difference between inner and bndel*/
   /* pointers */
   union element *pred, *succ;       /* double linked list of elements       */
   void *refs[1];                                        /* variable length array managed by ug  */
-} ;
+};
 
 struct triangle {
 
@@ -709,7 +709,7 @@ struct triangle {
 
   /* WARNING: the allocation of the data pointer depends on the format        */
   void *data;                                       /* associated data pointer              */
-} ;
+};
 
 struct quadrilateral {
 
@@ -749,7 +749,7 @@ struct quadrilateral {
 
   /* WARNING: the allocation of the data pointer depends on the format        */
   void *data;                                       /* associated data pointer              */
-} ;
+};
 
 struct tetrahedron {
 
@@ -790,7 +790,7 @@ struct tetrahedron {
 
   /* WARNING: the allocation of the data pointer depends on the format        */
   void *data;                                       /* associated data pointer              */
-} ;
+};
 
 struct pyramid {
 
@@ -831,7 +831,7 @@ struct pyramid {
 
   /* WARNING: the allocation of the data pointer depends on the format        */
   void *data;                                       /* associated data pointer              */
-} ;
+};
 
 struct prism {
 
@@ -927,19 +927,27 @@ union element {
   struct prism pr;
   struct hexahedron he;
         #endif
-} ;
+};
 
 union geom_object {                                             /* objects that can hold a vector		*/
   struct node nd;
   struct edge ed;
   union element el;
-} ;
+};
 
 union selection_object {                                        /* objects than can be selected			*/
   struct node nd;
   union element el;
   struct vector ve;
-} ;
+};
+
+union object_with_key {                                         /* objects that can have a key			*/
+  struct node nd;
+  union element el;
+  struct vector ve;
+  union vertex vertex;
+  struct edge edge;
+};
 
 typedef struct
 {
@@ -979,7 +987,7 @@ struct grid {
   BLOCKVECTOR *lastblockvector;         /* pointer to the last blockvector		*/
   struct grid *coarser, *finer;         /* coarser and finer grids				*/
   struct multigrid *mg;                         /* corresponding multigrid structure	*/
-} ;
+};
 
 struct multigrid {
 
@@ -1027,7 +1035,7 @@ struct multigrid {
 
   INT CoarseGridFixed;                          /* coarse grid complete					*/
   INT MarkKey;                                  /* coarse grid MarkKey for SIMPLE_HEAP Mark/Release	*/
-} ;
+};
 
 /****************************************************************************/
 /*																			*/
@@ -1048,6 +1056,7 @@ typedef union  geom_object GEOM_OBJECT;
 typedef union  selection_object SELECTION_OBJECT;
 typedef struct grid GRID;
 typedef struct multigrid MULTIGRID;
+typedef union object_with_key KEY_OBJECT;
 
 /****************************************************************************/
 /*																			*/
@@ -1071,7 +1080,7 @@ struct elementvalues {
 
   PreprocessingProcPtr PreprocessProc;                  /* prepare eval values					*/
   ElementEvalProcPtr EvalProc;                                  /* pointer to corresponding function	*/
-} ;
+};
 
 struct elementvector {
 
@@ -1081,7 +1090,7 @@ struct elementvector {
   PreprocessingProcPtr PreprocessProc;                  /* prepare eval values					*/
   ElementVectorProcPtr EvalProc;                                /* pointer to corresponding function	*/
   int dimension;                                                                /* dimension of result vector			*/
-} ;
+};
 
 struct matrixvalues {
 
@@ -1090,7 +1099,7 @@ struct matrixvalues {
 
   PreprocessingProcPtr PreprocessProc;                  /* prepare eval values					*/
   MatrixEvalProcPtr EvalProc;                                   /* pointer to corresponding function	*/
-} ;
+};
 
 typedef struct elementvalues EVALUES ;
 typedef struct elementvector EVECTOR ;
@@ -1110,7 +1119,7 @@ struct AlgebraicDependency {
   ENVVAR v;
 
   DependencyProcPtr DependencyProc;             /* pointer to dependency function			*/
-} ;
+};
 
 typedef struct AlgebraicDependency ALG_DEP;
 
@@ -1883,25 +1892,25 @@ enum GM_OBJECTS {
 #define INCNOOFNODE(p)                          SETNOOFNODE(p,NOOFNODE(p)+1)
 #define DECNOOFNODE(p)                          SETNOOFNODE(p,NOOFNODE(p)-1)
 
-#define PREDV(p)                (p)->iv.pred
-#define SUCCV(p)                (p)->iv.succ
-#define CVECT(p)                (p)->iv.x
-#define XC(p)                   (p)->iv.x[0]
-#define YC(p)                   (p)->iv.x[1]
-#define ZC(p)                   (p)->iv.x[2]
-#define LCVECT(p)               (p)->iv.xi
-#define XI(p)                   (p)->iv.xi[0]
-#define ETA(p)                  (p)->iv.xi[1]
-#define NU(p)                   (p)->iv.xi[2]
-#define VDATA(p)                (p)->iv.data
-#define VFATHER(p)              (p)->iv.father
+#define PREDV(p)                ((p)->iv.pred)
+#define SUCCV(p)                ((p)->iv.succ)
+#define CVECT(p)                ((p)->iv.x)
+#define XC(p)                   ((p)->iv.x[0])
+#define YC(p)                   ((p)->iv.x[1])
+#define ZC(p)                   ((p)->iv.x[2])
+#define LCVECT(p)               ((p)->iv.xi)
+#define XI(p)                   ((p)->iv.xi[0])
+#define ETA(p)                  ((p)->iv.xi[1])
+#define NU(p)                   ((p)->iv.xi[2])
+#define VDATA(p)                ((p)->iv.data)
+#define VFATHER(p)              ((p)->iv.father)
 
 /* for boundary vertices */
-#define V_BNDP(p)               (p)->bv.bndp
+#define V_BNDP(p)               ((p)->bv.bndp)
 
 /* parallel macros */
 #ifdef ModelP
-#define PARHDRV(p)                      (&((p)->iv.ddd))
+#define PARHDRV(p)              (&((p)->iv.ddd))
 #endif /* ModelP */
 
 /****************************************************************************/
@@ -1933,26 +1942,26 @@ enum GM_OBJECTS {
 #define MODIFIED(p)                             CW_READ_STATIC(p,MODIFIED_,NODE_)
 #define SETMODIFIED(p,n)                        CW_WRITE_STATIC(p,MODIFIED_,NODE_,n)
 
-#define PREDN(p)        (p)->pred
-#define SUCCN(p)        (p)->succ
-#define START(p)        (p)->start
+#define PREDN(p)                        ((p)->pred)
+#define SUCCN(p)                        ((p)->succ)
+#define START(p)                        ((p)->start)
 
-#define NFATHER(p)                      (p)->father
-#define SETNFATHER(p,n)         (p)->father = n
+#define NFATHER(p)                      ((NODE*)(p)->father)
+#define SETNFATHER(p,n)         ((p)->father = n)
 /*
    #define NFATHER(p)			((NTYPE(p) == CORNER_NODE) ? (p)->father : NULL)
    #define NFATHEREDGE(p)		((NTYPE(p) == MID_NODE) ? (EDGE *)(p)->father : NULL)
-   #define SETNFATHEREDGE(p,e)	(p)->father = (NODE *) e
+   #define SETNFATHEREDGE(p,e)	((p)->father = (NODE *) (e))
  */
-#define CORNERTYPE(p)   (NTYPE(p) == CORNER_NODE)
-#define MIDTYPE(p)              (NTYPE(p) == MID_NODE)
-#define SIDETYPE(p)             (NTYPE(p) == SIDE_NODE)
-#define CENTERTYPE(p)   (NTYPE(p) == CENTER_NODE)
+#define CORNERTYPE(p)           (NTYPE(p) == CORNER_NODE)
+#define MIDTYPE(p)                      (NTYPE(p) == MID_NODE)
+#define SIDETYPE(p)                     (NTYPE(p) == SIDE_NODE)
+#define CENTERTYPE(p)           (NTYPE(p) == CENTER_NODE)
 
-#define SONNODE(p)      (p)->son
-#define MYVERTEX(p) (p)->myvertex
-#define NDATA(p)        (p)->data
-#define NVECTOR(p)      (p)->vector
+#define SONNODE(p)                      ((p)->son)
+#define MYVERTEX(p)             ((p)->myvertex)
+#define NDATA(p)                        ((p)->data)
+#define NVECTOR(p)                      ((p)->vector)
 
 #define NODE_ELEMENT_LIST(p)    ((ELEMENTLIST *)(p)->data)
 #define ELEMENT_PTR(p)                  ((p)->el)
@@ -1973,13 +1982,13 @@ enum GM_OBJECTS {
 #define LOFFSET(p)                                      CW_READ(p,LOFFSET_CE)
 #define SETLOFFSET(p,n)                         CW_WRITE(p,LOFFSET_CE,n)
 
-#define NBNODE(p)       (p)->nbnode
-#define NEXT(p)         (p)->next
-#define LDATA(p)        (p)->matelem
-#define MATELEM(p)      (p)->matelem  /* can be used for node and link */
+#define NBNODE(p)                                       ((p)->nbnode)
+#define NEXT(p)                                         ((p)->next)
+#define LDATA(p)                                        ((p)->matelem)
+#define MATELEM(p)                                      ((p)->matelem)  /* can be used for node and link */
 
-#define MYEDGE(p)       ((EDGE *)((p)-LOFFSET(p)))
-#define REVERSE(p)      ((p)+(1-LOFFSET(p)*2))
+#define MYEDGE(p)                                       ((EDGE *)((p)-LOFFSET(p)))
+#define REVERSE(p)                                      ((p)+(1-LOFFSET(p)*2))
 
 /****************************************************************************/
 /*																			*/
@@ -2153,10 +2162,10 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define SIDES_OF_ELEM(p)                (element_descriptors[TAG(p)]->sides_of_elem)
 #define EDGES_OF_ELEM(p)                (element_descriptors[TAG(p)]->edges_of_elem)
 #define CORNERS_OF_ELEM(p)              (element_descriptors[TAG(p)]->corners_of_elem)
-#define LOCAL_COORD_OF_ELEM(p,c)        (element_descriptors[TAG(p)]->local_corner[(c)])
+#define LOCAL_COORD_OF_ELEM(p,c)    (element_descriptors[TAG(p)]->local_corner[(c)])
 
 
-#define SONS_OF_ELEM(p)                 (element_descriptors[TAG(p)]->max_sons_of_elem) /* this is the number of pointers ! */
+#define SONS_OF_ELEM(p)                         (element_descriptors[TAG(p)]->max_sons_of_elem) /* this is the number of pointers ! */
 
 #define EDGES_OF_SIDE(p,i)              (element_descriptors[TAG(p)]->edges_of_side[(i)])
 #define CORNERS_OF_SIDE(p,i)            (element_descriptors[TAG(p)]->corners_of_side[(i)])
@@ -2179,9 +2188,9 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define EDGE_OF_CORNER(p,c,e)           (element_descriptors[TAG(p)]->edge_of_corner[(c)][(e)])
 
 #define CTRL2(p)        ((p)->ge.flag)
-#define FLAG(p)                 (p)->ge.flag
-#define SUCCE(p)                (p)->ge.succ
-#define PREDE(p)                (p)->ge.pred
+#define FLAG(p)                 ((p)->ge.flag)
+#define SUCCE(p)                ((p)->ge.succ)
+#define PREDE(p)                ((p)->ge.pred)
 
 #define CORNER(p,i)     ((NODE *) (p)->ge.refs[n_offset[TAG(p)]+(i)])
 #define EFATHER(p)              ((ELEMENT *) (p)->ge.refs[father_offset[TAG(p)]])
@@ -2207,15 +2216,15 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 
 /* use the following macros to assign values, since definition  */
 /* above is no proper lvalue.									*/
-#define SET_CORNER(p,i,q)       (p)->ge.refs[n_offset[TAG(p)]+(i)] = q
-#define SET_EFATHER(p,q)        (p)->ge.refs[father_offset[TAG(p)]] = q
-#define SET_SON(p,i,q)          (p)->ge.refs[sons_offset[TAG(p)]+(i)] = q
-#define SET_NBELEM(p,i,q)       (p)->ge.refs[nb_offset[TAG(p)]+(i)] = q
-#define VOID_NBELEM(p,i)        (p)->ge.refs[nb_offset[TAG(p)]+(i)]
-#define SET_BNDS(p,i,q)         (p)->ge.refs[side_offset[TAG(p)]+(i)] = q
-#define SET_EVECTOR(p,q)        (p)->ge.refs[evector_offset[TAG(p)]] = q
-#define SET_SVECTOR(p,i,q)      (p)->ge.refs[svector_offset[TAG(p)]+(i)] = q
-#define SET_EDATA(p,q)      (p)->ge.refs[data_offset[TAG(p)]] = q
+#define SET_CORNER(p,i,q)       ((p)->ge.refs[n_offset[TAG(p)]+(i)] = q)
+#define SET_EFATHER(p,q)        ((p)->ge.refs[father_offset[TAG(p)]] = q)
+#define SET_SON(p,i,q)          ((p)->ge.refs[sons_offset[TAG(p)]+(i)] = q)
+#define SET_NBELEM(p,i,q)       ((p)->ge.refs[nb_offset[TAG(p)]+(i)] = q)
+#define VOID_NBELEM(p,i)        ((p)->ge.refs[nb_offset[TAG(p)]+(i)])
+#define SET_BNDS(p,i,q)         ((p)->ge.refs[side_offset[TAG(p)]+(i)] = q)
+#define SET_EVECTOR(p,q)        ((p)->ge.refs[evector_offset[TAG(p)]] = q)
+#define SET_SVECTOR(p,i,q)      ((p)->ge.refs[svector_offset[TAG(p)]+(i)] = q)
+#define SET_EDATA(p,q)      ((p)->ge.refs[data_offset[TAG(p)]] = q)
 
 #define SideBndCond(t,side,l,v,type)  BNDS_BndCond(ELEM_BNDS(t,side),l,NULL,v,type)
 #define Vertex_BndCond(p,w,i,v,t)     BNDP_BndCond(V_BNDP(p),w,i,NULL,v,t)
@@ -2807,7 +2816,7 @@ INT         SetSubdomainIDfromBndInfo           (MULTIGRID *theMG);
 INT         FixCoarseGrid                       (MULTIGRID *theMG);
 INT                     ClearMultiGridUsedFlags                         (MULTIGRID *theMG, INT FromLevel, INT ToLevel, INT mask);
 void            CalculateCenterOfMass                           (ELEMENT *theElement, DOUBLE_VECTOR center_of_mass);
-INT             KeyForObject                                            (SELECTION_OBJECT *obj );
+INT             KeyForObject                                            (KEY_OBJECT *obj);
 
 /* TODO: remove the following functions after the code will never need any debugging */
 char *PrintElementInfo (ELEMENT *theElement,INT full);
