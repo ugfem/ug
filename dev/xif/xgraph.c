@@ -986,9 +986,9 @@ WINDOWID X11_OpenOutput (const char *title, INT x, INT y, INT width, INT height,
   if ((width<DEFAULTMINX)||(height<DEFAULTMINY)) {*error=1; return(0);}
 
   /* open new window */
-  if (GraphOpen(gw,(char *)title,x,
-                display_height-y-height-CONTROLSIZE,
-                width+1,height+CONTROLSIZE+2)>0)
+  /* the following (char *) cast is ugly, but can not really be avoided, since the
+          XStringListToTextProperty in GraphOpen wansts a (char **) pointer */
+  if (GraphOpen(gw,(char *)title,x,display_height-y-height-CONTROLSIZE,width+1,height+CONTROLSIZE+2)>0)
   {
     *error=1;
     return(0);
