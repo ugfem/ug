@@ -298,8 +298,6 @@ static MULTIGRID *MN_MG;                /* multigrid pointer						*/
 static NODE *MN_Node;                   /* moved node								*/
 static COORD MN_pos[2];                 /* new pos of the moved node				*/
 static COORD MN_lambda;                 /* new boundary parameter if boundary node      */
-static PATCH *MN_patch;                 /* patch if boundary node				        */
-static PATCH_DESC MN_PatchDesc; /* patch descriptor for boundary node		*/
 static COORD MN_xmin;                   /* limits of the picture					*/
 static COORD MN_xmax;                   /* limits of the picture					*/
 static COORD MN_ymin;                   /* limits of the picture					*/
@@ -308,21 +306,15 @@ static COORD MN_delta;                  /* resolution                           
 static INT MN_accept;                   /* indicates whether correctly moved or not	*/
 static INT MN_MouseMoved;               /* invert links at last pos if TRUE			*/
 static INT MN_LastMousePos[2];  /* store last mouse position				*/
+static short MN_Resolution;     /* resolution                                                   */
 
-/*---------- working variables of 'EXT_BndEval2d' --------------------------*/
-#define BE_TEXTSIZE                     (10*TextFactor)
-static short BE_PlotBoundary;   /* plot boundary if TRUE					*/
-static long BE_BndColor;                /* use this color for the outer boundary	*/
-static long BE_InnerBndColor;   /* use this color for interior boundaries	*/
-static short BE_BndLineWidth;   /* use this line width						*/
-static short BE_PlotSegmentIDs; /* plot also sehment IDs					*/
-static long BE_SegIdColor;              /* plot sement IDs with this color			*/
-static MULTIGRID *BE_MG;                /* mg pointer								*/
-static INT BE_CurrSeg;                  /* current segment to be plotted			*/
-static PATCH *BE_Patch;                 /* current patch of boundary				*/
-static INT BE_CurrLine;                 /* current line of the segment to be plotted*/
-static INT BE_nLines;                   /* number of plotted lines					*/
-static INT BE_MaxLines;                 /* max line number per call of EXT_BndEval2d*/
+/*---------- working variables of 'EW_BndEval2d' ---------------------------*/
+static short BND_PlotBoundary;  /* plot boundary if TRUE					*/
+static long BND_BndColor;               /* use this color for the outer boundary	*/
+static long BND_InnerBndColor;  /* use this color for interior boundaries	*/
+static short BND_BndLineWidth;  /* use this line width						*/
+static short BND_Resolution;     /* resolution                                                  */
+static MULTIGRID *BND_MG;               /* mg pointer								*/
 
 /*---------- working variables of 'VW_VecMatEval' --------------------------*/
 #define VM_MARKERSIZE           6
@@ -5090,7 +5082,7 @@ static INT EW_BndOfElemEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   return (0);
 }
 
-static INT EXT_PreProcess_Bnd2d (PICTURE *thePicture, WORK *theWork)
+static INT EW_PreProcess_Bnd2D (PICTURE *thePicture, WORK *theWork)
 {
   struct GridPlotObj2D *theGpo;
   OUTPUTDEVICE *theOD;
@@ -5100,24 +5092,21 @@ static INT EXT_PreProcess_Bnd2d (PICTURE *thePicture, WORK *theWork)
   theOD  = PIC_OUTPUTDEV(thePicture);
   theMG  = PO_MG(PIC_PO(thePicture));
 
-  BE_PlotBoundary                         = theGpo->PlotBoundary;
-  BE_BndColor                                     = theOD->blue;
-  BE_InnerBndColor                        = theOD->cyan;
-  BE_PlotSegmentIDs                       = theGpo->PlotSegmentIDs;
-  BE_SegIdColor                           = theOD->red;
+  BND_PlotBoundary                                = theGpo->PlotBoundary;
+  BND_BndColor                                    = theOD->blue;
+  BND_InnerBndColor                       = theOD->cyan;
+  BND_Resolution                  = 10;
 
-  BE_MG                                           = theMG;
-  BE_CurrSeg                                      = 0;
-  BE_Patch                                        = BVP_GetFirstPatch(MG_BVP(BE_MG));
-  BE_CurrLine                                     = 1;
-  BE_nLines                                       = 0;
-  BE_MaxLines                                     = 100;
+  BND_MG                                          = theMG;
   UgSetLineWidth (2);
+
+  /* mark surface elements */
+  if (MarkElements_MGS_Bnd(theMG,0,CURRENTLEVEL(theMG))) return (1);
 
   return (0);
 }
 
-static INT EXT_PreProcess_VecMatBnd2d (PICTURE *thePicture, WORK *theWork)
+static INT EW_PreProcess_VecMatBnd2D (PICTURE *thePicture, WORK *theWork)
 {
   struct VecMatPlotObj2D *theVmo;
   OUTPUTDEVICE *theOD;
@@ -5127,100 +5116,76 @@ static INT EXT_PreProcess_VecMatBnd2d (PICTURE *thePicture, WORK *theWork)
   theOD  = PIC_OUTPUTDEV(thePicture);
   theMG  = PO_MG(PIC_PO(thePicture));
 
-  BE_PlotBoundary                         = theVmo->Boundary;
-  BE_BndColor                                     = theOD->blue;
-  BE_InnerBndColor                        = theOD->cyan;
-  BE_PlotSegmentIDs                       = NO;
-  BE_SegIdColor                           = theOD->red;
+  BND_PlotBoundary                        = theVmo->Boundary;
+  BND_BndColor                            = theOD->blue;
+  BND_InnerBndColor                       = theOD->cyan;
 
-  BE_MG                                           = theMG;
-  BE_CurrSeg                                      = 0;
-  BE_Patch                                        = BVP_GetFirstPatch(MG_BVP(BE_MG));
-  BE_CurrLine                                     = 1;
-  BE_nLines                                       = 0;
-  BE_MaxLines                                     = 100;
+  BND_MG                                          = theMG;
+  BND_Resolution                          = 10;
   UgSetLineWidth (2);
 
   return (0);
 }
 
-static INT EXT_BndEval2d (DRAWINGOBJ *theDO, INT *end)
+static INT EW_BndEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
   COORD alpha,beta,delta,lambda;
   INT res;
   COORD_VECTOR x0,x1;
   long Color;
-  BVP *theBVP;
+  PATCH *thePatch;
   PATCH_DESC thePatchDesc;
+  ELEMENTSIDE *theSide;
+  INT i,j;
 
-  if (!BE_PlotBoundary && !BE_PlotSegmentIDs)
+  if (!BND_PlotBoundary)
   {
     DO_2c(theDO) = DO_NO_INST;
-    *end = TRUE;
     return (0);
   }
-  theBVP = MG_BVP(BE_MG);
 
   /* plot boundary segments and their ids (if) */
-  for (; BE_Patch!=NULL; BE_Patch=BVP_GetNextPatch(theBVP,BE_Patch))
+  for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
-    if (Patch_GetPatchDesc(BE_Patch,&thePatchDesc)) return (1);
+    theSide = SIDE(theElement,i);
+    if (theSide == NULL)
+      continue;
+    thePatch = ES_PATCH(theSide);
+    if (Patch_GetPatchDesc(thePatch,&thePatchDesc))
+      return (1);
     if ((PATCH_LEFT(thePatchDesc)==0) || (PATCH_RIGHT(thePatchDesc)==0))
-      Color = BE_BndColor;
+      Color = BND_BndColor;
     else
-      Color = BE_InnerBndColor;
-    alpha  = PATCH_LCVECT(thePatchDesc,0)[0];
-    beta   = PATCH_LCVECT(thePatchDesc,1)[0];
-    res    = PATCH_RES(thePatchDesc);
+      Color = BND_InnerBndColor;
+    alpha  = PARAM(theSide,0,0);
+    beta   = PARAM(theSide,1,0);
+    res    = BND_Resolution;
     delta  = (beta - alpha) / ((COORD)res);
 
-    if (BE_PlotBoundary)
+    /* plot boundary with resolution */
+    lambda = alpha;
+    if (Patch_local2global(thePatch,&lambda,x0))
+      return (1);
+    for (j=1; j<=res; j++)
     {
-      /* plot boundary with resolution */
-      lambda = alpha + (BE_CurrLine-1)*delta;
-      if (Patch_local2global(BE_Patch,&lambda,x0)) return (1);
-      for (; BE_CurrLine<=res; BE_CurrLine++)
-      {
-        lambda = alpha + BE_CurrLine*delta;
-        lambda = MIN(lambda,beta);
-        if (Patch_local2global(BE_Patch,&lambda,x1)) return (1);
-
-        DO_2c(theDO) = DO_LINE; DO_inc(theDO)
-        DO_2l(theDO) = Color; DO_inc(theDO);
-        V2_COPY(x0,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-        V2_COPY(x1,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-
-        V2_COPY(x1,x0);
-        if (BE_nLines++==BE_MaxLines)
-        {
-          BE_nLines = 0;
-          DO_2c(theDO) = DO_NO_INST;
-          return (0);
-        }
-      }
-      BE_CurrLine = 1;
-    }
-    /* plot segid if */
-    if (BE_PlotSegmentIDs)
-    {
-      lambda = 0.5*(alpha+beta);
-      if (Patch_local2global(BE_Patch,&lambda,x0)) return (1);
-      DO_2c(theDO) = DO_TEXT; DO_inc(theDO)
-      DO_2l(theDO) = BE_SegIdColor; DO_inc(theDO);
-      DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO)
-      DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO)
-      DO_2s(theDO) = BE_TEXTSIZE; DO_inc(theDO);
+      lambda += delta;
+      if (j==res)
+        lambda = beta;
+      if (Patch_local2global(thePatch,&lambda,x1))
+        return (1);
+      DO_2c(theDO) = DO_LINE; DO_inc(theDO)
+      DO_2l(theDO) = Color; DO_inc(theDO);
       V2_COPY(x0,DO_2Cp(theDO)); DO_inc_n(theDO,2);
-      sprintf(DO_2cp(theDO),"%d",(int)BE_CurrSeg); DO_inc_str(theDO);
+      V2_COPY(x1,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+      V2_COPY(x1,x0);
     }
-    BE_CurrSeg++;
   }
+
   DO_2c(theDO) = DO_NO_INST;
-  *end = TRUE;
   return (0);
 }
 
-static INT EXT_PostProcess_Bnd2d (PICTURE *thePicture, WORK *theWork)
+static INT EW_PostProcess_Bnd2D (PICTURE *thePicture, WORK *theWork)
 {
   /* reset standard line width */
   UgSetLineWidth (1);
@@ -5744,6 +5709,7 @@ static INT EXT_PreProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
   MN_MouseMoved = FALSE;
   MN_LastMousePos[0] = W_INSERTNODE_WORK(theWork)->PixelX;
   MN_LastMousePos[1] = W_INSERTNODE_WORK(theWork)->PixelY;
+  MN_Resolution = 100;
 
   /* get physical position */
   pt[0] = W_INSERTNODE_WORK(theWork)->PixelX;
@@ -5800,9 +5766,13 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
   VERTEX *theVertex,*nbVertex;
   LINK *theLink;
   COORD nbpos[2];
-  COORD npos[2],apos[2],epos[2];
-  COORD len,l,la,le,dl,dist2,bestDist2,sdl;
+  COORD pos[2];
+  COORD len,l,la,le,dl,bestDist2;
   INT MousePos[2];
+  PATCH *thePatch;
+  ELEMENT *theElement;
+  ELEMENTSIDE *theSide;
+  INT i;
 
   if (MouseStillDown())
   {
@@ -5852,39 +5822,47 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
     /* boundary vertex? */
     if (MOVE(theVertex)==1)
     {
-      /* find pos on segment with shortest dist to mouse pos */
-      MN_patch = FIRSTPATCH(theVertex);
-      if (Patch_GetPatchDesc(MN_patch,&MN_PatchDesc)) return(1);
-      MN_lambda = FIRSTLAMBDA(theVertex);
-      dl = (PATCH_LCVECT(MN_PatchDesc,1)[0]-PATCH_LCVECT(MN_PatchDesc,0)[0])/ PATCH_RES(MN_PatchDesc);
+      theElement = VFATHER(theVertex);
+      if (theElement == NULL)
+      {
+        DO_2c(theDO) = DO_NO_INST;
+        MN_accept = FALSE;
+        return(0);
+      }
+      thePatch = VS_PATCH(VSEG(theVertex));
+      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+      {
+        theSide = SIDE(theElement,i);
+        if (theSide != NULL)
+          if (ES_PATCH(theSide) == thePatch)
+            break;
+      }
+      if (theSide == NULL)
+      {
+        DO_2c(theDO) = DO_NO_INST;
+        MN_accept = FALSE;
+        return(0);
+      }
+      la = PARAM(theSide,0,0);
+      le = PARAM(theSide,1,0);
+      dl = (la - le) / MN_Resolution;
 
       /* scan resolution points of the segment */
       bestDist2 = MAX_C;
-      for (la=PATCH_LCVECT(MN_PatchDesc,0)[0]; la<=PATCH_LCVECT(MN_PatchDesc,1)[0]; la+=dl)
+      l = la;
+      for (i=1; i<MN_Resolution; i++)
       {
-        le = MIN(la+dl,PATCH_LCVECT(MN_PatchDesc,1)[0]);
-        if (Patch_local2global(MN_patch,&la,apos)) return(1);
-        if (Patch_local2global(MN_patch,&le,epos)) return(1);
-        V2_EUKLIDNORM_OF_DIFF(apos,epos,len);
-        sdl = len/MAX(10.0*len/MN_delta,1.0);
-
-        /* scan part between resolution points */
-        for (l=la; l<le; l+=sdl)
+        l += dl;
+        if (Patch_local2global(thePatch,&l,pos)) return(1);
+        V2_EUKLIDNORM_OF_DIFF(pos,MN_pos,len);
+        if (len < bestDist2)
         {
-          if (Patch_local2global(MN_patch,&l,npos)) return(1);
-          V2_SUBTRACT(npos,MN_pos,npos);
-          V2_SCALAR_PRODUCT(npos,npos,dist2);
-
-          /* find best fit */
-          if (dist2<bestDist2)
-          {
-            bestDist2 = dist2;
-            MN_lambda = l;
-          }
+          bestDist2 = len;
+          MN_lambda = l;
         }
       }
-      if (Patch_local2global(MN_patch,&MN_lambda,MN_pos)) return(1);
     }
+
 
     /* plot links inverse */
     for (theLink=START(MN_Node); theLink!=NULL; theLink=NEXT(theLink))
@@ -13270,12 +13248,14 @@ INT InitWOP (void)
   theEWW->EW_PostProcessProc                              = NULL;
 
   theWP = POH_WORKPROGS(thePOH,DRAW_WORK,2);
-  WP_WORKMODE(theWP) = EXTERN;
-  theEXW = WP_EXTERNWISE(theWP);
-  theEXW->EXT_PreProcessProc                              = EXT_PreProcess_Bnd2d;
-  theEXW->EXT_EvaluateProc                                = EXT_BndEval2d;
-  theEXW->EXT_ExecuteProc                                 = Draw2D;
-  theEXW->EXT_PostProcessProc                             = EXT_PostProcess_Bnd2d;
+  WP_WORKMODE(theWP) = ELEMENTWISE;
+  theEWW = WP_ELEMWISE(theWP);
+  theEWW->EW_PreProcessProc                               = EW_PreProcess_Bnd2D;
+  theEWW->EW_GetFirstElementProcProc              = EW_GetFirstElement_vert_fw_up_Proc;
+  theEWW->EW_GetNextElementProcProc               = EW_GetNextElement_vert_fw_up_Proc;
+  theEWW->EW_EvaluateProc                             = EW_BndEval2D;
+  theEWW->EW_ExecuteProc                                  = Draw2D;
+  theEWW->EW_PostProcessProc                              = EW_PostProcess_Bnd2D;
 
   theWP = POH_WORKPROGS(thePOH,DRAW_WORK,3);
   WP_WORKMODE(theWP) = NODEWISE;
@@ -13518,12 +13498,14 @@ INT InitWOP (void)
   POH_NBCYCLES(thePOH,DRAW_WORK) = 3;
 
   theWP = POH_WORKPROGS(thePOH,DRAW_WORK,0);
-  WP_WORKMODE(theWP) = EXTERN;
-  theEXW = WP_EXTERNWISE(theWP);
-  theEXW->EXT_PreProcessProc                              = EXT_PreProcess_VecMatBnd2d;
-  theEXW->EXT_EvaluateProc                                = EXT_BndEval2d;
-  theEXW->EXT_ExecuteProc                                 = Draw2D;
-  theEXW->EXT_PostProcessProc                             = EXT_PostProcess_Bnd2d;
+  WP_WORKMODE(theWP) = ELEMENTWISE;
+  theEWW = WP_ELEMWISE(theWP);
+  theEWW->EW_PreProcessProc                               = EW_PreProcess_VecMatBnd2D;
+  theEWW->EW_GetFirstElementProcProc              = EW_GetFirstElement_vert_fw_up_Proc;
+  theEWW->EW_GetNextElementProcProc               = EW_GetNextElement_vert_fw_up_Proc;
+  theEWW->EW_EvaluateProc                                 = EW_BndEval2D;
+  theEWW->EW_ExecuteProc                                  = Draw2D;
+  theEWW->EW_PostProcessProc                              = EW_PostProcess_Bnd2D;
 
   theWP = POH_WORKPROGS(thePOH,DRAW_WORK,1);
   WP_WORKMODE(theWP) = VECTORWISE;

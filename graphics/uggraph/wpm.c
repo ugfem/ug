@@ -2412,7 +2412,6 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->ElemColored     = NO;
     theGpo->WhichElem               = PO_ALL;
     theGpo->PlotBoundary    = YES;
-    theGpo->PlotSegmentIDs  = NO;
     theGpo->PlotElemID              = NO;
     theGpo->PlotNodeID              = NO;
     theGpo->PlotNodes               = NO;
@@ -2458,19 +2457,6 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
         theGpo->PlotBoundary = YES;
       else if (iValue==0)
         theGpo->PlotBoundary = NO;
-      break;
-    }
-
-  /* set segID option */
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='s')
-    {
-      if (sscanf(argv[i],"s %d",&iValue)!=1)
-        break;
-      if (iValue==1)
-        theGpo->PlotSegmentIDs = YES;
-      else if (iValue==0)
-        theGpo->PlotSegmentIDs = NO;
       break;
     }
 
@@ -2584,12 +2570,6 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"BND","YES");
   else
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"BND","NO");
-  UserWrite(buffer);
-
-  if (theGpo->PlotSegmentIDs == YES)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"SegID","YES");
-  else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"SegID","NO");
   UserWrite(buffer);
 
   if (theGpo->PlotNodes == YES)

@@ -265,7 +265,6 @@ struct GridPlotObj2D {
   INT PlotNodeID;                                                       /* YES or NO									*/
   INT PlotNodes;                                                        /* YES or NO									*/
   INT PlotBoundary;                                                     /* YES or NO									*/
-  INT PlotSegmentIDs;                                                   /* YES or NO									*/
   INT WhichElem;                                                        /* see above									*/
   INT ElemColored;                                                      /* YES or NO									*/
 };
