@@ -4,9 +4,12 @@
 #### barf on errors
 set -e
 
+# may be used to force a certain automake-version e.g. 1.7
+AMVERS=
+
 # everybody who checks out the CVS wants the maintainer-mode to be enabled
 # (should be off for source distributions, this should happen automatically)
-DEFAULTCONFOPT="--enable-maintainer-mode --prefix=/home/thimo/Dune/uglib"
+DEFAULTCONFOPT="--enable-maintainer-mode"
 
 # default values
 DEBUG=1
@@ -73,6 +76,13 @@ if [ "$OPTIM" = "1" ] ; then
     COMPFLAGS="$COMPFLAGS $OPTIMFLAGS"
 fi
 
+# check if automake-version was set
+if test "x$AMVERS" != x ; then
+  echo Warning: explicitly using automake version $AMVERS
+  # binaries are called automake-$AMVERS
+  AMVERS="-$AMVERS"
+fi
+
 #### create all autotools-files
 
 echo "--> libtoolize..."
@@ -82,13 +92,13 @@ libtoolize --force
 # for plugin-stuff later: --ltdl
 
 echo "--> aclocal..."
-aclocal -I m4
+aclocal$AMVERS -I m4
 
 echo "--> autoheader..."
 autoheader
 
 echo "--> automake..."
-automake --add-missing
+automake$AMVERS --add-missing
 
 echo "--> autoconf..."
 autoconf
