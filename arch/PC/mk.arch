@@ -1,0 +1,25 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for Linux-PC (with GCC)
+#
+
+ARCH_TYPE     = __PC__
+
+ARCH_CC       = gcc
+ARCH_C++      = g++
+ARCH_F77      = f77
+ARCH_LINK     = gcc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK =
+
+ARCH_LIBS     = -lm -lc
+
+ARCH_CFLAGS   =  # -g 
+ARCH_LFLAGS   = 
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDE = 
+ARCH_XLIB     = 
+

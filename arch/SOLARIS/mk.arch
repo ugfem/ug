@@ -1,0 +1,25 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for SUN Sparc 5 Workstations (SOLARIS 5.3)
+#     (cc -V: SC3.0)
+#
+
+ARCH_TYPE     = __SOLARIS__
+
+ARCH_CC       = cc
+ARCH_C++      = cc
+ARCH_LINK     = cc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK =
+
+ARCH_LIBS     = -lm -lc
+
+ARCH_CFLAGS   = -Aa -w1 -Xc  # -g 
+ARCH_LFLAGS   =
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDE = -I/usr/openwin/share/include -I.
+ARCH_XLIB     = -L/usr/openwin/lib -L. -lX11 -lXt -lXaw -lXmu -lXext
+

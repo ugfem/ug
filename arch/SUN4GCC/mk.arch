@@ -1,0 +1,25 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for SUN Workstations (SunOS 5.3)
+#     (cc -V: SC3.0.1)
+#
+
+ARCH_TYPE     = __SUN4GCC__
+
+ARCH_CC       = gcc
+ARCH_C++      = g++
+ARCH_LINK     = gcc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK =
+
+ARCH_LIBS     = -lm -lc
+
+ARCH_CFLAGS   =  # -g 
+ARCH_LFLAGS   = 
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDE = -I/usr/openwin/include
+ARCH_XLIB     = -L/usr/openwin/lib -lX11 -lXt -lXaw -lXmu -lXext
+

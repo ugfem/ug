@@ -1,0 +1,24 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for IBM AIX
+#
+
+ARCH_TYPE     = __AIX__
+
+ARCH_CC       = cc
+ARCH_C++      = cc
+ARCH_LINK     = cc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK =
+
+ARCH_LIBS     = -lm
+
+ARCH_CFLAGS   = -g 
+ARCH_LFLAGS   = 
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDE =
+ARCH_XLIB     =
+

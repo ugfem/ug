@@ -1,0 +1,25 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for Intel Paragon
+#
+
+ARCH_TYPE     = __PARAGON__
+
+ARCH_CC       = cc
+ARCH_C++      = CC --no_bool --no_namespaces --no_rtti
+ARCH_F77      = f77
+ARCH_LINK     = cc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK =
+
+ARCH_LIBS     = -lm
+
+ARCH_CFLAGS   = -A  # -g -Xc -O1 -Mnoperfmon -Mvect
+ARCH_LFLAGS   = # -Mdebug -Mframe -O0
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDE =
+ARCH_XLIB     = -lX11 -lXt -lXaw -lXmu -lXext -lX11 -lXt
+

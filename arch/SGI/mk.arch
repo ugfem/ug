@@ -1,0 +1,25 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for SGI Workstations
+#
+
+ARCH_TYPE     = __SGI__
+
+ARCH_CC       = cc
+ARCH_C++      = cc
+ARCH_LINK     = cc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK =
+
+ARCH_LIBS     = -lm
+
+# add -mips2 for invoking R4000 specific extensions
+ARCH_CFLAGS   = -mips2 -O2  # -g 
+ARCH_LFLAGS   = -mips2
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDE =
+ARCH_XLIB     = -lX11 -lXt -lXaw -lXmu -lXext
+
