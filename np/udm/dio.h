@@ -48,7 +48,6 @@
 #define DIO_VERSION                                     "DATA_IO_1.7"
 
 #define __DTIO_USE_IN_UG__
-#define DIO_DIM                 3
 
 /****************************************************************************/
 /*																			*/
