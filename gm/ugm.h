@@ -113,6 +113,7 @@ INT              PointInElement                 (const COORD*, const ELEMENT *th
 VIRT_HEAP_MGMT *GetGenMGUDM             (void);
 
 NODE            *CreateMidNode                  (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after);
+NODE        *CreateCenterNode       (GRID *theGrid, ELEMENT *theElement);
 
 #ifdef __TWODIM__
 EDGE            *CreateAuxEdge                  (GRID *theGrid, NODE *from, NODE *to);
