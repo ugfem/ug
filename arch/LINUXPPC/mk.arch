@@ -9,7 +9,6 @@ ARCH_TYPE     = __LINUXPPC__
 ARCH_MAKE     = make
 ARCH_CC       = gcc
 ARCH_C++      = g++
-ARCH_F77      = g77
 ARCH_LINK     = gcc
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
@@ -17,9 +16,11 @@ ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lm
 
-ARCH_CFLAGS   = -g -Wall -Wno-unused -Wno-parentheses
+ARCH_CFLAGS   = -pipe
+ARCH_NOOPTIM  = -g -Wall -Wno-unused -Wno-parentheses
+ARCH_OPTIM    = -s -O3 -fomit-frame-pointer -funroll-loops -ffast-math
 ARCH_C++FLAGS =
-ARCH_LFLAGS   = 
+ARCH_LFLAGS   =
 ARCH_ARFLAGS  = rus
 
 ARCH_XINCLUDES = 
