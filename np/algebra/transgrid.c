@@ -2065,5 +2065,62 @@ INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const MATDATA_
   return(NUM_OK);
 }
 
+/****************************************************************************/
+/*D
+   DiagonalScaleSystem - scale system of equations by point-block-diagonal
+
+   SYNOPSIS:
+   INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const VECDATA_DESC *rhs);
+
+   PARAMETERS:
+   .  FineGrid - pointer to grid
+   .  Mat - matrix
+   .  rhs - right hand side
+
+   DESCRIPTION:
+   Scales Ax=b to DAx=Db, where D is the inverse of the diagonal blocks of A.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured.
+   D*/
+/****************************************************************************/
+
+#define IS_COARSE(v)            NFATHER(VMYNODE(v))!=NULL
+#define V_COARSE(v)                     NVECTOR(NFATHER(VMYNODE(v)))
+
+INT CreateStandardNodeRestProl (GRID *fineGrid)
+{
+  VECTOR *V,*VC;
+  MATRIX *M,*MI;
+
+  if (DOWNGRID(fineGrid)==NULL) return (1);
+  if (DisposeIMatricesInGrid (fineGrid)) return (1);
+
+  for (V=FIRSTVECTOR(fineGrid); V!= NULL;  V=SUCCVC(V))
+  {
+    if (IS_COARSE(V))
+    {
+      VC = V_COARSE(V);
+      MI = CreateIMatrix(fineGrid,V,VC);
+      MVALUE(MI,0) = 1.0;
+    }
+    else
+    {
+      for (M=VSTART(V); M!=NULL; M=MNEXT(M))
+      {
+        if (!IS_COARSE(MDEST(M))) continue;
+        VC = V_COARSE(MDEST(M));
+        MI = CreateIMatrix(fineGrid,V,VC);
+        MVALUE(MI,0) = 0.5;
+      }
+    }
+  }
+
+  return (0);
+}
+
+
 
 #endif /* interpolation matrix is defined */
