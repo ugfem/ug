@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/*            DDD V1.7.1                                                    */
+/*            DDD V1.7.3                                                    */
 /*                                                                          */
 /* File:      ddd.h                                                         */
 /*                                                                          */
@@ -62,7 +62,7 @@ extern "C" {
  #endif
 #endif
 
-#define DDD_VERSION    "1.7.1"
+#define DDD_VERSION    "1.7.3"
 
 
 /* F77SYM(lsym,usym) macro is defined in compiler.h. 961127 KB */
@@ -161,7 +161,12 @@ enum IFConstants {
 
 /* DDD_TYPE DDD_USER_DATA: send stream of bytes with XferAddData */
 enum XferConstants {
-  DDD_USER_DATA = 0x8000
+  /* DDD_TYPE DDD_USER_DATA: send stream of bytes with XferAddData */
+  DDD_USER_DATA = 0x8000,
+
+  /* second parameter for MKCONS handler */
+  XFER_UPGRADE = 0x9000,          /* object has been upgraded due to RULE C3 */
+  XFER_NEW                        /* object is totally new */
 };
 
 

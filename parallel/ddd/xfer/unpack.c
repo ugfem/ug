@@ -479,6 +479,7 @@ static void AcceptObjFromMsg (
         ObjCopyGlobalData(desc,
                           HDR2OBJ(localCplObjs[j],desc), copy, ote->size);
 
+        ote->oldprio = OBJ_PRIO(localCplObjs[j]);
         OBJ_PRIO(localCplObjs[j]) = ote->prio;
         ote->is_new = PARTNEW;
       }
@@ -543,7 +544,7 @@ static void AcceptReceivedObjects (
           1. collision detection for incoming objects with same
                   gid: accept object with highest priority. if several
                   such objects exist, an arbitrary one is chosen.
-                  discard all other objects with same gid.
+                  discard all other objects with same gid. (RULE XFER-C2)
 
           2. transfer objects from message into local memory.
 
@@ -668,7 +669,7 @@ static void UpdateCouplings (
     }
 
 
-    /* for all NewCpl-Item with same gid as incoming object */
+    /* for all NewCpl-Items with same gid as incoming object */
     while (iNC<nNC && itemsNC[iNC].gid == gid)
     {
       /* there is a corresponding NewCpl-item */
@@ -1208,14 +1209,17 @@ static void CallObjMkConsHandler (LC_MSGHANDLE xm)
   /* initialize new objects corresponding to application: consistency */
   for(i=0; i<lenObjTab; i++)               /* for all message items */
   {
-    if (theObjTab[i].is_new!=NOTNEW && theObjTab[i].is_new!=OTHERMSG)
+    if (theObjTab[i].is_new==PARTNEW || theObjTab[i].is_new==TOTALNEW)
     {
       TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
       DDD_OBJ obj   = HDR2OBJ(theObjTab[i].hdr, desc);
 
+      int newness = (theObjTab[i].is_new==PARTNEW) ?
+                    XFER_UPGRADE : XFER_NEW;
+
       /* call application handler for object consistency */
       if (desc->handler[HANDLER_OBJMKCONS]!=NULL)
-        desc->handler[HANDLER_OBJMKCONS](obj);
+        desc->handler[HANDLER_OBJMKCONS](obj, newness);
     }
   }
 
@@ -1403,7 +1407,6 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
   }
 
 
-
   /*
           TODO: the following loops can be implemented more
           efficiently. in each loop, there is another loop
@@ -1433,15 +1436,19 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
           4. update consistency
    */
 
-  for(i=0; i<nRecvMsgs; i++)
-    CallUpdateHandler(theMsgs[i]);
-
-  for(i=0; i<nRecvMsgs; i++)
-    UnpackAddData(theMsgs[i]);
-
+  /* for PARTNEW objects */
   for(i=0; i<nRecvMsgs; i++)
     CallSetPriorityHandler(theMsgs[i]);
 
+  /* for TOTALNEW objects */
+  for(i=0; i<nRecvMsgs; i++)
+    CallUpdateHandler(theMsgs[i]);
+
+  /* for all incoming objects */
+  for(i=0; i<nRecvMsgs; i++)
+    UnpackAddData(theMsgs[i]);
+
+  /* for PARTNEW and TOTALNEW objects */
   for(i=0; i<nRecvMsgs; i++)
     CallObjMkConsHandler(theMsgs[i]);
 

@@ -650,6 +650,7 @@ void ExecLocalXISetPrio (
     /*
             else: SetPrio _and_ DelObj, SetPrio is invalid,
                   DelObj will be executed lateron
+                  (this is rule XFER-M1).
      */
   }
 

@@ -1,5 +1,16 @@
 ---------------------------
 
+CHANGES 1.7.2 -> 1.7.3
+
+---------------------------
+970121 kb
+changed order of handler calls in xfer-unpack implementation.
+	- now MKCONS handler gets second parameter 'newness'.
+	  XFER_UPGRADE for objects upgraded according RULE C3.
+	  XFER_NEW for new objects.
+	- this should be documented in RefMan.
+---------------------------
+
 CHANGES 1.7.1 -> 1.7.2
 
 ---------------------------
