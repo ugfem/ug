@@ -1,0 +1,23 @@
+#
+#	PPIF MAKEFILE OPTIONS
+#
+#   for SHMEM (Cray T3D)
+#
+
+
+# in:
+#	ENV_LIBS
+#   ENV_INCLUDES
+#   ARCH_CC
+#   ARCH_PLIBS
+
+
+PPIF_CC       = $(ARCH_CC)
+
+PPIF_LIBS     = $(ENV_LIBS) $(ARCH_PLIBS) -lc -lsma -lu
+PPIF_INCLUDES = $(ENV_INCLUDES) -I/usr/include/mpp
+
+PPIF_CFLAGS   = $(ENV_CFLAGS)
+PPIF_LFLAGS   = $(ENV_LFLAGS)
+
+
