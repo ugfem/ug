@@ -1346,7 +1346,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 			MidNodes[i] = MIDNODE(theEdge);
 			if (MidNodes[i] == NULL)
 			{
-				MidNodes[i] = CreateMidNode(theGrid,theElement,i,theElementContext[Corner0]);
+				MidNodes[i] = CreateMidNode(theGrid,theElement,i);
 				if (MidNodes[i]==NULL) RETURN(GM_FATAL);
 				IFDEBUG(gm,2)
 				UserWriteF(" created ID(MidNode)=%d for edge=%d",ID(MidNodes[i]),i);
@@ -2243,9 +2243,9 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 			ASSERT(k == element_descriptors[sons[i].tag]->corners_of_elem);
 
 			if (sons[i].bdy == 1) 
-				sons[i].theSon = CreateElement(theGrid,sons[i].tag,BEOBJ,ElementNodes,NULL);
+				sons[i].theSon = CreateElement(theGrid,sons[i].tag,BEOBJ,ElementNodes);
 			else
-				sons[i].theSon = CreateElement(theGrid,sons[i].tag,IEOBJ,ElementNodes,NULL);
+				sons[i].theSon = CreateElement(theGrid,sons[i].tag,IEOBJ,ElementNodes);
 			if (sons[i].theSon==NULL) RETURN(GM_FATAL);
 
 			IFDEBUG(gm,0)
@@ -2610,9 +2610,9 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 
 		/* TODO: delete special debug */ PRINTELEMID(-2)
 		if (boundaryelement)
-				theSon = CreateElement(theGrid,rule->sons[s].tag,BEOBJ,ElementNodes,NULL);
+				theSon = CreateElement(theGrid,rule->sons[s].tag,BEOBJ,ElementNodes);
 		else
-				theSon = CreateElement(theGrid,rule->sons[s].tag,IEOBJ,ElementNodes,NULL);
+				theSon = CreateElement(theGrid,rule->sons[s].tag,IEOBJ,ElementNodes);
 		if (theSon==NULL) RETURN(GM_ERROR);
 
 		/* TODO: delete special debug */ PRINTELEMID(-2)

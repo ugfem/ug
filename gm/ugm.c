@@ -126,10 +126,10 @@ RCSID("$Header$",UG_RCS_STRING)
 /*																			*/
 /****************************************************************************/
 
-static VERTEX *CreateBoundaryVertex     (GRID *theGrid, VERTEX *after);
-static VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after);
-static VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex);
 static NODE *CreateNode (GRID *theGrid);
+static VERTEX *CreateBoundaryVertex     (GRID *theGrid);
+static VERTEX *CreateInnerVertex (GRID *theGrid);
+static VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex);
 
 static INT DisposeNode (GRID *theGrid, NODE *theNode);
 static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex);
@@ -435,7 +435,7 @@ static VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex)
    CreateBoundaryVertex - Return pointer to a new boundary vertex structure
 
    SYNOPSIS:
-   static VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after);
+   static VERTEX *CreateBoundaryVertex (GRID *theGrid);
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
@@ -452,7 +452,7 @@ static VSEGMENT *CreateVertexSegment (GRID *theGrid, VERTEX *vertex)
    D*/
 /****************************************************************************/
 
-static VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after)
+static VERTEX *CreateBoundaryVertex (GRID *theGrid)
 {
   VERTEX *pv;
   INT ds;
@@ -485,22 +485,11 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after)
         #endif
 
   /* insert in vertex list */
-  if (after==NULL)
-  {
-    SUCCV(pv) = FIRSTVERTEX(theGrid);
-    PREDV(pv) = NULL;
-    if (SUCCV(pv)!=NULL) PREDV(SUCCV(pv)) = pv;
-    else LASTVERTEX(theGrid) = pv;
-    FIRSTVERTEX(theGrid) = pv;
-  }
-  else
-  {
-    SUCCV(pv) = SUCCV(after);
-    PREDV(pv) = after;
-    if (SUCCV(pv)!=NULL) PREDV(SUCCV(pv)) = pv;
-    else LASTVERTEX(theGrid) = pv;
-    SUCCV(after) = pv;
-  }
+  SUCCV(pv) = FIRSTVERTEX(theGrid);
+  PREDV(pv) = NULL;
+  if (SUCCV(pv)!=NULL) PREDV(SUCCV(pv)) = pv;
+  else LASTVERTEX(theGrid) = pv;
+  FIRSTVERTEX(theGrid) = pv;
 
   /* counters */
   theGrid->nVert++;
@@ -513,7 +502,7 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after)
    CreateInnerVertex - Return pointer to a new inner vertex structure
 
    SYNOPSIS:
-   static VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after);
+   static VERTEX *CreateInnerVertex (GRID *theGrid);
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
@@ -530,7 +519,7 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after)
    D*/
 /****************************************************************************/
 
-static VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after)
+static VERTEX *CreateInnerVertex (GRID *theGrid)
 {
   VERTEX *pv;
   INT ds;
@@ -561,22 +550,11 @@ static VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after)
   for (i=0; i<DIM; i++) LCVECT(pv)[i] = 0.0;
 
   /* insert in vertex list */
-  if (after==NULL)
-  {
-    SUCCV(pv) = FIRSTVERTEX(theGrid);
-    PREDV(pv) = NULL;
-    if (SUCCV(pv)!=NULL) PREDV(SUCCV(pv)) = pv;
-    else LASTVERTEX(theGrid) = pv;
-    FIRSTVERTEX(theGrid) = pv;
-  }
-  else
-  {
-    SUCCV(pv) = SUCCV(after);
-    PREDV(pv) = after;
-    if (SUCCV(pv)!=NULL) PREDV(SUCCV(pv)) = pv;
-    else LASTVERTEX(theGrid) = pv;
-    SUCCV(after) = pv;
-  }
+  SUCCV(pv) = FIRSTVERTEX(theGrid);
+  PREDV(pv) = NULL;
+  if (SUCCV(pv)!=NULL) PREDV(SUCCV(pv)) = pv;
+  else LASTVERTEX(theGrid) = pv;
+  FIRSTVERTEX(theGrid) = pv;
 
   /* counters */
   theGrid->nVert++;
@@ -702,7 +680,7 @@ NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
    CreateMidNode - Return pointer to a new node structure on an edge
 
    SYNOPSIS:
-   NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge, NODE *after);
+   NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge);
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
@@ -721,7 +699,7 @@ NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
    D*/
 /****************************************************************************/
 
-NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge, NODE *after)
+NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
 {
   NODE *theNode;
   EDGE *theEdge;
@@ -752,7 +730,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge, NODE *after)
         {
           if (theVertex == NULL)
           {
-            theVertex = CreateBoundaryVertex(theGrid,NULL);
+            theVertex = CreateBoundaryVertex(theGrid);
             if (theVertex == NULL) return(NULL);
             global = CVECT(theVertex);
             local = LCVECT(theVertex);
@@ -798,7 +776,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge, NODE *after)
   if (theVertex == NULL)
   {
     /* we need an inner vertex */
-    theVertex = CreateInnerVertex(theGrid,NULL);
+    theVertex = CreateInnerVertex(theGrid);
     if (theVertex==NULL) return(NULL);
     V_DIM_LINCOMB(0.5, CVECT(v0), 0.5, CVECT(v1), CVECT(theVertex));
     V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theElement,co0),
@@ -875,7 +853,7 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
     theSide = SIDE(theElement,side);
     if (theSide != NULL)
     {
-      theVertex = CreateBoundaryVertex(theGrid,NULL);
+      theVertex = CreateBoundaryVertex(theGrid);
       if (theVertex == NULL) return(NULL);
 
       if ((vs = CreateVertexSegment(theGrid,theVertex)) == NULL)
@@ -924,7 +902,7 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 
   if (theVertex == NULL)
   {
-    theVertex = CreateInnerVertex(theGrid,NULL);
+    theVertex = CreateInnerVertex(theGrid);
     if (theVertex == NULL) return(NULL);
     global = CVECT(theVertex);
     local = LCVECT(theVertex);
@@ -981,7 +959,7 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
   DOUBLE fac;
   COORD *x[MAX_CORNERS_OF_ELEM];
 
-  theVertex = CreateInnerVertex(theGrid,NULL);
+  theVertex = CreateInnerVertex(theGrid);
   if (theVertex==NULL)
     return(NULL);
   theNode = CreateNode(theGrid);
@@ -1166,7 +1144,7 @@ LINK *GetLink (NODE *from, NODE *to)
 
    SYNOPSIS:
    ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
-   NODE **nodes, ELEMENT *after);
+   NODE **nodes);
 
    PARAMETERS:
    .  theGrid - grid structure to extend
@@ -1186,7 +1164,7 @@ LINK *GetLink (NODE *from, NODE *to)
 /****************************************************************************/
 
 ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
-                        NODE **nodes, ELEMENT *after)
+                        NODE **nodes)
 {
   ELEMENT *pe;
   INT i,j;
@@ -1255,26 +1233,13 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
         #endif
 
   /* insert in element list */
-  if (after==NULL)
-  {
-    SUCCE(pe) = theGrid->elements;
-    PREDE(pe) = NULL;
-    if (SUCCE(pe)!=NULL)
-      PREDE(SUCCE(pe)) = pe;
-    else
-      theGrid->lastelement = pe;
-    theGrid->elements = pe;
-  }
+  SUCCE(pe) = theGrid->elements;
+  PREDE(pe) = NULL;
+  if (SUCCE(pe)!=NULL)
+    PREDE(SUCCE(pe)) = pe;
   else
-  {
-    SUCCE(pe) = SUCCE(after);
-    PREDE(pe) = after;
-    if (SUCCE(pe)!=NULL)
-      PREDE(SUCCE(pe)) = pe;
-    else
-      theGrid->lastelement = pe;
-    SUCCE(after) = pe;
-  }
+    theGrid->lastelement = pe;
+  theGrid->elements = pe;
 
   /* counters */
   theGrid->nElem++;
@@ -1791,7 +1756,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
   /* create nodes and vertices */
   for (i=0; i<n; i++)
   {
-    pv[i] = CreateBoundaryVertex(theGrid,NULL);
+    pv[i] = CreateBoundaryVertex(theGrid);
     if (pv[i]==NULL) { DisposeMultiGrid(theMG); return(NULL); }
     SETMOVE(pv[i],0);
     SETUSED(pv[i],0);
@@ -2814,7 +2779,7 @@ INT InsertInnerNode (MULTIGRID *theMG, COORD *pos)
   theGrid = GRID_ON_LEVEL(theMG,0);
 
   /* create objects */
-  theVertex = CreateInnerVertex(theGrid,NULL);
+  theVertex = CreateInnerVertex(theGrid);
   if (theVertex==NULL)
   {
     PrintErrorMessage('E',"InsertInnerNode","cannot create vertex");
@@ -2927,7 +2892,7 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
   }
 
   /* create objects */
-  theVertex = CreateBoundaryVertex(theGrid,NULL);
+  theVertex = CreateBoundaryVertex(theGrid);
   if (theVertex==NULL)
   {
     PrintErrorMessage('E',"InsertBoundaryNodeFromPatch",
@@ -3283,7 +3248,7 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
     else
     {
       CORNER_COORDINATES(theElement,n,x);
-      GlobalToLocal(n,x,newPos,LCVECT(theVertex));
+      GlobalToLocal(n,(const COORD **)x,newPos,LCVECT(theVertex));
       VFATHER(theVertex) = theElement;
     }
   }
@@ -3530,7 +3495,8 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
           else
           {
             CORNER_COORDINATES(eptr,m,corn);
-            GlobalToLocal(m,corn,cvect,LCVECT(vptr));
+            GlobalToLocal(m,(const COORD **)corn,
+                          cvect,LCVECT(vptr));
             VFATHER(vptr) = eptr;
           }
         }
@@ -3869,7 +3835,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList)
     }
 
   /* create element */
-  theElement = CreateElement(theGrid,tag,ElementType,Node,NULL);
+  theElement = CreateElement(theGrid,tag,ElementType,Node);
   if (theElement==NULL)
   {
     PrintErrorMessage('E',"InsertElement","cannot allocate element");

@@ -90,8 +90,8 @@ INT              PutFreeObjectLocal             (MULTIGRID *theMG, void *object,
 /* create basic objects */
 EDGE        *CreateEdge             (GRID *theGrid, NODE *from, NODE *to, INT with_vector);
 ELEMENT     *CreateElement          (GRID *theGrid, INT tag, INT objtype,
-                                     NODE **nodes, ELEMENT *after);
-ELEMENTSIDE *CreateElementSide          (GRID *theGrid);
+                                     NODE **nodes);
+ELEMENTSIDE *CreateElementSide      (GRID *theGrid);
 INT         CreateSonElementSide    (GRID *theGrid, ELEMENT *theElement,
                                      INT side, ELEMENT *theSon, INT son_side);
 
@@ -107,7 +107,7 @@ INT              PointInElement                 (const COORD*, const ELEMENT *th
 VIRT_HEAP_MGMT *GetGenMGUDM             (void);
 
 NODE        *CreateSonNode          (GRID *theGrid, NODE *FatherNode);
-NODE            *CreateMidNode                  (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after);
+NODE            *CreateMidNode                  (GRID *theGrid, ELEMENT *theElement, INT side);
 NODE        *CreateCenterNode       (GRID *theGrid, ELEMENT *theElement);
 
 #ifdef __THREEDIM__
