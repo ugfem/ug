@@ -932,7 +932,9 @@ typedef struct
 {
   unsigned INT VecReserv[MAXVECTORS][MAX_NDOF_MOD_32];
   unsigned INT MatReserv[MAXMATRICES][MAX_NDOF_MOD_32];
-} DATA_RESERVATION ;
+  unsigned INT VecConsistentStatus[MAXMATRICES][MAX_NDOF_MOD_32];
+  unsigned INT VecCollectStatus[MAXMATRICES][MAX_NDOF_MOD_32];
+} DATA_STATUS;
 
 struct grid {
 
@@ -949,8 +951,8 @@ struct grid {
 #ifdef __INTERPOLATION_MATRIX__
   INT nIMat;                        /* number of interpolation matrices     */
 #endif
-  DATA_RESERVATION dr;              /* memory management for vectors|matrix */
-
+  DATA_STATUS data_status;          /* memory management for vectors|matrix */
+                                    /* status for consistent and collect    */
   /* pointers */
   union  element *elements[ELEMENTPRIOS];       /* pointer to first element     */
   union  element *lastelement[ELEMENTPRIOS];       /* pointer to last element	*/
@@ -986,8 +988,8 @@ struct multigrid {
   HEAP *theHeap;                                        /* associated heap structure			*/
   INT nProperty;                                        /* max nb of properties used in elements*/
 
-  DATA_RESERVATION dr;              /* memory management for vectors|matrix */
-
+  DATA_STATUS data_status;          /* memory management for vectors|matrix */
+                                    /* status for consistent and collect    */
   /* pointers */
   struct grid *amggrids[MAXLEVEL];      /* pointers to the grids				*/
   struct grid *grids[MAXLEVEL];         /* pointers to the grids				*/
