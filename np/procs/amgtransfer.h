@@ -42,64 +42,11 @@
 /*																			*/
 /****************************************************************************/
 
-#define DISPLAY_NP_AMG_STRING "Level  NVectors   NMatrices  NIMats (to finer level)\n"
-#define DISPLAY_NP_AMG_FORMAT "%3d   %8d   %8d   %8d\n"
-
 /****************************************************************************/
 /*																			*/
 /* data structures exported by the corresponding source file				*/
 /*																			*/
 /****************************************************************************/
-
-/* a data type for returning the status of the coarsening procedure         */
-typedef struct {
-  INT nVects;
-  INT nMats;
-  INT nIMats;
-} CLRESULT;
-
-typedef struct {
-  INT error_code;                           /* error code                       */
-  INT nLevels;                              /* number of created CG levels      */
-  CLRESULT clres[MAXLEVEL];                 /* data for each level              */
-} CRESULT;
-
-typedef INT (*MarkConnectionsProcPtr)(GRID *, MATDATA_DESC *, DOUBLE);
-typedef INT (*CoarsenProcPtr)(GRID *);
-typedef INT (*SetupIRMatProcPtr)(GRID *, MATDATA_DESC *, MATDATA_DESC *);
-typedef INT (*SetupCGMatProcPtr)(GRID *, MATDATA_DESC *, MATDATA_DESC *);
-
-typedef struct
-{
-  NP_TRANSFER transfer;
-  INT display;                               /* display modus                   */
-
-  MarkConnectionsProcPtr MarkStrong;        /* mark strong connections         */
-  DOUBLE thetaS;                             /* parameter                       */
-
-  CoarsenProcPtr Coarsen;                    /* the coarsening routine          */
-
-  SetupIRMatProcPtr SetupIR;                 /* setup interpolation/restriction */
-
-  SetupCGMatProcPtr SetupCG;                 /* setup coarse grid matrix        */
-
-  MarkConnectionsProcPtr MarkKeep;           /* mark connections to keep        */
-  DOUBLE thetaK;                             /* parameter                       */
-  INT sparsenFlag;                           /* if set, lump to diagonal        */
-
-  INT reorderFlag;                           /* ordering of fine grid points    */
-
-  INT vectLimit;                             /* stop if vects<vectLimit         */
-  INT matLimit;                              /* stop if matrices<matLimit       */
-  DOUBLE bandLimit;                          /* stop if matrices/vects>bandLimit*/
-  DOUBLE vRedLimit;                          /* stop if vectReduction<vRedLimit */
-  DOUBLE mRedLimit;                          /* stop if matReduction<mRedLimit  */
-  INT levelLimit;                            /* stop if -level>levelLimit       */
-
-  INT explicitFlag;                          /* clear only by npexecute         */
-  INT hold;                                  /* no clear in postprocess         */
-
-} NP_AMG_TRANSFER;
 
 /****************************************************************************/
 /*																			*/

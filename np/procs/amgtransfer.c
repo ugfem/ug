@@ -59,6 +59,8 @@
 /*                                                                          */
 /****************************************************************************/
 
+#define DISPLAY_NP_AMG_STRING "Level  NVectors   NMatrices  NIMats (to finer level)\n"
+#define DISPLAY_NP_AMG_FORMAT "%3d   %8d   %8d   %8d\n"
 
 /****************************************************************************/
 /*                                                                          */
@@ -66,6 +68,57 @@
 /*        in the corresponding include file!)                               */
 /*                                                                          */
 /****************************************************************************/
+
+/* a data type for returning the status of the coarsening procedure         */
+typedef struct {
+  INT nVects;
+  INT nMats;
+  INT nIMats;
+} CLRESULT;
+
+typedef struct {
+  INT error_code;                           /* error code                       */
+  INT nLevels;                              /* number of created CG levels      */
+  CLRESULT clres[MAXLEVEL];                 /* data for each level              */
+} CRESULT;
+
+typedef INT (*MarkConnectionsProcPtr)(GRID *, MATDATA_DESC *, DOUBLE);
+typedef INT (*CoarsenProcPtr)(GRID *);
+typedef INT (*SetupIRMatProcPtr)(GRID *, MATDATA_DESC *, MATDATA_DESC *);
+typedef INT (*SetupCGMatProcPtr)(GRID *, MATDATA_DESC *, MATDATA_DESC *);
+
+typedef struct
+{
+  NP_TRANSFER transfer;
+  INT display;                               /* display modus                   */
+
+  MarkConnectionsProcPtr MarkStrong;        /* mark strong connections         */
+  DOUBLE thetaS;                             /* parameter                       */
+
+  CoarsenProcPtr Coarsen;                    /* the coarsening routine          */
+
+  SetupIRMatProcPtr SetupIR;                 /* setup interpolation/restriction */
+
+  SetupCGMatProcPtr SetupCG;                 /* setup coarse grid matrix        */
+
+  MarkConnectionsProcPtr MarkKeep;           /* mark connections to keep        */
+  DOUBLE thetaK;                             /* parameter                       */
+  INT sparsenFlag;                           /* if set, lump to diagonal        */
+
+  INT reorderFlag;                           /* ordering of fine grid points    */
+
+  INT vectLimit;                             /* stop if vects<vectLimit         */
+  INT matLimit;                              /* stop if matrices<matLimit       */
+  DOUBLE bandLimit;                          /* stop if matrices/vects>bandLimit*/
+  DOUBLE vRedLimit;                          /* stop if vectReduction<vRedLimit */
+  DOUBLE mRedLimit;                          /* stop if matReduction<mRedLimit  */
+  INT levelLimit;                            /* stop if -level>levelLimit       */
+
+  INT symmetric;                             /* flag for symmetry               */
+  INT explicitFlag;                          /* clear only by npexecute         */
+  INT hold;                                  /* no clear in postprocess         */
+
+} NP_AMG_TRANSFER;
 
 /****************************************************************************/
 /*																			*/
@@ -256,12 +309,6 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
       REP_ERR_RETURN(NP_NOT_ACTIVE);
     }
   }
-  if (np->MarkStrong==NULL)
-  {
-    PrintErrorMessage('E',"NPAMGTransferInit","no $strong... definition");
-    REP_ERR_RETURN(NP_NOT_ACTIVE);
-  }
-
   /* definition of sparsen criterion, default = no sparsening, keep all */
   np->MarkKeep=NULL;
   np->thetaK = 0.0;
@@ -294,8 +341,10 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
   if (ReadArgvOption("hold",argc,argv)==1)
     np->hold=1;
   if (ReadArgvChar("I",buffer,argc,argv) == 0) {
-    if (strcmp(buffer,"Average") == 0)
+    if (strcmp(buffer,"Average") == 0) {
       np->SetupIR = IpAverage;
+      np->Coarsen = CoarsenAverage;
+    }
     if (strcmp(buffer,"RugeStueben") == 0)
       np->SetupIR = IpRugeStueben;
     if (strcmp(buffer,"Vanek") == 0)
@@ -337,6 +386,7 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
     np->explicitFlag=1;
   else
     np->explicitFlag=0;
+  np->symmetric = ReadArgvOption("symmetric",argc,argv);
 
   /* finally the usual TRANSFER data */
   if (sc_read(np->transfer.damp,np->transfer.x,"damp",argc,argv))
@@ -400,6 +450,8 @@ INT AMGTransferDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Coarsen","RugeStueben");
   else if (np->Coarsen==CoarsenVanek)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Coarsen","Vanek");
+  else if (np->Coarsen==CoarsenAverage)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"Coarsen","Average");
   else
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Coarsen","unknown");
 
@@ -479,7 +531,6 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     result[0]=0;
     return(0);
   }
-
   /* clear AMG levels */
   if (DisposeAMGLevels(theMG)!=0) {
     PrintErrorMessage('E',"AMGTransferPreProcess",
@@ -487,7 +538,6 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     result[0]=1;
     REP_ERR_RETURN(result[0]);
   }
-
   theGrid=GRID_ON_LEVEL(theMG,0);
 
   SetStringValue(":amg:blevel",0);
@@ -500,8 +550,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     UserWriteF(DISPLAY_NP_AMG_FORMAT,0,(int)theGrid->nVector,
                (int)theGrid->nCon,0);
   }
-
-
+  AssembleTotalDirichletBoundary(theGrid,A,x,b);
   /* coarsen until criteria are fulfilled */
   while (theMG->bottomLevel>np->levelLimit) {
     level=theMG->bottomLevel;
@@ -521,12 +570,13 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       if ((DOUBLE)nMat/(DOUBLE)nVect>np->bandLimit)
         break;
 
-    UnmarkAll(theGrid,NULL,0.0);
-    if ((result[0]=(np->MarkStrong)(theGrid,A,np->thetaS))!=0)
-      REP_ERR_RETURN(result[0]);
-
+    if (np->MarkStrong != NULL) {
+      UnmarkAll(theGrid,NULL,0.0);
+      if ((result[0]=(np->MarkStrong)(theGrid,A,np->thetaS))!=0)
+        REP_ERR_RETURN(result[0]);
+    }
     if ((result[0]=(np->Coarsen)(theGrid))!=0)
-      REP_ERR_RETURN(result[0]);
+      break;
 
     newGrid=theGrid->coarser;
     if (newGrid==NULL)
@@ -535,10 +585,15 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     if ((result[0]=(np->SetupIR)(theGrid,A,NULL /* preliminary!! */))!=0)
       REP_ERR_RETURN(result[0]);
 
-    if ((result[0]=(np->SetupCG)(theGrid,A,NULL /* preliminary!! */))!=0)
-      REP_ERR_RETURN(result[0]);
+    if (AllocMDFromMD(theMG,level-1,level-1,A,&A))
+      REP_ERR_RETURN(1);
+    if (AssembleGalerkinByMatrix(theGrid,A,np->symmetric))
+      REP_ERR_RETURN(1);
+        #ifdef ModelP
+    if (a_vector_vecskip(theMG,level-1,level-1,x) != NUM_OK)
+      REP_ERR_RETURN(1);
+        #endif
 
-    newGrid=theGrid->coarser;
     if (np->MarkKeep!=NULL)
     {
       UnmarkAll(newGrid,NULL,0.0);
@@ -581,6 +636,9 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       if ((DOUBLE)2*newGrid->nCon/(DOUBLE)nVect > np->mRedLimit)
         break;
   };
+  for (level=-1; level>= theMG->bottomLevel; level--)
+    if (AssembleDirichletBoundary (GRID_ON_LEVEL(theMG,level),A,x,b))
+      REP_ERR_RETURN(1);
 
   /* we set the baselevel for the following cycle!! */
   *fl=theMG->bottomLevel;
@@ -746,7 +804,7 @@ static INT SelectionAMGConstruct (NP_BASE *theNP)
   np =(NP_AMG_TRANSFER *) theNP;
   np->Coarsen = CoarsenRugeStueben;
   np->SetupIR = IpRugeStueben;
-  np->SetupCG = GalerkinCGMatrixFromInterpolation;
+  np->SetupCG = NULL;
 
   return(0);
 }
@@ -760,7 +818,7 @@ static INT ClusterAMGConstruct (NP_BASE *theNP)
   np =(NP_AMG_TRANSFER *) theNP;
   np->Coarsen = CoarsenVanek;
   np->SetupIR = IpVanek;
-  np->SetupCG = GalerkinCGMatrixFromInterpolation;
+  np->SetupCG = NULL;
 
   return(0);
 }
