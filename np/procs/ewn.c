@@ -499,9 +499,9 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
 {
   NP_EWN     *np    = (NP_EWN *) theNP;
   MULTIGRID *theMG = theNP->base.mg;
-  INT i,j,k,l,PrintID,iter,done,result;
+  INT i,j,k,l,PrintID,iter,done,result,DoLS;
   char text[DISPLAY_WIDTH+4],format2[64],format3[64],formatr1[64],formatr2[64],formats[64];
-  DOUBLE a[2],rq,s,min,shift;
+  DOUBLE a[2],rq,s,min,shift,shift_old;
   DOUBLE A[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE B[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE BL[MAX_NUMBER_EW*MAX_NUMBER_EW];
@@ -525,16 +525,20 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
   strcpy(format3,"      %3d: [% "); strcat(format3,text); strcat(format3,"e, % "); strcat(format3,text); strcat(format3,"e]\n");
   strcpy(formatr1," %-3d   res: %3d: (% "); strcat(formatr1,text); strcat(formatr1,"e, % "); strcat(formatr1,text); strcat(formatr1,"e)\n");
   strcpy(formatr2,"            %3d: (% "); strcat(formatr2,text); strcat(formatr2,"e, % "); strcat(formatr2,text); strcat(formatr2,"e)\n");
-  shift=np->shift_min;
+  shift=np->shift_min; DoLS=0;
   for (iter=0; iter<np->maxiter; iter++)
   {
     if (iter > 0)
     {
-      if (dmatcopy(theNP->base.mg,bl,level,ALL_VECTORS,np->M,np->N)) return(1);
-      if (dcopy(theNP->base.mg,bl,level,ALL_VECTORS,np->t,np->E)) return(1);
-      if (dscal(theNP->base.mg,bl,level,ALL_VECTORS,np->t,-shift)) return(1);
-      if (dmassadd(theNP->base.mg,bl,level,ALL_VECTORS,np->M,np->t,np->type)) return(1);
-      if (np->LS->PreProcess != NULL) if ((*np->LS->PreProcess)(np->LS,level,ev[0],np->r,np->M, &np->baselevel,&result)) return(1);
+      /* preprocess if */
+      if (iter==1 || DoLS)
+      {
+        if (dmatcopy(theNP->base.mg,bl,level,ALL_VECTORS,np->M,np->N)) return(1);
+        if (dcopy(theNP->base.mg,bl,level,ALL_VECTORS,np->t,np->E)) return(1);
+        if (dscal(theNP->base.mg,bl,level,ALL_VECTORS,np->t,-shift)) return(1);
+        if (dmassadd(theNP->base.mg,bl,level,ALL_VECTORS,np->M,np->t,np->type)) return(1);
+        if (np->LS->PreProcess != NULL) if ((*np->LS->PreProcess)(np->LS,level,ev[0],np->r,np->M, &np->baselevel,&result)) return(1);
+      }
       for (i=0; i<New; i++)
       {
         if (dcopy(theMG,bl,level,ALL_VECTORS,np->t,ev[i])) NP_RETURN(1,ewresult->error_code);
@@ -545,8 +549,6 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
         if (np->Project != NULL)
           if (np->Project->Project(np->Project,bl,level, ev[i],&ewresult->error_code) != NUM_OK) NP_RETURN(1,ewresult->error_code);
       }
-      if (np->LS->PostProcess!=NULL)
-        if ((*np->LS->PostProcess)(np->LS,level,ev[0],np->r,np->M,&result)) return(1);
     }
     for (i=0; i<New; i++)
     {
@@ -657,6 +659,14 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
     shift=MIN(shift,min);
     shift=MAX(shift,np->shift_min);
     shift=MIN(shift,np->shift_max);
+    DoLS=0; if (shift!=shift_old) DoLS=1;shift_old=shift;
+
+    /* postprocess if */
+    if (iter> 0 && (iter==np->maxiter-1 || DoLS))
+    {
+      if (np->LS->PostProcess!=NULL)
+        if ((*np->LS->PostProcess)(np->LS,level,ev[0],np->r,np->M,&result)) return(1);
+    }
   }
 
   /* print result */
