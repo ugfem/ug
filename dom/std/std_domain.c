@@ -1332,7 +1332,7 @@ static INT M_BNDS_Global (BNDS *theBndS, DOUBLE *local, DOUBLE *global)
     for (i=0; i<DIM; i++)
       global[i] = (1.0 - local[0] - local[1]) * p->p[0].pos[i]
                   + local[0] * p->p[1].pos[i]
-                  + local[1] * local[1] * p->p[2].pos[i];
+                  + local[1] * p->p[2].pos[i];
     #endif
 
     #ifdef CYLINDER
@@ -1412,9 +1412,6 @@ static INT M_BNDS_BndCond (BNDS *theBndS, DOUBLE *local,
     DOUBLE_VECTOR global;
     INT i;
     M2_PATCH *patch = (M2_PATCH *)currBVP->patches[p->patch_id];
-
-
-
 
     type[0] = patch->c;
     M_BNDS_Global(theBndS,local,global);
