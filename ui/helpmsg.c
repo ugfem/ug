@@ -57,7 +57,7 @@
 #define BUFFERSIZE			256
 #define LONGBUFFSIZE		1024
 
-#define HELPFILE_LIST		"ui/helpfile.list"
+#define HELPFILE_LIST		"lib/ugdata/helpfile.list"
 
 #define HELPSEP 			'-' 	/* sperator of help pages				*/
 #define KEWORDCHAR			'>' 	/* seperator for keyword list			*/
