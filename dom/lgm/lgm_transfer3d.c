@@ -450,6 +450,51 @@ int LGM_ReadPoints (LGM_POINT_INFO *lgm_point_info)
   return (0);
 }
 
+static int Search_Neighbours(LGM_SURFACE_INFO *surface_info, int **point_list, int nPoints)
+{
+  int ni,i,j,k,l,nTriangle,corner_id;
+  int a,b,c,d;
+
+  nTriangle = surface_info->nTriangles;
+
+  for(i=0; i<nTriangle; i++)
+    for(j=0; j<3; j++)
+      surface_info->Triangle[i].neighbor[j] = -1;
+
+  for(i=0; i<nPoints; i++)
+  {
+    point_list[i][0] = 0;
+    for(j=1; j<MAXTRIANGLES; j++)
+      point_list[i][j] = -1;
+  }
+  for(i=0; i<nTriangle; i++)
+  {
+    for(j=0; j<3; j++)
+    {
+      corner_id = surface_info->Triangle[i].corner[j];
+      point_list[corner_id][++point_list[corner_id][0]] = i;
+    }
+  }
+
+  for(ni=0; ni<nPoints; ni++)
+    for(i=1; i<=point_list[ni][0]; i++)
+      for(j=1; j<=point_list[ni][0]; j++)
+        if(i!=j)
+          for(k=0; k<3; k++)
+            for(l=0; l<3; l++)
+            {
+              a = surface_info->Triangle[point_list[ni][i]].corner[(k+1)%3];
+              b = surface_info->Triangle[point_list[ni][i]].corner[(k+2)%3];
+              c = surface_info->Triangle[point_list[ni][j]].corner[(l+2)%3];
+              d = surface_info->Triangle[point_list[ni][j]].corner[(l+1)%3];
+              if( (a==c) && (b==d) )
+              {
+                surface_info->Triangle[point_list[ni][i]].neighbor[k] = point_list[ni][j];
+              }
+            }
+  return(0);
+}
+
 int LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
 {
   int i,k,n,i1,i2,i3;
@@ -527,6 +572,9 @@ int LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
     if (SkipBTN())
       return (1);
   }
+
+  /* search neighbours */
+  Search_Neighbours(surface_info, surface_info->point_list, surface_info->length);
 
   return (0);
 }
