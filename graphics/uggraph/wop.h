@@ -129,7 +129,7 @@
 #define VECTORWISE                                              3
 #define EXTERN                                                  4
 
-#define MAX_NO_CYCLES                                   3
+#define MAX_NO_CYCLES                                   4
 
 #define WP_WORKMODE(p)                                  ((p)->WorkMode)
 #define WP_ELEMWISE(p)                                  (&((p)->ElemWiseWorkProcs))
@@ -395,6 +395,8 @@ typedef struct PlotObjHandling PLOTOBJHANDLING;
 INT             InitWOP                                 (void);
 
 INT             WorkOnPicture                   (PICTURE *thePicture, WORK *theWork);
+INT                     DragPicture                             (PICTURE *thePicture, INT *MousePos);
+INT                     ZoomPicture                             (PICTURE *thePicture, INT *MousePos);
 INT             DrawUgPicture                   (PICTURE *thePicture);
 INT             DrawPictureFrame                (PICTURE *thePicture, INT mode);
 INT             ErasePicture                    (PICTURE *thePicture);
