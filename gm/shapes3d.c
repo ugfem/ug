@@ -336,11 +336,11 @@ INT TetraDerivative (const COORD **theCorners, COORD_VECTOR theGradient[MAX_CORN
 
 	for (j=0; j<MAX_CORNERS_OF_ELEM; j++)
 	{
-		V3_SUBTRACT(theCorners[(j+1)%MAX_CORNERS_OF_ELEM],theCorners[(j+2)%MAX_CORNERS_OF_ELEM],a)
-		V3_SUBTRACT(theCorners[(j+1)%MAX_CORNERS_OF_ELEM],theCorners[(j+3)%MAX_CORNERS_OF_ELEM],b)
+		V3_SUBTRACT(theCorners[(j+1)%4],theCorners[(j+2)%4],a)
+		V3_SUBTRACT(theCorners[(j+1)%4],theCorners[(j+3)%4],b)
 		V3_VECTOR_PRODUCT(a,b,theGradient[j])
 		V3_Normalize(theGradient[j]);
-		V3_SUBTRACT(theCorners[j],theCorners[(j+1)%MAX_CORNERS_OF_ELEM],a)
+		V3_SUBTRACT(theCorners[j],theCorners[(j+1)%4],a)
 		V3_SCALAR_PRODUCT(theGradient[j],a,h)
 		if (ABS(h)<SMALL_C) return (1);
 		V3_SCALE(1/h,theGradient[j])
@@ -432,6 +432,729 @@ INT FV_TetInfo (COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_
 	for (i=0; i<MAX_EDGES_OF_ELEM; i++)
 		V3_LINCOMB(17.0/24.0,emp[i],7.0/24.0,emp[OppositeEdge[i]],GIP[i])
 
+	return (0);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  FV_AliTetInfo													*/
+/*																			*/
+/* Purpose:   calc gradient of shape function i 							*/
+/*																			*/
+/* Input:	  int i: corner number [0..3]									*/
+/*			  COORD **Corners: list of ptrs to phys corner vectors			*/
+/*																			*/
+/* Output:	  COORD **theGradient: list of ptrs to gradients				*/
+/*																			*/
+/* Return:	  INT 0: ok 													*/
+/*				  1: error													*/
+/*																			*/
+/****************************************************************************/
+
+static INT FindCrossParam3D (COORD_VECTOR p1, COORD_VECTOR p2, COORD_VECTOR p3, COORD_VECTOR p4, DOUBLE_VECTOR v, COORD_VECTOR param)
+{
+	COORD M[9], I[9];
+	
+	V3_SUBTRACT(p1,p2,M)
+	V3_SUBTRACT(p4,p3,M+3)
+	V3_COPY(v,M+6)
+	if (M3_Invert(I,M))
+		return (1);
+	V3_SUBTRACT(p1,p3,M)
+	M3_TIMES_V3(I,M,param)
+	
+	return (0);
+}
+
+static INT MirrorAtPlane (COORD *in, COORD *pp, COORD *pn, COORD *out)
+{
+	COORD_VECTOR a;
+	
+	V3_SUBTRACT(pp,in,a)
+	if (V3_Project(a,pn,out))
+	V3_LINCOMB(1.0,in,2.0,out,out)
+	
+	return (0);
+}
+
+#define V3_TRI_CM(a,b,c,e)			   {(e)[0] = 0.333333333333*((a)[0]+(b)[0]+(c)[0]);\
+										(e)[1] = 0.333333333333*((a)[1]+(b)[1]+(c)[1]);\
+										(e)[2] = 0.333333333333*((a)[2]+(b)[2]+(c)[2]);}
+#define V3_QUA_CM(a,b,c,d,e)		   {(e)[0] = 0.25*((a)[0]+(b)[0]+(c)[0]+(d)[0]);\
+										(e)[1] = 0.25*((a)[1]+(b)[1]+(c)[1]+(d)[1]);\
+										(e)[2] = 0.25*((a)[2]+(b)[2]+(c)[2]+(d)[2]);}
+
+INT FV_AliTetInfo (COORD **CornerPoints, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv, COORD_VECTOR GIP[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+{
+	COORD sp, alpha, check[2];
+	COORD_VECTOR a, b, c, d, e, cm, normal, param, EdgeMidPoints[6], SideMidPoints[4];
+	INT i, help, noutflow, ninflow, outflow[4], inflow[4], OpEdge[3], GrEdge[3], side[3], OpCorner, corner[3], inverted, First;
+	INT BackEdge, FrontEdge, BackCorner[2], FrontCorner[2], EdgeF0B0, EdgeF0B1, EdgeF1B0, EdgeF1B1, flags, changed;
+	
+	/* reset areas and integrationpoints */
+	for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+	{
+		V3_CLEAR(Area[i])
+		V3_CLEAR(GIP[i])
+		V3_COPY(LIP[i],LUIP[i])
+	}
+	
+	/* edge mid points */
+	for (i=0; i<6; i++)	V3_LINCOMB(0.5,CornerPoints[CornerOfEdge[i][0]],0.5,CornerPoints[CornerOfEdge[i][1]],EdgeMidPoints[i])
+			
+	/* side mid points */
+	for (i=0; i<MAX_SIDES_OF_ELEM; i++)
+	{
+		V3_ADD(CornerPoints[CornerOfSide[i][0]],CornerPoints[CornerOfSide[i][1]],a)
+		V3_ADD(CornerPoints[CornerOfSide[i][2]],a,SideMidPoints[i])
+		V3_SCALE(0.33333333333333333,SideMidPoints[i])
+	}
+
+	/* in/outflow sides */
+	noutflow = ninflow = 0;
+	for (i=0; i<4; i++)
+	{
+		V3_SUBTRACT(CornerPoints[CornerOfSide[i][1]],CornerPoints[CornerOfSide[i][0]],a)
+		V3_SUBTRACT(CornerPoints[CornerOfSide[i][2]],CornerPoints[CornerOfSide[i][0]],b)
+		V3_VECTOR_PRODUCT(a,b,normal)
+		V3_SUBTRACT(CornerPoints[OppositeCorner[i]],CornerPoints[CornerOfSide[i][0]],a)
+		V3_SCALAR_PRODUCT(a,normal,sp)
+		if (sp>0.0) V3_SCALE(-1.0,normal)
+		V3_SCALAR_PRODUCT(conv,normal,sp)
+		if (sp>=0.0) 	outflow[noutflow++] = i;
+		if (sp<0.0)		inflow[ninflow++] = i;
+	}
+	
+	/* check */
+	check[0]=check[1]=0.0;
+	for (i=0; i<ninflow; i++)
+	{
+		V3_SUBTRACT(CornerPoints[CornerOfSide[inflow[i]][1]],CornerPoints[CornerOfSide[inflow[i]][0]],a)
+		V3_SUBTRACT(CornerPoints[CornerOfSide[inflow[i]][2]],CornerPoints[CornerOfSide[inflow[i]][0]],b)
+		V3_VECTOR_PRODUCT(a,b,normal)
+		V3_SCALAR_PRODUCT(conv,normal,sp)
+		check[0] += ABS(0.5*sp);
+	}
+	for (i=0; i<noutflow; i++)
+	{
+		V3_SUBTRACT(CornerPoints[CornerOfSide[outflow[i]][1]],CornerPoints[CornerOfSide[outflow[i]][0]],a)
+		V3_SUBTRACT(CornerPoints[CornerOfSide[outflow[i]][2]],CornerPoints[CornerOfSide[outflow[i]][0]],b)
+		V3_VECTOR_PRODUCT(a,b,normal)
+		V3_SCALAR_PRODUCT(conv,normal,sp)
+		check[1] += ABS(0.5*sp);
+	}
+	assert((check[0]-check[1])<=1e-6*(check[0]+check[1]));
+
+	/* change if inflow > outflow */
+	inverted = 0;
+	if (ninflow>noutflow)
+	{
+		inverted = 1;
+		for (i=0; i<ninflow; i++)	{help = inflow[i]; inflow[i] = outflow[i]; outflow[i] = help;}
+		help = ninflow; ninflow = noutflow; noutflow = help;
+	}
+	if ( ninflow+noutflow!=4 || ninflow<1 || ninflow>2) 
+		return (1);
+		
+	/* handle different cases */
+	switch (ninflow)
+	{
+		case 2:
+			/* two in-, two outflow */
+			BackEdge = EdgeOf2Sides[inflow[0]][inflow[1]];
+			FrontEdge = EdgeOf2Sides[outflow[0]][outflow[1]];
+			BackCorner[0] = CornerOfSideAndEdge[outflow[0]][FrontEdge];
+			BackCorner[1] = CornerOfSideAndEdge[outflow[1]][FrontEdge];
+			FrontCorner[0] = CornerOfSideAndEdge[inflow[0]][BackEdge];
+			FrontCorner[1] = CornerOfSideAndEdge[inflow[1]][BackEdge];
+			EdgeF0B0 = EdgeWithCorners[FrontCorner[0]][BackCorner[0]];
+			EdgeF0B1 = EdgeWithCorners[FrontCorner[0]][BackCorner[1]];
+			EdgeF1B0 = EdgeWithCorners[FrontCorner[1]][BackCorner[0]];
+			EdgeF1B1 = EdgeWithCorners[FrontCorner[1]][BackCorner[1]];
+			
+			if (FindCrossParam3D(CornerPoints[FrontCorner[0]],CornerPoints[FrontCorner[1]],CornerPoints[BackCorner[0]],CornerPoints[BackCorner[1]],conv,param)) return (1);
+			if (param[0]<0.0 || param[0]>1.0 || param[1]<0.0 || param[1]>1.0)
+				i=i;
+			changed=0;
+			if (param[0]<0.5)
+			{
+				param[0]=1.0-param[0];
+				help=inflow[0]; inflow[0]=inflow[1]; inflow[1]=help;
+				changed=1;
+			}
+			if (param[1]<0.5)
+			{
+				param[1]=1.0-param[1];
+				help=outflow[0]; outflow[0]=outflow[1]; outflow[1]=help;
+				changed=1;
+			}
+			if (changed)
+			{
+				BackCorner[0] = CornerOfSideAndEdge[outflow[0]][FrontEdge];
+				BackCorner[1] = CornerOfSideAndEdge[outflow[1]][FrontEdge];
+				FrontCorner[0] = CornerOfSideAndEdge[inflow[0]][BackEdge];
+				FrontCorner[1] = CornerOfSideAndEdge[inflow[1]][BackEdge];
+				EdgeF0B0 = EdgeWithCorners[FrontCorner[0]][BackCorner[0]];
+				EdgeF0B1 = EdgeWithCorners[FrontCorner[0]][BackCorner[1]];
+				EdgeF1B0 = EdgeWithCorners[FrontCorner[1]][BackCorner[0]];
+				EdgeF1B1 = EdgeWithCorners[FrontCorner[1]][BackCorner[1]];
+			}
+			flags = (param[0]>0.5) | ((param[1]>0.5)<<1);
+			switch (flags)
+			{
+				case 0:
+					/* totaly symmetric */
+					V3_SUBTRACT(CornerPoints[BackCorner[1]],CornerPoints[BackCorner[0]],a)
+					V3_SUBTRACT(CornerPoints[FrontCorner[1]],CornerPoints[FrontCorner[0]],b)
+					V3_VECTOR_PRODUCT(a,b,c)
+					V3_SCALE(0.041666666666666666,c) V3_COPY(c,d)
+					V3_SCALAR_PRODUCT(conv,c,sp)
+					if (sp>0.0) V3_SCALE(-1.0,d)
+					else 		{V3_SCALE(-1.0,c); sp = -sp;}
+					
+					V3_QUA_CM(SideMidPoints[inflow[0]],SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF0B0],EdgeMidPoints[BackEdge],GIP[EdgeF0B0])
+					if (CornerOfEdge[EdgeF0B0][0]==FrontCorner[0])		V3_COPY(d,Area[EdgeF0B0])
+					else												V3_COPY(c,Area[EdgeF0B0])
+			
+					V3_QUA_CM(SideMidPoints[inflow[0]],SideMidPoints[outflow[1]],EdgeMidPoints[EdgeF0B1],EdgeMidPoints[BackEdge],GIP[EdgeF0B1])
+					if (CornerOfEdge[EdgeF0B1][0]==FrontCorner[0])		V3_COPY(d,Area[EdgeF0B1])
+					else												V3_COPY(c,Area[EdgeF0B1])
+					
+					V3_QUA_CM(SideMidPoints[inflow[1]],SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF1B0],EdgeMidPoints[BackEdge],GIP[EdgeF1B0])
+					if (CornerOfEdge[EdgeF1B0][0]==FrontCorner[1])		V3_COPY(d,Area[EdgeF1B0])
+					else												V3_COPY(c,Area[EdgeF1B0])
+
+					V3_QUA_CM(SideMidPoints[inflow[1]],SideMidPoints[outflow[1]],EdgeMidPoints[EdgeF1B1],EdgeMidPoints[BackEdge],GIP[EdgeF1B1])
+					if (CornerOfEdge[EdgeF1B1][0]==FrontCorner[1])		V3_COPY(d,Area[EdgeF1B1])
+					else												V3_COPY(c,Area[EdgeF1B1])
+					break;
+				case 1:
+					/* FrontEdgeMidPoint in 'inflow[0]' ,symmetric in 'outflow' */
+					if (param[0]<=0.75)
+					{
+						/* no coupling of F0 and F1 */
+						
+						/* entries F1B0 and F1B1 */
+						V3_SUBTRACT(EdgeMidPoints[FrontEdge],EdgeMidPoints[EdgeF1B0],a)
+						V3_SUBTRACT(SideMidPoints[inflow[1]],SideMidPoints[outflow[0]],b)
+						V3_VECTOR_PRODUCT(a,b,c)
+						V3_SCALE(0.5,c) V3_COPY(c,d)
+						V3_SCALAR_PRODUCT(conv,c,sp)
+						if (sp>0.0) V3_SCALE(-1.0,d)
+						else 		{V3_SCALE(-1.0,c); sp = -sp;}
+						
+						V3_QUA_CM(SideMidPoints[inflow[1]],SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF1B0],EdgeMidPoints[FrontEdge],GIP[EdgeF1B0])
+						if (CornerOfEdge[EdgeF1B0][0]==FrontCorner[1])	V3_COPY(d,Area[EdgeF1B0])
+						else											V3_COPY(c,Area[EdgeF1B0])
+						
+						V3_QUA_CM(SideMidPoints[inflow[1]],SideMidPoints[outflow[1]],EdgeMidPoints[EdgeF1B1],EdgeMidPoints[FrontEdge],GIP[EdgeF1B1])
+						if (CornerOfEdge[EdgeF1B1][0]==FrontCorner[1])	V3_COPY(d,Area[EdgeF1B1])
+						else											V3_COPY(c,Area[EdgeF1B1])
+						
+						/* entries F0B0 and F0B1 */
+						V3_SUBTRACT(EdgeMidPoints[FrontEdge],EdgeMidPoints[EdgeF0B0],a)
+						V3_SUBTRACT(SideMidPoints[inflow[0]],SideMidPoints[outflow[0]],b)
+						V3_VECTOR_PRODUCT(a,b,c)
+						V3_SCALE(0.5,c) V3_COPY(c,d)
+						V3_SCALAR_PRODUCT(conv,c,sp)
+						if (sp>0.0) V3_SCALE(-1.0,d)
+						else 		{V3_SCALE(-1.0,c); sp = -sp;}
+						
+						V3_QUA_CM(SideMidPoints[inflow[0]],SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF0B0],EdgeMidPoints[FrontEdge],GIP[EdgeF0B0])
+						if (CornerOfEdge[EdgeF0B0][0]==FrontCorner[0])	V3_COPY(d,Area[EdgeF0B0])
+						else											V3_COPY(c,Area[EdgeF0B0])
+
+						V3_QUA_CM(SideMidPoints[inflow[0]],SideMidPoints[outflow[1]],EdgeMidPoints[EdgeF0B1],EdgeMidPoints[FrontEdge],GIP[EdgeF0B1])
+						if (CornerOfEdge[EdgeF0B1][0]==FrontCorner[0])	V3_COPY(d,Area[EdgeF0B1])
+						else											V3_COPY(c,Area[EdgeF0B1])
+					}
+					else
+					{
+						/* coupling of F0 and F1 */
+						
+						/* entries for F0F1, F0B0, F0B1 */
+						if (FindCrossParam3D(EdgeMidPoints[FrontEdge],SideMidPoints[outflow[0]],SideMidPoints[inflow[0]],EdgeMidPoints[EdgeF0B0],conv,param)) return (1);
+						V3_SUBTRACT(EdgeMidPoints[FrontEdge],SideMidPoints[outflow[0]],a)
+						V3_SUBTRACT(SideMidPoints[inflow[0]],EdgeMidPoints[EdgeF0B0],b)
+						V3_VECTOR_PRODUCT(a,b,c) V3_SCALAR_PRODUCT(conv,c,sp) if (sp<0.0) {V3_SCALE(-1.0,c); sp = -sp;}
+
+						V3_LINCOMB(0.5,SideMidPoints[inflow[0]],0.5,EdgeMidPoints[FrontEdge],GIP[FrontEdge])
+						V3_COPY(c,Area[FrontEdge])
+						if (CornerOfEdge[FrontEdge][0]==FrontCorner[1]) alpha = -param[0]*param[1];
+						else											alpha = param[0]*param[1];
+						V3_SCALE(alpha,Area[FrontEdge])
+
+						V3_LINCOMB(1.0-param[0],EdgeMidPoints[FrontEdge],param[0],SideMidPoints[outflow[0]],a)
+						V3_TRI_CM(SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF0B0],a,GIP[EdgeF0B0])
+						V3_COPY(c,Area[EdgeF0B0])
+						if (CornerOfEdge[EdgeF0B0][0]==FrontCorner[0])  alpha = 0.5*(1.0-param[0])*(param[1]-1.0);
+						else											alpha = 0.5*(1.0-param[0])*(1.0-param[1]);
+						V3_SCALE(alpha,Area[EdgeF0B0])
+						V3_COPY(c,Area[EdgeF0B1])
+
+							
+						V3_SUBTRACT(CornerPoints[FrontCorner[1]],CornerPoints[FrontCorner[0]],a)
+						V3_SUBTRACT(EdgeMidPoints[BackEdge],CornerPoints[FrontCorner[0]],b)
+						V3_VECTOR_PRODUCT(a,b,d)
+						if (MirrorAtPlane(GIP[EdgeF0B0],CornerPoints[FrontCorner[0]],d,GIP[EdgeF0B1])) return (1);
+						if (CornerOfEdge[EdgeF0B1][0]==FrontCorner[0])  alpha = 0.5*(1.0-param[0])*(param[1]-1.0);
+						else											alpha = 0.5*(1.0-param[0])*(1.0-param[1]);
+						V3_SCALE(alpha,Area[EdgeF0B1])
+						
+						/* entries for F1B0, F1B1 */
+						V3_COPY(c,d) alpha=0.5*(1.0-param[0])*param[1]; V3_SCALE(alpha,d)
+
+						V3_LINCOMB(1.0-param[0],EdgeMidPoints[FrontEdge],param[0],SideMidPoints[outflow[0]],a)
+						V3_TRI_CM(SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF0B0],a,GIP[EdgeF1B0])
+						V3_SCALE(sp*alpha,GIP[EdgeF1B0])
+					
+						V3_SUBTRACT(SideMidPoints[inflow[0]],EdgeMidPoints[EdgeF1B0],a)
+						V3_SUBTRACT(SideMidPoints[inflow[1]],SideMidPoints[outflow[0]],b)
+						V3_VECTOR_PRODUCT(a,b,c) V3_SCALAR_PRODUCT(conv,c,sp) if (sp<0.0) {V3_SCALE(-0.5,c);sp=-sp;} else V3_SCALE(0.5,c)
+						V3_ADD(c,d,c) V3_COPY(c,d) V3_SCALE(-1.0,d)
+							
+						
+						V3_QUA_CM(SideMidPoints[outflow[0]],SideMidPoints[inflow[1]],EdgeMidPoints[EdgeF1B0],SideMidPoints[inflow[0]],cm)
+						V3_LINCOMB(1.0,GIP[EdgeF1B0],0.5*sp,cm,GIP[EdgeF1B0])
+						if (CornerOfEdge[EdgeF1B0][0]==FrontCorner[1])	V3_COPY(d,Area[EdgeF1B0])
+						else											V3_COPY(c,Area[EdgeF1B0])
+						V3_SCALAR_PRODUCT(conv,Area[EdgeF1B0],sp) sp = ABS(sp); if (sp>0.0) V3_SCALE(1.0/sp,GIP[EdgeF1B0])
+
+						V3_SUBTRACT(CornerPoints[FrontCorner[1]],CornerPoints[FrontCorner[0]],a)
+						V3_SUBTRACT(EdgeMidPoints[BackEdge],CornerPoints[FrontCorner[0]],b)
+						V3_VECTOR_PRODUCT(a,b,e)
+						if (MirrorAtPlane(GIP[EdgeF1B0],CornerPoints[FrontCorner[0]],e,GIP[EdgeF1B1])) return (1);
+						if (CornerOfEdge[EdgeF1B1][0]==FrontCorner[1])	V3_COPY(d,Area[EdgeF1B1])
+						else											V3_COPY(c,Area[EdgeF1B1])
+							
+						/* the local upwind intergration points */
+						V3_COPY(TRefCoord[FrontCorner[0]],LUIP[FrontEdge])
+					}
+					break;
+				case 2:
+					/* FrontEdgeMidPoint in 'outflow[1]' ,symmetric in 'inflow' */
+					if (param[1]<=0.75)
+					{
+						/* no coupling of B0 and B1 */
+						
+						/* entries for F0B1 and F1B1 */
+						V3_SUBTRACT(EdgeMidPoints[BackEdge],EdgeMidPoints[EdgeF0B1],a)
+						V3_SUBTRACT(SideMidPoints[inflow[0]],SideMidPoints[outflow[1]],b)
+						V3_VECTOR_PRODUCT(a,b,c)
+						V3_SCALE(0.5,c) V3_COPY(c,d)
+						V3_SCALAR_PRODUCT(conv,c,sp)
+						if (sp>0.0) V3_SCALE(-1.0,d)
+						else 		V3_SCALE(-1.0,c)
+						
+						V3_QUA_CM(SideMidPoints[inflow[0]],SideMidPoints[outflow[1]],EdgeMidPoints[EdgeF0B1],EdgeMidPoints[BackEdge],GIP[EdgeF0B1])
+						if (CornerOfEdge[EdgeF0B1][0]==FrontCorner[0])	V3_COPY(d,Area[EdgeF0B1])
+						else											V3_COPY(c,Area[EdgeF0B1])
+						
+						V3_QUA_CM(SideMidPoints[inflow[1]],SideMidPoints[outflow[1]],EdgeMidPoints[EdgeF1B1],EdgeMidPoints[BackEdge],GIP[EdgeF1B1])
+						if (CornerOfEdge[EdgeF1B1][0]==FrontCorner[1])	V3_COPY(d,Area[EdgeF1B1])
+						else											V3_COPY(c,Area[EdgeF1B1])
+						
+						/* entries for F0B0 and F1B0 */
+						V3_SUBTRACT(EdgeMidPoints[BackEdge],EdgeMidPoints[EdgeF0B0],a)
+						V3_SUBTRACT(SideMidPoints[inflow[0]],SideMidPoints[outflow[0]],b)
+						V3_VECTOR_PRODUCT(a,b,c)
+						V3_SCALE(0.5,c) V3_COPY(c,d)
+						V3_SCALAR_PRODUCT(conv,c,sp)
+						if (sp>0.0) V3_SCALE(-1.0,d)
+						else 		V3_SCALE(-1.0,c)
+						
+						V3_QUA_CM(SideMidPoints[inflow[0]],SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF0B0],EdgeMidPoints[BackEdge],GIP[EdgeF0B0])
+						if (CornerOfEdge[EdgeF0B0][0]==FrontCorner[0])	V3_COPY(d,Area[EdgeF0B0])
+						else											V3_COPY(c,Area[EdgeF0B0])
+						
+						V3_QUA_CM(SideMidPoints[inflow[1]],SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF1B0],EdgeMidPoints[BackEdge],GIP[EdgeF1B0])
+						if (CornerOfEdge[EdgeF1B0][0]==FrontCorner[1])	V3_COPY(d,Area[EdgeF1B0])
+						else											V3_COPY(c,Area[EdgeF1B0])
+					}
+					else
+					{
+						/* coupling of B0 and B1 */
+						
+						/* entries for B0B1, F0B0 and F1B0 */
+						if (FindCrossParam3D(EdgeMidPoints[BackEdge],SideMidPoints[inflow[0]],SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF0B0],conv,param)) return (1);
+						V3_SUBTRACT(EdgeMidPoints[BackEdge],SideMidPoints[inflow[0]],a)
+						V3_SUBTRACT(SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF0B0],b)
+						V3_VECTOR_PRODUCT(a,b,c) V3_SCALAR_PRODUCT(conv,c,sp) if (sp<0.0) {V3_SCALE(-1.0,c); sp = -sp;}
+
+						V3_LINCOMB(0.5,SideMidPoints[outflow[0]],0.5,EdgeMidPoints[BackEdge],GIP[BackEdge])
+						V3_COPY(c,Area[BackEdge])
+						if (CornerOfEdge[BackEdge][0]==BackCorner[0]) alpha = -param[0]*param[1];
+						else										  alpha = param[0]*param[1];
+						V3_SCALE(alpha,Area[BackEdge])
+							
+						V3_LINCOMB(1.0-param[0],EdgeMidPoints[BackEdge],param[0],SideMidPoints[inflow[0]],a)
+						V3_TRI_CM(SideMidPoints[inflow[0]],EdgeMidPoints[EdgeF0B0],a,GIP[EdgeF0B0])
+						V3_COPY(c,Area[EdgeF0B0])
+						if (CornerOfEdge[EdgeF0B0][0]==FrontCorner[0])  alpha = 0.5*(1.0-param[0])*(param[1]-1.0);
+						else											alpha = 0.5*(1.0-param[0])*(1.0-param[1]);
+						V3_SCALE(alpha,Area[EdgeF0B0])
+							
+						V3_SUBTRACT(CornerPoints[BackCorner[1]],CornerPoints[BackCorner[0]],a)
+						V3_SUBTRACT(EdgeMidPoints[FrontEdge],CornerPoints[BackCorner[0]],b)
+						V3_VECTOR_PRODUCT(a,b,d)
+						if (MirrorAtPlane(GIP[EdgeF0B0],CornerPoints[BackCorner[0]],d,GIP[EdgeF1B0])) return (1);
+						V3_COPY(c,Area[EdgeF1B0])
+						if (CornerOfEdge[EdgeF1B0][0]==FrontCorner[1])  alpha = 0.5*(1.0-param[0])*(param[1]-1.0);
+						else											alpha = 0.5*(1.0-param[0])*(1.0-param[1]);
+						V3_SCALE(alpha,Area[EdgeF1B0])
+						
+						/* entries for F1B1 and F0B1 */
+						V3_COPY(c,d) alpha=0.5*(1.0-param[0])*param[1]; V3_SCALE(alpha,d)
+
+						V3_LINCOMB(1.0-param[0],EdgeMidPoints[BackEdge],param[0],SideMidPoints[inflow[0]],a)
+						V3_TRI_CM(SideMidPoints[inflow[0]],EdgeMidPoints[BackEdge],a,GIP[EdgeF0B1])
+						V3_SCALE(sp*alpha,GIP[EdgeF0B1])
+					
+						V3_SUBTRACT(SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF0B1],a)
+						V3_SUBTRACT(SideMidPoints[inflow[0]],SideMidPoints[outflow[1]],b)
+						V3_VECTOR_PRODUCT(a,b,c) V3_SCALAR_PRODUCT(conv,c,sp) if (sp<0.0) {V3_SCALE(-0.5,c);sp=-sp;} else V3_SCALE(0.5,c)
+						V3_ADD(c,d,c) V3_COPY(c,d) V3_SCALE(-1.0,d)
+							
+						V3_QUA_CM(SideMidPoints[outflow[1]],SideMidPoints[inflow[0]],EdgeMidPoints[EdgeF0B1],SideMidPoints[outflow[0]],cm)
+						V3_LINCOMB(1.0,GIP[EdgeF0B1],0.5*sp,cm,GIP[EdgeF0B1])
+						if (CornerOfEdge[EdgeF0B1][0]==FrontCorner[0])	V3_COPY(d,Area[EdgeF0B1])
+						else											V3_COPY(c,Area[EdgeF0B1])
+							
+						V3_SUBTRACT(CornerPoints[BackCorner[1]],CornerPoints[BackCorner[0]],a)
+						V3_SUBTRACT(EdgeMidPoints[FrontEdge],CornerPoints[BackCorner[0]],b)
+						V3_VECTOR_PRODUCT(a,b,e)
+						if (MirrorAtPlane(GIP[EdgeF0B1],CornerPoints[BackCorner[0]],e,GIP[EdgeF1B1])) return (1);
+						if (CornerOfEdge[EdgeF1B1][0]==FrontCorner[1])	V3_COPY(d,Area[EdgeF1B1])
+						else											V3_COPY(c,Area[EdgeF1B1])
+							
+						/* the local upwind intergration points */
+						V3_COPY(TRefCoord[BackCorner[1]],LUIP[BackEdge])
+					}
+					break;
+				case 3:
+					/* FrontEdgeMidPoint in 'inflow[0]' and 'outflow[1]' */
+					if (FindCrossParam3D(SideMidPoints[outflow[0]],EdgeMidPoints[FrontEdge],EdgeMidPoints[BackEdge],SideMidPoints[inflow[0]],conv,param)) return (1);
+					if (param[0]>=0.0 )
+					{
+						/* no coupling of B0 and B1 */
+						V3_LINCOMB(1.0-param[0],SideMidPoints[outflow[0]],param[0],EdgeMidPoints[FrontEdge],a)
+
+						/* coupling F0-B1 */
+						V3_SUBTRACT(a,EdgeMidPoints[EdgeF0B1],b)
+						V3_SUBTRACT(SideMidPoints[inflow[0]],EdgeMidPoints[FrontEdge],c)
+						V3_VECTOR_PRODUCT(b,c,d)
+						V3_SCALAR_PRODUCT(conv,d,sp) sp = ABS(sp);
+						V3_QUA_CM(a,EdgeMidPoints[EdgeF0B1],SideMidPoints[inflow[0]],EdgeMidPoints[FrontEdge],GIP[EdgeF0B1])
+						V3_SCALE(0.5*sp,GIP[EdgeF0B1])
+						V3_SUBTRACT(EdgeMidPoints[EdgeF0B1],EdgeMidPoints[FrontEdge],b)
+						V3_SUBTRACT(SideMidPoints[outflow[1]],EdgeMidPoints[FrontEdge],c)
+						V3_VECTOR_PRODUCT(b,c,e)
+						V3_SCALAR_PRODUCT(conv,e,sp) sp = ABS(sp);
+						V3_TRI_CM(EdgeMidPoints[EdgeF0B1],EdgeMidPoints[FrontEdge],SideMidPoints[outflow[1]],cm)
+						V3_LINCOMB(1.0,GIP[EdgeF0B1],0.5*sp,cm,GIP[EdgeF0B1])
+						V3_ADD(d,e,d)
+						V3_SCALAR_PRODUCT(conv,d,sp) if (sp<0.0) V3_SCALE(-1.0,d)
+						if (CornerOfEdge[EdgeF0B1][0]==FrontCorner[0])	V3_SCALE(-1.0,d)
+						V3_SCALE(0.5,d) V3_COPY(d,Area[EdgeF0B1])
+						V3_SCALAR_PRODUCT(conv,d,sp) sp = ABS(sp); if (sp>0.0) V3_SCALE(1.0/sp,GIP[EdgeF0B1])
+
+						/* coupling F1-B1 */
+						V3_SUBTRACT(a,SideMidPoints[inflow[1]],b)
+						V3_SUBTRACT(EdgeMidPoints[FrontEdge],EdgeMidPoints[BackEdge],c)
+						V3_VECTOR_PRODUCT(b,c,d)
+						V3_SCALAR_PRODUCT(conv,d,sp) sp = ABS(sp);
+						V3_QUA_CM(a,SideMidPoints[inflow[1]],EdgeMidPoints[FrontEdge],EdgeMidPoints[BackEdge],GIP[EdgeF1B1])
+						V3_SCALE(0.5*sp,GIP[EdgeF1B1])
+						V3_SUBTRACT(EdgeMidPoints[EdgeF1B1],EdgeMidPoints[FrontEdge],b)
+						V3_SUBTRACT(SideMidPoints[inflow[1]],SideMidPoints[outflow[1]],c)
+						V3_VECTOR_PRODUCT(b,c,e)
+						V3_SCALAR_PRODUCT(conv,e,sp) sp = ABS(sp);
+						V3_QUA_CM(SideMidPoints[inflow[1]],SideMidPoints[outflow[1]],EdgeMidPoints[EdgeF1B1],EdgeMidPoints[FrontEdge],cm)
+						V3_LINCOMB(1.0,GIP[EdgeF1B1],0.5*sp,cm,GIP[EdgeF1B1])
+						V3_ADD(d,e,d)
+						V3_SCALAR_PRODUCT(conv,d,sp) if (sp<0.0) V3_SCALE(-1.0,d)
+						if (CornerOfEdge[EdgeF1B1][0]==FrontCorner[1])	V3_SCALE(-1.0,d)
+						V3_SCALE(0.5,d) V3_COPY(d,Area[EdgeF1B1])
+						V3_SCALAR_PRODUCT(conv,d,sp) sp = ABS(sp); if (sp>0.0) V3_SCALE(1.0/sp,GIP[EdgeF1B1])
+
+						/* coupling F1-B0 */
+						V3_SUBTRACT(a,EdgeMidPoints[EdgeF1B0],b)
+						V3_SUBTRACT(EdgeMidPoints[BackEdge],SideMidPoints[outflow[0]],c)
+						V3_VECTOR_PRODUCT(b,c,d)
+						V3_SCALAR_PRODUCT(conv,d,sp) sp = ABS(sp);
+						V3_QUA_CM(a,EdgeMidPoints[EdgeF1B0],EdgeMidPoints[BackEdge],SideMidPoints[outflow[0]],GIP[EdgeF1B0])
+						V3_SCALE(0.5*sp,GIP[EdgeF1B0])
+						V3_SUBTRACT(SideMidPoints[inflow[1]],EdgeMidPoints[BackEdge],b)
+						V3_SUBTRACT(EdgeMidPoints[EdgeF1B0],EdgeMidPoints[BackEdge],c)
+						V3_VECTOR_PRODUCT(b,c,e)
+						V3_SCALAR_PRODUCT(conv,e,sp) sp = ABS(sp);
+						V3_TRI_CM(SideMidPoints[inflow[1]],EdgeMidPoints[BackEdge],EdgeMidPoints[EdgeF1B0],cm)
+						V3_LINCOMB(1.0,GIP[EdgeF1B0],0.5*sp,cm,GIP[EdgeF1B0])
+						V3_ADD(d,e,d)
+						V3_SCALAR_PRODUCT(conv,d,sp) if (sp<0.0) V3_SCALE(-1.0,d)
+						if (CornerOfEdge[EdgeF1B0][0]==FrontCorner[1])	V3_SCALE(-1.0,d)
+						V3_SCALE(0.5,d) V3_COPY(d,Area[EdgeF1B0])
+						V3_SCALAR_PRODUCT(conv,d,sp) sp = ABS(sp); if (sp>0.0) V3_SCALE(1.0/sp,GIP[EdgeF1B0])
+
+						/* coupling F0-B0 */
+						V3_QUA_CM(a,EdgeMidPoints[EdgeF0B0],SideMidPoints[outflow[0]],SideMidPoints[inflow[0]],GIP[EdgeF0B0])
+						V3_SUBTRACT(a,EdgeMidPoints[EdgeF0B0],b)
+						V3_SUBTRACT(SideMidPoints[outflow[0]],SideMidPoints[inflow[0]],c)
+						V3_VECTOR_PRODUCT(b,c,d)
+						V3_SCALAR_PRODUCT(conv,d,sp) if (sp<0.0) V3_SCALE(-1.0,d)
+						if (CornerOfEdge[EdgeF0B0][0]==FrontCorner[0])	V3_SCALE(-1.0,d)
+						V3_SCALE(0.5,d) V3_COPY(d,Area[EdgeF0B0])
+					}
+					else
+					{
+						/* coupling of B0 and B1 */
+						
+						/* entries for B0B1(the half) and F0B0 */
+						if (FindCrossParam3D(EdgeMidPoints[BackEdge],SideMidPoints[inflow[0]],SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF0B0],conv,param)) return (1);
+						V3_SUBTRACT(EdgeMidPoints[BackEdge],SideMidPoints[inflow[0]],a)
+						V3_SUBTRACT(SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF0B0],b)
+						V3_VECTOR_PRODUCT(a,b,c) V3_SCALAR_PRODUCT(conv,c,sp) if (sp<0.0) {V3_SCALE(-1.0,c); sp = -sp;}
+							
+						V3_LINCOMB(1.0-param[0],EdgeMidPoints[BackEdge],param[0],SideMidPoints[inflow[0]],GIP[BackEdge])
+						V3_COPY(c,Area[BackEdge])
+						if (CornerOfEdge[BackEdge][0]==BackCorner[0]) alpha = -0.5*param[0]*param[1];
+						else										  alpha = 0.5*param[0]*param[1];
+						V3_SCALE(alpha,Area[BackEdge])
+							
+						V3_TRI_CM(GIP[BackEdge],SideMidPoints[inflow[0]],EdgeMidPoints[EdgeF0B0],GIP[EdgeF0B0])
+						V3_COPY(c,Area[EdgeF0B0])
+						if (CornerOfEdge[EdgeF0B0][0]==FrontCorner[0])  alpha = 0.5*(1.0-param[0])*(param[1]-1.0);
+						else											alpha = 0.5*(1.0-param[0])*(1.0-param[1]);
+						V3_SCALE(alpha,Area[EdgeF0B0])
+
+						/* entry for F0B1 */
+						V3_LINCOMB(1.0-param[0],EdgeMidPoints[BackEdge],param[0],SideMidPoints[inflow[0]],e)
+						V3_SUBTRACT(EdgeMidPoints[EdgeF0B1],e,a)
+						V3_SUBTRACT(EdgeMidPoints[FrontEdge],SideMidPoints[inflow[0]],b)
+						V3_VECTOR_PRODUCT(a,b,c)
+						V3_SCALAR_PRODUCT(conv,c,sp) sp = ABS(sp);
+						V3_QUA_CM(EdgeMidPoints[EdgeF0B1],e,EdgeMidPoints[FrontEdge],SideMidPoints[inflow[0]],GIP[EdgeF0B1])
+						V3_SCALE(0.5*sp,GIP[EdgeF0B1])
+						V3_SUBTRACT(EdgeMidPoints[EdgeF0B1],EdgeMidPoints[FrontEdge],a)
+						V3_SUBTRACT(SideMidPoints[outflow[1]],EdgeMidPoints[FrontEdge],b)
+						V3_VECTOR_PRODUCT(a,b,d) V3_ADD(c,d,c) 
+						V3_SCALAR_PRODUCT(conv,d,sp) sp = ABS(sp);
+						V3_TRI_CM(EdgeMidPoints[EdgeF0B1],EdgeMidPoints[FrontEdge],SideMidPoints[outflow[1]],cm)
+						V3_LINCOMB(1.0,GIP[EdgeF0B1],0.5*sp,cm,GIP[EdgeF0B1])
+						V3_SUBTRACT(EdgeMidPoints[FrontEdge],e,a)
+						V3_SUBTRACT(SideMidPoints[outflow[0]],e,b)
+						V3_VECTOR_PRODUCT(a,b,d) V3_ADD(c,d,c) 
+						V3_SCALAR_PRODUCT(conv,d,sp) sp = ABS(sp);
+						V3_TRI_CM(EdgeMidPoints[FrontEdge],e,SideMidPoints[outflow[0]],cm)
+						V3_LINCOMB(1.0,GIP[EdgeF0B1],0.5*sp,cm,GIP[EdgeF0B1])
+    					V3_SCALAR_PRODUCT(conv,c,sp) if (sp<0.0) V3_SCALE(-0.5,c) else V3_SCALE(0.5,c)
+						if (CornerOfEdge[EdgeF0B1][0]==FrontCorner[0])  V3_SCALE(-1.0,c)
+						V3_COPY(c,Area[EdgeF0B1])
+						V3_SCALAR_PRODUCT(conv,c,sp) sp = ABS(sp); if (sp>0.0) V3_SCALE(1.0/sp,GIP[EdgeF0B1])
+							
+						/* entries for B0B1 (the half) and F1B0 */
+						if (FindCrossParam3D(EdgeMidPoints[BackEdge],SideMidPoints[inflow[1]],SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF1B0],conv,param)) return (1);
+						V3_SUBTRACT(EdgeMidPoints[BackEdge],SideMidPoints[inflow[1]],a)
+						V3_SUBTRACT(SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF1B0],b)
+						V3_VECTOR_PRODUCT(a,b,c) V3_SCALAR_PRODUCT(conv,c,sp) if (sp<0.0) V3_SCALE(-1.0,c)
+						V3_COPY(c,d)
+						
+						V3_LINCOMB(1.0-param[0],EdgeMidPoints[BackEdge],param[0],SideMidPoints[inflow[1]],e)
+						V3_ADD(GIP[BackEdge],e,GIP[BackEdge])
+						if (CornerOfEdge[BackEdge][0]==BackCorner[0]) alpha = -0.5*param[0]*param[1];
+						else										  alpha = 0.5*param[0]*param[1];
+						V3_SCALE(alpha,d) V3_ADD(d,Area[BackEdge],Area[BackEdge])
+						V3_ADD(EdgeMidPoints[BackEdge],GIP[BackEdge],GIP[BackEdge]) V3_ADD(SideMidPoints[outflow[0]],GIP[BackEdge],GIP[BackEdge])
+						V3_SCALE(0.25,GIP[BackEdge])
+							
+						V3_TRI_CM(e,SideMidPoints[inflow[1]],EdgeMidPoints[EdgeF1B0],GIP[EdgeF1B0])
+						V3_COPY(c,Area[EdgeF1B0])
+						if (CornerOfEdge[EdgeF1B0][0]==FrontCorner[1])  alpha = 0.5*(1.0-param[0])*(param[1]-1.0);
+						else											alpha = 0.5*(1.0-param[0])*(1.0-param[1]);
+						V3_SCALE(alpha,Area[EdgeF1B0])
+
+						/* entry for F1B1 */	
+						V3_LINCOMB(1.0-param[0],EdgeMidPoints[BackEdge],param[0],SideMidPoints[inflow[1]],e)
+						V3_SUBTRACT(EdgeMidPoints[EdgeF1B1],e,a)
+						V3_SUBTRACT(SideMidPoints[inflow[1]],SideMidPoints[outflow[0]],b)
+						V3_VECTOR_PRODUCT(a,b,c)
+						V3_SCALAR_PRODUCT(conv,c,sp) sp = ABS(sp);
+						V3_QUA_CM(EdgeMidPoints[EdgeF1B1],e,SideMidPoints[inflow[1]],SideMidPoints[outflow[0]],GIP[EdgeF1B1])
+						V3_SCALE(0.5*sp,GIP[EdgeF1B1])
+						V3_SUBTRACT(SideMidPoints[outflow[1]],SideMidPoints[outflow[0]],a)
+						V3_SUBTRACT(EdgeMidPoints[EdgeF1B1],EdgeMidPoints[FrontEdge],b)
+						V3_VECTOR_PRODUCT(a,b,d) V3_ADD(c,d,c) V3_SCALAR_PRODUCT(conv,c,sp) if (sp<0.0) V3_SCALE(-0.5,c) else V3_SCALE(0.5,c)
+						if (CornerOfEdge[EdgeF1B1][0]==FrontCorner[1])  V3_SCALE(-1.0,c)
+						V3_COPY(c,Area[EdgeF1B1])
+						V3_SCALAR_PRODUCT(conv,d,sp) sp = ABS(sp);
+						V3_QUA_CM(SideMidPoints[outflow[1]],SideMidPoints[outflow[0]],EdgeMidPoints[EdgeF1B1],EdgeMidPoints[FrontEdge],cm)
+						V3_LINCOMB(1.0,GIP[EdgeF1B1],0.5*sp,cm,GIP[EdgeF1B1])
+						V3_SCALAR_PRODUCT(conv,c,sp) sp = ABS(sp); if (sp>0.0) V3_SCALE(1.0/sp,GIP[EdgeF1B1])
+							
+						/* the local upwind intergration points */
+						V3_COPY(TRefCoord[BackCorner[1]],LUIP[BackEdge])
+					}
+					break;
+				default :
+					return (1);
+			}
+						
+			/* the local upwind intergration points */
+			V3_COPY(TRefCoord[BackCorner[0]],LUIP[EdgeF0B0])
+			V3_COPY(TRefCoord[BackCorner[0]],LUIP[EdgeF1B0])
+			V3_COPY(TRefCoord[BackCorner[1]],LUIP[EdgeF0B1])
+			V3_COPY(TRefCoord[BackCorner[1]],LUIP[EdgeF1B1])
+			break;
+		case 1:
+			/* one in-, three outflow */
+			OpCorner = OppositeCorner[inflow[0]];
+			for (i=0; i<3; i++)
+			{
+				corner[i] = CornerOfSide[inflow[0]][i];
+				OpEdge[i] = EdgeWithCorners[corner[i]][OpCorner];
+				GrEdge[i] = EdgeWithCorners[corner[i]][CornerOfSide[inflow[0]][(i+1)%3]];
+				side[i]   = SideOfCorners[corner[i]][CornerOfSide[inflow[0]][(i+1)%3]][OpCorner];
+			}
+			
+			/* calculate the three quadrilaterals */
+			V3_SUBTRACT(CornerPoints[corner[1]],CornerPoints[corner[0]],a)	/* a = P1 - P0 	*/
+			V3_SUBTRACT(CornerPoints[corner[2]],CornerPoints[corner[0]],b)	/* b = P2 - P0 	*/
+			V3_VECTOR_PRODUCT(a,b,c)
+			V3_SCALE(0.02777777777777777777,c)
+			for (i=0; i<3; i++)
+			{
+				V3_SUBTRACT(CornerPoints[corner[(i+2)%3]],CornerPoints[corner[(i+1)%3]],a)
+				V3_SUBTRACT(CornerPoints[OpCorner],CornerPoints[corner[(i+1)%3]],b)
+				V3_VECTOR_PRODUCT(a,b,d)
+				V3_SCALE(0.08333333333333333333,d)
+				V3_ADD(c,d,Area[OpEdge[i]])
+				
+				V3_SCALAR_PRODUCT(conv,Area[OpEdge[i]],sp) sp = ABS(sp);
+				V3_QUA_CM(EdgeMidPoints[OpEdge[i]],SideMidPoints[side[i]],SideMidPoints[inflow[0]],SideMidPoints[side[(i+2)%3]],GIP[OpEdge[i]])
+					/*V3_SCALE(sp,GIP[OpEdge[i]])*/
+			}
+			
+			/* calculate triangles from crosspoints */
+			for (i=0; i<3; i++)
+			{
+				if (FindCrossParam3D(SideMidPoints[side[i]],EdgeMidPoints[OpEdge[i]],SideMidPoints[inflow[0]],EdgeMidPoints[GrEdge[i]],conv,param)) return (1);
+				if (param[0]>0.0)
+				{
+					/* subtract first triangle to corrisponding quadrilateral */
+					V3_SUBTRACT(EdgeMidPoints[OpEdge[i]],SideMidPoints[inflow[0]],a)
+					V3_SUBTRACT(SideMidPoints[side[i]],SideMidPoints[inflow[0]],b)
+					V3_VECTOR_PRODUCT(a,b,c)
+					if (param[0]>=1.0)
+						V3_SCALE(0.5,c)
+					else
+						V3_SCALE(0.5*param[0],c)
+					V3_SUBTRACT(Area[OpEdge[i]],c,Area[OpEdge[i]])
+					V3_ADD(Area[OpEdge[(i+1)%3]],c,Area[OpEdge[(i+1)%3]])
+
+					V3_LINCOMB(1.0-param[0],SideMidPoints[side[i]],param[0],EdgeMidPoints[OpEdge[i]],e)/*
+					V3_TRI_CM(e,SideMidPoints[side[i]],SideMidPoints[inflow[0]],cm)
+					V3_SCALAR_PRODUCT(conv,c,sp) sp = ABS(sp);
+					V3_SCALE(sp,cm)
+					V3_SUBTRACT(GIP[OpEdge[i]],cm,GIP[OpEdge[i]])
+					V3_ADD(GIP[OpEdge[(i+1)%3]],cm,GIP[OpEdge[(i+1)%3]])*/		/* still to normalize !! */
+							
+					/* connections of P0 and P1 */
+					V3_SUBTRACT(EdgeMidPoints[OpEdge[i]],EdgeMidPoints[GrEdge[i]],a)
+					V3_SUBTRACT(SideMidPoints[side[i]],EdgeMidPoints[GrEdge[i]],b)
+					V3_VECTOR_PRODUCT(a,b,Area[GrEdge[i]])
+					if (param[0]>=1.0)
+						V3_SCALE(0.5,Area[GrEdge[i]])
+					else
+						V3_SCALE(0.5*param[0],Area[GrEdge[i]])
+					V3_TRI_CM(e,SideMidPoints[side[i]],EdgeMidPoints[GrEdge[i]],GIP[GrEdge[i]])					
+
+					First = (CornerOfEdge[GrEdge[i]][0]==corner[i]);
+					V3_SCALAR_PRODUCT(conv,Area[GrEdge[i]],sp)
+					if ((!inverted && !First && sp<0.0) ||	
+					    (!inverted && First && sp>0.0) ||	
+				 	    (inverted && First && sp<0.0) ||	
+				   	    (inverted && !First && sp>0.0))	
+						V3_SCALE(-1.0,Area[GrEdge[i]])
+					V3_COPY(TRefCoord[corner[(i+1)%3]],LUIP[GrEdge[i]])
+				}
+				else if (param[0]<0.0)
+				{
+					if (FindCrossParam3D(SideMidPoints[side[i]],EdgeMidPoints[OpEdge[(i+1)%3]],SideMidPoints[inflow[0]],EdgeMidPoints[GrEdge[i]],conv,param)) return (1);
+					if (param[0]>0.0)
+					{
+						V3_SUBTRACT(SideMidPoints[side[i]],SideMidPoints[inflow[0]],a)
+						V3_SUBTRACT(EdgeMidPoints[OpEdge[(i+1)%3]],SideMidPoints[inflow[0]],b)
+						V3_VECTOR_PRODUCT(a,b,c)
+						if (param[0]>=1.0)
+							V3_SCALE(0.5,c)
+						else
+							V3_SCALE(0.5*param[0],c)
+						V3_ADD(Area[OpEdge[i]],c,Area[OpEdge[i]])
+						V3_SUBTRACT(Area[OpEdge[(i+1)%3]],c,Area[OpEdge[(i+1)%3]])
+
+						V3_LINCOMB(1.0-param[0],SideMidPoints[side[i]],param[0],EdgeMidPoints[OpEdge[(i+1)%3]],e)/*
+						V3_TRI_CM(e,SideMidPoints[side[i]],SideMidPoints[inflow[0]],cm)
+						V3_SCALAR_PRODUCT(conv,c,sp) sp = ABS(sp);
+						V3_SCALE(sp,cm)
+						V3_ADD(GIP[OpEdge[i]],cm,GIP[OpEdge[i]])
+						V3_SUBTRACT(GIP[OpEdge[(i+1)%3]],cm,GIP[OpEdge[(i+1)%3]])*/	/* still to normalize !! */
+							
+						/* connections of P0 and P1 */
+						V3_SUBTRACT(EdgeMidPoints[OpEdge[(i+1)%3]],EdgeMidPoints[GrEdge[i]],a)
+						V3_SUBTRACT(SideMidPoints[side[i]],EdgeMidPoints[GrEdge[i]],b)
+						V3_VECTOR_PRODUCT(a,b,Area[GrEdge[i]])
+						if (param[0]>=1.0)
+							V3_SCALE(0.5,Area[GrEdge[i]])
+						else
+							V3_SCALE(0.5*param[0],Area[GrEdge[i]])
+						V3_TRI_CM(e,SideMidPoints[side[i]],EdgeMidPoints[GrEdge[i]],GIP[GrEdge[i]])					
+
+						First = (CornerOfEdge[GrEdge[i]][0]==corner[i]);
+						V3_SCALAR_PRODUCT(conv,Area[GrEdge[i]],sp)
+						if ((!inverted && !First && sp>0.0) ||	
+					 	   (!inverted && First && sp<0.0) ||	
+				 	  	   (inverted && First && sp>0.0) ||	
+				   	   	   (inverted && !First && sp<0.0))	
+							V3_SCALE(-1.0,Area[GrEdge[i]])
+						V3_COPY(TRefCoord[corner[i]],LUIP[GrEdge[i]])
+					}
+				}
+				else
+					V3_LINCOMB(0.5,SideMidPoints[side[i]],0.5,EdgeMidPoints[GrEdge[i]],GIP[GrEdge[i]])
+			}
+
+			/*for (i=0; i<3; i++)
+			{
+				V3_SCALAR_PRODUCT(conv,Area[OpEdge[i]],sp) sp = ABS(sp);
+				if (sp>0.0)	V3_SCALE(1.0/sp,GIP[OpEdge[i]])
+			}*/
+			
+			/* turn to the right direction and set LUIPs */			
+			for (i=0; i<3; i++)
+			{
+				/* the main connections */
+				First = (CornerOfEdge[OpEdge[i]][1]==OpCorner);
+				V3_SCALAR_PRODUCT(conv,Area[OpEdge[i]],sp)
+				if ((!inverted && !First && sp>0.0) ||	
+				    (!inverted && First && sp<0.0) ||	
+				    (inverted && First && sp>0.0) ||	
+				    (inverted && !First && sp<0.0))	
+					V3_SCALE(-1.0,Area[OpEdge[i]])
+				
+				if (inverted)
+					V3_COPY(TRefCoord[OpCorner],LUIP[OpEdge[i]])
+				else
+					V3_COPY(TRefCoord[corner[i]],LUIP[OpEdge[i]])
+			}
+			break;			
+		default:
+			return (1);		
+	}
+	
+	/* project areas to be parallel to 'conv' */
+	for (i=0; i<6; i++)
+		if (V3_Project(Area[i],conv,Area[i])) return (1);
+	
 	return (0);
 }
 
@@ -696,9 +1419,9 @@ INT Side_TetInfo (COORD **theCorners, INT side, COORD_VECTOR Area, COORD_VECTOR 
 D*/			
 /****************************************************************************/
 
-INT GSUIP (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT GetSkewedUIP (COORD_VECTOR *theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
 {
-	COORD_VECTOR a, lconv;
+	COORD_VECTOR lconv;
 	COORD alpha;
 	COORD M[9],I[9];
 	INT flags, i;
@@ -709,8 +1432,7 @@ INT GSUIP (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTO
 	if (M3_Invert(I,M)) return (1);
 	for (i=0; i<MAX_EDGES_OF_ELEM; i++)
 	{
-		V3_SUBTRACT(conv[i],theCorners[0],a)
-		M3_TIMES_V3 (I,a,lconv)
+		M3_TIMES_V3 (I,conv[i],lconv)
 		flags = (ABS(lconv[0])<SMALL_C);
 		flags |= ((ABS(lconv[1])<SMALL_C)<<1);
 		flags |= ((ABS(lconv[2])<SMALL_C)<<2);
