@@ -45,7 +45,6 @@
 
 #include "devices.h"
 
-#include "switch.h"
 #include "gm.h"
 #include "algebra.h"
 #include "misc.h"
