@@ -40,6 +40,7 @@ then
 	echo "         T3E (set ARCH = T3E)";
 	echo "         NECSX4 (set ARCH = NECSX4)";
 	echo "         NEXTSTEP (set ARCH = NEXTSTEP)";
+	echo "         OPENSTEP (set ARCH = OPENSTEP)";
 	echo "         SEQ (set MODEL = SEQ)";
 	echo "         MPI (set MODEL = MPI)";
 	echo "         NX (set MODEL = NX)";
@@ -318,6 +319,9 @@ edit_ugconf()
 		;;
 	NEXTSTEP)
 		sed 's/^ARCH.*$/ARCH = NEXTSTEP/' $1 > $1.tmp
+		;;
+	OPENSTEP)
+		sed 's/^ARCH.*$/ARCH = OPENSTEP/' $1 > $1.tmp
 		;;
 	SEQ)
 		sed 's/^MODEL[ \t].*$/MODEL = SEQ/' $1 > $1.tmp
