@@ -637,7 +637,7 @@ static INT file_corners_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey,
                &id,c,c+1,c+2) != 1+N) return(0);
 
     if (i < nBndP)
-      for (j=0; j<3; j++)
+      for (j=0; j<DIM; j++)
         midpoint[j] += c[j];
 
     if (Mesh != NULL) {
@@ -655,7 +655,7 @@ static INT file_corners_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey,
     /* printf("%d %f %f %f\n",id,c[0],c[1],c[2]);  */
   }
   s = 1.0 / nBndP;
-  for (j=0; j<3; j++)
+  for (j=0; j<DIM; j++)
     midpoint[j] *= s;
   if (Mesh != NULL) {
     *radius = 0.0;
@@ -663,12 +663,16 @@ static INT file_corners_fill (FILE *f, HEAP *Heap, MESH *Mesh, INT MarkKey,
     {
       M_BNDP *p = (M_BNDP *)Mesh->theBndPs[i];
 
-      for (j=0; j<3; j++)
+      for (j=0; j<DIM; j++)
         *radius = MAX(*radius,fabs(midpoint[j] - p->pos[j]));
     }
   }
   else
-    *radius = ABS(midpoint[0])+ABS(midpoint[1])+ABS(midpoint[2]);
+  {
+    *radius = 0.0;
+    for (j=0; j<DIM; j++)
+      *radius += ABS(midpoint[j]);
+  }
 
   return(0);
 }
