@@ -705,7 +705,8 @@ INT CheckEdgePrio (ELEMENT *theElement, EDGE *theEdge)
 	#endif
 
 	if (dddctrl.edgeData)
-		CheckVectorPrio(theElement,EDVECTOR(theEdge));
+	    if (EDVECTOR(theEdge) != NULL)
+		    CheckVectorPrio(theElement,EDVECTOR(theEdge));
 
 	return(0);
 }
@@ -824,7 +825,8 @@ INT CheckInterfaces(GRID *theGrid)
 				ASSERT(theEdge != NULL);
 				SETUSED(theEdge,j);
 				if (dddctrl.edgeData)
-					SETUSED(EDVECTOR(theEdge),j);
+				    if (EDVECTOR(theEdge) != NULL)
+					    SETUSED(EDVECTOR(theEdge),j);
 			}
 		}
 	}
