@@ -44,6 +44,8 @@
 #include "udm.h"
 #include "pcr.h"
 #include "debug.h"
+#include "fifo.h"
+#include "misc.h"
 
 #include "transfer.h"
 #include "ls.h"
@@ -119,10 +121,6 @@ struct np_smoother {
 
   VEC_SCALAR damp;
   MATDATA_DESC *L;
-
-    #ifdef ModelP
-  INT cons_mode;
-    #endif
 
   INT (*Step)
     (struct np_smoother *,                   /* pointer to (derived) object     */
@@ -259,6 +257,18 @@ typedef struct
   VECDATA_DESC *t;
 
 } NP_LMGC;
+
+typedef struct
+{
+  NP_SMOOTHER smoother;
+
+  INT mem;                                                      /* memory used temporary (bytes)*/
+  INT nv;                                                       /* # vectors					*/
+  INT bw;                                                       /* bandwidth					*/
+  DOUBLE *Mat;                                          /* matrix						*/
+  DOUBLE *Vec;                                          /* vector						*/
+
+} NP_EX;
 
 /****************************************************************************/
 /*																			*/
@@ -447,14 +457,6 @@ static INT SmootherInit (NP_BASE *theNP, INT argc , char **argv)
   for (i=0; i<MAX_VEC_COMP; i++) np->damp[i] = 1.0;
   sc_read(np->damp,np->iter.b,"damp",argc,argv);
   np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
-        #ifdef ModelP
-  if (ReadArgvOption("M",argc,argv))
-    np->cons_mode = MAT_MASTER_CONS;
-  else if (ReadArgvOption("D",argc,argv))
-    np->cons_mode = MAT_DIAG_CONS;
-  else
-    np->cons_mode = MAT_CONS;
-        #endif
 
   return (NPIterInit(&np->iter,argc,argv));
 }
@@ -469,9 +471,6 @@ static INT SmootherDisplay (NP_BASE *theNP)
   if (sc_disp(np->damp,np->iter.b,"damp")) REP_ERR_RETURN (1);
   if (np->L != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"L",ENVITEM_NAME(np->L));
-        #ifdef ModelP
-  UserWriteF(DISPLAY_NP_FORMAT_SI,"cons_mode",(int)np->cons_mode);
-        #endif
 
   return (0);
 }
@@ -554,12 +553,10 @@ static INT JacobiPreProcess  (NP_ITER *theNP, INT level,
   GRID *theGrid;
 
   np = (NP_SMOOTHER *) theNP;
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L))
-    NP_RETURN(1,result[0]);
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) NP_RETURN(1,result[0]);
   theGrid = NP_GRID(theNP,level);
   if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->L,MAT_DIAG_CONS) != NUM_OK)
-    NP_RETURN(1,result[0]);
+  if (l_matrix_consistent(theGrid,np->L,MAT_DIAG_CONS) != NUM_OK) NP_RETURN(1,result[0]);
         #endif
   *baselevel = level;
 
@@ -636,12 +633,10 @@ static INT GSPreProcess  (NP_ITER *theNP, INT level,
   GRID *theGrid;
 
   np = (NP_SMOOTHER *) theNP;
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L))
-    NP_RETURN(1,result[0]);
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) NP_RETURN(1,result[0]);
   theGrid = NP_GRID(theNP,level);
   if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
-    NP_RETURN(1,result[0]);
+  if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS) != NUM_OK) NP_RETURN(1,result[0]);
         #endif
   *baselevel = level;
 
@@ -654,23 +649,12 @@ static INT GSStep (NP_SMOOTHER *theNP, INT level,
                    MATDATA_DESC *L,
                    INT *result)
 {
-  NP_SMOOTHER *np;
-  GRID *theGrid;
-
-  np = (NP_SMOOTHER *) theNP;
-  theGrid = NP_GRID(theNP,level);
     #ifdef ModelP
-  if (np->cons_mode == MAT_CONS) {
-    if (l_vector_collect(theGrid,b)!=NUM_OK)
-      NP_RETURN(1,result[0]);
-  }
-  else {
-    if (l_vector_meanvalue(theGrid,b) != NUM_OK)
-      NP_RETURN(1,result[0]);
-  }
-  if (l_lgs(theGrid,x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_vector_collect(NP_GRID(theNP,level),b)!=NUM_OK) NP_RETURN(1,result[0]);
+
+  if (l_lgs(NP_GRID(theNP,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
     #else
-  if (l_lgs(theGrid,x,A,b) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_lgs(NP_GRID(theNP,level),x,A,b) != NUM_OK) NP_RETURN(1,result[0]);
     #endif
 
   return (0);
@@ -985,7 +969,7 @@ static INT SGSPreProcess  (NP_ITER *theNP, INT level,
   theGrid = NP_GRID(theNP,level);
   if (l_dmatcopy(theGrid,np->L,A) != NUM_OK)
     NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
+  if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS) != NUM_OK)
     NP_RETURN(1,result[0]);
         #endif
   *baselevel = level;
@@ -1014,14 +998,7 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
 
   /* iterate forward */
     #ifdef ModelP
-  if (np->smoother.cons_mode == MAT_CONS) {
-    if (l_vector_collect(theGrid,b)!=NUM_OK)
-      NP_RETURN(1,result[0]);
-  }
-  else {
-    if (l_vector_meanvalue(theGrid,b) != NUM_OK)
-      NP_RETURN(1,result[0]);
-  }
+  if (l_vector_collect(theGrid,b)!=NUM_OK) NP_RETURN(1,result[0]);
   if (l_lgs(theGrid,NP_SGS_t(np),np->smoother.L,b)
       != NUM_OK)
     NP_RETURN(1,result[0]);
@@ -1032,8 +1009,7 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
     #endif
 
   /* damp */
-  if (l_dscale(theGrid,NP_SGS_t(np),ACTIVE_CLASS,np->smoother.damp)!=NUM_OK)
-    NP_RETURN(1,result[0]);
+  if (l_dscale(theGrid,NP_SGS_t(np),ACTIVE_CLASS,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
 
   /* update defect */
   if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,NP_SGS_t(np),ACTIVE_CLASS)
@@ -1041,14 +1017,7 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
 
   /* iterate backward */
     #ifdef ModelP
-  if (np->smoother.cons_mode == MAT_CONS) {
-    if (l_vector_collect(theGrid,b)!=NUM_OK)
-      NP_RETURN(1,result[0]);
-  }
-  else {
-    if (l_vector_meanvalue(theGrid,b) != NUM_OK)
-      NP_RETURN(1,result[0]);
-  }
+  if (l_vector_collect(theGrid,b)!=NUM_OK) NP_RETURN(1,result[0]);
   if (l_ugs(theGrid,x,np->smoother.L,b))
     NP_RETURN(1,result[0]);
   if (l_vector_consistent(theGrid,x) != NUM_OK) NP_RETURN(1,result[0]);
@@ -1057,16 +1026,14 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
     #endif
 
   /* damp */
-  if (l_dscale(theGrid,x,ACTIVE_CLASS,np->smoother.damp) != NUM_OK)
-    NP_RETURN(1,result[0]);
+  if (l_dscale(theGrid,x,ACTIVE_CLASS,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
 
   /* update defect */
   if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,x,ACTIVE_CLASS)
       != NUM_OK) NP_RETURN(1,result[0]);
 
   /* now add the two corrections */
-  if (l_daxpy(theGrid,x,ACTIVE_CLASS,Factor_One,NP_SGS_t(np)) != NUM_OK)
-    NP_RETURN(1,result[0]);
+  if (l_daxpy(theGrid,x,ACTIVE_CLASS,Factor_One,NP_SGS_t(np)) != NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
 }
@@ -1803,9 +1770,7 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
   if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
         #ifdef ModelP
-  if (l_matrix_consistent(theGrid,np->smoother.L,np->smoother.cons_mode)
-      != NUM_OK)
-    NP_RETURN(1,result[0]);
+  if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
         #endif
   /*	if (np->mindiag[0] > 0.0)
       if (l_shift_diagonal(theGrid,np->smoother.L,np->mindiag) != NUM_OK)
@@ -1825,22 +1790,10 @@ static INT ILUStep (NP_SMOOTHER *theNP, INT level,
                     MATDATA_DESC *L,
                     INT *result)
 {
-  NP_ILU *np;
-  GRID *theGrid;
-
-  np = (NP_ILU *) theNP;
-  theGrid = NP_GRID(theNP,level);
     #ifdef ModelP
-  if (np->smoother.cons_mode == MAT_CONS) {
-    if (l_vector_collect(theGrid,b)!=NUM_OK)
-      NP_RETURN(1,result[0]);
-  }
-  else {
-    if (l_vector_meanvalue(theGrid,b) != NUM_OK)
-      NP_RETURN(1,result[0]);
-  }
+  if (l_vector_collect(NP_GRID(theNP,level),b)!=NUM_OK) NP_RETURN(1,result[0]);
     #endif
-  if (l_luiter(theGrid,x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_luiter(NP_GRID(theNP,level),x,L,b) != NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
 }
@@ -3573,6 +3526,341 @@ static INT AddmgcConstruct (NP_BASE *theNP)
 }
 
 /****************************************************************************/
+/*D
+   exact - numproc for exact solver
+
+   DESCRIPTION:
+   This numproc executes a symmetric Gauss-Seidel smoother,
+   using the blas routines
+   'l_lgs' and 'l_ugs'. It can be used in 'lmgc'.
+
+   .vb
+   npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>]
+       $damp <sc double list>;
+   .ve
+
+   .  $c~<cor> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $damp~<sc~double~list> - damping factors for each component
+
+   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .  <double~list>  - <double> {: <double>}*
+   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
+
+   'npexecute <name> [$i] [$s] [$p];'
+
+   .  $p - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+   D*/
+/****************************************************************************/
+
+static INT EXInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  return (SmootherInit(theNP,argc,argv));
+}
+
+static INT EXDisplay (NP_BASE *theNP)
+{
+  NP_EX *np;
+  DOUBLE mem;
+  char name [32];
+
+  np = (NP_EX *) theNP;
+  SmootherDisplay(theNP);
+  if (np->mem > 1024*1024)
+  {
+    strcpy(name,"memory(MByte)");
+    mem = (np->mem)/1024.0/1024.0;
+  }
+  else if (np->mem > 1024)
+  {
+    strcpy(name,"memory(KByte)");
+    mem = (np->mem)/1024.0;
+  }
+  else
+  {
+    strcpy(name,"memory(Byte)");
+    mem = (np->mem);
+  }
+  UserWriteF(DISPLAY_NP_FORMAT_SF,name,(float)mem);
+
+  return (0);
+}
+
+#define EX_MAT(m,b,i,j)                 ((m)[2*(b)*(i) + (j)])
+
+static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+  NP_EX *np;
+  FIFO myfifo;
+  void *buffer;
+  VECTOR **vlist;
+  VECTOR *theV,*theW;
+  MATRIX *theM;
+  HEAP *theHeap;
+  GRID *theGrid;
+  INT bw,ment,i,j,k,n,index,cindex,ctype,ccomp,rindex,rtype,rcomp,max;
+  DOUBLE f;
+  DOUBLE *Mat;
+  SHORT *comp;
+
+  np = (NP_EX *) theNP;
+  *baselevel = level;
+  theGrid = NP_GRID(theNP,level);
+
+  /* reorder vector-list */
+  theHeap = MGHEAP(NP_MG(theNP));
+  MarkTmpMem(theHeap);
+  n = NVEC(theGrid);
+  buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
+  vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
+  fifo_init(&myfifo,buffer,sizeof(VECTOR*)*n);
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    SETUSED(theV,0);
+  fifo_in(&myfifo,(void *)FIRSTVECTOR(theGrid));
+  SETUSED(FIRSTVECTOR(theGrid),1);
+  while(!fifo_empty(&myfifo))
+  {
+    theV = (VECTOR *)fifo_out(&myfifo);
+    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+      if (!USED(MDEST(theM)))
+      {
+        fifo_in(&myfifo,(void *)MDEST(theM));
+        SETUSED(MDEST(theM),1);
+      }
+  }
+  fifo_in(&myfifo,(void *)theV);
+  SETUSED(theV,0); i=0;
+  while(!fifo_empty(&myfifo))
+  {
+    theV = (VECTOR *)fifo_out(&myfifo);
+    vlist[i++] = theV;
+    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+      if (USED(MDEST(theM)))
+      {
+        fifo_in(&myfifo,(void *)MDEST(theM));
+        SETUSED(MDEST(theM),0);
+      }
+  }
+  assert(i==n);
+  for (i=0; i<n; i++) GRID_UNLINK_VECTOR(theGrid,vlist[i],PrioMaster);
+  for (i=0; i<n; i++) GRID_LINK_VECTOR(theGrid,vlist[i],PrioMaster);
+  ReleaseTmpMem(theHeap);
+  if (MD_IS_SCALAR(A))
+  {
+    for (theV=FIRSTVECTOR(theGrid),i=0; theV!=NULL; theV=SUCCVC(theV),i++)
+      VINDEX(theV) = i;
+    bw = 0;
+    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    {
+      index = VINDEX(theV);
+      for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+      {
+        k = index-MDESTINDEX(theM);
+        k = ABS(k);
+        bw = MAX(bw,k);
+      }
+    }
+    np->bw = bw;
+    np->nv = NVEC(theGrid);
+  }
+  else
+  {
+    max = 0;
+    for (theV=FIRSTVECTOR(theGrid),i=0; theV!=NULL; theV=SUCCVC(theV))
+    {
+      VINDEX(theV) = i;
+      k = VD_NCMPS_IN_TYPE(x,VTYPE(theV));
+      i += k;
+      max = MAX(max,k);
+    }
+    bw = 0;
+    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    {
+      index = VINDEX(theV);
+      for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+      {
+        k = index-MDESTINDEX(theM);
+        k = ABS(k);
+        bw = MAX(bw,k);
+      }
+    }
+    np->bw = bw + max - 1;
+    np->nv = i;
+  }
+
+  /* get storage for matrix */
+  bw = np->bw;
+  if (Mark(theHeap,FROM_BOTTOM)) REP_ERR_RETURN(1);
+  np->Mat = (DOUBLE*)GetMem(theHeap,np->nv*(2*bw+1)*sizeof(DOUBLE),FROM_BOTTOM);
+  if (np->Mat==NULL) REP_ERR_RETURN(1);
+  memset((void*)np->Mat,0,np->nv*(2*bw+1)*sizeof(DOUBLE));
+  np->mem = np->nv*(2*bw+1)*sizeof(DOUBLE);
+  np->Vec = (DOUBLE*)GetMem(theHeap,np->nv*sizeof(DOUBLE),FROM_BOTTOM);
+  if (np->Vec==NULL) REP_ERR_RETURN(1);
+
+  /* copy matrix */
+  Mat             = np->Mat;
+  if (MD_IS_SCALAR(A))
+  {
+    ment = MD_SCALCMP(A);
+    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    {
+      index = VINDEX(theV);
+      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
+        EX_MAT(Mat,bw,index,MDESTINDEX(theM)) = MVALUE(theM,ment);
+    }
+  }
+  else
+  {
+    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    {
+      rindex = VINDEX(theV);
+      rtype = VTYPE(theV);
+      rcomp = VD_NCMPS_IN_TYPE(x,rtype);
+      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
+      {
+        theW = MDEST(theM);
+        cindex = VINDEX(theW);
+        ctype = VTYPE(theW);
+        ccomp = VD_NCMPS_IN_TYPE(x,ctype);
+        comp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
+        for (i=0; i<rcomp; i++)
+          for (j=0; j<ccomp; j++)
+            EX_MAT(Mat,bw,rindex+i,cindex+j) = MVALUE(theM,comp[i*ccomp+j]);
+      }
+    }
+  }
+
+  /* decompose matrix */
+  n               = np->nv;
+  bw              = np->bw;
+  Mat             = np->Mat;
+  for (i=0; i<n-1; i++)
+  {
+    if (EX_MAT(Mat,bw,i,i)==0.0) return (1);
+    for (j=i+1; j<=MIN(i+bw,n-1); j++)
+    {
+      f = EX_MAT(Mat,bw,j,i)/EX_MAT(Mat,bw,i,i);
+      EX_MAT(Mat,bw,j,i) = f;
+      for (k=i+1; k<=MIN(i+bw,n-1); k++)
+        EX_MAT(Mat,bw,j,k) -= f*EX_MAT(Mat,bw,i,k);
+    }
+  }
+
+  return (0);
+}
+
+static INT EXSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  INT i,j,n,bw,vent,type;
+  NP_EX *np;
+  GRID *theGrid;
+  DOUBLE *Mat,*Vec;
+  VECTOR *theV;
+  SHORT *comp;
+
+  /* store passed XXXDATA_DESCs */
+  NPIT_A(theNP) = A;
+  NPIT_c(theNP) = x;
+  NPIT_b(theNP) = b;
+
+  np = (NP_EX *) theNP;
+  theGrid = NP_GRID(theNP,level);
+
+  /* init */
+  n               = np->nv;
+  bw              = np->bw;
+  Mat             = np->Mat;
+  Vec             = np->Vec;
+
+  /* copy b to Vec */
+  if (MD_IS_SCALAR(A))
+  {
+    vent=VD_SCALCMP(b);
+    for (theV=FIRSTVECTOR(theGrid),i=0; theV!=NULL; theV=SUCCVC(theV),i++)
+      Vec[i] = VVALUE(theV,vent);
+  }
+  else
+  {
+    for (theV=FIRSTVECTOR(theGrid),i=0; theV!=NULL; theV=SUCCVC(theV))
+    {
+      type = VTYPE(theV);
+      comp = VD_CMPPTR_OF_TYPE(b,type);
+      for (j=0; j<VD_NCMPS_IN_TYPE(b,type); j++)
+        Vec[i++] = VVALUE(theV,comp[j]);
+    }
+  }
+
+  /* invert lower */
+  for (i=1; i<n; i++)
+    for (j=MAX(i-bw,0); j<i; j++)
+      Vec[i] -= EX_MAT(Mat,bw,i,j)*Vec[j];
+
+  /* invert upper */
+  for (i=n-1; i>=0; i--)
+  {
+    for (j=i+1; j<=MIN(i+bw,n-1); j++)
+      Vec[i] -= EX_MAT(Mat,bw,i,j)*Vec[j];
+    Vec[i] /= EX_MAT(Mat,bw,i,i);
+  }
+
+  /* copy Vec to c */
+  if (MD_IS_SCALAR(A))
+  {
+    vent=VD_SCALCMP(x);
+    for (theV=FIRSTVECTOR(theGrid),i=0; theV!=NULL; theV=SUCCVC(theV),i++)
+      VVALUE(theV,vent) = Vec[i];
+  }
+  else
+  {
+    for (theV=FIRSTVECTOR(theGrid),i=0; theV!=NULL; theV=SUCCVC(theV))
+    {
+      type = VTYPE(theV);
+      comp = VD_CMPPTR_OF_TYPE(x,type);
+      for (j=0; j<VD_NCMPS_IN_TYPE(x,type); j++)
+        VVALUE(theV,comp[j]) = Vec[i++];
+    }
+  }
+
+  /* damp */
+  if (l_dscale(theGrid,x,ACTIVE_CLASS,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
+
+  /* update defect */
+  if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,x,ACTIVE_CLASS)!= NUM_OK) NP_RETURN(1,result[0]);
+
+  return (0);
+}
+
+static INT EXPostProcess (NP_ITER *theNP, INT level,VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  HEAP *theHeap;
+
+  theHeap = MGHEAP(NP_MG(theNP));
+  if (Release(theHeap,FROM_BOTTOM)) REP_ERR_RETURN(1);
+
+  return(0);
+}
+
+static INT EXConstruct (NP_BASE *theNP)
+{
+  NP_ITER *np;
+
+  theNP->Init     = EXInit;
+  theNP->Display  = EXDisplay;
+  theNP->Execute  = NPIterExecute;
+
+  np = (NP_ITER *) theNP;
+  np->PreProcess  = EXPreProcess;
+  np->Iter                = EXSmoother;
+  np->PostProcess = EXPostProcess;
+
+  return(0);
+}
+
+/****************************************************************************/
 /*
    InitIter	- Init this file
 
@@ -3627,6 +3915,8 @@ INT InitIter ()
   if (CreateClass(ITER_CLASS_NAME ".lmgc",sizeof(NP_LMGC),LmgcConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".addmgc",sizeof(NP_LMGC),AddmgcConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".ex",sizeof(NP_EX),EXConstruct))
     REP_ERR_RETURN (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
