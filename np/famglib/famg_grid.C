@@ -173,6 +173,9 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 	
 #ifdef ModelP
 	// distribute master values to V(H)Ghosts
+	// Note: ghosts exist only on the baselevel and then only in case of coarsegrid agglomeration,
+	//       otherwise not; but if not existing l_ghostvector_consistent recognizes 
+	//       this situation very quickly and thus we can call it in all cases. 
 	if (l_ghostvector_consistent(DOWNGRID(mygrid),((FAMGugVector&)cgsol).GetUgVecDesc())!= NUM_OK)
 		assert(0);
 #endif        
@@ -352,6 +355,9 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, const FAMGVector &cgsol, FAMGVec
 	
     #ifdef ModelP
 	// distribute master values to V(H)Ghosts
+	// Note: ghosts exist only on the baselevel and then only in case of coarsegrid agglomeration,
+	//       otherwise not; but if not existing l_ghostvector_consistent recognizes 
+	//       this situation very quickly and thus we can call it in all cases. 
 	if (l_ghostvector_consistent(DOWNGRID(mygrid),((FAMGugVector&)cgsol).GetUgVecDesc())!= NUM_OK)
 		assert(0);
 	#endif        
@@ -2760,8 +2766,11 @@ INT l_force_consistence (GRID *g, const VECDATA_DESC *x)
 	DDD_IFAOneway(BorderVectorIF, GRID_ATTR(g), IF_BACKWARD, m * sizeof(DOUBLE),
 				  Gather_VectorComp, Scatter_VectorComp);
 	// TODO: perhaps this communication to the ghosts can be omitted
-	DDD_IFAOneway(VectorIF, GRID_ATTR(g), IF_FORWARD, m * sizeof(DOUBLE),
-				  Gather_VectorComp, Scatter_VectorComp);
+	// YES: I expect no ghostvectors on famglevels except 
+	//      on baselevel for coarsegrid agglomeration; but this function is called only
+	//      for fine grids (i.e. not for baselevel grid).
+	//DDD_IFAOneway(VectorIF, GRID_ATTR(g), IF_FORWARD, m * sizeof(DOUBLE),
+	//			  Gather_VectorComp, Scatter_VectorComp);
 
 	return (NUM_OK);
 }
