@@ -271,9 +271,9 @@
 #define BVDOWNTYPEDIAG          2       /* symbolic value for BVDOWNTYPE */
 #define BV1DTV                          0       /* symbolic value for BVTVTYPE */
 #define BV2DTV                          1       /* symbolic value for BVTVTYPE */
-#define BVNOORIENTATION         0       /* no special orientation */
-#define BVHORIZONTAL            1       /* vectors form a horizontal line */
-#define BVVERTICAL                      2       /* vectors form a vertical line */
+#define BVNOORIENTATION         0       /* no special orientation for BVORIENTATION */
+#define BVHORIZONTAL            1       /* vectors form a horizontal line for BVORIENTATION */
+#define BVVERTICAL                      2       /* vectors form a vertical line for BVORIENTATION */
 
 
 /****************************************************************************/
