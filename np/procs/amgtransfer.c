@@ -298,7 +298,8 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
       np->Coarsen = CoarsenVanek;
   }
   if (np->Coarsen==NULL) {
-    PrintErrorMessage('E',"NPAMGTransferInit","$I ... definition is incorrect");
+    PrintErrorMessage('E',"NPAMGTransferInit",
+                      "$C ... definition is incorrect");
     REP_ERR_RETURN(NP_NOT_ACTIVE);
   }
 
@@ -484,7 +485,7 @@ INT AMGTransferDisplay (NP_BASE *theNP)
   if (np->SetupCG==GalerkinCGMatrixFromInterpolation)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupCG","Galerkin");
   else
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupCG","unknown");
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"SetupCG","AssembleGalerkin");
 
   if (np->MarkKeep==NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"MarkKeep","NULL (keep all)");
@@ -598,6 +599,12 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
             #endif
       if ((result[0]=(np->SetupIR)(theGrid,A,NULL /*preliminary!*/))!=0)
         REP_ERR_RETURN(result[0]);
+      if (AllocMDFromMD(theMG,level-1,level-1,A,&A))
+        REP_ERR_RETURN(1);
+      if (l_dmatset(GRID_ON_LEVEL(theMG,level-1),A,0.0) != NUM_OK)
+        REP_ERR_RETURN(1);
+      if (AssembleGalerkinByMatrix(theGrid,A,np->symmetric))
+        REP_ERR_RETURN(1);
       if (np->MarkKeep!=NULL) {
         UnmarkAll(newGrid,NULL,0.0);
         if ((result[0]=(np->MarkKeep)(newGrid,A,np->thetaK))!=0)
@@ -635,14 +642,16 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
           break;
     }
   }
-  for (level=0; level>theMG->bottomLevel; level--) {
-    if (AllocMDFromMD(theMG,level-1,level-1,A,&A))
-      REP_ERR_RETURN(1);
-    if (l_dmatset(GRID_ON_LEVEL(theMG,level-1),A,0.0) != NUM_OK)
-      REP_ERR_RETURN(1);
-    if (AssembleGalerkinByMatrix(GRID_ON_LEVEL(theMG,level),
-                                 A,np->symmetric))
-      REP_ERR_RETURN(1);
+  else {
+    for (level=0; level>theMG->bottomLevel; level--) {
+      if (AllocMDFromMD(theMG,level-1,level-1,A,&A))
+        REP_ERR_RETURN(1);
+      if (l_dmatset(GRID_ON_LEVEL(theMG,level-1),A,0.0) != NUM_OK)
+        REP_ERR_RETURN(1);
+      if (AssembleGalerkinByMatrix(GRID_ON_LEVEL(theMG,level),
+                                   A,np->symmetric))
+        REP_ERR_RETURN(1);
+    }
   }
   for (level=0; level>= theMG->bottomLevel; level--)
     if (AssembleDirichletBoundary (GRID_ON_LEVEL(theMG,level),A,x,b))
