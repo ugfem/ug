@@ -538,8 +538,9 @@ void memmgr_Init (void)
   }
         #else
   /* check for allocatable memory */
-  printf("%4d: MemMgr. size of allocatable memory: %ld\n", me,
-         (unsigned long)MemFree());
+  /* TODO correct MemFree */
+  /*	printf("%4d: MemMgr. size of allocatable memory: %ld\n", me,
+                  (unsigned long)MemFree());*/
   /*
    */
         #endif
