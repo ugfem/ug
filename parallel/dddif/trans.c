@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:	  transfer.c													*/
+/* File:	  trans.c                                                                                                       */
 /*																			*/
 /* Purpose:   create new grid distribution according to lb-marks of master  */
 /*            elements.                                                                                                 */
@@ -321,6 +321,7 @@ int TransferGridFromCoarse (MULTIGRID *theMG)
 
 
   /* remove all connections for vectors with PrioGhost */
+  if (0)
   {
     int g;
     for(g=TOPLEVEL(theMG); g>=0; g--)
