@@ -1183,10 +1183,11 @@ INT Field_genStochField(NP_STOCH_FIELD *np)
   INT i, NOfN[DIM+1];
   MULTIGRID *theMg;
   HEAP *theHeap;
+  INT MarkKey;
 
   theMg = NP_MG(np);
   theHeap = MGHEAP(theMg);
-  MarkTmpMem(theHeap);
+  MarkTmpMem(theHeap,&MarkKey);
 
   NOfN[DIM] = 1;
   Cor[DIM] = 1.0;
@@ -1199,7 +1200,7 @@ INT Field_genStochField(NP_STOCH_FIELD *np)
   theSeed = np->initial;
   initialize = 0;
 
-  if ((FieldH = (DOUBLE *) GetTmpMem(theHeap, 2*NOfN[DIM]*sizeof(DOUBLE))) == NULL)
+  if ((FieldH = (DOUBLE *) GetTmpMem(theHeap, 2*NOfN[DIM]*sizeof(DOUBLE),MarkKey)) == NULL)
     return(1);
   H = FieldH;
 
@@ -1213,7 +1214,7 @@ INT Field_genStochField(NP_STOCH_FIELD *np)
 
   CopyTo(H, &(np->size[0]),np->Fld);
 
-  ReleaseTmpMem(theHeap);
+  ReleaseTmpMem(theHeap,MarkKey);
   return(0);
 }
 
@@ -1473,12 +1474,13 @@ static INT NPStochFieldInit(NP_BASE *theNP, INT argc , char **argv)
   if (sopt == 1)
   {
     if (np->Fld != NULL)
-      DisposeMem(theHeap, np->Fld);
+      PutFreelistMemory(theHeap, np->Fld, np->FldSize);
 
     NumOfDouble = 1;
     for (i=0; i<DIM; i++)
       NumOfDouble *= np->size[i];
-    if ((theField=GetMem(theHeap,NumOfDouble*sizeof(DOUBLE),FROM_TOP))==NULL)
+    np->FldSize = NumOfDouble*sizeof(DOUBLE);
+    if ((theField=GetFreelistMemory(theHeap,np->FldSize))==NULL)
     {
       PrintErrorMessage('E',"NPStochFieldInit","not enough memory");
       ret = NP_NOT_ACTIVE;

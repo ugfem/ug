@@ -81,6 +81,7 @@ struct np_stoch_field
   INT inttype;
   INT initial;
   DOUBLE *Fld;
+  MEM FldSize;                          /* current allocation size of Fld in byte		*/
 };
 
 
