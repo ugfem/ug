@@ -867,7 +867,9 @@ int FAMGNode::Eliminate(FAMGGrid *grid)
 	DOUBLE xmin1=MAX_D, xmin2=MAX_D, ymin1=MAX_D, ymin2=MAX_D;
 #endif
 
-	//cout<<me<<": Eli node "<<GetId()<<endl;
+	#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+	cout<<me<<": Eli node "<<GetId()<<endl;
+	#endif
     minweight = 1e+10;
     for(pl = GetPaList(); pl != NULL; pl = pl->GetNext())
     {
@@ -893,7 +895,9 @@ int FAMGNode::Eliminate(FAMGGrid *grid)
 			x2 = MAX_D;
 			y1 = MAX_D;
 			y2 = MAX_D;
-			//cout<<me<<": Eli no pa "<<endl;
+			#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+			cout<<me<<": Eli no pa "<<endl;
+			#endif
 		}
 		else
 		{
@@ -906,7 +910,9 @@ int FAMGNode::Eliminate(FAMGGrid *grid)
 			y1 = pos[1];
 			x2 = MAX_D;
 			y2 = MAX_D;
-			//cout<<me<<": Eli node 1. "<<nod->GetId()<<" "<<x1<<" "<<y1<<endl;
+			#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+			cout<<me<<": Eli node 1. "<<nod->GetId()<<" "<<x1<<" "<<y1<<endl;
+			#endif
 
 			if( pl->GetNp() > 1 )
 			{
@@ -916,7 +922,9 @@ int FAMGNode::Eliminate(FAMGGrid *grid)
 				assert(vec!=NULL);
 				assert( VOBJECT(vec) != NULL );
 				VectorPosition(vec,pos);
-				//cout<<me<<": Eli node 2. "<<nod->GetId()<<" "<<pos[0]<<" "<<pos[1]<<endl;
+				#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+				cout<<me<<": Eli node 2. "<<nod->GetId()<<" "<<pos[0]<<" "<<pos[1]<<endl;
+				#endif
 			
 				if( (pos[0] < x1-eps) || ( (ABSDIFF(pos[0],x1)<eps) && (pos[1] < y1-eps) ) )	
 				{	// pa_node2 < pa_node1
@@ -924,7 +932,9 @@ int FAMGNode::Eliminate(FAMGGrid *grid)
 					y2 = y1;
 					x1 = pos[0];
 					y1 = pos[1];
-					//cout<<me<<": Eli node resorted "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<endl;
+					#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+					cout<<me<<": Eli node resorted "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<endl;
+					#endif
 				}
 				else
 				{	// pa_node1 < pa_node2 ( pa_node1==pa_node2 impossible)
@@ -934,7 +944,9 @@ int FAMGNode::Eliminate(FAMGGrid *grid)
 			}
 		}
 		// now the coordinates of the parent are in x1, y1, x2 and y2
-		//cout<<me<<": Eli pa kkord "<<weight<<" "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<" "<<minweight<<" "<<xmin1<<" "<<ymin1<<" "<<xmin2<<" "<<ymin2<<endl;
+		#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+		cout<<me<<": Eli pa kkord "<<weight<<" "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<" "<<minweight<<" "<<xmin1<<" "<<ymin1<<" "<<xmin2<<" "<<ymin2<<endl;
+		#endif
 
         if ( (weight < minweight) || ( (weight==minweight) && ((x1 < xmin1-eps) || ( (ABSDIFF(x1,xmin1)<eps) && (y1 < ymin1-eps) || (ABSDIFF(y1,ymin1)<eps) && ( (x2 < xmin2-eps) || ( (ABSDIFF(x2,xmin2)<eps) && ( (y2 < ymin2-eps))))))))
         {
@@ -944,7 +956,9 @@ int FAMGNode::Eliminate(FAMGGrid *grid)
 			ymin1 = y1;
 			xmin2 = x2;
 			ymin2 = y2;
-			//cout<<me<<": Eli took better"<<endl;			
+			#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+			cout<<me<<": Eli took better"<<endl;			
+			#endif
         }
 #else
         if (weight < minweight)

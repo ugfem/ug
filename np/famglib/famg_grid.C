@@ -94,6 +94,7 @@ static int* CopyPEBuffer = NULL;
 INT l_force_consistence (GRID *g, const VECDATA_DESC *x);
 INT l_vector_collectAll (GRID *g, const VECDATA_DESC *x);
 
+
 // Class FAMGGrid
 
 
@@ -1377,11 +1378,16 @@ int FAMGGrid::ConstructTransfer()
 	if( graph->InsertHelplist() ) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 
 	finished = 0;
-	//prv(level,0);//prm(level,1);
+
+	#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+	prv(level,0); //prm(level,1);
+	#endif
 
 	while( !finished )
 	{
+		#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
 		//cout<<me<<": #"<<step<<endl; printlist(graph);
+		#endif
 
 		// taken from FAMGGrid::EliminateNodes
 		if( graph->GetList() == NULL ) 
@@ -1416,7 +1422,9 @@ int FAMGGrid::ConstructTransfer()
 				}
 
 				nod = nod->GetSucc();
-				//cout<<me<<": "<<step<<"! sc "<<pos[0]<<" "<<pos[1]<<" "<<xmin<<" "<<ymin<<VINDEX(vec)<<endl;
+				#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+				cout<<me<<": "<<step<<"! sc "<<pos[0]<<" "<<pos[1]<<" "<<xmin<<" "<<ymin<<VINDEX(vec)<<endl;
+				#endif
 			}
 
 
@@ -1427,11 +1435,15 @@ int FAMGGrid::ConstructTransfer()
 				choice[MIN_pe] = DUMMY_PE;
 				choice[xCOORD] = DUMMY_COORD;
 				choice[yCOORD] = DUMMY_COORD;
-				//cout << me<<": "<<step<<"! choice palist=0 "<<"node "<<nodei->GetId()<<endl;
+				#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+				cout << me<<": "<<step<<"! choice palist=0 "<<"node "<<nodei->GetId()<<endl;
+				#endif
 			}
 			else if (nodei->CheckPaList(graph))
 			{
-				//cout << me<<": "<<step<<"! choice checkpalist "<<"node "<<nodei->GetId()<<endl;
+				#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+				cout << me<<": "<<step<<"! choice checkpalist "<<"node "<<nodei->GetId()<<endl;
+				#endif
 				// CheckPaList is necessary for non structure
 				//   symmetric matrices. It is not nice and
 				//   should be avoided. 
@@ -1449,14 +1461,20 @@ int FAMGGrid::ConstructTransfer()
 				choice[MIN_pe] = me;
 				choice[xCOORD] = xmin;
 				choice[yCOORD] = ymin;
-				//cout<<me<<": "<<step<<"! sbuf "<<xmin<<" "<<ymin<< " "<<choice[xCOORD]<<" "<<choice[yCOORD]<<endl;
+				#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+				cout<<me<<": "<<step<<"! sbuf "<<xmin<<" "<<ymin<< " "<<choice[xCOORD]<<" "<<choice[yCOORD]<<endl;
+				#endif
 			}
 		}
 
 		// Communicate global best choice
-		//cout << me<<": "<<step<<"! choice vor "<< choice[MIN_data] <<" node "<<nodei->GetId()<<endl;
+		#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+		cout << me<<": "<<step<<"! choice vor "<< choice[MIN_data] <<" node "<<nodei->GetId()<<endl;
+		#endif
 		FAMG_GlobalBestChoice ( choice );
-		//cout << me<<": "<<step<<"! choice nach "<< choice[MIN_data]<<" pe "<<choice[MIN_pe] <<endl;
+		#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+		cout << me<<": "<<step<<"! choice nach "<< choice[MIN_data]<<" pe "<<choice[MIN_pe] <<endl;
+		#endif
 
 		finished = (ABSDIFF(choice[MIN_pe],DUMMY_PE)<eps); // no PE left which has a node to be eliminated
 
@@ -1464,7 +1482,9 @@ int FAMGGrid::ConstructTransfer()
 		{
 			if( ABSDIFF(me,choice[MIN_pe])<eps )
 			{	// Do the elimination
-				//cout << me<<": "<<step<<"! el "<<nodei->GetId()<<" w= "<<choice[MIN_data]<<" x= "<<choice[xCOORD]<<" y= "<<choice[yCOORD]<<endl;
+				#ifdef FAMG_SINGLESTEP_FULL_OUTPUT
+				cout << me<<": "<<step<<"! el "<<nodei->GetId()<<" w= "<<choice[MIN_data]<<" x= "<<choice[xCOORD]<<" y= "<<choice[yCOORD]<<endl;
+				#endif
 				graph->Remove(nodei);
 				if(nodei->Eliminate(this)) RETURN(1);
 				if(nodei->UpdateNeighborsFG(this)) RETURN(1); 

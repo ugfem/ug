@@ -37,6 +37,7 @@
 #define FAMG_INNER_FIRST
 
 //#define FAMG_SINGLESTEP
+//#define FAMG_SINGLESTEP_FULL_OUTPUT
 
 #endif
 
