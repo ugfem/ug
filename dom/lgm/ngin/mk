@@ -1,0 +1,6 @@
+#!/bin/csh -f
+
+/opt/ansic/bin/cc -c -g -Aa +w2 ngin-lex.c ngin-yacc.c 
+/opt/ansic/bin/cc -c -g -Aa -I../../../include ng.c
+/opt/ansic/bin/cc -o proc ngin-lex.o ngin-yacc.o ng.o 
+
