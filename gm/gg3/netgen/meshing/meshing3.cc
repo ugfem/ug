@@ -45,6 +45,7 @@ static int problemindex = 1;
 
 
 static Meshing3 * meshing;
+static int GSF_DEBUG = 0;
 
 
 
@@ -177,25 +178,25 @@ void PlotVolMesh (const ROT3D & r, char key)
   y = 30;
 
   //  sprintf (buf, "Trials:   %ld", cnttrials);
-  //  MyOutTextXY (20, y, buf);
+  //  if (GSF_DEBUG) MyOutTextXY (20, y, buf);
   //  y += 15;
   //  sprintf (buf, "Success:  %d", cntsucc);
-  //  MyOutTextXY (20, y, buf);
+  //  if (GSF_DEBUG) MyOutTextXY (20, y, buf);
   //  y += 15;
   sprintf (buf, "Elements: %d", cntelem);
-  MyOutTextXY (20, y, buf);
+  if (GSF_DEBUG) MyOutTextXY (20, y, buf);
   y += 15;
   sprintf (buf, "Quality:  %d", qualclass);
-  MyOutTextXY (20, y, buf);
+  if (GSF_DEBUG) MyOutTextXY (20, y, buf);
   y += 15;
   sprintf (buf, "Volume:   %4.1f %%", float(100 * meshing->adfront->Volume() / vol0));
-  MyOutTextXY (20, y, buf);
+  if (GSF_DEBUG) MyOutTextXY (20, y, buf);
   y += 15;
   //  sprintf (buf, "Error:    %f", err);
-  //  MyOutTextXY (20, y, buf);
+  //  if (GSF_DEBUG) MyOutTextXY (20, y, buf);
   //  y += 15;
   sprintf (buf, "Time:     %d", GetTime());
-  MyOutTextXY (20, y, buf);
+  if (GSF_DEBUG) MyOutTextXY (20, y, buf);
   y += 15;
 
   DrawPnF(locpoints, locfaces, style, drawrad, r);
@@ -209,7 +210,7 @@ void PlotVolMesh (const ROT3D & r, char key)
     {
       MySetColor(LIGHTBLUE);
       sprintf (cbuf, "%d", pindex[i]);
-      MyOutTextXY (r.X(locpoints[i]), r.Y(locpoints[i]), cbuf);
+      if (GSF_DEBUG) MyOutTextXY (r.X(locpoints[i]), r.Y(locpoints[i]), cbuf);
     }
   }
 
@@ -218,8 +219,8 @@ void PlotVolMesh (const ROT3D & r, char key)
     MySetColor (BLACK);
     sprintf (buf, "Problem with rule %d: %s",
              problemindex, meshing->rules[problemindex]->Name());
-    MyOutTextXY (120, 30, buf);
-    MyOutTextXY (120, 45, meshing->problems[problemindex]);
+    if (GSF_DEBUG) MyOutTextXY (120, 30, buf);
+    if (GSF_DEBUG) MyOutTextXY (120, 45, meshing->problems[problemindex]);
   }
 
   if (key == 's')

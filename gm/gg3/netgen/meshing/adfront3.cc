@@ -180,10 +180,12 @@ int ADFRONT3 :: GetLocals (ARRAY<Point3d> & locpoints,
 
   for (i = 1; i<= faces.Size(); i++)
   {
-    hi = faces.Get(i).QualClass() +
-         2 * min (points.Get(faces.Get(i).Face().PNum(1)).FrontNr(),
-                  points.Get(faces.Get(i).Face().PNum(2)).FrontNr(),
-                  points.Get(faces.Get(i).Face().PNum(3)).FrontNr() );
+    /* ******************** bug ********************************** */
+    hi = faces.Get(i).QualClass();
+    /*    hi = faces.Get(i).QualClass() +
+             2 * min (points.Get(faces.Get(i).Face().PNum(1)).FrontNr(),
+                      points.Get(faces.Get(i).Face().PNum(2)).FrontNr(),
+                      points.Get(faces.Get(i).Face().PNum(3)).FrontNr() );*/
 
     if (hi < minval || i == 1)
     {
