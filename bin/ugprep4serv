@@ -20,15 +20,18 @@ ugmakeman
 ugmakelatex
 ugmakelatexrefs -new
 ugtex progmanual.tex
-ugtex refmanual.tex
+ugtex refmanualI.tex
+ugtex refmanualII.tex
 ugtex applmanual.tex
 ugtex progmanual.tex
-ugtex refmanual.tex
+ugtex refmanualI.tex
+ugtex refmanualII.tex
 ugtex applmanual.tex
 ugtex progmanual.tex
 ugtex refmanual.tex
 ugtex applmanual.tex
 dvips progmanual.dvi -o progmanual.ps
-dvips refmanual.dvi -o refmanual.ps
+dvips refmanualI.dvi -o refmanualI.ps
+dvips refmanualII.dvi -o refmanualII.ps
 dvips applmanual.dvi -o applmanual.ps
 

@@ -27,9 +27,8 @@ do
 	then
 		rm -r $i;
 	else
-		if test "$i" = "progmanual.ps" -o "$i" = "refmanual.ps" -o \
-				"$i" = "applmanual.ps" -o "$i" = "ug.help" -o \
-                "$i" = "ug2d.help" -o "$i" = "ug3d.help"
+		if test "$i" = "progmanual.ps" -o "$i" = "refmanualI.ps" -o \
+				"$i" = "applmanual.ps" -o "$i" = "refmanualII.ps"
 		then 
 			echo "`basename $0`: $i not removed!";
 		else
@@ -56,7 +55,8 @@ then
 	cd ${UGROOT}/doc
 	gzip applmanual.ps
 	gzip progmanual.ps
-	gzip refmanual.ps
+	gzip refmanualI.ps
+	gzip refmanualII.ps
 	cd ${UGROOT}
 	cd ..
 	cd ..
@@ -67,7 +67,8 @@ then
 	cp ${UGROOT}/../license.ps .
 	cp ${UGROOT}/doc/applmanual.ps.gz .
 	cp ${UGROOT}/doc/progmanual.ps.gz .
-	cp ${UGROOT}/doc/refmanual.ps.gz .
+	cp ${UGROOT}/doc/refmanualI.ps.gz .
+	cp ${UGROOT}/doc/refmanualII.ps.gz .
 	mv ../UG $1
 	tar cvf $1.tar $1
 	gzip $1.tar

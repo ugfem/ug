@@ -1,0 +1,81 @@
+\documentstyle[epsf,twoside,titlepage]{ugart}
+
+% Voreinstellungen
+\input{const.tex}
+\input{refman.sty}
+\pagestyle{myheadings}
+\sloppy
+\makeindex
+
+% Titelseite
+
+
+\begin{document}
+\newcommand{\sectitle}{\mbox{}}
+\setcounter{page}{0}
+
+\title{UG Reference Manual, Part I}
+\author{The UG Group}
+\maketitle
+
+
+
+\section*{Introduction}
+
+The UG Manual consists of three parts:
+\\[5mm]  
+The {\em Programming Manual} gives an overview on the program, it
+explains the submodules and all data structures and it contains
+all commands which are needed for running an application.
+\\[5mm]  
+The {\em Reference Manual} contains a list of all 
+functions in the ug library which can be called in the Problem Classes.
+\\[5mm]
+The {\em Application and Problem Class Documentation} gives examples
+of applications of the ug library.
+\\[5mm]
+The manuals are created with the tool {\tt doctext} and the content is 
+identical with the man pages. All man pages can be displayed on screen 
+with the commands {\tt xugman} resp. {\tt ugman}.
+\\[5mm]
+We hope that this documentation helps the reader to use UG 
+and to implement own applications.
+\\[1cm]
+The documentation team
+\\[1cm]
+Peter Bastian\\
+Gabi Beddies\\
+Rolf Dornberger\\
+Dirk Feuchter\\
+Reinhard Haag\\
+Ingo Heppner\\
+Wolfgang Hoffmann\\
+Klaus Johannsen\\
+Stefan Lang\\
+George Mazurkevich\\
+Nikolas Neu\ss\\
+Henrik Rentz-Reichert\\
+Oliver Urbitsch\\
+Christian Wieners\\
+Christian Wrobel
+
+\newpage
+{
+\small
+\tableofcontents
+}
+\clearpage
+
+\thispagestyle{plain}
+\section{manpages for module ''ug/ui''}
+\renewcommand{\sectitle}{ug/ui}
+\input{ug3/ug/ui/refman}
+
+\thispagestyle{plain}
+\section{manpages for module ''ug/np''}
+\renewcommand{\sectitle}{ug/np}
+\input{ug3/ug/np/refman}
+
+
+\end{document}
+

@@ -79,14 +79,6 @@ appl3 ()
 	then
 		ugmake ns3d
 	fi
-    if test -d $UGROOT/../df
-	then
-	    ugmake dom GSF
-		ugconf GSF_DOMAIN
-		ugmake df
-	    ugmake dom STD
-		ugconf STD_DOMAIN
-	fi
 }
 
 if test "$1" = "ug2"
