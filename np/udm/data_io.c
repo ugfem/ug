@@ -131,7 +131,7 @@ MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *D
 {
   MULTIGRID *mg;
   DIO_GENERAL dio_general;
-  char FileName[NAMESIZE],*mgname,*mgtype,NumberString[6],*p;
+  char FileName[NAMESIZE],*mgname,*mgtype,NumberString[8],*p;
   INT close,load,nparfiles;
   char buf[64];
 
@@ -229,7 +229,7 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
   SHORT *cp[DIO_VDMAX];
   INT ncmp[DIO_VDMAX];
   INT MarkKey;
-  char FileName[NAMESIZE], NumberString[6];
+  char FileName[NAMESIZE], NumberString[8];
   char buf[64];
 
   if (theMG==NULL) return (1);
@@ -437,7 +437,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   const DOUBLE *x[MAX_CORNERS_OF_ELEM];
   DOUBLE value,fnblock;
   DOUBLE_VECTOR vector;
-  char *p,FileName[NAMESIZE],NumberString[6];
+  char *p,FileName[NAMESIZE],NumberString[8];
   SHORT *cp[DIO_VDMAX];
   INT ncmp[DIO_VDMAX],blocksize,free,fb,lb,nblock,saved;
   INT MarkKey;
