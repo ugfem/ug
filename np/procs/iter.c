@@ -1235,6 +1235,76 @@ static INT PGSDisplay (NP_BASE *theNP)
   return (0);
 }
 
+struct matrix_list {
+  MATRIX *m;
+  DOUBLE value;
+};
+
+static int sort_MatArray (const void *e1, const void *e2)
+{
+  DOUBLE v1 = (*((struct matrix_list *)e1)).value;
+  DOUBLE v2 = (*((struct matrix_list *)e2)).value;
+
+  if (v1 < v2) return(-1);
+  if (v1 > v2) return(1);
+  return (0);
+}
+
+static INT SortMatrices (GRID *theGrid, MATDATA_DESC *A)
+{
+  VECTOR *v;
+  MATRIX *m;
+  struct matrix_list *table;
+  INT cnt,max,rtype,ctype,rcomp,ccomp,i,j;
+  DOUBLE val;
+  SHORT *Mcomp;
+
+  max = 0;
+  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+    rtype = VTYPE(v);
+    rcomp = MD_ROWS_IN_RT_CT(A,rtype,rtype);
+    if (rcomp == 0) continue;
+    cnt = 0;
+    m = VSTART(v);
+    ASSERT(m != NULL);
+    ASSERT(MDEST(m) == v);
+    for (m=MNEXT(m); m!=NULL; m=MNEXT(m)) cnt ++;
+    max = MAX(max,cnt);
+  }
+  table = (struct matrix_list *)GetTmpMem(MGHEAP(MYMG(theGrid)),
+                                          max*sizeof(struct matrix_list));
+  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v)) {
+    rtype = VTYPE(v);
+    rcomp = MD_ROWS_IN_RT_CT(A,rtype,rtype);
+    if (rcomp == 0) continue;
+    cnt = 0;
+    m = VSTART(v);
+    for (m=MNEXT(m); m!=NULL; m=MNEXT(m)) {
+      ctype = MDESTTYPE(m);
+      ccomp = MD_COLS_IN_RT_CT(A,rtype,ctype);
+      table[cnt].m = m;
+      if (ccomp > 0)
+        Mcomp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
+      val = 0;
+      for (i=0; i<rcomp*ccomp; i++)
+        val += ABS(MVALUE(m,Mcomp[i]));
+      table[cnt].value = val;
+      cnt++;
+    }
+    if (cnt < 2) continue;
+    qsort(table,cnt,sizeof(struct matrix_list),sort_MatArray);
+    m=VSTART(v);
+    for(j=0; j<cnt; j++) {
+      MNEXT(m) = table[j].m;
+      m = MNEXT(m);
+    }
+    MNEXT(m)=NULL;
+  }
+  ReleaseTmpMem(MGHEAP(MYMG(theGrid)));
+
+  return(0);
+}
+
 static INT PGSPreProcess  (NP_ITER *theNP, INT level,
                            VECDATA_DESC *x, VECDATA_DESC *b,
                            MATDATA_DESC *A, INT *baselevel, INT *result)
@@ -1258,6 +1328,9 @@ static INT PGSPreProcess  (NP_ITER *theNP, INT level,
 
   /* get storage for extra temp */
   if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->t))
+    NP_RETURN(1,result[0]);
+
+  if (SortMatrices(theGrid,A))
     NP_RETURN(1,result[0]);
 
   return (0);
