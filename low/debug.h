@@ -46,8 +46,8 @@
 #define PRINTDEBUG(m,n,s) IFDEBUG(m,n) PrintDebug s; ENDDEBUG
 #define ENDDEBUG  }
 #else
-#define IFDEBUG(m,n)    /*
-                         #define ENDDEBUG		*/
+#define IFDEBUG(m,n)    if (1==0) {
+#define ENDDEBUG        }
 #define PRINTDEBUG(m,n,s) /* no debugging */
 #endif
 
