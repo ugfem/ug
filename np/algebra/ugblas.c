@@ -903,7 +903,7 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 			for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
 				   *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++)
 			  msgbuf[i] = MVALUE(m,Comp[i]);
-			msgbuf+MaxBlockSize;
+			msgbuf+=MaxBlockSize;
 		}
 	}
 
@@ -934,6 +934,11 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
 				    if (((DDD_PROC)proclist[i])==proc &&
 						((DDD_PRIO)proclist[i+1]!=PrioGhost)) {
 						*msgbuf = MVALUE(m,mc);
+/*
+printf("%4d:       POK  GATH " VINDEX_FMTX " -> " VINDEX_FMTX " :  %lf\n",
+me, VINDEX_PRTX(pv), VINDEX_PRTX(MDEST(m)), *msgbuf);
+fflush(stdout);
+*/
 						msgbuf++;
 					}
 				}
@@ -957,7 +962,7 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
 			for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
 					 *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++) {
 				msgbuf[i] = MVALUE(m,Comp[i]);
-				msgbuf+MaxBlockSize;
+				msgbuf+=MaxBlockSize;
 			}
 		}
 	}
@@ -997,6 +1002,12 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 					if (((DDD_PROC)proclist[i])==proc &&
 						((DDD_PRIO)proclist[i+1]!=PrioGhost)) {
 					  MVALUE(m,mc) += *msgbuf;
+/*
+printf("%4d:       POK  SCAT " VINDEX_FMTX " -> " VINDEX_FMTX " :  %lf\n",
+me, VINDEX_PRTX(pv), VINDEX_PRTX(MDEST(m)), *msgbuf);
+fflush(stdout);
+*/
+
 					  msgbuf++;
 					}
 				}
@@ -1019,7 +1030,7 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 				Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
 				for (j=0; j<MD_COLS_IN_MTYPE(ConsMatrix,mtype)*rcomp; j++)
 				    msgbuf[j] += MVALUE(m,Comp[j]);
-				msgbuf+MaxBlockSize;
+				msgbuf+=MaxBlockSize;
 			}
 		}
 	else
@@ -1037,7 +1048,7 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 				  if (!(vecskip & (1<<k)))				
 				      for (j=k*ncomp; j<(k+1)*ncomp; j++)
 						  msgbuf[j] += MVALUE(m,Comp[j]);
-				msgbuf+MaxBlockSize;
+				msgbuf+=MaxBlockSize;
 			}
 		}
 
@@ -1185,10 +1196,27 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 						 MaxBlockSize*MaximumInconsMatrices*sizeof(DOUBLE),
 						 Gather_OffDiagMatrixComp, Scatter_OffDiagMatrixComp);
     else if (mode == MAT_MASTER_CONS) 
+	{
+/*
+Synchronize();
+fflush(stdout); fflush(stderr);
+Synchronize();
+printf("%4d: POKPOKPOK  START MaximumInconsMatrices=%d\n", me, MaximumInconsMatrices);
+fflush(stdout); fflush(stderr);
+*/
+
 		DDD_IFAOnewayX(BorderVectorIF,GLEVEL(g),IF_FORWARD,
 					   MaxBlockSize*MaximumInconsMatrices*sizeof(DOUBLE),
 					   Gather_OffDiagMatrixCompCollect,
 					   Scatter_OffDiagMatrixComp);
+
+/*
+printf("%4d: POKPOKPOK  STOP  MaximumInconsMatrices=%d\n", me, MaximumInconsMatrices);
+Synchronize();
+fflush(stdout); fflush(stderr);
+Synchronize();
+*/
+	}
 
 	return (NUM_OK);
 }
