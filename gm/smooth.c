@@ -1583,6 +1583,7 @@ static INT SplineSmooth(NODE *theNode, DOUBLE *newPos)
 
   /* opposite node on neighbour elem */
   nbelem0 = NBELEM(elem,edge);
+  if (TAG(nbelem0) != QUADRILATERAL) return(-1);
   for (edge=0; edge<EDGES_OF_ELEM(nbelem0); edge++)
   {
     theEdge=GetEdge(CORNER(nbelem0,CORNER_OF_EDGE(nbelem0,edge,0)),
