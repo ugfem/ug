@@ -87,6 +87,7 @@ static int OverlapForLevel0;
 
 INT l_force_consistence (GRID *g, const VECDATA_DESC *x);
 INT l_vector_collectAll (GRID *g, const VECDATA_DESC *x);
+int pl(FAMGGraph *graph);
 
 // Class FAMGGrid
  
@@ -359,13 +360,13 @@ int FAMGGrid::BiCGStab()
 	
     FAMGMarkHeap(FAMG_FROM_BOTTOM);
     vec[FAMGR] = solution.create_new();
-    if(vec[FAMGR] == NULL) return 1;
+    if(vec[FAMGR] == NULL) RETURN(1);
     vec[FAMGV] = solution.create_new();
-    if(vec[FAMGV] == NULL) return 1;
+    if(vec[FAMGV] == NULL) RETURN(1);
     vec[FAMGP] = solution.create_new();
-    if(vec[FAMGP] == NULL) return 1;
+    if(vec[FAMGP] == NULL) RETURN(1);
     vec[FAMGT] = solution.create_new();
-    if(vec[FAMGT] == NULL) return 1;
+    if(vec[FAMGT] == NULL) RETURN(1);
 
     maxit = 50;
     rlimit = 1e-10;
@@ -534,19 +535,19 @@ int FAMGGrid::ILUTDecomp(int cgilut)
     if(graph == NULL)
     {
         graph = (FAMGGraph *) FAMGGetMem(sizeof(FAMGGraph),FAMG_FROM_BOTTOM);
-        if(graph == NULL) return 1;
+        if(graph == NULL) RETURN(1);
     }
-    if(graph->Init(this)) return 1;
-    if(graph->OrderILUT(matrix)) return 1;
+    if(graph->Init(this)) RETURN(1);
+    if(graph->OrderILUT(matrix)) RETURN(1);
     Order(graph->GetMap());
     graph = NULL;
     FAMGReleaseHeap(FAMG_FROM_BOTTOM);
 
     decomp = (FAMGDecomp *) FAMGGetMem(sizeof(FAMGDecomp),FAMG_FROM_TOP);
-    if(decomp == NULL) return 1;
+    if(decomp == NULL) RETURN(1);
 
-    if(decomp->Init(matrix)) return 1;
-    if(decomp->Construct(cgilut)) return 1;
+    if(decomp->Init(matrix)) RETURN(1);
+    if(decomp->Construct(cgilut)) RETURN(1);
 
     
     return 0;
@@ -712,7 +713,7 @@ int FAMGGrid::InitLevel0(const class FAMGSystem &system)
 	
 #ifdef FAMG_REORDERmap	
     map = (int *) FAMGGetMem(n*sizeof(int),FAMG_FROM_TOP);
-    if(map == NULL) return 1;
+    if(map == NULL) RETURN(1);
     for(i = 0; i < n; i++) map[i] = i;
 #endif
 
@@ -755,12 +756,12 @@ int FAMGGrid::Init(int nn, const FAMGGrid& grid_pattern)
 	
 	matrix = new FAMGugMatrix(new_grid, *(FAMGugMatrix*)grid_pattern.GetMatrix());
     if(matrix == NULL)
-		return 1;
+		RETURN(1);
 	if(grid_pattern.GetMatrix()!=grid_pattern.GetConsMatrix())
 	{
 		Consmatrix = new FAMGugMatrix(new_grid, *(FAMGugMatrix*)grid_pattern.GetConsMatrix());
 	    if(Consmatrix == NULL)
-			return 1;
+			RETURN(1);
 	}
 	else
 		Consmatrix = matrix;
@@ -773,9 +774,9 @@ int FAMGGrid::Init(int nn, const FAMGGrid& grid_pattern)
 #else	
     matrix = (FAMGMatrix *) FAMGGetMem(sizeof(FAMGMatrix),FAMG_FROM_TOP);
     if(matrix == NULL)
-		return 1;
+		RETURN(1);
     if(matrix->Init(n))
-		return 1;
+		RETURN(1);
 	mygridvector = NULL; // aendern
 #endif
 	
@@ -788,7 +789,7 @@ int FAMGGrid::Init(int nn, const FAMGGrid& grid_pattern)
 	
 #ifndef USE_UG_DS	
     father = (int *) FAMGGetMem(n*sizeof(int),FAMG_FROM_TOP);
-    if(father == NULL) return 1;
+    if(father == NULL) RETURN(1);
 #endif
 	
 #ifdef FAMG_ILU
@@ -808,14 +809,14 @@ int FAMGGrid::Init(int nn, const FAMGGrid& grid_pattern)
 		{
 			ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create vector nr. " << i << endl;
 			FAMGError(ostr);
-			return 0;
+			RETURN(1);
 		}
         SetVector(i,new_vector);
     }
 
 #ifdef UG_DRAW
     vertex = (void **) FAMGGetMem(n*sizeof(void *),FAMG_FROM_TOP);
-    if(vertex == NULL) return 1;
+    if(vertex == NULL) RETURN(1);
 #endif
 	
     GetSmoother();
@@ -923,13 +924,14 @@ int FAMGGrid::Construct(FAMGGrid *fg)
 #endif
 	
     if(GetMatrix()->ConstructGalerkinMatrix(*fg)) 
-		return 1;
+		RETURN(1);
 	
     return 0;
 }
 
 
 int FAMGGrid::ConstructTransfer()
+// Do not leave this function premature in ModelP! This can cause deadlocks.
 {
     int i, conloops;
 	double TotalTime;
@@ -957,28 +959,30 @@ int FAMGGrid::ConstructTransfer()
 	
     conloops = FAMGGetParameter()->Getconloops();
     transfer = (FAMGTransfer *) FAMGGetMem(sizeof(FAMGTransfer),FAMG_FROM_TOP);
-    if(transfer == NULL) return 1;
-    if (transfer->Init(this)) return 1;
+    if(transfer == NULL) assert(0);
+    if (transfer->Init(this)) assert(0);
 
     FAMGMarkHeap(FAMG_FROM_BOTTOM);
 
     graph = (FAMGGraph *) FAMGGetMem(sizeof(FAMGGraph),FAMG_FROM_BOTTOM);
-    if (graph == NULL) {FAMGReleaseHeap(FAMG_FROM_BOTTOM);  return 1;}
+    if (graph == NULL) {FAMGReleaseHeap(FAMG_FROM_BOTTOM);  RETURN(1);}
 
     // test
     // FGSSmoothTV();
 
-    if (graph->Init(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
-    if (graph->Construct(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
-	
+    if (graph->Init(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+    if (graph->Construct(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+
 	if( level == 0 )
-		if (graph->EliminateDirichletNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
-	
+	{
+		if (graph->EliminateDirichletNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+#ifdef ModelP
+		CommunicateNodeStatus();
+#endif
+	}
+
 #ifdef ModelP
 	// in parallel now only the nodes in the border of the core partition are in the list
-	
-	// communicate the results of the previous EliminateDirichletNodes
-	CommunicateNodeStatus();
 	
 	VECTOR *vec;
 	MATRIX *mat;
@@ -991,28 +995,28 @@ int FAMGGrid::ConstructTransfer()
 	{
 		cout << "FAMGGrid::ConstructTransfer(): ERROR in constructing the coloring graph"<<endl<<fflush;
 		FAMGReleaseHeap(FAMG_FROM_BOTTOM);
-		return 1;
+		RETURN(1);
 	}
 		
 	if( ConstructColoring( FAMGGetParameter()->GetColoringMethod() ) )
 	{
 		cout << "FAMGGrid::ConstructTransfer(): ERROR in coloring the graph"<<endl<<fflush;
 		FAMGReleaseHeap(FAMG_FROM_BOTTOM);
-		return 1;
+		RETURN(1);
 	}
 		
 	GraphColorTime = CURRENT_TIME - GraphColorTime;
 	BorderCycles = UG_GlobalMaxINT((int)FAMGMyColor);
 	cout <<me<<": level = "<<level<<" my color = "<<FAMGMyColor<<" max. color = "<<BorderCycles<<" ColoringMethod = "<<FAMGGetParameter()->GetColoringMethod()<<endl;
-	
+
 	BorderTime = CURRENT_TIME_LONG;
 	for ( int color = 0; color <= BorderCycles; color++)
 	{
 		if( FAMGMyColor == color )
 		{
-		    if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
-		    if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
-    		if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+		    if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+		    if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+    		if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 		}
 		
 //prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
@@ -1033,7 +1037,7 @@ int FAMGGrid::ConstructTransfer()
 				if(graph->InsertNode(this, nodei))
 				{
 					FAMGReleaseHeap(FAMG_FROM_BOTTOM);
-					return 1;
+					RETURN(1);
 				}
 		}
     }
@@ -1043,9 +1047,9 @@ int FAMGGrid::ConstructTransfer()
 	FAMGNode *nodei;
 	VECTOR *vec;
 	
-	if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
-	if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
-	if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+	if (graph->InsertHelplist()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+	if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+	if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 	// put the undecided nodes from the core partition into the list
     for(i = 0; i < n; i++)
    	{
@@ -1058,14 +1062,14 @@ int FAMGGrid::ConstructTransfer()
 				if(graph->InsertNode(this, nodei))
 				{
 					FAMGReleaseHeap(FAMG_FROM_BOTTOM);
-					return 1;
+					RETURN(1);
 				}
 		}
     }
 #endif
 	
-	if( graph->InsertHelplist() ) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
-    if (graph->EliminateNodes(this)) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+	if( graph->InsertHelplist() ) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+    if (graph->EliminateNodes(this)) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
     
     for(i = 0; i < conloops; i++)
     {
@@ -1076,19 +1080,19 @@ int FAMGGrid::ConstructTransfer()
 		assert(0);	// todo: change
         tmpmatrix = (FAMGMatrixAlg *) FAMGGetMem(sizeof(FAMGMatrixAlg),FAMG_FROM_BOTTOM);
         if(tmpmatrix == NULL)
-			return 1;
+			RETURN(1);
         if(tmpmatrix->Init2(n))
-			return 1;
+			RETURN(1);
         if(tmpmatrix->TmpMatrix(matrix,transfer,graph))
-			return 1;
+			RETURN(1);
 #endif
  
-        if (graph->Construct2(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
-        if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+        if (graph->Construct2(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+        if (graph->EliminateNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
         FAMGReleaseHeap(FAMG_FROM_BOTTOM);
     }
 
-    if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); return 1;}
+    if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
     
 #ifdef ModelP
 	// update the ghost and border nodes
@@ -1139,7 +1143,7 @@ int FAMGGrid::OrderVector(int vn, int *mapping)
 
     FAMGMarkHeap(FAMG_FROM_TOP);
     helpvect = (double *) FAMGGetMem(n*sizeof(double), FAMG_FROM_TOP);
-    if (helpvect == NULL) return 1;
+    if (helpvect == NULL) RETURN(1);
     vect = vector[vn];
     if(vect != NULL)
     {
@@ -1159,7 +1163,7 @@ int FAMGGrid::ReorderVector(int vn, int *mapping)
 
     FAMGMarkHeap(FAMG_FROM_TOP);
     helpvect = (double *) FAMGGetMem(n*sizeof(double), FAMG_FROM_TOP);
-    if (helpvect == NULL) return 1;
+    if (helpvect == NULL) RETURN(1);
     vect = vector[vn];
     if(vect != NULL)
     {
@@ -1183,7 +1187,7 @@ int FAMGGrid::Order(int *mapping)
     {  
         FAMGMarkHeap(FAMG_FROM_TOP);
         helpfather = (int *) FAMGGetMem(n*sizeof(int), FAMG_FROM_TOP);
-        if (helpfather == NULL) return 1;
+        if (helpfather == NULL) RETURN(1);
         for(i = 0; i < n; i++) helpfather[i] = father[i];
         for(i = 0; i < n; i++) father[mapping[i]] = helpfather[i];
         FAMGReleaseHeap(FAMG_FROM_TOP);
@@ -1194,23 +1198,23 @@ int FAMGGrid::Order(int *mapping)
     {
         FAMGMarkHeap(FAMG_FROM_TOP);
         helpvertex = (void **) FAMGGetMem(n*sizeof(void *), FAMG_FROM_TOP);
-        if (helpvertex == NULL) return 1;
+        if (helpvertex == NULL) RETURN(1);
         for(i = 0; i < n; i++) helpvertex[i] = vertex[i];
         for(i = 0; i < n; i++) vertex[mapping[i]] = helpvertex[i];
         FAMGReleaseHeap(FAMG_FROM_TOP);
     }
         
     /* order test vectors */
-    if(OrderVector(FAMGTVA,mapping)) return 1;
-    if(OrderVector(FAMGTVB,mapping)) return 1;
+    if(OrderVector(FAMGTVA,mapping)) RETURN(1);
+    if(OrderVector(FAMGTVB,mapping)) RETURN(1);
    
     /* order matrix */
-    if (matrix->Order(mapping)) return 1;
+    if (matrix->Order(mapping)) RETURN(1);
 
     /* order transfer */
     if(transfer != NULL)
     {
-        if (transfer->Order(mapping)) return 1;
+        if (transfer->Order(mapping)) RETURN(1);
     }
 
     return 0;
@@ -1226,7 +1230,7 @@ int FAMGGrid::Reorder()
     {  
         FAMGMarkHeap(FAMG_FROM_TOP);
         helpfather = (int *) FAMGGetMem(n*sizeof(int), FAMG_FROM_TOP);
-        if (helpfather == NULL) return 1;
+        if (helpfather == NULL) RETURN(1);
         for(i = 0; i < n; i++) helpfather[i] = father[i];
         for(i = 0; i < n; i++) father[i] = helpfather[map[i]];
         FAMGReleaseHeap(FAMG_FROM_TOP);
@@ -1237,23 +1241,23 @@ int FAMGGrid::Reorder()
     {
         FAMGMarkHeap(FAMG_FROM_TOP);
         helpvertex = (void **) FAMGGetMem(n*sizeof(void *), FAMG_FROM_TOP);
-        if (helpvertex == NULL) return 1;
+        if (helpvertex == NULL) RETURN(1);
         for(i = 0; i < n; i++) helpvertex[i] = vertex[i];
         for(i = 0; i < n; i++) vertex[i] = helpvertex[map[i]];
         FAMGReleaseHeap(FAMG_FROM_TOP);
     }
         
     /* reorder test vectors */
-    if(ReorderVector(FAMGTVA,map)) return 1;
-    if(ReorderVector(FAMGTVB,map)) return 1;
+    if(ReorderVector(FAMGTVA,map)) RETURN(1);
+    if(ReorderVector(FAMGTVB,map)) RETURN(1);
     
     /* reorder matrix */
-    if (matrix->Reorder(map)) return 1;
+    if (matrix->Reorder(map)) RETURN(1);
 
     /* reorder transfer */ // debug
     if(transfer != NULL)
     {
-        if (transfer->Reorder(map)) return 1;
+        if (transfer->Reorder(map)) RETURN(1);
     }
 
     return 0;
@@ -1944,8 +1948,7 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 		}	
 		else
 		{
-			assert(0); // unrecognized message type
-			return 1;
+			RETURN(1); // unrecognized message type
 		}
 	}
 	else
@@ -2014,8 +2017,7 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 		FAMGPaList *palist = NULL;
 		if(Communication_Graph->SavePaList(palist,pos,parents,prolongations,restrictions,1.0))
 		{
-			assert(0);
-			return 1;
+			RETURN(1);
 		}
 		Communication_Graph->ClearPaList(node->GetPaList());		
 		node->SetPaList(palist);
@@ -2026,8 +2028,7 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 	}
 	else
 	{
-		assert(0); // unrecognized message type
-		return 1;
+		RETURN(1); // unrecognized message type
 	}
 #ifdef Debug
 	}	// end of else
@@ -2223,34 +2224,69 @@ INT l_vector_collectAll (GRID *g, const VECDATA_DESC *x)
 	return (NUM_OK);
 }
 
+ppal( FAMGNode *node )
+{
+	FAMGPaList *palist = node->GetPaList();
+
+	cout << " PaList = ";
+	while( palist!=NULL )
+	{
+		cout << "(";
+		for( int i=0; i<palist->GetNp(); i++ )
+		{
+			if( i!=0 )
+				cout << ";";
+			cout << palist->GetPa(i);
+		}
+		cout << ")";
+		palist = palist->GetNext();
+	}
+	//cout << "\n";	
+	return 0;
+}
+
 
 pl(FAMGGraph *graph)
 {
 	FAMGList *list;
 	FAMGNode *n;
 	list = graph->GetList();
+	#ifdef ModelP
+	cout << me << ": ";
+	#endif
 	cout << "LISTE: "<<endl;
 	while(list!=NULL)
 	{
-		cout<<"   data" << list->GetData()<<" first="<<list->GetFirst()->GetId()<<" last="<<list->GetLast()->GetId()<<endl<<flush;
+		#ifdef ModelP
+		cout << me << ": ";
+		#endif
+		cout<<"   data " << list->GetData()<<" first="<<list->GetFirst()->GetId()<<" last="<<list->GetLast()->GetId()<<endl<<flush;
 		n = list->GetFirst();
 		while( n!=NULL)
 		{
+			#ifdef ModelP
+			cout << me << ": ";
+			#endif
 			cout<<"       "<<n->GetId();
 			if(n->GetPred()!=NULL)
 				cout<<" pred= "<<n->GetPred()->GetId();
 			if(n->GetSucc()!=NULL)
 				cout<<" succ= "<<n->GetSucc()->GetId();
+			ppal(n);
 			cout<<endl<<flush;
 			n = n->GetSucc();
 		}
 		list = list->GetSucc();
 	}
+	#ifdef ModelP
+	cout << me << ": ";
+	#endif
 	cout <<"helplist:";
 	n=graph->GetHelpList();
 	while(n!=NULL)
 	{
 		cout<<" "<<n->GetId();
+		ppal(n);
 		n = n->GetSucc();
 	}
 	cout<<endl<<flush;

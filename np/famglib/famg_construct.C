@@ -968,48 +968,80 @@ int FAMGGraph::EliminateNodes(FAMGGrid *gridptr)
 int FAMGGraph::EliminateDirichletNodes(FAMGGrid *gridptr)
 {
 #ifdef USE_UG_DS
+	// ASSUMPTION: all Dirichlet vectors have data == 0 in the list (thus are only in the first part with data==0)
+
 	FAMGNode *node, *nextNode;
 	FAMGList *list;
 	VECTOR *vec;
+	int NodeRemoved;
 	
 	list = GetList();
-	while( list!=NULL )
+	
+	if( list->GetData() == 0 )
+	{	// there may be Dirichlet nodes
+	
+		// We need the following complicated procedure because UpdateNeighborsFG
+		// may put nodes from the list into helplist which is inserted itself by 
+		// InsertHelplist back into the main list; but by that way some nodes
+		// may have sneaked to the front of the list, thus we must process 
+		// the list until no node was found any longer for elimination.
+	
+		do
+		{
+			NodeRemoved = 0;		// clear flag
+			node = list->GetFirst();
+			assert( node!=NULL );	// a list with no node in it is not allowed
+			while( node!=NULL )
+			{
+				// prepare next loop as long as it is possible; the danger is, that
+				// FAMGGraph::Remove(node*) deletes node from the list, such that
+				// succ of node is invalid for our needs.
+				nextNode = node->GetSucc();
+
+				// now we may remove(node) if we want
+
+				// analyse if node is a Dirichlet node
+				vec = ((FAMGugVectorEntryRef*)(node->GetVec().GetPointer()))->myvector();
+				if( VECSKIP(vec) )
+				{
+					// vec has at least 1 Dirichlet component
+					assert(node->GetPaList()->GetNp()==0);	// node should have no parents because he can be eliminated directly (dirichlet node!)
+					assert(node->GetPaList()->GetNext()==NULL);	// ... and furthermore this should be the onlyiest elimination under consideration
+					Remove(node);	// remove from list
+					if(node->Eliminate(gridptr)) return 1;
+					if(node->UpdateNeighborsFG(gridptr)) return 1; 
+					if(InsertHelplist()) return 1;
+					NodeRemoved = 1;
+				}
+
+				node = nextNode;
+			}
+			// the list may have became empty and is now not valid any more; thus refresh
+			list = GetList();
+			if( list->GetData() != 0 )
+				break;	// there are no more Dirichlet nodes because all nodes have data > 0
+		} 
+		while( NodeRemoved );
+	}
+
+#ifdef Debug
+	// assert that no further Dirichlet vectors exist
+	for( list=GetList(); list!=NULL; list=list->GetSucc() )
 	{
 		node = list->GetFirst();
 		assert( node!=NULL );	// a list with no node in it is not allowed
-		while( node!=NULL )
+		for( ;node!=NULL; node=node->GetSucc() )
 		{
-			// prepare next loop as long as it is possible; the danger is, that
-			// FAMGGraph::Remove(node*) deletes node from the list, such that
-			// succ of node is invalid for our needs and more: Remove may delete
-			// the whole list (if node was its onlyiest) such that also the list 
-			// successor can not be determined
-			nextNode = node->GetSucc();
-			if( nextNode==NULL )
-			{
-				list = list->GetSucc();
-			}
-			
-			// now we may remove(node) if we want
-			
-			// analyse if node is a Dirichlet node
+			// analyse whether node is a Dirichlet node
 			vec = ((FAMGugVectorEntryRef*)(node->GetVec().GetPointer()))->myvector();
-			if( VECSKIP(vec) )
-			{
-				// vec has at least 1 Dirichlet component
-				assert(node->GetPaList()->GetNp()==0);	// node should have no parents because he can be eliminated directly (dirichlet node!)
-				assert(node->GetPaList()->GetNext()==NULL);	// ... and furthermore this should be the onlyiest elimination under consideration
-	            if(node->Eliminate(gridptr)) return 1;
-    	        if(node->UpdateNeighborsFG(gridptr)) return 1; 
-        	    // if(InsertHelplist()) return 1; // should be superflouos here because no nodes were put into the helplist
-			}
-			
-			node = nextNode;
+			assert( !VECSKIP(vec) );
 		}
 	}
+#endif	// Debug
+
 #else
 	cout << "FAMGGraph::EliminateDirichletNodes only implemented for UG" << endl;
-#endif
+#endif	// ModelP
 	return 0;
 }
 
@@ -1073,12 +1105,17 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 	
     for(i = 0; i < n; i++)
     {
-        nodei = graph->GetNode(i);
+		nodei = graph->GetNode(i);
 		vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
 		
 		if( IS_FAMG_GHOST(vec) )
 			continue; // only master vectors can be in border the of the core partition
-		
+		// put Dirichlet vectors into the list
+		if( VECSKIP(vec) )
+			// a Dirichlet vector was found
+			if(InsertNode(gridptr, nodei))
+				return 0;
+
 		// vec lies in the border of the core partition if he has a ghost or border neighbor
 		for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
 			if( IS_FAMG_GHOST(MDEST(mat)) )
