@@ -132,3 +132,14 @@ yet. Use it on your own risk!
    DEFAULT_NAMES in this file), but they should not lead to problems.
 
 
+UG/ug/ui:
+--------
+
+Q: How to save and load data without saving and loading the multigrid?
+
+A: Saving data without the multigrid is done by using the option '$p' in the
+   savedata-command ('p' for save pure data). Example:
+        savedata test $t xdr $a sol $p;
+   Loading the data without the multigrid can be done by adding the option
+   '$r' in the loaddata-command ('r' for read only data). Example:
+        loaddata test $t xdr $a sol $r;
