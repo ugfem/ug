@@ -3112,7 +3112,7 @@ static INT SaveDataCommand (INT argc, char **argv)
   char *NamePtr[5];
   EVALUES *theEValues[5];
   EVECTOR *theEVector[5];
-  INT i,j,n,ret,number,rename,nm;
+  INT i,j,n,ret,number,rename,nm,save_without_mg;
   int iValue;
   double Value[3];
   DOUBLE t[3];
@@ -3127,6 +3127,7 @@ static INT SaveDataCommand (INT argc, char **argv)
   number = -1;
   t[0]=t[1]=t[2]=-1.0; nm=0;
   rename=0;
+  save_without_mg=0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -3185,6 +3186,9 @@ static INT SaveDataCommand (INT argc, char **argv)
       ret = sscanf(argv[i]," r %d",&iValue);
       if (ret==0 || (ret==1 && iValue==1)) rename = 1;
       break;
+    case 'p' :
+      save_without_mg=1;
+      break;
     }
   if (((t[0]<0.0) && number>=0) || ((t[0]>=0.0) && number<0))
   {
@@ -3226,7 +3230,7 @@ static INT SaveDataCommand (INT argc, char **argv)
     }
 
   if (n<=0) return (PARAMERRORCODE);
-  if (SaveData(theMG,FileName,rename,type,number,t[0],t[1],t[2],n,theVDList,theEValues,theEVector,Names)) return (PARAMERRORCODE);
+  if (SaveData(theMG,FileName,rename,save_without_mg,type,number,t[0],t[1],t[2],n,theVDList,theEValues,theEVector,Names)) return (PARAMERRORCODE);
 
   return(OKCODE);
 }
@@ -3247,6 +3251,7 @@ static INT SaveDataCommand (INT argc, char **argv)
    .  $h~<heapsize>    - the heapsize to be allocated
                                                                         (overrides saved one)
    .  $a~<vd name>...	- save data to this vec data descriptors
+   .  $r                                - read data in current multigrid
 
    KEYWORDS:
    multigrid, load, read, file, data
@@ -3262,6 +3267,7 @@ static INT LoadDataCommand (INT argc, char **argv)
   VECDATA_DESC *theVDList[NM_MAX];
   INT i,m,n,number,force,ret,nm,fqn,datapathes_set_old;
   int iValue;
+  INT read_in_currmg=0;
   MEM heapSize;
 
   /* scan filename */
@@ -3324,10 +3330,18 @@ static INT LoadDataCommand (INT argc, char **argv)
         return(PARAMERRORCODE);
       }
       break;
+
+    case 'r' :
+      read_in_currmg=1;
+      break;
+
     case 'z' :
       fqn = 1;
       break;
     }
+
+  /* consistency */
+  if (read_in_currmg) force=0;
 
   if (fqn) {
     datapathes_set_old = datapathes_set;
@@ -3376,6 +3390,13 @@ static INT LoadDataCommand (INT argc, char **argv)
       m = i+1;
 
   if (m<=0) return (PARAMERRORCODE);
+  if (read_in_currmg) {
+    /* renumber multigrid corresponding to saved order */
+    if (RenumberMultiGrid(currMG,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0)!=GM_OK) {
+      PrintErrorMessage('E',"loaddata","renumbering of the mg failed");
+      return (CMDERRORCODE);
+    }
+  }
   if (LoadData(currMG,FileName,type,number,m,theVDList)) return (CMDERRORCODE);
 
   if (fqn) datapathes_set = datapathes_set_old;
@@ -6722,34 +6743,25 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
       xused = TRUE;
       order[i] = _X_; sign[i] = -1; break;
 
-                        #ifdef __TWODIM__
     case 'u' :
       if (yused) error = TRUE;
       yused = TRUE;
       order[i] = _Y_; sign[i] =  1; break;
     case 'd' :
-      if (yused) error = TRUE;
-      yused = TRUE;
-      order[i] = _Y_; sign[i] = -1; break;
-                        #else
-    case 'b' :
-      if (yused) error = TRUE;
-      yused = TRUE;
-      order[i] = _Y_; sign[i] =  1; break;
-    case 'f' :
       if (yused) error = TRUE;
       yused = TRUE;
       order[i] = _Y_; sign[i] = -1; break;
 
-    case 'u' :
+#ifdef __THREEDIM__
+    case 'b' :
       if (zused) error = TRUE;
       zused = TRUE;
       order[i] = _Z_; sign[i] =  1; break;
-    case 'd' :
+    case 'f' :
       if (zused) error = TRUE;
       zused = TRUE;
       order[i] = _Z_; sign[i] = -1; break;
-                        #endif
+#endif
 
                         #ifdef __TWODIM__
 
@@ -7008,7 +7020,7 @@ static INT OrderVectorsCommand (INT argc, char **argv)
         mode = GM_CCFFLL;
       else
       {
-        PrintHelp("orderv",HELPITEM," (you have to specify FFCCLL or FCFCLL as mode)");
+        PrintHelp("orderv",HELPITEM," (you have to specify FFLLCC, FFLCLC, CCFFLL or FCFCLL as mode)");
         return (PARAMERRORCODE);
       }
       break;
@@ -10485,6 +10497,44 @@ static INT TextFacCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   linefac - set factor to zoom line width
+
+   DESCRIPTION:
+   This command sets factor to zoom line width (default 1).
+
+   SYMTAX:
+   'linefac <factor>'
+
+   KEYWORDS:
+   graphics, plot, window, picture, view, linewidth
+   D*/
+/****************************************************************************/
+
+static INT LineFacCommand (INT argc, char **argv)
+{
+  double Value;
+
+        #ifdef ModelP
+  if (me!=master) return (OKCODE);
+        #endif
+
+  NO_OPTION_CHECK(argc,argv);
+
+  if (sscanf(argv[0],"linefac %lf",&Value)!=1)
+  {
+    PrintErrorMessage('E',"linefac","specify a factor");
+    return (PARAMERRORCODE);
+  }
+
+  SetLineFactor(Value);
+
+  InvalidatePicturesOfMG(currMG);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
    setplotobject - set plotting specification
 
    DESCRIPTION:
@@ -12561,13 +12611,16 @@ static INT FreeMatDescCommand (INT argc, char **argv)
    This command lists the contents of vector and matrix data descriptors of the
    current multigrid
 
-   'symlist {$V [<vd>] | $M [<md>]}'
+   'symlist {$V [<vd>] | $M [<md>]  [$alloc] [$scal]}'
 
         Specify either option V or M with or without:~
    .  <vd> - name of a vec data desc, if omitted ALL vec data descs of the current
                         multigrid are listed
    .  <md> - name of a mat data desc, if omitted ALL mat data descs of the current
                         multigrid are listed
+
+   .  <alloc> - is descriptor allocated and/or locked
+   .  <scal> - is descriptor scalar or not
 
    KEYWORDS:
    multigrid, numerics, userdata, vecdata, matdata, list, show, display, print
@@ -14833,9 +14886,9 @@ static INT ListPeriodicPosCommand (INT argc, char **argv)
   }
 
 #ifdef __THREEDIM__
-  if (sscanf(argv[1],"%lf %lf %lf",pos,pos+1,pos+2) != 3)
+  if (sscanf(argv[0],"lppos %lf %lf %lf",pos,pos+1,pos+2) != 3)
 #else
-  if (sscanf(argv[1],"%lf %lf",pos,pos+1) != 2)
+  if (sscanf(argv[0],"lppos %lf %lf",pos,pos+1) != 2)
 #endif
   {
     if (me == master)
@@ -15022,6 +15075,7 @@ INT InitCommands ()
   if (CreateCommand("drag",                       DragCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("rotate",             RotateCommand                                   )==NULL) return (__LINE__);
   if (CreateCommand("textfac",            TextFacCommand                                  )==NULL) return (__LINE__);
+  if (CreateCommand("linefac",            LineFacCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("setplotobject",      SetPlotObjectCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("polist",             PlotObjectListCommand                   )==NULL) return (__LINE__);
   if (CreateCommand("plot",                       PlotCommand                                     )==NULL) return (__LINE__);
