@@ -1784,7 +1784,7 @@ INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
     i += sprintf(buffer+i,"   cl %d %d sk ",VCLASS(v),VNCLASS(v));
     for (j=0; j<ncomp; j++)
       i += sprintf(buffer+i,"%d ",((VECSKIP(v) & (1<<j))!=0));
-    i += sprintf(buffer+i,"n %d\n",VNEW(v));
+    i += sprintf(buffer+i,"n %d t %d o %d\n",VNEW(v),VTYPE(v),VOTYPE(v));
     UserWrite(buffer);
   }
 
