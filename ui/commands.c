@@ -111,6 +111,7 @@
 
 #ifdef __DLB__
 #include "dlb.h"
+#include "dlb_eval.h"
 #endif
 
 #ifdef CHACOT
@@ -12826,6 +12827,38 @@ static INT PStatCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
+#ifdef __DLB__
+/****************************************************************************/
+/*
+   dlb_eval - gives information current load balancing situation
+
+   DESCRIPTION:
+   information on the current load balancing situation of MultiGrid
+
+   'dlb_eval $v <0-n>'
+
+
+   KEYWORDS:
+   load balancing, status, load, interfaces, partition graph
+ */
+/****************************************************************************/
+
+static INT DLB_EvalCommand (INT argc, char **argv)
+{
+  INT verbose;
+  MULTIGRID       *theMG;
+
+  if (argc > 2) return(CMDERRORCODE);
+
+  theMG = currMG;
+  verbose = 0;
+  ReadArgvINT("v",&verbose,argc,argv);
+
+  if (dlb_eval(theMG,verbose)!=0) return(CMDERRORCODE);
+
+  return(OKCODE);
+}
+#endif
 
 #ifdef CHACOT
 /****************************************************************************/
@@ -14275,7 +14308,8 @@ INT InitCommands ()
 #endif
         #ifdef __DLB__
   if (CreateCommand("lbmm",           LBMMCommand                     )==NULL) return(__LINE__);
-  if (CreateCommand("dlb_config",     DLB_Config_Command )==NULL      ) return(__LINE__);
+  if (CreateCommand("dlb_config",     DLB_Config_Command                  )==NULL      ) return(__LINE__);
+  if (CreateCommand("dlb_eval",           DLB_EvalCommand                             )==NULL) return (__LINE__);
         #endif
 
 #endif /* ModelP */
