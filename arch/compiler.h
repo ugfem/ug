@@ -47,6 +47,7 @@ extern "C" {
 /*          __PC__       IBM compatible PC                                  */
 /*          __T3D__      CRAY T3D version                                   */
 /*          __POWERGC__  XPLORER (PowerPC)                                  */
+/*          __C90__      CRAY 90 version                                    */
 /*          __MWCW__     Apple Power Macintosh                              */
 /*                                                                          */
 /* #define this if you are using NXLib                                      */
@@ -311,7 +312,6 @@ extern "C" {
 #endif
 
 
-
 /****************************************************************************/
 /*                                                                          */
 /* Definitions for XPLORER (PowerPC)  version                               */
@@ -332,6 +332,30 @@ extern "C" {
 /* memory */
 #define ALIGNMENT 8               /* power of 2 and >=sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFF8     /*  compatible to alignment */
+
+#endif
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for CRAY 90                                                  */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __C90__
+#undef __MWCW__
+
+/* basic types */
+#define SHORT  short
+#define INT    int
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+
+/* memory */
+#define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
+#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
 
 #endif
 
