@@ -1553,8 +1553,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   /* read hierarchical elements */
   max=0;
   for (i=0; i<cg_general.nElement; i++) {cge = MGIO_CG_ELEMENT_PS(cg_element,i); max = MAX(max,cge->nhe);}
-  /*refinement = (MGIO_REFINEMENT*)GetTmpMem(theHeap,max*MGIO_REFINEMENT_SIZE);*/
-  refinement = (MGIO_REFINEMENT*)malloc(max*MGIO_REFINEMENT_SIZE);
+  refinement = (MGIO_REFINEMENT*)GetTmpMem(theHeap,max*MGIO_REFINEMENT_SIZE);
   if (refinement==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for refinement\n",(int)max*MGIO_REFINEMENT_SIZE); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   for (j=0; j<=TOPLEVEL(theMG); j++)
   {
