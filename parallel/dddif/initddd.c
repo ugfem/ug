@@ -72,6 +72,9 @@
 DDD_TYPE TypeVector;
 DDD_TYPE TypeIVertex, TypeBVertex;
 DDD_TYPE TypeNode;
+#ifdef __THREEDIM__
+DDD_TYPE TypeEdge;
+#endif
 
 #ifdef __TWODIM__
 DDD_TYPE TypeTrElem, TypeTrBElem;
@@ -88,7 +91,9 @@ DDD_TYPE TypeHeElem, TypeHeBElem;
 /* DDD data objects */
 DDD_TYPE TypeMatrix;
 DDD_TYPE TypeBndP;
+#ifdef __TWODIM__
 DDD_TYPE TypeEdge;
+#endif
 DDD_TYPE TypeBndS;
 
 /* DDD interfaces needed for distributed computation */
@@ -96,6 +101,9 @@ DDD_IF ElementIF, ElementSymmIF;
 DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF;
 DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF;
 DDD_IF VertexIF;
+#ifdef __THREEDIM__
+DDD_IF EdgeIF;
+#endif
 
 
 
@@ -261,7 +269,6 @@ static void ddd_DeclareTypes (void)
   dddctrl.types[NDOBJ] = TypeNode;
   dddctrl.dddObj[NDOBJ] = TRUE;
 
-
         #ifdef __TWODIM__
   TypeTrElem      = DDD_TypeDeclare("TrElem");
   TypeTrBElem     = DDD_TypeDeclare("TrBElem");
@@ -292,6 +299,9 @@ static void ddd_DeclareTypes (void)
   TypeEdge        = DDD_TypeDeclare("Edge");
   dddctrl.ugtypes[TypeEdge] = EDOBJ;
   dddctrl.types[EDOBJ] = TypeEdge;
+        #ifdef __THREEDIM__
+  dddctrl.dddObj[EDOBJ] = TRUE;
+        #endif
 
   TypeBndS = DDD_TypeDeclare("BndS");
   dddctrl.ugtypes[TypeBndS] = BSOBJ;
@@ -471,6 +481,10 @@ static void ddd_DefineTypes (void)
                  EL_LDATA,  ELDEF(e.links[1].next),
                  EL_OBJPTR, ELDEF(e.links[1].nbnode), TypeNode,
 
+                #ifdef __THREEDIM__
+                 EL_DDDHDR, &e.ddd,
+                #endif
+
                  EL_OBJPTR, ELDEF(e.midnode),  TypeNode,
                  EL_CONTINUE);
 
@@ -501,8 +515,8 @@ static void ddd_IfInit (void)
 {
   DDD_TYPE O[8];
   int nO;
-  int A[8];
-  int B[8];
+  DDD_PRIO A[8];
+  DDD_PRIO B[8];
 
 #ifdef __TWODIM__
   O[0] = TypeTrElem; O[1] = TypeTrBElem;
@@ -559,6 +573,13 @@ static void ddd_IfInit (void)
   A[0] = PrioMaster;
   B[0] = PrioMaster;
   VertexIF = DDD_IFDefine(2,O,1,A,1,B);
+
+        #ifdef __THREEDIM__
+  O[0] = TypeEdge;
+  A[0] = PrioMaster;
+  B[0] = PrioMaster;
+  EdgeIF = DDD_IFDefine(1,O,1,A,1,B);
+        #endif
 }
 
 
@@ -598,6 +619,9 @@ void InitDDDTypes (void)
   DDD_TypeDisplay(TypeIVertex);
   DDD_TypeDisplay(TypeBVertex);
   DDD_TypeDisplay(TypeNode);
+        #ifdef __THREEDIM__
+  DDD_TypeDisplay(TypeEdge);
+        #endif
 
         #ifdef __TWODIM__
   DDD_TypeDisplay(TypeTrElem);
@@ -617,7 +641,9 @@ void InitDDDTypes (void)
 
   /* display dependent types */
   DDD_TypeDisplay(TypeMatrix);
+        #ifdef __TWODIM__
   DDD_TypeDisplay(TypeEdge);
+        #endif
   ENDDEBUG
 
   ddd_HandlerInit(HSET_XFER);
@@ -685,6 +711,9 @@ int InitParallel (int *argc, char ***argv)
 
   /* show messages during transfer, for debugging */
   DDD_SetOption(OPT_DEBUG_XFERMESGS, OPT_OFF);
+
+  /* treat identify tokens for one object as set */
+  DDD_SetOption(OPT_IDENTIFY_MODE, IDMODE_SETS);
 
   /* initialize context */
   /* TODO: malloc() should be replaced by HEAPs or ddd_memmgr */
