@@ -4525,7 +4525,7 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos)
    D*/
 /****************************************************************************/
 
-INT MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, DOUBLE *newPos)
+INT MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, const DOUBLE *newPos)
 {
   ELEMENT *theElement;
   DOUBLE *x[MAX_CORNERS_OF_ELEM];
@@ -4536,11 +4536,11 @@ INT MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, DOUBLE *newPos)
   if (MOVE(vert)!=DIM)
     REP_ERR_RETURN(GM_ERROR);
 
+  if (BNDP_Move(V_BNDP(vert),newPos))
+    REP_ERR_RETURN(GM_ERROR);
   V_DIM_COPY(newPos,CVECT(vert));
   if (LEVEL(vert) > 0)
   {
-    if (BNDP_Move(V_BNDP(vert),newPos))
-      REP_ERR_RETURN(GM_ERROR);
     theElement = VFATHER(vert);
     if (theElement == NULL)
       REP_ERR_RETURN(GM_ERROR)
