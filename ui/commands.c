@@ -370,6 +370,25 @@ static INT QuitCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   mute - set mutelevel
+
+   DESCRIPTION:
+   This command sets a mutelevel.
+   The default value is 0 and all skript lines will be printed on the shell.
+   This will be suppressed by mutelevel -1.
+   Smaller muteleveles should reduce the output further.
+
+   'mute <value>'
+   .   <value> - integer which gives the mutelevel
+
+   REMARK:
+   Formally, this is not an ug command, 'mute' is checked in
+   'InterpretString'.
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
    help - search for for a command and prints the help
 
    DESCRIPTION:
