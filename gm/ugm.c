@@ -5707,7 +5707,7 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
       assert(VList[i]!=NULL);
       if (BNDP_Global(theMesh->theBndPs[i],CVECT(VList[i]))) assert(0);
       if (BNDP_BndPDesc(theMesh->theBndPs[i],&move,&part))
-        return(NULL);
+        return(GM_OK);
       SETMOVE(VList[i],move);
       V_BNDP(VList[i]) = theMesh->theBndPs[i];
       maxlevel = MAX(maxlevel,theMesh->VertexLevel[i]);
@@ -5729,7 +5729,7 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
       assert(VList[i]!=NULL);
       if (BNDP_Global(theMesh->theBndPs[i],CVECT(VList[i]))) assert(0);
       if (BNDP_BndPDesc(theMesh->theBndPs[i],&move,&part))
-        return(NULL);
+        return(GM_OK);
       SETMOVE(VList[i],move);
       V_BNDP(VList[i]) = theMesh->theBndPs[i];
     }
