@@ -84,7 +84,8 @@ int FAMGGrid::ConstructLocalMatrix(const FAMGVectorEntry &veci, struct FAMGMatri
 
     nm1 = 0; nm2 = 0;
     mi_iter.reset();
-    mi_iter(matij);   
+    mi_iter(matij); 
+    norm1 = norm2 = 0.0;
 	while(mi_iter(matij))
     {
         if(matij.is_strong())
