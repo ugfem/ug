@@ -98,6 +98,7 @@
 /****************************************************************************/
 
 #define LGM_PROBLEM_NAME(p)                                     ENVITEM_NAME(p)
+#define LGM_PROBLEM_INIT(p)                                     ((p)->InitProblem)
 #define LGM_PROBLEM_CONFIG(p)                           ((p)->ConfigProblem)
 #define LGM_PROBLEM_DOMCONFIG(p)                        ((p)->ConfigDomainSize)
 #define LGM_PROBLEM_NCOEFF(p)                           ((p)->numOfCoeffFct)
@@ -255,8 +256,10 @@
 
 #endif
 
+typedef INT (*InitProcPtr)(INT, char **, char *, char *, char *, char *);
 typedef INT (*BndCondProcPtr)(DOUBLE *, DOUBLE *, INT *);
 typedef INT (*DomainSizeConfig)(DOUBLE *min, DOUBLE *max);
+
 
 /****************************************************************************/
 /*																			*/
@@ -270,6 +273,7 @@ struct lgm_problem {
   ENVDIR v;
 
   /* fields for problem */
+  InitProcPtr InitProblem;          /* procedure to initialize problem          */
   ConfigProcPtr ConfigProblem;      /* procedure to reinitialize problem		*/
   DomainSizeConfig ConfigDomainSize;      /* procedure to reinitialize size of d*/
   BndCondProcPtr BndCond;               /* global boundary condition				*/
@@ -574,7 +578,7 @@ typedef struct Domain3d
 /****************************************************************************/
 
 #ifndef Grape
-LGM_PROBLEM     *CreateProblem                  (char *name, ConfigProcPtr config, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[]);
+LGM_PROBLEM     *CreateProblem                  (char *name, InitProcPtr config, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[]);
 #endif
 INT                     SetBoundaryCondition    (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond);
 INT                     SetDomainSize                   (LGM_DOMAIN *theDomain);

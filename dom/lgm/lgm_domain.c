@@ -83,7 +83,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-LGM_PROBLEM *CreateProblem (char *name, ConfigProcPtr config, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[])
+LGM_PROBLEM *CreateProblem (char *name, InitProcPtr init, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[])
 {
   LGM_PROBLEM *newProblem;
   int i;
@@ -95,7 +95,8 @@ LGM_PROBLEM *CreateProblem (char *name, ConfigProcPtr config, DomainSizeConfig d
   if (newProblem==NULL) return(NULL);
 
   /* fill in data */
-  LGM_PROBLEM_CONFIG(newProblem)          = config;
+  LGM_PROBLEM_INIT(newProblem)            = init;
+  LGM_PROBLEM_CONFIG(newProblem)          = NULL;
   LGM_PROBLEM_DOMCONFIG(newProblem)       = domconfig;
   LGM_PROBLEM_BNDCOND(newProblem)         = BndCond;
   LGM_PROBLEM_NCOEFF(newProblem)          = numOfCoefficients;
@@ -183,6 +184,25 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
       return (NULL);
     }
     LGM_DOMAIN_PROBLEM(theDomain) = theProblem;
+
+    /* initialize problem */
+    if (theProblem->InitProblem!=NULL)
+    {
+      INT ret, i, nSubDom = LGM_DOMAIN_NSUBDOM(theDomain);
+      char **argv;
+
+      argv = (char **) GetTmpMem(Heap, sizeof(char *) * (nSubDom+1));
+      /* TODO: check-mem */
+
+      for(i=1; i<=nSubDom; i++)
+      {
+        argv[i] = "QUARTAER";                          /* TODO !! */
+      }
+
+      ret = (*(theProblem->InitProblem))(nSubDom, argv,
+                                         "a.hyd", "a.bnd", "a.ini", "a.src");
+      /* TODO: filenamen besser ! */
+    }
 
     /* set boundary conditions */
     BndCond = LGM_PROBLEM_BNDCOND(theProblem);
