@@ -3875,7 +3875,7 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
       theGpo->PartShrinkFactor = fValue;
       break;
     }
-  if (theGpo->PartitonShrinkFactor<=0.0 || theGpo->PartShrinkFactor>1.0)
+  if (theGpo->PartShrinkFactor<=0.0 || theGpo->PartShrinkFactor>1.0)
     return (NOT_ACTIVE);
         #endif
 
