@@ -771,7 +771,7 @@ INT GetVlistMValues (INT cnt, VECTOR **theVec,
           mptr[Comp[i][i][k*vncomp[i]+l]];
     m2 = 0;
     for (j=0; j<i; j++) {
-      GET_MATRIX(theVec[i],theVec[j],theMatrix);
+      theMatrix = GetMatrix(theVec[i],theVec[j]);
       if (theMatrix == NULL) {
         for (k=0; k<vncomp[i]; k++)
           for (l=0; l<vncomp[j]; l++)
@@ -2143,7 +2143,7 @@ INT PrintIMatrix (GRID *g, VECDATA_DESC *V, INT vclass, INT vnclass)
         ccomp = VD_NCMPS_IN_TYPE(V,MDESTTYPE(m));
         Mcomp = i * ccomp;
         for (j=0; j<ccomp; j++)
-          UserWriteF("%4.2lf ",MVALUE(m,Mcomp+j));
+          UserWriteF("%4.2lf ",MVALUE(m,i+j*rcomp));
       }
       UserWrite("\n");
     }
