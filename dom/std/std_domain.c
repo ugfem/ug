@@ -127,6 +127,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
+static INT BndPointGlobal (BNDP *aBndP, DOUBLE *global);
+
 /****************************************************************************/
 /*D
    CreateProblem -  Create a new PROBLEM structure
@@ -841,9 +843,9 @@ static INT CreateCornerPoints (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp)
     m = POINT_PATCH_N(p);
     ps = (BND_PS *)GetFreelistMemory(Heap,sizeof(BND_PS)
                                      +(m-1)*sizeof(COORD_BND_VECTOR));
-    ps->n = m;
     if (ps == NULL)
       return(1);
+    ps->n = m;
     ps->patch_id = PATCH_ID(p);
 
     for (j=0; j<m; j++) {
@@ -915,6 +917,16 @@ static INT CreateCornerPoints (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp)
         }
       }
     }
+    if (!PATCH_IS_FIXED(p))
+    {
+      /* store global coordinates */
+      BND_DATA(ps) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
+      if (BND_DATA(ps)==NULL)
+        return (1);
+
+      if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
+        return (1);
+    }
     bndp[i] = (BNDP *)ps;
   }
 
@@ -934,7 +946,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   LINEAR_SEGMENT *theLinSegment;
   BOUNDARY_CONDITION *theBndCond;
   PATCH **corners,**sides,*thePatch;
-  INT i,j,n,m,maxSubDomains,ncorners,nlines,nsides;
+  INT i,j,n,m,maxSubDomains,ncorners,nlines,nsides,free;
 #       ifdef __THREEDIM__
   PATCH **lines;
   INT k;
@@ -976,6 +988,10 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
       return (NULL);
     PATCH_TYPE(thePatch) = PARAMETRIC_PATCH_TYPE;
     PATCH_ID(thePatch) = theSegment->id;
+    if (theSegment->segType==FREE)
+      PATCH_STATE(thePatch) = PATCH_FREE;
+    else
+      PATCH_STATE(thePatch) = PATCH_FIXED;
     PARAM_PATCH_LEFT(thePatch) = theSegment->left;
     PARAM_PATCH_RIGHT(thePatch) = theSegment->right;
     PARAM_PATCH_BC(thePatch) = NULL;
@@ -1077,12 +1093,15 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
     PATCH_TYPE(thePatch) = POINT_PATCH_TYPE;
     PATCH_ID(thePatch) = i;
     m = 0;
+    free = 0;
     for (j=0; j<nsides; j++) {
       if (PATCH_TYPE(sides[j]) == LINEAR_PATCH_TYPE) {
         for (n=0; n<LINEAR_PATCH_N(sides[j]); n++)
           if (LINEAR_PATCH_POINTS(sides[j],n) == i) {
             POINT_PATCH_PID(thePatch,m) = j;
             POINT_PATCH_CID(thePatch,m++) = n;
+            if (PATCH_IS_FREE(sides[j]))
+              free++;
           }
       }
       else if (PATCH_TYPE(sides[j]) == PARAMETRIC_PATCH_TYPE) {
@@ -1090,9 +1109,17 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
           if (PARAM_PATCH_POINTS(sides[j],n) == i) {
             POINT_PATCH_PID(thePatch,m) = j;
             POINT_PATCH_CID(thePatch,m++) = n;
+            if (PATCH_IS_FREE(sides[j]))
+              free++;
           }
       }
     }
+    if (free==m)
+      PATCH_STATE(thePatch) = PATCH_FREE;
+    else if (free==0)
+      PATCH_STATE(thePatch) = PATCH_FIXED;
+    else
+      PATCH_STATE(thePatch) = PATCH_BND_OF_FREE;
 
     for (j=0; j<nsides; j++)
       POINT_PATCH_N(thePatch) = m;
@@ -1122,6 +1149,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
               POINT_PATCH_PID(corners[j],m))
             k++;
       if (k < 2)
+        /* points share one patch only and ly on opposite corners of this patch */
         continue;
       thePatch=
         (PATCH *)GetFreelistMemory(Heap,sizeof(LINE_PATCH)
@@ -1133,19 +1161,25 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
       LINE_PATCH_C0(thePatch) = i;
       LINE_PATCH_C1(thePatch) = j;
       k = 0;
+      free = 0;
       for (n=0; n<POINT_PATCH_N(corners[i]); n++)
         for (m=0; m<POINT_PATCH_N(corners[j]); m++)
-          if (POINT_PATCH_PID(corners[i],n) ==
-              POINT_PATCH_PID(corners[j],m)) {
-            LINE_PATCH_PID(thePatch,k) =
-              POINT_PATCH_PID(corners[i],n);
-            LINE_PATCH_CID0(thePatch,k) =
-              POINT_PATCH_CID(corners[i],n);
-            LINE_PATCH_CID1(thePatch,k) =
-              POINT_PATCH_CID(corners[j],m);
+          if (POINT_PATCH_PID(corners[i],n) == POINT_PATCH_PID(corners[j],m))
+          {
+            LINE_PATCH_PID(thePatch,k)  = POINT_PATCH_PID(corners[i],n);
+            LINE_PATCH_CID0(thePatch,k) = POINT_PATCH_CID(corners[i],n);
+            LINE_PATCH_CID1(thePatch,k) = POINT_PATCH_CID(corners[j],m);
+            if (PATCH_IS_FREE(sides[LINE_PATCH_PID(thePatch,k)]))
+              free++;
             k++;
           }
       LINE_PATCH_N(thePatch) = k;
+      if (free==k)
+        PATCH_STATE(thePatch) = PATCH_FREE;
+      else if (free==0)
+        PATCH_STATE(thePatch) = PATCH_FIXED;
+      else
+        PATCH_STATE(thePatch) = PATCH_BND_OF_FREE;
       lines[nlines++] = thePatch;
       PRINTDEBUG(dom,1,("lines id %d type %d n %d\n",
                         PATCH_ID(thePatch),PATCH_TYPE(thePatch),
@@ -1570,6 +1604,17 @@ static BNDP *CreateBndPOnLine (HEAP *Heap, PATCH *p0, PATCH *p1, DOUBLE lcoord)
                       lcoord));
   }
 
+  if (!PATCH_IS_FIXED(p))
+  {
+    /* store global coordinates */
+    BND_DATA(bp) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
+    if (BND_DATA(bp)==NULL)
+      return (NULL);
+
+    if (BndPointGlobal((BNDP *)bp,BND_DATA(bp)))
+      return (NULL);
+  }
+
   return((BNDP *)bp);
 }
 #endif
@@ -1651,6 +1696,17 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   }
   else
     return(NULL);
+
+  if (!PATCH_IS_FIXED(p))
+  {
+    /* store global coordinates */
+    BND_DATA(ps) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
+    if (BND_DATA(ps)==NULL)
+      return (NULL);
+
+    if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
+      return (NULL);
+  }
 
   return ((BNDP *)ps);
 }
@@ -1765,6 +1821,17 @@ static INT GenerateBnodes (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
         bndp[n] = (BNDP *)ps;
         ps->patch_id = i;
         ps->local[0][0] = lambda[0];
+
+        if (!PATCH_IS_FIXED(p))
+        {
+          /* store global coordinates */
+          BND_DATA(ps) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
+          if (BND_DATA(ps)==NULL)
+            return (NULL);
+
+          if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
+            return (NULL);
+        }
       }
       n++;
       lambda[0] += step;
@@ -1893,6 +1960,17 @@ static INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
         bndp[n] = (BNDP *)ps;
         ps->patch_id = i;
         ps->local[0][0] = lambda[0];
+
+        if (!PATCH_IS_FIXED(p))
+        {
+          /* store global coordinates */
+          BND_DATA(ps) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
+          if (BND_DATA(ps)==NULL)
+            return (NULL);
+
+          if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
+            return (NULL);
+        }
       }
       n++;
     }
@@ -2183,6 +2261,16 @@ static INT TriangulatePatch (HEAP *Heap, PATCH *p, BNDP **bndp,
         lambda = i * step;
         V2_LINCOMB(lambda,next_local[1],(1.0-lambda),next_local[0],
                    ps->local[0]);
+        if (!PATCH_IS_FIXED(p))
+        {
+          /* store global coordinates */
+          BND_DATA(ps) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
+          if (BND_DATA(ps)==NULL)
+            return (NULL);
+
+          if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
+            return (NULL);
+        }
         bndp[nodeid++] = (BNDP *)ps;
 
 
@@ -2556,27 +2644,63 @@ static INT PatchGlobal (PATCH *p, DOUBLE *lambda, DOUBLE *global)
   return(1);
 }
 
-/* domain interface function: for description see domain.h */
-INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
+static INT FreeBNDS_Global (BND_PS *ps, DOUBLE *local, DOUBLE *global)
 {
-  BND_PS *ps;
+  BND_PS **ppt;
   PATCH *p;
-  DOUBLE lambda[DIM_OF_BND];
+  DOUBLE *pos[4];
+  INT i;
 
-  ps = (BND_PS *)aBndS;
   p = currBVP->patches[ps->patch_id];
   if (p == NULL)
     return(1);
 
-  PRINTDEBUG(dom,1,(" Bnds global loc %f pid %d\n",
-                    local[0],PATCH_ID(p)));
+  /* get corner coordinates */
+  ppt = (BND_PS**)BND_DATA(ps);
+  ASSERT(BND_N(ps)<=4);
+  for (i=0; i<BND_N(ps); i++)
+  {
+    ASSERT(ppt!=NULL);
+    pos[i] = (DOUBLE*)BND_DATA(*(ppt++));
+  }
 
-  if ((PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE) ||
-      (PATCH_TYPE(p) == LINEAR_PATCH_TYPE))
-      #ifdef __TWODIM__
+  /* claculate global coordinates */
+        #ifdef __TWODIM__
+  for (i=0; i<DIM; i++)
+    global[i] = (1.0-local[0])*pos[0][i]+local[0]*pos[1][i];
+        #endif
+        #ifdef __THREEDIM__
+  switch (ps->n)
+  {
+  case 3 :
+    for (i=0; i<DIM; i++)
+      global[i] = (1.0-local[0]-local[1]) * pos[0][i]
+                  + local[0]*pos[1][i] + local[1]*pos[2][i];
+    break;
+  case 4 :
+    for (i=0; i<DIM; i++)
+      global[0] = (1.0-local[0])*(1.0-local[1]) * pos[0][i]
+                  + local[0]*(1.0-local[1])*pos[1][i]
+                  + local[0]*local[1]*pos[2][i]
+                  + (1.0-local[0])*local[1]*pos[3][i];
+    break;
+  }
+        #endif
+
+  return (0);
+}
+
+static INT local2lambda (BND_PS *ps, DOUBLE local[], DOUBLE lambda[])
+{
+  PATCH *p;
+
+  p = currBVP->patches[ps->patch_id];
+
+  if ((PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE) || (PATCH_TYPE(p) == LINEAR_PATCH_TYPE))
+                #ifdef __TWODIM__
     lambda[0] = (1.0-local[0])*ps->local[0][0]+local[0]*ps->local[1][0];
-      #endif
-      #ifdef __THREEDIM__
+                #endif
+                #ifdef __THREEDIM__
     switch (ps->n)
     {
     case 3 :
@@ -2596,13 +2720,35 @@ INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
                   + (1.0-local[0])*local[1]*ps->local[3][1];
       break;
     }
-       #endif
+                #endif
     else
       return(1);
 
-  return(PatchGlobal(p,lambda,global));
+  return (0);
+}
 
-  return(1);
+/* domain interface function: for description see domain.h */
+INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
+{
+  BND_PS *ps;
+  PATCH *p;
+  DOUBLE lambda[DIM_OF_BND];
+
+  ps = (BND_PS *)aBndS;
+  p = currBVP->patches[ps->patch_id];
+  if (p == NULL)
+    return(1);
+
+  PRINTDEBUG(dom,1,(" Bnds global loc %f pid %d\n",
+                    local[0],PATCH_ID(p)));
+
+  if (PATCH_IS_FREE(p))
+    return (FreeBNDS_Global(ps,local,global));
+
+  if (local2lambda(ps,local,lambda))
+    return (1);
+
+  return(PatchGlobal(p,lambda,global));
 }
 
 static INT SideIsCooriented (BND_PS *ps)
@@ -2615,19 +2761,26 @@ static INT SideIsCooriented (BND_PS *ps)
 #       endif
 
 #       ifdef __THREEDIM__
-  INT i, n;
+  INT i, n, m;
   DOUBLE vp, x0[2], x1[2];
 
   n = BND_N(ps);
+  m = 0;
   for (i=0; i<n; i++)
   {
     V2_SUBTRACT(BND_LOCAL(ps,(i+1)%n), BND_LOCAL(ps,i), x0);
     V2_SUBTRACT(BND_LOCAL(ps,(i+n-1)%n), BND_LOCAL(ps,i), x1);
     V2_VECTOR_PRODUCT(x0, x1, vp);
     if (vp>SMALL_C)
-      return (NO);
+      m--;
+    else
+      m++;
   }
-  return (YES);
+  if              (m== n) return (YES);
+  else if (m==-n) return (NO);
+
+  return (2);
+
 #       endif
 }
 
@@ -2649,48 +2802,35 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
 
   PRINTDEBUG(dom,1,(" BndCond %d %x\n",PATCH_TYPE(p),p));
 
-  if ((PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE) ||
-      (PATCH_TYPE(p) == LINEAR_PATCH_TYPE))
-      #ifdef __TWODIM__
-    lambda[0] = (1.0-local[0])*ps->local[0][0] + local[0]*ps->local[1][0];
-      #endif
-      #ifdef __THREEDIM__
-    switch (ps->n)
-    {
-    case 3 :
-      lambda[0] = (1.0-local[0]-local[1]) * ps->local[0][0]
-                  + local[0]*ps->local[1][0] + local[1]*ps->local[2][0];
-      lambda[1] = (1.0-local[0]-local[1]) * ps->local[0][1]
-                  + local[0]*ps->local[1][1] + local[1]*ps->local[2][1];
-      break;
-    case 4 :
-      lambda[0] = (1.0-local[0])*(1.0-local[1]) * ps->local[0][0]
-                  + local[0]*(1.0-local[1])*ps->local[1][0]
-                  + local[0]*local[1]*ps->local[2][0]
-                  + (1.0-local[0])*local[1]*ps->local[3][0];
-      lambda[1] = (1.0-local[0])*(1.0-local[1]) * ps->local[0][1]
-                  + local[0]*(1.0-local[1])*ps->local[1][1]
-                  + local[0]*local[1]*ps->local[2][1]
-                  + (1.0-local[0])*local[1]*ps->local[3][1];
-      break;
-    }
-       #endif
-    else
-      return(1);
-
-  if (currBVP->GeneralBndCond != NULL) {
+  if (currBVP->GeneralBndCond != NULL)
+  {
     type[0] = PATCH_ID(p) - currBVP->sideoffset;
-    if (PatchGlobal(p,lambda,global))
-      return(1);
+    if (PATCH_IS_FREE(p))
+    {
+      if (FreeBNDS_Global(ps,local,global))
+        return(1);
+    }
+    else
+    {
+      if (local2lambda(ps,local,lambda))
+        return (1);
+      if (PatchGlobal(p,lambda,global))
+        return(1);
+    }
     /* besides gobal coordinates return also whether element lies left or right of boundary */
     global[DIM] = (SideIsCooriented(ps)) ? ELEM_IS_LEFT : ELEM_IS_RIGHT;
     if (in == NULL)
       return((*(currBVP->GeneralBndCond))(NULL,NULL,global,value,type));
+
     /* TODO: copy left/right (s.a.) also to in? (calling function has to provide enough storage) */
     for (i=0; i<DIM; i++)
       in[i] = global[i];
+
     return((*(currBVP->GeneralBndCond))(NULL,NULL,in,value,type));
   }
+
+  if (local2lambda(ps,local,lambda))
+    return (1);
 
   /* besides parametric coordinates return also whether element lies left or right of boundary */
   lambda[DIM_OF_BND] = (SideIsCooriented(ps)) ? ELEM_IS_LEFT : ELEM_IS_RIGHT;
@@ -2770,34 +2910,19 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
   pp->patch_id = ps->patch_id;
   pp->n = 1;
 
-  if ((PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE) ||
-      (PATCH_TYPE(p) == LINEAR_PATCH_TYPE))
-      #ifdef __TWODIM__
-    pp->local[0][0]=(1.0-local[0])*ps->local[0][0]+local[0]*ps->local[1][0];
-      #endif
-      #ifdef __THREEDIM__
-    switch (ps->n)
-    {
-    case 3 :
-      pp->local[0][0] = (1.0-local[0]-local[1]) * ps->local[0][0]
-                        + local[0]*ps->local[1][0] + local[1]*ps->local[2][0];
-      pp->local[0][1] = (1.0-local[0]-local[1]) * ps->local[0][1]
-                        + local[0]*ps->local[1][1] + local[1]*ps->local[2][1];
-      break;
-    case 4 :
-      pp->local[0][0] = (1.0-local[0])*(1.0-local[1]) * ps->local[0][0]
-                        + local[0]*(1.0-local[1])*ps->local[1][0]
-                        + local[0]*local[1]*ps->local[2][0]
-                        + (1.0-local[0])*local[1]*ps->local[3][0];
-      pp->local[0][1] = (1.0-local[0])*(1.0-local[1]) * ps->local[0][1]
-                        + local[0]*(1.0-local[1])*ps->local[1][1]
-                        + local[0]*local[1]*ps->local[2][1]
-                        + (1.0-local[0])*local[1]*ps->local[3][1];
-      break;
-    }
-       #endif
-    else
-      return(NULL);
+  if (local2lambda(ps,local,pp->local[0]))
+    return (NULL);
+
+  if (!PATCH_IS_FIXED(p))
+  {
+    /* store global coordinates */
+    BND_DATA(pp) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
+    if (BND_DATA(pp)==NULL)
+      return (NULL);
+
+    if (FreeBNDS_Global(ps,pp->local[0],BND_DATA(pp)))
+      return (NULL);
+  }
 
   PRINTDEBUG(dom,1,(" BNDP s %d\n",pp->patch_id));
 
@@ -2812,8 +2937,7 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
 /****************************************************************************/
 /****************************************************************************/
 
-/* domain interface function: for description see domain.h */
-INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
+static INT BndPointGlobal (BNDP *aBndP, DOUBLE *global)
 {
   BND_PS *ps;
   PATCH *p,*s;
@@ -2894,6 +3018,26 @@ INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
 }
 
 /* domain interface function: for description see domain.h */
+INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
+{
+  BND_PS *ps;
+  DOUBLE *pos;
+  INT i;
+
+  ps = (BND_PS *)aBndP;
+  if (!PATCH_IS_FIXED(currBVP->patches[ps->patch_id]))
+  {
+    /* copy globals */
+    pos = (DOUBLE*) BND_DATA(ps);
+    for (i=0; i<DIM; i++)
+      global[i] = pos[i];
+    return (0);
+  }
+
+  return (BndPointGlobal(aBndP,global));
+}
+
+/* domain interface function: for description see domain.h */
 INT BNDP_BndPDesc (BNDP *theBndP, INT *move, INT *part)
 {
   BND_PS *ps;
@@ -2912,14 +3056,14 @@ INT BNDP_BndPDesc (BNDP *theBndP, INT *move, INT *part)
     if (STD_BVP_NDOMPART(currBVP)>1)
       *part = DPI_SG2P(DOMAIN_PARTINFO(STD_BVP_DOMAIN(currBVP)),
                        PATCH_ID(p)-STD_BVP_SIDEOFFSET(currBVP));                                                        /* <-- this expression yields the segment id */
-    *move = DIM_OF_BND;
+    *move = PATCH_IS_FREE(p) ? DIM : DIM_OF_BND;
     return(0);
 
   case POINT_PATCH_TYPE :
     if (STD_BVP_NDOMPART(currBVP)>1)
       *part = DPI_PT2P(DOMAIN_PARTINFO(STD_BVP_DOMAIN(currBVP)),
                        PATCH_ID(p));                                                                                                            /* <-- this expression yields the corner id */
-    *move = 0;
+    *move = PATCH_IS_FREE(p) ? DIM : 0;
     return(0);
 
 #               ifdef __THREEDIM__
@@ -2927,7 +3071,7 @@ INT BNDP_BndPDesc (BNDP *theBndP, INT *move, INT *part)
     if (STD_BVP_NDOMPART(currBVP)>1)
       *part = DPI_LN2P(DOMAIN_PARTINFO(STD_BVP_DOMAIN(currBVP)),
                        LINE_PATCH_C0(p),LINE_PATCH_C1(p));
-    *move = 1;
+    *move = PATCH_IS_FREE(p) ? DIM : 1;
     return(0);
 #               endif
   }
@@ -2992,7 +3136,7 @@ INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
 /* domain interface function: for description see domain.h */
 BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 {
-  BND_PS *bp[4],*bs;
+  BND_PS *bp[4],*bs,**pps;
   PATCH *p[4];
   DOUBLE *lambda[4];
   INT i,j,l,pid;
@@ -3088,6 +3232,18 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 
   PRINTDEBUG(dom,1,(" Create BNDS %x %d\n",bs,pid));
 
+  if (!PATCH_IS_FIXED(currBVP->patches[pid]))
+  {
+    /* store corner patch pointers */
+    BND_DATA(bs) = GetFreelistMemory(Heap,n*sizeof(BND_PS*));
+    if (BND_DATA(bs)==NULL)
+      return (NULL);
+
+    pps = (BND_PS**)BND_DATA(bs);
+    for (i=0; i<n; i++)
+      *(pps++) = bp[i];
+  }
+
   return((BNDS *)bs);
 }
 
@@ -3097,9 +3253,6 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
   BND_PS *bp0,*bp1,*bp;
   PATCH *p0,*p1;
   INT i,j,k,l,cnt;
-#       ifdef __THREEDIM__
-  PATCH *p;
-#       endif
 
   bp0 = (BND_PS *)aBndP0;
   bp1 = (BND_PS *)aBndP1;
@@ -3132,6 +3285,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
     #ifdef __THREEDIM__
   if (cnt > 1)
   {
+    PATCH *p;
     k = GetCommonLinePatchId (p0,p1);
     if ((k<currBVP->ncorners) || (k>=currBVP->sideoffset))
       return(NULL);
@@ -3164,6 +3318,16 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
                         LINE_PATCH_PID(p,l),l,
                         bp->local[l][0],bp->local[l][1]));
 
+    if (!PATCH_IS_FIXED(p))
+    {
+      /* store global coordinates */
+      BND_DATA(bp) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
+      if (BND_DATA(bp)==NULL)
+        return (NULL);
+
+      if (BndPointGlobal((BNDP *)bp,BND_DATA(bp)))
+        return (NULL);
+    }
     return((BNDP *)bp);
   }
     #endif
@@ -3181,9 +3345,41 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
         break;
       }
 
+  if (!PATCH_IS_FIXED(currBVP->patches[bp->patch_id]))
+  {
+    /* store global coordinates */
+    BND_DATA(bp) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
+    if (BND_DATA(bp)==NULL)
+      return (NULL);
+
+    if (BndPointGlobal((BNDP *)bp,BND_DATA(bp)))
+      return (NULL);
+  }
+
   return((BNDP *)bp);
 }
 
+/* domain interface function: for description see domain.h */
+INT BNDP_Move (BNDP *aBndP, DOUBLE global[])
+{
+  BND_PS *ps;
+  DOUBLE *pos;
+  INT i;
+
+  ps = (BND_PS *)aBndP;
+  if (PATCH_IS_FREE(currBVP->patches[ps->patch_id]))
+  {
+    /* copy globals */
+    pos = (DOUBLE*) BND_DATA(ps);
+    for (i=0; i<DIM; i++)
+      pos[i] = global[i];
+    return (0);
+  }
+
+  return (1);
+}
+
+/* domain interface function: for description see domain.h */
 INT BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size)
 {
   BND_PS *bp;
@@ -3281,8 +3477,19 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
   if (currBVP->GeneralBndCond != NULL)
   {
     type[0] = PATCH_ID(p) - currBVP->sideoffset;
+    if (PATCH_IS_FREE(p))
+    {
+      DOUBLE *pos=(DOUBLE*)BND_DATA(ps);
+
+      /* copy globals */
+      for (i=0; i<DIM; i++)
+        global[i] = pos[i];
+      return (0);
+    }
+    else
     if (PatchGlobal(p,local,global))
       return(1);
+
     if (in == NULL)
       return((*(currBVP->GeneralBndCond))(NULL,NULL,global,value,type));
     for (i=0; i<DIM; i++)
@@ -3307,6 +3514,9 @@ INT BNDP_Dispose (HEAP *Heap, BNDP *theBndP)
     return(0);
 
   ps = (BND_PS *)theBndP;
+  if (!PATCH_IS_FIXED(currBVP->patches[ps->patch_id]))
+    if (PutFreelistMemory(Heap,BND_DATA(ps),DIM*sizeof(DOUBLE)))
+      return (1);
   return(PutFreelistMemory(Heap,ps,BND_SIZE(ps)));
 }
 
@@ -3319,6 +3529,9 @@ INT BNDS_Dispose (HEAP *Heap, BNDS *theBndS)
     return(0);
 
   ps = (BND_PS *)theBndS;
+  if (!PATCH_IS_FIXED(currBVP->patches[ps->patch_id]))
+    if (PutFreelistMemory(Heap,BND_DATA(ps),BND_N(ps)*sizeof(BNDP*)))
+      return (1);
   return(PutFreelistMemory(Heap,ps,BND_SIZE(ps)));
 }
 
@@ -3376,6 +3589,16 @@ BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap)
     for (j=0; j<DIM-1; j++)
       bp->local[i][j] = dList[j];
   }
+  if (!PATCH_IS_FIXED(currBVP->patches[pid]))
+  {
+    /* store global coordinates */
+    BND_DATA(bp) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
+    if (BND_DATA(bp)==NULL)
+      return (NULL);
+
+    if (BndPointGlobal((BNDP *)bp,BND_DATA(bp)))
+      return (NULL);
+  }
 
   return((BNDP *)bp);
 }
@@ -3384,29 +3607,29 @@ INT ReadAndPrintArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
 {
   INT i;
   char option[OPTIONLEN];
-  float x,y,z;
+  float x[DIM];
 
   for (i=0; i<argc; i++)
     if (argv[i][0]==name[0])
     {
           #ifdef __TWODIM__
-      if (sscanf(argv[i],"%s %f %f",option,&x,&y) != 3)
+      if (sscanf(argv[i],"%s %f %f",option,x,x+1) != 3)
         continue;
           #endif
           #ifdef __THREEDIM__
-      if (sscanf(argv[i],"%s %f %f %f",option,&x,&y,&z) != 4)
+      if (sscanf(argv[i],"%s %f %f %f",option,x,x+1,x+2) != 4)
         continue;
           #endif
       if (strcmp(option,name) == 0)
       {
-        pos[0] = x;
-        pos[1] = y;
+        pos[0] = x[0];
+        pos[1] = x[1];
               #ifdef __TWODIM__
-        UserWriteF("set %s to (%f,%f)\n",name,x,y);
+        UserWriteF("set %s to (%f,%f)\n",name,x[0],x[1]);
               #endif
               #ifdef __THREEDIM__
-        pos[2] = z;
-        UserWriteF("set %s to (%f,%f)\n",name,x,y);
+        pos[2] = x[2];
+        UserWriteF("set %s to (%f,%f,%f)\n",name,x[0],x[1],x[2]);
               #endif
         return(0);
       }
