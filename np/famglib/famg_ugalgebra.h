@@ -51,11 +51,11 @@ extern "C"
 
 class FAMGugVectorEntryRef : public FAMGVectorEntryRef
 {
+public:
   friend class FAMGugVector;
   friend class FAMGugMatrix;
   friend class FAMGugVectorIter;
 
-public:
   FAMGugVectorEntryRef() : vp(NULL) {}
   FAMGugVectorEntryRef( VECTOR *vec ) : vp(vec) {}
 
@@ -92,13 +92,13 @@ private:
 
 class FAMGugGridVector : public FAMGGridVector
 {
+public:
   typedef class FAMGugVectorEntry VectorEntry;
   typedef class FAMGugVectorIter Iterator;
 
   friend class FAMGugVectorIter;
   friend class FAMGugVectorRevIter;
 
-public:
   FAMGugGridVector( GRID* grid) : mygrid(grid) {}
   //virtual ~FAMGugGridVector()	{};	// nothing to do
 
@@ -153,6 +153,7 @@ private:
 
 class FAMGugVector : public FAMGVector
 {
+public:
   typedef class FAMGugVectorEntry VectorEntry;
   typedef class FAMGugVectorIter Iterator;
   typedef class FAMGugVectorRevIter RevIterator;
@@ -160,7 +161,6 @@ class FAMGugVector : public FAMGVector
   friend class FAMGugVectorIter;
   friend class FAMGugVectorRevIter;
 
-public:
   FAMGugVector( const FAMGugGridVector & gridvec, VECDATA_DESC *vec_desc ) : FAMGVector(gridvec), mydesc(vec_desc) {
     allocatedVD=0; assert(VD_IS_SCALAR(vec_desc)); comp = VD_SCALCMP(vec_desc);
   }
@@ -320,12 +320,12 @@ private:
 
 class FAMGugMatrix : public FAMGMatrixAlg
 {
+public:
   typedef class FAMGugVector Vector;
   typedef class FAMGugGridVector GridVector;
   typedef class FAMGugMatrixEntry MatrixEntry;
   typedef class FAMGugMatrixIter Iterator;
 
-public:
   FAMGugMatrix( GRID *grid, MATDATA_DESC *md, int nrVec, int nrLink ) : FAMGMatrixAlg(nrVec,nrLink), mygrid(grid), matdesc(md), comp(MD_SCALCMP(md)) {
     assert(MD_IS_SCALAR(md));
   }

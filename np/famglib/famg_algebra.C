@@ -30,6 +30,11 @@
 $Header$
 */
 
+#ifdef __AIX__
+// xlC on AIX doesn't know the key word typename
+#define typename
+#endif
+
 void FAMGGridVector::MarkUnknowns(FAMGGraph *graph)
 {
 	FAMGVectorEntry ve;
@@ -467,4 +472,5 @@ int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg )
 			}
 		}
 	}
+	return 0;
 }
