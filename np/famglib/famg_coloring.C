@@ -111,7 +111,7 @@ int ConstructColoring( int OrderingFunctionType )
 //		Parallel Heuristics for Improved, Balanced Graph Colorings
 //		to appear in journal of Parallel and Distributed Computing
 {
-	int i, nbpe, res, j;	
+	int i, res, j;	
 	VChannelPtr NbCh[FAMGColorMaxNb];		// communication channels to the neighbor Pe's
 	VChannelPtr ch;
 	double MyWeight;						// weight of this Pe (see PLF algorithm); must be >= 0
