@@ -145,10 +145,19 @@ INT InitUg (int *argcp, char ***argvp)
   if (MakeStruct(":conf"))
     return(__LINE__);
   /* set variable for parallel modus */
-  if (SetStringValue("conf:parallel",0.0))
-    return(__LINE__);
         #ifdef ModelP
   if (SetStringValue("conf:parallel",1.0))
+    return(__LINE__);
+  if (SetStringValue("conf:procs",(DOUBLE)procs))
+    return(__LINE__);
+  if (SetStringValue("conf:me",(DOUBLE)me))
+    return(__LINE__);
+    #else
+  if (SetStringValue("conf:parallel",0.0))
+    return(__LINE__);
+  if (SetStringValue("conf:procs",1.0))
+    return(__LINE__);
+  if (SetStringValue("conf:me",0.0))
     return(__LINE__);
     #endif
 
