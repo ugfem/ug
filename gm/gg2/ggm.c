@@ -274,7 +274,7 @@ FRONTCOMP *CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, INT ncomp, NODE
   }
 
   /* get storage for ncomp FCs */
-  FChandle = (FRONTCOMP *) GetMem(theMG->theHeap,ncomp*sizeof(FRONTCOMP),FROM_BOTTOM);
+  FChandle = (FRONTCOMP *) GetFreelistMemory(theMG->theHeap,ncomp*sizeof(FRONTCOMP));
 
   if (FChandle==NULL)
     return (NULL);
