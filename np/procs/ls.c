@@ -338,7 +338,8 @@ static INT LinearSolverPreProcess (NP_LINEAR_SOLVER *theNP, INT level,
 {
   NP_LS *np;
 
-  np = (NP_LS *) theNP;   if (np->Iter->PreProcess != NULL)
+  np = (NP_LS *) theNP;
+  if (np->Iter->PreProcess != NULL)
     if ((*np->Iter->PreProcess)(np->Iter,level,x,b,A,baselevel,result))
       return(1);
   np->baselevel = MIN(*baselevel,level);

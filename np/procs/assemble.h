@@ -61,7 +61,6 @@ struct np_assemble {
 
   /* data (optinal, necessary for calling the generic execute routine)    */
   VECDATA_DESC *x;                       /* solution                        */
-  VECDATA_DESC *c;                       /* correction                      */
   VECDATA_DESC *b;                       /* defect                          */
   MATDATA_DESC *A;                       /* matrix                          */
 
@@ -72,26 +71,6 @@ struct np_assemble {
     VECDATA_DESC *,                              /* solution vector                 */
     VECDATA_DESC *,                              /* rhs vector                          */
     MATDATA_DESC *,                              /* matrix                                                      */
-    INT *);                                      /* result                          */
-  INT (*AssembleSolution)
-    (struct np_assemble *,                   /* pointer to (derived) object     */
-    INT,                                         /* level                           */
-    VECDATA_DESC *,                              /* solution vector                 */
-    INT *);                                      /* result                          */
-  INT (*AssembleDefect)
-    (struct np_assemble *,                   /* pointer to (derived) object     */
-    INT,                                         /* level                           */
-    VECDATA_DESC *,                              /* solution vector                 */
-    VECDATA_DESC *,                              /* defect vector                   */
-    MATDATA_DESC *,                              /* matrix                          */
-    INT *);                                      /* result                          */
-  INT (*AssembleMatrix)
-    (struct np_assemble *,                   /* pointer to (derived) object     */
-    INT,                                         /* level                           */
-    VECDATA_DESC *,                                          /* current solution	(initial)	*/
-    VECDATA_DESC *,                                          /* defect for current solution     */
-    VECDATA_DESC *,                                          /* correction to be computed               */
-    MATDATA_DESC *,                              /* matrix                          */
     INT *);                                      /* result                          */
   INT (*Assemble)
     (struct np_assemble *,                   /* pointer to (derived) object     */
@@ -114,13 +93,6 @@ typedef INT (*PreProcessAssembleProcPtr)                                    \
   (NP_ASSEMBLE *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
 typedef INT (*AssembleProcPtr)                                              \
   (NP_ASSEMBLE *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
-typedef INT (*AssembleSolutionProcPtr)                                      \
-  (NP_ASSEMBLE *, INT, VECDATA_DESC *, INT *);
-typedef INT (*AssembleDefectProcPtr)                                        \
-  (NP_ASSEMBLE *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
-typedef INT (*AssembleMatrixProcPtr)                                        \
-  (NP_ASSEMBLE *, INT, VECDATA_DESC *, VECDATA_DESC *, VECDATA_DESC *,       \
-  MATDATA_DESC *, INT *);
 typedef INT (*PostProcessAssembleProcPtr)                                   \
   (NP_ASSEMBLE *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
 

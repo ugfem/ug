@@ -119,7 +119,6 @@ INT NPAssembleInit (NP_BASE *theNP, INT argc , char **argv)
   np = (NP_ASSEMBLE *) theNP;
   np->A = ReadArgvMatDesc(np->base.mg,"A",argc,argv);
   np->x = ReadArgvVecDesc(np->base.mg,"x",argc,argv);
-  np->c = ReadArgvVecDesc(np->base.mg,"c",argc,argv);
   np->b = ReadArgvVecDesc(np->base.mg,"b",argc,argv);
 
   if ((np->A == NULL) || (np->b == NULL) || (np->x == NULL))
@@ -142,8 +141,6 @@ INT NPAssembleDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"b",ENVITEM_NAME(np->b));
   if (np->x != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(np->x));
-  if (np->c != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"c",ENVITEM_NAME(np->x));
   UserWrite("\n");
 
   return(0);
@@ -194,42 +191,6 @@ INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
-  if (ReadArgvOption("s",argc,argv)) {
-    if (np->AssembleSolution == NULL) {
-      PrintErrorMessage('E',"NPAssembleExecute","no AssembleSolution");
-      return (1);
-    }
-    if ((*np->AssembleSolution)(np,level,np->x,&result)) {
-      UserWriteF("NPAssembleExecute: AssembleSolution failed, error code %d\n",
-                 result);
-      return (1);
-    }
-  }
-
-  if (ReadArgvOption("d",argc,argv)) {
-    if (np->AssembleDefect == NULL) {
-      PrintErrorMessage('E',"NPAssembleExecute","no AssembleDefect");
-      return (1);
-    }
-    if ((*np->AssembleDefect)(np,level,np->x,np->b,np->A,&result)) {
-      UserWriteF("NPAssembleExecute: AssembleDefect failed, error code %d\n",
-                 result);
-      return (1);
-    }
-  }
-
-  if (ReadArgvOption("M",argc,argv)) {
-    if (np->AssembleMatrix == NULL) {
-      PrintErrorMessage('E',"NPAssembleExecute","no AssembleMatrix");
-      return (1);
-    }
-    if ((*np->AssembleMatrix)(np,level,np->x,np->b,np->c,np->A,&result)) {
-      UserWriteF("NPAssembleExecute: AssembleMatrix failed, error code %d\n",
-                 result);
-      return (1);
-    }
-  }
-
   if (ReadArgvOption("p",argc,argv)) {
     if (np->PostProcess == NULL) {
       PrintErrorMessage('E',"NPAssembleExecute","no PostProcess");
@@ -244,7 +205,6 @@ INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
 
   return(0);
 }
-
 
 /****************************************************************************/
 /*D
@@ -530,11 +490,6 @@ static INT Assemble (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
     }
     UserWrite("a]");
   }
-  if (theNP->AssembleSolution != NULL)
-    if ((*theNP->AssembleSolution)(theNP,level,x,result)) {
-      UserWriteF("(AssembleSolution failed, error code %d\n",result[0]);
-      return (1);
-    }
   if (np->PostMatrix != NULL)
     if ((*np->PostMatrix)(np,level,x,b,A,result)) {
       UserWriteF("(PostMatrix failed, error code %d\n",result[0]);
@@ -565,9 +520,6 @@ INT NPLocalAssembleConstruct (NP_ASSEMBLE *np)
 {
   np->PreProcess = AssemblePreProcess;
   np->Assemble = Assemble;
-  /* np->AssembleSolution  depends on the application */
-  np->AssembleDefect = NULL;       /* TODO  */
-  np->AssembleMatrix = NULL;       /* TODO */
   np->PostProcess = AssemblePostProcess;
 
   return(0);
