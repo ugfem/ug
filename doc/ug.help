@@ -885,3 +885,22 @@ clar             # clear array; set all entries to 0.0
 clar $n <name>
   $n <name> # name of the array structure
 
+-ptest > parallel
+ptest {$0|$1} # grid distribution (will replace later)
+$0            # transfer complete grid
+$1            # do load balancing
+
+-pstat > parallel
+pstat {$c|$i|$l|$s|$b}  # parallel status information
+$c                      # call ddd consistency check  
+$i                      # display ddd interfaces
+$s                      # show ddd status
+$l                      # show list of local objects
+$b                      # enter interactive debugger
+
+-context > parallel
+context {$a|$e|<n>}  # set context for plotting and printing
+$a                   # all processors
+$e                   # empty
+<n>                  # toggle processor n
+  
