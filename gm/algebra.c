@@ -693,7 +693,6 @@ static INT CreateVectorInPart (GRID *theGrid, INT DomPart, INT VectorObjType,
   SETVNCLASS(pv,0);
   SETVBUILDCON(pv,1);
   SETVNEW(pv,1);
-  SETVCNEW(pv,1);
   SETPRIO(pv,PrioMaster);
 
     #ifdef __BLOCK_VECTOR_DESC__
@@ -993,30 +992,26 @@ CONNECTION *CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to)
   if (pc==NULL) return (NULL);
 
   /* initialize data */
-  SETCEXTRA(pc,0);
   pm = CMATRIX0(pc);
-  CTRL(pm) = 0;
-  SETMTYPE(pm,MType);
+  SETOBJT(pm,MAOBJ);
   SETMROOTTYPE(pm,RootType);
   SETMDESTTYPE(pm,DestType);
   SETMDIAG(pm,Diag);
   SETMOFFSET(pm,0);
   SETMSIZE(pm,Size);
   SETMNEW(pm,1);
-  SETVCNEW(to,1);
   MDEST(pm) = to;
   if (!Diag)
   {
     pm = CMATRIX1(pc);
     CTRL(pm) = 0;
-    SETMTYPE(pm,MType);
+    SETOBJT(pm,MAOBJ);
     SETMROOTTYPE(pm,DestType);
     SETMDESTTYPE(pm,RootType);
     SETMDIAG(pm,Diag);
     SETMOFFSET(pm,1);
     SETMSIZE(pm,Size);
     SETMNEW(pm,1);
-    SETVCNEW(from,1);
     MDEST(pm) = from;
   }
 
@@ -2830,7 +2825,6 @@ INT PrepareAlgebraModification (MULTIGRID *theMG)
     for (theVector=FIRSTVECTOR(GRID_ON_LEVEL(theMG,k)); theVector!= NULL; theVector=SUCCVC(theVector))
     {
       SETVNEW(theVector,0);
-      SETVCNEW(theVector,0);
       for (theMatrix=VSTART(theVector); theMatrix!=NULL; theMatrix = MNEXT(theMatrix))
         SETMNEW(theMatrix,0);
     }
@@ -2838,7 +2832,6 @@ INT PrepareAlgebraModification (MULTIGRID *theMG)
 
   return (0);
 }
-
 
 /****************************************************************************/
 /*D
@@ -7052,8 +7045,7 @@ MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
   if (pm==NULL)
     return (NULL);
 
-  CTRL(pm) = 0;
-  SETMTYPE(pm,MType);
+  SETOBJT(pm,MAOBJ);
   SETMDIAG(pm,0);
   SETMROOTTYPE(pm,RootType);
   SETMDESTTYPE(pm,DestType);

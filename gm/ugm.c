@@ -1535,7 +1535,6 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
   NBNODE(link0) = to;
   NBNODE(link1) = from;
   SET_NO_OF_ELEM(pe,1);
-  SETTAG(pe,0);
   SETEDGENEW(pe,1);
   if (NSUBDOM(from) != NSUBDOM(to))
     SETEDSUBDOM(pe,0);

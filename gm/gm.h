@@ -28,7 +28,12 @@
 /*																			*/
 /* Remarks:                                                                                                                             */
 /*																			*/
+/*																			*/
 /****************************************************************************/
+
+/* RCS_ID
+   $Header$
+ */
 
 /****************************************************************************/
 /*																			*/
@@ -1122,7 +1127,7 @@ typedef struct {
 /* status of control entry */
 #define CE_FREE                                         0
 #define CE_USED                                         1
-#define CE_LOCKED                                       2
+#define CE_LOCKED                                       1
 
 /* initializer macros for control entry and word predefines */
 #define CW_INIT(used,cw,objs)                           {used, STR(cw), cw ## CW, cw ## OFFSET,objs}
@@ -1231,24 +1236,18 @@ enum GM_CE {
   VTYPE_CE,
   VOTYPE_CE,
   VPART_CE,
-  VCFLAG_CE,
-  VCUSED_CE,
   VCOUNT_CE,
   VECTORSIDE_CE,
   VCLASS_CE,
   VDATATYPE_CE,
   VNCLASS_CE,
   VNEW_CE,
-  VCNEW_CE,
-  VCNB_CE,
   VCCUT_CE,
   VCCOARSE_CE,
   MOFFSET_CE,
   MROOTTYPE_CE,
   MDESTTYPE_CE,
   MDIAG_CE,
-  MTYPE_CE,
-  MUSED_CE,
   MSIZE_CE,
   MNEW_CE,
   CEXTRA_CE,
@@ -1286,8 +1285,6 @@ enum GM_CE {
 #ifdef ModelP
   XFERVECTOR_CE,
   XFERMATX_CE,
-  XFERNODE_CE,
-  XFERLINK_CE,
 #endif
 
   GM_N_CE
@@ -1321,7 +1318,6 @@ enum GM_CE {
 /*							3: red or green elem							*/
 /* VNEW          |19	|*| | 1 if vector is new								*/
 /* VCNEW	 |20	|*| | 1 if vector has a new connection					*/
-/* VCNB		 |21-25	|*| |                                                                                                   */
 /* VCCUT	 |26	|*| |                                                                                                   */
 /* VTYPE	 |27-28 |*| | abstract vector type								*/
 /* VPART	 |29-30 |*| | domain part										*/
@@ -1368,82 +1364,68 @@ enum GM_CE {
 #define VOTYPE(p)                                       CW_READ_STATIC(p,VOTYPE_,VECTOR_)
 #define SETVOTYPE(p,n)                          CW_WRITE_STATIC(p,VOTYPE_,VECTOR_,n)
 
-#define VTYPE_SHIFT                             27
+#define VTYPE_SHIFT                             2
 #define VTYPE_LEN                                       2
 #define VTYPE(p)                                        CW_READ_STATIC(p,VTYPE_,VECTOR_)
 #define SETVTYPE(p,n)                           CW_WRITE_STATIC(p,VTYPE_,VECTOR_,n)
 
-#define VPART_SHIFT                             29
-#define VPART_LEN                                       2
-#define VPART(p)                                        CW_READ_STATIC(p,VPART_,VECTOR_)
-#define SETVPART(p,n)                           CW_WRITE_STATIC(p,VPART_,VECTOR_,n)
-
-#define VCFLAG_SHIFT                            3
-#define VCFLAG_LEN                                      1
-#define VCFLAG(p)                                       CW_READ_STATIC(p,VCFLAG_,VECTOR_)
-#define SETVCFLAG(p,n)                          CW_WRITE_STATIC(p,VCFLAG_,VECTOR_,n)
-
-#define VCUSED_SHIFT                            4
-#define VCUSED_LEN                                      1
-#define VCUSED(p)                                       CW_READ_STATIC(p,VCUSED_,VECTOR_)
-#define SETVCUSED(p,n)                          CW_WRITE_STATIC(p,VCUSED_,VECTOR_,n)
-
-#define VCOUNT_SHIFT                            5
-#define VCOUNT_LEN                                      2
-#define VCOUNT(p)                                       CW_READ_STATIC(p,VCOUNT_,VECTOR_)
-#define SETVCOUNT(p,n)                          CW_WRITE_STATIC(p,VCOUNT_,VECTOR_,n)
-
-#define VECTORSIDE_SHIFT                        7
-#define VECTORSIDE_LEN                          3
-#define VECTORSIDE(p)                           CW_READ_STATIC(p,VECTORSIDE_,VECTOR_)
-#define SETVECTORSIDE(p,n)                      CW_WRITE_STATIC(p,VECTORSIDE_,VECTOR_,n)
-
-#define VCLASS_SHIFT                            11
-#define VCLASS_LEN                                      2
-#define VCLASS(p)                                       CW_READ_STATIC(p,VCLASS_,VECTOR_)
-#define SETVCLASS(p,n)                          CW_WRITE_STATIC(p,VCLASS_,VECTOR_,n)
-
-#define VDATATYPE_SHIFT                         13
+#define VDATATYPE_SHIFT                         4
 #define VDATATYPE_LEN                           4
 #define VDATATYPE(p)                            CW_READ_STATIC(p,VDATATYPE_,VECTOR_)
 #define SETVDATATYPE(p,n)                       CW_WRITE_STATIC(p,VDATATYPE_,VECTOR_,n)
 
-#define VNCLASS_SHIFT                           17
+#define VCLASS_SHIFT                            8
+#define VCLASS_LEN                                      2
+#define VCLASS(p)                                       CW_READ_STATIC(p,VCLASS_,VECTOR_)
+#define SETVCLASS(p,n)                          CW_WRITE_STATIC(p,VCLASS_,VECTOR_,n)
+
+#define VNCLASS_SHIFT                           10
 #define VNCLASS_LEN                             2
 #define VNCLASS(p)                                      CW_READ_STATIC(p,VNCLASS_,VECTOR_)
 #define SETVNCLASS(p,n)                         CW_WRITE_STATIC(p,VNCLASS_,VECTOR_,n)
 
-#define VNEW_SHIFT                                      19
+#define VNEW_SHIFT                                      12
 #define VNEW_LEN                                        1
 #define VNEW(p)                                         CW_READ_STATIC(p,VNEW_,VECTOR_)
 #define SETVNEW(p,n)                            CW_WRITE_STATIC(p,VNEW_,VECTOR_,n)
 
-#define VCNEW_SHIFT                             20
-#define VCNEW_LEN                                       1
-#define VCNEW(p)                                        CW_READ_STATIC(p,VCNEW_,VECTOR_)
-#define SETVCNEW(p,n)                           CW_WRITE_STATIC(p,VCNEW_,VECTOR_,n)
-
-#define VCNB_SHIFT                                      21
-#define VCNB_LEN                                        5
-#define VCNB(p)                                         CW_READ_STATIC(p,VCNB_,VECTOR_)
-#define SETVCNB(p,n)                            CW_WRITE_STATIC(p,VCNB_,VECTOR_,n)
-
-#define VCCUT_SHIFT                             26
+#define VCCUT_SHIFT                             13
 #define VCCUT_LEN                                       1
 #define VCCUT(p)                                        CW_READ_STATIC(p,VCCUT_,VECTOR_)
 #define SETVCCUT(p,n)                           CW_WRITE_STATIC(p,VCCUT_,VECTOR_,n)
 
-#define VCCOARSE_SHIFT                          31
+#define VCOUNT_SHIFT                            14
+#define VCOUNT_LEN                                      2
+#define VCOUNT(p)                                       CW_READ_STATIC(p,VCOUNT_,VECTOR_)
+#define SETVCOUNT(p,n)                          CW_WRITE_STATIC(p,VCOUNT_,VECTOR_,n)
+
+#define VECTORSIDE_SHIFT                        16
+#define VECTORSIDE_LEN                          3
+#define VECTORSIDE(p)                           CW_READ_STATIC(p,VECTORSIDE_,VECTOR_)
+#define SETVECTORSIDE(p,n)                      CW_WRITE_STATIC(p,VECTORSIDE_,VECTOR_,n)
+
+#define VCCOARSE_SHIFT                          19
 #define VCCOARSE_LEN                            1
 #define VCCOARSE(p)                                     CW_READ_STATIC(p,VCCOARSE_,VECTOR_)
 #define SETVCCOARSE(p,n)                        CW_WRITE_STATIC(p,VCCOARSE_,VECTOR_,n)
 
 #ifdef ModelP
-#define XFERVECTOR_SHIFT                        21
+#define XFERVECTOR_SHIFT                        20
 #define XFERVECTOR_LEN                          2
 #define XFERVECTOR(p)                           CW_READ(p,XFERVECTOR_CE)
 #define SETXFERVECTOR(p,n)                      CW_WRITE(p,XFERVECTOR_CE,n)
 #endif /* ModelP */
+
+#define VPART_SHIFT                             22
+#define VPART_LEN                                       2
+#define VPART(p)                                        CW_READ_STATIC(p,VPART_,VECTOR_)
+#define SETVPART(p,n)                           CW_WRITE_STATIC(p,VPART_,VECTOR_,n)
+
+#define VCFLAG(p)                                       THEFLAG(p)
+#define SETVCFLAG(p,n)                          SETTHEFLAG(p,n)
+
+#define VCUSED(p)                                       USED(p)
+#define SETVCUSED(p,n)                          SETUSED(p,n)
 
 #define VOBJECT(v)                                      ((v)->object)
 #ifdef ModelP
@@ -1517,54 +1499,43 @@ enum GM_CE {
 #define MDIAG(p)                                        CW_READ_STATIC(p,MDIAG_,MATRIX_)
 #define SETMDIAG(p,n)                           CW_WRITE_STATIC(p,MDIAG_,MATRIX_,n)
 
-#define MTYPE_SHIFT                             6
-#define MTYPE_LEN                                       6
-#define MTYPE(p)                                        CW_READ_STATIC(p,MTYPE_,MATRIX_)
-#define SETMTYPE(p,n)                           CW_WRITE_STATIC(p,MTYPE_,MATRIX_,n)
-
-#define MUSED_SHIFT                             12
-#define MUSED_LEN                                       1
-#define MUSED(p)                                        CW_READ_STATIC(p,MUSED_,MATRIX_)
-#define SETMUSED(p,n)                           CW_WRITE_STATIC(p,MUSED_,MATRIX_,n)
-
-#ifndef ModelP
-#define MSIZE_SHIFT                             13
-#define MSIZE_LEN                                       15
-#define MSIZEMAX                                        (POW2(MSIZE_LEN)-1)
-#define MSIZE(p)                                        CW_READ(p,MSIZE_CE)
-#define SETMSIZE(p,n)                           CW_WRITE(p,MSIZE_CE,n)
-#else /* NOT ModelP */
-#define MSIZE_SHIFT                             13
-#define MSIZE_LEN                                       13
-#define MSIZEMAX                                        (POW2(MSIZE_LEN)-1)
-#define MSIZE(p)                                        CW_READ(p,MSIZE_CE)
-#define SETMSIZE(p,n)                           CW_WRITE(p,MSIZE_CE,n)
-
-#define XFERMATX_SHIFT                          26
-#define XFERMATX_LEN                            2
-#define XFERMATX(p)                             CW_READ(p,XFERMATX_CE)
-#define SETXFERMATX(p,n)                        CW_WRITE(p,XFERMATX_CE,n)
-#endif /* NOT ModelP */
-
-#define MNEW_SHIFT                                      28
+#define MNEW_SHIFT                                      6
 #define MNEW_LEN                                        1
 #define MNEW(p)                                         CW_READ_STATIC(p,MNEW_,MATRIX_)
 #define SETMNEW(p,n)                            CW_WRITE_STATIC(p,MNEW_,MATRIX_,n)
 
-#define CEXTRA_SHIFT                            29
+#define CEXTRA_SHIFT                            7
 #define CEXTRA_LEN                                      1
 #define CEXTRA(p)                                       CW_READ_STATIC(p,CEXTRA_,MATRIX_)
 #define SETCEXTRA(p,n)                          CW_WRITE_STATIC(p,CEXTRA_,MATRIX_,n)
 
-#define MDOWN_SHIFT                             30
+#define MDOWN_SHIFT                             8
 #define MDOWN_LEN                                       1
 #define MDOWN(p)                                        CW_READ_STATIC(p,MDOWN_,MATRIX_)
 #define SETMDOWN(p,n)                           CW_WRITE_STATIC(p,MDOWN_,MATRIX_,n)
 
-#define MUP_SHIFT                                       31
+#define MUP_SHIFT                                       9
 #define MUP_LEN                                         1
 #define MUP(p)                                          CW_READ_STATIC(p,MUP_,MATRIX_)
 #define SETMUP(p,n)                             CW_WRITE_STATIC(p,MUP_,MATRIX_,n)
+
+#define MSIZE_SHIFT                             10
+#define MSIZE_LEN                                       15
+#define MSIZEMAX                                        (POW2(MSIZE_LEN)-1)
+#define MSIZE(p)                                        (CW_READ(p,MSIZE_CE)+sizeof(MATRIX)-sizeof(DOUBLE))
+#define SETMSIZE(p,n)                           CW_WRITE(p,MSIZE_CE,(n-sizeof(MATRIX)+sizeof(DOUBLE)))
+
+#define MTYPE(p)                                        (MatrixType[MROOTTYPE(p)][MDESTTYPE(p)])
+
+#define MUSED(p)                                        USED(p)
+#define SETMUSED(p,n)               SETUSED(p,n)
+
+#ifdef ModelP
+#define XFERMATX_SHIFT                          25
+#define XFERMATX_LEN                            2
+#define XFERMATX(p)                             CW_READ(p,XFERMATX_CE)
+#define SETXFERMATX(p,n)                        CW_WRITE(p,XFERMATX_CE,n)
+#endif
 
 #define MINC(m)                                         ((MATRIX*)(((char *)(m))+MSIZE(m)))
 #define MDEC(m)                                         ((MATRIX*)(((char *)(m))-MSIZE(m)))
@@ -1677,14 +1648,15 @@ enum GM_CE {
 /*																			*/
 /* Use of the control word:                                                                                             */
 /*																			*/
-/* macro name|bits	|V|N|L|E|G|M|use										*/
-/*																			*/
+/* macro name|bits	|V|N|L|E|V|M|  use										*/
+/*							 C											*/
 /* all objects:                                                                                                                         */
-/* OBJT          |27-31 |*|*|*|*|*|*|object type identification                                 */
-/* TAG		 |24-26 |*|*|*|*|*|*|general purpose tag field					*/
-/* USED          |23	|*|*|*|*|*|*|object visited, leave them as you found 'em*/
-/* LEVEL	 |17-22 |*|*| |*| | |level of a node/element (imp. for copies)	*/
-/* THEFLAG	 |16	|*|*|*|*|*|*|general purp.,  leave them as you found 'em*/
+/* TAG		 |18-20 | | | |*| | |general purpose tag field					*/
+/* LEVEL	 |21-25 |*|*| |*| | |level of a node/element (imp. for copies)	*/
+/* THEFLAG	 |26	|*|*|*|*| | |general purp.,  leave them as you found 'em*/
+/* USED          |27	|*|*|*|*| | |object visited, leave them as you found 'em*/
+/* OBJT          |28-31 |*|*|*|*| | |object type identification                                 */
+
 /*																			*/
 /* vertices:																*/
 /* MOVED	 |0     |*| | | | | |boundary vertex not lying on edge midpoint */
@@ -1705,7 +1677,7 @@ enum GM_CE {
 /* EDGENEW	 |1     | | |*| | | |status of edge								*/
 /* NOOFELEM  |2-8	| | |*| | | |nb. of elem. the edge is part of			*/
 /* AUXEDGE	 |9		|														*/
-/* EDSUBDOM  |12-15 | | | |*| | |subdomain of edge if inner edge, 0 else	*/
+/* EDSUBDOM  |12-17 | | | |*| | |subdomain of edge if inner edge, 0 else	*/
 /*																			*/
 /* elements:																*/
 /* ECLASS	 |8-9	| | | |*| | |element class from enumeration type		*/
@@ -1720,11 +1692,7 @@ enum GM_CE {
 /* object identification */
 enum GM_OBJECTS {
 
-  MGOBJ=0,                                              /* multigrid object					*/
-  /* CAUTION: OBJT not set for MG!	*/
-  /* BUT: OBJT macro will read from	*/
-  /* higher bits of the ENVDIR comp	*/
-  /* type and will return 0==MGOBJ	*/
+  MGOBJ,                                                /* multigrid object	                        */
   IVOBJ,                                                /* inner vertex                                         */
   BVOBJ,                                                /* boundary vertex					*/
   IEOBJ,                                                /* inner element					*/
@@ -1736,14 +1704,14 @@ enum GM_OBJECTS {
   /* object numbers for algebra */
   VEOBJ,                                                /* vector object					*/
   MAOBJ,                                                /* matrix object					*/
-  COOBJ,                                        /* connection object	                */
   BLOCKVOBJ,                        /* blockvector object               */
 
   NPREDEFOBJ,                                           /* no of predefined objects             */
 
   NOOBJ = -1
 };
-#define LIOBJ           EDOBJ           /* link and edge are identified		*/
+#define LIOBJ           EDOBJ           /* link and edge are identified		        */
+#define COOBJ           MAOBJ           /* connection and matrix are identified		*/
 
 /****************************************************************************/
 /*																			*/
@@ -1755,31 +1723,31 @@ enum GM_OBJECTS {
 #define GENERAL_CW                                      NODE_CW         /* any of the geom objects	*/
 #define GENERAL_OFFSET                          0
 
-#define OBJ_SHIFT                                       27
-#define OBJ_LEN                                         5
+#define OBJ_SHIFT                                       28
+#define OBJ_LEN                                         4
 #define OBJT(p)                                         CW_READ_STATIC(p,OBJ_,GENERAL_)
 #define SETOBJT(p,n)                            CW_WRITE_STATIC(p,OBJ_,GENERAL_,n)
 #define OBJT_MAX                                        (POW2(OBJ_LEN)-1)
 
-#define USED_SHIFT                                      23
+#define USED_SHIFT                                      27
 #define USED_LEN                                        1
 #define USED(p)                                         CW_READ_STATIC(p,USED_,GENERAL_)
 #define SETUSED(p,n)                            CW_WRITE_STATIC(p,USED_,GENERAL_,n)
 
-#define TAG_SHIFT                                       24
-#define TAG_LEN                                         3
-#define TAG(p)                                          CW_READ_STATIC(p,TAG_,GENERAL_)
-#define SETTAG(p,n)                             CW_WRITE_STATIC(p,TAG_,GENERAL_,n)
+#define THEFLAG_SHIFT                           26
+#define THEFLAG_LEN                             1
+#define THEFLAG(p)                                      CW_READ_STATIC(p,THEFLAG_,GENERAL_)
+#define SETTHEFLAG(p,n)                         CW_WRITE_STATIC(p,THEFLAG_,GENERAL_,n)
 
-#define LEVEL_SHIFT                             17
+#define LEVEL_SHIFT                             21
 #define LEVEL_LEN                                       5
 #define LEVEL(p)                                        CW_READ_STATIC(p,LEVEL_,GENERAL_)
 #define SETLEVEL(p,n)                           CW_WRITE_STATIC(p,LEVEL_,GENERAL_,n)
 
-#define THEFLAG_SHIFT                           16
-#define THEFLAG_LEN                             1
-#define THEFLAG(p)                                      CW_READ_STATIC(p,THEFLAG_,GENERAL_)
-#define SETTHEFLAG(p,n)                         CW_WRITE_STATIC(p,THEFLAG_,GENERAL_,n)
+#define TAG_SHIFT                                       18
+#define TAG_LEN                                         3
+#define TAG(p)                                          CW_READ_STATIC(p,TAG_,GENERAL_)
+#define SETTAG(p,n)                             CW_WRITE_STATIC(p,TAG_,GENERAL_,n)
 
 /* use this to allocate space for general flags in all control words */
 /* of geometric objects                                                                                          */
@@ -1875,13 +1843,6 @@ enum GM_OBJECTS {
 #define NSUBDOM(p)                                      CW_READ_STATIC(p,NSUBDOM_,NODE_)
 #define SETNSUBDOM(p,n)                         CW_WRITE_STATIC(p,NSUBDOM_,NODE_,n)
 
-#ifdef ModelP
-#define XFERNODE_SHIFT                          9
-#define XFERNODE_LEN                            2
-#define XFERNODE(p)                             CW_READ_STATIC(p,XFERNODE_,NODE_)
-#define SETXFERNODE(p,n)                        CW_WRITE_STATIC(p,XFERNODE_,NODE_,n)
-#endif /* ModelP */
-
 #define NPROP_SHIFT                 11
 #define NPROP_LEN                   4
 #define NPROP(p)                    CW_READ_STATIC(p,NPROP_,NODE_)
@@ -1932,13 +1893,6 @@ enum GM_OBJECTS {
 #define LOFFSET(p)                                      CW_READ(p,LOFFSET_CE)
 #define SETLOFFSET(p,n)                         CW_WRITE(p,LOFFSET_CE,n)
 
-#ifdef ModelP
-#define XFERLINK_SHIFT                          10
-#define XFERLINK_LEN                            2
-#define XFERLINK(p)                             CW_READ(p,XFERLINK_CE)
-#define SETXFERLINK(p,n)                        CW_WRITE(p,XFERLINK_CE,n)
-#endif /* ModelP */
-
 #define NBNODE(p)       (p)->nbnode
 #define NEXT(p)         (p)->next
 #define LDATA(p)        (p)->matelem
@@ -1976,7 +1930,7 @@ enum GM_OBJECTS {
 
 /* boundary edges will be indicated by a subdomain id of 0 */
 #define EDSUBDOM_SHIFT                          12
-#define EDSUBDOM_LEN                            4
+#define EDSUBDOM_LEN                            6
 #define EDSUBDOM(p)                                     CW_READ(p,EDSUBDOM_CE)
 #define SETEDSUBDOM(p,n)                        CW_WRITE(p,EDSUBDOM_CE,n)
 
@@ -2016,7 +1970,7 @@ enum GM_OBJECTS {
 #define NSONS(p)                                                CW_READ(p,NSONS_CE)
 #define SETNSONS(p,n)                                   CW_WRITE(p,NSONS_CE,n)
 
-#define NEWEL_SHIFT                                     15
+#define NEWEL_SHIFT                                     17
 #define NEWEL_LEN                                               1
 #define NEWEL(p)                                                CW_READ(p,NEWEL_CE)
 #define SETNEWEL(p,n)                                   CW_WRITE(p,NEWEL_CE,n)

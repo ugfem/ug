@@ -47,7 +47,7 @@
 /****************************************************************************/
 
 #define CW_EDOBJ                (BITWISE_TYPE(EDOBJ) | BITWISE_TYPE(LIOBJ))
-/* take both matrix and connection in one	*/
+/* take both edges and links in one	        */
 #define CW_GROBJ                BITWISE_TYPE(GROBJ)
 #define CW_MGOBJ                BITWISE_TYPE(MGOBJ)
 #define CW_NDOBJ                BITWISE_TYPE(NDOBJ)
@@ -135,16 +135,12 @@ static CONTROL_WORD_PREDEF cw_predefines[MAX_CONTROL_WORDS] = {
 
 static CONTROL_ENTRY_PREDEF ce_predefines[MAX_CONTROL_ENTRIES] = {
   CE_INIT(CE_LOCKED,      VECTOR_,                VOTYPE_,                CW_VEOBJ),
-  CE_INIT(CE_LOCKED,      VECTOR_,                VCFLAG_,                CW_VEOBJ),
-  CE_INIT(CE_LOCKED,      VECTOR_,                VCUSED_,                CW_VEOBJ),
   CE_INIT(CE_LOCKED,      VECTOR_,                VCOUNT_,                CW_VEOBJ),
   CE_INIT(CE_LOCKED,      VECTOR_,                VECTORSIDE_,    CW_VEOBJ),
   CE_INIT(CE_LOCKED,      VECTOR_,                VCLASS_,                CW_VEOBJ),
   CE_INIT(CE_LOCKED,      VECTOR_,                VDATATYPE_,             CW_VEOBJ),
   CE_INIT(CE_LOCKED,      VECTOR_,                VNCLASS_,               CW_VEOBJ),
   CE_INIT(CE_LOCKED,      VECTOR_,                VNEW_,                  CW_VEOBJ),
-  CE_INIT(CE_LOCKED,      VECTOR_,                VCNEW_,                 CW_VEOBJ),
-  CE_INIT(CE_LOCKED,      VECTOR_,                VCNB_,                  CW_VEOBJ),
   CE_INIT(CE_LOCKED,      VECTOR_,                VCCUT_,                 CW_VEOBJ),
   CE_INIT(CE_LOCKED,      VECTOR_,                VTYPE_,                 CW_VEOBJ),
   CE_INIT(CE_LOCKED,      VECTOR_,                VPART_,                 CW_VEOBJ),
@@ -154,8 +150,6 @@ static CONTROL_ENTRY_PREDEF ce_predefines[MAX_CONTROL_ENTRIES] = {
   CE_INIT(CE_LOCKED,      MATRIX_,                MROOTTYPE_,             CW_MAOBJ),
   CE_INIT(CE_LOCKED,      MATRIX_,                MDESTTYPE_,             CW_MAOBJ),
   CE_INIT(CE_LOCKED,      MATRIX_,                MDIAG_,                 CW_MAOBJ),
-  CE_INIT(CE_LOCKED,      MATRIX_,                MTYPE_,                 CW_MAOBJ),
-  CE_INIT(CE_LOCKED,      MATRIX_,                MUSED_,                 CW_MAOBJ),
   CE_INIT(CE_LOCKED,      MATRIX_,                MSIZE_,                 CW_MAOBJ),
   CE_INIT(CE_LOCKED,      MATRIX_,                MNEW_,                  CW_MAOBJ),
   CE_INIT(CE_LOCKED,      MATRIX_,                CEXTRA_,                CW_MAOBJ),
@@ -166,11 +160,10 @@ static CONTROL_ENTRY_PREDEF ce_predefines[MAX_CONTROL_ENTRIES] = {
   CE_INIT(CE_USED,        BLOCKVECTOR_,   BVLEVEL_,               CW_BVOBJ),
   CE_INIT(CE_USED,        BLOCKVECTOR_,   BVTVTYPE_,              CW_BVOBJ),
 
-  CE_INIT(CE_LOCKED,      GENERAL_,               OBJ_,                   CW_GEOMOBJS),
-  CE_INIT(CE_LOCKED,      GENERAL_,               USED_,                  CW_GEOMOBJS),
-  CE_INIT(CE_LOCKED,      GENERAL_,               TAG_,                   CW_GEOMOBJS),
+  CE_INIT(CE_LOCKED,      GENERAL_,               OBJ_,                   (CW_GEOMOBJS | CW_VEOBJ | CW_MAOBJ)),
+  CE_INIT(CE_LOCKED,      GENERAL_,               USED_,                  (CW_GEOMOBJS | CW_VEOBJ | CW_MAOBJ)),
+  CE_INIT(CE_LOCKED,      GENERAL_,               THEFLAG_,               (CW_GEOMOBJS | CW_VEOBJ)),
   CE_INIT(CE_LOCKED,      GENERAL_,               LEVEL_,                 CW_GEOMOBJS),
-  CE_INIT(CE_LOCKED,      GENERAL_,               THEFLAG_,               CW_GEOMOBJS),
 
   CE_INIT(CE_LOCKED,      VERTEX_,                MOVE_,                  CW_VXOBJS),
   CE_INIT(CE_LOCKED,      VERTEX_,                MOVED_,                 CW_VXOBJS),
@@ -198,6 +191,7 @@ static CONTROL_ENTRY_PREDEF ce_predefines[MAX_CONTROL_ENTRIES] = {
   CE_INIT(CE_USED,        ELEMENT_,               NSONS_,                 CW_ELOBJS),
   CE_INIT(CE_USED,        ELEMENT_,               REFINECLASS_,   CW_ELOBJS),
   CE_INIT(CE_USED,        ELEMENT_,               NEWEL_,                 CW_ELOBJS),
+  CE_INIT(CE_USED,        ELEMENT_,               TAG_,                   CW_ELOBJS),
 
   CE_INIT(CE_USED,        FLAG_,                  MARK_,                  CW_ELOBJS),
   CE_INIT(CE_USED,        FLAG_,                  COARSEN_,               CW_ELOBJS),
@@ -212,8 +206,6 @@ static CONTROL_ENTRY_PREDEF ce_predefines[MAX_CONTROL_ENTRIES] = {
   CE_INIT(CE_USED,        PROPERTY_,              PROP_,                  CW_ELOBJS),
 
         #ifdef ModelP
-  CE_INIT(CE_USED,        LINK_,                  XFERLINK_,              CW_EDOBJ),
-  CE_INIT(CE_USED,        NODE_,                  XFERNODE_,              CW_NDOBJ),
   CE_INIT(CE_USED,        VECTOR_,                XFERVECTOR_,    CW_VEOBJ),
   CE_INIT(CE_USED,        MATRIX_,                XFERMATX_,              CW_MAOBJ),
         #else /* ModelP */
@@ -502,7 +494,7 @@ static void ListAllCWsOfObjectType (INT objt)
     if (min==MAX_I)
       break;
 
-    printf("cw %-20s with offset in object %3d (unsigend INTs):\n",control_words[cw].name,min);
+    printf("cw %-20s with offset in object %3d (unsigned INTs):\n",control_words[cw].name,min);
     ListCWofObjectType(objt,min);
     sub = min;
     last_cw = cw;
@@ -562,7 +554,11 @@ static INT InitPredefinedControlWords (void)
       cw->objt_used = pcw->objt_used;
     }
 
-  ASSERT(nused==GM_N_CW);
+  if (nused!=GM_N_CW)
+  {
+    printf("InitPredefinedControlWords: nused=%d != GM_N_CW=%d\n",nused,GM_N_CW);
+    assert(FALSE);
+  }
 
   return (GM_OK);
 }
@@ -625,6 +621,9 @@ static INT InitPredefinedControlEntries (void)
       ce->mask = (POW2(ce->length)-1)<<ce->offset_in_word;
       ce->xor_mask = ~ce->mask;
 
+      PRINTDEBUG(gm,1,("ceID %d used %d name %s cw %d\n",
+                       i,ce->used,ce->name,ce->control_word));
+
       ASSERT(ce->objt_used & cw->objt_used);                                    /* ce and cw have! common objects */
 
       /* set mask in all cws that use some of the ces objects and have the same offset than cw */
@@ -665,15 +664,17 @@ static INT InitPredefinedControlEntries (void)
     }
 
   IFDEBUG(gm,1)
-  ListAllCWsOfObjectType(IVOBJ);
-  ListAllCWsOfObjectType(IEOBJ);
-  ListAllCWsOfObjectType(EDOBJ);
-  ListAllCWsOfObjectType(NDOBJ);
-  ListAllCWsOfObjectType(VEOBJ);
-  ListAllCWsOfObjectType(MAOBJ);
-  ListAllCWsOfObjectType(BLOCKVOBJ);
-  ListAllCWsOfObjectType(GROBJ);
-  ListAllCWsOfObjectType(MGOBJ);
+  if (me == master) {
+    ListAllCWsOfObjectType(IVOBJ);
+    ListAllCWsOfObjectType(IEOBJ);
+    ListAllCWsOfObjectType(EDOBJ);
+    ListAllCWsOfObjectType(NDOBJ);
+    ListAllCWsOfObjectType(VEOBJ);
+    ListAllCWsOfObjectType(MAOBJ);
+    ListAllCWsOfObjectType(BLOCKVOBJ);
+    ListAllCWsOfObjectType(GROBJ);
+    ListAllCWsOfObjectType(MGOBJ);
+  }
   ENDDEBUG
 
   /* TODO: enable next lines for error control */
@@ -682,7 +683,11 @@ static INT InitPredefinedControlEntries (void)
     return (__LINE__);
   ENDDEBUG
 
-  ASSERT(nused==REFINE_N_CE);
+  if (nused!=REFINE_N_CE)
+  {
+    printf("InitPredefinedControlEntries: nused=%d != REFINE_N_CE=%d\n",nused,REFINE_N_CE);
+    assert(FALSE);
+  }
 
   return (GM_OK);
 }
@@ -794,20 +799,27 @@ unsigned INT ReadCW (const void *obj, INT ceID)
 
   ASSERT(obj!=NULL);
   HEAPFAULT(obj);
-  ASSERT(ceID>=0);
-  ASSERT(ceID<MAX_CONTROL_ENTRIES);
+  if ((ceID<0) || (ceID>=MAX_CONTROL_ENTRIES))
+  {
+    printf("ReadCW: ceID=%d out of range\n",ceID);
+    assert(FALSE);
+  }
 
   ce_usage[ceID].read++;
 
   ce = control_entries+ceID;
 
-  ASSERT(ce->used);
-
-  if (ce->objt_used & CW_GEOMOBJS)
+  if (!ce->used)
   {
-    cw_objt = BITWISE_TYPE(OBJT(obj));
+    printf("ReadCW: ceID=%d unused\n",ceID);
+    assert(FALSE);
+  }
 
-    ASSERT(cw_objt & ce->objt_used);
+  cw_objt = BITWISE_TYPE(OBJT(obj));
+  if (!(cw_objt & ce->objt_used))
+  {
+    printf("ReadCW: invalid objt %d for ce %s\n",OBJT(obj),ce->name);
+    assert(FALSE);
   }
 
   off_in_wrd = ce->offset_in_word;
@@ -816,9 +828,6 @@ unsigned INT ReadCW (const void *obj, INT ceID)
   cw = ((unsigned INT *)(obj))[off_in_obj];
   i = cw & mask;
   i = i>>off_in_wrd;
-
-  /* the next statement is just to keep variable contents despite optimization
-     printf("", ce,off_in_obj,mask,i,off_in_wrd,cw);*/
 
   return (i);
 }
@@ -864,24 +873,37 @@ void WriteCW (void *obj, INT ceID, INT n)
 
   ASSERT(obj!=NULL);
   HEAPFAULT(obj);
-  ASSERT(ceID>=0);
-  ASSERT(ceID<MAX_CONTROL_ENTRIES);
+  if ((ceID<0) || (ceID>=MAX_CONTROL_ENTRIES))
+  {
+    printf("WriteCW: ceID=%d out of range\n",ceID);
+    assert(FALSE);
+  }
 
   ce_usage[ceID].write++;
 
   ce = control_entries+ceID;
 
-  ASSERT(ce->used);
+  if (!ce->used)
+  {
+    printf("WriteCW: ceID=%d unused\n",ceID);
+    assert(FALSE);
+  }
 
   cw_objt = BITWISE_TYPE(OBJT(obj));
 
-  if (ce->objt_used & CW_GEOMOBJS)
+  /* special: SETOBJT cannot be checked */
+  if (cw_objt==BITWISE_TYPE(0))
   {
-    /* special: SETOBJT cannot be checked */
-    if (cw_objt==BITWISE_TYPE(0))
-      ASSERT(ceID==OBJ_CE);
-    else
-      ASSERT(cw_objt & ce->objt_used);
+    if (ceID!=OBJ_CE)
+    {
+      printf("WriteCW: objt 0 but no SETOBJT access\n");
+      assert(FALSE);
+    }
+  }
+  else if (!(cw_objt & ce->objt_used))
+  {
+    printf("WriteCW: invalid objt %d for ce %s\n",OBJT(obj),ce->name);
+    assert(FALSE);
   }
 
   off_in_wrd = ce->offset_in_word;
@@ -892,14 +914,16 @@ void WriteCW (void *obj, INT ceID, INT n)
   i = (*pcw) & xmsk;
   j = n<<off_in_wrd;
 
-  ASSERT(j<=mask);
+  if (j>mask)
+  {
+    printf("WriteCW: value=%d exceeds max=%d for %d\n",
+           n,POW2(ce->length)-1,ce->name);
+    assert(FALSE);
+  }
 
   j = j & mask;
 
   *pcw = i | j;
-
-  /* the next statement is just to keep variable contents despite optimization
-     printf("", ce,off_in_obj,mask,i,j,off_in_wrd,cw_objt,xmsk,pcw);*/
 }
 
 /****************************************************************************/
@@ -993,6 +1017,7 @@ INT AllocateControlEntry (INT cw_id, INT length, INT *ce_id)
   ce->mask = mask;
   ce->xor_mask = ~mask;
   ce->name = NULL;
+  ce->objt_used = cw->objt_used;
 
   /* remember used bits */
   cw->used_mask |= mask;
