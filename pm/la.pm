@@ -5,7 +5,7 @@ use Exporter;
 $VERSION = 1.0;
 @ISA = qw(Exporter);
 
-@EXPORT = qw(la_mv la_inv la_p la_spec);
+@EXPORT = qw(la_mv la_inv la_p la_spec la_norm la_scale);
 @EXPORT_OK = qw();
 %EXPORT_TAGS = qw();
 
@@ -134,6 +134,38 @@ sub la_p
 
 sub la_spec
 {
+    my ($i,$j,$ii,$jj,$m,$s,$n,$name,@r,@f,@real,@imag);
+
+    $m=shift;
+    $n=$#{$m}+1;
+    $s='';
+    for ($i=0; $i<$n; $i++)
+    {
+        for ($j=0; $j<$n; $j++)
+        {
+            if ($m->[$i][$j]==0) { next; }
+            $ii=$i+1; $jj=$j+1;
+            $s.="a($ii,$jj)=$m->[$i][$j];\n";
+        }
+    }
+    $s.="\nspec(a)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"; $name="foo"; #tmpfile;
+    open(FOO,">$name"); print FOO $s; close(FOO);
+    $s=`cat $name | scilab -nw`; #`rm $name`;
+    ($s,$s)=split /ans/,$s; $s=~s/more \?//g;
+    $s=~s/\s+/ /g; $s=~s/! !/!/g; $s=~s/i//g; $s=~s/\+\s*//g; $s=~s/\-\s*/-/g;
+    @f=split /!/,$s; shift @f;
+    for ($i=0; $i<@f-1; $i++)
+    {
+        @r=float $f[$i];
+        if (@r==1) {$real[$i]=$r[0];$imag[$i]=0;}
+        elsif (@r==2) {$real[$i]=$r[0];$imag[$i]=$r[1];}
+        else {die "cannot evaluate spectrum from '$s'\n";}
+    }
+    return(\@real,\@imag);
+}
+
+sub la_norm
+{
 	my ($i,$j,$m,$s,$n,$name,@r,@f,@real,@imag);
 
 	$m=shift;
@@ -148,22 +180,24 @@ sub la_spec
 			elsif ($i<$n-1 && $j==$n-1) {$s.=";\n"}
 		}
 	}
-	$s.="};\nspec(a)\n"; $name=tmpfile; 
+	$s.="};\nsqrt(max(spec(a*a')))\n"; $name=tmpfile; 
 	open(FOO,">$name"); print FOO $s; close(FOO);
 	$s=`cat $name | scilab -nw`; `rm $name`;
-	($s,$s)=split /ans/,$s; 
-	$s=~s/\s+/ /g; $s=~s/! !/!/g; $s=~s/i//g; $s=~s/\+\s*//g; $s=~s/\-\s*/-/g;
-	@f=split /!/,$s; shift @f;
-	for ($i=0; $i<@f-1; $i++)
-	{
-		@r=float $f[$i];
-		if (@r==1) {$real[$i]=$r[0];$imag[$i]=0;}
-		elsif (@r==2) {$real[$i]=$r[0];$imag[$i]=$r[1];}
-		else {die "cannot evaluate spectrum from '$s'\n";}
-	}
-	return(\@real,\@imag);
+	return float "ans",$s;
 }
 
+sub la_scale
+{
+	my ($r,$i,$m,$n,$s);
+
+	$s=shift; $m=shift;
+	$n=$#{$m}+1;
+	for ($i=0; $i<$n; $i++)
+    {
+    	$r->[$i]=$s*$m->[$i];
+    }
+	return $r;
+}
 
 1;
 
