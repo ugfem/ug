@@ -3207,11 +3207,11 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     }
 
   /* now CreateAlgebra  is necessary to have the coarse grid nodevectors for DDD identification in Evaluate_pinfo */
-  if (CreateAlgebra (theMG))                                              {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (CreateAlgebra (theMG))                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
         #ifdef DYNAMIC_MEMORY_ALLOCMODEL
-  if (DisposeConnectionsFromMultiGrid(theMG))             {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (DisposeBottomHeapTmpMemory(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
         #endif
-  if (PrepareAlgebraModification(theMG))                  {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (PrepareAlgebraModification(theMG))          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   i = MG_ELEMUSED | MG_NODEUSED | MG_EDGEUSED | MG_VERTEXUSED |  MG_VECTORUSED;
   ClearMultiGridUsedFlags(theMG,0,TOPLEVEL(theMG),i);
