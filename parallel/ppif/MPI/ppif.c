@@ -710,7 +710,7 @@ int InfoARecv (VChannelPtr vc, msgid m)
 int SendMail (int destId, int reqId, void *data, int size)
 
 {
-  if (MPI_SUCCESS == MPI_Ssend (data, size, MPI_BYTE, destId, ID_MAIL, MPI_COMM_WORLD) )
+  if (MPI_SUCCESS == MPI_Send (data, size, MPI_BYTE, destId, ID_MAIL, MPI_COMM_WORLD) )
     return (PPIF_SUCCESS);
 
   return (PPIF_FAILURE);
