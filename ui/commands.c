@@ -2947,7 +2947,8 @@ static INT NListCommand (INT argc, char **argv)
 {
 
   MULTIGRID *theMG;
-  INT i,fromN,toN,res,mode,dataopt,boundaryopt,neighbouropt,verboseopt;
+  INT i,fromN,toN,res,mode,gidopt,dataopt,boundaryopt,neighbouropt,verboseopt;
+  char buff[32];
 
   /* following variables: keep type for sscanf */
   long f,t;
@@ -2968,7 +2969,7 @@ static INT NListCommand (INT argc, char **argv)
   }
 
   /* check options */
-  dataopt = boundaryopt = neighbouropt = verboseopt = mode = FALSE;
+  gidopt = dataopt = boundaryopt = neighbouropt = verboseopt = mode = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -2995,6 +2996,15 @@ static INT NListCommand (INT argc, char **argv)
         return (PARAMERRORCODE);
       }
       break;
+
+#ifdef ModelP
+    case 'g' :
+      mode = DO_ID;
+      gidopt = TRUE;
+      res = sscanf(argv[i]," g %s",buff);
+      fromN = toN = (DDD_GID) strtol(buff, 0, 0);
+      break;
+#endif
 
     case 's' :
       if (mode!=FALSE)
@@ -3039,11 +3049,11 @@ static INT NListCommand (INT argc, char **argv)
   switch (mode)
   {
   case DO_ID :
-    ListNodeRange(theMG,fromN,toN,dataopt,boundaryopt,neighbouropt,verboseopt);
+    ListNodeRange(theMG,fromN,toN,gidopt,dataopt,boundaryopt,neighbouropt,verboseopt);
     break;
 
   case DO_ALL :
-    ListNodeRange(theMG,0,MAX_I,dataopt,boundaryopt,neighbouropt,verboseopt);
+    ListNodeRange(theMG,0,MAX_I,gidopt,dataopt,boundaryopt,neighbouropt,verboseopt);
     break;
 
   case DO_SELECTION :
@@ -3086,7 +3096,8 @@ static INT NListCommand (INT argc, char **argv)
 static INT EListCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  INT i,fromE,toE,res,mode,dataopt,boundaryopt,neighbouropt,verboseopt,levelopt;
+  INT i,fromE,toE,res,mode,gidopt,dataopt,boundaryopt,neighbouropt,verboseopt,levelopt;
+  char buff[32];
 
   /* following variables: keep type for sscanf */
   long f,t;
@@ -3107,7 +3118,7 @@ static INT EListCommand (INT argc, char **argv)
   }
 
   /* check options */
-  dataopt = boundaryopt = neighbouropt = verboseopt = levelopt = mode = FALSE;
+  gidopt = dataopt = boundaryopt = neighbouropt = verboseopt = levelopt = mode = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -3134,6 +3145,15 @@ static INT EListCommand (INT argc, char **argv)
         return (PARAMERRORCODE);
       }
       break;
+
+#ifdef ModelP
+    case 'g' :
+      mode = DO_ID;
+      gidopt = TRUE;
+      res = sscanf(argv[i]," g %s",buff);
+      fromE = toE = (DDD_GID) strtol(buff, 0, 0);
+      break;
+#endif
 
     case 's' :
       if (mode!=FALSE)
@@ -3182,11 +3202,11 @@ static INT EListCommand (INT argc, char **argv)
   switch (mode)
   {
   case DO_ID :
-    ListElementRange(theMG,fromE,toE,dataopt,boundaryopt,neighbouropt,verboseopt,levelopt);
+    ListElementRange(theMG,fromE,toE,gidopt,dataopt,boundaryopt,neighbouropt,verboseopt,levelopt);
     break;
 
   case DO_ALL :
-    ListElementRange(theMG,0,MAX_I,dataopt,boundaryopt,neighbouropt,verboseopt,levelopt);
+    ListElementRange(theMG,0,MAX_I,gidopt,dataopt,boundaryopt,neighbouropt,verboseopt,levelopt);
     break;
 
   case DO_SELECTION :
@@ -3404,10 +3424,11 @@ static INT VMListCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   GRID *theGrid;
-  INT i,fl,tl,fromV,toV,res,mode,dataopt,matrixopt,vclass,vnclass;
+  INT i,fl,tl,fromV,toV,res,mode,gidopt,dataopt,matrixopt,vclass,vnclass;
   VECDATA_DESC *theVD;
   MATDATA_DESC *theMD;
   char value[VALUELEN];
+  char buff[32];
   /* following variables: keep type for sscanf */
   long f,t;
 
@@ -3458,7 +3479,7 @@ static INT VMListCommand (INT argc, char **argv)
   }
 
   /* check options */
-  dataopt = matrixopt = mode = FALSE;
+  gidopt = dataopt = matrixopt = mode = FALSE;
   fl = tl = CURRENTLEVEL(theMG);
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -3486,6 +3507,15 @@ static INT VMListCommand (INT argc, char **argv)
         return (PARAMERRORCODE);
       }
       break;
+
+#ifdef ModelP
+    case 'g' :
+      mode = DO_ID;
+      gidopt = TRUE;
+      res = sscanf(argv[i]," g %s",buff);
+      fromV = toV = (DDD_GID) strtol(buff, 0, 0);
+      break;
+#endif
 
     case 's' :
       if (mode!=FALSE)
@@ -3538,11 +3568,11 @@ static INT VMListCommand (INT argc, char **argv)
   switch (mode)
   {
   case DO_ID :
-    ListVectorRange(theMG,fl,tl,fromV,toV,matrixopt,dataopt);
+    ListVectorRange(theMG,fl,tl,fromV,toV,gidopt,matrixopt,dataopt);
     break;
 
   case DO_ALL :
-    ListVectorRange(theMG,fl,tl,0,MAX_I,matrixopt,dataopt);
+    ListVectorRange(theMG,fl,tl,0,MAX_I,gidopt,matrixopt,dataopt);
     break;
 
   case DO_SELECTION :
