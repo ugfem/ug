@@ -118,16 +118,17 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 	
 	// correct defect
 	Defect(fgdefect, fgdefect, fgsolution);
-#ifdef ModelP
-	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
-		assert(0);
-#endif
 
 #ifdef USE_UG_DS
 	// correct global solution
 	fgglobsolution += fgsolution;
 #endif
 	
+#ifdef ModelP
+	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
+		assert(0);
+#endif
+
 	const FAMGSparseVector *svfg  = fgdefect.GetSparseVectorPtr();
 	const FAMGSparseVector *svcg  = cgdefect.GetSparseVectorPtr();
 	const FAMGSparseVector *svr  = transfer.Get_sr();
@@ -254,11 +255,6 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 	DOUBLE d1, d2, d3;
 #endif
 
-#ifdef ModelP
-	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
-		assert(0);
-#endif
-	
 #ifdef PROTOCOLNUMERIC
 	d1 = fgdefect*fgdefect;
     d2 = fgsolution*fgsolution;
@@ -294,10 +290,6 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 	
 	// correct defect
 	Defect(fgdefect, fgdefect, fgsolution);
-#ifdef ModelP
-	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
-		assert(0);
-#endif
 
 #ifdef USE_UG_DS	
 	// correct global solution
@@ -316,6 +308,11 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 	}
 #endif
 		
+#ifdef ModelP
+	if (l_vector_collect(mygrid,((FAMGugVector&)fgdefect).GetUgVecDesc())!=NUM_OK) 
+		assert(0);
+#endif
+
     cgdefect = 0.0;
 
 	FAMGVectorIter fiter(GetGridVector());

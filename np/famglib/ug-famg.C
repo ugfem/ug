@@ -1803,9 +1803,7 @@ static INT FAMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 
 
 /* actions for FAMG defect restriction:
-	t := 0				[FAMGGrid::Restriction]
-	t += M^{-1} * b		fine grid Jacobi smoothing [FAMGGrid::Restriction]
-						t carries the solution update back to ug
+	t := M^{-1} * b		fine node Jacobi smoothing [FAMGGrid::Restriction]
 	d -= K * t			update defect [FAMGGrid::Restriction]
 	c += t				update global solution [FAMGGrid::Restriction]	
 	d_{l+1} = R * d_l	restrict defect [FAMGGrid::Restriction]
@@ -1834,8 +1832,7 @@ INT FAMGRestrictDefect (NP_TRANSFER *theNP, INT level,
 	t_l += P * c_{l+1}	prolong correction [FAMGGrid::Restriction]
 	d -= K * t			update defect [FAMGGrid::Restriction]
 	c += t				new, only for transfer [FAMGGrid::Restriction]
-	t := 0				prepare for the followign smoothing [FAMGGrid::Restriction]
-	t += M^{-1} * b		fine grid Jacobi smoothing [FAMGGrid::Restriction]
+	t := M^{-1} * b		fine grid Jacobi smoothing [FAMGGrid::Restriction]
 						t carries the solution update back to ug
 UG	c += t				[ug/np/procs/iter.c/Lmgc()]
 UG	d -= K * t			update defect [ug/np/procs/iter.c/Lmgc()]; not in [FAMGGrid::Restriction]
