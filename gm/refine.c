@@ -1342,12 +1342,15 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 			Node0 = CORNER(theElement,Corner0);
 			Node1 = CORNER(theElement,Corner1);
 			if ((theEdge = GetEdge(Node0,Node1))==NULL)
-			 RETURN(GM_FATAL);
+				RETURN(GM_FATAL);
 			MidNodes[i] = MIDNODE(theEdge);
 			if (MidNodes[i] == NULL)
 			{
 				MidNodes[i] = CreateMidNode(theGrid,theElement,i,theElementContext[Corner0]);
 				if (MidNodes[i]==NULL) RETURN(GM_FATAL);
+				IFDEBUG(gm,2)
+				UserWriteF(" created ID(MidNode)=%d for edge=%d",ID(MidNodes[i]),i);
+				ENDDEBUG
 				MIDNODE(theEdge) = MidNodes[i];
 			} 
 		}
@@ -1445,7 +1448,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 							ASSERT(j<SIDES_OF_ELEM(theNeighbor));
 							if (NODE_OF_RULE(theNeighbor,MARK(theNeighbor),EDGES_OF_ELEM(theNeighbor)+j) &&
 								(!NODE_OF_RULE(theNeighbor,REFINE(theNeighbor),EDGES_OF_ELEM(theNeighbor)+j) ||
-								 USED(theNeighbor)==0))
+								 USED(theNeighbor)==1))
 									toCreate = 1;
 						}
 					}
@@ -1471,6 +1474,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 				}
 			ENDDEBUG
 
+if (0) {
 			if (toDelete)
 			{
 				/* this node has no links any more delete it */
@@ -1479,6 +1483,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 					SideNodes[i] = NULL;
 				}
 			}
+}
 
 			if (toCreate)
 			{
@@ -2348,7 +2353,10 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 						break;
 				ASSERT(l<SIDES_OF_ELEM(NbElement));
 				IFDEBUG(gm,2)
-				UserWriteF("     SIDE=%d NBSIDE=%d ID(theElement)=%d ID(NbElement)=%d\n",i,l,ID(theElement),ID(NbElement));
+				UserWriteF("     SIDE=%d NBSIDE=%d ID(theElement)=%d ID(NbElement)=%d\n"\
+						   "     NbREFINECLASS=%d NbMARKCLASS=%d NbREFINE=%d NbMARK=%d\n",
+						   i,l,ID(theElement),ID(NbElement),REFINECLASS(NbElement),
+						   MARKCLASS(NbElement),REFINE(NbElement),MARK(NbElement));
 				ENDDEBUG
 
 				switch (MARKCLASS(NbElement)) {
@@ -2576,13 +2584,6 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 	/* is something to do ? */
 	if (!IS_TO_REFINE(theElement)) return(GM_OK);
 
-if (0) {
-	if (DIM==3 && TAG(theElement)==HEXAHEDRON && MARKCLASS(theElement)==GREEN_CLASS) {
-		if (RefineElementGreen(theGrid,theElement,theElementContext) != GM_OK) RETURN(GM_FATAL);
-		return(GM_OK);
-	}
-}
-
 	rule = MARK2RULEADR(theElement,MARK(theElement));
 
 	/* TODO: delete special debug */ PRINTELEMID(-2)
@@ -2603,8 +2604,10 @@ if (0) {
 						}
 			}
 
-		for (i=0; i<element_descriptors[rule->sons[s].tag]->corners_of_elem; i++)
+		for (i=0; i<element_descriptors[rule->sons[s].tag]->corners_of_elem; i++) {
+			ASSERT(theElementContext[rule->sons[s].corners[i]]!=NULL);
 			ElementNodes[i] = theElementContext[rule->sons[s].corners[i]];
+		}
 
 		/* TODO: delete special debug */ PRINTELEMID(-2)
 		if (boundaryelement)
@@ -3142,11 +3145,12 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
 	for (k=j; k>=0; k--)
 	{
 		theGrid = GRID_ON_LEVEL(theMG,k);
-		for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+		for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement)) {
 			UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d Refine=%d "\
 			"Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),ECLASS(theElement),\
 			REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),\
 			COARSEN(theElement));
+		}			
 	}
 	ENDDEBUG
 		theGrid = GRID_ON_LEVEL(theMG,level);
