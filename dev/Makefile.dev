@@ -12,7 +12,7 @@ include ../ug.conf
 
 
 # select your devices: one of { NIF, XIF, SIF, RIF }. META and PS are optional
-DEVICES = $(IF)IF META PS
+DEVICES = $(IF)IF META PS PPM
 OBJECTS = ugdevices.o sockcomm.o
 
 
@@ -42,6 +42,9 @@ META:
 
 PS:
 	cd ps; make -f Makefile.ps; cd ..;
+	
+PPM:
+	cd ppm; make -f Makefile.ppm; cd ..;
 
 XLIB: 
 	rm -f ../lib/libdev.a
@@ -49,20 +52,23 @@ XLIB:
 	cd meta; make -f Makefile.meta; cd ..;
 	cd xif; make -f Makefile.xif; cd ..;
 	cd ps; make -f Makefile.ps; cd ..;
-
+	cd ppm; make -f Makefile.ppm; cd ..;
+	
 SLIB: 
 	rm -f ../lib/libdev.a
 	$(ARCH_AR) $(ARCH_ARFLAGS) ../lib/libdevS.a $(OBJECTS)
 	cd meta; make -f Makefile.meta; cd ..;
 	cd sif; make -f Makefile.sif; cd ..;
 	cd ps; make -f Makefile.ps; cd ..;
+	cd ppm; make -f Makefile.ppm; cd ..;
 
 RLIB: 
 	rm -f ../lib/libdev.a
 	$(ARCH_AR) $(ARCH_ARFLAGS) ../lib/libdevR.a $(OBJECTS)
 	cd meta; make -f Makefile.meta; cd ..;
-	cd rif; make -f Makefile.rif; cd ..;
-	cd ps; make -f Makefile.ps; cd ..;
+	cd rif;  make -f Makefile.rif; cd ..;
+	cd ps;   make -f Makefile.ps; cd ..;
+	cd ppm;  make -f Makefile.ppm; cd ..;
 
 clean:
 	rm -f *.o
@@ -71,6 +77,7 @@ clean:
 	cd rif;  make -f Makefile.rif  clean; cd ..;
 	cd meta; make -f Makefile.meta clean; cd ..;
 	cd ps;   make -f Makefile.ps   clean; cd ..;
+	cd ppm;  make -f Makefile.ppm   clean; cd ..;
 
 #preliminary: only xif+meta+ps (should be configurable in another way)
 extract:
@@ -78,8 +85,10 @@ extract:
 	cd xif;  make -f Makefile.xif  extract; cd ..;
 	cd meta; make -f Makefile.meta extract; cd ..;
 	cd ps;   make -f Makefile.ps   extract; cd ..;
+	cd ppm; make -f Makefile.ppm   extract; cd ..;
 
 xmc: extract all
 	cd xif;  make -f Makefile.xif  clean; cd ..;
 	cd meta; make -f Makefile.meta clean; cd ..;
 	cd ps;   make -f Makefile.ps   clean; cd ..;
+	cd ppm; make -f Makefile.ppm   clean; cd ..;
