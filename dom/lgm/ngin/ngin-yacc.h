@@ -3,7 +3,7 @@
 typedef union
 {
   /* put RCS string here in order to get it into yacc-generated header file
-     static char RCS_ID("$Header: /hosts/dom/cvs/df/gen/problems/dfcfg/dfcfg.y,v 0
+     static char RCS_ID("$Header: /hosts/dom/cvs/df/gen/problems/dfcfg/dfcfg.y,v 1.1
      1998/02/20 16:58:46 birken Exp $",UG_RCS_STRING);
    */
 
@@ -17,7 +17,7 @@ typedef union
   BND_NODE *bs;
   INNER_NODE *in;
   ELEM_FACE *ef;
-  ELEMENT *el;
+  NG_ELEMENT *el;
 } YYSTYPE;
 #define DOUBLE_VALUE    258
 #define INT_VALUE       259
