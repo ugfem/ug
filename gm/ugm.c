@@ -468,7 +468,7 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
   if (NELIST_DEF_IN_GRID(theGrid)) NDATA(pn) = NULL;
   MYVERTEX(pn) = vertex;
   /* priliminary */
-  if (father != NULL)
+  if (Father != NULL)
     if ((OBJT(Father) == IEOBJ) || (OBJT(Father) == BEOBJ))
       Father = NULL;
   SETNFATHER(pn,Father);
