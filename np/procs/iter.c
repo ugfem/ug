@@ -1651,6 +1651,8 @@ static II_MultiplySchurComplement (MULTIGRID *theMG, INT level,
                                    VECDATA_DESC *c, VECDATA_DESC *d,
                                    INT *result)
 {
+  DOUBLE eunorm;
+
   if (dmatmul(theMG,level,level,ALL_VECTORS,II_t,II_upA,c) != NUM_OK)
     NP_RETURN(1,result[0]);
     #ifdef ModelP
@@ -1664,7 +1666,7 @@ static II_MultiplySchurComplement (MULTIGRID *theMG, INT level,
   if (dmatmul(theMG,level,level,ALL_VECTORS,d,II_puA,II_u)
       != NUM_OK)
     NP_RETURN(1,result[0]);
-  if (dmatmul_minus(theMG,level,level,ALL_VECTORS,d,II_ppA,II_p)
+  if (dmatmul_minus(theMG,level,level,ALL_VECTORS,d,II_ppA,c)
       != NUM_OK)
     NP_RETURN(1,result[0]);
 }
@@ -1684,6 +1686,8 @@ static INT II_Iter (NP_ITER *theNP, INT level,
   if (AllocVDFromVD(theMG,level,level,c,&np->t)) NP_RETURN(1,result[0]);
   if (AllocVDFromVD(theMG,level,level,c,&np->d)) NP_RETURN(1,result[0]);
   if (dcopy(theMG,level,level,ALL_VECTORS,np->d,b) != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (dset(theMG,level,level,ALL_VECTORS,c,0.0) != NUM_OK)
     NP_RETURN(1,result[0]);
   if (level == np->baselevel)
     iter = np->basenu - np->nu2;
@@ -1727,14 +1731,14 @@ static INT II_Iter (NP_ITER *theNP, INT level,
       REP_ERR_RETURN(1);
     if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK)
       NP_RETURN(1,result[0]);
-    if (i<np->nu2-1) {
-      if (II_MultiplySchurComplement(theMG,level,c,np->t,result))
-        NP_RETURN(1,result[0]);
-      if (dcopy(theMG,level,level,ALL_VECTORS,b,np->d) != NUM_OK)
-        NP_RETURN(1,result[0]);
-      if (dadd(theMG,level,level,ALL_VECTORS,b,np->t) != NUM_OK)
-        NP_RETURN(1,result[0]);
-    }
+    /*	    if (i<np->nu2-1) {
+        if (II_MultiplySchurComplement(theMG,level,c,np->t,result))
+                NP_RETURN(1,result[0]);
+            if (dcopy(theMG,level,level,ALL_VECTORS,b,np->d) != NUM_OK)
+                NP_RETURN(1,result[0]);
+            if (dadd(theMG,level,level,ALL_VECTORS,b,np->t) != NUM_OK)
+                NP_RETURN(1,result[0]);
+       } */
   }
   if (FreeVD(NP_MG(theNP),level,level,np->t)) REP_ERR_RETURN(1);
   if (FreeVD(NP_MG(theNP),level,level,np->d)) REP_ERR_RETURN(1);
@@ -2288,6 +2292,7 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
   DOUBLE rho,lambda;
   INT i,PrintID;
   char text[DISPLAY_WIDTH+4],text1[DISPLAY_WIDTH];
+  DOUBLE eunorm;
 
   np = (NP_TS *) theNP;
   theMG = NP_MG(theNP);
@@ -2380,18 +2385,20 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
     REP_ERR_RETURN(1);
 
   i = 0;
-  if (np->thresh > 0.0)
-  {
-    DOUBLE udef,pdef;
+  /*
+     if (np->thresh > 0.0)
+     {
+      DOUBLE udef,pdef;
 
-    if (dnrm2(theMG,level,level,ALL_VECTORS,np->ub,&udef))
-      NP_RETURN(1,result[0]);
-    if (dnrm2(theMG,level,level,ALL_VECTORS,np->pb,&pdef))
-      NP_RETURN(1,result[0]);
+          if (dnrm2(theMG,level,level,ALL_VECTORS,np->ub,&udef))
+              NP_RETURN(1,result[0]);
+          if (dnrm2(theMG,level,level,ALL_VECTORS,np->pb,&pdef))
+              NP_RETURN(1,result[0]);
 
-    if (udef < pdef * np->thresh)
-      i = np->dc;
-  }
+          if (udef < pdef * np->thresh)
+              i = np->dc;
+     }
+   */
 
   /* defect correction for the Schur complement*/
   for ( ; i<np->dc; i++) {
