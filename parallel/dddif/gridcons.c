@@ -563,8 +563,8 @@ void ConstructConsistentGrid (GRID *theGrid)
           else SETONNBSIDE(theVertex,MAX_SIDES_OF_ELEM);
           break;
 
-        case (CENTER_NODE) :
                                         #endif
+        case (CENTER_NODE) :
         case (LEVEL_0_NODE) :
           /* nothing to do */
           break;
