@@ -21,8 +21,8 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef __CMG_INTERFACE__
-#define __CMG_INTERFACE__
+#ifndef __FAMG_INTERFACE__
+#define __FAMG_INTERFACE__
 
 /* RCS_ID
    $Header$
@@ -30,14 +30,14 @@
 
 #include "gm.h"        /* for ug data structure               */
 
-#define CMG_RHS      0
-#define CMG_UNKNOWN  1
-#define CMG_DEFECT   2
-#define CMG_TVA       3
-#define CMG_TVB       4
-#define CMG_NVECTORS 5
+#define FAMG_RHS      0
+#define FAMG_UNKNOWN  1
+#define FAMG_DEFECT   2
+#define FAMG_TVA       3
+#define FAMG_TVB       4
+#define FAMG_NVECTORS 5
 
-struct CMG_Interface
+struct FAMG_Interface
 {
   int n;
   int nl;
@@ -45,11 +45,11 @@ struct CMG_Interface
   int *start;
   int *index;
   double *entry;
-  double *vector[CMG_NVECTORS];
+  double *vector[FAMG_NVECTORS];
   void **extra;
 };
 
-struct CMG_Parameter
+struct FAMG_Parameter
 {
   int heap;
   int nv;
@@ -80,45 +80,45 @@ struct CMG_Parameter
   char cgsmoother[10];
 };
 
-struct CMG_IndexBitField
+struct FAMG_IndexBitField
 {
   unsigned type : 1;
   unsigned id : 31;
 };
 
-struct CMG_MatrixPtr
+struct FAMG_MatrixPtr
 {
-  struct CMG_IndexBitField *index;
+  struct FAMG_IndexBitField *index;
   double *entry;
   double **adjoined;
   int nc;
 };
 
-typedef struct CMG_MatrixPtr CMG_MatrixPtr;
+typedef struct FAMG_MatrixPtr FAMG_MatrixPtr;
 
-struct CMG_TransferBitField
+struct FAMG_TransferBitField
 {
   unsigned f1 : 1;
   unsigned f0 : 31;
 };
 
 
-struct CMG_TransferEntry
+struct FAMG_TransferEntry
 {
   double data;
-  struct CMG_TransferBitField id;
-  struct CMG_TransferEntry *next;
+  struct FAMG_TransferBitField id;
+  struct FAMG_TransferEntry *next;
 };
 
-typedef struct CMG_TransferEntry CMG_TransferEntry;
+typedef struct FAMG_TransferEntry FAMG_TransferEntry;
 
-int CMGSolveSystem(struct CMG_Interface*,struct CMG_Parameter*);
-void **CMG_GetExtraPtr(int level);
-int CMG_GetN(int level);
-int CMG_GetNF(int level);
-CMG_MatrixPtr  *CMG_GetMatrixPtr(int level,int i);
-double * CMG_GetVector(int level, int i);
-int CMG_GetMaxLevel();
-CMG_TransferEntry  *CMG_GetTransferEntry(int level,int i);
+int FAMGSolveSystem(struct FAMG_Interface*,struct FAMG_Parameter*);
+void **FAMG_GetExtraPtr(int level);
+int FAMG_GetN(int level);
+int FAMG_GetNF(int level);
+FAMG_MatrixPtr  *FAMG_GetMatrixPtr(int level,int i);
+double * FAMG_GetVector(int level, int i);
+int FAMG_GetMaxLevel();
+FAMG_TransferEntry  *FAMG_GetTransferEntry(int level,int i);
 
 #endif

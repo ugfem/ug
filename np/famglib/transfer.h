@@ -4,7 +4,7 @@
 /*																			*/
 /* File:      matrix.h														*/
 /*																			*/
-/* Purpose:   cmg tranfer classes											*/
+/* Purpose:   famg tranfer classes											*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -21,71 +21,71 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef __CMG_TRANSFER__
-#define __CMG_TRANSFER__
+#ifndef __FAMG_TRANSFER__
+#define __FAMG_TRANSFER__
 
 /* RCS_ID
    $Header$
  */
 
-struct CMGTransferBitField
+struct FAMGTransferBitField
 {
   unsigned f1 : 1;
   unsigned f0 : 31;
 };
 
-// Class CMGTransferEntry
+// Class FAMGTransferEntry
 
-class CMGTransferEntry
+class FAMGTransferEntry
 {
 public:
   double GetData(void) const;
   int GetId(void) const;
-  CMGTransferEntry *GetNext(void) const;
-  CMGTransferEntry *GetReverse();
-  CMGTransferEntry *GetReverse(int);
-  CMGTransferEntry* GetEntry(int);
-  CMGTransferEntry* NewEntry(CMGTransferEntry*);
-  int SaveEntry(CMGTransferEntry*,double);
-  int SaveEntry(CMGTransferEntry*,double,CMGTransferEntry**);
+  FAMGTransferEntry *GetNext(void) const;
+  FAMGTransferEntry *GetReverse();
+  FAMGTransferEntry *GetReverse(int);
+  FAMGTransferEntry* GetEntry(int);
+  FAMGTransferEntry* NewEntry(FAMGTransferEntry*);
+  int SaveEntry(FAMGTransferEntry*,double);
+  int SaveEntry(FAMGTransferEntry*,double,FAMGTransferEntry**);
   void SetData(double);
   void AddData(double);
   void SetId(int);
   void SetRev(int);
-  void SetNext(CMGTransferEntry *);
+  void SetNext(FAMGTransferEntry *);
   void Init(int);
 private:
   double data;
-  CMGTransferBitField id;
-  CMGTransferEntry *next;
+  FAMGTransferBitField id;
+  FAMGTransferEntry *next;
 };
 
 
-inline double CMGTransferEntry::GetData() const {
+inline double FAMGTransferEntry::GetData() const {
   return data;
 }
-inline void CMGTransferEntry::SetData(double val) {
+inline void FAMGTransferEntry::SetData(double val) {
   data = val;
 }
-inline void CMGTransferEntry::AddData(double val) {
+inline void FAMGTransferEntry::AddData(double val) {
   data += val;
 }
-inline int CMGTransferEntry::GetId() const {
+inline int FAMGTransferEntry::GetId() const {
   return id.f0;
 }
-inline void CMGTransferEntry::SetId(int i) {
+inline void FAMGTransferEntry::SetId(int i) {
   id.f0 = i;
 }
-inline void CMGTransferEntry::SetRev(int i) {
+inline void FAMGTransferEntry::SetRev(int i) {
   id.f1 = i;
 }
-inline CMGTransferEntry *CMGTransferEntry::GetNext() const {
+inline FAMGTransferEntry *FAMGTransferEntry::GetNext() const {
   return next;
 }
-inline void CMGTransferEntry::SetNext(CMGTransferEntry *mat) {
+inline void FAMGTransferEntry::SetNext(FAMGTransferEntry *mat) {
   next = mat;
 }
-inline CMGTransferEntry *CMGTransferEntry::GetReverse()
+inline FAMGTransferEntry *FAMGTransferEntry::GetReverse()
 {
   return this+(1 - 2*id.f1);
 }
@@ -93,28 +93,28 @@ inline CMGTransferEntry *CMGTransferEntry::GetReverse()
 
 
 
-class CMGTransfer
+class FAMGTransfer
 {
 public:
-  CMGTransferEntry* GetRow() const;
-  CMGTransferEntry* GetRow(int) const;
-  void SetRow(CMGTransferEntry*);
-  int Init(class CMGGrid*);
-  int Construct(class CMGGrid*);
+  FAMGTransferEntry* GetRow() const;
+  FAMGTransferEntry* GetRow(int) const;
+  void SetRow(FAMGTransferEntry*);
+  int Init(class FAMGGrid*);
+  int Construct(class FAMGGrid*);
   int Reorder(int *);
   int Order(int *);
 private:
   int n;
-  CMGTransferEntry *row;
+  FAMGTransferEntry *row;
 };
 
-inline CMGTransferEntry *CMGTransfer::GetRow() const {
+inline FAMGTransferEntry *FAMGTransfer::GetRow() const {
   return row;
 }
-inline CMGTransferEntry *CMGTransfer::GetRow(int i) const {
+inline FAMGTransferEntry *FAMGTransfer::GetRow(int i) const {
   return row+i;
 }
-inline void CMGTransfer::SetRow(CMGTransferEntry *ptr) {
+inline void FAMGTransfer::SetRow(FAMGTransferEntry *ptr) {
   row = ptr;
 }
 

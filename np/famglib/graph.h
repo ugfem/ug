@@ -4,7 +4,7 @@
 /*																			*/
 /* File:      graph.h														*/
 /*																			*/
-/* Purpose:   cmg graph classes												*/
+/* Purpose:   famg graph classes											*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -20,8 +20,8 @@
 /* Remarks:																	*/
 /*																			*/
 /****************************************************************************/
-#ifndef __CMG_GRAPH__
-#define __CMG_GRAPH__
+#ifndef __FAMG_GRAPH__
+#define __FAMG_GRAPH__
 
 #include "matrix.h"
 
@@ -29,63 +29,63 @@
    $Header$
  */
 
-const int CMGMAXPARENTS=2;
+const int FAMGMAXPARENTS=2;
 
 
-class CMGList
+class FAMGList
 {
 public:
   int GetData() const;
-  void Insert(class CMGNode *);
-  void Init(CMGList *,CMGList *,int );
-  CMGList* GetPred() const;
-  CMGList* GetSucc() const;
-  class CMGNode* GetFirst() const;
-  class CMGNode* GetLast() const;
+  void Insert(class FAMGNode *);
+  void Init(FAMGList *,FAMGList *,int );
+  FAMGList* GetPred() const;
+  FAMGList* GetSucc() const;
+  class FAMGNode* GetFirst() const;
+  class FAMGNode* GetLast() const;
   void SetData(int);
-  void SetPred(CMGList *);
-  void SetSucc(CMGList *);
-  void SetFirst(class CMGNode *);
-  void SetLast(class CMGNode *);
+  void SetPred(FAMGList *);
+  void SetSucc(FAMGList *);
+  void SetFirst(class FAMGNode *);
+  void SetLast(class FAMGNode *);
 private:
   int data;
-  CMGList *succ, *pred;
-  class CMGNode *first, *last;
+  FAMGList *succ, *pred;
+  class FAMGNode *first, *last;
 };
 
-inline int CMGList::GetData() const {
+inline int FAMGList::GetData() const {
   return data;
 }
-inline CMGList* CMGList::GetPred() const {
+inline FAMGList* FAMGList::GetPred() const {
   return pred;
 }
-inline CMGList* CMGList::GetSucc() const {
+inline FAMGList* FAMGList::GetSucc() const {
   return succ;
 }
-inline class CMGNode* CMGList::GetFirst() const {
+inline class FAMGNode* FAMGList::GetFirst() const {
   return first;
 }
-inline class CMGNode* CMGList::GetLast() const {
+inline class FAMGNode* FAMGList::GetLast() const {
   return last;
 }
-inline void CMGList::SetData(int val) {
+inline void FAMGList::SetData(int val) {
   data = val;
 }
-inline void CMGList::SetPred(CMGList *p) {
+inline void FAMGList::SetPred(FAMGList *p) {
   pred = p;
 }
-inline void CMGList::SetSucc(CMGList *s) {
+inline void FAMGList::SetSucc(FAMGList *s) {
   succ = s;
 }
-inline void CMGList::SetFirst(class CMGNode *f) {
+inline void FAMGList::SetFirst(class FAMGNode *f) {
   first = f;
 }
-inline void CMGList::SetLast(class CMGNode *l) {
+inline void FAMGList::SetLast(class FAMGNode *l) {
   last = l;
 }
 
 
-class CMGPaList
+class FAMGPaList
 {
 public:
   int GetNp() const;
@@ -98,86 +98,86 @@ public:
   double GetCoefft(int) const;
   double *GetCoeff() const;
   double *GetCoefft() const;
-  CMGPaList* GetNext() const;
+  FAMGPaList* GetNext() const;
   void SetNp(int);
   void SetPa(int, int);
-  void SetNext(CMGPaList* );
+  void SetNext(FAMGPaList* );
   void SetNewLinks(int);
   void SetNewCG(double);
   void SetCoeff(int, double);
   void SetCoefft(int, double);
-  void Init(CMGPaList *nex, int n, int *p, double *c, double *ct, double error);
-  void MarkParents(class CMGGrid *grid);
+  void Init(FAMGPaList *nex, int n, int *p, double *c, double *ct, double error);
+  void MarkParents(class FAMGGrid *grid);
   double TotalWeight();
 private:
   int np;
-  int pa[CMGMAXPARENTS];
-  double coeff[CMGMAXPARENTS];
-  double coefft[CMGMAXPARENTS];
+  int pa[FAMGMAXPARENTS];
+  double coeff[FAMGMAXPARENTS];
+  double coefft[FAMGMAXPARENTS];
   double approx;
   int newlinks;
   double newcg;
-  class CMGPaList *next;
+  class FAMGPaList *next;
 };
 
-inline int CMGPaList::GetNp() const {
+inline int FAMGPaList::GetNp() const {
   return np;
 }
-inline int CMGPaList::GetPa(int i) const {
+inline int FAMGPaList::GetPa(int i) const {
   return pa[i];
 }
-inline int *CMGPaList::GetPa() const {
+inline int *FAMGPaList::GetPa() const {
   return (int *) pa;
 }
-inline int CMGPaList::GetNewLinks() const {
+inline int FAMGPaList::GetNewLinks() const {
   return newlinks;
 }
-inline double CMGPaList::GetApprox() const {
+inline double FAMGPaList::GetApprox() const {
   return approx;
 }
-inline double CMGPaList::GetNewCG() const {
+inline double FAMGPaList::GetNewCG() const {
   return newcg;
 }
-inline double CMGPaList::GetCoeff(int i) const {
+inline double FAMGPaList::GetCoeff(int i) const {
   return coeff[i];
 }
-inline double CMGPaList::GetCoefft(int i) const {
+inline double FAMGPaList::GetCoefft(int i) const {
   return coefft[i];
 }
-inline double *CMGPaList::GetCoeff() const {
+inline double *FAMGPaList::GetCoeff() const {
   return (double *) coeff;
 }
-inline double *CMGPaList::GetCoefft() const {
+inline double *FAMGPaList::GetCoefft() const {
   return (double *)coefft;
 }
-inline CMGPaList* CMGPaList::GetNext() const {
+inline FAMGPaList* FAMGPaList::GetNext() const {
   return next;
 }
-inline void CMGPaList::SetNp(int v) {
+inline void FAMGPaList::SetNp(int v) {
   np = v;
 }
-inline void CMGPaList::SetPa(int i, int p) {
+inline void FAMGPaList::SetPa(int i, int p) {
   pa[i] = p;
 }
-inline void CMGPaList::SetNewLinks(int v) {
+inline void FAMGPaList::SetNewLinks(int v) {
   newlinks = v;
 }
-inline void CMGPaList::SetNewCG(double v) {
+inline void FAMGPaList::SetNewCG(double v) {
   newcg = v;
 }
-inline void CMGPaList::SetCoeff(int i, double c) {
+inline void FAMGPaList::SetCoeff(int i, double c) {
   coeff[i] = c;
 }
-inline void CMGPaList::SetCoefft(int i, double c) {
+inline void FAMGPaList::SetCoefft(int i, double c) {
   coefft[i] = c;
 }
-inline void CMGPaList::SetNext(CMGPaList* ptr) {
+inline void FAMGPaList::SetNext(FAMGPaList* ptr) {
   next = ptr;
 }
 
 
 
-struct CMGNodeBitField
+struct FAMGNodeBitField
 {
   unsigned f0 : 1;
   unsigned f1 : 1;
@@ -187,7 +187,7 @@ struct CMGNodeBitField
   int lid : 16;
 };
 
-class CMGNode
+class FAMGNode
 {
 public:
   int GetData() const;
@@ -196,20 +196,20 @@ public:
   int GetLocalId() const;
   double GetLocalNormA() const;
   double GetLocalNormB() const;
-  CMGNode* GetPred() const;
-  CMGNode* GetSucc() const;
-  CMGList* GetList() const;
-  CMGPaList* GetPaList() const;
-  void SetPred(CMGNode *);
-  void SetSucc(CMGNode *);
-  void SetList(CMGList *);
+  FAMGNode* GetPred() const;
+  FAMGNode* GetSucc() const;
+  FAMGList* GetList() const;
+  FAMGPaList* GetPaList() const;
+  void SetPred(FAMGNode *);
+  void SetSucc(FAMGNode *);
+  void SetList(FAMGList *);
   void SetData(int val);
   void SetId(int);
   void SetNSons(int);
   void SetLocalId(int);
   void SetLocalNormA(double);
   void SetLocalNormB(double);
-  void SetPaList(CMGPaList*);
+  void SetPaList(FAMGPaList*);
   int GetFlag() const;
   int GetFlag1() const;
   int GetFlag2() const;
@@ -221,165 +221,165 @@ public:
   void MarkCGNode();
   void MarkFGNode();
   void Init(int);
-  int UpdateNeighborsFG(class CMGGrid *grid);
-  int Eliminate(CMGGrid *grid);
-  void MarkBestNeighbor(CMGGrid *grid);
-  int CountNewLinks(CMGGrid *grid, class CMGGraph *graph);
-  void CountNewCG(class CMGGraph *graph);
-  int CountNewCG(CMGGraph *graph, int j);
+  int UpdateNeighborsFG(class FAMGGrid *grid);
+  int Eliminate(FAMGGrid *grid);
+  void MarkBestNeighbor(FAMGGrid *grid);
+  int CountNewLinks(FAMGGrid *grid, class FAMGGraph *graph);
+  void CountNewCG(class FAMGGraph *graph);
+  int CountNewCG(FAMGGraph *graph, int j);
   void ComputeTotalWeight();
 private:
   int data;
   int id;
-  class CMGNode *pred, *succ;
-  class CMGList *list;
-  class CMGPaList *palist;
-  CMGNodeBitField control;
+  class FAMGNode *pred, *succ;
+  class FAMGList *list;
+  class FAMGPaList *palist;
+  FAMGNodeBitField control;
 };
 
-inline int CMGNode::GetData() const {
+inline int FAMGNode::GetData() const {
   return data;
 }
-inline int CMGNode::GetId() const {
+inline int FAMGNode::GetId() const {
   return id;
 }
-inline int CMGNode::GetNSons() const {
+inline int FAMGNode::GetNSons() const {
   return control.ns;
 }
-inline int CMGNode::GetLocalId() const {
+inline int FAMGNode::GetLocalId() const {
   return control.lid;
 }
-inline CMGNode* CMGNode::GetPred() const {
+inline FAMGNode* FAMGNode::GetPred() const {
   return pred;
 }
-inline CMGNode* CMGNode::GetSucc() const {
+inline FAMGNode* FAMGNode::GetSucc() const {
   return succ;
 }
-inline CMGList* CMGNode::GetList() const {
+inline FAMGList* FAMGNode::GetList() const {
   return list;
 }
-inline CMGPaList* CMGNode::GetPaList() const {
+inline FAMGPaList* FAMGNode::GetPaList() const {
   return palist;
 }
-inline void CMGNode::SetData(int val) {
+inline void FAMGNode::SetData(int val) {
   data = val;
 }
-inline void CMGNode::SetId(int i) {
+inline void FAMGNode::SetId(int i) {
   id = i;
 }
-inline void CMGNode::SetNSons(int i) {
+inline void FAMGNode::SetNSons(int i) {
   control.ns = i;
 }
-inline void CMGNode::SetLocalId(int i) {
+inline void FAMGNode::SetLocalId(int i) {
   control.lid = i;
 }
-inline void CMGNode::SetList(CMGList *l) {
+inline void FAMGNode::SetList(FAMGList *l) {
   list = l;
 }
-inline void CMGNode::SetPred(CMGNode *p) {
+inline void FAMGNode::SetPred(FAMGNode *p) {
   pred = p;
 }
-inline void CMGNode::SetSucc(CMGNode *s) {
+inline void FAMGNode::SetSucc(FAMGNode *s) {
   succ = s;
 }
-inline void CMGNode::SetPaList(CMGPaList *ptr) {
+inline void FAMGNode::SetPaList(FAMGPaList *ptr) {
   palist = ptr;
 }
-inline int CMGNode::IsCGNode() const {
+inline int FAMGNode::IsCGNode() const {
   return (control.nt == 2);
 }
-inline int CMGNode::IsFGNode() const {
+inline int FAMGNode::IsFGNode() const {
   return (control.nt == 1);
 }
-inline int CMGNode::GetFlag() const {
+inline int FAMGNode::GetFlag() const {
   return control.f0;
 }
-inline int CMGNode::GetFlag1() const {
+inline int FAMGNode::GetFlag1() const {
   return control.f1;
 }
-inline int CMGNode::GetFlag2() const {
+inline int FAMGNode::GetFlag2() const {
   return control.f2;
 }
-inline void CMGNode::MarkCGNode() {
+inline void FAMGNode::MarkCGNode() {
   control.nt = 2;
 }
-inline void CMGNode::MarkFGNode() {
+inline void FAMGNode::MarkFGNode() {
   control.nt = 1;
 }
-inline void CMGNode::SetFlag(int f) {
+inline void FAMGNode::SetFlag(int f) {
   control.f0 = f;
 }
-inline void CMGNode::SetFlag1(int f) {
+inline void FAMGNode::SetFlag1(int f) {
   control.f1 = f;
 }
-inline void CMGNode::SetFlag2(int f) {
+inline void FAMGNode::SetFlag2(int f) {
   control.f2 = f;
 }
 
 
-class CMGGraph
+class FAMGGraph
 {
 public:
   int* GetMap() const;
-  class CMGDecompRow* GetRow() const;
+  class FAMGDecompRow* GetRow() const;
   int GetNF() const;
-  CMGList* GetFreeList() const;
-  void SetFreeList(CMGList*);
-  int Insert(CMGNode *);
-  void Remove(CMGNode *);
-  int InsertH(CMGNode *);
-  void RemoveH(CMGNode *);
-  void Store(CMGNode *);
+  FAMGList* GetFreeList() const;
+  void SetFreeList(FAMGList*);
+  int Insert(FAMGNode *);
+  void Remove(FAMGNode *);
+  int InsertH(FAMGNode *);
+  void RemoveH(FAMGNode *);
+  void Store(FAMGNode *);
   int InsertHelplist();
-  CMGNode *GetNode() const;
-  CMGNode *GetFirstNode();
-  CMGNode *GetFirstNodeH();
-  CMGNode *GetLastNode();
-  int Init(class CMGGrid*);
-  int Construct(class CMGGrid *);
-  int Construct2(class CMGGrid *);
+  FAMGNode *GetNode() const;
+  FAMGNode *GetFirstNode();
+  FAMGNode *GetFirstNodeH();
+  FAMGNode *GetLastNode();
+  int Init(class FAMGGrid*);
+  int Construct(class FAMGGrid *);
+  int Construct2(class FAMGGrid *);
   int InitList();
-  void MarkFGNode(CMGNode *);
-  void MarkCGNode(CMGNode *);
-  void ClearPaList(CMGPaList *);
-  void ClearPaListRev(CMGPaList *&);
-  void CorrectPaList(CMGPaList *&palist, double threshold);
-  int SavePaList(CMGPaList *&list, int np, int *pa, double *c, double *ct, double error);
-  int EliminateNodes(CMGGrid *gridptr);
-  int RemainingNodes(CMGGrid *gridptr);
-  void UpdateNSons(CMGPaList *newlist, CMGPaList *oldlist, CMGGrid *grid);
+  void MarkFGNode(FAMGNode *);
+  void MarkCGNode(FAMGNode *);
+  void ClearPaList(FAMGPaList *);
+  void ClearPaListRev(FAMGPaList *&);
+  void CorrectPaList(FAMGPaList *&palist, double threshold);
+  int SavePaList(FAMGPaList *&list, int np, int *pa, double *c, double *ct, double error);
+  int EliminateNodes(FAMGGrid *gridptr);
+  int RemainingNodes(FAMGGrid *gridptr);
+  void UpdateNSons(FAMGPaList *newlist, FAMGPaList *oldlist, FAMGGrid *grid);
   void InitNSons();
-  int OrderSpecial(class CMGMatrix *matrix);
-  int OrderILUT(CMGMatrix *matrix);
+  int OrderSpecial(class FAMGMatrix *matrix);
+  int OrderILUT(FAMGMatrix *matrix);
 private:
   int n;
   int nf;
   int nc;
-  CMGNode *node;
-  CMGList *list;
-  CMGNode *helplist;
-  CMGPaList *freepalist;
-  CMGList *freelist;
+  FAMGNode *node;
+  FAMGList *list;
+  FAMGNode *helplist;
+  FAMGPaList *freepalist;
+  FAMGList *freelist;
   int *map;
-  class CMGDecompRow *row;
+  class FAMGDecompRow *row;
 };
 
-inline int* CMGGraph::GetMap() const {
+inline int* FAMGGraph::GetMap() const {
   return map;
 }
-inline class CMGDecompRow* CMGGraph::GetRow() const {
+inline class FAMGDecompRow* FAMGGraph::GetRow() const {
   return row;
 }
-inline int CMGGraph::GetNF() const {
+inline int FAMGGraph::GetNF() const {
   return nf;
 }
-inline CMGNode *CMGGraph::GetNode() const {
+inline FAMGNode *FAMGGraph::GetNode() const {
   return node;
 }
-inline CMGList *CMGGraph::GetFreeList() const {
+inline FAMGList *FAMGGraph::GetFreeList() const {
   return freelist;
 }
-inline void CMGGraph::SetFreeList(CMGList *pl) {
+inline void FAMGGraph::SetFreeList(FAMGList *pl) {
   freelist = pl;
 }
 

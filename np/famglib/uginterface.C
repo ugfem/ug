@@ -34,9 +34,9 @@ $Header$
     // actually these should be a system member functions. Maybe it is more
     // flexibel this way.
 
-static CMGSystem *cmgsystemptr;
+static FAMGSystem *famgsystemptr;
 
-static void ReadParameter(CMGParameter *parameter, CMGParameter *in_parameter)
+static void ReadParameter(FAMGParameter *parameter, FAMGParameter *in_parameter)
 {
     parameter->Setheap(in_parameter->Getheap());
     parameter->Setgamma(in_parameter->Getgamma());
@@ -67,165 +67,165 @@ static void ReadParameter(CMGParameter *parameter, CMGParameter *in_parameter)
 }    
 
 
-static int CMGConstructParameter(CMGParameter *in_parameter)
+static int FAMGConstructParameter(FAMGParameter *in_parameter)
 {
-    CMGParameter *parameter = new CMGParameter;
+    FAMGParameter *parameter = new FAMGParameter;
     if(parameter == NULL) return 1;
     ReadParameter(parameter, in_parameter); 
-    CMGSetParameter(parameter);
+    FAMGSetParameter(parameter);
 
     return 0;
 }
 
-static void CMGDeconstructParameter()
+static void FAMGDeconstructParameter()
 {
-    CMGParameter *parameter = CMGGetParameter();
+    FAMGParameter *parameter = FAMGGetParameter();
     delete parameter;
 }
 
-static int CMGConstruct(double *matrix, int *index, int *start, int n, int nl, double *tvA, double *tvB, void **extra)
+static int FAMGConstruct(double *matrix, int *index, int *start, int n, int nl, double *tvA, double *tvB, void **extra)
 {
  
 
-    CMGHeap *heap = new CMGHeap (CMGGetParameter()->Getheap());
+    FAMGHeap *heap = new FAMGHeap (FAMGGetParameter()->Getheap());
     if (heap == NULL) return 1;
-    CMGSetHeap(heap);
+    FAMGSetHeap(heap);
 
-    cmgsystemptr = (CMGSystem *) CMGGetMem(sizeof(CMGSystem),CMG_FROM_TOP);
-    if(cmgsystemptr == NULL) return 1;
+    famgsystemptr = (FAMGSystem *) FAMGGetMem(sizeof(FAMGSystem),FAMG_FROM_TOP);
+    if(famgsystemptr == NULL) return 1;
     
-    cmgsystemptr->Init();
-    if(cmgsystemptr->Construct(matrix,index,start,n,nl,tvA,tvB,extra)) return 1;
+    famgsystemptr->Init();
+    if(famgsystemptr->Construct(matrix,index,start,n,nl,tvA,tvB,extra)) return 1;
 
     return 0;
 }
-static int CMGConstructSimple(double *matrix, int *index, int *start, int n, int nl, void **extra)
+static int FAMGConstructSimple(double *matrix, int *index, int *start, int n, int nl, void **extra)
 {
-    if(cmgsystemptr->ConstructSimple(matrix,index,start,n,nl,extra)) return 1;
+    if(famgsystemptr->ConstructSimple(matrix,index,start,n,nl,extra)) return 1;
 
     return 0;
 }
 
-static int CMGSolve(double *rhs, double *defect, double *unknown)
+static int FAMGSolve(double *rhs, double *defect, double *unknown)
 {
-    return cmgsystemptr->Solve(rhs,defect,unknown);
+    return famgsystemptr->Solve(rhs,defect,unknown);
 }
 
-static void CMGDeconstruct()
+static void FAMGDeconstruct()
 {
-    cmgsystemptr->Deconstruct();
+    famgsystemptr->Deconstruct();
     
-    CMGHeap *heap = CMGGetHeap();
+    FAMGHeap *heap = FAMGGetHeap();
     delete heap;
 }
 
-static void CMGDeconstructSimple()
+static void FAMGDeconstructSimple()
 {
-    cmgsystemptr->DeconstructSimple();
+    famgsystemptr->DeconstructSimple();
 
     // remove heap, parameter
 }
 
-int CMGSolveSystem(CMG_Interface *interface, CMG_Parameter *in_parameter)
+int FAMGSolveSystem(FAMG_Interface *interface, FAMG_Parameter *in_parameter)
 {
     int status;
 
 
-    CMGConstructParameter((CMGParameter*)in_parameter);
+    FAMGConstructParameter((FAMGParameter*)in_parameter);
 
-    CMGConstruct(interface->entry,interface->index,interface->start,interface->n,interface->nl,interface->vector[CMG_TVA],interface->vector[CMG_TVB],interface->extra);
+    FAMGConstruct(interface->entry,interface->index,interface->start,interface->n,interface->nl,interface->vector[FAMG_TVA],interface->vector[FAMG_TVB],interface->extra);
 
-    status = CMGSolve(interface->vector[CMG_RHS],interface->vector[CMG_DEFECT],interface->vector[CMG_UNKNOWN]);
+    status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
 
-    CMGDeconstructSimple();
+    FAMGDeconstructSimple();
 
-    CMGConstructSimple(interface->entry,interface->index,interface->start,interface->n,interface->nl,interface->extra);
+    FAMGConstructSimple(interface->entry,interface->index,interface->start,interface->n,interface->nl,interface->extra);
 
-    status = CMGSolve(interface->vector[CMG_RHS],interface->vector[CMG_DEFECT],interface->vector[CMG_UNKNOWN]);
+    status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
 
-    CMGDeconstruct();
-    CMGConstruct(interface->entry,interface->index,interface->start,interface->n,interface->nl,interface->vector[CMG_TVA],interface->vector[CMG_TVB],interface->extra);
+    FAMGDeconstruct();
+    FAMGConstruct(interface->entry,interface->index,interface->start,interface->n,interface->nl,interface->vector[FAMG_TVA],interface->vector[FAMG_TVB],interface->extra);
 
-    status = CMGSolve(interface->vector[CMG_RHS],interface->vector[CMG_DEFECT],interface->vector[CMG_UNKNOWN]);
+    status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
 
-    status = CMGSolve(interface->vector[CMG_RHS],interface->vector[CMG_DEFECT],interface->vector[CMG_UNKNOWN]);
+    status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
 
-    CMGDeconstructSimple();
+    FAMGDeconstructSimple();
 
-    CMGConstructSimple(interface->entry,interface->index,interface->start,interface->n,interface->nl,interface->extra);
+    FAMGConstructSimple(interface->entry,interface->index,interface->start,interface->n,interface->nl,interface->extra);
 
-    status = CMGSolve(interface->vector[CMG_RHS],interface->vector[CMG_DEFECT],interface->vector[CMG_UNKNOWN]);
+    status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
 
-    status = CMGSolve(interface->vector[CMG_RHS],interface->vector[CMG_DEFECT],interface->vector[CMG_UNKNOWN]);
+    status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
 
-     status = CMGSolve(interface->vector[CMG_RHS],interface->vector[CMG_DEFECT],interface->vector[CMG_UNKNOWN]);
+     status = FAMGSolve(interface->vector[FAMG_RHS],interface->vector[FAMG_DEFECT],interface->vector[FAMG_UNKNOWN]);
 
-   CMGDeconstruct();
+   FAMGDeconstruct();
 
-   CMGDeconstructParameter();
+   FAMGDeconstructParameter();
  
     return status;
 }
 
-void **CMG_GetExtraPtr(int level)
+void **FAMG_GetExtraPtr(int level)
 {
     void **ptr;
 
-    ptr = cmgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetNode();
+    ptr = famgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetNode();
 
     return ptr;
 }
 
-int CMG_GetN(int level)
+int FAMG_GetN(int level)
 {
     int n;
 
-    n = cmgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetN();
+    n = famgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetN();
     return n;
 }
 
-int CMG_GetNF(int level)
+int FAMG_GetNF(int level)
 {
     int nf;
 
-    nf = cmgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetNF();
+    nf = famgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetNF();
     return nf;
 }
 
-CMG_MatrixPtr  *CMG_GetMatrixPtr(int level,int i)
+FAMG_MatrixPtr  *FAMG_GetMatrixPtr(int level,int i)
 {
-    CMGMatrix *matrix;
-    CMGMatrixPtr mat;
+    FAMGMatrix *matrix;
+    FAMGMatrixPtr mat;
     
-    matrix = cmgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetMatrix();
+    matrix = famgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetMatrix();
     mat = matrix->GetStart(i);
-    return ((CMG_MatrixPtr *) &mat);
+    return ((FAMG_MatrixPtr *) &mat);
 }
 
-CMG_TransferEntry  *CMG_GetTransferEntry(int level,int i)
+FAMG_TransferEntry  *FAMG_GetTransferEntry(int level,int i)
 {
-    CMGTransfer *transfer;
-    CMGTransferEntry *trans;
+    FAMGTransfer *transfer;
+    FAMGTransferEntry *trans;
     
-    transfer = cmgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetTransfer();
+    transfer = famgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetTransfer();
     if(transfer == NULL) return NULL;
     trans = transfer->GetRow(i);
-    return ((CMG_TransferEntry *) trans);
+    return ((FAMG_TransferEntry *) trans);
 }
 
-double * CMG_GetVector(int level, int i)
+double * FAMG_GetVector(int level, int i)
 {
     double *vector;
     
-    vector = cmgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetVector(i);
+    vector = famgsystemptr->GetMultiGrid(0)->GetGrid(level)->GetVector(i);
     return vector;
 }
 
 
-int CMG_GetMaxLevel()
+int FAMG_GetMaxLevel()
 {
     int n;
 
-    n = cmgsystemptr->GetMultiGrid(0)->GetN();
+    n = famgsystemptr->GetMultiGrid(0)->GetN();
     return n-1;
 }

@@ -4,7 +4,7 @@
 /*																			*/
 /* File:      grid.h														*/
 /*																			*/
-/* Purpose:   cmg grid classes												*/
+/* Purpose:   famg grid classes												*/
 /*                                                                          */
 /* Author:    Christian Wagner                                                              */
 /*            Institut fuer Computeranwendungen  III			            */
@@ -19,8 +19,8 @@
 /*                                                                          */
 /****************************************************************************/
 
-#ifndef __CMG_GRID__
-#define __CMG_GRID__
+#ifndef __FAMG_GRID__
+#define __FAMG_GRID__
 
 #include "matrix.h"
 #include "decomp.h"
@@ -31,29 +31,29 @@
    $Header$
  */
 
-const int CMGRHS=0;
-const int CMGUNKNOWN=1;
-const int CMGDEFECT=2;
-const int CMGTVA=3;
-const int CMGTVB=4;
-const int CMGMAXVECTORS=5;
+const int FAMGRHS=0;
+const int FAMGUNKNOWN=1;
+const int FAMGDEFECT=2;
+const int FAMGTVA=3;
+const int FAMGTVB=4;
+const int FAMGMAXVECTORS=5;
 
-class CMGGrid
+class FAMGGrid
 {
 public:
   void **GetNode() const;
-  CMGMatrix *GetMatrix() const;
-  CMGMatrix *GetTmpMatrix() const;
-  CMGDecomp *GetDecomp() const;
-  CMGGraph *GetGraph() const;
+  FAMGMatrix *GetMatrix() const;
+  FAMGMatrix *GetTmpMatrix() const;
+  FAMGDecomp *GetDecomp() const;
+  FAMGGraph *GetGraph() const;
   double *GetVector(int) const;
   double **GetVectorPtr();
-  CMGTransfer *GetTransfer() const;
+  FAMGTransfer *GetTransfer() const;
   int GetN() const;
   int GetNF() const;
   int* GetFather() const;
   int* GetMap() const;
-  void SetTmpMatrix(CMGMatrix *tmp);
+  void SetTmpMatrix(FAMGMatrix *tmp);
   void SetVector(int, double *);
 
   void Defect();
@@ -64,10 +64,10 @@ public:
   void BGSSmooth();
   void ILUTSmooth();
   void DevideFGDefect();
-  void Prolongation(const CMGGrid *cg);
-  void ProlongationTrans(const CMGGrid *cg);
-  void Restriction(CMGGrid *cg) const;
-  void RestrictionTrans(CMGGrid *cg) const;
+  void Prolongation(const FAMGGrid *cg);
+  void ProlongationTrans(const FAMGGrid *cg);
+  void Restriction(FAMGGrid *cg) const;
+  void RestrictionTrans(FAMGGrid *cg) const;
   int ILUTDecomp(int);
   int ConstructTransfer();
   void CopyVector(int, int);
@@ -76,9 +76,9 @@ public:
   void SetVector(int, double);
   void MultVector(int source, double factor);
   int AnalyseParents(int i);
-  int InitLevel0(const class CMGSystem &);
+  int InitLevel0(const class FAMGSystem &);
   int Init(int);
-  int Construct(CMGGrid *);
+  int Construct(FAMGGrid *);
   void Deconstruct();
   int BiCGStab();
   void SmoothTV();
@@ -86,13 +86,13 @@ public:
   int ReorderVector(int,int*);
   int Order(int*);
   int Reorder();
-  int AnalyseNodeSimple(int i, CMGPaList *&palist);
+  int AnalyseNodeSimple(int i, FAMGPaList *&palist);
 
 
-  int AnalyseNode0(int i, CMGPaList *&palist);
-  double BestFirst0(CMGPaList *&palist, double mii, double prt, double plt, double ff, double gg, struct CMGSpecialData *sd, int nnb);
-  double BestSecond0(CMGPaList *&palist, double mii, double prt, double plt, double ff, double gg, struct CMGSpecialData *sd, int nnb);
-  double BestFirst2(CMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, CMGSpecialData sd);
+  int AnalyseNode0(int i, FAMGPaList *&palist);
+  double BestFirst0(FAMGPaList *&palist, double mii, double prt, double plt, double ff, double gg, struct FAMGSpecialData *sd, int nnb);
+  double BestSecond0(FAMGPaList *&palist, double mii, double prt, double plt, double ff, double gg, struct FAMGSpecialData *sd, int nnb);
+  double BestFirst2(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData sd);
   void FF0(int j, double &ff, double &gg, double *f, double *g);
   void DFF0(int j);
   void JK0(int k, double &hjk, double &ejk, double* h, double *e);
@@ -101,10 +101,10 @@ public:
   void FJ0(int j, double &fj, double &gj, double *f, double *g);
   void JJ0(int j, double &hjj, double &ejj);
 
-  int AnalyseNode1(int i, CMGPaList *&palist);
-  double BestFirst1(CMGPaList *&palist, double mii, double prt, double plt, double ff, double gg, struct CMGSpecialData *sd, int nnb);
-  double BestFirst5(CMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, CMGSpecialData sd);
-  double BestSecond1(CMGPaList *&palist, double mii, double prt, double plt, double ff, double gg, struct CMGSpecialData *sd, int nnb);
+  int AnalyseNode1(int i, FAMGPaList *&palist);
+  double BestFirst1(FAMGPaList *&palist, double mii, double prt, double plt, double ff, double gg, struct FAMGSpecialData *sd, int nnb);
+  double BestFirst5(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData sd);
+  double BestSecond1(FAMGPaList *&palist, double mii, double prt, double plt, double ff, double gg, struct FAMGSpecialData *sd, int nnb);
   void FF1(int j, double &ff, double &gg, double *f, double *g);
   void DFF1(int j);
   void JK1(int k, double &hjk, double &ejk, double* h, double *e);
@@ -113,10 +113,10 @@ public:
   void FJ1(int j, double &fj, double &gj, double *f, double *g);
   void JJ1(int j, double &hjj, double &ejj);
 
-  int AnalyseNode2(int i, CMGPaList *&palist);
-  int AnalyseNode3(int i, CMGPaList *&palist);
-  int AnalyseNode4(int i, CMGPaList *&palist);
-  int AnalyseNode5(int i, CMGPaList *&palist);
+  int AnalyseNode2(int i, FAMGPaList *&palist);
+  int AnalyseNode3(int i, FAMGPaList *&palist);
+  int AnalyseNode4(int i, FAMGPaList *&palist);
+  int AnalyseNode5(int i, FAMGPaList *&palist);
 
   int SetFlagsAndCount(int i, int f);
   int Connected(int i, int z);
@@ -133,60 +133,60 @@ public:
 private:
   int n;                     // unknowns
   int nf;
-  CMGMatrix *matrix;
-  CMGMatrix *tmpmatrix;
-  CMGDecomp *decomp;
-  CMGTransfer *transfer;
-  CMGGraph *graph;
-  double *vector[CMGMAXVECTORS];
+  FAMGMatrix *matrix;
+  FAMGMatrix *tmpmatrix;
+  FAMGDecomp *decomp;
+  FAMGTransfer *transfer;
+  FAMGGraph *graph;
+  double *vector[FAMGMAXVECTORS];
   int *father;
   int *map;        // actually either map or father
   void  **vertex;
-  void (CMGGrid::*CGSmootherPtr)(void);
-  void (CMGGrid::*PreSmootherPtr)(void);
-  void (CMGGrid::*PostSmootherPtr)(void);
+  void (FAMGGrid::*CGSmootherPtr)(void);
+  void (FAMGGrid::*PreSmootherPtr)(void);
+  void (FAMGGrid::*PostSmootherPtr)(void);
 };
 
-inline void **CMGGrid::GetNode() const {
+inline void **FAMGGrid::GetNode() const {
   return vertex;
 }
-inline CMGMatrix *CMGGrid::GetMatrix() const {
+inline FAMGMatrix *FAMGGrid::GetMatrix() const {
   return matrix;
 }
-inline CMGMatrix *CMGGrid::GetTmpMatrix() const {
+inline FAMGMatrix *FAMGGrid::GetTmpMatrix() const {
   return tmpmatrix;
 }
-inline CMGDecomp *CMGGrid::GetDecomp() const {
+inline FAMGDecomp *FAMGGrid::GetDecomp() const {
   return decomp;
 }
-inline CMGGraph *CMGGrid::GetGraph() const {
+inline FAMGGraph *FAMGGrid::GetGraph() const {
   return graph;
 }
-inline double **CMGGrid::GetVectorPtr()  {
+inline double **FAMGGrid::GetVectorPtr()  {
   return vector;
 }
-inline double *CMGGrid::GetVector(int i) const {
+inline double *FAMGGrid::GetVector(int i) const {
   return vector[i];
 }
-inline int CMGGrid::GetN() const {
+inline int FAMGGrid::GetN() const {
   return n;
 }
-inline int CMGGrid::GetNF() const {
+inline int FAMGGrid::GetNF() const {
   return nf;
 }
-inline int* CMGGrid::GetFather() const {
+inline int* FAMGGrid::GetFather() const {
   return father;
 }
-inline int* CMGGrid::GetMap() const {
+inline int* FAMGGrid::GetMap() const {
   return map;
 }
-inline CMGTransfer *CMGGrid::GetTransfer() const {
+inline FAMGTransfer *FAMGGrid::GetTransfer() const {
   return transfer;
 }
-inline void CMGGrid::SetTmpMatrix(CMGMatrix *tmp) {
+inline void FAMGGrid::SetTmpMatrix(FAMGMatrix *tmp) {
   tmpmatrix = tmp;
 }
-inline void CMGGrid::SetVector(int i, double *p) {
+inline void FAMGGrid::SetVector(int i, double *p) {
   vector[i] = p;
 }
 

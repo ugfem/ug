@@ -2,7 +2,7 @@
 /*																			*/
 /* File:      construct.C													*/
 /*																			*/
-/* Purpose:   cmg graph classes functions									*/
+/* Purpose:   famg graph classes functions									*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -47,10 +47,10 @@ extern "C"
 $Header$
 */
 
-int CMGGrid::AnalyseNodeSimple(int i, CMGPaList *&palist)
+int FAMGGrid::AnalyseNodeSimple(int i, FAMGPaList *&palist)
 {
-    CMGNode *nodei, *node;
-    CMGPaList *pl;
+    FAMGNode *nodei, *node;
+    FAMGPaList *pl;
     int remove, z, j;
 
     palist = NULL;
@@ -79,7 +79,7 @@ int CMGGrid::AnalyseNodeSimple(int i, CMGPaList *&palist)
 }
 
 
-double CMGPaList::TotalWeight()
+double FAMGPaList::TotalWeight()
 {
     double weight;
 
@@ -91,9 +91,9 @@ double CMGPaList::TotalWeight()
 } 
 
 
-void CMGNode::ComputeTotalWeight()
+void FAMGNode::ComputeTotalWeight()
 {
-    CMGPaList *pl;
+    FAMGPaList *pl;
     double weight, minweight;
 
     minweight = 1e+7;
@@ -119,10 +119,10 @@ void CMGNode::ComputeTotalWeight()
 }
 
 
-void CMGNode::CountNewCG(CMGGraph *graph)
+void FAMGNode::CountNewCG(FAMGGraph *graph)
 {
-    CMGNode *node;
-    CMGPaList *pl;
+    FAMGNode *node;
+    FAMGPaList *pl;
     double nc;
     int i, np, *pa, ns;
 
@@ -154,10 +154,10 @@ void CMGNode::CountNewCG(CMGGraph *graph)
     return;
 }
 
-int CMGNode::CountNewCG(CMGGraph *graph, int j)
+int FAMGNode::CountNewCG(FAMGGraph *graph, int j)
 {
-    CMGNode *node;
-    CMGPaList *pl;
+    FAMGNode *node;
+    FAMGPaList *pl;
     double nc;
     int i, np, *pa, found, change, ns;
 
@@ -203,11 +203,11 @@ int CMGNode::CountNewCG(CMGGraph *graph, int j)
 }
 
 
-int CMGGrid::Connected(int i, int z)
+int FAMGGrid::Connected(int i, int z)
 {
-    CMGTransferEntry *trans, *transis, *transrj;
-    CMGMatrixPtr matsr;
-    CMGNode *noder, *node;
+    FAMGTransferEntry *trans, *transis, *transrj;
+    FAMGMatrixPtr matsr;
+    FAMGNode *noder, *node;
     int j,r,s;
 
     trans = transfer->GetRow();
@@ -252,11 +252,11 @@ int CMGGrid::Connected(int i, int z)
     return 0;
 }
 
-int CMGGrid::SetFlagsAndCount(int i, int f)
+int FAMGGrid::SetFlagsAndCount(int i, int f)
 {
-    CMGTransferEntry *trans, *transis, *transrj;
-    CMGMatrixPtr matsr;
-    CMGNode *nodej, *noder, *node;
+    FAMGTransferEntry *trans, *transis, *transrj;
+    FAMGMatrixPtr matsr;
+    FAMGNode *nodej, *noder, *node;
     int z,j,r,s;
 
     trans = transfer->GetRow();
@@ -326,11 +326,11 @@ int CMGGrid::SetFlagsAndCount(int i, int f)
     return z;
 }
 
-void CMGGrid::SetFlags(int i, int f)
+void FAMGGrid::SetFlags(int i, int f)
 {
-    CMGTransferEntry *trans, *transis, *transrj;
-    CMGMatrixPtr matsr;
-    CMGNode *nodej, *noder, *node;
+    FAMGTransferEntry *trans, *transis, *transrj;
+    FAMGMatrixPtr matsr;
+    FAMGNode *nodej, *noder, *node;
     int j,r,s;
 
     trans = transfer->GetRow();
@@ -384,11 +384,11 @@ void CMGGrid::SetFlags(int i, int f)
     return;
 }
 
-int CMGGrid::CountLinks(int i)
+int FAMGGrid::CountLinks(int i)
 {
-    CMGTransferEntry *trans, *transis, *transrj;
-    CMGMatrixPtr matsr;
-    CMGNode *nodej, *noder, *node;
+    FAMGTransferEntry *trans, *transis, *transrj;
+    FAMGMatrixPtr matsr;
+    FAMGNode *nodej, *noder, *node;
     int z,j,r,s;
 
     trans = transfer->GetRow();
@@ -458,10 +458,10 @@ int CMGGrid::CountLinks(int i)
     return z;
 }
 
-int CMGNode::CountNewLinks(CMGGrid *gridptr, CMGGraph *graph)
+int FAMGNode::CountNewLinks(FAMGGrid *gridptr, FAMGGraph *graph)
 {
-    CMGPaList *pl;
-    CMGNode *node;
+    FAMGPaList *pl;
+    FAMGNode *node;
     int nnb, nl, z, np, *pa, y, newlinks;
     
     node = graph->GetNode();
@@ -497,9 +497,9 @@ int CMGNode::CountNewLinks(CMGGrid *gridptr, CMGGraph *graph)
 }
 
 
-void CMGGraph::InitNSons()
+void FAMGGraph::InitNSons()
 {
-    CMGPaList *palist, *pl;
+    FAMGPaList *palist, *pl;
     int i, np, j, z, mark;
 
     for(i = 0; i < n; i++)
@@ -548,10 +548,10 @@ void CMGGraph::InitNSons()
     return;
 }
             
-int CMGGrid::UpdateNBNewCG(int i)
+int FAMGGrid::UpdateNBNewCG(int i)
 {
-    CMGNode *nodej, *node;
-    CMGMatrixPtr matij;
+    FAMGNode *nodej, *node;
+    FAMGMatrixPtr matij;
     int j;
 
     node = graph->GetNode();
@@ -573,9 +573,9 @@ int CMGGrid::UpdateNBNewCG(int i)
     return 0;
 }
 
-void CMGGraph::UpdateNSons(CMGPaList *newlist, CMGPaList *oldlist, CMGGrid* grid)
+void FAMGGraph::UpdateNSons(FAMGPaList *newlist, FAMGPaList *oldlist, FAMGGrid* grid)
 {
-    CMGPaList *pl;
+    FAMGPaList *pl;
     int np, z, j, mark, fmark;
     
     for(pl = oldlist; pl != NULL; pl = pl->GetNext())
@@ -701,11 +701,11 @@ void CMGGraph::UpdateNSons(CMGPaList *newlist, CMGPaList *oldlist, CMGGrid* grid
 }
 
 
-int CMGGrid::UpdateNeighborsCG(int i)
+int FAMGGrid::UpdateNeighborsCG(int i)
 {
-    CMGNode *nodej, *node;
-    CMGMatrixPtr matij;
-    CMGPaList *pl;
+    FAMGNode *nodej, *node;
+    FAMGMatrixPtr matij;
+    FAMGPaList *pl;
     int j, z, found, k;
 
     node = graph->GetNode();
@@ -786,10 +786,10 @@ int CMGGrid::UpdateNeighborsCG(int i)
 }
 
  
-void CMGPaList::MarkParents(CMGGrid *grid)
+void FAMGPaList::MarkParents(FAMGGrid *grid)
 {
-    CMGNode *node,*cgnode;
-    CMGGraph *graph;
+    FAMGNode *node,*cgnode;
+    FAMGGraph *graph;
     int i;
     
     graph = grid->GetGraph();
@@ -810,9 +810,9 @@ void CMGPaList::MarkParents(CMGGrid *grid)
 }
 
         
-int CMGGrid::SaveCoeffs(int i, int np, int *pa, double *coeff, double *coefft)
+int FAMGGrid::SaveCoeffs(int i, int np, int *pa, double *coeff, double *coefft)
 {
-    CMGTransferEntry *trans;
+    FAMGTransferEntry *trans;
     int j,z;
 
     trans = transfer->GetRow();
@@ -826,10 +826,10 @@ int CMGGrid::SaveCoeffs(int i, int np, int *pa, double *coeff, double *coefft)
     return 0;
 }
 
-int CMGNode::Eliminate(CMGGrid *grid)
+int FAMGNode::Eliminate(FAMGGrid *grid)
 {
-    CMGGraph *graph;
-    CMGPaList *pl, *minpl;
+    FAMGGraph *graph;
+    FAMGPaList *pl, *minpl;
     double weight, minweight;
 
     graph = grid->GetGraph();
@@ -857,12 +857,12 @@ int CMGNode::Eliminate(CMGGrid *grid)
     return 0;
 }
 
-int CMGNode::UpdateNeighborsFG(CMGGrid *grid)
+int FAMGNode::UpdateNeighborsFG(FAMGGrid *grid)
 {
-    CMGGraph *graph;
-    CMGNode *node, *nodej;
-    CMGMatrixPtr matij;
-    CMGPaList *palist;
+    FAMGGraph *graph;
+    FAMGNode *node, *nodej;
+    FAMGMatrixPtr matij;
+    FAMGPaList *palist;
     int j;
     
     graph = grid->GetGraph();
@@ -892,9 +892,9 @@ int CMGNode::UpdateNeighborsFG(CMGGrid *grid)
         
 
           
-int CMGGraph::RemainingNodes(CMGGrid *gridptr)
+int FAMGGraph::RemainingNodes(FAMGGrid *gridptr)
 {
-    CMGNode* cgnode;
+    FAMGNode* cgnode;
     
     cgnode = GetFirstNode();
     while(cgnode != NULL)
@@ -924,9 +924,9 @@ int CMGGraph::RemainingNodes(CMGGrid *gridptr)
 
     return 0;
 }
-int CMGGraph::EliminateNodes(CMGGrid *gridptr)
+int FAMGGraph::EliminateNodes(FAMGGrid *gridptr)
 {
-    CMGNode* fgnode;
+    FAMGNode* fgnode;
     
     fgnode = GetFirstNode();
     while(fgnode != NULL)
@@ -963,10 +963,10 @@ int CMGGraph::EliminateNodes(CMGGrid *gridptr)
 }
 
 
-int CMGGraph::Construct(CMGGrid *gridptr)
+int FAMGGraph::Construct(FAMGGrid *gridptr)
 {
-    CMGNode *nodei;
-    CMGPaList *palist;
+    FAMGNode *nodei;
+    FAMGPaList *palist;
     int i;
 
 #ifdef UG_DRAW
@@ -981,7 +981,7 @@ int CMGGraph::Construct(CMGGrid *gridptr)
     } 
 #endif 
 
-    int type = CMGGetParameter()->Gettype();
+    int type = FAMGGetParameter()->Gettype();
     
     for(i = 0; i < n; i++)
     {
@@ -1021,10 +1021,10 @@ int CMGGraph::Construct(CMGGrid *gridptr)
     return 0;
 }
 
-int CMGGraph::Construct2(CMGGrid *gridptr)
+int FAMGGraph::Construct2(FAMGGrid *gridptr)
 {
-    CMGNode *nodei;
-    CMGPaList *palist;
+    FAMGNode *nodei;
+    FAMGPaList *palist;
     int i;
 
 #ifdef UG_DRAW
@@ -1040,7 +1040,7 @@ int CMGGraph::Construct2(CMGGrid *gridptr)
     } 
 #endif
 
-    int type = CMGGetParameter()->Gettype();
+    int type = FAMGGetParameter()->Gettype();
     
     for(i = 0; i < n; i++)
     {

@@ -2,7 +2,7 @@
 /*																			*/
 /* File:      approx.C                                                      */
 /*																			*/
-/* Purpose:   cmg graph classes functions									*/
+/* Purpose:   famg graph classes functions									*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -34,7 +34,7 @@
 $Header$
 */
 
-struct CMGSpecialData
+struct FAMGSpecialData
 {
     int j;
     double hjj, ejj, fj, gj, rj, lj;
@@ -42,12 +42,12 @@ struct CMGSpecialData
 
 
 
-void CMGGrid::JJ1(int j, double &hjj, double &ejj)
+void FAMGGrid::JJ1(int j, double &hjj, double &ejj)
 {
-    CMGMatrixPtr matjz;
+    FAMGMatrixPtr matjz;
     double esum, hsum, mjj, mjz, mzj;
 
-    double omega = CMGGetParameter()->Getomegar();
+    double omega = FAMGGetParameter()->Getomegar();
     hsum = 0.0;
     esum = 0.0;
     matjz = tmpmatrix->GetStart(j);
@@ -67,14 +67,14 @@ void CMGGrid::JJ1(int j, double &hjj, double &ejj)
 }
         
 
-void CMGGrid::FJ1(int j, double &fj, double &gj, double *f, double *g)
+void FAMGGrid::FJ1(int j, double &fj, double &gj, double *f, double *g)
 {
-    CMGMatrixPtr matjz;
-    CMGNode *node;
+    FAMGMatrixPtr matjz;
+    FAMGNode *node;
     double mjz, mzj, mjj, tf, tg;
     int z, lz;
     
-    double omega = CMGGetParameter()->Getomegar();
+    double omega = FAMGGetParameter()->Getomegar();
     node = graph->GetNode();
     matjz = tmpmatrix->GetStart(j);
     mjj = matjz.GetData();
@@ -100,14 +100,14 @@ void CMGGrid::FJ1(int j, double &fj, double &gj, double *f, double *g)
 }
 
 
-int CMGGrid::LocalJ1(int j, double *h, double *e)
+int FAMGGrid::LocalJ1(int j, double *h, double *e)
 {
-    CMGMatrixPtr matjz;
-    CMGNode *node, *nodej, *nodez;
+    FAMGMatrixPtr matjz;
+    FAMGNode *node, *nodej, *nodez;
     double mjj;
     int z, nn;
 
-    double omega = CMGGetParameter()->Getomegar();
+    double omega = FAMGGetParameter()->Getomegar();
     node = graph->GetNode();
  
     matjz = tmpmatrix->GetStart(j);
@@ -128,17 +128,17 @@ int CMGGrid::LocalJ1(int j, double *h, double *e)
         else 
         {
             ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-            CMGWarning(ostr);
+            FAMGWarning(ostr);
         }
     }
 
     return 0;
 }
 
-void CMGGrid::DLocalJ1(int j)
+void FAMGGrid::DLocalJ1(int j)
 {
-    CMGMatrixPtr matjz;
-    CMGNode *node, *nodej, *nodez;
+    FAMGMatrixPtr matjz;
+    FAMGNode *node, *nodej, *nodez;
     int z;
 
     node = graph->GetNode();
@@ -156,14 +156,14 @@ void CMGGrid::DLocalJ1(int j)
 }
    
    
-void CMGGrid::JK1(int k, double &hjk, double &ejk, double *h, double *e)        
+void FAMGGrid::JK1(int k, double &hjk, double &ejk, double *h, double *e)        
 {
-    CMGMatrixPtr matkz;
-    CMGNode *node, *nodek, *nodez;
+    FAMGMatrixPtr matkz;
+    FAMGNode *node, *nodek, *nodez;
     double mkz, mzk, mkk, th, te;
     int z, lz;
     
-    double omega = CMGGetParameter()->Getomegar();
+    double omega = FAMGGetParameter()->Getomegar();
 
     node = graph->GetNode();
     nodek = node+k;
@@ -200,14 +200,14 @@ void CMGGrid::JK1(int k, double &hjk, double &ejk, double *h, double *e)
 }
 
 
-void CMGGrid::FF1(int i, double &ff, double &gg, double *f, double *g)
+void FAMGGrid::FF1(int i, double &ff, double &gg, double *f, double *g)
 {
-    CMGMatrixPtr matjz, matij;
-    CMGNode *node, *nodez, *nodej;
+    FAMGMatrixPtr matjz, matij;
+    FAMGNode *node, *nodez, *nodej;
     double mjj, mzj, mjz, rj, lj;
     int z, j, lz, nn;
 
-    double omega = CMGGetParameter()->Getomegar();
+    double omega = FAMGGetParameter()->Getomegar();
     node = graph->GetNode();
     matij = tmpmatrix->GetStart(i);
     nn = 0;
@@ -236,7 +236,7 @@ void CMGGrid::FF1(int i, double &ff, double &gg, double *f, double *g)
                 else 
                 {
                     ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-                    CMGWarning(ostr);
+                    FAMGWarning(ostr);
                 }
             }
             else
@@ -265,7 +265,7 @@ void CMGGrid::FF1(int i, double &ff, double &gg, double *f, double *g)
             else 
             {
                 ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-                CMGWarning(ostr);
+                FAMGWarning(ostr);
             }
         }
         else
@@ -286,10 +286,10 @@ void CMGGrid::FF1(int i, double &ff, double &gg, double *f, double *g)
     return;
 }
         
-void CMGGrid::DFF1(int i)
+void FAMGGrid::DFF1(int i)
 {
-    CMGMatrixPtr matjz, matij;
-    CMGNode *node, *nodez, *nodej;
+    FAMGMatrixPtr matjz, matij;
+    FAMGNode *node, *nodez, *nodej;
     int z, j;
 
     node = graph->GetNode();
@@ -315,7 +315,7 @@ void CMGGrid::DFF1(int i)
         
 
 
-double CMGGrid::BestSecond1(CMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, CMGSpecialData *sd, int nnb)
+double FAMGGrid::BestSecond1(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData *sd, int nnb)
 {
     double *tvA, *tvB;
     double aj, ak, bj, bk;
@@ -324,15 +324,15 @@ double CMGGrid::BestSecond1(CMGPaList *&palist, double mii, double rt, double lt
     double coeffA[2], coeffB[2];
     int k, np, pa[2], j, z, y;
 
-    double tol = CMGGetParameter()->Gettol();
-    tvA = vector[CMGTVA];
-    tvB = vector[CMGTVB];
+    double tol = FAMGGetParameter()->Gettol();
+    tvA = vector[FAMGTVA];
+    tvB = vector[FAMGTVB];
 
-    min = CMGGetParameter()->Geterror2();
+    min = FAMGGetParameter()->Geterror2();
     for(z = 0; z < nnb-1; z++)
     {
         j = sd[z].j;
-        CMGMarkHeap(CMG_FROM_TOP);
+        FAMGMarkHeap(FAMG_FROM_TOP);
         hjj = (sd[z]).hjj; ejj = sd[z].ejj;
         fj = sd[z].fj; gj = sd[z].gj;
         tvAj = tvA[j];
@@ -448,7 +448,7 @@ double CMGGrid::BestSecond1(CMGPaList *&palist, double mii, double rt, double lt
             }
         }
         DLocalJ1(j);
-        CMGReleaseHeap(CMG_FROM_TOP);
+        FAMGReleaseHeap(FAMG_FROM_TOP);
     }
 
     graph->CorrectPaList(palist,min/tol);
@@ -457,18 +457,18 @@ double CMGGrid::BestSecond1(CMGPaList *&palist, double mii, double rt, double lt
 }
 
 
-double CMGGrid::BestFirst1(CMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, CMGSpecialData *sd, int nnb)
+double FAMGGrid::BestFirst1(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData *sd, int nnb)
 {
     double *tvA, *tvB, aj, bj, coeffA[1], coeffB[1];
     double errorA, errorB, error, min;
     double hjj, ejj, fj, gj;
     int j, np, pa[1], z;
     
-    double tol = CMGGetParameter()->Gettol();
-    tvA = vector[CMGTVA];
-    tvB = vector[CMGTVB];
+    double tol = FAMGGetParameter()->Gettol();
+    tvA = vector[FAMGTVA];
+    tvB = vector[FAMGTVB];
  
-    min = 1.01*CMGGetParameter()->Geterror1(); 
+    min = 1.01*FAMGGetParameter()->Geterror1(); 
     for(z = 0; z < nnb; z++)
     {
         j = sd[z].j;
@@ -499,18 +499,18 @@ double CMGGrid::BestFirst1(CMGPaList *&palist, double mii, double rt, double lt,
     return min;
 }
 
-double CMGGrid::BestFirst5(CMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, CMGSpecialData sd)
+double FAMGGrid::BestFirst5(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData sd)
 {
     double *tvA, *tvB, aj, bj, coeffA[1], coeffB[1];
     double errorA, errorB, error, min;
     double hjj, ejj, fj, gj;
     int j, np, pa[1];
     
-    double tol = CMGGetParameter()->Gettol();
-    tvA = vector[CMGTVA];
-    tvB = vector[CMGTVB];
+    double tol = FAMGGetParameter()->Gettol();
+    tvA = vector[FAMGTVA];
+    tvB = vector[FAMGTVB];
  
-    min = 1.01*CMGGetParameter()->Geterror1(); 
+    min = 1.01*FAMGGetParameter()->Geterror1(); 
     j = sd.j;
     aj = rt/tvA[j];
     bj = lt/tvB[j];
@@ -534,15 +534,15 @@ double CMGGrid::BestFirst5(CMGPaList *&palist, double mii, double rt, double lt,
 }
 
 
-int CMGGrid::AnalyseNode3(int i, CMGPaList *&palist)
+int FAMGGrid::AnalyseNode3(int i, FAMGPaList *&palist)
 {
-    CMGMatrixPtr matij;
+    FAMGMatrixPtr matij;
     double rj, lj, rt, lt, mii, rmax, lmax, min1, *tvA, *tvB, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000];
     int j, nnb, z;
-    CMGSpecialData *sd;
+    FAMGSpecialData *sd;
 
-    tvA = vector[CMGTVA];
-    tvB = vector[CMGTVB];
+    tvA = vector[FAMGTVA];
+    tvB = vector[FAMGTVB];
 
     palist = NULL;
 
@@ -583,12 +583,12 @@ int CMGGrid::AnalyseNode3(int i, CMGPaList *&palist)
         nnb++;
     }
 
-    double sigma = CMGGetParameter()->Getsigma();
+    double sigma = FAMGGetParameter()->Getsigma();
     lmax = lmax*sigma; rmax = rmax*sigma;
 
  
-    CMGMarkHeap(CMG_FROM_TOP);
-    sd = (struct CMGSpecialData*) CMGGetMem(nnb*sizeof(struct CMGSpecialData), CMG_FROM_TOP);
+    FAMGMarkHeap(FAMG_FROM_TOP);
+    sd = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
     if (sd == NULL) return 1;
 
 
@@ -620,25 +620,25 @@ int CMGGrid::AnalyseNode3(int i, CMGPaList *&palist)
 
 
     min1 = BestFirst1(palist,mii,rt,lt,ff,gg,sd,z);
-    if(min1 > CMGGetParameter()->Geterror1()) 
+    if(min1 > FAMGGetParameter()->Geterror1()) 
     {
         graph->ClearPaListRev(palist);
         BestSecond1(palist,mii,rt,lt,ff,gg,sd,z);
     } 
 
-    CMGReleaseHeap(CMG_FROM_TOP);
+    FAMGReleaseHeap(FAMG_FROM_TOP);
     return 0;
 }
 
-int CMGGrid::AnalyseNode4(int i, CMGPaList *&palist)
+int FAMGGrid::AnalyseNode4(int i, FAMGPaList *&palist)
 {
-    CMGMatrixPtr matij;
+    FAMGMatrixPtr matij;
     double rj, lj, rt, lt, hr, hl, mii, rmax, lmax, min1, *tvA, *tvB, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000], rmax2, lmax2;
     int j, nnb, z;
-    CMGSpecialData *sd;
+    FAMGSpecialData *sd;
 
-    tvA = vector[CMGTVA];
-    tvB = vector[CMGTVB];
+    tvA = vector[FAMGTVA];
+    tvB = vector[FAMGTVB];
     palist = NULL;
 
     matij = matrix->GetStart(i);
@@ -695,11 +695,11 @@ int CMGGrid::AnalyseNode4(int i, CMGPaList *&palist)
         nnb++;
     }
     
-    double sigma = CMGGetParameter()->Getsigma();
+    double sigma = FAMGGetParameter()->Getsigma();
     lmax = lmax2*sigma; rmax = rmax2*sigma;
  
-    CMGMarkHeap(CMG_FROM_TOP);
-    sd = (struct CMGSpecialData*) CMGGetMem(nnb*sizeof(struct CMGSpecialData), CMG_FROM_TOP);
+    FAMGMarkHeap(FAMG_FROM_TOP);
+    sd = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
     if (sd == NULL) return 1;
 
     FF1(i,ff,gg, f, g);
@@ -731,27 +731,27 @@ int CMGGrid::AnalyseNode4(int i, CMGPaList *&palist)
 
 
     min1 = BestFirst1(palist,mii,rt,lt,ff,gg,sd,z);
-    if(min1 > CMGGetParameter()->Geterror1()) 
+    if(min1 > FAMGGetParameter()->Geterror1()) 
     {
         graph->ClearPaListRev(palist);
         BestSecond1(palist,mii,rt,lt,ff,gg,sd,z);
     } 
 
-    CMGReleaseHeap(CMG_FROM_TOP);
+    FAMGReleaseHeap(FAMG_FROM_TOP);
     return 0;
 }
 
 
 
-int CMGGrid::AnalyseNode5(int i, CMGPaList *&palist)
+int FAMGGrid::AnalyseNode5(int i, FAMGPaList *&palist)
 {
-    CMGMatrixPtr matij;
+    FAMGMatrixPtr matij;
     double rj, lj, rt, lt, mii, min1, min2, *tvA, *tvB, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000], *err1, sigma;
     int j, nnb, z, y, k;
-    CMGSpecialData *sd, *sd2;
+    FAMGSpecialData *sd, *sd2;
 
-    tvA = vector[CMGTVA];
-    tvB = vector[CMGTVB];
+    tvA = vector[FAMGTVA];
+    tvB = vector[FAMGTVB];
     palist = NULL;
 
     matij = matrix->GetStart(i);
@@ -785,14 +785,14 @@ int CMGGrid::AnalyseNode5(int i, CMGPaList *&palist)
         nnb++;
     }
  
-    sigma = CMGGetParameter()->Getsigma();
+    sigma = FAMGGetParameter()->Getsigma();
 
     FF1(i,ff,gg, f, g);
    
-    CMGMarkHeap(CMG_FROM_TOP);
-    sd = (struct CMGSpecialData*) CMGGetMem(nnb*sizeof(struct CMGSpecialData), CMG_FROM_TOP);
+    FAMGMarkHeap(FAMG_FROM_TOP);
+    sd = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
     if (sd == NULL) return 1;
-    err1= (double*) CMGGetMem(nnb*sizeof(double), CMG_FROM_TOP);
+    err1= (double*) FAMGGetMem(nnb*sizeof(double), FAMG_FROM_TOP);
     if (err1 == NULL) return 1;
 
 
@@ -815,7 +815,7 @@ int CMGGrid::AnalyseNode5(int i, CMGPaList *&palist)
     DFF1(i);
 
 
-    min1 = min2 = 10000.0*CMGGetParameter()->Geterror2();
+    min1 = min2 = 10000.0*FAMGGetParameter()->Geterror2();
     for(k = 0; k < z; k++)
     {
         err1[k] = BestFirst5(palist,mii,rt,lt,ff,gg,sd[k]);
@@ -830,13 +830,13 @@ int CMGGrid::AnalyseNode5(int i, CMGPaList *&palist)
         }           
     }
 
-    if(min1 < CMGGetParameter()->Geterror1())
+    if(min1 < FAMGGetParameter()->Geterror1())
     {
-        graph->CorrectPaList(palist,min1/CMGGetParameter()->Gettol()); 
+        graph->CorrectPaList(palist,min1/FAMGGetParameter()->Gettol()); 
     }
     else
     {
-        sd2 = (struct CMGSpecialData*) CMGGetMem(nnb*sizeof(struct CMGSpecialData), CMG_FROM_TOP);
+        sd2 = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
         if (sd2 == NULL) return 1;
         y = 0;
         for(k = 0; k < z; k++)
@@ -851,19 +851,19 @@ int CMGGrid::AnalyseNode5(int i, CMGPaList *&palist)
         BestSecond1(palist,mii,rt,lt,ff,gg,sd2,y);
     } 
 
-    CMGReleaseHeap(CMG_FROM_TOP);
+    FAMGReleaseHeap(FAMG_FROM_TOP);
     return 0;
 }
 
 
-void CMGGrid::JJ0(int j, double &hjj, double &ejj)
+void FAMGGrid::JJ0(int j, double &hjj, double &ejj)
 {
-    CMGMatrixPtr matjz;
+    FAMGMatrixPtr matjz;
     double esum, hsum, mjj, mjz, mzj, mzz;
     int z;
 
-    const double omegar = CMGGetParameter()->Getomegar();
-    const double omegal = 0.5*CMGGetParameter()->Getomegal();
+    const double omegar = FAMGGetParameter()->Getomegar();
+    const double omegal = 0.5*FAMGGetParameter()->Getomegal();
     hsum = 0.0;
     esum = 0.0;
     matjz = tmpmatrix->GetStart(j);
@@ -885,15 +885,15 @@ void CMGGrid::JJ0(int j, double &hjj, double &ejj)
 }
         
 
-void CMGGrid::FJ0(int j, double &fj, double &gj, double *f, double *g)
+void FAMGGrid::FJ0(int j, double &fj, double &gj, double *f, double *g)
 {
-    CMGMatrixPtr matjz;
-    CMGNode *node;
+    FAMGMatrixPtr matjz;
+    FAMGNode *node;
     double mzz, mjz, mzj, mjj, tf, tg;
     int z, lz;
     
-    const double omegar = CMGGetParameter()->Getomegar();
-    const double omegal = 0.5*CMGGetParameter()->Getomegal();
+    const double omegar = FAMGGetParameter()->Getomegar();
+    const double omegal = 0.5*FAMGGetParameter()->Getomegal();
     node = graph->GetNode();
     matjz = tmpmatrix->GetStart(j);
     mjj = matjz.GetData();
@@ -920,17 +920,17 @@ void CMGGrid::FJ0(int j, double &fj, double &gj, double *f, double *g)
 }
 
 
-int CMGGrid::LocalJ0(int j, double *h, double *e)
+int FAMGGrid::LocalJ0(int j, double *h, double *e)
 {
-    CMGMatrixPtr matjz;
-    CMGNode *node, *nodej, *nodez;
+    FAMGMatrixPtr matjz;
+    FAMGNode *node, *nodej, *nodez;
     double mjj, mzz;
     int z, nn;
 
     node = graph->GetNode();
 
-    const double omegar = CMGGetParameter()->Getomegar();
-    const double omegal = 0.5*CMGGetParameter()->Getomegal();
+    const double omegar = FAMGGetParameter()->Getomegar();
+    const double omegal = 0.5*FAMGGetParameter()->Getomegal();
     matjz = tmpmatrix->GetStart(j);
     mjj = matjz.GetData();
     nodej = node+j;
@@ -950,17 +950,17 @@ int CMGGrid::LocalJ0(int j, double *h, double *e)
         else 
         {
             ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-            CMGWarning(ostr);
+            FAMGWarning(ostr);
         }
     }
 
     return 0;
 }
 
-void CMGGrid::DLocalJ0(int j)
+void FAMGGrid::DLocalJ0(int j)
 {
-    CMGMatrixPtr matjz;
-    CMGNode *node, *nodej, *nodez;
+    FAMGMatrixPtr matjz;
+    FAMGNode *node, *nodej, *nodez;
     int z;
 
     node = graph->GetNode();
@@ -979,10 +979,10 @@ void CMGGrid::DLocalJ0(int j)
 }
    
    
-void CMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)        
+void FAMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)        
 {
-    CMGMatrixPtr matkz;
-    CMGNode *node, *nodek, *nodez;
+    FAMGMatrixPtr matkz;
+    FAMGNode *node, *nodek, *nodez;
     double mkz, mzk, mkk, mzz, th, te;
     int z, lz;
     
@@ -992,8 +992,8 @@ void CMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)
     matkz = tmpmatrix->GetStart(k);
     mkk = matkz.GetData();
 
-    const double omegar = CMGGetParameter()->Getomegar();
-    const double omegal = 0.5*CMGGetParameter()->Getomegal();
+    const double omegar = FAMGGetParameter()->Getomegar();
+    const double omegal = 0.5*FAMGGetParameter()->Getomegal();
     hjk = ejk = 0.0;
     lz = nodek->GetLocalId();
     if(lz >= 0)
@@ -1024,16 +1024,16 @@ void CMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)
 }
 
 
-void CMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
+void FAMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
 {
-    CMGMatrixPtr matij, matjz;
-    CMGNode *node, *nodez, *nodej;
+    FAMGMatrixPtr matij, matjz;
+    FAMGNode *node, *nodez, *nodej;
     double mjj, mzz, mzj, mjz, rj, lj;
     int z, j, lz, nn;
 
     node = graph->GetNode();
-    const double omegar = CMGGetParameter()->Getomegar();
-    const double omegal = 0.5*CMGGetParameter()->Getomegal();
+    const double omegar = FAMGGetParameter()->Getomegar();
+    const double omegal = 0.5*FAMGGetParameter()->Getomegal();
     nn = 0;
     matij = tmpmatrix->GetStart(i);
     while(matij.GetNext())
@@ -1062,7 +1062,7 @@ void CMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
                 else 
                 {
                     ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-                    CMGWarning(ostr);
+                    FAMGWarning(ostr);
                 }
             }
             else
@@ -1091,7 +1091,7 @@ void CMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
             else 
             {
                 ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-                CMGWarning(ostr);
+                FAMGWarning(ostr);
             }
         }
         else
@@ -1113,10 +1113,10 @@ void CMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
     return;
 }
         
-void CMGGrid::DFF0(int i)
+void FAMGGrid::DFF0(int i)
 {
-    CMGMatrixPtr matjz, matij;
-    CMGNode *node, *nodez, *nodej;
+    FAMGMatrixPtr matjz, matij;
+    FAMGNode *node, *nodez, *nodej;
     int z, j;
 
     node = graph->GetNode();
@@ -1139,13 +1139,13 @@ void CMGGrid::DFF0(int i)
 }
 
 #ifdef ORIG_TEST
-void CMGGrid::JJ0(int j, double &hjj, double &ejj)
+void FAMGGrid::JJ0(int j, double &hjj, double &ejj)
 {
-    CMGMatrixPtr matjz;
+    FAMGMatrixPtr matjz;
     double esum, hsum, mjj, mjz, mzj, mzz;
     int z;
 
-    const double omega = CMGomega();
+    const double omega = FAMGomega();
     const double omega2 = omega*omega;
     hsum = 0.0;
     esum = 0.0;
@@ -1168,14 +1168,14 @@ void CMGGrid::JJ0(int j, double &hjj, double &ejj)
 }
         
 
-void CMGGrid::FJ0(int j, double &fj, double &gj, double *f, double *g)
+void FAMGGrid::FJ0(int j, double &fj, double &gj, double *f, double *g)
 {
-    CMGMatrixPtr matjz;
-    CMGNode *node;
+    FAMGMatrixPtr matjz;
+    FAMGNode *node;
     double mzz, mjz, mzj, mjj, tf, tg;
     int z, lz;
     
-    const double omega = CMGomega();
+    const double omega = FAMGomega();
     const double omega2 = omega*omega;
     node = graph->GetNode();
     matjz = tmpmatrix->GetStart(j);
@@ -1203,16 +1203,16 @@ void CMGGrid::FJ0(int j, double &fj, double &gj, double *f, double *g)
 }
 
 
-int CMGGrid::LocalJ0(int j, double *h, double *e)
+int FAMGGrid::LocalJ0(int j, double *h, double *e)
 {
-    CMGMatrixPtr matjz;
-    CMGNode *node, *nodej, *nodez;
+    FAMGMatrixPtr matjz;
+    FAMGNode *node, *nodej, *nodez;
     double mjj, mzz;
     int z, nn;
 
     node = graph->GetNode();
 
-    const double omega = CMGomega();
+    const double omega = FAMGomega();
     const double omega2 = omega*omega;
     matjz = tmpmatrix->GetStart(j);
     mjj = matjz.GetData();
@@ -1233,17 +1233,17 @@ int CMGGrid::LocalJ0(int j, double *h, double *e)
         else 
         {
             ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-            CMGWarning(ostr);
+            FAMGWarning(ostr);
         }
     }
 
     return 0;
 }
 
-void CMGGrid::DLocalJ0(int j)
+void FAMGGrid::DLocalJ0(int j)
 {
-    CMGMatrixPtr matjz;
-    CMGNode *node, *nodej, *nodez;
+    FAMGMatrixPtr matjz;
+    FAMGNode *node, *nodej, *nodez;
     int z;
 
     node = graph->GetNode();
@@ -1262,10 +1262,10 @@ void CMGGrid::DLocalJ0(int j)
 }
    
    
-void CMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)        
+void FAMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)        
 {
-    CMGMatrixPtr matkz;
-    CMGNode *node, *nodek, *nodez;
+    FAMGMatrixPtr matkz;
+    FAMGNode *node, *nodek, *nodez;
     double mkz, mzk, mkk, mzz, th, te;
     int z, lz;
     
@@ -1275,7 +1275,7 @@ void CMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)
     matkz = tmpmatrix->GetStart(k);
     mkk = matkz.GetData();
 
-    const double omega = CMGomega();
+    const double omega = FAMGomega();
     const double omega2 = omega*omega;
     hjk = ejk = 0.0;
     lz = nodek->GetLocalId();
@@ -1307,15 +1307,15 @@ void CMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)
 }
 
 
-void CMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
+void FAMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
 {
-    CMGMatrixPtr matij, matjz;
-    CMGNode *node, *nodez, *nodej;
+    FAMGMatrixPtr matij, matjz;
+    FAMGNode *node, *nodez, *nodej;
     double mjj, mzz, mzj, mjz, rj, lj;
     int z, j, lz, nn;
 
     node = graph->GetNode();
-    const double omega = CMGomega();
+    const double omega = FAMGomega();
     const double omega2 = omega*omega;
     nn = 0;
     matij = tmpmatrix->GetStart(i);
@@ -1345,7 +1345,7 @@ void CMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
                 else 
                 {
                     ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-                    CMGWarning(ostr);
+                    FAMGWarning(ostr);
                 }
             }
             else
@@ -1374,7 +1374,7 @@ void CMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
             else 
             {
                 ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-                CMGWarning(ostr);
+                FAMGWarning(ostr);
             }
         }
         else
@@ -1396,10 +1396,10 @@ void CMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
     return;
 }
         
-void CMGGrid::DFF0(int i)
+void FAMGGrid::DFF0(int i)
 {
-    CMGMatrixPtr matjz, matij;
-    CMGNode *node, *nodez, *nodej;
+    FAMGMatrixPtr matjz, matij;
+    FAMGNode *node, *nodez, *nodej;
     int z, j;
 
     node = graph->GetNode();
@@ -1423,13 +1423,13 @@ void CMGGrid::DFF0(int i)
 #endif
 #ifdef NEW_TEST
 
-void CMGGrid::JJ0(int j, double &hjj, double &ejj)
+void FAMGGrid::JJ0(int j, double &hjj, double &ejj)
 {
-    CMGMatrixPtr matjz;
+    FAMGMatrixPtr matjz;
     double esum, hsum, mjj, mjz, mzj, mzz;
     int z;
 
-    const double omega = CMGomega();
+    const double omega = FAMGomega();
     const double omega2 = omega*omega;
     hsum = 0.0;
     esum = 0.0;
@@ -1452,14 +1452,14 @@ void CMGGrid::JJ0(int j, double &hjj, double &ejj)
 }
         
 
-void CMGGrid::FJ0(int j, double &fj, double &gj, double *f, double *g)
+void FAMGGrid::FJ0(int j, double &fj, double &gj, double *f, double *g)
 {
-    CMGMatrixPtr matjz;
-    CMGNode *node;
+    FAMGMatrixPtr matjz;
+    FAMGNode *node;
     double mzz, mjz, mzj, mjj, tf, tg;
     int z, lz;
     
-    const double omega = CMGomega();
+    const double omega = FAMGomega();
     const double omega2 = omega*omega;
     node = graph->GetNode();
     matjz = tmpmatrix->GetStart(j);
@@ -1487,16 +1487,16 @@ void CMGGrid::FJ0(int j, double &fj, double &gj, double *f, double *g)
 }
 
 
-int CMGGrid::LocalJ0(int j, double *h, double *e)
+int FAMGGrid::LocalJ0(int j, double *h, double *e)
 {
-    CMGMatrixPtr matjz;
-    CMGNode *node, *nodej, *nodez;
+    FAMGMatrixPtr matjz;
+    FAMGNode *node, *nodej, *nodez;
     double mjj, mzz;
     int z, nn;
 
     node = graph->GetNode();
 
-    const double omega = CMGomega();
+    const double omega = FAMGomega();
     const double omega2 = omega*omega;
     matjz = tmpmatrix->GetStart(j);
     mjj = matjz.GetData();
@@ -1517,17 +1517,17 @@ int CMGGrid::LocalJ0(int j, double *h, double *e)
         else 
         {
             ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-            CMGWarning(ostr);
+            FAMGWarning(ostr);
         }
     }
 
     return 0;
 }
 
-void CMGGrid::DLocalJ0(int j)
+void FAMGGrid::DLocalJ0(int j)
 {
-    CMGMatrixPtr matjz;
-    CMGNode *node, *nodej, *nodez;
+    FAMGMatrixPtr matjz;
+    FAMGNode *node, *nodej, *nodez;
     int z;
 
     node = graph->GetNode();
@@ -1546,10 +1546,10 @@ void CMGGrid::DLocalJ0(int j)
 }
    
    
-void CMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)        
+void FAMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)        
 {
-    CMGMatrixPtr matkz;
-    CMGNode *node, *nodek, *nodez;
+    FAMGMatrixPtr matkz;
+    FAMGNode *node, *nodek, *nodez;
     double mkz, mzk, mkk, mzz, th, te;
     int z, lz;
     
@@ -1559,7 +1559,7 @@ void CMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)
     matkz = tmpmatrix->GetStart(k);
     mkk = matkz.GetData();
 
-    const double omega = CMGomega();
+    const double omega = FAMGomega();
     const double omega2 = omega*omega;
     hjk = ejk = 0.0;
     lz = nodek->GetLocalId();
@@ -1591,15 +1591,15 @@ void CMGGrid::JK0(int k, double &hjk, double &ejk, double *h, double *e)
 }
 
 
-void CMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
+void FAMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
 {
-    CMGMatrixPtr matij, matjz;
-    CMGNode *node, *nodez, *nodej;
+    FAMGMatrixPtr matij, matjz;
+    FAMGNode *node, *nodez, *nodej;
     double mjj, mzz, mzj, mjz, rj, lj;
     int z, j, lz, nn;
 
     node = graph->GetNode();
-    const double omega = CMGomega();
+    const double omega = FAMGomega();
     const double omega2 = omega*omega;
     nn = 0;
     matij = tmpmatrix->GetStart(i);
@@ -1629,7 +1629,7 @@ void CMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
                 else 
                 {
                     ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-                    CMGWarning(ostr);
+                    FAMGWarning(ostr);
                 }
             }
             else
@@ -1658,7 +1658,7 @@ void CMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
             else 
             {
                 ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-                CMGWarning(ostr);
+                FAMGWarning(ostr);
             }
        }
         else
@@ -1680,10 +1680,10 @@ void CMGGrid::FF0(int i, double &ff, double &gg, double *f, double *g)
     return;
 }
         
-void CMGGrid::DFF0(int i)
+void FAMGGrid::DFF0(int i)
 {
-    CMGMatrixPtr matjz, matij;
-    CMGNode *node, *nodez, *nodej;
+    FAMGMatrixPtr matjz, matij;
+    FAMGNode *node, *nodez, *nodej;
     int z, j;
 
     node = graph->GetNode();
@@ -1706,7 +1706,7 @@ void CMGGrid::DFF0(int i)
 }
 #endif
 
-double CMGGrid::BestSecond0(CMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, CMGSpecialData *sd, int nnb)
+double FAMGGrid::BestSecond0(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData *sd, int nnb)
 {
     double *tvA, *tvB;
     double aj, ak, bj, bk;
@@ -1715,15 +1715,15 @@ double CMGGrid::BestSecond0(CMGPaList *&palist, double mii, double rt, double lt
     double coeffA[2], coeffB[2];
     int k, np, pa[2], j, z, y;
 
-    double tol = CMGGetParameter()->Gettol();
-    tvA = vector[CMGTVA];
-    tvB = vector[CMGTVB];
+    double tol = FAMGGetParameter()->Gettol();
+    tvA = vector[FAMGTVA];
+    tvB = vector[FAMGTVB];
  
-    min = CMGGetParameter()->Geterror2();
+    min = FAMGGetParameter()->Geterror2();
     for(z = 0; z < nnb; z++)
     {
         j = sd[z].j;
-        CMGMarkHeap(CMG_FROM_TOP);
+        FAMGMarkHeap(FAMG_FROM_TOP);
         hjj = (sd[z]).hjj; ejj = sd[z].ejj;
         fj = sd[z].fj; gj = sd[z].gj;
         if(LocalJ0(j,h,e)) return 1e+20;
@@ -1838,7 +1838,7 @@ double CMGGrid::BestSecond0(CMGPaList *&palist, double mii, double rt, double lt
             }
         }
         DLocalJ0(j);
-        CMGReleaseHeap(CMG_FROM_TOP);
+        FAMGReleaseHeap(FAMG_FROM_TOP);
     }
 
     graph->CorrectPaList(palist,min/tol);
@@ -1846,18 +1846,18 @@ double CMGGrid::BestSecond0(CMGPaList *&palist, double mii, double rt, double lt
     return min;
 }
 
-double CMGGrid::BestFirst0(CMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, CMGSpecialData *sd, int nnb)
+double FAMGGrid::BestFirst0(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData *sd, int nnb)
 {
     double *tvA, *tvB, aj, bj, coeffA[1], coeffB[1];
     double errorA, errorB, error, min;
     double hjj, ejj, fj, gj;
     int j, np, pa[1], z;
     
-    double tol = CMGGetParameter()->Gettol();
-    tvA = vector[CMGTVA];
-    tvB = vector[CMGTVB];
+    double tol = FAMGGetParameter()->Gettol();
+    tvA = vector[FAMGTVA];
+    tvB = vector[FAMGTVB];
 
-    min = 1.01*CMGGetParameter()->Geterror1(); 
+    min = 1.01*FAMGGetParameter()->Geterror1(); 
     for(z = 0; z < nnb; z++)
     {
         j = sd[z].j;
@@ -1889,18 +1889,18 @@ double CMGGrid::BestFirst0(CMGPaList *&palist, double mii, double rt, double lt,
 
     return min;
 }
-double CMGGrid::BestFirst2(CMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, CMGSpecialData sd)
+double FAMGGrid::BestFirst2(FAMGPaList *&palist, double mii, double rt, double lt, double ff, double gg, FAMGSpecialData sd)
 {
     double *tvA, *tvB, aj, bj, coeffA[1], coeffB[1];
     double errorA, errorB, error, min;
     double hjj, ejj, fj, gj;
     int j, np, pa[1];
     
-    double tol = CMGGetParameter()->Gettol();
-    tvA = vector[CMGTVA];
-    tvB = vector[CMGTVB];
+    double tol = FAMGGetParameter()->Gettol();
+    tvA = vector[FAMGTVA];
+    tvB = vector[FAMGTVB];
  
-    min = 1.01*CMGGetParameter()->Geterror1(); 
+    min = 1.01*FAMGGetParameter()->Geterror1(); 
     j = sd.j;
     aj = rt/tvA[j];
     bj = lt/tvB[j];
@@ -1926,15 +1926,15 @@ double CMGGrid::BestFirst2(CMGPaList *&palist, double mii, double rt, double lt,
     return error;
 }
 
-int CMGGrid::AnalyseNode0(int i, CMGPaList *&palist)
+int FAMGGrid::AnalyseNode0(int i, FAMGPaList *&palist)
 {
-    CMGMatrixPtr matij;
+    FAMGMatrixPtr matij;
     double rj, lj, rt, lt, mjj, mii, rmax, lmax, min1, *tvA, *tvB, ff, gg, hjj, ejj, fj, gj, f[4000], g[4000], normr, norml;
     int j, nnb, z;
-    CMGSpecialData *sd;
+    FAMGSpecialData *sd;
 
-    tvA = vector[CMGTVA];
-    tvB = vector[CMGTVB];
+    tvA = vector[FAMGTVA];
+    tvB = vector[FAMGTVB];
 
     palist = NULL;
 
@@ -1975,11 +1975,11 @@ int CMGGrid::AnalyseNode0(int i, CMGPaList *&palist)
         nnb++;
     }
                 
-    double sigma = CMGGetParameter()->Getsigma();
+    double sigma = FAMGGetParameter()->Getsigma();
     lmax = lmax*sigma; rmax = rmax*sigma;
 
-    CMGMarkHeap(CMG_FROM_TOP);
-    sd = (struct CMGSpecialData*) CMGGetMem(nnb*sizeof(struct CMGSpecialData), CMG_FROM_TOP);
+    FAMGMarkHeap(FAMG_FROM_TOP);
+    sd = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
     if (sd == NULL) return 1;
 
     FF0(i,ff,gg, f, g);
@@ -2011,26 +2011,26 @@ int CMGGrid::AnalyseNode0(int i, CMGPaList *&palist)
 
 
     min1 = BestFirst0(palist,mii,rt,lt,ff,gg,sd,z);
-    if(min1 > CMGGetParameter()->Geterror1()) 
+    if(min1 > FAMGGetParameter()->Geterror1()) 
     {
         graph->ClearPaListRev(palist);
         BestSecond0(palist,mii,rt,lt,ff,gg,sd,z);
     } 
 
-    CMGReleaseHeap(CMG_FROM_TOP);
+    FAMGReleaseHeap(FAMG_FROM_TOP);
     return 0;
 }
 
 
-int CMGGrid::AnalyseNode1(int i, CMGPaList *&palist)
+int FAMGGrid::AnalyseNode1(int i, FAMGPaList *&palist)
 {
-    CMGMatrixPtr matij;
+    FAMGMatrixPtr matij;
     double rj, lj, rt, lt, mii, rmax, lmax, min1, *tvA, *tvB, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000], hr, hl, rmax2, lmax2, mjj;
     int j, nnb, z;
-    CMGSpecialData *sd;
+    FAMGSpecialData *sd;
 
-    tvA = vector[CMGTVA];
-    tvB = vector[CMGTVB];
+    tvA = vector[FAMGTVA];
+    tvB = vector[FAMGTVB];
     palist = NULL;
 
     matij = matrix->GetStart(i);
@@ -2089,11 +2089,11 @@ int CMGGrid::AnalyseNode1(int i, CMGPaList *&palist)
         nnb++;
     }
                 
-    double sigma = CMGGetParameter()->Getsigma();
+    double sigma = FAMGGetParameter()->Getsigma();
     lmax = lmax2*sigma; rmax = rmax2*sigma;
 
-    CMGMarkHeap(CMG_FROM_TOP);
-    sd = (struct CMGSpecialData*) CMGGetMem(nnb*sizeof(struct CMGSpecialData), CMG_FROM_TOP);
+    FAMGMarkHeap(FAMG_FROM_TOP);
+    sd = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
     if (sd == NULL) return 1;
 
     FF0(i,ff,gg, f, g);
@@ -2126,27 +2126,27 @@ int CMGGrid::AnalyseNode1(int i, CMGPaList *&palist)
 
 
     min1 = BestFirst0(palist,mii,rt,lt,ff,gg,sd,z);
-    if(min1 > CMGGetParameter()->Geterror1()) 
+    if(min1 > FAMGGetParameter()->Geterror1()) 
     {
         graph->ClearPaListRev(palist);
         BestSecond0(palist,mii,rt,lt,ff,gg,sd,z);
     } 
 
-    CMGReleaseHeap(CMG_FROM_TOP);
+    FAMGReleaseHeap(FAMG_FROM_TOP);
     return 0;
 }
 
 
 
-int CMGGrid::AnalyseNode2(int i, CMGPaList *&palist)
+int FAMGGrid::AnalyseNode2(int i, FAMGPaList *&palist)
 {
-    CMGMatrixPtr matij;
+    FAMGMatrixPtr matij;
     double rj, lj, rt, lt, mii, min1, min2, *tvA, *tvB, ff, gg, hjj, ejj, fj, gj, normr, norml, f[4000], g[4000], *err1, sigma, mjj;
     int j, nnb, z, y, k;
-    CMGSpecialData *sd, *sd2;
+    FAMGSpecialData *sd, *sd2;
 
-    tvA = vector[CMGTVA];
-    tvB = vector[CMGTVB];
+    tvA = vector[FAMGTVA];
+    tvB = vector[FAMGTVB];
     palist = NULL;
 
     matij = matrix->GetStart(i);
@@ -2182,13 +2182,13 @@ int CMGGrid::AnalyseNode2(int i, CMGPaList *&palist)
 
     FF0(i,ff,gg, f, g);
     
-    sigma = CMGGetParameter()->Getsigma();
+    sigma = FAMGGetParameter()->Getsigma();
  
-    CMGMarkHeap(CMG_FROM_TOP);
-    sd = (struct CMGSpecialData*) CMGGetMem(nnb*sizeof(struct CMGSpecialData), CMG_FROM_TOP);
+    FAMGMarkHeap(FAMG_FROM_TOP);
+    sd = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
     if (sd == NULL) return 1;
 
-    err1= (double*) CMGGetMem(nnb*sizeof(double), CMG_FROM_TOP);
+    err1= (double*) FAMGGetMem(nnb*sizeof(double), FAMG_FROM_TOP);
     if (err1 == NULL) return 1;
 
     z = 0;
@@ -2213,7 +2213,7 @@ int CMGGrid::AnalyseNode2(int i, CMGPaList *&palist)
     DFF0(i);
 
 
-    min1 = min2 = 10000.0*CMGGetParameter()->Geterror2();
+    min1 = min2 = 10000.0*FAMGGetParameter()->Geterror2();
     for(k = 0; k < z; k++)
     {
         err1[k] = BestFirst2(palist,mii,rt,lt,ff,gg,sd[k]);
@@ -2228,13 +2228,13 @@ int CMGGrid::AnalyseNode2(int i, CMGPaList *&palist)
         }           
     }
 
-    if(min1 < CMGGetParameter()->Geterror1())
+    if(min1 < FAMGGetParameter()->Geterror1())
     {
-        graph->CorrectPaList(palist,min1/CMGGetParameter()->Gettol()); 
+        graph->CorrectPaList(palist,min1/FAMGGetParameter()->Gettol()); 
     }
     else
     {
-        sd2 = (struct CMGSpecialData*) CMGGetMem(nnb*sizeof(struct CMGSpecialData), CMG_FROM_TOP);
+        sd2 = (struct FAMGSpecialData*) FAMGGetMem(nnb*sizeof(struct FAMGSpecialData), FAMG_FROM_TOP);
         if (sd2 == NULL) return 1;
         y = 0;
         for(k = 0; k < z; k++)
@@ -2249,7 +2249,7 @@ int CMGGrid::AnalyseNode2(int i, CMGPaList *&palist)
         BestSecond0(palist,mii,rt,lt,ff,gg,sd2,y);
     } 
 
-    CMGReleaseHeap(CMG_FROM_TOP);
+    FAMGReleaseHeap(FAMG_FROM_TOP);
     return 0;
 }
 

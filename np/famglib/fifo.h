@@ -4,7 +4,7 @@
 /*                                                                          */
 /* File:      fifo.h														*/
 /*                                                                          */
-/* Purpose:   cmg fifo class												*/
+/* Purpose:   famg fifo class												*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -21,8 +21,8 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef __CMG_FIFO__
-#define __CMG_FIFO__
+#ifndef __FAMG_FIFO__
+#define __FAMG_FIFO__
 
 /* RCS_ID
    $Header$
@@ -30,10 +30,10 @@
 
 // integer fifo. for pointers: cast pointers to integer.
 
-class CMGFifo
+class FAMGFifo
 {
 public:
-  CMGFifo(void **buffer, int el_size);
+  FAMGFifo(void **buffer, int el_size);
   void Clear();
   int Empty();
   int Full();
@@ -49,7 +49,7 @@ private:
 };
 
 
-inline CMGFifo::CMGFifo(void **buffer, int total_size)
+inline FAMGFifo::FAMGFifo(void **buffer, int total_size)
 {
   size = total_size / sizeof(int);
   elements =  buffer;
@@ -58,24 +58,24 @@ inline CMGFifo::CMGFifo(void **buffer, int total_size)
   used = 0;
 }
 
-inline void CMGFifo::Clear()
+inline void FAMGFifo::Clear()
 {
   start = 0;
   end = 0;
   used = 0;
 }
 
-inline int CMGFifo::Empty()
+inline int FAMGFifo::Empty()
 {
   return (used == 0);
 }
 
-inline int CMGFifo::Full()
+inline int FAMGFifo::Full()
 {
   return (used == size);
 }
 
-inline int CMGFifo::In(void *el)
+inline int FAMGFifo::In(void *el)
 {
   if(used < size)
   {
@@ -90,7 +90,7 @@ inline int CMGFifo::In(void *el)
   }
 }
 
-inline void* CMGFifo::Out()
+inline void* FAMGFifo::Out()
 {
   if (used == 0) return NULL;
   int i = start;

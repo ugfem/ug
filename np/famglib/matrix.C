@@ -2,7 +2,7 @@
 /*																			*/
 /* File:      matrix.C														*/
 /*																			*/
-/* Purpose:   cmg matrix classes functions									*/
+/* Purpose:   famg matrix classes functions									*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -30,12 +30,12 @@
 $Header$
 */
 
-static double cmgzero = 0.0;
+static double famgzero = 0.0;
 
 
-void CMGMatrix::DevideFGDefect(double *unknown, double *defect)
+void FAMGMatrix::DevideFGDefect(double *unknown, double *defect)
 {
-    CMGMatrixPtr matij;
+    FAMGMatrixPtr matij;
     double *u = unknown;
     double *d = defect;
 
@@ -53,9 +53,9 @@ void CMGMatrix::DevideFGDefect(double *unknown, double *defect)
     return;
 }
  
-void CMGMatrix::VecMinusMatVec(double *defect, double *rhs, double *unknown)
+void FAMGMatrix::VecMinusMatVec(double *defect, double *rhs, double *unknown)
 {
-    CMGMatrixPtr matij;
+    FAMGMatrixPtr matij;
     double sum;
     double *d = defect;
     double *r = rhs;
@@ -76,7 +76,7 @@ void CMGMatrix::VecMinusMatVec(double *defect, double *rhs, double *unknown)
     return;
 }
 
-void CMGMatrix::JAC(double *vec)
+void FAMGMatrix::JAC(double *vec)
 {
     const double omega = 0.6666666;
     double *v = vec;
@@ -88,9 +88,9 @@ void CMGMatrix::JAC(double *vec)
     return;
 }
 
-void CMGMatrix::FGS(double *vec)
+void FAMGMatrix::FGS(double *vec)
 {
-    CMGMatrixPtr matij;
+    FAMGMatrixPtr matij;
     double sum, mii;
     int i,j;
 
@@ -116,9 +116,9 @@ void CMGMatrix::FGS(double *vec)
     return;
 }
 
-void CMGMatrix::BGS(double *vec)
+void FAMGMatrix::BGS(double *vec)
 {
-    CMGMatrixPtr matij;
+    FAMGMatrixPtr matij;
     double sum, mii;
     int i,j;
 
@@ -144,9 +144,9 @@ void CMGMatrix::BGS(double *vec)
     return;
 }
 
-void CMGMatrix::SGS(double *vec)
+void FAMGMatrix::SGS(double *vec)
 {
-    CMGMatrixPtr matij;
+    FAMGMatrixPtr matij;
     double sum, mii;
     int i,j;
 
@@ -196,7 +196,7 @@ void CMGMatrix::SGS(double *vec)
     return;
 }
 
-int CMGMatrix::GetSmallestIndex()
+int FAMGMatrix::GetSmallestIndex()
 {
     int j,i,min,nc;
 
@@ -212,9 +212,9 @@ int CMGMatrix::GetSmallestIndex()
 }
 
 
-void CMGMatrix::ModifyIndex(int f)
+void FAMGMatrix::ModifyIndex(int f)
 {
-    CMGIndexBitField bf;
+    FAMGIndexBitField bf;
     int *ind;
     
     ind = index;
@@ -229,15 +229,15 @@ void CMGMatrix::ModifyIndex(int f)
     return;
 }
         
-void CMGMatrix::RemodifyIndex(int f)
+void FAMGMatrix::RemodifyIndex(int f)
 {
-    CMGIndexBitField *bf;
+    FAMGIndexBitField *bf;
     int *ind;
     
     ind = index;
     for(int i = 0; i < nl; i++)
     {
-        bf  = (CMGIndexBitField *)ind;
+        bf  = (FAMGIndexBitField *)ind;
         (*ind) = (bf->id+f);
         ind++;
     }
@@ -245,9 +245,9 @@ void CMGMatrix::RemodifyIndex(int f)
     return;
 }
         
-void CMGMatrix::ModifyIndex(int *type, int f)
+void FAMGMatrix::ModifyIndex(int *type, int f)
 {
-    CMGIndexBitField bf;
+    FAMGIndexBitField bf;
     int *ind, ii;
     
     ind = index; 
@@ -263,15 +263,15 @@ void CMGMatrix::ModifyIndex(int *type, int f)
     return;
 }
         
-void CMGMatrix::RemodifyIndex(int *type, int f)
+void FAMGMatrix::RemodifyIndex(int *type, int f)
 {
-    CMGIndexBitField *bf;
+    FAMGIndexBitField *bf;
     int *ind, ii;
     
     ind = index; 
     for(int i = 0; i < nl; i++)
     {
-        bf  = (CMGIndexBitField *)ind;
+        bf  = (FAMGIndexBitField *)ind;
         ii =  bf->id;
         type[ii] = bf->type;
         (*ind) = ii+f;
@@ -281,16 +281,16 @@ void CMGMatrix::RemodifyIndex(int *type, int f)
     return;
 }
         
-int CMGMatrix::OrderColumns(int *map)
+int FAMGMatrix::OrderColumns(int *map)
 {
     double hd, *mat, *firstentry;
     int i, j, nc;
-    CMGIndexBitField *firstindex, *ind, hi;
+    FAMGIndexBitField *firstindex, *ind, hi;
 
     for(i = 0; i < n; i++)
     {
         nc = start[i+1]-start[i];
-        firstindex = ind =  (CMGIndexBitField *) index+start[i];
+        firstindex = ind =  (FAMGIndexBitField *) index+start[i];
         firstentry = mat = entry+start[i];
         for(j = 0; j < nc; j++)
         {
@@ -300,7 +300,7 @@ int CMGMatrix::OrderColumns(int *map)
         if(j == nc)
         {
             ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": wrong matrix structure." << endl;
-            CMGError(ostr);
+            FAMGError(ostr);
             return(1);
         }
         map[i] = j;
@@ -316,16 +316,16 @@ int CMGMatrix::OrderColumns(int *map)
     return 0;
 }
 
-int CMGMatrix::OrderColumns()
+int FAMGMatrix::OrderColumns()
 {
     double hd, *mat, *firstentry;
     int i, j, nc;
-    CMGIndexBitField *firstindex, *ind, hi;
+    FAMGIndexBitField *firstindex, *ind, hi;
 
     for(i = 0; i < n; i++)
     {
         nc = start[i+1]-start[i];
-        firstindex = ind =  (CMGIndexBitField *) index+start[i];
+        firstindex = ind =  (FAMGIndexBitField *) index+start[i];
         firstentry = mat = entry+start[i];
         for(j = 0; j < nc; j++)
         {
@@ -335,7 +335,7 @@ int CMGMatrix::OrderColumns()
         if(j == nc)
         {
             ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": wrong matrix structure." << endl;
-            CMGError(ostr);
+            FAMGError(ostr);
             return(1);
         }
         if(j == 0) continue;
@@ -350,16 +350,16 @@ int CMGMatrix::OrderColumns()
     return 0;
 }
 
-int CMGMatrix::ReorderColumns(int *map)
+int FAMGMatrix::ReorderColumns(int *map)
 {
     double hd, *mat, *firstentry;
     int i;
-    CMGIndexBitField *firstindex, *ind, hi;
+    FAMGIndexBitField *firstindex, *ind, hi;
 
     for(i = 0; i < n; i++)
     {
         if(map[i] == 0) continue;
-        firstindex = (CMGIndexBitField *) index+start[i];
+        firstindex = (FAMGIndexBitField *) index+start[i];
         firstentry = entry+start[i];
         ind = firstindex + map[i];
         mat = firstentry + map[i];
@@ -375,12 +375,12 @@ int CMGMatrix::ReorderColumns(int *map)
     return 0;
 }
 
-int CMGMatrix::OrderColumns2(CMGGraph *graph)
+int FAMGMatrix::OrderColumns2(FAMGGraph *graph)
 {
-    CMGNode *node;
+    FAMGNode *node;
     double hd, *mat, *firstentry;
     int i, j, nc;
-    CMGIndexBitField *firstindex, *ind, hi;
+    FAMGIndexBitField *firstindex, *ind, hi;
 
     node = graph->GetNode();
 
@@ -388,7 +388,7 @@ int CMGMatrix::OrderColumns2(CMGGraph *graph)
     {
         if((node+i)->IsFGNode()) continue;
         nc = start[i+1]-start[i];
-        firstindex = ind = (CMGIndexBitField *) index+start[i];
+        firstindex = ind = (FAMGIndexBitField *) index+start[i];
         firstentry = mat = entry+start[i];
         for(j = 0; j < nc; j++)
         {
@@ -398,7 +398,7 @@ int CMGMatrix::OrderColumns2(CMGGraph *graph)
         if(j == nc)
         {
             ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": wrong matrix structure." << endl;
-            CMGError(ostr);
+            FAMGError(ostr);
             return(1);
         }
         if(j == 0) continue;
@@ -414,12 +414,12 @@ int CMGMatrix::OrderColumns2(CMGGraph *graph)
 }
 
 
-int CMGMatrix::ConstructAdjoined()
+int FAMGMatrix::ConstructAdjoined()
 {
-    CMGMatrixPtr matij, matjk;
+    FAMGMatrixPtr matij, matjk;
     int i, j, k, found;
 
-    adjoined = (double **) CMGGetMem(nl*sizeof(double *), CMG_FROM_TOP);
+    adjoined = (double **) FAMGGetMem(nl*sizeof(double *), FAMG_FROM_TOP);
     if (adjoined == NULL) return 1;
 
     for(i = 0; i < n; i++)
@@ -448,7 +448,7 @@ int CMGMatrix::ConstructAdjoined()
                 } while(matjk.GetNext());
                 if(!found)
                 {
-                    *(matij.GetAdjoinedPtr()) = &cmgzero;
+                    *(matij.GetAdjoinedPtr()) = &famgzero;
                 }
             }
         } while(matij.GetNext());
@@ -458,12 +458,12 @@ int CMGMatrix::ConstructAdjoined()
     return 0;
 }
 
-int CMGMatrix::ConstructAdjoinedB()
+int FAMGMatrix::ConstructAdjoinedB()
 {
-    CMGMatrixPtr matij, matjk;
+    FAMGMatrixPtr matij, matjk;
     int i, j, k, found;
 
-    adjoined = (double **) CMGGetMem(nl*sizeof(double *), CMG_FROM_BOTTOM);
+    adjoined = (double **) FAMGGetMem(nl*sizeof(double *), FAMG_FROM_BOTTOM);
     if (adjoined == NULL) return 1;
 
     for(i = 0; i < n; i++)
@@ -492,7 +492,7 @@ int CMGMatrix::ConstructAdjoinedB()
                 } while(matjk.GetNext());
                 if(!found)
                 {
-                    *(matij.GetAdjoinedPtr()) = &cmgzero;
+                    *(matij.GetAdjoinedPtr()) = &famgzero;
                 }
             }
         } while(matij.GetNext());
@@ -503,13 +503,13 @@ int CMGMatrix::ConstructAdjoinedB()
 }
 
 
-int CMGMatrix::ConstructAdjoined2(CMGGraph *graph)
+int FAMGMatrix::ConstructAdjoined2(FAMGGraph *graph)
 {
-    CMGMatrixPtr matij, matjk;
+    FAMGMatrixPtr matij, matjk;
     int i, j, k, found;
-    CMGNode *node = graph->GetNode();
+    FAMGNode *node = graph->GetNode();
 
-    adjoined = (double **) CMGGetMem(nl*sizeof(double *), CMG_FROM_BOTTOM);
+    adjoined = (double **) FAMGGetMem(nl*sizeof(double *), FAMG_FROM_BOTTOM);
     if (adjoined == NULL) return 1;
 
     for(i = 0; i < n; i++)
@@ -539,7 +539,7 @@ int CMGMatrix::ConstructAdjoined2(CMGGraph *graph)
                 } while(matjk.GetNext());
                 if(!found)
                 {
-                    *(matij.GetAdjoinedPtr()) = &cmgzero;
+                    *(matij.GetAdjoinedPtr()) = &famgzero;
                     // return(1);
                 }
             }
@@ -551,11 +551,11 @@ int CMGMatrix::ConstructAdjoined2(CMGGraph *graph)
 }
 
 
-int CMGMatrix::ConstructEnd()
+int FAMGMatrix::ConstructEnd()
 {
     int i;
 
-    end = (int *) CMGGetMem(sizeof(int)*n,CMG_FROM_TOP);
+    end = (int *) FAMGGetMem(sizeof(int)*n,FAMG_FROM_TOP);
     if(end == NULL) return 1;
      
     for(i = 0; i < n; i++) end[i] = start[i+1];
@@ -563,11 +563,11 @@ int CMGMatrix::ConstructEnd()
     return 0;
 }
     
-int CMGMatrix::ConstructEndB()
+int FAMGMatrix::ConstructEndB()
 {
     int i;
 
-    end = (int *) CMGGetMem(sizeof(int)*n,CMG_FROM_BOTTOM);
+    end = (int *) FAMGGetMem(sizeof(int)*n,FAMG_FROM_BOTTOM);
     if(end == NULL) return 1;
      
     for(i = 0; i < n; i++) end[i] = start[i+1];
@@ -575,11 +575,11 @@ int CMGMatrix::ConstructEndB()
     return 0;
 }
     
-int CMGMatrix::ConstructEnd2()
+int FAMGMatrix::ConstructEnd2()
 {
     int i;
 
-    end = (int *) CMGGetMem(sizeof(int)*n,CMG_FROM_BOTTOM);
+    end = (int *) FAMGGetMem(sizeof(int)*n,FAMG_FROM_BOTTOM);
     if(end == NULL) return 1;
      
     for(i = 0; i < n; i++) end[i] = start[i+1];
@@ -587,23 +587,23 @@ int CMGMatrix::ConstructEnd2()
     return 0;
 }
     
-int CMGMatrix::CGMatrix(CMGMatrix *fgmatrix, CMGTransfer *transfer, int *father)
+int FAMGMatrix::CGMatrix(FAMGMatrix *fgmatrix, FAMGTransfer *transfer, int *father)
 {    
-    CMGMatrixPtr matik, matjk;
-    CMGTransferEntry *trans, *transij, *transks;
+    FAMGMatrixPtr matik, matjk;
+    FAMGTransferEntry *trans, *transij, *transks;
     double mis, tij, mjk, tks, mik, *firstentry, *mat;
     int i, j, s, k, z, nsaved, ii, offset, fnn, *fathermap, *tmpflag, *firstindex, *ind, found;
     
     fnn = fgmatrix->GetN();
     trans = transfer->GetRow();
 
-    CMGMarkHeap(CMG_FROM_BOTTOM);
+    FAMGMarkHeap(FAMG_FROM_BOTTOM);
 
-    fathermap = (int *) CMGGetMem(sizeof(int)*fnn,CMG_FROM_BOTTOM);
-    if (fathermap == NULL) {CMGReleaseHeap(CMG_FROM_BOTTOM);  return 1;}
+    fathermap = (int *) FAMGGetMem(sizeof(int)*fnn,FAMG_FROM_BOTTOM);
+    if (fathermap == NULL) {FAMGReleaseHeap(FAMG_FROM_BOTTOM);  return 1;}
 
-    tmpflag = (int *) CMGGetMem(sizeof(int)*n,CMG_FROM_BOTTOM);
-    if (tmpflag == NULL) {CMGReleaseHeap(CMG_FROM_BOTTOM);  return 1;}
+    tmpflag = (int *) FAMGGetMem(sizeof(int)*n,FAMG_FROM_BOTTOM);
+    if (tmpflag == NULL) {FAMGReleaseHeap(FAMG_FROM_BOTTOM);  return 1;}
 
     for(z = 0; z < n; z++)
     {
@@ -719,10 +719,10 @@ int CMGMatrix::CGMatrix(CMGMatrix *fgmatrix, CMGTransfer *transfer, int *father)
     }
 
     nl = offset;
-    index = (int *) CMGGetMem(nl*sizeof(int), CMG_FROM_TOP);
+    index = (int *) FAMGGetMem(nl*sizeof(int), FAMG_FROM_TOP);
     if (index == NULL) return 1;
     
-    entry = (double *) CMGGetMem(nl*sizeof(double), CMG_FROM_TOP);
+    entry = (double *) FAMGGetMem(nl*sizeof(double), FAMG_FROM_TOP);
     if (entry == NULL) return 1;
     
     // save entries
@@ -841,7 +841,7 @@ int CMGMatrix::CGMatrix(CMGMatrix *fgmatrix, CMGTransfer *transfer, int *father)
         if((start[z]+nsaved) != start[z+1])
         {  
             ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-            CMGError(ostr);
+            FAMGError(ostr);
             return(1);
         }
     }
@@ -851,17 +851,17 @@ int CMGMatrix::CGMatrix(CMGMatrix *fgmatrix, CMGTransfer *transfer, int *father)
     if(OrderColumns()) return 1;
     if(ConstructAdjoined()) return 1;
 
-    CMGReleaseHeap(CMG_FROM_BOTTOM);
+    FAMGReleaseHeap(FAMG_FROM_BOTTOM);
 
     return 0;
 }
 
 
-int CMGMatrix::TmpMatrix(CMGMatrix *matrix, CMGTransfer *transfer, CMGGraph *graph)
+int FAMGMatrix::TmpMatrix(FAMGMatrix *matrix, FAMGTransfer *transfer, FAMGGraph *graph)
 {    
-    CMGMatrixPtr matik, matjk;
-    CMGTransferEntry *trans, *transij, *transks;
-    CMGNode *node;
+    FAMGMatrixPtr matik, matjk;
+    FAMGTransferEntry *trans, *transij, *transks;
+    FAMGNode *node;
     double mis, tij, mjk, tks, mik, *firstentry, *mat;
     int i, j, s, k, nsaved, ii, offset, *firstindex, *ind, found;
    
@@ -980,10 +980,10 @@ int CMGMatrix::TmpMatrix(CMGMatrix *matrix, CMGTransfer *transfer, CMGGraph *gra
     }
 
     nl = offset;
-    index = (int *) CMGGetMem(nl*sizeof(int), CMG_FROM_BOTTOM);
+    index = (int *) FAMGGetMem(nl*sizeof(int), FAMG_FROM_BOTTOM);
     if (index == NULL) return 1;
     
-    entry = (double *) CMGGetMem(nl*sizeof(double), CMG_FROM_BOTTOM);
+    entry = (double *) FAMGGetMem(nl*sizeof(double), FAMG_FROM_BOTTOM);
     if (entry == NULL) return 1;
     
     // save entries
@@ -1102,7 +1102,7 @@ int CMGMatrix::TmpMatrix(CMGMatrix *matrix, CMGTransfer *transfer, CMGGraph *gra
         if((start[i]+nsaved) != start[i+1])
         {  
             ostrstream ostr; ostr << __FILE__ << __LINE__ << endl;
-            CMGError(ostr);
+            FAMGError(ostr);
             return(1);
         }
     }
@@ -1115,16 +1115,16 @@ int CMGMatrix::TmpMatrix(CMGMatrix *matrix, CMGTransfer *transfer, CMGGraph *gra
     return 0;
 }
 
-void CMGMatrix::MarkUnknowns(CMGGraph *graph)
+void FAMGMatrix::MarkUnknowns(FAMGGraph *graph)
 {
-    CMGIndexBitField *bf;
+    FAMGIndexBitField *bf;
     int id;
-    CMGNode *node = graph->GetNode();
+    FAMGNode *node = graph->GetNode();
     int *ind = index;
     
     for(int i = 0; i < nl; i++)
     {
-        bf = (CMGIndexBitField *) ind;
+        bf = (FAMGIndexBitField *) ind;
         id = bf->id;
         if((node+id)->IsFGNode()) bf->type = 1;
         ind++;
@@ -1134,10 +1134,10 @@ void CMGMatrix::MarkUnknowns(CMGGraph *graph)
 }
 
 
-int CMGMatrix::Init(int nn)
+int FAMGMatrix::Init(int nn)
 {
     n = nn;
-    start = (int *) CMGGetMem((nn+1)*sizeof(int), CMG_FROM_TOP);
+    start = (int *) FAMGGetMem((nn+1)*sizeof(int), FAMG_FROM_TOP);
     if (start == NULL) return 1;
 
     nl = 0;
@@ -1148,10 +1148,10 @@ int CMGMatrix::Init(int nn)
     return 0;
 }
 
-int CMGMatrix::Init2(int nn) // memory from BOTTOM
+int FAMGMatrix::Init2(int nn) // memory from BOTTOM
 {
     n = nn;
-    start = (int *) CMGGetMem((nn+1)*sizeof(int), CMG_FROM_BOTTOM);
+    start = (int *) FAMGGetMem((nn+1)*sizeof(int), FAMG_FROM_BOTTOM);
     if (start == NULL) return 1;
 
     nl = 0;
@@ -1162,9 +1162,9 @@ int CMGMatrix::Init2(int nn) // memory from BOTTOM
     return 0;
 }
         
-void CMGMatrix::Mult(double *vout, double *vin)
+void FAMGMatrix::Mult(double *vout, double *vin)
 {
-    CMGMatrixPtr matij;
+    FAMGMatrixPtr matij;
     double sum;
     int i;
 
@@ -1182,9 +1182,9 @@ void CMGMatrix::Mult(double *vout, double *vin)
     return;
 }
 
-void CMGMatrix::MultTrans(double *vout, double *vin)
+void FAMGMatrix::MultTrans(double *vout, double *vin)
 {
-    CMGMatrixPtr matij;
+    FAMGMatrixPtr matij;
     double sum;
     int i;
 
@@ -1203,24 +1203,24 @@ void CMGMatrix::MultTrans(double *vout, double *vin)
 }
 
 
-int CMGMatrix::Order(int *mapping)
+int FAMGMatrix::Order(int *mapping)
 {
     int i, *helparray, *ind;
 
-    CMGMarkHeap(CMG_FROM_TOP);
-    helparray = (int *) CMGGetMem(n*sizeof(int), CMG_FROM_TOP);
+    FAMGMarkHeap(FAMG_FROM_TOP);
+    helparray = (int *) FAMGGetMem(n*sizeof(int), FAMG_FROM_TOP);
     if (helparray == NULL) return 1;
     for(i = 0; i < n; i++) helparray[i] = start[i];
     for(i = 0; i < n; i++) start[mapping[i]] = helparray[i];
     for(i = 0; i < n; i++) helparray[i] = end[i];
     for(i = 0; i < n; i++) end[mapping[i]] = helparray[i];
-    CMGReleaseHeap(CMG_FROM_TOP);
+    FAMGReleaseHeap(FAMG_FROM_TOP);
 
     ind = index;
-    CMGIndexBitField *bf;
+    FAMGIndexBitField *bf;
     for(i = 0; i < nl; i++)
     {
-        bf = (CMGIndexBitField *)ind;
+        bf = (FAMGIndexBitField *)ind;
         bf->id = mapping[bf->id];
         ind++;
     }
@@ -1228,12 +1228,12 @@ int CMGMatrix::Order(int *mapping)
     return 0;
 }
 
-int CMGMatrix::Reorder(int *mapping)
+int FAMGMatrix::Reorder(int *mapping)
 {
     int i, *helparray, *ind;
 
-    CMGMarkHeap(CMG_FROM_TOP);
-    helparray = (int *) CMGGetMem(n*sizeof(int), CMG_FROM_TOP);
+    FAMGMarkHeap(FAMG_FROM_TOP);
+    helparray = (int *) FAMGGetMem(n*sizeof(int), FAMG_FROM_TOP);
     if (helparray == NULL) return 1;
     for(i = 0; i < n; i++) helparray[i] = start[i];
     for(i = 0; i < n; i++) start[i] = helparray[mapping[i]];
@@ -1243,14 +1243,14 @@ int CMGMatrix::Reorder(int *mapping)
     // reverse mapping
     for(i = 0; i < n; i++) helparray[mapping[i]] = i;
     ind = index;
-    CMGIndexBitField *bf;
+    FAMGIndexBitField *bf;
     for(i = 0; i < nl; i++)
     {
-       bf = (CMGIndexBitField *)ind;
+       bf = (FAMGIndexBitField *)ind;
        bf->id = helparray[bf->id];
        ind++;
     }
-    CMGReleaseHeap(CMG_FROM_TOP);
+    FAMGReleaseHeap(FAMG_FROM_TOP);
     
     return 0;
 }

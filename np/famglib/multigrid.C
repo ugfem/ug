@@ -2,7 +2,7 @@
 /*																			*/
 /* File:      multigrid.C													*/
 /*																			*/
-/* Purpose:   cmg   multigrid classes functions								*/
+/* Purpose:   famg   multigrid classes functions							*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -34,18 +34,18 @@
 $Header$
 */
 
-// Class CMGMultigrid
+// Class FAMGMultigrid
 
 
-int CMGMultiGrid::Init(const CMGSystem &system)
+int FAMGMultiGrid::Init(const FAMGSystem &system)
 {
-    CMGGrid *grid0;
+    FAMGGrid *grid0;
     int i;
 
     n = 0;
-    for(i = 0; i < CMGMAXGRIDS; i++) grid[i] = NULL;
+    for(i = 0; i < FAMGMAXGRIDS; i++) grid[i] = NULL;
 
-    grid0 = (CMGGrid *) CMGGetMem(sizeof(CMGGrid),CMG_FROM_TOP);
+    grid0 = (FAMGGrid *) FAMGGetMem(sizeof(FAMGGrid),FAMG_FROM_TOP);
     if(grid0 == NULL) return(NULL);
 
     if( grid0->InitLevel0(system)) return 1;
@@ -55,23 +55,23 @@ int CMGMultiGrid::Init(const CMGSystem &system)
     return 0;
 }    
 
-int CMGMultiGrid::Construct()
+int FAMGMultiGrid::Construct()
 {
-    CMGGrid *g, *cg;
+    FAMGGrid *g, *cg;
     int level, nnc, nn, ilu, cgilu;
 
     // read parameter
-    const int cgnodes = CMGGetParameter()->Getcgnodes();
-    const double mincoarse = CMGGetParameter()->Getmincoarse();
-    const int gamma = CMGGetParameter()->Getgamma();
-    if ((strcmp("ilut",CMGGetParameter()->Getpresmoother()) == 0)
-     || (strcmp("ilut",CMGGetParameter()->Getpostsmoother()) == 0))  
+    const int cgnodes = FAMGGetParameter()->Getcgnodes();
+    const double mincoarse = FAMGGetParameter()->Getmincoarse();
+    const int gamma = FAMGGetParameter()->Getgamma();
+    if ((strcmp("ilut",FAMGGetParameter()->Getpresmoother()) == 0)
+     || (strcmp("ilut",FAMGGetParameter()->Getpostsmoother()) == 0))  
     {
         ilu = 1; 
         
     }
     else ilu = 0;
-    if (strcmp("ilut",CMGGetParameter()->Getcgsmoother()) == 0)
+    if (strcmp("ilut",FAMGGetParameter()->Getcgsmoother()) == 0)
     {
         cgilu = 1;
         
@@ -80,8 +80,8 @@ int CMGMultiGrid::Construct()
 
     g = grid[0];
     g->SmoothTV();
-    CMGMarkHeap(CMG_FROM_TOP); // release in Deconstruct
-    for(level = 0; level < CMGMAXGRIDS-1; level++)
+    FAMGMarkHeap(FAMG_FROM_TOP); // release in Deconstruct
+    for(level = 0; level < FAMGMAXGRIDS-1; level++)
     {
         g->Stencil();
         nn = g->GetN();
@@ -96,7 +96,7 @@ int CMGMultiGrid::Construct()
         if (g->ConstructTransfer()) return 1;        
         nnc = (g->GetN())-(g->GetNF());
         // if (nnc == 0) return 0; 
-        cg = (CMGGrid *) CMGGetMem(sizeof(CMGGrid),CMG_FROM_TOP);
+        cg = (FAMGGrid *) FAMGGetMem(sizeof(FAMGGrid),FAMG_FROM_TOP);
         if(cg == NULL) return(NULL);
         if(cg->Init(nnc)) return 1;
         if(cg->Construct(g)) return 1;
@@ -106,10 +106,10 @@ int CMGMultiGrid::Construct()
         if(nnc > nn*mincoarse) break;
     }
 
-    if(level == CMGMAXGRIDS-1)
+    if(level == FAMGMAXGRIDS-1)
     {
         ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": maximum number of levels reached. " << endl;
-        CMGWarning(ostr);
+        FAMGWarning(ostr);
     }
 
     g->Stencil();
@@ -122,29 +122,29 @@ int CMGMultiGrid::Construct()
 }
 
 
-int CMGMultiGrid::Deconstruct()
+int FAMGMultiGrid::Deconstruct()
 {
     int i;
     
     if(Reorder()) return 1;
     for(i = 0; i < n; i++) if(grid[i] != NULL)  grid[i]->Deconstruct();
-    CMGReleaseHeap(CMG_FROM_TOP); // mark in construct
+    FAMGReleaseHeap(FAMG_FROM_TOP); // mark in construct
     n = 1;
 
     return 0;
 }
     
-int CMGMultiGrid::Step(int level)
+int FAMGMultiGrid::Step(int level)
 {    
     // Input:  right hand side, initial guess and defect
     // Output: right hand side, new solution and new defect
     
-    CMGGrid *g, *cg;
+    FAMGGrid *g, *cg;
     int i,n1,n2,gamma;
 
-    n1 = CMGGetParameter()->Getn1();
-    n2 = CMGGetParameter()->Getn2();
-    gamma = CMGGetParameter()->Getgamma();
+    n1 = FAMGGetParameter()->Getn1();
+    n2 = FAMGGetParameter()->Getn2();
+    gamma = FAMGGetParameter()->Getgamma();
  
 
     if(gamma < 1)
@@ -154,14 +154,14 @@ int CMGMultiGrid::Step(int level)
         for(i = 0; i < n1; i++)
         {
             g->PreSmooth();
-            g->AddVector(CMGDEFECT,CMGUNKNOWN);
+            g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
             g->Defect();
         }        
 
         for(i = 0; i < n2; i++)
         {
             g->PostSmooth();
-            g->AddVector(CMGDEFECT,CMGUNKNOWN);
+            g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
             g->Defect();
         }
 
@@ -180,14 +180,14 @@ int CMGMultiGrid::Step(int level)
         for(i = 0; i < n1; i++)
         {
             g->PreSmooth();
-            g->AddVector(CMGDEFECT,CMGUNKNOWN);
+            g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
             g->Defect();
         }        
 
         g->DevideFGDefect();
         g->Restriction(cg);
-        cg->SetVector(CMGUNKNOWN,0.0);
-        cg->CopyVector(CMGRHS,CMGDEFECT);
+        cg->SetVector(FAMGUNKNOWN,0.0);
+        cg->CopyVector(FAMGRHS,FAMGDEFECT);
         for(i = 0; i < gamma; i++) { if(Step(level+1)) return 1; }
         g->Prolongation(cg);
         g->Defect();
@@ -195,7 +195,7 @@ int CMGMultiGrid::Step(int level)
         for(i = 0; i < n2; i++)
         {
             g->PostSmooth();
-            g->AddVector(CMGDEFECT,CMGUNKNOWN);
+            g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
             g->Defect();
         }
 
@@ -205,24 +205,24 @@ int CMGMultiGrid::Step(int level)
 }
 
 
-int CMGMultiGrid::SGSStep(int level)
+int FAMGMultiGrid::SGSStep(int level)
 {    
     // Input:  right hand side, initial guess and defect
     // Output: right hand side, new solution and new defect
     
-    CMGGrid *g;
+    FAMGGrid *g;
     g = grid[level];
 
     g->SGSSmooth();
-    g->AddVector(CMGDEFECT,CMGUNKNOWN);
+    g->AddVector(FAMGDEFECT,FAMGUNKNOWN);
     g->Defect();
   
     return 0;
 }
 
-void CMGMultiGrid::Mult(double *vout, double *vin)
+void FAMGMultiGrid::Mult(double *vout, double *vin)
 {
-    CMGMatrix *matrix;
+    FAMGMatrix *matrix;
 
     matrix = grid[0]->GetMatrix();
     matrix->Mult(vout,vin);
@@ -230,9 +230,9 @@ void CMGMultiGrid::Mult(double *vout, double *vin)
     return;
 }
         
-int CMGMultiGrid::Order()
+int FAMGMultiGrid::Order()
 {
-    CMGGrid *grid0;
+    FAMGGrid *grid0;
     
     grid0 = grid[0];
     if((n > 0) && (grid0 != NULL))
@@ -243,9 +243,9 @@ int CMGMultiGrid::Order()
     return 0;
 }
 
-int CMGMultiGrid::Reorder()
+int FAMGMultiGrid::Reorder()
 {
-    CMGGrid *grid0;
+    FAMGGrid *grid0;
     
     grid0 = grid[0];
     if((n > 0) && (grid0 != NULL))

@@ -4,7 +4,7 @@
 /*																			*/
 /* File:      decomp.h														*/
 /*																			*/
-/* Purpose:   cmg decomp classes											*/
+/* Purpose:   famg decomp classes											*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -21,8 +21,8 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef __CMG_DECOMP__
-#define __CMG_DECOMP__
+#ifndef __FAMG_DECOMP__
+#define __FAMG_DECOMP__
 
 #include "matrix.h"
 
@@ -30,66 +30,66 @@
    $Header$
  */
 
-struct CMGDecompBitField
+struct FAMGDecompBitField
 {
   unsigned f0 : 23;
   unsigned f1 : 1;
 };
 
-// Class CMGDecompEntry
+// Class FAMGDecompEntry
 
-class CMGDecompEntry
+class FAMGDecompEntry
 {
 public:
   double GetData(void) const;
   int GetId(void) const;
-  CMGDecompEntry *GetNext(void) const;
-  CMGDecompEntry *GetReverse();
-  CMGDecompEntry *GetReverse(int);
+  FAMGDecompEntry *GetNext(void) const;
+  FAMGDecompEntry *GetReverse();
+  FAMGDecompEntry *GetReverse(int);
   void SetData(double);
   void AddData(double);
   void SetId(int);
   void SetRev(int);
-  void SetNext(CMGDecompEntry *);
+  void SetNext(FAMGDecompEntry *);
   void Init(int);
 private:
   double data;
-  CMGDecompBitField id;
-  CMGDecompEntry *next;
+  FAMGDecompBitField id;
+  FAMGDecompEntry *next;
 };
 
 
-inline double CMGDecompEntry::GetData() const {
+inline double FAMGDecompEntry::GetData() const {
   return data;
 }
-inline void CMGDecompEntry::SetData(double val) {
+inline void FAMGDecompEntry::SetData(double val) {
   data = val;
 }
-inline void CMGDecompEntry::AddData(double val) {
+inline void FAMGDecompEntry::AddData(double val) {
   data += val;
 }
-inline int CMGDecompEntry::GetId() const {
+inline int FAMGDecompEntry::GetId() const {
   return id.f0;
 }
-inline void CMGDecompEntry::SetId(int i) {
+inline void FAMGDecompEntry::SetId(int i) {
   id.f0 = i;
 }
-inline void CMGDecompEntry::SetRev(int i) {
+inline void FAMGDecompEntry::SetRev(int i) {
   id.f1 = i;
 }
-inline CMGDecompEntry *CMGDecompEntry::GetNext() const {
+inline FAMGDecompEntry *FAMGDecompEntry::GetNext() const {
   return next;
 }
-inline void CMGDecompEntry::SetNext(CMGDecompEntry *mat) {
+inline void FAMGDecompEntry::SetNext(FAMGDecompEntry *mat) {
   next = mat;
 }
-inline CMGDecompEntry *CMGDecompEntry::GetReverse()
+inline FAMGDecompEntry *FAMGDecompEntry::GetReverse()
 {
   return this+(1 - 2*id.f1);
 }
 
 
-class CMGDecompRow
+class FAMGDecompRow
 {
 public:
   double GetData() const;
@@ -97,67 +97,67 @@ public:
   void SetData(double);
   void AddData(double);
   void SetId(int);
-  CMGDecompEntry *GetRight() const;
-  CMGDecompEntry *GetLeft() const;
-  CMGDecompEntry* GetEntry(int) const;
-  CMGDecompEntry* NewEntry(CMGDecompRow*);
-  int SaveEntry(CMGDecompRow*,double);
-  int SaveEntry(CMGDecompRow*,double,CMGDecompEntry**);
-  void SetRight(CMGDecompEntry*);
-  void MoveLeft(CMGDecompEntry*);
+  FAMGDecompEntry *GetRight() const;
+  FAMGDecompEntry *GetLeft() const;
+  FAMGDecompEntry* GetEntry(int) const;
+  FAMGDecompEntry* NewEntry(FAMGDecompRow*);
+  int SaveEntry(FAMGDecompRow*,double);
+  int SaveEntry(FAMGDecompRow*,double,FAMGDecompEntry**);
+  void SetRight(FAMGDecompEntry*);
+  void MoveLeft(FAMGDecompEntry*);
   void Init(int);
 private:
   int id;
   double data;
-  CMGDecompEntry *right, *left;
+  FAMGDecompEntry *right, *left;
 };
 
-inline double CMGDecompRow::GetData() const {
+inline double FAMGDecompRow::GetData() const {
   return data;
 }
-inline int CMGDecompRow::GetId() const {
+inline int FAMGDecompRow::GetId() const {
   return id;
 }
-inline CMGDecompEntry *CMGDecompRow::GetRight() const {
+inline FAMGDecompEntry *FAMGDecompRow::GetRight() const {
   return right;
 }
-inline CMGDecompEntry *CMGDecompRow::GetLeft() const {
+inline FAMGDecompEntry *FAMGDecompRow::GetLeft() const {
   return left;
 }
-inline void CMGDecompRow::SetId(int i) {
+inline void FAMGDecompRow::SetId(int i) {
   id = i;
 }
-inline void CMGDecompRow::SetData(double val) {
+inline void FAMGDecompRow::SetData(double val) {
   data = val;
 }
-inline void CMGDecompRow::AddData(double val) {
+inline void FAMGDecompRow::AddData(double val) {
   data += val;
 }
-inline void CMGDecompRow::SetRight(CMGDecompEntry *mat) {
+inline void FAMGDecompRow::SetRight(FAMGDecompEntry *mat) {
   right = mat;
 }
 
-class CMGDecomp
+class FAMGDecomp
 {
 public:
-  CMGDecompRow* GetRow() const;
-  CMGDecompRow* GetRow(int) const;
+  FAMGDecompRow* GetRow() const;
+  FAMGDecompRow* GetRow(int) const;
   void SetN(int);
-  int Init(CMGMatrix *);
+  int Init(FAMGMatrix *);
   int Construct(int);
   void ILUT(double *);
 private:
   int n;
-  CMGDecompRow *row;
+  FAMGDecompRow *row;
 };
 
-inline CMGDecompRow *CMGDecomp::GetRow() const {
+inline FAMGDecompRow *FAMGDecomp::GetRow() const {
   return row;
 }
-inline CMGDecompRow *CMGDecomp::GetRow(int i) const {
+inline FAMGDecompRow *FAMGDecomp::GetRow(int i) const {
   return row+i;
 }
-inline void CMGDecomp::SetN(int i) {
+inline void FAMGDecomp::SetN(int i) {
   n = i;
 }
 

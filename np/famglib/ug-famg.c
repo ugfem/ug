@@ -67,8 +67,8 @@
 /****************************************************************************/
 REP_ERR_FILE;
 
-static struct CMG_Interface cmg_interface;
-static struct CMG_Parameter cmg_parameter;
+static struct FAMG_Interface famg_interface;
+static struct FAMG_Parameter famg_parameter;
 
 /* RCS_ID
    $Header$
@@ -98,7 +98,7 @@ typedef struct
   DOUBLE divlimit;
   DOUBLE reduction;
   INT famg_mark_key;
-} NP_CMG;
+} NP_FAMG;
 
 /****************************************************************************/
 /*                                                                          */
@@ -107,112 +107,112 @@ typedef struct
 /****************************************************************************/
 
 
-static INT CMGInit (NP_BASE *theNP, INT argc , char **argv)
+static INT FAMGInit (NP_BASE *theNP, INT argc , char **argv)
 {
-  NP_CMG *np;
+  NP_FAMG *np;
   char *str;
 
-  np = (NP_CMG *) theNP;
+  np = (NP_FAMG *) theNP;
 
-  if (ReadArgvINT("h",&(cmg_parameter.heap),argc,argv))
-    cmg_parameter.heap = 1e+7;
-  if (ReadArgvINT("n1",&(cmg_parameter.n1),argc,argv))
-    cmg_parameter.n1 = 1;
-  if (ReadArgvINT("n2",&(cmg_parameter.n2),argc,argv))
-    cmg_parameter.n2 = 1;
-  if (ReadArgvINT("g",&(cmg_parameter.gamma),argc,argv))
-    cmg_parameter.gamma = 1;
-  if (ReadArgvINT("cgn",&(cmg_parameter.cgnodes),argc,argv))
-    cmg_parameter.cgnodes = 1;
-
-
-  cmg_parameter.ilut = 1e+10;
-  GetStringValueDouble(":cmg:ilut",&(cmg_parameter.ilut));
-
-  cmg_parameter.cgilut = 0.0;
-  GetStringValueDouble(":cmg:cgilut",&(cmg_parameter.cgilut));
-
-  cmg_parameter.conloops = 0;
-  GetStringValueInt(":cmg:conloops",&(cmg_parameter.conloops));
-
-  cmg_parameter.mincoarse = 0.8;
-  GetStringValueDouble(":cmg:mincoarse",&(cmg_parameter.mincoarse));
-
-  cmg_parameter.type = 0;
-  GetStringValueInt(":cmg:type",&(cmg_parameter.type));
-
-  cmg_parameter.stv = 0;
-  GetStringValueInt(":cmg:stv",&(cmg_parameter.stv));
-
-  cmg_parameter.tol = 0.95;
-  GetStringValueDouble(":cmg:tol",&(cmg_parameter.tol));
-
-  cmg_parameter.sigma = 0.45;
-  GetStringValueDouble(":cmg:sigma",&(cmg_parameter.sigma));
-
-  cmg_parameter.omegar = 1.0;
-  GetStringValueDouble(":cmg:omegar",&(cmg_parameter.omegar));
-
-  cmg_parameter.omegal = 1.0;
-  GetStringValueDouble(":cmg:omegal",&(cmg_parameter.omegal));
-
-  cmg_parameter.error1 = 1e-6;
-  GetStringValueDouble(":cmg:error1",&(cmg_parameter.error1));
-
-  cmg_parameter.error2 = 1.0;
-  GetStringValueDouble(":cmg:error2",&(cmg_parameter.error2));
-
-  cmg_parameter.maxit = 100;
-  GetStringValueInt(":cmg:maxit",&(cmg_parameter.maxit));
-
-  cmg_parameter.alimit = 1e-14;
-  GetStringValueDouble(":cmg:alimit",&(cmg_parameter.alimit));
-
-  cmg_parameter.rlimit = 1e-10;
-  GetStringValueDouble(":cmg:rlimit",&(cmg_parameter.rlimit));
-
-  cmg_parameter.divlimit= 10.0;
-  GetStringValueDouble(":cmg:divlimit",&(cmg_parameter.divlimit));
-
-  cmg_parameter.reduction = 1.0;
-  GetStringValueDouble(":cmg:reduction",&(cmg_parameter.reduction));
-
-  strcpy(cmg_parameter.solver,"linit");
-  str = GetStringVar(":cmg:solver");
-  if(str != NULL) strcpy(cmg_parameter.solver,str);
-
-  strcpy(cmg_parameter.presmoother,"fgs");
-  str = GetStringVar(":cmg:presmoother");
-  if(str != NULL) strcpy(cmg_parameter.presmoother,str);
-
-  strcpy(cmg_parameter.postsmoother,"bgs");
-  str = GetStringVar(":cmg:postsmoother");
-  if(str != NULL) strcpy(cmg_parameter.postsmoother,str);
-
-  strcpy(cmg_parameter.cgsmoother,"ilut");
-  str = GetStringVar(":cmg:cgsmoother");
-  if(str != NULL) strcpy(cmg_parameter.cgsmoother,str);
+  if (ReadArgvINT("h",&(famg_parameter.heap),argc,argv))
+    famg_parameter.heap = 1e+7;
+  if (ReadArgvINT("n1",&(famg_parameter.n1),argc,argv))
+    famg_parameter.n1 = 1;
+  if (ReadArgvINT("n2",&(famg_parameter.n2),argc,argv))
+    famg_parameter.n2 = 1;
+  if (ReadArgvINT("g",&(famg_parameter.gamma),argc,argv))
+    famg_parameter.gamma = 1;
+  if (ReadArgvINT("cgn",&(famg_parameter.cgnodes),argc,argv))
+    famg_parameter.cgnodes = 1;
 
 
-  np->heap = cmg_parameter.heap;
-  np->n1 = cmg_parameter.n1;
-  np->n2 = cmg_parameter.n2;
-  np->gamma = cmg_parameter.gamma;
-  np->cgnodes = cmg_parameter.cgnodes;
-  np->maxit = cmg_parameter.maxit;
-  np->alimit = cmg_parameter.alimit;
-  np->rlimit = cmg_parameter.rlimit;
-  np->divlimit = cmg_parameter.divlimit;
-  np->reduction = cmg_parameter.reduction;
+  famg_parameter.ilut = 1e+10;
+  GetStringValueDouble(":famg:ilut",&(famg_parameter.ilut));
+
+  famg_parameter.cgilut = 0.0;
+  GetStringValueDouble(":famg:cgilut",&(famg_parameter.cgilut));
+
+  famg_parameter.conloops = 0;
+  GetStringValueInt(":famg:conloops",&(famg_parameter.conloops));
+
+  famg_parameter.mincoarse = 0.8;
+  GetStringValueDouble(":famg:mincoarse",&(famg_parameter.mincoarse));
+
+  famg_parameter.type = 0;
+  GetStringValueInt(":famg:type",&(famg_parameter.type));
+
+  famg_parameter.stv = 0;
+  GetStringValueInt(":famg:stv",&(famg_parameter.stv));
+
+  famg_parameter.tol = 0.95;
+  GetStringValueDouble(":famg:tol",&(famg_parameter.tol));
+
+  famg_parameter.sigma = 0.45;
+  GetStringValueDouble(":famg:sigma",&(famg_parameter.sigma));
+
+  famg_parameter.omegar = 1.0;
+  GetStringValueDouble(":famg:omegar",&(famg_parameter.omegar));
+
+  famg_parameter.omegal = 1.0;
+  GetStringValueDouble(":famg:omegal",&(famg_parameter.omegal));
+
+  famg_parameter.error1 = 1e-6;
+  GetStringValueDouble(":famg:error1",&(famg_parameter.error1));
+
+  famg_parameter.error2 = 1.0;
+  GetStringValueDouble(":famg:error2",&(famg_parameter.error2));
+
+  famg_parameter.maxit = 100;
+  GetStringValueInt(":famg:maxit",&(famg_parameter.maxit));
+
+  famg_parameter.alimit = 1e-14;
+  GetStringValueDouble(":famg:alimit",&(famg_parameter.alimit));
+
+  famg_parameter.rlimit = 1e-10;
+  GetStringValueDouble(":famg:rlimit",&(famg_parameter.rlimit));
+
+  famg_parameter.divlimit= 10.0;
+  GetStringValueDouble(":famg:divlimit",&(famg_parameter.divlimit));
+
+  famg_parameter.reduction = 1.0;
+  GetStringValueDouble(":famg:reduction",&(famg_parameter.reduction));
+
+  strcpy(famg_parameter.solver,"linit");
+  str = GetStringVar(":famg:solver");
+  if(str != NULL) strcpy(famg_parameter.solver,str);
+
+  strcpy(famg_parameter.presmoother,"fgs");
+  str = GetStringVar(":famg:presmoother");
+  if(str != NULL) strcpy(famg_parameter.presmoother,str);
+
+  strcpy(famg_parameter.postsmoother,"bgs");
+  str = GetStringVar(":famg:postsmoother");
+  if(str != NULL) strcpy(famg_parameter.postsmoother,str);
+
+  strcpy(famg_parameter.cgsmoother,"ilut");
+  str = GetStringVar(":famg:cgsmoother");
+  if(str != NULL) strcpy(famg_parameter.cgsmoother,str);
+
+
+  np->heap = famg_parameter.heap;
+  np->n1 = famg_parameter.n1;
+  np->n2 = famg_parameter.n2;
+  np->gamma = famg_parameter.gamma;
+  np->cgnodes = famg_parameter.cgnodes;
+  np->maxit = famg_parameter.maxit;
+  np->alimit = famg_parameter.alimit;
+  np->rlimit = famg_parameter.rlimit;
+  np->divlimit = famg_parameter.divlimit;
+  np->reduction = famg_parameter.reduction;
 
   return (NPIterInit(&np->iter,argc,argv));
 }
 
-static INT CMGDisplay (NP_BASE *theNP)
+static INT FAMGDisplay (NP_BASE *theNP)
 {
-  NP_CMG *np;
+  NP_FAMG *np;
 
-  np = (NP_CMG *) theNP;
+  np = (NP_FAMG *) theNP;
 
   NPIterDisplay(&np->iter);
 
@@ -231,9 +231,9 @@ static INT CMGDisplay (NP_BASE *theNP)
   return (0);
 }
 
-static INT CMGPreProcess  (NP_ITER *theNP, INT level,
-                           VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                           INT *baselevel, INT *result)
+static INT FAMGPreProcess  (NP_ITER *theNP, INT level,
+                            VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                            INT *baselevel, INT *result)
 {
   MULTIGRID *mg;
   GRID *grid;
@@ -245,11 +245,11 @@ static INT CMGPreProcess  (NP_ITER *theNP, INT level,
   DOUBLE d, sum;
 
   int n, nl, nv, *index, *start;
-  double *entry, *vector[CMG_NVECTORS];
+  double *entry, *vector[FAMG_NVECTORS];
   void **extra;
-  NP_CMG *np;
+  NP_FAMG *np;
 
-  np = (NP_CMG *) theNP;
+  np = (NP_FAMG *) theNP;
 
   mg = NP_MG(theNP);
   MarkTmpMem(MGHEAP(mg),&np->famg_mark_key);   /* release in PostProcess */
@@ -299,7 +299,7 @@ static INT CMGPreProcess  (NP_ITER *theNP, INT level,
   extra = (void **) GetTmpMem(MGHEAP(mg),n*sizeof(void *),np->famg_mark_key);
   if (extra == NULL)
   {
-    UserWrite("CMGCreateSystem: not enough memory. \n");
+    UserWrite("FAMGCreateSystem: not enough memory. \n");
     REP_ERR_RETURN(1);
   }
 
@@ -330,17 +330,17 @@ static INT CMGPreProcess  (NP_ITER *theNP, INT level,
   start = (int *) GetTmpMem(MGHEAP(mg),(n+1)*sizeof(int),np->famg_mark_key);
   if (start == NULL)
   {
-    UserWrite("ug - cmg: not enough memory. \n");
+    UserWrite("ug - famg: not enough memory. \n");
     REP_ERR_RETURN(1);
   }
 
   /* allocate vectors */
-  for(j = 0; j < CMG_NVECTORS; j++)
+  for(j = 0; j < FAMG_NVECTORS; j++)
   {
     vector[j] = (DOUBLE *) GetTmpMem(MGHEAP(mg),n*sizeof(DOUBLE),np->famg_mark_key);
     if (vector[j] == NULL)
     {
-      UserWrite("ug - cmg: not enough memory. \n");
+      UserWrite("ug - famg: not enough memory. \n");
       REP_ERR_RETURN(1);
     }
   }
@@ -409,7 +409,7 @@ static INT CMGPreProcess  (NP_ITER *theNP, INT level,
           }
           if(!found)
           {
-            UserWrite("error in CMGSolve \n");
+            UserWrite("error in FAMGSolve \n");
           }
         }
         i++;
@@ -455,7 +455,7 @@ static INT CMGPreProcess  (NP_ITER *theNP, INT level,
         }
         if(!found)
         {
-          UserWrite("error in CMGSolve \n");
+          UserWrite("error in FAMGSolve \n");
         }
       }
       i++;
@@ -465,7 +465,7 @@ static INT CMGPreProcess  (NP_ITER *theNP, INT level,
 
   if(i != n)
   {
-    UserWrite("error in CMGPreProcess. \n");
+    UserWrite("error in FAMGPreProcess. \n");
     REP_ERR_RETURN(1);
   }
 
@@ -474,13 +474,13 @@ static INT CMGPreProcess  (NP_ITER *theNP, INT level,
   index = (int *) GetTmpMem(MGHEAP(mg),nl*sizeof(int),np->famg_mark_key);
   if (index == NULL)
   {
-    UserWrite("ug - cmg: not enough memory. \n");
+    UserWrite("ug - famg: not enough memory. \n");
     REP_ERR_RETURN(1);
   }
   entry = (double *) GetTmpMem(MGHEAP(mg),nl*sizeof(double),np->famg_mark_key);
   if (entry == NULL)
   {
-    UserWrite("ug - cmg: not enough memory. \n");
+    UserWrite("ug - famg: not enough memory. \n");
     REP_ERR_RETURN(1);
   }
 
@@ -494,7 +494,7 @@ static INT CMGPreProcess  (NP_ITER *theNP, INT level,
       {
         if(offset != start[i])
         {
-          UserWrite("error in CMGPreProcess. \n");
+          UserWrite("error in FAMGPreProcess. \n");
           REP_ERR_RETURN(1);
         }
         entry[offset] = MVALUE(VSTART(vec),mc);
@@ -559,7 +559,7 @@ static INT CMGPreProcess  (NP_ITER *theNP, INT level,
           }
           if(!found)
           {
-            UserWrite("error in CMGSolve \n");
+            UserWrite("error in FAMGSolve \n");
           }
         }
         i++;
@@ -574,7 +574,7 @@ static INT CMGPreProcess  (NP_ITER *theNP, INT level,
     {
       if(offset != start[i])
       {
-        UserWrite("error in CMGPreProcess. \n");
+        UserWrite("error in FAMGPreProcess. \n");
         REP_ERR_RETURN(1);
       }
       entry[offset] = MVALUE(VSTART(vec),mc);
@@ -616,32 +616,32 @@ static INT CMGPreProcess  (NP_ITER *theNP, INT level,
         }
         if(!found)
         {
-          UserWrite("error in CMGSolve \n");
+          UserWrite("error in FAMGSolve \n");
         }
       }
       i++;
     }
   }
 
-  cmg_interface.n = n;
-  cmg_interface.nl = nl;
-  cmg_interface.nv = CMG_NVECTORS;
-  cmg_interface.start = start;
-  cmg_interface.index = index;
-  cmg_interface.entry = entry;
-  cmg_interface.extra = extra;
-  for(j = 0; j < CMG_NVECTORS; j++)
+  famg_interface.n = n;
+  famg_interface.nl = nl;
+  famg_interface.nv = FAMG_NVECTORS;
+  famg_interface.start = start;
+  famg_interface.index = index;
+  famg_interface.entry = entry;
+  famg_interface.extra = extra;
+  for(j = 0; j < FAMG_NVECTORS; j++)
   {
-    cmg_interface.vector[j] = vector[j];
+    famg_interface.vector[j] = vector[j];
   }
 
   return(0);
 }
 
 
-static INT CMGSolve (NP_ITER *theNP, INT level,
-                     VECDATA_DESC *c, VECDATA_DESC *b, MATDATA_DESC *A,
-                     INT *result)
+static INT FAMGSolve (NP_ITER *theNP, INT level,
+                      VECDATA_DESC *c, VECDATA_DESC *b, MATDATA_DESC *A,
+                      INT *result)
 {
   MULTIGRID *mg;
   GRID *grid;
@@ -670,12 +670,12 @@ static INT CMGSolve (NP_ITER *theNP, INT level,
     REP_ERR_RETURN(1);
   }
 
-  unknown = cmg_interface.vector[CMG_UNKNOWN];
-  rhs = cmg_interface.vector[CMG_RHS];
-  defect = cmg_interface.vector[CMG_DEFECT];
-  tv = cmg_interface.vector[CMG_TVA];
-  tvT = cmg_interface.vector[CMG_TVB];
-  n = cmg_interface.n;
+  unknown = famg_interface.vector[FAMG_UNKNOWN];
+  rhs = famg_interface.vector[FAMG_RHS];
+  defect = famg_interface.vector[FAMG_DEFECT];
+  tv = famg_interface.vector[FAMG_TVA];
+  tvT = famg_interface.vector[FAMG_TVB];
+  n = famg_interface.n;
 
   i = 0;
   for (lev=FULLREFINELEVEL(mg); lev<level; lev++)
@@ -709,13 +709,13 @@ static INT CMGSolve (NP_ITER *theNP, INT level,
   }
   if(i != n)
   {
-    UserWrite("error in CMGPreProcess. \n");
+    UserWrite("error in FAMGPreProcess. \n");
     REP_ERR_RETURN(1);
   }
   UserWriteF("unknowns: %d \n",n);
 
   /* solve */
-  CMGSolveSystem(&cmg_interface,&cmg_parameter);
+  FAMGSolveSystem(&famg_interface,&famg_parameter);
 
   i = 0;
   for (lev=FULLREFINELEVEL(mg); lev<level; lev++)
@@ -773,7 +773,7 @@ static INT CMGSolve (NP_ITER *theNP, INT level,
   }
   if(i != n)
   {
-    UserWrite("error in CMGPreProcess. \n");
+    UserWrite("error in FAMGPreProcess. \n");
     REP_ERR_RETURN(1);
   }
 
@@ -783,14 +783,14 @@ static INT CMGSolve (NP_ITER *theNP, INT level,
 }
 
 
-static INT CMGPostProcess (NP_ITER *theNP, INT level,
-                           VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                           INT *result)
+static INT FAMGPostProcess (NP_ITER *theNP, INT level,
+                            VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                            INT *result)
 {
   MULTIGRID *mg;
-  NP_CMG *np;
+  NP_FAMG *np;
 
-  np = (NP_CMG *) theNP;
+  np = (NP_FAMG *) theNP;
 
   mg = NP_MG(theNP);
   ReleaseTmpMem(MGHEAP(mg),np->famg_mark_key);   /* mark in PreProcess */
@@ -798,26 +798,26 @@ static INT CMGPostProcess (NP_ITER *theNP, INT level,
   return (0);
 }
 
-static INT CMGConstruct (NP_BASE *theNP)
+static INT FAMGConstruct (NP_BASE *theNP)
 {
   NP_ITER *np;
 
-  theNP->Init = CMGInit;
-  theNP->Display = CMGDisplay;
+  theNP->Init = FAMGInit;
+  theNP->Display = FAMGDisplay;
   theNP->Execute = NPIterExecute;
 
   np = (NP_ITER *) theNP;
-  np->PreProcess = CMGPreProcess;
-  np->Iter = CMGSolve;
-  np->PostProcess = CMGPostProcess;
+  np->PreProcess = FAMGPreProcess;
+  np->Iter = FAMGSolve;
+  np->PostProcess = FAMGPostProcess;
 
   return(0);
 }
 
 
-INT InitCMG ()
+INT InitFAMG ()
 {
-  if (CreateClass(ITER_CLASS_NAME ".cmg",sizeof(NP_CMG),CMGConstruct))
+  if (CreateClass(ITER_CLASS_NAME ".famg",sizeof(NP_FAMG),FAMGConstruct))
     REP_ERR_RETURN (__LINE__);
 
   return(0);

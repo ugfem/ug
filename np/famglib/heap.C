@@ -2,7 +2,7 @@
 /*																			*/
 /* File:      heap.C														*/
 /*																			*/
-/* Purpose:   cmg heap class functions										*/
+/* Purpose:   famg heap class functions										*/
 /*                                                                          */
 /* Author:    Christian Wagner 					                            */
 /*            Institut fuer Computeranwendungen  III			            */
@@ -35,21 +35,21 @@ $Header$
 /*                                                                          */
 /****************************************************************************/
 
-CMGHeap *cmgheapptr;
+FAMGHeap *famgheapptr;
 
-CMGHeap::~CMGHeap()
+FAMGHeap::~FAMGHeap()
 {
     free(buffer);
 }
 
-CMGHeap::CMGHeap(unsigned long size)
+FAMGHeap::FAMGHeap(unsigned long size)
 {
-    size = CMGCEIL(size);
+    size = FAMGCEIL(size);
     buffer = malloc(size);
     if(buffer == NULL)
     {
          ostrstream ostr; ostr  << __FILE__ << ", line " << __LINE__ << ": can not allocate " << size << " byte." << endl;
-         CMGError(ostr);
+         FAMGError(ostr);
     }
     else
     {
@@ -60,7 +60,7 @@ CMGHeap::CMGHeap(unsigned long size)
 }
 
 
-void *CMGHeap::GetMem(unsigned long size, int mode)
+void *FAMGHeap::GetMem(unsigned long size, int mode)
 {
 	void *ptr;
 
@@ -69,14 +69,14 @@ void *CMGHeap::GetMem(unsigned long size, int mode)
         return((void *)-1);
     }
     
-    size = CMGCEIL(size);
-    if (mode==CMG_FROM_TOP)
+    size = FAMGCEIL(size);
+    if (mode==FAMG_FROM_TOP)
     {
         top -= size;
         if(top < bottom)
         {
             ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": not enough memory for << size << byte." << endl;
-            CMGError(ostr);
+            FAMGError(ostr);
             return(NULL);
         }
         return((void *)top);
@@ -88,32 +88,32 @@ void *CMGHeap::GetMem(unsigned long size, int mode)
         if(top < bottom) 
         {
             ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": not enough memory." << endl;
-            CMGError(ostr);
+            FAMGError(ostr);
             return(NULL);
         }
         return(ptr);
     }
 }
 
-int CMGHeap::Mark(int mode)
+int FAMGHeap::Mark(int mode)
 {
 	
-    if (mode==CMG_FROM_TOP)
+    if (mode==FAMG_FROM_TOP)
     {
-        if (ntop >= CMGMAXSTACK)
+        if (ntop >= FAMGMAXSTACK)
         {
             ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": stack too small." << endl;
-            CMGError(ostr);
+            FAMGError(ostr);
             return(1);
         }
         topstack[ntop++] = top;
     }
 	else 
     {
-        if (nbottom >= CMGMAXSTACK)
+        if (nbottom >= FAMGMAXSTACK)
         {
             ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": stack too small." << endl;
-            CMGError(ostr);
+            FAMGError(ostr);
             return(1);
         }
         bottomstack[nbottom++] = bottom;
@@ -123,14 +123,14 @@ int CMGHeap::Mark(int mode)
 }
 
 
-int CMGHeap::Release(int mode)
+int FAMGHeap::Release(int mode)
 {
-	if (mode==CMG_FROM_TOP)
+	if (mode==FAMG_FROM_TOP)
 	{
         if (ntop <= 0)
         {
             ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": stack error." << endl;
-            CMGError(ostr);
+            FAMGError(ostr);
             return(1);
         }
         top = topstack[--ntop];
@@ -140,7 +140,7 @@ int CMGHeap::Release(int mode)
         if (nbottom <= 0)
         {
             ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": stack error." << endl;
-            CMGError(ostr);
+            FAMGError(ostr);
             return(1);
         }
         bottom = bottomstack[--nbottom];
@@ -148,28 +148,28 @@ int CMGHeap::Release(int mode)
 	return(0);
 }
 
-void *CMGGetMem(unsigned long size, int mode)
+void *FAMGGetMem(unsigned long size, int mode)
 {
-    return cmgheapptr->GetMem(size,mode);
+    return famgheapptr->GetMem(size,mode);
 }
 
-int CMGMarkHeap(int mode)
+int FAMGMarkHeap(int mode)
 {
-    return cmgheapptr->Mark(mode);
+    return famgheapptr->Mark(mode);
 }
 
-int CMGReleaseHeap(int mode)
+int FAMGReleaseHeap(int mode)
 {
-    return cmgheapptr->Release(mode);
+    return famgheapptr->Release(mode);
 }
 
-void CMGSetHeap(CMGHeap *ptr)
+void FAMGSetHeap(FAMGHeap *ptr)
 {
-    cmgheapptr = ptr;
+    famgheapptr = ptr;
 }
 
-CMGHeap *CMGGetHeap()
+FAMGHeap *FAMGGetHeap()
 {
-    return cmgheapptr;
+    return famgheapptr;
 }
 

@@ -2,7 +2,7 @@
 /*																			*/
 /* File:      graph.C														*/
 /*																			*/
-/* Purpose:   cmg graph classes functions									*/
+/* Purpose:   famg graph classes functions									*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -35,7 +35,7 @@ $Header$
    
     // Class List
 
-void CMGList::Insert(CMGNode *node)
+void FAMGList::Insert(FAMGNode *node)
 {   
     node->SetSucc(first);
     node->SetPred(NULL);
@@ -45,7 +45,7 @@ void CMGList::Insert(CMGNode *node)
     node->SetList(this);
 }
 
-void CMGList::Init(CMGList *p,CMGList *s,int d)
+void FAMGList::Init(FAMGList *p,FAMGList *s,int d)
 {
      data = d;
      first = NULL;
@@ -58,7 +58,7 @@ void CMGList::Init(CMGList *p,CMGList *s,int d)
 
     // Class Node
 
-void CMGNode::Init(int i)
+void FAMGNode::Init(int i)
 {
     data = 0;
     id = i;
@@ -78,7 +78,7 @@ void CMGNode::Init(int i)
 // Class PaList
 
 
-void CMGPaList::Init(CMGPaList *nex, int n, int *p, double *c, double *ct, double error)
+void FAMGPaList::Init(FAMGPaList *nex, int n, int *p, double *c, double *ct, double error)
 {
     int z;
     
@@ -99,9 +99,9 @@ void CMGPaList::Init(CMGPaList *nex, int n, int *p, double *c, double *ct, doubl
     // Class Graph
 
  
-int CMGGraph::Insert(CMGNode *nod)
+int FAMGGraph::Insert(FAMGNode *nod)
 {
-    CMGList *last, *li, *pl;
+    FAMGList *last, *li, *pl;
     int data;
 
     data = nod->GetData();
@@ -122,7 +122,7 @@ int CMGGraph::Insert(CMGNode *nod)
             }
             else
             {
-                pl = (CMGList *) CMGGetMem(sizeof(CMGList), CMG_FROM_BOTTOM);
+                pl = (FAMGList *) FAMGGetMem(sizeof(FAMGList), FAMG_FROM_BOTTOM);
             }
             if (pl == NULL) return 1;
             if(li->GetPred() == NULL) list = pl;
@@ -139,7 +139,7 @@ int CMGGraph::Insert(CMGNode *nod)
     }
     else
     {
-        pl = (CMGList *)CMGGetMem(sizeof(class CMGList), CMG_FROM_BOTTOM);
+        pl = (FAMGList *)FAMGGetMem(sizeof(class FAMGList), FAMG_FROM_BOTTOM);
     }
     if (pl == NULL) return 1;
     if(last == NULL) list = pl; 
@@ -149,9 +149,9 @@ int CMGGraph::Insert(CMGNode *nod)
     return 0;
 }
 
-void CMGGraph::Remove(CMGNode *nod)
+void FAMGGraph::Remove(FAMGNode *nod)
 {
-    CMGList *li;
+    FAMGList *li;
     
     if(nod->GetList() == NULL)  return; // nod not on list
         
@@ -199,7 +199,7 @@ void CMGGraph::Remove(CMGNode *nod)
     nod->SetList(NULL);
 }
 
-void CMGGraph::Store(CMGNode *nod)
+void FAMGGraph::Store(FAMGNode *nod)
 {
     if (nod->GetList() != NULL)
     {
@@ -212,9 +212,9 @@ void CMGGraph::Store(CMGNode *nod)
     return;
 }
 
-int CMGGraph::InsertHelplist()
+int FAMGGraph::InsertHelplist()
 {
-    CMGNode *nextnode, *oldnode;
+    FAMGNode *nextnode, *oldnode;
 
     nextnode = helplist;
     while(nextnode != NULL)
@@ -233,9 +233,9 @@ int CMGGraph::InsertHelplist()
     return 0;
 }
        
-CMGNode *CMGGraph::GetFirstNode()
+FAMGNode *FAMGGraph::GetFirstNode()
 {
-    CMGNode *nod;
+    FAMGNode *nod;
     
     if(list == NULL) return NULL;
     nod = list->GetFirst();
@@ -244,9 +244,9 @@ CMGNode *CMGGraph::GetFirstNode()
     return nod;
 }
 
-CMGNode *CMGGraph::GetLastNode()
+FAMGNode *FAMGGraph::GetLastNode()
 {
-    CMGNode *nod;
+    FAMGNode *nod;
     
     if(list == NULL) return NULL;
     nod = list->GetLast();
@@ -255,9 +255,9 @@ CMGNode *CMGGraph::GetLastNode()
     return nod;
 }
 
-void CMGGraph::ClearPaList(CMGPaList *pl)
+void FAMGGraph::ClearPaList(FAMGPaList *pl)
 {
-    CMGPaList *opl;
+    FAMGPaList *opl;
 
     while(pl != NULL)
     {
@@ -272,9 +272,9 @@ void CMGGraph::ClearPaList(CMGPaList *pl)
     return;
 }
  
-void CMGGraph::ClearPaListRev(CMGPaList *&palist)
+void FAMGGraph::ClearPaListRev(FAMGPaList *&palist)
 {
-    CMGPaList *opl, *pl;
+    FAMGPaList *opl, *pl;
 
     pl = palist;
     while(pl != NULL)
@@ -291,9 +291,9 @@ void CMGGraph::ClearPaListRev(CMGPaList *&palist)
     return;
 } 
 
-void CMGGraph::CorrectPaList(CMGPaList *&palist, double threshold)
+void FAMGGraph::CorrectPaList(FAMGPaList *&palist, double threshold)
 {
-    CMGPaList *pl, *opl, *prev;
+    FAMGPaList *pl, *opl, *prev;
 
     pl = palist;
     prev = NULL;
@@ -321,9 +321,9 @@ void CMGGraph::CorrectPaList(CMGPaList *&palist, double threshold)
     return;
 } 
 
-int CMGGraph::SavePaList(CMGPaList *&list, int np, int *pa, double *c, double *ct, double error)
+int FAMGGraph::SavePaList(FAMGPaList *&list, int np, int *pa, double *c, double *ct, double error)
 {
-    CMGPaList *pl;
+    FAMGPaList *pl;
 
     if (freepalist != NULL)
     {
@@ -332,7 +332,7 @@ int CMGGraph::SavePaList(CMGPaList *&list, int np, int *pa, double *c, double *c
     }
     else
     {
-        pl = (CMGPaList *) CMGGetMem(sizeof(class CMGPaList), CMG_FROM_BOTTOM);
+        pl = (FAMGPaList *) FAMGGetMem(sizeof(class FAMGPaList), FAMG_FROM_BOTTOM);
         if (pl == NULL) return 1;
     }
 
@@ -345,7 +345,7 @@ int CMGGraph::SavePaList(CMGPaList *&list, int np, int *pa, double *c, double *c
 
 
 
-void CMGGraph::MarkFGNode(CMGNode *fgnode)
+void FAMGGraph::MarkFGNode(FAMGNode *fgnode)
 {
     if(fgnode->IsFGNode()) return;
     fgnode->MarkFGNode();
@@ -355,7 +355,7 @@ void CMGGraph::MarkFGNode(CMGNode *fgnode)
     return;
 }
 
-void CMGGraph::MarkCGNode(CMGNode *cgnode)
+void FAMGGraph::MarkCGNode(FAMGNode *cgnode)
 {
     if(cgnode->IsCGNode()) return;
     cgnode->MarkCGNode();
@@ -365,9 +365,9 @@ void CMGGraph::MarkCGNode(CMGNode *cgnode)
     return;
 }
 
-int CMGGraph::Init(CMGGrid *gridptr)
+int FAMGGraph::Init(FAMGGrid *gridptr)
 {
-    CMGNode *nodei;
+    FAMGNode *nodei;
     int i;
 
     // noetig ?
@@ -375,7 +375,7 @@ int CMGGraph::Init(CMGGrid *gridptr)
     nf = 0;
     nc = n-1;
 
-    node = (CMGNode *) CMGGetMem(n*sizeof(CMGNode), CMG_FROM_BOTTOM);
+    node = (FAMGNode *) FAMGGetMem(n*sizeof(FAMGNode), FAMG_FROM_BOTTOM);
     if (node == NULL) return 1;
     
     for(i = 0; i < n; i++)
@@ -387,7 +387,7 @@ int CMGGraph::Init(CMGGrid *gridptr)
     map = gridptr->GetMap();
     if(map == NULL) // temporary map on level > 0
     {
-        map = (int *) CMGGetMem(n*sizeof(int),CMG_FROM_BOTTOM);
+        map = (int *) FAMGGetMem(n*sizeof(int),FAMG_FROM_BOTTOM);
         if (map == NULL) return 1;
         for(i = 0; i < n; i++) map[i] = i;
     }
@@ -400,7 +400,7 @@ int CMGGraph::Init(CMGGrid *gridptr)
 
     // just for plotting
 
-    //     CMGMatrixEntry *row, *rowi, *matij;
+    //     FAMGMatrixEntry *row, *rowi, *matij;
 
     //     row = gridptr->GetMatrix()->GetRow();
     //     for(i = 0; i < n; i++)
@@ -418,14 +418,14 @@ int CMGGraph::Init(CMGGrid *gridptr)
 
     // test
  
-int CMGGraph::InsertH(CMGNode *nod)
+int FAMGGraph::InsertH(FAMGNode *nod)
 {
-    CMGList *last, *li, *pl;
+    FAMGList *last, *li, *pl;
     int data;
 
     data = nod->GetData();
     last = NULL;
-    for(li = (CMGList *)helplist; li != NULL; li = li->GetSucc())
+    for(li = (FAMGList *)helplist; li != NULL; li = li->GetSucc())
     {
         if (data == li->GetData()) 
         {
@@ -441,10 +441,10 @@ int CMGGraph::InsertH(CMGNode *nod)
             }
             else
             {
-                pl = (CMGList *) CMGGetMem(sizeof(CMGList), CMG_FROM_BOTTOM);
+                pl = (FAMGList *) FAMGGetMem(sizeof(FAMGList), FAMG_FROM_BOTTOM);
             }
             if (pl == NULL) return 1;
-            if(li->GetPred() == NULL) helplist = (CMGNode *)pl;
+            if(li->GetPred() == NULL) helplist = (FAMGNode *)pl;
             pl->Init(li->GetPred(),li,data); 
             pl->Insert(nod);
             return 0;
@@ -458,19 +458,19 @@ int CMGGraph::InsertH(CMGNode *nod)
     }
     else
     {
-        pl = (CMGList *)CMGGetMem(sizeof(class CMGList), CMG_FROM_BOTTOM);
+        pl = (FAMGList *)FAMGGetMem(sizeof(class FAMGList), FAMG_FROM_BOTTOM);
     }
     if (pl == NULL) return 1;
-    if(last == NULL) helplist = (CMGNode *)pl; 
+    if(last == NULL) helplist = (FAMGNode *)pl; 
     pl->Init(last,NULL,data);
     pl->Insert(nod);
 
     return 0;
 }
 
-void CMGGraph::RemoveH(CMGNode *nod)
+void FAMGGraph::RemoveH(FAMGNode *nod)
 {
-    CMGList *li;
+    FAMGList *li;
     
     if(nod->GetList() == NULL)  return; // nod not on list
         
@@ -501,7 +501,7 @@ void CMGGraph::RemoveH(CMGNode *nod)
             }
             else
             {
-                helplist = (CMGNode *)li->GetSucc();
+                helplist = (FAMGNode *)li->GetSucc();
             }
             if( li->GetSucc() != NULL)
             {
@@ -518,13 +518,13 @@ void CMGGraph::RemoveH(CMGNode *nod)
     nod->SetList(NULL);
 }
 
-CMGNode *CMGGraph::GetFirstNodeH()
+FAMGNode *FAMGGraph::GetFirstNodeH()
 {
-    CMGNode *nod;
-    CMGList *hlist;
+    FAMGNode *nod;
+    FAMGList *hlist;
     
     if(helplist == NULL) return NULL;
-    hlist = (CMGList *)helplist;
+    hlist = (FAMGList *)helplist;
     nod = hlist->GetFirst();
     RemoveH(nod);
 
@@ -533,10 +533,10 @@ CMGNode *CMGGraph::GetFirstNodeH()
 
 
 
-int CMGGraph::OrderSpecial(CMGMatrix *matrix)
+int FAMGGraph::OrderSpecial(FAMGMatrix *matrix)
 {
-    CMGNode *nodei, *nodej;
-    CMGMatrixPtr matij;
+    FAMGNode *nodei, *nodej;
+    FAMGMatrixPtr matij;
     int i, z, nl;
     double mii;
 
@@ -613,10 +613,10 @@ int CMGGraph::OrderSpecial(CMGMatrix *matrix)
     return 0;
 }
         
-int CMGGraph::OrderILUT(CMGMatrix *matrix)
+int FAMGGraph::OrderILUT(FAMGMatrix *matrix)
 {
-    CMGNode *nodei;
-    CMGMatrixPtr matij;
+    FAMGNode *nodei;
+    FAMGMatrixPtr matij;
     int i, j, z, nl;
     //    double mii;
 
@@ -637,19 +637,19 @@ int CMGGraph::OrderILUT(CMGMatrix *matrix)
     }
 
 
-    CMGMarkHeap(CMG_FROM_BOTTOM);
+    FAMGMarkHeap(FAMG_FROM_BOTTOM);
 
-    void **buffer = (void **) CMGGetMem(sizeof(CMGNode *)*n,CMG_FROM_BOTTOM);
-    if (buffer == NULL) {CMGReleaseHeap(CMG_FROM_BOTTOM);  return 1;}
+    void **buffer = (void **) FAMGGetMem(sizeof(FAMGNode *)*n,FAMG_FROM_BOTTOM);
+    if (buffer == NULL) {FAMGReleaseHeap(FAMG_FROM_BOTTOM);  return 1;}
 
-    CMGFifo fifo(buffer,sizeof(CMGNode *)*n);
+    FAMGFifo fifo(buffer,sizeof(FAMGNode *)*n);
 
     
     fifo.In((void *) (node+0));
     (node+0)->SetFlag(1);
     while(!fifo.Empty())
     {
-        nodei = (CMGNode *) fifo.Out();
+        nodei = (FAMGNode *) fifo.Out();
         i = nodei->GetId();
         matij = matrix->GetStart(i);
         // mii = matij.GetData();
@@ -677,7 +677,7 @@ int CMGGraph::OrderILUT(CMGMatrix *matrix)
         (nodei)->SetFlag(0);
         while(!fifo.Empty())
         {        
-            nodei = (CMGNode *)fifo.Out();
+            nodei = (FAMGNode *)fifo.Out();
             i = nodei->GetId();
             map[i] = z;
             Remove(nodei);
@@ -698,7 +698,7 @@ int CMGGraph::OrderILUT(CMGMatrix *matrix)
         nodei = GetFirstNode();
     }
 
-    CMGReleaseHeap(CMG_FROM_BOTTOM);
+    FAMGReleaseHeap(FAMG_FROM_BOTTOM);
  
     if(z != n) return 1;
 

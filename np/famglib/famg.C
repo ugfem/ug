@@ -1,8 +1,8 @@
 /****************************************************************************/
 /*																			*/
-/* File:      cmg.C															*/
+/* File:      famg.C														*/
 /*																			*/
-/* Purpose:   cmg file interface											*/
+/* Purpose:   famg file interface											*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -196,7 +196,7 @@ static int isEmpty(char * str, char comment, int maxlen)
     return 1;
 }
 
-int CMGParameter::Read()
+int FAMGParameter::Read()
 {
     heap = 100e+6;
     nv = 16;
@@ -375,7 +375,7 @@ main(int argc, char **argv)
     if (ReadRHS(rhs,n,argc,argv)) return 1;
 
     // read parameter 
-    CMGParameter parameter;
+    FAMGParameter parameter;
     if(parameter.Read()) return 1; 
 
     // and here we go ....
@@ -384,15 +384,15 @@ main(int argc, char **argv)
    double *defect = new double[n];
 
 
-   if(CMGConstructParameter(&parameter)) return 1;
+   if(FAMGConstructParameter(&parameter)) return 1;
 
-   if(CMGConstruct(entry,index,start,n,nl,NULL, NULL,NULL)) return 1;
+   if(FAMGConstruct(entry,index,start,n,nl,NULL, NULL,NULL)) return 1;
 
-   status = CMGSolve(rhs,defect,unknown);
+   status = FAMGSolve(rhs,defect,unknown);
 
-   CMGDeconstruct();
+   FAMGDeconstruct();
 
-   CMGDeconstructParameter();
+   FAMGDeconstructParameter();
 
 
 

@@ -11,7 +11,7 @@
 include $(UGROOT)/ug.conf
 
 # path to library
-FAMGLIB      = ../lib/libfamg.a
+FAMGLIB      = $(UG_LIB)
 
 OBJECTS = heap.o misc.o matrix.o decomp.o transfer.o graph.o approx.o \
           construct.o grid.o multigrid.o system.o uginterface.o ug-famg.o
@@ -21,6 +21,9 @@ OBJECTS = heap.o misc.o matrix.o decomp.o transfer.o graph.o approx.o \
 
 
 $(FAMGLIB) : $(OBJECTS) Makefile.famglib
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(FAMGLIB) $(OBJECTS) 
+
+ar: $(OBJECTS) Makefile.famglib
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(FAMGLIB) $(OBJECTS) 
 
 .SUFFIXES: .o .c .C

@@ -1,4 +1,4 @@
-# cmg inputfile
+# famg inputfile
 solver bicgstab # bicgstab, linit, gmres
 presmoother fgs # fgs, bgs, sgs, ilut, jac
 postsmoother bgs # fgs, bgs, sgs, ilut, jac

@@ -4,7 +4,7 @@
 /*																			*/
 /* File:      system.h														*/
 /*																			*/
-/* Purpose:   cmg system class												*/
+/* Purpose:   famg system class												*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -21,8 +21,8 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef __CMG_SYSTEM__
-#define __CMG_SYSTEM__
+#ifndef __FAMG_SYSTEM__
+#define __FAMG_SYSTEM__
 
 #include <string.h>
 #include "matrix.h"
@@ -33,9 +33,9 @@
    $Header$
  */
 
-const int CMGMULTIGRIDS=1;
+const int FAMGMULTIGRIDS=1;
 
-class CMGParameter  // struct makes it easier than class
+class FAMGParameter  // struct makes it easier than class
 {
 public:
   int Getheap();
@@ -123,196 +123,196 @@ private:
   char cgsmoother[10];
 };
 
-inline int CMGParameter::Getheap() {
+inline int FAMGParameter::Getheap() {
   return heap;
 }
-inline int CMGParameter::Getnv() {
+inline int FAMGParameter::Getnv() {
   return nv;
 }
-inline int CMGParameter::Getgamma() {
+inline int FAMGParameter::Getgamma() {
   return gamma;
 }
-inline int CMGParameter::Getn1() {
+inline int FAMGParameter::Getn1() {
   return n1;
 }
-inline int CMGParameter::Getn2() {
+inline int FAMGParameter::Getn2() {
   return n2;
 }
-inline double CMGParameter::Getilut() {
+inline double FAMGParameter::Getilut() {
   return ilut;
 }
-inline double CMGParameter::Getcgilut() {
+inline double FAMGParameter::Getcgilut() {
   return cgilut;
 }
-inline int CMGParameter::Getcgnodes() {
+inline int FAMGParameter::Getcgnodes() {
   return cgnodes;
 }
-inline double CMGParameter::Getmincoarse() {
+inline double FAMGParameter::Getmincoarse() {
   return mincoarse;
 }
-inline int CMGParameter::Getconloops() {
+inline int FAMGParameter::Getconloops() {
   return conloops;
 }
-inline int CMGParameter::Gettype() {
+inline int FAMGParameter::Gettype() {
   return type;
 }
-inline int CMGParameter::Getstv() {
+inline int FAMGParameter::Getstv() {
   return stv;
 }
-inline double CMGParameter::Gettol() {
+inline double FAMGParameter::Gettol() {
   return tol;
 }
-inline double CMGParameter::Getsigma() {
+inline double FAMGParameter::Getsigma() {
   return sigma;
 }
-inline double CMGParameter::Getomegar() {
+inline double FAMGParameter::Getomegar() {
   return omegar;
 }
-inline double CMGParameter::Getomegal() {
+inline double FAMGParameter::Getomegal() {
   return omegal;
 }
-inline double CMGParameter::Geterror1() {
+inline double FAMGParameter::Geterror1() {
   return error1;
 }
-inline double CMGParameter::Geterror2() {
+inline double FAMGParameter::Geterror2() {
   return error2;
 }
-inline int CMGParameter::Getmaxit() {
+inline int FAMGParameter::Getmaxit() {
   return maxit;
 }
-inline double CMGParameter::Getalimit() {
+inline double FAMGParameter::Getalimit() {
   return alimit;
 }
-inline double CMGParameter::Getrlimit() {
+inline double FAMGParameter::Getrlimit() {
   return rlimit;
 }
-inline double CMGParameter::Getdivlimit() {
+inline double FAMGParameter::Getdivlimit() {
   return divlimit;
 }
-inline double CMGParameter::Getreduction() {
+inline double FAMGParameter::Getreduction() {
   return reduction;
 }
-inline char* CMGParameter::Getsolver() {
+inline char* FAMGParameter::Getsolver() {
   return solver;
 }
-inline char* CMGParameter::Getpresmoother() {
+inline char* FAMGParameter::Getpresmoother() {
   return presmoother;
 }
-inline char* CMGParameter::Getpostsmoother() {
+inline char* FAMGParameter::Getpostsmoother() {
   return postsmoother;
 }
-inline char* CMGParameter::Getcgsmoother() {
+inline char* FAMGParameter::Getcgsmoother() {
   return cgsmoother;
 }
 
-inline void CMGParameter::Setheap(int i) {
+inline void FAMGParameter::Setheap(int i) {
   heap = i;
 }
-inline void CMGParameter::Setnv(int i) {
+inline void FAMGParameter::Setnv(int i) {
   nv = i;
 }
-inline void CMGParameter::Setgamma(int i) {
+inline void FAMGParameter::Setgamma(int i) {
   gamma = i;
 }
-inline void CMGParameter::Setilut(double d) {
+inline void FAMGParameter::Setilut(double d) {
   ilut = d;
 }
-inline void CMGParameter::Setcgilut(double d) {
+inline void FAMGParameter::Setcgilut(double d) {
   cgilut = d;
 }
-inline void CMGParameter::Setn1(int i) {
+inline void FAMGParameter::Setn1(int i) {
   n1 = i;
 }
-inline void CMGParameter::Setn2(int i) {
+inline void FAMGParameter::Setn2(int i) {
   n2 = i;
 }
-inline void CMGParameter::Setcgnodes(int i) {
+inline void FAMGParameter::Setcgnodes(int i) {
   cgnodes = i;
 }
-inline void CMGParameter::Setmincoarse(double d) {
+inline void FAMGParameter::Setmincoarse(double d) {
   mincoarse = d;
 }
-inline void CMGParameter::Setconloops(int i) {
+inline void FAMGParameter::Setconloops(int i) {
   conloops = i;
 }
-inline void CMGParameter::Settype(int i) {
+inline void FAMGParameter::Settype(int i) {
   type = i;
 }
-inline void CMGParameter::Setstv(int i) {
+inline void FAMGParameter::Setstv(int i) {
   stv = i;
 }
-inline void CMGParameter::Settol(double d) {
+inline void FAMGParameter::Settol(double d) {
   tol = d;
 }
-inline void CMGParameter::Setsigma(double d) {
+inline void FAMGParameter::Setsigma(double d) {
   sigma = d;
 }
-inline void CMGParameter::Setomegar(double d) {
+inline void FAMGParameter::Setomegar(double d) {
   omegar = d;
 }
-inline void CMGParameter::Setomegal(double d) {
+inline void FAMGParameter::Setomegal(double d) {
   omegal = d;
 }
-inline void CMGParameter::Seterror1(double d) {
+inline void FAMGParameter::Seterror1(double d) {
   error1 = d;
 }
-inline void CMGParameter::Seterror2(double d) {
+inline void FAMGParameter::Seterror2(double d) {
   error2 = d;
 }
-inline void CMGParameter::Setmaxit(int i) {
+inline void FAMGParameter::Setmaxit(int i) {
   maxit = i;
 }
-inline void CMGParameter::Setalimit(double d) {
+inline void FAMGParameter::Setalimit(double d) {
   alimit = d;
 }
-inline void CMGParameter::Setrlimit(double d) {
+inline void FAMGParameter::Setrlimit(double d) {
   rlimit = d;
 }
-inline void CMGParameter::Setdivlimit(double d) {
+inline void FAMGParameter::Setdivlimit(double d) {
   divlimit = d;
 }
-inline void CMGParameter::Setreduction(double d) {
+inline void FAMGParameter::Setreduction(double d) {
   reduction = d;
 }
-inline void CMGParameter::Setsolver(char *ptr) {
+inline void FAMGParameter::Setsolver(char *ptr) {
   strcpy(solver,ptr);
 }
-inline void CMGParameter::Setpresmoother(char *ptr) {
+inline void FAMGParameter::Setpresmoother(char *ptr) {
   strcpy(presmoother,ptr);
 }
-inline void CMGParameter::Setpostsmoother(char *ptr) {
+inline void FAMGParameter::Setpostsmoother(char *ptr) {
   strcpy(postsmoother,ptr);
 }
-inline void CMGParameter::Setcgsmoother(char *ptr) {
+inline void FAMGParameter::Setcgsmoother(char *ptr) {
   strcpy(cgsmoother,ptr);
 }
 
 
-class CMGSystem
+class FAMGSystem
 {
 public:
-  CMGSystem();
-  CMGMatrix * GetMatrix() const;
+  FAMGSystem();
+  FAMGMatrix * GetMatrix() const;
   int GetN() const;
   double *GetVector(int i) const;
   void **GetExtra() const;
-  CMGMultiGrid *GetMultiGrid(int) const;
-  void SetMatrix(CMGMatrix *);
+  FAMGMultiGrid *GetMultiGrid(int) const;
+  void SetMatrix(FAMGMatrix *);
   void SetExtra(void **);
   void SetVector(int, double *);
   void SetN(int);
   int Init();
-  CMGMultiGrid *CreateMultiGrid();
+  FAMGMultiGrid *CreateMultiGrid();
   int Solve(double *rhs, double *defect, double *unknown);
   int LinIt();
   int AdTVSolve();
   int BiCGStab();
   int BiCG();
-  int Arnoldi(CMGMultiGrid *mg0, double **vec, double *H, double *G, double *Q, double *P, double &q0, int con);
-  int ArnoldiTrans(CMGMultiGrid *mg0, double **vec, double *H, double *G, double *Q, double *P, double &q0, int con);
-  int UpdateSolution(CMGMultiGrid *mg0, double **vec, double *H, double *Q, double &q0, int con);
-  int ComputeEigenVector(CMGMultiGrid *mg0, double **vec, double *G, double *P, int con);
-  int ComputeEigenVectorTrans(CMGMultiGrid *mg0, double **vec, double *G, double *P, int con);
+  int Arnoldi(FAMGMultiGrid *mg0, double **vec, double *H, double *G, double *Q, double *P, double &q0, int con);
+  int ArnoldiTrans(FAMGMultiGrid *mg0, double **vec, double *H, double *G, double *Q, double *P, double &q0, int con);
+  int UpdateSolution(FAMGMultiGrid *mg0, double **vec, double *H, double *Q, double &q0, int con);
+  int ComputeEigenVector(FAMGMultiGrid *mg0, double **vec, double *G, double *P, int con);
+  int ComputeEigenVectorTrans(FAMGMultiGrid *mg0, double **vec, double *G, double *P, int con);
   int GMRES();
   int Construct(double *entr, int *index, int *start, int n, int nl, double *tvA, double *tvB, void **extraptr);
   int ConstructSimple(double *entr, int *index, int *start, int n, int nl, void **extraptr);
@@ -321,44 +321,44 @@ public:
 private:
   int nmg;
   int n;             // unknowns
-  CMGMultiGrid *mg[CMGMULTIGRIDS];
-  CMGMatrix *matrix;
-  double *vector[CMGMAXVECTORS];
+  FAMGMultiGrid *mg[FAMGMULTIGRIDS];
+  FAMGMatrix *matrix;
+  double *vector[FAMGMAXVECTORS];
   int *colmap;
   void **extra;
-  int (CMGSystem::*SolverPtr)(void);
+  int (FAMGSystem::*SolverPtr)(void);
 
 };
 
-inline CMGMatrix *CMGSystem::GetMatrix() const {
+inline FAMGMatrix *FAMGSystem::GetMatrix() const {
   return matrix;
 }
-inline int CMGSystem::GetN() const {
+inline int FAMGSystem::GetN() const {
   return n;
 }
-inline double *CMGSystem::GetVector(int i) const {
+inline double *FAMGSystem::GetVector(int i) const {
   return vector[i];
 }
-inline void **CMGSystem::GetExtra() const {
+inline void **FAMGSystem::GetExtra() const {
   return extra;
 }
-inline CMGMultiGrid *CMGSystem::GetMultiGrid(int i) const {
+inline FAMGMultiGrid *FAMGSystem::GetMultiGrid(int i) const {
   return mg[i];
 }
-inline void CMGSystem::SetN(int i) {
+inline void FAMGSystem::SetN(int i) {
   n = i;
 }
-inline void CMGSystem::SetMatrix(CMGMatrix *ptr) {
+inline void FAMGSystem::SetMatrix(FAMGMatrix *ptr) {
   matrix = ptr;
 }
-inline void CMGSystem::SetExtra(void **ptr) {
+inline void FAMGSystem::SetExtra(void **ptr) {
   extra = ptr;
 }
-inline void CMGSystem::SetVector(int i, double *ptr) {
+inline void FAMGSystem::SetVector(int i, double *ptr) {
   vector[i] = ptr;
 }
 
-CMGParameter * CMGGetParameter();
-void CMGSetParameter(CMGParameter *ptr);
+FAMGParameter * FAMGGetParameter();
+void FAMGSetParameter(FAMGParameter *ptr);
 
 #endif

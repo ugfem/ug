@@ -4,7 +4,7 @@
 /*																			*/
 /* File:      matrix.h														*/
 /*																			*/
-/* Purpose:   cmg matrix classes											*/
+/* Purpose:   famg matrix classes											*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -21,8 +21,8 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef __CMG_MATRIX__
-#define __CMG_MATRIX__
+#ifndef __FAMG_MATRIX__
+#define __FAMG_MATRIX__
 
 #include "misc.h"
 #include "transfer.h"
@@ -32,21 +32,21 @@
    $Header$
  */
 
-// for other data structures, CMGMatrixPtr may contain only
+// for other data structures, FAMGMatrixPtr may contain only
 // one pointer to the matrix entry
 
-struct CMGIndexBitField
+struct FAMGIndexBitField
 {
   unsigned type : 1;
   unsigned id : 31;
 };
 
 
-class CMGMatrixPtr
+class FAMGMatrixPtr
 {
 public:
   void SetNC(int);
-  void SetIndexPtr(CMGIndexBitField *);
+  void SetIndexPtr(FAMGIndexBitField *);
   void SetIndex(int);
   void SetType(int);
   void SetEntryPtr(double*);
@@ -62,7 +62,7 @@ public:
   double *GetAdjoined();
   double *GetEntry();
 private:
-  CMGIndexBitField *index;
+  FAMGIndexBitField *index;
   double *entry;
   double **adjoined;
   int nc;         // remaining columns/rows
@@ -70,7 +70,7 @@ private:
 
 // for other data structures e.g. ptr++ or ptr = ptr->next
 
-inline int CMGMatrixPtr::GetNext()
+inline int FAMGMatrixPtr::GetNext()
 {
   if( nc <= 0) return 0;
   index++;
@@ -81,54 +81,54 @@ inline int CMGMatrixPtr::GetNext()
 }
 
 // for other data structures e.g. ptr = ptr->data
-inline double CMGMatrixPtr::GetData() {
+inline double FAMGMatrixPtr::GetData() {
   return *entry;
 }
-inline int CMGMatrixPtr::GetIndex() {
+inline int FAMGMatrixPtr::GetIndex() {
   return index->id;
 }
-inline int CMGMatrixPtr::GetType() {
+inline int FAMGMatrixPtr::GetType() {
   return index->type;
 }
-inline double CMGMatrixPtr::GetAdjData() {
+inline double FAMGMatrixPtr::GetAdjData() {
   return **adjoined;
 }
-inline double *CMGMatrixPtr::GetAdjoined() {
+inline double *FAMGMatrixPtr::GetAdjoined() {
   return *adjoined;
 }
-inline double **CMGMatrixPtr::GetAdjoinedPtr() {
+inline double **FAMGMatrixPtr::GetAdjoinedPtr() {
   return adjoined;
 }
-inline double *CMGMatrixPtr::GetEntry() {
+inline double *FAMGMatrixPtr::GetEntry() {
   return entry;
 }
-inline void CMGMatrixPtr::SetData(double d) {
+inline void FAMGMatrixPtr::SetData(double d) {
   (*entry) = d;
 }
-inline void CMGMatrixPtr::SetType(int typ) {
+inline void FAMGMatrixPtr::SetType(int typ) {
   index->type = typ;
 }
-inline void CMGMatrixPtr::SetIndex(int id) {
+inline void FAMGMatrixPtr::SetIndex(int id) {
   index->id = id;
 }
-inline void CMGMatrixPtr::SetNC(int i) {
+inline void FAMGMatrixPtr::SetNC(int i) {
   nc = i;
 }
-inline void CMGMatrixPtr::SetIndexPtr(CMGIndexBitField *ptr) {
+inline void FAMGMatrixPtr::SetIndexPtr(FAMGIndexBitField *ptr) {
   index = ptr;
 }
-inline void CMGMatrixPtr::SetEntryPtr(double* ptr) {
+inline void FAMGMatrixPtr::SetEntryPtr(double* ptr) {
   entry = ptr;
 }
-inline void CMGMatrixPtr::SetAdjoinedPtr(double** ptr) {
+inline void FAMGMatrixPtr::SetAdjoinedPtr(double** ptr) {
   adjoined = ptr;
 }
-inline void CMGMatrixPtr::SetAdjoined(double* ptr) {
+inline void FAMGMatrixPtr::SetAdjoined(double* ptr) {
   (*adjoined) = ptr;
 }
 
 
-class CMGMatrix
+class FAMGMatrix
 {
 public:
   int GetN() const;
@@ -141,7 +141,7 @@ public:
   void SetEntry(double*);
   void SetAdjoined(double**);
   int *GetStartPtr() const;
-  CMGMatrixPtr GetStart(int i);
+  FAMGMatrixPtr GetStart(int i);
   int GetType(int i) const;
   void DevideFGDefect(double *unknown, double *defect);
   void VecMinusMatVec(double *defect, double *rhs, double *unknown);
@@ -152,16 +152,16 @@ public:
   int OrderColumns();
   int OrderColumns(int *map);
   int ReorderColumns(int *map);
-  int OrderColumns2(CMGGraph*);
+  int OrderColumns2(FAMGGraph*);
   int ConstructAdjoined();
   int ConstructAdjoinedB();
-  int ConstructAdjoined2(CMGGraph*);
+  int ConstructAdjoined2(FAMGGraph*);
   int ConstructEnd();
   int ConstructEndB();
   int ConstructEnd2();
-  int CGMatrix(CMGMatrix *fgmatrix, CMGTransfer *transfer, int *father);
-  int TmpMatrix(CMGMatrix *matrix, CMGTransfer *transfer, CMGGraph *graph);
-  void MarkUnknowns(CMGGraph *graph);
+  int CGMatrix(FAMGMatrix *fgmatrix, FAMGTransfer *transfer, int *father);
+  int TmpMatrix(FAMGMatrix *matrix, FAMGTransfer *transfer, FAMGGraph *graph);
+  void MarkUnknowns(FAMGGraph *graph);
   int Order(int *mapping);
   int Reorder(int *mapping);
   int GetSmallestIndex();
@@ -183,47 +183,47 @@ private:
   double **adjoined;
 };
 
-inline int CMGMatrix::GetN() const {
+inline int FAMGMatrix::GetN() const {
   return n;
 }
-inline int CMGMatrix::GetNL() const {
+inline int FAMGMatrix::GetNL() const {
   return nl;
 }
-inline int *CMGMatrix::GetStartPtr() const {
+inline int *FAMGMatrix::GetStartPtr() const {
   return start;
 }
-inline double CMGMatrix::GetDiag(int i) const {
+inline double FAMGMatrix::GetDiag(int i) const {
   return entry[start[i]];
 }
-inline int CMGMatrix::GetType(int i) const {
-  return ((CMGIndexBitField *)(index+start[i]))->type;
+inline int FAMGMatrix::GetType(int i) const {
+  return ((FAMGIndexBitField *)(index+start[i]))->type;
 }
-inline void CMGMatrix::SetN(int nn) {
+inline void FAMGMatrix::SetN(int nn) {
   n = nn;
 }
-inline void CMGMatrix::SetNL(int nn) {
+inline void FAMGMatrix::SetNL(int nn) {
   nl = nn;
 }
-inline void CMGMatrix::SetStartPtr(int* p) {
+inline void FAMGMatrix::SetStartPtr(int* p) {
   start = p;
 }
-inline void CMGMatrix::SetIndex(int* p) {
+inline void FAMGMatrix::SetIndex(int* p) {
   index = p;
 }
-inline void CMGMatrix::SetEntry(double* p) {
+inline void FAMGMatrix::SetEntry(double* p) {
   entry = p;
 }
-inline void CMGMatrix::SetAdjoined(double** p) {
+inline void FAMGMatrix::SetAdjoined(double** p) {
   adjoined = p;
 }
 
-inline CMGMatrixPtr CMGMatrix::GetStart(int i)
+inline FAMGMatrixPtr FAMGMatrix::GetStart(int i)
 {
-  CMGMatrixPtr mat;
+  FAMGMatrixPtr mat;
 
   int offset = start[i];
   mat.SetEntryPtr(entry+offset);
-  mat.SetIndexPtr((CMGIndexBitField *)(index+offset));
+  mat.SetIndexPtr((FAMGIndexBitField *)(index+offset));
   mat.SetAdjoinedPtr(adjoined+offset);
   mat.SetNC(end[i]-offset-1);
 

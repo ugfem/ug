@@ -2,7 +2,7 @@
 /*																			*/
 /* File:      decomp.C														*/
 /*																			*/
-/* Purpose:   cmg decomp classes functions									*/
+/* Purpose:   famg decomp classes functions									*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -29,9 +29,9 @@
 $Header$
 */
 
-// Class CMGDecompEntry
+// Class FAMGDecompEntry
 
-void CMGDecompEntry::Init(int i)
+void FAMGDecompEntry::Init(int i)
 {
     id.f0 = i;
     next = NULL;
@@ -40,18 +40,18 @@ void CMGDecompEntry::Init(int i)
     return;
 }        
 
-    // Class CMGDecompRow
+    // Class FAMGDecompRow
 
 
-CMGDecompEntry *CMGDecompRow::NewEntry(CMGDecompRow* rowj)
+FAMGDecompEntry *FAMGDecompRow::NewEntry(FAMGDecompRow* rowj)
 {
-    CMGDecompEntry *matij, *matji, *ptr;
+    FAMGDecompEntry *matij, *matji, *ptr;
     int i,j;
 
     // Allocate matij and matji at once. That's not nice but it saves
     // an pointer.
 
-    ptr = (CMGDecompEntry *) CMGGetMem(sizeof(CMGDecompEntry[2]),CMG_FROM_TOP);
+    ptr = (FAMGDecompEntry *) FAMGGetMem(sizeof(FAMGDecompEntry[2]),FAMG_FROM_TOP);
     if(ptr == NULL)  return(NULL);
 
     i = id;
@@ -74,9 +74,9 @@ CMGDecompEntry *CMGDecompRow::NewEntry(CMGDecompRow* rowj)
     return matij;
 }
     
-CMGDecompEntry *CMGDecompRow::GetEntry(int j) const
+FAMGDecompEntry *FAMGDecompRow::GetEntry(int j) const
 {
-    CMGDecompEntry *matij;
+    FAMGDecompEntry *matij;
 
     for(matij = right; matij != NULL; matij = (*matij).GetNext())
     {
@@ -86,9 +86,9 @@ CMGDecompEntry *CMGDecompRow::GetEntry(int j) const
     return NULL;
 }
 
-int CMGDecompRow::SaveEntry(CMGDecompRow* rowj, double val)
+int FAMGDecompRow::SaveEntry(FAMGDecompRow* rowj, double val)
 {
-    CMGDecompEntry *matij;
+    FAMGDecompEntry *matij;
     int j;
 
     // test 
@@ -112,9 +112,9 @@ int CMGDecompRow::SaveEntry(CMGDecompRow* rowj, double val)
 }
 
 
-int CMGDecompRow::SaveEntry(CMGDecompRow* rowj, double val,CMGDecompEntry** p)
+int FAMGDecompRow::SaveEntry(FAMGDecompRow* rowj, double val,FAMGDecompEntry** p)
 {
-    CMGDecompEntry *matij;
+    FAMGDecompEntry *matij;
     int j;
 
     *p = NULL;    
@@ -139,9 +139,9 @@ int CMGDecompRow::SaveEntry(CMGDecompRow* rowj, double val,CMGDecompEntry** p)
     return 0;
 }
 
-void CMGDecompRow::MoveLeft(CMGDecompEntry* mat)
+void FAMGDecompRow::MoveLeft(FAMGDecompEntry* mat)
 {
-    CMGDecompEntry *link, *prev;
+    FAMGDecompEntry *link, *prev;
 
     if (right == mat) right=mat->GetNext();
     else
@@ -158,7 +158,7 @@ void CMGDecompRow::MoveLeft(CMGDecompEntry* mat)
     left = mat;
 }
 
-void CMGDecompRow::Init(int i)
+void FAMGDecompRow::Init(int i)
 {
     id = i;
     right = NULL;
@@ -169,18 +169,18 @@ void CMGDecompRow::Init(int i)
 }        
 
 
-    // Class CMGDecomp
+    // Class FAMGDecomp
 
         
-int CMGDecomp::Init(CMGMatrix *matrix) 
+int FAMGDecomp::Init(FAMGMatrix *matrix) 
 {
-    CMGDecompRow *rowi;
-    CMGMatrixPtr matij;
+    FAMGDecompRow *rowi;
+    FAMGMatrixPtr matij;
     int i;
 
     n = matrix->GetN();
 
-    row = (CMGDecompRow*) CMGGetMem(n*sizeof(CMGDecompRow), CMG_FROM_TOP);
+    row = (FAMGDecompRow*) FAMGGetMem(n*sizeof(FAMGDecompRow), FAMG_FROM_TOP);
     if (row == NULL) return(1);
     for(i = 0; i < n; i++)
     {
@@ -204,15 +204,15 @@ int CMGDecomp::Init(CMGMatrix *matrix)
 } 
 
 
-int CMGDecomp::Construct(int cgilut)	
+int FAMGDecomp::Construct(int cgilut)	
 {
-    CMGDecompRow *rowi, *rowj, *rowk;
-    CMGDecompEntry *matij, *matik, *matji, *matjk;
+    FAMGDecompRow *rowi, *rowj, *rowk;
+    FAMGDecompEntry *matij, *matik, *matji, *matjk;
 	double factor,val,diag, mjj, mkk, ilut;
     int i,j,k;
 
-    if(cgilut) ilut = CMGGetParameter()->Getcgilut();
-    else ilut = CMGGetParameter()->Getilut();
+    if(cgilut) ilut = FAMGGetParameter()->Getcgilut();
+    else ilut = FAMGGetParameter()->Getilut();
     
     for(i = 0; i < n; i++)
     {
@@ -221,7 +221,7 @@ int CMGDecomp::Construct(int cgilut)
         if(Abs(diag) < 1e-15)
         {
             ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": division by zero" << endl;
-            CMGWarning(ostr);
+            FAMGWarning(ostr);
         }
 
         // Elimination of the whole Column 
@@ -268,12 +268,12 @@ int CMGDecomp::Construct(int cgilut)
 	return 0;
 }
          
-void CMGDecomp::ILUT(double *vec)
+void FAMGDecomp::ILUT(double *vec)
 {
     /* symmetric Gauss-Seidel */
 
-    CMGDecompEntry *matij;
-    CMGDecompRow *rowi;
+    FAMGDecompEntry *matij;
+    FAMGDecompRow *rowi;
     double  sum, *v;
     int i,j;
 

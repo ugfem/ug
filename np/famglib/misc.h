@@ -21,8 +21,8 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef __CMG_MISC__
-#define __CMG_MISC__
+#ifndef __FAMG_MISC__
+#define __FAMG_MISC__
 
 #include <iostream.h>
 #include <strstream.h>
@@ -53,22 +53,22 @@ inline double Min(double a, double b)
   else return a;
 }
 
-void CMGError(ostrstream &OutputString);
-void CMGWarning(ostrstream &OutputString);
-void CMGWrite(ostrstream &OutputString);
-double CMGNorm(const int n, const double *v);
-void CMGSetVector(const int n, double *v, const double val);
-void CMGCopyVector(const int n, double *v1, const double *v2);
-void CMGCopyScaledVector(const int n, double *v1, const double *v2, const double factor);
-void CMGSubVector(const int n, double *v1, const double *v2);
-void CMGAddVector(const int n, double *v1, const double *v2);
-void CMGAddVector(const int n, double *v1, const double *v2, const double factor);
-void CMGAddVector(const int n, double *v1, const double factor, const double *v2);
-void CMGMultVector(const int n, double *v1, const double factor);
-void CMGSetSubVector(const int n, double *v1, const double *v2, const double *v3);
-double CMGSum(const int n, const double *v1);
-double CMGScalProd(const int n, const double *v1, const double *v2);
-void CMGEigenVector(int n, double *a, double *b, double *e);
+void FAMGError(ostrstream &OutputString);
+void FAMGWarning(ostrstream &OutputString);
+void FAMGWrite(ostrstream &OutputString);
+double FAMGNorm(const int n, const double *v);
+void FAMGSetVector(const int n, double *v, const double val);
+void FAMGCopyVector(const int n, double *v1, const double *v2);
+void FAMGCopyScaledVector(const int n, double *v1, const double *v2, const double factor);
+void FAMGSubVector(const int n, double *v1, const double *v2);
+void FAMGAddVector(const int n, double *v1, const double *v2);
+void FAMGAddVector(const int n, double *v1, const double *v2, const double factor);
+void FAMGAddVector(const int n, double *v1, const double factor, const double *v2);
+void FAMGMultVector(const int n, double *v1, const double factor);
+void FAMGSetSubVector(const int n, double *v1, const double *v2, const double *v3);
+double FAMGSum(const int n, const double *v1);
+double FAMGScalProd(const int n, const double *v1, const double *v2);
+void FAMGEigenVector(int n, double *a, double *b, double *e);
 
 
 #endif

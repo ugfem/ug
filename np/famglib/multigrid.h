@@ -4,7 +4,7 @@
 /*																			*/
 /* File:      multigrid.h													*/
 /*																			*/
-/* Purpose:   cmg multigrid classes											*/
+/* Purpose:   famg multigrid classes										*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -21,8 +21,8 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef __CMG_MULTIGRID__
-#define __CMG_MULTIGRID__
+#ifndef __FAMG_MULTIGRID__
+#define __FAMG_MULTIGRID__
 
 #include "grid.h"
 
@@ -30,30 +30,30 @@
    $Header$
  */
 
-const int CMGMAXGRIDS=32;
+const int FAMGMAXGRIDS=32;
 
-class CMGMultiGrid
+class FAMGMultiGrid
 {
 public:
   int Step(int);
   int SGSStep(int);
   void Mult(double *vout, double *vin);
-  CMGGrid *GetGrid(int) const;
+  FAMGGrid *GetGrid(int) const;
   int GetN() const;
   int Construct();
   int Deconstruct();
-  int Init(const class CMGSystem &);
+  int Init(const class FAMGSystem &);
   int Order();
   int Reorder();
 private:
   int n;                    // grids
-  CMGGrid *grid[CMGMAXGRIDS];
+  FAMGGrid *grid[FAMGMAXGRIDS];
 };
 
-inline CMGGrid *CMGMultiGrid::GetGrid(int i) const {
+inline FAMGGrid *FAMGMultiGrid::GetGrid(int i) const {
   return grid[i];
 }
-inline int CMGMultiGrid::GetN() const {
+inline int FAMGMultiGrid::GetN() const {
   return n;
 }
 

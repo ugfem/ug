@@ -2,7 +2,7 @@
 /*																			*/
 /* File:      interface.C													*/
 /*																			*/
-/* Purpose:   cmg interface													*/
+/* Purpose:   famg interface												*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -27,9 +27,9 @@
 $Header$
 */
 
-static CMGSystem *cmgsystemptr;
+static FAMGSystem *famgsystemptr;
 
-static void ReadParameter(CMGParameter *parameter, CMGParameter *in_parameter)
+static void ReadParameter(FAMGParameter *parameter, FAMGParameter *in_parameter)
 {
     parameter->Setheap(in_parameter->Getheap());
     parameter->Setgamma(in_parameter->Getgamma());
@@ -59,65 +59,65 @@ static void ReadParameter(CMGParameter *parameter, CMGParameter *in_parameter)
     parameter->Setcgsmoother(in_parameter->Getcgsmoother());
 }    
 
-int CMGConstructParameter(CMGParameter *in_parameter)
+int FAMGConstructParameter(FAMGParameter *in_parameter)
 {
-    CMGParameter *parameter = new CMGParameter;
+    FAMGParameter *parameter = new FAMGParameter;
     if(parameter == NULL) return 1;
     ReadParameter(parameter, in_parameter); 
-    CMGSetParameter(parameter);
+    FAMGSetParameter(parameter);
 
     return 0;
 }
 
-int CMGDeconstructParameter()
+int FAMGDeconstructParameter()
 {
-    CMGParameter *parameter = CMGGetParameter();
+    FAMGParameter *parameter = FAMGGetParameter();
     delete parameter;
 
     return 0;
 }
 
-int CMGConstruct(double *matrix, int *index, int *start, int n, int nl, double *tvA, double *tvB, void **extra)
+int FAMGConstruct(double *matrix, int *index, int *start, int n, int nl, double *tvA, double *tvB, void **extra)
 {
  
 
-    CMGHeap *heap = new CMGHeap (CMGGetParameter()->Getheap());
+    FAMGHeap *heap = new FAMGHeap (FAMGGetParameter()->Getheap());
     if (heap == NULL) return 1;
-    CMGSetHeap(heap);
+    FAMGSetHeap(heap);
 
-    cmgsystemptr = (CMGSystem *) CMGGetMem(sizeof(CMGSystem),CMG_FROM_TOP);
-    if(cmgsystemptr == NULL) return 1;
+    famgsystemptr = (FAMGSystem *) FAMGGetMem(sizeof(FAMGSystem),FAMG_FROM_TOP);
+    if(famgsystemptr == NULL) return 1;
     
-    cmgsystemptr->Init();
-    if(cmgsystemptr->Construct(matrix,index,start,n,nl,tvA,tvB,extra)) return 1;
+    famgsystemptr->Init();
+    if(famgsystemptr->Construct(matrix,index,start,n,nl,tvA,tvB,extra)) return 1;
 
     return 0;
 }
-int CMGPrepare(double *matrix, int *index, int *start, int n, int nl, void **extra)
+int FAMGPrepare(double *matrix, int *index, int *start, int n, int nl, void **extra)
 {
-    if(cmgsystemptr->ConstructSimple(matrix,index,start,n,nl,extra)) return 1;
+    if(famgsystemptr->ConstructSimple(matrix,index,start,n,nl,extra)) return 1;
 
     return 0;
 }
 
-int CMGSolve(double *rhs, double *defect, double *unknown)
+int FAMGSolve(double *rhs, double *defect, double *unknown)
 {
-    return cmgsystemptr->Solve(rhs,defect,unknown);
+    return famgsystemptr->Solve(rhs,defect,unknown);
 }
 
-int CMGDeconstruct()
+int FAMGDeconstruct()
 {
-    if(cmgsystemptr->Deconstruct()) return 1;
+    if(famgsystemptr->Deconstruct()) return 1;
     
-    CMGHeap *heap = CMGGetHeap();
+    FAMGHeap *heap = FAMGGetHeap();
     delete heap;
     
     return 0;
 }
 
-int CMGRepair()
+int FAMGRepair()
 {
-    if(cmgsystemptr->DeconstructSimple()) return 1;
+    if(famgsystemptr->DeconstructSimple()) return 1;
     
     return 0;
 }

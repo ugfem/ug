@@ -4,7 +4,7 @@
 /*																			*/
 /* File:      interface.C													*/
 /*																			*/
-/* Purpose:   cmg interface													*/
+/* Purpose:   famg interface												*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -21,8 +21,8 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef CMG_INTERFACE
-#define CMG_INTERFACE
+#ifndef FAMG_INTERFACE
+#define FAMG_INTERFACE
 
 /* RCS_ID
    $Header$
@@ -30,13 +30,13 @@
 
 // exported functions
 
-int CMGDeconstructParameter();
-int CMGConstructParameter(class CMGParameter *in_parameter);
-int CMGConstruct(double *matrix, int *index, int *start, int n, int nl, double *tvA, double *tvB, void **extra);
-int CMGPrepare(double *matrix, int *index, int *start, int n, int nl, void **extra);
-int CMGSolve(double *rhs, double *unknown, double *defect);
-int CMGDeconstruct();
-int CMGRepair();
+int FAMGDeconstructParameter();
+int FAMGConstructParameter(class FAMGParameter *in_parameter);
+int FAMGConstruct(double *matrix, int *index, int *start, int n, int nl, double *tvA, double *tvB, void **extra);
+int FAMGPrepare(double *matrix, int *index, int *start, int n, int nl, void **extra);
+int FAMGSolve(double *rhs, double *unknown, double *defect);
+int FAMGDeconstruct();
+int FAMGRepair();
 
 
 #endif

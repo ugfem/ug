@@ -2,7 +2,7 @@
 /*																			*/
 /* File:      transfer.C													*/
 /*																			*/
-/* Purpose:   cmg transfer classes functions								*/
+/* Purpose:   famg transfer classes functions								*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -28,9 +28,9 @@
 $Header$
 */
 
-// Class CMGTransferEntry
+// Class FAMGTransferEntry
 
-void CMGTransferEntry::Init(int i)
+void FAMGTransferEntry::Init(int i)
 {
     id.f0 = i;
     next = NULL;
@@ -39,9 +39,9 @@ void CMGTransferEntry::Init(int i)
     return;
 }        
 
-CMGTransferEntry *CMGTransferEntry::GetEntry(int j)
+FAMGTransferEntry *FAMGTransferEntry::GetEntry(int j)
 {
-    CMGTransferEntry *transij;
+    FAMGTransferEntry *transij;
 
     for(transij = this; transij != NULL; transij = transij->GetNext())
     {
@@ -53,15 +53,15 @@ CMGTransferEntry *CMGTransferEntry::GetEntry(int j)
 
 
 
-CMGTransferEntry *CMGTransferEntry::NewEntry(CMGTransferEntry* rowj)
+FAMGTransferEntry *FAMGTransferEntry::NewEntry(FAMGTransferEntry* rowj)
 {
-    CMGTransferEntry *transij, *transji, *ptr;
+    FAMGTransferEntry *transij, *transji, *ptr;
     int i,j;
 
     // Allocate transij and transji at once. That's not nice but it saves
     // an pointer.
 
-    ptr = (CMGTransferEntry *) CMGGetMem(sizeof(CMGTransferEntry[2]),CMG_FROM_TOP);
+    ptr = (FAMGTransferEntry *) FAMGGetMem(sizeof(FAMGTransferEntry[2]),FAMG_FROM_TOP);
     if(ptr == NULL) return(NULL);
 
     i = id.f0;
@@ -84,9 +84,9 @@ CMGTransferEntry *CMGTransferEntry::NewEntry(CMGTransferEntry* rowj)
     return transij;
 }
     
-int CMGTransferEntry::SaveEntry(CMGTransferEntry* rowj, double val)
+int FAMGTransferEntry::SaveEntry(FAMGTransferEntry* rowj, double val)
 {
-    CMGTransferEntry *transij;
+    FAMGTransferEntry *transij;
     int j;
 
     // test 
@@ -109,9 +109,9 @@ int CMGTransferEntry::SaveEntry(CMGTransferEntry* rowj, double val)
     return 0;
 }
 
-int CMGTransferEntry::SaveEntry(CMGTransferEntry* rowj, double val,CMGTransferEntry** p)
+int FAMGTransferEntry::SaveEntry(FAMGTransferEntry* rowj, double val,FAMGTransferEntry** p)
 {
-    CMGTransferEntry *transij;
+    FAMGTransferEntry *transij;
     int j;
 
     *p = NULL;    
@@ -138,17 +138,17 @@ int CMGTransferEntry::SaveEntry(CMGTransferEntry* rowj, double val,CMGTransferEn
 
       
 
-// Class CMGTransfer
+// Class FAMGTransfer
 
 
-int CMGTransfer::Init(CMGGrid *grid) 
+int FAMGTransfer::Init(FAMGGrid *grid) 
 {
-    CMGTransferEntry *rowi;
+    FAMGTransferEntry *rowi;
     int i;
 
     n = grid->GetN();
 
-    row = (CMGTransferEntry*) CMGGetMem(n*sizeof(CMGTransferEntry), CMG_FROM_TOP);
+    row = (FAMGTransferEntry*) FAMGGetMem(n*sizeof(FAMGTransferEntry), FAMG_FROM_TOP);
     if (row == NULL) return(1);
     for(i = 0; i < n; i++)
     {
@@ -160,13 +160,13 @@ int CMGTransfer::Init(CMGGrid *grid)
     return(0);
 } 
 
-int CMGTransfer::Order(int *mapping)
+int FAMGTransfer::Order(int *mapping)
 {
-    CMGTransferEntry *helptrans, *transij;
+    FAMGTransferEntry *helptrans, *transij;
     int i;
 
-    CMGMarkHeap(CMG_FROM_TOP);
-    helptrans = (CMGTransferEntry *) CMGGetMem(n*sizeof(CMGTransferEntry), CMG_FROM_TOP);
+    FAMGMarkHeap(FAMG_FROM_TOP);
+    helptrans = (FAMGTransferEntry *) FAMGGetMem(n*sizeof(FAMGTransferEntry), FAMG_FROM_TOP);
     if (helptrans == NULL) return 1;
     for(i = 0; i < n; i++) helptrans[i] = row[i];
     for(i = 0; i < n; i++) row[mapping[i]] = helptrans[i];
@@ -177,18 +177,18 @@ int CMGTransfer::Order(int *mapping)
             transij->SetId(mapping[transij->GetId()]);
         }
     }
-    CMGReleaseHeap(CMG_FROM_TOP);
+    FAMGReleaseHeap(FAMG_FROM_TOP);
     
     return 0;
 }
 
-int CMGTransfer::Reorder(int *mapping)
+int FAMGTransfer::Reorder(int *mapping)
 {
-    CMGTransferEntry *helptrans, *transij, *transji;
+    FAMGTransferEntry *helptrans, *transij, *transji;
     int i;
 
-    CMGMarkHeap(CMG_FROM_TOP);
-    helptrans = (CMGTransferEntry *) CMGGetMem(n*sizeof(CMGTransferEntry), CMG_FROM_TOP);
+    FAMGMarkHeap(FAMG_FROM_TOP);
+    helptrans = (FAMGTransferEntry *) FAMGGetMem(n*sizeof(FAMGTransferEntry), FAMG_FROM_TOP);
     if (helptrans == NULL) return 1;
     for(i = 0; i < n; i++) helptrans[i] = row[i];
     for(i = 0; i < n; i++) row[i] = helptrans[mapping[i]];
@@ -201,7 +201,7 @@ int CMGTransfer::Reorder(int *mapping)
             transji->SetId(i);
         }
     }
-    CMGReleaseHeap(CMG_FROM_TOP);
+    FAMGReleaseHeap(FAMG_FROM_TOP);
     
     return 0;
 }

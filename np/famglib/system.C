@@ -2,7 +2,7 @@
 /*																			*/
 /* File:      system.C														*/
 /*																			*/
-/* Purpose:   cmg system class functions									*/
+/* Purpose:   famg system class functions									*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -30,34 +30,34 @@
 #include "grid.h"
 #include "misc.h"
 
-static CMGParameter *cmgparaptr;
-static int cmgfirsti=0; // first index (0 or 1 ?)
-const int cmgnv = 50; // maximum number of Arnoldi vectors
+static FAMGParameter *famgparaptr;
+static int famgfirsti=0; // first index (0 or 1 ?)
+const int famgnv = 50; // maximum number of Arnoldi vectors
 
 /* RCS_ID
 $Header$
 */
 
 // Class  Parameter
-void CMGSetParameter(CMGParameter *ptr)
+void FAMGSetParameter(FAMGParameter *ptr)
 {
-    cmgparaptr = ptr;
+    famgparaptr = ptr;
 }
     
-CMGParameter * CMGGetParameter()
+FAMGParameter * FAMGGetParameter()
 {
-    return cmgparaptr;
+    return famgparaptr;
 }
     
 
-int CMGSystem::Init()
+int FAMGSystem::Init()
 {
     int i;
 
     nmg = 0;
-    for(i = 0; i < CMGMULTIGRIDS; i++) mg[i] = NULL; 
+    for(i = 0; i < FAMGMULTIGRIDS; i++) mg[i] = NULL; 
     matrix = NULL;
-    for(i = 0; i < CMGMAXVECTORS; i++) vector[i] = NULL;
+    for(i = 0; i < FAMGMAXVECTORS; i++) vector[i] = NULL;
     extra = NULL;
     
     SolverPtr = NULL;
@@ -65,9 +65,9 @@ int CMGSystem::Init()
     return 0;
     
 }
-int CMGSystem::ConstructSimple(double *entry, int *index, int *start, int nn, int nl, void **extraptr)
+int FAMGSystem::ConstructSimple(double *entry, int *index, int *start, int nn, int nl, void **extraptr)
 {
-    CMGMarkHeap(CMG_FROM_BOTTOM);
+    FAMGMarkHeap(FAMG_FROM_BOTTOM);
     
     n = nn;
     matrix->SetN(n);
@@ -76,37 +76,37 @@ int CMGSystem::ConstructSimple(double *entry, int *index, int *start, int nn, in
     matrix->SetEntry(entry);
     matrix->SetStartPtr(start);
 
-    matrix->ModifyIndex(colmap,cmgfirsti);
+    matrix->ModifyIndex(colmap,famgfirsti);
     if(matrix->ConstructEndB()) return 1;
     if(matrix->OrderColumns(colmap)) return 1;
     if(matrix->ConstructAdjoinedB()) return 1;
     
 
-    char *solver = CMGGetParameter()->Getsolver();
-    SolverPtr = &CMGSystem::BiCGStab;
+    char *solver = FAMGGetParameter()->Getsolver();
+    SolverPtr = &FAMGSystem::BiCGStab;
     if(strcmp(solver,"bicgstab") == 0)
     {
-        SolverPtr = &CMGSystem::BiCGStab;
+        SolverPtr = &FAMGSystem::BiCGStab;
     }
     else if(strcmp(solver,"linit") == 0)
     {
-        SolverPtr = &CMGSystem::LinIt;
+        SolverPtr = &FAMGSystem::LinIt;
     }
     else if(strcmp(solver,"gmres") == 0)
     {
-        SolverPtr = &CMGSystem::GMRES;
+        SolverPtr = &FAMGSystem::GMRES;
     }
     else
     {
         ostrstream ostr;
         ostr << __FILE__ << __LINE__ <<  "solver = bicgstab" << endl;
-        CMGWarning(ostr);
+        FAMGWarning(ostr);
     }
 
     extra = extraptr;
     
     // mg0 supposed to be constructed
-    CMGMultiGrid *mg0 = mg[0];
+    FAMGMultiGrid *mg0 = mg[0];
     if(mg0 == NULL) return 1;
     if(mg0->Order()) return 1;
 
@@ -114,18 +114,18 @@ int CMGSystem::ConstructSimple(double *entry, int *index, int *start, int nn, in
 }
 
 
-int CMGSystem::Construct(double *entry, int *index, int *start, int nn, int nl, double *tvA, double *tvB, void **extraptr)
+int FAMGSystem::Construct(double *entry, int *index, int *start, int nn, int nl, double *tvA, double *tvB, void **extraptr)
 {
     int i;
 
-    CMGMarkHeap(CMG_FROM_TOP);
-    CMGMarkHeap(CMG_FROM_BOTTOM);
+    FAMGMarkHeap(FAMG_FROM_TOP);
+    FAMGMarkHeap(FAMG_FROM_BOTTOM);
 
-    matrix = (CMGMatrix *) CMGGetMem(sizeof(CMGMatrix),CMG_FROM_TOP);
+    matrix = (FAMGMatrix *) FAMGGetMem(sizeof(FAMGMatrix),FAMG_FROM_TOP);
     if (matrix == NULL) return 1;
     
     // only for reorder column
-    colmap = (int*) CMGGetMem(nn*sizeof(int),CMG_FROM_TOP);
+    colmap = (int*) FAMGGetMem(nn*sizeof(int),FAMG_FROM_TOP);
     if (colmap == NULL) return 1;
     
     n = nn;
@@ -135,49 +135,49 @@ int CMGSystem::Construct(double *entry, int *index, int *start, int nn, int nl, 
     matrix->SetEntry(entry);
     matrix->SetStartPtr(start);
 
-    cmgfirsti = matrix->GetSmallestIndex();
-    matrix->ModifyIndex(cmgfirsti);
+    famgfirsti = matrix->GetSmallestIndex();
+    matrix->ModifyIndex(famgfirsti);
     if(matrix->ConstructEndB()) return 1;
     if(matrix->OrderColumns(colmap)) return 1;
     if(matrix->ConstructAdjoinedB()) return 1;
     
     if(tvA == NULL)
     {
-        tvA = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_TOP);
+        tvA = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_TOP);
         for(i = 0; i < n; i++) tvA[i] = 1.0;
     }
     if(tvB == NULL)
     {
-        tvB = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_TOP);
+        tvB = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_TOP);
         for(i = 0; i < n; i++) tvB[i] = 1.0;
     }
-    vector[CMGTVA] = tvA;
-    vector[CMGTVB] = tvB;
+    vector[FAMGTVA] = tvA;
+    vector[FAMGTVB] = tvB;
 
-    char *solver = CMGGetParameter()->Getsolver();
-    SolverPtr = &CMGSystem::BiCGStab;
+    char *solver = FAMGGetParameter()->Getsolver();
+    SolverPtr = &FAMGSystem::BiCGStab;
     if(strcmp(solver,"bicgstab") == 0)
     {
-        SolverPtr = &CMGSystem::BiCGStab;
+        SolverPtr = &FAMGSystem::BiCGStab;
     }
     else if(strcmp(solver,"linit") == 0)
     {
-        SolverPtr = &CMGSystem::LinIt;
+        SolverPtr = &FAMGSystem::LinIt;
     }
     else if(strcmp(solver,"gmres") == 0)
     {
-        SolverPtr = &CMGSystem::GMRES;
+        SolverPtr = &FAMGSystem::GMRES;
     }
     else
     {
         ostrstream ostr;
         ostr << __FILE__ << __LINE__ <<  "solver = bicgstab" << endl;
-        CMGWarning(ostr);
+        FAMGWarning(ostr);
     }
 
     extra = extraptr;
     
-    CMGMultiGrid *mg0 = CreateMultiGrid();
+    FAMGMultiGrid *mg0 = CreateMultiGrid();
     if(mg0 == NULL) return 1;
     if (mg0->Init(*this)) return 1;
     if (mg0->Construct()) return 1;
@@ -186,45 +186,45 @@ int CMGSystem::Construct(double *entry, int *index, int *start, int nn, int nl, 
 }
 
 
-int CMGSystem::Solve(double *rhs, double *defect, double *unknown)
+int FAMGSystem::Solve(double *rhs, double *defect, double *unknown)
 {
     double *d, *u;
     int i;
     int status;
 
     if (rhs == NULL) return 1;
-    vector[CMGRHS] = rhs;
+    vector[FAMGRHS] = rhs;
     
-    CMGMarkHeap(CMG_FROM_TOP);
+    FAMGMarkHeap(FAMG_FROM_TOP);
 
     d = defect;
     if((d == NULL) || (d == rhs))
     {
-        d = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_TOP);
+        d = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_TOP);
         if (d == NULL) return 1;
     }
-    vector[CMGDEFECT] = d;
+    vector[FAMGDEFECT] = d;
  
     u = unknown;
     if((u == NULL) || (u == rhs) || (u == defect) )
     {
-        u = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_TOP);
+        u = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_TOP);
         if (u == NULL) return 1;
     }
-    vector[CMGUNKNOWN] = u;
+    vector[FAMGUNKNOWN] = u;
     
-    CMGGrid *g = mg[0]->GetGrid(0);
-    g->SetVector(CMGUNKNOWN,u);
-    g->SetVector(CMGDEFECT,d);
-    g->SetVector(CMGRHS,rhs);
-    if(g->OrderVector(CMGRHS,g->GetMap())) return 1;
+    FAMGGrid *g = mg[0]->GetGrid(0);
+    g->SetVector(FAMGUNKNOWN,u);
+    g->SetVector(FAMGDEFECT,d);
+    g->SetVector(FAMGRHS,rhs);
+    if(g->OrderVector(FAMGRHS,g->GetMap())) return 1;
 
    status = (this->*SolverPtr)();
    if(status != NULL) return status;
        
-   if(g->ReorderVector(CMGRHS,g->GetMap())) return 1;
-   if(g->ReorderVector(CMGDEFECT,g->GetMap())) return 1;
-   if(g->ReorderVector(CMGUNKNOWN,g->GetMap())) return 1;
+   if(g->ReorderVector(FAMGRHS,g->GetMap())) return 1;
+   if(g->ReorderVector(FAMGDEFECT,g->GetMap())) return 1;
+   if(g->ReorderVector(FAMGUNKNOWN,g->GetMap())) return 1;
 
   if(defect != d) 
    {
@@ -233,8 +233,8 @@ int CMGSystem::Solve(double *rhs, double *defect, double *unknown)
            for(i = 0; i < n; i++) defect[i] = d[i];
        }
        d = NULL;
-       vector[CMGDEFECT] = NULL;
-       g->SetVector(CMGDEFECT,(double *)NULL);
+       vector[FAMGDEFECT] = NULL;
+       g->SetVector(FAMGDEFECT,(double *)NULL);
    }
    if(unknown != u) 
    { 
@@ -243,61 +243,61 @@ int CMGSystem::Solve(double *rhs, double *defect, double *unknown)
            for(i = 0; i < n; i++) unknown[i] = u[i];
        }
        u = NULL;
-       vector[CMGUNKNOWN] = NULL;
-       g->SetVector(CMGUNKNOWN,(double *)NULL);
+       vector[FAMGUNKNOWN] = NULL;
+       g->SetVector(FAMGUNKNOWN,(double *)NULL);
    }
     
-    CMGReleaseHeap(CMG_FROM_TOP);
+    FAMGReleaseHeap(FAMG_FROM_TOP);
 
     return status;
 }
 
-int CMGSystem::Deconstruct()
+int FAMGSystem::Deconstruct()
 {
-    CMGMultiGrid *mg0=mg[0];
+    FAMGMultiGrid *mg0=mg[0];
 
     if(mg0 != NULL) if(mg0->Deconstruct()) return 1;
 
     // repair matrix
     if(matrix->ReorderColumns(colmap)) return 1;
-    matrix->RemodifyIndex(cmgfirsti);
-    CMGReleaseHeap(CMG_FROM_BOTTOM);
-    CMGReleaseHeap(CMG_FROM_TOP);
+    matrix->RemodifyIndex(famgfirsti);
+    FAMGReleaseHeap(FAMG_FROM_BOTTOM);
+    FAMGReleaseHeap(FAMG_FROM_TOP);
 
     return 0;
 }
 
-int CMGSystem::DeconstructSimple()
+int FAMGSystem::DeconstructSimple()
 {
-    CMGMultiGrid *mg0=mg[0];
+    FAMGMultiGrid *mg0=mg[0];
 
     if(mg0 != NULL) if(mg0->Reorder()) return 1;
 
     // repair matrix
     if(matrix->ReorderColumns(colmap)) return 1;
-    matrix->RemodifyIndex(colmap,cmgfirsti);
-    CMGReleaseHeap(CMG_FROM_BOTTOM);
+    matrix->RemodifyIndex(colmap,famgfirsti);
+    FAMGReleaseHeap(FAMG_FROM_BOTTOM);
     return 0;
 }
 
-CMGSystem::CMGSystem()
+FAMGSystem::FAMGSystem()
 {
     int i;
 
     nmg = 0;
-    for(i = 0; i < CMGMULTIGRIDS; i++) mg[i] = NULL; 
+    for(i = 0; i < FAMGMULTIGRIDS; i++) mg[i] = NULL; 
     matrix = NULL;
-    for(i = 0; i < CMGMAXVECTORS; i++) vector[i] = NULL;
+    for(i = 0; i < FAMGMAXVECTORS; i++) vector[i] = NULL;
     extra = NULL;
-    SolverPtr = &CMGSystem::LinIt;
+    SolverPtr = &FAMGSystem::LinIt;
 }
 
 
-CMGMultiGrid *CMGSystem::CreateMultiGrid()
+FAMGMultiGrid *FAMGSystem::CreateMultiGrid()
 {
-    CMGMultiGrid *newmg;
+    FAMGMultiGrid *newmg;
    
-    newmg = (CMGMultiGrid *) CMGGetMem(sizeof(CMGMultiGrid),CMG_FROM_TOP);
+    newmg = (FAMGMultiGrid *) FAMGGetMem(sizeof(FAMGMultiGrid),FAMG_FROM_TOP);
     if(newmg == NULL) return(NULL);
     mg[nmg] = newmg;
     nmg++;
@@ -306,7 +306,7 @@ CMGMultiGrid *CMGSystem::CreateMultiGrid()
 }
 
 #ifdef WRITE_VECTOR_TEST
-static void CMGWriteVector(int n, double *vec)
+static void FAMGWriteVector(int n, double *vec)
 {
     ofstream vfile("vec.dat",ios::out);
     if (!vfile) return;
@@ -320,46 +320,46 @@ static void CMGWriteVector(int n, double *vec)
 #endif
 
 
-int CMGSystem::LinIt()
+int FAMGSystem::LinIt()
 {
     double rlimit,alimit,divlimit,reduction,limit,defectnorm,startdefect,oldnorm;
     int maxit,i;
     ostrstream ostr;
 
-    maxit = cmgparaptr->Getmaxit();
-    rlimit = cmgparaptr->Getrlimit();
-    alimit = cmgparaptr->Getalimit();
-    divlimit =cmgparaptr->Getdivlimit();
-    reduction = cmgparaptr->Getreduction();
+    maxit = famgparaptr->Getmaxit();
+    rlimit = famgparaptr->Getrlimit();
+    alimit = famgparaptr->Getalimit();
+    divlimit =famgparaptr->Getdivlimit();
+    reduction = famgparaptr->Getreduction();
 
-    CMGSetVector(n,vector[CMGUNKNOWN],0.0);
-    CMGCopyVector(n,vector[CMGDEFECT],vector[CMGRHS]);
-    startdefect = CMGNorm(n,vector[CMGDEFECT]);
+    FAMGSetVector(n,vector[FAMGUNKNOWN],0.0);
+    FAMGCopyVector(n,vector[FAMGDEFECT],vector[FAMGRHS]);
+    startdefect = FAMGNorm(n,vector[FAMGDEFECT]);
     limit = rlimit*startdefect;
     defectnorm = startdefect;
     ostr << 0 << "\t" <<  startdefect << endl;
-    CMGWrite(ostr);
+    FAMGWrite(ostr);
 
-    // CMGMultiGrid * mg0 = CreateMultiGrid();
+    // FAMGMultiGrid * mg0 = CreateMultiGrid();
     // if(mg0 == NULL) return 1;
     // if (mg0->Init(*this)) return 1;
     // if (mg0->Construct()) return 1;
-    CMGMultiGrid *mg0 = mg[0];
+    FAMGMultiGrid *mg0 = mg[0];
    
     for(i = 0; i < maxit; i++)
     {
         if((defectnorm < alimit) || (defectnorm < limit)) break;
         if(mg0->Step(0)) { mg0->Deconstruct(); return 1;}
         oldnorm = defectnorm;
-        defectnorm = CMGNorm(n,vector[CMGDEFECT]);
+        defectnorm = FAMGNorm(n,vector[FAMGDEFECT]);
         ostr << i+1 << "\t" << defectnorm << "\t" << defectnorm/oldnorm << endl;    
-        CMGWrite(ostr);
+        FAMGWrite(ostr);
     
         if((defectnorm < alimit) || (defectnorm < limit)) break;
         if (defectnorm/oldnorm > divlimit)
         {
             ostr << "diverged" << endl;
-            CMGWrite(ostr);
+            FAMGWrite(ostr);
             break;
         }
         
@@ -377,53 +377,53 @@ int CMGSystem::LinIt()
     return 1;
 }
 
-int CMGSystem::AdTVSolve()
+int FAMGSystem::AdTVSolve()
 {
     double rlimit,alimit,divlimit,reduction,limit,defectnorm,startdefect,oldnorm;
     int maxit,i,j,init;
     ostrstream ostr;
 
-    maxit = cmgparaptr->Getmaxit();
-    rlimit = cmgparaptr->Getrlimit();
-    alimit = cmgparaptr->Getalimit();
-    divlimit =cmgparaptr->Getdivlimit();
-    reduction = cmgparaptr->Getreduction();
+    maxit = famgparaptr->Getmaxit();
+    rlimit = famgparaptr->Getrlimit();
+    alimit = famgparaptr->Getalimit();
+    divlimit =famgparaptr->Getdivlimit();
+    reduction = famgparaptr->Getreduction();
     init = 8;
 
-    CMGSetVector(n,vector[CMGUNKNOWN],0.0);
-    CMGCopyVector(n,vector[CMGDEFECT],vector[CMGRHS]);
-    startdefect = CMGNorm(n,vector[CMGDEFECT]);
+    FAMGSetVector(n,vector[FAMGUNKNOWN],0.0);
+    FAMGCopyVector(n,vector[FAMGDEFECT],vector[FAMGRHS]);
+    startdefect = FAMGNorm(n,vector[FAMGDEFECT]);
     limit = rlimit*startdefect;
     defectnorm = startdefect;
     ostr << 0 << "\t" <<  startdefect << endl;
-    CMGWrite(ostr);
+    FAMGWrite(ostr);
 
-    // CMGMultiGrid * mg0 = CreateMultiGrid();
+    // FAMGMultiGrid * mg0 = CreateMultiGrid();
     // if(mg0 == NULL) return 1;
     // if (mg0->Init(*this)) return 1;
     // if (mg0->Construct()) return 1;
-    CMGMultiGrid *mg0 = mg[0];
+    FAMGMultiGrid *mg0 = mg[0];
    
     for(i = 0; i < maxit;)
     {
         if((defectnorm < alimit) || (defectnorm < limit)) break;
         for(j = 0; (j < init) && (i < maxit); j++, i++)
         {
-            CMGCopyVector(n,vector[CMGTVA],vector[CMGUNKNOWN]);
-            CMGCopyVector(n,vector[CMGTVB],vector[CMGUNKNOWN]);
+            FAMGCopyVector(n,vector[FAMGTVA],vector[FAMGUNKNOWN]);
+            FAMGCopyVector(n,vector[FAMGTVB],vector[FAMGUNKNOWN]);
             if(mg0->Step(0)) { mg0->Deconstruct(); return 1;}
-            CMGSubVector(n,vector[CMGTVA],vector[CMGUNKNOWN]);
-            CMGSubVector(n,vector[CMGTVB],vector[CMGUNKNOWN]);
+            FAMGSubVector(n,vector[FAMGTVA],vector[FAMGUNKNOWN]);
+            FAMGSubVector(n,vector[FAMGTVB],vector[FAMGUNKNOWN]);
             oldnorm = defectnorm;
-            defectnorm = CMGNorm(n,vector[CMGDEFECT]);
+            defectnorm = FAMGNorm(n,vector[FAMGDEFECT]);
             ostr << i+1 << "\t" << defectnorm << "\t" << defectnorm/oldnorm << endl;    
-            CMGWrite(ostr);
+            FAMGWrite(ostr);
             
             if((defectnorm < alimit) || (defectnorm < limit)) break;
             if (defectnorm/oldnorm > divlimit)
             {
                 ostr << "diverged" << endl;
-                CMGWrite(ostr);
+                FAMGWrite(ostr);
                 break;
             }
 
@@ -432,7 +432,7 @@ int CMGSystem::AdTVSolve()
         if (defectnorm/oldnorm > divlimit)
         {
             ostr << "diverged" << endl;
-            CMGWrite(ostr);
+            FAMGWrite(ostr);
             break;
         }
 
@@ -459,7 +459,7 @@ int CMGSystem::AdTVSolve()
 
 // BiCGStab
 
-int CMGSystem::BiCGStab()
+int FAMGSystem::BiCGStab()
 {
     double rlimit,alimit,divlimit,reduction,limit,defectnorm,startdefect,oldnorm;
     double *vec[6], rho, oldrho, alpha, beta, omega, nenner;
@@ -467,142 +467,142 @@ int CMGSystem::BiCGStab()
     ostrstream ostr;
 
 
-    const int CMGX = 0;
-    const int CMGR = 1;
-    const int CMGV = 2;
-    const int CMGP = 3;
-    const int CMGT = 4;
-    const int CMGR0 = 5;
+    const int FAMGX = 0;
+    const int FAMGR = 1;
+    const int FAMGV = 2;
+    const int FAMGP = 3;
+    const int FAMGT = 4;
+    const int FAMGR0 = 5;
 
-    CMGMarkHeap(CMG_FROM_BOTTOM);
-    vec[CMGX] = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_BOTTOM);
-    if(vec[CMGX] == NULL) return 1;
-    vec[CMGR] = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_BOTTOM);
-    if(vec[CMGR] == NULL) return 1;
-    vec[CMGV] = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_BOTTOM);
-    if(vec[CMGV] == NULL) return 1;
-    vec[CMGP] = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_BOTTOM);
-    if(vec[CMGP] == NULL) return 1;
-    vec[CMGT] = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_BOTTOM);
-    if(vec[CMGT] == NULL) return 1;
-    vec[CMGR0] = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_BOTTOM);
-    if(vec[CMGR0] == NULL) return 1;
+    FAMGMarkHeap(FAMG_FROM_BOTTOM);
+    vec[FAMGX] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
+    if(vec[FAMGX] == NULL) return 1;
+    vec[FAMGR] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
+    if(vec[FAMGR] == NULL) return 1;
+    vec[FAMGV] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
+    if(vec[FAMGV] == NULL) return 1;
+    vec[FAMGP] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
+    if(vec[FAMGP] == NULL) return 1;
+    vec[FAMGT] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
+    if(vec[FAMGT] == NULL) return 1;
+    vec[FAMGR0] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
+    if(vec[FAMGR0] == NULL) return 1;
 
-    maxit = cmgparaptr->Getmaxit();
-    rlimit = cmgparaptr->Getrlimit();
-    alimit = cmgparaptr->Getalimit();
-    divlimit =cmgparaptr->Getdivlimit();
-    reduction = cmgparaptr->Getreduction();
+    maxit = famgparaptr->Getmaxit();
+    rlimit = famgparaptr->Getrlimit();
+    alimit = famgparaptr->Getalimit();
+    divlimit =famgparaptr->Getdivlimit();
+    reduction = famgparaptr->Getreduction();
 
 
     // construct preconditioner
-    // CMGMultiGrid * mg0 = CreateMultiGrid();
+    // FAMGMultiGrid * mg0 = CreateMultiGrid();
     // if(mg0 == NULL) return 1;
     // if (mg0->Init(*this)) return 1;
     // if (mg0->Construct()) return 1;
-    CMGMultiGrid *mg0 = mg[0];
+    FAMGMultiGrid *mg0 = mg[0];
    
-    CMGSetVector(n,vec[CMGX],0.0);
-    CMGCopyVector(n,vec[CMGR0],vector[CMGRHS]);
+    FAMGSetVector(n,vec[FAMGX],0.0);
+    FAMGCopyVector(n,vec[FAMGR0],vector[FAMGRHS]);
 
     
-    defectnorm = CMGNorm(n,vec[CMGR0]);
+    defectnorm = FAMGNorm(n,vec[FAMGR0]);
     startdefect = defectnorm;
     limit = rlimit*startdefect;
     ostr << 0 << "\t" <<  startdefect << endl;
-    CMGWrite(ostr);
+    FAMGWrite(ostr);
 
-    CMGCopyVector(n,vec[CMGR],vec[CMGR0]);
-    CMGCopyVector(n,vec[CMGP],vec[CMGR]);
-    rho = CMGSum(n,vec[CMGR]);
+    FAMGCopyVector(n,vec[FAMGR],vec[FAMGR0]);
+    FAMGCopyVector(n,vec[FAMGP],vec[FAMGR]);
+    rho = FAMGSum(n,vec[FAMGR]);
     if (Abs(rho) < 1e-10*alimit) 
     {
        ostr << __FILE__ << ", line " << __LINE__ << ": rho too small" << endl;
-       CMGWarning(ostr);
+       FAMGWarning(ostr);
     }
 
     for(i = 0; i < maxit; i++)
     {
 
-        CMGCopyVector(n,vector[CMGRHS],vec[CMGP]);
-        CMGSetVector(n,vector[CMGUNKNOWN],0.0);
-        CMGCopyVector(n,vector[CMGDEFECT],vector[CMGRHS]);
+        FAMGCopyVector(n,vector[FAMGRHS],vec[FAMGP]);
+        FAMGSetVector(n,vector[FAMGUNKNOWN],0.0);
+        FAMGCopyVector(n,vector[FAMGDEFECT],vector[FAMGRHS]);
         if(mg0->Step(0)) { mg0->Deconstruct(); return 1;}
-        CMGSetSubVector(n,vec[CMGV],vec[CMGP],vector[CMGDEFECT]);
+        FAMGSetSubVector(n,vec[FAMGV],vec[FAMGP],vector[FAMGDEFECT]);
 
-        nenner = CMGSum(n,vec[CMGV]);
+        nenner = FAMGSum(n,vec[FAMGV]);
         if (Abs(nenner) < 1e-15*Abs(rho)) 
         {
             ostr << __FILE__ << ", line " << __LINE__ << ": nenner too small" << endl;
-            CMGWarning(ostr);
+            FAMGWarning(ostr);
         }
     
         alpha = rho/nenner;
-        CMGAddVector(n,vec[CMGX],vector[CMGUNKNOWN],alpha);
-        CMGAddVector(n,vec[CMGR],vec[CMGV],-alpha);
+        FAMGAddVector(n,vec[FAMGX],vector[FAMGUNKNOWN],alpha);
+        FAMGAddVector(n,vec[FAMGR],vec[FAMGV],-alpha);
 
         oldnorm = defectnorm;
-        defectnorm = CMGNorm(n,vec[CMGR]);
+        defectnorm = FAMGNorm(n,vec[FAMGR]);
         ostr << i+0.5 << "\t" << defectnorm << "\t" << defectnorm/oldnorm;
         ostr << "\t" << alpha  << endl; 
-        CMGWrite(ostr);
+        FAMGWrite(ostr);
         if((defectnorm < alimit) || (defectnorm < limit)) break;
         if (defectnorm/oldnorm > divlimit)
         {
             ostr << "diverged" << endl;
-            CMGWrite(ostr);
+            FAMGWrite(ostr);
            break;
         }
         
-        CMGCopyVector(n,vector[CMGRHS],vec[CMGR]);
-        CMGSetVector(n,vector[CMGUNKNOWN],0.0);
-        CMGCopyVector(n,vector[CMGDEFECT],vector[CMGRHS]);
+        FAMGCopyVector(n,vector[FAMGRHS],vec[FAMGR]);
+        FAMGSetVector(n,vector[FAMGUNKNOWN],0.0);
+        FAMGCopyVector(n,vector[FAMGDEFECT],vector[FAMGRHS]);
         if(mg0->Step(0)) { mg0->Deconstruct(); return 1;}
-        CMGSetSubVector(n,vec[CMGT],vec[CMGR],vector[CMGDEFECT]);
+        FAMGSetSubVector(n,vec[FAMGT],vec[FAMGR],vector[FAMGDEFECT]);
 
-        omega = CMGScalProd(n,vec[CMGT],vec[CMGR])/CMGScalProd(n,vec[CMGT],vec[CMGT]);
+        omega = FAMGScalProd(n,vec[FAMGT],vec[FAMGR])/FAMGScalProd(n,vec[FAMGT],vec[FAMGT]);
         if (Abs(omega) < 1e-15) 
         {
             ostr << __FILE__ << ", line " << __LINE__ << ": omega too small" << endl;
-            CMGWarning(ostr);
+            FAMGWarning(ostr);
         }
 
-        CMGAddVector(n,vec[CMGX],vector[CMGUNKNOWN],omega);
-        CMGAddVector(n,vec[CMGR],vec[CMGT],-omega);
-        CMGAddVector(n,vec[CMGP],vec[CMGV],-omega);
+        FAMGAddVector(n,vec[FAMGX],vector[FAMGUNKNOWN],omega);
+        FAMGAddVector(n,vec[FAMGR],vec[FAMGT],-omega);
+        FAMGAddVector(n,vec[FAMGP],vec[FAMGV],-omega);
 
         oldnorm = defectnorm;
-        defectnorm = CMGNorm(n,vec[CMGR]);
+        defectnorm = FAMGNorm(n,vec[FAMGR]);
         ostr << i+1 << "\t" << defectnorm << "\t" << defectnorm/oldnorm;
         ostr << "\t" << omega << endl;   
-        CMGWrite(ostr);
+        FAMGWrite(ostr);
         if((defectnorm < alimit) || (defectnorm < limit)) break;
         if (defectnorm/oldnorm > divlimit)
         {
             ostr << "diverged" << endl;
-            CMGWrite(ostr);            
+            FAMGWrite(ostr);            
             break;
         }
 
         oldrho = rho;
-        rho = CMGSum(n,vec[CMGR]);
+        rho = FAMGSum(n,vec[FAMGR]);
         if (Abs(rho) < 1e-10*alimit) 
         {
             ostr << __FILE__ << ", line " << __LINE__ << ": rho too small" << endl;
-            CMGWarning(ostr);
+            FAMGWarning(ostr);
         }
 
         beta = rho*alpha/(oldrho*omega);
         // could be accelerated
-        CMGMultVector(n,vec[CMGP],beta);
-        CMGAddVector(n,vec[CMGP],vec[CMGR]);
+        FAMGMultVector(n,vec[FAMGP],beta);
+        FAMGAddVector(n,vec[FAMGP],vec[FAMGR]);
     }
        
-    CMGCopyVector(n,vector[CMGDEFECT],vec[CMGR]);
-    CMGCopyVector(n,vector[CMGUNKNOWN],vec[CMGX]);
-    CMGCopyVector(n,vector[CMGRHS],vec[CMGR0]);
+    FAMGCopyVector(n,vector[FAMGDEFECT],vec[FAMGR]);
+    FAMGCopyVector(n,vector[FAMGUNKNOWN],vec[FAMGX]);
+    FAMGCopyVector(n,vector[FAMGRHS],vec[FAMGR0]);
 
-    CMGReleaseHeap(CMG_FROM_BOTTOM);
+    FAMGReleaseHeap(FAMG_FROM_BOTTOM);
     
     if (defectnorm < startdefect*reduction)
     {
@@ -618,14 +618,14 @@ int CMGSystem::BiCGStab()
     // GMRES
 
 
-void CMGMatVecMult(int n, int nr, double* M, double* h)
+void FAMGMatVecMult(int n, int nr, double* M, double* h)
 {
     double sum, *g;
     int i,j;
 
     
-    CMGMarkHeap(CMG_FROM_BOTTOM);
-    g = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_BOTTOM);
+    FAMGMarkHeap(FAMG_FROM_BOTTOM);
+    g = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
 
     for(i = 0; i < n; i++)
     {
@@ -638,7 +638,7 @@ void CMGMatVecMult(int n, int nr, double* M, double* h)
     }
     for(i = 0; i < n; i++) h[i] = g[i];
             
-    CMGReleaseHeap(CMG_FROM_BOTTOM);
+    FAMGReleaseHeap(FAMG_FROM_BOTTOM);
 
     return;
 }
@@ -746,17 +746,17 @@ static double ComputeEV(int n, int nv, double *H, double *G, double *e)
     return 1.0/norm;
 }
         
-int CMGSystem::Arnoldi(CMGMultiGrid *mg0, double **vec, double *H, double *G, double *Q, double *P, double &q0, int con)
+int FAMGSystem::Arnoldi(FAMGMultiGrid *mg0, double **vec, double *H, double *G, double *Q, double *P, double &q0, int con)
 {
-     double q, gamma, oldgamma, h[cmgnv], c, s, nenner;
+     double q, gamma, oldgamma, h[famgnv], c, s, nenner;
      int i,j,nv;
      ostrstream ostr;
            
-     nv = cmgparaptr->Getnv();  
+     nv = famgparaptr->Getnv();  
      for(i = 0; i < (nv+1)*(nv+1); i++) Q[i] = 0.0;
 
-     q = CMGNorm(n,vector[CMGDEFECT]);
-     CMGCopyScaledVector(n,vec[0],vector[CMGDEFECT],1.0/q); 
+     q = FAMGNorm(n,vector[FAMGDEFECT]);
+     FAMGCopyScaledVector(n,vec[0],vector[FAMGDEFECT],1.0/q); 
      q0 = q;
      Q[0] = 1.0;
      oldgamma = q0;
@@ -765,10 +765,10 @@ int CMGSystem::Arnoldi(CMGMultiGrid *mg0, double **vec, double *H, double *G, do
      for(i = 0; i < nv; i++)
      {
          // def = M^{-1}A v_{i-1}
-         CMGCopyScaledVector(n,vec[i],vector[CMGDEFECT],1.0/q); 
-         CMGCopyVector(n,vector[CMGRHS],vec[i]);
-         CMGSetVector(n,vector[CMGUNKNOWN],0.0);
-         CMGCopyVector(n,vector[CMGDEFECT],vector[CMGRHS]);
+         FAMGCopyScaledVector(n,vec[i],vector[FAMGDEFECT],1.0/q); 
+         FAMGCopyVector(n,vector[FAMGRHS],vec[i]);
+         FAMGSetVector(n,vector[FAMGUNKNOWN],0.0);
+         FAMGCopyVector(n,vector[FAMGDEFECT],vector[FAMGRHS]);
          if(con)
          {
              if(mg0->Step(0)) { mg0->Deconstruct(); return 1;}
@@ -777,25 +777,25 @@ int CMGSystem::Arnoldi(CMGMultiGrid *mg0, double **vec, double *H, double *G, do
          {
              mg0->SGSStep(0);
          }
-         CMGSetSubVector(n,vector[CMGDEFECT],vector[CMGRHS],vector[CMGDEFECT]);
+         FAMGSetSubVector(n,vector[FAMGDEFECT],vector[FAMGRHS],vector[FAMGDEFECT]);
  
          // modified Gram-Schmitt
          for(j = 0; j <= i; j++)
          {
-             h[j] = CMGScalProd(n,vector[CMGDEFECT],vec[j]);
-             CMGAddVector(n,vector[CMGDEFECT],vec[j],-h[j]);
+             h[j] = FAMGScalProd(n,vector[FAMGDEFECT],vec[j]);
+             FAMGAddVector(n,vector[FAMGDEFECT],vec[j],-h[j]);
          }
 
-         q = CMGNorm(n,vector[CMGDEFECT]);
+         q = FAMGNorm(n,vector[FAMGDEFECT]);
          if(q < 1e-10) 
          {
              ostr << __FILE__ << ", line " << __LINE__ << ": GMRES breakdownl" << endl;
-             CMGWarning(ostr);
+             FAMGWarning(ostr);
          }
          // => def = v_i*q
 
          // update H
-         CMGMatVecMult(i+1,nv+1,Q,h);
+         FAMGMatVecMult(i+1,nv+1,Q,h);
          UpdateH(i,nv,H,h);
 
          if(i == nv-1)
@@ -816,7 +816,7 @@ int CMGSystem::Arnoldi(CMGMultiGrid *mg0, double **vec, double *H, double *G, do
          // check convergence
          gamma = Abs(q0*Q[(nv+1)*(i+1)]);
          ostr << i+1 << "\t" << gamma << "\t" << gamma/oldgamma << endl;
-         CMGWrite(ostr);
+         FAMGWrite(ostr);
          oldgamma = gamma;
 
      }
@@ -824,23 +824,23 @@ int CMGSystem::Arnoldi(CMGMultiGrid *mg0, double **vec, double *H, double *G, do
      return 0;
 }
 
-int CMGSystem::UpdateSolution(CMGMultiGrid *mg0, double **vec, double *H, double *Q, double &q0, int con)
+int FAMGSystem::UpdateSolution(FAMGMultiGrid *mg0, double **vec, double *H, double *Q, double &q0, int con)
 {
-    double x[cmgnv];
+    double x[famgnv];
     int j, nv;
     
-    nv = cmgparaptr->Getnv();
+    nv = famgparaptr->Getnv();
 
     ComputeX(nv,nv,x,H,Q,q0);
-    CMGSetVector(n,vector[CMGRHS],0.0);
+    FAMGSetVector(n,vector[FAMGRHS],0.0);
     for(j = 0; j < nv; j++)
     {
-        CMGAddVector(n,vector[CMGRHS],vec[j],x[j]);
+        FAMGAddVector(n,vector[FAMGRHS],vec[j],x[j]);
     }
             
 
-    CMGSetVector(n,vector[CMGUNKNOWN],0.0);
-    CMGCopyVector(n,vector[CMGDEFECT],vector[CMGRHS]);
+    FAMGSetVector(n,vector[FAMGUNKNOWN],0.0);
+    FAMGCopyVector(n,vector[FAMGDEFECT],vector[FAMGRHS]);
     
     
     if(con)
@@ -856,29 +856,29 @@ int CMGSystem::UpdateSolution(CMGMultiGrid *mg0, double **vec, double *H, double
     return 0;
 }
 
-int CMGSystem::ComputeEigenVector(CMGMultiGrid *mg0, double **vec, double *G, double *P, int con)
+int FAMGSystem::ComputeEigenVector(FAMGMultiGrid *mg0, double **vec, double *G, double *P, int con)
 {
-    double e[cmgnv], ew, norm;
+    double e[famgnv], ew, norm;
     int j, nv;
 
-    nv = cmgparaptr->Getnv();
+    nv = famgparaptr->Getnv();
 
     // compute eigenvector to smallest eigenvalue
     ew = ComputeEV(nv,nv,G,P,e);
     ostrstream ostr; ostr << "ew = " << ew << endl;
-    CMGWrite(ostr);
+    FAMGWrite(ostr);
     if(Abs(ew) < 0.1)
     {
-        CMGSetVector(n,vector[CMGRHS],0.0);
-        CMGSetVector(n,vector[CMGUNKNOWN],0.0);
+        FAMGSetVector(n,vector[FAMGRHS],0.0);
+        FAMGSetVector(n,vector[FAMGUNKNOWN],0.0);
         for(j = 0; j < nv; j++)
         {
-            CMGAddVector(n,vector[CMGRHS],vec[j],e[j]);
+            FAMGAddVector(n,vector[FAMGRHS],vec[j],e[j]);
         }
 
 
-        CMGSetVector(n,vector[CMGUNKNOWN],0.0);
-        CMGCopyVector(n,vector[CMGDEFECT],vector[CMGRHS]);
+        FAMGSetVector(n,vector[FAMGUNKNOWN],0.0);
+        FAMGCopyVector(n,vector[FAMGDEFECT],vector[FAMGRHS]);
         if(con)
         {
             if(mg0->Step(0)) { mg0->Deconstruct(); return 1;}
@@ -887,9 +887,9 @@ int CMGSystem::ComputeEigenVector(CMGMultiGrid *mg0, double **vec, double *G, do
         {
             mg0->SGSStep(0);
         }
-        norm = CMGNorm(n,vector[CMGUNKNOWN]);
-        CMGCopyScaledVector(n,vector[CMGTVA],vector[CMGUNKNOWN],1.0/norm);
-        CMGCopyScaledVector(n,vector[CMGTVB],vector[CMGUNKNOWN],1.0/norm);
+        norm = FAMGNorm(n,vector[FAMGUNKNOWN]);
+        FAMGCopyScaledVector(n,vector[FAMGTVA],vector[FAMGUNKNOWN],1.0/norm);
+        FAMGCopyScaledVector(n,vector[FAMGTVB],vector[FAMGUNKNOWN],1.0/norm);
 
         return -1;
     }
@@ -897,53 +897,53 @@ int CMGSystem::ComputeEigenVector(CMGMultiGrid *mg0, double **vec, double *G, do
     return 0;
 }
             
-int CMGSystem::GMRES()
+int FAMGSystem::GMRES()
 {
     double rlimit,alimit,reduction,limit,defectnorm,startdefect;
     int maxit;
-    double H[cmgnv*cmgnv], G[cmgnv*cmgnv], Q[(cmgnv+1)*(cmgnv+1)], P[(cmgnv+1)*(cmgnv+1)], *vec[cmgnv], *sol, *rhs, *def, q0;
+    double H[famgnv*famgnv], G[famgnv*famgnv], Q[(famgnv+1)*(famgnv+1)], P[(famgnv+1)*(famgnv+1)], *vec[famgnv], *sol, *rhs, *def, q0;
     int i, k, newtv, con, nv;
     ostrstream ostr;
 
-    maxit = cmgparaptr->Getmaxit();
-    rlimit = cmgparaptr->Getrlimit();
-    alimit = cmgparaptr->Getalimit();
-    reduction = cmgparaptr->Getreduction();
-    nv = cmgparaptr->Getnv();
+    maxit = famgparaptr->Getmaxit();
+    rlimit = famgparaptr->Getrlimit();
+    alimit = famgparaptr->Getalimit();
+    reduction = famgparaptr->Getreduction();
+    nv = famgparaptr->Getnv();
 
-    CMGMarkHeap(CMG_FROM_BOTTOM);
+    FAMGMarkHeap(FAMG_FROM_BOTTOM);
 
-    sol = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_BOTTOM);
+    sol = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
     if(sol == NULL) return 1;
-    rhs = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_BOTTOM);
+    rhs = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
     if(rhs == NULL) return 1;
     
     // test
-    def = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_BOTTOM);
+    def = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
     if(def == NULL) return 1;
 
     for(i = 0; i < nv; i++)
     {
-        vec[i] = (double *) CMGGetMem(n*sizeof(double),CMG_FROM_BOTTOM);
+        vec[i] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
         if(vec[i] == NULL) return 1;
     }
     
 
-    CMGSetVector(n,vector[CMGUNKNOWN],0.0);
-    CMGSetVector(n,sol,0.0);
-    CMGCopyVector(n,vector[CMGDEFECT],vector[CMGRHS]);
+    FAMGSetVector(n,vector[FAMGUNKNOWN],0.0);
+    FAMGSetVector(n,sol,0.0);
+    FAMGCopyVector(n,vector[FAMGDEFECT],vector[FAMGRHS]);
 
-    startdefect = defectnorm = CMGNorm(n,vector[CMGDEFECT]);
+    startdefect = defectnorm = FAMGNorm(n,vector[FAMGDEFECT]);
     limit = rlimit*defectnorm;
     ostr << "start defect: " << defectnorm  << endl;
-    CMGWrite(ostr);
+    FAMGWrite(ostr);
 
 
-    // CMGMultiGrid * mg0 = CreateMultiGrid();
+    // FAMGMultiGrid * mg0 = CreateMultiGrid();
     // if(mg0 == NULL) return 1;
     // if (mg0->Init(*this)) return 1;
     // if (mg0->Construct()) return 1;
-    CMGMultiGrid *mg0 = mg[0];
+    FAMGMultiGrid *mg0 = mg[0];
 
     newtv = 0;
     con = 1;
@@ -963,10 +963,10 @@ int CMGSystem::GMRES()
        }
 
  
-        CMGCopyVector(n,rhs,vector[CMGRHS]);
-        CMGCopyVector(n,sol,vector[CMGUNKNOWN]);
+        FAMGCopyVector(n,rhs,vector[FAMGRHS]);
+        FAMGCopyVector(n,sol,vector[FAMGUNKNOWN]);
         //test
-        CMGCopyVector(n,def,vector[CMGDEFECT]);
+        FAMGCopyVector(n,def,vector[FAMGDEFECT]);
 
         if(Arnoldi(mg0,vec,H,G,Q,P,q0,con)) return 1;
 
@@ -981,24 +981,24 @@ int CMGSystem::GMRES()
 
         if(UpdateSolution(mg0,vec,H,Q,q0,con)) return 1;
 
-        CMGAddVector(n,vector[CMGUNKNOWN],sol);
+        FAMGAddVector(n,vector[FAMGUNKNOWN],sol);
 
-        CMGCopyVector(n,vector[CMGRHS],rhs);
+        FAMGCopyVector(n,vector[FAMGRHS],rhs);
         mg0->GetGrid(0)->Defect();
-        defectnorm = CMGNorm(n,vector[CMGDEFECT]);
+        defectnorm = FAMGNorm(n,vector[FAMGDEFECT]);
         ostr << defectnorm << endl;
-        CMGWrite(ostr);
+        FAMGWrite(ostr);
         if( (defectnorm < alimit) || (defectnorm < limit)) break;
     }
 
     if(!con) 
     {
         ostr  << __FILE__ << __LINE__ << endl;
-        CMGError(ostr);
+        FAMGError(ostr);
         return 1;
     }
 
-    CMGReleaseHeap(CMG_FROM_BOTTOM);
+    FAMGReleaseHeap(FAMG_FROM_BOTTOM);
 
     if (defectnorm < startdefect*reduction)
     {

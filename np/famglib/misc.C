@@ -26,22 +26,22 @@
 $Header$
 */
 
-void CMGError(ostrstream &OutputString)
+void FAMGError(ostrstream &OutputString)
 {
     cerr << "Error ! " << OutputString.rdbuf() << flush;
 }
 
-void CMGWarning(ostrstream &OutputString)
+void FAMGWarning(ostrstream &OutputString)
 {
     cerr  << "Warning !" << OutputString.rdbuf() << flush;
 }
 
-void CMGWrite(ostrstream &OutputString)
+void FAMGWrite(ostrstream &OutputString)
 {
     cout << OutputString.rdbuf() << flush;
 }
 
-double CMGNorm(const int n, const double *v)
+double FAMGNorm(const int n, const double *v)
 {
     double norm = 0.0;
     int i;
@@ -53,49 +53,49 @@ double CMGNorm(const int n, const double *v)
 }
 
 
-void CMGSetVector(const int n, double *v, const double val)
+void FAMGSetVector(const int n, double *v, const double val)
 {
     int i;
 
     for(i = 0; i < n; i++) v[i] = val;
 }
 
-void CMGCopyVector(const int n, double *v1, const double *v2)
+void FAMGCopyVector(const int n, double *v1, const double *v2)
 {
     int i;
 
     for(i = 0; i < n; i++) v1[i] = v2[i];
 }
 
-void CMGCopyScaledVector(const int n, double *v1, const double *v2, const double factor)
+void FAMGCopyScaledVector(const int n, double *v1, const double *v2, const double factor)
 {
     int i;
 
     for(i = 0; i < n; i++) v1[i] = factor*v2[i];
 }
 
-void CMGSubVector(const int n, double *v1, const double *v2)
+void FAMGSubVector(const int n, double *v1, const double *v2)
 {
     int i;
 
     for(i = 0; i < n; i++) v1[i] -= v2[i];
 }
 
-void CMGAddVector(const int n, double *v1, const double *v2)
+void FAMGAddVector(const int n, double *v1, const double *v2)
 {
     int i;
 
     for(i = 0; i < n; i++) v1[i] += v2[i];
 }
 
-void CMGAddVector(const int n, double *v1, const double *v2, const double factor)
+void FAMGAddVector(const int n, double *v1, const double *v2, const double factor)
 {
     int i;
 
     for(i = 0; i < n; i++) v1[i] += v2[i]*factor;
 }
 
-void CMGAddVector(const int n, double *v1, const double factor, const double *v2)
+void FAMGAddVector(const int n, double *v1, const double factor, const double *v2)
 {
     int i;
 
@@ -103,21 +103,21 @@ void CMGAddVector(const int n, double *v1, const double factor, const double *v2
 }
 
 
-void CMGMultVector(const int n, double *v1, const double factor)
+void FAMGMultVector(const int n, double *v1, const double factor)
 {
     int i;
 
     for(i = 0; i < n; i++) v1[i] = v1[i]*factor;
 }
 
-void CMGSetSubVector(const int n, double *v1, const double *v2, const double *v3)
+void FAMGSetSubVector(const int n, double *v1, const double *v2, const double *v3)
 {
     int i;
 
     for(i = 0; i < n; i++) v1[i] = v2[i] - v3[i];
 }
 
-double CMGSum(const int n, const double *v1)
+double FAMGSum(const int n, const double *v1)
 {
     double sum=0.0;
     int i;
@@ -127,7 +127,7 @@ double CMGSum(const int n, const double *v1)
     return sum;
 }
 
-double CMGScalProd(const int n, const double *v1, const double *v2)
+double FAMGScalProd(const int n, const double *v1, const double *v2)
 {
     double sum=0.0;
     int i;
@@ -138,7 +138,7 @@ double CMGScalProd(const int n, const double *v1, const double *v2)
 }
 
 
-void CMGEigenVector(int n, double *a, double *b, double *e)
+void FAMGEigenVector(int n, double *a, double *b, double *e)
 {
     int i, z;
     double norm;

@@ -1,45 +1,45 @@
 Es werden im wesentlichen 7 Funktionen zur Verf"ugung gestellt:
 
-int CMGConstruct(double *matrix, int *index, int *start, int n, int nl, double *tvA, double *tvB, void **extra);
+int FAMGConstruct(double *matrix, int *index, int *start, int n, int nl, double *tvA, double *tvB, void **extra);
 
-int CMGDeconstruct();
+int FAMGDeconstruct();
 
-int CMGRepair();
+int FAMGRepair();
 
-int CMGPrepare(double *matrix, int *index, int *start, int n, int nl, void **extra);
+int FAMGPrepare(double *matrix, int *index, int *start, int n, int nl, void **extra);
 
-int CMGSolve(double *rhs, double *defect, double *unknown);
+int FAMGSolve(double *rhs, double *defect, double *unknown);
 
-int CMGDeconstructParameter();
-int CMGConstructParameter(class CMGParameter *in_parameter);
+int FAMGDeconstructParameter();
+int FAMGConstructParameter(class FAMGParameter *in_parameter);
 
 
-CMGConstruct erzeugt alles was f"ur das AMG notwendig ist. matrix ist das
+FAMGConstruct erzeugt alles was f"ur das AMG notwendig ist. matrix ist das
 a[] Array, index das ja[] Array (das l"angere der beiden int Arrays),
 start das ia[] array (das k"urzere), n die Anzahl der Unbekannten, nl
 die L"ange von matrix bzw. index. tvA, tvB ist f"ur Sie nicht wichtig.
-CMGConstruct "zerst"ort" die Eingabedaten.
+FAMGConstruct "zerst"ort" die Eingabedaten.
 
 Die einzige Bedingung an die Matrix ist, da"s die Diagonaleintr"age
 gespeichert sind. Insbesondere ist Struktursymmetrie doch nicht notwendig.
 
-CMGDeconstruct stellt die Eingabedaten (matrix, index, ...) wieder her und
+FAMGDeconstruct stellt die Eingabedaten (matrix, index, ...) wieder her und
 gibt den Speicher, der f"ur das AMG ben"otigt wurde wieder frei.
 
-CMGRepair stellt ebenfalls die Eingabedaten (matrix, index, ...) wieder her,
+FAMGRepair stellt ebenfalls die Eingabedaten (matrix, index, ...) wieder her,
 bereitet aber eine erneute Benutzung des gleichen AMG f"ur eine andere Matrix
 vor. D.h. der Speicher f"ur die AMG Komponenten wird nicht freigegeben.
 
-CMGPrepare bereitet die Benutzung des alten AMG f"ur eine neue Matrix vor.
+FAMGPrepare bereitet die Benutzung des alten AMG f"ur eine neue Matrix vor.
 Die Eingabematrix wird ebenfalls wieder zerst"ort und kann durch
-CMGRepair oder CMGDeconstruct wieder hergestellt werden.
+FAMGRepair oder FAMGDeconstruct wieder hergestellt werden.
 
-CMGSolve l"ost das Gleichungssystem. Die Argumente k"onnen auch gleich sein.
-Z.B. liefer CMGSolve(rhs,rhs,rhs) die L"osung zur rechten Seite rhs wieder
+FAMGSolve l"ost das Gleichungssystem. Die Argumente k"onnen auch gleich sein.
+Z.B. liefer FAMGSolve(rhs,rhs,rhs) die L"osung zur rechten Seite rhs wieder
 im Vektor rhs zur"uck.
 
-CMGConstructParameter und CMGDeconstructParameter sind zur Eingabe bzw.
-Speicherfreigabe der Parameter notwendig. Das Argument von CMGConstructParameter
+FAMGConstructParameter und FAMGDeconstructParameter sind zur Eingabe bzw.
+Speicherfreigabe der Parameter notwendig. Das Argument von FAMGConstructParameter
 mu"s wahrscheinlich noch auf Ihren Code angepasst werden. Es gibt aber
 auch eine Fileschnittstelle f"ur die ca. 20 wichtigen oder unwichtigen
 Parameter.
@@ -50,22 +50,22 @@ oder Divergenz). Wenn sie 0 zur"uckgeben, haben sie keinen Fehler gefunden.
 
 Ein Beispielcode k"onnte so aussehen:
 
-   if(CMGConstructParameter(&parameter)) return 1;
+   if(FAMGConstructParameter(&parameter)) return 1;
 
-   if(CMGConstruct(matrix,index,start,n,nl,NULL, NULL,NULL)) return 1;
+   if(FAMGConstruct(matrix,index,start,n,nl,NULL, NULL,NULL)) return 1;
 
-   status = CMGSolve(rhs,defect,unknown);
-   status = CMGSolve(rhs1,defect,unknown1);
+   status = FAMGSolve(rhs,defect,unknown);
+   status = FAMGSolve(rhs1,defect,unknown1);
 
-   CMGRepair();
+   FAMGRepair();
 
-   if(CMGPrepare(matrix2,index2,start2,n,nl2,NULL)) return 1;
+   if(FAMGPrepare(matrix2,index2,start2,n,nl2,NULL)) return 1;
 
-   status = CMGSolve(rhs2,defect,unknown2);
+   status = FAMGSolve(rhs2,defect,unknown2);
 
-   CMGDeconstruct();
+   FAMGDeconstruct();
 
-   CMGDeconstructParameter();
+   FAMGDeconstructParameter();
 
 Hier wird f"ur matrix, index, start das AMG erzeugt und die L"osung
 f"ur zwei verschieden rechte Seiten berechnet. Danach wird matrix, index, start

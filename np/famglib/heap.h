@@ -4,7 +4,7 @@
 /*																			*/
 /* File:      heap.h														*/
 /*																			*/
-/* Purpose:   cmg heap class												*/
+/* Purpose:   famg heap class												*/
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -21,35 +21,35 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef __CMG_HEAP__
-#define __CMG_HEAP__
+#ifndef __FAMG_HEAP__
+#define __FAMG_HEAP__
 
 /* RCS_ID
    $Header$
  */
 
-#define CMGMAXSTACK 8
+#define FAMGMAXSTACK 8
 
-class CMGHeap
+class FAMGHeap
 {
 public:
   void *GetMem(unsigned long, int);
   int Mark(int);
   int Release(int);
-  CMGHeap(unsigned long );
-  ~CMGHeap();
+  FAMGHeap(unsigned long );
+  ~FAMGHeap();
 private:
   void *buffer;
   unsigned long top, bottom;
   int ntop, nbottom;
-  unsigned long topstack[CMGMAXSTACK], bottomstack[CMGMAXSTACK];
+  unsigned long topstack[FAMGMAXSTACK], bottomstack[FAMGMAXSTACK];
 };
 
-#define CMGALIGNMENT 8
-#define CMGCEIL(n) ((n)+((CMGALIGNMENT-((n)& (CMGALIGNMENT-1)))& (CMGALIGNMENT-1)))
+#define FAMGALIGNMENT 8
+#define FAMGCEIL(n) ((n)+((FAMGALIGNMENT-((n)& (FAMGALIGNMENT-1)))& (FAMGALIGNMENT-1)))
 
-#define CMG_FROM_TOP  1
-#define CMG_FROM_BOTTOM  2
+#define FAMG_FROM_TOP  1
+#define FAMG_FROM_BOTTOM  2
 
 
 /****************************************************************************/
@@ -57,10 +57,10 @@ private:
 /* Functions                                                                */
 /*                                                                          */
 /****************************************************************************/
-void *CMGGetMem(unsigned long size, int mode);
-void CMGSetHeap(CMGHeap *ptr);
-CMGHeap *CMGGetHeap();
-int CMGMarkHeap(int mode);
-int CMGReleaseHeap(int mode);
+void *FAMGGetMem(unsigned long size, int mode);
+void FAMGSetHeap(FAMGHeap *ptr);
+FAMGHeap *FAMGGetHeap();
+int FAMGMarkHeap(int mode);
+int FAMGReleaseHeap(int mode);
 
 #endif
