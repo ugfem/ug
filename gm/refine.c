@@ -160,7 +160,7 @@
 #define GETMARKDATA(elem,dataadr)                                            \
 		(*dataadr) = (*dataadr) | ((MARK(elem))<<MARKDATA_SHIFT)
 #define SETMARKDATA(elem,data)                                               \
-		SETMARK(elem,(data>>MARKDATA_SHIFT)&((1<<MARKCLASS_LEN)-1))
+		SETMARK(elem,(data>>MARKDATA_SHIFT)&((1<<MARK_LEN)-1))
 		
 /* macros for storing sparse data needed in ExchangeClosureInfo() */
 #define COARSENDATA_SHIFT	19
@@ -771,6 +771,8 @@ static int Gather_ElementClosureInfo (DDD_OBJ obj, void *data)
 	GetEdgeInfo(theElement,&refinedata,PATTERN);
 
 	GETMARKCLASSDATA(theElement,&refinedata);
+	/* mark and sidepattern have same control word positions */
+	/* if this changes sidepattern must be sent separately   */
 	GETMARKDATA(theElement,&refinedata);
 	GETCOARSENDATA(theElement,&refinedata);
 	((INT *)data)[0] = refinedata;
@@ -795,6 +797,8 @@ static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data)
 	SetEdgeInfo(theElement,refinedata,PATTERN,|);
 
 	SETMARKCLASSDATA(theElement,refinedata);
+	/* mark and sidepattern have same control word positions */
+	/* if this changes sidepattern must be sent separately   */
 	SETMARKDATA(theElement,refinedata);
 	SETCOARSENDATA(theElement,refinedata);
 
