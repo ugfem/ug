@@ -562,7 +562,7 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
   VD_IDENT_PTR(vd) = Ident;
 
   if (FillRedundantComponentsOfVD(vd))
-    return (NULL);
+    REP_ERR_RETURN (NULL);
   VM_LOCKED(vd) = 0;
 
   return (vd);
@@ -1260,15 +1260,16 @@ INT VDinterfaceCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_
         /* copy all components from vd not in vds */
         for (i=0; i<n; i++)
         {
-          ASSERT(k<MAX_MAT_COMP);
-
           cmp = VD_CMP_OF_TYPE(vd,tp,i);
           for (j=0; j<ns; j++)
-            if (VD_CMP_OF_TYPE(vds,tp,i)==cmp)
+            if (VD_CMP_OF_TYPE(vds,tp,j)==cmp)
               break;
           if (j<ns)
             /* cmp contained in vds */
             continue;
+
+          ASSERT(k<MAX_MAT_COMP);
+
           SubComp[k] = cmp;
           SubName[k] = VM_COMP_NAME(vd,VD_OFFSET(vd,tp)+i);
           k++;
@@ -2523,8 +2524,8 @@ INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DE
       if (!MD_ISDEF_IN_MTYPE(md,tp))
         REP_ERR_RETURN (1);
 
-      n  = MD_ROWS_IN_MTYPE(md,tp) * MD_COLS_IN_MTYPE(md,tp);
-      ns = MD_ROWS_IN_MTYPE(mds,tp) * MD_COLS_IN_MTYPE(mds,tp);
+      n  = MD_NCMPS_IN_MTYPE(md,tp);
+      ns = MD_NCMPS_IN_MTYPE(mds,tp);
       if (ns<n)
       {
         /* copy all components from mds */
@@ -2540,6 +2541,94 @@ INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DE
         }
         SubRCmp[tp] = MD_ROWS_IN_MTYPE(mds,tp);
         SubCCmp[tp] = MD_COLS_IN_MTYPE(mds,tp);
+      }
+      else if (ns!=n)
+        /* md does not contain mds */
+        REP_ERR_RETURN (1);
+    }
+  }
+
+  *mdi = CreateSubMatDesc(MD_MG(md),NULL,SubRCmp,SubCCmp,SubComp,SubName);
+  if (*mdi == NULL)
+    REP_ERR_RETURN (1);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+        MDinterfaceCoCoupleDesc - an interface MATDATA_DESC is created describing couplings
+
+        SYNOPSIS:
+        INT MDinterfaceCoCoupleDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi)
+
+    PARAMETERS:
+   .   md			- make a sub desc of this MATDATA_DESC
+   .   mds			- an existing sub desc of md
+   .   mdi			- handle to new coupling desc
+
+        DESCRIPTION:
+        This function creates a sub descriptor to a given MATDATA_DESC such that all components
+        from md which are not in mds but in the same rows as mds will be described.
+        Components are taken only in types in which mds is defined but where mds is a true subset of md.
+
+        RETURN VALUE:
+        INT
+   .n   0: ok
+   .n      n: if an error occured
+   D*/
+/****************************************************************************/
+
+INT MDinterfaceCoCoupleDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi)
+{
+  SHORT SubComp[MAX_MAT_COMP],SubRCmp[NMATTYPES],SubCCmp[NMATTYPES];
+  INT i,j,k,l,n,ns,nr,nc,nc_co,tp,cmp;
+  char SubName[2*MAX_MAT_COMP];
+
+  k = 0;
+  for (tp=0; tp<NMATTYPES; tp++)
+  {
+    SubRCmp[tp] = SubCCmp[tp] = 0;
+    if (MD_ISDEF_IN_MTYPE(mds,tp))
+    {
+      if (!MD_ISDEF_IN_MTYPE(md,tp))
+        REP_ERR_RETURN (1);
+
+      n  = MD_NCMPS_IN_MTYPE(md,tp);
+      ns = MD_NCMPS_IN_MTYPE(mds,tp);
+      if (ns<n)
+      {
+        /* this is the interface */
+        /* copy all components from md with same rows as mds but NOT in mds */
+        nr = MD_ROWS_IN_MTYPE(md,tp);
+        nc = MD_COLS_IN_MTYPE(md,tp);
+        for (i=0; i<nr; i++)
+        {
+          nc_co = 0;
+          for (j=0; j<nc; j++)
+          {
+            cmp = MD_IJ_CMP_OF_MTYPE(md,tp,i,j);
+            for (j=0; j<ns; j++)
+              if (MD_MCMP_OF_MTYPE(mds,tp,j)==cmp)
+                break;
+            if (j<ns)
+              /* cmp contained in vds */
+              continue;
+
+            ASSERT(k<MAX_MAT_COMP);
+
+            SubComp[k] = cmp;
+            l = MD_MTYPE_OFFSET(md,tp)+i*nr+j;
+            SubName[2*k]   = VM_COMP_NAME(md,2*l);
+            SubName[2*k+1] = VM_COMP_NAME(md,2*l+1);
+            k++;
+            nc_co++;
+          }
+          if (nc_co==nc)
+            k -= nc_co;
+        }
+        SubRCmp[tp] = nr;
+        SubCCmp[tp] = nc_co;
       }
       else if (ns!=n)
         /* md does not contain mds */
@@ -3217,7 +3306,7 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
       {
         /* this is the interface */
         md = SPID_MDI(spid,i);
-        n  = MD_ROWS_IN_MTYPE(md,tp)*MD_COLS_IN_MTYPE(md,tp);
+        n  = MD_NCMPS_IN_MTYPE(md,tp);
         for (j=0; j<n; j++)
         {
           ASSERT(ni<SPID_NMD_MAX*MAX_MAT_COMP);
@@ -3229,7 +3318,7 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
       {
         /* this is non-interface */
         md = SPID_MD(spid,i);
-        n  = MD_ROWS_IN_MTYPE(md,tp)*MD_COLS_IN_MTYPE(md,tp);
+        n  = MD_NCMPS_IN_MTYPE(md,tp);
         for (j=0; j<n; j++)
         {
           ASSERT(nn<SPID_NMD_MAX*MAX_MAT_COMP);
@@ -3253,7 +3342,7 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
         {
           /* this is the interface */
           md = SPID_MDI(spid,i);
-          n  = MD_ROWS_IN_MTYPE(md,tp)*MD_COLS_IN_MTYPE(md,tp);
+          n  = MD_NCMPS_IN_MTYPE(md,tp);
           for (j=0; j<n; j++)
             max = MAX(max,MD_MCMP_OF_MTYPE(md,tp,j));
         }
@@ -3270,7 +3359,7 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
       {
         /* this is non-interface */
         md = SPID_MDI(spid,i);
-        n  = MD_ROWS_IN_MTYPE(md,tp)*MD_COLS_IN_MTYPE(md,tp);
+        n  = MD_NCMPS_IN_MTYPE(md,tp);
         for (j=0; j<n; j++)
         {
           ASSERT(nn<SPID_NMD_MAX*MAX_MAT_COMP);
@@ -3311,8 +3400,8 @@ INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
         /* this is the interface */
         mdi = SPID_MDI(spid,i);
         md  = SPID_MD(spid,i);
-        n   = MD_ROWS_IN_MTYPE(md,tp)*MD_COLS_IN_MTYPE(md,tp);
-        ASSERT(n==MD_ROWS_IN_MTYPE(md,tpn)*MD_COLS_IN_MTYPE(md,tpn));
+        n   = MD_NCMPS_IN_MTYPE(md,tp);
+        ASSERT(n==MD_NCMPS_IN_MTYPE(md,tpn));
         if (direction==SPID_FORTH)
           /* get comps from non-interface */
           for (j=0; j<n; j++)
