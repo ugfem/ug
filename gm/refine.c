@@ -3060,9 +3060,9 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
       ASSERT(k == CORNERS_OF_TAG(sons[i].tag));
 
       if (sons[i].bdy == 1)
-        sons[i].theSon = CreateElement(theGrid,sons[i].tag,BEOBJ,ElementNodes);
+        sons[i].theSon = CreateElement(theGrid,sons[i].tag,BEOBJ,ElementNodes,theElement);
       else
-        sons[i].theSon = CreateElement(theGrid,sons[i].tag,IEOBJ,ElementNodes);
+        sons[i].theSon = CreateElement(theGrid,sons[i].tag,IEOBJ,ElementNodes,theElement);
       if (sons[i].theSon==NULL) RETURN(GM_FATAL);
 
       IFDEBUG(gm,0)
@@ -3088,8 +3088,6 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
       UserWriteF("\n");
       ENDDEBUG
 
-
-      SET_EFATHER(sons[i].theSon,theElement);
       SETECLASS(sons[i].theSon,GREEN_CLASS);
       SETNSONS(theElement,NSONS(theElement)+1);
       if (i == 0) SET_SON(theElement,0,sons[i].theSon);
@@ -3456,16 +3454,15 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 
     /* TODO: delete special debug */ PRINTELEMID(-2)
     if (boundaryelement)
-      theSon = CreateElement(theGrid,SON_TAG_OF_RULE(rule,s),BEOBJ,ElementNodes);
+      theSon = CreateElement(theGrid,SON_TAG_OF_RULE(rule,s),BEOBJ,ElementNodes,theElement);
     else
-      theSon = CreateElement(theGrid,SON_TAG_OF_RULE(rule,s),IEOBJ,ElementNodes);
+      theSon = CreateElement(theGrid,SON_TAG_OF_RULE(rule,s),IEOBJ,ElementNodes,theElement);
     if (theSon==NULL) RETURN(GM_ERROR);
 
     /* TODO: delete special debug */ PRINTELEMID(-2)
     /* fill in son data */
     SonList[s] = theSon;
     SETECLASS(theSon,MARKCLASS(theElement));
-    SET_EFATHER(theSon,theElement);
   }
 
   /* TODO: delete special debug */ PRINTELEMID(-2)

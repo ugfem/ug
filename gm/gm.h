@@ -1984,13 +1984,13 @@ INT                     SaveCnomGridAndValues (MULTIGRID *theMG, char *FileName,
 #endif
 
 /* coarse grid manipulations */
-INT             InsertInnerNode                 (MULTIGRID *theMG, COORD *pos);
-INT         InsertBoundaryNode      (MULTIGRID *theMG, BNDP *bndp);
+NODE        *InsertInnerNode            (MULTIGRID *theMG, COORD *pos);
+NODE        *InsertBoundaryNode     (MULTIGRID *theMG, BNDP *bndp);
 
 INT             DeleteNodeWithID                (MULTIGRID *theMG, INT id);
 INT             DeleteNode                              (MULTIGRID *theMG, NODE *theNode);
-INT             InsertElementFromIDs    (MULTIGRID *theMG, INT n, INT  *idList);
-INT             InsertElement                   (MULTIGRID *theMG, INT n, NODE **NodeList, ELEMENT **ElemList, INT *NbgSdList);
+ELEMENT     *InsertElementFromIDs       (MULTIGRID *theMG, INT n, INT  *idList);
+ELEMENT     *InsertElement                      (MULTIGRID *theMG, INT n, NODE **NodeList, ELEMENT **ElemList, INT *NbgSdList);
 INT         InsertMesh              (MULTIGRID *theMG, MESH *theMesh);
 INT             DeleteElementWithID     (MULTIGRID *theMG, INT id);
 INT             DeleteElement                   (MULTIGRID *theMG, ELEMENT *theElement);

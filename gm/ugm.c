@@ -1001,14 +1001,14 @@ LINK *GetLink (NODE *from, NODE *to)
 
    SYNOPSIS:
    ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
-   NODE **nodes);
+   NODE **nodes, ELEMENT *Father);
 
    PARAMETERS:
    .  theGrid - grid structure to extend
    .  tag - the element type
    .  objtype - inner element (IEOBJ) or boundary element (BEOBJ)
    .  nodes - list of corner nodes in reference numbering
-   .  after - insert after that element (NULL if b.o.l.)
+   .  Father - pointer to father element (NULL on base level)
 
    DESCRIPTION:
    This function creates and initializes a new element and returns a pointer to it.
@@ -1021,7 +1021,7 @@ LINK *GetLink (NODE *from, NODE *to)
 /****************************************************************************/
 
 ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
-                        NODE **nodes)
+                        NODE **nodes, ELEMENT *Father)
 {
   ELEMENT *pe;
   INT i;
@@ -1090,7 +1090,11 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
         #endif
 
   /* insert in element list */
-  GRID_LINK_ELEMENT(theGrid,pe,PrioMaster)
+  GRID_LINK_ELEMENT(theGrid,pe,PrioMaster);
+
+  SET_EFATHER(pe,Father);
+  if (Father != NULL)
+    SETPROP(pe,PROP(Father));
 
   /* counters */
   theGrid->nElem++;
@@ -2416,7 +2420,7 @@ INT FindNeighborElement (const ELEMENT *theElement, INT Side, ELEMENT **theNeigh
    InsertInnerNode - Insert a inner node
 
    SYNOPSIS:
-   INT InsertInnerNode (MULTIGRID *theMG, COORD *pos);
+   NODE *InnerNode (MULTIGRID *theMG, COORD *pos);
 
    PARAMETERS:
    .  theMG - multigrid structure
@@ -2427,12 +2431,12 @@ INT FindNeighborElement (const ELEMENT *theElement, INT Side, ELEMENT **theNeigh
 
    RETURN VALUE:
    INT
-   .n   GM_OK if ok
-   .n   GM_ERROR when error occured.
+   .n   pointer to a node if ok
+   .n   NULL when error occured.
    D*/
 /****************************************************************************/
 
-INT InsertInnerNode (MULTIGRID *theMG, COORD *pos)
+NODE *InsertInnerNode (MULTIGRID *theMG, COORD *pos)
 {
   GRID *theGrid;
   VERTEX *theVertex;
@@ -2443,7 +2447,7 @@ INT InsertInnerNode (MULTIGRID *theMG, COORD *pos)
   if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
   {
     PrintErrorMessage('E',"InsertInnerNode","only a multigrid with exactly one level can be edited");
-    RETURN(GM_ERROR);
+    return(NULL);
   }
   theGrid = GRID_ON_LEVEL(theMG,0);
 
@@ -2452,14 +2456,14 @@ INT InsertInnerNode (MULTIGRID *theMG, COORD *pos)
   if (theVertex==NULL)
   {
     PrintErrorMessage('E',"InsertInnerNode","cannot create vertex");
-    RETURN(GM_ERROR);
+    return(NULL);
   }
   theNode = CreateNode(theGrid);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
     PrintErrorMessage('E',"InsertInnerNode","cannot create node");
-    RETURN(GM_ERROR);
+    return(NULL);
   }
 
   /* fill data */
@@ -2469,7 +2473,7 @@ INT InsertInnerNode (MULTIGRID *theMG, COORD *pos)
   INDEX(theNode) = 0;
   MYVERTEX(theNode) = theVertex;
 
-  return(GM_OK);
+  return(theNode);
 }
 
 /****************************************************************************/
@@ -2477,7 +2481,7 @@ INT InsertInnerNode (MULTIGRID *theMG, COORD *pos)
    InsertBoundaryNode - Insert a boundary node
 
    SYNOPSIS:
-   INT InsertBoundaryNode (MULTIGRID *theMG, BNDP *bndp);
+   NODE *InsertBoundaryNode (MULTIGRID *theMG, BNDP *bndp);
 
    PARAMETERS:
    .  theMG - multigrid structure
@@ -2493,7 +2497,7 @@ INT InsertInnerNode (MULTIGRID *theMG, COORD *pos)
    D*/
 /****************************************************************************/
 
-INT InsertBoundaryNode (MULTIGRID *theMG, BNDP *bndp)
+NODE *InsertBoundaryNode (MULTIGRID *theMG, BNDP *bndp)
 {
   GRID *theGrid;
   NODE *theNode;
@@ -2505,7 +2509,7 @@ INT InsertBoundaryNode (MULTIGRID *theMG, BNDP *bndp)
   {
     PrintErrorMessage('E',"InsertBoundaryNode",
                       "only a multigrid with exactly one level can be edited");
-    RETURN(GM_ERROR);
+    return(NULL);
   }
   theGrid = GRID_ON_LEVEL(theMG,0);
 
@@ -2515,18 +2519,18 @@ INT InsertBoundaryNode (MULTIGRID *theMG, BNDP *bndp)
   {
     BNDP_Dispose(MGHEAP(MYMG(theGrid)),bndp);
     PrintErrorMessage('E',"InsertBoundaryNode","cannot create vertex");
-    RETURN(GM_ERROR);
+    return(NULL);
   }
   if (BNDP_Global(bndp,CVECT(theVertex)))
   {
     DisposeVertex(theGrid,theVertex);
-    RETURN(GM_ERROR);
+    return(NULL);
   }
 
   if (BNDP_BndPDesc(bndp,&move))
   {
     DisposeVertex(theGrid,theVertex);
-    RETURN(GM_ERROR);
+    return(NULL);
   }
   SETMOVE(theVertex,move);
   V_BNDP(theVertex) = bndp;
@@ -2536,7 +2540,7 @@ INT InsertBoundaryNode (MULTIGRID *theMG, BNDP *bndp)
   {
     DisposeVertex(theGrid,theVertex);
     PrintErrorMessage('E',"InsertBoundaryNode","cannot create node");
-    RETURN(GM_ERROR);
+    return(NULL);
   }
   MYVERTEX(theNode) = theVertex;
   TOPNODE(theVertex) = theNode;
@@ -2547,7 +2551,7 @@ INT InsertBoundaryNode (MULTIGRID *theMG, BNDP *bndp)
   PRINTDEBUG(dom,1,("  ipn %ld nd %x bndp %x \n",
                     ID(theNode),theNode,V_BNDP(theVertex)));
 
-  return(GM_OK);
+  return(theNode);
 }
 
 /****************************************************************************/
@@ -3015,7 +3019,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
    InsertElement - Insert an element
 
    SYNOPSIS:
-   InsertElement (MULTIGRID *theMG, INT n, NODE **Node);
+   ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node);
 
    PARAMETERS:
    .  theMG - multigrid structure
@@ -3027,8 +3031,8 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
 
    RETURN VALUE:
    INT
-   .n   GM_OK if ok
-   .n   GM_ERROR when error occured.
+   .n   pointer to an element if ok
+   .n   NULL when error occured.
    D*/
 /****************************************************************************/
 
@@ -3079,7 +3083,7 @@ static INT CheckOrientation (INT n, VERTEX **vertices)
 }
 #endif
 
-INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT *NbgSdList)
+ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT *NbgSdList)
 {
   GRID             *theGrid;
   INT i,j,k,l,m,found,num,tag,ElementType;
@@ -3101,7 +3105,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT
   {
     PrintErrorMessage('E',"InsertElement",
                       "only a multigrid with exactly one level can be edited");
-    RETURN(GM_ERROR);
+    return(NULL);
   }
   theGrid = GRID_ON_LEVEL(theMG,0);
 
@@ -3111,7 +3115,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT
   {
     PrintErrorMessage('E',"InsertElement",
                       "only triangles and quadrilaterals allowed in 2D");
-    RETURN(GM_ERROR);
+    return(NULL);
   }
   tag = n;
         #endif
@@ -3127,7 +3131,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT
   {
     PrintErrorMessage('E',"InsertElement",
                       "only tetrahedrons, pyramids and hexahedrons are allowed in the 3D coarse grid");
-    RETURN(GM_ERROR);
+    return(NULL);
   }
     #endif
 
@@ -3171,7 +3175,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT
             {
               PrintErrorMessage('E',"InsertElement",
                                 "cannot find orientation");
-              RETURN(GM_ERROR);
+              return(NULL);
             }
           }
         }
@@ -3269,7 +3273,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT
             {
               PrintErrorMessage('E',"InsertElement",
                                 "neighbor relation inconsistent");
-              RETURN(GM_ERROR);
+              return(NULL);
             }
             Neighbor[i] = theElement;
             NeighborSide[i] = j;
@@ -3285,11 +3289,11 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT
     }
 
   /* create element */
-  theElement = CreateElement(theGrid,tag,ElementType,Node);
+  theElement = CreateElement(theGrid,tag,ElementType,Node,NULL);
   if (theElement==NULL)
   {
     PrintErrorMessage('E',"InsertElement","cannot allocate element");
-    RETURN(GM_ERROR);
+    return(NULL);
   }
 
   IFDEBUG(dom,1)
@@ -3331,7 +3335,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT
       if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
         if (DisposeDoubledSideVector(theGrid,Neighbor[i],
                                      NeighborSide[i],theElement,i))
-          RETURN(GM_ERROR);
+          return(NULL);
             #endif
     }
   }
@@ -3346,10 +3350,10 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT
     PrintErrorMessage('E',"InsertElement",
                       "could not create algebra connections");
     DisposeElement (theGrid,theElement,TRUE);
-    RETURN(GM_ERROR);
+    return(NULL);
   }
 
-  return(GM_OK);
+  return(theElement);
 }
 
 /****************************************************************************/
@@ -3357,7 +3361,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT
    InsertElementFromIDs - Insert element with node ids
 
    SYNOPSIS:
-   INT InsertElementFromIDs (MULTIGRID *theMG, INT n, INT *idList);
+   ELEMENT *InsertElementFromIDs (MULTIGRID *theMG, INT n, INT *idList);
 
    PARAMETERS:
    .  theMG - multigrid structure
@@ -3370,12 +3374,12 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT
 
    RETURN VALUE:
    INT
-   .n   GM_OK if ok
-   .n   GM_ERROR when error occured.
+   .n   pointer to an element if ok
+   .n   NULL when error occured.
    D*/
 /****************************************************************************/
 
-INT InsertElementFromIDs (MULTIGRID *theMG, INT n, INT *idList)
+ELEMENT *InsertElementFromIDs (MULTIGRID *theMG, INT n, INT *idList)
 {
   GRID *theGrid;
   NODE *Node[MAX_CORNERS_OF_ELEM],*theNode;
@@ -3385,7 +3389,7 @@ INT InsertElementFromIDs (MULTIGRID *theMG, INT n, INT *idList)
   if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
   {
     PrintErrorMessage('E',"InsertElementFromIDs","only a multigrid with exactly one level can be edited");
-    RETURN(GM_ERROR);
+    return(NULL);
   }
   theGrid = GRID_ON_LEVEL(theMG,0);
 
@@ -3394,8 +3398,9 @@ INT InsertElementFromIDs (MULTIGRID *theMG, INT n, INT *idList)
     for (j=i+1; j<n; j++)
       if (idList[i]==idList[j])
       {
-        PrintErrorMessage('E',"InsertElementFromIDs","nodes must be pairwise different");
-        RETURN(GM_ERROR);
+        PrintErrorMessage('E',"InsertElementFromIDs",
+                          "nodes must be pairwise different");
+        return(NULL);
       }
 
   /* init data */
@@ -3420,7 +3425,7 @@ INT InsertElementFromIDs (MULTIGRID *theMG, INT n, INT *idList)
   {
     PrintErrorMessage('E',"InsertElementFromIDs",
                       "could not find all nodes");
-    RETURN(GM_ERROR);
+    return(NULL);
   }
 
   return (InsertElement(theMG,n,Node,NULL,NULL));
@@ -3534,7 +3539,7 @@ INT DeleteElementWithID (MULTIGRID *theMG, INT id)
 INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
 {
   GRID *theGrid;
-  ELEMENT **EList,*nbList[MAX_SIDES_OF_ELEM];
+  ELEMENT **EList,*nbList[MAX_SIDES_OF_ELEM],*theElement;
   NODE **NList,*Nodes[MAX_CORNERS_OF_ELEM],*theNode;
   INT sid,i,nel,nnd,k,n;
 
@@ -3547,10 +3552,12 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
     return(GM_OK);
 
   for (i=0; i<theMesh->nBndP; i++)
-    InsertBoundaryNode(theMG,theMesh->theBndPs[i]);
+    if (InsertBoundaryNode(theMG,theMesh->theBndPs[i]) == NULL)
+      return(GM_ERROR);
 
   for (i=0; i<theMesh->nInnP; i++)
-    InsertInnerNode(theMG,theMesh->Position[i]);
+    if (InsertInnerNode(theMG,theMesh->Position[i]) == NULL)
+      return(GM_ERROR);
 
   if (theMesh->nElements == NULL)
     return(GM_OK);
@@ -3560,10 +3567,14 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
   NList = (NODE **) GetTmpMem(MGHEAP(theMG),nnd*sizeof(NODE *));
 
   if (NList == NULL)
+  {
     for (sid=0; sid<theMesh->nSubDomains; sid++)
       for (i=0; i<theMesh->nElements[sid]; i++)
-        InsertElementFromIDs (theMG,theMesh->Element_corners[sid][i],
-                              theMesh->Element_corner_ids[sid][i]);
+        if (InsertElementFromIDs (theMG,theMesh->Element_corners[sid][i],
+                                  theMesh->Element_corner_ids[sid][i])
+            == NULL)
+          return(GM_ERROR);
+  }
   else
   {
     nnd = 0;
@@ -3594,9 +3605,11 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
       if (EList != NULL)
         for (k=0; k<SIDES_OF_REF(n); k++)
           nbList[k] = EList[theMesh->nbElements[sid][i][k]];
-      InsertElement (theMG,n,Nodes,nbList,NULL);
+      theElement = InsertElement (theMG,n,Nodes,nbList,NULL);
+      if (theElement == NULL)
+        return(GM_ERROR);
       if (EList != NULL)
-        EList[nel++] = FIRSTELEMENT(theGrid);
+        EList[nel++] = theElement;
     }
 
   return(GM_OK);
