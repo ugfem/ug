@@ -4612,7 +4612,7 @@ static INT DeleteElementCommand (INT argc, char **argv)
 static INT RefineCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  INT i,mode,rv;
+  INT i,mode,mark,rv;
   EVECTOR *theElemEvalDirection;
 
         #ifdef ModelP
@@ -4633,9 +4633,13 @@ static INT RefineCommand (INT argc, char **argv)
   /* check options */
   theElemEvalDirection = NULL;
   mode = GM_REFINE_TRULY_LOCAL;
+  mark = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
+    case 'a' :
+      mark = MARK_ALL;
+      break;
     case 'g' :
       mode = mode | GM_COPY_ALL;
       break;
@@ -4646,7 +4650,7 @@ static INT RefineCommand (INT argc, char **argv)
       mode = mode | GM_USE_HEXAHEDRA;
       break;
             #ifdef __THREEDIM__
-    case 'a' :
+    case 'd' :
       if (sscanf(argv[i],"a %s",buffer)==1)
         theElemEvalDirection = GetElementVectorEvalProc(buffer);
       if (theElemEvalDirection==NULL)
@@ -4658,6 +4662,27 @@ static INT RefineCommand (INT argc, char **argv)
       PrintHelp("refine",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
+
+  if (mark == MARK_ALL) {
+    INT l,nmarked;
+    ELEMENT *theElement;
+
+
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement)) {
+        if (EstimateHere(theElement))
+          if ((rv = MarkForRefinement(theElement,
+                                      RED,NULL))!=0)
+          {
+            l = TOPLEVEL(theMG);
+            break;
+          }
+          else
+            nmarked++;
+      }
+    UserWriteF("%d: %d elements marked\n",nmarked);
+  }
 
   /* get velocity */
         #ifdef __THREEDIM__
