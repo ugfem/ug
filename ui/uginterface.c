@@ -491,7 +491,7 @@ static void DoInfoBox (WINDOWID win, INT mp[2])
 {
   UGWINDOW *ugw;
   PICTURE *thePic;
-  INT tool,state;
+  INT tool,state,nfct,fct;
   char buffer[128];
 
   ugw = WinID2UgWindow(win);
@@ -509,16 +509,21 @@ static void DoInfoBox (WINDOWID win, INT mp[2])
         switch (tool)
         {
         case arrowTool :
-          strcpy(buffer,ArrowToolFuncs[(tool==UGW_CURRTOOL(ugw)) ? UGW_CURRFUNC(ugw) : 0]);
+          fct = (tool==UGW_CURRTOOL(ugw)) ? UGW_CURRFUNC(ugw) : 0;
+          sprintf(buffer,"%s [%d/%d]",ArrowToolFuncs[fct],(int)(fct+1),(int)N_ARROW_FUNCS);
           break;
 
         default :
           if (VO_STATUS(PIC_VO(currPicture)) == ACTIVE)
           {
-            if (POH_NTOOLFUNC(PIC_POH(currPicture),tool)==0)
+            nfct = POH_NTOOLFUNC(PIC_POH(currPicture),tool);
+            if (nfct==0)
               strcpy(buffer,"tool disabled");
             else
-              strcpy(buffer,POH_TOOLNAME(PIC_POH(currPicture),tool,(tool==UGW_CURRTOOL(ugw)) ? UGW_CURRFUNC(ugw) : 0));
+            {
+              fct = (tool==UGW_CURRTOOL(ugw)) ? UGW_CURRFUNC(ugw) : 0;
+              sprintf(buffer,"%s [%d/%d]",POH_TOOLNAME(PIC_POH(currPicture),tool,fct),(int)fct+1,(int)nfct);
+            }
           }
         }
         DrawInfoBox(win,buffer);
@@ -557,7 +562,7 @@ static void DoInfoBox (WINDOWID win, INT mp[2])
       else if (UGW_BOXSTATE(ugw)!=MOUSE_OUT_CURR_PIC)
       {
         /* mouse outside current picture */
-        sprintf(buffer,"mouse out");
+        sprintf(buffer,"mouse outside");
         UGW_BOXSTATE(ugw) = MOUSE_OUT_CURR_PIC;
         DrawInfoBox(win,buffer);
       }
@@ -909,8 +914,7 @@ static INT ProcessEvent (char *String, INT EventMask)
     else
       PrintErrorMessage('W',"ProcessEvent","cannot change tool since curr pic not in window");
     UGW_BOXSTATE(theUgW) = BOX_INVALID;
-    DoInfoBox(  WinID,
-                theEvent.DocChangeTool.MousePosition);
+    DoInfoBox(WinID,theEvent.DocChangeTool.MousePosition);
     break;
   case DOC_CONTENTCLICK :
     WinID = theEvent.DocDrag.win;
@@ -921,6 +925,8 @@ static INT ProcessEvent (char *String, INT EventMask)
     if (currPicture != thePic)
     {
       SetCurrentPicture(thePic);
+      UGW_BOXSTATE(theUgW) = BOX_INVALID;
+      DoInfoBox(WinID,theEvent.DocChangeTool.MousePosition);
       break;
     }
 
