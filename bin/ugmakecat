@@ -1,0 +1,22 @@
+#!/bin/sh
+cd ..
+mkdir catman
+cd man
+if test -f mandesc
+then
+   mv mandesc ../catman
+fi
+for mandir in man*; do
+  catdir=`echo ${mandir} | sed s/man/cat/1`
+  manext=`echo ${mandir} | sed s/man//1`
+  mkdir ../catman/${catdir};
+  for n in ./${mandir}/*.${manext}; do
+    a=`basename ${n} .${manext}`
+    gnroff -man -Tascii ${n} >./${mandir}/${a}
+    pack -f ./${mandir}/${a}
+    mv ./${mandir}/${a}.z ../catman/${catdir}/.
+    rm ${n}
+  done
+  rmdir ${mandir}
+done
+
