@@ -152,7 +152,7 @@
 #define MARK_SELECTION                  4
 #define NO_SIDE_SPECIFIED               -1
 #define NO_RULE_SPECIFIED               -1
-#define NO_OF_RULES                     16
+#define NO_OF_RULES                     64
 
 /* for save command */
 #define NO_COMMENT                               "no comment"
@@ -217,9 +217,12 @@ static MARKRULE myMR[NO_OF_RULES]=      /* name and ID of available rules	*/
  {"bi_3",       BISECTION_3},
                                          #endif
                                          #ifdef __THREEDIM__
+ /* rules for tetrahedra */
                                          #ifndef TET_RULESET
  {"tet2hex",TETRA_RED_HEX},
                                          #endif
+ /* rules for prisms */
+ {"pri_quadsect",PRISM_QUADSECT},
                                          #endif
  {"coarse", COARSE}};
 
