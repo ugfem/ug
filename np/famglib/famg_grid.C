@@ -1279,6 +1279,8 @@ int FAMGGrid::ConstructTransfer()
 
 #ifdef ModelP
 	double GraphColorTime, BorderTime;
+	FAMGNode *nodei;
+	VECTOR *vec;
 	
 	// set a consistent copy of the stiffmat
 	// in order to be able to construct a consistent interpolationmatrix
@@ -1324,13 +1326,41 @@ int FAMGGrid::ConstructTransfer()
 		if (graph->EliminateDirichletNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 		CommunicateNodeStatus();
 	}
-#endif
 
-#ifdef ModelP
+#ifdef FAMG_INNER_FIRST
+	if( graph->InsertHelplist() )
+		RETURN(1);
+
+	if (graph->EliminateNodes(this))
+		RETURN(1);
+
+	// let undecided nodes in the list; perhaps they can be eliminated
+	// in the border step; if not they become coarse there
+	//if (graph->RemainingNodes()) RETURN(1);
+
+	CommunicateNodeStatus();
+	
+	// put the undecided nodes from the core partition into the list
+    for(i = 0; i < n; i++)
+   	{
+		nodei = graph->GetNode(i);
+	
+		// now only the unmarked nodes must be inserted into the list
+		if( nodei->IsUndecidedNode() )
+		{
+			vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
+			if( IS_FAMG_MASTER(vec) ) // only master vectors can be in border the of the core partition
+				if(graph->InsertNode(this, nodei))
+				{
+					FAMGReleaseHeap(FAMG_FROM_BOTTOM);
+					RETURN(1);
+				}
+		}
+	}
+#endif // FAMG_INNER_FIRST
+
 	// in parallel now only the nodes in the border of the core partition are in the list
 	
-	VECTOR *vec;
-	FAMGNode *nodei;
 	int NrNbPe;
 	FAMGColor MyColor, BorderCycles;
 	
@@ -1367,7 +1397,8 @@ int FAMGGrid::ConstructTransfer()
 		CommunicateNodeStatus();
 	}	
 	BorderTime = CURRENT_TIME_LONG - BorderTime;
-	
+
+#ifndef FAMG_INNER_FIRST
 	// put the undecided nodes from the core partition into the list
     for(i = 0; i < n; i++)
    	{
@@ -1385,6 +1416,8 @@ int FAMGGrid::ConstructTransfer()
 				}
 		}
     }
+#endif //FAMG_INNER_FIRST
+
 #endif
 
 #ifdef SIMULATE_HALFENING	// TODO: remove it
@@ -1412,9 +1445,11 @@ int FAMGGrid::ConstructTransfer()
     }
 #endif
 	
+#ifndef FAMG_INNER_FIRST
 	if( graph->InsertHelplist() ) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
     if (graph->EliminateNodes(this)) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
-    
+#endif 
+
     for(i = 0; i < conloops; i++)
     {
         // FAMGMarkHeap(FAMG_FROM_BOTTOM);
@@ -1446,13 +1481,15 @@ int FAMGGrid::ConstructTransfer()
         // FAMGReleaseHeap(FAMG_FROM_BOTTOM);
     }
 
+#ifndef FAMG_INNER_FIRST
     if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
-      
+
 #ifdef ModelP
 	// update the ghost and border nodes
 //prim(GLEVEL(GetugGrid()));//?????????????????????????????????????????????
 	CommunicateNodeStatus();
 
+#endif
 #endif
 	
     nf = graph->GetNF();

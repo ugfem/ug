@@ -996,7 +996,7 @@ int FAMGGraph::EliminateDirichletNodes(FAMGGrid *gridptr)
 	int NodeRemoved;
 	
 	list = GetList();
-	
+
 	if( list->GetData() == 0 )
 	{	// there may be Dirichlet nodes
 	
@@ -1175,12 +1175,45 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
     InitNSons();
 	
 #ifdef ModelP
-	// in the first step eliminate only nodes in the border of the core partition
-	// the remaining nodes must be processed in a second step (see FAMGGrid:ConstructTransfer)
 	VECTOR *vec;
 	MATRIX *mat;
-	
+
+#ifdef FAMG_INNER_FIRST
+	int ghostfound;
+
     for(i = 0; i < n; i++)
+    {
+		nodei = graph->GetNode(i);
+		vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
+		
+		if( IS_FAMG_GHOST(vec) )
+			continue; // only master vectors can be in border the of the core partition
+
+		// put Dirichlet vectors into the list
+		if( VECSKIP(vec) )
+			// a Dirichlet vector was found
+			if(InsertNode(gridptr, nodei))
+				RETURN(0);
+
+		// vec lies in the border of the core partition if he has a ghost or border neighbor
+		ghostfound = 0;
+		for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+			if( IS_FAMG_GHOST(MDEST(mat)) )
+			{
+				ghostfound = 1;
+				break;
+			}
+
+		if( !ghostfound )
+			// a ghost neighbor was not found
+			if(InsertNode(gridptr, nodei))
+				RETURN(0);
+    }
+#else
+	// in the first step eliminate only nodes in the border of the core partition
+	// the remaining nodes must be processed in a second step (see FAMGGrid:ConstructTransfer)
+    
+	for(i = 0; i < n; i++)
     {
 		nodei = graph->GetNode(i);
 		vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
@@ -1203,6 +1236,8 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 			if(InsertNode(gridptr, nodei))
 				return 0;
     }
+#endif // FAMG_INNER_FIRST
+
 #else
 #ifdef SIMULATE_HALFENING	// TODO: remove it
 	VECTOR *vec;

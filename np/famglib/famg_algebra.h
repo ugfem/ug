@@ -32,6 +32,8 @@
 // much faster
 #define ONLY_ONE_ALGEBRA_DS
 
+#define FAMG_INNER_FIRST
+
 // TODO: remove it:
 //#define SIMULATE_HALFENING
 
