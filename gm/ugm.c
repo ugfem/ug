@@ -229,30 +229,33 @@ void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
       for (i=0; i<MAXVECTORS; i++)
         if (size == sizeof(MATRIX)-sizeof(DOUBLE)
             +theFormat->MatrixSizes[MatrixType[i][i]])
-        {
-          ptr = (void **) theMG->freeConnections[i];
-          theMG->freeVectors[i] = ptr[0];
-          break;
-        }
+          if (theMG->freeConnections[i] != NULL)
+          {
+            ptr = (void **) theMG->freeConnections[i];
+            theMG->freeConnections[i] = ptr[0];
+            break;
+          }
       for (i=0; i<MAXMATRICES; i++)
         if (size == 2*(sizeof(MATRIX)-sizeof(DOUBLE)
                        +theFormat->MatrixSizes[i]))
-        {
-          ptr = (void **) theMG->freeConnections[MAXVECTORS+i];
-          theMG->freeVectors[MAXVECTORS+i] = ptr[0];
-          break;
-        }
+          if (theMG->freeConnections[MAXVECTORS+i] != NULL)
+          {
+            ptr = (void **) theMG->freeConnections[MAXVECTORS+i];
+            theMG->freeConnections[MAXVECTORS+i] = ptr[0];
+            break;
+          }
     }
     else if (type == VCOBJ)
     {
       for (i=0; i<MAXVECTORS; i++)
         if (size == sizeof(VECTOR)-sizeof(DOUBLE)
             +theMG->theFormat->VectorSizes[i])
-        {
-          ptr = (void **) theMG->freeVectors[i];
-          theMG->freeVectors[i] = ptr[0];
-          break;
-        }
+          if (theMG->freeVectors[i] != NULL)
+          {
+            ptr = (void **) theMG->freeVectors[i];
+            theMG->freeVectors[i] = ptr[0];
+            break;
+          }
     }
         #ifdef __INTERPOLATION_MATRIX__
     else if (type == IMOBJ)
@@ -260,11 +263,12 @@ void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
       for (i=0; i<MAXMATRICES; i++)
         if (size == sizeof(MATRIX)-sizeof(DOUBLE)
             +theMG->theFormat->IMatrixSizes[i])
-        {
-          ptr = (void **) theMG->freeIMatrices[i];
-          theMG->freeIMatrices[i] = ptr[0];
-          break;
-        }
+          if (theMG->freeIMatrices[i] != NULL)
+          {
+            ptr = (void **) theMG->freeIMatrices[i];
+            theMG->freeIMatrices[i] = ptr[0];
+            break;
+          }
     }
                 #endif
   }
