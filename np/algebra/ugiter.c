@@ -1912,6 +1912,128 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
   return (NUM_OK);
 }
 
+INT l_ilubdecomp_SB (BLOCKVECTOR *theBV, const MATDATA_DESC *M, const VEC_SCALAR beta)
+{
+  VECTOR *vi,*vj,*vk,*first_vec,*last_vec;
+  MATRIX *Mij,*Mji,*Mjk,*Mik;
+  DOUBLE InvMat[MAX_SINGLE_MAT_COMP],PivMat[MAX_SINGLE_MAT_COMP];
+  DOUBLE CorMat[MAX_SINGLE_MAT_COMP];
+  DOUBLE sum;
+  INT offset[NVECTYPES+1],last_index;
+  register DOUBLE *Diag,*Piv,*Elm,*Mat,*Djj,*Dkk;
+  register SHORT *DiagComp,*PivComp,*ElmComp,*MatComp,*DjjComp,*DkkComp;
+  register INT i0,j0,k0,l,m;
+  INT type,ctype,rtype,PivIsZero,CorIsZero;
+  INT n,n2,nr,nnr,nc,nrnc;
+  INT i,mc,mask;
+  DOUBLE RowSum[MAX_SINGLE_VEC_COMP],Damp[MAX_SINGLE_VEC_COMP];
+  VEC_SCALAR j_Normalization,k_Normalization;
+  DOUBLE diag,invdiag,pivot,AbsDjj;
+  const DOUBLE *TypeBeta,*TypeThresh;
+  const DOUBLE *TypeORT;
+  DOUBLE *Rest;
+  SHORT *RestComp;
+  INT flag;
+
+  /* consistency check: diagonal blocks are supposed to be square matrices */
+  for (type=0; type<NVECTYPES; type++)
+    if (MD_ROWS_IN_RT_CT(M,type,type)>0)
+    {
+      nr = MD_ROWS_IN_RT_CT(M,type,type);
+
+      ASSERT (nr*nr <= MAX_SINGLE_MAT_COMP);
+      /* if too little: increase MAX_SINGLE_VEC_COMP and recompile	*/
+                        #ifdef NDEBUG
+      if (nr*nr > MAX_SINGLE_MAT_COMP)
+        /* check also in case NDEBUG is defined (assert off)	*/
+        REP_ERR_RETURN (__LINE__);
+                        #endif
+      if (nr != MD_COLS_IN_RT_CT(M,type,type))
+        REP_ERR_RETURN (__LINE__);
+    }
+
+  /* consistency check:
+     the transpose block-matrices (iff) must have the same format */
+  for (rtype=0; rtype<NVECTYPES; rtype++)
+    for (ctype=rtype+1; ctype<NVECTYPES; ctype++)
+      if (MD_ROWS_IN_RT_CT(M,rtype,ctype)>0)
+      {
+        if (MD_ROWS_IN_RT_CT(M,rtype,rtype)!=MD_ROWS_IN_RT_CT(M,rtype,ctype))
+          REP_ERR_RETURN (__LINE__);
+        if (MD_ROWS_IN_RT_CT(M,rtype,ctype)!=MD_COLS_IN_RT_CT(M,ctype,rtype))
+          REP_ERR_RETURN (__LINE__);
+        if (MD_COLS_IN_RT_CT(M,rtype,ctype)!=MD_ROWS_IN_RT_CT(M,ctype,rtype))
+          REP_ERR_RETURN (__LINE__);
+      }
+
+  /* calculate offsets for beta and threshold for different types */
+  offset[0] = 0;
+  for (type=1; type<NVECTYPES; type++)
+    offset[type] = offset[type-1] + MD_ROWS_IN_RT_CT(M,type-1,type-1);
+
+  /* decompose the matrix */
+  first_vec = BVFIRSTVECTOR(theBV);
+  last_vec = BVLASTVECTOR(theBV);
+  last_index = VINDEX(last_vec);
+
+  if (MD_IS_SCALAR(M))
+  {
+    mc = MD_SCALCMP(M);
+    mask = 0;
+    for (type=0; type<NVECTYPES; type++)
+      if (MD_ROWS_IN_RT_CT(M,type,type)>0)
+        mask |= 1<<type;
+
+    /* loop over all lines */
+    for (vi=first_vec; vi!=SUCCVC(last_vec); vi=SUCCVC(vi))
+    {
+      /* check class and mask */
+      if ( !((VDATATYPE(vi)&mask)&&(VCLASS(vi)>=ACTIVE_CLASS)) ) continue;
+      i = VINDEX(vi);
+
+      /* now we are at line i */
+      diag = MVALUE(VSTART(vi),mc);                                                     /* diagonal element */
+      if (fabs(diag)<SMALL_D) REP_ERR_RETURN(-i);                               /* decomposition failed */
+      invdiag = 1.0/diag;
+
+      /* eliminate all entries (j,i) with j>i */
+      for (Mij=MNEXT(VSTART(vi)); Mij!=NULL; Mij=MNEXT(Mij))
+      {
+        /* check class and mask */
+        vj = MDEST(Mij);
+        if ( !((VDATATYPE(vj)&mask)&&(VCLASS(vj)>=ACTIVE_CLASS)&&(VINDEX(vj)>i)&&(VINDEX(vj)<=last_index)) ) continue;
+        Mji = MADJ(Mij);
+        AbsDjj = fabs(MVALUE(VSTART(vj),mc));
+        pivot = MVALUE(Mji,mc)*invdiag;
+
+        /* the pivot becomes the entry of the lower triangular part */
+        MVALUE(Mji,mc) = pivot;
+
+        if (pivot==0.0)
+          continue;                                             /* nothing to eliminate */
+
+        /* do gaussian elimination on the pattern (all ujk, k>i) */
+        for (Mik=MNEXT(VSTART(vi)); Mik!=NULL; Mik=MNEXT(Mik))
+        {
+          vk = MDEST(Mik);
+          if ( !((VDATATYPE(vk)&mask)&&(VCLASS(vk)>=ACTIVE_CLASS)&&(VINDEX(vk)>i)&&(VINDEX(vk)<=last_index)) ) continue;
+          Mjk = GetMatrix(vj,vk);
+          if (Mjk!=NULL)
+            MVALUE(Mjk,mc) -= pivot*MVALUE(Mik,mc);                                                                       /* entry is in pattern */
+          else
+          {
+            if (beta!=NULL)                                     /* only if beta is defined */
+              MVALUE(VSTART(vj),mc) += beta[0]*fabs(pivot*MVALUE(Mik,mc));                                           /* entry not in pattern */
+          }
+        }
+      }
+    }
+    return (NUM_OK);
+  }
+
+  REP_ERR_RETURN (1);
+}
+
 /****************************************************************************/
 /*D
    l_icdecomp	- compute incomplete decomposition
@@ -3996,6 +4118,150 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
   }
 
   return (NUM_OK);
+}
+
+INT l_luiter_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+{
+  VECTOR *vec,*w,*first_vec,*last_vec;
+  INT rtype,ctype,myindex,err,first_index,last_index;
+  register MATRIX *mat;
+  register SHORT vc,dc,mc,mask;
+  register SHORT *mcomp,*vcomp,*wcomp,*dcomp;
+  register SHORT i,j;
+  register SHORT n,nc;
+  register DOUBLE sum;
+  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
+  DEFINE_VS_CMPS(s);
+  DEFINE_VD_CMPS(cy);
+  DEFINE_MD_CMPS(m);
+  register SHORT *tmpptr;
+
+#ifndef NDEBUG
+  if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
+    REP_ERR_RETURN (err);
+#endif
+
+  first_vec = BVFIRSTVECTOR(theBV);
+  last_vec = BVLASTVECTOR(theBV);
+  first_index = VINDEX(first_vec);
+  last_index = VINDEX(last_vec);
+
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
+  {
+    vc    = VD_SCALCMP(v);
+    mc    = MD_SCALCMP(M);
+    dc    = VD_SCALCMP(d);
+    mask  = VD_SCALTYPEMASK(v);
+
+    /* solve LowerTriangle(v)=d */
+    for (vec=first_vec; vec!= SUCCVC(last_vec); vec=SUCCVC(vec))
+    {
+      myindex = VINDEX(vec);
+      if ( (VDATATYPE(vec)&mask) && (VCLASS(vec)>=ACTIVE_CLASS) )
+      {
+        sum = 0.0;
+        for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+        {
+          w = MDEST(mat);
+          if ((VINDEX(w)>=first_index) && (VINDEX(w)<myindex) && (VDATATYPE(w)&mask) && (VCLASS(w)>=ACTIVE_CLASS) )
+            sum += MVALUE(mat,mc)*VVALUE(w,vc);
+        }
+        VVALUE(vec,vc) = (VVALUE(vec,dc)-sum);                           /* since Diag(L)=I per convention */
+      }
+    }
+
+    /* solve UpperTriangle(v)=d */
+    for (vec=last_vec; vec!= PREDVC(first_vec); vec=PREDVC(vec))
+    {
+      myindex = VINDEX(vec);
+      if ( (VDATATYPE(vec)&mask) && (VCLASS(vec)>=ACTIVE_CLASS) )
+      {
+        sum = 0.0;
+        for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+        {
+          w = MDEST(mat);
+          if ((VINDEX(w)>myindex) && (VINDEX(w)<=last_index) && (VDATATYPE(w)&mask) && (VCLASS(w)>=ACTIVE_CLASS) )
+            sum += MVALUE(mat,mc)*VVALUE(w,vc);
+        }
+        VVALUE(vec,vc) = (VVALUE(vec,vc)-sum) / MVALUE(VSTART(vec),mc);
+      }
+    }
+    return (NUM_OK);
+  }
+
+  REP_ERR_RETURN (1);
+}
+
+INT l_tpluiter_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+{
+  VECTOR *vec,*w,*first_vec,*last_vec;
+  INT rtype,ctype,myindex,err,first_index,last_index;
+  register MATRIX *mat;
+  register SHORT vc,dc,mc,mask;
+  register SHORT *mcomp,*vcomp,*wcomp,*dcomp;
+  register SHORT i,j;
+  register SHORT n,nc;
+  register DOUBLE sum;
+  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
+  DEFINE_VS_CMPS(s);
+  DEFINE_VD_CMPS(cy);
+  DEFINE_MD_CMPS(m);
+  register SHORT *tmpptr;
+
+#ifndef NDEBUG
+  if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
+    REP_ERR_RETURN (err);
+#endif
+
+  first_vec = BVFIRSTVECTOR(theBV);
+  last_vec = BVLASTVECTOR(theBV);
+  first_index = VINDEX(first_vec);
+  last_index = VINDEX(last_vec);
+
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
+  {
+    vc    = VD_SCALCMP(v);
+    mc    = MD_SCALCMP(M);
+    dc    = VD_SCALCMP(d);
+    mask  = VD_SCALTYPEMASK(v);
+
+    /* solve LowerTriangle(v)=d */
+    for (vec=first_vec; vec!= SUCCVC(last_vec); vec=SUCCVC(vec))
+    {
+      myindex = VINDEX(vec);
+      if ( (VDATATYPE(vec)&mask) && (VCLASS(vec)>=ACTIVE_CLASS) )
+      {
+        sum = 0.0;
+        for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+        {
+          w = MDEST(mat);
+          if ((VINDEX(w)>=first_index) && (VINDEX(w)<myindex) && (VDATATYPE(w)&mask) && (VCLASS(w)>=ACTIVE_CLASS) )
+            sum += MVALUE(MADJ(mat),mc)*VVALUE(w,vc);
+        }
+        VVALUE(vec,vc) = (VVALUE(vec,dc)-sum) / MVALUE(VSTART(vec),mc);
+      }
+    }
+
+    /* solve UpperTriangle(v)=d */
+    for (vec=last_vec; vec!= PREDVC(first_vec); vec=PREDVC(vec))
+    {
+      myindex = VINDEX(vec);
+      if ( (VDATATYPE(vec)&mask) && (VCLASS(vec)>=ACTIVE_CLASS) )
+      {
+        sum = 0.0;
+        for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+        {
+          w = MDEST(mat);
+          if ((VINDEX(w)>myindex) && (VINDEX(w)<=last_index) && (VDATATYPE(w)&mask) && (VCLASS(w)>=ACTIVE_CLASS) )
+            sum += MVALUE(MADJ(mat),mc)*VVALUE(w,vc);
+        }
+        VVALUE(vec,vc) = (VVALUE(vec,vc)-sum);                          /* since Diag(L)=I per convention */
+      }
+    }
+    return (NUM_OK);
+  }
+
+  REP_ERR_RETURN (1);
 }
 
 #ifdef __BLOCK_VECTOR_DESC__
