@@ -522,6 +522,7 @@ static INT EE2D_ElemID; 		/* 1 if element ID has to be plotted		*/
 static INT EE2D_Subdom; 		/* 1 if subdomain ID of element has to be pl*/
 static INT EE2D_RefMark;		/* 1 if plot refinement marks				*/
 static INT 	EE2D_EdgeColor;		/* 1 to color edges like elements */
+static DOUBLE EE2D_ZScale;       /* scaling factor used in HGrid             */
 static long EE2D_ColorRefMark;	/* color of refinement marks				*/
 static INT EE2D_IndMark;		/* 1 if plot indicator marks				*/
 static long EE2D_ColorIndMark;	/* color of indicator marks	     			*/
@@ -2313,6 +2314,46 @@ static INT MarkElements_MGS (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 
 /****************************************************************************/
 /*
+   MarkElements_All - Mark all elements 
+
+   SYNOPSIS:
+   static INT MarkElements_All (MULTIGRID *theMG, INT fromLevel, INT toLevel);
+
+   PARAMETERS:
+.  theMG - pointer to multigrid
+.  fromLevel -
+.  toLevel -
+
+   DESCRIPTION:
+   This function marks elements of multigrid. 
+
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured. 												
+*/
+/****************************************************************************/
+
+static INT MarkElements_All (MULTIGRID *theMG, INT fromLevel, INT toLevel)
+{
+	ELEMENT *theElement;
+	INT i;
+	
+	fromLevel = MAX(fromLevel,0);
+	toLevel = MIN(toLevel,CURRENTLEVEL(theMG));
+	
+	for (i=fromLevel; i<=toLevel; i++)
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
+			if (EE2D_Elem2Plot[ECLASS(theElement)])
+				SETUSED(theElement,1);
+			else
+				SETUSED(theElement,0);
+				
+	return (0);
+}
+
+/****************************************************************************/
+/*
    MarkElements_MGS_On_Line - Mark elements on surface of multigrid on a line
 
    SYNOPSIS:
@@ -2826,6 +2867,35 @@ static EW_GetFirstElementProcPtr EW_GetFirstElement_hor_fw_up_Proc (VIEWEDOBJ *t
 }
 /****************************************************************************/
 /*
+   EW_GetFirstElement_HGrid_Proc - Get the GetFirstElementProc	
+
+   SYNOPSIS:
+   static EW_GetFirstElementProcPtr EW_GetFirstElement_hor_fw_up_Proc 
+   (VIEWEDOBJ *theViewedObj);
+
+   PARAMETERS:
+.  theViewedObj -
+
+   DESCRIPTION:
+   This function gets the GetFirstElementProc.
+
+   RETURN VALUE:
+   EW_GetFirstElementProcPtr
+.n      pointer to 
+.n      Null if error occured.
+*/
+/****************************************************************************/
+static EW_GetFirstElementProcPtr EW_GetFirstElement_HGrid_Proc (VIEWEDOBJ *theViewedObj)
+{
+	if (theViewedObj->ViewPoint[2]>TOPLEVEL(VO_MG(theViewedObj)))
+		return (EW_GetFirstElement_hor_fw_up);
+	else if (theViewedObj->ViewPoint[2]<0)
+		return (EW_GetFirstElement_hor_fw_down);
+	else
+		return (EW_GetFirstElement_hor_fw_up);
+}
+/****************************************************************************/
+/*
    EW_GetFirstElement_hor_fw_down_Proc - Get the GetFirstElementProc	
 
    SYNOPSIS:
@@ -2922,6 +2992,37 @@ static EW_GetNextElementProcPtr EW_GetNextElement_vert_fw_up_Proc (VIEWEDOBJ *th
 {
 	return (EW_GetNextElement_vert_fw_up);
 }
+
+/****************************************************************************/
+/*
+   EW_GetNextElement_HGrid_Proc - Get the GetFirstElementProc	
+
+   SYNOPSIS:
+   static EW_GetFirstElementProcPtr EW_GetFirstElement_hor_fw_up_Proc 
+   (VIEWEDOBJ *theViewedObj);
+
+   PARAMETERS:
+.  theViewedObj -
+
+   DESCRIPTION:
+   This function gets the GetFirstElementProc.
+
+   RETURN VALUE:
+   EW_GetFirstElementProcPtr
+.n      pointer to 
+.n      Null if error occured.
+*/
+/****************************************************************************/
+static EW_GetNextElementProcPtr EW_GetNextElement_HGrid_Proc (VIEWEDOBJ *theViewedObj)
+{
+	if (theViewedObj->ViewPoint[2]>TOPLEVEL(VO_MG(theViewedObj)))
+		return (EW_GetNextElement_hor_fw_up);
+	else if (theViewedObj->ViewPoint[2]<0)
+		return (EW_GetNextElement_hor_fw_down);
+	else
+		return (EW_GetNextElement_hor_fw_up);
+}
+
 /****************************************************************************/
 /*
    EW_GetNextElement_vert_bw_up_Proc - Get the GetNextElementProc
@@ -6607,6 +6708,160 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 	return (0);
 }
 
+/****************************************************************************/
+/*
+   EW_PreProcess_HPlotElements2D - Initialize input variables of EW_ElementEval2D for HGridPlot2D	
+
+   SYNOPSIS:
+   static INT EW_PreProcess_HPlotElements2D (PICTURE *thePicture, WORK *theWork);
+
+   PARAMETERS:
+.  thePicture -
+.  theWork -
+  
+   DESCRIPTION:
+   This function initializes input variables of EW_ElementEval2D for GridPlot2D.
+
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+*/
+/****************************************************************************/
+
+static INT EW_PreProcess_HPlotElements2D (PICTURE *thePicture, WORK *theWork)
+{
+	struct HGridPlotObj2D *theGpo;
+	OUTPUTDEVICE *theOD;
+	MULTIGRID *theMG;
+	INT i;
+	
+	theGpo = &(PIC_PO(thePicture)->theHGpo);
+	theOD  = PIC_OUTPUTDEV(thePicture);
+	theMG  = PO_MG(PIC_PO(thePicture));
+	
+	if (theGpo->WhichElem == PO_NO && theGpo->PlotElemID == NO)
+		return (1);
+	
+	EE2D_NoColor[COLOR_EDGE]			= 0;	
+	EE2D_NoColor[COLOR_LOWER_LEVEL] 	= 1;
+	EE2D_NoColor[COLOR_BND] 			= 1;	
+	if (theGpo->ElemColored == 1)
+	{
+		EE2D_NoColor[COLOR_COPY]		= 0;	
+		EE2D_NoColor[COLOR_IRR] 		= 0;	
+		EE2D_NoColor[COLOR_REG] 		= 0;	
+	}
+	else
+	{
+		EE2D_NoColor[COLOR_COPY]		= 1;	
+		EE2D_NoColor[COLOR_IRR] 		= 1;	
+		EE2D_NoColor[COLOR_REG] 		= 1;	
+	}
+	if (theGpo->PlotBoundary == YES)
+		EE2D_NoColor[COLOR_BND] 		= 0;	
+	
+	
+	EE2D_Color[COLOR_COPY]			= theOD->yellow;
+	EE2D_Color[COLOR_IRR]			= theOD->green;
+	EE2D_Color[COLOR_REG]			= theOD->red;
+	EE2D_Color[COLOR_LOWER_LEVEL]	= theOD->white;
+	EE2D_Color[COLOR_EDGE]			= theOD->black;
+	EE2D_Color[COLOR_BND]			= theOD->blue;
+	EE2D_Color[COLOR_ELEMID]		= theOD->orange;
+		
+	EE2D_Elem2Plot[PLOT_ALL]		= 0;
+	EE2D_Elem2Plot[PLOT_COPY]		= 0;
+	EE2D_Elem2Plot[PLOT_IRR]		= 0;
+	EE2D_Elem2Plot[PLOT_REG]		= 0;
+	
+		
+	switch (theGpo->WhichElem)
+	{
+		case PO_NO:
+			break;
+		case PO_ALL:
+			EE2D_Elem2Plot[PLOT_ALL] = 1;
+		case PO_COPY:
+			EE2D_Elem2Plot[PLOT_COPY] = 1;
+		case PO_IRR:
+			EE2D_Elem2Plot[PLOT_IRR] = 1;
+		case PO_REG:
+			EE2D_Elem2Plot[PLOT_REG] = 1;
+	}
+	EE2D_RefMark					= theGpo->PlotRefMarks;
+	EE2D_ColorRefMark				= theOD->magenta;
+	EE2D_IndMark					= theGpo->PlotIndMarks;
+	EE2D_ColorIndMark				= theOD->red;
+	EE2D_ElemID 					= theGpo->PlotElemID;
+	EE2D_Subdom 					= theGpo->PlotSubdomain;
+	EE2D_ShrinkFactor				= theGpo->ShrinkFactor;
+	EE2D_EdgeColor					= theGpo->EdgeColor;
+	if (TOPLEVEL(theMG)>0)
+		EE2D_ZScale					= theGpo->ZMax/TOPLEVEL(theMG);
+	else
+		EE2D_ZScale					= 0;
+
+	EE2D_Property = 0;
+	if (theGpo->ElemColored==2)
+	{
+		#ifndef ModelP
+		EE2D_NProperty = MG_NPROPERTY(theMG);
+		#else
+		EE2D_NProperty = procs;
+		#endif
+
+		if (EE2D_NProperty>0
+			#ifndef ModelP
+			&& EE2D_NProperty<EE_MAX_PROP
+			#endif
+			)
+		{
+		    EE2D_Property = 1;
+			for (i=0; i<=EE2D_NProperty; i++)
+			EE2D_PropertyColor[i] = theOD->spectrumStart 
+			  + i*(DOUBLE)(theOD->spectrumEnd - theOD->spectrumStart)
+				/ (DOUBLE)EE2D_NProperty;
+		}
+		else
+		{
+			theGpo->ElemColored = 1;
+			EE2D_Property = 0;
+			UserWrite("wrong NProperty, switch back to standard mode\n");
+		}
+	}
+	
+	/* mark all elements */
+	EE2D_MaxLevel = CURRENTLEVEL(theMG);
+	if (MarkElements_All(theMG,0,EE2D_MaxLevel)) return (1);
+
+    #ifdef ModelP
+	{
+		INT i, nc;
+		ELEMENT *elem;
+		EE2D_PartShrinkFactor = theGpo->PartShrinkFactor;
+		if (EE2D_PartShrinkFactor < 1.0) {
+			nc = 0;
+			V2_CLEAR(EE2D_PartMidPoint);
+			for (elem = EW_GetFirstElement_vert_fw_up(theMG, 0, CURRENTLEVEL(theMG));
+				 elem != NULL;
+				 elem = EW_GetNextElement_vert_fw_up(elem))
+			{
+				for (i = 0; i < CORNERS_OF_ELEM(elem); i++) {
+					nc++;
+					V2_ADD(EE2D_PartMidPoint, CVECT(MYVERTEX(CORNER(elem,i))), 
+						   EE2D_PartMidPoint);
+				}
+			}
+			if (nc > 0)
+			    V2_SCALE(1.0/(DOUBLE)nc, EE2D_PartMidPoint);
+		}
+	}
+	#endif
+
+	return (0);
+}
+
 static INT EW_PreProcess_PlotGridBefore2D (PICTURE *thePicture, WORK *theWork)
 {
 	struct ElemScalarPlotObj2D *theEspo;
@@ -8633,6 +8888,204 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	return (0);
 }
 
+/****************************************************************************/
+/*
+   EW_ElementHEval2D - 
+
+   SYNOPSIS:
+   static INT EW_ElementHEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO);
+
+   PARAMETERS:
+.  theElement -
+.  theDO -
+  
+   DESCRIPTION:
+   This function evaluates geometry of 2D element in the hierarchi of multigrid levels (triangle/quadrilateral).
+
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+*/
+/****************************************************************************/
+
+static INT EW_ElementHEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
+{
+	INT i, j;
+	long edgecolor = -1;
+	DOUBLE *x[MAX_CORNERS_OF_ELEM],Element_Z;
+	DOUBLE_VECTOR MidPoint,help;
+	INT coe,rule;
+	void *data;
+#	ifdef ModelP
+	DOUBLE_VECTOR help1;
+#	endif
+
+	coe = CORNERS_OF_ELEM(theElement);
+	Element_Z = EE2D_ZScale*LEVEL(theElement);
+
+	/* get coordinates of corners of the element */
+	for (i=0; i<coe; i++)
+		x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
+
+	if (EE2D_IndMark)
+	  GetRefinementMark (theElement,&rule,&data);
+
+	/* store viewable sides on drawing obj */
+	if (EE2D_Property)
+	{
+		DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO); 
+		DO_2c(theDO) = coe; DO_inc(theDO) ;
+		#ifndef ModelP
+		if (SUBDOMAIN(theElement)<1 || SUBDOMAIN(theElement)>EE2D_NProperty) return (1);
+		DO_2l(theDO) = edgecolor = EE2D_PropertyColor[(int)SUBDOMAIN(theElement)];
+		#else
+		DO_2l(theDO) = edgecolor = EE2D_PropertyColor[me+1];
+		#endif
+		DO_inc(theDO);
+	}
+	else
+	{
+		if (((EE2D_NoColor[ECLASS(theElement)] && !EE2D_IndMark)) ||
+			(((rule != RED) && EE2D_IndMark)) )
+		{
+			DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO) 
+			DO_2c(theDO) = coe; DO_inc(theDO) 
+		}
+		else
+		{
+			DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
+			DO_2c(theDO) = coe; DO_inc(theDO) 
+			if (EE2D_IndMark)
+			  DO_2l(theDO) = edgecolor = EE2D_ColorIndMark;
+			else
+			  DO_2l(theDO) = edgecolor = EE2D_Color[ECLASS(theElement)]; 
+			DO_inc(theDO);
+		}
+	}
+
+	
+	if (EE2D_EdgeColor == 1)
+	{
+		if (edgecolor != -1)
+		{
+			DO_2l(theDO) = edgecolor;
+			DO_inc(theDO);
+		}
+	}
+	else
+	{
+		DO_2l(theDO) = EE2D_Color[COLOR_EDGE];
+		DO_inc(theDO);
+	}
+
+	/* now compute transformation of geomtric information */
+	/* as configured with setplotobject:                  */
+	/* ShrinkFactor: shrink to point of gradient of elem  */
+	/* PartShrinkFactor: shrink to point gradient of      */
+	/*    residing on this partition                      */
+	if (EE2D_ShrinkFactor==1.0)
+	{
+		#ifdef ModelP
+		for (j=0; j<coe; j++)
+		{
+			V2_LINCOMB(EE2D_PartShrinkFactor,x[j],1.0-EE2D_PartShrinkFactor,EE2D_PartMidPoint,help)
+			V2_COPY(help,DO_2Cp(theDO));
+			DO_inc_n(theDO,2);
+			DO_2Cp(theDO)[0]=Element_Z;
+			DO_inc(theDO);
+		}
+		#else
+		for (j=0; j<coe; j++)
+		{
+			V2_COPY(x[j],DO_2Cp(theDO));
+			DO_inc_n(theDO,2);
+			DO_2Cp(theDO)[0]=Element_Z;
+			DO_inc(theDO);
+		}
+		#endif
+	}
+	else
+	{
+		#ifdef ModelP
+		V2_CLEAR(MidPoint)
+		for (i=0; i<coe; i++)
+		{
+			V2_LINCOMB(EE2D_PartShrinkFactor,x[i],1.0-EE2D_PartShrinkFactor,EE2D_PartMidPoint,help)
+			V2_ADD(MidPoint,help,MidPoint)
+		}
+		V2_SCALE(1.0/(DOUBLE)i,MidPoint)
+
+		for (j=0; j<coe; j++)
+		{
+			V2_LINCOMB(EE2D_PartShrinkFactor,x[j],1.0-EE2D_PartShrinkFactor,EE2D_PartMidPoint,help)
+			V2_LINCOMB(EE2D_ShrinkFactor,help,1.0-EE2D_ShrinkFactor,MidPoint,help1)
+			V2_COPY(help1,DO_2Cp(theDO));
+			DO_inc_n(theDO,2);
+			DO_2Cp(theDO)[0]=Element_Z;
+			DO_inc(theDO);
+		}
+		#else
+		V2_CLEAR(MidPoint)
+		for (i=0; i<coe; i++)
+			V2_ADD(MidPoint,x[i],MidPoint)
+		V2_SCALE(1.0/(DOUBLE)i,MidPoint)
+
+		for (j=0; j<coe; j++)
+		{
+			V2_LINCOMB(EE2D_ShrinkFactor,x[j],1.0-EE2D_ShrinkFactor,MidPoint,help)
+			V2_COPY(help,DO_2Cp(theDO));
+			DO_inc_n(theDO,2);
+			DO_2Cp(theDO)[0]=Element_Z;
+			DO_inc(theDO);
+		}
+		#endif
+	}
+	
+	/* plot refinement mark */
+	if (EE2D_RefMark)
+		theDO = InvertRefinementMark2D(theElement,theDO);
+	
+	/* plot element ID */
+	if (EE2D_ElemID || EE2D_Subdom)
+	{
+		V2_CLEAR(MidPoint)
+		for (i=0; i<coe; i++)
+			V2_ADD(MidPoint,x[i],MidPoint)
+		V2_SCALE(1.0/(DOUBLE)i,MidPoint)
+		
+		DO_2c(theDO) = DO_TEXT; DO_inc(theDO) 
+		DO_2l(theDO) = EE2D_Color[COLOR_ELEMID]; DO_inc(theDO);
+		DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO) 
+		DO_2c(theDO) = TEXT_CENTERED; DO_inc(theDO) 
+		DO_2s(theDO) = EE2D_TEXTSIZE; DO_inc(theDO);
+		V2_COPY(MidPoint,DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		DO_2Cp(theDO)[0]=Element_Z;
+		DO_inc(theDO);
+		#ifdef ModelP
+			sprintf(DO_2cp(theDO),"%d/%x",
+				(int)ID(theElement),
+				(long)EGID(theElement));
+			DO_inc_str(theDO);
+		#else
+			if (EE2D_Subdom && EE2D_ElemID)
+				sprintf(DO_2cp(theDO),"%d(%d)",(int)ID(theElement),(int)SUBDOMAIN(theElement));
+			else if (EE2D_Subdom)
+				sprintf(DO_2cp(theDO),"(%d)",(int)SUBDOMAIN(theElement));
+			else if (EE2D_ElemID)
+				sprintf(DO_2cp(theDO),"%d",(int)ID(theElement));
+			DO_inc_str(theDO);
+		#endif
+	}
+
+	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
+	
+	return (0);
+}
 static INT EW_ElementBdryEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, n;
@@ -22585,6 +23038,46 @@ INT InitWOP (void)
 	
 	#ifdef __TWODIM__
 	
+		/* create WorkHandling for 'Grid' */
+		if ((thePOH=CreatePlotObjHandling ("HGrid")) 	== NULL) return (__LINE__);
+		
+		POH_DYNAMIC_INFO(thePOH) = DynInfo_Grid2D;
+		
+		/* draw work */
+		POH_NBCYCLES(thePOH,DRAW_WORK) = 1;
+		
+		theWP = POH_WORKPROGS(thePOH,DRAW_WORK,0);
+		WP_WORKMODE(theWP) = ELEMENTWISE;
+		theEWW = WP_ELEMWISE(theWP);
+		theEWW->EW_PreProcessProc				= EW_PreProcess_HPlotElements2D;
+		theEWW->EW_GetFirstElementProcProc		= EW_GetFirstElement_HGrid_Proc;
+		theEWW->EW_GetNextElementProcProc		= EW_GetNextElement_HGrid_Proc;
+		theEWW->EW_EvaluateProc 				= EW_ElementHEval2D;
+		theEWW->EW_ExecuteProc					= Draw3D;
+		theEWW->EW_PostProcessProc				= InvertElementSelection2D;
+
+		/* selectnode work */
+		POH_NBCYCLES(thePOH,SELECTNODE_WORK) = 0;
+
+		/* selectelement work */
+		POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 0;
+		
+		/* markelement work */
+		POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
+		
+		/* insertnode work */
+		POH_NBCYCLES(thePOH,INSERTNODE_WORK) = 0;
+
+		/* movenode work */
+		POH_NBCYCLES(thePOH,MOVENODE_WORK) = 0;
+		
+		/* insertbndnode work */
+		POH_NBCYCLES(thePOH,INSERTBNDNODE_WORK) = 0;
+		
+		/* findrange work */
+		POH_NBCYCLES(thePOH,FINDRANGE_WORK) = 0;
+	
+
 		/* create WorkHandling for 'Grid' */
 		if ((thePOH=CreatePlotObjHandling ("Grid")) 	== NULL) return (__LINE__);
 		

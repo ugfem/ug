@@ -141,6 +141,7 @@
 #define VO_SYD(p)                               ((p)->ScaleYDir)
 #define VO_SZD(p)                               ((p)->ScaleZDir)
 #define VO_SCALE(p)                             ((p)->Scale)
+#define VO_MG(p)                                ((p)->thePlotObj.theHead.theMG)
 
 #define VO_TRAFO(p)                             ((p)->ObsTrafo)
 #define VO_INVTRAFO(p)                  ((p)->InvObsTrafo)
@@ -326,6 +327,30 @@ struct GridPlotObj2D {
   VECDATA_DESC *FreeBnd;                                        /* global coords of new free boundary			*/
 };
 
+struct HGridPlotObj2D {
+
+  struct PlotObjHead theHead;               /* the head                                     */
+
+  /* data for 2D-View of grid */
+  DOUBLE ShrinkFactor;                      /* YES or NO                                    */
+    #ifdef ModelP
+  DOUBLE PartShrinkFactor;                  /* YES or NO                                    */
+    #endif
+  INT PlotElemID;                           /* YES or NO                                    */
+  INT PlotRefMarks;                         /* YES or NO                                    */
+  INT PlotIndMarks;                         /* YES or NO                                    */
+  INT PlotNodeID;                           /* YES or NO                                    */
+  INT PlotNodeType;                         /* YES or NO                                    */
+  INT PlotNodes;                            /* YES or NO                                    */
+  INT PlotBoundary;                         /* YES or NO                                    */
+  INT PlotSubdomain;                        /* YES or NO                                    */
+  INT WhichElem;                            /* see above                                    */
+  INT ElemColored;                          /* YES or NO                                    */
+  INT EdgeColor;                            /* for coloring of edges                        */
+  DOUBLE ZMax;                                                          /* z-coordinate to which CURRLEVEL is extended  */
+  VECDATA_DESC *FreeBnd;                    /* global coords of new free boundary           */
+};
+
 struct VecMatPlotObj2D {
 
   struct PlotObjHead theHead;                           /* the head                                                                     */
@@ -429,6 +454,7 @@ union PlotObj {
   struct ElemScalarPlotObj2D theEspo;
   struct ElemVectorPlotObj2D theEvpo;
   struct GridPlotObj2D theGpo;
+  struct HGridPlotObj2D theHGpo;
   struct VecMatPlotObj2D theVmo;
   struct LinePlotObj theLpo;
 #endif

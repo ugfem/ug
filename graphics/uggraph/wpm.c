@@ -3402,6 +3402,196 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
 }
 
 /****************************************************************************/
+/*D
+   HGrid2D - plot object for multigrid (omit 2D when using it)
+
+   DESCRIPTION:
+   The Grid plot object shows the multigrid with its elements.
+
+   Possible options:~
+   .    $c~0|1					- use color off/on
+   .    $w~c|i|r|a				- show copy/irregular/regular/all elements
+   .    $b~0|1					- show boundary off/on
+   .    $r~0|1					- show refinement marks off/on
+   .    $i~0|1					- show error indicator marks off/on
+                                                                (only with r and c option off)
+   .    $e~0|1					- show element IDs off/on
+   .    $S~0|1					- show element subdomain IDs off/on
+   .    $n~0|1					- show node IDs off/on
+   .    $m~0|1					- plot node markers off/on
+   .    $s~<shrink>			- factor to shrink elements
+   .    $p~<shrink>			- parallel only: factor to shrink processor partition
+   .    $free~<vd>				- vec data desc describing new global coordinates of free boundary
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, multigrid, elements
+   D*/
+/****************************************************************************/
+
+static INT InitHGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
+{
+  BVP_DESC *theBVPDesc;
+  VECDATA_DESC *vd;
+  struct HGridPlotObj2D *theGpo;
+  char buffer[VALUELEN];
+
+  theGpo = &(thePlotObj->theHGpo);
+  theBVPDesc = MG_BVPD(PO_MG(thePlotObj));
+  V2_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
+  PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
+
+  /* defaults */
+  if (PO_STATUS(thePlotObj)==NOT_INIT)
+  {
+    theGpo->ShrinkFactor            = 1.0;
+                #ifdef ModelP
+    theGpo->PartShrinkFactor        = 1.0;
+                #endif
+    theGpo->ElemColored             = 1;
+    theGpo->EdgeColor                       = 0;
+    theGpo->WhichElem                       = PO_ALL;
+    theGpo->PlotBoundary            = YES;
+    theGpo->PlotElemID                      = NO;
+    theGpo->PlotNodeID                      = NO;
+    theGpo->PlotNodeType            = NO;
+    theGpo->PlotNodes                       = NO;
+    theGpo->PlotRefMarks            = NO;
+    theGpo->PlotIndMarks            = NO;
+    theGpo->ZMax                            = PO_RADIUS(thePlotObj);
+    theGpo->FreeBnd                 = NULL;
+  }
+
+  /* scan options */
+  if (ReadArgvChar("w",buffer,argc,argv)==0)
+    switch (buffer[0])
+    {
+    case 'c' : theGpo->WhichElem = PO_COPY; break;
+    case 'i' : theGpo->WhichElem = PO_IRR; break;
+    case 'r' : theGpo->WhichElem = PO_REG; break;
+    case 'a' : theGpo->WhichElem = PO_ALL; break;
+    default :  return (NOT_ACTIVE);
+    }
+  ReadArgvDOUBLE("s",&theGpo->ShrinkFactor,       argc,argv);
+  ReadArgvINT   ("c",&theGpo->ElemColored,        argc,argv);
+  ReadArgvINT   ("x",&theGpo->EdgeColor,          argc,argv);
+  ReadArgvINT   ("b",&theGpo->PlotBoundary,       argc,argv);
+  ReadArgvINT   ("r",&theGpo->PlotRefMarks,       argc,argv);
+  ReadArgvINT   ("i",&theGpo->PlotIndMarks,       argc,argv);
+  ReadArgvINT   ("e",&theGpo->PlotElemID,         argc,argv);
+  ReadArgvINT   ("S",&theGpo->PlotSubdomain,      argc,argv);
+  ReadArgvINT   ("n",&theGpo->PlotNodeID,         argc,argv);
+  ReadArgvINT   ("type",&theGpo->PlotNodeType,argc,argv);
+  ReadArgvINT   ("m",&theGpo->PlotNodes,          argc,argv);
+  ReadArgvDOUBLE("z",&theGpo->ZMax,                       argc,argv);
+  PO_MIDPOINT(thePlotObj)[2]=0.5*theGpo->ZMax;
+
+  vd = ReadArgvVecDesc(PO_MG(thePlotObj),"free",argc,argv);
+  if (vd!=NULL) theGpo->FreeBnd = vd;
+        #ifdef ModelP
+  ReadArgvDOUBLE("p",&theGpo->PartShrinkFactor,argc,argv);
+  if (theGpo->PartShrinkFactor<=0.0 || theGpo->PartShrinkFactor>1.0)
+    return (NOT_ACTIVE);
+        #endif
+
+  /* check validity */
+  if (theGpo->ShrinkFactor<=0.0 || theGpo->ShrinkFactor>1.0)
+    return (NOT_ACTIVE);
+  if (theGpo->ElemColored<0 || theGpo->ElemColored>2) return (NOT_ACTIVE);
+  if (theGpo->PlotIndMarks == YES)
+  {
+    if ((theGpo->ElemColored == YES) ||
+        (theGpo->PlotRefMarks == YES))
+    {
+      UserWrite("use i option only without c and r option\n");
+      return (NOT_ACTIVE);
+    }
+  }
+
+  if (theGpo->FreeBnd!=NULL)
+  {
+    if (VD_ncmps_in_otype_mod(theGpo->FreeBnd,NODEVEC,NON_STRICT)!=DIM)
+      return (NOT_ACTIVE);
+
+    if (!VD_SUCC_COMP(theGpo->FreeBnd))
+      return (NOT_ACTIVE);
+  }
+
+  return (ACTIVE);
+}
+
+/****************************************************************************/
+/*
+   DisplayHGridPlotObject_2D - Display content of 2D grid object
+
+   SYNOPSIS:
+   static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj);
+
+   PARAMETERS:
+   .  thePlotObj -
+
+   DESCRIPTION:
+   This function displays content of 2D grid object.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if error occured.
+ */
+/****************************************************************************/
+
+static INT DisplayHGridPlotObject_2D (PLOTOBJ *thePlotObj)
+{
+  struct HGridPlotObj2D *theGpo;
+
+  theGpo = &(thePlotObj->theHGpo);
+
+  /* print content */
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"ShrinkFactor",(float)theGpo->ShrinkFactor);
+        #ifdef ModelP
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"PartShrinkFactor",(float)theGpo->PartShrinkFactor);
+        #endif
+  if (theGpo->PlotBoundary == YES)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"BND","YES");
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"BND","NO");
+
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"Node markers",         BOOL_2_YN(theGpo->PlotNodes));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"ref marks",            BOOL_2_YN(theGpo->PlotRefMarks));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"indicator marks",      BOOL_2_YN(theGpo->PlotIndMarks));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"ElemID",                       BOOL_2_YN(theGpo->PlotElemID));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"subdomID",                     BOOL_2_YN(theGpo->PlotSubdomain));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"NodeID",                       BOOL_2_YN(theGpo->PlotNodeID));
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"NodeType",                     BOOL_2_YN(theGpo->PlotNodeType));
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"ZMax",                         (float)theGpo->ZMax);
+
+  switch (theGpo->WhichElem)
+  {
+  case PO_COPY :
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"WHICH_Elem","COPY");
+    break;
+  case PO_IRR :
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"WHICH_Elem","IRREGULAR");
+    break;
+  case PO_REG :
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"WHICH_Elem","REGULAR");
+    break;
+  case PO_ALL :
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"WHICH_Elem","ALL");
+    break;
+  }
+
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"COLORED",(int)theGpo->ElemColored);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"EDGECOLOR",(int)theGpo->EdgeColor);
+
+  if (theGpo->FreeBnd!=NULL)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"free bnd",ENVITEM_NAME(theGpo->FreeBnd));
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"free bnd","NO");
+
+  return (0);
+}
+
+/****************************************************************************/
 /*
    InitVecMat_2D - Initialization of 2D vector-matrix graph object
 
@@ -5357,6 +5547,11 @@ INT InitPlotObjTypes (void)
   thePOT->Dimension                               = TYPE_2D;
   thePOT->SetPlotObjProc                  = InitGridPlotObject_2D;
   thePOT->DispPlotObjProc                 = DisplayGridPlotObject_2D;
+
+  if ((thePOT=GetPlotObjType("HGrid"))    == NULL) return (1);
+  thePOT->Dimension                               = TYPE_3D;
+  thePOT->SetPlotObjProc                  = InitHGridPlotObject_2D;
+  thePOT->DispPlotObjProc                 = DisplayHGridPlotObject_2D;
 
   if ((thePOT=GetPlotObjType("VecMat"))  == NULL) return (1);
   thePOT->Dimension                               = TYPE_2D;
