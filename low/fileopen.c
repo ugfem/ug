@@ -283,11 +283,12 @@ FILE *fopen_r (const char *fname, const char *mode, int do_rename)
     fclose(f);
 
     strcpy(new_fname,fname);
+    strcat(new_fname,".");
 
     if (stat(fname, &fstat)<0)
       return(FT_UNKNOWN);
     Time = fstat.st_mtime;
-    strftime(new_fname+strlen(fname),64,"%y%m%d%H%M",localtime(&Time));
+    strftime(new_fname+strlen(fname)+1,64,"%y%m%d%H%M",localtime(&Time));
 
     rename(fname,new_fname);                    /* TODO: check success? */
   }
