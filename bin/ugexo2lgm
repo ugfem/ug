@@ -292,7 +292,7 @@ sub read_exo2()
 
 sub write_domain
 {
-	print LGM "# Domain-Info\n";
+	printf LGM "# Domain-Info\n";
 	print LGM "name = default_name\n";
 	print LGM "problemname = default_problem\n";
 	print LGM "convex = 1\n";
@@ -487,16 +487,20 @@ sub write_lgm()
 {
 	print "writing lgm geometry file $lgm\n";
 	open(LGM, ">$lgm") || die "can't open $lgm\n";
+
 	open(MAP, ">$map") || die "can't open $map\n";
 	printf MAP "Map file created by ugexo2lgm\n";
 	printf MAP "Map from cubit lines/surfaces to lgm lines/surfaces\n";
 	printf MAP "Map valid for file %s\n",$exo2;
+	printf MAP "Map created at %s\n",$s=localtime;
 
 	write_domain();
 	write_unit();
 	write_line();
  	write_surf();
  	write_coord();
+
+	printf LGM "\n# Domain-Info created at %s\n",$s=localtime;
 
 	close(MAP);
 	close(LGM);
