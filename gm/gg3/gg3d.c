@@ -42,7 +42,7 @@
 #include "general.h"
 #include "debug.h"
 #include "scan.h"
-
+#include "ugstruct.h"
 #include "gg3d.h"
 
 /****************************************************************************/
@@ -713,7 +713,7 @@ static INT Read_VolumeMesh(MESH *mesh, MULTIGRID *theMG, INT MarkKey)
   return(0);
 }
 
-static INT MAX_ELE = 75;
+static INT MAX_ELE = 150;
 
 static INT Search_Neighbours(MULTIGRID *theMG, MESH *mesh, INT MarkKey)
 {
