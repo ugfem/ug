@@ -16,11 +16,13 @@
 #import "MAppController.h"
 #import "MShell.h"
 
+extern MShell *theUGshell;
+
 @implementation MAppController
 
 - (void)appendText:(id)sender
 {
-	[[MShell instantiate] appendToText:[sender lossyCString]];
+    [theUGshell appendToText:[sender lossyCString]];
 }
 
 - (void)closeGraphic:(id)sender
@@ -30,7 +32,36 @@
 
 - (void)executeCommand:(id)sender
 {
-    [[MShell instantiate] interpretCommand:sender];
+    printf("execute command\n");
+    //[theUGshell interpretCommand:sender];
+}
+
+- (void)runScript:(id)sender
+{
+    NSOpenPanel *openPanel = [NSOpenPanel openPanel];
+    int runModalResult;
+
+    // Configure the OpenPanel
+    [openPanel setTitle:NSLocalizedString(@"Run script", @"Select an UG script file to run.")];
+    [openPanel setTreatsFilePackagesAsDirectories:NO];
+    [openPanel setAllowsMultipleSelection:NO];
+    [openPanel setCanChooseDirectories:NO];
+    [openPanel setCanChooseFiles:YES];
+    [openPanel setDirectory:(_openPanelPath ? _openPanelPath : NSHomeDirectory())];
+
+    // Run the panel
+    runModalResult = [openPanel runModal];
+    if (runModalResult == NSOKButton) {
+        NSString *path = [openPanel filename];
+        NSString *execute = @"execute ";
+        NSString *command = [execute stringByAppendingString:path];
+        printf ("%s\n", [command lossyCString]);
+        [theUGshell interpretCommand:command];
+    }
+    [_openPanelPath release];
+    _openPanelPath = [[openPanel directory] copyWithZone:[self zone]];
+
+    return;
 }
 
 - (void)newGraphic:(id)sender
@@ -38,6 +69,10 @@
 }
 
 - (void)saveDocument:(id)sender
+{
+}
+
+- (void)saveDocumentAs:(id)sender
 {
 }
 
@@ -51,6 +86,11 @@
 
 - (void)showPreferences:(id)sender
 {
+}
+
+- (void)dealloc {
+    [_openPanelPath release];
+    [super dealloc];
 }
 
 @end

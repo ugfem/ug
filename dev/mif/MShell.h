@@ -34,7 +34,10 @@
   MShellTextView  *theTextView;
   NSMenu                  *theMenu;
   id shellFont;
+  float fontsize;
   char                    *inpLine;
+  NSDictionary        *promptAttributes;
+  NSDictionary        *cmdlineAttributes;
 }
 
 + (MShell *)    instantiate;
@@ -50,6 +53,7 @@
 - (BOOL)        interpretCommand:(NSString*)command;
 
 - (MShellWindow*) window;
+- (MShellTextView*)     textview;
 /*- (BOOL)textView:(NSTextView *)aTextView shouldChangeTextInRange:(NSRange)affectedCharRange replacementString:(NSString *)replacementString;
    - (NSRange)textView:(NSTextView *)aTextView willChangeSelectionFromCharacterRange:(NSRange)oldSelectedCharRange toCharacterRange:(NSRange)newSelectedCharRange;*/
 @end

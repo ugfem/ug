@@ -53,6 +53,7 @@
 #include "MGraphicWindow.h"
 #include "MGraphicView.h"
 #include "MInterface.h"
+#include "MAppController.h"
 
 /****************************************************************************/
 /*																			*/
@@ -72,10 +73,6 @@
 /****************************************************************************/
 
 
-
-static int doneFlag=1;
-static int nbuf=0;
-static char buf[INPUTBUFFERLEN];
 
 static HEAP *guiHeap=NULL;
 static long guiHeapSize=32000;
@@ -100,6 +97,7 @@ NSString *principalClassName;
 NSString *mainNibFile;
 
 MShell	*theUGshell;			/* the shell object */
+MAppController *appControl;
 
 /****************************************************************************/
 /*																			*/
@@ -123,141 +121,150 @@ MShell	*theUGshell;			/* the shell object */
 
 static void MacOSXServerMove (SHORT_POINT point)
 {
-    UserWrite("MacOSXServerMove called\n");
-	//[currgw->theGraphWindow moveToPoint:point];
+	[currgw->theGraphWindow moveToPoint:point];
+    return;
 }
 
 static void MacOSXServerDraw (SHORT_POINT point)
 {
-    UserWrite("MacOSXServerDraw called\n");
-	//[currgw->theGraphWindow drawLineTo:point];
+	[currgw->theGraphWindow drawLineTo:point];
+    return;
 }
 
 static void MacOSXServerPolyline (SHORT_POINT *points, INT n)
 {
-    UserWrite("MacOSXServerPolyline called\n");
-	//[currgw->theGraphWindow drawPolyLine:points noOfPoints:n];
+	[currgw->theGraphWindow drawPolyLine:points noOfPoints:n];
 }
 
 static void MacOSXServerInversePolyline (SHORT_POINT *points, INT n)
 {
-    UserWrite("MacOSXServerInversePolyline called\n");
-	return;
+    [currgw->theGraphWindow drawInversePolygon:points noOfPoints:n];
+    return;
 }
 
 static void MacOSXServerPolygon (SHORT_POINT *points, INT n)
 {
-    UserWrite("MacOSXServerPolygon called\n");
-	//[currgw->theGraphWindow drawPolygon:points noOfPoints:n];
+	[currgw->theGraphWindow drawPolygon:points noOfPoints:n];
+    return;
+}
+
+static void MacOSXServerShadedPolygon (SHORT_POINT *points, INT n, DOUBLE i)
+{
+    [currgw->theGraphWindow drawShadedPolygon:points noOfPoints:n intensity:i];
+    return;
 }
 
 static void MacOSXServerInversePolygon (SHORT_POINT *points, INT n)
 {
-    UserWrite("MacOSXServerInversePolygon called\n");
+    [currgw->theGraphWindow drawInversePolygon:points noOfPoints:n];
 	return;
 }
 
 static void MacOSXServerErasePolygon (SHORT_POINT *points, INT n)
 {
-    UserWrite("MacOSXServerErasePolygon called\n");
-	return;
-}
-
-static void MacOSXServerPolymark (short n, SHORT_POINT *points)
-{
-    UserWrite("MacOSXServerPolymark called\n");
-	return;
-}
-
-static void MacOSXServerInvMarker (short n, short s, SHORT_POINT point)
-{
-    UserWrite("InvMarker called\n");
-	return;
-}
-
-		
-static void MacOSXServerInvPolymark (short n, SHORT_POINT *points)
-{
-    UserWrite("MacOSXServerInvPolymark called\n");
-	return;
-}
-
-static void MacOSXServerDrawText (const char *s, INT mode)
-{
-    UserWriteF("MacOSXServerDrawText called <%s,%d>\n",s,mode);
-	return;
-}
-
-static void MacOSXServerCenteredText (SHORT_POINT point, const char *s, INT mode)
-{
-    UserWriteF("MacOSXServerCenteredText called <%s,%d>\n",s,mode);
-	return;
-}
-
-static void MacOSXServerClearViewPort (void)
-{
-    UserWrite("MacOSXServerClearViewPort called\n");
-	return;
-}
-
-static void MacOSXServerSetLineWidth (short w)
-{
-    UserWrite("MacOSXServerSetLineWidth called\n");
-	//[currgw->theGraphWindow setLineWidth:w];
-	return;
-}
-
-static void MacOSXServerSetTextSize (short s)
-{
-    UserWrite("MacOSXServerSetTextSize called\n");
+    [currgw->theGraphWindow erasePolygon:points noOfPoints:n];
 	return;
 }
 
 static void MacOSXServerSetMarker (short n)
 {
-	UserWrite("MacOSXServerSetMarker called\n");
+    [currgw->theGraphWindow setMarker:n];
     return;
 }
 
 static void MacOSXServerSetMarkerSize (short s)
 {
-    UserWrite("MacOSXServerSetMarkerSize called\n");
+    [currgw->theGraphWindow setMarkerSize:s];
+    return;
+}
+
+static void MacOSXServerPolymark (short n, SHORT_POINT *points)
+{
+    [currgw->theGraphWindow polyMark:points noOfPoints:n];
+	return;
+}
+
+/*static void MacOSXServerInvMarker (SHORT_POINT point)
+{
+    [currgw->theGraphWindow invMarker:point];
+	return;
+}*/
+
+		
+static void MacOSXServerInvPolymark (short n, SHORT_POINT *points)
+{
+    [currgw->theGraphWindow invPolyMark:points noOfPoints:n];
+	return;
+}
+
+static void MacOSXServerDrawText (const char *s, INT m)
+{
+    [currgw->theGraphWindow drawText:s mode:m];
+	return;
+}
+
+static void MacOSXServerCenteredText (SHORT_POINT point, const char *s, INT m)
+{
+    [currgw->theGraphWindow drawCenteredText:s
+                                     atPoint:point mode:m];
+	return;
+}
+
+static void MacOSXServerClearViewPort (void)
+{
+    [currgw->theGraphWindow clearView];
+	return;
+}
+
+static void MacOSXServerSetLineWidth (short w)
+{
+	[currgw->theGraphWindow setLineWidth:w];
+	return;
+}
+
+static void MacOSXServerSetTextSize (short s)
+{
+    [currgw->theGraphWindow setTextSize:s];
 	return;
 }
 
 static void MacOSXServerSetColor (long index)
 {	
-    UserWrite("MacOSXServerSetColor called\n");
-/*	[[NSColor colorWithDeviceRed:(float)ColorTable[index].red/(float)0xFFFF
+    [[NSColor colorWithDeviceRed:(float)ColorTable[index].red/(float)0xFFFF
 				green:(float)ColorTable[index].green/(float)0xFFFF
 				blue:(float)ColorTable[index].blue/(float)0xFFFF
-				alpha:1.0]
-    		set];*/
+				alpha:1.0] set];
+    /*printf ("c[%ld] = (%f, %f, %f)\n", index,
+            (float)ColorTable[index].red/(float)0xFFFF,
+            (float)ColorTable[index].green/(float)0xFFFF,
+            (float)ColorTable[index].blue/(float)0xFFFF);*/
 	return;
 }
 
 static void MacOSXServerSetPaletteEntry (long index, short r, short g, short b)
 {
-    UserWrite("MacOSXServerSetPaletteEntry called\n");
+    [currgw->theGraphWindow setPaletteEntryWithIndex:index red:r green:g blue:b];
 	return;
 }
 
-static void MacOSXServerSetNewPalette (long start, long count, short *r, short *g, short *b)
+static void MacOSXServerSetNewPalette (long index, long count, short *r, short *g, short *b)
 {
-    UserWrite("MacOSXServerSetNewPalette called\n");
+    [currgw->theGraphWindow setNewPaletteEntryWithIndex:index
+                                           withCount:count
+                                           red:*r green:*g blue:*b];
 	return;
 }
 
 static void MacOSXServerGetPaletteEntry (long index, short *r, short *g, short *b)
 {
-    UserWrite("MacOSXServerGetPaletteEntry called\n");
-	return;
+    [currgw->theGraphWindow getPaletteEntryWithIndex:index red:r green:g blue:b];
+    return;
 }
 
 static void MacOSXServerFlush (void)
 {
-    UserWrite("MacOSXServerFlush called\n");
-    //[currgw->theGraphWindow flush];
+    //printf("MacOSXServerFlush called\n");
+    [currgw->theGraphWindow flush];
 	return;
 }
 
@@ -316,6 +323,7 @@ INT GetScreenSize (INT size[2])
 
 INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
 {
+    //[[theUGshell window] displayIfNeeded];
     theEvent->Type = NO_EVENT;
 	return 0;
 }
@@ -372,19 +380,19 @@ void WriteString (const char *s)
 
 INT MouseStillDown (void)
 {
-    UserWrite("MouseStillDown was called\n");
+    printf("MouseStillDown was called\n");
     return (0);
 }
 
 void DrawInfoBox (WINDOWID win, const char *info)
 {
-    UserWrite("DrawInfoBox called\n");
+    printf("DrawInfoBox called\n");
     return;
 }
 
 INT WhichTool (WINDOWID win, const INT mouse[2], INT *tool)
 {
-    UserWrite("WhichTool called\n");
+    printf("WhichTool called\n");
     return (0);
 }
 
@@ -408,7 +416,8 @@ static WINDOWID MacOSXServer_OpenOutput (
 	gw->next   = windowList;
 	windowList = gw;
 	
-    
+    gw->currTool = arrowTool;
+
 	gw->theGraphWindow = [[MGraphicWindow alloc]
                 initWithContentRect:viewRect
                 styleMask:  ( NSTitledWindowMask
@@ -419,7 +428,8 @@ static WINDOWID MacOSXServer_OpenOutput (
 
     [gw->theGraphWindow setTitle:[NSString stringWithCString:title]];
     [gw->theGraphWindow setFrameOrigin:NSMakePoint(x,y)];
-    [gw->theGraphWindow makeKeyAndOrderFront:nil];
+    [gw->theGraphWindow makeKeyAndOrderFront:gw->theGraphWindow];
+    [gw->theGraphWindow setDelegate:[[[MShell instantiate] window] contentView]];
     
 	/* fill global and local lower left and upper right in the devices coordinate system */
 	gw->Global_LL[0] = Global_LL[0] = x;
@@ -496,8 +506,6 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 {
 	char buffer[256];
 	NSRect	shellFrame;
-	NSSize	screenSize;
-	OUTPUTDEVICE *outdev;
 	int i,j;
 	unsigned short res,delta,max,r,g,b;
 	int scrollback;
@@ -534,17 +542,21 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 	if (GetDefaultValue(DEFAULTSFILENAME,"TermWinDV",buffer)==0)
 		sscanf(buffer," %d ",&TermWinDV);
 	
-	[NSApplication sharedApplication];
-    [NSBundle loadNibNamed:@"UG_MacOSXServer.nib" owner:[NSApplication sharedApplication]];
-    //[NSBundle loadNibNamed:@"UG_MacOSXServer.nib" owner:NSApp];
-    
-	/* Create the unique shell object and set some of its values */
+    [NSApplication sharedApplication];
+
+    appControl = [[MAppController alloc] init];
+    /* Create the unique shell object and set some of its values */
     theUGshell = [MShell instantiate];
     if (theUGshell==NULL) return NULL;
+
+    [NSBundle loadNibNamed:@"UG_MacOSXServer.nib" owner:theUGshell];
+    //[NSBundle loadNibNamed:@"UG_MacOSXServer.nib" owner:NSApp];
+
 	[theUGshell setScrollback:scrollback];
 	[theUGshell setCharactersPerLine:charsperline];
-	[theUGshell setFontSize:fontSize];
-	
+	[theUGshell setFontSize:10.0];
+    [NSApp setDelegate:theUGshell];
+    
     shellFrame = NSMakeRect(TermWinH, TermWinV, TermWinDH, TermWinDV);
 	[[theUGshell window] setFrame:shellFrame display:YES];
 
@@ -638,7 +650,8 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 	MacOSXServerOutputDevice->Draw				= MacOSXServerDraw;
 	MacOSXServerOutputDevice->Polyline			= MacOSXServerPolyline;
 	MacOSXServerOutputDevice->InversePolyline	= MacOSXServerInversePolyline;
-	MacOSXServerOutputDevice->Polygon			= MacOSXServerPolygon;
+    MacOSXServerOutputDevice->Polygon			= MacOSXServerPolygon;
+    MacOSXServerOutputDevice->ShadedPolygon		= MacOSXServerShadedPolygon;
 	MacOSXServerOutputDevice->InversePolygon 	= MacOSXServerInversePolygon;
 	MacOSXServerOutputDevice->ErasePolygon		= MacOSXServerErasePolygon;
 	MacOSXServerOutputDevice->Polymark			= MacOSXServerPolymark;
@@ -650,7 +663,7 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 	/* init pointers to set functions */
 	MacOSXServerOutputDevice->SetLineWidth		= MacOSXServerSetLineWidth;
 	MacOSXServerOutputDevice->SetTextSize		= MacOSXServerSetTextSize;
-	MacOSXServerOutputDevice->SetMarker			= MacOSXServerSetMarker;
+    MacOSXServerOutputDevice->SetMarker			= MacOSXServerSetMarker;
 	MacOSXServerOutputDevice->SetMarkerSize		= MacOSXServerSetMarkerSize;
 	MacOSXServerOutputDevice->SetColor			= MacOSXServerSetColor;
 	MacOSXServerOutputDevice->SetPaletteEntry	= MacOSXServerSetPaletteEntry;
@@ -659,6 +672,7 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 	/* init pointers to miscellaneous functions */
 	MacOSXServerOutputDevice->GetPaletteEntry	= MacOSXServerGetPaletteEntry;
 	MacOSXServerOutputDevice->Flush				= MacOSXServerFlush;
+    MacOSXServerOutputDevice->PlotPixelBuffer	= NULL;
 
 	printf("output device 'screen' for ");
     printf(ARCHNAME);

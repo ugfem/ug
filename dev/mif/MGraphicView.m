@@ -22,13 +22,24 @@
 
 @implementation MGraphicView
 
+- (id) initWithFrame:(NSRect)frameRect
+{
+    [super initWithFrame:frameRect];
+	theShellTextView = [[MShell instantiate] textview];
+    return self;
+}
+
+- (void) keyDown:(NSEvent *)theEvent
+{
+	[theShellTextView keyDown:theEvent];
+}
+
 - (void)drawRect:(NSRect)aRect
 {
 	PSsetgray(NSWhite);
 	NSRectFill(aRect);
 
-    InterpretCommand("plot\n");
-	
+    //InterpretCommand("plot");
 }
 @end
 

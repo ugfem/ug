@@ -21,25 +21,35 @@
 #import <AppKit/AppKit.h>
 
 
-#define MAX_BUFFERED_COMMANDS 8
+#define MAX_BUFFERED_COMMANDS 128
 
 
 @interface MShellTextView : NSTextView
 {
   int startPosition;                                            // This is the start of the current command.
+  NSTextStorage *theTextStore;
 
   NSMutableArray      *theCommandList;          // store the history of entered commands
   unsigned int commandCount;                    // count the number of entered commands
   unsigned int currCommandNumber;               // for scrolling through command list
   NSMutableString     *currentLine;             // the current input text
+
+  NSDictionary *textAttributes;                 // Normal text attributes
+  NSDictionary *errorAttributes;                // Error highlighting attributes
+  NSDictionary *promptAttributes;               // Prompt text attributes
+  NSDictionary *cmdlineAttributes;      // Command line text attributes
 }
 
 - (id) initWithFrame:(NSRect)frameRect;
 
 - (void) appendPrompt;
 
+- (void) appendText:(NSString *)str;
+
 - (void)keyDown:(NSEvent *)theEvent;
 
 - (void) replaceCurrentCommandWith:(NSString *)command;
+
+- (void)highlightError;
 
 @end

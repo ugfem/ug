@@ -23,13 +23,18 @@
 {
   id inspector;
   id shell;
+
+  NSString *_openPanelPath;
 }
 - (void)appendText:(id)sender;
 - (void)closeGraphic:(id)sender;
 - (void)executeCommand:(id)sender;
+- (void)runScript:(id)sender;
 - (void)newGraphic:(id)sender;
 - (void)saveDocument:(id)sender;
+- (void)saveDocumentAs:(id)sender;
 - (void)showInfo:(id)sender;
 - (void)showInspector:(id)sender;
 - (void)showPreferences:(id)sender;
+- (void)dealloc;
 @end

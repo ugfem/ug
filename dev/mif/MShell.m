@@ -51,10 +51,22 @@ static MShell	*singleInstance = nil;
 	/*
 	 * Open up a Window
 	 */
-	theWindow = [[MShellWindow alloc] initWithContentRect:NSMakeRect(100.0, 350.0, 600.0, 300.0)
+    int TermWinX, TermWinY, TermWinW, TermWinH;
+    char buffer[256];
+    
+    /* read default size of shell window */
+    if (GetDefaultValue(DEFAULTSFILENAME,"TermWinH",buffer)==0)
+        sscanf(buffer," %d ",&TermWinX);
+    if (GetDefaultValue(DEFAULTSFILENAME,"TermWinV",buffer)==0)
+        sscanf(buffer," %d ",&TermWinY);
+    if (GetDefaultValue(DEFAULTSFILENAME,"TermWinDH",buffer)==0)
+        sscanf(buffer," %d ",&TermWinW);
+    if (GetDefaultValue(DEFAULTSFILENAME,"TermWinDV",buffer)==0)
+        sscanf(buffer," %d ",&TermWinH);
+    theWindow = [[MShellWindow alloc] initWithContentRect:NSMakeRect(TermWinX, TermWinY, TermWinW, TermWinH)
 					styleMask:(NSTitledWindowMask | NSResizableWindowMask | NSMiniaturizableWindowMask)
-					backing:NSBackingStoreRetained
-					defer:YES];
+                    backing:NSBackingStoreBuffered
+					defer:NO];
 	[theWindow setTitle:@"UG shell"];
 	[NSApp setDelegate:theWindow];
 
@@ -65,23 +77,11 @@ static MShell	*singleInstance = nil;
 	theTextView = [theShellView textView];
         
     [[theWindow contentView] addSubview:[theShellView scrollView]];
-    [theWindow makeKeyAndOrderFront:nil];
+    [theWindow makeKeyAndOrderFront:self];
     [theWindow makeFirstResponder:theTextView];
-    [theWindow setDelegate:theTextView];
-
-    /*[[NSNotificationCenter defaultCenter]
-		addObserver:self
-     	selector:@selector(theTextView:shouldChangeTextInRange:replacementString:)
-		name:NSTextDidChangeNotification
-       	object:theTextView];
-    
-	[[NSNotificationCenter defaultCenter]
-		addObserver:self
-     	selector:@selector(theTextView:willChangeSelectionFromCharacterRange:toCharacterRange:)
-		name:NSTextViewDidChangeSelectionNotification
-       	object:theTextView];*/
-
-    /* alloc input line buffer */
+	//[theWindow setDelegate:theTextView];
+	    
+    /* allocate input line buffer */
     if ((inpLine=(char *)malloc(cmdintbufsize))==NULL)
     {
         PrintErrorMessage('F',"MShell setUp method","could not allocate inpLine buffer");
@@ -89,16 +89,15 @@ static MShell	*singleInstance = nil;
     }
     inpLine[0] = (char) 0;
 
-	/* Don't display it, this is done later after the correct size is set */
-	/* [theWindow display]; */
+	[theWindow display];
 	
-	return YES;
+    return YES;
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
 	//printf ("applicationDidFinishLaunching called\n");
-    [self appendToText:"applicationDidFinishLaunching called\n"];
+    //[self appendToText:"applicationDidFinishLaunching called\n"];
 }
 
 - (void) appendPrompt
@@ -108,11 +107,7 @@ static MShell	*singleInstance = nil;
 
 - (void) appendToText:(const char *)val
 {
-    [[theTextView textStorage]
-        replaceCharactersInRange:NSMakeRange([[theTextView textStorage] length], 0)
-        withString:[NSString stringWithCString:val]];
-    [theTextView scrollRangeToVisible:NSMakeRange([[theTextView textStorage] length], 0)];
-    [theTextView didChangeText];
+    [theTextView appendText:[NSString stringWithCString:val]];
     return;
 }
 
@@ -139,7 +134,22 @@ static MShell	*singleInstance = nil;
 
 - (void)	setFontSize:(float)fsize
 {
-	[theTextView setFont:[NSFont userFixedPitchFontOfSize:fsize]];
+    fontsize = fsize;
+    printf ("6 Current font is %s", [[[theTextView font] displayName] lossyCString]);
+    printf (" at size %f\n", [[theTextView font] pointSize]);
+    //[[NSFont userFixedPitchFontOfSize:24.0] set];
+    [theTextView setFont:[NSFont userFixedPitchFontOfSize:fontsize]];
+    //[theTextView setTextColor:[NSColor redColor]];
+    //[theTextView textDidChange];
+    printf ("7 Current font is %s", [[[theTextView font] displayName] lossyCString]);
+    printf (" at size %f\n", [[theTextView font] pointSize]);
+
+    //[[theTextView text] beginEditing];
+    //[myTextView setFont:[NSFont fontWithName:@"Helvetica-Oblique"
+//    size:12.0] range:changeCharRange];
+ //   [theTextStore endEditing];
+  //  [theTextView didChangeText];
+
 }
 
 
@@ -181,6 +191,9 @@ static MShell	*singleInstance = nil;
             [NSApp stop:nil];
             return NO;
         }
+        else	{
+            [theTextView highlightError];
+		}
     }
 
     return YES;
@@ -191,5 +204,9 @@ static MShell	*singleInstance = nil;
 	return theWindow;
 }
 
+- (MShellTextView*)	textview
+{
+    return theTextView;
+}
 @end
 

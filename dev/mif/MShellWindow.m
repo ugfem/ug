@@ -44,16 +44,8 @@ unsigned int ugTextLength;
 {
     self = [super initWithContentRect:contentRect styleMask:styleMask
                                  backing:backingType defer:flag];
-	if ( self )
-    {
-        NSMutableCharacterSet *workingSet = [[NSCharacterSet alphanumericCharacterSet] mutableCopy];
-        [workingSet addCharactersInString:@";:,."];
-        finalCharSet = [workingSet copy];
-        [workingSet release];
-        commandString = [NSMutableString stringWithString:@""];
-    }
-    
-	return self;
+
+    return self;
 }
 
 @end

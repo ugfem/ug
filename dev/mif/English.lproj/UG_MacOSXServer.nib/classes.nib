@@ -12,7 +12,9 @@
                 closeGraphic = id; 
                 executeCommand = id; 
                 newGraphic = id; 
+                runScript = id; 
                 saveDocument = id; 
+                saveDocumentAs = id; 
                 showInfo = id; 
                 showInspector = id; 
                 showPreferences = id; 

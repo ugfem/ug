@@ -20,10 +20,15 @@
 
 #import <AppKit/AppKit.h>
 
-@interface MGraphicView : NSView
-{}
+#import "MShell.h"
 
-- (void)drawRect:(NSRect)aRect;
+@interface MGraphicView : NSView
+{
+  MShellTextView *theShellTextView;
+}
+
+- (void) drawRect:(NSRect)aRect;
+- (void) keyDown: (NSEvent *)theEvent;
 
 @end
 

@@ -76,23 +76,23 @@ extern MShell *theUGshell;
     [theScrollView setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)]; 
 
     /* Create the MShellTextView */
-    theTextView = [[[MShellTextView alloc] initWithFrame:NSMakeRect(0, 0,
-           [theScrollView contentSize].width, [theScrollView contentSize].height)] autorelease];
+    theTextView = [[MShellTextView alloc] initWithFrame:NSMakeRect(0, 0,
+           [theScrollView contentSize].width, [theScrollView contentSize].height)];
     // 2000.0 instead of [theScrollView contentSize].width?
 
     [theTextView setMinSize:(NSSize){50.0, 50.0}];
     [theTextView setMaxSize:(NSSize){1e7, 1e7}];
     [theTextView setVerticallyResizable:YES];
     [theTextView setHorizontallyResizable:YES];
-    [theTextView setAutoresizingMask:NSViewWidthSizable];
     [[theTextView textContainer] setWidthTracksTextView:NO];
 
+    [theScrollView setDocumentView:theTextView];
+	//[theTextView setUsesFontPanel:YES];
+    [theTextView setRichText:YES];
     [theTextView setEditable:YES];
     [theTextView setSelectable:YES];
-    [[NSFont userFixedPitchFontOfSize:10.0] set];
-    //[theTextView setFont:[NSFont userFixedPitchFontOfSize:10.0]];
+
     [self addSubview:theScrollView];
-    [theScrollView setDocumentView:theTextView];
 
     /*
      * Get notification if text input ended:
