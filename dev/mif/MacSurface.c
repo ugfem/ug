@@ -137,6 +137,15 @@ void MousePosition (INT *ScreenPoint)
 
 INT MouseStillDown(void)
 {
+  /*if (StillDown())
+          return (1);
+     else
+     {
+          char buffer[8];
+
+          UserIn(buffer);
+          return (0);
+     }*/
   return (StillDown());
 }
 
