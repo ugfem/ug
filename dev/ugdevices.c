@@ -804,7 +804,7 @@ if (with_defaultOuputDevice)
 {
   if (me!=master)
   {
-    defaultOuputDevice = malloc(sizeof(OUTPUTDEVICE));
+    defaultOuputDevice = (OUTPUTDEVICE *)malloc(sizeof(OUTPUTDEVICE));
     /* TODO:  set function pointers to NULL */
   }
 
