@@ -699,7 +699,7 @@ Continue:
       if (k <= 0) bdf->dt *= 2.0;
       else
       {
-        if (bdf->optnlsteps==1) dtfactor = QUOT(20+bdf->number_of_nonlinear_iterations,5+bdf->step);
+        if (bdf->optnlsteps==1) dtfactor = 1.05*QUOT(bdf->number_of_nonlinear_iterations,bdf->step);
         else dtfactor = bdf->optnlsteps;
         bdf->dt *= SQRT(QUOT(dtfactor,k));
       }
