@@ -306,6 +306,7 @@ static INT InitQuadrilateral (void)
   radius = MAX(radius,ABS(x_quad[1][1]-MidPoint[1]));
   radius = MAX(radius,ABS(x_quad[2][1]-MidPoint[1]));
   radius = MAX(radius,ABS(x_quad[3][1]-MidPoint[1]));
+  radius *= 1.42;
   if (CreateDomain("Quadrilateral",MidPoint,radius,4,4,YES)==NULL) return(1);
   if (CreateBoundarySegment2D("south",1,0,0,0,1,1,0.0,1.0,
                               southBoundary,NULL)==NULL) return(1);
@@ -2511,7 +2512,7 @@ static INT kreisBoundaryLower (void *data, DOUBLE *param, DOUBLE *result)
   return(0);
 }
 
-#define INNEN_RADIUS 0.6
+#define INNEN_RADIUS 0.8
 
 static INT kreisBoundaryUpper1 (void *data, DOUBLE *param, DOUBLE *result)
 {
@@ -2565,6 +2566,123 @@ static INT kreisBoundaryLower2 (void *data, DOUBLE *param, DOUBLE *result)
 
   result[0] = INNEN_RADIUS * cos(alpha + PI + PI*lambda);
   result[1] = INNEN_RADIUS * sin(alpha + PI + PI*lambda);
+
+  return(0);
+}
+
+static INT kreisBoundaryUpper3 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+  DOUBLE_VECTOR x,y,z;
+
+  lambda = param[0];
+
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+
+  x[0] = INNEN_RADIUS * cos(alpha-0.0) * 0.8;
+  x[1] = INNEN_RADIUS * sin(alpha-0.0) * 0.8;
+  y[0] = INNEN_RADIUS * cos(alpha + PI-0.0) * 0.8;
+  y[1] = INNEN_RADIUS * sin(alpha + PI-0.0) * 0.8;
+  z[0] = INNEN_RADIUS * cos(alpha + PI * 0.5-0.0) * 0.3;
+  z[1] = INNEN_RADIUS * sin(alpha + PI * 0.5-0.0) * 0.3;
+  if (lambda <= 0.5) {
+    result[0] = x[0] * (1 - lambda*2) + z[0] * lambda*2
+                * (lambda - 0.4)/0.1;
+    result[1] = x[1] * (1 - lambda*2) + z[1] * lambda*2
+                * (lambda - 0.4)/0.1;
+  }
+  else {
+    result[0] = z[0] * (1 - (lambda-0.5)*2)
+                * (lambda - 0.4)/0.1
+                + y[0] * (lambda-0.5)*2;
+    result[1] = z[1] * (1 - (lambda-0.5)*2)
+                * (lambda - 0.4)/0.1
+                + y[1] * (lambda-0.5)*2;
+  }
+
+  return(0);
+}
+
+static INT kreisBoundaryLower3 (void *data, DOUBLE *param, DOUBLE *result)
+{
+  DOUBLE lambda;
+  DOUBLE_VECTOR x,y,z;
+
+  lambda = param[0];
+
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+
+  x[0] = INNEN_RADIUS * cos(alpha + PI-0.0) * 0.8;
+  x[1] = INNEN_RADIUS * sin(alpha + PI-0.0) * 0.8;
+  y[0] = INNEN_RADIUS * cos(alpha-0.0) * 0.8;
+  y[1] = INNEN_RADIUS * sin(alpha-0.0) * 0.8;
+  z[0] = INNEN_RADIUS * cos(alpha + PI * 1.5-0.0) * 0.3;
+  z[1] = INNEN_RADIUS * sin(alpha + PI * 1.5-0.0) * 0.3;
+  if (lambda <= 0.5) {
+    result[0] = x[0] * (1 - lambda*2) + z[0] * lambda*2
+                * (lambda - 0.4)/0.1;
+    result[1] = x[1] * (1 - lambda*2) + z[1] * lambda*2
+                * (lambda - 0.4)/0.1;
+  }
+  else {
+    result[0] = z[0] * (1 - (lambda-0.5)*2)
+                * (lambda - 0.4)/0.1
+                + y[0] * (lambda-0.5)*2;
+    result[1] = z[1] * (1 - (lambda-0.5)*2)
+                * (lambda - 0.4)/0.1
+                + y[1] * (lambda-0.5)*2;
+  }
+
+  return(0);
+}
+
+static const INT ring1_sd2p[3] = {0,0,3};
+static const INT ring1_sg2p[8] = {0,0,1,1,2,2,0,0};
+static const INT ring1_pt2p[8] = {0,0,1,1,2,2,0,0};
+static const DOMAIN_PART_INFO ring1_dpi = {ring1_sd2p,ring1_sg2p,ring1_pt2p};
+
+static INT InitRings1 (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  MidPoint[0] = MidPoint[1] = 0.0;
+  radius = 1.05;
+
+  if (CreateDomainWithParts("Rings1",MidPoint,radius,8,8,NO,3,&ring1_dpi)
+      ==NULL) return(1);
+
+  if (CreateBoundarySegment2D("ring2 bnd upper",
+                              1,0,0,0,1,20,0.0,1.0,
+                              kreisBoundaryUpper,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring2 bnd lower",
+                              1,0,1,1,0,20,0.0,1.0,
+                              kreisBoundaryLower,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring2 inner bnd upper",
+                              2,1,2,2,3,20,0.0,1.0,
+                              kreisBoundaryUpper1,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring2 inner bnd lower",
+                              2,1,3,3,2,20,0.0,1.0,
+                              kreisBoundaryLower1,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring2 inner2 bnd upper",
+                              2,1,4,4,5,20,0.0,1.0,
+                              kreisBoundaryUpper2,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring2 inner2 bnd lower",
+                              2,1,5,5,4,20,0.0,1.0,
+                              kreisBoundaryLower2,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring2 inner3 bnd upper",
+                              0,1,6,6,7,20,0.0,1.0,
+                              kreisBoundaryUpper3,NULL)==NULL)
+    return(1);
+  if (CreateBoundarySegment2D("ring2 inner3 bnd lower",
+                              0,1,7,7,6,20,0.0,1.0,
+                              kreisBoundaryLower3,NULL)==NULL)
+    return(1);
 
   return(0);
 }
@@ -4880,6 +4998,14 @@ INT STD_BVP_Configure (INT argc, char **argv)
       alpha = 0.0;
     }
   }
+  else if (strcmp(DomainName,"Rings1") == 0) {
+    if (ReadArgvDOUBLE("dalpha",&dalpha,argc,argv) == 0) {
+      alpha += dalpha;
+    }
+    else if (ReadArgvDOUBLE("alpha",&alpha,argc,argv)) {
+      alpha = 0.0;
+    }
+  }
   else if (strcmp(DomainName,"Skin") == 0) {
     if (ReadArgvDOUBLE("L",&L,argc,argv))
     {
@@ -5032,6 +5158,11 @@ INT STD_BVP_Configure (INT argc, char **argv)
     else if (strcmp(DomainName,"Rings") == 0)
     {
       if (InitRings())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Rings1") == 0)
+    {
+      if (InitRings1())
         return(1);
     }
     else if (strcmp(DomainName,"Holes") == 0)
