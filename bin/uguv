@@ -1,0 +1,31 @@
+#!/usr/local/bin/perl
+
+$ENV{'UGROOT'} or die "define environment-var 'UGROOT'\n";
+if (!@ARGV) {die "usage: uguv <name>\n";} 
+
+$gm=$ENV{'UGROOT'}.'/gm';
+open(MGIOH,$gm."/mgio.h");
+while(<MGIOH>)
+{
+	if (/(UG_IO_\d.\d)/)
+	{
+		$version=$1;
+	}
+}
+$n=@ARGV;
+for ($i=0; $i<$n; $i++)
+{
+	print "updating '".$ARGV[$i]."' to version '".$version."'\n";
+	close(MGIOH);
+	open(MG,$ARGV[$i]);
+	open(MGUP,">foo");
+	while(<MG>)
+	{
+		s/UG_IO_\d.\d/$version/g;
+		print MGUP;
+	}
+	close(MG);
+	close(MGUP);
+	@args=('mv foo '.$ARGV[$i]); system(@args);
+}
+
