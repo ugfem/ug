@@ -114,6 +114,12 @@
 #endif
 #endif
 
+#ifdef ModelP
+#define MODEL "PARALLEL"
+#else
+#define MODEL "SEQUENTIAL"
+#endif
+
 #undef __GRAPE_TRUE__
 #ifdef _3
 #ifdef GRAPET
