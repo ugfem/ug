@@ -30,6 +30,10 @@
 #ifndef __DEBUG__
 #define __DEBUG__
 
+#ifndef __GENERAL__
+#include "general.h"
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -65,6 +69,7 @@
 /*																			*/
 /****************************************************************************/
 
+typedef int (*PrintDebugProcPtr)(const char *, ...);
 
 /****************************************************************************/
 /*																			*/
@@ -72,7 +77,7 @@
 /*																			*/
 /****************************************************************************/
 
-#ifdef Debug
+#if (defined Debug && !defined compile_debug)
 
 extern int Debuginit;
 extern int Debugdddif;
@@ -92,6 +97,9 @@ extern int Debugui;
 /*																			*/
 /****************************************************************************/
 
-void PrintDebug (char *format, ...);
+void SetPrintDebugProc          (PrintDebugProcPtr print);
+void PrintDebug                         (const char *format, ...);
+int  PrintDebugToFile           (const char *format, ...);
+int  SetPrintDebugToFile        (const char *fname);
 
 #endif

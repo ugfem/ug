@@ -29,15 +29,17 @@
 /*																			*/
 /****************************************************************************/
 
+#include "general.h"
+
 #ifdef Debug
+#define compile_debug
 
 #include <stdio.h>
 #include <stdarg.h>
 
 #include "devices.h"
-
-#include "general.h"
-
+#include "fileopen.h"
+#include "debug.h"
 
 /****************************************************************************/
 /*																			*/
@@ -57,8 +59,6 @@
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
-
-typedef int (*PrintDebugProcPtr)(const char *, ...);
 
 /****************************************************************************/
 /*																			*/
@@ -87,7 +87,8 @@ extern int me, master;
 /*																			*/
 /****************************************************************************/
 
-PrintDebugProcPtr printdebug=printf;
+static PrintDebugProcPtr printdebug=printf;
+static FILE                                     *debugfile;
 
 /* RCS string */
 RCSID("$Header$",UG_RCS_STRING)
@@ -148,8 +149,36 @@ void SetPrintDebugProc (PrintDebugProcPtr print)
   printdebug = print;
 }
 
+int PrintDebugToFile (const char *format, ...)
+{
+  char buffer[256];
+  va_list args;
 
-int InitDebug()
+  /* initialize args */
+  va_start(args,format);
+
+  vsprintf(buffer,format,args);
+
+  fprintf(debugfile,buffer);
+
+  /* garbage collection */
+  va_end(args);
+
+  return (0);
+}
+
+int SetPrintDebugToFile (const char *fname)
+{
+  if ((debugfile=fileopen(fname,"w"))==NULL)
+    return (1);
+
+  SetPrintDebugProc(PrintDebugToFile);
+
+  return (0);
+}
+
+
+static int InitDebug()
 {
   SetPrintDebugProc(printf);
   return(0);
