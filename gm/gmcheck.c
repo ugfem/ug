@@ -541,10 +541,11 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 	    #endif
 				UserWriteF(PFMT "elem=" EID_FMTX " edge%d=" EDID_FMTX " midnode NID=NULL" 
 				" BUT REFINE(elem)=RED\n",me,EID_PRTX(theElement),i,EDID_PRTX(theEdge));
+				nerrors++;
 		#ifdef ModelP
 		ENDDEBUG
 	    #endif
-			return(nerrors++);
+			return(nerrors);
 		}
 		else
 			return(nerrors);
@@ -666,44 +667,81 @@ PAR(
 			if (j == SIDES_OF_ELEM(NbElement))
 			{
 				*SideError |= (1<<i);
+				UserWriteF(PFMT "elem=" EID_FMTX " has side error\n",
+					me,EID_PRTX(theElement));
 				nerrors++;
 			}
 			else
 			{
 				/* if this is a boundary side it has to be an inner boundary 
-				   and the neighbour side is also a boundary side */
+				   and the neighbor side is also a boundary side */
 				/* TODO: check boundary side for NbElement==NULL */
 				if (OBJT(theElement) == BEOBJ)
 					if (SIDE_ON_BND(theElement,i))
 					{
-						INT id,nbid,id_nb,nbid_nb,part;
+						INT err,id,nbid,id_nb,nbid_nb,part;
 						
-						if (BNDS_BndSDesc(ELEM_BNDS(theElement,i),&id,&nbid,&part))
+						if (err = BNDS_BndSDesc(ELEM_BNDS(theElement,i),&id,&nbid,&part))
+						{
 							bserror |= (1<<i);
+							UserWriteF(PFMT "elem=" EID_FMTX " ERROR BNDS_BndSDesc(%d) returned err=%d\n",
+								me,EID_PRTX(theElement),i,err);
+						}
 						else
 						{
 							if ((id==0) || (nbid==0))
+							{
 								/* no interior boundary */
+								UserWriteF(PFMT "elem=" EID_FMTX " ERROR BNDS_BndSDesc(%d) returned id=%d nbid=%d\n",
+									me,EID_PRTX(theElement),i,id,nbid);
 								bserror |= (1<<i);
+							}
 							if (id==nbid)
+							{
 								/* should be avoided */
+								UserWriteF(PFMT "elem=" EID_FMTX " ERROR BNDS_BndSDesc(%d) returned id=%d nbid=%d\n",
+									me,EID_PRTX(theElement),i,id,nbid);
 								bserror |= (1<<i);
+							}
 							
 							/* check neighbour */
 							if (!SIDE_ON_BND(NbElement,j))
+							{
+								UserWriteF(PFMT "elem=" EID_FMTX " ERROR nb=" EID_FMTX " nbside=%d not on boundary id=%d nbid=%d\n",
+									me,EID_PRTX(theElement),EID_PRTX(theElement),j,id,nbid);
 								bserror |= (1<<i);
+							}
 							else
 							{
 								if (BNDS_BndSDesc(ELEM_BNDS(NbElement,j),&id_nb,&nbid_nb,&part))
+								{
+									UserWriteF(PFMT "nb=" EID_FMTX " ERROR BNDS_BndSDesc(%d) returned id=%d nbid=%d\n",
+										me,EID_PRTX(NbElement),j,id,nbid);
 									bserror |= (1<<i);
+								}
 								else
 								{
 									if (id!=nbid_nb)
+									{
+										UserWriteF(PFMT "nb=" EID_FMTX " ERROR nbside=%d id=%d unequal nbid_nb=%d\n",
+											me,EID_PRTX(NbElement),j,id,nbid);
 										bserror |= (1<<i);
+									}
 									if (nbid!=id_nb)
+									{
+										UserWriteF(PFMT "nb=" EID_FMTX " ERROR nbside=%d nbid=%d unequal id_nb=%d\n",
+											me,EID_PRTX(NbElement),j,id,nbid);
 										bserror |= (1<<i);
+									}
 								}
 							}
+						}
+						if (bserror) 
+						{
+							UserWriteF(PFMT "elem=" EID_FMTX " nb=" EID_FMTX 
+								" elemsubdom=%d nbsubdom=%d\n",
+								me,EID_PRTX(theElement),EID_PRTX(NbElement),
+								SUBDOMAIN(theElement),SUBDOMAIN(NbElement));
 						}
 					}
 			}
@@ -1004,7 +1042,12 @@ if (0)			nerrors++;
 	}
 	
 	if (bserror)
+	{
+		UserWriteF(PFMT "theElement=" EID_FMTX 
+				" bserror=%d\n",
+				me,EID_PRTX(theElement),bserror);
 		nerrors++;
+	}
 	if (nerrors > 0)
 	{
 		UserWriteF("ELEM(" EID_FMTX "): element has %d errors\n",
@@ -1376,8 +1419,6 @@ static INT CheckGeometry (GRID *theGrid)
 				/* back pointer failure */
 				if (SideError & 1<<i)
 				{
-					errors++;
-
 					UserWriteF("   SIDE[%d]=(",i);
 					for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 					{
@@ -1388,6 +1429,8 @@ static INT CheckGeometry (GRID *theGrid)
 					}
 					UserWriteF(") has neighbour=" EID_FMTX " but a backPtr does not exist\n",
 						EID_PRTX(NBELEM(theElement,i)));
+
+					errors++;
 				}
 
 				/* neighbor pointer failure */
