@@ -2575,7 +2575,7 @@ INT PrintMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
           UserWrite("wrong type\n");
         Mcomp = MD_MCMP_OF_RT_CT(Mat,rtype,ctype,i*ccomp);
         for (j=0; j<ccomp; j++)
-          UserWriteF("%4.2f ",MVALUE(m,Mcomp+j));
+          UserWriteF("%16.8e ",MVALUE(m,Mcomp+j));
       }
       UserWrite("\n");
     }
