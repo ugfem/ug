@@ -1417,6 +1417,9 @@ INT FAMGTransferInit (NP_BASE *theNP, INT argc, char **argv)
 	if (ReadArgvINT("coarsegridsolver",&(famgtrans->coarsegridsolver),argc,argv))
         famgtrans->coarsegridsolver = 1;
 	
+	if (ReadArgvINT("coarsegridagglo",&(famgtrans->coarsegridagglo),argc,argv))
+        famgtrans->coarsegridagglo = 0;
+	
 	//famgtrans->ConsMat = ReadArgvMatDesc(famgtrans->amg_trans.transfer.base.mg,"ConsMat",argc,argv);
 
 	famgtrans->smooth_sol = NULL;	// default to detect errors
@@ -1484,10 +1487,13 @@ INT FAMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 #ifdef ModelP
 	// coarse grid agglomeration
 //prm(mg->bottomLevel,0);
-	AMGAgglomerate(mg);
-	l_amgmatrix_collect(GRID_ON_LEVEL(mg,mg->bottomLevel),A);
-	UserWrite("coarse grid agglomerated\n");
-	printf("%d: coarse grid agglomerated\n", me);
+	if( np->coarsegridagglo )
+	{
+		AMGAgglomerate(mg);
+		l_amgmatrix_collect(GRID_ON_LEVEL(mg,mg->bottomLevel),A);
+		UserWrite("coarse grid agglomerated\n");
+		printf("%d: coarse grid agglomerated\n", me);
+	}
 //prm(mg->bottomLevel,0);
 #endif
 	

@@ -62,6 +62,7 @@ typedef struct
 
   INT famg_mark_key;
   INT coarsegridsolver;
+  INT coarsegridagglo;
 
   VECDATA_DESC *smooth_sol;                     /* for the fine grid smoother */
   VECDATA_DESC *smooth_def;                     /* for the fine grid smoother */
