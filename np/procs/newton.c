@@ -59,7 +59,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-#define MAX_LINE_SEARCH                 10
+#define MAX_LINE_SEARCH                 20
 #define LINE_SEARCH_REDUCTION   0.5
 
 REP_ERR_FILE;
@@ -104,7 +104,8 @@ typedef struct
   INT maxLineSearch;                            /* maximum number of line search steps			*/
   DOUBLE rhoReass;                              /* reassemble if nonlin conv worth than this    */
   DOUBLE lambda;                                /* nonlinear damp factor in $step and $nmg_step */
-  DOUBLE linMinRed[MAX_VEC_COMP];         /* minimum reduction for linear solver	*/
+  DOUBLE linMinRed[MAX_VEC_COMP];      /* minimum reduction for linear solver		*/
+  DOUBLE scale[MAX_VEC_COMP];       /* scaling of components						*/
   DOUBLE divFactor[MAX_VEC_COMP];         /* divergence factor for nonlin iteration	*/
 
   /* and XDATA_DESCs */
@@ -202,7 +203,8 @@ typedef struct
    D*/
 /****************************************************************************/
 
-static INT NonLinearDefect (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x, NP_NEWTON *newton, NP_NL_ASSEMBLE *ass, VEC_SCALAR defect)
+static INT NonLinearDefect (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x,
+                            NP_NEWTON *newton, NP_NL_ASSEMBLE *ass, VEC_SCALAR defect)
 {
   LRESULT lr;                           /* result of linear solver				*/
   INT i,error,n_unk;
@@ -431,7 +433,10 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   for (i=0; i<n_unk; i++) res->first_defect[i] = defect[i];
 
   /* compute single norm */
-  s = 0.0; for (i=0; i<n_unk; i++) s += defect[i]*defect[i];s = sqrt(s);
+  s = 0.0;
+  for (i=0; i<n_unk; i++)
+    s += newton->scale[i]*newton->scale[i]*defect[i]*defect[i];
+  s = sqrt(s);
   sprime = s;
   sold = s * sqrt(2.0);
   sred = 1.0E10; for (i=0; i<n_unk; i++) sred = MIN(sred,reduction[i]);
@@ -619,8 +624,9 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
       /* compute single norm */
       sold = sprime;
-      sprime = 0.0; for (i=0; i<n_unk; i++)
-        sprime += defect[i]*defect[i];
+      sprime = 0.0;
+      for (i=0; i<n_unk; i++)
+        sprime += newton->scale[i]*newton->scale[i]*defect[i]*defect[i];
       sprime = sqrt(sprime);
 
       rho[kk] = sprime/s;
@@ -836,6 +842,10 @@ static INT NewtonInit (NP_BASE *base, INT argc, char **argv)
       PrintErrorMessage('E',"NewtonInit","linminred must be in (0,1)");
       REP_ERR_RETURN(NP_NOT_ACTIVE);
     }
+
+  if (sc_read(newton->scale,NP_FMT(newton),newton->s,"scale",argc,argv))
+    for (i=0; i<MAX_VEC_COMP; i++)
+      newton->scale[i] = 1.0;
 
   if (sc_read(newton->divFactor,NP_FMT(newton),newton->s,"divfac",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++)
