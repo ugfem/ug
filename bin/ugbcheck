@@ -16,6 +16,9 @@ case `/bin/uname` in
 	HP-UX)
 		AWK=awk
 		;;
+	"Paragon OSF/1")
+		AWK=/usr/bin/nawk
+		;;
 	*)
 		AWK=nawk
 		;;
