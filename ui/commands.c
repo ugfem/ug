@@ -659,13 +659,13 @@ static INT CreateMetafileNameCommand (INT argc, char **argv)
 
 static INT ReadClockCommand (INT argc, char **argv)
 {
-  clock_t Time;
+  DOUBLE Time;
 
   NO_OPTION_CHECK(argc,argv);
 
-  Time = (clock()-Time0)/((float) CLOCKS_PER_SEC);
+  Time = (clock()-Time0)/((DOUBLE) CLOCKS_PER_SEC);
 
-  if (SetStringValue(":CLOCK",(double) Time)!=0)
+  if (SetStringValue(":CLOCK",Time)!=0)
   {
     PrintErrorMessage('E',"readclock","could not get string variable :CLOCK");
     return (CMDERRORCODE);
@@ -2072,7 +2072,8 @@ static INT LogOffCommand (INT argc, char **argv)
     return (OKCODE);
   }
 
-  CloseLogFile();
+  if (CloseLogFile()!=0)
+    PrintErrorMessage('W',"logoff","no logfile open");
 
   return(OKCODE);
 }
@@ -4952,6 +4953,82 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   shellorderv - order the vectors shell by shell
+
+
+   DESCRIPTION:
+   This command orders the vectors of the current level of the current
+   multigrid in shells starting from a seed.
+
+   'shellorderv f | l | s'
+
+   .  f - take first vector as seed
+   .  l - take last vector as seed
+   .  s - take selected vector as seed
+
+   D*/
+/****************************************************************************/
+
+static INT ShellOrderVectorsCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  GRID *theGrid;
+  VECTOR *seed;
+  char option;
+
+  NO_OPTION_CHECK(argc,argv);
+
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"shellorderv","no open multigrid");
+    return (CMDERRORCODE);
+  }
+  theGrid = GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
+
+  if (sscanf(argv[0],"shellorderv %c",&option)!=1)
+  {
+    PrintErrorMessage('E',"shellorderv","specify f, l or s");
+    return (CMDERRORCODE);
+  }
+
+  switch (option)
+  {
+  case 'f' :
+    seed = FIRSTVECTOR(theGrid);
+    break;
+  case 'l' :
+    seed = LASTVECTOR(theGrid);
+    break;
+  case 's' :
+    if (SELECTIONMODE(theMG)!=vectorSelection)
+    {
+      PrintErrorMessage('E',"shellorderv","no vector selection");
+      return (CMDERRORCODE);
+    }
+    if (SELECTIONSIZE(theMG)!=1)
+    {
+      PrintErrorMessage('E',"shellorderv","select ONE vector");
+      return (CMDERRORCODE);
+    }
+    seed = (VECTOR *)SELECTIONOBJECT(theMG,0);
+    break;
+  default :
+    PrintErrorMessage('E',"shellorderv","specify f, l or s");
+    return (CMDERRORCODE);
+  }
+
+  if (ShellOrderVectors(theGrid,seed)!=0)
+  {
+    PrintErrorMessage('E',"shellorderv","ShellOrderVectors failed");
+    return (CMDERRORCODE);
+  }
+  else
+    return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
    orderv - order the vectors according to the user provided dependencies
 
 
@@ -5103,6 +5180,39 @@ static INT OrderVectorsCommand (INT argc, char **argv)
   }
 
   return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   setindex - set vector index in ascending order
+
+   DESCRIPTION:
+   'setindex' sets the vector index in ascending order.
+   D*/
+/****************************************************************************/
+
+static INT SetIndexCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  GRID *theGrid;
+
+  NO_OPTION_CHECK(argc,argv);
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"orderv","no open multigrid");
+    return (CMDERRORCODE);
+  }
+  theGrid = GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
+
+  if (l_setindex(theGrid)!=0)
+  {
+    PrintErrorMessage('E',"setindex","l_setindex failed");
+    return (CMDERRORCODE);
+  }
+  else
+    return (OKCODE);
 }
 
 /****************************************************************************/
@@ -5469,9 +5579,78 @@ static INT SelectCommand (INT argc, char **argv)
 
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
-      PrintHelp("find",HELPITEM,buffer);
+      PrintHelp("select",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   extracon - display or delete extra connections
+
+   DESCRIPTION:
+   This command displays or deleteâ extra connections.
+
+   'extracon [$d]'
+
+   .  $c - also check the connections
+   D*/
+/****************************************************************************/
+
+static INT ExtraConnectionCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  GRID *theGrid;
+  VECTOR *vec;
+  MATRIX *mat;
+  INT delete,i,nextra;
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"extracon","no open multigrid");
+    return (CMDERRORCODE);
+  }
+
+  /* check options */
+  delete = FALSE;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'd' :
+      delete = TRUE;
+      break;
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintHelp("extracon",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
+  theGrid = GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
+
+  /* count extra connections on current level */
+  nextra = 0;
+  for (vec=FIRSTVECTOR(theGrid); vec!=NULL; vec=SUCCVC(vec))
+    for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+      if (CEXTRA(MMYCON(mat)))
+        nextra++;
+  nextra /= 2;                  /* have been counted twice */
+
+  UserWriteF("%d extra connections on level %d (total %d)\n",(int)nextra,(int)CURRENTLEVEL(theMG),(int)NC(theGrid));
+
+  SetStringValue(":extraconratio",nextra/((DOUBLE)NC(theGrid)));
+
+  if (delete)
+  {
+    if (DisposeExtraConnections(theGrid)!=GM_OK)
+    {
+      PrintErrorMessage('E',"extracon","deleting extra connections failed");
+      return (CMDERRORCODE);
+    }
+    UserWrite("...deleted\n");
+  }
 
   return (OKCODE);
 }
@@ -8266,11 +8445,12 @@ static INT ClearCommand (INT argc, char **argv)
    This command reinitializes the problem with the user defined reinit of the
    problem
 
-   'reinit [$d <domain> $p <problem>]'
+   'reinit [$d <domain> $p <problem>] [reinit options]'
 
-   .  no~option - reinit the problem of the current multigrid
+   .  no~option			  - reinit the problem of the current multigrid
    .  $d~<domain>            - domain to initialize (default is the domain of the current mg)
    .  $p~<problem>           - problem to initialize (default is the problem of the current mg)
+   .  reinit~options		  - these options will be passed to the problem defined reinit procedure
    D*/
 /****************************************************************************/
 
@@ -8420,6 +8600,7 @@ static INT ExecuteNumProcCommand (INT argc, char **argv)
   char theNumProcName[NAMESIZE];
   NUM_PROC *theNumProc;
   MULTIGRID *theMG;
+  INT err;
 
   /* get NumProc */
   if ((sscanf(argv[0],expandfmt(CONCAT3(" npexecute %",NAMELENSTR,"[ -~]")),theNumProcName)!=1) || (strlen(theNumProcName)==0))
@@ -8448,9 +8629,9 @@ static INT ExecuteNumProcCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (ExecuteNumProc(theNumProc,theMG,argc,argv))
+  if ((err=ExecuteNumProc(theNumProc,theMG,argc,argv))!=0)
   {
-    sprintf(buffer,"execution of '%s' failed",theNumProcName);
+    sprintf(buffer,"execution of '%s' failed (error code %d)",theNumProcName,err);
     PrintErrorMessage('E',"npexecute",buffer);
     return (CMDERRORCODE);
   }
@@ -9339,6 +9520,9 @@ INT InitCommands ()
   if (CreateCommand("ordernodes",         OrderNodesCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("lexorderv",          LexOrderVectorsCommand                  )==NULL) return (__LINE__);
   if (CreateCommand("orderv",             OrderVectorsCommand                     )==NULL) return (__LINE__);
+  if (CreateCommand("shellorderv",        ShellOrderVectorsCommand                )==NULL) return (__LINE__);
+  if (CreateCommand("setindex",           SetIndexCommand                                 )==NULL) return (__LINE__);
+  if (CreateCommand("extracon",           ExtraConnectionCommand                  )==NULL) return (__LINE__);
   if (CreateCommand("check",                      CheckCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("in",                         InsertInnerNodeCommand                  )==NULL) return (__LINE__);
   if (CreateCommand("bn",                         InsertBoundaryNodeCommand               )==NULL) return (__LINE__);
