@@ -333,7 +333,7 @@ INT AllocMDFromVRowVCol (MULTIGRID *theMG, INT fl, INT tl,
 INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
                    const VECDATA_DESC *x, const VECDATA_DESC *y, MATDATA_DESC **new_desc);
 INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
-                   const MATDATA_DESC *template_desc, MATDATA_DESC **new_desc);
+                   MATDATA_DESC *template_desc, MATDATA_DESC **new_desc);
 
 /* locking of vector and matrix descriptors */
 INT LockVD (MULTIGRID *theMG, VECDATA_DESC *vd);

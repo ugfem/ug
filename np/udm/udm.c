@@ -2905,7 +2905,7 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
 /****************************************************************************/
 
 INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
-                   const MATDATA_DESC *md, MATDATA_DESC **new_desc)
+                   MATDATA_DESC *md, MATDATA_DESC **new_desc)
 {
   MATDATA_DESC *mdnew;
 
