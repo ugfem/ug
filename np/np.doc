@@ -303,13 +303,13 @@ MAT, sol and rhs will be created by 'npinit mgs' and locked.
 
 .vb
 mgs --> | Alloc vec00
-        | lmgc        | Alloc vec01
-		|			  |	--> transfer
-        |             | --> smooth
-        |             | Free vec01
-        |             | --> basesolver | Alloc vec01
-	    |                              | --> smooth
-        |                              | Free vec01
+        | --> lmgc | Alloc vec01
+		|     	   | --> transfer
+        |          | --> smooth
+        |          | Free vec01
+        |          | --> basesolver | Alloc vec01
+	    |                           | --> smooth
+        |                           | Free vec01
         | Free vec00
 .ve                                    
 
