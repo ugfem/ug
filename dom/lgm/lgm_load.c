@@ -71,7 +71,7 @@ typedef int (*ReadSizesProc)(LGM_SIZES *lgm_sizes);
 typedef int (*ReadSubDomainProc)(int i, LGM_SUBDOMAIN_INFO *subdom_info);
 typedef int (*ReadLinesProc)(int i, LGM_LINE_INFO *line_info);
 typedef int (*ReadPointsProc)(LGM_POINT_INFO *lgm_point_info);
-typedef int (*ReadMeshProc)(HEAP *theHeap, LGM_MESH_INFO *lgm_mesh_info);
+typedef int (*ReadMeshProc)(HEAP *theHeap, LGM_MESH_INFO *lgm_mesh_info, INT MarkKey);
 
 #if (LGM_DIM==3)
 typedef int (*ReadSurfaceProc)(int i, LGM_SURFACE_INFO *surface_info);
@@ -289,7 +289,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   return (theDomain);
 }
 
-INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh)
+INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh, INT MarkKey)
 {
   /* if impossible to read mesh, return 1 */
   if (ReadMesh==NULL) return (1);
@@ -594,7 +594,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   return (theDomain);
 }
 
-INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh)
+INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh, INT MarkKey)
 {
   LGM_MESH_INFO lgm_mesh_info;
   INT i;
@@ -603,7 +603,7 @@ INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh)
   if (ReadMesh==NULL) return (1);
 
   /* do the right thing */
-  if ((*ReadMesh)(theHeap,&lgm_mesh_info)) return (1);
+  if ((*ReadMesh)(theHeap,&lgm_mesh_info,MarkKey)) return (1);
 
   /* copy mesh_info to mesh and create BNDPs */
   theMesh->nBndP                    = lgm_mesh_info.nBndP;
