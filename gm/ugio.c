@@ -106,9 +106,7 @@
 #define EORPHAN(e)              (EFATHER(e)==NULL || THEFLAG(e))
 
 /* define this for reconstruction of vertical node pointers */
-/*
-   #define __ConnectVerticalOverlap__
- */
+#define __ConnectVerticalOverlap__
 
 /****************************************************************************/
 /*																			*/
@@ -1667,7 +1665,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   }
 
   /* save refinement */
-  refinement = (MGIO_REFINEMENT *)GetTmpMem(theHeap,(hr_max+1)*MGIO_REFINEMENT_SIZE,MarkKey);                   /* size according to procs==1 or procs>1 (see mgio.h) */
+  refinement = (MGIO_REFINEMENT *)GetTmpMem(theHeap,MGIO_REFINEMENT_SIZE,MarkKey);                      /* size according to procs==1 or procs>1 (see mgio.h) */
   if (refinement==NULL) {UserWriteF("ERROR: cannot allocate %ld bytes for refinement\n",(long)hr_max*MGIO_REFINEMENT_SIZE); REP_ERR_RETURN(1);}
   if (procs>1) tl=TOPLEVEL(theMG);
   else tl=0;
