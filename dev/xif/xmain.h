@@ -46,28 +46,35 @@
 #define XUI             0x1
 #define CUI             0x2
 #define GUI             0x4
+#define NUI             0x8
 #define XGUI            0x5
 #define CGUI            0x6
+#define CNUI            0xa
 
-#define CUITOGGLE               2
+#define CUITOGGLE               0x2
 
 #define XUI_STRING      "x"
 #define CUI_STRING      "c"
 #define GUI_STRING      "g"
+#define NUI_STRING      "n"
 #define XGUI_STRING     "xg"
 #define CGUI_STRING     "cg"
+#define CNUI_STRING     "cn"
 
 #define CUI_ON          (user_interface & CUI)
 #define XUI_ON          (user_interface & XUI)
 #define GUI_ON          (user_interface & GUI)
+#define NUI_ON          (user_interface & NUI)
 
 #define SET_CUI_ON      (user_interface |= CUI)
 #define SET_XUI_ON      (user_interface |= XUI)
 #define SET_GUI_ON      (user_interface |= GUI)
+#define SET_NUI_ON      (user_interface |= NUI)
 
 #define SET_CUI_OFF     (user_interface &= ~CUI)
 #define SET_XUI_OFF     (user_interface &= ~XUI)
 #define SET_GUI_OFF     (user_interface &= ~GUI)
+#define SET_NUI_OFF     (user_interface &= ~NUI)
 
 #define TOGGLE_CUI      {int tmp=cui; cui=CUI_ON; \
                          if (tmp) SET_CUI_ON;else SET_CUI_OFF;}

@@ -519,7 +519,7 @@ INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask)
 INT GetNextUGEvent (EVENT *theEvent, INT EventMask)
 {
   if (CUI_ON) GetNextUGEvent_CUI (theEvent,EventMask);
-  else GetNextUGEvent_XUI (theEvent,EventMask);
+  else if (!NUI_ON) GetNextUGEvent_XUI (theEvent,EventMask);
   return(0);
 }
 
@@ -575,21 +575,25 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
       {
         fprintf(stderr,"%s: invalid use of option -ui [selected_ui]\n",prog_name);
         fprintf(stderr,"%s: choose for option -ui [" XUI_STRING "|" CUI_STRING "|"
-                GUI_STRING "|" XGUI_STRING "|" CGUI_STRING "]\n",prog_name);
+                NUI_STRING "|" GUI_STRING "|" XGUI_STRING "|"
+                CGUI_STRING "|" CNUI_STRING "]\n",prog_name);
         exit(-1);
       }
 
       if (strcmp(buffer,XUI_STRING)==0)       { user_interface = XUI; ok = 1; }
       if (strcmp(buffer,CUI_STRING)==0)       { user_interface = CUI; ok = 1; }
       if (strcmp(buffer,GUI_STRING)==0)       { user_interface = GUI; ok = 1; }
+      if (strcmp(buffer,NUI_STRING)==0)       { user_interface = NUI; ok = 1; }
       if (strcmp(buffer,XGUI_STRING)==0)      { user_interface = XGUI; ok = 1; }
       if (strcmp(buffer,CGUI_STRING)==0)      { user_interface = CGUI; ok = 1; }
+      if (strcmp(buffer,CNUI_STRING)==0)      { user_interface = CNUI; ok = 1; }
 
       if (!ok)
       {
         fprintf(stderr,"%s: invalid use of option -ui [selected_ui]\n",prog_name);
         fprintf(stderr,"%s: choose for option -ui [" XUI_STRING "|" CUI_STRING "|"
-                GUI_STRING "|" XGUI_STRING "|" CGUI_STRING "]\n",prog_name);
+                NUI_STRING "|" GUI_STRING "|" XGUI_STRING "|"
+                CGUI_STRING "|" CNUI_STRING "]\n",prog_name);
         exit(-1);
       }
 
@@ -598,6 +602,8 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
       i -= 1;
       *argcp -= 2;
     }
+
+  if (NUI_ON) { *error = 0; return(NULL); }
 
         #ifdef USE_XAW
   /* set input focus to true, due to problems with some
@@ -683,7 +689,7 @@ void WriteString (const char *s)
                 #endif
     /* printf("%s",s); */
   }
-  else
+  else if (!NUI_ON)
   {
     ShellInsertString(&shell,s);
     return;
