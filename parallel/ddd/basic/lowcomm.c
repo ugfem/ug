@@ -190,8 +190,8 @@ static char *theRecvBuffer;
 static LC_MSGHANDLE *theRecvArray;
 static MSG_DESC *LC_FreeMsgDescs;
 
-static AllocFunc _SendAlloc, _RecvAlloc;
-static FreeFunc _SendFree,  _RecvFree;
+static AllocFunc _DefaultAlloc, _SendAlloc, _RecvAlloc;
+static FreeFunc _DefaultFree,  _SendFree,  _RecvFree;
 
 
 /****************************************************************************/
@@ -225,10 +225,9 @@ void LC_Init (AllocFunc aAllocFunc, FreeFunc aFreeFunc)
 
   LC_FreeMsgDescs = NULL;
 
-  _SendAlloc = aAllocFunc;
-  _SendFree  = aFreeFunc;
-  _RecvAlloc = aAllocFunc;
-  _RecvFree  = aFreeFunc;
+  _DefaultAlloc = aAllocFunc;
+  _DefaultFree  = aFreeFunc;
+  LC_SetMemMgrDefault();
 }
 
 
@@ -249,16 +248,39 @@ void LC_Exit (void)
 
 /**
         Customizing memory management for LowComm subsystem.
-        Currently this function supports only alloc/free of message buffers.
+        Currently this function supports only alloc/free of
+        buffers for messages to be sent.
  */
-
-void LC_SetMemMgr (AllocFunc send_alloc, FreeFunc send_free,
-                   AllocFunc recv_alloc, FreeFunc recv_free)
+void LC_SetMemMgrSend (AllocFunc aAllocFunc, FreeFunc aFreeFunc)
 {
-  _SendAlloc = send_alloc;
-  _SendFree  = send_free;
-  _RecvAlloc = recv_alloc;
-  _RecvFree  = recv_free;
+  _SendAlloc = aAllocFunc;
+  _SendFree  = aFreeFunc;
+}
+
+
+/**
+        Customizing memory management for LowComm subsystem.
+        Currently this function supports only alloc/free of
+        buffers for messages to be received.
+ */
+void LC_SetMemMgrRecv (AllocFunc aAllocFunc, FreeFunc aFreeFunc)
+{
+  _RecvAlloc = aAllocFunc;
+  _RecvFree  = aFreeFunc;
+}
+
+
+/**
+        Set memory management for LowComm subsystem to its default state.
+        Set alloc/free of message buffers to the functions provided to
+        \lcfunk{Init}.
+ */
+void LC_SetMemMgrDefault (void)
+{
+  _SendAlloc = _DefaultAlloc;
+  _SendFree  = _DefaultFree;
+  _RecvAlloc = _DefaultAlloc;
+  _RecvFree  = _DefaultFree;
 }
 
 
@@ -322,7 +344,7 @@ static LC_MSGHANDLE LC_NewRecvMsg (LC_MSGTYPE mt, DDD_PROC source, size_t size)
   msg->bufferSize = size;
 
   /* allocate chunks array */
-  msg->chunks = (CHUNK_DESC *) AllocTmp(sizeof(CHUNK_DESC)*mtyp->nComps);
+  msg->chunks = (CHUNK_DESC *) AllocTmpReq(sizeof(CHUNK_DESC)*mtyp->nComps, TMEM_LOWCOMM);
 
   /* enter message into recv queue */
   msg->next = LC_RecvQueue;
@@ -337,8 +359,9 @@ static LC_MSGHANDLE LC_NewRecvMsg (LC_MSGTYPE mt, DDD_PROC source, size_t size)
 static void LC_DeleteMsg (LC_MSGHANDLE msg)
 {
   MSG_DESC   *md = (MSG_DESC *)msg;
+  size_t size = sizeof(CHUNK_DESC) * md->msgType->nComps;
 
-  FreeTmp(md->chunks);
+  FreeTmpReq(md->chunks,size,TMEM_LOWCOMM);
   FreeMsgDesc(md);
 }
 
@@ -888,7 +911,7 @@ LC_MSGHANDLE LC_NewSendMsg (LC_MSGTYPE aMsgType, DDD_PROC aDest)
   msg->bufferSize = 0;
 
   /* allocate chunks array */
-  msg->chunks = (CHUNK_DESC *) AllocTmp(sizeof(CHUNK_DESC)*mtyp->nComps);
+  msg->chunks = (CHUNK_DESC *) AllocTmpReq(sizeof(CHUNK_DESC)*mtyp->nComps, TMEM_LOWCOMM);
   if (msg->chunks==NULL)
   {
     DDD_PrintError('E', 6602, STR_NOMEM " in LC_NewSendMsg()");
@@ -1072,7 +1095,7 @@ int LC_Connect (LC_MSGTYPE mtyp)
   {
     sprintf(cBuffer, "cannot receive %d messages (must be less than %d)",
             nRecvs, procs-1);
-    DDD_PrintError('E', 6620, cBuffer);
+    DDD_PrintError('E', 6622, cBuffer);
     HARD_EXIT;
   }
 
@@ -1088,7 +1111,7 @@ int LC_Connect (LC_MSGTYPE mtyp)
   /* create array of receive message handles */
   if (nRecvs>0)
   {
-    theRecvArray = (LC_MSGHANDLE *)AllocTmp(sizeof(LC_MSGHANDLE)*nRecvs);
+    theRecvArray = (LC_MSGHANDLE *)AllocTmpReq(sizeof(LC_MSGHANDLE)*nRecvs, TMEM_LOWCOMM);
   }
 
 
@@ -1109,7 +1132,13 @@ int LC_Connect (LC_MSGTYPE mtyp)
 
   /* get necessary connections to comm-partners */
   if (p>0)
-    DDD_GetChannels(nRecvs+nSends);
+  {
+    if (! IS_OK(DDD_GetChannels(nRecvs+nSends)))
+    {
+      DDD_PrintError('E', 6620, "couldn't get channels in LC_Connect()");
+      HARD_EXIT;
+    }
+  }
 
 
 #       if DebugLowComm<=5
@@ -1188,7 +1217,8 @@ void LC_Cleanup (void)
 
   if (theRecvArray!=NULL)
   {
-    FreeTmp(theRecvArray);
+    size_t size = sizeof(LC_MSGHANDLE)*nRecvs;
+    FreeTmpReq(theRecvArray,size,TMEM_LOWCOMM);
     theRecvArray=NULL;
   }
 

@@ -20,6 +20,10 @@
 /*                                                                          */
 /****************************************************************************/
 
+/* RCS_ID
+   $Header$
+ */
+
 /****************************************************************************/
 /*                                                                          */
 /* auto include mechanism and other include files                           */
@@ -43,6 +47,8 @@ extern "C" {
 /*        macros                                                            */
 /*                                                                          */
 /****************************************************************************/
+
+#define TMEM_STD  0
 
 
 
@@ -97,14 +103,12 @@ void  memmgr_FreePMEM (void *mem);
 void *memmgr_AllocAMEM (size_t size);
 void  memmgr_FreeAMEM (void *mem);
 
-void *memmgr_AllocTMEM (size_t size);
-void  memmgr_FreeTMEM (void *mem);
+void *memmgr_AllocTMEM (size_t size, int kind);
+void  memmgr_FreeTMEM (void *mem, int kind);
 
-void *memmgr_AllocHMEM (size_t size);
-void  memmgr_FreeHMEM (void *mem);
-
-void  memmgr_MarkHMEM (void);
-void  memmgr_ReleaseHMEM (void);
+void  memmgr_MarkHMEM (long *);
+void *memmgr_AllocHMEM (size_t size, long);
+void  memmgr_ReleaseHMEM (long);
 
 
 #ifdef __cplusplus

@@ -244,7 +244,7 @@ static int PrepareCmdMsgs (XICopyObj **itemsCO, int nCO, CMDMSG **theMsgs)
            sizeof(DDD_GID)*xm->nUnDelete);
   }
 
-  FreeTmp(gids);
+  FreeTmp(gids,0);
 
   return(nMsgs);
 }
@@ -296,7 +296,7 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
     return(0);
 
 
-  unionGidTab = (DDD_GID *) AllocTmp(sizeof(DDD_GID)*lenGidTab);
+  unionGidTab = (DDD_GID *) OO_Allocate (sizeof(DDD_GID)*lenGidTab);
   if (unionGidTab==NULL)
   {
     DDD_PrintError('E', 6510, STR_NOMEM " in CmdMsgUnpack");
@@ -371,7 +371,7 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
       iLCO++;
     }
 
-    FreeTmp(localCplObjs);
+    FreeLocalCoupledObjectsList(localCplObjs);
   }
         #endif
 
@@ -408,7 +408,7 @@ static int CmdMsgUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 #       endif
 
 
-  FreeTmp(unionGidTab);
+  OO_Free (unionGidTab /*,0*/);
 
   return(nPruned);
 }
@@ -516,7 +516,7 @@ int PruneXIDelCmd (
   for(; sendMsgs!=NULL; sendMsgs=sm)
   {
     sm = sendMsgs->next;
-    FreeTmp(sendMsgs);
+    FreeTmp(sendMsgs,0);
   }
 
   return(nPruned);

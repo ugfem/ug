@@ -116,6 +116,11 @@ static LC_MSGTYPE consmsg_t;
 static LC_MSGCOMP constab_id;
 
 
+#ifdef ConsMemFromHeap
+static long theMarkKey;
+#endif
+
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -135,6 +140,15 @@ void ddd_ConsExit (void)
 {}
 
 
+#ifdef ConsMemFromHeap
+static void *cons_AllocHeap (size_t size)
+{
+  void *buffer = AllocHeap(size, theMarkKey);
+  return(buffer);
+}
+#endif
+
+
 /****************************************************************************/
 
 static int ConsBuildMsgInfos (CONS_INFO *allItems, int nXferItems, CONSMSG **theMsgs)
@@ -150,7 +164,7 @@ static int ConsBuildMsgInfos (CONS_INFO *allItems, int nXferItems, CONSMSG **the
     /* create new message item, if necessary */
     if (allItems[i].dest != lastdest)
     {
-      cm = (CONSMSG *) AllocTmp(sizeof(CONSMSG));
+      cm = (CONSMSG *) AllocTmpReq(sizeof(CONSMSG), TMEM_CONS);
       if (cm==NULL)
       {
         DDD_PrintError('E', 9900, STR_NOMEM " in ConsBuildMsgInfos");
@@ -293,7 +307,7 @@ static int ConsCheckGlobalCpl (void)
   /* get storage for messages */
   cplBuf = (CONS_INFO *)
                 #ifdef ConsMemFromHeap
-           AllocHeap(lenCplBuf*sizeof(CONS_INFO));
+           AllocHeap(lenCplBuf*sizeof(CONS_INFO), theMarkKey);
                 #else
            AllocTmp(lenCplBuf*sizeof(CONS_INFO));
                 #endif
@@ -352,7 +366,7 @@ static int ConsCheckGlobalCpl (void)
   {
     error_cnt += ConsCheckSingleMsg(recvMsgs[i], locObjs);
   }
-  if (nRecvMsgs>0) FreeTmp(locObjs);
+  if (nRecvMsgs>0) FreeLocalObjectsList(locObjs);
 
 
 
@@ -363,13 +377,13 @@ static int ConsCheckGlobalCpl (void)
   /* free temporary storage */
         #ifndef ConsMemFromHeap
   if (cplBuf!=NULL)
-    FreeTmp(cplBuf);
+    FreeTmp(cplBuf,0);
         #endif
 
   for(; sendMsgs!=NULL; sendMsgs=cm)
   {
     cm = sendMsgs->next;
-    FreeTmp(sendMsgs);
+    FreeTmpReq(sendMsgs, sizeof(CONSMSG), TMEM_CONS);
   }
 
   return(error_cnt);
@@ -512,7 +526,7 @@ static int Cons2CheckSingleMsg (LC_MSGHANDLE xm, DDD_HDR *locObjs)
   /* the next too lines are wrong, bug find by PURIFY. KB 970416.
      the locObjs list is freed in Cons2CheckGlobalCpl!
      if (locObjs!=NULL)
-          FreeTmp(locObjs);
+          FreeTmp(locObjs,0);
    */
 
 
@@ -538,7 +552,7 @@ static int Cons2CheckGlobalCpl (void)
   /* get storage for messages */
   cplBuf = (CONS_INFO *)
                 #ifdef ConsMemFromHeap
-           AllocHeap(lenCplBuf*sizeof(CONS_INFO));
+           AllocHeap(lenCplBuf*sizeof(CONS_INFO), theMarkKey);
                 #else
            AllocTmp(lenCplBuf*sizeof(CONS_INFO));
                 #endif
@@ -597,7 +611,7 @@ static int Cons2CheckGlobalCpl (void)
   {
     error_cnt += Cons2CheckSingleMsg(recvMsgs[i], locObjs);
   }
-  if (nRecvMsgs>0) FreeTmp(locObjs);
+  if (nRecvMsgs>0) FreeLocalObjectsList(locObjs);
 
 
   /* cleanup low-comm layer */
@@ -607,13 +621,13 @@ static int Cons2CheckGlobalCpl (void)
   /* free temporary storage */
         #ifndef ConsMemFromHeap
   if (cplBuf!=NULL)
-    FreeTmp(cplBuf);
+    FreeTmp(cplBuf,0);
         #endif
 
   for(; sendMsgs!=NULL; sendMsgs=cm)
   {
     cm = sendMsgs->next;
-    FreeTmp(sendMsgs);
+    FreeTmp(sendMsgs,0);
   }
 
   return(error_cnt);
@@ -641,8 +655,7 @@ static int ConsCheckDoubleObj (void)
     }
   }
 
-  if (locObjs!=NULL)
-    FreeTmp(locObjs);
+  FreeLocalObjectsList(locObjs);
 
   return(error_cnt);
 }
@@ -685,8 +698,8 @@ int DDD_Library::ConsCheck (void)
   int total_errors=0;
 
         #ifdef ConsMemFromHeap
-  MarkHeap();
-  LC_SetMemMgr(memmgr_AllocTMEM, memmgr_FreeTMEM, memmgr_AllocHMEM, NULL);
+  MarkHeap(&theMarkKey);
+  LC_SetMemMgrRecv(cons_AllocHeap, NULL);
         #endif
 
   DDD_Flush();
@@ -731,9 +744,8 @@ int DDD_Library::ConsCheck (void)
 
 
         #ifdef ConsMemFromHeap
-  ReleaseHeap();
-  LC_SetMemMgr(memmgr_AllocTMEM, memmgr_FreeTMEM,
-               memmgr_AllocTMEM, memmgr_FreeTMEM);
+  ReleaseHeap(theMarkKey);
+  LC_SetMemMgrDefault();
         #endif
 
   return(total_errors);

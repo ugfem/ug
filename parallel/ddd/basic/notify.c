@@ -130,6 +130,17 @@ void NotifyInit (void)
     DDD_PrintError('E', 6300, STR_NOMEM " in NotifyInit");
     HARD_EXIT;
   }
+
+
+  /* allocate array of NOTIFY_DESCs */
+  if (procs>1)
+  {
+    theDescs = (NOTIFY_DESC *) AllocTmp(sizeof(NOTIFY_DESC)*(procs-1));
+  }
+  else
+  {
+    theDescs = NULL;
+  }
 }
 
 
@@ -138,6 +149,11 @@ void NotifyExit (void)
   /* free memory */
   FreeFix(theRouting);
   FreeFix(allInfoBuffer);
+
+  if (theDescs!=NULL)
+  {
+    FreeTmp(theDescs,sizeof(NOTIFY_DESC)*(procs-1));
+  }
 }
 
 
@@ -359,14 +375,9 @@ int NotifyTwoWave (NOTIFY_INFO *allInfos, int lastInfo)
 NOTIFY_DESC *DDD_NotifyBegin (int n)
 {
   nSendDescs = n;
-  if (procs>1)
-  {
-    theDescs = (NOTIFY_DESC *) AllocTmp(sizeof(NOTIFY_DESC)*(procs-1));
-  }
-  else
-  {
-    theDescs = NULL;
-  }
+
+  /* allocation of theDescs is done in NotifyInit() */
+
 
   if (n>procs-1)
   {
@@ -381,10 +392,7 @@ NOTIFY_DESC *DDD_NotifyBegin (int n)
 
 void DDD_NotifyEnd (void)
 {
-  if (theDescs!=NULL)
-  {
-    FreeTmp(theDescs);
-  }
+  /* free'ing of theDescs is done in NotifyExit() */
 }
 
 

@@ -155,14 +155,14 @@ DDD_PROC *DDD_ProcArray (void)
 }
 
 
-void DDD_GetChannels (int nPartners)
+RETCODE DDD_GetChannels (int nPartners)
 {
   int i, nConn;
 
   if (nPartners>2*(procs-1))
   {
     DDD_PrintError('E', 1520, "topology error in DDD_GetChannels");
-    HARD_EXIT;
+    RET_ON_ERROR;
   }
 
   nConn = 0;
@@ -170,7 +170,18 @@ void DDD_GetChannels (int nPartners)
   {
     if (theTopology[theProcArray[i]]==NULL)
     {
-      theTopology[theProcArray[i]] = ConnASync(theProcArray[i], VC_TOPO);
+      VChannelPtr vc = ConnASync(theProcArray[i], VC_TOPO);
+
+      if (vc==NULL)
+      {
+        sprintf(cBuffer,
+                "can't connect to proc=%d in DDD_GetChannels",
+                theProcArray[i]);
+        DDD_PrintError('E', 1521, cBuffer);
+        RET_ON_ERROR;
+      }
+
+      theTopology[theProcArray[i]] = vc;
       nConn++;
 
       theProcFlags[i] = TRUE;
@@ -196,7 +207,7 @@ void DDD_GetChannels (int nPartners)
                   " in DDD_GetChannels",
                   theProcArray[i]);
           DDD_PrintError('E', 1530, cBuffer);
-          HARD_EXIT;
+          RET_ON_ERROR;
         }
 
 
@@ -209,6 +220,8 @@ void DDD_GetChannels (int nPartners)
     }
   }
   /* TODO free unused channels? */
+
+  RET_ON_OK;
 }
 
 

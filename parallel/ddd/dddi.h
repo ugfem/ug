@@ -32,6 +32,7 @@
    #define CheckCplMEM
    #define CheckMsgMEM
    #define CheckTmpMEM
+   #define CheckHeapMem
  */
 
 
@@ -74,6 +75,15 @@
  */
 #define HARD_EXIT  assert(0)
 /* #define HARD_EXIT  exit(1) */
+
+
+/*
+        macros for correct return or premature abort of a procedure
+ */
+#define RET_ON_OK      return (TRUE)
+#define RET_ON_ERROR   return (FALSE)
+#define IS_OK(p)       ((p)==TRUE)
+typedef int RETCODE;
 
 
 /*
@@ -564,7 +574,7 @@ extern VChannelPtr *theTopology;
 /****************************************************************************/
 
 
-#if defined(CheckPMEM) || defined(CheckIFMEM) || defined(CheckCplMEM) || defined(CheckMsgMEM) || defined(CheckTmpMEM)
+#if defined(CheckPMEM) || defined(CheckIFMEM) || defined(CheckCplMEM) || defined(CheckMsgMEM) || defined(CheckTmpMEM) || defined(CheckHeapMem)
 
 static void *dummy_ptr;
 static char *mem_ptr;
@@ -580,8 +590,20 @@ static char *mem_ptr;
 /*** mapping memory allocation calls to memmgr_ calls ***/
 
 #define AllocObj(s,t,p,a) memmgr_AllocOMEM((size_t)s,(int)t,(int)p,(int)a)
-#define AllocHeap(s)      memmgr_AllocHMEM((size_t)s)
 #define AllocCom(s)       memmgr_AllocAMEM((size_t)s)
+
+
+#ifdef CheckHeapMem
+#define AllocHeap(s,key)  \
+  (dummy_ptr = (mem_ptr=(char *)memmgr_AllocHMEM(SST+(size_t)(s), key)) != NULL ? \
+               mem_ptr+SST : NULL);                                     \
+  if (mem_ptr!=NULL) GET_SSTVAL(dummy_ptr) = s;                            \
+  printf("%4d: MALL Heap adr=%08x size=%ld file=%s line=%d\n",             \
+         me,dummy_ptr,s,__FILE__,__LINE__)
+#else
+#define AllocHeap(s,key)    memmgr_AllocHMEM((size_t)(s), key)
+#endif
+
 
 #ifdef CheckPMEM
 #define AllocFix(s)  \
@@ -597,25 +619,36 @@ static char *mem_ptr;
 
 #ifdef CheckMsgMEM
 #define AllocMsg(s)  \
-  (dummy_ptr = (mem_ptr=(char *)memmgr_AllocTMEM(SST+(size_t)s)) != NULL ? \
+  (dummy_ptr = (mem_ptr=(char *)memmgr_AllocTMEM(SST+(size_t)s, TMEM_MSG)) \
+               != NULL ?                                                            \
                mem_ptr+SST : NULL);                                     \
   if (mem_ptr!=NULL) GET_SSTVAL(dummy_ptr) = s;                            \
   printf("%4d: MALL TMsg adr=%08x size=%ld file=%s line=%d\n",             \
          me,dummy_ptr,s,__FILE__,__LINE__)
 #else
-#define AllocMsg(s)       memmgr_AllocTMEM((size_t)s)
+#define AllocMsg(s)       memmgr_AllocTMEM((size_t)s, TMEM_MSG)
 #endif
 
 
 #ifdef CheckTmpMEM
 #define AllocTmp(s)  \
-  (dummy_ptr = (mem_ptr=(char *)memmgr_AllocTMEM(SST+(size_t)s)) != NULL ? \
+  (dummy_ptr = (mem_ptr=(char *)memmgr_AllocTMEM(SST+(size_t)s, TMEM_ANY)) \
+               != NULL ?                                                            \
                mem_ptr+SST : NULL);                                     \
   if (mem_ptr!=NULL) GET_SSTVAL(dummy_ptr) = s;                            \
   printf("%4d: MALL TTmp adr=%08x size=%ld file=%s line=%d\n",             \
          me,dummy_ptr,s,__FILE__,__LINE__)
+
+#define AllocTmpReq(s,r)  \
+  (dummy_ptr = (mem_ptr=(char *)memmgr_AllocTMEM(SST+(size_t)s, r))        \
+               != NULL ?                                                            \
+               mem_ptr+SST : NULL);                                     \
+  if (mem_ptr!=NULL) GET_SSTVAL(dummy_ptr) = s;                            \
+  printf("%4d: MALL TTmp adr=%08x size=%ld kind=%d file=%s line=%d\n",     \
+         me,dummy_ptr,s,r,__FILE__,__LINE__)
 #else
-#define AllocTmp(s)       memmgr_AllocTMEM((size_t)s)
+#define AllocTmp(s)       memmgr_AllocTMEM((size_t)s, TMEM_ANY)
+#define AllocTmpReq(s,r)  memmgr_AllocTMEM((size_t)s, r)
 #endif
 
 
@@ -649,8 +682,9 @@ static char *mem_ptr;
 /*** mapping memory free calls to memmgr calls ***/
 
 #define FreeObj(mem,s,t)  memmgr_FreeOMEM(mem,(size_t)s,(int)t)
-#define FreeHeap(mem)     memmgr_FreeHMEM(mem)
 #define FreeCom(mem)      memmgr_FreeAMEM(mem)
+
+
 
 #ifdef CheckPMEM
 #define FreeFix(mem)      {               \
@@ -663,24 +697,30 @@ static char *mem_ptr;
 #endif
 
 #ifdef CheckMsgMEM
-#define FreeMsg(mem)      {   \
+#define FreeMsg(mem,size)      {   \
     size_t s=GET_SSTVAL(mem); \
-    memmgr_FreeTMEM(((char *)mem)-SST);    \
+    memmgr_FreeTMEM(((char *)mem)-SST, TMEM_MSG);    \
     printf("%4d: FREE TMsg adr=%08x size=%ld file=%s line=%d\n",\
            me,mem,s,__FILE__,__LINE__); }
 #else
-#define FreeMsg(mem)      memmgr_FreeTMEM(mem)
+#define FreeMsg(mem,size)      memmgr_FreeTMEM(mem, TMEM_MSG)
 #endif
 
 
 #ifdef CheckTmpMEM
-#define FreeTmp(mem)      {                  \
+#define FreeTmp(mem,size)      {                  \
     size_t s=GET_SSTVAL(mem); \
-    memmgr_FreeTMEM(((char *)mem)-SST);       \
+    memmgr_FreeTMEM(((char *)mem)-SST,TMEM_ANY);       \
     printf("%4d: FREE TTmp adr=%08x size=%ld file=%s line=%d\n",\
            me,mem,s,__FILE__,__LINE__); }
+#define FreeTmpReq(mem,size,r)      {                  \
+    size_t s=GET_SSTVAL(mem); \
+    memmgr_FreeTMEM(((char *)mem)-SST,r);       \
+    printf("%4d: FREE TTmp adr=%08x size=%ld kind=%d file=%s line=%d\n",\
+           me,mem,s,r,__FILE__,__LINE__); }
 #else
-#define FreeTmp(mem)      memmgr_FreeTMEM(mem)
+#define FreeTmp(mem,size)      memmgr_FreeTMEM(mem,TMEM_ANY)
+#define FreeTmpReq(mem,size,r) memmgr_FreeTMEM(mem,r)
 #endif
 
 
@@ -801,7 +841,7 @@ void      DDD_XferPrioChange (DDD_HDR, DDD_PRIO);
 void      ddd_TopoInit (void);
 void      ddd_TopoExit (void);
 DDD_PROC *DDD_ProcArray (void);
-void      DDD_GetChannels (int);
+RETCODE   DDD_GetChannels (int);
 void      DDD_DisplayTopo (void);
 
 
@@ -810,7 +850,9 @@ void      DDD_DisplayTopo (void);
 void      DDD_HdrConstructorCopy (DDD_HDR, DDD_PRIO);
 void      ObjCopyGlobalData (TYPE_DESC *, DDD_OBJ, DDD_OBJ, size_t);
 DDD_HDR  *LocalObjectsList (void);
+void      FreeLocalObjectsList (DDD_HDR *);
 DDD_HDR  *LocalCoupledObjectsList (void);
+void      FreeLocalCoupledObjectsList (DDD_HDR *);
 #ifdef CPP_FRONTEND
 DDD_OBJ  DDD_ObjNew (size_t, DDD_TYPE, DDD_PRIO, DDD_ATTR);
 #endif

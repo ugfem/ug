@@ -46,6 +46,26 @@
 #define ContainerImplementation
 #define _CHECKALLOC(ptr)   assert(ptr!=NULL)
 
+
+static int TmpMem_kind = TMEM_ANY;
+
+static void *join_AllocTmp (size_t size)
+{
+  return AllocTmpReq(size, TmpMem_kind);
+}
+
+static void join_FreeTmp (void *buffer)
+{
+  FreeTmpReq(buffer, 0, TmpMem_kind);
+}
+
+void join_SetTmpMem (int kind)
+{
+  TmpMem_kind = kind;
+}
+
+
+
 #include "join.h"
 
 
@@ -250,6 +270,9 @@ int JoinStepMode (int old)
 
 void ddd_JoinInit (void)
 {
+  /* set kind of TMEM alloc/free requests */
+  join_SetTmpMem(TMEM_ANY);
+
   /* init control structures for JoinInfo-items in messages */
   joinGlobals.setJIJoin    = New_JIJoinSet();
   joinGlobals.setJIAddCpl2 = New_JIAddCplSet();
@@ -273,6 +296,9 @@ void ddd_JoinInit (void)
 
 void ddd_JoinExit (void)
 {
+  /* set kind of TMEM alloc/free requests */
+  join_SetTmpMem(TMEM_ANY);
+
 
   /* TODO data (e.g., lists&trees of JI-items) should be freed!! */
 }

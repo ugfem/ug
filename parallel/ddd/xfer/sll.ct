@@ -66,12 +66,11 @@ static Segm(T) *NewSegm(T) (void)
 {
 	Segm(T) *segm;
 
-	segm = (Segm(T) *) AllocTmp(sizeof(Segm(T)));
-
+	segm = (Segm(T) *) OO_Allocate (sizeof(Segm(T)));
 	if (segm==NULL)
 	{
 		DDD_PrintError('F', 6060, STR_NOMEM " during XferEnd()");
-		HARD_EXIT;
+		return(NULL);
 	}
 
 	segm->next   = segms(T);
@@ -90,7 +89,7 @@ static void FreeSegms(T) (void)
 	while (segm!=NULL)
 	{
 		next = segm->next;
-		FreeTmp(segm);
+		OO_Free (segm /*,sizeof(Segm(T))*/ );
 
 		segm = next;
 	}
@@ -108,6 +107,8 @@ T *New(T) (SLLNewArgProtos)
 	if (segm==NULL || segm->nItems==SEGM_SIZE)
 	{
 		segm = NewSegm(T) ();
+		if (segm==NULL)
+			return(NULL);
 	}
 
 	item = &(segm->item[segm->nItems++]);
@@ -145,8 +146,7 @@ T **SortedArray(T) (int (*compar) (const void *, const void *))
 	if (n(T)>0)
 	{
 		/* alloc array */
-		array = (T **) AllocTmp(sizeof(T *) * n(T));
-
+		array = (T **) OO_Allocate(sizeof(T *) * n(T));
 		if (array==NULL)
 		{
 			DDD_PrintError('F', 6061, STR_NOMEM " during XferEnd()");

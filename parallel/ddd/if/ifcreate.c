@@ -266,14 +266,16 @@ static int is_elem (DDD_PRIO el, int n, DDD_PRIO *set)
 
 
 
-static void update_channels (DDD_IF ifId)
+static RETCODE update_channels (DDD_IF ifId)
 {
   IF_PROC *ifh;
   int i;
   DDD_PROC *partners = DDD_ProcArray();
 
   if (theIF[ifId].nIfHeads==0)
-    return;
+  {
+    RET_ON_OK;
+  }
 
   /* MarkHeap(); */
 
@@ -282,13 +284,19 @@ static void update_channels (DDD_IF ifId)
     partners[i] = ifh->proc;
   }
 
-  DDD_GetChannels(theIF[ifId].nIfHeads);
+  if (! IS_OK(DDD_GetChannels(theIF[ifId].nIfHeads)))
+  {
+    RET_ON_ERROR;
+  }
 
   for(ifh=theIF[ifId].ifHead; ifh!=NULL; ifh=ifh->next) {
     ifh->vc = VCHAN_TO(ifh->proc);
   }
 
   /* ReleaseHeap(); */
+
+
+  RET_ON_OK;
 }
 
 
@@ -335,7 +343,7 @@ static COUPLING ** IFCollectStdCouplings (void)
 
 /****************************************************************************/
 
-static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
+static RETCODE IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
 {
   IF_PROC     *ifHead, *lastIfHead;
   IF_ATTR    *ifAttr, *lastIfAttr;
@@ -412,7 +420,7 @@ static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
         sprintf(cBuffer, STR_NOMEM
                 " for IF %02d in IFCreateFromScratch", ifId);
         DDD_PrintError('E', 4001, cBuffer);
-        HARD_EXIT;
+        RET_ON_ERROR;
       }
 
       /* copy data from temporary array */
@@ -561,13 +569,19 @@ static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
 
 
   STAT_RESET1;
-  update_channels(ifId);
+  if (! IS_OK(update_channels(ifId)))
+  {
+    DDD_PrintError('E', 4003, "couldn't create communication channels");
+    RET_ON_ERROR;
+  }
   STAT_TIMER1(T_CREATE_COMM);
 
   /* TODO das handling der VCs muss noch erheblich verbessert werden */
   /* TODO durch das is_elem suchen ist alles noch VERY inefficient */
 
   STAT_SET_MODULE(STAT_MOD);
+
+  RET_ON_OK;
 }
 
 
@@ -697,13 +711,32 @@ if (nCplItems>0)
     HARD_EXIT;
   }
 
-  IFCreateFromScratch(tmpcpl, nIFs);
+  if (! IS_OK(IFCreateFromScratch(tmpcpl, nIFs)))
+  {
+    DDD_PrintError('E', 4101, "cannot create interface in DDD_IFDefine");
+                        #ifdef CPP_FRONTEND
+    HARD_EXIT;
+                        #else
+    return(0);
+                        #endif
+  }
 
   /* free temporary array */
-  FreeTmp(tmpcpl);
+  FreeTmp(tmpcpl,0);
 }
 else
-  IFCreateFromScratch(NULL, nIFs);
+{
+  if (! IS_OK(IFCreateFromScratch(NULL, nIFs)))
+  {
+    DDD_PrintError('E', 4102, "cannot create interface in DDD_IFDefine");
+                        #ifdef CPP_FRONTEND
+    HARD_EXIT;
+                        #else
+    return(0);
+                        #endif
+  }
+}
+
 
 nIFs++;
 
@@ -714,7 +747,7 @@ return(nIFs-1);
 
 
 
-void StdIFDefine (void)
+static void StdIFDefine (void)
 {
   /* exception: no OBJSTRUCT or priority entries */
   theIF[STD_INTERFACE].nObjStruct = 0;
@@ -730,7 +763,12 @@ void StdIFDefine (void)
 
   /* create initial interface state */
   theIF[STD_INTERFACE].ifHead = NULL;
-  IFCreateFromScratch(NULL, STD_INTERFACE);
+  if (! IS_OK(IFCreateFromScratch(NULL, STD_INTERFACE)))
+  {
+    DDD_PrintError('E', 4104,
+                   "cannot create standard interface during IF initialization");
+    HARD_EXIT;
+  }
 }
 
 
@@ -996,7 +1034,12 @@ static void IFRebuildAll (void)
    */
 
   /* create standard interface */
-  IFCreateFromScratch(NULL, STD_INTERFACE);
+  if (! IS_OK(IFCreateFromScratch(NULL, STD_INTERFACE)))
+  {
+    DDD_PrintError('E', 4105,
+                   "cannot create standard interface in IFRebuildAll");
+    HARD_EXIT;
+  }
 
 
   if (nIFs>1)
@@ -1019,7 +1062,12 @@ static void IFRebuildAll (void)
       /* TODO: ausnutzen, dass STD_IF obermenge von allen interfaces ist */
       for(i=1; i<nIFs; i++)
       {
-        IFCreateFromScratch(tmpcpl, i);
+        if (! IS_OK(IFCreateFromScratch(tmpcpl, i)))
+        {
+          sprintf(cBuffer, "cannot create interface %d in IFRebuildAll", i);
+          DDD_PrintError('E', 4106, cBuffer);
+          HARD_EXIT;
+        }
 
         /*
            DDD_InfoIFImpl(i);
@@ -1027,7 +1075,7 @@ static void IFRebuildAll (void)
       }
 
       /* free temporary array */
-      FreeTmp(tmpcpl);
+      FreeTmp(tmpcpl,0);
     }
     else
     {

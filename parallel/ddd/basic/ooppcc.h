@@ -62,6 +62,17 @@ typedef PtrOf * CPtr;
 #define CArray     CCAT(ArrayOf,Array)
 
 
+#ifndef ArrayAllocate
+/* define default allocate function */
+#define ArrayAllocate OO_Allocate
+#endif
+
+#ifndef ArrayFree
+/* define default free function */
+#define ArrayFree OO_Free
+#endif
+
+
 /*** array class ***/
 
 #define ClassName CArray
@@ -87,7 +98,7 @@ Method_New_ (int size _NEWPARAMS)
   }
   else
   {
-    This->data = (CN(ArrayOf) *)OO_Allocate (sizeof(CN(ArrayOf)) * size);
+    This->data = (CN(ArrayOf) *)ArrayAllocate (sizeof(CN(ArrayOf))*size);
     _CHECKALLOC(This->data);
   }
 
@@ -100,7 +111,11 @@ Method_New_ (int size _NEWPARAMS)
 
 void Method(Free) (ParamThis)
 {
-  OO_Free (This->data);
+#ifndef NoArrayFree
+  if (This->data!=NULL)
+    ArrayFree (This->data);
+#endif
+
   Destruct(This);
 }
 
@@ -122,6 +137,11 @@ int Method(GetSize) (ParamThis)
 
 
 /****************************************************************************/
+#undef ArrayAllocate
+#undef ArrayFree
+#ifdef NoArrayFree
+        #undef NoArrayFree
+#endif
 #undef CArray
 #undef ArrayOf
 #endif

@@ -68,8 +68,8 @@
 #define _PRINTSAME    , indent, fp
 
 /* map memory allocation calls */
-#define OO_Allocate  AllocTmp
-#define OO_Free      FreeTmp
+#define OO_Allocate  join_AllocTmp
+#define OO_Free      join_FreeTmp
 
 
 /* extra prefix for all join-related data structures and/or typedefs */
@@ -286,6 +286,7 @@ extern JOIN_GLOBALS joinGlobals;
    void PropagateCplInfos(XISetPrio **, int, XIDelObj  **, int,
                 TENewCpl *, int);
  */
+void join_SetTmpMem (int);
 int JoinMode (void);
 int JoinStepMode(int);
 

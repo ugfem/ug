@@ -114,7 +114,7 @@ static CPLMSG *CreateCplMsg (DDD_PROC dest, CPLMSG *lastxm)
 {
   CPLMSG *xm;
 
-  xm = (CPLMSG *) AllocTmp(sizeof(CPLMSG));
+  xm = (CPLMSG *) AllocTmpReq(sizeof(CPLMSG), TMEM_XFER);
   if (xm==NULL)
   {
     DDD_PrintError('E', 6400, STR_NOMEM " in PrepareCplMsgs");
@@ -494,7 +494,7 @@ void CommunicateCplMsgs (
   for(; sendMsgs!=NULL; sendMsgs=sm)
   {
     sm = sendMsgs->next;
-    FreeTmp(sendMsgs);
+    FreeTmpReq (sendMsgs,sizeof(CPLMSG), TMEM_XFER);
   }
 }
 

@@ -90,6 +90,7 @@
 
 #define NEW_AddCpl(destproc,objgid,cplproc,cplprio)   {          \
 				XIAddCpl *xc = NewXIAddCpl(SLLNewArgs);          \
+				if (xc==NULL) HARD_EXIT;                         \
 				xc->to      = (destproc);                        \
 				xc->te.gid  = (objgid);                          \
 				xc->te.proc = (cplproc);                         \
@@ -1105,6 +1106,9 @@ static void PropagateIncomings (
 				if (newness==PARTNEW || newness==PRUNEDNEW)
 				{
 					XIModCpl *xc = NewXIModCpl(SLLNewArgs);
+					if (xc==NULL)
+						HARD_EXIT;
+
 					xc->to      = arrayNO[iNO]->dest; /* receiver of XIModCpl*/
 					xc->te.gid  = ote->gid;           /* the object's gid    */
 					xc->te.prio = OBJ_PRIO(ote->hdr); /* the obj's new prio  */
@@ -1122,6 +1126,9 @@ static void PropagateIncomings (
 				{
 */
 					XIModCpl *xc = NewXIModCpl(SLLNewArgs);
+					if (xc==NULL)
+						HARD_EXIT;
+
 					xc->to      = cpl->proc;         /* receiver of XIModCpl*/
 					xc->te.gid  = ote->gid;           /* the object's gid   */
 					xc->te.prio = OBJ_PRIO(ote->hdr); /* the obj's new prio */
@@ -1641,7 +1648,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 
 	if (nNewCpl>0)
 	{
-		allNewCpl = (TENewCpl *) AllocTmp(sizeof(TENewCpl)*nNewCpl);
+		allNewCpl = (TENewCpl *) OO_Allocate (sizeof(TENewCpl)*nNewCpl);
 		if (allNewCpl==NULL) {
 			DDD_PrintError('E', 6560, STR_NOMEM " in XferUnpack");
 			return;
@@ -1653,8 +1660,7 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 
 	if (lenObjTab>0)
 	{
-		unionObjTab = (OBJTAB_ENTRY **)
-			AllocTmp(sizeof(OBJTAB_ENTRY *)*lenObjTab);
+		unionObjTab = (OBJTAB_ENTRY **) OO_Allocate (sizeof(OBJTAB_ENTRY *)*lenObjTab);
 
 		if (unionObjTab==NULL) {
 			DDD_PrintError('E', 6562, STR_NOMEM " in XferUnpack");
@@ -1831,9 +1837,9 @@ void XferUnpack (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
 
 	/* free temporary memory */
 	if (allNewCpl!=NULL)
-		FreeTmp(allNewCpl);
+		OO_Free (allNewCpl /*,0*/);
 	if (unionObjTab!=NULL)
-		FreeTmp(unionObjTab);
+		OO_Free (unionObjTab /*,0*/);
 }
 
 

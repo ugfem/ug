@@ -79,8 +79,18 @@
 #define _PRINTSAME    , indent, fp
 
 /* map memory allocation calls */
-#define OO_Allocate  AllocTmp
-#define OO_Free      FreeTmp
+/* activate this to allocate memory from freelists
+   /*
+   #ifdef XferMemFromHeap
+ */
+#define OO_Allocate  xfer_AllocHeap
+#define OO_Free      xfer_FreeHeap
+/*
+   #else
+   #define OO_Allocate  xfer_AllocTmp
+   #define OO_Free      xfer_FreeTmp
+   #endif
+ */
 
 
 /* extra prefix for all xfer-related data structures and/or typedefs */
@@ -156,6 +166,10 @@ int  Method(Compare) (ClassPtr, ClassPtr);
 #define SetOf          XICopyObj
 #define Set_SegmSize   256
 #define Set_BTreeOrder 32
+#ifdef XferMemFromHeap
+#define ArrayAllocate  xfer_AllocHeap
+#define NoArrayFree
+#endif
 #include "basic/ooppcc.h"
 
 
@@ -239,6 +253,10 @@ int  Method(Compare) (ClassPtr, ClassPtr);
 #define SetOf          XISetPrio
 #define Set_SegmSize   256
 #define Set_BTreeOrder 32
+#ifdef XferMemFromHeap
+#define ArrayAllocate  xfer_AllocHeap
+#define NoArrayFree
+#endif
 #include "basic/ooppcc.h"
 
 
@@ -494,6 +512,11 @@ typedef struct _XFER_GLOBALS
   XICopyObjSet *setXICopyObj;
   XISetPrioSet *setXISetPrio;
 
+  /* flag for memory control (heap or no heap) */
+  int useHeap;
+  /* MarkKey for memory management */
+  long theMarkKey;
+
 } XFER_GLOBALS;
 
 
@@ -516,6 +539,10 @@ extern XFER_GLOBALS xferGlobals;
 XFERADDDATA *NewXIAddData (void);
 void FreeAllXIAddData (void);
 int *AddDataAllocSizes(int);
+void xfer_SetTmpMem (int);
+void *xfer_AllocHeap (size_t);
+void *xfer_AllocSend (size_t);
+void xfer_FreeSend (void *);
 /* and others, via template mechanism */
 
 

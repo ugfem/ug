@@ -114,7 +114,7 @@ static CplSegm *NewCplSegm (void)
 {
   CplSegm *segm;
 
-  segm = (CplSegm *) AllocTmp(sizeof(CplSegm));
+  segm = (CplSegm *) AllocTmpReq(sizeof(CplSegm), TMEM_CPL);
 
   if (segm==NULL)
   {
@@ -139,7 +139,7 @@ static void FreeCplSegms (void)
   while (segm!=NULL)
   {
     next = segm->next;
-    FreeTmp(segm);
+    FreeTmpReq(segm, sizeof(CplSegm), TMEM_CPL);
 
     segm = next;
   }
@@ -243,7 +243,7 @@ static void IncreaseCplTabSize (void)
   memcpy(ddd_CplTable, old_CplTable, sizeof(COUPLING *) * old_CplTabSize);
 
   /* free old one */
-  FreeTmp(old_CplTable);
+  FreeTmp(old_CplTable,0);
 
 
   /* now we alloc new ncpl-table. the number of entries in ddd_CplTable and
@@ -264,7 +264,7 @@ static void IncreaseCplTabSize (void)
   memcpy(ddd_NCplTable, old_NCplTable, sizeof(short) * old_CplTabSize);
 
   /* again free old table */
-  FreeTmp(old_NCplTable);
+  FreeTmp(old_NCplTable,0);
 
 
   /* issue a warning in order to inform user */
@@ -776,8 +776,8 @@ void ddd_CplMgrExit (void)
   FreeFix(localIBuffer);
   FreeCplSegms();
 
-  FreeTmp(ddd_CplTable);
-  FreeTmp(ddd_NCplTable);
+  FreeTmp(ddd_CplTable,0);
+  FreeTmp(ddd_NCplTable,0);
 }
 
 

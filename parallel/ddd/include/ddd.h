@@ -35,6 +35,7 @@
 /*            96/11/28 kb  merged F_FRONTEND functionality from code branch */
 /*            97/02/10 kb  started with CPP_FRONTEND implementation         */
 /*            98/01/28 kb  new ddd-module: Join.                            */
+/*            98/05/14 kb  redesigned memory handling.                      */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -48,7 +49,7 @@
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.17"
+#define DDD_VERSION    "1.8.18"
 
 
 /****************************************************************************/
@@ -254,6 +255,23 @@ enum XferConstants {
 enum PrioMatrixDefaults {
   PRIOMERGE_MAXIMUM = 0,
   PRIOMERGE_MINIMUM
+};
+
+
+
+/* constants for management of temporary memory allocation/deletion */
+enum TMemRequsts {
+  TMEM_ANY     = 0x0000,
+  TMEM_MSG,
+  TMEM_OBJLIST,
+  TMEM_CPL,
+
+  TMEM_XFER    = 0x1000,
+  TMEM_LOWCOMM,
+
+  TMEM_JOIN    = 0x2000,
+
+  TMEM_CONS    = 0x3000
 };
 
 

@@ -79,8 +79,6 @@ RCSID("$Header$",DDD_RCS_STRING)
 /*                                                                          */
 /****************************************************************************/
 
-DDD_HDR *LocalObjectsList (void);
-
 
 
 /****************************************************************************/
@@ -135,5 +133,5 @@ void DDD_Library::ListLocalObjects (void)
     DDD_PrintLine(cBuffer);
   }
 
-  FreeTmp(locObjs);
+  FreeLocalObjectsList(locObjs);
 }

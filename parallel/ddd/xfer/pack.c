@@ -709,7 +709,7 @@ void XferPackMsgs (XFERMSG *theMsgs)
     if (n>0)
     {
       /* alloc array of pointers to messages */
-      xm_array = (XFERMSG **) AllocTmp(sizeof(XFERMSG *) * n);
+      xm_array = (XFERMSG **) OO_Allocate (sizeof(XFERMSG *) * n);
       if (xm_array!=NULL)
       {
         for(i=0, xm=theMsgs; i<n; xm=xm->next, i++) xm_array[i] = xm;
@@ -721,7 +721,7 @@ void XferPackMsgs (XFERMSG *theMsgs)
         if (n>1) xm_array[n-1]->next = NULL;
 
         /* free array */
-        FreeTmp(xm_array);
+        OO_Free (xm_array /*,0*/);
       }
       /* else
          {

@@ -22,6 +22,11 @@
 /*                                                                          */
 /****************************************************************************/
 
+/* RCS_ID
+   $Header$
+ */
+
+
 /****************************************************************************/
 /*                                                                          */
 /* auto include mechanism and other include files                           */
@@ -78,7 +83,7 @@ typedef struct _Buffer
 
 /* release buffer's memory, set buffer to empty */
 #define BufferFree(b)     { if ((b).buf!=NULL)   \
-                            { FreeMsg((b).buf); BufferInit(b); }  }
+                            { FreeMsg((b).buf,(b).size); BufferInit(b); }  }
 
 /* allocate memory, doesn't control if there already is allocated memory */
 /* note: s==0 isn't checked, AllocMsg==0 isn't check. TODO. */
@@ -88,12 +93,12 @@ typedef struct _Buffer
 #define BufferReset(b)    { (b).used=0; }
 
 /* reuse buffer or increase size, if existing buffer space is too small */
-#define BufferCreate(b,s) {                          \
-    if ((s)<=(b).size)                       \
-      (b).used = (s);                      \
-    else {                                   \
-      if ((b).buf!=NULL) FreeMsg((b).buf); \
-      BufferAlloc((b),(s));                \
+#define BufferCreate(b,s) {                                   \
+    if ((s)<=(b).size)                                \
+      (b).used = (s);                               \
+    else {                                            \
+      if ((b).buf!=NULL) FreeMsg((b).buf,(b).size); \
+      BufferAlloc((b),(s));                         \
     }  }
 
 /* get pointer to buffer memory */

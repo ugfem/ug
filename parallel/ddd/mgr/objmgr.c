@@ -124,7 +124,7 @@ DDD_HDR *LocalObjectsList (void)
   if (ddd_nObjs==0)
     return(NULL);
 
-  locObjs = (DDD_HDR *) AllocTmp(ddd_nObjs*sizeof(DDD_HDR));
+  locObjs = (DDD_HDR *) AllocTmpReq (ddd_nObjs*sizeof(DDD_HDR), TMEM_OBJLIST);
   if (locObjs==NULL) {
     DDD_PrintError('E', 2210,  STR_NOMEM " in LocalObjectsList");
     return(NULL);
@@ -136,6 +136,15 @@ DDD_HDR *LocalObjectsList (void)
   return(locObjs);
 }
 
+void FreeLocalObjectsList (DDD_HDR *locObjs)
+{
+  if (locObjs==NULL)
+    return;
+
+  FreeTmpReq(locObjs, ddd_nObjs*sizeof(DDD_HDR), TMEM_OBJLIST);
+}
+
+
 
 DDD_HDR *LocalCoupledObjectsList (void)
 {
@@ -144,7 +153,7 @@ DDD_HDR *LocalCoupledObjectsList (void)
   if (NCpl_Get==0)
     return(NULL);
 
-  locObjs = (DDD_HDR *) AllocTmp(NCpl_Get*sizeof(DDD_HDR));
+  locObjs = (DDD_HDR *) AllocTmpReq (NCpl_Get*sizeof(DDD_HDR), TMEM_OBJLIST);
   if (locObjs==NULL) {
     DDD_PrintError('E', 2211, STR_NOMEM " in LocalCoupledObjectsList");
     return(NULL);
@@ -155,6 +164,16 @@ DDD_HDR *LocalCoupledObjectsList (void)
 
   return(locObjs);
 }
+
+
+void FreeLocalCoupledObjectsList (DDD_HDR *locObjs)
+{
+  if (locObjs==NULL)
+    return;
+
+  FreeTmpReq(locObjs, NCpl_Get*sizeof(DDD_HDR), TMEM_OBJLIST);
+}
+
 
 
 /****************************************************************************/
@@ -186,7 +205,7 @@ void ddd_EnsureObjTabSize (int n)
   memcpy(ddd_ObjTable, old_ObjTable, sizeof(DDD_HDR) * old_ObjTabSize);
 
   /* free old one */
-  FreeTmp(old_ObjTable);
+  FreeTmp(old_ObjTable,0);
 
   /* issue a warning in order to inform user */
   sprintf(cBuffer, "increased object table, now %d entries", ddd_ObjTabSize);
@@ -1092,7 +1111,7 @@ void ddd_ObjMgrInit (void)
 
 void ddd_ObjMgrExit (void)
 {
-  FreeTmp(ddd_ObjTable);
+  FreeTmp(ddd_ObjTable,0);
 }
 
 

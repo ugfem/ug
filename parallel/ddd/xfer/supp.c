@@ -45,7 +45,75 @@
 #define ContainerImplementation
 #define _CHECKALLOC(ptr)   assert(ptr!=NULL)
 
+
+static int TmpMem_kind = TMEM_ANY;
+
+static void *xfer_AllocTmp (size_t size)
+{
+  void *buffer = AllocTmpReq(size, TmpMem_kind);
+  return(buffer);
+}
+
+static void xfer_FreeTmp (void *buffer)
+{
+  FreeTmpReq(buffer, 0, TmpMem_kind);
+}
+
+void xfer_SetTmpMem (int kind)
+{
+  TmpMem_kind = kind;
+}
+
+
+
+/* forward declaration */
+void *xfer_AllocHeap (size_t);
+void xfer_FreeHeap (void *);
+
+
 #include "xfer.h"
+
+
+
+#ifdef XferMemFromHeap
+void *xfer_AllocHeap (size_t size)
+{
+  void *buffer;
+
+  if (xferGlobals.useHeap)
+  {
+    buffer = AllocHeap(size, xferGlobals.theMarkKey);
+  }
+  else
+  {
+    buffer = AllocTmp(size);
+  }
+
+  return(buffer);
+}
+
+void xfer_FreeHeap (void *buffer)
+{
+  if (!xferGlobals.useHeap)
+  {
+    FreeTmp(buffer,0);
+  }
+  /* else: do nothing for heap-allocated memory */
+}
+
+#endif
+
+
+void *xfer_AllocSend (size_t size)
+{
+  void *buffer = AllocTmpReq(size, TMEM_ANY);
+  return(buffer);
+}
+
+void xfer_FreeSend (void *buffer)
+{
+  FreeTmpReq(buffer, 0, TMEM_ANY);
+}
 
 
 
@@ -277,7 +345,7 @@ static AddDataSegm *NewAddDataSegm (void)
 {
   AddDataSegm *segm;
 
-  segm = (AddDataSegm *) AllocTmp(sizeof(AddDataSegm));
+  segm = (AddDataSegm *) OO_Allocate(sizeof(AddDataSegm));
   if (segm==NULL)
   {
     DDD_PrintError('F', 9999, STR_NOMEM " during XferEnd()");
@@ -300,7 +368,7 @@ static void FreeAddDataSegms (void)
   while (segm!=NULL)
   {
     next = segm->next;
-    FreeTmp(segm);
+    OO_Free (segm /*,sizeof(AddDataSegm)*/);
 
     segm = next;
   }
@@ -316,7 +384,7 @@ static SizesSegm *NewSizesSegm (void)
 {
   SizesSegm *segm;
 
-  segm = (SizesSegm *) AllocTmp(sizeof(SizesSegm));
+  segm = (SizesSegm *) OO_Allocate (sizeof(SizesSegm));
   if (segm==NULL)
   {
     DDD_PrintError('F', 9999, STR_NOMEM " during XferEnd()");
@@ -339,7 +407,7 @@ static void FreeSizesSegms (void)
   while (segm!=NULL)
   {
     next = segm->next;
-    FreeTmp(segm);
+    OO_Free (segm /*,sizeof(SizesSegm)*/);
 
     segm = next;
   }

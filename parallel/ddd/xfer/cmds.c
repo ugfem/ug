@@ -76,7 +76,6 @@
 XICopyObj *theXIAddData;
 
 
-
 /****************************************************************************/
 /*                                                                          */
 /* definition of variables global to this source file only (static!)        */
@@ -436,12 +435,6 @@ void DDD_XferEnd (void)
   size_t sendMem=0, recvMem=0;
   int DelCmds_were_pruned;
 
-        #ifdef XferMemFromHeap
-  MarkHeap();
-  LC_SetMemMgr(memmgr_AllocTMEM, memmgr_FreeTMEM,
-               memmgr_AllocHMEM, NULL);
-        #endif
-
   STAT_SET_MODULE(DDD_MODULE_XFER);
   STAT_ZEROALL;
 
@@ -664,7 +657,7 @@ void DDD_XferEnd (void)
   /* recreate sorted list of local coupled objects,
      old list might be corrupt due to creation of new objects */
   STAT_RESET;
-  if (localCplObjs!=NULL) FreeTmp(localCplObjs);
+  FreeLocalCoupledObjectsList(localCplObjs);
   localCplObjs = LocalCoupledObjectsList();
 
 
@@ -709,45 +702,45 @@ void DDD_XferEnd (void)
   XICopyObjPtrArray_Free(arrayXICopyObj);
   XICopyObjSet_Reset(xferGlobals.setXICopyObj);
 
-  if (arrayNewOwners!=NULL) FreeTmp(arrayNewOwners);
+  if (arrayNewOwners!=NULL) OO_Free (arrayNewOwners,0);
   FreeAllXIAddData();
 
   XISetPrioPtrArray_Free(arrayXISetPrio);
   XISetPrioSet_Reset(xferGlobals.setXISetPrio);
 
-  if (arrayXIDelCmd!=NULL) FreeTmp(arrayXIDelCmd);
+  if (arrayXIDelCmd!=NULL) OO_Free (arrayXIDelCmd,0);
   FreeAllXIDelCmd();
 
-  if (arrayXIDelObj!=NULL) FreeTmp(arrayXIDelObj);
+  if (arrayXIDelObj!=NULL) OO_Free (arrayXIDelObj,0);
   FreeAllXIDelObj();
 
-  if (arrayXINewCpl!=NULL) FreeTmp(arrayXINewCpl);
+  if (arrayXINewCpl!=NULL) OO_Free (arrayXINewCpl,0);
   FreeAllXINewCpl();
 
-  if (arrayXIOldCpl!=NULL) FreeTmp(arrayXIOldCpl);
+  if (arrayXIOldCpl!=NULL) OO_Free (arrayXIOldCpl,0);
   FreeAllXIOldCpl();
 
-  if (arrayXIDelCpl!=NULL) FreeTmp(arrayXIDelCpl);
+  if (arrayXIDelCpl!=NULL) OO_Free (arrayXIDelCpl,0);
   FreeAllXIDelCpl();
 
-  if (arrayXIModCpl!=NULL) FreeTmp(arrayXIModCpl);
+  if (arrayXIModCpl!=NULL) OO_Free (arrayXIModCpl,0);
   FreeAllXIModCpl();
 
-  if (arrayXIAddCpl!=NULL) FreeTmp(arrayXIAddCpl);
+  if (arrayXIAddCpl!=NULL) OO_Free (arrayXIAddCpl,0);
   FreeAllXIAddCpl();
 
-  if (localCplObjs!=NULL) FreeTmp(localCplObjs);
+  FreeLocalCoupledObjectsList(localCplObjs);
 
   for(; sendMsgs!=NULL; sendMsgs=sm)
   {
     sm = sendMsgs->next;
-    FreeTmp(sendMsgs);
+    OO_Free (sendMsgs,0);
   }
 
         #ifdef XferMemFromHeap
-  ReleaseHeap();
-  LC_SetMemMgr(memmgr_AllocTMEM, memmgr_FreeTMEM,
-               memmgr_AllocTMEM, memmgr_FreeTMEM);
+  xferGlobals.useHeap = FALSE;
+  ReleaseHeap(xferGlobals.theMarkKey);
+  LC_SetMemMgrDefault();
         #endif
 
 #       if DebugXfer<=4
@@ -1151,6 +1144,9 @@ void DDD_XferAddData (int cnt, DDD_TYPE typ)
   if (theXIAddData==NULL) return;
 
   xa = NewXIAddData();
+  if (xa==NULL)
+    HARD_EXIT;
+
   xa->addCnt = cnt;
   xa->addTyp = typ;
   xa->sizes  = NULL;
@@ -1201,6 +1197,9 @@ void DDD_XferAddDataX (int cnt, DDD_TYPE typ, size_t *sizes)
   if (theXIAddData==NULL) return;
 
   xa = NewXIAddData();
+  if (xa==NULL)
+    HARD_EXIT;
+
   xa->addCnt = cnt;
   xa->addTyp = typ;
 
@@ -1296,6 +1295,9 @@ void DDD_Object::XferDeleteObj (void)
   TYPE_DESC *desc =  &(theTypeDefs[OBJ_TYPE(hdr)]);
   XIDelCmd  *dc = NewXIDelCmd(SLLNewArgs);
 
+  if (dc==NULL)
+    HARD_EXIT;
+
 
         #ifdef CPP_FRONTEND
   dc->obj = this;
@@ -1329,6 +1331,9 @@ void DDD_XferDeleteObj (DDD_TYPE *type, DDD_OBJ *obj)
 {
   DDD_HDR hdr = OBJ2HDR(*obj,&theTypeDefs[*type]);
   XIDelCmd  *dc = NewXIDelCmd(SLLNewArgs);
+
+  if (dc==NULL)
+    HARD_EXIT;
 
   dc->hdr = hdr;
 
@@ -1383,6 +1388,17 @@ void DDD_XferBegin (void)
     DDD_PrintError('E', 6010, "DDD_XferBegin() aborted");
     HARD_EXIT;
   }
+
+
+  /* set kind of TMEM alloc/free requests */
+  xfer_SetTmpMem(TMEM_XFER);
+
+        #ifdef XferMemFromHeap
+  MarkHeap(&xferGlobals.theMarkKey);
+  xferGlobals.useHeap = TRUE;
+  LC_SetMemMgrRecv(xfer_AllocHeap, NULL);
+  LC_SetMemMgrSend(xfer_AllocSend, xfer_FreeSend);
+        #endif
 }
 
 

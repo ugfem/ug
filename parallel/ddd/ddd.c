@@ -99,6 +99,18 @@ int theOptions[OPT_END];
 /****************************************************************************/
 
 
+static void *LowComm_DefaultAlloc (size_t s)
+{
+  return memmgr_AllocTMEM(s, TMEM_LOWCOMM);
+}
+
+static void LowComm_DefaultFree (void *buffer)
+{
+  memmgr_FreeTMEM(buffer, TMEM_LOWCOMM);
+}
+
+
+
 /****************************************************************************/
 /*                                                                          */
 /* Function:  DDD_Init                                                      */
@@ -197,7 +209,7 @@ DDD_Library::DDD_Library (int *argcp, char ***argvp)
 
   /* init all DDD components */
   NotifyInit();
-  LC_Init(memmgr_AllocTMEM, memmgr_FreeTMEM);
+  LC_Init(LowComm_DefaultAlloc, LowComm_DefaultFree);
   ddd_StatInit();
   ddd_TypeMgrInit();
   ddd_ObjMgrInit();

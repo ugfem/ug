@@ -180,6 +180,9 @@ XICopyObj **CplClosureEstimate (XICopyObjPtrArray *arrayItems, int *nRet)
       for(cpl=xicpl; cpl!=NULL; cpl=CPL_NEXT(cpl))
       {
         XINewCpl *xc = NewXINewCpl(SLLNewArgs);
+        if (xc==NULL)
+          HARD_EXIT;
+
         xc->to      = cpl->proc;                           /* receiver of XINewCpl     */
         xc->te.dest = dest;                                /* destination of XICopyObj */
         xc->te.gid  = xigid;                               /* the object's gid         */
@@ -194,6 +197,9 @@ XICopyObj **CplClosureEstimate (XICopyObjPtrArray *arrayItems, int *nRet)
       for(cpl=xicpl; cpl!=NULL; cpl=CPL_NEXT(cpl))
       {
         XIOldCpl *xc = NewXIOldCpl(SLLNewArgs);
+        if (xc==NULL)
+          HARD_EXIT;
+
         xc->to      = dest;                                    /* receiver of XIOldCpl */
         xc->te.gid  = xigid;                                   /* the object's gid     */
         xc->te.proc = cpl->proc;                               /* coupling proc        */
@@ -203,6 +209,9 @@ XICopyObj **CplClosureEstimate (XICopyObjPtrArray *arrayItems, int *nRet)
       /* send one coupling (XIOldCpl) for local copy */
       {
         XIOldCpl *xc = NewXIOldCpl(SLLNewArgs);
+        if (xc==NULL)
+          HARD_EXIT;
+
         xc->to      = dest;                                     /* receiver of XIOldCpl */
         xc->te.gid  = xigid;                                    /* the object's gid     */
         xc->te.proc = me;                                       /* coupling proc        */
@@ -222,7 +231,7 @@ XICopyObj **CplClosureEstimate (XICopyObjPtrArray *arrayItems, int *nRet)
     int j, k;
 
     arrayNewOwners =
-      (XICopyObj **)AllocTmp(sizeof(XICopyObj *)* nNewOwners);
+      (XICopyObj **) OO_Allocate (sizeof(XICopyObj *)* nNewOwners);
     if (arrayNewOwners==NULL)
     {
       DDD_PrintError('E', 6102, STR_NOMEM " in XferEnd()");
@@ -265,6 +274,9 @@ XICopyObj **CplClosureEstimate (XICopyObjPtrArray *arrayItems, int *nRet)
         /* tell no1-dest that no2-dest gets a copy with no2->prio  */
         {
           XINewCpl *xc = NewXINewCpl(SLLNewArgs);
+          if (xc==NULL)
+            HARD_EXIT;
+
           xc->to      = no1->dest;                                 /* receiver of XINewCpl     */
           xc->te.dest = no2->dest;                                 /* destination of XICopyObj */
           xc->te.gid  = gid1;                                      /* the object's gid         */
@@ -274,6 +286,9 @@ XICopyObj **CplClosureEstimate (XICopyObjPtrArray *arrayItems, int *nRet)
         /* tell no2->dest that no1-dest gets a copy with no1->prio */
         {
           XINewCpl *xc = NewXINewCpl(SLLNewArgs);
+          if (xc==NULL)
+            HARD_EXIT;
+
           xc->to      = no2->dest;                                 /* receiver of XINewCpl     */
           xc->te.dest = no1->dest;                                 /* destination of XICopyObj */
           xc->te.gid  = gid1;                                      /* the object's gid         */
@@ -329,7 +344,7 @@ static XFERMSG *CreateXferMsg (DDD_PROC dest, XFERMSG *lastxm)
 {
   XFERMSG *xm;
 
-  xm = (XFERMSG *) AllocTmp(sizeof(XFERMSG));
+  xm = (XFERMSG *) OO_Allocate (sizeof(XFERMSG));
   if (xm==NULL)
   {
     DDD_PrintError('E', 6100, STR_NOMEM " in PrepareObjMsgs");
@@ -674,6 +689,9 @@ void ExecLocalXISetPrio (
       for(cpl=ObjCplList(hdr); cpl!=NULL; cpl=CPL_NEXT(cpl))
       {
         XIModCpl *xc = NewXIModCpl(SLLNewArgs);
+        if (xc==NULL)
+          HARD_EXIT;
+
         xc->to      = cpl->proc;                               /* receiver of XIModCpl  */
         xc->te.gid  = gid;                                     /* the object's gid      */
         xc->te.prio = newprio;                                 /* the object's new prio */
@@ -683,6 +701,9 @@ void ExecLocalXISetPrio (
       while (iNO<nNO && itemsNO[iNO]->gid==gid)
       {
         XIModCpl *xc = NewXIModCpl(SLLNewArgs);
+        if (xc==NULL)
+          HARD_EXIT;
+
         xc->to      = itemsNO[iNO]->dest;                        /* receiver of XIModCpl */
         xc->te.gid  = gid;                                       /* the object's gid     */
         xc->te.prio = newprio;                                  /* the object's new prio */
@@ -718,7 +739,7 @@ void ExecLocalXIDelCmd (XIDelCmd  **itemsD, int nD)
     return;
 
   /* reconstruct original order of DelObj commands */
-  origD = (XIDelCmd **) AllocTmp(sizeof(XIDelCmd *) * nD);
+  origD = (XIDelCmd **) OO_Allocate (sizeof(XIDelCmd *) * nD);
   if (origD==NULL)
   {
     DDD_PrintError('E', 6101, STR_NOMEM " in XferEnd()");
@@ -763,7 +784,7 @@ void ExecLocalXIDelCmd (XIDelCmd  **itemsD, int nD)
                 #endif
   }
 
-  FreeTmp(origD);
+  OO_Free (origD /*,0*/);
 }
 
 
@@ -795,6 +816,9 @@ void ExecLocalXIDelObj (
     while (iNO<nNO && itemsNO[iNO]->gid==gid)
     {
       XIDelCpl *xc = NewXIDelCpl(SLLNewArgs);
+      if (xc==NULL)
+        HARD_EXIT;
+
       xc->to      = itemsNO[iNO]->dest;                  /* receiver of XIDelCpl */
       xc->prio    = PRIO_INVALID;                        /* dont remember priority   */
       xc->te.gid  = gid;                                 /* the object's gid     */
@@ -849,6 +873,9 @@ void PropagateCplInfos (
       while (iNC<nNC && arrayNC[iNC].gid==gid)
       {
         XIModCpl *xc = NewXIModCpl(SLLNewArgs);
+        if (xc==NULL)
+          HARD_EXIT;
+
         xc->to      = arrayNC[iNC].dest;                         /* receiver of XIModCpl */
         xc->te.gid  = gid;                                       /* the object's gid     */
         xc->te.prio = newprio;                                   /* the object's new prio */
@@ -876,6 +903,9 @@ void PropagateCplInfos (
     while (iNC<nNC && arrayNC[iNC].gid==gid)
     {
       XIDelCpl *xc = NewXIDelCpl(SLLNewArgs);
+      if (xc==NULL)
+        HARD_EXIT;
+
       xc->to      = arrayNC[iNC].dest;                   /* receiver of XIDelCpl */
       xc->prio    = PRIO_INVALID;
       xc->te.gid  = gid;                                 /* the object's gid     */
@@ -905,6 +935,9 @@ void XferRegisterDelete (DDD_HDR hdr)
 
   /* create new XIDelObj */
   xi      = NewXIDelObj(SLLNewArgs);
+  if (xi==NULL)
+    HARD_EXIT;
+
   xi->gid = OBJ_GID(hdr);
   xi->delcpls = NULL;
 
@@ -919,6 +952,8 @@ void XferRegisterDelete (DDD_HDR hdr)
   for(cpl=ObjCplList(hdr); cpl!=NULL; cpl=CPL_NEXT(cpl))
   {
     XIDelCpl *xc = NewXIDelCpl(SLLNewArgs);
+    if (xc==NULL)
+      HARD_EXIT;
 
     xc->to      = cpl->proc;                     /* receiver of XIDelCpl */
     xc->prio    = cpl->prio;                     /* remember priority    */
@@ -1013,6 +1048,12 @@ int XferStepMode (int old)
 
 void ddd_XferInit (void)
 {
+  /* switch off heap usage, will be switched on during XferBegin/End */
+  xferGlobals.useHeap = FALSE;
+
+  /* set kind of TMEM alloc/free requests */
+  xfer_SetTmpMem(TMEM_ANY);
+
   /* init control structures for XferInfo-items in first (?) message */
   xferGlobals.setXICopyObj = New_XICopyObjSet();
   xferGlobals.setXISetPrio = New_XISetPrioSet();
@@ -1055,6 +1096,9 @@ void ddd_XferInit (void)
 
 void ddd_XferExit (void)
 {
+  /* set kind of TMEM alloc/free requests */
+  xfer_SetTmpMem(TMEM_ANY);
+
   CmdMsgExit();
   CplMsgExit();
 

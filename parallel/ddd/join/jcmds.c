@@ -1043,7 +1043,7 @@ void DDD_JoinEnd (void)
   for(; sendMsgs2!=NULL; sendMsgs2=sm2)
   {
     sm2 = sendMsgs2->next;
-    FreeTmp(sendMsgs2);
+    FreeTmp(sendMsgs2, 0);
   }
 
 
@@ -1139,7 +1139,7 @@ void DDD_JoinEnd (void)
   for(; sendMsgs3!=NULL; sendMsgs3=sm3)
   {
     sm3 = sendMsgs3->next;
-    FreeTmp(sendMsgs3);
+    FreeTmp(sendMsgs3, 0);
   }
 
 
@@ -1159,14 +1159,14 @@ void DDD_JoinEnd (void)
   JIAddCplPtrArray_Free(arrayJIAddCpl3);
   JIAddCplSet_Reset(joinGlobals.setJIAddCpl3);
 
-  if (localCplObjs!=NULL) FreeTmp(localCplObjs);
+  if (localCplObjs!=NULL) FreeTmp(localCplObjs, 0);
 
-  if (joinObjs!=NULL) FreeTmp(joinObjs);
+  if (joinObjs!=NULL) FreeTmp(joinObjs, 0);
 
   for(; sendMsgs1!=NULL; sendMsgs1=sm1)
   {
     sm1 = sendMsgs1->next;
-    FreeTmp(sendMsgs1);
+    FreeTmp(sendMsgs1, 0);
   }
 
 
@@ -1294,6 +1294,10 @@ void DDD_JoinBegin (void)
     DDD_PrintError('E', 7010, "DDD_JoinBegin() aborted");
     HARD_EXIT;
   }
+
+
+  /* set kind of TMEM alloc/free requests */
+  join_SetTmpMem(TMEM_JOIN);
 }
 
 

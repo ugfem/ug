@@ -1,5 +1,20 @@
 ---------------------------
 
+CHANGES 1.8.17 -> 1.8.18
+
+---------------------------
+980514 kb
+complete redesign of memory handling.
+	- memory handling, esp. during DDD_XferEnd() is done more specifically,
+	  now. Each call to AllocTMEM and FreeTMEM is given an additional 
+	  parameter 'kind', which tells the memory manager what kind of
+	  memory is allocated. A simple memory manager can ignore this and
+	  call malloc() and free().
+	- Also module Join has been changed accordingly.
+	- NOTE: the memory manager (MemMgr) interface has changed, some calls
+	  have more parameters!
+---------------------------
+
 CHANGES 1.8.16 -> 1.8.17
 
 ---------------------------
