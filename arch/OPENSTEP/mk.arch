@@ -9,7 +9,7 @@ ARCH_MAKE     = make
 ARCH_CC       = cc
 ARCH_C++      = cc++
 ARCH_LINK     = cc
-ARCH_AR       = ar
+ARCH_AR       = ugarranlib ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = true
 
