@@ -41,6 +41,8 @@ then
 	echo "         NODEBUG (set DEBUG_MODE = OFF)";
 	echo "         CHACO (set CHACO = ON)";
 	echo "         NOCHACO (set CHACO = OFF)";
+	echo "         CAD (set CAD = ON)";
+	echo "         NOCAD (set CAD = OFF)";
 	exit 1;
 fi
 
@@ -82,7 +84,7 @@ PACKSUFFIX=Z
 
 grep_valid_entries()
 {
-	egrep '^[ ]*ARCH|^[ ]*MODEL |^[ ]*DIM|^[ ]*GRAPE |^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE|^[ ]*CHACO' $1;
+	egrep '^[ ]*ARCH|^[ ]*MODEL |^[ ]*DIM|^[ ]*GRAPE |^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE|^[ ]*CHACO|^[ ]*CAD' $1;
 }
 
 
@@ -294,6 +296,12 @@ edit_ugconf()
 		;;
 	NOCHACO)
 		sed 's/^CHACO.*$/CHACO = OFF/' $1 > $1.tmp
+		;;
+	CAD)
+		sed 's/^CAD.*$/CAD = ON/' $1 > $1.tmp
+		;;
+	NOCAD)
+		sed 's/^CAD.*$/CAD = OFF/' $1 > $1.tmp
 		;;
 	*)
 		echo "error: unrecognized option '" $2 "'. use 'ugconf -help' for help.";
