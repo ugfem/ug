@@ -231,6 +231,12 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
   {
     if (whichWindow==(WindowPtr)&(shell.theRecord))
       IdleShellWindow();
+    if (whichWindow!=NULL)
+    {
+      gw = WhichGW(whichWindow);
+      if (gw!=NULL)
+        DrawInfoBox(gw);
+    }
   }
 
   /* get event */

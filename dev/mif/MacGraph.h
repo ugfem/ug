@@ -51,8 +51,11 @@
 /*																			*/
 /****************************************************************************/
 
-#define GRAPHWIN_MINSIZE                100
+#define GRAPHWIN_MINSIZE                135
 #define MAXTITLELENGTH                  128
+
+#define INFO_SIZE                               128
+#define INFO_LEN                                127
 
 /********************************************************************************/
 /*																				*/
@@ -83,6 +86,11 @@ struct graphwindow {
   short marker_size;                                            /* size of markers in pixels			*/
   short marker_id;                                              /* number of marker                                     */
   short textSize;                                               /* text size							*/
+
+  /* info and tool box */
+  char info[INFO_LEN];
+  INT currTool;
+  INT InfoBoxState;
 
   /* save size of viewport */
   INT Global_LL[2];                                             /* global x-coord of plotting region	*/
@@ -115,7 +123,7 @@ INT                      Mac_UpdateOutput               (WINDOWID win, char *s, 
 INT                      GetTool                                (WindowPtr theWindow, INT *MouseLocation, INT *ChosenToolPtr);
 GRAPH_WINDOW    *WhichGW                                (WindowPtr win);
 void                     SetCurrentGW                   (GRAPH_WINDOW *g);
-void                     DrawInfoBox                    (GRAPH_WINDOW *gw, char *info);
+void                     DrawInfoBox                    (GRAPH_WINDOW *gw);
 INT                      GrowGraphWindow                (GRAPH_WINDOW *gw, EventRecord *theEvent, DOC_GROW_EVENT *docGrow);
 INT                              DragGraphWindow                (GRAPH_WINDOW *gw, EventRecord *theEvent, DOC_DRAG_EVENT *docDrag);
 
