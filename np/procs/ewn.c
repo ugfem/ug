@@ -102,6 +102,7 @@ typedef struct
   INT c_n;                                                               /* convergence on c_n vectors      */
   INT c_d;                                                               /* up to c_d digits                */
   INT type;                                  /* usage of mass matrix            */
+  DOUBLE shift;                                                  /* shift of center of inverse iter */
 
   /* dynamical data */
   VECDATA_DESC *r;                           /* help vector                     */
@@ -170,6 +171,22 @@ static INT SetUnsymmetric (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,
   return (NUM_OK);
 }
 
+static INT dm0add2 (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x, MATDATA_DESC *A)
+{
+  return (1);
+}
+
+static INT dmassadd (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *A, const VECDATA_DESC *x, INT type)
+{
+  switch(type)
+  {
+  case MD_0 :
+    return (dm0add(mg,fl,tl,mode,x,A));
+  default :
+    return(1);
+  }
+}
+
 static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev, VECDATA_DESC **ev, NP_NL_ASSEMBLE *Assemble, INT *result)
 {
   NP_EWN *np;
@@ -186,6 +203,12 @@ static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev, VECDATA_DESC *
   if (np->reset)
     for (i=0; i<nev; i++)
       if (SetUnsymmetric(theNP->base.mg,bl,level,ev[i],EVERY_CLASS,i)) NP_RETURN(1,result[0]);
+  if (np->shift!=0.0)
+  {
+    if (dcopy(theNP->base.mg,bl,level,ALL_VECTORS,np->t,np->E)) return(1);
+    if (dscal(theNP->base.mg,bl,level,ALL_VECTORS,np->t,-np->shift)) return(1);
+    if (dmassadd(theNP->base.mg,bl,level,ALL_VECTORS,np->M,np->t,np->type)) return(1);
+  }
   np->reset = 0;
   if (np->LS->PreProcess != NULL) if ((*np->LS->PreProcess)(np->LS,level,ev[0],np->r,np->M, &np->baselevel,result)) return(1);
 
@@ -207,6 +230,12 @@ static INT EWPostProcess (NP_EW_SOLVER *theNP, INT level, INT nev, VECDATA_DESC 
   if (FreeMD(theNP->base.mg,bl,level,np->M)) NP_RETURN(1,result[0]);
   for (i=0; i<nev; i++)
     if ((*np->Transfer->ProjectSolution)(np->Transfer,bl,level,ev[i],result)) NP_RETURN(1,result[0]);
+  if (np->shift!=0.0)
+  {
+    if (dcopy(theNP->base.mg,bl,level,ALL_VECTORS,np->t,np->E)) return(1);
+    if (dscal(theNP->base.mg,bl,level,ALL_VECTORS,np->t,np->shift)) return(1);
+    if (dmassadd(theNP->base.mg,bl,level,ALL_VECTORS,np->M,np->t,np->type)) return(1);
+  }
   if (np->LS->PostProcess != NULL)
     if ((*np->LS->PostProcess)(np->LS,level,ev[0],np->r,np->M,result)) NP_RETURN(1,result[0]);
 
@@ -286,6 +315,7 @@ static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
   if (strcmp(buffer,"std")==0) np->type=MD_STD;
   else if (strcmp(buffer,"0")==0) np->type=MD_0;
   else np->type=MD_UNDEF;
+  if (ReadArgvDOUBLE("shift",&np->shift,argc,argv)) np->shift=0.0;
 
   return(NP_EXECUTABLE);
 }
@@ -457,7 +487,7 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
   NP_EWN     *np    = (NP_EWN *) theNP;
   MULTIGRID *theMG = theNP->base.mg;
   INT i,j,k,l,PrintID,iter,done;
-  char text[DISPLAY_WIDTH+4],format1[64],format2[64],format3[64];
+  char text[DISPLAY_WIDTH+4],format1[64],format2[64],format3[64],formatr1[64],formatr2[64];
   DOUBLE a[2],rq,s;
   DOUBLE A[MAX_NUMBER_EW][MAX_NUMBER_EW];
   DOUBLE B[MAX_NUMBER_EW][MAX_NUMBER_EW];
@@ -475,6 +505,12 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
 
   ewresult->error_code = 0;
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'§',"\n"); UserWrite(text);
+  sprintf(text,"%d.%d",np->c_d+1,np->c_d-1);
+  strcpy(format1," %-3d  %3d: (% "); strcat(format1,text); strcat(format1,"e, % "); strcat(format1,text); strcat(format1,"e)\n");
+  strcpy(format2,"      %3d: (% "); strcat(format2,text); strcat(format2,"e, % "); strcat(format2,text); strcat(format2,"e)\n");
+  strcpy(format3,"      %3d: [% "); strcat(format3,text); strcat(format3,"e, % "); strcat(format3,text); strcat(format3,"e]\n");
+  strcpy(formatr1," %-3d   res: %3d: (% "); strcat(formatr1,text); strcat(formatr1,"e, % "); strcat(formatr1,text); strcat(formatr1,"e)\n");
+  strcpy(formatr2,"            %3d: (% "); strcat(formatr2,text); strcat(formatr2,"e, % "); strcat(formatr2,text); strcat(formatr2,"e)\n");
   for (iter=0; iter<np->maxiter; iter++)
   {
     if (iter > 0)
@@ -550,17 +586,13 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
     /* display */
     if (np->display > PCR_NO_DISPLAY)
     {
-      sprintf(text,"%d.%d",np->c_d+1,np->c_d-1);
-      strcpy(format1," %-3d  %3d: (% "); strcat(format1,text); strcat(format1,"e, % "); strcat(format1,text); strcat(format1,"e)\n");
-      strcpy(format2,"      %3d: (% "); strcat(format2,text); strcat(format2,"e, % "); strcat(format2,text); strcat(format2,"e)\n");
-      strcpy(format3,"      %3d: [% "); strcat(format3,text); strcat(format3,"e, % "); strcat(format3,text); strcat(format3,"e]\n");
       for (i=0; i<np->ew.nev; i++)
         if (i==0)
-          UserWriteF(format1,(int)iter,(int)i,ew_re[i],ew_im[i]);
+          UserWriteF(format1,(int)iter,(int)i,ew_re[i]+np->shift,ew_im[i]);
         else if (i<np->c_n)
-          UserWriteF(format2,(int)i,ew_re[i],ew_im[i]);
+          UserWriteF(format2,(int)i,ew_re[i]+np->shift,ew_im[i]);
         else
-          UserWriteF(format3,(int)i,ew_re[i],ew_im[i]);
+          UserWriteF(format3,(int)i,ew_re[i]+np->shift,ew_im[i]);
       UserWriteF("\n");
     }
 
@@ -583,6 +615,14 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
     }
     if (done) break;
   }
+
+  /* print result */
+  for (i=0; i<np->c_n; i++)
+    if (i==0)
+      UserWriteF(formatr1,(int)iter,(int)i,ew_re[i]+np->shift,ew_im[i]);
+    else
+      UserWriteF(formatr2,(int)i,ew_re[i]+np->shift,ew_im[i]);
+  UserWriteF("\n");
 
   return (0);
 }
