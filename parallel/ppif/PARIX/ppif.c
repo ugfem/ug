@@ -150,8 +150,8 @@ struct messagecarrier {
 /*                                                                          */
 /****************************************************************************/
 
-/* Revison Control System string */
-RCSID(Header: $,PPIF_RCS_STRING)
+/* Revision Control System string */
+RCSID($Header$,PPIF_RCS_STRING)
 
 
 /****************************************************************************/

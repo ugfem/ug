@@ -83,8 +83,8 @@
 
 /* TODO: delete this */
 /* copied from compiler.h */
-#define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
-#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
+/*#define ALIGNMENT 8   */                  /* power of 2 and >= sizeof(int) !  */
+/*#define ALIGNMASK 0xFFFFFFF8  */          /* compatible to alignment          */
 
 
 /****************************************************************************/
@@ -288,8 +288,8 @@ enum directions {north,east,south,west,up,down};
 /*                                                                          */
 /****************************************************************************/
 
-/* Revison Control System string */
-RCSID(Header: $,PPIF_RCS_STRING)
+/* Revision Control System string */
+RCSID($Header$,PPIF_RCS_STRING)
 
 
 /****************************************************************************/
