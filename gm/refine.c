@@ -247,7 +247,8 @@ typedef NODE *ELEMENTCONTEXT[MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM];
 /*																			*/
 /****************************************************************************/
 
-REFINEINFO refine_info;	/* information used by the estimator and refine     */ 
+/* information used by the estimator and refine*/ 
+REFINEINFO refine_info = {0}; /* init step to 0 */
 
 /****************************************************************************/
 /*																			*/
@@ -368,7 +369,7 @@ INT SetRefineInfo(MULTIGRID *theMG)
 
 INT TestRefineInfo(MULTIGRID *theMG)
 {
-	if (PREDNEW(REFINEINFO(theMG)) > PREDMAX(REFINEINFO(theMG)))
+	if (PREDNEW0(REFINEINFO(theMG)) > PREDMAX(REFINEINFO(theMG)))
 		return(GM_ERROR);
 	else
 		return(GM_OK);
@@ -4816,8 +4817,10 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 			PREDMAX(REFINEINFO(theMG)));
 		SetRefineInfo(theMG);
 
-		UserWriteF("refinetest: predicted_new=%9.0f predicted_max=%9.0f\n",
-			PREDNEW(REFINEINFO(theMG)), PREDMAX(REFINEINFO(theMG)));
+
+		/* refinement possible or not */
+		if (TestRefineInfo(theMG) != GM_OK)
+		{
 			UserWriteF("Too much marked elements: "
 				"Number of marked elements would cause heap overflow\n");
 			return(GM_ERROR);
@@ -5028,4 +5031,7 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 /*
 	/* reset status */
 	RESETMGSTATUS(theMG);
+
+CheckMultiGrid(theMG);
+	SETREFINESTEP(REFINEINFO(theMG),REFINESTEP(REFINEINFO(theMG))++);
 }

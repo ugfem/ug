@@ -121,12 +121,18 @@
 
 /* macros for refineinfo */
 #define REFINEINFO(mg)                                  refine_info
-#define MARKCOUNT(r)                                    r.markcount
-#define SETMARKCOUNT(r,n)                               r.markcount = n
-#define PREDNEW(r)                                              r.predicted_new
-#define SETPREDNEW(r,n)                                 r.predicted_new = n
-#define PREDMAX(r)                                              r.predicted_max
-#define SETPREDMAX(r,n)                                 r.predicted_max = n
+#define REFINESTEP(r)                                   r.step
+#define SETREFINESTEP(r,s)                              r.step = s
+#define MARKCOUNT(r)                                    r.markcount[r.step]
+#define SETMARKCOUNT(r,n)                               r.markcount[r.step] = n
+#define PREDNEW0(r)                                             r.predicted_new[r.step][0]
+#define SETPREDNEW0(r,n)                                r.predicted_new[r.step][0] = n
+#define PREDNEW1(r)                                             r.predicted_new[r.step][1]
+#define SETPREDNEW1(r,n)                                r.predicted_new[r.step][1] = n
+#define PREDNEW2(r)                                             r.predicted_new[r.step][2]
+#define SETPREDNEW2(r,n)                                r.predicted_new[r.step][2] = n
+#define PREDMAX(r)                                              r.predicted_max[r.step]
+#define SETPREDMAX(r,n)                                 r.predicted_max[r.step] = n
 
 /****************************************************************************/
 /*																			*/
@@ -136,9 +142,10 @@
 
 typedef struct refineinfo
 {
-  float markcount;                      /* count of currently marked elements           */
-  float predicted_new;          /* count of elements, which would be created    */
-  float predicted_max;          /* count of elements which can be created       */
+  INT step;                                       /* count of calls to RefineMultiGrid      */
+  float markcount[100];                   /* count of currently marked elements     */
+  float predicted_new[100][3];        /* count of elements, would be created    */
+  float predicted_max[100];               /* count of elements which can be created */
 } REFINEINFO;
 
 typedef INT (*Get_Sons_of_ElementSideProcPtr)(ELEMENT *theElement, INT side, INT *Sons_of_Side,ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons);
