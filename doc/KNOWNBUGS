@@ -46,3 +46,18 @@ Applikation: d3f
 Skript: init.scr (with savedata switched on), df_run.scr
 
 
+UG/ug/ui/
+-----------
+
+dataexplorer:
+Bug description: The dataexplorer command can fail in parallel mode if the buffer 
+	size PFILE_BUFFER_SIZE in pfile.h is too small.  You will see either a 
+	timeout error, crash or message truncation error, depending on the circumstances.
+	The problem is that each process will write its segment into the buffer before the
+	segments are collected and then written by the master.  If the buffer is too small,
+	this fails.
+
+Bug fix (hack): Increase the size of PFILE_BUFFER_SIZE until the command suceeds.
+	A permanent solution should probably determine the buffer size dynamically,
+	but could then be unable to allocate enough memory.
+
