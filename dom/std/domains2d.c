@@ -241,15 +241,10 @@ static INT diagonal (void *data, COORD *param, COORD *result)
   COORD lambda;
 
   lambda = param[0];
-
-  /* check range */
   if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (1.0-lambda)*x_quad[0][0] + lambda*x_quad[2][0];
+  result[1] = (1.0-lambda)*x_quad[0][1] + lambda*x_quad[2][1];
 
-  /* fill result */
-  result[0] = lambda;
-  result[1] = lambda;
-
-  /* return ok */
   return(0);
 }
 
@@ -257,12 +252,15 @@ static INT InitTriangle (void)
 {
   COORD radius,MidPoint[2];
 
-  /* allocate new domain structure */
-  MidPoint[0] = MidPoint[1] = 0.5;
-  radius = 0.5;
+  MidPoint[0] = 0.333333*(x_quad[0][0]+x_quad[1][0]+x_quad[2][0]);
+  MidPoint[1] = 0.333333*(x_quad[0][1]+x_quad[1][1]+x_quad[2][1]);
+  radius =            ABS(x_quad[0][0]-MidPoint[0]);
+  radius = MAX(radius,ABS(x_quad[1][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[2][0]-MidPoint[0]));
+  radius = MAX(radius,ABS(x_quad[0][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[1][1]-MidPoint[1]));
+  radius = MAX(radius,ABS(x_quad[2][1]-MidPoint[1]));
   if (CreateDomain("Triangle",MidPoint,radius,3,3,YES)==NULL) return(1);
-
-  /* allocate the boundary segments */
   if (CreateBoundarySegment2D("south",   1,0,0,0,1,1,0.0,1.0,
                               southBoundary,NULL)==NULL) return(1);
   if (CreateBoundarySegment2D("east",    1,0,1,1,2,1,0.0,1.0,
@@ -270,7 +268,6 @@ static INT InitTriangle (void)
   if (CreateBoundarySegment2D("diagonal",0,1,2,0,2,1,0.0,1.0,
                               diagonal,NULL)==NULL) return(1);
 
-  /* return ok */
   return(0);
 }
 
@@ -285,15 +282,10 @@ static INT BottomBoundary (void *data, COORD *param, COORD *result)
   COORD lambda;
 
   lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (1.0-lambda)*x_quad[0][0] + lambda*9.0;
+  result[1] = (1.0-lambda)*x_quad[0][1] + lambda*0.0;
 
-  /* check range */
-  if ((lambda<0.0)||(lambda>9.0)) return(1);
-
-  /* fill result */
-  result[0] = lambda;
-  result[1] = 0.0;
-
-  /* return ok */
   return(0);
 }
 
@@ -352,15 +344,10 @@ static INT LeftBoundary (void *data, COORD *param, COORD *result)
   COORD lambda;
 
   lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = (1.0-lambda)*x_quad[0][0] + lambda* 0.0;
+  result[1] = (1.0-lambda)*x_quad[0][1] + lambda*10.0;
 
-  /* check range */
-  if ((lambda<0.0)||(lambda>10.0)) return(1);
-
-  /* fill result */
-  result[0] = 0.0;
-  result[1] = 10.0 - lambda;
-
-  /* return ok */
   return(0);
 }
 
@@ -377,7 +364,7 @@ static INT InitPuncturedDisc (void)
   /* allocate the boundary segments */
   if (CreateBoundarySegment2D("bottom",1,0,
                               0,0,1,1,
-                              0.0,9.0,
+                              0.0,1.0,
                               BottomBoundary,NULL)==NULL) return(1);
   if (CreateBoundarySegment2D("circle", 1,0,
                               1,1,2,20,
@@ -392,8 +379,8 @@ static INT InitPuncturedDisc (void)
                               0.0,10.0,
                               TopBoundary, NULL)==NULL) return(1);
   if (CreateBoundarySegment2D("left", 1,0,
-                              4,4,0,1,
-                              0.0,10.0,
+                              4,0,4,1,
+                              0.0,1.0,
                               LeftBoundary, NULL)==NULL) return(1);
 
   /* return ok */
@@ -917,6 +904,38 @@ INT STD_BVP_Configure (INT argc, char **argv)
       x_quad[3][0] = 0.0;
       x_quad[3][1] = 1.0;
     }
+  }
+  else if (strcmp(DomainName,"Triangle") == 0)
+  {
+    if (ReadArgvPosition("x0",argc,argv,x_quad[0]))
+    {
+      x_quad[0][0] = 0.0;
+      x_quad[0][1] = 0.0;
+    }
+    if (ReadArgvPosition("x1",argc,argv,x_quad[1]))
+    {
+      x_quad[1][0] = 1.0;
+      x_quad[1][1] = 0.0;
+    }
+    if (ReadArgvPosition("x2",argc,argv,x_quad[2]))
+    {
+      x_quad[2][0] = 1.0;
+      x_quad[2][1] = 1.0;
+    }
+  }
+  else if (strcmp(DomainName,"Punctured Disc") == 0)
+  {
+    if (ReadArgvPosition("x0",argc,argv,x_quad[0]))
+    {
+      x_quad[0][0] = 0.0;
+      x_quad[0][1] = 0.0;
+    }
+    x_quad[1][0] = 10.0;
+    x_quad[1][1] = 0.0;
+    x_quad[2][0] = 10.0;
+    x_quad[2][1] = 10.0;
+    x_quad[3][0] = 0.0;
+    x_quad[3][1] = 10.0;
   }
 
   theDomain = GetDomain(DomainName);
