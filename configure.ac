@@ -87,7 +87,7 @@ AC_CHECK_FUNCS([bzero floor gethostbyaddr gethostbyname gethrtime memmove memset
 ## parallel support
 #
 
-AC_ARG_ENABLE([parallel],AS_HELP_STRING([--enable-parallel],[enable parallel computing (default is NO)]),[parallel=$enableval],[parallel=no])
+AC_ARG_ENABLE([parallel],AC_HELP_STRING([--enable-parallel],[enable parallel computing (default is NO)]),[parallel=$enableval],[parallel=no])
 
 if test x$parallel = xyes ; then
   # set define
@@ -96,7 +96,7 @@ fi
 
 # debugging
 
-AC_ARG_ENABLE([debug],AS_HELP_STRING([--enable-debug],[enable UG debugging (default is NO)]),[debug=$enableval],[debug=no])
+AC_ARG_ENABLE([debug],AC_HELP_STRING([--enable-debug],[enable UG debugging (default is NO)]),[debug=$enableval],[debug=no])
 
 if test x$debug = xyes ; then
   # set define
