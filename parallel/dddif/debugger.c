@@ -206,7 +206,7 @@ static void buggy_NodeShow (NODE *n)
 
   if (NFATHER(n))
     printf("%4d:    father=%08x\n", me,
-           DDD_InfoGlobalId(PARHDR(NFATHER(n))));
+           DDD_InfoGlobalId(PARHDR((NODE *)NFATHER(n))));
 
   if (PREDN(n))
     printf("%4d:    pred=%08x\n", me,

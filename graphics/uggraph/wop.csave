@@ -3232,7 +3232,8 @@ static NODE *NW_GetNextNode_leave_fw (NODE *theNode)
 		else
 			theNode=TOPNODE(theVertex);
 		ASSERT(theNode!=NULL);
-		while (LEVEL(theNode)>GNode_toLevel && CORNERTYPE(theNode)) theNode=NFATHER(theNode);
+		while (LEVEL(theNode)>GNode_toLevel && CORNERTYPE(theNode)) 
+		  theNode=(NODE *)NFATHER(theNode);
 		if (theNode==NULL) return (NULL);
 	}
 	while (!USED(theNode));
@@ -3273,7 +3274,8 @@ static NODE *NW_GetNextNode_leave_bw (NODE *theNode)
 		}
 		else
 			theNode = TOPNODE(theVertex); 
-		while (LEVEL(theNode)>GNode_toLevel && CORNERTYPE(theNode)) theNode=NFATHER(theNode);
+		while (LEVEL(theNode)>GNode_toLevel && CORNERTYPE(theNode)) 
+		  theNode=(NODE *)NFATHER(theNode);
 		if (theNode==NULL) return (NULL);
 	}
 	while (!USED(theNode));
@@ -3486,7 +3488,8 @@ static NODE *NW_GetFirstNode_leave_fw (MULTIGRID *theMG, INT fromLevel, INT toLe
 	GNode_toLevel	= toLevel;
 	
 	theNode = TOPNODE(FIRSTVERTEX(GRID_ON_LEVEL(theMG,fromLevel)));
-	while (LEVEL(theNode)>GNode_toLevel && CORNERTYPE(theNode)) theNode=NFATHER(theNode);
+	while (LEVEL(theNode)>GNode_toLevel && CORNERTYPE(theNode)) 
+	  theNode=(NODE *)NFATHER(theNode);
 	if (theNode==NULL) return (NULL);
 	
 	if (theNode==NULL)
@@ -3534,7 +3537,8 @@ static NODE *NW_GetFirstNode_leave_bw (MULTIGRID *theMG, INT fromLevel, INT toLe
 	GNode_toLevel	= toLevel;
 	
 	theNode = LASTNODE(GRID_ON_LEVEL(GNode_MG,fromLevel));
-	while (LEVEL(theNode)>GNode_toLevel && CORNERTYPE(theNode)) theNode=NFATHER(theNode);
+	while (LEVEL(theNode)>GNode_toLevel && CORNERTYPE(theNode)) 
+	  theNode=(NODE *)NFATHER(theNode);
 	if (theNode==NULL) return (NULL);
 	
 	if (theNode==NULL)

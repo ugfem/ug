@@ -59,7 +59,7 @@
 
 /* determine the ddd header for identification of a node */
 #define NIDENT_HDR(node) ( (CORNERTYPE(node)) ? \
-                           PARHDR(NFATHER(node)) : PARHDR(node) )
+                           PARHDR((NODE *)NFATHER(node)) : PARHDR(node) )
 
 /****************************************************************************/
 /*																			*/
@@ -345,7 +345,7 @@ static INT IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor,
   {
     theNode = CORNER(Son,CORNER_OF_SIDE(Son,SonSide,k));
     if (CORNERTYPE(theNode))
-      IdentHdr[nident++] = PARHDR(NFATHER(theNode));
+      IdentHdr[nident++] = PARHDR((NODE *)NFATHER(theNode));
     else
       IdentHdr[nident++] = PARHDR(theNode);
   }
@@ -391,10 +391,10 @@ static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode,
       IdentObjectHdr[nobject++] = PARHDR(NVECTOR(theNode));
 
     /* identify to proclist of node */
-    proclist = DDD_InfoProcList(PARHDR(NFATHER(theNode)));
+    proclist = DDD_InfoProcList(PARHDR((NODE *)NFATHER(theNode)));
 
     /* identify using father node */
-    IdentHdr[nident++] = PARHDR(NFATHER(theNode));
+    IdentHdr[nident++] = PARHDR((NODE *)NFATHER(theNode));
 
     Ident_FctPtr(IdentObjectHdr, nobject,
                  proclist+2, PrioGhost, IdentHdr, nident);
@@ -437,7 +437,8 @@ static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode,
 
                         #ifdef __THREEDIM__
     /* 3D: identify to proclist of edge */
-    theEdge = GetEdge(NFATHER(EdgeNodes[0]),NFATHER(EdgeNodes[1]));
+    theEdge = GetEdge((NODE *)NFATHER(EdgeNodes[0]),
+                      (NODE *)NFATHER(EdgeNodes[1]));
     ASSERT(theEdge!=NULL);
 
     proclist = DDD_InfoProcList(PARHDR(theEdge));
@@ -445,8 +446,8 @@ static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode,
 
     /* identify using edge nodes */
     /*
-                            IdentHdr[nident++] = PARHDR(NFATHER(EdgeNodes[0]));
-                            IdentHdr[nident++] = PARHDR(NFATHER(EdgeNodes[1]));
+                            IdentHdr[nident++] = PARHDR((NODE *)NFATHER(EdgeNodes[0]));
+                            IdentHdr[nident++] = PARHDR((NODE *)NFATHER(EdgeNodes[1]));
      */
 
     /* this is the buggy case
@@ -479,7 +480,7 @@ static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode,
 
     /* identify using corner nodes of side */
     for (i=0; i<ncorners; i++)
-      IdentHdr[nident++] = PARHDR(NFATHER(Nodes[i]));
+      IdentHdr[nident++] = PARHDR((NODE *)NFATHER(Nodes[i]));
 
     /* identify side node */
     Ident_FctPtr(IdentObjectHdr, nobject,
@@ -587,12 +588,12 @@ static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor,
         #endif
 
   if (CORNERTYPE(Nodes[0]))
-    IdentHdr[nident++] = PARHDR(NFATHER(Nodes[0]));
+    IdentHdr[nident++] = PARHDR((NODE *)NFATHER(Nodes[0]));
   else
     IdentHdr[nident++] = PARHDR(Nodes[0]);
 
   if (CORNERTYPE(Nodes[1]))
-    IdentHdr[nident++] = PARHDR(NFATHER(Nodes[1]));
+    IdentHdr[nident++] = PARHDR((NODE *)NFATHER(Nodes[1]));
   else
     IdentHdr[nident++] = PARHDR(Nodes[1]);
 

@@ -156,7 +156,7 @@ static INT StandardRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
 
     if (CORNERTYPE(theNode))
     {
-      vc = NVECTOR(NFATHER(theNode));
+      vc = NVECTOR((NODE *)NFATHER(theNode));
       vecskip  = VECSKIP(vc);
       for (i=0; i<ncomp; i++)
         if (!(vecskip & (1<<i)))
@@ -255,7 +255,7 @@ static INT StandardIntCorNodeVector (GRID *FineGrid, const VECDATA_DESC *to, con
 
     if (CORNERTYPE(theNode))
     {
-      vc = NVECTOR(NFATHER(theNode));
+      vc = NVECTOR((NODE *)NFATHER(theNode));
       for (i=0; i<ncomp; i++)
         if (!(vecskip & (1<<i)))
           VVALUE(v,toComp[i]) = damp[i] * VVALUE(vc,fromComp[i]);
@@ -336,7 +336,7 @@ static INT StandardIntNewNodeVector (GRID *FineGrid, const VECDATA_DESC *Cor)
 
     if (CORNERTYPE(theNode))
     {
-      vc = NVECTOR(NFATHER(theNode));
+      vc = NVECTOR((NODE *)NFATHER(theNode));
       for (i=0; i<ncomp; i++)
         VVALUE(v,Comp[i]) = VVALUE(vc,Comp[i]);
     }
@@ -2187,7 +2187,7 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
 
     if (CORNERTYPE(theNode))             /* This node is also in the coarse grid */
     {
-      vc = NVECTOR(NFATHER(theNode));
+      vc = NVECTOR((NODE *)NFATHER(theNode));
 
       /* compute Q = D(vc)(D(vf))^{-1} */
       Dcoarse = &(MVALUE(VSTART(vc),0));
@@ -2454,7 +2454,7 @@ INT CreateStandardNodeRestProl (GRID *FineGrid, INT ncomp)
     vf = NVECTOR(theNode);
     if (CORNERTYPE(theNode))             /* This node is also in the coarse grid */
     {
-      vc = NVECTOR(NFATHER(theNode));
+      vc = NVECTOR((NODE *)NFATHER(theNode));
       /* allocate restriction matrix entry */
       im = GetIMatrix(vf,vc);
       if (im==NULL) {

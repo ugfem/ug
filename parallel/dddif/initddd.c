@@ -490,7 +490,6 @@ static void ddd_DefineTypes (void)
 
                  /* TODO: muss umgerechnet werden! */
                  EL_GDATA,  ELDEF(n.id),
-                 EL_GDATA,  ELDEF(n.index),
                  EL_LDATA,  ELDEF(n.pred),
                  EL_LDATA,  ELDEF(n.succ),
 

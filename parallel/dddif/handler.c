@@ -891,7 +891,7 @@ void NodeUpdate (DDD_OBJ obj)
 		{
 			case (CORNER_NODE):
 				ASSERT(OBJT(NFATHER(theNode)) == NDOBJ);
-				SONNODE(NFATHER(theNode)) = theNode;
+				SONNODE((NODE *)NFATHER(theNode)) = theNode;
 				break;
 
 			case (MID_NODE):
@@ -938,9 +938,9 @@ void NodeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 	NODE	*theNode	= (NODE *)obj;
 	VECTOR	*vec		= NULL;
 
-	PRINTDEBUG(dddif,1,(PFMT " NodeXferCopy(): n=" ID_FMTX " proc=%d prio=%d\n",
-		me,ID_PRTX(theNode),proc,prio))
-
+	PRINTDEBUG(dddif,1,(PFMT " NodeXferCopy(): n=" ID_FMTX 
+						" proc=%d prio=%d\n",
+						me,ID_PRTX(theNode),proc,prio));
 
 	/* copy vertex */
 	PRINTDEBUG(dddif,2,(PFMT " NodeXferCopy(): n=" ID_FMTX " Xfer v=" 
@@ -949,6 +949,11 @@ void NodeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 	#ifdef Debug
 	if (NFATHER(theNode) != NULL)
 	{
+	    PRINTDEBUG(dddif,1,(PFMT " NodeXferCopy(): n=" ID_FMTX 
+							" NTYPE=%d OBJT=%d\n",
+							me,ID_PRTX(theNode),NTYPE(theNode),
+							OBJT(NFATHER(theNode))));
+
 		switch (NTYPE(theNode))
 		{
 			case (CORNER_NODE):
@@ -956,11 +961,11 @@ void NodeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 				break;
 
 			case (MID_NODE):
-				ASSERT(OBJT((EDGE *)NFATHER(theNode)) == EDOBJ);
+				ASSERT(OBJT(NFATHER(theNode)) == EDOBJ);
 				break;
 
 			default:
-				ASSERT(0);
+			    ASSERT(0);
 				break;
 		}
 	}
@@ -1340,6 +1345,7 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 			edge = GetEdge(CORNER(pe,CORNER_OF_EDGE(pe,i,0)),
 						   CORNER(pe,CORNER_OF_EDGE(pe,i,1)));
 			ASSERT(edge != NULL);
+			ASSERT(OBJT(edge) == EDOBJ);
 
 			#ifdef __THREEDIM__
 			PRINTDEBUG(dddif,2,(PFMT " ElementXferCopy():  e=" EID_FMTX 
@@ -1482,7 +1488,7 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
 		/*    is unpacked several times.                       */
 		if (newness == XFER_NEW)
 			enew = CreateEdge(theGrid, NBNODE(LINK0(ecopy)), 
-					  	  	  NBNODE(LINK1(ecopy)), FALSE,0);
+					  	  	  NBNODE(LINK1(ecopy)), FALSE);
 		else
 			enew = GetEdge(NBNODE(LINK0(ecopy)), 
 					  	   NBNODE(LINK1(ecopy)));
@@ -1554,7 +1560,7 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
 
 			/* set nfather pointer of midnode */ 
 			ASSERT(ID(MIDNODE(enew)) != -1);
-			SETNFATHER(MIDNODE(enew),(NODE *)enew);
+			SETNFATHER(MIDNODE(enew),(GEOM_OBJECT *)enew);
 
 			/* make vertex information consistent */
 			VFATHER(theVertex) = pe;
@@ -2113,8 +2119,10 @@ void EdgeUpdate (DDD_OBJ obj)
 	{
 		ASSERT(ID(MIDNODE(pe)) != -1);
 		ASSERT(NTYPE((MIDNODE(pe))) == MID_NODE);
-		SETNFATHER(MIDNODE(pe),(NODE *)pe);
+		SETNFATHER(MIDNODE(pe),(GEOM_OBJECT *)pe);
 	}
+
+	ASSERT(OBJT(pe) == EDOBJ);
 
 	/* increment counter */
 	NE(theGrid)++;
@@ -2142,6 +2150,7 @@ void EdgeObjMkCons (DDD_OBJ obj, int newness)
 	if (dddctrl.edgeData && EDVECTOR(theEdge)) 
 		VOBJECT(EDVECTOR(theEdge)) = (void*)theEdge;
 
+	ASSERT(OBJT(theEdge) == EDOBJ);
 }
 
 void EdgeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio) 
@@ -2150,6 +2159,8 @@ void EdgeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 
 	PRINTDEBUG(dddif,1,(PFMT " EdgeXferCopy(): edge=%x/%08x proc=%d prio=%d\n",
 		me,pe,DDD_InfoGlobalId(PARHDR(pe)),proc,prio));
+
+	ASSERT(OBJT(pe) == EDOBJ);
 }
 #endif
 

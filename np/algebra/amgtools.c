@@ -1087,8 +1087,8 @@ static INT GenerateClusters(AVECTOR **Ua, AVECTOR **Ue, GRID *theGrid, GRID *new
         REP_ERR_RETURN(1);
       }
       SETVCLASS(newVect,3);
-      SETVNCLASS(newVect,CLASS(vect));
-      INDEX(newVect)=nc;
+      SETVNCLASS(newVect,VCLASS(vect));
+      VINDEX(newVect)=nc;
 
       /* generate the cluster as imatrices to newVect */
       for (avect=Ca; avect!=NULL; avect=avect->succ)
@@ -1211,9 +1211,9 @@ INT CoarsenVanek(GRID *theGrid)
           if (VCCOARSE(vect2))
           {
             newVect=MDEST(VISTART(vect2));
-            if (INDEX(newVect)<minSize)
+            if (VINDEX(newVect)<minSize)
             {
-              minSize=INDEX(newVect);
+              minSize=VINDEX(newVect);
               newVect0=newVect;
             }
           }
@@ -1250,7 +1250,7 @@ INT CoarsenVanek(GRID *theGrid)
           REP_ERR_RETURN(1);
         }
 
-        INDEX(newVect0)++;
+        VINDEX(newVect0)++;
       }
       avect=avect->succ;
     }
