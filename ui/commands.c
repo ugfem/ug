@@ -429,13 +429,15 @@ static INT HelpCommand (INT argc, char **argv)
     if (rv!=HELP_OK)
     {
       /* another try: ug command buf existing? */
+      UserWrite("no help found\n"
+                "maybe a command matches...\n");
       Cmd = SearchUgCmd(buf);
       if (Cmd!=NULL)
         rv = PrintHelp(ENVITEM_NAME(Cmd),mode,NULL);
     }
   }
   else
-    rv = PrintHelp("help",mode,NULL);
+    rv = PrintHelp("help",HELPITEM,NULL);
 
   switch (rv)
   {
@@ -1902,8 +1904,8 @@ static INT ConfigureCommand (INT argc, char **argv)
   if (BVP_SetBVPDesc(theBVP,&theBVPDesc))
     return (CMDERRORCODE);
 
-  if (BVPD_CONFIG(theBVPDesc)!=NULL)
-    if ((*BVPD_CONFIG (theBVPDesc))(argc,argv))
+  if (BVPD_CONFIG(&theBVPDesc)!=NULL)
+    if ((*BVPD_CONFIG(&theBVPDesc))(argc,argv))
     {
       PrintErrorMessage('E',"configure"," (could not configure BVP)");
       return(CMDERRORCODE);
@@ -2334,7 +2336,6 @@ static INT SaveDomainCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   char Name[NAMESIZE];
-  BVP_DESC BVPDesc;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -2345,10 +2346,7 @@ static INT SaveDomainCommand (INT argc, char **argv)
 
   /* scan name */
   if (sscanf(argv[0],expandfmt(CONCAT3(" savedomain %",NAMELENSTR,"[ -~]")),Name)!=1)
-  {
-    if (BVP_SetBVPDesc(MG_BVP(theMG),&BVPDesc)) return (CMDERRORCODE);
-    strcpy(Name,BVPDesc.name);
-  }
+    strcpy(Name,BVPD_NAME(MG_BVPD(theMG)));
 
   if (BVP_Save(MG_BVP(theMG),Name,ENVITEM_NAME(theMG),MGHEAP(theMG),argc,argv)) return (CMDERRORCODE);
 
@@ -4190,7 +4188,7 @@ static INT RefineCommand (INT argc, char **argv)
 
    DESCRIPTION:
    If the coarse grid is build interactively by 'ie', this command
-   terminates this process and calls 'CreateAlgebra'.
+   terminates this process and calls 'FixCoarseGrid'.
 
    'fixcoarsegrid'
 
@@ -4205,14 +4203,15 @@ static INT FixCoarseGridCommand (INT argc, char **argv)
 
   theMG = currMG;
   if (theMG==NULL) {
-    PrintErrorMessage('E',"fixcoarsegridmark","no open multigrid");
+    PrintErrorMessage('E',"fixcoarsegrid","no open multigrid");
     return (CMDERRORCODE);
   }
-  if (CreateAlgebra(GRID_ON_LEVEL(theMG,0)) != GM_OK) {
-    PrintErrorMessage('E',"fixcoarsegridmark",
-                      "could not create algebra");
-    return (CMDERRORCODE);
-  }
+
+  if (FixCoarseGrid(theMG)) return (CMDERRORCODE);
+
+    #ifdef ModelP
+  ddd_test("0", currMG);         /* WARNING: will disappear! */
+        #endif
 
   return(OKCODE);
 }
@@ -6348,7 +6347,7 @@ static INT QualityCommand (INT argc, char **argv)
 static INT MakeGridCommand  (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  INT i,Single_Mode,display;
+  INT i=0,Single_Mode,display;
   MESH *mesh;
     #ifdef __TWODIM__
   CoeffProcPtr coeff;
@@ -6358,7 +6357,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
   int iValue;
   float tmp;
         #endif
-        #if defined __THREEDIM__ && defined NETGEN_SUPPORT
+        #if defined __THREEDIM__ && defined _NETGEN
   INT smooth;
   DOUBLE h;
   INT coeff;
@@ -6524,7 +6523,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
     }
         #endif
 
-        #if defined __THREEDIM__ && defined NETGEN_SUPPORT
+        #if defined __THREEDIM__ && defined _NETGEN
     if (ReadArgvINT("s",&smooth,argc,argv))
       smooth = 0;
     if (ReadArgvDOUBLE("h",&h,argc,argv))
@@ -7637,9 +7636,16 @@ static INT PicFrameCommand (INT argc, char **argv)
    of the current picture.
    It calls the function 'SetView'.
 
-    in 2D: 'setview [$i] [$t <x> <y>] [$x  <x> <y>]'
+    in 2D:~
+   .vb
+   setview [$i] [$t <x> <y>] [$x  <x> <y>]
+   .ve
 
-    in 3D: 'setview [$i] [$o <x> <y> <z> $t <x> <y> <z>] [$x <x> <y> [<z>]] [$p < | =]'
+    in 3D:~
+   .vb
+   setview [$i] [$o <x> <y> <z> $t <x> <y> <z>] [$x <x> <y> [<z>]] [$p < | =]
+              {$C | $R | {$P <x> <y> <z> $N <x> <y> <z>}}
+   .ve
 
    .n                         all coordinates have to be given in physical coordinates
 
@@ -7651,12 +7657,16 @@ static INT PicFrameCommand (INT argc, char **argv)
 
    .   $x <x> <y> [<z>]       - define an x-axis in the viewplane (which will be to the right in the picture)
 
-    some 3D plot objects allow to define a cut. It can be defined by using the following options.
-    for initialization $P and $N  have to be specified:~
 
+   Some 3D plot objects allow to define a cut. It can be set and manipulated using the
+   following options:~
+
+   .   $C                     - define a default cut facing to x-direction and cutting the object's midpoint
    .   $P~<x>~<y>~<z>         - a point on the cut plane
    .   $N~<x>~<y>~<z>         - the normal of the cut plane
    .   $R					   - remove cut
+
+   For first definition of cut specify either C-option or both P- and N-option.
 
    KEYWORDS:
    graphics, plot, window, picture, view, cutting plane
@@ -7771,6 +7781,18 @@ static INT SetViewCommand (INT argc, char **argv)
 
     case 'i' :
       VO_STATUS(theViewedObj) = NOT_INIT;
+      break;
+
+
+    /* capitals for cut definition */
+
+    case 'C' :
+      /* set default cut */
+      V3_COPY(PO_MIDPOINT(PIC_PO(thePic)),PlanePoint);
+      V3_CLEAR(PlaneNormal);
+      PlaneNormal[_X_] = 1.0;
+      CutPoint = PlanePoint;
+      CutNormal = PlaneNormal;
       break;
 
     case 'R' :
@@ -8386,76 +8408,7 @@ static INT TextFacCommand (INT argc, char **argv)
 
 
    The remaining options depend on which object you specified.
-
-   2D:
-
-   'Grid [$c {0|1}] [$e {0|1}] [$n {0|1}] [$w {0|1}] [$m {0|1}] [$r {0|1}] [$i {0|1}] '
-
-   .    $c~{0|1}                                        - plot colored: no/yes
-   .    $e~{0|1}                                    - plot ElemIDs: no/yes
-   .    $n~{0|1}                                        - plot NodeIDs: no/yes
-   .    $r~{0|1}                                        - plot ref marks: no/yes
-   .    $i~{0|1}                                        - plot marks of indicator: no/yes
-   .    $w~{c/i/r/a}                                    - which elements to plot:
-   .n                                        c  copies and up
-   .n                                        i  irregular and up
-   .n                                        r  regular and up
-   .n                                        a  all
-
-    'EScalar {$e <ElemEvalProc> | $s <symbol/>} [$m {COLOR | CONTOURS_EQ}]'
-            '[$f <fromValue>] [$t <toValue>] [$n <nContours>]'
-
-   .    $e~<ElemEvalProc>               - name of element scalar evaluation procedure
-   .    $s~<symbol>                     - name of the symbol
-   .    $d~<depth>                      - depth of plot
-   .    $m~{COLOR|CONTOURS_EQ}          - mode: COLOR-plot or CONTOUR-plot
-   .    $f~<fromValue>~$t~<toValue>     - range [fromValue,toValue]
-   .    $n~<nContours>                  - number of contours
-
-   'EVector $e <ElemEvalProc> [$c {0|1}] [$t <toValue>] [$r <rastersize>] [$l <cutlength>]'
-
-   .    $e~<ElemEvalProc>               - name of element vector evaluation procedure
-   .    $s~<symbol>                     - vector symbol name, alternatively to e-option
-   .                                    - (if scalar symbol name it means the gradient)
-   .    $c~{0|1}                        - cut vectors if to long
-   .    $t~<toValue>                    - range: [0,toValue]
-   .    $r~<rastersize>                 - physical meshsize of rasterpoints where
-                                       vectors are plotted
-   .    $l~<cutlength>                  - cutlength in units of rastersize
-
-   3D:
-
-   'Grid [$c {0|1}] [$w {0|1}] [$P <x> <y> <z>] [$N <x> <y> <z>]'
-
-   .    $c~{0|1}                        - plot colored: no/yes
-   .    $w~{c/i/r/a}                    - which elements to plot:
-   .n                                        c  copies and up
-   .n                                        i  irregular and up
-   .n                                        r  regular and up
-   .n                                        a  all
-
-
-   'EScalar $e <ElemEvalProc> [$m {COLOR | CONTOURS_EQ}] [$f <fromValue>] [$t <toValue>] [$n <nContours>] [$P <x> <y> <z>] [$N <x> <y> <z>]'
-
-   .    $e~<ElemEvalProc>               - name of element scalar evaluation procedure
-   .    $s~<symbol>                     - scalar symbol name, alternatively to e-option
-   .    $d~<depth>                      - depth of plot
-   .    $m~{COLOR|CONTOURS_EQ}          - mode: COLOR-plot or CONTOUR-plot
-   .    $f~<fromValue>~$t~<toValue>     - range [fromValue,toValue]
-   .    $n~<nContours>                  - number of contours
-
-
-    'EVector $e <ElemEvalProc> [$c {0|1}] [$t <toValue>] [$r <rastersize>] [$P <x> <y> <z>] [$N <x> <y> <z>]'
-
-   .    $e~<ElemEvalProc>               - name of element vector evaluation procedure
-   .    $s~<symbol>                     - vector symbol name, alternatively to e-option
-   .                                    - (if scalar symbol name it means the gradient)
-   .    $c~{0|1}                        - cut vectors if to long
-   .    $t~<toValue>                    - range: [0,toValue]
-   .    $r~<rastersize>                 - physical meshsize of rasterpoints where
-   .    $P~<x>~<y>~<z>                  - a point on the cut plane
-   .    $N~<x>~<y>~<z>                  - the normal of the cut plane
-                                     - vectors are plotted
+   See the help for one of the abobe plotobjects for further help.
 
    EXAMPLE:
    .vb
@@ -8475,6 +8428,9 @@ static INT TextFacCommand (INT argc, char **argv)
 
    KEYWORDS:
    graphics, plot, window, picture, view, plotobject
+
+   SEE ALSO:
+   Matrix, Grid, EScalar, EVector, VecMat, line
    D*/
 
 static INT SetPlotObjectCommand (INT argc, char **argv)
@@ -8879,6 +8835,46 @@ static INT UpdateDocumentCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   rotmode - rotation mode for 3D pictures (arrow tool)
+
+   DESCRIPTION:
+   This command toggles the rotation mode for 3D plot objects between
+   Euler angle mode and Virtual Sphere. Just try both to find the most
+   convenient one.
+
+   'rotmode E[uler] | S[phere]'
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, arrowtool
+
+   SEE ALSO:
+   arrowtool
+   D*/
+/****************************************************************************/
+
+static INT RotModeCommand (INT argc, char **argv)
+{
+  INT mode;
+
+  NO_OPTION_CHECK(argc,argv);
+
+  if (strchr(argv[0],'E')!=NULL)
+    mode = ROTMODE_EULER;
+  else if (strchr(argv[0],'S')!=NULL)
+    mode = ROTMODE_SPHERE;
+  else
+  {
+    PrintHelp("rotmode",HELPITEM," (specify Euler or Sphere)");
+    return(PARAMERRORCODE);
+  }
+
+  SetRotMode(mode);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
    clear - assign a value to a symbolic vector
 
    DESCRIPTION:
@@ -8989,11 +8985,10 @@ static INT MFLOPSCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   GRID *g;
-  INT i,j,l;
+  INT i,l;
   INT ncomp;
   VECDATA_DESC *x,*y;
   MATDATA_DESC *A;
-  DOUBLE sum;
   VECTOR *v;
   MATRIX *mat;
   INT n,m,loop;
@@ -9037,9 +9032,9 @@ static INT MFLOPSCommand (INT argc, char **argv)
     for (mat=VSTART(v); mat!=NULL; mat = MNEXT(mat))
       m++;
   }
-  ncomp = VD_NCMPS_IN_TYPE(x,NODEVECTOR);
-  if ((ncomp == 0) || (VD_NCOMP(x) != ncomp)) {
-    PrintErrorMessage('E',"mflops","only for NODEVECTOR");
+  ncomp = VD_ncmps_in_otype(x,NODEVEC);
+  if ((ncomp <= 0) || (VD_NCOMP(x) != ncomp)) {
+    PrintErrorMessage('E',"mflops","only for NODEVEC");
     return (PARAMERRORCODE);
   }
 
@@ -9080,7 +9075,7 @@ static INT MFLOPSCommand (INT argc, char **argv)
 
    DESCRIPTION:
    This function sets the random values of a grid function specified by a vec data descriptor.
-   The data descriptor is created if it doesn´t exist yet.
+   The data descriptor is created if it does not exist yet.
 
    'rand <symbol name> [$a] [$s] [$f <value>] [$t <value>]'
 
@@ -9173,7 +9168,7 @@ static INT RandCommand (INT argc, char **argv)
 
    DESCRIPTION:
    This command copies from one vector symbol to another one.
-   The data descriptor is created if it doesn´t exist yet.
+   The data descriptor is created if it does not exist yet.
 
    'copy $f <from vec sym> $t <to vec sym> [$a]'
 
@@ -9326,7 +9321,7 @@ static INT HomotopyCommand (INT argc, char **argv)
    interpolate - (standard) interpolate a vector symbol to new vectors on the current level
 
    DESCRIPTION:
-   The data descriptor is created if it doesn´t exist yet.
+   The data descriptor is created if it does not exist yet.
 
    'interpolate <vec sym>'
 
@@ -9395,7 +9390,7 @@ static INT ReInitCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   BVP *theBVP;
-  BVP_DESC theBVPDesc;
+  BVP_DESC theBVPDesc,*theBVPD;
   INT i,bopt;
   char BVPName[NAMESIZE];
 
@@ -9425,6 +9420,8 @@ static INT ReInitCommand (INT argc, char **argv)
       PrintErrorMessageF('E',"reinit","could not interpret '%s' as a BVP name",BVPName);
       return (CMDERRORCODE);
     }
+    if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (CMDERRORCODE);
+    theBVPD = &theBVPDesc;
   }
   else
   {
@@ -9435,11 +9432,11 @@ static INT ReInitCommand (INT argc, char **argv)
       return (CMDERRORCODE);
     }
     theBVP = MG_BVP(theMG);
+    theBVPD = MG_BVPD(theMG);
   }
-  if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (CMDERRORCODE);
 
-  if (BVPD_CONFIG(theBVPDesc)!=NULL)
-    (*BVPD_CONFIG (theBVPDesc))(argc,argv);
+  if (BVPD_CONFIG(theBVPD)!=NULL)
+    (*BVPD_CONFIG (theBVPD))(argc,argv);
 
   return(OKCODE);
 }
@@ -9457,6 +9454,44 @@ static INT CreateFormatCommand (INT argc, char **argv)
   case 0 : return (OKCODE);
   case 1 : PrintHelp("newformat",HELPITEM,NULL);
     return (PARAMERRORCODE);
+  default : return (CMDERRORCODE);
+  }
+}
+
+/****************************************************************************/
+/*D
+   delformat - delete a previously enroled format
+
+   DESCRIPTION:
+   This command deletes a previously enroled format.
+
+   'delformat <format name>'
+
+   .  <format~name> - name of the fomat
+
+   KEYWORDS:
+   storage, format
+   D*/
+/****************************************************************************/
+
+static INT DeleteFormatCommand (INT argc, char **argv)
+{
+  INT err;
+  char fmtname[NAMESIZE];
+
+  NO_OPTION_CHECK(argc,argv);
+
+  if (sscanf(argv[0],"delformat %s",fmtname)!=1)
+  {
+    PrintErrorMessage('E',"delformat","specify format to delete");
+    return (PARAMERRORCODE);
+  }
+
+  err = DeleteFormat(fmtname);
+
+  switch (err)
+  {
+  case GM_OK : return (OKCODE);
   default : return (CMDERRORCODE);
   }
 }
@@ -10010,11 +10045,16 @@ static INT CreateMatDescCommand (INT argc, char **argv)
    symlist - list contents of vector and matrix symbols
 
    DESCRIPTION:
-   This command lists the contents of vector and matrix data descriptors.
+   This command lists the contents of vector and matrix data descriptors of the
+   current multigrid
 
-   'scnp <num proc name>'
+   'symlist {$V [<vd>] | $M [<md>]}'
 
-   .  <num~proc~name> - name of an existing NumProc
+        Specify either option V or M with or without:~
+   .  <vd> - name of a vec data desc, if omitted ALL vec data descs of the current
+                        multigrid are listed
+   .  <md> - name of a mat data desc, if omitted ALL mat data descs of the current
+                        multigrid are listed
 
    KEYWORDS:
    multigrid, numerics, userdata, vecdata, matdata, list, show, display, print
@@ -10487,18 +10527,18 @@ static INT InitScreenSize (void)
 
 static INT LBCommand (INT argc, char **argv)
 {
-  INT res,cmd_error,error,maxlevel,i;
-  int minlevel,cluster_depth,threshold,Const,n,c,
-      strategy,eigen,loc,dims,weights,coarse,mode,iopt;
-  char levelarg[32];
-  MULTIGRID *theMG;
-
                 #ifndef ModelP
   /* dummy command in seriell version */
   return(OKCODE);
                 #endif
 
                 #ifdef ModelP
+  INT res,cmd_error,error,maxlevel,i;
+  int minlevel,cluster_depth,threshold,Const,n,c,
+      strategy,eigen,loc,dims,weights,coarse,mode,iopt;
+  char levelarg[32];
+  MULTIGRID *theMG;
+
   theMG = currMG;
 
   if (theMG == NULL)
@@ -10964,13 +11004,12 @@ static INT LB4Command (INT argc, char **argv)
    .n					init
    .n					dddif
    .n					dev
+   .n					dom
    .n					gm
    .n					graph
    .n					low
    .n					machines
-   .n					numerics
    .n					np
-   .n					dom
    .n					ui
    .n                  pclib
    .n                  appl
@@ -10996,7 +11035,7 @@ static INT DebugCommand (INT argc, char **argv)
 
   if (argc==3)
   {
-    if (strcmp("init",argv[1])==0) Debuginit               = atoi(argv[2]);
+    if              (strcmp("init",argv[1])==0) Debuginit               = atoi(argv[2]);
     else if (strcmp("dddif",argv[1])==0) Debugdddif              = atoi(argv[2]);
     else if (strcmp("dev",argv[1])==0) Debugdev                = atoi(argv[2]);
     else if (strcmp("dom",argv[1])==0) Debugdom                = atoi(argv[2]);
@@ -11005,7 +11044,6 @@ static INT DebugCommand (INT argc, char **argv)
     else if (strcmp("low",argv[1])==0) Debuglow                = atoi(argv[2]);
     else if (strcmp("machines",argv[1])==0) Debugmachines   = atoi(argv[2]);
     else if (strcmp("np",argv[1])==0) Debugnp             = atoi(argv[2]);
-    else if (strcmp("dom",argv[1])==0) Debugdom        = atoi(argv[2]);
     else if (strcmp("ui",argv[1])==0) Debugui                 = atoi(argv[2]);
     else if (strcmp("pclib",argv[1])==0) Debugpclib              = atoi(argv[2]);
     else if (strcmp("appl",argv[1])==0) Debugappl               = atoi(argv[2]);
@@ -11018,7 +11056,7 @@ static INT DebugCommand (INT argc, char **argv)
   }
   else
   {
-    if (strcmp("init",argv[1])==0)                  {module="init";         l=Debuginit;}
+    if              (strcmp("init",argv[1])==0)             {module="init";         l=Debuginit;}
     else if (strcmp("dddif",argv[1])==0)    {module="dddif";        l=Debugdddif;}
     else if (strcmp("dev",argv[1])==0)              {module="dev";          l=Debugdev;}
     else if (strcmp("dom",argv[1])==0)              {module="dom";          l=Debugdom;}
@@ -11027,7 +11065,6 @@ static INT DebugCommand (INT argc, char **argv)
     else if (strcmp("low",argv[1])==0)              {module="low";          l=Debuglow;}
     else if (strcmp("machines",argv[1])==0) {module="machines";     l=Debugmachines;}
     else if (strcmp("np",argv[1])==0)           {module="np";           l=Debugnp;}
-    else if (strcmp("dom",argv[1])==0)          {module="dom";          l=Debugdom;}
     else if (strcmp("ui",argv[1])==0)               {module="ui";           l=Debugui;}
     else if (strcmp("pclib",argv[1])==0)    {module="pclib";        l=Debugpclib;}
     else if (strcmp("appl",argv[1])==0)             {module="appl";         l=Debugappl;}
@@ -11999,6 +12036,7 @@ INT InitCommands ()
   if (CreateCommand("plot",                       PlotCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("findrange",          FindRangeCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("updateDoc",          UpdateDocumentCommand                   )==NULL) return (__LINE__);
+  if (CreateCommand("rotmode",            RotModeCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("cmfn",                       CreateMetafileNameCommand               )==NULL) return (__LINE__);
 
   /* commands for problem management */
@@ -12022,6 +12060,7 @@ INT InitCommands ()
 
   /* formats */
   if (CreateCommand("newformat",          CreateFormatCommand                             )==NULL) return (__LINE__);
+  if (CreateCommand("delformat",          DeleteFormatCommand                             )==NULL) return (__LINE__);
   if (CreateCommand("showpf",             ShowPrintingFormatCommand               )==NULL) return (__LINE__);
   if (CreateCommand("setpf",                      SetPrintingFormatCommand                )==NULL) return (__LINE__);
   if (CreateCommand("createvector",   CreateVecDescCommand            )==NULL) return (__LINE__);
