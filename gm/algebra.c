@@ -3021,7 +3021,8 @@ INT CreateAlgebra (MULTIGRID *theMG)
     for (i=0; i<=TOPLEVEL(theMG); i++) {
       g = GRID_ON_LEVEL(theMG,i);
 
-      if (NVEC(g)>0) return(0);
+      if (NVEC(g)>0)
+        continue;                               /* skip this level */
 
       fmt = MGFORMAT(MYMG(g));
 
