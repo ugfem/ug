@@ -75,7 +75,8 @@
 #define MAX_NEW_CORNERS(tag) MaxNewCorners[tag]       /* midpoints on edges and sides plus center           */
 #define MAX_NEW_EDGES(tag)   MaxNewEdges[tag]         /* maximal new edges of type 1/2                      */
 #define MAX_RULES(tag)       MaxRules[tag]            /* number of rules for one element type               */
-#define CENTER_NODE_INDEX(e) CenterNodeIndex[TAG(e)] /* index of centernode in sonandnode and elemcontext */
+#define CENTER_NODE_INDEX(e) CenterNodeIndex[TAG(e)]  /* index of centernode in sonandnode and elemcontext */
+#define CENTER_NODE_INDEX_TAG(t) CenterNodeIndex[t]       /* index of centernode in sonandnode and elemcontext */
 
 #define MARK2RULE(e,m)          (m)
 #define MARK2RULEADR(e,m)       (&(RefRules[TAG(e)][m]))
@@ -126,6 +127,9 @@
 #define MAX_SONS_2D    4
 #define MAX_SONS_3D    12
 #define MAX_SONS_DIM CONCAT(MAX_SONS_,DIM,D)
+
+/* max fine grid nodes of an element */
+#define MAX_REFINED_CORNERS_DIM (MAX_CORNERS_OF_ELEM_DIM+MAX_NEW_CORNERS_DIM)
 
 #define IS_REFINED(e)           (REFINE(e)!=NO_REFINEMENT)
 #define LEAFELEM(e)                     (!IS_REFINED(e))
@@ -238,6 +242,7 @@
 #define EDGE_TO_OF_RULE(r,e)            (r->edges[e].to)
 #define EDGE_SIDE_OF_RULE(r,e)          (r->edges[e].side)
 #define SON_TAG_OF_RULE(r,s)            (r->sons[s].tag)
+#define SON_TAG(s)                                      (s->tag)
 #define SON_CORNER_OF_RULE(r,s,n)       (r->sons[s].corners[n])
 #define SON_CORNER(s,n)                         (s->corners[n])
 #define SON_NB_OF_RULE(r,s,n)           (r->sons[s].nb[n])
