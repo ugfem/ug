@@ -7984,8 +7984,14 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
       SETSUBDOMAIN(theElement,id);
       SETUSED(theElement,1);
       fifo_in(&myfifo,(void *)theElement);
-      PRINTDEBUG(gm,1,("elem %3d sid %d\n",
-                       ID(theElement),SUBDOMAIN(theElement)));
+      PRINTDEBUG(gm,1,("elem %3d sid %d\n",ID(theElement),SUBDOMAIN(theElement)));
+      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+      {
+        if (NBELEM(theElement,i)==NULL || SIDE_ON_BND(theElement,i)) continue;
+        theNeighbor = NBELEM(theElement,i);
+        if (USED(theNeighbor))
+          assert(SUBDOMAIN(theElement)==SUBDOMAIN(theNeighbor));
+      }
     }
 
   /* set subdomain id for all elements */
@@ -7996,7 +8002,12 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
     {
       if (NBELEM(theElement,i)==NULL) continue;
       theNeighbor = NBELEM(theElement,i);
-      if (USED(theNeighbor)) continue;
+      if (USED(theNeighbor))
+      {
+        if (INNER_SIDE(theElement,i))
+          assert(SUBDOMAIN(theElement)==SUBDOMAIN(theNeighbor));
+        continue;
+      }
       SETSUBDOMAIN(theNeighbor,SUBDOMAIN(theElement));
       SETUSED(theNeighbor,1);
       fifo_in(&myfifo,(void *)theNeighbor);
