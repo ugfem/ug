@@ -493,7 +493,9 @@ static void printBVrec( BLOCKVECTOR *bv_first, char *indent, const BV_DESC *bvd_
       printf( "number of vectors %2d ", BVNUMBEROFVECTORS(bv) );
       printf( "first vector %3d ", VINDEX(BVFIRSTVECTOR(bv)) );
       printf( "last vector %3d ", VINDEX(BVLASTVECTOR(bv)) );
-      printf( "level %2d\n", BVLEVEL(bv) );
+      printf( "level %2d", BVLEVEL(bv) );
+      printf( " %s", BVORIENTATION(bv)==BVNOORIENTATION ? "(N)" : (BVORIENTATION(bv)==BVVERTICAL ? "(V)" : (BVORIENTATION(bv)==BVHORIZONTAL ? "(H)" : "")));
+      printf( "%s\n", BV_IS_DIAG_BV(bv) ? "(D)" : "");
 
       if ( bvdf != NULL )
       {
@@ -888,9 +890,74 @@ static void MeshwidthForFFConstructTestvector_loc( const VECTOR *v, const VECTOR
     }
   }
 
-  if( *coord > 0.5 )
-    *coord = 1.0 - *coord;
+  /*if( *coord > 0.5 )
+   *coord = 1.0 - *coord;*/	/* warum war das drin ???? */
 }
+
+
+void CalculateTv_loc_linesegments( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr )
+/* isolates the single linesegments (leaf blockvectors) and calculates for
+   each of these segments an ordinary (1D) testvector */
+{
+  register DOUBLE pos, hkpi;
+  register VECTOR *v, *end_v;
+  register BLOCKVECTOR *bv_i, *bv_end;
+  DOUBLE meshwidth, coord, line_pos;
+
+  if ( BV_IS_EMPTY( bv ) )
+    return;
+
+#ifdef QQQTTTT /* auskommentiert fuer Variante, die sich an den Vector-Koordinaten oreintiert */
+  if ( BV_IS_LEAF_BV(bv) )
+  {             /* go simply over the vectors of the blockvector */
+    v = BVFIRSTVECTOR(bv);
+    MeshwidthForFFConstructTestvector_loc( v, SUCCVC(v), &meshwidth, &coord );
+    hkpi = PI * wavenr * meshwidth;
+    pos = PI * coord * wavenr;
+
+    end_v = BVENDVECTOR( bv );
+    BLOCK_L_VLOOP( v, BVFIRSTVECTOR(bv), end_v )                /* over all points in the line */
+    {
+      /*printf("pos %g  sin %g\n", pos, sin(pos) );*/
+      VVALUE( v, tv_comp ) = sin( pos );
+      pos += hkpi;
+    }
+
+    /*printf("leaf tv ; wavenr %g    mesh %g    coord %g\n", wavenr, meshwidth, coord ); printvBS( bv, tv_comp );*/
+  }
+#endif
+  if ( BV_IS_LEAF_BV(bv) )
+  {
+    DOUBLE_VECTOR position;
+    register DOUBLE kpi;
+    register const INT orientation = (BVORIENTATION(bv)==BVHORIZONTAL ? 0 : 1);
+
+    /* go simply over the vectors of the blockvector */
+    kpi = PI * wavenr;
+    end_v = BVENDVECTOR( bv );
+    BLOCK_L_VLOOP( v, BVFIRSTVECTOR(bv), end_v )                /* over all points in the line */
+    {
+      VectorPosition( v, position );
+      /*printf("pos %g  sin %g\n", pos, sin(pos) );*/
+      VVALUE( v, tv_comp ) = sin( position[orientation] * kpi );
+    }
+
+    /*printf("leaf tv ; wavenr = %g,  orientation = %d\n", wavenr, orientation ); printvBS( bv, tv_comp );*/
+  }
+  else
+  {
+    bv_i = BVDOWNBV( bv );
+    bv_end = BVDOWNBVEND( bv );
+
+    for ( ; bv_i != bv_end; bv_i = BVSUCC( bv_i) )
+    {
+      ASSERT( BVTVTYPE(bv_i) == BV1DTV );
+      CalculateTv_loc_linesegments( bv_i, tv_comp, wavenr );
+    }
+    /*printf("inner tv \n"); printvBS( bv, tv_comp );*/
+  }
+}
+
 
 /****************************************************************************/
 /*D
@@ -948,8 +1015,8 @@ void FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE waven
   register BLOCKVECTOR *bv_i, *bv_end;
   DOUBLE meshwidth, coord, line_pos;
 
-  if ( BV_IS_LEAF_BV( bv ) )
-  /* 2D block */
+  if ( BVTVTYPE( bv ) != BV2DTV )
+  /* line(s) block */
   {
     /* zick-zack instead of sin */
     /*DOUBLE incr = (2.0 * wavenr) / (BVNUMBEROFVECTORS(bv) + 1.0 );
@@ -965,21 +1032,31 @@ void FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE waven
             return;
      */
 
-    v = BVFIRSTVECTOR(bv);
-    MeshwidthForFFConstructTestvector_loc( v, SUCCVC(v), &meshwidth, &coord );
-    hkpi = PI * wavenr * meshwidth;
-    pos = PI * coord * wavenr;
+    CalculateTv_loc_linesegments( bv, tv_comp, wavenr );
 
-    end_v = BVENDVECTOR( bv );
-    BLOCK_L_VLOOP( v, BVFIRSTVECTOR(bv), end_v )                /* over all points in the line */
-    {
-      /*printf("pos %g  sin %g\n", pos, sin(pos) );*/
-      VVALUE( v, tv_comp ) = sin( pos );
-      pos += hkpi;
+#ifdef QQQTTT
+    if ( BV_IS_LEAF_BV(bv) )
+    {                   /* go simply over the vectors of the blockvector */
+      v = BVFIRSTVECTOR(bv);
+      MeshwidthForFFConstructTestvector_loc( v, SUCCVC(v), &meshwidth, &coord );
+      hkpi = PI * wavenr * meshwidth;
+      pos = PI * coord * wavenr;
+
+      end_v = BVENDVECTOR( bv );
+      BLOCK_L_VLOOP( v, BVFIRSTVECTOR(bv), end_v )                      /* over all points in the line */
+      {
+        /*printf("pos %g  sin %g\n", pos, sin(pos) );*/
+        VVALUE( v, tv_comp ) = sin( pos );
+        pos += hkpi;
+      }
     }
+    else
+    {}
+#endif
+
   }
   else
-  /* 3D block */
+  /* plane block; tensor product testvector */
   {
     ASSERT( !BV_IS_LEAF_BV(bv) );
     bv_i = BVDOWNBV(bv);
@@ -1217,10 +1294,13 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
   register BLOCKVECTOR *bv_i, *bv_ip1, *bv_stop;
   register BV_DESC *bvd_i=NULL, *bvd_ip1, *bvd_temp;
   BV_DESC bvd1, bvd2;
-  INT aux_comp, L_comp;
-#       ifdef MINV_2D_EXACT
-  INT auxsub_comp;
-#       endif
+  BLOCKVECTOR *bv_first;
+  INT aux_comp, auxsub_comp, L_comp;
+#ifdef MINV_2D_EXACT
+  INT auxA_comp, auxB_comp;
+#endif
+
+  ASSERT( !BV_IS_EMPTY(bv) );
 
   if ( BV_IS_LEAF_BV(bv) )
   {
@@ -1233,16 +1313,25 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
     bvd1 = *bvd;
     bv_stop = BVDOWNBVEND(bv);
     for ( bv_i = BVDOWNBV( bv ); bv_i != bv_stop; bv_i = BVSUCC( bv_i ) )
-    {
-      BVD_PUSH_ENTRY( &bvd1, BVNUMBER(bv_i), bvdf );
-      FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, b_comp );
-      BVD_DISCARD_LAST_ENTRY(&bvd1);
-    }
+      if( !BV_IS_EMPTY(bv_i) )
+      {
+        BVD_PUSH_ENTRY( &bvd1, BVNUMBER(bv_i), bvdf );
+        FFMultWithMInv( bv_i, &bvd1, bvdf, v_comp, b_comp );
+        BVD_DISCARD_LAST_ENTRY(&bvd1);
+      }
 
     return(NUM_OK);
   }
 
+#ifdef MINV_2D_EXACT
+  auxA_comp = GET_AUX_VEC;
+  ASSERT( auxA_comp>-1 );
+  auxB_comp = GET_AUX_VEC;
+  ASSERT( auxB_comp>-1 );
+#endif
+
   aux_comp = GET_AUX_VEC;
+  ASSERT( aux_comp>-1 );
   L_comp = STIFFMAT_ON_LEVEL( bv );
 
   ASSERT( v_comp != aux_comp );
@@ -1254,23 +1343,40 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
   bvd1 = bvd2 = *bvd;
   bvd_i = &bvd1;
   bvd_ip1 = &bvd2;
-  BVD_PUSH_ENTRY( &bvd1, 0, bvdf );
-  BVD_PUSH_ENTRY( &bvd2, 1, bvdf );
 
   /* solve lower triangular matrix; except the last block in this loop */
   /* aux := ( L + T )^-1 * b */
+
+  /* set up stop-block (last non-empty block) */
   bv_stop = BVDOWNBVLAST(bv);
-  for ( bv_i = BVDOWNBV(bv), bv_ip1 = BVSUCC( bv_i );
-        bv_i != bv_stop;
-        bv_i = bv_ip1, bv_ip1 = BVSUCC( bv_ip1 ) )
+  while( BV_IS_EMPTY( bv_stop ) && (bv_stop != BVDOWNBV(bv)) )          /* search first nonempty bv */
+    bv_stop = BVPRED( bv_stop );
+
+  /* set up first block */
+  bv_i = BVDOWNBV(bv);
+  while( BV_IS_EMPTY( bv_i ) && (bv_i != BVDOWNBVEND(bv)) )             /* search first nonempty bv */
+    bv_i = BVSUCC( bv_i );
+  ASSERT( bv_i != BVDOWNBVEND(bv) );
+  BVD_PUSH_ENTRY( bvd_i, BVNUMBER(bv_i), bvdf );
+  bv_first = bv_i;
+
+  /* set up second block */
+  bv_ip1 = BVSUCC( bv_i );
+  while( (bv_ip1 != BVDOWNBVEND(bv)) && BV_IS_EMPTY( bv_ip1 ) )         /* search first nonempty bv */
+    bv_ip1 = BVSUCC( bv_ip1 );
+  if ( bv_ip1 != BVDOWNBVEND(bv) )
+    BVD_PUSH_ENTRY( bvd_ip1, BVNUMBER(bv_ip1), bvdf );
+  /* else: bv_ip1 and bvd_ip1 are never used;
+     thus the content of them have not to be updated */
+
+  for ( ; bv_i != bv_stop; )
   {
     /* aux_i := (T_i)^-1 * b_i */
 #ifdef MINV_2D_EXACT
-    if( L_comp == 0 )
-      gs_solveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF_COMP, aux_comp, b_comp, aux5_COMP, TRUE );
+    if ( BV_IS_LEAF_BV(bv_i) )
+      solveLUMatBS( bv_i, bvd_i, bvdf, aux_comp, DECOMPMAT_ON_LEVEL( bv_i ), b_comp );
     else
-      /*gs_solveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF3D_COMP, aux_comp, b_comp, aux5_COMP, TRUE );*/
-      FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, Lsub_comp, Tinv_comp, b_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+      gs_solveBS ( bv_i, bvd_i, bvdf, 5e-14, 1000, L_comp, aux_comp, b_comp, auxA_comp, TRUE, TRUE );
 #else
     FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, b_comp );
 #endif
@@ -1279,27 +1385,53 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
     dmatmul_minusBS( bv_ip1, bvd_i, bvdf, b_comp, L_comp, aux_comp );
 
     /* prepare BVDs for next loop */
+    bv_i = bv_ip1;
     SWAP( bvd_i, bvd_ip1, bvd_temp );
-    BVD_INC_LAST_ENTRY( bvd_ip1, 2, bvdf );
+    bv_ip1 = BVSUCC( bv_ip1 );
+    while( (bv_ip1 != BVDOWNBVEND(bv)) && BV_IS_EMPTY( bv_ip1 ) )               /* search first nonempty bv */
+      bv_ip1 = BVSUCC( bv_ip1 );
+    if( bv_ip1 != BVDOWNBVEND(bv) )
+    {
+      BVD_DISCARD_LAST_ENTRY( bvd_ip1 );
+      BVD_PUSH_ENTRY( bvd_ip1, BVNUMBER(bv_ip1), bvdf );
+    }
+    /* else: bv_ip1 and bvd_ip1 are never used;
+       thus the content of them have not to be updated */
   }
   /* special treatment: v_last = (T_last)^-1 * b_last */
 #ifdef MINV_2D_EXACT
-  if( L_comp == 0 )
-    gs_solveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF_COMP, aux_comp, b_comp, aux5_COMP, TRUE );
-  else
-    /*gssolveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF3D_COMP, aux_comp, b_comp, aux5_COMP, TRUE );*/
-    FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, Lsub_comp, Tinv_comp, b_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+  /*if ( BV_IS_LEAF_BV(bv_i) )
+          solveLUMatBS( bv_i, bvd_i, bvdf, v_comp, DECOMPMAT_ON_LEVEL( bv_i ), b_comp );
+     else*/
+  {
+    dcopyBS( bv_i, auxB_comp, b_comp );                 /* necessary if b_comp == v_comp */
+    gs_solveBS ( bv_i, bvd_i, bvdf, 5e-14, 1000, L_comp, v_comp, auxB_comp, auxA_comp, TRUE, TRUE );
+  }
 #else
   FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, b_comp );
 #endif
 
   /* solve upper triangular matrix; the last block is already calculated */
   /* v := (T^-1*U + I )^-1 * aux */
-  ASSERT( bv_i == BVDOWNBVLAST(bv) );
+  ASSERT( bv_i == bv_stop );
+
+  /* set up stop block */
+  bv_stop = BVPRED( bv_first );
+
+  /* set up last block (bvd_ip1, bv_ip1 is not used)*/
   SWAP( bvd_i, bvd_ip1, bvd_temp );
-  BVD_DEC_LAST_ENTRY( bvd_i, 2, bvdf );
-  bv_stop = BVPRED( BVDOWNBV(bv) );
-  for ( bv_i = BVPRED( bv_i ); bv_i != bv_stop; bv_i = BVPRED( bv_i ) )
+
+  /* set up last but one block (bv(d)_i )*/
+  bv_i = BVPRED( bv_i );
+  while( (bv_i != bv_stop) && BV_IS_EMPTY( bv_i ) )             /* search first nonempty bv */
+    bv_i = BVPRED( bv_i );
+  if ( bv_i != bv_stop )
+  {
+    BVD_DISCARD_LAST_ENTRY( bvd_i );
+    BVD_PUSH_ENTRY( bvd_i, BVNUMBER(bv_i), bvdf );
+  }
+
+  for ( ; bv_i != bv_stop; )
   {
     /* v_i := L_(i,i+1) * v_i+1 */
     dsetBS( bv_i, v_comp, 0.0 );
@@ -1307,12 +1439,13 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
 
     /* v_i := (T_i)^-1 * v_i */
 #ifdef MINV_2D_EXACT
-    dcopyBS( bv_i, aux4_COMP, v_comp );
-    if( L_comp == 0 )
-      gs_solveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF_COMP, v_comp, aux4_COMP, aux5_COMP, TRUE );
-    else
-      /*gs_solveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF3D_COMP, v_comp, aux4_COMP, aux5_COMP, TRUE );*/
-      FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, Lsub_comp, Tinv_comp, v_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+    /*if ( BV_IS_LEAF_BV(bv_i) )
+            solveLUMatBS( bv_i, bvd_i, bvdf, v_comp, DECOMPMAT_ON_LEVEL( bv_i ), b_comp );
+       else*/
+    {
+      dcopyBS( bv_i, auxB_comp, v_comp );
+      gs_solveBS ( bv_i, bvd_i, bvdf, 5e-14, 1000, L_comp, v_comp, auxB_comp, auxA_comp, TRUE, TRUE );
+    }
 #else
     FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, v_comp );
 #endif
@@ -1322,10 +1455,24 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
 
     /* prepare BVDs for next loop */
     SWAP( bvd_i, bvd_ip1, bvd_temp );
-    BVD_DEC_LAST_ENTRY( bvd_i, 2, bvdf );
+    bv_i = BVPRED( bv_i );
+    while( (bv_i != bv_stop) && BV_IS_EMPTY( bv_i ) )                   /* search first nonempty bv */
+      bv_i = BVPRED( bv_i );
+    if( bv_i != bv_stop )
+    {
+      BVD_DISCARD_LAST_ENTRY( bvd_i );
+      BVD_PUSH_ENTRY( bvd_i, BVNUMBER(bv_i), bvdf );
+    }
+    /* else: bv_i and bvd_i are never used;
+       thus the content of them have not to be updated */
   }
 
   FREE_AUX_VEC( aux_comp );
+
+#ifdef MINV_2D_EXACT
+  FREE_AUX_VEC( auxB_comp );
+  FREE_AUX_VEC( auxA_comp );
+#endif
 
   return NUM_OK;
 }

@@ -4381,7 +4381,7 @@ INT solveLUMatBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMA
 
     if ( fabs( diag ) < SMALL_D )
     {
-      PrintErrorMessage( 'E', "solveLUMatBS", "Very small diagonal for division" );
+      PrintErrorMessage( 'E', "solveLUMatBS", "Very small diagonal for division or no diagonal element" );
       REP_ERR_RETURN (NUM_SMALL_DIAG);
     }
 

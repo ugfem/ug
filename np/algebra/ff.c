@@ -90,7 +90,6 @@ static DOUBLE glob_h;   /* used if THETA_ANA is defined */
 #ifdef __BLOCK_VECTOR_DESC__
 
 INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest, const BLOCKVECTOR *bv_source, const BV_DESC *bvd_dest, const BV_DESC *bvd_source, const BV_DESC_FORMAT *bvdf, INT tv_comp );
-INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest, const BLOCKVECTOR *bv_source, const BV_DESC *bvd_dest, const BV_DESC *bvd_source, const BV_DESC_FORMAT *bvdf, INT tv1_comp, INT tv2_comp );
 
 INT TFFUpdateDiagBlock( const BLOCKVECTOR *bv_dest, const BV_DESC *bvd_dest, const BV_DESC *bvd_source, const BV_DESC_FORMAT *bvdf, INT T, INT DL, INT Theta, GRID *grid );
 
@@ -207,7 +206,7 @@ INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
     {
       SETVCUSED( v_dest, FALSE );
       m = GetMatrix( v_source, v_dest );
-      assert( m != NULL );
+      ASSERT( m != NULL );
       MVALUE( m, Theta_comp ) = MVALUE( MADJ(m), Theta_comp ) = VVALUE( v_source, aux_comp ) / val;
     }
   }
@@ -287,6 +286,7 @@ INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
         m = GetMatrix( v_source, v_dest );
         assert( m != NULL );
         MVALUE( m, Theta_comp ) = MVALUE( MADJ(m), Theta_comp ) = 1e11;
+        FREE_AUX_VEC(aux_comp);
         REP_ERR_RETURN(NUM_ERROR);
       }
 
@@ -325,7 +325,8 @@ INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
                                                  INT aux1_comp,
                                                  INT aux2_comp,
                                                  INT auxsub_comp,
-                                                 INT Ksub_comp );
+                                                 INT Ksub_comp,
+                                                 GRID *grid);
 
    PARAMETERS:
    .  bv_dest - blockvector for testvector
@@ -342,6 +343,7 @@ INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
    .  aux2_comp - position of the 2. auxiliary-component in the VECTOR-data
    .  auxsub_comp - position of the auxiliary-component for subproblems (only 3D)
    .  Ksub_comp - position of the diagonal and off-diagonal component of the subproblem-matrix to be decomposed (only 3D)
+   .  grid - to allocate new entries if necessary
 
    DESCRIPTION:
    The tridiagonal matrix Theta is calculated such that
@@ -370,15 +372,19 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
                                const BV_DESC *bvd_source,
                                const BV_DESC_FORMAT *bvdf,
                                INT tv1_comp,
-                               INT tv2_comp )
+                               INT tv2_comp,
+                               GRID *grid)
 {
   register VECTOR *vi, *vip1, *end_v;
   register DOUBLE e1i, e2i, e1ip1, e2ip1, a1, a2, det, off_val;
   register MATRIX *m_offdiag;
   INT aux1_comp, aux2_comp, K_comp, T_comp;
+  CONNECTION *con;
 
   aux1_comp = GET_AUX_VEC;
+  ASSERT( aux1_comp>-1 );
   aux2_comp = GET_AUX_VEC;
+  ASSERT( aux2_comp>-1 );
   K_comp = STIFFMAT_ON_LEVEL_BLOCKWISE(bv_dest);
   T_comp = DECOMPMAT_ON_LEVEL_BLOCKWISE(bv_dest);
 
@@ -437,7 +443,7 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
     det = e1i*e2ip1 - e1ip1*e2i;
     if ( fabs(det) < SMALL_D )
     {
-      PRINTDEBUG( np, 0, ("FFCalculateTheta: testvectors incompatible\n") );
+      PRINTDEBUG( np, 0, ("FFCalculateThetaAndUpdate: testvectors incompatible\n") );
       printf("tv1\n"); printvBS(bv_dest, tv1_comp);printf("tv2\n"); printvBS(bv_dest, tv2_comp);
       REP_ERR_RETURN(NUM_ERROR);
     }
@@ -445,14 +451,25 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
     MVALUE( VSTART(vi), T_comp ) = MVALUE( VSTART(vi), K_comp ) -
                                    (a1*e2ip1 - a2*e1ip1) / det;
 
-    m_offdiag = GetMatrix( vi, vip1 );
+    /*m_offdiag = GetMatrix( vi, vip1 );*/
     /*ASSERT( m_offdiag != NULL );*/
+    if ( (m_offdiag = GetMatrix( vi, vip1 )) == NULL )
+    {
+      if ( (con = CreateExtraConnection( grid, vi, vip1 )) == NULL )
+      {
+        PrintErrorMessage( 'E', "FFCalculateThetaAndUpdate", "Not enough memory" );
+        REP_ERR_RETURN (NUM_OUT_OF_MEM);
+      }
+      m_offdiag = CMATRIX0( con );
+    }
     off_val = (e1i*a2 - e2i*a1) / det;
     if( m_offdiag != NULL )
     {
       MVALUE( m_offdiag, T_comp ) = MVALUE( m_offdiag, K_comp ) - off_val;
       MVALUE( MADJ(m_offdiag), T_comp ) = MVALUE(MADJ(m_offdiag), K_comp ) - off_val;
     }
+    else
+      ASSERT(FALSE);
 
     a1 = VVALUE( vip1, aux1_comp ) - off_val*e1i;
     a2 = VVALUE( vip1, aux2_comp ) - off_val*e2i;
@@ -606,6 +623,8 @@ INT TFFDecomp( DOUBLE wavenr,
   MATRIX *m;
 #endif
 
+  ASSERT( !BV_IS_EMPTY(bv) );
+
   K_comp = STIFFMAT_ON_LEVEL(bv);
   FF_comp = DECOMPMAT_ON_LEVEL(bv);
 
@@ -620,21 +639,15 @@ INT TFFDecomp( DOUBLE wavenr,
     bvd1 = *bvd;
     bv_end = BVDOWNBVEND(bv);
     for ( bv_i = BVDOWNBV( bv ); bv_i != bv_end; bv_i = BVSUCC( bv_i ) )
-    {
-      BVD_PUSH_ENTRY( &bvd1, BVNUMBER(bv_i), bvdf );
-      TFFDecomp( wavenr, wavenr3D, bv_i, &bvd1, bvdf, tv_comp, grid );
-      BVD_DISCARD_LAST_ENTRY(&bvd1);
-    }
+      if( !BV_IS_EMPTY(bv_i) )
+      {
+        BVD_PUSH_ENTRY( &bvd1, BVNUMBER(bv_i), bvdf );
+        TFFDecomp( wavenr, wavenr3D, bv_i, &bvd1, bvdf, tv_comp, grid );
+        BVD_DISCARD_LAST_ENTRY(&bvd1);
+      }
 
     return(NUM_OK);
   }
-
-  /* initialize the BVDs */
-  bvd1 = bvd2 = *bvd;                   /* copy of the BVD */
-  bvd_i = &bvd1;
-  bvd_im1 = &bvd2;
-  BVD_PUSH_ENTRY( bvd_im1, 0, bvdf );
-  BVD_PUSH_ENTRY( bvd_i, 1, bvdf );
 
 #ifdef THETA_ANA
   bv_im1 = BVDOWNBV(bv);
@@ -664,14 +677,34 @@ INT TFFDecomp( DOUBLE wavenr,
   }
 #endif
 
+  /* initialize the BVDs */
+  bvd1 = bvd2 = *bvd;                   /* copy of the BVD */
+  bvd_i = &bvd1;
+  bvd_im1 = &bvd2;
+
   /* the loop calculates (T_i-1)^-1 and Theta(i,j) for i=1..n-1 */
   /* T_0 := D_0 */
-  bv_im1 = BVDOWNBV(bv);
-  dmatcopyBS( bv_im1, bvd_im1, bvdf, FF_comp, K_comp );
+
   bv_end = BVDOWNBVEND(bv);
-  for ( bv_i = BVSUCC( bv_im1 );
-        bv_i != bv_end;
-        bv_im1 = bv_i, bv_i = BVSUCC( bv_i ) )
+
+  /* set up first block */
+  bv_im1 = BVDOWNBV(bv);
+  while( BV_IS_EMPTY( bv_im1 ) && (bv_im1 != bv_end) )          /* search first nonempty bv */
+    bv_im1 = BVSUCC( bv_im1 );
+  ASSERT( bv_im1 != bv_end );
+  BVD_PUSH_ENTRY( bvd_im1, BVNUMBER(bv_im1), bvdf );
+
+  /* set up second block */
+  bv_i = BVSUCC( bv_im1 );
+  while( (bv_i != bv_end) && BV_IS_EMPTY( bv_i ) )              /* search first nonempty bv */
+    bv_i = BVSUCC( bv_i );
+  if ( bv_i != bv_end )
+    BVD_PUSH_ENTRY( bvd_i, BVNUMBER(bv_i), bvdf );
+  /* else: bv_i and bvd_i are never used;
+     thus the content of them have not to be updated */
+
+  dmatcopyBS( bv_im1, bvd_im1, bvdf, FF_comp, K_comp );
+  for ( ; bv_i != bv_end; )
   {
     /* T_i-1 decompose */
     TFFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, tv_comp, grid );
@@ -685,6 +718,8 @@ INT TFFDecomp( DOUBLE wavenr,
     dmatsetBS( bv_im1, bvd_i, bvdf, FF_comp, 1.0/li );
     /*printf("theta = %g\n", 1.0 / li );*/
     li = lambda - 1.0 / li;
+#elif defined FF_PARALLEL_SIMULATION
+    BoxTFFCalculateTheta( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv_comp, grid );
 #else
     TFFCalculateTheta( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv_comp );
 #endif
@@ -695,8 +730,18 @@ INT TFFDecomp( DOUBLE wavenr,
     TFFUpdateDiagBlock( bv_i, bvd_i, bvd_im1, bvdf, FF_comp, K_comp, FF_comp, grid );
 
     /* update BVDs for the next loop */
+    bv_im1 = bv_i;
     SWAP( bvd_i, bvd_im1, bvd_temp );
-    BVD_INC_LAST_ENTRY( bvd_i, 2, bvdf );
+    bv_i = BVSUCC( bv_i );
+    while( (bv_i != bv_end) && BV_IS_EMPTY( bv_i ) )                    /* search first nonempty bv */
+      bv_i = BVSUCC( bv_i );
+    if( bv_i != bv_end )
+    {
+      BVD_DISCARD_LAST_ENTRY( bvd_i );
+      BVD_PUSH_ENTRY( bvd_i, BVNUMBER(bv_i), bvdf );
+    }
+    /* else: bv_i and bvd_i are never used;
+       thus the content of them have not to be updated */
   }
   /* now bv_im1 and bvd_im1 points to the last block */
 
@@ -809,6 +854,8 @@ INT TFFDecomp( DOUBLE wavenr,
    further level of blockvectors (representing grid lines!) it is
    considered as a plane, otherwise as a cube.
 
+   The sonlist of 'bv' must contain at least one non-empty blockvector.
+
    SEE ALSO:
    TFFDecomp, FFCalculateTheta, FFConstructTestvector_loc, FFConstructTestvector, FFMultWithM, FFMultWithMInv
 
@@ -833,12 +880,16 @@ INT FFDecomp( DOUBLE wavenr,
   BV_DESC bvd1, bvd2;
   INT K_comp, FF_comp;
 
+  ASSERT( !BV_IS_EMPTY(bv) );
 
   K_comp = STIFFMAT_ON_LEVEL(bv);
   FF_comp = DECOMPMAT_ON_LEVEL(bv);
 
   ASSERT( FF_comp != DUMMY_COMP );
   ASSERT( K_comp != DUMMY_COMP );
+  ASSERT( tv1_comp != DUMMY_COMP );
+  ASSERT( tv2_comp != DUMMY_COMP );
+  ASSERT( tv1_comp != tv2_comp );
 
   if ( BV_IS_LEAF_BV(bv) )
   {
@@ -851,54 +902,98 @@ INT FFDecomp( DOUBLE wavenr,
     bvd1 = *bvd;
     bv_end = BVDOWNBVEND(bv);
     for ( bv_i = BVDOWNBV( bv ); bv_i != bv_end; bv_i = BVSUCC( bv_i ) )
-    {
-      BVD_PUSH_ENTRY( &bvd1, BVNUMBER(bv_i), bvdf );
-      FFDecomp( wavenr, wavenr3D, bv_i, &bvd1, bvdf, tv1_comp, tv2_comp, grid );
-      BVD_DISCARD_LAST_ENTRY(&bvd1);
-    }
+      if( !BV_IS_EMPTY(bv_i) )
+      {
+        BVD_PUSH_ENTRY( &bvd1, BVNUMBER(bv_i), bvdf );
+        FFDecomp( wavenr, wavenr3D, bv_i, &bvd1, bvdf, tv1_comp, tv2_comp, grid );
+        BVD_DISCARD_LAST_ENTRY(&bvd1);
+      }
 
     return(NUM_OK);
   }
-
-  ASSERT( tv1_comp != DUMMY_COMP );
-  ASSERT( tv2_comp != DUMMY_COMP );
-  ASSERT( tv1_comp != tv2_comp );
 
   /* initialize the BVDs */
   bvd1 = bvd2 = *bvd;                   /* copy of the BVD */
   bvd_i = &bvd1;
   bvd_im1 = &bvd2;
-  BVD_PUSH_ENTRY( bvd_im1, 0, bvdf );
-  BVD_PUSH_ENTRY( bvd_i, 1, bvdf );
 
   /* the loop calculates (T_i-1)^-1 and Theta(i,j) for i=1..n-1 */
   /* T_0 := D_0 */
-  bv_im1 = BVDOWNBV(bv);
-  dmatcopyBS( bv_im1, bvd_im1, bvdf, FF_comp, K_comp );
+
   bv_end = BVDOWNBVEND(bv);
-  for ( bv_i = BVSUCC( bv_im1 );
-        bv_i != bv_end;
-        bv_im1 = bv_i, bv_i = BVSUCC( bv_i ) )
+
+  /* set up first block */
+  bv_im1 = BVDOWNBV(bv);
+  while( BV_IS_EMPTY( bv_im1 ) && (bv_im1 != bv_end) )          /* search first nonempty bv */
+    bv_im1 = BVSUCC( bv_im1 );
+  ASSERT( bv_im1 != bv_end );
+  BVD_PUSH_ENTRY( bvd_im1, BVNUMBER(bv_im1), bvdf );
+
+  /* set up second block */
+  bv_i = BVSUCC( bv_im1 );
+  while( (bv_i != bv_end) && BV_IS_EMPTY( bv_i ) )              /* search first nonempty bv */
+    bv_i = BVSUCC( bv_i );
+  if ( bv_i != bv_end )
+    BVD_PUSH_ENTRY( bvd_i, BVNUMBER(bv_i), bvdf );
+  /* else: bv_i and bvd_i are never used;
+     thus the content of them have not to be updated */
+
+  dmatcopyBS( bv_im1, bvd_im1, bvdf, FF_comp, K_comp );
+  for ( ; bv_i != bv_end; )
   {
     /* T_i-1 decompose */
     FFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
 
     /* calculate Theta_(i,i);
        result on digonal blocks of FF_comp */
-    FFConstructTestvector_loc( bv_i, tv1_comp, wavenr, wavenr3D );
-    FFConstructTestvector_loc( bv_i, tv2_comp, wavenr+1.0, wavenr3D );
-    FFCalculateThetaAndUpdate( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv1_comp, tv2_comp );
+    if ( BVNUMBER(bv_i)== -101 )
+    {                   /* cross point sysytem aus ptff.c */
+      FFConstructTestvector_loc( bv_i, tv1_comp, 1.0, 1.0 );
+      FFConstructTestvector_loc( bv_i, tv2_comp, 2.0, 2.0 );
+      printf( "special crosspoint tv\n");
+      /*printvBS( bv_i, tv1_comp ); printvBS( bv_i, tv2_comp );*/
+    }
+    else
+    {
+      FFConstructTestvector_loc( bv_i, tv1_comp, wavenr, wavenr3D );
+      FFConstructTestvector_loc( bv_i, tv2_comp, wavenr+1.0, wavenr3D );
+    }
 
+#ifdef FF_PARALLEL_SIMULATION
+    if ( BV_IS_DIAG_BV(bv_im1) && (BVPRED(bv_im1)==NULL) )
+    {
+      /* construct FF filtered approximation of the leaf blocks of the schur complement */
+      /* the determination of the "lines" block is only a quick hack!!! */
+      ConstructSchurFFApprox( bv_im1, bv_i, bvd_im1, bvd_i, bvdf, tv1_comp, tv2_comp, grid );
+    }
+    else
+    {
+      FFCalculateThetaAndUpdate( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
+    }
+#else
+    FFCalculateThetaAndUpdate( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
+#endif
     /* update BVDs for the next loop */
+    bv_im1 = bv_i;
     SWAP( bvd_i, bvd_im1, bvd_temp );
-    BVD_INC_LAST_ENTRY( bvd_i, 2, bvdf );
+    bv_i = BVSUCC( bv_i );
+    while( (bv_i != bv_end) && BV_IS_EMPTY( bv_i ) )                    /* search first nonempty bv */
+      bv_i = BVSUCC( bv_i );
+    if( bv_i != bv_end )
+    {
+      BVD_DISCARD_LAST_ENTRY( bvd_i );
+      BVD_PUSH_ENTRY( bvd_i, BVNUMBER(bv_i), bvdf );
+    }
+    /* else: bv_i and bvd_i are never used;
+       thus the content of them have not to be updated */
   }
   /* now bv_im1 and bvd_im1 points to the last block */
 
   /* calculate the last (T_n)^-1 */
   FFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
 
-  /*printvBS(bv, tv1_comp);printvBS(bv, tv2_comp); printmBS(bv,bv,K_comp); printmBS(bv,bv,FF_comp); printf("\n");*/
+  /*	printvBS(bv, tv1_comp);printvBS(bv, tv2_comp);*/
+  /*printf("K_comp\n"); printmBS(bv,bv,K_comp);printf("FF_comp\n"); printmBS(bv,bv,FF_comp); printf("\n");*/
   return(NUM_OK);
 }
 

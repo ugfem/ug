@@ -59,7 +59,7 @@
 #define FF_MAX_MATS 10
 
 /* max. number of auxiliary vectors */
-#define FF_MAX_VECS 10
+#define FF_MAX_VECS 20
 
 
 #define STIFFMAT_ON_LEVEL(bv)                           (FF_Mats[BVLEVEL(bv)])

@@ -78,7 +78,8 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
                                const BV_DESC *bvd_source,
                                const BV_DESC_FORMAT *bvdf,
                                INT tv1_comp,
-                               INT tv2_comp );
+                               INT tv2_comp,
+                               GRID *grid );
 
 
 INT TFFDecomp( DOUBLE wavenr,
