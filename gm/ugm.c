@@ -11487,6 +11487,7 @@ static INT MatchingPeriodicEntries (PERIODIC_ENTRIES *coordlist, INT i, INT j)
 
 #ifdef ModelP
 static int GetMatchingProcs (PERIODIC_ENTRIES *coordlist, INT i, int *np, int *theprocs);
+#endif
 
 INT SetPerVecVOBJECT(GRID *g)
 {
@@ -11513,6 +11514,19 @@ INT SetPerVecVOBJECT(GRID *g)
   return(0);
 }
 
+static void PrintListEntry (int i, PERIODIC_ENTRIES *coordlist)
+{
+  INT j;
+
+  UserWriteF(PFMT " i=%d n=%d",me,i,coordlist[i].n);
+  for (j=0; j<coordlist[i].n; j++)
+    UserWriteF(" %08x",PVID(coordlist[i].vp[j]));
+  UserWriteF("\n");
+
+  return;
+}
+
+#ifdef ModelP
 static void CountNTpls (GRID *g, INT nn, PERIODIC_ENTRIES *coordlist, int *ntpls)
 {
   INT i;
@@ -12014,18 +12028,6 @@ static void PrintIdTpls (int *idntpls, IDTPL **idtpls)
       PrintIdTpl(i,j,idtpls[i]+j);
     }
   }
-
-  return;
-}
-
-static void PrintListEntry (int i, PERIODIC_ENTRIES *coordlist)
-{
-  INT j;
-
-  UserWriteF(PFMT " i=%d n=%d",me,i,coordlist[i].n);
-  for (j=0; j<coordlist[i].n; j++)
-    UserWriteF(" %08x",PVID(coordlist[i].vp[j]));
-  UserWriteF("\n");
 
   return;
 }
