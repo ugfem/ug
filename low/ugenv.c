@@ -717,10 +717,10 @@ void EnvHeapInfo (char *s)
    D*/
 /****************************************************************************/
 
-INT GetNewEnvDirID ()
+INT GetNewEnvDirID (void)
 {
   /* NB: ENVDIRs have odd types and start with 1 */
-  static theNewEnvDirID = 1;
+  static INT theNewEnvDirID = 1;
 
   theNewEnvDirID += 2;
 
@@ -749,7 +749,7 @@ INT GetNewEnvDirID ()
 INT GetNewEnvVarID ()
 {
   /* NB: ENVVARs have even types and start with 2 */
-  static theNewEnvVarID = 0;
+  static INT theNewEnvVarID = 0;
 
   theNewEnvVarID += 2;
 
