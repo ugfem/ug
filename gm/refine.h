@@ -58,6 +58,10 @@
 #define NOTUSED    -1                      /* SHORT has to be signed!       */
 #define NO_CENTER_NODE     NOTUSED
 
+#ifdef ModelP
+/* undefine if all son objects shall be idenfied */
+#define IDENT_ONLY_NEW
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -133,6 +137,16 @@ enum REFINE_CE {
 #define MARKCLASS_LEN                                   2
 #define MARKCLASS(p)                                    CW_READ(p,MARKCLASS_CE)
 #define SETMARKCLASS(p,n)                               CW_WRITE(p,MARKCLASS_CE,n)
+
+#ifdef ModelP
+#define NEW_NIDENT_LEN                 2
+#define NEW_NIDENT(p)                  CW_READ(p,ce_NEW_NIDENT)
+#define SETNEW_NIDENT(p,n)             CW_WRITE(p,ce_NEW_NIDENT,n)
+
+#define NEW_EDIDENT_LEN                2
+#define NEW_EDIDENT(p)                 CW_READ(p,ce_NEW_EDIDENT)
+#define SETNEW_EDIDENT(p,n)            CW_WRITE(p,ce_NEW_EDIDENT,n)
+#endif
 
 /* macros for refineinfo */
 #define RINFO_MAX                                               100
@@ -229,6 +243,10 @@ typedef INT (*Get_Sons_of_ElementSideProcPtr)(ELEMENT *theElement, INT side, INT
 /****************************************************************************/
 
 extern REFINEINFO refine_info;
+#ifdef ModelP
+extern INT ce_NEW_NIDENT;
+extern INT ce_NEW_EDIDENT;
+#endif
 
 /****************************************************************************/
 /*																			*/
