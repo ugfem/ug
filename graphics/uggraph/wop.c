@@ -444,6 +444,7 @@ static RotObsTrafoProcPtr InitRotObsTrafo3d;
 static VIEWEDOBJ			*OE_ViewedObj;
 static DOUBLE               *OE_zMin;
 static DOUBLE               *OE_zMax;
+static INT					OE_MarkKey;
 static INT                  OE_OrderStrategy;
 static INT                  OE_force_ordering;
 static INT                  OE_nBndElem;
@@ -773,6 +774,7 @@ static INT *                EVector2D_PicGUR;
 static INT					EVector_cutvector;
 static DOUBLE				EVector_V2L_factor;
 static DOUBLE				EVector_CutLenFactor;
+static DOUBLE				EVector_max;
 static long 				EVector_ColorCut;
 
 /* 2D */
@@ -9117,6 +9119,7 @@ static INT EW_PreProcess_EVector2D (PICTURE *thePicture, WORK *theWork)
 	EVector_EvalFct 	  = theEvpo->EvalFct->EvalProc;
 	EVector_V2L_factor	  = EVector_rastersize/theEvpo->max/NormObsTrafo;	
 	EVector_CutLenFactor  = theEvpo->CutLenFactor;
+	EVector_max			  = theEvpo->max;
 	EVector_ColorCut	  = theOD->red;
 	EVector2D_ColorNormal = theOD->black;
 	EVector2D_PicGLL	  = PIC_GLL(thePicture);
@@ -9312,7 +9315,7 @@ static INT EW_EVector2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	DOUBLE_VECTOR LocalCoord, Poly[MAX_POINTS_OF_POLY], RasterPoint[RASTERPOINTS_MAX];
 	COORD_POINT corners[MAX_CORNERS_OF_ELEM];
 	const DOUBLE *x[MAX_CORNERS_OF_ELEM];
-	DOUBLE norm;
+	DOUBLE norm,RelativeLength;
 	long Color;
 	DOUBLE min, max;
 	DOUBLE_VECTOR Arrow,TArrow;
@@ -9366,11 +9369,14 @@ static INT EW_EVector2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
         V2_TRAFOM3_V2_NT(Arrow,ObsTrafo,TArrow);
         V2_EUKLIDNORM(TArrow,norm);
 		V2_SCALE(EVector_V2L_factor,Arrow)
-				
-		if ((norm*EVector_V2L_factor>EVector_rastersize*EVector_CutLenFactor) && EVector_cutvector)
+		
+		RelativeLength = norm / (EVector_CutLenFactor*EVector_max);
+		if (EVector_cutvector && (RelativeLength>1.))
 		{
 			Color = EVector_ColorCut;
-			V2_SCALE(EVector_rastersize*EVector_CutLenFactor/norm/EVector_V2L_factor,Arrow)
+			
+			/* resize to final size EVector_rastersize*CutLenFactor */
+			V2_SCALE(1./RelativeLength,Arrow)
 		}
 		else
 			Color = EVector2D_ColorNormal;
@@ -14410,6 +14416,7 @@ static INT OrderFathersNNS (MULTIGRID *mg, ELEMENT **table)
     ELEMENT *p, *q;
 	HEAP *heap;
 	GRID *grid;
+	INT MarkKey;
     
 	/* copy elements */
 	n = 0;
@@ -14419,11 +14426,11 @@ static INT OrderFathersNNS (MULTIGRID *mg, ELEMENT **table)
 
 	/* allocate arrays for z coordinates */
 	heap = mg->theHeap;
-    Mark(heap, FROM_TOP);
-	OE_zMin = (DOUBLE *)GetMem(heap, n*sizeof(DOUBLE), FROM_TOP);
-	OE_zMax = (DOUBLE *)GetMem(heap, n*sizeof(DOUBLE), FROM_TOP);
+    MarkTmpMem(heap,&MarkKey);
+	OE_zMin = (DOUBLE *)GetTmpMem(heap, n*sizeof(DOUBLE),MarkKey);
+	OE_zMax = (DOUBLE *)GetTmpMem(heap, n*sizeof(DOUBLE),MarkKey);
 	if (OE_zMin == NULL || OE_zMax == NULL) {
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap,MarkKey);
 		return 2;
 	}
 
@@ -14455,7 +14462,7 @@ static INT OrderFathersNNS (MULTIGRID *mg, ELEMENT **table)
 				break;
 			if (CompareElements(&p, &q) == 1) {
 				if (USED(q)) {
-					Release(heap, FROM_TOP);
+					ReleaseTmpMem(heap,MarkKey);
 					return 1;
 				}
 				for (k=j; k>i; k--)
@@ -14468,7 +14475,7 @@ static INT OrderFathersNNS (MULTIGRID *mg, ELEMENT **table)
 		}
 		if (ok) i++;
 	}
-	Release(heap, FROM_TOP);
+	ReleaseTmpMem(heap,MarkKey);
 	return 0;
 }
 
@@ -14871,7 +14878,7 @@ static void TestPrecedence(INT i, INT j)
 	{
 		BCOUNT(i)++;
 		h = HIDDEN_BY(j);
-		HIDDEN_BY(j) = (ILIST *)GetMem(OE_Heap, sizeof(ILIST), FROM_TOP);
+		HIDDEN_BY(j) = (ILIST *)GetTmpMem(OE_Heap, sizeof(ILIST), OE_MarkKey);
 		if (HIDDEN_BY(j) == NULL) {
 			OE_Error = 1;
 			return;
@@ -14882,7 +14889,7 @@ static void TestPrecedence(INT i, INT j)
 	else if (cmp == -1) {
 		BCOUNT(j)++;
 		h = HIDDEN_BY(i);
-		HIDDEN_BY(i) = (ILIST *)GetMem(OE_Heap, sizeof(ILIST), FROM_TOP);
+		HIDDEN_BY(i) = (ILIST *)GetTmpMem(OE_Heap, sizeof(ILIST), OE_MarkKey);
 		if (HIDDEN_BY(i) == NULL) {
 			OE_Error = 1;
 			return;
@@ -15056,13 +15063,13 @@ static INT OrderFathersXSH(MULTIGRID *mg, ELEMENT **table)
 		
 	/* allocate Arrays */
 	heap = mg->theHeap;
-	Mark(heap, FROM_TOP);
-	OE_Map     = (MAP *)      GetMem(heap, OE_nBndElem*sizeof(MAP),         FROM_TOP);
-	OE_BE_Data = (BE_DATA *)  GetMem(heap, OE_nBndElem*sizeof(BE_DATA),     FROM_TOP);
-	OE_BoxTab  = (INT *)      GetMem(heap, OE_nBndElem*sizeof(INT),         FROM_TOP);
+	MarkTmpMem(heap,&OE_MarkKey);
+	OE_Map     = (MAP *)      GetTmpMem(heap, OE_nBndElem*sizeof(MAP),         OE_MarkKey);
+	OE_BE_Data = (BE_DATA *)  GetTmpMem(heap, OE_nBndElem*sizeof(BE_DATA),     OE_MarkKey);
+	OE_BoxTab  = (INT *)      GetTmpMem(heap, OE_nBndElem*sizeof(INT),         OE_MarkKey);
 
 	if (OE_Map == NULL || OE_BE_Data == NULL || OE_BoxTab == NULL) {
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap,OE_MarkKey);
 		return 2;
 	}
 
@@ -15152,7 +15159,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, ELEMENT **table)
 	}
 
 	if (OE_Error) {
-		Release(heap, FROM_TOP);	
+		ReleaseTmpMem(heap,OE_MarkKey);	
 		return 2;
 	}
 
@@ -15164,7 +15171,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, ELEMENT **table)
 			table[pos++] = p;
 		}
 	if (pos == 0) { 
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap, OE_MarkKey);
 		return 1;                 /* give up, if no 1st shell */
 	}
 
@@ -15241,7 +15248,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, ELEMENT **table)
 					}
 				}
 			}
-			Release(heap, FROM_TOP);
+			ReleaseTmpMem(heap, OE_MarkKey);
 			return 1;                  /* give up, if untractable cycle */
 
 		resolved:
@@ -15254,7 +15261,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, ELEMENT **table)
 			newBegin  = pos;
 		}
 	}
-	Release(heap, FROM_TOP);
+	ReleaseTmpMem(heap,OE_MarkKey);
 	return 0; 
 }
 
@@ -15283,6 +15290,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
     COORD_POINT t;
     DOUBLE *corner[8];
 	DOUBLE_VECTOR temp;
+	INT MarkKey;
     INT i, j, k, l, count, root, pos, lastBegin, newBegin, wanted;
 
 	/* count boundary elements */
@@ -15293,11 +15301,11 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
 		
 	/* allocate Arrays */
 	heap = mg->theHeap;
-	Mark(heap, FROM_TOP);
-	OE_BoxTab  = (INT *) GetMem(heap, OE_nBndElem*sizeof(INT), FROM_TOP);
+	MarkTmpMem(heap,&MarkKey);
+	OE_BoxTab  = (INT *) GetTmpMem(heap, OE_nBndElem*sizeof(INT), MarkKey);
 
 	if (OE_BoxTab == NULL) {
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap,MarkKey);
 		return 2;
 	}
 
@@ -15351,7 +15359,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
 			BSearch1(root);
 		}
 	if (OE_Error) {
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap,MarkKey);
 		return 2;
 	}
 
@@ -15429,7 +15437,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
 			newBegin  = pos;
 		}
 	}
-	Release(heap, FROM_TOP);
+	ReleaseTmpMem(heap,MarkKey);
 
 	/* compute plot ids */
 	l = 1;
@@ -15712,7 +15720,7 @@ static int ScatterGraphs(DDD_OBJ obj, void *data)
 
 	/* allocate & init memory, if necessary */
 	if (SH_LINK(p) == NULL)
-		if ((SH_LINK(p) = (SH_DATA *)GetMem(OE_Heap, sizeof(SH_DATA), FROM_TOP)) == NULL) {
+		if ((SH_LINK(p) = (SH_DATA *)GetTmpMem(OE_Heap, sizeof(SH_DATA), MarkKey)) == NULL) {
 			OE_Error =1;
 			return 0;
 		}
@@ -15727,7 +15735,7 @@ static int ScatterGraphs(DDD_OBJ obj, void *data)
 	while (d-d1 < n) {
 		gid = *d;  d++;
 		i = Insert(HTAB(p), gid); 
-		if ((GR_LINK(p)[i] = (GR_DATA *)GetMem(OE_Heap, sizeof(GR_DATA), FROM_TOP)) == NULL) {
+		if ((GR_LINK(p)[i] = (GR_DATA *)GetTmpMem(OE_Heap, sizeof(GR_DATA), MarkKey)) == NULL) {
 			OE_Error = 1;
 			return 0;
 		}
@@ -15735,7 +15743,7 @@ static int ScatterGraphs(DDD_OBJ obj, void *data)
 		CNT(p, i)      = *d;  d++;
 		NAD(p, i) = na = *d;  d++;
 		if (na > 0) {
-			if ((ADJACENT(p, i) = (INT *)GetMem(OE_Heap, na*sizeof(INT), FROM_TOP)) == NULL) {
+			if ((ADJACENT(p, i) = (INT *)GetTmpMem(OE_Heap, na*sizeof(INT), MarkKey)) == NULL) {
 				OE_Error = 1;
 				return 0;
 			}
@@ -15792,7 +15800,7 @@ static INT OrderRemoteSons(ELEMENT *p)
 		if (EPRIO(son) != PrioMaster) continue;
 		k = Insert(HTAB(p), EGID(son)); 
 		pel[k] = son;
-		if ((GR_LINK(p)[k] = (GR_DATA *)GetMem(OE_Heap, sizeof(GR_DATA), FROM_TOP)) == NULL)
+		if ((GR_LINK(p)[k] = (GR_DATA *)GetTmpMem(OE_Heap, sizeof(GR_DATA), MarkKey)) == NULL)
 			return 1;
 		HIS_GAP(p, k) = GAP(son);
 		na = cnt = 0;
@@ -15809,7 +15817,7 @@ static INT OrderRemoteSons(ELEMENT *p)
 		ADJACENT(p, k) = adjacent[k];
 	}
 
-	if ((TABLE(p) = (INT *)GetMem(OE_Heap, N_GLOBAL_SONS(p)*sizeof(INT), FROM_TOP)) == NULL)
+	if ((TABLE(p) = (INT *)GetTmpMem(OE_Heap, N_GLOBAL_SONS(p)*sizeof(INT), MarkKey)) == NULL)
 		return 1;
 
 	/* find first shell */
@@ -16003,6 +16011,7 @@ static INT SortLevelsLocally(MULTIGRID *mg)
 	HEAP *heap;
 	ELEMENT *p, **table, *lastFather;
 	INT i, j, k, n, err;
+	INT MarkKey;
 
 	err = 0;
 	heap = mg->theHeap;
@@ -16017,10 +16026,10 @@ static INT SortLevelsLocally(MULTIGRID *mg)
 		if (n == 0) continue;
 
 		/* allocate mem */
-		Mark(heap, FROM_TOP);
-		table = (ELEMENT **)GetMem(heap, n*sizeof(ELEMENT *), FROM_TOP);
+		MarkTmpMem(heap,&MarkKey);
+		table = (ELEMENT **)GetTmpMem(heap, n*sizeof(ELEMENT *), MarkKey);
 		if (table == NULL) {
-			Release(heap, FROM_TOP);
+			ReleaseTmpMem(heap,MarkKey);
 			err = 1;
 			return UG_GlobalMaxINT(err);
 		}
@@ -16047,7 +16056,7 @@ static INT SortLevelsLocally(MULTIGRID *mg)
 			}
 			
 		}
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap,MarkKey);
 	}
 	return UG_GlobalMaxINT(err);
 }
@@ -16092,16 +16101,17 @@ static INT NumberCoarseGrid(INT *table, MULTIGRID *mg)
 	INT i, j, me, err;
 	ELEMENT **mine, *p;
 	HEAP *heap;
+	INT MarkKey;
 
 	/* allocate mem */
 	err = 0;
 	if (OE_nLocalCGelems == 0)
 		return UG_GlobalMaxINT(err);
 	heap = mg->theHeap;
-	Mark(heap, FROM_TOP);
-	if ((mine = (ELEMENT **)GetMem(heap, OE_nLocalCGelems*sizeof(ELEMENT *), FROM_TOP)) == NULL) {
+	MarkTmpMem(heap,&MarkKey);
+	if ((mine = (ELEMENT **)GetTmpMem(heap, OE_nLocalCGelems*sizeof(ELEMENT *), MarkKey)) == NULL) {
 		err = 1;
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap,MarkKey);
 		return UG_GlobalMaxINT(err);
 	}
 	
@@ -16121,7 +16131,7 @@ static INT NumberCoarseGrid(INT *table, MULTIGRID *mg)
 			j+=2;
 		PLOT_ID(mine[i]) = table[j+1];
 	}
-	Release(heap, FROM_TOP);
+	ReleaseTmpMem(heap,MarkKey);
 	return UG_GlobalMaxINT(err);
 }
 
@@ -16152,6 +16162,7 @@ static INT CollectCoarseGrid(MULTIGRID *mg)
 	ELEMENT *elem, *neighbor;
 	DOUBLE *corner[MAX_CORNERS_OF_ELEM], *d, *d0, *d1, *d2, *d3;
 	INT i, quit, j, na, cnt, k, n, error, l, ns, nc, fvs, fhs;
+	INT MarkKey;
 
 	/* state information */
 	INT receiving[WOP_DOWN_CHANNELS], sending[WOP_DOWN_CHANNELS+1], 
@@ -16165,7 +16176,7 @@ static INT CollectCoarseGrid(MULTIGRID *mg)
 	elem = FIRSTELEMENT(GRID_ON_LEVEL(mg,0));
 	heap = mg->theHeap;
 	error = k = 0;
-	Mark(heap, FROM_BOTTOM);
+	MarkTmpMem(heap,&MarkKey);
 	for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
 		for (j = 0; j < DO_BUFFER_SLOTS; j++)
 			if ((OE_Buffer[i][j] = (DOUBLE *)GetMem(heap, 
@@ -16176,8 +16187,8 @@ static INT CollectCoarseGrid(MULTIGRID *mg)
 oops:
 	error = UG_GlobalMaxINT(error);
 	if (error) {
+		ReleaseTmpMem(heap,MarkKey);
 		UserWrite("CollectCoarseGrid(): error in stage 0\n");
-		Release(heap, FROM_BOTTOM);
 		return 1;
 	}
 	for (i=0; i<WOP_DOWN_CHANNELS; i++) {
@@ -16240,7 +16251,7 @@ oops:
 						CGG_NAD(k) = na = CGG_2INT(d);  d++;
 						if (na > 0) {
 							if ((CGG_ADJACENT(k) = 
-								(INT *)GetMem(heap, na*sizeof(INT), FROM_TOP)) == NULL){
+								(INT *)GetTmpMem(heap, na*sizeof(INT), MarkKey)) == NULL){
 								error = 1;
 								UserWrite("CollectCoarseGrid(): error in stage 1\n");
 								break;
@@ -16254,8 +16265,8 @@ oops:
 						/* read boundary side info */
 						ns = CGG_2INT(d);  d++;
 						if (ns > 0) {
-							if ((CGG_BLINK(k) = (BS_DATA *) GetMem(heap, sizeof(BS_DATA)
-										+(ns-1)*sizeof(SIDE_DATA), FROM_TOP)) == NULL) {
+							if ((CGG_BLINK(k) = (BS_DATA *) GetTmpMem(heap, sizeof(BS_DATA)
+										+(ns-1)*sizeof(SIDE_DATA), MarkKey)) == NULL) {
 								error = 1;
 								UserWriteF("CollectCoarseGrid(): error in stage 2 ns=%d\n",ns);
 								break;
@@ -16362,7 +16373,7 @@ oops:
 			front[i] = (front[i] + 1) % CGG_BUFFER_SLOTS;
 		}
 	}
-	Release(heap, FROM_BOTTOM);
+	ReleaseTmpMem(heap,MarkKey);
 	return error;
 }
 #endif
@@ -16427,38 +16438,40 @@ static INT OrderHirarchically(MULTIGRID *mg)
 		}
 
 	    #ifdef ModelP
-
-		/* nonlocal case (parallel only) */
-
-		Mark(heap, FROM_TOP);
-
-		/* collect graphs describing remote sons */
-		if (CollectGraphs(grid)) {
-			Release(heap, FROM_TOP);
-			return 1;
+		{
+			/* nonlocal case (parallel only) */
+			INT MarkKey;
+	
+			MarkTmpMem(heap,&MarkKey);
+	
+			/* collect graphs describing remote sons */
+			if (CollectGraphs(grid)) {
+				ReleaseTmpMem(heap,MarkKey);
+				return 1;
+			}
+	
+			/* order remote sons */
+			grid = GRID_ON_LEVEL(mg,i);
+			for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
+				if (SH_LINK(p) != NULL)
+				    if (OrderRemoteSons(p)) {
+						err = 1;
+						break;
+					}
+			err = UG_GlobalMaxINT(err);
+			if (err) {
+				ReleaseTmpMem(heap,MarkKey);
+				return 1;
+			}
+	
+			/* tell remote sons their ordering */
+			DistributeOrdering(grid);
+	
+			/* tell VGhosts their Master's plot id */
+			DistributePlotIDs(GRID_ON_LEVEL(mg,i+1));
+	
+			ReleaseTmpMem(heap,MarkKey);
 		}
-
-		/* order remote sons */
-		grid = GRID_ON_LEVEL(mg,i);
-		for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
-			if (SH_LINK(p) != NULL)
-			    if (OrderRemoteSons(p)) {
-					err = 1;
-					break;
-				}
-		err = UG_GlobalMaxINT(err);
-		if (err) {
-			Release(heap, FROM_TOP);
-			return 1;
-		}
-
-		/* tell remote sons their ordering */
-		DistributeOrdering(grid);
-
-		/* tell VGhosts their Master's plot id */
-		DistributePlotIDs(GRID_ON_LEVEL(mg,i+1));
-
-		Release(heap, FROM_TOP);
 		#endif
 	}
 	return 0;
@@ -16490,7 +16503,9 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	HEAP *heap;
 	GRID *grid;
 	INT err;
+	INT MarkKey;
 	#ifdef ModelP
+	INT MarkKeyMaster;
 	ELEMENT *p;
 	INT n;
 	INT *table;
@@ -16500,7 +16515,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 
 	heap = mg->theHeap;
 	grid = GRID_ON_LEVEL(mg,0);
-	Mark(heap, FROM_TOP);
+	MarkTmpMem(heap,&MarkKey);
 
 	#ifdef ModelP
 	/* count all coarse grid elements */
@@ -16511,24 +16526,24 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	OE_nGlobalCGelems = n = UG_GlobalSumINT(n);
 
 	/* allocate memory for ordering list and coarse grid graph */
-	table  = (INT *)GetMem(heap, 2*n*sizeof(INT), FROM_TOP);
+	table  = (INT *)GetTmpMem(heap, 2*n*sizeof(INT), MarkKey);
 	err = (table == NULL);
 	err = UG_GlobalMaxINT(err);
 	if (err) {
+		ReleaseTmpMem(heap,MarkKey);
 		UserWrite("OrderCoarseGrid(): out of mem 1\n");
-		Release(heap, FROM_TOP);
 		return 1;
 	}
 	if (me == master) {
-		Mark(heap, FROM_TOP);
-	    OE_CGG = (CGG_DATA *)GetMem(heap, n*sizeof(CGG_DATA), FROM_TOP);
+		MarkTmpMem(heap,&MarkKeyMaster);
+	    OE_CGG = (CGG_DATA *)GetTmpMem(heap, n*sizeof(CGG_DATA), MarkKeyMaster);
 		if (err = (OE_CGG == NULL))
-			Release(heap, FROM_TOP);
+			ReleaseTmpMem(heap,MarkKeyMaster);
 	}
 	Broadcast(&err, sizeof(err));
 	if (err) {
+		Release(heap, MarkKeyMaster);
 		UserWrite("OrderCoarseGrid(): out of mem 2\n");
-		Release(heap, FROM_TOP);
 		return 1;
 	}
 
@@ -16536,18 +16551,18 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	err = CollectCoarseGrid(mg);
     Broadcast(&err, sizeof(err));
 	if (err) {
+		if (me == master) ReleaseTmpMem(heap,MarkKeyMaster);
+		ReleaseTmpMem(heap,MarkKey);
 		UserWrite("OrderCoarseGrid(): CollectCoarseGrid() failed\n");
-		if (me == master) Release(heap, FROM_TOP);
-		Release(heap, FROM_TOP);
 		return 1;
 	}
 	
 	#else
 	/* allocate memory for ordering list */
-	table = (ELEMENT **)GetMem(heap, (grid->nElem)*sizeof(ELEMENT *), FROM_TOP);
+	table = (ELEMENT **)GetTmpMem(heap, (grid->nElem)*sizeof(ELEMENT *), MarkKey);
 	if (table == NULL) {
+		ReleaseTmpMem(heap,MarkKey);
 		UserWrite("OrderCoarseGrid(): out of mem 3\n");
-		Release(heap, FROM_TOP);
 		return 1;
 	}
 	#endif
@@ -16581,7 +16596,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 			UserWrite("OrderCoarseGrid(): untractable cycle\n");
 		else if (err == 2)
 			UserWrite("OrderCoarseGrid(): out of mem5\n");
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap,MarkKeyMaster);
 	}
 	Broadcast(&err, sizeof(err));
 	if (err == 0) {
@@ -16591,7 +16606,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	}
 	#endif
 
-    Release(heap, FROM_TOP);
+    ReleaseTmpMem(heap,MarkKey);
    	return err;
 }
 
@@ -16644,6 +16659,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 	GRID *grid;
 	ELEMENT *p;
 	INT err;
+	INT MarkKey;
     #endif
 
 	/* check if multigrid is already ordered */
@@ -16680,13 +16696,13 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 	/* allocate memory for and compute OS_Data (parallel case only) */
 	#ifdef ModelP
 	heap = mg->theHeap;
-	Mark(heap, FROM_TOP);
+	MarkTmpMem(heap,&MarkKey);
 	err = 0;
 	for (i = 0; i <= mg->topLevel; i++) {
 		grid = GRID_ON_LEVEL(mg,i);
 		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
 			if (EPRIO(p) != PrioHGhost)
-				if ((OS_LINK(p) = (OS_DATA *) GetMem(heap, sizeof(OS_DATA), FROM_TOP)) == NULL) {
+				if ((OS_LINK(p) = (OS_DATA *) GetTmpMem(heap, sizeof(OS_DATA), MarkKey)) == NULL) {
 					err = 1;
 					goto fault;
 				}
@@ -16695,7 +16711,7 @@ fault:
 	err = UG_GlobalMaxINT(err);
 	if (err) {
 		UserWrite("Insufficient memory to order elements.\n");
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap,MarkKey);
 		return 1;
 	}
 	ComputeOS_Data(mg);
@@ -16705,7 +16721,7 @@ fault:
 	if (OrderCoarseGrid(mg)) {
 		UserWrite("ordering of coarse grid failed.\n");
 		#ifdef ModelP
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap,MarkKey);
 		#endif
 		return 1;
 	}
@@ -16714,7 +16730,7 @@ fault:
 	if (OrderHirarchically(mg)) {
 		UserWrite("Insufficient memory to order elements.\n");
 		#ifdef ModelP
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap,MarkKey);
 		#endif
 		return 1;
 	}
@@ -16726,7 +16742,7 @@ fault:
 		for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
 				ID(p) = PLOT_ID(p);
 	}
-	Release(heap, FROM_TOP);
+	ReleaseTmpMem(heap,MarkKey);
 
 	/* sort grids */
 	if (SortLevelsLocally(mg)) {
@@ -19615,6 +19631,7 @@ static INT WorkEW(void)
 	
 	HEAP *heap;
 	INT i, j, err=0;
+	INT MarkKey;
 
 	WOP_Element = (CONTEXT(me) ?
       (*WOP_EW_GetFirstElementProc)(WOP_MG, 0, WOP_MG->currentLevel) : NULL);
@@ -19627,18 +19644,18 @@ static INT WorkEW(void)
 
 		/* allocate buffers */
 		heap = WOP_MG->theHeap;
-		Mark(heap, FROM_TOP);
+		MarkTmpMem(heap,&MarkKey);
 		for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
 			for (j = 0; j < DO_BUFFER_SLOTS; j++)
-				if ((WOP_DO_Buffer[i][j] = (DRAWINGOBJ *)GetMem(heap, 
-					 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), FROM_TOP)) == NULL) {
+				if ((WOP_DO_Buffer[i][j] = (DRAWINGOBJ *)GetTmpMem(heap, 
+					 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), MarkKey)) == NULL) {
 					err = 1;
 					goto oops;
 				}
 	oops:
 		err = UG_GlobalMaxINT(err);
 		if (err) {
-			Release(heap, FROM_TOP);
+			ReleaseTmpMem(heap,MarkKey);
 			return 1;
 		}
 
@@ -19657,7 +19674,7 @@ static INT WorkEW(void)
 		}
         #endif
 
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap,MarkKey);
 		break;
 
 	case  FINDRANGE_WORK:
@@ -19717,21 +19734,22 @@ static INT WorkNW(void)
 
 	HEAP *heap;
 	INT i, j, err=0;
+	INT MarkKey;
 
 	/* allocate buffers */
 	heap = WOP_MG->theHeap;
-	Mark(heap, FROM_TOP);
+	MarkTmpMem(heap,&MarkKey);
 	for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
 		for (j = 0; j < DO_BUFFER_SLOTS; j++)
-			if ((WOP_DO_Buffer[i][j] = (DRAWINGOBJ *)GetMem(heap, 
-				 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), FROM_TOP)) == NULL) {
+			if ((WOP_DO_Buffer[i][j] = (DRAWINGOBJ *)GetTmpMem(heap, 
+				 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), MarkKey)) == NULL) {
 				err = 1;
 				goto oops;
 			}
 oops:
 	err = UG_GlobalMaxINT(err);
 	if (err) {
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap,MarkKey);
 		return 1;
 	}
 
@@ -19746,7 +19764,7 @@ oops:
 		PWorkNW_Evaluate();
 	}
 
-	Release(heap, FROM_TOP);
+	ReleaseTmpMem(heap,MarkKey);
 	return (0);
 
 #endif
@@ -19796,21 +19814,22 @@ static INT WorkVW(void)
 
 	HEAP *heap;
 	INT i, j, err=0;
+	INT MarkKey;
 
 	/* allocate buffers */
 	heap = WOP_MG->theHeap;
-	Mark(heap, FROM_TOP);
+	MarkTmpMem(heap,&MarkKey);
 	for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
 		for (j = 0; j < DO_BUFFER_SLOTS; j++)
-			if ((WOP_DO_Buffer[i][j] = (DRAWINGOBJ *)GetMem(heap, 
-				 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), FROM_TOP)) == NULL) {
+			if ((WOP_DO_Buffer[i][j] = (DRAWINGOBJ *)GetTmpMem(heap, 
+				 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), MarkKey)) == NULL) {
 				err = 1;
 				goto oops;
 			}
 oops:
 	err = UG_GlobalMaxINT(err);
 	if (err) {
-		Release(heap, FROM_TOP);
+		ReleaseTmpMem(heap,MarkKey);
 		return 1;
 	}
 
@@ -19825,7 +19844,7 @@ oops:
 		PWorkVW_Evaluate();
 	}
   
-	Release(heap, FROM_TOP);
+	ReleaseTmpMem(heap,MarkKey);
 	return (0);
 
 #endif
