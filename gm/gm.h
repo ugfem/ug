@@ -66,9 +66,7 @@
 #include "domain.h"
 #endif
 
-#ifdef ModelP
 #include "pargm.h"
-#endif
 
 /* if interpolation matrix is stored */
 #define __INTERPOLATION_MATRIX__
@@ -660,18 +658,27 @@ struct grid {
 #endif
 
   /* pointers */
-  union  element *elements;                     /* pointer to first element                     */
-  union  element *lastelement;          /* pointer to last element				*/
+  union  element *elements[ELEMENTPRIOS];       /* pointer to first element     */
+  union  element *lastelement[ELEMENTPRIOS];       /* pointer to last element	*/
   union  vertex *vertices;                      /* pointer to first vertex				*/
   union  vertex *lastvertex;                    /* pointer to last vertex				*/
-  struct node *firstNode;                       /* pointer to first node				*/
-  struct node *lastNode;                        /* pointer to last node                                 */
-  VECTOR *firstVector;                          /* pointer to first vector				*/
-  VECTOR *lastVector;                           /* pointer to last vector				*/
+  struct node *firstNode[NODEPRIOS];            /* pointer to first node			*/
+  struct node *lastNode[NODEPRIOS];             /* pointer to last node                         */
+  VECTOR *firstVector[VECTORPRIOS];             /* pointer to first vector			*/
+  VECTOR *lastVector[VECTORPRIOS];              /* pointer to last vector			*/
   BLOCKVECTOR *firstblockvector;        /* pointer to the first blockvector		*/
   BLOCKVECTOR *lastblockvector;         /* pointer to the last blockvector		*/
   struct grid *coarser, *finer;         /* coarser and finer grids				*/
   struct multigrid *mg;                         /* corresponding multigrid structure	*/
+        #ifdef ModelP
+  /* pointers to seperate ghost and master objects						*/
+  /* element list contains in parallel version first all ghostelements	*/
+  /* and then all master elements                                                                               */
+  /* ghostlastelement successor is pointer to elements		                        */
+  /* instead firstelements predecessor is NULL							*/
+  union  element *ghostelements;                /* pointer to first ghost element       */
+  union  element *lastghostelement;             /* pointer to last ghost element	*/
+        #endif
 } ;
 
 struct multigrid {
@@ -1787,15 +1794,65 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define GSTATUS(p)                      ((p)->status)
 #define SETGSTATUS(p,n)         ((p)->status|=n)
 #define RESETGSTATUS(p,n)       ((p)->status&=(~n))
-#define FIRSTELEMENT(p)         ((p)->elements)
-#define LASTELEMENT(p)          ((p)->lastelement)
+
+#ifdef ModelP
+#define PFIRSTELEMENT(p)                                ((LISTPART_FIRSTELEMENT(p,0)!=NULL) ?\
+                                                         (LISTPART_FIRSTELEMENT(p,0)) : (FIRSTELEMENT(p)))
+#define PRIO_FIRSTELEMENT(p,prio)               ((p)->elements[PRIO2LISTPART(ELEMENT_LIST,prio)])
+#define LISTPART_FIRSTELEMENT(p,part)   ((p)->elements[part])
+#define FIRSTELEMENT(p)                                 ((p)->elements[PRIO2LISTPART(ELEMENT_LIST,PrioMaster)])
+
+#define PLASTELEMENT(p)                                 LASTELEMENT(p)
+#define PRIO_LASTELEMENT(p,prio)                ((p)->elements[PRIO2LISTPART(ELEMENT_LIST,prio)])
+#define LISTPART_LASTELEMENT(p,part)    ((p)->lastelement[part])
+#define LASTELEMENT(p)                                  ((p)->lastelement[PRIO2LISTPART(ELEMENT_LIST,PrioMaster)])
+#else
+#define FIRSTELEMENT(p)         ((p)->elements[0])
+#define PFIRSTELEMENT(p)        FIRSTELEMENT(p)
+#define LASTELEMENT(p)          ((p)->lastelement[0])
+#define PLASTELEMENT(p)         LASTELMENT(p)
+#endif
+
 #define FIRSTVERTEX(p)          ((p)->vertices)
 #define LASTVERTEX(p)           ((p)->lastvertex)
 #define FIRSTELEMSIDE(p)        ((p)->sides)
-#define FIRSTNODE(p)            ((p)->firstNode)
-#define LASTNODE(p)             ((p)->lastNode)
-#define FIRSTVECTOR(p)          ((p)->firstVector)
-#define LASTVECTOR(p)           ((p)->lastVector)
+
+#ifdef ModelP
+#define PFIRSTNODE(p)                                   ((LISTPART_FIRSTNODE(p,0)!=NULL) ?\
+                                                         (LISTPART_FIRSTNODE(p,0)) : (FIRSTNODE(p)))
+#define PRIO_FIRSTNODE(p,prio)                  ((p)->firstNode[PRIO2LISTPART(NODE_LIST,prio)])
+#define LISTPART_FIRSTNODE(p,part)              ((p)->firstNode[part])
+#define FIRSTNODE(p)                                    ((p)->firstNode[PRIO2LISTPART(NODE_LIST,PrioMaster)])
+
+#define PLASTNODE(p)                                    LASTNODE(p)
+#define PRIO_LASTNODE(p,prio)                   ((p)->lastNode[PRIO2LISTPART(NODE_LIST,prio)])
+#define LISTPART_LASTNODE(p,part)               ((p)->lastNode[part])
+#define LASTNODE(p)                                     ((p)->lastNode[PRIO2LISTPART(NODE_LIST,PrioMaster)])
+#else
+#define FIRSTNODE(p)            ((p)->firstNode[0])
+#define PFIRSTNODE(p)           FIRSTNODE(p)
+#define LASTNODE(p)             ((p)->lastNode[0])
+#define PLASTNODE(p)            LASTNODE(p)
+#endif
+
+#ifdef ModelP
+#define PFIRSTVECTOR(p)                                 ((LISTPART_FIRSTVECTOR(p,0)!=NULL) ?\
+                                                         (LISTPART_FIRSTVECTOR(p,0)) : (FIRSTVECTOR(p)))
+#define PRIO_FIRSTVECTOR(p,prio)                ((p)->firstVector[PRIO2LISTPART(VECTOR_LIST,prio)])
+#define LISTPART_FIRSTVECTOR(p,part)    ((p)->firstVector[part])
+#define FIRSTVECTOR(p)                                  ((p)->firstVector[PRIO2LISTPART(VECTOR_LIST,PrioMaster)])
+
+#define PLASTVECTOR(p)                                  LASTVECTOR(p)
+#define PRIO_LASTVECTOR(p,prio)                 ((p)->lastVector[PRIO2LISTPART(VECTOR_LIST,prio)])
+#define LISTPART_LASTVECTOR(p,part)     ((p)->lastVector[part])
+#define LASTVECTOR(p)                                   ((p)->lastVector[PRIO2LISTPART(VECTOR_LIST,PrioMaster)])
+#else
+#define FIRSTVECTOR(p)          ((p)->firstVector[0])
+#define PFIRSTVECTOR(p)         FIRSTVECTOR(p)
+#define LASTVECTOR(p)           ((p)->lastVector[0])
+#define PLASTVECTOR(p)          LASTVECTOR(p)
+#endif
+
 #define GFIRSTBV(p)             ((p)->firstblockvector)
 #define GLASTBV(p)                      ((p)->lastblockvector)
 #define UPGRID(p)                       ((p)->finer)
