@@ -1984,6 +1984,7 @@ INT Identify_SonObjects (GRID *theGrid)
     if (Identify_SonNodes (theGrid) != GM_OK) RETURN(GM_ERROR);
   }
 
+  return (GM_OK);
 }
 
 /****************************************************************************/
