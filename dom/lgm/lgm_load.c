@@ -172,7 +172,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   }
   else
   {
-    UserWrite("ERROR: fimename must end with .lgm or .hgm\n");
+    UserWrite("ERROR: filename must end with .lgm or .hgm\n");
     return (NULL);
   }
 
