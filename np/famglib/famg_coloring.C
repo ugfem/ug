@@ -69,11 +69,14 @@ static int DetermineNbs( DDD_OBJ obj)
 }
 
 
-int ConstructColoringGraph( DDD_ATTR grid_attr)
+int ConstructColoringGraph( DDD_ATTR grid_attr, int OrderingFunctionType )
 // returns the number of neighbors
 {
 	int i;
 	int helpNb[FAMGColorMaxProcs];
+	
+	if( OrderingFunctionType == 1 )
+		return 0;
 	
 	assert(FAMGColorMaxProcs>=procs);	// otherwise increase the constant FAMGColorMaxProcs 
 	
@@ -150,6 +153,15 @@ int ConstructColoring( int OrderingFunctionType )
 	msgid MsgOutId[FAMGColorMaxNb];			// id of async send's
 	msgid MsgInId[FAMGColorMaxNb];			// id of async recv's
 	
+	if( OrderingFunctionType == 1 )
+	{
+		FAMGMyColor = me;
+		return 0;
+	}
+	
+	MyWeight = CalculateWeight( me, OrderingFunctionType );
+	PRINTDEBUG(np,2,(PFMT " MyWeight %g\n", me, MyWeight));
+
 	if( NrNb > FAMGColorMaxNb )
 	{
 		cout << "ConstructColoring(): error Number of neighbors ("<<NrNb<<") larger than maximum <<FAMGColorMaxNb<<. Increase FAMGColorMaxNb"<<endl<<fflush;
@@ -162,9 +174,6 @@ int ConstructColoring( int OrderingFunctionType )
 	for( i = 0; i < NrNb; i++ )
 		NbCh[i] = ConnASync( Nb[i], 7643 );		// just a silly number
 	
-	MyWeight = CalculateWeight( me, OrderingFunctionType );
-	PRINTDEBUG(np,2,(PFMT " MyWeight %g\n", me, MyWeight));
-
 	for( i = 0; i < NrNb; i++ )
 	{
 		//
