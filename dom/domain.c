@@ -144,7 +144,6 @@ PATCH *Patch_GetPatchByID (BVP *theBVP, INT id)
 
 INT Patch_GetPatchID (PATCH *thePatch)
 {
-  PATCH *thePatch;
   PATCH_DESC thePatchDesc;
 
   if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return (-1);
