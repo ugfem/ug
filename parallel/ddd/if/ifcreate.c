@@ -295,7 +295,7 @@ static COUPLING ** IFCollectStdCouplings (void)
   cplarray = (COUPLING **) AllocIF(sizeof(COUPLING *)*nCplItems);
   if (cplarray==NULL) {
     DDD_PrintError('E', 4000, "not enough memory in IFCreateFromScratch");
-    exit(1);
+    HARD_EXIT;
   }
 
   /* collect couplings */
@@ -351,7 +351,7 @@ void IFCreateFromScratch (DDD_IF ifId)
                 "not enough memory for IF %02d in IFCreateFromScratch",
                 ifId);
         DDD_PrintError('E', 4000, cBuffer);
-        exit(1);
+        HARD_EXIT;
       }
     }
     else

@@ -152,7 +152,7 @@ void DDD_GetChannels (int nPartners)
   if (nPartners>2*(procs-1))
   {
     DDD_PrintError('E', 1520, "topology error in DDD_GetChannels");
-    exit(1);
+    HARD_EXIT;
   }
 
   nConn = 0;

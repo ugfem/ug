@@ -104,7 +104,7 @@ static int sort_NewOwners (const void *e1, const void *e2)
         this final information will be transferred in a second pass, as
         soon as the receiver has decided whether he accepts the incoming
         object or not (depending on rules XFER-C2, XFER-C3, XFER-C4,
-        XFER_P and XFER-D).
+        XFER-P and XFER-D).
  */
 
 XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
@@ -623,6 +623,7 @@ void ExecLocalXISetPrio (
         xc->to      = cpl->proc;                               /* receiver of XIModCpl  */
         xc->te.gid  = gid;                                     /* the object's gid      */
         xc->te.prio = newprio;                                 /* the object's new prio */
+        xc->typ     = typ;                                     /* the object's type     */
       }
       /* 2. for all CopyObj-items with new-owner destinations */
       while (iNO<nNO && itemsNO[iNO]->gid==gid)
@@ -631,6 +632,7 @@ void ExecLocalXISetPrio (
         xc->to      = itemsNO[iNO]->dest;                        /* receiver of XIModCpl */
         xc->te.gid  = gid;                                       /* the object's gid     */
         xc->te.prio = newprio;                                  /* the object's new prio */
+        xc->typ     = typ;                                     /* the object's type     */
 
         iNO++;
       }
@@ -787,6 +789,7 @@ void PropagateCplInfos (
         xc->to      = arrayNC[iNC].dest;                         /* receiver of XIModCpl */
         xc->te.gid  = gid;                                       /* the object's gid     */
         xc->te.prio = newprio;                                   /* the object's new prio */
+        xc->typ     = OBJ_TYPE(hdr);                             /* the object's type     */
 
         iNC++;
       }

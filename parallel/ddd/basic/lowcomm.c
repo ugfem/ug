@@ -636,7 +636,7 @@ int LC_Connect (LC_MSGTYPE mtyp)
     sprintf(cBuffer, "cannot send %d messages (must be less than %d)",
             nSends, procs-1);
     DDD_PrintError('E', 6620, cBuffer);
-    exit(1);
+    HARD_EXIT;
   }
 
 #       if DebugLowComm<=9
@@ -667,7 +667,7 @@ int LC_Connect (LC_MSGTYPE mtyp)
     sprintf(cBuffer, "cannot receive %d messages (must be less than %d)",
             nRecvs, procs-1);
     DDD_PrintError('E', 6620, cBuffer);
-    exit(1);
+    HARD_EXIT;
   }
 
 

@@ -37,6 +37,8 @@
 #ifndef __DDDI_H__
 #define __DDDI_H__
 
+#include <assert.h>
+
 #ifndef __COMPILER__
 #include "compiler.h"
 #endif
@@ -55,6 +57,13 @@
         macro in order to turn usage of register variables on/off
  */
 #define REGISTER register
+
+/*
+        macro for exiting program in case of a severe error condition
+ */
+#define HARD_EXIT  assert(0)
+/* #define HARD_EXIT  exit(1) */
+
 
 
 /****************************************************************************/
@@ -79,6 +88,10 @@
 #define MAX_TRIES 5000000    /* max. number of tries til timeout in IF-comm */
 
 
+/* use maximum as default, if no Priomerge-matrix is available */
+#define PRIOMERGE_DEFAULT PRIOMERGE_MAXIMUM
+
+
 
 /*** DDD internal constants ***/
 
@@ -101,6 +114,7 @@ enum PrioMergeVals {
   PRIO_FIRST,
   PRIO_SECOND
 };
+
 
 
 /****************************************************************************/
@@ -137,6 +151,7 @@ enum PrioMergeVals {
 /* insert the following line literally into all source files */
 /* remove the question marks!! */
 /* RCSID????("$Header$",DDD_RCS_STRING) */
+
 
 
 
@@ -206,6 +221,7 @@ typedef struct _TYPE_DESC
   HandlerPtr handler[HANDLER_MAX];      /* pointer to handler functions         */
 
   DDD_PRIO *prioMatrix;                 /* 2D matrix for comparing priorities   */
+  int prioDefault;                      /* default mode for PrioMerge           */
 
   /* redundancy for efficiency */
   int nPointers;                        /* number of outside references         */
@@ -412,6 +428,7 @@ static void *dummy_ptr;
 /* typemgr.c */
 void      ddd_TypeMgrInit (void);
 void      ddd_TypeMgrExit (void);
+int       ddd_TypeDefined (TYPE_DESC *);
 
 
 /* cplmgr.c */

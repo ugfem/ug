@@ -471,7 +471,7 @@ static int sort_tupelOrder (const void *e1, const void *e2)
        }
      */
 
-    exit(1);
+    HARD_EXIT;
   }
 
   return(0);
@@ -504,7 +504,7 @@ static void SetLOI (IDENTINFO *ii, int loi)
     sprintf(cBuffer, "IdentifyObject-cycle, objects %08x and %08x",
             ii->msg.gid, ii->id.object);
     DDD_PrintError('E', 3310, cBuffer);
-    exit(1);
+    HARD_EXIT;
   }
 
 
@@ -713,7 +713,7 @@ static int IdentifySort (IDENTINFO *id, int nIds,
 
   default :
     DDD_PrintError('E', 3330, "unknown OPT_IDENTIFY_MODE");
-    exit(1);
+    HARD_EXIT;
   }
 
 
@@ -943,7 +943,7 @@ static idcons_CheckPairs (void)
   if (err)
   {
     DDD_PrintError('E', 3908, "found errors in IdentifyEnd()");
-    exit(1);
+    HARD_EXIT;
   }
   else
   {
@@ -971,7 +971,7 @@ void DDD_IdentifyEnd (void)
   if (!IdentStepMode(IMODE_CMDS))
   {
     DDD_PrintError('E', 3071, "DDD_IdentifyEnd() aborted.");
-    exit(1);
+    HARD_EXIT;
   };
 
 
@@ -994,7 +994,7 @@ void DDD_IdentifyEnd (void)
     if (plist->local_ids==NULL)
     {
       DDD_PrintError('F',3100,"not enough memory in DDD_IdentifyEnd");
-      exit(1);
+      HARD_EXIT;
     }
     plist->msgin  = (MSGITEM *) &plist->local_ids[plist->entries];
     plist->msgout =             &plist->msgin[plist->entries];
@@ -1021,7 +1021,7 @@ void DDD_IdentifyEnd (void)
 
   /* initiate comm-channels and send/receive calls */
   if (!InitComm(cnt))
-    exit(1);
+    HARD_EXIT;
 
 
   /*
@@ -1063,7 +1063,7 @@ void DDD_IdentifyEnd (void)
                     OBJ_GID((*msgout)->hdr), me,
                     msgin->gid, plist->proc);
             DDD_PrintError('E', 3920, cBuffer);
-            exit(1);
+            HARD_EXIT;
           }
 #                                       endif
 
@@ -1130,14 +1130,14 @@ static void IdentifyIdEntry (DDD_HDR hdr, ID_ENTRY *id, DDD_PROC proc)
   if (!IdentActive())
   {
     DDD_PrintError('E', 3072, "Missing DDD_IdentifyBegin(), aborted");
-    exit(1);
+    HARD_EXIT;
   }
 
   if (proc==me)
   {
     sprintf(cBuffer, "cannot identify %08x with myself", OBJ_GID(hdr));
     DDD_PrintError('E', 3060, cBuffer);
-    exit(1);
+    HARD_EXIT;
   }
 
   if (proc>=procs)
@@ -1145,7 +1145,7 @@ static void IdentifyIdEntry (DDD_HDR hdr, ID_ENTRY *id, DDD_PROC proc)
     sprintf(cBuffer, "cannot identify %08x with processor %d",
             OBJ_GID(hdr), proc);
     DDD_PrintError('E', 3061, cBuffer);
-    exit(1);
+    HARD_EXIT;
   }
 
 
@@ -1329,7 +1329,7 @@ void DDD_IdentifyBegin (void)
   if (!IdentStepMode(IMODE_IDLE))
   {
     DDD_PrintError('E', 3073, "DDD_IdentifyBegin() aborted.");
-    exit(1);
+    HARD_EXIT;
   }
 
   thePLists    = NULL;

@@ -44,7 +44,7 @@
 extern "C" {
 #endif
 
-#define DDD_VERSION    "1.7.5"
+#define DDD_VERSION    "1.7.6"
 
 
 /****************************************************************************/
@@ -118,6 +118,26 @@ enum HandlerType {
 };
 
 
+/* handler prototypes, for documentation only.
+   (will not be checked by compiler) TODO.
+
+   void handler_LDATACONSTRUCTOR (DDD_OBJ);
+   void handler_UPDATE           (DDD_OBJ);
+   void handler_DESTRUCTOR       (DDD_OBJ);
+   void handler_OBJMKCONS        (DDD_OBJ, int);
+   void handler_XFERCOPY         (DDD_OBJ, DDD_PROC, DDD_PRIO);
+   void handler_XFERDELETE       (DDD_OBJ);
+   void handler_XFERGATHER       (DDD_OBJ, int, DDD_TYPE, void *);
+   void handler_XFERSCATTER      (DDD_OBJ, int, DDD_TYPE, void *, int);
+   void handler_XFERGATHERX      (DDD_OBJ, int, DDD_TYPE, char **);
+   void handler_XFERSCATTERX     (DDD_OBJ, int, DDD_TYPE, char **, int);
+   void handler_COPYMANIP        (DDD_OBJ);
+   void handler_DELETE           (DDD_OBJ);
+   void handler_SETPRIORITY      (DDD_OBJ, DDD_PRIO);
+
+ */
+
+
 
 /* options for DDD_SetOption */
 enum OptionType {
@@ -163,12 +183,25 @@ enum XferConstants {
   /* DDD_TYPE DDD_USER_DATA: send stream of bytes with XferAddData */
   DDD_USER_DATA = 0x8000,
 
-  /* second parameter for MKCONS handler */
-  XFER_UPGRADE = 0x9000,          /* object has been upgraded due to RULE C3 */
-  XFER_NEW                        /* object is totally new */
+
+  /* additional parameter for MKCONS and XFERSCATTER handlers */
+
+  /* object has been rejected due to RULE C3 (XFERSCATTER) */
+  XFER_REJECT  = 0x9000,
+
+  /* object has been upgraded due to RULE C3 (XFERSCATTER, MKCONS) */
+  XFER_UPGRADE,
+
+  /* object is totally new (XFERSCATTER, MKCONS) */
+  XFER_NEW
 };
 
 
+/* several default modes for priority handling */
+enum PrioMatrixDefaults {
+  PRIOMERGE_MAXIMUM = 0,
+  PRIOMERGE_MINIMUM
+};
 
 
 
@@ -334,6 +367,10 @@ int      DDD_InfoTypes (void);
  */
 void     DDD_PrioritySet (DDD_HDR, DDD_PRIO);
 void     DDD_AttrSet (DDD_HDR, DDD_ATTR); /* this shouldn't be allowed */
+void     DDD_PrioMergeDefault (DDD_TYPE, int);
+void     DDD_PrioMergeDefine (DDD_TYPE, DDD_PRIO, DDD_PRIO, DDD_PRIO);
+DDD_PRIO DDD_PrioMerge (DDD_TYPE, DDD_PRIO, DDD_PRIO);
+void     DDD_PrioMergeDisplay (DDD_TYPE);
 int  *   DDD_InfoProcList (DDD_HDR);
 DDD_PROC DDD_InfoProcPrio (DDD_HDR, DDD_PRIO);
 int      DDD_InfoIsLocal (DDD_HDR);

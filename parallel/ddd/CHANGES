@@ -1,5 +1,35 @@
 ---------------------------
 
+CHANGES 1.7.5 -> 1.7.6
+
+---------------------------
+970129 kb
+new interface for general PriorityMerge.
+	- default for merging of priorities is MAXIMUM.
+	- a new default can be set by DDD_PrioMergeDefault()
+	- special exceptions can be introduced by DDD_PrioMergeDefine()
+	- the current setting is displayed by DDD_PrioMergeDisplay()
+	- the PrioMerge operation might be tested from application level
+	  via DDD_PrioMerge().
+	- all PrioMerge operations work with DDD_TYPE as first argument,
+	  i.e., one can define arbitrary PrioMerge logic for each DDD_TYPE.
+	- the Xfer-Module has been adapted so that it supports the general
+	  PrioMerge settings.
+970129 kb
+replaced all exit(1) calls by macro call HARD_EXIT.
+	- the current default for HARD_EXIT is assert(0), thus, one
+	  will get a core file after every DDD error.
+	- later (in production versions) one can replace this by
+	  simple exit(1) or similar.
+970129 kb
+added new parameter newness to calls of scatter-handlers.
+	- HANDLER_XFERSCATTER and HANDLER_XFERSCATTERX get an additional
+	  parameter 'newness', which is one of { XFER_REJECT, XFER_UPGRADE,
+	  XFER_NEW }, depending on an incoming objects status.
+	- this should be documented in RefMan.
+NOTE: changing of XFERSCATTER parameterlist in applications necessary!
+---------------------------
+
 CHANGES 1.7.4 -> 1.7.5
 
 ---------------------------
@@ -40,6 +70,7 @@ changed order of handler calls in xfer-unpack implementation.
 	  XFER_UPGRADE for objects upgraded according RULE C3.
 	  XFER_NEW for new objects.
 	- this should be documented in RefMan.
+NOTE: changing of MKCONS parameterlist in applications necessary!
 ---------------------------
 
 CHANGES 1.7.1 -> 1.7.2

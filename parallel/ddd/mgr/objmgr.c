@@ -197,14 +197,14 @@ DDD_OBJ DDD_ObjNew (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
     sprintf(cBuffer,
             "priority must be less than %d in DDD_ObjNew", MAX_PRIO);
     DDD_PrintError('E', 2205, cBuffer);
-    exit(1);
+    HARD_EXIT;
   }
   if (typ<0 || typ>=MAX_TYPEDESC)
   {
     sprintf(cBuffer,
             "DDD-type must be less than %d in DDD_ObjNew", MAX_TYPEDESC);
     DDD_PrintError('E', 2206, cBuffer);
-    exit(1);
+    HARD_EXIT;
   }
 
   /* get object memory */
@@ -340,7 +340,7 @@ void DDD_HdrConstructor (DDD_HDR hdr,DDD_TYPE typ,DDD_PRIO prio,DDD_ATTR attr)
     sprintf(cBuffer,
             "priority must be less than %d in DDD_HdrConstructor", MAX_PRIO);
     DDD_PrintError('E', 2225, cBuffer);
-    exit(1);
+    HARD_EXIT;
   }
 
   /* check whether there are available objects */
@@ -504,7 +504,7 @@ DDD_OBJ DDD_ObjGet (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
     sprintf(cBuffer,
             "priority must be less than %d in DDD_ObjGet", MAX_PRIO);
     DDD_PrintError('E', 2235, cBuffer);
-    exit(1);
+    HARD_EXIT;
   }
 
   /* get raw memory */
@@ -631,7 +631,7 @@ void DDD_HdrConstructorCopy (DDD_HDR newhdr, DDD_PRIO prio)
     sprintf(cBuffer,
             "priority must be less than %d in DDD_HdrConstructorCopy", MAX_PRIO);
     DDD_PrintError('E', 2245, cBuffer);
-    exit(1);
+    HARD_EXIT;
   }
 
   /* check whether there are available objects */

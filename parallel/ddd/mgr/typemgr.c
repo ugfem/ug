@@ -96,6 +96,15 @@ static int nDescr;
 /****************************************************************************/
 
 
+int ddd_TypeDefined (TYPE_DESC *desc)
+{
+  return(desc->mode==DDD_TYPE_DEFINED);
+}
+
+
+/****************************************************************************/
+
+
 /*
         sort pointers to ELEM_DESC according to their offset
  */
@@ -333,7 +342,7 @@ static void ConstructDesc (TYPE_DESC *desc)
   {
     DDD_PrintError('E', 9999,
                    RegisterError(desc,0, "out of memory"));
-    exit(1);             /*return;*/
+    HARD_EXIT;             /*return;*/
   }
 #endif
 }
@@ -438,7 +447,7 @@ static void AttachMask (TYPE_DESC *desc)
   {
     DDD_PrintError('E', 9906,
                    RegisterError(desc,0, "out of memory"));
-    exit(1);             /*return;*/
+    HARD_EXIT;             /*return;*/
   }
 
   /* set default: EL_LDATA for unspecified regions (gaps) */
@@ -566,7 +575,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
   {
     DDD_PrintError('E', 9907,
                    "invalid DDD_TYPE in DDD_TypeDefine");
-    exit(1);             /*return;*/
+    HARD_EXIT;             /*return;*/
   }
 
   /* get object description */
@@ -585,7 +594,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
       DDD_PrintError('E', 9908,
                      RegisterError(desc, 0, "undeclared DDD_TYPE"));
     }
-    exit(1);             /*return;*/
+    HARD_EXIT;             /*return;*/
   }
 
 
@@ -664,7 +673,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
           errtxt=RegisterError(desc,argno,
                                "referencing invalid DDD_TYPE");
           DDD_PrintError('E', 9909, errtxt);
-          exit(1);                                       /*return;*/
+          HARD_EXIT;                                       /*return;*/
         }
       }
       else
@@ -685,7 +694,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
       {
         errtxt=RegisterError(desc,argno, "invalid sizeof");
         DDD_PrintError('E', 9910, errtxt);
-        exit(1);                                 /*return;*/
+        HARD_EXIT;                                 /*return;*/
       }
 
       /* remember #pointers */
@@ -776,7 +785,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
         sprintf(buf,"undefined DDD_TYPE=%d", argtyp);
         errtxt=RegisterError(desc,argno-1,buf);
         DDD_PrintError('E', 9911, errtxt);
-        exit(1);                                 /*return;*/
+        HARD_EXIT;                                 /*return;*/
       }
 
       /* check whether given DDD_TYPE has been defined already */
@@ -784,7 +793,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
       {
         /* do recursive TypeDefine */
         i = RecursiveRegister(desc, i, argtyp, argp-adr, argno);
-        if (i==ERROR) exit(1);                                 /* return; */
+        if (i==ERROR) HARD_EXIT;                                 /* return; */
       }
       else
       {
@@ -793,7 +802,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
                 theTypeDefs[argtyp].name);
         errtxt=RegisterError(desc,argno-1,buf);
         DDD_PrintError('E', 9912, errtxt);
-        exit(1);                                 /*return;*/
+        HARD_EXIT;                                 /*return;*/
       }
 
 #                               ifdef DebugTypeDefine
@@ -805,7 +814,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
 #else
       errtxt=RegisterError(desc,argno,"recursive DDD_TYPE");
       DDD_PrintError('E', 9912, errtxt);
-      exit(1);                           /*return;*/
+      HARD_EXIT;                           /*return;*/
 #endif
       break;
     }
@@ -817,7 +826,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
   {
     errtxt=RegisterError(desc,0, "too many elements");
     DDD_PrintError('E', 1150, errtxt);
-    exit(1);             /*return;*/
+    HARD_EXIT;             /*return;*/
   }
 
 
@@ -839,7 +848,7 @@ void DDD_TypeDefine (DDD_TYPE *ftyp, ...)
 #               ifdef C_FRONTEND
     /* do normalization */
     if (! NormalizeDesc(desc))
-      exit(1);                           /*return;*/
+      HARD_EXIT;                           /*return;*/
 
     /* attach copy-mask for efficient copying */
     AttachMask(desc);
@@ -888,7 +897,7 @@ void DDD_TypeDeclare (char *name, int *size, DDD_TYPE *type)
   {
 #ifdef C_FRONTEND
     DDD_PrintError('E', 9913, "no more DDD_TYPEs in DDD_TypeDeclare()");
-    exit(1);             /*return(ERROR);*/
+    HARD_EXIT;             /*return(ERROR);*/
 #else
     *type = -1;
     return;
@@ -899,7 +908,8 @@ void DDD_TypeDeclare (char *name, int *size, DDD_TYPE *type)
   desc->mode = DDD_TYPE_DECLARED;
   desc->name = name;
 
-  desc->prioMatrix = NULL;
+  desc->prioMatrix  = NULL;
+  desc->prioDefault = PRIOMERGE_DEFAULT;
 
 
 #ifdef C_FRONTEND
@@ -950,7 +960,7 @@ void DDD_TypeDisplay (DDD_TYPE *idf)
     {
       sprintf(cBuffer, "invalid DDD_TYPE %d in DDD_TypeDisplay", id);
       DDD_PrintError('E', 9914, cBuffer);
-      exit(1);                   /*return;*/
+      HARD_EXIT;                   /*return;*/
     }
 
     desc = &(theTypeDefs[id]);
@@ -958,7 +968,7 @@ void DDD_TypeDisplay (DDD_TYPE *idf)
     {
       sprintf(cBuffer, "undefined DDD_TYPE %d in DDD_TypeDisplay", id);
       DDD_PrintError('E', 9915, cBuffer);
-      exit(1);                   /*return;*/
+      HARD_EXIT;                   /*return;*/
     }
 
     /* print header */
@@ -1091,7 +1101,7 @@ void DDD_HandlerRegister (DDD_TYPE *fid, ...)
   {
     DDD_PrintError('E', 9916,
                    "undefined DDD_TYPE in DDD_HandlerRegister()");
-    exit(1);             /*return;*/
+    HARD_EXIT;             /*return;*/
   }
 
   /* read argument list, fill object structure definition */

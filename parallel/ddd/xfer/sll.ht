@@ -52,7 +52,7 @@ extern int n(T);
 T *New(T) (void);
 T *Free(T) (T *);
 T **SortedArray(T) (int (*) (const void *, const void *));
-int Unify(T) (T **, int (*) (T *, T *));
+int Unify(T) (T **, int (*) (T **, T **));
 void OrigOrder(T) (T **, int);
 void Init(T) (void);
 void FreeAll(T) (void);

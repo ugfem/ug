@@ -156,7 +156,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 	{
 		DDD_PrintError('E', 4300,
 			CONCAT("cannot use standard interface in ",IF_FUNCNAME));
-		exit(1);
+		HARD_EXIT;
 	}
 
 

@@ -93,8 +93,12 @@ static int sort_XICopyObj (const void *e1, const void *e2)
   if (item1->gid < item2->gid) return(-1);
   if (item1->gid > item2->gid) return(1);
 
-  if (item1->prio < item2->prio) return(-1);
-  if (item1->prio > item2->prio) return(1);
+  /* sorting according to priority is not necessary anymore,
+     equal items with different priorities will be sorted
+     out according to PriorityMerge(). KB 970129
+     if (item1->prio < item2->prio) return(-1);
+     if (item1->prio > item2->prio) return(1);
+   */
 
   return(0);
 }
@@ -110,9 +114,12 @@ static int sort_XISetPrio (const void *e1, const void *e2)
   if (item1->gid < item2->gid) return(-1);
   if (item1->gid > item2->gid) return(1);
 
-  /* ascending prio is needed for UnifyXISetPrio */
-  if (item1->prio < item2->prio) return(-1);
-  if (item1->prio > item2->prio) return(1);
+  /* sorting according to priority is not necessary anymore,
+     equal items with different priorities will be sorted
+     out according to PriorityMerge(). KB 970129
+     if (item1->prio < item2->prio) return(-1);
+     if (item1->prio > item2->prio) return(1);
+   */
 
   return(0);
 }
@@ -216,9 +223,12 @@ static int sort_XIModCpl (const void *e1, const void *e2)
   if (gid1 < gid2) return(-1);
   if (gid1 > gid2) return(1);
 
-  /* ascending prio is needed for unify */
-  if (item1->te.prio < item2->te.prio) return(-1);
-  if (item1->te.prio > item2->te.prio) return(1);
+  /* sorting according to priority is not necessary anymore,
+     equal items with different priorities will be sorted
+     out according to PriorityMerge(). KB 970129
+     if (item1->te.prio < item2->te.prio) return(-1);
+     if (item1->te.prio > item2->te.prio) return(1);
+   */
 
   return(0);
 }
@@ -251,42 +261,102 @@ static int sort_XIAddCpl (const void *e1, const void *e2)
 
 /*
         eliminate double XICopyObj-items.
+        merge priorities from similar XICopyObj-items.
 
-        the items have been sorted according to key
-    (dest,gid,prio), all in ascending order.
-        if dest and gid (i.e., hdr) are equal,
-        the item is skipped. due to the sorting
-        according to ascending prio, always the
-        last item of items with equal (dest/gid)
-        is taken, this is the one with maximum priority.
+        the items have been sorted according to key (dest,gid),
+        all in ascending order. if dest or gid are different, then
+        at least the first item is relevant. if both are equal,
+        we merge priorities and get a new priority together with
+        the information whether first item wins over second.
+        if first item wins, it is switched into second position and
+        the second item (now on first position) is rejected.
+        if second item wins, first item is rejected.
+        in both cases, we use the new priority for next comparison.
+
         this implements rule XFER-C1.
-
-        the number of valid items is returned.
  */
-static int unify_XICopyObj (XICopyObj *i1, XICopyObj *i2)
+static int unify_XICopyObj (XICopyObj **i1p, XICopyObj **i2p)
 {
-  return ((i1->hdr != i2->hdr) || (i1->dest != i2->dest));
+  XICopyObj *i1 = *i1p, *i2 = *i2p;
+  DDD_PRIO newprio;
+  int ret;
+
+  /* if items are different in gid or dest, take first item */
+  if ((i1->hdr != i2->hdr) || (i1->dest != i2->dest))
+    return TRUE;
+
+  /* items have equal gid and dest, we must check priority */
+  ret = PriorityMerge(&theTypeDefs[OBJ_TYPE(i1->hdr)],
+                      i1->prio, i2->prio, &newprio);
+
+  if (ret==PRIO_FIRST || ret==PRIO_UNKNOWN)
+  {
+    /* i1 is winner, take it, switch it into second position,
+       signal rejection of i2 (now on first position).
+       use new priority */
+
+    i1->prio = newprio;
+    *i1p = i2; *i2p = i1;              /* switch pointers */
+  }
+  else
+  {
+    /* i1 lost, i2 is winner. throw away i1, but
+       use new priority for next comparison */
+    i2->prio = newprio;
+  }
+
+  return FALSE;
 }
 
 
 
 /*
         eliminate double XISetPrio-items.
+        merge priorities from similar XISetPrio-items.
 
-        the items have been sorted according to key
-    (gid,prio), all in ascending order.
-        if gid (i.e., hdr) is equal,
-        the item is skipped. due to the sorting
-        according to ascending prio, always the
-        last item of items with equal (gid)
-        is taken, this is the one with maximum priority.
+        the items have been sorted according to key (gid), in
+        ascending order. if gid (i.e., hdr) is different,
+        then at least the first item is relevant. if gid is equal,
+        we merge priorities and get a new priority together with
+        the information whether first item wins over second.
+        if first item wins, it is switched into second position and
+        the second item (now on first position) is rejected.
+        if second item wins, first item is rejected.
+        in both cases, we use the new priority for next comparison.
+
         this implements rule XFER-P1.
-
-        the number of valid items is returned.
  */
-static int unify_XISetPrio (XISetPrio *i1, XISetPrio *i2)
+static int unify_XISetPrio (XISetPrio **i1p, XISetPrio **i2p)
 {
-  return (i1->hdr != i2->hdr);
+  XISetPrio *i1 = *i1p, *i2 = *i2p;
+  DDD_PRIO newprio;
+  int ret;
+
+  /* if items are different in gid or dest, take first item */
+  if (i1->hdr != i2->hdr)
+    return TRUE;
+
+  /* items have equal gid, we must check priority */
+  ret = PriorityMerge(&theTypeDefs[OBJ_TYPE(i1->hdr)],
+                      i1->prio, i2->prio, &newprio);
+
+  if (ret==PRIO_FIRST || ret==PRIO_UNKNOWN)
+  {
+    /* i1 is winner, take it, switch it into second position,
+       signal rejection of i2 (now on first position).
+       use new priority */
+
+    i1->prio = newprio;
+    *i1p = i2; *i2p = i1;              /* switch pointers */
+  }
+  else
+  {
+    /* i1 lost, i2 is winner. throw away i1, but
+       use new priority for next comparison */
+    i2->prio = newprio;
+  }
+
+  return FALSE;
 }
 
 
@@ -302,26 +372,58 @@ static int unify_XISetPrio (XISetPrio *i1, XISetPrio *i2)
 
         the number of valid items is returned.
  */
-static int unify_XIDelCmd (XIDelCmd *i1, XIDelCmd *i2)
+static int unify_XIDelCmd (XIDelCmd **i1, XIDelCmd **i2)
 {
-  return (i1->hdr != i2->hdr);
+  return ((*i1)->hdr != (*i2)->hdr);
 }
 
 
 
 /*
         eliminate double XIModCpl-items.
+        merge priorities from similar XIModCpl-items.
 
-        the items have been sorted according to key
-    (to,gid), all in ascending order.
-        if to and gid are equal,
-        all items but the last are skipped.
-
-        the number of valid items is returned.
+        the items have been sorted according to key (to,gid),
+        all in ascending order. if to or gid are different, then
+        at least the first item is relevant. if both are equal,
+        we merge priorities and get a new priority together with
+        the information whether first item wins over second.
+        if first item wins, it is switched into second position and
+        the second item (now on first position) is rejected.
+        if second item wins, first item is rejected.
+        in both cases, we use the new priority for next comparison.
  */
-static int unify_XIModCpl (XIModCpl *i1, XIModCpl *i2)
+static int unify_XIModCpl (XIModCpl **i1p, XIModCpl **i2p)
 {
-  return ((i1->to != i2->to) || (i1->te.gid != i2->te.gid));
+  XIModCpl *i1 = *i1p, *i2 = *i2p;
+  DDD_PRIO newprio;
+  int ret;
+
+  /* if items are different in gid or dest, take first item */
+  if ((i1->to != i2->to) || (i1->te.gid != i2->te.gid))
+    return TRUE;
+
+  /* items have equal to and gid, we must check priority */
+  ret = PriorityMerge(&theTypeDefs[i1->typ],
+                      i1->te.prio, i2->te.prio, &newprio);
+
+  if (ret==PRIO_FIRST || ret==PRIO_UNKNOWN)
+  {
+    /* i1 is winner, take it, switch it into second position,
+       signal rejection of i2 (now on first position).
+       use new priority */
+
+    i1->te.prio = newprio;
+    *i1p = i2; *i2p = i1;              /* switch pointers */
+  }
+  else
+  {
+    /* i1 lost, i2 is winner. throw away i1, but
+       use new priority for next comparison */
+    i2->te.prio = newprio;
+  }
+
+  return FALSE;
 }
 
 
@@ -366,7 +468,7 @@ void DDD_XferEnd (void)
   if (!XferStepMode(XMODE_CMDS))
   {
     DDD_PrintError('E', 6011, "DDD_XferEnd() aborted");
-    exit(1);
+    HARD_EXIT;
   }
 
 
@@ -622,7 +724,7 @@ static void XferInitCopyInfo (DDD_HDR hdr,
   if (!XferActive())
   {
     DDD_PrintError('E', 6012, "Missing DDD_XferBegin(). aborted");
-    exit(1);
+    HARD_EXIT;
   }
 
   if (dest>=procs)
@@ -630,7 +732,7 @@ static void XferInitCopyInfo (DDD_HDR hdr,
     sprintf(cBuffer, "cannot transfer %08x to processor %d (procs=%d)",
             OBJ_GID(hdr), dest, procs);
     DDD_PrintError('E', 6003, cBuffer);
-    exit(1);
+    HARD_EXIT;
   }
 
   if (prio<0 || prio>=MAX_PRIO)
@@ -638,7 +740,7 @@ static void XferInitCopyInfo (DDD_HDR hdr,
     sprintf(cBuffer, "priority must be less than %d (prio=%d) in xfer-cmd",
             MAX_PRIO, prio);
     DDD_PrintError('E', 6004, cBuffer);
-    exit(1);
+    HARD_EXIT;
   }
 
   if (dest==me)
@@ -925,6 +1027,6 @@ void DDD_XferBegin (void)
   if (!XferStepMode(XMODE_IDLE))
   {
     DDD_PrintError('E', 6010, "DDD_XferBegin() aborted");
-    exit(1);
+    HARD_EXIT;
   }
 }

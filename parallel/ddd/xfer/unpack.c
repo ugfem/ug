@@ -32,6 +32,7 @@
 /* standard C library */
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "dddi.h"
 #include "xfer.h"
@@ -135,8 +136,11 @@ static int sort_ObjTabPtrs (const void *e1, const void *e2)
   if (ci1->gid > ci2->gid) return(1);
 
   /* sort with decreasing priority */
-  if (ci1->prio < ci2->prio) return(1);
-  if (ci1->prio > ci2->prio) return(-1);
+  /* not necessary anymore. see first phase of
+     AcceptReceivedObjects() for details. KB 970128
+     if (ci1->prio < ci2->prio) return(1);
+     if (ci1->prio > ci2->prio) return(-1);
+   */
 
   return(0);
 }
@@ -234,7 +238,7 @@ static void LocalizeObject (int merge_mode, TYPE_DESC *desc,
                       OBJ_GID(OBJ2HDR(*ref,refdesc)),
                       OBJ_GID(theSymTab[stIdx].adr.hdr));
               DDD_PrintError('W', 6540, cBuffer);
-              /* exit(1);  ??? */
+              /* assert(0);  ??? */
             }
           }
 
@@ -318,7 +322,8 @@ static void LocalizeObject (int merge_mode, TYPE_DESC *desc,
 static void PutDepData (char *data,
                         TYPE_DESC *desc,
                         DDD_OBJ obj,
-                        SYMTAB_ENTRY *theSymTab)
+                        SYMTAB_ENTRY *theSymTab,
+                        int newness)
 {
   TYPE_DESC    *descDep;
   char         *chunk, *curr, *adr, **table;
@@ -382,7 +387,7 @@ static void PutDepData (char *data,
        */
       if (desc->handler[HANDLER_XFERSCATTER]!=NULL)
         desc->handler[HANDLER_XFERSCATTER](obj,
-                                           addCnt, addTyp, (void *)chunk);
+                                           addCnt, addTyp, (void *)chunk, newness);
       /*
          printf("%4d: PutDepData   XFERSCATTER ok\n", me); fflush(stdout);
        */
@@ -415,7 +420,7 @@ static void PutDepData (char *data,
       /* scatter data via handler */
       if (desc->handler[HANDLER_XFERSCATTERX]!=NULL)
         desc->handler[HANDLER_XFERSCATTERX](obj,
-                                            addCnt, addTyp, table);
+                                            addCnt, addTyp, table, newness);
     }
 
 
@@ -459,7 +464,8 @@ static void AcceptObjFromMsg (
 
     if ((j<nLocalCplObjs) && (OBJ_GID(localCplObjs[j])==ote->gid))
     {
-      /* object already here, compare priorities */
+      /* object already here, compare priorities.
+         this is the implementation of rule XFER-C3. */
       DDD_PRIO newprio;
       int ret = PriorityMerge(desc,
                               ote->prio, OBJ_PRIO(localCplObjs[j]), &newprio);
@@ -477,12 +483,9 @@ static void AcceptObjFromMsg (
         /* new priority wins -> recreate */
         /* all GDATA-parts are overwritten by contents of message */
         copy = (DDD_OBJ)(theObjects+ote->offset);
-        ote->hdr = localCplObjs[j];
         ObjCopyGlobalData(desc,
                           HDR2OBJ(localCplObjs[j],desc), copy, ote->size);
 
-        ote->oldprio = OBJ_PRIO(localCplObjs[j]);
-        OBJ_PRIO(localCplObjs[j]) = ote->prio;
         ote->is_new = PARTNEW;
       }
       else                    /* existing is higher than incoming */
@@ -494,9 +497,16 @@ static void AcceptObjFromMsg (
 #                               endif
 
         /* new priority looses -> keep existing obj */
-        ote->hdr = localCplObjs[j];
         ote->is_new = NOTNEW;
       }
+
+      /* store pointer to local object */
+      ote->hdr = localCplObjs[j];
+
+      /* store old priority and set new one */
+      ote->prio    = newprio;
+      ote->oldprio = OBJ_PRIO(localCplObjs[j]);
+      OBJ_PRIO(localCplObjs[j]) = newprio;
     }
     else
     {
@@ -541,10 +551,10 @@ static void AcceptReceivedObjects (
   /*
           allRecObjs is a pointer array to all OBJTAB_ENTRYs
           received in incoming messages. it is sorted according
-          to (gid/ascending,prio/descending).
+          to (gid/ascending).
 
           1. collision detection for incoming objects with same
-                  gid: accept object with highest priority. if several
+                  gid: accept object with merged priority. if several
                   such objects exist, an arbitrary one is chosen.
                   discard all other objects with same gid. (RULE XFER-C2)
 
@@ -561,16 +571,45 @@ static void AcceptReceivedObjects (
   /* 1. collision detection */
   for(i=nRecObjs-1; i>0; i--)
   {
-    if (allRecObjs[i]->gid == allRecObjs[i-1]->gid)
+    if (allRecObjs[i]->gid != allRecObjs[i-1]->gid)
     {
-      /* mark OBJTAB_ENTRY invalid */
-      allRecObjs[i]->is_new = OTHERMSG;
+      allRecObjs[i]->is_new = THISMSG;
     }
     else
-      allRecObjs[i]->is_new = THISMSG;
+    {
+      DDD_PRIO newprio;
+      int ret;
+
+      ret = PriorityMerge(&theTypeDefs[allRecObjs[i]->typ],
+                          allRecObjs[i]->prio, allRecObjs[i-1]->prio, &newprio);
+
+      if (ret==PRIO_FIRST || ret==PRIO_UNKNOWN)
+      {
+        /* item i is winner */
+        OBJTAB_ENTRY *tmp;
+
+        allRecObjs[i]->prio = newprio;
+
+        /* switch first item i in second position i-1 */
+        /* item on first position will be discarded */
+        tmp = allRecObjs[i];
+        allRecObjs[i] = allRecObjs[i-1];
+        allRecObjs[i-1] = tmp;
+      }
+      else
+      {
+        /* item i-1 is winner */
+        allRecObjs[i-1]->prio = newprio;
+      }
+
+      /* mark item i invalid */
+      allRecObjs[i]->is_new = OTHERMSG;
+    }
   }
   allRecObjs[0]->is_new = THISMSG;
 
+  /* now the first item in a series of items with equal gid is the
+     THISMSG-item, the following are OTHERMSG-items */
 
 
   /* 2. transfer from message into local memory */
@@ -683,7 +722,6 @@ static void UpdateCouplings (
         xc->te.gid  = gid;
         xc->te.proc = me;
         xc->te.prio = OBJ_PRIO(hdr);
-
       }
 
       iNC++;
@@ -914,8 +952,9 @@ static void PropagateIncomings (
         {
           XIModCpl *xc = NewXIModCpl();
           xc->to      = arrayNO[iNO]->dest;                               /* receiver of XIModCpl*/
-          xc->te.gid  = ote->gid;                                         /* the object's gid   */
-          xc->te.prio = OBJ_PRIO(ote->hdr);                               /* the obj's new prio */
+          xc->te.gid  = ote->gid;                                         /* the object's gid    */
+          xc->te.prio = OBJ_PRIO(ote->hdr);                               /* the obj's new prio  */
+          xc->typ     = OBJ_TYPE(ote->hdr);                               /* the obj's ddd-type  */
         }
 
         iNO++;
@@ -932,6 +971,7 @@ static void PropagateIncomings (
         xc->to      = cpl->proc;                                         /* receiver of XIModCpl*/
         xc->te.gid  = ote->gid;                                           /* the object's gid   */
         xc->te.prio = OBJ_PRIO(ote->hdr);                                 /* the obj's new prio */
+        xc->typ     = OBJ_TYPE(ote->hdr);                                 /* the obj's ddd-type  */
         /*
                                         }
          */
@@ -1124,12 +1164,22 @@ static void UnpackAddData (LC_MSGHANDLE xm)
     {
       TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
       DDD_OBJ obj   = HDR2OBJ(theObjTab[i].hdr, desc);
+      int newness;
 
       /*
          printf("%4d: scatter %d/%d, addLen=%d, objadr=%08x gid=%08x\n",
               me,i,lenObjTab,theObjTab[i].addLen,obj,theObjTab[i].gid);
          fflush(stdout);
        */
+
+
+      switch (theObjTab[i].is_new)
+      {
+      case OTHERMSG : newness=XFER_REJECT;   break;
+      case NOTNEW :   newness=XFER_REJECT;   break;
+      case PARTNEW :  newness=XFER_UPGRADE;  break;
+      case TOTALNEW : newness=XFER_NEW;      break;
+      }
 
       /*
               compute begin of data section. theObjTab[i].size is equal to
@@ -1140,7 +1190,7 @@ static void UnpackAddData (LC_MSGHANDLE xm)
                       theObjTab[i].offset +
                       CEIL(theObjTab[i].size));
 
-      PutDepData(data, desc, obj, theSymTab);
+      PutDepData(data, desc, obj, theSymTab, newness);
     }
   }
 }
@@ -1148,11 +1198,8 @@ static void UnpackAddData (LC_MSGHANDLE xm)
 
 
 /*
-        if RULE C3a has been applied, the old object's priority
-        was lower than the incoming object's priority. the object
-        has been marked PARTNEW and the two copies have been merged.
-        in order to allow application reactions on this priority
-        upgrade, the SETPRIORITY-handler is called.
+        in order to allow application reactions on a priority
+        change, the SETPRIORITY-handler is called.
 
         TODO: is this really a reason for calling SETPRIORITY? or
         should there be a separate handler for this task?
@@ -1175,7 +1222,7 @@ static void CallSetPriorityHandler (LC_MSGHANDLE xm)
 
   for(i=0; i<lenObjTab; i++)               /* for all message items */
   {
-    if (theObjTab[i].is_new==PARTNEW)
+    if (theObjTab[i].oldprio != theObjTab[i].prio)
     {
       TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
       DDD_OBJ obj   = HDR2OBJ(theObjTab[i].hdr, desc);

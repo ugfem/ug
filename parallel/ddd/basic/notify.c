@@ -112,7 +112,7 @@ void NotifyInit (void)
   if (theRouting==NULL)
   {
     DDD_PrintError('E', 6301, "not enough memory in NotifyInit");
-    exit(1);
+    HARD_EXIT;
   }
 
 
@@ -123,7 +123,7 @@ void NotifyInit (void)
   if (allInfoBuffer==NULL)
   {
     DDD_PrintError('E', 6300, "not enough memory in NotifyInit");
-    exit(1);
+    HARD_EXIT;
   }
 }
 

@@ -304,6 +304,8 @@ typedef struct _XIModCpl
   DDD_PROC to;                  /* receiver of this item                        */
   TEModCpl te;                  /* table entry (for message)                    */
 
+  DDD_TYPE typ;                 /* type of corresponding object                 */
+
 } XIModCpl;
 
 /* include template */

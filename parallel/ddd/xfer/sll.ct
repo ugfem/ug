@@ -173,14 +173,14 @@ void OrigOrder(T) (T **array, int n)
 	allow compar() to decide correctly.
 */
 
-int Unify(T) (T **array, int (*compar) (T *, T *))
+int Unify(T) (T **array, int (*compar) (T **, T **))
 {
 	int  i, cntValid;
 
 	for(i=0, cntValid=0; i<n(T)-1; i++)
 	{
 		/* test if unique */
-		if (compar(array[i],array[i+1]))
+		if (compar(&array[i],&array[i+1]))
 		{
 			/* choose item */
 			array[cntValid] = array[i];
