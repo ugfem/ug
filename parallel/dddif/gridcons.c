@@ -373,7 +373,6 @@ void ConstructConsistentGrid (GRID *theGrid)
       theVertex = MYVERTEX(theNode);
       theFather = EFATHER(theElement);
 
-      /*			if (VFATHER(theVertex)==NULL && theFather!=NULL) */
       if (VFATHER(theVertex)==NULL)
       {
         switch (NTYPE(theNode))
@@ -435,6 +434,7 @@ void ConstructConsistentGrid (GRID *theGrid)
           break;
 
         case (CENTER_NODE) :
+        case (LEVEL_0_NODE) :
           /* nothing to do */
           break;
 
