@@ -7884,7 +7884,7 @@ int LGM_ANSYS_ReadPoints (LGM_POINT_INFO *lgm_point_info)
 }
 
 
-INT LGM_ANSYS_ReadMesh (HEAP *theHeap, MESH *theMesh)
+int LGM_ANSYS_ReadMesh (HEAP *theHeap, LGM_MESH_INFO *theMesh)
 {
     return (1);
 }
