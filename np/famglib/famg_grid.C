@@ -2346,7 +2346,6 @@ void FAMGGrid::ConstructOverlap()
 		abort();
 	}
 
-prv(GLEVEL(mygrid),0);
 	DDD_XferBegin();
     #ifdef DDDOBJMGR
     DDD_ObjMgrBegin();
