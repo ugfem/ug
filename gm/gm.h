@@ -2598,6 +2598,16 @@ typedef struct {
   /* ... the refinement rules should be placed here later */
 } GENERAL_ELEMENT;
 
+/* these are the offsets into the variable length pointer array of the element */
+extern INT n_offset[TAGS];
+extern INT father_offset[TAGS];
+extern INT sons_offset[TAGS];
+extern INT nb_offset[TAGS];
+extern INT evector_offset[TAGS];
+extern INT svector_offset[TAGS];
+extern INT side_offset[TAGS];
+extern INT data_offset[TAGS];
+
 /* the element descriptions are also globally available, these are pointers ! */
 extern GENERAL_ELEMENT *element_descriptors[TAGS];
 extern GENERAL_ELEMENT *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
