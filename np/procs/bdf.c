@@ -311,9 +311,9 @@ INT BDFTimeInit (NP_T_SOLVER *ts, INT level, INT *res)
       {
         for (i=0; i<=level; i++)
           RESETGSTATUS(GRID_ON_LEVEL(mg,i),GSTATUS_BDF);
-        if (RefineMultiGrid(mg,bdf->refarg,
-                            GM_REFINE_PARALLEL,
-                            GM_REFINE_NOHEAPTEST) != GM_OK)
+        if (AdaptMultiGrid(mg,bdf->refarg,
+                           GM_REFINE_PARALLEL,
+                           GM_REFINE_NOHEAPTEST) != GM_OK)
           NP_RETURN(1,res[0]);
         if (level != TOPLEVEL(mg))
         {
@@ -558,9 +558,9 @@ Continue:
           {
             for (i=0; i<=level; i++)
               RESETGSTATUS(GRID_ON_LEVEL(mg,i),GSTATUS_BDF);
-            if (RefineMultiGrid(mg,bdf->refarg,
-                                GM_REFINE_PARALLEL,
-                                GM_REFINE_NOHEAPTEST) != GM_OK)
+            if (AdaptMultiGrid(mg,bdf->refarg,
+                               GM_REFINE_PARALLEL,
+                               GM_REFINE_NOHEAPTEST) != GM_OK)
               NP_RETURN(1,res[0]);
             if (level != TOPLEVEL(mg)) {
               if (level < TOPLEVEL(mg)) {
