@@ -178,6 +178,7 @@ typedef struct
   VECDATA_DESC *u;
   VECDATA_DESC *t;
   VECDATA_DESC *s;
+  VECDATA_DESC *p;
   VECDATA_DESC *q;
   VECDATA_DESC *r;
   MATDATA_DESC *L;
@@ -201,10 +202,14 @@ typedef struct
   INT pp_sub;
 
   INT dc;
+  INT dc_max;
   INT extra;
+  INT display;
 
   NP_ITER *u_iter;
   NP_ITER *p_iter;
+
+  VEC_SCALAR red;
 
     #ifdef ModelP
   INT cons_mode;
@@ -1476,6 +1481,7 @@ static INT TSInit (NP_BASE *theNP, INT argc , char **argv)
   np->u = ReadArgvVecDesc(theNP->mg,"U",argc,argv);
   np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
   np->s = ReadArgvVecDesc(theNP->mg,"s",argc,argv);
+  np->p = ReadArgvVecDesc(theNP->mg,"P",argc,argv);
   np->q = ReadArgvVecDesc(theNP->mg,"q",argc,argv);
   np->r = ReadArgvVecDesc(theNP->mg,"r",argc,argv);
   np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
@@ -1518,6 +1524,9 @@ static INT TSInit (NP_BASE *theNP, INT argc , char **argv)
   }
   for (i=0; i<MAX_VEC_COMP; i++) np->damp[i] = 1.0;
   sc_read(np->damp,NP_FMT(np),np->iter.b,"damp",argc,argv);
+  for (i=0; i<MAX_VEC_COMP; i++) np->red[i] = 0.0;
+  sc_read(np->red,NP_FMT(np),np->iter.b,"red",argc,argv);
+
   np->u_iter = (NP_ITER *)
                ReadArgvNumProc(theNP->mg,"UI",ITER_CLASS_NAME,argc,argv);
   if (np->u_iter == NULL) {
@@ -1541,6 +1550,8 @@ static INT TSInit (NP_BASE *theNP, INT argc , char **argv)
   if (ReadArgvINT("dc",&np->dc,argc,argv))
     np->dc = 0;
   np->extra = ReadArgvOption("extra",argc,argv);
+  np->display = ReadArgvDisplay(argc,argv);
+  np->dc_max = 0;
 
   return (NPIterInit(&np->iter,argc,argv));
 }
@@ -1554,6 +1565,7 @@ static INT TSDisplay (NP_BASE *theNP)
   NPIterDisplay(&np->iter);
   UserWrite("configuration parameters:\n");
   if (sc_disp(np->damp,np->iter.b,"damp")) REP_ERR_RETURN (1);
+  if (sc_disp(np->red,np->iter.b,"red")) REP_ERR_RETURN (1);
     #ifdef ModelP
   UserWriteF(DISPLAY_NP_FORMAT_SI,"cons_mode",(int)np->cons_mode);
         #endif
@@ -1569,6 +1581,8 @@ static INT TSDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
   if (np->s != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"s",ENVITEM_NAME(np->s));
+  if (np->p != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"P",ENVITEM_NAME(np->p));
   if (np->q != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"q",ENVITEM_NAME(np->q));
   if (np->L != NULL)
@@ -1602,7 +1616,12 @@ static INT TSDisplay (NP_BASE *theNP)
   UserWriteF(DISPLAY_NP_FORMAT_SI,"pu_sub",(int)np->pu_sub);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"pp_sub",(int)np->pp_sub);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"dc",(int)np->dc);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"dc_max",(int)np->dc_max);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"extra",(int)np->extra);
+
+  if (np->display == PCR_NO_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
+  else if (np->display == PCR_RED_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
+  else if (np->display == PCR_FULL_DISPLAY) UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
 
   return (0);
 }
@@ -1661,8 +1680,11 @@ static INT ConstructSchurComplement (GRID *theGrid,
           ASSERT(zncomp == MD_COLS_IN_RT_CT(uuA,ztype,ztype));
           if (InvertSmallBlock(zncomp,
                                MD_MCMPPTR_OF_RT_CT(uuA,ztype,ztype),
-                               MVALUEPTR(VSTART(z),0),InvMat))
-            REP_ERR_RETURN (1);
+                               MVALUEPTR(VSTART(z),0),InvMat)) {
+            /*   REP_ERR_RETURN (1);  */
+            for (i=0; i<zncomp*zncomp; i++) InvMat[i] = 0.0;
+            for (i=0; i<zncomp; i++) InvMat[i*zncomp+i] = 1.0;
+          }
           pu = MD_MCMPPTR_OF_RT_CT(puA,vtype,ztype);
           up = MD_MCMPPTR_OF_RT_CT(puA,wtype,ztype);
           puval = MVALUEPTR(m0,0);
@@ -1752,6 +1774,8 @@ static INT TSPreProcess  (NP_ITER *theNP, INT level,
           (np->p_iter,level,np->px,np->pb,np->S,baselevel,result))
       REP_ERR_RETURN(1);
 
+  np->dc_max = 0;
+
   return (0);
 }
 
@@ -1761,7 +1785,10 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
 {
   NP_TS *np;
   MULTIGRID *theMG;
-  INT i;
+  VEC_SCALAR defect2reach,defect;
+  DOUBLE rho,lambda;
+  INT i,PrintID;
+  char text[DISPLAY_WIDTH+4],text1[DISPLAY_WIDTH];
 
   np = (NP_TS *) theNP;
   theMG = NP_MG(theNP);
@@ -1781,6 +1808,8 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
     if (AllocVDFromVD(theMG,level,level,np->px,&np->q))
       NP_RETURN(1,result[0]);
     if (AllocVDFromVD(theMG,level,level,np->px,&np->r))
+      NP_RETURN(1,result[0]);
+    if (AllocVDFromVD(theMG,level,level,np->px,&np->p))
       NP_RETURN(1,result[0]);
   }
   if (dcopy(theMG,level,level,ALL_VECTORS,np->t,np->ub) != NUM_OK)
@@ -1805,17 +1834,42 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
   if (np->dc) {
     if (dcopy(theMG,level,level,ALL_VECTORS,np->q,np->s) != NUM_OK)
       NP_RETURN(1,result[0]);
+    sprintf(text1,"level %d: %s",level,ENVITEM_NAME(np));
+    CenterInPattern(text,DISPLAY_WIDTH,text1,' ',"\n");
+    if (PreparePCR(np->q,np->display,text,&PrintID))
+      NP_RETURN(1,result[0]);
+    if (dnrm2x(theMG,level,level,ALL_VECTORS,np->q,defect))
+      NP_RETURN(1,result[0]);
+    if (sc_mul_check(defect2reach,defect,np->red,np->q))
+      NP_RETURN(1,result[0]);
+    if (DoPCR(PrintID,defect,PCR_CRATE_SD))
+      NP_RETURN(1,result[0]);
+    if (dset(theMG,level,level,ALL_VECTORS,np->p,0.0)!= NUM_OK)
+      NP_RETURN(1,result[0]);
+    rho = 1.0;
   }
-  else
+  else {
     np->q = np->s;
+    np->r = np->px;
+  }
   if (dset(theMG,level,level,ALL_VECTORS,np->px,0.0)!= NUM_OK)
     NP_RETURN(1,result[0]);
-  if ((*np->p_iter->Iter)(np->p_iter,level,np->px,np->q,np->S,result))
+  if ((*np->p_iter->Iter)(np->p_iter,level,np->r,np->q,np->S,result))
     REP_ERR_RETURN(1);
 
   /* defect correction for the Schur complement*/
   for (i=0; i<np->dc; i++) {
-    if (dmatmul(theMG,level,level,ALL_VECTORS,np->t,np->upA,np->px)
+    /* compute q = S * p */
+    if (ddot(theMG,level,level,ALL_VECTORS,np->s,np->r,&lambda))
+      NP_RETURN(1,result[0]);
+    rho = - lambda / rho;
+    if (daxpy(theMG,level,level,ALL_VECTORS,np->r,rho,np->p) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    rho = - lambda;
+    ASSERT(lambda != 0.0);
+    if (dcopy(theMG,level,level,ALL_VECTORS,np->p,np->r) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (dmatmul(theMG,level,level,ALL_VECTORS,np->t,np->upA,np->p)
         != NUM_OK)
       NP_RETURN(1,result[0]);
         #ifdef ModelP
@@ -1826,27 +1880,41 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
       NP_RETURN(1,result[0]);
     if ((*np->u_iter->Iter)(np->u_iter,level,np->u,np->t,np->uuA,result))
       REP_ERR_RETURN(1);
-    if (dcopy(theMG,level,level,ALL_VECTORS,np->q,np->s) != NUM_OK)
-      NP_RETURN(1,result[0]);
-    if (dmatmul_add(theMG,level,level,ALL_VECTORS,np->q,np->puA,np->u)
+    if (dmatmul(theMG,level,level,ALL_VECTORS,np->q,np->puA,np->u)
         != NUM_OK)
       NP_RETURN(1,result[0]);
-    IFDEBUG(np,1)
-    {
-      DOUBLE nrm;
-      dnrm2(theMG,level,level,ALL_VECTORS,np->q,&nrm);
-      UserWriteF("i %d nrm %f\n",i,nrm);
-    }
-    ENDDEBUG
+    if (ddot(theMG,level,level,ALL_VECTORS,np->q,np->p,&lambda))
+      NP_RETURN(1,result[0]);
+    ASSERT(lambda != 0);
+    lambda = rho / lambda;
+    /* update inner defect */
+    if (daxpy(theMG,level,level,ALL_VECTORS,np->s,lambda,np->q) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    /* update Lagrange corrector */
+    if (daxpy(theMG,level,level,ALL_VECTORS,np->px,lambda,np->p) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (dnrm2x(theMG,level,level,ALL_VECTORS,np->s,defect))
+      NP_RETURN(1,result[0]);
+    if (DoPCR(PrintID,defect,PCR_CRATE_SD))
+      NP_RETURN(1,result[0]);
+    if (sc_cmp(defect,defect2reach,np->q))
+      break;
         #ifdef ModelP
     if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),np->q)!=NUM_OK)
       NP_RETURN(1,result[0]);
         #endif
     if (dset(theMG,level,level,ALL_VECTORS,np->r,0.0)!= NUM_OK)
       NP_RETURN(1,result[0]);
+    if (dcopy(theMG,level,level,ALL_VECTORS,np->q,np->s) != NUM_OK)
+      NP_RETURN(1,result[0]);
     if ((*np->p_iter->Iter)(np->p_iter,level,np->r,np->q,np->S,result))
       REP_ERR_RETURN(1);
-    if (dadd(theMG,level,level,ALL_VECTORS,np->px,np->r) != NUM_OK)
+  }
+  if (np->dc) {
+    np->dc_max = MAX(i+1,np->dc_max);
+    if (DoPCR(PrintID,defect,PCR_AVERAGE_SD))
+      NP_RETURN(1,result[0]);
+    if (PostPCR(PrintID,NULL))
       NP_RETURN(1,result[0]);
   }
   if (dmatmul(theMG,level,level,ALL_VECTORS,np->t,np->upA,np->px)
@@ -1875,6 +1943,7 @@ static INT TSSmoother (NP_ITER *theNP, INT level,
   FreeVD(NP_MG(theNP),level,level,np->t);
   FreeVD(NP_MG(theNP),level,level,np->s);
   if (np->dc) {
+    FreeVD(NP_MG(theNP),level,level,np->p);
     FreeVD(NP_MG(theNP),level,level,np->q);
     FreeVD(NP_MG(theNP),level,level,np->r);
   }
@@ -1898,6 +1967,9 @@ static INT TSPostProcess (NP_ITER *theNP, INT level,
     if ((*np->p_iter->PostProcess)
           (np->p_iter,level,x,b,A,result))
       REP_ERR_RETURN(1);
+
+  if ((np->display > PCR_NO_DISPLAY) && (TOPLEVEL(NP_MG(theNP)) == level))
+    UserWriteF("maximal number of inner iterations: %d\n",np->dc_max);
 
   return(0);
 }
