@@ -28,6 +28,7 @@ $VERSION = 1.0;
 ##############################################
 
 use Term::ANSIColor qw(:constants);
+use Math::Complex;
 
 sub float
 {
@@ -164,6 +165,19 @@ sub transpose
     }
 }
 
+sub scale
+{
+	@_==2 or die "ERROR in star_scale: provide 2 arguments\n";
+	my $a=shift; my $dim=dim $a;
+	my $scale=shift;
+	my %r=();my $k;
+	for $k (keys %$a)
+	{
+		$r{$k}=$scale*$$a{$k};
+	}
+	return \%r;
+}
+
 sub restrict
 {
     @_<1 and die "ERROR in star_restict: provide 1+dim arguments\n";
@@ -183,7 +197,7 @@ sub restrict
 
 sub norm
 {
-    @_==1 or die "ERROR in norm: provide 1 arguments\n";
+    @_==1 or die "ERROR in norm: provide 1 argument\n";
     my $a=shift; dim $a;
     my $norm=0;
     my $k;
@@ -239,6 +253,77 @@ sub print
         }
         die "ERROR in s_print: dimension $dim not implemented yet\n";
     }
+}
+
+sub f
+{
+    @_==1 or die "ERROR in star_f: provide 1 argument\n";
+    my $a=shift;
+	my ($key,$f,$eta,$c,$sign_eta,$sign_c,$v,$i,$nu,$sign_nu);
+    my $dim=dim $a;
+    SWITCH:
+    {
+        if ($dim==1)
+        {
+			$f='sub {my $eta=shift;return(';
+			for $key (keys %$a) 
+			{ 
+				$c=$$a{$key}; if ($c<0) { $sign_c=-1; } elsif ($c==0) { next; } else { $sign_c=1; } $c=abs($c);
+				$eta=float $key; $eta*=3.1415926535; if ($eta<0) { $sign_eta=-1; } elsif ($eta==0) {$sign_eta=0; } else { $sign_eta=1; } $eta=abs($eta);
+				if ($sign_eta<0)
+				{
+					if ($sign_c<0) 	{ $f.="-$c*exp(-$eta*".'$eta*i)'; }
+					else 			{ $f.="+$c*exp(-$eta*".'$eta*i)'; }
+				}
+				elsif ($sign_eta==0)
+				{
+					if ($sign_c<0) 	{ $f.="-$c"; }
+					else 			{ $f.="+$c"; }
+				}
+				else
+				{
+					if ($sign_c<0) 	{ $f.="-$c*exp($eta*".'$eta*i)'; }
+					else 			{ $f.="+$c*exp($eta*".'$eta*i)'; }
+				}
+			}
+		}
+        if ($dim==2)
+        {
+			$f='sub {my $eta=shift;my $xi=shift;return(';
+			for $key (keys %$a) 
+			{ 
+				$c=$$a{$key}; if ($c<0) { $sign_c=-1; } elsif ($c==0) { next; } else { $sign_c=1; } $c=abs($c);
+				($eta,$nu)=float $key; 
+				$eta*=3.1415926535; if ($eta<0) { $sign_eta=-1; } elsif ($eta==0) {$sign_eta=0; } else { $sign_eta=1; } $eta=abs($eta);
+				$nu*=3.1415926535; if ($nu<0) { $sign_nu=-1; } elsif ($nu==0) {$sign_nu=0; } else { $sign_nu=1; } $nu=abs($nu);
+				if ($sign_eta<0)
+				{
+					if ($sign_c<0) 	{ $f.="-$c*exp(-$eta*".'$eta*i)'; }
+					else 			{ $f.="+$c*exp(-$eta*".'$eta*i)'; }
+				}
+				elsif ($sign_eta==0)
+				{
+					if ($sign_c<0) 	{ $f.="-$c"; }
+					else 			{ $f.="+$c"; }
+				}
+				else
+				{
+					if ($sign_c<0) 	{ $f.="-$c*exp($eta*".'$eta*i)'; }
+					else 			{ $f.="+$c*exp($eta*".'$eta*i)'; }
+				}
+				if ($sign_nu<0)
+				{
+					$f.="*exp(-$nu*".'$nu*i)'; 
+				}
+				elsif ($sign_nu>0)
+				{
+					$f.="*exp($nu*".'$nu*i)'; 
+				}
+			}
+		}
+	}
+	$f.=');}'; $f=eval($f);
+	return $f;
 }
 
 1;
