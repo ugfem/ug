@@ -312,6 +312,9 @@ INT WriteLogFile (const char *text)
   if (logFile==NULL) return(1);
 
   fputs(text,logFile);
+        #ifdef Debug
+  fflush(logFile);
+        #endif
 
   return(0);
 }
@@ -355,6 +358,12 @@ void UserWrite (const char *s)
 else
 {
   PRINTDEBUG(ui,1,("%d: %s\n", me,s))
+  IFDEBUG(ui,0)
+  if (logFile!=NULL) {
+    fputs(s,logFile);
+    fflush(logFile);
+  }
+  ENDDEBUG
 }
         #endif
 }
@@ -404,6 +413,12 @@ int UserWriteF (const char *format, ...)
 else
 {
   PRINTDEBUG(ui,1,("%d: %s\n", me,buffer))
+  IFDEBUG(ui,0)
+  if (logFile!=NULL) {
+    fputs(buffer,logFile);
+    fflush(logFile);
+  }
+  ENDDEBUG
 }
         #endif
 
