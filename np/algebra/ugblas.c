@@ -6200,9 +6200,6 @@ INT s_dtpmatmul_set (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const
 	register SHORT nr,nc;
 	DOUBLE s[MAX_SINGLE_VEC_COMP],sum;
 	DEFINE_VD_CMPS(cx);
-	DEFINE_VD_CMPS(cy);
-	DEFINE_VS_CMPS(s);
-	DEFINE_MD_CMPS(m);
 
 #ifndef NDEBUG
 	if ((err=MatmulCheckConsistency(x,M,y))!=NUM_OK)

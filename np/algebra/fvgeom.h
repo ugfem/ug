@@ -163,7 +163,7 @@ typedef struct {
   INT co;                                                       /* corresponding corner					*/
   INT side;                                                     /* boundary side of element				*/
   DOUBLE_VECTOR ip_local;                       /* integration point in local coords	*/
-  DOUBLE param[DIM-1];                          /* local side coordinates                       */
+  DOUBLE param[DIM-1];                  /* local side coordinates                       */
   DOUBLE_VECTOR normal;                         /* normal on face at ip pointing to CV j*/
   DOUBLE area;                                          /* area of boundary face				*/
   SD_VALUES sdv;                                        /* shape fcts, deriv. etc. at b-faces	*/
