@@ -308,7 +308,11 @@ ENVITEM *MakeEnvItem (const char *name, const INT type, const INT size)
     {
       /* new variable */
       newItem=(ENVITEM *) GetMem(envHeap,size,0);
-      if (newItem==NULL) return(NULL);
+      if (newItem==NULL)
+      {
+        UserWriteF("MakeEnvItem(): envHeap out of memory\n");
+        return(NULL);
+      }
       memset(newItem,0,size);
     }
     else
@@ -316,7 +320,11 @@ ENVITEM *MakeEnvItem (const char *name, const INT type, const INT size)
       /* new directory */
       if (pathIndex+1>=MAXENVPATH) return(NULL);
       newItem=(ENVITEM *) GetMem(envHeap,size,0);
-      if (newItem==NULL) return(NULL);
+      if (newItem==NULL)
+      {
+        UserWriteF("MakeEnvItem(): envHeap out of memory\n");
+        return(NULL);
+      }
       memset(newItem,0,size);
       newItem->d.down = NULL;
     }
