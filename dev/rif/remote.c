@@ -405,7 +405,7 @@ void InitRemotePort (OUTPUTDEVICE *thePort)
 /****************************************************************************/
 
 
-WINDOWID Remote_OpenOutput (const char *title, INT x, INT y, INT width, INT height, INT *Global_LL, INT *Global_UR, INT *Local_LL, INT *Local_UR, INT *error)
+WINDOWID Remote_OpenOutput (const char *title, INT rename, INT x, INT y, INT width, INT height, INT *Global_LL, INT *Global_UR, INT *Local_LL, INT *Local_UR, INT *error)
 {
   WINDOWID win;
 
