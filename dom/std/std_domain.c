@@ -2192,6 +2192,104 @@ BVP *CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
   return ((BVP*)theBVP);
 }
 
+static INT Problem_Configure (INT argc, char **argv)
+{
+  DOMAIN *theDomain;
+  PROBLEM *theProblem;
+  BOUNDARY_CONDITION *theBndCond;
+  PATCH *thePatch;
+  INT n;
+  char ProblemName[NAMESIZE];
+  INT i;
+
+  for (i=0; i<argc; i++)
+    if ((argv[i][0] == 'p') && (argv[i][1] == ' '))
+      if ((sscanf(argv[i],expandfmt(CONCAT3("p %",NAMELENSTR,"[ -~]")),
+                  ProblemName)!=1) || (strlen(ProblemName)==0))
+        continue;
+
+  theDomain = currBVP->Domain;
+  if (theDomain == NULL)
+    return(1);
+  theProblem = GetProblem(ENVITEM_NAME(theDomain),ProblemName);
+  if (theProblem==NULL)
+    return (1);
+  if (currBVP->numOfCoeffFct < theProblem->numOfCoeffFct)
+    return (1);
+  if (currBVP->numOfUserFct < theProblem->numOfUserFct)
+    return (1);
+  for (i=0; i<theProblem->numOfCoeffFct; i++)
+    currBVP->CU_ProcPtr[i] = theProblem->CU_ProcPtr[i];
+  for (i=0; i<theProblem->numOfUserFct; i++)
+    currBVP->CU_ProcPtr[i+theProblem->numOfCoeffFct] =
+      theProblem->CU_ProcPtr[i+theProblem->numOfCoeffFct];
+  currBVP->Problem = theProblem;
+  n = currBVP->sideoffset;
+  for (theBndCond=GetFirstBoundaryCondition(theProblem);
+       theBndCond!=NULL; theBndCond = GetNextBoundaryCondition(theBndCond))
+  {
+    thePatch = currBVP->patches[n];
+    assert(n-currBVP->sideoffset == theBndCond->id);
+    PARAM_PATCH_BC(thePatch) = theBndCond->BndCond;
+    PARAM_PATCH_BCD(thePatch) = theBndCond->data;
+    n++;
+  }
+
+  UserWriteF("%s configured with problem %s\n",
+             ENVITEM_NAME(currBVP),ProblemName);
+
+  return (0);
+}
+
+BVP *CreateBVP_Problem (char *BVPName, char *DomainName, char *ProblemName)
+{
+  STD_BVP *theBVP;
+  DOMAIN *theDomain;
+  PROBLEM *theProblem;
+  INT i,n;
+
+  /* get domain and problem */
+  theDomain = GetDomain(DomainName);
+  if (theDomain==NULL)
+    return (NULL);
+  theProblem = GetProblem(DomainName,ProblemName);
+  if (theProblem==NULL)
+    return (NULL);
+
+  /* change to /BVP directory */
+  if (ChangeEnvDir("/BVP")==NULL)
+    return (NULL);
+
+  /* allocate new domain structure */
+  n = (theProblem->numOfCoeffFct+theProblem->numOfUserFct-1)*sizeof(void*);
+  theBVP = (STD_BVP *) MakeEnvItem (BVPName,theBVPDirID,sizeof(STD_BVP)+n);
+  if (theBVP==NULL)
+    return(NULL);
+  if (ChangeEnvDir(BVPName)==NULL)
+    return(NULL);
+  for (i=0; i<theProblem->numOfCoeffFct; i++)
+    theBVP->CU_ProcPtr[i] = theProblem->CU_ProcPtr[i];
+  for (i=0; i<theProblem->numOfUserFct; i++)
+    theBVP->CU_ProcPtr[i+theProblem->numOfCoeffFct] =
+      theProblem->CU_ProcPtr[i+theProblem->numOfCoeffFct];
+  theBVP->numOfCoeffFct = theProblem->numOfCoeffFct;
+  theBVP->numOfUserFct = theProblem->numOfUserFct;
+  STD_BVP_S2P_PTR(theBVP) = NULL;
+
+  theBVP->Domain = theDomain;
+  theBVP->Problem = theProblem;
+
+  /* fill in data of problem */
+  theBVP->ConfigProc = Problem_Configure;
+  theBVP->GeneralBndCond = NULL;
+
+  theBVP->type = BVP_STANDARD;
+
+  UserWriteF("BVP %s installed.\n",BVPName);
+
+  return ((BVP*)theBVP);
+}
+
 const char *GetBVP_DomainName (const BVP *aBVP)
 {
   const STD_BVP *theBVP = (const STD_BVP *)aBVP;
@@ -2389,7 +2487,6 @@ static INT CreateCornerPoints (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp)
   return(0);
 }
 
-/* domain interface function: for description see domain.h */
 BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
 {
   STD_BVP *theBVP;

@@ -575,6 +575,8 @@ BVP   *Create_MarcBVP             (char *BVPname, BndCondProcPtr theBndCond,
                                    int numOfCoeffFct, CoeffProcPtr coeffs[],
                                    int numOfUserFct, UserProcPtr userfct[]);
 
+BVP *CreateBVP_Problem (char *BVPName, char *DomainName, char *ProblemName);
+
 /* scanning of coordinates */
 INT   ReadAndPrintArgvPosition    (char *name, INT argc, char **argv, DOUBLE *pos);
 
