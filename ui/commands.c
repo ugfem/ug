@@ -193,6 +193,8 @@ typedef struct
 
 static MULTIGRID *currMG=NULL;                  /* the current multigrid			*/
 
+static NP_BASE *currNumProc=NULL;               /* current numerical procedure		*/
+
 static char buffer[BUFFERSIZE];         /* general purpose text buffer		*/
 
 static FILE     *protocolFile=NULL;     /* for protocol commands			*/
@@ -328,28 +330,10 @@ INT SetCurrentMultigrid (MULTIGRID *theMG)
    This command quits the program and closes the shell.
 
    'quit'
+
+   KEYWORDS:
+   exit, terminate, bye
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   QuitCommand - Quit programm
-
-   SYNOPSIS:
-   static INT QuitCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function quits programm (checks open files, documents, ... ).
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT QuitCommand (INT argc, char **argv)
@@ -368,6 +352,7 @@ static INT QuitCommand (INT argc, char **argv)
    The default value is 0 and all skript lines will be printed on the shell.
    This will be suppressed by mutelevel -1.
    Smaller muteleveles should reduce the output further.
+   A mutelevel of -1000 supresses all output to shell.
 
    'mute <value>'
    .   <value> - integer which gives the mutelevel
@@ -375,58 +360,37 @@ static INT QuitCommand (INT argc, char **argv)
    REMARK:
    Formally, this is not an ug command, 'mute' is checked in
    'InterpretString'.
+
+   KEYWORDS:
+   verbose, quiet, silent
    D*/
 /****************************************************************************/
 
 /****************************************************************************/
 /*D
-   help - search for for a command and prints the help
+   help - print help for a command or keyword
 
    DESCRIPTION:
-   This command searches for a command and prints the help.
-   It gets online help for commands etc.
+   This command prints help for a given helpitem, e.g. a command. The helpitem
+   is looked up case insensitive. Command names can be abbreviated as if they
+   where called from the shell window.
 
    help [[<helpitem>] $k]
 
-   .   no~option             - this is  equivalent to 'help help'
-   .   <helpitem>            - print help for <helpitem> (string)
-   .   $k                    - search for keyword <helpitem>
+   .   no~option      - this is  equivalent to 'help help'
+   .   <helpitem>     - print help for <helpitem> (string)
+   .   $k             - search for keyword <helpitem> (multiple occurence)
 
    EXAMPLE:
+   'help PlotObj'
+
+   prints help for the plotobject command.
+
    'help plot $k'
 
    prints a list of all commands which are relevant for plotting
    (openwindow, setview, zoom ...)
-
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   HelpCommand - Search for for a command and prints the help
-
-   SYNOPSIS:
-   static INT HelpCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function searches for a command and prints the help.
-   It gets online help for commands etc.
-
-   help [[<helpitem>] $k]
-
-   .   no option             - this is  equivalent to 'help help'
-   .   <helpitem>            - print help for <helpitem> (string)
-   .   $k                    - search for keyword <helpitem>
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT HelpCommand (INT argc, char **argv)
@@ -483,7 +447,7 @@ static INT HelpCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   checkhelp - Check wether all commands in /menu have a help item
+   checkhelp - check wether all commands in /menu have a help item
 
    DESCRIPTION:
    This function checks wether for all commands in /menu a help item exists.
@@ -493,32 +457,12 @@ static INT HelpCommand (INT argc, char **argv)
 
    It calls the funtion 'CheckHelp'.
 
+   EXAMPLE:
    'checkhelp'
+
+   KEYWORDS:
+   check
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   CheckHelpCommand - Check wether all commands in /menu have a help item
-
-   SYNOPSIS:
-   static INT CheckHelpCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function checks wether for all commands in /menu a help item exists.
-   It also checks wether for all num proc types a help item exists.
-
-   It prints all commands and num proc types for which help does NOT exist.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT CheckHelpCommand (INT argc, char **argv)
@@ -570,22 +514,10 @@ static INT CheckHelpCommand (INT argc, char **argv)
 
    This runs 'mysolve' 100 times and
    creates metafiles 'film.0000', 'film.0001', 'film.0002', ... 'film.0100'.
-   D*/
-/****************************************************************************/
 
-/****************************************************************************/
-/*																			*/
-/* Function:  CreateMetafileNameCommand										*/
-/*																			*/
-/* Purpose:   create a string containing the name of a metafile name for	*/
-/*			  animation by xugv												*/
-/*																			*/
-/* Input:	  INT argc: number of arguments (incl. its own name                     */
-/*			  char **argv: array of strings giving the arguments			*/
-/*																			*/
-/* Output:	  INT 0: everything ok											*/
-/*			  INT >0: error                                                                                                 */
-/*																			*/
+   KEYWORDS:
+   movie, film
+   D*/
 /****************************************************************************/
 
 static INT CreateMetafileNameCommand (INT argc, char **argv)
@@ -636,35 +568,13 @@ static DOUBLE nec_clock( void )
    string variable ':CLOCK'.
 
    'readclock'
+
+   KEYWORDS:
+   time, stopwatch, clock
+
+   SEE ALSO:
+   resetclock;
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ReadClockCommand - For measuring the time used
-
-   SYNOPSIS:
-   static INT ReadClockCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function is for measuring the time used.
-   It reads all time clock.
-
-   .  readclock       - prints the execution time since the last 'resetclock' to
-                     string variable ':CLOCK'
-
-   `Warning:` be careful measuring long times because depending on the
-   implementation the wrap around time may be short.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT ReadClockCommand (INT argc, char **argv)
@@ -702,31 +612,13 @@ static INT ReadClockCommand (INT argc, char **argv)
    It sets the global variable 'Time0' to zero.
 
    'resetclock'
+
+   KEYWORDS:
+   time, stopwatch, clock
+
+   SEE ALSO:
+   readclock;
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ResetClockCommand - For measuring the time used
-
-   SYNOPSIS:
-   static INT ResetClockCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function is for measuring the time used.
-   It resets all time clock.
-
-   .  resetclock      - reset the execution time clock to zero
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT ResetClockCommand (INT argc, char **argv)
@@ -784,29 +676,21 @@ static INT InitClock(void)
    date - prints the date
 
    DESCRIPTION:
-   This command prints the date on the shell resp.
+   This command prints the date to the shell resp.
    writes it in the string variable ':date'.
 
    'date [$s] [$S]'
 
-   .  no~option - print the date on the shell
-   .  $s   -  put in the string variable ':date'.
-   .  $S   -  use short format of the form yy.mm.dd
+   .  no~option - print the date to the shell
+   .  $s                 -  put in the string variable ':date'.
+   .  $S         -  use short format of the form yy.mm.dd
 
+   KEYWORDS:
+   time, calendar
+
+   SEE ALSO:
+   'resetclock', 'readclock'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*																			*/
-/* Function:  DateCommand													*/
-/*																			*/
-/* Purpose:   prints date and time					                                                */
-/*																			*/
-/* Input:	  INT argc: number of arguments (incl. its own name                     */
-/*			  char **argv: array of strings giving the arguments			*/
-/*																			*/
-/* Output:	  INT return code see header file								*/
-/*																			*/
 /****************************************************************************/
 
 static INT DateCommand (INT argc, char **argv)
@@ -856,36 +740,11 @@ static INT DateCommand (INT argc, char **argv)
    'ls [<path>]'
 
    .  no~option - lists the content of the current directory.
-   .  <path>  - contains the relative or absolute path in UNIX-style
+   .  <path>    - contains the relative or absolute path in UNIX-style
+
+   KEYWORDS:
+   environment, directory, list
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ListEnvCommand - Navigate through the environment tree
-
-   SYNOPSIS:
-   static INT ListEnvCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function navigates through the environment tree.
-   It lists environment directory.
-   It uses the function 'ChangeEnvDir'.
-
-   ls [<path>]
-
-   .  <path>                  - <path> contains the relative or absolute path in UNIX-style
-   .n                           if <path> is omitted: ls <the current directory>
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT ListEnvCommand (INT argc, char **argv)
@@ -949,31 +808,12 @@ static INT ListEnvCommand (INT argc, char **argv)
 
    'cd [<path>]'
 
-   .  <path> - <path> contains the relative or absolute path in UNIX-style
    .  no~option - cd to root (cd /)
+   .  <path>	 - <path> contains the relative or absolute path in UNIX-style
+
+   KEYWORDS:
+   environment, directory, working
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ChangeEnvCommand - Navigate through the environment tree
-
-   SYNOPSIS:
-   static INT ChangeEnvCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function navigates through the environment tree.
-   It changes environment directory to specified path.
-
-   cd [<path>]
-
-   .  <path>                  - <path> contains the relative or absolute path in UNIX-style
-   .                          - if <path> is omitted: cd to root (cd /)
- */
 /****************************************************************************/
 
 static INT ChangeEnvCommand (INT argc, char **argv)
@@ -1003,6 +843,16 @@ static INT ChangeEnvCommand (INT argc, char **argv)
   s = buffer+i;
 
   /* pathname is now in buffer */
+  if (strlen(buffer)==0)
+  {
+    /* empty path: change to root directory */
+    strcpy(userPath,DIRSEP);
+    currentDir = ChangeEnvDir(userPath);
+    if (currentDir == NULL)
+      return (CMDERRORCODE);
+    else
+      return (OKCODE);
+  }
   currentDir = ChangeEnvDir(s);
   if (currentDir==NULL)
   {
@@ -1018,38 +868,17 @@ static INT ChangeEnvCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   pwd - print the current environment
+   pwd - print the current environment directory
 
    DESCRIPTION:
-   This command print the current environment on the shell.
+   This command print the current environment directory to the shell.
    It uses the function 'CangeEnvDir'.
 
    'pwd'
+
+   KEYWORDS:
+   environment, directory, working
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   PrintEnvDirCommand - Navigate through the environment tree
-
-   SYNOPSIS:
-   static INT PrintEnvDirCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function navigates through the environment tree.
-   It prints environment working directory.
-
-   pwd
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT PrintEnvDirCommand (INT argc, char **argv)
@@ -1081,32 +910,13 @@ static INT PrintEnvDirCommand (INT argc, char **argv)
    envinfo - print total size and used memory
 
    DESCRIPTION:
-   This command prints total size and used memory on the shell.
+   This command prints total size and used memory of the emvironment to shell.
 
    'envinfo'
+
+   KEYWORDS:
+   environment, size, heap, memory
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   EnvInfoCommand - Print total size and used memory
-
-   SYNOPSIS:
-   static INT EnvInfoCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function prints used and size of environment heap.
-   It calls the function 'EnvHeapInfo'.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT EnvInfoCommand (INT argc, char **argv)
@@ -1121,55 +931,23 @@ static INT EnvInfoCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*
-   SetCommand - Set (or print) a string variable struct
-
-   SYNOPSIS:
-   static INT SetCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function sets (or prints) a string variable struct.
-   It sets or prints the contents of a struct or struct directory
-   using the functions 'PrintStructContents', 'SetStringVar',
-   'PrintCurrentStructContents'.
-
-   set {<struct> <value>} | {[<structdir> | <struct>] [$r]}
-
-   .  <struct> <value>              - assign <value> (just a string of arbitraray length) to <struct>
-   .  [<structdir> | <struct>] [$r] - display contents of <struct> or <structdir> .n                               (default: current struct dir)
-
-   . $r                             - specifies the directory, its contents is listed recursively
-   .n                               (see also: help structpath)
-
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
-/****************************************************************************/
-
-/****************************************************************************/
 /*D
    set - set (or print) a string variable struct
 
    DESCRIPTION:
    This command sets (or prints) a string variable struct.
+   If it is not existing it is also created.
    It sets or prints the contents of a struct or struct directory.
 
    'set {<struct> <value>} | {[<structdir> | <struct>] [$r]}'
 
-   .  <struct>~<value>   - assign <value> (just a string of arbitraray length) to <struct>
-   .  [<structdir>|<struct>]~[$r] - display contents of <struct> or <structdir>
+   .  <struct>~<value>                          - assign <value> (just a string of arbitrary length) to <struct>
+   .  [<structdir>|<struct>]~[$r]  - display contents of <struct> or <structdir>
+   .n                                (default: current struct dir)
+   .  $r                                                - specifies the directory, its contents is listed recursively
 
-   .n                               (default: current struct dir)
-
-   . $r        - specifies the directory, its contents is listed recursively
-
+   KEYWORDS:
+   variable, create, set, assign, value, struct, show, display, print
 
    SEE ALSO:
    'structpath'
@@ -1271,30 +1049,23 @@ static INT SetCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*
-   DeleteVariableCommand - Delete an existing variable
-
-   SYNOPSIS:
-   static INT DeleteVariableCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
+/*D
+   dv - delete an existing string variable
 
    DESCRIPTION:
-   This function deletes an existing variable.
+   This command deletes an existing string variable from the environment.
 
    dv <variable name>
 
-   .  <variable name>         - <variable name> consists of a complete path related to the
-   .n                         current struct dir or the structure root directory in the environment
-   .n                         (see also: help structpath)
+   .  <variable name>    - <variable name> consists of a complete path related to the
+                        current struct dir or the structure root directory in the environment
 
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
+   KEYWORDS:
+   variable, remove, delete
+
+   SEE ALSO:
+   def, structpath, dv
+   D*/
 /****************************************************************************/
 
 static INT DeleteVariableCommand (INT argc, char **argv)
@@ -1337,40 +1108,15 @@ static INT DeleteVariableCommand (INT argc, char **argv)
 
    'ms <structdir>'
 
-   .  <structdir>             - the <structdir> consists of a complete path related to the
-                             current struct dir or the string variable root in the environment
+   .  <structdir>     - the <structdir> consists of a complete path related to the
+                     current struct dir or the string variable root in the environment
+
+   KEYWORDS:
+   variable, create, struct
 
    SEE ALSO:
    'structpath'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   MakeStructCommand - Create a structure
-
-   SYNOPSIS:
-   static INT MakeStructCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function creates a structure.
-   It creates a new string variable struct.
-
-   ms <structdir>
-
-   .  <structdir>             - the <structdir> consists of a complete path related to the
-                             current struct dir or the string variable root in the environment
-                             (see also: help structpath)
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT MakeStructCommand (INT argc, char **argv)
@@ -1396,38 +1142,20 @@ static INT MakeStructCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   cs  - change to a struct
+   cs  - change to a struct directory
 
    DESCRIPTION:
-   This commands changes to a struct.
+   This commands changes to a struct directory.
    It calls the function 'ChangeStructDir'.
 
    'cs <structdir>'
 
-   .  <structdir>             - the <structdir> consists of a complete path related to the
-                             current struct dir or the string variable root in the environment
+   .  <structdir>   - the <structdir> consists of a complete path related to the
+                   current struct dir or the string variable root in the environment
+
+   KEYWORDS:
+   variable, struct, change
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ChangeStructCommand - Create a structure
-
-   SYNOPSIS:
-   static INT ChangeStructCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function changes a structure.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT ChangeStructCommand (INT argc, char **argv)
@@ -1460,31 +1188,13 @@ static INT ChangeStructCommand (INT argc, char **argv)
 
    DESCRIPTION:
    This commands calls the function 'GetStructPathName' and
-   puts the result on the screen.
+   prints the result to the shell.
 
    'pws'
+
+   KEYWORDS:
+   variable, print, display, show, struct
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   PrintWorkStructCommand - prints the path of a struct
-
-   SYNOPSIS:
-   static INT PrintWorkStructCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function prints the path of a struct.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT PrintWorkStructCommand (INT argc, char **argv)
@@ -1509,37 +1219,16 @@ static INT PrintWorkStructCommand (INT argc, char **argv)
 
    'ds <structdir>'
 
-   .  <structdir>             - the <structdir> consists of a complete path related to the
-   .n                         current struct dir or the string variable root in the environment
+   .  <structdir>   - the <structdir> consists of a complete path related to the
+   .n                 current struct dir or the string variable root in the environment
+
+   KEYWORDS:
+   variable, delete, remove, struct
+
+   SEE ALSO:
+   dv, structpath
+
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   DeleteStructCommand - Delete an existing structure
-
-   SYNOPSIS:
-   static INT DeleteStructCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function deletes an existing structure.
-   It deletes an existing struct directory.
-
-   ds <structdir>
-
-   .  <structdir>             - the <structdir> consists of a complete path related to the
-   .n                         current struct dir or the string variable root in the environment
-   .n                         (see also: help structpath)
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT DeleteStructCommand (INT argc, char **argv)
@@ -1582,14 +1271,11 @@ static INT DeleteStructCommand (INT argc, char **argv)
 
    'protocol {$i[ ]<verbatim text> | $n[ ]<verbatim text> | $t[ ]<verbatim text> | $f}*'
 
-   .vb
-    $%i   append <verbatim text> to protocol file
-    $%n   write a line feed and append <verbatim text> to protocol file
-    $%t   write a tab and append <verbatim text> to protocol file
-          NOTE: the first space (if there) following the option character is skipped
-
-    $%f   flush the file buffer
-   .ve
+   .   $%i   - append <verbatim text> to protocol file
+   .   $%n   - write a line feed and append <verbatim text> to protocol file
+   .   $%t   - write a tab and append <verbatim text> to protocol file
+   .n          NOTE: the first space (if there) following the option character is skipped
+   .   $%f   - flush the file buffer
 
    EXAMPLE:
    .vb
@@ -1600,11 +1286,16 @@ static INT DeleteStructCommand (INT argc, char **argv)
    protoOff
    .ve
 
-   Then, the file 'exp.proto' will consists of the string
+   Then, the file 'exp.proto' will consist of the string
    .vb
    "the value of exp(1) is\t2.7182818\nyou can use $s in protocol"
    .ve
 
+   KEYWORDS:
+   protocol, file, output, format
+
+   SEE ALSO:
+   'protoOn', 'protoOff'
    D*/
 /****************************************************************************/
 
@@ -1785,35 +1476,16 @@ static INT OpenProto (char *name, INT mode)
 
    .   <filename>  - name of the protocol file
    .    $r!        - if a file named <filename> exist already, rename it to <filename>.saved
-   .n                          break if the renaming fails
+   .n                break if the renaming fails
+   .   $r          - like above but proceed even if renaming fails
+   .   $a          - append to existing file named <filename>
 
-   .   $r                     - like above but proceed even if renaming fails
-   .   $a                     - append to existing file named <filename>
+   KEYWORDS:
+   protocol, file, open, output, format
+
+   SEE ALSO:
+   'protoOff', 'protocol'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ProtoOnCommand - Open protocol file where specially formatted output is saved
-
-   SYNOPSIS:
-   static INT ProtoOnCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function opens protocol file where specially formatted output is saved.
-   It writes formatted ouput to the open protocol file.
-
-   protoOn
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT ProtoOnCommand (INT argc, char **argv)
@@ -1884,31 +1556,12 @@ static INT ProtoOnCommand (INT argc, char **argv)
 
    'protoOff'
 
+   KEYWORDS:
+   protocol, file, close, output, format
+
    SEE ALSO:
-   'protoOn'
+   'protoOn', 'protocol'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ProtoOffCommand - Close protocol file
-
-   SYNOPSIS:
-   static INT ProtoOffCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function closes protocol file.
-   It closes the protocol file (see the 'protoOn' command).
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT ProtoOffCommand (INT argc, char **argv)
@@ -1932,6 +1585,26 @@ static INT ProtoOffCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
+/****************************************************************************/
+/*D
+   GetProtocolFile - return pointer to current protocol file
+
+   SYNOPSIS:
+   FILE *GetProtocolFile (void)
+
+   PARAMETERS:
+   .  void - none
+
+   DESCRIPTION:
+   This function returns a pointer to the current protocol file (NULL if not open).
+
+   RETURN VALUE:
+   FILE *
+   .n    file ptr if ok
+   .n    NULL if no protocol file open
+   D*/
+/****************************************************************************/
+
 FILE *GetProtocolFile (void)
 {
   return (protocolFile);
@@ -1939,39 +1612,21 @@ FILE *GetProtocolFile (void)
 
 /****************************************************************************/
 /*D
-   logon - open protocol file where all output is saved
+   logon - open log file where all shell output is saved
 
    DESCRIPTION:
-   This command opens protocol file where all is saved.
+   This command opens a log file where all shell output is saved.
 
    'logon <logfilename>'
 
    .   <filename>  - name of logfile
+
+   KEYWORDS:
+   protocol, file, open, output
+
+   SEE ALSO:
+   'logoff'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   LogOnCommand - open protocol file where all output is saved
-
-   SYNOPSIS:
-   static INT LogOnCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function opens protocol file where all output is saved.
-   It directs total shell output also to a logfile.
-
-   logon <logfilename>
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT LogOnCommand (INT argc, char **argv)
@@ -2046,31 +1701,12 @@ static INT LogOnCommand (INT argc, char **argv)
 
    'logoff'
 
+   KEYWORDS:
+   protocol, file, close, output
+
    SEE ALSO:
    'logon'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   LogOffCommand - Close protocol file
-
-   SYNOPSIS:
-   static INT LogOffCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function closes protocol file.
-   It switches off the logging mechanism.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT LogOffCommand (INT argc, char **argv)
@@ -2114,25 +1750,19 @@ static INT LogOffCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*
-   CnomCommand - write a cnom output file
-
-   SYNOPSIS:
-   static INT CNomCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
+   cnom - write a cnom output file
 
    DESCRIPTION:
    This function writes data in a format suitable for the program cnom 2.0
    written by Susanne Kroemker of the IWR, Heidelberg.
 
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
+   'cnom ...'
+
+   KEYWORDS:
+   file, open, output, data
  */
 /****************************************************************************/
+
 static INT CnomCommand (INT argc, char **argv)
 {
   char docName[32],plotprocName[NAMESIZE],tagName[NAMESIZE];
@@ -2154,6 +1784,7 @@ static INT CnomCommand (INT argc, char **argv)
   }
   if (argc!=2)
   {
+    PrintErrorMessage('E',"cnom","specify only one argument with cnom");
     PrintHelp("cnom",HELPITEM,buffer);
     return(PARAMERRORCODE);
   }
@@ -2200,15 +1831,18 @@ static INT CnomCommand (INT argc, char **argv)
 
    DESCRIPTION:
    This command configures the BPV, calling BVP_Configure.
-   The arguments depend on the domain mudule.
+   The arguments depend on the domain module.
 
    'configure <BVP name> ...'
 
    EXAMPLE:
    'configure test $d Quadrilateral $P 2 1.1 1.3'
 
-   In the standard domain module, the BVP test will be coupled with
+   In the 2D standard domain module, the BVP test will be coupled with
    a quadrilateral with corners (0,0), (1,0), (1.1,1.3) and (0,1).
+
+   KEYWORDS:
+   boundary value problem, change
    D*/
 /****************************************************************************/
 
@@ -2256,7 +1890,10 @@ static INT ConfigureCommand (INT argc, char **argv)
 
    'close [$a]'
 
-   .   $a                     - close all multigrids
+   .   $a  - close all multigrids
+
+   KEYWORDS:
+   multigrid, close
    D*/
 /****************************************************************************/
 
@@ -2338,25 +1975,27 @@ static INT CloseCommand (INT argc, char **argv)
    DESCRIPTION:
    This command allocates a new multigrid, using the function 'CreateMultiGrid'.
    It allocates heap and a new multigrid structure.
-   The specification of the problem and the domain must be supplied by
+   The specification of the boundary value problem must be supplied by
    the user with the functions 'CreateProblem' and 'CreateDomain'.
    It also creates the corner vertices and nodes of the domain.
 
-   'new [<mgname>] $d <domain> $p <problem> $f <format> $h <heapsize>'
+   'new [<mgname>] $b <boundary value problem> $f <format> $h <heapsize>'
 
-   .  <mgname>               - the name of the multigrid (default is 'untitled-<nb>')
-   .  $d~<domain>            - one of the enroled domains
-   .  $p~<problem>           - one of the problems enroled for <domain>
-   .  $f~<format>            - one of the enroled formats matching with <problem>
-   .  $h~<heapsize>          - the heapsize to be allocated in byte (or use suffix
-        "K" for kilobyte, "M" for megabyte, "G" for gigabyte)
+   .  <mgname>                          - the name of the multigrid (default is 'untitled-<nb>')
+   .  $p~<boundary~value~problem>	- a boundary value problem
+   .  $f~<format>                       - one of the enroled formats matching with <boundary value problem>
+   .  $h~<heapsize>                     - the heapsize to be allocated in byte (or use suffix
+                                              "K" for kilobyte, "M" for megabyte, "G" for gigabyte)
 
    EXAMPLES:
-   'new $d unit square $p TestProblem $f nc $h 30000000;'
+   'new $p TestProblem $f nc $h 30000000;'
 
-   'new $d unit square $p TestProblem $f nc $h 30000K;'
+   'new $b TestProblem $f nc $h 30000K;'
 
-   'new $d unit square $p TestProblem $f nc $h 30M;'
+   'new $b TestProblem $f nc $h 30M;'
+
+   KEYWORDS:
+   multigrid, new, create
    D*/
 /****************************************************************************/
 
@@ -2453,47 +2092,25 @@ static INT NewCommand (INT argc, char **argv)
    The specification of the problem and the domain must be supplied by
    the user with the functions 'CreateProblem' and 'CreateDomain'.
 
-   'open [<mgname>] $d <domain> $p <problem> $f <format> $h <heapsize>'
+   'open <filename> [$t <type>] [$m <mg name>] [$b <problem>] [$f <format>] [$h <heapsize>]'
 
-   .  <mgname>               - the name of the multigrid
-   .  $d~<domain>            - one of the enroled domains
-   .  $p~<problem>           - one of the problems enroled for <domain>
-   .  $f~<format>            - one of the enroled formats matching with <problem>
-   .  $h~<heapsize>          - the heapsize to be allocated
+   .  <filename>                        - the name of the multigrid file (the fule name will be composed
+                                                                        to: <filename>.ug.mg.<type>
+   .  $t~<type>					- file was saved with type: asc (default) or bin
+   .  <mg~name>					- grid will be created with this name
+   .  $p~<boundary~value~problem>	- a boundary value problem
+                                                                        (overrides saved one)
+   .  $f~<format>                       - one of the enroled formats matching with <boundary value problem>
+                                                                        (overrides saved one)
+   .  $h~<heapsize>                     - the heapsize to be allocated
+                                                                        (overrides saved one)
+
+   KEYWORDS:
+   multigrid, new, open, file
 
    SEE ALSO:
    'new', 'save'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   OpenCommand - load a new multigrid from a data file
-
-   SYNOPSIS:
-   static INT OpenCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function loads a new multigrid from a data file.
-   It allocates heap and new multigrid structure.
-
-   open <mgname> [$d <domain> [$p <problem>]] [$f <format>] $h <heapsize>
-
-   .   <mgname>               - the name of the multigrid
-   .   $d <domain>            - one of the enroled domains
-   .   $p <problem>           - one of the problems enroled for <domain>
-   .   $f <format>            - one of the enroled formats matching with <problem>
-   .   $h <heapsize>          - the heapsize to be allocated
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT OpenCommand (INT argc, char **argv)
@@ -2512,7 +2129,7 @@ static INT OpenCommand (INT argc, char **argv)
     return (PARAMERRORCODE);
   }
 
-  /* get problem, domain and format */
+  /* get problem and format */
   strcpy(type,"asc");
   theBVP = theFormat = theMGName = NULL;
   heapSize = 0;
@@ -2600,61 +2217,25 @@ static INT OpenCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   close - close current multigrid
-
-   DESCRIPTION:
-   This command closes the current (or all) open multigrid(s),
-   frees their heaps and closes all the pictures belonging to them,
-   calling 'DisposeMultiGrid' and 'DisposePicture'.
-
-   'close [$a]'
-
-   .   $a                     - close all multigrids
-   D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*D
    save - save a multigrid structure in a file
 
    DESCRIPTION:
    This command writes the current multigrid structure in a file.
 
-   'save [<name>] [$c <comment>]'
+   'save [<name>] [$t <type>] [$c <comment>]'
 
    .  <name>                  - name to save with (default is the mgname)
-   .  $c <comment>            - optionally specify a comment string
+   .  $t~<type>			   - type can be asc (default>, bin or scr. asc and bin can be opend with
+                                                                the open command, scr can be executed as script (surface will be saved
+                                                                as level 0)
+   .  $c~<comment>            - optionally specify a comment string
+
+   KEYWORDS:
+   multigrid, save, write, data, file, output
 
    SEE ALSO:
    'open'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   SaveCommand - Save multigrid structure in a file
-
-   SYNOPSIS:
-   static INT SaveCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function saves multigrid structure in a file.
-   It saves the current multigrid.
-
-   save <filename>, <filename> = xxx.asc (ascii)
-                                   xxx.bin (binary)
-                                   xxx.asc.gz (zipped ascii)
-                                   xxx.bin.gz (zipped binary)
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT SaveCommand (INT argc, char **argv)
@@ -2713,27 +2294,21 @@ static INT SaveCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*
-   SaveDomainCommand - Save domain structure in a file
-
-   SYNOPSIS:
-   static INT SaveDomainCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
+/*D
+   savedomain - save domain structure in a file
 
    DESCRIPTION:
-   This function saves domain structure in a file.
-   It saves the one from current multigrid.
+   This command saves the domain structure of the current multigrid in a file.
+   All arguments are passed to the current domain module interface function.
 
-   savedomain <filename>
+   'savedomain ...'
 
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
+   SEE ALSO:
+   'open'
+
+   KEYWORDS:
+   multigrid, domain, save, write, data, file, output
+   D*/
 /****************************************************************************/
 
 static INT SaveDomainCommand (INT argc, char **argv)
@@ -2762,31 +2337,27 @@ static INT SaveDomainCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*
-   SaveDataCommand - Save multigrid data in a file
-
-   SYNOPSIS:
-   static INT SaveDataCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
+/*D
+   savedata - save multigrid data in a file
 
    DESCRIPTION:
-   This function saves multigrid data in a file.
+   This function saves multigrid data from the current multigrid in a file.
+   The multigrid has to be saved before.
 
-   savedata <filename> $v <vecdatadesc name>
+   'savedata <filename> [$t <type>] [$n <number>] [$T <time>] [$a <vd name> [$b <vd name>[$c <vd name>[$d <vd name>[$e <vd name>]]]]]'
 
-   <filename> = xxx.asc (ascii)
-                xxx.bin (binary)
-                xxx.asc.gz (zipped ascii)
-                xxx.bin.gz (zipped binary)
+   .  <filename>		- the filename will be composed to <filename>.ug.data.<type>
+   .  $t~<type>		- type can be asc (default) or bin
+   .  $n~<number>		- picture number for movie
+   .  $T~<time>		- assign this time level
+   .  $a~<vd name>...	- read data from this vec data descriptors
 
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
+   KEYWORDS:
+   multigrid, save, write, data, file, output
+
+   SEE ALSO:
+   'save'
+   D*/
 /****************************************************************************/
 
 static INT ReadSaveDataInput (MULTIGRID *theMG, INT argc, char **argv, char *VDSym, char EvalChar, VECDATA_DESC **theVD, EVALUES **theEVal, EVECTOR **theEVec)
@@ -2900,31 +2471,25 @@ static INT SaveDataCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*
-   LoadDataCommand - Load multigrid data from a file
-
-   SYNOPSIS:
-   static INT LoadDataCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
+/*D
+   loaddata - load multigrid data from a file
 
    DESCRIPTION:
    This function loads multigrid data from a file.
 
-   loaddata <filename> $v <vecdatadesc name>
+   'loaddata <filename> [$t <type>] [$n <number>] [$T <time>] [$a <vd name> [$b <vd name>[$c <vd name>[$d <vd name>[$e <vd name>]]]]]'
 
-   <filename> = xxx.asc (ascii)
-                xxx.bin (binary)
-                xxx.asc.gz (zipped ascii)
-                xxx.bin.gz (zipped binary)
+   .  <filename>		- the filename will be composed to <filename>.ug.data.<type>
+   .  $t~<type>		- type can be asc (default) or bin
+   .  $n~<number>		- picture number of movie
+   .  $a~<vd name>...	- save data to this vec data descriptors
 
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
+   KEYWORDS:
+   multigrid, load, read, file, data
+
+   SEE ALSO:
+   'save'
+   D*/
 /****************************************************************************/
 
 static INT LoadDataCommand (INT argc, char **argv)
@@ -2994,42 +2559,20 @@ static INT LoadDataCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   level - select another level
+   level - select another current level
 
    DESCRIPTION:
-   This command selects another level or lists an info.
-   It changes the working (current) level of the current multigrid.
+   This command changes another current level of the current multigrid.
 
    level <level> | + | -
 
    .  <level> - go to level <level>
    .  +       - go to the next finer level
    .  -       - go to the next coarser level
+
+   KEYWORDS:
+   multigrid, current
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   LevelCommand	- Select another level or list info
-
-   SYNOPSIS:
-   static INT LevelCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function selects another level or list info.
-   It changes the working (current) level of the current multigrid.
-
-   level <level> | + | -
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT LevelCommand (INT argc, char **argv)
@@ -3103,30 +2646,10 @@ static INT LevelCommand (INT argc, char **argv)
    subsequently to fill the gaps, calling the function 'RenumberMultiGrid'.
 
    'renumber'
+
+   KEYWORDS:
+   multigrid, id
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   RenumberMGCommand - Reassign the object IDs in the multigrid
-
-   SYNOPSIS:
-   static INT RenumberMGCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function reassigns the object IDs in the multigrid
-   subsequently to fill the gaps.
-   It assigns consecutive id's to all objects.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT RenumberMGCommand (INT argc, char **argv)
@@ -3161,29 +2684,10 @@ static INT RenumberMGCommand (INT argc, char **argv)
    'ListUGWindow'.
 
    'wplist'
+
+   KEYWORDS:
+   graphics, plot, window, list, display, show
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   WindowPictureListCommand - List info of all windows and pictures
-
-   SYNOPSIS:
-   static INT WindowPictureListCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function lists info of all windows and pictures.
-   It lists all windows with their pictures.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT WindowPictureListCommand (INT argc, char **argv)
@@ -3215,35 +2719,13 @@ static INT WindowPictureListCommand (INT argc, char **argv)
    This command lists information on all multigrids, calling
    the functions 'ListMultiGridHeader' and 'ListMultiGrid'.
 
-   'mglist [$l]'
+   'mglist [$s]'
 
-   .  $l - long format for additional information
+   .  $s - short format for less information
+
+   KEYWORDS:
+   multigrid, list, display, show
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   MGListCommand - List info all multigrids
-
-   SYNOPSIS:
-   static INT MGListCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function lists info all multigrids.
-   It lists all open multigrids.
-
-   mglist [$l]
-   .  $l                     - list long format
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT MGListCommand (INT argc, char **argv)
@@ -3258,11 +2740,16 @@ static INT MGListCommand (INT argc, char **argv)
     return (OKCODE);
   }
 
-  longformat = FALSE;
+  longformat = TRUE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
+    case 's' :
+      longformat = FALSE;
+      break;
+
     case 'l' :
+      /* old syntax */
       longformat = TRUE;
       break;
 
@@ -3289,28 +2776,10 @@ static INT MGListCommand (INT argc, char **argv)
    the function 'ListGrids'.
 
    'glist'
+
+   KEYWORDS:
+   multigrid, list, display, show
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   GListCommand	- List info for the current multigrid
-
-   SYNOPSIS:
-   static INT GListCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function lists info for the current multigrid.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT GListCommand (INT argc, char **argv)
@@ -3349,46 +2818,18 @@ static INT GListCommand (INT argc, char **argv)
 
    'nlist $s | {$i <fromID> [<toID>]} [$d] [$b] [$n] [$v] [$a]'
 
-   .  $s                     - list info for the selected nodes
-   .  $i                     - list info for nodes with an ID in the range <fromID> through <toID>                           # if <fromID> is omitted only the node with <fromID> is listed
-   .  $d                     - up to version 2.3 ONLY: list also user data space
-   .  $b                     - print additional info for boundary nodes
-   .  $n                     - list also neighbours of each node
-   .  $v                     - print extended info (verbose mode)
-   .  $a                     - list all nodes
+   .  $s  - list info for the selected nodes
+   .  $i  - list info for nodes with an ID in the range <fromID> through <toID>
+         if <fromID> is omitted only the node with <fromID> is listed
+   .  $d  - up to version 2.3 ONLY: list also user data space
+   .  $b  - print additional info for boundary nodes
+   .  $n  - list also neighbours of each node
+   .  $v  - print extended info (verbose mode)
+   .  $a  - list all nodes
+
+   KEYWORDS:
+   multigrid, node, link, list, display, show
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   NListCommand - List info for specified nodes
-
-   SYNOPSIS:
-   static INT NListCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function lists info for specified nodes.
-   It prints info for the specified nodes.
-
-   nlist $s | {$i <fromID> [<toID>]} [$d] [$b] [$n] [$v] [$a]
-
-   .  $s                     - list info for the selected nodes
-   .  $i                     - list info for nodes with an ID in the range <fromID> through <toID>                           # if <fromID> is omitted only the node with <fromID> is listed
-   .  $d                     - up to version 2.3 ONLY: list also user data space
-   .  $b                     - print additional info for boundary nodes
-   .  $n                     - list also neighbours of each node
-   .  $v                     - print extended info (verbose mode)
-   .  $a                     - list all nodes
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT NListCommand (INT argc, char **argv)
@@ -3511,57 +2952,24 @@ static INT NListCommand (INT argc, char **argv)
    elist - list information on specified elements
 
    DESCRIPTION:
-   This command lists information on spezified elements, calling
+   This command lists information on specified elements, calling
    the functions 'ListElementRange' and 'ListElementSelection'.
 
    'elist $s | {$i <fromID> [<toID>]} [$d] [$b] [$n] [$v] [$a]'
 
-   .  $s                     - list info for the selected elements
-   .  $i                     - list info for elements with an ID in the range <fromID> through <toID>
-   .n                        - if <fromID> is omitted only the element with <fromID> is listed
+   .  $s  - list info for the selected elements
+   .  $i  - list info for elements with an ID in the range <fromID> through <toID>
+         if <fromID> is omitted only the element with <fromID> is listed
+   .  $d  - up to version 2.3 ONLY: list also user data space
+   .  $b  - print additional info for boundary elements
+   .  $n  - list also neighbours of each element
+   .  $v  - print extended info (verbose mode)
+   .  $l  - list only elements of current level
+   .  $a  - list all elements
 
-   .  $d                     - up to version 2.3 ONLY: list also user data space
-   .  $b                     - print additional info for boundary elements
-   .  $n                     - list also neighbours of each element
-   .  $v                     - print extended info (verbose mode)
-   .  $l                     - list only elements of current level
-   .  $a                     - list all elements
+   KEYWORDS:
+   multigrid, element, list, display, show
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   EListCommand	- List info for specified elements
-
-   SYNOPSIS:
-   static INT EListCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function lists info for specified elements.
-   It prints info for the specified elements.
-
-   elist $s | {$i <fromID> [<toID>]} [$d] [$b] [$n] [$v] [$a]
-
-   .  $s                     - list info for the selected elements
-   .  $i                     - list info for elements with an ID in the range <fromID> through <toID>
-   .n                        if <fromID> is omitted only the element with <fromID> is listed
-
-   .  $d                     - up to version 2.3 ONLY: list also user data space
-   .  $b                     - print additional info for boundary elements
-   .  $n                     - list also neighbours of each element
-   .  $v                     - print extended info (verbose mode)
-   .  $l                     - list only elements of current level
-   .  $a                     - list all elements
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT EListCommand (INT argc, char **argv)
@@ -3684,50 +3092,26 @@ static INT EListCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   slist - list information on all selected nodes and elements
+   slist - list information on all selected nodes or elements
 
    DESCRIPTION:
-   This command lists information on selected nodes and elements, calling
-   the functions 'ListNodeSelection' and 'ListElementSelection'.
+   This command lists information on selected nodes or elements, calling
+   the functions 'ListNodeSelection', 'ListElementSelection'.
+   (Listing of selected vectors is not implemented.)
 
    'slist [$d] [$b] [$n] [$v]'
 
-   .   $d                     - up to version 2.3 ONLY: list also user data space
-   .   $b                     - print additional info for boundary nodes/elements
-   .   $n                     - list also neighbours of each node/element
-   .   $v                     - print extended info (verbose mode)
+   .   $d  - up to version 2.3 ONLY: list also user data space
+   .   $b  - print additional info for boundary nodes/elements
+   .   $n  - list also neighbours of each node/element
+   .   $v  - print extended info (verbose mode)
+
+   KEYWORDS:
+   multigrid, selection, list, display, show
 
    SEE ALSO:
    'select'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   SelectionListCommand - List all nodes/elements from selection buffer
-
-   SYNOPSIS:
-   static INT SelectionListCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function lists all nodes/elements from selection buffer.
-   It lists the contents of the selction buffer (elist/nlist format resp.).
-
-   slist [$d] [$b] [$n] [$v]
-   .   $d                     - up to version 2.3 ONLY: list also user data space
-   .   $b                     - print additional info for boundary nodes/elements
-   .   $n                     - list also neighbours of each node/element
-   .   $v                     - print extended info (verbose mode)
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT SelectionListCommand (INT argc, char **argv)
@@ -3806,22 +3190,20 @@ static INT SelectionListCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*
-   RuleListCommand - List rule records of element type for refinement
+/*D
+   rlist - list rule records of element type for refinement
 
    DESCRIPTION:
    This command lists the rule record of a refinement rule for an element type,
    if an integer is given or all records for this element type, if all-option is set.
 
-   'rlist [tri|qua|tet|hex] [rulenumber] | [$a]'
+   'rlist [tri|qua|tet|hex] {[rulenumber] | [$a]}'
 
-   .  $a                      - list all rules for element type
+   .  $a  - list all rules for element type
 
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
+   KEYWORDS:
+   multigrid, element, rule, type, list, display, show
+   D*/
 /****************************************************************************/
 
 static INT RuleListCommand (INT argc, char **argv)
@@ -3893,48 +3275,18 @@ static INT RuleListCommand (INT argc, char **argv)
 
    'vmlist $s | {$i <fromID> [<toID>]} [$m] [$d] [$a] [$l <f> <t>]'
 
-   .  $s                     - list info for the selected vectors
-   .  $i                     - list info for vectors with an ID in the range <fromID> through <toID>
-   .n                        if <fromID> is omitted only the vector with <fromID> is listed
+   .  $s			- list info for the selected vectors
+   .  $i			- list info for vectors with an ID in the range <fromID> through <toID>
+                          if <fromID> is omitted only the vector with <fromID> is listed
 
-   .  $m                     - list also the associated matrix entries
-   .  $d                     - list also the user data
-   .  $a                     - list all vectors
-   .  $l <f> <t>             - process levels f <= l <= t
+   .  $m			- list also the associated matrix entries
+   .  $d			- list also the user data
+   .  $a			- list all vectors
+   .  $l <f> <t>   - process levels f <= l <= t
+
+   KEYWORDS:
+   multigrid, vector, matrix, userdata, list, display, show
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   VMListCommand - List info for specified vectors (and matrices)
-
-   SYNOPSIS:
-   static INT VMListCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function lists info for specified vectors (and matrices).
-   It prints info for the specified vectors (possibly including associated matrix entries).
-
-   vmlist $s | {$i <fromID> [<toID>]} [$m] [$d] [$a] [$l <f> <t>]
-
-   .  $s                     - list info for the selected vectors
-   .  $i                     - list info for vectors with an ID in the range <fromID> through <toID>
-   .n                        if <fromID> is omitted only the vector with <fromID> is listed
-
-   .  $m                     - list also the associated matrix entries
-   .  $d                     - list also the user data
-   .  $a                     - list all vectors
-   .  $l <f> <t>             - process levels f <= l <= t
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT VMListCommand (INT argc, char **argv)
@@ -4104,34 +3456,11 @@ static INT VMListCommand (INT argc, char **argv)
 
    'in <x> <y> [<z>]'
 
-   .  <x>~<y>~[<z>]            - specify as much coordinates as the space has dimensions
+   .  <x>~<y>~[<z>] - specify as much coordinates as the space has dimensions
+
+   KEYWORDS:
+   multigrid, insert, create, node, edit
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   InsertInnerNodeCommand - Insert an inner node+vertex
-
-   SYNOPSIS:
-   static INT InsertInnerNodeCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function inserts an inner node+vertex.
-   It inserts an inner node into a multigrid with only level 0.
-
-   in <x> <y> <z>
-
-   .  <x> <y> <z>            - specify as much coordinates as the space has dimensions
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT InsertInnerNodeCommand (INT argc, char **argv)
@@ -4184,40 +3513,18 @@ static INT InsertInnerNodeCommand (INT argc, char **argv)
    DESCRIPTION:
    This command inserts an boundary node and the corresponding vertex
    into a multigrid with only level 0, calling the function
-   'InsertBoubdaryNode'.
+   'InsertBoubdaryNode'. The options are passed to the domain module function BVP_InsertBndP.
 
-   'bn <Id> <s> [<t>]'
+   'bn...'
 
-   .  <Id>                   - insert a boundary node on the patch with <Id>
-   .  <s>~[<t>]                - specify as much patch coordinates as the boundary has dimensions
+   for the domain module std .... is
+   '<Id> <s> [<t>]'
+   .  <Id>              - insert a boundary node on the patch with <Id>
+   .  <s>~[<t>]    - specify as much patch coordinates as the boundary has dimensions
+
+   KEYWORDS:
+   multigrid, insert, create, node, edit
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   InsertBoundaryNodeCommand - Insert a boundary node+vertex
-
-   SYNOPSIS:
-   static INT InsertBoundaryNodeCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function inserts a boundary node+vertex.
-   It inserts a boundary node into a multigrid with only level 0.
-
-   bn <Id> <s> [<t>]
-
-   .  <Id>                   - insert a boundary node on the pach with <Id>
-   .  <s>~[<t>]                - specify as much patch coordinates as the boundary has dimensions
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT InsertBoundaryNodeCommand (INT argc, char **argv)
@@ -4267,36 +3574,12 @@ static INT InsertBoundaryNodeCommand (INT argc, char **argv)
 
    'deln <Id> | $s'
 
-   .  <Id>                   - ID of the node to be deleted
-   .  $s                     - delete ALL nodes from the selection
+   .  <Id>  - ID of the node to be deleted
+   .  $s    - delete ALL nodes from the selection
+
+   KEYWORDS:
+   multigrid, delete, remove, node, edit
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   DeleteNodeCommand - Delete a node+vertex
-
-   SYNOPSIS:
-   static INT DeleteNodeCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function deletes a node+vertex.
-   It deletes a node from the multigrid.
-
-   deln <Id> | $s
-
-   .  <Id>                   - ID of the node to be deleted
-   .  $s                     - delete ALL nodes from the selection
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT DeleteNodeCommand (INT argc, char **argv)
@@ -4375,38 +3658,14 @@ static INT DeleteNodeCommand (INT argc, char **argv)
 
    'move {<Id> | $s} {$i <x> <y> [<z>] | $b <SegId> <s> [<t>]}'
 
-   .  <Id>                   - Id of the node to be moved
-   .  $i~<x>~<y>~[<z>]         - specify as much coordinates as the space has dimensions
-   .  $b~<Id>~<s>~[<t>]        - specify as much boundary segment coordinates as the boundary has dimensions
+   .  <Id>                - Id of the node to be moved
+   .  $i~<x>~<y>~[<z>]    - specify as much coordinates as the space has dimensions
+   .  $b~<Id>~<s>~[<t>]   - in the current implementation (domain module dependent)
+                                                 boundary nodes can not be moved
+
+   KEYWORDS:
+   multigrid, move, node, edit
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   MoveNodeCommand - Move a node of the current multigrid
-
-   SYNOPSIS:
-   static INT MoveNodeCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function moves a node of the current multigrid.
-   It moves a node of the multigrid to a new postion.
-
-   move {<Id> | $s} {$i <x> <y> <z> | $b <SegId> <s> <t>}
-
-   .  <Id>                   - Id of the node to be moved
-   .  $i <x> <y> <z>         - specify as much coordinates as the space has dimensions
-   .  $b <Id> <s> <t>        - specify as much boundary segment coordinates as the boundary has dimensions
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT MoveNodeCommand (INT argc, char **argv)
@@ -4529,7 +3788,7 @@ static INT MoveNodeCommand (INT argc, char **argv)
   }
   else if (type==BVOBJ)
   {
-    PrintErrorMessage('E',"move","failed moving the node");
+    PrintErrorMessage('E',"move","moving boundary nodes not implemented yet");
     return (CMDERRORCODE);
   }
   else
@@ -4554,36 +3813,12 @@ static INT MoveNodeCommand (INT argc, char **argv)
 
    'ie {<Id>}+ | $s'
 
-   .  {<Id>}+                - specify at least three (2d) or four (3d) corner nodes, the corresponding (unique) element will be created
-   .  $s - taking selected nodes
+   .  {<Id>}+  - specify at least three (2d) or four (3d) corner nodes, the corresponding (unique) element will be created
+   .  $s                - taking selected nodes
+
+   KEYWORDS:
+   multigrid, insert, create, element, edit
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   InsertElementCommand - Insert an element
-
-   SYNOPSIS:
-   static INT InsertElementCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function inserts an element.
-   It inserts an element for specified corner nodes.
-
-   ie {<Id>}+ | $s
-
-   .  {<Id>}+                - specify at least three corner nodes, the coresponding (unique) element will
-   .n                        - be created
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT InsertElementCommand (INT argc, char **argv)
@@ -4696,36 +3931,12 @@ static INT InsertElementCommand (INT argc, char **argv)
 
    'dele <Id> | $s'
 
-   .  <Id>                   - ID of the element to be deleted
-   .  $s                     - delete all elements from the selection
+   .  <Id> - ID of the element to be deleted
+   .  $s   - delete all elements from the selection
+
+   KEYWORDS:
+   multigrid, delete, remove, element, edit
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   DeleteElementCommand - Delete an element
-
-   SYNOPSIS:
-   static INT DeleteElementCommand (INT argc, char **argv)
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function deletes an element.
-   It deletes an element from the multigrid including edges not deeded anymore.
-
-   dele <Id> | $s
-
-   .  <Id>                   - ID of the element to be deleted
-   .  $s                     - delete ALL elements from the selection
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT DeleteElementCommand (INT argc, char **argv)
@@ -4801,35 +4012,19 @@ static INT DeleteElementCommand (INT argc, char **argv)
    This command refines the multigrid according to the refinement marks
    set in the elements, calling the function 'RefineMultiGrid'.
 
-   'refine [$g]'
+   'refine [$g] [$a] [$h] [$x] [$d <vector plot proc>]'
 
-   .  no~option - only local refinement
-   .  $g - copy nonrefined regions to new level
+   .  no~option				- only local refinement
+   .  $g						- copy nonrefined regions to new level
+   .  $a						- refine all elements
+   .  $d~<vector~plot~proc>	- 3D only: use vector eval proc for determination of
+                                                                regular refinement direction of tetrahedra
+   .  $h						- refine not closed (not implemented yet)
+   .  $x						- use hexahedra (not implemented yet)
+
+   KEYWORDS:
+   multigrid, adapt, mark
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   RefineCommand - Refine the current multigrid
-
-   SYNOPSIS:
-   static INT RefineCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function refines the current multigrid.
-   It refines the multigrid according to the refinement marks set in the elements.
-
-   refine [$g]
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT RefineCommand (INT argc, char **argv)
@@ -4874,7 +4069,7 @@ static INT RefineCommand (INT argc, char **argv)
       break;
             #ifdef __THREEDIM__
     case 'd' :
-      if (sscanf(argv[i],"a %s",buffer)==1)
+      if (sscanf(argv[i],"d %s",buffer)==1)
         theElemEvalDirection = GetElementVectorEvalProc(buffer);
       if (theElemEvalDirection==NULL)
         UserWrite("direction eval fct not found: taking shortest interior edge\n");
@@ -4948,9 +4143,12 @@ static INT RefineCommand (INT argc, char **argv)
 
    DESCRIPTION:
    If the coarse grid is build interactively by 'ie', this command
-   determinated this process and calls 'CreateAlgebra'.
+   terminates this process and calls 'CreateAlgebra'.
 
    'fixcoarsegrid'
+
+   KEYWORDS:
+   multigrid, edit, finish
    D*/
 /****************************************************************************/
 
@@ -4986,15 +4184,22 @@ static INT FixCoarseGridCommand (INT argc, char **argv)
 
    'mark [$h | {[<rule> [<side>]] [$a | $i <Id> | $s]} | $c] [$pos <x y [z]>] [$x <x>] [$y <y>] [$z <z>]'
 
-   .  <rule>                 - specify a refinement rule ("red" is default)
-   .  <side>                 - has to be specified if the corresponding rule can be applied in several orientations
-   .  $a                     - refine all (leave) elements
-   .  $i <Id>                - refine the element with <Id>
-   .  $s                     - refine all elements from the current selection
-   .  $h                     - show available rules
-   .  $x                     - marks elements with corner[0] < x
-   .  $y                     - marks elements with corner[1] < y
-   .  $z                     - marks elements with corner[2] < z
+   .  <rule>     - specify a refinement rule ("red" is default)
+   .  <side>     - has to be specified if the corresponding rule can be applied in several orientations
+   .  $a         - refine all (leave) elements
+   .  $c		  - set all marks to no refinement
+   .  $i <Id>    - refine the element with <Id>
+   .  $s         - refine all elements from the current selection
+   .  $h         - show available rules
+   .  $x         - marks elements with corner[0] < x
+   .  $y         - marks elements with corner[1] < y
+   .  $z         - marks elements with corner[2] < z
+
+   KEYWORDS:
+   multigrid, refine, adapt, rule, type, mark
+
+   SEE ALSO:
+   'refine'
    D*/
 /****************************************************************************/
 
@@ -5315,6 +4520,9 @@ static INT MarkCommand (INT argc, char **argv)
    .    <nIt>   - number of iterations
    .    $b      - also smooth boundary nodes
    .    $nc     - improvement for nonconvex domains
+
+   KEYWORDS:
+   multigrid
    D*/
 /****************************************************************************/
 
@@ -5379,10 +4587,13 @@ static INT SmoothMGCommand (INT argc, char **argv)
    'smoothgrid [$limit <value>] [$reset] [$g <value>] [$force <value>]'
 
    . $limit~<value>       - give maximum displacement of the vertices in local coordinates
-                       of the father element (0 < value < 0.5, default: 0.3)
+                         of the father element (0 < value < 0.5, default: 0.3)
    . $reset               - reset elements to default size
    . $g <value>           - do not apply smoothing below grid level <value>
    . $force <value>       - apply smoothgrid for all elements between toplevel and level <value>
+
+   KEYWORDS:
+   multigrid, anisotropy
    D*/
 /****************************************************************************/
 
@@ -5543,30 +4754,21 @@ static INT SmoothGridCommand (INT argc, char **argv)
 
    If specified the links are ordered in the corresponding order.
 
-   'ordernodes ur|ul|dr|dl|ru|rd|lu|ld' [$l <level>] [$L]
+   'ordernodes ur|ul|dr|dl|ru|rd|lu|ld [$l <level>] [$L]'
 
-   . [$l~<level>] - only on level <level>
-   .n      u=up, d=down, r=right, l=left
+   .   $l~<level> - only on level <level>
+   .n                              u=up, d=down, r=right, l=left
+   .   $L		   - also order links
 
     EXAMPLE:
         'ordernodes rd $l2'
 
-        Order nodes of grid level 2 lexicographically in horizontal lines from
-    left to right and the lines vertical from top down.
-   D*/
-/****************************************************************************/
+   Order nodes of grid level 2 lexicographically in horizontal lines from
+   left to right and the lines vertical from top down.
 
-/****************************************************************************/
-/*                                                                          */
-/* Function:  OrderNodesCommand                                             */
-/*                                                                          */
-/* Purpose:   reorder nodes in lexicographical order                        */
-/*                                                                          */
-/* Input:     INT argc: number of arguments (incl. its own name)            */
-/*            char **argv: array of strings giving the arguments            */
-/*                                                                          */
-/* Output:    INT return code see header file                               */
-/*                                                                          */
+   KEYWORDS:
+   multigrid, order
+   D*/
 /****************************************************************************/
 
 static INT OrderNodesCommand (INT argc, char **argv)
@@ -5720,12 +4922,16 @@ static INT OrderNodesCommand (INT argc, char **argv)
    It orders the vectors of the current multigrid, calling the function
    'LexOrderVectorsInGrid'.
 
-   'lexorderv '
+   'lexorderv ur|ul|dr|dl|ru|rd|lu|ld [$l <level>] [$m] [$w s|n] [$s <|>]'
 
-   .  $m FFCCLL | FCFCLL     - possible modes are FFCCLL or FCFCLL
-   .  $d <dep-proc>          - the ordering algorithm uses this dependency procedure...
-   .  $o <dep-proc options>  - ...and passes these options to it
-   .  $a                     - order all levels of the current multigrid
+   .   $l~<level> - only on level <level>
+   .n                              u=up, d=down, r=right, l=left
+   .   $m		   - also order matrices
+   .   $w~s|n	   - order skip or nonskip vectors resp.
+   .   $s <|>	   - pput skip vectors at begin or end of the list resp.
+
+   KEYWORDS:
+   multigrid, order
    D*/
 /****************************************************************************/
 
@@ -5899,6 +5105,8 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
    .  l - take last vector as seed
    .  s - take selected vector as seed
 
+   KEYWORDS:
+   multigrid, order, shell
    D*/
 /****************************************************************************/
 
@@ -5976,36 +5184,13 @@ static INT ShellOrderVectorsCommand (INT argc, char **argv)
    .  $d <dep-proc>          - the ordering algorithm uses this dependency procedure...
    .  $o <dep-proc options>  - ...and passes these options to it
    .  $a                     - order all levels of the current multigrid
+
+   SEE ALSO:
+   'lineorderv'
+
+   KEYWORDS:
+   multigrid, order, downstream
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   OrderVectorsCommand - Order the vectors according to the user provided dependencies
-
-   SYNOPSIS:
-   static INT OrderVectorsCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function orders the vectors according to the user provided dependencies.
-   It orders the vectors of the current multigrid.
-
-   orderv $m FFCCLL | FCFCLL $d <dep-proc> $o dep-proc options> [$a]
-
-   .  $m FFCCLL | FCFCLL     - possible modes are FFCCLL or FCFCLL
-   .  $d <dep-proc>          - the ordering algorithm uses this dependency procedure...
-   .  $o <dep-proc options>  - ...and passes these options to it
-   .  $a                     - order all levels of the current multigrid
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT OrderVectorsCommand (INT argc, char **argv)
@@ -6133,7 +5318,10 @@ static INT OrderVectorsCommand (INT argc, char **argv)
 
    'revvecorder [$a]'
 
-   .  $a                     - order all levels of the current multigrid
+   .  $a  - reorder all levels of the current multigrid
+
+   KEYWORDS:
+   multigrid, order, reverse
    D*/
 /****************************************************************************/
 
@@ -6183,11 +5371,19 @@ static INT RevertVecOrderCommand (INT argc, char **argv)
    It orders the vectors of the current multigrid, calling the function
    'LineOrderVectors'.
 
-   'lineorderv $d <dep-proc> $o <dep-proc options> $c <find-cut-proc> [$a]'
+   'lineorderv $d <dep-proc> $o <dep-proc options> $c <find-cut-proc> [$a] [$v <level>]'
 
    .  $d <dep-proc>          - the ordering algorithm uses this dependency procedure...
    .  $o <dep-proc options>  - ...and passes these options to it
+   .  $c					  - user supplied find cut procedure
    .  $a                     - order all levels of the current multigrid
+   .  $v~<level>			  - verbose level
+
+   SEE ALSO:
+   'orderv'
+
+   KEYWORDS:
+   multigrid, order, downstream, lines
    D*/
 /****************************************************************************/
 
@@ -6278,6 +5474,9 @@ static INT LineOrderVectorsCommand (INT argc, char **argv)
 
    DESCRIPTION:
    'setindex' sets the vector index in ascending order.
+
+   KEYWORDS:
+   multigrid, vector, index
    D*/
 /****************************************************************************/
 
@@ -6318,45 +5517,18 @@ static INT SetIndexCommand (INT argc, char **argv)
    'AddNodeToSelection', 'RemoveNodeFromSelection',
    'AddElementToSelection' and 'RemoveElementFromSelection'
 
-   'find <x> <y> <z> {$n <tol> | $e} [$s]'
-
-   .  <x>~<y>~<z>            - specify as much coordinates as the space has dimensions
-   .  $n~<tol>               - find a node maching the position with tolerance <tol>
-   .  $e                     - find an element maching the position
-   .  $s                     - add the selected node (element) to the selection buffer
-   .n                           (if not specified the node is just listed)
-   D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   FindCommand - Find (& select) a node (element) from a given position (+tol)
-
-   SYNOPSIS:
-   static INT FindCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function finds (& selects) a node (element) from a given position (+tol).
-   It finds a node (element) on the current level of the current multigrid.
-
    find <x> <y> <z> {$n <tol> | $v <tol> | $e} [$s]
 
-   .  <x> <y> <z>            - specify as much coordinates as the space has dimensions
-   .  $n <tol>               - find a node maching the position with tolerance <tol>
-   .  $v <tol>               - find a vector maching the position with tolerance <tol>
-   .  $e                     - find an element maching the position
-   .  $s                     - add the selected node (element) to the selection buffer
-                          - (if not specified the node is just listed)
+   .  <x> <y> <z> - specify as much coordinates as the space has dimensions
+   .  $n <tol>    - find a node maching the position with tolerance <tol>
+   .  $v <tol>    - find a vector maching the position with tolerance <tol>
+   .  $e          - find an element maching the position
+   .  $s          - add the selected node (element) to the selection buffer
+                 (if not specified the node is just listed)
 
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
+   KEYWORDS:
+   multigrid, node, element, position, find, select
+   D*/
 /****************************************************************************/
 
 static INT FindCommand (INT argc, char **argv)
@@ -6499,40 +5671,16 @@ static INT FindCommand (INT argc, char **argv)
    'AddNodeToSelection', 'RemoveNodeFromSelection',
    'AddElementToSelection' and 'RemoveElementFromSelection'
 
-   'select $c | $n {+|-} <Id> | $e {+|-} <Id>'
+   'select $i | $c | $n {+|-} <Id> | $e {+|-} <Id>'
 
-   .  $c                     - clear the selection buffer
-   .  $n {+|-} <Id>          - add (+) or remove (-) the node with <Id> to (from) the selection buffer
-   .  $e {+|-} <Id>          - add (+) or remove (-) the element with <Id> to (from) the selection buffer
+   .  $i				- print type and number of list members
+   .  $c               - clear the selection buffer
+   .  $n~{+|-}~<Id>    - add (+) or remove (-) the node with <Id> to (from) the selection buffer
+   .  $e~{+|-}~<Id>    - add (+) or remove (-) the element with <Id> to (from) the selection buffer
+
+   KEYWORDS:
+   multigrid, select, element, node
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   SelectCommand - Find (and selct) a node (element) from a given position (+tol
-
-   SYNOPSIS:
-   static INT SelectCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function finds (& selects) a node (element) from a given position (+tol).
-   It adds/removes nodes/elements from the selction buffer of the current multigrid.
-
-   select $c | $n {+|-} <Id> | $e {+|-} <Id>
-
-   .  $c                     - clear the selection buffer
-   .  $n~{+|-}~<Id>          - add (+) or remove (-) the node with <Id> to (from) the selection buffer
-   .  $e~{+|-}~<Id>          - add (+) or remove (-) the element with <Id> to (from) the selection buffer
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT SelectCommand (INT argc, char **argv)
@@ -6693,14 +5841,18 @@ static INT SelectCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   extracon - display or delete extra connections
+   extracon - display number of (and delete) extra connections
 
    DESCRIPTION:
-   This command displays or deleteí extra connections.
+   This command displays the number extra connections.(and deletes them if specified).
+   Extra connection extend the usual sparsity pattern.
 
    'extracon [$d]'
 
    .  $c - also check the connections
+
+   KEYWORDS:
+   multigrid, matrices, connections, pattern, delete, remove
    D*/
 /****************************************************************************/
 
@@ -6778,28 +5930,10 @@ static INT ExtraConnectionCommand (INT argc, char **argv)
    .  $c - also check the algebraic part of data structures
    .  $l - also check the lists of objects and counters of a grid
    .  $i - also check interfaces (only parallel version)
+
+   KEYWORDS:
+   multigrid, check, consistency, data structure, algebra, counters, interfaces
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   CheckCommand - Check consistency of the data structure
-
-   SYNOPSIS:
-   static INT CheckCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function checks consistency of the data structure.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT CheckCommand (INT argc, char **argv)
@@ -6904,15 +6038,18 @@ static INT CheckCommand (INT argc, char **argv)
 
    'quality $a | $s | {$i <fromID> [<toID>]} [$< <angle>] [$> <angle>]'
 
-   .    $a                     - check angles of all elements in the multigrid
-   .    $s                     - check angles of the selected elements
-   .    $i                     - check angles of elements with an ID in the range <fromID> through <toID>
-   .n                           if <fromID> is omitted only the element with <fromID> is listed
+   .    $a          - check angles of all elements in the multigrid
+   .    $s          - check angles of the selected elements
+   .    $i          - check angles of elements with an ID in the range <fromID> through <toID>
+   .n                 if <fromID> is omitted only the element with <fromID> is listed
 
-   .    $<~<angle>             - print info for all elements the minangle of which is < <angle>
-   .    $>~<angle>             - print info for all elements the maxangle of which is > <angle>
+   .    $<~<angle>  - print info for all elements the minangle of which is < <angle>
+   .    $>~<angle>  - print info for all elements the maxangle of which is > <angle>
 
      (angles in degree 0-360)
+
+   KEYWORDS:
+   multigrid, element, quality, angles, find
    D*/
 /****************************************************************************/
 
@@ -6958,47 +6095,14 @@ static INT QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
     UserWrite(mintext);
     ListElement(theMG,theElement,FALSE,FALSE,FALSE,FALSE);
   }
-  else if (lessopt && (min<themin))
+  else if (greateropt && (max>themax))
   {
-    UserWrite(mintext);
+    UserWrite(maxtext);
     ListElement(theMG,theElement,FALSE,FALSE,FALSE,FALSE);
   }
 
   return(0);
 }
-
-/****************************************************************************/
-/*
-   QualityCommand - Calculate min and max angle of elements
-
-   SYNOPSIS:
-   static INT QualityCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function calculates min and max angle of elements
-   and lists elements with angle < or > given angles.
-   It checks the min and max angles of the elements in the grid.
-
-   quality $a | $s | {$i <fromID> [<toID>]} [$< <angle>] [$> <angle>]
-
-   .  $a                     - check angles of all elements in the multigrid
-   .  $s                     - check angles of the selected elements
-   .  $i                     - check angles of elements with an ID in the range <fromID> through <toID>
-   .n                        if <fromID> is omitted only the element with <fromID> is listed
-
-   .  $< <angle>             - print info for all elements the minangle of which is < <angle>
-   .  $> <angle>             - print info for all elements the maxangle of which is > <angle>
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
-/****************************************************************************/
 
 static INT QualityCommand (INT argc, char **argv)
 {
@@ -7143,24 +6247,44 @@ static INT QualityCommand (INT argc, char **argv)
 /*D
    makegrid - generate grid
 
+
+   2D advancing front generator:
+
    DESCRIPTION:
    This command generates the grid. First, the command bnodes must be called.
-   It reads the environ variables ':gg:RelRasterSize', ':gg:h_global',
+   It reads the environment variables ':gg:RelRasterSize', ':gg:h_global',
    ':gg:searchconst', ':gg:angle', ':gg:epsi'.
 
-   'makegrid ${W|w|K|k} [$E] [$h <val>] [$m <no>]'
+   'makegrid ${W|w|K|k} [$E] [$h <val>] [$m <no>] [$S <search>] [$A <angle>] [$d <subdom>]'
 
-   .  {W|w|K|k} - W resp. K are using the accellerator,
-   W resp. w use the angle criterion,
-   K resp. k use the edge criterion
-   .  E - grid generator tries to create eqilateral triangles
-   .  h - mesh size
-   .  m - id of mesh size coefficient function
-
-   .n default: isosceles triangles
+   .  ${W|w|K|k}	- W resp. K are using the quadtree accellerator,
+   .  $W~resp.~w	- use the angle criterion,
+   .  $K~resp.~k	- use the edge criterion
+   .  $E                        - grid generator tries to create equilateral triangles (edgelength h)
+   .n                                   default: isosceles triangles (height h)
+   .  $h~<val>  - mesh size
+   .  $m~<no>		- id of mesh size coefficient function
+   .  $S~<search>	- search radius (experts only)
+   .  $A~<angle>	- try to avoid angle smaller than <angle>
+   .  $d~<subdom>	- restrict grid generation to subdomain with id <subdom>
 
    EXAMPLE:
    'makegrid $k $h 1.0;'
+
+
+   3D advancing front generator (by J. Schoeberl):
+
+   DESCRIPTION:
+   This command invokes the advancing front tetrahedral grid generator.
+
+   'makegrid [$s] [$h <meshsize>] [$d]'
+
+   .   $s				- smooth generated grid
+   .   $h <meshsize>	- preferred meshsize (default 1.0)
+   .   $d				- ?
+
+   KEYWORDS:
+   multigrid, generate, create, mesh, net, grid, coarse, advancing front
    D*/
 /****************************************************************************/
 
@@ -7177,7 +6301,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
   int iValue;
   float tmp;
         #endif
-    #ifdef __THREEDIM__
+        #if defined __THREEDIM__ && defined NETGENT
   INT smooth;
   DOUBLE h;
         #endif
@@ -7376,29 +6500,17 @@ static INT MakeGridCommand  (INT argc, char **argv)
 
    'cadconvert $<filename> $h<heapsize>'
 
-   .  $ <filename>          - filename = name of CADOutputfile ("*.ans", ANSYS/PREP7-Format)
-   .  $f <format>            - one of the enroled formats matching with <problem>
-   .  $h <heapsize>          - the heapsize to be allocated
+   .  $ <filename>  - filename = name of CADOutputfile ("*.ans", ANSYS/PREP7-Format)
+   .  $f <format>   - one of the enroled formats matching with <problem>
+   .  $h <heapsize> - the heapsize to be allocated
 
 
    EXAMPLE:
-   .vb
-   cadconvert $ wuerfel.ans $h 12000;
-   .ve
-   D*/
-/****************************************************************************/
+   'cadconvert $ wuerfel.ans $h 12000;'
 
-/****************************************************************************/
-/*                                                                          */
-/* Function:  CADGridConvertCommand                                             */
-/*                                                                          */
-/* Purpose:   converts a predefined CADgrid to an UG-multigrid				*/
-/*                                                                          */
-/* Input:     INT argc: number of arguments (incl. its own name             */
-/*            char **argv: array of strings giving the arguments            */
-/*                                                                          */
-/* Output:    INT return code see header file                               */
-/*                                                                          */
+   KEYWORDS:
+   multigrid, generate, create, mesh, net, grid, coarse, CAD, ANSYS, PREP7
+   D*/
 /****************************************************************************/
 
 #if defined(CAD) && defined(__THREEDIM__)
@@ -7473,14 +6585,15 @@ static INT CADGridConvertCommand(INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   screensize - print the size of the monitor screen in pixels
+   grape - switch to interactive grape mode
 
    DESCRIPTION:
-   This command prints the size of the monitor screen in pixels.
-   It prints the size in pixels of the screen (if there) on the shell
-   and in the variables ':screensize:width', ':screensize:height'
+   This command switches to interactive grape mode. Quitting grape returns to ug.
 
    'screensize'
+
+   KEYWORDS:
+   multigrid, graphics, GRAPE, plot
    D*/
 /****************************************************************************/
 
@@ -7503,25 +6616,19 @@ static INT CallGrapeCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*
-   ScreenSizeCommand - Print the size of the monitor screen in pixels
-
-   SYNOPSIS:
-   static INT ScreenSizeCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
+/*D
+   screensize - print the size of the monitor screen in pixels
 
    DESCRIPTION:
-   This function prints the size of the monitor screen in pixels.
-   It prints the size in pixels of the screen (if there) ==> max window size.
+   This command prints the size of the monitor screen in pixels.
+   It prints the size in pixels of the screen (if there) on the shell
+   and in the variables ':screensize:width', ':screensize:height'
 
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
+   'screensize'
+
+   KEYWORDS:
+   screen, size, width, height
+   D*/
 /****************************************************************************/
 
 static INT ScreenSizeCommand (INT argc, char **argv)
@@ -7561,43 +6668,19 @@ static INT ScreenSizeCommand (INT argc, char **argv)
    (this will be the current window then).
    It calls the function 'CreateUGWindow'.
 
-
    'openwindow <h> <v> <dh> <dv> [$d <output device>] [$n <window name>]'
 
-   .  <h>~<v>                - the lower left corner of the plotting region in the --> standardRefSys
+   .  <h>~<v>                - the lower left corner of the plotting region in the 'standardRefSys'
    .  <dh>~<dv>              - the width and height resp. of the plotting region of the window
    .  $d~<output~device>     - specify the name of an output device (default: screen)
    .  $n~<window~name>       - optionally you can specify the window name
+
+   SEE ALSO:
+   'closewindow', 'openpicture', 'closepicture'
+
+   KEYWORDS:
+   graphics, plot, window, open, create
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   OpenWindowCommand - Open a new window
-
-   SYNOPSIS:
-   static INT OpenWindowCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function opens a new window.
-   It opens an ug-window on an outputdevice (this will be the current window then).
-
-   openwindow <h> <v> <dh> <dv> [$d <output device>] [$n <window name>]
-
-   .  <h> <v>                - the lower left corner of the plotting region in the --> standardRefSys
-   .  <dh> <dv>              - the width and height resp. of the plotting region of the window
-   .  $d <output device>     - specify the name of an output device (default: screen)
-   .  $n <window name>       - optionally you can specify the window name
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT OpenWindowCommand (INT argc, char **argv)
@@ -7692,40 +6775,16 @@ static INT OpenWindowCommand (INT argc, char **argv)
 
    'closewindow [$n <window name> | $a]'
 
-   .  $n~<window~name>       - close the window with the specified name
+   .  $n~<window~name>  - close the window with the specified name
    .n                        (default: the current window)
+   .  $a                - close all open windows
 
-   .  $a                     - close all open windows
+   KEYWORDS:
+   graphics, plot, window, close, remove
+
+   SEE ALSO:
+   'openwindow', 'openpicture', 'closepicture'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   CloseWindowCommand - Close the current ug-window
-
-   SYNOPSIS:
-   static INT CloseWindowCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function closes the current ug-window.
-   It closes one (or all) ug-window(s) (including the pictures residing there, of course).
-
-   closewindow [$n <window name> | $a]
-
-   .  $n <window name>       - close the window with the specified name
-   .n                        (default: the current window)
-
-   .  $a                     - close all open windows
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT CloseWindowCommand (INT argc, char **argv)
@@ -7854,33 +6913,12 @@ static INT CloseWindowCommand (INT argc, char **argv)
 
    .  <window~name> - name of a window
 
+   KEYWORDS:
+   graphics, plot, window, current, active
+
    SEE ALSO:
    'openwindow'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   SetCurrentWindowCommand - Make a window the current window
-
-   SYNOPSIS:
-   static INT SetCurrentWindowCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function makes a window the current window.
-   It makes a window the current window.
-
-   setcurrwindow <window name>
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT SetCurrentWindowCommand (INT argc, char **argv)
@@ -7930,6 +6968,12 @@ static INT SetCurrentWindowCommand (INT argc, char **argv)
    .  $i                     - draw text inverse
    .  $c                     - center text at <xpos> <ypos>
    .  $s~<size>              - text size
+
+   KEYWORDS:
+   graphics, plot, window, text
+
+   SEE ALSO:
+   'openwindow'
    D*/
 /****************************************************************************/
 
@@ -8015,47 +7059,24 @@ static INT DrawTextCommand (INT argc, char **argv)
 
    DESCRIPTION:
    This command opens a picture on a window
-   (these will be the current window and picture then).
+   (these will be the current window and picture resp. then).
    It calls the function 'CreatePicture'.
 
    'openpicture [$w <window name>] [$s <h> <v> <dh> <dv>] [$n <picture name>]'
 
    .  $w~<window~name>       - open a picture on this window (default: current window)
-   .  $s~<h>~<v>~<dh>~<dv>   - specify the location and size in the --> standardRefSys with the origin located in the lower left corner of the parent window
-   .n                        (default: picture size = parent window size)
+   .  $s~<h>~<v>~<dh>~<dv>   - specify the location and size in the 'standardRefSys' with
+                                                        the origin located in the lower left corner of the parent window
+   .n                           (default: picture size = parent window size)
 
    .  $n~<picture~name>      - optionally you can specify the picture name
+
+   KEYWORDS:
+   graphics, plot, window, picture, open, create
+
+   SEE ALSO:
+   'openwindow', 'closepicture'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   OpenPictureCommand - open a new picture
-
-   SYNOPSIS:
-   static INT OpenPictureCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function opens a new window.
-   It opens a picture on a window (these will be the current window and picture then).
-
-   openpicture [$w <window name>] [$s <h> <v> <dh> <dv>] [$n <picture name>]
-
-   .  $w~<window~name>       - open a picture on this window (default: current window)
-   .  $s~<h>~<v>~<dh>~<dv>   - specify the location and size in the --> standardRefSys with the origin located in the lower left corner of the parent window
-   .n                        (default: picture size = parent window size)
-
-   .  $n~<picture name>      - optionally you can specify the picture name
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT OpenPictureCommand (INT argc, char **argv)
@@ -8164,39 +7185,16 @@ static INT OpenPictureCommand (INT argc, char **argv)
    'closepicture [$a | {$w <window name> {<picture name> | $a}}]'
 
    .  $w~<window~name>        - close a picture of this window
-   (default: the current picture)
+                                                                (default: the current picture)
    .  $a                      - close all pictures of the current window
    .  {<picture~name>~|~$a}   - close the picture with the specified name or all pictures of that window
+
+   KEYWORDS:
+   graphics, plot, window, picture, close, remove
+
+   SEE ALSO:
+   'openwindow', 'openpicture'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ClosePictureCommand - Close the current view
-
-   SYNOPSIS:
-   static INT ClosePictureCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function closes the current view.
-   It closes one (or all) picture(s) on a window.
-
-   closepicture [$a | {$w <window name> {<picture name> | $a}}]
-
-   .  default                 - the current picture
-   .  $a                      - close all pictures of the current window
-   .  $w <window name>        - close a picture of this window
-   .  {<picture name> | $a}   - close the picture with the specified name or all pictures of that window
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT ClosePictureCommand (INT argc, char **argv)
@@ -8305,35 +7303,15 @@ static INT ClosePictureCommand (INT argc, char **argv)
 
    'setcurrpicture <picture name> [$w <window name>]'
 
-   .  <picture~name>       - name of the picture
+   .  <picture~name>         - name of the picture
    .  $w~<window~name>       - picture resides in this window (default: current window)
+
+   KEYWORDS:
+   graphics, plot, window, picture, current, active
+
+   SEE ALSO:
+   'openwindow', 'openpicture'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   SetCurrentPictureCommand - make a picture the current picture
-
-   SYNOPSIS:
-   static INT SetCurrentPictureCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function makes a picture the current picture.
-   It makes a picture the current picture.
-
-   'setcurrpicture <picture name> [$w <window name>]'
-
-   .  $w<window~name>       - picture resides in this window (default: current window)
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT SetCurrentPictureCommand (INT argc, char **argv)
@@ -8406,9 +7384,16 @@ static INT SetCurrentPictureCommand (INT argc, char **argv)
    picwin - move the current picture to a new window
 
    DESCRIPTION:
-   This command moves the current picture to a new window.
+   This command moves the current picture to a newly created window. All
+   settings will be kept.
 
    'picwin'
+
+   KEYWORDS:
+   graphics, plot, window, picture, move
+
+   SEE ALSO:
+   'openwindow', 'openpicture'
    D*/
 /****************************************************************************/
 
@@ -8444,28 +7429,13 @@ static INT PictureWindowCommand (INT argc, char **argv)
    It calls the function 'ErasePicture'.
 
    'clearpicture'
+
+   KEYWORDS:
+   graphics, plot, window, picture, clear, erase
+
+   SEE ALSO:
+   'openwindow', 'openpicture'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ClearPictureCommand - clear current picture
-
-   SYNOPSIS:
-   static INT ClearPictureCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function clears current picture.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT ClearPictureCommand (INT argc, char **argv)
@@ -8499,10 +7469,19 @@ static INT ClearPictureCommand (INT argc, char **argv)
    picframe - toggle framing of pictures
 
    DESCRIPTION:
-   This command toggles the framing of pictures.
+   This command toggles the framing of pictures. If on a black frame is drawn
+   around each picture to show its bounds. The current picture is indicated
+   by an orange frame, while the frame of a currently drawn picture turns red.
+   It is recommended to switch off framing for other devices than 'screen'.
 
    SYMTAX:
    'picframe 0|1'
+
+   KEYWORDS:
+   graphics, plot, window, picture, frame
+
+   SEE ALSO:
+   'openwindow'
    D*/
 /****************************************************************************/
 
@@ -8538,57 +7517,26 @@ static INT PicFrameCommand (INT argc, char **argv)
    .n                         all coordinates have to be given in physical coordinates
 
    .   $i                     - return to default settings first
-   .   $o~<x>~<y>~<z>         - 3D objects ONLY: specify the observer stand
-   .   $p~<~|~=               - 3D objects ONLY: choose central (<) or parallel (=) perspective
-   .   $t~<x>~<y>~[<z>]       - specify the target point in the viewplane
-   .n                         (NB: the viewplane is then defined to be normal to the line observer-target)
-
-   .    $x~<x>~<y>~[<z>]      - define an x-axis in the viewplane (which will be to the right in the picture)
-   D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   SetViewCommand - Specify or change the observer's view
-
-   SYNOPSIS:
-   static INT SetViewCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function specifies or changes the observer's view of
-   the object of the current picture.
-   It specifies or change the observer's view of the object of the current picture.
-
-    in 2D: 'setview [$i] [$t <x> <y>] [$x  <x> <y>]'
-
-    in 3D: 'setview [$i] [$o <x> <y> <z> $t <x> <y> <z>] [$x <x> <y> [<z>]] [$p < | =]'
-
-   .n                         all coordinates have to be given in physical coordinates
-
-   .   $i                     - return to default settings first
    .   $o <x> <y> <z>         - 3D objects ONLY: specify the observer stand
    .   $p < | =               - 3D objects ONLY: choose central (<) or parallel (=) perspective
    .   $t <x> <y> [<z>]       - specify the target point in the viewplane
-   .n                         (NB: the viewplane is then defined to be normal to the line observer-target)
+   .n	                         (NB: the viewplane is then defined to be normal to the line observer-target)
 
-   .    $x <x> <y> [<z>]      - define an x-axis in the viewplane (which will be to the right in the picture)
+   .   $x <x> <y> [<z>]       - define an x-axis in the viewplane (which will be to the right in the picture)
 
-   .n  some 3D plot objects allow to define a cut. It can be defined by using the following options.
-    for initialization both hve to be specified
+    some 3D plot objects allow to define a cut. It can be defined by using the following options.
+    for initialization $P and $N  have to be specified:~
 
-   .    $P~<x>~<y>~<z>                  - a point on the cut plane
-   .    $N~<x>~<y>~<z>                  - the normal of the cut plane
-   .    $R								 - remove cut
+   .   $P~<x>~<y>~<z>         - a point on the cut plane
+   .   $N~<x>~<y>~<z>         - the normal of the cut plane
+   .   $R					   - remove cut
 
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
+   KEYWORDS:
+   graphics, plot, window, picture, view, cutting plane
+
+   SEE ALSO:
+   'vdisplay'
+   D*/
 /****************************************************************************/
 
 static INT SetViewCommand (INT argc, char **argv)
@@ -8761,28 +7709,18 @@ static INT SetViewCommand (INT argc, char **argv)
    This command displays view of current picture.
    It calls the function 'DisplayViewOfDisplayedObject'.
 
-   'vdisplay'
+   'vdisplay [$s]'
+
+   .   $s		- print settings in 'setview'-command style. This is especially
+                                useful after interactive zoom and pan. Pasting the output into
+                                a script file will reproduce the current view of the picture.
+
+   KEYWORDS:
+   graphics, plot, window, picture, view, cutting plane, display, show, print
+
+   SEE ALSO:
+   'setview'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   DisplayViewCommand - Display view of current picture
-
-   SYNOPSIS:
-   static INT DisplayViewCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function displays view of current picture.
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT DisplayViewCommand (INT argc, char **argv)
@@ -8840,6 +7778,12 @@ static INT DisplayViewCommand (INT argc, char **argv)
    'cpview [$a] [$c]'
    .  a - set views of all pictures in all windows
    .  c - set also cut (if defined for plot object)
+
+   KEYWORDS:
+   graphics, plot, window, picture, view, cutting plane, copy
+
+   SEE ALSO:
+   'setview', 'arrowtool'
    D*/
 /****************************************************************************/
 
@@ -8888,38 +7832,19 @@ static INT CopyViewCommand (INT argc, char **argv)
    walk - let the observer walk relative to the viewRefSys
 
    DESCRIPTION:
-   This command lets the observer walk relative to the viewRefSys
-   in the current picture.
-   It calls the function 'walk'.
+   This command lets the observer walk relative to the 'viewRefSys'
+   in the current picture. It calls the function 'walk'.
 
    'walk <x> <y> [<z>]'
 
    .   <x>~<y>~[<z>] - coordinates
+
+   KEYWORDS:
+   graphics, plot, window, picture, view, observer, move
+
+   SEE ALSO:
+   'arrowtool'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   WalkCommand - let the observer walk relative to the viewRefSys
-
-   SYNOPSIS:
-   static INT WalkCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function lets the observer walk relative to the viewRefSys
-   in the current picture.
-
-   walk <x> <y> [<z>]
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT WalkCommand (INT argc, char **argv)
@@ -8987,37 +7912,13 @@ static INT WalkCommand (INT argc, char **argv)
    .  <rotation~angle>       - the observer will be rotated around the target point in the above plane
 
    (angles in degree 0 - 360)
+
+   KEYWORDS:
+   graphics, plot, window, picture, view, observer, move, rotate
+
+   SEE ALSO:
+   'arrowtool'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   WalkAroundCommand - let the observer walk on a sphere around the target point
-
-   SYNOPSIS:
-   static INT WalkAroundCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function lets the observer walk on a sphere around
-   the target point in the current picture. (3D ONLY)
-   It lets the observer walk on a sphere around the target point in the current picture.
-
-   walkaround <viewplane angle> <rotation angle>
-
-   .  <viewplane~angle>      - this angle runs in the view plane math pos from the x-axis and defines
-   .n                        - together with the target-observer direction a plane
-
-   .  <rotation~angle>       - the observer will be rotated around the target point in the above plane
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT WalkAroundCommand (INT argc, char **argv)
@@ -9085,34 +7986,14 @@ static INT WalkAroundCommand (INT argc, char **argv)
 
    'zoom <factor>'
 
-   .       <factor>              - values < 1 magnify picture
+   .  <factor>  - values < 1 magnify picture
 
+   KEYWORDS:
+   graphics, plot, window, picture, view, zoom, magnify
+
+   SEE ALSO:
+   'arrowtool'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ZoomCommand - zoom the current picture
-
-   SYNOPSIS:
-   static INT ZoomCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function zooms the current picture.
-
-   zoom <factor>
-
-   .  zoom <factor>              - values < 1 magnify picture
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT ZoomCommand (INT argc, char **argv)
@@ -9169,31 +8050,12 @@ static INT ZoomCommand (INT argc, char **argv)
 
    .  <dx>~<dy>  - displacement vector
 
+   KEYWORDS:
+   graphics, plot, window, picture, view, observer, pan, move
+
+   SEE ALSO:
+   'arrowtool'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   DragCommand - drag the projection plane of the current picture
-
-   SYNOPSIS:
-   static INT DragCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function drags the projection plane of the current picture
-   relative to its x-axis.
-
-   drag <dx> <dy>
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT DragCommand (INT argc, char **argv)
@@ -9248,34 +8110,14 @@ static INT DragCommand (INT argc, char **argv)
 
    'rotate <angle>'
 
-   .  <angle>                - <angle> runs in the view plane math pos from the x-axis
+   .  <angle>  - <angle> runs in the view plane math pos from the x-axis
+
+   KEYWORDS:
+   graphics, plot, window, picture, view, observer, rotate
+
+   SEE ALSO:
+   'arrowtool'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   RotateCommand - Rotate the projection plane of the current picture
-
-   SYNOPSIS:
-   static INT RotateCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function rotates the projection plane of the current picture
-   around the target point.
-
-   rotate <angle>
-
-   .  <angle>                - <angle> runs in the view plane math pos from the x-axis
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT RotateCommand (INT argc, char **argv)
@@ -9327,10 +8169,13 @@ static INT RotateCommand (INT argc, char **argv)
    textfac - set factor to zoom text sizes
 
    DESCRIPTION:
-   This command sets factor to zoom text sizes.
+   This command sets factor to zoom text sizes (default 1).
 
    SYMTAX:
    'textfac <factor>'
+
+   KEYWORDS:
+   graphics, plot, window, picture, view, textsize
    D*/
 /****************************************************************************/
 
@@ -9361,14 +8206,26 @@ static INT TextFacCommand (INT argc, char **argv)
 
    DESCRIPTION:
    This command specifies the object which will be plotted in the current
-   picture and associates the current multigrid with it (if not done yet) .
+   picture and associates the current multigrid with it (if not done yet).
    It calls the function 'SpecifyPlotObjOfViewedObject'.
 
    'setplotobject [<object type name>] [$a] ... '
 
-   .    <object~type~name>   - possible are: 'Grid', 'EScalar', 'EVector'
-   .    $a - (for 3d plot objects) moves the observer to a place outside
-                   the bounding sphere of the plot object
+   .    <object~type~name>   - possible are:
+   .n								2 and 3D:~
+   .n								'Matrix'
+
+   .n								2 and 3D (with possibly different options):~
+   .n								'Grid',			for help see 'Grid2D', 'Grid3D'
+   .n								'EScalar',		for help see 'EScalar2D', 'EScalar3D'
+   .n								'EVector'		for help see 'EVector2D', 'EVector3D'
+   .n								'VecMat'		for help see 'VecMat2D', 'VecMat3D'
+
+   .n								2D only:~
+   .n								'line'
+
+   .    $a					  - (for 3d plot objects) moves the observer to a place outside
+                                    the bounding sphere of the plot object
 
 
    The remaining options depend on which object you specified.
@@ -9377,12 +8234,12 @@ static INT TextFacCommand (INT argc, char **argv)
 
    'Grid [$c {0|1}] [$e {0|1}] [$n {0|1}] [$w {0|1}] [$m {0|1}] [$r {0|1}] [$i {0|1}] '
 
-   .    $c~{0|1}      - plot colored: no/yes
-   .    $e~{0|1}      - plot ElemIDs: no/yes
-   .    $n~{0|1}      - plot NodeIDs: no/yes
-   .    $r~{0|1}      - plot ref marks: no/yes
-   .    $i~{0|1}      - plot marks of indicator: no/yes
-   .    $w~{c/i/r/a}  - which elements to plot:
+   .    $c~{0|1}                                        - plot colored: no/yes
+   .    $e~{0|1}                                    - plot ElemIDs: no/yes
+   .    $n~{0|1}                                        - plot NodeIDs: no/yes
+   .    $r~{0|1}                                        - plot ref marks: no/yes
+   .    $i~{0|1}                                        - plot marks of indicator: no/yes
+   .    $w~{c/i/r/a}                                    - which elements to plot:
    .n                                        c  copies and up
    .n                                        i  irregular and up
    .n                                        r  regular and up
@@ -9392,9 +8249,9 @@ static INT TextFacCommand (INT argc, char **argv)
             '[$f <fromValue>] [$t <toValue>] [$n <nContours>]'
 
    .    $e~<ElemEvalProc>               - name of element scalar evaluation procedure
-   .    $s~<symbol>                    - name of the symbol
+   .    $s~<symbol>                     - name of the symbol
    .    $d~<depth>                      - depth of plot
-   .    $m~{COLOR|CONTOURS_EQ}        - mode: COLOR-plot or CONTOUR-plot
+   .    $m~{COLOR|CONTOURS_EQ}          - mode: COLOR-plot or CONTOUR-plot
    .    $f~<fromValue>~$t~<toValue>     - range [fromValue,toValue]
    .    $n~<nContours>                  - number of contours
 
@@ -9404,7 +8261,7 @@ static INT TextFacCommand (INT argc, char **argv)
    .    $c~{0|1}                        - cut vectors if to long
    .    $t~<toValue>                    - range: [0,toValue]
    .    $r~<rastersize>                 - physical meshsize of rasterpoints where
-                                     vectors are plotted
+                                       vectors are plotted
    .    $l~<cutlength>                  - cutlength in units of rastersize
 
    3D:
@@ -9451,32 +8308,10 @@ static INT TextFacCommand (INT argc, char **argv)
    openpicture $n p2 $s 5 615 300 300;
    setplotobject EScalar $e v_sol $d 1;
    .ve
+
+   KEYWORDS:
+   graphics, plot, window, picture, view, plotobject
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   SetPlotObjectCommand - Specify the object
-
-   SYNOPSIS:
-   static INT SetPlotObjectCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function specifies the object which will be plotted in the current
-   picture and associates the current multigrid with it (if not done yet) .
-   It specifies the object which will be plotted in the current picture and associates
-   the current multigrid with it (if not done yet).
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
-/****************************************************************************/
 
 static INT SetPlotObjectCommand (INT argc, char **argv)
 {
@@ -9542,32 +8377,16 @@ static INT SetPlotObjectCommand (INT argc, char **argv)
 
    DESCRIPTION:
    This command prints the specifications of the object defined in the
-   current picture.
-   It calls the function 'DisplayObject'.
+   current picture. It calls the function 'DisplayObject'.
 
    'polist'
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, list, show, print, display
+
+   SEE ALSO:
+   'setplotobject'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   PlotObjectListCommand -  print the specifications of the object
-
-   SYNOPSIS:
-   static INT PlotObjectListCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function prints the specifications of the object defined in the current picture.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT PlotObjectListCommand (INT argc, char **argv)
@@ -9606,53 +8425,70 @@ static INT PlotObjectListCommand (INT argc, char **argv)
    its specifications.
    It calls the function 'WorkOnPicture'.
 
-   'plot'
+   'plot [$o] [$a]'
+
+   .   $o	- ordering strategy (only used for 3D hidden surface)
+   .   $a  - plot all pictures in all windows
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, draw
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   PlotCommand - Plot the object of the current picture
-
-   SYNOPSIS:
-   static INT PlotCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function plots the object of the current picture according to its specifications.
-   It prints the specifications of the object defined in the current picture.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT PlotCommand (INT argc, char **argv)
 {
-  PICTURE *thePic;
-  WORK myWork,*theWork;
-  INT i;
-  extern INT OE_OrderStrategy;
+  UGWINDOW *theUgW;
+  PICTURE *thePic,*currPic;
+  INT i,OrderStrategy,all;
 
   /* set ordering strategy for coarse grid */
-  OE_OrderStrategy = 0;
+  OrderStrategy = 0;
+  all = NO;
 
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'o' :
-      sscanf(argv[i],"o %d", &OE_OrderStrategy);
+      sscanf(argv[i],"o %d", &OrderStrategy);
+      if (SetOrderStrategy(OrderStrategy)!=0)
+      {
+        PrintErrorMessage('E',"plot","invalid order mode");
+        return (CMDERRORCODE);
+      }
+      break;
+    case 'a' :
+      all = YES;
       break;
     default :
       break;
     }
 
-  theWork = &myWork;
+  if (all)
+  {
+    currPic = GetCurrentPicture();
+
+    /* plot all pictures in all windows */
+    for (theUgW=GetFirstUgWindow(); theUgW!=NULL; theUgW=GetNextUgWindow(theUgW))
+      for (thePic=GetFirstPicture(theUgW); thePic!=NULL; thePic=GetNextPicture(thePic))
+      {
+        if (DrawUgPicture(thePic)!=0)
+        {
+          PrintErrorMessage('E',"plot","error during WorkOnPicture");
+          return (CMDERRORCODE);
+        }
+
+                                #ifdef ModelP
+        if (me == master)
+                                #endif
+
+        if (thePic==currPic)
+          DrawPictureFrame(thePic,WOP_ACTIVE);
+        else
+          DrawPictureFrame(thePic,WOP_NOT_ACTIVE);
+      }
+
+    return (OKCODE);
+  }
 
   /* current picture */
   thePic = GetCurrentPicture();
@@ -9662,10 +8498,7 @@ static INT PlotCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  /* fill work struct */
-  W_ID(theWork) = DRAW_WORK;
-
-  if (WorkOnPicture(thePic,theWork)!=0)
+  if (DrawUgPicture(thePic)!=0)
   {
     PrintErrorMessage('E',"plot","error during WorkOnPicture");
     return (CMDERRORCODE);
@@ -9674,6 +8507,7 @@ static INT PlotCommand (INT argc, char **argv)
         #ifdef ModelP
   if (me == master)
         #endif
+
   /* picture is current */
   DrawPictureFrame(thePic,WOP_ACTIVE);
 
@@ -9682,7 +8516,7 @@ static INT PlotCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   findrange - find the range
+   findrange - find the range of values to be plotted
 
    DESCRIPTION:
    This command computes the range of  values to be plotted for the object
@@ -9696,38 +8530,12 @@ static INT PlotCommand (INT argc, char **argv)
    .  $s                     - symmetrize the range (min=max)
    .  $p                     - store range in plot object
 
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, range, values
+
    SEE ALSO:
    'plot'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   FindRangeCommand -  Plot the object of the current picture
-
-   SYNOPSIS:
-   static INT FindRangeCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function plots the object of the current picture according to its specifications.
-   It finds the range of values to be plotted for the object in the current picture.
-   The result will be printed and stored into :findrange:min and :findrange:max.
-
-   findrange [$z <zoom factor>] [$s] [$p]
-
-   .  $z <zoom factor>       - zoom the range by this factor
-   .  $s                     - symmetrize the range (min=max)
-   .  $p                     - store range in plot object
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT FindRangeCommand (INT argc, char **argv)
@@ -9830,38 +8638,21 @@ static INT FindRangeCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   setcurrmg - set a current multigrid
+   setcurrmg - change the current multigrid
 
    DESCRIPTION:
-   This command sets a current multigrid.
+   This command sets the current multigrid.
 
    'setcurrmg <mgname>'
 
-   .    <mgname>  - name of the open multigrid which will be the current one
+   .  <mgname>  - name of the open multigrid which will be made the current one
+
+   KEYWORDS:
+   multigrid, current, active
+
+   SEE ALSO:
+   'open', 'new'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   SetCurrentMultigridCommand - Make a multigrid the current multigrid
-
-   SYNOPSIS:
-   static INT SetCurrentMultigridCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function makes a multigrid the current multigrid.
-   It specifies the object which will be plotted in the current picture and associates
-   the current multigrid with it (if not done yet).
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT SetCurrentMultigridCommand (INT argc, char **argv)
@@ -9894,7 +8685,7 @@ static INT SetCurrentMultigridCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   updateDoc - updating the windows and pictures of the current multigrid
+   updateDoc - reset the windows and pictures of the current multigrid to invalid
 
    DESCRIPTION:
    This command runs 'InvalidatePicturesOfMG' and
@@ -9902,29 +8693,10 @@ static INT SetCurrentMultigridCommand (INT argc, char **argv)
    If the refresh state is on, the pictures will be replotted.
 
    'updateDoc'
+
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, invalidate
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   UpdateDocumentCommand - Redraw pictures of current multigrid
-
-   SYNOPSIS:
-   static INT UpdateDocumentCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function redraws pictures of current multigrid.
-   It redraws all pictures of the current multigrid.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT UpdateDocumentCommand (INT argc, char **argv)
@@ -9943,49 +8715,25 @@ static INT UpdateDocumentCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   clear - assign a value to a symbolic vector or matrix
+   clear - assign a value to a symbolic vector
 
    DESCRIPTION:
-   This function sets the value of a symbol.
-   It clears or assign a constant value to a user defined symbol.
+   This function sets the values of a grid function specified by a vec data descriptor.
+   The data descriptor is created if it doesn´t exist yet.
+   It clears or assigns a constant value.
 
    'clear <symbol name> [$a] [$u] [$v <value>]'
 
-   .  $a                     - from level 0 through current level (default: current level only)
-   .  $u                     - consider the skip fields
-   .  $v~<value>             - assign this value (instead of 0.0)
+   .  $a         - from level 0 through current level (default: current level only)
+   .  $s         - don't change skip (Dirichlet) values
+   .  $v~<value> - assign this value (instead of 0.0)
+
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, clear, set
 
    SEE ALSO:
-   'cv', 'cm'
+   'cv', 'cm', 'copy'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ClearCommand - Set the value of a symbol
-
-   SYNOPSIS:
-   static INT ClearCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function sets the value of a symbol.
-   It clears or assign a constant value to a user defined symbol.
-
-   clear <symbol name> [$a] [$s] [$v <value>]
-
-   .  $a                     - from level 0 through current level (default: current level only)
-   .  $s                     - consider the skip fields
-   .  $v <value>             - assign this value (instead of 0.0)
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT ClearCommand (INT argc, char **argv)
@@ -10034,7 +8782,7 @@ static INT ClearCommand (INT argc, char **argv)
   theVD = ReadArgvVecDesc(theMG,"clear",argc,argv);
 
   if (theVD == NULL) {
-    PrintErrorMessage('E',"clear","could not read symbol");
+    PrintErrorMessage('E',"clear","could not read data descriptor");
     return (PARAMERRORCODE);
   }
 
@@ -10058,6 +8806,8 @@ static INT ClearCommand (INT argc, char **argv)
    copy - copy from one vector symbol to another one
 
    DESCRIPTION:
+   This command copies from one vector symbol to another one.
+   The data descriptor is created if it doesn´t exist yet.
 
    'copy $f <from vec sym> $t <to vec sym> [$a]'
 
@@ -10067,6 +8817,12 @@ static INT ClearCommand (INT argc, char **argv)
 
    EXAMPLE:
    'copy $f sol $t old;'
+
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, copy, set
+
+   SEE ALSO:
+   'cv', 'cm', 'clear'
    D*/
 /****************************************************************************/
 
@@ -10133,6 +8889,12 @@ static INT CopyCommand (INT argc, char **argv)
 
    EXAMPLE:
    'homotopy $v 0.5 $x sol $y old;'
+
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, weighted sum, interpolate
+
+   SEE ALSO:
+   'cv', 'cm', 'copy', 'clear'
    D*/
 /****************************************************************************/
 
@@ -10198,13 +8960,20 @@ static INT HomotopyCommand (INT argc, char **argv)
    interpolate - (standard) interpolate a vector symbol to new vectors on the current level
 
    DESCRIPTION:
+   The data descriptor is created if it doesn´t exist yet.
 
    'interpolate <vec sym>'
 
-   . <vec~sym>      - vector symbol to be interpolated
+   . <vec~sym>  - vector symbol to be interpolated
 
    EXAMPLE:
    'interpolate sol;'
+
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, interpolate, prolongate
+
+   SEE ALSO:
+   'clear', 'cv'
    D*/
 /****************************************************************************/
 
@@ -10240,46 +9009,20 @@ static INT InterpolateCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   reinit - reinitialize a problem
+   reinit - reinitialize a boundary value problem
 
    DESCRIPTION:
    This command reinitializes the problem with the user defined reinit of the
-   problem
+   problem. All arguments are passed to the reinit function
 
-   'reinit [$d <domain> $p <problem>] [reinit options]'
+   'reinit [$b <boundary value problem>] ...'
 
-   .  no~option			  - reinit the problem of the current multigrid
-   .  $d~<domain>            - domain to initialize (default is the domain of the current mg)
-   .  $p~<problem>           - problem to initialize (default is the problem of the current mg)
-   .  reinit~options		  - these options will be passed to the problem defined reinit procedure
+   .  $b~<boundary~value~problem> - problem to initialize
+                                                             (default is the problem of the current mg)
+
+   KEYWORDS:
+   multigrid, boundary value problem, configure, change
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   reinit - configure a problem
-
-   SYNOPSIS:
-   static INT ReInitCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function reinitializes the problem.
-   It reinitializes a problem.
-
-   reinit [$d <domain> $p <problem>]
-
-   .  $d <domain>            - domain to initialize (default is the domain of the current mg)
-   .  $p <problem>           - problem to initialize (default is the problem of the current mg)
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT ReInitCommand (INT argc, char **argv)
@@ -10335,409 +9078,6 @@ static INT ReInitCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-#ifdef __NUMERICS__
-
-static NUM_PROC *currNumProc=NULL;              /* current numerical procedure		*/
-
-
-/****************************************************************************/
-/*D
-   GetCurrentNumProc - return a pointer to the current numproc
-
-   SYNOPSIS:
-   static NUM_PROC *GetCurrentNumProc (void);
-
-   PARAMETERS:
-   .  void -
-
-   DESCRIPTION:
-   This function returns a pointer to the current numproc.
-
-   RETURN VALUE:
-   NUM_PROC *
-   .n      pointer to numproc
-   .n      NULL if there is no current numproc.
-   D*/
-/****************************************************************************/
-
-static NUM_PROC *GetCurrentNumProc (void)
-{
-  return (currNumProc);
-}
-
-/****************************************************************************/
-/*D
-   SetCurrentNumProc -	Set the current NumProc if it is valid
-
-   SYNOPSIS:
-   static INT SetCurrentNumProc (NUM_PROC *theNumProc);
-
-   PARAMETERS:
-   .  theNumProc - pointer to multigrid
-
-   DESCRIPTION:
-   This function sets the current NumProc if it is valid, i. e.
-   the function checks whether 'theNumProc' acually points to a numproc.
-   It can be NULL only if no numproc is defined.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if theNumProc is not in the numproc list
-   D*/
-/****************************************************************************/
-
-static INT SetCurrentNumProc (NUM_PROC *theNumProc)
-{
-  NUM_PROC *np;
-
-  np = GetFirstNumProc();
-  if (np==theNumProc)
-  {
-    /* possibly NULL */
-    currNumProc = theNumProc;
-    return (0);
-  }
-
-  for (; np!=NULL; np=GetNextNumProc(np))
-    if (np==theNumProc)
-    {
-      /* never NULL */
-      currNumProc = theNumProc;
-      return (0);
-    }
-
-  return (1);
-}
-
-/****************************************************************************/
-/*D
-   npexecute - execute a NumProc
-
-   DESCRIPTION:
-   This command executes a NumProc.
-   It calls the function 'ExecuteNumProc'.
-
-   'npexecute [<num proc name>] <argument list to be passed>'
-
-   . <num~proc~name> - name of an existing NumProc
-
-   SEE ALSO
-   'numerics', 'NUM_PROC'
-   D*/
-/****************************************************************************/
-
-static INT ExecuteNumProcCommand (INT argc, char **argv)
-{
-  char theNumProcName[NAMESIZE];
-  NUM_PROC *theNumProc;
-  MULTIGRID *theMG;
-  INT err;
-
-  /* get NumProc */
-  if ((sscanf(argv[0],expandfmt(CONCAT3(" npexecute %",NAMELENSTR,"[ -~]")),theNumProcName)!=1) || (strlen(theNumProcName)==0))
-  {
-    theNumProc = GetCurrentNumProc();
-    if (theNumProc == NULL)
-    {
-      PrintErrorMessage('E',"npexecute","there is no current numerical procedure");
-      return (CMDERRORCODE);
-    }
-  }
-  else
-  {
-    theNumProc = GetNumProcFromName(theNumProcName);
-    if (theNumProc == NULL)
-    {
-      PrintErrorMessage('E',"npexecute","cannot find specified numerical procedure");
-      return (CMDERRORCODE);
-    }
-  }
-
-  theMG = currMG;
-  if (theMG==NULL)
-  {
-    PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
-    return (CMDERRORCODE);
-  }
-
-  if ((err=ExecuteNumProc(theNumProc,theMG,argc,argv))!=0)
-  {
-    PrintErrorMessageF('E',"npexecute","execution of '%s' failed (error code %d)",theNumProcName,err);
-    return (CMDERRORCODE);
-  }
-
-  return(OKCODE);
-}
-
-
-/****************************************************************************/
-/*D
-   nplist - list of all NumProcs created
-
-   DESCRIPTION:
-   This command list all NumProcs and displays their status.
-   It calls the function 'ListNumProc'.
-
-   'nplist'
-   D*/
-/****************************************************************************/
-
-static INT NumProcListCommand (INT argc, char **argv)
-{
-  NO_OPTION_CHECK(argc,argv);
-  if (ListNumProc(GetCurrentNumProc())) return (CMDERRORCODE);
-  return(OKCODE);
-}
-
-/****************************************************************************/
-/*D
-   npdisplay - display a NumProc
-
-   DESCRIPTION:
-   This command displays a NumProc.
-   It calls the function 'DisplayNumProc'.
-
-   'npdisplay [<num proc name>]'
-
-   . <num~proc~name> - name of an existing NumProc (default is the current NumProc)
-
-   D*/
-/****************************************************************************/
-
-static INT NumProcDisplayCommand (INT argc, char **argv)
-{
-  char theNumProcName[NAMESIZE];
-  NUM_PROC *theNumProc;
-
-  if (argc!=1)
-  {
-    PrintErrorMessage('W',"npdisplay","don't specify arguments with npdisplay");
-    return (OKCODE);
-  }
-
-  /* get NumProc */
-  if ((sscanf(argv[0],expandfmt(CONCAT3(" npdisplay %",NAMELENSTR,"[ -~]")),theNumProcName)!=1) || (strlen(theNumProcName)==0))
-  {
-    theNumProc = GetCurrentNumProc();
-    if (theNumProc == NULL)
-    {
-      PrintErrorMessage('W',"npdisplay","there is no current numproc");
-      return (OKCODE);
-    }
-  }
-  else
-  {
-    theNumProc = GetNumProcFromName(theNumProcName);
-    if (theNumProc == NULL)
-    {
-      PrintErrorMessage('W',"npdisplay","cannot find specified numerical procedure");
-      return (OKCODE);
-    }
-  }
-
-  /* display NumProc */
-  if (DisplayNumProc(theNumProc))
-  {
-    PrintErrorMessage('E',"npdisplay","error during DisplayNumProc procedure\n");
-    return (CMDERRORCODE);
-  }
-
-  return(OKCODE);
-}
-
-/****************************************************************************/
-/*D
-   npcreate - creating a NumProc
-
-   DESCRIPTION:
-   This command creates a NumProc.
-   It calls the function 'CreateNumProc'.
-
-   'npcreate <num proc name> $t <num proc type> $f <format>'
-
-   . <num~proc~name> - name of the new NumProc
-   . $t~<num~proc~type> - name of an existing NumProcType
-   . $f~<format> - name of an existing format
-
-   SEE ALSO
-   'numerics', 'NUM_PROC',  'NP_TYPE_BASIC', 'NP_TYPE_SMOOTHER',
-   'NP_TYPE_SOLVER', 'NP_TYPE_ASSEMBLE'
-   D*/
-/****************************************************************************/
-
-static INT NumProcCreateCommand (INT argc, char **argv)
-{
-  NP_TYPE *theNumProcType;
-  NUM_PROC *theNumProc;
-  FORMAT *theFormat;
-  char theNumProcTypeName[NAMESIZE], theFormatName[NAMESIZE];
-  char theNumProcName[NAMESIZE];
-  INT i, topt, fopt;
-
-  /* get NumProc name */
-  if ((sscanf(argv[0],expandfmt(CONCAT3(" npcreate %",NAMELENSTR,"[ -~]")),theNumProcName)!=1) || (strlen(theNumProcName)==0))
-  {
-    PrintErrorMessage('E',"npcreate","specify the name of the theNumProcName to create");
-    return (PARAMERRORCODE);
-  }
-
-  /* get format and NumProcType names */
-  topt = fopt = 0;
-  for (i=1; i<argc; i++)
-    switch (argv[i][0])
-    {
-    case 't' :
-      if (sscanf(argv[i],expandfmt(CONCAT3("t %",NAMELENSTR,"[ -~]")),theNumProcTypeName)!=1)
-      {
-        PrintHelp("npcreate",HELPITEM," (cannot read theNumProcType name)");
-        return(PARAMERRORCODE);
-      }
-      topt = 1;
-      break;
-    case 'f' :
-      if (sscanf(argv[i],expandfmt(CONCAT3("f %",NAMELENSTR,"[ -~]")),theFormatName)!=1)
-      {
-        PrintHelp("npcreate",HELPITEM," (cannot read format name)");
-        return(PARAMERRORCODE);
-      }
-      fopt = 1;
-      break;
-    default :
-      sprintf(buffer,"(invalid option '%s')",argv[i]);
-      PrintHelp("npcreate",HELPITEM,buffer);
-      return (PARAMERRORCODE);
-    }
-  if (topt+fopt!=2)
-  {
-    PrintHelp("npcreate",HELPITEM," (specify n, t, f option)");
-    return(PARAMERRORCODE);
-  }
-
-  /* find NumProcType and format */
-  theNumProcType = GetNumProcTypeFromName(theNumProcTypeName);
-  if (theNumProcType==NULL)
-  {
-    PrintHelp("npcreate",HELPITEM," (cannot find specified  NumProcType)");
-    return(PARAMERRORCODE);
-  }
-  theFormat = GetFormat(theFormatName);
-  if (theFormat==NULL)
-  {
-    PrintHelp("npcreate",HELPITEM," (cannot find specified  Format)");
-    return(PARAMERRORCODE);
-  }
-
-  /* create NumProc */
-  if ((theNumProc=CreateNumProc(theNumProcName,theNumProcType,theFormat))==NULL)
-  {
-    PrintHelp("npcreate",HELPITEM," (create solver failed)");
-    return(PARAMERRORCODE);
-  }
-
-  if (SetCurrentNumProc(theNumProc))
-    return(PARAMERRORCODE);
-
-  return(OKCODE);
-}
-
-/****************************************************************************/
-/*D
-   npinit - inizialize a NumProc
-
-   DESCRIPTION:
-   This command inizializes a NumProc.
-   It calls the function 'SetNumProc'.
-
-   'npinit <argument list to be passed>'
-
-   SEE ALSO:
-   'numerics', 'NUM_PROC'
-   D*/
-/****************************************************************************/
-
-static INT NumProcInitCommand (INT argc, char **argv)
-{
-  NUM_PROC *theNumProc;
-
-  theNumProc = GetCurrentNumProc();
-  if (theNumProc == NULL)
-  {
-    PrintErrorMessage('W',"npinit","there is no current NumProc");
-    return (OKCODE);
-  }
-
-  if (SetNumProc(theNumProc,argc,argv))
-  {
-    PrintErrorMessage('W',"npinit","error during SetNumProc procedure");
-    return (CMDERRORCODE);
-  }
-
-
-  return(OKCODE);
-}
-
-/****************************************************************************/
-/*D
-   scnp - make a NumProc the current NumProc
-
-   DESCRIPTION:
-   This command makes a NumProc the current NumProc.
-   It sets current num proc.
-   It calls the function 'GetNumProcFromName'.
-
-   'scnp <num proc name>'
-
-   . <num~proc~name> - name of an existing NumProc
-   D*/
-/****************************************************************************/
-
-static INT SetCurrentNumProcCommand (INT argc, char **argv)
-{
-  NUM_PROC *theNumProc;
-  char npname[NAMESIZE];
-
-  NO_OPTION_CHECK(argc,argv);
-
-  /* get solver name */
-  if (sscanf(argv[0],expandfmt(CONCAT3(" scnp %",NAMELENSTR,"[ -~]")),npname)!=1)
-  {
-    PrintHelp("scnp",HELPITEM," (specify current NumProc name)");
-    return(PARAMERRORCODE);
-  }
-
-  theNumProc = GetNumProcFromName(npname);
-
-  if (theNumProc==NULL)
-  {
-    PrintErrorMessage('E',"scnp","no NumProc with this name exists");
-    return (CMDERRORCODE);
-  }
-
-  if (SetCurrentNumProc(theNumProc))
-    return (CMDERRORCODE);
-
-  return(OKCODE);
-}
-
-#endif /* __NUMERICS__ */
-
-/****************************************************************************/
-/*D
-        showpf - command to display current settings of data
-                                        listing functions
-
-        SYNTAX:
-        showpf
-
-        DESCRIPTION:
-        ...
-
-        SEE ALSO:
-        setpf
-   D*/
-/****************************************************************************/
-
 /* see formats.c for the man page */
 
 static INT CreateFormatCommand (INT argc, char **argv)
@@ -10772,9 +9112,14 @@ static INT CreateFormatCommand (INT argc, char **argv)
 
         EXAMPLE:
    .vb
-        newformat ns $V n3: sol rhs tmp cor $M n3xn3: MAT LU;
+        newformat ns $V n3: vt 5 $M n3xn3: mt 2;
 
         open grid $f ns $h 1000000;
+
+        clear sol;		# creates sol vec data desc from vt template
+
+ # suppose rhs, MAT, LU data descriptors have been created by the initialization of
+ # the discretization and solver
 
  # print sol, rhs vector data and MAT, LU matrix data of vector with index 10
         setpf ns $V0 $M0 $V+ sol rhs $M+ MAT LU;
@@ -10785,16 +9130,17 @@ static INT CreateFormatCommand (INT argc, char **argv)
         vmlist $i 12 $m $d;
    .ve
 
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, matdata, print, show, display
+
         SEE ALSO:
-        showpf
+        'showpf'
    D*/
 /****************************************************************************/
 
 static INT SetPrintingFormatCommand (INT argc, char **argv)
 {
   INT err;
-
-#       ifdef __NP__
   MULTIGRID *theMG;
 
   theMG = currMG;
@@ -10804,23 +9150,6 @@ static INT SetPrintingFormatCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
   err = SetPrintingFormatCmd(theMG,argc,argv);
-#       endif
-
-#       ifdef __NUMERICS__
-  char format[NAMESIZE];
-
-  if (sscanf(argv[0],"setpf %s",format)!=1)
-  {
-    if (currMG==NULL)
-    {
-      PrintErrorMessage('E',"setpf","no format specified and no current mg");
-      return (PARAMERRORCODE);
-    }
-    strcpy(format,ENVITEM_NAME(MGFORMAT(currMG)));
-  }
-
-  err = SetPrintingFormatCmd(format,argc,argv);
-#       endif
 
   switch (err)
   {
@@ -10836,11 +9165,13 @@ static INT SetPrintingFormatCommand (INT argc, char **argv)
         showpf - command to display current settings of data
                                         listing functions
 
-        SYNTAX:
-        showpf
-
         DESCRIPTION:
-        ...
+        This command shows which user data will bbe listed by vml $d $m...
+
+        'showpf'
+
+    KEYWORDS:
+    multigrid, numerics, userdata, vecdata, matdata, print, show, display
 
         SEE ALSO:
         setpf
@@ -10855,10 +9186,6 @@ static INT ShowPrintingFormatCommand (INT argc, char **argv)
 
   return (OKCODE);
 }
-
-#ifdef __NP__
-
-static NP_BASE *currNumProc=NULL;               /* current numerical procedure		*/
 
 /****************************************************************************/
 /*D
@@ -10923,7 +9250,10 @@ static INT SetCurrentNumProc (NP_BASE *theNumProc)
 
    'npexecute [<num proc name>] <argument list to be passed>'
 
-   . <num~proc~name> - name of an existing NumProc
+   .  <num~proc~name> - name of an existing NumProc
+
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, matdata, numproc, execute
 
    SEE ALSO
    'numerics', 'NUM_PROC'
@@ -10989,8 +9319,13 @@ static INT ExecuteNumProcCommand (INT argc, char **argv)
 
    'npdisplay [<num proc name>]'
 
-   . <num~proc~name> - name of an existing NumProc (default is the current NumProc)
+   .  <num~proc~name> - name of an existing NumProc (default is the current NumProc)
 
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, matdata, numproc, display, show, print
+
+   SEE ALSO:
+   'npcreate', 'npexecute'
    D*/
 /****************************************************************************/
 
@@ -11041,16 +9376,19 @@ static INT NumProcDisplayCommand (INT argc, char **argv)
    npcreate - creating a NumProc
 
    DESCRIPTION:
-   This command creates a NumProc.
+   This command creates a NumProc for the current multigrid with a given constructor.
    It calls the function 'CreateNumProc'.
 
    'npcreate <num proc name> $c <constructor>'
 
-   . <num~proc~name> - name of the new NumProc
-   . $c~<num~proc~type> - name of an existing constructor
+   .  <num~proc~name>           - name of the new NumProc
+   .  $c~<num~proc~type>	- name of an existing constructor
 
-   SEE ALSO
-   'NUM_PROC'
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, matdata, numproc, create, install
+
+   SEE ALSO:
+   'npdisplay', 'npexecute', 'NUM_PROC'
    D*/
 /****************************************************************************/
 
@@ -11103,8 +9441,11 @@ static INT NumProcCreateCommand (INT argc, char **argv)
 
    'npinit <argument list to be passed>'
 
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, matdata, numproc, initialize, parameters, configure
+
    SEE ALSO:
-   'numerics', 'NUM_PROC'
+   'npcreate', 'npdisplay', 'numerics', 'NUM_PROC'
    D*/
 /****************************************************************************/
 
@@ -11174,6 +9515,12 @@ static INT NumProcInitCommand (INT argc, char **argv)
    'scnp <num proc name>'
 
    . <num~proc~name> - name of an existing NumProc
+
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, matdata, numproc, active, current
+
+   SEE ALSO:
+   'npcreate', 'npdisplay', 'numerics', 'NUM_PROC'
    D*/
 /****************************************************************************/
 
@@ -11211,7 +9558,7 @@ static INT SetCurrentNumProcCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*
+/*D
    createvector - construct vector descriptors
 
    DESCRIPTION:
@@ -11220,13 +9567,16 @@ static INT SetCurrentNumProcCommand (INT argc, char **argv)
 
    'createvector <v1> [<v2> ...] [$t <template>] [$m <name>]'
 
-   .  v1 - vector name
+   .  v1                - vector name
    .  template - template name (default is the first vector template)
-   .  name - multigrid name (default is the current multigrid)
+   .  name      - multigrid name (default is the current multigrid)
+
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, create
 
    SEE ALS0:
-   newformat, creatematrix
- */
+   'newformat', 'creatematrix'
+   D*/
 /****************************************************************************/
 
 static INT CreateVecDescCommand (INT argc, char **argv)
@@ -11249,7 +9599,7 @@ static INT CreateVecDescCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*
+/*D
    creatematrix - construct matrix
 
    DESCRIPTION:
@@ -11258,13 +9608,16 @@ static INT CreateVecDescCommand (INT argc, char **argv)
 
    'creatematrix <M1> [<M2> ...] [$t <template>] [$m <name>]'
 
-   .  M1 - matrix name
+   .  M1                - matrix name
    .  template - template name (default is the first matrix template)
-   .  name - multigrid name (default is the current multigrid)
+   .  name      - multigrid name (default is the current multigrid)
+
+   KEYWORDS:
+   multigrid, numerics, userdata, matdata, create
 
    SEE ALS0:
-   newformat, createvector
- */
+   'newformat', 'createvector'
+   D*/
 /****************************************************************************/
 
 static INT CreateMatDescCommand (INT argc, char **argv)
@@ -11291,11 +9644,17 @@ static INT CreateMatDescCommand (INT argc, char **argv)
    symlist - list contents of vector and matrix symbols
 
    DESCRIPTION:
-   This command lists the contents of vector and matrix symbols.
+   This command lists the contents of vector and matrix data descriptors.
 
    'scnp <num proc name>'
 
-   . <num~proc~name> - name of an existing NumProc
+   .  <num~proc~name> - name of an existing NumProc
+
+   KEYWORDS:
+   multigrid, numerics, userdata, vecdata, matdata, list, show, display, print
+
+   SEE ALSO:
+   'newformat', 'createvector', 'creatematrix'
    D*/
 /****************************************************************************/
 
@@ -11372,7 +9731,6 @@ static INT SymListCommand (INT argc, char **argv)
 
   return (OKCODE);
 }
-#endif /* __NP__ */
 
 /****************************************************************************/
 /*D
@@ -11401,37 +9759,12 @@ static INT SymListCommand (INT argc, char **argv)
 
    The special character ? is limited however to the 'setkey' command.
 
+   KEYWORDS:
+   shortcut, hotkey, create, define
+
    SEE ALSO:
    'setkey', 'delkey'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   SetCommandKeyCommand - associate a command key with a ug command
-
-   SYNOPSIS:
-   static INT SetCommandKeyCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function associates a command key with a ug command.
-   It creates a command key and assign executable statements to it.
-
-   setkey $<command char> $"<command sequence>"
-
-   .  $k <command char>      - specifiy a single character which will be the command key
-   .  $"<command sequence>"  - give an arbitrary sequence of statements which is to be
-   .n                           executed when the command key is pressed
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT SetCommandKeyCommand (INT argc, char **argv)
@@ -11510,36 +9843,12 @@ static INT SetCommandKeyCommand (INT argc, char **argv)
    .  $all                   - delete all command keys allocated before
    .  $<command~char>        - delete only the command key associated with <command char>
 
+   KEYWORDS:
+   shortcut, hotkey, remove, undefine
+
    SEE ALSO:
    'setkey', 'delkey'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   DeleteCommandKeyCommand - delete an existing command key
-
-   SYNOPSIS:
-   static INT DeleteCommandKeyCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function deletes an existing command key.
-   It removes a command key allocated before.
-
-   delkey $all | $<command char>
-
-   .  $all                   - delete all command keys allocated before
-   .  $<command char>        - delete only the command key associated with <command char>
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT DeleteCommandKeyCommand (INT argc, char **argv)
@@ -11574,39 +9883,20 @@ static INT DeleteCommandKeyCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   key - list all existing command keys
+   keylist - list all existing command keys
 
    DESCRIPTION:
    This command lists all existing command keys.
    It calls the function 'ListCmdKeys'.
 
-   'key'
+   'keylist'
+
+   KEYWORDS:
+   shortcut, hotkey, list, show, display, print
 
    SEE ALSO:
    'setkey', 'delkey'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ListCommandKeysCommand - List all existing command keys
-
-   SYNOPSIS:
-   static INT ListCommandKeysCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function lists all existing command keys.
-   It lists all command keys defined together with their contents.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT ListCommandKeysCommand (INT argc, char **argv)
@@ -11623,36 +9913,17 @@ static INT ListCommandKeysCommand (INT argc, char **argv)
    refreshon - sets the refresh state on
 
    DESCRIPTION:
-   This command sets the refresh state on: the pictures on the screen
+   This command sets the refresh state on: The pictures on the screen
    device will be updated instantaneously.
 
    'refreshon'
 
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, invalid, update
+
     SEE ALSO:
-        'InvalidatePicturesOfMG', 'InvalidateUgWindowsOfMG'
+        'refreshoff', 'InvalidatePicturesOfMG', 'InvalidateUgWindowsOfMG'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   RefreshOnCommand - Set refresh status TRUE
-
-   SYNOPSIS:
-   static INT RefreshOnCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function sets refresh status TRUE.
-   It pictures on the screen device will be updated instantaneously.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT RefreshOnCommand (INT argc, char **argv)
@@ -11677,31 +9948,12 @@ static INT RefreshOnCommand (INT argc, char **argv)
 
    'refreshoff'
 
+   KEYWORDS:
+   graphics, plot, window, picture, plotobject, invalid, update
+
    SEE ALSO:
    'refreshon'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   RefreshOffCommand - Set refresh status FALSE
-
-   SYNOPSIS:
-   static INT RefreshOffCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function sets refresh status FALSE.
-   It pictures on the screen device will be updated ONLY explicitely.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
 /****************************************************************************/
 
 static INT RefreshOffCommand (INT argc, char **argv)
@@ -11713,27 +9965,21 @@ static INT RefreshOffCommand (INT argc, char **argv)
 }
 
 /****************************************************************************/
-/*
-   SystemCommand - calls system routine
-
-   SYNOPSIS:
-   static INT SystemCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
+/*D
+   system - calls system routine
 
    DESCRIPTION:
    This function calls a system routine.
 
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
+   'system <system~command>
+
+   .   <system~command>	- this command string is passed to the system
+
+   KEYWORDS:
+   system, cshell, UNIX
+   D*/
 /****************************************************************************/
 
-#ifndef __MWCW__
 static INT SystemCommand (INT argc, char **argv)
 {
   char *p;
@@ -11745,11 +9991,10 @@ static INT SystemCommand (INT argc, char **argv)
 
   return (OKCODE);
 }
-#endif
 
 /****************************************************************************/
 /*
-   InitFindRange -
+   InitFindRange - create struct where findrange stores results (min and max)
 
    SYNOPSIS:
    static INT InitFindRange ();
@@ -11758,7 +10003,7 @@ static INT SystemCommand (INT argc, char **argv)
    .  void
 
    DESCRIPTION:
-   This function defines ':findrange'.
+   This function creates the struct ':findrange'.
 
    RETURN VALUE:
    INT
@@ -11777,7 +10022,7 @@ static INT InitFindRange (void)
 
 /****************************************************************************/
 /*
-   InitScreenSize -
+   InitScreenSize - create struct :screensize
 
    SYNOPSIS:
    static INT InitScreenSize ();
@@ -11786,7 +10031,7 @@ static INT InitFindRange (void)
    .  void
 
    DESCRIPTION:
-   This function prints the size in pixels of the screen (if there) ==> max window size.
+   This function creates the struct _screensize for the 'screensize' command.
 
    RETURN VALUE:
    INT
@@ -11806,16 +10051,19 @@ static INT InitScreenSize (void)
 #ifdef ModelP
 
 /****************************************************************************/
-/*                                                                          */
-/* Function:  PTestCommand                                                                                              */
-/*                                                                          */
-/* Purpose:   simple testbed for parallel implementations, t.b. removed     */
-/*                                                                          */
-/* Input:     INT argc: number of arguments (incl. its own name)            */
-/*            char **argv: array of strings giving the arguments            */
-/*                                                                          */
-/* Output:    INT return code see header file                               */
-/*                                                                          */
+/*
+   ptest - simple testbed for parallel implementations, t.b. removed
+
+   DESCRIPTION:
+   ...
+
+   'ptest ...'
+
+   arguments will be passed to DDD
+
+   KEYWORDS:
+   parallel, processors, check, DDD
+ */
 /****************************************************************************/
 
 static INT PTestCommand (INT argc, char **argv)
@@ -11837,18 +10085,22 @@ static INT PTestCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-
 /****************************************************************************/
-/*                                                                          */
-/* Function:  ContextCommand                                                                                    */
-/*                                                                          */
-/* Purpose:   manipulate set current processor context	                        */
-/*                                                                          */
-/* Input:     INT argc: number of arguments (incl. its own name)            */
-/*            char **argv: array of strings giving the arguments            */
-/*                                                                          */
-/* Output:    INT return code see header file                               */
-/*                                                                          */
+/*
+   context - manipulate current processor context
+
+   DESCRIPTION:
+   This command adds/removes processors from the current context.
+
+   'context <processor> | $a | $e'
+
+   .  <processor>		- processor id
+   .  $a				- add all processors
+   .  $e				- remove all processors (empty context)
+
+   KEYWORDS:
+   parallel, processors, display, show, print, DDD, configure
+ */
 /****************************************************************************/
 
 static INT ContextCommand (INT argc, char **argv)
@@ -11899,18 +10151,20 @@ static INT ContextCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
-
 /****************************************************************************/
-/*                                                                          */
-/* Function:  PStatCommand                                                                                              */
-/*                                                                          */
-/* Purpose:   gives information about parallel data structures				*/
-/*                                                                          */
-/* Input:     INT argc: number of arguments (incl. its own name)            */
-/*            char **argv: array of strings giving the arguments            */
-/*                                                                          */
-/* Output:    INT return code see header file                               */
-/*                                                                          */
+/*
+   pstat - gives information about parallel data structures
+
+   DESCRIPTION:
+   ...
+
+   'pstat ...'
+
+   first argument will be passed to DDD
+
+   KEYWORDS:
+   parallel, processors, display, show, print, DDD, status, interfaces
+ */
 /****************************************************************************/
 
 static INT PStatCommand (INT argc, char **argv)
@@ -11924,18 +10178,20 @@ static INT PStatCommand (INT argc, char **argv)
 
 
 #ifdef CHACOT
+
 /****************************************************************************/
-/*                                                                          */
-/* Function:  LB4Command                                                    */
-/*                                                                          */
-/* Purpose:   load balancer using different (high level) strategies         */
-/*            based on the clustering technique                             */
-/*                                                                          */
-/* Input:     INT argc: number of arguments (incl. its own name             */
-/*            char **argv: array of strings giving the arguments            */
-/*                                                                          */
-/* Output:    INT return code see header file                               */
-/*                                                                          */
+/*
+   lb4 - load balancer using different (high level) strategies
+                        based on the clustering technique
+
+   DESCRIPTION:
+   ...
+
+   'lb4 ...'
+
+   KEYWORDS:
+   parallel, processors, load balance, chaco
+ */
 /****************************************************************************/
 
 static INT LB4Command (INT argc, char **argv)
@@ -12093,16 +10349,32 @@ static INT LB4Command (INT argc, char **argv)
 #endif /* ModelP */
 
 /****************************************************************************/
-/*                                                                          */
-/* Function:  DebugCommand                                                                                              */
-/*                                                                          */
-/* Purpose:   set or show debugging level for modules                                   */
-/*                                                                          */
-/* Input:     INT argc: number of arguments (incl. its own name)            */
-/*            char **argv: array of strings giving the arguments            */
-/*                                                                          */
-/* Output:    INT return code see header file                               */
-/*                                                                          */
+/*D
+   debug - set or display debug level for ug kernel subsystem
+
+   DESCRIPTION:
+   This command sets the debug level for a ug kernel subsystem.
+
+   'debug $<module> [$<level>]'
+
+   .   $<module>	- module can be one of
+   .n					init
+   .n					dddif
+   .n					dev
+   .n					gm
+   .n					graph
+   .n					low
+   .n					machines
+   .n					numerics
+   .n					np
+   .n					dom
+   .n					ui
+   .   $<level>	- assign this level (if omitted display current level for the
+                                        specified module)
+
+   KEYWORDS:
+   debug, configure, set, display, show, print
+   D*/
 /****************************************************************************/
 
 #ifdef Debug
@@ -12158,7 +10430,7 @@ static INT DebugCommand (INT argc, char **argv)
       return (CMDERRORCODE);
     }
 
-    UserWriteF("debuglevel for module %s is set to %d\n",module,l);
+    UserWriteF("debuglevel for module %s is %d\n",module,l);
   }
   return(OKCODE);
 }
@@ -12170,11 +10442,14 @@ static INT DebugCommand (INT argc, char **argv)
 
    DESCRIPTION:
    This command prints the error stack which is created when functios use
-   the ERR_REP_RETURN macro. In low level functions REP_ERR_RESET should be called.
+   the ERR_REP_RETURN macro. The stack is cleared before each call of a ug-command.
 
    File and line of the returning functions are printed.
 
    'reperr'
+
+   KEYWORDS:
+   debug, stack, error, display, show, print
    D*/
 /****************************************************************************/
 
@@ -12200,11 +10475,16 @@ static INT RepErrCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   ShowConfig - show the main configuration settings of this ug-program
+   showconfig - show the main configuration settings of this ug-program
 
    DESCRIPTION:
    This command shows the main configuration options having been active
    when this ug was compiled.
+
+   'showconfig'
+
+   KEYWORDS:
+   debug, check, configure, show, display, print
    D*/
 /****************************************************************************/
 
@@ -12300,17 +10580,17 @@ static INT ShowConfigCommand (INT argc, char **argv)
    'save') and the postfix 'ar' for 'array'.
 
    CONSTRUCTION and DESTRUCTION:
-   .  crar $n <name> {$n_i}+ - create array of specified size
-   .  dear $n <name> - delete array
+   .  crar~$n~<name>~{$n_i}+                     - create array of specified size
+   .  dear~$n~<name>                                     - delete array
 
    ACCESS to values:
-   .  wrar $n <name> {$n_i}+ $v <value> - write array[n_1][n_2]...[n_k] := <value>
-   .  rear $n <name> {$n_i}+ - read array[n_1][n_2]...[n_k] to ':ARRAY_VALUE'
-   .  clar $n <name> - clear array, all entries := 0.0
+   .  wrar~$n~<name>~{$n_i}+~$v~<value> - write array[n_1][n_2]...[n_k] := <value>
+   .  rear~$n~<name>~{$n_i}+			 - read array[n_1][n_2]...[n_k] to ':ARRAY_VALUE'
+   .  clar~$n~<name>					 - clear array, all entries := 0.0
 
    FILEOPERATIONS:
-   .  saar $n <name> - save array to file '<name>.array'
-   .  loar $n <name> - load array from file '<name>.array'
+   .  saar~$n~<name>					 - save array to file '<name>.array'
+   .  loar~$n~<name>					 - load array from file '<name>.array'
 
    EXAMPLE:
    Use the array commands to realize a consecutively numbering of logfiles
@@ -12336,28 +10616,12 @@ static INT ShowConfigCommand (INT argc, char **argv)
        logon @logname;
    .ve
 
+   KEYWORDS:
+   values, array, manipulate, load, store, data, indexed
+
    SEE ALSO:
-   crar, dear, wrar, rear, saar, loar, clar, defaults
+   'crar', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar', 'defaults'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ClearArray - set all entries of the array to 0
-
-   SYNOPSIS:
-   static INT ClearArray (ARRAY *theAR);
-
-   PARAMETERS:
-   .  theAR - array structure to work on
-
-   DESCRIPTION:
-   Set all entries of the data field contained in the array structure to 0.
-
-   RETURN VALUE:
-   INT
-   .n    0 always
- */
 /****************************************************************************/
 
 static INT ClearArray (ARRAY *theAR)
@@ -12509,53 +10773,20 @@ static INT ReadArray (ARRAY *theAR, INT *Point, DOUBLE *value)
    'crar $n <name> {$<n_i>}+'
 
    .  <name> - name of the array structure
-   .  <n_i> - extension in the i.th dimension, 1 <= i <= 'AR_NVAR_MAX'
+   .  <n_i>  - extension in the i.th dimension, 1 <= i <= 'AR_NVAR_MAX'
 
    EXAMPLE:
    .vb
  # Create a 3x7 (2-dimensional) array
    crar $n example_array $3$7;
    .ve
+
+   KEYWORDS:
+   values, array, manipulate, load, store, data, indexed
 
    SEE ALSO:
-   array, dear, wrar, rear, saar, loar, clar
+   'array', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   CreateArrayCommand - allocate a new array structure
-
-   SYNOPSIS:
-   static INT CreateArrayCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   Allocate a new array structure in the directory '\Array' and
-   allocate the data field of the specified size with the function
-   'CreateArray'. The data field is the same as a 'double[n_1][n_2]...[n_k]'
-   definition in C would allocate. The maximum number 'k' of dimensions
-   is 'AR_NVAR_MAX'. Give the 'n_i' only for the dimensions 'i' you need.
-
-   'crar $n <name> {$<n_i>}+'
-
-   .  <name> - name of the array structure
-   .  <n_i> - extension in the i.th dimension, 1 <= i <= 'AR_NVAR_MAX'
-
-   EXAMPLE:
-   .vb
- # Create a 3x7 (2-dimensional) array
-   crar $n example_array $3$7;
-   .ve
-
-   RETURN VALUE:
-   INT
-   .n    OKCODE if ok
-   .n    CMDERRORCODE if error occured
- */
 /****************************************************************************/
 
 static INT CreateArrayCommand (INT argc, char **argv)
@@ -12600,35 +10831,12 @@ static INT CreateArrayCommand (INT argc, char **argv)
 
    .  <name> - name of the array structure
 
+   KEYWORDS:
+   values, array, manipulate, load, store, data, indexed
+
    SEE ALSO:
-   array, crar, wrar, rear, saar, loar, clar
+   'array', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   DeleteArrayCommand - delete an existing array structure
-
-   SYNOPSIS:
-   static INT DeleteArrayCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   Delete the already existing array. The entry in the directory '\Array'
-   is removed and the data field of the array is freed.
-
-   'dear $n <name>'
-
-   .  <name> - name of the array structure
-
-   RETURN VALUE:
-   INT
-   .n    OKCODE if ok
-   .n    CMDERRORCODE if error occured
- */
 /****************************************************************************/
 
 static INT DeleteArrayCommand (INT argc, char **argv)
@@ -12675,39 +10883,12 @@ static INT DeleteArrayCommand (INT argc, char **argv)
    The file is written in the binary mode, thus be careful when exchanging
    the computer architecture.
 
+   KEYWORDS:
+   values, array, manipulate, load, store, data, indexed
+
    SEE ALSO:
-   array, crar, dear, wrar, rear, loar, clar, defaults
+   'array', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar', 'defaults'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   SaveArrayCommand - save an array to file
-
-   SYNOPSIS:
-   static INT SaveArrayCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   Store the content of the array into a file with name '<array name>.array'.
-   The 'arraypathes' entry in the 'defaults' file is considered.
-
-   'saar $n <name>'
-
-   .  <name> - name of the array structure
-
-   REMARK:
-   The file is written in the binary mode, thus be careful when exchanging
-   the computer architecture.
-
-   RETURN VALUE:
-   INT
-   .n    OKCODE if ok
-   .n    CMDERRORCODE if error occured
- */
 /****************************************************************************/
 
 static INT SaveArrayCommand (INT argc, char **argv)
@@ -12774,40 +10955,12 @@ static INT SaveArrayCommand (INT argc, char **argv)
    The file is written in the binary mode, thus be careful when exchanging
    the computer architecture.
 
+   KEYWORDS:
+   values, array, manipulate, load, store, data, indexed
+
    SEE ALSO:
-   array, crar, dear, wrar, rear, saar, clar, defaults
+   'array', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar', 'defaults'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   LoadArrayCommand - load and allocates an array from file
-
-   SYNOPSIS:
-   static INT LoadArrayCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   Load the content of the array from the file with name '<array name>.array'.
-   The 'arraypathes' entry in the 'defaults' file is considered. A new array
-   structure with the given name is allocated in the directory '\Array'.
-
-   'loar $n <name>'
-
-   .  <name> - name of the array structure
-
-   REMARK:
-   The file is written in the binary mode, thus be careful when exchanging
-   the computer architecture.
-
-   RETURN VALUE:
-   INT
-   .n    OKCODE if ok
-   .n    CMDERRORCODE if error occured
- */
 /****************************************************************************/
 
 static INT LoadArrayCommand (INT argc, char **argv)
@@ -12863,8 +11016,8 @@ static INT LoadArrayCommand (INT argc, char **argv)
 
    'wrar $n <name> {$<n_i>}+ $v <value>'
 
-   .  <name> - name of the array structure
-   .  <n_i> - i.th coordinate of the entry, 0 <= n_i < allocated extension
+   .  <name>  - name of the array structure
+   .  <n_i>   - i.th coordinate of the entry, 0 <= n_i < allocated extension
    .  <value> - double value to be stored
 
    REMARK:
@@ -12877,48 +11030,13 @@ static INT LoadArrayCommand (INT argc, char **argv)
  # perform array[2][5] := 1.0
    wrar $n example_array $2$5 $v 1.0;
    .ve
+
+   KEYWORDS:
+   values, array, manipulate, load, store, data, indexed
 
    SEE ALSO:
-   array, crar, dear, rear, saar, loar, clar
+   'array', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar', 'defaults'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   WriteArrayCommand - write value into one single entry of the array
-
-   SYNOPSIS:
-   static INT WriteArrayCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   Write the given double-value into the specified entry of the array.
-
-   'wrar $n <name> {$<n_i>}+ $v <value>'
-
-   .  <name> - name of the array structure
-   .  <n_i> - i.th coordinate of the entry, 0 <= n_i < allocated extension
-   .  <value> - double value to be stored
-
-   REMARK:
-   Like in C if the array is allocated with 'n' components in a dimension,
-   the valid indices for writing are 0,..,'n'-1. An index outside this
-   range causes an error. Give coordinate for all allocated dimensions.
-
-   EXAMPLE:
-   .vb
- # perform array[2][5] := 1.0
-   wrar $n example_array $2$5 $v 1.0;
-   .ve
-
-   RETURN VALUE:
-   INT
-   .n    OKCODE if ok
-   .n    CMDERRORCODE if error occured
- */
 /****************************************************************************/
 
 static INT WriteArrayCommand (INT argc, char **argv)
@@ -12976,8 +11094,8 @@ static INT WriteArrayCommand (INT argc, char **argv)
 
    'rear $n <name> {$<n_i>}+'
 
-   .  <name> - name of the array structure
-   .  <n_i> - i.th coordinate of the entry, 0 <= n_i < allocated extension
+   .  <name>  - name of the array structure
+   .  <n_i>   - i.th coordinate of the entry, 0 <= n_i < allocated extension
 
    REMARK:
    Like in C if the array is allocated with 'n' components in a dimension,
@@ -12991,50 +11109,13 @@ static INT WriteArrayCommand (INT argc, char **argv)
  # and display the value
    set :ARRAY_VALUE;
    .ve
+
+   KEYWORDS:
+   values, array, manipulate, load, store, data, indexed
 
    SEE ALSO:
-   array, crar, dear, wrar, saar, loar, clar
+   'array', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar', 'defaults'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ReadArrayCommand - read the value from one single entry of the array
-
-   SYNOPSIS:
-   static INT ReadArrayCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   Read the the specified value from the array and store it in the
-   environment variable ':ARRAY_VALUE'.
-
-   'rear $n <name> {$<n_i>}+'
-
-   .  <name> - name of the array structure
-   .  <n_i> - i.th coordinate of the entry, 0 <= n_i < allocated extension
-
-   REMARK:
-   Like in C if the array is allocated with 'n' components in a dimension,
-   the valid indices for reading are 0,..,'n'-1. An index outside this
-   range causes an error. Give coordinate for all allocated dimensions.
-
-   EXAMPLE:
-   .vb
- # retrieve array[2][5]
-   rear $n example_array $2$5;
- # and display the value
-   set :ARRAY_VALUE;
-   .ve
-
-   RETURN VALUE:
-   INT
-   .n    OKCODE if ok
-   .n    CMDERRORCODE if error occured
- */
 /****************************************************************************/
 
 static INT ReadArrayCommand (INT argc, char **argv)
@@ -13093,34 +11174,12 @@ static INT ReadArrayCommand (INT argc, char **argv)
 
    .  <name> - name of the array structure
 
+   KEYWORDS:
+   values, array, manipulate, load, store, data, indexed
+
    SEE ALSO:
-   array, crar, dear, wrar, rear, saar, loar
+   'array', 'dear', 'wrar', 'rear', 'saar', 'loar', 'clar', 'defaults'
    D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   ClearArrayCommand - set all entries of the array to 0.0
-
-   SYNOPSIS:
-   static INT ClearArrayCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   Set all entries of the data field contained in the array structure to 0.0.
-
-   'clar $n <name>'
-
-   .  <name> - name of the array structure
-
-   RETURN VALUE:
-   INT
-   .n    OKCODE if ok
-   .n    CMDERRORCODE if error occured
- */
 /****************************************************************************/
 
 static INT ClearArrayCommand (INT argc, char **argv)
@@ -13354,15 +11413,9 @@ INT InitCommands ()
   if (CreateCommand("newformat",          CreateFormatCommand                             )==NULL) return (__LINE__);
   if (CreateCommand("showpf",             ShowPrintingFormatCommand               )==NULL) return (__LINE__);
   if (CreateCommand("setpf",                      SetPrintingFormatCommand                )==NULL) return (__LINE__);
-#ifdef __NP__
   if (CreateCommand("createvector",   CreateVecDescCommand            )==NULL) return (__LINE__);
   if (CreateCommand("creatematrix",   CreateMatDescCommand            )==NULL) return (__LINE__);
   if (CreateCommand("symlist",            SymListCommand                      )==NULL) return (__LINE__);
-#endif /* __NP__ */
-
-#ifdef __NUMERICS__
-  if (CreateCommand("nplist",                     NumProcListCommand                              )==NULL) return (__LINE__);
-#endif /* __NUMERICS__ */
 
   /* miscellaneous commands */
   if (CreateCommand("setkey",             SetCommandKeyCommand                    )==NULL) return (__LINE__);
@@ -13370,9 +11423,7 @@ INT InitCommands ()
   if (CreateCommand("keylist",            ListCommandKeysCommand                  )==NULL) return (__LINE__);
   if (CreateCommand("refreshon",          RefreshOnCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("refreshoff",         RefreshOffCommand                               )==NULL) return (__LINE__);
-    #ifndef __MWCW__
   if (CreateCommand("system",                     SystemCommand                                   )==NULL) return (__LINE__);
-    #endif
 
   /* debugging */
         #ifdef Debug
