@@ -5835,8 +5835,6 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   {
     ((NP_FAMG_TRANSFER*)np->Transfer)->smooth_sol = np->t;
     ((NP_FAMG_TRANSFER*)np->Transfer)->smooth_def = b;
-    if (dset(theMG,level,level,ALL_VECTORS,np->t,0.0) != NUM_OK)
-      NP_RETURN(1,result[0]);
   }
 #endif
   if ((*np->Transfer->InterpolateCorrection)
