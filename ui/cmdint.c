@@ -65,6 +65,9 @@
 #include "xmain.h"
 #endif
 
+/* glibc: no prototype in math.h unless _ISOC9X_SOURCE is defined */
+long int lrint(double x);
+
 USING_UG_NAMESPACES
 
 /****************************************************************************/
