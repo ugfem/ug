@@ -62,9 +62,21 @@ RLIB:
 	cd ps; make -f Makefile.ps; cd ..;
 
 clean:
-	rm -f $(OBJECTS)
+	rm -f *.o
 	cd xif;  make -f Makefile.xif  clean; cd ..;
 	cd sif;  make -f Makefile.sif  clean; cd ..;
 	cd rif;  make -f Makefile.rif  clean; cd ..;
+	cd meta; make -f Makefile.meta clean; cd ..;
+	cd ps;   make -f Makefile.ps   clean; cd ..;
+
+#preliminary: only xif+meta+ps (should be configurable in another way)
+extract:
+	$(ARCH_AR) $(ARCH_EXFLAGS) ../lib/libdev.a $(OBJECTS)
+	cd xif;  make -f Makefile.xif  extract; cd ..;
+	cd meta; make -f Makefile.meta extract; cd ..;
+	cd ps;   make -f Makefile.ps   extract; cd ..;
+
+xmc: extract all
+	cd xif;  make -f Makefile.xif  clean; cd ..;
 	cd meta; make -f Makefile.meta clean; cd ..;
 	cd ps;   make -f Makefile.ps   clean; cd ..;

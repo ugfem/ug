@@ -7,7 +7,6 @@
 ##############################################################################
 
 
-
 # include configuration and all makefile macro definitions
 include ../ug.conf
 
@@ -37,8 +36,15 @@ GSF:
 	cd gsf; make -f Makefile.gsf; cd ..;
 
 clean:
-	rm -f $(OBJECTS)
+	rm -f *.o
 	cd std;  make -f Makefile.std clean; cd ..;
 	cd gsf;  make -f Makefile.gsf clean; cd ..;
 
+#preliminary: only std (should be configurable in another way)
+extract:
+	$(ARCH_AR) $(ARCH_EXFLAGS) ../lib/libdom$(UG_DOMSUFFIX).a $(OBJECTS)
+	cd std;  make -f Makefile.std extract; cd ..;
+
+xmc: extract all
+	cd std;  make -f Makefile.std clean; cd ..;
 
