@@ -4323,6 +4323,22 @@ static INT MarkCommand (INT argc, char **argv)
     return(OKCODE);
   }
 
+  if (ReadArgvDOUBLE("X",&x,argc, argv)==0)
+  {
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+            if (XC(MYVERTEX(CORNER(theElement,j))) > x)
+              MarkForRefinement(theElement,RED,NULL);
+
+    UserWriteF("all elements in x > %f marked for refinement\n",
+               (float) x);
+
+    return(OKCODE);
+  }
+
   if (ReadArgvDOUBLE("y",&y,argc, argv)==0)
   {
     for (l=0; l<=TOPLEVEL(theMG); l++)
