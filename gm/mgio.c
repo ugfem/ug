@@ -104,7 +104,7 @@ static MGIO_GE_ELEMENT lge[MGIO_TAGS];
 /* RCS string */
 #ifdef __MGIO_USE_IN_UG__
 
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 #endif
 #endif
@@ -844,8 +844,7 @@ int Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
 
 int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 {
-  int i,j,k,m,s;
-  unsigned int ctrl;
+  int i,j,m,s;
   MGIO_CG_ELEMENT *pe;
 
   pe = cg_element;
@@ -893,7 +892,7 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 
 int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 {
-  int i,j,k,s;
+  int i,j,s;
   MGIO_CG_ELEMENT *pe;
 
   pe = cg_element;

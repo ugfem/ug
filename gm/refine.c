@@ -1839,8 +1839,8 @@ static INT compare_node (const void *e0, const void *e1)
   return(0);
 }
 
-INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
-                             ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons)
+static INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
+                                    ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons)
 {
   INT i,j,nsons,markclass;
 
@@ -2407,14 +2407,8 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
   NODE *theNode, *theNode0, *theNode1;
   NODE *theSideNodes[8];
   NODE *ElementNodes[MAX_CORNERS_OF_ELEM];
-  ELEMENT *theSon;
-  ELEMENT *NbElement;
-  ELEMENT *NbSonList[MAX_SONS];
-  ELEMENT *NbSideSons[5];
-  REFRULE *NbRule;
-  SONDATA *sdata2;
-  int i,j,k,l,m,n,o,p,q,r,s,s2,found,points;
-  int side,nbside,nelem,nedges,node0;
+  int i,j,k,l,m,n,s,found;
+  int nelem,nedges,node0;
   int bdy,edge, sides[4], side0, side1;
   int tetNode0, tetNode1, tetNode2, tetEdge0, tetEdge1, tetEdge2,
       tetSideNode0Node1, tetSideNode0Node2, tetSideNode1Node2,
@@ -3227,15 +3221,16 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 
 static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theElementContext)
 {
-  INT i,j,l,s,s2,p,q,side,pyrSide,nbside;
-  INT points,m,n,o,k,r;
-  ELEMENT *theSon,*theNeighbor;
+  INT i,s,p,side;
+  ELEMENT *theSon;
   ELEMENT *SonList[MAX_SONS],*SonList2[MAX_SONS];
-  ELEMENT *NbSideSons[5];
   NODE *ElementNodes[MAX_CORNERS_OF_ELEM];
-  INT boundaryelement, found;
-  REFRULE *rule, *rule2;
-  SONDATA *sdata, *sdata2;
+  INT boundaryelement;
+  REFRULE *rule;
+  SONDATA *sdata;
+#       ifdef __THREEDIM__
+  INT l;
+#       endif
 
   /* is something to do ? */
   if (!IS_TO_REFINE(theElement)) return(GM_OK);

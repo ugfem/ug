@@ -2598,7 +2598,7 @@ INT CheckConnections (GRID *theGrid)
    D*/
 /****************************************************************************/
 
-INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString, VECTOR *theVector, int VectorType)
+static INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString, VECTOR *theVector, int VectorType)
 {
   GEOM_OBJECT *VecObject;
   INT error=GM_OK;
@@ -2682,12 +2682,14 @@ INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString, VECTOR *theVector, 
 INT CheckAlgebra (GRID *theGrid)
 {
   ELEMENT *theElement;
-  NODE *theNode, *Node0, *Node1;
+  NODE *theNode;
   VECTOR *theVector;
   EDGE *theEdge;
   LINK *theLink;
-  GEOM_OBJECT *theObject;
-  INT errors,i;
+  INT errors;
+#       ifdef __THREEDIM__
+  INT i;
+#       endif
 
   errors = GM_OK;
 

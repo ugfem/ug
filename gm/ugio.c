@@ -189,7 +189,7 @@ INT MGSetVectorClasses (MULTIGRID *theMG)
    D*/
 /****************************************************************************/
 
-INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
+static INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
 {
   FILE *stream;
   GRID *theGrid;
@@ -530,7 +530,7 @@ static INT nHierElements (ELEMENT *theElement, INT *n)
 
 #endif
 
-INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
+static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
 {
   GRID *theGrid;
   NODE *theNode;
@@ -546,11 +546,14 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   MGIO_CG_ELEMENT *cg_element;
   MGIO_REFINEMENT *refinement;
   MGIO_BD_GENERAL bd_general;
-  INT i,j,k,niv,nbv,nie,nbe,n,bvi,ivi,nhe,hr_max;
-  INT RefRuleOffset[TAGS],zip;
-  char sysCom[NAMESIZE];
+  INT i,j,k,niv,nbv,nie,nbe,n,nhe,hr_max;
+  INT RefRuleOffset[TAGS];
   char *p;
   BNDP **BndPList;
+#       ifndef __MWCW__
+  char sysCom[NAMESIZE];
+  INT zip;
+#       endif
 
   /* check */
   if (theMG==NULL) return (1);
@@ -742,7 +745,6 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
 INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
 {
   char *p;
-  INT mode;
 
   /* check name convention */
   p = name + strlen(name) - 4;
@@ -865,7 +867,7 @@ static INT IO_GetSideNode (ELEMENT *theElement, INT side, NODE **theNode, INT *n
 
 static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT *refinement)
 {
-  INT i,j,n,nedge,type,sonRefined,n0,n1,Sons_of_Side,Sons_of_Side_List[MAX_SONS],nbside;
+  INT i,j,n,nedge,type,sonRefined,n0,n1,Sons_of_Side,Sons_of_Side_List[MAX_SONS];
   ELEMENT *theSonElem[MAX_SONS];
   ELEMENT *SonList[MAX_SONS];
   NODE *NodeList[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
@@ -875,6 +877,9 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   MGIO_RR_RULE *theRule;
   static MGIO_REFINEMENT *ref;
   struct mgio_sondata *SonData;
+#       ifdef __THREEDIM__
+  INT nbside;
+#       endif
 
   BNDS *bnds;
   bnds = ELEM_BNDS(theElement,2);
@@ -1062,8 +1067,6 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   MULTIGRID *theMG;
   GRID *theGrid;
   ELEMENT *theElement;
-  ELEMENT *SonList[MAX_SONS],*theNeighbor;
-  INT Sons_of_NbSide_List[MAX_SONS];
   HEAP *theHeap;
   MGIO_MG_GENERAL mg_general;
   MGIO_GE_GENERAL ge_general;
@@ -1075,15 +1078,20 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   MGIO_BD_GENERAL bd_general;
   MGIO_REFINEMENT *refinement;
   BNDP **BndPList;
-  DOUBLE **PositionList, *Positions;
-  char sysCom[NAMESIZE];
-  char *p;
+  DOUBLE *Positions;
   BVP *theBVP;
   BVP_DESC theBVPDesc;
   MESH theMesh;
   char FormatName[NAMESIZE], BndValName[NAMESIZE], MGName[NAMESIZE];
-  INT i,j,k,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],**Element_corner_ids_uniq_subdom,*Element_corner_ids,max,**Element_nb_uniq_subdom,*Element_nb_ids;
-  INT zip,Sons_of_Side,side,nbside;
+  INT i,j,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],**Element_corner_ids_uniq_subdom,*Element_corner_ids,max,**Element_nb_uniq_subdom,*Element_nb_ids;
+#       ifndef __MWCW__
+  char sysCom[NAMESIZE],*p;
+  INT zip;
+#       endif
+#       ifdef __THREEDIM__
+  INT k;
+  ELEMENT *theNeighbor;
+#       endif
 
 #ifndef __MWCW__
   /* unzip if */

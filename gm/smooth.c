@@ -573,10 +573,9 @@ static INT LambdaFromQuad (ELEMENT *theElement,VERTEX *centerVertex,
                            NODE *sidemidNode,NODE *cornerNodes[],
                            DOUBLE *lambda)
 {
-  VERTEX *CenterVertex,*bndVertex;
   DOUBLE *CornerPtrs[MAX_CORNERS_OF_ELEM],lcorn0[DIM],lcorn1[DIM],lmid0[DIM],lmid1[DIM];
   DOUBLE *LocalCoord;
-  INT i,j,k,coe,idim,node_found,coord,curved;
+  INT i,j,k,coe,node_found,coord,curved;
   ELEMENT *sonElement;
   NODE *midNode[2];
   LINK *theLink;
@@ -669,9 +668,9 @@ static INT LambdaFromQuad (ELEMENT *theElement,VERTEX *centerVertex,
 static INT DefaultBndElemCenterLocal(NODE *centerNode, DOUBLE *defaultLocal)
 {
   ELEMENT *fatherElement;
-  DOUBLE global[DIM],*local;
-  INT coe,m,j,moved;
-  VERTEX *theVertex,*VertexOnEdge[MAX_EDGES_OF_ELEM];
+  DOUBLE global[DIM];
+  INT coe,m,j;
+  VERTEX *VertexOnEdge[MAX_EDGES_OF_ELEM];
   NODE *theNode;
   EDGE *theEdge;
   DOUBLE fac;
@@ -748,12 +747,12 @@ static INT DefaultBndElemCenterLocal(NODE *centerNode, DOUBLE *defaultLocal)
 INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const INT ForceLevelSet)
 {
   MULTIGRID *theMG;
-  ELEMENT *theElement,*fatherElement,*oppositeElement,*nbElement[MAX_SIDES_OF_ELEM];
-  VERTEX *theVertex,*CenterVertex;
+  ELEMENT *fatherElement,*oppositeElement,*nbElement[MAX_SIDES_OF_ELEM];
+  VERTEX *theVertex;
   NODE *theNode,*CornerNodes[2],*CenterNodes[2],*node0,*node1;
   DOUBLE *CornerPtrs[MAX_CORNERS_OF_ELEM],LocalCenter[3]={0.5,0.5,0.5};
   DOUBLE newPos[DIM],newLocal[DIM],lambda,lambda0,lambda1,lambda_old,x1,x2;
-  INT i,j,coe,numOfSides,nqsides,curved,coN,ceN,nbn,Eside,nlinks,OnlyRedSons;
+  INT i,coe,numOfSides,coN,ceN,Eside,nlinks,OnlyRedSons;
   LINK *theLink;
 
   theMG = MYMG(theGrid);
@@ -1031,7 +1030,7 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
 INT SmoothGridReset (GRID *theGrid, INT *MoveInfo)
 {
   MULTIGRID *theMG;
-  ELEMENT *theElement,*fatherElement,*oppositeElement,*nbElement[MAX_SIDES_OF_ELEM];
+  ELEMENT *fatherElement;
   VERTEX *theVertex;
   NODE *theNode,*CornerNodes[2],*CenterNodes[2];
   DOUBLE *CornerPtrs[MAX_CORNERS_OF_ELEM],LocalCenter[3]={0.5,0.5,0.5};
