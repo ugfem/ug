@@ -222,7 +222,7 @@ INT NS_DIM_PREFIX TraceUGBlas (INT trace)
 
    This function checks wether the two VECDATA_DESCs match.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_DESC_MISMATCH if the type descriptors does not match
@@ -258,7 +258,7 @@ INT NS_DIM_PREFIX VecCheckConsistency (const VECDATA_DESC *x, const VECDATA_DESC
    This function checks whether the VECDATA_DESCs and the MATDATA_DESC
    match.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_DESC_MISMATCH if the type descriptors not match
@@ -383,7 +383,7 @@ static int Scatter_VectorComp (DDD_OBJ obj, void *data)
 
    This function builds the sum of the vector values for all border vectors.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -441,7 +441,7 @@ static int Scatter_VectorComp_noskip (DDD_OBJ obj, void *data)
    DESCRIPTION:
    This function finds and stores the minimum of the vector values of all border vectors
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
@@ -485,28 +485,6 @@ INT l_vector_minimum_noskip (GRID *g, const VECDATA_DESC *x)
 }
 
 
-/****************************************************************************/
-/*D
-   l_vector_maximum_noskip
-     - stores the maximum of the vector values on master and all copies
-
-   SYNOPSIS:
-   INT l_vector_maximum_noskip (GRID *g, const VECDATA_DESC *x);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  x - vector data descriptor
-
-   DESCRIPTION:
-   This function finds and stores the maximum of the vector values of all border vectors
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK      if ok
-   .n    NUM_ERROR   if error occurrs
-   D*/
-/****************************************************************************/
-
 static int Scatter_MaxVectorComp_noskip (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
@@ -527,6 +505,20 @@ static int Scatter_MaxVectorComp_noskip (DDD_OBJ obj, void *data)
 
   return (NUM_OK);
 }
+
+/****************************************************************************/
+/** \brief Stores the maximum of the vector values on master and all copies
+
+   \param g - pointer to grid
+   \param x - vector data descriptor
+
+   This function finds and stores the maximum of the vector values of all border vectors
+
+   \return <ul>
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+ */
+/****************************************************************************/
 
 INT l_vector_maximum_noskip (GRID *g, const VECDATA_DESC *x)
 {
@@ -557,7 +549,7 @@ INT l_vector_maximum_noskip (GRID *g, const VECDATA_DESC *x)
 
    This function builds the sum of the vector values for all border vectors.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
@@ -590,7 +582,7 @@ INT l_vector_consistent_noskip (GRID *g, const VECDATA_DESC *x)
 
    This function builds the sum of the vector values for all border vectors.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -680,7 +672,7 @@ static int Scatter_VectorCompBS (DDD_OBJ obj, void *data)
    blockvector for all master and border vectors; the result is stored in all
    master and border vectors.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -733,7 +725,7 @@ static int Scatter_GhostVectorComp (DDD_OBJ obj, void *data)
 
    This function copies the vector values of master vectors to ghost vectors.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -767,7 +759,7 @@ INT NS_DIM_PREFIX l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x)
    This function copies the vector values on the master vectors to the
    horizontal ghosts.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -828,7 +820,7 @@ static int Scatter_EData (DDD_OBJ obj, void *data)
    This function copies the element data field form all masters to the
    copy elements.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -884,7 +876,7 @@ static int Scatter_NData (DDD_OBJ obj, void *data)
 
    This function adds the node data field form all borders and masters.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -969,7 +961,7 @@ static int Scatter_ProjectVectorComp (DDD_OBJ obj, void *data)
 
    This function copies the vector values of master vectors to ghost vectors.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -1029,7 +1021,7 @@ static int Gather_VectorCompCollect (DDD_OBJ obj, void *data)
    This function collects the sum of the vector values for all border vectors
    to the master vector.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -1062,7 +1054,7 @@ INT NS_DIM_PREFIX l_vector_collect (GRID *g, const VECDATA_DESC *x)
    This function collects the sum of the vector values for all border vectors
    to the master vector.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -1210,7 +1202,7 @@ static int Scatter_GhostVectorVecskip (DDD_OBJ obj, void *data)
 
    This function checks the vecskip flags and exchanges Dirichlet values.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -1267,7 +1259,7 @@ INT NS_DIM_PREFIX a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA
    This function collects the sum of the vector values for all ghost vectors
    to the master vector.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -1336,7 +1328,7 @@ static int Scatter_MatrixCollect (DDD_OBJ obj, void *data)
    This function collects the matrix entries of ghost elements.
    It is called in 'AssembleGalerkinByMatrix'.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -1588,7 +1580,7 @@ static int CountAndSortMatrices (DDD_OBJ obj)
    first AMG-level stored on one processor.
    It is called in 'AMGAgglomerate'.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -1700,7 +1692,7 @@ static INT l_vector_average (GRID *g, const VECDATA_DESC *x)
 
    This function builds the mean value of all vector values on border vectors.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -1736,7 +1728,7 @@ INT NS_DIM_PREFIX l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
 
    This function builds the mean value of all vector values on border vectors.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -2170,7 +2162,7 @@ static int CountAndSortInconsMatrices (DDD_OBJ obj)
    This function builds the sum of the matrix values for
    the matrix list of all border vectors.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK      if ok
    .n    NUM_ERROR   if error occurrs
  */
@@ -2265,7 +2257,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK
    .n    NUM_ERROR if error occured
 
@@ -2285,7 +2277,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    This function sets all components of a vector to a given value.
 
-   RETURN VALUE:
+   \return <ul>
    .n    NUM_OK
    .n    NUM_ERROR if error occured
 
@@ -2324,7 +2316,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK
    .n    NUM_ERROR if error occured
@@ -2349,7 +2341,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    This function copies a vector to another: `x := y`.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK
    .n    NUM_ERROR if error occured
@@ -2433,7 +2425,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK
    .n    NUM_ERROR if error occured
@@ -2458,7 +2450,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    This function calculates `x := a * x`.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK
    .n    NUM_ERROR if error occured
@@ -2503,7 +2495,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK
    .n    NUM_ERROR if error occured
@@ -2554,7 +2546,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -2579,7 +2571,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    This function calculates `x := x + y`.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -2644,7 +2636,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -2669,7 +2661,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    This function calculates `x := x - y`.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -2717,7 +2709,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -2742,7 +2734,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    This function calculates `x := -x + y`.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -2791,7 +2783,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -2842,7 +2834,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -2868,7 +2860,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    This function calculates `x := x + ay`.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -2917,7 +2909,7 @@ INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3016,7 +3008,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3071,7 +3063,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3097,7 +3089,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
    This function computes the scalar product of two vectors.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3149,7 +3141,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3203,7 +3195,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3229,7 +3221,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
    This function computes the euclidian norm of a vector and stores it to
    a DOUBLE.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3307,7 +3299,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3335,7 +3327,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
 
    This function sets all matrix entries to `a`.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3492,7 +3484,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3520,7 +3512,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
 
    This function set all 'M := N'.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3616,7 +3608,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3645,7 +3637,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
 
    This function sets 'M := M + N'.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3742,7 +3734,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3771,7 +3763,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
 
    This function computes `x = M * y`.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3857,7 +3849,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3886,7 +3878,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
 
    This function computes `x = x + M * y`.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3965,7 +3957,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
 
    It runs from level fl to tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -3994,7 +3986,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
 
    This function computes `x = x - M * y`.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
@@ -4068,7 +4060,7 @@ INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATD
    This function sets all components of a vector on one grid level
    to random value.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK
  */
@@ -4263,7 +4255,7 @@ INT NS_DIM_PREFIX l_dsetrandom2 (GRID *g, const VECDATA_DESC *x, INT xclass, DOU
    This function sets on one grid level all components of a vector for which
    the skip flag is not set to a given value.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK
  */
@@ -4342,7 +4334,7 @@ INT NS_DIM_PREFIX l_dsetnonskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOU
    the skip flag is not set to a given value.
    It runs from level fl to level tl.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK
  */
@@ -4417,7 +4409,7 @@ INT NS_DIM_PREFIX a_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DE
    the skip flag is not set to a given value.
    It runs the surface of the grid, c. f. 'FINE_GRID_DOF' in 'gm.h'.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK
  */
@@ -4508,7 +4500,7 @@ INT NS_DIM_PREFIX s_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DE
    This function sets on one grid level all components of a vector for which
    the skip flag is not set to a given value.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK
  */
@@ -4587,7 +4579,7 @@ INT NS_DIM_PREFIX l_dsetskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE
    'typedef INT (*SetFuncProcPtr) (const DOUBLE_VECTOR Global, SHORT vtype,'
    'DOUBLE *val);'
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if the function could not be evaluated for a VECTOR
@@ -4872,7 +4864,7 @@ INT NS_DIM_PREFIX l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xcl
 
    This function computes the mean of a vector on one grid level.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    if NDEBUG is not defined:
@@ -5057,7 +5049,7 @@ INT NS_DIM_PREFIX l_dmatset_SB (BLOCKVECTOR *dest, BLOCKVECTOR *source,const MAT
 
    This function copies a matrix `M1 = M2-transpose` on one grid level.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    if NDEBUG is not defined:
@@ -5756,7 +5748,7 @@ INT NS_DIM_PREFIX s_dtpmatmul_set (MULTIGRID *mg, INT fl, INT tl, const VECDATA_
    This function computes times matrix with vector `x := x + M-Transpose * y`
    on one grid level.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    if NDEBUG is not defined:
@@ -5839,7 +5831,7 @@ INT NS_DIM_PREFIX l_dtpmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const
 
    The result matrix must be different to the input matrices.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_OUT_OF_MEM if no memory for additional matrix entries available
@@ -5924,7 +5916,7 @@ INT NS_DIM_PREFIX d2matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_co
 
    The result matrix must be different to the input matrices.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_OUT_OF_MEM if no memory for additional matrix entries available
@@ -6013,7 +6005,7 @@ INT NS_DIM_PREFIX d2matmul_minusBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *
 
    The result matrix must be different to the input matrices.
 
-   RETURN VALUE:
+   \return <ul>
    INT
    .n    NUM_OK if ok
    .n    NUM_OUT_OF_MEM if no memory for additional matrix entries available
@@ -6080,14 +6072,7 @@ INT NS_DIM_PREFIX d3matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_co
 
 
 /****************************************************************************/
-/** \brief
-   CalculateDefectAndNormBS - calculates the defect of a blockmatrix d := f - K * u
-
-   SYNOPSIS:
-    DOUBLE CalculateDefectAndNormBS( const BLOCKVECTOR *bv_row,
-            const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT d_comp,
-                INT f_comp, INT K_comp, INT u_comp );
-
+/** \brief Calculates the defect of a blockmatrix d := f - K * u
 
  * @param bv_row - row-blockvector of the matrix
  * @param bvd_col - description of the column-blockvector
@@ -6106,8 +6091,7 @@ INT NS_DIM_PREFIX d3matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_co
    d_comp == f_comp is allowed; then this function is equivalent to
    'dmatmul_minusBS' and then 'eunormBS'.
 
-   RETURN VALUE:
-   INT
+   \return <ul>
    .n    NUM_OK if ok
 
    SEE ALSO:

@@ -942,7 +942,7 @@ static INT CutBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *theBV, INT makeVC)
 /****************************************************************************/
 /** \brief Return pointer to a new connection structure
  *
- * @param  TheGrid - grid where matrix should be inserted
+ * @param  theGrid - grid where matrix should be inserted
  * @param  from - source vector
  * @param  to - destination vector
 
@@ -3545,8 +3545,9 @@ static INT CheckVector (const FORMAT *fmt, const INT s2p[], GEOM_OBJECT *theObje
    This function assumes a correct geometric data structure.
 
  * @return <ul>
- *   <li>    GM_OK if ok
- *   <li>    GM_ERROR	if error occured.
+ *   <li>    GM_OK if ok </li>
+ *   <li>    GM_ERROR	if error occured. </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -3764,8 +3765,9 @@ INT NS_DIM_PREFIX CheckAlgebra (GRID *theGrid)
    one of its sides, edges or nodes.
 
  * @return <ul>
- *   <li>   0 if does not correspond
- *   <li>   1 if does correspond.
+ *   <li>   0 if does not correspond </li>
+ *   <li>   1 if does correspond.	 </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -3815,8 +3817,9 @@ INT NS_DIM_PREFIX VectorInElement (ELEMENT *theElement, VECTOR *theVector)
    midpoint is returned, and for sides and elements the center of mass.
 
  * @return <ul>
- *   <li>    0 if ok
- *   <li>    1 if error occured.
+ *   <li>    0 if ok                     </li>
+ *   <li>    1 if error occured.	 </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -3888,8 +3891,9 @@ INT NS_DIM_PREFIX VectorPosition (const VECTOR *theVector, DOUBLE *position)
    Initialize vector class in all vectors associated with given element with 3.
 
  * @return <ul>
- *   <li>   0 if ok
- *   <li>   1 if error occured.
+ *   <li>   0 if ok </li>
+ *   <li>   1 if error occured. </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -3932,8 +3936,9 @@ INT NS_DIM_PREFIX SeedVectorClasses (GRID *theGrid, ELEMENT *theElement)
    Reset all vector classes in all vectors of given grid to 0.
 
  * @return <ul>
- *   <li>    0 if ok
- *   <li>    1 if error occured.
+ *   <li>    0 if ok </li>
+ *   <li>    1 if error occured. </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -4064,8 +4069,9 @@ static INT PropagateVectorClassX (GRID *theGrid, INT vclass)
    now computes the class 2 and class 1 vectors.
 
  * @return <ul>
- *   <li>     0 if ok
- *   <li>     1 if error occured
+ *   <li>     0 if ok </li>
+ *   <li>     1 if error occured	 </li>
+   </ul>
  */
 /****************************************************************************/
 INT NS_DIM_PREFIX PropagateVectorClasses (GRID *theGrid)
@@ -4150,8 +4156,9 @@ INT NS_DIM_PREFIX PropagateVectorClasses (GRID *theGrid)
    is also the basis for determining copies.
 
  * @return <ul>
- *   <li>    0 if ok
- *   <li>    1 if error occured.
+ *   <li>    0 if ok </li>
+ *   <li>    1 if error occured.			 </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -4177,8 +4184,9 @@ INT NS_DIM_PREFIX ClearNextVectorClasses (GRID *theGrid)
    Set VNCLASS in all vectors associated with the element to 3.
 
  * @return <ul>
- *   <li>    0 if ok
- *   <li>    1 if error occured.
+ *   <li>    0 if ok  </li>
+ *   <li>    1 if error occured.	 </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -4337,8 +4345,9 @@ static INT PropagatePeriodicNextVectorClass (GRID *theGrid)
    Computes values of VNCLASS field in all vectors after seed.
 
  * @return <ul>
- *   <li>   0 if ok
- *   <li>   1 if error occured
+ *   <li>   0 if ok              </li>
+ *   <li>   1 if error occured </li>
+   </ul>
  */
 /****************************************************************************/
 INT NS_DIM_PREFIX PropagateNextVectorClasses (GRID *theGrid)
@@ -4415,8 +4424,9 @@ INT NS_DIM_PREFIX PropagateNextVectorClasses (GRID *theGrid)
    element.
 
  * @return <ul>
- *   <li>   0 if ok
- *   <li>   1 if error occured.
+ *   <li>   0 if ok </li>
+ *   <li>   1 if error occured. </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -4610,8 +4620,9 @@ static int MatrixCompare (MATRIX **MatHandle1, MATRIX **MatHandle2)
    It has the complexity of qsort which is n*log(n).
 
  * @return <ul>
- *   <li>  0 if ok
- *   <li>  1 if error occured.
+ *   <li>  0 if ok </li>
+ *   <li>  1 if error occured. </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -4731,9 +4742,6 @@ INT NS_DIM_PREFIX LexOrderVectorsInGrid (GRID *theGrid, INT mode, const INT *ord
 
    This function creates a new find cut dependency in environement.
 
- * @return <ul>
- *   <li>  0 if ok
- *   <li>  1 if error occured.
  */
 /****************************************************************************/
 
@@ -4762,9 +4770,6 @@ FIND_CUT * NS_DIM_PREFIX CreateFindCutProc (char *name, FindCutProcPtr FindCutPr
 
    This function creates a new algebraic dependency in environement.
 
- * @return <ul>
- *   <li>  0 if ok
- *   <li>  1 if error occured.
  */
 /****************************************************************************/
 
@@ -4882,8 +4887,9 @@ static INT SensCompare (MATRIX **MatHandle1, MATRIX **MatHandle2)
    This function reorders the matrix list of a vector in a circular order (2D only).
 
  * @return <ul>
- *   <li>   0 if ok
- *   <li>   1 if error occured.
+ *   <li>   0 if ok </li>
+ *   <li>   1 if error occured.	 </li>
+   </ul>
  */
 /****************************************************************************/
 static INT OrderMatrices (VECTOR *vec, INT Sense)
@@ -4938,8 +4944,9 @@ static INT OrderMatrices (VECTOR *vec, INT Sense)
    This function reorders double linked vector list by a shell algorithm.
 
  * @return <ul>
- *   <li>   0 if ok
- *   <li>   1 if error occured.
+ *   <li>   0 if ok </li>
+ *   <li>   1 if error occured.	 </li>
+   </ul>
  */
 /****************************************************************************/
 

@@ -1,31 +1,31 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  ugiter.c														*/
-/*																			*/
-/* Purpose:   iterative schemes and decompositions							*/
-/*			  working on the matrix-vector structure						*/
-/*																			*/
-/* Author:	  Henrik Rentz-Reichert                                                                                 */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
-/*																			*/
-/* History:   25.03.95 begin, ug version 3.0								*/
-/*																			*/
-/* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                          */
+/* File:      ugiter.c                                                      */
+/*                                                                          */
+/* Purpose:   iterative schemes and decompositions                          */
+/*            working on the matrix-vector structure                        */
+/*                                                                          */
+/* Author:    Henrik Rentz-Reichert                                         */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/* email:     ug@ica3.uni-stuttgart.de                                      */
+/*                                                                          */
+/* History:   25.03.95 begin, ug version 3.0                                */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* include files															*/
-/*			  system include files											*/
-/*			  application include files                                                                     */
-/*																			*/
+/*                                                                          */
+/* include files                                                            */
+/* system include files                                                     */
+/* application include files                                                */
+/*                                                                          */
 /****************************************************************************/
 
 #include <stdlib.h>
@@ -50,25 +50,28 @@
 USING_UG_NAMESPACES
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*    compile time constants defining static data size (i.e. arrays)        */
+/*    other constants                                                       */
+/*    macros                                                                */
+/*                                                                          */
 /****************************************************************************/
 
 #define SMALL_DET                       1e-15
 #define MAX_DEPTH           MAX_NODAL_VECTORS
 #define V_BVNUMBER(v,n)         (VINDEX(v)/n)
 
-/* macros to define VEC_SCALAR, VECDATA_DESC and MATDATA_DESC components */
+/** @name Macros to define VEC_SCALAR, VECDATA_DESC and MATDATA_DESC components */
+/** @{*/
 #define DEFINE_VS_CMPS(a)                               register DOUBLE a ## 0,a ## 1,a ## 2
 #define DEFINE_VD_CMPS(x)                               register INT x ## 0,x ## 1,x ## 2
 #define DEFINE_MD_CMPS(m)                               register INT m ## 00,m ## 01,m ## 02,m ## 10,m ## 11,m ## 12,m ## 20,m ## 21,m ## 22
+/** @}*/
 
-/* macros to set VECDATA_DESC and MATDATA_DESC components */
+/** @name Macros to set VECDATA_DESC and MATDATA_DESC components */
+/** @{*/
 #define SET_YCMP_1(y,v,tp,cp)                   {y ## 0 = (VD_CMPPTR_OF_TYPE(v,tp))[0];}
 #define SET_YCMP_2(y,v,tp,cp)                   {cp=VD_CMPPTR_OF_TYPE(v,tp); y ## 0 = (cp)[0]; y ## 1 = (cp)[1];}
 #define SET_YCMP_3(y,v,tp,cp)                   {cp=VD_CMPPTR_OF_TYPE(v,tp); y ## 0 = (cp)[0]; y ## 1 = (cp)[1]; y ## 2 = (cp)[2];}
@@ -109,24 +112,25 @@ USING_UG_NAMESPACES
 #define SET_CMPS_31(y,v,m,M,rt,ct,cp)   SET_MCMP_31(m,M,rt,ct,cp); SET_YCMP_1(y,v,ct,cp);
 #define SET_CMPS_32(y,v,m,M,rt,ct,cp)   SET_MCMP_32(m,M,rt,ct,cp); SET_YCMP_2(y,v,ct,cp);
 #define SET_CMPS_33(y,v,m,M,rt,ct,cp)   SET_MCMP_33(m,M,rt,ct,cp); SET_YCMP_3(y,v,ct,cp);
+/** @}*/
 
 /****************************************************************************/
-/*																			*/
-/* data structures used in this source file (exported data structures are	*/
-/*		  in the corresponding include file!)								*/
-/*																			*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                          */
+/* data structures used in this source file (exported data structures are   */
+/* in the corresponding include file!)                                      */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
+/****************************************************************************/
+
+/****************************************************************************/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 static INT StoreInverse=TRUE;
@@ -153,52 +157,22 @@ REP_ERR_FILE;
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*																			*/
-/* some functions to assign values to the global variables of this file		*/
-/*																			*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*																			*/
-/* Function:  IterCheckConsistencyEtc										*/
-/*																			*/
-/* Purpose:   check wether the VECDATA_DESC is consistent with the format	*/
-/*			  and wether DESCRIPTORS match									*/
-/*			  and wether the problem is scalar								*/
-/*																			*/
-/* Input:	  FORMAT		*theFormat										*/
-/*			  VECDATA_DESC *theVec											*/
-/*            MATDATA_DESC *M                   the matrix to precondition          */
-/*            VECDATA_DESC *d           right hand side (the defect)            */
 /*                                                                          */
-/*            INT			*isscal     treat as scalar if TRUE             */
-/*            INT			*vc         v component				            */
-/*            INT			*mc         M component				            */
-/*            INT			*dc         d component				            */
-/*            INT			*mask       data type maks			            */
+/* some functions to assign values to the global variables of this file     */
 /*                                                                          */
-/* Output:    INT 0: ok                                                         */
-/*            INT 1: error	                                                */
-/*																			*/
 /****************************************************************************/
 
+
 /****************************************************************************/
-/*D
-   l_setindex - set index field in vectors of the specified types
+/** \brief Set index field in vectors of the specified types
 
-   SYNOPSIS:
-   INT l_setindex (GRID *g);
+   \param g - pointer to grid
 
-   PARAMETERS:
-   .  g - pointer to grid
-
-   DESCRIPTION:
    This function sets index field in vectors of the specified types.
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK
-   D*/
+   \return
+   NUM_OK
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_setindex (GRID *g)
@@ -221,24 +195,18 @@ INT NS_DIM_PREFIX l_setindex (GRID *g)
 }
 
 /****************************************************************************/
-/*D
-   l_ordervtypes - Rearrange doubly linked vector list according to TypeOrder
+/** \brief Rearrange doubly linked vector list according to TypeOrder
 
-   SYNOPSIS:
-   INT l_ordervtypes (GRID *g, const SHORT TypeOrder[NVECTYPES]);
+   \param g - pointer to grid
+   \param TypeOrder - describes the order
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  TypeOrder[NVECTYPES] - describes the order
-
-   DESCRIPTION:
    This function rearranges doubly linked vector list according to TypeOrder.
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_ERROR if an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_ERROR if an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_ordervtypes (GRID *g, const SHORT TypeOrder[NVECTYPES])
@@ -290,30 +258,23 @@ INT NS_DIM_PREFIX l_ordervtypes (GRID *g, const SHORT TypeOrder[NVECTYPES])
 }
 
 /****************************************************************************/
-/*D
-   l_jac - solve Diag(M)v=d
+/** \brief Solve Diag(M)v=d
 
-   SYNOPSIS:
-   INT l_jac (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-   const VECDATA_DESC *d);
+   \param g - pointer to grid
+   \param v - type vector descriptor to store correction
+   \param M - type matrix descriptor for precondition
+   \param d - type vector descriptor for right hand side (the defect)
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  v - type vector descriptor to store correction
-   .  M - type matrix descriptor for precondition
-   .  d - type vector descriptor for right hand side (the defect)
-
-   DESCRIPTION:
-   This function solves `Diag(M) v = d`, where only the diagonal of 'M'
+   This function solves \f$ diag(M) v = d \f$, where only the diagonal of \f$ M \f$
    is used.
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_DESC_MISMATCH if the type descriptors not match
-   .n    NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP
-   .n    NUM_SMALL_DIAG if a diagonal block system is (nearly) singular.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_DESC_MISMATCH if the type descriptors not match </li>
+   <li>   NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP </li>
+   <li>   NUM_SMALL_DIAG if a diagonal block system is (nearly) singular. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_jac (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
@@ -383,32 +344,24 @@ INT NS_DIM_PREFIX l_jac (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, 
 }
 
 /****************************************************************************/
-/*D
-   jacBS - iterates Diag(K)u=f for a blockmatrix K (Jacobi method)
+/** \brief Iterates Diag(K)u=f for a blockmatrix K (Jacobi method)
 
-   SYNOPSIS:
-   INT jacBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd,
-            const BV_DESC_FORMAT *bvdf, INT K_comp, INT u_comp, INT f_comp );
+   \param bv - blockvector of the matrix
+   \param bvd - description of the blockvector
+   \param bvdf - format to interpret the 'bvd'
+   \param K_comp - position of the scalar in the MATRIXs of the blockmatrix
+   \param u_comp - position of the solution scalar in the VECTORs of the blockvector
+   \param f_comp - position of the right hand side scalar in the VECTORs of the blockvector
 
-   PARAMETERS:
-   .  bv - blockvector of the matrix
-   .  bvd - description of the blockvector
-   .  bvdf - format to interpret the 'bvd'
-   .  K_comp - position of the scalar in the MATRIXs of the blockmatrix
-   .  u_comp - position of the solution scalar in the VECTORs of the blockvector
-   .  f_comp - position of the right hand side scalar in the VECTORs of the blockvector
-
-   DESCRIPTION:
-   This function solves Ku = f by solving `Diag(K) u = f` (Jacobi method),
+   This function solves \f$ Ku = f \f$ by solving `Diag(K) u = f` (Jacobi method),
    where only the diagonal of 'K' is used. The blockmatrix K must be on the
    diagonal of the global matrix.
 
    u_comp and f_comp must be different!
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   D*/
+   \return
+   NUM_OK if ok
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX jacBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT K_comp, INT u_comp, INT f_comp )
@@ -430,31 +383,24 @@ INT NS_DIM_PREFIX jacBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DE
 
 
 /****************************************************************************/
-/*D
-   l_lgs - solve LowerTriangle
+/** \brief Solve LowerTriangle
 
-   SYNOPSIS:
-   INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-   const VECDATA_DESC *d);
+   \param g - pointer to grid
+   \param v - type vector descriptor to store correction
+   \param M - type matrix descriptor for precondition
+   \param d - type vector descriptor for right hand side (the defect)
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  v - type vector descriptor to store correction
-   .  M - type matrix descriptor for precondition
-   .  d - type vector descriptor for right hand side (the defect)
-
-   DESCRIPTION:
    This function solves `LowerTriangle(M) v = d`,
    where only the lower part of 'M' is used.
 
    `Remark.` Index field must be set!
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_DESC_MISMATCH if the type descriptors not match
-   .n    __LINE__ line where an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_DESC_MISMATCH if the type descriptors not match </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 #ifdef _SPARSE_
@@ -772,31 +718,24 @@ INT NS_DIM_PREFIX l_tplgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const M
 #endif /* not _SPARSE_ */
 
 /****************************************************************************/
-/*D
-   l_ugs - solve UpperTriangle
+/** \brief Solve UpperTriangle
 
-   SYNOPSIS:
-   INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-   const VECDATA_DESC *d);
+   \param g - pointer to grid
+   \param v - type vector descriptor to store correction
+   \param M - type matrix descriptor for precondition
+   \param d - type vector descriptor for right hand side (the defect)
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  v - type vector descriptor to store correction
-   .  M - type matrix descriptor for precondition
-   .  d - type vector descriptor for right hand side (the defect)
-
-   DESCRIPTION:
    This function solves `UpperTriangle(M) v = d`,
    where only the upper part of 'M' is used.
 
    `Remark.` Index field must be set!
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_DESC_MISMATCH if the type descriptors not match
-   .n    __LINE__ line where an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_DESC_MISMATCH if the type descriptors not match </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
@@ -1043,31 +982,24 @@ INT NS_DIM_PREFIX l_ugs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MAT
 }
 
 /****************************************************************************/
-/*D
-   l_lgsB - solve LowerBLOCKVECTORTriangle
+/** \brief Solve LowerBLOCKVECTORTriangle
 
-   SYNOPSIS:
-   INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const MATDATA_DESC *LU,
-   const VECDATA_DESC *d);
+   \param g  - pointer to grid
+   \param v  - type vector descriptor to store correction
+   \param M  - type matrix descriptor for precondition
+   \param d  - type vector descriptor for right hand side (the defect)
 
-   PARAMETERS:
-   .  g  - pointer to grid
-   .  v  - type vector descriptor to store correction
-   .  M  - type matrix descriptor for precondition
-   .  d  - type vector descriptor for right hand side (the defect)
-
-   DESCRIPTION:
    This function solves `LowerBLOCKVECTORTriangle(M) v = d`,
    where only the upper part of 'M' is used.
 
    `Remark.` Index field must be set!
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_DESC_MISMATCH if the type descriptors not match
-   .n    __LINE__ line where an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_DESC_MISMATCH if the type descriptors not match </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
@@ -1278,29 +1210,21 @@ INT NS_DIM_PREFIX l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
 #ifdef __BLOCK_VECTOR_DESC__
 
 /****************************************************************************/
-/*D
-   gs_solveBS - iterates LowerTriangle(K)u=f for a blockmatrix K (Gauss-Seidel method)
+/** \brief Iterates LowerTriangle(K)u=f for a blockmatrix K (Gauss-Seidel method)
 
-   SYNOPSIS:
-   INT gs_solveBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd,
-   const BV_DESC_FORMAT *bvdf, DOUBLE eps, INT max_it, INT K_comp,
-   INT u_comp, INT f_comp, INT aux_comp, INT verbose, INT eps_relative );
+   \param bv - blockvector of the matrix
+   \param bvd - description of the blockvector
+   \param bvdf - format to interpret the 'bvd'
+   \param eps - final accuracy for the defect
+   \param max_it - maximum of iterations to be performed
+   \param K_comp - position of the scalar in the MATRIXs of the blockmatrix
+   \param u_comp - position of the solution scalar in the VECTORs of the blockvector
+   \param f_comp - position of the right hand side scalar in the VECTORs of the blockvector
+   \param aux_comp - if nonnegative denotes auxiliary component for defect calculation
+   \param verbose - if TRUE display the convergence rate of the iteration
+   \param eps_relative - error reduction relative to the start defect
 
-   PARAMETERS:
-   .  bv - blockvector of the matrix
-   .  bvd - description of the blockvector
-   .  bvdf - format to interpret the 'bvd'
-   .  eps - final accuracy for the defect
-   .  max_it - maximum of iterations to be performed
-   .  K_comp - position of the scalar in the MATRIXs of the blockmatrix
-   .  u_comp - position of the solution scalar in the VECTORs of the blockvector
-   .  f_comp - position of the right hand side scalar in the VECTORs of the blockvector
-   .  aux_comp - if nonnegative denotes auxiliary component for defect calculation
-   .  verbose - if TRUE display the convergence rate of the iteration
-   .  eps_relative - error reduction relative to the start defect
-
-   DESCRIPTION:
-   This function solve Ku = f by iterative solvings of `LowerTriangle(K) v = f`.
+   This function solve \f$ Ku = f\f$ by iterative solvings of `LowerTriangle(K) v = f`.
    The blockmatrix K must be on the diagonal of the
    global matrix.
 
@@ -1313,11 +1237,11 @@ INT NS_DIM_PREFIX l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
 
    u_comp, f_comp (and aux_comp if given) must be different!
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    1 if not converged
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   1 if not converged </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX gs_solveBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, DOUBLE eps, INT max_it, INT K_comp, INT u_comp, INT f_comp, INT aux_comp, INT verbose, INT eps_relative )
@@ -1397,33 +1321,26 @@ INT NS_DIM_PREFIX gs_solveBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const 
 #endif
 
 /****************************************************************************/
-/*D
-   l_lsor - solve LowerTriangle
+/** \brief Solve LowerTriangle
 
-   SYNOPSIS:
-   INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-   const VECDATA_DESC *d, const DOUBLE *omega);
+   \param g - pointer to grid
+   \param v - type vector descriptor to store correction
+   \param M - type matrix descriptor for precondition
+   \param d - type vector descriptor for right hand side (the defect)
+   \param omega - relaxation parameter
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  v - type vector descriptor to store correction
-   .  M - type matrix descriptor for precondition
-   .  d - type vector descriptor for right hand side (the defect)
-   .  omega - relaxation parameter
-
-   DESCRIPTION:
    This function solves `LowerTriangle(M) v = d`,
    where only the lower part of 'M' is used,
    using successive overrelaxation.
 
    `Remark.` Index field must be set!
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_DESC_MISMATCH if the type descriptors not match
-   .n    __LINE__ line where an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_DESC_MISMATCH if the type descriptors not match </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
@@ -2072,33 +1989,26 @@ INT NS_DIM_PREFIX l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC 
 }
 
 /****************************************************************************/
-/*D
-   l_lsor_ld - solve LowerTriangle with local damping
+/** \brief Solve LowerTriangle with local damping
 
-   SYNOPSIS:
-   INT l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-   const VECDATA_DESC *d, const VECDATA_DESC *damp);
+   \param g - pointer to grid
+   \param v - type vector descriptor to store correction
+   \param M - type matrix descriptor for precondition
+   \param d - type vector descriptor for right hand side (the defect)
+   \param damp - vector of local damping factors
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  v - type vector descriptor to store correction
-   .  M - type matrix descriptor for precondition
-   .  d - type vector descriptor for right hand side (the defect)
-   .  damp - vector of local damping factors
-
-   DESCRIPTION:
    This function solves `LowerTriangle(M) v = d`,
    where only the lower part of 'M' is used,
    using successive overrelaxation.
 
    `Remark.` Index field must be set!
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_DESC_MISMATCH if the type descriptors not match
-   .n    __LINE__ line where an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_DESC_MISMATCH if the type descriptors not match </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, const VECDATA_DESC *damp, VECDATA_DESC *diag)
@@ -2313,24 +2223,16 @@ INT NS_DIM_PREFIX l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC 
 }
 
 /****************************************************************************/
-/*D
-   l_ilubthdecomp	- compute incomplete decomposition
+/** \brief Compute incomplete decomposition
 
-   SYNOPSIS:
-   INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta,
-   const VEC_SCALAR threshold, const VECDATA_DESC *rest,
-   const VEC_SCALAR oldrestthresh);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  M - type matrix descriptor
-   .  beta - modification parameters
-   .  threshold - introduce new connection if entry > threshold
-   .  rest - if !=NULL store normalized rest matrix row sums here
-   .  oldrestthresh - if !=NULL use rest field of last step to flag vectors where
+   \param g - pointer to grid
+   \param M - type matrix descriptor
+   \param beta - modification parameters
+   \param threshold - introduce new connection if entry > threshold
+   \param rest - if !=NULL store normalized rest matrix row sums here
+   \param oldrestthresh - if !=NULL use rest field of last step to flag vectors where
                                                 connections will be introduced
 
-   DESCRIPTION:
    This function computes an incomplete decomposition of order 0
    with modification of the diagonal.
    A new connection is introduced if an entry is larger than threshold.
@@ -2339,12 +2241,12 @@ INT NS_DIM_PREFIX l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC 
 
    The matrix M is overwritten!
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    i<0 if decomposition failed
-   .n    __LINE__ line where an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   i<0 if decomposition failed </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VEC_SCALAR threshold, const VECDATA_DESC *VD_rest, const VEC_SCALAR oldrestthresh)
@@ -2831,28 +2733,6 @@ INT NS_DIM_PREFIX l_ilubdecomp_SB (BLOCKVECTOR *theBV, const MATDATA_DESC *M, co
   REP_ERR_RETURN (1);
 }
 
-/****************************************************************************/
-/*D
-   l_icdecomp	- compute incomplete decomposition
-
-   SYNOPSIS:
-   INT l_icdecomp (GRID *g, const MATDATA_DESC *M);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  M - type matrix descriptor
-
-   DESCRIPTION:
-   This function computes an incomplete decomposition of order 0.
-   The matrix M is overwritten!
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    i<0 if decomposition failed
-   .n    __LINE__ line where an error occured.
-   D*/
-/****************************************************************************/
 
 #define SMALL_ROOT 0.001
 
@@ -2955,6 +2835,22 @@ static INT SquareRootOfSmallBlock(SHORT n, const SHORT *mcomp,
   REP_ERR_RETURN(1);
 }
 
+/****************************************************************************/
+/** \brief Compute incomplete decomposition
+
+   \param g - pointer to grid
+   \param M - type matrix descriptor
+
+   This function computes an incomplete decomposition of order 0.
+   The matrix M is overwritten!
+
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   i<0 if decomposition failed </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
+/****************************************************************************/
 INT NS_DIM_PREFIX l_icdecomp (GRID *g, const MATDATA_DESC *M)
 {
   VECTOR *vi,*vj,*vk;
@@ -3216,31 +3112,23 @@ INT NS_DIM_PREFIX l_icdecomp (GRID *g, const MATDATA_DESC *M)
 }
 
 /****************************************************************************/
-/*D
-    l_iluspdecomp - compute spectrally shifted incomplete decomposition of order 0
+/** \brief Compute spectrally shifted incomplete decomposition of order 0
 
-        SYNOPSIS:
-        INT l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta,
-        const VECDATA_DESC *t, INT mode);
+   \param  g - grid level
+   \param  M - matrix to decompose
+   \param  t - temp vector to store shifting parameters
+   \param  mode - shift 'SP_GLOBAL' or 'SP_LOCAL'
+   \param  oldrestthresh - if !=NULL use t field of last step (it contains the normalized row sums of the
+   rest natrix of the decomposition) to flag vectors where
+   connections will be introduced (CAUTION: do not overwrite t before!)
 
-        PARAMETERS:
-   .   g - grid level
-   .   M - matrix to decompose
-   .   t - temp vector to store shifting parameters
-   .   mode - shift 'SP_GLOBAL' or 'SP_LOCAL'
-   .   oldrestthresh - if !=NULL use t field of last step (it contains the normalized row sums of the
-                                                rest natrix of the decomposition) to flag vectors where
-                                                connections will be introduced (CAUTION: do not overwrite t before!)
-
-        DESCRIPTION:
         The row sums of the rest matrix are used to modify the diagonal of the
         decomposition. This is done either globally or locally.
 
-        RETURN VALUE:
-        INT
-   .n   NUM_OK when o.k.
+        \return
+        NUM_OK when o.k.
 
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VECDATA_DESC *t, INT mode, const VEC_SCALAR oldrestthresh)
@@ -3750,27 +3638,21 @@ INT NS_DIM_PREFIX l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALA
 }
 
 /****************************************************************************/
-/*D
-   l_lrdecomp - compute left-right decomposition of M
+/** \brief Compute left-right decomposition of M
 
-   SYNOPSIS:
-   INT l_lrdecomp (GRID *g, const MATDATA_DESC *M, const DOUBLE *threshold);
+   \param g - pointer to grid
+   \param M - type matrix descriptor for precondition
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  M - type matrix descriptor for precondition
-
-   DESCRIPTION:
    This function computes left-right decomposition of M.
    The matrix M is overwritten!
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_OUT_OF_MEM if there is not enough memory to store the decomposition
-   .n    i<0 if the decomposition fails at the 'VECTOR' with 'INDEX' '-i'
-   .n    __LINE__ line where an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_OUT_OF_MEM if there is not enough memory to store the decomposition </li>
+   <li>   i<0 if the decomposition fails at the 'VECTOR' with 'INDEX' '-i' </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_lrdecomp (GRID *g, const MATDATA_DESC *M)
@@ -4004,20 +3886,13 @@ INT NS_DIM_PREFIX l_lrdecomp (GRID *g, const MATDATA_DESC *M)
 #ifdef __BLOCK_VECTOR_DESC__
 
 /****************************************************************************/
-/*D
-   LUDecomposeDiagBS - calculate the LU decomposition of a diagonal block of a matrix
+/** \brief Calculate the LU decomposition of a diagonal block of a matrix
 
-   SYNOPSIS:
-   INT LUDecomposeDiagBS( const BLOCKVECTOR *bv, const BV_DESC *bvd,
-                          const BV_DESC_FORMAT *bvdf, INT A_comp, GRID *grid );
+   \param bv - blockvector of the blockmatrix
+   \param bvd - description of the blockvector
+   \param bvdf - format to interpret the 'bvd'
+   \param A_comp - position of the matrix in the MATRIX-data of the blockmatrix
 
-   PARAMETERS:
-   .  bv - blockvector of the blockmatrix
-   .  bvd - description of the blockvector
-   .  bvdf - format to interpret the 'bvd'
-   .  A_comp - position of the matrix in the MATRIX-data of the blockmatrix
-
-   DESCRIPTION:
    Calculate the LU decomposition of the given block of matrix 'A'. The result
    is stored again in this block. The matrix must be a digonalblock of the
    global matrix 'A'. For the fill-in extra connections are allocated.
@@ -4030,15 +3905,12 @@ INT NS_DIM_PREFIX l_lrdecomp (GRID *g, const MATDATA_DESC *M)
 
    To solve for such a decomposition use 'solveLUMatBS'.
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_SMALL_DIAG if a diagonal element was < SMALL_D (i.e. division by nearly 0)
-   .n    NUM_OUT_OF_MEM not enough memory to allocate the fill-in entries
-
-   SEE ALSO:
-   BLOCKVECTOR, blas_routines, solveLUMatBS
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_SMALL_DIAG if a diagonal element was < SMALL_D (i.e. division by nearly 0) </li>
+   <li>   NUM_OUT_OF_MEM not enough memory to allocate the fill-in entries </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX LUDecomposeDiagBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT A_comp, GRID *grid )
@@ -4124,27 +3996,21 @@ INT NS_DIM_PREFIX LUDecomposeDiagBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, 
 #endif
 
 /****************************************************************************/
-/*D
-   l_lrregularize - regularize last diagonal block
+/** \brief Regularize last diagonal block
 
-   SYNOPSIS:
-   INT l_lrregularize (GRID *theGrid, const MATDATA_DESC *M, INT restore)
+   \param theGrid - pointer to grid
+   \param M - type matrix descriptor for decomposition
+   \param restore - if true and StoreInverse the inverse of the last block is computed and stored first
 
-   PARAMETERS:
-   .  theGrid - pointer to grid
-   .  M - type matrix descriptor for decomposition
-   .  restore - if true and StoreInverse the inverse of the last block is computed and stored first
-
-   DESCRIPTION:
    This function regularizes the last diagonal block if it was found to be singular.
    It checks wether it is singular exactly for one component and replaces the zero by 1.
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    1: more than one diagonal entry is zero
-   .n    2: InvertSmallBlock failed after regularizing
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   1: more than one diagonal entry is zero </li>
+   <li>   2: InvertSmallBlock failed after regularizing </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_lrregularize (GRID *theGrid, const MATDATA_DESC *M, INT restore)
@@ -4209,26 +4075,20 @@ INT NS_DIM_PREFIX l_lrregularize (GRID *theGrid, const MATDATA_DESC *M, INT rest
 }
 
 /****************************************************************************/
-/*D
-   l_lrregularizeB - regularize last diagonal block of BLOCKVECTOR
+/** \brief Regularize last diagonal block of BLOCKVECTOR
 
-   SYNOPSIS:
-   INT l_lrregularizeB (GRID *theGrid, const MATDATA_DESC *M)
+   \param theGrid - pointer to grid
+   \param M - type matrix descriptor for decomposition
 
-   PARAMETERS:
-   .  theGrid - pointer to grid
-   .  M - type matrix descriptor for decomposition
-
-   DESCRIPTION:
    This function regularizes the last diagonal block if it was found to be singular.
    It checks wether it is singular exactly for one component and replaces the zero by 1.
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    1: more than one diagonal entry is zero
-   .n    2: InvertSmallBlock failed after regularizing
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   1: more than one diagonal entry is zero </li>
+   <li>   2: InvertSmallBlock failed after regularizing </li>
+   </ul>
+ */
 /****************************************************************************/
 
 static INT l_lrregularizeB (GRID *theGrid, VECTOR *vec, const MATDATA_DESC *M)
@@ -4284,27 +4144,21 @@ static INT l_lrregularizeB (GRID *theGrid, VECTOR *vec, const MATDATA_DESC *M)
 }
 
 /****************************************************************************/
-/*D
-   l_lrdecompB - compute left-right decomposition of M BLOCKVECTOR-wise
+/** \brief Compute left-right decomposition of M BLOCKVECTOR-wise
 
-   SYNOPSIS:
-   INT l_lrdecompB (GRID *g, const MATDATA_DESC *M, const DOUBLE *threshold);
+   \param g - pointer to grid
+   \param M - type matrix descriptor for precondition
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  M - type matrix descriptor for precondition
-
-   DESCRIPTION:
    This function computes left-right decomposition of M.
    The matrix M is overwritten!
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_OUT_OF_MEM if there is not enough memory to store the decomposition
-   .n    i<0 if the decomposition fails at the 'VECTOR' with 'INDEX' '-i'
-   .n    __LINE__ line where an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_OUT_OF_MEM if there is not enough memory to store the decomposition </li>
+   <li>   i<0 if the decomposition fails at the 'VECTOR' with 'INDEX' '-i' </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_lrdecompB (GRID *g, const MATDATA_DESC *M)
@@ -4573,30 +4427,23 @@ INT NS_DIM_PREFIX l_lrdecompB (GRID *g, const MATDATA_DESC *M)
 }
 
 /****************************************************************************/
-/*D
-   l_luiter - solve L*U*v=d
+/** \brief Solve L*U*v=d
 
-   SYNOPSIS:
-   INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-   const VECDATA_DESC *d);
+   \param g - pointer to grid
+   \param v - type vector descriptor to store correction
+   \param M - type matrix descriptor for precondition
+   \param d - type vector descriptor for right hand side (the defect)
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  v - type vector descriptor to store correction
-   .  M - type matrix descriptor for precondition
-   .  d - type vector descriptor for right hand side (the defect)
-
-   DESCRIPTION:
-   This function solves `L*U*v=d`, where `L`, `U` are the factors from a
+   This function solves \f$LUv=d \f$, where \f$ L \f$, \f$ U \f$ are the factors from a
    (in-)complete decomposition, stored in 'M'.
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_DESC_MISMATCH if the type descriptors not match
-   .n    NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP
-   .n    __LINE__ line where an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_DESC_MISMATCH if the type descriptors not match </li>
+   <li>   NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
@@ -5083,22 +4930,15 @@ INT NS_DIM_PREFIX l_tpluiter_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, cons
 #ifdef __BLOCK_VECTOR_DESC__
 
 /****************************************************************************/
-/*D
-   solveLUMatBS - solve for a LU-decomposed diagonal block of a matrix
+/** \brief Solve for a LU-decomposed diagonal block of a matrix
 
-   SYNOPSIS:
-   INT solveLUMatBS( const BLOCKVECTOR *bv, const BV_DESC *bvd,
-       const BV_DESC_FORMAT *bvdf, INT dest_comp, INT LU_comp, INT source_comp );
+   \param bv - blockvector of the blockmatrix
+   \param bvd - description of the blockvector
+   \param bvdf - format to interpret the 'bvd'
+   \param dest_comp - position of the result in the VECTOR-data
+   \param LU_comp - position of the LU decomposition in the MATRIX-data of the blockmatrix
+   \param source_comp - position of the given right hand side in the VECTOR-data
 
-   PARAMETERS:
-   .  bv - blockvector of the blockmatrix
-   .  bvd - description of the blockvector
-   .  bvdf - format to interpret the 'bvd'
-   .  dest_comp - position of the result in the VECTOR-data
-   .  LU_comp - position of the LU decomposition in the MATRIX-data of the blockmatrix
-   .  source_comp - position of the given right hand side in the VECTOR-data
-
-   DESCRIPTION:
    Given a LU-decposition of a matrixblock 'A' and a right hand side vector
    'source_comp', this function solves 'A * dest_comp = source_comp'. The
    matrixblock must be on the diagonal of the global matrix.
@@ -5113,14 +4953,11 @@ INT NS_DIM_PREFIX l_tpluiter_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, cons
    REMARK:
    dest_comp == source_comp is possible!
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_SMALL_DIAG if a diagonal element was < SMALL_D (i.e. division by nearly 0)
-
-   SEE ALSO:
-   BLOCKVECTOR, blas_routines, LUDecomposeDiagBS
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_SMALL_DIAG if a diagonal element was < SMALL_D (i.e. division by nearly 0) </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX solveLUMatBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT dest_comp, INT LU_comp, INT source_comp )
@@ -5198,32 +5035,25 @@ INT NS_DIM_PREFIX solveLUMatBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const
 #endif
 
 /****************************************************************************/
-/*D
-   l_luiterB - solve L*U*v=d
+/** \brief Solve L*U*v=d
 
-   SYNOPSIS:
-   INT l_luiterB (GRID *g, const BLOCKVECTOR *bv,
-                const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
+   \param g  - pointer to grid
+   \param bv - block vector to invert
+   \param v  - type vector descriptor to store correction
+   \param M  - type matrix descriptor for precondition
+   \param d  - type vector descriptor for right hand side (the defect)
 
-   PARAMETERS:
-   .  g  - pointer to grid
-   .  bv - block vector to invert
-   .  v  - type vector descriptor to store correction
-   .  M  - type matrix descriptor for precondition
-   .  d  - type vector descriptor for right hand side (the defect)
-
-   DESCRIPTION:
    This function solves `L*U*v=d`, where `L`, `U` are the factors from a
    (in-)complete decomposition, stored in 'M'.
    Only the block 'bv' is solved. Without updating any defect.
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_DESC_MISMATCH if the type descriptors not match
-   .n    NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP
-   .n    __LINE__ line where an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_DESC_MISMATCH if the type descriptors not match </li>
+   <li>   NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
@@ -5579,30 +5409,23 @@ INT NS_DIM_PREFIX l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC 
 }
 
 /****************************************************************************/
-/*D
-   l_lltiter - solve L * L^T * v = d
+/** \brief Solve L * L^T * v = d
 
-   SYNOPSIS:
-   INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-   const VECDATA_DESC *d);
+   \param g - pointer to grid
+   \param v - type vector descriptor to store correction
+   \param M - type matrix descriptor for precondition
+   \param d - type vector descriptor for right hand side (the defect)
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  v - type vector descriptor to store correction
-   .  M - type matrix descriptor for precondition
-   .  d - type vector descriptor for right hand side (the defect)
-
-   DESCRIPTION:
    This function solves `L * L^T * v = d`, where `L` is a factor from a
    (in-)complete decomposition, stored in 'M'.
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_DESC_MISMATCH if the type descriptors not match
-   .n    NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP
-   .n    __LINE__ line where an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_DESC_MISMATCH if the type descriptors not match </li>
+   <li>   NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
@@ -5619,7 +5442,7 @@ INT NS_DIM_PREFIX l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC 
   DEFINE_VS_CMPS(s);
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
-  register SHORT *tmpptr;
+  SHORT *tmpptr;
 
   PRINTDEBUG(np,1,("l_lltiter: l=%d v=%s M=%s d=%s\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d)));
 
@@ -5894,24 +5717,16 @@ INT NS_DIM_PREFIX l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC 
 
 
 /****************************************************************************/
-/*D
-   l_ilubthdecomp_fine	- compute incomplete decomposition on fine grid nodes
+/** \brief Compute incomplete decomposition on fine grid nodes
 
-   SYNOPSIS:
-   INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta,
-   const VEC_SCALAR threshold, const VECDATA_DESC *rest,
-   const VEC_SCALAR oldrestthresh);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  M - type matrix descriptor
-   .  beta - modification parameters
-   .  threshold - introduce new connection if entry > threshold
-   .  rest - if !=NULL store normalized rest matrix row sums here
-   .  oldrestthresh - if !=NULL use rest field of last step to flag vectors where
+   \param g - pointer to grid
+   \param M - type matrix descriptor
+   \param beta - modification parameters
+   \param threshold - introduce new connection if entry > threshold
+   \param rest - if !=NULL store normalized rest matrix row sums here
+   \param oldrestthresh - if !=NULL use rest field of last step to flag vectors where
                                                 connections will be introduced
 
-   DESCRIPTION:
    This function computes an incomplete decomposition of order 0
    with modification of the diagonal.
    A new connection is introduced if an entry is larger than threshold.
@@ -5921,25 +5736,25 @@ INT NS_DIM_PREFIX l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC 
 
    The matrix M is overwritten!
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    i<0 if decomposition failed
-   .n    __LINE__ line where an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   i<0 if decomposition failed </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VEC_SCALAR threshold, const VECDATA_DESC *VD_rest, const VEC_SCALAR oldrestthresh)
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
-        #ifndef __MWCW__
+#ifndef __MWCW__
   DOUBLE InvMat[MAX_SINGLE_MAT_COMP],PivMat[MAX_SINGLE_MAT_COMP];
   DOUBLE CorMat[MAX_SINGLE_MAT_COMP];
-        #endif
+#endif
   DOUBLE sum;
   INT offset[NVECTYPES+1];
-  register DOUBLE *Diag,*Piv,*Elm,*Mat,*Djj,*Dkk;
+  DOUBLE *Diag,*Piv,*Elm,*Mat,*Djj,*Dkk;
   register SHORT *DiagComp,*PivComp,*ElmComp,*MatComp,*DjjComp,*DkkComp;
   register INT i0,j0,k0,l,m;
   INT type,ctype,rtype,PivIsZero,CorIsZero;
@@ -6303,31 +6118,24 @@ INT NS_DIM_PREFIX l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC
 }
 
 /****************************************************************************/
-/*D
-   l_luiter_fine - solve L*U*v=d
+/** \brief Solve L*U*v=d
 
-   SYNOPSIS:
-   INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-   const VECDATA_DESC *d);
+   \param g - pointer to grid
+   \param v - type vector descriptor to store correction
+   \param M - type matrix descriptor for precondition
+   \param d - type vector descriptor for right hand side (the defect)
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  v - type vector descriptor to store correction
-   .  M - type matrix descriptor for precondition
-   .  d - type vector descriptor for right hand side (the defect)
-
-   DESCRIPTION:
    This function solves `L*U*v=d`, where `L`, `U` are the factors from a
    (in-)complete decomposition, stored in 'M'.
    THIS VERSION SKIPS VECTORS IN COARSE GRID NODES!
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_DESC_MISMATCH if the type descriptors not match
-   .n    NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP
-   .n    __LINE__ line where an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_DESC_MISMATCH if the type descriptors not match </li>
+   <li>   NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
@@ -6708,34 +6516,6 @@ INT NS_DIM_PREFIX l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_D
   return (NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   l_pgs - patch Gauss Seidel step
-
-   SYNOPSIS:
-   INT l_pgs (GRID *g, const VECDATA_DESC *v,
-   const MATDATA_DESC *M, const VECDATA_DESC *d,
-   INT depth, INT mode);
-
-   PARAMETERS:
-   .  g - pointer to grid
-   .  v - type vector descriptor to store correction
-   .  M - type matrix descriptor for precondition
-   .  d - type vector descriptor for right hand side (the defect)
-   .  depth - number of patch vectors
-   .  mode - overlapping mode
-
-   DESCRIPTION:
-   This function performs a patch Gauss Seidel step.
-
-   `Remark.` Index field must be set!
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    __LINE__ line where an error occured.
-   D*/
-/****************************************************************************/
 
 static VECDATA_DESC *t;
 
@@ -6979,6 +6759,26 @@ static INT ElementJAC (GRID *g, const VECDATA_DESC *v,
   return (NUM_OK);
 }
 
+/****************************************************************************/
+/** \brief Patch Gauss Seidel step
+
+   \param g - pointer to grid
+   \param v - type vector descriptor to store correction
+   \param M - type matrix descriptor for precondition
+   \param d - type vector descriptor for right hand side (the defect)
+   \param depth - number of patch vectors
+   \param mode - overlapping mode
+
+   This function performs a patch Gauss Seidel step.
+
+   `Remark.` Index field must be set!
+
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
+/****************************************************************************/
 INT NS_DIM_PREFIX l_pgs (GRID *g, const VECDATA_DESC *v,
                          const MATDATA_DESC *M, const VECDATA_DESC *d,
                          INT depth, INT mode, DOUBLE vdamp)
@@ -7235,21 +7035,11 @@ INT NS_DIM_PREFIX l_pgs (GRID *g, const VECDATA_DESC *v,
 }
 
 /****************************************************************************/
-/*																			*/
-/* Function:  InvertSparseBlock												*/
-/*																			*/
-/* Purpose:   invert  sparse block                                              */
-/*																			*/
-/* Input:	                                                                        */
-/*			  SPARSE_MATRIX *sm     pointer to the sparse matrix structure  */
-/*			  MATRIX *mat			matrix to be invetred                                   */
-/*			  DOUBLE *invmat		store inverse matrix here				*/
-/*																			*/
-/* Author: Natalia Simus													*/
-/*																			*/
-/* Output:	  INT 0: ok                                                                                                     */
-/*			 __LINE__ line where an error occured							*/
-/*																			*/
+/** \brief Invert sparse block
+   \param sm    pointer to the sparse matrix structure
+   \param mat			matrix to be invetred
+   \param invmat		store inverse matrix here
+ */
 /****************************************************************************/
 
 static INT InvertSparseBlock (SPARSE_MATRIX *sm, MATRIX *mat, DOUBLE *invmat)
@@ -7320,20 +7110,13 @@ static INT InvertSparseBlock (SPARSE_MATRIX *sm, MATRIX *mat, DOUBLE *invmat)
 }
 
 /****************************************************************************/
-/*																			*/
-/* Function:  SolveInverseSparseBlock										*/
-/*																			*/
-/* Purpose:   solve a small system of equations								*/
-/*																			*/
-/* Input:	  SPARSE_MATRIX *sm		sparse matrix structure of the system   */
-/*			  MATRIX *mat           components of inverse matrix			*/
-/*            SHORT  *scomp             components of the solution              */
-/*			  DOUBLE *sol			DOUBLE array of the solution			*/
-/*			  DOUBLE *rhs			find right hand side here				*/
-/*																			*/
-/* Output:	  INT 0: ok                                                                                                     */
-/*				  1: error													*/
-/*																			*/
+/** \brief Solve a small system of equations
+
+   \param sm		sparse matrix structure of the system
+   \param mat           components of inverse matrix
+   \param sol			DOUBLE array of the solution
+   \param rhs			find right hand side here
+ */
 /****************************************************************************/
 
 static INT SolveInverseSparseBlock (SPARSE_MATRIX *sm, MATRIX *mat,
@@ -7359,15 +7142,15 @@ static INT SolveInverseSparseBlock (SPARSE_MATRIX *sm, MATRIX *mat,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    l_iluspbldecomp - compute incomplete decomposition
 
    SYNOPSIS:
    INT l_iluspbldecomp (GRID *g, const MATDATA_DESC *M);
 
    PARAMETERS:
-   .  g - pointer to grid
-   .  M - type matrix descriptor
+   \param g - pointer to grid
+   \param M - type matrix descriptor
 
    DESCRIPTION:
    This function computes an incomplete decomposition of
@@ -7376,12 +7159,12 @@ static INT SolveInverseSparseBlock (SPARSE_MATRIX *sm, MATRIX *mat,
 
    The matrix M is overwritten !
 
-   RETURN VALUE:
+   \return <ul>
    INT
-   .n    NUM_OK if ok
-   .n    i<0 if decomposition failed
-   .n    __LINE__ line where an error occured.
-   D*/
+   <li>   NUM_OK if ok </li>
+   <li>   i<0 if decomposition failed </li>
+   <li>   __LINE__ line where an error occured. </li>
+ */
 /****************************************************************************/
 INT NS_DIM_PREFIX l_iluspbldecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta)
 {
@@ -7570,31 +7353,24 @@ INT NS_DIM_PREFIX l_iluspbldecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCA
 }
 
 /****************************************************************************/
-/*D
-   l_iluspbliter - solve L*U*v=d
+/** \brief Solve L*U*v=d
 
-   SYNOPSIS:
-   INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-   const VECDATA_DESC *d);
+   \param g - pointer to grid
+   \param v - type vector descriptor to store correction
+   \param M - type matrix descriptor for precondition
+   \param d - type vector descriptor for right hand side (the defect)
 
-   PARAMETERS:
-   .  g - pointer to grid
-   .  v - type vector descriptor to store correction
-   .  M - type matrix descriptor for precondition
-   .  d - type vector descriptor for right hand side (the defect)
-
-   DESCRIPTION:
    This function solves `L*U*v=d`, where `L`, `U` are the factors from a
    (in-)complete decomposition, stored in 'M',
    only sparse block structure of 'M' under consideration
 
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_DESC_MISMATCH if the type descriptors not match
-   .n    NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP
-   .n    __LINE__ line where an error occured.
-   D*/
+   \return <ul>
+   <li>   NUM_OK if ok </li>
+   <li>   NUM_DESC_MISMATCH if the type descriptors not match </li>
+   <li>   NUM_BLOCK_TOO_LARGE if the blocks are larger as MAX_SINGLE_VEC_COMP </li>
+   <li>   __LINE__ line where an error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX l_iluspbliter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)

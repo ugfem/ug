@@ -16,7 +16,7 @@
 /*            The use inside of UG under the actual UG license              */
 /*            is allowed.                                                   */
 /*                                  HD, 13.7.99,  Nicolas Neuss.            */
-/*                                                                              */
+/*                                                                          */
 /****************************************************************************/
 
 #include <float.h>
@@ -46,33 +46,23 @@ REP_ERR_FILE;
 #include "udm.h"  /* for MAX_MAT_COMP */
 
 /****************************************************************************/
-/*D
-   ComputeSMSizeOfArray - Computes the size of a sparse matrix array
+/** \brief Computes the size of a sparse matrix array
 
-   SYNOPSIS:
-   static INT ComputeSMSizeOfArray (SHORT nr, SHORT nc, const SHORT *comps,
-                                    SHORT *NPtr, SHORT *NredPtr)
+   \param nr - number of rows
+   \param nc - number of columns
+   \param comps - pointer to integer array
+   \param NPtr - here N is stored
+   \param NredPtr - here Nred is stored
 
-   PARAMETERS:
-   .  nr - number of rows
-   .  nc - number of columns
-   .  comps - pointer to integer array
-   .  NPtr - here N is stored
-   .  NredPtr - here Nred is stored
-
-   DESCRIPTION:
    Positive numbers in the comps-array are transfered,
    negative ones mean non-existing entries in the sparse matrix. Equal
    positive numbers mean identified fields.
 
-   RETURN VALUE:
-   INT
-   .n 0 ok
-   .n 1 offset too large (increase MAX_MAT_COMP and recompile)
-
-   SEE ALSO:
-   SM2Array
-   D*/
+   \return <ul>
+   <li> 0 ok </li>
+   <li> 1 offset too large (increase MAX_MAT_COMP and recompile) </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT ComputeSMSizeOfArray (SHORT nr, SHORT nc, const SHORT *comps,
@@ -113,31 +103,22 @@ INT ComputeSMSizeOfArray (SHORT nr, SHORT nc, const SHORT *comps,
 }
 
 /****************************************************************************/
-/*D
-   SM2Array - Computes the array form of a sparse matrix
+/** \brief Computes the array form of a sparse matrix
 
-   SYNOPSIS:
-   INT SM2Array (const SPARSE_MATRIX *sm, SHORT *comps)
+   \param sm - sparse matrix
+   \param comps - pointer to integer array
 
-   PARAMETERS:
-   .  sm - sparse matrix
-   .  comps - pointer to integer array
-
-   DESCRIPTION:
    Computes the array form of a sparse matrix. Positive numbers in the comps-array
    are taken from the sparse matrix format. -1 means a non-existing entry in the
    sparse matrix.
    Later these values will be interpreted as offsets in some value field.
 
-   RETURN VALUE:
-   INT
-   .n 0 ok
-   .n -1 if size of sparse matrix too large
-   .n -2 if sparse matrix is not consistent
-
-   SEE ALSO:
-   Array2SM
-   D*/
+   \return <ul>
+   <li> 0 ok </li>
+   <li> -1 if size of sparse matrix too large </li>
+   <li> -2 if sparse matrix is not consistent </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT SM2Array (const SPARSE_MATRIX *sm, SHORT *comps)
@@ -177,33 +158,24 @@ INT SM2Array (const SPARSE_MATRIX *sm, SHORT *comps)
 
 
 /****************************************************************************/
-/*D
-   Array2SM - Computes the sparse matrix form of an array
+/** \brief Computes the sparse matrix form of an array
 
-   SYNOPSIS:
-   INT Array2SM (SHORT nr, SHORT nc, const SHORT *comps, SPARSE_MATRIX *sm)
+   \param nr - number of rows
+   \param nc - number of columns
+   \param comps - pointer to integer array
+   \param sm - sparse matrix
 
-   PARAMETERS:
-   .  nr - number of rows
-   .  nc - number of columns
-   .  comps - pointer to integer array
-   .  sm - sparse matrix
-
-   DESCRIPTION:
    Computes the sparse matrix form of an offset
    array. Positive numbers in the comps-array are transfered, negative
    ones mean non-existing entries in the sparse matrix. Equal positive
    numbers mean identified fields. It is assumed that there is enough
    space in the arrays of the sparse matrix.
 
-   RETURN VALUE:
-   INT
-   .n 0 ok
-   .n 1 offset too large (increase MAX_MAT_COMP and recompile)
-
-   SEE ALSO:
-   SM2Array
-   D*/
+   \return <ul>
+   <li> 0 ok </li>
+   <li> 1 offset too large (increase MAX_MAT_COMP and recompile) </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT Array2SM (SHORT nr, SHORT nc, const SHORT *comps, SPARSE_MATRIX *sm)
@@ -253,31 +225,22 @@ INT Array2SM (SHORT nr, SHORT nc, const SHORT *comps, SPARSE_MATRIX *sm)
 }
 
 /****************************************************************************/
-/*D
-   String2SMArray - Transforms a string to a SM array
+/** \brief Transforms a string to a SM array
 
-   SYNOPSIS:
-   INT String2SMArray (SHORT n, char *str, SHORT *comps)
+   \param n - size (i.e. rows*cols)
+   \param str - pointer to char array consisting of [*0a-z]
+   \param comps - pointer to integer array
 
-   PARAMETERS:
-   .  n - size (i.e. rows*cols)
-   .  str - pointer to char array consisting of [*0a-z]
-   .  comps - pointer to integer array
-
-   DESCRIPTION:
    Transforms a string to a SM array. * means a non-zero entry, 0
    means a zero entry. a-z are used for identification of positions
    (they get the same offset). It is assumed that there is enough
    space in the sparse matrix array.
 
-   RETURN VALUE:
-   INT
-   .n 0 ok
-   .n 1 wrong format
-
-   SEE ALSO:
-   SM2Array
-   D*/
+   \return <ul>
+   <li> 0 ok </li>
+   <li> 1 wrong format </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT String2SMArray (SHORT n, char *str, SHORT *comps)
@@ -334,26 +297,20 @@ INT String2SMArray (SHORT n, char *str, SHORT *comps)
 #endif /* __UG__ */
 
 /****************************************************************************/
-/*D
-   SM_Compute_Reduced_Size - Computes the reduced size of a sparse matrix
+/** \brief Computes the reduced size of a sparse matrix
 
-   SYNOPSIS:
-   INT SM_Compute_Reduced_Size (SPARSE_MATRIX *sm)
+   \param sm - sparse matrix
 
-   PARAMETERS:
-   .  sm - sparse matrix
-
-   DESCRIPTION:
    Computes the reduced size of a sparse matrix, i.e. takes possible
    identification into account.
    Warning: This is an O(N^2)-algorithm, but N should be moderate
    in comparison with the number of MATRIX structures anyhow.
 
-   RETURN VALUE:
-   INT
-   .n positive: reduced size
-   .n negative: an error occured
-   D*/
+   \return <ul>
+   <li> positive: reduced size </li>
+   <li> negative: an error occured </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT SM_Compute_Reduced_Size (SPARSE_MATRIX *sm)
@@ -383,16 +340,10 @@ INT SM_Compute_Reduced_Size (SPARSE_MATRIX *sm)
 }
 
 /****************************************************************************/
-/*D
-   SM_Compute_Reduced_Offsets - Computes the reduced offset field of a sparse matrix
+/** \brief Computes the reduced offset field of a sparse matrix
 
-   SYNOPSIS:
-   INT SM_Compute_Reduced_Offsets (SPARSE_MATRIX *sm)
+   \param sm - sparse matrix
 
-   PARAMETERS:
-   .  sm - sparse matrix
-
-   DESCRIPTION:
    Computes the reduced offset field of a sparse matrix, i.e. counting
    identified only once. The field to take the reduced offsets should
    be large enough (i.e. apply SM_Compute_Reduced_Size before)!
@@ -400,11 +351,11 @@ INT SM_Compute_Reduced_Size (SPARSE_MATRIX *sm)
    Warning: This is an O(N^2)-algorithm, but N should be moderate
    in comparison with the number of MATRIX structures anyhow.
 
-   RETURN VALUE:
-   INT
-   .n positive: number of reduced offsets
-   .n negative: an error occured
-   D*/
+   \return <ul>
+   <li> positive: number of reduced offsets </li>
+   <li> negative: an error occured </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT SM_Compute_Reduced_Offsets (SPARSE_MATRIX *sm, SHORT *reduced_offsets)
@@ -434,29 +385,23 @@ INT SM_Compute_Reduced_Offsets (SPARSE_MATRIX *sm, SHORT *reduced_offsets)
 }
 
 /****************************************************************************/
-/*D
-   SM_Compare - Compares two sparse matrices
+/** \brief Compares two sparse matrices
 
-   SYNOPSIS:
-   INT SM_Compare (SPARSE_MATRIX *sm1, SPARSE_MATRIX *sm2)
+   \param sm1 - sparse matrix
+   \param sm2 - sparse matrix
 
-   PARAMETERS:
-   .  sm1 - sparse matrix
-   .  sm2 - sparse matrix
-
-   DESCRIPTION:
    Compares two sparse matrices
 
-   RETURN VALUE:
-   INT
-   .n 0 ok
-   .n 1 nrows not equal
-   .n 2 ncols not equal
-   .n 3 total number of nonzeros not equal
-   .n 5 rows not equally long
-   .n 6 column indices do not agree
-   .n 7 offset structure is not compatible
-   D*/
+   \return <ul>
+   <li> 0 ok </li>
+   <li> 1 nrows not equal </li>
+   <li> 2 ncols not equal </li>
+   <li> 3 total number of nonzeros not equal </li>
+   <li> 5 rows not equally long </li>
+   <li> 6 column indices do not agree </li>
+   <li> 7 offset structure is not compatible </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT SM_Compare (SPARSE_MATRIX *sm1, SPARSE_MATRIX *sm2)
@@ -501,29 +446,22 @@ INT SM_Compare (SPARSE_MATRIX *sm1, SPARSE_MATRIX *sm2)
 }
 
 /****************************************************************************/
-/*D
-   SM_Compute_Diff_From_Offset - Computes a  ptrdiff_t-form of the sparse matrix offsets
+/** \brief Computes a  ptrdiff_t-form of the sparse matrix offsets
 
-   SYNOPSIS:
-   INT SM_Compute_Diff_From_Offset (INT N, SHORT *offset,
-                                 SHORT *start_off, ptrdiff_t Diff)
+   \param N - size of offset-field
+   \param offset - pointer to offset field
+   \param Diff - pointer to ptrdiff_t field
 
-   PARAMETERS:
-   .  N - size of offset-field
-   .  offset - pointer to offset field
-   .  Diff - pointer to ptrdiff_t field
-
-   DESCRIPTION:
    Writes out the offset array in a ptrdiff_t-form, which should
    allow faster access for the (sparse) blas routines. The Diff-field
    should have place for N entries! Also the start_offset is returned,
    even if it might be easily obtained.
 
-   RETURN VALUE:
-   INT
-   .n 0 ok
-   .n -1 error
-   D*/
+   \return <ul>
+   <li> 0 ok </li>
+   <li> -1 error </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT SM_Compute_Diff_From_Offset (INT N, SHORT *offset, ptrdiff_t *Diff)
@@ -544,36 +482,27 @@ INT SM_Compute_Diff_From_Offset (INT N, SHORT *offset, ptrdiff_t *Diff)
 }
 
 /****************************************************************************/
-/*D
-   SM_Compute_yDiff_From_Offset  - Computes a ptrdiff_t-form for a vector.
+/** \brief Computes a ptrdiff_t-form for a vector.
 
-   SYNOPSIS:
-   INT SM_Compute_yDiff_From_Offset (INT N, SHORT *col_ind, SHORT *cmp_off,
-                                     ptrdiff_t *Diff)
+   \param N - size of col_ind-field
+   \param col_ind - pointer to col_ind field
+   \param cmp_off - pointer to y''s offset field
+   \param Diff - pointer to ptrdiff_t field
+   \param sm - sparse matrix
+   \param compoff - component offsets
+   \param startOff - start offset
+   \param Diff - beginning of ptrdiff_t array
 
-   PARAMETERS:
-   .  N - size of col_ind-field
-   .  col_ind - pointer to col_ind field
-   .  cmp_off - pointer to y''s offset field
-   .  Diff - pointer to ptrdiff_t field
-
-   .  sm - sparse matrix
-   .  compoff - component offsets
-   .  startOff - start offset
-   .  Diff - beginning of ptrdiff_t array
-
-   DESCRIPTION:
    Writes out a ptrdiff_t-field of for fast access of the components
    of a vector inside a sparse matrix-vector multiplication.  The
    Diff-field should have place for N entries!  The cmp_off field
    should be a VECDATA_DESC-offset-field for some type.
 
-   RETURN VALUE:
-   INT
-   .n 0 ok
-   .n -1 an error ocurred
-
-   D*/
+   \return <ul>
+   <li> 0 ok </li>
+   <li> -1 an error ocurred </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT SM_Compute_yDiff_From_Offset (INT N, SHORT *col_ind, SHORT *cmp_off,
@@ -593,33 +522,6 @@ INT SM_Compute_yDiff_From_Offset (INT N, SHORT *col_ind, SHORT *cmp_off,
 
   return(0);
 }
-
-/****************************************************************************/
-/*D
-   SM_Decompose_LR_pivot - LR decomposes a sparse matrix
-
-   SYNOPSIS:
-   INT SM_Decompose_LR_pivot (const SPARSE_MATRIX sm, DOUBLE *LR, int *pivot)
-
-   associated functions:
-   INT Decompose_LR_pivot (INT n, DOUBLE *mat, int *pivot)
-   INT Solve_LR (const DOUBLE *LR, const int *pivot, DOUBLE *x, const DOUBLE *b)
-
-   PARAMETERS:
-   .  sm - sparse matrix
-   .  LR - DOUBLE field of size nr^2
-   .  pivot - SHORT field of size nr
-
-   DESCRIPTION:
-   Computes an LR decomposition with pivoting from the sparse matrix sm.
-   sm must be quadratic, LR and pivot field must be long enough!
-
-   RETURN VALUE:
-   INT
-   .n 0 ok
-   .n -1 error
-   D*/
-/****************************************************************************/
 
 INT Decompose_LR_pivot (int n, DOUBLE *mat, int *pivot)
 {
@@ -700,6 +602,27 @@ INT Solve_LR (int n, const DOUBLE *LR, const int *pivot, DOUBLE *x, const DOUBLE
 
   return (0);
 }
+
+/****************************************************************************/
+/** \brief LR decomposes a sparse matrix
+
+   \sa
+   Decompose_LR_pivot()
+   Solve_LR()
+
+   \param sm - sparse matrix
+   \param LR - DOUBLE field of size nr^2
+   \param pivot - SHORT field of size nr
+
+   Computes an LR decomposition with pivoting from the sparse matrix sm.
+   sm must be quadratic, LR and pivot field must be long enough!
+
+   \return <ul>
+   <li> 0 ok </li>
+   <li> -1 error </li>
+   </ul>
+ */
+/****************************************************************************/
 
 INT SM_Decompose_LR_pivot (const SPARSE_MATRIX *sm, DOUBLE *values,
                            DOUBLE *LR, int *pivot)
