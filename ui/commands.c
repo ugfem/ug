@@ -4750,7 +4750,7 @@ static INT MarkCommand (INT argc, char **argv)
   if (ReadArgvOption("c",argc, argv))
   {
     for (i=0; i<=TOPLEVEL(theMG); i++)
-      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i));
+      for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i));
            theElement!=NULL; theElement=SUCCE(theElement))
         if (EstimateHere(theElement))
           MarkForRefinement(theElement,NO_REFINEMENT,NULL);
@@ -4901,7 +4901,8 @@ static INT MarkCommand (INT argc, char **argv)
   {
   case MARK_ALL :
     for (l=0; l<=TOPLEVEL(theMG); l++)
-      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l)); theElement!=NULL; theElement=SUCCE(theElement))
+      for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement)) {
         if (EstimateHere(theElement))
           if ((rv = MarkForRefinement(theElement,
                                       Rule,(void *)Side))!=0)
@@ -4911,6 +4912,7 @@ static INT MarkCommand (INT argc, char **argv)
           }
           else
             nmarked++;
+      }
     break;
 
   case MARK_ID :
