@@ -74,6 +74,7 @@
 #define MAT_DIAG_CONS         0
 #define MAT_CONS              1
 #define MAT_MASTER_CONS       2
+#define MAT_GHOST_DIAG_CONS   3
 
 /* special REP_ERR_RETURN macro */
 #define NP_RETURN(err,intvar)           {intvar = __LINE__; REP_ERR_RETURN(err);}
