@@ -493,11 +493,11 @@ INT                     RotatePicture                   (PICTURE *thePicture, co
 INT                     RotateCut                               (PICTURE *thePicture, const INT *OldMousePos);
 INT                     MoveCut                                 (PICTURE *thePicture, const INT *OldMousePos);
 INT             DrawUgPicture                   (PICTURE *thePicture);
+INT         BulletDrawUgPicture     (PICTURE *thePicture, DOUBLE zOffsetFactor);
 INT                     SetTextFactor                   (DOUBLE textfactor);
 INT                     SetDoFramePicture               (INT mode);
 INT             DrawPictureFrame                (PICTURE *thePicture, INT mode);
 INT             ErasePicture                    (PICTURE *thePicture);
 INT                     SetOrderStrategy                (INT OrderStrategy);
-
 
 #endif

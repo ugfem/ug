@@ -41,6 +41,7 @@
 #include "debug.h"
 #include "wop.h"
 #include "wpm.h"
+#include "bullet.h"
 #include "fileopen.h"
 #include "misc.h"
 #include "evm.h"
@@ -114,10 +115,14 @@ INT ce_CUTMODE;
 #define CM_INFRONT						2
 
 INT ce_ELEMORD;
-#define ELEMORD_LEN 					1
+#define ELEMORD_LEN 					2
 #define ELEMORD(p)						CW_READ(p,ce_ELEMORD)
 #define SETELEMORD(p,n) 				CW_WRITE(p,ce_ELEMORD,n)
 
+/* values for ELEMORD */
+#define NOTHING_DONE                    0
+#define VSIDES_DONE                     1
+#define ALL_DONE                        2
 
 /* Macros for Node order */
 #define NODE_ORDER(p) 		   ((TAG(theElement) == TETRAHEDRON) ? \
@@ -555,6 +560,7 @@ static VECTOR *EE3D_ndv[MAX_CORNERS_OF_ELEM];
 static VECTOR *EE3D_sdv[MAX_SIDES_OF_ELEM];
 static VECTOR *EE3D_edv[MAX_EDGES_OF_ELEM];
 static INT  EE3D_votp[NVECTYPES];
+static INT EE3D_PlotCut;        /* 1 if cut (if any) should be plotted      */
 #ifdef ModelP
 static DOUBLE EE3D_PartShrinkFactor;
 								/* part. shrink factor, 1.0 if normal plot	*/
@@ -4133,6 +4139,143 @@ static INT Draw2D (DRAWINGOBJ *q)
 	return (0);
 }
 
+static INT BulletDraw2D (DRAWINGOBJ *q)
+{
+	INT j, n, end;
+	DOUBLE a[2], b[2], points[2*MAX_POINTS_OF_POLY], *pp;
+	DOUBLE p1[2], p2[2];
+	long color, color2;
+	
+	end = 0;
+	while (!end)
+	{
+		switch (DO_2c(q))
+		{
+			case DO_NO_INST:
+				end = 1;
+				break;
+			case DO_WAIT:
+				DO_inc(q);
+				break;
+			case DO_RANGE:
+				DO_inc_RANGE(q);
+				break;
+			case DO_LINE:
+				DO_inc(q);
+				color = DO_2l(q); DO_inc(q);
+				V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,2);
+				(*OBS_ProjectProc)(p1,(COORD_POINT *)&a);
+				V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,p2); DO_inc_n(q,2);
+				(*OBS_ProjectProc)(p2,(COORD_POINT *)&b);
+				BulletLine(a,b,color);
+				break;
+			case DO_STYLED_LINE:
+				DO_inc_n(q,8);
+				break;
+			case DO_ARROW:
+				DO_inc_n(q,6);
+				break;
+			case DO_DEPEND:
+				DO_inc_n(q,6);
+				break;
+			case DO_INVERSE_LINE:
+				DO_inc_n(q,5);
+				break;
+			case DO_INVERSE_POLYLINE:
+				DO_inc(q)
+				n = DO_2c(q); DO_inc(q);
+				DO_inc_n(q,2*n);
+				break;
+			case DO_POLYLINE:
+				DO_inc(q);
+				n = DO_2c(q); DO_inc(q);
+				color = DO_2l(q); DO_inc(q);
+			    pp = points;	
+				for (j=0; j<n; j++) {
+					V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,2);
+					(*OBS_ProjectProc)(p1, (COORD_POINT *)pp);
+					pp+=2;
+				}
+				BulletPolyLine(points, n, color);
+				break;
+			case DO_POLYGON:
+				DO_inc(q);
+				n = DO_2c(q); DO_inc(q);
+				color = DO_2l(q); DO_inc(q);
+			    pp = points;	
+				for (j=0; j<n; j++) {
+					V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,2);
+					(*OBS_ProjectProc)(p1, (COORD_POINT *)pp);
+					pp+=2;
+				}
+				BulletPolygon(points, n, 1.0, color);
+				break;
+			case DO_ERASE_POLYGON:
+				DO_inc(q)
+				n = DO_2c(q); DO_inc(q);
+				pp = points;	
+				for (j=0; j<n; j++) {
+					V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,2);
+					(*OBS_ProjectProc)(p1, (COORD_POINT *)pp);
+					pp+=2;
+				}
+				BulletPolygon(points, n, 1.0, WOP_OutputDevice->white);
+				break;
+			case DO_INVERSE_POLYGON:
+				DO_inc(q)
+				n = DO_2c(q); DO_inc(q);
+				DO_inc_n(q,2*n);
+				break;
+			case DO_ERASE_SURRPOLYGON:
+				DO_inc(q);
+				n = DO_2c(q); DO_inc(q)
+				color = DO_2l(q); DO_inc(q);
+				pp = points;	
+				for (j=0; j<n; j++) {
+					V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,2);
+					(*OBS_ProjectProc)(p1, (COORD_POINT *)pp);
+					pp+=2;
+				}
+				BulletPolygon(points, n, 1.0, WOP_OutputDevice->white);
+				BulletPolyLine(points, n, color);
+				break;
+			case DO_SURRPOLYGON:
+				DO_inc(q);
+				n = DO_2c(q); DO_inc(q);
+				color  = DO_2l(q); DO_inc(q);
+				color2 = DO_2l(q); DO_inc(q);
+				pp = points;	
+				for (j=0; j<n; j++) {
+					V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,2);
+					(*OBS_ProjectProc)(p1, (COORD_POINT *)pp);
+					pp+=2;
+				}
+				BulletPolygon(points, n, 1.0, color);
+				BulletPolyLine(points, n, color2);
+				break;
+			case DO_TEXT:
+				DO_inc_n(q,7);
+				DO_inc_str(q);
+				break;
+			case DO_POLYMARK:
+				DO_inc(q)
+				n = DO_2c(q); DO_inc(q)
+				UgSetColor(DO_2l(q)); DO_inc_n(q,3);
+				DO_inc_n(q,2*n);
+				break;
+			case DO_INVPOLYMARK:
+				DO_inc(q);
+				n = DO_2c(q); DO_inc_n(q,3);
+				DO_inc_n(q,2*n);
+				break;
+			default:
+				RETURN(1);
+		}
+	}
+	
+	return (0);
+}
+
 /****************************************************************************/
 /*
    LineDraw2D - Draw content of a 2D Line drawing object 
@@ -4252,7 +4395,7 @@ static INT NW_SelectNode2D (DRAWINGOBJ *q)
 
 /****************************************************************************/
 /*
-   Draw3D - Draw content of a 2D drawing object	
+   Draw3D - Draw content of a 3D drawing object	
 
    SYNOPSIS:
    static INT Draw3D (DRAWINGOBJ *q);
@@ -4261,7 +4404,7 @@ static INT NW_SelectNode2D (DRAWINGOBJ *q)
 .  q - the drawing object
 
    DESCRIPTION:
-   This function draws content of a 2D drawing object.	
+   This function draws content of a 3D drawing object.	
 
    RETURN VALUE:
    INT
@@ -4498,6 +4641,169 @@ static INT Draw3D (DRAWINGOBJ *q)
 					(*OBS_ProjectProc)(help,point+j);
 				}
 				UgShadedPolygon(point,j,intensity);
+				break;
+		    default:
+			    RETURN(1);
+		}
+	}
+	
+	return (0);
+}
+
+static INT BulletDraw3D (DRAWINGOBJ *q)
+{
+	INT j, n, end;
+	DOUBLE a[3], b[3], points[3*MAX_POINTS_OF_POLY], *pp;
+	DOUBLE p1[3], p2[3], intensity;
+	long color, color2;
+	
+	end = 0;
+	while (!end)
+	{
+		switch (DO_2c(q))
+		{
+			case DO_NO_INST:
+				end = 1;
+				break;
+			case DO_WAIT:
+				DO_inc(q);
+				break;
+			case DO_RANGE:
+				DO_inc_RANGE(q);
+				break;
+			case DO_LINE:
+				DO_inc(q)
+				color = DO_2l(q); DO_inc(q);
+				V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,3);
+				(*OBS_ProjectProc)(p1,(COORD_POINT *)&a); a[3] = p1[3];
+				V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,p2); DO_inc_n(q,3);
+				(*OBS_ProjectProc)(p2,(COORD_POINT *)&b); b[3] = p2[3];
+				BulletLine(a,b,color);
+				break;
+			case DO_STYLED_LINE:
+				DO_inc_n(q,10);
+				break;
+			case DO_ARROW:
+				DO_inc_n(q,8);
+				break;
+			case DO_DEPEND:
+				DO_inc_DEPEND(q,3);
+				break;
+			case DO_INVERSE_LINE:
+				DO_inc_n(q,8);
+				break;
+			case DO_INVERSE_POLYLINE:
+				DO_inc(q); n = DO_2c(q); DO_inc(q);
+				DO_inc_n(q,3*n);
+				break;
+			case DO_POLYLINE:
+				DO_inc(q);
+				n = DO_2c(q); DO_inc(q);
+				color = DO_2l(q); DO_inc(q);
+			    pp = points;	
+				for (j=0; j<n; j++) {
+					V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,3);
+					(*OBS_ProjectProc)(p1, (COORD_POINT *)pp); pp[2] = p1[2];
+					pp+=3;
+				}
+				BulletPolyLine(points, n, color);
+				break;
+			case DO_POLYGON:
+				DO_inc(q);
+				n = DO_2c(q); DO_inc(q);
+				color = DO_2l(q); DO_inc(q);
+			    pp = points;	
+				for (j=0; j<n; j++) {
+					V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,3);
+					(*OBS_ProjectProc)(p1, (COORD_POINT *)pp); pp[2] = p1[2];
+					pp+=3;
+				}
+				BulletPolygon(points, n, 1.0, color);
+				break;
+			case DO_ERASE_POLYGON:
+				DO_inc(q);
+				n = DO_2c(q); DO_inc(q);
+			    pp = points;	
+				for (j=0; j<n; j++) {
+					V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,3);
+					(*OBS_ProjectProc)(p1, (COORD_POINT *)pp); pp[2] = p1[2];
+					pp+=3;
+				}
+				BulletPolygon(points, n, 1.0, WOP_OutputDevice->white);
+				break;
+			case DO_INVERSE_POLYGON:
+				DO_inc(q)
+				n = DO_2c(q); DO_inc(q);
+				DO_inc_n(q,3*n);
+				break;
+			case DO_ERASE_SURRPOLYGON:
+				DO_inc(q)
+				n = DO_2c(q); DO_inc(q)
+				color = DO_2l(q); DO_inc(q);
+				pp = points;	
+				for (j=0; j<n; j++) {
+					V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,3);
+					(*OBS_ProjectProc)(p1, (COORD_POINT *)pp); pp[2] = p1[2];
+					pp+=3;
+				}
+				BulletPolygon(points, n, 1.0, WOP_OutputDevice->white);
+				BulletPolyLine(points, n, color);
+				break;
+			case DO_SURRPOLYGON:
+				DO_inc(q)
+				n = DO_2c(q); DO_inc(q)
+				color  = DO_2l(q); DO_inc(q);
+				color2 = DO_2l(q); DO_inc(q);
+				pp = points;	
+				for (j=0; j<n; j++) {
+					V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,3);
+					(*OBS_ProjectProc)(p1, (COORD_POINT *)pp); pp[2] = p1[2];
+					pp+=3;
+				}
+				BulletPolygon(points, n, 1.0, color);
+				BulletPolyLine(points, n, color2);  
+				break;
+			case DO_TEXT:
+				DO_inc_n(q,8);
+				DO_inc_str(q);
+				break;
+			case DO_POLYMARK:
+				DO_inc(q)
+				n = DO_2c(q); DO_inc_n(q,4);
+				DO_inc_n(q,3*n);
+				break;
+		    case DO_INVPOLYMARK:
+			    DO_inc(q);
+				n = DO_2c(q); DO_inc_n(q,3);
+				DO_inc_n(q,3*n);
+				break;
+		    case DO_SURR_SHADED_POLYGON:
+			    DO_inc(q);
+				n = DO_2c(q); DO_inc(q);
+				color = DO_2l(q); DO_inc(q);
+				intensity = *q; DO_inc(q);
+				color2 = DO_2l(q); DO_inc(q);
+				pp = points;	
+				for (j=0; j<n; j++) {
+					V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,3);
+					(*OBS_ProjectProc)(p1, (COORD_POINT *)pp); pp[2] = p1[2];
+					pp+=3;
+				}
+				BulletPolygon(points, n, intensity, color);
+				BulletPolyLine(points, n, color2);
+				break;
+		  case DO_SHADED_POLYGON:
+			    DO_inc(q);
+				n = DO_2c(q); DO_inc(q)
+				UgSetColor(DO_2l(q)); DO_inc(q);
+				intensity = *q; DO_inc(q);
+				pp = points;	
+				for (j=0; j<n; j++) {
+					V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,p1); DO_inc_n(q,3);
+					(*OBS_ProjectProc)(p1, (COORD_POINT *)pp); pp[2] = p1[2];
+					pp+=3;
+				}
+				BulletPolygon(points, n, intensity, color);
 				break;
 		    default:
 			    RETURN(1);
@@ -6118,9 +6424,9 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 		EE2D_NoColor[COLOR_BND] 		= 0;	
 	
 	
-	EE2D_Color[COLOR_COPY]			= 0.75*theOD->spectrumEnd+0.25*theOD->spectrumStart;
-	EE2D_Color[COLOR_IRR]			= (theOD->spectrumEnd+theOD->spectrumStart)/2;
-	EE2D_Color[COLOR_REG]			= theOD->spectrumEnd;
+	EE2D_Color[COLOR_COPY]			= theOD->yellow;
+	EE2D_Color[COLOR_IRR]			= theOD->green;
+	EE2D_Color[COLOR_REG]			= theOD->red;
 	EE2D_Color[COLOR_LOWER_LEVEL]	= theOD->white;
 	EE2D_Color[COLOR_EDGE]			= theOD->black;
 	EE2D_Color[COLOR_BND]			= theOD->blue;
@@ -12710,8 +13016,8 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 			theDO = ElementVectors(theElement,theDO,Viewable,co,z);
 		
 		/* plot intersection of element with cut plane if */
-		if (CUT_CutAtFront)
-		{
+		if (CUT_CutAtFront && EE3D_PlotCut)
+		{ 
 			switch (TAG(theElement)) {
               case (TETRAHEDRON):
                 if (GetPolyElemISCutPlaneTET(x,z,NodeOrder,Polygon,&n))
@@ -13402,7 +13708,7 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 			theDO = ElementVectors(theElement,theDO,Viewable,co,z);
 		
 		/* plot intersection of element with cut plane if */
-		if (CUT_CutAtFront)
+		if (CUT_CutAtFront && EE3D_PlotCut)
 		{
 			switch (TAG(theElement)) {
               case (TETRAHEDRON):
@@ -16887,7 +17193,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	}
 	Broadcast(&err, sizeof(err));
 	if (err) {
-		ReleaseTmpMem(heap, MarkKeyMaster);
+		ReleaseTmpMem(heap, MarkKey);
 		UserWrite("OrderCoarseGrid(): out of mem 2\n");
 		return 1;
 	}
@@ -16994,11 +17300,11 @@ static INT SettingsEqual (const VIEWEDOBJ *vo, const WOP_MG_DATA *data)
 	return (NO);
 }
 
-static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
+static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo, INT bullet)
 {
 	WOP_MG_DATA *myMGdata;
 	MEM offset;
-	INT i;
+	INT ord, i;
     #ifdef ModelP
 	HEAP *heap;
 	GRID *grid;
@@ -17019,14 +17325,15 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 		SaveSettings(vo, myMGdata);
 	else if (!OE_force_ordering)
 	{
-		if (SettingsEqual(vo, myMGdata))
+		if (SettingsEqual(vo, myMGdata)) {
 			#ifdef ModelP
-			if (UG_GlobalMinINT(ELEMORD(mg)))
+			ord = UG_GlobalMinINT(ELEMORD(mg));
 			#else
-			if (ELEMORD(mg))
+			ord = (ELEMORD(mg));
 			#endif
-				/* no ordering necessary */
+			if (ord == ALL_DONE || bullet && ord == VSIDES_DONE)
 				return 0;
+		}
 	}
 	
 	OE_force_ordering = FALSE;
@@ -17037,7 +17344,13 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 	/* calculate the viewable sides of all elements on all levels */
 	for (i = 0; i <= mg->topLevel; i++)	
 		CalcViewableSidesOnGrid(GRID_ON_LEVEL(mg,i));
-	
+
+	/* no more to do for bullet plotter */
+	if (bullet) {
+		SETELEMORD(mg, VSIDES_DONE);
+		return 0;
+	}
+
 	/* allocate memory for and compute OS_Data (parallel case only) */
 	#ifdef ModelP
 	heap = mg->theHeap;
@@ -17055,7 +17368,7 @@ static INT OrderElements_3D (MULTIGRID *mg, VIEWEDOBJ *vo)
 fault:
 	err = UG_GlobalMaxINT(err);
 	if (err) {
-		UserWrite("Insufficient memory to order elements.\n");
+		UserWrite("Insufficient memory to order elements 1.\n");
 		ReleaseTmpMem(heap,MarkKey);
 		return 1;
 	}
@@ -17073,7 +17386,7 @@ fault:
 
 	/* now order level 1 to toplevel hirarchically */
 	if (OrderHirarchically(mg)) {
-		UserWrite("Insufficient memory to order elements.\n");
+		UserWrite("Insufficient memory to order elements 2\n");
 		#ifdef ModelP
 		ReleaseTmpMem(heap,MarkKey);
 		#endif
@@ -17091,12 +17404,12 @@ fault:
 
 	/* sort grids */
 	if (SortLevelsLocally(mg)) {
-		UserWrite("Insufficient memory to order elements.\n");
+		UserWrite("Insufficient memory to order elements 3\n");
 		return 1;
 	}
 	#endif
 
-	SETELEMORD(mg,1);
+	SETELEMORD(mg, ALL_DONE);
 
 	return (0);
 }
@@ -17481,6 +17794,8 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 	
 	EE3D_ShrinkFactor				= theGpo->ShrinkFactor;
 
+	EE3D_PlotCut                    = 1;
+
 	if (EE3D_ShrinkFactor<1.0)
 	{
 		EE3D_Nodes					= theGpo->NodeMarkers;
@@ -17795,6 +18110,8 @@ static INT EW_PreProcess_EScalar3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	EE3D_PartShrinkFactor			= 1.0;
 	#endif
 	
+	EE3D_PlotCut                    = 0;
+
 	/* build cut trafo */
 	theCut = VO_CUT(PIC_VO(thePicture));
 	if (BuildCutTrafo(theCut,OBS_ViewDirection)) return (1);
@@ -17810,7 +18127,7 @@ static INT EW_PreProcess_EScalar3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	}
 	else
 		if (MarkElements_MGS_Bnd_Cut(theMG,0,CURRENTLEVEL(theMG))) return (1);
-	
+		
 	return (0);
 }
 	
@@ -17924,6 +18241,8 @@ static INT EW_PreProcess_EVector3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	#ifdef ModelP
 	EE3D_PartShrinkFactor			= 1.0;
 	#endif
+
+	EE3D_PlotCut                    = 0;
 
 	/* build cut trafo */
 	theCut = VO_CUT(PIC_VO(thePicture));
@@ -19936,6 +20255,7 @@ static void PWorkVW_Evaluate(void)
 
    PARAMETERS:
 .  WOP_WorkMode - the work mode which needs to be initialized
+.  bullet       - whether to init for bullet plotter
 
    DESCRIPTION:
    This function initializes the next cycle for WOP. This includes e.g. ordering
@@ -19948,7 +20268,7 @@ static void PWorkVW_Evaluate(void)
 D*/
 /****************************************************************************/
 
-static INT WOP_Init(INT WOP_WorkMode)
+static INT WOP_Init(INT WOP_WorkMode, INT bullet)
 {
 	switch (WOP_WorkMode)
 	{
@@ -19958,10 +20278,10 @@ static INT WOP_Init(INT WOP_WorkMode)
 			if (WOP_ViewDim == TYPE_3D)
 			{
 				#ifdef __TWODIM__
-					if (OrderElements_2D(WOP_MG,WOP_ViewedObj))
+					if (OrderElements_2D(WOP_MG,WOP_ViewedObj /*,bullet */))
 				#endif
 				#ifdef __THREEDIM__
-					if (OrderElements_3D(WOP_MG,WOP_ViewedObj))
+					if (OrderElements_3D(WOP_MG,WOP_ViewedObj,bullet))
 				#endif
 				{
 					UserWrite("ording of elements failed\n");
@@ -20444,7 +20764,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 		WOP_WorkMode = WP_WORKMODE(WOP_WorkProcs);
 
 		/* initialize */
-		if (WOP_Init(WOP_WorkMode)!=0) return 1;
+		if (WOP_Init(WOP_WorkMode, NO)!=0) return 1;
 
 		/* work */
 		if (WOP_GEN_PreProcessProc!=NULL)
@@ -20454,7 +20774,6 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 		switch (WOP_WorkMode)
 		{
 			case ELEMENTWISE:
-
 				if (WorkEW()) return (1);
 				break;
 
@@ -20501,6 +20820,148 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 	return (0);
 }
 
+static INT BulletDrawWork(PICTURE *thePicture, WORK *theWork, DOUBLE zOffsetFactor)
+{
+	INT i, error;
+
+	if (thePicture==NULL || theWork==NULL)	return (1);
+	WOP_Picture = thePicture;
+	WOP_ViewedObj = PIC_VO(WOP_Picture);
+	if (VO_STATUS(WOP_ViewedObj) != ACTIVE)
+	{
+		UserWrite("PlotObject and View have to be initialized\n");
+		return (0);
+	}
+	WOP_Work					= theWork;
+	WOP_OutputDevice			= UGW_OUTPUTDEV(PIC_UGW(WOP_Picture));
+	WOP_PlotObjHandling 		= (PLOTOBJHANDLING*)PO_POT(PIC_PO(WOP_Picture));
+	WOP_MG						= PO_MG(PIC_PO(WOP_Picture));
+	if (WOP_MG == NULL) return (1);
+	WOP_ViewDim 				= PO_DIM(PIC_PO(WOP_Picture));
+	if (WOP_ViewDim == NOT_DEFINED) return (1);
+	
+	/* build transformation */
+	if (BuildObsTrafo(WOP_Picture))
+	{
+		UserWrite("cannot build transformation\n");
+		return (1);
+	}
+	
+	/* activate low level graphic */
+#ifdef ModelP
+	if (me == master)
+#endif
+	error=PrepareGraph(WOP_Picture);
+#ifdef ModelP
+	Broadcast(&error, sizeof(error));
+#endif
+	if (error)
+	{
+		UserWrite("cannot activate low level graphic\n");
+		return (1);
+	}
+	
+	if (POH_NBCYCLES(WOP_PlotObjHandling,W_ID(WOP_Work)) <= 0)
+	{
+		UserWrite("action not executable on this plot object\n");
+		return (0);
+	}
+
+	/* erase picture */
+#ifdef ModelP
+	if (me == master)
+#endif
+	error = (ErasePicture(WOP_Picture));
+#ifdef ModelP
+	Broadcast(&error, sizeof(error));
+#endif 
+	if (error) return 1;
+
+	/* draw frame */
+#ifdef ModelP
+	if (me == master)
+#endif
+	error = DrawPictureFrame(WOP_Picture,WOP_WORKING);
+#ifdef ModelP
+	Broadcast(&error, sizeof(error));
+#endif 
+	if (error) return 1;
+
+	/* open bullet plotter */
+	switch (BulletOpen(WOP_Picture, zOffsetFactor))
+	{
+	case BULLET_OK:
+		break;
+
+	case BULLET_CANT:
+		UserWrite("Current picture's device doesn't support bullet plotting.\n");
+		return 1;
+
+	case BULLET_NOMEM:
+		UserWrite("Not enough memory for bullet plotting.\n");
+		return 1;
+	}
+
+	/* do plot cycles */
+	for (i=0; i<POH_NBCYCLES(WOP_PlotObjHandling,W_ID(WOP_Work)); i++)
+	{
+		WOP_WorkProcs = POH_WORKPROGS(WOP_PlotObjHandling,W_ID(WOP_Work),i);
+		WOP_WorkMode = WP_WORKMODE(WOP_WorkProcs);
+
+		/* initialize */
+		if (WOP_Init(WOP_WorkMode, YES)!=0) return 1;
+
+		/* work */
+		if (WOP_GEN_PreProcessProc!=NULL)
+			if ((*WOP_GEN_PreProcessProc)(WOP_Picture,WOP_Work))
+				continue;
+
+		switch (WOP_WorkMode)
+		{
+		case ELEMENTWISE:
+#ifdef ModelP
+			WOP_Element = (CONTEXT(me) ?
+			  (*WOP_EW_GetFirstElementProc)(WOP_MG, 0, WOP_MG->currentLevel) : NULL);
+#else
+			WOP_Element = (*WOP_EW_GetFirstElementProc)(WOP_MG,0,
+														WOP_MG->currentLevel);
+#endif
+			for (; WOP_Element != NULL; 
+				 WOP_Element=(*WOP_EW_GetNextElementProc)(WOP_Element)) 
+			{
+				if ((*WOP_EW_EvaluateProc)(WOP_Element,WOP_DrawingObject)) return 1;
+#ifdef __THREEDIM__
+				if (BulletDraw3D(WOP_DrawingObject)) return 1;
+#else
+				if (BulletDraw2D(WOP_DrawingObject)) return 1;
+#endif
+			}
+			break;
+
+		case NODEWISE:
+		case VECTORWISE:
+		case EXTERN:
+		case RECURSIVE:
+			/* simply ignore it for the moment */
+			break;
+
+		default:
+			RETURN(1);
+		}
+
+		if (WOP_GEN_PostProcessProc!=NULL)
+			if ((*WOP_GEN_PostProcessProc)(WOP_Picture,WOP_Work)) return (1);
+	}
+
+	/* plot and close */
+	BulletPlot();
+	BulletClose();
+
+	/* picture is valid now */
+	PIC_VALID(WOP_Picture) = YES;
+			
+	return 0;
+}
 
 /****************************************************************************/
 /*D
@@ -21818,6 +22279,17 @@ INT DrawUgPicture (PICTURE *thePicture)
 	
 	return (0);
 }
+
+INT BulletDrawUgPicture(PICTURE *thePicture, DOUBLE zOffsetFactor)
+{
+	WORK theWork;
+	
+	theWork.WorkID = DRAW_WORK;
+    if (BulletDrawWork(thePicture,&theWork,zOffsetFactor)) return (1);
+	
+	return (0);
+}
+
 
 /****************************************************************************/
 /*D

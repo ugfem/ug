@@ -9,7 +9,7 @@
 # include configuration and all makefile macro definitions
 include ../../ug.conf
 
-OBJECTS = wpm.o graph.o wop.o initgraph.o plotproc.o placer.o
+OBJECTS = wpm.o graph.o wop.o initgraph.o plotproc.o placer.o bullet.o
 
 $(UG_LIB): $(OBJECTS) Makefile.uggraph 
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
