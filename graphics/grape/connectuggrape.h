@@ -77,7 +77,7 @@
 
 INT InitGrape(void);
 int CallGrape (MULTIGRID *theMG);
-#ifndef __AIX__
+#if !defined(__AIX__) && !defined(__MACOSX__)
 void usleep (unsigned long time);
 #endif
 

@@ -58,7 +58,7 @@ INT InitGrape (void)
   return (0);
 }
 
-#ifndef __AIX__
+#if !defined(__AIX__) && !defined(__MACOSX__)
 void usleep (unsigned long time)
 {
   return;
