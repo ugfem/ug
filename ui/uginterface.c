@@ -350,8 +350,11 @@ INT DelCmdKey (char c)
 
   theCmdKey = (CMDKEY *) SearchEnv(theCmdKeyName,"/Cmd Keys",theCmdKeyVarID,theCmdKeyDirID);
   if (theCmdKey != NULL)
+  {
+    ENVITEM_LOCKED(theCmdKey) = FALSE;
     if (RemoveEnvItem((ENVITEM *)theCmdKey))
       return (1);
+  }
 
   return (0);
 }
@@ -448,8 +451,11 @@ INT DelAllCmdKeys (void)
 
   for (theCmdKey = (CMDKEY *) theDir->down; theCmdKey!=NULL; theCmdKey=(CMDKEY *) NEXT_ENVITEM(theCmdKey))
     if (ENVITEM_TYPE(theCmdKey) == theCmdKeyVarID)
+    {
+      ENVITEM_LOCKED(theCmdKey) = FALSE;
       if (RemoveEnvItem((ENVITEM *)theCmdKey))
         return (1);
+    }
 
   return (0);
 }
