@@ -11,7 +11,7 @@
 
 # These are the environment dependent variables from ug.conf
 ENV_CFLAGS = $(MODEL_ENV_CFLAGS)
-ENV_LFLAGS = $(MODEL_ENV_LFLAGS) $(GRAPE_ENV_LFLAGS)
+ENV_LFLAGS = $(MODEL_ENV_LFLAGS) $(GRAPE_ENV_LFLAGS) $(GUI_ENV_LFLAGS)
 
 # library name suffixes
 UG_LIBSUFFIX = $(DIM)
@@ -52,6 +52,8 @@ include $(UGROOT)/configs/mk.chaco.$(CHACO)
 # include macro definitions for cad
 include $(UGROOT)/configs/mk.cad.$(CAD)
 
+# include macro definitions for gui
+include $(UGROOT)/configs/mk.gui.$(GUI)
 
 
 # construct new macro definitions from given ones
@@ -60,7 +62,7 @@ UG_CFLAGS =	-c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 			$(ARCH_XINCLUDES) $(ENV_CFLAGS) \
 			$(RIF_CFLAGS) $(CHACO_CFLAGS) \
 			$(NETGEN_CFLAGS) $(COVISE_CFLAGS) $(GRAPE_CFLAGS) \
-			$(CAD_CFLAGS) \
+			$(CAD_CFLAGS) $(GUI_CFLAGS) \
 			-I$(UGROOT)/include
 
 UG_C++FLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
@@ -68,7 +70,7 @@ UG_C++FLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 
 UG_LFLAGS = $(ARCH_LFLAGS) $(PPIF_LFLAGS) $(MODEL_LFLAGS) $(GRAPE_LFLAGS) \
 			$(ARCH_XLIBS) $(ARCH_LIBS) $(ENV_LFLAGS) $(ARCH_PLIBS) \
-			$(NETGEN_LFLAGS) $(COVISE_LFLAGS) $(CHACO_LFLAGS) $(CAD_LFLAGS)
+			$(NETGEN_LFLAGS) $(COVISE_LFLAGS) $(CHACO_LFLAGS) $(CAD_LFLAGS) $(GUI_LFLAGS)
 
 UG_LIB    = $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a 
 

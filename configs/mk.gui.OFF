@@ -1,0 +1,4 @@
+# this file is for internal ug configuration. don't change it!
+
+GUI_CFLAGS =
+GUI_LFLAGS =
