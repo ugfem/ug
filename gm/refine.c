@@ -3054,6 +3054,9 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 				{
 					RETURN(GM_FATAL);
 				}
+                #ifdef IDENT_ONLY_NEW
+				SETNEW_NIDENT(SideNodes[i],1);
+				#endif
 			}
 
 			IFDEBUG(gm,0)
