@@ -1,0 +1,26 @@
+A short documentation about netgen:
+
+In this directory and below you find a part of the 3D mesh-generator NETGEN,
+developed by Joachim Schoeberl at the Johannes Kepler Universitaet Linz.
+
+This part is able to dissect a volume given by boundary triangles into
+tetrahedrons. Also a mesh smoother is contained in this package.
+
+The source files are splitted into the following directories:
+
+meshing:     files for mesh-generation
+general:     files for abstract data types (ARRAY, HASHTABLE, ...)
+geom:        files for geometric objects
+linalg:      files for linear algebra 
+opti:        files for BFGS - optimization
+
+The principle of NETGEN is explaind in 
+
+Joachim Schoeber:
+    An Automatic Mesh Generator using Geometric Rules 
+    for two and three Space Dimensions
+    Techn. Rep. No 95-3, JKU-Linz
+    
+This paper is available via internet. Please have a look into
+
+    www.numa.uni-linz.ac.at
