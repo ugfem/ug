@@ -5769,10 +5769,10 @@ static INT MarkCommand (INT argc, char **argv)
   char rulename[32];
   INT i,j,l,mode,rv,Rule,sid;
   DOUBLE_VECTOR global;
-  DOUBLE x,y;
+  DOUBLE x,X,y,Y;
   long nmarked;
 #       ifdef __THREEDIM__
-  DOUBLE z;
+  DOUBLE z,Z;
 #       endif
 
   /* following variables: keep type for sscanf */
@@ -5952,6 +5952,31 @@ static INT MarkCommand (INT argc, char **argv)
   }
 
 #ifdef __THREEDIM__
+  if ((ReadArgvDOUBLE("x0",&x,argc, argv)==0) &&
+      (ReadArgvDOUBLE("x1",&X,argc, argv)==0) &&
+      (ReadArgvDOUBLE("y0",&y,argc, argv)==0) &&
+      (ReadArgvDOUBLE("y1",&Y,argc, argv)==0) &&
+      (ReadArgvDOUBLE("z0",&z,argc, argv)==0) &&
+      (ReadArgvDOUBLE("z1",&Z,argc, argv)==0))
+  {
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+            if ((XC(MYVERTEX(CORNER(theElement,j))) < X) &&
+                (XC(MYVERTEX(CORNER(theElement,j))) > x) &&
+                (YC(MYVERTEX(CORNER(theElement,j))) < Y) &&
+                (YC(MYVERTEX(CORNER(theElement,j))) > y) &&
+                (ZC(MYVERTEX(CORNER(theElement,j))) < Z) &&
+                (ZC(MYVERTEX(CORNER(theElement,j))) > z))
+              MarkForRefinement(theElement,Rule,NULL);
+
+    UserWriteF("all elements in box marked for refinement\n");
+
+    return(OKCODE);
+  }
+
   if (ReadArgvDOUBLE("z",&z,argc, argv)==0)
   {
     for (l=0; l<=TOPLEVEL(theMG); l++)
@@ -14759,6 +14784,28 @@ static INT DumpAlgCommand(INT argc, char **argv)
   return(OKCODE);
 }
 
+/****************************************************************************/
+/* Quick Hack for periodic boundaries                                       */
+/****************************************************************************/
+
+#ifdef __PERIODIC_BOUNDARY__
+static INT MakePeriodicCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG = currMG;
+
+  if (theMG == NULL)
+  {
+    UserWrite("MakePeriodic: no open multigrid\n");
+    return(OKCODE);
+  }
+
+  if (MG_GeometricToPeriodic(theMG,0,TOPLEVEL(theMG)))
+    REP_ERR_RETURN (CMDERRORCODE);
+
+  return (OKCODE);
+}
+#endif
+
 
 /****************************************************************************/
 /*
@@ -14788,6 +14835,11 @@ static INT DumpAlgCommand(INT argc, char **argv)
 
 INT InitCommands ()
 {
+  /* quick hack */
+#ifdef __PERIODIC_BOUNDARY__
+  if (CreateCommand("makeperiodic",       MakePeriodicCommand                             )==NULL) return (__LINE__);
+#endif
+
   /* general commands */
   if (CreateCommand("quit",                       QuitCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("exitug",                     ExitUgCommand                                   )==NULL) return (__LINE__);
