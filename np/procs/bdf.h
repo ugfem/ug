@@ -71,7 +71,7 @@ typedef struct
   INT predictorder;                      /* 0,1 are allowed                 */
   INT nested;                            /* use nested iteration            */
   INT nlinterpolate;                     /* nonlinear interpolation         */
-  INT presteps;                                               /* number of steps for start grid */
+  INT presteps;                          /* number of steps for start grid */
   INT optnlsteps;                        /* optimal number of nonlin. steps */
   INT rep;                               /* for repeat solver after grid chg*/
   INT Break;                             /* break after error estimator     */
