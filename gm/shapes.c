@@ -2,31 +2,31 @@
 // NOTE: It contained invalid syntax that could not be processed by uncrustify.
 
 /****************************************************************************/
-/*																			*/
-/* File:	  shapes.c														*/
-/*																			*/
-/* Purpose:   shape functions for triangles and quadrilaterals				*/
-/*																			*/
-/* Author:	  Peter Bastian 												*/
-/*			  Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen	*/
-/*			  Universitaet Heidelberg										*/
-/*			  Im Neuenheimer Feld 368										*/
-/*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de					        */
-/*																			*/
-/* History:   08.04.92 begin, ug version 2.0								*/
-/*			  20.11.94 moved shapes.c from ug to cd folder					*/
-/*																			*/
-/* Remarks: 																*/
-/*																			*/
+/*                                                                          */
+/* File:      shapes.c                                                      */
+/*                                                                          */
+/* Purpose:   shape functions for triangles and quadrilaterals              */
+/*                                                                          */
+/* Author:    Peter Bastian                                                 */
+/*            Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
+/*            Universitaet Heidelberg                                       */
+/*            Im Neuenheimer Feld 368                                       */
+/*            6900 Heidelberg                                               */
+/* internet:  ug@ica3.uni-stuttgart.de                                      */
+/*                                                                          */
+/* History:   08.04.92 begin, ug version 2.0                                */
+/*            20.11.94 moved shapes.c from ug to cd folder                  */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* include files															*/
-/*			  system include files											*/
-/*			  application include files 									*/
-/*																			*/
+/*                                                                          */
+/* include files                                                            */
+/* system include files                                                     */
+/* application include files                                                */
+/*                                                                          */
 /****************************************************************************/
 
 #include <math.h>
@@ -44,7 +44,7 @@
 USING_UG_NAMESPACES
 
 /****************************************************************************/
-/*																			*/
+/*                                                                          */
 /* defines in the following order											*/
 /*																			*/
 /*		  compile time constants defining static data size (i.e. arrays)	*/
@@ -150,28 +150,21 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 
 /****************************************************************************/
-/*D
-   LocalCornerCoordinates - Return corners of reference element
+/** \brief Return corners of reference element
 
-   SYNOPSIS:
-   INT LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *result);
+\param dim - space dimension, 2D can elements can be used in 3D
+\param tag - identifier for element type
+\param corner - corner for which the coordinates should be returned
+\param result - vector to store result
 
-   PARAMETERS:
-.  dim - space dimension, 2D can elements can be used in 3D
-.  tag - identifier for element type
-.  corner - corner for which the coordinates should be returned
-.  result - vector to store result
-
-   DESCRIPTION:
    This routine returns the coordinates of the corners of the reference element.
    The function is currently implemented in two dimensions for triangles (tag=3)
    and quadrilaterals (tag=4).
 
-   RETURN VALUES:
-   0 when o.k.
-
-   1 if an error occured.
-D*/
+   \return <ul>
+   <li> 0 when o.k.
+   <li> 1 if an error occured.
+*/
 /****************************************************************************/
 
 INT  NS_PREFIX LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *result)
@@ -182,30 +175,22 @@ INT  NS_PREFIX LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *res
 }
 
 /****************************************************************************/
-/*D
-   InterpolateFEFunction - Interpolate a finite element function 
+/** \brief Interpolate a finite element function 
 
-   SYNOPSIS:
-   INT InterpolateFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
-        DOUBLE nodal_values[MAX_CORNERS_OF_ELEM], DOUBLE *result);
+\param dim - space dimension, 2D can elements can be used in 3D
+\param tag - identifier for element type
+\param ip_local - point in coordinates of the reference element where FE function should be evaluated
+\param nodal_values - values of finite element function in corners
+\param result - where to store result
 
-   PARAMETERS:
-.  dim - space dimension, 2D can elements can be used in 3D
-.  tag - identifier for element type
-.  ip_local - point in coordinates of the reference element where FE function should be evaluated
-.  nodal_values - values of finite element function in corners
-.  result - where to store result
-
-   DESCRIPTION:
    This function interpolates a finite element function given by its nodal
    values. Currently standard linear elements for triangles (tag=3) and
    bilinear elements for quadrilaterals (tag=4) are implemented.
 
-   RETURN VALUE:
-   0 when o.k.
-
-   1 if an error occured.
-D*/
+   \return <ul>
+   <li> 0 when o.k.
+   <li> 1 if an error occured.
+*/
 /****************************************************************************/
 
 INT  NS_PREFIX InterpolateFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
@@ -281,26 +266,19 @@ INT  NS_PREFIX InterpolateFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
 }
 
 /****************************************************************************/
-/*D
-   LinearTrafo - return whether coordinate trafo is linear or not
+/** \brief Return whether coordinate transformation is linear or not
 
-   SYNOPSIS:
-   INT LinearTrafo (INT dim, INT tag);
+\param dim - space dimension, 2D can elements can be used in 3D
+\param tag - identifier for element type
 
-   PARAMETERS:
-.  dim - space dimension, 2D can elements can be used in 3D
-.  tag - identifier for element type
-
-   DESCRIPTION:
    This function returns TRUE when the coordinate transformation from the
    reference element to the general element is linear. In that case the
    Jacobian need only be evaluated once per element.
 
-   RETURN VALUES:
-   TRUE when transformation is linear
-
-   FALSE when transformation is nonlinear
-D*/
+   \return <ul>
+   <li> TRUE when transformation is linear
+   <li> FALSE when transformation is nonlinear
+*/
 /****************************************************************************/
 
 INT  NS_PREFIX LinearTrafo (INT dim, INT tag)
@@ -322,22 +300,15 @@ INT  NS_PREFIX LinearTrafo (INT dim, INT tag)
 }
 
 /****************************************************************************/
-/*D
-   JacobianInverse - compute inverse of jacobian
+/** \brief Compute inverse of jacobian
 
-   SYNOPSIS:
-   INT JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
-       DOUBLE ip_local[DIM], DOUBLE Jinv[DIM][DIM], DOUBLE *detJ);
+\param dim - space dimension, 2D can elements can be used in 3D
+\param tag - identifier for element type
+\param co_global - global coordintes of corners of the element
+\param ip_local - point in coordinates of the reference element where Jacobian should be evaluated
+\param Jinv - where to store resulting inverse of Jacobian
+\param detJ - where to store determinant of Jacobian
 
-   PARAMETERS:
-.  dim - space dimension, 2D can elements can be used in 3D
-.  tag - identifier for element type
-.  co_global - global coordintes of corners of the element
-.  ip_local - point in coordinates of the reference element where Jacobian should be evaluated
-.  Jinv - where to store resulting inverse of Jacobian
-.  detJ - where to store determinant of Jacobian
-
-   DESCRIPTION:
    Let T be the coordinate transformation from the reference element to a
    general element.
    This function computes the determinant of the Jacobian of T and
@@ -350,9 +321,9 @@ INT  NS_PREFIX LinearTrafo (INT dim, INT tag)
 
    1 if an error occured (e.g. determinant is very small)
 
-   SEE ALSO:
+   \sa
    GradientFEFunction, LinearTrafo
-D*/
+*/
 /****************************************************************************/
 
 INT  NS_PREFIX JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
@@ -488,23 +459,15 @@ INT  NS_PREFIX JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNERS_O
 }
 
 /****************************************************************************/
-/*D
-   GradientFEFunction - compute gradient of finite element function 
+/** \brief Compute gradient of finite element function 
 
-   SYNOPSIS:
-   INT GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM], 
-       DOUBLE Jinv[DIM][DIM], DOUBLE nodal_values[MAX_CORNERS_OF_ELEM],
-       DOUBLE result[DIM]);
+\param dim - space dimension, 2D can elements can be used in 3D
+\param tag - identifier for element type
+\param ip_local - point in coordinates of the reference element where gradient should be evaluated
+\param Jinv - inverse of Jacobian
+\param nodal_values - values of finite element function in corners
+\param result - where to store result
 
-   PARAMETERS:
-.  dim - space dimension, 2D can elements can be used in 3D
-.  tag - identifier for element type
-.  ip_local - point in coordinates of the reference element where gradient should be evaluated
-.  Jinv - inverse of Jacobian
-.  nodal_values - values of finite element function in corners
-.  result - where to store result
-
-   DESCRIPTION:
    This function computes the gradient of a finite element function in a point
    given in reference coordinates.
 
@@ -515,7 +478,7 @@ INT  NS_PREFIX JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNERS_O
 
    SEE ALSO:
    JacobianInverse
-D*/
+*/
 /****************************************************************************/
 
 INT  NS_PREFIX GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM], 
@@ -596,7 +559,7 @@ INT  NS_PREFIX GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    SurfaceElement - compute surface element for surface integral of first kind
 
    SYNOPSIS:
@@ -604,10 +567,10 @@ INT  NS_PREFIX GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
        DOUBLE ip_local[DIM], DOUBLE *result)
 
    PARAMETERS:
-.  dim - space dimension of mapped element (i.e. 2 and 3 are allowed)
-.  nc - number of corners
-.  co_global - global coordintes of corners of the element
-.  ip_local - point in coordinates of the reference element where surfel should be evaluated
+\param dim - space dimension of mapped element (i.e. 2 and 3 are allowed)
+\param nc - number of corners
+\param co_global - global coordintes of corners of the element
+\param ip_local - point in coordinates of the reference element where surfel should be evaluated
 
    DESCRIPTION:
    The reference elements in 1D and 2D are mapped to an arbitrary element in the
@@ -620,7 +583,7 @@ INT  NS_PREFIX GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
 
    SEE ALSO:
 
-D*/
+*/
 /****************************************************************************/
 
 INT  NS_PREFIX SurfaceElement (INT dim, INT nc, 
@@ -663,29 +626,29 @@ INT  NS_PREFIX SurfaceElement (INT dim, INT nc,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    GN - General Shape function for nodes
 
    SYNOPSIS:
    DOUBLE GN (INT n, INT i, DOUBLE ip_local);
 
    PARAMETERS:
-.  n - number of corners of the element
-.  i - corner number (corner number [0..n-1])
-.  local - local DOUBLEinates
+\param n - number of corners of the element
+\param i - corner number (corner number [0..n-1])
+\param local - local DOUBLEinates
 
    DESCRIPTION:
    This function finds the value of the shape function i for the reference 
    elements at the given local coordinate.
 
    The shape functions fullfill
-.n   Ni(node i) = 1
-.n   Ni(node k) = 0, if k is not equal i.
+<li>  Ni(node i) = 1
+<li>  Ni(node k) = 0, if k is not equal i.
    
-   RETURN VALUE:
+   \return
    DOUBLE
-.n          value
-D*/   
+<li>         value
+*/   
 /****************************************************************************/
 
 DOUBLE  NS_PREFIX GN (INT n, INT i, const DOUBLE *ip_local)
@@ -778,30 +741,30 @@ DOUBLE  NS_PREFIX GN (INT n, INT i, const DOUBLE *ip_local)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    GNs - General Shape function for nodes
 
    SYNOPSIS:
    INT GNs (INT n, DOUBLE *ip_local, DOUBLE *result)
 
    PARAMETERS:
-.  n - number of corners of the element
-.  local - local DOUBLEinates
-.  result - vector of values
+\param n - number of corners of the element
+\param local - local DOUBLEinates
+\param result - vector of values
 
    DESCRIPTION:
    This function finds the value of the shape functions for the reference 
    elements at the given local coordinate.
 
    The shape functions fullfill
-.n   Ni(node i) = 1
-.n   Ni(node k) = 0, if k is not equal i.
+<li>  Ni(node i) = 1
+<li>  Ni(node k) = 0, if k is not equal i.
    
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok 
-.n    1 if determinant of coordinate transformation too small.
-D*/   
+<li>   0 if ok 
+<li>   1 if determinant of coordinate transformation too small.
+*/   
 /****************************************************************************/
 
 INT  NS_PREFIX GNs (INT n, const DOUBLE *ip_local, DOUBLE *result)
@@ -878,30 +841,30 @@ INT  NS_PREFIX GNs (INT n, const DOUBLE *ip_local, DOUBLE *result)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    GNs - General Shape function for nodes
 
    SYNOPSIS:
    INT GNs (INT n, DOUBLE *ip_local, DOUBLE *result)
 
    PARAMETERS:
-.  n - number of corners of the element
-.  local - local DOUBLEinates
-.  result - vector of values
+\param n - number of corners of the element
+\param local - local DOUBLEinates
+\param result - vector of values
 
    DESCRIPTION:
    This function finds the value of the shape functions for the reference 
    elements at the given local coordinate.
 
    The shape functions fullfill
-.n   Ni(node i) = 1
-.n   Ni(node k) = 0, if k is not equal i.
+<li>  Ni(node i) = 1
+<li>  Ni(node k) = 0, if k is not equal i.
    
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok 
-.n    1 if determinant of coordinate transformation too small.
-D*/   
+<li>   0 if ok 
+<li>   1 if determinant of coordinate transformation too small.
+*/   
 /****************************************************************************/
 
 INT  NS_PREFIX DimGNs (INT dim, INT n, const DOUBLE *ip_local, DOUBLE *result)
@@ -987,26 +950,26 @@ INT  NS_PREFIX DimGNs (INT dim, INT n, const DOUBLE *ip_local, DOUBLE *result)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    D_GN - General Shape function for nodes
 
    SYNOPSIS:
    INT D_GN (INT n, INT i, const DOUBLE *ip_local, DOUBLE *derivative);
 
    PARAMETERS:
-.  n - number of corners of the element
-.  i - corner number (corner number [0..n-1])
-.  ip_local - local DOUBLEinates
-.  derivative - derivative
+\param n - number of corners of the element
+\param i - corner number (corner number [0..n-1])
+\param ip_local - local DOUBLEinates
+\param derivative - derivative
 
    DESCRIPTION:
    This function computes the derivative of the shape functions GN.
    
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok 
-.n    1 if determinant of coordinate transformation too small.
-D*/   
+<li>   0 if ok 
+<li>   1 if determinant of coordinate transformation too small.
+*/   
 /****************************************************************************/
 
 INT  NS_PREFIX D_GN (INT n, INT i, const DOUBLE *ip_local, DOUBLE *derivative)
@@ -1234,22 +1197,22 @@ INT  NS_PREFIX D_GN (INT n, INT i, const DOUBLE *ip_local, DOUBLE *derivative)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    LMP - local midpoint
 
    SYNOPSIS:
    DOUBLE *LMP (INT n);
 
    PARAMETERS:
-.  n - number of corners of the element
+\param n - number of corners of the element
 
    DESCRIPTION:
    This function gives the local coordinates of the midpoint of an element
       
-   RETURN VALUE:
+   \return
    DOUBLE *
-.n          local
-D*/   
+<li>         local
+*/   
 /****************************************************************************/
 
 DOUBLE * NS_PREFIX LMP (INT n)
@@ -1275,7 +1238,7 @@ DOUBLE * NS_PREFIX LMP (INT n)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    UG_GlobalToLocal - Transform global coordinates to local
 
    SYNOPSIS:
@@ -1283,20 +1246,20 @@ DOUBLE * NS_PREFIX LMP (INT n)
    DOUBLE *LocalCoord);
 
    PARAMETERS:
-.  n - number of corners
-.  Corners - coordinates of corners 
-.  EvalPoint - global coordinates
-.  LocalCoord - local coordinates 
+\param n - number of corners
+\param Corners - coordinates of corners 
+\param EvalPoint - global coordinates
+\param LocalCoord - local coordinates 
 
    DESCRIPTION:
    This function transforms global coordinates to local in an evaluated point
    in 3D.
 
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
+<li>   0 if ok
+<li>   1 if error occured.
+*/
 /****************************************************************************/
 
 INT NS_PREFIX UG_GlobalToLocal (INT n, const DOUBLE **Corners, 
@@ -1339,7 +1302,7 @@ INT NS_PREFIX UG_GlobalToLocal (INT n, const DOUBLE **Corners,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    UG_GlobalToLocal - Transform global coordinates to local
 
    SYNOPSIS:
@@ -1347,20 +1310,20 @@ INT NS_PREFIX UG_GlobalToLocal (INT n, const DOUBLE **Corners,
    DOUBLE *LocalCoord);
 
    PARAMETERS:
-.  n - number of corners
-.  Corners - coordinates of corners 
-.  EvalPoint - global coordinates
-.  LocalCoord - local coordinates 
+\param n - number of corners
+\param Corners - coordinates of corners 
+\param EvalPoint - global coordinates
+\param LocalCoord - local coordinates 
 
    DESCRIPTION:
    This function transforms global coordinates to local in an evaluated point
    in 3D.
 
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
+<li>   0 if ok
+<li>   1 if error occured.
+*/
 /****************************************************************************/
 
 INT NS_PREFIX UG_GlobalToLocalBnd (INT n, const DOUBLE **Corners, 
@@ -1411,26 +1374,26 @@ INT NS_PREFIX UG_GlobalToLocalBnd (INT n, const DOUBLE **Corners,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    dNds	-  Partial derivative of shape function	
 
    SYNOPSIS:
    DOUBLE dNds (int n, int i, DOUBLE s, DOUBLE t);
 
    PARAMETERS:
-.  n - number of sides (3 for triangle, 4 for quadrangle)
-.  i - corner number [0..n-1]
-.  s - local DOUBLEinates
-.  t - local DOUBLEinates
+\param n - number of sides (3 for triangle, 4 for quadrangle)
+\param i - corner number [0..n-1]
+\param s - local DOUBLEinates
+\param t - local DOUBLEinates
 
    DESCRIPTION:
    This function calculates the partial derivative of the shape function Ni(s,t) 
    with respect to s.		
 
-   RETURN VALUE:
+   \return
    DOUBLE											
-.n          value
-D*/
+<li>         value
+*/
 /****************************************************************************/
 
 #ifdef __TWODIM__
@@ -1462,26 +1425,26 @@ DOUBLE  NS_PREFIX dNds (INT n, INT i, DOUBLE s, DOUBLE t)
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    dNdt	- Partial derivative of shape function	
 
    SYNOPSIS:
    DOUBLE dNdt (int n, int i, DOUBLE s, DOUBLE t);
 
    PARAMETERS:
-.  n - number of sides (for triangle, 4 for quadrangle)
-.  i - corner number [0..n-1]
-.  s - local DOUBLEinates				
-.  t - local DOUBLEinates	
+\param n - number of sides (for triangle, 4 for quadrangle)
+\param i - corner number [0..n-1]
+\param s - local DOUBLEinates				
+\param t - local DOUBLEinates	
 
    DESCRIPTION:
    This function calculates the partial derivative of the shape function Ni(s,t) 
    with respect to t.												
 
-   RETURN VALUE:
+   \return
    DOUBLE
-.n          value
-D*/
+<li>         value
+*/
 /****************************************************************************/
 
 #ifdef __TWODIM__
@@ -1513,7 +1476,7 @@ DOUBLE  NS_PREFIX dNdt (INT n, INT i, DOUBLE s, DOUBLE t)
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    Derivatives - Compute partial derivatives of the shape functions and 
    determinant of coordinate transformation
 
@@ -1522,14 +1485,14 @@ DOUBLE  NS_PREFIX dNdt (INT n, INT i, DOUBLE s, DOUBLE t)
    DOUBLE ipt, DOUBLE *dNdx, DOUBLE *dNdy, DOUBLE *DetJ);
 
    PARAMETERS:
-.  n - number of sides (3 for triangle, 4 for quadrangle)
-.  px - x,y DOUBLEinates of corners
-.  py - x,y DOUBLEinates of corners
-.  ips - location to compute derivatives in s,t DOUBLE
-.  ipt - location to compute derivatives in s,t DOUBLE
-.  dNdx - output array for derivatives
-.  dNdy - output array for derivatives
-.  DetJ - determinant of coordinate transformation
+\param n - number of sides (3 for triangle, 4 for quadrangle)
+\param px - x,y DOUBLEinates of corners
+\param py - x,y DOUBLEinates of corners
+\param ips - location to compute derivatives in s,t DOUBLE
+\param ipt - location to compute derivatives in s,t DOUBLE
+\param dNdx - output array for derivatives
+\param dNdy - output array for derivatives
+\param DetJ - determinant of coordinate transformation
 
    DESCRIPTION:
    This function computes the partial derivatives of the shape 
@@ -1539,11 +1502,11 @@ DOUBLE  NS_PREFIX dNdt (INT n, INT i, DOUBLE s, DOUBLE t)
    in the interior of an element at specific locations. Furthermore 
    the determinant of coordinate transformation is calculated.
 
-   RETURN VALUE:
+   \return <ul>
    int
-.n    0 if ok 
-.n    1 if determinant of coordinate transformation too small.
-D*/
+<li>   0 if ok 
+<li>   1 if determinant of coordinate transformation too small.
+*/
 /****************************************************************************/
 
 #ifdef __TWODIM__
@@ -1569,7 +1532,7 @@ INT  NS_PREFIX Derivatives (INT n, const DOUBLE *px, const DOUBLE *py, DOUBLE ip
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    Gradients - Compute gradients of the shape functions and 
    determinant of coordinate transformation	
 
@@ -1578,23 +1541,23 @@ INT  NS_PREFIX Derivatives (INT n, const DOUBLE *px, const DOUBLE *py, DOUBLE ip
    DOUBLE_VECTOR Gradient[MAX_CORNERS_OF_ELEM], DOUBLE *DetJ);
 
    PARAMETERS:
-.  n - number of sides (3 for triangle, 4 for quadrangle)
-.  theCorners - coordinates of the element corners
-.  ips - location to compute derivatives in s,t DOUBLE
-.  ipt - location to compute derivatives in s,t DOUBLE
-.  Gradient - output array for gradients 
-.  DetJ - determinant of coordinate transformation
+\param n - number of sides (3 for triangle, 4 for quadrangle)
+\param theCorners - coordinates of the element corners
+\param ips - location to compute derivatives in s,t DOUBLE
+\param ipt - location to compute derivatives in s,t DOUBLE
+\param Gradient - output array for gradients 
+\param DetJ - determinant of coordinate transformation
 
    DESCRIPTION:
    This function computes gradients of the shape functions with respect to 
    x,y Coordinates at a given point (ips,ipt) and the determinant of 
    coordinate transformation.
 
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok 
-.n    1 if determinant of coordinate transformation too small. 
-D*/
+<li>   0 if ok 
+<li>   1 if determinant of coordinate transformation too small. 
+*/
 /****************************************************************************/
 
 #ifdef __TWODIM__
@@ -1621,7 +1584,7 @@ INT  NS_PREFIX Gradients (INT n, const DOUBLE **theCorners, DOUBLE ips, DOUBLE i
 
 
 /****************************************************************************/
-/*D
+/** \brief
    L2GDerivative2d - Derivative of LOCAL_TO_GLOBAL
 
    SYNOPSIS:
@@ -1629,21 +1592,21 @@ INT  NS_PREFIX Gradients (INT n, const DOUBLE **theCorners, DOUBLE ips, DOUBLE i
    const DOUBLE_VECTOR EvalPoint, DOUBLE *Derivative);
 
    PARAMETERS:
-.  n - corner number  
-.  Corners - coordinates of corners
-.  EvalPoint - local coordinates
-.  Derivative - df1/ds, df2/ds, df1/dt, df2/dt   
+\param n - corner number  
+\param Corners - coordinates of corners
+\param EvalPoint - local coordinates
+\param Derivative - df1/ds, df2/ds, df1/dt, df2/dt   
 
    DESCRIPTION:
    This function calculates the derivates of the shape functions in an
    evaluated point and transforms the local coordinates of the derivates to 
    global in triangular and quadrilateral elements.
 
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
+<li>   0 if ok
+<li>   1 if error occured.
+*/
 /****************************************************************************/
 
 #ifdef __TWODIM__
@@ -1689,24 +1652,24 @@ INT  NS_PREFIX L2GDerivative2d (INT n, const DOUBLE **Corners, const DOUBLE_VECT
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    TetraSideNormals - Calculate inner normals of tetrahedra
 
    SYNOPSIS:
    INT TetraSideNormals (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE_VECTOR theNormals[MAX_SIDES_OF_ELEM]);
 
    PARAMETERS:
-.  theCorners - list of pointers to phys corner vectors
-.  theNormals - normals of tetrahedra
+\param theCorners - list of pointers to phys corner vectors
+\param theNormals - normals of tetrahedra
 
    DESCRIPTION:
    This function calculates the inner normals on the sides of a tetrahedron.	
 
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
+<li>   0 if ok
+<li>   1 if error occured.
+*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
@@ -1739,24 +1702,24 @@ INT NS_PREFIX TetraSideNormals (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    TetMaxSideAngle - Calculate maximal side angle of Tetrahedron
 
    SYNOPSIS:
    INT TetMaxSideAngle (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE *MaxAngle);
 
    PARAMETERS:
-.  theCorners - list of pointers to phys corner vectors
-.  MaxAngle - max side angle
+\param theCorners - list of pointers to phys corner vectors
+\param MaxAngle - max side angle
 
    DESCRIPTION:
    This function calculates the maximal side angle of the tetrahedron.
 
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
+<li>   0 if ok
+<li>   1 if error occured.
+*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
@@ -1781,26 +1744,26 @@ INT  NS_PREFIX TetMaxSideAngle (ELEMENT *theElement, const DOUBLE **theCorners, 
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    TetAngleAndLength - Calculates side angle and length of edge of Tetrahedron
 
    SYNOPSIS:
    INT TetAngleAndLength (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE *Angle, DOUBLE *Length);
 
    PARAMETERS:
-.  theCorners - list of pointers to phys corner vectors
-.  Angle - side angle
-.  Length - sidelength
+\param theCorners - list of pointers to phys corner vectors
+\param Angle - side angle
+\param Length - sidelength
 
    DESCRIPTION:
    This function calculates the side angle of a tetrahedron and the lengths of 
    the edges belonging to this side.
 
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
+<li>   0 if ok
+<li>   1 if error occured.
+*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
@@ -1839,24 +1802,24 @@ INT  NS_PREFIX TetAngleAndLength (ELEMENT *theElement, const DOUBLE **theCorners
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    TetraDerivative - Calculates gradient of shape function for tetrahedron
 
    SYNOPSIS:
    INT TetraDerivative (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE_VECTOR theGradient[MAX_CORNERS_OF_ELEM])
 
    PARAMETERS:
-.  theCorners - list of pointers to phys corner vectors
-.  theGradient - gradients of shape functions
+\param theCorners - list of pointers to phys corner vectors
+\param theGradient - gradients of shape functions
 
    DESCRIPTION:
    This function calculates the gradient of shape function for tetrahedron.
 
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
+<li>   0 if ok
+<li>   1 if error occured.
+*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
@@ -1883,24 +1846,24 @@ INT  NS_PREFIX TetraDerivative (ELEMENT *theElement, const DOUBLE **theCorners, 
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    TetraVolume - Calculate volume of tetrahedron
 
    SYNOPSIS:
    INT TetraVolume (DOUBLE **theCorners, DOUBLE *volume);
 
    PARAMETERS:
-.  theCorners - list of pointers to phys corner vectors
-.  volume - volume of tetrahedron
+\param theCorners - list of pointers to phys corner vectors
+\param volume - volume of tetrahedron
 
    DESCRIPTION:
    This function calculates the volume of a tetrahedron.	
 
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
+<li>   0 if ok
+<li>   1 if error occured.
+*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
@@ -1921,7 +1884,7 @@ INT  NS_PREFIX TetraVolume (const DOUBLE **theCorners, DOUBLE *volume)
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    FV_TetInfo - Calculate control volume subsurfaces and global integration points
 
    SYNOPSIS:
@@ -1929,20 +1892,20 @@ INT  NS_PREFIX TetraVolume (const DOUBLE **theCorners, DOUBLE *volume)
    DOUBLE_VECTOR GIP[MAX_EDGES_OF_ELEM]);
 
    PARAMETERS:
-.  theCorners - coordinates of the element corners
-.  Area - area of subsurface
-.  GIP - global integration point
+\param theCorners - coordinates of the element corners
+\param Area - area of subsurface
+\param GIP - global integration point
 
    DESCRIPTION:
    This function calculates the subsurfaces (SCV) of the control volume (CV) in 
    tetrahedron elements. The global integration points are computed in the 
    center of mass on these subsurfaces.
 
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
+<li>   0 if ok
+<li>   1 if error occured.
+*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
@@ -2943,7 +2906,7 @@ INT FV_TetInfo_for_conv (ELEMENT *theElement, const DOUBLE **CornerPoints, DOUBL
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    Side_TetInfo	- Calculate subsurfaces and integration points on elementside of tetrahedron 
 
    SYNOPSIS:
@@ -2951,10 +2914,10 @@ INT FV_TetInfo_for_conv (ELEMENT *theElement, const DOUBLE **CornerPoints, DOUBL
    DOUBLE_VECTOR GIP[3]);
 
    PARAMETERS:
-.  theCorners - list of pointers to phys corner vectors
-.  side - side of tetrahedron
-.  Area - area of subsurface on an element side
-.  Gip[3] - surface integration points
+\param theCorners - list of pointers to phys corner vectors
+\param side - side of tetrahedron
+\param Area - area of subsurface on an element side
+\param Gip[3] - surface integration points
 
    DESCRIPTION:
    The tetrahedrons are subdevided into four subcontrol volumes, defined by the
@@ -2963,11 +2926,11 @@ INT FV_TetInfo_for_conv (ELEMENT *theElement, const DOUBLE **CornerPoints, DOUBL
    in three subsurfaces. The area and the global integration points of these
    subsurfaces are calculated in this function.
 
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
+<li>   0 if ok
+<li>   1 if error occured.
+*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
@@ -3010,7 +2973,7 @@ INT  NS_PREFIX Side_TetInfo (DOUBLE **theCorners, INT side, DOUBLE_VECTOR Area, 
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    GSUIP - Calculate upwind integration point
 
    SYNOPSIS:
@@ -3018,10 +2981,10 @@ INT  NS_PREFIX Side_TetInfo (DOUBLE **theCorners, INT side, DOUBLE_VECTOR Area, 
    DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
 
    PARAMETERS:
-.  theCorners - coordinates of the element corners
-.  LIP - integration point
-.  conv - velocity
-.  LUIP - upwind integration point
+\param theCorners - coordinates of the element corners
+\param LIP - integration point
+\param conv - velocity
+\param LUIP - upwind integration point
 
    DESCRIPTION:
    This function calculates the upwind integration points LUIP on the surface
@@ -3029,11 +2992,11 @@ INT  NS_PREFIX Side_TetInfo (DOUBLE **theCorners, INT side, DOUBLE_VECTOR Area, 
    at the node on the intersection of the local flow vector `conv`, defined in the
    integration point IP, with the element boundary.
 
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok
-.n    1 if error occured.	
-D*/			
+<li>   0 if ok
+<li>   1 if error occured.	
+*/			
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
@@ -3212,7 +3175,7 @@ INT  NS_PREFIX GetSkewedUIP (const DOUBLE_VECTOR *theCorners, const DOUBLE_VECTO
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    GFUIP - Calculate upwind integration point
 
    SYNOPSIS:
@@ -3220,10 +3183,10 @@ INT  NS_PREFIX GetSkewedUIP (const DOUBLE_VECTOR *theCorners, const DOUBLE_VECTO
    DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
 
    PARAMETERS:
-.  theCorners - coordinates of the element corners
-.  LIP - integration point
-.  conv - velocity in the integration point
-.  LUIP - upwind integration point
+\param theCorners - coordinates of the element corners
+\param LIP - integration point
+\param conv - velocity in the integration point
+\param LUIP - upwind integration point
 
    DESCRIPTION:
    This function calculates the upwind integration points LUIP using the
@@ -3231,11 +3194,11 @@ INT  NS_PREFIX GetSkewedUIP (const DOUBLE_VECTOR *theCorners, const DOUBLE_VECTO
    the maximum distance upstream to the intersection of the local flow vector
    `conv`, defined in the integration point IP, with the element boundary.
    
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok
-.n    1 if error occured.													
-D*/
+<li>   0 if ok
+<li>   1 if error occured.													
+*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
@@ -3278,7 +3241,7 @@ INT  NS_PREFIX GFUIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDG
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    GCUIP - Calculate upwind integration point
 
    SYNOPSIS:
@@ -3286,10 +3249,10 @@ INT  NS_PREFIX GFUIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDG
    DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
 
    PARAMETERS:
-.  theCorners - coordinates of the element corners
-.  LIP - integration point
-.  conv - velocity
-.  LUIP - upwind integration point
+\param theCorners - coordinates of the element corners
+\param LIP - integration point
+\param conv - velocity
+\param LUIP - upwind integration point
 
 
    DESCRIPTION:
@@ -3298,11 +3261,11 @@ INT  NS_PREFIX GFUIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDG
    corner next to the intersection-point of the local flow vector `conv`, defined
    in the integration point IP, with the element boundary.
 
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
+<li>   0 if ok
+<li>   1 if error occured.
+*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
@@ -3496,7 +3459,7 @@ INT  NS_PREFIX GCUIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDG
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    COPYIP - Copy integration points
 
    SYNOPSIS:
@@ -3504,19 +3467,19 @@ INT  NS_PREFIX GCUIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDG
    DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM]);
 
    PARAMETERS:
-.  theCorners - coordinates of the element corners
-.  LIP - integration point
-.  conv - velocity 
-.  LUIP - upwind integration point
+\param theCorners - coordinates of the element corners
+\param LIP - integration point
+\param conv - velocity 
+\param LUIP - upwind integration point
   
    DESCRIPTION:
    This function copies integration points on the upwind integration points.
 
-   RETURN VALUE:
+   \return <ul>
    INT
-.n    0 if ok
-.n    1 if error occured.
-D*/
+<li>   0 if ok
+<li>   1 if error occured.
+*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 

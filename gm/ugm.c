@@ -4023,7 +4023,7 @@ INT NS_PREFIX DisposeMultiGrid (MULTIGRID *theMG)
   DDD_IFRefreshAll();
         #endif
 
-  /* TODO: normally the MG-heap should be cleaned-up before freeing.
+  /** \todo Normally the MG-heap should be cleaned-up before freeing.
            DDD depends on storage in the heap, even if no DDD objects
                    are allocated!! (due to free-lists, DDD type definitions
                    etc.) therefore, repeated new/close commands are inhibited
