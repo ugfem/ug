@@ -193,5 +193,11 @@ INT InitNumerics ()
     return (err);
   }
 
+  /* init amg solver */
+  if ((err=InitOrder())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
   return (0);
 }
