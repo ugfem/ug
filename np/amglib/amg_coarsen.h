@@ -55,6 +55,10 @@
 #define AMG_MAX_STACK                   256             /* size of seed stack				*/
 #define AMG_MAX_ROW                             512             /* max number of nonzeros in row	*/
 
+
+#define AMG_UNSYM                               1               /* unsymmetric dependency strategy	*/
+#define AMG_SYM                                 2               /* symmetric dependency strategy	*/
+
 /****************************************************************************/
 /*																			*/
 /* data structures exported by the corresponding source file				*/
@@ -73,6 +77,7 @@ typedef struct {                                        /* parameters of coarsen
   int depthtarget;                                      /* create at most so many levels		*/
   double coarsenrate;                                   /* quit if coarsening is too slow		*/
   int major;                                                    /* use major component strategy if >=0  */
+  int dependency;                                       /* selects dependency strategy                  */
 } AMG_CoarsenContext;
 
 typedef struct {

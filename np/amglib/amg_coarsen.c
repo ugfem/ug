@@ -289,7 +289,86 @@ static int Dependency (AMG_MATRIX *A, AMG_GRAPH *g, AMG_CoarsenContext *cc)
 
   if (cc->verbose==1)
   {
-    AMG_Print("D");
+    AMG_Print("U");
+  }
+
+  return(strong);
+}
+
+static int Dependency_sym (AMG_MATRIX *A, AMG_GRAPH *g, AMG_CoarsenContext *cc)
+{
+  int n = AMG_GRAPH_N(g);
+  int e = AMG_GRAPH_E(g);
+  int *ra = AMG_GRAPH_RA(g);
+  int *ja = AMG_GRAPH_JA(g);
+  int *ca = AMG_GRAPH_CA(g);
+  char *na = AMG_GRAPH_NA(g);
+  char *la = AMG_GRAPH_LA(g);
+  double *a = AMG_MATRIX_A(A);
+  char buffer[128];
+  int comp,sas=AMG_GRAPH_SAS(g);
+
+  int i,k,kk,start,end;
+  double maxval;
+  int strong=0;
+
+  /* initialize flags */
+  for (i=0; i<n; i++) na[i] = 0;
+  for (i=0; i<e; i++) la[i] = 0;
+
+  /* for all rows */
+  for (i=0; i<n; i++)
+  {
+    start = ra[i]; end = start+ja[start]; comp=i%sas;
+
+    /* compute symmetric maxval */
+    maxval = -1.0E20;
+    for (k=start+1; k<end; k++)
+      if ((ja[k]%sas)==comp)
+      {
+        kk = AMG_FindEntry(A,ja[k],i);
+        if (kk<0) {
+          sprintf(buffer,"%12s: no entry (%d,%d)\n","Dependency",ja[k],i);
+          AMG_Print(buffer);
+          return(-1);
+        }
+        maxval=AMG_MAX(maxval,(a[k]*a[kk])/(a[start]*a[ra[ja[k]]]));
+      }
+
+    /* check for isolated condition */
+    if (maxval<cc->beta)
+    {
+      SET_ISOLATED(na[i]);                   /* component 0, the scalar case */
+      continue;
+    }
+
+    maxval = maxval*cc->alpha;             /* reduce by alpha */
+    for (k=start+1; k<end; k++)
+      if ((ja[k]%sas)==comp)
+      {
+        kk = AMG_FindEntry(A,ja[k],i);
+        if (kk<0) {
+          sprintf(buffer,"%12s: no entry (%d,%d)\n","Dependency",ja[k],i);
+          AMG_Print(buffer);
+          return(-1);
+        }
+        if ((a[k]*a[kk])/(a[start]*a[ra[ja[k]]]) < maxval) continue;
+        SET_DEPENDS(la[k]);  SET_INFLUENCES(la[kk]);
+        SET_DEPENDS(la[kk]); SET_INFLUENCES(la[k]);
+        strong++;
+      }
+  }
+
+  if (cc->verbose>1)
+  {
+    sprintf(buffer,"%12s: %d rows %d nonzeros %d strong connections\n","Dependency",
+            n,AMG_MATRIX_CONNECTIONS(A),strong);
+    AMG_Print(buffer);
+  }
+
+  if (cc->verbose==1)
+  {
+    AMG_Print("S");
   }
 
   return(strong);
@@ -1593,9 +1672,10 @@ static AMG_MATRIX *Coarsen (AMG_MATRIX *A, AMG_GRAPH *g, AMG_CoarsenContext *cc)
 static void LexPrint (AMG_MATRIX *A[AMG_MAX_LEVELS], AMG_GRAPH *G[AMG_MAX_LEVELS], int level)
 {
   int i,j,k,n,d;
-  char ch;
+  char ch,b;
 
   n = (int) sqrt( (double) AMG_MATRIX_N(A[0]) );
+  b='0';
 
   for (j=n-1; j>=0; j--)
   {
@@ -1603,7 +1683,7 @@ static void LexPrint (AMG_MATRIX *A[AMG_MAX_LEVELS], AMG_GRAPH *G[AMG_MAX_LEVELS
     {
       k = j*n+i;
       for (d=0; d<level; d++) k = G[d]->ca[k];
-      ch = 33+k%64;
+      ch = b+k%16;
       AMG_Print(&ch);
     }
     AMG_Print("\n");
@@ -1626,6 +1706,8 @@ static int Statistic (AMG_MATRIX *A, int depth)
   sprintf(buffer,"Level %2d: %7d=rows %7d=nonzeros %12.4lg=avg %4d=min %4d=max\n",
           depth,n,A->connections,(double)(((double)A->connections)/((double)n)),min_con,max_con);
   AMG_Print(buffer);
+
+  return(AMG_OK);
 }
 
 
@@ -1666,10 +1748,21 @@ int AMG_BuildHierarchy (AMG_CoarsenContext *cc, AMG_MATRIX *A,
     g = NewGraph(H[depth]);
     if (g==NULL) return(-1);
     G[depth] = g;             /* graph structure on fine grid */
-    if (Dependency(H[depth],G[depth],cc)<0)
+    if (cc->dependency==AMG_SYM)
     {
-      AMG_Print("Dependency failed\n");
-      return(-1);
+      if (Dependency_sym(H[depth],G[depth],cc)<0)
+      {
+        AMG_Print("Dependency failed\n");
+        return(-1);
+      }
+    }
+    else
+    {
+      if (Dependency(H[depth],G[depth],cc)<0)
+      {
+        AMG_Print("Dependency failed\n");
+        return(-1);
+      }
     }
     if (Clustering(G[depth],cc)!=AMG_OK)
     {
@@ -1699,6 +1792,7 @@ int AMG_BuildHierarchy (AMG_CoarsenContext *cc, AMG_MATRIX *A,
     depth++;
     H[depth]=C;
     /*LexPrint(H,G,depth);*/
+    /*if (C->n<25) AMG_PrintMatrix(C,"mist");*/
   }
 
   if (cc->verbose>1)

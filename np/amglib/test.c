@@ -23,7 +23,7 @@
 /*																			*/
 /****************************************************************************/
 
-#undef MWCW
+#define MWCW
 
 /****************************************************************************/
 /*																			*/
@@ -58,6 +58,8 @@
 /*		  macros															*/
 /*																			*/
 /****************************************************************************/
+
+#define PI 3.141592654
 
 /****************************************************************************/
 /*																			*/
@@ -101,25 +103,88 @@ static double u0 (double x, double y)
   return(x*x+y*y);
 }
 
+#define K0      1.0
+#define K1      1.0E-1
+#define K2      1.0E-1
+#define K3      1.0E-2
+#define K4      1.0E07
+#define K5      1.0E05
+
+#define EPS 1.0E-6
+#define NU  16
+
+#define CHECKER_XL      0.1
+#define CHECKER_YL      0.1
+#define CHECKER_K1      1.0E4
+#define CHECKER_K2      1.0E0
+#define CHECKER_K3      1.0E-4
+#define CHECKER_K4      1.0E0
+
+static double k_het (double x, double y)
+{
+  if ( x>=0.5 && x<=0.64 && y>= 0.3333333 && y<=0.5 )
+    return(K1);
+
+  if ( x>=0.5 && x<=0.9 && y>= 0.5 && y<=0.53 )
+    return(K2);
+
+  if ( x>=0.25 && x<=0.5 && y>= 0.5 && y<=0.75 )
+    return(K3);
+
+  if ( x>=0.1 && x<=0.3 && y>= 0.1 && y<=0.3 )
+    return(K4);
+
+  if ( x>=0.64 && x<=0.95 && y>= 0.6 && y<=0.9 )
+    return(K5);
+
+  return(K0);
+}
+
+static double k_checker (double x, double y)
+{
+  int ix,iy;
+
+  ix=((int)floor(x/CHECKER_XL))%2;
+  iy=((int)floor(y/CHECKER_YL))%2;
+
+  if ( ix==0 && iy==0 ) return(CHECKER_K1);
+  if ( ix==1 && iy==0 ) return(CHECKER_K2);
+  if ( ix==1 && iy==1 ) return(CHECKER_K3);
+  if ( ix==0 && iy==1 ) return(CHECKER_K4);
+
+  AMG_Print("kx_checker: fatal error!\n");
+  return(0.0);
+}
+
+static double k_osc (double x, double y)
+{
+  return(EPS+1.0+sin(PI*NU*x)*sin(PI*NU*y));
+}
+
+static double rx_circle (double x, double y)
+{
+  return(-sin(PI*x)*cos(PI*y));
+}
+
+static double ry_circle (double x, double y)
+{
+  return(sin(PI*y)*cos(PI*x));
+}
+
+
 static double kx (double x, double y)
 {
-  double r;
-
-  r = 0.0;
-  return(1.0E-6);
+  return(k_checker(x,y));
 }
 
 static double ky (double x, double y)
 {
-  double r;
-
-  r = 0.0;
-  return(1.0E-6);
+  return(k_checker(x,y));
 }
 
 static double rx (double x, double y)
 {
-  return(1.0);
+  return(0.0);
 }
 
 static double ry (double x, double y)
@@ -170,32 +235,6 @@ static int SetupSystem2D (int N) /* N is the number of points in one direction *
       y_n = y+0.5*h;
       y_s = y-0.5*h;
 
-      /* permeability at center of elements */
-      kx_nw = kx(x_w,y_n);
-      kx_ne = kx(x_e,y_n);
-      kx_sw = kx(x_w,y_s);
-      kx_se = kx(x_e,y_s);
-      ky_nw = ky(x_w,y_n);
-      ky_ne = ky(x_e,y_n);
-      ky_sw = ky(x_w,y_s);
-      ky_se = ky(x_e,y_s);
-
-      /* harmonic mean of permeabilities */
-      kx_w = 2.0 / ( (1.0/kx_nw)+(1.0/kx_sw) );
-      kx_e = 2.0 / ( (1.0/kx_ne)+(1.0/kx_se) );
-      kx_n = 2.0 / ( (1.0/kx_nw)+(1.0/kx_ne) );
-      kx_s = 2.0 / ( (1.0/kx_sw)+(1.0/kx_se) );
-      ky_w = 2.0 / ( (1.0/ky_nw)+(1.0/ky_sw) );
-      ky_e = 2.0 / ( (1.0/ky_ne)+(1.0/ky_se) );
-      ky_n = 2.0 / ( (1.0/ky_nw)+(1.0/ky_ne) );
-      ky_s = 2.0 / ( (1.0/ky_sw)+(1.0/ky_se) );
-
-      /* velocities */
-      rx_e = rx(x_e,y);
-      rx_w = rx(x_w,y);
-      ry_n = ry(x,y_n);
-      ry_s = ry(x,y_s);
-
       /* count the number of nonzeros in row me and allocate row */
       nonzeros=1;
       if (i>0) nonzeros++;
@@ -206,26 +245,41 @@ static int SetupSystem2D (int N) /* N is the number of points in one direction *
 
       if ( (i>0) && (i<N-1) && (j>0) && (j<N-1) )
       {                         /* interior node */
-                                /* diagonal coefficient and right hand side */
-        w = kx_w + kx_e + ky_n + ky_s + h*(rx_e+ry_n);
+
+        /* permeabilities */
+        kx_w = kx(x_w,y);
+        kx_e = kx(x_e,y);
+        ky_n = ky(x,y_n);
+        ky_s = ky(x,y_s);
+
+        /* velocities */
+        rx_e = rx(x_e,y);
+        rx_w = rx(x_w,y);
+        ry_n = ry(x,y_n);
+        ry_s = ry(x,y_s);
+
+        /* diagonal coefficient and right hand side */
+        w = kx_w + kx_e + ky_n + ky_s +
+            h*AMG_MAX(rx_e,0.0)+h*AMG_MAX(ry_n,0.0)+
+            h*AMG_MAX(-rx_w,0.0)+h*AMG_MAX(-ry_s,0.0);
         if (AMG_InsertValues(A0,me,me,&w)<0) return(1);
         AMG_VECTOR_ENTRY(b0,me,0) = f(x,y)*h*h;
         /*AMG_VECTOR_ENTRY(x0,me,0) = u0(x,y);*/
 
         /* west coefficient */
-        w = -kx_w - h*rx_w;
+        w = -kx_w - h*AMG_MAX(rx_w,0.0);
         if (AMG_InsertValues(A0,me,(j  )*N+(i-1),&w)<0) return(1);
 
         /* south coefficient */
-        w = -ky_s - h*ry_s;
+        w = -ky_s - h*AMG_MAX(ry_s,0.0);
         if (AMG_InsertValues(A0,me,(j-1)*N+(i  ),&w)<0) return(1);
 
         /* east coefficient */
-        w = -kx_e;
+        w = -kx_e - h*AMG_MAX(-rx_e,0.0);
         if (AMG_InsertValues(A0,me,(j  )*N+(i+1),&w)<0) return(1);
 
         /* north coefficient */
-        w = -ky_n;
+        w = -ky_n - h*AMG_MAX(-ry_n,0.0);
         if (AMG_InsertValues(A0,me,(j+1)*N+(i  ),&w)<0) return(1);
       }
       else
@@ -448,26 +502,27 @@ int main (int argc, char *argv[])
   cc.maxconnectivity=15;
   cc.verbose=1;
   cc.depthtarget=20;
-  cc.coarsentarget=10;
+  cc.coarsentarget=12;
   cc.coarsenrate=1.2;
   cc.major=-1;
+  cc.dependency=AMG_SYM;
 
   /* solver context */
   sc.verbose=1;
-  sc.solver=AMG_LS;
+  sc.solver=AMG_BCGS;
   sc.preconditioner=AMG_MGC;
   sc.maxit=800;
-  sc.red_factor=1.0E-8;
+  sc.red_factor=1.0E-10;
   sc.dnorm_min=1.0E-15;
   sc.coarse_smoother=AMG_EX;
   sc.coarse_maxit=200;
   sc.coarse_red_factor=1.0E-3;
-  sc.n1=3;
-  sc.n2=3;
-  sc.gamma=2;
+  sc.n1=2;
+  sc.n2=2;
+  sc.gamma=1;
   sc.omega_p[0]=1.8;
-  sc.smoother=AMG_DJAC;
-  sc.omega[0]=0.5;
+  sc.smoother=AMG_SSOR;
+  sc.omega[0]=1.0;
 
   AMG_Build(&sc,&cc,A0);
   AMG_Solve(x0,b0);

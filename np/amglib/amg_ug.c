@@ -607,6 +607,7 @@ static INT AMGSolverPostProcess (NP_LINEAR_SOLVER *theNP,
    .  $display full|red|no - affects only first and last defect.
 
    .  $vc <value> - verbose value for coarsening, default is 1, higher means more output.
+   .  $dependency <string> - use 'sym' for symmetric problems, 'unsym' for others, default is unsym.
    .  $alpha <value> - threshold for strong coupling default is 0.4
    .  $beta  <value> - threshold for diagonal dominant (isolated) nodes, default is 0.001
    .  $minc <value> - smallest desired cluster size, default is 4 in 2D, 8 in 3D.
@@ -716,6 +717,13 @@ static INT AMGSolverInit (NP_BASE *theNP, INT argc , char **argv)
     theAMGC->cc.major=i;
   else
     theAMGC->cc.major=-1;
+  if (!ReadArgvChar("dependency",buf,argc,argv))
+  {
+    if (strcmp(buf,"sym")==0) theAMGC->cc.dependency=AMG_SYM;
+    if (strcmp(buf,"unsym")==0) theAMGC->cc.dependency=AMG_UNSYM;
+  }
+  else
+    theAMGC->cc.dependency=AMG_UNSYM;
 
   /* fill solver context */
   if (!ReadArgvINT("vs",&i,argc,argv))
