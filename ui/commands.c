@@ -104,6 +104,7 @@
 #include "cmdint.h"
 #include "cmdline.h"
 #include "helpmsg.h"
+#include "mmio.h"
 
 #ifdef ModelP
 #include "parallel.h"
@@ -5670,6 +5671,28 @@ static INT MarkCommand (INT argc, char **argv)
     return(OKCODE);
   }
 
+  if (ReadArgvDOUBLE("stripes",&x,argc, argv)==0)
+  {
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+        {
+          INT flag=1;
+          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+          {
+            DOUBLE xc=YC(MYVERTEX(CORNER(theElement, j)));
+            xc=fmod(xc,(4*x));
+            if ((xc<0.9*x)||(xc>2.1*x)) flag=0;
+          }
+          if(flag)
+            MarkForRefinement(theElement,Rule,NULL);
+        }
+    UserWriteF("stripes %f\n", (float) x);
+
+    return(OKCODE);
+  }
+
   if (ReadArgvINT("S",&sid,argc, argv)==0)
   {
     for (l=0; l<=TOPLEVEL(theMG); l++)
@@ -10269,13 +10292,13 @@ static INT PlotCommand (INT argc, char **argv)
 {
   UGWINDOW *theUgW;
   PICTURE *thePic,*currPic;
-  INT i,OrderStrategy,all,bullet;
+  INT i,OrderStrategy,all,bullet,noframe;
   DOUBLE zOffsetFactor;
 
   /* scan for options */
 
   OrderStrategy = 0;
-  all = bullet = NO;
+  all = bullet = noframe = NO;
   zOffsetFactor = 1.0;
 
   for (i=1; i<argc; i++)
@@ -10296,6 +10319,10 @@ static INT PlotCommand (INT argc, char **argv)
       bullet = YES;
       sscanf(argv[i],"b %lf", &zOffsetFactor);
       break;
+    case 'n' :
+      noframe = YES;
+      break;
+
     default :
       break;
     }
@@ -10364,7 +10391,8 @@ static INT PlotCommand (INT argc, char **argv)
         #endif
 
   /* picture is current */
-  DrawPictureFrame(thePic,WOP_ACTIVE);
+  if (noframe==NO)
+    DrawPictureFrame(thePic,WOP_ACTIVE);
 
   return (OKCODE);
 }
@@ -11421,6 +11449,7 @@ static INT ReInitCommand (INT argc, char **argv)
     switch (argv[i][0])
     {
     case 'b' :
+      if (argv[i][1]!=' ') continue;
       if (sscanf(argv[i],expandfmt(CONCAT3("b %",NAMELENSTR,"[0-9a-zA-Z/_ ]")),BVPName)!=1)
       {
         PrintErrorMessage('E',"reinit","could not read BndValProblem string");
@@ -11457,7 +11486,8 @@ static INT ReInitCommand (INT argc, char **argv)
   }
 
   if (BVPD_CONFIG(theBVPD)!=NULL)
-    (*BVPD_CONFIG (theBVPD))(argc,argv);
+    if ((*BVPD_CONFIG (theBVPD))(argc,argv)!=0)
+      return (CMDERRORCODE);
 
   return(OKCODE);
 }
@@ -12099,10 +12129,49 @@ static INT CreateMatDescCommand (INT argc, char **argv)
   else
     theMG = GetMultigrid(name);
   if (theMG==NULL) {
-    PrintErrorMessage('E',"createvector","no current multigrid");
+    PrintErrorMessage('E',"creatematrix","no current multigrid");
     return(CMDERRORCODE);
   }
   if (CreateMatDescCmd(theMG,argc,argv))
+    return(CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   freematrix - free matrix
+
+   DESCRIPTION:
+   This function frees matrix descriptors.
+
+   'freematrix <M1> [<M2> ...] [$m <name>]'
+
+   .  M1                - matrix name
+   .  name      - multigrid name (default is the current multigrid)
+
+   KEYWORDS:
+   multigrid, numerics, userdata, matdata, create
+
+   SEE ALS0:
+   'newformat', 'creatematrix'
+   D*/
+/****************************************************************************/
+
+static INT FreeMatDescCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  char name[NAMESIZE];
+
+  if (ReadArgvChar("m",name,argc,argv))
+    theMG = currMG;
+  else
+    theMG = GetMultigrid(name);
+  if (theMG==NULL) {
+    PrintErrorMessage('E',"freematrix","no current multigrid");
+    return(CMDERRORCODE);
+  }
+  if (FreeMatDescCmd(theMG,argc,argv))
     return(CMDERRORCODE);
 
   return (OKCODE);
@@ -13406,7 +13475,7 @@ static INT TraceCommand (INT argc, char **argv)
 
    DESCRIPTION:
    This command prints the error stack which is created when functios use
-   the ERR_REP_RETURN macro. The stack is cleared before each call of a ug-command.
+   the REP_ERR_RETURN macro. The stack is cleared before each call of a ug-command.
 
    File and line of the returning functions are printed.
 
@@ -14252,6 +14321,24 @@ static INT InitArray (void)
 }
 
 
+/****************************************************************************/
+/*D
+   dumpalg - dumps the surface algebra to the interface
+
+   DESCRIPTION:
+   Dumps the surface algebra
+
+   'dumpalg <name>'
+
+   .  <name> - file name
+
+   KEYWORDS:
+   data, io
+
+   SEE ALSO:
+   D*/
+/****************************************************************************/
+
 static DumpAlgCommand(INT argc, char **argv)
 {
   INT level, comp;
@@ -14325,6 +14412,7 @@ static DumpAlgCommand(INT argc, char **argv)
 
   return(OKCODE);
 }
+
 
 /****************************************************************************/
 /*
@@ -14511,6 +14599,7 @@ INT InitCommands ()
   if (CreateCommand("setpf",                      SetPrintingFormatCommand                )==NULL) return (__LINE__);
   if (CreateCommand("createvector",   CreateVecDescCommand            )==NULL) return (__LINE__);
   if (CreateCommand("creatematrix",   CreateMatDescCommand            )==NULL) return (__LINE__);
+  if (CreateCommand("freematrix",     FreeMatDescCommand              )==NULL) return (__LINE__);
   if (CreateCommand("symlist",            SymListCommand                      )==NULL) return (__LINE__);
 
   /* miscellaneous commands */

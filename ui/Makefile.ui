@@ -10,10 +10,10 @@
 include ../ug.conf
 
 OBJECTS = uginterface.o initui.o cmdint.o cmdline.o \
-		  commands.o helpmsg.o avs.o tecplot.o 
+		  commands.o helpmsg.o avs.o tecplot.o mmio.o 
 
 $(UG_LIB) : $(OBJECTS) Makefile.ui
-	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
 
 ar : 
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 

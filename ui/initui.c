@@ -42,6 +42,7 @@
 #include "cmdint.h"
 #include "ugstruct.h"
 #include "commands.h"
+#include "mmio.h"
 #include "tecplot.h"
 #include "avs.h"
 
@@ -151,6 +152,13 @@ INT InitUi ()
 
   /* avs output */
   if ((err=InitAVS())!=0)
+  {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* matrix market input/output */
+  if ((err=InitMMIO())!=0)
   {
     SetHiWrd(err,__LINE__);
     return (err);
