@@ -233,7 +233,7 @@ static int CollectElementsNearSegment(MULTIGRID *theMG,
  */
 /****************************************************************************/
 
-static int CreateDD(GRID *theGrid, int hor_boxes, int vert_boxes )
+static int PartitionElementsForDD(GRID *theGrid, int hor_boxes, int vert_boxes )
 {
   ELEMENT *theElement;
   INT i;
@@ -252,16 +252,50 @@ static int CreateDD(GRID *theGrid, int hor_boxes, int vert_boxes )
       xmax = MAX(xmax,coord[0]);
       ymax = MAX(ymax,coord[1]);
     }
-    printf( PFMT "element coord %g %g %d %d\n", me, xmax, ymax, hor_boxes, vert_boxes );
+    /*printf( PFMT "element coord %g %g %d %d\n", me, xmax, ymax, hor_boxes, vert_boxes );*/
 
     /* the according subdomain is determined by the upper right corner */
     PARTITION(theElement) = (int)(ymax*vert_boxes - 0.5) * hor_boxes + (int)(xmax*hor_boxes - 0.5);
-    printf( PFMT "element partition %d\n", me, PARTITION(theElement) );
+    /*printf( PFMT "element partition %d\n", me, PARTITION(theElement) );*/
   }
 
   return(0);
 }
 
+static int CreateDD(MULTIGRID *theMG, INT level, int hor_boxes, int vert_boxes )
+/* the final call to TransferGridFromLevel() must be done by the current caller */
+{
+  INT elements;
+  int hor, vert;
+  GRID *theGrid;
+
+  theGrid = GRID_ON_LEVEL(theMG,level);
+  if( hor_boxes*vert_boxes >= 4 )
+  {
+    elements = NT(theGrid);
+    elements = UG_GlobalMaxINT(elements);
+
+    if( elements > 2000 )
+    {
+      /* we have a case with too heavy load for DDD; thus subdivide */
+      /* find a coarser auxiliary partition */
+      hor = hor_boxes;
+      vert = vert_boxes;
+
+      if( hor%2 == 0 )
+        hor /= 2;                               /* hor_boxes can be halfened */
+      else if( vert%2 == 0 )
+        vert /= 2;                              /* vert_boxes can be halfened */
+      else
+        assert(0);                              /* further consideration for subdividing necessary */
+
+      CreateDD(theMG, level, hor, vert );                       /* simplify the problem */
+      TransferGridFromLevel(theMG,level);
+    }
+  }
+
+  PartitionElementsForDD(theGrid, hor_boxes, vert_boxes );
+}
 
 /****************************************************************************/
 /*
@@ -381,7 +415,8 @@ void lbs (char *argv, MULTIGRID *theMG)
   case (6) :
     if (sscanf(argv,"%d %d %d",&param,&hor_boxes,&vert_boxes) != 3) break;
     ASSERT(hor_boxes*vert_boxes == procs );
-    CreateDD(GRID_ON_LEVEL(theMG,TOPLEVEL(theMG)),hor_boxes,vert_boxes);
+    fromlevel = TOPLEVEL(theMG);
+    CreateDD(theMG,fromlevel,hor_boxes,vert_boxes);
     break;
 
   default : break;
