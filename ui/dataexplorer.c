@@ -56,6 +56,7 @@
 #include "cmdline.h"
 #include "num.h"
 #include "rm.h"
+#include "udm.h"
 
 #include "dataexplorer.h"
 
@@ -76,6 +77,10 @@
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
+
+#ifdef ModelP
+static VECDATA_DESC *ConsVector;
+#endif
 
 /* data for CVS	*/
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -143,6 +148,20 @@ static void LocallyUniqueIDs (MULTIGRID *mg)
       SETUSED(vx,0);
 
   nv=0;
+  /* first set master ids */
+  for (k=0; k<=TOPLEVEL(mg); k++)
+    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
+      if (!EstimateHere(el)) continue;
+      for (i=0; i<CORNERS_OF_ELEM(el); i++) {
+        vx = MYVERTEX(CORNER(el,i));
+        if (USED(vx)) continue;
+        if (DDD_InfoPriority(PARHDR(CORNER(el,i)))!=PrioMaster) continue;
+        SETUSED(vx,1);
+        ID(vx) = nv++;
+      }
+    }
+
+  /* next set remaining ids */
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
       if (!EstimateHere(el)) continue;
@@ -155,6 +174,30 @@ static void LocallyUniqueIDs (MULTIGRID *mg)
     }
 }
 
+static int Gather_VertexID (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+  INT vc,i,type;
+  const SHORT *Comp;
+
+  type = VTYPE(pv);
+  Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
+  ((INT *)data)[0] = (INT)VVALUE(pv,Comp[0]);
+
+  return (NUM_OK);
+}
+static int Scatter_VertexID (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+  INT vc,i,type;
+  const SHORT *Comp;
+
+  type = VTYPE(pv);
+  Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
+  (INT)VVALUE(pv,Comp[0]) = ((INT *)data)[0];
+
+  return (NUM_OK);
+}
 #endif
 
 static double clampf(double x)
@@ -472,8 +515,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
   if (binaryOutput) {
     strcpy(filename_dat,filename);
     c_ptr=strrchr(filename_dat,'.');
-    if (c_ptr!=NULL)
-      memset(c_ptr, '\0', 1);
+    /*                  if (c_ptr!=NULL) */
+    /*                          memset(c_ptr, '\0', 1); */
     strcat(filename_dat, ".bin");
     pf_bin = pfile_open_bin(filename_dat);
     if (pf_bin==NULL) {
@@ -484,8 +527,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
   } else {
     strcpy(filename_dat,filename);
     c_ptr=strrchr(filename_dat,'.');
-    if (c_ptr!=NULL)
-      memset(c_ptr, '\0', 1);
+    /*                  if (c_ptr!=NULL) */
+    /*                          memset(c_ptr, '\0', 1); */
     strcat(filename_dat, ".dat");
     pf_txt = pfile_open(filename_dat);
     if (pf_txt==NULL) {
@@ -498,7 +541,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(filename_grid, filename_dat);
   else {
     strcpy(filename_grid, filename);
-    c_ptr=strchr(filename_grid,'.');
+    c_ptr=strrchr(filename_grid,'.');
     memset(c_ptr, '\0', 1);
     if (binaryOutput)
       strcat(filename_grid, ".0000.bin");
@@ -541,7 +584,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
       SETUSED(vx,0);
-  numVertices = 0;
+  numVertices = 0; numVerticesTot=0;
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
       if (!EstimateHere(el)) continue;
@@ -550,7 +593,11 @@ static INT DataExplorerCommand (INT argc, char **argv)
         vx = MYVERTEX(CORNER(el,i));
         if (USED(vx)) continue;
         SETUSED(vx,1);
+#ifdef ModelP
+        if (DDD_InfoPriority(PARHDR(CORNER(el,i)))==PrioMaster)                         /* count only Master vertices */
+#endif
         numVertices++;
+        numVerticesTot++;
       }
     }
 
@@ -576,9 +623,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
         }
       }
   }
-  else
-    numVerticesTot = numVertices;
-
 
   /* count surface elements */
   numElements = 0;
@@ -633,43 +677,56 @@ static INT DataExplorerCommand (INT argc, char **argv)
   }
 
   /* write vertex coordinates */
-  counter=0;
-  for (k=0; k<=TOPLEVEL(mg); k++) {
-    if (binaryOutput && !writeGrid) break;
-    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
-      if (!EstimateHere(el)) continue;
-      if ( subdomains && !subdom[SUBDOMAIN(el)] ) continue;
+  {
+    INT count_rest = 0;
 
-      for (i=0; i<CORNERS_OF_ELEM(el); i++)
-      {
-        vx = MYVERTEX(CORNER(el,i));
-        if (USED(vx)) continue;
-        SETUSED(vx,1);
+    counter=ov;
+    for (k=0; k<=TOPLEVEL(mg); k++) {
+      if (binaryOutput && !writeGrid) break;
+      for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
+        if (!EstimateHere(el)) continue;
+        if ( subdomains && !subdom[SUBDOMAIN(el)] ) continue;
 
-        /* map: vertex id -> position in coordinate list */
-        Id2Position[ID(vx)] = counter;
+        for (i=0; i<CORNERS_OF_ELEM(el); i++)
+        {
+          vx = MYVERTEX(CORNER(el,i));
+          if (USED(vx)) continue;
+          SETUSED(vx,1);
 
-        /* write the thing */
-        if (binaryOutput) {
-          buffer_FLOAT[0]=clampf(XC(vx));
-          buffer_FLOAT[1]=clampf(YC(vx));
-          buffer_FLOAT[2]=clampf(ZC(vx));
-        } else {
+          /* map: vertex id -> position in coordinate list */
+#ifdef ModelP
+          if (DDD_InfoPriority(PARHDR(CORNER(el,i)))==PrioMaster) {
+#endif
+          Id2Position[ID(vx)] = counter;
+          /* write the thing */
+          if (binaryOutput) {
+            buffer_FLOAT[0]=clampf(XC(vx));
+            buffer_FLOAT[1]=clampf(YC(vx));
+            buffer_FLOAT[2]=clampf(ZC(vx));
+          } else {
 #ifdef __TWODIM__
-          sprintf(it,"\t%g\t%g\n", clampf(XC(vx)), clampf(YC(vx)));
+            sprintf(it,"\t%g\t%g\n", clampf(XC(vx)), clampf(YC(vx)));
 #else
-          sprintf(it,"\t%g\t%g\t%g\n", clampf(XC(vx)), clampf(YC(vx)),
-                  clampf(ZC(vx)));
+            sprintf(it,"\t%g\t%g\t%g\n", clampf(XC(vx)), clampf(YC(vx)),
+                    clampf(ZC(vx)));
+#endif
+          }
+          if (binaryOutput)
+            pfile_tagged_write_FLOAT(pf_bin, buffer_FLOAT, DIM, counter);
+          else {
+            if (writeGrid)
+              pfile_tagged_puts(pf_txt,it,counter);
+            old_pos+=strlen(it);
+          }
+          counter++;
+#ifdef ModelP
+        }
+        else {
+          Id2Position[ID(vx)] = ov+numVertices+count_rest;
+          count_rest++;
+        }
 #endif
         }
-        if (binaryOutput)
-          pfile_tagged_write_FLOAT(pf_bin, buffer_FLOAT, DIM, counter+ov);
-        else {
-          if (writeGrid)
-            pfile_tagged_puts(pf_txt,it,counter+ov);
-          old_pos+=strlen(it);
-        }
-        counter++;
       }
     }
   }
@@ -685,6 +742,64 @@ static INT DataExplorerCommand (INT argc, char **argv)
 #endif
     old_pos = 0;
   }
+
+#ifdef ModelP
+  {
+    /* communicate local IDs set in Id2Position */
+    VECDATA_DESC *dummy=NULL;
+    NODE *node;
+    ELEMENT *el;
+    SHORT comp,NBoxComps[NVECTYPES];
+
+    for (i=0; i<NVECTYPES; i++) NBoxComps[i] = 0;
+    NBoxComps[NODEVEC] = 1;
+
+    /* allocate temporal storage for ID */
+    if (AllocVDfromNCmp(mg,0,TOPLEVEL(mg),NBoxComps,NULL,&dummy)) {
+      return (10);
+    }
+    if (dummy==NULL) {
+      return (10);
+    }
+    comp=VD_cmp_of_otype(dummy,NODEVEC,0);
+
+    ConsVector=dummy;
+
+    /* communicate position ids of vertices */
+    for (k=0; k<=TOPLEVEL(mg); k++) {
+      for (node=FIRSTNODE(GRID_ON_LEVEL(mg,k)); node!=NULL; node=SUCCN(node))
+        SETUSED(node,0);
+
+      for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) {
+        if (!EstimateHere(el)) {
+          for (i=0; i<CORNERS_OF_ELEM(el); i++) {
+            if (USED(CORNER(el,i))) continue;
+
+            (INT)VVALUE(NVECTOR(CORNER(el,i)),comp) = ID(MYVERTEX(CORNER(el,i)));
+            SETUSED(CORNER(el,i),1);
+          }
+        } else {
+          for (i=0; i<CORNERS_OF_ELEM(el); i++) {
+            if (USED(CORNER(el,i))) continue;
+
+            (INT)VVALUE(NVECTOR(CORNER(el,i)),comp) = Id2Position[ID(MYVERTEX(CORNER(el,i)))];
+            SETUSED(CORNER(el,i),1);
+          }
+        }
+      }
+
+      DDD_IFAOneway(BorderVectorIF,GRID_ATTR(GRID_ON_LEVEL(mg,k)),IF_BACKWARD,sizeof(INT),Gather_VertexID, Scatter_VertexID);
+      for (node=FIRSTNODE(GRID_ON_LEVEL(mg,k)); node!=NULL; node=SUCCN(node)) {
+        if (USED(MYVERTEX(node))) {           /* a possible candidate on the surface */
+          if (DDD_InfoPriority(PARHDR(node))!=PrioMaster)
+            Id2Position[ID(MYVERTEX(node))] = (INT)VVALUE(NVECTOR(node),comp);
+        }
+      }
+    }
+
+    FreeVD(mg,0,TOPLEVEL(mg),dummy);
+  }
+#endif
 
   /* check if grid consists of tetrahedrons or triangles (in 2D) only */
   notOnlyTetra=0;
@@ -745,67 +860,67 @@ static INT DataExplorerCommand (INT argc, char **argv)
       case 3 :
         if (notOnlyTetra) {                               /* in 2D and NOT only triangles */
           if (binaryOutput) {
-            buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
-            buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
-            buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
-            buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
+            buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))];
+            buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))];
+            buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))];
+            buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))];
             usedBuf=4;
           } else
             sprintf(it,"\t%d\t%d\t%d\t%d\n",
-                    Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov);
+                    Id2Position[ID(MYVERTEX(CORNER(el,0)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,1)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,2)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,2)))]);
         } else {                                          /* in 2D and only triangles */
           if (binaryOutput) {
-            buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
-            buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
-            buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
+            buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))];
+            buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))];
+            buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))];
             usedBuf=3;
           } else
             sprintf(it,"\t%d\t%d\t%d\n",
-                    Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov);
+                    Id2Position[ID(MYVERTEX(CORNER(el,0)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,1)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,2)))]);
         }
         break;
 
       case 4 :
 #ifdef __TWODIM__
         if (binaryOutput) {
-          buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
-          buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
-          buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
-          buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
+          buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))];
+          buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))];
+          buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,3)))];
+          buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))];
           usedBuf=4;
         } else
           sprintf(it,"\t%d\t%d\t%d\t%d\n",
-                  Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov);
+                  Id2Position[ID(MYVERTEX(CORNER(el,0)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,1)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,3)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,2)))]);
 #else
         if (notOnlyTetra) {                               /* in 3D and NOT only Tetrahedrons */
           if (binaryOutput) {
-            buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
-            buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
-            buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
-            buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
-            buffer_INT[4]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
-            buffer_INT[5]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
-            buffer_INT[6]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
-            buffer_INT[7]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
+            buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))];
+            buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))];
+            buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))];
+            buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))];
+            buffer_INT[4]=Id2Position[ID(MYVERTEX(CORNER(el,3)))];
+            buffer_INT[5]=Id2Position[ID(MYVERTEX(CORNER(el,3)))];
+            buffer_INT[6]=Id2Position[ID(MYVERTEX(CORNER(el,3)))];
+            buffer_INT[7]=Id2Position[ID(MYVERTEX(CORNER(el,3)))];
             usedBuf=8;
           } else
             sprintf(it,"\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-                    Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov);
+                    Id2Position[ID(MYVERTEX(CORNER(el,0)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,1)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,2)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,2)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,3)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,3)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,3)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,3)))]);
         } else {                                         /* in 3D and only Tetrahedrons in grid */
           if ((ID(MYVERTEX(CORNER(el,0))) > numVerticesTot+1) ||
               (ID(MYVERTEX(CORNER(el,1))) > numVerticesTot+1) ||
@@ -815,88 +930,88 @@ static INT DataExplorerCommand (INT argc, char **argv)
           }
 
           if (binaryOutput) {
-            buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
-            buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
-            buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
-            buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
+            buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))];
+            buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))];
+            buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))];
+            buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,3)))];
             usedBuf=4;
           } else
             sprintf(it,"\t%d\t%d\t%d\t%d\n",
-                    Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                    Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov);
+                    Id2Position[ID(MYVERTEX(CORNER(el,0)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,1)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,2)))],
+                    Id2Position[ID(MYVERTEX(CORNER(el,3)))]);
         }
 #endif
         break;
 
       case 5 :
         if (binaryOutput) {
-          buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
-          buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
-          buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
-          buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
-          buffer_INT[4]=Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov;
-          buffer_INT[5]=Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov;
-          buffer_INT[6]=Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov;
-          buffer_INT[7]=Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov;
+          buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))];
+          buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))];
+          buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,3)))];
+          buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))];
+          buffer_INT[4]=Id2Position[ID(MYVERTEX(CORNER(el,4)))];
+          buffer_INT[5]=Id2Position[ID(MYVERTEX(CORNER(el,4)))];
+          buffer_INT[6]=Id2Position[ID(MYVERTEX(CORNER(el,4)))];
+          buffer_INT[7]=Id2Position[ID(MYVERTEX(CORNER(el,4)))];
           usedBuf=8;
         } else
           sprintf(it,"\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-                  Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov);
+                  Id2Position[ID(MYVERTEX(CORNER(el,0)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,1)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,3)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,2)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,4)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,4)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,4)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,4)))]);
         break;
 
       case 6 :
         if (binaryOutput) {
-          buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
-          buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
-          buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
-          buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
-          buffer_INT[4]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
-          buffer_INT[5]=Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov;
-          buffer_INT[6]=Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov;
-          buffer_INT[7]=Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov;
+          buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))];
+          buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))];
+          buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,2)))];
+          buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))];
+          buffer_INT[4]=Id2Position[ID(MYVERTEX(CORNER(el,3)))];
+          buffer_INT[5]=Id2Position[ID(MYVERTEX(CORNER(el,4)))];
+          buffer_INT[6]=Id2Position[ID(MYVERTEX(CORNER(el,5)))];
+          buffer_INT[7]=Id2Position[ID(MYVERTEX(CORNER(el,5)))];
           usedBuf=8;
         } else
           sprintf(it,"\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-                  Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov);
+                  Id2Position[ID(MYVERTEX(CORNER(el,0)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,1)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,2)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,2)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,3)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,4)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,5)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,5)))]);
         break;
 
       case 8 :
         if (binaryOutput) {
-          buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov;
-          buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov;
-          buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov;
-          buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov;
-          buffer_INT[4]=Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov;
-          buffer_INT[5]=Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov;
-          buffer_INT[6]=Id2Position[ID(MYVERTEX(CORNER(el,7)))]+ov;
-          buffer_INT[7]=Id2Position[ID(MYVERTEX(CORNER(el,6)))]+ov;
+          buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el,0)))];
+          buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el,1)))];
+          buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el,3)))];
+          buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el,2)))];
+          buffer_INT[4]=Id2Position[ID(MYVERTEX(CORNER(el,4)))];
+          buffer_INT[5]=Id2Position[ID(MYVERTEX(CORNER(el,5)))];
+          buffer_INT[6]=Id2Position[ID(MYVERTEX(CORNER(el,7)))];
+          buffer_INT[7]=Id2Position[ID(MYVERTEX(CORNER(el,6)))];
           usedBuf=8;
         } else
           sprintf(it,"\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-                  Id2Position[ID(MYVERTEX(CORNER(el,0)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,1)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,3)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,2)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,4)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,5)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,7)))]+ov,
-                  Id2Position[ID(MYVERTEX(CORNER(el,6)))]+ov);
+                  Id2Position[ID(MYVERTEX(CORNER(el,0)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,1)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,3)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,2)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,4)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,5)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,7)))],
+                  Id2Position[ID(MYVERTEX(CORNER(el,6)))]);
         break;
       }
       if (binaryOutput)
@@ -1042,54 +1157,54 @@ static INT DataExplorerCommand (INT argc, char **argv)
             {
             case 2 :                                        /* in 2D sides are edges => only two points */
               if (binaryOutput) {
-                buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
-                buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
+                buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))];
+                buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))];
                 usedBuf=2;
               } else
                 sprintf(it,"\t%d\t%d\n",
-                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
-                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov);
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))],
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]);
               break;
             case 3 :                                        /* has to be 3D */
               if (notOnlyTriang) {                                              /* not only faces with 3 corners */
                 if (binaryOutput) {
-                  buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
-                  buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
-                  buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
-                  buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
+                  buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))];
+                  buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))];
+                  buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))];
+                  buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))];
                   usedBuf=4;
                 } else
                   sprintf(it,"\t%d\t%d\t%d\t%d\n",
-                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
-                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov,
-                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov,
-                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov);
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))],
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))],
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))],
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]);
               } else {                                                          /* only triangles as faces */
                 if (binaryOutput) {
-                  buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
-                  buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
-                  buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
+                  buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))];
+                  buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))];
+                  buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))];
                   usedBuf=3;
                 } else
                   sprintf(it,"\t%d\t%d\t%d\n",
-                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
-                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov,
-                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov);
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))],
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))],
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]);
               }
               break;
             case 4 :                                        /* has to be 3D and quads */
               if (binaryOutput) {
-                buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
-                buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
-                buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,3))))]+ov;
-                buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
+                buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))];
+                buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))];
+                buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,3))))];
+                buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))];
                 usedBuf=4;
               } else
                 sprintf(it,"\t%d\t%d\t%d\t%d\n",
-                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
-                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov,
-                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,3))))]+ov,
-                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov);
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))],
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))],
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,3))))],
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]);
               break;
             }
             if (binaryOutput)
@@ -1176,54 +1291,54 @@ static INT DataExplorerCommand (INT argc, char **argv)
             {
             case 2 :                                        /* in 2D sides are edges => only two points */
               if (binaryOutput) {
-                buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
-                buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
+                buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))];
+                buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))];
                 usedBuf=2;
               } else
                 sprintf(it,"\t%d\t%d\n",
-                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
-                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov);
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))],
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]);
               break;
             case 3 :                                        /* has to be 3D */
               if (notOnlyTriang) {                                              /* not only faces with 3 corners */
                 if (binaryOutput) {
-                  buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
-                  buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
-                  buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
-                  buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
+                  buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))];
+                  buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))];
+                  buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))];
+                  buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))];
                   usedBuf=4;
                 } else
                   sprintf(it,"\t%d\t%d\t%d\t%d\n",
-                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
-                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov,
-                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov,
-                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov);
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))],
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))],
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))],
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]);
               } else {                                                          /* only triangles as faces */
                 if (binaryOutput) {
-                  buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
-                  buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
-                  buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
+                  buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))];
+                  buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))];
+                  buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))];
                   usedBuf=3;
                 } else
                   sprintf(it,"\t%d\t%d\t%d\n",
-                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
-                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov,
-                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov);
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))],
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))],
+                          Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]);
               }
               break;
             case 4 :                                        /* has to be 3D and quads */
               if (binaryOutput) {
-                buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov;
-                buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov;
-                buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,3))))]+ov;
-                buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov;
+                buffer_INT[0]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))];
+                buffer_INT[1]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))];
+                buffer_INT[2]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,3))))];
+                buffer_INT[3]=Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))];
                 usedBuf=4;
               } else
                 sprintf(it,"\t%d\t%d\t%d\t%d\n",
-                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))]+ov,
-                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))]+ov,
-                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,3))))]+ov,
-                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]+ov);
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,0))))],
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,1))))],
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,3))))],
+                        Id2Position[ID(MYVERTEX(CORNER(el, CORNER_OF_SIDE(el,i,2))))]);
               break;
             }
             if (binaryOutput)
@@ -1310,6 +1425,9 @@ static INT DataExplorerCommand (INT argc, char **argv)
           CornersCoord[i] = CVECT(MYVERTEX(CORNER(el,i)));
         for (i=0; i<CORNERS_OF_ELEM(el); i++)
         {
+#ifdef ModelP
+          if (DDD_InfoPriority(PARHDR(CORNER(el,i)))!=PrioMaster) continue;
+#endif
           vx = MYVERTEX(CORNER(el,i));
           if (USED(vx)) continue;
           SETUSED(vx,1);
@@ -1434,6 +1552,9 @@ static INT DataExplorerCommand (INT argc, char **argv)
           CornersCoord[i] = CVECT(MYVERTEX(CORNER(el,i)));
         for (i=0; i<CORNERS_OF_ELEM(el); i++)
         {
+#ifdef ModelP
+          if (DDD_InfoPriority(PARHDR(CORNER(el,i)))!=PrioMaster) continue;
+#endif
           vx = MYVERTEX(CORNER(el,i));
           if (USED(vx)) continue;
           SETUSED(vx,1);
