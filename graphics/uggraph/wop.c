@@ -10790,9 +10790,13 @@ static INT GetLineElemSideISCutPlaneHEX (ELEMENT* theElement, DOUBLE **Corners, 
 			*Number = 2;
 			return (0);			
 		case (3):
-			V3_LINCOMB(Z[ordercon[3][0]]/(Z[ordercon[3][0]]-Z[3]), x[3], -Z[3]/(Z[ordercon[3][0]]-Z[3]), x[ordercon[3][0]], Line[0])
-			V3_LINCOMB(Z[ordercon[3][1]]/(Z[ordercon[3][1]]-Z[3]), x[3], -Z[3]/(Z[ordercon[3][1]]-Z[3]), x[ordercon[3][1]], Line[1])
-			*Number = 2;
+			if (CORNERS_OF_SIDE(theElement,side)==4)
+			{
+				V3_LINCOMB(Z[ordercon[3][0]]/(Z[ordercon[3][0]]-Z[3]), x[3], -Z[3]/(Z[ordercon[3][0]]-Z[3]), x[ordercon[3][0]], Line[0])
+				V3_LINCOMB(Z[ordercon[3][1]]/(Z[ordercon[3][1]]-Z[3]), x[3], -Z[3]/(Z[ordercon[3][1]]-Z[3]), x[ordercon[3][1]], Line[1])
+				*Number = 2;
+			}
+			else *Number = 0;
 			return (0);
 		default:
 			*Number = 0;
