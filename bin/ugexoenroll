@@ -1,0 +1,213 @@
+#!/usr/bin/perl -w #-d
+# $Header$
+# usage: ugexoenroll <modelname> <lgmfilename>
+#       <modelname> - name of model to generate mesh for
+#
+# author: Stefan Lang, INF 368, IWR, University of Heidelberg
+#         Stefan.Lang@iwr.uni-heidelberg.de
+# history: start 040301
+
+if ($#ARGV != 0)
+{
+    print "usage: ugexoenroll <modelname>\n";
+    exit;
+}
+
+$model = "$ARGV[0]";
+
+
+
+sub model_geom_jou
+{
+	my $model = $_[0];
+	my $filename = $model . "_geom.jou";
+
+	open(FILE, ">$filename") || die "can't open $filename\n";
+
+	printf FILE "# edit to construct geometry here\n";
+	printf FILE "brick x 1 Y 1.5 Z 2\n";
+	printf FILE "\n";
+
+	printf FILE "# merge for consistent geometry\n";
+	printf FILE "merge all\n";
+
+	close(FILE);
+}
+
+sub model_list_jou
+{
+	my $model = $_[0];
+	my $filename = $model . "_list.jou";
+
+	open(FILE, ">$filename") || die "can't open $filename\n";
+
+	printf FILE "# create consistent geometry\n";
+	printf FILE "playback '%s_geom.jou'\n",$model;
+	printf FILE "\n";
+
+	printf FILE "# logfile with additional information\n";
+	printf FILE "logging on file '%s_geom.log'\n",$model;
+	printf FILE "list volume all\n";
+	printf FILE "list surface all\n";
+
+	close(FILE);
+}
+
+
+sub model_smesh_jou
+{
+	my $model = $_[0];
+	my $filename = $model . "_smesh.jou";
+
+	open(FILE, ">$filename") || die "can't open $filename\n";
+
+	printf FILE "# create consistent geometry\n";
+	printf FILE "playback '%s_geom.jou'\n",$model;
+	printf FILE "\n";
+
+	printf FILE "# set surface normal\n";
+	printf FILE "playback '%s_usn.jou'\n",$model;
+	printf FILE "\n";
+
+	printf FILE "# surface meshing of geometry\n";
+	printf FILE "playback '%s_default_smesh.jou'\n",$model;
+	printf FILE "\n";
+
+	printf FILE "# output of surface mesh\n";
+	printf FILE "set nodeset Associativity on\n";
+	printf FILE "set nodeset Associativity Complete on\n";
+	printf FILE "export genesis '%s_smesh.gen'\n",$model;
+
+	close(FILE);
+}
+
+
+sub model_default_smesh_jou
+{
+	my $model = $_[0];
+	my $filename = $model . "_default_smesh.jou";
+
+	open(FILE, ">$filename") || die "can't open $filename\n";
+
+	printf FILE "# edit here to mesh surfaces\n";
+	printf FILE "curve all size 1.\n";
+	printf FILE "surface all scheme trimesh\n";
+	printf FILE "mesh surface all\n";
+
+	close(FILE);
+}
+
+
+sub model_vmeshpre_jou
+{
+	my $model = $_[0];
+	my $filename = $model . "_vmeshpre.jou";
+
+	open(FILE, ">$filename") || die "can't open $filename\n";
+
+	printf FILE "# consistent geometry\n";
+	printf FILE "playback '%s_geom.jou'\n",$model;
+	printf FILE "\n";
+
+	printf FILE "# set surface normal\n";
+	printf FILE "playback '%s_usn.jou'\n",$model;
+	printf FILE "\n";
+
+	printf FILE "# volume meshing\n";
+	printf FILE "playback '%s_default_vmesh.jou'\n",$model;
+	printf FILE "\n";
+
+	printf FILE "# output with logging on\n";
+	printf FILE "set nodeset associativity on\n";
+	printf FILE "set nodeset associativity complete on\n";
+	printf FILE "set sideset  associativity on\n";
+	printf FILE "\n";
+
+	printf FILE "logging on file '%s_vmesh.log'\n",$model;
+	printf FILE "\n";
+
+	printf FILE "export genesis 'unit_vmesh.gen'\n";
+
+	close(FILE);
+}
+
+
+sub model_vmesh_jou
+{
+	my $model = $_[0];
+	my $filename = $model . "_vmesh.jou";
+
+	open(FILE, ">$filename") || die "can't open $filename\n";
+
+	printf FILE "# consistent geometry\n";
+	printf FILE "playback '%s_geom.jou'",$model;
+	printf FILE "\n";
+
+	printf FILE "# set surface normal\n";
+	printf FILE "playback '%s_usn.jou'",$model;
+	printf FILE "\n";
+
+	printf FILE "# volume meshing\n";
+	printf FILE "playback '%s_default_vmesh.jou'\n",$model;
+	printf FILE "\n";
+
+
+	printf FILE "# out with unique surface normals\n";
+	printf FILE "set nodeset associativity on\n";
+	printf FILE "set nodeset associativity complete on\n";
+	printf FILE "\n";
+
+	printf FILE "playback '%s_bss.jou'\n",$model;
+	printf FILE "\n";
+
+	printf FILE "export genesis '%s_vmesh.gen'",$model;
+
+	close(FILE);
+}
+
+
+sub model_default_vmesh_jou
+{
+	my $model = $_[0];
+	my $filename = $model . "_default_vmesh.jou";
+
+	open(FILE, ">$filename") || die "can't open $filename\n";
+
+	printf FILE "# edit here to mesh volumes\n";
+	printf FILE "curve all size 1.\n";
+	printf FILE "surface all scheme trimesh\n";
+	printf FILE "mesh surface all\n";
+	printf FILE "volume all scheme tetmesh\n";
+	printf FILE "mesh volume all\n";
+
+	close(FILE);
+}
+
+
+sub main ()
+{
+	# jou file to construct geometry
+	model_geom_jou($model);
+
+	# jou file to list geometry
+	model_list_jou($model);
+
+	# jou file for surface meshing
+	model_smesh_jou($model);
+
+	# jou file to mesh surface
+	model_default_smesh_jou($model);
+
+	# jou file for (pre)volume meshing	
+	model_vmeshpre_jou($model);
+	model_vmesh_jou($model);
+
+	# jou file to mesh volume
+	model_default_vmesh_jou($model);
+}
+
+
+main();
+
+exit;
+
