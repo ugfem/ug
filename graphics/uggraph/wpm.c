@@ -1648,9 +1648,6 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
         /* ViewDirection is zero */
         V3_COPY(ey,DefaultPYD);
       }
-      if (DefaultPYD[2]<0.0)
-        if (RotateProjectionPlane(thePicture,PI))
-          return (1);
 
       if (CanvasRatio >= 1.0)
       {
@@ -1721,7 +1718,14 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
     if (PO_USESCUT(thePlotObj))
     {
       /* (re)define cut plane */
-      if (SetCutPlane(VO_CUT(theViewedObj),RemoveCut,cutPoint,cutNormal)) return (1);
+      if (cutNormal!=NULL && cutNormal[0]==0.0 && cutNormal[1]==0.0 && cutNormal[2]==0.0)
+      {
+        if (SetCutPlane(VO_CUT(theViewedObj),RemoveCut,cutPoint,ViewDirection)) return (1);
+      }
+      else
+      {
+        if (SetCutPlane(VO_CUT(theViewedObj),RemoveCut,cutPoint,cutNormal)) return (1);
+      }
 
       /*if (CUT_STATUS(VO_CUT(theViewedObj))==NOT_ACTIVE)
               CUT_STATUS(VO_CUT(theViewedObj)) = NOT_INIT;*/
