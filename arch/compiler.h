@@ -47,6 +47,7 @@ extern "C" {
 /*          __PC__       IBM compatible PC                                  */
 /*          __T3D__      CRAY T3D version                                   */
 /*          __POWERGC__  XPLORER (PowerPC)                                  */
+/*          __CC__       CC-Parsytec (PowerPC)                              */
 /*          __C90__      CRAY 90 version                                    */
 /*          __NECSX4__   NEC SX4                                            */
 /*          __MWCW__     Apple Power Macintosh                              */
@@ -319,7 +320,7 @@ extern "C" {
 /*                                                                          */
 /****************************************************************************/
 
-#ifdef __POWERGC__
+#if (defined(__POWERGC__) || defined(__CC__))
 #undef __MWCW__
 
 /* basic types */
