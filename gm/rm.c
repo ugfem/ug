@@ -2378,6 +2378,38 @@ INT GetRefinementMark (const ELEMENT *theElement, INT *rule, void *data)
   return(GM_RULE_WITHOUT_ORIENTATION);
 }
 
+/****************************************************************************/
+/*																			*/
+/* Function:  GetRefinementMarkType                                                                     */
+/*																			*/
+/* Purpose:   gets type of mark for an element								*/
+/*																			*/
+/* Param:	  ELEMENT *theElement: element to refine						*/
+/*																			*/
+/* return:	  int 1: element is marked for refinement						*/
+/*			  int 0: element is not marked									*/
+/*			  int -1: element is marked for coarsening                                      */
+/*																			*/
+/****************************************************************************/
+
+INT GetRefinementMarkType (const ELEMENT *theElement)
+{
+  INT rule;
+  INT side;
+
+  GetRefinementMark(theElement,&rule,&side);
+
+  switch (rule)
+  {
+  case RED :                       return(1);
+  case COPY :
+  case NO_REFINEMENT :     return(0);
+  case COARSE :            return(-1);
+  default :                        assert(0);
+  }
+
+  return(0);
+}
 
 /****************************************************************************/
 /*																			*/
