@@ -25,6 +25,7 @@ then
 	echo "         SOLARIS (set ARCH = SOLARIS)";
 	echo "         SUN4GCC (set ARCH = SUN4GCC)";
 	echo "         T3D (set ARCH = T3D)";
+	echo "         T3E (set ARCH = T3E)";
 	echo "         NECSX4 (set ARCH = NECSX4)";
 	echo "         SEQ (set MODEL = SEQ)";
 	echo "         MPI (set MODEL = MPI)";
@@ -32,6 +33,7 @@ then
 	echo "         NXLIB (set MODEL = NXLIB)";
 	echo "         PARIX (set MODEL = PARIX)";
 	echo "         PVM (set MODEL = PVM)";
+	echo "         SHMEM (set MODEL = SHMEM)";
 	echo "         SHMEMT3D (set MODEL = SHMEMT3D)";
 	echo "         STD_DOMAIN (set DOM_MODUL = STD_DOMAIN)";
 	echo "         GSF_DOMAIN (set DOM_MODUL = GSF_DOMAIN)";
@@ -245,6 +247,9 @@ edit_ugconf()
 	T3D)
 		sed 's/^ARCH.*$/ARCH = T3D/' $1 > $1.tmp
 		;;
+	T3E)
+		sed 's/^ARCH.*$/ARCH = T3E/' $1 > $1.tmp
+		;;
 	NECSX4)
 		sed 's/^ARCH.*$/ARCH = NECSX4/' $1 > $1.tmp
 		;;
@@ -265,6 +270,9 @@ edit_ugconf()
 		;;
 	PVM)
 		sed 's/^MODEL[ \t].*$/MODEL = PVM/' $1 > $1.tmp
+		;;
+	SHMEM)
+		sed 's/^MODEL[ \t].*$/MODEL = SHMEM/' $1 > $1.tmp
 		;;
 	SHMEMT3D)
 		sed 's/^MODEL[ \t].*$/MODEL = SHMEMT3D/' $1 > $1.tmp
