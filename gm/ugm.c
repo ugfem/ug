@@ -66,8 +66,6 @@
 #include "ugm.h"
 #include "elements.h"
 #include "shapes.h"
-
-/* include refine because of macros accessed in list functions */
 #include "refine.h"
 
 #ifdef ModelP
@@ -341,7 +339,7 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid)
   SETMOVE(pv,DIM_OF_BND);
         #ifdef ModelP
   DDD_AttrSet(PARHDRV(pv),theGrid->level);
-  DDD_PrioritySet(PARHDRV(pv),PrioVertex);
+  DDD_PrioritySet(PARHDRV(pv),PrioMaster);
         #endif
 
   /* insert in vertex list */
@@ -405,7 +403,7 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
   SETMOVE(pv,DIM);
         #ifdef ModelP
   DDD_AttrSet(PARHDRV(pv),theGrid->level);
-  DDD_PrioritySet(PARHDRV(pv),PrioVertex);
+  DDD_PrioritySet(PARHDRV(pv),PrioMaster);
         #endif
   for (i=0; i<DIM; i++) LCVECT(pv)[i] = 0.0;
 
@@ -484,11 +482,7 @@ static NODE *CreateNode (GRID *theGrid)
   theGrid->status |= 1;          /* recalculate stiffness matrix */
 
   /* insert in vertex list */
-  SUCCN(pn) = theGrid->firstNode;
-  PREDN(pn) = NULL;
-  if (SUCCN(pn)!=NULL) PREDN(SUCCN(pn)) = pn;
-  theGrid->firstNode = pn;
-  if (theGrid->lastNode==NULL) theGrid->lastNode = pn;
+  GRID_LINK_NODE(theGrid,pn,PrioMaster);
 
   /* counters */
   theGrid->nNode++;
@@ -919,6 +913,7 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
       INC_NO_OF_ELEM(pe);
     else
       return (NULL);
+
     return(pe);
   }
 
@@ -1095,13 +1090,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
         #endif
 
   /* insert in element list */
-  SUCCE(pe) = theGrid->elements;
-  PREDE(pe) = NULL;
-  if (SUCCE(pe)!=NULL)
-    PREDE(SUCCE(pe)) = pe;
-  else
-    theGrid->lastelement = pe;
-  theGrid->elements = pe;
+  GRID_LINK_ELEMENT(theGrid,pe,PrioMaster)
 
   /* counters */
   theGrid->nElem++;
@@ -1209,11 +1198,11 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
 #endif
 
   theGrid->status       = 0;
-  theGrid->elements = NULL;
-  theGrid->lastelement = NULL;
+  FIRSTELEMENT(theGrid) = NULL;
+  LASTELEMENT(theGrid) = NULL;
   theGrid->vertices = NULL;
-  theGrid->firstNode = theGrid->lastNode = NULL;
-  theGrid->firstVector = theGrid->lastVector = NULL;
+  FIRSTNODE(theGrid) = FIRSTNODE(theGrid) = NULL;
+  FIRSTVECTOR(theGrid) = LASTVECTOR(theGrid) = NULL;
   GFIRSTBV(theGrid) = NULL;
   GLASTBV(theGrid) = NULL;
   if (l>0)
@@ -1661,11 +1650,11 @@ static INT DisposeNode (GRID *theGrid, NODE *theNode)
   if (PREDN(theNode)!=NULL)
     SUCCN(PREDN(theNode)) = SUCCN(theNode);
   else
-    theGrid->firstNode = SUCCN(theNode);
+    FIRSTNODE(theGrid) = SUCCN(theNode);
   if (SUCCN(theNode)!=NULL)
     PREDN(SUCCN(theNode)) = PREDN(theNode);
   else
-    theGrid->lastNode = PREDN(theNode);
+    LASTNODE(theGrid) = PREDN(theNode);
   theVertex = MYVERTEX(theNode);
   father = NFATHER(theNode);
   if (father != NULL)
@@ -1785,11 +1774,11 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
   if (PREDE(theElement)!=NULL)
     SUCCE(PREDE(theElement)) = SUCCE(theElement);
   else
-    theGrid->elements = SUCCE(theElement);
+    FIRSTELEMENT(theGrid) = SUCCE(theElement);
   if (SUCCE(theElement)!=NULL)
     PREDE(SUCCE(theElement)) = PREDE(theElement);
   else
-    theGrid->lastelement = PREDE(theElement);
+    LASTELEMENT(theGrid) = PREDE(theElement);
 
   /* remove element sides if it's a boundary element */
   if (OBJT(theElement)==BEOBJ)
@@ -2103,11 +2092,11 @@ INT RenumberMultiGrid (MULTIGRID *theMG)
       ID(theVertex) = nv++;
 
     /* nodes */
-    for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode))
+    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
       ID(theNode) = nn++;
 
     /* elements */
-    for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
       ID(theElement) = ne++;
   }
 
@@ -2280,8 +2269,8 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT Also
   SUCCN(table[entries-1])  = NULL;
   PREDN(table[0]) = NULL;
 
-  theGrid->firstNode = table[0];
-  theGrid->lastNode  = table[entries-1];
+  FIRSTNODE(theGrid) = table[0];
+  LASTNODE(theGrid)  = table[entries-1];
 
 
   ReleaseTmpMem(theHeap);
@@ -2349,11 +2338,11 @@ INT PutAtStartOfList (GRID *theGrid, INT cnt, ELEMENT **elemList)
     if (PREDE(theElement)!=NULL)
       SUCCE(PREDE(theElement)) = SUCCE(theElement);
     else
-      theGrid->elements = SUCCE(theElement);
+      FIRSTELEMENT(theGrid) = SUCCE(theElement);
     if (SUCCE(theElement)!=NULL)
       PREDE(SUCCE(theElement)) = PREDE(theElement);
     else
-      theGrid->lastelement = PREDE(theElement);
+      LASTELEMENT(theGrid) = PREDE(theElement);
   }
 
   /* reorder elements locally */
@@ -2961,7 +2950,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
 
       /* update global coordinates of new nodes */
       if (l!=0)
-        for (node=theGrid->firstNode; node!=NULL; node=SUCCN(node))
+        for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
           if (NFATHER(node)==NULL)
           {
             vptr=MYVERTEX(node);
@@ -2972,7 +2961,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
             }
           }
 
-      for (node=theGrid->firstNode; node!=NULL; node=SUCCN(node))
+      for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
       {
         /* skip node if it is a copy from a lower level */
         if (NFATHER(node) != NULL)
@@ -3607,7 +3596,7 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
           nbList[k] = EList[theMesh->nbElements[sid][i][k]];
       InsertElement (theMG,n,Nodes,nbList,NULL);
       if (EList != NULL)
-        EList[nel++] = theGrid->elements;
+        EList[nel++] = FIRSTELEMENT(theGrid);
     }
 
   return(GM_OK);
@@ -4106,7 +4095,7 @@ void ListGrids (const MULTIGRID *theMG)
       }
 
     /* count other objects */
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+    for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
       if ((NSONS(theElement)==0) || (l==cl))
       {
         nt++;
@@ -4437,7 +4426,8 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
   if (COARSEN(theElement)) UserWrite(" COARSEN");
 
         #ifdef ModelP
-  sprintf(buffer," EGID=%08x",DDD_InfoGlobalId(PARHDRE(theElement)));
+  sprintf(buffer," EGID=%08x EPRIO=%d",DDD_InfoGlobalId(PARHDRE(theElement)),
+          DDD_InfoPriority(PARHDRE(theElement)));
   UserWrite(buffer);
         #endif
 
@@ -4614,13 +4604,13 @@ void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT dataopt, INT bopt
 
   if (lopt==FALSE)
     for (level=0; level<=TOPLEVEL(theMG); level++)
-      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,level)); theElement!=NULL; theElement=SUCCE(theElement))
+      for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,level)); theElement!=NULL; theElement=SUCCE(theElement))
       {
         if ( (ID(theElement)>=from)&&(ID(theElement)<=to) )
           ListElement(theMG,theElement,dataopt,bopt,nbopt,vopt);
       }
   else
-    for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG))); theElement!=NULL; theElement=SUCCE(theElement))
+    for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG))); theElement!=NULL; theElement=SUCCE(theElement))
     {
       if ( (ID(theElement)>=from)&&(ID(theElement)<=to) )
         ListElement(theMG,theElement,dataopt,bopt,nbopt,vopt);
@@ -4991,7 +4981,7 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
   INT SideError, EdgeError, NodeError,count,n;
 
   /* reset used flags
-     for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode))
+     for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
      {
      #ifdef Debug
      #ifdef ModelP
@@ -5012,7 +5002,7 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
    #endif */
 
   /* check neighbors and edges of elements */
-  for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
     n = SIDES_OF_ELEM(theElement);
     if (CheckElement(theElement, &SideError, &EdgeError, &NodeError)==0) continue;
@@ -5079,25 +5069,22 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
   }
 
   /* look for dead edges */
-  for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode))
+  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
     {
       SETUSED(theLink,1);
     }
   }
-  for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode))
+  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
     {
-      if ((USED(theLink)&&!USED(REVERSE(theLink))) ||
-          (USED(REVERSE(theLink))&&!USED(theLink)))
+      if (USED(theLink)!=1 || USED(REVERSE(theLink))!=1)
       {
                 #ifdef ModelP
-        sprintf(buffer,"edge between %ld and %ld dead ",(long)ID(theNode),(long)ID(NBNODE(theLink)));
+        UserWriteF("edge between %ld and %ld dead \n",(long)ID(theNode),(long)ID(NBNODE(theLink)));
                                 #endif
-        UserWrite(buffer);
-        UserWrite("\n");
       }
       else
       {
@@ -5114,7 +5101,7 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
         #endif
 
   /* look for dead nodes */
-  for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode))
+  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     if (!USED(theNode))
     {
@@ -5136,7 +5123,7 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
 
   /* check number of elem and their pointers */
   count = 0;
-  for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
     if (SUCCE(theElement)!=NULL)
     {
@@ -5162,12 +5149,12 @@ INT CheckGrid (GRID *theGrid) /* 2D VERSION */
     }
     count++;
   }
-  if (PREDE(theGrid->elements) != NULL)
+  if (PREDE(FIRSTELEMENT(theGrid)) != NULL)
   {
     sprintf(buffer,"first element of the grid has a previous 'element'\n");
     UserWrite(buffer);
   }
-  if (SUCCE(theGrid->lastelement) != NULL)
+  if (SUCCE(LASTELEMENT(theGrid)) != NULL)
   {
     sprintf(buffer,"last element of the grid has a following 'element'\n");
     UserWrite(buffer);
@@ -5268,8 +5255,12 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
   {
     theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
                       CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
-    if (theEdge==NULL)
+    assert(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0))!=NULL);
+    assert(CORNER(theElement,CORNER_OF_EDGE(theElement,i,1))!=NULL);
+    if (theEdge==NULL) {
       *EdgeError |= 1<<i;
+      continue;
+    }
     else
       SETUSED(theEdge,1);
     theNode = MIDNODE(theEdge);
@@ -5278,8 +5269,14 @@ static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, IN
     theVertex = MYVERTEX(theNode);
     if (VFATHER(theVertex) != theElement)
       continue;
-    if (i != ONEDGE(theVertex))
+    if (i != ONEDGE(theVertex)) {
+                        #ifdef ModelP
+      printf("%d: EID=%d VID=%d edgenumber of vertex wrong\n",me,ID(theElement),ID(theVertex));
+                        #else
+      printf("EID=%d VID=%d edgenumber of vertex wrong\n",ID(theElement),ID(theVertex));
+                        #endif
       *EdgeError |= 1<<i;
+    }
   }
 
   if (NSONS(theElement)!=0)
@@ -5321,7 +5318,7 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
         #endif
 
   /* reset used flags */
-  for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode))
+  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     SETUSED(theNode,0);
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
@@ -5329,10 +5326,15 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
   }
 
   /* check neighbors and edges of elements */
-  for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
     if (CheckElement(theElement,&SideError,&EdgeError,&NodeError,&ESonError,&NSonError)==0) continue;
+                #ifdef ModelP
+    sprintf(buffer,"ELEM %ld/%08x/%x:\n",(long)ID(theElement),
+            DDD_InfoGlobalId(PARHDRE(theElement)),theElement);
+                #else
     sprintf(buffer,"ELEM %ld:\n",(long)ID(theElement));
+                #endif
     UserWrite(buffer);
     if (SideError)
       for (i=0; i<SIDES_OF_ELEM(theElement); i++)
@@ -5440,7 +5442,7 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
   }
 
   /* look for dead edges */
-  for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode))
+  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
     {
@@ -5450,9 +5452,20 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
         theEdge = MYEDGE(theLink);
         if (!USED(theEdge))
         {
-          sprintf(buffer,"edge between %ld and %ld dead, NO_OF_ELEM=%d ",(long)ID(theNode),(long)ID(NBNODE(theLink)),NO_OF_ELEM(theEdge));
-          UserWrite(buffer);
-          UserWrite("\n");
+          UserWriteF("edge between %ld and %ld dead, NO_OF_ELEM=%d \n",
+                     (long)ID(theNode),(long)ID(NBNODE(theLink)),NO_OF_ELEM(theEdge));
+          {
+            NODE *nb;
+            nb = NBNODE(theLink);
+            {
+              LINK *theLink;
+              UserWriteF("linklist of nbnode %d:",ID(nb));
+              for (theLink=START(nb); theLink!=NULL; theLink=NEXT(theLink)) {
+                UserWriteF(" %d-%d",ID(NBNODE(theLink)),ID(NBNODE(REVERSE(theLink))));
+              }
+            }
+            UserWrite("\n");
+          }
         }
         else
           SETUSED(theEdge,0);
@@ -5462,7 +5475,7 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
   }
 
   /* look for dead nodes */
-  for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode))
+  for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
   {
     if (!USED(theNode))
     {
@@ -5478,7 +5491,7 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
 
   /* check number of elem and their pointers */
   count = 0;
-  for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
     if (SUCCE(theElement)!=NULL)
     {
@@ -5504,12 +5517,12 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
     }
     count++;
   }
-  if (PREDE(theGrid->elements) != NULL)
+  if (PREDE(FIRSTELEMENT(theGrid)) != NULL)
   {
     sprintf(buffer,"first element of the grid has a previous 'element'\n");
     UserWrite(buffer);
   }
-  if (SUCCE(theGrid->lastelement) != NULL)
+  if (SUCCE(LASTELEMENT(theGrid)) != NULL)
   {
     sprintf(buffer,"last element of the grid has a following 'element'\n");
     UserWrite(buffer);
