@@ -57,7 +57,7 @@
   /* set priorities of node */                                     \
   SETPRIO(n,prio);                                                 \
                                                                              \
-  if (TYPE_DEF_IN_GRID(g,NODEVECTOR))                              \
+  if (VEC_DEF_IN_OBJ_OF_GRID(g,NODEVEC))                           \
     SETPRIO(NVECTOR(n),prio);
 
 #ifdef __TWODIM__
@@ -72,7 +72,7 @@
   PRIO_SET_EDGE(e,prio)                                            \
                                                                              \
   /* set priority of edge vector */                                \
-  if (TYPE_DEF_IN_GRID(g,EDGEVECTOR))                              \
+  if (VEC_DEF_IN_OBJ_OF_GRID(g,EDGEVEC))                           \
     SETPRIO(EDVECTOR(e),prio);
 
 #define CHECK_OBJECT_PRIO(o,prio,master,ghost,id,s)                          \
@@ -249,7 +249,7 @@ void SetGhostObjectPriorities (GRID *theGrid)
        theElement!=NULL;
        theElement=SUCCE(theElement))
   {
-    if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
     {
       if (USED(theElement) == 0)
         SETPRIO(EVECTOR(theElement),PrioGhost);
@@ -272,7 +272,7 @@ void SetGhostObjectPriorities (GRID *theGrid)
     }
 
 
-    if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR) || DIM==3)
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC) || DIM==3)
     {
       /* set edge priorities */
       for (i=0; i<EDGES_OF_ELEM(theElement); i++)
@@ -295,7 +295,7 @@ void SetGhostObjectPriorities (GRID *theGrid)
                         #ifdef __THREEDIM__
       /* if one of the side nodes is a ghost node */
       /* then its a ghost side vector             */
-      if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+      if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
         for (i=0; i<SIDES_OF_ELEM(theElement); i++)
         {
           INT j;

@@ -4207,16 +4207,18 @@ static INT FixCoarseGridCommand (INT argc, char **argv)
   MULTIGRID *theMG;
 
   theMG = currMG;
+
+  PRINTDEBUG(ui,2,("%d: FixCoarseGrid currMG %x fixed %d\n",
+                   me,theMG,MG_COARSE_FIXED(theMG)));
+
   if (theMG==NULL) {
     PrintErrorMessage('E',"fixcoarsegrid","no open multigrid");
     return (CMDERRORCODE);
   }
-
   if (FixCoarseGrid(theMG)) return (CMDERRORCODE);
 
-    #ifdef ModelP
-  ddd_test("0", currMG);         /* WARNING: will disappear! */
-        #endif
+  PRINTDEBUG(ui,2,("%d: FixCoarseGrid currMG %x fixed %d\n",
+                   me,theMG,MG_COARSE_FIXED(theMG)));
 
   return(OKCODE);
 }

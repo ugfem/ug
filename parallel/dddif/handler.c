@@ -577,7 +577,7 @@ void VectorDelete (DDD_OBJ obj)
 		" VOBJ=%d l=%d\n",me,VINDEX_PRTX(pv),OBJT(pv),level))
 
 	/* remove vector from its object */
-	if (VTYPE(pv)==NODEVECTOR)
+	if (VOTYPE(pv)==NODEVEC)
 	{
 		NVECTOR((NODE *)VOBJECT(pv))  = NULL;
 	}
@@ -601,10 +601,9 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 	INT		old			= DDD_InfoPriority(PARHDR(pv));
 
 	PRINTDEBUG(dddif,2,(PFMT " VectorPriorityUpdate(): v=" VINDEX_FMTX
-		" old=%d new=%d level=%d\n",me,VINDEX_PRTX(pv),old,new,level))
-
-	printf("%d: VectorPriorityUpdate(): oldlevel=%d newlevel=%d\n",
-		me,(int)DDD_InfoAttr(PARHDR(pv)),level);
+						" old=%d new=%d level=%d attr=%d\n",
+						me,VINDEX_PRTX(pv),old,new,level,
+						(int)DDD_InfoAttr(PARHDR(pv))));
 
 	if (pv == NULL) return;
 	if (old == new) return;
@@ -978,7 +977,7 @@ void NodeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 	{
 		vec = NVECTOR(theNode);
 		Size = sizeof(VECTOR)-sizeof(DOUBLE)
-				+dddctrl.currMG->theFormat->VectorSizes[VTYPE(vec)];
+				+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
 
 		PRINTDEBUG(dddif,2,(PFMT " NodeXferCopy(): n=" ID_FMTX 
 			" Xfer NODEVEC=" VINDEX_FMTX " size=%d\n",
@@ -1359,7 +1358,7 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 				VECTOR *vec = EDVECTOR(edge);
 
 				Size = sizeof(VECTOR)-sizeof(DOUBLE)
-						+dddctrl.currMG->theFormat->VectorSizes[VTYPE(vec)];
+				  +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
 				PRINTDEBUG(dddif,3,(PFMT " ElementXferCopy():  e=" EID_FMTX 
 					" EDGEVEC=" VINDEX_FMTX " size=%d\n",
 					me,EID_PRTX(pe),VINDEX_PRTX(vec),Size))
@@ -1375,7 +1374,7 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 	  {
 		vec = EVECTOR(pe);
 		Size = sizeof(VECTOR)-sizeof(DOUBLE)
-				+dddctrl.currMG->theFormat->VectorSizes[VTYPE(vec)];
+				  +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
 		
 		PRINTDEBUG(dddif,2,(PFMT " ElementXferCopy(): e=" EID_FMTX 
 			" ELEMVEC=" VINDEX_FMTX " size=%d\n",
@@ -1391,7 +1390,7 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 		{
 			vec = SVECTOR(pe,i);
 			Size = sizeof(VECTOR)-sizeof(DOUBLE)
-					+dddctrl.currMG->theFormat->VectorSizes[VTYPE(vec)];
+				  +FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
 
 			PRINTDEBUG(dddif,2,(PFMT " ElementXferCopy(): e=" EID_FMTX 
 				" SIDEVEC=" VINDEX_FMTX " size=%d\n",

@@ -506,8 +506,8 @@ static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode,
 }
 
 static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor,
-                         NODE **SideNodes, INT ncorners, ELEMENT *Son, INT SonSide,
-                         INT edgeofside, INT Vec)
+                         NODE **SideNodes, INT ncorners, ELEMENT *Son,
+                         INT SonSide, INT edgeofside, INT Vec)
 {
   NODE *Nodes[2];
   EDGE *theEdge;
@@ -556,9 +556,9 @@ static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor,
   if (EDIDENT(theEdge) == IDENT) return(0);
 
   PRINTDEBUG(dddif,1,("%d: Identify EDGE edgeofside=%d pe=%08x/%x eID=%d"
-                      " ntype0=%d  ntype1=%d\n",me,edgeofside,
+                      " ntype0=%d  ntype1=%d Vec=%d\n",me,edgeofside,
                       DDD_InfoGlobalId(PARHDRE(Son)),Son,ID(Son),
-                      NTYPE(Nodes[0]), NTYPE(Nodes[1])))
+                      NTYPE(Nodes[0]), NTYPE(Nodes[1]), Vec))
 
         #ifdef __THREEDIM__
   IdentObjectHdr[nobject++] = PARHDR(theEdge);
@@ -637,11 +637,11 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
 
     /* identify new node including its vector and vertex        */
     IdentifyNode(theNeighbor, theNode, SideNodes, j, ncorners,
-                 TYPE_DEF_IN_GRID(theGrid,NODEVECTOR));
+                 VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC));
   }
 
   /* identify edge vectors (2D); edges, edge and side vectors (3D) */
-  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR) || DIM==3)
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC) || DIM==3)
   {
     ELEMENT *SonList[MAX_SONS];
     INT SonsOfSide,SonSides[MAX_SONS];
@@ -656,7 +656,7 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
 
     for (j=0; j<SonsOfSide; j++) {
 
-      if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR) || DIM==3)
+      if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC) || DIM==3)
       {
         INT edgeofside;
         INT nedges = EDGES_OF_SIDE(SonList[j],SonSides[j]);
@@ -665,12 +665,12 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
         for (edgeofside=0; edgeofside<nedges; edgeofside++) {
           IdentifyEdge(theElement,theNeighbor,SideNodes,ncorners,
                        SonList[j],SonSides[j],edgeofside,
-                       TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR));
+                       VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC));
         }
       }
 
                         #ifdef __THREEDIM__
-      if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+      if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,SIDEVEC))
         IdentifySideVector(theElement,theNeighbor,SonList[j],SonSides[j]);
                         #endif
     }

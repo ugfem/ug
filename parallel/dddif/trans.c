@@ -40,6 +40,7 @@
 #include "ugm.h"
 #include "algebra.h"
 #include "debug.h"
+#include "devices.h"
 
 /****************************************************************************/
 /*																			*/

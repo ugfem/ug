@@ -837,17 +837,11 @@ void InitCurrMG (MULTIGRID *MG)
 {
   dddctrl.currMG = MG;
 
-  dddctrl.nodeData = TYPE_DEF_IN_MG(dddctrl.currMG,NODEVECTOR);
-  dddctrl.edgeData = TYPE_DEF_IN_MG(dddctrl.currMG,EDGEVECTOR);
-  dddctrl.elemData = TYPE_DEF_IN_MG(dddctrl.currMG,ELEMVECTOR);
-        #ifdef __THREEDIM__
-  dddctrl.sideData = TYPE_DEF_IN_MG(dddctrl.currMG,SIDEVECTOR);
-        #else
-  dddctrl.sideData = FALSE;
-        #endif
+  dddctrl.nodeData = VEC_DEF_IN_OBJ_OF_MG(dddctrl.currMG,NODEVEC);
+  dddctrl.edgeData = VEC_DEF_IN_OBJ_OF_MG(dddctrl.currMG,EDGEVEC);
+  dddctrl.elemData = VEC_DEF_IN_OBJ_OF_MG(dddctrl.currMG,ELEMVEC);
+  dddctrl.sideData = VEC_DEF_IN_OBJ_OF_MG(dddctrl.currMG,SIDEVEC);
 }
-
-
 
 /****************************************************************************/
 /*																			*/

@@ -157,6 +157,8 @@ enum HandlerSets
 
 #define GIDFMT                                                  "%08x"
 
+#define GRID_ATTR(g) ((DDD_ATTR) (GLEVEL(g) + 32))
+
 #define __EXCHANGE_CONNECTIONS__
 
 #endif /* ModelP */
@@ -264,8 +266,9 @@ void    ConstructConsistentGrid         (GRID *theGrid);
 INT             CheckInterfaces                         (GRID *theGrid);
 void    SetGhostObjectPriorities    (GRID *theGrid);
 
-/* from transfer.c */
+/* from trans.c */
 int TransferGridFromLevel (MULTIGRID *theMG, INT level);
+void AMGAgglomerate(MULTIGRID *theMG);
 
 /* from identify.c */
 INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel);
