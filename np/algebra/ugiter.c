@@ -56,7 +56,7 @@
 /****************************************************************************/
 
 #define SMALL_DET                       1e-15
-
+#define MAX_DEPTH           8
 #define V_BVNUMBER(v,n)         (VINDEX(v)/n)
 
 /* macros to define VEC_SCALAR, VECDATA_DESC and MATDATA_DESC components */
@@ -5879,6 +5879,101 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
                           MVALPTR(VSTART(vec)),s)!=0)
         REP_ERR_RETURN (__LINE__);
     }
+  }
+
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*D
+   l_pgs - patch Gauss Seidel step
+
+   SYNOPSIS:
+   INT l_pgs (GRID *g, const VECDATA_DESC *v,
+   const MATDATA_DESC *M, const VECDATA_DESC *d,
+   INT depth, INT mode);
+
+   PARAMETERS:
+   .  g - pointer to grid
+   .  v - type vector descriptor to store correction
+   .  M - type matrix descriptor for precondition
+   .  d - type vector descriptor for right hand side (the defect)
+   .  depth - number of patch vectors
+   .  mode - overlapping mode
+
+   DESCRIPTION:
+   This function performs a patch Gauss Seidel step.
+
+   `Remark.` Index field must be set!
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    __LINE__ line where an error occured.
+   D*/
+/****************************************************************************/
+
+INT l_pgs (GRID *g, const VECDATA_DESC *v,
+           const MATDATA_DESC *M, const VECDATA_DESC *d,
+           INT depth, INT mode)
+{
+  VECTOR *vec,*vlist[MAX_DEPTH],*w;
+  MATRIX *mat;
+  DOUBLE Mval[LOCAL_DIM*LOCAL_DIM],vval[LOCAL_DIM],dval[LOCAL_DIM];
+  INT cnt,m,i,j,k,l,ncomp,vcnt,vtype,wtype,wncomp;
+  INT myindex,index;
+  const SHORT *Comp,*VComp;
+
+  if (depth > MAX_DEPTH) {
+    UserWriteF("l_pgs: MAX_DEPTH too small\n");
+    REP_ERR_RETURN (__LINE__);
+  }
+  for (vec=FIRSTVECTOR(g); vec!= NULL; vec=SUCCVC(vec)) {
+    if (START(vec) == NULL) continue;
+    if (VCLASS(vec) < ACTIVE_CLASS) continue;
+    cnt = 1;
+    vlist[0] = vec;
+    if (depth > 1)
+      for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat)) {
+        vlist[cnt++] = MDEST(mat);
+        if (cnt >= depth) break;
+      }
+    m = GetVlistMValues(cnt,vlist,M,Mval);
+    if (m != GetVlistVValues(cnt,vlist,d,dval)) {
+      UserWriteF("l_pgs: wrong dimension %d in local system %d\n",
+                 m,GetVlistVValues(cnt,vlist,d,dval));
+      REP_ERR_RETURN (__LINE__);
+    }
+    index = VINDEX(vlist[0]);
+    for (i=1; i<cnt; i++) {
+      j = VINDEX(vlist[i]);
+      index = MIN(j,index);
+    }
+    vcnt = 0;
+    for (i=0; i<cnt; i++) {
+      vtype = VTYPE(vlist[i]);
+      ncomp = VD_NCMPS_IN_TYPE(d,vtype);
+      for (mat=MNEXT(VSTART(vlist[i])); mat!=NULL; mat=MNEXT(mat)) {
+        w = MDEST(mat);
+        myindex = VINDEX(w);
+        if (index < myindex) continue;
+        if (VCLASS(w) < ACTIVE_CLASS) continue;
+        wtype = VTYPE(w);
+        Comp = MD_MCMPPTR_OF_MTYPE(M,MTP(vtype,wtype));
+        wncomp = VD_NCMPS_IN_TYPE(d,wtype);
+        VComp = VD_CMPPTR_OF_TYPE(v,wtype);
+        for (k=0; k<ncomp; k++)
+          for (l=0; l<wncomp; l++)
+            dval[vcnt+k] -= MVALUE(mat,Comp[k*wncomp+l])
+                            * VVALUE(w,VComp[l]);
+      }
+      vcnt += ncomp;
+    }
+    if (SolveFullMatrix(m,vval,Mval,dval)) {
+      UserWriteF("l_pgs: solving on local patch failed\n");
+      REP_ERR_RETURN (__LINE__);
+    }
+    SetVlistVValues(cnt,vlist,v,vval);
   }
 
   return (NUM_OK);
