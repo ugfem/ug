@@ -1,18 +1,18 @@
-This is TeX, C Version 3.14t3 (format=lplain 92.5.26)  22 SEP 1995 07:57
-**progmanual.tex
+This is TeX, Version 3.14159 (C version 6.1) (format=latex 95.9.21)  11 OCT 1995 16:58
+**refmanual
 
 ! Emergency stop.
-<*> progmanual.tex
-                  
+<*> refmanual
+             
 End of file on the terminal!
 
  
 Here is how much of TeX's memory you used:
- 3 strings out of 4454
- 24 string characters out of 63057
- 23017 words of memory out of 262141
- 1977 multiletter control sequences out of 9500
- 18996 words of font info for 72 fonts, out of 72000 for 255
+ 2 strings out of 10925
+ 19 string characters out of 72332
+ 44813 words of memory out of 262141
+ 2960 multiletter control sequences out of 9500
+ 3640 words of font info for 14 fonts, out of 150000 for 255
  14 hyphenation exceptions out of 607
- 0i,0n,0p,1b,6s stack positions out of 600i,40n,60p,3000b,4000s
+ 0i,0n,0p,1b,6s stack positions out of 300i,40n,60p,3000b,4000s
 No pages of output.

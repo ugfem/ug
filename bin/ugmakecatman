@@ -1,0 +1,31 @@
+#!/bin/sh
+# ugmakecatman
+# build catman pages from man pages
+set -e
+
+if test $# -eq 0
+then
+   echo "building catman pages";
+   cd $UGROOT/man;
+   ugmakecat;
+   cd $UGROOT/../diff2d/man;
+   ugmakecat;
+   cd $UGROOT/../cd3d/man;
+   ugmakecat;
+   cd $UGROOT/../fem/man;
+   ugmakecat;
+fi
+
+if test "$1" = "remove"
+then
+   echo "removing catman pages";
+   cd $UGROOT;
+   rm -r catman;
+   cd $UGROOT/../diff2d;
+   rm -r catman;
+   cd $UGROOT/../cd3d;
+   rm -r catman;
+   cd $UGROOT/../fem;
+   rm -r catman;
+fi
+

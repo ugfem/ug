@@ -1,9 +1,9 @@
 #!/bin/sh
-if test $UGMAN
+if test $UGROOT
 then
-    MANPATH=$UGMAN
+    MANPATH=$UGROOT/catman
     export MANPATH
     man $*
 else
-    echo "ERROR: to get the man pages of ug set the environment variable UGMAN"
+    echo "ERROR: to get the man pages of ug set the environment variable UGROOT"
 fi

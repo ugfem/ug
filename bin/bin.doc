@@ -5,16 +5,16 @@
    
    DESCRIPTION:
    ug provides a couple of commands to be invoked from a UNIX shell to
-   lighten the handling of the ug software:~
+   ease the handling of the ug software:~
    
-.  ugman - print out a ug manual entry (equivalent to 'man')
-.  ugproject - checks soundness of all standard experimenting environment
-.  xugman - browser for ug manual entries (equivalent to 'xman')
+.  ugman - print out a ug manual entry (equivalent to 'man' with appropriate paths)
+.  ugproject - compiles all libraries and applications shipped with the current distribution
+.  xugman - browser for ug manual entries (equivalent to 'xman' with appropriate paths)
 .  ugclean - clean source code [and ug libraries]
 .  ugmake - call make with the right Makefile*
 
    DEPENDENCIES:
-   This commands are available only in an UNIX environment.
+   These commands are available only in an UNIX environment.
    
    SEE ALSO:
    commands, ugman, ugproject, xugman, installation, machines
@@ -37,24 +37,16 @@ D*/
    
    Before you can use the 'ugman' command you have to define the paths
    to the ug and application manual pages in the environment variable
-   '$UGMAN'. For details see the manual for `installation`.
+   '$UGMAN'. For details see the manual page for `Installation`.
    
    DEPENDENCIES:
 .  $UGMAN - The environment variable '$UGMAN' must point to the paths where
-   the manual pages are stored. See manual page for `install`.
-.  man - Because 
-   ugman uses the 'man' command it is not available on MacIntosh.
-.  nroff - The 
-   manual pages are not pre-formatted by nroff. So the UNIX
-   utilities 'nroff', 'neqn' and 'tbl' must be present to format 
-   the current page. On SGI 'nroff' is available only as an extra to
-   pay product in the "Documentors Work Bench". The call sequence 
-   would be e.g.
-.n '~~~~~neqn' `page.1` '| tbl | nroff -man >' `page`'; pack -f' `page`
-
-. MacIntosh - 'man' is not available on MacIntosh.
-.  SGI - On SGI 'nroff' is available only as an extra to
-   pay product in the "Documentors Work Bench".
+   the manual pages are stored. See manual page for `Installation`.
+.  man - Because ugman uses the 'man' command it is not available on MacIntosh.
+.  gnroff,doctext - In principal you could modify the man pages and  regenerate
+   them. To do that you would our modified version of Bill Gropps 'doctext' version
+   and the 'gnroff' software.
+.  MacIntosh - 'man' is not available on MacIntosh.
    
    BUGS:
    Due to limitations of the 'man' command concerning the searched 
@@ -69,13 +61,12 @@ D*/
 D*/
 
 /*D
-   ugproject - checks soundness of all standard experimenting environments
+   ugproject - shell script that compiles all applications 
 
    DESCRIPTION:
-   Compiles all standard experimenting environments in order to check the
-   compilability of the ug3 software. This command should be invoked after
-   each change to the ug kernel or the standard problemclass libraries.
-   Watch the bug!
+   This shell scripts compiles and builds all applications shipped with the
+   current distribution of ug3. It also builds all libraries needed for the
+   different applications.
    
    BUG:
    If an error occurs during the compilation the 'ugproject' command aborts

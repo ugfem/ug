@@ -13,7 +13,7 @@ then
 fi
 
 # set man path 
-MANPATH=$UGROOT/catman:$UGROOT/../diff2d/man:$UGROOT/../cd3d/man:$UGROOT/../fem/man
+MANPATH=$UGROOT/catman:$UGROOT/../diff2d/catman:$UGROOT/../cd3d/catman:$UGROOT/../fem/catman
 export MANPATH
 
 xman -notopbox -bothshown
