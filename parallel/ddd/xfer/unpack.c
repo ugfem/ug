@@ -1222,7 +1222,8 @@ static void CallSetPriorityHandler (LC_MSGHANDLE xm)
 
   for(i=0; i<lenObjTab; i++)               /* for all message items */
   {
-    if (theObjTab[i].oldprio != theObjTab[i].prio)
+    if ((theObjTab[i].is_new==NOTNEW || theObjTab[i].is_new==PARTNEW)
+        && (theObjTab[i].oldprio != theObjTab[i].prio))
     {
       TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
       DDD_OBJ obj   = HDR2OBJ(theObjTab[i].hdr, desc);
