@@ -308,16 +308,16 @@
 									  V3_SCALAR_PRODUCT(a,c,detJ);         \
 									  (area) = ABS(detJ)/6.0;}
 
-#define AREA_OF_PYRAMID(x,area)      {DOUBLE detJ,ar; DOUBLE_VECTOR a,b,c; \
-									  V3_SUBTRACT((x)[1],(x)[0],a);        \
-									  V3_SUBTRACT((x)[2],(x)[0],b);        \
-									  V3_VECTOR_PRODUCT(a,b,c);            \
-									  V3_SUBTRACT((x)[4],(x)[0],b);        \
-									  V3_SCALAR_PRODUCT(b,c,detJ);         \
-									  ar = ABS(detJ)/6.0;                  \
-									  V3_SUBTRACT((x)[3],(x)[0],a);        \
-									  V3_VECTOR_PRODUCT(a,b,c);            \
-									  V3_SCALAR_PRODUCT(b,c,detJ);         \
+#define AREA_OF_PYRAMID(x,area)      {DOUBLE detJ,ar; DOUBLE_VECTOR a,b,c,d;\
+									  V3_SUBTRACT((x)[1],(x)[0],a);         \
+									  V3_SUBTRACT((x)[2],(x)[0],b);         \
+									  V3_VECTOR_PRODUCT(a,b,c);             \
+									  V3_SUBTRACT((x)[4],(x)[0],d);         \
+									  V3_SCALAR_PRODUCT(c,d,detJ);          \
+									  ar = ABS(detJ)/6.0;                   \
+									  V3_SUBTRACT((x)[3],(x)[0],a);         \
+									  V3_VECTOR_PRODUCT(a,b,c);             \
+									  V3_SCALAR_PRODUCT(c,d,detJ);          \
 									  (area) = ABS(detJ)/6.0 + ar;}
 
 #define AREA_OF_PRISM(x,area)   {DOUBLE detJ,ar; DOUBLE_VECTOR a,b,c;      \
@@ -476,12 +476,12 @@
   else if ((n) == 8) {TRANSFORMATION_OF_HEXAHEDRON((x),(local),(M));}}
 
 #define SIDE_NORMAL(n,i,x,normal)                                \
-  { DOUBLE s; DOUBLE_VECTOR a,b,axb; ELEMENT e;                  \
+  { DOUBLE s; DOUBLE_VECTOR a,b; ELEMENT e;                      \
 	V3_SUBTRACT(x[CORNER_OF_SIDE_REF((n),(i),1)],                \
                 x[CORNER_OF_SIDE_REF((n),(i),0)],a);             \
 	V3_SUBTRACT(x[CORNER_OF_SIDE_REF((n),(i),2)],                \
 				x[CORNER_OF_SIDE_REF((n),(i),0)],b);             \
-	V3_VECTOR_PRODUCT(a,b,axb);                                  \
+	V3_VECTOR_PRODUCT(a,b,(normal));                             \
 	V3_EUKLIDNORM((normal),s);                                   \
 	V3_SCALE(1.0/s,(normal));}
 
