@@ -862,8 +862,8 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
     i = CORNERS_OF_ELEM(theElement)+CENTER_NODE_INDEX(theElement);
     if (NodeContext[i]!=NULL && ((nex>>i)&0x1))
     {
-      if (LEVEL(NodeContext[i])<LEVEL(vid_n[ID(MYVERTEX(NodeContext[i]))])
-          && ID(MYVERTEX(NodeContext[i]))<nov)
+      if (ID(MYVERTEX(NodeContext[i]))<nov
+          && LEVEL(NodeContext[i])<LEVEL(vid_n[ID(MYVERTEX(NodeContext[i]))]))
       {
         refinement->orphanid[n++] = ID(vid_n[ID(MYVERTEX(NodeContext[i]))]);
         refinement->orphanid_ex = 1;
