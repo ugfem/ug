@@ -1165,7 +1165,7 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
   theGrid->nSide = 0;
   theGrid->nVector = 0;
   theGrid->nCon = 0;
-  theGrid->status = 0;
+  theGrid->status       = 0;
   theGrid->elements = NULL;
   theGrid->lastelement = NULL;
   theGrid->vertices = NULL;
@@ -2816,6 +2816,8 @@ static INT CheckOrientation (INT n, VERTEX **vertices)
   return(1);
 }
 
+#define SWAP(a,i,j,t)                   {t = a[i]; a[i] = a[j]; a[j] = t;}
+
 INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
 {
   GRID *theGrid;
@@ -2837,7 +2839,7 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
   theGrid = GRID_ON_LEVEL(theMG,0);
 
   /* check tag */
-  if ((n<3)&&(n>4))
+  if ((n!=TRIANGLE)&&(n!=QUADRILATERAL))
   {
     PrintErrorMessage('E',"InsertElement","only triangles and quadrilaterals allowed in 2D");
     return(GM_ERROR);
@@ -2855,17 +2857,41 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
   if (!CheckOrientation(n,Vertex))
   {
     /* flip order */
-    for (i=0; i<n/2; i++)
-    {
-      j = n-i-1;
-      theNode = Node[i]; Node[i] = Node[j]; Node[j] = theNode;
-      theVertex = Vertex[i]; Vertex[i] = Vertex[j]; Vertex[j] = theVertex;
-    }
+    SWAP(Node,      0,n/2,theNode);
+    SWAP(Vertex,0,n/2,theVertex);
 
     if (!CheckOrientation(n,Vertex))
     {
-      PrintErrorMessage('E',"InsertElement","no convex polygon");
-      return(GM_ERROR);
+      /* this was the only possibility for a triangle: so is a nonconvex quadrilateral */
+      /* interchange first two nodes and try again */
+      SWAP(Node,      0,1,theNode);
+      SWAP(Vertex,0,1,theVertex);
+      if (!CheckOrientation(n,Vertex))
+      {
+        /* flip order */
+        SWAP(Node,      0,n/2,theNode);
+        SWAP(Vertex,0,n/2,theVertex);
+        if (!CheckOrientation(n,Vertex))
+        {
+          /* flip order back */
+          SWAP(Node,      0,n/2,theNode);
+          SWAP(Vertex,0,n/2,theVertex);
+          /* interchange second two nodes and try again */
+          SWAP(Node,      1,2,theNode);
+          SWAP(Vertex,1,2,theVertex);
+          if (!CheckOrientation(n,Vertex))
+          {
+            /* flip order */
+            SWAP(Node,      0,n/2,theNode);
+            SWAP(Vertex,0,n/2,theVertex);
+            if (!CheckOrientation(n,Vertex))
+            {
+              PrintErrorMessage('E',"InsertElement","Huh???");
+              return(GM_ERROR);
+            }
+          }
+        }
+      }
     }
   }
 
@@ -3610,6 +3636,49 @@ NODE *FindNodeFromPosition (GRID *theGrid, COORD *pos, COORD *tol)
   return(NULL);
 }
 
+/****************************************************************************/
+/*D
+   FindVectorFromPosition - Find vector from position
+
+   SYNOPSIS:
+   VECTOR *FindVectorFromPosition (GRID *theGrid, COORD *pos, COORD *tol);
+
+   PARAMETERS:
+   .  theGrid - grid level to search
+   .  pos - given position
+   .  tol - tolerance to accept
+
+   DESCRIPTION:
+   This function finds the first vector within `tol` from `pos` in 1-norm.
+
+   RETURN VALUE:
+   NODE *
+   .n   pointer to NODE
+   .n   NULL if not found.
+   D*/
+/****************************************************************************/
+
+#ifdef __version3__
+
+VECTOR *FindVectorFromPosition (GRID *theGrid, COORD *pos, COORD *tol)
+{
+  VECTOR *theVector;
+  COORD_VECTOR vpos;
+  int i,found;
+
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+  {
+    VectorPosition(theVector,vpos);
+    found = 1;
+    for (i=0; i<DIM; i++)
+      if (fabs(pos[i]-vpos[i])>=tol[i]) {found=0; break;}
+    if (found) return(theVector);
+  }
+
+  return(NULL);
+}
+
+#endif
 
 /****************************************************************************/
 /*D
@@ -3838,25 +3907,147 @@ void ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const INT longformat)
 
 void ListGrids (const MULTIGRID *theMG)
 {
-  int l;
-  const GRID *theGrid;
+  GRID *theGrid;
+  ELEMENT *theElement,*NBElem;
+  VERTEX *myVertex,*nbVertex,*v0,*v1;
+  NODE *theNode,*n0,*n1;
+  EDGE *theEdge;
+  LINK *theLink;
+  VECTOR *vec;
+  MATRIX *mat;
   char c;
+  COORD hmin,hmax,h;
+  INT l,cl,minl,i,soe,eos,coe,side,e;
+  INT nn,ne,nt,ns,nvec,nc;
+
+  cl = CURRENTLEVEL(theMG);
 
   sprintf(buffer,"grids of '%s':\n",ENVITEM_NAME(theMG));
 
-  UserWrite("level maxlevel    #vert    #node    #edge    #elem    #side    #vect    #conn\n");
+  UserWrite("level maxlevel    #vert    #node    #edge    #elem    #side    #vect    #conn  minedge  maxedge\n");
   for (l=0; l<=TOPLEVEL(theMG); l++)
   {
     theGrid = GRID_ON_LEVEL(theMG,l);
 
-    c = (l==CURRENTLEVEL(theMG)) ? '*' : ' ';
+    c = (l==cl) ? '*' : ' ';
 
-    sprintf(buffer,"%c %3d %8d %8ld %8ld %8ld %8ld %8ld %8ld %8ld\n",c,l,(int)TOPLEVEL(theMG),
+    /* calculate minimal and maximal edge */
+    hmin = MAX_C;
+    hmax = 0.0;
+    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+    {
+      myVertex = MYVERTEX(theNode);
+      for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
+      {
+        nbVertex = MYVERTEX(NBNODE(theLink));
+        V_DIM_EUKLIDNORM_OF_DIFF(CVECT(myVertex),CVECT(nbVertex),h);
+        hmin = MIN(hmin,h);
+        hmax = MAX(hmax,h);
+      }
+    }
+
+    sprintf(buffer,"%c %3d %8d %8ld %8ld %8ld %8ld %8ld %8ld %8ld %9.3e %9.3e\n",c,l,(int)TOPLEVEL(theMG),
             (long)NV(theGrid),(long)NN(theGrid),(long)NE(theGrid),(long)NT(theGrid),
-            (long)NS(theGrid),(long)NVEC(theGrid),(long)NC(theGrid));
+            (long)NS(theGrid),(long)NVEC(theGrid),(long)NC(theGrid),(float)hmin,(float)hmax);
 
     UserWrite(buffer);
   }
+
+  /* surface grid up to current level */
+  minl = cl;
+  hmin = MAX_C;
+  hmax = 0.0;
+  nn = ne = nt = ns = nvec = nc = 0;
+  for (l=0; l<=cl; l++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,l);
+
+    /* reset USED flags in all objects to be counted */
+    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+    {
+      SETUSED(theNode,0);
+      for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
+        SETUSED(MYEDGE(theLink),0);
+    }
+    for (vec=FIRSTVECTOR(theGrid); vec!=NULL; vec=SUCCVC(vec))
+      for (mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
+        SETCUSED(MMYCON(mat),0);
+
+    /* count vectors and connections */
+    for (vec=FIRSTVECTOR(theGrid); vec!=NULL; vec=SUCCVC(vec))
+      if ((l==cl) || (VNCLASS(vec)<1))
+      {
+        nvec++;
+        for (mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
+        {
+          if (MUSED(mat)) continue;
+          SETCUSED(MMYCON(mat),1);
+
+          if ((l==cl) || (VNCLASS(MDEST(mat))<1))
+            nc++;
+        }
+      }
+
+    /* count other objects */
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      if ((NSONS(theElement)==0) || (l==cl))
+      {
+        nt++;
+
+        minl = MIN(minl,l);
+
+        coe = CORNERS_OF_ELEM(theElement);
+        for (i=0; i<coe; i++)
+        {
+          theNode = CORNER(theElement,i);
+          if (USED(theNode)) continue;
+          SETUSED(theNode,1);
+
+          if ((SONNODE(theNode)==NULL) || (l==cl))
+            nn++;
+        }
+
+        soe = SIDES_OF_ELEM(theElement);
+        for (side=0; side<soe; side++)
+        {
+          if (OBJT(theElement)==BEOBJ)
+            if (SIDE(theElement,side)!=NULL) ns++;
+
+          /* check neighbour element */
+          if (l<cl)
+            if ((NBElem=NBELEM(theElement,side))!=NULL)
+              if (NSONS(NBElem)>0)
+                continue;                                                       /* objects of this side will be counted by the neighbour */
+
+          eos = EDGES_OF_SIDE(theElement,side);
+          for (i=0; i<eos; i++)
+          {
+            e  = EDGE_OF_SIDE(theElement,side,i);
+            n0 = CORNER(theElement,CORNER_OF_EDGE(theElement,e,0));
+            v0 = MYVERTEX(n0);
+            n1 = CORNER(theElement,CORNER_OF_EDGE(theElement,e,1));
+            v1 = MYVERTEX(n1);
+
+            if ((theEdge=GetEdge(n0,n1))==NULL) continue;
+
+            if (USED(theEdge)) continue;
+            SETUSED(theEdge,1);
+
+            ne++;
+
+            V_DIM_EUKLIDNORM_OF_DIFF(CVECT(v0),CVECT(v1),h);
+            hmin = MIN(hmin,h);
+            hmax = MAX(hmax,h);
+          }
+        }
+      }
+  }
+  UserWrite("\nsurface grid up to current level:\n");
+  UserWriteF("%c %3d %8d %8s %8ld %8ld %8ld %8ld %8ld %8ld %9.3e %9.3e\n",' ',minl,(int)cl,
+             "---",(long)nn,(long)ne,(long)nt,
+             (long)ns,(long)nvec,(long)nc,(float)hmin,(float)hmax);
+
+  /* storage */
   sprintf(buffer,"\n%lu bytes used out of %lu allocated\n",HeapUsed(MGHEAP(theMG)),HeapSize(MGHEAP(theMG)));
   UserWrite(buffer);
 }
@@ -4486,10 +4677,10 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
 
 /****************************************************************************/
 /*D
-   ListVectorSelection - List info about vectors of elements in selection
+   ListVectorOfElementSelection - List info about vectors of elements in selection
 
    SYNOPSIS:
-   void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt);
+   void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt);
 
    PARAMETERS:
    .  theMG -  structure to list
@@ -4506,7 +4697,7 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
 
 #ifdef __version3__
 
-void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
+void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
 {
   int i,j;
   ELEMENT *theElement;
@@ -4515,7 +4706,7 @@ void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
 
   if (SELECTIONMODE(theMG) != elementSelection)
   {
-    PrintErrorMessage('E',"ListElementSelection","wrong selection type");
+    PrintErrorMessage('E',"ListVectorOfElementSelection","wrong selection type");
     return;
   }
   for (j=0; j<SELECTIONSIZE(theMG); j++)
@@ -4535,6 +4726,83 @@ void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
 }
 #endif
 
+/****************************************************************************/
+/*D
+   ListVectorSelection - list information about vectors in selection
+
+   SYNOPSIS:
+   void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
+
+   PARAMETERS:
+   .  theMG: multigrid structure to list
+   .  matrixopt - list matrices of this vector
+   .  dataopt - list user data if true
+
+   DESCRIPTION:
+   This function lists information about all elements in the selection.
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+#ifdef __version3__
+
+void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
+{
+  int j;
+  VECTOR *theVector;
+
+  if (SELECTIONSIZE(theMG) <= 0) return;
+  if (SELECTIONMODE(theMG) != vectorSelection)
+  {
+    PrintErrorMessage('E',"ListVectorSelection","wrong selection type");
+    return;
+  }
+  for(j=0; j<SELECTIONSIZE(theMG); j++)
+  {
+    theVector = (VECTOR *) SELECTIONOBJECT(theMG,j);
+    ListVector(theMG,theVector,matrixopt,dataopt);
+  }
+}
+
+#endif
+
+/****************************************************************************/
+/*D
+   IsVectorSelected - Check whether vector is in selection list
+
+   SYNOPSIS:
+   INT IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector);
+
+   PARAMETERS:
+   .  theMG - multigrid structure
+   .  theVector - vector to check
+
+   DESCRIPTION:
+   This function checks whether an element is in the selection list.
+
+   RETURN VALUE:
+   INT
+   .n   0 if NOT in list
+   .n   1 if in list.
+   D*/
+/****************************************************************************/
+
+#ifdef __version3__
+
+INT IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
+{
+  int j;
+
+  if (SELECTIONMODE(theMG) != vectorSelection) return (0);
+  for(j=0; j<SELECTIONSIZE(theMG); j++)
+    if (theVector == (VECTOR *) SELECTIONOBJECT(theMG,j))
+      return (1);
+  return (0);
+}
+
+#endif
 
 /****************************************************************************/
 /*D
@@ -5236,7 +5504,7 @@ void ClearSelection (MULTIGRID *theMG)
 INT AddNodeToSelection (MULTIGRID *theMG, NODE *theNode)
 {
   int i;
-  GEOM_OBJECT *g;
+  SELECTION_OBJECT *g;
 
   if (SELECTIONSIZE(theMG)!=0)
   {
@@ -5244,7 +5512,7 @@ INT AddNodeToSelection (MULTIGRID *theMG, NODE *theNode)
   }
   else SELECTIONMODE(theMG) = nodeSelection;
 
-  g = (GEOM_OBJECT *) theNode;
+  g = (SELECTION_OBJECT *) theNode;
   for (i=0; i<SELECTIONSIZE(theMG); i++)
     if (SELECTIONOBJECT(theMG,i)==g) return(GM_ERROR);
 
@@ -5261,7 +5529,7 @@ INT AddNodeToSelection (MULTIGRID *theMG, NODE *theNode)
    AddElementToSelection - Add element to selection buffer
 
    SYNOPSIS:
-   INT AddElementToSelection (MULTIGRID *theMG, NODE *theElement);
+   INT AddElementToSelection (MULTIGRID *theMG, ELEMENT *theElement);
 
    PARAMETERS:
    .  theMG - multigrid structure
@@ -5280,7 +5548,7 @@ INT AddNodeToSelection (MULTIGRID *theMG, NODE *theNode)
 INT AddElementToSelection (MULTIGRID *theMG, ELEMENT *theElement)
 {
   int i;
-  GEOM_OBJECT *g;
+  SELECTION_OBJECT *g;
 
   if (SELECTIONSIZE(theMG)!=0)
   {
@@ -5288,7 +5556,7 @@ INT AddElementToSelection (MULTIGRID *theMG, ELEMENT *theElement)
   }
   else SELECTIONMODE(theMG) = elementSelection;
 
-  g = (GEOM_OBJECT *) theElement;
+  g = (SELECTION_OBJECT *) theElement;
   for (i=0; i<SELECTIONSIZE(theMG); i++)
     if (SELECTIONOBJECT(theMG,i)==g) return(GM_ERROR);
 
@@ -5299,6 +5567,52 @@ INT AddElementToSelection (MULTIGRID *theMG, ELEMENT *theElement)
   return(GM_OK);
 }
 
+/****************************************************************************/
+/*D
+   AddVectorToSelection - Add vector to selection buffer
+
+   SYNOPSIS:
+   INT AddVectorToSelection (MULTIGRID *theMG, VECTOR *theVector);
+
+   PARAMETERS:
+   .  theMG - multigrid structure
+   .  theVector - vector to add
+
+   DESCRIPTION:
+   This function adds a vector to the selection buffer.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR if an  error occured.
+   D*/
+/****************************************************************************/
+
+#ifdef __version3__
+
+INT AddVectorToSelection (MULTIGRID *theMG, VECTOR *theVector)
+{
+  int i;
+  SELECTION_OBJECT *g;
+
+  if (SELECTIONSIZE(theMG)!=0)
+  {
+    if (SELECTIONMODE(theMG)!=vectorSelection) return(GM_ERROR);
+  }
+  else SELECTIONMODE(theMG) = vectorSelection;
+
+  g = (SELECTION_OBJECT *) theVector;
+  for (i=0; i<SELECTIONSIZE(theMG); i++)
+    if (SELECTIONOBJECT(theMG,i)==g) return(GM_ERROR);
+
+  if (SELECTIONSIZE(theMG)>=MAXSELECTION) return(GM_ERROR);
+
+  SELECTIONOBJECT(theMG,SELECTIONSIZE(theMG)) = g;
+  SELECTIONSIZE(theMG)++;
+  return(GM_OK);
+}
+
+#endif
 
 /****************************************************************************/
 /*
@@ -5324,7 +5638,7 @@ INT AddElementToSelection (MULTIGRID *theMG, ELEMENT *theElement)
 INT RemoveNodeFromSelection (MULTIGRID *theMG, NODE *theNode)
 {
   int i,j,found;
-  GEOM_OBJECT *g;
+  SELECTION_OBJECT *g;
 
   if (SELECTIONSIZE(theMG)>0)
   {
@@ -5332,7 +5646,7 @@ INT RemoveNodeFromSelection (MULTIGRID *theMG, NODE *theNode)
   }
   else return(GM_ERROR);
 
-  g = (GEOM_OBJECT *) theNode;
+  g = (SELECTION_OBJECT *) theNode;
   found = 0;
   for (i=0; i<SELECTIONSIZE(theMG); i++)
     if (SELECTIONOBJECT(theMG,i)==g)
@@ -5356,7 +5670,7 @@ INT RemoveNodeFromSelection (MULTIGRID *theMG, NODE *theNode)
    RemoveElementFromSelection - Remove element from selection buffer
 
    SYNOPSIS:
-   INT RemoveElementFromSelection (MULTIGRID *theMG, NODE *theElement);
+   INT RemoveElementFromSelection (MULTIGRID *theMG, ELEMENT *theElement);
 
    PARAMETERS:
    .  theMG - multigrid structure
@@ -5375,7 +5689,7 @@ INT RemoveNodeFromSelection (MULTIGRID *theMG, NODE *theNode)
 INT RemoveElementFromSelection (MULTIGRID *theMG, ELEMENT *theElement)
 {
   int i,j,found;
-  GEOM_OBJECT *g;
+  SELECTION_OBJECT *g;
 
   if (SELECTIONSIZE(theMG)>0)
   {
@@ -5383,7 +5697,7 @@ INT RemoveElementFromSelection (MULTIGRID *theMG, ELEMENT *theElement)
   }
   else return(GM_ERROR);
 
-  g = (GEOM_OBJECT *) theElement;
+  g = (SELECTION_OBJECT *) theElement;
   found = 0;
   for (i=0; i<SELECTIONSIZE(theMG); i++)
     if (SELECTIONOBJECT(theMG,i)==g)
@@ -5401,6 +5715,59 @@ INT RemoveElementFromSelection (MULTIGRID *theMG, ELEMENT *theElement)
   return(GM_OK);
 }
 
+/****************************************************************************/
+/*
+   RemoveVectorFromSelection - Remove vector from selection buffer
+
+   SYNOPSIS:
+   INT RemoveVectorFromSelection (MULTIGRID *theMG, VECTOR *theVector);
+
+   PARAMETERS:
+   .  theMG - multigrid structure
+   .  theVector - vector to remove
+
+   DESCRIPTION:
+   This function removes a vector from the selection buffer.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR if an error occured.
+ */
+/****************************************************************************/
+
+#ifdef __version3__
+
+INT RemoveVectorFromSelection (MULTIGRID *theMG, VECTOR *theVector)
+{
+  int i,j,found;
+  SELECTION_OBJECT *g;
+
+  if (SELECTIONSIZE(theMG)>0)
+  {
+    if (SELECTIONMODE(theMG)!=vectorSelection) return(GM_ERROR);
+  }
+  else return(GM_ERROR);
+
+  g = (SELECTION_OBJECT *) theVector;
+  found = 0;
+  for (i=0; i<SELECTIONSIZE(theMG); i++)
+    if (SELECTIONOBJECT(theMG,i)==g)
+    {
+      found = 1;
+      break;
+    }
+
+  if (!found) return(GM_ERROR);
+
+  for (j=i+1; j<SELECTIONSIZE(theMG); j++)
+    SELECTIONOBJECT(theMG,j-1) = SELECTIONOBJECT(theMG,j);
+
+  SELECTIONSIZE(theMG)--;
+  return(GM_OK);
+}
+
+#endif
 
 /****************************************************************************/
 /*D
