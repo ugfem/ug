@@ -2145,6 +2145,8 @@ INT         MoveSideNode             (MULTIGRID *theMG, NODE *theNode, COORD *la
 #endif
 INT         MoveNode                (MULTIGRID *theMG, NODE *theNode, COORD *newPos);
 INT             SmoothMultiGrid                 (MULTIGRID *theMG, INT niter, INT bdryFlag);
+INT         SmoothGrid              (GRID *theGrid, const COORD LimitLocDis, INT *MoveInfo, const INT ForceLevelSet);
+INT         SmoothGridReset         (GRID *theGrid, INT *MoveInfo);
 
 /* handling struct blockvector_description_format (BV_DESC_FORMAT) */
 INT InitBVDF                                            ( BV_DESC_FORMAT *bvdf, BLOCKNUMBER max_blocks );

@@ -2658,7 +2658,7 @@ INT DeleteNodeWithID (MULTIGRID *theMG, INT id)
    FindFather - Find the new father element
 
    SYNOPSIS:
-   static ELEMENT *FindFather(VERTEX *vptr);
+   ELEMENT *FindFather(VERTEX *vptr);
 
    PARAMETERS:
    .  vptr - Pointer to 'VERTEX' whose father element is to be found.
@@ -2675,7 +2675,7 @@ INT DeleteNodeWithID (MULTIGRID *theMG, INT id)
    D*/
 /****************************************************************************/
 
-static ELEMENT *FindFather (VERTEX *theVertex)
+ELEMENT *FindFather (VERTEX *theVertex)
 {
   ELEMENT *theElement;
   INT i;
@@ -3043,125 +3043,10 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
   return(GM_OK);
 }
 
-/****************************************************************************/
-/*D
-   SmoothMultiGrid - Interprete and execute a smooth multigrid command
-
-   SYNOPSIS:
-   INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag);
-
-   PARAMETERS:
-   .  theMG - pointer to multigrid
-   .  niter - number of iterations to do
-   .  bdryFlag - see 'smoothmg' command.
-
-   DESCRIPTION:
-   This function smoothes all grid levels of a multigrid hierarchy.
-   It processes all grid levels from bottom to top. Within each grid
-   level all nodes that are not already in coarser levels are set to
-   a new position obtained by the center of gravity of their neighboring
-   nodes. The processing from bottom to top level ensures fast convergence
-   of the algorithm. Caution! The algorithm may produce undesirable
-   results for non-convex domains.
-
-   `This function is available in 2D version only!`
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    >0 if error occured.
-   D*/
-/****************************************************************************/
-
-INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
+INT GetMidNodeParam (NODE * theNode, COORD *lambda)
 {
-  INT l,i,n,m;
-  DOUBLE N;
-  GRID *theGrid;
-  NODE *node;
-  ELEMENT *eptr;
-  VERTEX *vptr;
-  LINK *lptr;
-  COORD *corn[MAX_CORNERS_OF_ELEM],*y,*cvect;
-  COORD x[DIM],old_x[DIM];
-
-  if (bdryFlag)
-  {
-    PrintErrorMessage('E',"SmoothMultiGrid",
-                      "Smoothing boundary nodes not implemented for 3d");
-    return(GM_ERROR);
-  }
-
-  n = niter;
-  if (n<=0) n = 1;
-  if (n>50) n = 50;
-
-  for (i=0; i<n; i++)
-  {
-    for (l=0; l<=theMG->topLevel; l++)
-    {
-      theGrid=theMG->grids[l];
-
-      /* update global coordinates of new nodes */
-      if (l!=0)
-        for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
-          if (NFATHER(node)==NULL)
-          {
-            vptr=MYVERTEX(node);
-            if ((OBJT(vptr)!=BVOBJ)||(bdryFlag!=0))
-            {
-              CORNER_COORDINATES(VFATHER(vptr),m,corn);
-              LOCAL_TO_GLOBAL(m,corn,LCVECT(vptr),CVECT(vptr));
-            }
-          }
-
-      for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
-      {
-        /* skip node if it is a copy from a lower level */
-        if (NFATHER(node) != NULL)
-          continue;
-        vptr = MYVERTEX(node);
-        /* skip node if it on the boundary */
-        if (OBJT(vptr) == BVOBJ)
-          continue;
-        cvect = CVECT(vptr);
-        V_DIM_CLEAR(x);
-        N=0.0;
-        for (lptr=START(node); lptr!=NULL; lptr=NEXT(lptr))
-        {
-          y = CVECT(MYVERTEX(NBNODE(lptr)));
-          V_DIM_ADD1(y,x);
-          N+=1.0;
-        }
-
-        V_DIM_SCALESET(1/N,x,cvect);
-
-        /* if there is a father element, change local variables */
-        if (l!=0)
-        {
-          V_DIM_COPY(cvect,old_x);
-          eptr = FindFather(vptr);
-          if (eptr == NULL)
-          {
-            PrintErrorMessage('W',"MoveNode",
-                              "cannot find father element");
-            V_DIM_COPY(old_x,cvect);
-            return(GM_ERROR);
-          }
-          else
-          {
-            CORNER_COORDINATES(eptr,m,corn);
-            UG_GlobalToLocal(m,(const COORD **)corn,
-                             cvect,LCVECT(vptr));
-            VFATHER(vptr) = eptr;
-          }
-        }
-
-      }
-    }
-  }
-
-  return(GM_OK);
+  *lambda = 0.5;
+  return(0);
 }
 
 /****************************************************************************/

@@ -12,7 +12,7 @@ include ../ug.conf
 
 OBJECTS = algebra.o enrol.o evm.o mgio.o ugio.o\
 		 ugm.o cw.o initgm.o elements.o\
-		 shapes.o evalproc.o rm.o refine.o
+		 shapes.o evalproc.o rm.o refine.o smooth.o
 
 # local C compiler flags
 LCFLAGS = -I../include

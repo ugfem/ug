@@ -30,21 +30,10 @@
 #ifndef __UGM__
 #define __UGM__
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
-
-#ifndef __SWITCH__
 #include "switch.h"
-#endif
-
-#ifndef __GM__
 #include "gm.h"
-#endif
-
-#ifndef __DLMGR__
 #include "dlmgr.h"
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -109,6 +98,7 @@ INT              DisposeElement                 (GRID *theGrid, ELEMENT *theElem
 INT              DisposeTopLevel                (MULTIGRID *theMG);
 
 /* miscellaneous */
+ELEMENT     *FindFather             (VERTEX *vptr);
 INT              FindNeighborElement    (const ELEMENT *theElement, INT Side, ELEMENT **theNeighbor, INT *NeighborSide);
 INT              PointInElement                 (const COORD*, const ELEMENT *theElement);
 VIRT_HEAP_MGMT *GetGenMGUDM             (void);
