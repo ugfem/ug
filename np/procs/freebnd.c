@@ -13,7 +13,7 @@
 /*			  70550 Stuttgart												*/
 /*			  email: ug@ica3.uni-stuttgart.de								*/
 /*																			*/
-/* History:   1.9.97 begin													*/
+/* History:   01.09.97 begin, ug version 3.7								*/
 /*																			*/
 /* Remarks:                                                                                                                             */
 /*																			*/
@@ -110,11 +110,11 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT MoveFreeBoundary (MULTIGRID *mg, const VECDATA_DESC *vd)
+INT MoveFreeBoundary (MULTIGRID *mg, INT level, const VECDATA_DESC *vd)
 {
   VECTOR *vec;
   VERTEX *vert;
-  INT cl,lev;
+  INT lev;
 
         #ifdef ModelP
   /* TODO: parallel version */
@@ -128,10 +128,9 @@ INT MoveFreeBoundary (MULTIGRID *mg, const VECDATA_DESC *vd)
   if (!VD_SUCC_COMP(vd))
     REP_ERR_RETURN(1);
 
-  cl = CURRENTLEVEL(mg);
-  for (lev=0; lev<=cl; lev++)
+  for (lev=0; lev<=level; lev++)
     for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!=NULL; vec=SUCCVC(vec))
-      if ((lev==cl) || FINE_GRID_DOF(vec))
+      if ((lev==level) || FINE_GRID_DOF(vec))
       {
         vert = MYVERTEX((NODE*)VOBJECT(vec));
         if (MOVE(vert)!=DIM)

@@ -13,7 +13,7 @@
 /*			  70550 Stuttgart												*/
 /*			  email: ug@ica3.uni-stuttgart.de								*/
 /*																			*/
-/* History:   29.01.92 begin, ug version 2.0								*/
+/* History:   01.09.97 begin, ug version 3.7								*/
 /*																			*/
 /* Remarks:                                                                                                                             */
 /*																			*/
@@ -70,6 +70,6 @@
 /*																			*/
 /****************************************************************************/
 
-INT MoveFreeBoundary (MULTIGRID *mg, const VECDATA_DESC *vd);
+INT MoveFreeBoundary (MULTIGRID *mg, INT level, const VECDATA_DESC *vd);
 
 #endif
