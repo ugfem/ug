@@ -4,11 +4,12 @@
 /*																			*/
 /* File:	  bullet.c                                                                                                      */
 /*																			*/
-/* Purpose:   The bullet plotter rasterizes lines and polygons in a pixel   */
-/*            buffer using---in 3D---the z buffer algorithm. Suitable       */
-/*            output devices can display the pixel buffer in a single       */
-/*            operation which may be faster than the standard plotting      */
-/*            routine.                                                      */
+/* Purpose:   The bullet plotter rasterizes lines and polygons in a local   */
+/*            pixel buffer using -- in 3D -- the z buffer algorithm. Main   */
+/*            advantage is that rasterization can be done in parallel and   */
+/*            that merging the buffers is a simple reduction operation.     */
+/*            Besides, the output device can flush the pixels all at once.  */
+/*            This speeds up a remote X connection considerably.            */
 /*																			*/
 /* Author:	  Michael Lampe                                                                                                 */
 /*			  Institut fuer Computeranwendungen                                                     */
@@ -76,6 +77,14 @@ typedef struct {
 
 /****************************************************************************/
 /*																			*/
+/* definition of exported global variables                                  */
+/*																			*/
+/****************************************************************************/
+
+INT BulletDim;
+
+/****************************************************************************/
+/*																			*/
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
@@ -102,14 +111,6 @@ static INT DitherMatrix[DM_ROWS][DM_COLS] =
  {51, 19, 59, 27, 49, 17, 57, 25},
  {15, 47,  7, 39, 13, 45,  5, 37},
  {63, 31, 55, 23, 61, 29, 53, 21}};
-
-/****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
-/****************************************************************************/
-
-INT BulletDim;
 
 /****************************************************************************/
 /*																			*/
@@ -196,7 +197,7 @@ INT BulletOpen(PICTURE *picture, DOUBLE factor)
       *z++ = FAR_AWAY;
 
     /* init pixel buffer */
-    p = (char *)(PBuffer = (char *)z);
+    p = (char *)(PBuffer = (void *)z);
   }
   else
     p = (char *)(PBuffer = ZBuffer);
@@ -215,7 +216,7 @@ INT BulletOpen(PICTURE *picture, DOUBLE factor)
    void BulletClose(void)
 
    PARAMETERS:
-   .  none
+   .  none -
 
    DESCRIPTION:
    BulletClose closes the bullet plotter by releasing the buffers allocated
@@ -281,7 +282,7 @@ static void MergeBuffers(void *buffer1, void *buffer2)
    void BulletPlot(void)
 
    PARAMETERS:
-   .  none
+   .  none -
 
    DESCRIPTION:
    BulletPlot plots the pixel buffer via the output device's PlotPixelBuffer
@@ -309,18 +310,13 @@ static void FramePicture(void)
 void BulletPlot(void)
 {
   INT son;
-  void *data;
+  void *scratch;
 
   /* reuse z buffer if possible */
-  if (BulletDim == 3)
-  {
-    if (sizeof(ZTYP) >= 4)
-      data = ZBuffer;
-    else
-      data = NULL;
-  }
+  if (BulletDim == 3 && sizeof(ZTYP) >= 4)
+    scratch = ZBuffer;
   else
-    data = NULL;
+    scratch = NULL;
 
   /* merge buffers */
 #ifdef ModelP
@@ -334,7 +330,7 @@ void BulletPlot(void)
 #endif
   {
     FramePicture();
-    (*OutputDevice->PlotPixelBuffer)(PBuffer, data, NbPixels,
+    (*OutputDevice->PlotPixelBuffer)(PBuffer, scratch, NbPixels,
                                      XShift, YShift, Width, Height);
   }
 }
@@ -360,9 +356,7 @@ static void DrawPoint(INT x, INT y, DOUBLE z, char c)
     }
   }
   else
-  {
     P_BUFFER(y)[x]=c;
-  }
 }
 
 /*****************************************************************************
@@ -378,7 +372,7 @@ static void DrawLine(POINT p1, DOUBLE z1, POINT p2, DOUBLE z2, char c)
   INT x, y, dx, dy;
 
   if (p1.x == p2.x && p1.y == p2.y) {
-    DrawPoint(p1.x, p1.y, z1, c);
+    DrawPoint(p1.x, p1.y, MAX(z1, z2), c);
     return;
   }
 
@@ -599,15 +593,12 @@ void BulletLine(DOUBLE *point1, DOUBLE *point2, long color)
   p1.y = (INT)(point1[1] - YShift + 0.5);
   p2.x = (INT)(point2[0] - XShift + 0.5);
   p2.y = (INT)(point2[1] - YShift + 0.5);
-  if (BulletDim == 3)
-  {
-    z1   = point1[2];
-    z2   = point2[2];
+  if (BulletDim == 3) {
+    z1 = point1[2];
+    z2 = point2[2];
   }
   else
-  {
     z1 = z2 = 0.0;
-  }
   DrawLine(p1, z1, p2, z2, color);
 }
 
@@ -675,26 +666,22 @@ void BulletPolygon(DOUBLE *points, INT nb, DOUBLE intensity, long color)
   p0.x = (INT)((*points++) - XShift + 0.5);
   p0.y = (INT)((*points++) - YShift + 0.5);
   if (BulletDim == 3)
-  {
     z0   = *points++;
-  }
   else
-  {
     z0 = 0.0;
-  }
   for (k = 1; k < nb-1; k++) {
     p1.x = (INT)((*points++) - XShift + 0.5);
     p1.y = (INT)((*points++) - YShift + 0.5);
     if (BulletDim == 3)
-      z1   = *points++;
+      z1 = *points++;
     else
-      z1   = 0.0;
+      z1 = 0.0;
     p2.x = (INT)((*points++) - XShift + 0.5);
     p2.y = (INT)((*points++) - YShift + 0.5);
     if (BulletDim == 3)
-      z2   = *points;
+      z2 = *points;
     else
-      z2   = 0.0;
+      z2 = 0.0;
     points -= 2;
     DrawTriangle(p0, z0, p1, z1, p2, z2, intensity, color);
   }

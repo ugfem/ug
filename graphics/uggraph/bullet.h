@@ -4,11 +4,12 @@
 /*																			*/
 /* File:	  bullet.h                                                                                                      */
 /*																			*/
-/* Purpose:   The bullet plotter rasterizes lines and polygons in a pixel   */
-/*            buffer using---in 3D---the z buffer algorithm. Suitable       */
-/*            output devices can display the pixel buffer in a single       */
-/*            operation which may be faster than the standard plotting      */
-/*            routine.                                                      */
+/* Purpose:   The bullet plotter rasterizes lines and polygons in a local   */
+/*            pixel buffer using -- in 3D -- the z buffer algorithm. Main   */
+/*            advantage is that rasterization can be done in parallel and   */
+/*            that merging the buffers is a simple reduction operation.     */
+/*            Besides, the output device can flush the pixels all at once.  */
+/*            This speeds up a remote X connection considerably.            */
 /*																			*/
 /* Author:	  Michael Lampe                                                                                                 */
 /*			  Institut fuer Computeranwendungen                                                     */
@@ -24,8 +25,7 @@
 /****************************************************************************/
 
 /* RCS_ID
-   $Header: /hosts/dom/cvs/UG/ug/graphics/uggraph/wop.h,v 1.2 1998/06/03 09:07:08 stefan Exp
-   $
+   $Header$
  */
 
 /****************************************************************************/
@@ -37,13 +37,8 @@
 #ifndef __BULLET__
 #define __BULLET__
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
-
-#ifndef __WPM__
 #include "wpm.h"
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -73,7 +68,6 @@
 
 extern INT BulletDim;
 
-
 /****************************************************************************/
 /*																			*/
 /*  exported functions	                                                                                                */
@@ -83,8 +77,8 @@ extern INT BulletDim;
 INT BulletOpen(PICTURE *picture, DOUBLE factor);
 void BulletClose(void);
 void BulletPlot(void);
-void BulletLine(DOUBLE *p1, DOUBLE *p2, long c);
-void BulletPolyLine(DOUBLE *p, INT n, long c);
-void BulletPolygon(DOUBLE *p, INT n, DOUBLE i, long c);
+void BulletLine(DOUBLE *point1, DOUBLE *point2, long color);
+void BulletPolyLine(DOUBLE *points, INT nb, long color);
+void BulletPolygon(DOUBLE *points, INT nb, DOUBLE intensity, long color);
 
 #endif
