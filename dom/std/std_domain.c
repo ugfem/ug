@@ -3377,18 +3377,30 @@ INT ReadAndPrintArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
 {
   INT i;
   char option[OPTIONLEN];
-  float x,y;
+  float x,y,z;
 
   for (i=0; i<argc; i++)
     if (argv[i][0]==name[0])
     {
-      if (sscanf(argv[i],"%s %f %f",option,&x,&y)!=3)
+          #ifdef __TWODIM__
+      if (sscanf(argv[i],"%s %f %f",option,&x,&y) != 3)
         continue;
+          #endif
+          #ifdef __THREEDIM__
+      if (sscanf(argv[i],"%s %f %f %f",option,&x,&y,&z) != 4)
+        continue;
+          #endif
       if (strcmp(option,name) == 0)
       {
         pos[0] = x;
         pos[1] = y;
+              #ifdef __TWODIM__
         UserWriteF("set %s to (%f,%f)\n",name,x,y);
+              #endif
+              #ifdef __THREEDIM__
+        pos[2] = z;
+        UserWriteF("set %s to (%f,%f)\n",name,x,y);
+              #endif
         return(0);
       }
     }
