@@ -1078,10 +1078,10 @@ static void idcons_CheckPairs (void)
  */
 
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
-void DDD_IdentifyEnd (void)
+DDD_RET DDD_IdentifyEnd (void)
 #endif
 #ifdef CPP_FRONTEND
-void DDD_Library::IdentifyEnd (void)
+DDD_RET DDD_Library::IdentifyEnd (void)
 #endif
 {
   ID_PLIST        *plist, *pnext=NULL;
@@ -1305,6 +1305,8 @@ void DDD_Library::IdentifyEnd (void)
 #       endif
 
   IdentStepMode(IMODE_BUSY);
+
+  return(DDD_RET_OK);
 }
 
 

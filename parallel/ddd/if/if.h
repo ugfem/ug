@@ -88,6 +88,7 @@ typedef DDD_OBJ IFObjPtr;
 #endif
 
 
+
 /****************************************************************************/
 /*                                                                          */
 /* data structures                                                          */
@@ -211,6 +212,10 @@ void    IFExecLoopObj (ExecProcPtr, IFObjPtr *, int);
 void    IFExecLoopCplX (ExecProcXPtr, COUPLING **, int);
 #endif
 #endif
+char *  IFCommHdrLoopCpl (ComProcHdrPtr, COUPLING **, char *, size_t, int);
+char *  IFCommHdrLoopCplX (ComProcHdrXPtr, COUPLING **, char *, size_t, int);
+void    IFExecHdrLoopCpl (ExecProcHdrPtr, COUPLING **, int);
+void    IFExecHdrLoopCplX (ExecProcHdrXPtr, COUPLING **, int);
 
 
 /* ifobjsc.c */

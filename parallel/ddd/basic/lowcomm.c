@@ -233,7 +233,7 @@ void LC_Init (AllocFunc aAllocFunc, FreeFunc aFreeFunc)
 
 
 /**
-        Aborts LowComm subsystem.
+        Exits LowComm subsystem.
         This function frees memory allocated by the LowComm subsystem
         and shuts down its communication structures.
  */
@@ -551,7 +551,9 @@ static void LC_FreeSendQueue (void)
 
   for(md=LC_SendQueue; md!=NULL; md=next)
   {
-    assert(md->msgState==MSTATE_READY);
+    /* the following assertion is too picky. Freeing of
+       message queues should be possible in all msgStates. */
+    /*assert(md->msgState==MSTATE_READY);*/
 
     next = md->next;
     LC_DeleteMsg((LC_MSGHANDLE)md);
@@ -575,7 +577,9 @@ static void LC_FreeRecvQueue (void)
 
   for(md=LC_RecvQueue; md!=NULL; md=next)
   {
-    assert(md->msgState==MSTATE_READY);
+    /* the following assertion is too picky. Freeing of
+       message queues should be possible in all msgStates. */
+    /*assert(md->msgState==MSTATE_READY);*/
 
     next = md->next;
     LC_DeleteMsg((LC_MSGHANDLE)md);
@@ -703,7 +707,7 @@ int LC_MsgAlloc (LC_MSGHANDLE msg)
         NOTE: one big memory block is allocated and used for all
               message buffers.
  */
-static void LC_PrepareRecv (void)
+static RETCODE LC_PrepareRecv (void)
 {
   MSG_DESC *md;
   size_t sumSize;
@@ -725,7 +729,7 @@ static void LC_PrepareRecv (void)
     DDD_PrintError('E', 6610, STR_NOMEM " in LC_PrepareRecv");
     sprintf(cBuffer, "(size of message buffer: %d)", sumSize);
     DDD_PrintError('E', 6610, cBuffer);
-    HARD_EXIT;
+    RET_ON_ERROR;
   }
 
 
@@ -741,6 +745,8 @@ static void LC_PrepareRecv (void)
 
     md->msgState=MSTATE_COMM;
   }
+
+  RET_ON_OK;
 }
 
 
@@ -1080,6 +1086,7 @@ int LC_Connect (LC_MSGTYPE mtyp)
   MSG_DESC *md;
   int i, p;
 
+
   if (nSends<0 || nSends>procs-1)
   {
     sprintf(cBuffer, "cannot send %d messages (must be less than %d)",
@@ -1110,19 +1117,29 @@ int LC_Connect (LC_MSGTYPE mtyp)
 
   /* inform message receivers */
   nRecvs = DDD_Notify();
-  if (nRecvs==ERROR)
+  if (nRecvs<0)
   {
-    DDD_PrintError('E', 6621, "Notify() failed in LC_Connect()");
-    HARD_EXIT;
+    /* some processor raised an exception */
+    sprintf(cBuffer,
+            "Notify() raised exception #%d in LC_Connect()",
+            -nRecvs);
+    DDD_PrintError('E', 6624, cBuffer);
+
+    /* automatically call LC_Cleanup() */
+    DDD_NotifyEnd();
+    LC_Cleanup();
+
+    return(nRecvs);
   }
 
 
-  if (nRecvs<0 || nRecvs>procs-1)
+  if (nRecvs>procs-1)
   {
     sprintf(cBuffer, "cannot receive %d messages (must be less than %d)",
             nRecvs, procs-1);
     DDD_PrintError('E', 6622, cBuffer);
-    HARD_EXIT;
+    DDD_NotifyEnd();
+    return(EXCEPTION_LOWCOMM_CONNECT);
   }
 
 
@@ -1138,6 +1155,12 @@ int LC_Connect (LC_MSGTYPE mtyp)
   if (nRecvs>0)
   {
     theRecvArray = (LC_MSGHANDLE *)AllocTmpReq(sizeof(LC_MSGHANDLE)*nRecvs, TMEM_ANY);
+    if (theRecvArray==NULL)
+    {
+      DDD_PrintError('E', 6623, "out of memory in LC_Connect()");
+      DDD_NotifyEnd();
+      return(EXCEPTION_LOWCOMM_CONNECT);
+    }
   }
 
 
@@ -1162,7 +1185,7 @@ int LC_Connect (LC_MSGTYPE mtyp)
     if (! IS_OK(DDD_GetChannels(nRecvs+nSends)))
     {
       DDD_PrintError('E', 6620, "couldn't get channels in LC_Connect()");
-      HARD_EXIT;
+      return(EXCEPTION_LOWCOMM_CONNECT);
     }
   }
 
@@ -1173,7 +1196,10 @@ int LC_Connect (LC_MSGTYPE mtyp)
 
 
   if (nRecvs>0)
-    LC_PrepareRecv();
+  {
+    if (! IS_OK(LC_PrepareRecv()))
+      return(EXCEPTION_LOWCOMM_CONNECT);
+  }
 
 
 #       if DebugLowComm<=9
@@ -1182,6 +1208,54 @@ int LC_Connect (LC_MSGTYPE mtyp)
 #       endif
 
   return(nRecvs);
+}
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  LC_Abort                                                      */
+/*                                                                          */
+/****************************************************************************/
+
+int LC_Abort (int exception)
+{
+  int retException;
+
+  if (exception>EXCEPTION_LOWCOMM_USER)
+  {
+    DDD_PrintError('E', 6626,
+                   "exception must be <=EXCEPTION_LOWCOMM_USER in LC_Abort()");
+    HARD_EXIT;
+  }
+
+
+  DDD_NotifyBegin(exception);
+
+#       if DebugLowComm<=9
+  sprintf(cBuffer, "%4d: LC_Abort() exception=%d ...\n",
+          me, exception);
+  DDD_PrintDebug(cBuffer);
+#       endif
+
+
+  /* inform message receivers */
+  retException = DDD_Notify();
+
+  DDD_NotifyEnd();
+
+
+#       if DebugLowComm<=9
+  sprintf(cBuffer, "%4d: LC_Abort() ready, exception=%d.\n",
+          me, retException);
+  DDD_PrintDebug(cBuffer);
+#       endif
+
+
+  /* automatically call LC_Cleanup() */
+  LC_Cleanup();
+
+  return(retException);
 }
 
 
