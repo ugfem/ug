@@ -750,25 +750,36 @@ static INT l_vector_average (GRID *g, const VECDATA_DESC *x)
 {
 	VECTOR *v;
 	DOUBLE fac;
-	INT vc,i,type,mask,n;
+	INT vc,i,type,mask,n,vecskip;
 	const SHORT *Comp;	
 
 	if (VD_IS_SCALAR(x)) {
         mask = VD_SCALTYPEMASK(x);
 		vc = VD_SCALCMP(x);
 		for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v)) 
-		    if (mask & VDATATYPE(v)) 
+		    if ((VECSKIP(v) == 0) && (mask & VDATATYPE(v)))
 			    VVALUE(v,vc) *= 1.0 / (DDD_InfoNCopies(PARHDR(v)) + 1.0);
+
+		for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v)) 
+		  UserWriteF("v %f m %d\n",VVALUE(v,vc),DDD_InfoNCopies(PARHDR(v)));
+
 	}
 	else 
 	    for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v)) {
-		  type = VTYPE(v);
-		  n = VD_NCMPS_IN_TYPE(x,type);
-		  if (n == 0) continue;
-		  Comp = VD_CMPPTR_OF_TYPE(x,type);
-		  fac = 1.0 / (DDD_InfoNCopies(PARHDR(v)) + 1.0);
-		  for (i=0; i<n; i++)
-		      VVALUE(v,Comp[i]) *= fac;
+		    type = VTYPE(v);
+			n = VD_NCMPS_IN_TYPE(x,type);
+			if (n == 0) continue;
+			vecskip = VECSKIP(v);
+			Comp = VD_CMPPTR_OF_TYPE(x,type);
+			fac = 1.0 / (DDD_InfoNCopies(PARHDR(v)) + 1.0);
+			if (fac == 1.0) continue;
+			if (vecskip == 0)
+			    for (i=0; i<n; i++)
+				    VVALUE(v,Comp[i]) *= fac;
+			else
+			    for (i=0; i<n; i++)
+				    if (!(vecskip & (1<<i)))	
+					    VVALUE(v,Comp[i]) *= fac;			
 		}
 
 	return(NUM_OK);
@@ -824,6 +835,8 @@ INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 
     ConsVector = (VECDATA_DESC *)x;
 
+	PrintVector(GRID_ON_LEVEL(mg,tl),x,3,3);
+
 	m = 0;
 	for (tp=0; tp<NVECTYPES; tp++)
 		m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
@@ -836,9 +849,13 @@ INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 			DDD_IFAExchange(BorderVectorSymmIF, level, m * sizeof(DOUBLE),
 							Gather_VectorComp, Scatter_VectorComp);
 
+	PrintVector(GRID_ON_LEVEL(mg,tl),x,3,3);
+
 	for (level=fl; level<=tl; level++) 
 	    if (l_vector_average(GRID_ON_LEVEL(mg,level),x) != NUM_OK)
 		    REP_ERR_RETURN(NUM_ERROR);
+
+	PrintVector(GRID_ON_LEVEL(mg,tl),x,3,3);
 
 	return (NUM_OK);
 }
