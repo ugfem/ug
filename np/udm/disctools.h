@@ -63,7 +63,7 @@ START_NAMESPACE
 #define MAX_BND_VECTORS         8
 #endif
 
-#define MAXVD                           10
+#define MAXVD                           25
 #define MAXMD                           5
 
 #define MVMD_NVD(p)                     ((p)->nvd)
