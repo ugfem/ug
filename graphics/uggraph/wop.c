@@ -4143,7 +4143,7 @@ static INT BulletDraw2D (DRAWINGOBJ *q)
 {
 	INT j, n, end;
 	DOUBLE a[2], b[2], points[2*MAX_POINTS_OF_POLY], *pp;
-	DOUBLE p1[2], p2[2];
+	DOUBLE p1[2], p2[2], norm;
 	long color, color2;
 	
 	end = 0;
@@ -4173,7 +4173,21 @@ static INT BulletDraw2D (DRAWINGOBJ *q)
 				DO_inc_n(q,8);
 				break;
 			case DO_ARROW:
-				DO_inc_n(q,6);
+				DO_inc(q)
+				color = DO_2l(q); DO_inc(q);
+				V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo, p1); DO_inc_n(q,2);
+				(*OBS_ProjectProc)(p1,(COORD_POINT *)points);
+				V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo, p1); DO_inc_n(q,2);
+				(*OBS_ProjectProc)(p1,(COORD_POINT *)(points+6));
+				points[2] = ARR_ALPHA*points[6] + (1.0-ARR_ALPHA)*points[0];
+				points[3] = ARR_ALPHA*points[7] + (1.0-ARR_ALPHA)*points[1];
+				a[0] = points[6]-points[2]; a[1] = points[7]-points[3];
+				points[4] = points[2] + ARR_COS*a[0] - ARR_SIN*a[1];
+				points[5] = points[3] + ARR_SIN*a[0] + ARR_COS*a[1];
+				points[8] = points[2] + ARR_COS*a[0] + ARR_SIN*a[1];
+				points[9] = points[3] - ARR_SIN*a[0] + ARR_COS*a[1];
+				points[10] = points[2]; points[11] = points[3];
+				BulletPolyLine(points, 6, color);
 				break;
 			case DO_DEPEND:
 				DO_inc_n(q,6);
@@ -14499,12 +14513,12 @@ static void CalcViewableSides(ELEMENT *theElement)
 						Vector[2] += (x[k][0]-x[l][0])*(x[k][1]+x[l][1]);
 					}
 					V3_SUBTRACT(xc,xcs,Vector03);
-					V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
-					if (ScalarPrd>0)
+					V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd);
+					if (ScalarPrd>0.0)
 						V3_SCALE(-1.0, Vector);
 
 					/* test side */
-					if (Vector[0]*ViewDirection[0]+Vector[1]*ViewDirection[1]+Vector[2]*ViewDirection[2]>0)
+					if (Vector[0]*ViewDirection[0]+Vector[1]*ViewDirection[1]+Vector[2]*ViewDirection[2]>0.0)
 					{
 						Viewablility |= (1<<i);
 					}
