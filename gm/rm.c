@@ -49,6 +49,9 @@
 #include "rm.h"
 
 #include "defaults.h"
+#ifdef ModelP
+#include "parallel.h"
+#endif
 
 /****************************************************************************/
 /*																			*/
