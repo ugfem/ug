@@ -646,7 +646,6 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
       old_re[i]=ew_re[i];
       old_im[i]=ew_im[i];
     }
-    if (done) break;
 
     /* calculate shift */
     shift=0.5*(shift+ew_re[0]);
@@ -662,11 +661,14 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
     DoLS=0; if (shift!=shift_old) DoLS=1;shift_old=shift;
 
     /* postprocess if */
-    if (iter> 0 && (iter==np->maxiter-1 || DoLS))
+    if (iter> 0 && (done || iter==np->maxiter-1 || DoLS))
     {
       if (np->LS->PostProcess!=NULL)
         if ((*np->LS->PostProcess)(np->LS,level,ev[0],np->r,np->M,&result)) return(1);
     }
+
+    /* done? */
+    if (done) break;
   }
 
   /* print result */
