@@ -145,6 +145,7 @@ static MULTIGRID *GBNV_mg;                      /* multigrid							*/
 static INT GBNV_n;                                      /* list items							*/
 static INT GBNV_curr;                           /* curr pos								*/
 static VECTOR **GBNV_list=NULL;         /* list pointer							*/
+static INT GBNV_MarkKey;                        /* key for Mark/Release					*/
 
 /****************************************************************************/
 /*																			*/
@@ -2186,8 +2187,8 @@ INT PrepareGetBoundaryNeighbourVectors (GRID *theGrid, INT *MaxListLen)
 
   /* allocate list storage: 3 pointers each */
   GBNV_mg = MYMG(theGrid);
-  MarkTmpMem(MGHEAP(GBNV_mg));
-  GBNV_list = (VECTOR **) GetTmpMem(MGHEAP(GBNV_mg),3*GBNV_n*sizeof(VECTOR *));
+  MarkTmpMem(MGHEAP(GBNV_mg),&GBNV_MarkKey);
+  GBNV_list = (VECTOR **) GetTmpMem(MGHEAP(GBNV_mg),3*GBNV_n*sizeof(VECTOR *),GBNV_MarkKey);
   if (GBNV_list==NULL)
     REP_ERR_RETURN(1);
 
@@ -2360,8 +2361,10 @@ INT GetBoundaryNeighbourVectors (INT dt, INT obj, INT *cnt, VECTOR *VecList[])
 
 INT FinishBoundaryNeighbourVectors (void)
 {
-  if (ReleaseTmpMem(MGHEAP(GBNV_mg)))
+        #ifdef __TWODIM
+  if (ReleaseTmpMem(MGHEAP(GBNV_mg)),GBNV_MarkKey)
     REP_ERR_RETURN(1);
+        #endif
 
   GBNV_list = NULL;
 
@@ -2699,15 +2702,13 @@ static INT ConnectWithNeighborhood (ELEMENT *theElement, GRID *theGrid, ELEMENT 
 
 INT CreateConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
 {
-  MULTIGRID *theMG;
   FORMAT *theFormat;
   INT MaxDepth;
   INT *ConDepth;
   INT *MatSize;
 
   /* set pointers */
-  theMG = theGrid->mg;
-  theFormat = theMG->theFormat;
+  theFormat = GFORMAT(theGrid);
   MaxDepth = FMT_CONN_DEPTH_MAX(theFormat);
   ConDepth = FMT_CONN_DEPTH_PTR(theFormat);
   MatSize = FMT_S_MATPTR(theFormat);
@@ -2794,7 +2795,6 @@ static INT ConnectInsertedWithNeighborhood (ELEMENT *theElement, GRID *theGrid, 
 
 INT InsertedElementCreateConnection (GRID *theGrid, ELEMENT *theElement)
 {
-  MULTIGRID *theMG;
   FORMAT *theFormat;
   INT MaxDepth;
 
@@ -2802,8 +2802,7 @@ INT InsertedElementCreateConnection (GRID *theGrid, ELEMENT *theElement)
     RETURN (1);
 
   /* set pointers */
-  theMG = theGrid->mg;
-  theFormat = theMG->theFormat;
+  theFormat = GFORMAT(theGrid);
   MaxDepth = (INT)(floor(0.5*(double)FMT_CONN_DEPTH_MAX(theFormat)));
 
   /* reset used flags in neighborhood */
@@ -3302,14 +3301,12 @@ static INT CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *cente
 INT ElementCheckConnection (GRID *theGrid, ELEMENT *theElement)
 {
   FORMAT *theFormat;
-  MULTIGRID *theMG;
   INT MaxDepth;
   INT *ConDepth;
   INT *MatSize;
 
   /* set pointers */
-  theMG = theGrid->mg;
-  theFormat = theMG->theFormat;
+  theFormat = GFORMAT(theGrid);
   MaxDepth = FMT_CONN_DEPTH_MAX(theFormat);
   ConDepth = FMT_CONN_DEPTH_PTR(theFormat);
   MatSize = FMT_S_MATPTR(theFormat);
@@ -3846,11 +3843,11 @@ INT VectorInElement (ELEMENT *theElement, VECTOR *theVector)
 
 INT VectorPosition (const VECTOR *theVector, DOUBLE *position)
 {
-  INT i, j;
+  INT i;
   EDGE *theEdge;
-  ELEMENT *theElement;
         #ifdef __THREEDIM__
-  INT theSide;
+  ELEMENT *theElement;
+  INT theSide,j;
         #endif
 
   ASSERT(theVector != NULL);
@@ -4523,6 +4520,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, INT mode, const INT *order, const INT 
   INT i,entries,nm;
   HEAP *theHeap;
   INT takeSkip, takeNonSkip;
+  INT MarkKey;
 
   theMG   = MYMG(theGrid);
   entries = NVEC(theGrid);
@@ -4542,10 +4540,10 @@ INT LexOrderVectorsInGrid (GRID *theGrid, INT mode, const INT *order, const INT 
       entries++;
   if (entries < 2) return(0);
   theHeap = MGHEAP(theMG);
-  MarkTmpMem(theHeap);
-  if ((table = (VECTOR **)GetTmpMem(theHeap,entries*sizeof(VECTOR *)))==NULL)
+  MarkTmpMem(theHeap,&MarkKey);
+  if ((table = (VECTOR **)GetTmpMem(theHeap,entries*sizeof(VECTOR *),MarkKey))==NULL)
   {
-    ReleaseTmpMem(theHeap);
+    ReleaseTmpMem(theHeap,MarkKey);
     PrintErrorMessage('E',"LexOrderVectorsInGrid",
                       "could not allocate memory from the MGHeap");
     return (2);
@@ -4589,7 +4587,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, INT mode, const INT *order, const INT 
             #endif
   }
   if (!AlsoOrderMatrices) {
-    ReleaseTmpMem(theHeap);
+    ReleaseTmpMem(theHeap,MarkKey);
     return (0);
   }
   MatTable = (MATRIX **) table;
@@ -4614,7 +4612,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, INT mode, const INT *order, const INT 
     }
     VSTART(theVec) = MatTable[0];
   }
-  ReleaseTmpMem(theHeap);
+  ReleaseTmpMem(theHeap,MarkKey);
 
   return (0);
 }
@@ -4884,6 +4882,7 @@ INT ShellOrderVectors (GRID *theGrid, VECTOR *seed)
   MATRIX *theM;
   HEAP *theHeap=MGHEAP(MYMG(theGrid));
   INT i,n;
+  INT MarkKey;
 
   /* count vectors */
   n = 0;
@@ -4894,9 +4893,9 @@ INT ShellOrderVectors (GRID *theGrid, VECTOR *seed)
     return(0);
 
   /* find new ordering */
-  MarkTmpMem(theHeap);
-  buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
-  vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n);
+  MarkTmpMem(theHeap,&MarkKey);
+  buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
+  vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
   fifo_init(&myfifo,buffer,sizeof(VECTOR*)*n);
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
     SETVCUSED(theV,0);
@@ -4926,7 +4925,7 @@ INT ShellOrderVectors (GRID *theGrid, VECTOR *seed)
   for (i=0; i<n; i++) GRID_UNLINK_VECTOR(theGrid,vlist[i]);
   for (i=0; i<n; i++) GRID_LINK_VECTOR(theGrid,vlist[i],PrioMaster);
 
-  ReleaseTmpMem(theHeap);
+  ReleaseTmpMem(theHeap,MarkKey);
 
   return (0);
 }
@@ -5054,7 +5053,9 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   INT up, down;
   HEAP *theHeap;
 
-  ASSERT(1);       /* see TODO below */
+        #ifdef ModelP
+  ASSERT(FALSE);       /* see TODO below */
+        #endif
 
   /********************************************************************/
   /*	init				                                                                                        */
@@ -5327,9 +5328,11 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   }
   else if (mode==GM_FFLCLC)
   {
+    INT MarkKey;
+
     theHeap = MYMG(theGrid)->theHeap;
-    Mark(theHeap,FROM_TOP);
-    if ((FBVList=(BLOCKVECTOR **)GetMem(theHeap,3*(cycle+1)*sizeof(BLOCKVECTOR*),FROM_TOP))==NULL) RETURN (1);
+    MarkTmpMem(theHeap,&MarkKey);
+    if ((FBVList=(BLOCKVECTOR **)GetTmpMem(theHeap,3*(cycle+1)*sizeof(BLOCKVECTOR*),MarkKey))==NULL) RETURN (1);
     for (i=0; i<3*cycle+3; i++) FBVList[i]=NULL;
     LBVList = FBVList + cycle + 1;
     CBVList = LBVList + cycle + 1;
@@ -5350,7 +5353,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
       if (InsertBlockvector_l0(theGrid,CBVList[i],LBVList[k],0,YES)) RETURN (1);
     }
 
-    Release(theHeap,FROM_TOP);
+    ReleaseTmpMem(theHeap,MarkKey);
   }
   else if (mode==GM_CCFFLL)
   {
@@ -5671,8 +5674,11 @@ static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT verboselevel)
   INT StrongInflow,nInflow,StrongOutflow,nOutflow,pushInflow,pushOutflow;
   INT bvn;
   char gen_label[3];
+  INT MarkKey;
 
-  ASSERT(1);       /* see TODO below */
+        #ifdef ModelP
+  ASSERT(FALSE);       /* see TODO below */
+        #endif
 
   gen_label[GM_GEN_FIRST] = 'F';
   gen_label[GM_GEN_LAST]  = 'L';
@@ -5686,10 +5692,10 @@ static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT verboselevel)
   FreeAllBV(theGrid);
 
   /* init fifos */
-  Mark(MGHEAP(MYMG(theGrid)),FROM_TOP);
+  MarkTmpMem(MGHEAP(MYMG(theGrid)),&MarkKey);
   fifosize = 30*floor(sqrt(NVEC(theGrid)))*sizeof(VECTOR*);
-  fifo_init(&FFifo,GetMem(MGHEAP(MYMG(theGrid)),fifosize,FROM_TOP),fifosize);
-  fifo_init(&LFifo,GetMem(MGHEAP(MYMG(theGrid)),fifosize,FROM_TOP),fifosize);
+  fifo_init(&FFifo,GetTmpMem(MGHEAP(MYMG(theGrid)),fifosize,MarkKey),fifosize);
+  fifo_init(&LFifo,GetTmpMem(MGHEAP(MYMG(theGrid)),fifosize,MarkKey),fifosize);
 
   /* init USED, N_INFLOW and N_OUTFLOW */
   StrongInflow = StrongOutflow = 0;
@@ -6083,7 +6089,7 @@ static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT verboselevel)
   for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector))
     VINDEX(theVector) = i++;
 
-  Release(MGHEAP(MYMG(theGrid)),FROM_TOP);
+  ReleaseTmpMem(MGHEAP(MYMG(theGrid)),MarkKey);
 
   return (0);
 }
