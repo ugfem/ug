@@ -59,6 +59,15 @@ case $MODEL in
 		echo mpprun -n $PROC $1;
 		mpprun -n $PROC $1;
 		;;
+	SHMEMT3D)
+		if test ! -f $1$2
+		then
+			echo fixing executable...
+			mppfixpe -o $1$2 -X $2 $1;
+		fi
+		echo mppexec $1$2;
+		mppexec $1$2;
+		;;
 	SEQ)
 		$1 $3 $4;
         ;;
