@@ -6,14 +6,14 @@
 /*                                                                          */
 /* Purpose:   tools for assembling                                          */
 /*                                                                          */
-/* Author:	  Christian Wieners                                                                             */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
-/*																			*/
-/* History:   Nov 27 95 begin                                                                           */
+/* Author:    Christian Wieners                                             */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/* email:     ug@ica3.uni-stuttgart.de                                      */
+/*                                                                          */
+/* History:   Nov 27 95 begin                                               */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -81,25 +81,18 @@ USING_UG_NAMESPACES
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*D
-   MG_GetCoeffFct - get function pointer
+/** \brief Get function pointer
 
-   SYNOPSIS:
-   CoeffProcPtr MG_GetCoeffFct (const MULTIGRID *theMG, INT n);
+   \param theMG - pointer to a multigrid
+   \param n - number of coefficient function
 
-   PARAMETERS:
-   .  theMG - pointer to a multigrid
-   .  n - number of coefficient function
-
-   DESCRIPTION:
    This function returns a pointer to the nth coefficient function
    of the multigrid.
 
    RETURN VALUE:
-   CoeffProcPtr
    .n    pointer to function
    .n    NULL if n is too large
-   D*/
+ */
 /****************************************************************************/
 
 CoeffProcPtr NS_DIM_PREFIX MG_GetCoeffFct (const MULTIGRID *theMG, INT n)
@@ -117,25 +110,18 @@ CoeffProcPtr NS_DIM_PREFIX MG_GetCoeffFct (const MULTIGRID *theMG, INT n)
 }
 
 /****************************************************************************/
-/*D
-   MG_GetUserFct - get function pointer
+/** \brief Get function pointer
 
-   SYNOPSIS:
-   UserProcPtr MG_GetUserFct (MULTIGRID *theMG, INT n);
+   \param theMG - pointer to a multigrid
+   \param n - number of a user function
 
-   PARAMETERS:
-   .  theMG - pointer to a multigrid
-   .  n - number of a user function
-
-   DESCRIPTION:
    This function returns a pointer to the nth user function
    of the multigrid.
 
    RETURN VALUE:
-   CoeffProcPtr
    .n    pointer to function
    .n    NULL if n is too large
-   D*/
+ */
 /****************************************************************************/
 
 UserProcPtr NS_DIM_PREFIX MG_GetUserFct (MULTIGRID *theMG, INT n)
@@ -153,20 +139,18 @@ UserProcPtr NS_DIM_PREFIX MG_GetUserFct (MULTIGRID *theMG, INT n)
 }
 
 /****************************************************************************/
-/** \brief Get vector list
+/** \brief Get vector list for an element
  *
  * @param theElement pointer to an element
-   .  vec - vector list
-   .  theVD - vector descriptor
+   \param vec - vector list
+   \param theVD - vector descriptor
 
    This function gets a list of vectors corresponding to an element.
    It uses GetVectorsOfDataTypesInObjects (which should be preferred).
 
    RETURN VALUE:
-
-   .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetAllVectorsOfElementOfType (ELEMENT *theElement, VECTOR **vec,
@@ -179,6 +163,22 @@ INT NS_DIM_PREFIX GetAllVectorsOfElementOfType (ELEMENT *theElement, VECTOR **ve
 
   return (cnt);
 }
+
+/****************************************************************************/
+/** \brief Get vector list for an element side
+ *
+ * @param theElement pointer to an element
+   \param side the number of the element side
+   \param vec - vector list
+   \param theVD - vector descriptor
+
+   This function gets a list of vectors corresponding to an element.
+   It uses GetVectorsOfDataTypesInObjects (which should be preferred).
+
+   RETURN VALUE:
+   .n    -1 if error occured
+ */
+/****************************************************************************/
 
 INT NS_DIM_PREFIX GetAllVectorsOfElementsideOfType (ELEMENT *theElement, INT side,
                                                     VECTOR **vec,
@@ -228,28 +228,20 @@ INT NS_DIM_PREFIX GetAllVectorsOfElementsideOfType (ELEMENT *theElement, INT sid
 
 
 /****************************************************************************/
-/*D
-   GetElementsideIndices - compute vector indices of an element side
+/** \brief Compute vector indices of an element side
 
-   SYNOPSIS:
-   INT GetElementsideIndices (ELEMENT *theElement, INT side,
-   VECDATA_DESC *theVD, INT *index);
+   \param theElement - pointer to an element
+   \param side - element side
+   \param theVD - type vector descriptor
+   \param index - index list
 
-   PARAMETERS:
-   .  theElement - pointer to an element
-   .  side - element side
-   .  theVD - type vector descriptor
-   .  index - index list
-
-   DESCRIPTION:
    This function gets the indices of the vector pointers of an element
    corresponding to a side.
 
    RETURN VALUE:
-   INT
    .n    number of components of the element side
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetElementsideIndices (ELEMENT *theElement, INT side,
@@ -308,26 +300,18 @@ INT NS_DIM_PREFIX GetElementsideIndices (ELEMENT *theElement, INT side,
 }
 
 /****************************************************************************/
-/*D
-   GetElementVPtrs - get list of DOUBLE pointers for vectors
+/** \brief Get list of DOUBLE pointers for vectors
 
-   SYNOPSIS:
-   INT GetElementVPtrs (ELEMENT *theElement, VECDATA_DESC *theVD,
-   DOUBLE **vptr);
+   \param theElement - pointer to an element
+   \param theVD - type vector descriptor
+   \param vptr - pointer to double values
 
-   PARAMETERS:
-   .  theElement - pointer to an element
-   .  theVD - type vector descriptor
-   .  vptr - pointer to double values
-
-   DESCRIPTION:
    This function gets all local vector pointers corresponding to an element.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetElementVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD, DOUBLE **vptr)
@@ -352,26 +336,18 @@ INT NS_DIM_PREFIX GetElementVPtrs (ELEMENT *theElement, const VECDATA_DESC *theV
 }
 
 /****************************************************************************/
-/*D
-   GetElementVValue - get list of DOUBLE values for vectors
+/** \brief Get list of DOUBLE values for vectors
 
-   SYNOPSIS:
-   INT GetElementVValues (ELEMENT *theElement, VECDATA_DESC *theVD,
-   DOUBLE *value);
+   \param theElement - pointer to an element
+   \param theVD - type vector descriptor
+   \param value - pointer to double values
 
-   PARAMETERS:
-   .  theElement - pointer to an element
-   .  theVD - type vector descriptor
-   .  value - pointer to double values
-
-   DESCRIPTION:
    This function gets all local vector values corresponding to an element.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
@@ -400,26 +376,18 @@ INT NS_DIM_PREFIX GetElementVValues (ELEMENT *theElement, const VECDATA_DESC *th
 }
 
 /****************************************************************************/
-/*D
-   AddElementVValue - add list of DOUBLE values for vectors
+/** \brief Add list of DOUBLE values for vectors
 
-   SYNOPSIS:
-   INT AddElementVValues (ELEMENT *theElement, VECDATA_DESC *theVD,
-   DOUBLE *value);
+   \param theElement - pointer to an element
+   \param theVD - type vector descriptor
+   \param value - pointer to double values
 
-   PARAMETERS:
-   .  theElement - pointer to an element
-   .  theVD - type vector descriptor
-   .  value - pointer to double values
-
-   DESCRIPTION:
    This function adds all local vector values corresponding to an element.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX AddElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
@@ -448,27 +416,19 @@ INT NS_DIM_PREFIX AddElementVValues (ELEMENT *theElement, const VECDATA_DESC *th
 }
 
 /****************************************************************************/
-/*D
-   GetVlistVecskip - get list of vecskip flags
+/** \brief Get list of vecskip flags
 
-   SYNOPSIS:
-   INT GetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC *theVD,
-   INT *vecskip);
+   \param cnt - number of vectors
+   \param theVec - vector list
+   \param theVD - type vector descriptor
+   \param vecskip - set 1 for DIRICHLET boundary, 0 else
 
-   PARAMETERS:
-   .  cnt - number of vectors
-   .  theVec - vector list
-   .  theVD - type vector descriptor
-   .  vecskip - set 1 for DIRICHLET boundary, 0 else
-
-   DESCRIPTION:
    This function gets vecskip flags for a vector set.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC *theVD,
@@ -488,27 +448,19 @@ INT NS_DIM_PREFIX GetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC 
 }
 
 /****************************************************************************/
-/*D
-   SetVlistVecskip - get list of vecskip flags
+/** \brief Set list of vecskip flags
 
-   SYNOPSIS:
-   INT SetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC *theVD,
-   INT *vecskip);
+   \param cnt - number of vectors
+   \param theVec - vector list
+   \param theVD - type vector descriptor
+   \param vecskip - set 1 for DIRICHLET boundary, 0 else
 
-   PARAMETERS:
-   .  cnt - number of vectors
-   .  theVec - vector list
-   .  theVD - type vector descriptor
-   .  vecskip - set 1 for DIRICHLET boundary, 0 else
-
-   DESCRIPTION:
    This function sets vecskip flags for a vector set.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX SetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC *theVD,
@@ -529,27 +481,19 @@ INT NS_DIM_PREFIX SetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC 
 }
 
 /****************************************************************************/
-/*D
-   GetVlistVValue - get list of DOUBLE values for vectors
+/** \brief Get list of DOUBLE values for vectors
 
-   SYNOPSIS:
-   INT GetVlistVValues (INT cnt, VECTOR **theVec,
-   const VECDATA_DESC *theVD, DOUBLE *value);
+   \param cnt - number of vectors
+   \param theVec - vector list
+   \param theVD - type vector descriptor
+   \param value - pointer to double values
 
-   PARAMETERS:
-   .  cnt - number of vectors
-   .  theVec - vector list
-   .  theVD - type vector descriptor
-   .  value - pointer to double values
-
-   DESCRIPTION:
    This function gets all local vector values corresponding to an element.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetVlistVValues (INT cnt, VECTOR **theVec,
@@ -572,27 +516,19 @@ INT NS_DIM_PREFIX GetVlistVValues (INT cnt, VECTOR **theVec,
 }
 
 /****************************************************************************/
-/*D
-   AddVlistVValues - get list of DOUBLE values for vectors
+/** \brief Add list of DOUBLE values for vectors
 
-   SYNOPSIS:
-   INT AddVlistVValues (INT cnt, VECTOR **theVec,
-   const VECDATA_DESC *theVD, DOUBLE *value);
+   \param cnt - number of vectors
+   \param theVec - vector list
+   \param theVD - type vector descriptor
+   \param value - pointer to double values
 
-   PARAMETERS:
-   .  cnt - number of vectors
-   .  theVec - vector list
-   .  theVD - type vector descriptor
-   .  value - pointer to double values
-
-   DESCRIPTION:
    This function adds all local vector values corresponding to an element.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX AddVlistVValues (INT cnt, VECTOR **theVec,
@@ -615,27 +551,19 @@ INT NS_DIM_PREFIX AddVlistVValues (INT cnt, VECTOR **theVec,
 }
 
 /****************************************************************************/
-/*D
-   SetVlistVValues - set list of DOUBLE values for vectors
+/** \brief Set list of DOUBLE values for vectors
 
-   SYNOPSIS:
-   INT SetVlistVValues (INT cnt, VECTOR **theVec,
-   const VECDATA_DESC *theVD, DOUBLE *value);
+   \param cnt - number of vectors
+   \param theVec - vector list
+   \param theVD - type vector descriptor
+   \param value - pointer to double values
 
-   PARAMETERS:
-   .  cnt - number of vectors
-   .  theVec - vector list
-   .  theVD - type vector descriptor
-   .  value - pointer to double values
-
-   DESCRIPTION:
    This function sets all local vector values corresponding to a vector list.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX SetVlistVValues (INT cnt, VECTOR **theVec,
@@ -658,27 +586,19 @@ INT NS_DIM_PREFIX SetVlistVValues (INT cnt, VECTOR **theVec,
 }
 
 /****************************************************************************/
-/*D
-   GetElementVPtrsVecskip - get list of DOUBLE pointers for vectors
+/** \brief Get list of DOUBLE pointers for vectors
 
-   SYNOPSIS:
-   INT GetElementVPtrsVecskip (ELEMENT *theElement, VECDATA_DESC *theVD,
-   DOUBLE **vptr, INT *vecskip);
+   \param theElement - pointer to an element
+   \param theVD - type vector descriptor
+   \param vptr - pointer to double values
+   \param vecskip - set 1 for DIRICHLET boundary, 0 else
 
-   PARAMETERS:
-   .  theElement - pointer to an element
-   .  theVD - type vector descriptor
-   .  vptr - pointer to double values
-   .  vecskip - set 1 for DIRICHLET boundary, 0 else
-
-   DESCRIPTION:
    This function gets all local vector pointers corresponding to an element.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetElementVPtrsVecskip (ELEMENT *theElement, const VECDATA_DESC *theVD,
@@ -707,28 +627,20 @@ INT NS_DIM_PREFIX GetElementVPtrsVecskip (ELEMENT *theElement, const VECDATA_DES
 }
 
 /****************************************************************************/
-/*D
-   GetElementNewVPtrs - get list of DOUBLE pointers for vectors
+/** \brief ???
 
-   SYNOPSIS:
-   INT GetElementNewVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD,
-   DOUBLE **vptr, INT *newField);
+   \param theElement - pointer to an element
+   \param theVD - type vector descriptor
+   \param vptr - pointer to double values
+   \param newField - set 1 for new vectors, 0 else
 
-   PARAMETERS:
-   .  theElement - pointer to an element
-   .  theVD - type vector descriptor
-   .  vptr - pointer to double values
-   .  newField - set 1 for new vectors, 0 else
-
-   DESCRIPTION:
    This function gets all local vector pointers corresponding to an element.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    0 if there is no new vector
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetElementNewVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD,
@@ -762,25 +674,17 @@ INT NS_DIM_PREFIX GetElementNewVPtrs (ELEMENT *theElement, const VECDATA_DESC *t
 }
 
 /****************************************************************************/
-/*D
-   GetElementMPtrs - get list of DOUBLE pointers for matrices
+/** \brief Get list of DOUBLE pointers for matrices
 
-   SYNOPSIS:
-   INT GetElementMPtrs (ELEMENT *theElement, const MATDATA_DESC *md,
-   DOUBLE **mptr);
+   \param theElement - pointer to an element
+   \param md - matrix data descriptor
+   \param mptr - pointer to double values corresponding to the local stiffness matrix
 
-   PARAMETERS:
-   .  theElement - pointer to an element
-   .  md - matrix data descriptor
-   .  mptr - pointer to double values corresponding to the local stiffness matrix
-
-   DESCRIPTION:
    This function gets all local matrix pointers corresponding to an element.
 
    RETURN VALUE:
-   INT
    .n    number of dofs
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetElementMPtrs (ELEMENT *theElement, const MATDATA_DESC *md,
@@ -844,27 +748,19 @@ INT NS_DIM_PREFIX GetElementMPtrs (ELEMENT *theElement, const MATDATA_DESC *md,
 }
 
 /****************************************************************************/
-/*D
-   GetVlistMValues - get list of DOUBLE values for matrices
+/** \brief Get list of DOUBLE values for matrices
 
-   SYNOPSIS:
-   INT GetVlistMValues (INT cnt, VECTOR **theVec,
-   const MATDATA_DESC *theMD, DOUBLE *value);
+   \param cnt - number of vectors
+   \param theVec - vector list
+   \param theMD - type matrix descriptor
+   \param value - pointer to double values
 
-   PARAMETERS:
-   .  cnt - number of vectors
-   .  theVec - vector list
-   .  theMD - type matrix descriptor
-   .  value - pointer to double values
-
-   DESCRIPTION:
    This function get all local matrix values corresponding to a vector list.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetVlistMValues (INT cnt, VECTOR **theVec,
@@ -924,28 +820,20 @@ INT NS_DIM_PREFIX GetVlistMValues (INT cnt, VECTOR **theVec,
 }
 
 /****************************************************************************/
-/*D
-   AddVlistMValues - add list of DOUBLE values for matrices
+/** \brief Add list of DOUBLE values for matrices
 
-   SYNOPSIS:
-   INT AddVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
-   const MATDATA_DESC *theMD, DOUBLE *value);
+   \param theGrid - pointer to grid
+   \param cnt - number of vectors
+   \param theVec - vector list
+   \param theMD - type matrix descriptor
+   \param value - pointer to double values
 
-   PARAMETERS:
-   .  theGrid - pointer to grid
-   .  cnt - number of vectors
-   .  theVec - vector list
-   .  theMD - type matrix descriptor
-   .  value - pointer to double values
-
-   DESCRIPTION:
    This function adds all local matrix values corresponding to a vector list.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX AddVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
@@ -1123,30 +1011,21 @@ INT NS_DIM_PREFIX SetVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
 }
 
 /****************************************************************************/
-/*D
-   GetElementVMPtrs - get list of DOUBLE pointers for vectors and matrices
+/** \brief Get list of DOUBLE pointers for vectors and matrices
 
-   SYNOPSIS:
-   INT GetElementVMPtrs (ELEMENT *theElement,
-   VECDATA_DESC *theVD, MATDATA_DESC *md,
-   DOUBLE **vptr, DOUBLE **mptr);
+   \param theElement - pointer to an element
+   \param theVD - type vector descriptor
+   \param md - type matrix descriptor
+   \param vptr - pointer to double values corresponding to the local right hand side
+   \param mptr - pointer to double values corresponding to the local stiffness matrix
 
-   PARAMETERS:
-   .  theElement - pointer to an element
-   .  theVD - type vector descriptor
-   .  md - type matrix descriptor
-   .  vptr - pointer to double values corresponding to the local right hand side
-   .  mptr - pointer to double values corresponding to the local stiffness matrix
-
-   DESCRIPTION:
    This function gets all local vector pointers corresponding to an element
    and the connecting matrix pointers.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetElementVMPtrs (ELEMENT *theElement,
@@ -1207,35 +1086,26 @@ INT NS_DIM_PREFIX GetElementVMPtrs (ELEMENT *theElement,
 }
 
 /****************************************************************************/
-/*D
-   GetElementVVMPtrs - get list of DOUBLE pointers for vectors and matrices
+/** \brief Get list of DOUBLE pointers for vectors and matrices
 
-   SYNOPSIS:
-   INT GetElementVVMPtrs (ELEMENT *theElement, VECDATA_DESC *theVD1,
-   VECDATA_DESC *theVD2, MATDATA_DESC *md,
-   DOUBLE **vptr1, DOUBLE **vptr2, DOUBLE **mptr, INT *vecskip);
+   \param theElement - pointer to an element
+   \param theVD1 - type vector descriptor
+   \param theVD2 - type vector descriptor
+   \param md - type matrix descriptor
+   \param vptr1 - pointer to double values corresponding to the local right hand side
+   \param vptr2 - pointer to double values corresponding to the local right hand side
+   \param mptr - pointer to double values corresponding to the local stiffness matrix
+   \param vecskip - set 1 for DIRICHLET boundary, 0 else
 
-   PARAMETERS:
-   .  theElement - pointer to an element
-   .  theVD1 - type vector descriptor
-   .  theVD2 - type vector descriptor
-   .  md - type matrix descriptor
-   .  vptr1 - pointer to double values corresponding to the local right hand side
-   .  vptr2 - pointer to double values corresponding to the local right hand side
-   .  mptr - pointer to double values corresponding to the local stiffness matrix
-   .  vecskip - set 1 for DIRICHLET boundary, 0 else
-
-   DESCRIPTION:
    This function gets all local vector pointers corresponding to an element
    and the connecting matrix pointers.
 
    RETURN VALUE:
-   INT
    .n    total number of components if ok
    .n    -1: error in GetAllVectorsOfElementOfType
    .n    -2: vecdata descriptors of different size
    .n    -3: could not get matrix
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD1,
@@ -1303,16 +1173,10 @@ INT NS_DIM_PREFIX GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *th
 }
 
 /****************************************************************************/
-/*D
-   PrepareMultipleVMPtrs - prepare execution of GetMultipleVMPtrs
+/** \brief Prepare execution of GetMultipleVMPtrs
 
-   SYNOPSIS:
-   INT PrepareMultipleVMPtrs (MVM_DESC *mvmd)
+   \param mvmd - multiple VM data structure, partially to be filled before call
 
-   PARAMETERS:
-   .  mvmd - multiple VM data structure, partially to be filled before call
-
-   DESCRIPTION:
    This function prepares the execution of GetMultipleVMPtrs in a
    loop. It has to be called once before running the loop. The types needed are
    evaluated and it is checked, whether the components described by the
@@ -1321,12 +1185,11 @@ INT NS_DIM_PREFIX GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *th
    the user.
 
    RETURN VALUE:
-   INT
    .n    0
 
    SEE ALSO:
    GetMultipleVMPtrs
-   D*/
+ */
 /****************************************************************************/
 
 static INT PrepareMultipleVMPtrs (MVM_DESC *mvmd)
@@ -1374,31 +1237,19 @@ static INT PrepareMultipleVMPtrs (MVM_DESC *mvmd)
 }
 
 /****************************************************************************/
-/*D
-   GetMultipleVMPtrs - get list of DOUBLE pointers for vectors and matrices
+/** \brief Get list of DOUBLE pointers for vectors and matrices
 
-   SYNOPSIS:
-   INT GetMultipleVMPtrs (const MVM_DESC *mvmd, INT cnt, VECTOR *VecList[],
-                                                                                         DOUBLE **vptrlist[MAXVD],
-                                                                                         DOUBLE **mptrlist[MAXMD],
-                                                                                         INT *vecskip, INT *vtype, INT nvec[MAXVD])
+   \param[in] mvmd - data filled by PrepareElementMultipleVMPtrs
+   \param[in] cnt - number of vectors to extract pointers from
+   \param[in] VecList - list of vectors to extract pointers from
 
-
-   PARAMETERS:
-   input variables:~
-   .  mvmd - data filled by PrepareElementMultipleVMPtrs
-   .  cnt - number of vectors to extract pointers from
-   .  VecList - list of vectors to extract pointers from
-
-   output variables:~
-   .  vptrlist - pointer to lists of double values corresponding the  VECDATA_DESC-list
-   .  mptrlist - pointer to lists of double values corresponding the  MATDATA_DESC-list
-   .  vecskip - set 1 for DIRICHLET boundary, 0 else (ordering corresponds to the first
+   \param[out] vptrlist - pointer to lists of double values corresponding the  VECDATA_DESC-list
+   \param[out] mptrlist - pointer to lists of double values corresponding the  MATDATA_DESC-list
+   \param[out] vecskip - set 1 for DIRICHLET boundary, 0 else (ordering corresponds to the first
                                 VECDATA_DESC)
-   .  vtype - types of vectors collected for first vd
-   .  nvec - number of vectors involved from per vd of mvmd
+   \param[out] vtype - types of vectors collected for first vd
+   \param[out] nvec - number of vectors involved from per vd of mvmd
 
-   DESCRIPTION:
    This functions returns pointers to the data fields described in a VECDATA_DESC-list
    and a MATDATA_DESC-list passed in the mvmd argument. Before call of this function
    in a loop PrepareMultipleVMPtrs has to be called with mvmd.
@@ -1407,13 +1258,12 @@ static INT PrepareMultipleVMPtrs (MVM_DESC *mvmd)
    DOUBLE value is returned. The pointers can be incremented by the user.
 
    RETURN VALUE:
-   INT
    .n    0 if ok
    .n    >0: error
 
    SEE ALSO:
    PrepareMultipleVMPtrs
-   D*/
+ */
 /****************************************************************************/
 
 static INT GetMultipleVMPtrs (const MVM_DESC *mvmd, INT cnt, VECTOR *VecList[],
@@ -1561,27 +1411,20 @@ static INT GetMultipleVMPtrs (const MVM_DESC *mvmd, INT cnt, VECTOR *VecList[],
 }
 
 /****************************************************************************/
-/*D
-   PrepareElementMultipleVMPtrs - prepare execution of GetElementMultipleVMPtrs
+/** \brief Prepare execution of GetElementMultipleVMPtrs
 
-   SYNOPSIS:
-   INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
+   \param mvmd - multiple VM data structure, partially to be filled before call
 
-   PARAMETERS:
-   .  mvmd - multiple VM data structure, partially to be filled before call
-
-   DESCRIPTION:
    This function prepares the execution of GetElementMultipleVMPtrs in an element
    loop. It has to be called once before running the loop.
    For further description see 'PrepareMultipleVMPtrs'.
 
    RETURN VALUE:
-   INT
    .n    0
 
    SEE ALSO:
    PrepareMultipleVMPtrs, GetElementMultipleVMPtrs
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
@@ -1590,27 +1433,17 @@ INT NS_DIM_PREFIX PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
 }
 
 /****************************************************************************/
-/*D
-   GetElementMultipleVMPtrs - get list of DOUBLE pointers for vectors and matrices
+/** \brief Get list of DOUBLE pointers for vectors and matrices
 
-   SYNOPSIS:
-   INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
-                                                                                         DOUBLE **vptrlist[MAXVD],
-                                                                                         DOUBLE **mptrlist[MAXMD],
-                                                                                         INT *vecskip, INT *vtype, INT nvec[MAXVD])
-
-
-   PARAMETERS:
-   .  elem - pointer to an element
-   .  mvmd - data filled by PrepareElementMultipleVMPtrs
-   .  vptrlist - pointer to lists of double values corresponding the  VECDATA_DESC-list
-   .  mptrlist - pointer to lists of double values corresponding the  MATDATA_DESC-list
-   .  vecskip - set 1 for DIRICHLET boundary, 0 else (ordering corresponds to the first
+   \param elem - pointer to an element
+   \param mvmd - data filled by PrepareElementMultipleVMPtrs
+   \param vptrlist - pointer to lists of double values corresponding the  VECDATA_DESC-list
+   \param mptrlist - pointer to lists of double values corresponding the  MATDATA_DESC-list
+   \param vecskip - set 1 for DIRICHLET boundary, 0 else (ordering corresponds to the first
                                 VECDATA_DESC)
-   .  vtype - types of vectors collected for first vd
-   .  nvec - number of vectors involved from this element
+   \param vtype - types of vectors collected for first vd
+   \param nvec - number of vectors involved from this element
 
-   DESCRIPTION:
    This functions returns pointers to the data fields described in a VECDATA_DESC-list
    and a MATDATA_DESC-list passed in the mvmd argument. Before call of this function
    in an element loop PrepareElementMultipleVMPtrs has to be called with mvmd.
@@ -1619,13 +1452,12 @@ INT NS_DIM_PREFIX PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
    DOUBLE value is returned. The pointers can be incremented by the user.
 
    RETURN VALUE:
-   INT
    .n    0: ok
    .n    >0: error
 
    SEE ALSO:
    GetMultipleVMPtrs,PrepareElementMultipleVMPtrs
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
@@ -1644,17 +1476,11 @@ INT NS_DIM_PREFIX GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
 }
 
 /****************************************************************************/
-/*D
-   PrepareBndVecMultipleVMPtrs - prepare execution of GetBndVecMultipleVMPtrs
+/** \brief Prepare execution of GetBndVecMultipleVMPtrs
 
-   SYNOPSIS:
-   INT PrepareBndVecMultipleVMPtrs (GRID *theGrid, MVM_DESC *mvmd)
+   \param theGrid - grid level
+   \param mvmd - multiple VM data structure, partially to be filled before call
 
-   PARAMETERS:
-   .  theGrid - grid level
-   .  mvmd - multiple VM data structure, partially to be filled before call
-
-   DESCRIPTION:
    This function prepares the execution of GetBndVecMultipleVMPtrs in an element
    loop. It has to be called once before running the loop.
    For further description see 'PrepareMultipleVMPtrs'.
@@ -1665,7 +1491,7 @@ INT NS_DIM_PREFIX GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
 
    SEE ALSO:
    PrepareMultipleVMPtrs, GetBndVecMultipleVMPtrs
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX PrepareBndVecMultipleVMPtrs (GRID *theGrid, MVM_DESC *mvmd)
@@ -1691,30 +1517,18 @@ INT NS_DIM_PREFIX PrepareBndVecMultipleVMPtrs (GRID *theGrid, MVM_DESC *mvmd)
 }
 
 /****************************************************************************/
-/*D
-   GetBndVecMultipleVMPtrs - get list of DOUBLE pointers for vectors and matrices
+/** \brief Get list of DOUBLE pointers for vectors and matrices
 
-   SYNOPSIS:
-   INT GetBndVecMultipleVMPtrs (const MVM_DESC *mvmd,
-                                                                                         INT *cnt,
-                                                                                         VECTOR *VecList[],
-                                                                                         DOUBLE **vptrlist[MAXVD],
-                                                                                         DOUBLE **mptrlist[MAXMD],
-                                                                                         INT *vecskip, INT *vtype, INT nvec[MAXVD])
-
-
-   PARAMETERS:
-   .  mvmd - data filled by PrepareBndVecMultipleVMPtrs
-   .  cnt - items in the vector list
-   .  VecList - list of local boundary vector neighborhood
-   .  vptrlist - pointer to lists of double values corresponding the  VECDATA_DESC-list
-   .  mptrlist - pointer to lists of double values corresponding the  MATDATA_DESC-list
-   .  vecskip - set 1 for DIRICHLET boundary, 0 else (ordering corresponds to the first
+   \param mvmd - data filled by PrepareBndVecMultipleVMPtrs
+   \param cnt - items in the vector list
+   \param VecList - list of local boundary vector neighborhood
+   \param vptrlist - pointer to lists of double values corresponding the  VECDATA_DESC-list
+   \param mptrlist - pointer to lists of double values corresponding the  MATDATA_DESC-list
+   \param vecskip - set 1 for DIRICHLET boundary, 0 else (ordering corresponds to the first
                                 VECDATA_DESC)
-   .  vtype - types of vectors collected for first vd
-   .  nvec - number of vectors involved from this element
+   \param vtype - types of vectors collected for first vd
+   \param nvec - number of vectors involved from this element
 
-   DESCRIPTION:
    This functions returns pointers to the data fields described in a VECDATA_DESC-list
    and a MATDATA_DESC-list passed in the mvmd argument. Before call of this function
    in an element loop PrepareBndVecMultipleVMPtrs has to be called with mvmd.
@@ -1723,13 +1537,12 @@ INT NS_DIM_PREFIX PrepareBndVecMultipleVMPtrs (GRID *theGrid, MVM_DESC *mvmd)
    DOUBLE value is returned. The pointers can be incremented by the user.
 
    RETURN VALUE:
-   INT
    .n    0: ok
    .n    >0: error
 
    SEE ALSO:
    GetMultipleVMPtrs,PrepareBndVecMultipleVMPtrs
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetBndVecMultipleVMPtrs (const MVM_DESC *mvmd,
@@ -1760,24 +1573,17 @@ INT NS_DIM_PREFIX FinishBndVecMultipleVMPtrs (void)
 }
 
 /****************************************************************************/
-/*D
-   ClearVecskipFlags - set all vecskip flags to 0
+/** \brief Set all vecskip flags to 0
 
-   SYNOPSIS:
-   INT ClearVecskipFlags (GRID *theGrid, VECDATA_DESC *theVD);
+   \param theGrid - pointer to a grid
+   \param theVD - type vector descriptor
 
-   PARAMETERS:
-   .  theGrid - pointer to a grid
-   .  theVD - type vector descriptor
-
-   DESCRIPTION:
    This function sets the vecskip flags for all vectors of a grid to 0.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX ClearVecskipFlags (GRID *theGrid, const VECDATA_DESC *theVD)
@@ -1796,30 +1602,21 @@ INT NS_DIM_PREFIX ClearVecskipFlags (GRID *theGrid, const VECDATA_DESC *theVD)
 }
 
 /****************************************************************************/
-/*D
-   ComputePartVecskip - set bits where skip component of vectors have to be cleared
+/** \brief Set bits where skip component of vectors have to be cleared
 
-   SYNOPSIS:
-   INT ComputePartVecskip (const VECDATA_DESC *vd, const VECDATA_DESC *vds,
-                                                                INT n[NVECTYPES], INT typeskip[NVECTYPES],
-                                                                INT co_n[NVECTYPES], INT co_typeskip[NVECTYPES])
+   \param vd - descriptor of the global data
+   \param vds - sub descriptor of vd describing the part to be cleared
+   \param n - number of components at interface
+   \param typeskip - bits are set where comps of vds relative to vd
+   \param co_n - number of co-components at interface
+   \param co_typeskip - bits are set where not comps of vds relative to vd
 
-   PARAMETERS:
-   .  vd - descriptor of the global data
-   .  vds - sub descriptor of vd describing the part to be cleared
-   .  n - number of components at interface
-   .  typeskip - bits are set where comps of vds relative to vd
-   .  co_n - number of co-components at interface
-   .  co_typeskip - bits are set where not comps of vds relative to vd
-
-   DESCRIPTION:
    This function sets bits where skip the component of vectors have to be cleared.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX ComputePartVecskip (const VECDATA_DESC *vd, const VECDATA_DESC *vds,
@@ -1869,25 +1666,18 @@ INT NS_DIM_PREFIX ComputePartVecskip (const VECDATA_DESC *vd, const VECDATA_DESC
 }
 
 /****************************************************************************/
-/*D
-   ClearPartVecskipFlags - set vecskip bits to 0 in part of the domain
+/** \brief Set vecskip bits to 0 in part of the domain
 
-   SYNOPSIS:
-   INT ClearPartVecskipFlags (GRID *theGrid, const INT typeskip[NVECTYPES])
+   \param theGrid - pointer to a grid
+   \param typeskip - clear flags where bits are set
 
-   PARAMETERS:
-   .  theGrid - pointer to a grid
-   .  typeskip - clear flags where bits are set
-
-   DESCRIPTION:
    This function resets the vecskip flags in all vectors of a grid at positions
    where flags are set in typeskip.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX ClearPartVecskipFlags (GRID *theGrid, const INT typeskip[NVECTYPES])
@@ -1907,27 +1697,19 @@ INT NS_DIM_PREFIX ClearPartVecskipFlags (GRID *theGrid, const INT typeskip[NVECT
 }
 
 /****************************************************************************/
-/*D
-   GetElementDirichletFlags - get vecskip entries
+/** \brief Get vecskip entries
 
-   SYNOPSIS:
-   INT GetElementDirichletFlags (ELEMENT *theElement, VECDATA_DESC *theVD,
-   INT *vecskip);
+   \param theElement - pointer to an element
+   \param theVD - type vector descriptor
+   \param vecskip - returns 1 for DIRICHLET boundary, 0 else
 
-   PARAMETERS:
-   .  theElement - pointer to an element
-   .  theVD - type vector descriptor
-   .  vecskip - returns 1 for DIRICHLET boundary, 0 else
-
-   DESCRIPTION:
    This function gets the vecskip flags for all local vectors
    corresponding to an element.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX GetElementDirichletFlags (ELEMENT *theElement, const VECDATA_DESC *theVD,
@@ -1953,27 +1735,19 @@ INT NS_DIM_PREFIX GetElementDirichletFlags (ELEMENT *theElement, const VECDATA_D
 }
 
 /****************************************************************************/
-/*D
-   SetElementDirichletFlags - set vecskip entries
+/** \brief Set vecskip entries
 
-   SYNOPSIS:
-   INT SetElementDirichletFlags (ELEMENT *theElement, VECDATA_DESC *theVD,
-   INT *vecskip);
+   \param theElement - pointer to an element
+   \param theVD - type vector descriptor
+   \param vecskip - set 1 for DIRICHLET boundary, 0 else
 
-   PARAMETERS:
-   .  theElement - pointer to an element
-   .  theVD - type vector descriptor
-   .  vecskip - set 1 for DIRICHLET boundary, 0 else
-
-   DESCRIPTION:
    This function sets the vecskip flags for all local vectors
    corresponding to an element.
 
    RETURN VALUE:
-   INT
    .n    number of components
    .n    -1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX SetElementDirichletFlags (ELEMENT *theElement, const VECDATA_DESC *theVD,
@@ -2000,25 +1774,18 @@ INT NS_DIM_PREFIX SetElementDirichletFlags (ELEMENT *theElement, const VECDATA_D
 }
 
 /****************************************************************************/
-/*D
-   ClearDirichletValues - sets values with Dirichlet flag to 0
+/** \brief Sets values with Dirichlet flag to 0
 
-   SYNOPSIS:
-   INT ClearDirichletValues (GRID *theGrid, VECDATA_DESC *x);
+   \param theGrid - pointer to a grid
+   \param x - type vector descriptor
 
-   PARAMETERS:
-   .  theGrid - pointer to a grid
-   .  x - type vector descriptor
-
-   DESCRIPTION:
    This function sets all components of x where the vecskip flag is set
    to zero.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX ClearDirichletValues (GRID *theGrid, VECDATA_DESC *x)
@@ -2040,29 +1807,21 @@ INT NS_DIM_PREFIX ClearDirichletValues (GRID *theGrid, VECDATA_DESC *x)
 }
 
 /****************************************************************************/
-/*D
-   AssembleDirichletBoundary - modifies matrix entries and right hand side
+/** \brief Modifies matrix entries and right hand side
    for Dirichlet boundary
 
-   SYNOPSIS:
-   INT AssembleDirichletBoundary (GRID *theGrid, MATDATA_DESC *Mat,
-   VECDATA_DESC *Sol, VECDATA_DESC *Rhs);
+   \param theGrid - pointer to a grid
+   \param Mat - type matrix descriptor for the stiffness matix
+   \param Sol - type vector descriptor for the solution vector
+   \param Rhs - type vector descriptor for the right hand side
 
-   PARAMETERS:
-   .  theGrid - pointer to a grid
-   .  Mat - type matrix descriptor for the stiffness matix
-   .  Sol - type vector descriptor for the solution vector
-   .  Rhs - type vector descriptor for the right hand side
-
-   DESCRIPTION:
    This function sets all components of Rhs where the vecskip flag is set
    to the Sol value and sets the corresponding matrix row to the unit vector.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX AssembleDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
@@ -2106,25 +1865,18 @@ INT NS_DIM_PREFIX AssembleDirichletBoundary (GRID *theGrid, const MATDATA_DESC *
 }
 
 /****************************************************************************/
-/*D
-   ModifyDirichletMatrix - modifies matrix entries for Dirichlet values
+/** \brief Modifies matrix entries for Dirichlet values
    for Dirichlet boundary
 
-   SYNOPSIS:
-   INT ModifyDirichletMatrix (GRID *theGrid, const MATDATA_DESC *Mat);
+   \param theGrid - pointer to a grid
+   \param Mat - type matrix descriptor for the stiffness matix
 
-   PARAMETERS:
-   .  theGrid - pointer to a grid
-   .  Mat - type matrix descriptor for the stiffness matix
-
-   DESCRIPTION:
    This function sets all matrix rows to the unit vector where the vecskip flag is set.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX ModifyDirichletMatrix (GRID *theGrid, const MATDATA_DESC *Mat)
@@ -2161,24 +1913,17 @@ INT NS_DIM_PREFIX ModifyDirichletMatrix (GRID *theGrid, const MATDATA_DESC *Mat)
 }
 
 /****************************************************************************/
-/*D
-   ModifyDirichletDefect - set defect to zero for Dirichlet boundary
+/** \brief Set defect to zero for Dirichlet boundary
 
-   SYNOPSIS:
-   INT ModifyDirichletDefect (GRID *theGrid, VECDATA_DESC *Cor);
+   \param theGrid - pointer to a grid
+   \param Cor - type vector descriptor for the correction vector
 
-   PARAMETERS:
-   .  theGrid - pointer to a grid
-   .  Cor - type vector descriptor for the correction vector
-
-   DESCRIPTION:
    This function sets all components of Cor to zero where the vecskip flag is set.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX ModifyDirichletDefect (GRID *theGrid, const VECDATA_DESC *Cor)
@@ -2203,29 +1948,21 @@ INT NS_DIM_PREFIX ModifyDirichletDefect (GRID *theGrid, const VECDATA_DESC *Cor)
 }
 
 /****************************************************************************/
-/*D
-   AssembleTotalDirichletBoundary - modifies matrix entries and right hand side
+/** \brief Modifies matrix entries and right hand side
    for Dirichlet boundary
 
-   SYNOPSIS:
-   INT AssembleTotalDirichletBoundary (GRID *theGrid, MATDATA_DESC *Mat,
-   VECDATA_DESC *Sol, VECDATA_DESC *Rhs);
+   \param theGrid - pointer to a grid
+   \param Mat - type matrix descriptor for the stiffness matix
+   \param Sol - type vector descriptor for the solution vector
+   \param Rhs - type vector descriptor for the right hand side
 
-   PARAMETERS:
-   .  theGrid - pointer to a grid
-   .  Mat - type matrix descriptor for the stiffness matix
-   .  Sol - type vector descriptor for the solution vector
-   .  Rhs - type vector descriptor for the right hand side
-
-   DESCRIPTION:
    This function sets all components of Rhs where the vecskip flag is set
    to the Sol value and sets the corresponding matrix row and column to the unit vector.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
@@ -2291,32 +2028,24 @@ INT NS_DIM_PREFIX AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_D
 }
 
 /****************************************************************************/
-/*D
-   ConvertMatrix - converts a matrix in a sparse format
+/** \brief Converts a matrix in a sparse format
 
-   SYNOPSIS:
-   INT ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
-   MATDATA_DESC *A, INT symmetric, int *pn, int **pia, int **pja, double **pa);
+   \param theGrid - pointer to a grid
+   \param theHeap - pointer to heap
+   \param MarkKey - mark in temp mem
+   \param A - pointer to matrix descriptor
+   \param symmetric - if symmetric, store only upper part
+   \param pn - number of lines
+   \param pia - diagonal indices
+   \param pja - row indices
+   \param pa - matrix entries
 
-   PARAMETERS:
-   .  theGrid - pointer to a grid
-   .  theHeap - pointer to heap
-   .  MarkKey - mark in temp mem
-   .  A - pointer to matrix descriptor
-   .  symmetric - if symmetric, store only upper part
-   .  pn - number of lines
-   .  pia - diagonal indices
-   .  pja - row indices
-   .  pa - matrix entries
-
-   DESCRIPTION:
    This function converts a matrix in a sparse format.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
@@ -2388,29 +2117,6 @@ INT NS_DIM_PREFIX ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
   return(NUM_OK);
 }
 
-/****************************************************************************/
-/*D
-   PrintVector - print a vector list
-
-   SYNOPSIS:
-   INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass);
-
-   PARAMETERS:
-   .  g - pointer to a grid
-   .  X - pointer to vector descriptor
-   .  vclass - class number
-   .  vnclass - class number
-
-   DESCRIPTION:
-   This function prints the values of X for all vectors with class smaller
-   or equal to vclass and next class smaller or equal to vnclass.
-
-   RETURN VALUE:
-   INT
-   .n    NUM_OK if ok
-   .n    NUM_ERROR if error occured
-   D*/
-/****************************************************************************/
 
 static void PrintSingleVectorX (const VECTOR *v, const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf, INT *info)
 {
@@ -2480,6 +2186,23 @@ INT NS_DIM_PREFIX PrintVectorX (const GRID *g, const VECDATA_DESC *X, INT vclass
   return(NUM_OK);
 }
 
+/****************************************************************************/
+/** \brief Print a vector list
+
+   \param g - pointer to a grid
+   \param X - pointer to vector descriptor
+   \param vclass - class number
+   \param vnclass - class number
+
+   This function prints the values of X for all vectors with class smaller
+   or equal to vclass and next class smaller or equal to vnclass.
+
+   RETURN VALUE:
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+ */
+/****************************************************************************/
+
 INT NS_DIM_PREFIX PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
 {
   return (PrintVectorX(g,X,vclass,vnclass,UserWriteF));
@@ -2525,28 +2248,21 @@ INT NS_DIM_PREFIX PrintSVector (MULTIGRID *mg, VECDATA_DESC *X)
 }
 
 /****************************************************************************/
-/*D
-   PrintMatrix - print a matrix list
+/** \brief Print a matrix list
 
-   SYNOPSIS:
-   INT PrintMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass);
+   \param g - pointer to a grid
+   \param M - pointer to matrix descriptor
+   \param vclass - class number
+   \param vnclass - class number
 
-   PARAMETERS:
-   .  g - pointer to a grid
-   .  M - pointer to matrix descriptor
-   .  vclass - class number
-   .  vnclass - class number
-
-   DESCRIPTION:
    This function prints the values of M of the matrix list
    for all vectors with class smaller
    or equal to vclass and next class smaller or equal to vnclass.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX PrintMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
@@ -2667,28 +2383,21 @@ INT NS_DIM_PREFIX PrintDiagMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT v
 
 #ifdef __INTERPOLATION_MATRIX__
 /****************************************************************************/
-/*D
-   PrintIMatrix - print the interpolation matrix list
+/** \brief Print the interpolation matrix list
 
-   SYNOPSIS:
-   INT PrintIMatrix (GRID *g, VECDATA_DESC *V, INT vclass, INT vnclass);
+   \param g - pointer to a grid
+   \param V - pointer to vector descriptor
+   \param vclass - class number
+   \param vnclass - class number
 
-   PARAMETERS:
-   .  g - pointer to a grid
-   .  V - pointer to vector descriptor
-   .  vclass - class number
-   .  vnclass - class number
-
-   DESCRIPTION:
    This function prints the values of the interpolation matrix list
    for all vectors with class smaller
    or equal to vclass and next class smaller or equal to vnclass.
 
    RETURN VALUE:
-   INT
    .n    NUM_OK if ok
    .n    NUM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_DIM_PREFIX PrintIMatrix (GRID *g, VECDATA_DESC *V, INT vclass, INT vnclass)
