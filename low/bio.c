@@ -29,10 +29,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#if defined(__T3E__)
-#include <rpc/types.h>
-#endif
-#include <rpc/xdr.h>
+#include <rpc/rpc.h>    /* to include xdr.h in a portable way */
 
 #include "general.h"
 
