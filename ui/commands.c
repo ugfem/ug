@@ -96,6 +96,8 @@
 /*																			*/
 /****************************************************************************/
 
+#define BUFFERSIZE                              512     /* size of the general purpose text buff*/
+
 #define WHITESPACE                              " \t"
 
 #define LONGSTRSIZE                     256 /* size of some strings                             */
@@ -107,6 +109,8 @@
 #define APPEND_PROTO                    1
 #define RENAME_PROTO                    2
 #define TRYRENAME_PROTO                 3
+#define MAXPATHLENGTH                   255
+#define MAXRENAMECHAR                   'z'
 
 /* for the .list commands */
 #define DO_ID                                   1
@@ -149,7 +153,7 @@ typedef struct MarkRule MARKRULE;
 static MULTIGRID *currMG=NULL;                  /* the current multigrid			*/
 
 static NUM_PROC *currNumProc=NULL;              /* current numerical procedure		*/
-static char buffer[512];                        /* general purpose text buffer		*/
+static char buffer[BUFFERSIZE];         /* general purpose text buffer		*/
 
 static FILE     *protocolFile=NULL;     /* for protocol commands			*/
 
@@ -471,8 +475,11 @@ static INT HelpCommand (INT argc, char **argv)
    checkhelp - Check wether all commands in /menu have a help item
 
    DESCRIPTION:
-   This command checks wether all commands in /menu have a help item.
-   It prints all commands for which help does NOT exist.
+   This function checks wether for all commands in /menu a help item exists.
+   It also checks wether for all num proc types a help item exists.
+
+   It prints all commands and num proc types for which help does NOT exist.
+
    It calls the funtion 'CheckHelp'.
 
    'checkhelp'
@@ -491,8 +498,10 @@ static INT HelpCommand (INT argc, char **argv)
    .  argv - array of strings giving the arguments
 
    DESCRIPTION:
-   This function checks wether all commands in /menu have a help item.
-   It prints all commands for which help does NOT exist.
+   This function checks wether for all commands in /menu a help item exists.
+   It also checks wether for all num proc types a help item exists.
+
+   It prints all commands and num proc types for which help does NOT exist.
 
    RETURN VALUE:
    INT
@@ -720,82 +729,17 @@ static INT InitClock()
 
 /****************************************************************************/
 /*D
-   mute - stop echoing commands during execute
-
-   DESCRIPTION:
-   This command stops echoing commands during execute.
-   It sets a certain verbose level for the command interpreter
-   (and for user commands).
-   It calls the funtion 'SetMuteLevel'.
-
-   'mute <mutelevel>'
-
-   .  <mutelevel>             - <mutelevel> has to be signed integer
-   .n                           0 means full (regular) output
-   .n                           1 or > mean supressing output more and more
-   .n                           -1 or < mean verbosing more and more
-   D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   MuteCommand - Stop echoing commands during execute
-
-   SYNOPSIS:
-   static INT MuteCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function stops echoing commands during execute.
-   It sets a certain verbose level for the command interpreter (and for user commands).
-
-   mute <mutelevel>
-   .  <mutelevel>             - <mutelevel> has to signed integer
-   .n                           0 means full (regular) output
-   .n                           1 or > mean supressing output more and more
-   .n                           -1 or < mean verbosing more and more
-
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
-/****************************************************************************/
-
-static INT MuteCommand (INT argc, char **argv)
-{
-  int mute;
-
-  NO_OPTION_CHECK(argc,argv);
-
-  /* scan input */
-  if (sscanf(argv[0]," mute %d",&mute)!=1)
-  {
-    PrintHelp("mute",HELPITEM," (no mutelevel specified)");
-    return(PARAMERRORCODE);
-  }
-
-  SetMuteLevel(mute);
-
-  return(DONE);
-}
-
-/****************************************************************************/
-/*D
    date - prints the date
 
    DESCRIPTION:
    This command prints the date on the shell resp.
    writes it in the string variable ':date'.
 
-   'date [$s]'
+   'date [$s] [$S]'
 
    .  no~option - print the date on the shell
    .  $s   -  put in the string variable ':date'.
+   .  $S   -  use short format of the form yy.mm.dd
 
    D*/
 /****************************************************************************/
@@ -816,16 +760,21 @@ static INT MuteCommand (INT argc, char **argv)
 static INT DateCommand (INT argc, char **argv)
 {
   time_t Time;
-  struct tm *Tm;
+  char *fmt;
   INT i,svopt;
 
   /* check options */
   svopt = FALSE;
+  fmt = "%a %b %d %H:%M:%S %Y";
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 's' :
       svopt = TRUE;
+      break;
+
+    case 'S' :
+      fmt = "%y.%m.%d";;
       break;
 
     default :
@@ -835,16 +784,12 @@ static INT DateCommand (INT argc, char **argv)
     }
 
   time(&Time);
-  Tm = localtime(&Time);
-  strcpy(buffer,asctime(Tm));
+  strftime(buffer,BUFFERSIZE,fmt,localtime(&Time));
 
   if (svopt)
-  {
-    buffer[strlen(buffer)-1] = '\0';
     SetStringVar(":date",buffer);
-  }
   else
-    UserWrite(buffer);
+    UserWriteF("%s\n",buffer);
 
   return (OKCODE);
 }
@@ -1481,23 +1426,27 @@ static INT DeleteStructCommand (INT argc, char **argv)
 
    'protocol {$i[ ]<verbatim text> | $n[ ]<verbatim text> | $t[ ]<verbatim text> | $f}*'
 
-   .   $i                     - append <verbatim text> to protocol file
-   .   $n                     - write a line feed and append <verbatim text> to protocol file
-   .   $t                     - write a tab and append <verbatim text> to protocol file
+   .   $\i                     - append <verbatim text> to protocol file
+   .   $\n                     - write a line feed and append <verbatim text> to protocol file
+   .   $\t                     - write a tab and append <verbatim text> to protocol file
    .n                         NOTE: the first space (if there) following the option character is skipped
 
-   .   $f                     - flush the file buffer
+   .   $\f                     - flush the file buffer
 
    EXAMPLE:
    .vb
    x = exp(1);
    protoOn exp.proto;
-   protocoll $i the value of exp(1) is $t @x;
+   protocol $\i the value of exp(1) is $\t @x;
+   protocol $\n you can use $s in protocol;
    protoOff
    .ve
 
    Then, the file 'exp.proto' will consists of the string
-   .n   the value of exp(1) is 2.7182818
+   .vb
+   "the value of exp(1) is\t2.7182818\nyou can use $s in protocol"
+   .ve
+
    D*/
 /****************************************************************************/
 
@@ -1518,12 +1467,12 @@ static INT DeleteStructCommand (INT argc, char **argv)
 
    protocol {$i[ ]<verbatim text> | $n[ ]<verbatim text> | $t[ ]<verbatim text> | $f}*
 
-   .   $i                     - append <verbatim text> to protocol file
-   .   $n                     - write a line feed and append <verbatim text> to protocol file
-   .   $t                     - write a tab and append <verbatim text> to protocol file
+   .   $\i                     - append <verbatim text> to protocol file
+   .   $\n                     - write a line feed and append <verbatim text> to protocol file
+   .   $\t                     - write a tab and append <verbatim text> to protocol file
    .n                         NOTE: the first space (if there) following the option character is skipped
 
-   .   $f                     - flush the file buffer
+   .   $\f                     - flush the file buffer
 
    RETURN VALUE:
    INT
@@ -1544,8 +1493,13 @@ static INT ProtocolCommand (INT argc, char **argv)
 
   for (i=1; i<argc; i++)
   {
-    from = (argv[i][1]==' ') ? 2 : 1;
-    switch (argv[i][0])
+    if (argv[i][0]!='\\')
+    {
+      PrintErrorMessage('E',"protocol","protocol options have to begin with %");
+      return (PARAMERRORCODE);
+    }
+    from = (argv[i][2]==' ') ? 3 : 2;
+    switch (argv[i][1])
     {
     case 'i' :
       fprintf(protocolFile,"%s",(argv[i])+from);
@@ -1561,13 +1515,16 @@ static INT ProtocolCommand (INT argc, char **argv)
 
     case 'f' :
       fflush(protocolFile);
-      break;
+      continue;
 
     default :
       sprintf(buffer," (unknown option '%s')",argv[i]);
       PrintHelp("protocol",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
+    /* write options not followed by a \ */
+    while ((i+1<argc) && (argv[i+1][0]!='\\'))
+      fprintf(protocolFile," $%s",(argv[++i]));
   }
 
   return (OKCODE);
@@ -1597,74 +1554,91 @@ static INT ProtocolCommand (INT argc, char **argv)
 
 static INT OpenProto (char *name, INT mode)
 {
-  char newname[32],protopath[BUFFSIZE];
+  char realname[MAXPATHLENGTH],fullname[MAXPATHLENGTH],*pos;
+  INT pathlen;
+  char c;
 
-  if (GetDefaultValue(DEFAULTSFILENAME,"protocoldir",protopath)!=0)
-    protopath[0] = '\0';
+  pathlen = 0;
+  if (GetDefaultValue(DEFAULTSFILENAME,"protocoldir",fullname)==0)
+  {
+    pathlen = strlen(fullname);
+    strcat(fullname,name);
+  }
+  else
+    strcpy(fullname,name);
 
   if (protocolFile!=NULL)
   {
     fclose(protocolFile);
+    protocolFile = NULL;
     PrintErrorMessage('W',"OpenProto","open protocol file closed!!\n");
   }
 
   if (mode==APPEND_PROTO)
   {
-    if (protopath[0]!='\0')
-      protocolFile = FileOpenUsingSearchPath(name,"a",protopath);
-    else
-      protocolFile = fileopen(name,"a");
+    protocolFile = fileopen(fullname,"a");
     if (protocolFile==NULL)
       return (1);
     else
       return (0);
   }
 
-  /* does file exist? */
-  if (protopath[0]!='\0')
-    protocolFile = FileOpenUsingSearchPath(name,"r",protopath);
-  else
-    protocolFile = fileopen(name,"r");
-  if (protocolFile!=NULL)
-  {
-    /* file does exist: rename it? */
-    fclose(protocolFile);
-    protocolFile = NULL;
+  strcpy(realname,fullname);
 
-    if ((mode==RENAME_PROTO)||(mode==TRYRENAME_PROTO))
+  if ((mode==RENAME_PROTO)||(mode==TRYRENAME_PROTO))
+  {
+    /* while file with realname exists */
+    c = 'a';
+    while ((protocolFile=fileopen(realname,"r"))!=NULL)
     {
-      strcpy(newname,name);
-      strcat(newname,".saved");
-      if (rename(name,newname)!=0)
+      fclose(protocolFile);
+      protocolFile = NULL;
+
+      if (c<=MAXRENAMECHAR)
       {
-        if (mode==RENAME_PROTO)
+        /* try new name */
+        strcpy(realname,fullname);
+        if (strchr(name,'.')!=NULL)
         {
-          sprintf(buffer,"existing file '%s' could NOT be renamed to '%s'",name,newname);
-          PrintErrorMessage('E',"OpenProto",buffer);
-          return (1);
+          if ((pos=strrchr(realname,'.'))!=NULL)
+          {
+            /* place a char before .ext in name.ext */
+            *pos++ = c++;
+            *pos = '\0';
+            pos = strrchr(fullname,'.');
+            strcat(realname,pos);
+          }
         }
         else
         {
-          sprintf(buffer,"existing file '%s' could NOT be renamed to '%s'",name,newname);
-          PrintErrorMessage('W',"OpenProto",buffer);
+          /* place a char after name */
+          pos = realname + strlen(realname);
+          *pos++ = c++;
+          *pos = '\0';
         }
       }
-      else
+      else if (mode==RENAME_PROTO)
       {
-        sprintf(buffer,"existing old protocol file '%s' renamed to '%s'",name,newname);
-        PrintErrorMessage('W',"OpenProto",buffer);
+        sprintf(buffer,"could't find a new name for '%s'",fullname);
+        PrintErrorMessage('E',"OpenProto",buffer);
+        return (1);
       }
+      else
+        break;
     }
-    else if (mode==NORENAME_PROTO)
-      PrintErrorMessage('W',"OpenProto","existing file overwritten");
   }
 
-  if (protopath[0]!='\0')
-    protocolFile = FileOpenUsingSearchPath(name,"w",protopath);
-  else
-    protocolFile = fileopen(name,"w");
+  protocolFile = fileopen(realname,"w");
   if (protocolFile==NULL)
     return (1);
+
+  SetStringVar(":protofilename",realname+pathlen);
+
+  if (strcmp(realname+pathlen,name)!=0)
+  {
+    sprintf(buffer,"opened protcol file '%s' (instead of '%s')",realname+pathlen,name);
+    PrintErrorMessage('W',"OpenProto",buffer);
+  }
 
   return(0);
 }
@@ -2547,6 +2521,8 @@ static INT LevelCommand (INT argc, char **argv)
     PrintErrorMessage('E',"level","specify <level>, + or - with the level command");
     return (CMDERRORCODE);
   }
+
+  UserWriteF("  current level is %d (top level %d)\n",CURRENTLEVEL(theMG),TOPLEVEL(theMG));
 
   InvalidatePicturesOfMG(theMG);
   InvalidateUgWindowsOfMG(theMG);
@@ -4500,7 +4476,9 @@ static INT SmoothMGCommand (INT argc, char **argv)
    It orders the nodes of the current multigrid, calling the function
    'OrderNodesInGrid' on all levels.
 
-   'ordernodes ur|ul|dr|dl|ru|rd|lu|ld' [$l <level>]
+   If specified the links are ordered in the corresponding order.
+
+   'ordernodes ur|ul|dr|dl|ru|rd|lu|ld' [$l <level>] [$L]
 
    . [$l~<level>] - only on level <level>
    .n      u=up, d=down, r=right, l=left
@@ -4509,7 +4487,7 @@ static INT SmoothMGCommand (INT argc, char **argv)
         'ordernodes rd $l2'
 
         Order nodes of grid level 2 lexicographically in horizontal lines from
-    left to right and the vertical lines from top to down.
+    left to right and the lines vertical from top down.
    D*/
 /****************************************************************************/
 
@@ -4517,7 +4495,7 @@ static INT SmoothMGCommand (INT argc, char **argv)
 /*                                                                          */
 /* Function:  OrderNodesCommand                                             */
 /*                                                                          */
-/* Purpose:   reorder nodes in lexicographically	                        */
+/* Purpose:   reorder nodes in lexicographical order                        */
 /*                                                                          */
 /* Input:     INT argc: number of arguments (incl. its own name)            */
 /*            char **argv: array of strings giving the arguments            */
@@ -4531,7 +4509,7 @@ static INT OrderNodesCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   GRID *theGrid;
   INT i,res,level,fromLevel,toLevel;
-  INT sign[DIM],order[DIM],xused,yused,zused,error;
+  INT sign[DIM],order[DIM],xused,yused,zused,error,AlsoOrderLinks;
   char ord[3];
 
   theMG = currMG;
@@ -4608,6 +4586,7 @@ static INT OrderNodesCommand (INT argc, char **argv)
   }
 
   /* check options */
+  AlsoOrderLinks = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -4625,6 +4604,10 @@ static INT OrderNodesCommand (INT argc, char **argv)
         PrintErrorMessage('E',"ordernodes","level out of range");
         return(PARAMERRORCODE);
       }
+      break;
+
+    case 'L' :
+      AlsoOrderLinks = TRUE;
       break;
 
     default :
@@ -4648,7 +4631,7 @@ static INT OrderNodesCommand (INT argc, char **argv)
     sprintf(buffer," [%d:",level);
     UserWrite(buffer);
 
-    if (OrderNodesInGrid(theGrid,order,sign)!=GM_OK)
+    if (OrderNodesInGrid(theGrid,order,sign,AlsoOrderLinks)!=GM_OK)
     {
       PrintErrorMessage('E',"ordernodes","OrderNodesInGrid failed");
       return (CMDERRORCODE);
@@ -5609,7 +5592,7 @@ static INT OpenWindowCommand (INT argc, char **argv)
       break;
 
     case 'n' :
-      if (sscanf(argv[i],expandfmt(CONCAT3("n %",NAMELENSTR,"[a-zA-Z0-9_-.]")),winname)!=1)
+      if (sscanf(argv[i],expandfmt(CONCAT3("n %",NAMELENSTR,"[a-zA-Z0-9_.-]")),winname)!=1)
       {
         PrintErrorMessage('E',"openwindow","specify window name with n option");
         return (PARAMERRORCODE);
@@ -6304,12 +6287,13 @@ static INT ClearPictureCommand (INT argc, char **argv)
    of the current picture.
    It calls the function 'SetView'.
 
-    in 2D: 'setview [$t <x> <y>] [$x  <x> <y>]'
+    in 2D: 'setview [$i] [$t <x> <y>] [$x  <x> <y>]'
 
-    in 3D: 'setview [$o <x> <y> <z> $t <x> <y> <z>] [$x <x> <y> [<z>]] [$p < | =]'
+    in 3D: 'setview [$i] [$o <x> <y> <z> $t <x> <y> <z>] [$x <x> <y> [<z>]] [$p < | =]'
 
    .n                         all coordinates have to be given in physical coordinates
 
+   .   $i                     - return to default settings first
    .   $o~<x>~<y>~<z>         - 3D objects ONLY: specify the observer stand
    .   $p~<~|~=               - 3D objects ONLY: choose central (<) or parallel (=) perspective
    .   $t~<x>~<y>~[<z>]       - specify the target point in the viewplane
@@ -6335,12 +6319,13 @@ static INT ClearPictureCommand (INT argc, char **argv)
    the object of the current picture.
    It specifies or change the observer's view of the object of the current picture.
 
-    in 2D: 'setview [$t <x> <y>] [$x  <x> <y>]'
+    in 2D: 'setview [$i] [$t <x> <y>] [$x  <x> <y>]'
 
-    in 3D: 'setview [$o <x> <y> <z> $t <x> <y> <z>] [$x <x> <y> [<z>]] [$p < | =]'
+    in 3D: 'setview [$i] [$o <x> <y> <z> $t <x> <y> <z>] [$x <x> <y> [<z>]] [$p < | =]'
 
    .n                         all coordinates have to be given in physical coordinates
 
+   .   $i                     - return to default settings first
    .   $o <x> <y> <z>         - 3D objects ONLY: specify the observer stand
    .   $p < | =               - 3D objects ONLY: choose central (<) or parallel (=) perspective
    .   $t <x> <y> [<z>]       - specify the target point in the viewplane
@@ -6449,6 +6434,10 @@ static INT SetViewCommand (INT argc, char **argv)
       perspective = &per;
       break;
 
+    case 'i' :
+      VO_STATUS(theViewedObj) = NOT_INIT;
+      break;
+
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("setview",HELPITEM,buffer);
@@ -6510,13 +6499,13 @@ static INT DisplayViewCommand (INT argc, char **argv)
   thePic = GetCurrentPicture();
   if (thePic==NULL)
   {
-    PrintErrorMessage('E',"diplayview","there's no current picture");
+    PrintErrorMessage('E',"vdisplay","there's no current picture");
     return (CMDERRORCODE);
   }
 
   if (DisplayViewOfViewedObject(thePic))
   {
-    PrintErrorMessage('E',"diplayview","error during DisplayView");
+    PrintErrorMessage('E',"vdisplay","error during DisplayView");
     return (CMDERRORCODE);
   }
 
@@ -7517,10 +7506,10 @@ static INT UpdateDocumentCommand (INT argc, char **argv)
    This function sets the value of a symbol.
    It clears or assign a constant value to a user defined symbol.
 
-   clear <symbol name> [$a] [$u] [$v <value>]
+   clear <symbol name> [$a] [$s] [$v <value>]
 
    .  $a                     - from level 0 through current level (default: current level only)
-   .  $u                     - consider the skip fields
+   .  $s                     - consider the skip fields
    .  $v <value>             - assign this value (instead of 0.0)
 
    RETURN VALUE:
@@ -7532,10 +7521,10 @@ static INT UpdateDocumentCommand (INT argc, char **argv)
 
 static INT ClearCommand (INT argc, char **argv)
 {
-
   MULTIGRID *theMG;
   TYPE_VEC_DESC sym;
-  INT i,fl,tl;
+  INT i,fl,tl,skip;
+  float value;
 
   theMG = GetCurrentMultigrid();
   if (theMG==NULL)
@@ -7546,11 +7535,25 @@ static INT ClearCommand (INT argc, char **argv)
 
   /* check options */
   fl = tl = CURRENTLEVEL(theMG);
+  skip = FALSE;
+  value = 0.0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'a' :
       fl = 0;
+      break;
+
+    case 's' :
+      skip = TRUE;
+      break;
+
+    case 'v' :
+      if (sscanf(argv[i],"v %f",value)!=1)
+      {
+        PrintErrorMessage('E',"clear","could not read value");
+        return(CMDERRORCODE);
+      }
       break;
 
     default :
@@ -7565,8 +7568,16 @@ static INT ClearCommand (INT argc, char **argv)
     return (PARAMERRORCODE);
   }
 
-  if (a_dset(theMG,fl,tl,&sym,EVERY_CLASS,0.0)!=NUM_OK)
-    return (CMDERRORCODE);
+  if (skip)
+  {
+    if (a_dsetnonskip(theMG,fl,tl,&sym,EVERY_CLASS,value)!=NUM_OK)
+      return (CMDERRORCODE);
+  }
+  else
+  {
+    if (a_dset(theMG,fl,tl,&sym,EVERY_CLASS,value)!=NUM_OK)
+      return (CMDERRORCODE);
+  }
 
   return (OKCODE);
 }
@@ -8609,7 +8620,6 @@ INT InitCommands ()
   if (CreateCommand("checkhelp",          CheckHelpCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("readclock",          ReadClockCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("resetclock",         ResetClockCommand                               )==NULL) return (__LINE__);
-  if (CreateCommand("mute",                       MuteCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("date",                       DateCommand                                     )==NULL) return (__LINE__);
 
   /* commands for environement management */
