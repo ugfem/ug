@@ -1437,8 +1437,181 @@ static INT ElemOnSpecBnd(ELEMENT *theElement, const INT *bnd, const INT bnd_num,
   }
   return(FALSE);
 }
+static void CubicSplineCompute(DOUBLE *x, DOUBLE *y, INT n, DOUBLE yp1, DOUBLE ypn, DOUBLE *y2)
+{
+  DOUBLE sig, u[5], p, qn;
+  INT i,k;
+
+  y2[1] = -0.5;
+  u[1] = (3./(x[2]-x[1]))*((y[2]-y[1])/(x[2]-x[1])-yp1);
+  for (i=2; i<n; i++)
+  {
+    sig = (x[i]-x[i-1])/(x[i+1]-x[i-1]);
+    p = sig*y2[i-1]+2.;
+    y2[i]=(sig-1.)/p;
+    u[i]=(6.*((y[i+1]-y[i])/(x[i+1]-x[i])-(y[i]-y[i-1])/(x[i]-x[i-1]))
+          /(x[i+1]-x[i-1])-sig*u[i-1])/p;
+  }
+  qn=0.5;
+  u[n]=(3./(x[n]-x[n-1]))*(ypn-(y[n]-y[n-1])/(x[n]-x[n-1]));
+  y2[n]=(u[n]-qn*u[n-1])/(qn*y2[n-1]+1.);
+  for (k=n-1; k>0; k--)
+    y2[k]=y2[k]*y2[k+1]+u[k];
+
+  return;
+}
+static void CubicSplineInterpolate(DOUBLE *xa, DOUBLE *ya,  DOUBLE *y2a, INT n, DOUBLE x, DOUBLE *y)
+{
+  DOUBLE a,b,h;
+  INT k,kh,kl;
+
+  kl = 1;
+  kh = n;
+
+mark1:
+  if (kh-kl > 1)
+  {
+    k = (kh+kl)/2;
+    if (xa[k] > x)
+      kh = k;
+    else
+      kl = k;
+    goto mark1;
+  }
+
+  h=xa[kh]-xa[kl];
+  a=(xa[kh]-x)/h;
+  b=(x-xa[kl])/h;
+  *y=a*ya[kl]+b*ya[kh]+((a*a*a-a)*y2a[kl]+(b*b*b-b)*y2a[kh])*(h*h)/6.;
+
+  return;
+}
+/* calculate new position 'newPos' of 'midnode' using a cubic spline calculation for the nodes */
+/* node0 - node1 - node2 - node3. 'midnode' is situated between node1 and node2 */
+static INT SplineCompute(DOUBLE *midnode, DOUBLE *node0, DOUBLE *node1, DOUBLE *node2,
+                         DOUBLE *node3, DOUBLE *newPos)
+{
+  DOUBLE dfx1,dfxn,dfy1,dfyn,fx,fy,alpha,c;
+  DOUBLE ha[5],xa[5],ya[5],fx2[5],fy2[5];
+  DOUBLE len1,len2;
+  INT i;
+  /* we do not use ha[0]...fy2[0] (fortran translation) */
+  xa[1] = node0[0]; ya[1]= node0[1];
+  xa[2] = node1[0]; ya[2]= node1[1];
+  xa[3] = node2[0]; ya[3]= node2[1];
+  xa[4] = node3[0]; ya[4]= node3[1];
+
+  /* parametrize profile */
+  ha[1] = 0;
+  for (i=2; i<=4; i++)
+    ha[i] = ha[i-1] + SQRT((xa[i]-xa[i-1])*(xa[i]-xa[i-1])+(ya[i]-ya[i-1])*(ya[i]-ya[i-1]));
+  /*  derivatives at ends of interval */
+  dfx1=(xa[2]-xa[1])/(ha[2]-ha[1]);
+  dfy1=(ya[2]-ya[1])/(ha[2]-ha[1]);
+  dfxn=(xa[4]-xa[3])/(ha[4]-ha[3]);
+  dfyn=(ya[4]-ya[3])/(ha[4]-ha[3]);
+  CubicSplineCompute(ha,xa,4,dfx1,dfxn,fx2);
+  CubicSplineCompute(ha,ya,4,dfy1,dfyn,fy2);
+
+  V_DIM_EUKLIDNORM_OF_DIFF(midnode,node1,len1);
+  V_DIM_EUKLIDNORM_OF_DIFF(node2,node1,len2);
+  c = ha[2]*(1-len1/len2)+ ha[3]*len1/len2;
+  CubicSplineInterpolate(ha,xa,fx2,4,c,&fx);
+  CubicSplineInterpolate(ha,ya,fy2,4,c,&fy);
+  newPos[0] = fx;newPos[1] = fy;
+  return(0);
+}
+/* calculate a new position of a midnode by spline interpolation using two neighbour */
+/* nodes in each edge direction as spline points */
+static INT SplineSmooth(NODE *theNode, DOUBLE *newPos)
+{
+  ELEMENT *elem, *nbelem0, *nbelem1;
+  VERTEX *theVertex;
+  EDGE    *theEdge;
+  NODE *node0, *node1, *node2, *node3;
+  INT i,co,co0, co1, edge;
+  DOUBLE_VECTOR newPos1;
+  DOUBLE diff0, diff1;
+
+  if (NTYPE(theNode)!=MID_NODE) return(-1);
+  theVertex = MYVERTEX(theNode);
+  elem = VFATHER(theVertex);
+  if (TAG(elem)!=QUADRILATERAL) return(-1);
+  edge = ONEDGE(theVertex);
+  co0 = CORNER_OF_EDGE(elem,edge,0);
+  co1 = CORNER_OF_EDGE(elem,edge,1);
+  node1 = CORNER(elem,co1);
+  node2 = CORNER(elem,co0);
+  nbelem0 = NBELEM(elem,co1);
+  if (TAG(nbelem0)!=QUADRILATERAL) return(-1);
+  nbelem1 = NBELEM(elem,(co0+3)%4);
+  if (TAG(nbelem1)!=QUADRILATERAL) return(-1);
+
+  for (i=0; i<CORNERS_OF_ELEM(nbelem0); i++)
+    if (CORNER(nbelem0,i)==node1) {co=i;break;}
+
+  for (i=0; i<SIDES_OF_ELEM(nbelem0); i++)
+    if (elem==NBELEM(nbelem0,i)) {edge=i;break;}
+
+  if (edge==co)
+    node0 = CORNER(nbelem0,(co+3)%4);
+  else
+    node0 = CORNER(nbelem0,(co+1)%4);
+
+  for (i=0; i<CORNERS_OF_ELEM(nbelem1); i++)
+    if (CORNER(nbelem1,i)==node2) {co=i;break;}
+
+  for (i=0; i<SIDES_OF_ELEM(nbelem0); i++)
+    if (elem==NBELEM(nbelem1,i)) {edge=i;break;}
+
+  if (edge==co)
+    node3 = CORNER(nbelem1,(co+3)%4);
+  else
+    node3 = CORNER(nbelem1,(co+1)%4);
+
+  if (SplineCompute(CVECT(MYVERTEX(theNode)),CVECT(MYVERTEX(node0)),CVECT(MYVERTEX(node1)),
+                    CVECT(MYVERTEX(node2)),CVECT(MYVERTEX(node3)),newPos)!=0) return(-1);
+
+  /* do not move a mid node more than 30% of the thickness of its smallest neighbour element */
+
+  /* opposite node on father elem */
+  edge = ONEDGE(theVertex);
+  theEdge=GetEdge(CORNER(elem,CORNER_OF_EDGE(elem,(edge+2)%4,0)),
+                  CORNER(elem,CORNER_OF_EDGE(elem,(edge+2)%4,1)));
+  ASSERT(theEdge != NULL);
+  node1 = MIDNODE(theEdge);
+
+  /* opposite node on neighbour elem */
+  nbelem0 = NBELEM(elem,edge);
+  for (edge=0; edge<EDGES_OF_ELEM(nbelem0); edge++)
+  {
+    theEdge=GetEdge(CORNER(nbelem0,CORNER_OF_EDGE(nbelem0,edge,0)),
+                    CORNER(nbelem0,CORNER_OF_EDGE(nbelem0,edge,1)));
+    ASSERT(theEdge != NULL);
+    if (theNode==MIDNODE(theEdge))
+    {
+      theEdge=GetEdge(CORNER(nbelem0,CORNER_OF_EDGE(nbelem0,(edge+2)%4,0)),
+                      CORNER(nbelem0,CORNER_OF_EDGE(nbelem0,(edge+2)%4,1)));
+      ASSERT(theEdge != NULL);
+      node0 = MIDNODE(theEdge);
+      break;
+    }
+  }
+  V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(theNode)),CVECT(MYVERTEX(node0)),diff0);
+  V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(theNode)),CVECT(MYVERTEX(node1)),diff1);
+  diff0 = MIN(diff0,diff1);
+  V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(theNode)),newPos,diff1);
+  if (diff1>0.3*diff0)       /* maybe other values than 30% will be better */
+  {
+    V_DIM_SUBTRACT(newPos,CVECT(MYVERTEX(theNode)),newPos);
+    V_DIM_LINCOMB(1.0,CVECT(MYVERTEX(theNode)),0.2,newPos,newPos);
+  }
+
+  return(0);
+}
+
 /****************************************************************************/
-/*
+/*D
    SmoothGrid - resize all quadrilaterals and triangles on specified grids according
              to the element sizes of grid (l-1)
 
@@ -1453,6 +1626,16 @@ static INT ElemOnSpecBnd(ELEMENT *theElement, const INT *bnd, const INT bnd_num,
    .  bnd_num      - number of boundaries with special treatment
    .  bnd[]        - apply ortho-option on this boundaries
    .  option       - option type
+   .  option = 0	- smoothgrid					resize elements on toplevel
+   .  option = 1	- smoothgrid $ortho0                    resize elements on toplevel and orthogonal elements at
+   specified boundary
+   .  option = 2	- smoothgrid $ortho1                    resize elements on toplevel and orthogonal elements at
+   specified boundary for all son elements of a level 0 boundary element
+   .  option = 3	= smoothgrid $b					no smoothing, only orthogonal elements at specified boundary
+   .  option = 4	= smoothgrid $spline0			only spline smoothing
+   .  option = 5	= smoothgrid $spline			option=0  and spline smoothing
+   .  option = 6	= smoothgrid $ortho0 $spline	option=1  and spline smoothing
+   .  option = 7	= smoothgrid $ortho1 $spline	option=2 and spline smoothing
 
    DESCRIPTION
    Resize all quadrilaterals and triangles on grid (l) according to the element sizes of grid (l-1).
@@ -1466,7 +1649,7 @@ static INT ElemOnSpecBnd(ELEMENT *theElement, const INT *bnd, const INT bnd_num,
    INT
    .n   0: ok
    .n   1: error
- */
+   D*/
 /****************************************************************************/
 
 INT SmoothGrid (MULTIGRID *theMG, INT fl, INT tl, const DOUBLE LimitLocDis,
@@ -1512,6 +1695,9 @@ INT SmoothGrid (MULTIGRID *theMG, INT fl, INT tl, const DOUBLE LimitLocDis,
 
     if (option==3)
       goto option_b;
+
+    if (option==4)
+      goto option_c;
 
     /*    move center nodes of quadrilaterals  */
     for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
@@ -1594,7 +1780,7 @@ option_b:
 
     /* move boundary side nodes of quadrilaterals in order to get orthogonal boundary elements  on
        specified boundaries */
-    if (option==1 || option==2)       /* search bnd mid nodes  */
+    if (option==1 || option==2 || option==6 || option==7)       /* search bnd mid nodes  */
       for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
       {
         /* skip node if it is a copy from a lower level */
@@ -1622,7 +1808,7 @@ option_b:
       }
 
     /* move all son nodes of an level-0-boundary-element in order to get 'orthogonal' elements */
-    if (option==2)
+    if (option==2 || option==7)
     {
       /*    move center nodes of quadrilaterals  */
       for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
@@ -1684,6 +1870,112 @@ option_b:
     {
       PrintErrorMessage('E',"SmoothGrid","Error in MoveNodesOnGrid");
       goto exit;
+    }
+
+option_c:
+    if (option>=4)
+    {
+      INT n,n1,nlinks,edge,coe;
+      LINK *theLink;
+      DOUBLE *CornerPtrs[MAX_CORNERS_OF_ELEM];
+      n = 0;
+      /* move inner mid nodes using cubic spline functions */
+      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+      {
+        DOUBLE_VECTOR newPos;
+        /* skip node if it is a copy from a lower level */
+        if (CORNERTYPE(theNode)) continue;
+
+        /* skip node if it is not a mid node */
+        if (NTYPE(theNode)!=MID_NODE) continue;
+
+        /* get father element */
+        theVertex=MYVERTEX(theNode);
+        /* copy old position */
+        V_DIM_COPY(CVECT(theVertex),VertexCoord[ID(theVertex)]);
+        fatherElement = VFATHER(theVertex);
+        /* skip nodes near a boundary */
+        if (OBJT(fatherElement)==BEOBJ) continue;
+        edge = ONEDGE(theVertex);
+        if (OBJT(NBELEM(fatherElement,edge))==BEOBJ) continue;
+        /* skip nodes which are moved due to the 'ortho1' option */
+        if (option==7)
+        {
+          /* search father element on level 0 */
+          Level0Father=fatherElement;
+          for (i=GLEVEL(theGrid)-1; i>0; i--) Level0Father=EFATHER(Level0Father);
+          /* check if father element is at a specified boundary */
+          if (OBJT(Level0Father)==BEOBJ)
+            if (ElemOnSpecBnd(Level0Father,bnd,bnd_num,&side)) continue;
+
+          /* check second 'father' element */
+          edge = ONEDGE(theVertex);
+          Level0Father = NBELEM(fatherElement,edge);
+          for (i=GLEVEL(theGrid)-1; i>0; i--) Level0Father=EFATHER(Level0Father);
+          /* check if father element is at a specified boundary */
+          if (OBJT(Level0Father)==BEOBJ)
+            if (ElemOnSpecBnd(Level0Father,bnd,bnd_num,&side)) continue;
+        }
+
+        /* calculate new position */
+        if (SplineSmooth(theNode,newPos)) continue;
+        /* move node to new position */
+        if (MoveNode(theMG,theNode,newPos,FALSE)!=0) return(1);
+        n++;
+      }
+      n1 = 0;
+      /* move center nodes according to the displacements of the neighbouring mid nodes */
+      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+      {
+        DOUBLE_VECTOR newPos;
+        /* skip node if it is a copy from a lower level */
+        if (CORNERTYPE(theNode)) continue;
+
+        /* skip node if it is not a center node */
+        if (NTYPE(theNode)!=CENTER_NODE) continue;
+
+        /* get father element */
+        theVertex=MYVERTEX(theNode);
+        fatherElement = VFATHER(theVertex);
+        if (OBJT(fatherElement)==BEOBJ) continue;
+
+        /* skip nodes which are moved due to the 'ortho1' option */
+        if (option==7)
+        {
+          /* search father element on level 0 */
+          Level0Father=fatherElement;
+          for (i=GLEVEL(theGrid)-1; i>0; i--) Level0Father=EFATHER(Level0Father);
+          /* check if father element is at a specified boundary */
+          if (OBJT(Level0Father)==BEOBJ)
+            if (ElemOnSpecBnd(Level0Father,bnd,bnd_num,&side)) continue;
+        }
+        V_DIM_COPY(CVECT(theVertex),newPos);
+        nlinks=0;
+        /* add the mean displacement of the neighbouring nodes to the center node */
+        for (theLink=START(theNode); theLink!=0; theLink=NEXT(theLink))
+        {
+          V_DIM_LINCOMB(1.0,newPos,0.5,CVECT(MYVERTEX(NBNODE(theLink))),newPos);
+          V_DIM_LINCOMB(1.0,newPos,-0.5,VertexCoord[ID(MYVERTEX(NBNODE(theLink)))],newPos);
+          nlinks++;
+        }
+        if (nlinks!=4) continue;
+        /* move the center node to the new position */
+        if (MoveNode(theMG,theNode,newPos,FALSE)!=0) return(1);
+        n1++;
+      }
+      UserWriteF("%d mid-nodes and %d center-nodes moved due to 'spline' option on level %d\n",
+                 n,n1,GLEVEL(theGrid));
+
+      /* update nodes on higher level */
+      for(i=GLEVEL(theGrid)+1; i<=TOPLEVEL(theMG); i++)
+        for (theVertex=FIRSTVERTEX(GRID_ON_LEVEL(theMG,i));
+             theVertex!=NULL; theVertex=SUCCV(theVertex))
+          if ((OBJT(theVertex) != BVOBJ)) {
+            CORNER_COORDINATES(VFATHER(theVertex),coe,CornerPtrs);
+            LOCAL_TO_GLOBAL(coe,CornerPtrs,LCVECT(theVertex),CVECT(theVertex));
+          }
+          else
+            MoveBndMidNode(theMG,theVertex);
     }
 
     /* reset used flag */
