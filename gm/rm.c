@@ -1355,7 +1355,9 @@ static INT Alignment (ELEMENT *theElement)
   V3_CLEAR(MidPoint)
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     Corners[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
-  (*theDirectionElemEval)(theElement,Corners,LMP(CORNERS_OF_ELEM(theElement)),Velocity);
+  (*theDirectionElemEval)(theElement,Corners,
+                          (COORD *)LMP(CORNERS_OF_ELEM(theElement)),
+                          Velocity);
 
   /* get physical position of the midpoints of the edges */
   for (i=0; i<EDGES_OF_ELEM(theElement); i++)

@@ -730,7 +730,7 @@ static void GradNodeIndex (const ELEMENT *theElement, const COORD **theCorners, 
   COORD_VECTOR theGradient[MAX_CORNERS_OF_ELEM];
   DOUBLE v;
 
-  TetraDerivative(theElement,theCorners,theGradient);
+  TetraDerivative((ELEMENT *)theElement,theCorners,theGradient);
   V3_CLEAR(values)
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
   {

@@ -5541,7 +5541,7 @@ INT PointInElement (const COORD *x, const ELEMENT *theElement) /* 2D version */
 #endif
 
 #ifdef __THREEDIM__
-static INT PointInElement (const COORD *global, const ELEMENT *theElement)
+INT PointInElement (const COORD *global, const ELEMENT *theElement)
 {
   COORD *x[MAX_CORNERS_OF_ELEM];
   COORD_VECTOR a,b,rot;
@@ -5552,12 +5552,12 @@ static INT PointInElement (const COORD *global, const ELEMENT *theElement)
 
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
-    V3_SUBTRACT(x[CORNERS_OF_SIDE(theElement,i,1)],
-                x[CORNERS_OF_SIDE(theElement,i,0)],a);
-    V3_SUBTRACT(x[CORNERS_OF_SIDE(theElement,i,2)],
-                x[CORNERS_OF_SIDE(theElement,i,0)],b);
+    V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,1)],
+                x[CORNER_OF_SIDE(theElement,i,0)],a);
+    V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,2)],
+                x[CORNER_OF_SIDE(theElement,i,0)],b);
     V3_VECTOR_PRODUCT(a,b,rot);
-    V3_SUBTRACT(global,x[CORNERS_OF_SIDE(theElement,i,0)],b);
+    V3_SUBTRACT(global,x[CORNER_OF_SIDE(theElement,i,0)],b);
     V3_SCALAR_PRODUCT(rot,b,det);
     if (det < 0.0)
       return(0);
