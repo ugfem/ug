@@ -30,10 +30,6 @@
 
 #include "compiler.h"
 
-#ifndef __PLOTPROC__
-#include "plotproc.h"
-#endif
-
 #ifndef __DEVICESH__
 #include "devices.h"
 #endif

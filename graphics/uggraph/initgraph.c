@@ -36,7 +36,6 @@
 #include "misc.h"
 
 /* graph module */
-#include "plotproc.h"
 #include "wpm.h"
 #include "wop.h"
 
@@ -75,13 +74,6 @@ static char rcsid[] = "$Header$";
 INT InitGraph ()
 {
   INT err;
-
-  /* init plotproc.c */
-  if ((err=InitPlotproc())!=0)
-  {
-    SetHiWrd(err,__LINE__);
-    return (err);
-  }
 
   /* init wpm.c */
   if ((err=InitWPM())!=0)

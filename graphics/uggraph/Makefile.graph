@@ -19,7 +19,7 @@ include ../ug.conf
 LCFLAGS = -I../low -I../dev -I../gm -I../numerics
 
 # object files for both dimensions
-OBJECTS = plotproc.o wpm.o graph.o wop.o initgraph.o
+OBJECTS = wpm.o graph.o wop.o initgraph.o
 
 # objects for 2D version
 OBJECTS2 =

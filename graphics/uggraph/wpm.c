@@ -35,8 +35,8 @@
 
 #include "compiler.h"
 #include "misc.h"
-#include "plotproc.h"
 #include "evm.h"
+#include "gm.h"
 #include "num.h"
 #include "wpm.h"
 
@@ -2107,7 +2107,7 @@ static INT InitMatrixPlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
       if (sscanf(argv[i],"e %s",buffer)!=1)
         break;
       if (strlen(buffer)>=NAMESIZE) break;
-      theMpo->EvalFct = GetMatrixValuePlotProc(buffer);
+      theMpo->EvalFct = GetMatrixValueEvalProc(buffer);
       break;
     }
   if (theMpo->EvalFct == NULL)
@@ -2144,7 +2144,7 @@ static INT DisplayMatrixPlotObject (PLOTOBJ *thePlotObj)
   UserWrite(buffer);
 
   /* print procedure name */
-  sprintf(buffer,"PlotProc=%s\n",((ENVVAR*)theMpo->EvalFct)->name);
+  sprintf(buffer,"EvalProc=%s\n",((ENVVAR*)theMpo->EvalFct)->name);
   UserWrite(buffer);
 
   return (ACTIVE);
@@ -2946,7 +2946,7 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
       if (sscanf(argv[i],"e %s",buffer)!=1)
         break;
       if (strlen(buffer)>=NAMESIZE) break;
-      theEspo->EvalFct = GetElementValuePlotProc(buffer);
+      theEspo->EvalFct = GetElementValueEvalProc(buffer);
       break;
     }
   if (theEspo->EvalFct == NULL)
@@ -2993,9 +2993,9 @@ static INT DisplayScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj)
 
   /* print content */
   if (theEspo->EvalFct != NULL)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"PlotProc",ENVITEM_NAME(theEspo->EvalFct));
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theEspo->EvalFct));
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"PlotProc","---");
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc","---");
   UserWrite(buffer);
 
   if (theEspo->PlotGrid == YES)
@@ -3137,7 +3137,7 @@ static INT InitVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
       if (sscanf(argv[i],"e %s",buffer)!=1)
         break;
       if (strlen(buffer)>=NAMESIZE) break;
-      theEvpo->EvalFct = GetElementVectorPlotProc(buffer);
+      theEvpo->EvalFct = GetElementVectorEvalProc(buffer);
       break;
     }
   if (theEvpo->EvalFct == NULL)
@@ -3547,7 +3547,7 @@ static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
       if (sscanf(argv[i],"e %s",buffer)!=1)
         break;
       if (strlen(buffer)>=NAMESIZE) break;
-      theEspo->EvalFct = GetElementValuePlotProc(buffer);
+      theEspo->EvalFct = GetElementValueEvalProc(buffer);
       break;
     }
   if (theEspo->EvalFct == NULL)
@@ -3601,9 +3601,9 @@ static INT DisplayScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj)
 
   /* print content */
   if (theEspo->EvalFct != NULL)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"PlotProc",ENVITEM_NAME(theEspo->EvalFct));
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theEspo->EvalFct));
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"PlotProc","---");
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc","---");
   UserWrite(buffer);
   sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"Range",(float)theEspo->min,(float)theEspo->max);
   UserWrite(buffer);
@@ -3748,7 +3748,7 @@ static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
       if (sscanf(argv[i],"e %s",buffer)!=1)
         break;
       if (strlen(buffer)>=NAMESIZE) break;
-      theEvpo->EvalFct = GetElementVectorPlotProc(buffer);
+      theEvpo->EvalFct = GetElementVectorEvalProc(buffer);
       break;
     }
   if (theEvpo->EvalFct == NULL)
@@ -3790,9 +3790,9 @@ static INT DisplayVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj)
 
   /* print content */
   if (theEvpo->EvalFct != NULL)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"PlotProc",ENVITEM_NAME(theEvpo->EvalFct));
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theEvpo->EvalFct));
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"PlotProc","---");
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc","---");
   UserWrite(buffer);
   sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"Range",0.0,(float)theEvpo->max);
   UserWrite(buffer);

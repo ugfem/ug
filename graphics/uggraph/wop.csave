@@ -37,7 +37,6 @@
 #include "compiler.h"
 #include "wop.h"
 #include "wpm.h"
-#include "plotproc.h"
 #include "misc.h"
 #include "evm.h"
 #include "simplex.h"
@@ -336,7 +335,7 @@ static COORD_POINT FE3D_MousePos;
 
 /*---------- working variables of 'EW_EScalar2D' ---------------------------*/
 static PreprocessingProcPtr EScalar2D_PreProcess;
-static ElementPlotProcPtr EScalar2D_EvalFct;
+static ElementEvalProcPtr EScalar2D_EvalFct;
 static COORD EScalar2D_V2C_factor;
 static COORD EScalar2D_V2C_offset;
 static INT EScalar2D_mode;
@@ -349,7 +348,7 @@ static DOUBLE EScalar2D_maxValue;
 
 /*---------- working variables of 'EW_EScalar3D' ---------------------------*/
 static PreprocessingProcPtr EScalar3D_PreProcess;
-static ElementPlotProcPtr EScalar3D_EvalFct;
+static ElementEvalProcPtr EScalar3D_EvalFct;
 static COORD EScalar3D_V2C_factor;
 static COORD EScalar3D_V2C_offset;
 static INT EScalar3D_mode;
@@ -5878,7 +5877,7 @@ static INT EW_PreProcess_EScalar2D (PICTURE *thePicture, WORK *theWork)
       UserWrite("maxValue has to be larger than minValue\n");
       return (1);
     }
-  EScalar2D_EvalFct        = theEspo->EvalFct->PlotProc;
+  EScalar2D_EvalFct        = theEspo->EvalFct->EvalProc;
   if ((theEspo->max - theEspo->min)==0)
     EScalar2D_V2C_factor = 0;
   else
@@ -6535,7 +6534,7 @@ static INT EW_PreProcess_EVector2D (PICTURE *thePicture, WORK *theWork)
     }
   EVector_rastersize        = theEvpo->RasterSize;
   EVector_cutvector         = theEvpo->CutVectors;
-  EVector_EvalFct           = theEvpo->EvalFct->PlotProc;
+  EVector_EvalFct           = theEvpo->EvalFct->EvalProc;
   EVector_V2L_factor        = EVector_rastersize/theEvpo->max;                                  /* scale length of vectors			*/
   EVector_CutLenFactor  = theEvpo->CutLenFactor;
   EVector_ColorCut          = theOD->red;
@@ -8723,7 +8722,7 @@ static INT EW_PreProcess_EScalar3D (PICTURE *thePicture, WORK *theWork)
   /* do not plot if cut plane is on the back */
   if (!CUT_CutAtFront) return (1);
 
-  EScalar3D_EvalFct        = theEspo->EvalFct->PlotProc;
+  EScalar3D_EvalFct        = theEspo->EvalFct->EvalProc;
   EScalar3D_V2C_factor = (theOD->spectrumEnd - theOD->spectrumStart)/(theEspo->max - theEspo->min);
   EScalar3D_V2C_offset = theOD->spectrumStart - EScalar3D_V2C_factor*theEspo->min;
   EScalar3D_mode           = theEspo->mode;
@@ -8778,7 +8777,7 @@ static INT EW_PreProcess_EScalar3D_FR (PICTURE *thePicture, WORK *theWork)
 
   if (theEspo->theCut.status!=ACTIVE) return (1);
 
-  EScalar3D_EvalFct        = theEspo->EvalFct->PlotProc;
+  EScalar3D_EvalFct        = theEspo->EvalFct->EvalProc;
   EScalar3D_V2C_factor = (theOD->spectrumEnd - theOD->spectrumStart);
   EScalar3D_V2C_offset = theOD->spectrumStart;
   EScalar3D_mode           = PO_COLOR;
@@ -8843,7 +8842,7 @@ static INT EW_PreProcess_EVector3D (PICTURE *thePicture, WORK *theWork)
   EVector_cutvector               = theEvpo->CutVector;
   EVector_CutLenFactor    = theEvpo->CutLenFactor;
   EVector3D_projectvector = theEvpo->ProjectVector;
-  EVector_EvalFct                 = theEvpo->EvalFct->PlotProc;
+  EVector_EvalFct                 = theEvpo->EvalFct->EvalProc;
   EVector_V2L_factor              = EVector_rastersize/theEvpo->max;                                    /* scale length of vectors			*/
   EVector3D_V2C_factor    = 0.5*(theOD->spectrumEnd - theOD->spectrumStart);       /* transformation from (-1,1) to     */
   EVector3D_V2C_offset    = theOD->spectrumStart + EVector3D_V2C_factor;                /* color spectrum					*/
