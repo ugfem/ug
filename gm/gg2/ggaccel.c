@@ -82,6 +82,8 @@ static INT EttObj;
 /*                                                                          */
 /****************************************************************************/
 
+static void InsertQuadtree(FRONTCOMP *pon, int ncomp);
+static void DELETE_ND ( FRONTCOMP *delete_p );
 
 /****************************************************************************/
 /*                                                                          */
@@ -187,8 +189,8 @@ static float length_of_edge(FRONTCOMP* edgefc, FRONTCOMP* edgefc_aim)
 /*                                                                          */
 /****************************************************************************/
 
-float length_of_angle
-  (FRONTCOMP* anglefc_ori, FRONTCOMP* anglefc, FRONTCOMP* anglefc_aim)
+static COORD length_of_angle (FRONTCOMP* anglefc_ori,
+                              FRONTCOMP* anglefc, FRONTCOMP* anglefc_aim)
 {
   VERTEX *theVertex;
   COORD xc,yc,px,py,sx,sy,angle;
@@ -879,8 +881,8 @@ static void insert(QFCLISTTYP *p_new, QUADTREETYP *q_place,
 
     insert(n_zeiger, q_pointer, src, wi);
 
-    /* Besides we must consider, whether we can insert the point p_new or have
-       /* to refine again */
+    /* Besides we must consider, whether we can insert the point p_new or have */
+    /* to refine again */
     helpc3 = 0;
     if ( (YC(MYVERTEX(FRONTN(FROC(p_new)))) < (src->y + wi)) &&
          (XC(MYVERTEX(FRONTN(FROC(p_new)))) >= (src->x + wi))   )
