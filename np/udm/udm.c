@@ -551,6 +551,7 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
   /* fill fields with scalar properties */
   SetScalVecSettings(vd);
   VM_LOCKED(vd) = 0;
+  VD_SUCC_COMP(vd) = TRUE;
 
   return (vd);
 }
@@ -627,6 +628,7 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const char *name,
   /* fill fields with scalar properties */
   SetScalVecSettings(vd);
   VM_LOCKED(vd) = 0;
+  VD_SUCC_COMP(vd) = FALSE;
 
   return (vd);
 }

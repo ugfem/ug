@@ -80,6 +80,7 @@
 #define VD_NCOMP(vd)                        (VD_OFFSETPTR(vd)[NVECTYPES])
 #define VD_MINTYPE(vd)                      ((vd)->mintype)
 #define VD_MAXTYPE(vd)                      ((vd)->maxtype)
+#define VD_SUCC_COMP(vd)                    ((vd)->SuccComp)
 
 /* MATDATA_DESC */
 #define MTP(rt,ct)                          ((rt)*NVECTYPES+(ct))
@@ -175,6 +176,7 @@ typedef struct {
   /* redundant (but frequently used) information                          */
   SHORT IsScalar;                  /* TRUE if desc is scalar:               */
                                    /*  same settings in all types           */
+  SHORT SuccComp;                   /* successive components                */
   SHORT ScalComp;                  /* location of scalar component          */
   INT ScalTypeMask;                /* mask for used vectypes                */
   SHORT offset[NVECOFFSETS];       /* offsets for VEC_SCALARs               */
