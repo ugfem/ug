@@ -1,0 +1,57 @@
+#!/bin/sh
+if test "$1" = "-help"
+then
+	echo "purpose: make symbolic links for all header files";
+	echo "         used in the application modules";
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+ugmkln () 
+{
+	for j in `cd $1; ls -1 *.h; cd $UGROOT/include;`
+	do
+		if test -h ${j}
+			then	
+				echo "links for ${j} exists";
+			else
+				ln -s $1${j} ${j};
+		fi
+	done
+}
+
+cd $UGROOT;
+
+if test -d include
+then
+	rm -f -r include;
+fi	
+mkdir include;
+cd include;
+
+ugmkln "../";
+
+for i in `ls -1 ../`
+do
+    if test -d "../${i}"
+    then
+		echo "change to ../$i";
+	    ugmkln ../${i}/;
+		for k in `ls -1 ../${i}`
+		do
+		    if test -d "../${i}/${k}"
+		    then
+				echo "change to $k";
+			    ugmkln ../${i}/${k}/;
+		    fi
+		done
+    fi
+done
+
+exit 0;
+
