@@ -336,7 +336,7 @@ static INT Write_RefRules (MULTIGRID *theMG, INT *RefRuleOffset)
         Refrule->sonandnode[j][0] = ug_refrule->sonandnode[j][0];
         Refrule->sonandnode[j][1] = ug_refrule->sonandnode[j][1];
       }
-      for (j=0; j<MGIO_MAX_SONS_OF_ELEM; j++)
+      for (j=0; j<Refrule->nsons; j++)
       {
         sonData = &(Refrule->sons[j]);
         sonData->tag = ug_refrule->sons[j].tag;

@@ -569,14 +569,15 @@ int     Read_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
   int i,j,k,m,s;
   MGIO_RR_RULE *prr;
 
-  m = 2+MGIO_MAX_NEW_CORNERS+2*MGIO_MAX_NEW_CORNERS+MGIO_MAX_SONS_OF_ELEM*(1+MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_SIDES_OF_ELEM+1);
   prr = rr_rules;
   for (i=0; i<n; i++)
   {
+    if (Bio_Read_mint(2,intList)) return (1);
+    prr->class = intList[0];
+    prr->nsons = intList[1];
+    m = MGIO_MAX_NEW_CORNERS+2*MGIO_MAX_NEW_CORNERS+prr->nsons*(1+MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_SIDES_OF_ELEM+1);
     if (Bio_Read_mint(m,intList)) return (1);
     s=0;
-    prr->class = intList[s++];
-    prr->nsons = intList[s++];
     for (j=0; j<MGIO_MAX_NEW_CORNERS; j++)
       prr->pattern[j] = intList[s++];
     for (j=0; j<MGIO_MAX_NEW_CORNERS; j++)
@@ -584,7 +585,7 @@ int     Read_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
       prr->sonandnode[j][0] = intList[s++];
       prr->sonandnode[j][1] = intList[s++];
     }
-    for (j=0; j<MGIO_MAX_SONS_OF_ELEM; j++)
+    for (j=0; j<prr->nsons; j++)
     {
       prr->sons[j].tag = intList[s++];
       for (k=0; k<MGIO_MAX_CORNERS_OF_ELEM; k++)
@@ -624,10 +625,9 @@ int     Read_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
 
 int     Write_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
 {
-  int i,j,k,m,s;
+  int i,j,k,s;
   MGIO_RR_RULE *prr;
 
-  m = 2+MGIO_MAX_NEW_CORNERS+2*MGIO_MAX_NEW_CORNERS+MGIO_MAX_SONS_OF_ELEM*(1+MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_SIDES_OF_ELEM+1);
   prr = rr_rules;
   for (i=0; i<n; i++)
   {
@@ -641,7 +641,7 @@ int     Write_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
       intList[s++] = prr->sonandnode[j][0];
       intList[s++] = prr->sonandnode[j][1];
     }
-    for (j=0; j<MGIO_MAX_SONS_OF_ELEM; j++)
+    for (j=0; j<prr->nsons; j++)
     {
       intList[s++] = prr->sons[j].tag;
       for (k=0; k<MGIO_MAX_CORNERS_OF_ELEM; k++)

@@ -40,7 +40,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define MGIO_VERSION                                    "UG_IO_1.5"
+#define MGIO_VERSION                                    "UG_IO_1.6"
 
 #define __MGIO_USE_IN_UG__
 #define MGIO_DIM                        3
@@ -91,7 +91,7 @@
                 #define MGIO_MAX_CORNERS_OF_SIDE        2
         #endif
         #if (MGIO_DIM==3)
-                #define MGIO_MAX_SONS_OF_ELEM                   12
+                #define MGIO_MAX_SONS_OF_ELEM                   30
                 #define MGIO_MAX_EDGES_OF_ELEM                  12
                 #define MGIO_MAX_CORNERS_OF_ELEM                8
                 #define MGIO_MAX_SIDES_OF_ELEM                  6
