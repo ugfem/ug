@@ -338,7 +338,7 @@ static INT GradientAtLMP (ELEMENT *theElement, INT ncomp, VECDATA_DESC *theVD,
   return(0);
 }
 
-static DOUBLE ElementIndicator (ELEMENT *t, INT ncomp, VECDATA_DESC *theVD)
+static DOUBLE ElementIndicator_christian (ELEMENT *t, INT ncomp, VECDATA_DESC *theVD)
 {
   ELEMENT *f;
   DOUBLE_VECTOR egrad[MAX_SINGLE_VEC_COMP];
@@ -361,6 +361,20 @@ static DOUBLE ElementIndicator (ELEMENT *t, INT ncomp, VECDATA_DESC *theVD)
   }
 
   return(est * area);
+}
+
+static DOUBLE ElementIndicator (ELEMENT *t, INT ncomp, VECDATA_DESC *theVD)
+{
+  DOUBLE theMin=1.0E100, theMax=-1.0E100;
+  INT i;
+
+  for (i=0; i<CORNERS_OF_ELEM(t); i++)
+  {
+    theMin = MIN(theMin,VVALUE(NVECTOR(CORNER(t,i)),VD_CMP_OF_TYPE(theVD,NODEVEC,1)));
+    theMax = MAX(theMax,VVALUE(NVECTOR(CORNER(t,i)),VD_CMP_OF_TYPE(theVD,NODEVEC,1)));
+  }
+
+  return(theMax-theMin);
 }
 
 INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
@@ -426,12 +440,22 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
       if (EstimateHere(t) && ECLASS(t) != YELLOW_CLASS)
       {
         est = List[nel++];
-        if ((est > rf) && (k < to))
+        if ((ECLASS(t)==RED_CLASS) && (est > rf) && (k < to))
         {
           MarkForRefinement(t,RED,0);
           mfr++;
         }
-        else if ((est < cr) && (k > from))
+        if ((ECLASS(t)==GREEN_CLASS) && (est > rf) && (k < to+1))
+        {
+          MarkForRefinement(t,RED,0);
+          mfr++;
+        }
+        if ((ECLASS(t)==YELLOW_CLASS) && (est > rf) && (k < to+1))
+        {
+          MarkForRefinement(t,RED,0);
+          mfr++;
+        }
+        if ((ECLASS(t)==RED_CLASS) && (est < cr) && (k > from))
         {
           MarkForRefinement(t,COARSE,0);
           mfc++;
@@ -487,6 +511,7 @@ static INT IndicatorInit (NP_BASE *theNumProc, INT argc, char **argv)
   theNP->project = ReadArgvOption("p",argc,argv);
   theNP->update = ReadArgvOption("r",argc,argv);
   theNP->interpolate = ReadArgvOption("i",argc,argv);
+  theNP->clear = ReadArgvOption("c",argc,argv);
 
   return (NPErrorInit(&theNP->error,argc,argv));
 }
