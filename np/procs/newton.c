@@ -106,6 +106,7 @@ typedef struct
   DOUBLE scale[MAX_VEC_COMP];       /* scaling of components						*/
   DOUBLE divFactor[MAX_VEC_COMP];         /* divergence factor for nonlin iteration	*/
   INT noLastDef;                                        /* no defect check after last iteration			*/
+  INT force_iteration;                  /* if 1 at least 1 iteration is carried out     */
 
   /* and XDATA_DESCs */
   MATDATA_DESC *J;                              /* the Matrix to be solved						*/
@@ -450,7 +451,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
       UserWriteF(" ++ s=%12.4E Initial nonlinear residual\n",s);
 
   /* check if iteration is necessary */
-  if (sc_cmp(defect,abslimit,newton->d)) {
+  if (sc_cmp(defect,abslimit,newton->d) && !newton->force_iteration) {
     res->converged = 1;
     for (i=0; i<n_unk; i++) res->last_defect[i] = defect[i];
     res->error_code = 0;
@@ -827,6 +828,9 @@ static INT NewtonInit (NP_BASE *base, INT argc, char **argv)
   if ((newton->lineSearch<0)||(newton->lineSearch>3)) {
     PrintErrorMessage('E',"NewtonInit","line = 0,1,2 or 3");
     REP_ERR_RETURN(NP_NOT_ACTIVE);
+  }
+  if (ReadArgvINT("fi",&(newton->force_iteration),argc,argv)) {
+    newton->force_iteration = 0;
   }
   if (ReadArgvINT("maxit",&(newton->maxit),argc,argv))
     newton->maxit = 50;
