@@ -75,8 +75,7 @@
 #define HASH_RESIZEFRAC             0.5
 #define ELEMPROCLISTSIZE                2000
 #define PROCLISTSIZE(np)                (ELEMPROCLISTSIZE*MAX_SONS * MAX(5,(int)(2.0+log((double)(np)))))
-#define VERBOSE
-#define MERGE_DEBUG
+/*#define MERGE_DEBUG*/
 
 /****************************************************************************/
 /*																			*/
@@ -121,6 +120,7 @@ typedef struct {
   HASH_TABLE *ht_gol;
   int **in_lid2gid;
   char out[128];
+  int init;
 } DATA_MAP;
 
 typedef struct {
@@ -721,6 +721,7 @@ int FreeDataMap (DATA_MAP *map)
 {
   int i;
 
+  if (map->init==0) return (0);
   for (i=0; i<map->nparfiles; i++)
     free(map->in_lid2gid[i]);
   free(map->in_lid2gid);
@@ -754,6 +755,8 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
   int nc[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS],*o_element_im,out_blid_offset,out_ilid_offset,nid_l0_max,vid_l0_max,vid_bl0_max,lid,error;
   int found,n_bn_l0,n_in_l0,id,gecid[MGIO_MAX_CORNERS_OF_ELEM],crosscheck_nref_tot;
   void *object;
+
+  if (map->init!=0)                                                               {printf("ERROR in 'MergeMultigrid': map is already initialized\n");return (1);}
 
   /*************************************************************************/
   /************************ read input file ********************************/
@@ -832,7 +835,7 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
   if (BndPList==NULL)                                                                             {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'BndPList' \n");return (1);}
   map->in_lid2gid=(int**)ht_malloc(map->nparfiles*sizeof(int*),"const");
   if (map->in_lid2gid==NULL)                                                              {printf("ERROR in 'MergeMultigrid': cannot allocate array for 'in_lid2gid' \n");return (1);}
-  printf("merging '%s': ",mgdesc->mgname);
+  printf("merging '%s':\n",mgdesc->mgname);
   fflush(stdout);
   for (i=0; i<map->nparfiles; i++)
   {
@@ -1043,18 +1046,14 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
   if (HashTableInsertAtBegin (&(map->ht_gol),ht_in_l0)) {printf("ERROR in 'MergeMultigrid': cannot insert hash table\n");return (1);}
   if (HashTableInsertAtBegin (&(map->ht_gol),ht_bn_l0)) {printf("ERROR in 'MergeMultigrid': cannot insert hash table\n");return (1);}
 
-#ifdef VERBOSE
+#ifdef MERGE_DEBUG
   HashTablePrint(ht_cgv,"vtx");
   HashTablePrint(ht_bnp,"bnp");
   HashTablePrint(ht_ref,"ref");
-#ifdef MERGE_DEBUG
   HashTableStat(ht_ref,&hst);
   crosscheck_nref_tot=hst.n_obj;
-#endif
   HashTablePrint((map->ht_gol),"gol");
-#ifdef MERGE_DEBUG
   HashTablePrint(ht_nodes,"nds");
-#endif
 #endif
 
   /*************************************************************************/
@@ -1095,7 +1094,7 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
         }
     }
   cg_general_out.nInnerElement=cg_general_out.nElement-cg_general_out.nBndElement;
-#ifdef VERBOSE
+#ifdef MERGE_DEBUG
   printf("coarse grid info: nPoints:     %d\n"
          "                  nInnerPoints:%d\n"
          "                  nBnbPoints:  %d\n"
@@ -1224,12 +1223,10 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
   /* we are done */
   if (CloseMGFile())                                                              {printf("ERROR in 'MergeMultigrid': cannot close output file\n");return (1);}
 
-#ifdef VERBOSE
+#ifdef MERGE_DEBUG
   printf("\n");
-#endif
-
-  /* display memory requirements */
   if (ht_malloc_display()) return (1);
+#endif
 
   /* free hashtables */
   FreeHashTable(&ht_cgv);
@@ -1261,6 +1258,8 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
   free(ncge);
   free(cg_point_out);
 
+  map->init=1;
+
   return (0);
 }
 
@@ -1289,6 +1288,8 @@ int MergeData (char *data, DATA_MAP *data_map)
   DIO_GENERAL dio_general_out,dio_general;
   double *data_out,* data_in;
 
+  if (data_map->init==0)                                          {printf("map is not initialized in 'MergeData'\n"); return (1);}
+
   /* read first header and modify */
   if (data==NULL) return (1);
   strcpy(buffer,data);
@@ -1309,7 +1310,8 @@ int MergeData (char *data, DATA_MAP *data_map)
   for (i=0; i<nnodes_out*ndata_pn; i++) data_out[i]=3.141e59;
 
   /* merge data */
-  printf("merging '%s': ",data);
+  printf("merging '%s':\n",data);
+  fflush(stdout);
   key[0]=1;
   for (i=0; i<data_map->nparfiles; i++)
   {
@@ -1317,6 +1319,7 @@ int MergeData (char *data, DATA_MAP *data_map)
     sprintf(buffer,"%s/data.%04d",data,i);
     if (i<data_map->nparfiles-1) printf("[%d]",i);
     else printf("[%d]\n",i);
+    fflush(stdout);
     if (Read_OpenDTFile(buffer))            {printf("cannot open file '%s' in 'MergeData'\n",buffer); return (1);}
     if (Read_DT_General(&dio_general))      {printf("cannot read 'dio_general' in 'MergeData'\n",buffer); return (1);}
     data_in=(double*)ht_malloc(dio_general.ndata*sizeof(double),"procloc");
@@ -1348,7 +1351,6 @@ int MergeData (char *data, DATA_MAP *data_map)
   if (p==NULL)                                {printf("ERROR in 'MergeData': cannot create outfilename\n");return (1);}
   p+=strlen(p)+1;
   sprintf(out,"%s_%d.%s",buffer,data_map->nparfiles,p);
-  printf("OUT: %s\n",out);
   if (Write_OpenDTFile(out,1))                            {printf("cannot open output-file '%s' in 'MergeData'\n",out); return (1);}
   if (Write_DT_General(&dio_general_out))     {printf("cannot write 'dio_general_out' to output-file '%s' in 'MergeData'\n",out); return (1);}
   if (Bio_Write_mdouble(nnodes_out*ndata_pn,data_out)) {printf("cannot write data to output-file '%s' in 'MergeData'\n",out); return (1);}
@@ -1363,17 +1365,37 @@ int MergeData (char *data, DATA_MAP *data_map)
 
 int main (int argc, char **argv)
 {
-  char in[128];
+  int i,from,to,fopt;
+  char in[128],last_merged_mg[128],name[128];
   MG_DESC mgdesc;
   DATA_MAP map;
 
   if (argc<2)                                                                                             {printf("filename required\n"); return (1);}
   strcpy(in,argv[1]);
+  fopt=0; from=to=0;
+  if (argc==5 && argv[2][1]=='f')
+  {
+    sscanf(argv[3],"%d",&from);
+    sscanf(argv[4],"%d",&to);
+    if (from>to)                                                                            {printf("f-option: from <= to !!\n"); return (1);}
+    fopt=1;
+  }
 
-  if (GetMgFromData(in,&mgdesc))                                                  {printf("cannot get mg from data\n"); return (1);}
-  if (MergeMultigrid(&mgdesc,&map))                                               {printf("some error\n"); return (1);}
-  if (MergeData (in,&map))                                                                {printf("cannot merge data\n");  return (1);}
-  if (FreeDataMap(&map))                                                                  {printf("cannot free map\n");  return (1);}
+  last_merged_mg[0]='\0';
+  map.init=0;
+  for (i=from; i<=to; i++)
+  {
+    if (fopt) sprintf(name,"%s.%06d.ug.data.xdr",in,i);
+    else strcpy(name,in);
+    if (GetMgFromData(name,&mgdesc))                                                {printf("cannot get mg from data\n"); return (1);}
+    if (strcmp(last_merged_mg,mgdesc.mgname)!=0)
+    {
+      strcpy(last_merged_mg,mgdesc.mgname);
+      if (FreeDataMap(&map))                                                                  {printf("cannot free map\n");  return (1);}
+      if (MergeMultigrid(&mgdesc,&map))                                               {printf("some error\n"); return (1);}
+    }
+    if (MergeData (name,&map))                                                              {printf("cannot merge data\n");  return (1);}
+  }
 
   return (0);
 }
