@@ -40,6 +40,7 @@
 #include "compiler.h"
 #include "misc.h"
 #include "general.h"
+#include "pfile.h"
 
 #include "gm.h"
 #include "ugenv.h"
@@ -82,6 +83,114 @@
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
+
+#ifdef ModelP
+static INT get_offset (INT n)
+{
+  INT i,subtreesize[50],sum,offset;
+
+  /* get number of objects downtree */
+  sum = n;
+  for (i=0; i<degree; i++) {
+    GetConcentrate(i,subtreesize+i,sizeof(INT));
+    sum += subtreesize[i];
+  }
+
+  /* get offset */
+  if (me==master)
+  {
+    offset = 0;
+  }
+  else
+  {
+    Concentrate(&sum,sizeof(INT));
+    GetSpread(&offset,sizeof(INT));
+  }
+
+  /* send offsets for downtree nodes */
+  sum = offset+n;
+  for (i=0; i<degree; i++) {
+    Spread(i,&sum,sizeof(INT));
+    sum += subtreesize[i];
+  }
+
+  return(offset);
+}
+
+static INT GloballyUniqueIDs (MULTIGRID *theMG)
+{
+  GRID *theGrid;
+  VERTEX *theVertex;
+  NODE *theNode;
+  ELEMENT *theElement;
+  INT nv,nn,ne;
+  INT ov,on,oe;
+  int k,j;
+
+  nv = ne = nn = 0;
+
+  j = theMG->topLevel;
+  for (k=0; k<=j; k++)
+  {
+    theGrid = theMG->grids[k];
+
+    /* vertices */
+    for (theVertex=FIRSTVERTEX(theGrid); theVertex!=NULL; theVertex=SUCCV(theVertex))
+      ID(theVertex) = nv++;
+
+    /* nodes */
+    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+      ID(theNode) = nn++;
+
+    /* elements */
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      ID(theElement) = ne++;
+  }
+
+  theMG->vertIdCounter = nv;
+  theMG->nodeIdCounter = nn;
+  theMG->elemIdCounter = ne;
+
+  ov = get_offset(nv);
+  on = get_offset(nn);
+  oe = get_offset(ne);
+
+  for (k=0; k<=j; k++)
+  {
+    theGrid = theMG->grids[k];
+
+    /* vertices */
+    for (theVertex=FIRSTVERTEX(theGrid); theVertex!=NULL; theVertex=SUCCV(theVertex))
+      ID(theVertex) += ov;
+
+    /* nodes */
+    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+      ID(theNode) += on;
+
+    /* elements */
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      ID(theElement) += oe;
+  }
+
+  return(0);
+}
+
+static INT AVS_GlobalSumINT (INT i)
+{
+  int l;
+  INT n;
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,&n,sizeof(INT));
+    i += n;
+  }
+  Concentrate(&i,sizeof(INT));
+  Broadcast(&i,sizeof(INT));
+  return(i);
+}
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* definition of functions													*/
@@ -93,12 +202,14 @@ static INT AVSCommand (INT argc, char **argv)
   INT i,j,k,v;                                  /* counters etc.							*/
   INT counter;                                  /* for formatting output					*/
   char buf[128];                                /* for messages								*/
+  char item[1024],it[256];              /* item buffers								*/
+  INT ic=0;                                             /* item length								*/
   VERTEX *vx;                                           /* a vertex pointer							*/
   ELEMENT *el;                                  /* an element pointer						*/
 
   MULTIGRID *mg;                                /* our multigrid							*/
   char filename[NAMESIZE];      /* file name for output file				*/
-  FILE *stream;                                 /* the output file pointer					*/
+  PFILE *pf;                                            /* the output file pointer					*/
 
   EVALUES *zcoord;                              /* use scalar as z coordinate in 2D only	*/
   char zcoord_name[NAMESIZE];           /* name for eval functions                  */
@@ -116,12 +227,14 @@ static INT AVSCommand (INT argc, char **argv)
   EVECTOR *ev_cell[MAXVARIABLES];       /* pointers to vector eval function desc*/
   char ev_cell_name[MAXVARIABLES][NAMESIZE];            /* names for eval functions */
   char s[NAMESIZE];                             /* name of eval proc						*/
-  INT numNodes;                                 /* number of data points					*/
-  INT numElements;                              /* number of elements						*/
+  INT numNodes;                                 /* number of data points locally			*/
+  INT numElements;                              /* number of elements locally				*/
+  INT gnumNodes;                                /* number of data points globally			*/
+  INT gnumElements;                             /* number of elements globallay				*/
   PreprocessingProcPtr pre;             /* pointer to prepare function				*/
   ElementEvalProcPtr eval_s;            /* pointer to scalar evaluation function	*/
   ElementVectorProcPtr eval_v;      /* pointer to vector evaluation function	*/
-  DOUBLE *CornersCoord[MAX_CORNERS_OF_ELEM];       /* pointers to coordinates    */
+  DOUBLE *CornersCoord[MAX_CORNERS_OF_ELEM];       /* pointers to coordinates   */
   DOUBLE LocalCoord[DIM];               /* is one of the corners local coordinates	*/
   DOUBLE local[DIM];                            /* local coordinate in DOUBLE				*/
   DOUBLE value;                                 /* returned by user eval proc				*/
@@ -129,6 +242,7 @@ static INT AVSCommand (INT argc, char **argv)
   DOUBLE vval[DIM];                             /* result of vector evaluation function		*/
   time_t ltime;
   double scaling=1.0;
+  INT oe,on;
 
 
   /* get current multigrid */
@@ -275,20 +389,24 @@ static INT AVSCommand (INT argc, char **argv)
   /* get file name and open output file */
   if (sscanf(argv[0],expandfmt(CONCAT3(" avs %",NAMELENSTR,"[ -~]")),filename)!=1)
   {
-    PrintErrorMessage('E',"avs","could not read name of logfile");
+    PrintErrorMessage('E',"avs","could not read name of output file");
     return(PARAMERRORCODE);
   }
-  stream = fopen(filename,"w");
-  if (stream==NULL) return(PARAMERRORCODE);
+  pf = pfile_open(filename);
+  if (pf==NULL) return(PARAMERRORCODE);
 
   /********************************/
   /* TITLE                                              */
   /********************************/
 
   time(&ltime);
-  fprintf(stream,"# AVS data produced by UG\n");
-  fprintf(stream,"# multigrid: %s\n",mg->v.name);
-  fprintf(stream,"# date:      %s",ctime(&ltime));
+  sprintf(it,"# AVS data produced by UG\n");
+  strcpy(item+ic,it); ic+=strlen(it);
+  sprintf(it,"# multigrid: %s\n",mg->v.name);
+  strcpy(item+ic,it); ic+=strlen(it);
+  sprintf(it,"# date:      %s",ctime(&ltime));
+  strcpy(item+ic,it); ic+=strlen(it);
+  pfile_master_puts(pf,item); ic=0;
 
   /********************************/
   /* compute sizes				*/
@@ -316,22 +434,36 @@ static INT AVSCommand (INT argc, char **argv)
       }
     }
 
+        #ifdef ModelP
+  gnumNodes = AVS_GlobalSumINT(numNodes);
+  gnumElements = AVS_GlobalSumINT(numElements);
+  on=get_offset(numNodes);
+  oe=get_offset(numElements);
+  GloballyUniqueIDs(mg);       /* renumber objects */
+        #else
+  gnumNodes = numNodes;
+  gnumElements = numElements;
+  oe=on=0;
+        #endif
+
   /********************************/
   /* (1) now we are ready to write*/
   /* the sizes to the file		*/
   /********************************/
 
-  fprintf(stream,"%d %d %d %d %d\n",
-          numNodes,                                     /* total number of nodes to write       */
-          numElements,                          /* total number of cells			*/
-          ns+nv*DIM,                                    /* number of doubles per node		*/
+  sprintf(it,"%d %d %d %d %d\n",
+          gnumNodes,                                    /* total number of nodes to write       */
+          gnumElements,                         /* total number of cells			*/
+          ns+1+nv*DIM,                          /* number of doubles per node		*/
           ns_cell+nv_cell*DIM,          /* doubles per cell is always zero !*/
           0);                                                   /* doubles per model                            */
-
+  strcpy(item+ic,it); ic+=strlen(it);
+  pfile_master_puts(pf,item); ic=0;
 
   /********************************/
   /* (2) next are the coordinates */
   /* of nodes in point block form */
+  /* This is pfile segment 0      */
   /********************************/
 
   if (DIM==2 && zcoord!=NULL)
@@ -345,6 +477,7 @@ static INT AVSCommand (INT argc, char **argv)
     for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
       SETUSED(vx,0);
 
+  counter=0;
   for (k=0; k<=TOPLEVEL(mg); k++)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
     {
@@ -377,9 +510,13 @@ static INT AVSCommand (INT argc, char **argv)
           else
             z = 0.0;
         }
-        fprintf(stream,"%d %lg %lg %lg\n",ID(vx),x,y,z);
+        sprintf(it,"%d %lg %lg %lg\n",ID(vx),x,y,z);
+        pfile_tagged_puts(pf,it,counter+on);
+        counter++;
       }
     }
+
+  pfile_sync(pf);       /* end of segment */
 
   /********************************/
   /* (3) next is the cell               */
@@ -391,23 +528,27 @@ static INT AVSCommand (INT argc, char **argv)
     for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
     {
       if (NSONS(el)>0) continue;                        /* process finest level elements only */
-      counter++;                                                                /* this is the cell number                        */
 
       /* cell number and material id */
-      fprintf(stream,"%d %d ",counter,1 /*LEVEL(el)*/);
+                        #ifdef ModelP
+      sprintf(it,"%d %d ",ID(el),me);
+                        #else
+      sprintf(it,"%d %d ",ID(el),1);
+                        #endif
+      strcpy(item+ic,it); ic+=strlen(it);
 
       if (DIM==2)
       {
         switch (CORNERS_OF_ELEM(el))
         {
         case 3 :
-          fprintf(stream,"tri %d %d %d\n",
+          sprintf(it,"tri %d %d %d\n",
                   ID(MYVERTEX(CORNER(el,0))),
                   ID(MYVERTEX(CORNER(el,1))),
                   ID(MYVERTEX(CORNER(el,2))));
           break;
         case 4 :
-          fprintf(stream,"quad %d %d %d %d\n",
+          sprintf(it,"quad %d %d %d %d\n",
                   ID(MYVERTEX(CORNER(el,0))),
                   ID(MYVERTEX(CORNER(el,1))),
                   ID(MYVERTEX(CORNER(el,2))),
@@ -420,14 +561,14 @@ static INT AVSCommand (INT argc, char **argv)
         switch (CORNERS_OF_ELEM(el))
         {
         case 4 :
-          fprintf(stream,"tet %d %d %d %d\n",
+          sprintf(it,"tet %d %d %d %d\n",
                   ID(MYVERTEX(CORNER(el,0))),
                   ID(MYVERTEX(CORNER(el,2))),
                   ID(MYVERTEX(CORNER(el,1))),
                   ID(MYVERTEX(CORNER(el,3))));
           break;
         case 5 :
-          fprintf(stream,"pyr %d %d %d %d %d\n",
+          sprintf(it,"pyr %d %d %d %d %d\n",
                   ID(MYVERTEX(CORNER(el,4))),
                   ID(MYVERTEX(CORNER(el,0))),
                   ID(MYVERTEX(CORNER(el,1))),
@@ -435,7 +576,7 @@ static INT AVSCommand (INT argc, char **argv)
                   ID(MYVERTEX(CORNER(el,3))));
           break;
         case 6 :
-          fprintf(stream,"prism %d %d %d %d %d %d\n",
+          sprintf(it,"prism %d %d %d %d %d %d\n",
                   ID(MYVERTEX(CORNER(el,3))),
                   ID(MYVERTEX(CORNER(el,4))),
                   ID(MYVERTEX(CORNER(el,5))),
@@ -444,7 +585,7 @@ static INT AVSCommand (INT argc, char **argv)
                   ID(MYVERTEX(CORNER(el,2))));
           break;
         case 8 :
-          fprintf(stream,"hex %d %d %d %d %d %d %d %d\n",
+          sprintf(it,"hex %d %d %d %d %d %d %d %d\n",
                   ID(MYVERTEX(CORNER(el,4))),
                   ID(MYVERTEX(CORNER(el,5))),
                   ID(MYVERTEX(CORNER(el,6))),
@@ -456,13 +597,18 @@ static INT AVSCommand (INT argc, char **argv)
           break;
         }
       }
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_tagged_puts(pf,item,counter+oe); ic=0;
+      counter++;
     }
+
+  pfile_sync(pf);       /* end of segment */
 
   /********************************/
   /* node data					*/
   /********************************/
 
-  if (ns+nv>0)
+  if (1+ns+nv>0)
   {
 
     /********************************/
@@ -470,12 +616,21 @@ static INT AVSCommand (INT argc, char **argv)
     /*     nodes					*/
     /********************************/
 
-    fprintf(stream,"%d ",ns+nv);                                        /* number of components */
-    for (k=0; k<ns; k++)
-      fprintf(stream,"1 ");                                                     /* scalar component		*/
-    for (k=0; k<nv; k++)
-      fprintf(stream,"%d ",DIM);                                                /* vector component		*/
-    fprintf(stream,"\n");
+    sprintf(it,"%d ",ns+nv+1);                                          /* number of components */
+    strcpy(item+ic,it); ic+=strlen(it);
+    for (k=0; k<ns; k++) {
+      sprintf(it,"1 ");                                                         /* scalar component		*/
+      strcpy(item+ic,it); ic+=strlen(it);
+    }
+    sprintf(it,"1 ");                                                           /* scalar component me	*/
+    strcpy(item+ic,it); ic+=strlen(it);
+    for (k=0; k<nv; k++) {
+      sprintf(it,"%d ",DIM);                                            /* vector component		*/
+      strcpy(item+ic,it); ic+=strlen(it);
+    }
+    sprintf(it,"\n");
+    strcpy(item+ic,it); ic+=strlen(it);
+    pfile_master_puts(pf,item); ic=0;
 
     /********************************/
     /* (5) component labels			*/
@@ -483,10 +638,19 @@ static INT AVSCommand (INT argc, char **argv)
     /********************************/
 
     /* now all scalar variables */
-    for (i=0; i<ns; i++)
-      fprintf(stream,"%s, \n",es_name[i]);           /* no units */
-    for (i=0; i<nv; i++)
-      fprintf(stream,"%s, \n",ev_name[i]);           /* no units */
+    for (i=0; i<ns; i++) {
+      sprintf(it,"%s, \n",es_name[i]);           /* no units */
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
+    sprintf(it,"%s, \n","procid");             /* no units */
+    strcpy(item+ic,it); ic+=strlen(it);
+    pfile_master_puts(pf,item); ic=0;
+    for (i=0; i<nv; i++) {
+      sprintf(it,"%s, \n",ev_name[i]);           /* no units */
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
 
     /********************************/
     /* (6) all the node data		*/
@@ -519,6 +683,7 @@ static INT AVSCommand (INT argc, char **argv)
     for (k=0; k<=TOPLEVEL(mg); k++)
       for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
         SETUSED(vx,0);
+    counter=0;
     for (k=0; k<=TOPLEVEL(mg); k++)
       for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
       {
@@ -536,15 +701,25 @@ static INT AVSCommand (INT argc, char **argv)
           for (j=0; j<DIM; j++) LocalCoord[j] = local[j];
 
           /* write node id */
-          fprintf(stream,"%d ",ID(MYVERTEX(CORNER(el,i))));
+          sprintf(it,"%d ",ID(MYVERTEX(CORNER(el,i))));
+          strcpy(item+ic,it); ic+=strlen(it);
 
           /* scalar components */
           for (v=0; v<ns; v++)
           {
             eval_s = es[v]->EvalProc;
             value = eval_s(el,(const DOUBLE **)CornersCoord,LocalCoord);
-            fprintf(stream,"%lg ",value);
+            sprintf(it,"%lg ",value);
+            strcpy(item+ic,it); ic+=strlen(it);
           }
+
+                                        #ifdef ModelP
+          value = (DOUBLE) me;
+                                        #else
+          value = 1.0;
+                                        #endif
+          sprintf(it,"%lg ",value);
+          strcpy(item+ic,it); ic+=strlen(it);
 
           /* vector components */
           for (v=0; v<nv; v++)
@@ -552,15 +727,21 @@ static INT AVSCommand (INT argc, char **argv)
             eval_v = ev[v]->EvalProc;
             eval_v(el,(const DOUBLE **)CornersCoord,LocalCoord,vval);
             if (DIM==2)
-              fprintf(stream,"%lg %lg ",vval[0],vval[1]);
+              sprintf(it,"%lg %lg ",vval[0],vval[1]);
             else
-              fprintf(stream,"%lg %lg %lg ",vval[0],vval[1],vval[2]);
+              sprintf(it,"%lg %lg %lg ",vval[0],vval[1],vval[2]);
+            strcpy(item+ic,it); ic+=strlen(it);
           }
 
-          fprintf(stream,"\n");
+          sprintf(it,"\n");
+          strcpy(item+ic,it); ic+=strlen(it);
+          pfile_tagged_puts(pf,item,counter+on); ic=0;
+          counter++;
         }
       }
   }
+
+  pfile_sync(pf);       /* end of segment */
 
   /********************************/
   /* cell data					*/
@@ -571,15 +752,22 @@ static INT AVSCommand (INT argc, char **argv)
 
     /********************************/
     /* (4) data associated with		*/
-    /*     nodes					*/
+    /*     elements					*/
     /********************************/
 
-    fprintf(stream,"%d ",ns_cell+nv_cell);                                      /* number of components */
-    for (k=0; k<ns_cell; k++)
-      fprintf(stream,"1 ");                                                     /* scalar component		*/
-    for (k=0; k<nv_cell; k++)
-      fprintf(stream,"%d ",DIM);                                                /* vector component		*/
-    fprintf(stream,"\n");
+    sprintf(it,"%d ",ns_cell+nv_cell);                          /* number of components */
+    strcpy(item+ic,it); ic+=strlen(it);
+    for (k=0; k<ns_cell; k++) {
+      sprintf(it,"1 ");                                                         /* scalar component		*/
+      strcpy(item+ic,it); ic+=strlen(it);
+    }
+    for (k=0; k<nv_cell; k++) {
+      sprintf(it,"%d ",DIM);                                            /* vector component		*/
+      strcpy(item+ic,it); ic+=strlen(it);
+    }
+    sprintf(it,"\n");
+    strcpy(item+ic,it); ic+=strlen(it);
+    pfile_master_puts(pf,item); ic=0;
 
     /********************************/
     /* (5) component labels			*/
@@ -587,10 +775,16 @@ static INT AVSCommand (INT argc, char **argv)
     /********************************/
 
     /* now all scalar variables */
-    for (i=0; i<ns_cell; i++)
-      fprintf(stream,"%s, \n",es_cell_name[i]);           /* no units */
-    for (i=0; i<nv_cell; i++)
-      fprintf(stream,"%s, \n",ev_cell_name[i]);           /* no units */
+    for (i=0; i<ns_cell; i++) {
+      sprintf(it,"%s, \n",es_cell_name[i]);           /* no units */
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
+    for (i=0; i<nv_cell; i++) {
+      sprintf(it,"%s, \n",ev_cell_name[i]);           /* no units */
+      strcpy(item+ic,it); ic+=strlen(it);
+      pfile_master_puts(pf,item); ic=0;
+    }
 
     /********************************/
     /* (6) all the cell data		*/
@@ -624,7 +818,6 @@ static INT AVSCommand (INT argc, char **argv)
       for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
       {
         if (NSONS(el)>0) continue;                              /* process finest level elements only */
-        counter++;                                                                      /* this is the cell id				  */
         for (i=0; i<CORNERS_OF_ELEM(el); i++)
           CornersCoord[i] = CVECT(MYVERTEX(CORNER(el,i)));                       /* x,y,z of corners */
         /* compute center in local coordinates */
@@ -638,14 +831,16 @@ static INT AVSCommand (INT argc, char **argv)
         for (j=0; j<DIM; j++) LocalCoord[j] /= ((DOUBLE)CORNERS_OF_ELEM(el));
 
         /* write cell id */
-        fprintf(stream,"%d ",counter);
+        sprintf(it,"%d ",ID(el));
+        strcpy(item+ic,it); ic+=strlen(it);
 
         /* scalar components */
         for (v=0; v<ns_cell; v++)
         {
           eval_s = es_cell[v]->EvalProc;
           value = eval_s(el,(const DOUBLE **)CornersCoord,LocalCoord);
-          fprintf(stream,"%lg ",value);
+          sprintf(it,"%lg ",value);
+          strcpy(item+ic,it); ic+=strlen(it);
         }
 
         /* vector components */
@@ -654,14 +849,20 @@ static INT AVSCommand (INT argc, char **argv)
           eval_v = ev_cell[v]->EvalProc;
           eval_v(el,(const DOUBLE **)CornersCoord,LocalCoord,vval);
           if (DIM==2)
-            fprintf(stream,"%lg %lg ",vval[0],vval[1]);
+            sprintf(it,"%lg %lg ",vval[0],vval[1]);
           else
-            fprintf(stream,"%lg %lg %lg ",vval[0],vval[1],vval[2]);
+            sprintf(it,"%lg %lg %lg ",vval[0],vval[1],vval[2]);
+          strcpy(item+ic,it); ic+=strlen(it);
         }
 
-        fprintf(stream,"\n");
+        sprintf(it,"\n");
+        strcpy(item+ic,it); ic+=strlen(it);
+        pfile_tagged_puts(pf,item,counter+oe); ic=0;
+        counter++;
       }
   }
+
+  pfile_sync(pf);       /* end of segment */
 
   /********************************/
   /* IN THIS VERSION:				*/
@@ -669,7 +870,7 @@ static INT AVSCommand (INT argc, char **argv)
   /* are ready !                                        */
   /********************************/
 
-  fclose(stream);
+  pfile_close(pf);
 
   return(OKCODE);
 }
