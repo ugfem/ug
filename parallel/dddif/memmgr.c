@@ -140,6 +140,8 @@ static size_t pmem=0;
 static size_t amem=0;
 static size_t tmem=0;
 
+static size_t mem_from_ug_freelists=0;
+
 
 #ifdef WITH_HASH_CONTROL
 /* hashing of alloc/free requests: hashtable and allocated entries */
@@ -437,6 +439,9 @@ void memmgr_Report (void)
   HashShowMarks('T');
         #endif
 
+  UserWriteF("%04d memmgr_Report.  Memory from UG's freelists: %9ld\n",
+             me, mem_from_ug_freelists);
+
   fflush(stdout);
 }
 
@@ -671,18 +676,49 @@ void memmgr_FreeAMEM (void *buffer)
  */
 /****************************************************************************/
 
-void *memmgr_AllocTMEM (unsigned long size)
+void *memmgr_AllocTMEM (unsigned long size, int kind)
 {
   void   *buffer;
 
-        #ifdef WITH_GENERAL_HEAP
-  buffer = GetMem(myheap,size,0);
-        #else
-  buffer = malloc(size);
-        #endif
 
-  allocated += size;
-  tmem      += size;
+  if (kind==TMEM_XFER || kind==TMEM_CPL ||
+      kind==TMEM_LOWCOMM || kind==TMEM_CONS)
+  {
+    size_t real_size = size+sizeof(size_t);
+
+    buffer = GetFreelistMemory(MGHEAP(dddctrl.currMG), real_size);
+    if (buffer!=NULL)
+    {
+      /* store size at the beginning of memory chunk */
+      *(size_t *)buffer = real_size;
+
+      /* hide this information */
+      buffer = (void *)(((char *)buffer) + sizeof(size_t));
+
+      mem_from_ug_freelists += real_size;
+
+      /*
+         printf("%4d:    X MEMM adr=%08x kind=%d size=%ld\n", me,
+                      buffer, kind, size);
+       */
+    }
+  }
+  else
+  {
+                #ifdef WITH_GENERAL_HEAP
+    buffer = GetMem(myheap,size,0);
+                #else
+    buffer = malloc(size);
+                #endif
+
+    allocated += size;
+    tmem      += size;
+
+    /*
+       printf("%4d:    O MEMM adr=%08x kind=%d size=%ld\n", me,
+                    buffer, kind, size);
+     */
+  }
 
         #ifdef WITH_HASH_CONTROL
   PushHash(buffer, size, 'T');
@@ -709,7 +745,7 @@ void *memmgr_AllocTMEM (unsigned long size)
  */
 /****************************************************************************/
 
-void memmgr_FreeTMEM (void *buffer)
+void memmgr_FreeTMEM (void *buffer, int kind)
 {
         #ifdef WITH_HASH_CONTROL
   {
@@ -719,37 +755,65 @@ void memmgr_FreeTMEM (void *buffer)
   }
         #endif
 
-        #ifdef WITH_GENERAL_HEAP
-  DisposeMem(myheap,buffer);
-        #else
-  free(buffer);
-        #endif
+
+  if (kind==TMEM_XFER || kind==TMEM_CPL ||
+      kind==TMEM_LOWCOMM || kind==TMEM_CONS)
+  {
+    size_t real_size;
+
+    /*
+       printf("%4d:    X MEMF adr=%08x kind=%d\n", me, buffer, kind);
+     */
+
+    /* get real_size from beginning of buffer */
+    buffer = (void *)(((char *)buffer) - sizeof(size_t));
+    real_size = *(size_t *)buffer;
+
+    PutFreelistMemory(MGHEAP(dddctrl.currMG), buffer, real_size);
+
+    /*
+       mem_from_ug_freelists -= real_size;
+     */
+  }
+  else
+  {
+    /*
+       printf("%4d:    O MEMF adr=%08x kind=%d\n", me, buffer, kind);
+     */
+
+                #ifdef WITH_GENERAL_HEAP
+    DisposeMem(myheap,buffer);
+                #else
+    free(buffer);
+                #endif
+  }
 }
 
 
 /****************************************************************************/
 
-static INT theMarkKey;
+void memmgr_MarkHMEM (long *theMarkKey)
+{
+  INT myMarkKey;
+  MarkTmpMem(MGHEAP(dddctrl.currMG), &myMarkKey);
+  *theMarkKey = (long)myMarkKey;
+}
 
-void *memmgr_AllocHMEM (size_t size)
+void *memmgr_AllocHMEM (size_t size, long theMarkKey)
 {
   void *buffer;
-  buffer = GetTmpMem(MGHEAP(dddctrl.currMG), size, theMarkKey);
+  buffer = GetTmpMem(MGHEAP(dddctrl.currMG), size, (INT)theMarkKey);
+
+  /*
+     printf("%4d:    H MEMM adr=%08x           size=%ld\n", me, buffer, size);
+   */
 
   return(buffer);
 }
 
-void memmgr_FreeHMEM (void *buffer)
-{}
-
-void memmgr_MarkHMEM (void)
+void memmgr_ReleaseHMEM (long theMarkKey)
 {
-  MarkTmpMem(MGHEAP(dddctrl.currMG), &theMarkKey);
-}
-
-void memmgr_ReleaseHMEM (void)
-{
-  ReleaseTmpMem(MGHEAP(dddctrl.currMG), theMarkKey);
+  ReleaseTmpMem(MGHEAP(dddctrl.currMG), (INT)theMarkKey);
 }
 
 

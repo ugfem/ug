@@ -201,7 +201,7 @@ void UG_GlobalMaxNINT (INT n, INT *x)
   INT *y;
 
   size = sizeof(INT)*n;
-  y = (INT *)memmgr_AllocTMEM(size);
+  y = (INT *)memmgr_AllocTMEM(size, TMEM_STD);
 
   for (l=degree-1; l>=0; l--)
   {
@@ -212,7 +212,7 @@ void UG_GlobalMaxNINT (INT n, INT *x)
   Concentrate(x,size);
   Broadcast(x,size);
 
-  memmgr_FreeTMEM(y);
+  memmgr_FreeTMEM(y, TMEM_STD);
 
   return;
 }
@@ -244,7 +244,7 @@ void UG_GlobalMinNINT (INT n, INT *x)
   INT *y;
 
   size = sizeof(INT)*n;
-  y = (INT *)memmgr_AllocTMEM(size);
+  y = (INT *)memmgr_AllocTMEM(size, TMEM_STD);
 
   for (l=degree-1; l>=0; l--)
   {
@@ -255,7 +255,7 @@ void UG_GlobalMinNINT (INT n, INT *x)
   Concentrate(x,size);
   Broadcast(x,size);
 
-  memmgr_FreeTMEM(y);
+  memmgr_FreeTMEM(y, TMEM_STD);
 
   return;
 }
@@ -286,7 +286,7 @@ void UG_GlobalSumNINT (INT n, INT *xs)
   int l, i, size=sizeof(INT)*n;
   INT *ys;
 
-  ys = (INT *)memmgr_AllocTMEM(size);
+  ys = (INT *)memmgr_AllocTMEM(size, TMEM_STD);
 
   for (l=degree-1; l>=0; l--)
   {
@@ -298,7 +298,7 @@ void UG_GlobalSumNINT (INT n, INT *xs)
   Concentrate(xs,size);
   Broadcast(xs,size);
 
-  memmgr_FreeTMEM(ys);
+  memmgr_FreeTMEM(ys, TMEM_STD);
 }
 
 /****************************************************************************/
@@ -430,7 +430,7 @@ void UG_GlobalMaxNDOUBLE (INT n, DOUBLE *x)
   DOUBLE *y;
 
   size = sizeof(DOUBLE)*n;
-  y = (DOUBLE *)memmgr_AllocTMEM(size);
+  y = (DOUBLE *)memmgr_AllocTMEM(size, TMEM_STD);
 
   for (l=degree-1; l>=0; l--)
   {
@@ -441,7 +441,7 @@ void UG_GlobalMaxNDOUBLE (INT n, DOUBLE *x)
   Concentrate(x,size);
   Broadcast(x,size);
 
-  memmgr_FreeTMEM(y);
+  memmgr_FreeTMEM(y, TMEM_STD);
 
   return;
 }
@@ -473,7 +473,7 @@ void UG_GlobalMinNDOUBLE (INT n, DOUBLE *x)
   DOUBLE *y;
 
   size = sizeof(DOUBLE)*n;
-  y = (DOUBLE *)memmgr_AllocTMEM(size);
+  y = (DOUBLE *)memmgr_AllocTMEM(size, TMEM_STD);
 
   for (l=degree-1; l>=0; l--)
   {
@@ -484,7 +484,7 @@ void UG_GlobalMinNDOUBLE (INT n, DOUBLE *x)
   Concentrate(x,size);
   Broadcast(x,size);
 
-  memmgr_FreeTMEM(y);
+  memmgr_FreeTMEM(y, TMEM_STD);
 
   return;
 }
@@ -515,7 +515,7 @@ void UG_GlobalSumNDOUBLE (INT n, DOUBLE *x)
   int l, i, size=sizeof(DOUBLE)*n;
   DOUBLE *y;
 
-  y = (DOUBLE *)memmgr_AllocTMEM(size);
+  y = (DOUBLE *)memmgr_AllocTMEM(size, TMEM_STD);
 
   for (l=degree-1; l>=0; l--)
   {
@@ -526,5 +526,5 @@ void UG_GlobalSumNDOUBLE (INT n, DOUBLE *x)
   Concentrate(x,size);
   Broadcast(x,size);
 
-  memmgr_FreeTMEM(y);
+  memmgr_FreeTMEM(y, TMEM_STD);
 }
