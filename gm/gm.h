@@ -1931,6 +1931,10 @@ EVECTOR         *CreateElementVectorEvalProcFromCoeffProc       (const char *nam
 EVALUES         *GetElementValueEvalProc                                        (const char *name);
 EVECTOR         *GetElementVectorEvalProc                                       (const char *name);
 MVALUES         *GetMatrixValueEvalProc                                         (const char *name);
+EVALUES         *GetFirstElementValueEvalProc                           (void);
+EVALUES         *GetNextElementValueEvalProc                            (EVALUES *EvalProc);
+EVECTOR         *GetFirstElementValueEvalProc                           (void);
+EVECTOR         *GetNextElementValueEvalProc                            (EVECTOR *EvecProc);
 
 /* miscellaneous */
 INT             RenumberMultiGrid               (MULTIGRID *theMG);
