@@ -10918,7 +10918,7 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
 
 #ifdef __PERIODIC_BOUNDARY__
 
-#define SMALL_DOUBLE 1e-6
+#define SMALL_DOUBLE 1e-4
 
 /* maximal count of periodic objects */
 #define MAX_PERIODIC_OBJ        DIM+1
@@ -11062,8 +11062,8 @@ static INT DisposeAndModVector(GRID *grid, PERIODIC_ENTRIES *list, INT i, INT j)
       MDEST(MADJ(m)) = NVECTOR(list[i].node);
   }
 
-  UserWriteF("DisposeAndModVector vtx=%d node=%d vec=%d\n",
-             ID(MYVERTEX(list[j].node)),ID(list[j].node),VINDEX(vec));
+  PRINTDEBUG(gm,1,("DisposeAndModVector perid=%d vtx=%d node=%d vec=%d\n",
+                   list[j].periodic_id,ID(MYVERTEX(list[j].node)),ID(list[j].node),VINDEX(vec)));
 
   if (DisposeVector(grid,vec))
     return(1);
@@ -11092,7 +11092,7 @@ static INT Grid_GeometricToPeriodic (GRID *g)
   PERIODIC_ENTRIES *coordlist;
   INT MarkKey,nn,i;
 
-  PRINTDEBUG(gm,0,("Grid_GeometricToPeriodic\n"))
+  PRINTDEBUG(gm,1,("Grid_GeometricToPeriodic\n"))
 
   if (PeriodicBoundaryInfo == NULL)
   {
@@ -11153,7 +11153,7 @@ static INT Grid_GeometricToPeriodic (GRID *g)
 
         V_DIM_COPY(*coord,coordlist[nn].coord);
 
-        PRINTDEBUG(gm,0,("coordlist identify v=%d c0 %lf %lf %lf c1 %lf %lf %lf\n",
+        PRINTDEBUG(gm,1,("coordlist identify v=%d c0 %lf %lf %lf c1 %lf %lf %lf\n",
                          ID(vtx),
                          own_coord[0],own_coord[1],own_coord[2],
                          periodic_coords[i][0],periodic_coords[i][1],periodic_coords[i][2]))
@@ -11166,21 +11166,21 @@ static INT Grid_GeometricToPeriodic (GRID *g)
     }
   }
 
-  PRINTDEBUG(gm,0,("Grid_GeometricToPeriodic identify nn=%d\n",nn))
+  PRINTDEBUG(gm,1,("Grid_GeometricToPeriodic identify nn=%d\n",nn))
 
   /* sort list */
   qsort(coordlist,nn,sizeof(PERIODIC_ENTRIES),sort_entries);
 
   for (i=0; i<nn; i++)
   {
-    UserWriteF("%d perid=%d vtx=%08d node=%08d c %lf %lf %lf\n",
-               i,coordlist[i].periodic_id,
-               ID(MYVERTEX(coordlist[i].node)),
-               ID(coordlist[i].node),
-               coordlist[i].coord[0],
-               coordlist[i].coord[1],
-               coordlist[i].coord[2]
-               );
+    PRINTDEBUG(gm,1,("%d perid=%d vtx=%08d node=%08d c %lf %lf %lf\n",
+                     i,coordlist[i].periodic_id,
+                     ID(MYVERTEX(coordlist[i].node)),
+                     ID(coordlist[i].node),
+                     coordlist[i].coord[0],
+                     coordlist[i].coord[1],
+                     coordlist[i].coord[2]
+                     ));
   }
 
         #ifndef ModelP
