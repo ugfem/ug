@@ -13,8 +13,8 @@ fi
 
 
 
-case `/bin/uname` in
-	AIX)
+case `/bin/uname | cut -f1 -d ' ' ` in
+	AIX | Paragon)
 		FOLLOW_LINKS=
 		echo "not following symbolic links"
 		;;
