@@ -80,7 +80,9 @@ enum HandlerSets
 /*#define DEL_VECTOR  1*/  /* this is a node without vector */
 
 /* status output from different parallel phases */
-#define STAT_OUT                0
+/*
+   #define STAT_OUT
+ */
 
 /* old/new style for grid consistency */
 /* undefine if old is wanted          */
