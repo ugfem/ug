@@ -10,7 +10,7 @@
 include $(UGROOT)/ug.conf
 
 # the following list may be extended
-MODULES = PROCS ALGEBRA UDM
+MODULES = PROCS ALGEBRA UDM FIELD
 
 # object files for both dimensions
 OBJECTS = initnp.o
@@ -36,6 +36,8 @@ ALGEBRA:
 UDM:
 	cd udm; make -f Makefile.udm; cd ..;
 
+FIELD:
+	cd field; make -f Makefile.field; cd ..;
 
 .SUFFIXES: .o .c
 
@@ -47,11 +49,13 @@ clean:
 	cd procs; make -f Makefile.procs clean; cd ..;
 	cd algebra; make -f Makefile.algebra clean; cd ..;
 	cd udm; make -f Makefile.udm clean; cd ..;
+	cd field; make -f Makefile.field clean; cd ..;
 
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
 	cd procs; make -f Makefile.procs extract; cd ..;
 	cd algebra; make -f Makefile.algebra extract; cd ..;
 	cd udm; make -f Makefile.udm extract; cd ..;
+	cd field; make -f Makefile.field extract; cd ..;
 
 xmc: extract all clean

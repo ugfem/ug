@@ -48,6 +48,7 @@
 #include "ts.h"
 #include "bdf.h"
 #include "ew.h"
+#include "field.h"
 
 #include "initnp.h"
 #include "numproc.h"
@@ -154,6 +155,12 @@ INT InitNumerics ()
 
   /* init data io */
   if ((err=DIO_Init())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* init stochastic field */
+  if ((err=InitStochField())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }
