@@ -274,6 +274,7 @@ sub TreePointDistanceCallback
 	## function outside tree.pm
 	$dist = $bypass->{dist};
 	$d = $dist->($bypass->{x},$obj);
+#print "TreePointDistanceCallback d=$d\n";
 	if($d <= $bypass->{min}){
 		$bypass->{min} = $d;
 		$bypass->{obj} = $obj;
@@ -347,12 +348,13 @@ sub BBT_TreePointDistance
 	$minmax = MinMaxBBoxPointDist2($tree->{root},$x, $HUGE); 
 	#printf("minmax=%f\n",sqrt($minmax));
 	$bypass{min} = $HUGE;
+	if ($minmax == 0.0) {$minmax = 1e-6};
 	## Callback function outside tree.pm
 	$bypass{dist} = $dist;
 	$bypass{x} = $x;
 	$bypass{obj} = "NULL";
 	ClosestBBoxesToPoint($tree->{root}, $x, \&TreePointDistanceCallback, \%bypass, \$minmax);
-#	printf "BBT_TreePointDistance: obj=$bypass{obj}\n";
+# 	printf "BBT_TreePointDistance: obj=$bypass{obj} d=$bypass{min}\n";
 	$$obj = $bypass{obj};
 	return $bypass{min}
 }
