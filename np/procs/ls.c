@@ -584,8 +584,8 @@ static INT CGInit (NP_BASE *theNP, INT argc , char **argv)
   NP_CG *np;
 
   np = (NP_CG *) theNP;
-  np->p = ReadArgvVecDesc(theNP->mg,"c",argc,argv);
-  np->t = ReadArgvVecDesc(theNP->mg,"c",argc,argv);
+  np->p = ReadArgvVecDesc(theNP->mg,"p",argc,argv);
+  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
 
   return (LinearSolverInit(theNP,argc,argv));
 }
