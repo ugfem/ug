@@ -8,7 +8,7 @@ ARCH_TYPE     = __PARAGON__
 
 ARCH_MAKE     = gmake
 ARCH_CC       = cc
-ARCH_C++      = CC --no_bool --no_namespaces --no_rtti
+ARCH_C++      = CC --no_bool --no_rtti # --no_namespaces
 ARCH_F77      = f77
 ARCH_LINK     = cc
 ARCH_AR       = ar
