@@ -50,6 +50,8 @@
 #include "ew.h"
 #include "field.h"
 #include "db.h"
+#include "fas.h"
+#include "nliter.h"
 
 #include "initnp.h"
 #include "numproc.h"
@@ -126,7 +128,15 @@ INT InitNumerics ()
     SetHiWrd(err,__LINE__);
     return (err);
   }
+  if ((err=InitFasSolver())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
   if ((err=InitIter())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+  if ((err=InitNLIter())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }
