@@ -804,10 +804,7 @@ static INT GetToken (char *buffer)
     return(error);
 
   if (itemType!=ALPHAID)
-  {
-    PrintErrorMessage('E',"GetToken","syntax error (expected a token)");
-    return(8401);
-  }
+    return(8401);               /* (possibly) syntax error */
   else
     return(DONE);
 }
@@ -2126,6 +2123,21 @@ static INT InterpretString()
       continue;
     }
 
+    if (strcmp(buffer,"mute")==0)
+    {
+      if ((error=EvaluateExpression(&result))!=DONE)
+        return(error);
+
+      if (result.ro.type!=NUMBERID)
+        return (1234);                          /* syntax error: number for mutelevel expected */
+
+      mutelevel = (INT) result.ro.value;
+
+      SetMuteLevel(mutelevel);
+
+      continue;
+    }
+
     if ((strcmp(buffer,"execute")==0)||(strcmp(buffer,"ex")==0))
     {
       if ((error=GetFullPathName(buffer))!=DONE)
@@ -2266,15 +2278,19 @@ static INT InterpretString()
         }
       }
       error = ExecCommand(cmdBuffer);
-      if (error!=DONE)
+      if ((error!=QUITCODE) && dontexit)
       {
-        if ((error!=QUITCODE) && dontexit)
-        {
-          SetStringValue(":cmdstatus",error);
-          error = DONE;
-        }
-        else
-          return(error);
+        SetStringValue(":cmdstatus",error);
+        error = DONE;
+      }
+      else if (error!=DONE)
+      {
+        if (GetMuteLevel()<0)
+          SetMuteLevel(mutelevel=0);
+
+        if (error==PARAMERRORCODE)
+          UserWrite("ERROR: bad parameters\n");
+        return(error);
       }
 
       continue;
