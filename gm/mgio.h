@@ -45,7 +45,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define MGIO_VERSION                                    "UG_IO_2.1"
+#define MGIO_VERSION                                    "UG_IO_2.2"
 
 #define __MGIO_USE_IN_UG__
 #define MGIO_DIM                        3
@@ -68,7 +68,7 @@
         #include "domain.h"
 
         #define MGIO_PARFILE                                            (nparfiles>1)
-    #define MGIO_DEBUG                          1
+    #define MGIO_DEBUG                          0
 
         #define MGIO_BNDP                                                       BNDP
         #define MGIO_BNDS                                                       BNDS
