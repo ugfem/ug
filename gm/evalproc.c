@@ -38,7 +38,6 @@
 #include "evm.h"
 #include "devices.h"
 #include "shapes.h"
-#include "num.h"
 
 /****************************************************************************/
 /*																			*/
