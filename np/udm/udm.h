@@ -132,6 +132,16 @@
 #define SPID_MD(p,i)            ((p)->md[i])
 #define SPID_MDI(p,i)           ((p)->mdi[i])
 
+/* flags for constistent status and collect status */
+
+#define READ_VEC_CONS_FLAG(p,vt,i)      READ_FLAG((p)->data_status.VecConsistentStatus[vt][(i)/32],1<<((i)%32))
+#define SET_VEC_CONS__FLAG(p,vt,i)      SET_FLAG((p)->data_status.VecConsistentStatus[vt][(i)/32],1<<((i)%32))
+#define CLEAR_VEC_CONS__FLAG(p,vt,i)    CLEAR_FLAG((p)->data_status.VecConsistentStatus[vt][(i)/32],1<<((i)%32))
+
+#define READ_VEC_COLLECT_FLAG(p,vt,i)   READ_FLAG((p)->data_status.VecCollectStatus[vt][(i)/32],1<<((i)%32))
+#define SET_VEC_COLLECT__FLAG(p,vt,i)   SET_FLAG((p)->data_status.VecCollectStatus[vt][(i)/32],1<<((i)%32))
+#define CLEAR_VEC_COLLECT__FLAG(p,vt,i) CLEAR_FLAG((p)->data_status.VecCollectStatus[vt][(i)/32],1<<((i)%32))
+
 /****************************************************************************/
 /*																			*/
 /* data structures                                                                                                                      */

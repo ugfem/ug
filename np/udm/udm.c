@@ -51,12 +51,12 @@
 
 #define MAX_NAMES 99
 
-#define READ_DR_VEC_FLAG(p,vt,i)        READ_FLAG((p)->dr.VecReserv[vt][(i)/32],1<<((i)%32))
-#define READ_DR_MAT_FLAG(p,vt,i)        READ_FLAG((p)->dr.MatReserv[vt][(i)/32],1<<((i)%32))
-#define SET_DR_VEC_FLAG(p,vt,i)         SET_FLAG((p)->dr.VecReserv[vt][(i)/32],1<<((i)%32))
-#define SET_DR_MAT_FLAG(p,vt,i)         SET_FLAG((p)->dr.MatReserv[vt][(i)/32],1<<((i)%32))
-#define CLEAR_DR_VEC_FLAG(p,vt,i)       CLEAR_FLAG((p)->dr.VecReserv[vt][(i)/32],1<<((i)%32))
-#define CLEAR_DR_MAT_FLAG(p,vt,i)       CLEAR_FLAG((p)->dr.MatReserv[vt][(i)/32],1<<((i)%32))
+#define READ_DR_VEC_FLAG(p,vt,i)        READ_FLAG((p)->data_status.VecReserv[vt][(i)/32],1<<((i)%32))
+#define READ_DR_MAT_FLAG(p,vt,i)        READ_FLAG((p)->data_status.MatReserv[vt][(i)/32],1<<((i)%32))
+#define SET_DR_VEC_FLAG(p,vt,i)         SET_FLAG((p)->data_status.VecReserv[vt][(i)/32],1<<((i)%32))
+#define SET_DR_MAT_FLAG(p,vt,i)         SET_FLAG((p)->data_status.MatReserv[vt][(i)/32],1<<((i)%32))
+#define CLEAR_DR_VEC_FLAG(p,vt,i)       CLEAR_FLAG((p)->data_status.VecReserv[vt][(i)/32],1<<((i)%32))
+#define CLEAR_DR_MAT_FLAG(p,vt,i)       CLEAR_FLAG((p)->data_status.MatReserv[vt][(i)/32],1<<((i)%32))
 
 #define A_REASONABLE_NUMBER             100
 
