@@ -432,9 +432,6 @@ static void XferGridWithOverlap (GRID *theGrid)
       }
     }
   }
-
-  /* set prios on ghost objects */
-  SetGhostObjectPriorities(theGrid);
 }
 
 
