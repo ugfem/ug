@@ -77,6 +77,8 @@
 
 INT InitGrape(void);
 int CallGrape (MULTIGRID *theMG);
+#ifndef __AIX__
 void usleep (unsigned long time);
+#endif
 
 #endif

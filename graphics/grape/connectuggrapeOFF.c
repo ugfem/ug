@@ -58,7 +58,9 @@ INT InitGrape (void)
   return (0);
 }
 
+#ifndef __AIX__
 void usleep (unsigned long time)
 {
   return;
 }
+#endif
