@@ -3005,7 +3005,7 @@ static int RefineGrid (GRID *theGrid)
 				ID(theElement),TAG(theElement),REFINECLASS(theElement),MARKCLASS(theElement),
 				REFINE(theElement),MARK(theElement),NSONS(theElement),COARSEN(theElement));
 			UserWriteF("REFINING element ID=%d TAG=%d REFINECLASS=%d MARKCLASS=%d REFINE=%d "
-				MARK=%d COARSEN=%d\n",ID(theElement),TAG(theElement),REFINECLASS(theElement),
+				"MARK=%d COARSEN=%d\n",ID(theElement),TAG(theElement),REFINECLASS(theElement),
 				MARKCLASS(theElement),REFINE(theElement),MARK(theElement),COARSEN(theElement));
 			ENDDEBUG
 
