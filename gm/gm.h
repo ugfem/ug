@@ -813,7 +813,7 @@ struct multigrid {
   INT elemIdCounter;                                    /* count objects in that multigrid		*/
   INT topLevel;                                         /* depth of the element tree			*/
   INT currentLevel;                                     /* level we are working on				*/
-  INT bottomLevel;                                      /* depth of the element tree			*/
+  INT bottomLevel;                                      /* bottom level for AMG                 */
   BVP *theBVP;                                          /* pointer to BndValProblem				*/
   struct format *theFormat;                     /* pointer to format definition                 */
   HEAP *theHeap;                                        /* associated heap structure			*/
@@ -822,7 +822,8 @@ struct multigrid {
   DATA_RESERVATION dr;              /* memory management for vectors|matrix */
 
   /* pointers */
-  struct grid *Grids[2*MAXLEVEL];       /* pointers to the grids				*/
+  struct grid *amggrids[MAXLEVEL];      /* pointers to the grids				*/
+  struct grid *grids[MAXLEVEL];         /* pointers to the grids				*/
 
   /* NodeElementPointerArray used for an O(n) InsertElement               */
   union element ***ndelemptrarray;                      /* pointer to the node element blocks   */
@@ -2142,6 +2143,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define NS(p)                           ((p)->nSide)
 #define NVEC(p)                         ((p)->nVector)
 #define NC(p)                           ((p)->nCon)
+#define NIMAT(p)                        ((p)->nIMat)
 #define TYPE_DEF_IN_GRID(p,tp) ((p)->mg->theFormat->VectorSizes[(tp)]>0)
 #define NELIST_DEF_IN_GRID(p)  ((p)->mg->theFormat->nodeelementlist)
 #define EDATA_DEF_IN_GRID(p)   ((p)->mg->theFormat->elementdata)
@@ -2164,6 +2166,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define NIDCNT(p)                       ((p)->nodeIdCounter)
 #define EIDCNT(p)                       ((p)->elemIdCounter)
 #define TOPLEVEL(p)                     ((p)->topLevel)
+#define BOTTOMLEVEL(p)                  ((p)->bottomLevel)
 #define CURRENTLEVEL(p)                 ((p)->currentLevel)
 #define MGFORMAT(p)                     ((p)->theFormat)
 #define DATAFORMAT(p)                   ((p)->theFormat)
@@ -2173,7 +2176,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MGNOOFCORNERS(p)                ((p)->numOfCorners)
 #define MGHEAP(p)                               ((p)->theHeap)
 #define MG_NPROPERTY(p)                 ((p)->nProperty)
-#define GRID_ON_LEVEL(p,i)              ((p)->Grids[i+MAXLEVEL])
+#define GRID_ON_LEVEL(p,i)              ((p)->grids[i])
 /* macros for the NodeElementsBlockArray . . .  */
 #define ELEMS_OF_NODE_MAX               75
 #define NDELEM_BLKS_MAX                 100
@@ -2282,6 +2285,8 @@ MULTIGRID       *LoadMultiGrid                  (char *MultigridName, char *name
 INT             SaveMultiGrid                   (MULTIGRID *theMG, char *FileName, char *type, char *comment);
 INT         DisposeGrid             (GRID *theGrid);
 INT             DisposeMultiGrid                (MULTIGRID *theMG);
+INT         DisposeAMGLevel         (MULTIGRID *theMG);
+INT         DisposeAMGLevels        (MULTIGRID *theMG);
 #ifdef __TWODIM__
 INT                     SaveCnomGridAndValues (MULTIGRID *theMG, char *FileName, char *plotprocName, char *tagName);
 #endif

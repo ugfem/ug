@@ -289,7 +289,7 @@ int             Write_PBndDesc          (int n, BNDP **BndPList);
 #endif
 
 /* general functions */
-int     CloseMGFile                     ();
-int     MGIO_Init                       ();
+int     CloseMGFile                     (void);
+int     MGIO_Init                       (void);
 
 #endif

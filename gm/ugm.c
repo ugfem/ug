@@ -126,6 +126,8 @@ static DOUBLE InvMeshSize;
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
+REP_ERR_FILE;
+
 /****************************************************************************/
 /*																			*/
 /* forward declarations of functions used before they are defined			*/
@@ -1526,6 +1528,73 @@ GRID *CreateNewLevel (MULTIGRID *theMG, INT algebraic)
 	return(theGrid);
 }
 
+
+/****************************************************************************/
+/*D
+   CreateNewLevelAMG - Create new amg level
+
+   SYNOPSIS:
+   GRID *CreateNewLevelAMG (MULTIGRID *theMG);
+
+   PARAMETERS:
+.  theMG - multigrid structure
+
+   DESCRIPTION:
+   This function creates and initialized a new grid structure for bottomLevel - 1
+   and returns a pointer to it.
+
+   RETURN VALUE:
+   GRID *
+.n   pointer to requested object
+.n   NULL if out of memory
+D*/
+/****************************************************************************/
+
+GRID *CreateNewLevelAMG (MULTIGRID *theMG)
+{
+	GRID *theGrid;
+	int l;
+	
+	if (theMG->bottomLevel-1<=-MAXLEVEL) return(NULL);
+	
+	l = theMG->bottomLevel-1;
+
+	/* allocate grid object */
+	theGrid = GetMemoryForObject(theMG,sizeof(GRID),GROBJ);
+	if (theGrid==NULL) return(NULL);
+	
+	/* fill in data */
+	CTRL(theGrid) = 0;
+	SETOBJT(theGrid,GROBJ);
+	theGrid->level = l;
+	theGrid->nEdge = 0;
+	theGrid->nCon = 0;
+	/* other counters are init in INIT fcts below */
+
+#ifdef __INTERPOLATION_MATRIX__
+	theGrid->nIMat = 0;
+#endif
+
+	theGrid->status       = 0;
+	GRID_INIT_ELEMENT_LIST(theGrid);
+	GRID_INIT_NODE_LIST(theGrid);
+	GRID_INIT_VERTEX_LIST(theGrid);
+	GRID_INIT_VECTOR_LIST(theGrid);
+	GFIRSTBV(theGrid) = NULL;
+	GLASTBV(theGrid) = NULL;
+	
+	/* fill in further data */
+	theGrid->mg = theMG;
+	theGrid->level = l;
+	theGrid->finer = theMG->grids[l+1];
+	theMG->grids[l+1]->coarser = theGrid;
+	
+	theMG->grids[l] = theGrid;
+	theMG->bottomLevel = l;
+	
+	return(theGrid);
+}
+
 /****************************************************************************/
 /*D
    MakeMGItem - Create a multigrid environment item 
@@ -2576,7 +2645,7 @@ INT DisposeTopLevel (MULTIGRID *theMG)
    INT DisposeGrid (GRID *theGrid);
 
    PARAMETERS:
-.  theMG - multigrid to remove from
+.  theGrid - grid to be removed
 
    DESCRIPTION:
    This function removes the top level grid from multigrid structure.
@@ -2634,6 +2703,98 @@ INT DisposeGrid (GRID *theGrid)
 
 	return(0);
 }
+
+/****************************************************************************/
+/*D
+   DisposeAMGLevel - dispose bottom AMG level 
+
+   SYNOPSIS:
+   INT DisposeAMGLevel (MULTIGRID *theMG);
+
+   PARAMETERS:
+.  theMG - multigrid to remove from
+
+   DESCRIPTION:
+   This function removes the bottom AMG level from multigrid structure.
+
+   RETURN VALUE:
+   INT
+.n   0 if ok
+.n   1 no valid object number
+.n   2 no AMG levels
+D*/
+/****************************************************************************/
+
+INT DisposeAMGLevel (MULTIGRID *theMG)
+{
+	int l;
+	GRID *theGrid;
+  	GRID *fineGrid;
+
+	/* level 0 can not be deleted */
+	l = theMG->bottomLevel;
+	if (l>=0) return(2);
+	theGrid = theMG->grids[l];
+	fineGrid = theMG->grids[l+1];
+
+	assert((FIRSTELEMENT(theGrid)==NULL)&&(FIRSTVERTEX(theGrid)==NULL)
+		   &&(FIRSTNODE(theGrid)==NULL));
+	
+	/* clear interpolation matrices from higher level!! */
+	if (DisposeIMatricesInGrid(fineGrid))
+		return(1);
+
+	/* clear level */
+	while (FIRSTVECTOR(theGrid)!=NULL) 
+	  if (DisposeVector(theGrid,FIRSTVECTOR(theGrid)))
+		  return(1);
+
+	/* remove from grids array */
+	theMG->grids[l] = NULL;
+	theMG->grids[l+1]->coarser = NULL;
+	(theMG->bottomLevel)++;
+	if (theMG->currentLevel<theMG->bottomLevel) 
+	  theMG->currentLevel = theMG->bottomLevel;
+	
+	PutFreeObject(theMG,theGrid,sizeof(GRID),GROBJ);
+
+	return(0);
+}
+
+/****************************************************************************/
+/*D
+   DisposeAMGLevels - dispose all AMG level 
+
+   SYNOPSIS:
+   INT DisposeAMGLevels (MULTIGRID *theMG);
+
+   PARAMETERS:
+.  theMG - multigrid to remove from
+
+   DESCRIPTION:
+   This function removes all AMG level from multigrid structure.
+
+   RETURN VALUE:
+   INT
+.n   0 if ok
+.n   1 if error occured
+D*/
+/****************************************************************************/
+
+INT DisposeAMGLevels (MULTIGRID *theMG)
+{
+	INT err;
+
+	while ((err=DisposeAMGLevel(theMG))!=2)
+		if (err==1)
+		{
+			PrintErrorMessage('E',"AMGTransferPreProcess","could not dispose AMG levels");
+			REP_ERR_RETURN(1);
+		}
+
+	return(0);
+}
+
 
 /****************************************************************************/
 /*D
@@ -5646,7 +5807,12 @@ void ListGrids (const MULTIGRID *theMG)
 	
 	UserWriteF("grids of '%s':\n",ENVITEM_NAME(theMG));
 	
-	UserWrite("level maxlevel    #vert    #node    #edge    #elem    #side    #vect    #conn  minedge  maxedge\n");
+	UserWrite("level maxlevel    #vert    #node    #edge    #elem    #side    #vect    #conn");
+#ifdef __INTERPOLATION_MATRIX__
+	UserWrite("    #imat");
+#endif
+	UserWrite("  minedge  maxedge\n");
+
 	for (l=0; l<=TOPLEVEL(theMG); l++)
 	{
 		theGrid = GRID_ON_LEVEL(theMG,l);
@@ -5675,11 +5841,34 @@ void ListGrids (const MULTIGRID *theMG)
 			  if (SIDE_ON_BND(theElement,i))
 				ns++;
 
+#ifdef __INTERPOLATION_MATRIX__
+		UserWriteF("%c %3d %8d %8ld %8ld %8ld %8ld %8ld %8ld %8ld %8ld %9.3e %9.3e\n",c,l,(int)TOPLEVEL(theMG),
+			(long)NV(theGrid),(long)NN(theGrid),(long)NE(theGrid),(long)NT(theGrid),
+			(long)ns,(long)NVEC(theGrid),(long)NC(theGrid),(long)NIMAT(theGrid),(float)hmin,(float)hmax);
+#else
 		UserWriteF("%c %3d %8d %8ld %8ld %8ld %8ld %8ld %8ld %8ld %9.3e %9.3e\n",c,l,(int)TOPLEVEL(theMG),
 			(long)NV(theGrid),(long)NN(theGrid),(long)NE(theGrid),(long)NT(theGrid),
 			(long)ns,(long)NVEC(theGrid),(long)NC(theGrid),(float)hmin,(float)hmax);
+#endif
 	}
 	
+#ifdef __INTERPOLATION_MATRIX__
+	if (BOTTOMLEVEL(theMG)<0)
+	{
+		UserWrite("AMG levels:\n");
+		for (l=-1; l>=BOTTOMLEVEL(theMG); l--)
+		{
+			theGrid = GRID_ON_LEVEL(theMG,l);
+		
+			c = (l==cl) ? '*':' ';
+
+			UserWriteF("%c %3d %8d %8ld %8ld %8ld %8ld %8ld %8ld %8ld %8ld\n",c,l,(int)TOPLEVEL(theMG),
+					   (long)NV(theGrid),(long)NN(theGrid),(long)NE(theGrid),(long)NT(theGrid),
+					   (long)0,(long)NVEC(theGrid),(long)NC(theGrid),(long)NIMAT(theGrid));
+		}
+	}
+#endif
+
 	/* surface grid up to current level */
 	minl = cl;
 	hmin = MAX_C;

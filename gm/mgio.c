@@ -1190,7 +1190,7 @@ int Write_PBndDesc (int n, BNDP **BndPList)
  */
 /****************************************************************************/
 
-int CloseMGFile ()
+int CloseMGFile (void)
 {
   if (fclose(stream)!=NULL) return (1);
   return (0);

@@ -87,7 +87,7 @@
 #ifdef __SGI__
 /* qsort on SGI cannot handle nontransitive compare routines,               */
 /* resulting by rounding errors                                             */
-#define ORDERRES                0           /* resolution for LexAlgDep					*/
+#define ORDERRES                0       /* resolution for LexAlgDep					*/
 #else
 #define ORDERRES                1e-3    /* resolution for LexAlgDep					*/
 #endif
@@ -3459,17 +3459,17 @@ static INT LexCompare (VECTOR **pvec1, VECTOR **pvec2)
                 #ifdef __THREEDIM__
     if (fabs(diff[Order[DIM-2]])<=ORDERRES)
     {
-      if (pv2[Order[DIM-3]]>pv1[Order[DIM-3]]) return (-Sign[DIM-3]);
+      if (diff[Order[DIM-3]]>0.0) return (-Sign[DIM-3]);
       else return ( Sign[DIM-3]);
     }
     else
                 #endif
-    if (pv2[Order[DIM-2]]>pv1[Order[DIM-2]]) return (-Sign[DIM-2]);
+    if (diff[Order[DIM-2]]>0.0) return (-Sign[DIM-2]);
     else return ( Sign[DIM-2]);
   }
   else
   {
-    if (pv2[Order[DIM-1]]>pv1[Order[DIM-1]]) return (-Sign[DIM-1]);
+    if (diff[Order[DIM-1]]>0.0) return (-Sign[DIM-1]);
     else return ( Sign[DIM-1]);
   }
 }
@@ -6529,7 +6529,7 @@ INT MoveVector (GRID *theGrid, VECTOR *moveVector, VECTOR *destVector, INT after
    MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec);
 
    PARAMETERS:
-   .  TheGrid - grid where matrix should be inserted
+   .  theGrid - fine grid
    .  fvec - fine grid vector
    .  cvec - coarse grid vector
 
