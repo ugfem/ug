@@ -10,17 +10,17 @@
 /*                                                                          */
 /* Purpose:   general element concept (header file)                         */
 /*                                                                          */
-/* Author:        Peter Bastian                                                                                                 */
-/*                        Institut fuer Computeranwendungen III                                                 */
-/*                        Universitaet Stuttgart                                                                                */
-/*                        Pfaffenwaldring 27                                                                                    */
-/*                        70569 Stuttgart                                                                                               */
-/*                        email: ug@ica3.uni-stuttgart.de                                                       */
-/*                                                                                                                                                      */
-/* History:   24.03.95 begin, ug version 3.0                                                            */
-/*                                                                                                                                                      */
-/* Remarks:                                                                                                                             */
-/*                                                                                                                                                      */
+/* Author:    Peter Bastian                                                 */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
+/* History:   24.03.95 begin, ug version 3.0                                */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -29,9 +29,9 @@
  */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* auto include mechanism and other include files                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __ELEMENTS__
@@ -48,10 +48,22 @@ namespace UG3d {
 #endif
 #endif
 
+/** \brief Number of different element types    */
+#define TAGS 8
+
+extern INT n_offset[TAGS];
+extern INT father_offset[TAGS];
+extern INT sons_offset[TAGS];
+extern INT nb_offset[TAGS];
+extern INT evector_offset[TAGS];
+extern INT svector_offset[TAGS];
+extern INT side_offset[TAGS];
+extern INT data_offset[TAGS];
+
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* function definitions                                                                                                         */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* function definitions                                                     */
+/*                                                                          */
 /****************************************************************************/
 
 INT PreInitElementTypes         (void);
