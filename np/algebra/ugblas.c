@@ -726,7 +726,7 @@ INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x)
 
 /****************************************************************************/
 /*D
-   l_vector_meanvalue - collects the vector values of all copies
+   l_vector_meanvalue - averages the vector values of all copies
 
    SYNOPSIS:
    INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x);
@@ -776,6 +776,42 @@ INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
 		}
 
 	return (l_vector_consistent(g,x));
+}
+#endif
+
+/****************************************************************************/
+/*D
+   a_vector_meanvalue - averages the vector values of all copies
+
+   SYNOPSIS:
+   INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
+
+   PARAMETERS:
+.  mg - pointer to multigrid 
+.  fl - from level
+.  tl - from level
+.  x - vector data descriptor
+
+   DESCRIPTION:
+   This function builds the mean value of all vector values on border vectors.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK      if ok
+.n    NUM_ERROR   if error occurrs
+D*/
+/****************************************************************************/
+
+#ifdef ModelP
+INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
+{
+    INT level; 
+
+	for (level=fl; level<=tl; level++) 
+	    if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),x))
+			return(NUM_ERROR);
+
+	return (NUM_OK);
 }
 #endif
 
