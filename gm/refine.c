@@ -239,7 +239,7 @@ INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
 								  CORNER_OF_EDGE_PTR((elem),i,1));           \
 				ASSERT(theEdge!=NULL);                                       \
                                                                              \
-				SET ## (macro)(theEdge, (macro)(theEdge) OP (pattern&0x1));  \
+				SET ## macro(theEdge, macro(theEdge) OP (pattern&0x1));      \
 				pattern >>= 1;                                               \
 			}                                                                \
 		}
