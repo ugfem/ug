@@ -44,6 +44,9 @@
 #include "amg_iter.h"
 #include "amg_coarsen.h"
 
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -103,9 +106,6 @@
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
-/* RCS_ID
-   $Header$
- */
 
 /* data for CVS */
 static int clustersize=0;                       /* number of nodes in cluster			*/
@@ -1386,7 +1386,7 @@ static int Clustering (AMG_GRAPH *g, AMG_CoarsenContext *cc)
 
   if (cc->verbose>1)
   {
-    sprintf(buffer,"%12s: %d clusters (%d:%d) out of %d nodes (%.4lg)\n","Clustering",
+    sprintf(buffer,"%12s: %d clusters (%d:%d) out of %d nodes (%.4g)\n","Clustering",
             clusternumber,conclusters,isoclusters,n,((double)n)/((double)clusternumber));
     AMG_Print(buffer);
   }
@@ -1702,7 +1702,7 @@ static int Statistic (AMG_MATRIX *A, int depth)
     min_con=AMG_MIN(min_con,ja[ra[i]]);
     max_con=AMG_MAX(max_con,ja[ra[i]]);
   }
-  sprintf(buffer,"Level %2d: %7d=rows %7d=nonzeros %12.4lg=avg %4d=min %4d=max\n",
+  sprintf(buffer,"Level %2d: %7d=rows %7d=nonzeros %12.4g=avg %4d=min %4d=max\n",
           depth,n,A->connections,(double)(((double)A->connections)/((double)n)),min_con,max_con);
   AMG_Print(buffer);
 
