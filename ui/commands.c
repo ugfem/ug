@@ -68,6 +68,7 @@
 #include "evm.h"
 #include "ugm.h"
 #include "algebra.h"
+#include "shapes.h"
 
 /* grid generator module */
 #ifdef __TWODIM__
@@ -86,6 +87,7 @@
 #include "data_io.h"
 #include "npcheck.h"
 #include "udm.h"
+#include "fvgeom.h"
 
 /* graph module */
 #include "wpm.h"
@@ -2445,6 +2447,571 @@ static INT SaveDomainCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   average, freeaverage - average result of a plot proc to nodal vector
+
+   DESCRIPTION:
+   The average command takes a plot procedure (scalar or vector), allocates
+   a vec data desc with nodal components and computes a conforming
+   approximation of the function via a box-volume weighted average.
+   The vec data desc will be given the same name as the plot procedure. The
+   freeaverage command is called with same arguments and deallocates the vec data
+   descs. The vec data descs are not locked!
+
+   'average {$ns <scalar plot proc> [$s <sym>] | $nv <vector plot proc> [$s <sym>]}*'
+   'freeaverage {$ns <scalar plot proc> [$s <sym>] | $nv <vector plot proc> [$s <sym>]}*'
+
+   EXAMPLE:
+   .vb
+   average $nv uwTrans $s sol $nv unTrans $s sol;
+   savedata air3d $t xdr $n @step $T @TIME $a sol $b uwTrans $c unTrans;
+   freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
+   .ve
+
+
+   KEYWORDS:
+   file, output
+
+   D*/
+/****************************************************************************/
+
+#ifdef ModelP
+static INT comm_comp, comm_box_comp;
+
+static int Gather_Scalar (DDD_OBJ obj, void *data)
+{
+  NODE *pv = (NODE *)obj;
+  DOUBLE *d = (DOUBLE *)data;
+
+  d[0] = VVALUE(NVECTOR(pv),comm_comp);
+  d[1] = VVALUE(NVECTOR(pv),comm_box_comp);
+
+  return (NUM_OK);
+}
+
+static int Scatter_Scalar (DDD_OBJ obj, void *data)
+{
+  NODE *pv = (NODE *)obj;
+  DOUBLE *d = (DOUBLE *)data;
+
+  VVALUE(NVECTOR(pv),comm_comp) += d[0];
+  VVALUE(NVECTOR(pv),comm_box_comp) += d[1];
+
+  return (NUM_OK);
+}
+
+INT l_sum_scalar (GRID *g, INT comp, INT box_comp)
+{
+  comm_comp = comp; comm_box_comp = box_comp;
+  DDD_IFAExchange(BorderNodeSymmIF, GRID_ATTR(g), 2*sizeof(DOUBLE),
+                  Gather_Scalar, Scatter_Scalar);
+  return (NUM_OK);
+}
+
+static int Gather_Vector (DDD_OBJ obj, void *data)
+{
+  NODE *pv = (NODE *)obj;
+  DOUBLE *d = (DOUBLE *)data;
+  INT i;
+
+  for (i=0; i<DIM; i++)
+    d[i] = VVALUE(NVECTOR(pv),comm_comp+i);
+  d[DIM] = VVALUE(NVECTOR(pv),comm_box_comp);
+
+  return (NUM_OK);
+}
+
+static int Scatter_Vector (DDD_OBJ obj, void *data)
+{
+  NODE *pv = (NODE *)obj;
+  DOUBLE *d = (DOUBLE *)data;
+  INT i;
+
+  for (i=0; i<DIM; i++)
+    VVALUE(NVECTOR(pv),comm_comp+i) += d[i];
+  VVALUE(NVECTOR(pv),comm_box_comp) += d[DIM];
+
+  return (NUM_OK);
+}
+
+INT l_sum_vector (GRID *g, INT comp, INT box_comp)
+{
+  comm_comp = comp; comm_box_comp = box_comp;
+  DDD_IFAExchange(BorderNodeSymmIF, GRID_ATTR(g), (DIM+1)*sizeof(DOUBLE),
+                  Gather_Vector, Scatter_Vector);
+  return (NUM_OK);
+}
+#endif
+
+
+INT AverageScalar (MULTIGRID *mg, EVALUES *eval, char *eval_name, VECDATA_DESC *vecdesc)
+{
+  INT box_compo,compo,n,k,i,error,j;
+  GRID *g;
+  NODE *theNode;
+  VECTOR *theVector;
+  SHORT NCmpInType[NVECTYPES];
+  VECDATA_DESC *box_vd=NULL;
+  PreprocessingProcPtr preProc;
+  ElementEvalProcPtr evalProc;
+  ELEMENT *el;
+  DOUBLE value;
+  DOUBLE *CornersCoord[MAX_CORNERS_OF_ELEM];
+  DOUBLE LocalCoord[DIM];
+  DOUBLE local[DIM];
+  FVElementGeometry Geo;
+  SubControlVolume *scv;
+
+  /* get component */
+  compo = VD_ncmp_cmpptr_of_otype(vecdesc,NODEVEC,&n)[0];
+  assert(n>0);
+
+  /* reset average to zero */
+  for (k=0; k<=TOPLEVEL(mg); k++)
+  {
+    g = GRID_ON_LEVEL(mg,k);
+    for (theNode=FIRSTNODE(g); theNode!= NULL; theNode=SUCCN(theNode))
+    {
+      theVector = NVECTOR(theNode);
+      VVALUE(theVector,compo) = 0.0;
+    }
+  }
+
+  /* allocate vecdata desc for box volume */
+  for (k=0; k<NVECTYPES; k++) NCmpInType[k]=0;
+  NCmpInType[NODEVEC]=1;       /* one component in node */
+  if (AllocVDfromNCmp(mg,0,TOPLEVEL(mg),NCmpInType,NULL,&box_vd)) return(1);
+
+  /* get component of box volume */
+  box_compo = VD_ncmp_cmpptr_of_otype(box_vd,NODEVEC,&n)[0];
+
+  /* reset box volume to zero */
+  for (k=0; k<=TOPLEVEL(mg); k++)
+  {
+    g = GRID_ON_LEVEL(mg,k);
+    for (theNode=FIRSTNODE(g); theNode!= NULL; theNode=SUCCN(theNode))
+    {
+      theVector = NVECTOR(theNode);
+      VVALUE(theVector,box_compo) = 0.0;
+    }
+  }
+
+  /* prepare plot function */
+  preProc = eval->PreprocessProc;
+  if (preProc!=NULL) preProc(eval_name,mg);
+  evalProc = eval->EvalProc;
+
+  /* run through all levels, elements, corners, ... */
+  for (k=0; k<=TOPLEVEL(mg); k++)
+    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
+    {
+      /* get control volume geometry */
+      error = EvaluateFVGeometry(el,&Geo);
+
+      /* process all corners of element */
+      for (i=0; i<CORNERS_OF_ELEM(el); i++)
+      {
+        /* sub control volume */
+        scv = Geo.scv+i;
+
+        /* get value in corner i */
+        for (j=0; j<CORNERS_OF_ELEM(el); j++)
+          CornersCoord[j] = CVECT(MYVERTEX(CORNER(el,j)));                       /* x,y,z of corners */
+        LocalCornerCoordinates(DIM,TAG(el),i,local);
+        for (j=0; j<DIM; j++) LocalCoord[j] = local[j];
+        value = evalProc(el,(const DOUBLE **)CornersCoord,LocalCoord);
+
+        /* accumulate value weighted with box volume */
+        theVector = NVECTOR(CORNER(el,i));
+        VVALUE(theVector,compo) += scv->volume*value;
+
+        /* ... and accumulate box volume */
+        VVALUE(theVector,box_compo) += scv->volume;
+      }
+    }
+
+  /* if it is parallel, then sum values at interfaces */
+        #ifdef ModelP
+  for (k=0; k<=TOPLEVEL(mg); k++)
+    l_sum_scalar(GRID_ON_LEVEL(mg,k),compo,box_compo);
+        #endif
+
+  /* finally, divide by box volume */
+  for (k=0; k<=TOPLEVEL(mg); k++)
+  {
+    g = GRID_ON_LEVEL(mg,k);
+    for (theNode=FIRSTNODE(g); theNode!= NULL; theNode=SUCCN(theNode))
+    {
+      theVector = NVECTOR(theNode);
+      VVALUE(theVector,compo) =
+        VVALUE(theVector,compo)/VVALUE(theVector,box_compo);
+    }
+  }
+
+  /* and free box volume */
+  FreeVD(mg,0,TOPLEVEL(mg),box_vd);
+
+  return(0);
+}
+
+
+INT AverageVector (MULTIGRID *mg, EVECTOR *eval, char *eval_name, VECDATA_DESC *vecdesc)
+{
+  INT box_compo,compo,n,k,i,error,j;
+  GRID *g;
+  NODE *theNode;
+  VECTOR *theVector;
+  SHORT NCmpInType[NVECTYPES];
+  VECDATA_DESC *box_vd=NULL;
+  PreprocessingProcPtr preProc;
+  ElementVectorProcPtr evalProc;
+  ELEMENT *el;
+  DOUBLE value[DIM];
+  DOUBLE *CornersCoord[MAX_CORNERS_OF_ELEM];
+  DOUBLE LocalCoord[DIM];
+  DOUBLE local[DIM];
+  FVElementGeometry Geo;
+  SubControlVolume *scv;
+
+  /* get component */
+  compo = VD_ncmp_cmpptr_of_otype(vecdesc,NODEVEC,&n)[0];
+  assert(n==DIM);
+  for (j=1; j<DIM; j++)
+    if (VD_ncmp_cmpptr_of_otype(vecdesc,NODEVEC,&n)[j]!=compo+j)
+    {
+      UserWrite("can only handle consecutive components!\n");
+      return(1);
+    }
+
+  /* reset average to zero */
+  for (k=0; k<=TOPLEVEL(mg); k++)
+  {
+    g = GRID_ON_LEVEL(mg,k);
+    for (theNode=FIRSTNODE(g); theNode!= NULL; theNode=SUCCN(theNode))
+    {
+      theVector = NVECTOR(theNode);
+      for (j=0; j<DIM; j++) VVALUE(theVector,compo+j) = 0.0;
+    }
+  }
+
+  /* allocate vecdata desc for box volume */
+  for (k=0; k<NVECTYPES; k++) NCmpInType[k]=0;
+  NCmpInType[NODEVEC]=1;       /* one component in node */
+  if (AllocVDfromNCmp(mg,0,TOPLEVEL(mg),NCmpInType,NULL,&box_vd)) return(1);
+
+  /* get component of box volume */
+  box_compo = VD_ncmp_cmpptr_of_otype(box_vd,NODEVEC,&n)[0];
+
+  /* reset box volume to zero */
+  for (k=0; k<=TOPLEVEL(mg); k++)
+  {
+    g = GRID_ON_LEVEL(mg,k);
+    for (theNode=FIRSTNODE(g); theNode!= NULL; theNode=SUCCN(theNode))
+    {
+      theVector = NVECTOR(theNode);
+      VVALUE(theVector,box_compo) = 0.0;
+    }
+  }
+
+  /* prepare plot function */
+  preProc = eval->PreprocessProc;
+  if (preProc!=NULL) preProc(eval_name,mg);
+  evalProc = eval->EvalProc;
+
+  /* run through all levels, elements, corners, ... */
+  for (k=0; k<=TOPLEVEL(mg); k++)
+    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
+    {
+      /* get control volume geometry */
+      error = EvaluateFVGeometry(el,&Geo);
+
+      /* process all corners of element */
+      for (i=0; i<CORNERS_OF_ELEM(el); i++)
+      {
+        /* sub control volume */
+        scv = Geo.scv+i;
+
+        /* get value in corner i */
+        for (j=0; j<CORNERS_OF_ELEM(el); j++)
+          CornersCoord[j] = CVECT(MYVERTEX(CORNER(el,j)));                       /* x,y,z of corners */
+        LocalCornerCoordinates(DIM,TAG(el),i,local);
+        for (j=0; j<DIM; j++) LocalCoord[j] = local[j];
+        evalProc(el,(const DOUBLE **)CornersCoord,LocalCoord,value);
+
+        /* accumulate value weighted with box volume */
+        theVector = NVECTOR(CORNER(el,i));
+        for (j=0; j<DIM; j++) VVALUE(theVector,compo+j) += scv->volume*value[j];
+
+        /* ... and accumulate box volume */
+        VVALUE(theVector,box_compo) += scv->volume;
+      }
+    }
+
+  /* if it is parallel, then sum values at interfaces */
+        #ifdef ModelP
+  for (k=0; k<=TOPLEVEL(mg); k++)
+    l_sum_vector(GRID_ON_LEVEL(mg,k),compo,box_compo);
+        #endif
+
+  /* finally, divide by box volume */
+  for (k=0; k<=TOPLEVEL(mg); k++)
+  {
+    g = GRID_ON_LEVEL(mg,k);
+    for (theNode=FIRSTNODE(g); theNode!= NULL; theNode=SUCCN(theNode))
+    {
+      theVector = NVECTOR(theNode);
+      for (j=0; j<DIM; j++)
+        VVALUE(theVector,compo+j) =
+          VVALUE(theVector,compo+j)/VVALUE(theVector,box_compo);
+    }
+  }
+
+  /* and free box volume */
+  FreeVD(mg,0,TOPLEVEL(mg),box_vd);
+
+  return(0);
+}
+
+#define MAXVARIABLES    10
+
+static INT AverageCommand (INT argc, char **argv)
+{
+  MULTIGRID *mg;
+  INT ns;
+  INT nv;
+  EVALUES *es[MAXVARIABLES];
+  char es_name[MAXVARIABLES][NAMESIZE];
+  EVECTOR *ev[MAXVARIABLES];
+  char ev_name[MAXVARIABLES][NAMESIZE];
+  char s[NAMESIZE];
+  VECDATA_DESC *vd,*vd2;
+  SHORT NCmpInType[NVECTYPES];
+  INT i,k;
+
+  /* get current multigrid */
+  mg = GetCurrentMultigrid();
+  if (mg==NULL)
+  {
+    PrintErrorMessage('W',"average","no multigrid open\n");
+    return (OKCODE);
+  }
+
+  /* scan input for $ns <scalar eval proc> [$s <symbol>] or $nv <scalar eval proc> [$s <symbol>]*/
+  ns=nv=0;       /* no plot functions yet */
+  for(i=1; i<argc; i++)
+  {
+    if (strncmp(argv[i],"ns",2)==0) {
+      if (ns>=MAXVARIABLES)
+      {
+        PrintErrorMessage('E',"average:","too many scalar variables specified\n");
+        break;
+      }
+      sscanf(argv[i],"ns %s", s);
+      es[ns] = GetElementValueEvalProc(s);
+      if (es[ns]==NULL)
+      {
+        PrintErrorMessageF('E',"average:","could not find scalar eval proc %s\n",s);
+        break;
+      }
+      if (sscanf(argv[i+1],"s %s", s) == 1)
+      {
+        strcpy(es_name[ns],s);
+        i++;
+      }
+      else
+        strcpy(es_name[ns],es[ns]->v.name);
+      ns++;
+      continue;
+    }
+
+    if (strncmp(argv[i],"nv",2)==0) {
+      if (nv>=MAXVARIABLES)
+      {
+        PrintErrorMessage('E',"average:","too many vector variables specified\n");
+        break;
+      }
+      sscanf(argv[i],"nv %s", s);
+      ev[nv] = GetElementVectorEvalProc(s);
+      if (ev[nv]==NULL)
+      {
+        PrintErrorMessageF('E',"average:","could not find vector eval proc %s\n",s);
+        break;
+      }
+      if (sscanf(argv[i+1],"s %s", s) == 1)
+      {
+        strcpy(ev_name[nv],s);
+        i++;
+      }
+      else
+        strcpy(ev_name[nv],ev[nv]->v.name);
+      nv++;
+      continue;
+    }
+
+  }
+
+  /* scalar functions with one component in node .. */
+  for (k=0; k<NVECTYPES; k++) NCmpInType[k]=0;
+  NCmpInType[NODEVEC]=1;
+  for (i=0; i<ns; i++)
+  {
+    /* allocate free VECDATA_DESC */
+    vd=NULL;
+    if (AllocVDfromNCmp(mg,0,TOPLEVEL(mg),NCmpInType,NULL,&vd)) return(1);
+
+    /* if name exist then it must be that of vd */
+    vd2=GetVecDataDescByName(mg,es[i]->v.name);
+    if (vd2!=vd && vd2!=NULL)
+    {
+      UserWrite(es[i]->v.name); UserWrite(": name exists already, skipping\n");
+      FreeVD(mg,0,TOPLEVEL(mg),vd);
+      return(1);
+      continue;
+    }
+
+    /* rename vd to name of plot proc */
+    strcpy(vd->v.name,es[i]->v.name);
+    UserWrite(es[i]->v.name); UserWrite(": created\n");
+
+    /* ... and average it */
+    if (AverageScalar(mg,es[i],es_name[i],vd)) return(1);
+  }
+
+  /* vector functions with DIM components in node .. */
+  for (k=0; k<NVECTYPES; k++) NCmpInType[k]=0;
+  NCmpInType[NODEVEC]=DIM;
+  for (i=0; i<nv; i++)
+  {
+    /* allocate free VECDATA_DESC */
+    vd=NULL;
+    if (AllocVDfromNCmp(mg,0,TOPLEVEL(mg),NCmpInType,NULL,&vd)) return(1);
+
+    /* if name exist then it must be that of vd */
+    vd2=GetVecDataDescByName(mg,ev[i]->v.name);
+    if (vd2!=vd && vd2!=NULL)
+    {
+      UserWrite(ev[i]->v.name); UserWrite(": name exists already, skipping\n");
+      FreeVD(mg,0,TOPLEVEL(mg),vd);
+      return(1);
+      continue;
+    }
+
+    /* rename vd to name of plot proc */
+    strcpy(vd->v.name,ev[i]->v.name);
+    UserWrite(ev[i]->v.name); UserWrite(": created\n");
+
+    /* ... and average it */
+    if (AverageVector(mg,ev[i],ev_name[i],vd)) return(1);
+  }
+
+  return(0);
+}
+
+static INT FreeAverageCommand (INT argc, char **argv)
+{
+  MULTIGRID *mg;
+  INT ns;
+  INT nv;
+  EVALUES *es[MAXVARIABLES];
+  char es_name[MAXVARIABLES][NAMESIZE];
+  EVECTOR *ev[MAXVARIABLES];
+  char ev_name[MAXVARIABLES][NAMESIZE];
+  char s[NAMESIZE];
+  VECDATA_DESC *vd;
+  INT i;
+
+  /* get current multigrid */
+  mg = GetCurrentMultigrid();
+  if (mg==NULL)
+  {
+    PrintErrorMessage('W',"average","no multigrid open\n");
+    return (OKCODE);
+  }
+
+  /* scan input for $ns <scalar eval proc> [$s <symbol>] or $nv <scalar eval proc> [$s <symbol>]*/
+  ns=nv=0;       /* no plot functions yet */
+  for(i=1; i<argc; i++)
+  {
+    if (strncmp(argv[i],"ns",2)==0) {
+      if (ns>=MAXVARIABLES)
+      {
+        PrintErrorMessage('E',"freeaverage:","too many scalar variables specified\n");
+        break;
+      }
+      sscanf(argv[i],"ns %s", s);
+      es[ns] = GetElementValueEvalProc(s);
+      if (es[ns]==NULL)
+      {
+        PrintErrorMessageF('E',"freeaverage:","could not find scalar eval proc %s\n",s);
+        break;
+      }
+      if (sscanf(argv[i+1],"s %s", s) == 1)
+      {
+        strcpy(es_name[ns],s);
+        i++;
+      }
+      else
+        strcpy(es_name[ns],es[ns]->v.name);
+
+      /* get VECDATA_DESC */
+      vd = GetVecDataDescByName(mg,es[ns]->v.name);
+      if (vd==NULL)
+      {
+        UserWrite(es[ns]->v.name); UserWrite(": VECDATA_DESC not found\n");
+        continue;
+      }
+
+      /* free it */
+      FreeVD(mg,0,TOPLEVEL(mg),vd);
+      UserWrite(vd->v.name); UserWrite(": freed\n");
+
+      ns++;
+      continue;
+    }
+
+    if (strncmp(argv[i],"nv",2)==0) {
+      if (nv>=MAXVARIABLES)
+      {
+        PrintErrorMessage('E',"freeaverage:","too many vector variables specified\n");
+        break;
+      }
+      sscanf(argv[i],"nv %s", s);
+      ev[nv] = GetElementVectorEvalProc(s);
+      if (ev[nv]==NULL)
+      {
+        PrintErrorMessageF('E',"freeaverage:","could not find vector eval proc %s\n",s);
+        break;
+      }
+      if (sscanf(argv[i+1],"s %s", s) == 1)
+      {
+        strcpy(ev_name[nv],s);
+        i++;
+      }
+      else
+        strcpy(ev_name[nv],ev[nv]->v.name);
+
+      /* get VECDATA_DESC */
+      vd = GetVecDataDescByName(mg,ev[nv]->v.name);
+      if (vd==NULL)
+      {
+        UserWrite(ev[nv]->v.name); UserWrite(": VECDATA_DESC not found\n");
+        continue;
+      }
+
+      /* free it */
+      FreeVD(mg,0,TOPLEVEL(mg),vd);
+      UserWrite(vd->v.name); UserWrite(": freed\n");
+
+      nv++;
+      continue;
+    }
+
+  }
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
    savedata - save multigrid data in a file
 
    DESCRIPTION:
@@ -2476,8 +3043,14 @@ static INT ReadSaveDataInput (MULTIGRID *theMG, INT argc, char **argv, char *VDS
   *theVD = NULL; *theEVal = NULL; *theEVec = NULL;
 
   /* read VecDesc */
-  *theVD = ReadArgvVecDescX(theMG,VDSym,argc,argv,NO);
-  if (*theVD!=NULL) return (1);
+  for (i=1; i<argc; i++)
+    if (argv[i][0]==VDSym[0])
+    {
+      if (sscanf(argv[i]+1," %s",buffer)!=1) break;
+      if (strlen(buffer)>=NAMESIZE) break;
+      *theVD = GetVecDataDescByName(theMG,buffer);
+      if (*theVD!=NULL) return (1);
+    }
 
   /* get plot procedure */
   for (i=1; i<argc; i++)
@@ -13557,6 +14130,8 @@ INT InitCommands ()
   if (CreateCommand("loaddata",           LoadDataCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("changemc",           ChangeMagicCookieCommand                )==NULL) return (__LINE__);
   if (CreateCommand("level",                      LevelCommand                                    )==NULL) return (__LINE__);
+  if (CreateCommand("average",        AverageCommand                  )==NULL) return (__LINE__);
+  if (CreateCommand("freeaverage",    FreeAverageCommand              )==NULL) return (__LINE__);
   if (CreateCommand("renumber",           RenumberMGCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("smooth",             SmoothMGCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("smoothgrid",     SmoothGridCommand               )==NULL) return(__LINE__);
