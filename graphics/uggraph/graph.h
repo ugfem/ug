@@ -94,6 +94,6 @@ void    UgSetTextSize                           (short size);
 void    UgSetLineWidth                          (short width);
 
 /* miscellenious */
-void    UgFlushCash                             (void);
+void    UgFlush                                         (void);
 
 #endif

@@ -1129,23 +1129,23 @@ void UgClearViewPort (void)
 
 /****************************************************************************/
 /*D
-   UgFlushCash -  Set line width to width
+   UgFlush -  Flush the machines graphics buffer
 
    SYNOPSIS:
-   void UgFlushCash (void);
+   void UgFlush (void);
 
    PARAMETERS:
    .  void
 
    DESCRIPTION:
-   This function sets line width to width.
+   This function flushes the machines graphics buffer.
 
    RETURN VALUE:
    void
    D*/
 /****************************************************************************/
 
-void UgFlushCash (void)
+void UgFlush (void)
 {
   (*CurrentOutputDevice->Flush)();
 }
