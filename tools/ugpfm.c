@@ -1347,6 +1347,13 @@ int MergeData (char *data, DATA_MAP *data_map, int step)
 
   if (data_map->init==0)                                          {printf("map is not initialized in 'MergeData'\n"); return (1);}
 
+  /* ask for step if */
+  if (step)
+  {
+    printf("merging %s [press enter to start]\n",data);
+    getc(stdin);
+  }
+
   /* read first header and modify */
   if (data==NULL) return (1);
   strcpy(buffer,data);
@@ -1375,13 +1382,6 @@ int MergeData (char *data, DATA_MAP *data_map, int step)
   {
     /* check if data existing */
     if (data_map->in_lid2gid[i]==NULL) continue;
-
-    /* ask for step if */
-    if (step)
-    {
-      printf("start merging '%s' [press any key]\n");
-      getc(stdin);
-    }
 
     /* open data-file */
     sprintf(buffer,"%s/data.%04d",data,i);
@@ -1441,7 +1441,7 @@ int main (int argc, char **argv)
   if (argc<2)                                                                                             {printf("filename required\n"); return (1);}
   strcpy(in,argv[1]);
   fopt=0; from=to=0;
-  if (argc==5 && argv[2][1]=='f')
+  if ((argc==6 || argc==5) && argv[2][1]=='f')
   {
     sscanf(argv[3],"%d",&from);
     sscanf(argv[4],"%d",&to);
