@@ -131,6 +131,8 @@ static MG_GGDATA *myMGdata;
 
 static GG_PARAM *myPars;
 
+static INT SingleMode;
+
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -390,11 +392,18 @@ static INT AssembleFrontLists (MULTIGRID *theMG, MESH *mesh)
     return(1);
 
   theIFL = CreateIndepFrontList(theGrid);
-  for (SubdomainID=1; SubdomainID<=numOfSubdomains; SubdomainID++)
-    if (HandleSubdomain (theIFL,Nodes,SubdomainID,
-                         mesh->nSides[SubdomainID],
-                         mesh->Side_corner_ids[SubdomainID]))
+  if (SingleMode<=0 || SingleMode>numOfSubdomains)
+  {
+    for (SubdomainID=1; SubdomainID<=numOfSubdomains; SubdomainID++)
+      if (HandleSubdomain (theIFL,Nodes,SubdomainID, mesh->nSides[SubdomainID], mesh->Side_corner_ids[SubdomainID]))
+        return (1);
+  }
+  else
+  {
+    SubdomainID = SingleMode;
+    if (HandleSubdomain (theIFL,Nodes,SubdomainID, mesh->nSides[SubdomainID], mesh->Side_corner_ids[SubdomainID]))
       return (1);
+  }
 
   return (0);
 }
@@ -2316,7 +2325,7 @@ static INT FL_FC_Disposer(FRONTCOMP *disp_FC, FRONTLIST *disp_FL)
 
 static INT debug;
 
-INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh, CoeffProcPtr coeff)
+INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh, CoeffProcPtr coeff, INT Single_Mode)
 {
   GRID *theGrid;
   INDEPFRONTLIST *theIFL,*nextIFL;
@@ -2330,6 +2339,8 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
 
   FRONTCOMP *disp_FC;
   FRONTLIST *disp_FL;
+
+  SingleMode = Single_Mode;
 
   SetFlagsfortemporaryGGObjects(IflObj, FlObj, FcObj);
 
