@@ -2148,7 +2148,7 @@ FORMAT                  *Ugly_CreateFormat (char *name,INT sVertex, INT sMultiGr
 /* create, saving and disposing a multigrid structure */
 MULTIGRID   *CreateMultiGrid        (char *MultigridName, char *BndValProblem, char *format, unsigned long heapSize);
 MULTIGRID       *LoadMultiGrid                  (char *MultigridName, char *name, char *type, char *BndValProblem, char *format, unsigned long heapSize);
-INT             SaveMultiGrid                   (MULTIGRID *theMG, char *FileName, char *type, char *comment);
+INT         SaveMultiGrid           (MULTIGRID *theMG, char *name, char *comment);
 INT         DisposeGrid             (GRID *theGrid);
 INT             DisposeMultiGrid                (MULTIGRID *theMG);
 #ifdef __TWODIM__
