@@ -134,6 +134,6 @@ UTIL:
 	cd util; make; cd ..;
 
 clean:
-	rm -f *.o $(DEST)
-	rm -f */*.o
+	find . -name '*.o' -exec rm {} \; -print
+	rm -f $(DEST)
 
