@@ -540,7 +540,7 @@ static VW_EvaluateProcPtr			WOP_VW_EvaluateProc;
 static EXT_EvaluateProcPtr			WOP_EXT_EvaluateProc;
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -4213,6 +4213,79 @@ static INT GEN_PostProcess_Scalar_FR (PICTURE *thePicture, WORK *theWork)
 /************************************ Part for 2D and 3D Version ******************************************/
 /**********************************************************************************************************/
 
+static INT EXT_BVPreProcess (PICTURE *thePicture, WORK *theWork)
+{
+	struct MatrixPlotObj *theMpo;
+	OUTPUTDEVICE *theOD;
+	MULTIGRID *theMG;
+	GRID *theGrid;
+
+	theMpo = &(PIC_PO(thePicture)->theMpo);
+	
+	if (!theMpo->BV)
+		return (1);
+	
+	theOD  = PIC_OUTPUTDEV(thePicture);
+	theMG  = PO_MG(PIC_PO(thePicture));
+	theGrid= GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
+	
+	BV_color	= theOD->black;
+	BV_theBV	= GFIRSTBV(theGrid);
+	
+	if (BV_theBV==NULL)
+		return (2);
+	
+	return (0);
+}
+
+static INT EXT_BVEval (DRAWINGOBJ *theDO, INT *end)
+{
+	INT row,col;
+	
+	if (BV_theBV==NULL)
+	{
+		/* hor line after last vector */
+		DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+		DO_2l(theDO) = BV_color; DO_inc(theDO);
+		DO_2C(theDO) = 			0;   DO_inc(theDO); DO_2C(theDO) = 0;   DO_inc(theDO);
+		DO_2C(theDO) = MAT_maxrow;   DO_inc(theDO); DO_2C(theDO) = 0;   DO_inc(theDO);
+		
+		/* vert line after last vector */
+		DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+		DO_2l(theDO) = BV_color; DO_inc(theDO);
+		DO_2C(theDO) = MAT_maxrow;   DO_inc(theDO); DO_2C(theDO) = 			0;   DO_inc(theDO);
+		DO_2C(theDO) = MAT_maxrow;   DO_inc(theDO); DO_2C(theDO) = MAT_maxrow;   DO_inc(theDO);
+		
+		BV_theBV = BVSUCC(BV_theBV);
+		
+		DO_2c(theDO) = DO_NO_INST;
+		
+		*end = TRUE;
+		return (0);
+	}
+	
+	col = VINDEX(BVFIRSTVECTOR(BV_theBV)) - 1;
+	row = MAT_maxrow - col;
+	
+	/* hor line at BVFIRSTVECTOR(BV_theBV) */
+	DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+	DO_2l(theDO) = BV_color; DO_inc(theDO);
+	DO_2C(theDO) = 			0;   DO_inc(theDO); DO_2C(theDO) = row;   DO_inc(theDO);
+	DO_2C(theDO) = MAT_maxrow;   DO_inc(theDO); DO_2C(theDO) = row;   DO_inc(theDO);
+	
+	/* vert line at BVFIRSTVECTOR(BV_theBV) */
+	DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+	DO_2l(theDO) = BV_color; DO_inc(theDO);
+	DO_2C(theDO) = col;   DO_inc(theDO); DO_2C(theDO) = 		 0;   DO_inc(theDO);
+	DO_2C(theDO) = col;   DO_inc(theDO); DO_2C(theDO) = MAT_maxrow;   DO_inc(theDO);
+	
+	BV_theBV = BVSUCC(BV_theBV);
+	
+	DO_2c(theDO) = DO_NO_INST;
+	
+	return (0);
+}
+
 static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
 {
 	struct MatrixPlotObj *theMpo;
@@ -4713,7 +4786,6 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 	struct GridPlotObj2D *theGpo;
 	OUTPUTDEVICE *theOD;
 	MULTIGRID *theMG;
-	BVP_DESC theBVPDesc;
 	INT i;
 	
 	theGpo = &(PIC_PO(thePicture)->theGpo);
@@ -6588,7 +6660,7 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
 	if (EE2D_IndMark)
-	  GetRefinementMark ((const ELEMENT *)theElement,&rule,data);
+	  GetRefinementMark ((const ELEMENT *)theElement,&rule,&data);
 
 	/* store viewable sides on drawing obj */
 	if (EE2D_ShrinkFactor==1.0)
@@ -14007,9 +14079,9 @@ INT InitWOP (void)
 	ELEMWISEWORK *theEWW;
 	VECTORWISEWORK *theVWW;
 	INT i;
+        EXTERNWORK *theEXW;
 	#ifdef __TWODIM__
 		NODEWISEWORK *theNWW;
-		EXTERNWORK *theEXW;
 	#endif
 	
 	/* create WorkHandling for 'Matrix' */
@@ -14019,7 +14091,7 @@ INT InitWOP (void)
 	for (i=0; i<NB_WORK; i++) POH_NBCYCLES(thePOH,i) = 0;
 	
 	/* draw work */
-	POH_NBCYCLES(thePOH,DRAW_WORK) = 1;
+	POH_NBCYCLES(thePOH,DRAW_WORK) = 2;
 
 	theWP = POH_WORKPROGS(thePOH,DRAW_WORK,0);
 	WP_WORKMODE(theWP) = VECTORWISE;
@@ -14034,6 +14106,18 @@ INT InitWOP (void)
 	theVWW->VW_ExecuteProc					= Draw3D;
 	#endif
 	theVWW->VW_PostProcessProc				= NULL;
+
+	theWP = POH_WORKPROGS(thePOH,DRAW_WORK,1);
+	WP_WORKMODE(theWP) = EXTERN;
+	theEXW = WP_EXTERNWISE(theWP);
+	theEXW->EXT_PreProcessProc				= EXT_BVPreProcess;
+	theEXW->EXT_EvaluateProc				= EXT_BVEval;
+	#ifdef __TWODIM__
+	theEXW->EXT_ExecuteProc					= Draw2D;
+	#else
+	theEXW->EXT_ExecuteProc					= Draw3D;
+	#endif
+	theEXW->EXT_PostProcessProc				= NULL;
 
 	/* findrange work */
 	POH_NBCYCLES(thePOH,FINDRANGE_WORK) = 1;
