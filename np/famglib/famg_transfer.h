@@ -62,6 +62,7 @@ public:
   void SetRestriction(double);
 #ifdef FAMG_SPARSE_BLOCK
   void SetTransferEntry(const FAMGSparseVector*,const FAMGSparseVector*,double*);
+  void SetTransferEntry(const FAMGSparseVector*,double );
  #endif
   //void AddProlongation(double);
   //void AddRestriction(double);

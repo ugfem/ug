@@ -663,16 +663,16 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
     
     // sparse vector structure of the test vectors
     // todo: create this automatically from the script 
-    /*
+    
       short ncomp = 2;
     short *compmap;
     compmap = new short[2];
-    compmap[0] = 0; compmap[1] = 0; */
+    compmap[0] = 0; compmap[1] = 1; 
     
-    short ncomp = 1;
+    /* short ncomp = 1;
     short *compmap;
     compmap = new short[1];
-    compmap[0] = 0; 
+    compmap[0] = 0; */
 
 	 famg_interface.vector[FAMG_TVA] = new FAMGugVector( *(FAMGugGridVector*)famg_interface.gridvector,tv,compmap,ncomp);
 	if( famg_interface.vector[FAMG_TVA] == NULL )

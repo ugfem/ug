@@ -155,7 +155,6 @@ FAMGTransferEntry *FAMGTransfer::NewEntry(const FAMGVectorEntry& fg_vec, const F
 #ifdef FAMG_SPARSE_BLOCK
 int FAMGTransfer::SetEntries(const FAMGVectorEntry& fg_vec, const FAMGVectorEntry& cg_vec, const FAMGSparseVector *sploc, const FAMGSparseVector *srloc, double *prolongation_val, double *restriction_val)
 {
-    // todo: adapt to sparse matrices
 
     FAMGTransferEntry *transij, *row_entry;
 
@@ -216,6 +215,16 @@ void FAMGTransferEntry::SetTransferEntry(const FAMGSparseVector *st, const FAMGS
     for(short i = 0; i < ncmp; i++)
     {
         MVALUE((MATRIX*)this,st->Get_comp(i)) = val[stloc->Get_comp(i)]; 
+    }
+    return;
+}
+    
+void FAMGTransferEntry::SetTransferEntry(const FAMGSparseVector *st, double val)
+{
+    short ncmp = st->Get_n();
+    for(short i = 0; i < ncmp; i++)
+    {
+        MVALUE((MATRIX*)this,st->Get_comp(i)) = 1.0; 
     }
     return;
 }
@@ -356,9 +365,13 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 			if(imat!=NULL)
 			{
 				transfc = (FAMGTransferEntry*)imat;	// dirty cast
-		
+#ifdef FAMG_SPARSE_BLOCK		
+                transfc->SetTransferEntry(&sp,1.0);
+                transfc->SetTransferEntry(&sr,1.0);
+#else
 				transfc->SetProlongation(1.0);
 				transfc->SetRestriction(1.0);
+#endif
 			}
 			else
 		    {
