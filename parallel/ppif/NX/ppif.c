@@ -56,8 +56,9 @@
 #include <nx.h>
 #include <errno.h>
 
-/* ppif includes */
 #include "../ppif_general.h"
+
+#include "compiler.h"
 
 /****************************************************************************/
 /*                                                                          */

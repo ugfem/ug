@@ -75,11 +75,10 @@
 #include <unistd.h>
 #include <mpp/shmem.h>
 #include <mpp/sync_proto.h>
-/* TODO: uncomment this
-   #include "compiler.h"
- */
-/* ppif includes */
+
 #include "../ppif_general.h"
+
+#include "compiler.h"
 
 
 /* TODO: delete this */

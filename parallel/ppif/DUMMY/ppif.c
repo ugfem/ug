@@ -48,8 +48,9 @@
 #include <stdio.h>
 #include <time.h>
 
-/* ppif includes */
 #include "../ppif_general.h"
+
+#include "compiler.h"
 
 /****************************************************************************/
 /*                                                                          */

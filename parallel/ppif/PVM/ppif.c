@@ -51,8 +51,12 @@
 
 #include "pvm3.h"
 
-/* ppif includes */
 #include "../ppif_general.h"
+
+#include "compiler.h"
+
+/* arch include files */
+#include "compiler.h"
 
 /****************************************************************************/
 /*                                                                          */

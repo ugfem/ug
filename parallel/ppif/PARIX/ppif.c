@@ -58,8 +58,9 @@
 #include <sys/thread.h>
 #include <sys/time.h>
 
-/* ppif includes */
 #include "../ppif_general.h"
+
+#include "compiler.h"
 
 /* LocalLink has no definition */
 int LocalLink (LinkCB_t *Link[2]);
