@@ -444,7 +444,9 @@ struct generic_element {            /* no difference between inner and bndel*/
 
         #ifdef ModelP
   DDD_HEADER ddd;
-  INT ptmp;
+  INT ptmp;                                             /* stores parition information			*/
+  INT ptmp1;                                            /* stores cluster pointer				*/
+  INT ptmp2;                                            /* stores number of descendents			*/
         #endif
 
   /* pointers */
@@ -462,7 +464,9 @@ struct triangle {
 
         #ifdef ModelP
   DDD_HEADER ddd;
-  INT ptmp;
+  INT ptmp;                                             /* stores parition information			*/
+  INT ptmp1;                                            /* stores cluster pointer				*/
+  INT ptmp2;                                            /* stores number of descendents			*/
         #endif
 
   /* pointers */
@@ -493,7 +497,9 @@ struct quadrilateral {
 
         #ifdef ModelP
   DDD_HEADER ddd;
-  INT ptmp;
+  INT ptmp;                                             /* stores parition information			*/
+  INT ptmp1;                                            /* stores cluster pointer				*/
+  INT ptmp2;                                            /* stores number of descendents			*/
         #endif
 
   /* pointers */
@@ -1819,10 +1825,16 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 
 #ifdef ModelP
 #define PFIRSTNODE(p)                                   ((LISTPART_FIRSTNODE(p,0)!=NULL) ?\
-                                                         (LISTPART_FIRSTNODE(p,0)) : (FIRSTNODE(p)))
+                                                         (LISTPART_FIRSTNODE(p,0)) :\
+                                                         ((LISTPART_FIRSTNODE(p,1)!=NULL) ?\
+                                                          (LISTPART_FIRSTNODE(p,1)) : (FIRSTNODE(p))))
 #define PRIO_FIRSTNODE(p,prio)                  ((p)->firstNode[PRIO2LISTPART(NODE_LIST,prio)])
 #define LISTPART_FIRSTNODE(p,part)              ((p)->firstNode[part])
-#define FIRSTNODE(p)                                    ((p)->firstNode[PRIO2LISTPART(NODE_LIST,PrioMaster)])
+#define FIRSTNODE(p)                                    (((p)->firstNode[PRIO2LISTPART(NODE_LIST,\
+                                                                                       PrioBorder)]!=NULL) ?\
+                                                         (p)->firstNode[PRIO2LISTPART(NODE_LIST,PrioBorder)] :\
+                                                         (p)->firstNode[PRIO2LISTPART(NODE_LIST,PrioMaster)])
+#define SFIRSTNODE(p)                                    (p)->firstNode[PRIO2LISTPART(NODE_LIST,PrioMaster)]
 
 #define PLASTNODE(p)                                    LASTNODE(p)
 #define PRIO_LASTNODE(p,prio)                   ((p)->lastNode[PRIO2LISTPART(NODE_LIST,prio)])
@@ -1831,16 +1843,23 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #else
 #define FIRSTNODE(p)            ((p)->firstNode[0])
 #define PFIRSTNODE(p)           FIRSTNODE(p)
+#define SFIRSTNODE(p)           FIRSTNODE(p)
 #define LASTNODE(p)             ((p)->lastNode[0])
 #define PLASTNODE(p)            LASTNODE(p)
 #endif
 
 #ifdef ModelP
 #define PFIRSTVECTOR(p)                                 ((LISTPART_FIRSTVECTOR(p,0)!=NULL) ?\
-                                                         (LISTPART_FIRSTVECTOR(p,0)) : (FIRSTVECTOR(p)))
+                                                         (LISTPART_FIRSTVECTOR(p,0)) :\
+                                                         ((LISTPART_FIRSTVECTOR(p,1)!=NULL) ?\
+                                                          (LISTPART_FIRSTVECTOR(p,1)) : (FIRSTVECTOR(p))))
 #define PRIO_FIRSTVECTOR(p,prio)                ((p)->firstVector[PRIO2LISTPART(VECTOR_LIST,prio)])
 #define LISTPART_FIRSTVECTOR(p,part)    ((p)->firstVector[part])
-#define FIRSTVECTOR(p)                                  ((p)->firstVector[PRIO2LISTPART(VECTOR_LIST,PrioMaster)])
+#define FIRSTVECTOR(p)                                  (((p)->firstVector[PRIO2LISTPART(VECTOR_LIST,\
+                                                                                         PrioBorder)]!=NULL) ?\
+                                                         (p)->firstVector[PRIO2LISTPART(VECTOR_LIST,PrioBorder)] :\
+                                                         (p)->firstVector[PRIO2LISTPART(VECTOR_LIST,PrioMaster)])
+#define SFIRSTVECTOR(p)                                  (p)->firstVector[PRIO2LISTPART(VECTOR_LIST,PrioMaster)]
 
 #define PLASTVECTOR(p)                                  LASTVECTOR(p)
 #define PRIO_LASTVECTOR(p,prio)                 ((p)->lastVector[PRIO2LISTPART(VECTOR_LIST,prio)])
@@ -1849,6 +1868,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #else
 #define FIRSTVECTOR(p)          ((p)->firstVector[0])
 #define PFIRSTVECTOR(p)         FIRSTVECTOR(p)
+#define SFIRSTVECTOR(p)         FIRSTVECTOR(p)
 #define LASTVECTOR(p)           ((p)->lastVector[0])
 #define PLASTVECTOR(p)          LASTVECTOR(p)
 #endif
@@ -2075,6 +2095,9 @@ INT             MinMaxAngle                     (ELEMENT *theElement, DOUBLE *am
 /* check */
 INT             CheckGrid                               (GRID *theGrid);
 INT             CheckConnections                (GRID *theGrid);
+#ifdef ModelP
+void            CheckLists                              (GRID *theGrid);
+#endif
 
 /* selection */
 void            ClearSelection                  (MULTIGRID *theMG);
