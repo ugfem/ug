@@ -69,6 +69,7 @@
 /*																			*/
 /****************************************************************************/
 
+INT GetOrderedSons                                              (ELEMENT *theElement, MGIO_RR_RULE *theRule, NODE **NodeContext, ELEMENT **SonList, INT *nmax);
 INT NEW_Write_RefRules                                  (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR_RULE **mrule_handle);
 INT ResetRefineTagsBeyondRuleManager    (MULTIGRID *mg);
 
