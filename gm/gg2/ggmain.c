@@ -916,7 +916,7 @@ static INT AssembleFrontLists (MULTIGRID *theMG)
   GRID *theGrid;
   INDEPFRONTLIST *theIFL;
   SEGMENTINFO *segInfo;
-  INT numOfSubdomains,numOfPatches,nSeg,SubdomainID,i;
+  INT numOfSubdomains,numOfPatches,nSeg,SubdomainID;
   BVP *theBVP;
   BVP_DESC theBVPDesc;
   PATCH *thePatch;
