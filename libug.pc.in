@@ -8,4 +8,4 @@ Version: @VERSION@
 Description: library for the discretization of PDEs on unstructured grids
 Requires:
 Libs: -L${libdir}
-Cflags: -I${includedir}
+Cflags: -I${includedir} @UG_EXTRAFLAGS@ @UG_XLIBS@
