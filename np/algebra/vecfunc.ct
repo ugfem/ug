@@ -84,6 +84,8 @@ INT CAT(T_FUNCNAME,BS) (const BLOCKVECTOR *bv, INT xc T_ARGS_BV)
 		T_CONS_CHECK_BV;
 	#endif
 	#endif
+
+	if( BV_IS_EMPTY(bv) )	return(NUM_OK);
 	
 	end_v = BVENDVECTOR( bv );
 	for (v=BVFIRSTVECTOR(bv); v!= end_v; v=SUCCVC(v))

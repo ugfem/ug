@@ -5472,6 +5472,8 @@ INT d2matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_D
 
   ASSERT( (M_res_comp >= 0) && (M1comp >= 0) && (M2comp >= 0) );
 
+  if( BV_IS_EMPTY(bv_row1) ) return(NUM_OK);
+
   end_v = BVENDVECTOR( bv_row1 );
   for ( vi = BVFIRSTVECTOR( bv_row1 ); vi != end_v; vi = SUCCVC( vi ) )
     for ( mik = VSTART( vi ); mik != NULL; mik = MNEXT( mik ) )
@@ -5554,6 +5556,8 @@ INT d2matmul_minusBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, cons
   INT extra_cons = 0;
 
   ASSERT( (M_res_comp >= 0) && (M1comp >= 0) && (M2comp >= 0) );
+
+  if( BV_IS_EMPTY(bv_row1) ) return(NUM_OK);
 
   end_v = BVENDVECTOR( bv_row1 );
   for ( vi = BVFIRSTVECTOR( bv_row1 ); vi != end_v; vi = SUCCVC( vi ) )
@@ -5641,6 +5645,8 @@ INT d3matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_D
   INT extra_cons = 0;
 
   ASSERT( (M_res_comp >= 0) && (M1comp >= 0) && (M2comp >= 0) && (M3comp >= 0) );
+
+  if( BV_IS_EMPTY(bv_row1) ) return (NUM_OK);
 
   end_v = BVENDVECTOR( bv_row1 );
   for ( vi = BVFIRSTVECTOR( bv_row1 ); vi != end_v; vi = SUCCVC( vi ) )
@@ -5735,6 +5741,9 @@ DOUBLE CalculateDefectAndNormBS( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_c
   ASSERT( (d_comp >= 0) && (f_comp >= 0) && (K_comp >= 0) && (u_comp >= 0) );
 
   result = 0.0;
+
+  if( BV_IS_EMPTY(bv_row) ) return result;
+
   end_v = BVENDVECTOR( bv_row );
   for ( v = BVFIRSTVECTOR( bv_row ); v != end_v; v = SUCCVC( v ) )
   {

@@ -135,6 +135,8 @@ INT CAT(T_FUNCNAME,BS) (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const
 	#endif
 	#endif
 
+	if( BV_IS_EMPTY(bv_row) )	return(NUM_OK);
+
 	end_v=BVENDVECTOR(bv_row);
 	for (v=BVFIRSTVECTOR(bv_row); v!=end_v; v=SUCCVC(v)) 
 	{
