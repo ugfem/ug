@@ -326,7 +326,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   MarkTmpMem(theHeap);
   nvec=0;
   for (i=0; i<=TOPLEVEL(theMG); i++)
-    nvec += NVEC(GRID_ON_LEVEL(theMG,i));
+    nvec += NN(GRID_ON_LEVEL(theMG,i));
   VectorList = (VECTOR **)GetTmpMem(theHeap,nvec*sizeof(VECTOR*));
   if (VectorList==NULL)                                                                   {CloseDTFile(); UserWrite("ERROR: cannot allocate memoriy for VectorList\n"); return (1);}
   for (i=0; i<nvec; i++) VectorList[i] = NULL;
