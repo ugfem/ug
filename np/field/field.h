@@ -44,7 +44,13 @@
 /*									                                                                        */
 /****************************************************************************/
 
-#define FIELD_CLASS_NAME                        "field"
+#define FIELD_CLASS_NAME        "field"
+
+#define FIELD_EXPONENTIAL       1
+#define FIELD_GAUSSIAN          2
+
+#define FIELD_LOGNORM           1
+#define FIELD_NORMDIST          2
 
 /****************************************************************************/
 /*									                                                                        */
@@ -60,11 +66,62 @@ struct np_field
 
 typedef struct np_field NP_FIELD;
 
+struct np_stoch_field
+{
+  NP_FIELD field;
+
+  /* configuration */
+  INT size[DIM];
+  DOUBLE mean;
+  DOUBLE var;
+  DOUBLE cor[DIM];
+  DOUBLE cs[DIM];
+  DOUBLE nugget;
+  INT actype;
+  INT inttype;
+  INT initial;
+  DOUBLE *Fld;
+};
+
+
+struct np_get_fld
+{
+  NP_FIELD field;
+
+  /* configuration */
+  DOUBLE mean;
+  DOUBLE var;
+  DOUBLE cor[DIM];
+  INT dtype;
+  NP_FIELD *FldNp;
+};
+
+struct np_aniso_fld
+{
+  struct np_get_fld field;
+
+  /* configuration */
+#ifdef __THREEDIM__
+  DOUBLE euler[3];
+#else
+  DOUBLE angle;
+#endif
+};
+
+typedef struct np_stoch_field NP_STOCH_FIELD;
+typedef struct np_get_fld NP_GET_FIELD;
+typedef struct np_aniso_fld NP_ANISO_FIELD;
+
 /****************************************************************************/
 /*									                                                                        */
 /* definition of exported functions					                                        */
 /*									                                                                        */
 /****************************************************************************/
+
+INT Field_genStochField(NP_STOCH_FIELD *np);
+INT Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out);
+INT Field_GetFieldAtPoint (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out);
+INT Field_RotateAndGetField (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out);
 
 INT InitStochField (void);
 

@@ -81,15 +81,6 @@
     #endif
 #endif
 
-#define EXPONENTIAL             1
-#define GAUSSIAN                2
-
-#define CONSTiNTERPOLATION      0
-#define LINEARpDIM              1
-
-#define LOGNORM                 1
-#define NORMDIST                2
-
 #ifndef PI
     #define PI (3.1415926535898)
 #endif
@@ -122,52 +113,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*	are in the corresponding include file!)								*/
 /*																		*/
 /************************************************************************/
-
-struct np_stoch_field
-{
-  NP_FIELD field;
-
-  /* configuration */
-  INT size[DIM];
-  DOUBLE mean;
-  DOUBLE var;
-  DOUBLE cor[DIM];
-  DOUBLE cs[DIM];
-  DOUBLE nugget;
-  INT actype;
-  INT inttype;
-  INT initial;
-  DOUBLE *Fld;
-};
-
-
-struct np_get_fld
-{
-  NP_FIELD field;
-
-  /* configuration */
-  DOUBLE mean;
-  DOUBLE var;
-  DOUBLE cor[DIM];
-  INT dtype;
-  NP_FIELD *FldNp;
-};
-
-struct np_aniso_fld
-{
-  struct np_get_fld field;
-
-  /* configuration */
-#ifdef __THREEDIM__
-  DOUBLE euler[3];
-#else
-  DOUBLE angle;
-#endif
-};
-
-typedef struct np_stoch_field NP_STOCH_FIELD;
-typedef struct np_get_fld NP_GET_FIELD;
-typedef struct np_aniso_fld NP_ANISO_FIELD;
 
 /************************************************************************/
 /*																		*/
@@ -1001,7 +946,7 @@ static INT Rho(INT Index, INT len, INT n)
    index correction for the fast fourier transform is included.
 
    SEE ALSO:
-   fFT, genStochField
+   fFT, Field_genStochField
 
    RETURN VALUE:
    void
@@ -1048,14 +993,14 @@ static void CopyTo(DOUBLE *inField, INT *NOfN, DOUBLE *outField)
    DESCRIPTION:
    This procedure adds the value value to each entry of the array Feld.
 
-   This procedure is invoked by genStochField to add the desired
+   This procedure is invoked by Field_genStochField to add the desired
    mean value to the stochastic field with mean value zero if
-   genStochField was called without the correct option. Otherwise
+   Field_genStochField was called without the correct option. Otherwise
    this procedure will be called by correct so, that the field afterwards
    has the desired mean value.
 
    SEE ALSO:
-   mult, correct, genStochField
+   mult, correct, Field_genStochField
 
    RETURN VALUE:
    void
@@ -1145,11 +1090,11 @@ static void mult (DOUBLE *Feld, INT *NOfN, DOUBLE factor)
    the mean and the variance of the array and than shifts and multiplies
    it such that it gets the right mean and variance.
 
-   It is invoked by genStochField if the correct option is
+   It is invoked by Field_genStochField if the correct option is
    set after the computation of the stochastic field.
 
    SEE ALSO:
-   add, mult, genStochField
+   add, mult, Field_genStochField
 
    RETURN VALUE:
    void
@@ -1199,11 +1144,11 @@ static void correct (DOUBLE *Feld, INT *NOfN, DOUBLE wantedMean, DOUBLE wantedVa
 
 /************************************************************************/
 /*
-   genStochField - calculate an array with prescribed stochastic
+   Field_genStochField - calculate an array with prescribed stochastic
    properties
 
    SYNOPSIS:
-   INT genSochField(NP_STOCH_FIELD *np);
+   INT Field_genSochField(NP_STOCH_FIELD *np);
 
    PARAMETERS:
    .  np - numproc with properties of the field and pointer to array for the
@@ -1231,7 +1176,7 @@ static void correct (DOUBLE *Feld, INT *NOfN, DOUBLE wantedMean, DOUBLE wantedVa
  */
 /************************************************************************/
 
-static INT genStochField(NP_STOCH_FIELD *np)
+INT Field_genStochField(NP_STOCH_FIELD *np)
 {
   DOUBLE *FieldH;
   DOUBLE F[DIM], Cor[DIM+1];       /* the last one is the product of the others */
@@ -1488,10 +1433,10 @@ static INT NPStochFieldInit(NP_BASE *theNP, INT argc , char **argv)
       ret = NP_NOT_ACTIVE;
     }
     else
-      np->actype = EXPONENTIAL;
+      np->actype = FIELD_EXPONENTIAL;
   else if (ReadArgvOption("b",argc,argv))
-    np->actype = GAUSSIAN;
-  else if ((np->actype != EXPONENTIAL) && (np->actype != GAUSSIAN))
+    np->actype = FIELD_GAUSSIAN;
+  else if ((np->actype != FIELD_EXPONENTIAL) && (np->actype != FIELD_GAUSSIAN))
     ret = NP_NOT_ACTIVE;
 
   if (ReadArgvINT("i",ival,argc,argv))
@@ -1519,10 +1464,10 @@ static INT NPStochFieldInit(NP_BASE *theNP, INT argc , char **argv)
       ret = NP_NOT_ACTIVE;
     }
     else
-      np->inttype = LINEARpDIM;
+      np->inttype = TRUE;
   else if (ReadArgvOption("const",argc,argv))
-    np->inttype = CONSTiNTERPOLATION;
-  else if ((np->inttype != LINEARpDIM) && (np->inttype != CONSTiNTERPOLATION))
+    np->inttype = FALSE;
+  else if ((np->inttype != TRUE) && (np->inttype != FALSE))
     ret = NP_NOT_ACTIVE;
 
   if (sopt == 1)
@@ -1543,7 +1488,7 @@ static INT NPStochFieldInit(NP_BASE *theNP, INT argc , char **argv)
   }
 
   if (ret == NP_ACTIVE)
-    if (genStochField(np))
+    if (Field_genStochField(np))
     {
       PrintErrorMessage('E',"NPStochFieldInit","Cannot initialize the stoch. field");
       ret = NP_NOT_ACTIVE;
@@ -1577,9 +1522,9 @@ static INT NPStochFieldDisplay(NP_BASE *theNP)
   UserWriteF(DISPLAY_NP_FORMAT_SFF,"Cell size",np->cs[0],np->cs[1]);
 #endif
   UserWriteF(DISPLAY_NP_FORMAT_SF,"Nugget",np->nugget);
-  if (np->actype==EXPONENTIAL)
+  if (np->actype==FIELD_EXPONENTIAL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Autocorrelation","exponential");
-  else if (np->actype==GAUSSIAN)
+  else if (np->actype==FIELD_GAUSSIAN)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Autocorrelation","gaussian");
 
   if (np->initial > 0)
@@ -1587,15 +1532,15 @@ static INT NPStochFieldDisplay(NP_BASE *theNP)
   else
     UserWriteF(DISPLAY_NP_FORMAT_S,"Random initial");
 
-  if (np->inttype==LINEARpDIM)
+  if (np->inttype==TRUE)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Interpolation","linear in each dir");
-  else if (np->inttype==CONSTiNTERPOLATION)
+  else if (np->inttype==FALSE)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Interpolation","constant on cells");
 
   return(0);
 }
 
-static INT RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
+INT Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 {
   NP_STOCH_FIELD *np;
   INT i, node[DIM];
@@ -1615,10 +1560,10 @@ static INT RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 #ifdef __THREEDIM__
   switch(np->inttype)
   {
-  case CONSTiNTERPOLATION :
+  case FALSE :
     out[0] = (REALPART(np->size,np->Fld,node[0],node[1],node[2]) - np->mean) / sqrt(np->var);
     break;
-  case LINEARpDIM :
+  case TRUE :
     cornerValues[0] =  REALPART(np->size,np->Fld,node[0],node[1],node[2]);
     cornerValues[1] =  REALPART(np->size,np->Fld,node[0]+1,node[1],node[2]);
     cornerValues[2] =  REALPART(np->size,np->Fld,node[0],node[1]+1,node[2]);
@@ -1642,10 +1587,10 @@ static INT RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 #else
   switch(np->inttype)
   {
-  case CONSTiNTERPOLATION :
+  case FALSE :
     out[0] = (REALPART(np->size,np->Fld,node[0],node[1]) - np->mean) / sqrt(np->var);
     break;
-  case LINEARpDIM :
+  case TRUE :
     cornerValues[0] =  REALPART(np->size,np->Fld,node[0],node[1]);
     cornerValues[1] =  REALPART(np->size,np->Fld,node[0]+1,node[1]);
     cornerValues[2] =  REALPART(np->size,np->Fld,node[0],node[1]+1);
@@ -1676,7 +1621,7 @@ static INT StochFieldConstruct (NP_BASE *theNP)
 
   /* field entry */
   theField = (NP_FIELD *) theNP;
-  theField->Evaluate = RandomValues;
+  theField->Evaluate = Field_RandomValues;
 
   /* stochastic parameters */
   np = (NP_STOCH_FIELD *) theNP;
@@ -1809,10 +1754,10 @@ static INT NPGetFieldInit (NP_BASE *theNP, INT argc , char **argv)
       ret= NP_NOT_ACTIVE;
     }
     else
-      np->dtype = NORMDIST;
+      np->dtype = FIELD_NORMDIST;
   else if (ReadArgvOption("LOGNOR",argc,argv))
-    np->dtype = LOGNORM;
-  else if ((np->dtype != NORMDIST) && (np->dtype != LOGNORM))
+    np->dtype = FIELD_LOGNORM;
+  else if ((np->dtype != FIELD_NORMDIST) && (np->dtype != FIELD_LOGNORM))
     ret = NP_NOT_ACTIVE;
 
   if (np->FldNp == NULL)
@@ -1835,13 +1780,13 @@ static INT NPGetFieldDisplay(NP_BASE *theNP)
 #else
   UserWriteF(DISPLAY_NP_FORMAT_SFF,"Cor. lengths",np->cor[0],np->cor[1]);
 #endif
-  if (np->dtype==NORMDIST) UserWriteF(DISPLAY_NP_FORMAT_SS,"Distribution","normal distributed");
-  else if (np->dtype==LOGNORM) UserWriteF(DISPLAY_NP_FORMAT_SS,"Distribution","lognormal");
+  if (np->dtype==FIELD_NORMDIST) UserWriteF(DISPLAY_NP_FORMAT_SS,"Distribution","normal distributed");
+  else if (np->dtype==FIELD_LOGNORM) UserWriteF(DISPLAY_NP_FORMAT_SS,"Distribution","lognormal");
 
   return(0);
 }
 
-static INT GetFieldAtPoint (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
+INT Field_GetFieldAtPoint (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 {
   NP_GET_FIELD *np;
   NP_FIELD *npsd;
@@ -1858,10 +1803,10 @@ static INT GetFieldAtPoint (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 
   switch (np->dtype)
   {
-  case NORMDIST :
+  case FIELD_NORMDIST :
     out[0] = np->mean + sqrt(np->var) * value[0];
     break;
-  case LOGNORM :
+  case FIELD_LOGNORM :
     zeta =  sqrt(log(np->var/(np->mean * np->mean) + 1.0));
     lambda = log(np->mean) - (zeta * zeta) / 2.0;
     out[0] = exp(lambda + zeta * value[0]);
@@ -1885,7 +1830,7 @@ static INT GetFieldConstruct (NP_BASE *theNP)
 
   /* field evaluation */
   theField = (NP_FIELD *) theNP;
-  theField->Evaluate = GetFieldAtPoint;
+  theField->Evaluate = Field_GetFieldAtPoint;
 
   np = (NP_GET_FIELD *) theNP;
   for (i=0; i<DIM; i++)
@@ -1991,7 +1936,7 @@ static INT NPanisoFldDisplay(NP_BASE *theNP)
   return(0);
 }
 
-static INT RotateAndGetField (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
+INT Field_RotateAndGetField (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 {
   NP_ANISO_FIELD  *np;
   DOUBLE transX[DIM];
@@ -2028,7 +1973,7 @@ static INT RotateAndGetField (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
               + cosinus[1] * Pos[2];
 #endif
 
-  return(GetFieldAtPoint(theField, transX, out));
+  return(Field_GetFieldAtPoint(theField, transX, out));
 }
 
 
@@ -2045,7 +1990,7 @@ static INT GetAnisoFieldConstruct       (NP_BASE *theNP)
 
   /* field entry */
   theField = (NP_FIELD *) theNP;
-  theField->Evaluate = RotateAndGetField;
+  theField->Evaluate = Field_RotateAndGetField;
 
   fldnp = (NP_GET_FIELD *) theNP;
   for (i=0; i<DIM; i++)
