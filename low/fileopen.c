@@ -392,6 +392,70 @@ INT ReadSearchingPaths (const char *filename, const char *paths)
 
   return (0);
 }
+/****************************************************************************/
+/*D
+        DirCreateUsingSearchPaths - create a directory searching in the directories specified
+                        in the environment item '/Paths/<paths>'
+
+        SYNOPSIS:
+        int DirCreateUsingSearchPaths (const char *fname, const char *paths);
+
+        PARAMETERS:
+   .   fname - file name to be opened
+   .   paths - try paths specified in the environment item '/Paths/<paths> which was
+                        set by --> 'ReadSearchingPaths'
+
+        DESCRIPTION:
+        The functions trys to create a directory with 'filename' using one by one the
+        paths specified in the environment item '/Paths/<paths> which was
+        set by --> 'ReadSearchingPaths'. It is used in several places in ug (all paths
+        are read from the standard --> 'defaults' file)":"
+
+   .n   'srciptpaths' is used by the interpreter for script execution
+   .n   'gridpaths' is used by ugio to read grids from (they are stored in the
+   .n   first path
+
+        RETURN VALUE:
+        int
+   .n   0 sucessfull completion
+   .n      != 0 error occured
+
+        SEE ALSO:
+        mkdir(2)
+   D*/
+/****************************************************************************/
+
+int DirCreateUsingSearchPaths (const char *fname, const char *paths)
+{
+  PATHS *thePaths;
+  char fullname[MAXPATHLENGTH];
+  INT i,fnamelen,mode,error;
+
+  fnamelen = strlen(fname);
+  mode = S_IRUSR | S_IWUSR | S_IXUSR |
+         S_IRGRP | S_IXGRP;
+
+  if (paths == NULL)
+    if ((error=mkdir(fname,mode))!=0) return (1);
+
+  if ((thePaths=GetPaths(paths))==NULL)
+    return (NULL);
+
+  for (i=0; i<thePaths->nPaths; i++)
+  {
+    if (strlen(thePaths->path[i])+fnamelen>MAXPATHLENGTH)
+      return (NULL);
+
+    strcpy(fullname,thePaths->path[i]);
+    strcat(fullname,"/");
+    strcat(fullname,fname);
+
+    if ((error=mkdir(fullname,mode))!=0)
+      return (1);
+  }
+
+  return (0);
+}
 
 /****************************************************************************/
 /*D
