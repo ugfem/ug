@@ -1,0 +1,19 @@
+#Domain-Info
+name = elder
+problemname = elder
+convex = 0
+
+# Unit-Info
+unit 1 AQUIFER
+
+#Line-Info
+line 0: left=1; right=0; points: 0 1;
+line 1: left=1; right=0; points: 1 2;
+line 2: left=1; right=0; points: 2 3;
+line 3: left=1; right=0; points: 3 0;
+
+#Point-Info
+0.0 0.0;
+600.0 0.0;
+600.0 150.0;
+0.0 150.0;
