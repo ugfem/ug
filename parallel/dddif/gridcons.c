@@ -334,6 +334,14 @@ INT SetBorderPriorities (GRID *theGrid)
   return(GM_OK);
 }
 
+INT SetGridBorderPriorities (GRID *theGrid)
+{
+  /* set border priorities on next higher level */
+  if (SetBorderPriorities(UPGRID(theGrid)) != GM_OK) return(GM_FATAL);
+
+  return(GM_OK);
+}
+
 void ConstructConsistentGrid (GRID *theGrid)
 {
   INT i,j,k,l,m,o;

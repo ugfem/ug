@@ -270,7 +270,7 @@ DDD_TYPE        NFatherObjType  (DDD_OBJ obj, DDD_OBJ ref);
 int BalanceGridRCB (MULTIGRID *, int);
 
 /* from gridcons.c */
-INT             SetBorderPriorities                     (GRID *theGrid);
+INT             SetGridBorderPriorities         (GRID *theGrid);
 void    ConstructConsistentGrid         (GRID *theGrid);
 INT             CheckInterfaces                         (GRID *theGrid);
 void    SetGhostObjectPriorities    (GRID *theGrid);
