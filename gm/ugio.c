@@ -780,9 +780,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char * type, char *c
         cg_element[i].nbid[j] = ID(NBELEM(theElement,j));
       else
         cg_element[i].nbid[j] = -1;
-#if (DIM==2)
     cg_element[i].subdomain = SUBDOMAIN(theElement);
-#endif
   }
   if (Write_CG_Elements((int)n,cg_element)) return (1);
 
@@ -1298,9 +1296,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
     SETREFINECLASS(theElement,NO_CLASS);
     SETMARK(theElement,0);
     SETMARKCLASS(theElement,NO_CLASS);
-#if (DIM==2)
     SETSUBDOMAIN(theElement,cg_element[ID(theElement)].subdomain);
-#endif
   }
 
   /* are we ready ? */

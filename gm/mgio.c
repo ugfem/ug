@@ -881,7 +881,7 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
   {
     /* coarse grid part */
     if (Bio_Read_mint(1,&pe->ge)) return (1);
-    m=lge[pe->ge].nCorner+lge[pe->ge].nSide+1;
+    m=lge[pe->ge].nCorner+lge[pe->ge].nSide+2;
     if (Bio_Read_mint(m,intList)) return (1);
     s=0;
     pe->nhe = intList[s++];
@@ -889,6 +889,7 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
       pe->cornerid[j] = intList[s++];
     for (j=0; j<lge[pe->ge].nSide; j++)
       pe->nbid[j] = intList[s++];
+    pe->subdomain = intList[s++];
     pe++;
   }
 
@@ -964,6 +965,7 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
       intList[s++] = pe->cornerid[j];
     for (j=0; j<lge[pe->ge].nSide; j++)
       intList[s++] = pe->nbid[j];
+    intList[s++] = pe->subdomain;
     MGIO_CHECK_INTSIZE(s);
     if (Bio_Write_mint(s,intList)) return (1);
 
