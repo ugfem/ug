@@ -727,6 +727,9 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
   MGCreateConnection(theMG);
         #endif
 
+  /* the grid has changed at least on one processor, thus reset MGSTATUS on all processors */
+  RESETMGSTATUS(theMG);
+
   DDD_ConsCheck();
 
   return 0;
