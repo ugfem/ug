@@ -33,14 +33,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* only for the definition of NS_PREFIX */
-#include "domain.h"
-
 #include "general.h"
 #include "debug.h"
 #include "ugenv.h"
 #include "misc.h"
 #include "scan.h"
+
+#include "np.h"
 
 /**  \todo (HRR 971105): hierarchy conflict */
 #include "ugdevices.h"
@@ -56,11 +55,6 @@ USING_UG_NAMESPACE
 /*		  macros															*/
 /*																			*/
 /****************************************************************************/
-
-#define OPTIONLEN                       32
-#define OPTIONLENSTR            "31"
-#define VALUELEN                        64
-#define VALUELENSTR                     "63"
 
 /****************************************************************************/
 /*                                                                          */
@@ -81,7 +75,7 @@ USING_UG_NAMESPACE
 /*                                                                          */
 /****************************************************************************/
 
-REP_ERR_FILE;
+  REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
