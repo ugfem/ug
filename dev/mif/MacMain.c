@@ -96,6 +96,12 @@
 
 #define DATA_MAX        2               /* max size of data returned by GUI_GetNextEvent*/
 
+/* quick fix: printf (called by debug.c fcts) will stimulate the SIOUX-interface
+   to open another terminal window wich belongs to the application but is
+   unknown to ug */
+#undef assert
+#define assert(ass)             if ((ass)==FALSE) return (0)
+
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
