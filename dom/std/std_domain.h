@@ -1,22 +1,29 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/** \defgroup std The Standard Domain
+ * \ingroup dom
+ */
+/*! \file std_domain.h
+ * \ingroup std
+ */
+
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* File:          std_domain.h                                                                                                  */
-/*                                                                                                                                                      */
-/* Purpose:   standard domain declaration                                                                       */
-/*                                                                                                                                                      */
-/* Author:        Peter Bastian/Klaus Johannsen                                                                 */
-/*                        Institut fuer Computeranwendungen III                                                 */
-/*                        Universitaet Stuttgart                                                                                */
-/*                        Pfaffenwaldring 27                                                                                    */
-/*                        70550 Stuttgart                                                                                               */
-/*                        email: ug@ica3.uni-stuttgart.de                                                               */
-/*                                                                                                                                                      */
-/* History:   29.01.92 begin, ug version 2.0                                                            */
-/*                                                                                                                                                      */
-/* Remarks:                                                                                                                             */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* File:      std_domain.h                                                  */
+/*                                                                          */
+/* Purpose:   standard domain declaration                                   */
+/*                                                                          */
+/* Author:    Peter Bastian/Klaus Johannsen                                 */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70550 Stuttgart                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
+/* History:   29.01.92 begin, ug version 2.0                                */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 

@@ -1,22 +1,26 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/** \defgroup dev Devices
+ * \ingroup ug
+ */
+
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* File:          initdev.h                                                                                                     */
-/*                                                                                                                                                      */
-/* Purpose:   contains definitions of init functions of all devices             */
-/*                                                                                                                                                      */
-/* Author:        Peter Bastian                                                                                                 */
-/*                        Institut fuer Computeranwendungen III                                                 */
-/*                        Universitaet Stuttgart                                                                                */
-/*                        Pfaffenwaldring 27                                                                                    */
-/*                        70569 Stuttgart                                                                                               */
-/*                        email: ug@ica3.uni-stuttgart.de                                                       */
-/*                                                                                                                                                      */
-/* History:   16.12.94 restructured for ug version 3.0                                          */
-/*                                                                                                                                                      */
-/* Remarks:                                                                                                                             */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* File:      initdev.h                                                     */
+/*                                                                          */
+/* Purpose:   contains definitions of init functions of all devices         */
+/*                                                                          */
+/* Author:    Peter Bastian                                                 */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
+/* History:   16.12.94 restructured for ug version 3.0                      */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 /* RCS_ID
