@@ -341,6 +341,10 @@
    #define TOPNODE(p)		(p)->iv.topnode
  */
 
+/* modes for LexOrderVectorsInGrid */
+#define OV_CARTES                       0
+#define OV_POLAR                        1
+
 /****************************************************************************/
 /*																			*/
 /* format definition data structure                                                                             */
@@ -1168,12 +1172,10 @@ typedef struct {
   unsigned INT xor_mask;                                /* 0 where bits are used			*/
 } CONTROL_ENTRY;
 
-#ifndef __COMPILE_CW__
 extern CONTROL_WORD
   control_words[MAX_CONTROL_WORDS];             /* global array with descriptions	*/
 extern CONTROL_ENTRY
   control_entries[MAX_CONTROL_ENTRIES];      /* predefined control words		*/
-#endif
 
 /* general query macros */
 
@@ -2091,7 +2093,6 @@ typedef struct {
   /* ... the refinement rules should be placed here later */
 } GENERAL_ELEMENT;
 
-#ifndef __COMPILE_EL__
 /* these are the offsets into the variable length pointer array of the element */
 extern INT n_offset[TAGS];
 extern INT father_offset[TAGS];
@@ -2104,7 +2105,6 @@ extern INT data_offset[TAGS];
 
 /* the element descriptions are also globally available, these are pointers ! */
 extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -2734,7 +2734,7 @@ BLOCK_DESC      *GetMGUDBlockDescriptor (BLOCK_ID id);
 /* ordering of degrees of freedom */
 ALG_DEP         *CreateAlgebraicDependency              (char *name, DependencyProcPtr DependencyProc);
 FIND_CUT        *CreateFindCutProc                              (char *name, FindCutProcPtr FindCutProc);
-INT                     LexOrderVectorsInGrid                   (GRID *theGrid, const INT *order, const INT *sign, INT which, INT SpecSkipVecs, INT AlsoOrderMatrices);
+INT                     LexOrderVectorsInGrid                   (GRID *theGrid, INT mode, const INT *order, const INT *sign, INT which, INT SpecSkipVecs, INT AlsoOrderMatrices);
 INT             OrderVectors                                    (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat, const char *dependency, const char *dep_options, const char *findcut);
 INT                     ShellOrderVectors                               (GRID *theGrid, VECTOR *seed);
 INT                     PrepareForLineorderVectors              (GRID *theGrid);
