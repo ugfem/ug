@@ -7952,8 +7952,9 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
   HEAP *theHeap;
   GRID *theGrid;
   ELEMENT *theElement, *theNeighbor;
+  NODE *theNode;
   void *buffer;
-  INT i,n,id,nbid,part;
+  INT i,n,id,nbid,part,j;
   FIFO myfifo;
 
   /* prepare */
@@ -7987,6 +7988,12 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
       SETUSED(theElement,1);
       fifo_in(&myfifo,(void *)theElement);
       PRINTDEBUG(gm,1,("elem %3d sid %d\n",ID(theElement),SUBDOMAIN(theElement)));
+      for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+      {
+        theNode = CORNER(theElement,i);
+        if (OBJT(MYVERTEX(theNode))==IVOBJ)
+          SETNSUBDOM(theNode,id);
+      }
       for (i=0; i<SIDES_OF_ELEM(theElement); i++)
       {
         if (NBELEM(theElement,i)==NULL || SIDE_ON_BND(theElement,i)) continue;
@@ -8012,6 +8019,12 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
       }
       SETSUBDOMAIN(theNeighbor,SUBDOMAIN(theElement));
       SETUSED(theNeighbor,1);
+      for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+      {
+        theNode = CORNER(theElement,j);
+        if (OBJT(MYVERTEX(theNode))==IVOBJ)
+          SETNSUBDOM(theNode,SUBDOMAIN(theElement));
+      }
       fifo_in(&myfifo,(void *)theNeighbor);
     }
   }
