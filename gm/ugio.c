@@ -1085,6 +1085,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   cg_general.nInnerElement = nie;
   if (Write_CG_General(&cg_general)) return (1);
 
+#ifdef PARALLEL_ONEPROC_HASGRID
   /* this proc has no elements */
   if (cg_general.nElement == 0)
   {
@@ -1096,6 +1097,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
 
     return(0);
   }
+#endif
 
   /* write coarse grid points */
   if (WriteCG_Vertices(theMG,nbv+niv)) return (1);
@@ -1946,6 +1948,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   /* read general information about coarse grid */
   if (Read_CG_General(&cg_general))                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
+#ifdef PARALLEL_ONEPROC_HASGRID
   /* this proc has no elements */
   if (cg_general.nElement == 0)
   {
@@ -1961,6 +1964,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     }
     return(theMG);
   }
+#endif
 
 
 
