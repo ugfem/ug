@@ -62,7 +62,7 @@ case $MODEL in
 	SHMEMT3D)
 		if test -f $1$2
 		then
-			if test `find . -newer $1 | grep $1$2 | wc -l` -eq 1
+			if test `find . -newer $1 | grep $1$2 | wc -l` -ge 1
 			then
 				echo mppexec $1$2;
 				mppexec $1$2 $3 $4;
