@@ -666,26 +666,26 @@ INT ClearIMatrix (GRID *g, VECDATA_DESC *theVD)
 {
   VECTOR *v;
   MATRIX *m;
-  INT j,rcomp;
-  DOUBLE *mptr;
 
-  if (VD_IS_SCALAR(theVD))
-  {
-    for (v = FIRSTVECTOR(g); v != NULL; v = SUCCVC(v))
-    {
+  if (VD_IS_SCALAR(theVD)) {
+    register SHORT mask = VD_SCALTYPEMASK(theVD);
+
+    for (v = FIRSTVECTOR(g); v != NULL; v = SUCCVC(v)) {
       VINDEX(v) = 0;
-      for (m = VISTART(v); m != NULL; m = NEXT(m))
-        MVALUE(m,0) = 0.0;
+      if (VDATATYPE(v)&mask) {
+        for (m = VISTART(v); m != NULL; m = NEXT(m))
+          MVALUE(m,0) = 0.0;
+      }
     }
     return (NUM_OK);
   }
+  for (v = FIRSTVECTOR(g); v != NULL; v = SUCCVC(v)) {
+    INT j,rcomp;
+    DOUBLE *mptr;
 
-  for (v = FIRSTVECTOR(g); v != NULL; v = SUCCVC(v))
-  {
     VINDEX(v) = 0;
     rcomp = VD_NCMPS_IN_TYPE(theVD,VTYPE(v));
-    for (m = VISTART(v); m != NULL; m = NEXT(m))
-    {
+    for (m = VISTART(v); m != NULL; m = NEXT(m)) {
       mptr = MVALUEPTR(m,0);
       for (j=0; j<rcomp*VD_NCMPS_IN_TYPE(theVD,MDESTTYPE(m)); j++)
         mptr[j] = 0.0;
