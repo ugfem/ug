@@ -6489,6 +6489,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
   float tmp;
 #endif
 #if defined __THREEDIM__ && defined _NETGEN
+  INT smooth;
   DOUBLE h;
   INT coeff;
 #endif
