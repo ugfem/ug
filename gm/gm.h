@@ -1670,12 +1670,14 @@ extern CONTROL_ENTRY
 #define NSONS(p)                                                CW_READ(p,NSONS_CE)
 #define SETNSONS(p,n)                                   CW_WRITE(p,NSONS_CE,n)
 
-/* macros for flag word                           */
 #define NEWEL_CE                                                48
 #define NEWEL_SHIFT                                     15
 #define NEWEL_LEN                                               1
 #define NEWEL(p)                                                CW_READ(p,NEWEL_CE)
 #define SETNEWEL(p,n)                                   CW_WRITE(p,NEWEL_CE,n)
+
+/* macros for flag word                           */
+/* are obviously all for internal use */
 
 /* the property field */
 #define SUBDOMAIN_CE                    75

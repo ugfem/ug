@@ -159,6 +159,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {1,ECLASS_CE,           ELEMENT_CW,     ECLASS_SHIFT,           ECLASS_LEN              },
   {1,NSONS_CE,            ELEMENT_CW,     NSONS_SHIFT,            NSONS_LEN               },
   {1,REFINECLASS_CE,      ELEMENT_CW,     REFINECLASS_SHIFT,      REFINECLASS_LEN },
+  {1,NEWEL_CE,            ELEMENT_CW,     NEWEL_SHIFT,        NEWEL_LEN           },
 
   {1,MARK_CE,             FLAG_CW,        MARK_SHIFT,             MARK_LEN                },
   {1,COARSEN_CE,          FLAG_CW,        COARSEN_SHIFT,          COARSEN_LEN             },
@@ -167,7 +168,6 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {1,UPDATE_GREEN_CE,     FLAG_CW,        UPDATE_GREEN_SHIFT,     UPDATE_GREEN_LEN},
   {1,SIDEPATTERN_CE,      FLAG_CW,        SIDEPATTERN_SHIFT,      SIDEPATTERN_LEN },
   {1,MARKCLASS_CE,        FLAG_CW,        MARKCLASS_SHIFT,        MARKCLASS_LEN   },
-  {1,NEWEL_CE,            FLAG_CW,        NEWEL_SHIFT,        NEWEL_LEN           },
 
   {1,SUBDOMAIN_CE,    PROPERTY_CW,SUBDOMAIN_SHIFT,    SUBDOMAIN_LEN   },
   {1,NODEORD_CE,          PROPERTY_CW,NODEORD_SHIFT,      NODEORD_LEN     },
