@@ -1,0 +1,34 @@
+/*! \mainpage UG-4.0 Reference Manual
+ *
+ *       
+ * \section intro Introduction
+ *
+ * This is the introduction.
+ *
+ * \section mods Modules
+ *
+<ul>
+  <li> \ref ug </li> 
+  <ul>
+    <li> \ref dev </li>
+    <li> \ref dom </li>
+    <ul>
+      <li> \ref lgm </li>
+      <li> \ref std </li>
+    </ul>
+    <li> \ref gm </li>
+     <ul>
+      <li> \ref gg2 </li>
+      <li> \ref gg3 </li>
+    </ul>
+    <li> \ref graphics </li>
+    <li> \ref low </li>
+    <li> \ref np </li>
+    <li> \ref ui </li>
+  </ul>
+</ul>
+ 
+
+\section chapter2 More Stuff
+
+ */
