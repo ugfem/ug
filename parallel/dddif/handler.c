@@ -1487,7 +1487,7 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
 		/*    is unpacked several times.                       */
 		if (newness == XFER_NEW)
 			enew = CreateEdge(theGrid, NBNODE(LINK0(ecopy)), 
-					  	  	  NBNODE(LINK1(ecopy)), FALSE);
+					  	  	  NBNODE(LINK1(ecopy)), FALSE,0);
 		else
 			enew = GetEdge(NBNODE(LINK0(ecopy)), 
 					  	   NBNODE(LINK1(ecopy)));
