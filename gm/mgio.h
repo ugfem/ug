@@ -40,7 +40,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define MGIO_VERSION                                    "UG_IO_1.2"
+#define MGIO_VERSION                                    "UG_IO_1.3"
 
 #define __MGIO_USE_IN_UG__
 #define MGIO_DIM                        3
@@ -123,9 +123,10 @@
 struct mgio_mg_general {
 
   /* information about the file */
-  int mode;                                     /* macros see above								*/
+  int mode;                                             /* macros see above							*/
   char version[MGIO_NAMELEN];       /* version of i/o							*/
   int magic_cookie;                             /* identification number					*/
+  char ident[MGIO_NAMELEN];             /* identification string from input file	*/
 
   /* number of objects */
   int nLevel;                                   /* nb of levels of the mg						*/

@@ -226,6 +226,7 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
 
   /* now special mode */
   if (Bio_Read_string(mg_general->version)) return (1);
+  if (Bio_Read_string(mg_general->ident)) return (1);
   if (Bio_Read_string(mg_general->DomainName)) return (1);
   if (Bio_Read_string(mg_general->MultiGridName)) return (1);
   if (Bio_Read_string(mg_general->Formatname)) return (1);
@@ -279,6 +280,7 @@ int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
 
   /* now special mode */
   if (Bio_Write_string(mg_general->version)) return (1);
+  if (Bio_Write_string(mg_general->ident)) return (1);
   if (Bio_Write_string(mg_general->DomainName)) return (1);
   if (Bio_Write_string(mg_general->MultiGridName)) return (1);
   if (Bio_Write_string(mg_general->Formatname)) return (1);
