@@ -278,7 +278,7 @@ static void IFPolymark (short n, SHORT_POINT *points)
   for (i=0; i<n; i++) Marker(gw->marker_id,gw->marker_size,points[i]);
 }
 
-static void IFText (char *s, INT mode)
+static void IFText (const char *s, INT mode)
 {
   XGCValues values_return;
   unsigned long valuemask,plane_mask;
@@ -302,7 +302,7 @@ static void IFText (char *s, INT mode)
   }
 }
 
-static void IFCenteredText (SHORT_POINT point, char *s, INT mode)
+static void IFCenteredText (SHORT_POINT point, const char *s, INT mode)
 {
   int ts,w;
   XGCValues values_return;
@@ -965,7 +965,7 @@ int GraphOpen (GraphWindow *gw, char *window_name, int x, int y, int width, int 
 /*																			*/
 /****************************************************************************/
 
-WINDOWID X11_OpenOutput (char *title, INT x, INT y, INT width, INT height, INT *Global_LL, INT *Global_UR, INT *Local_LL, INT *Local_UR, INT *error)
+WINDOWID X11_OpenOutput (const char *title, INT x, INT y, INT width, INT height, INT *Global_LL, INT *Global_UR, INT *Local_LL, INT *Local_UR, INT *error)
 {
   GraphWindow *gw;
 
@@ -986,7 +986,9 @@ WINDOWID X11_OpenOutput (char *title, INT x, INT y, INT width, INT height, INT *
   if ((width<DEFAULTMINX)||(height<DEFAULTMINY)) {*error=1; return(0);}
 
   /* open new window */
-  if (GraphOpen(gw,title,x,display_height-y-height-CONTROLSIZE,width+1,height+CONTROLSIZE+2)>0)
+  if (GraphOpen(gw,(char *)title,x,
+                display_height-y-height-CONTROLSIZE,
+                width+1,height+CONTROLSIZE+2)>0)
   {
     *error=1;
     return(0);

@@ -103,5 +103,6 @@ void  ShellInsertString           (ShellWindow *sh, const char *s);
 void  ShellHandleExposeEvent  (ShellWindow *sh, XEvent *report);
 void  ShellHandleResizeEvent  (ShellWindow *sh, XEvent *report);
 char *ShellHandleKeybordEvent (ShellWindow *sh, XEvent *report,int *cmdKey, int onlyCmdKey);
+void AppendOrInsertCutbuffer  (ShellWindow *sh, char *cutbuf, int cnt);
 
 #endif
