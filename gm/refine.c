@@ -2464,7 +2464,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
 		}		
 
 		/* internal boundaries not connected */
-		return(GM_OK);
+/*		return(GM_OK); */
 	}
 
 	/* connect to neighbor element */
