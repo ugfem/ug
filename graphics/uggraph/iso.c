@@ -16,10 +16,16 @@
 /* History:   19.10.04 begin, ug3-version                                   */
 /*																			*/
 /* Remarks:   - extracting an isosurface from a tetrahedron is easy, e.g.:  */
-/*              [THIS PAPER]                                                */
+/*              "Tetra-Cubes: An algorithm to generate 3D isosurfaces based */
+/*              upon tetrahedra" --  B. Carneiro, C. Silva, and A. Kaufman, */
+/*              Proc. SIBGRAPI '96, pp. 205-210                             */
+/*                                                                          */
 /*            - consistent decomposition of zoo meshes into tetrahedra is   */
-/*              explained here:                                             */
-/*              [THIS PAPER]                                                */
+/*              explained here: "Approximate Volume Rendering for Curvi-    */
+/*              linear and Unstructured Grids by Hardware-Assisted Poly-    */
+/*              hedron Projection" --  N. Max, P. Williams, C. Silva,       */
+/*              International Journal of Imaging Systems (2000), 11:53-61   */
+/*                                                                          */
 /*            - corners of elements are numbered as in UG                   */
 /*																			*/
 /****************************************************************************/
@@ -63,15 +69,15 @@ static int Pyr[2][8] = {
   {0, 1, 3, 4, 1, 2, 3, 4}
 };
 
-static int Pri[8][12] = {              /* manual labour, triple check Pri!! */
-  {0, 4, 5, 3, 1, 4, 2, 0, 2, 4, 5, 0},
-  {3, 4, 2, 5, 3, 4, 0, 2, 0, 4, 1, 2},
-  {0, 1, 2, 5, 3, 4, 0, 5, 0, 4, 1, 5},
+static int Pri[8][12] = {
+  {0, 4, 5, 3, 1, 4, 2, 0, 4, 5, 2, 0},
   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+  {0, 4, 5, 3, 1, 4, 5, 0, 1, 5, 2, 0},
+  {1, 5, 3, 4, 0, 5, 3, 1, 0, 2, 5, 1},
+  {0, 1, 2, 4, 2, 5, 3, 4, 0, 2, 3, 4},
+  {2, 3, 4, 5, 0, 3, 1, 2, 1, 3, 4, 2},
   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-  {1, 3, 2, 0, 1, 2, 4, 3, 2, 5, 4, 3},
-  {3, 4, 1, 5, 5, 3, 0, 1, 5, 0, 2, 1},
-  {3, 4, 1, 5, 5, 3, 2, 1, 3, 0, 2, 1}
+  {1, 5, 3, 4, 0, 2, 3, 1, 2, 5, 3, 1}
 };
 
 static int Hex[64][24] = {  /* computed with AH's procedural implementation */
@@ -325,13 +331,13 @@ void NS_DIM_PREFIX ExtractElement(CELL *cell, double lambda, POLY *poly, int *np
     ExtractTet(&tet, lambda, poly+3);
     CopyNodes(&tet, cell, Hex[k]+16);
     ExtractTet(&tet, lambda, poly+4);
-    if (Hex[k][20] < 0) {
+    if (Hex[k][20] < 0)
       *npoly = 5;
-      break;
+    else {
+      CopyNodes(&tet, cell, Hex[k]+20);
+      ExtractTet(&tet, lambda, poly+5);
+      *npoly = 6;
     }
-    CopyNodes(&tet, cell, Hex[k]+20);
-    ExtractTet(&tet, lambda, poly+5);
-    *npoly = 6;
     break;
   default :
     *npoly = 0;
