@@ -236,9 +236,10 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
 
   /* fill data in vec data desc */
   i = 0;
+  Comp = VM_COMPPTR(vd);
   for (tp=0; tp<NVECTYPES; tp++) {
     VD_NCMPS_IN_TYPE(vd,tp) = NCmpInType[tp];
-    Comp = VD_CMPPTR_OF_TYPE(vd,tp) = VM_COMPPTR(vd) + offset[tp];
+    VD_CMPPTR_OF_TYPE(vd,tp) = Comp + offset[tp];
     for (j=0; j<MAX_NDOF_MOD_32*32; j++) {
       if (i >= offset[tp+1]) break;
       if (j*sizeof(DOUBLE) >= theMG->theFormat->VectorSizes[tp])
@@ -250,6 +251,13 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
   }
   for (tp=0; tp<NVECOFFSETS; tp++)
     VD_OFFSET(vd,tp) = offset[tp];
+
+  for (tp=0; tp<NVECTYPES; tp++) {
+    PRINTDEBUG(numerics,1,("offset %d comp ",offset[tp]));
+    for (i=0; i<VD_NCMPS_IN_TYPE(vd,tp); i++)
+      PRINTDEBUG(numerics,1,(" %d",VD_CMP_OF_TYPE(vd,tp,i)));
+  }
+  PRINTDEBUG(numerics,1,("\n"));
 
   /* fill fields with scalar properties */
   SetScalVecSettings(vd);
@@ -283,6 +291,7 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, VECDATA_DESC *theVD,
   /* fill data in vec data desc */
   for (tp=0; tp<NVECTYPES; tp++) {
     VD_NCMPS_IN_TYPE(vd,tp) = NCmpInType[tp];
+    VD_CMPPTR_OF_TYPE(vd,tp) = VM_COMPPTR(vd) + offset[tp];
     for (j=0; j<NCmpInType[tp]; j++) {
       VM_COMP_NAME(vd,offset[tp]+j) =
         VM_COMP_NAME(theVD,offptr[tp]+Comps[tp]+j);
@@ -445,10 +454,11 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, char *name, char *compNames,
 
   /* fill data in vec data desc */
   i = 0;
+  Comp = VM_COMPPTR(md);
   for (tp=0; tp<NMATTYPES; tp++) {
     MD_ROWS_IN_MTYPE(md,tp) = RowsInType[tp];
     MD_COLS_IN_MTYPE(md,tp) = ColsInType[tp];
-    Comp = MD_MCMPPTR_OF_MTYPE(md,tp) = VM_COMPPTR(md) + offset[tp];
+    MD_MCMPPTR_OF_MTYPE(md,tp) = Comp + offset[tp];
     for (j=0; j<MAX_NDOF_MOD_32*32; j++) {
       if (i >= offset[tp+1]) break;
       if (j*sizeof(DOUBLE) >=
@@ -496,6 +506,7 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, MATDATA_DESC *theMD,
   for (tp=0; tp<NMATTYPES; tp++) {
     MD_ROWS_IN_MTYPE(md,tp) = RowsInType[tp];
     MD_COLS_IN_MTYPE(md,tp) = ColsInType[tp];
+    MD_MCMPPTR_OF_MTYPE(md,tp) = VM_COMPPTR(md) + offset[tp];
     for (j=0; j<RowsInType[tp]*ColsInType[tp]; j++) {
       VM_COMP_NAME(md,offset[tp]+2*j) =
         VM_COMP_NAME(theMD,offptr[tp]+Comps[tp]+2*j);
