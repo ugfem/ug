@@ -46,20 +46,24 @@ fi
 if test $# -eq 0 -o "$1" = "-new"
 then
 	# generate ug man pages
+	echo "Generating ug-pages"
 	cd $UGROOT;
 	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug *.doc
 
 	# generate dev man pages
+	echo "Generating dev-pages"
 	cd $UGROOT/dev;
 	doctext -quotefmt -mpath $UGROOT/man/man4 -ext 4 -heading ug/dev *.c *.h
 	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/dev *.doc
 
 	# generate gm man pages
+	echo "Generating gm-pages"
 	cd $UGROOT/gm;
 	doctext -quotefmt -mpath $UGROOT/man/man5 -ext 5 -heading ug/gm *.c *.h
 	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/gm *.doc
 
 	# generate gg man pages
+	echo "Generating gg-pages"
 	cd $UGROOT/gm/gg2;
 	doctext -quotefmt -mpath $UGROOT/man/man5 -ext 5 -heading ug/gm/gg2 *.c *.h
 	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/gm/gg2 *.doc
@@ -68,33 +72,41 @@ then
         doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/gm/gg3 *.doc
 
 	# generate uggraph man pages
+	echo "Generating uggraph-pages"
 	cd $UGROOT/graphics/uggraph;
 	doctext -quotefmt -mpath $UGROOT/man/man6 -ext 6 -heading ug/graphics/uggraph *.c *.h
 	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/graphics/uggraph *.doc
 
 	# generate low man pages
+	echo "Generating low-pages"
 	cd $UGROOT/low;
 	doctext -quotefmt -mpath $UGROOT/man/man7 -ext 7 -heading ug/low *.c *.h
 	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/low *.doc
 
 	# generate dom man pages
+	echo "Generating dom-pages"
 	cd $UGROOT/dom;
 	doctext -quotefmt -mpath $UGROOT/man/man4 -ext 5 -heading ug/dom *.c *.h
 	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/dom *.doc
 
 	# generate dom/std man pages
+	echo "  Generating std-pages"
 	cd $UGROOT/dom/std;
 	doctext -quotefmt -mpath $UGROOT/man/man5 -ext 5 -heading ug/dom/std *.c *.h
 	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/dom/std *.doc
 
 	# generate np man pages
+	echo "Generating np-pages"
 	cd $UGROOT/np;
 	doctext -quotefmt -mpath $UGROOT/man/man5 -ext 5 -heading ug/np *.c *.h
 	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/np *.doc
+	echo "  Generating udm-pages"
 	cd $UGROOT/np/udm;
 	doctext -quotefmt -mpath $UGROOT/man/man5 -ext 5 -heading ug/np/udm *.c *.h
+	echo "  Generating algebra-pages"
 	cd $UGROOT/np/algebra;
 	doctext -quotefmt -mpath $UGROOT/man/man5 -ext 5 -heading ug/np/algebra *.c *.h
+	echo "  Generating procs-pages"
 	cd $UGROOT/np/procs;
 	for i in *.c *.h
 	do
@@ -108,6 +120,7 @@ then
 	done
 
 	# generate ui man pages
+	echo "Generating ui-pages"
 	cd $UGROOT/ui;
 	for i in *.c *.h
 	do
@@ -126,6 +139,7 @@ then
 	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading ug/ui *.doc
 
 	#generate administration man pages
+	echo "Generating administration-pages"
 	if test -d $UGROOT/..
 	then
 		cd $UGROOT/..
@@ -138,10 +152,12 @@ then
 
 	# generate man page for simple
 	cd $UGROOT/../simple
+	echo "Generating simple-pages"
 	doctext -quotefmt -mpath $UGROOT/man/man3 -ext 3 -heading simple *.doc
 
 	#generate man pages for diff2d
 	cd $UGROOT/../diff2d
+	echo "Generating diff2d-pages"
 	doctext -quotefmt -mpath $UGROOT/../diff2d/man/mana -ext a -heading diff2d *.doc
 	cd $UGROOT/../diff2d/pclib
 	doctext -quotefmt -mpath $UGROOT/../diff2d/man/manb -ext b -heading diff2d/pclib *.c *.h
@@ -150,6 +166,7 @@ then
 
 	#generate man pages for ns
 	cd $UGROOT/../ns
+	echo "Generating ns-pages"
 	doctext -quotefmt -mpath $UGROOT/../ns/man/mana -ext a -heading ns *.doc
 	cd $UGROOT/../ns/pclib
 	doctext -quotefmt -mpath $UGROOT/../ns/man/mane -ext e -heading ns/pclib *.c *.h
@@ -160,16 +177,18 @@ then
 
 	#generate man pages for sc
 	cd $UGROOT/../sc
-	doctext -quotefmt -mpath $UGROOT/../sc/man/mana -ext a -heading ns *.doc
+	echo "Generating sc-pages"
+	doctext -quotefmt -mpath $UGROOT/../sc/man/mana -ext a -heading sc *.doc
 	cd $UGROOT/../sc/pclib
-	doctext -quotefmt -mpath $UGROOT/../sc/man/mane -ext e -heading sc/pclib *.c *.h
+	doctext -quotefmt -mpath $UGROOT/../sc/man/manc -ext c -heading sc/pclib *.c *.h
 	cd $UGROOT/../sc/appl2d
-	doctext -quotefmt -mpath $UGROOT/../sc/man/mane -ext e -heading sc/appl2d *.c *.h
+	doctext -quotefmt -mpath $UGROOT/../sc/man/manc -ext c -heading sc/appl2d *.c *.h
 	cd $UGROOT/../sc/appl3d
-	doctext -quotefmt -mpath $UGROOT/../sc/man/mane -ext e -heading sc/appl3d *.c *.h
+	doctext -quotefmt -mpath $UGROOT/../sc/man/manc -ext c -heading sc/appl3d *.c *.h
 
 	#generate man pages for fe
 	cd $UGROOT/../fe
+	echo "Generating fe-pages"
 	doctext -quotefmt -mpath $UGROOT/../fe/man/mana -ext a -heading fe *.doc
 	cd $UGROOT/../fe/pclib
 	doctext -quotefmt -mpath $UGROOT/../fe/man/mand -ext d -heading fe/pclib *.c *.h
