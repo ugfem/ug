@@ -4915,7 +4915,6 @@ INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
   if (aBndP == NULL) return(0);
 
   theBndP = BNDP2LGM(aBndP);
-  ASSERT(LGM_BNDP_NLINE(theBndP)<=1);
   if (LGM_BNDP_NLINE(theBndP)>0)
     PutFreelistMemory(Heap,theBndP->Line,sizeof(LGM_BNDP_PLINE));
   ASSERT(LGM_BNDP_N(theBndP)>0);
