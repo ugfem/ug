@@ -2575,7 +2575,7 @@ static INT DisposeNode (GRID *theGrid, NODE *theNode)
   GRID_UNLINK_NODE(theGrid,theNode);
 
   theVertex = MYVERTEX(theNode);
-  father = NFATHER(theNode);
+  father = (GEOM_OBJECT *)NFATHER(theNode);
   if (father != NULL)
   {
     switch (NTYPE(theNode))
@@ -5907,7 +5907,8 @@ VECTOR *FindVectorFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol)
    .  id - id to search
 
    DESCRIPTION:
-   This function finds an element with the identification `id`.
+   This function finds an element with the identification `id`. In parallel
+   also ghost elements are searched.
 
    RETURN VALUE:
    ELEMENT *
@@ -5920,7 +5921,8 @@ ELEMENT *FindElementFromId (GRID *theGrid, INT id)
 {
   ELEMENT *theElement;
 
-  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+  /* use PFIRSTELEMENT instead of FIRSTELEMENT to search also for ghost elements */
+  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
     if (ID(theElement)==id) return(theElement);
 
   return(NULL);
@@ -6190,7 +6192,7 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
    KeyForObject - calculate an (hopefully) unique key for the geometric object
 
    SYNOPSIS:
-   INT KeyForObject( SELECTION_OBJECT *obj );
+   INT KeyForObject( KEY_OBJECT *obj );
 
    PARAMETERS:
    .  obj - geometric object which from the key is needed (can be one of VERTEX, ELEMENT, NODE or VECTOR)
@@ -6204,6 +6206,11 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
    leading digits of the 2 resp. 3 coordinates and taking from this again
    the sigificant digits and adding the level number.
 
+   APPLICATION:
+   Use always an explicit cast to avoid compiler warnings, e.g.
+        NODE *theNode;
+                KeyForObject((KEY_OBJECT *)theNode);
+
    SEE ALSO:
    VERTEX, ELEMENT, NODE, VECTOR
 
@@ -6212,7 +6219,7 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
    D*/
 /****************************************************************************/
 
-INT KeyForObject( SELECTION_OBJECT *obj )
+INT KeyForObject( KEY_OBJECT *obj )
 {
   int dummy;            /* dummy variable */
   DOUBLE_VECTOR coord;
@@ -6220,22 +6227,29 @@ INT KeyForObject( SELECTION_OBJECT *obj )
   if (obj==NULL) return (-1);
   switch( OBJT(obj) )
   {
+  /* vertex */
   case BVOBJ :
   case IVOBJ :                  /* both together cover all vertex types */
     return LEVEL(obj)+COORDINATE_TO_KEY(CVECT((VERTEX*)obj),&dummy);
 
+  /* element */
   case BEOBJ :
   case IEOBJ :                  /* both together cover all element types */
     CalculateCenterOfMass( (ELEMENT*)obj, coord );
     return LEVEL(obj)+COORDINATE_TO_KEY(coord,&dummy);
 
+  /* node */
   case NDOBJ :     return LEVEL(obj)+COORDINATE_TO_KEY(CVECT(MYVERTEX((NODE*)obj)),&dummy);
 
-
+  /* vector */
   case VEOBJ :     VectorPosition( (VECTOR*)obj, coord );
     return LEVEL(obj)+COORDINATE_TO_KEY(coord,&dummy);
 
-  default :        PrintErrorMessage('E',"IDForObject","unrecognized object type");
+  /* edge */
+  case EDOBJ :     return LEVEL(obj)+COORDINATE_TO_KEY(CVECT(MYVERTEX(MIDNODE((EDGE*)obj))),&dummy);
+
+  default :        sprintf( buffer, "unrecognized object type %d", OBJT(obj) );
+    PrintErrorMessage('E',"KeyForObject",buffer);
     assert(0);
   }
   return (GM_ERROR);
@@ -7138,7 +7152,7 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
       }
     }
 
-    UserWriteF(" key=%d\n", KeyForObject((SELECTION_OBJECT*)theNode) );
+    UserWriteF(" key=%d\n", KeyForObject((KEY_OBJECT *)theNode) );
   }
 
   /******************************/
@@ -7302,7 +7316,7 @@ void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataopt, 
         break;
 #endif
       case 2 :                          /* $k option */
-        if ( KeyForObject((SELECTION_OBJECT *)theNode) == from)
+        if ( KeyForObject((KEY_OBJECT *)theNode) == from)
           ListNode(theMG,theNode,dataopt,bopt,nbopt,vopt);
         break;
 
@@ -7404,7 +7418,7 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
     /*
        #endif
      */
-    UserWriteF(" key=%d\n", KeyForObject((SELECTION_OBJECT*)theElement) );
+    UserWriteF(" key=%d\n", KeyForObject((KEY_OBJECT *)theElement) );
   }
   if (nbopt)
   {
@@ -7566,7 +7580,7 @@ void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataop
         break;
 #endif
       case 2 :                          /* $k option */
-        if ( KeyForObject((SELECTION_OBJECT *)theElement) == from)
+        if ( KeyForObject((KEY_OBJECT *)theElement) == from)
           ListElement(theMG,theElement,dataopt,bopt,nbopt,vopt);
         break;
 
@@ -7668,11 +7682,13 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
                  EID_PRT(theElement));
     }
     break;
-    default :
-      ASSERT(FALSE);
+
+    default : PrintErrorMessage( 'E', "ListVector", "unrecognized VECTOR type" );
+      assert(0);
     }
+
   UserWriteF("VCLASS=%1d VNCLASS=%1d",VCLASS(theVector),VNCLASS(theVector));
-  UserWriteF(" key=%d\n", KeyForObject((SELECTION_OBJECT *)theVector) );
+  UserWriteF(" key=%d\n", KeyForObject((KEY_OBJECT *)theVector) );
 
   /* print vector data if */
   if (dataopt && FMT_PR_VEC(theFormat)!=NULL)
@@ -7892,7 +7908,7 @@ void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT id
           break;
 #endif
         case LV_KEY :                                   /* $k option */
-          if ( KeyForObject((SELECTION_OBJECT *)theVector) == from)
+          if ( KeyForObject((KEY_OBJECT *)theVector) == from)
             ListVector(theMG,theVector,matrixopt,dataopt,modifiers);
           break;
 
@@ -9247,7 +9263,7 @@ char *PrintElementInfo (ELEMENT *theElement,INT full)
       }
     }
   }
-  sprintf(tmp," key=%d\n", KeyForObject((SELECTION_OBJECT*)theElement) );
+  sprintf(tmp," key=%d\n", KeyForObject((KEY_OBJECT *)theElement) );
   strcat( out, tmp );
 
   if(full)
