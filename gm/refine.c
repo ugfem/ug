@@ -242,29 +242,16 @@ static INT DropMarks (MULTIGRID *theMG)
 	{
 		theGrid = GRID_ON_LEVEL(theMG,k);
 		for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
-			#ifdef ModelP
 			if ((MARKCLASS(theElement) == RED) && (ECLASS(theElement) != RED))
-			#else
-			if (LEAFELEM(theElement) && (MARKCLASS(theElement) == RED) && (ECLASS(theElement) != RED))
-			#endif
 			{
 				Mark = MARK(theElement);
 				/* TODO: marks must be changed if element type changes */
 				if (TAG(theElement)!=HEXAHEDRON && TAG(EFATHER(theElement))==HEXAHEDRON)  Mark = HEXA_RED;
 				FatherElement = theElement;
 
-				#ifdef ModelP
 				SETMARK(FatherElement,NO_REFINEMENT);
 				SETMARKCLASS(FatherElement,0);
 				FatherElement = EFATHER(FatherElement);
-				#else
-				while(ECLASS(FatherElement) != RED)
-				{	
-					SETMARK(FatherElement,NO_REFINEMENT);
-					SETMARKCLASS(FatherElement,0);
-					FatherElement = EFATHER(FatherElement);
-				}
-				#endif
 
 				SETMARK(FatherElement,Mark);
 				SETMARKCLASS(FatherElement,RED);
