@@ -289,7 +289,7 @@ INT   GetStringINTInRange    (const char *name, INT min, INT max, INT *value);
    'cmdstatus' in the root structure), 'exit 1' returns to the initial state.
    
    Usually when an (interpreter) error occurs also its position
-   is shown by printing the command line with an indicator '^' below.
+   is shown by printing the command line with an indicator below.
    
    In the 'ui' directory exists also a script file 'intcheck.scr',
    which checks some functionality of the interpreter.
