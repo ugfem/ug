@@ -2483,12 +2483,12 @@ enum GM_OBJECTS {
 /****************************************************************************/
 
 /* TAG values */
-//#define TRIANGLE                3
-//#define QUADRILATERAL   4
-//#define TETRAHEDRON     4
-//#define PYRAMID                 5
-//#define PRISM           6
-//#define HEXAHEDRON              7
+/* #define TRIANGLE        3 */
+/* #define QUADRILATERAL   4 */
+/* #define TETRAHEDRON     4 */
+/* #define PYRAMID         5 */
+/* #define PRISM           6 */
+/* #define HEXAHEDRON      7 */
 
 enum {TRIANGLE = 3,
       QUADRILATERAL = 4};
