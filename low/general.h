@@ -46,7 +46,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define UG_VERSION "ug 3.4"
+#define UG_VERSION "ug 3.6"
 
 #define UG_RCS_STRING UGRCSSTRING(UG_VERSION,ARCH_VERSION,DIM,MODEL,GRAPE_SUPPORT,NETGEN_SUPPORT,DOM_MODULE,DEBUG_MODE)
 
