@@ -627,9 +627,9 @@ void surfacemeshing :: EndMesh ()
 {
   int i;
 
-  for (i = 1; i <= ruleused.Size(); i++)
-    (*testout) << setw(4) << ruleused[i]
-               << " times used rule " << rules[i] -> Name() << endl;
+  //  for (i = 1; i <= ruleused.Size(); i++)
+  //    (*testout) << setw(4) << ruleused[i]
+  //            << " times used rule " << rules[i] -> Name() << endl;
 }
 
 void surfacemeshing :: Mesh (double gh)
@@ -1179,8 +1179,8 @@ void surfacemeshing :: ImproveMesh (ARRAY<Point3d> & points, const ARRAY<Element
         GetNormalVector (surfi2, sp1, n2);
         t1 = Cross (n1, n2);
 
-        if (surfi == 10 && surfi2 == 16)
-          (*testout) << "n1 = " << n1 << " n2 = " << n2 << " t = " << t1 << endl;
+        //        if (surfi == 10 && surfi2 == 16)
+        //          (*testout) << "n1 = " << n1 << " n2 = " << n2 << " t = " << t1 << endl;
 
         xedge = 0;
         //        BFGS (xedge, Opti2EdgeFunctionValueGrad);
@@ -1243,7 +1243,7 @@ void surfacemeshing :: ImproveMesh (ARRAY<Point3d> & points, const ARRAY<Element
 
 int InitSurfaceNetgen (char * rulefilename)
 {
-  testout = new ofstream("test.out");
+  //  testout = new ofstream("test.out");
   meshing = new my_surfacemeshing(rulefilename);
 
   //  points = new ARRAY<Point3d>;
