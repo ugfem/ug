@@ -4002,7 +4002,7 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG, INT FromLevel)
   NODE *theNode;
   GRID *theGrid;
 
-  PRINTDEBUG(gm,0,("%d: IdentifyProcBoundaryObjects(): FromLevel=%d\n",me,FromLevel))
+  PRINTDEBUG(gm,1,("%d: IdentifyProcBoundaryObjects(): FromLevel=%d\n",me,FromLevel))
 
   /* this quickfix is not necessary anymore. ddd is now capable of
      multiple priority assignments for same object. KB 960906 */
@@ -4044,13 +4044,13 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG, INT FromLevel)
   /* identify nodes */
   for (l=FromLevel; l<TOPLEVEL(theMG); l++) {
 
-    PRINTDEBUG(gm,0,("%d: IdentifyProcBoundaryObjects(): current identlevel=%d\n",me,l));
+    PRINTDEBUG(gm,1,("%d: IdentifyProcBoundaryObjects(): current identlevel=%d\n",me,l));
 
     theGrid = GRID_ON_LEVEL(theMG,l);
 
     for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
 
-      PRINTDEBUG(gm,0,("%d: Identify current element: pe=%08x/%x eID=%d\n",me,
+      PRINTDEBUG(gm,1,("%d: Identify current element: pe=%08x/%x eID=%d\n",me,
                        DDD_InfoGlobalId(PARHDRE(theElement)),theElement,
                        ID(theElement)));
 
@@ -4081,7 +4081,7 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG, INT FromLevel)
                                         #endif
 
 
-          PRINTDEBUG(gm,0,("%d: Identify nodes=%d of pe=%08x/%x eID=%d\n",me,
+          PRINTDEBUG(gm,1,("%d: Identify nodes=%d of pe=%08x/%x eID=%d\n",me,
                            nodes,DDD_InfoGlobalId(PARHDRE(theElement)),theElement,
                            ID(theElement)));
 
@@ -4108,7 +4108,7 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG, INT FromLevel)
 
               if (XFERNODE(theNode) == IDENT) continue;
 
-              PRINTDEBUG(gm,0,("%d: Identify  j=%d cornernode=%08x prio=%d token=%d to \n",
+              PRINTDEBUG(gm,1,("%d: Identify  j=%d cornernode=%08x prio=%d token=%d to \n",
                                me, j,
                                DDD_InfoGlobalId(PARHDR(theNode)),
                                DDD_InfoPriority(PARHDR(theNode)),
@@ -4124,7 +4124,7 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG, INT FromLevel)
                   continue;
                 }
 
-                PRINTDEBUG(gm,0,("%d: ...proc=%d n=%d \n",me,*proclist,n));
+                PRINTDEBUG(gm,1,("%d: ...proc=%d n=%d \n",me,*proclist,n));
 
                 DDD_IdentifyObject(PARHDR(theNode), *proclist,
                                    PARHDR(NFATHER(theNode)));
@@ -4136,14 +4136,14 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG, INT FromLevel)
                 proclist += 2;
               }
               assert(n>=1);
-              PRINTDEBUG(gm,0,("\n"));
+              PRINTDEBUG(gm,1,("\n"));
               SETXFERNODE(theNode,IDENT);
               break;
 
             case (MID_NODE) :
 
                                                                 #ifdef __TWODIM__
-              PRINTDEBUG(gm,0,("%d: Identify j=%d midnode=%08x prio=%d tok0=%d tok1=%d\n",
+              PRINTDEBUG(gm,1,("%d: Identify j=%d midnode=%08x prio=%d tok0=%d tok1=%d\n",
                                me, j,
                                DDD_InfoGlobalId(PARHDR(theNode)),
                                DDD_InfoPriority(PARHDR(theNode)),
@@ -4159,7 +4159,7 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG, INT FromLevel)
               assert(EdgeNodes[1]!=NULL);
               assert(EdgeNodes[2]!=NULL);
 
-              PRINTDEBUG(gm,0,("%d: Identify j=%d midnode=%08x prio=%d tok0=%d tok1=%d\n",
+              PRINTDEBUG(gm,1,("%d: Identify j=%d midnode=%08x prio=%d tok0=%d tok1=%d\n",
                                me, j,
                                DDD_InfoGlobalId(PARHDR(theNode)),
                                DDD_InfoPriority(PARHDR(theNode)),
@@ -4178,7 +4178,7 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG, INT FromLevel)
                   continue;
                 }
 
-                PRINTDEBUG(gm,0,("%d: ...proc=%d n=%d \n",me,*proclist,n));
+                PRINTDEBUG(gm,1,("%d: ...proc=%d n=%d \n",me,*proclist,n));
                 /* TODO: identify edge vectors */
                 /* identify midnode, vertex and vector of midnode */
                 if (DDD_InfoGlobalId(PARHDR(NFATHER(EdgeNodes[0]))) <
@@ -4219,7 +4219,7 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG, INT FromLevel)
                 proclist += 2;
               }
               assert(n==1);
-              PRINTDEBUG(gm,0,("\n"));
+              PRINTDEBUG(gm,1,("\n"));
               break;
                                                         #ifdef __THREEDIM__
             case (SIDE_NODE) :
@@ -4238,7 +4238,7 @@ INT     IdentifyProcBoundaryObjects     (MULTIGRID *theMG, INT FromLevel)
 
   DDD_IdentifyEnd();
 
-  IFDEBUG(gm,0)
+  IFDEBUG(gm,1)
 
   PRINTDEBUG(gm,0,("AFTER Identify\n"));
 
@@ -4345,14 +4345,14 @@ INT CreateGridOverlap (MULTIGRID *theMG, INT FromLevel)
         if (theNeighbor == NULL) continue;
 
         if ((prio = DDD_InfoPriority(PARHDRE(theNeighbor))) == PrioGhost) {
-          PRINTDEBUG(gm,0,("%d: EID=%d side=%d NbID=%d NbPARTITION=%d\n",me,
+          PRINTDEBUG(gm,1,("%d: EID=%d side=%d NbID=%d NbPARTITION=%d\n",me,
                            ID(theElement),i,ID(theNeighbor),
                            DDD_InfoProcPrio(PARHDRE(theNeighbor),PrioMaster)))
         }
         if (NSONS(theNeighbor) == 0) {
 
           Get_Sons_of_ElementSide(theElement,i,&SonsOfSide,SonList,SonSides,1);
-          PRINTDEBUG(gm,0,("%d: SonsOfSide=%d\n",me,SonsOfSide))
+          PRINTDEBUG(gm,1,("%d: SonsOfSide=%d\n",me,SonsOfSide))
 
           for (s=0; s<SonsOfSide; s++) {
             theSon = SonList[s];
@@ -4360,7 +4360,7 @@ INT CreateGridOverlap (MULTIGRID *theMG, INT FromLevel)
             UpdateGridOverlap -
             SETUSED(theSon,1);
             if (IS_REFINED(theElement) && THEFLAG(theElement))
-              PRINTDEBUG(gm,0,("%d: Sending Son=%08x/%x SonID=%d SonLevel=%d"
+              PRINTDEBUG(gm,1,("%d: Sending Son=%08x/%x SonID=%d SonLevel=%d"
                                " to dest=%d\n",
                                me,DDD_InfoGlobalId(PARHDRE(theSon)),theSon,ID(theSon),
                                LEVEL(theSon),DDD_InfoProcPrio(PARHDRE(theNeighbor),PrioMaster)))
@@ -4419,7 +4419,7 @@ INT CreateGridOverlap (MULTIGRID *theMG, INT FromLevel)
                                (prio = DDD_InfoPriority(PARHDRE(theElement))) == PrioMaster)
                              continue;
 
-                           PRINTDEBUG(gm,0,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
+                           PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
                                             me,DDD_InfoGlobalId(PARHDRE(theElement)),
                                             theElement,ID(theElement),
                                             LEVEL(theElement)));
@@ -4437,7 +4437,7 @@ INT CreateGridOverlap (MULTIGRID *theMG, INT FromLevel)
                              if (Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,
                                                          Sons_of_Side_List,SonSides,1)!=GM_OK) RETURN(GM_FATAL);
 
-                             IFDEBUG(gm,0)
+                             IFDEBUG(gm,1)
                              INT j;
                              printf("%d:                side=%d NSONS=%d Sons_of_Side=%d:\n",me,i,NSONS(theElement),Sons_of_Side);
                              for (j=0; j<Sons_of_Side; j++)
