@@ -15,18 +15,29 @@ $VERSION = 1.0;
 ##############################################
 
 use IPC::Open2;
+use IO::Handle;
 BEGIN
 {
 	my $debug=0;
 	sub debug
 	{
 		$debug=$_[0];
+		open(DEBUG,">scripts/debug.scr");
+		DEBUG->autoflush(1);
 	}
 	sub submit
 	{
 		if ($_[0]=~/quit/) {die "ERROR: quit command is blocked, use 'end'\n";}
 	    print IN $_[0];
-		if ($debug) { print "UG-CMD: $_[0]"} ;
+		if ($debug) 
+		{ 
+			$_[0]=~/(.*)/;
+			print DEBUG "$1;\n"; 
+		}
+	}
+	END
+	{
+		close(DEBUG);
 	}
 }
 sub out
@@ -83,6 +94,7 @@ sub ug
                 die "ERROR: provide [0|1] with 'debug'\n";
             }
 			debug $_[1];
+			return;
 		}
 
 		# command 'end'
