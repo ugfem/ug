@@ -273,6 +273,9 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   res->rho_first = 0.0;
   res->number_of_nonlinear_iterations = 0;
   res->number_of_line_searches = 0;
+  res->total_linear_iterations = 0;
+  res->max_linear_iterations = 0;
+  res->exec_time = 0.0;
 
   /* initialize timers and counters */
   defect_c = newton_c = linear_c = 0;
@@ -432,6 +435,10 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     ListVectorRange(mg,0,level,0,1000,FALSE,TRUE);
                 #endif
 
+    /* linear solver statistics */
+    res->total_linear_iterations += lr.number_of_linear_iterations;
+    res->max_linear_iterations = MAX(res->max_linear_iterations,lr.number_of_linear_iterations);
+
     if (newton->lineSearch)
       UserWriteF(" ++ newton step %3d\n",r);
 
@@ -552,6 +559,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     for (i=0; i<n_unk; i++) res->last_defect[i] = defect[i];
     UserWriteF("AVG EXEC TIMES: DEF[%2d]=%10.4lg JAC[%2d]=%10.4lg LIN[%2d]=%10.4lg\n",
                defect_c,defect_t/defect_c,newton_c,newton_t/newton_c,linear_c,linear_t/linear_c);
+    res->exec_time = defect_t+newton_t+linear_t;
   }
 
   /* postprocess assemble once at the end */

@@ -419,6 +419,7 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
     if (DoPCR(PrintID,lresult->first_defect,PCR_CRATE)) NP_RETURN(1,lresult->error_code);
   if (sc_cmp(lresult->first_defect,abslimit,b)) lresult->converged = 1;
   else lresult->converged = 0;
+  lresult->number_of_linear_iterations = 0;
   for (i=0; i<np->maxiter; i++)
   {
     if (lresult->converged) break;
@@ -435,6 +436,7 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level,
     if (sc_cmp(lresult->last_defect,abslimit,b) ||
         sc_cmp(lresult->last_defect,defect2reach,b)) {
       lresult->converged = 1;
+      lresult->number_of_linear_iterations=i+1;
       break;
     }
   }

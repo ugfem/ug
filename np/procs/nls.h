@@ -59,6 +59,9 @@ typedef struct {
   INT number_of_nonlinear_iterations;       /* number of iterations             */
   INT number_of_line_searches;              /* number of line search steps      */
   INT rho_first;                            /* first rho                        */
+  INT total_linear_iterations;          /* total number                     */
+  INT max_linear_iterations;            /* max number of linear iterations  */
+  DOUBLE exec_time;                     /* for this nonlinear solve ...     */
 } NLRESULT;
 
 struct np_nl_solver {

@@ -92,6 +92,12 @@ typedef struct
   DOUBLE rhogood;                                                /* threshold for step doubling		*/
   NP_TRANSFER *trans;                                            /* uses transgrid for nested iter  */
 
+  /* statistics */
+  INT number_of_nonlinear_iterations;       /* number of iterations             */
+  INT total_linear_iterations;          /* total number                     */
+  INT max_linear_iterations;            /* max number of linear iterations  */
+  DOUBLE exec_time;                     /* for nonlinear solver ...             */
+
   /* and XDATA_DESCs */
   VECDATA_DESC *y_p1;                    /* solution y_k+1                                      */
   VECDATA_DESC *y_0;                     /* solution y_k                                        */
@@ -265,6 +271,12 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
   sprintf(buffer,"%12.4lE",bdf->dt);
   SetStringVar("TIMESTEP",buffer);
 
+  /* statistics init */
+  bdf->number_of_nonlinear_iterations = 0;
+  bdf->total_linear_iterations = 0;
+  bdf->max_linear_iterations = 0;
+  bdf->exec_time = 0.0;
+
   /* return ok */
   *res = 0;
   return(*res);
@@ -359,6 +371,13 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
           return(__LINE__);
       if ( (*nlsolve->Solver)(nlsolve,k,bdf->y_p1,&bdf->tsolver.nlass,nlsolve->abslimit,nlsolve->reduction,&nlresult) )
         return(__LINE__);
+
+      /* update statisitics */
+      bdf->number_of_nonlinear_iterations += nlresult.number_of_nonlinear_iterations;
+      bdf->total_linear_iterations += nlresult.total_linear_iterations;
+      bdf->max_linear_iterations = MAX(bdf->max_linear_iterations,nlresult.max_linear_iterations);
+      bdf->exec_time += nlresult.exec_time;
+
       if (nlsolve->PostProcess!=NULL)
         if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
           return(__LINE__);
@@ -422,6 +441,10 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   sprintf(buffer,"%12.4lE",bdf->dt);
   SetStringVar("TIMESTEP",buffer);
 
+  UserWriteF("TIMESTEP %4d: TIME=%10.4lg DT=%10.4lg EXECT=%10.4lg NLIT=%5d LIT=%5d MAXLIT=%3d\n",
+             bdf->step,bdf->t_0,bdf->dt,bdf->exec_time,bdf->number_of_nonlinear_iterations,
+             bdf->total_linear_iterations,bdf->max_linear_iterations);
+
   /* chose new dt for next time step */
   if (verygood && (!bad) && bdf->dt*2<=bdf->dtmax)
   {
@@ -434,6 +457,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
     bdf->dt *= bdf->dtscale;
     *res=0; return(*res);
   }
+
 
   return(0);
 }
