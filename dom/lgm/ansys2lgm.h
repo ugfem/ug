@@ -323,6 +323,8 @@ typedef struct {
 #define MAXLINE                         100
 #define NMBOFCNDS                       30
 
+#define NMBOFLOCLCOORDS         2
+
 #define CORNERS_OF_BND_SEG      3
 #define CORNERS_OF_BND_SIDE     3
 #define CORNERS_OF_ELEMENT      4
