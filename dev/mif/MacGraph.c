@@ -1005,6 +1005,8 @@ static WINDOWID Mac_OpenOutput (
   gw->Local_UR[0] = Local_UR[0] = width;
   gw->Local_UR[1] = Local_UR[1] = 0;
 
+  TextFont(monaco);
+
   /* return window ptr */
   *error = 0;
   return((WINDOWID)gw);
