@@ -695,14 +695,11 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
   MG_BVP(theMG) = theBVP;
   theMG->theHeap = theHeap;
   for (i=0; i<MAXLEVEL; i++) theMG->grids[i] = NULL;
-  for (i=0; i<MAXOBJECTS; i++) theMG->freeObjects[i] = NULL;
-  for (i=0; i<MAXVECTORS; i++) theMG->freeVectors[i] = NULL;
-  for (i=0; i<MAXCONNECTIONS; i++) theMG->freeConnections[i] = NULL;
-
-#ifdef __INTERPOLATION_MATRIX__
-  for (i=0; i<MAXMATRICES; i++)
-    theMG->freeIMatrices[i] = NULL;
-#endif
+  for (i=0; i<MAXFREEOBJECTS; i++)
+  {
+    theMG->freeObjects[i] = NULL;
+    theMG->SizeOfFreeObjects[i] = -1;
+  }
 
   /* load corner vertices ids */
   n = BVPD_NCORNERS(theBVPDesc);

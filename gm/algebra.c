@@ -494,7 +494,7 @@ INT CreateVector (GRID *theGrid, VECTOR *After, INT VectorType, VECTOR **VectorH
   if (ds == 0)
     return (0);
   Size = sizeof(VECTOR)-sizeof(DOUBLE)+ds;
-  pv = GetMemoryForObject(theMG,Size,VCOBJ);
+  pv = GetMemoryForObject(theMG,Size,VEOBJ);
   if (pv==NULL)
     return(1);
   *VectorHandle = pv;
@@ -787,7 +787,7 @@ CONNECTION *CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to)
   }
 
   if (Diag)
-    pc = (CONNECTION*)GetMemoryForObject(theMG,Size,COOBJ);
+    pc = (CONNECTION*)GetMemoryForObject(theMG,Size,MAOBJ);
   else
     pc = (CONNECTION*)GetMemoryForObject(theMG,2*Size,COOBJ);
   if (pc==NULL) return (NULL);
@@ -960,7 +960,7 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
   /* delete the vector itself */
   Size = sizeof(VECTOR)-sizeof(DOUBLE)
          +theGrid->mg->theFormat->VectorSizes[VTYPE(theVector)];
-  if (PutFreeObject(theGrid->mg,theVector,Size,VCOBJ))
+  if (PutFreeObject(theGrid->mg,theVector,Size,VEOBJ))
     return(1);
 
   theGrid->nVector--;
@@ -1126,7 +1126,7 @@ INT DisposeConnection (GRID *theGrid, CONNECTION *theConnection)
 
   /* free connection object */
   if (MDIAG(Matrix))
-    PutFreeObject(MYMG(theGrid),Matrix,MSIZE(Matrix),COOBJ);
+    PutFreeObject(MYMG(theGrid),Matrix,MSIZE(Matrix),MAOBJ);
   else
     PutFreeObject(MYMG(theGrid),Matrix,2*MSIZE(Matrix),COOBJ);
 
@@ -4716,7 +4716,7 @@ MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
   Size = sizeof(MATRIX)-sizeof(DOUBLE)+ds;
   if (MSIZEMAX<Size) return (NULL);
   assert (Size % ALIGNMENT == 0);
-  pm = GetMemoryForObject (theMG,Size,IMOBJ);
+  pm = GetMemoryForObject (theMG,Size,MAOBJ);
   if (pm==NULL)
     return (NULL);
 
@@ -4763,7 +4763,7 @@ INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix)
   for (Matrix=theMatrix; Matrix!=NULL; )
   {
     NextMatrix = NEXT(Matrix);
-    PutFreeObject(theGrid->mg,Matrix,MSIZE(Matrix),IMOBJ);
+    PutFreeObject(theGrid->mg,Matrix,MSIZE(Matrix),MAOBJ);
     theGrid->nIMat--;
     Matrix = NextMatrix;
   }

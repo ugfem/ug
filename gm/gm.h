@@ -91,8 +91,9 @@
 /* some size parameters */
 #define MAXLEVEL                                32      /* maximum depth of triangulation		*/
 #define MAXOBJECTS                              32      /* use 5 bits for object identification */
-#define MAXSELECTION                    100 /* max number of elements in selection	*/
-#define TAGS                                    8       /* number of different element types	*/
+#define MAXFREEOBJECTS             128  /* number of free object pionters       */
+#define MAXSELECTION               100  /* max number of elements in selection	*/
+#define TAGS                                     8      /* number of different element types	*/
 
 /* some size macros for allocation purposes */
 #define MAX_SIDES_OF_ELEM               6                       /* max number of sides of an elem	*/
@@ -686,13 +687,10 @@ struct multigrid {
 
   /* pointers */
   struct grid *grids[MAXLEVEL];         /* pointers to the grids				*/
-  void *freeObjects[MAXOBJECTS];        /* pointer to allocated but unused objs */
-  void *freeVectors[MAXVECTORS];        /* pointer to allocated but unused objs */
-  void *freeConnections[MAXCONNECTIONS];      /* ptr to alloc. but unused objs	*/
-#ifdef __INTERPOLATION_MATRIX__
-  void *freeIMatrices[MAXMATRICES];
+  void *freeObjects[MAXFREEOBJECTS];
   /* pointer to allocated but unused objs */
-#endif
+  INT SizeOfFreeObjects[MAXFREEOBJECTS];
+  /* corresponding size                   */
 
   /* selection */
   INT NbOfSelections;                           /* number of selected objects			*/
@@ -1258,13 +1256,10 @@ extern CONTROL_ENTRY
 /* object numbers for algebra */
 #define VEOBJ 10                                                /* vector object					*/
 #define MAOBJ 11                                                /* matrix object					*/
-#define BLOCKVOBJ 12                    /* blockvector object               */
-#define NPREDEFOBJ 13                                   /* no of predefined objects             */
+#define COOBJ 12                                /* connection object	                */
+#define BLOCKVOBJ 13                    /* blockvector object               */
 
-#define IMOBJ (MAXOBJECTS+1)                    /* interpolation matrix object		*/
-#define COOBJ (MAXOBJECTS+2)                    /* connection object	                */
-#define VCOBJ (MAXOBJECTS+3)                    /* vector object					*/
-
+#define NPREDEFOBJ 14                                   /* no of predefined objects             */
 #define NOOBJ -1
 
 /****************************************************************************/

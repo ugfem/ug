@@ -214,76 +214,37 @@ INT ReleaseOBJT (INT type)
 void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
 {
   void **ptr, *obj;
-  INT i;
+  INT i,j,k,l;
   FORMAT *theFormat;
 
   if (size == 0)
     return(NULL);
   obj = NULL;
 
-  if (type >= MAXOBJECTS)
-  {
-    theFormat = MGFORMAT(theMG);
-    if (type == COOBJ)
-    {
-      for (i=0; i<MAXVECTORS; i++)
-        if (size == sizeof(MATRIX)-sizeof(DOUBLE)
-            +theFormat->MatrixSizes[MatrixType[i][i]])
-          if (theMG->freeConnections[i] != NULL)
-          {
-            ptr = (void **) theMG->freeConnections[i];
-            theMG->freeConnections[i] = ptr[0];
-            break;
-          }
-      for (i=0; i<MAXMATRICES; i++)
-        if (size == 2*(sizeof(MATRIX)-sizeof(DOUBLE)
-                       +theFormat->MatrixSizes[i]))
-          if (theMG->freeConnections[MAXVECTORS+i] != NULL)
-          {
-            ptr = (void **) theMG->freeConnections[MAXVECTORS+i];
-            theMG->freeConnections[MAXVECTORS+i] = ptr[0];
-            break;
-          }
-    }
-    else if (type == VCOBJ)
-    {
-      for (i=0; i<MAXVECTORS; i++)
-        if (size == sizeof(VECTOR)-sizeof(DOUBLE)
-            +theMG->theFormat->VectorSizes[i])
-          if (theMG->freeVectors[i] != NULL)
-          {
-            ptr = (void **) theMG->freeVectors[i];
-            theMG->freeVectors[i] = ptr[0];
-            break;
-          }
-    }
-        #ifdef __INTERPOLATION_MATRIX__
-    else if (type == IMOBJ)
-    {
-      for (i=0; i<MAXMATRICES; i++)
-        if (size == sizeof(MATRIX)-sizeof(DOUBLE)
-            +theMG->theFormat->IMatrixSizes[i])
-          if (theMG->freeIMatrices[i] != NULL)
-          {
-            ptr = (void **) theMG->freeIMatrices[i];
-            theMG->freeIMatrices[i] = ptr[0];
-            break;
-          }
-    }
-                #endif
-  }
-  /* 'ptr' will be set equal to 'theMG->freeObjects[type]' but with	        */
+  /* 'ptr' will be set equal to 'theMG->freeObjects[k]' but with	        */
   /* different interpretation: void ** instead of void *. 'ptr'			*/
   /* points to the first two bytes of the object (i.e. unsigned INT ctrl	*/
   /* and INT id) but will be interpreted as a void * pointer, witch points*/
   /* to the next free object.                                                                                   */
-  else if (type>=0)
-    if (theMG->freeObjects[type]!=NULL)
+
+  i = (size / ALIGNMENT);
+  for (j=0; j<MAXFREEOBJECTS; j++)
+  {
+    k = (i + j) % MAXFREEOBJECTS;
+    l = theMG->SizeOfFreeObjects[k];
+    if (l == size)
     {
-      ptr = (void **) theMG->freeObjects[type];
-      theMG->freeObjects[type] = ptr[0];
-      obj = (void *) ptr;
+      if (theMG->freeObjects[k] != NULL)
+      {
+        ptr = (void **) theMG->freeObjects[type];
+        theMG->freeObjects[type] = ptr[0];
+        obj = (void *) ptr;
+      }
+      break;
     }
+    if(l == -1)
+      break;
+  }
 
   if (obj == NULL)
     obj = GetMem(MGHEAP(theMG),(MEM *)size,FROM_BOTTOM);
@@ -321,75 +282,40 @@ void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
 INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type)
 {
   void **ptr;
-  INT i;
+  INT i,j,k,l;
   FORMAT *theFormat;
 
   ptr = (void **) object;
 
-  if (type >= MAXOBJECTS)
-  {
-    theFormat = MGFORMAT(theMG);
-    if (type == COOBJ)
-    {
-      for (i=0; i<MAXVECTORS; i++)
-        if (size == sizeof(MATRIX)-sizeof(DOUBLE)
-            +theFormat->MatrixSizes[MatrixType[i][i]])
-        {
-          ptr[0] = theMG->freeConnections[i];
-          theMG->freeConnections[i] = (void *)object;
-          break;
-        }
-      for (i=0; i<MAXMATRICES; i++)
-        if (size == 2*(sizeof(MATRIX)-sizeof(DOUBLE)
-                       +theFormat->MatrixSizes[i]))
-        {
-          ptr[0] = theMG->freeConnections[MAXVECTORS+i];
-          theMG->freeConnections[MAXVECTORS+i] = (void *)object;
-          break;
-        }
-    }
-    else if (type == VCOBJ)
-    {
-      for (i=0; i<MAXVECTORS; i++)
-        if (size == sizeof(VECTOR)-sizeof(DOUBLE)
-            +theMG->theFormat->VectorSizes[i])
-        {
-          ptr[0] = theMG->freeVectors[i];
-          theMG->freeVectors[i] = (void *)object;
-          break;
-        }
-    }
-        #ifdef __INTERPOLATION_MATRIX__
-    else if (type == IMOBJ)
-    {
-      for (i=0; i<MAXMATRICES; i++)
-        if (size == sizeof(MATRIX)-sizeof(DOUBLE)
-            +theMG->theFormat->IMatrixSizes[i])
-        {
-          ptr[0] = theMG->freeIMatrices[i];
-          theMG->freeIMatrices[i] = (void *)object;
-          break;
-        }
-    }
-                #endif
-  }
   /* 'ptr' will be set equal to 'object' but with different inter-		*/
   /* pretation: void ** instead of void *. 'ptr' points to the first		*/
   /* two bytes of the object (i.e. unsigned INT ctrl	and INT id) but         */
   /* will be interpreted as a void * pointer, witch will be set equal   */
-  /* to 'theMG->freeObjects[type]' i.e. the first free object.			*/
-  else if (type >= 0)
+  /* to 'theMG->freeObjects[k]' i.e. the first free object.			    */
+
+  i = (size / ALIGNMENT);
+  for (j=0; j<MAXFREEOBJECTS; j++)
   {
-    ptr[0] = theMG->freeObjects[type];
-    theMG->freeObjects[type] = object;
-  }
-  else
-  {
-    UserWrite("wrong object given to PutFreeObject\n");
-    return(1);
+    k = (i + j) % MAXFREEOBJECTS;
+    l = theMG->SizeOfFreeObjects[k];
+    if (l == size)
+    {
+      ptr[0] = theMG->freeObjects[k];
+      theMG->freeObjects[k] = object;
+      return(0);
+    }
+    if(l == -1)
+    {
+      theMG->SizeOfFreeObjects[k] = size;
+      ptr[0] = theMG->freeObjects[k];
+      theMG->freeObjects[k] = object;
+      return(0);
+    }
   }
 
-  return(0);
+  UserWrite("PutFreeObject: increase MAXFREEOBJECTS\n");
+
+  return(1);
 }
 
 /****************************************************************************/
@@ -1979,14 +1905,11 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
   theMG->theHeap = theHeap;
   SELECTIONSIZE(theMG) = 0;
   for (i=0; i<MAXLEVEL; i++) theMG->grids[i] = NULL;
-  for (i=0; i<MAXOBJECTS; i++) theMG->freeObjects[i] = NULL;
-  for (i=0; i<MAXVECTORS; i++) theMG->freeVectors[i] = NULL;
-  for (i=0; i<MAXCONNECTIONS; i++) theMG->freeConnections[i] = NULL;
-
-#ifdef __INTERPOLATION_MATRIX__
-  for (i=0; i<MAXMATRICES; i++)
-    theMG->freeIMatrices[i] = NULL;
-#endif
+  for (i=0; i<MAXFREEOBJECTS; i++)
+  {
+    theMG->freeObjects[i] = NULL;
+    theMG->SizeOfFreeObjects[i] = -1;;
+  }
 
   /* allocate level 0 grid */
   theGrid = CreateNewLevel(theMG);
