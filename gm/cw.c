@@ -96,6 +96,7 @@ CONTROL_ENTRY control_entries[MAX_CONTROL_ENTRIES];
 predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {1,VTYPE_CE,            VECTOR_CW,      VTYPE_SHIFT,            VTYPE_LEN               },
   {1,VBUILDCON_CE,        VECTOR_CW,      VBUILDCON_SHIFT,        VBUILDCON_LEN   },
+  {1,VCFLAG_CE,           VECTOR_CW,      VCFLAG_SHIFT,           VCFLAG_LEN              },
   {1,VCUSED_CE,           VECTOR_CW,      VCUSED_SHIFT,           VCUSED_LEN              },
   {1,VCOUNT_CE,           VECTOR_CW,      VCOUNT_SHIFT,           VCOUNT_LEN              },
   {1,VECTORSIDE_CE,       VECTOR_CW,      VECTORSIDE_SHIFT,       VECTORSIDE_LEN  },
@@ -191,10 +192,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {0,0,0,0,0},
   {0,0,0,0,0},
   {0,0,0,0,0},
-  {0,0,0,0,0},
 }; /* last entry used: 72 for XFERLINK_CE */
-
-/* free entry: 36 (EXTRA for edge does not exist any more) */
 
 /****************************************************************************/
 /*                                                                          */
