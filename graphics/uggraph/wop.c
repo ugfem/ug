@@ -885,7 +885,7 @@ static DRAWINGOBJ       *WOP_DO_Buffer[WOP_DOWN_CHANNELS_MAX+1][DO_BUFFER_SLOTS]
 static VChannelPtr       WOP_UpChannel;
 static VChannelPtr       WOP_DownChannel[WOP_DOWN_CHANNELS_MAX];
 static INT               WOP_NbDesc[WOP_DOWN_CHANNELS_MAX];
-DRAWINGOBJ        *WOP_DObjPnt;
+DRAWINGOBJ        * NS_DIM_PREFIX WOP_DObjPnt;
 static INT WOP_Sending  [WOP_DOWN_CHANNELS_MAX+1]; /* indicates sending from buffer i  */
 static INT WOP_Receiving[WOP_DOWN_CHANNELS_MAX];   /* indicates receiving in buffer i  */
 static INT WOP_NbTokens [WOP_DOWN_CHANNELS_MAX];   /* nb of tokens seen from channel i */
