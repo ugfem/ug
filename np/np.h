@@ -96,6 +96,7 @@
 
 /* formats for display routines */
 #define DISPLAY_WIDTH                                   50
+#define DISPLAY_NP_BAR                                  "--------------------------------------------------\n"
 #define DISPLAY_NP_LI_FORMAT_SSSSS              "%-2s %-15.12s %-15.12s %-15.12s %-15.12s\n"
 #define DISPLAY_NP_LI_FORMAT_SSSSSI             "%-2s %-15.12s %-15.12s %-15.12s %-15.12s %-2d\n"
 #define DISPLAY_NP_LI_FORMAT_SSSSSS             "%-2s %-15.12s %-15.12s %-15.12s %-15.12s %-15.12s\n"
@@ -408,7 +409,7 @@ INT l_icdecomp      (GRID *g, const MATDATA_DESC *M);
 INT l_iluspdecomp       (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VECDATA_DESC *t, INT mode, const VEC_SCALAR oldrestthresh);
 INT l_lrdecomp          (GRID *g, const MATDATA_DESC *M);
 INT LUDecomposeDiagBS(const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT A_comp, GRID *grid );
-INT l_lrregularize      (GRID *theGrid, const MATDATA_DESC *M);
+INT l_lrregularize      (GRID *theGrid, const MATDATA_DESC *M, INT restore);
 INT l_lrdecompB         (GRID *g, const MATDATA_DESC *M);
 INT l_luiter            (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d);
 INT solveLUMatBS        (const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT dest_comp, INT LU_comp, INT source_comp );
