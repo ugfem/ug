@@ -194,6 +194,7 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
   int where_x,where_y,tool;
   int x,y,w,h;
   int cmdKey, onlyCmdKey;
+  int flag;
 
   /* no event as default */
   theEvent->Type = NO_EVENT;
@@ -252,8 +253,9 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
     if (report.xconfigure.window==shell.win)
     {
                                 #ifdef USE_XAW
+      flag=XtDispatchEvent(&report);
                                 #ifdef DEBUG
-      if (XtDispatchEvent(&report)== FALSE)
+      if (flag==FALSE)
         PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"))
         else
           PRINTDEBUG(dev,1,("XtDispatchEvent(): handler for this event found\n"))
@@ -414,8 +416,9 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
 
         #ifdef USE_XAW
   /* Send all events to shell widget */
+  flag=XtDispatchEvent(&report);
         #ifdef DEBUG
-  if (XtDispatchEvent(&report)== FALSE)
+  if (flag==FALSE)
     PRINTDEBUG(dev,1,("XtDispatchEvent(): NO handler for this event found\n"))
     else
       PRINTDEBUG(dev,1,("XtDispatchEvent(): Handler for this event found\n"))
