@@ -406,8 +406,17 @@ static INT GenerateNewGrid(GRID *theGrid)
                           "could not create interpolation matrix");
         REP_ERR_RETURN(1);
       }
-      assert(VISTART(vect)!=NULL);
-      assert(MDEST(VISTART(vect))!=NULL);
+      assert(VISTART(vect) != NULL);
+      assert(MDEST(VISTART(vect)) != NULL);
+      assert(VSTART(newVect) == NULL);
+      if (CreateConnection(newGrid,newVect,newVect) == NULL)
+      {
+        PrintErrorMessage('E',"GenerateNewGrid",
+                          "could not create diag matrix");
+        REP_ERR_RETURN(1);
+      }
+      assert(VSTART(newVect) != NULL);
+      assert(MDEST(VSTART(newVect)) == newVect);
     }
   }
   return(DONE);
@@ -637,47 +646,41 @@ INT CoarsenAverage (GRID *theGrid)
     if (VECSKIP(theV) == 0) continue;
     d = 0;
     for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) d++;
-    PRINTDEBUG(np,1,(" %d",d));
+    PRINTDEBUG(np,1,("%d:%d ",VINDEX(theV),d));
     dmin = MIN(d,dmin);
   }
-  PRINTDEBUG(np,1,("dmin %d\n",dmin));
+  PRINTDEBUG(np,1,("\ndmin %d\n",dmin));
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
     if (VECSKIP(theV) == 0) continue;
     d = 0;
     for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) d++;
-    if (d == dmin) break;
+    if (d == dmin)
+      fifo_in(&myfifo,(void *)theV);
   }
-  assert(theV != NULL);
-  fifo_in(&myfifo,(void *)theV);
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
+    if (VECSKIP(theV) == 0) continue;
+    d = 0;
+    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) d++;
+    if (d > dmin)
+      fifo_in(&myfifo,(void *)theV);
+  }
   while(!fifo_empty(&myfifo)) {
     theV = (VECTOR *)fifo_out(&myfifo);
     if (USED(theV)) {
-      PRINTDEBUG(np,1,("out %d",VINDEX(theV)));
-      theM = VSTART(theV);
-      for (theM=MNEXT(theM); theM!=NULL; theM=MNEXT(theM)) {
+      for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
         theW = MDEST(theM);
-        if (VECSKIP(theW) == 0) continue;
         if (!USED(theW)) break;
       }
-      if (theM == NULL)
-        for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-          theW = MDEST(theM);
-          if (!USED(theW)) break;
-        }
-      /* else
-          for (theM=MNEXT(theM); theM!=NULL; theM=MNEXT(theM)) {
-                  if (VECSKIP(MDEST(theM)) == 0) continue;
-                      if (!USED(MDEST(theM)))
-                          fifo_in(&myfifo,(void *)MDEST(theM));
-              } */
-      if (theM == NULL) theV = NULL;
-      else theV = theW;
+      if (theM != NULL) {
+        fifo_in(&myfifo,(void *)theW);
+        PRINTDEBUG(np,1,("out %d in %d\n",VINDEX(theV),VINDEX(theW)));
+      }
     }
-    if (theV != NULL) {
+    else {
       m++;
       SETVCCOARSE(theV,1);
       SETUSED(theV,1);
-      PRINTDEBUG(np,1,("c %d:",VINDEX(theV)));
+      PRINTDEBUG(np,1,("c %d",VINDEX(theV)));
       for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
         theW = MDEST(theM);
         if (USED(theW)) continue;
@@ -685,10 +688,10 @@ INT CoarsenAverage (GRID *theGrid)
         SETUSED(theW,1);
         SETVCCOARSE(theW,0);
         fifo_in(&myfifo,(void *)theW);
-        PRINTDEBUG(np,1,(" %d",VINDEX(theW)));
+        PRINTDEBUG(np,1,(" f %d",VINDEX(theW)));
       }
+      PRINTDEBUG(np,1,("\n"));
     }
-    PRINTDEBUG(np,1,("\n"));
   }
   if (m != n)
     return(1);
@@ -965,17 +968,30 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
     }
 
   newGrid=theGrid->coarser;
+  PRINTDEBUG(np,1,("\nIp "));
   for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
     if (VCCOARSE(vect) == 0) {
       ncomp = MD_COLS_IN_RT_CT(A,VTYPE(vect),VTYPE(vect));
       n = 0;
-      for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat))
-        if (VCCOARSE(MDEST(mat))==1) n++;
+      if (VECSKIP(vect)) {
+        for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat))
+          if (VECSKIP(MDEST(mat)))
+            if (VCCOARSE(MDEST(mat))==1)
+              n++;
+      }
+      else
+        for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat))
+          if (VCCOARSE(MDEST(mat))==1) n++;
       assert(n > 0);
+      PRINTDEBUG(np,1,("%d:%d ",VINDEX(vect),n));
       s = 1.0 / n;
       for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
         dest = MDEST(mat);
-        if (VCCOARSE(dest) == 0) continue;
+        if (VCCOARSE(dest) == 0)
+          continue;
+        if (VECSKIP(vect))
+          if (VECSKIP(dest) == 0)
+            continue;
         if (MD_COLS_IN_RT_CT(A,VTYPE(vect),VTYPE(dest)) != ncomp) {
           PrintErrorMessage('E',"IpAverage",
                             "can't handle this format");
@@ -998,6 +1014,7 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
       }
     }
     else {
+      ncomp = MD_COLS_IN_RT_CT(A,VTYPE(vect),VTYPE(vect));
       imat = VISTART(vect);
       assert (imat != NULL);
       SETMDIAG(imat,1);
@@ -1007,6 +1024,7 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
           else MVALUE(imat,i*ncomp + j) = 0.0;
         }
     }
+  PRINTDEBUG(np,1,("\n"));
 
   IFDEBUG(np,4)
   CheckImat(theGrid,2);
