@@ -1843,6 +1843,8 @@ enum GM_OBJECTS {
 #define TAG(p)                                          CW_READ_STATIC(p,TAG_,GENERAL_)
 #define SETTAG(p,n)                             CW_WRITE_STATIC(p,TAG_,GENERAL_,n)
 
+#define REF2TAG(n)                                      (reference2tag[n])
+
 #define CTRL(p)         (*((unsigned INT *)(p)))
 #define ID(p)           (((INT *)(p))[1])
 
@@ -2150,6 +2152,7 @@ extern INT data_offset[TAGS];
 
 /* the element descriptions are also globally available, these are pointers ! */
 extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
+extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 
 /****************************************************************************/
 /*																			*/

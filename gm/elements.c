@@ -67,6 +67,7 @@ INT side_offset[TAGS];
 INT data_offset[TAGS];
 
 GENERAL_ELEMENT *element_descriptors[TAGS],     *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
+INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 
 /****************************************************************************/
 /*																			*/
@@ -728,6 +729,7 @@ static INT PreProcessElementDescription (GENERAL_ELEMENT *el)
   /* make description globally available */
   element_descriptors[tag] = el;
   reference_descriptors[el->corners_of_elem] = el;
+  reference2tag[el->corners_of_elem] = tag;
 
   return(GM_OK);
 }
