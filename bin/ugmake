@@ -1,4 +1,16 @@
 #!/bin/sh
+# $Id$
+
+# TODO:
+#
+# - makeoptions _only_ work when exactly one ugmodule-option is
+#   passed. That's not very nice if no module is passed or if the
+#   (undocumented!) mode with two args is used. [Thimo 30.8.2004]
+
+# terminate script if any subcommands fail. This implicitly passes
+# make-errors to the outside
+set -e
+
 if test "$1" = "-help"
 then
 	echo "usage: $0 [<ugmodule>] [makeoptions]";
@@ -19,17 +31,36 @@ then
 	exit 1;
 fi
 
+# search for the correct Makefile in current dir
+get_makefile () {
+    PWD=`pwd`
+    DIRNAME=`basename $PWD`
+    # according to UG-policy the suffix should be the name of the directory
+    if test -e Makefile.$DIRNAME ; then
+	MAKEFILE="Makefile.$DIRNAME"
+    else
+	# first fallback: if "Makefile" exists, use that needed for
+	# $UGROOT/Makefile the applications and for upward
+	# compatibility
+	if test -e Makefile ; then
+	    MAKEFILE=Makefile
+	else
+	    # last fallback: use the single "Makefile*"
+	    if test `ls Makefile*|wc -l` -eq 1 ; then
+		MAKEFILE=`ls Makefile*`
+	    else
+		echo "$0: Makefile not found or not unique!"; 
+		exit 1
+	    fi
+	fi
+    fi
+}
+
 # if no parameter is specified make in current directory
 if test $# -eq 0 
 then
-	if test `ls Makefile*|wc -l` -eq 1 
-	then
-		make -f `ls Makefile*`;
-		exit 0;
-	else
-		echo "$0: Makefile not found or not unique!"; 
-		exit 1;
-	fi
+    get_makefile
+    make -f $MAKEFILE
 fi
 
 if test $# -eq 2 
@@ -208,7 +239,7 @@ then
                 fi
 		;;
 	sc2d)
-                if test -d $UGROOT../sc/appl2d
+                if test -d $UGROOT/../sc/appl2d
                 then
                         cd $UGROOT/../sc/appl2d;
                 else
@@ -246,15 +277,9 @@ then
 	esac;
 
 	# call make with the right makefile
-	if test `ls Makefile*|wc -l` -eq 1 
-	then
-		shift;
-		make -f `ls Makefile*` $*;
-		exit $?;
-	else
-		echo "$0: Makefile not found or not unique in $PWD!"; 
-		exit 1;
-	fi
+	get_makefile
+	shift
+	make -f $MAKEFILE $*
 fi
 
 exit 0;
