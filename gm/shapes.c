@@ -72,6 +72,12 @@
 /*																			*/
 /****************************************************************************/
 
+/* local midpoints */
+static COORD_VECTOR_2D LMP_Triangle             = {0.3333333333333, 0.3333333333333};
+static COORD_VECTOR_2D LMP_Quadrilateral        = {0.5, 0.5};
+static COORD_VECTOR_3D LMP_Tetrahedron          = {0.25, 0.25, 0.25};
+
+
 /* data for CVS */
 static char rcsid[] = "$Header$";
 
@@ -154,6 +160,43 @@ DOUBLE GN (INT n, INT i, COORD *local)
     }
   default :
     return (-1.0);
+  }
+#endif
+}
+
+/****************************************************************************/
+/*D
+   LMP - local midpoint
+
+   SYNOPSIS:
+   COORD *LMidP (INT n);
+
+   PARAMETERS:
+   .  n - number of corners of the element
+
+   DESCRIPTION:
+   This function gives the local coordinates of the midpoint of an element
+
+   RETURN VALUE:
+   COORD *
+   .n          local
+   D*/
+/****************************************************************************/
+
+COORD *LMP (INT n)
+{
+#ifdef __TWODIM__
+  switch (n)
+  {
+  case 3 : return (LMP_Triangle);
+  case 4 : return (LMP_Quadrilateral);
+  }
+#endif
+
+#ifdef __THREEDIM__
+  switch (n)
+  {
+  case 4 : return (LMP_Tetrahedron);
   }
 #endif
 }
