@@ -17,6 +17,7 @@ ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lm -lc
 ARCH_PLIBS    = /usr/lib/libV3.a
+ARCH_FLIBS    = -lf
 
 ARCH_CFLAGS   = -Aa +w2 -D_HPUX_SOURCE -g -z # +O2 +Onolimit 
 ARCH_C++FLAGS = -y -Aa -g -z
