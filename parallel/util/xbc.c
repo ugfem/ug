@@ -33,7 +33,9 @@ void XBroadcast(int n, void *p, int s, ...)
   pp = p; ss = s;
   va_start(a, s);
 
-#ifdef __va_copy
+#if defined va_copy
+  va_copy(aa, a);
+#elif defined __va_copy
   __va_copy (aa, a);
 #else
   aa = a;
@@ -56,5 +58,5 @@ void XBroadcast(int n, void *p, int s, ...)
     memcpy(p, b, s); b += s;
   }
 
-  va_end(a);
+  va_end(a); va_end(aa);
 }
