@@ -64,8 +64,8 @@
 /*                                                                          */
 /****************************************************************************/
 
-#define CSTART()    clock_start=CURRENT_TIME;
-#define CSTOP(t,c)  t+=(CURRENT_TIME-clock_start);c++
+#define CSTART()    clock_start=CURRENT_TIME_LONG;
+#define CSTOP(t,c)  t+=(CURRENT_TIME_LONG-clock_start);c++
 
 /****************************************************************************/
 /*																			*/

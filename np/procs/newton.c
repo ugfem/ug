@@ -62,8 +62,8 @@
 #define MAX_LINE_SEARCH                 20
 #define LINE_SEARCH_REDUCTION   0.5
 
-#define CSTART()    clock_start=CURRENT_TIME;
-#define CSTOP(t,c)  t+=(CURRENT_TIME-clock_start);c++
+#define CSTART()    clock_start=CURRENT_TIME_LONG;
+#define CSTOP(t,c)  t+=(CURRENT_TIME_LONG-clock_start);c++
 
 /****************************************************************************/
 /*																			*/
