@@ -19,6 +19,7 @@ list_options_arch()
 	echo "             AIXGCC (set ARCH = AIXGCC)";
 	echo "             C90 (set ARCH = C90)";
 	echo "             CC (set ARCH = CC)";
+	echo "             CYGWIN (set ARCH = CYGWIN)";
 	echo "             DEC (set ARCH = DEC)";
 	echo "             SGI (set ARCH = DEC)";
 	echo "             SGI10 (set ARCH = SGI10)";
@@ -420,6 +421,9 @@ edit_ugconf()
 		;;
 	LINUXIA64)
 		sed 's/^ARCH.*$/ARCH = LINUXIA64/' $1 > $1.tmp
+		;;
+	CYGWIN)
+	        sed 's/^ARCH.*$/ARCH = CYGWIN/' $1 > $1.tmp
 		;;
 	POWERGC)
 		sed 's/^ARCH.*$/ARCH = POWERGC/' $1 > $1.tmp

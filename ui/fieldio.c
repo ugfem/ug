@@ -29,7 +29,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#ifndef __MWCW__
+#if !defined __MWCW__ && !defined __CYGWIN__
 #include <rpc/rpc.h>
 #endif
 
@@ -57,7 +57,7 @@
 /*																			*/
 /****************************************************************************/
 
-#ifdef __MWCW__
+#if defined __MWCW__ || defined __CYGWIN__
 #define ASCII  /* only ASCII */
 #else
 #undef ASCII   /* use ACSII or XDR */
