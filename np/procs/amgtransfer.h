@@ -75,8 +75,7 @@ typedef struct {
 typedef INT (*MarkConnectionsProcPtr)(GRID *, MATDATA_DESC *, DOUBLE);
 typedef INT (*CoarsenProcPtr)(GRID *);
 typedef INT (*SetupIRMatProcPtr)(GRID *, MATDATA_DESC *, MATDATA_DESC *);
-typedef INT (*SetupCGMatProcPtr)(GRID *, MATDATA_DESC *,
-                                 MATDATA_DESC *, INT);
+typedef INT (*SetupCGMatProcPtr)(GRID *, MATDATA_DESC *, MATDATA_DESC *, INT);
 
 typedef struct
 {
@@ -105,6 +104,8 @@ typedef struct
   DOUBLE vRedLimit;                          /* stop if vectReduction<vRedLimit */
   DOUBLE mRedLimit;                          /* stop if matReduction<mRedLimit  */
   INT levelLimit;                            /* stop if -level>levelLimit       */
+  INT aggLimit;                              /* agglomerate to one processor    */
+  /* if level < aggLimit.            */
   INT symmetric;                             /* symmetric stiffness matrix      */
 
   INT explicitFlag;                          /* clear only by npexecute         */
