@@ -50,6 +50,8 @@
 #include "devices.h"
 
 #include "compiler.h"
+#include "defaults.h"
+#include "fileopen.h"
 #include "switch.h"
 #include "gm.h"
 #include "GenerateRules.h"
@@ -2362,6 +2364,7 @@ INT InitRefine3d (void)
   int nRules, nPatterns, err, i, P2R;
   FILE *stream;
   FULLREFRULE *newFRR;
+  char buffer[256];
 
   /************************************************************************/
   /*																		*/
@@ -2370,7 +2373,10 @@ INT InitRefine3d (void)
   /************************************************************************/
 
   /* open file */
-  stream = fopen("RefRules.data","r");
+  if (GetDefaultValue(DEFAULTSFILENAME,"refrulefile",buffer)==0)
+    stream = fileopen(buffer,"r");
+  else
+    stream = fileopen("RefRules.data","r");
   if (stream==NULL)
   {
     UserWrite("ERROR: could not open file 'RefRules.data'\n");
