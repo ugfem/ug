@@ -34,6 +34,7 @@
 
 #include "general.h"
 #include "gm.h"
+#include "pcr.h"
 #include "np.h"
 
 #include "transfer.h"
@@ -63,6 +64,12 @@ typedef struct
   TransGridProcPtr intcor;
   InterpolateSolutionProcPtr intnew;
 
+  VECDATA_DESC *t;
+  INT display;                                 /* display modus                 */
+  INT level;                                   /* level optimization            */
+  INT meanvalue;                               /* in parallel for nonconforming */
+  /* interpolation                 */
+
 } NP_STANDARD_TRANSFER;
 
 /****************************************************************************/
@@ -84,6 +91,37 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /* forward declarations of functions used before they are defined			*/
 /*																			*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*D
+   NP_ITER - type definition for iterations
+
+   DESCRIPTION:
+   This numproc type is used for the description of linear iterations.
+   It can be called by the given interface from a linear solver.
+   Initializing the data is optional; it can be done with
+
+   'INT NPIterInit (NP_ITER *theNP, INT argc , char **argv);'
+
+   This routine returns 'EXECUTABLE' if the initizialization is complete
+   and  'ACTIVE' else.
+   The data they can be displayed and the num proc can be executed by
+
+   'INT NPIterDisplay (NP_ITER *theNP);'
+   'INT NPIterExecute (NP_BASE *theNP, INT argc , char **argv);'
+
+   .vb
+
+
+   ..... fill in data structure here when the realizition is finished
+
+
+   .ve
+
+   SEE ALSO:
+   num_proc
+   D*/
 /****************************************************************************/
 
 INT NPTransferInit (NP_TRANSFER *np, INT argc , char **argv)
@@ -259,6 +297,51 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
   return(0);
 }
 
+/****************************************************************************/
+/*D
+   ilu - numproc for point block beta-modified ilu smoother
+
+   DESCRIPTION:
+   This numproc executes a point block ilu smoother, using the blas routines
+   'l_ilubthdecomp' and 'l_luiter'. It can be used in 'lmgc'.
+
+   .vb
+   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
+       $n <it> $damp <sc double list> $beta <sc double list>
+   .ve
+
+   .  $c~<sol> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $n~<it> - number of iterations
+   .  $damp~<sc~double~list> - damping factors for each component
+   .  $beta~<sc~double~list> - parameter for modification of the diagonal
+
+   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
+
+   'npexecute <name> [$i] [$s] [$p]'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+
+   EXAMPLE:
+   .vb
+   npcreate sm $t ilu;
+    npinit $n 1 $damp 1.0 $beta 0.0;
+   npcreate base $t ls;
+    npinit $m 10 $i ilu $d no $red 1e-4;
+   npcreate mgc $t lmgc;
+    npinit $g 1 $S sm sm base;
+   npcreate solver $t ls;
+    npinit $x x $b b $A MAT $m 20 $i mgc $d full $red 1e-4;
+
+   npexecute solver $i $d $r $s $p;
+   .ve
+   D*/
+/****************************************************************************/
+
 static INT TransferInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_STANDARD_TRANSFER *np;
@@ -274,6 +357,9 @@ static INT TransferInit (NP_BASE *theNP, INT argc , char **argv)
     np->intcor = InterpolateCorrectionByMatrix;
     np->intnew = InterpolateNewVectorsByMatrix;
   }
+  np->meanvalue = ReadArgvOption("m",argc,argv);
+  np->level = ReadArgvOption("L",argc,argv);
+  np->display = ReadArgvDisplay(argc,argv);
 
   return (TransferInitSymbols(&np->transfer,argc,argv));
 }
@@ -299,6 +385,16 @@ static INT TransferDisplay (NP_BASE *theNP)
   if (np->intnew == InterpolateNewVectorsByMatrix)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"InterpolateNew","StandardRestrict");
 
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"meanvalue",(int)np->meanvalue);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"level",(int)np->level);
+
+  if (np->display == PCR_NO_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
+  else if (np->display == PCR_RED_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
+  else if (np->display == PCR_FULL_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
+
   return (0);
 }
 
@@ -319,6 +415,14 @@ static INT RestrictDefect (NP_TRANSFER *theNP, INT level,
   np = (NP_STANDARD_TRANSFER *) theNP;
   result[0] = (*np->res)(GRID_ON_LEVEL(theNP->base.mg,level),from,to,damp);
 
+    #ifdef ModelP
+  if (l_ghostvector_collect(GRID_ON_LEVEL(theNP->base.mg,level-1),to)
+      != NUM_OK) {
+    result[0] = __LINE__;
+    return (1);
+  }
+        #endif
+
   return(result[0]);
 }
 
@@ -331,6 +435,14 @@ static INT InterpolateCorrection (NP_TRANSFER *theNP, INT level,
 
   np = (NP_STANDARD_TRANSFER *) theNP;
   result[0] = (*np->intcor)(GRID_ON_LEVEL(theNP->base.mg,level),from,to,damp);
+    #ifdef ModelP
+  if (np->meanvalue)
+    if (l_vector_meanvalue(GRID_ON_LEVEL(theNP->base.mg,level),to)
+        != NUM_OK) {
+      result[0] = __LINE__;
+      return (1);
+    }
+        #endif
 
   return(result[0]);
 }
@@ -346,8 +458,85 @@ static INT InterpolateNewVectors (NP_TRANSFER *theNP, INT level,
   return(result[0]);
 }
 
+static INT ProjectSolution (NP_TRANSFER *theNP, INT level,
+                            VECDATA_DESC *x, INT *result)
+{
+  result[0] = StandardProject(GRID_ON_LEVEL(theNP->base.mg,level-1),x,x);
+
+  return(result[0]);
+}
+
+static INT AdaptCorrection (NP_TRANSFER *theNP, INT level,
+                            VECDATA_DESC *c, VECDATA_DESC *b,
+                            MATDATA_DESC *A, INT *result)
+{
+  NP_STANDARD_TRANSFER *np;
+  GRID *theGrid;
+  VEC_SCALAR scal;
+  DOUBLE a0,a1;
+  INT j,ncomp;
+
+  np = (NP_STANDARD_TRANSFER *) theNP;
+  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  if (np->level) {
+    if (AllocVDFromVD(theNP->base.mg,level,level,c,&np->t)) {
+      result[0] = __LINE__;
+      return(1);
+    }
+    ncomp = VD_NCOMP(c);
+    if (l_dset(theGrid,np->t,EVERY_CLASS,0.0) != NUM_OK) {
+      result[0] = __LINE__;
+      return(1);
+    }
+    if (l_dmatmul(theGrid,np->t,NEWDEF_CLASS,A,c,ACTIVE_CLASS) != NUM_OK) {
+      result[0] = __LINE__;
+      return(1);
+    }
+        #ifdef ModelP
+    if (l_vector_collect(theGrid,np->t) != NUM_OK) {
+      result[0] = __LINE__;
+      return (1);
+    }
+            #endif
+    if (l_ddot (theGrid,np->t,NEWDEF_CLASS,b,scal) != NUM_OK) {
+      result[0] = __LINE__;
+      return(1);
+    }
+    a0 = 0.0;
+    for (j=0; j<ncomp; j++)
+      a0 += scal[j];
+    if (l_ddot (theGrid,np->t,NEWDEF_CLASS,np->t,scal) != NUM_OK) {
+      result[0] = __LINE__;
+      return(1);
+    }
+    a1 = 0.0;
+    for (j=0; j<ncomp; j++)
+      a1 += scal[j];
+    if (a1 <= 0.0) {
+      result[0] = __LINE__;
+      return(1);
+    }
+    if (np->display == PCR_FULL_DISPLAY)
+      UserWriteF("       min  %7.4lf\n",1+a0/a1);
+    for (j=0; j<ncomp; j++)
+      scal[j] = 1 + a0 / a1;
+    if (l_dscale (theGrid,c,ACTIVE_CLASS,scal)) {
+      result[0] = __LINE__;
+      return(1);
+    }
+    for (j=0; j<ncomp; j++)
+      scal[j] = - a0 / a1;
+    if (l_daxpy (theGrid,b,NEWDEF_CLASS,scal,np->t)) {
+      result[0] = __LINE__;
+      return(1);
+    }
+  }
+
+  return(0);
+}
+
 static INT TransferPostProcess (NP_TRANSFER *theNP, INT level,
-                                VECDATA_DESC *from, VECDATA_DESC *to,
+                                VECDATA_DESC *x, VECDATA_DESC *b,
                                 MATDATA_DESC *A, INT *result)
 {
   return(0);
@@ -366,7 +555,8 @@ static INT TransferConstruct (NP_BASE *theNP)
   np->RestrictDefect = RestrictDefect;
   np->InterpolateCorrection = InterpolateCorrection;
   np->InterpolateNewVectors = InterpolateNewVectors;
-  np->ProjectSolution = NULL;
+  np->ProjectSolution = ProjectSolution;
+  np->AdaptCorrection = AdaptCorrection;
   np->PostProcess = TransferPostProcess;
 
   return(0);
