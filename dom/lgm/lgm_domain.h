@@ -28,6 +28,26 @@
 #ifndef __LGM_DOM__
 #define __LGM_DOM__
 
+#ifdef Grape
+
+#include "grape.h"
+
+#define SHORT  short
+#define INT    int
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+
+/*dummy types */
+#define ENVDIR char
+#define ENVVAR char
+#define ConfigProcPtr char
+
+#define LGM_DIM 3
+
+#else
+
 #ifndef __UGENV__
 #include "ugenv.h"
 #endif
@@ -38,6 +58,8 @@
 
 #ifndef __DOMAIN__
 #include "domain.h"
+#endif
+
 #endif
 
 /****************************************************************************/
@@ -363,6 +385,12 @@ struct lgm_line {
   INT nPoint;                                                   /* nb. of points on the line	*/
   INT begin, end;                                       /* global id's starting from 0	*/
   struct linedisc *ldisc;                       /* discretization of the line	*/
+
+  /* specials for grape */
+        #ifdef Grape
+  INT active;
+        #endif
+
   struct lgm_point point[1];                    /* points of line stored here	*/
 };
 
@@ -395,6 +423,11 @@ struct lgm_surface {
   struct lgm_point *point;                              /* ptr to first point					*/
   struct lgm_triangle *triangle;                /* ptr to first triangle				*/
 
+  /* specials for grape */
+        #ifdef Grape
+  INT active;
+        #endif
+
   /* references */
   struct lgm_line *line[1];                             /* ptr to lines							*/
 };
@@ -415,6 +448,12 @@ struct lgm_subdom {
   /* problem */
   char ProblemName[128];                                /* name of problem						*/
   struct lgm_problem *theProblem;               /* ptr to problem						*/
+
+  /* specials for grape */
+        #ifdef Grape
+  INT active;
+  SUPROP_DEV *suprop;
+        #endif
 
   /* references */
   struct lgm_surface *surface[1];               /* begin of surface reference field		*/
@@ -488,6 +527,13 @@ typedef struct lgm_bndp_surf LGM_BNDP_PSURFACE;
 
 #endif
 
+#ifdef Grape
+typedef struct Domain3d
+{
+  INSTANCE_STRUCT;\
+  LGM_DOMAIN *domain;
+} DOMAIN3D;
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
@@ -501,7 +547,9 @@ typedef struct lgm_bndp_surf LGM_BNDP_PSURFACE;
 /*																			*/
 /****************************************************************************/
 
+#ifndef Grape
 LGM_PROBLEM     *CreateProblem                  (char *name, ConfigProcPtr config, DomainSizeConfig domconfig, BndCondProcPtr BndCond, int numOfCoefficients, CoeffProcPtr coeffs[], int numOfUserFct, UserProcPtr userfct[]);
+#endif
 INT                     SetBoundaryCondition    (LGM_DOMAIN *theDomain, BndCondProcPtr BndCond);
 INT                     SetDomainSize                   (LGM_DOMAIN *theDomain);
 
