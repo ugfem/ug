@@ -950,7 +950,7 @@ int Read_pinfo (int ge, MGIO_PARINFO *pinfo)
 
 int Write_pinfo (int ge, MGIO_PARINFO *pinfo)
 {
-  int i,m,s,np;
+  int i,s,np;
 
   if (Bio_Write_string("PINFO_BEGIN")) return (1);
 

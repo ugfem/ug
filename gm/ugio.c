@@ -403,7 +403,7 @@ static INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
   return(GM_OK);
 }
 
-INT OrphanCons(MULTIGRID *theMG)
+static INT OrphanCons(MULTIGRID *theMG)
 {
   INT i,j,error,orphan;
   GRID            *theGrid;
@@ -562,7 +562,7 @@ static INT Write_RefRules (MULTIGRID *theMG, INT *RefRuleOffset)
   return (0);
 }
 
-INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **SonList, INT *nmax)
+static INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **SonList, INT *nmax)
 {
   INT i,j,k,l,nfound,found;
   REFRULE *theRule;
@@ -618,7 +618,6 @@ INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **SonList, 
 static INT SetRefinement (ELEMENT *theElement, NODE **NodeContext, ELEMENT *SonList[MAX_SONS], INT nmax, MGIO_REFINEMENT *refinement, INT *RefRuleOffset)
 {
   REFRULE *theRule;
-  NODE *theNode;
   INT i,j,n,sonRefined,sonex,nex;
 
   if (nmax==0) return (0);
@@ -896,19 +895,21 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   MGIO_GE_GENERAL ge_general;
   MGIO_GE_ELEMENT ge_element[TAGS];
   MGIO_CG_GENERAL cg_general;
-  MGIO_CG_POINT *cg_point;
   MGIO_CG_ELEMENT *cg_element,*cge;
   MGIO_REFINEMENT *refinement;
   MGIO_BD_GENERAL bd_general;
   MGIO_PARINFO cg_pinfo;
-  INT i,j,k,niv,nbv,nie,nbe,n,nhe,hr_max,mode,level,n_inc,n_max,id,foid,non,tl,Err,saved;
+  INT i,j,k,niv,nbv,nie,nbe,n,nhe,hr_max,mode,level,id,foid,non,tl,saved;
   INT RefRuleOffset[TAGS];
-  int *vidlist,ftype,error,*cg_ident;
+  int *vidlist;
   char *p,*f,*s,*l;
   BNDP **BndPList;
   char filename[NAMESIZE];
   char buf[64],itype[10];
   int lastnumber;
+#ifdef ModelP
+  int ftype;
+#endif
 
   /* check */
   if (theMG==NULL) return (1);
@@ -1252,14 +1253,16 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT 
 
 static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pinfo)
 {
-  INT i,j,k,s,prio,where,oldwhere,old;
+  INT i,j,s,prio,where,oldwhere,old;
   INT evec,nvec,edvec,svec;
   GRID            *vgrid;
   ELEMENT         *theFather,*After,*Next,*Succe;
   NODE            *theNode;
   VERTEX          *theVertex;
-  EDGE            *theEdge;
   VECTOR          *theVector;
+#if (MGIO_DIM==3)
+  EDGE            *theEdge;
+#endif
 
 
   evec = VEC_DEF_IN_OBJ_OF_MG(MYMG(theGrid),ELEMVEC);
@@ -1509,7 +1512,6 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   ELEMENT *theSonList[MAX_SONS];
   NODE *NodeList[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
   NODE *SonNodeList[MAX_CORNERS_OF_ELEM];
-  NODE *theNode;
   GRID *upGrid;
   EDGE *theEdge;
   MGIO_RR_RULE *theRule;
@@ -1766,9 +1768,8 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
 {
   MULTIGRID *theMG;
   GRID *theGrid;
-  ELEMENT *theElement,*theNeighbor,*ENext;
+  ELEMENT *theElement,*ENext;
   NODE *theNode;
-  EDGE *theEdge;
   HEAP *theHeap;
   MGIO_MG_GENERAL mg_general;
   MGIO_GE_GENERAL ge_general;
@@ -1786,13 +1787,17 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   BVP_DESC theBVPDesc;
   MESH theMesh;
   char FormatName[NAMESIZE], BndValName[NAMESIZE], MGName[NAMESIZE], filename[NAMESIZE];
-  INT i,j,k,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],
+  INT i,j,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],
   **Element_corner_ids_uniq_subdom,*Element_corner_ids,max,**Element_nb_uniq_subdom,
   *Element_nb_ids,id,level;
-  INT parfile,lastnumber;
+  INT lastnumber;
   char buf[64],itype[10];
-  char *p,*f,*s,*l;
-  int *vidlist,fileprocs;
+  char *f,*s,*l;
+  int *vidlist;
+#ifdef __THREEDIM__
+  ELEMENT *theNeighbor;
+  INT k;
+#endif
 
   if (autosave)
   {

@@ -786,9 +786,11 @@ static INT InitClosureFIFO (void)
 
 static INT UpdateFIFOLists (GRID *theGrid, ELEMENT *theElement, INT thePattern, INT NewPattern)
 {
+	#ifdef __TWODIM__
 	INT 	j;
-	ELEMENT *NbElement;
 	EDGE	*theEdge;
+	ELEMENT *NbElement;
+	#endif
 
 	if (MARKCLASS(theElement)==RED_CLASS && thePattern!=NewPattern)
 	{
@@ -1290,9 +1292,8 @@ static INT CorrectElementSidePattern (ELEMENT *theElement, ELEMENT *theNeighbor,
 
 static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 {
-	INT		i,j;
+	INT		i;
 	ELEMENT *theElement,*theNeighbor;
-	EDGE	*theEdge;
 
 	/* set pattern (edge and side) on the elements */
 	for (theElement=firstElement; theElement!=NULL; 
@@ -1334,10 +1335,9 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 
 static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 {
-	INT		i,j,Mark,NewPattern;
-	INT		thePattern,theEdgePattern,theSidePattern;
+	INT		Mark,NewPattern;
+	INT		thePattern,theEdgePattern,theSidePattern=0;
 	ELEMENT	*theElement;
-	EDGE	*theEdge;
 
 	/* set refinement rules from edge- and sidepattern */
 	(*cnt) = 0;
@@ -1442,7 +1442,6 @@ static int Gather_AddEdgePattern (DDD_OBJ obj, void *data)
 {
 	INT 	i,pat;
 	ELEMENT *theElement = (ELEMENT *)obj;
-	EDGE	*theEdge;
 
 	pat = 0;
 	GetEdgeInfo(theElement,&pat,ADDPATTERN);
@@ -1521,9 +1520,12 @@ static INT SetAddPatterns (GRID *theGrid)
 
 static INT BuildGreenClosure (GRID *theGrid)
 {
-	INT		i,j;
+	INT		i;
 	ELEMENT	*theElement;
 	EDGE	*theEdge;
+	#ifdef __THREEDIM__
+	INT	j;
+	#endif
 
 	/* build a green covering around the red elements */
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
@@ -1917,7 +1919,7 @@ INT GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 
 INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 {
-	int SonID,tag;
+	int SonID;
 	ELEMENT *son;
 	
 	if (theElement==NULL) RETURN(GM_ERROR);
@@ -1966,11 +1968,13 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 /*																			*/
 /****************************************************************************/
 
-INT RestrictElementMark(ELEMENT *theElement)
+static INT RestrictElementMark(ELEMENT *theElement)
 {
 	#ifdef __THREEDIM__
+	#ifdef TET_RULESET
 	EDGE *theEdge;
 	int j,Rule,Pattern;
+	#endif
 	#endif
 	
 	if (MARKCLASS(theElement)==RED_CLASS)
@@ -2390,9 +2394,8 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 	#ifdef __THREEDIM__
 	ELEMENT *theNeighbor;			/* neighbor and a son of current elem.	*/
 	NODE **SideNodes;				/* nodes on refined sides				*/
-	NODE *theNode0, *theNode1;
 	EDGE *fatherEdge;
-	INT l,j;
+	INT j;
 	#endif
 
 	/* reset context to NULL */
@@ -2749,7 +2752,6 @@ typedef struct compare_record COMPARE_RECORD;
 INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, 
 					 NODE *SideNodes[MAX_SIDE_NODES], INT ioflag)
 {
-	EDGE *theEdge;
 	INT i,ncorners,nedges;
 
 	ncorners = CORNERS_OF_SIDE(theElement,side);
@@ -3373,7 +3375,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 	#endif
 
 	IFDEBUG(gm,4)
-	INT i,j;
+	INT i;
 	if (!ioflag)
 	{
 		UserWriteF("After qsort\n");
@@ -3494,7 +3496,6 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theContext)
 {
 	INT		i,boundaryelement;
-	NODE	*ElementNodes[MAX_CORNERS_OF_ELEM];
 	ELEMENT *theSon;
 
 	/* check for boundary */
@@ -4808,7 +4809,6 @@ static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContex
 
 static int RefineGrid (GRID *theGrid)
 {
-	int i,prio;
 	ELEMENT *theElement;
 	ELEMENT *NextElement;
 	ELEMENTCONTEXT theContext;

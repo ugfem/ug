@@ -2748,15 +2748,18 @@ static int CorrectRule (REFRULE *theRule)
 #ifdef __THREEDIM__
 static INT InitRuleManager3D (void)
 {
-  int nRules, nPatterns, i, P2R;
-  FILE *stream;
   FULLREFRULE *newFRR;
+  int nRules;
+        #ifdef TET_RULESET
+  int nPatterns, i, P2R;
+  FILE *stream;
   REFRULE *Rules;
   char buffer[256];
+        #endif
 
   /************************************************************************/
   /*																		*/
-  /* read refinement rules from for tetrahedrons file 'RefRules.data'		*/
+  /* read refinement rules for tetrahedrons from file 'RefRules.data'		*/
   /*																		*/
   /************************************************************************/
 #ifdef TET_RULESET

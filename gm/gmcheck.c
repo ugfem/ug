@@ -571,8 +571,10 @@ static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT
 	ELEMENT *NbElement,*theFather;
 	ELEMENT *SonList[MAX_SONS];
 	VERTEX	*theVertex,*Vertices[MAX_CORNERS_OF_ELEM];
+PAR(
 	DOUBLE  *x[MAX_CORNERS_OF_ELEM];
 	DOUBLE_VECTOR center;
+)ENDPAR
 	
 	*SideError = 0;
 	*NodeError = 0;
@@ -1147,9 +1149,9 @@ static INT CheckGeometry (GRID *theGrid)
 	return(errors);
 }
 
-INT CheckElementList (GRID *theGrid)
+static INT CheckElementList (GRID *theGrid)
 {
-	ELEMENT *theElement,*Father;
+	ELEMENT *theElement;
 
 	if (LEVEL(theGrid) <= 0) return(0);
 
@@ -1188,7 +1190,7 @@ PAR(				&& EPRIO(theElement)==EPRIO(PREDE(theElement)) )ENDPAR )
 			}
 		}
     }
-
+	return (0);
 }
 
 INT CheckLists (GRID *theGrid)
