@@ -56,6 +56,7 @@
 #define ENVVAR char
 #define ConfigProcPtr char
 
+#warning LGM_DIM 3 for Grape is overwritten later anyway ?!
 #define LGM_DIM 3
 
 #else
@@ -73,6 +74,9 @@
 #endif
 
 #endif
+
+/* need dimension defines even */
+#include "dimension.h"
 
 /* OS_CHANGED */
 /* Set LGM_VERBOSE 1 to get a more verbose LGM module */
