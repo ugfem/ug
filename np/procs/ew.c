@@ -806,7 +806,6 @@ static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
 
   np = (NP_EW *) theNP;
 
-  np->assemble = 1;
   np->interpolate = 0;
   np->reset = 1;
   np->LS = (NP_LINEAR_SOLVER *)
@@ -840,6 +839,10 @@ static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
     np->Neumann = 0;
   if (np->Neumann)
     np->Orthogonalize = 1;
+  if (ReadArgvOption("na",argc,argv))
+    np->assemble = 0;
+  else
+    np->assemble = 1;
 
   return(NPEWSolverInit(&np->ew,argc,argv));
 }
