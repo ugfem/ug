@@ -127,6 +127,8 @@
 #define FFMAX_TRIES     50000000  /* max. number of tries til timeout in communication */
 
 #ifdef ModelP
+#define FF_CROSS_NR -101
+#define FF_LINES_NR -100
 
 #define FFCommBufferBV(bv)      ((FFCommBuffer*)BVUSERDATA(bv))
 #define FFVChannelIn(bv)    (FFCommBufferBV(bv)->vcin)
@@ -145,6 +147,23 @@
 #define FFCommSize(bv,ffcommobjt)       ((ffcommobjt)==FFCommVec ? FFCommVecSize(bv) : (ffcommobjt)==FFCommTridiagMat ? FFCommTridiagMatSize(bv) : -1)
 #define FFCommMaxSize(bv)                       FFCommTridiagMatSize(bv)
 
+#define FF_MAX_CROSS_PER_PE             4
+#define FF_CROSS_MAX_NEIGHBOURS 3
+#define FF_MAX_CROSS_MATS               (FF_MAX_CROSS_PER_PE*FF_CROSS_MAX_NEIGHBOURS)
+
+#define FFCROSSMAT(r,c)                         FFCrossMatMem[2*FFCrossBw*(r)+(c)]
+
+#define FFCrossVC(pe)                           (PEInfoArray[pe].vc)
+#define FFCrossRow(pe)                          (PEInfoArray[pe].row)
+#define FFCrossCol(pe)                          (PEInfoArray[pe].col)
+#define FFCrossFirstPos(pe)                     (PEInfoArray[pe].fpos)
+#define FFCrossOffsetPtr(pe)            (PEInfoArray[pe].offsets)
+#define FFCrossVecs(pe)                         (FFCrossOffsetPtr(pe)->numberofvectors)
+#define FFCrossNbs(pe)                          (FFCrossOffsetPtr(pe)->numberofneighbours)
+#define FFCrossVecSize(pe)                      (FFCrossOffsetPtr(pe)->sizeofvector)
+#define FFCrossMatSize(pe)                      (FFCrossOffsetPtr(pe)->sizeofmatrix)
+#define FFCrossVecPosOffset(pe,vnr)             (FFCrossOffsetPtr(pe)->v_rel_pos[vnr])
+#define FFCrossNbPosOffset(pe,vnr,nbnr) (FFCrossOffsetPtr(pe)->nb_rel_pos[vnr][nbnr])
 
 /****************************************************************************/
 /*																			*/
@@ -163,18 +182,47 @@ struct ffcommbuffer
 };
 
 typedef struct ffcommbuffer FFCommBuffer;
-
 typedef enum ffcommobject {FFCommNone,FFCommVec,FFCommTridiagMat} FFCommObjectType;
-
 typedef INT (*FFBufferFunc)(BLOCKVECTOR *bv, FFCommObjectType ffcommobjt);
 
-#endif
+struct ffcrossoffsets
+{
+  INT numberofvectors;          /* number of cross vectors in the pe */
+  INT numberofneighbours;       /* number of neighbours in the matrix graph of each cross point in the pe */
+  INT sizeofvector;                     /* buffer size to store all cross vectors */
+  INT sizeofmatrix;                     /* buffer size to store all cross point matrix */
+  INT v_rel_pos[FF_MAX_CROSS_PER_PE];           /* relative position of the cross vectors (in their lex. ordering) resp. the lex. first cross vector in this pe */
+  INT nb_rel_pos[FF_MAX_CROSS_PER_PE][FF_CROSS_MAX_NEIGHBOURS];         /* relative position of the neighbours of the cross vectors (in pred/succ ordering) resp. the according cross vector */
+};
+typedef struct ffcrossoffsets FFCrossOffsets;
+
+struct peinfo
+{
+  VChannelPtr vc;                               /* channel to the slave pe */
+  INT row;                                              /* row of this pe in the domain decomposition grid */
+  INT col;                                              /* column of this pe in the domain decomposition grid */
+  INT fpos;                                             /* global number of the lex. first cross point vector in this pe */
+  FFCrossOffsets *offsets;              /* pointer to the offsets of the further cross points within this pe */
+};
+typedef struct peinfo PEInfo;
 
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
 /*																			*/
 /****************************************************************************/
+
+extern PEInfo *PEInfoArray;             /* dyn. allocacted array for each slave pe */
+extern int FFFarmer;                    /* pe number of the master for cross system calculation */
+extern VChannelPtr FFFarmerVC;  /* for slave: channel to the farmer */
+extern DOUBLE *FFCrossVecMem;   /* mem for global cross point vector */
+extern INT FFCrossVecSize;              /* size of the FFCrossVecMem vector */
+extern DOUBLE *FFCrossMatMem;   /* mem for band matrix for cross point system */
+extern INT FFCrossMatSize;              /* size of the FFCrossMatMem matrix */
+extern INT FFCrossBw;                   /* bandwidth of the FFCrossMatMem matrix */
+extern DOUBLE FFFarmerBuffer[FF_MAX_CROSS_MATS];        /* buffer for communication with FFFarmer */
+extern INT FFCrossOffdiagMats;  /* number of offdiagonal matrix entries for cross system */
+#endif
 
 extern INT mute_level;
 
@@ -230,6 +278,12 @@ void FFFinishComm( BLOCKVECTOR *bv, FFBufferFunc b_func, FFCommObjectType ffcomm
 void FFMakeConsistent( BLOCKVECTOR *bv, FFCommObjectType ffcommobjt, INT comp );
 #define FFVectorConsistent(bv,v_comp)           (FFMakeConsistent(bv,FFCommVec,v_comp))
 #define FFTridiagMatConsistent(bv,m_comp)       (FFMakeConsistent(bv,FFCommTridiagMat,m_comp))
+
+void FFInitCrossComm( BLOCKVECTOR *bv );
+void FFFinishCrossComm( void );
+void FFGatherCrossMat( BLOCKVECTOR *bv, INT m_comp );
+void FFSolveCrossVec( BLOCKVECTOR *bv, INT v_comp );
+
 #endif
 
 

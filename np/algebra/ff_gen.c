@@ -74,17 +74,6 @@
 /*																			*/
 /****************************************************************************/
 
-/****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
-/****************************************************************************/
-
-/* data for CVS */
-static char RCS_ID("$Header$",UG_RCS_STRING);
-
-REP_ERR_FILE;
-
 /* mute level for FFs */
 INT mute_level  = 0;
 
@@ -124,6 +113,29 @@ INT aux5_COMP = DUMMY_COMP;
 /* auxiliary component; only for checking the results (if CHECK_CALCULATION is on) */
 INT aux6_COMP = DUMMY_COMP;
 
+#ifdef ModelP
+PEInfo *PEInfoArray;    /* dyn. allocacted array for each slave pe */
+int FFFarmer;                   /* pe number of the master for cross system calculation */
+VChannelPtr FFFarmerVC; /* for slave: channel to the farmer */
+DOUBLE *FFCrossVecMem;  /* mem for global cross point vector */
+INT FFCrossVecSize;             /* size of the FFCrossVecMem vector */
+DOUBLE *FFCrossMatMem;  /* mem for band matrix for cross point system */
+INT FFCrossMatSize;             /* size of the FFCrossMatMem matrix */
+INT FFCrossBw;                  /* bandwidth of the FFCrossMatMem matrix */
+DOUBLE FFFarmerBuffer[FF_MAX_CROSS_MATS];       /* buffer for communication with FFFarmer */
+INT FFCrossOffdiagMats; /* number of offdiagonal matrix entries for cross system */
+#endif
+
+/****************************************************************************/
+/*																			*/
+/* definition of variables global to this source file only (static!)		*/
+/*																			*/
+/****************************************************************************/
+
+/* data for CVS */
+static char RCS_ID("$Header$",UG_RCS_STRING);
+
+REP_ERR_FILE;
 
 /****************************************************************************/
 /*																			*/
@@ -1447,7 +1459,7 @@ INT FFMultWithMInv(
     FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, b_comp, NULL, NULL );
 
     /* in the case of ModelP: make the new solution on the interface consistent */
-    if( BVNUMBER(bv_i) == -100 )             /* lines blockvector */
+    if( BVNUMBER(bv_i) == FF_LINES_NR )             /* lines blockvector */
 #ifdef FFCOMM
       FFVectorConsistent( bv_i, aux_comp );
 #else
@@ -1484,24 +1496,32 @@ INT FFMultWithMInv(
     gs_solveBS ( bv_i, bvd_i, bvdf, 5e-14, 1000, L_comp, v_comp, auxB_comp, auxA_comp, TRUE, TRUE );
   }
 #else
-        #ifdef ModelP
-  FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, b_comp, NULL, NULL );
-
+  #ifdef ModelP
   /* lines or cross blockvector */
-  if( (BVNUMBER(bv_i) == -100) || (BVNUMBER(bv_i) == -101) )
+  if( BVNUMBER(bv_i) == FF_LINES_NR )
   {
-#ifdef FFCOMM
-    if ( BVNUMBER(bv_i) == -100 )
-      FFVectorConsistent( bv_i, v_comp );
-    else
+    FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, b_comp, NULL, NULL );
+      #ifdef FFCOMM
+    FFVectorConsistent( bv_i, v_comp );
+      #else
     if( l_vector_consistentBS( grid, bvd_i, bvdf, v_comp )!=NUM_OK ) REP_ERR_RETURN (1);
-#else
-    if( l_vector_consistentBS( grid, bvd_i, bvdf, v_comp )!=NUM_OK ) REP_ERR_RETURN (1);
-#endif
+      #endif
   }
-#else
+  else if( BVNUMBER(bv_i) == FF_CROSS_NR )
+  {
+      #ifdef FFCOMM
+    FFSolveCrossVec( bv_i, v_comp );
+      #else
+    FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, b_comp, NULL, NULL );
+    if( l_vector_consistentBS( grid, bvd_i, bvdf, v_comp )!=NUM_OK ) REP_ERR_RETURN (1);
+      #endif
+  }
+  else
+    FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, b_comp, NULL, NULL );
+
+  #else
   FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, b_comp );
-        #endif
+  #endif
 #endif
 
   /* solve upper triangular matrix; the last block is already calculated */
@@ -1544,7 +1564,7 @@ INT FFMultWithMInv(
     FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, v_comp, NULL, NULL );
 
     /* in the case of ModelP: make the new solution on the interface consistent */
-    if( BVNUMBER(bv_i) == -100 )             /* lines blockvector */
+    if( BVNUMBER(bv_i) == FF_LINES_NR )             /* lines blockvector */
 #ifdef FFCOMM
       FFVectorConsistent( bv_i, v_comp );
 #else

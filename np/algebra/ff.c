@@ -418,7 +418,7 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
 #ifdef ModelP
   FFMultWithMInv( bv_source, bvd_source, bvdf, aux1_comp, aux1_comp, NULL, NULL );
   FFMultWithMInv( bv_source, bvd_source, bvdf, aux2_comp, aux2_comp, NULL, NULL );
-  if ( BVNUMBER(bv_source) == -100 )       /* bv_source == Lines */
+  if ( BVNUMBER(bv_source) == FF_LINES_NR )       /* bv_source == Lines */
   {
 #ifdef FFCOMM
     FFVectorConsistent( (BLOCKVECTOR*)bv_source, aux1_comp );
@@ -967,7 +967,7 @@ INT FFDecomp( DOUBLE wavenr,
 
     /* calculate Theta_(i,i);
        result on digonal blocks of FF_comp */
-    if ( BVNUMBER(bv_i)== -101 )
+    if ( BVNUMBER(bv_i)== FF_CROSS_NR )
     {                   /* cross point sysytem aus ptff.c */
       FFConstructTestvector_loc( bv_i, tv1_comp, 1.0, 1.0 );
       FFConstructTestvector_loc( bv_i, tv2_comp, 2.0, 2.0 );
@@ -981,7 +981,7 @@ INT FFDecomp( DOUBLE wavenr,
     }
 
 #if (defined FF_ModelP) || (defined FF_PARALLEL_SIMULATION)
-    if ( BVNUMBER(bv_i) == -100 )               /* lines */
+    if ( BVNUMBER(bv_i) == FF_LINES_NR )                /* lines */
     {
       /* construct FF filtered approximation of the leaf blocks of the schur complement */
       /* the determination of the "lines" block is only a quick hack!!! */
@@ -1005,11 +1005,12 @@ INT FFDecomp( DOUBLE wavenr,
       FFCalculateThetaAndUpdate( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
 
                         #ifdef ModelP
-      if ( BVNUMBER(bv_i) == -101 )                     /* crosspoints */
+      if ( BVNUMBER(bv_i) == FF_CROSS_NR )                      /* crosspoints */
       {
         /* make Schur complement matrix for cross points consistent */
 #ifdef FFCOMM
-        FFTridiagMatConsistent( bv_i, FF_comp );
+        /*FFTridiagMatConsistent( bv_i, FF_comp );*/
+        FFGatherCrossMat( bv_i, FF_comp );
 #else
         ASSERT(grid!=NULL);
         if( l_matrix_consistent( grid, DECOMP_MATDATA_DESC_ON_LEVEL(bv), MAT_CONS )!=NUM_OK ) REP_ERR_RETURN(NUM_ERROR);
