@@ -1052,6 +1052,7 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 
       thePatch = ES_PATCH(theSide);
       VS_PATCH(vs) = thePatch;
+
       if (Patch_local2global(thePatch,lambda,bnd_global))
         return (NULL);
 
@@ -1630,11 +1631,12 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
 {
   ELEMENTSIDE *oldSide,*newSide;
   VSEGMENT *vs;
+  PATCH *thePatch;
   COORD *lambda;
   INT i,j;
 
   IFDEBUG(gm,0)
-  assert (OBJT(theElement) != BEOBJ);
+  assert (OBJT(theElement) == BEOBJ);
   assert (SIDE(theElement,side) != NULL);
   ENDDEBUG
 
@@ -1643,16 +1645,16 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
   if (newSide == NULL)
     RETURN(GM_ERROR);
   SET_SIDE(theSon,son_side,newSide);
-  ES_PATCH(newSide) = ES_PATCH(oldSide);
+  thePatch = ES_PATCH(oldSide);
+  ES_PATCH(newSide) = thePatch;
+
   for (i=0; i<CORNERS_OF_SIDE(theSon,son_side); i++)
   {
-    lambda = PARAMPTR(newSide,i);
-    for( vs=VSEG(MYVERTEX(CORNER(theSon,i))); vs!=NULL; vs = NEXTSEG(vs) )
-    {
-      if (VS_PATCH(vs) == ES_PATCH(oldSide))
+    for(vs=VSEG(MYVERTEX(CORNER(theSon,CORNER_OF_SIDE(theSon,son_side,i)))); vs!=NULL; vs = NEXTSEG(vs) )
+      if (VS_PATCH(vs) == thePatch)
         break;
-    }
     assert(vs!=NULL);
+    lambda = PARAMPTR(newSide,i);
     for (j=0; j<DIM-1; j++)
       lambda[j] =  LAMBDA(vs,j);
   }
