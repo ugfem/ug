@@ -38,6 +38,7 @@
 #include "parallel.h"
 #include "general.h"
 #include "gm.h"
+#include "refine.h"
 #include "ugm.h"
 #include "evm.h"
 #include "shapes.h"
@@ -130,6 +131,9 @@ REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
+
+/* count for errors to report from communication scatter functions */
+static INT check_distributed_objects_errors = 0;
 
 
 /****************************************************************************/
@@ -1142,6 +1146,103 @@ INT CheckElementPrio (ELEMENT *theElement)
 
 /****************************************************************************/
 /*
+   CheckDistributedObjects - Check the uniqueness of global ids 
+
+   SYNOPSIS:
+   INT CheckDistributedObjects (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid
+
+   DESCRIPTION:
+   Compare the global ids of distributed objects which are identified.
+   This is done for nodes and edges (3D).
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
+static int Gather_ObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+	INT		i;
+	ELEMENT *theElement = (ELEMENT *)obj;
+
+	/* copy node gids into buffer */
+	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+	{
+		((unsigned int *)data)[i] = GID(CORNER(theElement,i));
+	}
+
+	#ifdef __THREEDIM__
+	/* copy edge gids into buffer */
+	for (i=CORNERS_OF_ELEM(theElement); i<EDGES_OF_ELEM(theElement); i++)
+	{
+		EDGE *theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
+								CORNER_OF_EDGE_PTR(theElement,i,1));
+		((unsigned int *)data)[i] = GID(theEdge);
+	}
+	#endif
+}
+
+static int Scatter_ObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+	INT		i;
+	ELEMENT *theElement = (ELEMENT *)obj;
+	NODE	*theNode;
+	EDGE	*theEdge;
+
+	/* compare node gids with buffer gids */
+	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+	{
+		theNode = CORNER(theElement,i);
+		if (((unsigned int *)data)[i] != GID(theNode))
+		{
+			UserWriteF(PFMT "ELEM=" EID_FMTX " #ERROR#: NODE=" ID_FMTX " gids don't match "
+				"local=%08x remote=%08x remoteproc/prio=%d/%d\n",me,EID_PRTX(theElement),ID_PRTX(theNode),
+				GID(theNode),((unsigned int *)data)[i],proc,prio);
+			check_distributed_objects_errors++;
+		}
+	}
+
+	#ifdef __THREEDIM__
+	/* compare edge gids with buffer gids */
+	for (i=CORNERS_OF_ELEM(theElement); i<EDGES_OF_ELEM(theElement); i++)
+	{
+		theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
+						  CORNER_OF_EDGE_PTR(theElement,i,1));
+		if (((unsigned int *)data)[i] = GID(theEdge))
+		{
+			UserWriteF(PFMT "ELEM=" EID_FMTX " #ERROR#: EDGE=" ID_FMTX " gids don't match "
+				"local=%08x remote=%08x remoteproc/prio=%d/%d\n",me,EID_PRTX(theElement),ID_PRTX(theEdge),
+				GID(theEdge),((unsigned int *)data)[i],proc,prio);
+			check_distributed_objects_errors++;
+		}
+	}
+	#endif
+}
+
+INT CheckDistributedObjects(GRID *theGrid)
+{
+	INT nerrors;
+	#ifdef __TWODIM__
+	INT size = 4;	/* compare the 3/4 node ids */
+	#endif
+	#ifdef __THREEDIM__
+	INT size = 20	/* compare 8 nodes + 12 edges */
+	#endif
+
+	check_distributed_objects_errors = 0;
+
+	DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_BACKWARD,size*sizeof(unsigned int),
+				Gather_ObjectGids, Scatter_ObjectGids);
+
+	nerrors = check_distributed_objects_errors;
+	return(nerrors);
+}
+
+/****************************************************************************/
+/*
    CheckInterfaces - 
 
    SYNOPSIS:
@@ -1214,6 +1315,9 @@ INT CheckInterfaces(GRID *theGrid)
 	{
 		nerrors += CheckElementPrio(theElement);
 	}
+	
+	/* check uniqueness of global ids for distributed nodes and edges */
+	nerrors += CheckDistributedObjects(theGrid);
 
 	/* check ddd interface consistency */
 	DDD_SetOption(OPT_QUIET_CONSCHECK, OPT_ON);
