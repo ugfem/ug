@@ -369,6 +369,7 @@ static INT SetRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, INT 
   if (REFINE(theElement)==NO_REFINEMENT) return (1);
   refinement->refrule = REFINE(theElement) + RefRuleOffset[TAG(theElement)];
   theRule = RefRules[TAG(theElement)] + REFINE(theElement);
+  refinement->refclass = ECLASS(SON(theElement,0));
 
   /* store new corner ids */
   for (i=0,n=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -455,6 +456,7 @@ static INT SetRefinement (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS], MGIO_
     refinement->refrule = -1;
     refinement->nnewcorners = 0;
     refinement->nmoved = 0;
+    refinement->refclass = 0;
     return (0);
   }
   else
@@ -488,6 +490,9 @@ static INT SetRefinement (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS], MGIO_
 
   /* not movable at the moment */
   refinement->nmoved = 0;
+
+  /* set refinement class */
+  refinement->refclass = ECLASS(SonList[0]);
 
   return (0);
 }
@@ -883,9 +888,6 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   INT nbside;
 #       endif
 
-  BNDS *bnds;
-  bnds = ELEM_BNDS(theElement,2);
-
   /* init */
   if (refinement!=NULL) ref=refinement;
   if (ref->refrule==-1) return (1);
@@ -895,8 +897,6 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   SETMARKCLASS(theElement,RED_CLASS);
   theRule = rr_rules+ref->refrule;
   upGrid = UPGRID(theGrid);
-
-  bnds = ELEM_BNDS(theElement,2);
 
   /* insert nodes */
   n=0;
@@ -912,12 +912,14 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     n++;
   }
 
-  bnds = ELEM_BNDS(theElement,2);
-
   nedge = EDGES_OF_ELEM(theElement);
   for (i=0; i<nedge; i++)
   {
-    if (theRule->pattern[i]!=1) continue;
+    if (theRule->pattern[i]!=1)
+    {
+      NodeList[n++]==NULL;
+      continue;
+    }
     n0 = CORNER_OF_EDGE(theElement,i,0);
     n1 = CORNER_OF_EDGE(theElement,i,1);
     theEdge = GetEdge(CORNER(theElement,n0),CORNER(theElement,n1));
@@ -932,12 +934,14 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     n++;
   }
 
-  bnds = ELEM_BNDS(theElement,2);
-
 #ifdef __THREEDIM__
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
-    if (theRule->pattern[i+nedge]!=1) continue;
+    if (theRule->pattern[i+nedge]!=1)
+    {
+      NodeList[n++]==NULL;
+      continue;
+    }
     if (IO_GetSideNode(theElement,i,&(NodeList[n]),&nbside)) return (1);
     if (NodeList[n]==NULL)
     {
@@ -951,8 +955,6 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   }
 #endif
 
-  bnds = ELEM_BNDS(theElement,2);
-
   if (theRule->pattern[CENTER_NODE_INDEX(theElement)]==1)
   {
     NodeList[n] = CreateCenterNode(upGrid,theElement);
@@ -960,8 +962,6 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     ID(NodeList[i]) = ref->newcornerid[n];
     n++;
   }
-
-  bnds = ELEM_BNDS(theElement,2);
 
   /* insert elements */
   SETNSONS(theElement,theRule->nsons);
@@ -980,7 +980,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
       SonNodeList[j] = NodeList[SonData->corners[j]];
     theSonElem[i] = CreateElement(upGrid,SonData->tag,type,SonNodeList,theElement);
     if (theSonElem[i]==NULL) return (1);
-    SETECLASS(theSonElem[i],theRule->class);
+    SETECLASS(theSonElem[i],ref->refclass);
   }
 #ifdef __TWODIM__
   for (i=0; i<theRule->nsons; i++) SET_SON(theElement,i,theSonElem[i]);
@@ -988,8 +988,6 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
 #ifdef __THREEDIM__
   SET_SON(theElement,0,theSonElem[0]);
 #endif
-
-  bnds = ELEM_BNDS(theElement,2);
 
   /* set neighbor relation between sons */
   for (i=0; i<theRule->nsons; i++)
@@ -1002,13 +1000,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
         SET_NBELEM(theSonElem[i],j,NULL);
   }
 
-  bnds = ELEM_BNDS(theElement,2);
-
   /* connect to neighbors */
-  for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-  {
-    bnds = ELEM_BNDS(theElement,i);
-  }
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
     if (IO_Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,SonList,Sons_of_Side_List,1)) return (1);

@@ -40,7 +40,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define MGIO_VERSION                                    "UG_IO_1.6"
+#define MGIO_VERSION                                    "UG_IO_1.7"
 
 #define __MGIO_USE_IN_UG__
 #define MGIO_DIM                        3
@@ -219,6 +219,7 @@ struct mgio_refinement {
 
   int refrule;                                                                  /* id of refinement rule					*/
   int sonref;                                                                           /* 1 if sons are refined, bitwise			*/
+  int refclass;                                                                 /* refinement class							*/
   int nnewcorners;                                                              /* nb of new corners on next level			*/
   int newcornerid[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];      /* ids of new corners    */
   int nmoved;                                                                           /* nmoved new corners moved					*/

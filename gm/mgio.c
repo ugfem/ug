@@ -62,10 +62,11 @@
 #define MGIO_CHECK_DOUBLESIZE(n)        if ((n)>MGIO_DOUBLESIZE) return (1)
 #define MGIO_CHECK_BUFFERIZE(s)         if (strlen(s)>MGIO_BUFFERSIZE) return (1)
 
-#define MGIO_ECTRL(ref,nf,nm)                                   ((nf)&31) | (((nm)&31)<<5)  | (((ref)&4194303)<<10)
+#define MGIO_ECTRL(ref,nf,nm,refc)                                      ((nf)&31) | (((nm)&31)<<5)  | (((ref)&262143)<<10) | (((refc)&7)<<28)
 #define MGIO_ECTRL_NC(ctrl)                                             ((ctrl)&31)
 #define MGIO_ECTRL_NM(ctrl)                                             (((ctrl)>>5)&31)
-#define MGIO_ECTRL_REF(ctrl)                                    (((ctrl)>>10)&4194303)
+#define MGIO_ECTRL_REF(ctrl)                                    (((ctrl)>>10)&262143)
+#define MGIO_ECTRL_REFCLASS(ctrl)                               (((ctrl)>>28)&7)
 
 /****************************************************************************/
 /*																			*/
@@ -955,6 +956,7 @@ int Read_Refinement (int n, MGIO_REFINEMENT *refinement)
     {
       pr->nnewcorners = MGIO_ECTRL_NC(ctrl);
       pr->nmoved = MGIO_ECTRL_NM(ctrl);
+      pr->refclass = MGIO_ECTRL_REFCLASS(ctrl);
       if (pr->nnewcorners+pr->nmoved>0)
         if (Bio_Read_mint(pr->nnewcorners+pr->nmoved,intList)) return (1);
       s=0;
@@ -1009,7 +1011,7 @@ int Write_Refinement (int n, MGIO_REFINEMENT *refinement)
   for (i=0; i<n; i++)
   {
     s=t=0;
-    intList[s++] = MGIO_ECTRL(pr->refrule+1,pr->nnewcorners,pr->nmoved);
+    intList[s++] = MGIO_ECTRL(pr->refrule+1,pr->nnewcorners,pr->nmoved,pr->refclass);
     intList[s++] = pr->sonref;
     if (pr->refrule>-1)
     {
