@@ -951,13 +951,14 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
    D*/
 /****************************************************************************/
 
-INT BNDP_BndPDesc (BNDP *aBndP, INT *move)
+INT BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
 {
   LGM_LINE *theLine;
   LGM_BNDP *theBndP;
   DOUBLE slocal;
   INT ilocal;
 
+  part[0] = 0;
   theBndP = BNDP2LGM(aBndP);
   theLine = LGM_BNDP_LINE(theBndP,0);
   ilocal = floor(LGM_BNDP_LOCAL(theBndP,0));
@@ -1334,7 +1335,7 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
    D*/
 /****************************************************************************/
 
-INT BNDS_BndSDesc (BNDS *aBndS, INT *left, INT *right)
+INT BNDS_BndSDesc (BNDS *aBndS, INT *left, INT *right, INT *part)
 {
   LGM_BNDS *theBndS;
   LGM_LINE *theLine;
@@ -1342,6 +1343,7 @@ INT BNDS_BndSDesc (BNDS *aBndS, INT *left, INT *right)
   theBndS = BNDS2LGM(aBndS);
   theLine = LGM_BNDS_LINE(theBndS);
 
+  part[0] = 0;
   *left = LGM_LINE_LEFT(theLine);
   *right = LGM_LINE_RIGHT(theLine);
 

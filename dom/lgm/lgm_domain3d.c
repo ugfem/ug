@@ -2335,13 +2335,13 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
   return (0);
 }
 
-INT BNDP_BndPDesc (BNDP *aBndP, INT *move)
+INT BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
 
+  part[0] = 0;
   theBndP = BNDP2LGM(aBndP);
-
   if(LGM_BNDP_N(theBndP)==1)
     *move=1;                                            /* Point in the Interior of the surface */
   else
@@ -2687,7 +2687,7 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   return (0);
 }
 
-INT BNDS_BndSDesc (BNDS *aBndS, INT *left, INT *right)
+INT BNDS_BndSDesc (BNDS *aBndS, INT *left, INT *right, INT *part)
 {
   LGM_BNDS *theBndS;
   LGM_SURFACE *theSurface;
@@ -2695,6 +2695,7 @@ INT BNDS_BndSDesc (BNDS *aBndS, INT *left, INT *right)
   theBndS = BNDS2LGM(aBndS);
   theSurface = LGM_BNDS_SURFACE(theBndS);
 
+  part[0] = 0;
   if(LGM_BNDS_N(theBndS)>0)
   {
     *left = LGM_SURFACE_LEFT(theSurface);
