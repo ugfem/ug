@@ -895,12 +895,13 @@ $0            # transfer complete grid
 $1            # do load balancing
 
 -pstat > parallel
-pstat {$c|$i|$l|$s|$b}  # parallel status information
-$c                      # call ddd consistency check  
-$i                      # display ddd interfaces
-$s                      # show ddd status
-$l                      # show list of local objects
-$b                      # enter interactive debugger
+pstat {$c|$i|$l|$s|$b|$m}  # parallel status information
+$c                         # call ddd consistency check  
+$i                         # display ddd interfaces
+$s                         # show ddd status
+$l                         # show list of local objects
+$b                         # enter interactive debugger
+$m                         # show ddd and dddif memory statistics
 
 -context > parallel
 context {$a|$e|<n>}  # set context for plotting and printing
