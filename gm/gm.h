@@ -2466,6 +2466,7 @@ extern const BV_DESC_FORMAT three_level_bvdf;   /* bvdf for 3 blocklevels	*/
 #define GM_OUT_OF_RANGE                         6
 #define GM_NOT_FOUND                            7
 #define GM_INCONSISTANCY                        8
+#define GM_COARSE_NOT_FIXED                     9
 #define GM_FATAL                                        999
 
 /* some constants passed as parameters */
