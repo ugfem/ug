@@ -63,11 +63,11 @@
 
 /* concatenation macros with one level of indirection to allow argument expansion */
 #define CONCAT3(a,b,c)            CONCAT3_AUX(a,b,c)
-#define CONCAT3_AUX(a,b,c)        a ## b ## c
+#define CONCAT3_AUX(a,b,c)        a b c
 #define CONCAT4(a,b,c,d)          CONCAT4_AUX(a,b,c,d)
-#define CONCAT4_AUX(a,b,c,d)      a ## b ## c ## d
+#define CONCAT4_AUX(a,b,c,d)      a b c d
 #define CONCAT5(a,b,c,d,e)        CONCAT5_AUX(a,b,c,d,e)
-#define CONCAT5_AUX(a,b,c,d,e)    a ## b ## c ## d ## e
+#define CONCAT5_AUX(a,b,c,d,e)    a b c d e
 
 #define YES             1
 #define ON              1
