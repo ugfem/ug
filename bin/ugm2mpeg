@@ -88,24 +88,17 @@ end
 set ARCH=`grep '^ARCH[ \t]' $UGROOT/ug.conf | awk '{ print $3 }' -`
 #
 #
-#
-#
 # On SGI: convert meta -> rgb -> pnm -> uvy -> mpeg
+#
 #
 if ("$ARCH" == "SGI") then
 	#
 	#  Convert to rgb files
 	#
 	echo converting meta to rgb
-	set file = `echo $base $fe | awk '{printf "%s.%04d",$1,$2}'`
-	rm -f $file.rgb
+	rm -f $base.*.rgb
 	echo ugv $base -f $fs $fe -p
 	ugv $base -f $fs $fe -p
-	while (! -f $file.rgb )
-		sleep 2
-	end
-	sleep 5
-	ugkillall ugv
 	#
 	# get size of the first image and use for the rest.
 	#
@@ -116,7 +109,6 @@ if ("$ARCH" == "SGI") then
 	echo ""
 	echo images have dimensions $width x $height
 	echo ""
-	sleep 2
 	#
 	@ iin = $fs
 	@ iout = $fs
@@ -126,7 +118,6 @@ if ("$ARCH" == "SGI") then
 	  echo Converting $file to $outname .Y .U .V
 	  sgitopnm $file | ppmtoyuvsplit $outname
 	  echo removing $file
-	  sleep 1
 	  rm -f $file
 	  @ iin += $fi
 	  @ iout++
@@ -137,7 +128,6 @@ if ("$ARCH" == "SGI") then
 # If not on SGI: Do slow conversion using Postscript
 #
 else
-#
 	@ iin = $fs
 	@ iout = $fs
 	while ( $iin <= $fe )
@@ -149,29 +139,24 @@ else
 	  echo Converting $file to $outname.ps
 	  m2ps $file
 	  #
+	  # get size of the first image and use for the rest.
+	  #
+	  if ( $iin == $fs ) then
+		set junk = `grep BoundingBox $outname.ps`
+		@ width  = $junk[4]
+		@ height = $junk[5]
+		echo ""
+		echo images have dimensions $width x $height
+		echo ""
+	  endif
+	  #
 	  #  Convert ps-files to ppm-files
 	  #
 	  set file = `echo $base $iin | awk '{printf "%s.%04d.ps",$1,$2}'`
 	  set outname = `echo $base $iout | awk '{printf "%s.%04d",$1,$2}'`
 	  echo Converting $file to $outname.ppm
-	  exec gs -dNOPAUSE -dQUIET -sDEVICE=ppm -sOutputFile=$outname.ppm $file &;
-	  while (! -f $outname.ppm)
-		sleep 1;
-	  end
-	  sleep 20;
-	  #
-	  # get size of the first image and use for the rest.
-	  #
-	  if ( $iin == $fs ) then
-		set file = `echo $base $fs | awk '{printf "%s.%04d.ppm",$1,$2}'` 
-		set junk = `cat  $file | head -3`
-		@ width = $junk[9]
-		@ height = $junk[10]
-		echo ""
-		echo images have dimensions $width x $height
-		echo ""
-		sleep 2
-	  endif
+	  gs -dNOPAUSE -dQUIET -sDEVICE=ppmraw -g${width}x${height} \
+	     -sOutputFile=$outname.ppm $file -c quit;
 	  #
 	  # Convert ppm to yuv files
 	  #
@@ -191,51 +176,36 @@ else
 	@ iout--	# reset to the last actual frame output
 endif
 #
+#  ppmtoyuvsplit chops off an odd row and/or column
+#
+if ( $width  % 2 ) @ width --
+if ( $height % 2 ) @ height --
+#
 #  Compress into an mpeg movie file.
 #  NOTE: An option has to be added if the width of the image is not evenly
 #        divisible by 16.
 #
-set junk = `echo $width 16 | awk '{print $1/$2}'`
-@ div16 = `echo $junk | awk -F. '{print $2}'`
-if ($div16 == 0) then
-   set junk = `echo $height 16 | awk '{print $1/$2}'`
-   @ div16 = `echo $junk | awk -F. '{print $2}'`
-   if ($div16 == 0) then
-      set PF = ""       # only if both X and Y are evenly divisible by 16
-   else
-      set PF = "-PF"
-   endif
-else
-   set PF = "-PF"
-endif
-#
-#  ppmtoyuvsplit may chop off an odd row and/or column
-#
-set junk = `echo $width 2 | awk '{print $1/$2}'`
-@ xeven = `echo $junk | awk -F. '{print $2}'`
-set junk = `echo $height 2 | awk '{print $1/$2}'`
-@ yeven = `echo $junk | awk -F. '{print $2}'`
-#
-echo Width Height $width $height      in 
-#
-if ( $xeven != 0 ) @ width --
-if ( $yeven != 0 ) @ height --
-#
-echo Width Height $width $height     out 
-sleep 2
+set PF = ""
+if ( $width % 16 || $height % 16 ) set PF = "-PF"
+
 set MPEGNAME = "$base".mpg
 echo Name of MPEG-movie: $base.mpg
 mpeg -f 1 -g 1 -a $fs -b $iout -h $width -v $height $PF $base. -s $MPEGNAME
 #
 #  Clean up and instruct the user.
 #
-rm $base.*.Y
-rm $base.*.U
-rm $base.*.V
+rm -f $base.*.[YUV]
 #
 echo  "To see segment, type mpeg_play $MPEGNAME"
 echo  "or"
 echo  "mpeg_play -dither color $MPEGNAME"
 echo  ""
+
+
+
+
+
+
+
 
 
