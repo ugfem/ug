@@ -347,7 +347,7 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid)
 	SETMOVE(pv,DIM_OF_BND);
 	#ifdef ModelP
 	DDD_AttrSet(PARHDRV(pv),theGrid->level);
-	DDD_PrioritySet(PARHDRV(pv),PrioMaster);
+	SETVXPRIO(pv,PrioMaster);
 	#endif
 	
 	/* insert in vertex list */
@@ -407,7 +407,7 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
 	SETMOVE(pv,DIM);
 	#ifdef ModelP
 	DDD_AttrSet(PARHDRV(pv),theGrid->level);
-	DDD_PrioritySet(PARHDRV(pv),PrioMaster);
+	SETVXPRIO(pv,PrioMaster);
 	#endif
 	for (i=0; i<DIM; i++) LCVECT(pv)[i] = 0.0;
 	
@@ -478,7 +478,7 @@ static NODE *CreateNode (GRID *theGrid)
 	SETLEVEL(pn,theGrid->level);
 	#ifdef ModelP
 	DDD_AttrSet(PARHDR(pn),theGrid->level);
-	DDD_PrioritySet(PARHDR(pn),PrioMaster);
+	SETPRIO(pn,PrioMaster);
 	#endif
 	ID(pn) = (theGrid->mg->nodeIdCounter)++;
 	START(pn) = NULL;
@@ -1328,7 +1328,7 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
 	SETLEVEL(pe,theGrid->level);
 	#if (defined ModelP) && (defined __THREEDIM__)
 	DDD_AttrSet(PARHDR(pe),theGrid->level);
-	DDD_PrioritySet(PARHDR(pe),PrioMaster);
+	SETPRIO(pe,PrioMaster);
 	#endif
 	NBNODE(link0) = to;
 	NBNODE(link1) = from;
@@ -1443,7 +1443,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
 	SETLEVEL(pe,theGrid->level);
 	#ifdef ModelP
 	DDD_AttrSet(PARHDRE(pe),theGrid->level);
-	DDD_PrioritySet(PARHDRE(pe),PrioMaster);
+	SETEPRIO(pe,PrioMaster);
 	PARTITION(pe) = me;
 	#endif
 	SETEBUILDCON(pe,1);
@@ -2353,7 +2353,7 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 		if (theFather != NULL)
 		{
 			#ifdef ModelP
-			int		index = PRIO2INDEX(DDD_InfoPriority(PARHDRE(theElement)));
+			int		index = PRIO2INDEX(EPRIO(theElement));
 			#else
 			int		index = 0;
 			#endif
@@ -2366,8 +2366,7 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 				{
 					if (EFATHER(succe)==theFather)
 					#ifdef ModelP
-					if (DDD_InfoPriority(PARHDRE(succe)) == 
-						DDD_InfoPriority(PARHDRE(theElement)))
+					if (EPRIO(succe) == EPRIO(theElement))
 					#endif
 					{
 						Next = succe;
@@ -2508,7 +2507,77 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 			    #endif
 			}
 		}
+		else
+			MidNodes[j] = NULL;
 	}
+
+	#ifdef __THREEDIM__
+	/* reset VFATHER of sidenodes */
+	for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+	{
+		NODE *theNode0 = MidNodes[EDGE_OF_SIDE(theElement,j,0)];
+		NODE *theNode1 = MidNodes[EDGE_OF_SIDE(theElement,j,2)];
+
+		/* consider all cases here, because theNode0 or theNode1 may be NULL, */
+		/* but SideNode may exist                                             */
+		if (theNode0==NULL || theNode1==NULL)
+		{
+			theNode0 = theNode1 = NULL;
+			for (i=0; i<EDGES_OF_SIDE(theElement,j); i++)
+			{
+				NODE *MidNode = MidNodes[EDGE_OF_SIDE(theElement,j,i)];
+
+				if (MidNode != NULL)
+				{
+					if (theNode0 == NULL)
+						theNode0 = MidNode;
+					else
+					{
+						theNode1 = MidNode;
+						break;
+					}
+				}
+			}
+			if (theNode0==NULL || theNode1==NULL || theNode0==theNode1)
+				theNode0 = theNode1 = NULL;
+		}
+
+		theNode = NULL;
+
+		if (theNode0!=NULL && theNode1!=NULL)
+			theNode = GetSideNode(theElement,j);
+
+		if (theNode!=NULL && VFATHER(MYVERTEX(theNode))==theElement)
+		{
+			ELEMENT *theNb = NBELEM(theElement,j);
+
+			theVertex = MYVERTEX(theNode);
+			VFATHER(theVertex) = theNb;
+
+			if (theNb != NULL)
+			{
+				/* calculate new local coords */
+				k = ONNBSIDE(theVertex);
+				SETONNBSIDE(theVertex,ONSIDE(theVertex));
+				SETONSIDE(theVertex,k);
+
+				m = CORNERS_OF_SIDE(theNb,k);
+				local = LCVECT(theVertex);
+				fac = 1.0 / m;
+				V_DIM_CLEAR(local);
+				for (o=0; o<m; o++)
+				{
+					l = CORNER_OF_SIDE(theNb,k,o);
+					V_DIM_LINCOMB(1.0,local,1.0,
+								  LOCAL_COORD_OF_ELEM(theNb,l),local);
+				}
+				V_DIM_SCALE(fac,local);
+			}
+			else
+				SETONNBSIDE(theVertex,MAX_SIDES_OF_ELEM);
+		}
+	}
+	#endif
 
 	if (NELIST_DEF_IN_GRID(theGrid)) 
 	    for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
@@ -2551,8 +2620,7 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 						}
 					}
 					ASSERT(i<EDGES_OF_ELEM(theFather) ||
-						DDD_InfoPriority(PARHDRE(theElement))==PrioGhost ||
-						DDD_InfoPriority(PARHDRE(theElement))==PrioVGhost);
+						EGHOST(theElement));
 				}
 #else
 				theFather = VFATHER(theVertex);
@@ -3201,7 +3269,7 @@ INT PutAtEndOfList (GRID *theGrid, INT cnt, ELEMENT **elemList)
 
 	theFather = EFATHER(elemList[0]);
 	#ifdef ModelP
-	prio		= DDD_InfoPriority(PARHDRE(elemList[0]));
+	prio		= EPRIO(elemList[0]);
 	#else
 	prio		= 0;
 	#endif
@@ -3214,7 +3282,7 @@ INT PutAtEndOfList (GRID *theGrid, INT cnt, ELEMENT **elemList)
 
 		ASSERT(theFather == EFATHER(theElement));
 		#ifdef ModelP
-		ASSERT(prio == DDD_InfoPriority(PARHDRE(theElement)));
+		ASSERT(prio == EPRIO(theElement));
 		#endif
 	}
 	#endif
@@ -5573,12 +5641,13 @@ void ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const INT longformat)
 D*/
 /****************************************************************************/
 
-INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag)
+INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, INT verbose)
 {
 	INT		i,j,sons,maxsons,heap,used,free;
 	INT		red, green, yellow; 
 	INT		mg_red,mg_green,mg_yellow;
 	INT		mg_greenrulesons[MAXLEVEL+1][MAX_SONS+1],mg_greenrules[MAXLEVEL+1];
+	INT		markcount[MAXLEVEL+1];
 	INT		mg_red_size,mg_green_size,mg_yellow_size,mg_sum_size;
 	FLOAT	sum,sum_div_red,redplusgreen_div_red;
 	FLOAT	mg_sum,mg_sum_div_red,mg_redplusgreen_div_red;
@@ -5596,24 +5665,34 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag)
 	mg_red = mg_green = mg_yellow = mg_sum = 0;
 	mg_sum_div_red = mg_redplusgreen_div_red = 0.0;
 
-	if (greenflag)
-		for (i=0; i<MAXLEVEL+1; i++)
+	for (i=0; i<MAXLEVEL+1; i++)
+	{
+		if (greenflag)
 		{
 			mg_greenrules[i] = 0;
 			for (j=0; j<MAX_SONS+1; j++) mg_greenrulesons[i][j] = 0;
 			maxsons = 0;
 		}
+		if (gridflag)
+		{
+			markcount[i] = 0;
+		}
+	}
 
 	#ifdef ModelP
 	infobuffer	= (INT *) malloc((procs+1)*(MAXLEVEL+1)*3*sizeof(INT));
+	if (infobuffer == NULL) assert(0);
+
 	lbinfo		= (INT **) malloc((procs+1)*sizeof(INT));
+	if (lbinfo == NULL) assert(0);
+
 	memset((void *)infobuffer,0,(procs+1)*(MAXLEVEL+1)*3*sizeof(INT));
 	for (i=0; i<procs+1; i++)
 		lbinfo[i] = infobuffer+(i*(MAXLEVEL+1)*3);
 	total_elements = sum_elements = master_elements = hghost_elements = vghost_elements = 0;
 	#endif
 
-	if (gridflag)
+	if (verbose && gridflag)
 	{
 		UserWriteF("\nMULTIGRID STATISTICS:\n");
 		UserWriteF("LEVEL      RED     GREEN    YELLOW        SUM     SUM/RED (RED+GREEN)/RED\n");
@@ -5629,12 +5708,23 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag)
 		for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
 			 theElement=SUCCE(theElement))
 		{
+			SETUSED(theElement,0);
 			switch (ECLASS(theElement))
 			{
 				case RED_CLASS:		red++;		break;
 				case GREEN_CLASS:	green++;	break;
 				case YELLOW_CLASS:	yellow++;	break;
 				default:			assert(0);
+			}
+			if (LEAFELEM(theElement))
+			{
+				if (GetRefinementMarkType(theElement) && 
+					USED(ELEMENT_TO_MARK(theElement)) == 0)
+				{
+					markcount[LEVEL(theElement)]++;
+					markcount[MAXLEVEL]++;
+					SETUSED(ELEMENT_TO_MARK(theElement),1);
+				}
 			}
 			if (greenflag)
 				switch (REFINECLASS(theElement))
@@ -5677,7 +5767,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag)
 		sum_div_red = sum / red;
 		redplusgreen_div_red = ((float)(red+green)) / red;
 
-		if (gridflag)
+		if (verbose && gridflag)
 			UserWriteF("   %2d  %9d %9d %9d  %9.0f    %2.3f      %2.3f\n",
 				i,red,green,yellow,sum,sum_div_red,redplusgreen_div_red);
 
@@ -5689,11 +5779,11 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag)
 	mg_sum_div_red 			= mg_sum / mg_red; 
 	mg_redplusgreen_div_red	= ((float)(mg_red + mg_green)) / mg_red;
 
-	if (gridflag)
+	if (verbose && gridflag)
 		UserWriteF("  ALL  %9d %9d %9d  %9.0f    %2.3f      %2.3f\n",
 			mg_red,mg_green,mg_yellow,mg_sum,mg_sum_div_red,mg_redplusgreen_div_red);
 	
-	/* compute and list heap info */
+	/* compute heap info */
 	if (gridflag)
 	{
 		heap = HeapFreelistUsed(MGHEAP(theMG));
@@ -5705,7 +5795,18 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag)
 		mg_yellow_size = (float)mg_sum_size*mg_yellow/mg_sum;
 		mg_sum_size_div_red = ((float)mg_sum_size)/mg_red;
 		mg_redplusgreen_size_div_red = ((float)(mg_red_size+mg_green_size))/mg_red;
+	}
 
+	/* set heap info in refine info */
+	if (gridflag)
+	{
+		SETPREDNEW(REFINEINFO(theMG),markcount[MAXLEVEL]*(2<<(DIM-1))*mg_sum_div_red);
+		SETPREDMAX(REFINEINFO(theMG),free/mg_sum_size_div_red);
+	}
+
+	/* list heap info */
+	if (verbose && gridflag)
+	{
 		UserWriteF(" HEAP  %7dKB %7dKB %7dKB  %7dKB    %2.3fKB    %2.3fKB\n",
 			mg_red_size,mg_green_size,mg_yellow_size,mg_sum_size,
 			mg_sum_size_div_red,mg_redplusgreen_size_div_red);
@@ -5717,7 +5818,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag)
 	}
 
 	/* compute and list green rule info */
-	if (greenflag)
+	if (verbose && greenflag)
 	{
 		UserWriteF("\nGREEN RULE STATISTICS:\n");
 		UserWriteF("  LEVEL GREENSONS     RULES GREENSONS/RUL");
@@ -5749,7 +5850,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag)
 
 	#ifdef ModelP
 	/* compute and list loadbalancing info */
-	if (lbflag)
+	if (verbose && lbflag)
 	{
 		UserWriteF("\nLB INFO:\n");
 		/* now collect lb info on master */
@@ -5845,6 +5946,8 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag)
 		}
 
 	}
+	free(infobuffer);
+	free(lbinfo);
 	#endif
 
 	return (GM_OK);
@@ -6892,7 +6995,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 			{
 				nerrors++;	
                 #ifdef ModelP
-				if (DDD_InfoPriority(PARHDRE(theElement)) == PrioGhost) {
+				if (EHGHOST(theElement)) {
 				    nerrors = 0;
 					IFDEBUG(gm,1)
 					    nerrors = 1;
@@ -6913,7 +7016,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 			{
 				nerrors++;	
                 #ifdef ModelP
-				if (DDD_InfoPriority(PARHDRE(theElement)) == PrioGhost) {
+				if (EHGHOST(theElement)) {
 				    nerrors = 0;
 					IFDEBUG(gm,1)
 					    nerrors = 1;
@@ -6943,7 +7046,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 			{
 				nerrors++;	
                 #ifdef ModelP
-				if (DDD_InfoPriority(PARHDRE(theElement)) == PrioGhost) {
+				if (EHGHOST(theElement)) {
 				    nerrors = 0;
 					IFDEBUG(gm,1)
 					    nerrors = 1;
@@ -7142,7 +7245,7 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 		{
 
         #ifdef ModelP
-		if (DDD_InfoPriority(PARHDRE(theElement)) == PrioGhost) {
+		if (EHGHOST(theElement)) {
 		    nerrors = 0;
 			IFDEBUG(gm,1)
 			    nerrors = 1;
@@ -7252,7 +7355,7 @@ static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT
 			if (ECLASS(theElement)!=YELLOW_CLASS)
 				if (OBJT(theElement) == IEOBJ)
 				#ifdef ModelP
-				if (DDD_InfoPriority(PARHDRE(theElement)) == PrioMaster)
+				if (EMASTER(theElement))
 				#endif
 					*SideError |= (1<<(i+MAX_SIDES_OF_ELEM));
 
@@ -7274,7 +7377,7 @@ static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT
 				}
 				else if (ECLASS(theElement)!=YELLOW_CLASS)
 					#ifdef ModelP
-					if (DDD_InfoPriority(PARHDRE(theElement)) == PrioMaster)
+					if (EMASTER(theElement))
 					#endif
 						*SideError |= (1<<(i+2*MAX_SIDES_OF_ELEM));
 			}
@@ -7338,7 +7441,7 @@ static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT
 				if (j >= EDGES_OF_ELEM(theFather)) 
 				{
 					#ifdef ModelP
-					if (DDD_InfoPriority(PARHDRE(theFather)) == PrioMaster)
+					if (EMASTER(theFather))
 					#endif
 						UserWriteF(PFMT "ELEM(" EID_FMTX ") ERROR MIDNODE=NULL"
 							" for mid node=%d\n",
@@ -7377,7 +7480,7 @@ static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT
 	{
 		if (LEVEL(theElement) > 0)
 		{
-			if (DDD_InfoPriority(PARHDRE(theElement)) == PrioMaster)
+			if (EMASTER(theElement))
 				UserWriteF(PFMT "ELEM(" EID_FMTX ") ERROR father=NULL\n",
 					me,EID_PRTX(theElement));
 			else
@@ -7773,7 +7876,7 @@ INT CheckElementList (GRID *theGrid)
 		 theElement=SUCCE(theElement))
 	{
 		ELEMENT *Father	= EFATHER(theElement);
-PAR(	INT 	prio 	= DDD_InfoPriority(PARHDRE(theElement));               )ENDPAR
+PAR(	INT 	prio 	= EPRIO(theElement);               )ENDPAR
 
 		if (Father == NULL)  
 		{
@@ -7785,8 +7888,7 @@ PAR(	INT 	prio 	= DDD_InfoPriority(PARHDRE(theElement));               )ENDPAR
 		{
 			if (PREDE(theElement) != NULL)
 				if (EFATHER(PREDE(theElement))==Father
-PAR(				&& DDD_InfoPriority(PARHDRE(theElement))== 	
-					   DDD_InfoPriority(PARHDRE(PREDE(theElement))) )ENDPAR )
+PAR(				&& EPRIO(theElement)==EPRIO(PREDE(theElement)) )ENDPAR )
 				{
 					UserWriteF(PFMT " ERROR element=" EID_FMTX " is not first"
 						"son in list pred elem=" EID_FMTX " father=" EID_FMTX
