@@ -4827,6 +4827,22 @@ static INT MarkCommand (INT argc, char **argv)
     return(OKCODE);
   }
 
+  if (ReadArgvDOUBLE("Y",&y,argc, argv)==0)
+  {
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+            if (YC(MYVERTEX(CORNER(theElement,j))) > y)
+              MarkForRefinement(theElement,Rule,NULL);
+
+    UserWriteF("all elements in y > %f marked for refinement\n",
+               (float) y);
+
+    return(OKCODE);
+  }
+
   if (ReadArgvINT("S",&sid,argc, argv)==0)
   {
     for (l=0; l<=TOPLEVEL(theMG); l++)
@@ -4858,6 +4874,23 @@ static INT MarkCommand (INT argc, char **argv)
 
     return(OKCODE);
   }
+
+  if (ReadArgvDOUBLE("Z",&z,argc, argv)==0)
+  {
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+            if (ZC(MYVERTEX(CORNER(theElement,j))) > z)
+              MarkForRefinement(theElement,Rule,NULL);
+
+    UserWriteF("all elements in z > %f marked for refinement\n",
+               (float) z);
+
+    return(OKCODE);
+  }
+
 #endif
 
   if (ReadArgvPosition("pos",argc,argv,global)==0)
