@@ -77,67 +77,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*                                                                          */
 /****************************************************************************/
 
-typedef struct
-{
-  NP_T_SOLVER tsolver;                                   /* derived from class NP_T_SOLVER	*/
-
-  /* local variables */
-  INT step;                                                              /* number of time step				*/
-  DOUBLE dt;                                                     /* size of time step				*/
-  DOUBLE t_p1;                                                   /* time t_k+1                                  */
-  DOUBLE t_0;                                                        /* time t_k                                        */
-  DOUBLE t_m1;                                                   /* time t_k-1                                  */
-  NP_ORDERED_LIST *TimeControl;          /* list for time steps             */
-  DOUBLE disabled_timestep;                              /* storage for timestep disabled   */
-  /* TimeControl                     */
-
-  /* parameters (to be set with init function */
-  INT baselevel;                                                 /* for nested iteration		    */
-  INT order;                                                             /* 1,2 are allowed					*/
-  INT predictorder;                                              /* 0,1 are allowed					*/
-  INT nested;                                                            /* use nested iteration                        */
-  INT nlinterpolate;                                             /* nonlinear interpolation			*/
-  INT presteps;                                               /* number of steps for start grid */
-  INT optnlsteps;                                            /* optimal number of nonlin. steps */
-  INT rep;                               /* for repeat solver after grid chg*/
-  INT Break;                                                     /* break after error estimator         */
-  INT Continue;                                              /* continue after error estimator  */
-  INT refarg;                                                    /* refine copy all                 */
-  INT noabort;                                               /* take last iterate if not converged */
-  DOUBLE tstart;                                                 /* start time                          */
-  DOUBLE dtstart;                                                /* time step to begin with			*/
-  DOUBLE dtmin;                                                  /* smallest time step allowed		*/
-  DOUBLE dtmax;                                                  /* largest time step allowed		*/
-  DOUBLE dtscale;                                                /* scaling factor applied after ste*/
-  DOUBLE rhogood;                                                /* threshold for step doubling		*/
-  NP_TRANSFER *trans;                                            /* uses transgrid for nested iter  */
-  NP_ERROR *error;                       /* error indicator                 */
-  NP_ERROR *initerror;                       /* error indicator for error in initial conditions                */
-  INT ctn;                                                               /* change to nested iteration		*/
-  INT hist;
-  INT list_i;
-  INT list_n;
-  DOUBLE list_dt[50];
-  DOUBLE list_work[50];
-  INT displayMode;
-  char scaleName[NAMELEN];
-  DOUBLE scale;
-
-  /* statistics */
-  INT number_of_nonlinear_iterations;       /* number of iterations             */
-  INT total_linear_iterations;          /* total number                     */
-  INT max_linear_iterations;            /* max number of linear iterations  */
-  DOUBLE exec_time;                     /* for nonlinear solver ...             */
-
-  /* and XDATA_DESCs */
-  VECDATA_DESC *y_p1;                    /* solution y_k+1                                      */
-  VECDATA_DESC *y_0;                     /* solution y_k                                        */
-  VECDATA_DESC *y_m1;                    /* solution y_k-1                                      */
-  VECDATA_DESC *b;                                               /* saved nonlinear solution		*/
-
-} NP_BDF;                                                                /*final class implementing BDF(1,2)*/
-
-
 /****************************************************************************/
 /****************************************************************************/
 /*                                                                          */
@@ -147,14 +86,12 @@ typedef struct
 /****************************************************************************/
 /****************************************************************************/
 
-static INT BDFPreProcess
-  (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, INT *res)
+INT BDFPreProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, INT *res)
 {
   return(0);
 }
 
-static INT BDFAssembleSolution
-  (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, INT *res)
+INT BDFAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -168,9 +105,7 @@ static INT BDFAssembleSolution
   return((*tass->TAssembleSolution)(tass,fl,tl,bdf->t_p1,u,res));
 }
 
-static INT BDFAssembleDefect
-  (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u,
-  VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
+INT BDFAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -205,9 +140,7 @@ static INT BDFAssembleDefect
   return( (*tass->TAssembleDefect)(tass,fl,tl,bdf->t_p1,s_m,s_a,u,d,J,res) );
 }
 
-static INT BDFAssembleMatrix
-  (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u,
-  VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
+INT BDFAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -239,9 +172,7 @@ static INT BDFAssembleMatrix
   return( (*tass->TAssembleMatrix)(tass,fl,tl,bdf->t_p1,s_a,u,d,v,J,res) );
 }
 
-static INT BDFNAssembleMatrix
-  (NP_NL_ASSEMBLE *ass, INT fl, INT tl, NODE *n, VECDATA_DESC *u,
-  VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
+INT BDFNAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, NODE *n, VECDATA_DESC *u, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -273,7 +204,7 @@ static INT BDFNAssembleMatrix
   return( (*tass->TNAssembleMatrix)(tass,fl,tl,n,bdf->t_p1,s_a,u,d,v,J,res) );
 }
 
-static INT BDFPostProcess
+INT BDFPostProcess
   (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x,
   VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
 {
@@ -288,7 +219,7 @@ static INT BDFPostProcess
 /****************************************************************************/
 /****************************************************************************/
 
-static INT TimePreProcess (NP_T_SOLVER *ts, INT level, INT *res)
+INT BDFTimePreProcess (NP_T_SOLVER *ts, INT level, INT *res)
 {
   NP_BDF *bdf;
 
@@ -311,7 +242,7 @@ static INT TimePreProcess (NP_T_SOLVER *ts, INT level, INT *res)
   return(0);
 }
 
-static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
+INT BDFTimeInit (NP_T_SOLVER *ts, INT level, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -436,7 +367,7 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
   return(*res);
 }
 
-static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
+static INT BDFTimeStep (NP_T_SOLVER *ts, INT level, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -917,7 +848,7 @@ output:         /* output */
   return(0);
 }
 
-static INT TimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
+INT BDFTimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -958,7 +889,7 @@ static INT TimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
 /*																			*/
 /****************************************************************************/
 
-static INT BDFInit (NP_BASE *base, INT argc, char **argv)
+INT BDFInit (NP_BASE *base, INT argc, char **argv)
 {
   NP_BDF *bdf;
   VECDATA_DESC *tmp;
@@ -1123,7 +1054,7 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
 /*																			*/
 /****************************************************************************/
 
-static INT BDFDisplay (NP_BASE *theNumProc)
+INT BDFDisplay (NP_BASE *theNumProc)
 {
   NP_BDF *bdf;
 
@@ -1334,10 +1265,10 @@ static INT BDFConstruct (NP_BASE *theNP)
   na->NLNAssembleMatrix       = BDFNAssembleMatrix;
 
   /* and the time solver */
-  ts->TimePreProcess              = TimePreProcess;
-  ts->TimeInit                    = TimeInit;
-  ts->TimeStep                    = TimeStep;
-  ts->TimePostProcess             = TimePostProcess;
+  ts->TimePreProcess              = BDFTimePreProcess;
+  ts->TimeInit                    = BDFTimeInit;
+  ts->TimeStep                    = BDFTimeStep;
+  ts->TimePostProcess             = BDFTimePostProcess;
 
   bdf->y_p1 = NULL;
   bdf->y_m1 = NULL;
