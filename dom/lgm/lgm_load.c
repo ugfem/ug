@@ -83,9 +83,7 @@ typedef int (*ReadSurfaceProc)(int i, LGM_SURFACE_INFO *surface_info);
 /*																			*/
 /****************************************************************************/
 
-#if (LGM_DIM==2)
 LGM_LINE        **LinePtrArray          = NULL;
-#endif
 #if (LGM_DIM==3)
 LGM_SURFACE     **SurfacePtrArray       = NULL;
 #endif
@@ -413,8 +411,10 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
       return(NULL);
 
   /* allocate lines */
-  if ((LinePtrList=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL)
-    return (NULL);
+  if ((LinePtrList=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL) return (NULL);
+        #ifdef ModelP
+  if ((LinePtrArray=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL) return (NULL);
+        #endif
   for (i=0; i<theDomInfo.nPolyline; i++)
   {
     size = sizeof(LGM_LINE) + (lgm_sizes.Polyline_nPoint[i]-1)*sizeof(LGM_POINT);
@@ -438,6 +438,10 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     id = pi[0];
     LGM_LINE_END(LinePtrList[i]) = id;
     LGM_LINE_ID(LinePtrList[i])  = i;
+                #ifdef ModelP
+    PRINTDEBUG(dom,3,(PFMT "LGM_LoadDomain(): i=%d lineptr=%x\n",me,i,LinePtrList[i]));
+    LinePtrArray[i] = LinePtrList[i];
+                #endif
   }
 
   /* allocate surfaces */
