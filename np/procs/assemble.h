@@ -48,6 +48,16 @@
 #define ASSEMBLE_CLASS_NAME     "assemble"
 #define NL_ASSEMBLE_CLASS_NAME  "nlass"
 #define T_ASSEMBLE_CLASS_NAME   "tass"
+#define NL_PARTASS_CLASS_NAME   "nlpass"
+#define T_PARTASS_CLASS_NAME    "tpass"
+
+enum PP_ACTIONS {
+  PARTASS_UNKNOWN,
+  PARTASS_DEFECT  = 1<<0,
+  PARTASS_MATRIX  = 1<<1
+};
+
+#define PARTASS_DEF_AND_MAT     (PARTASS_DEFECT | PARTASS_MATRIX)
 
 /* access macros for NP_ASSEMBLE */
 #define NPASS_x(p)                              (((NP_ASSEMBLE*)(p))->x)
@@ -95,6 +105,51 @@
 #define NPAT_ASSSOL(p)                  (((NP_T_ASSEMBLE*)(p))->TAssembleSolution)
 #define NPAT_ASSMAT(p)                  (((NP_T_ASSEMBLE*)(p))->TAssembleMatrix)
 #define NPAT_POST(p)                    (((NP_T_ASSEMBLE*)(p))->TAssemblePostProcess)
+
+/* PARTASS_PARAMS access macros */
+#define PP_ACTION(p)                    ((p)->action)
+#define PP_SCALE_A(p)                   ((p)->s_a)
+#define PP_SCALE_M(p)                   ((p)->s_m)
+#define PP_TIME(p)                              ((p)->time)
+#define PP_DELTA_T(p)                   ((p)->dt)
+#define PP_TIMEDEP(p)                   ((p)->dt!=0.0)
+#define PP_ASS_PART(p)                  ((p)->ass_part)
+#define PP_SKIP(p)                              ((p)->partskip)
+#define PP_CO_SKIP(p)                   ((p)->co_partskip)
+#define PP_MD_A(p)                              ((p)->MD_A)
+#define PP_MD_A_glob(p)                 ((p)->MD_A_glob)
+#define PP_VD_s(p)                              ((p)->VD_s)
+#define PP_VD_s_glob(p)                 ((p)->VD_s_glob)
+#define PP_VD_s_i(p)                    ((p)->VD_s_i)
+#define PP_VD_s_co(p)                   ((p)->VD_s_co)
+#define PP_VD_o(p)                              ((p)->VD_o)
+#define PP_VD_o_glob(p)                 ((p)->VD_o_glob)
+#define PP_VD_c(p)                              ((p)->VD_c)
+#define PP_VD_c_glob(p)                 ((p)->VD_c_glob)
+#define PP_VD_r(p)                              ((p)->VD_r)
+#define PP_VD_r_glob(p)                 ((p)->VD_r_glob)
+#define PP_VD_gridvel(p)                ((p)->VD_gridvel)
+
+/* NP_NL_PARTASS access macros */
+#define NPPNL_t(p)                              (((NP_NL_PARTASS*)(p))->t)
+#define NPPNL_s(p)                              (((NP_NL_PARTASS*)(p))->s)
+#define NPPNL_x(p)                              (((NP_NL_PARTASS*)(p))->x)
+#define NPPNL_c(p)                              (((NP_NL_PARTASS*)(p))->c)
+#define NPPNL_b(p)                              (((NP_NL_PARTASS*)(p))->b)
+#define NPPNL_g(p)                              (((NP_NL_PARTASS*)(p))->g)
+#define NPPNL_A(p)                              (((NP_NL_PARTASS*)(p))->A)
+
+#define NPPNL_PRE(p)                    (((NP_NL_PARTASS*)(p))->NLPpreprocess)
+#define NPPNL_ASSSOL(p)                 (((NP_NL_PARTASS*)(p))->NLPassembleSolution)
+#define NPPNL_ASS(p)                    (((NP_NL_PARTASS*)(p))->NLPassemble)
+#define NPPNL_POST(p)                   (((NP_NL_PARTASS*)(p))->NLPpostprocess)
+
+/* NP_T_PARTASS access macros */
+#define NPPT_INITIAL(p)                 (((NP_T_PARTASS*)(p))->TPassembleInitial)
+#define NPPT_PRE(p)                     (((NP_T_PARTASS*)(p))->TPpreprocess)
+#define NPPT_ASSSOL(p)                  (((NP_T_PARTASS*)(p))->TPassembleSolution)
+#define NPPT_ASS(p)                     (((NP_T_PARTASS*)(p))->TPassemble)
+#define NPPT_POST(p)                    (((NP_T_PARTASS*)(p))->TPpostprocess)
 
 /****************************************************************************/
 /*																			*/
@@ -428,46 +483,182 @@ typedef INT (*TAssemblePostProcessProcPtr)                                    \
 
 /****************************************************************************/
 /*																			*/
+/* nonlinear assemble interface												*/
+/*																			*/
+/****************************************************************************/
+
+typedef struct {
+
+  INT action;                                                   /* defect/matrix (enum PP_ACTIONS)	*/
+  DOUBLE s_a;                                                   /* scale stiffness mat				*/
+  DOUBLE s_m;                                                   /* scale mass matrix				*/
+  DOUBLE time;                                                  /* time                                                         */
+  DOUBLE dt;                                                    /* time step						*/
+  INT ass_part;                                                 /* assemble part only				*/
+  INT                *partskip;
+  INT                *co_partskip;
+  MATDATA_DESC   *MD_A;                                 /* stiffness matrix                             */
+  MATDATA_DESC   *MD_A_glob;
+  VECDATA_DESC   *VD_s;                                 /* solution                                             */
+  VECDATA_DESC   *VD_s_glob;
+  VECDATA_DESC   *VD_s_i;
+  VECDATA_DESC   *VD_s_co;
+  VECDATA_DESC   *VD_o;                                 /* last time step sol				*/
+  VECDATA_DESC   *VD_o_glob;
+  VECDATA_DESC   *VD_c;                                 /* correction						*/
+  VECDATA_DESC   *VD_c_glob;
+  VECDATA_DESC   *VD_r;                                 /* right hand side					*/
+  VECDATA_DESC   *VD_r_glob;
+  VECDATA_DESC   *VD_gridvel;                   /* grid velocity					*/
+
+} PARTASS_PARAMS;
+
+struct np_nl_partass {
+
+  NP_BASE base;                                                 /* inherits base class				*/
+
+  /* data (optional, necessary for calling the generic execute routine)	*/
+  VEC_TEMPLATE *t;                                              /* template matching x				*/
+  INT s;                                                        /* sub vec for own part                         */
+  VECDATA_DESC *x;                                              /* solution                                             */
+  VECDATA_DESC *c;                                              /* correction						*/
+  VECDATA_DESC *b;                                              /* defect							*/
+  VECDATA_DESC *g;                                              /* grid velocity					*/
+  MATDATA_DESC *A;                                              /* matrix							*/
+
+  /* functions */
+  INT (*NLPpreprocess)(
+    struct np_nl_partass *,                             /* pointer to (derived) object		*/
+    INT fl,                                                             /* from level						*/
+    INT tl,                                                             /* to level                                             */
+    PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
+    INT *                                                               /* result							*/
+    );
+  INT (*NLPassembleSolution)(
+    struct np_nl_partass *,                             /* pointer to (derived) object		*/
+    INT fl,                                                             /* from level						*/
+    INT tl,                                                             /* to level                                             */
+    PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
+    INT *                                                               /* result							*/
+    );
+  INT (*NLPassemble)(
+    struct np_nl_partass *,                             /* pointer to (derived) object		*/
+    INT fl,                                                             /* from level						*/
+    INT tl,                                                             /* to level                                             */
+    PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
+    INT *                                                               /* result							*/
+    );
+  INT (*NLPpostprocess)(
+    struct np_nl_partass *,                             /* pointer to (derived) object		*/
+    INT fl,                                                             /* from level						*/
+    INT tl,                                                             /* to level                                             */
+    PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
+    INT *                                                               /* result							*/
+    );
+};
+typedef struct np_nl_partass NP_NL_PARTASS;
+
+/****************************************************************************/
+/*																			*/
+/* time-dependent part assemble interface									*/
+/*																			*/
+/****************************************************************************/
+
+struct np_t_partass {
+
+  NP_BASE base;                                                 /* inherits base class				*/
+
+  /* data (optional, necessary for calling the generic execute routine)	*/
+  VEC_TEMPLATE *t;                                              /* template matching x				*/
+  INT s;                                                        /* sub vec for own part                         */
+
+  /* functions */
+  INT (*TPassembleInitial)(
+    struct np_t_partass *,                              /* pointer to (derived) object		*/
+    INT fl,                                                             /* from level						*/
+    INT tl,                                                             /* to level                                             */
+    PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
+    INT *                                                               /* result							*/
+    );
+  INT (*TPpreprocess)(
+    struct np_t_partass *,                              /* pointer to (derived) object		*/
+    INT fl,                                                             /* from level						*/
+    INT tl,                                                             /* to level                                             */
+    PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
+    INT *                                                               /* result							*/
+    );
+  INT (*TPassembleSolution)(
+    struct np_t_partass *,                              /* pointer to (derived) object		*/
+    INT fl,                                                             /* from level						*/
+    INT tl,                                                             /* to level                                             */
+    PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
+    INT *                                                               /* result							*/
+    );
+  INT (*TPassemble)(
+    struct np_t_partass *,                              /* pointer to (derived) object		*/
+    INT fl,                                                             /* from level						*/
+    INT tl,                                                             /* to level                                             */
+    PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
+    INT *                                                               /* result							*/
+    );
+  INT (*TPpostprocess)(
+    struct np_t_partass *,                              /* pointer to (derived) object		*/
+    INT fl,                                                             /* from level						*/
+    INT tl,                                                             /* to level                                             */
+    PARTASS_PARAMS *pp,                                 /* part assemble parameters             */
+    INT *                                                               /* result							*/
+    );
+};
+typedef struct np_t_partass NP_T_PARTASS;
+
+/****************************************************************************/
+/*																			*/
 /* definition of exported functions											*/
 /*																			*/
 /****************************************************************************/
 
-/* generic init function for Assemble num procs */
-INT NPAssembleInit (NP_BASE *theNP, INT argc , char **argv);
+/* generic init/display/execute functions for Assemble num procs */
+INT NPAssembleInit                              (NP_BASE *theNP, INT argc , char **argv);
+INT NPAssembleDisplay                   (NP_BASE *theNP);
+INT NPAssembleExecute                   (NP_BASE *theNP, INT argc , char **argv);
 
-/* generic display function for Assemble num procs */
-INT NPAssembleDisplay (NP_BASE *theNP);
-
-/* generic execute function for Assemble num procs */
-INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv);
-
-/* generic init function for LocalAssemble num procs */
-INT NPLocalAssembleInit (NP_LOCAL_ASSEMBLE *theNP, INT argc , char **argv);
-
-/* generic display function for LocalAssemble num procs */
-INT NPLocalAssembleDisplay (NP_LOCAL_ASSEMBLE *theNP);
+/* generic init/display function for LocalAssemble num procs */
+INT NPLocalAssembleInit                 (NP_LOCAL_ASSEMBLE *theNP, INT argc , char **argv);
+INT NPLocalAssembleDisplay              (NP_LOCAL_ASSEMBLE *theNP);
 
 /* modification of the matrix for Dirichlet values */
-INT NPLocalAssemblePostMatrix (NP_LOCAL_ASSEMBLE *theNP, INT level,
-                               VECDATA_DESC *x,
-                               VECDATA_DESC *b, MATDATA_DESC *A, INT *result);
+INT NPLocalAssemblePostMatrix   (NP_LOCAL_ASSEMBLE *theNP, INT level,
+                                 VECDATA_DESC *x,
+                                 VECDATA_DESC *b, MATDATA_DESC *A, INT *result);
 
 /* generic construction of NP_ASSEMBLE from NP_LOCAL_ASSEMBLE */
-INT NPLocalAssembleConstruct (NP_ASSEMBLE *theNP);
+INT NPLocalAssembleConstruct    (NP_ASSEMBLE *theNP);
 
-/* generic init function for NLAssemble num procs */
-INT NPNLAssembleInit (NP_BASE *theNP, INT argc , char **argv);
+/* generic init/display/execute functions for NLAssemble num procs */
+INT NPNLAssembleInit                    (NP_BASE *theNP, INT argc , char **argv);
+INT NPNLAssembleDisplay                 (NP_BASE *theNP);
+INT NPNLAssembleExecute                 (NP_BASE *theNP, INT argc , char **argv);
 
-/* generic display function for NLAssemble num procs */
-INT NPNLAssembleDisplay (NP_BASE *theNP);
+/* generic init/display/execute functions for time--dependent assembly */
+INT NPTAssembleInit                     (NP_BASE *theNP, INT argc , char **argv);
+INT NPTAssembleDisplay                  (NP_BASE *theNP);
+INT NPTAssembleExecute                  (NP_BASE *theNP, INT argc , char **argv);
 
-/* generic execute function for NLAssemble num procs */
-INT NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv);
+void DefaultPartassParams               (PARTASS_PARAMS *pp);
+INT SetPartassParams                    (PARTASS_PARAMS *pp, const VEC_TEMPLATE *vt, INT sub,
+                                         DOUBLE s_a, DOUBLE s_m, DOUBLE t, DOUBLE dt,
+                                         VECDATA_DESC *s, VECDATA_DESC *r, VECDATA_DESC *o,
+                                         VECDATA_DESC *c, VECDATA_DESC *g, MATDATA_DESC *A);
 
-/* default functions for time--dependent assembly */
-INT NPTAssembleInit     (NP_BASE *theNP, INT argc , char **argv);
-INT NPTAssembleDisplay  (NP_BASE *theNP);
-INT NPTAssembleExecute  (NP_BASE *theNP, INT argc , char **argv);
+/* generic init/display/execute functions for NP_NL_PARTASS num procs */
+INT NPNLPartAssInit                     (NP_BASE *theNP, INT argc, char **argv);
+INT NPNLPartAssDisplay                  (NP_BASE *theNP);
+INT NPNLPartAssExecute                  (NP_BASE *theNP, INT argc, char **argv);
+
+/* generic init/display/execute functions for NP_T_PARTASS num procs */
+INT NPTPartAssInit                              (NP_BASE *theNP, INT argc, char **argv);
+INT NPTPartAssDisplay                   (NP_BASE *theNP);
+INT NPTPartAssExecute                   (NP_BASE *theNP, INT argc, char **argv);
 
 /* init tis file */
 INT InitAssemble (void);
