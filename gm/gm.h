@@ -2311,6 +2311,9 @@ INT         MarkForRefinement       (ELEMENT *theElement, INT rule, void *data);
 INT             GetRefinementMark               (const ELEMENT *theElement, INT *rule, void *data);
 INT             GetRefinementMarkType   (const ELEMENT *theElement);
 INT             RefineMultiGrid                 (MULTIGRID *theMG, INT flag, INT seq, INT mgtest);
+INT         TestRefineInfo          (MULTIGRID *theMG);
+INT         SetRefineInfo           (MULTIGRID *theMG);
+
 NODE            *GetFineNodeOnEdge              (const ELEMENT *theElement, INT side);
 /*INT			GetFineSidesTouchingCoarseSide (const ELEMENT *theElement, INT side, INT *nfine, ELEMENT *Elements[MAX_SIDES_TOUCHING], INT Sides[MAX_SIDES_TOUCHING]);*/
 
