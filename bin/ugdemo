@@ -23,7 +23,7 @@ if test -x $UGROOT/../df/gen/appl/df2d
 then
         echo "df2d: Density driven flow 2d";
 fi
-if test -x $UGROOT/../sc/appl2d/scalar2d
+if test -x $UGROOT/../sc/appl2d/sc2d
 then
         echo "pm2d: Poros media equation 2d";   
         echo "tu2d: Scalar tutorial script 2d";   
@@ -68,7 +68,7 @@ then
 			;;
         pm2d)
 			cd $UGROOT/../sc/appl2d
-			ugrun scalar2d $PROC ugdemo.scr -noquit
+			ugrun sc2d $PROC ugdemo.scr -noquit
 			;;
         df2d)
 			cd $UGROOT/../df/gen/appl
@@ -104,7 +104,7 @@ then
 			;;
         tu2d)
 			cd $UGROOT/../sc/appl2d
-			ugrun scalar2d $PROC tutorial.scr -noquit
+			ugrun sc2d $PROC tutorial.scr -noquit
 			;;
         *)
                 echo "target $1 not found";
