@@ -147,7 +147,7 @@
 #define MARK_SELECTION                  4
 #define NO_SIDE_SPECIFIED               -1
 #define NO_RULE_SPECIFIED               -1
-#define NO_OF_RULES                     10
+#define NO_OF_RULES                     16
 
 /* for save command */
 #define NO_COMMENT                               "no comment"
@@ -204,11 +204,18 @@ static MARKRULE myMR[NO_OF_RULES]=      /* name and ID of available rules	*/
  {"no",         NO_REFINEMENT},
  {"blue",       BLUE},
  {"copy",       COPY},
+                                         #ifdef __TWODIM__
  {"bi_1",       BISECTION_1},
  {"bi_2q",      BISECTION_2_Q},
  {"bi_2t1", BISECTION_2_T1},
  {"bi_2t2", BISECTION_2_T2},
  {"bi_3",       BISECTION_3},
+                                         #endif
+                                         #ifdef __THREEDIM__
+                                         #ifdef TET_RULESET
+ {"tet2hex",TETRA_RED_HEX},
+                                         #endif
+                                         #endif
  {"coarse", COARSE}};
 
 #ifdef __NECSX4__
@@ -4377,7 +4384,8 @@ static INT MarkCommand (INT argc, char **argv)
   }
 
   /* scan parameters */
-  rv = sscanf(argv[0],"mark %31[redbluecopycoarsnoi_123qt] %d",rulename,&Side);
+  /*rv = sscanf(argv[0],"mark %31[redbluecopycoarsnoi_123qttet2hex] %d",rulename,&Side);*/
+  rv = sscanf(argv[0],"mark %31[a-z_1-9] %d",rulename,&Side);
   if (rv<1)
   {
     /* set the default rule */
@@ -6535,7 +6543,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
 static INT StatusCommand  (INT argc, char **argv)
 {
   MULTIGRID       *theMG;
-  INT i,green,load;
+  INT i,grid,green,load;
 
   /* get current multigrid */
   theMG = currMG;
@@ -6544,13 +6552,13 @@ static INT StatusCommand  (INT argc, char **argv)
     PrintErrorMessage('E',"status command","no open multigrid");
     return (CMDERRORCODE);
   }
-  green = 0;
-  load = 0;
+  grid = green = load = 0;
 
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
     case 'a' :
+      grid = 1;
       green = 1;
                                 #ifdef ModelP
       load = 1;
@@ -6562,13 +6570,17 @@ static INT StatusCommand  (INT argc, char **argv)
                         #ifdef ModelP
     case 'l' :
       load = 1;
+      sscanf(argv[i],"l %d",&load);
       break;
                         #endif
+    case 'm' :
+      grid = 1;
+      break;
     default :
       break;
     }
 
-  if (MultiGridStatus(theMG,green,load) != 0)
+  if (MultiGridStatus(theMG,grid,green,load) != 0)
   {
     PrintErrorMessage('E',"GridStatus()","execution failed");
     return (CMDERRORCODE);
@@ -10321,7 +10333,7 @@ static INT InitScreenSize (void)
 static INT LBCommand (INT argc, char **argv)
 {
   INT res,cmd_error,error,maxlevel,i;
-  int minlevel,cluster_depth,threshold,Const,n,c,depth,
+  int minlevel,cluster_depth,threshold,Const,n,c,
       strategy,eigen,loc,dims,weights,coarse,mode,iopt;
   char levelarg[32];
   MULTIGRID *theMG;
@@ -10378,7 +10390,7 @@ static INT LBCommand (INT argc, char **argv)
 
     case 'd' :
                                                 #ifdef CHACOT
-      sscanf(argv[i],"d %d",&depth);
+      sscanf(argv[i],"d %d",&cluster_depth);
                                                 #endif
                                                 #ifndef CHACOT
       UserWriteF("lb: depth parameter skipped\n");
