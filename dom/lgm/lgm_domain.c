@@ -390,8 +390,15 @@ INT BNDS_Dispose (HEAP *Heap, BNDS *aBndS)
 /* domain interface function: for description see domain.h */
 INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
 {
-  UserWrite("ERROR: lgm domain does not permit moving boundary points\n");
-  return (1);
+  INT i,j;
+  LGM_BNDP *theBndP;
+
+  theBndP=(LGM_BNDP*)aBndP;
+  for (i=0; i<theBndP->nsurf; i++)
+    for (j=0; j<DIM; j++)
+      theBndP->Surf[i].global[j]=global[j];
+
+  return (0);
 }
 
 /* domain interface function: for description see domain.h */
