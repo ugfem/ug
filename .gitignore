@@ -13,3 +13,4 @@ mkinstalldirs
 libtool
 stamp-h*
 libug.pc
+semantic.cache
