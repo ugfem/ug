@@ -151,6 +151,52 @@ static VERTEX *CreateInnerVertex (GRID *theGrid);
 static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex);
 static INT DisposeEdge (GRID *theGrid, EDGE *theEdge);
 
+
+#ifdef __PERIODIC_BOUNDARY__
+
+#define SMALL_DOUBLE 1e-4
+#define MAX_PERIODIC_PROCS      128
+
+/* node counter for periodic vector */
+#define PVCOUNT VCOUNT
+#define SETPVCOUNT      SETVCOUNT
+
+/* vid is unique id of vector */
+#ifndef ModelP
+#define PVID VINDEX
+#else
+#define PVID GID
+#endif
+/*
+   #define COORDLIST(n) coordlist[(n)]
+   #define COORDLISTX(g,l,n) (LEVEL(g)?((PERIODIC_HENTRIES *)(l))[(n)]:((PERIODIC_ENTRIES *)(l))[(n)])
+   #define COORDLISTPTR(g) (LEVEL(g)?((PERIODIC_ENTRIES *)hcoordlist):coordlist)
+ */
+
+#ifdef __TWODIM__
+#define MIN_COORD(a,b) (((*a)[0]< (*b)[0]) ? (a) : (((*a)[1] < (*b)[1]) ? (a) : (b)))
+#else
+#define MIN_COORD(a,b) (((*a)[0]< (*b)[0]) ? (a) : (((*a)[1] < (*b)[1]) ? (a) : (((*a)[2] < (*b)[2]) ? (a) : (b))))
+#endif
+
+typedef struct periodic_entries
+{
+  NODE *node;
+  DOUBLE_VECTOR coord;
+  INT periodic_id;
+  INT n;
+        #ifdef __TWODIM__
+  VECTOR *vp[2];
+        #else
+  VECTOR *vp[4];
+        #endif
+}
+PERIODIC_ENTRIES;
+
+static PeriodicBoundaryInfoProcPtr PeriodicBoundaryInfo = NULL;
+#endif
+
+
 /****************************************************************************/
 /*D
    GetFreeOBJT - Get an object type id not occupied in theMG
@@ -3380,6 +3426,10 @@ INT DisposeNode (GRID *theGrid, NODE *theNode)
   }
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC))
   {
+#ifdef __PERIODIC_BOUNDARY__
+    if (theNode == (NODE *)VOBJECT(NVECTOR(theNode)))
+      VOBJECT(NVECTOR(theNode)) = NULL;
+#endif
     if (DisposeVector (theGrid,NVECTOR(theNode)))
       RETURN(1);
   }
@@ -3848,6 +3898,9 @@ INT Collapse (MULTIGRID *theMG)
 #endif
   for (l=tl-1; l>=0; l--) {
     theGrid = GRID_ON_LEVEL(theMG,l);
+#ifdef __PERIODIC_BOUNDARY__
+    GridSetPerVecCount(theGrid);
+#endif
     for (theNode=PFIRSTNODE(theGrid); theNode != NULL;
          theNode = SUCCN(theNode)) {
       SONNODE(theNode) = NULL;
@@ -8445,6 +8498,10 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
     }
 
     UserWriteF(" key=%d\n", KeyForObject((KEY_OBJECT *)theNode) );
+
+    if (NVECTOR(theNode) != NULL)
+      UserWriteF(" vec=" VINDEX_FMTX "\n",
+                 VINDEX_PRTX(NVECTOR(theNode)));
   }
 
   /******************************/
@@ -10972,46 +11029,9 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
   return (GM_OK);
 }
 
+
+
 #ifdef __PERIODIC_BOUNDARY__
-
-#define SMALL_DOUBLE 1e-4
-#define MAX_PERIODIC_PROCS      128
-
-/* vid is unique id of vector */
-#ifndef ModelP
-#define PVID VINDEX
-#else
-#define PVID GID
-#endif
-/*
-   #define COORDLIST(n) coordlist[(n)]
-   #define COORDLISTX(g,l,n) (LEVEL(g)?((PERIODIC_HENTRIES *)(l))[(n)]:((PERIODIC_ENTRIES *)(l))[(n)])
-   #define COORDLISTPTR(g) (LEVEL(g)?((PERIODIC_ENTRIES *)hcoordlist):coordlist)
- */
-
-#ifdef __TWODIM__
-#define MIN_COORD(a,b) (((*a)[0]< (*b)[0]) ? (a) : (((*a)[1] < (*b)[1]) ? (a) : (b)))
-#else
-#define MIN_COORD(a,b) (((*a)[0]< (*b)[0]) ? (a) : (((*a)[1] < (*b)[1]) ? (a) : (((*a)[2] < (*b)[2]) ? (a) : (b))))
-#endif
-
-typedef struct periodic_entries
-{
-  NODE *node;
-  DOUBLE_VECTOR coord;
-  INT periodic_id;
-  INT n;
-        #ifdef __TWODIM__
-  VECTOR *vp[2];
-        #else
-  VECTOR *vp[4];
-        #endif
-}
-PERIODIC_ENTRIES;
-
-static PeriodicBoundaryInfoProcPtr PeriodicBoundaryInfo = NULL;
-
-
 
 static int sort_entries_old (const void *e1, const void *e2)
 {
@@ -11085,6 +11105,42 @@ static int sort_entries (const void *e1, const void *e2)
    }
  */
 
+INT GridSetPerVecCount (GRID *g)
+{
+  NODE *n;
+
+  if (PeriodicBoundaryInfo == NULL)
+  {
+    UserWriteF("Grid_GeometricToPeriodic: no function *PeriodicBoundaryInfo\n");
+    return(GM_OK);
+  }
+
+  for (n=PFIRSTNODE(g); n!=NULL; n=SUCCN(n))
+    SETPVCOUNT(NVECTOR(n),0);
+
+  for (n=PFIRSTNODE(g); n!=NULL; n=SUCCN(n))
+  {
+    assert(PVCOUNT(NVECTOR(n))<3);
+    SETPVCOUNT(NVECTOR(n),PVCOUNT(NVECTOR(n))+ 1);
+  }
+
+  return(0);
+}
+
+INT MGSetPerVecCount (MULTIGRID *mg)
+{
+  INT level;
+
+  for (level=0; level<=TOPLEVEL(mg); level++)
+  {
+    GRID *g = GRID_ON_LEVEL(mg,level);
+
+    if (GridSetPerVecCount(g)) return(GM_ERROR);
+  }
+
+  return (GM_OK);
+}
+
 static INT ModifyVectorPointer (GRID *g, PERIODIC_ENTRIES *list, INT i, INT j)
 {
   MATRIX *m,*n;
@@ -11102,48 +11158,51 @@ static INT ModifyVectorPointer (GRID *g, PERIODIC_ENTRIES *list, INT i, INT j)
 
   m = START(w);
   n = START(v);
-  for (m=NEXT(m); m != NULL; m=NEXT(m))
-  {
-    INT periodic_ids[MAX_PERIODIC_OBJ];
-    DOUBLE_VECTOR own_coord, periodic_coords[MAX_PERIODIC_OBJ];
-    INT nbnd,IsOnSamePerBnd;
-    VERTEX *vtx;
 
-    IsOnSamePerBnd=FALSE;
-    d = MDEST(m);
-
-    vtx = MYVERTEX((NODE*)VOBJECT(d));
-
-    /* is d on periodic boundary */
-    if (OBJT(vtx) == BVOBJ)
+  if (m != NULL)
+    for (m=NEXT(m); m != NULL; m=NEXT(m))
     {
-      nbnd = 0;
-      if ((*PeriodicBoundaryInfo)(vtx,&nbnd,periodic_ids,own_coord,periodic_coords))
-      {
-        INT k;
+      INT periodic_ids[MAX_PERIODIC_OBJ];
+      DOUBLE_VECTOR own_coord, periodic_coords[MAX_PERIODIC_OBJ];
+      INT nbnd,IsOnSamePerBnd;
+      VERTEX *vtx;
 
-        for (k=0; k<nbnd; k++)
-          if (periodic_ids[k]==list[i].periodic_id)
-          {
-            IsOnSamePerBnd=TRUE;
-            break;
-          }
+      IsOnSamePerBnd=FALSE;
+      d = MDEST(m);
+
+      vtx = MYVERTEX((NODE*)VOBJECT(d));
+
+      /* is d on periodic boundary */
+      if (OBJT(vtx) == BVOBJ)
+      {
+        nbnd = 0;
+        if ((*PeriodicBoundaryInfo)(vtx,&nbnd,periodic_ids,own_coord,periodic_coords))
+        {
+          INT k;
+
+          for (k=0; k<nbnd; k++)
+            if (periodic_ids[k]==list[i].periodic_id)
+            {
+              IsOnSamePerBnd=TRUE;
+              break;
+            }
+        }
+
+        if (IsOnSamePerBnd)
+        {
+          continue;
+        }
       }
 
-      if (IsOnSamePerBnd)
+      n = GetMatrix(v,d);
+      if (n == NULL)
       {
-        continue;
+        /* create connection only to vectors not belonging to bnd with same periodic_id */
+        n = CreateConnection(g,v,d);
+        if (n == NULL) assert(0);
       }
     }
 
-    n = GetMatrix(v,d);
-    if (n == NULL)
-    {
-      /* create connection only to vectors not belonging to bnd with same periodic_id */
-      n = CreateConnection(g,v,d);
-      if (n == NULL) assert(0);
-    }
-  }
   return(0);
 }
 
@@ -11171,9 +11230,10 @@ static INT DisposeAndModVector(GRID *g, PERIODIC_ENTRIES *list, INT i, INT j)
       MDEST(MADJ(m)) = NVECTOR(list[i].node);
   }
 
-  PRINTDEBUG(gm,1,("DisposeAndModVector perid=%d vtx=%d node=%d vec=%d pos %lf %lf %lf level %d\n",
-                   list[j].periodic_id,ID(MYVERTEX(list[j].node)),
-                   ID(list[j].node),VINDEX(vec),
+  PRINTDEBUG(gm,1,(PFMT "DisposeAndModVector perid=%d vtx=%d node="
+                   ID_FMTX " vec=" VINDEX_FMTX " pos %lf %lf %lf level %d\n",
+                   me,list[j].periodic_id,ID(MYVERTEX(list[j].node)),
+                   ID_PRTX(list[j].node),VINDEX_PRTX(vec),
                    XC(MYVERTEX(list[j].node)),
                    YC(MYVERTEX(list[j].node)),
                    ZC(MYVERTEX(list[j].node)),GLEVEL(g)));
@@ -11310,22 +11370,73 @@ static INT MatchingPeriodicEntries (PERIODIC_ENTRIES *coordlist, INT i, INT j)
 }
 
 #ifdef ModelP
-static INT SelectCorProc (VECTOR **vp, INT pos, INT p, INT *np, INT *theprocs)
+INT SetPerVecVOBJECT(GRID *g)
+{
+  NODE *n;
+
+  for (n=FIRSTNODE(g); n!=NULL; n=SUCCN(n))
+  {
+    if (VOBJECT(NVECTOR(n)) == NULL)
+    {
+      VOBJECT(NVECTOR(n)) = (GEOM_OBJECT *)n;
+    }
+  }
+
+  for (n=PFIRSTNODE(g); n!=FIRSTNODE(g); n=SUCCN(n))
+  {
+    if (VOBJECT(NVECTOR(n)) == NULL)
+    {
+      VOBJECT(NVECTOR(n)) = (GEOM_OBJECT *)n;
+    }
+  }
+
+        #ifdef Debug
+  for (n=PFIRSTNODE(g); n!=NULL; n=SUCCN(n))
+  {
+    assert(VOBJECT(NVECTOR(n)) != NULL);
+  }
+        #endif
+
+  return(0);
+}
+
+
+static INT SelectCorProc (VECTOR **vp, INT pos, INT p, int *np, int *theprocs)
 {
   int *proclist = PROCLIST(vp[pos]);
+  int j,Proclist[MAX_PERIODIC_PROCS];
 
+  /* copy proclist */
+  j = 0;
   while (*proclist != -1)
   {
+    Proclist[j] = proclist[0];
+    Proclist[j+1] = proclist[1];
+
+    proclist += 2;
+    j+=2;
+  }
+  Proclist[j] = -1;
+  assert(j < MAX_PERIODIC_PROCS);
+  proclist = Proclist;
+
+  proclist += 2;
+  while (*proclist != -1)
+  {
+    PRINTDEBUG(gm,1,("pos%d " VINDEX_FMTX " proc=%d prio=%d\n",
+                     pos,VINDEX_PRTX(vp[pos]),*proclist,*(proclist+1)));
+
     if (*proclist==p && MASTERPRIO(*(proclist+1)))
     {
       if (pos == 0)
       {
+        PRINTDEBUG(gm,1,("FOUND np=%d newproc=%d\n", *np,*proclist))
         theprocs[*np] = p;
-        *np++;
+        (*np)++;
       }
       else
       if (SelectCorProc(vp,pos-1,p,np,theprocs))
-        return(1);
+        assert(0);
     }
     proclist += 2;
   }
@@ -11333,24 +11444,44 @@ static INT SelectCorProc (VECTOR **vp, INT pos, INT p, INT *np, INT *theprocs)
   return(0);
 }
 
-static INT GetMatchingProcs (PERIODIC_ENTRIES *coordlist, INT i, INT *np, INT *theprocs)
+static int GetMatchingProcs (PERIODIC_ENTRIES *coordlist, INT i, int *np, int *theprocs)
 {
   INT pos = coordlist[i].n-1;
   int *proclist = PROCLIST(coordlist[i].vp[pos]);
+  int j,Proclist[MAX_PERIODIC_PROCS];
 
+  /* copy proclist */
+  j = 0;
   while (*proclist != -1)
   {
+    Proclist[j] = proclist[0];
+    Proclist[j+1] = proclist[1];
+
+    proclist += 2;
+    j+=2;
+  }
+  Proclist[j] = -1;
+  assert(j < MAX_PERIODIC_PROCS);
+  proclist = Proclist;
+
+  proclist += 2;
+  while (*proclist != -1)
+  {
+    PRINTDEBUG(gm,1,("pos%d " VINDEX_FMTX " proc=%d prio=%d\n",
+                     pos,VINDEX_PRTX(coordlist[i].vp[pos]),*proclist,*(proclist+1)));
+
     if (MASTERPRIO(*(proclist+1)))
     {
       if (pos == 0)
       {
+        PRINTDEBUG(gm,1,("FOUND np=%d newproc=%d\n", *np,*proclist))
         theprocs[*np] = *proclist;
-        *np++;
+        (*np)++;
         assert(*np < MAX_PERIODIC_PROCS);
       }
       else
       if (SelectCorProc(coordlist[i].vp,pos-1,*proclist,np,theprocs))
-        return(1);
+        assert(0);
     }
 
     proclist += 2;
@@ -11361,28 +11492,73 @@ static INT GetMatchingProcs (PERIODIC_ENTRIES *coordlist, INT i, INT *np, INT *t
 
 static INT Identify_PeriodicVector (PERIODIC_ENTRIES *coordlist, INT i)
 {
-  INT p,j,theprocs[MAX_PERIODIC_PROCS],np;
+  int p,j,theprocs[MAX_PERIODIC_PROCS],np;
+
+  PRINTDEBUG(gm,1,("IPV: GetMatchingProcs\n"));
 
   np = 0;
   if (GetMatchingProcs(coordlist,i,&np,theprocs)) return(1);
 
+        #ifdef Debug
+  if(0)
+    if (coordlist[i].n != 2)
+      return(0);
+        #endif
+
+  PRINTDEBUG(gm,1,("IPV:" VINDEX_FMTX " np=%d\n",
+                   VINDEX_PRTX(NVECTOR(coordlist[i].node)),np))
+
   for (p=0; p<np; p++)
   {
+    PRINTDEBUG(gm,1,("p=%d",theprocs[p]))
+
     for (j=0; j<coordlist[i].n; j++)
     {
-      DDD_IdentifyObject(PARHDR(NVECTOR(coordlist[i].node)),theprocs[p],PARHDR(coordlist[i].vp[j]));
+      ASSERT(NVECTOR(coordlist[i].node)!=NULL);
+      ASSERT(coordlist[i].vp[j]!=NULL);
+      PRINTDEBUG(gm,1,(" GID=%08x",
+                       GID(coordlist[i].vp[j])))
+
+      if (0)
+        DDD_IdentifyObject(PARHDR(NVECTOR(coordlist[i].node)),theprocs[p],
+                           PARHDR(coordlist[i].vp[j]));
+      else
+        DDD_IdentifyNumber(PARHDR(NVECTOR(coordlist[i].node)),theprocs[p],
+                           GID(coordlist[i].vp[j]));
     }
+                #ifdef Debug
+    {
+      DOUBLE *cv = CVECT(MYVERTEX(coordlist[i].node));
+      PRINTDEBUG(gm,1,(" c %lf %lf %lf \n",cv[0],cv[1],cv[2]))
+    }
+                #endif
   }
 
   return(0);
 }
 #endif
 
-static INT Grid_GeometricToPeriodic (GRID *g)
+static INT CheckPerVectors(GRID *theGrid)
+{
+  VECTOR *theVector;
+
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL;
+       theVector=SUCCVC(theVector))
+  {
+    if (GID(theVector) == 0x00122801)
+      PRINTDEBUG(gm,0,(PFMT " FOUND disposed vec=" VINDEX_FMTX,
+                       me,VINDEX_PRTX(theVector)));
+  }
+
+  return(0);
+}
+
+INT Grid_GeometricToPeriodic (GRID *g)
 {
   NODE *node;
   PERIODIC_ENTRIES *coordlist = NULL;
   INT MarkKey,nn,i,level;
+  INT heapmem = 0;
 
   level = GLEVEL(g);
 
@@ -11394,9 +11570,24 @@ static INT Grid_GeometricToPeriodic (GRID *g)
     return(GM_OK);
   }
 
+  GridSetPerVecCount(g);
+
+        #ifndef ModelP
+  /* set PVID of vectors */
+  i = 0;
+  for (node=FIRSTNODE(g); node!=NULL; node=SUCCN(node))
+  {
+    if (node == (NODE *)VOBJECT(NVECTOR(node)))
+    {
+      PVID(NVECTOR(node)) = i;
+      i++;
+    }
+  }
+        #endif
+
   /* count vector-node pairs to identify */
   nn = 0;
-  for (node=PFIRSTNODE(g); node!=NULL; node=SUCCN(node))
+  for (node=FIRSTNODE(g); node!=NULL; node=SUCCN(node))
   {
     VERTEX *vtx;
     DOUBLE_VECTOR own_coord, periodic_coords[MAX_PERIODIC_OBJ];
@@ -11412,12 +11603,18 @@ static INT Grid_GeometricToPeriodic (GRID *g)
   }
 
   /* allocate arrays */
-  MarkTmpMem(MGHEAP(MYMG(g)),&MarkKey);
+  if (heapmem)
+  {
+    MarkTmpMem(MGHEAP(MYMG(g)),&MarkKey);
 
-  coordlist = (PERIODIC_ENTRIES *)GetTmpMem(MGHEAP(MYMG(g)),nn*sizeof(PERIODIC_ENTRIES),MarkKey);
+    coordlist = (PERIODIC_ENTRIES *)GetTmpMem(MGHEAP(MYMG(g)),nn*sizeof(PERIODIC_ENTRIES),MarkKey);
+  }
+  else
+    coordlist = (PERIODIC_ENTRIES *)malloc(nn*sizeof(PERIODIC_ENTRIES));
+  if (coordlist == NULL) assert(0);
 
   nn=0;
-  for (node=PFIRSTNODE(g); node!=NULL; node=SUCCN(node))
+  for (node=FIRSTNODE(g); node!=NULL; node=SUCCN(node))
   {
     VERTEX *vtx;
     DOUBLE_VECTOR own_coord, periodic_coords[MAX_PERIODIC_OBJ];
@@ -11473,28 +11670,30 @@ static INT Grid_GeometricToPeriodic (GRID *g)
   /* sort list */
   qsort(coordlist,nn,sizeof(PERIODIC_ENTRIES),sort_entries);
 
-        #ifdef Debug
+  IFDEBUG(gm,1)
   for (i=0; i<nn; i++)
   {
-    PRINTDEBUG(gm,0,("%d perid=%d vtx=%08d node=%08d v=%d c %lf %lf %lf %d\n",
-                     i,coordlist[i].periodic_id,
-                     ID(MYVERTEX(coordlist[i].node)),
-                     ID(coordlist[i].node),PVID(NVECTOR(coordlist[i].node)),
-                     coordlist[i].coord[0],
-                     coordlist[i].coord[1],
-                     coordlist[i].coord[2],
-                     coordlist[i].n
-                     ));
+    UserWriteF("%d perid=%d vtx=%08d node=" ID_FMTX " v="
+               VINDEX_FMTX " c %lf %lf %lf %d\n",
+               i,coordlist[i].periodic_id,
+               ID(MYVERTEX(coordlist[i].node)),
+               ID_PRTX(coordlist[i].node),VINDEX_PRTX(NVECTOR(coordlist[i].node)),
+               coordlist[i].coord[0],
+               coordlist[i].coord[1],
+               coordlist[i].coord[2],
+               coordlist[i].n
+               );
     if (coordlist[i].n>0)
     {
       INT j;
 
-      PRINTDEBUG(gm,0,("v"));
-      for (j=0; j<coordlist[i].n; j++) PRINTDEBUG(gm,0,(" %d",PVID(coordlist[i].vp[j])));
-      PRINTDEBUG(gm,0,("\n"));
+      UserWriteF("v");
+      for (j=0; j<coordlist[i].n; j++)
+        UserWriteF(" %08x",PVID(coordlist[i].vp[j]));
+      UserWriteF("\n");
     }
   }
-        #endif
+  ENDDEBUG
 
         #ifndef ModelP
   assert(nn%2==0);
@@ -11503,7 +11702,7 @@ static INT Grid_GeometricToPeriodic (GRID *g)
   /* identify */
   for (i=0; i<nn-1; i++)
   {
-    while (MatchingPeriodicEntries(coordlist,i,i+1))
+    if (MatchingPeriodicEntries(coordlist,i,i+1))
     {
       INT mode = 0;
       DOUBLE diff;
@@ -11538,25 +11737,25 @@ static INT Grid_GeometricToPeriodic (GRID *g)
       else
       if (ModifyVectorPointer(g,coordlist,i+1,i))
         return (1);
-      i++;
     }
   }
 
   /* dispose vectors */
-  for (i=0; i<nn; i++)
+        #ifdef ModelP
+  DDD_XferBegin();
+    #ifdef DDDOBJMGR
+  DDD_ObjMgrBegin();
+    #endif
+    #endif
+  for (i=0; i<nn-1; i++)
   {
-    while (MatchingPeriodicEntries(coordlist,i,i+1))
+    if (MatchingPeriodicEntries(coordlist,i,i+1))
     {
       INT mode = 0;
       DOUBLE diff;
 
-      if (GLEVEL(g) == 0)
-      {
-        V_DIM_EUKLIDNORM_OF_DIFF(coordlist[i].coord,CVECT(MYVERTEX(coordlist[i].node)),diff);
-        if (diff < SMALL_DOUBLE) mode = 1;
-      }
-      else
-      {}
+      V_DIM_EUKLIDNORM_OF_DIFF(coordlist[i].coord,CVECT(MYVERTEX(coordlist[i].node)),diff);
+      if (diff < SMALL_DOUBLE) mode = 1;
 
       if (mode)
       {
@@ -11566,42 +11765,58 @@ static INT Grid_GeometricToPeriodic (GRID *g)
       else
       if (DisposeAndModVector(g,coordlist,i+1,i))
         return (1);
-      i++;
     }
   }
-
-        #ifdef Debug
-  PRINTDEBUG(gm,0,("After Periodic Identification:\n"))
-  for (i=0; i<nn; i++)
-  {
-    while (MatchingPeriodicEntries(coordlist,i,i+1))
-    {
-      PRINTDEBUG(gm,0,("%d v0=%d v1=%d\n",i,
-                       PVID(NVECTOR(coordlist[i].node)),
-                       PVID(NVECTOR(coordlist[i+1].node))))
-      i++;
-    }
-  }
+        #ifdef ModelP
+    #ifdef DDDOBJMGR
+  DDD_ObjMgrEnd();
+        #endif
+  DDD_XferEnd();
+  DDD_IFRefreshAll();
         #endif
 
-  ReleaseTmpMem(MGHEAP(MYMG(g)),MarkKey);
+  IFDEBUG(gm,1)
+  UserWriteF("After Periodic Identification:\n");
+  for (i=0; i<nn-1; i++)
+  {
+    if (MatchingPeriodicEntries(coordlist,i,i+1))
+    {
+      UserWriteF("%d v0=" VINDEX_FMTX " v1=" VINDEX_FMTX
+                 " n=%d\n",i,
+                 VINDEX_PRTX(NVECTOR(coordlist[i].node)),
+                 VINDEX_PRTX(NVECTOR(coordlist[i+1].node)),
+                 coordlist[i].n);
+    }
+  }
+  ENDDEBUG
 
         #ifdef ModelP
   /* identify periodic vectors between processors */
   if (GLEVEL(g) == 0) return (GM_OK);
+  if (procs == 1) return (GM_OK);
 
   DDD_IdentifyBegin();
 
   for (i=0; i<nn; i++)
   {
+    assert(VOBJECT(NVECTOR(coordlist[i].node))!=NULL);
+
     if (coordlist[i].node != (NODE *)VOBJECT(NVECTOR(coordlist[i].node))) continue;
 
     Identify_PeriodicVector(coordlist,i);
   }
 
-  DDD_IdentifyEnd();
-
+  if (1)
+  {
+    DDD_IdentifyEnd();
+    DDD_IFRefreshAll();
+  }
         #endif
+
+  if (heapmem)
+    ReleaseTmpMem(MGHEAP(MYMG(g)),MarkKey);
+  else
+    free(coordlist);
 
   return (GM_OK);
 }

@@ -153,6 +153,12 @@ INT             MinNextNodeClass                        (ELEMENT *theElement);
 
 #ifdef __PERIODIC_BOUNDARY__
 INT             MG_GeometricToPeriodic          (MULTIGRID *mg, INT fl, INT tl);
+INT                     Grid_GeometricToPeriodic        (GRID *g);
+INT                     MGSetPerVecCount                        (MULTIGRID *mg);
+INT                     GridSetPerVecCount                      (GRID *g);
+#ifdef ModelP
+INT                     SetPerVecVOBJECT                        (GRID *g);
+#endif
 #endif
 
 #endif

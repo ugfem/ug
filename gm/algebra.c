@@ -109,6 +109,12 @@ static INT ce_VCSTRONG;
 #define VCSTRONG(p)                                             CW_READ(p,ce_VCSTRONG)
 #define SETVCSTRONG(p,n)                                CW_WRITE(p,ce_VCSTRONG,n)
 
+#ifdef __PERIODIC_BOUNDARY__
+/* node counter for periodic vector */
+#define PVCOUNT VCOUNT
+#define SETPVCOUNT SETVCOUNT
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -1191,6 +1197,20 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
 {
   MATRIX *theMatrix, *next;
   INT Size;
+
+#ifdef __PERIODIC_BOUNDARY__
+  SETPVCOUNT(theVector,PVCOUNT(theVector)-1);
+  if (PVCOUNT(theVector) > 0)
+  {
+    PRINTDEBUG(gm,1,(PFMT "DisposeVector: v=" VINDEX_FMTX
+                     " NOT disposed count=%d\n",
+                     me,VINDEX_PRTX(theVector),PVCOUNT(theVector)));
+    return (0);
+  }
+  PRINTDEBUG(gm,1,(PFMT "DisposeVector: v=" VINDEX_FMTX
+                   " disposed count=%d\n",
+                   me,VINDEX_PRTX(theVector),PVCOUNT(theVector)));
+#endif
 
   if (theVector == NULL)
     return(0);
@@ -3132,31 +3152,32 @@ INT SetSurfaceClasses (MULTIGRID *theMG)
     for (v=PFIRSTVECTOR(theGrid); v!= NULL; v=SUCCVC(v)) {
             #ifdef DYNAMIC_MEMORY_ALLOCMODEL
                     #ifdef Debug
-      if (VOTYPE(v) == NODEVEC)
-      {
-        NODE *theNode = (NODE *) VOBJECT(v);
+      if (0)
+        if (VOTYPE(v) == NODEVEC)
+        {
+          NODE *theNode = (NODE *) VOBJECT(v);
 
-        if (NCLASS(theNode) > VCLASS(v))
-          UserWriteF(PFMT " node=" ID_FMTX " c %d ncl %d vector="
-                     VINDEX_FMTX
-                     " c %d vc %d level %d\n",
-                     me,
-                     ID_PRTX(theNode),NCOPIES(theNode),NCLASS(theNode),
-                     VINDEX_PRTX(v),NCOPIES(v),VCLASS(v),level);
+          if (NCLASS(theNode) > VCLASS(v))
+            UserWriteF(PFMT " node=" ID_FMTX " c %d ncl %d vector="
+                       VINDEX_FMTX
+                       " c %d vc %d level %d\n",
+                       me,
+                       ID_PRTX(theNode),NCOPIES(theNode),NCLASS(theNode),
+                       VINDEX_PRTX(v),NCOPIES(v),VCLASS(v),level);
 
-        assert(NCLASS(theNode) <= VCLASS(v));
+          assert(NCLASS(theNode) <= VCLASS(v));
 
 
-        if (NNCLASS(theNode) > VNCLASS(v))
-          UserWriteF(PFMT " node=" ID_FMTX " c %d ncl %d vector="
-                     VINDEX_FMTX
-                     " c %d vc %d level %d\n",
-                     me,
-                     ID_PRTX(theNode),NCOPIES(theNode),NNCLASS(theNode),
-                     VINDEX_PRTX(v),NCOPIES(v),VNCLASS(v),level);
+          if (NNCLASS(theNode) > VNCLASS(v))
+            UserWriteF(PFMT " node=" ID_FMTX " c %d ncl %d vector="
+                       VINDEX_FMTX
+                       " c %d vc %d level %d\n",
+                       me,
+                       ID_PRTX(theNode),NCOPIES(theNode),NNCLASS(theNode),
+                       VINDEX_PRTX(v),NCOPIES(v),VNCLASS(v),level);
 
-        assert(NNCLASS(theNode) <= VNCLASS(v));
-      }
+          assert(NNCLASS(theNode) <= VNCLASS(v));
+        }
                         #endif
                         #endif
       SETNEW_DEFECT(v,(VCLASS(v)>=2));
@@ -3764,6 +3785,7 @@ static INT CheckVector (const FORMAT *fmt, const INT s2p[], GEOM_OBJECT *theObje
           }
           else
                                         #endif
+                                        #ifndef __PERIODIC_BOUNDARY__
           {
             errors++;
             UserWriteF("%d: %s vector=" VINDEX_FMTX " is referenced by "
@@ -3780,6 +3802,14 @@ static INT CheckVector (const FORMAT *fmt, const INT s2p[], GEOM_OBJECT *theObje
                          GID(NBNODE(LINK1(&(VecObject->ed)))) );
                                                 #endif
           }
+                                        #else
+          /* TODO: check whether reference to node is valid */
+          if (HEAPCHECK(VecObject) || VecObject==NULL)
+            UserWriteF("%d: %s vector=" VINDEX_FMTX " is referenced by "
+                       "obj0=%x, but points to ZOMBIE obj1=%x\n",
+                       me, ObjectString, VINDEX_PRTX(theVector),
+                       theObject, VecObject);
+                                        #endif
         }
       }
     }
@@ -3922,9 +3952,9 @@ INT CheckAlgebra (GRID *theGrid)
     if (VCUSED(theVector) != 1)
     {
       errors++;
-      UserWriteF("%d: vector ID=%d NOT referenced by an geom_object: "
+      UserWriteF("%d: vector" VINDEX_FMTX " NOT referenced by an geom_object: "
                  "vtype=%d, objptr=%x",
-                 me, ID(theVector), VTYPE(theVector), VOBJECT(theVector));
+                 me, VINDEX_PRTX(theVector), VTYPE(theVector), VOBJECT(theVector));
       if (VOBJECT(theVector) != NULL)
         UserWriteF(" objtype=%d\n",OBJT(VOBJECT(theVector)));
       else

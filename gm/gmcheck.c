@@ -131,7 +131,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 	    INT cnt = NOOFNODE(theVertex);
 		NODE *Node = theNode;
 
-		while (CORNERTYPE(Node)) {
+		while (Node!=NULL && CORNERTYPE(Node)) {
 		    cnt--;
 			Node = (NODE*) NFATHER(Node);
 		}
@@ -352,6 +352,13 @@ static INT CheckNode (ELEMENT *theElement, NODE* theNode, INT i)
 			me,ID_PRTX(theNode),OBJT(theNode));
 		return(nerrors++);
 	}
+
+if (VOBJECT(NVECTOR(theNode)) == NULL)
+{
+	UserWriteF(PFMT " node=" ID_FMTX " has vector" ID_FMTX "  with VOBJ=NULL\n",
+		me,ID_PRTX(theNode),ID_PRTX(NVECTOR(theNode)));
+	return(nerrors++);
+}
 
 	switch (NTYPE(theNode))
 	{

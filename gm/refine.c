@@ -1027,6 +1027,43 @@ INT ExchangeElementClosureInfo (GRID *theGrid)
 	return(GM_OK);
 }
 
+static int Gather_ElementRefine (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+	ELEMENT *theElement = (ELEMENT *)obj;
+
+	PRINTDEBUG(gm,1,(PFMT "Gather_ElementRefine(): e=" EID_FMTX "\n",
+			 me,EID_PRTX(theElement)))
+	   
+	((INT *)data)[0] = MARKCLASS(theElement);
+	((INT *)data)[1] = MARK(theElement);
+
+	return(GM_OK);
+}
+
+static int Scatter_ElementRefine (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+	ELEMENT *theElement = (ELEMENT *)obj;
+
+	PRINTDEBUG(gm,1,(PFMT "Scatter_ElementClosureInfo(): e=" EID_FMTX "\n",
+			 me,EID_PRTX(theElement)))
+
+	if (EMASTER(theElement)) return(GM_OK);
+	if (EGHOST(theElement) && EGHOSTPRIO(prio)) return(GM_OK);
+
+	SETMARKCLASS(theElement,((INT *)data)[0]);
+	SETMARK(theElement,((INT *)data)[1]);
+
+	return(GM_OK);
+}
+
+INT ExchangeElementRefine (GRID *theGrid)
+{
+	/* exchange information of elements to compute closure */
+	DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_FORWARD,2*sizeof(INT),
+		Gather_ElementRefine, Scatter_ElementRefine);
+
+	return(GM_OK);
+}
 
 #ifdef __THREEDIM__
 
@@ -6014,6 +6051,13 @@ if (0) {
 
 DDD_CONSCHECK;
 
+#ifdef __PERIODIC_BOUNDARY__
+	if (newlevel)
+	{
+		ASSERT(FinerGrid != NULL);
+		Grid_GeometricToPeriodic(FinerGrid);
+	}
+#endif
 
 	if (level<toplevel || newlevel)
 	{
@@ -6245,7 +6289,7 @@ static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
 			SETTHEFLAG(vec,TRUE);
 			if (mark==RED) {
 			  SETUSED(vec,TRUE);
-			  PRINTDEBUG(gm,0,("periodic vec %8d on level %d: used at %d bndries\n",VINDEX(vec),level,n));
+			  PRINTDEBUG(gm,1,("periodic vec %8d on level %d: used at %d bndries\n",VINDEX(vec),level,n));
 			}
 		  }
 		}
@@ -6285,7 +6329,7 @@ static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
 		  
 			if (THEFLAG(vec)) {	/* periodic vector */
 			  SETUSED(vec,TRUE);
-			  PRINTDEBUG(gm,0,("Elem %8d on level %d: periodic vec %8d\n",ID(elem),level,VINDEX(vec)));
+			  PRINTDEBUG(gm,1,("Elem %8d on level %d: periodic vec %8d\n",ID(elem),level,VINDEX(vec)));
 			}
 		  }
 		}
@@ -6317,7 +6361,7 @@ static INT MakePeriodicMarksConsistent(MULTIGRID *mg)
 		  
 		  MarkForRefinement(elem,RED,0);
 
-		  PRINTDEBUG(gm,0,("Elem %8d marked red\n",ID(elem)));
+		  PRINTDEBUG(gm,1,("Elem %8d marked red\n",ID(elem)));
 		}
 	  }
 	}
@@ -6334,6 +6378,7 @@ static INT	PreProcessAdaptMultiGrid(MULTIGRID *theMG)
 	#endif
 
 	#ifdef __PERIODIC_BOUNDARY__
+if (0)
 	if (MakePeriodicMarksConsistent(theMG)) REP_ERR_RETURN(1);
 	#endif
 	
@@ -6348,7 +6393,7 @@ static INT	PostProcessAdaptMultiGrid(MULTIGRID *theMG)
 
 #ifdef __PERIODIC_BOUNDARY__
 {
-if (1)
+if (0)
 	MG_GeometricToPeriodic(theMG,TOPLEVEL(theMG),TOPLEVEL(theMG));
 }
 
@@ -6518,6 +6563,12 @@ if (0)
 
 			REFINE_GRID_LIST(1,theMG,level,("End GridClosure(%d,down):\n",level),"");
 		}
+		#ifdef ModelP
+		else
+		{
+			ExchangeElementRefine(theGrid);
+		}
+		#endif
 
 		/* restrict marks on next lower grid level */
 		if (RestrictMarks(GRID_ON_LEVEL(theMG,level-1))!=GM_OK) RETURN(GM_ERROR);
@@ -6546,6 +6597,11 @@ if (0)
 		SETMODIFIED(theGrid,0);
 		for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) SETMODIFIED(theNode,0);
 
+		#ifdef __PERIODIC_BOUNDARY__
+		if (GRID_ON_LEVEL(theMG,level+1) != NULL)
+			GridSetPerVecCount(GRID_ON_LEVEL(theMG,level+1));
+		#endif
+
 		if (hFlag)
 		{
 			/* leave only regular marks */
@@ -6566,6 +6622,13 @@ if (0)
 
 			REFINE_GRID_LIST(1,theMG,level,("End GridClosure(%d,up):\n",level),"");
 		}
+		#ifdef ModelP
+		else
+		{
+			ExchangeElementRefine(theGrid);
+		}
+		#endif
+		
 
 		nrefined += ComputeCopies(theGrid);
 
