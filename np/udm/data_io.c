@@ -458,7 +458,6 @@ INT SaveData (MULTIGRID *theMG, char *name, INT rename, char *type, INT number, 
   DTIO_BLOCK *block,*bptr;
 #ifdef ModelP
   INT error;
-  int ftype;
   char buf[64];
 #endif
 
@@ -513,20 +512,10 @@ INT SaveData (MULTIGRID *theMG, char *name, INT rename, char *type, INT number, 
 #ifdef ModelP
   error = 0;
   if (me == master)
-  {
     if (DTIO_PARFILE)
-    {
-      ftype = DTIO_filetype(FileName);
-      if (ftype == FT_FILE)
-      {
+      if (DTIO_dircreate(FileName,(int)rename))
         error = -1;
-      }
-      else if (ftype == FT_UNKNOWN)
-      {
-        if (DTIO_dircreate(FileName)) error = -1;
-      }
-    }
-  }
+
   Broadcast(&error,sizeof(int));
   if (error == -1)
   {
