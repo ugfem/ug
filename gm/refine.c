@@ -2206,6 +2206,9 @@ static int ComputeCopies (GRID *theGrid)
 	/* copy all option or neighborhood */	
 	if (rFlag==GM_COPY_ALL) 
 	{
+        #ifdef ModelP
+        flag = UG_GlobalMaxINT(flag);
+        #endif
 		if (flag)
 			for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
 				theElement=SUCCE(theElement))
@@ -5190,6 +5193,8 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 
 /*
 CheckMultiGrid(theMG);
+*/
+
 	/* check necessary condition */
 	if (!MG_COARSE_FIXED(theMG))
 		return (GM_COARSE_NOT_FIXED);
@@ -5207,6 +5212,7 @@ if (0)
 	/* set up information in refine_info */
 	if (TOPLEVEL(theMG) == 0)
 		SETREFINESTEP(REFINEINFO(theMG),0);
+		
 	/* set info for refinement prediction */
 	SetRefineInfo(theMG);
 	/* evaluate prediction */
@@ -5241,14 +5247,14 @@ if (0)
 	/* drop marks to regular elements */
 	if (hFlag)
 		if (DropMarks(theMG)) RETURN(GM_ERROR);
-	
+
 	/* prepare algebra (set internal flags correctly) */
 	PrepareAlgebraModification(theMG);
 
 	toplevel = TOPLEVEL(theMG);
 
 	REFINE_MULTIGRID_LIST(1,theMG,"RefineMultiGrid()","","")
-	
+
 	/* compute modification of coarser levels from above */
 	for (level=toplevel; level>0; level--)
 	{
@@ -5354,10 +5360,14 @@ if (0)
 #ifdef ModelP
 		DDD_IdentifyBegin();
 		DDD_XferBegin();
+#endif
 
 	DEBUG_TIME(0);
 
 		/* now really manipulate the next finer level */		
+		if (level<toplevel || newlevel)
+			if (RefineGrid(theGrid)!=GM_OK)				RETURN(GM_FATAL);
+
 #ifdef ModelP
 		DDD_XferEnd();
 
@@ -5365,6 +5375,9 @@ if (0)
 	DEBUG_TIME(0);
 
 { 
+int check=1;
+int debugstart=3;
+int gmlevel=Debuggm;
 int dddiflevel;
 if (1)
 {
@@ -5377,10 +5390,17 @@ if (1)
 
 		if (Identify_SonNodesAndSonEdges(theGrid))	RETURN(GM_FATAL);
 
+
+
 		DDD_IdentifyEnd();
+
+	DEBUG_TIME(0);
 
 
 		if (level<toplevel || newlevel)
+		{
+			DDD_XferBegin();
+			if (SetGridBorderPriorities(theGrid)) 		RETURN(GM_FATAL);
 			if (UpdateGridOverlap(theGrid))				RETURN(GM_FATAL);
 			DDD_XferEnd();
 
@@ -5388,10 +5408,14 @@ if (1)
 
 			DDD_XferBegin();
 			if (ConnectGridOverlap(theGrid))			RETURN(GM_FATAL);
+			DDD_XferEnd();
+
 	DEBUG_TIME(0);
 
 			/* this is needed due to special cases while coarsening */
 			/* sample scene: a ghost element is needed as overlap  	*/
+			/* for two master elements, one of the master elements  */
+			/* is coarsened, then the prio of nodes of the ghost    */
 			/* element must eventually be downgraded from master    */
 			/* to ghost prio (s.l. 971020)                          */
 			ConstructConsistentGrid(FinerGrid);
@@ -5401,8 +5425,12 @@ if (1)
 
 
 CheckConsistency(theMG,level,debugstart,gmlevel,&check);
+
+
 }
 #endif
+
+		if (level<toplevel || newlevel)
 		{
 			/* now rebuild connections in neighborhood of elements which have EBUILDCON set */
 			/* This flag has been set either by GridDisposeConnection or by CreateElement	*/
@@ -5422,6 +5450,9 @@ CheckConsistency(theMG,level,debugstart,gmlevel,&check);
 	DEBUG_TIME(0);
 
 	}
+
+	#ifdef ModelP
+	IdentifyExit();
 	#endif
 
 	DisposeTopLevel(theMG);
