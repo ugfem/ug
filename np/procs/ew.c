@@ -1524,10 +1524,8 @@ static INT EWSolver1 (NP_EW_SOLVER *theNP, INT level, INT New,
       UserWriteF("\n");
     }
   }
-  if (DoPCR(PrintID,defect,PCR_AVERAGE))
-    NP_RETURN(1,ewresult->error_code);
-  if (PostPCR(PrintID,":ew:avg"))
-    NP_RETURN(1,ewresult->error_code);
+  DoPCR(PrintID,defect,PCR_AVERAGE);
+  PostPCR(PrintID,":ew:avg");
 
   return (0);
 }
