@@ -35,6 +35,7 @@
 #include "general.h"
 #include "ugm.h"      /* for GetFreeOBJT() */
 #include "memmgr.h"
+#include "ugdevices.h"
 #include "namespace.h"
 
 /* UG namespaces: */
@@ -118,7 +119,7 @@ NS_PREFIX NodeIF, NS_PREFIX NodeAllIF;
 DDD_IF NS_PREFIX BorderVectorIF, NS_PREFIX BorderVectorSymmIF,
 NS_PREFIX OuterVectorIF, NS_PREFIX OuterVectorSymmIF,
 NS_PREFIX VectorVIF, NS_PREFIX VectorVAllIF, NS_PREFIX VectorIF;
-DDD_IF NS_PREFIX VertexIF;
+static DDD_IF VertexIF;
 #ifdef __THREEDIM__
 DDD_IF NS_PREFIX EdgeIF, NS_PREFIX BorderEdgeSymmIF, NS_PREFIX EdgeHIF, NS_PREFIX EdgeVHIF,
 NS_PREFIX EdgeSymmVHIF;

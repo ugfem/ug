@@ -38,6 +38,7 @@
 #include "dddi.h"
 
 
+USING_UG_NAMESPACE
 
 /*
         NOTE: all container-classes from ooppcc.h are implemented in this

@@ -97,6 +97,7 @@
 #include "identify.h"
 #include "pargm.h"
 #include "cmdint.h"
+#include "debugger.h"
 
 /** \todo temporarily included to make vecskips consistent for df */
  
@@ -348,8 +349,8 @@ REFINEINFO NS_DIM_PREFIX refine_info;
 
 #ifdef ModelP
 /* control words for identiftication of new nodes and edges */
-INT ce_NEW_NIDENT;
-INT ce_NEW_EDIDENT;
+INT NS_DIM_PREFIX ce_NEW_NIDENT;
+INT NS_DIM_PREFIX ce_NEW_EDIDENT;
 #endif
 
 /****************************************************************************/
@@ -410,7 +411,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, int *check);
+static void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, int *check);
 
 
 /****************************************************************************/
@@ -967,7 +968,7 @@ static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data, DDD_PROC proc, D
 	return(GM_OK);
 }
 
-INT NS_DIM_PREFIX ExchangeElementClosureInfo (GRID *theGrid)
+static INT ExchangeElementClosureInfo (GRID *theGrid)
 {
 	/* exchange information of elements to compute closure */
 	DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
@@ -1005,7 +1006,7 @@ static int Scatter_ElementRefine (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PR
 	return(GM_OK);
 }
 
-INT NS_DIM_PREFIX ExchangeElementRefine (GRID *theGrid)
+static INT ExchangeElementRefine (GRID *theGrid)
 {
 	/* exchange information of elements to compute closure */
 	DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_FORWARD,2*sizeof(INT),
@@ -6194,7 +6195,7 @@ if (0) CheckGrid(FinerGrid,1,0,1,1);
 */
 /****************************************************************************/
 
-void NS_DIM_PREFIX CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, int *check)
+static void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, int *check)
 {
 	GRID *theGrid = GRID_ON_LEVEL(theMG,level);
 

@@ -1,24 +1,24 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  parallel.h													*/
-/*																			*/
-/* Purpose:   defines for parallel ugp version 3							*/
-/*																			*/
-/* Author:	  Stefan Lang, Klaus Birken                                                             */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70550 Stuttgart												*/
-/*			  email: stefan@ica3.uni-stuttgart.de							*/
-/*			  phone: 0049-(0)711-685-7003									*/
-/*			  fax  : 0049-(0)711-685-7000									*/
-/*																			*/
-/* History:   09.05.95 begin, ugp version 3.0								*/
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          parallel.h                                                                                                    */
+/*                                                                                                                                                      */
+/* Purpose:   defines for parallel ugp version 3                                                        */
+/*                                                                                                                                                      */
+/* Author:        Stefan Lang, Klaus Birken                                                             */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70550 Stuttgart                                                                                               */
+/*                        email: stefan@ica3.uni-stuttgart.de                                                   */
+/*                        phone: 0049-(0)711-685-7003                                                                   */
+/*                        fax  : 0049-(0)711-685-7000                                                                   */
+/*                                                                                                                                                      */
+/* History:   09.05.95 begin, ugp version 3.0                                                           */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* RCS_ID
@@ -26,9 +26,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __PARALLEL_H__
@@ -53,13 +53,13 @@ USING_UGDIM_NAMESPACE
   START_UG_NAMESPACE
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -77,7 +77,7 @@ enum HandlerSets
 /* defines for control word entries */
 #define TOUCHED     2 /* object is eventually to be copied  */
 #define COPY        1 /* object is definitely to be copied   */
-#define CLEAR       0 /* clear xfer flag					*/
+#define CLEAR       0 /* clear xfer flag                                        */
 
 /* CE for nodes */
 /* not used, kb 961216
@@ -205,16 +205,16 @@ enum HandlerSets
 
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported global variables                                                                      */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifdef ModelP
@@ -274,9 +274,9 @@ extern DDD_CTRL dddctrl;
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifdef ModelP
@@ -325,8 +325,10 @@ INT             Identify_SonNodesAndSonEdges    (GRID *theGrid);
 INT             IdentifyGridLevels                              (MULTIGRID *theMG, INT FromLevel, INT ToLevel);
 
 /* from overlap.c */
+
 INT             UpdateGridOverlap                       (GRID *theGrid);
 INT             ConnectGridOverlap                      (GRID *theGrid);
+INT             ConnectVerticalOverlap (MULTIGRID *theMG);
 
 /* from priority.c */
 void    SetGhostObjectPriorities        (GRID *theGrid);

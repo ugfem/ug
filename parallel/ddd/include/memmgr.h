@@ -32,10 +32,15 @@
 
 #ifndef __MEMMGR__
 #define __MEMMGR__
-#ifdef __cplusplus
-extern "C" {
-#endif
 
+#include "namespace.h"
+
+START_UG_NAMESPACE
+/*
+   #ifdef __cplusplus
+   extern "C" {
+   #endif
+ */
 
 
 /****************************************************************************/
@@ -97,21 +102,24 @@ extern "C" {
 void *memmgr_AllocOMEM (size_t size, int Typeid, int prio, int attr);
 void  memmgr_FreeOMEM (void *mem, size_t size, int Typeid);
 
-void *memmgr_AllocPMEM (size_t size);
+void *memmgr_AllocPMEM (long unsigned int size);
 void  memmgr_FreePMEM (void *mem);
 
-void *memmgr_AllocAMEM (size_t size);
+void *memmgr_AllocAMEM (long unsigned int size);
 void  memmgr_FreeAMEM (void *mem);
 
-void *memmgr_AllocTMEM (size_t size, int kind);
+void *memmgr_AllocTMEM (long unsigned int size, int kind);
 void  memmgr_FreeTMEM (void *mem, int kind);
 
 void  memmgr_MarkHMEM (long *);
 void *memmgr_AllocHMEM (size_t size, long);
 void  memmgr_ReleaseHMEM (long);
 
+/*
+   #ifdef __cplusplus
+   }
+   #endif
+ */
+END_NAMESPACE
 
-#ifdef __cplusplus
-}
-#endif
 #endif

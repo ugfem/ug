@@ -38,6 +38,7 @@
 /*#include "xfer/xfer.h"*/
 #include "basic/lowcomm.h"
 
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*                                                                          */

@@ -59,7 +59,7 @@
 
 #include "basic/oopp.h"    /* for object-orientated style via preprocessor */
 
-
+USING_UG_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
