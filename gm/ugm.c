@@ -105,7 +105,7 @@
 /*																			*/
 /****************************************************************************/
 
-static char buffer[256];                        /* general purpose text buffer			*/
+static char buffer[4*256];                      /* general purpose text buffer			*/
 
 static VIRT_HEAP_MGMT *theGenMGUDM; /* general user data space management	*/
 
