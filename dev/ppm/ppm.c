@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "defaults.h"
 #include "fileopen.h"
@@ -177,7 +178,7 @@ static void ppm_PlotPixelBuffer(void *buffer, void *data, INT len,
   int i, j;
   long offset;
 
-  p = buffer;
+  p = (unsigned char *)buffer;
   offset = ppm_Window->header_length + 3 * (y*ppm_Window->width + x);
   for (j = 0; j < h; j++) {
     fseek(ppm_Window->file, offset, SEEK_SET);
