@@ -3069,17 +3069,19 @@ static INT ReadSaveDataInput (MULTIGRID *theMG, INT argc, char **argv, char *VDS
   return (0);
 }
 
+#define NM_MAX          100
+
 static INT SaveDataCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  char FileName[NAMESIZE],type[NAMESIZE];
-  VECDATA_DESC *theVDList[5];
+  char FileName[NAMESIZE],type[NAMESIZE],mname[NAMESIZE];
+  VECDATA_DESC *theVDList[NM_MAX];
   char NameList[5][NAMESIZE];
   char **Names;
   char *NamePtr[5];
   EVALUES *theEValues[5];
   EVECTOR *theEVector[5];
-  INT i,j,n,ret,number,rename;
+  INT i,j,n,ret,number,rename,nm;
   int iValue;
   double Value[3];
   DOUBLE t[3];
@@ -3092,15 +3094,29 @@ static INT SaveDataCommand (INT argc, char **argv)
 
   strcpy(type,"asc");
   number = -1;
-  t[0]=t[1]=t[2]=-1.0;
+  t[0]=t[1]=t[2]=-1.0; nm=0;
   rename=0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
+    case 'm' :
+      ret=sscanf(argv[i]+1," %s %d",mname,&iValue);
+      if (ret!=2)
+      {
+        PrintHelp("savedata",HELPITEM," (multiple vector specification)");
+        return(PARAMERRORCODE);
+      }
+      nm=iValue;
+      if (nm<1 || nm>NM_MAX)
+      {
+        PrintHelp("savedata",HELPITEM," (multiple vector number out of range [0,xxx])");
+        return(PARAMERRORCODE);
+      }
+      break;
     case 't' :
       if (sscanf(argv[i],expandfmt(CONCAT3("t %",NAMELENSTR,"[ -~]")),type)!=1)
       {
-        PrintHelp("open",HELPITEM," (cannot read type specification)");
+        PrintHelp("savedata",HELPITEM," (cannot read type specification)");
         return(PARAMERRORCODE);
       }
       break;
@@ -3147,11 +3163,24 @@ static INT SaveDataCommand (INT argc, char **argv)
 
   /* get input */
   n=0;
-  ret = ReadSaveDataInput (theMG,argc,argv,"a",'A',theVDList+0,theEValues+0,theEVector+0);        if (ret) n++;
-  ret = ReadSaveDataInput (theMG,argc,argv,"b",'B',theVDList+1,theEValues+1,theEVector+1);        if (ret) n++;
-  ret = ReadSaveDataInput (theMG,argc,argv,"c",'C',theVDList+2,theEValues+2,theEVector+2);        if (ret) n++;
-  ret = ReadSaveDataInput (theMG,argc,argv,"d",'D',theVDList+3,theEValues+3,theEVector+3);        if (ret) n++;
-  ret = ReadSaveDataInput (theMG,argc,argv,"e",'E',theVDList+4,theEValues+4,theEVector+4);        if (ret) n++;
+  if (nm<=0)
+  {
+    ret = ReadSaveDataInput (theMG,argc,argv,"a",'A',theVDList+0,theEValues+0,theEVector+0);        if (ret) n++;
+    ret = ReadSaveDataInput (theMG,argc,argv,"b",'B',theVDList+1,theEValues+1,theEVector+1);        if (ret) n++;
+    ret = ReadSaveDataInput (theMG,argc,argv,"c",'C',theVDList+2,theEValues+2,theEVector+2);        if (ret) n++;
+    ret = ReadSaveDataInput (theMG,argc,argv,"d",'D',theVDList+3,theEValues+3,theEVector+3);        if (ret) n++;
+    ret = ReadSaveDataInput (theMG,argc,argv,"e",'E',theVDList+4,theEValues+4,theEVector+4);        if (ret) n++;
+  }
+  else
+  {
+    for (i=0; i<nm; i++)
+    {
+      sprintf(buffer,"%s%d",mname,i);
+      theVDList[i]=GetVecDataDescByName(theMG,buffer);
+      if (theVDList[i]==NULL) return (PARAMERRORCODE);
+    }
+    n=nm;
+  }
 
   /* read names */
   Names=NULL;
@@ -3198,9 +3227,9 @@ static INT SaveDataCommand (INT argc, char **argv)
 
 static INT LoadDataCommand (INT argc, char **argv)
 {
-  char FileName[NAMESIZE],type[NAMESIZE];
-  VECDATA_DESC *theVDList[5];
-  INT i,m,n,number,force;
+  char FileName[NAMESIZE],type[NAMESIZE],mname[NAMESIZE];
+  VECDATA_DESC *theVDList[NM_MAX];
+  INT i,m,n,number,force,ret,nm;
   int iValue;
   MEM heapSize;
 
@@ -3211,9 +3240,25 @@ static INT LoadDataCommand (INT argc, char **argv)
   heapSize=0;
   force=0;
   number = -1;
+  nm=0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
+    case 'm' :
+      ret=sscanf(argv[i]+1," %s %d",mname,&iValue);
+      if (ret!=2)
+      {
+        PrintHelp("savedata",HELPITEM," (multiple vector specification)");
+        return(PARAMERRORCODE);
+      }
+      nm=iValue;
+      if (nm<1 || nm>NM_MAX)
+      {
+        PrintHelp("savedata",HELPITEM," (multiple vector number out of range [0,xxx])");
+        return(PARAMERRORCODE);
+      }
+      break;
+
     case 't' :
       if (sscanf(argv[i],expandfmt(CONCAT3("t %",NAMELENSTR,"[ -~]")),type)!=1)
       {
@@ -3263,12 +3308,28 @@ static INT LoadDataCommand (INT argc, char **argv)
 
   /* get vecdatadesc */
   n=0;
-  theVDList[n++]=ReadArgvVecDesc(currMG,"a",argc,argv);
-  theVDList[n++]=ReadArgvVecDesc(currMG,"b",argc,argv);
-  theVDList[n++]=ReadArgvVecDesc(currMG,"c",argc,argv);
-  theVDList[n++]=ReadArgvVecDesc(currMG,"d",argc,argv);
-  theVDList[n++]=ReadArgvVecDesc(currMG,"e",argc,argv);
-
+  if (nm==0)
+  {
+    theVDList[n++]=ReadArgvVecDesc(currMG,"a",argc,argv);
+    theVDList[n++]=ReadArgvVecDesc(currMG,"b",argc,argv);
+    theVDList[n++]=ReadArgvVecDesc(currMG,"c",argc,argv);
+    theVDList[n++]=ReadArgvVecDesc(currMG,"d",argc,argv);
+    theVDList[n++]=ReadArgvVecDesc(currMG,"e",argc,argv);
+  }
+  else
+  {
+    for (i=0; i<nm; i++)
+    {
+      sprintf(buffer,"%s%d",mname,i);
+      theVDList[i]=GetVecDataDescByName(currMG,buffer);
+      if (theVDList[i]==NULL)
+      {
+        theVDList[i]=CreateVecDescOfTemplate (currMG,buffer,NULL);
+        if (theVDList[i]==NULL) return (CMDERRORCODE);
+      }
+    }
+    n=nm;
+  }
   m=0;
   for (i=0; i<n; i++)
     if (theVDList[i]!=NULL)
@@ -11956,7 +12017,7 @@ static INT NumProcCreateCommand (INT argc, char **argv)
   char ConstructName[NAMESIZE];
   NP_BASE *theNumProc;
   MULTIGRID *theMG;
-  INT err;
+  INT err,ignore;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -11964,27 +12025,31 @@ static INT NumProcCreateCommand (INT argc, char **argv)
     PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
     return (CMDERRORCODE);
   }
+
   /* get NumProc name */
-  if ((sscanf(argv[0],expandfmt(CONCAT3(" npcreate %",
-                                        NAMELENSTR,"[ -~]")),
-              theNumProcName)!=1) || (strlen(theNumProcName)==0)) {
-    PrintErrorMessage('E',"npcreate",
-                      "specify the name of the theNumProcName to create");
+  if ((sscanf(argv[0],expandfmt(CONCAT3(" npcreate %",NAMELENSTR,"[ -~]")),theNumProcName)!=1) || (strlen(theNumProcName)==0))
+  {
+    PrintErrorMessage('E',"npcreate","specify the name of the theNumProcName to create");
     return (PARAMERRORCODE);
   }
-  if (ReadArgvChar("c",ConstructName,argc,argv)) {
-    PrintErrorMessage('E',"npcreate",
-                      "specify the name of the constructor");
+  if (ReadArgvChar("c",ConstructName,argc,argv))
+  {
+    PrintErrorMessage('E',"npcreate","specify the name of the constructor");
     return (PARAMERRORCODE);
   }
-  if ((err=CreateObject (theMG,theNumProcName,ConstructName))!=0) {
-    UserWriteF("creating of '%s' failed (error code %d)\n",
-               theNumProcName,err);
-    return (CMDERRORCODE);
+  ignore=ReadArgvOption("i",argc,argv);
+  if (ignore)
+  {
+    theNumProc = GetNumProcByName(theMG,theNumProcName,"");
   }
+  if (!ignore || theNumProc==NULL)
+    if ((err=CreateObject(theMG,theNumProcName,ConstructName))!=0)
+    {
+      UserWriteF("creating of '%s' failed (error code %d)\n",theNumProcName,err);
+      return (CMDERRORCODE);
+    }
   theNumProc = GetNumProcByName(theMG,theNumProcName,"");
-  if (SetCurrentNumProc(theNumProc))
-    return(PARAMERRORCODE);
+  if (SetCurrentNumProc(theNumProc)) return(PARAMERRORCODE);
 
   return(OKCODE);
 }
