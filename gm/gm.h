@@ -157,7 +157,7 @@ START_UGDIM_NAMESPACE
 #define __XXL_MSIZE__
 
 /** \brief If pointer between element/centernode is stored */
-#define __CENTERNODE__
+#undef __CENTERNODE__
 
 /** \brief If interpolation matrix is stored */
 #define __INTERPOLATION_MATRIX__
