@@ -64,8 +64,8 @@
 
 typedef struct {
   INT nip;
-  DOUBLE local[MAX_INT_POINTS][3];
-  DOUBLE weight[MAX_INT_POINTS];
+  const DOUBLE_VECTOR_3D *local;        /* array[nip] for local coordinates */
+  const DOUBLE *weight;                         /* array[nip] for weights */
 } QUADRATURE;
 
 typedef struct {
