@@ -2507,77 +2507,7 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 			    #endif
 			}
 		}
-		else
-			MidNodes[j] = NULL;
 	}
-
-	#ifdef __THREEDIM__
-	/* reset VFATHER of sidenodes */
-	for (j=0; j<SIDES_OF_ELEM(theElement); j++)
-	{
-		NODE *theNode0 = MidNodes[EDGE_OF_SIDE(theElement,j,0)];
-		NODE *theNode1 = MidNodes[EDGE_OF_SIDE(theElement,j,2)];
-
-		/* consider all cases here, because theNode0 or theNode1 may be NULL, */
-		/* but SideNode may exist                                             */
-		if (theNode0==NULL || theNode1==NULL)
-		{
-			theNode0 = theNode1 = NULL;
-			for (i=0; i<EDGES_OF_SIDE(theElement,j); i++)
-			{
-				NODE *MidNode = MidNodes[EDGE_OF_SIDE(theElement,j,i)];
-
-				if (MidNode != NULL)
-				{
-					if (theNode0 == NULL)
-						theNode0 = MidNode;
-					else
-					{
-						theNode1 = MidNode;
-						break;
-					}
-				}
-			}
-			if (theNode0==NULL || theNode1==NULL || theNode0==theNode1)
-				theNode0 = theNode1 = NULL;
-		}
-
-		theNode = NULL;
-
-		if (theNode0!=NULL && theNode1!=NULL)
-			theNode = GetSideNode(theElement,j);
-
-		if (theNode!=NULL && VFATHER(MYVERTEX(theNode))==theElement)
-		{
-			ELEMENT *theNb = NBELEM(theElement,j);
-
-			theVertex = MYVERTEX(theNode);
-			VFATHER(theVertex) = theNb;
-
-			if (theNb != NULL)
-			{
-				/* calculate new local coords */
-				k = ONNBSIDE(theVertex);
-				SETONNBSIDE(theVertex,ONSIDE(theVertex));
-				SETONSIDE(theVertex,k);
-
-				m = CORNERS_OF_SIDE(theNb,k);
-				local = LCVECT(theVertex);
-				fac = 1.0 / m;
-				V_DIM_CLEAR(local);
-				for (o=0; o<m; o++)
-				{
-					l = CORNER_OF_SIDE(theNb,k,o);
-					V_DIM_LINCOMB(1.0,local,1.0,
-								  LOCAL_COORD_OF_ELEM(theNb,l),local);
-				}
-				V_DIM_SCALE(fac,local);
-			}
-			else
-				SETONNBSIDE(theVertex,MAX_SIDES_OF_ELEM);
-		}
-	}
-	#endif
 
 	if (NELIST_DEF_IN_GRID(theGrid)) 
 	    for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
@@ -5643,7 +5573,7 @@ D*/
 
 INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, INT verbose)
 {
-	INT		i,j,sons,maxsons,heap,used,free;
+	INT		i,j,sons,maxsons,heap,used,free_bytes;
 	INT		red, green, yellow; 
 	INT		mg_red,mg_green,mg_yellow;
 	INT		mg_greenrulesons[MAXLEVEL+1][MAX_SONS+1],mg_greenrules[MAXLEVEL+1];
@@ -5660,6 +5590,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 	INT		**lbinfo;
 	INT		total_elements,sum_elements,master_elements,hghost_elements,vghost_elements;
 	VChannelPtr	mych;
+	void *ptr;
 	#endif
 
 	mg_red = mg_green = mg_yellow = mg_sum = 0;
@@ -5788,7 +5719,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 	{
 		heap = HeapFreelistUsed(MGHEAP(theMG));
 		used = HeapUsed(MGHEAP(theMG))-heap;
-		free = (HeapSize(MGHEAP(theMG))-used)>>10;
+		free_bytes = (HeapSize(MGHEAP(theMG))-used)>>10;
 		mg_sum_size = used>>10;
 		mg_red_size = mg_sum_size*mg_red/mg_sum;
 		mg_green_size = mg_sum_size*mg_green/mg_sum;
@@ -5801,7 +5732,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 	if (gridflag)
 	{
 		SETPREDNEW(REFINEINFO(theMG),markcount[MAXLEVEL]*(2<<(DIM-1))*mg_sum_div_red);
-		SETPREDMAX(REFINEINFO(theMG),free/mg_sum_size_div_red);
+		SETPREDMAX(REFINEINFO(theMG),free_bytes/mg_sum_size_div_red);
 	}
 
 	/* list heap info */
@@ -5811,10 +5742,10 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 			mg_red_size,mg_green_size,mg_yellow_size,mg_sum_size,
 			mg_sum_size_div_red,mg_redplusgreen_size_div_red);
 
-		UserWriteF(" EST  FREE=%7dKB  MAXNEWELEMENTS free/(SUM/RED)=%9.0f "
+		UserWriteF(" EST  FREE=%7dKB  MAXNEWELEMENTS free_bytes/(SUM/RED)=%9.0f "
 			"FREE/((RED+GREEN)/RED)=%9.0f\n",
-			free,free/mg_sum_size_div_red,
-			free/mg_redplusgreen_size_div_red);
+			free_bytes,free_bytes/mg_sum_size_div_red,
+			free_bytes/mg_redplusgreen_size_div_red);
 	}
 
 	/* compute and list green rule info */
