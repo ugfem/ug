@@ -37,10 +37,10 @@
 
 UNLINK(OTYPE)
 	{
-		INT Prio = DDD_InfoPriority( HDR(OTYPE)((Object)) );
-		INT listpart = PRIO2LISTPART( CAT(OTYPE,_LIST) ,Prio);
-		INT listpart1 = listpart;
-		OTYPE *Object1 = NULL;
+		INT Prio		= DDD_InfoPriority( HDR(OTYPE)((Object)) );
+		INT listpart	= PRIO2LISTPART( CAT(OTYPE,_LIST) ,Prio);
+		INT listpart1	= listpart;
+		OTYPE *Object1	= NULL;
 
 		IFDEBUG(gm,1) 
 			printf("%d: GRID_UNLINK_" STR(OTYPE) "():" STR(OTYPE) 
@@ -48,7 +48,8 @@ UNLINK(OTYPE)
 			fflush(stdout);
 		ENDDEBUG 
 
-		if (listpart<0 || listpart>LASTPART_OF_LIST(OTYPE)) {
+		if (listpart<0 || listpart>LASTPART_OF_LIST(OTYPE))
+		{
 			printf(PFMT " GRID_UNLINK_" STR(OTYPE) "(): ERROR " STR(OTYPE)
 				" has no valid listpart=%d for prio=%d\n",me,listpart,Prio);
 			fflush(stdout);
@@ -72,23 +73,23 @@ UNLINK(OTYPE)
 		}
 		ENDDEBUG
 
-		switch (listpart) {
-
+		switch (listpart)
+		{
 			case FIRSTPART_OF_LIST:
 
 				if (PRED(Object)!=NULL)
 					SUCC(PRED(Object)) = SUCC(Object);
 
-				if (CAT(LISTPART_LAST,OTYPE(Grid,listpart)) != Object) {
-
+				if (CAT(LISTPART_LAST,OTYPE(Grid,listpart)) != Object)
+				{
 					if (CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) == Object)
 						CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) = SUCC(Object);
 
 					if (SUCC(Object)!=NULL) 
 						PRED(SUCC(Object)) = PRED(Object);
 				}
-				else {
-
+				else
+				{
 					if (CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) == Object)
 						CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) = NULL;
 
@@ -101,10 +102,12 @@ UNLINK(OTYPE)
 
 				if (PRED(Object)!=NULL) 
 					SUCC(PRED(Object)) = SUCC(Object);
-				else {
+				else
+				{
 					CAT(LISTPART_FIRST,OTYPE(Grid,LASTPART_OF_LIST(OTYPE))) = SUCC(Object);
 
-					do {
+					do
+					{
 						listpart1--;
 						Object1 = CAT(LISTPART_LAST,OTYPE(Grid,listpart1));
 					}
@@ -115,7 +118,8 @@ UNLINK(OTYPE)
 				}
 				if (SUCC(Object)!=NULL) 
 					PRED(SUCC(Object)) = PRED(Object);
-				else {
+				else
+				{
 					CAT(LISTPART_LAST,OTYPE(Grid,LASTPART_OF_LIST(OTYPE))) = PRED(Object);
 					if (PRED(Object) != NULL) 
 						SUCC(PRED(Object)) = NULL;
@@ -127,12 +131,13 @@ UNLINK(OTYPE)
 				/* unlink in middle of list */
 				if (PRED(Object)!=NULL) 
 					SUCC(PRED(Object)) = SUCC(Object);
-				else {
-
+				else
+				{
 					if (SUCC(Object)!=NULL) 
 						PRED(SUCC(Object)) = NULL;
 
-					do {
+					do
+					{
 						listpart1--;
 						Object1 = CAT(LISTPART_LAST,OTYPE(Grid,listpart1));
 					}
@@ -141,16 +146,16 @@ UNLINK(OTYPE)
 					if (Object1!=NULL)
 						SUCC(Object1) = SUCC(Object);
 				}
-				if (CAT(LISTPART_LAST,OTYPE(Grid,listpart)) != Object) {
-
+				if (CAT(LISTPART_LAST,OTYPE(Grid,listpart)) != Object)
+				{
 					if (CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) == Object)
 						CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) = SUCC(Object);
 
 					if (SUCC(Object)!=NULL) 
 						PRED(SUCC(Object)) = PRED(Object);
 				}
-				else {
-
+				else
+				{
 					if (CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) == Object)
 						CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) = NULL;
 
@@ -179,7 +184,8 @@ UNLINK(OTYPE)
 			n++;	
 			printf(PFMT " nob=%d o=" CAT(FORMAT(OTYPE),FMTX) "\n",
 				me,n,CAT(FORMAT(OTYPE),PRTX(Object1)));
-			if (n>10000) {
+			if (n>10000)
+			{
 				printf("%d: GRID_UNLINK_" STR(OTYPE) "(): LOOPERROR " STR(OTYPE) 
 					" has listpart=%d for prio=%d\n",me,listpart,Prio);
 				fflush(stdout);
@@ -210,13 +216,15 @@ UNLINK(OTYPE)
 {                                                           
 	if (PRED(Object)!=NULL)                                 
 		SUCC(PRED(Object)) = SUCC(Object);                  
-	else {                                                  
+	else
+	{                                                  
 		CAT(FIRST,OTYPE(Grid)) = SUCC(Object);                
 		if (SUCC(Object)!=NULL) PRED(SUCC(Object)) = NULL;  
 	}                                                       
 	if (SUCC(Object)!=NULL)                                 
 		PRED(SUCC(Object)) = PRED(Object);                  
-	else {                                                  
+	else
+	{                                                  
 		CAT(LAST,OTYPE(Grid)) = PRED(Object);                 
 	    if (PRED(Object)!=NULL) SUCC(PRED(Object)) = NULL;  
 	}                                                       
@@ -230,10 +238,10 @@ UNLINK(OTYPE)
 
 LINK(OTYPE)
 	{
-		INT listpart = PRIO2LISTPART(CAT(OTYPE,_LIST),Prio);
-		INT listpartprev = listpart;
-		INT listpartnext = listpart;
-		OTYPE *Object1 = NULL;
+		INT listpart		= PRIO2LISTPART(CAT(OTYPE,_LIST),Prio);
+		INT listpartprev	= listpart;
+		INT listpartnext	= listpart;
+		OTYPE *Object1		= NULL;
 
 		ASSERT(Grid != NULL);
 		ASSERT(Object != NULL);
@@ -245,7 +253,8 @@ LINK(OTYPE)
 			fflush(stdout);
 		ENDDEBUG 
 
-		if (listpart<0 || listpart>LASTPART_OF_LIST(OTYPE)) {
+		if (listpart<0 || listpart>LASTPART_OF_LIST(OTYPE))
+		{
 			printf("%d: GRID_LINK_" STR(OTYPE) "(): ERROR " STR(OTYPE) 
 				" has no valid listpart=%d for prio=%d\n",me,listpart,Prio);
 			fflush(stdout);
@@ -254,23 +263,26 @@ LINK(OTYPE)
 
 		PRED(Object) = SUCC(Object) = NULL;
 
-		switch  (listpart) {
-
+		switch  (listpart)
+		{
 			case FIRSTPART_OF_LIST:
 
 				Object1 = CAT(LISTPART_FIRST,OTYPE(Grid,FIRSTPART_OF_LIST));
 				PRED(Object) = NULL;
 				CAT(LISTPART_FIRST,OTYPE(Grid,FIRSTPART_OF_LIST)) = Object;
-				if (Object1==NULL) {
+				if (Object1==NULL)
+				{
 					CAT(LISTPART_LAST,OTYPE(Grid,FIRSTPART_OF_LIST)) = Object;
-					do {
+					do
+					{
 						listpartnext++;
 						CAT(Object1=LISTPART_FIRST,OTYPE(Grid,listpartnext));
 					}
 					while (listpartnext<LASTPART_OF_LIST(OTYPE) && Object1==NULL);
 					SUCC(Object) = Object1;
 				}
-				else {
+				else
+				{
 					SUCC(Object) = Object1;
 					PRED(Object1) = Object;
 				}
@@ -286,7 +298,8 @@ LINK(OTYPE)
 					PRED(Object) = NULL;
 					CAT(LISTPART_FIRST,OTYPE(Grid,LASTPART_OF_LIST(OTYPE))) = Object;
 
-					do {
+					do
+					{
 						listpartprev--;
 						Object1=CAT(LISTPART_LAST,OTYPE(Grid,listpartprev));
 					}
@@ -312,9 +325,11 @@ LINK(OTYPE)
 				PRED(Object) = NULL;
 
 				/* empty list? */
-				if (Object1 == NULL) {
+				if (Object1 == NULL)
+				{
 					CAT(LISTPART_LAST,OTYPE(Grid,listpart)) = Object;
-					do {
+					do
+					{
 						listpartnext++;
 						Object1=CAT(LISTPART_FIRST,OTYPE(Grid,listpartnext));
 					}
@@ -324,7 +339,8 @@ LINK(OTYPE)
 				else 
 					PRED(Object1) = Object;
 
-				do {
+				do
+				{
 					listpartprev--;
 					Object1=CAT(LISTPART_LAST,OTYPE(Grid,listpartprev));
 				}
@@ -347,7 +363,8 @@ LINK(OTYPE)
 			 Object1 = SUCC(Object1))
 		{
 			n++;	
-			if (n>10000) {
+			if (n>10000)
+			{
 				printf("%d: GRID_LINK_" STR(OTYPE) "(): LOOPERROR " STR(OTYPE) 
 					" has listpart=%d for prio=%d\n",me,listpart,Prio);
 				fflush(stdout);
@@ -378,12 +395,14 @@ LINK(OTYPE)
 
 	after = CAT(LAST,OTYPE(Grid));
 	SUCC(Object) = NULL;
-	if (after==NULL) {
+	if (after==NULL)
+	{
 		PRED(Object) = NULL;
 		CAT(LAST,OTYPE(Grid)) = Object;
 		CAT(FIRST,OTYPE(Grid)) = Object;
 	}
-	else {
+	else
+	{
 		PRED(Object) = after;
 		CAT(LAST,OTYPE(Grid)) = Object;
 		SUCC(after) = Object;
@@ -494,7 +513,8 @@ CHECK(OTYPE)
 					INT listpartprev = i;
 					OTYPE *Object1;
 
-					do {
+					do
+					{
 						listpartprev--;
 						Object1=CAT(LISTPART_LAST,OTYPE(Grid,listpartprev));
 					}
