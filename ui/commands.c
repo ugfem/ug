@@ -6632,6 +6632,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
   if (MG_COARSE_FIXED(theMG)) {
     MG_COARSE_FIXED(theMG) = FALSE;
     MarkTmpMem(MGHEAP(theMG),&MarkKey);
+    MG_MARK_KEY(theMG) = MarkKey;
     if ((MGNDELEMPTRARRAY(theMG) =
            GetTmpMem(MGHEAP(theMG),NDELEM_BLKS_MAX*sizeof(ELEMENT**),MarkKey))==NULL)
     {
