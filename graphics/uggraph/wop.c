@@ -552,12 +552,19 @@ static DOUBLE_VECTOR EE3D_PartMidPoint;
 static COORD_POINT 	FN3D_MousePos;
 
 /*---------- working variables of 'NW_NodesEval2D' -------------------------*/
-static long  NE_IDColor; 		/* color of node ID's                       */
-static INT   NE_EvalNodeID;		/* 1 if to evaluate 						*/
-static INT   NE_EvalNode;		/* 1 if to evaluate 						*/
-static long  NE_MarkerColor[3];	/* color of node marks						*/
-static short NE_Marker[3];		/* marker for inner nodes					*/
-static short NE_MarkerSize[3];	/* markersize for inner nodes				*/
+static long NE_IDColor; 		/* color of node ID's                       */
+static long NE_BndMarkerColor;	/* color of bnd marks						*/
+static long NE_CornerMarkerColor;/* color of corner marks					*/
+static long NE_InnerMarkerColor;/* color of inner marks 					*/
+static INT NE_EvalNodeID;		/* 1 if to evaluate 						*/
+static INT NE_EvalInnerNode;	/* 1 if to evaluate 						*/
+static INT NE_EvalBndNode;		/* 1 if to evaluate 						*/
+static short NE_InnerMarker;	/* marker for inner nodes					*/
+static short NE_BndMarker;		/* marker for bnd nodes 					*/
+static short NE_CornerMarker;	/* marker for corner nodes 					*/
+static short NE_InnerMarkerSize;/* markersize for inner nodes				*/
+static short NE_BndMarkerSize;	/* markersize for bnd nodes 				*/
+static short NE_CornerMarkerSize;/* markersize for corner nodes 			*/
 static NODE *NE_Node;			/* node for insert node work				*/
 
 /*---------- working variables of 'EW_MarkElement2D' -----------------------*/
@@ -5069,8 +5076,9 @@ static INT PlotMatrixEntry (
 	char valtext[16],*p;
 	
 	Color = (long)(MAT_factor*value+MAT_offset);
-	Color = MAX(Color,WOP_OutputDevice->spectrumStart);
 	Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
+	if (Color<WOP_OutputDevice->spectrumStart)
+		return (0);
 	
 	/* draw */
 	DO_2c(*DOhandle) = DO_POLYGON; DO_inc(*DOhandle) 
@@ -5671,9 +5679,9 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 		EE2D_NoColor[COLOR_BND] 		= 0;	
 	
 	
-	EE2D_Color[COLOR_COPY]			= theOD->yellow;
-	EE2D_Color[COLOR_IRR]			= theOD->green;
-	EE2D_Color[COLOR_REG]			= theOD->red;
+	EE2D_Color[COLOR_COPY]			= 0.75*theOD->spectrumEnd+0.25*theOD->spectrumStart;
+	EE2D_Color[COLOR_IRR]			= (theOD->spectrumEnd+theOD->spectrumStart)/2;
+	EE2D_Color[COLOR_REG]			= theOD->spectrumEnd;
 	EE2D_Color[COLOR_LOWER_LEVEL]	= theOD->white;
 	EE2D_Color[COLOR_EDGE]			= theOD->black;
 	EE2D_Color[COLOR_BND]			= theOD->blue;
@@ -5705,6 +5713,29 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 	EE2D_ElemID 					= theGpo->PlotElemID;
 	EE2D_Subdom 					= theGpo->PlotSubdomain;
 	EE2D_ShrinkFactor				= theGpo->ShrinkFactor;
+	#ifdef ModelP
+	{
+		INT i, nc;
+		ELEMENT *elem;
+		EE2D_PartShrinkFactor = theGpo->PartShrinkFactor;
+		if (EE2D_PartShrinkFactor < 1.0) {
+			nc = 0;
+			V2_CLEAR(EE3D_PartMidPoint);
+			for (elem = EW_GetFirstElement_vert_fw_up(theMG, 0, CURRENTLEVEL(theMG));
+				 elem != NULL;
+				 elem = EW_GetNextElement_vert_fw_up(elem))
+			{
+				for (i = 0; i < CORNERS_OF_ELEM(elem); i++) {
+					nc++;
+					V2_ADD(EE2D_PartMidPoint, CVECT(MYVERTEX(CORNER(elem, i))), 
+						   EE2D_PartMidPoint);
+				}
+			}
+			if (nc > 0)
+			    V2_SCALE(1.0/(DOUBLE)nc, EE2D_PartMidPoint);
+		}
+	}
+	#endif
 	EE2D_Property = 0;
 	if (theGpo->ElemColored==2)
 	{
@@ -5737,50 +5768,6 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 	/* mark surface elements */
 	EE2D_MaxLevel = CURRENTLEVEL(theMG);
 	if (MarkElements2D(theMG,0,EE2D_MaxLevel)) return (1);
-
-    #ifdef ModelP
-	{
-		INT i, nc;
-		ELEMENT *elem;
-		EE2D_PartShrinkFactor = theGpo->PartShrinkFactor;
-		if (EE2D_PartShrinkFactor < 1.0) {
-			nc = 0;
-			V2_CLEAR(EE3D_PartMidPoint);
-			for (elem = EW_GetFirstElement_vert_fw_up(theMG, 0, CURRENTLEVEL(theMG));
-				 elem != NULL;
-				 elem = EW_GetNextElement_vert_fw_up(elem))
-			{
-				for (i = 0; i < CORNERS_OF_ELEM(elem); i++) {
-					nc++;
-					V3_ADD(EE2D_PartMidPoint, CVECT(MYVERTEX(CORNER(elem, i))), 
-						   EE2D_PartMidPoint);
-				}
-			}
-			V2_SCALE(1.0/(DOUBLE)nc, EE2D_PartMidPoint);
-		}
-	}
-/* 
-	{
-		GRID *theGrid;
-		NODE *theNode;
-		INT  nodes;
-
-		EE2D_PartShrinkFactor			= theGpo->PartShrinkFactor;
-		if (EE2D_PartShrinkFactor < 1.0)
-		{
-			nodes = 0;
-			theGrid = GRID_ON_LEVEL(theMG, CURRENTLEVEL(theMG));
-			V2_CLEAR(EE2D_PartMidPoint)
-			for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
-				V2_ADD(EE2D_PartMidPoint,CVECT(MYVERTEX(theNode)),EE2D_PartMidPoint)
-				nodes++;
-			}
-			if (nodes > 0)
-				V2_SCALE(1.0/(DOUBLE)nodes,EE2D_PartMidPoint)
-		}
-	}
-*/
-	#endif
 
 	return (0);
 }
@@ -6393,18 +6380,26 @@ static INT NW_PreProcess_PlotNodes2D (PICTURE *thePicture, WORK *theWork)
 	theMG  = PO_MG(PIC_PO(thePicture));
 	
 	NE_IDColor					= theOD->black;
-	NE_MarkerColor[0]			= theOD->green;
-	NE_MarkerColor[1]			= theOD->blue;
-	NE_MarkerColor[2]			= theOD->red;
-	NE_Marker[0]				= FILLED_RHOMBUS_MARKER;
-	NE_Marker[1]				= FILLED_SQUARE_MARKER;
-	NE_Marker[2]				= FILLED_CIRCLE_MARKER;
-	NE_MarkerSize[0]			= 4;
-	NE_MarkerSize[1]			= 4;
-	NE_MarkerSize[2]			= 4;
+	NE_BndMarkerColor			= theOD->red;
+	NE_CornerMarkerColor		= theOD->red;
+	NE_InnerMarkerColor 		= theOD->red;
+	NE_InnerMarker				= FILLED_CIRCLE_MARKER;
+	NE_BndMarker				= FILLED_SQUARE_MARKER;
+	NE_CornerMarker				= FILLED_RHOMBUS_MARKER;
+	NE_InnerMarkerSize			= 4;
+	NE_BndMarkerSize			= 4;
+	NE_CornerMarkerSize			= 4;
 	
-	NE_EvalNodeID				= (theGpo->PlotNodeID == YES);
-	NE_EvalNode					= (theGpo->PlotNodes == YES);
+	NE_EvalNodeID				= 0;
+	NE_EvalInnerNode			= 0;
+	NE_EvalBndNode				= 0;
+	if (theGpo->PlotNodeID == YES)
+		NE_EvalNodeID			= 1;
+	if (theGpo->PlotNodes == YES)
+	{
+		NE_EvalInnerNode		= 1;
+		NE_EvalBndNode			= 1;
+	}
 	
 	/* mark nodes */
 	switch (theGpo->WhichElem)
@@ -7971,17 +7966,39 @@ static INT EW_ElementBdryEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 
 static INT NW_NodesEval2D (NODE *theNode, DRAWINGOBJ *theDO)
 {
-	INT mv=MOVE(MYVERTEX(theNode));
-	
-	if (NE_EvalNode)
+	if (OBJT(MYVERTEX(theNode))==BVOBJ)
 	{
-		DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
-		DO_2c(theDO) = 1; DO_inc(theDO)
-		DO_2l(theDO) = NE_MarkerColor[mv]; DO_inc(theDO);
-		DO_2s(theDO) = NE_Marker[mv]; DO_inc(theDO);
-		DO_2s(theDO) = NE_MarkerSize[mv]; DO_inc(theDO);
-		V2_COPY(CVECT(MYVERTEX(theNode)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		/* plot marks of boundary nodes */
+		if (NE_EvalBndNode)
+		{
+			DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
+			DO_2c(theDO) = 1; DO_inc(theDO) 
+			if (MOVE(MYVERTEX(theNode)))
+			{
+				DO_2l(theDO) = NE_BndMarkerColor; DO_inc(theDO);
+				DO_2s(theDO) = NE_BndMarker; DO_inc(theDO);
+				DO_2s(theDO) = NE_BndMarkerSize; DO_inc(theDO);
+			}
+			else
+			{
+				DO_2l(theDO) = NE_CornerMarkerColor; DO_inc(theDO);
+				DO_2s(theDO) = NE_CornerMarker; DO_inc(theDO);
+				DO_2s(theDO) = NE_CornerMarkerSize; DO_inc(theDO);
+			}
+			V2_COPY(CVECT(MYVERTEX(theNode)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		}
 	}
+	else
+		/* plot marks of inner nodes */
+		if (NE_EvalInnerNode)
+		{
+			DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
+			DO_2c(theDO) = 1; DO_inc(theDO) 
+			DO_2l(theDO) = NE_InnerMarkerColor; DO_inc(theDO);
+			DO_2s(theDO) = NE_InnerMarker; DO_inc(theDO);
+			DO_2s(theDO) = NE_InnerMarkerSize; DO_inc(theDO);
+			V2_COPY(CVECT(MYVERTEX(theNode)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		}
 	
 	/* plot node ID */
 	if (NE_EvalNodeID)
@@ -8013,17 +8030,39 @@ static INT NW_NodesEval2D (NODE *theNode, DRAWINGOBJ *theDO)
 
 static INT EXT_NodesEval2D (DRAWINGOBJ *theDO, INT *end)
 {
-	INT mv=MOVE(MYVERTEX(NE_Node));
-	
-	if (NE_EvalNode)
+	if (OBJT(MYVERTEX(NE_Node))==BVOBJ)
 	{
-		DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
-		DO_2c(theDO) = 1; DO_inc(theDO)
-		DO_2l(theDO) = NE_MarkerColor[mv]; DO_inc(theDO);
-		DO_2s(theDO) = NE_Marker[mv]; DO_inc(theDO);
-		DO_2s(theDO) = NE_MarkerSize[mv]; DO_inc(theDO);
-		V2_COPY(CVECT(MYVERTEX(NE_Node)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		/* plot marks of boundary nodes */
+		if (NE_EvalBndNode)
+		{
+			DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
+			DO_2c(theDO) = 1; DO_inc(theDO) 
+			if (MOVE(MYVERTEX(NE_Node)))
+			{
+				DO_2l(theDO) = NE_BndMarkerColor; DO_inc(theDO);
+				DO_2s(theDO) = NE_BndMarker; DO_inc(theDO);
+				DO_2s(theDO) = NE_BndMarkerSize; DO_inc(theDO);
+			}
+			else
+			{
+				DO_2l(theDO) = NE_CornerMarkerColor; DO_inc(theDO);
+				DO_2s(theDO) = NE_CornerMarker; DO_inc(theDO);
+				DO_2s(theDO) = NE_CornerMarkerSize; DO_inc(theDO);
+			}
+			V2_COPY(CVECT(MYVERTEX(NE_Node)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		}
 	}
+	else
+		/* plot marks of inner nodes */
+		if (NE_EvalInnerNode)
+		{
+			DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
+			DO_2c(theDO) = 1; DO_inc(theDO) 
+			DO_2l(theDO) = NE_InnerMarkerColor; DO_inc(theDO);
+			DO_2s(theDO) = NE_InnerMarker; DO_inc(theDO);
+			DO_2s(theDO) = NE_InnerMarkerSize; DO_inc(theDO);
+			V2_COPY(CVECT(MYVERTEX(NE_Node)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
+		}
 	
 	/* plot node ID */
 	if (NE_EvalNodeID)
@@ -12271,21 +12310,11 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 					DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO);
 				}
 				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
-				#ifdef ModelP
-				for (j=0; j<n; j++)
-				{
-					V3_LINCOMB(EE3D_PartShrinkFactor,Polygon[j],
-					1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
-					V3_COPY(help,DO_2Cp(theDO));
-					DO_inc_n(theDO,3);
-				}
-				#else
 				for (j=0; j<n; j++)
 				{
 					V3_COPY(Polygon[j],DO_2Cp(theDO));
 					DO_inc_n(theDO,3);
 				}
-				#endif
 			}
 			else
 			{
@@ -12314,21 +12343,12 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 					DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
 				}
 				DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
-				#ifdef ModelP
-				for (j=0; j<n; j++)
-				{
-					V3_LINCOMB(EE3D_PartShrinkFactor,Polygon[j],
-					1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
-					V3_COPY(help,DO_2Cp(theDO));
-					DO_inc_n(theDO,3);
-				}
-				#else
 				for (j=0; j<n; j++)
 				{
 					V3_COPY(Polygon[j],DO_2Cp(theDO));
 					DO_inc_n(theDO,3);
 				}
-				#endif
+				
 				/* inverse if selected */
 				if (IsElementSelected(GElem_MG,theElement))
 				{
@@ -12399,21 +12419,11 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 							DO_2c(theDO) = n; DO_inc(theDO) 
 							break;
 					}
-					#ifdef ModelP
-					for (j=0; j<n; j++)
-					{
-						V3_LINCOMB(EE3D_PartShrinkFactor,Polygon[j],
-						1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
-						V3_COPY(help,DO_2Cp(theDO));
-						DO_inc_n(theDO,3);
-					}
-					#else
 					for (j=0; j<n; j++)
 					{
 						V3_COPY(Polygon[j],DO_2Cp(theDO));
 						DO_inc_n(theDO,3);
 					}
-					#endif
 				}
 				else
 				{
@@ -12440,21 +12450,13 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 							DO_2c(theDO) = n; DO_inc(theDO) 
 							break;
 					}
-					#ifdef ModelP
-					for (j=0; j<n; j++)
-					{
-						V3_LINCOMB(EE3D_PartShrinkFactor,Polygon[j],
-						1.0-EE3D_PartShrinkFactor,EE3D_PartMidPoint,help)
-						V3_COPY(help,DO_2Cp(theDO));
-						DO_inc_n(theDO,3);
-					}
-					#else
 					for (j=0; j<n; j++)
 					{
 						V3_COPY(Polygon[j],DO_2Cp(theDO));
 						DO_inc_n(theDO,3);
 					}
-					#endif
+				
+				
 					/* inverse if selected */
 					if (IsElementSelected(GElem_MG,theElement))
 					{
@@ -12934,7 +12936,7 @@ static void CalcViewableSides(ELEMENT *theElement)
 {
 	DOUBLE_VECTOR Vector, Vector01, Vector02, Vector03, ViewDirection;
 	INT Viewablility;
-	INT i,j,k,l,n;
+	INT i,j;
 	DOUBLE *x[MAX_CORNERS_OF_ELEM], xc[3], xcs[3];
 	DOUBLE ScalarPrd;
 
@@ -13059,31 +13061,6 @@ static void CalcViewableSides(ELEMENT *theElement)
 				{
 					/* compute senter of side */
 					V3_CLEAR(xcs)
-					for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
-						V3_ADD(x[CORNER_OF_SIDE(theElement,i,j)],xcs,xcs)
-					V3_SCALE(0.25,xcs)
-
-					/* set view direction */
-					V3_SUBTRACT(VO_VP(OE_ViewedObj),xcs,ViewDirection);
-
-					/* compute outer normal of (approximating plane for) side */
-					V3_CLEAR(Vector);
-					n = CORNERS_OF_SIDE(theElement, i);
-					for (j = 0; j < n; j++) {
-						k = CORNER_OF_SIDE(theElement, i, j);
-						l = CORNER_OF_SIDE(theElement, i, (j+1) % n);
-						Vector[0] += (x[k][1]-x[l][1])*(x[k][2]+x[l][2]);
-						Vector[1] += (x[k][2]-x[l][2])*(x[k][0]+x[l][0]);
-						Vector[2] += (x[k][0]-x[l][0])*(x[k][1]+x[l][1]);
-					}
-					V3_SUBTRACT(xc,xcs,Vector03);
-					V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
-					if (ScalarPrd>0)
-						V3_SCALE(-1.0, Vector);
-
-					/* test side */
-/*
-					V3_CLEAR(xcs)
 					for (j=0; j<CORNERS_OF_SIDE(theElement,i); ++j)
 						V3_ADD(x[CORNER_OF_SIDE(theElement,i,j)],xcs,xcs)
 					V3_SCALE(0.25,xcs)
@@ -13096,8 +13073,6 @@ static void CalcViewableSides(ELEMENT *theElement)
 					V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
 					if (ScalarPrd>0)
 						V3_SCALE(-1.0, Vector)
-*/
-					/* test side */
 					if (Vector[0]*ViewDirection[0]+Vector[1]*ViewDirection[1]+Vector[2]*ViewDirection[2]>0)
 					{
 						Viewablility |= (1<<i);
@@ -13112,29 +13087,6 @@ static void CalcViewableSides(ELEMENT *theElement)
 				{
 					/* compute senter of side */
 					V3_CLEAR(xcs)
-					for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
-						V3_ADD(x[CORNER_OF_SIDE(theElement,i,j)],xcs,xcs)
-					V3_SCALE(0.25,xcs);
-
-					/* set view direction */
-					V3_SUBTRACT(VO_VP(OE_ViewedObj),VO_VT(OE_ViewedObj),
-								ViewDirection);
-					/* compute outer normal of (approximating plane for) side */
-					V3_CLEAR(Vector);
-					n = CORNERS_OF_SIDE(theElement, i);
-					for (j = 0; j < n; j++) {
-						k = CORNER_OF_SIDE(theElement, i, j);
-						l = CORNER_OF_SIDE(theElement, i, (j+1) % n);
-						Vector[0] += (x[k][1]-x[l][1])*(x[k][2]+x[l][2]);
-						Vector[1] += (x[k][2]-x[l][2])*(x[k][0]+x[l][0]);
-						Vector[2] += (x[k][0]-x[l][0])*(x[k][1]+x[l][1]);
-					}
-					V3_SUBTRACT(xc,xcs,Vector03);
-					V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
-					if (ScalarPrd>0)
-						V3_SCALE(-1.0, Vector);
-/*
-					V3_CLEAR(xcs)
 					for (j=0; j<CORNERS_OF_SIDE(theElement,i); ++j)
 						V3_ADD(x[CORNER_OF_SIDE(theElement,i,j)],xcs,xcs)
 					V3_SCALE(0.25,xcs)
@@ -13146,7 +13098,6 @@ static void CalcViewableSides(ELEMENT *theElement)
 					V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
 					if (ScalarPrd>0)
 						V3_SCALE(-1.0, Vector)
-*/
 					if (Vector[0]*ViewDirection[0]+Vector[1]*ViewDirection[1]+Vector[2]*ViewDirection[2]>0)
 					{
 						Viewablility |= (1<<i);
@@ -16378,49 +16329,6 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 			UserWrite("wrong NProperty, switch back to standard mode\n");
 		}
 	}
-	#ifdef ModelP
-	{
-		INT i, nc;
-		ELEMENT *elem;
-		EE3D_PartShrinkFactor = theGpo->PartShrinkFactor;
-		if (EE3D_PartShrinkFactor < 1.0) {
-			nc = 0;
-			V3_CLEAR(EE3D_PartMidPoint);
-			for (elem = EW_GetFirstElement_vert_fw_up(theMG, 0, CURRENTLEVEL(theMG));
-				 elem != NULL;
-				 elem = EW_GetNextElement_vert_fw_up(elem))
-			{
-				for (i = 0; i < CORNERS_OF_ELEM(elem); i++) {
-					nc++;
-					V3_ADD(EE3D_PartMidPoint, CVECT(MYVERTEX(CORNER(elem, i))), 
-						   EE3D_PartMidPoint);
-				}
-			}
-			V3_SCALE(1.0/(DOUBLE)nc, EE3D_PartMidPoint);
-		}
-	}
-/* 
-	{
-		GRID *theGrid;
-		NODE *theNode;
-		INT  nodes;
-
-		EE3D_PartShrinkFactor			= theGpo->PartShrinkFactor;
-		if (EE3D_PartShrinkFactor < 1.0)
-		{
-			nodes = 0;
-			theGrid = GRID_ON_LEVEL(theMG, 0);
-			V3_CLEAR(EE3D_PartMidPoint)
-			for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
-				V3_ADD(EE3D_PartMidPoint,CVECT(MYVERTEX(theNode)),EE3D_PartMidPoint)
-				nodes++;
-			}
-			if (nodes > 0)
-				V3_SCALE(1.0/(DOUBLE)nodes,EE3D_PartMidPoint)
-		}
-	}
-*/
-	#endif
 
 	return (0);
 }
