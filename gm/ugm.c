@@ -664,6 +664,30 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
    D*/
 /****************************************************************************/
 
+static INT SideOfNbElement(ELEMENT *theElement, INT side)
+{
+  ELEMENT *nb;
+  NODE *nd[MAX_CORNERS_OF_SIDE];
+  INT i,j,m,n,num;
+
+  nb = NBELEM(theElement,side);
+  if (nb == NULL) return(MAX_SIDES_OF_ELEM);
+
+  n = CORNERS_OF_SIDE(theElement,side);
+  for (i=0; i<n; i++)
+    nd[i] = CORNER(theElement,CORNER_OF_SIDE(theElement,side,i));
+
+  for (j=0; j<SIDES_OF_ELEM(nb); j++) {
+    num = 0;
+    for (i=0; i<n; i++)
+      for (m=0; m<CORNERS_OF_SIDE(nb,j); m++)
+        if (nd[i] == CORNER(nb,CORNER_OF_SIDE(nb,j,m))) num++;
+    if (num == n) return(j);
+  }
+
+  return(MAX_SIDES_OF_ELEM);
+}
+
 #ifdef __THREEDIM__
 NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 {
@@ -733,6 +757,7 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
   }
   VFATHER(theVertex) = theElement;
   SETONSIDE(theVertex,side);
+  SETONNBSIDE(theVertex,SideOfNbElement(theElement,side));
   V_DIM_COPY(local,LCVECT(theVertex));
 
   /* create node */
@@ -3365,47 +3390,20 @@ ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList
     SET_NBELEM(theElement,i,Neighbor[i]);
     if (Neighbor[i]!=NULL)
     {
-      if (NbgSdList != NULL) {
-        SET_NBELEM(Neighbor[i],NeighborSide[i],theElement);
-                #ifdef __THREEDIM__
-        if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
-          if (DisposeDoubledSideVector(theGrid,Neighbor[i],
-                                       NeighborSide[i],theElement,i))
-            return(NULL);
-                 #endif
+      if (NbgSdList == NULL)
+        NeighborSide[i] = SideOfNbElement(theElement,i);
+      if (NeighborSide[i] >= MAX_SIDES_OF_ELEM) {
+        PrintErrorMessage('E',"InsertElement",
+                          "neighbor relation inconsistent");
+        return(NULL);
       }
-      else {
-        for(j=0; j<CORNERS_OF_SIDE_REF(n,i); j++ )
-          sideNode[j] = Node[CORNER_OF_SIDE_REF(n,i,j)];
-        for (j=0; j<SIDES_OF_ELEM(Neighbor[i]); j++) {
-
-          num = 0;
-          /* for all corners of the side of the neighbour */
-          for (m=0; m<CORNERS_OF_SIDE(Neighbor[i],j); m++) {
-            NeighborNode = CORNER(Neighbor[i],
-                                  CORNER_OF_SIDE(Neighbor[i],j,m));
-            /* for all corners of the side of the
-               element to be created */
-            for (k=0; k<CORNERS_OF_SIDE_REF(n,i); k++)
-              if(NeighborNode==sideNode[k]) {
-                num++;
-                break;
-              }
-          }
-          if(num==CORNERS_OF_SIDE_REF(n,i)) {
-            if (NBELEM(Neighbor[i],j)!=NULL) {
-              PrintErrorMessage('E',"InsertElement",
-                                "neighbor relation inconsistent");
-              return(NULL);
-            }
-            SET_NBELEM(Neighbor[i],j,theElement);
-
-
-
-            break;
-          }
-        }
-      }
+      SET_NBELEM(Neighbor[i],NeighborSide[i],theElement);
+            #ifdef __THREEDIM__
+      if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+        if (DisposeDoubledSideVector(theGrid,Neighbor[i],
+                                     NeighborSide[i],theElement,i))
+          return(NULL);
+            #endif
     }
   }
 

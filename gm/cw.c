@@ -132,6 +132,8 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {1,MOVE_CE,             VERTEX_CW,      MOVE_SHIFT,             MOVE_LEN                },
   {1,MOVED_CE,            VERTEX_CW,      MOVED_SHIFT,            MOVED_LEN               },
   {1,ONEDGE_CE,           VERTEX_CW,      ONEDGE_SHIFT,           ONEDGE_LEN              },
+  {1,ONSIDE_CE,           VERTEX_CW,      ONSIDE_SHIFT,           ONSIDE_LEN              },
+  {1,ONNBSIDE_CE,         VERTEX_CW,      ONNBSIDE_SHIFT,         ONNBSIDE_LEN    },
 
   {1,NODE_GEN,            NODE_CW,        GENERAL_SHIFT,          GENERAL_LEN             },
   {1,CLASS_CE,            NODE_CW,        CLASS_SHIFT,            CLASS_LEN               },
@@ -190,9 +192,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {0,0,0,0,0},
   {0,0,0,0,0},
   {0,0,0,0,0},
-  {0,0,0,0,0},
-  {0,0,0,0,0},
-}; /* last entry used: 72 for XFERLINK_CE */
+}; /* last entry used: 74 for ONNBSIDE_CE */
 
 /****************************************************************************/
 /*                                                                          */
@@ -260,7 +260,7 @@ INT InitPredefinedControlEntries (void)
       ce->offset_in_object = cw->offset_in_object;
       ce->mask = (POW2(ce->length)-1)<<ce->offset_in_word;
       ce->xor_mask = ~ce->mask;
-                        #ifdef Debug
+      IFDEBUG(gm,1)
       /* check for overlapping control entries */
       if (cw->used_mask & ce->mask)
       {
@@ -278,7 +278,7 @@ INT InitPredefinedControlEntries (void)
         }
         PRINTDEBUG(gm,1,("\n"));
       }
-                        #endif
+      ENDDEBUG
       cw->used_mask |= ce->mask;
     }
   return (GM_OK);

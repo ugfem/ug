@@ -1324,8 +1324,10 @@ extern CONTROL_ENTRY
 /*																			*/
 /* vertices:																*/
 /* MOVED	 |0     |*| | | | | |boundary vertex not lying on edge midpoint */
-/* ONEDGE	 |1 - 4 |*| | | | | |no. of edge in father element				*/
-/* MOVE          |5-6	|*| | | | | |vertex can be moved on a 0(1,2,3) dim subsp*/
+/* MOVE          |1-2	|*| | | | | |vertex can be moved on a 0(1,2,3) dim subsp*/
+/* ONEDGE	 |3 - 6 |*| | | | | |no. of edge in father element				*/
+/* ONSIDE	 |3 - 5 |*| | | | | |no. of side in father element				*/
+/* ONNBSIDE	 |6 - 8 |*| | | | | |no. of side in the neigbor of the father   */
 /*																			*/
 /* nodes:																	*/
 /* CLASS	 |0-2	| |*| | | | |class of node on current level                     */
@@ -1430,7 +1432,7 @@ extern CONTROL_ENTRY
 #define VERTEX_GEN                                      24
 
 #define MOVE_CE                                         25
-#define MOVE_SHIFT                                      5
+#define MOVE_SHIFT                                      1
 #define MOVE_LEN                                        2
 #define MOVE(p)                                         CW_READ(p,MOVE_CE)
 #define SETMOVE(p,n)                            CW_WRITE(p,MOVE_CE,n)
@@ -1442,12 +1444,23 @@ extern CONTROL_ENTRY
 #define SETMOVED(p,n)                           CW_WRITE(p,MOVED_CE,n)
 
 #define ONEDGE_CE                                       27
-#define ONEDGE_SHIFT                            1
+#define ONEDGE_SHIFT                            3
 #define ONEDGE_LEN                                      4
 #define ONEDGE(p)                                       CW_READ(p,ONEDGE_CE)
 #define SETONEDGE(p,n)                          CW_WRITE(p,ONEDGE_CE,n)
-#define ONSIDE(p)                                       CW_READ(p,ONEDGE_CE)
-#define SETONSIDE(p,n)                          CW_WRITE(p,ONEDGE_CE,n)
+
+#define ONSIDE_CE                               73
+#define ONSIDE_SHIFT                            3
+#define ONSIDE_LEN                                      3
+#define ONSIDE(p)                                       CW_READ(p,ONSIDE_CE)
+#define SETONSIDE(p,n)                          CW_WRITE(p,ONSIDE_CE,n)
+
+#define ONNBSIDE_CE                             74
+#define ONNBSIDE_SHIFT                          6
+#define ONNBSIDE_LEN                            3
+#define ONNBSIDE(p)                                     CW_READ(p,ONNBSIDE_CE)
+#define SETONNBSIDE(p,n)                        CW_WRITE(p,ONNBSIDE_CE,n)
+
 
 #define PREDV(p)                (p)->iv.pred
 #define SUCCV(p)                (p)->iv.succ
