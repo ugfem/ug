@@ -199,10 +199,10 @@ static void IFInvPolymark (short n, SHORT_POINT *points)
   SocketWrite(theSocket, (char *)points, sizeof(SHORT_POINT)*n);
 }
 
-static void IFText (const char *s, INT mode)
+static void IFDrawText (const char *s, INT mode)
 {
   BUFSTART;
-  BUFINT(DC_Text);
+  BUFINT(DC_DrawText);
   BUFINT(mode);
   BUFTEXT(s);        /* text am schluss, wegen alignment */
   BUFEND;
@@ -364,7 +364,7 @@ void InitRemotePort (OUTPUTDEVICE *thePort)
   thePort->ErasePolygon   = IFErasePolygon;
   thePort->Polymark               = IFPolymark;
   thePort->InvPolymark    = IFInvPolymark;
-  thePort->Text                   = IFText;
+  thePort->DrawText               = IFDrawText;
   thePort->CenteredText   = IFCenteredText;
   thePort->ClearViewPort  = IFClearViewPort;
 
