@@ -980,7 +980,7 @@ static void NodeObjMkCons (DDD_OBJ obj, int newness)
 #ifdef __PERIODIC_BOUNDARY__
     if (VOBJECT(NVECTOR(theNode))==NULL || PRIO((NODE *)VOBJECT(NVECTOR(theNode)))<PRIO(theNode))
 #endif
-    VOBJECT(NVECTOR(theNode)) = (geom_object*)theNode;
+    VOBJECT(NVECTOR(theNode)) = (GEOM_OBJECT*)theNode;
 
 }
 
@@ -1774,11 +1774,11 @@ static void ElementObjMkCons (DDD_OBJ obj, int newness)
   }
 
   /* reconstruct pointer from vectors */
-  if (dddctrl.elemData) VOBJECT(EVECTOR(pe)) = (geom_object*)pe;
+  if (dddctrl.elemData) VOBJECT(EVECTOR(pe)) = (GEOM_OBJECT*)pe;
 
   if (dddctrl.sideData)
     for (i=0; i<SIDES_OF_ELEM(pe); i++)
-      VOBJECT(SVECTOR(pe,i)) = (geom_object*)pe;
+      VOBJECT(SVECTOR(pe,i)) = (GEOM_OBJECT*)pe;
 
   /*  if called with prio old=ghost and new=ghost,
           then you have eventually to unlink and link
@@ -1928,7 +1928,7 @@ static void ElementObjMkCons_Xferold (DDD_OBJ obj, int newness)
                       me,EID_PRTX(pe),newness))
 
   /* reconstruct pointer from vectors */
-  if (dddctrl.elemData) VOBJECT(EVECTOR(pe)) = (geom_object*)pe;
+  if (dddctrl.elemData) VOBJECT(EVECTOR(pe)) = (GEOM_OBJECT*)pe;
 
         #ifdef __THREEDIM__
   /* update edge of new created elements */
@@ -1956,7 +1956,7 @@ static void ElementObjMkCons_Xferold (DDD_OBJ obj, int newness)
   if (dddctrl.sideData)
   {
     for (i=0; i<SIDES_OF_ELEM(pe); i++)
-      VOBJECT(SVECTOR(pe,i)) = (geom_object*)pe;
+      VOBJECT(SVECTOR(pe,i)) = (GEOM_OBJECT*)pe;
   }
 }
 
