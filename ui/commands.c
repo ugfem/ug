@@ -12035,7 +12035,7 @@ static INT RepErrCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   ShowConfig - show the main configuration settings of this ug-programm
+   ShowConfig - show the main configuration settings of this ug-program
 
    DESCRIPTION:
    This command shows the main configuration options having been active
