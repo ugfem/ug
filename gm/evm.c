@@ -253,7 +253,7 @@ INT PointInTriangle (const COORD_POINT *Points, const COORD_POINT Point)
   rhs[0] = Point.x;
   rhs[1] = Point.y;
   rhs[2] = 1.0;
-  M3_TIMES_M3(Inverse,rhs,lambda);
+  M3_TIMES_V3(Inverse,rhs,lambda);
 
   /* decide if Point lies in the interior of Points */
   if (lambda[0]>=0.0 && lambda[1]>=0.0 && lambda[2]>=0.0)
