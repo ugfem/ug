@@ -3487,8 +3487,8 @@ INT NS_PREFIX SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plot
   /* write header */
   fprintf(stream,">DATA\n");
   fprintf(stream,">TIME(S) 0.0\n");
-  fprintf(stream,">NV: %d\n",nv);
-  fprintf(stream,">NE: %d\n",ne);
+  fprintf(stream,">NV: %ld\n",nv);
+  fprintf(stream,">NE: %ld\n",ne);
 
   /* compute min and max */
   min = MAX_D; max = -MAX_D;
@@ -3512,7 +3512,7 @@ INT NS_PREFIX SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plot
   fprintf(stream," %s\n",tag);
   fprintf(stream," %15.8E\n",min);
   fprintf(stream,">MAX\n");
-  fprintf(stream," %s\n,tag");
+  fprintf(stream," %s\n", tag);
   fprintf(stream," %15.8E\n",max);
   fprintf(stream,">FIN\n");
 
@@ -3567,7 +3567,7 @@ INT NS_PREFIX SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plot
         if (TAG(theElement)==3)
           fprintf(stream,"%ld %ld %ld\n",(long)ID(MYVERTEX(CORNER(theElement,0))),(long)ID(MYVERTEX(CORNER(theElement,1))),(long)ID(MYVERTEX(CORNER(theElement,2))));
         else
-          fprintf(stream,"%ld %ld %ld %ld\n",ID(MYVERTEX(CORNER(theElement,0))),(long)ID(MYVERTEX(CORNER(theElement,1))),(long)ID(MYVERTEX(CORNER(theElement,2))),(long)ID(MYVERTEX(CORNER(theElement,3))));
+          fprintf(stream,"%ld %ld %ld %ld\n",(long)ID(MYVERTEX(CORNER(theElement,0))),(long)ID(MYVERTEX(CORNER(theElement,1))),(long)ID(MYVERTEX(CORNER(theElement,2))),(long)ID(MYVERTEX(CORNER(theElement,3))));
       }
   }
 
