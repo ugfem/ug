@@ -65,6 +65,9 @@ typedef int (*RW_string_proc)(char *string);
 
 /* file */
 static FILE *stream;
+static int n_byte;
+static fpos_t *pos;
+
 
 /* low level read/write functions */
 static RW_mint_proc Read_mint, Write_mint;
@@ -94,10 +97,14 @@ static int DEBUG_Read_mint (int n, int *intList)
 
 static int DEBUG_Write_mint (int n, int *intList)
 {
-  int i;
+  int i,m;
 
   for (i=0; i<n; i++)
-    if (fprintf(stream,"%d\n",intList[i])<0) return (1);
+  {
+    m = fprintf(stream,"%d\n",intList[i]);
+    if (m<0) return (1);
+    n_byte += m;
+  }
   return (0);
 }
 
@@ -113,11 +120,15 @@ static int DEBUG_Read_mdouble (int n, double *doubleList)
 
 static int DEBUG_Write_mdouble (int n, double *doubleList)
 {
-  int i;
+  int i,m;
   double fValue;
 
   for (i=0; i<n; i++)
-    if (fprintf(stream,"%lf\n",doubleList[i])<0) return (1);
+  {
+    m = fprintf(stream,"%lf\n",doubleList[i]);
+    if (m<0) return (1);
+    n_byte += m;
+  }
   return (0);
 }
 
@@ -129,7 +140,11 @@ static int DEBUG_Read_string (char *string)
 
 static int DEBUG_Write_string (char *string)
 {
-  if (fprintf(stream,"%s\n",string)<0) return (1);
+  int m;
+
+  m = fprintf(stream,"%s\n",string);
+  if (m<0) return (1);
+  n_byte += m;
   return (0);
 }
 
@@ -151,10 +166,14 @@ static int ASCII_Read_mint (int n, int *intList)
 
 static int ASCII_Write_mint (int n, int *intList)
 {
-  int i;
+  int i,m;
 
   for (i=0; i<n; i++)
-    if (fprintf(stream,"%d ",intList[i])<0) return (1);
+  {
+    m = fprintf(stream,"%d ",intList[i]);
+    if (m<0) return (1);
+    n_byte += m;
+  }
   return (0);
 }
 
@@ -170,11 +189,15 @@ static int ASCII_Read_mdouble (int n, double *doubleList)
 
 static int ASCII_Write_mdouble (int n, double *doubleList)
 {
-  int i;
+  int i,m;
   double fValue;
 
   for (i=0; i<n; i++)
-    if (fprintf(stream,"%lf ",doubleList[i])<0) return (1);
+  {
+    m = fprintf(stream,"%lf ",doubleList[i]);
+    if (m<0) return (1);
+    n_byte += m;
+  }
   return (0);
 }
 
@@ -186,7 +209,12 @@ static int ASCII_Read_string (char *string)
 
 static int ASCII_Write_string (char *string)
 {
-  if (fprintf(stream,"%s ",string)<0) return (1);
+  int m;
+
+  m = fprintf(stream,"%s ",string);
+  if (m<0) return (1);
+  n_byte += m;
+
   return (0);
 }
 
@@ -206,6 +234,7 @@ static int BIN_Read_mint (int n, int *intList)
 static int BIN_Write_mint (int n, int *intList)
 {
   if (fwrite((void*)intList,sizeof(int)*n,1,stream)!=1) return (1);
+  n_byte += n*sizeof(int);
   return (0);
 }
 
@@ -218,6 +247,7 @@ static int BIN_Read_mdouble (int n, double *doubleList)
 static int BIN_Write_mdouble (int n, double *doubleList)
 {
   if (fwrite((void*)doubleList,sizeof(double)*n,1,stream)!=1) return (1);
+  n_byte += n*sizeof(double);
   return (0);
 }
 
@@ -229,7 +259,11 @@ static int BIN_Read_string (char *string)
 
 static int BIN_Write_string (char *string)
 {
-  if (fprintf(stream,"%s ",string)<0) return (1);
+  int m;
+
+  m = fprintf(stream,"%s ",string);
+  if (m<0) return (1);
+  n_byte += m;
   return (0);
 }
 
@@ -304,4 +338,41 @@ int Bio_Read_string (char *string)
 int Bio_Write_string (char *string)
 {
   return ((*Write_string)(string));
+}
+
+int Bio_Jump_From (void)
+{
+  n_byte = 0;
+  if (fgetpos(stream,pos)) return (1);
+  if (fprintf(stream," %20d ",n_byte)<0) return (1);
+
+  return (0);
+}
+
+int Bio_Jump_To (void)
+{
+  fpos_t *act;
+  int jump;
+
+  if (fgetpos(stream,act)) return (1);
+  if (fsetpos(stream,pos)) return (1);
+  if (fprintf(stream," %20d ",n_byte)<0) return (1);
+  if (fsetpos(stream,act)) return (1);
+
+  return (0);
+}
+
+int Bio_Jump (int dojump)
+{
+  int jump;
+
+  if (fscanf(stream," %20d ",&jump)!=1) return (1);
+  if (dojump==0) return (0);
+  while(jump>0)
+  {
+    if (fgetc(stream)==EOF) return (1);
+    jump--;
+  }
+
+  return (0);
 }

@@ -40,7 +40,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define MGIO_VERSION                                    "UG_IO_1.1"
+#define MGIO_VERSION                                    "UG_IO_1.2"
 
 #define __MGIO_USE_IN_UG__
 #define MGIO_DIM                        3
@@ -227,7 +227,6 @@ struct mgio_refinement {
 struct mgio_bd_general {
 
   int nBndP;                                                                            /* n BNDP in mg, only ug					*/
-  int nBndS;                                                                            /* n BNDS in mg, only ug					*/
 };
 
 typedef struct mgio_mg_general MGIO_MG_GENERAL;
