@@ -1289,6 +1289,8 @@ INT NPTAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
 
 void DefaultPartassParams (PARTASS_PARAMS *pp)
 {
+  int i;
+
   memset(pp,0.0,sizeof(PARTASS_PARAMS));
 
   PP_ACTION(pp)           = PARTASS_UNKNOWN;
@@ -1297,8 +1299,6 @@ void DefaultPartassParams (PARTASS_PARAMS *pp)
   PP_TIME(pp)             = 0.0;
   PP_DELTA_T(pp)          = 0.0;
   PP_ASS_PART(pp)         = NO;
-  PP_SKIP(pp)             = NULL;
-  PP_CO_SKIP(pp)          = NULL;
   PP_MD_A(pp)             = NULL;
   PP_MD_A_glob(pp)        = NULL;
   PP_VD_s(pp)             = NULL;
@@ -1312,6 +1312,9 @@ void DefaultPartassParams (PARTASS_PARAMS *pp)
   PP_VD_r(pp)             = NULL;
   PP_VD_r_glob(pp)        = NULL;
   PP_VD_gridvel(pp)       = NULL;
+  for (i=0; i<NVECTYPES; i++)
+    PP_SKIP(pp)[i]          =
+      PP_CO_SKIP(pp)[i]       = 0;
 
   return;
 }
@@ -2125,12 +2128,12 @@ INT InitAssemble (void)
 {
   /* create partass class */
   if (CreateClass(NL_ASSEMBLE_CLASS_NAME ".nlpass",
-                  sizeof(NP_NL_PARTASS), NLPartAssConstruct))
+                  sizeof(NP_PA_NL), NLPartAssConstruct))
     REP_ERR_RETURN (__LINE__);
 
   /* create time partass class */
   if (CreateClass(T_ASSEMBLE_CLASS_NAME ".tpass",
-                  sizeof(NP_T_PARTASS), TPartAssConstruct))
+                  sizeof(NP_PA_T), TPartAssConstruct))
     REP_ERR_RETURN (__LINE__);
 
   /* TODO (HRR 971118): remove old part assemble num proc (2 items) */

@@ -489,27 +489,27 @@ typedef INT (*TAssemblePostProcessProcPtr)                                    \
 
 typedef struct {
 
-  INT action;                                                   /* defect/matrix (enum PP_ACTIONS)	*/
-  DOUBLE s_a;                                                   /* scale stiffness mat				*/
-  DOUBLE s_m;                                                   /* scale mass matrix				*/
-  DOUBLE time;                                                  /* time                                                         */
-  DOUBLE dt;                                                    /* time step						*/
-  INT ass_part;                                                 /* assemble part only				*/
-  INT                *partskip;
-  INT                *co_partskip;
-  MATDATA_DESC   *MD_A;                                 /* stiffness matrix                             */
+  INT action;                                                           /* def/mat (enum PP_ACTIONS)	*/
+  DOUBLE s_a;                                                           /* scale stiffness mat			*/
+  DOUBLE s_m;                                                           /* scale mass matrix			*/
+  DOUBLE time;                                                          /* time                                                 */
+  DOUBLE dt;                                                            /* time step					*/
+  INT ass_part;                                                         /* assemble part only			*/
+  INT partskip[NVECTYPES];                              /* own skip flag positions		*/
+  INT co_partskip[NVECTYPES];                           /* co skip flag positions		*/
+  MATDATA_DESC   *MD_A;                                         /* stiffness matrix                     */
   MATDATA_DESC   *MD_A_glob;
-  VECDATA_DESC   *VD_s;                                 /* solution                                             */
+  VECDATA_DESC   *VD_s;                                         /* solution                                     */
   VECDATA_DESC   *VD_s_glob;
   VECDATA_DESC   *VD_s_i;
   VECDATA_DESC   *VD_s_co;
-  VECDATA_DESC   *VD_o;                                 /* last time step sol				*/
+  VECDATA_DESC   *VD_o;                                         /* last time step sol			*/
   VECDATA_DESC   *VD_o_glob;
-  VECDATA_DESC   *VD_c;                                 /* correction						*/
+  VECDATA_DESC   *VD_c;                                         /* correction					*/
   VECDATA_DESC   *VD_c_glob;
-  VECDATA_DESC   *VD_r;                                 /* right hand side					*/
+  VECDATA_DESC   *VD_r;                                         /* right hand side				*/
   VECDATA_DESC   *VD_r_glob;
-  VECDATA_DESC   *VD_gridvel;                   /* grid velocity					*/
+  VECDATA_DESC   *VD_gridvel;                                   /* grid velocity				*/
 
 } PARTASS_PARAMS;
 
