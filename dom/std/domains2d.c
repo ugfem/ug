@@ -2235,7 +2235,7 @@ static INT InitFour (void)
                               south2Boundary,NULL)==NULL) return(1);
   if (CreateBoundarySegment2D("east2", 2,0, 5, 4, 5,1,0.0,1.0,
                               east2Boundary, NULL)==NULL) return(1);
-  if (CreateBoundarySegment2D("north2",2,0, 6,10, 5,1,0.0,1.0,
+  if (CreateBoundarySegment2D("north2",0,2, 6,10, 5,1,0.0,1.0,
                               north2Boundary,NULL)==NULL) return(1);
   if (CreateBoundarySegment2D("east1", 1,2, 7, 9,10,1,0.0,1.0,
                               eastBoundary, NULL)==NULL) return(1);
