@@ -13420,7 +13420,14 @@ static INT EW_SelectElement3D (DRAWINGOBJ *q)
 				found |= PointInPolygon(point,j,FE3D_MousePos);
 				break;
 			case DO_SURRPOLYGON:
-				DO_inc_SURRPOLYGON(q,3);
+				DO_inc(q)
+				n = DO_2c(q); DO_inc_n(q,3)
+				for (j=0; j<n; j++)
+				{
+					V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,3);
+					(*OBS_ProjectProc)(help,point+j);
+				}
+				found |= PointInPolygon(point,j,FE3D_MousePos);
 				break;
 			default:
 				return (1);
