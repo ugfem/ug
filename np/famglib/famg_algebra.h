@@ -36,8 +36,13 @@
 
 #define FAMG_INNER_FIRST
 
+// FAMG_SINGLESTEP works only if the given grid has full geometric infos.
+// This is true for level 0 grid from UG or if FAMG_FULL_OVERLAP is active.
+// The geometric info is used to force the same elimination sequence independent
+// of the number of processors (incl. 1 PE).
 //#define FAMG_SINGLESTEP
 //#define FAMG_SINGLESTEP_FULL_OUTPUT
+//#define FAMG_FULL_OVERLAP
 
 #endif
 
