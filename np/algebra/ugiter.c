@@ -3120,7 +3120,7 @@ INT l_lrdecomp (GRID *g, const MATDATA_DESC *M)
     Diag = MVALUEPTR(VSTART(vi),0);
 
     if (InvertSmallBlock(n,DiagComp,Diag,InvMat)!=0)
-      REP_ERR_RETURN (-i);                              /* decompostion failed */
+      return (-i);                              /* decompostion failed (no REP_ERR_RETURN because may be regularized) */
 
     /* write inverse back to diagonal block */
     if (StoreInverse)
@@ -3343,11 +3343,12 @@ INT LUDecomposeDiagBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_
    l_lrregularize - regularize last diagonal block
 
    SYNOPSIS:
-   INT l_lrregularize (GRID *theGrid, const MATDATA_DESC *M)
+   INT l_lrregularize (GRID *theGrid, const MATDATA_DESC *M, INT restore)
 
    PARAMETERS:
    .  theGrid - pointer to grid
    .  M - type matrix descriptor for decomposition
+   .  restore - if true and StoreInverse the inverse of the last block is computed and stored first
 
    DESCRIPTION:
    This function regularizes the last diagonal block if it was found to be singular.
@@ -3361,14 +3362,25 @@ INT LUDecomposeDiagBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_
    D*/
 /****************************************************************************/
 
-INT l_lrregularize (GRID *theGrid, const MATDATA_DESC *M)
+INT l_lrregularize (GRID *theGrid, const MATDATA_DESC *M, INT restore)
 {
   INT type,found,ncmp,i,l,cmp,singComp,matComp;
   DOUBLE value, min, InvMat[MAX_SINGLE_MAT_COMP];
 
-  /* find singular component and regularize */
   type = VTYPE(LASTVECTOR(theGrid));
   ncmp = MD_ROWS_IN_RT_CT(M,type,type);
+
+  if (restore && StoreInverse)
+  {
+    if (InvertSmallBlock(ncmp,MD_MCMPPTR_OF_RT_CT(M,type,type),MVALUEPTR(VSTART(LASTVECTOR(theGrid)),0),InvMat)!=0)
+      REP_ERR_RETURN (2);                               /* decompostion failed */
+
+    /* write inverse back to diagonal block */
+    for (l=0; l<ncmp*ncmp; l++)
+      MVALUEPTR(VSTART(LASTVECTOR(theGrid)),0)[MD_MCMP_OF_RT_CT(M,type,type,l)] = InvMat[l];
+  }
+
+  /* find singular component and regularize */
   found = 0;
   min = MAX_D;
   for (i=0; i<ncmp; i++)
