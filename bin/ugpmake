@@ -116,8 +116,6 @@ then
     dom)
         echo UGMAKE=$PMAKE
         UGMAKE=$PMAKE
-        echo ugpmake std
-        ugpmake std
         echo UGMAKE=$SMAKE
         UGMAKE=$SMAKE
         echo cd $UGROOT/dom
