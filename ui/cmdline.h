@@ -54,7 +54,7 @@
 /* return values for commands */
 #define DONE                    0               /* command exectuted properly				*/
 #define OKCODE                  0               /* command exectuted properly				*/
-#define QUITCODE                2               /* indicates end of program to calling if	*/
+#define QUITCODE                12345   /* indicates end of program to calling if	*/
 #define PARAMERRORCODE  3               /* not enough parameters					*/
 #define CMDERRORCODE    4               /* other error condition					*/
 #define INTERRUPTCODE   5               /* cmd terminated by user interrupt			*/
