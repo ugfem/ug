@@ -1359,7 +1359,14 @@ int Write_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
 #endif
 
   s=t=0;
-  intList[s++] = MGIO_ECTRL(pr->refrule+1,pr->nnewcorners,pr->nmoved,pr->refclass,pr->orphanid_ex);
+  if (MGIO_PARFILE)
+  {
+    intList[s++] = MGIO_ECTRL(pr->refrule+1,pr->nnewcorners,pr->nmoved,pr->refclass,pr->orphanid_ex);
+  }
+  else
+  {
+    intList[s++] = MGIO_ECTRL(pr->refrule+1,pr->nnewcorners,pr->nmoved,pr->refclass,0);
+  }
   intList[s++] = pr->sonref;
   if (pr->refrule>-1)
   {
