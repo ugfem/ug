@@ -6416,23 +6416,23 @@ static INT MakeGridCommand  (INT argc, char **argv)
   MULTIGRID *theMG;
   INT i,Single_Mode,display;
   MESH *mesh;
-    #ifdef __TWODIM__
+  INT smooth;
+#ifdef __TWODIM__
   CoeffProcPtr coeff;
   GG_ARG args;
   GG_PARAM params;
   long ElemID,m;
   int iValue;
   float tmp;
-        #endif
-        #if defined __THREEDIM__ && defined _NETGEN
-  INT smooth;
+#endif
+#if defined __THREEDIM__ && defined _NETGEN
   DOUBLE h;
   INT coeff;
-        #endif
+#endif
 
-        #ifdef ModelP
+#ifdef ModelP
   if (me!=master) return (OKCODE);
-        #endif
+#endif
 
   /* get current multigrid */
   theMG = currMG;
@@ -6443,42 +6443,31 @@ static INT MakeGridCommand  (INT argc, char **argv)
   }
   if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
   {
-    PrintErrorMessage('E',"InsertBoundaryNode",
-                      "only a multigrid with exactly one level can be edited");
+    PrintErrorMessage('E',"InsertBoundaryNode","only a multigrid with exactly one level can be edited");
     RETURN(GM_ERROR);
   }
   if (MG_COARSE_FIXED(theMG)) {
     MG_COARSE_FIXED(theMG) = FALSE;
     MarkTmpMem(MGHEAP(theMG));
     if ((MGNDELEMPTRARRAY(theMG) =
-           GetTmpMem(MGHEAP(theMG),NDELEM_BLKS_MAX*sizeof(ELEMENT**)))
-        ==NULL) {
+           GetTmpMem(MGHEAP(theMG),NDELEM_BLKS_MAX*sizeof(ELEMENT**)))==NULL)
+    {
       ReleaseTmpMem(MGHEAP(theMG));
-      PrintErrorMessage('E',"makegrid",
-                        "ERROR: could not allocate memory from the MGHeap");
+      PrintErrorMessage('E',"makegrid","ERROR: could not allocate memory from the MGHeap");
       return (CMDERRORCODE);
     }
-    for (i=0; i<NDELEM_BLKS_MAX; i++)
-      MGNDELEMBLK(theMG,i) = NULL;
+    for (i=0; i<NDELEM_BLKS_MAX; i++) MGNDELEMBLK(theMG,i) = NULL;
   }
 
   Single_Mode = 0;
   display = 0;
 
   /* check options */
-    #ifdef __TWODIM__
-  args.doanimate =
-    args.doupdate =
-      args.dostep =
-        args.equilateral =
-          args.plotfront =
-            args.printelem =
-              args.doangle =
-                args.doEdge =
-                  args.doAngle =  NO;
+#ifdef __TWODIM__
+  args.doanimate = args.doupdate = args.dostep = args.equilateral = args.plotfront = args.printelem = args.doangle = args.doEdge = args.doAngle =  NO;
   args.doedge = YES;
   ElemID = -1;
-        #endif
+#endif
 
   if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))
   {
@@ -6503,31 +6492,37 @@ static INT MakeGridCommand  (INT argc, char **argv)
 
   if (mesh->nElements == NULL)
   {
-        #ifdef __TWODIM__
+#ifdef __TWODIM__
     coeff = NULL;
     params.h_global = .0;
     params.CheckCos = cos(PI/18.0);
     params.searchconst = 0.2;
+    smooth = 10;
     for (i=1; i<argc; i++)
       switch (argv[i][0])
       {
       case 'a' :
-        args.doanimate = YES; break;
+        args.doanimate = YES;
+        break;
       case 'u' :
-        args.doupdate = YES; break;
+        args.doupdate = YES;
+        break;
       case 's' :
-        args.dostep = YES; break;
+        args.dostep = YES;
+        break;
       case 'f' :
-        args.plotfront = YES; break;
+        args.plotfront = YES;
+        break;
       case 'p' :
-        args.printelem = YES; break;
+        args.printelem = YES;
+        break;
       case 'E' :
-        args.equilateral = YES; break;
+        args.equilateral = YES;
+        break;
       case 'e' :
         if (sscanf(argv[i],"e %ld",&ElemID)!=1)
         {
-          PrintHelp("makegrid",HELPITEM,
-                    " (could not read <element id>)");
+          PrintHelp("makegrid",HELPITEM," (could not read <element id>)");
           return (PARAMERRORCODE);
         }
         break;
@@ -6546,8 +6541,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
       case 'm' :
         if (sscanf(argv[i],"m %ld",&m)!=1)
         {
-          PrintHelp("makegrid",HELPITEM,
-                    " (could not read <element id>)");
+          PrintHelp("makegrid",HELPITEM," (could not read <element id>)");
           return (PARAMERRORCODE);
         }
         coeff = MG_GetCoeffFct(theMG,m);
@@ -6555,32 +6549,26 @@ static INT MakeGridCommand  (INT argc, char **argv)
       case 'h' :
         if (sscanf(argv[i],"h %f",&tmp)!=1)
         {
-          PrintHelp("makegrid",HELPITEM,
-                    " (could not read <element id>)");
+          PrintHelp("makegrid",HELPITEM," (could not read <element id>)");
           return (PARAMERRORCODE);
         }
-        if (tmp > 0)
-          params.h_global = tmp;
+        if (tmp > 0) params.h_global = tmp;
         break;
       case 'A' :
         if (sscanf(argv[i],"A %f",&tmp)!=1)
         {
-          PrintHelp("makegrid",HELPITEM,
-                    " (could not read <element id>)");
+          PrintHelp("makegrid",HELPITEM," (could not read <element id>)");
           return (PARAMERRORCODE);
         }
-        if ((tmp > 0) && (tmp < 90))
-          params.CheckCos = cos(tmp*PI/180.0);
+        if ((tmp > 0) && (tmp < 90)) params.CheckCos = cos(tmp*PI/180.0);
         break;
       case 'S' :
         if (sscanf(argv[i],"S %f",&tmp)!=1)
         {
-          PrintHelp("makegrid",HELPITEM,
-                    " (could not read <element id>)");
+          PrintHelp("makegrid",HELPITEM," (could not read <element id>)");
           return (PARAMERRORCODE);
         }
-        if ((tmp > 0) && (tmp < 1.0))
-          params.searchconst = tmp;
+        if ((tmp > 0) && (tmp < 1.0)) params.searchconst = tmp;
         break;
       case 'd' :
         if (sscanf(argv[i],"d %d",&iValue)!=1) break;
@@ -6590,41 +6578,49 @@ static INT MakeGridCommand  (INT argc, char **argv)
         if (sscanf(argv[i],"D %d",&iValue)!=1) break;
         display = iValue;
         break;
+      case 'g' :
+        if (sscanf(argv[i],"g %d",&iValue)!=1) break;
+        smooth = iValue;
+        break;
       default :
         break;
       }
     params.epsi = params.h_global * 0.125;
 
-    if (GenerateGrid(theMG, &args, &params, mesh, coeff, Single_Mode, display) != 0)
+    if (GenerateGrid(theMG, &args, &params, mesh, coeff, Single_Mode, display))
     {
       PrintErrorMessage('E',"makegrid","execution failed");
       ReleaseTmpMem(MGHEAP(theMG));
       return (CMDERRORCODE);
     }
-        #endif
+    if (SmoothMultiGrid(theMG,smooth,GM_KEEP_BOUNDARY_NODES)!=GM_OK)
+    {
+      PrintErrorMessage('E',"makegrid","failed smoothing the multigrid");
+      return (CMDERRORCODE);
+    }
+    if (CheckOrientationInGrid (GRID_ON_LEVEL(theMG,0)))
+    {
+      PrintErrorMessage('E',"makegrid","orientation wrong");
+      return (CMDERRORCODE);
+    }
+#endif
 
-        #if defined __THREEDIM__ && defined _NETGEN
-    if (ReadArgvINT("s",&smooth,argc,argv))
-      smooth = 0;
-    if (ReadArgvDOUBLE("h",&h,argc,argv))
-      h = 1.0;
+#if defined __THREEDIM__ && defined _NETGEN
+    if (ReadArgvINT("s",&smooth,argc,argv)) smooth = 0;
+    if (ReadArgvDOUBLE("h",&h,argc,argv)) h = 1.0;
     if(h<0)
-      if (ReadArgvINT("c",&coeff,argc,argv))
-        coeff = 0;
+      if (ReadArgvINT("c",&coeff,argc,argv)) coeff = 0;
 
-    if (GenerateGrid3d(theMG,mesh,h,smooth,
-                       ReadArgvOption("d",argc,argv),coeff))
+    if (GenerateGrid3d(theMG,mesh,h,smooth,ReadArgvOption("d",argc,argv),coeff))
     {
       PrintErrorMessage('E',"makegrid","execution failed");
       ReleaseTmpMem(MGHEAP(theMG));
       return (CMDERRORCODE);
     }
-            #endif
+#endif
   }
 
-  if (FixCoarseGrid(theMG))
-    return (CMDERRORCODE);
-
+  if (FixCoarseGrid(theMG)) return (CMDERRORCODE);
   InvalidatePicturesOfMG(theMG);
   InvalidateUgWindowsOfMG(theMG);
 
