@@ -10465,7 +10465,7 @@ static INT NumProcCreateCommand (INT argc, char **argv)
     return (PARAMERRORCODE);
   }
   if ((err=CreateObject (theMG,theNumProcName,ConstructName))!=0) {
-    UserWriteF("execution of '%s' failed (error code %d)",
+    UserWriteF("creating of '%s' failed (error code %d)\n",
                theNumProcName,err);
     return (CMDERRORCODE);
   }
@@ -10500,7 +10500,7 @@ static INT NumProcInitCommand (INT argc, char **argv)
   theMG = GetCurrentMultigrid();
   if (theMG==NULL)
   {
-    PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
+    PrintErrorMessage('E',"npinit","there is no current multigrid\n");
     return (CMDERRORCODE);
   }
 
@@ -10510,7 +10510,7 @@ static INT NumProcInitCommand (INT argc, char **argv)
     theNumProc = GetCurrentNumProc();
     if (theNumProc == NULL)
     {
-      PrintErrorMessage('E',"npexecute","there is no current numerical procedure");
+      PrintErrorMessage('E',"npinit","there is no current numerical procedure");
       return (CMDERRORCODE);
     }
   }
@@ -10519,7 +10519,7 @@ static INT NumProcInitCommand (INT argc, char **argv)
     theNumProc = GetNumProcByName (theMG,theNumProcName,"");
     if (theNumProc == NULL)
     {
-      PrintErrorMessage('E',"npexecute","cannot find specified numerical procedure");
+      PrintErrorMessage('E',"npinit","cannot find specified numerical procedure");
       return (CMDERRORCODE);
     }
   }
@@ -10527,12 +10527,19 @@ static INT NumProcInitCommand (INT argc, char **argv)
   switch (theNumProc->status) {
   case NP_NOT_INIT :
     UserWriteF("num proc %s has status NOT_INIT\n",theNumProcName);
+    break;
   case NP_NOT_ACTIVE :
     UserWriteF("num proc %s has status NOT_ACTIVE\n",theNumProcName);
+    break;
   case NP_ACTIVE :
-    UserWriteF("num proc %s has status NOT_ACTIVE\n",theNumProcName);
+    UserWriteF("num proc %s has status ACTIVE\n",theNumProcName);
+    break;
   case NP_EXECUTABLE :
     UserWriteF("num proc %s has status EXECUTABLE\n",theNumProcName);
+    break;
+  default :
+    PrintErrorMessage('E',"npinit","unknown status");
+    return (CMDERRORCODE);
   }
 
   return(OKCODE);
