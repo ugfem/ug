@@ -15501,7 +15501,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, ELEMENT **table)
 	/* create new shell from last one */
 	lastBegin = 0;
 	newBegin  = pos;
-	while (pos < grid->nElem) {
+	while (pos < NT(grid)) {
 		/* try to find regular shell */
 		for (i = lastBegin; i<newBegin; i++) {
 			p = table[i];
@@ -16904,7 +16904,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	
 	#else
 	/* allocate memory for ordering list */
-	table = (ELEMENT **)GetTmpMem(heap, (grid->nElem)*sizeof(ELEMENT *), MarkKey);
+	table = (ELEMENT **)GetTmpMem(heap, (NT(grid))*sizeof(ELEMENT *), MarkKey);
 	if (table == NULL) {
 		ReleaseTmpMem(heap,MarkKey);
 		UserWrite("OrderCoarseGrid(): out of mem 3\n");
@@ -16934,7 +16934,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 		else if (err == 2)
 			UserWrite("OrderCoarseGrid(): out of mem4\n");
 		else
-			PutAtEndOfList(grid,grid->nElem, table);
+			PutAtEndOfList(grid,NT(grid), table);
     #else
 		err = OrderFathersXSH(mg, table);
 		if (err == 1)
