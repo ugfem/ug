@@ -589,6 +589,23 @@ int HT_ShiftEntry (void **obj)
   return (0);
 }
 
+void write_cge_gnu(FILE *stream, MGIO_CG_ELEMENT *elem, struct mgio_cg_point_seq *cg_point_out)
+{
+  int i,id;
+
+  for (i=0; i<3; i++)
+  {
+    id=elem->cornerid[i];
+    fprintf(stream,"%f %f;\n",cg_point_out[id].position[0],cg_point_out[id].position[1]);
+    id=elem->cornerid[(i+1)%3];
+    fprintf(stream,"%f %f;\n",cg_point_out[id].position[0],cg_point_out[id].position[1]);
+    fprintf(stream,"\n");
+  }
+  fprintf(stream,"\n");
+
+  return;
+}
+
 int MergeMultigrid (char *in, int rename)
 {
   HASH_TABLE *ht_cgv,*ht_ref,*ht_bnp, *ht_cgvlid;
@@ -609,10 +626,13 @@ int MergeMultigrid (char *in, int rename)
   unsigned short *ProcList;
   BNDP **BndPList;
   char prefix[128],appdix[128],outname[128],tmp[128],tmp2[28],*p;
-  int i,j,k,l,s,t,non,foid,tag,*vidlist,key[MGIO_MAX_CORNERS_OF_ELEM+1],*ncge,n_ref_tot,nref_read,level,bndpid,*in_lid2gid;
+  int i,j,k,l,s,t,non,foid,tag,*vidlist,key[MGIO_MAX_CORNERS_OF_ELEM+1],*ncge,n_ref_tot,nref_read,level,*in_lid2gid;
   int nc[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS],*o_element_im,out_blid_offset,out_ilid_offset,nid_l0_max,vid_l0_max,vid_bl0_max,lid,error;
-  int found,n_bn_l0,n_in_l0;
+  int found,n_bn_l0,n_in_l0,id;
   void *object;
+  FILE *stream;
+
+  stream=fopen("foo","w");
 
   /*************************************************************************/
   /************************ read input file ********************************/
@@ -750,24 +770,26 @@ int MergeMultigrid (char *in, int rename)
             in_lid2gid[l]=cg_pinfo.n_ident[k];
 #ifdef MERGE_DEBUG
             key[0]=1; key[1]=cg_pinfo.n_ident[k];
-            if (PushHashEntry(&ht_nodes,key,NULL))                          {printf("ERROR in 'MergeMultigrid': cannot insert vertex in 'ht_cgv' of proc %d file\n",i);return (1);}
+            if (PushHashEntry(&ht_nodes,key,NULL))                          {printf("ERROR in 'MergeMultigrid': cannot insert vertex in 'ht_nodes' of proc %d file\n",i);return (1);}
 #endif
           }
         if (level==0 && o_element_im[j])
           for (k=0; k<ge_element[o_element[j].ge].nCorner; k++)
             if (MASTERPRIO(cg_pinfo.prio_node[k]))
             {
+              assert(o_element[j].cornerid[k]>=foid);
+              assert(o_element[j].cornerid[k]<non);
+              id=vidlist[o_element[j].cornerid[k]-foid];
               key[0]=1; key[1]=cg_pinfo.n_ident[k];
-              if (PushHashEntry(&ht_cgv,key,(void*)(cg_point[i]+o_element[j].cornerid[k])))
+              if (PushHashEntry(&ht_cgv,key,(void*)(cg_point[i]+id)))
               {printf("ERROR in 'MergeMultigrid': cannot insert vertex in 'ht_cgv' of proc %d file\n",i);return (1);}
-              bndpid=vidlist[o_element[j].cornerid[k]-foid];
               if (nid_l0_max<o_element[j].cornerid[k]) nid_l0_max=o_element[j].cornerid[k];
-              if (vid_l0_max<bndpid) vid_l0_max=bndpid;
-              if (bndpid<bd_general[i].nBndP)
+              if (vid_l0_max<id) vid_l0_max=id;
+              if (id<bd_general[i].nBndP)
               {
-                if (PushHashEntry(&ht_bnp,key,(void*)(BndPList[bndpid])))
-                {printf("ERROR in 'MergeMultigrid': cannot insert vertex in 'ht_cgv' of proc %d file\n",i);return (1);}
-                if (vid_bl0_max<bndpid) vid_bl0_max=bndpid;
+                if (PushHashEntry(&ht_bnp,key,(void*)(BndPList[id])))
+                {printf("ERROR in 'MergeMultigrid': cannot insert vertex in 'ht_bnp' of proc %d file\n",i);return (1);}
+                if (vid_bl0_max<id) vid_bl0_max=id;
               }
             }
         for (k=0; k<ge_element[o_element[j].ge].nCorner; k++)
@@ -813,7 +835,7 @@ int MergeMultigrid (char *in, int rename)
                 assert(in_lid2gid[t]==-1 || in_lid2gid[t]==ref->pinfo[l].n_ident[s]);
 #ifdef MERGE_DEBUG
                 key[0]=1; key[1]=ref->pinfo[l].n_ident[s];
-                if (PushHashEntry(&ht_nodes,key,NULL))                          {printf("ERROR in 'MergeMultigrid': cannot insert vertex in 'ht_cgv' of proc %d file\n",i);return (1);}
+                if (PushHashEntry(&ht_nodes,key,NULL))                          {printf("ERROR in 'MergeMultigrid': cannot insert vertex in 'ht_nodes' of proc %d file\n",i);return (1);}
 #endif
               }
           for (l=0; l<rr_rules[ref->refrule].nsons; l++)
@@ -1009,6 +1031,7 @@ int MergeMultigrid (char *in, int rename)
       elem->cornerid[i]=lid;
     }
     elem->nref=0;
+    write_cge_gnu(stream,elem,cg_point_out);
   }
   if (EndHashGet(ht_cge))                                     {printf("ERROR in 'MergeMultigrid': cannot 'EndHashGet' of 'ht_cge' for output file\n");return (1);}
 #ifdef MERGE_DEBUG
@@ -1058,6 +1081,8 @@ int MergeMultigrid (char *in, int rename)
 #ifdef VERBOSE
   printf("\n");
 #endif
+
+  close(stream);
 
   return (0);
 }
