@@ -32,7 +32,7 @@ uglib: include $(UGMODULES)
 
 UGD: include $(UGDMODULES) ugd.o
 	make $(UG_LIB) 	
-	$(UG_LINK) -o bin/ugd $(ARCH_LFLAGS) ugd.o lib/libdev.a \
+	$(UG_LINK) -o bin/ugd $(ARCH_LFLAGS) ugd.o lib/libdev$(IF).a \
                           $(UG_LIB) $(UG_LFLAGS)
 	echo "ugd compiled"
 
