@@ -57,5 +57,6 @@
 /* misc macros */
 #define AMG_MIN(x,y)            (((x)<(y)) ? (x) : (y))
 #define AMG_MAX(x,y)            (((x)>(y)) ? (x) : (y))
+#define AMG_ABS(x)              (((x)>=0) ?  (x) : (-x))
 
 #endif

@@ -58,6 +58,7 @@
 #define AMG_SSOR                        3
 #define AMG_ILU                         4
 #define AMG_MGC                         5
+#define AMG_EX                          6
 
 #define AMG_LS                          5               /* solver types							*/
 #define AMG_CG                          6

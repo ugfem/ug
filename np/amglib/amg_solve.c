@@ -220,6 +220,56 @@ static int jac (AMG_SolverContext *sc, int k, int depth,                        
   return(AMG_OK);
 }
 
+static int ex (AMG_SolverContext *sc, int k, int depth,                         \
+               AMG_MATRIX *A[AMG_MAX_LEVELS], AMG_GRAPH *G[AMG_MAX_LEVELS],            \
+               AMG_MATRIX *M[AMG_MAX_LEVELS], AMG_VECTOR *x[AMG_MAX_LEVELS],           \
+               AMG_VECTOR *b[AMG_MAX_LEVELS], AMG_VECTOR *d[AMG_MAX_LEVELS])
+{
+  /* defect d=b-Ax is valid on entry */
+  AMG_EXApplyLU(AMG_MATRIX_A(M[k]),AMG_MATRIX_BW(M[k]),AMG_MATRIX_N(M[k]),AMG_VECTOR_X(d[k]));
+  AMG_daxpy(x[k],1.0,d[k]);                             /* update solution x */
+  return(AMG_OK);
+}
+
+static AMG_MATRIX *prepare_ex (AMG_MATRIX *A)
+{
+  int bw,rl;
+  int i,n=A->n,k,start,end;
+  int *ra=A->ra, *ja=A->ja;
+  double *a=A->a,*lu;
+  AMG_MATRIX *new;
+
+  /* compute bandwith */
+  bw=0;
+  for (i=0; i<n; i++)
+  {
+    start = ra[i]; end = start+ja[start];
+    for (k=start+1; k<end; k++)
+      bw=AMG_MAX(bw,AMG_ABS(i-ja[k]));
+  }
+
+  /* allocate new matrix */
+  new = AMG_NewMatrix(n,1,n*(2*bw+1),AMG_MATRIX_SAS(A),"ex matrix");
+  if (new==NULL) return(new);
+  lu=new->a;
+  AMG_MATRIX_BW(new)=bw;
+
+  /* insert & copy entries */
+  for (i=0; i<n*(2*bw+1); i++) lu[i]=0.0;
+  for (i=0; i<n; i++)
+  {
+    start = ra[i]; end = start+ja[start];
+    AMG_EX_MAT(lu,bw,i,i) = a[start];
+    for (k=start+1; k<end; k++)
+      AMG_EX_MAT(lu,bw,i,ja[k]) = a[k];
+  }
+
+  /* decompose */
+  if (AMG_EXDecomposeMatrix(lu,bw,n)) return(AMG_NULL);
+
+  /* return matrix */
+  return(new);
+}
 
 
 static int mgc (AMG_SolverContext *sc, int k, int depth,                                \
@@ -375,6 +425,14 @@ static int ls_build (AMG_SolverContext *sc, AMG_CoarsenContext *cc, AMG_MATRIX *
     case AMG_SSOR :
       coarse_smoother = ssor;
       break;
+    case AMG_EX :
+      M[depth]=prepare_ex(A[depth]);
+      if (M[depth]==NULL) {
+        AMG_Print("error in prepare_ex\n");
+        return(AMG_FATAL);
+      }
+      coarse_smoother = ex;
+      break;
     default :
       AMG_Print("invalid coarse smoother\n");
       return(AMG_FATAL);
@@ -518,6 +576,14 @@ static int cg_build (AMG_SolverContext *sc, AMG_CoarsenContext *cc, AMG_MATRIX *
       break;
     case AMG_SSOR :
       coarse_smoother = ssor;
+      break;
+    case AMG_EX :
+      M[depth]=prepare_ex(A[depth]);
+      if (M[depth]==NULL) {
+        AMG_Print("error in prepare_ex\n");
+        return(AMG_FATAL);
+      }
+      coarse_smoother = ex;
       break;
     default :
       AMG_Print("invalid coarse smoother\n");
@@ -669,6 +735,14 @@ static int bcgs_build (AMG_SolverContext *sc, AMG_CoarsenContext *cc, AMG_MATRIX
       break;
     case AMG_SSOR :
       coarse_smoother = ssor;
+      break;
+    case AMG_EX :
+      M[depth]=prepare_ex(A[depth]);
+      if (M[depth]==NULL) {
+        AMG_Print("error in prepare_ex\n");
+        return(AMG_FATAL);
+      }
+      coarse_smoother = ex;
       break;
     default :
       AMG_Print("invalid coarse smoother\n");

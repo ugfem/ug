@@ -631,7 +631,7 @@ static INT AMGSolverPostProcess (NP_LINEAR_SOLVER *theNP,
    .  $n2 <value> -  number of postsmoothing steps in mg, default 2.
    .  $g <value> -  gamma in mg, default 1 (V-cycle).
    .  $omp <value> - damping factor for prolongation, default 1.8, adapts automatically.
-   .  $csm <string> - select smoother for coarse grid solver: ssor | sor | jac, default ssor.
+   .  $csm <string> - select smoother for coarse grid solver: ssor | sor | jac | ex default ssor.
    .  $cit <value> - maximum number of iterations on coarsest grid, default 100.
    .  $cred <value> - reduction factor on coarsest grid, default 0.001.
 
@@ -750,6 +750,7 @@ static INT AMGSolverInit (NP_BASE *theNP, INT argc , char **argv)
     if (strcmp(buf,"ssor")==0) theAMGC->sc.coarse_smoother=AMG_SSOR;
     if (strcmp(buf,"sor")==0) theAMGC->sc.coarse_smoother=AMG_SOR;
     if (strcmp(buf,"jac")==0) theAMGC->sc.coarse_smoother=AMG_DJAC;
+    if (strcmp(buf,"ex")==0) theAMGC->sc.coarse_smoother=AMG_EX;
   }
   else
     theAMGC->sc.coarse_smoother=AMG_SSOR;

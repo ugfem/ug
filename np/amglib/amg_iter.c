@@ -17,6 +17,7 @@
 /*																			*/
 /* History:   04 FEB 1996 Begin												*/
 /*			  01 OKT 1997 redesign											*/
+/*			  21 OKT 1997 EX code due to Klaus Johannsen					*/
 /*																			*/
 /* Remarks:                                                                                                                             */
 /*																			*/
@@ -265,4 +266,94 @@ int AMG_sorb (AMG_MATRIX *A, AMG_VECTOR *v_, AMG_VECTOR *d_, double *omega)
 
 
   return(AMG_FATAL);
+}
+
+/****************************************************************************/
+/*D
+   AMG_EXDecomposeMatrixdouble - LU decompose a band matrix (double numbers)
+
+   SYNOPSIS:
+   int AMG_EXDecomposeMatrixdouble (double *Mat, int bw, int n);
+
+   PARAMETERS:
+   .  Mat - pointer to double array containing the bandmatrix
+   .  bw - bandwidth
+   .  n - number of rows (==columns) of the matrix
+
+   DESCRIPTION:
+   This function calculates the Gauss decomposition of the given band matrix;
+   the L and U factors are stored instead of the band matrix.
+
+   RETURN VALUE:
+   int  0: o.k.
+        1: main diagonal element to small (0.0); can not divide
+
+   SEE ALSO:
+   EXDecomposeMatrixFLOAT, EXCopyMatrixdouble, EXApplyLUdouble
+   D*/
+/****************************************************************************/
+
+int AMG_EXDecomposeMatrix (double *Mat, int bw, int n)
+{
+  int i,j,k;
+  double f,d;
+
+  for (i=0; i<n-1; i++)
+  {
+    d = AMG_EX_MAT(Mat,bw,i,i);
+    if (AMG_ABS(d)<=1.0E-80) return (1);
+    for (j=i+1; j<=AMG_MIN(i+bw,n-1); j++)
+    {
+      f = AMG_EX_MAT(Mat,bw,j,i)/d;
+      AMG_EX_MAT(Mat,bw,j,i) = f;
+      for (k=i+1; k<=AMG_MIN(i+bw,n-1); k++)
+        AMG_EX_MAT(Mat,bw,j,k) -= f*AMG_EX_MAT(Mat,bw,i,k);
+    }
+  }
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   AMG_EXApplyLUdouble - applies a LU decomposed band matrix (double numbers)
+
+   SYNOPSIS:
+   int AMG_EXApplyLUdouble (double *Mat, int bw, int n, double *Vec);
+
+   PARAMETERS:
+   .  Mat - pointer to double array containing the bandmatrix
+   .  bw - bandwidth
+   .  n - number of rows (==columns) of the matrix
+   .  Vec - pointer to double array containing the vector
+
+   DESCRIPTION:
+   This function solves for the LU decomposed band matrix 'Mat' the equation
+   L*U x = f.
+   f is provided in 'Vec' and the result x is returned again in 'Vec'.
+
+   RETURN VALUE:
+   int  0: o.k.
+
+   SEE ALSO:
+   EXApplyLUFLOAT, EXCopyMatrixdouble, EXDecomposeMatrixdouble
+   D*/
+/****************************************************************************/
+
+int AMG_EXApplyLU (double *Mat, int bw, int n, double *Vec)
+{
+  int i,j;
+
+  /* invert lower */
+  for (i=1; i<n; i++)
+    for (j=AMG_MAX(i-bw,0); j<i; j++)
+      Vec[i] -= AMG_EX_MAT(Mat,bw,i,j)*Vec[j];
+
+  /* invert upper */
+  for (i=n-1; i>=0; i--)
+  {
+    for (j=i+1; j<=AMG_MIN(i+bw,n-1); j++)
+      Vec[i] -= AMG_EX_MAT(Mat,bw,i,j)*Vec[j];
+    Vec[i] /= AMG_EX_MAT(Mat,bw,i,i);
+  }
+  return (0);
 }

@@ -47,6 +47,8 @@
 /*																			*/
 /****************************************************************************/
 
+#define AMG_EX_MAT(m,b,i,j)                     ((m)[2*(b)*(i) + (j)])
+
 /****************************************************************************/
 /*																			*/
 /* data structures exported by the corresponding source file				*/
@@ -71,5 +73,8 @@
 int     AMG_jac                 (AMG_MATRIX *A, AMG_VECTOR *v, AMG_VECTOR *d, double *omega);
 int     AMG_sorf                (AMG_MATRIX *A, AMG_VECTOR *v, AMG_VECTOR *d, double *omega);
 int     AMG_sorb                (AMG_MATRIX *A, AMG_VECTOR *v, AMG_VECTOR *d, double *omega);
+
+int     AMG_EXDecomposeMatrix (double *Mat, int bw, int n);
+int     AMG_EXApplyLU (double *Mat, int bw, int n, double *Vec);
 
 #endif

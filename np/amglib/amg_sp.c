@@ -195,6 +195,7 @@ AMG_MATRIX *AMG_NewMatrix (int n, int b, int nonzeros, int system_as_scalar, cha
   AMG_MATRIX_SAS(new) = system_as_scalar;
   AMG_MATRIX_NONZEROS(new) = nonzeros;
   AMG_MATRIX_CONNECTIONS(new) = 0;
+  AMG_MATRIX_BW(new) = -1;
   AMG_MATRIX_RA(new) = r;
   AMG_MATRIX_JA(new) = j;
   AMG_MATRIX_A(new) = a;

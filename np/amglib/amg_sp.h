@@ -92,6 +92,7 @@ struct amg_matrix {                                     /* combines all links			
   int b;                                                        /* dimension of blocks: b x b			*/
   int bb;                                                       /* block size in doubles: ie bs=b*b		*/
   int system_as_scalar;                         /* system treated as scalars if > 1		*/
+  int bandwidth;                                        /* bandwidth of the matrix				*/
   int nonzeros;                                         /* number of nonzero blocks allocated	*/
   int connections;                                      /* nonzeros actually used				*/
   int *ra;                                                      /* ra[i]: index of first entry of row i	*/
@@ -113,6 +114,7 @@ struct amg_matrix AMG_MATRIX;                   /* a matrix                     
 #define AMG_MATRIX_SAS(p)                       ((p)->system_as_scalar)
 #define AMG_MATRIX_NONZEROS(p)          ((p)->nonzeros)
 #define AMG_MATRIX_CONNECTIONS(p)       ((p)->connections)
+#define AMG_MATRIX_BW(p)                        ((p)->bandwidth)
 #define AMG_MATRIX_RA(p)                        ((p)->ra)
 #define AMG_MATRIX_JA(p)                        ((p)->ja)
 #define AMG_MATRIX_A(p)                         ((p)->a)
