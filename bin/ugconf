@@ -582,6 +582,8 @@ done
 # decide whether ug.conf has really been changed
 grep_valid_entries $UGROOT/ug.conf > $UGROOT/ug.conf.old.1
 grep_valid_entries $UGROOT/ug.conf.new > $UGROOT/ug.conf.new.1
+if test $HOSTTYPE != "macintosh"
+then
 if `diff $UGROOT/ug.conf.old.1 $UGROOT/ug.conf.new.1 >/dev/null `
 then
 	if test $FLAG_QUIET = "false"
@@ -591,6 +593,7 @@ then
 	rm $UGROOT/ug.conf.old.1 $UGROOT/ug.conf.new.1
 	rm $UGROOT/ug.conf.new
 	exit 0;
+fi
 fi
 rm $UGROOT/ug.conf.old.1 $UGROOT/ug.conf.new.1
 
