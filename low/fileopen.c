@@ -41,6 +41,7 @@
 #ifdef __MACINTOSH__
 #include <unistd.h>
 #include <stat.h>
+#include <Files.h>
 /* NB: On Macs the structs of <types.h> are defined locally in <stat.h> */
 #else
 #include <sys/stat.h>
@@ -583,6 +584,92 @@ INT DirWalk (const char *dir, ProcessFileProc fcn)
       }
   closedir(dfd);
   return 0;
+
+#elif macintosh
+  CInfoPBRec cipbr;                                                     /* local parameter block */
+  HFileInfo       *fpb = (HFileInfo *)&cipbr;           /* two pointers */
+  DirInfo *dpb = (DirInfo *) &cipbr;
+  HVolumeParam hpb;
+  OSErr err;
+  short idx;
+  char dirname[1024];
+  short volID;
+  long dirID;
+
+  /* copy dir to dirname and delete trailing ':' */
+  /* dir is const, thats why we don't modify it directly */
+  if (dir[strlen(dir)-1]==':') strncpy(dirname,dir,strlen(dir)-1);
+  else strcpy(dirname,dir);
+
+  /* first, get volume reference number via PBHGetVInfo... */
+  hpb.ioNamePtr = c2pstr((char *)dirname);
+  hpb.ioVRefNum = 0;                                            /* use pathname, not ref num */
+  hpb.ioVolIndex = -1;                                  /* don't use volume index either */
+  err = PBHGetVInfo( (HParmBlkPtr)&hpb, FALSE );
+  if (err) {
+    if (err==nsvErr)             /* No such volume error */
+      REP_ERR_RETURN (VOLUME_NOT_FOUND);
+    if (err==paramErr)             /* No such volume error */
+      REP_ERR_RETURN (NO_DEFAULT_VOLUME);
+  }
+  volID = hpb.ioVRefNum;
+
+  /* next, get directory ID via PBGetCatInfo... */
+  fpb->ioVRefNum = 0;
+  /* partial pathname, and buffer to receive name */
+  if (dir[strlen(dir)-1]==':') strncpy(dirname,dir,strlen(dir)-1);
+  else strcpy(dirname,dir);
+  fpb->ioNamePtr = c2pstr((char *)dirname);
+  fpb->ioDirID = 0;                                             /* search from working directory */
+  fpb->ioFDirIndex = 0;                                 /* gimme info about the named directory */
+  err = PBGetCatInfo( &cipbr, FALSE );      /* get the catalog info */
+  if (err)        {
+    /* No such volume */
+    if (err == nsvErr) REP_ERR_RETURN (VOLUME_NOT_FOUND);
+    /* I/O error */
+    if (err == ioErr) REP_ERR_RETURN (IO_ERROR);
+    /* Bad Filename */
+    if (err == bdNamErr) REP_ERR_RETURN (BAD_FILENAME);
+    /* File not found */
+    if (err == fnfErr) REP_ERR_RETURN (FILE_NOT_FOUND);
+    /* No default volume */
+    if (err == paramErr) REP_ERR_RETURN (NO_DEFAULT_VOLUME);
+    /* Directory not found or incomplete pathname */
+    if (err == dirNFErr) REP_ERR_RETURN (DIR_NOT_FOUND);
+    /* User does not have the correct access */
+    if (err == afpAccessDenied) REP_ERR_RETURN (ACCESS_ERROR);
+    /* Directory not found or incomplete pathname */
+    if (err == afpObjectTypeErr) REP_ERR_RETURN (DIR_NOT_FOUND);
+  }
+  dirID = dpb->ioDrDirID;               /* get directory ID for subsequent searching */
+
+  /* return if path is not a directory */
+  if (dpb->ioFlAttrib & 16) REP_ERR_RETURN (PATH_NO_DIR)
+
+    /* now loop through files using PBGetCatInfo... */
+    fpb->ioVRefNum = volID;
+  for( idx=1; TRUE; idx++) {
+    char name[MAX_PATH_LEN];
+
+    fpb->ioDirID = dirID;                       /* set ioDirID on each loop */
+    fpb->ioFDirIndex = idx;                     /* index of entry to return */
+
+    err = PBGetCatInfo( &cipbr, FALSE );
+    if (err) break;                                     /* exit when no more entries */
+
+    if (strlen(dirname)+strlen(p2cstr(fpb->ioNamePtr))+2 > sizeof(name))
+      REP_ERR_RETURN (NAME_TOO_LONG)
+      else
+      {
+        strcpy(name,dirname);
+        strcat(name,p2cstr(fpb->ioNamePtr));
+        (*fcn)(name);
+      }
+
+  }
+
+  return 0;
+
 #endif
 
   printf("fileopen.c: DirWalk() not implemented for architecture: %s\n",ARCHNAME);

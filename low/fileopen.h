@@ -60,7 +60,14 @@ enum DIRWALK_ERR
   PATH_INVALID    = 1,
   PATH_NO_DIR,
   NAME_TOO_LONG,
-  NOT_IMPLEMENTED
+  NOT_IMPLEMENTED,
+  VOLUME_NOT_FOUND,
+  NO_DEFAULT_VOLUME,
+  IO_ERROR,
+  BAD_FILENAME,
+  FILE_NOT_FOUND,
+  DIR_NOT_FOUND,
+  ACCESS_ERROR
 };
 
 /****************************************************************************/
