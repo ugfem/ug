@@ -618,7 +618,7 @@ static void InitMetaPort (OUTPUTDEVICE *thePort)
  */
 /****************************************************************************/
 
-static WINDOWID OpenMetaWindow (const char *title, INT x, INT y, INT width, INT height, INT *Global_LL, INT *Global_UR, INT *Local_LL, INT *Local_UR, INT *error)
+static WINDOWID OpenMetaWindow (const char *title, INT rename, INT x, INT y, INT width, INT height, INT *Global_LL, INT *Global_UR, INT *Local_LL, INT *Local_UR, INT *error)
 {
   METAWINDOW *MetaWindow;
   char metapath[BUFFLEN];
@@ -635,7 +635,7 @@ static WINDOWID OpenMetaWindow (const char *title, INT x, INT y, INT width, INT 
   MetaWindow->blockUsed = 0;
   MetaWindow->itemCounter = 0;
   if (GetDefaultValue(DEFAULTSFILENAME,"metafilesdir",metapath)==0)
-    MetaWindow->metafile = FileOpenUsingSearchPath(title,"wb",metapath);
+    MetaWindow->metafile = FileOpenUsingSearchPath_r(title,"wb",metapath,rename);
   else
     MetaWindow->metafile = fileopen(title,"wb");
   if (MetaWindow->metafile==NULL)
