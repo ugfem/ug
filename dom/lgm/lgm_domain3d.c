@@ -2660,28 +2660,14 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   Surface_Local2Global (theSurface,global1,loc1);
   Surface_Local2Global (theSurface,global2,loc2);
 
-  global[0] = local[0] * global0[0] + local[1] * global1[0] + (1-local[0]-local[1]) * global2[0];
-  global[1] = local[0] * global0[1] + local[1] * global1[1] + (1-local[0]-local[1]) * global2[1];
-  global[2] = local[0] * global0[2] + local[1] * global1[2] + (1-local[0]-local[1]) * global2[2];
-
-  /*	global[0] = (1-local[0]-local[1]) * global0[0] + local[1] * global1[0] + local[0] * global2[0];
-          global[1] = (1-local[0]-local[1]) * global0[1] + local[1] * global1[1] + local[0] * global2[1];
-          global[2] = (1-local[0]-local[1]) * global0[2] + local[1] * global1[2] + local[0] * global2[2];	*/
-
-  /*	global[0] = (1-local[0]-local[1]) * global0[0] + local[0] * global1[0] + local[1] * global2[0];
-          global[1] = (1-local[0]-local[1]) * global0[1] + local[0] * global1[1] + local[1] * global2[1];
-          global[2] = (1-local[0]-local[1]) * global0[2] + local[0] * global1[2] + local[1] *
-          global2[2];		*/
+  global[0] = (1-local[0]-local[1]) * global0[0] + local[0] * global1[0] + local[1] * global2[0];
+  global[1] = (1-local[0]-local[1]) * global0[1] + local[0] * global1[1] + local[1] * global2[1];
+  global[2] = (1-local[0]-local[1]) * global0[2] + local[0] * global1[2] + local[1] * global2[2];
 
   GetLocalKoord(theSurface,global,loc);
 
-  /*	printf("%f %f %f %f %f %f %f\n",local[0],local[1],loc[0],loc[1],global[0],global[1],global[2]);
-          printf("%f %f %f\n",global0[0],global0[1],global0[2]);
-          printf("%f %f %f\n",global1[0],global1[1],global1[2]);
-          printf("%f %f %f\n",global2[0],global2[1],global2[2]);*/
   if (BNDS_Global(aBndS,loc,new_global))
     return (1);
-  /*	printf("%f %f %f\n",new_global[0],new_global[1],new_global[2]);*/
 
   if (in!=NULL)
   {
