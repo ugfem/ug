@@ -104,7 +104,7 @@ void *memmgr_AllocOMEM (size_t size, int ddd_type, int prio, int attr)
 {
   void   *buffer;
 
-  buffer = GetMemoryLocal(dddctrl.currMG, size, UGTYPE(ddd_type));
+  buffer = (void *)GetMemoryLocal(dddctrl.currMG, size, UGTYPE(ddd_type));
 
   printf("%4d: memmgr_AllocOMem: size=%05d ddd_type=%02d prio=%d attr=%d\n",
          me,size,ddd_type,prio,attr);

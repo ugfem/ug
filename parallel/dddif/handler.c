@@ -293,8 +293,8 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 		return;
 	}
 
-	PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x Size=%d nodetoID=%d\n",me,vec,conn,Size,ID(VOBJECT(MDEST(conn)))))
 	memcpy(conn,Data[nconn++],Size);
+	PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x Size=%d nodetoID=%d\n",me,vec,conn,Size,ID(VOBJECT(MDEST(conn)))))
 
 	/* look which matrix belongs to that vector 				*/
 	/* TODO: change this to faster macro sequence if stable 	*/
@@ -330,8 +330,8 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 			UserWrite("%2d:  VectorScatterConnX(): ERROR can't get mem for conn=%x\n",conn);
 		}
 
-		PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x Size=%d nodetoID=%d\n",me,vec,conn,Size,ID(VOBJECT(MDEST(conn)))))
 		memcpy(conn,Data[nconn++],Size);
+		PRINTDEBUG(dddif,4,("%2d:  VectorScatterConnX(): v=%x conn=%x Size=%d nodetoID=%d\n",me,vec,conn,Size,ID(VOBJECT(MDEST(conn)))))
 
 		/* look which matrix belongs to that vector 				*/
 		/* TODO: change this to faster macro sequence if stable 	*/
@@ -1036,7 +1036,8 @@ void ElemScatterElemSide (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
 			/* put into double linked list */
 			PREDS(elemside) = NULL;
 			SUCCS(elemside) = FIRSTELEMSIDE(theGrid);
-			if (PREDS(FIRSTELEMSIDE(theGrid))) PREDS(FIRSTELEMSIDE(theGrid)) = elemside;
+			if (FIRSTELEMSIDE(theGrid)!=0)
+				PREDS(FIRSTELEMSIDE(theGrid)) = elemside;
 			FIRSTELEMSIDE(theGrid) = elemside;
 		}
 	}

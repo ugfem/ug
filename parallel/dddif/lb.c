@@ -8,6 +8,7 @@
 
 #include "parallel.h"
 
+
 int TransferGrid (MULTIGRID *theMG)
 {
   ELEMENT *e;
@@ -54,9 +55,12 @@ void ddd_test (int mode, MULTIGRID *theMG)
 {
   InitCurrMG(theMG);
   switch (mode) {
+  /* dies balanciert ein GRID mit RCB */
   case (0) : BalanceGrid(theMG); break;
 
+  /* dies verschickt ein GRID komplett */
   case (1) : TransferGrid(theMG); break;
+
   default : break;
   }
 }
