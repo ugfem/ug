@@ -8245,7 +8245,7 @@ static INT PicFrameCommand (INT argc, char **argv)
    Some 3D plot objects allow to define a cut. It can be set and manipulated using the
    following options:~
 
-   .   $C                     - define a default cut facing to x-direction and cutting the object's midpoint
+   .   $C                     - define a default cut facing to x-direction and cutting the objects midpoint
    .   $P~<x>~<y>~<z>         - a point on the cut plane
    .   $N~<x>~<y>~<z>         - the normal of the cut plane
    .   $R					   - remove cut
@@ -8821,7 +8821,7 @@ static INT ZoomCommand (INT argc, char **argv)
    to its x-axis.
    It calls the function 'DragProjectionPlane'.
 
-   drag <dx> <dy>
+   'drag <dx> <dy>'
 
    .  <dx>~<dy>  - displacement vector
 
@@ -11241,7 +11241,7 @@ static INT MachineTestCommand (INT argc, char **argv)
    DESCRIPTION:
    This function calls a system routine.
 
-   'system <system~command>
+   'system <system~command>'
 
    .   <system~command>	- this command string is passed to the system
 
@@ -11393,7 +11393,6 @@ static INT InitScreenSize (void)
    .  $d <depth>		- depth of clusters
    .  $f <maxlevel>	- no load balancing above this level
    .  $e <minelem>		- minimal number of elements on each processor
-
 
    KEYWORDS:
    parallel, processors, load balance, chaco

@@ -6303,7 +6303,7 @@ void ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const INT longformat)
    .  load  - statistic about load balancing
 
    DESCRIPTION:
-   This function lists information about multigrid's element types
+   This function lists information about multigrids element types.
 
    RETURN VALUE:
    INT
