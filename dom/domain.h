@@ -79,9 +79,6 @@
 #endif
 #endif
 
-/* object identification */
-#define BSOBJ 8                                                 /* boundary surface                 */
-#define BPOBJ 9                                                 /* boundary point object			*/
 
 /* boundary types */
 #define FIXED         0
