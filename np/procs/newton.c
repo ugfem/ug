@@ -268,7 +268,7 @@ static INT NonLinearDefect (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x,
 
   IFDEBUG(np,1)
   UserWrite("---- After computation of nonlinear defect\n");
-  ListVectorRange(mg,0,level,0,1000,FALSE,TRUE);
+  ListVectorRange(mg,0,level,0,0,1000,FALSE,TRUE);
   ENDDEBUG
 
   /* compute norm of defect */
@@ -540,7 +540,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
     IFDEBUG(np,1)
     UserWrite("---- After linear solver\n");
-    ListVectorRange(mg,0,level,0,1000,FALSE,TRUE);
+    ListVectorRange(mg,0,level,0,0,1000,FALSE,TRUE);
     ENDDEBUG
 
     /* linear solver statistics */
