@@ -145,8 +145,8 @@ typedef struct {
 
 static LOCAL_DOUBLES LocalCoords[TAGS];
 
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
+/* data for CVS */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/
@@ -1037,6 +1037,196 @@ INT GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VEC
   PrintErrorMessage('E',"GetMJRawPositiveUpwindShapes","not implemented for 3D");
   return (__LINE__);
 #   endif
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   AFVGeometry - compute geometrical data for aligned finite volumes
+
+   SYNOPSIS:
+   INT AFVGeometry (const ELEMENT *theElement, FVElementGeometry *geo, DOUBLE_VECTOR Convection)
+
+   PARAMETERS:
+   .  theElement - given element
+   .  geo - finite volume element geometry
+   .  Convection - given velocity
+
+   DESCRIPTION:
+   This function computes the subcontrol volumes for a given element aligned
+   to a given velocity.
+
+   RETURN VALUES:
+   0 when o.k.
+
+   __LINE__ if an error occured.
+   D*/
+/****************************************************************************/
+
+INT AFVGeometry (const ELEMENT *theElement, FVElementGeometry *geo, DOUBLE_VECTOR Convection)
+{
+  SubControlVolumeFace *scvf;
+  SD_VALUES *sdv;
+  DOUBLE_VECTOR deriv,ScvfNormal[MAXE],ScvfGip[MAXE],ScvfLip[MAXE];
+  DOUBLE_VECTOR emp[MAXE],edge[MAXS];
+  DOUBLE_VECTOR b;
+  const DOUBLE *CornerPtrs[MAXNC];
+  DOUBLE fact1,fact2;
+  INT i,j,ninflow,inflow[MAXE],noutflow,outflow[MAXE];
+  INT coe,eoe;
+    #ifdef __THREEDIM__
+  DOUBLE_VECTOR gradients[MAXNC];
+    #endif
+
+  if (V_DIM_ISZERO(Convection))
+    return(EvaluateFVGeometry (theElement,geo));
+
+  FVG_ELEM(geo)   = theElement;
+  FVG_TAG(geo)    = TAG(theElement);
+  FVG_NSCV(geo)   = coe = CORNERS_OF_ELEM(theElement);
+  FVG_NSCVF(geo)  = eoe = EDGES_OF_ELEM(theElement);
+  switch (coe)
+  {
+        #ifdef __TWODIM__
+  case TRIANGLE :
+    /* corners */
+    for (i=0; i<coe; i++)
+    {
+      CornerPtrs[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
+      V2_COPY(CornerPtrs[i],FVG_GCO(geo,i));
+    }
+
+    /* surface normals */
+    ninflow = noutflow = 0;
+    for (i=0; i<3; i++)
+    {
+      scvf = FVG_SCVF(geo,i);
+      V2_CLEAR(SCVF_NORMAL(scvf));
+
+      V2_LINCOMB(0.5,CornerPtrs[(i+1)%3],0.5,CornerPtrs[i],emp[i])
+      V2_SUBTRACT(CornerPtrs[CORNER_OF_EDGE(theElement,i,1)],CornerPtrs[CORNER_OF_EDGE(theElement,i,0)],edge[i])
+      j = (2*CORNER_OF_EDGE(theElement,i,1)+2*CORNER_OF_EDGE(theElement,i,0))%3;
+      V2_SUBTRACT(CornerPtrs[j],CornerPtrs[CORNER_OF_EDGE(theElement,i,0)],b)
+      V2_VECTOR_PRODUCT(edge[i],b,fact1)
+      V2_VECTOR_PRODUCT(edge[i],Convection,fact2)
+      if (fact1*fact2>=0.0)
+      {
+        inflow[ninflow] = i;
+        ninflow++;
+      }
+      else
+      {
+        outflow[noutflow] = i;
+        noutflow++;
+      }
+    }
+    switch (ninflow)
+    {
+    case 1 :
+      /* surface normals */
+      SCVF_NORMAL(FVG_SCVF(geo,outflow[0]))[_X_] = emp[outflow[0]][_Y_] - emp[inflow[0]] [_Y_];
+      SCVF_NORMAL(FVG_SCVF(geo,outflow[0]))[_Y_] = emp[inflow[0]] [_X_] - emp[outflow[0]][_X_];
+      V2_SCALAR_PRODUCT(SCVF_NORMAL(FVG_SCVF(geo,outflow[0])),edge[outflow[0]],fact1)
+      if (fact1<0.0)
+        V2_SCALE(-1.0,SCVF_NORMAL(FVG_SCVF(geo,outflow[0])))
+        SCVF_NORMAL(FVG_SCVF(geo,outflow[1]))[_X_] = emp[outflow[1]][_Y_] - emp[inflow[0]] [_Y_];
+      SCVF_NORMAL(FVG_SCVF(geo,outflow[1]))[_Y_] = emp[inflow[0]] [_X_] - emp[outflow[1]][_X_];
+      V2_SCALAR_PRODUCT(SCVF_NORMAL(FVG_SCVF(geo,outflow[1])),edge[outflow[1]],fact1)
+      if (fact1<0.0)
+        V2_SCALE(-1.0,SCVF_NORMAL(FVG_SCVF(geo,outflow[1])))
+
+        /* global and local integration points */
+        V2_LINCOMB(0.5,emp[inflow[0]],0.5,emp[outflow[0]],SCVF_GIP(FVG_SCVF(geo,outflow[0])))
+        V2_LINCOMB(0.5,emp[inflow[0]],0.5,emp[outflow[1]],SCVF_GIP(FVG_SCVF(geo,outflow[1])))
+        if (UG_GlobalToLocal(FVG_NSCV(geo),CornerPtrs,SCVF_GIP(FVG_SCVF(geo,outflow[0])),SCVF_LIP(FVG_SCVF(geo,outflow[0])))) return (1);
+      if (UG_GlobalToLocal(FVG_NSCV(geo),CornerPtrs,SCVF_GIP(FVG_SCVF(geo,outflow[1])),SCVF_LIP(FVG_SCVF(geo,outflow[1])))) return (1);
+      V2_CLEAR(SCVF_GIP(FVG_SCVF(geo,inflow[0]))) V2_CLEAR(SCVF_LIP(FVG_SCVF(geo,inflow[0])))
+      break;
+    case 2 :
+      /* surface normals */
+      SCVF_NORMAL(FVG_SCVF(geo,inflow[0]))[_X_] = emp[outflow[0]][_Y_] - emp[inflow[0]] [_Y_];
+      SCVF_NORMAL(FVG_SCVF(geo,inflow[0]))[_Y_] = emp[inflow[0]] [_X_] - emp[outflow[0]][_X_];
+      V2_SCALAR_PRODUCT(SCVF_NORMAL(FVG_SCVF(geo,inflow[0])),edge[inflow[0]],fact1)
+      if (fact1<0.0)
+        V2_SCALE(-1.0,SCVF_NORMAL(FVG_SCVF(geo,inflow[0])))
+        SCVF_NORMAL(FVG_SCVF(geo,inflow[1]))[_X_] = emp[outflow[0]][_Y_] - emp[inflow[1]] [_Y_];
+      SCVF_NORMAL(FVG_SCVF(geo,inflow[1]))[_Y_] = emp[inflow[1]] [_X_] - emp[outflow[0]][_X_];
+      V2_SCALAR_PRODUCT(SCVF_NORMAL(FVG_SCVF(geo,inflow[1])),edge[inflow[1]],fact1)
+      if (fact1<0.0)
+        V2_SCALE(-1.0,SCVF_NORMAL(FVG_SCVF(geo,inflow[1])))
+
+        /* global and local integration points */
+        V2_LINCOMB(0.5,emp[inflow[0]],0.5,emp[outflow[0]],SCVF_GIP(FVG_SCVF(geo,inflow[0])))
+        V2_LINCOMB(0.5,emp[inflow[1]],0.5,emp[outflow[0]],SCVF_GIP(FVG_SCVF(geo,inflow[1])))
+        if (UG_GlobalToLocal(FVG_NSCV(geo),CornerPtrs,SCVF_GIP(FVG_SCVF(geo,inflow[0])),SCVF_LIP(FVG_SCVF(geo,inflow[0])))) return (1);
+      if (UG_GlobalToLocal(FVG_NSCV(geo),CornerPtrs,SCVF_GIP(FVG_SCVF(geo,inflow[1])),SCVF_LIP(FVG_SCVF(geo,inflow[1])))) return (1);
+      V2_CLEAR(SCVF_GIP(FVG_SCVF(geo,outflow[0]))) V2_CLEAR(SCVF_LIP(FVG_SCVF(geo,outflow[0])))
+      break;
+    default :
+      PrintErrorMessage('E',"AFVGeometry","unknown case");
+      return(__LINE__);
+    }
+    break;
+  case QUADRILATERAL :
+    for (i=0; i<coe; i++)
+    {
+      CornerPtrs[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
+      V2_COPY(CornerPtrs[i],FVG_GCO(geo,i));
+    }
+
+    /* surface normals */
+    break;
+                #endif
+
+        #ifdef __THREEDIM__
+  case TETRAHEDRON :
+    /* get coordinates */
+    for (i=0; i<coe; i++)
+    {
+      CornerPtrs[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
+      V3_COPY(CornerPtrs[i],FVG_GCO(geo,i));
+    }
+
+    /* surface normals */
+    FV_AliTetInfo(CornerPtrs,ScvfNormal,Convection,ScvfGip,ScvfLip);
+    for (i=0; i<eoe; i++)
+    {
+      V3_COPY(ScvfNormal[i],SCVF_NORMAL(FVG_SCVF(geo,i)));
+      V3_COPY(ScvfGip[i],SCVF_GIP(FVG_SCVF(geo,i)));
+      V3_COPY(ScvfLip[i],SCVF_LIP(FVG_SCVF(geo,i)));
+    }
+    break;
+        #endif /* __THREEDIM__ */
+
+  default :
+    PrintErrorMessage('E',"AFVGeometry","unknown elementtype");
+    return(__LINE__);
+  }
+
+  for (i=0; i<eoe; i++)
+  {
+    sdv  = FVG_IPSDV(geo,i);
+    scvf = FVG_SCVF(geo,i);
+
+    /* shape functions */
+    if (GNs(coe,(DOUBLE *)SCVF_LIP(scvf),SDV_SHAPEPTR(sdv)))
+    {
+      PrintErrorMessage('E',"AFVGeometry","something wrong with shape functions");
+      return(__LINE__);
+    }
+
+    /* gradients at IPs */
+    for (j=0; j<coe; j++)
+    {
+      if (D_GN(coe,j,(DOUBLE *)SCVF_LIP(scvf),deriv))
+      {
+        PrintErrorMessage('E',"AFVGeometry","something wrong with derivatives of shape functions");
+        return(__LINE__);
+      }
+      MM_TIMES_V_DIM(SDV_JINV(sdv),deriv,SDV_GRADPTR(sdv,j));
+    }
+  }
 
   return (0);
 }

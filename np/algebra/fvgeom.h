@@ -207,6 +207,9 @@ INT GetMJRawRegularUpwindShapes         (const FVElementGeometry *geo, const DOU
 INT GetMJRawPositiveUpwindShapes        (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF],
                                          DOUBLE NodalShape[MAXF][MAXNC], DOUBLE IPShape[MAXF][MAXF]);
 
+/* aligned finite volumes */
+INT AFVGeometry                                         (const ELEMENT *theElement, FVElementGeometry *geo, DOUBLE_VECTOR Convection);
+
 /* shape functions and their derivatives */
 INT EvaluateShapesAndDerivatives        (FVElementGeometry *geo, INT flags);
 
