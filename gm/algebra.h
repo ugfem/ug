@@ -126,6 +126,7 @@ INT             GetVectorsOfSides                               (const ELEMENT *
 INT             GetVectorsOfEdges                               (const ELEMENT *theElement, INT *cnt, VECTOR **vList);
 INT             GetVectorsOfNodes                               (const ELEMENT *theElement, INT *cnt, VECTOR **vList);
 INT                     GetVectorsOfType                                (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vList);
+INT                     GetVectorsOfTypes                               (const ELEMENT *theElement, const INT *type, INT *cnt, VECTOR **vList);
 INT             GetElementInfoFromSideVector    (const VECTOR *theVector, ELEMENT **Elements, INT *Sides);
 
 /* gridwise functions */

@@ -253,7 +253,7 @@ static INT SkipV;
 static DOUBLE InvMeshSize;
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -1682,6 +1682,62 @@ INT GetVectorsOfType (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vL
   RETURN (GM_ERROR);
 }
 
+/****************************************************************************/
+/*D
+   GetVectorsOfTypes - get vector list including all vectors of specified types
+
+   SYNOPSIS:
+   INT GetVectorsOfTypes (const ELEMENT *theElement, const INT *type, INT *cnt, VECTOR **vList)
+
+   PARAMETERS:
+   .  theElement - pointer to an element
+   .  type - specified types
+   .  vec - vector list
+
+   DESCRIPTION:
+   This function gets a list of vectors of the specified types corresponding to an element.
+
+   RETURN VALUE:
+   INT
+   .n    GM_OK if ok
+   .n    GM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+INT GetVectorsOfTypes (const ELEMENT *theElement, const INT *type, INT *cnt, VECTOR **vec)
+{
+  INT i;
+
+  *cnt = 0;
+  if (type[NODEVECTOR])
+  {
+    if (GetVectorsOfNodes(theElement,&i,vec) != GM_OK)
+      return(GM_ERROR);
+    *cnt += i;
+  }
+  if (type[EDGEVECTOR])
+  {
+    if (GetVectorsOfEdges(theElement,&i,vec+*cnt) != GM_OK)
+      return(GM_ERROR);
+    *cnt += i;
+  }
+  if (type[ELEMVECTOR])
+  {
+    if (GetVectorsOfElement(theElement,&i,vec+*cnt) != GM_OK)
+      return(GM_ERROR);
+    *cnt += i;
+  }
+    #ifdef __THREEDIM__
+  if (type[SIDEVECTOR])
+  {
+    if (GetVectorsOfSides(theElement,&i,vec+*cnt) != GM_OK)
+      return(GM_ERROR);
+    *cnt += i;
+  }
+    #endif
+
+  return (GM_OK);
+}
 
 /****************************************************************************/
 /*D
@@ -4108,8 +4164,10 @@ static VECTOR *FindOptimalStrong (FIFO *fifo)
   if (vec!=minvec)
   {
     do
+    {
       if (vec!=minvec)
         fifo_in(fifo,vec);
+    }
     while ((vec=(VECTOR*)fifo_out(fifo))!=first);
 
     /* push first again */
@@ -4221,7 +4279,6 @@ static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT verboselevel)
   }
   pushInflow  = (nInflow ==StrongInflow);
   pushOutflow = (nOutflow==StrongOutflow);
-
 
   /* in the sequel we use (and therefore destroy) the PREDVC-list for book keeping */
 
@@ -4676,6 +4733,77 @@ INT LineOrderVectors (MULTIGRID *theMG, INT levels, const char *dependency, cons
   FreeControlEntry(ce_VCSTRONG);
 
   return (GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   PrepareForLineorderVectors - prepare for lineorderv
+
+   SYNOPSIS:
+   INT PrepareForLineorderVectors (GRID *theGrid)
+
+   PARAMETERS:
+   .  theGrid - pointer to grid
+
+   DESCRIPTION:
+   This function resets flags in vectors for the line ordering algorithm.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT PrepareForLineorderVectors (GRID *theGrid)
+{
+  VECTOR *vec;
+
+  for (vec=FIRSTVECTOR(theGrid); vec!=NULL; vec=SUCCVC(vec))
+  {
+    SETVCUSED(vec,FALSE);
+    SETVCFLAG(vec,FALSE);
+  }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   MarkBeginEndForLineorderVectors - flag begin or end vectors for lineorderv
+
+   SYNOPSIS:
+   INT MarkBeginEndForLineorderVectors (ELEMENT *elem, const INT *type, const INT *mark)
+
+   PARAMETERS:
+   .  elem - set flag in marked vectors of the element
+   .  mark - set GM_LOV_BEGIN or GM_LOV_END or no flag
+
+   DESCRIPTION:
+   This function sets flags in vectors for the line ordering algorithm.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT MarkBeginEndForLineorderVectors (ELEMENT *elem, const INT *type, const INT *mark)
+{
+  VECTOR *vList[MAX_ELEM_VECTORS];
+  INT i,cnt;
+
+  GetVectorsOfTypes(elem,type,&cnt,vList);
+
+  for (i=0; i<cnt; i++)
+    switch (mark[i])
+    {
+    case GM_LOV_BEGIN :      SETVCUSED(vList[i],TRUE);
+    case GM_LOV_END :        SETVCFLAG(vList[i],TRUE);
+    }
+
+  return (0);
 }
 
 /****************************************************************************/
@@ -5271,10 +5399,10 @@ static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, cons
 
 INT CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_stripe )
 {
+#ifdef __BLOCK_VECTOR_DESC__
   BLOCKVECTOR *bv_inner, *bv_boundary;
   VECTOR *v;
   INT nr_blocks, ret;
-#ifdef __BLOCK_VECTOR_DESC__
   BV_DESC bvd;
 
   if ( GFIRSTBV( grid ) != NULL )
@@ -5386,10 +5514,10 @@ INT CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_stripe )
 
 INT CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT vectors_per_stripe )
 {
+#ifdef __BLOCK_VECTOR_DESC__
   BLOCKVECTOR *bv_inner, *bv_boundary, *bv_plane, *prev;
   VECTOR *v;
   INT i, nr_planes, nr_vectors, ret;
-#ifdef __BLOCK_VECTOR_DESC__
   BV_DESC bvd;
 
   if ( GFIRSTBV( grid ) != NULL )
@@ -5538,11 +5666,11 @@ INT CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT 
 
 INT CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
 {
+#ifdef __BLOCK_VECTOR_DESC__
   BLOCKVECTOR *bv;
   INT ret;
   register VECTOR *v, *end_v;
 
-#ifdef __BLOCK_VECTOR_DESC__
   if ( GFIRSTBV( grid ) != NULL )
     FreeAllBV( grid );
 
