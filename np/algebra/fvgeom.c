@@ -615,7 +615,7 @@ INT EvaluateAFVGeometry (const ELEMENT *e, const DOUBLE *conv, FVElementGeometry
 #       endif
 
 #       ifdef __THREEDIM__
-INT EvaluateAFVGeometry (const ELEMENT *e, DOUBLE v, FVElementGeometry *geo)
+INT EvaluateAFVGeometry (const ELEMENT *e, const DOUBLE v, FVElementGeometry *geo)
 {
   assert(0);
 }
