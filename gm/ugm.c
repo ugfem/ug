@@ -1013,6 +1013,42 @@ INT GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
 
 /****************************************************************************/
 /*																			*/
+/* Function:  GetCenterNode	     											*/
+/*																			*/
+/* Purpose:   get the center node of an element of next finer level         */
+/*																			*/
+/* return:	  NODE* : pointer to center node								*/
+/*			  NULL	: no node found      		 							*/
+/*																			*/
+/****************************************************************************/
+
+NODE *GetCenterNode (ELEMENT *theElement)
+{
+	INT		i,j;
+	NODE	*theNode;
+	ELEMENT *SonList[MAX_SONS],*theSon;
+
+	theNode = NULL;
+	if (GetAllSons(theElement,SonList) != GM_OK) assert(0);
+
+	for (i=0; SonList[i]!=NULL; i++)
+	{
+		theSon = SonList[i];
+		for (j=0; j<CORNERS_OF_ELEM(theSon); j++)
+		{
+			theNode = CORNER(theSon,j); 
+			if (NTYPE(theNode) == CENTER_NODE)
+			{
+				 assert(VFATHER(MYVERTEX(theNode)) == theElement);
+				 return (theNode);
+			}
+		}
+	}
+	return (NULL);
+}
+
+/****************************************************************************/
+/*																			*/
 /* Function:  CreateCenterNode	   											*/
 /*																			*/
 /* Purpose:   allocate a new node on an side of an element. Includes vertex */
@@ -1093,6 +1129,143 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
 	theGrid->status |= 1;
 
 	return(theNode);	
+}
+
+
+/****************************************************************************/
+/*D
+   GetNodeContext - get all nodes related to this element on next level
+
+   SYNOPSIS:
+   INT GetNodeContext (ELEMENT *theElement, NODE **theElementContext)
+
+   PARAMETERS:
+.  theElement - element for context
+.  theElementContext - node context of this element
+
+   DESCRIPTION:
+   This function returns the nodes related to the element on the next
+   finer level. The ordering is according to the reference numbering.
+
+   RETURN VALUE:
+   INT
+.n   GM_OK    if ok
+.n   != GM_OK if not ok
+D*/
+/****************************************************************************/
+
+INT GetNodeContext (ELEMENT *theElement, NODE **theElementContext) 
+{
+	NODE *theNode, **MidNodes, **CenterNode;
+	EDGE *theEdge;
+	INT i,Corner0, Corner1;
+	#ifdef __THREEDIM__
+	NODE **SideNodes;
+	NODE *theNode0, *theNode1;
+	#endif
+
+	/* reset context */
+	for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)  
+		theElementContext[i] = NULL;
+
+    /* is element to refine */
+	if (!IS_REFINED(theElement)) return(GM_OK);
+
+	/* get corner nodes */
+	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+	{
+		theNode = CORNER(theElement,i);
+		theElementContext[i] = SONNODE(theNode);
+	}
+
+	/* check for midpoint nodes */
+	MidNodes = theElementContext+CORNERS_OF_ELEM(theElement);
+	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
+	{
+		Corner0 = CORNER_OF_EDGE(theElement,i,0);
+		Corner1 = CORNER_OF_EDGE(theElement,i,1);
+		
+		theEdge = GetEdge(CORNER(theElement,Corner0),
+						  CORNER(theElement,Corner1));
+		ASSERT(theEdge != NULL);
+
+		MidNodes[i] = MIDNODE(theEdge);
+	}
+
+	#ifdef __THREEDIM__
+	SideNodes = theElementContext+CORNERS_OF_ELEM(theElement)+
+					EDGES_OF_ELEM(theElement);
+	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+	{
+#ifdef TET_RULESET
+		/* no side nodes for triangular sides yet */
+		if (CORNERS_OF_SIDE(theElement,i) == 3) continue;
+#endif
+		/* check for side node */
+		SideNodes[i] = GetSideNode(theElement,i);
+	}
+	#endif
+	
+	/* check for center node */
+	CenterNode = MidNodes+CENTER_NODE_INDEX(theElement);
+	CenterNode[0] = GetCenterNode(theElement);
+	assert(0);
+
+	return(GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   GetNbSideByNodes - return matching side of the neighboring element
+
+   SYNOPSIS:
+   void GetNbSideByNodes (ELEMENT *theNeighbor, INT *nbside, ELEMENT *theElement, INT side);
+
+   PARAMETERS:
+.  theNeighbor - element to test for matching side
+.  nbside - the matching side
+.  theElement - element with side to match
+.  side - side of element to match
+
+   DESCRIPTION:
+   This function computes the matching side of neighboring element.
+
+   RETURN VALUE:
+   void
+D*/
+/****************************************************************************/
+
+void GetNbSideByNodes (ELEMENT *theNeighbor, INT *nbside, ELEMENT *theElement, INT side)
+{
+	INT i,k,l,ec,nc;
+
+	ec = CORNERS_OF_SIDE(theElement,side);
+
+	for (i=0; i<SIDES_OF_ELEM(theNeighbor); i++)
+	{
+		nc = CORNERS_OF_SIDE(theNeighbor,i);
+		if (ec != nc) continue;
+
+		for (k=0; k<nc; k++)
+			if (CORNER_OF_SIDE_PTR(theElement,side,0) == 
+				CORNER_OF_SIDE_PTR(theNeighbor,i,k))
+				break;
+
+		for (l=1; l<ec; l++)
+		{
+			if (CORNER_OF_SIDE_PTR(theElement,side,l) !=
+				CORNER_OF_SIDE_PTR(theNeighbor,i,(nc+k-l)%nc))
+				break;
+		}
+		if (l == ec)
+		{
+			*nbside = i;
+			return;
+		}
+	}
+
+	/* no side of the neighbor matches */
+	assert(0);
 }
 
 
@@ -5759,6 +5932,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 		new = markcount[MAXLEVEL]*(2<<(DIM-1))+newpergreen*closuresides[MAXLEVEL];
 		SETPREDNEW1(REFINEINFO(theMG),new);
 
+		SETREAL(REFINEINFO(theMG),mg_sum);
 		SETPREDMAX(REFINEINFO(theMG),free_bytes/mg_sum_size_div_red);
 	}
 
@@ -5773,9 +5947,16 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 			"FREE/((RED+GREEN)/RED)=%9.0f\n",
 			free_bytes,free_bytes/mg_sum_size_div_red,
 			free_bytes/mg_redplusgreen_size_div_red);
-		UserWriteF(" EST  MARKCOUNT=%9.0f  PRED_NEW0=%9.0f PRED_NEW1=%9.0f PRED_MAX=%9.0f\n",
+		UserWriteF(" EST %2d  ELEMS=%9.0f MARKCOUNT=%9.0f  PRED_NEW0=%9.0f PRED_NEW1=%9.0f PRED_MAX=%9.0f\n",
+			REFINESTEP(REFINEINFO(theMG)),REAL(REFINEINFO(theMG)),
 			MARKCOUNT(REFINEINFO(theMG)),PREDNEW0(REFINEINFO(theMG)),
 			PREDNEW1(REFINEINFO(theMG)),PREDMAX(REFINEINFO(theMG)));
+		UserWriteF(" EST TRACE step=%d\n",refine_info.step);
+		for (i=0; i<refine_info.step; i++)
+			UserWriteF(" EST  %2d  ELEMS=%9.0f REAL=%9.0f MARKS=%9.0f  PRED0=%9.0f PRED1=%9.0f PRED_MAX=%9.0f\n",
+				i,refine_info.real[i],((i>0)?refine_info.real[i]-refine_info.real[i-1]:0),
+				refine_info.markcount[i],refine_info.predicted_new[i][0],
+				refine_info.predicted_new[i][1],refine_info.predicted_max[i]);
 	}
 
 	/* compute and list green rule info */

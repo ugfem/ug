@@ -2238,7 +2238,6 @@ extern const BV_DESC_FORMAT three_level_bvdf;   /* bvdf for 3 blocklevels	*/
 #define GM_REFINE_TRULY_LOCAL           2
 #define GM_COPY_ALL                             3
 #define GM_REFINE_NOT_CLOSED            4
-#define GM_USE_HEXAHEDRA                        8
 #define GM_REFINE_PARALLEL                      0
 #define GM_REFINE_SEQUENTIAL            1
 #define GM_REFINE_NOHEAPTEST            0
@@ -2308,8 +2307,8 @@ INT             DeleteElement                   (MULTIGRID *theMG, ELEMENT *theE
 /* refinement */
 INT             EstimateHere                    (ELEMENT *theElement);
 INT         MarkForRefinement       (ELEMENT *theElement, INT rule, void *data);
-INT             GetRefinementMark               (const ELEMENT *theElement, INT *rule, void *data);
-INT             GetRefinementMarkType   (const ELEMENT *theElement);
+INT             GetRefinementMark               (ELEMENT *theElement, INT *rule, void *data);
+INT             GetRefinementMarkType   (ELEMENT *theElement);
 INT             RefineMultiGrid                 (MULTIGRID *theMG, INT flag, INT seq, INT mgtest);
 INT         TestRefineInfo          (MULTIGRID *theMG);
 INT         SetRefineInfo           (MULTIGRID *theMG);

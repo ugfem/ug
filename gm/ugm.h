@@ -108,6 +108,7 @@ INT              CheckEnumerationNodeElem (MULTIGRID *theMG);
 
 NODE        *CreateSonNode          (GRID *theGrid, NODE *FatherNode);
 NODE            *CreateMidNode                  (GRID *theGrid, ELEMENT *theElement, INT edge);
+NODE            *GetCenterNode                  (ELEMENT *theElement);
 NODE        *CreateCenterNode       (GRID *theGrid, ELEMENT *theElement);
 
 #ifdef __THREEDIM__
@@ -116,6 +117,9 @@ NODE            *GetSideNode                    (ELEMENT *theElement, INT side);
 #endif
 INT          GetSideIDFromScratch   (ELEMENT *theElement, NODE *theNode);
 NODE        *GetMidNode             (ELEMENT *theElement, INT edge);
+INT                     GetNodeContext                  (ELEMENT *theElement, NODE **theElementContext);
+void            GetNbSideByNodes                (ELEMENT *theNeighbor, INT *nbside, ELEMENT *theElement, INT side);
+
 
 #ifdef ModelP
 void *GetMemoryForObject_par (HEAP *theHeap, INT size, INT type);
