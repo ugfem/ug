@@ -193,9 +193,9 @@ public:
   void SetFG( const FAMGugVectorEntry& ve );
 
 private:
-  FAMGugVector(const FAMGugGridVector & gridvec) : FAMGVector(gridvec) {
+  FAMGugVector(const FAMGugGridVector & gridvec) : FAMGVector(gridvec), mydesc(NULL) {
     allocatedVD=0;
-  };                                                                                                    // only for create_new
+  };                                                                                                                    // only for create_new
   int GetComp() const {
     return comp;
   }
