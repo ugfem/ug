@@ -11,9 +11,6 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70550 Stuttgart												*/
-/*			  email: stefan@ica3.uni-stuttgart.de							*/
-/*			  phone: 0049-(0)711-685-7003									*/
-/*			  fax  : 0049-(0)711-685-7000									*/
 /*																			*/
 /* History:   09.05.95 begin, ugp version 3.0								*/
 /*																			*/
@@ -36,6 +33,7 @@
 #include "debug.h"
 #include "parallel.h"
 #include "general.h"
+#include "memmgr.h"
 
 /****************************************************************************/
 /*																			*/
@@ -720,6 +718,8 @@ void InitCurrMG (MULTIGRID *MG)
 int InitParallel (int *argc, char ***argv)
 {
   int i;
+
+  memmgr_Init();
 
   /* init DDD and set options */
   DDD_Init(argc, argv);
