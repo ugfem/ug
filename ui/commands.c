@@ -2112,7 +2112,7 @@ static INT CnomCommand (INT argc, char **argv)
 {
   char docName[32],plotprocName[NAMESIZE],tagName[NAMESIZE];
   INT error;
-  int flag;
+  int i,flag;
 
   if (currMG==NULL)
   {
