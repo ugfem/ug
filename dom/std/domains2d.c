@@ -389,6 +389,151 @@ static INT InitPuncturedDisc (void)
 
 /****************************************************************************/
 /*                                                                          */
+/*  define the CT disc                                                      */
+/*                                                                          */
+/****************************************************************************/
+
+static INT Bottom1Boundary (void *data, COORD *param, COORD *result)
+{
+  COORD lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>10.0)) return(1);
+  result[0] = lambda;
+  result[1] = 0.5;
+
+  return(0);
+}
+
+static INT Bottom2Boundary (void *data, COORD *param, COORD *result)
+{
+  COORD lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>0.5)) return(1);
+  result[0] = 10.0 + 0.5*sin(PI*lambda);       /* x */ /* PI defined in misc.h */
+  result[1] = 0.5*cos(PI*lambda);       /* y */
+
+  return(0);
+}
+
+static INT Bottom3Boundary (void *data, COORD *param, COORD *result)
+{
+  COORD lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>9.5)) return(1);
+  result[0] = 10.5 + lambda;
+  result[1] = 0.0;
+
+  return(0);
+}
+
+static INT Top1Boundary (void *data, COORD *param, COORD *result)
+{
+  COORD lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>20.0)) return(1);
+  result[0] = 20.0-lambda;
+  result[1] = 12.0;
+
+  return(0);
+}
+
+static INT Right1Boundary (void *data, COORD *param, COORD *result)
+{
+  COORD lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>12.0)) return(1);
+  result[0] = 20.0;
+  result[1] = lambda;
+
+  return(0);
+}
+
+static INT Left1Boundary (void *data, COORD *param, COORD *result)
+{
+  COORD lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>11.5)) return(1);
+  result[0] = 0.0;
+  result[1] = 12.0 - lambda;
+
+  return(0);
+}
+
+static INT CircleUpperBoundary (void *data, COORD *param, COORD *result)
+{
+  COORD lambda;
+
+  lambda = param[0];
+  if ((lambda<0.0)||(lambda>1.0)) return(1);
+  result[0] = 6.0 + 0.5*sin(PI*lambda);       /* x */ /* PI defined in misc.h */
+  result[1] = 6.5 + 0.5*cos(PI*lambda);       /* y */
+
+  return(0);
+}
+
+static INT CircleLowerBoundary (void *data, COORD *param, COORD *result)
+{
+  COORD lambda;
+
+  lambda = param[0];
+  if ((lambda<1.0)||(lambda>2.0)) return(1);
+  result[0] = 6.0 + 0.5*sin(PI*lambda);       /* x */ /* PI defined in misc.h */
+  result[1] = 6.5 + 0.5*cos(PI*lambda);       /* y */
+
+  return(0);
+}
+
+static INT InitCTDisc (void)
+{
+  COORD radius,MidPoint[2];
+
+  MidPoint[0] = 10; MidPoint[1] = 6.0;
+  radius = 10;
+  if (CreateDomain("CT Disc",
+                   MidPoint,radius,8,8,NO)==NULL) return(1);
+  if (CreateBoundarySegment2D("bottom1",1,0,
+                              0,0,1,1,
+                              0.0,10.0,
+                              Bottom1Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("bottom2", 1,0,
+                              1,1,2,20,
+                              0.0,0.5,
+                              Bottom2Boundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("bottom3",1,0,
+                              2,2,3,1,
+                              0.0,9.5,
+                              Bottom3Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("right1",1,0,
+                              3,3,4,1,
+                              0.0,12.0,
+                              Right1Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("top1", 1,0,
+                              4,4,5,1,
+                              0.0,20.0,
+                              Top1Boundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("left1", 1,0,
+                              5,5,0,1,
+                              0.0,11.5,
+                              Left1Boundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("upper", 1,0,
+                              6,6,7,20,
+                              0.0,1.0,
+                              CircleUpperBoundary, NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("lower", 1,0,
+                              7,7,6,20,
+                              1.0,2.0,
+                              CircleLowerBoundary, NULL)==NULL) return(1);
+  return(0);
+}
+
+/****************************************************************************/
+/*                                                                          */
 /*  define a circle segment                                                 */
 /*                                                                          */
 /****************************************************************************/
@@ -973,6 +1118,11 @@ INT STD_BVP_Configure (INT argc, char **argv)
     else if (strcmp(DomainName,"Punctured Disc") == 0)
     {
       if (InitPuncturedDisc())
+        return(1);
+    }
+    else if (strcmp(DomainName,"CT Disc") == 0)
+    {
+      if (InitCTDisc())
         return(1);
     }
     else
