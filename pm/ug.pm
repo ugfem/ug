@@ -26,8 +26,11 @@ BEGIN
 	sub debug
 	{
 		$debug=$_[0];
-		open(DEBUG,">scripts/debug.scr");
-		DEBUG->autoflush(1);
+		if ($debug)
+		{
+			open(DEBUG,">debug.scr");
+			DEBUG->autoflush(1);
+		}
 	}
 	sub submit
 	{
@@ -59,7 +62,7 @@ BEGIN
 		{
 			if ($line=~/ERROR/) {$error=1;}
 			if ($line=~/^EOO$/) {last;}
-			if ($_[0] || $error || $debug) {print $line;}
+			if ($_[0] || $error) {print $line;}
 			$ret.=$line;
 		}
 		if ($error) {die "ug aborted due to ERROR\n";}
@@ -71,18 +74,26 @@ sub set
 	print IN "set $_[0]\n";
     return split /[=\s]+/,out(0);
 }
+
 sub ug
 {
-	my ($i,$cmd,$print,$command,$ui,$stat);
+	my (@in,$i,$cmd,$print,$command,$ui,$stat,%argv,$dummy);
+
+	# cancel trailing white spaces
+	@in=@_;
+	for ($i=0; $i<@in; $i++) { $in[$i]=~s/\s*$//g; }
 
 	# basic check
-	if (@_<=0) 
+	if (@in<=0) 
 	{
 		die "ERROR: provide ug command\n";
 	} 
+	if ($in[0] eq '') { return; }
+	if ($in[0]=~/^\s*\#/) { return; }
 
 	# detect internal print
-	$command=$_[0]; $print=0;
+	$command=$in[0]; 
+	$print=0;
 	if ($command=~/^\s*print\s+/) 
 	{
 		$print=1; 
@@ -93,28 +104,31 @@ sub ug
 	# check for I/O channels
 	if ($command ne "start")
 	{
-		1==stat IN and 1==stat OUT or die "ERROR: IN/OUT channel missing\n";
-		1==stat IN or die "ERROR: IN channel missing\n";
-		1==stat OUT or die "ERROR: OUT channel missing\n";
+		1==stat IN and 1==stat OUT or die "ERROR in '$command': IN/OUT channel missing\n";
+		1==stat IN or die "ERROR in '$command': IN channel missing\n";
+		1==stat OUT or die "ERROR in '$command': OUT channel missing\n";
 	}
 
+	# scan arguments (used for some commands)
+	@in%2==1 or die "odd number of arguments provided with command '$in[0]'\n";
+	($dummy,%argv)=@in; 
 	SWITCH:
 	{
 		# debug
 		if ($command eq "debug")
 		{
-			if (@_!=2 || ($_[1]!=0 && $_[1]!=1))
+			if (@in!=3 || ($in[2]!=0 && $in[2]!=1))
             {
                 die "ERROR: provide [0|1] with 'debug'\n";
             }
-			debug $_[1];
+			debug $in[2];
 			return;
 		}
 
 		# command 'end'
 		if ($command eq "end")
 		{
-			if(@_!=1)
+			if(@in!=1)
         	{   
         	    die "ERROR: don't provide any option with 'end'\n";
         	} 
@@ -127,25 +141,24 @@ sub ug
 		# command 'set'
 		if ($command eq "set")
 		{
-			if(@_!=2)
+			if(@in!=2)
             {   
                 die "ERROR: provide one option with 'set'\n";
             }
-			print IN "set $_[1]\n";
+			print IN "set $in[1]\n";
 			return split /[=\s]+/,out($print);
 		}
 
 		# command 'start'
 		if ($command eq "start")
 		{
-			if(@_<2 || @_>3 || (@_==3 && $_[2] ne "x") || $_[1]=~/-ui/)
+			if(@in!=3)
         	{   
-        	    die 'ERROR: usage: ug("start", "<program>" [,"x"]);'."\n";
+        	    die 'ERROR: usage: ug "start", "p"=>"program";'."\n";
         	} 
 			
-			if (@_==2)	{$ui="-ui cn";}
-			if (@_==3)	{$ui="-ui c";}
-        	open2(*OUT,*IN,"$_[1] $ui -perl");
+			$ui="-ui c";
+        	open2(*OUT,*IN,"$argv{'p'} $ui -perl");
 			IN->autoflush(1); OUT->autoflush(1);
 			return out($print);
 		}
@@ -153,20 +166,20 @@ sub ug
 		# command 'ug' 
 		if ($command eq "ug")
         {
-			if(@_!=2)
+			if(@in!=2)
             {
                 die "ERROR: command 'ug' must come with one argument\n\n";
             }
-			submit "$_[1]\n";
+			submit "$in[1]\n";
 			return out($print);
 		}
 
 		# std command
-		if (@_%2==1) {$cmd="$command "; $i=1;}
-		else {$cmd="$command $_[1] "; $i=2;}
-		for (;$i<@_;$i+=2)
+		if (@in%2==1) {$cmd="$command "; $i=1;}
+		else {$cmd="$command $in[1] "; $i=2;}
+		for (;$i<@in;$i+=2)
 		{
-			$cmd.='$'."$_[$i] $_[$i+1] ";
+			$cmd.='$'."$in[$i] $in[$i+1] ";
 		}
 		$cmd.="\n";
 		submit $cmd;
@@ -175,15 +188,24 @@ sub ug
 }
 sub float
 {
-	my $real='[+-]?\d+\.?\d*[eE]?[+-]?\d+|[+-]?\d*\.?\d+[eE]?[+-]?\d+';
-	my (@list,$f,$s);
+	my $real='[+-]?\d+\.?\d*[eE]?[+-]?\d+|[+-]?\d*\.?\d+[eE]?[+-]?\d+|[+-]?\d+';
+	my (@list,$f,$s,$in);
 
 	if (@_==1) { @list=grep /$real/,split /($real)/,$_[0]; }
-	else 
+	elsif (@_==2) 
 	{
-		($f,$s)=split /$_[0]/,$_[1],2;
+		$in=' '.$_[1];
+		($f,$s)=split /$_[0]/,$in,2;
 		@list=grep /$real/,split /($real)/,$s;
 	}
+	else
+	{
+		$in=' '.$_[2];
+        ($f,$s)=split /$_[0]/,$in,2;
+        @list=grep /$real/,split /($real)/,$s;
+		if ($_[1]>=@list || $_[1]<0) { return undef;}
+		for ($s=0; $s<$_[1]; $s++) { shift @list; } 
+    }
 	return wantarray ? @list : $list[0];
 }
 
