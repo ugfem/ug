@@ -458,7 +458,7 @@ INT ExecCommand (char *cmdLine)
     UserWrite("ERROR: invalid parameters\n");
   if (error!=OKCODE && error!=QUITCODE)
     UserWrite("ERROR in command execution\n");
-
+#ifdef Debug
   IFDEBUG(ui,0)
   if ((error==OKCODE) && REP_ERR_ENCOUNTERED && strcmp("reperr",options[0])!=0)
   {
@@ -468,6 +468,7 @@ INT ExecCommand (char *cmdLine)
     return (FATAL);
   }
   ENDDEBUG
+#endif
 
   return(error);
 }
