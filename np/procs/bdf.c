@@ -606,7 +606,11 @@ static INT BDFDisplay (NP_BASE *theNumProc)
   /* general ts display */
   NPTSolverDisplay(&bdf->tsolver);
 
-  UserWrite("BDF data:\n");
+  UserWrite("\nBDF data:\n");
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"t_m1",(float)bdf->t_m1);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"t_0",(float)bdf->t_0);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"t_p1",(float)bdf->t_p1);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"dt",(float)bdf->dt);
   if (bdf->y_p1 != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"y_p1",ENVITEM_NAME(bdf->y_p1));
   if (bdf->y_0  != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"y_0 ",ENVITEM_NAME(bdf->y_0 ));
   if (bdf->y_m1 != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"y_m1",ENVITEM_NAME(bdf->y_m1));
