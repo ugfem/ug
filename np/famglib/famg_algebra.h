@@ -51,7 +51,11 @@ public:
   virtual int GetIndex() const = 0;
 
 protected:
+#ifdef __SGI10__
+  virtual long comparable_value() const = 0;
+#else
   virtual size_t comparable_value() const = 0;
+#endif
 };
 
 class FAMGVectorEntry

@@ -67,10 +67,15 @@ public:
   }
 
 protected:
+#ifdef __SGI10__
+  virtual long comparable_value() const {
+    return (long)myvector();
+  }
+#else
   virtual size_t comparable_value() const {
     return (size_t)myvector();
   }
-
+#endif
 private:
   VECTOR *vp;
 };
