@@ -63,7 +63,7 @@
 /*																			*/
 /****************************************************************************/
 
-typedef int (*ReadDomainProc)(char *filename, LGM_DOMAIN_INFO *domain_info);
+typedef int (*ReadDomainProc)(HEAP *theHeap, char *filename, LGM_DOMAIN_INFO *domain_info);
 typedef int (*ReadSizesProc)(LGM_SIZES *lgm_sizes);
 typedef int (*ReadSubDomainProc)(int i, LGM_SUBDOMAIN_INFO *subdom_info);
 typedef int (*ReadLinesProc)(int i, LGM_LINE_INFO *line_info);
@@ -168,7 +168,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   }
 
   /* read general information */
-  if ((*ReadDomain)(filename,&theDomInfo))
+  if ((*ReadDomain)(theHeap,filename,&theDomInfo))
   {
     UserWrite("ERROR in LGM_LoadDomain: ReadDomain failed\n");
     return (NULL);
@@ -321,7 +321,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   }
 
   /* read general information */
-  if ((*ReadDomain)(filename,&theDomInfo))
+  if ((*ReadDomain)(theHeap,filename,&theDomInfo))
     return (NULL);
 
   /* allocate and initialize the LGM_DOMAIN */

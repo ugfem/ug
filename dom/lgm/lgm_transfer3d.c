@@ -32,6 +32,7 @@
 #include "devices.h"
 #include "lgm_domain.h"
 #include "lgm_transfer.h"
+#include "heaps.h"
 
 /* data for CVS */
 static char rcsid[] = "$Header$";
@@ -39,6 +40,7 @@ static char rcsid[] = "$Header$";
 static FILE *stream;
 static INT lgmdomainpathes_set;
 static INT LGM_DEBUG = 0;
+static HEAP *theHeap;
 
 static int SkipBTN (void)
 {
@@ -94,10 +96,14 @@ static fpos_t filepos;
 static fpos_t fileposline;
 static fpos_t filepossurface;
 
-int LGM_ReadDomain (char *filename, LGM_DOMAIN_INFO *domain_info)
+int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info)
 {
   int i,i0,i1,i2;
   char buffer[256];
+
+  /* store heapptr */
+  if (Heap==NULL) return (1);
+  theHeap = Heap;
 
   /* open file */
   if (lgmdomainpathes_set)

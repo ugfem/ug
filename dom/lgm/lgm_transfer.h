@@ -32,6 +32,8 @@
 #include "domain.h"
 #endif
 
+#include "heaps.h"
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -200,7 +202,7 @@ typedef struct lgm_point_info LGM_POINT_INFO;
 /*																			*/
 /****************************************************************************/
 
-int LGM_ReadDomain                      (char *filename, LGM_DOMAIN_INFO *domain_info);
+int LGM_ReadDomain                      (HEAP *theHeap, char *filename, LGM_DOMAIN_INFO *domain_info);
 int LGM_ReadSizes                       (LGM_SIZES *lgm_sizes);
 int LGM_ReadSubDomain           (int i, LGM_SUBDOMAIN_INFO *subdom_info);
 int LGM_ReadLines                       (int i, LGM_LINE_INFO *line_info);

@@ -124,11 +124,16 @@ static int ReadCommentLine (char *comment)
 
 static int nSubdomain, nLine;
 static fpos_t filepos;
+static HEAP *theHeap;
 
-int LGM_ReadDomain (char *filename, LGM_DOMAIN_INFO *domain_info)
+int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info)
 {
   int i;
   char buffer[256];
+
+  /* store heapptr */
+  if (Heap==NULL) return (1);
+  theHeap = Heap;
 
   /* open file */
   if (lgmdomainpathes_set)
