@@ -91,6 +91,8 @@ typedef DOUBLE DOUBLE_VECTOR[DIM];
 
 static DOUBLE_VECTOR x_hex[8];
 
+REP_ERR_FILE;
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
