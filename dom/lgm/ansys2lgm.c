@@ -64,7 +64,7 @@
 #define T 1
 #define F 0
 
-#define NUOFCLMS 50
+#define NUOFCLMS 60
 #define FALS 0
 #define TRU 1
 
