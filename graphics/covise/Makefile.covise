@@ -10,24 +10,24 @@
 # include configuration and all makefile macro definitions
 include ../../ug.conf
 
-OBJECTS = coviseif$(GRAPE).o
+OBJECTS = coviseif.o
 
 # local C compiler flags
-LCFLAGS = -I../../include
+LCFLAGS = -I../../include -I$(HOME)/covise/src/covise_lib
 
-all : $(OBJECTS) Makefile.grape
-	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libcovise$(COVISE)$(DIM).a $(OBJECTS) 
+all : $(OBJECTS) Makefile.covise
+	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libcovise$(DIM).a $(OBJECTS) 
 
-.SUFFIXES: .o .c
+.SUFFIXES: .o .cpp
 
-.c.o:
-	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
+.cpp.o:
+	$(ARCH_C++) $(UG_CFLAGS) $(LCFLAGS) $<
 
 clean:
 	rm -f *.o
 
 extract:
-	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libcovise$(COVISE)$(DIM).a $(OBJECTS)
+	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libcovise$(DIM).a $(OBJECTS)
 
 xmc: extract all clean
 
