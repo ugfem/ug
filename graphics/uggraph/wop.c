@@ -18080,6 +18080,7 @@ static INT EW_PreProcess_EVector3D (PICTURE *thePicture, WORK *theWork)
 	struct ElemVectorPlotObj3D *theEvpo;
 	OUTPUTDEVICE *theOD;
 	MULTIGRID *theMG;
+	DOUBLE PixRange,WCRange;
 	
 	theEvpo = &(PIC_PO(thePicture)->theEvpo);
 	theOD  = PIC_OUTPUTDEV(thePicture);
@@ -18096,7 +18097,9 @@ static INT EW_PreProcess_EVector3D (PICTURE *thePicture, WORK *theWork)
 	/* do not plot if cut plane is on the back */
 	if (!CUT_CutAtFront) return (1);
 	
-	EVector_rastersize		= theEvpo->RasterSize;
+	PixRange = ABS(thePicture->Global_LL[0]-thePicture->Global_UR[0]); 
+	V3_EUKLIDNORM(thePicture->theViewedObj.PlaneXDir,WCRange); WCRange*=2.0;
+	EVector_rastersize		= WCRange/PixRange*theEvpo->RasterSize;
 	EVector_cutvector		= theEvpo->CutVector;
 	EVector_CutLenFactor    = theEvpo->CutLenFactor;
 	EVector3D_projectvector = theEvpo->ProjectVector;
