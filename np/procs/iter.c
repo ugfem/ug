@@ -5094,8 +5094,11 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
 
   /* get storage for matrix */
   bw = np->bw;
-  if (Mark(theHeap,FROM_BOTTOM,&np->MarkKey)) REP_ERR_RETURN(1);
-  np->Vec = (DOUBLE*)GetMem(theHeap,np->nv*sizeof(DOUBLE),FROM_BOTTOM);
+  /* delete this
+     if (Mark(theHeap,FROM_BOTTOM,&np->MarkKey))											REP_ERR_RETURN(1);
+     np->Vec = (DOUBLE*)GetMem(theHeap,np->nv*sizeof(DOUBLE),FROM_BOTTOM);
+   */
+  np->Vec = (DOUBLE*)GetFreelistMemory(theHeap,np->nv*sizeof(DOUBLE));
   if (np->Vec==NULL) REP_ERR_RETURN(1);
   if (np->fmode == 1)
   {
@@ -5240,6 +5243,10 @@ static INT EXPostProcess (NP_ITER *theNP, INT level,VECDATA_DESC *x, VECDATA_DES
     if (PutFreelistMemory(theHeap, np->DMat, np->mem))
       REP_ERR_RETURN(1);
   }
+
+  ASSERT(np->Vec!=NULL);
+  if (PutFreelistMemory(theHeap, np->Vec, np->nv*sizeof(DOUBLE)))
+    REP_ERR_RETURN(1);
 
   if (np->smoother.L != NULL)
     if (FreeMD(NP_MG(theNP),level,level,np->smoother.L)) REP_ERR_RETURN(1);
