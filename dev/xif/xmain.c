@@ -546,7 +546,10 @@ OUTPUTDEVICE *InitScreen (int argc, char **argv, INT *error)
 void WriteString (const char *s)
 {
         #ifdef STDIF
-  puts(s);
+  fputs(s,stdout);
+        #ifdef Debug
+  fflush(stdout);
+        #endif
   /* printf("%s",s); */
         #else
   ShellInsertString(&shell,s);
