@@ -8,6 +8,11 @@
 -
 ############################## general commands #########################################
 
+-cnom > graphics output file interface
+cnom             # writes grid and data to a file
+cnom <file_name> $p <ElemEvalProc> $t <TagName>
+    $p <ElemEvalProc>              # name of element scalar evaluation procedure
+    $t <TagName>                   # name of data field to be used in cnom
 
 -
 ##############################  PlotObjectTypes  #########################################
