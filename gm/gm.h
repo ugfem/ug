@@ -167,7 +167,7 @@
 /****************************************************************************/
 
 /* define to have matrices > 4KB (control word too small, adds integer to matrix struct) */
-#undef __XXL_MSIZE__
+#define __XXL_MSIZE__
 
 /* if interpolation matrix is stored */
 #define __INTERPOLATION_MATRIX__
@@ -185,7 +185,8 @@
 #endif
 
 /* if periodic boundaries are used */
-/*  #define __PERIODIC_BOUNDARY__ */
+#define __PERIODIC_BOUNDARY__
+
 
 /****************************************************************************/
 /*																			*/
@@ -225,7 +226,7 @@
 
 #define MAX_ELEM_VECTORS                (MAX_CORNERS_OF_ELEM+MAX_EDGES_OF_ELEM+1+MAX_SIDES_OF_ELEM)
 
-#define MAX_NDOF_MOD_32         64           /* max number of doubles in a vector or matrix mod 32 */
+#define MAX_NDOF_MOD_32        256           /* max number of doubles in a vector or matrix mod 32 */
 #define MAX_NDOF 32*MAX_NDOF_MOD_32
 /****************************************************************************/
 /*																			*/
