@@ -365,7 +365,8 @@ extern "C" {
 /*                                                                          */
 /****************************************************************************/
 
-#define ARCH_VERSION "$Id$"
+#define ARCH_VERSION "ARCH_1_0"
+static char compilerrcs_id[] = "$Id$";
 
 /* limits of the basic types */
 #define MAX_S            SHRT_MAX
