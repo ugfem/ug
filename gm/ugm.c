@@ -587,7 +587,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
       {
         SETMOVED(theVertex,1);
         CORNER_COORDINATES(theElement,n,x);
-        UG_GlobalToLocal(n,(const DOUBLE **)x,global,local);
+        UG_GlobalToLocal(n,(const DOUBLE **)x,bnd_global,local);
       }
       else
         V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theElement,co0),
@@ -2816,10 +2816,72 @@ ELEMENT *FindFather (VERTEX *theVertex)
    D*/
 /****************************************************************************/
 
+static INT RecreateBNDSofNode (MULTIGRID *theMG, NODE *theNode)
+{
+  ELEMENT *theElement, *sonElem, *NBElem;
+  BNDS *bnds;
+  BNDP *bndp, *sidebndp[MAX_CORNERS_OF_SIDE];
+  INT m,i,j,k,l,patch_id;
+
+  /* first scan father element of theNode */
+  theElement = VFATHER(MYVERTEX(theNode));
+  for (i=0; i<NSONS(theElement); i++)
+  {
+    /* search side in son element with theNode as a corner */
+    sonElem = SON(theElement,i);
+    if (OBJT(sonElem)!=BEOBJ) continue;
+    for (j=0; j<SIDES_OF_ELEM(sonElem); j++)
+      for (k=0; k<CORNERS_OF_SIDE(sonElem,j); k++)
+        if (CORNER(sonElem,CORNER_OF_SIDE(sonElem,j,k))==theNode)
+        {
+          bnds = ELEM_BNDS(sonElem,j);
+          if (bnds==NULL) continue;
+          if (BNDS_Dispose(MGHEAP(theMG),bnds))
+            return(GM_ERROR);
+          /* create BNDS from BNDPs of this element side */
+          for (l=0; l<CORNERS_OF_SIDE(sonElem,j); l++)
+            sidebndp[l] = V_BNDP(MYVERTEX(CORNER(sonElem,CORNER_OF_SIDE(sonElem,j,l))));
+          bnds = BNDP_CreateBndS(MGHEAP(theMG),sidebndp,CORNERS_OF_SIDE(sonElem,j));
+          SET_BNDS(sonElem,j,bnds);
+        }
+  }
+
+  if (NTYPE(theNode)==MID_NODE) return(GM_OK);
+
+  /* scan all neighbour elements of the father element */
+  for (m=0; m<SIDES_OF_ELEM(theElement); m++)
+  {
+    NBElem = NBELEM(theElement,m);
+    if (NBElem==NULL) continue;
+    if (OBJT(NBElem)!=BEOBJ) continue;
+    for (i=0; i<NSONS(NBElem); i++)
+    {
+      /* search side in son element with theNode as a corner */
+      sonElem = SON(NBElem,i);
+      if (OBJT(sonElem)!=BEOBJ) continue;
+      for (j=0; j<SIDES_OF_ELEM(sonElem); j++)
+        for (k=0; k<CORNERS_OF_SIDE(sonElem,j); k++)
+          if (CORNER(sonElem,CORNER_OF_SIDE(sonElem,j,k))==theNode)
+          {
+            bnds = ELEM_BNDS(sonElem,j);
+            if (bnds==NULL) continue;
+            if (BNDS_Dispose(MGHEAP(theMG),bnds))
+              return(GM_ERROR);
+            /* create BNDS from BNDPs of this element side */
+            for (l=0; l<CORNERS_OF_SIDE(sonElem,j); l++)
+              sidebndp[l] = V_BNDP(MYVERTEX(CORNER(sonElem,CORNER_OF_SIDE(sonElem,j,l))));
+            bnds = BNDP_CreateBndS(MGHEAP(theMG),sidebndp,CORNERS_OF_SIDE(sonElem,j));
+            SET_BNDS(sonElem,j,bnds);
+          }
+    }
+  }
+  return(GM_OK);
+}
+
 INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda)
 {
   ELEMENT *theElement;
-  NODE *Node0,*Node1;
+  NODE *Node0,*Node1,*sonNode;
   VERTEX *theVertex;
   BNDP *bndp;
   DOUBLE *x[MAX_CORNERS_OF_ELEM],*global,*local;
@@ -2863,8 +2925,12 @@ INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda)
     if (diff > MAX_PAR_DIST) {
       SETMOVED(theVertex,1);
       CORNER_COORDINATES(theElement,n,x);
+      V_DIM_COPY(bnd_global,global);
       UG_GlobalToLocal(n,(const DOUBLE **)x,global,local);
     }
+    RecreateBNDSofNode(theMG,theNode);
+    for (sonNode=SONNODE(theNode); sonNode!=0; sonNode=SONNODE(sonNode))
+      RecreateBNDSofNode(theMG,sonNode);
   }
 
   /* Warning: O(n) Operation! */
@@ -2875,6 +2941,7 @@ INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda)
         CORNER_COORDINATES(VFATHER(theVertex),n,x);
         LOCAL_TO_GLOBAL(n,x,LCVECT(theVertex),CVECT(theVertex));
       }
+
 
   return(GM_OK);
 }
@@ -6566,6 +6633,9 @@ static INT GetAngle(DOUBLE *angle,DOUBLE *n1, DOUBLE *n2)
   if ((norm1<SMALL_D)||(norm2<SMALL_D))
     return(1);
 
+  V_DIM_SCALE(1.0/norm1,n1);
+  V_DIM_SCALE(1.0/norm2,n2);
+  V_DIM_SCALAR_PRODUCT(n1,n2,s);
 
   s=MIN(1,s); s=MAX(-1,s);
 
