@@ -47,6 +47,7 @@
 #include <X11/Xaw/Label.h>
 #include <X11/Xaw/Dialog.h>
 #include <X11/Xaw/Command.h>
+#include "shades.h"
 
 /* defines for opCodes */
 #define opNop                           0
@@ -70,6 +71,7 @@
 #define opNewPolymark      18
 #define opNewText              19
 #define opNewCenteredText  20
+#define opShadedPolygon    21
 
 #define SIZE                50
 #define CSIZE              256
@@ -164,6 +166,9 @@ char *mfile[MAX_FILES];
 static int run_max, run_count;
 
 static int littleEndian = 1; /* needed for check LITTLE/BIG-ENDIAN */
+
+/* pixmaps for shading patterns */
+static Pixmap pattern[NO_PATTERNS];
 
 /* forward declarations */
 static void Marker(short n, short s, short x, short y);
@@ -305,6 +310,11 @@ void createGraphics(void)
 
   XFillPolygon(display, pixmap, gc, edges, 4,
                Convex, CoordModeOrigin);
+
+  /* make stipples for shading */
+  for (i = 0; i < NO_PATTERNS; i++)
+    pattern[i] = XCreateBitmapFromData(display,XtWindow(picture), pattern_data[i],
+                                       PATTERN_SIZE, PATTERN_SIZE);
 }
 
 
@@ -446,10 +456,10 @@ int RasterizeFile(FILE *stream)
   long itemCounter;                         /* number of commands in buffer */
   char *data;                             /* data pointer in buffer */
   short fx, fy;                          /* file screen size */
-  int i,error,j,k,size;
+  int i,error,j,k,size,snb;
   char opCode;
   short xx[SIZE],yy[SIZE];
-  short x_cur, y_cur, x, y,r,g,b,n,lw,ts,m,ms,w,x1,y1,x2,y2;
+  short x_cur, y_cur, x, y,r,g,b,n,lw,ts,m,ms,w,x1,y1,x2,y2,shd;
   XPoint xy[SIZE];
   char s[CSIZE];
   unsigned char c,ac;
@@ -934,6 +944,43 @@ int RasterizeFile(FILE *stream)
                      x_cur, y_cur, s, n);
         break;
 
+      case opShadedPolygon :
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        memcpy(&shd,data,STD_SHORT);
+        STD2NAT(shd,STD_SHORT);
+        data += STD_SHORT;
+        if (n>=SIZE) {free(buffer); return(2);}
+        size = n;
+        for (k=0; k<n; k++)
+        {
+          memcpy(xx+k,data,STD_SHORT);
+          STD2NAT(xx[k],STD_SHORT);
+          data += STD_SHORT;
+        }
+        for (k=0; k<n; k++)
+        {
+          memcpy(yy+k,data,STD_SHORT);
+          STD2NAT(yy[k],STD_SHORT);
+          data += STD_SHORT;
+        }
+
+        if (n<3) break;
+        for (j=0; j<n; j++) {
+          xy[j].x = xx[j];
+          xy[j].y = fy-yy[j];
+        }
+        snb = (int)(0.5+(float)(NO_PATTERNS-1)*(float)(shd)/1000.0);
+        XSetFillStyle(display, gc, FillOpaqueStippled);
+        XSetStipple(display, gc, pattern[snb]);
+        XFillPolygon(display, pixmap, gc,
+                     xy, n, Convex, CoordModeOrigin);
+        XSetFillStyle(display, gc, FillSolid);
+        x_cur = xy[n-1].x;
+        y_cur = xy[n-1].y;
+        break;
+
       default :
         break;
       }
@@ -954,10 +1001,10 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
   long itemCounter;                         /* number of commands in buffer */
   char *data;                             /* data pointer in buffer */
   short fx, fy;                          /* file screen size */
-  int i,error,j,k,size;
+  int i,error,j,k,size,snb;
   char opCode;
   short xx[SIZE],yy[SIZE];
-  short x_cur, y_cur, x, y,r,g,b,n,lw,ts,m,ms,w,x1,y1,x2,y2;
+  short x_cur, y_cur, x, y,r,g,b,n,lw,ts,m,ms,w,x1,y1,x2,y2,shd;
   XPoint xy[SIZE];
   char s[CSIZE];
   unsigned char c,ac;
@@ -1466,6 +1513,43 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
         y_cur = y + ts/2;
         XDrawString( display, pixmap, gc,
                      x_cur, y_cur, s, n);
+        break;
+
+      case opShadedPolygon :
+        memcpy(&n,data,STD_SHORT);
+        STD2NAT(n,STD_SHORT);
+        data += STD_SHORT;
+        memcpy(&shd,data,STD_SHORT);
+        STD2NAT(shd,STD_SHORT);
+        data += STD_SHORT;
+        if (n>=SIZE) {free(buffer); return(2);}
+        size = n;
+        for (k=0; k<n; k++)
+        {
+          memcpy(xx+k,data,STD_SHORT);
+          STD2NAT(xx[k],STD_SHORT);
+          data += STD_SHORT;
+        }
+        for (k=0; k<n; k++)
+        {
+          memcpy(yy+k,data,STD_SHORT);
+          STD2NAT(yy[k],STD_SHORT);
+          data += STD_SHORT;
+        }
+
+        if (n<3) break;
+        for (j=0; j<n; j++) {
+          xy[j].x = xx[j];
+          xy[j].y = fy-yy[j];
+        }
+        snb = (int)(0.5+(float)(NO_PATTERNS-1)*(float)(shd)/1000.0);
+        XSetFillStyle(display, gc, FillOpaqueStippled);
+        XSetStipple(display, gc, pattern[snb]);
+        XFillPolygon(display, pixmap, gc,
+                     xy, n, Convex, CoordModeOrigin);
+        XSetFillStyle(display, gc, FillSolid);
+        x_cur = xy[n-1].x;
+        y_cur = xy[n-1].y;
         break;
 
       default :

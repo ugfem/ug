@@ -83,6 +83,7 @@
 #define opNewPolymark           18
 #define opNewText                       19
 #define opNewCenteredText       20
+#define opShadedPolygon     21
 
 #define SIZE                    50
 #define CSIZE                   256
@@ -117,7 +118,7 @@ static FILE *psfile;
 static short IF_cx=0, IF_cy=0;
 static float red[COLORS],green[COLORS],blue[COLORS];
 static short IF_lw=-1, IF_ts=-1;
-static unsigned char IF_cc=0;
+static unsigned int IF_cc=0;
 static int ox,oy,sx,sy;
 static float tx,ty,mxx,myy,mxy,myx;
 static int landscape = 0;
@@ -188,6 +189,7 @@ FILE  *OpenPSFile(char *filename, char *title, int x, int y, int w, int h )
   fprintf(file,"/N {newpath} def\n");
   fprintf(file,"/R {setrgbcolor} def\n");
   fprintf(file,"/W {setlinewidth} def\n");
+  fprintf(file,"/I {dup dup currentrgbcolor 4 -2 roll mul 4 -2 roll mul 4 -2 roll mul R} def\n");
 
   fprintf(file,"\n");
 
@@ -266,6 +268,22 @@ void IF_Polygon (short n, short *x, short *y)
     fprintf(psfile,"%g %g L\n",TRFMX(x[i],y[i]),TRFMY(x[i],y[i]));
   fprintf(psfile,"C\n");
 
+  return;
+}
+
+void IF_ShadedPolygon (short n, short shd, short *x, short *y)
+{
+  int i;
+  float intensity;
+
+  intensity = (float)(shd)/1000.0;
+  fprintf(psfile, "%6.5f I\n", intensity);
+  fprintf(psfile,"N\n");
+  fprintf(psfile,"%g %g M\n",TRFMX(x[0],y[0]),TRFMY(x[0],y[0]));
+  for (i=1; i<n; i++)
+    fprintf(psfile,"%g %g L\n",TRFMX(x[i],y[i]),TRFMY(x[i],y[i]));
+  fprintf(psfile,"C\n");
+  IF_cc = -1;
   return;
 }
 
@@ -520,7 +538,7 @@ int ConvertFile (FILE *stream)
   short fx,fy;                                                  /* file screen size					*/
   int i,error,j,size;
   char opCode;
-  short x,y,r,g,b,n,lw,ts,m,ms,w,x1,y1,x2,y2;
+  short x,y,r,g,b,n,lw,ts,m,ms,w,x1,y1,x2,y2,shd;
   short xx[SIZE],yy[SIZE];
   short rr[COLORS],gg[COLORS],bb[COLORS];
   char s[CSIZE];
@@ -827,6 +845,20 @@ int ConvertFile (FILE *stream)
         IF_TextSize(ts);
         IF_Foreground(c);
         IF_CenteredText(x,y,s);
+        break;
+
+      case opShadedPolygon :
+        memcpy(&n,data,2);
+        data += 2;
+        memcpy(&shd,data,2);
+        data += 2;
+        if (n>=SIZE) {free(buffer); return(2);}
+        size = n<<1;
+        memcpy(xx,data,size);
+        data += size;
+        memcpy(yy,data,size);
+        data += size;
+        IF_ShadedPolygon(n,shd,xx,yy);
         break;
 
       default :
