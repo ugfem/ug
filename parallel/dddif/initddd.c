@@ -339,7 +339,9 @@ static void ddd_DefineTypes (void)
                  EL_LDATA,  ELDEF(v.start),
 
                  /* TODO is this LDATA or GDATA? */
+                #ifdef __BLOCK_VECTOR_DESC__
                  EL_LDATA,  ELDEF(v.block_descr),
+                #endif
 
                 #ifdef __INTERPOLATION_MATRIX__
                  EL_LDATA,  ELDEF(v.istart),
