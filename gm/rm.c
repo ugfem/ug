@@ -9,21 +9,21 @@
 /* Author:    Stefan Lang                                                   */
 /*            Institut fuer Computeranwendungen III                         */
 /*            Universitaet Stuttgart                                        */
-/*			  Pfaffenwaldring 27											*/
-/*			  70550 Stuttgart												*/
-/*																			*/
-/* History:   21.11.95 begin, ugp version 3.0								*/
-/*																			*/
-/* Remarks:                                                                                                                             */
-/*																			*/
+/*            Pfaffenwaldring 27                                            */
+/*            70550 Stuttgart                                               */
+/*                                                                          */
+/* History:   21.11.95 begin, ugp version 3.0                               */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* include files															*/
-/*			  system include files											*/
-/*			  application include files                                                                     */
-/*																			*/
+/*                                                                          */
+/* include files                                                            */
+/* system include files                                                     */
+/* application include files                                                */
+/*                                                                          */
 /****************************************************************************/
 
 /* standard C library */
@@ -118,9 +118,9 @@ static ElementVectorProcPtr theDirectionElemEval;
 
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 #ifdef __TWODIM__
@@ -736,7 +736,7 @@ static REFRULE TetrahedronRules[MAX_TET_RULES] =
                     {-1,-1}},
 
    /* new edges */
-   /* TODO: not complete, since not needed any more */
+   /** \todo not complete, since not needed any more */
    {{ 3, 0, 5,-1},{ 3, 5, 1,-1},{ 3, 1, 6,-1},{ 3, 6, 2,-1},
                     { 3, 2, 7,-1},{ 4, 1, 4,-1},{ 4, 2, 4,-1},{ 4, 3, 4,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -832,7 +832,7 @@ static REFRULE TetrahedronRules[MAX_TET_RULES] =
                     {-1,-1}},
 
    /* new edges */
-   /* TODO: not complete, since not needed any more */
+   /** \todo not complete, since not needed any more */
    {{ 3, 0, 5,-1},{ 3, 5, 1,-1},{ 3, 1, 6,-1},{ 3, 6, 2,-1},
                     { 3, 2, 7,-1},{ 4, 1, 4,-1},{ 4, 2, 4,-1},{ 4, 3, 4,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -996,7 +996,7 @@ static REFRULE PyramidRules[MAX_PYR_RULES] =
                     {-1,-1}},
 
    /* new edges */
-   /* TODO: not complete, since not needed any more */
+   /** \todo not complete, since not needed any more */
    {{ 3, 0, 5,-1},{ 3, 5, 1,-1},{ 3, 1, 6,-1},{ 3, 6, 2,-1},
                     { 3, 2, 7,-1},{ 4, 1, 4,-1},{ 4, 2, 4,-1},{ 4, 3, 4,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -1038,7 +1038,7 @@ static REFRULE PyramidRules[MAX_PYR_RULES] =
                     {-1,-1}},
 
    /* new edges */
-   /* TODO: not complete, since not needed any more */
+   /** \todo not complete, since not needed any more */
    {{ 3, 0, 5,-1},{ 3, 5, 1,-1},{ 3, 1, 6,-1},{ 3, 6, 2,-1},
                     { 3, 2, 7,-1},{ 4, 1, 4,-1},{ 4, 2, 4,-1},{ 4, 3, 4,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -1153,7 +1153,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,-1}},
 
    /* new edges */
-   /* TODO: not complete, since not needed any more */
+   /** \todo not complete, since not needed any more */
    {{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -1202,7 +1202,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,-1}},
 
    /* new edges */
-   /* TODO: not complete, since not needed any more */
+   /** \todo not complete, since not needed any more */
    {{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -1247,7 +1247,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,-1}},
 
    /* new edges */
-   /* TODO: not complete, since not needed any more */
+   /** \todo not complete, since not needed any more */
    {{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -1290,7 +1290,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,-1}},
 
    /* new edges */
-   /* TODO: not complete, since not needed any more */
+   /** \todo not complete, since not needed any more */
    {{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -1333,7 +1333,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,-1}},
 
    /* new edges */
-   /* TODO: not complete, since not needed any more */
+   /** \todo not complete, since not needed any more */
    {{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -1376,7 +1376,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,-1}},
 
    /* new edges */
-   /* TODO: not complete, since not needed any more */
+   /** \todo not complete, since not needed any more */
    {{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -1419,7 +1419,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,-1}},
 
    /* new edges */
-   /* TODO: not complete, since not needed any more */
+   /** \todo not complete, since not needed any more */
    {{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -1462,7 +1462,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,-1}},
 
    /* new edges */
-   /* TODO: not complete, since not needed any more */
+   /** \todo not complete, since not needed any more */
    {{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -1505,7 +1505,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,-1}},
 
    /* new edges */
-   /* TODO: not complete, since not needed any more */
+   /** \todo not complete, since not needed any more */
    {{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -1548,7 +1548,7 @@ static REFRULE PrismRules[MAX_PRI_RULES] =
                     {-1,-1}},
 
    /* new edges */
-   /* TODO: not complete, since not needed any more */
+   /** \todo not complete, since not needed any more */
    {{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
                     {-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},{-1,-1,-1,-1},
@@ -2285,30 +2285,12 @@ static REFRULE HexahedronRules[MAX_HEX_RULES] =
 static char RCS_ID("$Header$",UG_RCS_STRING) ;
 
 /****************************************************************************/
-/*																			*/
-/* forward declarations of functions used before they are defined			*/
-/*																			*/
+/*                                                                          */
+/* forward declarations of functions used before they are defined           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifdef __THREEDIM__
-
-/****************************************************************************/
-/*
-   GetRule_AnisotropicRed -
-
-   SYNOPSIS:
-   INT GetRule_AnisotropicRed (ELEMENT *theElement, INT *Rule);
-
-   PARAMETERS:
-   .  theElement
-   .  Rule
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT
- */
-/****************************************************************************/
 
 INT NS_PREFIX GetRule_AnisotropicRed (ELEMENT *theElement, INT *Rule)
 {
@@ -2354,22 +2336,15 @@ INT NS_PREFIX GetRule_AnisotropicRed (ELEMENT *theElement, INT *Rule)
 
 
 /****************************************************************************/
-/*D
-   ShortestInteriorEdge - compute best full refined refrule for the element
+/** \brief Compute best full refined refrule for the element
 
-   SYNOPSIS:
-   static INT ShortestInteriorEdge (ELEMENT *theElement);
+   \param theElement - for that element
 
-   PARAMETERS:
-   .  theElement - for that element
-
-   DESCRIPTION:
    This function computes the best full refined refrule for the element.
 
-   RETURN VALUE:
-   INT
-   .n   Mark: number of refrule
-   D*/
+   \return
+   Mark: number of refrule
+ */
 /****************************************************************************/
 
 static INT ShortestInteriorEdge (ELEMENT *theElement)
@@ -2423,21 +2398,15 @@ static INT ShortestInteriorEdge (ELEMENT *theElement)
 
 
 /****************************************************************************/
-/*D
-   MinimalSideAngle - compute best full refined refrule for the element
+/** \brief Compute best full refined refrule for the element
 
-   SYNOPSIS:
-   static INT MinimalSideAngle (ELEMENT *theElement);
+   \param theElement - for that element
 
-   PARAMETERS:
-   .  theElement - for that element
-
-   DESCRIPTION:
    This function computes the best full refined refrule for the element
-   RETURN VALUE:
-   INT
-   .n   Mark: number of refrule
-   D*/
+
+   \return
+   Mark: number of refrule
+ */
 /****************************************************************************/
 
 static INT MinimalSideAngle (ELEMENT *theElement)
@@ -2500,22 +2469,15 @@ static INT MinimalSideAngle (ELEMENT *theElement)
 
 
 /****************************************************************************/
-/*D
-   MinimalSideEntry - compute best full refined refrule for the element
+/** \brief Compute best full refined refrule for the element
 
-   SYNOPSIS:
-   static INT MinimalSideEntry (ELEMENT *theElement);
+   \param theElement - for that element
 
-   PARAMETERS:
-   .  theElement - for that element
-
-   DESCRIPTION:
    This function computes the best full refined refrule for the element
 
-   RETURN VALUE:
-   INT
-   .n   Mark: number of refrule
-   D*/
+   \return
+   Mark: number of refrule
+ */
 /****************************************************************************/
 
 static INT MinimalSideEntry (ELEMENT *theElement)
@@ -2533,7 +2495,7 @@ static INT MinimalSideEntry (ELEMENT *theElement)
   for (i=0; i<EDGES_OF_ELEM(theElement); i++)
     V3_LINCOMB(0.5, Corners[CORNER_OF_EDGE(theElement,i,0)], 0.5, Corners[CORNER_OF_EDGE(theElement,i,1)], MidPoints[i]);
 
-  /* try possebilities */
+  /* try possibilities */
   Min = MAX_C;
   for (i=0; i<3; i++)
   {
@@ -2588,22 +2550,15 @@ static INT MinimalSideEntry (ELEMENT *theElement)
 
 
 /****************************************************************************/
-/*D
-   BestLaplaceMMatrix - compute best full refined refrule for the element
+/** \brief Compute best full refined refrule for the element
 
-   SYNOPSIS:
-   static INT BestLaplaceMMatrix (ELEMENT *theElement);
+   \param theElement - for that element
 
-   PARAMETERS:
-   .  theElement - for that element
-
-   DESCRIPTION:
    This function computes the best full refined refrule for the element: optimal laplace-disc w.r.t. M-Matrix eigenschaft.
 
-   RETURN VALUE:
-   INT
-   .n   Mark: number of refrule
-   D*/
+   \return
+   Mark: number of refrule
+ */
 /****************************************************************************/
 
 static INT BestLaplaceMMatrix (ELEMENT *theElement)
@@ -2685,22 +2640,15 @@ static INT BestLaplaceMMatrix (ELEMENT *theElement)
 
 
 /****************************************************************************/
-/*D
-   MaxPerpendicular - compute best full refined refrule for the element
+/** \brief Compute best full refined refrule for the element
 
-   SYNOPSIS:
-   static INT MaxPerpendicular (ELEMENT *theElement);
+   \param theElement - for that element
 
-   PARAMETERS:
-   .  theElement - for that element
-
-   DESCRIPTION:
    This function computes the best full refined refrule for the element: optimal laplace-disc w.r.t. M-Matrix eigenschaft
 
-   RETURN VALUE:
-   INT
+   \return
    .n   Mark: number of refrule
-   D*/
+ */
 /****************************************************************************/
 
 static INT MaxPerpendicular (ELEMENT *theElement)
@@ -2766,22 +2714,22 @@ static INT MaxPerpendicular (ELEMENT *theElement)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    MaxRightAngle - compute best full refined refrule for the element
 
    SYNOPSIS:
    static INT MaxRightAngle (ELEMENT *theElement);
 
    PARAMETERS:
-   .  theElement - for that element
+   \param theElement - for that element
 
    DESCRIPTION:
    This function computes the best full refined refrule for the element: optimal laplace-disc w.r.t. M-Matrix eigenschaft
 
-   RETURN VALUE:
+   \return
    INT
    .n   Mark: number of refrule
-   D*/
+ */
 /****************************************************************************/
 
 static INT MaxRightAngle (ELEMENT *theElement)
@@ -2845,22 +2793,22 @@ static INT MaxRightAngle (ELEMENT *theElement)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    MaxArea - compute best full refined refrule for the element
 
    SYNOPSIS:
    static INT MaxArea (ELEMENT *theElement);
 
    PARAMETERS:
-   .  theElement - for that element
+   \param theElement - for that element
 
    DESCRIPTION:
    This function computes the best full refined refrule for the element: optimal laplace-disc w.r.t. M-Matrix eigenschaft
 
-   RETURN VALUE:
+   \return
    INT
    .n   Mark: number of refrule
-   D*/
+ */
 /****************************************************************************/
 
 static INT MaxArea (ELEMENT *theElement)
@@ -2922,22 +2870,22 @@ static INT MaxArea (ELEMENT *theElement)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    Alignment -  compute best full refined refrule for the element
 
    SYNOPSIS:
    static INT Alignment (ELEMENT *theElement);
 
    PARAMETERS:
-   .  theElement - for that element
+   \param theElement - for that element
 
    DESCRIPTION:
    This function computes the best full refined refrule for the element according to velocity
 
-   RETURN VALUE:
+   \return
    INT
    .n   Mark: number of refrule
-   D*/
+ */
 /****************************************************************************/
 
 static INT Alignment (ELEMENT *theElement)
@@ -2991,22 +2939,22 @@ static INT Alignment (ELEMENT *theElement)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    YAlignment - compute best full refined refrule for the element
 
    SYNOPSIS:
    static INT YAlignment (ELEMENT *theElement);
 
    PARAMETERS:
-   .  theElement - for that element
+   \param theElement - for that element
 
    DESCRIPTION:
    This function computes the best full refined refrule for the element
 
-   RETURN VALUE:
+   \return
    INT
    .n   Mark: number of refrule
-   D*/
+ */
 /****************************************************************************/
 
 static INT YAlignment (ELEMENT *theElement)
@@ -3056,24 +3004,24 @@ static INT YAlignment (ELEMENT *theElement)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    MarkForRefinement - mark an element for refinement
 
    SYNOPSIS:
    INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data);
 
    PARAMETERS:
-   .  theElement - for that element
-   .  rule - type of refinement mark
+   \param theElement - for that element
+   \param rule - type of refinement mark
 
    DESCRIPTION:
    This function marks an element for refinement
 
-   RETURN VALUE:
+   \return
    INT
    .n   1 if element has been marked
    .n   0 if element cannot be marked
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
@@ -3436,23 +3384,17 @@ INT NS_PREFIX MarkForRefinementX (ELEMENT *e, INT fl, INT tl, INT rule, void *da
 
 
 /****************************************************************************/
-/*D
-   EstimateHere - return true (1) when element can be tagged for refinement
+/** \brief Return true when element can be tagged for refinement
 
-   SYNOPSIS:
-   INT EstimateHere (ELEMENT *theElement);
+   \param theElement - element to refine
 
-   PARAMETERS:
-   .  theElement - element to refine
-
-   DESCRIPTION:
    This function returns true (1) when element can be tagged for refinement
 
-   RETURN VALUE:
-   INT
-   .n   false - do not tag element
-   .n   true - element can be tagged for refinement
-   D*/
+   \return <ul>
+   <li> false - do not tag element </li>
+   <li> true - element can be tagged for refinement </li>
+   </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX EstimateHere (ELEMENT *theElement)
@@ -3465,38 +3407,17 @@ INT NS_PREFIX EstimateHere (ELEMENT *theElement)
 
 
 /****************************************************************************/
-/*																			*/
-/* Function:  ClearMarksOnLevel                                                                                         */
-/*																			*/
-/* Purpose:   clear refinement on level                                                                                 */
-/*																			*/
-/* Param:	  GRID *theGrid: level											*/
-/*			  INT ClearType: 0: clear all									*/
-/*							 1: clear refinements							*/
-/*						    -1: clear coarsenings							*/
-/*																			*/
-/* return:	  INT GM_OK: ok													*/
-/*				  GM_ERROR: error											*/
-/*																			*/
-/****************************************************************************/
-/****************************************************************************/
-/*
-   ClearMarksOnLevel - clear refinement on level
+/** \brief Clear refinement on level
 
-   SYNOPSIS:
-   INT ClearMarksOnLevel (GRID *theGrid, INT ClearType);
+   \param theGrid - level
+   \param ClearType - 0: clear all, 1: clear refinements, -1: clear coarsenings
 
-   PARAMETERS:
-   .  theGrid - level
-   .  ClearType - 0: clear all, 1: clear refinements, -1: clear coarsenings
-
-   DESCRIPTION:
    This function clears refinement on level
 
-   RETURN VALUE:
-   INT
-   .n   GM_OK - ok
-   .n   GM_ERROR - error
+   \return <ul>
+   <li> GM_OK - ok </li>
+   <li> GM_ERROR - error </li>
+   </ul>
  */
 /****************************************************************************/
 
@@ -3519,23 +3440,16 @@ INT NS_PREFIX ClearMarksOnLevel (GRID *theGrid, INT ClearType)
 
 
 /****************************************************************************/
-/*D
-    Patterns2Rules - return mark of rule for a specific pattern
+/** \brief Return mark of rule for a specific pattern
 
-   SYNOPSIS:
-   INT Patterns2Rules(ELEMENT *theElement, INT pattern);
+   \param theElement - element rule is searched for
+   \param pattern: pattern a rule is searched for
 
-   PARAMETERS:
-   .  theElement - element rule is searched for
-   .  pattern: pattern a rule is searched for
-
-   DESCRIPTION:
    This function returns mark of rule for a specific pattern
 
-   RETURN VALUE:
-   INT
-   .n   mark of rule
-   D*/
+   \return
+   mark of rule
+ */
 /****************************************************************************/
 
 INT NS_PREFIX Patterns2Rules(ELEMENT *theElement, INT pattern)
@@ -3561,7 +3475,7 @@ INT NS_PREFIX Patterns2Rules(ELEMENT *theElement, INT pattern)
     break;
   case (QUADRILATERAL) :
     switch (pattern) {
-    /* TODO: 0 can mean Q_COPY OR Q_NOREF */
+    /** \todo 0 can mean Q_COPY OR Q_NOREF */
     case (0) : return(Q_NOREF);
     case (5) : return(Q_BLUE_0);
     case (7) : return(Q_CLOSE_3_3);
@@ -3708,23 +3622,17 @@ INT NS_PREFIX Patterns2Rules(ELEMENT *theElement, INT pattern)
 
 
 /****************************************************************************/
-/*D
-   ELEMENT_TO_MARK - gets the element which has to be marked
+/** \brief Gets the element which has to be marked
 
-   SYNOPSIS:
-   ELEMENT *ELEMENT_TO_MARK (ELEMENT *theElement);
+   \param MarkElement - element to be estimated
 
-   PARAMETERS:
-   .  MarkElement - element to be estimated
-
-   DESCRIPTION:
    This function gets the element which has to be marked
 
-   RETURN VALUE:
-   ELEMENT
-   .n  NULL if MarkElement was no surface element
-   .n  !NULL - first element downward with class RED_CLASS
-   D*/
+   \return <ul>
+   <li> first element downward with class RED_CLASS </li>
+   <li> NULL if MarkElement was no surface element </li>
+   </ul>
+ */
 /****************************************************************************/
 
 ELEMENT * NS_PREFIX ELEMENT_TO_MARK (ELEMENT *theElement)
@@ -3746,25 +3654,25 @@ ELEMENT * NS_PREFIX ELEMENT_TO_MARK (ELEMENT *theElement)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    GetRefinementMark - gets rule of refinement
 
    SYNOPSIS:
    INT GetRefinementMark (ELEMENT *theElement, INT *rule, void *data);
 
    PARAMETERS:
-   .  theElement - element to refine
-   .  rule - filled with current refinement rule
-   .  data - filled with side, if rule is oriented
+   \param theElement - element to refine
+   \param rule - filled with current refinement rule
+   \param data - filled with side, if rule is oriented
 
    DESCRIPTION:
    This function gets rule of refinement
 
-   RETURN VALUE:
+   \return
    INT
    .n   0: side information valid
    .n   1: rule without orientation
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX GetRefinementMark (ELEMENT *theElement, INT *rule, void *data)
@@ -3817,24 +3725,24 @@ INT NS_PREFIX GetRefinementMark (ELEMENT *theElement, INT *rule, void *data)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    GetRefinementMarkType - gets type of mark for an element
 
    SYNOPSIS:
    INT GetRefinementMarkType (ELEMENT *theElement);
 
    PARAMETERS:
-   .  theElement - element to refine
+   \param theElement - element to refine
 
    DESCRIPTION:
    This function gets the type of mark for an element
 
-   RETURN VALUE:
+   \return
    INT
    .n   0 if element is not marked
    .n   1 if element is marked for refinement
    .n   -1 if element is marked for coarsening
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX GetRefinementMarkType (ELEMENT *theElement)
@@ -3865,11 +3773,11 @@ INT NS_PREFIX GetRefinementMarkType (ELEMENT *theElement)
    static INT PrintEdgeData (struct edgedata theEdgeData);
 
    PARAMETERS:
-   .  theEdgeData
+   \param theEdgeData
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return
    INT
  */
 /****************************************************************************/
@@ -3892,11 +3800,11 @@ static INT PrintEdgeData (struct edgedata theEdgeData)
    static INT PrintSonData(struct sondata theSonData);
 
    PARAMETERS:
-   .  theSonData
+   \param theSonData
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return
    INT
  */
 /****************************************************************************/
@@ -3947,22 +3855,22 @@ static INT PrintSonData (struct sondata theSonData, PrintfProcPtr Printf)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ShowRefRule -
 
    SYNOPSIS:
    INT ShowRefRule (INT tag, INT nb);
 
    PARAMETERS:
-   .  tag
-   .  nb
+   \param tag
+   \param nb
 
    DESCRIPTION:
 
 
-   RETURN VALUE:
+   \return
    INT
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX ShowRefRuleX (INT tag, INT nb, PrintfProcPtr Printf)
@@ -4033,24 +3941,24 @@ INT NS_PREFIX ShowRefRule (INT tag, INT nb)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    FReadRule - Read the rule data set and initialize the rules data
 
    SYNOPSIS:
    static int FReadRule (FILE *stream, REFRULE *theRule);
 
    PARAMETERS:
-   .  stream - file which stores rules
-   .  theRule - pointer to rule structure
+   \param stream - file which stores rules
+   \param theRule - pointer to rule structure
 
    DESCRIPTION:
    This function reads the rule data set and initializes the rules data
 
-   RETURN VALUE:
+   \return
    INT
    .n   0 - ok
    .n   >0 - error
-   D*/
+ */
 /****************************************************************************/
 
 #define TET_RULE_FATHER_SIDE_OFFSET             20
@@ -4147,11 +4055,11 @@ static int FReadRule (FILE *stream, REFRULE *theRule)
    static int CorrectRule (REFRULE *theRule);
 
    PARAMETERS:
-   .  theRule
+   \param theRule
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return
    int
  */
 /****************************************************************************/
@@ -4511,7 +4419,7 @@ static int      CheckVolumes(REFRULE *Rule)
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    InitRuleManager3D - Read the rule data set and initialize the rules
 
    SYNOPSIS:
@@ -4523,11 +4431,11 @@ static int      CheckVolumes(REFRULE *Rule)
    DESCRIPTION:
    This function reads the rule data set and initializes the rules data structure for tetrahedrons. Initializes the regular refinement rules (red rules) for hexahedrons. Irregular refinement of green closure is done algorithmically.
 
-   RETURN VALUE:
+   \return
    INT
    .n   0 if ok
    .n   >0 if an error occurs
-   D*/
+ */
 /****************************************************************************/
 
 static INT InitRuleManager3D (void)
@@ -4789,12 +4697,12 @@ static INT InitRuleManager3D (void)
    INT SetAlignmentPtr (MULTIGRID *theMG, EVECTOR *direction);
 
    PARAMETERS:
-   .  theMG
-   .  direction
+   \param theMG
+   \param direction
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   \return
    INT
  */
 /****************************************************************************/
@@ -4819,7 +4727,7 @@ INT NS_PREFIX SetAlignmentPtr (MULTIGRID *theMG, EVECTOR *direction)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    InitRuleManager2D - Initializes rules for triangles and quadrilaterals
 
    SYNOPSIS:
@@ -4831,11 +4739,11 @@ INT NS_PREFIX SetAlignmentPtr (MULTIGRID *theMG, EVECTOR *direction)
    DESCRIPTION:
    This function initializes rules for triangles and quadrilaterals
 
-   RETURN VALUE:
+   \return
    INT
    .n   0 - ok
    .n   >0 - error
-   D*/
+ */
 /****************************************************************************/
 
 static INT InitRuleManager2D (void)
@@ -4939,21 +4847,10 @@ static INT InitRuleManager2D (void)
 
 
 /****************************************************************************/
-/*D
-   InitRuleManager - Initialize the 2- or 3D rule set
+/** \brief InitRuleManager Initialize the 2- or 3D rule set
 
-   SYNOPSIS:
-   INT InitRuleManager (void);
-
-   PARAMETERS:
-   .  void
-
-   DESCRIPTION:
    This function initialize the 2- or 3D rule set
-
-   RETURN VALUE:
-   INT
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX InitRuleManager (void)
@@ -4964,7 +4861,7 @@ INT NS_PREFIX InitRuleManager (void)
   if ((err=CONCAT(InitRuleManager,DIM,D) ()) != GM_OK)
   {
     SetHiWrd(err,__LINE__);
-    return(err);;
+    return(err);
   }
   return (0);
 }
