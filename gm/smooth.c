@@ -44,6 +44,7 @@
 #include "ugdevices.h"
 #include "udm.h"
 #include "pargm.h"
+#include "debug.h"
 
 #define SMALL_LOCAL    1.E-4
 
@@ -58,6 +59,8 @@
 #define V_DIM_LOCAL_EQUAL(A,B)      V3_LOCAL_EQUAL(A,B)
 #endif
 #define MIN_DIFF 0.05   /* minimum local distance between midnode and cornernode */
+
+REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -1865,6 +1868,12 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
   DOUBLE *corn[MAX_CORNERS_OF_ELEM],*y,*cvect;
   DOUBLE x[DIM],old_x[DIM];
 
+        #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  if (MG_COARSE_FIXED(theMG))
+    if (DisposeBottomHeapTmpMemory(theMG))
+      REP_ERR_RETURN(1);
+        #endif
+
   if (bdryFlag) {
     PrintErrorMessage('E',"SmoothMultiGrid",
                       "Smoothing boundary nodes not implemented");
@@ -1954,6 +1963,12 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
       }
     }
   }
+
+        #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+  if (MG_COARSE_FIXED(theMG))
+    if (CreateAlgebra(theMG))
+      REP_ERR_RETURN(1);
+        #endif
 
   return(GM_OK);
 }
