@@ -1068,8 +1068,10 @@ static int Gather_NewNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
 
   if (SonNode!=NULL && NEW_NIDENT(SonNode))
   {
+    IFDEBUG(dddif,1)
     UserWriteF(PFMT "new son node=" ID_FMTX  "node=" ID_FMTX "\n",
                me,ID_PRTX(SonNode),ID_PRTX(theNode));
+    ENDDEBUG
     *((int *)data) = 1;
   }
   else

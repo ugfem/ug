@@ -5689,6 +5689,23 @@ static int RefineGrid (GRID *theGrid, INT *nadapted)
 
 		if (REFINEMENT_CHANGES(theElement))
 		{
+			#ifdef ModelP
+			{
+				/* check for valid load balancing */
+				int *proclist = EPROCLIST(theElement);
+				proclist += 2;
+				while (*proclist != -1)
+				{
+					if (*(proclist+1)!=PrioMaster && (*(proclist+1)!=PrioHGhost))
+					{
+						UserWriteF(PFMT "ERROR invalid load balancing: this element"
+							" has copies of type=%d\n",me,*(proclist+1));
+					}
+					proclist += 2;
+				}
+			}
+			#endif
+
 			if (hFlag==0 && MARKCLASS(theElement)!=RED_CLASS)
 			{
 				SETMARK(theElement,NO_REFINEMENT);
@@ -6562,6 +6579,7 @@ CheckConsistency(theMG,level,debugstart,gmlevel,&check);
 	DEBUG_TIME(0);
 
 	#ifdef ModelP
+if (0)
 	CheckGrid(FinerGrid,1,1,1,1);
 	#endif
 
