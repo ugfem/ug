@@ -1,51 +1,73 @@
 /*****************************************************************************/
 /*D
-
    PLOTPROC - graph-submodule for enroling plotprocedures
    
    PURPOSE:
    Creates in the ug environment and fetchs from the ug environment the names 
    connected with the routines needed for plotting different kind of data
    (scalar or vector) 
-   which are associated with 'NODE's, 'ELEMENT's, 'MATRIX's etc. It also contans
+   which are associated with 'NODE's, 'ELEMENT's, 'MATRIX's etc. It also contains
    general plot procedures.
    
    ELEMENT DATA:   
-.  'EVALUES~*CreateElementValuePlotProc~(const~char~*name,~PreprocessingProcPtr~PreProc,~ElementPlotProcPtr~PlotProc)'
-   - creates in the ug environment 'name' connected with the preprocessing 
-   routine 'PreProc' and working routine 'PlotProc' for evaluation
-   of scalar data assosiated with the 'ELEMENT'; 
+.vb
+EVALUES *CreateElementValuePlotProc (const char *name, PreprocessingProcPtr PreProc, 
+                                     ElementPlotProcPtr PlotProc)
+.ve
+
+.n   creates in the ug environment 'name' connected with the preprocessing 
+     routine 'PreProc' 
+.n   and working routine 'PlotProc' for evaluation
+     of scalar data assosiated with the 'ELEMENT'; 
+
 .  'EVALUES~*GetElementValuePlotProc~(const~char~*name)' - gets the 'name'
     from ug environment and associates it with plot procedure. Available
     names of data (procedures)  to plot: 'solution', 'correction', 'defect', 'temporary',
-    see also 'CDTOOLS.doc'.
+    see also 'cdtools.doc'.
             
-.  'EVECTOR~*CreateElementVectorPlotProc~(const~char~*name,~PreprocessingProcPtr~PreProc,~ElementVectorProcPtr~PlotProc,~INT~d)'
-   - creates in the ug environment 'name' connected with the preprocessing 
-   routine 'PreProc' and working routine 'PlotProc' for evaluation
-   of vector data of the dimension 'd' assosiated with the 'ELEMENT'; 
+.vb  
+EVECTOR *CreateElementVectorPlotProc (const char *name, PreprocessingProcPtr PreProc,
+	                                  ElementVectorProcPtr PlotProc, INT d)
+.ve
+
+.n   creates in the ug environment 'name' connected with the preprocessing 
+     routine 'PreProc' 
+.n   and working routine 'PlotProc' for evaluation
+     of vector data of the dimension 'd' assosiated with the 'ELEMENT'; 
+
 .  'EVECTOR~*GetElementVectorPlotProc~(const~char~*name)' - gets the 'name'
     from ug environment and associates it with plot procedure. 
     Available names (procedures) of data to plot: 'gradientvector', see also
-    'CDTOOLS.doc'.
+    'cdtools.doc'.
 
    MATRIX DATA:
-.  'MVALUES~*CreateMatrixValuePlotProc~(const~char~*name,~PreprocessingProcPtr~PreProc,~MatrixPlotProcPtr~PlotProc)'
-   - creates in the ug environment 'name' connected with the preprocessing 
-   routine 'PreProc' and working routine 'PlotProc' for evaluation
-   of data assosiated with the 'MATRIX'; 
-.  'MVALUES~*GetMatrixValuePlotProc~(const~char~*name)' -gets the 'name'
+.vb
+MVALUES *CreateMatrixValuePlotProc (const char *name, PreprocessingProcPtr PreProc,
+                                    MatrixPlotProcPtr PlotProc)
+.ve
+
+.n  creates in the ug environment 'name' connected with the preprocessing 
+    routine 'PreProc' 
+.n  and working routine 'PlotProc' for evaluation
+    of data assosiated with the 'MATRIX'.
+
+.  'MVALUES~*GetMatrixValuePlotProc~(const~char~*name)' - gets the 'name'
     from ug environment and associates it with plot procedure. Till now
     not available.
    
    NODE DATA (GENERAL PLOT PROCEDURES):
 .  'static~INT~PreprocessNodeIndex~(MULTIGRID~*theMG)' - 
    preprocessing function for plotting NodeVector Order.
-.  'static~DOUBLE~NodeIndex~(const~ELEMENT~*theElement,const~COORD~**CornersCoord,~COORD~*LocalCoord)'
-   - plot function for NodeVector Order.
+
+.vb
+static DOUBLE NodeIndex (const ELEMENT *theElement, const COORD **CornersCoord,
+                         COORD *LocalCoord)
+.ve
+
+.n    plot function for NodeVector Order.
   
    SEE ALSO:
-   'CDTOOLS.doc' 
+   'cdtools.doc' 
 D*/
 /**************************************************************************/
 
@@ -237,7 +259,7 @@ D*/
 
 .   'PLOTOBJTYPE' - defines a class of 'PLOTOBJ's, i.e. defines its dimension (note, that
     the dimension of a 'PLOTOBJ' is not neccessary the same as the dimension of the
-	corrisponding 'MULTIGRID') and how to initialize or display its parameters (by means
+	corresponding 'MULTIGRID') and how to initialize or display its parameters (by means
 	of function-calls, function-pointers are stored in the 'PLOTOBJTYPE').
 	
 .   'VIEWEDOBJ' - includes a 'PLOTOBJ', so it is a further specification of it. 
@@ -264,7 +286,7 @@ D*/
 
 .   'CUT' - description of a cutplane (only 3-dimensional plots). This structure should be
     used for describing cutplanes because the initialization as well as its display is
-	supported by special function, which garantie a constant format (see the static routines 
+	supported by special function, which guaranties a constant format (see the static routines 
 	`SetCutPlane`, `DisplayCutPlane` in the file `wpm.c`)
 		
 	SEE ALSO:
@@ -292,7 +314,7 @@ struct PlotObjHead {                        // head of all PlotObjs
     MULTIGRID *theMG;                       // the data base
     COORD theMidPoint[3];                   // MidPoint of covering 2/3D sphere
     COORD theRadius;                        // radius of covering 2/3D sphere
-    INT clearBevoreDraw;                    // YES or NO
+    INT clearBeforeDraw;                    // YES or NO
 };
 
 union PlotObj {
@@ -342,10 +364,10 @@ typedef union  PlotObj              PLOTOBJ;
 						         ball is impossible, often initialized from the information of
 							     'DOMAIN'
 
-.   'clearBevoreDraw' - screen is cleared before plotting if 'YES'
+.   'clearBeforeDraw' - screen is cleared before plotting if 'YES'
 
 	MACROS:
-	The macros for 'PLOTOBJ', all beginning with 'PO_',are defined in`wmp.h`
+	The macros for 'PLOTOBJ', all beginning with 'PO_', are defined in `wmp.h`.
 	
 	SEE ALSO:
 	SpecifyPlotObjOfViewedObject, DisplayObject, ElemScalarPlotObj3D
@@ -453,8 +475,9 @@ struct ViewedObj {
     INT perspective;                        // YES or NO
     COORD   ViewPoint[3];                   // Observer Stand
     COORD   ViewTarget[3];                  // View target point
-    COORD   PlaneMidpoint[3];               // description of projection plane (the
-    COORD   PlaneXDir[3], PlaneYDir[3];     // infiniteextension touches the ViewTarget)
+    COORD   PlaneMidpoint[3];               // description of projection plane 
+    COORD   PlaneXDir[3], PlaneYDir[3];     // (the infinite extension 
+                                            // touches the ViewTarget)
 };
 
 typedef struct ViewedObj             VIEWEDOBJ;
@@ -498,7 +521,8 @@ struct PICture {
     struct UgWindow *theUgWindow;               // window of that canvas
     INT Global_LL[2], Global_UR[2];             // size of picture w.r.t. parent
                                                 // i.e.the ugwindow local pixel sp
-    INT sign_x, sign_y;                         // 1 if right/up system, -1 if left/down system
+    INT sign_x, sign_y;                         // 1 if right/up system, 
+                                                // -1 if left/down system
     INT Valid;                                  // YES or NO
     struct ViewedObj theViewedObj;              // the object as you see it
 };
@@ -546,10 +570,10 @@ struct UgWindow {
     INT Valid;                                  // YES or NO
     INT NbPictures;                             // number of pictures for that ugwindow
     INT currTool;                               // current tool chosen
-    INT Global_LL[2], Global_UR[2];             // size of Ugwindow w.r.t. parent i.e.the
-                                                // ug-screen pixelspace
-    INT Local_LL[2], Local_UR[2];               // real pixelrange of UgWindow, given by
-                                                // LowerLeft, UpperRight
+    INT Global_LL[2], Global_UR[2];             // size of Ugwindow w.r.t. parent 
+                                                // i.e. the ug-screen pixelspace
+    INT Local_LL[2], Local_UR[2];               // real pixelrange of UgWindow, 
+                                                // given by LowerLeft, UpperRight
 };
 
 typedef struct UgWindow              UGWINDOW;
@@ -569,7 +593,7 @@ typedef struct UgWindow              UGWINDOW;
     correctly, otherwise NO.
 .   'NbPictures' - number of 'PICTURE's opened on that 'UGWINDOW', stored as 'ENVVAR's in the 'ENVDIR'.
 .   'currTool' - number of current 'TOOL'.
-.   'Global_LL',~'Global_UR' - lower-left and upper-right outter corner-position on the screen, the real
+.   'Global_LL',~'Global_UR' - lower-left and upper-right outer corner-position on the screen, the real
     pixel coordinates used on the screen (for example a monitor has usually a y-axis going down in
 	positive direction). In this way it is realized that the content of a 'PICTURE' on the 'UGWINDOW' 
 	is not upside down.
@@ -577,7 +601,7 @@ typedef struct UgWindow              UGWINDOW;
     are used for plotting. Often you find the point (0,0) to be the upper-left.
     
 	MACROS:
-	Macros are defined in`wpm.h`, beginning allways with 'UGW_'.
+	Macros are defined in`wpm.h`, beginning always with 'UGW_'.
 	
 	SEE ALSO:
     'OUTPUTDEVICE', 'META', 'TOOL', 'DEVICE', 'PICTURE'	
@@ -615,11 +639,11 @@ typedef struct PlotObjType			PLOTOBJTYPE;
 	they just give an abstract caracterization of an 'PLOTOBJ'.
 
 .   'v' - Makes the 'PLOTOBJTYPE' an environment variable, stores also the name of the 'PLOTOBJTYPE'.
-.   'Dimension' - dimension of the corrisponding 'PLOTOBJ', unchangeable.
-.   'SetPlotObjProc' - ptr. to function which initializes the parameters of the corresponding
+.   'Dimension' - dimension of the corresponding 'PLOTOBJ', unchangeable.
+.   'SetPlotObjProc' - pointer to function which initializes the parameters of the corresponding
     'PLOTOBJ'. The arguments 'argc' and 'argv' are input parameters from the 'COMMANDS'. Their
     format is described there.
-.   'DispPlotObjProc' - ptr. to function which displays the parameters of the corresponding
+.   'DispPlotObjProc' - pointer to function which displays the parameters of the corresponding
     'PLOTOBJ'.
 
 	MACROS:
@@ -653,15 +677,15 @@ D*/
 .   iteractive~'WORK'~(induced~by~mouse-action) - 'SELECTNODE_WORK', searches a 'NODE' in a grid-plot
 .n           'SELECTELEMENT_WORK', searches an 'ELEMENT' in a grid-plot
 .n           'MARKELEMENT_WORK', marks an 'ELEMENT' in a grid-plot for 'refinement'
-.n           'INSERTNODE_WORK', inserte an inner 'NODE' in a grid-plot
+.n           'INSERTNODE_WORK', inserts an inner 'NODE' in a grid-plot
 .n           'MOVENODE_WORK', moves a 'NODE' in a grid-plot
-.n           'INSERTBNDNODE_WORK', inserte an boundary 'NODE' in a grid-plot
+.n           'INSERTBNDNODE_WORK', inserts an boundary 'NODE' in a grid-plot
 	
 
     Second, the submodule provides an administrational structure which holds
 	pointers to routines executing a work on a plotobject (see also 'PLOTOBJ'). This
 	structure is called 'PLOTOBJHANDLING', it is an extension of the structure 'PLOTOBJTYPE'
-	defined in `wpm.h`, which holds the pointers the the initialization- and displayfunctions
+	defined in `wpm.h`, which holds the pointers of the initialization- and displayfunctions
 	for the 'PLOTOBJ'. Third, it contains all functions realizing a special work on a special
 	plotobject. 
 	
@@ -789,13 +813,20 @@ union Work {
 	
     INT WorkID;                                     // unique ID of the work
     struct Draw_Work theDrawWork;                   // desc. for drawing an object
-    struct FindRange_Work theFindRangeWork;         // desc. for finding the range of an object
-    struct SelectNode_Work theSelectNodeWork;       // desc. for selecting a node of an object
-    struct SelectElement_Work theSelectElementWork; // desc. for selecting an element of an obj.
-    struct MarkElement_Work theMarkElementWork;     // desc. for marking an element of an obj.
-    struct InsertNode_Work theInsertNodeWork;       // desc. for inserting an inner node in obj.
-    struct InsertBndNode_Work theInsertBndNodeWork; // desc. for inserting an bnd node in obj.
-    struct MoveNode_Work theMoveNodeWork;           // desc. for moving an node of an obj.
+    struct FindRange_Work theFindRangeWork;         // desc. for finding the range 
+                                                    // of an object
+    struct SelectNode_Work theSelectNodeWork;       // desc. for selecting a node 
+                                                    // of an object
+    struct SelectElement_Work theSelectElementWork; // desc. for selecting an element
+                                                    // of an object
+    struct MarkElement_Work theMarkElementWork;     // desc. for marking an element
+                                                    // of an object
+    struct InsertNode_Work theInsertNodeWork;       // desc. for inserting an inner node
+                                                    // in an object
+    struct InsertBndNode_Work theInsertBndNodeWork; // desc. for inserting an bnd node
+                                                    // in an object
+    struct MoveNode_Work theMoveNodeWork;           // desc. for moving an node 
+                                                    // of an object
 };
 
 typedef union  Work                 WORK;
@@ -822,9 +853,9 @@ typedef union  Work                 WORK;
 .   theMarkElementWork - marks an 'ELEMENT' for refinement and shows its refinement on the screen.
                         'PixelX, PixelY' - pixel input-values optained by mouse-click.
 .   theInsertNodeWork - inserts an inner 'NODE' at mouse-position. 'PixelX, PixelY' - pixel input-values
-                        optained by mouse-click.
+                        obtained by mouse-click.
 .   theInsertBndNodeWork - inserts an boundary 'NODE' at mouse-position. 'PixelX, PixelY' - pixel input-values
-                           optained by mouse-click.
+                           obtained by mouse-click.
 .   theMoveNodeWork - moves an boundary 'NODE' according to the mouse-position. 'PixelX, PixelY' - pixel
                       input-values optained by mouse-click.
 
@@ -847,33 +878,52 @@ D*/
 	STRUCTURES:
 .vb
 // general procedure ptr
-typedef INT                        (*GEN_PreProcessProcPtr)          (PICTURE *, union Work *);
-typedef INT                        (*GEN_ExecuteProcPtr)             (DRAWINGOBJ *);
-typedef INT                        (*GEN_PostProcessProcPtr)         (PICTURE *, union Work *);
+typedef INT                        (*GEN_PreProcessProcPtr)          
+                                                  (PICTURE *, union Work *);
+typedef INT                        (*GEN_ExecuteProcPtr)             
+                                                  (DRAWINGOBJ *);
+typedef INT                        (*GEN_PostProcessProcPtr)         
+                                                  (PICTURE *, union Work *);
 
 // elementwise procedure ptr
-typedef ELEMENT *                  (*EW_GetFirstElementProcPtr)      (MULTIGRID *, INT, INT);
-typedef ELEMENT *                  (*EW_GetNextElementProcPtr)       (ELEMENT *);
-typedef EW_GetFirstElementProcPtr  (*EW_GetFirstElementProcProcPtr)  (VIEWEDOBJ *);
-typedef EW_GetNextElementProcPtr   (*EW_GetNextElementProcProcPtr)   (VIEWEDOBJ *);
-typedef INT                        (*EW_EvaluateProcPtr)             (ELEMENT *, DRAWINGOBJ *);
+typedef ELEMENT *                  (*EW_GetFirstElementProcPtr)      
+                                                  (MULTIGRID *, INT, INT);
+typedef ELEMENT *                  (*EW_GetNextElementProcPtr)       
+                                                  (ELEMENT *);
+typedef EW_GetFirstElementProcPtr  (*EW_GetFirstElementProcProcPtr)  
+                                                  (VIEWEDOBJ *);
+typedef EW_GetNextElementProcPtr   (*EW_GetNextElementProcProcPtr)   
+                                                  (VIEWEDOBJ *);
+typedef INT                        (*EW_EvaluateProcPtr)             
+                                                  (ELEMENT *, DRAWINGOBJ *);
 
 // nodewise procedure ptr
-typedef NODE *                     (*NW_GetFirstNodeProcPtr)         (MULTIGRID *, INT, INT);
-typedef NODE *                     (*NW_GetNextNodeProcPtr)          (NODE *);
-typedef NW_GetFirstNodeProcPtr     (*NW_GetFirstNodeProcProcPtr)     (VIEWEDOBJ *);
-typedef NW_GetNextNodeProcPtr      (*NW_GetNextNodeProcProcPtr)      (VIEWEDOBJ *);
-typedef INT                        (*NW_EvaluateProcPtr)             (NODE *, DRAWINGOBJ *);
+typedef NODE *                     (*NW_GetFirstNodeProcPtr)         
+                                                  (MULTIGRID *, INT, INT);
+typedef NODE *                     (*NW_GetNextNodeProcPtr)          
+                                                  (NODE *);
+typedef NW_GetFirstNodeProcPtr     (*NW_GetFirstNodeProcProcPtr)     
+                                                  (VIEWEDOBJ *);
+typedef NW_GetNextNodeProcPtr      (*NW_GetNextNodeProcProcPtr)      
+                                                  (VIEWEDOBJ *);
+typedef INT                        (*NW_EvaluateProcPtr)             
+                                                  (NODE *, DRAWINGOBJ *);
 
 // vectorwise procedure ptr
-typedef VECTOR *                   (*VW_GetFirstVectorProcPtr)       (MULTIGRID *, INT, INT);
-typedef VECTOR *                   (*VW_GetNextVectorProcPtr)        (VECTOR *); 
-typedef VW_GetFirstVectorProcPtr   (*VW_GetFirstVectorProcProcPtr)   (VIEWEDOBJ *);
-typedef VW_GetNextVectorProcPtr    (*VW_GetNextVectorProcProcPtr)    (VIEWEDOBJ *);
-typedef INT                        (*VW_EvaluateProcPtr)             (VECTOR *, DRAWINGOBJ *);
+typedef VECTOR *                   (*VW_GetFirstVectorProcPtr)       
+                                                  (MULTIGRID *, INT, INT);
+typedef VECTOR *                   (*VW_GetNextVectorProcPtr)        
+                                                  (VECTOR *); 
+typedef VW_GetFirstVectorProcPtr   (*VW_GetFirstVectorProcProcPtr)   
+                                                  (VIEWEDOBJ *);
+typedef VW_GetNextVectorProcPtr    (*VW_GetNextVectorProcProcPtr)    
+                                                  (VIEWEDOBJ *);
+typedef INT                        (*VW_EvaluateProcPtr)             
+                                                  (VECTOR *, DRAWINGOBJ *);
 
 // extern procedure ptr
-typedef INT                        (*EXT_EvaluateProcPtr)            (DRAWINGOBJ *, INT *);
+typedef INT                        (*EXT_EvaluateProcPtr)  
+                                                  (DRAWINGOBJ *, INT *);
 
 struct ElemWiseWork {
 
@@ -941,7 +991,7 @@ struct PlotObjHandling {
 
 	DESCRIPTION:
 	The 'PLOTOBJHANDLING' is an extension of 'PLOTOBJTYPE'. It holds additionally
-	pointers to functions which realize diferent kinds of 'WORK' on the corresponding
+	pointers to functions which realize different kinds of 'WORK' on the corresponding
 	'PLOTOBJ's. For every kind of 'WORK' there is a (at inialization time) fixed 
 	number of cycles to be executed, stored in the field 'NbOfCycles[WorkID]' ('WorkID'
 	is the ID of the 'WORK' to be executed). If this number is zero, the 'WORK' is not
@@ -951,7 +1001,7 @@ struct PlotObjHandling {
 	are':' 'ELEMENTWISE', 'NODEWISE', 'VECTORWISE', 'EXTERN'. According to this value a
 	cycle means a run over 'ELEMENT's (in general all 'ELEMENT's of the 'MULTIGRID'), a run
 	over the 'NODE's (in general all 'NODE's of the 'MULTIGRID'), a run over 'VECTOR's
-	(in general all 'VECTOR's of the 'MULTIGRID') or a extern execution. An extern execution
+	(in general all 'VECTOR's of the 'MULTIGRID') or an extern execution. An extern execution
 	is defined by a user, who want to do something not realizable by one of the previous.
 	In this way one subsubstructure of `ElemWiseWork`,`NodeWiseWork`,`VectorWiseWork`,`ExternWork`
 	determine the work to do. Apart of the last `ExternWork`, the way a cycle is executed is
@@ -964,19 +1014,19 @@ struct PlotObjHandling {
 	which contains only elementary geometrical commands like `draw line`. The geometrical information
 	has the same dimension as the plot, and no transformation to a transformed (for example pixel-space)
 	was carried out. After every 'ELEMENT'evaluation an 'EW_ExecuteProc'edure takes the information
-	from the 'DRAWINGOBJ'ect and transforms it to 2-dimensional pixel coordinates, which are the 
-	plotted by means of the lowlevel-plot-routines from file `ll-graph.c`. Finally a
+	from the 'DRAWINGOBJ'ect and transforms it to 2-dimensional pixel coordinates, which are 
+	plotted by means of the lowlevel-plot-routines in 'graph.c'. Finally a
 	'EW_PostProcessProc'edure is executed to complete the plot (for example a plot of a coordinate
-	system). To understand the external work, we trust in the reader.
+	system).
 	
 	MACROS:
-.    for~WorkProcs - 'WP_WORKMODE', 'WP_ELEMWISE', 'WP_NODEWISE', ,WP_VECTORWISE','WP_EXTERNWISE(p)
-.    for ~'PLOTOBJHANDLING' - 'POH_PLOTOBJTYPE', 'POH_NBCYCLES', 'POH_WORKPROGS(p,m,n)'
+.    for~WorkProcs - 'WP_WORKMODE', 'WP_ELEMWISE', 'WP_NODEWISE', 'WP_VECTORWISE','WP_EXTERNWISE(p)'
+.    for~'PLOTOBJHANDLING' - 'POH_PLOTOBJTYPE', 'POH_NBCYCLES', 'POH_WORKPROGS(p,m,n)'
 
 	EXAMPLE OF INITIALIZATION:
 	This exaple shows an initialization of one kind of work, the 'DRAW_WORK' for
-	an `EScalar`-'PLOTOBJTYPE'. First a 'PLOTOBJHANDLING' is created, then the nb.
-	of cycles (3) for this work is fixed. Then you see three block, in each of them
+	an `EScalar`-'PLOTOBJTYPE'. First a 'PLOTOBJHANDLING' is created, then the number
+	of cycles (3) for this work is fixed. Then you see three blocks, in each of them
 	first the `WorkMode` (here 'ELEMENTWISE') is stored and then the six allready
 	mentioned function-pointers are stored.
 	
@@ -1024,5 +1074,4 @@ struct PlotObjHandling {
 	'WOP'
 D*/
 /****************************************************************************/
-
 
