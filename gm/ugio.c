@@ -2158,7 +2158,6 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   INT MarkKey;
 #ifdef __THREEDIM__
   ELEMENT *theNeighbor;
-  INT k;
 #endif
 
   if (autosave)
