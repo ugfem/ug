@@ -8,6 +8,9 @@
 /*                                                                          */
 /* History:   25.02.2005 begin	                                            */
 /*                                                                          */
+/* Usage:     paraview <filename> $a sol                                    +/
+   /*                                                                          */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
@@ -52,6 +55,7 @@
 
 USING_UG_NAMESPACES
 
+
 /****************************************************************************/
 /*								            */
 /* defines in the following order					    */
@@ -62,7 +66,10 @@ USING_UG_NAMESPACES
 /*                                                                          */
 /****************************************************************************/
 
-#define MAXVARIABLES 50                 /* max number of eval procs */
+
+/* max number of eval procs */
+#define MAXVARIABLES 50
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -81,26 +88,34 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*			                                                    */
 /****************************************************************************/
 
+
 static INT ParaViewCommand (INT argc, char **argv)
 {
 
-  int i, j, k, l, a, coe, numVertices, numElements, offset;
+  /*counters*/
+  int i, counterCorners, level, counterEquations, numVertices, numElements, offset, numEquations;
 
-  char item[1024], it[256];   /*item buffers*/
-  INT ic = 0;                 /*item lenght*/
+  /*file stuff*/
+  char buffer[1024];          /*buffer for outputfile*/
   char filename[NAMESIZE];    /*filename for output file*/
-  char* c_ptr;
+  char* c_ptr;                /*for searching patterns in strings, resp. a dot in filename*/
   FILE *outputFile;           /*file pointer for output file*/
 
+  /*ug topology*/
   MULTIGRID *mg;              /*our multigrid*/
+  GRID *g;                    /*the grid*/
   ELEMENT *el;                /*an element*/
   VERTEX *vx;                 /*a vertex*/
 
-  EVALUES *theEVal[MAXVARIABLES];          /*pointers to scalar eval function desc*/
-  char s[NAMESIZE];
-  DOUBLE value;               /*returned by user eval proc*/
+  /*ug vector solutions*/
+  VECTOR *v;                  /*vector*/
+  VECDATA_DESC *vd;           /*the vector data descriptor*/
+  DOUBLE value;               /*solution value*/
 
-  const DOUBLE *x[MAX_CORNERS_OF_ELEM];
+  /*special cases*/
+  int ugPrismArray[6];        /*for renumbering vertex IDs*/
+  int vtkWedgeArray[6];       /*for renumbering vertex IDs*/
+
 
   /*************************************************************************/
   /*GET CURRENT MULTIGRID                                                  */
@@ -114,21 +129,6 @@ static INT ParaViewCommand (INT argc, char **argv)
     return (OKCODE);
   }
 
-
-  /*************************************************************************/
-  /*SCAN OPTIONS                                                           */
-  /*************************************************************************/
-
-  int ns = 0;
-  for(i=1; i<argc; i++)
-  {
-    PrintErrorMessageF('E',"paraview:","scan option %d\n",i);
-    sscanf(argv[i],"a %s", s);
-    PrintErrorMessageF('E',"paraview:","sscanf %d\n",i);
-    theEVal[i] = GetElementValueEvalProc(s);
-    PrintErrorMessageF('E',"paraview:","theEval[ %d\n",i);
-    ns++;
-  }
 
   /*************************************************************************/
   /*GET FILENAME AND OPEN OUTPUTFILE                                       */
@@ -159,44 +159,40 @@ static INT ParaViewCommand (INT argc, char **argv)
   /**************************************************************************/
 
 
-  sprintf(it, "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n");
+  fputs(buffer, outputFile);
 
-  sprintf(it, "\t<UnstructuredGrid>\n");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "\t<UnstructuredGrid>\n");
+  fputs(buffer, outputFile);
+
 
   /**************************************************************************/
   /*WRITE NUMBER OF VERTICES AND ELEMENTS                                   */
   /**************************************************************************/
 
 
-  for (k=0; k<=TOPLEVEL(mg); k++)
+  for (level=0; level<=TOPLEVEL(mg); level++)
   {
-    for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
+    for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,level)); vx!=NULL; vx=SUCCV(vx))
     {
       SETUSED(vx,0);
     }
   }
 
   numVertices = 0;
+  numElements = 0;
 
-  for (k=0; k<=TOPLEVEL(mg); k++)
+  for (level=0; level<=TOPLEVEL(mg); level++)
   {
-    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
+    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,level)); el!=NULL; el=SUCCE(el))
     {
       if (!EstimateHere(el)) continue;
 
       numElements ++;
 
-      for (i=0; i<CORNERS_OF_ELEM(el); i++)
+      for (counterCorners=0; counterCorners<CORNERS_OF_ELEM(el); counterCorners++)
       {
-        vx = MYVERTEX(CORNER(el,i));
+        vx = MYVERTEX(CORNER(el,counterCorners));
         if (USED(vx)) continue;
         SETUSED(vx,1);
 
@@ -207,11 +203,8 @@ static INT ParaViewCommand (INT argc, char **argv)
     }
   }
 
-  sprintf(it, "\t\t<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", numVertices, numElements);
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "\t\t<Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", numVertices, numElements);
+  fputs(buffer, outputFile);
 
 
   /****************************************************************************/
@@ -219,61 +212,44 @@ static INT ParaViewCommand (INT argc, char **argv)
   /****************************************************************************/
 
 
-  sprintf(it, "\t\t\t<Points>\n");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "\t\t\t<Points>\n");
+  fputs(buffer, outputFile);
+
+  sprintf(buffer, "\t\t\t\t<DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">\n\t\t\t\t\t");
+  fputs(buffer, outputFile);
 
 
-  sprintf(it, "\t\t\t\t<DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">\n\t\t\t\t\t");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
-
-
-  for (k=0; k<=TOPLEVEL(mg); k++)
+  for (level=0; level<=TOPLEVEL(mg); level++)
   {
-    for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
+    for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,level)); vx!=NULL; vx=SUCCV(vx))
     {
       SETUSED(vx,0);
     }
   }
 
-  for (k=0; k<=TOPLEVEL(mg); k++)
+  for (level=0; level<=TOPLEVEL(mg); level++)
   {
-    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
+    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,level)); el!=NULL; el=SUCCE(el))
     {
       if (!EstimateHere(el)) continue;
 
-      for (i=0; i<CORNERS_OF_ELEM(el); i++)
+      for (counterCorners=0; counterCorners<CORNERS_OF_ELEM(el); counterCorners++)
       {
-        vx = MYVERTEX(CORNER(el,i));
+        vx = MYVERTEX(CORNER(el,counterCorners));
         if (USED(vx)) continue;
         SETUSED(vx,1);
 
-        sprintf(it, "%g %g %g \n", XC(vx), YC(vx), ZC(vx));
-        strcpy(item+ic, it);
-        ic += strlen(it);
-        fputs(it, outputFile);
-        ic = 0;
+        sprintf(buffer, "%g %g %g \n", XC(vx), YC(vx), ZC(vx));
+        fputs(buffer, outputFile);
       }
     }
   }
 
-  sprintf(it, "\n\t\t\t\t</DataArray>");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "\n\t\t\t\t</DataArray>");
+  fputs(buffer, outputFile);
 
-
-  sprintf(it, "\n\t\t\t</Points>\n");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "\n\t\t\t</Points>\n");
+  fputs(buffer, outputFile);
 
 
   /****************************************************************************/
@@ -286,54 +262,64 @@ static INT ParaViewCommand (INT argc, char **argv)
   /****************************************************************************/
 
 
-  sprintf(it, "\t\t\t<Cells>\n");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "\t\t\t<Cells>\n");
+  fputs(buffer, outputFile);
 
-  sprintf(it, "\t\t\t\t<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">\n\t\t\t\t\t");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "\t\t\t\t<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">\n\t\t\t\t\t");
+  fputs(buffer, outputFile);
 
-
-  for (k=0; k<=TOPLEVEL(mg); k++)
+  for (level=0; level<=TOPLEVEL(mg); level++)
   {
-    for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
+    for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,level)); vx!=NULL; vx=SUCCV(vx))
     {
       SETUSED(vx,0);
     }
   }
 
-
-  for (k=0; k<=TOPLEVEL(mg); k++)
+  for (level=0; level<=TOPLEVEL(mg); level++)
   {
-    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
+    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,level)); el!=NULL; el=SUCCE(el))
     {
-      sprintf(it, "\n");
-      fputs(it, outputFile);
-      ic = 0;
+      sprintf(buffer, "\n");
+      fputs(buffer, outputFile);
 
       if (!EstimateHere(el)) continue;
 
-      for (i=0; i<CORNERS_OF_ELEM(el); i++)
+      for (counterCorners=0; counterCorners<CORNERS_OF_ELEM(el); counterCorners++)
       {
-        vx = MYVERTEX(CORNER(el,i));
+        vx = MYVERTEX(CORNER(el,counterCorners));
 
-        sprintf(it, "%d ", ID(vx));
-        fputs(it, outputFile);
-        ic = 0;
+        /*if the element is a prism: reorder vertex IDs: UG(0,1,2,3,4,5) -> VTK(0,2,1,3,5,4) */
+
+        if(TAG(el) == PRISM)
+        {
+          ugPrismArray[counterCorners] = ID(vx);
+
+          vtkWedgeArray[0] = ugPrismArray[0];
+          vtkWedgeArray[1] = ugPrismArray[2];
+          vtkWedgeArray[2] = ugPrismArray[1];
+          vtkWedgeArray[3] = ugPrismArray[3];
+          vtkWedgeArray[4] = ugPrismArray[5];
+          vtkWedgeArray[5] = ugPrismArray[4];
+
+          for(i=0; i<6; i++)
+          {
+            sprintf(buffer, "%d ", vtkWedgeArray[i]);
+            fputs(buffer, outputFile);
+          }
+        }
+
+        else
+        {
+          sprintf(buffer, "%d ", ID(vx));
+          fputs(buffer, outputFile);
+        }
       }
     }
   }
 
-  sprintf(it, "\n\t\t\t\t</DataArray>\n");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "\n\t\t\t\t</DataArray>\n");
+  fputs(buffer, outputFile);
 
 
   /****************************************************************************/
@@ -341,37 +327,26 @@ static INT ParaViewCommand (INT argc, char **argv)
   /****************************************************************************/
 
 
-  sprintf(it, "\t\t\t\t<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">\n\t\t\t\t\t");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "\t\t\t\t<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">\n\t\t\t\t\t");
+  fputs(buffer, outputFile);
 
   offset = 0;
 
-  for (k=0; k<=TOPLEVEL(mg); k++)
+  for (level=0; level<=TOPLEVEL(mg); level++)
   {
-    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
+    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,level)); el!=NULL; el=SUCCE(el))
     {
       if (!EstimateHere(el)) continue;
 
       offset += CORNERS_OF_ELEM(el);
 
-      sprintf(it, "%d \n", offset);
-      strcpy(item+ic, it);
-      ic += strlen(it);
-      fputs(it, outputFile);
-      ic = 0;
-
+      sprintf(buffer, "%d \n", offset);
+      fputs(buffer, outputFile);
     }
   }
 
-
-  sprintf(it, "\n\t\t\t\t</DataArray>\n");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "\n\t\t\t\t</DataArray>\n");
+  fputs(buffer, outputFile);
 
 
   /****************************************************************************/
@@ -379,102 +354,80 @@ static INT ParaViewCommand (INT argc, char **argv)
   /****************************************************************************/
 
 
-  sprintf(it, "\t\t\t\t<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">\n\t\t\t\t\t");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "\t\t\t\t<DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">\n\t\t\t\t\t");
+  fputs(buffer, outputFile);
 
-
-  for (k=0; k<=TOPLEVEL(mg); k++)
+  for (level=0; level<=TOPLEVEL(mg); level++)
   {
-    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el))
+    for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,level)); el!=NULL; el=SUCCE(el))
     {
       if (!EstimateHere(el)) continue;
 
-      if(TAG(el) == TRIANGLE) sprintf(it, "5 \n");
-      else if(TAG(el) == QUADRILATERAL) sprintf(it, "9 \n");
-      else if(TAG(el) == TETRAHEDRON) sprintf(it, "10 \n");
-      else if(TAG(el) == PYRAMID) sprintf(it, "14 \n");
-      else if(TAG(el) == PRISM) sprintf(it, "13 \n");
-      else if(TAG(el) == HEXAHEDRON) sprintf(it, "12 \n");
-      else sprintf(it, "   TAG NOT FOUND   \n");
+      if(TAG(el) == TRIANGLE) sprintf(buffer, "5 \n");
+      else if(TAG(el) == QUADRILATERAL) sprintf(buffer, "9 \n");
+      else if(TAG(el) == TETRAHEDRON) sprintf(buffer, "10 \n");
+      else if(TAG(el) == PYRAMID) sprintf(buffer, "14 \n");
+      else if(TAG(el) == PRISM) sprintf(buffer, "13 \n");
+      else if(TAG(el) == HEXAHEDRON) sprintf(buffer, "12 \n");
+      else sprintf(buffer, "   TAG NOT FOUND   \n");
 
-      strcpy(item+ic, it);
-      ic += strlen(it);
-      fputs(it, outputFile);
-      ic = 0;
+      fputs(buffer, outputFile);
     }
   }
 
+  sprintf(buffer, "\n\t\t\t\t</DataArray>\n");
+  fputs(buffer, outputFile);
 
-  sprintf(it, "\n\t\t\t\t</DataArray>\n");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
-
-
-  sprintf(it, "\t\t\t</Cells>\n");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "\t\t\t</Cells>\n");
+  fputs(buffer, outputFile);
 
 
   /****************************************************************************/
   /*WRITE POINT DATA                                                          */
   /****************************************************************************/
 
+  /*vector data*/
 
-  /*   sprintf(it, "\t\t\t<PointData>\n"); */
-  /*   strcpy(item+ic, it); */
-  /*   ic += strlen(it); */
-  /*   fputs(it, outputFile); */
-  /*   ic = 0; */
+  sprintf(buffer, "\t\t\t<PointData>\n");
+  fputs(buffer, outputFile);
 
-  /*   sprintf(it, "\t\t\t\t<DataArray type=\"Float64\" Name=\"values\" format=\"ascii\">\n\t\t\t\t\t"); */
-  /*   strcpy(item+ic, it); */
-  /*   ic += strlen(it); */
-  /*   fputs(it, outputFile); */
-  /*   ic = 0; */
+  if ((vd = ReadArgvVecDesc(mg,"a",argc,argv))==NULL)
+  {
+    PrintErrorMessage('E',"paraview","could not read vec symbol");
+    return (PARAMERRORCODE);
+  }
 
+  for (level=0; level<=TOPLEVEL(mg); level++)
+  {
+    g = GRID_ON_LEVEL(mg,level);
+    numEquations = VD_NCMPS_IN_TYPE(vd,VTYPE(FIRSTVECTOR(g)));
 
-  /* save data from eval procs */
+    for (counterEquations=0; counterEquations<numEquations; counterEquations++)
+    {
+      sprintf(buffer, "\t\t\t\t<DataArray type=\"Float64\" Name=\"%c\" format=\"ascii\">\n\t\t\t\t\t", VM_COMP_NAME(vd,counterEquations));
+      fputs(buffer, outputFile);
 
-  /*   for (k=0; k<=TOPLEVEL(mg); k++) */
-  /*     { */
-  /*       PrintErrorMessageF('E',"paraview:","WRITE POINT DATA k %d\n",k); */
-  /*       for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,k)); el!=NULL; el=SUCCE(el)) */
-  /*    { */
-  /*      if (!EstimateHere(el)) continue; */
-  /*      coe = CORNERS_OF_ELEM(el); */
-  /*      for (l=0; l<coe; l++) */
-  /*        { */
-  /*          PrintErrorMessageF('E',"paraview:","WRITE POINT DATA l %d\n",l); */
-  /*          value = (*(theEVal[0]->EvalProc))(el,x,LOCAL_COORD_OF_ELEM(el,l)); */ /*fehler*/
-  /*               PrintErrorMessageF('E',"paraview:","WRITE POINT DATA l %d\n",l); */
-  /*          sprintf(it,"\t\t\t\t\%g\n",value); */
-  /*          strcpy(item+ic, it); */
-  /*          ic += strlen(it); */
-  /*          fputs(it, outputFile); */
-  /*          ic = 0; */
-  /*        } */
-  /*    } */
-  /*     } */
+      for (el=FIRSTELEMENT(GRID_ON_LEVEL(mg,level)); el!=NULL; el=SUCCE(el))
+      {
+        if (!EstimateHere(el)) continue;
 
-  /*   sprintf(it, "\n\t\t\t\t</DataArray>\n"); */
-  /*   strcpy(item+ic, it); */
-  /*   ic += strlen(it); */
-  /*   fputs(it, outputFile); */
-  /*   ic = 0; */
+        for (counterCorners=0; counterCorners<CORNERS_OF_ELEM(el); counterCorners++)
+        {
+          v = NVECTOR(CORNER(el,counterCorners));
 
+          value = VVALUE(v,VD_CMP_OF_TYPE(vd,VTYPE(v),counterEquations));
+          sprintf(buffer,"%g\n",value);
+          fputs(buffer, outputFile);
+        }
+      }
 
-  /*   sprintf(it, "\t\t\t</PointData>\n"); */
-  /*   strcpy(item+ic, it); */
-  /*   ic += strlen(it); */
-  /*   fputs(it, outputFile); */
-  /*   ic = 0; */
+      sprintf(buffer, "\n\t\t\t\t</DataArray>\n");
+      fputs(buffer, outputFile);
+    }
+  }
+
+  sprintf(buffer, "\t\t\t</PointData>\n");
+  fputs(buffer, outputFile);
 
 
   /****************************************************************************/
@@ -482,25 +435,14 @@ static INT ParaViewCommand (INT argc, char **argv)
   /****************************************************************************/
 
 
-  sprintf(it, "\t\t</Piece>\n");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "\t\t</Piece>\n");
+  fputs(buffer, outputFile);
 
+  sprintf(buffer, "\t</UnstructuredGrid>\n");
+  fputs(buffer, outputFile);
 
-  sprintf(it, "\t</UnstructuredGrid>\n");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
-
-
-  sprintf(it, "</VTKFile>");
-  strcpy(item+ic, it);
-  ic += strlen(it);
-  fputs(it, outputFile);
-  ic = 0;
+  sprintf(buffer, "</VTKFile>");
+  fputs(buffer, outputFile);
 
 
   fclose(outputFile);
@@ -516,10 +458,10 @@ static INT ParaViewCommand (INT argc, char **argv)
 /*	                                                                    */
 /* Purpose:                                                                 */
 /*	                                                                    */
-/* Input:	 void	                                                    */
+/* Input:     void	                                                    */
 /*                                                                          */
-/* Output:	  INT 0: ok						    */
-/*			     else line number where error occured	    */
+/* Output:    INT 0: ok						            */
+/*            else line number where error occured	                    */
 /*                                                                          */
 /****************************************************************************/
 
