@@ -80,6 +80,7 @@
 
 /* numerics module */
 #include "np.h"
+#include "ugblas.h"
 #include "formats.h"
 #include "disctools.h"
 #include "data_io.h"
@@ -2017,11 +2018,13 @@ static INT CloseCommand (INT argc, char **argv)
    the user with the functions 'CreateProblem' and 'CreateDomain'.
    It also creates the corner vertices and nodes of the domain.
 
-   'new [<mgname>] $b <boundary value problem> $f <format> $h <heapsize>'
+   'new [<mgname>] $b <boundary value problem> $f <format> $h <heapsize> [$n] [$e]'
 
    .  <mgname>                          - the name of the multigrid (default is 'untitled-<nb>')
-   .  $p~<boundary~value~problem>	- a boundary value problem
+   .  $b~<boundary~value~problem>	- a boundary value problem
    .  $f~<format>                       - one of the enroled formats matching with <boundary value problem>
+   .  $n							- do not use optimezed insert element function
+   .  $e							- empty grid (no vertices, no elements)
    .  $h~<heapsize>                     - the heapsize to be allocated in byte (or use suffix
                                               "K" for kilobyte, "M" for megabyte, "G" for gigabyte)
 
@@ -2042,7 +2045,7 @@ static INT NewCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   char Multigrid[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE];
   MEM heapSize;
-  INT i,bopt,fopt,hopt,IEopt;
+  INT i,bopt,fopt,hopt,IEopt,emptyGrid;
 
   /* get multigrid name */
   if ((sscanf(argv[0],expandfmt(CONCAT3(" new %",NAMELENSTR,"[ -~]")),Multigrid)!=1) || (strlen(Multigrid)==0))
@@ -2055,6 +2058,7 @@ static INT NewCommand (INT argc, char **argv)
   heapSize = 0;
   bopt = fopt = hopt = FALSE;
   IEopt = TRUE;
+  emptyGrid = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -2080,6 +2084,10 @@ static INT NewCommand (INT argc, char **argv)
       IEopt = FALSE;
       break;
 
+    case 'e' :
+      emptyGrid = TRUE;
+      break;
+
     case 'h' :
       if (ReadMemSizeFromString(argv[i]+1,&heapSize)!=0)                           /* skip leading 'h' in argv */
       {
@@ -2102,7 +2110,7 @@ static INT NewCommand (INT argc, char **argv)
   }
 
   /* allocate the multigrid structure */
-  theMG = CreateMultiGrid(Multigrid,BVPName,Format,heapSize,IEopt);
+  theMG = CreateMultiGrid(Multigrid,BVPName,Format,heapSize,IEopt,!emptyGrid);
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"new","could not create multigrid");
@@ -2152,7 +2160,7 @@ static INT OpenCommand (INT argc, char **argv)
   char Multigrid[NAMESIZE],File[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE],type[NAMESIZE];
   char *theBVP,*theFormat,*theMGName;
   MEM heapSize;
-  INT i,force,IEopt,autosave;
+  INT i,force,IEopt,autosave,try_load;
 
   /* get multigrid name */
   if ((sscanf(argv[0],expandfmt(CONCAT3(" open %",NAMELENSTR,"[ -~]")),File)!=1) || (strlen(File)==0))
@@ -2165,6 +2173,7 @@ static INT OpenCommand (INT argc, char **argv)
   strcpy(type,"asc");
   theBVP = theFormat = theMGName = NULL;
   heapSize = force = autosave = 0;
+  try_load = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -2208,6 +2217,11 @@ static INT OpenCommand (INT argc, char **argv)
       break;
 
     case 't' :
+      if (strncmp(argv[i],"try",3)==0)
+      {
+        try_load = TRUE;
+        break;
+      }
       if (sscanf(argv[i],expandfmt(CONCAT3("t %",NAMELENSTR,"[ -~]")),type)!=1)
       {
         PrintHelp("open",HELPITEM," (cannot read type specification)");
@@ -2235,7 +2249,10 @@ static INT OpenCommand (INT argc, char **argv)
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"open","could not open multigrid");
-    RETURN(CMDERRORCODE);
+    if (try_load)
+      return(CMDERRORCODE);
+    else
+      RETURN(CMDERRORCODE);
   }
   currMG = theMG;
 
@@ -2316,7 +2333,7 @@ static INT SaveCommand (INT argc, char **argv)
       return (PARAMERRORCODE);
     }
 
-  if (SaveMultiGrid(theMG,Name,type,Comment,autosave)) return (PARAMERRORCODE);
+  if (SaveMultiGrid(theMG,Name,type,Comment,autosave)) return (CMDERRORCODE);
 
   return(OKCODE);
 }
@@ -12018,6 +12035,49 @@ static INT DebugCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   trace - trace a module
+
+   DESCRIPTION:
+   This command sets the trace level of modules (blas only up to now).
+
+   'trace [$blas <n>]'
+   .   $blas~<n>	- 0: off, 1: show parameters (default),
+                                        2: parameters and vector contents (blas level 1)
+
+   KEYWORDS:
+   debug, trace, ugblas
+   D*/
+/****************************************************************************/
+
+#ifdef Debug
+static INT TraceCommand (INT argc, char **argv)
+{
+  int i;
+
+  for (i=1; i<argc; i++)
+    STR_SWITCH(argv[i])
+    STR_CASE("blas")
+    int n;
+  if (sscanf(argv[i],"blas %d",&n)==1)
+    TraceUGBlas(n);
+  else
+    TraceUGBlas(TRBL_PARAMS);
+  STR_BREAK
+
+  STR_DEFAULT
+  sprintf(buffer,"(invalid option '%s')",argv[i]);
+  PrintHelp("trace",HELPITEM,buffer);
+  return (PARAMERRORCODE);
+  STR_BREAK
+
+    STR_SWITCH_END
+
+  return (OKCODE);
+}
+#endif
+
+/****************************************************************************/
+/*D
    reperr - prints the error stack
 
    DESCRIPTION:
@@ -12870,9 +12930,8 @@ static INT InitArray (void)
 
 static DumpAlgCommand(INT argc, char **argv)
 {
-  INT v_comp,level, comp;
+  INT level, comp;
   VECTOR *v;
-  MATRIX *m;
   MULTIGRID *theMG;
   GRID *theGrid;
   VECDATA_DESC *v_desc;
@@ -12914,27 +12973,30 @@ static DumpAlgCommand(INT argc, char **argv)
   }
 
   /* aus nstools.c
-      DisplayMatDataDesc(m,buffer);
-      fprintf(fptr,"%s",buffer);
-
-      fprintf(fptr,"Matrix:\n");
-      for (vec=FIRSTVECTOR(theGrid); vec!=NULL; vec=SUCCVC(vec))
-      {
-          for (mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
           {
-              fprintf(fptr,"%d\t%d\n",(int)VINDEX(vec),(int)VINDEX(MDEST(mat)));
-              fprintf(fptr,"f\tt");
-              for (i=0; i<MD_ROWS_IN_RT_CT(m,VTYPE(vec),VTYPE(MDEST(mat))); i++)
+                  MATRIX *m;
+              DisplayMatDataDesc(m,buffer);
+              fprintf(fptr,"%s",buffer);
+
+              fprintf(fptr,"Matrix:\n");
+              for (vec=FIRSTVECTOR(theGrid); vec!=NULL; vec=SUCCVC(vec))
               {
-                  for (j=0; j<MD_COLS_IN_RT_CT(m,VTYPE(vec),VTYPE(MDEST(mat))); j+
+                  for (mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
+                  {
+                      fprintf(fptr,"%d\t%d\n",(int)VINDEX(vec),(int)VINDEX(MDEST(mat)));
+                      fprintf(fptr,"f\tt");
+                      for (i=0; i<MD_ROWS_IN_RT_CT(m,VTYPE(vec),VTYPE(MDEST(mat))); i++)
+                      {
+                          for (j=0; j<MD_COLS_IN_RT_CT(m,VTYPE(vec),VTYPE(MDEST(mat))); j+
      +)
-                      fprintf(fptr,"\t%.9le",(double)MVALUE(mat,MD_IJ_CMP_OF_RT_CT
-     (m,VTYPE(vec),VTYPE(MDEST(mat)),i,j)));
-                  fprintf(fptr,"\n\t");
+                              fprintf(fptr,"\t%.9le",(double)MVALUE(mat,MD_IJ_CMP_OF_RT_CT
+          (m,VTYPE(vec),VTYPE(MDEST(mat)),i,j)));
+                          fprintf(fptr,"\n\t");
+                      }
+                      fprintf(fptr,"\n");
+                  }
               }
-              fprintf(fptr,"\n");
           }
-      }
    */
 
   return(OKCODE);
@@ -13132,6 +13194,7 @@ INT InitCommands ()
   /* commands for debugging */
         #ifdef Debug
   if (CreateCommand("debug",                      DebugCommand                                )==NULL) return (__LINE__);
+  if (CreateCommand("trace",                      TraceCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("reperr",             RepErrCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("timing",             TimingCommand                               )==NULL) return (__LINE__);
         #endif
