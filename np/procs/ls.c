@@ -1933,7 +1933,7 @@ static INT l_vector_makeinconsistent (GRID *g, const VECDATA_DESC *x)
       type = VTYPE(v);
       n = VD_NCMPS_IN_TYPE(x,type);
       if (n == 0) continue;
-      if (DDD_InfoPriority(PARHDR(v)) != PrioMaster) continue;
+      if (DDD_InfoPriority(PARHDR(v)) == PrioMaster) continue;
       Comp = VD_CMPPTR_OF_TYPE(x,type);
       for (i=0; i<n; i++)
         VVALUE(v,Comp[i]) = 0.0;
@@ -2021,17 +2021,11 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
   /* GMRES outer loop */
   for (it=0; it<np->maxiter; it++) {
     if (lresult->converged) break;
-
-    if (dnrm2(theMG,bl,level,ON_SURFACE,b,&rnorm) !=NUM_OK)
-      NP_RETURN(1,result[0]);
-    lambda = rnorm*rnorm;
-    printf("res %12.8f\n",lambda);
     if (dcopy(theMG,bl,level,ON_SURFACE,np->s,b)!= NUM_OK)
       NP_RETURN(1,lresult->error_code);
-
     /* Solve preconditioner for the initial residual */
-    if (dset(theMG,bl,level,ALL_VECTORS,np->r,0.0) != NUM_OK)
-      NP_RETURN(1,result[0]);
+    if (dset(theMG,bl,level,ALL_VECTORS,np->r,0.0)!= NUM_OK)
+      NP_RETURN(1,lresult->error_code);
     if ((*np->Iter->Iter)(np->Iter,level,np->r,np->s,A,
                           &lresult->error_code))
       REP_ERR_RETURN (1);
@@ -2043,59 +2037,62 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
       NP_RETURN(1,lresult->error_code);
     if (ddot(theMG,bl,level,ON_SURFACE,np->s,np->r,&sp) !=NUM_OK)
       NP_RETURN(1,result[0]);
-    lambda = 1.0/sqrt(sp);
+    ASSERT(sp > 0.0);
+    rnorm = sqrt(sp);
                 #else
     if (dnrm2(theMG,bl,level,ON_SURFACE,np->r,&rnorm) !=NUM_OK)
-      lambda = 1.0/rnorm;
-    NP_RETURN(1,result[0]);
+      NP_RETURN(1,result[0]);
+    ASSERT(rnorm > 0.0);
                 #endif
 
     /* copy the initial residual into v[0] */
-    if (dcopy(NP_MG(theNP),bl,level,ON_SURFACE,np->v[0],np->r) != NUM_OK)
+    if (dcopy(NP_MG(theNP),bl,level,ALL_VECTORS,np->v[0],np->r) != NUM_OK)
       NP_RETURN(1,lresult->error_code);
 
     /* scale v[0] = r/norm(r) */
+    lambda = 1.0 / rnorm;
     if (dscal(theMG,bl,level,ALL_VECTORS,np->v[0],lambda) != NUM_OK)
       NP_RETURN(1,result[0]);
 
     /* form s = norm(r)*e1 */
-    for (j=0; j<=MAX_RESTART; j++) s[j] = 0.0;
-    s[0] = 1.0/lambda;
+    s[0] = rnorm;
 
     /* GMRES inner loop */
     for (i=0; i<np->restart; i++) {
-      printf("#####################################\n");
-      printf("#### GMRES inner loop: i=%i\n",i);
-      printf("####   s[0]: %12.8f\n",s[0]);
+      PRINTDEBUG(np,1,("#####################################\n"));
+      PRINTDEBUG(np,1,("#### GMRES inner loop: i=%i\n",i));
+      PRINTDEBUG(np,1,("####   s[0]: %12.8f lambda %12.8f sp %12.8f\n",
+                       s[0],lambda,sp));
       lresult->number_of_linear_iterations++;
       /* Matrix-vector mutliply: A*v[i] */
-      if (dmatmul(theMG,bl,level,ON_SURFACE,np->s,A,np->v[i]))
+      if (dmatmul(theMG,bl,level,ALL_VECTORS,np->s,A,np->v[i]))
         NP_RETURN(1,lresult->error_code);
       /* preconditioner solve: Mw = A*v[i] */
-      if (dset(theMG,bl,level,ALL_VECTORS,np->w,0.0) != NUM_OK)
-        NP_RETURN(1,result[0]);
+      if (dset(theMG,bl,level,ALL_VECTORS,np->w,0.0)!= NUM_OK)
+        NP_RETURN(1,lresult->error_code);
       if ((*np->Iter->Iter)(np->Iter,level,np->w,np->s,A,
                             &lresult->error_code))
         REP_ERR_RETURN (1);
-
       /* form a column of the upper Hessenberg matrix / Arnoldi
              process */
       for (k=0; k<=i; k++) {
         /* form an entry of the upper Hessenberg matrix */
                             #ifdef ModelP
-        if (dcopy(theMG,bl,level,ON_SURFACE,np->s,np->w)!= NUM_OK)
+        if (dcopy(theMG,bl,level,ALL_VECTORS,np->s,np->w)!= NUM_OK)
           NP_RETURN(1,lresult->error_code);
         if (a_vector_makeinconsistent(theMG,bl,level,np->s) != NUM_OK)
           NP_RETURN(1,lresult->error_code);
-        if (ddot(theMG,bl,level,ON_SURFACE,np->s,np->v[k],&sp) !=NUM_OK)
+        if (ddot(theMG,bl,level,ON_SURFACE,np->s,np->v[k],&sp)
+            !=NUM_OK)
           NP_RETURN(1,result[0]);
                                 #else
-        if (ddot(theMG,bl,level,ON_SURFACE,np->w,np->v[k],&sp) !=NUM_OK)
+        if (ddot(theMG,bl,level,ON_SURFACE,np->w,np->v[k],&sp)
+            != NUM_OK)
           NP_RETURN(1,result[0]);
                                 #endif
         lambda = sp;
         H[k][i] = lambda;
-        printf("#### H[k,i]: %8.4f \n",H[k][i]);
+        PRINTDEBUG(np,1,("#### k = %d H[k,i]: %8.4f \n",k,H[k][i]));
 
         /* update the vector w  = w-h[k,i]*v */
         if (daxpy(theMG,bl,level,ALL_VECTORS,np->w,-lambda,np->v[k])
@@ -2105,7 +2102,7 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
 
       /* form H[i+1][i] = norm(w) */
                         #ifdef ModelP
-      if (dcopy(theMG,bl,level,ON_SURFACE,np->s,np->w)!= NUM_OK)
+      if (dcopy(theMG,bl,level,ALL_VECTORS,np->s,np->w)!= NUM_OK)
         NP_RETURN(1,lresult->error_code);
       if (a_vector_makeinconsistent(theMG,bl,level,np->s) != NUM_OK)
         NP_RETURN(1,lresult->error_code);
@@ -2117,12 +2114,14 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
         NP_RETURN(1,result[0]);
                         #endif
       H[i+1][i] = lambda;
-      printf("####norm(w): %8.4f \n",H[i+1][i]);
+      PRINTDEBUG(np,1,("####norm(w): %8.4f \n",H[i+1][i]));
 
       /* set v[i+1] = w/H[i+1][i] */ /* #### check scaling #### */
-      if (dcopy(NP_MG(theNP),bl,level,ON_SURFACE,np->v[i+1],np->w)!= NUM_OK)
+      if (dcopy(NP_MG(theNP),bl,level,ALL_VECTORS,np->v[i+1],np->w)
+          != NUM_OK)
         NP_RETURN(1,lresult->error_code);
-      if (dscal(theMG,bl,level,ALL_VECTORS,np->v[i+1],1.0/lambda)!=NUM_OK)
+      if (dscal(theMG,bl,level,ALL_VECTORS,np->v[i+1],1.0/lambda)
+          != NUM_OK)
         NP_RETURN(1,result[0]);
 
       /* apply Givens rotations */
@@ -2152,52 +2151,52 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
       s[i]     = lambda;
       H[i][i]   = cs[i]*H[i][i] + sn[i]*H[i+1][i];
       H[i+1][i] = 0.0;
-      printf("####      i: %12i\n",i);
-      printf("#### MAXRES: %12i\n",MAX_RESTART);
-      printf("####   s[i]: %12.8f\n",s[i]);
-      printf("#### s[i+1]: %12.8f \n",s[i+1]);
-      printf("####  cs[i]: %12.8f \n",cs[i]);
-      printf("####  sn[i]: %12.8f\n",sn[i]);
-      printf("#### H[i,i]: %12.8f\n",H[i][i]);
-      printf("####    TOL: %12.8f\n", tol);
+      PRINTDEBUG(np,1,("####      i: %12i\n",i));
+      PRINTDEBUG(np,1,("#### MAXRES: %12i\n",MAX_RESTART));
+      PRINTDEBUG(np,1,("####   s[i]: %12.8f\n",s[i]));
+      PRINTDEBUG(np,1,("#### s[i+1]: %12.8f \n",s[i+1]));
+      PRINTDEBUG(np,1,("####  cs[i]: %12.8f \n",cs[i]));
+      PRINTDEBUG(np,1,("####  sn[i]: %12.8f\n",sn[i]));
+      PRINTDEBUG(np,1,("#### H[i,i]: %12.8f\n",H[i][i]));
+      PRINTDEBUG(np,1,("####    TOL: %12.8f\n", tol));
       /* if the error is sufficiently small,
          perform the update and exit */
-      printf("#### abs(s[i+1]): %12.8f\n",fabs(s[i+1]));
-      printf("####         TOL: %12.8f\n",tol);
+      PRINTDEBUG(np,1,("#### abs(s[i+1]): %12.8f\n",fabs(s[i+1])));
+      PRINTDEBUG(np,1,("####         TOL: %12.8f\n",tol));
       if (fabs(s[i+1]) < tol) break;
-    }             /* end: GMRES inner loop:i */
+    }            /* end: GMRES inner loop:i */
 
     /* ensure i is the proper value */
     if (i>=np->restart) i=np->restart-1;
-    printf("#####################################\n");
+    PRINTDEBUG(np,1,("#####################################\n"));
     /* solve the upper Hessenberg system */
     for (i1=0; i1<=i; i1++)
       for (i2=0; i2<=i; i2++)
         Hsq[i1*(i+1)+i2] = H[i1][i2];
     for (i1=0; i1<=i; i1++) {
-      printf("% i  @@@@ ",i1);
+      PRINTDEBUG(np,1,("% i  @@@@ ",i1));
       for (i2=0; i2<=i; i2++)
-        printf("%12.8f ",Hsq[i1*(i+1)+i2]);
-      printf("\n");
+        PRINTDEBUG(np,1,("%12.8f ",Hsq[i1*(i+1)+i2]));
+      PRINTDEBUG(np,1,("\n"));
     }
 
     if (SolveFullMatrix(i+1,y,Hsq,s)) {
       UserWriteF("GMRESSolver: decompostion failed");
       NP_RETURN(1,lresult->error_code);
     }
-    printf("y ");
+    PRINTDEBUG(np,1,("y "));
     for (i2=0; i2<=i; i2++)
-      printf("%12.8f ",y[i2]);
-    printf("\n");
-    printf("s ");
+      PRINTDEBUG(np,1,("%12.8f ",y[i2]));
+    PRINTDEBUG(np,1,("\n"));
+    PRINTDEBUG(np,1,("s "));
     for (i2=0; i2<=i; i2++)
-      printf("%12.8f ",s[i2]);
-    printf("\n");
+      PRINTDEBUG(np,1,("%12.8f ",s[i2]));
+    PRINTDEBUG(np,1,("\n"));
     /* Perform a full matrix-vector multiply
        (NOT THE COEFFICIENT MATRIX!) */
     /*x = x + V(:,1:i)*y; */
 
-    if (dset(theMG,bl,level,ON_SURFACE,np->c,0.0)!= NUM_OK)
+    if (dset(theMG,bl,level,ALL_VECTORS,np->c,0.0)!= NUM_OK)
       NP_RETURN(1,lresult->error_code);
 
     for (i1=0; i1<=i; i1++) {
