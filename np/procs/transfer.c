@@ -1663,7 +1663,7 @@ static INT PartTransferConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitTransfer ()
+INT NS_PREFIX InitTransfer ()
 {
   if (CreateClass(TRANSFER_CLASS_NAME ".transfer",
                   sizeof(NP_STANDARD_TRANSFER),TransferConstruct))
