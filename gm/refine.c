@@ -5,7 +5,7 @@
 /*																			*/
 /* File:	  refine.c														*/
 /*																			*/
-/* Purpose:   unstructured grid refinement using a general element concept	*/
+/* Purpose:   unstructured grid adaption using a general element concept	*/
 /*			  (dimension independent for 2/3D)								*/
 /*																			*/
 /* Author:	  Stefan Lang                         							*/
@@ -355,382 +355,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, INT *check);
-
-#ifdef ModelPTest
-
-
-/****************************************************************************/
-/*
-   MakeRefMarkandMarkClassConsistent - exchange the MARK and MARKCLASS flags
-
-   SYNOPSIS:
-   int GetMarkandMarkClass (OBJECT obj, void *data);
-   int PutMarkandMarkClass (OBJECT obj, void *data);
-
-   PARAMETERS:
-.  level - level for which to make flags consistent
-
-   DESCRIPTION:
-   This function exchanges the MARK and MARKCLASS flags between elements on the vertical boundary of one level.
-
-   RETURN VALUE:
-   void
-*/
-/****************************************************************************/
-
-int GetMarkandMarkClass (OBJECT obj, void *data)
-{
-}
-
-int PutMarkandMarkClass (OBJECT obj, void *data)
-{
-}
-
-void MakeRefMarkandMarkClassConsistent (int level)
-{
-	INTERFACE id; 
-
-	/* get id for vertical interface downwards */
-	id = 1;
-	/* exchange marks */
-	DDD_IFExchange(id,INT,GetMarkandMarkClass, PutMarkandMarkClass);
-}
-#endif
-
-#ifdef ModelP
-
-
-/****************************************************************************/
-/*
-   CheckPartitioning - check whether all master copies have master copies of the sons
-
-   SYNOPSIS:
-   INT CheckPartitioning (MULTIGRID *theMG);
-
-   PARAMETERS:
-.  theMG
-
-   DESCRIPTION:
-   This function checks whether all master copies of elements which may be involved in next refinement step have master copies of the sons (if existing) at the same processor.
-
-   RETURN VALUE:
-   INT
-.n   GM_OK - ok 
-.n   GM_ERROR - error
-*/
-/****************************************************************************/
-
-INT CheckPartitioning (MULTIGRID *theMG)
-{
-	INT i,_restrict_;
-	ELEMENT *theElement;
-	ELEMENT *theFather;
-	GRID	*theGrid;
-
-	_restrict_ = 0;
-
-	/* reset used flags */
-	for (i=TOPLEVEL(theMG); i>0; i--)
-	{
-		theGrid = GRID_ON_LEVEL(theMG,i);
-		for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
-			 theElement=SUCCE(theElement))
-		{
-			if (LEAFELEM(theElement))
-			{
-				theFather = theElement;
-				while (EMASTER(theFather) && ECLASS(theFather)!=RED_CLASS 
-					   && LEVEL(theFather)>0)
-				{
-					theFather = EFATHER(theFather);
-				}
-			
-				/* if element with red element class does not exist */ 
-				/* or is ghost -> partitioning must be restricted   */
-				if (!EMASTER(theFather))
-				{
-					_restrict_ = 1;
-					continue;
-				}
-
-				/* if element is marked for coarsening and father    */
-				/* of element is not master -> restriction is needed */
-				if (COARSEN(theFather))
-				{
-					/* level 0 elements are not coarsened */
-					if (LEVEL(theFather)==0) continue;
-					if (!EMASTER(EFATHER(theFather)))
-						_restrict_ = 1;
-				}
-			}
-		}
-	}
-
-	_restrict_ = UG_GlobalMaxINT(_restrict_); 
-	if (me==master && _restrict_==1)
-	{
-		UserWriteF("CheckPartitioning(): partitioning is not valid for refinement\n");
-		UserWriteF("                     cleaning up ...\n");
-	}
-
-	return(_restrict_);
-}
-
-/****************************************************************************/
-/*
-   Gather_ElementRestriction - 
-
-   SYNOPSIS:
-   static int Gather_ElementRestriction (DDD_OBJ obj, void *data);
-
-   PARAMETERS:
-.  obj
-.  data
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   int
-*/
-/****************************************************************************/
-
-static int Gather_ElementRestriction (DDD_OBJ obj, void *data)
-{
-	ELEMENT *theElement = (ELEMENT *)obj;
-
-	PRINTDEBUG(gm,4,(PFMT "Gather_ElementRestriction(): e=" EID_FMTX "\n",
-			 me,EID_PRTX(theElement)))
-	((int *)data)[0] = USED(theElement);
-	   
-	return(GM_OK);
-}
-
-
-/****************************************************************************/
-/*
-   Scatter_ElementRestriction - 
-
-   SYNOPSIS:
-   static int Scatter_ElementRestriction (DDD_OBJ obj, void *data);
-
-   PARAMETERS:
-.  obj
-.  data
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   int
-*/
-/****************************************************************************/
-
-static int Scatter_ElementRestriction (DDD_OBJ obj, void *data)
-{
-	ELEMENT *theElement = (ELEMENT *)obj;
-	int used;
-
-	PRINTDEBUG(gm,4,(PFMT "Scatter_ElementRestriction(): e=" EID_FMTX "\n",
-			 me,EID_PRTX(theElement)))
-	if (EMASTER(theElement))
-	{
-		PRINTDEBUG(gm,4,(PFMT "Scatter_ElementRestriction(): restricting sons of e=" EID_FMTX "\n",
-			 me,EID_PRTX(theElement)))
-		used = MAX(USED(theElement),((int *)data)[0]);
-		SETUSED(theElement,used);
-	}
-	   
-	return(GM_OK);
-}
-
-
-/****************************************************************************/
-/*
-   Gather_RestrictedPartition - 
-
-   SYNOPSIS:
-   static int Gather_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio);
-
-   PARAMETERS:
-.  obj
-.  data
-.  proc
-.  prio
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   int
-*/
-/****************************************************************************/
-
-static int Gather_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
-{
-	ELEMENT *theElement = (ELEMENT *)obj;
-
-	if (EMASTER(theElement))
-	{
-		PRINTDEBUG(gm,4,(PFMT "Gather_RestrictedPartition(): e=" EID_FMTX "\n",
-			 me,EID_PRTX(theElement)))
-		((int *)data)[0] = PARTITION(theElement);
-	}
-	   
-	return(GM_OK);
-}
-
-
-/****************************************************************************/
-/*
-   Scatter_RestrictedPartition - 
-
-   SYNOPSIS:
-   static int Scatter_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio);
-
-   PARAMETERS:
-.  obj
-.  data
-.  proc
-.  prio
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   int   
-*/
-/****************************************************************************/
-
-static int Scatter_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
-{
-	ELEMENT *theElement = (ELEMENT *)obj;
-	ELEMENT *SonList[MAX_SONS];
-	int i,partition;
-
-	if (USED(theElement) && EMASTERPRIO(prio))
-	{
-		PRINTDEBUG(gm,4,(PFMT "Scatter_ElementRestriction(): restricting sons of e=" EID_FMTX "\n",
-			 me,EID_PRTX(theElement)))
-
-		partition = ((int *)data)[0];
-		/* send master sons to master element partition */
-		if (GetSons(theElement,SonList)) RETURN(GM_ERROR);
-		for (i=0; SonList[i]!=NULL; i++) 
-			PARTITION(SonList[i]) = partition;
-	}
-	   
-	return(GM_OK);
-}
-
-#define NOTCOARSENED	0
-#define COARSENED		1
-
-
-/****************************************************************************/
-/*
-   RestrictPartitioning - 
-
-   SYNOPSIS:
-   INT RestrictPartitioning (MULTIGRID *theMG, INT coarse);
-
-   PARAMETERS:
-.  theMG
-.  coarse
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT
-*/
-/****************************************************************************/
-
-INT RestrictPartitioning (MULTIGRID *theMG, INT coarse)
-{
-	INT i,j;
-	ELEMENT *theElement;
-	ELEMENT *theFather;
-	ELEMENT *SonList[MAX_SONS];
-	GRID	*theGrid;
-
-	/* reset used flags */
-	for (i=TOPLEVEL(theMG); i>=0; i--)
-	{
-		theGrid = GRID_ON_LEVEL(theMG,i);
-		for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
-			 theElement=SUCCE(theElement))
-		{
-			SETUSED(theElement,0);
-		}
-	}
-
-	/* set flags on elements which violate restriction */
-	for (i=TOPLEVEL(theMG); i>=0; i--)
-	{
-		theGrid = GRID_ON_LEVEL(theMG,i);
-		for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
-			 theElement=SUCCE(theElement))
-		{
-			if (GLEVEL(theGrid) == 0) break;
-			if (LEAFELEM(theElement) || USED(theElement))
-			{
-				theFather = theElement;
-				while (EMASTER(theFather) && ECLASS(theFather)!=RED_CLASS
-					   && LEVEL(theFather)>0)
-				{
-					theFather = EFATHER(theFather);
-				}
-			
-				/* if father with red refine class is not master */ 
-				/* partitioning must be restricted                */
-				if (!EMASTER(theFather))
-				{
-					/* the sons of father will be sent to partition of father */
-					SETUSED(theFather,1);
-				}
-
-				/* if element is marked for coarsening and father    */
-				/* of element is not master -> restriction is needed */
-				if (COARSEN(theFather))
-				{
-					/* level 0 elements are not coarsened */
-					if (LEVEL(theFather)==0) continue;
-					if (!EMASTER(EFATHER(theFather)))
-						SETUSED(EFATHER(theFather),1);
-				}
-			}
-		}
-		/* transfer restriction flags to master copies of father */
-		DDD_IFAOneway(ElementVHIF,GRID_ATTR(theGrid),IF_BACKWARD,sizeof(INT),
-			Gather_ElementRestriction, Scatter_ElementRestriction);
-	}
-
-	/* send restricted sons to partition of father */
-	for (i=0; i<=TOPLEVEL(theMG); i++)
-	{
-		theGrid = GRID_ON_LEVEL(theMG,i);
-
-		/* transfer (new) partitions of elements to non master copies */
-		DDD_IFAOnewayX(ElementVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
-			Gather_RestrictedPartition, Scatter_RestrictedPartition);
-
-		for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; 
-			 theElement=SUCCE(theElement))
-		{
-			if (!USED(theElement)) continue;
-
-			/* push partition to the sons */
-			GetAllSons(theElement,SonList);
-			for (j=0; SonList[j]!=NULL; j++)
-			{
-				SETUSED(SonList[j],1);
-				if (EMASTER(SonList[j]))
-					PARTITION(SonList[j]) = PARTITION(theElement);
-			}
-		}
-	}
-
-	if (TransferGrid(theMG) != 0) RETURN(GM_FATAL);
-
-	return(GM_OK);
-}
-#endif
 
 /****************************************************************************/
 /*
@@ -3988,7 +3612,7 @@ static int compare_nodes (const void *ce0, const void *ce1)
    Connect_Sons_of_ElementSide - 
 
    SYNOPSIS:
-   INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT notHanging, INT ioflag);
+   INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT ioflag);
 
    PARAMETERS:
 .  theGrid
@@ -3997,7 +3621,6 @@ static int compare_nodes (const void *ce0, const void *ce1)
 .  Sons_of_Side
 .  Sons_of_Side_List
 .  SonSides
-.  notHanging
 .  ioflag
 
    DESCRIPTION:
@@ -4007,8 +3630,7 @@ static int compare_nodes (const void *ce0, const void *ce1)
 */
 /****************************************************************************/
 
-INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides,
-								 INT notHanging, INT ioflag)
+INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT ioflag)
 {
 	COMPARE_RECORD ElemSonTable[MAX_SONS];
 	COMPARE_RECORD NbSonTable[MAX_SONS];
@@ -4064,7 +3686,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 	if (MARKCLASS(theNeighbor)==NO_CLASS)
 	{
 		
-		if (notHanging) assert(MARKCLASS(theElement)==YELLOW_CLASS);
+		if (hFlag) assert(MARKCLASS(theElement)==YELLOW_CLASS);
 	
 		return(GM_OK);
 	}			
@@ -4377,7 +3999,7 @@ static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theCo
 		SonSides[0] = i;
 
 		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side,
-			Sons_of_Side_List,SonSides,hFlag,0)!=GM_OK) RETURN(GM_FATAL);
+			Sons_of_Side_List,SonSides,0)!=GM_OK) RETURN(GM_FATAL);
 
 		#ifdef ModelP
 		if (Identify_Objects_of_ElementSide(theGrid,theElement,i)) RETURN(GM_FATAL);
@@ -5341,7 +4963,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 		assert(Sons_of_Side>0 && Sons_of_Side<6);
 
 		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side, 
-			 	Sons_of_Side_List,SonSides,hFlag,0)!=GM_OK) RETURN(GM_FATAL);
+			 	Sons_of_Side_List,SonSides,0)!=GM_OK) RETURN(GM_FATAL);
 
 		#ifdef ModelP
 		if (Identify_Objects_of_ElementSide(theGrid,theElement,i)) RETURN(GM_FATAL);
@@ -5564,7 +5186,7 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 				Sons_of_Side_List,SonSides,0,0)!=GM_OK) RETURN(GM_FATAL);
 
 		if (Connect_Sons_of_ElementSide(theGrid,theElement,i,Sons_of_Side, 
-				Sons_of_Side_List,SonSides,hFlag,0)!=GM_OK) RETURN(GM_FATAL);
+				Sons_of_Side_List,SonSides,0)!=GM_OK) RETURN(GM_FATAL);
 
 		#ifdef ModelP
 		if (Identify_Objects_of_ElementSide(theGrid,theElement,i)) RETURN(GM_FATAL);
@@ -5916,384 +5538,12 @@ if (0) CheckGrid(FinerGrid,1,1,1,1);
 
 
 #ifdef ModelP
-
-
-/****************************************************************************/
-/*
-   UpdateElementOverlap - 
-
-   SYNOPSIS:
-   static INT UpdateElementOverlap (ELEMENT *theElement);
-
-   PARAMETERS:
-.  theElement
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT
-*/
-/****************************************************************************/
-
-static INT UpdateElementOverlap (ELEMENT *theElement)
-{
-	INT		i,s,prio;
-	INT		SonsOfSide,SonSides[MAX_SONS];
-	ELEMENT *theNeighbor,*theSon;
-	ELEMENT *SonList[MAX_SONS];
-
-	/* yellow_class specific code:                                */
-	/* update need to be done for all elements with THEFLAG set,  */
-	/* execpt for yellow copies, since their neighbor need not be */
-	/* refined (s.l. 971029)                                      */
-#ifndef UPDATE_FULLOVERLAP
-	if (!THEFLAG(theElement) && REFINECLASS(theElement)!=YELLOW_CLASS) return(GM_OK);
-#endif
-/*
-	if (!THEFLAG(theElement)) return(GM_OK);
-*/
-
-	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-	{
-		theNeighbor = NBELEM(theElement,i);
-		if (theNeighbor == NULL) continue;
-
-		prio = EPRIO(theNeighbor);
-		if (!IS_REFINED(theNeighbor) || !EHGHOSTPRIO(prio)) continue;
-
-		/* yellow_class specific code:                                     */
-		/* this is the special situation an update of the element overlap  */
-		/* is needed, since the yellow element has now gotten a new yellow */
-		/* neighbor (s.l. 971029)                                          */
-		/* sending of yellow copies is now done in each situation. To send */
-		/* a yellow copy only if needed, THEFLAG(theNeighbor) must be set  */
-		/* properly in AdaptGrid() (980114 s.l.)                          */
-		#ifndef UPDATE_FULLOVERLAP
-		if ((REFINECLASS(theElement)==YELLOW_CLASS && !THEFLAG(theElement)) && 
-			!THEFLAG(theNeighbor)) continue;
-		#endif
-
-		PRINTDEBUG(gm,1,("%d: EID=%d side=%d NbID=%d " "NbPARTITION=%d\n",me,
-			ID(theElement),i,ID(theNeighbor), EPROCPRIO(theNeighbor,PrioMaster)))
-
-		Get_Sons_of_ElementSide(theElement,i,&SonsOfSide,
-			SonList,SonSides,1,0);
-		PRINTDEBUG(gm,1,("%d: SonsOfSide=%d\n",me,SonsOfSide))
-
-		for (s=0; s<SonsOfSide; s++)
-		{
-			theSon = SonList[s];
-			ASSERT(theSon != NULL);
-
-			PRINTDEBUG(gm,1,("%d: Sending Son=%08x/%x SonID=%d "
-				"SonLevel=%d to dest=%d\n", me,EGID(theSon),theSon,
-				ID(theSon),LEVEL(theSon), EPROCPRIO(theNeighbor,PrioMaster)))
-
-			HEAPFAULT(theNeighbor);			
-
-			if (EPROCPRIO(theNeighbor,PrioMaster)>=procs) break;
-
-			XFERECOPYX(theSon,EPROCPRIO(theNeighbor,PrioMaster),PrioHGhost,
-				(OBJT(theSon)==BEOBJ)?BND_SIZE_TAG(TAG(theSon)):
-				INNER_SIZE_TAG(TAG(theSon)));
-			/* send son to all elements where theNeighbor is master, vghost or vhghost */
-if (0)
-			{
-				INT *proclist = EPROCLIST(theNeighbor);
-				proclist += 2;
-				while (*proclist != -1)
-				{
-					if (!EHGHOSTPRIO(*(proclist+1)))
-					{
-						XFERECOPYX(theSon,*proclist,PrioHGhost,
-							(OBJT(theSon)==BEOBJ)?BND_SIZE_TAG(TAG(theSon)):
-							INNER_SIZE_TAG(TAG(theSon)));
-					}
-					proclist += 2;
-				}
-			}
-		}
-	}
-
-	return(GM_OK);
-}
-
-
-/****************************************************************************/
-/*
-   UpdateGridOverlap - 
-
-   SYNOPSIS:
-   static INT UpdateGridOverlap (GRID *theGrid);
-
-   PARAMETERS:
-.  theGrid
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT
-*/
-/****************************************************************************/
-
-INT UpdateGridOverlap (GRID *theGrid)
-{
-	ELEMENT *theElement;
-
-	for (theElement=FIRSTELEMENT(theGrid);theElement!=NULL;theElement=SUCCE(theElement))
-	{ 
-		if (IS_REFINED(theElement))
-			UpdateElementOverlap(theElement);
-	}
-
-	return(GM_OK);
-}
-
-
-/****************************************************************************/
-/*
-   UpdateMultiGridOverlap - 
-
-   SYNOPSIS:
-   static INT UpdateMultiGridOverlap (MULTIGRID *theMG, INT FromLevel);
-
-   PARAMETERS:
-.  theMG
-.  FromLevel
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT
-*/
-/****************************************************************************/
-
-static INT UpdateMultiGridOverlap (MULTIGRID *theMG, INT FromLevel)
-{
-	INT		l;		
-	GRID	*theGrid;
-
-	ddd_HandlerInit(HSET_REFINE);
-
-	for (l=FromLevel; l<TOPLEVEL(theMG); l++)
-	{
-		theGrid = GRID_ON_LEVEL(theMG,l);
-		UpdateGridOverlap(theGrid);
-	}
-
-	return(GM_OK);
-}
-
-
-/****************************************************************************/
-/*
-   DropUsedFlags - 
-
-   SYNOPSIS:
-   static INT DropUsedFlags (GRID *theGrid);
-
-   PARAMETERS:
-.  theGrid
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT
-*/
-/****************************************************************************/
-
-static INT DropUsedFlags (GRID *theGrid)
-{
-	ELEMENT *theElement;
-
-	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-	{
-		if (USED(theElement) == 1)
-		{
-			REFINE_ELEMENT_LIST(1,theElement,"drop mark");
-
-			ASSERT(EFATHER(theElement)!=NULL);
-
-			/* this father has to be connected */
-			SETUSED(EFATHER(theElement),1);
-			SETUSED(theElement,0);
-		}
-	}
-
-	return(GM_OK);
-}
-
-
-/****************************************************************************/
-/*
-   ConnectGridOverlap - 
-
-   SYNOPSIS:
-   static INT	ConnectGridOverlap (GRID *theGrid);
-
-   PARAMETERS:
-.  theGrid
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT
-*/
-/****************************************************************************/
-
-INT	ConnectGridOverlap (GRID *theGrid)
-{
-	INT		i,j,Sons_of_Side,prio;
-	INT		SonSides[MAX_SIDE_NODES];
-	ELEMENT	*theElement;
-	ELEMENT	*theNeighbor;
-	ELEMENT	*theSon;
-	ELEMENT *Sons_of_Side_List[MAX_SONS];
-
-	for (theElement=PFIRSTELEMENT(theGrid);theElement!=NULL;theElement=SUCCE(theElement))
-	{
-		prio = EPRIO(theElement);
-
-		/* connect only FROM hgost copies */
-		if (!IS_REFINED(theElement) || !EHGHOSTPRIO(prio)) continue;
-
-		PRINTDEBUG(gm,1,("%d: Connecting e=%08x/%x ID=%d eLevel=%d\n",
-							me,DDD_InfoGlobalId(PARHDRE(theElement)),
-							theElement,ID(theElement),
-							LEVEL(theElement)));
-
-		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-		{
-			if (OBJT(theElement)==BEOBJ
-				&& SIDE_ON_BND(theElement,i)
-				&& !INNER_BOUNDARY(theElement,i))	continue;
-
-			theNeighbor = NBELEM(theElement,i);
-			if (theNeighbor == NULL)       continue;
-
-			prio = EPRIO(theNeighbor);
-			/* overlap situation hasn't changed */
-			if (!THEFLAG(theElement) && !THEFLAG(theNeighbor)) continue;
-
-			/* connect only TO master copies */
-			if (!IS_REFINED(theNeighbor) || !MASTERPRIO(prio))	continue;
-
-			if (Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,
-					Sons_of_Side_List,SonSides,1,0)!=GM_OK) RETURN(GM_FATAL);
-
-			IFDEBUG(gm,1)
-				UserWriteF(PFMT " 		side=%d NSONS=%d Sons_of_Side=%d:\n",
-					me,i,NSONS(theElement),Sons_of_Side);
-				for (j=0; j<Sons_of_Side; j++)
-					UserWriteF(PFMT "            son=%08x/%x sonside=%d\n",
-						me,EGID(Sons_of_Side_List[j]),
-						Sons_of_Side_List[j],SonSides[j]);
-				printf("%d:         connecting ghostelements:\n",me);
-			ENDDEBUG
-			
-			/* the ioflag=1 is needed, since not all sended ghosts are needed! */
-			if (Connect_Sons_of_ElementSide(theGrid,theElement,i,
-					Sons_of_Side,Sons_of_Side_List,SonSides,hFlag,1)!=GM_OK) 
-				RETURN(GM_FATAL);
-		}
-
-		/* yellow_class specific code:                             */
-		/* check whether is a valid ghost, which as in minimum one */
-		/* master element as neighbor                              */
-		/* TODO: move this functionality to ComputeCopies          */
-		/* then disposing of theSon can be done in AdaptGrid      */
-		/* and the extra Xfer env around ConnectGridOverlap()      */
-		/* can be deleted (s.l. 971029)                            */
-		{
-			ELEMENT *SonList[MAX_SONS];
-
-			GetAllSons(theElement,SonList);
-			for (i=0; SonList[i]!=NULL; i++)
-			{
-				INT ok = 0;
-				theSon = SonList[i];
-				if (!EHGHOST(theSon)) continue;
-				for (j=0; j<SIDES_OF_ELEM(theSon); j++)
-				{
-					if (NBELEM(theSon,j)!=NULL && EMASTER(NBELEM(theSon,j))) ok = 1;
-				}
-				if (!ok)
-				{
-					if (ECLASS(theSon) == YELLOW_CLASS)
-					{
-						UserWriteF(PFMT "ConnectGridOverlap(): disposing useless yellow ghost  e=" EID_FMTX 
-							"f=" EID_FMTX "this ghost is useless!\n",
-							me,EID_PRTX(theSon),EID_PRTX(theElement));
-						DisposeElement(UPGRID(theGrid),theSon,TRUE);
-					}
-					else
-					{
-						UserWriteF(PFMT "ConnectGridOverlap(): ERROR e=" EID_FMTX 
-							"f=" EID_FMTX "this ghost is useless!\n",
-							me,EID_PRTX(theSon),EID_PRTX(theElement));
-
-						/* TODO: better do this
-						assert(0); */
-					}
-				}
-			}
-		}
-	}
-
-	return(GM_OK);
-}
-
-
-
-/****************************************************************************/
-/*
-   ConnectMultiGridOverlap - 
-
-   SYNOPSIS:
-   static INT	ConnectMultiGridOverlap (MULTIGRID *theMG, INT FromLevel);
-
-   PARAMETERS:
-.  theMG
-.  FromLevel
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT
-*/
-/****************************************************************************/
-
-static INT	ConnectMultiGridOverlap (MULTIGRID *theMG, INT FromLevel)
-{
-	INT l;
-	GRID *theGrid;
-	
-	/* drop used marks to fathers */
-	for (l=FromLevel+1; l<=TOPLEVEL(theMG); l++)
-	{
-		theGrid = GRID_ON_LEVEL(theMG,l);
-		if (DropUsedFlags(theGrid)) RETURN(GM_FATAL);
-	}
-
-	/* connect sons of elements with used flag set */
-	for (l=FromLevel; l<TOPLEVEL(theMG); l++)
-	{
-
-		theGrid = GRID_ON_LEVEL(theMG,l);
-		if (ConnectGridOverlap(theGrid)) RETURN(GM_FATAL); 
-	}
-			
-	return(GM_OK);
-}
-#endif
-		
-#ifdef ModelP
 /* parameters for CheckGrid() */
-#define GHOSTS	1
-#define GEOM	1
-#define ALG		0
-#define LIST	1
-#define IF 		1
+#define GHOSTS  1
+#define GEOM    1
+#define ALG     0
+#define LIST    1
+#define IF      1
 
 
 /****************************************************************************/
@@ -6413,7 +5663,7 @@ CheckMultiGrid(theMG);
 	if (CheckPartitioning(theMG))
 	{
 		assert(0);
-		if (RestrictPartitioning(theMG,COARSENED)) RETURN(GM_FATAL);
+		if (RestrictPartitioning(theMG)) RETURN(GM_FATAL);
 if (0)
 		return(GM_OK);
 	}
