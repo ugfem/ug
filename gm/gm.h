@@ -2564,7 +2564,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
 MULTIGRID   *OpenMGFromDataFile(MULTIGRID *theMG, INT number, char *type, char *DataFileName);
 MULTIGRID       *LoadMultiGrid  (char *MultigridName, char *name, char *type,
                                  char *BndValProblem, char *format,
-                                 unsigned long heapSize,INT force,INT optimizedIE);
+                                 unsigned long heapSize,INT force,INT optimizedIE, INT autosave);
 INT             SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave);
 INT         DisposeGrid             (GRID *theGrid);
 INT             DisposeMultiGrid                (MULTIGRID *theMG);

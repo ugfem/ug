@@ -1761,7 +1761,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   return (0);
 }
 
-MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize, INT force, INT optimizedIE)
+MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize, INT force, INT optimizedIE, INT autosave)
 {
   MULTIGRID *theMG;
   GRID *theGrid;
@@ -1788,14 +1788,48 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   INT i,j,k,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],
   **Element_corner_ids_uniq_subdom,*Element_corner_ids,max,**Element_nb_uniq_subdom,
   *Element_nb_ids,id,level;
-  INT parfile;
-  char buf[64];
+  INT parfile,lastnumber;
+  char buf[64],itype[10];
+  char *p,*f,*s,*l;
   int *vidlist,fileprocs;
 
-  /* open file */
-  strcpy(filename,name);
-  strcat(filename,".ug.mg.");
-  strcat(filename,type);
+  if (autosave)
+  {
+    if (name==NULL)
+    {
+      if (type!=NULL) return (NULL);
+      strcpy(filename,MG_FILENAME(theMG));
+      f = strtok(filename,".");   if (f==NULL) return (NULL);
+      s = strtok(NULL,".");       if (s==NULL) return (NULL);
+      l = strtok(NULL,".");       if (l==NULL) return (NULL);
+      l = strtok(NULL,".");       if (l==NULL) return (NULL);
+      l = strtok(NULL,".");       if (l==NULL) return (NULL);
+      strtok(l,"/");
+      if (sscanf(s,"%d",&lastnumber)!=1) return (NULL);if (lastnumber<0) return (NULL);lastnumber++;
+      strcpy(itype,l);
+      sprintf(buf,".%04d",lastnumber);
+      strcat(filename,buf);
+    }
+    else
+    {
+      if (type==NULL) return (NULL);
+      strcpy(itype,type);
+      if (name==NULL) return (NULL);
+      strcpy(filename,name);
+      strcat(filename,".0000");
+    }
+  }
+  else
+  {
+    if (type==NULL) return (NULL);
+    strcpy(itype,type);
+    if (name==NULL) return (NULL);
+    strcpy(filename,name);
+  }
+  sprintf(buf,".ug.mg.");
+  strcat(filename,buf);
+  strcat(filename,itype);
+
 #ifdef ModelP
   if (me == master)
   {

@@ -210,7 +210,7 @@ MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *D
       mgtype = p;
       mgname = dio_general.mgfile;
     }
-    mg = LoadMultiGrid (NULL,mgname,mgtype,NULL,NULL,0,0,0);
+    mg = LoadMultiGrid (NULL,mgname,mgtype,NULL,NULL,0,0,0,0);
   }
 
   return (mg);
