@@ -674,7 +674,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char * type, char *c
   mg_general.magic_cookie = MG_MAGIC_COOKIE(theMG);
   mg_general.heapsize             = MGHEAP(theMG)->size/1024;
   mg_general.nLevel               = TOPLEVEL(theMG) + 1;
-  mg_general.nNode = mg_general.nPoint = mg_general.nElement;
+  mg_general.nNode = mg_general.nPoint = mg_general.nElement = 0;
   for (i=0; i<=TOPLEVEL(theMG); i++)
   {
     theGrid = GRID_ON_LEVEL(theMG,i);
