@@ -208,11 +208,11 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
 
   /* change to /Formats directory */
   if (ChangeEnvDir("/Formats")==NULL)
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN_PTR (NULL);
 
   /* allocate new format structure */
   fmt = (FORMAT *) MakeEnvItem (name,theFormatDirID,sizeof(FORMAT));
-  if (fmt==NULL) REP_ERR_RETURN(NULL);
+  if (fmt==NULL) REP_ERR_RETURN_PTR(NULL);
 
   /* fill in data */
   FMT_S_VERTEX(fmt)               = sVertex;
@@ -244,12 +244,12 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
   /* set vector stuff */
   for (i=0; i<nvDesc; i++)
   {
-    if ((vDesc[i].tp<0)||(vDesc[i].tp>=MAXVECTORS)||(vDesc[i].size<0)) REP_ERR_RETURN(NULL);
+    if ((vDesc[i].tp<0)||(vDesc[i].tp>=MAXVECTORS)||(vDesc[i].size<0)) REP_ERR_RETURN_PTR(NULL);
     FMT_S_VEC_TP(fmt,vDesc[i].tp) = vDesc[i].size;
     if ((vDesc[i].name<FROM_VTNAME) || (TO_VTNAME<vDesc[i].name))
     {
       PrintErrorMessageF('E',"CreateFormat","type name '%c' out of range (%c-%c)",vDesc[i].name,FROM_VTNAME,TO_VTNAME);
-      REP_ERR_RETURN (NULL);
+      REP_ERR_RETURN_PTR (NULL);
     }
     FMT_VTYPE_NAME(fmt,vDesc[i].tp) = vDesc[i].name;
     FMT_SET_N2T(fmt,vDesc[i].name,vDesc[i].tp);
@@ -275,13 +275,13 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
   /* set connection stuff */
   for (i=0; i<nmDesc; i++)
   {
-    if ((mDesc[i].from<0)||(mDesc[i].from>=MAXVECTORS)) REP_ERR_RETURN(NULL);
-    if ((mDesc[i].to<0)  ||(mDesc[i].to>=MAXVECTORS)) REP_ERR_RETURN(NULL);
-    if (mDesc[i].diag<0) REP_ERR_RETURN(NULL);
-    if ((mDesc[i].size<0)||(mDesc[i].depth<0)) REP_ERR_RETURN(NULL);
+    if ((mDesc[i].from<0)||(mDesc[i].from>=MAXVECTORS)) REP_ERR_RETURN_PTR(NULL);
+    if ((mDesc[i].to<0)  ||(mDesc[i].to>=MAXVECTORS)) REP_ERR_RETURN_PTR(NULL);
+    if (mDesc[i].diag<0) REP_ERR_RETURN_PTR(NULL);
+    if ((mDesc[i].size<0)||(mDesc[i].depth<0)) REP_ERR_RETURN_PTR(NULL);
 
-    if (FMT_S_VEC_TP(fmt,mDesc[i].from)<=0) REP_ERR_RETURN(NULL);
-    if (FMT_S_VEC_TP(fmt,mDesc[i].to)<=0) REP_ERR_RETURN(NULL);
+    if (FMT_S_VEC_TP(fmt,mDesc[i].from)<=0) REP_ERR_RETURN_PTR(NULL);
+    if (FMT_S_VEC_TP(fmt,mDesc[i].to)<=0) REP_ERR_RETURN_PTR(NULL);
 
     if (mDesc[i].size>0 && mDesc[i].depth>=0)
     {
@@ -348,7 +348,7 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
       }
   FMT_MAX_TYPE(fmt) = MaxType;
 
-  if (ChangeEnvDir(name)==NULL) REP_ERR_RETURN(NULL);
+  if (ChangeEnvDir(name)==NULL) REP_ERR_RETURN_PTR(NULL);
   UserWrite("format "); UserWrite(name); UserWrite(" installed\n");
 
   return(fmt);
