@@ -90,7 +90,7 @@
 #define NUMBERID                        1
 #define ALPHAID                         2
 #define LSTRINGID                       3
-#define OTHERID                         16
+#define EMPTYID                         4
 
 #define Boolean int
 
@@ -187,7 +187,8 @@ static INT GetCondition(DOUBLE *result);
 
    DESCRIPTION:
    This function moves the command pointer `cmdPtr` until it encounters the first
-   non-blank. This includes the `\n`-character and comments of the form '#....EOL'.
+   non-blank. Here `blank` means space, tab and `\n`-character
+   as well as comments of the form '#....EOL'.
 
    RETURN VALUE:
    char
@@ -511,7 +512,7 @@ static INT GetAnItem (int *itemType,char *buffer)
   }
 
   buffer[0]=(char) 0;
-  *itemType=OTHERID;
+  *itemType=EMPTYID;
   return(DONE);
 }
 
@@ -688,30 +689,32 @@ static INT GetValueOfOperand (DOUBLE *t, OPERAND *term)
   {
   case NUMBERID :
     *t=term->ro.value;
+    error=FALSE;
     break;
 
   case ALPHAID :
     if ((error=ConvertStringToDouble(term->so.sptr,0,NULL,&itemType,t))!=DONE)
       return(error);
-    if (itemType!=NUMBERID)
-    {
-      PrintErrorMessage('E',"GetValueOfOperand","wrong item type");
-      return(8606);
-    }
+    error=(itemType!=NUMBERID);
     break;
 
   case LSTRINGID :
     if ((error=ConvertStringToDouble(term->lo.sptr,term->lo.length,NULL,&itemType,t))!=DONE)
       return(error);
-    if (itemType!=NUMBERID)
-    {
-      PrintErrorMessage('E',"GetValueOfOperand","wrong item type");
-      return(8606);
-    }
+    error=(itemType!=NUMBERID);
     break;
+
+  default :
+    error=TRUE;
   }
 
-  return(DONE);
+  if (error)
+  {
+    PrintErrorMessage('E',"GetValueOfOperand","wrong item type");
+    return(8606);
+  }
+  else
+    return(DONE);
 }
 
 /****************************************************************************/
@@ -803,7 +806,7 @@ static INT GetToken (char *buffer)
     return(error);
 
   if (itemType!=ALPHAID)
-    return(8401);               /* (possibly) syntax error */
+    return(1);
   else
     return(DONE);
 }
@@ -849,8 +852,7 @@ static INT GetFactor (OPERAND *result)
   OPERAND newResult;
 
   /* set error value */
-  result->ro.type=NUMBERID;
-  result->ro.value=0;
+  result->ro.type=EMPTYID;
 
   c=SkipBlanks();
 
@@ -951,7 +953,7 @@ static INT GetFactor (OPERAND *result)
     case ALPHAID :
       if (strcmp(buffer,"ugCmd")==0)
       {
-        break;                          /* will be implemented rsn */
+        break;                                  /* will be implemented rsn */
       }
       /* is it a built in function? */
       if (    (strcmp(buffer,"exp")==0)
@@ -996,13 +998,16 @@ static INT GetFactor (OPERAND *result)
         if ((stringAdr=GetStringVar(buffer))==NULL)
         {
           PrintErrorMessage('E',"GetFactor","variable not found");
-          return(8601);                                 /* variable not found */
+          return(8601);                                         /* variable not found */
         }
 
         newResult.so.type=ALPHAID;
         newResult.so.sptr=stringAdr;
         break;
       }
+
+    default :
+      break;
     }
     break;
 
@@ -1028,9 +1033,12 @@ static INT GetFactor (OPERAND *result)
       result->lo.length=newResult.lo.length;
     }
     break;
-  default :
-    PrintErrorMessage('E',"GetFactor","syntax error");
-    return(8602);               /* syntax error */
+  case EMPTYID :
+    if (signflag)
+    {
+      PrintErrorMessage('E',"GetFactor","syntax error");
+      return(8602);                     /* syntax error */
+    }
     break;
   }
 
@@ -1066,11 +1074,13 @@ static INT GetProduct(OPERAND *result)
   INT error;
   OPERAND newResult;
 
-  result->ro.type=NUMBERID;
-  result->ro.value=1;
+  result->ro.type=EMPTYID;
 
   if ((error=GetFactor(&newResult))!=DONE)
     return(error);
+
+  if (newResult.ro.type==EMPTYID)
+    return(DONE);
 
   c=SkipBlanks();
 
@@ -1115,6 +1125,12 @@ static INT GetProduct(OPERAND *result)
 
     if ((error=GetFactor(&newResult))!=DONE)
       return(error);
+
+    if (newResult.ro.type==EMPTYID)
+    {
+      PrintErrorMessage('E',"GetProduct","incomplete operation");
+      return(1);
+    }
 
     switch (c)
     {
@@ -1187,10 +1203,12 @@ static INT GetSum(OPERAND *result)
   OPERAND newResult;
 
   result->ro.type=NUMBERID;
-  result->ro.value=0;
 
   if ((error=GetProduct(&newResult))!=DONE)
     return(error);
+
+  if (newResult.ro.type==EMPTYID)
+    return(DONE);
 
   c=SkipBlanks();
 
@@ -1235,6 +1253,12 @@ static INT GetSum(OPERAND *result)
 
     if ((error=GetProduct(&newResult))!=DONE)
       return(error);
+
+    if (newResult.ro.type==EMPTYID)
+    {
+      PrintErrorMessage('E',"GetProduct","incomplete operation");
+      return(1);
+    }
 
     switch (c)
     {
@@ -1308,10 +1332,12 @@ static INT GetEquation (OPERAND *result)
   OPERAND term1,term2;
 
   result->ro.type=NUMBERID;
-  result->ro.value=0;
 
   if ((error=GetSum(&term1))!=DONE)
     return(error);
+
+  if (term1.ro.type==EMPTYID)
+    return(DONE);
 
   switch (c=SkipBlanks())
   {
@@ -1363,6 +1389,12 @@ static INT GetEquation (OPERAND *result)
     break;
 
   }             /* switch */
+
+  if (term2.ro.type==EMPTYID)
+  {
+    PrintErrorMessage('E',"GetProduct","incomplete operation");
+    return(1);
+  }
 
   switch (term1.ro.type)
   {
@@ -1805,22 +1837,20 @@ static INT InterpretString()
       if ((status&STATUSCODE)==IF)
       {
         cmdStart=cmdPtr;                                        /* search for else */
-        SkipBlanks();
 
-        GetToken(buffer);
-        if (strcmp(buffer,"else")==0)
-        {
-          status=status-IF+ELSE;
-          status0=StatusStack[StatusPos-1];
-          if ((status0&SKIPMODE)==0)
-            status=(status^SKIPMODE);                                                   /* if-else active: switch to opposite */
-          termFlag=FALSE;                                       /* leave terminating mode */
-        }
-        else
-        {
-          cmdPtr=cmdStart;                                      /* set cmdPtr back */
-          status=StatusStack[--StatusPos];
-        }
+        if (GetToken(buffer)==DONE)
+          if (strcmp(buffer,"else")==0)
+          {
+            status=status-IF+ELSE;
+            status0=StatusStack[StatusPos-1];
+            if ((status0&SKIPMODE)==0)
+              status=(status^SKIPMODE);                                                         /* if-else active: switch to opposite */
+            termFlag=FALSE;                                             /* leave terminating mode */
+            continue;
+          }
+
+        cmdPtr=cmdStart;                                /* set cmdPtr back */
+        status=StatusStack[--StatusPos];
         continue;
       }
 
@@ -2027,8 +2057,8 @@ static INT InterpretString()
       /* search for break */
       if (RepeatPos==0)
       {
-        PrintErrorMessage('E',"InterpretString","???");
-        return(8506);                           /* should not happen! */
+        PrintErrorMessage('E',"InterpretString","continue outside loop");
+        return(1);
       }
       else
       {
@@ -2041,8 +2071,21 @@ static INT InterpretString()
 
     if (strcmp(buffer,"print")==0)
     {
+      c=(char) 0;
       do
       {
+        /* skip , */
+        c1=c;
+        while ((c=SkipBlanks())==',')
+        {c1=c; cmdPtr++;}
+
+        if ((c==';')||(c==(char)0))
+        {
+          if (c1!=',')
+            UserWrite("\n");
+          break;
+        }
+
         if ((error=EvaluateExpression(&result))!=DONE)
           return(error);
 
@@ -2072,14 +2115,15 @@ static INT InterpretString()
           break;
         }
 
-        if ((c=SkipBlanks())!=',')
-          break;
-        else
-          cmdPtr++;
+        c=SkipBlanks();
+        if ((c!=',')&&(c!=';')&&(c!=(char) 0))
+        {
+          PrintErrorMessage('E',"InterpretString","error in print argument list");
+          return(1);
+        }
       }
       while (TRUE);
 
-      UserWrite("\n");
       continue;
     }
 
@@ -2349,8 +2393,8 @@ static INT InterpretString()
 void CommandLoop (int argc, char **argv)
 {
   INT error;
-  int i,j,k,kerr;
-  char c,inpLine[256],errLine[270],ver[100];
+  int i,j,k,kerr, tabCount;
+  char c,inpLine[256],errLine[256],spcLine[256], ver[100];
   char *strStart;
 
   strcpy(ver,VERSION);
@@ -2404,26 +2448,30 @@ void CommandLoop (int argc, char **argv)
             kerr++;
           }
 
-          k=0;
-          while (k<254)
+          if (kerr<254)
           {
-            c=*(strStart++);
-            if ((c==(char) 0)||(c=='\n'))
-              break;
-            errLine[k++]=c;
-          }
-          errLine[k++]='\n';
-          errLine[k]=(char) 0;
-          UserWrite(errLine);
-
-          if (kerr<=253)
-          {
-            for (k=0; k<kerr+11; k++)
-              errLine[k]=' ';
-            errLine[kerr+11]='^';
-            errLine[kerr+12]='\n';
-            errLine[kerr+13]=(char) 0;
+            k=0;
+            while (k<254)
+            {
+              c=*(strStart++);
+              if ((c==(char) 0)||(c=='\n'))
+                break;
+              if (k<kerr)
+              {
+                if (c!='\t')
+                  spcLine[k]=' ';
+                else
+                  spcLine[k]='\t';
+              }
+              errLine[k++]=c;
+            }
+            errLine[k++]='\n';
+            errLine[k]=(char) 0;
             UserWrite(errLine);
+
+            spcLine[kerr]=(char)0;
+            UserWrite(spcLine);
+            UserWrite("                ^\n");
           }
         }
       }

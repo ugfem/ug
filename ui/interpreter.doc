@@ -72,7 +72,7 @@
    For compatibility with older scripts, `ug`-commands can additionally be
    terminated by the '\n' character (CRLF), which allows to combine
    several `ug`-commands to one interpreter command. Yet it is recommendable to
-   terminate also `ug`-commands with ';', since it might be useful to allow
+   terminate also `ug`-commands with ';' since it might be useful to allow
    '\n' as a formatting character in later versions.
    
    Comments may be given at the end of the line. They start with the
@@ -82,7 +82,7 @@
    'repeat <statement>' repeats the following statement until
    it is stopped with the command 'break'. For example
 .vb
-    i=1; repeat if (i>10) break; else {print i; i=i+1;}
+    i=1; repeat {if (i>10) break; print i," ",; i=i+1;} print;
 .ve
    counts from 1 to 10.
    
@@ -95,10 +95,11 @@
 .vb
     if (a>b) c=a; else c=b;
 .ve
-   which sets 'c' to the maximum of 'a' and 'b'. There is a slight bug,
-   which will be fixed in a future release, namely if the second statement is
-   again an if-then-else-construct, you have to set it in brackets to
-   work correctly.
+   which sets 'c' to the maximum of 'a' and 'b'. 
+   
+   A difference to the 'if'-command in C is that if the second statement is
+   again an if-then-else-construct, it has to be set in brackets '{}' to
+   work correctly!
 
    VARIABLES:
    The interpreter knows only text variables and directories
@@ -113,14 +114,15 @@
 .vb
     variable-name=<expression>
 .ve
-   Examples are 'a=1', 'a="Hallo"', 'a=3*c+b'
+   Examples are 'a=1', 'a="Hallo"', 'a=3*c+b'.
    Alternatively one can express the first two cases using the historically
    earlier form 'set a 2' resp. 'set a Hallo'. Together with the
    'print' command described in section `Input and Output` one can look
    at their values with 'set a' (or 'print a').
    Constant strings may be enclosed either in single or double quotes, which
    is of use mainly in the simulation of procedures, see section `Substitution`.
-
+   Variables may be deleted with the command 'dv'.
+   
    STRUCTURES:
    A structure may be inductively defined as a
    (of course finite, more precisely the depth is restricted by 32) set
@@ -160,6 +162,9 @@
    One can compare two strings with the operators '==', '!=', '<=', '>='
    which have the same meaning as in C. If both strings can be interpreted
    as numbers their numeric value is used for the comparison.
+   As in C false expressions have value zero and true expressions have
+   non-zero value (usually one). Therefore one can simulate the logical operation
+   'AND' by '*' and 'OR' by '+'.
    
    FUNCTIONS:
    The interpreter understands the functions
@@ -167,7 +172,8 @@
 .n exp, log - e to the power of, and natural logarithm
 .n sin, cos - sine and cosine
 .n floor - gives the largest integer smaller than the argument
-   
+.n fabs - gives the absolute value of the argument
+
    If further functions should be needed, it is easily possible to
    introduce them by changing the routine 'GetFactor' in the file
    'ug/ui/cmdint.c'.
@@ -185,7 +191,8 @@
 .ve
    which prints first expr1, then expr2 and so on immediately after each
    other (so spaces must be explicitly given in the list).
-   At the end a '\n'-character (i.e. CRLF) is sent.
+   At the end a '\n'-character (i.e. CRLF) is sent, unless the
+   last expression is empty (i.e. the statement terminates with a comma).
 
    SUBSTITUTION:
    With the character '@' the following token is interpreted as
@@ -284,7 +291,13 @@ INT   GetStringINTInRange    (const char *name, INT min, INT max, INT *value);
    'exit 0' makes the interpreter to proceed even when errors of
    `ug`-commands occur (the error code is put into the variable
    'cmdstatus' in the root structure), 'exit 1' returns to the initial state.
-
+   
+   Usually when an (interpreter) error occurs also its position
+   is shown by printing the command line with an indicator '^' below.
+   
+   In the 'ui' directory exists also a script file 'intcheck.scr',
+   which checks some functionality of the interpreter.
+   
    SEE ALSO:
    'commands'
 D*/

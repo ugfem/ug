@@ -843,7 +843,7 @@ static INT DateCommand (INT argc, char **argv)
    DESCRIPTION:
    This function navigates through the environment tree.
    It lists environment directory.
-   It uses the function 'CangeEnvDir'.
+   It uses the function 'ChangeEnvDir'.
 
    ls [<path>]
 
@@ -1147,8 +1147,8 @@ static INT EnvInfoCommand (INT argc, char **argv)
 
 static INT SetCommand (INT argc, char **argv)
 {
-  char name[LONGSTRSIZE];
-  INT ropt,i,res,rv;
+  char name[LONGSTRSIZE], *namePtr;
+  INT flag,ropt,i,res,rv;
 
   res = sscanf(argv[0],expandfmt(CONCAT3(" set %",LONGSTRLENSTR,"[0-9:.a-zA-Z_] %255[ -~]")),name,buffer);
 
@@ -1176,23 +1176,107 @@ static INT SetCommand (INT argc, char **argv)
   switch (res)
   {
   case 1 :
-    rv =  PrintStructContents(name,ropt,buffer);
-    UserWrite(buffer);
+    namePtr=&(name[0]);
+    do
+    {
+      rv=PrintStructContents(namePtr,buffer,BUFFERSIZE,ropt);
+      if ((rv!=0)&&(rv!=4))
+      {
+        PrintErrorMessage('E',"set","structure not found or bad structure");
+        return (CMDERRORCODE);
+      }
+      UserWrite(buffer);
+      namePtr=NULL;
+    }
+    while (rv==4);
     break;
 
   case 2 :
     rv =  SetStringVar(name,buffer);
+    if (rv!=0)
+    {
+      PrintErrorMessage('E',"set","could not allocate variable");
+      return (CMDERRORCODE);
+    }
+
     break;
 
   default :
-    rv =  PrintCurrentStructContents(ropt,buffer);
-    UserWrite(buffer);
+    flag=1;
+    do
+    {
+      rv=PrintCurrentStructContents(flag,buffer,BUFFERSIZE,ropt);
+      if ((rv!=0)&&(rv!=4))
+      {
+        PrintErrorMessage('E',"set","structure not found or bad structure");
+        return (CMDERRORCODE);
+      }
+      UserWrite(buffer);
+      flag=0;
+    }
+    while (rv==4);
+    break;
   }
 
   if (rv==0)
     return (OKCODE);
-  else
+}
+
+/****************************************************************************/
+/*
+   DeleteVariableCommand - Delete an existing variable
+
+   SYNOPSIS:
+   static INT DeleteVariableCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   This function deletes an existing variable.
+
+   dv <variable name>
+
+   .  <variable name>         - <variable name> consists of a complete path related to the
+   .n                         current struct dir or the structure root directory in the environment
+   .n                         (see also: help structpath)
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT DeleteVariableCommand (INT argc, char **argv)
+{
+  INT res;
+  char name[LONGSTRSIZE];
+
+  NO_OPTION_CHECK(argc,argv);
+
+  res = sscanf(argv[0],expandfmt(CONCAT3(" dv %",LONGSTRLENSTR,"[0-9:.a-zA-Z_]")),name);
+
+  if (res!=1)
+  {
+    PrintHelp("dv",HELPITEM," (could not read name of variable)");
+    return(PARAMERRORCODE);
+  }
+
+  if (argc!=1)
+  {
+    PrintHelp("dv",HELPITEM,NULL);
+    return(PARAMERRORCODE);
+  }
+
+  if (DeleteVariable(name)!=0)
+  {
+    PrintErrorMessage('E',"dv","could not delete variable");
     return (CMDERRORCODE);
+  }
+  else
+    return(DONE);
 }
 
 /****************************************************************************/
@@ -1432,7 +1516,10 @@ static INT DeleteStructCommand (INT argc, char **argv)
   }
 
   if (DeleteStruct(name)!=0)
+  {
+    PrintErrorMessage('E',"ds","could not delete structure");
     return (CMDERRORCODE);
+  }
   else
     return(DONE);
 }
@@ -9225,6 +9312,7 @@ INT InitCommands ()
   if (CreateCommand("pwd",                        PrintEnvDirCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("envinfo",            EnvInfoCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("set",                        SetCommand                                              )==NULL) return (__LINE__);
+  if (CreateCommand("dv",                         DeleteVariableCommand                   )==NULL) return (__LINE__);
   if (CreateCommand("ms",                         MakeStructCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("cs",                         ChangeStructCommand                             )==NULL) return (__LINE__);
   if (CreateCommand("pws",                        PrintWorkStructCommand                  )==NULL) return (__LINE__);
