@@ -48,7 +48,6 @@
 #include "cmdint.h"
 #include "commands.h"
 #include "helpmsg.h"
-#include "num.h"
 #include "shapes.h"
 #include "cmdline.h"
 

@@ -35,7 +35,6 @@
 
 #include "helpmsg.h"
 #include "cmdline.h"
-#include "num.h"
 #include "devices.h"
 #include "misc.h"
 #include "fileopen.h"
@@ -242,7 +241,9 @@ INT PrintHelp (const char *HelpFor,int mode, const char *addText)
 INT CheckHelp ()
 {
   COMMAND *theCmd;
+#ifdef __NUMERICS__
   NP_TYPE *theNP;
+#endif
   char HelpItem[128],cmdname[NAMESIZE],npname[NAMESIZE],*s;
   int i,found,rv;
 
@@ -287,6 +288,7 @@ INT CheckHelp ()
   else
     UserWrite("for all commands on-line help is available\n\n");
 
+#ifdef __NUMERICS__
   /* loop num proc types */
   UserWrite("checking num proc types...\n");
   rv = 0;
@@ -327,6 +329,7 @@ INT CheckHelp ()
     UserWrite("for all other num proc types on-line help is available\n");
   else
     UserWrite("for all num proc types on-line help is available\n");
+#endif
 
   return (rv);
 }

@@ -2,18 +2,16 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      tecplot.h                                                     */
+/* File:      avs.h                                                         */
 /*                                                                          */
-/* Purpose:   tecplot output header file	                                                */
+/* Purpose:   avs output header file	                                                */
 /*                                                                          */
 /* Author:	  Peter Bastian                                                                                     */
 /*			  Institut fuer Computeranwendungen III                                                 */
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: peter@ica3.uni-stuttgart.de							*/
-/*			  fon: 0049-(0)711-685-7003										*/
-/*			  fax: 0049-(0)711-685-7000										*/
+/*			  email: ug@ica3.uni-stuttgart.de			                                */
 /*																			*/
 /* History:   29.06.95 begin, ug version 3.0								*/
 /*                                                                          */
@@ -30,37 +28,7 @@
 #ifndef __AVS__
 #define __AVS__
 
-#ifndef __GM__
-#include "gm.h"
-#endif
-
-#ifndef __NUMERICS__
-#include "num.h"
-#endif
-
-
-/****************************************************************************/
-/*                                                                          */
-/* defines in the following order                                           */
-/*                                                                          */
-/*        compile time constants defining static data size (i.e. arrays)    */
-/*        other constants                                                   */
-/*        macros                                                            */
-/*                                                                          */
-/****************************************************************************/
-
-
-/****************************************************************************/
-/*                                                                          */
-/* data structures exported by the corresponding source file                */
-/*                                                                          */
-/****************************************************************************/
-
-/****************************************************************************/
-/*                                                                          */
-/* definition of exported global variables                                  */
-/*                                                                          */
-/****************************************************************************/
+#include "compiler.h"
 
 /****************************************************************************/
 /*                                                                          */
