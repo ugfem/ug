@@ -390,7 +390,7 @@ INT PostPCR (INT ID, char *path)
       defect /= PCR_nComp[ID];
       if (SetStringValue("defect",defect)) return (1);
     }
-    if (PCR_nComp[ID] > 1)
+    if ((PCR_nComp[ID] > 1) && (PCR_InitNorm[ID] > 0))
       if (SetStringValue("norm",POW(PCR_OldNorm[ID]/PCR_InitNorm[ID],1.0/(PCR_nb[ID]-1)))) return (1);
     if (ChangeStructDir(":")==NULL) return (1);
   }
