@@ -272,8 +272,11 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
 		for( node=PFIRSTNODE(grid); node!=NULL; node=SUCCN(node) )
 		{
 		    vertex_coord = CVECT(MYVERTEX(node));
-			vector_coord = VVALUEPTR(NVECTOR(node),VecCoordComp);
-			V_DIM_COPY(vertex_coord,vector_coord);	// set vector_coord := vertex_coord
+		    if( NVECTOR(node)!=NULL)
+		    {
+				vector_coord = VVALUEPTR(NVECTOR(node),VecCoordComp);
+				V_DIM_COPY(vertex_coord,vector_coord);	// set vector_coord := vertex_coord
+			}
 		}
 		
 		// now propagate the coordinate info to the algebraic levels
