@@ -369,7 +369,7 @@ int PutBndNode (BND_NODE *BndNode)
       Global_Mesh->BndP_lcoord[n_bn][i][1]=BndNode->sp[i].local[0];
       fp+=2;
     }
-    Global_Mesh->BndPosition[n_bn]=(float*)NG_MALLOC(Global_Heap,3*sizeof(float),Global_MarkKey);
+    Global_Mesh->BndPosition[n_bn]=(double*)NG_MALLOC(Global_Heap,3*sizeof(double),Global_MarkKey);
     if (Global_Mesh->BndPosition[n_bn]==NULL) return (1);
     Global_Mesh->BndPosition[n_bn][0]=BndNode->global[0];
     Global_Mesh->BndPosition[n_bn][1]=BndNode->global[1];

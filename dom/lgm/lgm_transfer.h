@@ -109,7 +109,7 @@ struct lgm_line_info {
 
 struct lgm_point_info {
 
-  float position[LGM_TRDIM];                            /* position of corner							*/
+  double position[LGM_TRDIM];                           /* position of corner							*/
 };
 
 struct lgm_mesh_info {
@@ -118,7 +118,7 @@ struct lgm_mesh_info {
   int *BndP_nLine;                   /* nb. of lines per bound. point           */
   int **BndP_LineID;                 /* id of each line                         */
   float **BndP_lcoord;               /* local coord of BndP on each line        */
-  float **BndPosition;               /* list of boundary points                 */
+  double **BndPosition;               /* list of boundary points                 */
   int nInnP;                         /* nb. of inner nodes                      */
   double **InnPosition;               /* positions of inner nodes               */
   int nSubDomains;                   /* nb. of subdomains                       */
@@ -204,7 +204,7 @@ struct lgm_line_info {
 
 struct lgm_point_info {
 
-  float position[LGM_TRDIM];                            /* position of corner							*/
+  double position[LGM_TRDIM];                           /* position of corner							*/
 };
 
 struct lgm_mesh_info {
@@ -218,7 +218,7 @@ struct lgm_mesh_info {
   float ***BndP_lcoord;              /* local coord of BndP on each surface */
   float **BndP_lcoord_left;              /* left local coord of BndP on each line */
   float **BndP_lcoord_right;             /* right local coord of BndP on each line */
-  float **BndPosition;                           /* list of boundary points	            */
+  double **BndPosition;                          /* list of boundary points	            */
   int nInnP;                         /* nb. of inner nodes                  */
   double **InnPosition;               /* positions of inner nodes            */
   int nSubDomains;                   /* nb. of subdomains                   */

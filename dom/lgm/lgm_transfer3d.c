@@ -512,7 +512,7 @@ int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
 int LGM_ReadPoints (LGM_POINT_INFO *lgm_point_info)
 {
   int n;
-  float f[3];
+  double f[3];
 
   if (SkipBTN())
     return (1);
@@ -523,7 +523,7 @@ int LGM_ReadPoints (LGM_POINT_INFO *lgm_point_info)
   while (1)
   {
     if (SkipBTN()) break;
-    if (fscanf(stream,"%f %f %f;",f,f+1,f+2)!=3) break;
+    if (fscanf(stream,"%lf %lf %lf;",f,f+1,f+2)!=3) break;
     lgm_point_info[n].position[0] = f[0];
     lgm_point_info[n].position[1] = f[1];
     lgm_point_info[n].position[2] = f[2];
