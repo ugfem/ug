@@ -48,10 +48,13 @@
 #include "gm.h"
 
 
-#include "uggraph/initgraph.h"
+#include "initgraph.h"
 #ifdef _COVISE
-#include "covise/coviseif.h"
+#include "coviseif.h"
 #endif
+
+/* own header */
+#include "graphics.h"
 
 
 /****************************************************************************/
@@ -142,9 +145,9 @@ INT InitGraphics (void)
 
 INT ExitGraphics (void)
 {
+        #ifdef _COVISE
   INT error;
 
-        #ifdef _COVISE
   /* close Covise interface */
   error = ExitCoviseIF();
   if (error!=0)
