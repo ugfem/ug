@@ -93,12 +93,12 @@ typedef INT (*BndCondProcPtr)(void *, void *, DOUBLE *, DOUBLE *, INT *);
 
 
 /* domain definition */
-void                     *CreateDomainWithParts       (char *name, DOUBLE *MidPoint,
+void                     *CreateDomainWithParts       (const char *name, DOUBLE *MidPoint,
                                                        DOUBLE radius, INT segments,
                                                        INT corners, INT Convex,
                                                        INT nParts, const DOMAIN_PART_INFO *dpi);
 
-void                     *CreateDomain                        (char *name, DOUBLE *MidPoint,
+void                     *CreateDomain                        (const char *name, DOUBLE *MidPoint,
                                                                DOUBLE radius, INT segments,
                                                                INT corners, INT Convex);
 

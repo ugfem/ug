@@ -1827,7 +1827,7 @@ GetFirstBoundaryCondition (PROBLEM * theProblem)
 /****************************************************************************/
 
 void * NS_DIM_PREFIX
-CreateDomainWithParts (char *name, DOUBLE * MidPoint, DOUBLE radius,
+CreateDomainWithParts (const char *name, DOUBLE * MidPoint, DOUBLE radius,
                        INT segments, INT corners, INT Convex, INT nParts,
                        const DOMAIN_PART_INFO * dpi)
 {
@@ -1883,7 +1883,7 @@ CreateDomainWithParts (char *name, DOUBLE * MidPoint, DOUBLE radius,
 /****************************************************************************/
 
 void *NS_DIM_PREFIX
-CreateDomain (char *name, DOUBLE * MidPoint, DOUBLE radius, INT segments,
+CreateDomain (const char *name, DOUBLE * MidPoint, DOUBLE radius, INT segments,
               INT corners, INT Convex)
 {
   return (CreateDomainWithParts
