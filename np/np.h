@@ -189,6 +189,10 @@ INT dset           (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC 
                     DOUBLE a);
 INT dcopy          (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
                     const VECDATA_DESC *y);
+INT dpdot          (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const VECDATA_DESC *y);
+INT dm0dot         (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const VECDATA_DESC *y);
 INT dscal          (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
                     DOUBLE a);
 INT dscalx         (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
@@ -207,6 +211,8 @@ INT ddot           (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC 
                     const VECDATA_DESC *y, DOUBLE *a);
 INT ddotx          (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
                     const VECDATA_DESC *y, VEC_SCALAR a);
+INT ddotx_range    (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const VECDATA_DESC *y, DOUBLE *ll, DOUBLE *ur, VEC_SCALAR a);
 INT ddotw          (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
                     const VECDATA_DESC *y, const VEC_SCALAR w, DOUBLE *a);
 INT dnrm2          (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
@@ -231,6 +237,8 @@ INT dmatmul_add    (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC 
                     const MATDATA_DESC *M, const VECDATA_DESC *y);
 INT dmatmul_minus  (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
                     const MATDATA_DESC *M, const VECDATA_DESC *y);
+INT dmatscale      (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M,
+                    DOUBLE a);
 
 /* for compatibility only */
 
