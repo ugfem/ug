@@ -135,7 +135,7 @@ int main (int argc, char **argv)
             f[3*i+2]);
   fprintf(file,"coordinates\n%5d%5d\n",3,m);
   for (i=0; i<m; i++)
-    fprintf(file,"%5d%8.5f+0%8.4f+0%8.4f+0\n",
+    fprintf(file,"%5d%8.3f+0%8.3f+0%8.3f+0\n",
             i+1,c[3*i],c[3*i+1],c[3*i+2]);
   fclose(file);
 
@@ -151,7 +151,7 @@ int main (int argc, char **argv)
             e[4*i+3]);
   fprintf(file,"coordinates\n%5d%5d\n",3,nv);
   for (i=0; i<nv; i++)
-    fprintf(file,"%5d%8.5f+0%8.4f+0%8.4f+0\n",
+    fprintf(file,"%5d%8.3f+0%8.3f+0%8.3f+0\n",
             i+1,c[3*i],c[3*i+1],c[3*i+2]);
   fprintf(file,"end option\nsurface contact\n");
   for (i=0; i<m; i++)
