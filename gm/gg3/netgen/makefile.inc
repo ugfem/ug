@@ -13,9 +13,10 @@ default: $(objects)
 	$(ARCH_AR) r  ../../../../lib/libnetgen.a $(objects)
 
 .PRECIOUS:   .cc
+.SUFFIXES:   .cc
 # default rule
 .cc.o:
-	$(ARCH_C++) $(C++FLAGS) -I../general -I.. $<
+	$(ARCH_C++) $(UG_C++FLAGS) -I../general -I.. $<
 
 # clean up
 clean:
