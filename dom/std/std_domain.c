@@ -1158,6 +1158,10 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   Mesh->nBndP = theBVP->ncorners;
   Mesh->nInnP = 0;
   Mesh->nElements = NULL;
+  Mesh->VertexLevel = NULL;
+  Mesh->VertexPrio = NULL;
+  Mesh->ElementLevel = NULL;
+  Mesh->ElementPrio = NULL;
   Mesh->theBndPs = (BNDP **) GetTmpMem(Heap,n*sizeof(BNDP *));
   if (Mesh->theBndPs == NULL)
     return(NULL);
@@ -2596,6 +2600,9 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   for (i=0; i<mesh->nBndP; i++)
     PRINTDEBUG(dom,1,("   i %d  patch id %d\n",i,
                       ((BND_PS *)(mesh->theBndPs[i]))->patch_id));
+
+  mesh->VertexLevel = NULL;
+  mesh->VertexPrio = NULL;
 
   return (mesh);
 }
