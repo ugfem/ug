@@ -3198,7 +3198,7 @@ static DOUBLE LinePointDistance(LGM_LINE *theLine, INT Index)
   for(i=start_i+1; i<end_i; i++)
     length_of_segment = length_of_segment + LGM_POINT_DIST(LGM_LINE_POINT(theLine,i),LGM_LINE_POINT(theLine,i+1));
 
-  if(end_i<LGM_LINE_NPOINT(theLine))
+  if(end_i<LGM_LINE_NPOINT(theLine)-1)
     length_of_segment = length_of_segment +
                         end_s * LGM_POINT_DIST(LGM_LINE_POINT(theLine,end_i),LGM_LINE_POINT(theLine,end_i+1));
   if(end_i>start_i)
