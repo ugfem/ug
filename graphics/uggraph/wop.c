@@ -15279,7 +15279,7 @@ static INT compare_gid(const void *p, const void *q)
 	return 0;
 }
 
-static INT OrderFathersXSH(MULTIGRID *mg, INT *table)
+static INT OrderFathersXSH (MULTIGRID *mg, INT *table)
 {
 	GRID *grid;
 	HEAP *heap;
@@ -16158,13 +16158,13 @@ static INT NumberCoarseGrid(INT *table, MULTIGRID *mg)
 */
 /****************************************************************************/
 
-static INT CollectCoarseGrid(MULTIGRID *mg)
+static INT CollectCoarseGrid(MULTIGRID *mg, INT MarkKeyMaster)
 {
 	HEAP *heap;
 	ELEMENT *elem, *neighbor;
 	DOUBLE *corner[MAX_CORNERS_OF_ELEM], *d, *d0, *d1, *d2, *d3;
 	INT i, quit, j, na, cnt, k, n, error, l, ns, nc, fvs, fhs;
-	INT MarkKey;
+	INT MarkBottomKey;
 
 	/* state information */
 	INT receiving[WOP_DOWN_CHANNELS], sending[WOP_DOWN_CHANNELS+1], 
@@ -16178,7 +16178,7 @@ static INT CollectCoarseGrid(MULTIGRID *mg)
 	elem = FIRSTELEMENT(GRID_ON_LEVEL(mg,0));
 	heap = mg->theHeap;
 	error = k = 0;
-	MarkTmpMem(heap,&MarkKey);
+	Mark(heap,FROM_BOTTOM,&MarkBottomKey);
 	for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
 		for (j = 0; j < DO_BUFFER_SLOTS; j++)
 			if ((OE_Buffer[i][j] = (DOUBLE *)GetMem(heap, 
@@ -16189,7 +16189,7 @@ static INT CollectCoarseGrid(MULTIGRID *mg)
 oops:
 	error = UG_GlobalMaxINT(error);
 	if (error) {
-		ReleaseTmpMem(heap,MarkKey);
+		Release(heap,FROM_BOTTOM,MarkBottomKey);
 		UserWrite("CollectCoarseGrid(): error in stage 0\n");
 		return 1;
 	}
@@ -16253,7 +16253,7 @@ oops:
 						CGG_NAD(k) = na = CGG_2INT(d);  d++;
 						if (na > 0) {
 							if ((CGG_ADJACENT(k) = 
-								(INT *)GetTmpMem(heap, na*sizeof(INT), MarkKey)) == NULL){
+								(INT *)GetTmpMem(heap, na*sizeof(INT), MarkKeyMaster)) == NULL){
 								error = 1;
 								UserWrite("CollectCoarseGrid(): error in stage 1\n");
 								break;
@@ -16268,7 +16268,7 @@ oops:
 						ns = CGG_2INT(d);  d++;
 						if (ns > 0) {
 							if ((CGG_BLINK(k) = (BS_DATA *) GetTmpMem(heap, sizeof(BS_DATA)
-										+(ns-1)*sizeof(SIDE_DATA), MarkKey)) == NULL) {
+										+(ns-1)*sizeof(SIDE_DATA), MarkKeyMaster)) == NULL) {
 								error = 1;
 								UserWriteF("CollectCoarseGrid(): error in stage 2 ns=%d\n",ns);
 								break;
@@ -16375,7 +16375,7 @@ oops:
 			front[i] = (front[i] + 1) % CGG_BUFFER_SLOTS;
 		}
 	}
-	ReleaseTmpMem(heap,MarkKey);
+	Release(heap,FROM_BOTTOM,MarkBottomKey);
 	return error;
 }
 #endif
@@ -16550,7 +16550,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	}
 
 	/* collect coarse grid graph on master */
-	err = CollectCoarseGrid(mg);
+	err = CollectCoarseGrid(mg,MarkKeyMaster);
     Broadcast(&err, sizeof(err));
 	if (err) {
 		if (me == master) ReleaseTmpMem(heap,MarkKeyMaster);
