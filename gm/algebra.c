@@ -4044,8 +4044,8 @@ INT PropagateVectorClasses (GRID *theGrid)
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses():"
                    " 1. communication on level %d\n",me,GLEVEL(theGrid)))
   /* exchange VCLASS of vectors */
-  DDD_IFAOneway(BorderVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
-                Gather_VectorVClass, Scatter_VectorVClass);
+  DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_VectorVClass, Scatter_VectorVClass);
     #endif
 
   /* set vector classes in the algebraic neighborhood to 2 */
@@ -4062,8 +4062,8 @@ INT PropagateVectorClasses (GRID *theGrid)
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses(): 2. communication\n",
                    me))
   /* exchange VCLASS of vectors */
-  DDD_IFAOneway(BorderVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
-                Gather_VectorVClass, Scatter_VectorVClass);
+  DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_VectorVClass, Scatter_VectorVClass);
     #endif
 
   /* set vector classes in the algebraic neighborhood to 1 */
@@ -4080,8 +4080,8 @@ INT PropagateVectorClasses (GRID *theGrid)
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses(): 3. communication\n",
                    me))
   /* exchange VCLASS of vectors */
-  DDD_IFAOneway(BorderVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
-                Gather_VectorVClass, Scatter_VectorVClass);
+  DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_VectorVClass, Scatter_VectorVClass);
   /* send VCLASS to ghosts */
   DDD_IFAOneway(VectorAllIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
                 Gather_VectorVClass, Scatter_GhostVectorVClass);
@@ -4244,8 +4244,8 @@ INT PropagateNextVectorClasses (GRID *theGrid)
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 1. communication\n",me))
   /* exchange VNCLASS of vectors */
-  DDD_IFAOneway(BorderVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
-                Gather_VectorVNClass, Scatter_VectorVNClass);
+  DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_VectorVNClass, Scatter_VectorVNClass);
     #endif
 
   /* set vector classes in the algebraic neighborhood to 2 */
@@ -4261,8 +4261,8 @@ INT PropagateNextVectorClasses (GRID *theGrid)
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 2. communication\n",me))
   /* exchange VNCLASS of vectors */
-  DDD_IFAOneway(BorderVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
-                Gather_VectorVNClass, Scatter_VectorVNClass);
+  DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_VectorVNClass, Scatter_VectorVNClass);
     #endif
 
   /* set vector classes in the algebraic neighborhood to 1 */
@@ -4278,8 +4278,8 @@ INT PropagateNextVectorClasses (GRID *theGrid)
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 3. communication\n",me))
   /* exchange VNCLASS of vectors */
-  DDD_IFAOneway(BorderVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
-                Gather_VectorVNClass, Scatter_VectorVNClass);
+  DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_VectorVNClass, Scatter_VectorVNClass);
   /* send VCLASS to ghosts */
   DDD_IFAOneway(VectorAllIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
                 Gather_VectorVNClass, Scatter_GhostVectorVNClass);
