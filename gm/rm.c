@@ -1238,16 +1238,25 @@ static char RCS_ID("$Header$",UG_RCS_STRING) ;
 /****************************************************************************/
 
 #ifdef __THREEDIM__
+
+
 /****************************************************************************/
-/*																			*/
-/* Function:  ShortestInteriorEdge											*/
-/*																			*/
-/* Purpose:   compute best full refined refrule for the element                         */
-/*																			*/
-/* Param:	  ELEMENT *theElement: for that element                                                 */
-/*																			*/
-/* return:	  INT Mark: number of refrule									*/
-/*																			*/
+/*D
+   ShortestInteriorEdge - compute best full refined refrule for the element
+
+   SYNOPSIS:
+   static INT ShortestInteriorEdge (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - for that element
+
+   DESCRIPTION:
+   This function computes the best full refined refrule for the element.
+
+   RETURN VALUE:
+   INT
+   .n   Mark: number of refrule
+   D*/
 /****************************************************************************/
 
 static INT ShortestInteriorEdge (ELEMENT *theElement)
@@ -1296,19 +1305,27 @@ static INT ShortestInteriorEdge (ELEMENT *theElement)
   return (-1);
 }
 
-/****************************************************************************/
-/*																			*/
-/* Function:  MinimalSideAngle												*/
-/*																			*/
-/* Purpose:   compute best full refined refrule for the element                         */
-/*																			*/
-/* Param:	  ELEMENT *theElement: for that element                                                 */
-/*																			*/
-/* return:	  INT Mark: number of refrule									*/
-/*																			*/
-/****************************************************************************/
 
 #ifdef __ALLRULES__
+
+
+/****************************************************************************/
+/*D
+   MinimalSideAngle - compute best full refined refrule for the element
+
+   SYNOPSIS:
+   static INT MinimalSideAngle (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - for that element
+
+   DESCRIPTION:
+   This function computes the best full refined refrule for the element
+   RETURN VALUE:
+   INT
+   .n   Mark: number of refrule
+   D*/
+/****************************************************************************/
 
 static INT MinimalSideAngle (ELEMENT *theElement)
 {
@@ -1368,16 +1385,24 @@ static INT MinimalSideAngle (ELEMENT *theElement)
   }
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  MinimalSideEntry												*/
-/*																			*/
-/* Purpose:   compute best full refined refrule for the element                         */
-/*																			*/
-/* Param:	  ELEMENT *theElement: for that element                                                 */
-/*																			*/
-/* return:	  INT Mark: number of refrule									*/
-/*																			*/
+/*D
+   MinimalSideEntry - compute best full refined refrule for the element
+
+   SYNOPSIS:
+   static INT MinimalSideEntry (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - for that element
+
+   DESCRIPTION:
+   This function computes the best full refined refrule for the element
+
+   RETURN VALUE:
+   INT
+   .n   Mark: number of refrule
+   D*/
 /****************************************************************************/
 
 static INT MinimalSideEntry (ELEMENT *theElement)
@@ -1448,17 +1473,24 @@ static INT MinimalSideEntry (ELEMENT *theElement)
   }
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  BestLaplaceMMatrix										    */
-/*																			*/
-/* Purpose:   compute best full refined refrule for the element:		    */
-/*			  optimal laplace-disc w.r.t. M-Matrix eigenschaft				*/
-/*																			*/
-/* Param:	  ELEMENT *theElement: for that element                                             */
-/*																			*/
-/* return:	  INT Mark: number of refrule								    */
-/*																			*/
+/*D
+   BestLaplaceMMatrix - compute best full refined refrule for the element
+
+   SYNOPSIS:
+   static INT BestLaplaceMMatrix (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - for that element
+
+   DESCRIPTION:
+   This function computes the best full refined refrule for the element: optimal laplace-disc w.r.t. M-Matrix eigenschaft.
+
+   RETURN VALUE:
+   INT
+   .n   Mark: number of refrule
+   D*/
 /****************************************************************************/
 
 static INT BestLaplaceMMatrix (ELEMENT *theElement)
@@ -1538,17 +1570,24 @@ static INT BestLaplaceMMatrix (ELEMENT *theElement)
 
 #endif
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  MaxPerpendicular											    */
-/*																			*/
-/* Purpose:   compute best full refined refrule for the element:		    */
-/*			  optimal laplace-disc w.r.t. M-Matrix eigenschaft				*/
-/*																			*/
-/* Param:	  ELEMENT *theElement: for that element                                             */
-/*																			*/
-/* return:	  INT Mark: number of refrule								    */
-/*																			*/
+/*D
+   MaxPerpendicular - compute best full refined refrule for the element
+
+   SYNOPSIS:
+   static INT MaxPerpendicular (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - for that element
+
+   DESCRIPTION:
+   This function computes the best full refined refrule for the element: optimal laplace-disc w.r.t. M-Matrix eigenschaft
+
+   RETURN VALUE:
+   INT
+   .n   Mark: number of refrule
+   D*/
 /****************************************************************************/
 
 static INT MaxPerpendicular (ELEMENT *theElement)
@@ -1612,17 +1651,24 @@ static INT MaxPerpendicular (ELEMENT *theElement)
   return (refrule);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  MaxRightAngle                                                                                         */
-/*																			*/
-/* Purpose:   compute best full refined refrule for the element:		    */
-/*			  optimal laplace-disc w.r.t. M-Matrix eigenschaft				*/
-/*																			*/
-/* Param:	  ELEMENT *theElement: for that element                                             */
-/*																			*/
-/* return:	  INT Mark: number of refrule								    */
-/*																			*/
+/*D
+   MaxRightAngle - compute best full refined refrule for the element
+
+   SYNOPSIS:
+   static INT MaxRightAngle (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - for that element
+
+   DESCRIPTION:
+   This function computes the best full refined refrule for the element: optimal laplace-disc w.r.t. M-Matrix eigenschaft
+
+   RETURN VALUE:
+   INT
+   .n   Mark: number of refrule
+   D*/
 /****************************************************************************/
 
 static INT MaxRightAngle (ELEMENT *theElement)
@@ -1684,17 +1730,24 @@ static INT MaxRightAngle (ELEMENT *theElement)
   return (refrule);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  MaxArea												        */
-/*																			*/
-/* Purpose:   compute best full refined refrule for the element:		    */
-/*			  optimal laplace-disc w.r.t. M-Matrix eigenschaft				*/
-/*																			*/
-/* Param:	  ELEMENT *theElement: for that element                                             */
-/*																			*/
-/* return:	  INT Mark: number of refrule								    */
-/*																			*/
+/*D
+   MaxArea - compute best full refined refrule for the element
+
+   SYNOPSIS:
+   static INT MaxArea (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - for that element
+
+   DESCRIPTION:
+   This function computes the best full refined refrule for the element: optimal laplace-disc w.r.t. M-Matrix eigenschaft
+
+   RETURN VALUE:
+   INT
+   .n   Mark: number of refrule
+   D*/
 /****************************************************************************/
 
 static INT MaxArea (ELEMENT *theElement)
@@ -1754,17 +1807,24 @@ static INT MaxArea (ELEMENT *theElement)
   return (refrule);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  Alignment														*/
-/*																			*/
-/* Purpose:   compute best full refined refrule for the element according	*/
-/*			  to velocity													*/
-/*																			*/
-/* Param:	  ELEMENT *theElement: for that element                                                 */
-/*																			*/
-/* return:	  INT Mark: number of refrule									*/
-/*																			*/
+/*D
+   Alignment -  compute best full refined refrule for the element
+
+   SYNOPSIS:
+   static INT Alignment (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - for that element
+
+   DESCRIPTION:
+   This function computes the best full refined refrule for the element according to velocity
+
+   RETURN VALUE:
+   INT
+   .n   Mark: number of refrule
+   D*/
 /****************************************************************************/
 
 static INT Alignment (ELEMENT *theElement)
@@ -1816,16 +1876,24 @@ static INT Alignment (ELEMENT *theElement)
   return (-1);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  YAlignment													*/
-/*																			*/
-/* Purpose:   compute best full refined refrule for the element                         */
-/*																			*/
-/* Param:	  ELEMENT *theElement: for that element                                                 */
-/*																			*/
-/* return:	  INT Mark: number of refrule									*/
-/*																			*/
+/*D
+   YAlignment - compute best full refined refrule for the element
+
+   SYNOPSIS:
+   static INT YAlignment (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - for that element
+
+   DESCRIPTION:
+   This function computes the best full refined refrule for the element
+
+   RETURN VALUE:
+   INT
+   .n   Mark: number of refrule
+   D*/
 /****************************************************************************/
 
 static INT YAlignment (ELEMENT *theElement)
@@ -1873,19 +1941,26 @@ static INT YAlignment (ELEMENT *theElement)
 }
 #endif /* __THREEDIM__ */
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  MarkForRefinement                                                                                         */
-/*																			*/
-/* Purpose:   mark an element for refinement								*/
-/*																			*/
-/* Param:	  ELEMENT *theElement: element to refine						*/
-/*			  INT type: type of refinement mark:							*/
-/*						RED_MARK										    */
-/*																			*/
-/* return:	  INT 1: element has been marked								*/
-/*				  0: element cannot be marked								*/
-/*																			*/
+/*D
+   MarkForRefinement - mark an element for refinement
+
+   SYNOPSIS:
+   INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data);
+
+   PARAMETERS:
+   .  theElement - for that element
+   .  rule - type of refinement mark
+
+   DESCRIPTION:
+   This function marks an element for refinement
+
+   RETURN VALUE:
+   INT
+   .n   1 if element has been marked
+   .n   0 if element cannot be marked
+   D*/
 /****************************************************************************/
 
 INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
@@ -2163,17 +2238,25 @@ INT MarkForRefinementX (ELEMENT *t, INT fl, INT tl, INT rule, void *data)
   return(GM_ERROR);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  EstimateHere													*/
-/*																			*/
-/* Purpose:   return true (1) when element can be tagged for refinement         */
-/*																			*/
-/* Param:	  ELEMENT *theElement: element to refine						*/
-/*																			*/
-/* return:	  false: do not tag element                                                                     */
-/*			  true:  element can be tagged for refinement					*/
-/*																			*/
+/*D
+   EstimateHere - return true (1) when element can be tagged for refinement
+
+   SYNOPSIS:
+   INT EstimateHere (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - element to refine
+
+   DESCRIPTION:
+   This function returns true (1) when element can be tagged for refinement
+
+   RETURN VALUE:
+   INT
+   .n   false - do not tag element
+   .n   true - element can be tagged for refinement
+   D*/
 /****************************************************************************/
 
 INT EstimateHere (ELEMENT *theElement)
@@ -2184,11 +2267,12 @@ INT EstimateHere (ELEMENT *theElement)
   return(LEAFELEM(theElement));
 }
 
+
 /****************************************************************************/
 /*																			*/
 /* Function:  ClearMarksOnLevel                                                                                         */
 /*																			*/
-/* Purpose:   clear refinement on level										*/
+/* Purpose:   clear refinement on level                                                                                 */
 /*																			*/
 /* Param:	  GRID *theGrid: level											*/
 /*			  INT ClearType: 0: clear all									*/
@@ -2198,6 +2282,26 @@ INT EstimateHere (ELEMENT *theElement)
 /* return:	  INT GM_OK: ok													*/
 /*				  GM_ERROR: error											*/
 /*																			*/
+/****************************************************************************/
+/****************************************************************************/
+/*
+   ClearMarksOnLevel - clear refinement on level
+
+   SYNOPSIS:
+   INT ClearMarksOnLevel (GRID *theGrid, INT ClearType);
+
+   PARAMETERS:
+   .  theGrid - level
+   .  ClearType - 0: clear all, 1: clear refinements, -1: clear coarsenings
+
+   DESCRIPTION:
+   This function clears refinement on level
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK - ok
+   .n   GM_ERROR - error
+ */
 /****************************************************************************/
 
 INT ClearMarksOnLevel (GRID *theGrid, INT ClearType)
@@ -2217,17 +2321,25 @@ INT ClearMarksOnLevel (GRID *theGrid, INT ClearType)
   return (GM_OK);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  Patterns2Rules												*/
-/*																			*/
-/* Purpose:   return mark of rule for a specific pattern                                        */
-/*																			*/
-/* Param:	  ELEMENT * theElement: element rule is searches for			*/
-/*			  int pattern: pattern a rule is searched for					*/
-/*																			*/
-/* return:	  INT: mark of rule												*/
-/*																			*/
+/*D
+    Patterns2Rules - return mark of rule for a specific pattern
+
+   SYNOPSIS:
+   INT Patterns2Rules(ELEMENT *theElement, INT pattern);
+
+   PARAMETERS:
+   .  theElement - element rule is searched for
+   .  pattern: pattern a rule is searched for
+
+   DESCRIPTION:
+   This function returns mark of rule for a specific pattern
+
+   RETURN VALUE:
+   INT
+   .n   mark of rule
+   D*/
 /****************************************************************************/
 
 INT Patterns2Rules(ELEMENT *theElement, INT pattern)
@@ -2391,18 +2503,25 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
 
 #ifdef RESTRICT_BY_FUNCTION
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  ELEMENT_TO_MARK                                                                                           */
-/*																			*/
-/* Purpose:   gets the element which has to be marked						*/
-/*																			*/
-/* Param:	  ELEMENT *MarkElement: element to be estimated                                 */
-/*																			*/
-/* return:	  ELEMENT *theElement to mark                                                                   */
-/*			  NULL: MarkElement was no surface element                      */
-/*			  !NULL: first element downward with class RED_CLASS            */
-/*																			*/
+/*D
+   ELEMENT_TO_MARK - gets the element which has to be marked
+
+   SYNOPSIS:
+   ELEMENT *ELEMENT_TO_MARK (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  MarkElement - element to be estimated
+
+   DESCRIPTION:
+   This function gets the element which has to be marked
+
+   RETURN VALUE:
+   ELEMENT
+   .n  NULL if MarkElement was no surface element
+   .n  !NULL - first element downward with class RED_CLASS
+   D*/
 /****************************************************************************/
 
 ELEMENT *ELEMENT_TO_MARK (ELEMENT *theElement)
@@ -2422,19 +2541,27 @@ ELEMENT *ELEMENT_TO_MARK (ELEMENT *theElement)
 }
 #endif
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  GetRefinementMark                                                                                         */
-/*																			*/
-/* Purpose:   gets rule of refinement										*/
-/*																			*/
-/* Param:	  ELEMENT *theElement: element to refine						*/
-/*			  int *rule: filled with current refinement rule				*/
-/*			  int *data: filled with side, if rule is oriented				*/
-/*																			*/
-/* return:	  int 0: side information valid                                                                 */
-/*			  int 1: rule without orientation								*/
-/*																			*/
+/*D
+   GetRefinementMark - gets rule of refinement
+
+   SYNOPSIS:
+   INT GetRefinementMark (ELEMENT *theElement, INT *rule, void *data);
+
+   PARAMETERS:
+   .  theElement - element to refine
+   .  rule - filled with current refinement rule
+   .  data - filled with side, if rule is oriented
+
+   DESCRIPTION:
+   This function gets rule of refinement
+
+   RETURN VALUE:
+   INT
+   .n   0: side information valid
+   .n   1: rule without orientation
+   D*/
 /****************************************************************************/
 
 INT GetRefinementMark (ELEMENT *theElement, INT *rule, void *data)
@@ -2485,18 +2612,26 @@ INT GetRefinementMark (ELEMENT *theElement, INT *rule, void *data)
   return(GM_RULE_WITHOUT_ORIENTATION);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  GetRefinementMarkType                                                                     */
-/*																			*/
-/* Purpose:   gets type of mark for an element								*/
-/*																			*/
-/* Param:	  ELEMENT *theElement: element to refine						*/
-/*																			*/
-/* return:	  int 1: element is marked for refinement						*/
-/*			  int 0: element is not marked									*/
-/*			  int -1: element is marked for coarsening                                      */
-/*																			*/
+/*D
+   GetRefinementMarkType - gets type of mark for an element
+
+   SYNOPSIS:
+   INT GetRefinementMarkType (ELEMENT *theElement);
+
+   PARAMETERS:
+   .  theElement - element to refine
+
+   DESCRIPTION:
+   This function gets the type of mark for an element
+
+   RETURN VALUE:
+   INT
+   .n   0 if element is not marked
+   .n   1 if element is marked for refinement
+   .n   -1 if element is marked for coarsening
+   D*/
 /****************************************************************************/
 
 INT GetRefinementMarkType (ELEMENT *theElement)
@@ -2518,17 +2653,22 @@ INT GetRefinementMarkType (ELEMENT *theElement)
   return(0);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  ShowRefRule													*/
-/*																			*/
-/* Purpose:   fill SonList for theElement									*/
-/*																			*/
-/* Param:	  ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]				*/
-/*																			*/
-/* return:	  0: ok                                                                                                                 */
-/*			  1: error														*/
-/*																			*/
+/*
+   PrintEdgeData -
+
+   SYNOPSIS:
+   static INT PrintEdgeData (struct edgedata theEdgeData);
+
+   PARAMETERS:
+   .  theEdgeData
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
 /****************************************************************************/
 
 static INT PrintEdgeData (struct edgedata theEdgeData)
@@ -2539,6 +2679,24 @@ static INT PrintEdgeData (struct edgedata theEdgeData)
              ,(int)theEdgeData.side);
   return(0);
 }
+
+
+/****************************************************************************/
+/*
+   PrintSonData -
+
+   SYNOPSIS:
+   static INT PrintSonData(struct sondata theSonData);
+
+   PARAMETERS:
+   .  theSonData
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
 
 static INT PrintSonData(struct sondata theSonData)
 {
@@ -2574,6 +2732,25 @@ static INT PrintSonData(struct sondata theSonData)
 
   return(0);
 }
+
+/****************************************************************************/
+/*D
+   ShowRefRule -
+
+   SYNOPSIS:
+   INT ShowRefRule (INT tag, INT nb);
+
+   PARAMETERS:
+   .  tag
+   .  nb
+
+   DESCRIPTION:
+
+
+   RETURN VALUE:
+   INT
+   D*/
+/****************************************************************************/
 
 INT ShowRefRule (INT tag, INT nb)
 {
@@ -2637,19 +2814,26 @@ INT ShowRefRule (INT tag, INT nb)
   return (0);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  FReadRule														*/
-/*																			*/
-/* Purpose:   Read the rule data set and initialize the rules data                      */
-/*																			*/
-/* Input:	  FILE *stream: file which stores rules							*/
-/*			  REFRULE *theRule: pointer to rule structure                                   */
-/*																			*/
-/* Output:	  INT															*/
-/*				 0: ok														*/
-/*				>0: error													*/
-/*																			*/
+/*D
+   FReadRule - Read the rule data set and initialize the rules data
+
+   SYNOPSIS:
+   static int FReadRule (FILE *stream, REFRULE *theRule);
+
+   PARAMETERS:
+   .  stream - file which stores rules
+   .  theRule - pointer to rule structure
+
+   DESCRIPTION:
+   This function reads the rule data set and initializes the rules data
+
+   RETURN VALUE:
+   INT
+   .n   0 - ok
+   .n   >0 - error
+   D*/
 /****************************************************************************/
 
 static int FReadRule (FILE *stream, REFRULE *theRule)
@@ -2729,6 +2913,25 @@ static int FReadRule (FILE *stream, REFRULE *theRule)
   return (0);
 }
 
+
+#ifdef __THREEDIM__
+/****************************************************************************/
+/*
+   CorrectRuleXX -
+
+   SYNOPSIS:
+   static int CorrectRule (REFRULE *theRule);
+
+   PARAMETERS:
+   .  theRule
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+ */
+/****************************************************************************/
+
 static int CorrectRule41 (REFRULE *theRule)
 {
   int i;
@@ -2770,23 +2973,25 @@ static int CorrectRule53 (REFRULE *theRule)
 }
 
 /****************************************************************************/
-/*																			*/
-/* Function:  InitRuleManager3D												*/
-/*																			*/
-/* Purpose:   Read the rule data set and initialize the rules data                      */
-/*            structure for tetrahedrons. Initialize the regular refinement */
-/*            rules (red rules) for hexahedrons. Irregular refinement of    */
-/*			  green closure is done algorithmically.						*/
-/*																			*/
-/* Input:	  void															*/
-/*																			*/
-/* Output:	  INT															*/
-/*				 0: ok														*/
-/*				>0: error													*/
-/*																			*/
+/*D
+   InitRuleManager3D - Read the rule data set and initialize the rules
+
+   SYNOPSIS:
+   static INT InitRuleManager3D (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+   This function reads the rule data set and initializes the rules data structure for tetrahedrons. Initializes the regular refinement rules (red rules) for hexahedrons. Irregular refinement of green closure is done algorithmically.
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   >0 if an error occurs
+   D*/
 /****************************************************************************/
 
-#ifdef __THREEDIM__
 static INT InitRuleManager3D (void)
 {
   FULLREFRULE *newFRR;
@@ -3013,6 +3218,25 @@ static INT InitRuleManager3D (void)
   return (GM_OK);
 }
 
+
+/****************************************************************************/
+/*
+   SetAlignmentPtr -
+
+   SYNOPSIS:
+   INT SetAlignmentPtr (MULTIGRID *theMG, EVECTOR *direction);
+
+   PARAMETERS:
+   .  theMG
+   .  direction
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+ */
+/****************************************************************************/
+
 INT SetAlignmentPtr (MULTIGRID *theMG, EVECTOR *direction)
 {
   if (direction != NULL)
@@ -3029,22 +3253,29 @@ INT SetAlignmentPtr (MULTIGRID *theMG, EVECTOR *direction)
 
 #endif /* __THREEDIM__ */
 
-
-/****************************************************************************/
-/*																			*/
-/* Function:  InitRuleManager2D												*/
-/*																			*/
-/* Purpose:   Initializes rules for triangles and quadrilaterals                */
-/*																			*/
-/* Input:	  void															*/
-/*																			*/
-/* Output:	  INT															*/
-/*				 0: ok														*/
-/*				>0: error													*/
-/*																			*/
-/****************************************************************************/
-
 #ifdef __TWODIM__
+
+
+/****************************************************************************/
+/*D
+   InitRuleManager2D - Initializes rules for triangles and quadrilaterals
+
+   SYNOPSIS:
+   static INT InitRuleManager2D (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+   This function initializes rules for triangles and quadrilaterals
+
+   RETURN VALUE:
+   INT
+   .n   0 - ok
+   .n   >0 - error
+   D*/
+/****************************************************************************/
+
 static INT InitRuleManager2D (void)
 {
   int nPatterns;
@@ -3146,16 +3377,21 @@ static INT InitRuleManager2D (void)
 
 
 /****************************************************************************/
-/*																			*/
-/* Function:  InitRuleManager												*/
-/*																			*/
-/* Purpose:	  Initialize the 2- or 3D rule set								*/
-/*																			*/
-/* Input:	  void															*/
-/*																			*/
-/* Output:																	*/
-/*																			*/
-/*																			*/
+/*D
+   InitRuleManager - Initialize the 2- or 3D rule set
+
+   SYNOPSIS:
+   INT InitRuleManager (void);
+
+   PARAMETERS:
+   .  void
+
+   DESCRIPTION:
+   This function initialize the 2- or 3D rule set
+
+   RETURN VALUE:
+   INT
+   D*/
 /****************************************************************************/
 
 INT InitRuleManager (void)

@@ -331,17 +331,25 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 #ifdef ModelPTest
+
+
 /****************************************************************************/
-/*																			*/
-/* Function:  MakeRefMarkandMarkClassConsistent								*/
-/*																			*/
-/* Purpose:	  exchange the MARK and MARKCLASS flags between elements on 	*/
-/*			  the vertical boundary of one level.							*/
-/*																			*/
-/* Input:	  int level: level for which to make flags consistent 	 		*/
-/*																			*/
-/* Output:	  void 															*/
-/*																			*/
+/*
+   MakeRefMarkandMarkClassConsistent - exchange the MARK and MARKCLASS flags
+
+   SYNOPSIS:
+   int GetMarkandMarkClass (OBJECT obj, void *data);
+   int PutMarkandMarkClass (OBJECT obj, void *data);
+
+   PARAMETERS:
+.  level - level for which to make flags consistent
+
+   DESCRIPTION:
+   This function exchanges the MARK and MARKCLASS flags between elements on the vertical boundary of one level.
+
+   RETURN VALUE:
+   void
+*/
 /****************************************************************************/
 
 int GetMarkandMarkClass (OBJECT obj, void *data)
@@ -364,19 +372,26 @@ void MakeRefMarkandMarkClassConsistent (int level)
 #endif
 
 #ifdef ModelP
+
+
 /****************************************************************************/
-/*																			*/
-/* Function:  CheckPartitioning												*/
-/*																			*/
-/* Purpose:   check whether all master copies of elements which may be      */
-/*            involved in next refinement step have master copies of the    */
-/*            sons (if existing) at the same processor.                     */
-/*																			*/
-/* Param:	  MULTIGRID *theMG												*/
-/*																			*/
-/* return:	  INT GM_OK: ok 												*/
-/*			  INT GM_ERROR: error											*/
-/*																			*/
+/*
+   CheckPartitioning - check whether all master copies have master copies of the sons
+
+   SYNOPSIS:
+   INT CheckPartitioning (MULTIGRID *theMG);
+
+   PARAMETERS:
+.  theMG
+
+   DESCRIPTION:
+   This function checks whether all master copies of elements which may be involved in next refinement step have master copies of the sons (if existing) at the same processor.
+
+   RETURN VALUE:
+   INT
+.n   GM_OK - ok 
+.n   GM_ERROR - error
+*/
 /****************************************************************************/
 
 INT CheckPartitioning (MULTIGRID *theMG)
@@ -435,6 +450,24 @@ INT CheckPartitioning (MULTIGRID *theMG)
 	return(_restrict_);
 }
 
+/****************************************************************************/
+/*
+   Gather_ElementRestriction - 
+
+   SYNOPSIS:
+   static int Gather_ElementRestriction (DDD_OBJ obj, void *data);
+
+   PARAMETERS:
+.  obj
+.  data
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+*/
+/****************************************************************************/
+
 static int Gather_ElementRestriction (DDD_OBJ obj, void *data)
 {
 	ELEMENT *theElement = (ELEMENT *)obj;
@@ -445,6 +478,25 @@ static int Gather_ElementRestriction (DDD_OBJ obj, void *data)
 	   
 	return(GM_OK);
 }
+
+
+/****************************************************************************/
+/*
+   Scatter_ElementRestriction - 
+
+   SYNOPSIS:
+   static int Scatter_ElementRestriction (DDD_OBJ obj, void *data);
+
+   PARAMETERS:
+.  obj
+.  data
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+*/
+/****************************************************************************/
 
 static int Scatter_ElementRestriction (DDD_OBJ obj, void *data)
 {
@@ -464,6 +516,27 @@ static int Scatter_ElementRestriction (DDD_OBJ obj, void *data)
 	return(GM_OK);
 }
 
+
+/****************************************************************************/
+/*
+   Gather_RestrictedPartition - 
+
+   SYNOPSIS:
+   static int Gather_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio);
+
+   PARAMETERS:
+.  obj
+.  data
+.  proc
+.  prio
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+*/
+/****************************************************************************/
+
 static int Gather_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
 	ELEMENT *theElement = (ELEMENT *)obj;
@@ -477,6 +550,27 @@ static int Gather_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, D
 	   
 	return(GM_OK);
 }
+
+
+/****************************************************************************/
+/*
+   Scatter_RestrictedPartition - 
+
+   SYNOPSIS:
+   static int Scatter_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio);
+
+   PARAMETERS:
+.  obj
+.  data
+.  proc
+.  prio
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int   
+*/
+/****************************************************************************/
 
 static int Scatter_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
@@ -501,6 +595,25 @@ static int Scatter_RestrictedPartition (DDD_OBJ obj, void *data, DDD_PROC proc, 
 
 #define NOTCOARSENED	0
 #define COARSENED		1
+
+
+/****************************************************************************/
+/*
+   RestrictPartitioning - 
+
+   SYNOPSIS:
+   INT RestrictPartitioning (MULTIGRID *theMG, INT coarse);
+
+   PARAMETERS:
+.  theMG
+.  coarse
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
 
 INT RestrictPartitioning (MULTIGRID *theMG, INT coarse)
 {
@@ -594,16 +707,23 @@ INT RestrictPartitioning (MULTIGRID *theMG, INT coarse)
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* Function:  SetRefineInfo													*/
-/*																			*/
-/* Purpose:   fill refineinfo structure										*/
-/*																			*/
-/* Param:	  MULTIGRID *theMG												*/
-/*																			*/
-/* return:	  INT GM_OK: ok 												*/
-/*			  INT GM_ERROR: error											*/
-/*																			*/
+/*
+   SetRefineInfo - fill refineinfo structure
+
+   SYNOPSIS:
+   INT SetRefineInfo(MULTIGRID *theMG);
+
+   PARAMETERS:
+.  theMG
+
+   DESCRIPTION:
+   This function fills refineinfo structure
+
+   RETURN VALUE:
+   INT 
+.n   GM_OK if ok
+.n   GM_ERROR if an error occurs  
+*/
 /****************************************************************************/
 
 INT SetRefineInfo (MULTIGRID *theMG)
@@ -613,17 +733,25 @@ INT SetRefineInfo (MULTIGRID *theMG)
 	return(GM_OK);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  TestRefineInfo												*/
-/*																			*/
-/* Purpose:   test entries of refineinfo structure							*/
-/*																			*/
-/* Param:	  MULTIGRID *theMG												*/
-/*																			*/
-/* return:	  INT GM_OK: MG can be refined									*/
-/*			  INT GM_ERROR: MG refinement will lead to heap overflow		*/
-/*																			*/
+/*
+   TestRefineInfo - test entries of refineinfo structure
+
+   SYNOPSIS:
+   INT TestRefineInfo(MULTIGRID *theMG);
+
+   PARAMETERS:
+.  theMG
+
+   DESCRIPTION:
+   This function tests entries of refineinfo structure
+
+   RETURN VALUE:
+   INT
+.n   GM_OK if MG can be refined    
+.n   GM_ERROR if MG refinement will lead to heap overflow
+*/
 /****************************************************************************/
 
 INT TestRefineInfo (MULTIGRID *theMG)
@@ -635,17 +763,23 @@ INT TestRefineInfo (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/*																			*/
-/* Function:  DropMarks 													*/
-/*																			*/
-/* Purpose:   drop marks from leafelements to first regular, and reset		*/
-/*			  marks on all elements above (important for restrict marks) 	*/
-/*																			*/
-/* Param:	  MULTIGRID *theMG												*/
-/*																			*/
-/* return:	  INT GM_OK: ok 												*/
-/*			  INT GM_ERROR: error											*/
-/*																			*/
+/*
+   DropMarks - drop marks from leafelements to first regular
+
+   SYNOPSIS:
+   static INT DropMarks (MULTIGRID *theMG);
+
+   PARAMETERS:
+.  theMG
+
+   DESCRIPTION:
+   This function drops marks from leafelements to first regular, and resets marks on all elements above (important for restrict marks)
+
+   RETURN VALUE:
+   INT 
+.n   GM_OK if ok
+.n   GM_ERROR if an error occurs  
+*/
 /****************************************************************************/
 
 static INT DropMarks (MULTIGRID *theMG)
@@ -688,17 +822,24 @@ static INT DropMarks (MULTIGRID *theMG)
 }
 
 #ifdef ModelPTest
+
+
 /****************************************************************************/
-/*																			*/
-/* Function:  ExchangePatternOfMasterAndSlaves 								*/
-/*																			*/
-/* Purpose:	  exchange the PATTERN between elements on horizontal       	*/
-/*			  boundary of one level.										*/
-/*																			*/
-/* Input:	  int level: level for which to make flags consistent 	 		*/
-/*																			*/
-/* Output:	  void 															*/
-/*																			*/
+/*
+   ExchangePatternOfMasterAndSlaves - exchange the PATTERN between elements
+
+   SYNOPSIS:
+   int GetEdgePatternOfElement (OBJECT obj, void *data);
+
+   PARAMETERS:
+.  level - level for which to make flags consistent
+
+   DESCRIPTION:
+   This function exchanges the PATTERN between elements on horizontal boundary of one level.
+
+   RETURN VALUE:
+   void    
+*/
 /****************************************************************************/
 
 int GetEdgePatternOfElement (OBJECT obj, void *data)
@@ -724,6 +865,24 @@ void SendPatternFromMasterToSlaves(int level)
 
 /* Functions for realizing the (parallel) closure FIFO */
 
+
+/****************************************************************************/
+/*
+   InitClosureFIFO - function for realizing the (parallel) closure FIFO
+
+   SYNOPSIS:
+   static INT InitClosureFIFO (void);
+
+   PARAMETERS:
+.  void
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
+
 static INT InitClosureFIFO (void)
 {
 	fifo_first=fifo_last=fifo_insertfirst=fifo_insertlast=NULL;
@@ -733,6 +892,28 @@ static INT InitClosureFIFO (void)
 
 	return (GM_OK);
 }
+
+
+/****************************************************************************/
+/*
+   UpdateFIFOLists - function for realizing the (parallel) closure FIFO
+
+   SYNOPSIS:
+   static INT UpdateFIFOLists (GRID *theGrid, ELEMENT *theElement, INT thePattern, INT NewPattern);
+
+   PARAMETERS:
+.  theGrid - pointer to grid structure
+.  theElement
+.  thePattern
+.  NewPattern
+
+   DESCRIPTION: 
+
+   RETURN VALUE:
+   INT
+.n     
+*/
+/****************************************************************************/
 
 static INT UpdateFIFOLists (GRID *theGrid, ELEMENT *theElement, INT thePattern, INT NewPattern)
 {
@@ -811,6 +992,24 @@ static INT UpdateFIFOLists (GRID *theGrid, ELEMENT *theElement, INT thePattern, 
 	return(GM_OK);
 }
 
+
+/****************************************************************************/
+/*
+    UpdateClosureFIFO - function for realizing the (parallel) closure FIFO
+
+   SYNOPSIS:
+   static INT UpdateClosureFIFO (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid - pointer to grid structure
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
+
 static INT UpdateClosureFIFO (GRID *theGrid)
 {
 	ELEMENT *theElement;
@@ -849,6 +1048,24 @@ static INT UpdateClosureFIFO (GRID *theGrid)
 	return(0);
 }
 
+
+/****************************************************************************/
+/*
+   ManageParallelFIFO - function for realizing the (parallel) closure FIFO
+
+   SYNOPSIS:
+   static INT ManageParallelFIFO (ELEMENT *firstElement);
+
+   PARAMETERS:
+.  firstElement
+
+   DESCRIPTION: 
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
+
 static INT ManageParallelFIFO (ELEMENT *firstElement)
 {
 #if defined(FIFO) && defined(ModelP)
@@ -881,6 +1098,26 @@ static INT ManageParallelFIFO (ELEMENT *firstElement)
 #endif
 }
 
+
+/****************************************************************************/
+/*
+   PrintEdgeInfo - 
+
+   SYNOPSIS:
+   static INT PrintEdgeInfo (GRID *theGrid, char* string, INT level);
+
+   PARAMETERS:
+.  theGrid
+.  string
+.  level
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
 static INT PrintEdgeInfo (GRID *theGrid, char* string, INT level)
 {
 	INT pat;
@@ -898,6 +1135,28 @@ static INT PrintEdgeInfo (GRID *theGrid, char* string, INT level)
 
 	return(GM_OK);
 }
+
+
+/****************************************************************************/
+/*
+   GridClosure - compute closure for next level
+
+   SYNOPSIS:
+   static INT PrepareGridClosure (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid - pointer to grid structure
+
+   DESCRIPTION:
+   This function computes the closure for next level. A closure can only be determined if the rule set for the used elements is complete. This means that for all side and edge patterns possible for an element type exists a rule which closes the element. In this case a FIFO for computing the closure is not needed any more and the closure can be computed in one step.	
+  
+   RETURN VALUE:
+   INT 
+.n   >0 if elements will be refined
+.n   0 if no elements will be refined 
+.n   -1 if an error occured 
+*/
+/****************************************************************************/
 
 static INT PrepareGridClosure (GRID *theGrid)
 {
@@ -929,6 +1188,26 @@ static INT PrepareGridClosure (GRID *theGrid)
 }
 
 #ifdef ModelP
+
+
+/****************************************************************************/
+/*
+   Gather_ElementClosureInfo - 
+
+   SYNOPSIS:
+   static int Gather_ElementClosureInfo (DDD_OBJ obj, void *data);
+
+   PARAMETERS:
+.  obj
+.  data
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+*/
+/****************************************************************************/
+
 static int Gather_ElementClosureInfo (DDD_OBJ obj, void *data)
 {
 	INT 	i,refinedata;
@@ -955,6 +1234,26 @@ static int Gather_ElementClosureInfo (DDD_OBJ obj, void *data)
 	return(GM_OK);
 }
 
+
+
+/****************************************************************************/
+/*
+   Scatter_ElementClosureInfo - 
+
+   SYNOPSIS:
+   static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data);
+
+   PARAMETERS:
+.  obj
+.  data
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+*/
+/****************************************************************************/
+
 static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data)
 {
 	INT		i,refinedata;
@@ -980,6 +1279,24 @@ static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data)
 	return(GM_OK);
 }
 
+
+/****************************************************************************/
+/*
+   ExchangeClosureInfo - 
+
+   SYNOPSIS:
+   static INT ExchangeClosureInfo (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
 static INT ExchangeClosureInfo (GRID *theGrid)
 {
 	/* exchange sidepattern of edges */
@@ -989,6 +1306,24 @@ static INT ExchangeClosureInfo (GRID *theGrid)
 	return(GM_OK);
 }
 #endif
+
+
+/****************************************************************************/
+/*
+   ComputePatterns - 
+
+   SYNOPSIS:
+   static INT ComputePatterns (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid - pointer to grid structure
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
 
 static INT ComputePatterns (GRID *theGrid)
 {
@@ -1066,6 +1401,28 @@ static INT ComputePatterns (GRID *theGrid)
 
 #ifdef __THREEDIM__
 #ifdef TET_RULESET
+
+
+/****************************************************************************/
+/*
+   CorrectTetrahedronSidePattern - 
+
+   SYNOPSIS:
+   static INT CorrectTetrahedronSidePattern (ELEMENT *theElement, INT i, ELEMENT *theNeighbor, INT j);
+
+   PARAMETERS:
+.  theElement
+.  i
+.  theNeighbor
+.  j
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
 static INT CorrectTetrahedronSidePattern (ELEMENT *theElement, INT i, ELEMENT *theNeighbor, INT j)
 {
 	INT		k;
@@ -1175,6 +1532,26 @@ static INT CorrectTetrahedronSidePattern (ELEMENT *theElement, INT i, ELEMENT *t
 }
 #endif
 
+
+/****************************************************************************/
+/*
+   CorrectElementSidePattern - 
+
+   SYNOPSIS:
+   static INT CorrectElementSidePattern (ELEMENT *theElement, ELEMENT *theNeighbor, INT i);
+
+   PARAMETERS:
+.  theElement
+.  theNeighbor
+.  i
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
 static INT CorrectElementSidePattern (ELEMENT *theElement, ELEMENT *theNeighbor, INT i)
 {
 	INT		j,NbSidePattern;
@@ -1228,6 +1605,25 @@ static INT CorrectElementSidePattern (ELEMENT *theElement, ELEMENT *theNeighbor,
 	return(GM_OK);
 }
 
+
+/****************************************************************************/
+/*
+   SetElementSidePatterns - 
+
+   SYNOPSIS:
+   static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement);
+
+   PARAMETERS:
+.  theGrid - pointer to grid structure
+.  firstElement
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
+
 static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 {
 	INT		i;
@@ -1270,6 +1666,27 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 	return(GM_OK);
 }
 #endif
+
+
+
+/****************************************************************************/
+/*
+   SetElementRules - 
+
+   SYNOPSIS:
+   static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt);
+
+   PARAMETERS:
+.  theGrid - pointer to grid structure
+.  firstElement
+.  cnt 
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
 
 static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 {
@@ -1376,6 +1793,26 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 }
 
 #ifdef ModelP
+
+
+/****************************************************************************/
+/*
+   Gather_AddEdgePattern - 
+
+   SYNOPSIS:
+   static int Gather_AddEdgePattern (DDD_OBJ obj, void *data);
+
+   PARAMETERS:
+.  obj
+.  data
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int 
+*/
+/****************************************************************************/
+
 static int Gather_AddEdgePattern (DDD_OBJ obj, void *data)
 {
 	INT 	i,pat;
@@ -1390,6 +1827,25 @@ static int Gather_AddEdgePattern (DDD_OBJ obj, void *data)
 		me,EID_PRTX(theElement),pat));
 	return(GM_OK);
 }
+
+
+/****************************************************************************/
+/*
+   Scatter_AddEdgePattern - 
+
+   SYNOPSIS:
+   static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data);
+
+   PARAMETERS:
+.  obj
+.  data
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int 
+*/
+/****************************************************************************/
 
 static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data)
 {
@@ -1406,6 +1862,24 @@ static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data)
 	return(GM_OK);
 }
 
+
+/****************************************************************************/
+/*
+   ExchangeAddPatterns - 
+
+   SYNOPSIS:
+   static INT ExchangeAddPatterns (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid - pointer to grid structure
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
+
 static INT ExchangeAddPatterns (GRID *theGrid)
 {
 	/* exchange addpatterns of edges */
@@ -1416,6 +1890,23 @@ static INT ExchangeAddPatterns (GRID *theGrid)
 }
 #endif
 
+
+/****************************************************************************/
+/*
+   SetAddPatterns - 
+
+   SYNOPSIS:
+   static INT SetAddPatterns (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid - pointer to grid structure
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
 
 static INT SetAddPatterns (GRID *theGrid)
 {
@@ -1455,6 +1946,24 @@ static INT SetAddPatterns (GRID *theGrid)
 
 	return(GM_OK);
 }
+
+
+/****************************************************************************/
+/*
+   BuildGreenClosure - 
+
+   SYNOPSIS:
+   static INT BuildGreenClosure (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid - pointer to grid structure
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
 
 static INT BuildGreenClosure (GRID *theGrid)
 {
@@ -1596,6 +2105,26 @@ static INT BuildGreenClosure (GRID *theGrid)
 }
 
 #ifdef ModelP
+
+
+/****************************************************************************/
+/*
+   Gather_ElementInfo - 
+
+   SYNOPSIS:
+   static int Gather_ElementInfo (DDD_OBJ obj, void *Data);
+
+   PARAMETERS:
+.  obj
+.  Data
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+*/
+/****************************************************************************/
+
 static int Gather_ElementInfo (DDD_OBJ obj, void *Data)
 {
 	INT 	epat,eaddpat;
@@ -1652,6 +2181,25 @@ static int Gather_ElementInfo (DDD_OBJ obj, void *Data)
 		EID_PRTX(elem0),string,val0,val1);                                   \
 		assert(0);                                                           \
 	}
+
+
+/****************************************************************************/
+/*
+   Scatter_ElementInfo - 
+
+   SYNOPSIS:
+   static int Scatter_ElementInfo (DDD_OBJ obj, void *Data);
+
+   PARAMETERS:
+.  obj
+.  Data
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int
+*/
+/****************************************************************************/
 
 static int Scatter_ElementInfo (DDD_OBJ obj, void *Data)
 {
@@ -1724,6 +2272,26 @@ static INT CheckElementInfo (GRID *theGrid)
 /*			  INT -1: an error occured           		 					*/
 /*																			*/
 /****************************************************************************/
+/****************************************************************************/
+/*
+   GridClosure - ompute closure for next level
+
+   SYNOPSIS:
+   static int GridClosure (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid - pointer to grid structure
+
+   DESCRIPTION:
+   This function computes closure for next level. A closure can only be determined if the rule set for the used elements is complete. This means that for all side and edge patterns possible for an element type exists a rule which closes the element.  In this case a FIFO for computing the closure is not needed any more and the closure can be computed in one step.
+   
+   RETURN VALUE:
+   int
+.n   >0 elements will be refined
+.n   =0 no elements will be refined
+.n   =-1 an error accured
+*/
+/****************************************************************************/
 
 static int GridClosure (GRID *theGrid)
 {
@@ -1772,20 +2340,29 @@ static int GridClosure (GRID *theGrid)
 }
 
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  GetNeighborSons												*/
-/*																			*/
-/* Purpose:   fill SonList for theElement with a breadth first search		*/
-/*																			*/
-/* Param:	  ELEMENT *theElement:	father element							*/
-/*			  ELEMENT *theSon: currently visited son						*/ 
-/*			  ELEMENT *SonList[MAX_SONS]: the list of sons					*/
-/*			  int 	count: son count										*/
-/*			  int   nsons: number of sons									*/
-/*																			*/
-/* return:	  int: new son count											*/
-/*																			*/
+/*
+   GetNeighborSons - fill SonList for theElement 
+
+   SYNOPSIS:
+   static INT GetNeighborSons (ELEMENT *theElement, ELEMENT *theSon, 
+							ELEMENT *SonList[MAX_SONS], int count, int nsons);
+
+   PARAMETERS:
+.  theElement -	father element
+.  theSon - currently visited son	
+.  SonList[MAX_SONS] - the list of sons
+.  count - son count
+.  sons - number of sons
+
+   DESCRIPTION:
+   This function fills SonList for theElement with a breadth first search
+
+   RETURN VALUE:
+   INT
+.n   new son count  
+*/
 /****************************************************************************/
 
 static INT GetNeighborSons (ELEMENT *theElement, ELEMENT *theSon, 
@@ -1823,20 +2400,30 @@ static INT GetNeighborSons (ELEMENT *theElement, ELEMENT *theSon,
 }
 
 
+#ifdef ModelP
+
+
 /****************************************************************************/
-/*																			*/
-/* Function:  GetSons														*/
-/*																			*/
-/* Purpose:   fill SonList for theElement									*/
-/*																			*/
-/* Param:	  ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]				*/
-/*																			*/
-/* return:	  0: ok 														*/
-/*			  1: error														*/
-/*																			*/
+/*
+   GetSons - fill SonList for theElement
+
+   SYNOPSIS:
+   INT GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);
+
+   PARAMETERS:
+.  theElement
+.  SonList[MAX_SONS]
+
+   DESCRIPTION:
+   This function fills SonList for theElement
+
+   RETURN VALUE:
+   INT
+.n   0 if ok
+.n   1 if an error occurs  
+*/
 /****************************************************************************/
 
-#ifdef ModelP
 INT GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 {
 	ELEMENT *son;
@@ -1882,6 +2469,24 @@ INT GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 }
 #endif
 
+
+/****************************************************************************/
+/*
+   GetSons - 
+
+   SYNOPSIS:
+   INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS]);
+
+   PARAMETERS:
+.  theElement
+.  SonList[MAX_SONS]
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
 
 INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 {
@@ -1932,6 +2537,25 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 /* return:	  INT: =0  ok													*/
 /*				   >0  error												*/
 /*																			*/
+/****************************************************************************/
+/****************************************************************************/
+/*
+   RestrictElementMark - restrict refinement marks
+
+   SYNOPSIS:
+   static INT RestrictElementMark(ELEMENT *theElement);
+
+   PARAMETERS:
+.  theElement - pointer to the element
+
+   DESCRIPTION:
+   This function restricts refinement marks of an element whose sons are further marked for refinement
+   
+   RETURN VALUE:
+   INT
+.n   =0 - ok
+.n   >0 - error
+*/
 /****************************************************************************/
 
 static INT RestrictElementMark(ELEMENT *theElement)
@@ -2061,17 +2685,25 @@ static INT RestrictElementMark(ELEMENT *theElement)
 	return(GM_OK);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  RestrictMarks 												*/
-/*																			*/
-/* Purpose:   restrict refinement marks when going down 					*/
-/*																			*/
-/* Param:	  GRID *theGrid: pointer to grid structure						*/
-/*																			*/
-/* return:	  INT: =0  ok													*/
-/*				   >0  error												*/
-/*																			*/
+/*
+   RestrictMarks - restrict refinement marks when going down 
+
+   SYNOPSIS:
+   static INT RestrictMarks (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid - pointer to grid structure
+
+   DESCRIPTION:
+   This function restricts refinement marks when going down
+
+   RETURN VALUE:
+   INT
+.n   0 if ok
+.n  >0 if an error occurs  
+*/
 /****************************************************************************/
 
 static INT RestrictMarks (GRID *theGrid)
@@ -2169,15 +2801,22 @@ static INT RestrictMarks (GRID *theGrid)
 
 
 /****************************************************************************/
-/*																			*/
-/* Function:  ComputeCopies 												*/
-/*																			*/
-/* Purpose:   determine copy elements from node classes 					*/
-/*																			*/
-/* Param:	  GRID *theGrid: pointer to grid structure						*/
-/*																			*/
-/* return:	  INT number of yellow marks  	                				*/
-/*																			*/
+/*
+   ComputeCopies - determine copy elements from node classes
+
+   SYNOPSIS:
+   static int ComputeCopies (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid - pointer to grid structure
+
+   DESCRIPTION:
+   This function determines copy elements from node classes
+
+   RETURN VALUE:
+   int
+.n   GM_OK if ok    
+*/
 /****************************************************************************/
 
 static int ComputeCopies (GRID *theGrid)
@@ -2248,16 +2887,21 @@ static int ComputeCopies (GRID *theGrid)
 }
 
 /****************************************************************************/
-/*																			*/
-/* Function:  CheckElementContextConsistency					*/
-/*																			*/
-/* Purpose:   check NTYPE flags of nodes in elementcontextt with the sons	*/
-/*																			*/
-/* Param:	  ELEMENT *theElement: element to check						*/
-/*			  ELEMENTCONTEXT *theElementContext: context structure to check		*/
-/*																			*/
-/* return:	  none															*/
-/*																			*/
+/*
+   CheckElementContextConsistency - check NTYPE flags of nodes
+
+   SYNOPSIS:
+   static void CheckElementContextConsistency(ELEMENT *theElement);
+
+   PARAMETERS:
+.  theElement - element to check
+   
+   DESCRIPTION:
+   This function checks NTYPE flags of nodes in elementcontextt with the sons
+
+   RETURN VALUE:
+   void   
+*/
 /****************************************************************************/
 
 static void CheckElementContextConsistency(ELEMENT *theElement, 
@@ -2334,22 +2978,25 @@ static void CheckElementContextConsistency(ELEMENT *theElement,
 
 
 /****************************************************************************/
-/*																			*/
-/* Function:  UpdateContext 												*/
-/*																			*/
-/* Purpose:   assemble references to objects which interact with the sons	*/
-/*			  of the given element, i.e.									*/
-/*			  objects are allocated, kept or deleted as indicated by MARK	*/
-/*			  (i)	 corner nodes											*/
-/*			  (ii)	 nodes at midpoints of edges							*/
-/*																			*/
-/* Param:	  GRID *theGrid: grid level of the sons of theElement			*/
-/*			  ELEMENT *theElement: element to refine						*/
-/*			  ELEMENTCONTEXT *theContext: context structure to update		*/
-/*																			*/
-/* return:	  INT 0: ok 													*/
-/*			  INT 1: fatal memory error 									*/
-/*																			*/
+/*
+   UpdateContext - assemble references
+
+   SYNOPSIS:
+   static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementContext);
+
+   PARAMETERS:
+.  theGrid - grid level of the sons of theElement
+.  theElement - element to refine
+.  theContext - context structure to update
+
+   DESCRIPTION:
+   This function assembles references to objects which interact with the sons of the given element, i.e. objects are allocated, kept or deleted as indicated by MARK (i) corner nodes  (ii) nodes at midpoints of edges	
+   
+   RETURN VALUE:
+   int
+.n   0 - ok
+.n   1 - fatal memory error
+*/
 /****************************************************************************/
 
 static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementContext) 
@@ -2634,21 +3281,24 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 	return(GM_OK);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  UnrefineElement												*/
-/*																			*/
-/* Purpose:   remove previous refinement for an element	and all sonelements	*/
-/*			  recursively, deletes:											*/
-/*			  (i)	 all connections                                        */
-/*			  (ii)	 all interior nodes and edges are deleted				*/
-/*			  (iii)	 sons are deleted and references to sons reset to NULL	*/
-/*																			*/
-/* Param:	  GRID *theGrid: grid level of sons of theElement				*/
-/*			  ELEMENT *theElement: element to refine						*/
-/*																			*/
-/* return:	  none															*/
-/*																			*/
+/*
+   UnrefineElement - remove previous refinement
+
+   SYNOPSIS:
+   static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement);
+
+   PARAMETERS:
+.  theGrid: grid level of sons of theElement
+.  theElement: element to refine
+
+   DESCRIPTION:
+   This function removes previous refinement for an element and all sonelement recursively, deletes: (i) all connections, (ii) all interior nodes and edges are deleted, (iii) sons are deleted and references to sons reset to NULL.
+
+   RETURN VALUE:
+   INT     
+*/
 /****************************************************************************/
 
 static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement)
@@ -2717,6 +3367,27 @@ struct compare_record
 };
 typedef struct compare_record COMPARE_RECORD;
 
+
+/****************************************************************************/
+/*
+   GetSonSideNodes - 
+
+   SYNOPSIS:
+   INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, NODE *SideNodes[MAX_SIDE_NODES], INT ioflag));
+
+   PARAMETERS:
+.  theElement
+.  side
+.  nodes
+.  SideNodes[MAX_SIDE_NODES]
+.  ioflag
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
 
 INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, 
 					 NODE *SideNodes[MAX_SIDE_NODES], INT ioflag)
@@ -2816,6 +3487,24 @@ INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes,
 }
 
 
+/****************************************************************************/
+/*
+   compare_node - 
+
+   SYNOPSIS:
+   static INT compare_node (const void *e0, const void *e1);
+
+   PARAMETERS:
+.  e0
+.  e1
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
+
 static INT compare_node (const void *e0, const void *e1)
 {
 	NODE *n0, *n1;
@@ -2827,6 +3516,30 @@ static INT compare_node (const void *e0, const void *e1)
 	if (n0 > n1) return(-1);
 	return(0);
 }
+
+
+/****************************************************************************/
+/*
+   Get_Sons_of_ElementSide - 
+
+   SYNOPSIS:
+   INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side, ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons, INT ioflag);
+
+   PARAMETERS:
+.  theElement
+.  side
+.  Sons_of_Side
+.  SonList[MAX_SONS]
+.  SonSides
+.  NeedSons
+.  ioflag
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
 
 INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 							 ELEMENT *SonList[MAX_SONS], INT *SonSides, 
@@ -3087,6 +3800,25 @@ INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 	return(GM_OK);			
 }
 
+
+/****************************************************************************/
+/*
+   Sort_Node_Ptr - 
+
+   SYNOPSIS:
+   static INT Sort_Node_Ptr (INT n,NODE **nodes);
+
+   PARAMETERS:
+.  n
+.  nodes
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
+
 static INT Sort_Node_Ptr (INT n,NODE **nodes)
 {
 	NODE* nd;
@@ -3125,6 +3857,26 @@ static INT Sort_Node_Ptr (INT n,NODE **nodes)
 	return(GM_OK);
 }
 
+/****************************************************************************/
+/*
+   Fill_Comp_Table - 
+
+   SYNOPSIS:
+   static INT  Fill_Comp_Table (COMPARE_RECORD **SortTable, COMPARE_RECORD *Table, INT nelems, ELEMENT **Elements, INT *Sides);
+
+   PARAMETERS:
+.  SortTable
+.  Table
+.  nelems
+.  Elements
+.  Sides
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
 
 static INT	Fill_Comp_Table (COMPARE_RECORD **SortTable, COMPARE_RECORD *Table, INT nelems, 
 					 ELEMENT **Elements, INT *Sides)
@@ -3147,6 +3899,24 @@ static INT	Fill_Comp_Table (COMPARE_RECORD **SortTable, COMPARE_RECORD *Table, I
 	return(GM_OK);
 }
 
+
+/****************************************************************************/
+/*
+   compare_nodes - 
+
+   SYNOPSIS:
+   static int compare_nodes (const void *ce0, const void *ce1);
+
+   PARAMETERS:
+.  ce0
+.  ce1
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   int 
+*/
+/****************************************************************************/
 
 static int compare_nodes (const void *ce0, const void *ce1)
 {
@@ -3184,6 +3954,31 @@ static int compare_nodes (const void *ce0, const void *ce1)
 #pragma global_optimizer on
 #pragma optimization_level 1
 #endif
+
+
+/****************************************************************************/
+/*
+   Connect_Sons_of_ElementSide - 
+
+   SYNOPSIS:
+   INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT notHanging, INT ioflag);
+
+   PARAMETERS:
+.  theGrid
+.  theElement
+.  side
+.  Sons_of_Side
+.  Sons_of_Side_List
+.  SonSides
+.  notHanging
+.  ioflag
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT 
+*/
+/****************************************************************************/
 
 INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides,
 								 INT notHanging, INT ioflag)
@@ -3445,22 +4240,26 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 #endif
 
 /****************************************************************************/
-/*																			*/
-/* Function:  RefineElementYellow										    */
-/*																			*/
-/* Purpose:   copy an element 											    */
-/*			  (i)	 corner nodes are already allocated				        */
-/*			  (iv)	 create son and set references to sons 				    */
-/*																			*/
-/* Param:	  GRID *theGrid: grid level of sons of theElement				*/
-/*			  ELEMENT *theElement: element to refine						*/
-/*			  NODE   **theContext: nodes needed for new elements			*/
-/*																			*/
-/* return:	  INT 0: ok 													*/
-/*			  INT 1: fatal memory error 									*/
-/*																			*/
-/****************************************************************************/
-		
+/*
+   RefineElementYellow - copy an element
+
+   SYNOPSIS:
+   static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theContext);
+
+   PARAMETERS:
+.  theGrid - grid level of sons of theElement
+.  theElement - element to refine
+.  theContext - nodes needed for new elements
+   
+   DESCRIPTION:
+   This function copies an element, (i) corner nodes are already allocated, (iv) create son and set references to sons
+
+   RETURN VALUE:
+   INT
+.n   0 - ok
+.n   1 - fatal memory error  
+*/
+/****************************************************************************/			
 static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theContext)
 {
 	INT		i,boundaryelement;
@@ -3529,25 +4328,28 @@ static INT RefineElementYellow (GRID *theGrid, ELEMENT *theElement, NODE **theCo
 	return(GM_OK);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  RefineElementGreen											*/
-/*																			*/
-/* Purpose:   refine an element without context     	 					*/
-/*			  (i)	 corner and midnodes are already allocated				*/
-/*			  (ii)	 edges between corner and midnodes are ok				*/
-/*			  (iii)  create interior nodes and edges						*/
-/*			  (iv)	 create sons and set references to sons 				*/
-/*																			*/
-/* Param:	  GRID *theGrid: grid level of sons of theElement				*/
-/*			  ELEMENT *theElement: element to refine						*/
-/*			  NODE   **theContext: nodes needed for new elements			*/
-/*																			*/
-/* return:	  INT 0: ok 													*/
-/*			  INT 1: fatal memory error 									*/
-/*																			*/
-/****************************************************************************/
-		
+/*
+   RefineElementGreen - refine an element without context
+
+   SYNOPSIS:
+   static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theContext);
+
+   PARAMETERS:
+.  theGrid - grid level of sons of theElement
+.  theElement - element to refine
+.  theContext - nodes needed for new elements
+
+   DESCRIPTION:
+   This function refines an element without context, (i) corner and midnodes are already allocated, (ii) edges between corner and midnodes are ok, (iii) create interior nodes and edges, (iv) create sons and set references to sons. 	 
+   
+   RETURN VALUE:
+   INT
+.n   0 - ok
+.n   1 - fatal memory error  
+*/
+/****************************************************************************/			
 static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theContext)
 {
 	struct greensondata
@@ -4492,24 +5294,26 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 
 
 /****************************************************************************/
-/*																			*/
-/* Function:  RefineElementRed 												*/
-/*																			*/
-/* Purpose:   refine an element in the given context						*/
-/*			  (i)	 corner and midnodes are already allocated				*/
-/*			  (ii)	 edges between corner and midnodes are ok				*/
-/*			  (iii)  create interior nodes and edges						*/
-/*			  (iv)	 create sons and set references to sons 				*/
-/*																			*/
-/* Param:	  GRID *theGrid: grid level of sons of theElement				*/
-/*			  ELEMENT *theElement: element to refine						*/
-/*			  ELEMENTCONTEXT *theContext: current context of element		*/
-/*																			*/
-/* return:	  INT GM_OK: ok 												*/
-/*			  INT GM_FATAL: fatal memory error 								*/
-/*																			*/
-/****************************************************************************/
-		
+/*
+   RefineElementRed - refine an element in the given context
+
+   SYNOPSIS:
+   static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theElementContext);
+
+   PARAMETERS:
+.  theGrid - grid level of sons of theElement
+.  theElement - element to refine
+.  theContext - current context of element
+
+   DESCRIPTION:
+   This function refines an element in the given context, (i) corner and midnodes are already allocated, (ii) edges between corner and midnodes are ok, (iii) create interior nodes and edges, (iv) create sons and set references to sons. 
+   
+   RETURN VALUE:
+   INT
+.n   GM_OK - ok
+.n   GM_FATAL - fatal memory error  
+*/
+/****************************************************************************/			
 static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theElementContext)
 {
 	INT i,s,p,side;
@@ -4711,19 +5515,26 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 	return(GM_OK);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  RefineElement         										*/
-/*																			*/
-/* Purpose:   refine an element                                             */ 
-/*																			*/
-/* Param:	  GRID *UpGrid: grid level to refine							*/
-/*            ELEMENT *theElement: element to refine                        */
-/*            NODE **theNodeContext: nodecontext for refinement             */
-/*																			*/
-/* return:	  INT GM_OK: ok 												*/
-/*			  INT GM_FATAL: fatal memory error 								*/
-/*																			*/
+/*
+    - refine an element
+
+   SYNOPSIS:
+   static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContext);
+
+   PARAMETERS:
+.  UpGrid - grid level to refine
+.  theElement - element to refine
+.  theNodeContext - nodecontext for refinement
+
+   DESCRIPTION:
+   This function refines an element
+   RETURN VALUE:
+   INT
+.n  GM_OK - ok
+.n  GM_FATAL - fatal memory error
+*/
 /****************************************************************************/
 
 static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContext)
@@ -4762,17 +5573,25 @@ static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContex
 	return(GM_OK);
 }
 
+
 /****************************************************************************/
-/*																			*/
-/* Function:  RefineGrid													*/
-/*																			*/
-/* Purpose:   refine one level of the multigrid								*/
-/*																			*/
-/* Param:	  GRID *theGrid: grid level to refine							*/
-/*																			*/
-/* return:	  INT GM_OK: ok 												*/
-/*			  INT GM_FATAL: fatal memory error 								*/
-/*																			*/
+/*
+   RefineGrid - refine one level of the grid
+
+   SYNOPSIS:
+   static int RefineGrid (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid - grid level to refine
+
+   DESCRIPTION:
+   This function refines one level of the grid
+
+   RETURN VALUE:
+   INT
+.n   GM_OK - ok
+.n   GM_FATAL - fatal memory error  
+*/
 /****************************************************************************/
 
 static int RefineGrid (GRID *theGrid)
@@ -4897,6 +5716,25 @@ static int RefineGrid (GRID *theGrid)
 
 
 #ifdef ModelP
+
+
+/****************************************************************************/
+/*
+   UpdateElementOverlap - 
+
+   SYNOPSIS:
+   static INT UpdateElementOverlap (ELEMENT *theElement);
+
+   PARAMETERS:
+.  theElement
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
 static INT UpdateElementOverlap (ELEMENT *theElement)
 {
 	INT		i,s,prio;
@@ -4951,6 +5789,24 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 /****************************************************************************/
 /*
    UpdateGridOverlap - 
+
+   SYNOPSIS:
+   static INT UpdateGridOverlap (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
+static INT UpdateGridOverlap (GRID *theGrid)
+{
+	ELEMENT *theElement;
+
 	for (theElement=FIRSTELEMENT(theGrid);theElement!=NULL;theElement=SUCCE(theElement))
 	{ 
 /*
@@ -4968,6 +5824,25 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 /*
    UpdateMultiGridOverlap - 
 
+   SYNOPSIS:
+   static INT UpdateMultiGridOverlap (MULTIGRID *theMG, INT FromLevel);
+
+   PARAMETERS:
+.  theMG
+.  FromLevel
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
+static INT UpdateMultiGridOverlap (MULTIGRID *theMG, INT FromLevel)
+{
+	INT		l;		
+	GRID	*theGrid;
+
 	ddd_HandlerInit(HSET_REFINE);
 
 	for (l=FromLevel; l<TOPLEVEL(theMG); l++)
@@ -4983,6 +5858,24 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 /****************************************************************************/
 /*
    DropUsedFlags - 
+
+   SYNOPSIS:
+   static INT DropUsedFlags (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
+static INT DropUsedFlags (GRID *theGrid)
+{
+	ELEMENT *theElement;
+
 	for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 	{
 		if (USED(theElement) == 1)
@@ -5004,6 +5897,24 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 /****************************************************************************/
 /*
    ConnectGridOverlap - 
+
+   SYNOPSIS:
+   static INT	ConnectGridOverlap (GRID *theGrid);
+
+   PARAMETERS:
+.  theGrid
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
+static INT	ConnectGridOverlap (GRID *theGrid)
+{
+	INT		i,j,Sons_of_Side,prio;
+	INT		SonSides[MAX_SIDE_NODES];
 	ELEMENT	*theElement;
 	ELEMENT	*theNeighbor;
 	INT		i,j,l,Sons_of_Side,prio;
@@ -5105,6 +6016,26 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 
 /****************************************************************************/
 /*
+   ConnectMultiGridOverlap - 
+
+   SYNOPSIS:
+   static INT	ConnectMultiGridOverlap (MULTIGRID *theMG, INT FromLevel);
+
+   PARAMETERS:
+.  theMG
+.  FromLevel
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
+static INT	ConnectMultiGridOverlap (MULTIGRID *theMG, INT FromLevel)
+{
+	INT l;
+	GRID *theGrid;
 	
 	/* drop used marks to fathers */
 	for (l=FromLevel+1; l<=TOPLEVEL(theMG); l++)
@@ -5137,6 +6068,28 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 /****************************************************************************/
 /*
    CheckConsistency - 
+
+   SYNOPSIS:
+   void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, INT *check);
+
+   PARAMETERS:
+.  theMG
+.  level
+.  debugstart
+.  gmlevel
+.  check
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
+
+void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, INT *check)
+{
+	GRID *theGrid = GRID_ON_LEVEL(theMG,level);
+
 	IFDEBUG(gm,debugstart)
 		printf(PFMT "RefineMultiGrid(): %d. ConsCheck() on level=%d\n",me,(*check)++,level);
 		Debuggm = GHOSTS;
@@ -5151,6 +6104,24 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 /****************************************************************************/
 /*
    CheckMultiGrid - 
+
+   SYNOPSIS:
+   static INT CheckMultiGrid (MULTIGRID *theMG);
+
+   PARAMETERS:
+.  theMG
+
+   DESCRIPTION:
+
+   RETURN VALUE:
+   INT
+*/
+/****************************************************************************/
+
+static INT CheckMultiGrid (MULTIGRID *theMG)
+{
+	INT level;
+
 	UserWriteF("CheckMultiGrid() begin\n");
 
 	for (level=0; level<=TOPLEVEL(theMG); level++)
@@ -5169,20 +6140,27 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 /****************************************************************************/
 /*
    RefineMultiGrid - refine whole multigrid structure
+
    SYNOPSIS:
-/*																			*/
-/* Function:  RefineMultiGrid												*/
-/*																			*/
-/* Purpose:   refine whole multigrid structure								*/
-/*																			*/
-/* Param:	  MULTIGRID *theMG: multigrid to refine 						*/
-/*			  INT 		flag:   flag for switching between different yellow */
-/*								closures									*/
-/*																			*/
-/* return:	  INT 0: ok 													*/
-/*			  INT 1: out of memory, but data structure as before			*/
-/*			  INT 2: fatal memory error, data structure corrupted			*/
-/*																			*/
+   INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest);
+
+   PARAMETERS:
+.  theMG - multigrid to refine 
+.  flag - flag for switching between different yellow closures
+
+   DESCRIPTION:
+   This function refines whole multigrid structure
+
+   RETURN VALUE:
+   INT
+.n   0 - ok
+.n   1 - out of memory, but data structure as before
+.n   2 - fatal memory error, data structure corrupted   
+*/ 
+/****************************************************************************/
+
+INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest)
+{
 	int level,toplevel,nrefined;
 	int newlevel;
 	NODE *theNode;
