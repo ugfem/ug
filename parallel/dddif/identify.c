@@ -36,6 +36,7 @@
 #include "rm.h"
 #include "refine.h"
 #include "ddd.h"
+#include "parallel.h"
 
 /****************************************************************************/
 /*																			*/
@@ -290,7 +291,7 @@ static INT Identify_by_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
   ASSERT(nident>0);
   ASSERT(*proclist!=-1);
 
-  IFDEBUG(dddif,5)
+  IFDEBUG(dddif,1)
   Print_Identify_ObjectList(IdentObjectHdr,nobject,proclist,skiptag,
                             IdentHdr,nident);
   ENDDEBUG
@@ -393,6 +394,10 @@ static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
 
   case (CORNER_NODE) :
 
+    /* identification of cornernodes is done */
+    /* in Identify_SonNodesAndSonEdges()     */
+    break;
+
     PRINTDEBUG(dddif,1,("%d: Identify CORNERNODE gid=%08x node=%d "
                         "vec=%d\n",
                         me, DDD_InfoGlobalId(PARHDR(theNode)), node, Vec));
@@ -456,15 +461,13 @@ static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
                         #endif
 
     /* identify using edge nodes */
-    /*
-                            IdentHdr[nident++] = PARHDR((NODE *)NFATHER(EdgeNodes[0]));
-                            IdentHdr[nident++] = PARHDR((NODE *)NFATHER(EdgeNodes[1]));
-     */
+    IdentHdr[nident++] = PARHDR((NODE *)NFATHER(EdgeNodes[0]));
+    IdentHdr[nident++] = PARHDR((NODE *)NFATHER(EdgeNodes[1]));
 
     /* this is the buggy case
+                            IdentHdr[nident++] = PARHDR(EdgeNodes[0]);
+                            IdentHdr[nident++] = PARHDR(EdgeNodes[1]);
      */
-    IdentHdr[nident++] = PARHDR(EdgeNodes[0]);
-    IdentHdr[nident++] = PARHDR(EdgeNodes[1]);
 
     Ident_FctPtr(IdentObjectHdr, nobject,
                  proclist+2, PrioGhost, IdentHdr, nident);
@@ -555,6 +558,21 @@ static INT IdentifyEdge (GRID *theGrid,
   ASSERT(Nodes[0]!=NULL);
   ASSERT(Nodes[1]!=NULL);
 
+        #ifdef __TWODIM__
+  /* no identfication to nonrefined neighbors */
+  if (MARK(theNeighbor) == NO_REFINEMENT) return(0);
+        #endif
+        #ifdef __THREEDIM__
+  /* identification of sonedges is done in Identify_SonNodesAndSonEdges() */
+  if (NTYPE(Nodes[0])==CORNER_NODE && NTYPE(Nodes[1])==CORNER_NODE)
+  {
+    EDGE *FatherEdge;
+    FatherEdge = GetEdge((NODE *)NFATHER(Nodes[0]),(NODE *)NFATHER(Nodes[1]));
+
+    if (FatherEdge != NULL) return(0);
+  }
+        #endif
+
   theEdge = GetEdge(Nodes[0],Nodes[1]);
   ASSERT(theEdge!=NULL);
 
@@ -631,29 +649,30 @@ static INT IdentifyEdge (GRID *theGrid,
 static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
                                         INT i, ELEMENT *theNeighbor)
 {
-  INT nodes,j;
+  INT nodes,j,n;
   NODE *SideNodes[MAX_SIDE_NODES];
   INT ncorners;
   NODE *theNode;
 
   GetSonSideNodes(theElement,i,&nodes,SideNodes);
   ncorners = CORNERS_OF_SIDE(theElement,i);
+  n = 0;
 
   PRINTDEBUG(dddif,1,("%d: IdentifyObjectsOfElementSide():identify NODES "
                       "ncorners=%d nodes=%d\n",me,ncorners,nodes));
 
   /* identify nodes, vertices and node vectors of son elements */
-  for (j=0; j<nodes; j++)
+  for (j=0; j<MAX_SIDE_NODES; j++)
   {
-    INT prio;
-
     theNode = SideNodes[j];
-    ASSERT(theNode != NULL);
+    if (theNode == NULL) continue;
 
     /* identify new node including its vector and vertex        */
     IdentifyNode(theGrid,theNeighbor, theNode, SideNodes, j, ncorners,
                  VEC_DEF_IN_OBJ_OF_GRID(theGrid,NODEVEC));
+    n++;
   }
+  ASSERT(n == nodes);
 
   /* identify edge vectors (2D); edges, edge and side vectors (3D) */
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC) || DIM==3)
@@ -691,6 +710,8 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
                         #endif
     }
   }
+
+  return(GM_OK);
 }
 
 INT     IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
@@ -747,13 +768,13 @@ INT     IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel
                             theElement,ID(theElement),i));
 
         IdentifyObjectsOfElementSide(theGrid,theElement,i,theNeighbor);
+
       }
     }
   }
 
   return(GM_OK);
 }
-
 
 INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
 {
@@ -794,6 +815,181 @@ INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
 
   ENDDEBUG
 
+  /*
+          FreeControlEntry(ce_NIDENT);
+          FreeControlEntry(ce_EDIDENT);
+   */
+}
+
+static int Gather_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  NODE *theNode = (NODE *)obj;
+
+  /* identification is only done between master objects */
+  ASSERT(MASTER(theNode));
+  ASSERT(MASTERPRIO(prio));
+  ASSERT(identlevel-1 == LEVEL(theNode));
+
+  if (SONNODE(theNode) != NULL)
+    *((int *)data) = 1;
+  else
+    *((int *)data) = 0;
+
+  return(0);
+}
+
+static int Scatter_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  NODE    *theNode        = (NODE *)obj;
+  NODE    *SonNode        = SONNODE(theNode);
+  INT has_sonnode     = *((int *)data);
+
+  /* identification is only done between master objects */
+  ASSERT(MASTER(theNode));
+  ASSERT(MASTERPRIO(prio));
+  ASSERT(identlevel-1 == LEVEL(theNode));
+
+  if (SonNode != NULL)
+  {
+    if (has_sonnode)
+    {
+      DDD_IdentifyObject(PARHDR(SonNode),proc,PARHDR(theNode));
+      if (dddctrl.nodeData && NVECTOR(SonNode)!=NULL)
+        DDD_IdentifyObject(PARHDR(NVECTOR(SonNode)),proc,PARHDR(theNode));
+      IFDEBUG(dddif,1)
+      if (dddctrl.nodeData && NVECTOR(SonNode)!=NULL)
+        PrintDebug ("l=%d IdentHdr: %d Proc: %d me:%d IdentObjectHdr: %d %d\n",
+                    identlevel,GID(theNode),proc,me,GID(SonNode),GID(EDVECTOR(SonNode)));
+      else
+        PrintDebug ("l=%d IdentHdr: %d Proc: %d me:%d IdentObjectHdr: %d\n",
+                    identlevel,GID(theNode),proc,me,GID(SonNode));
+      ENDDEBUG
+    }
+  }
+
+  return(0);
+}
+
+#ifdef __THREEDIM__
+static int Gather_SonEdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  EDGE *theEdge = (EDGE *)obj;
+  EDGE *SonEdge;
+
+  /* identification is only done between master objects */
+  ASSERT(MASTER(theEdge));
+  ASSERT(MASTERPRIO(prio));
+  ASSERT(identlevel-1 == LEVEL(theEdge));
+
+  SonEdge = GetSonEdge(theEdge);
+  if (SonEdge != NULL)
+    *((int *)data) = 1;
+  else
+    *((int *)data) = 0;
+
+  return(0);
+}
+
+static int Scatter_SonEdgeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  EDGE    *theEdge        = (EDGE *)obj;
+  EDGE    *SonEdge;
+  INT has_sonedge     = *((int *)data);
+
+  /* identification is only done between master objects */
+  ASSERT(MASTER(theEdge));
+  ASSERT(MASTERPRIO(prio));
+  ASSERT(identlevel-1 == LEVEL(theEdge));
+
+  SonEdge = GetSonEdge(theEdge);
+  if (SonEdge != NULL)
+  {
+    if (has_sonedge)
+    {
+      DDD_IdentifyObject(PARHDR(SonEdge),proc,PARHDR(theEdge));
+      if (dddctrl.edgeData && EDVECTOR(SonEdge)!=NULL)
+        DDD_IdentifyObject(PARHDR(EDVECTOR(SonEdge)),proc,PARHDR(theEdge));
+      IFDEBUG(dddif,1)
+      if (dddctrl.edgeData && EDVECTOR(SonEdge)!=NULL)
+        PrintDebug ("l=%d IdentHdr: %d Proc: %d me:%d IdentObjectHdr: %d %d\n",
+                    identlevel,GID(theEdge),proc,me,GID(SonEdge),GID(EDVECTOR(SonEdge)));
+      else
+        PrintDebug ("l=%d IdentHdr: %d Proc: %d me:%d IdentObjectHdr: %d\n",
+                    identlevel,GID(theEdge),proc,me,GID(SonEdge));
+      ENDDEBUG
+    }
+  }
+
+  return(0);
+}
+#endif
+
+INT Identify_SonNodesAndSonEdges (GRID *theGrid)
+{
+        #ifdef Debug
+  identlevel = GLEVEL(theGrid)+1;
+        #endif
+
+  DDD_IFAOnewayX(BorderNodeSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(int),
+                 Gather_SonNodeInfo,Scatter_SonNodeInfo);
+
+        #ifdef __THREEDIM__
+  /* identify the sonedges */
+  DDD_IFAOnewayX(BorderEdgeSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(int),
+                 Gather_SonEdgeInfo,Scatter_SonEdgeInfo);
+        #endif
+  return(GM_OK);
+}
+
+INT Identify_Objects_of_ElementSide(GRID *theGrid, ELEMENT *theElement, INT i)
+{
+  INT prio;
+  ELEMENT *theNeighbor;
+
+  theNeighbor = NBELEM(theElement,i);
+  if (theNeighbor == NULL) return(GM_OK);
+
+  if ((prio = DDD_InfoPriority(PARHDRE(theNeighbor))) != PrioGhost
+      || NSONS(theNeighbor)!=0)
+    return(GM_OK);
+
+        #ifdef Debug
+  identlevel = GLEVEL(theGrid);
+        #endif
+  if (IdentifyObjectsOfElementSide(theGrid,theElement,i,theNeighbor)) RETURN(GM_FATAL);
+
+  return(GM_OK);
+}
+
+void IdentifyInit (MULTIGRID *theMG)
+{
+  INT i;
+
+        #ifdef Debug
+  debug = 0;
+        #endif
+
+  /* allocate a control word entry to lock nodes */
+  /* TODO: delete
+          if (AllocateControlEntry(NODE_CW,1,&ce_NIDENT) != GM_OK)
+                  assert(0);
+   */
+  /* allocate a control word entry to lock edges */
+  /* TODO: delete
+          if (AllocateControlEntry(EDGE_CW,1,&ce_EDIDENT) != GM_OK)
+                  assert(0);
+   */
+
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    ResetIdentFlags(GRID_ON_LEVEL(theMG,i));
+
+  /* set Ident_FctPtr to identification mode */
+  Ident_FctPtr = Identify_by_ObjectList;
+
+}
+
+void IdentifyExit (void)
+{
   /*FreeControlEntry(ce_NIDENT);
      FreeControlEntry(ce_EDIDENT); */
 }
