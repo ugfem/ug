@@ -2692,6 +2692,55 @@ static INT SaveCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*
+   SaveDomainCommand - Save domain structure in a file
+
+   SYNOPSIS:
+   static INT SaveDomainCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   This function saves domain structure in a file.
+   It saves the one from current multigrid.
+
+   savedomain <filename>
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT SaveDomainCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  char Name[NAMESIZE];
+  BVP_DESC BVPDesc;
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"savedomain","no open multigrid");
+    return (CMDERRORCODE);
+  }
+
+  /* scan name */
+  if (sscanf(argv[0],expandfmt(CONCAT3(" save %",NAMELENSTR,"[ -~]")),Name)!=1)
+  {
+    if (BVP_SetBVPDesc(MG_BVP(theMG),&BVPDesc)) return (CMDERRORCODE);
+    strcpy(Name,BVPDesc.name);
+  }
+
+  if (BVP_Save(MG_BVP(theMG),Name,argc,argv)) return (CMDERRORCODE);
+
+  return(OKCODE);
+}
+
+/****************************************************************************/
+/*
    SaveDataCommand - Save multigrid data in a file
 
    SYNOPSIS:
@@ -13099,6 +13148,7 @@ INT InitCommands ()
   if (CreateCommand("open",                       OpenCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("close",                      CloseCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("save",                       SaveCommand                                     )==NULL) return (__LINE__);
+  if (CreateCommand("savedomain",         SaveDomainCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("savedata",           SaveDataCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("loaddata",           LoadDataCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("level",                      LevelCommand                                    )==NULL) return (__LINE__);
