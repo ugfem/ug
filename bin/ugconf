@@ -29,6 +29,8 @@ then
 	echo "         PVM (set MODEL = PVM)";
 	echo "         SHMEMT3D (set MODEL = SHMEMT3D)";
 	echo "         STD_DOMAIN (set DOM_MODUL = STD_DOMAIN)";
+	echo "         DEBUG (set DEBUG_MODE = ON)";
+	echo "         NODEBUG (set DEBUG_MODE = OFF)";
 	exit 1;
 fi
 
@@ -51,6 +53,7 @@ then
 	then
 		cp $UGROOT/ug.conf $UGROOT/ug.conf.orig
 	fi				
+	exit 0;
 fi			
 
 if test "$1" = "restore"
@@ -59,18 +62,21 @@ then
 	then
 		mv $UGROOT/ug.conf.orig $UGROOT/ug.conf
 	fi				
+	exit 0;
 fi			
 
 if test "$1" = "2"
 then
 sed 's/^DIM.*$/DIM = 2/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "3"
 then
 sed 's/^DIM.*$/DIM = 3/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "NETGEN"
@@ -79,136 +85,176 @@ sed 's/^NETGEN.*$/NETGEN = ON/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
 sed 's/^DIM.*$/DIM = 3/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "GRAPE"
 then
 sed 's/^GRAPE.*$/GRAPE = ON/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "NONETGEN"
 then
 sed 's/^NETGEN.*$/NETGEN = OFF/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "NOGRAPE"
 then
 sed 's/^GRAPE.*$/GRAPE = OFF/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "HP"
 then
 sed 's/^ARCH.*$/ARCH = HP/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "DEC"
 then
 sed 's/^ARCH.*$/ARCH = DEC/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "SGI"
 then
 sed 's/^ARCH.*$/ARCH = SGI/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "AIX"
 then
 sed 's/^ARCH.*$/ARCH = AIX/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "PARAGON"
 then
 sed 's/^ARCH.*$/ARCH = PARAGON/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "PC"
 then
 sed 's/^ARCH.*$/ARCH = PC/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "POWERGC"
 then
 sed 's/^ARCH.*$/ARCH = POWERGC/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "SOLARIS"
 then
 sed 's/^ARCH.*$/ARCH = SOLARIS/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "SUN4GCC"
 then
 sed 's/^ARCH.*$/ARCH = SUN4GCC/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "T3D"
 then
 sed 's/^ARCH.*$/ARCH = T3D/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "NECSX4"
 then
 sed 's/^ARCH.*$/ARCH = NECSX4/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "SEQ"
 then
 sed 's/^MODEL[ \t].*$/MODEL = SEQ/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "MPI"
 then
 sed 's/^MODEL[ \t].*$/MODEL = MPI/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "NX"
 then
 sed 's/^MODEL[ \t].*$/MODEL = NX/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "NXLIB"
 then
 sed 's/^MODEL[ \t].*$/MODEL = NXLIB/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "PARIX"
 then
 sed 's/^MODEL[ \t].*$/MODEL = PARIX/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "PVM"
 then
 sed 's/^MODEL[ \t].*$/MODEL = PVM/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "SHMEMT3D"
 then
 sed 's/^MODEL[ \t].*$/MODEL = SHMEMT3D/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
 
 if test "$1" = "STD_DOMAIN"
 then
 sed 's/^DOM_MODULE.*$/DOM_MODULE = STD_DOMAIN/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
 mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
 fi			
+
+if test "$1" = "DEBUG"
+then
+sed 's/^DEBUG_MODE.*$/DEBUG_MODE = ON/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
+mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
+fi			
+
+if test "$1" = "NODEBUG"
+then
+sed 's/^DEBUG_MODE.*$/DEBUG_MODE = OFF/' $UGROOT/ug.conf > $UGROOT/ug.conf.tmp
+mv $UGROOT/ug.conf.tmp $UGROOT/ug.conf
+exit 0;
+fi			
+
+echo "error: unrecognized option. use 'ugconf -help' for help.";
+exit 1;
