@@ -282,6 +282,8 @@ INT PrintHelp (const char *HelpFor,int mode, const char *addText)
             }
           while (sscanf(buffer,"%s",HelpItem)!=1);
 
+          PRINTDEBUG(ui,1,("PrintHelp: first line is '%s'\n",buffer));
+
           if ((sscanf(ToLower(buffer),"%s",HelpItem)==1)&&(strstr(HelpItem,helpfor)!=NULL))
           {
             /* matching: print line */
@@ -294,6 +296,8 @@ INT PrintHelp (const char *HelpFor,int mode, const char *addText)
             while ((fgets(buffer2,BUFFERSIZE-1,hfile)!=NULL) && !DOC_TEXT_END(buffer2))
               if (strstr(buffer2,"KEYWORDS")!=NULL)
               {
+                PRINTDEBUG(ui,1,("PrintHelp: keywords line is '%s'\n",buffer2));
+
                 /* move on to next line and check it */
                 if (fgets(buffer2,BUFFERSIZE-1,hfile)==NULL)
                 {
@@ -302,7 +306,7 @@ INT PrintHelp (const char *HelpFor,int mode, const char *addText)
 #                                                                       endif
                   REP_ERR_RETURN(1);
                 }
-                if (strstr(ToLower(buffer),helpfor)!=NULL)
+                if (strstr(ToLower(buffer2),helpfor)!=NULL)
                 {
                   /* got it: print first line */
                   found++;
