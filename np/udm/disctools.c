@@ -1164,7 +1164,7 @@ INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
             for (k=0; k<n; k++)
               if (MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,j),tp,ctp,k+1)!=MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,j),tp,ctp,k)+1)
               {
-                MVMD_VDSUBSEQ(mvmd,j) = FALSE;
+                MVMD_MDSUBSEQ(mvmd,j) = FALSE;
                 break;
               }
           }
@@ -1417,6 +1417,8 @@ INT ComputePartVecskip (const VECDATA_DESC *vd, const VECDATA_DESC *vds,
   INT tp,n,ns,i,j,cmp;
 
   for (tp=0; tp<NVECTYPES; tp++)
+  {
+    typeskip[tp] = co_typeskip[tp] = 0;
     if (VD_ISDEF_IN_TYPE(vds,tp))
     {
       if (!VD_ISDEF_IN_TYPE(vd,tp))
@@ -1427,12 +1429,11 @@ INT ComputePartVecskip (const VECDATA_DESC *vd, const VECDATA_DESC *vds,
       if (ns<n)
       {
         /* set all bits of comps in vds relative to vd */
-        typeskip[tp] = co_typeskip[tp] = 0;
         for (i=0; i<n; i++)
         {
           cmp = VD_CMP_OF_TYPE(vd,tp,i);
           for (j=0; j<ns; j++)
-            if (VD_CMP_OF_TYPE(vds,tp,i)==cmp)
+            if (VD_CMP_OF_TYPE(vds,tp,j)==cmp)
               break;
           if (j<ns)
             /* cmp contained in vds */
@@ -1443,14 +1444,15 @@ INT ComputePartVecskip (const VECDATA_DESC *vd, const VECDATA_DESC *vds,
       }
       else if (ns==n)
       {
-        /* all/no bits here */
-        typeskip[tp] = ~0;
+        for (i=0; i<n; i++)
+          typeskip[tp] |= 1<<i;
         co_typeskip[tp] = 0;
       }
       else
         /* vd does not contain vds */
         REP_ERR_RETURN (1);
     }
+  }
   return (0);
 }
 
