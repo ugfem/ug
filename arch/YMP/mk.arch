@@ -1,0 +1,27 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for Cray YMP
+#
+
+ARCH_TYPE     = __YMP__
+
+ARCH_MAKE     = make
+ARCH_CC       = cc
+ARCH_C++      = 
+ARCH_LINK     = ld
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK = true
+
+ARCH_LIBS     = -lc -lm -lu
+
+ARCH_CFLAGS   = -I/usr/include -g -c 
+ARCH_C++FLAGS = 
+ARCH_LFLAGS   =
+
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDES = -I/usr/include/X11
+ARCH_XLIBS     = -L/usr/lib -lX11 -lXaw -lXt -lXmu -lXext
+
