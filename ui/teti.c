@@ -247,7 +247,7 @@ static INT TetiCommand (INT argc, char **argv)
   /* renumber objects				*/
   /********************************/
 
-  RenumberMultiGrid(mg);       /* ids are from level 0 to J according to list */
+  RenumberMultiGrid(mg,NULL,NULL,NULL,NULL,NULL,NULL);       /* ids are from level 0 to J according to list */
 
   fprintf(stream,"%d\n",VIDCNT(mg));
   fprintf(stream,"%d\n",EIDCNT(mg));
