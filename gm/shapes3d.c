@@ -112,7 +112,7 @@ static char rcsid[] = "$Header$";
 D*/
 /****************************************************************************/
 
-DOUBLE N (INT i, const COORD *LocalCoord)
+DOUBLE N (const INT i, const COORD *LocalCoord)
 {
 	switch (i)
 	{
