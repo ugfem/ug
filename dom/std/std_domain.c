@@ -2512,7 +2512,7 @@ INT BNDS_BndCond (BNDS *aBndS, COORD *local, COORD *in, DOUBLE *value, INT *type
 
   if (PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE)
       #ifdef __TWODIM__
-    lambda[0] = (1.0-local[0])*ps->local[0][0]+local[0]*ps->local[1][0];
+    lambda[0] = (1.0-local[0])*ps->local[0][0] + local[0]*ps->local[1][0];
       #endif
       #ifdef __THREEDIM__
     switch (ps->n)
