@@ -66,16 +66,6 @@
 #define TYPE_TFF 1
 #define TYPE_FF 2
 
-#define NPFF_FF(p)                              (((p)->FF))
-#define NPFF_FF3D(p)                    (((p)->FF3D))
-#define NPFF_aux(p)                             (((p)->aux))
-#define NPFF_aux3D(p)                   (((p)->aux3D))
-#define NPFF_aux2_3D(p)                 (((p)->aux2_3D))
-#define NPFF_aux2(p)                    (((p)->aux2))
-#define NPFF_aux3(p)                    (((p)->aux3))
-#define NPFF_aux4(p)                    (((p)->aux4))
-#define NPFF_aux5(p)                    (((p)->aux5))
-#define NPFF_aux6(p)                    (((p)->aux6))
 #define NPFF_tv(p)                              (((p)->tv))
 #define NPFF_tv2(p)                             (((p)->tv2))
 #define NPFF_t(p)                               (((p)->t))
@@ -196,16 +186,6 @@ typedef struct
   NP_SMOOTHER smoother;
 
   /* abstract memory description */
-  MATDATA_DESC *FF;                     /* frequency filtered matrix */
-  MATDATA_DESC *FF3D;                   /* frequency filtered matrix; only for 3D */
-  VECDATA_DESC *aux;                    /* auxiliary vector */
-  VECDATA_DESC *aux3D;          /* auxiliary vector; only for 3D */
-  VECDATA_DESC *aux2_3D;        /* auxiliary vector; only for 3D and FF */
-  VECDATA_DESC *aux2;                   /* auxiliary vector; for FF or for checks */
-  VECDATA_DESC *aux3;                   /* auxiliary vector; only for checks */
-  VECDATA_DESC *aux4;                   /* auxiliary vector; only for checks */
-  VECDATA_DESC *aux5;                   /* auxiliary vector; only for checks */
-  VECDATA_DESC *aux6;                   /* auxiliary vector; only for checks */
   VECDATA_DESC *tv;                     /* testvector */
   VECDATA_DESC *tv2;                    /* 2. testvector for FF */
   VECDATA_DESC *t;                      /* temp. vector for the update of the correction */
@@ -291,6 +271,9 @@ typedef struct
 static VEC_SCALAR Factor_One;
 
 REP_ERR_FILE;
+
+static MATDATA_DESC *FF_MATDATA_DESC_ARRAY[FF_MAX_MATS];
+static VECDATA_DESC *FF_VECDATA_DESC_ARRAY[FF_MAX_VECS];
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -2309,12 +2292,9 @@ static INT LUConstruct (NP_BASE *theNP)
    .vb
    npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$damp <sc double list>]
        [$FF <FF-mat sym>] [$FF3D <3D FF-mat sym>] [$L <LU mat sym>]
-       [$aux <temp sym>] [$tv <testvector sym>] [$tv2 <2. testvector sym>]
-           [$aux3D <3D temp sym>] [$aux2_3D <2. 3D temp sym>] [
-       $t <update for correction sym>]
-           $display {no|red|full} $wr <"all"|number> $wr3D <number> $type <FF|TFF>
-           [$aux2 <temp2 sym>] [$aux3 <temp3 sym>] [$aux4 <temp4 sym>]
-           [$aux5 <temp5 sym>] [$aux6 <temp6 sym>];
+       [$tv <testvector sym>] [$tv2 <2. testvector sym>]
+           [$t <update for correction sym>]
+           $display {no|red|full} $wr <"all"|number> $wr3D <number> $type <FF|TFF>;
    .ve
 
    .  $c~<cor> - correction vector
@@ -2326,16 +2306,8 @@ static INT LUConstruct (NP_BASE *theNP)
    .  $L~<LU-mat~sym> - symbol for the LU decomposed matrix
    .  $tv~<testvector~sym> - symbol for the testvector
    .  $tv2~<2.~testvector~sym> - symbol for the second testvector if neccessary
-   .  $aux~<temp~sym> - symbol for a temporary vector
-   .  $aux3D~<3D~temp~sym> - additional temporary symbol for the testvector for 3D
-   .  $aux2_3D~<2.~3D~temp~sym> - additional temporary symbol for the 2. testvector for 3D and FF
    .  $t~<update~for~correction~sym> - temp. vector
    .  $type~<type of frequency filter> - "TFF" for Wagners or "FF" for Wittums
-   .  $aux2~<temp2~sym> - symbol for a further temporary vector (neccessary for FF)
-   .  $aux3~<temp3~sym> - symbol for a further temporary vector
-   .  $aux4~<temp4~sym> - symbol for a further temporary vector
-   .  $aux5~<temp5~sym> - symbol for a further temporary vector
-   .  $aux6~<temp6~sym> - symbol for a further temporary vector
    .  $display - display mode: 'no', 'red'uced or 'full'
    .  $wr - relative frequency [0..1] for 2D OR 'all' for the whole logarithmic sequence of frequencies
    .  $wr3D - relative frequency [0..1] for 3D
@@ -2403,17 +2375,26 @@ static INT FFInit (NP_BASE *theNP, INT argc , char **argv)
   NP_FF *np;
   char buffer[128];
   MULTIGRID *theMG;
+  INT i;
 
   np = (NP_FF *) theNP;
   theMG = np->smoother.iter.base.mg;
 
-  NPFF_FF(np) = ReadArgvMatDesc(theMG,"FF",argc,argv);
+  TOS_FF_Vecs = 0;
+
+  for( i=0; i < FF_MAX_VECS; i++ )
+  {
+    FF_Vecs[i] = DUMMY_COMP;
+    FF_VECDATA_DESC_ARRAY[i] = NULL;
+  }
+
+  for( i=0; i < FF_MAX_MATS; i++ )
+  {
+    FF_Mats[i] = DUMMY_COMP;
+    FF_MATDATA_DESC_ARRAY[i] = NULL;
+  }
 
 #ifdef __THREEDIM__
-  NPFF_FF3D(np) = ReadArgvMatDesc(theMG,"FF3D",argc,argv);
-  NPFF_aux3D(np) = ReadArgvVecDesc(theMG,"aux3D",argc,argv);
-  NPFF_aux2_3D(np) = ReadArgvVecDesc(theMG,"aux2_3D",argc,argv);
-
   if ( ReadArgvChar ( "wr3D", buffer, argc, argv) )
   {
     PrintErrorMessage('E',"FFInit", "Option $wr3D mandatory");
@@ -2421,23 +2402,12 @@ static INT FFInit (NP_BASE *theNP, INT argc , char **argv)
   }
   sscanf(buffer,"%lf", &NPFF_WaveNrRel3D(np) );
 #else
-  NPFF_FF3D(np) = NULL;
-  NPFF_aux3D(np) = NULL;
-  NPFF_aux2_3D(np) = NULL;
   NPFF_WaveNrRel3D(np) = -1.0;
 #endif
 
-  NPFF_aux(np) = ReadArgvVecDesc(theMG,"aux",argc,argv);
   NPFF_tv(np)  = ReadArgvVecDesc(theMG,"tv",argc,argv);
   NPFF_tv2(np)  = ReadArgvVecDesc(theMG,"tv2",argc,argv);
   NPFF_t(np)   = ReadArgvVecDesc(theMG,"t",argc,argv);
-
-  NPFF_aux2(np) = ReadArgvVecDesc(theMG,"aux2",argc,argv);
-  NPFF_aux3(np) = ReadArgvVecDesc(theMG,"aux3",argc,argv);
-  NPFF_aux4(np) = ReadArgvVecDesc(theMG,"aux4",argc,argv);
-  NPFF_aux5(np) = ReadArgvVecDesc(theMG,"aux5",argc,argv);
-  NPFF_aux6(np) = ReadArgvVecDesc(theMG,"aux6",argc,argv);
-
 
   NPFF_DISPLAY(np) = ReadArgvDisplay(argc,argv);
   NPFF_MESHWIDTH(np) = 0.0;
@@ -2517,39 +2487,27 @@ static INT FFInit (NP_BASE *theNP, INT argc , char **argv)
 static INT FFDisplay (NP_BASE *theNP)
 {
   NP_FF *np;
+  INT i;
 
   SmootherDisplay(theNP);
   np = (NP_FF *) theNP;
 
-  UserWriteF("FF specific data:\n");
-  if (NPFF_FF(np) != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"FF",ENVITEM_NAME(NPFF_FF(np)));
+  UserWrite("FF specific data:\n");
 
-#ifdef __THREEDIM__
-  if (NPFF_FF3D(np) != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"FF3D",ENVITEM_NAME(NPFF_FF3D(np)));
-  if (NPFF_aux3D(np) != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux3D",ENVITEM_NAME(NPFF_aux3D(np)));
-  if (NPFF_aux2_3D(np) != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux2_3D",ENVITEM_NAME(NPFF_aux2_3D(np)));
-#endif
-
-  if (NPFF_aux(np) != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux",ENVITEM_NAME(NPFF_aux(np)));
   if (NPFF_tv(np) != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"tv",ENVITEM_NAME(NPFF_tv(np)));
   if (NPFF_tv2(np) != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"tv2",ENVITEM_NAME(NPFF_tv2(np)));
-  if (NPFF_aux2(np) != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux2",ENVITEM_NAME(NPFF_aux2(np)));
-  if (NPFF_aux3(np) != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux3",ENVITEM_NAME(NPFF_aux3(np)));
-  if (NPFF_aux4(np) != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux4",ENVITEM_NAME(NPFF_aux4(np)));
-  if (NPFF_aux5(np) != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux5",ENVITEM_NAME(NPFF_aux5(np)));
-  if (NPFF_aux6(np) != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux6",ENVITEM_NAME(NPFF_aux6(np)));
+
+  UserWrite("matrix hierarchy:");
+  i = 0;
+  while ( (FF_Mats[i] != DUMMY_COMP) && (i < FF_MAX_MATS) )
+    UserWriteF("  %d", FF_Mats[i++] );
+  UserWrite("\naux vector list:");
+  i = 0;
+  while ( (FF_Vecs[i] != DUMMY_COMP) && (i < FF_MAX_VECS) )
+    UserWriteF("  %d", FF_Vecs[i++] );
+  UserWrite("\n");
 
   UserWriteF(DISPLAY_NP_FORMAT_SF,"meshwidth",(double)NPFF_MESHWIDTH(np));
 
@@ -2626,7 +2584,7 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
   NP_FF *np;
   GRID *theGrid;
   DOUBLE wavenr, wavenr3D, meshwidth;
-  INT n;
+  INT i, n;
   BV_DESC bvd;
 
   np = (NP_FF *) theNP;
@@ -2642,29 +2600,13 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
 
   if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L))
     NP_RETURN(1,result[0]);
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&NPFF_FF(np)))
-    NP_RETURN(1,result[0]);
-  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPFF_aux(np)))
-    NP_RETURN(1,result[0]);
   if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPFF_tv(np)))
     NP_RETURN(1,result[0]);
-#ifdef __THREEDIM__
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&NPFF_FF3D(np)))
-    NP_RETURN(1,result[0]);
-  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPFF_aux3D(np)))
-    NP_RETURN(1,result[0]);
-#endif
 
   if (NPFF_DO_FF(np))
   {
     if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPFF_tv2(np)))
       NP_RETURN(1,result[0]);
-    if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPFF_aux2(np)))
-      NP_RETURN(1,result[0]);
-                #ifdef __THREEDIM__
-    if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPFF_aux2_3D(np)))
-      NP_RETURN(1,result[0]);
-                #endif
   }
 
   /* check if all objects are valid and scalar */
@@ -2679,29 +2621,6 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
     NP_RETURN(1,result[0]);
   }
 
-  if ( NPFF_FF(np) == NULL )
-  {
-    PrintErrorMessage( 'E', "FFPreProcess", "Symbol FF is not defined" );
-    NP_RETURN(1,result[0]);
-  }
-  if ( !MD_IS_SCALAR( NPFF_FF(np) ) )
-  {
-    PrintErrorMessage( 'E', "FFPreProcess", "Symbol FF is not scalar" );
-    NP_RETURN(1,result[0]);
-  }
-
-#ifdef __THREEDIM__
-  if ( NPFF_FF3D(np) == NULL )
-  {
-    PrintErrorMessage( 'E', "FFPreProcess", "Symbol FF3D is not defined" );
-    NP_RETURN(1,result[0]);
-  }
-  if ( !MD_IS_SCALAR( NPFF_FF3D(np) ) )
-  {
-    PrintErrorMessage( 'E', "FFPreProcess", "Symbol FF3D is not scalar" );
-    NP_RETURN(1,result[0]);
-  }
-#endif
 
   if ( np->smoother.L == NULL )
   {
@@ -2737,17 +2656,6 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
     NP_RETURN(1,result[0]);
   }
 
-  if ( NPFF_aux(np) == NULL )
-  {
-    PrintErrorMessage( 'E', "FFPreProcess", "Symbol aux is not defined" );
-    NP_RETURN(1,result[0]);
-  }
-  if ( !VD_IS_SCALAR( NPFF_aux(np) ) )
-  {
-    PrintErrorMessage( 'E', "FFPreProcess", "Symbol aux is not scalar" );
-    NP_RETURN(1,result[0]);
-  }
-
   if ( NPFF_tv(np) == NULL )
   {
     PrintErrorMessage( 'E', "FFPreProcess", "Symbol tv is not defined" );
@@ -2771,44 +2679,63 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
       PrintErrorMessage( 'E', "FFPreProcess", "Symbol tv2 is not scalar" );
       NP_RETURN(1,result[0]);
     }
+  }
 
-    if ( NPFF_aux2(np) == NULL )
-    {
-      PrintErrorMessage( 'E', "FFPreProcess", "Symbol aux2 is not defined" );
-      NP_RETURN(1,result[0]);
-    }
-    if ( !VD_IS_SCALAR( NPFF_aux2(np) ) )
-    {
-      PrintErrorMessage( 'E', "FFPreProcess", "Symbol aux2 is not scalar" );
-      NP_RETURN(1,result[0]);
-    }
+  /*	if ( FF_Mats[0] == DUMMY_COMP )
+     {*/
+  /* init the global arrays once ! */
 
-                #ifdef __THREEDIM__
-    if ( NPFF_aux2_3D(np) == NULL )
-    {
-      PrintErrorMessage( 'E', "FFPreProcess", "Symbol aux2_3D is not defined" );
+#ifdef __THREEDIM__
+  n = 2;
+#else
+  n = 1;
+#endif
+
+  /* first component is always the original, global stiffness matrix */
+  if( FF_Mats[0] == DUMMY_COMP )
+    FF_Mats[0] = MD_SCALCMP( A );
+  else
+  {
+    ASSERT(FF_Mats[0]==MD_SCALCMP( A ));
+  }
+
+  for( i=1; i<=n; i++ )
+  {
+    if (AllocMDFromMD(theNP->base.mg,level,level,A,FF_MATDATA_DESC_ARRAY+i))
       NP_RETURN(1,result[0]);
-    }
-    if ( !VD_IS_SCALAR( NPFF_aux2_3D(np) ) )
+    if ( FF_Mats[i] == DUMMY_COMP )
+      FF_Mats[i] = MD_SCALCMP( FF_MATDATA_DESC_ARRAY[i] );
+    else
     {
-      PrintErrorMessage( 'E', "FFPreProcess", "Symbol aux2_3D is not scalar" );
-      NP_RETURN(1,result[0]);
+      ASSERT(FF_Mats[i]==MD_SCALCMP( FF_MATDATA_DESC_ARRAY[i] ));
     }
-                #endif
+  }
+
+  /* in the last component there is stored the LU decomp of elementary blocks */
+  if( FF_Mats[i] == DUMMY_COMP )
+    FF_Mats[i] = MD_SCALCMP( np->smoother.L );
+  else
+  {
+    ASSERT(FF_Mats[i]==MD_SCALCMP( np->smoother.L ));
   }
 
 #ifdef __THREEDIM__
-  if ( NPFF_aux3D(np) == NULL )
-  {
-    PrintErrorMessage( 'E', "FFPreProcess", "Symbol aux3D is not defined" );
-    NP_RETURN(1,result[0]);
-  }
-  if ( !VD_IS_SCALAR( NPFF_aux3D(np) ) )
-  {
-    PrintErrorMessage( 'E', "FFPreProcess", "Symbol aux3D is not scalar" );
-    NP_RETURN(1,result[0]);
-  }
+  n = 2;
+#else
+  n = 1;
 #endif
+
+  if ( NPFF_DO_FF(np) )
+    n *= 2;
+
+  for( i=0; i<n; i++ )
+  {
+    if (AllocVDFromVD(theNP->base.mg,level,level,x,FF_VECDATA_DESC_ARRAY+i))
+      NP_RETURN(1,result[0]);
+    FF_Vecs[i] = VD_SCALCMP( FF_VECDATA_DESC_ARRAY[i] );
+  }
+  /*	}*/
+
 
   if (FF_PrepareGrid( theGrid, &meshwidth, TRUE, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
   {
@@ -2825,13 +2752,7 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
 
     if (NPFF_DO_TFF(np) && TFFDecomp( wavenr, wavenr3D, GFIRSTBV(theGrid), &bvd,
                                       NPFF_BVDF(np),
-                                      MD_SCALCMP( np->smoother.L ),
-                                      MD_SCALCMP( NPFF_FF(np) ),
-                                      MD_SCALCMP( A ),
                                       VD_SCALCMP( NPFF_tv(np) ),
-                                      VD_SCALCMP( NPFF_aux(np) ),
-                                      NPFF_aux3D(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux3D(np) ),
-                                      NPFF_FF3D(np)==NULL ? -1 : MD_SCALCMP( NPFF_FF3D(np) ),
                                       theGrid ) != NUM_OK )
     {
       PrintErrorMessage('E',"FFPreProcess","decomposition failed");
@@ -2839,16 +2760,8 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
     }
     else if (NPFF_DO_FF(np) && FFDecomp( wavenr, wavenr3D, GFIRSTBV(theGrid), &bvd,
                                          NPFF_BVDF(np),
-                                         MD_SCALCMP( np->smoother.L ),
-                                         MD_SCALCMP( NPFF_FF(np) ),
-                                         MD_SCALCMP( A ),
                                          VD_SCALCMP( NPFF_tv(np) ),
                                          VD_SCALCMP( NPFF_tv2(np) ),
-                                         VD_SCALCMP( NPFF_aux(np) ),
-                                         VD_SCALCMP( NPFF_aux2(np) ),
-                                         NPFF_aux3D(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux3D(np) ),
-                                         NPFF_aux2_3D(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux2_3D(np) ),
-                                         NPFF_FF3D(np)==NULL ? -1 : MD_SCALCMP( NPFF_FF3D(np) ),
                                          theGrid ) != NUM_OK )
     {
       PrintErrorMessage('E',"FFPreProcess","decomposition failed");
@@ -2902,26 +2815,36 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
 {
   NP_FF *np;
   MULTIGRID *theMG;
+  INT i;
 
   np = (NP_FF *) theNP;
   theMG = np->smoother.iter.base.mg;
 
-  if (NPFF_FF(np) != NULL)
-    FreeMD(theMG,level,level,NPFF_FF(np));
-  if (NPFF_FF3D(np) != NULL)
-    FreeMD(theMG,level,level,NPFF_FF3D(np));
   if (NPFF_tv(np) != NULL)
     FreeVD(theMG,level,level,NPFF_tv(np));
   if (NPFF_tv2(np) != NULL)
     FreeVD(theMG,level,level,NPFF_tv2(np));
-  if (NPFF_aux(np) != NULL)
-    FreeVD(theMG,level,level,NPFF_aux(np));
-  if (NPFF_aux2(np) != NULL)
-    FreeVD(theMG,level,level,NPFF_aux2(np));
-  if (NPFF_aux3D(np) != NULL)
-    FreeVD(theMG,level,level,NPFF_aux3D(np));
-  if (NPFF_aux2_3D(np) != NULL)
-    FreeVD(theMG,level,level,NPFF_aux2_3D(np));
+
+  for( i=1; i<FF_MAX_MATS; i++ )
+  {
+    if ( FF_MATDATA_DESC_ARRAY[i] != NULL )
+    {
+      FreeMD(theMG,level,level,FF_MATDATA_DESC_ARRAY[i]);
+      FF_MATDATA_DESC_ARRAY[i] = NULL;
+    }
+    FF_Mats[i] = DUMMY_COMP;
+  }
+
+
+  for( i=0; i<FF_MAX_VECS; i++ )
+  {
+    if ( FF_Vecs[i] != DUMMY_COMP )
+    {
+      FreeVD(theMG,level,level,FF_VECDATA_DESC_ARRAY[i]);
+      FF_VECDATA_DESC_ARRAY[i] = NULL;
+      FF_Vecs[i] = DUMMY_COMP;
+    }
+  }
 
   FreeAllBV( GRID_ON_LEVEL(theMG,level) );
   if (MGCreateConnection(theMG))        /* restore the disposed connections */
@@ -2981,7 +2904,6 @@ static INT FFIter (NP_ITER *theNP, INT level,
   GRID *theGrid;
   DOUBLE end_wave, wavenr, start_norm, new_norm;
 
-
   np = (NP_FF *) theNP;
   BVD_INIT( &bvd );
   BVD_PUSH_ENTRY( &bvd, 0, NPFF_BVDF(np) );
@@ -2993,16 +2915,11 @@ static INT FFIter (NP_ITER *theNP, INT level,
 
   if ( !NPFF_ALLFREQ(np) )
   {             /* smooth only for 1 testvector frequency */
-                /* copy defect to aux because FFMultWithMInv destroys its defect */
-    dcopyBS( GFIRSTBV(theGrid), VD_SCALCMP( NPFF_aux(np) ), VD_SCALCMP( b ) );
+                /* copy defect to tv because FFMultWithMInv destroys its defect */
+    dcopyBS( GFIRSTBV(theGrid), VD_SCALCMP( NPFF_tv(np) ), VD_SCALCMP( b ) );
     if (FFMultWithMInv( GFIRSTBV(theGrid), &bvd, NPFF_BVDF(np),
                         VD_SCALCMP( x ),
-                        MD_SCALCMP( A ),
-                        MD_SCALCMP( np->smoother.L ),
-                        VD_SCALCMP( NPFF_aux(np) ),
-                        VD_SCALCMP( NPFF_tv(np) ),
-                        NPFF_aux3D(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux3D(np) ),
-                        MD_SCALCMP( NPFF_FF(np) ) ) != NUM_OK)
+                        VD_SCALCMP( NPFF_tv(np) ) ) != NUM_OK)
     {
       PrintErrorMessage('E',"FFStep","inversion failed");
       NP_RETURN(1,result[0]);
@@ -3027,13 +2944,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
       {
         if ( TFFDecomp( wavenr, wavenr, GFIRSTBV(theGrid), &bvd,
                         NPFF_BVDF(np),
-                        MD_SCALCMP( np->smoother.L ),
-                        MD_SCALCMP( NPFF_FF(np) ),
-                        MD_SCALCMP( A ),
                         VD_SCALCMP( NPFF_tv(np) ),
-                        VD_SCALCMP( NPFF_aux(np) ),
-                        NPFF_aux3D(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux3D(np) ),
-                        NPFF_FF3D(np)==NULL ? -1 : MD_SCALCMP( NPFF_FF3D(np) ),
                         theGrid ) != NUM_OK )
         {
           PrintErrorMessage('E',"FFStep","TFF decomposition failed");
@@ -3046,16 +2957,8 @@ static INT FFIter (NP_ITER *theNP, INT level,
         printf("wavenr %g\n", wavenr);
         if (FFDecomp( wavenr, wavenr, GFIRSTBV(theGrid), &bvd,
                       NPFF_BVDF(np),
-                      MD_SCALCMP( np->smoother.L ),
-                      MD_SCALCMP( NPFF_FF(np) ),
-                      MD_SCALCMP( A ),
                       VD_SCALCMP( NPFF_tv(np) ),
                       VD_SCALCMP( NPFF_tv2(np) ),
-                      VD_SCALCMP( NPFF_aux(np) ),
-                      VD_SCALCMP( NPFF_aux2(np) ),
-                      NPFF_aux3D(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux3D(np) ),
-                      NPFF_aux2_3D(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux2_3D(np) ),
-                      NPFF_FF3D(np)==NULL ? -1 : MD_SCALCMP( NPFF_FF3D(np) ),
                       theGrid ) != NUM_OK )
         {
           PrintErrorMessage('E',"FFStep","FF decomposition failed");
@@ -3067,12 +2970,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
       dcopyBS( GFIRSTBV(theGrid), VD_SCALCMP( NPFF_t(np) ), VD_SCALCMP( b ) );
       if (FFMultWithMInv( GFIRSTBV(theGrid), &bvd, NPFF_BVDF(np),
                           VD_SCALCMP( NPFF_t(np) ),
-                          MD_SCALCMP( A ),
-                          MD_SCALCMP( np->smoother.L ),
-                          VD_SCALCMP( NPFF_t(np) ),
-                          VD_SCALCMP( NPFF_aux(np) ),
-                          NPFF_aux3D(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux3D(np) ),
-                          MD_SCALCMP( NPFF_FF(np) ) ) != NUM_OK)
+                          VD_SCALCMP( NPFF_t(np) ) ) != NUM_OK)
       {
         PrintErrorMessage('E',"FFStep","inversion failed");
         NP_RETURN(1,result[0]);

@@ -50,6 +50,30 @@
 /* number of FF decompositions to be stored as decomposed matrixes */
 #define NUMBER_FF_DECOMPS 1
 
+/* max. depth of matrix hierarchy */
+#define FF_MAX_MATS 10
+
+/* max. number of auxiliary vectors */
+#define FF_MAX_VECS 10
+
+
+#define STIFFMAT_ON_LEVEL(bv)                           (FF_Mats[BVLEVEL(bv)])
+#define DECOMPMAT_ON_LEVEL(bv)                          (FF_Mats[BVLEVEL(bv)+1])
+/* if you are already on the level of the single blocks */
+#define STIFFMAT_ON_LEVEL_BLOCKWISE(bv)         (FF_Mats[BVLEVEL(bv)-1])
+#define DECOMPMAT_ON_LEVEL_BLOCKWISE(bv)        (FF_Mats[BVLEVEL(bv)])
+
+/* realizes a simple stack of aux vectors in the array FF_Vecs
+   CAUTION: the sequence of free's must be exctly the reverse of the get's! */
+#ifdef Debug
+#define GET_AUX_VEC                                     ( (TOS_FF_Vecs<FF_MAX_VECS) ? FF_Vecs[TOS_FF_Vecs++] : -1 )
+#define FREE_AUX_VEC(vec)                       ( (vec==FF_Vecs[TOS_FF_Vecs-1]) ? (void)(TOS_FF_Vecs--) : ASSERT(FALSE) );
+#else
+#define GET_AUX_VEC                                     (FF_Vecs[TOS_FF_Vecs++])
+#define FREE_AUX_VEC(vec)                       (TOS_FF_Vecs--);
+#endif
+
+
 /* solve subproblems in MultWithMInv exactly by recursive solving */
 #define MINV_EXACTQQQ
 
@@ -115,6 +139,14 @@ extern DOUBLE FFEPS;
 /* value below them an approximation error is considered as ok */
 extern DOUBLE FFaccuracy;
 
+/* global array to hold the matrix hierarchy */
+extern INT FF_Mats[FF_MAX_MATS];
+
+/* global array to hold the auxiliary vectors */
+extern INT FF_Vecs[FF_MAX_VECS];
+extern INT TOS_FF_Vecs;
+
+
 /* auxiliary component; only for checking the results (if CHECK_CALCULATION is on) */
 extern INT aux2_COMP;
 
@@ -160,14 +192,9 @@ void FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE waven
 INT FFMultWithMInv( const BLOCKVECTOR *bv,
                     const BV_DESC *bvd,
                     const BV_DESC_FORMAT *bvdf,
-                    INT v_comp, INT L_comp,
-                    INT Tinv_comp,
-                    INT b_comp,
-                    INT aux_comp,
-                    INT auxsub_comp,
-                    INT Lsub_comp );
+                    INT v_comp, INT b_comp );
 
-INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT y_comp, INT T_comp, INT L_comp, INT Tinv_comp, INT x_comp, INT aux_comp, INT auxsub_comp, INT Lsub_comp );
+INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT y_comp, INT x_comp );
 
 INT InitFF (void);
 

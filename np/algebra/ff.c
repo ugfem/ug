@@ -90,8 +90,8 @@ static DOUBLE glob_h;   /* used if THETA_ANA is defined */
 
 #ifdef __BLOCK_VECTOR_DESC__
 
-INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest, const BLOCKVECTOR *bv_source, const BV_DESC *bvd_dest, const BV_DESC *bvd_source, const BV_DESC_FORMAT *bvdf, INT Theta, INT Tinv, INT L, INT tv_comp, INT aux_comp, INT auxsub_comp, INT Lsub_comp );
-INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest, const BLOCKVECTOR *bv_source, const BV_DESC *bvd_dest, const BV_DESC *bvd_source, const BV_DESC_FORMAT *bvdf, INT T_comp, INT Tinv_comp, INT K_comp, INT tv1_comp, INT tv2_comp, INT aux1_comp, INT aux2_comp, INT auxsub_comp, INT Ksub_comp );
+INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest, const BLOCKVECTOR *bv_source, const BV_DESC *bvd_dest, const BV_DESC *bvd_source, const BV_DESC_FORMAT *bvdf, INT tv_comp );
+INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest, const BLOCKVECTOR *bv_source, const BV_DESC *bvd_dest, const BV_DESC *bvd_source, const BV_DESC_FORMAT *bvdf, INT tv1_comp, INT tv2_comp );
 
 INT TFFUpdateDiagBlock( const BLOCKVECTOR *bv_dest, const BV_DESC *bvd_dest, const BV_DESC *bvd_source, const BV_DESC_FORMAT *bvdf, INT T, INT DL, INT Theta, GRID *grid );
 
@@ -157,35 +157,36 @@ INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
                        const BV_DESC *bvd_dest,
                        const BV_DESC *bvd_source,
                        const BV_DESC_FORMAT *bvdf,
-                       INT Theta,
-                       INT Tinv,
-                       INT L,
-                       INT tv_comp,
-                       INT aux_comp,
-                       INT auxsub_comp,
-                       INT Lsub_comp )
+                       INT tv_comp )
 {
   register VECTOR *v_dest, *v_source, *end_dest, *pred_dest, *pred_source, *succ_dest, *succ_source, *start_dest;
   register DOUBLE val, pred_val, succ_val;
   register MATRIX *m;
   INT missed, pred_found, succ_found, pred_in_block, succ_in_block;
+  INT aux_comp, L_comp, Theta_comp;
+
+  aux_comp = GET_AUX_VEC;
+  L_comp = STIFFMAT_ON_LEVEL_BLOCKWISE(bv_dest);
+  Theta_comp = DECOMPMAT_ON_LEVEL_BLOCKWISE(bv_dest);
 
   ASSERT( aux_comp != DUMMY_COMP );
   ASSERT( tv_comp != DUMMY_COMP );
-  ASSERT( L != DUMMY_COMP );
-  ASSERT( Theta != DUMMY_COMP );
+  ASSERT( L_comp != DUMMY_COMP );
+  ASSERT( Theta_comp != DUMMY_COMP );
+  /*ASSERT( L_comp == STIFFMAT_ON_LEVEL_BLOCKWISE(bv_source) );*/
+  /*ASSERT( Theta_comp == DECOMPMAT_ON_LEVEL_BLOCKWISE(bv_source) );*/
 
   /* aux_source := L_(source,dest) * tv_dest */
   dsetBS( bv_source, aux_comp, 0.0 );
-  dmatmulBS( bv_source, bvd_dest, bvdf, aux_comp, L, tv_comp );
+  dmatmulBS( bv_source, bvd_dest, bvdf, aux_comp, L_comp, tv_comp );
 
   /* aux_source = (T_source)^-1 * aux_source */
 #ifdef THETA_EXACT
   dcopyBS( bv_source, aux4_COMP, aux_comp );
   dsetBS( bv_source, aux_comp, 0.0 );
-  gs_solveBS ( bv_source, bvd_source, bvdf, 1e-16, 100, Theta, aux_comp, aux4_COMP, aux5_COMP, TRUE );
+  gs_solveBS ( bv_source, bvd_source, bvdf, 1e-16, 100, Theta_comp, aux_comp, aux4_COMP, aux5_COMP, TRUE );
 #else
-  FFMultWithMInv( bv_source, bvd_source, bvdf, aux_comp, Lsub_comp, Tinv, aux_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+  FFMultWithMInv( bv_source, bvd_source, bvdf, aux_comp, aux_comp );
 #endif
 
   /* calculate Theta */
@@ -208,7 +209,7 @@ INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
       SETVCUSED( v_dest, FALSE );
       m = GetMatrix( v_source, v_dest );
       assert( m != NULL );
-      MVALUE( m, Theta ) = MVALUE( MADJ(m), Theta ) = VVALUE( v_source, aux_comp ) / val;
+      MVALUE( m, Theta_comp ) = MVALUE( MADJ(m), Theta_comp ) = VVALUE( v_source, aux_comp ) / val;
     }
   }
 
@@ -218,7 +219,7 @@ INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
   v_source = BVFIRSTVECTOR( bv_source );
   start_dest = PREDVC( start_dest );
 
-  /*printf( "%4d. block row, theta = %12g lambda = %12g\n", BVNUMBER( bv_dest ), MVALUE(GetMatrix(v_source,v_dest),Theta),1/MVALUE(GetMatrix(v_source,v_dest),Theta));*/
+  /*printf( "%4d. block row, theta = %12g lambda = %12g\n", BVNUMBER( bv_dest ), MVALUE(GetMatrix(v_source,v_dest),Theta_comp),1/MVALUE(GetMatrix(v_source,v_dest),Theta_comp));*/
 
   while( missed > 0 )
   {
@@ -241,13 +242,13 @@ INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
       {
         if ( !VCUSED( pred_dest ) && pred_in_block )
         {
-          pred_val = MVALUE( GetMatrix( pred_source, pred_dest ), Theta );
+          pred_val = MVALUE( GetMatrix( pred_source, pred_dest ), Theta_comp );
           pred_found = TRUE;
         }
 
         if ( !VCUSED( succ_dest ) && succ_in_block )
         {
-          succ_val = MVALUE( GetMatrix( succ_source, succ_dest ), Theta );
+          succ_val = MVALUE( GetMatrix( succ_source, succ_dest ), Theta_comp );
           succ_found = TRUE;
         }
 
@@ -286,13 +287,13 @@ INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
         UserWrite( "Testvector was zero in TFFCalculateTheta.\n" );
         m = GetMatrix( v_source, v_dest );
         assert( m != NULL );
-        MVALUE( m, Theta ) = MVALUE( MADJ(m), Theta ) = 1e11;
+        MVALUE( m, Theta_comp ) = MVALUE( MADJ(m), Theta_comp ) = 1e11;
         REP_ERR_RETURN(NUM_ERROR);
       }
 
       m = GetMatrix( v_source, v_dest );
       assert( m != NULL );
-      MVALUE( m, Theta ) = MVALUE( MADJ(m), Theta ) = val;
+      MVALUE( m, Theta_comp ) = MVALUE( MADJ(m), Theta_comp ) = val;
 
     }             /* if !VCUSED */
 
@@ -300,6 +301,8 @@ INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
     v_source = SUCCVC( v_source );
 
   }       /* while missed */
+
+  FREE_AUX_VEC(aux_comp);
 
   return(NUM_OK);
 }
@@ -367,19 +370,18 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
                                const BV_DESC *bvd_dest,
                                const BV_DESC *bvd_source,
                                const BV_DESC_FORMAT *bvdf,
-                               INT T_comp,
-                               INT Tinv_comp,
-                               INT K_comp,
                                INT tv1_comp,
-                               INT tv2_comp,
-                               INT aux1_comp,
-                               INT aux2_comp,
-                               INT auxsub_comp,
-                               INT Ksub_comp )
+                               INT tv2_comp )
 {
   register VECTOR *vi, *vip1, *end_v;
   register DOUBLE e1i, e2i, e1ip1, e2ip1, a1, a2, det, off_val;
   register MATRIX *m_offdiag;
+  INT aux1_comp, aux2_comp, K_comp, T_comp;
+
+  aux1_comp = GET_AUX_VEC;
+  aux2_comp = GET_AUX_VEC;
+  K_comp = STIFFMAT_ON_LEVEL_BLOCKWISE(bv_dest);
+  T_comp = DECOMPMAT_ON_LEVEL_BLOCKWISE(bv_dest);
 
   ASSERT( aux1_comp != DUMMY_COMP );
   ASSERT( aux2_comp != DUMMY_COMP );
@@ -394,6 +396,8 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
   ASSERT( aux2_comp != tv1_comp );
   ASSERT( aux2_comp != tv2_comp );
   ASSERT( tv1_comp != tv2_comp );
+  /*ASSERT( K_comp == STIFFMAT_ON_LEVEL_BLOCKWISE(bv_source) );*/
+  /*ASSERT( T_comp == DECOMPMAT_ON_LEVEL_BLOCKWISE(bv_source) );*/
 
   /* aux_i := L_(i,i+1) * tv_i+1 */
   dsetBS( bv_source, aux1_comp, 0.0 );
@@ -402,8 +406,8 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
   dmatmulBS( bv_source, bvd_dest, bvdf, aux2_comp, K_comp, tv2_comp );
 
   /* aux_i = (T_i)^-1 * aux_i */
-  FFMultWithMInv( bv_source, bvd_source, bvdf, aux1_comp, Ksub_comp, Tinv_comp, aux1_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
-  FFMultWithMInv( bv_source, bvd_source, bvdf, aux2_comp, Ksub_comp, Tinv_comp, aux2_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+  FFMultWithMInv( bv_source, bvd_source, bvdf, aux1_comp, aux1_comp );
+  FFMultWithMInv( bv_source, bvd_source, bvdf, aux2_comp, aux2_comp );
 
   /* aux_i+1 := L_(i+1,i) * aux_i */
   dsetBS( bv_dest, aux1_comp, 0.0 );
@@ -458,6 +462,9 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
   /* end_v points to last vector and its value is e?ip1 */
   MVALUE( VSTART(end_v), T_comp ) = MVALUE( VSTART(end_v), K_comp ) -
                                     (e1ip1*a1 + e2ip1*a2) / (e1ip1*e1ip1 + e2ip1 * e2ip1);
+
+  FREE_AUX_VEC(aux2_comp);
+  FREE_AUX_VEC(aux1_comp);
 
   return(NUM_OK);
 }
@@ -588,27 +595,39 @@ INT TFFDecomp( DOUBLE wavenr,
                const BLOCKVECTOR *bv,
                const BV_DESC *bvd,
                const BV_DESC_FORMAT *bvdf,
-               INT LU_comp,
-               INT FF_comp,
-               INT K_comp,
                INT tv_comp,
-               INT aux_comp,
-               INT auxsub_comp,
-               INT FFsub_comp,
                GRID *grid )
 {
   register BLOCKVECTOR *bv_i, *bv_im1, *bv_end;
   register BV_DESC *bvd_i, *bvd_im1, *bvd_temp;
   BV_DESC bvd1, bvd2;
+  INT K_comp, FF_comp;
 #ifdef THETA_ANA
   DOUBLE lambda, li, a, bx, by, bz;
   MATRIX *m;
 #endif
 
+  K_comp = STIFFMAT_ON_LEVEL(bv);
+  FF_comp = DECOMPMAT_ON_LEVEL(bv);
+
   if ( BV_IS_LEAF_BV(bv) )
   {
-    dmatcopyBS( bv, bvd, bvdf, LU_comp, K_comp );
-    return LUDecomposeDiagBS( bv, bvd, bvdf, LU_comp, grid );
+    dmatcopyBS( bv, bvd, bvdf, FF_comp, K_comp );
+    return LUDecomposeDiagBS( bv, bvd, bvdf, FF_comp, grid );
+  }
+
+  if ( BV_IS_DIAG_BV(bv) )
+  {
+    bvd1 = *bvd;
+    bv_end = BVDOWNBVEND(bv);
+    for ( bv_i = BVDOWNBV( bv ); bv_i != bv_end; bv_i = BVSUCC( bv_i ) )
+    {
+      BVD_PUSH_ENTRY( &bvd1, BVNUMBER(bv_i), bvdf );
+      TFFDecomp( wavenr, wavenr3D, bv_i, &bvd1, bvdf, tv_comp, grid );
+      BVD_DISCARD_LAST_ENTRY(&bvd1);
+    }
+
+    return(NUM_OK);
   }
 
   /* initialize the BVDs */
@@ -656,7 +675,7 @@ INT TFFDecomp( DOUBLE wavenr,
         bv_im1 = bv_i, bv_i = BVSUCC( bv_i ) )
   {
     /* T_i-1 decompose */
-    TFFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, LU_comp, FFsub_comp, FF_comp, tv_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP, grid );
+    TFFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, tv_comp, grid );
 
     /* calculate Theta_(i-1,i) and Theta_(i,i-1);
        result on off-digonal blocks of FF_comp */
@@ -668,7 +687,7 @@ INT TFFDecomp( DOUBLE wavenr,
     /*printf("theta = %g\n", 1.0 / li );*/
     li = lambda - 1.0 / li;
 #else
-    TFFCalculateTheta( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, FF_comp, LU_comp, K_comp, tv_comp, aux_comp, auxsub_comp, FF_comp );
+    TFFCalculateTheta( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv_comp );
 #endif
 
     /* T_i := D_i + Theta_(i,i-1)*T_i-1*Theta_(i-1,i) -
@@ -683,7 +702,7 @@ INT TFFDecomp( DOUBLE wavenr,
   /* now bv_im1 and bvd_im1 points to the last block */
 
   /* calculate the last (T_n)^-1 */
-  TFFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, LU_comp, FFsub_comp, FF_comp, tv_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP, grid );
+  TFFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, tv_comp, grid );
 
 
 #ifdef CHECK_CALCULATION
@@ -806,29 +825,40 @@ INT FFDecomp( DOUBLE wavenr,
               const BLOCKVECTOR *bv,
               const BV_DESC *bvd,
               const BV_DESC_FORMAT *bvdf,
-              INT LU_comp,
-              INT FF_comp,
-              INT K_comp,
               INT tv1_comp,
               INT tv2_comp,
-              INT aux1_comp,
-              INT aux2_comp,
-              INT auxsub1_comp,
-              INT auxsub2_comp,
-              INT FFsub_comp,
               GRID *grid )
 {
   register BLOCKVECTOR *bv_i, *bv_im1, *bv_end;
   register BV_DESC *bvd_i, *bvd_im1, *bvd_temp;
   BV_DESC bvd1, bvd2;
+  INT K_comp, FF_comp;
 
-  ASSERT( LU_comp != DUMMY_COMP );
+
+  K_comp = STIFFMAT_ON_LEVEL(bv);
+  FF_comp = DECOMPMAT_ON_LEVEL(bv);
+
+  ASSERT( FF_comp != DUMMY_COMP );
   ASSERT( K_comp != DUMMY_COMP );
 
   if ( BV_IS_LEAF_BV(bv) )
   {
-    dmatcopyBS( bv, bvd, bvdf, LU_comp, K_comp );
-    return LUDecomposeDiagBS( bv, bvd, bvdf, LU_comp, grid );
+    dmatcopyBS( bv, bvd, bvdf, FF_comp, K_comp );
+    return LUDecomposeDiagBS( bv, bvd, bvdf, FF_comp, grid );
+  }
+
+  if ( BV_IS_DIAG_BV(bv) )
+  {
+    bvd1 = *bvd;
+    bv_end = BVDOWNBVEND(bv);
+    for ( bv_i = BVDOWNBV( bv ); bv_i != bv_end; bv_i = BVSUCC( bv_i ) )
+    {
+      BVD_PUSH_ENTRY( &bvd1, BVNUMBER(bv_i), bvdf );
+      FFDecomp( wavenr, wavenr3D, bv_i, &bvd1, bvdf, tv1_comp, tv2_comp, grid );
+      BVD_DISCARD_LAST_ENTRY(&bvd1);
+    }
+
+    return(NUM_OK);
   }
 
   ASSERT( tv1_comp != DUMMY_COMP );
@@ -852,13 +882,13 @@ INT FFDecomp( DOUBLE wavenr,
         bv_im1 = bv_i, bv_i = BVSUCC( bv_i ) )
   {
     /* T_i-1 decompose */
-    FFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, LU_comp, FFsub_comp, FF_comp, tv1_comp, tv2_comp, auxsub1_comp, auxsub2_comp, DUMMY_COMP, DUMMY_COMP, DUMMY_COMP, grid );
+    FFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
 
     /* calculate Theta_(i,i);
        result on digonal blocks of FF_comp */
     FFConstructTestvector_loc( bv_i, tv1_comp, wavenr, wavenr3D );
     FFConstructTestvector_loc( bv_i, tv2_comp, wavenr+1.0, wavenr3D );
-    FFCalculateThetaAndUpdate( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, FF_comp, LU_comp, K_comp, tv1_comp, tv2_comp, aux1_comp, aux2_comp, auxsub1_comp, FF_comp );
+    FFCalculateThetaAndUpdate( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv1_comp, tv2_comp );
 
     /* update BVDs for the next loop */
     SWAP( bvd_i, bvd_im1, bvd_temp );
@@ -867,9 +897,9 @@ INT FFDecomp( DOUBLE wavenr,
   /* now bv_im1 and bvd_im1 points to the last block */
 
   /* calculate the last (T_n)^-1 */
-  FFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, LU_comp, FFsub_comp, FF_comp, tv1_comp, tv2_comp, auxsub1_comp,auxsub2_comp, DUMMY_COMP, DUMMY_COMP, DUMMY_COMP, grid );
+  FFDecomp( wavenr, wavenr3D, bv_im1, bvd_im1, bvdf, tv1_comp, tv2_comp, grid );
 
-  /*printvBS(bv, tv_comp); printmBS(bv,bv,K_comp); printmBS(bv,bv,FF_comp); printmBS(bv,bv,LU_comp); printf("\n");*/
+  /*printvBS(bv, tv1_comp);printvBS(bv, tv2_comp); printmBS(bv,bv,K_comp); printmBS(bv,bv,FF_comp); printf("\n");*/
   return(NUM_OK);
 }
 
@@ -990,11 +1020,11 @@ INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *
     /*FFConstructTestvector( bv, tv_comp, (double)(1<<i), (double)(1<<j) );*/
 
     /* Calculates the TFF decomposition of M = (L + T) * T^-1 * (L^T + T) */
-    TFFDecomp( (double)(1<<i), (double)(1<<j), bv, bvd, bvdf, LU_comp, FF_comp, K_comp, tv_comp, aux_comp, auxsub_comp, FFsub_comp, grid );
+    TFFDecomp( (double)(1<<i), (double)(1<<j), bv, bvd, bvdf, tv_comp, grid );
 
     /* cor := M^-1 * f */
     dcopyBS( bv, cor_comp, f_comp );
-    FFMultWithMInv( bv, bvd, bvdf, cor_comp, K_comp, LU_comp, cor_comp, aux_comp, auxsub_comp, FF_comp );
+    FFMultWithMInv( bv, bvd, bvdf, cor_comp, cor_comp );
 
 #ifdef CHECK_CALCULATION
     {

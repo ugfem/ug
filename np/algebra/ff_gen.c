@@ -100,6 +100,14 @@ DOUBLE FFEPS = 1e-16;
 /* value below them an approximation error is considered as ok */
 DOUBLE FFaccuracy = 1e-10;
 
+/* global array to hold the matrix hierarchy */
+INT FF_Mats[FF_MAX_MATS];
+
+/* global array to hold the auxiliary vectors */
+INT FF_Vecs[FF_MAX_VECS];
+INT TOS_FF_Vecs = 0;
+
+
 /* auxiliary component; only for checking the results (if CHECK_CALCULATION is on) */
 INT aux2_COMP = DUMMY_COMP;
 
@@ -482,9 +490,10 @@ static void printBVrec( BLOCKVECTOR *bv_first, char *indent, const BV_DESC *bvd_
     printf( "%s Nr. %d ", indent, BVNUMBER(bv) );
     if ( BVNUMBEROFVECTORS(bv) != 0 )
     {
-      printf( "number of vectors %d ", BVNUMBEROFVECTORS(bv) );
-      printf( "first vector %d ", VINDEX(BVFIRSTVECTOR(bv)) );
-      printf( "last vector %d\n", VINDEX(BVLASTVECTOR(bv)) );
+      printf( "number of vectors %2d ", BVNUMBEROFVECTORS(bv) );
+      printf( "first vector %3d ", VINDEX(BVFIRSTVECTOR(bv)) );
+      printf( "last vector %3d ", VINDEX(BVLASTVECTOR(bv)) );
+      printf( "level %2d\n", BVLEVEL(bv) );
 
       if ( bvdf != NULL )
       {
@@ -712,6 +721,7 @@ INT FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_c
 #endif /* weglassen */
 
   /*printmBS( bv_inner, bv_inner, 0 );*/
+  printBV( bvdf );
 
   return 0;
 }
@@ -792,7 +802,7 @@ void FFConstructTestvector( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, D
       pos += hkpi;
     }
 #else
-    ASSERT( BVDOWNTYPE(bv) == BVDOWNTYPEBV );
+    ASSERT( !BV_IS_LEAF_BV(bv) );
     bv_i = BVDOWNBV(bv);
     bv_end = BVDOWNBVEND(bv);
 
@@ -866,7 +876,7 @@ static void MeshwidthForFFConstructTestvector_loc( const VECTOR *v, const VECTOR
   if( (*meshwidth = fabs( *coord - pos2[0] )) > 1e-6 )
   {
     /* assert that the 2 points are on the same vertical line */
-    ASSERT( fabs(pos1[1] - pos2[1]) <= 1e-6 );
+    /*		ASSERT( fabs(pos1[1] - pos2[1]) <= 1e-6 );*/ /* comment out because of cross points */
   }
   else
   {
@@ -874,7 +884,7 @@ static void MeshwidthForFFConstructTestvector_loc( const VECTOR *v, const VECTOR
     if( (*meshwidth = fabs( *coord - pos2[1] )) <= 1e-6 )
     {
       /* if not on the same vertical line then an error */
-      ASSERT( FALSE );
+      /*			ASSERT( FALSE );*/ /* comment out because of cross points */
     }
   }
 
@@ -971,7 +981,7 @@ void FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE waven
   else
   /* 3D block */
   {
-    ASSERT( BVDOWNTYPE(bv) == BVDOWNTYPEBV );
+    ASSERT( !BV_IS_LEAF_BV(bv) );
     bv_i = BVDOWNBV(bv);
     bv_end = BVDOWNBVEND(bv);
     v = BVFIRSTVECTOR(bv_i);
@@ -1062,11 +1072,16 @@ void FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE waven
    D*/
 /****************************************************************************/
 
-INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT y_comp, INT T_comp, INT L_comp, INT Tinv_comp, INT x_comp, INT aux_comp, INT auxsub_comp, INT Lsub_comp )
+INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT y_comp, INT x_comp )
 {
   register BLOCKVECTOR *bv_i, *bv_ip1, *bv_stop;
   register BV_DESC *bvd_i, *bvd_ip1, *bvd_temp;
   BV_DESC bvd1, bvd2;
+  INT aux_comp, L_comp, T_comp;
+
+  aux_comp = GET_AUX_VEC;
+  L_comp = STIFFMAT_ON_LEVEL(bv);
+  T_comp = DECOMPMAT_ON_LEVEL(bv);
 
   /* To minimize the incrementation of BVDs there are used two (one for
      index i and the other for index i+1) which are swapped in the loop;
@@ -1090,7 +1105,7 @@ INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
     dmatmulBS( bv_i, bvd_ip1, bvdf, aux_comp, L_comp, x_comp );
 
     /* aux_i := (T_i)^-1 * aux_i */
-    FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, Lsub_comp, Tinv_comp, aux_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+    FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, aux_comp );
 
     /* aux_i += x_i */
     daddBS( bv_i, aux_comp, x_comp );
@@ -1136,6 +1151,8 @@ INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
   /* y_0 += T_0 * aux_0 */
   dmatmulBS( bv_ip1, bvd_ip1, bvdf, y_comp, T_comp, aux_comp );
 
+  FREE_AUX_VEC(aux_comp);
+
   return NUM_OK;
 }
 
@@ -1149,24 +1166,14 @@ INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
                                                 const BV_DESC *bvd,
                                                 const BV_DESC_FORMAT *bvdf,
                                                 INT v_comp,
-                                                INT L_comp,
-                                                INT Tinv_comp,
-                                                INT b_comp,
-                                                INT aux_comp,
-                                                INT auxsub_comp,
-                                                INT Lsub_comp );
+                                                INT b_comp );
 
    PARAMETERS:
    .  bv - blockvector covering M
    .  bvd - description of the blockvector
    .  bvdf - format to interpret the 'bvd'
    .  v_comp - position of the result in the VECTOR-data
-   .  L_comp - position of the off-diagonal blocks of the stiffness matrix
-   .  Tinv_comp - position of the LU-decomposed diagonal blocks
    .  b_comp - position of the right hand side vector in the VECTOR-data
-   .  aux_comp - position of the auxiliary-component in the VECTOR-data
-   .  auxsub_comp - position of the auxiliary-component for subproblems (only 3D)
-   .  Lsub_comp - position of the off-diagonal blocks of the subproblem-matrix (only 3D)
 
    DESCRIPTION:
    'M' is an frequency filtered decomposed matrix as produced by 'TFFDecomp'
@@ -1205,43 +1212,43 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
                     const BV_DESC *bvd,
                     const BV_DESC_FORMAT *bvdf,
                     INT v_comp,
-                    INT L_comp,
-                    INT Tinv_comp,
-                    INT b_comp,
-                    INT aux_comp,
-                    INT auxsub_comp,
-                    INT Lsub_comp )
+                    INT b_comp )
 {
   register BLOCKVECTOR *bv_i, *bv_ip1, *bv_stop;
   register BV_DESC *bvd_i, *bvd_ip1, *bvd_temp;
   BV_DESC bvd1, bvd2;
+  INT aux_comp, auxsub_comp, L_comp;
 
   if ( BV_IS_LEAF_BV(bv) )
   {
-    solveLUMatBS( bv, bvd, bvdf, v_comp, Tinv_comp, b_comp );
+    solveLUMatBS( bv, bvd, bvdf, v_comp, DECOMPMAT_ON_LEVEL(bv), b_comp );
     return NUM_OK;
   }
 
+  if ( BV_IS_DIAG_BV(bv) )
+  {
+    bvd1 = *bvd;
+    bv_stop = BVDOWNBVEND(bv);
+    for ( bv_i = BVDOWNBV( bv ); bv_i != bv_stop; bv_i = BVSUCC( bv_i ) )
+    {
+      BVD_PUSH_ENTRY( &bvd1, BVNUMBER(bv_i), bvdf );
+      FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, b_comp );
+      BVD_DISCARD_LAST_ENTRY(&bvd1);
+    }
+
+    return(NUM_OK);
+  }
+
+  aux_comp = GET_AUX_VEC;
+  L_comp = STIFFMAT_ON_LEVEL( bv );
+
   ASSERT( v_comp != aux_comp );
   ASSERT( b_comp != aux_comp );
-  ASSERT( L_comp != Tinv_comp );
-
-  IFDEBUG(np,0)
-  if ( auxsub_comp != DUMMY_COMP )
-  {
-    ASSERT( auxsub_comp != v_comp );
-    ASSERT( auxsub_comp != b_comp );
-    ASSERT( auxsub_comp != aux_comp );
-    ASSERT( Lsub_comp != DUMMY_COMP );
-    ASSERT( Lsub_comp != L_comp );
-    ASSERT( Lsub_comp != Tinv_comp );
-  }
-  ENDDEBUG
 
   /* To minimize the incrementation of BVDs there are used two (one for
      index i and the other for index i+1) which are swapped in the loop;
      thus only one incrementation by 2 is necessary */
-    bvd1 = bvd2 = *bvd;
+  bvd1 = bvd2 = *bvd;
   bvd_i = &bvd1;
   bvd_ip1 = &bvd2;
   BVD_PUSH_ENTRY( &bvd1, 0, bvdf );
@@ -1262,7 +1269,7 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
       /*gs_solveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF3D_COMP, aux_comp, b_comp, aux5_COMP, TRUE );*/
       FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, Lsub_comp, Tinv_comp, b_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
 #else
-    FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, Lsub_comp, Tinv_comp, b_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+    FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, b_comp );
 #endif
 
     /* b_i+1 -= L_(i+1,i) * aux_i */
@@ -1280,7 +1287,7 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
     /*gssolveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF3D_COMP, aux_comp, b_comp, aux5_COMP, TRUE );*/
     FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, Lsub_comp, Tinv_comp, b_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
 #else
-  FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, Lsub_comp, Tinv_comp, b_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+  FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, b_comp );
 #endif
 
   /* solve upper triangular matrix; the last block is already calculated */
@@ -1304,7 +1311,7 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
       /*gs_solveBS ( bv_i, bvd_i, bvdf, 1e-16, 100, FF3D_COMP, v_comp, aux4_COMP, aux5_COMP, TRUE );*/
       FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, Lsub_comp, Tinv_comp, v_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
 #else
-    FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, Lsub_comp, Tinv_comp, v_comp, auxsub_comp, DUMMY_COMP, DUMMY_COMP );
+    FFMultWithMInv( bv_i, bvd_i, bvdf, v_comp, v_comp );
 #endif
 
     /* v_i := aux_i - v_i */
@@ -1314,6 +1321,8 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
     SWAP( bvd_i, bvd_ip1, bvd_temp );
     BVD_DEC_LAST_ENTRY( bvd_i, 2, bvdf );
   }
+
+  FREE_AUX_VEC( aux_comp );
 
   return NUM_OK;
 }
