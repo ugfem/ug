@@ -116,7 +116,9 @@ typedef struct message MESSAGE ;
 /****************************************************************************/
 
 /* Revision Control System string */
-RCSID("$Header$",PPIF_RCS_STRING)
+/*
+   RCSID("$Header$",PPIF_RCS_STRING)
+ */
 
 
 /****************************************************************************/
@@ -324,6 +326,7 @@ int InitPPIF (int *argcp, char ***argvp)
   tids[0] = pvm_parent();
   if (tids[0]<0)
   {
+    int debug_flag = 0;
     tids[0] = mytid;
     me = 0;
 
@@ -331,7 +334,8 @@ int InitPPIF (int *argcp, char ***argvp)
     configok = 0;
     DimZ = 1;
     for (i=1; i<*argcp; i++)
-      if (strncmp((*argvp)[i],"-sz",2)==0)
+    {
+      if (strncmp((*argvp)[i],"-sz",3)==0)
       {
         int j;
 
@@ -349,8 +353,27 @@ int InitPPIF (int *argcp, char ***argvp)
         *argcp = *argcp - 3;
         for(j=i; j<*argcp; j++)
           (*argvp)[j] = (*argvp)[j+3];
-        break;
+
+        i--; continue;
       }
+
+      /* debug flag for switching PvmTaskDebug on (default: off) */
+      if (strcmp((*argvp)[i],"-d")==0)
+      {
+        int j;
+
+        debug_flag = 1;
+
+        /* remove used arguments from arglist, 960409 KB */
+        *argcp = *argcp - 1;
+        for(j=i; j<*argcp; j++)
+          (*argvp)[j] = (*argvp)[j+1];
+
+        i--; continue;
+      }
+    }
+
+
     if (!configok)
     {
       error = pvm_config(&nhost,&narch,&hostp);
@@ -376,7 +399,9 @@ int InitPPIF (int *argcp, char ***argvp)
     {
       pvm_catchout(stdout);
 
-      error=pvm_spawn((*argvp)[0],(char **) 0,PvmTaskDebug,"",procs-1,&tids[1]);
+      error=pvm_spawn((*argvp)[0],(char **) 0,
+                      (debug_flag) ? PvmTaskDebug : 0, "", procs-1, &tids[1]);
+
       if (error<procs-1)
       {
         printf("Error in spawning tasks error=%d\n",error);
