@@ -1,18 +1,83 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/****************************************************************************/
+/*																			*/
+/* File:	  lb.c													        */
+/*																			*/
+/* Purpose:   a collect of simple and special load balancing functionality  */
+/*																			*/
+/* Author:	  Stefan Lang, Klaus Birken, Christian Wieners	                        */
+/*			  Institut fuer Computeranwendungen III                                                 */
+/*			  Universitaet Stuttgart										*/
+/*			  Pfaffenwaldring 27											*/
+/*			  70550 Stuttgart												*/
+/*																			*/
+/* History:   960906 kb  begin                                                                                          */
+/*            980204 sl  renamed test.c to lb.c                             */
+/*																			*/
+/* Remarks:                                                                                                                             */
+/*																			*/
+/****************************************************************************/
+
 #ifdef ModelP
 
+/****************************************************************************/
+/*																			*/
+/* include files															*/
+/*			  system include files											*/
+/*			  application include files                                                                     */
+/*																			*/
+/****************************************************************************/
 
 #include <stdio.h>
-
 
 #include "parallel.h"
 #include "general.h"
 #include "ugm.h"
 #include "devices.h"
 
+/****************************************************************************/
+/*																			*/
+/* defines in the following order											*/
+/*																			*/
+/*		  compile time constants defining static data size (i.e. arrays)	*/
+/*		  other constants													*/
+/*		  macros															*/
+/*																			*/
+/****************************************************************************/
+
+
+/****************************************************************************/
+/*																			*/
+/* data structures used in this source file (exported data structures are	*/
+/*		  in the corresponding include file!)								*/
+/*																			*/
+/****************************************************************************/
+
+
+/****************************************************************************/
+/*																			*/
+/* definition of exported global variables									*/
+/*																			*/
+/****************************************************************************/
+
+
+/****************************************************************************/
+/*																			*/
+/* definition of variables global to this source file only (static!)		*/
+/*																			*/
+/****************************************************************************/
+
+REP_ERR_FILE;
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
+
+/****************************************************************************/
+/*																			*/
+/* forward declarations of functions used before they are defined			*/
+/*																			*/
+/****************************************************************************/
 
 
 /****************************************************************************/
@@ -200,10 +265,10 @@ static int CreateDD(GRID *theGrid, int hor_boxes, int vert_boxes )
 
 /****************************************************************************/
 /*
-   ddd_test -
+   lbs -  interface for simple or special load balancing functionality
 
    SYNOPSIS:
-   void ddd_test (char *argv, MULTIGRID *theMG);
+   void lbs (char *argv, MULTIGRID *theMG);
 
    PARAMETERS:
    .  argv
@@ -216,7 +281,7 @@ static int CreateDD(GRID *theGrid, int hor_boxes, int vert_boxes )
  */
 /****************************************************************************/
 
-void ddd_test (char *argv, MULTIGRID *theMG)
+void lbs (char *argv, MULTIGRID *theMG)
 {
   int n,mode,param,fromlevel,tolevel,part,hor_boxes,vert_boxes,dest;
 
