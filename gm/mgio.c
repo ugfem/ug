@@ -295,13 +295,14 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
   /* now special mode */
   if ((*Read_string)(mg_general->DomainName)) return (1);
   if ((*Read_string)(mg_general->Formatname)) return (1);
-  if ((*Read_mint)(6,intList)) return (1);
-  mg_general->nLevel              = intList[0];
-  mg_general->nNode               = intList[1];
-  mg_general->nPoint              = intList[2];
-  mg_general->nElement    = intList[3];
-  mg_general->nHierElem   = intList[4];
-  mg_general->VectorTypes = intList[5];
+  if ((*Read_mint)(7,intList)) return (1);
+  mg_general->dim                 = intList[0];
+  mg_general->nLevel              = intList[1];
+  mg_general->nNode               = intList[2];
+  mg_general->nPoint              = intList[3];
+  mg_general->nElement    = intList[4];
+  mg_general->nHierElem   = intList[5];
+  mg_general->VectorTypes = intList[6];
 
   return (0);
 }
@@ -355,13 +356,14 @@ int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
   /* now special mode */
   if ((*Write_string)(mg_general->DomainName)) return (1);
   if ((*Write_string)(mg_general->Formatname)) return (1);
-  intList[0] = mg_general->nLevel;
-  intList[1] = mg_general->nNode;
-  intList[2] = mg_general->nPoint;
-  intList[3] = mg_general->nElement;
-  intList[4] = mg_general->nHierElem;
-  intList[5] = mg_general->VectorTypes;
-  if ((*Write_mint)(6,intList)) return (1);
+  intList[0] = mg_general->dim;
+  intList[1] = mg_general->nLevel;
+  intList[2] = mg_general->nNode;
+  intList[3] = mg_general->nPoint;
+  intList[4] = mg_general->nElement;
+  intList[5] = mg_general->nHierElem;
+  intList[6] = mg_general->VectorTypes;
+  if ((*Write_mint)(7,intList)) return (1);
 
   return (0);
 }

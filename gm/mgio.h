@@ -131,6 +131,7 @@ struct mgio_mg_general {
   int nHierElem;                        /* nb of son elements							*/
 
   /* information on geometry */
+  int dim;                                                              /* dimension						*/
   char DomainName[MGIO_NAMELEN];                /* name of domain in ug				*/
 
   /* information on algebraic structure */

@@ -355,6 +355,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   if (strcmp(p,".asc")==0) mg_general.mode = 0;
   else if (strcmp(p,".bin")==0) mg_general.mode = 1;
   else return (1);
+  mg_general.dim                  = DIM;
   mg_general.nLevel               = 1;
   mg_general.nNode                = NN(theGrid);
   mg_general.nPoint               = NV(theGrid);
@@ -553,6 +554,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   /* open file */
   if (Read_OpenFile (FileName))                                                                           {return (NULL);}
   if (Read_MG_General(&mg_general))                                                                       {CloseFile (); return (NULL);}
+  if (mg_general.dim!=DIM)                                                                                        {UserWrite("ERROR: wrong dimension\n");CloseFile (); return (NULL);}
 
   /* BVP and format */
   if (BVPName==NULL) strcpy(BndValName,mg_general.DomainName);
