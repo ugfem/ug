@@ -2085,7 +2085,7 @@ INT CreateStandardNodeRestProl (GRID *FineGrid, INT ncomp)
   for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {
     vf = NVECTOR(theNode);
-    if (NFATHER(theNode)!=NULL)             /* This node is also in the coarse grid */
+    if (CORNERTYPE(theNode))             /* This node is also in the coarse grid */
     {
       vc = NVECTOR(NFATHER(theNode));
       /* allocate restriction matrix entry */
