@@ -88,6 +88,20 @@ static int SkipBTN (void)
   return (0);
 }
 
+static int SkipEOL (void)
+{
+  int c;
+
+  while (1)
+  {
+    c = fgetc(stream);
+    if (c==EOF) return (1);
+    if (c=='\n') break;
+  }
+
+  return (0);
+}
+
 static int ReadCommentLine (char *comment)
 {
   char buffer[256];
@@ -123,12 +137,12 @@ static int ReadCommentLine (char *comment)
 /****************************************************************************/
 
 static int nSubdomain, nLine;
-static fpos_t filepos;
+static fpos_t filepos,UnitInfoFilepos;
 static HEAP *theHeap;
 
 int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info)
 {
-  int i;
+  int i,nUnit;
   char buffer[256];
 
   /* store heapptr */
@@ -170,6 +184,17 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info)
   if (SkipBTN()) return (1);
   if (fscanf(stream,"convex = %d",&i)!=1) return (1);
   domain_info->Convex = i;
+
+  /********************/
+  /* skip unit-Info   */
+  /********************/
+
+  /* if comment: read Unit-Info */
+  if (ReadCommentLine("Unit-Info")) return (1);
+  if (SkipBTN()) return (1);
+  if (fgetpos(stream, &UnitInfoFilepos)) return (1);
+  while (fscanf(stream,"name %d",&i)==1)
+    if (SkipEOL()) return (1);
 
   /* get number of subdomain and line */
   if (SkipBTN()) return (1);
@@ -339,7 +364,8 @@ int LGM_ReadLines (int dummy, LGM_LINE_INFO *line_info)
 
 int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
 {
-  int i,n,line_i;
+  int i,n,line_i,found;
+  char buffer[256];
 
   /* read subdomain information */
   if (fsetpos(stream, &filepos)) return (1);
@@ -354,6 +380,7 @@ int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
     if (SkipBTN()) return (1);
     if (fscanf(stream,"right=%d;",&i)!=1) return (1);
     if (i==subdom_i) subdom_info->LineNumber[n++] = line_i;
+    strcpy(subdom_info->Name,"-");
 
     if (SkipBTN()) return (1);
     if (fscanf(stream,"points: %d",&i)!=1) return (1);
@@ -364,6 +391,22 @@ int LGM_ReadSubDomain (int subdom_i, LGM_SUBDOMAIN_INFO *subdom_info)
     }
     line_i++;
   }
+
+  /* scan Unit-Info */
+  if (fgetpos(stream, &filepos)) return (1);
+  if (fsetpos(stream, &UnitInfoFilepos)) return (1);
+  found = 0;
+  while(1)
+  {
+    if (fscanf(stream,"name %d:",&i)!=1) break;
+    if (i==subdom_i) found++;
+    while (fscanf(stream," %d",&i)==1)
+      if (i==subdom_i) found++;
+    if (found>1) return (1);
+    if (fscanf(stream,"%s",buffer)!=1) return (1);
+    strcpy(subdom_info->Name,buffer);
+  }
+  if (fsetpos(stream, &filepos)) return (1);
 
   return (0);
 }
