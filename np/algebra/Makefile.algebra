@@ -10,7 +10,7 @@
 include $(UGROOT)/ug.conf
 
 OBJECTS = ugblas.o ugiter.o transgrid.o block.o quadrature.o fvgeom.o fegeom.o\
-	  ff_gen.o ff.o amgtools.o
+	  ff_gen.o ff.o amgtools.o npcheck.o
 
 $(UG_LIB) : $(OBJECTS) Makefile.algebra
 	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
