@@ -984,114 +984,68 @@ NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,int edge,NODE *after)
 /****************************************************************************/
 
 #ifdef __THREEDIM__
-NODE *CreateSideNode (GRID *theGrid,ELEMENT *theElement,NODE *Node0, NODE *Node1,NODE *after)
+NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 {
-  ELEMENTSIDE   *theSide;
-  ELEMENT           *BoundaryElement;
-  COORD s,smin;
-  COORD x[3], r[3], ropt[3], l[2], dl[2], Inverse[9], Matrix[9];
-  COORD_VECTOR HelpVector;
-  COORD             *lambda, *lambda1, *lambda2, *cvect, **Corners;
-  INT n,i,ni0,ni1,iopt;
-  VERTEX            *theVertex, *v1, *v2;
-  VSEGMENT          *vs1,*vs2, *vs;
-  NODE              *theNode;
-  PATCH         *thePatch;
+  ELEMENTSIDE *theSide;
+  VSEGMENT *vs;
+  PATCH *thePatch;
+  COORD *global,*local,*lambda;
+  COORD_VECTOR x;
+  INT n,j,k;
+  VERTEX *theVertex;
+  NODE *theNode;
+  DOUBLE fac, diff;
 
-  /* calculate midpoint of side */
-  v1      = MYVERTEX(Node0);
-  v2      = MYVERTEX(Node1);
-
-  /* calculate physical position of SideNode */
-  V3_LINCOMB(0.5, CVECT(v1), 0.5, CVECT(v2), x);
-
-  /* check for boundary node */
+  n = CORNERS_OF_SIDE(theElement,side);
+  fac = 1.0 / n;
   theVertex = NULL;
-  if (OBJT(v1) == BVOBJ && OBJT(v2) == BVOBJ)
+
+  /* check if boundary vertex */
+  if (OBJT(theElement) == BEOBJ)
   {
-    /* We now assume, that the edge is on the boundary if and only if	*/
-    /* there is at least one boundary segment containing both vertices. */
-    /* This works if we assume that there is no level 0 element                 */
-    /* with a boundary side covering more than one boundary segment.	*/
-    /* See also "InsertElementCommand" in "plot3d.c".					*/
-
-    for (vs1=VSEG(v1); vs1!=NULL; vs1=NEXTSEG(vs1))
+    theSide = SIDE(theElement,side);
+    if (theSide != NULL)
     {
-      for (vs2=VSEG(v2); vs2!=NULL; vs2=NEXTSEG(vs2))
+      theVertex = CreateBoundaryVertex(theGrid,NULL);
+      if (theVertex == NULL) return(NULL);
+
+      if ((vs = CreateVertexSegment(theGrid,theVertex)) == NULL)
       {
-        if (VS_PATCH(vs1) == VS_PATCH(vs2))
-        {
-          if (theVertex == NULL)
-          {
-            theVertex = CreateBoundaryVertex(theGrid,NULL);
-            cvect = CVECT(theVertex);
-          }
-          if (theVertex == NULL) return(NULL);
+        DisposeVertex(theGrid, theVertex);
+        return(NULL);
+      }
 
-          if ((vs = CreateVertexSegment(theGrid,theVertex)) == NULL)
-          {
-            DisposeVertex(theGrid, theVertex);
-            return(NULL);
-          }
-          thePatch = VS_PATCH(vs) = VS_PATCH(vs1);
+      global = CVECT(theVertex);
+      local = LCVECT(theVertex);
+      lambda  = PVECT(vs);
+      V_DIM_CLEAR(local);
+      V_DIM_CLEAR(global);
+      V2_CLEAR(lambda);
+      for (j=0; j<n; j++)
+      {
+        k = CORNER_OF_SIDE(theElement,side,j);
+        V_DIM_LINCOMB(1.0,local,1.0,
+                      LOCAL_COORD_OF_ELEM(theElement,k),local);
+        V_DIM_LINCOMB(1.0,global,1.0,
+                      CVECT(MYVERTEX(CORNER(theElement,k))),global);
+        V2_LINCOMB(1.0,lambda,1.0,
+                   PARAMPTR(theSide,j),lambda);
+      }
+      V_DIM_SCALE(fac,local);
+      V_DIM_SCALE(fac,global);
+      V_DIM_SCALE(fac,lambda);
 
-          /* find optimal parameters for this segment */
-          lambda1 = PVECT(vs1);
-          lambda2 = PVECT(vs2);
-          lambda  = PVECT(vs);
+      thePatch = ES_PATCH(theSide);
+      VS_PATCH(vs) = thePatch;
+      if (Patch_local2global(thePatch,lambda,x))
+        return (NULL);
 
-          /* test midpoint */
-          lambda[0] = 0.5*(lambda1[0] + lambda2[0]);
-          lambda[1] = 0.5*(lambda1[1] + lambda2[1]);
-
-          if (Patch_local2global(thePatch,lambda,ropt))
-            return (NULL);
-
-          V3_EUKLIDNORM_OF_DIFF(x,ropt,smin)
-
-          if (smin>MAX_PAR_DIST)                               /* perhaps not the midpoint */
-          {
-            l[0] = lambda1[0];
-            l[1] = lambda1[1];
-
-            assert (RESOLUTION > 0);
-            dl[0] = (lambda2[0] - lambda1[0])/((COORD) RESOLUTION);
-            dl[1] = (lambda2[1] - lambda1[1])/((COORD) RESOLUTION);
-
-            for (i=0; i<=RESOLUTION; i++)
-            {
-              if (Patch_local2global(thePatch,l,r))
-                return (NULL);
-              V3_EUKLIDNORM_OF_DIFF(x,r,s)
-              if (s<smin)
-              {
-                smin = s;
-                lambda[0] = l[0];
-                lambda[1] = l[1];
-                V3_COPY(r,ropt);
-              }
-              l[0]+=dl[0];
-              l[1]+=dl[1];
-            }
-          }
-
-          /* if it is the first vertex segment found fill in geometric data else compare with other vertex segments */
-          if (NEXTSEG(vs) == NULL)
-          {
-            V3_COPY(ropt,cvect);
-            SETMOVED(theVertex, smin>MAX_PAR_DIST);
-          }
-          else
-          {
-            V3_EUKLIDNORM_OF_DIFF(cvect,ropt,s)
-            if (s>MAX_PAR_DIST)
-            {
-              DisposeVertex(theGrid,theVertex);
-              UserWrite("two boundary segments with a common edge are not consistent\n");
-              return(NULL);
-            }
-          }
-        }
+      /* check if moved */
+      V3_EUKLIDNORM_OF_DIFF(x,global,diff);
+      if (diff>MAX_PAR_DIST)
+      {
+        SETMOVED(theVertex,1);
+        V3_COPY(x,global);
       }
     }
   }
@@ -1100,52 +1054,35 @@ NODE *CreateSideNode (GRID *theGrid,ELEMENT *theElement,NODE *Node0, NODE *Node1
   {
     theVertex = CreateInnerVertex(theGrid,NULL);
     if (theVertex == NULL) return(NULL);
-    V3_COPY(x,CVECT(theVertex));
+    global = CVECT(theVertex);
+    local = LCVECT(theVertex);
+    V_DIM_CLEAR(local);
+    V_DIM_CLEAR(global);
+    for (j=0; j<n; j++)
+    {
+      k = CORNER_OF_SIDE(theElement,side,j);
+      V_DIM_LINCOMB(1.0,local,1.0,
+                    LOCAL_COORD_OF_ELEM(theElement,k),local);
+      V_DIM_LINCOMB(1.0,global,1.0,
+                    CVECT(MYVERTEX(CORNER(theElement,k))),global);
+    }
+    V_DIM_SCALE(fac,local);
+    V_DIM_SCALE(fac,global);
   }
-
   VFATHER(theVertex) = theElement;
 
   /* create node */
-  theNode = CreateNode(theGrid,after);
+  theNode = CreateNode(theGrid,NULL);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
     return(NULL);
   }
   MYVERTEX(theNode) = theVertex;
+  TOPNODE(theVertex) = theNode;
   NFATHER(theNode) = NULL;
   SETNTYPE(theNode,SIDE_NODE);
-
-  /* local coordinates for the reference tetrahedron */
-  if (!MOVED(theVertex))
-  {
-    XI(theVertex)  = 0.5*(XI(v1)+XI(v2));
-    ETA(theVertex) = 0.5*(ETA(v1)+ETA(v2));
-    NU(theVertex)  = 0.5*(NU(v1)+NU(v2));
-  }
-  else
-  {
-    /* Get global coordinates */
-    CORNER_COORDINATES(theElement,n,Corners);
-
-    /* Get global coordinates */
-    V3_COPY(CVECT(theVertex),x);
-
-    /* Set initial guess to local coordinates, */
-    /* as if the node was not moved.           */
-    r[0] = 0.5*(XI(v1)+XI(v2));
-    r[1] = 0.5*(ETA(v1)+ETA(v2));
-    r[2] = 0.5*(NU(v1)+NU(v2));
-
-    /* Compute local coordinates
-       if (GlobalToLocal3d(n,Corners,x,r)!=0)
-       {
-            UserWrite(" *** CreateSideNode: can't move node !\n");
-            return (NULL);
-       }
-       else */
-    V3_COPY(r,LCVECT(theVertex));
-  }
+  theGrid->status |= 1;
 
   return(theNode);
 }
@@ -1165,29 +1102,32 @@ NODE *CreateSideNode (GRID *theGrid,ELEMENT *theElement,NODE *Node0, NODE *Node1
 
 NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
 {
-  COORD_VECTOR global,local;
+  COORD *global,*local;
   INT n,j;
   VERTEX *theVertex;
   NODE *theNode;
   DOUBLE fac;
   COORD *x[MAX_CORNERS_OF_ELEM];
 
-  theNode = CreateNode(theGrid,NULL);
-  if (theNode==NULL)
-    return(NULL);
   theVertex = CreateInnerVertex(theGrid,NULL);
   if (theVertex==NULL)
     return(NULL);
+  theNode = CreateNode(theGrid,NULL);
+  if (theNode==NULL)
+  {
+    DisposeVertex(theGrid,theVertex);
+    return(NULL);
+  }
   theGrid->status |= 1;
   CORNER_COORDINATES(theElement,n,x);
+  global = CVECT(theVertex);
+  local = LCVECT(theVertex);
   V_DIM_CLEAR(local);
   for (j=0; j<n; j++)
     V_DIM_LINCOMB(1.0,local,1.0,LOCAL_COORD_OF_ELEM(theElement,j),local);
   fac = 1.0 / n;
   V_DIM_SCALE(fac,local);
-  V_DIM_COPY(local,LCVECT(theVertex));
   LOCAL_TO_GLOBAL(n,x,local,global);
-  V_DIM_COPY(global,CVECT(theVertex));
   VFATHER(theVertex) = theElement;
   NFATHER(theNode) = NULL;
   MYVERTEX(theNode) = theVertex;
@@ -4530,57 +4470,6 @@ INT DisposeAuxEdges (GRID *theGrid)
     GSTATUS(theGrid) = 1;
 
   return (cnt);
-}
-#endif
-
-/****************************************************************************/
-/*
-   CheckParityOfElements - Check parity of elements in multigrid
-
-   SYNOPSIS:
-   INT CheckParityOfElements (MULTIGRID* theMG);
-
-   PARAMETERS:
-   .  theMG - pointer to multigrid
-
-   DESCRIPTION:
-   This function checks parity of elements in multigrid.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error occured.
- */
-/****************************************************************************/
-
-#ifdef __THREEDIM__
-INT CheckParityOfElements (MULTIGRID* theMG)
-{
-  INT i,j;
-  ELEMENT *theElement;
-  COORD sp,*x[4];
-  COORD_VECTOR a,b,c,d;
-  char buffer[128];
-
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-    for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
-    {
-      if (TAG(theElement)!=TETRAHEDRON) RETURN (1);
-
-      /* check orientation */
-      for (j=0; j<4; j++) x[j] = CVECT(MYVERTEX(CORNER(theElement,j)));
-      V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,0,1)],x[CORNER_OF_SIDE(theElement,0,0)],a)
-      V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,0,2)],x[CORNER_OF_SIDE(theElement,0,0)],b)
-      V3_SUBTRACT(x[CORNER_OPP_TO_SIDE(theElement,0)],x[CORNER_OF_SIDE(theElement,0,0)],c)
-      V3_VECTOR_PRODUCT(a,b,d)
-      V3_SCALAR_PRODUCT(c,d,sp)
-      if (sp<0.0) continue;
-
-      sprintf(buffer,"parity wrong: IS = %d\n",(int)ID(theElement));
-      UserWrite(buffer);
-    }
-
-  return(0);
 }
 #endif
 
