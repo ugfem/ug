@@ -2347,7 +2347,7 @@ static INT FL_FC_Disposer(FRONTCOMP *disp_FC, FRONTLIST *disp_FL)
 
 static INT debug;
 
-INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh, CoeffProcPtr coeff, INT Single_Mode)
+INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh, CoeffProcPtr coeff, INT Single_Mode, INT display)
 {
   GRID *theGrid;
   INDEPFRONTLIST *theIFL,*nextIFL;
@@ -2355,7 +2355,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
   FRONTCOMP *theFC,*thesuccFC,*thenewFC;
   FRONTCOMP *the_old_succ;
   DOUBLE xt[3],yt[3];
-  INT printelem,FlgForAccel;
+  INT printelem,FlgForAccel,nElement;
   FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS];
   ELEMENT_CONTEXT theElementContext;
 
@@ -2363,6 +2363,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
   FRONTLIST *disp_FL;
 
   SingleMode = Single_Mode;
+  nElement = 0;
 
   SetFlagsfortemporaryGGObjects(IflObj, FlObj, FcObj);
 
@@ -2452,6 +2453,15 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
 
           if (MakeElement(theGrid, &theElementContext ))
             return (8);
+          if (display>0)
+          {
+            nElement++;
+            if (nElement%display==0)
+            {
+              if (nElement%(10*display)==0) UserWrite("\n");
+              UserWriteF("[%d] ",(int)nElement);
+            }
+          }
           DisposeFrontList(myList);
 
           /* in this case "FrontcomponentUpdate(...);" is redundant*/
@@ -2483,6 +2493,15 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
 
         if (MakeElement(theGrid,&theElementContext))
           return (11);
+        if (display>0)
+        {
+          nElement++;
+          if (nElement%display==0)
+          {
+            if (nElement%(10*display)==0) UserWrite("\n");
+            UserWriteF("[%d] ",(int)nElement);
+          }
+        }
 
         if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
           return (1);
@@ -2513,6 +2532,15 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
             return (1);
           if (MakeElement(theGrid, &theElementContext))
             return (12);
+          if (display>0)
+          {
+            nElement++;
+            if (nElement%display==0)
+            {
+              if (nElement%(10*display)==0) UserWrite("\n");
+              UserWriteF("[%d] ",(int)nElement);
+            }
+          }
 
           /* in this case "FrontcomponentUpdate(...);" is redundant*/
 
@@ -2542,6 +2570,16 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
 
         if (MakeElement(theGrid, &theElementContext))
           return (15);
+
+        if (display>0)
+        {
+          nElement++;
+          if (nElement%display==0)
+          {
+            if (nElement%(10*display)==0) UserWrite("\n");
+            UserWriteF("[%d] ",(int)nElement);
+          }
+        }
 
         if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
           return (1);
@@ -2577,6 +2615,15 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
           /* we make this last element and dispose the list */
           if (MakeElement(theGrid, &theElementContext ))
             return (16);
+          if (display>0)
+          {
+            nElement++;
+            if (nElement%display==0)
+            {
+              if (nElement%(10*display)==0) UserWrite("\n");
+              UserWriteF("[%d] ",(int)nElement);
+            }
+          }
           DisposeFrontList(myList);
           /* in this case "FrontcomponentUpdate(...);" is redundant*/
           continue;
@@ -2606,6 +2653,15 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
         if (MakeElement(theGrid, &theElementContext))
           return (19);
 
+        if (display>0)
+        {
+          nElement++;
+          if (nElement%display==0)
+          {
+            if (nElement%(10*display)==0) UserWrite("\n");
+            UserWriteF("[%d] ",(int)nElement);
+          }
+        }
         if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
           return (1);
 
@@ -2637,6 +2693,8 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
     DisposeMultiGrid(theMG);
     return(0);
   }
+
+  if (display>0) UserWrite("\n");
 
   TerminateAccel(theMG, 0);
   return (0);
