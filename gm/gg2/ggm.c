@@ -505,7 +505,7 @@ INT DisposeFrontComp (FRONTLIST *myList, FRONTCOMP *theFC)
 
 MG_GGDATA *GetMGdataPointer (MULTIGRID *MG)
 {
-  myMGdata  = (MG_GGDATA*) GEN_MGUD_ADR(MG,OFFSET_IN_MGUD(MG,ggMGUDid));
+  myMGdata  = (MG_GGDATA*) GEN_MGUD_ADR(MG,OFFSET_IN_MGUD(ggMGUDid));
   return(myMGdata);
 }
 
