@@ -66,11 +66,7 @@
 #include "shapes.h"
 #include "refine.h"
 #include "domain.h"
-
-
-#ifdef ModelP
-#include "parallel.h"
-#endif
+#include "pargm.h"
 
 /****************************************************************************/
 /*																			*/
@@ -1286,6 +1282,43 @@ void GetNbSideByNodes (ELEMENT *theNeighbor, INT *nbside, ELEMENT *theElement, I
 
   /* no side of the neighbor matches */
   assert(0);
+}
+
+/****************************************************************************/
+/*D
+   SonEdge - Return pointer to son edge if it exists
+
+   SYNOPSIS:
+   EDGE *SonEdge (EDGE *theEdge);
+
+   PARAMETERS:
+   .  theEdge - edge for which son is searched
+
+   DESCRIPTION:
+   This function returns the pointer to the son edge if it exists.
+
+   RETURN VALUE:
+   EDGE *
+   .n   pointer to specified object
+   .n   NULL if not found
+   D*/
+/****************************************************************************/
+
+EDGE *GetSonEdge (EDGE *theEdge)
+{
+  EDGE *SonEdge=NULL;
+  NODE *Node0,*Node1,*SonNode0,*SonNode1;
+
+  Node0 = NBNODE(LINK0(theEdge));
+  Node1 = NBNODE(LINK1(theEdge));
+
+  SonNode0 = SONNODE(Node0);
+  SonNode1 = SONNODE(Node1);
+
+  if (SonNode0!=NULL && SonNode1!=NULL)
+    SonEdge = GetEdge(SonNode0,SonNode1);
+
+  return(SonEdge);
 }
 
 
@@ -2990,24 +3023,35 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
    D*/
 /****************************************************************************/
 
+#ifndef ModelP
+#define DO_NOT_DISPOSE  return (2)
+#else
+#define DO_NOT_DISPOSE  dispose=0
+#endif
+
 INT DisposeTopLevel (MULTIGRID *theMG)
 {
   int l;
   GRID *theGrid;
+        #ifdef ModelP
+  int dispose = 1;
+        #endif
 
   /* level 0 can not be deleted */
   l = theMG->topLevel;
-  if (l<=0) return(2);
+  if (l<=0) DO_NOT_DISPOSE;
+  if (theMG->bottomLevel<0) DO_NOT_DISPOSE;
   theGrid = GRID_ON_LEVEL(theMG,l);
 
   /* is level empty */
-  if (theMG->bottomLevel<0) return(2);
-  if (FIRSTELEMENT(theGrid)!=NULL)
-    return(2);
-  if (FIRSTVERTEX(theGrid)!=NULL)
-    return(2);
-  if (FIRSTNODE(theGrid)!=NULL)
-    return(2);
+  if (FIRSTELEMENT(theGrid)!=NULL) DO_NOT_DISPOSE;
+  if (FIRSTVERTEX(theGrid)!=NULL) DO_NOT_DISPOSE;
+  if (FIRSTNODE(theGrid)!=NULL) DO_NOT_DISPOSE;
+
+        #ifdef ModelP
+  dispose = UG_GlobalMinINT(dispose);
+  if (!dispose) return(2);
+        #endif
 
   /* remove from grids array */
   GRID_ON_LEVEL(theMG,l) = NULL;
