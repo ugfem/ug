@@ -47,7 +47,6 @@
 /*                                                                          */
 /****************************************************************************/
 
-#define CEIL(n)     ((n)+((ALIGNMENT-((n)&(ALIGNMENT-1)))&(ALIGNMENT-1)))
 #define FLOOR(n)    ((n)&ALIGNMASK)     /* lower next multiple of four */
 
 

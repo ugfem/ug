@@ -79,6 +79,8 @@
 #define TOTUSED_IN_HEAP(vhm)        ((vhm).TotalUsed)
 #define IS_BLOCK_DEFINED(vhm,id)    (GetBlockDesc((VIRT_HEAP_MGMT*)vhm,id)!=NULL)
 
+#define CEIL(n)     ((n)+((ALIGNMENT-((n)&(ALIGNMENT-1)))&(ALIGNMENT-1)))
+
 /****************************************************************************/
 /*                                                                          */
 /* data structures exported by the corresponding source file                */
