@@ -63,6 +63,7 @@
 
 /* grid manager module */
 #include "gm.h"
+#include "pargm.h"
 #include "rm.h"
 #include "evm.h"
 #include "ugm.h"
@@ -2662,6 +2663,11 @@ static INT SaveCommand (INT argc, char **argv)
   char Name[NAMESIZE],type[NAMESIZE],Comment[LONGSTRSIZE];
   INT i;
 
+        #ifdef ModelP
+  if (me != master) return(OKCODE);
+        #endif
+
+
   theMG = currMG;
   if (theMG==NULL)
   {
@@ -2821,6 +2827,10 @@ static INT SaveDataCommand (INT argc, char **argv)
   float fValue;
   DOUBLE time;
 
+        #ifdef ModelP
+  if (me != master) return(OKCODE);
+        #endif
+
   theMG = currMG;
   if (theMG==NULL) {PrintErrorMessage('E',"savedata","no open multigrid"); return (CMDERRORCODE);}
 
@@ -2924,6 +2934,11 @@ static INT LoadDataCommand (INT argc, char **argv)
   VECDATA_DESC *theVDList[5];
   INT i,m,n,number;
   int iValue;
+
+        #ifdef ModelP
+  if (me != master) return(OKCODE);
+        #endif
+
 
   theMG = currMG;
   if (theMG==NULL) {PrintErrorMessage('E',"loaddata","no open multigrid"); return (CMDERRORCODE);}
@@ -11969,9 +11984,9 @@ static INT LB4Command (INT argc, char **argv)
     cmd_error = 1;
   }
 
-  if (strategy<1 || strategy>6)
+  if (strategy<0 || strategy>6)
   {
-    UserWriteF("<strategy>: 1-6\n");
+    UserWriteF("<strategy>: 0-6\n");
     cmd_error = 1;
   }
 
