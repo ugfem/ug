@@ -2229,6 +2229,92 @@ static INT ConfigureCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   close - close current multigrid
+
+   DESCRIPTION:
+   This command closes the current (or all) open multigrid(s),
+   frees their heaps and closes all the pictures belonging to them,
+   calling 'DisposeMultiGrid' and 'DisposePicture'.
+
+   'close [$a]'
+
+   .   $a                     - close all multigrids
+   D*/
+/****************************************************************************/
+
+static INT CloseCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  UGWINDOW *theWin;
+  PICTURE *thePic,*NextPic,*currPic;
+  INT i,closeonlyfirst;
+
+  closeonlyfirst = TRUE;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'a' :
+      closeonlyfirst = FALSE;
+      break;
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintHelp("close",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
+
+  i = 0;
+  do
+  {
+    /* get multigrid */
+    theMG = currMG;
+    if (theMG==NULL)
+    {
+      if (i==0)
+      {
+        PrintErrorMessage('W',"close","no open multigrid");
+        return (OKCODE);
+      }
+      closeonlyfirst = FALSE;
+      break;
+    }
+
+    currPic = GetCurrentPicture();
+
+    /* close pictures first */
+    for (theWin=GetFirstUgWindow(); theWin!=NULL; theWin=GetNextUgWindow(theWin))
+      for (thePic=GetFirstPicture(theWin); thePic!=NULL; thePic=NextPic)
+      {
+        NextPic = GetNextPicture(thePic);
+
+        if (PIC_MG(thePic)==theMG)
+        {
+          if (thePic==currPic)
+            SetCurrentPicture(NULL);
+          if (DisposePicture(thePic)!=0)
+          {
+            PrintErrorMessage('E',"closewindow","could not close a picture of that window");
+            return (CMDERRORCODE);
+          }
+        }
+      }
+
+    if (DisposeMultiGrid(theMG)!=0)
+    {
+      PrintErrorMessage('E',"close","closing the mg failed");
+      return (CMDERRORCODE);
+    }
+    i++;
+
+    currMG = GetFirstMultigrid();
+  }
+  while (!closeonlyfirst);
+
+  return(OKCODE);
+}
+
+/****************************************************************************/
+/*D
    new - allocate a new multigrid
 
    DESCRIPTION:
@@ -2256,36 +2342,6 @@ static INT ConfigureCommand (INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-/****************************************************************************/
-/*
-   NewCommand - Allocate a new multigrid
-
-   SYNOPSIS:
-   static INT NewCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function allocates a new multigrid.
-   It allocates heap and new multigrid structure.
-
-   'new [<mgname>] $d <domain> $p <problem> $f <format> $h <heapsize>'
-   .  <mgname>               - the name of the multigrid (default is 'untitled-<nb>')
-   .  $d <domain>            - one of the enroled domains
-   .  $p <problem>           - one of the problems enroled for <domain>
-   .  $f <format>            - one of the enroled formats matching with <problem>
-   .  $h <heapsize>          - the heapsize to be allocated in byte (or use suffix
-        "K" for kilobyte, "M" for megabyte, "G" for gigabyte)
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
-/****************************************************************************/
-
 static INT NewCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -2296,6 +2352,9 @@ static INT NewCommand (INT argc, char **argv)
   /* get multigrid name */
   if ((sscanf(argv[0],expandfmt(CONCAT3(" new %",NAMELENSTR,"[ -~]")),Multigrid)!=1) || (strlen(Multigrid)==0))
     sprintf(Multigrid,"untitled-%d",(int)untitledCounter++);
+
+  theMG = GetMultigrid(Multigrid);
+  if ((theMG != NULL) && (theMG == currMG)) CloseCommand(0,NULL);
 
   /* get problem, domain and format */
   heapSize = 0;
@@ -2496,117 +2555,6 @@ static INT OpenCommand (INT argc, char **argv)
     return(CMDERRORCODE);
   }
   currMG = theMG;
-
-  return(OKCODE);
-}
-
-/****************************************************************************/
-/*D
-   close - close current multigrid
-
-   DESCRIPTION:
-   This command closes the current (or all) open multigrid(s),
-   frees their heaps and closes all the pictures belonging to them,
-   calling 'DisposeMultiGrid' and 'DisposePicture'.
-
-   'close [$a]'
-
-   .   $a                     - close all multigrids
-   D*/
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   CloseCommand	- Close current multigrid
-
-   SYNOPSIS:
-   static INT CloseCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function closes current multigrid.
-   It closes the current (or all) open multigrid(s) and frees their heaps.
-
-   close [$a]
-   .   $a                     - close all multigrids
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
-/****************************************************************************/
-
-static INT CloseCommand (INT argc, char **argv)
-{
-  MULTIGRID *theMG;
-  UGWINDOW *theWin;
-  PICTURE *thePic,*NextPic,*currPic;
-  INT i,closeonlyfirst;
-
-  closeonlyfirst = TRUE;
-  for (i=1; i<argc; i++)
-    switch (argv[i][0])
-    {
-    case 'a' :
-      closeonlyfirst = FALSE;
-      break;
-
-    default :
-      sprintf(buffer,"(invalid option '%s')",argv[i]);
-      PrintHelp("close",HELPITEM,buffer);
-      return (PARAMERRORCODE);
-    }
-
-  i = 0;
-  do
-  {
-    /* get multigrid */
-    theMG = currMG;
-    if (theMG==NULL)
-    {
-      if (i==0)
-      {
-        PrintErrorMessage('W',"close","no open multigrid");
-        return (OKCODE);
-      }
-      closeonlyfirst = FALSE;
-      break;
-    }
-
-    currPic = GetCurrentPicture();
-
-    /* close pictures first */
-    for (theWin=GetFirstUgWindow(); theWin!=NULL; theWin=GetNextUgWindow(theWin))
-      for (thePic=GetFirstPicture(theWin); thePic!=NULL; thePic=NextPic)
-      {
-        NextPic = GetNextPicture(thePic);
-
-        if (PIC_MG(thePic)==theMG)
-        {
-          if (thePic==currPic)
-            SetCurrentPicture(NULL);
-          if (DisposePicture(thePic)!=0)
-          {
-            PrintErrorMessage('E',"closewindow","could not close a picture of that window");
-            return (CMDERRORCODE);
-          }
-        }
-      }
-
-    if (DisposeMultiGrid(theMG)!=0)
-    {
-      PrintErrorMessage('E',"close","closing the mg failed");
-      return (CMDERRORCODE);
-    }
-    i++;
-
-    currMG = GetFirstMultigrid();
-  }
-  while (!closeonlyfirst);
 
   return(OKCODE);
 }

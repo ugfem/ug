@@ -295,8 +295,8 @@ static VEC_FORMAT *GetVectorTemplate (MULTIGRID *theMG, char *template)
 {
   ENVITEM *item;
 
-  if (ChangeEnvDir("/Multigrid") == NULL) return (NULL);
-  item = (ENVITEM *)ChangeEnvDir(ENVITEM_NAME(theMG));
+  if (ChangeEnvDir("/Formats") == NULL) return (NULL);
+  item = (ENVITEM *)ChangeEnvDir(ENVITEM_NAME(MGFORMAT(theMG)));
   if (item == NULL) return (NULL);
   if (template != NULL)
     for (item=ENVITEM_DOWN(item); item != NULL; item = NEXT_ENVITEM(item))
@@ -374,8 +374,8 @@ static MAT_FORMAT *GetMatrixTemplate (MULTIGRID *theMG, char *template)
 {
   ENVITEM *item;
 
-  if (ChangeEnvDir("/Multigrid") == NULL) return (NULL);
-  item = (ENVITEM *)ChangeEnvDir(ENVITEM_NAME(theMG));
+  if (ChangeEnvDir("/Formats") == NULL) return (NULL);
+  item = (ENVITEM *)ChangeEnvDir(ENVITEM_NAME(MGFORMAT(theMG)));
   if (item == NULL) return (NULL);
   if (template != NULL)
     for (item=ENVITEM_DOWN(item); item != NULL; item = NEXT_ENVITEM(item))
@@ -550,10 +550,13 @@ INT CreateFormatCmd (INT argc, char **argv)
   int n,nr,nc,depth;
 
   /* scan name of format */
-  if (sscanf(argv[0],expandfmt(CONCAT3("newformat %",
-                                       NAMELENSTR,"[ -~]")),formatname)!=1) {
+  if ((sscanf(argv[0],expandfmt(CONCAT3(" newformat %",NAMELENSTR,"[ -~]")),formatname)!=1) || (strlen(formatname)==0)) {
     PrintErrorMessage('E',"newformat","no format name specified");
     return (1);
+  }
+  if (GetFormat(formatname) != NULL) {
+    PrintErrorMessage('W',"newformat","format already exists");
+    return (0);
   }
   for (type=0; type<NVECTYPES; type++)
     ImatTypes[type] = FirstVecComp[type] = 0;
@@ -1054,6 +1057,8 @@ INT CreateFormatCmd (INT argc, char **argv)
   }
   ENVITEM_DOWN((ENVDIR *)newFormat) = ENVITEM_DOWN(dir);
   ENVITEM_DOWN(dir) = NULL;
+  ENVITEM_LOCKED(dir) = 0;
+  ChangeEnvDir("/");
   if (RemoveEnvDir((ENVITEM *)dir))
     PrintErrorMessage('W',"InitFormats","could not remove newformat dir");
 

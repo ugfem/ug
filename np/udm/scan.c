@@ -206,7 +206,7 @@ INT ReadArgvChar (char *name, char *buffer, INT argc, char **argv)
   char option[OPTIONLEN];
   char value[VALUELEN];
 
-  buffer = NULL;
+  buffer = "";
   for (i=0; i<argc; i++)
     if (argv[i][0]==name[0]) {
       if (sscanf(argv[i],

@@ -2,28 +2,28 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*	                                                                        */
-/* File:      ugenv.c                                                        */
-/*                                                                            */
-/* Purpose:   implements the ug environment mechanism                        */
-/*                                                                            */
-/* Author:      Peter Bastian                                                 */
-/*              Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen    */
-/*              Universitaet Heidelberg                                        */
-/*              Im Neuenheimer Feld 368                                        */
-/*              6900 Heidelberg                                                */
-/*                                                                            */
+/* File:      ugenv.c                                                       */
+/*                                                                          */
+/* Purpose:   implements the ug environment mechanism                       */
+/*                                                                          */
+/* Author:      Peter Bastian                                               */
+/*              Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen */
+/*              Universitaet Heidelberg                                     */
+/*              Im Neuenheimer Feld 368                                     */
+/*              6900 Heidelberg                                             */
+/*                                                                          */
 /* History:   18.02.92 begin, ug version 2.0                                */
-/*                                                                            */
+/*                                                                          */
 /* Revision:  08.09.95                                                      */
-/*                                                                            */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*                                                                            */
+/*                                                                          */
 /* include files                                                            */
-/*              system include files                                            */
-/*              application include files                                     */
-/*                                                                            */
+/*              system include files                                        */
+/*              application include files                                   */
+/*                                                                          */
 /****************************************************************************/
 
 #include <stdlib.h>
@@ -37,26 +37,26 @@
 #include "ugenv.h"
 
 /****************************************************************************/
-/*                                                                            */
-/* defines in the following order                                            */
-/*                                                                            */
-/*          compile time constants defining static data size (i.e. arrays)    */
-/*          other constants                                                    */
-/*          macros                                                            */
-/*                                                                            */
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*          compile time constants defining static data size (i.e. arrays)  */
+/*          other constants                                                 */
+/*          macros                                                          */
+/*                                                                          */
 /****************************************************************************/
 
-#define MAXENVPATH        32                /* max depth of the environment tree*/
+#define MAXENVPATH        32            /* max depth of the environment tree*/
 
 /****************************************************************************/
-/*                                                                            */
+/*                                                                          */
 /* definition of variables global to this source file only (static!)        */
-/*                                                                            */
+/*                                                                          */
 /****************************************************************************/
 
-static HEAP *envHeap=NULL;                /* heap used for the environment    */
+static HEAP *envHeap=NULL;              /* heap used for the environment    */
 static ENVDIR *path[MAXENVPATH];        /* path to current directory        */
-static int pathIndex;                    /* entry to path array                */
+static int pathIndex;                   /* entry to path array              */
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -431,7 +431,7 @@ INT RemoveEnvDir (ENVITEM *theItem)
 
   if (IS_ENVDIR(theItem))
     for (Item = ENVITEM_DOWN(theItem); Item != NULL; Item = Next) {
-      Next = NEXT_ENVITEM(theItem);
+      Next = NEXT_ENVITEM(Item);
       RemoveEnvDir(Item);
     }
   RemoveEnvItem(theItem);
