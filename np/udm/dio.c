@@ -28,8 +28,6 @@
 /****************************************************************************/
 
 #include <stdio.h>
-#include <string.h>
-
 #include "bio.h"
 #include "dio.h"
 
@@ -127,7 +125,7 @@ int Read_OpenDTFile (char *filename)
   if (datapaths_set) stream = FileOpenUsingSearchPaths(filename,"r","datapaths");
   else stream = fileopen(filename,"r");
 #else
-  stream = fileopen(filename,"r");
+  stream = fopen(filename,"r");
 #endif
 
   if (stream==NULL) return (1);
@@ -164,7 +162,7 @@ int Write_OpenDTFile (char *filename)
   if (datapaths_set) stream = FileOpenUsingSearchPaths(filename,"w","datapaths");
   else stream = fileopen(filename,"w");
 #else
-  stream = fileopen(filename,"w");
+  stream = fopen(filename,"w");
 #endif
 
   if (stream==NULL) return (1);
@@ -325,7 +323,7 @@ int CloseDTFile ()
  */
 /****************************************************************************/
 
-INT DIO_Init (void)
+int DIO_Init (void)
 {
 
 #ifdef __MGIO_USE_IN_UG__

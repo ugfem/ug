@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:	  data_io.c				                                                                        */
+/* File:	  dio.c															*/
 /*																			*/
 /* Purpose:   input/output of data			                                                                */
 /*																			*/
@@ -28,7 +28,6 @@
 /****************************************************************************/
 
 #include <stdio.h>
-#include <string.h>
 
 #include "compiler.h"
 #include "heaps.h"
@@ -170,6 +169,7 @@ INT LoadData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList)
   }
 
   /* load data */
+  MarkTmpMem(theHeap);
   entry = (INT *)GetTmpMem(theHeap,ncomp*sizeof(INT));
   if (entry==NULL)                                                                                {CloseDTFile(); return (1);}
   s=0;
@@ -322,6 +322,7 @@ INT SaveData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList)
   if (Write_DT_General (&dio_general))                                    {CloseDTFile(); return (1);}
 
   /* save data */
+  MarkTmpMem(theHeap);
   entry = (INT *)GetTmpMem(theHeap,ncomp*sizeof(INT));
   if (entry==NULL)                                                                                {CloseDTFile(); return (1);}
   s=0;
