@@ -46,28 +46,28 @@ $(UG_LIB): $(OBJECTS)
 ##############################################################################
 
 LOW: include
-	cd low; make -f Makefile.low; cd ..;
+	cd low && make -f Makefile.low
 
 DEV: include
-	cd dev; make -f Makefile.dev; cd ..;
+	cd dev && make -f Makefile.dev
 
 DOM: include
-	cd dom; make -f Makefile.dom; cd ..;
+	cd dom && make -f Makefile.dom
 
 GM: include
-	cd gm; make -f Makefile.gm; cd ..;
+	cd gm && make -f Makefile.gm
 
 NUMERICS: include
-	cd numerics; make -f Makefile.numerics; cd ..;
+	cd numerics && make -f Makefile.numerics
 
 NP: include
-	cd np; make -f Makefile.np; cd ..;
+	cd np && make -f Makefile.np
 
 GRAPHICS: include
-	cd graphics; make -f Makefile.graphics; cd ..;
+	cd graphics && make -f Makefile.graphics
 
 UI: include
-	cd ui; make -f Makefile.ui; cd ..;
+	cd ui && make -f Makefile.ui
 
 
 ##############################################################################
@@ -77,13 +77,13 @@ UI: include
 SEQUENTIAL:
 
 PARALLEL: include
-	cd parallel; $(ARCH_MAKE) -f Makefile.parallel; cd ..;
+	cd parallel; $(ARCH_MAKE) -f Makefile.parallel
 
 
 SEQUENTIAL_clean:
 
 PARALLEL_clean:
-	cd parallel; $(ARCH_MAKE) -f Makefile.parallel clean; cd ..;
+	cd parallel; $(ARCH_MAKE) -f Makefile.parallel clean
 
 
 ##############################################################################
@@ -99,45 +99,45 @@ include:
 
 clean: $(MODEL_TARGET)_clean
 	rm -f $(OBJECTS)
-	cd low; make -f Makefile.low clean; cd ..;
-	cd dev; make -f Makefile.dev clean; cd ..;
-	cd dom; make -f Makefile.dom clean; cd ..;
-	cd gm; make -f Makefile.gm clean; cd ..;
-	cd np; make -f Makefile.np clean; cd ..;
-	cd graphics; make -f Makefile.graphics clean; cd ..;
-	cd ui; make -f Makefile.ui clean; cd ..;
+	cd low && make -f Makefile.low clean
+	cd dev && make -f Makefile.dev clean
+	cd dom && make -f Makefile.dom clean
+	cd gm && make -f Makefile.gm clean
+	cd np && make -f Makefile.np clean
+	cd graphics && make -f Makefile.graphics clean
+	cd ui && make -f Makefile.ui clean
 
 ar: 
-	cd gm; make -f Makefile.gm ar; cd ..;
-	cd graphics; make -f Makefile.graphics ar; cd ..;
-	cd ui; make -f Makefile.ui ar; cd ..;
-	cd np; make -f Makefile.np ar; cd ..;
+	cd gm && make -f Makefile.gm ar
+	cd graphics && make -f Makefile.graphics ar
+	cd ui && make -f Makefile.ui ar
+	cd np && make -f Makefile.np ar
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS);
 	make;
 
 ifdef: $(MODEL_TARGET)_clean
-	cd gm; make -f Makefile.gm clean; cd ..;
-	cd np; make -f Makefile.np clean; cd ..;
-	cd graphics; make -f Makefile.graphics clean; cd ..;
-	cd dom; make -f Makefile.dom clean; cd ..;
-	cd ui; make -f Makefile.ui clean; cd ..;
+	cd gm && make -f Makefile.gm clean
+	cd np && make -f Makefile.np clean
+	cd graphics && make -f Makefile.graphics clean
+	cd dom && make -f Makefile.dom clean
+	cd ui && make -f Makefile.ui clean
 	rm -f initug.o;
 
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
-	cd low; make -f Makefile.low extract; cd ..;
-	cd dev; make -f Makefile.dev extract; cd ..;
-	cd dom; make -f Makefile.dom extract; cd ..;
-	cd gm; make -f Makefile.gm extract; cd ..;
-	cd np; make -f Makefile.np extract; cd ..;
-	cd graphics; make -f Makefile.graphics extract; cd ..;
-	cd ui; make -f Makefile.ui extract; cd ..;
+	cd low && make -f Makefile.low extract
+	cd dev && make -f Makefile.dev extract
+	cd dom && make -f Makefile.dom extract
+	cd gm && make -f Makefile.gm extract
+	cd np && make -f Makefile.np extract
+	cd graphics && make -f Makefile.graphics extract
+	cd ui && make -f Makefile.ui extract
 
 xmc:
-	cd low; make -f Makefile.low xmc; cd ..;
-	cd dev; make -f Makefile.dev xmc; cd ..;
-	cd dom; make -f Makefile.dom xmc; cd ..;
-	cd gm; make -f Makefile.gm xmc; cd ..;
-	cd np; make -f Makefile.np xmc; cd ..;
-	cd graphics; make -f Makefile.graphics xmc; cd ..;
-	cd ui; make -f Makefile.ui xmc; cd ..;
+	cd low && make -f Makefile.low xmc
+	cd dev && make -f Makefile.dev xmc
+	cd dom && make -f Makefile.dom xmc
+	cd gm && make -f Makefile.gm xmc
+	cd np && make -f Makefile.np xmc
+	cd graphics && make -f Makefile.graphics xmc
+	cd ui && make -f Makefile.ui xmc

@@ -27,17 +27,17 @@ ar:
 	$(ARCH_CC) $(UG_CFLAGS) $<
 
 GG:
-	cd gg$(DIM); make -f Makefile.gg$(DIM); cd ..;
+	cd gg$(DIM) && make -f Makefile.gg$(DIM)
 
 clean:
 	rm -f *.o
-	cd gg2; make -f Makefile.gg2 clean; cd ..;
-	cd gg3; make -f Makefile.gg3 clean; cd ..;
+	cd gg2 && make -f Makefile.gg2 clean
+	cd gg3 && make -f Makefile.gg3 clean
 
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) ../lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
-	cd gg$(DIM); make -f Makefile.gg$(DIM) extract; cd ..;
+	cd gg$(DIM) && make -f Makefile.gg$(DIM) extract
 
 xmc: extract all
-	cd gg$(DIM); make -f Makefile.gg$(DIM) clean; cd ..;
+	cd gg$(DIM) && make -f Makefile.gg$(DIM) clean
 

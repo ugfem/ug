@@ -32,14 +32,14 @@ include:
 	ln -s ../include include
 
 DDDIF:
-	cd dddif; make -f Makefile.dddif; cd ..;
+	cd dddif && make -f Makefile.dddif
 
 DDDOBJ:
-	cd dddobj; make -f Makefile.dddobj; cd ..;
+	cd dddobj && make -f Makefile.dddobj
 
 ON:
 	echo "creating chaco"
-	cd chaco; make -f Makefile.chaco; cd ..;
+	cd chaco && make -f Makefile.chaco
 
 OFF:
 	echo "no chaco"
@@ -60,9 +60,9 @@ ar:
 
 
 clean: ppif_clean
-	cd dddif; make -f Makefile.dddif clean; cd ..;
-	cd dddobj; make -f Makefile.dddobj clean; cd ..;
-	cd chaco; make -f Makefile.chaco clean; cd ..;
+	cd dddif && make -f Makefile.dddif clean
+	cd dddobj && make -f Makefile.dddobj clean
+	cd chaco && make -f Makefile.chaco clean
 	rm -f $(OBJECTS);
 
 

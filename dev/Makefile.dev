@@ -26,69 +26,69 @@ all : $(OBJECTS) $(DEVICES) Makefile.dev
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
 
 NIF:
-	cd nif; make -f Makefile.nif; cd ..;
+	cd nif && make -f Makefile.nif
 
 XIF:
-	cd xif; make -f Makefile.xif; cd ..;
+	cd xif && make -f Makefile.xif
 
 SIF:
-	cd sif; make -f Makefile.sif; cd ..;
+	cd sif && make -f Makefile.sif
 
 RIF:
-	cd rif; make -f Makefile.rif; cd ..;
+	cd rif && make -f Makefile.rif
 
 META:
-	cd meta; make -f Makefile.meta; cd ..;
+	cd meta && make -f Makefile.meta
 
 PS:
-	cd ps; make -f Makefile.ps; cd ..;
+	cd ps && make -f Makefile.ps
 	
 PPM:
-	cd ppm; make -f Makefile.ppm; cd ..;
+	cd ppm && make -f Makefile.ppm
 
 XLIB: 
 	rm -f ../lib/libdev.a
 	$(ARCH_AR) $(ARCH_ARFLAGS) ../lib/libdevX.a $(OBJECTS)
-	cd meta; make -f Makefile.meta; cd ..;
-	cd xif; make -f Makefile.xif; cd ..;
-	cd ps; make -f Makefile.ps; cd ..;
-	cd ppm; make -f Makefile.ppm; cd ..;
+	cd meta && make -f Makefile.meta
+	cd xif && make -f Makefile.xif
+	cd ps && make -f Makefile.ps
+	cd ppm && make -f Makefile.ppm
 	
 SLIB: 
 	rm -f ../lib/libdev.a
 	$(ARCH_AR) $(ARCH_ARFLAGS) ../lib/libdevS.a $(OBJECTS)
-	cd meta; make -f Makefile.meta; cd ..;
-	cd sif; make -f Makefile.sif; cd ..;
-	cd ps; make -f Makefile.ps; cd ..;
-	cd ppm; make -f Makefile.ppm; cd ..;
+	cd meta && make -f Makefile.meta
+	cd sif && make -f Makefile.sif
+	cd ps && make -f Makefile.ps
+	cd ppm && make -f Makefile.ppm
 
 RLIB: 
 	rm -f ../lib/libdev.a
 	$(ARCH_AR) $(ARCH_ARFLAGS) ../lib/libdevR.a $(OBJECTS)
-	cd meta; make -f Makefile.meta; cd ..;
-	cd rif;  make -f Makefile.rif; cd ..;
-	cd ps;   make -f Makefile.ps; cd ..;
-	cd ppm;  make -f Makefile.ppm; cd ..;
+	cd meta && make -f Makefile.meta
+	cd rif && make -f Makefile.rif
+	cd ps && make -f Makefile.ps
+	cd ppm && make -f Makefile.ppm
 
 clean:
 	rm -f *.o
-	cd xif;  make -f Makefile.xif  clean; cd ..;
-	cd sif;  make -f Makefile.sif  clean; cd ..;
-	cd rif;  make -f Makefile.rif  clean; cd ..;
-	cd meta; make -f Makefile.meta clean; cd ..;
-	cd ps;   make -f Makefile.ps   clean; cd ..;
-	cd ppm;  make -f Makefile.ppm   clean; cd ..;
+	cd xif && make -f Makefile.xif  clean
+	cd sif && make -f Makefile.sif  clean
+	cd rif && make -f Makefile.rif  clean
+	cd meta && make -f Makefile.meta clean
+	cd ps && make -f Makefile.ps   clean
+	cd ppm && make -f Makefile.ppm   clean
 
 #preliminary: only xif+meta+ps (should be configurable in another way)
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) ../lib/libdev$(IF).a $(OBJECTS)
-	cd xif;  make -f Makefile.xif  extract; cd ..;
-	cd meta; make -f Makefile.meta extract; cd ..;
-	cd ps;   make -f Makefile.ps   extract; cd ..;
-	cd ppm; make -f Makefile.ppm   extract; cd ..;
+	cd xif && make -f Makefile.xif  extract
+	cd meta && make -f Makefile.meta extract
+	cd ps && make -f Makefile.ps   extract
+	cd ppm && make -f Makefile.ppm   extract
 
 xmc: extract all
-	cd xif;  make -f Makefile.xif  clean; cd ..;
-	cd meta; make -f Makefile.meta clean; cd ..;
-	cd ps;   make -f Makefile.ps   clean; cd ..;
-	cd ppm; make -f Makefile.ppm   clean; cd ..;
+	cd xif && make -f Makefile.xif  clean
+	cd meta && make -f Makefile.meta clean
+	cd ps && make -f Makefile.ps   clean
+	cd ppm && make -f Makefile.ppm   clean

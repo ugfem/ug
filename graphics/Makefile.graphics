@@ -26,35 +26,35 @@ all: $(OBJECTS) $(GRAPE) UGGRAPH $(COVISE_TARGET)
 
 
 ar: $(GRAPE) 
-	cd uggraph; make -f Makefile.uggraph ar; cd ..;
+	cd uggraph && make -f Makefile.uggraph ar
 
 UGGRAPH:
-	cd uggraph; make -f Makefile.uggraph; cd ..;
+	cd uggraph && make -f Makefile.uggraph
 
 ON:
 	echo "creating grape"
-	cd grape; make -f Makefile.grape; cd ..;
+	cd grape && make -f Makefile.grape
 
 OFF:
 	echo "no grape"
-	cd grape; make -f Makefile.grape; cd ..;
+	cd grape && make -f Makefile.grape
 
 
 COVISE_ON:
 	echo "creating covise-if"
-	cd covise; make -f Makefile.covise; cd ..;
+	cd covise && make -f Makefile.covise
 
 COVISE_OFF:
 
 
 clean:
 	rm -f *.o
-	cd uggraph; make -f Makefile.uggraph clean; cd ..;
-	cd grape; make -f Makefile.grape clean; cd ..;
+	cd uggraph && make -f Makefile.uggraph clean
+	cd grape && make -f Makefile.grape clean
 
 extract:
-	cd uggraph; make -f Makefile.uggraph extract; cd ..;
-	cd grape; make -f Makefile.grape extract; cd ..;
+	cd uggraph && make -f Makefile.uggraph extract
+	cd grape && make -f Makefile.grape extract
 
 xmc: extract all clean
 

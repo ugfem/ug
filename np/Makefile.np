@@ -24,29 +24,29 @@ $(UG_LIB): $(OBJECTS)
 
 ar: 
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
-	cd procs; make -f Makefile.procs ar; cd ..;
-	cd algebra; make -f Makefile.algebra ar; cd ..;
-	cd udm; make -f Makefile.udm ar; cd ..;
-	cd field; make -f Makefile.field ar; cd ..;
-	cd amglib; make -f Makefile.amglib ar; cd ..;
+	cd procs && make -f Makefile.procs ar
+	cd algebra && make -f Makefile.algebra ar
+	cd udm && make -f Makefile.udm ar
+	cd field && make -f Makefile.field ar
+	cd amglib && make -f Makefile.amglib ar
 
 PROCS:
-	cd procs; make -f Makefile.procs; cd ..;
+	cd procs && make -f Makefile.procs
 
 ALGEBRA:
-	cd algebra; make -f Makefile.algebra; cd ..;
+	cd algebra && make -f Makefile.algebra
 
 UDM:
-	cd udm; make -f Makefile.udm; cd ..;
+	cd udm && make -f Makefile.udm
 
 FIELD:
-	cd field; make -f Makefile.field; cd ..;
+	cd field && make -f Makefile.field
 
 AMGLIB:
-	cd amglib; make -f Makefile.amglib; cd ..;
+	cd amglib && make -f Makefile.amglib
 
 SLU:
-	cd slu; make -f Makefile.slu; cd ..;
+	cd slu && make -f Makefile.slu
 
 .SUFFIXES: .o .c
 
@@ -55,18 +55,18 @@ SLU:
 
 clean:
 	rm -f *.o
-	cd procs; make -f Makefile.procs clean; cd ..;
-	cd algebra; make -f Makefile.algebra clean; cd ..;
-	cd udm; make -f Makefile.udm clean; cd ..;
-	cd field; make -f Makefile.field clean; cd ..;
-	cd amglib; make -f Makefile.amglib clean; cd ..;
+	cd procs && make -f Makefile.procs clean
+	cd algebra && make -f Makefile.algebra clean
+	cd udm && make -f Makefile.udm clean
+	cd field && make -f Makefile.field clean
+	cd amglib && make -f Makefile.amglib clean
 
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
-	cd procs; make -f Makefile.procs extract; cd ..;
-	cd algebra; make -f Makefile.algebra extract; cd ..;
-	cd udm; make -f Makefile.udm extract; cd ..;
-	cd field; make -f Makefile.field extract; cd ..;
-	cd amglib; make -f Makefile.amglib extract; cd ..;
+	cd procs && make -f Makefile.procs extract
+	cd algebra && make -f Makefile.algebra extract
+	cd udm && make -f Makefile.udm extract
+	cd field && make -f Makefile.field extract
+	cd amglib && make -f Makefile.amglib extract
 
 xmc: extract all clean
