@@ -1879,12 +1879,10 @@ static INT IO_GridCons(MULTIGRID *theMG)
 #ifdef ModelP
     /* spread element refine info */
     if (SpreadRefineInfo(theGrid) != GM_OK) RETURN(GM_FATAL);
-#endif
 
     /* spread nodetypes from master to its copies */
     if (SpreadGridNodeTypes(theGrid) != GM_OK) RETURN(GM_FATAL);
 
-#ifdef ModelP
     /* repair parallel information */
     ConstructConsistentGrid(theGrid);
 #endif
@@ -2405,6 +2403,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   return (0);
 }
 
+#ifdef ModelP
 static INT Gather_EClasses (DDD_OBJ obj, void *data)
 {
   ELEMENT *p;
@@ -2431,6 +2430,7 @@ void CommunicateEClasses (MULTIGRID *theMG)
                Gather_EClasses, Scatter_EClasses);
   return;
 }
+#endif
 
 #if (MGIO_DEBUG>0)
 static INT CheckCGKeys (INT ne, ELEMENT** eid_e, MGIO_CG_ELEMENT *cg_elem)
@@ -3053,7 +3053,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   /* repair inconsistencies */
   if (MGIO_PARFILE)
   {
+#ifdef ModelP
     CommunicateEClasses(theMG);
+#endif
     if (IO_GridCons(theMG)) return(NULL);
   }
 
