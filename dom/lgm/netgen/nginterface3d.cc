@@ -710,6 +710,22 @@ void surfacemeshing :: Mesh (double gh)
     bemp.Y() += 0.1 * (bemp2.X() - bemp1.X());
     bemp.X() -= 0.1 * (bemp2.Y() - bemp1.Y());
 
+    if(gh<=0.0)
+    {
+      locpoints.SetSize(0);
+      loclines.SetSize(0);
+      pindex.SetSize(0);
+      lindex.SetSize(0);
+      in[0] = bemp.X();
+      in[1] = bemp.Y();
+      in[2] = bemp.Z();
+      in[3] = gh;
+      Get_Local_h(in,&h);
+      qualclass =
+        adfront ->GetLocals (locpoints, loclines, pindex, lindex,
+                             surfind, - 3 * gh);
+    }
+
     DefineTransformation (surfind, locpoints[loclines[1].I1()],
                           locpoints[loclines[1].I2()]);
 
@@ -905,7 +921,7 @@ double Calc_Local_Coordinates(const Point3d p0,
   double s1[3],s2[3],s3[3],det;
   Point3d np,pp1,pp2;
   Vec3d n0,n1,n2,nv;
-  //double bb[3];
+
   nv = p - p0;
 
   Calc_Vectors(p0,p1,p2,n0,n1,n2);
@@ -932,7 +948,8 @@ double Calc_Local_Coordinates(const Point3d p0,
   aa[2] = a[3] - a[5];
   aa[3] = a[4] - a[5];
 
-  if(ABS(Det2d(aa))>0.0001)
+  det = ABS(Det2d(aa));
+  if(ABS(det)>1e-8)
   {
     det = ABS(Det2d(aa));
     cc[0] = pp1.X() - a[2];
@@ -949,9 +966,10 @@ double Calc_Local_Coordinates(const Point3d p0,
     aa[1] = a[1] - a[2];
     aa[2] = a[6] - a[8];
     aa[3] = a[7] - a[8];
-    if(ABS(Det2d(aa))>0.001)
+
+    det = ABS(Det2d(aa));
+    if(ABS(det)>1e-8)
     {
-      det = ABS(Det2d(aa));
       cc[0] = pp1.X() - a[2];
       cc[1] = pp1.Z() - a[8];
       InvMatMult2d(s2,cc,aa);
@@ -966,9 +984,10 @@ double Calc_Local_Coordinates(const Point3d p0,
       aa[1] = a[4] - a[5];
       aa[2] = a[6] - a[8];
       aa[3] = a[7] - a[8];
-      if(ABS(Det2d(aa))>0.001)
+
+      det = ABS(Det2d(aa));
+      if(ABS(det)>1e-8)
       {
-        det = ABS(Det2d(aa));
         cc[0] = pp1.Y() - a[5];
         cc[1] = pp1.Z() - a[8];
         InvMatMult2d(s3,cc,aa);

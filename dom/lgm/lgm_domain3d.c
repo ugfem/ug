@@ -73,7 +73,7 @@ static INT LineInfoId;
 static INT LGM_DEBUG = 0;
 static INT SAVE_SURFACE = 0;
 static DOUBLE LINE_DISTANCE = 0.05;
-#define SMALL 0.00001
+#define SMALL 1e-8
 static INT VAR_H = 1;
 
 static DOUBLE cosAngle = 0.99;          /* Winkel zwischen Inputdreiecken */
@@ -1999,7 +1999,7 @@ static DOUBLE Calc_Local_Coord(DOUBLE *p0, DOUBLE*p1, DOUBLE *p2, DOUBLE *global
   INT i,j;
   DOUBLE e0[3],e1[3],e2[3];
   DOUBLE n0[3],n1[3],n2[3],p[3],np[3],hp[3],l;
-  DOUBLE a[9];
+  DOUBLE a[9], det;
   DOUBLE aa[4],bb[2],cc[2];
 
   Minus(e0,global,p0);
@@ -2052,7 +2052,8 @@ static DOUBLE Calc_Local_Coord(DOUBLE *p0, DOUBLE*p1, DOUBLE *p2, DOUBLE *global
   aa[2] = a[3] - a[5];
   aa[3] = a[4] - a[5];
 
-  if((Det2d(aa)>SMALL)||(Det2d(aa)<-SMALL))
+  det = Det2d(aa);
+  if((det>SMALL)||(det<-SMALL))
   /*	if(Det2d(aa)!=0)*/
   {
     cc[0] = p[0] - a[2];
@@ -2065,7 +2066,8 @@ static DOUBLE Calc_Local_Coord(DOUBLE *p0, DOUBLE*p1, DOUBLE *p2, DOUBLE *global
     aa[1] = a[1] - a[2];
     aa[2] = a[6] - a[8];
     aa[3] = a[7] - a[8];
-    if((Det2d(aa)>SMALL)||(Det2d(aa)<-SMALL))
+    det = Det2d(aa);
+    if((det>SMALL)||(det<-SMALL))
     /*		if(Det2d(aa)!=0)*/
     {
       cc[0] = p[0] - a[2];
@@ -2078,7 +2080,8 @@ static DOUBLE Calc_Local_Coord(DOUBLE *p0, DOUBLE*p1, DOUBLE *p2, DOUBLE *global
       aa[1] = a[4] - a[5];
       aa[2] = a[6] - a[8];
       aa[3] = a[7] - a[8];
-      if((Det2d(aa)>SMALL)||(Det2d(aa)<-SMALL))
+      det = Det2d(aa);
+      if((det>SMALL)||(det<-SMALL))
       /*			if(Det2d(aa)!=0)*/
       {
         cc[0] = p[1] - a[5];
@@ -2427,7 +2430,7 @@ static INT Compare_Points(LGM_POINT *p, DOUBLE *global)
 {
   if( sqrt( (LGM_POINT_POS(p)[0]-global[0])*(LGM_POINT_POS(p)[0]-global[0])
             +         (LGM_POINT_POS(p)[1]-global[1])*(LGM_POINT_POS(p)[1]-global[1])
-            +         (LGM_POINT_POS(p)[2]-global[2])*(LGM_POINT_POS(p)[2]-global[2]) ) < 0.01 )
+            +         (LGM_POINT_POS(p)[2]-global[2])*(LGM_POINT_POS(p)[2]-global[2]) ) < SMALL )
     return(1);
   else
     return(0);
@@ -3215,7 +3218,7 @@ static INT Check_Line_Linedisc_Distance(HEAP *Heap, LGM_LINE *theLine, INT Index
 {
   int i, start_i, end_i;
   DOUBLE length_of_segment, start_local, end_local, start_s, end_s;
-  DOUBLE start_p[3], end_p[3], mid_p[3], len, line_p[3], mid_i, mid_local, local, dist;
+  DOUBLE start_p[3], end_p[3], mid_p[3], len, line_p[3], mid_i, mid_local, local, dist, abs_h;
   LINEPOINT *help;
 
   help = LGM_LINEDISCNEW_START(LGM_LINE_LINEDISCNEW(theLine));
@@ -3279,9 +3282,13 @@ static INT Check_Line_Linedisc_Distance(HEAP *Heap, LGM_LINE *theLine, INT Index
 
   local = (DOUBLE)mid_i + mid_local;
   Line_Local2GlobalNew(theLine,line_p,local);
+  if(h<0.0)
+    abs_h = -h;
+  else
+    abs_h = h;
   if(sqrt( (line_p[0]-mid_p[0])*(line_p[0]-mid_p[0]) +
            (line_p[1]-mid_p[1])*(line_p[1]-mid_p[1]) +
-           (line_p[2]-mid_p[2])*(line_p[2]-mid_p[2]) ) < LINE_DISTANCE * h)
+           (line_p[2]-mid_p[2])*(line_p[2]-mid_p[2]) ) < LINE_DISTANCE * abs_h)
     return(0);
   else
   {
