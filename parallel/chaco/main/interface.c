@@ -375,18 +375,29 @@ int interface (CLUSTER **clusters, int nvtxs, short *assign, double *goal,
 	{
 
 		/* begin part of Chaco's input_geom */
-
+		#ifdef __TWODIM__
 		igeom = 2;
+		#endif
+		#ifdef __THREEDIM__
+		igeom = 3;
+		#endif
 		x = (float *) (MEM_OK = smalloc((unsigned) (nvtxs+1)*sizeof(float));
 		if (!MEM_OK) return;
 		y = (float *) (MEM_OK = smalloc((unsigned) (nvtxs+1)*sizeof(float));
 		if (!MEM_OK) return;
+		#ifdef __THREEDIM__
+		z = (float *) (MEM_OK = smalloc((unsigned) (nvtxs+1)*sizeof(float));
+		if (!MEM_OK) return;
+		#endif
 
 		for (i=1; i<=nvtxs; i++)
 		{ 
 			cptr = clusters[i-1];
 			x[i] = (float) cptr->sx;
 			y[i] = (float) cptr->sy;
+			#ifdef __THREEDIM__
+			z[i] = (float) cptr->sz;
+			#endif
 		} 
 
 		/* end part of Chaco's input_geom */

@@ -385,13 +385,22 @@ static int Clustering (MULTIGRID *mg, int minlevel, int cluster_depth, int thres
 				c->source = me;
 				c->minlevel = LEVEL(e);
 				c->sx = c->sy = 0.0;
-				for (i=0; i<TAG(e); i++)
+				#ifdef __THREEDIM__
+				c->sz = 0.0;
+				#endif
+				for (i=0; i<CORNERS_OF_ELEM(e); i++)
 				{
 					c->sx += XC(MYVERTEX(CORNER(e,i)));
 					c->sy += YC(MYVERTEX(CORNER(e,i)));
+					#ifdef __THREEDIM__
+					c->sz += ZC(MYVERTEX(CORNER(e,i)));
+					#endif
 				}
 				c->sx /= ((COORD)(TAG(e)));
 				c->sy /= ((COORD)(TAG(e)));
+				#ifdef __THREEDIM__
+				c->sz /= ((COORD)(TAG(e)));
+				#endif
 				c->root_element = e;
 			}
 
