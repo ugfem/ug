@@ -10738,20 +10738,19 @@ static INT RefreshOffCommand (INT argc, char **argv)
  */
 /****************************************************************************/
 
+#ifndef __MWCW__
 static INT SystemCommand (INT argc, char **argv)
 {
-  char string[128], *p;
+  char *p;
 
   if (strlen(argv[0])<8) return (PARAMERRORCODE);
   p = argv[0]+7;
   if (system(p)==-1)
-  {
-    UserWrite("system-error: ");
-    UserWriteF("errno=%d, see <errno.h>\n",(int)errno);
-  }
+    UserWrite("system-error\n");
 
   return (OKCODE);
 }
+#endif
 
 /****************************************************************************/
 /*
@@ -12241,7 +12240,9 @@ INT InitCommands ()
   if (CreateCommand("keylist",            ListCommandKeysCommand                  )==NULL) return (__LINE__);
   if (CreateCommand("refreshon",          RefreshOnCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("refreshoff",         RefreshOffCommand                               )==NULL) return (__LINE__);
+    #ifndef __MWCW__
   if (CreateCommand("system",                     SystemCommand                                   )==NULL) return (__LINE__);
+    #endif
 
   /* debugging */
         #ifdef Debug
