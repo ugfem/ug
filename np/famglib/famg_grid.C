@@ -1078,6 +1078,29 @@ int FAMGGrid::Construct(FAMGGrid *fg)
 	FAMGVectorEntry fg_ve, cg_ve;
 	
 	// transfer testvectors by trivial injection to coarse grid
+#ifdef FAMG_SPARSE_BLOCK
+    j = 0;
+    const FAMGSparseVector *svAcg = tvAcg.GetSparseVectorPtr(); 
+    const FAMGSparseVector *svAfg = tvAfg.GetSparseVectorPtr(); 
+    const FAMGSparseVector *svBcg = tvBcg.GetSparseVectorPtr(); 
+    const FAMGSparseVector *svBfg = tvBfg.GetSparseVectorPtr(); 
+    double *tvAcg_val, *tvAfg_val, *tvBcg_val, *tvBfg_val; 
+
+	while( viter(fg_ve) )
+	{
+		if (fg_gridvec.IsCG(fg_ve))
+		{
+			cg_ve = GetTransfer()->GetFirstEntry(fg_ve)->GetCol();
+            tvAcg_val = tvAcg.GetValuePtr(cg_ve); 
+            tvAfg_val = tvAfg.GetValuePtr(fg_ve); 
+            tvBcg_val = tvBcg.GetValuePtr(cg_ve); 
+            tvBfg_val = tvBfg.GetValuePtr(fg_ve); 
+            SparseBlockVCopy(svAcg, svAfg, tvAcg_val, tvAfg_val, 1.0); 
+            SparseBlockVCopy(svBcg, svBfg, tvBcg_val, tvBfg_val, 1.0); 
+			j++;
+		}
+	}
+#else
     j = 0;
 	while( viter(fg_ve) )
 	{
@@ -1089,6 +1112,7 @@ int FAMGGrid::Construct(FAMGGrid *fg)
 			j++;
 		}
 	}
+#endif
 
     if (j != GetN())
     {

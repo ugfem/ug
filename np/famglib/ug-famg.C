@@ -662,17 +662,48 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
 
     
     // sparse vector structure of the test vectors
-    // todo: create this automatically from the script 
-    
-      short ncomp = 2;
-    short *compmap;
-    compmap = new short[2];
-    compmap[0] = 0; compmap[1] = 1; 
-    
-    /* short ncomp = 1;
-    short *compmap;
-    compmap = new short[1];
-    compmap[0] = 0; */
+    // todo: create this automatically from the script
+    // test vectros gets the same structure as the diagonal of D
+    SPARSE_MATRIX *spma = D->sm[DMTP(0)];
+
+    short ncomp = spma->nrows;
+    short *compmap, cmpm, j, jj;
+    compmap = new short[ncomp];
+    short *diagoff = new short[spma->N];
+    short ndiagoff = 0;
+
+    for(i = 0; i < spma->nrows; i++)
+    {
+        for(jj = spma->row_start[i]; jj < spma->row_start[i+1]; jj++)
+        {
+            if (i == spma->col_ind[jj])
+            {
+                diagoff[i] = spma->offset[jj];
+                ndiagoff++;
+            }
+        }
+    }
+
+    if(ncomp != ndiagoff)
+	{
+		ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": cannot create vector FAMG_UNKNOWN" << endl;
+		FAMGError(ostr);
+		return 1;
+	}
+
+    for(i = 0; i < ncomp; i++) compmap[i] = -1;
+    cmpm = 0;
+    for(i = 0; i < ncomp; i++)
+    {
+        if(compmap[i] >= 0) continue;
+        compmap[i] = cmpm;
+        for(j = i+1; j < ncomp; j++)
+        {
+            if(diagoff[i] == diagoff[j]) compmap[j] = cmpm;
+        }
+        cmpm++;
+    }
+        
 
 	 famg_interface.vector[FAMG_TVA] = new FAMGugVector( *(FAMGugGridVector*)famg_interface.gridvector,tv,compmap,ncomp);
 	if( famg_interface.vector[FAMG_TVA] == NULL )
@@ -690,6 +721,7 @@ static INT FAMGPreProcessForCoarseGridSolver  (MULTIGRID *mg, INT *mark_key, INT
 		return 0;
 	}
 
+    delete diagoff;
     delete compmap;
 
     for(i = 0; i < FAMG_NVECTORS; i++)
