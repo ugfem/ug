@@ -2260,8 +2260,8 @@ static INT NewCommand (INT argc, char **argv)
 static INT OpenCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  char theMultigrid[NAMESIZE],Domain[NAMESIZE],Problem[NAMESIZE],Format[NAMESIZE];
-  char *theDomain,*theProblem,*theFormat;
+  char theMultigrid[NAMESIZE],Format[NAMESIZE];
+  char *theBVP,*theFormat;
   unsigned long heapSize;
   INT i;
 
@@ -2273,27 +2273,17 @@ static INT OpenCommand (INT argc, char **argv)
   }
 
   /* get problem, domain and format */
-  theProblem = theDomain = theFormat = NULL;
+  theBVP = theFormat = NULL;
   heapSize = 0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
-    case 'p' :
-      if (sscanf(argv[i],expandfmt(CONCAT3("p %",NAMELENSTR,"[ -~]")),Problem)!=1)
+    case 'b' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("b %",NAMELENSTR,"[ -~]")),theBVP)!=1)
       {
-        PrintHelp("open",HELPITEM," (cannot read problem specification)");
+        PrintHelp("new",HELPITEM," (cannot read BndValProblem specification)");
         return(PARAMERRORCODE);
       }
-      theProblem = Problem;
-      break;
-
-    case 'd' :
-      if (sscanf(argv[i],expandfmt(CONCAT3("d %",NAMELENSTR,"[ -~]")),Domain)!=1)
-      {
-        PrintHelp("open",HELPITEM," (cannot read domain specification)");
-        return(PARAMERRORCODE);
-      }
-      theDomain = Domain;
       break;
 
     case 'f' :
@@ -2326,7 +2316,7 @@ static INT OpenCommand (INT argc, char **argv)
   }
 
   /* allocate the multigrid structure */
-  theMG = LoadMultiGrid(theMultigrid,theMultigrid,theDomain,theProblem,theFormat,heapSize);
+  theMG = LoadMultiGrid(theMultigrid,theMultigrid,theBVP,theFormat,heapSize);
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"open","could not open multigrid");
@@ -4881,7 +4871,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
 
   /* check options */
   AlsoOrderMatrices = SpecialTreatSkipVecs = FALSE;
-  which = GM_TAKE_SKIP | GM_TAKE_NONSKIP;
+  /* which = GM_TAKE_SKIP | GM_TAKE_NONSKIP;*/
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -4905,13 +4895,13 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
       AlsoOrderMatrices = TRUE;
       break;
 
-    case 'w' :
-      which = 0;
-      if (strchr(argv[i],'s')!=NULL)
-        which |= GM_TAKE_SKIP;
-      if (strchr(argv[i],'n')!=NULL)
-        which |= GM_TAKE_NONSKIP;
-      break;
+    /*			case 'w':
+                                    which = 0;
+                                    if (strchr(argv[i],'s')!=NULL)
+                                            which |= GM_TAKE_SKIP;
+                                    if (strchr(argv[i],'n')!=NULL)
+                                            which |= GM_TAKE_NONSKIP;
+                                    break; */
 
     case 's' :
       if              (strchr(argv[i],'<')!=NULL)
@@ -4941,7 +4931,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
     sprintf(buffer," [%d:",level);
     UserWrite(buffer);
 
-    if (LexOrderVectorsInGrid(theGrid,order,sign,which,SpecialTreatSkipVecs,AlsoOrderMatrices)!=GM_OK)
+    if (LexOrderVectorsInGrid(theGrid,order,sign,SpecialTreatSkipVecs,AlsoOrderMatrices)!=GM_OK)
     {
       PrintErrorMessage('E',"lexorderv","LexOrderVectorsInGrid failed");
       return (CMDERRORCODE);
@@ -5110,6 +5100,8 @@ static INT OrderVectorsCommand (INT argc, char **argv)
         mode = GM_FCFCLL;
       else if (strcmp(modestr,"FFCCLL")==0)
         mode = GM_FFCCLL;
+      else if (strcmp(modestr,"FFLCLC")==0)
+        mode = GM_FFLCLC;
       else
       {
         PrintHelp("orderv",HELPITEM," (you have to specify FFCCLL or FCFCLL as mode)");
