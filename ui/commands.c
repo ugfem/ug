@@ -1089,7 +1089,9 @@ static INT SetCommand (INT argc, char **argv)
     break;
   }
 
+        #ifdef ModelP
   free(buffer);
+        #endif
 
   if (rv==0)
     return (OKCODE);
