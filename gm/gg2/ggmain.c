@@ -2599,7 +2599,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
   {
     UserWrite("could not create connection in multigrid\n");
     DisposeMultiGrid(theMG);
-    return(NULL);
+    return(0);
   }
 
   TerminateAccel(theMG, 0);
