@@ -139,6 +139,24 @@ enum Priorities
 /* map pointer to structure onto a pointer to its DDD_HDR */
 #define PARHDR(obj)    (&((obj)->ddd))
 
+#ifdef __TWODIM__
+#define GETGID(x)       ((OBJT(x)==IEOBJ || OBJT(x)==BEOBJ) ? EGID((ELEMENT*)(x)) :  \
+                         ((OBJT(x)==IVOBJ || OBJT(x)==BVOBJ) ? VXGID((VERTEX *)(x)) :\
+                          ((OBJT(x)==NDOBJ || OBJT(x)==VEOBJ) ? GID((NODE *)(x)) :    \
+                                           -1)))
+#else
+#define GETGID(x)       (( OBJT(x)==IEOBJ || OBJT(x)==BEOBJ) ? EGID((ELEMENT*)(x)) : \
+                         ((OBJT(x)==IVOBJ || OBJT(x)==BVOBJ) ? VXGID((VERTEX *)(x)) :\
+                          ((OBJT(x)==NDOBJ || OBJT(x)==VEOBJ || OBJT(x)==EDOBJ) ?    \
+                                           GID((NODE *)(x)) : -1)))
+#endif
+
+/*
+   #define CDBG(x,y)       if (GETGID(x)==0x25000d) {y}
+ */
+#define CDBG(x,y)
+
+
 
 #else   /* not ModelP */
 
@@ -166,6 +184,8 @@ enum Priorities
 
 /* define mapping from position in linked list to object priority */
 #define PRIO2INDEX(prio)  0
+
+#define CDBG(x,y)
 
 #endif
 
