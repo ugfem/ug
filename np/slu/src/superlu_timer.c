@@ -34,14 +34,8 @@ double SuperLU_timer_() {
 
 #else
 
-#include <sys/types.h>
-#include <sys/times.h>
 #include <time.h>
-#include <sys/time.h>
-
-#ifndef CLK_TCK
-#define CLK_TCK 60
-#endif
+#include <sys/times.h>
 
 double SuperLU_timer_()
 {
@@ -50,7 +44,7 @@ double SuperLU_timer_()
   times(&use);
   tmp = use.tms_utime;
   tmp += use.tms_stime;
-  return (double)(tmp) / CLK_TCK;
+  return (double)tmp / (double)CLK_TCK;
 }
 
 #endif
