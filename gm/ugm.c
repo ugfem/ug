@@ -1209,7 +1209,6 @@ INT GetNodeContext (ELEMENT *theElement, NODE **theElementContext)
 	/* check for center node */
 	CenterNode = MidNodes+CENTER_NODE_INDEX(theElement);
 	CenterNode[0] = GetCenterNode(theElement);
-	assert(0);
 
 	return(GM_OK);
 }
@@ -2198,6 +2197,9 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
 	  }
 
 	/* allocate predefined mesh, e. g. corner vertices pointers */
+	#ifdef ModelP
+	if (me==master)
+	#endif
 	if (InsertMesh(theMG,&mesh))
 	  {
 		DisposeMultiGrid(theMG);
@@ -3105,42 +3107,158 @@ INT DisposeMultiGrid (MULTIGRID *theMG)
 D*/
 /****************************************************************************/
 
-INT RenumberMultiGrid (MULTIGRID *theMG)
+/************************************************************************************/
+/*     																				*/
+/*    Enumeration of nodes from left to right corresponding to 0...n-1 				*/
+/*    ----------------------------------------------------------------				*/
+/*     																				*/
+/*     					   orphan nodes												*/
+/*     					|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|							*/
+/*   N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N 			*/
+/*  |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| 		*/
+/*     			ghost nodes						  master nodes						*/
+/*     																				*/
+/*     																				*/
+/*     																				*/
+/*   Mapping should exist for all orphan nodes to vertices. 'foid' is id of first 	*/
+/*   orphan node, 'non' number of orphan nodes. (MGIO_PAR) it looks (consequently): */
+/*     																				*/
+/*     																				*/
+/*     					   				orphan nodes								*/
+/*     						        |~~~~~~~~~~~~~~~~~~~~|							*/
+/*                                   N N N N N N N N N N N N N N N N N N N 			*/
+/*  							    |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| 		*/
+/*     											  master nodes						*/
+/*     																				*/
+/*     																				*/
+/************************************************************************************/
+
+INT RenumberNodes (MULTIGRID *theMG, INT *foid, INT *non)
 {
-	GRID *theGrid;
-	VERTEX *theVertex;
+	INT i,nid;
 	NODE *theNode;
-	ELEMENT *theElement;
-	INT nv,nn,ne;
-	int k,j;
 	
-	nv = ne = nn = 0;
-	
-	j = theMG->topLevel;
-	for (k=0; k<=j; k++)
+	nid=0;
+	if (procs==1)
 	{
-		theGrid = GRID_ON_LEVEL(theMG,k);
+		/* ids for all nodes */
+		for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,0)); theNode!=NULL; theNode=SUCCN(theNode))
+		{
+			ID(theNode) = ID(MYVERTEX(theNode)); 
+			nid = MAX(nid,ID(theNode));
+		}
+		nid++;
+		non[0] = nid;
+		for (i=1; i<=TOPLEVEL(theMG); i++)
+			for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+				ID(theNode) = nid++;
+		foid[0] = 0;
+	}
+	else
+	{
+		/* ids for other nodes */
+		for (i=0; i<=TOPLEVEL(theMG); i++)
+			for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+				if (GHOST(theNode) && !USED(theNode))
+					ID(theNode) = nid++;
+		foid[0] = nid;
+
+		for (i=0; i<=TOPLEVEL(theMG); i++)
+			for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+				if (GHOST(theNode) && USED(theNode))
+					ID(theNode) = nid++;
+
+		/* ids for master nodes */
+		for (i=0; i<=TOPLEVEL(theMG); i++)
+			for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+				if (MASTER(theNode) && USED(theNode))
+					ID(theNode) = nid++;
+		non[0] = nid-foid[0];
 		
-		/* vertices */
-		for (theVertex=FIRSTVERTEX(theGrid); theVertex!=NULL; theVertex=SUCCV(theVertex))
-			ID(theVertex) = nv++;
+		/* ids for master nodes */
+		for (i=0; i<=TOPLEVEL(theMG); i++)
+			for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+				if (MASTER(theNode) && !USED(theNode))
+					ID(theNode) = nid++;
 		
-		/* nodes */
-		for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-			ID(theNode) = nn++;
-		
-		/* elements */
-		for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-			ID(theElement) = ne++;
 	}
 	
-	theMG->vertIdCounter = nv;
-	theMG->nodeIdCounter = nn;
-	theMG->elemIdCounter = ne;
-	
-	return(0);
+	return (0);
 }
 
+INT RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, INT *foid, INT *non)
+{
+	NODE *theNode;
+	ELEMENT *theElement;
+	INT i,n_ioe,n_boe,vid,n_iov,n_bov,eid,lfoid,lnon,j;
+	
+	/* init used-flags */
+	for (i=0; i<=TOPLEVEL(theMG); i++)
+		for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+		{
+			SETUSED(theNode,0);
+			SETUSED(MYVERTEX(theNode),0);
+			SETTHEFLAG(MYVERTEX(theNode),0);
+		}
+
+	/* renumber elements and set orphan-flags for nodes and vertices */
+	eid=n_ioe=n_boe=0;
+	for (i=0; i<=TOPLEVEL(theMG); i++)
+		for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
+			if (EFATHER(theElement)==NULL)
+			{
+				ID(theElement) = eid++;
+				if (OBJT(theElement)==BEOBJ) 	n_boe++;
+				else							n_ioe++;
+				for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+				{
+					SETUSED(CORNER(theElement,j),1);
+					SETUSED(MYVERTEX(CORNER(theElement,j)),1);
+				}
+				assert(i==0 || GHOST(theElement));
+			}
+	for (i=0; i<=TOPLEVEL(theMG); i++)
+		for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
+			if (EFATHER(theElement)!=NULL)
+				ID(theElement) = eid++;
+	if (nboe!=NULL) *nboe = n_boe;
+	if (nioe!=NULL) *nioe = n_ioe;
+
+	/* renumber vertices */
+	vid=n_iov=n_bov=0;
+	for (i=0; i<=TOPLEVEL(theMG); i++)
+		for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+			if (THEFLAG(MYVERTEX(theNode))==0 && USED(MYVERTEX(theNode)) && OBJT(MYVERTEX(theNode))==BVOBJ)
+			{
+				ID(MYVERTEX(theNode)) = vid++;
+				n_bov++;
+				SETTHEFLAG(MYVERTEX(theNode),1);
+			}
+	for (i=0; i<=TOPLEVEL(theMG); i++)
+		for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+			if (THEFLAG(MYVERTEX(theNode))==0 && USED(MYVERTEX(theNode)) && OBJT(MYVERTEX(theNode))==IVOBJ)
+			{
+				ID(MYVERTEX(theNode)) = vid++;
+				n_iov++;
+				SETTHEFLAG(MYVERTEX(theNode),1);
+			}
+	for (i=0; i<=TOPLEVEL(theMG); i++)					/* not neccessary for i/o */
+		for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+			if (THEFLAG(MYVERTEX(theNode))==0 && !USED(MYVERTEX(theNode)))
+			{
+				ID(MYVERTEX(theNode)) = vid++;
+				SETTHEFLAG(MYVERTEX(theNode),1);
+			}
+	if (nbov!=NULL) *nbov = n_bov;
+	if (niov!=NULL) *niov = n_iov;
+	
+	/* renumber nodes */
+	if (RenumberNodes(theMG,&lfoid,&lnon)) return (1);
+	if (foid!=NULL) *foid = lfoid;
+	if (non!=NULL) *non = lnon;
+	
+	return (0);
+}
 
 /****************************************************************************/
 /*
@@ -3480,21 +3598,12 @@ INT FindNeighborElement (const ELEMENT *theElement, INT Side, ELEMENT **theNeigh
 D*/
 /****************************************************************************/
 
-NODE *InsertInnerNode (MULTIGRID *theMG, DOUBLE *pos)
+NODE *InsertInnerNode (GRID *theGrid, DOUBLE *pos)
 {
-	GRID *theGrid;
 	VERTEX *theVertex;
 	NODE *theNode;
 	INT i;
 	
-	/* check level */
-	if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
-	{
-		PrintErrorMessage('E',"InsertInnerNode","only a multigrid with exactly one level can be edited");
-		return(NULL);
-	}
-	theGrid = GRID_ON_LEVEL(theMG,0);
-		
 	/* create objects */
 	theVertex = CreateInnerVertex(theGrid);
 	if (theVertex==NULL)
@@ -3541,21 +3650,11 @@ NODE *InsertInnerNode (MULTIGRID *theMG, DOUBLE *pos)
 D*/
 /****************************************************************************/
 
-NODE *InsertBoundaryNode (MULTIGRID *theMG, BNDP *bndp)
+NODE *InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
 {
-	GRID *theGrid;
 	NODE *theNode;
 	VERTEX *theVertex;
 	INT move;
-
-	/* check level */
-	if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
-	{
-		PrintErrorMessage('E',"InsertBoundaryNode",
-			"only a multigrid with exactly one level can be edited");
-		return(NULL);
-	}
-	theGrid = GRID_ON_LEVEL(theMG,0);
 
 	/* create objects */
 	theVertex = CreateBoundaryVertex(theGrid);
@@ -3621,21 +3720,12 @@ NODE *InsertBoundaryNode (MULTIGRID *theMG, BNDP *bndp)
 D*/
 /****************************************************************************/
 
-INT DeleteNode (MULTIGRID *theMG, NODE *theNode)
+INT DeleteNode (GRID *theGrid, NODE *theNode)
 {
-	GRID *theGrid;
 	VERTEX *theVertex;
 	ELEMENT *theElement;
 	INT i;
 
-	/* check level */
-	if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
-	{
-		PrintErrorMessage('E',"DeleteNode","only a multigrid with exactly one level can be edited");
-		RETURN(GM_ERROR);
-	}
-	theGrid = GRID_ON_LEVEL(theMG,0);
-	
 	if (theNode==NULL)
 	{
 		PrintErrorMessage('E',"DeleteNode","node not found");
@@ -3686,19 +3776,10 @@ INT DeleteNode (MULTIGRID *theMG, NODE *theNode)
 D*/
 /****************************************************************************/
 
-INT DeleteNodeWithID (MULTIGRID *theMG, INT id)
+INT DeleteNodeWithID (GRID *theGrid, INT id)
 {
-	GRID *theGrid;
 	NODE *theNode;
 
-	/* check level */
-	if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
-	{
-		PrintErrorMessage('E',"DeleteNodeWithID","only a multigrid with exactly one level can be edited");
-		RETURN(GM_ERROR);
-	}
-	theGrid = GRID_ON_LEVEL(theMG,0);
-		
 	/* find node */
 	for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
 		if (ID(theNode)==id) break;
@@ -3707,7 +3788,7 @@ INT DeleteNodeWithID (MULTIGRID *theMG, INT id)
 		PrintErrorMessage('E',"DeleteNodeWithID","node not found");
 		RETURN(GM_ERROR);
 	}
-	return (DeleteNode(theMG,theNode));
+	return (DeleteNode(theGrid,theNode));
 }
 
 /****************************************************************************/
@@ -4755,9 +4836,9 @@ static INT NdElPtrArray_Update(INT *MIndex, INT *MBlock, ELEMENT *theElement, MU
 
 
 
-ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT *NbgSdList)
+ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, INT *NbgSdList)
 {
-	GRID		 *theGrid;
+	MULTIGRID *theMG;
 	INT      	 i,j,k,m,rv,found,tag,ElementType;
 	INT 		 NeighborSide[MAX_SIDES_OF_ELEM];
 	NODE		 *sideNode[MAX_CORNERS_OF_SIDE],*NeighborNode;
@@ -4765,73 +4846,60 @@ ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList
 	ELEMENT 	 *theElement,*Neighbor[MAX_SIDES_OF_ELEM];
 	BNDS         *bnds[MAX_SIDES_OF_ELEM];
 	BNDP         *bndp[MAX_CORNERS_OF_ELEM];
+	NODE 		*cornerNode[MAX_CORNERS_OF_ELEM];
+	INT 		cornerID[2*MAX_CORNERS_OF_ELEM];
+	INT MIndex[MAX_CORNERS_OF_ELEM];
+	INT MBlock[MAX_CORNERS_OF_ELEM];
+	HEAP *theHeap;
+	INT highestid;
 	#ifdef __TWODIM__
 	VERTEX		 *theVertex;
 	NODE		 *theNode;
 	#endif
-
-	NODE 		*cornerNode[MAX_CORNERS_OF_ELEM];
-	INT 		cornerID[2*MAX_CORNERS_OF_ELEM],max;
-
-	INT MIndex[MAX_CORNERS_OF_ELEM];
-	INT MBlock[MAX_CORNERS_OF_ELEM];
-
-
-	HEAP *theHeap;
-
-
-	INT highestid;
     
-	for (i=0; i<CORNERS_OF_REF(n); i++)
-	{
-		cornerNode[i] = NULL;
-	}
-    max = 2 * MAX_CORNERS_OF_ELEM;
-	for (i=0; i<max; i++)
-	{
-		cornerID [i] = 0;
-	}
-
-	/* check level */
-	if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
-	{
-		PrintErrorMessage('E',"InsertElement",
-			 "only a multigrid with exactly one level can be edited");
-		return(NULL);
-	}
-	theGrid = GRID_ON_LEVEL(theMG,0);
+	theMG = MYMG(theGrid);
+	for (i=0; i<CORNERS_OF_REF(n); i++)	cornerNode[i] = NULL;
+	for (i=0; i<2*MAX_CORNERS_OF_ELEM; i++) cornerID [i] = 0;
 
 	/* check parameters */
     #ifdef __TWODIM__
-	if ((n!=TRIANGLE)&&(n!=QUADRILATERAL))
+	switch (n)
 	{
-		PrintErrorMessage('E',"InsertElement",
-						  "only triangles and quadrilaterals allowed in 2D");
- 		return(NULL);
+		case 3:
+			tag = TRIANGLE;
+			break;
+		case 4:
+			tag = QUADRILATERAL;
+			break;
+		default:
+			PrintErrorMessage('E',"InsertElement","only triangles and quadrilaterals allowed in 2D");
+			return(NULL);
 	}
-	tag = n;
-	#endif
-
-    #ifdef __THREEDIM__
-	if (n == 4)
-	  tag = TETRAHEDRON;
-	else if ( n == 5)
-	  tag = PYRAMID;
-	else if ( n == 6)
-	  tag = PRISM;
-	else if ( n == 8)
-	  tag = HEXAHEDRON;
-	else
-	  {
-		PrintErrorMessage('E',"InsertElement",
-		"only tetrahedrons, pyramids and hexahedrons are allowed in the 3D coarse grid");
-		return(NULL);
-	  }
     #endif
 
+	#ifdef __THREEDIM__
+	switch (n)
+	{
+		case 4:
+			tag = TETRAHEDRON;
+			break;
+		case 5:
+			tag = PYRAMID;
+			break;
+		case 6:
+			tag = PRISM;
+			break;
+		case 8:
+			tag = HEXAHEDRON;
+			break;
+		default:
+			PrintErrorMessage('E',"InsertElement","only tetrahedrons, pyramids and hexahedrons are allowed in the 3D coarse grid");
+			return(NULL);
+	}
+    #endif
+	
 	/* init vertices */
-	for (i=0; i<n; i++)
-	  Vertex[i] = MYVERTEX(Node[i]);
+	for (i=0; i<n; i++) Vertex[i] = MYVERTEX(Node[i]);
 
     #ifdef __TWODIM__
 	/* find orientation */
@@ -5102,19 +5170,19 @@ ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList
 D*/
 /****************************************************************************/
 
-ELEMENT *InsertElementFromIDs (MULTIGRID *theMG, INT n, INT *idList)
+ELEMENT *InsertElementFromIDs (GRID *theGrid, INT n, INT *idList)
 {
-	GRID *theGrid;
+	MULTIGRID *theMG;
 	NODE *Node[MAX_CORNERS_OF_ELEM],*theNode;
 	INT i,j,found;
 		
 	/* check level */
+	theMG = MYMG(theGrid);
 	if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
 	{
 		PrintErrorMessage('E',"InsertElementFromIDs","only a multigrid with exactly one level can be edited");
 		return(NULL);
 	}
-	theGrid = GRID_ON_LEVEL(theMG,0);
 	
 	/* check data */
 	for (i=0; i<n; i++)
@@ -5151,7 +5219,7 @@ ELEMENT *InsertElementFromIDs (MULTIGRID *theMG, INT n, INT *idList)
    		return(NULL);
 	}
 	
-	return (InsertElement(theMG,n,Node,NULL,NULL));
+	return (InsertElement(GRID_ON_LEVEL(theMG,0),n,Node,NULL,NULL));
 }
 
 /****************************************************************************/
@@ -5263,80 +5331,103 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
 {
     GRID *theGrid;
     ELEMENT **EList,*nbList[MAX_SIDES_OF_ELEM],*theElement;
-	NODE **NList,*Nodes[MAX_CORNERS_OF_ELEM],*theNode;
-    INT sid,i,nel,nnd,k,n,nid,eid;
-
-	#ifdef ModelP
-	if (me!=master)
-	  return(GM_OK);
-	#endif
+	NODE **NList,*Nodes[MAX_CORNERS_OF_ELEM],*theNode,*ListNode;
+	VERTEX **VList;
+    INT sid,i,nel,nnd,k,n,nid,eid,nv,j,maxlevel,l;
 
 	if (theMesh == NULL)	return(GM_OK);
 	if (theMesh->nElements == NULL)
 	{
+		assert(theMesh->VertexLevel==NULL && theMesh->VertexPrio==NULL);
+		theGrid = GRID_ON_LEVEL(theMG,0);
 		for (i=0; i<theMesh->nBndP; i++)
-			if (InsertBoundaryNode(theMG,theMesh->theBndPs[i]) == NULL)
+			if (InsertBoundaryNode(theGrid,theMesh->theBndPs[i]) == NULL)
 				return(GM_ERROR);
 		
 		for (i=0; i<theMesh->nInnP; i++)
-			if (InsertInnerNode(theMG,theMesh->Position[i]) == NULL)
+			if (InsertInnerNode(theGrid,theMesh->Position[i]) == NULL)
 				return(GM_ERROR);
 		return(GM_OK);
 	}
 
-	theGrid = GRID_ON_LEVEL(theMG,0);
-	nnd = theMesh->nBndP + theMesh->nInnP;
-	NList = (NODE **) GetTmpMem(MGHEAP(theMG),nnd*sizeof(NODE *));
+	/* prepare */
+	nv = theMesh->nBndP + theMesh->nInnP;
+	VList = (VERTEX **) GetTmpMem(MGHEAP(theMG),nv*sizeof(VERTEX *));
+	if (VList == NULL) return(GM_ERROR);
+	NList = (NODE **) GetTmpMem(MGHEAP(theMG),nv*sizeof(NODE *));
 	if (NList == NULL) return(GM_ERROR);
-
-	nid=0;
-	for (i=0; i<theMesh->nBndP; i++)
+	for (j=0; j<nv; j++) NList[j] = NULL;
+	
+	maxlevel = 0;
+	if (theMesh->VertexLevel!=NULL)
 	{
-		theNode = InsertBoundaryNode(theMG,theMesh->theBndPs[i]);
-		ID(theNode) = nid++;
-		if (theNode == NULL)	return(GM_ERROR);
-		NList[i] = theNode;
-	}
-	for (i=0; i<theMesh->nInnP; i++)
-	{
-		theNode = InsertInnerNode(theMG,theMesh->Position[i]);
-		ID(theNode) = nid++;
-		if (theNode == NULL)	return(GM_ERROR);
-		NList[i+theMesh->nBndP] = theNode;
-	}
-
-	EList = NULL;
-	if (theMesh->nbElements != NULL)
-	  {
-		theGrid = GRID_ON_LEVEL(theMG,0);
-		nel = 0;
-		for (sid=1; sid<=theMesh->nSubDomains; sid++)
-		  nel += theMesh->nElements[sid]; 
-		EList = (ELEMENT **) GetTmpMem(MGHEAP(theMG),nel*sizeof(ELEMENT *));
-		if (EList != NULL)
-		  for (i=0; i<nel; i++)	EList[i] = NULL;
-	  }
-
-	nel = 0,eid=0;
-	for (sid=1; sid<=theMesh->nSubDomains; sid++)
-		for (i=0; i<theMesh->nElements[sid]; i++)
+		for (i=0; i<theMesh->nBndP; i++)
 		{
-			n = theMesh->Element_corners[sid][i];
-			for (k=0; k<n; k++)
-				Nodes[k] = NList[theMesh->Element_corner_ids[sid][i][k]];
-			if (EList != NULL)
-				for (k=0; k<SIDES_OF_REF(n); k++)
-					if (theMesh->nbElements[sid][i][k]>=0)
-						nbList[k] = EList[theMesh->nbElements[sid][i][k]];
-					else
-						nbList[k] = NULL;
-			
-			/*theElement = InsertElement (theMG,n,Nodes,nbList,NULL);*/
-			theElement = InsertElement (theMG,n,Nodes,NULL,NULL);
-			ID(theElement) = eid++;
-			if (theElement == NULL)		return(GM_ERROR);
-			if (EList != NULL)			EList[nel++] = theElement;
+			theGrid = GRID_ON_LEVEL(theMG,theMesh->VertexLevel[i]);
+			VList[i] = CreateBoundaryVertex(theGrid);
+			assert(VList[i]!=NULL);
+			if (BNDP_Global(theMesh->theBndPs[i],CVECT(VList[i]))) assert(0);
+			V_BNDP(VList[i]) = theMesh->theBndPs[i];
+			maxlevel = MAX(maxlevel,theMesh->VertexLevel[i]);
 		}
+		for (i=theMesh->nBndP; i<nv; i++)
+		{
+			VList[i] = CreateInnerVertex(theGrid);
+			V_DIM_COPY(theMesh->Position[i-theMesh->nBndP],CVECT(VList[i]));
+			maxlevel = MAX(maxlevel,theMesh->VertexLevel[i]);
+		}
+	}
+	else
+	{
+		theGrid = GRID_ON_LEVEL(theMG,0);
+		for (i=0; i<theMesh->nBndP; i++)
+		{
+			VList[i] = CreateBoundaryVertex(theGrid);
+			assert(VList[i]!=NULL);
+			if (BNDP_Global(theMesh->theBndPs[i],CVECT(VList[i]))) assert(0);
+			V_BNDP(VList[i]) = theMesh->theBndPs[i];
+		}
+		for (i=theMesh->nBndP; i<nv; i++)
+		{
+			VList[i] = CreateInnerVertex(theGrid);
+			V_DIM_COPY(theMesh->Position[i-theMesh->nBndP],CVECT(VList[i]));
+		}
+	}
+	
+	for (i=0; i<=maxlevel; i++)
+	{
+		theGrid = GRID_ON_LEVEL(theMG,i);
+		for (j=1; j<=theMesh->nSubDomains; j++)
+			for (k=0; k<theMesh->nElements[j]; k++)
+			{
+				n = theMesh->Element_corners[j][k];
+				for (l=0; l<n; l++)
+				{
+					ListNode = NList[theMesh->Element_corner_ids[j][k][l]];
+					if (ListNode==NULL || LEVEL(ListNode)<i)
+					{
+						Nodes[l] = CreateNode(theGrid);
+						if (Nodes[l]==NULL) assert(0);
+						NList[theMesh->Element_corner_ids[j][k][l]] = Nodes[l];
+						MYVERTEX(Nodes[l]) = VList[theMesh->Element_corner_ids[j][k][l]];
+						if (ListNode==NULL || LEVEL(ListNode)<i-1)
+						{
+							NFATHER(Nodes[l]) = NULL;
+						}
+						else
+						{
+							SETNFATHER(Nodes[l],ListNode);
+							SONNODE(ListNode) = Nodes[l];
+						}
+					}
+					else
+					{
+						Nodes[l] = ListNode;
+					}
+				}
+				theElement = InsertElement (theGrid,n,Nodes,NULL,NULL);
+			}
+	}
 
     return(GM_OK);
 }
@@ -7207,7 +7298,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 	return(nerrors);
 }
 
-static INT CheckNode (ELEMENT *theElement, NODE* theNode, INT i)
+static INT CheckNode (ELEMENT *theElement, NODE* theNode, INT i) 
 {
 	VERTEX	*theVertex	= MYVERTEX(theNode);
 	NODE	*FatherNode;
@@ -8766,119 +8857,6 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
 		}
 	}
 	ReleaseTmpMem(theHeap);
-	
-	return (0);
-}
-
-/****************************************************************************/
-/*D
-   RenumberNodeElem - Init what is neccessary
-
-   SYNOPSIS:
-   INT RenumberNodeElem (MULTIGRID *theMG);
-
-   PARAMETERS:
-.  theMG - ptr to multigrid
-
-   DESCRIPTION:
-   This function renumbers nodes and elements according to their double-linked
-   lists.
-
-   RETURN VALUE:
-   INT
-.n   GM_OK if ok
-.n   > 0 line in which error occured.
-D*/
-/****************************************************************************/
-
-INT RenumberNodeElem (MULTIGRID *theMG)
-{
-	INT i,nid,eid;
-	GRID *theGrid;
-	NODE *theNode;
-	ELEMENT *theElement;
-	
-	nid=eid=0;
-	for (i=0; i<=TOPLEVEL(theMG); i++)
-	{
-		theGrid = GRID_ON_LEVEL(theMG,i);
-		for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-			ID(theElement) = eid++;
-		if (i==0)
-		{
-			for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-				if (OBJT(MYVERTEX(theNode))==BVOBJ)
-					ID(theNode) = nid++;
-			for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-				if (OBJT(MYVERTEX(theNode))==IVOBJ)
-					ID(theNode) = nid++;
-		}
-		else
-			for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-				ID(theNode) = nid++;
-	}
-	
-	return (0);
-}
-
-/****************************************************************************/
-/*D
-   CheckEnumerationNodeElem - check if numeration is according to RenumberNodeElem
-
-   SYNOPSIS:
-   INT CheckEnumerationNodeElem (MULTIGRID *theMG);
-
-   PARAMETERS:
-.  theMG - ptr to multigrid
-
-   DESCRIPTION:
-   This function checks numbers of nodes and elements;
-
-   RETURN VALUE:
-   INT
-.n   GM_OK if ok
-.n   > 0 line in which error occured.
-D*/
-/****************************************************************************/
-
-INT CheckEnumerationNodeElem (MULTIGRID *theMG)
-{
-	INT i,nid,eid;
-	GRID *theGrid;
-	NODE *theNode;
-	ELEMENT *theElement;
-	
-	nid=eid=0;
-	for (i=0; i<=TOPLEVEL(theMG); i++)
-	{
-		theGrid = GRID_ON_LEVEL(theMG,i);
-		for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-		{
-			if (ID(theElement)!=eid) return (1);
-			eid++;
-		}
-		if (i==0)
-		{
-			for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-				if (OBJT(MYVERTEX(theNode))==BVOBJ)
-				{
-					if (ID(theNode) != nid) return (1);
-					nid++;
-				}
-			for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-				if (OBJT(MYVERTEX(theNode))==IVOBJ)
-				{
-					if (ID(theNode) != nid) return (1);
-					nid++;
-				}
-		}
-		else
-			for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-			{
-				if (ID(theNode) != nid) return (1);
-				nid++;
-			}
-	}
 	
 	return (0);
 }
