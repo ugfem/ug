@@ -2123,7 +2123,7 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
    DisposeElement - Remove element from the data structure
 
    SYNOPSIS:
-   INT DisposeElement (GRID *theGrid, ELEMENT *theElement);
+   INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections);
 
    PARAMETERS:
    .  theGrid - grid to remove from
