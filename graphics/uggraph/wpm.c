@@ -3946,6 +3946,8 @@ static INT InitLinePlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theLpo->color                                                   = 0.0;
     theLpo->aspectratio                                             = 1.0;
     theLpo->EvalFct                                                 = NULL;
+    theLpo->Gnuplot                         = 0;
+    strcpy(theLpo->Gnufilename,"test.gnu");
   }
 
   /* set from option */
@@ -4081,6 +4083,17 @@ static INT InitLinePlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     ret = NOT_ACTIVE;
   }
 
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='G')
+    {
+      if (sscanf(argv[i],"G %s",buffer)!=1)
+        break;
+      if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(theLpo->Gnufilename,buffer);
+      theLpo->Gnuplot=1;
+      break;
+    }
+
   /* midpoint and radius */
   PO_MIDPOINT(thePlotObj)[0] = 0.5; PO_MIDPOINT(thePlotObj)[1] = 0.5*theLpo->aspectratio;
   PO_RADIUS(thePlotObj) = 0.5 * SQRT(1.0 + theLpo->aspectratio*theLpo->aspectratio);
@@ -4133,6 +4146,9 @@ static INT DisplayLinePlotObject_2D (PLOTOBJ *thePlotObj)
   UserWriteF(DISPLAY_PO_FORMAT_SI,"nHit",(int)theLpo->nHit);
   UserWriteF(DISPLAY_PO_FORMAT_SF,"x-min",(float)theLpo->xmin);
   UserWriteF(DISPLAY_PO_FORMAT_SF,"x-max",(float)theLpo->xmax);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"Gnuplot",(int)theLpo->Gnuplot);
+  if (theLpo->Gnuplot)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"filename",theLpo->Gnufilename);
 
   return (0);
 }
