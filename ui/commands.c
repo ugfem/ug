@@ -1632,10 +1632,10 @@ FILE *GetProtocolFile (void)
 static INT LogOnCommand (INT argc, char **argv)
 {
   char logfile[NAMESIZE];
-  INT i,rv,popt,pext;
+  INT i,rv,popt,pext,meext;
 
   /* check options */
-  popt = pext = FALSE;
+  popt = pext = meext = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -1651,6 +1651,12 @@ static INT LogOnCommand (INT argc, char **argv)
     case 'e' :
                                 #ifdef ModelP
       pext = TRUE;
+                                #endif
+      break;
+
+    case 'a' :
+                                #ifdef ModelP
+      meext = TRUE;
                                 #endif
       break;
 
@@ -1676,14 +1682,9 @@ static INT LogOnCommand (INT argc, char **argv)
         #ifdef ModelP
   if (pext == TRUE)
   {
-    if (sscanf(argv[0],expandfmt(CONCAT3(" logon -e %",NAMELENSTR,"[ -~]")),logfile)!=1)
-    {
-      PrintErrorMessage('E',"logon","could not read name of logfile");
-      return(PARAMERRORCODE);
-    }
-    sprintf(logfile,"%s.p%3d.%03d",logfile,procs,me);
+    sprintf(logfile,"%s.p%03d",logfile,procs);
   }
-  else
+  if (meext == TRUE)
   {
     sprintf(logfile,"%s.%03d",logfile,me);
   }
