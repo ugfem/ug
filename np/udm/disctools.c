@@ -1500,6 +1500,9 @@ INT PrepareBndVecMultipleVMPtrs (GRID *theGrid, MVM_DESC *mvmd)
   if (MaxListLen>MAX_BND_VECTORS)
     REP_ERR_RETURN (1);
 
+  /* index has been used by PrepareGetBoundaryNeighbourVectors */
+  l_setindex(theGrid);
+
   return (0);
 }
 
