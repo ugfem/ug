@@ -10,7 +10,7 @@
 #include <linalg/linalg.hh>
 
 
-ofstream myerr ("error.out");
+//ofstream myerr ("error.out");
 // ofstream myerr ("NUL");
 
 
@@ -47,13 +47,13 @@ void BaseMatrix :: SetSymmetric (int sym)
 
 double & BaseMatrix :: operator() (INDEX, INDEX)
 {
-  myerr << "BaseMatrix: operator() called" << endl;
+  //  myerr << "BaseMatrix: operator() called" << endl;
   return shit;
 }
 
 double BaseMatrix :: operator() (INDEX, INDEX) const
 {
-  myerr << "BaseMatrix: operator() called" << endl;
+  //  myerr << "BaseMatrix: operator() called" << endl;
   return 0;
 }
 
@@ -84,11 +84,11 @@ TempVector BaseMatrix :: operator* (const BaseVector & v) const
 
   if (Width() != v.Length())
   {
-    myerr << "\nMatrix and Vector don't fit" << endl;
+    //    myerr << "\nMatrix and Vector don't fit" << endl;
   }
   else if (Height() != prod->Length())
   {
-    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
+    //    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
   }
   else
   {
@@ -107,11 +107,11 @@ DenseMatrix operator* (const BaseMatrix & m1, const BaseMatrix & m2)
 
   if (m1.Width() != m2.Height())
   {
-    myerr << "BaseMatrix :: operator*: Matrix Size does not fit" << endl;
+    //         myerr << "BaseMatrix :: operator*: Matrix Size does not fit" << endl;
   }
   else if (temp.Height() != m1.Height())
   {
-    myerr << "BaseMatrix :: operator*: temp not allocated" << endl;
+    //         myerr << "BaseMatrix :: operator*: temp not allocated" << endl;
   }
   else
   {
@@ -135,11 +135,11 @@ DenseMatrix operator+ (const BaseMatrix & m1, const BaseMatrix & m2)
 
   if (m1.Width() != m2.Width() || m1.Height() != m2.Height())
   {
-    myerr << "BaseMatrix :: operator+: Matrix Size does not fit" << endl;
+    //    myerr << "BaseMatrix :: operator+: Matrix Size does not fit" << endl;
   }
   else if (temp.Height() != m1.Height())
   {
-    myerr << "BaseMatrix :: operator+: temp not allocated" << endl;
+    //    myerr << "BaseMatrix :: operator+: temp not allocated" << endl;
   }
   else
   {
@@ -156,7 +156,7 @@ DenseMatrix operator+ (const BaseMatrix & m1, const BaseMatrix & m2)
 void BaseMatrix :: Mult (const BaseVector & /* v */,
                          BaseVector & /* prod */) const
 {
-  myerr << "BaseMatrix :: Mult called" << endl;
+  //  myerr << "BaseMatrix :: Mult called" << endl;
 }
 
 void BaseMatrix :: MultTrans (const BaseVector &  v,
@@ -164,8 +164,8 @@ void BaseMatrix :: MultTrans (const BaseVector &  v,
 {
   if (Symmetric())
     Mult (v, prod);
-  else
-    myerr << "BaseMatrix :: MultTrans called for non symmetric matrix" << endl;
+  //  else
+  //    myerr << "BaseMatrix :: MultTrans called for non symmetric matrix" << endl;
 }
 
 void BaseMatrix :: Residuum (const BaseVector &  x,
@@ -186,7 +186,7 @@ void BaseMatrix :: ResiduumTrans (const BaseVector & x,
 
 BaseMatrix * BaseMatrix :: Copy () const
 {
-  myerr << "BaseMatrix :: Copy called" << endl;
+  //  myerr << "BaseMatrix :: Copy called" << endl;
   return NULL;
 }
 
@@ -207,11 +207,11 @@ BaseVector * BaseMatrix :: CreateVector () const
 
    if (Width() != v.Length())
     {
-    myerr << "\nMatrix and Vector don't fit" << endl;
+   //    myerr << "\nMatrix and Vector don't fit" << endl;
     }
    else if (Height() != prod.Length())
     {
-    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
+   //    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
     }
    else
     {
@@ -236,11 +236,11 @@ BaseVector * BaseMatrix :: CreateVector () const
 
    if (Height() != v.Length())
     {
-    myerr << "\nMatrix and Vector don't fit" << endl;
+   //    myerr << "\nMatrix and Vector don't fit" << endl;
     }
    else if (Width() != prod.Length())
     {
-    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
+   //    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
     }
    else
     {
@@ -265,11 +265,11 @@ BaseVector * BaseMatrix :: CreateVector () const
 
    if (Width() != x.Length() || Height() != b.Length())
     {
-    myerr << "\nMatrix and Vector don't fit" << endl;
+   //    myerr << "\nMatrix and Vector don't fit" << endl;
     }
    else if (Height() != res.Length())
     {
-    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
+   //    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
     }
    else
     {
@@ -299,19 +299,19 @@ void BaseMatrix :: SolveDestroy (const Vector & v, Vector & sol)
 
   if (Width() != Height())
   {
-    myerr << "SolveDestroy: Matrix not square";
+    //   myerr << "SolveDestroy: Matrix not square";
     return;
   }
   if (Width() != v.Length())
   {
-    myerr << "SolveDestroy: Matrix and Vector don't fit";
+    //    myerr << "SolveDestroy: Matrix and Vector don't fit";
     return;
   }
 
   sol = v;
   if (Height() != sol.Length())
   {
-    myerr << "SolveDestroy: Solution Vector not ok";
+    //    myerr << "SolveDestroy: Solution Vector not ok";
     return;
   }
 
@@ -345,7 +345,7 @@ void BaseMatrix :: Solve (const Vector & v, Vector & sol) const
 
   if (temp->Height() != Height())
   {
-    myerr << "Solve: Matrix temp not allocated" << endl;
+    //    myerr << "Solve: Matrix temp not allocated" << endl;
     return;
   }
 
@@ -362,17 +362,17 @@ Vector BaseMatrix :: Solve (const Vector & v) const
 
   if (Width() != Height())
   {
-    myerr << "Solve: Matrix not square";
+    //    myerr << "Solve: Matrix not square";
     return v;
   }
   if (Width() != v.Length())
   {
-    myerr << "Solve: Matrix and Vector don't fit";
+    //    myerr << "Solve: Matrix and Vector don't fit";
     return v;
   }
   if (Width() != sol.Length())
   {
-    myerr << "Solve: Vector sol not allocated" << endl;
+    //    myerr << "Solve: Vector sol not allocated" << endl;
   }
 
   Solve (v, sol);

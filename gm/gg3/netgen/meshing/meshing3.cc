@@ -562,7 +562,7 @@ void Meshing3 :: Mesh (double ah,int make_prism)
       }
       else
       {
-        printf("%s\n", "Can not create prism");
+        printf("%s\n", "Can not create pyramid");
         assert(0);
       }
       locelements.SetSize (0);
@@ -630,8 +630,6 @@ void Meshing3 :: Mesh (double ah,int make_prism)
       adfront -> GetGroup (findex[1], grouppoints, groupfaces, grouppindex, groupfindex);
       if (groupfaces.Size() <= 20 && FindInnerPoint (grouppoints, groupfaces, inp))
       {
-        (*testout) << "inner point found" << endl;
-
         for (i = 1; i <= groupfaces.Size(); i++)
           adfront -> DeleteFace (groupfindex[i]);
 
@@ -824,8 +822,8 @@ void Meshing3 :: Mesh (double ah,int make_prism)
 
         for (j = 1; j <= locelements[i].NP(); j++)
           locelements[i].PNum(j) = adfront -> GetGlobalIndex (pindex[locelements[i].PNum(j)]);
-        if(MESH_DEBUG)
-          printf("%s %d\n","NFF:",adfront->NFF());
+        //			if(MESH_DEBUG)
+        printf("%s %d\n","NFF:",adfront->NFF());
 
         SaveElement (locelements[i]);
         cntelem++;

@@ -10,7 +10,7 @@
 #include <linalg/linalg.hh>
 
 
-extern ofstream myerr;
+//extern ofstream myerr;
 
 
 
@@ -66,7 +66,7 @@ void SparseMatrix :: SetSize (INDEX h, INDEX w)
   else
   {
     height = width = 0;
-    myerr << "SparseMatrix::SetSize: Out of memory" << endl;
+    //    myerr << "SparseMatrix::SetSize: Out of memory" << endl;
   }
 }
 
@@ -106,7 +106,7 @@ void SparseMatrix :: ChangeSize (INDEX h, INDEX w)
   else
   {
     height = width = 0;
-    myerr << "SparseMatrix::SetSize: Out of memory" << endl;
+    //    myerr << "SparseMatrix::SetSize: Out of memory" << endl;
   }
 }
 
@@ -161,8 +161,8 @@ double & SparseMatrix::operator() (INDEX i, INDEX j)
   {
     return Elem(i, j);
   }
-  else myerr << "\nindex (" << i << "," << j << ") out of range (1.."
-             << height << ",1.." << width << ")\n";
+  //  else myerr << "\nindex (" << i << "," << j << ") out of range (1.."
+  //            << height << ",1.." << width << ")\n";
   return shit;
 }
 
@@ -172,8 +172,8 @@ double SparseMatrix::operator() (INDEX i, INDEX j) const
   {
     return Get(i, j);
   }
-  else myerr << "\nindex (" << i << "," << j << ") out of range (1.."
-             << height << ",1.." << width << ")\n";
+  //  else myerr << "\nindex (" << i << "," << j << ") out of range (1.."
+  //            << height << ",1.." << width << ")\n";
   return 0;
 }
 
@@ -282,7 +282,7 @@ double & SparseMatrix :: Elem(INDEX i, INDEX j)
       }
       else
       {
-        myerr << "SparseMatrix::Elem: Out of memory 1" << endl;
+        //      myerr << "SparseMatrix::Elem: Out of memory 1" << endl;
         return shit;
       }
 
@@ -324,7 +324,7 @@ double & SparseMatrix :: Elem(INDEX i, INDEX j)
       }
       else
       {
-        myerr << "SparseMatrix::Elem: Out of memory 2" << endl;
+        //       myerr << "SparseMatrix::Elem: Out of memory 2" << endl;
         return shit;
       }
     }
@@ -352,7 +352,7 @@ double & SparseMatrix :: Elem(INDEX i, INDEX j)
       }
       else
       {
-        myerr << "SparseMatrix::Elem: Out of memory 3" << endl;
+        //        myerr << "SparseMatrix::Elem: Out of memory 3" << endl;
         return shit;
       }
     }
@@ -415,8 +415,8 @@ void SparseMatrix :: SetLineAllocSize (INDEX i, int j)
       lins[i].maxsize = j;
       lins[i].col = ncol;
     }
-    else
-      myerr << "SPARSE_MATIRX :: SetLineAllocSize: Out of Memory" << endl;
+    //    else
+    //      myerr << "SPARSE_MATIRX :: SetLineAllocSize: Out of Memory" << endl;
   }
 }
 
@@ -462,7 +462,7 @@ void SparseMatrix :: Mult (const BaseVector & bv, BaseVector & bprod) const
 
   if (prod.Length() != Height() || v.Length() != Width())
   {
-    myerr << "SparseMatrix::Mult: Dimensions don't fit" << endl;
+    //   myerr << "SparseMatrix::Mult: Dimensions don't fit" << endl;
     return;
   }
 
@@ -517,7 +517,7 @@ void SparseMatrix :: MultTrans (const BaseVector & bv, BaseVector & bprod) const
 
   if (prod.Length() != Width() || v.Length() != Height())
   {
-    myerr << "SparseMatrix::Mult: Dimensions don't fit" << endl;
+    //   myerr << "SparseMatrix::Mult: Dimensions don't fit" << endl;
     return;
   }
 
@@ -562,7 +562,7 @@ void SparseMatrix :: Residuum (const BaseVector & bx, const BaseVector & bb,
   if (res.Length() != b.Length() || b.Length() != Height() ||
       x.Length() != Width())
   {
-    myerr << "SparseMatrix::Residuum: Dimensions don't fit" << endl;
+    //    myerr << "SparseMatrix::Residuum: Dimensions don't fit" << endl;
     return;
   }
 
@@ -620,7 +620,7 @@ void SparseMatrix :: ResiduumTrans (const BaseVector & bx, const BaseVector & bb
   if (res.Length() != b.Length() || b.Length() != Width() ||
       x.Length() != Height())
   {
-    myerr << "SparseMatrix::ResiduumTrans: Dimensions don't fit" << endl;
+    //    myerr << "SparseMatrix::ResiduumTrans: Dimensions don't fit" << endl;
     return;
   }
 
@@ -674,7 +674,7 @@ SparseMatrix operator* (const SparseMatrix & m1,
   }
   else
   {
-    myerr << "SparseMatrix :: operator* not implemented for symmetric case" << endl;
+    //   myerr << "SparseMatrix :: operator* not implemented for symmetric case" << endl;
   }
   return m;
 }
@@ -696,7 +696,7 @@ SparseMatrix & SparseMatrix :: operator+= (const SparseMatrix & m2)
   }
   else
   {
-    myerr << "SparseMatrix :: operator+= not implemented for different cases" << endl;
+    //    myerr << "SparseMatrix :: operator+= not implemented for different cases" << endl;
   }
   return *this;
 }
@@ -736,7 +736,7 @@ SparseMatrix & SparseMatrix :: operator*= (const SparseMatrix & m2)
   }
   else
   {
-    myerr << "SparseMatrix :: operator*= not implemented for Symmetric matrices" << endl;
+    //   myerr << "SparseMatrix :: operator*= not implemented for Symmetric matrices" << endl;
   }
 
   return *this;
@@ -758,8 +758,8 @@ void SparseMatrix :: Solve (const Vector & v, Vector & sol) const
     {
       if (temp.ElementsInLine(i) < 1 || temp.GetIndex(i, 1) != i)
       {
-        myerr << "i = " << i << endl;
-        myerr << "Solve: Matrix singular" << endl;
+        //        myerr << "i = " << i << endl;
+        //        myerr << "Solve: Matrix singular" << endl;
         char ch;
         cin >> ch;
       }
@@ -768,9 +768,9 @@ void SparseMatrix :: Solve (const Vector & v, Vector & sol) const
         nr = temp.GetIndex(i, j);
         if (temp.GetIndex(nr, 1) != i)
         {
-          myerr << temp << endl;
-          myerr << "i = " << i << "j = " << j << "nr = " << nr << endl;
-          myerr << "Solve: Graph not symmetrix" << endl;
+          //          myerr << temp << endl;
+          //          myerr << "i = " << i << "j = " << j << "nr = " << nr << endl;
+          //          myerr << "Solve: Graph not symmetrix" << endl;
           char ch;
           cin >> ch;
         }
@@ -794,8 +794,8 @@ void SparseMatrix :: Solve (const Vector & v, Vector & sol) const
       sol(i) /= temp.GetData(i, 1);
     }
   }
-  else
-    myerr << "SparseMatrix :: Solve not implemented for symmetic case" << endl;
+  //  else
+  //    myerr << "SparseMatrix :: Solve not implemented for symmetic case" << endl;
 }
 
 
@@ -1062,7 +1062,7 @@ void SparseMatrix :: DeleteColStruct (colstruct * cs, int s)
 
   if (i > poolsizes.Size())
   {
-    myerr << "SparseMatrix :: DeleteColStruct: Size not found" << endl;
+    //    myerr << "SparseMatrix :: DeleteColStruct: Size not found" << endl;
     return;
   }
 

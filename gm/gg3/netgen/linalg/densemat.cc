@@ -10,7 +10,7 @@
 #include <linalg/linalg.hh>
 
 
-extern ofstream myerr;
+//extern ofstream myerr;
 
 DenseMatrix :: DenseMatrix () : BaseMatrix ()
 {
@@ -24,7 +24,7 @@ DenseMatrix :: DenseMatrix (INDEX h, INDEX w) : BaseMatrix (h, w)
   if(!data)
   {
     height = width = 0;
-    myerr << "Matrix not allocated" << endl;
+    //    myerr << "Matrix not allocated" << endl;
   }
 }
 
@@ -35,8 +35,8 @@ DenseMatrix :: DenseMatrix (const DenseMatrix & m2)
 
   if (data)
     memcpy (data, m2.data, sizeof(double) * m2.Height() * m2.Width());
-  else
-    myerr << "DenseMatrix::MATIRX(DenseMatrix&): Matrix not allocated" << endl;
+  //  else
+  //    myerr << "DenseMatrix::MATIRX(DenseMatrix&): Matrix not allocated" << endl;
 }
 
 
@@ -47,8 +47,8 @@ DenseMatrix :: DenseMatrix (const BaseMatrix & m2)
 
   *this = m2;
 
-  if (!data)
-    myerr << "DenseMatrix::DenseMatrix (m2): Matrix not allocated" << endl;
+  //  if (!data)
+  //    myerr << "DenseMatrix::DenseMatrix (m2): Matrix not allocated" << endl;
 }
 
 
@@ -72,7 +72,7 @@ void DenseMatrix :: SetSize (INDEX h, INDEX w)
   if(!data)
   {
     height = width = 0;
-    myerr << "Matrix::SetSize: Matrix not allocated" << endl;
+    //         myerr << "Matrix::SetSize: Matrix not allocated" << endl;
   }
 }
 
@@ -87,8 +87,8 @@ DenseMatrix & DenseMatrix :: operator= (const BaseMatrix & m2)
     for (i = 1; i <= Height(); i++)
       for (j = 1; j <= Width(); j++)
         Set (i, j, m2(i, j));
-  else
-    myerr << "DenseMatrix::Operator=: Matrix not allocated" << endl;
+  //  else
+  //    myerr << "DenseMatrix::Operator=: Matrix not allocated" << endl;
 
   return *this;
 }
@@ -101,8 +101,8 @@ DenseMatrix & DenseMatrix :: operator= (const DenseMatrix & m2)
 
   if (data)
     memcpy (data, m2.data, sizeof(double) * m2.Height() * m2.Width());
-  else
-    myerr << "DenseMatrix::Operator=: Matrix not allocated" << endl;
+  //  else
+  //    myerr << "DenseMatrix::Operator=: Matrix not allocated" << endl;
 
   return *this;
 }
@@ -115,7 +115,7 @@ DenseMatrix & DenseMatrix :: operator+= (const DenseMatrix & m2)
 
   if (Height() != m2.Height() || Width() != m2.Width())
   {
-    myerr << "DenseMatrix::Operator+=: Sizes don't fit" << endl;
+    //    myerr << "DenseMatrix::Operator+=: Sizes don't fit" << endl;
     return *this;
   }
 
@@ -130,8 +130,8 @@ DenseMatrix & DenseMatrix :: operator+= (const DenseMatrix & m2)
       q++;
     }
   }
-  else
-    myerr << "DenseMatrix::Operator+=: Matrix not allocated" << endl;
+  //  else
+  //    myerr << "DenseMatrix::Operator+=: Matrix not allocated" << endl;
 
   return *this;
 }
@@ -143,7 +143,7 @@ DenseMatrix & DenseMatrix :: operator-= (const DenseMatrix & m2)
 
   if (Height() != m2.Height() || Width() != m2.Width())
   {
-    myerr << "DenseMatrix::Operator-=: Sizes don't fit" << endl;
+    //    myerr << "DenseMatrix::Operator-=: Sizes don't fit" << endl;
     return *this;
   }
 
@@ -158,8 +158,8 @@ DenseMatrix & DenseMatrix :: operator-= (const DenseMatrix & m2)
       q++;
     }
   }
-  else
-    myerr << "DenseMatrix::Operator-=: Matrix not allocated" << endl;
+  //  else
+  //    myerr << "DenseMatrix::Operator-=: Matrix not allocated" << endl;
 
   return *this;
 }
@@ -172,8 +172,8 @@ double & DenseMatrix :: operator() (INDEX i, INDEX j)
 {
   if (i >= 1 && j >= 1 && i <= height && j <= width)
     return Elem(i,j);
-  else myerr << "\nindex (" << i << "," << j << ") out of range (1.."
-             << height << ",1.." << width << ")\n";
+  //  else myerr << "\nindex (" << i << "," << j << ") out of range (1.."
+  //            << height << ",1.." << width << ")\n";
   return shit;
 }
 
@@ -181,8 +181,8 @@ double DenseMatrix :: operator() (INDEX i, INDEX j) const
 {
   if (i >= 1 && j >= 1 && i <= height && j <= width)
     return Get(i,j);
-  else myerr << "\nindex (" << i << "," << j << ") out of range (1.."
-             << height << ",1.." << width << ")\n";
+  //  else myerr << "\nindex (" << i << "," << j << ") out of range (1.."
+  //            << height << ",1.." << width << ")\n";
   return shit;
 }
 
@@ -218,7 +218,7 @@ double DenseMatrix :: Det () const
 {
   if (width != height)
   {
-    myerr << "DenseMatrix :: Det: width != height" << endl;
+    //    myerr << "DenseMatrix :: Det: width != height" << endl;
     return 0;
   }
 
@@ -235,7 +235,7 @@ double DenseMatrix :: Det () const
            - Get(3) * Get(5) * Get(7);
   default :
   {
-    myerr << "Matrix :: Det:  general size not implemented (size=" << width << ")" << endl;
+    //      myerr << "Matrix :: Det:  general size not implemented (size=" << width << ")" << endl;
     return 0;
   }
   }
@@ -250,12 +250,12 @@ void CalcInverse (const DenseMatrix & hm1, DenseMatrix & m2)
 
   if (m1.width != m1.height)
   {
-    myerr << "CalcInverse: matrix not symmetric" << endl;
+    //    myerr << "CalcInverse: matrix not symmetric" << endl;
     return;
   }
   if (m1.width != m2.width || m1.height != m2.height)
   {
-    myerr << "CalcInverse: dim(m2) != dim(m1)" << endl;
+    //    myerr << "CalcInverse: dim(m2) != dim(m1)" << endl;
     return;
   }
 
@@ -265,7 +265,7 @@ void CalcInverse (const DenseMatrix & hm1, DenseMatrix & m2)
     det = m1.Det();
     if (det == 0)
     {
-      myerr << "CalcInverse: Matrix singular" << endl;
+      //      myerr << "CalcInverse: Matrix singular" << endl;
       return;
     }
 
@@ -354,7 +354,7 @@ void CalcAAt (const DenseMatrix & a, DenseMatrix & m2)
 
   if (m2.Height() != n1 || m2.Width() != n1)
   {
-    myerr << "CalcAAt: sizes don't fit" << endl;
+    //   myerr << "CalcAAt: sizes don't fit" << endl;
     return;
   }
 
@@ -399,7 +399,7 @@ void CalcAtA (const DenseMatrix & a, DenseMatrix & m2)
 
   if (m2.Height() != n2 || m2.Width() != n2)
   {
-    myerr << "CalcAtA: sizes don't fit" << endl;
+    //    myerr << "CalcAtA: sizes don't fit" << endl;
     return;
   }
 
@@ -428,7 +428,7 @@ void CalcABt (const DenseMatrix & a, const DenseMatrix & b, DenseMatrix & m2)
 
   if (m2.Height() != n1 || m2.Width() != n3 || b.Width() != n2)
   {
-    myerr << "CalcABt: sizes don't fit" << endl;
+    //    myerr << "CalcABt: sizes don't fit" << endl;
     return;
   }
 
@@ -454,7 +454,7 @@ void CalcAtB (const DenseMatrix & a, const DenseMatrix & b, DenseMatrix & m2)
 
   if (m2.Height() != n2 || m2.Width() != n3 || b.Height() != n1)
   {
-    myerr << "CalcAtB: sizes don't fit" << endl;
+    //    myerr << "CalcAtB: sizes don't fit" << endl;
     return;
   }
 
@@ -480,11 +480,11 @@ DenseMatrix operator* (const DenseMatrix & m1, const DenseMatrix & m2)
 
   if (m1.Width() != m2.Height())
   {
-    myerr << "DenseMatrix :: operator*: Matrix Size does not fit" << endl;
+    //    myerr << "DenseMatrix :: operator*: Matrix Size does not fit" << endl;
   }
   else if (temp.Height() != m1.Height())
   {
-    myerr << "DenseMatrix :: operator*: temp not allocated" << endl;
+    //    myerr << "DenseMatrix :: operator*: temp not allocated" << endl;
   }
   else
   {
@@ -502,13 +502,13 @@ void Mult (const DenseMatrix & m1, const DenseMatrix & m2, DenseMatrix & m3)
 
   if (m1.Width() != m2.Height())
   {
-    myerr << "DenseMatrix :: operator*: Matrix Size does not fit" << endl;
-    myerr << "m1: " << m1.Height() << " x " << m1.Width() << endl;
-    myerr << "m2: " << m2.Height() << " x " << m2.Width() << endl;
+    //    myerr << "DenseMatrix :: operator*: Matrix Size does not fit" << endl;
+    //    myerr << "m1: " << m1.Height() << " x " << m1.Width() << endl;
+    //    myerr << "m2: " << m2.Height() << " x " << m2.Width() << endl;
   }
   else if (m3.Height() != m1.Height())
   {
-    myerr << "DenseMatrix :: operator*: temp not allocated" << endl;
+    //    myerr << "DenseMatrix :: operator*: temp not allocated" << endl;
   }
   else
   {
@@ -562,11 +562,11 @@ DenseMatrix operator+ (const DenseMatrix & m1, const DenseMatrix & m2)
 
   if (m1.Width() != m2.Width() || m1.Height() != m2.Height())
   {
-    myerr << "BaseMatrix :: operator+: Matrix Size does not fit" << endl;
+    //    myerr << "BaseMatrix :: operator+: Matrix Size does not fit" << endl;
   }
   else if (temp.Height() != m1.Height())
   {
-    myerr << "BaseMatrix :: operator+: temp not allocated" << endl;
+    //    myerr << "BaseMatrix :: operator+: temp not allocated" << endl;
   }
   else
   {
@@ -598,11 +598,11 @@ void DenseMatrix :: Mult (const BaseVector & bv, BaseVector & bprod) const
 
   if (Width() != v.Length())
   {
-    myerr << "\nMatrix and Vector don't fit" << endl;
+    //    myerr << "\nMatrix and Vector don't fit" << endl;
   }
   else if (Height() != prod.Length())
   {
-    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
+    //    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
   }
   else
   {
@@ -639,11 +639,11 @@ void DenseMatrix :: MultTrans (const BaseVector & bv, BaseVector & bprod) const
 
   if (Height() != v.Length())
   {
-    myerr << "\nMatrix and Vector don't fit" << endl;
+    //    myerr << "\nMatrix and Vector don't fit" << endl;
   }
   else if (Width() != prod.Length())
   {
-    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
+    //    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
   }
   else
   {
@@ -672,11 +672,11 @@ void DenseMatrix :: Residuum (const BaseVector & bx, const BaseVector & bb,
 
   if (Width() != x.Length() || Height() != b.Length())
   {
-    myerr << "\nMatrix and Vector don't fit" << endl;
+    //    myerr << "\nMatrix and Vector don't fit" << endl;
   }
   else if (Height() != res.Length())
   {
-    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
+    //    myerr << "Base_Matrix::operator*(Vector): prod vector not ok" << endl;
   }
   else
   {
@@ -700,7 +700,7 @@ double DenseMatrix :: EvaluateBilinearform (const BaseVector & x) const
 
   if (Width() != hx.Length() || Height() != hx.Length())
   {
-    myerr << "Matrix::EvaluateBilinearForm: sizes don't fit" << endl;
+    //    myerr << "Matrix::EvaluateBilinearForm: sizes don't fit" << endl;
   }
   else
   {
@@ -770,19 +770,19 @@ void DenseMatrix :: SolveDestroy (const Vector & v, Vector & sol)
 
   if (Width() != Height())
   {
-    myerr << "SolveDestroy: Matrix not square";
+    ///    myerr << "SolveDestroy: Matrix not square";
     return;
   }
   if (Width() != v.Length())
   {
-    myerr << "SolveDestroy: Matrix and Vector don't fit";
+    //    myerr << "SolveDestroy: Matrix and Vector don't fit";
     return;
   }
 
   sol = v;
   if (Height() != sol.Length())
   {
-    myerr << "SolveDestroy: Solution Vector not ok";
+    //    myerr << "SolveDestroy: Solution Vector not ok";
     return;
   }
 

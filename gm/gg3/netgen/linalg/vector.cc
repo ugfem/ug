@@ -10,7 +10,7 @@
 #include <linalg/linalg.hh>
 
 
-extern ofstream myerr;
+//extern ofstream myerr;
 
 double BaseVector :: shit = 0;
 
@@ -70,7 +70,7 @@ BaseVector :: operator/= (
     return (*this) *= (1/c);
   else
   {
-    myerr << "operator/=: division by zero" << endl;
+    //    myerr << "operator/=: division by zero" << endl;
     return *this;
   }
 }
@@ -160,7 +160,7 @@ Vector :: Vector (INDEX alength) : BaseVector (alength)
     if (!data)
     {
       length = 0;
-      myerr << "Vector not allocated" << endl;
+      //      myerr << "Vector not allocated" << endl;
     }
   }
   else
@@ -183,7 +183,7 @@ Vector :: Vector (const Vector & v2)
     else
     {
       length = 0;
-      myerr << "Vector::Vector : Vector not allocated" << endl;
+      //      myerr << "Vector::Vector : Vector not allocated" << endl;
     }
   }
   else
@@ -209,7 +209,7 @@ void Vector :: SetLength (INDEX alength)
   if (!data)
   {
     length = 0;
-    myerr << "Vector::SetLength: Vector not allocated" << endl;
+    //    myerr << "Vector::SetLength: Vector not allocated" << endl;
   }
 }
 
@@ -230,7 +230,7 @@ void Vector :: ChangeLength (INDEX alength)
   if (!data)
   {
     length = 0;
-    myerr << "Vector::SetLength: Vector not allocated" << endl;
+    //    myerr << "Vector::SetLength: Vector not allocated" << endl;
     delete [] olddata;
   }
 
@@ -243,16 +243,16 @@ void Vector :: ChangeLength (INDEX alength)
 double & Vector :: operator() (INDEX i)
 {
   if (i >= 1 && i <= length) return Elem(i);
-  else myerr << "\nindex " << i << " out of range ("
-             << 1 << "," << Length() << ")\n";
+  //  else myerr << "\nindex " << i << " out of range ("
+  //                                << 1 << "," << Length() << ")\n";
   return shit;
 }
 
 double Vector :: operator() (INDEX i) const
 {
   if (i >= 1 && i <= length) return Get(i);
-  else myerr << "\nindex " << i << " out of range ("
-             << 1 << "," << Length() << ")\n" << flush;
+  //  else myerr << "\nindex " << i << " out of range ("
+  //                                << 1 << "," << Length() << ")\n" << flush;
   return shit;
 }
 
@@ -363,8 +363,8 @@ BaseVector & Vector :: operator+= (const BaseVector & v2)
   if (Length() == hv2.Length())
     for (INDEX i = 1; i <= Length(); i++)
       Elem (i) += hv2.Get(i);
-  else
-    myerr << "operator+= illegal dimension" << endl;
+  //  else
+  //    myerr << "operator+= illegal dimension" << endl;
   return *this;
 }
 
@@ -375,8 +375,8 @@ BaseVector & Vector :: operator-= (const BaseVector & v2)
   if (Length() == hv2.Length())
     for (INDEX i = 1; i <= Length(); i++)
       Elem (i) -= hv2.Get(i);
-  else
-    myerr << "operator-= illegal dimension" << endl;
+  //  else
+  //    myerr << "operator-= illegal dimension" << endl;
   return *this;
 }
 
@@ -404,8 +404,8 @@ BaseVector & Vector :: Add (double scal, const BaseVector & v2)
       p1++; p2++;
     }
   }
-  else
-    myerr << "Vector::Add: illegal dimension" << endl;
+  //  else
+  //    myerr << "Vector::Add: illegal dimension" << endl;
   return *this;
 }
 
@@ -427,8 +427,8 @@ BaseVector & Vector :: Add (double scal, const BaseVector & v2,
       p1++; p2++; p3++;
     }
   }
-  else
-    myerr << "Vector::Add: illegal dimension" << endl;
+  //  else
+  //    myerr << "Vector::Add: illegal dimension" << endl;
   return *this;
 }
 
@@ -447,8 +447,8 @@ BaseVector & Vector :: Set (double scal, const BaseVector & v2)
       p1++; p2++;
     }
   }
-  else
-    myerr << "Vector::Set: illegal dimension" << endl;
+  //  else
+  //    myerr << "Vector::Set: illegal dimension" << endl;
   return *this;
 }
 
@@ -472,8 +472,8 @@ BaseVector & Vector :: Set (double scal , const BaseVector & v2,
       p1++; p2++; p3++;
     }
   }
-  else
-    myerr << "Vector::Set: illegal dimension" << endl;
+  //  else
+  //    myerr << "Vector::Set: illegal dimension" << endl;
   return *this;
 }
 
@@ -495,8 +495,8 @@ double Vector :: operator* (const BaseVector & v2) const
       p1++; p2++;
     }
   }
-  else
-    myerr << "Scalarproduct illegal dimension" << endl;
+  //  else
+  //    myerr << "Scalarproduct illegal dimension" << endl;
   return sum;
 }
 
@@ -518,8 +518,8 @@ void Vector :: SetRandom ()
     for (INDEX i = 1; i <= Length(); i++)
       sum.Set (i, Get(i));
     }
-   else
-    myerr << "operator+ (Vector, Vector): sum.Length() not ok" << endl;
+   //  else
+   //    myerr << "operator+ (Vector, Vector): sum.Length() not ok" << endl;
    return sum;
    }
  */
@@ -532,8 +532,8 @@ BaseVector & Vector::operator= (const Vector & v2)
 
   if (v2.Length() == Length())
     memcpy (data, v2.data, sizeof (double) * Length());
-  else
-    myerr << "Vector::operator=: not allocated" << endl;
+  //  else
+  //    myerr << "Vector::operator=: not allocated" << endl;
 
   return *this;
 }
@@ -548,8 +548,8 @@ BaseVector & Vector::operator= (const BaseVector & v2)
 
   if (hv2.Length() == Length())
     memcpy (data, hv2.data, sizeof (double) * Length());
-  else
-    myerr << "Vector::operator=: not allocated" << endl;
+  //  else
+  //    myerr << "Vector::operator=: not allocated" << endl;
 
   return *this;
 }
@@ -557,8 +557,8 @@ BaseVector & Vector::operator= (const BaseVector & v2)
 
 BaseVector & Vector::operator= (double scal)
 {
-  if (!Length()) myerr << "Vector::operator= (double) : data not allocated"
-                       << endl;
+  //  if (!Length()) myerr << "Vector::operator= (double) : data not allocated"
+  //                     << endl;
 
   for (INDEX i = 1; i <= Length(); i++)
     Set (i, scal);
