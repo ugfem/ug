@@ -828,7 +828,7 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const char *name,
 
 /****************************************************************************/
 /*D
-   CombineVecDescs - combines a field of vecdescs to a new vecdesc
+   CombineVecDesc - combines a field of vecdescs to a new vecdesc
 
    SYNOPSIS:
    VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_DESC **theVDs,
@@ -881,6 +881,7 @@ VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_
     REP_ERR_RETURN_PTR (NULL);
 
   /* fill data in vec data desc */
+  VD_MG(vd) = theMG;
   strcpy(VM_COMP_NAMEPTR(vd),"");       /* no component names */
   offset=0;
   for (type=0; type<NVECTYPES; type++) {
@@ -890,7 +891,7 @@ VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_
     for (i=0; i<nrOfVDs; i++)
     {
       for (j=0; j<VD_NCMPS_IN_TYPE(theVDs[i],type); j++)
-        VD_CMP_OF_TYPE(vd,type,k) = VD_CMP_OF_TYPE(theVDs[i],type,j);
+        VD_CMP_OF_TYPE(vd,type,k++) = VD_CMP_OF_TYPE(theVDs[i],type,j);
     }
     VD_NCMPS_IN_TYPE(vd,type) = k;
     offset += k;
