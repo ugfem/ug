@@ -74,8 +74,9 @@ INT svector_offset[TAGS];
 INT side_offset[TAGS];
 INT data_offset[TAGS];
 
-//GENERAL_ELEMENT *element_descriptors[TAGS],	*reference_descriptors[MAX_CORNERS_OF_ELEM+1];
-//INT reference2tag[MAX_CORNERS_OF_ELEM+1];
+GENERAL_ELEMENT * NS_PREFIX element_descriptors[TAGS];
+GENERAL_ELEMENT * NS_PREFIX reference_descriptors[MAX_CORNERS_OF_ELEM+1];
+INT NS_PREFIX reference2tag[MAX_CORNERS_OF_ELEM+1];
 
 #ifndef ModelP
 static INT nOBJT, OBJT4Elements[MAXOBJECTS];

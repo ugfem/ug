@@ -2649,8 +2649,9 @@ extern INT data_offset[TAGS];
 #endif
 
 /* the element descriptions are also globally available, these are pointers ! */
-GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
-INT reference2tag[MAX_CORNERS_OF_ELEM+1];
+extern GENERAL_ELEMENT *element_descriptors[TAGS];
+extern GENERAL_ELEMENT *reference_descriptors[MAX_CORNERS_OF_ELEM+1];
+extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 
 /****************************************************************************/
 /*                                                                                                                                                      */
