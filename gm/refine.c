@@ -114,10 +114,6 @@
 
 #define MARK_BISECT_EDGE(r,i)		(r->pattern[i]==1)
 
-#define SIDES_OF_ELEMDESC(t)		(element_descriptors[t]->sides_of_elem)
-#define EDGES_OF_ELEMDESC(t)		(element_descriptors[t]->edges_of_elem)
-#define CORNERS_OF_ELEMDESC(t)		(element_descriptors[t]->corners_of_elem)
-
 #define REF_TYPE_CHANGES(e)		((REFINE(e)!=MARK(e)) || (REFINECLASS(e)!=MARKCLASS(e)))
 #define IS_REFINED(e)			(REFINE(theElement)!=NO_REFINEMENT)
 #define IS_TO_REFINE(e)			(MARK(theElement)!=NO_REFINEMENT)
@@ -260,10 +256,10 @@ static INT DropMarks (MULTIGRID *theMG)
 	GRID *theGrid;
 	ELEMENT *theElement, *FatherElement;
 
-	for (k=theMG->topLevel; k>0; k--)
+	for (k=TOPLEVEL(theMG); k>0; k--)
 	{
 		theGrid = GRID_ON_LEVEL(theMG,k);
-		for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+		for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 			if ((MARKCLASS(theElement) == RED_CLASS) && (ECLASS(theElement) != RED_CLASS))
 			{
 				Mark = MARK(theElement);
@@ -350,7 +346,7 @@ static int CloseGrid (GRID *theGrid)
 	SHORT *myPattern;
 
 	/* reset USED flag of elements and PATTERN and ADDPATTERN flag on the edges */
-	for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 	{
 		/* TODO: delete special debug */ PRINTELEMID(11668)
 
@@ -366,7 +362,7 @@ static int CloseGrid (GRID *theGrid)
 	}
 	
 	/* reset EDGE/SIDEPATTERN in elements, set SIDEPATTERN in elements for quadrilateral sides and set PATTERN on the edges */
-	for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 	{
 		/* TODO: delete special debug */ PRINTELEMID(11668)
 
@@ -411,7 +407,7 @@ static int CloseGrid (GRID *theGrid)
 		/* SETEDGEPATTERN(theElement,0);*/
 	}
 	
-    firstElement = theGrid->elements;
+    firstElement = FIRSTELEMENT(theGrid);
 
 	if (fifoFlag) {
 		fifo_first=fifo_last=fifo_insertfirst=fifo_insertlast=NULL;
@@ -547,8 +543,18 @@ FIFOSTART:
 		else if (hFlag==0 && MARKCLASS(theElement)!=RED_CLASS) {
 			Mark = NO_REFINEMENT;
 		}
-		else 
+		else {
 			ASSERT(Mark != -1);
+
+			/* switch green class red class? */
+			if (MARKCLASS(theElement)!=RED_CLASS && SWITCHCLASS(CLASS_OF_RULE(MARK2RULEADR(theElement,Mark)))) {
+				IFDEBUG(gm,0)
+				UserWriteF("   Switching MARKCLASS=%d for MARK=%d of EID=%d to RED_CLASS\n",
+					MARKCLASS(theElement),Mark,ID(theElement));
+				ENDDEBUG
+				SETMARKCLASS(theElement,RED_CLASS);
+			}
+		}
 
 		IFDEBUG(gm,1)
 		UserWriteF("    ID=%d TAG=%d MyPattern=%d Mark=%d MyEdgePattern=%d MySidePattern=%d\n",ID(theElement),TAG(theElement),MyPattern,Mark,MyEdgePattern,MySidePattern);
@@ -591,7 +597,7 @@ FIFOSTART:
 							SUCCE(PREDE(NbElement)) = SUCCE(NbElement);
 						if (SUCCE(NbElement) != NULL)
 							PREDE(SUCCE(NbElement)) = PREDE(NbElement);
-                        if (theGrid->elements == NbElement) theGrid->elements = SUCCE(NbElement);
+                        if (FIRSTELEMENT(theGrid) == NbElement) FIRSTELEMENT(theGrid) = SUCCE(NbElement);
 
 						SUCCE(NbElement) = PREDE(NbElement) = NULL;
 						/* insert into fifo */
@@ -618,12 +624,14 @@ FIFOSTART:
 		}
 
 		/* TODO: why here swap from NOREFRULE to COPY_REFRULE */
+if (0)
 		if (MARKCLASS(theElement)==RED_CLASS && Mark==NO_REFINEMENT)
 		{
 			UserWriteF("CloseGrid(): MARKCLASS=RED_CLASS && Mark==NO_REFINEMENT -> set Mark=COPY!\n");
 			Mark = COPY;
 		}
 		/* TODO: delete or better  ... && MyPattern != 0 ?? */
+if (0)
 		if (MARKCLASS(theElement)!=RED_CLASS && Mark!=NO_REFINEMENT) {
 			SETMARKCLASS(theElement,GREEN_CLASS);
 			IFDEBUG(gm,1)
@@ -638,11 +646,11 @@ FIFOSTART:
 	if (fifoFlag) {
 		/* insert fifo work list into elementlist */
 		for (theElement=fifo_last; theElement!=NULL; theElement=PREDE(theElement)) {
-			SUCCE(theElement) = theGrid->elements;
-			PREDE(theGrid->elements) = theElement;
-			theGrid->elements = theElement;
+			SUCCE(theElement) = FIRSTELEMENT(theGrid);
+			PREDE(FIRSTELEMENT(theGrid)) = theElement;
+			FIRSTELEMENT(theGrid) = theElement;
 		}
-		PREDE(theGrid->elements) = NULL;
+		PREDE(FIRSTELEMENT(theGrid)) = NULL;
 
 		if (fifo_insertfirst!=NULL) {
 			/* append fifo insert list to fifo work list */
@@ -688,7 +696,7 @@ FIFOSTART:
 
 	
 	/* set additional pattern on the edges */
-	for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 	{
 		/* TODO: delete special debug */ PRINTELEMID(11668)
 
@@ -708,7 +716,7 @@ FIFOSTART:
 	}
 	
 	/* build a green covering around the red elements */
-	for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 	{
 		/* TODO: delete special debug */ PRINTELEMID(11668)
 
@@ -766,10 +774,13 @@ FIFOSTART:
 
 		/* if side node exists element needs to be green */
 		for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
-			ELEMENT * theNeighbor;
+			ELEMENT *theNeighbor;
 
 			theNeighbor = NBELEM(theElement,i);
+/* TODO: delete
 			if (theNeighbor==NULL || MARKCLASS(theNeighbor)!=RED_CLASS) continue;
+*/
+			if (theNeighbor==NULL) continue;
 
 			for (j=0; j<SIDES_OF_ELEM(theNeighbor); j++) {
 				if (NBELEM(theNeighbor,j) == theElement)
@@ -793,6 +804,7 @@ FIFOSTART:
 			}
 		}
 		#endif
+
 		/* if element is green before refinement and will be green after refinement and nothing changes */ 
 		if (REFINECLASS(theElement)==GREEN_CLASS && MARKCLASS(theElement)==GREEN_CLASS && UPDATE_GREEN(theElement)==0) {
 			/* do not renew green refinement */
@@ -903,11 +915,11 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 			/* get other sons from path info in rules */
 			theRule = MARK2RULEADR(theElement,REFINE(theElement));
 			
-			for (SonID=1; SonID<theRule->nsons; SonID++)
+			for (SonID=1; SonID<NSONS_OF_RULE(theRule); SonID++)
 			{
 				theSon = SonList[0];
-				for (PathPos=0; PathPos<PATHDEPTH(theRule->sons[SonID].path); PathPos++)
-					theSon = NBELEM(theSon,NEXTSIDE(theRule->sons[SonID].path,PathPos));
+				for (PathPos=0; PathPos<PATHDEPTH(SON_PATH_OF_RULE(theRule,SonID)); PathPos++)
+					theSon = NBELEM(theSon,NEXTSIDE(SON_PATH_OF_RULE(theRule,SonID),PathPos));
 				
 				if (theSon==NULL) RETURN(GM_ERROR);
 				
@@ -942,11 +954,11 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 				/* get other sons from path info in rules */
 				theRule = MARK2RULEADR(theElement,REFINE(theElement));
 				
-				for (SonID=1; SonID<theRule->nsons; SonID++)
+				for (SonID=1; SonID<NSONS_OF_RULE(theRule); SonID++)
 				{
 					theSon = SonList[0];
-					for (PathPos=0; PathPos<PATHDEPTH(theRule->sons[SonID].path); PathPos++)
-						theSon = NBELEM(theSon,NEXTSIDEHEX(theRule->sons[SonID].path,PathPos));
+					for (PathPos=0; PathPos<PATHDEPTH(SON_PATH_OF_RULE(theRule,SonID)); PathPos++)
+						theSon = NBELEM(theSon,NEXTSIDEHEX(SON_PATH_OF_RULE(theRule,SonID),PathPos));
 					
 					if (theSon==NULL)
 						RETURN(GM_ERROR);
@@ -986,7 +998,7 @@ static INT RestrictMarks (GRID *theGrid)
 	
 	/* TODO: delete special debug */ PRINTELEMID(-1)
 
-	for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 	{
 		if (GetSons(theElement,SonList)!=GM_OK) RETURN(GM_ERROR);
 
@@ -1147,7 +1159,7 @@ static int ComputeCopies (GRID *theGrid)
 	
 	/* seed dofs of regularly and irregularly refined elements to 3 */
 	flag = 0;
-	for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 		if (MARK(theElement)!=NO_REFINEMENT && (MARKCLASS(theElement)==RED_CLASS || MARKCLASS(theElement)==GREEN_CLASS))
 		{
 			SeedNextVectorClasses(theGrid,theElement);
@@ -1158,7 +1170,7 @@ static int ComputeCopies (GRID *theGrid)
 	if (rFlag==GM_COPY_ALL) 
 	{
 		if (flag)
-			for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+			for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 				SeedNextVectorClasses(theGrid,theElement);
 	}
 	else
@@ -1167,7 +1179,7 @@ static int ComputeCopies (GRID *theGrid)
 	}
 	
 	/* an element is copied if it has a dof of class 2 and higher */
-	for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement)) {
+	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
 		if ((MARK(theElement)==NO_REFINEMENT)&&(MaxNextVectorClass(theGrid,theElement)>=MINVNCLASS))
 		{
 			SETMARK(theElement,COPY);
@@ -1284,28 +1296,30 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 	VERTEX *CenterVertex;
 	EDGEDATA *edata;
 	REFRULE *rule, *nbrule;
-	INT Mark,Refine,toBisect,toDelete,toCreate;
+	INT Mark,Refine,toBisect,toCreate;
 	INT k,l;
 	char buffer[64];
 
-	/* resetContext to NULL */
+	/* reset context to NULL */
 	for(i=0; i<MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM; i++)  
 		theElementContext[i] = NULL;
+
+	/* is element to refine */
+	if (!IS_TO_REFINE(theElement)) return(GM_OK);
 
 	Mark = MARK(theElement);
 
 	/* allocate corner nodes if necessary */
-	if (IS_TO_REFINE(theElement))
-		for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+	{
+		theNode = CORNER(theElement,i);
+		if (SONNODE(theNode)==NULL)
 		{
-			theNode = CORNER(theElement,i);
-			if (SONNODE(theNode)==NULL)
-			{
-				SONNODE(theNode) = CreateSonNode(theGrid,theNode);
-				if (SONNODE(theNode)==NULL) RETURN(GM_FATAL);
-			}
-			theElementContext[i] = SONNODE(theNode);
+			SONNODE(theNode) = CreateSonNode(theGrid,theNode);
+			if (SONNODE(theNode)==NULL) RETURN(GM_FATAL);
 		}
+		theElementContext[i] = SONNODE(theNode);
+	}
 
 	/* allocate midpoint nodes */
 	MidNodes = theElementContext+CORNERS_OF_ELEM(theElement);
@@ -1315,26 +1329,29 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 		Corner1 = CORNER_OF_EDGE(theElement,i,1);
 		
 		toBisect = 0;
+
 		if (DIM==3 && TAG(theElement)==HEXAHEDRON && MARKCLASS(theElement)==GREEN_CLASS) {
 			theEdge = GetEdge(CORNER(theElement,Corner0),CORNER(theElement,Corner1));
 			ASSERT(theEdge != NULL);
-			if (ADDPATTERN(theEdge) == 0)
+			if (ADDPATTERN(theEdge) == 0) {
 				toBisect = 1;
+				MidNodes[i] = MIDNODE(theEdge);
+			}
 		}
 		else {
-/*
-			rule = MARK2RULEADR(theElement,Mark);
-			if (MARK_BISECT_EDGE(rule,i))
-*/
-			if (NODE_OF_RULE(theElement,Mark,i))
-				toBisect = 1;
+			if (NODE_OF_RULE(theElement,Mark,i)) toBisect = 1;
 		}
+
 		IFDEBUG(gm,2)
 		if (MidNodes[i] == NULL)
-		  UserWriteF("\n    MidNodes[%d]: toBisect=%d ID(Corner0)=%d ID(Corner1)=%d",i,toBisect,ID(CORNER(theElement,Corner0)),ID(CORNER(theElement,Corner1)));
+			UserWriteF("\n    MidNodes[%d]: toBisect=%d ID(Corner0)=%d ID(Corner1)=%d",
+				i,toBisect,ID(CORNER(theElement,Corner0)),ID(CORNER(theElement,Corner1)));
 		else
-		  UserWriteF("\n    MidNodes[%d]: toBisect=%d ID(Corner0)=%d ID(Corner1)=%d ID(MidNode)=%d",i,toBisect,ID(CORNER(theElement,Corner0)),ID(CORNER(theElement,Corner1)),ID(MidNodes[i]));
+			UserWriteF("\n    MidNodes[%d]: toBisect=%d ID(Corner0)=%d ID(Corner1)=%d"
+				" ID(MidNode)=%d",i,toBisect,ID(CORNER(theElement,Corner0)),
+				ID(CORNER(theElement,Corner1)),ID(MidNodes[i]));
 		ENDDEBUG
+
 		if (toBisect)
 		{
 			/* we need a midpoint node */
@@ -1352,6 +1369,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 				UserWriteF(" created ID(MidNode)=%d for edge=%d",ID(MidNodes[i]),i);
 				ENDDEBUG
 			} 
+			assert(MidNodes[i]!=NULL);
 		}
 	}
 
@@ -1360,243 +1378,193 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 	ENDDEBUG
 
 	#ifdef __THREEDIM__
-		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-		{
-			theNode = NULL;
-			theNode0 = theElementContext[EDGE_OF_SIDE(theElement,i,0)+CORNERS_OF_ELEM(theElement)];
-			theNode1 = theElementContext[EDGE_OF_SIDE(theElement,i,2)+CORNERS_OF_ELEM(theElement)];
-			l = 0;
-			if (theNode0 != NULL && theNode1 != NULL)
-			  for (theLink0=START(theNode0); theLink0!=NULL; theLink0=NEXT(theLink0)) {
-				for (theLink1=START(theNode1); theLink1!=NULL; theLink1=NEXT(theLink1)) 
-					if (NBNODE(theLink0) == NBNODE(theLink1)) {
-						IFDEBUG(gm,3)
-						UserWriteF("    		possible node ID=%d\n",ID(NBNODE(theLink0)));
-						ENDDEBUG
+	SideNodes = theElementContext+CORNERS_OF_ELEM(theElement)+EDGES_OF_ELEM(theElement);
+	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+	{
+		/* no side nodes for triangular sides yet */
+		if (CORNERS_OF_SIDE(theElement,i) == 3) continue;
 
-						if (NTYPE(NBNODE(theLink0)) == SIDE_NODE) {
-							theNode = NBNODE(theLink0);
-							l++;
-							IFDEBUG(gm,3)
-							UserWriteF("    		FOUND node ID=%d\n",ID(NBNODE(theLink0)));
-							continue;
-							ENDDEBUG
-							break;
-						}
-					}
-				if (theNode != NULL) {
-					IFDEBUG(gm,3)
-					continue;
-					ENDDEBUG
-					break;
-				}
-			}
-			ASSERT(l==0 || l==1);
-			theElementContext[i+CORNERS_OF_ELEM(theElement)+EDGES_OF_ELEM(theElement)] = theNode;
-		}
-		SideNodes = theElementContext+CORNERS_OF_ELEM(theElement)+EDGES_OF_ELEM(theElement);
-		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-		{
-			/* no side nodes for triangular sides yet */
-			if (CORNERS_OF_SIDE(theElement,i) == 3) continue;
+		toCreate = 0;
+		/* is side node needed */
+		if (TAG(theElement)==HEXAHEDRON && MARKCLASS(theElement)==GREEN_CLASS) {
 
-			toDelete = 0;
-			/* if side node exists and is not needed, try to delete it */
-			if (SideNodes[i]!=NULL) {
-				if (DIM==3 && TAG(theElement)==HEXAHEDRON && MARKCLASS(theElement)==GREEN_CLASS) {
-					theNeighbor = NBELEM(theElement,i);
+			theNeighbor = NBELEM(theElement,i);
 
-					if (theNeighbor!=NULL) {
-						if (MARKCLASS(theNeighbor)==GREEN_CLASS || MARKCLASS(theNeighbor)==YELLOW_CLASS)
-							toDelete = 1;
-						else {
-							for (j=0; j<SIDES_OF_ELEM(theNeighbor); j++) {
-								if (NBELEM(theNeighbor,j) == theElement) break;			
-							}
-							ASSERT(j<SIDES_OF_ELEM(theNeighbor));
+			if (theNeighbor!=NULL) {
+				if (MARKCLASS(theNeighbor)!=GREEN_CLASS && 
+					MARKCLASS(theNeighbor)!=YELLOW_CLASS) {
 
-							if (!NODE_OF_RULE(theNeighbor,MARK(theNeighbor),EDGES_OF_ELEM(theNeighbor)+j)) {
-								toDelete = 1;
-							}
-						}
-					}
-					else {
-						/* TODO: here also situtation for delete=1??? */
-						if (OBJT(theElement) == BEOBJ)
-							ASSERT(SIDE(theElement,i)!=NULL);
-						else
-							toDelete = 1;
-					}
-				}
-				else if (!NODE_OF_RULE(theElement,Mark,EDGES_OF_ELEM(theElement)+i)) {
-					toDelete = 1;
-				}
-			}
-
-			toCreate = 0;
-			/* if side node does not exist and is needed, allocate it */
-			if (SideNodes[i]==NULL) {
-				if (DIM==3 && TAG(theElement)==HEXAHEDRON && MARKCLASS(theElement)==GREEN_CLASS) {
-					theNeighbor = NBELEM(theElement,i);
-
-					if (theNeighbor!=NULL) {
-						if (MARKCLASS(theNeighbor)!=GREEN_CLASS && MARKCLASS(theNeighbor)!=YELLOW_CLASS) {
-							for (j=0; j<SIDES_OF_ELEM(theNeighbor); j++) {
-								if (NBELEM(theNeighbor,j) == theElement) break;			
-							}
-							ASSERT(j<SIDES_OF_ELEM(theNeighbor));
-							if (NODE_OF_RULE(theNeighbor,MARK(theNeighbor),EDGES_OF_ELEM(theNeighbor)+j) &&
-								(!NODE_OF_RULE(theNeighbor,REFINE(theNeighbor),EDGES_OF_ELEM(theNeighbor)+j) ||
-								 USED(theNeighbor)==1))
-									toCreate = 1;
-						}
-					}
-				}
-				else if (NODE_OF_RULE(theElement,Mark,EDGES_OF_ELEM(theElement)+i)) {
-					toCreate = 1;
-				}
-			}
-			IFDEBUG(gm,2)
-			if (SideNodes[i] == NULL)
-			  UserWriteF("    SideNode[%d]: delete=%d create=%d old=%x",i,toDelete,toCreate,SideNodes[i]);
-			else
-			  UserWriteF("    SideNode[%d]: delete=%d create=%d old=%x oldID=%d",i,toDelete,toCreate,SideNodes[i],ID(SideNodes[i]));
-			ENDDEBUG
-			IFDEBUG(gm,2)
-			if (SideNodes[i] != NULL)
-				if (START(SideNodes[i])!=NULL) {
-					LINK *sidelink;
-					UserWriteF("\n NO_OF_ELEM of EDGES:");
-					for (sidelink=START(SideNodes[i]); sidelink!=NULL; sidelink=NEXT(sidelink)) 
-						UserWriteF(" NO=%d NodeTo=%d",NO_OF_ELEM(MYEDGE(sidelink)),ID(NBNODE(sidelink)));
-					UserWrite("\n");
-				}
-			ENDDEBUG
-
-			if (toDelete)
-			{
-				SideNodes[i] = NULL;
-			}
-
-			if (toCreate)
-			{
-				theNeighbor = NBELEM(theElement,i);
-				if (theNeighbor != NULL)
-				  {
-					IFDEBUG(gm,3)
-					  UserWriteF("    ID(theNeighbor)=%d nbadr=%x:\n",ID(theNeighbor),theNeighbor);
-					ENDDEBUG
-
-					  /* check whether node exists already */
-					  Refine = REFINE(theNeighbor);
-				  }
-
-				if (theNeighbor!=NULL && DIM==3 && TAG(theNeighbor)==HEXAHEDRON && 
-					MARKCLASS(theNeighbor)==GREEN_CLASS && USED(theNeighbor)==0) {
-
-					IFDEBUG(gm,3)
-					UserWriteF("    	Searching for side node allocated by green neighbor:\n");
-					ENDDEBUG
-
-					ASSERT(SideNodes[i] == NULL);
-					/* get the side node */
-					theNode0 = theElementContext[EDGE_OF_SIDE(theElement,i,0)+CORNERS_OF_ELEM(theElement)];
-					theNode1 = theElementContext[EDGE_OF_SIDE(theElement,i,2)+CORNERS_OF_ELEM(theElement)];
-					for (theLink0=START(theNode0); theLink0!=NULL; theLink0=NEXT(theLink0)) {
-						for (theLink1=START(theNode1); theLink1!=NULL; theLink1=NEXT(theLink1)) 
-							if (NBNODE(theLink0) == NBNODE(theLink1)) {
-								
-								IFDEBUG(gm,3)
-								UserWriteF("    		possible node ID=%d\n",ID(NBNODE(theLink0)));
-								ENDDEBUG
-
-								l = 0;
-								/* TODO: faster: substitute check for side node through FLAG */ 
-								for (theLink=START(NBNODE(theLink0)); theLink!=NULL; theLink=NEXT(theLink)) 
-									for (k=0; k<CORNERS_OF_SIDE(theElement,i); k++) 
-										if (NBNODE(theLink) == SONNODE(CORNER(theElement,CORNER_OF_SIDE(theElement,i,k))))
-											l = 1;
-								if (l == 0) {
-									SideNodes[i] = NBNODE(theLink0);
-									IFDEBUG(gm,3)
-									UserWriteF("    		FOUND node ID=%d\n",ID(NBNODE(theLink0)));
-									continue;
-									ENDDEBUG
-									break;
-								}
-							}
-						if (SideNodes[i] != NULL) {
-							/* TODO: delete this 
-							IFDEBUG(gm,3)
-							continue;
-							ENDDEBUG
-							*/
-							break;
-						}
-					}
-					ASSERT(SideNodes[i] != NULL);
-				}
-				else if (theNeighbor!=NULL &&  Refine!=NO_REFINEMENT && !REF_TYPE_CHANGES(theNeighbor) &&
-						 (DIM!=3 || TAG(theNeighbor)!=HEXAHEDRON || MARKCLASS(theNeighbor)!=GREEN_CLASS))
-				{
-					/* get the side node */
-					nbrule = MARK2RULEADR(theNeighbor,Refine);
 					for (j=0; j<SIDES_OF_ELEM(theNeighbor); j++) {
 						if (NBELEM(theNeighbor,j) == theElement) break;			
 					}
 					ASSERT(j<SIDES_OF_ELEM(theNeighbor));
-					GetSons(theNeighbor,NeighborSonList);
-					theNeighbor = NeighborSonList[nbrule->sonandnode[EDGES_OF_ELEM(theNeighbor)+j][0]];
-					SideNodes[i] = CORNER(theNeighbor,nbrule->sonandnode[EDGES_OF_ELEM(theNeighbor)+j][1]);
-				}
-				else
-				{
-					/* allocate the sidenode */
-					if ((SideNodes[i] = CreateSideNode(theGrid,theElement,i)) == NULL) RETURN(GM_FATAL);
-				}
-				ASSERT(SideNodes[i]!=NULL);
-				for (j=0; j<EDGES_OF_SIDE(theElement,i); j++)
-				{
-					fatherEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,EDGE_OF_SIDE(theElement,i,j),0)),CORNER(theElement,CORNER_OF_EDGE(theElement,EDGE_OF_SIDE(theElement,i,j),1)));
-					Node0 = MIDNODE(fatherEdge);
-					ASSERT(Node0 != NULL);
+					if (NODE_OF_RULE(theNeighbor,MARK(theNeighbor),
+									 EDGES_OF_ELEM(theNeighbor)+j))
+/* TODO: delete this
+						(!NODE_OF_RULE(theNeighbor,REFINE(theNeighbor),EDGES_OF_ELEM(theNeighbor)+j) ||
+						 USED(theNeighbor)==1))
+*/
+							toCreate = 1;
 				}
 			}
-			IFDEBUG(gm,2)
-			if (SideNodes[i] != NULL) 
-			  UserWriteF(" new=%x newID=%d\n",SideNodes[i],ID(SideNodes[i]));
-			else
-			  UserWriteF(" new=%x\n",SideNodes[i]);
+		}
+		else if (NODE_OF_RULE(theElement,Mark,EDGES_OF_ELEM(theElement)+i)) {
+			toCreate = 1;
+		}
+
+		IFDEBUG(gm,2)
+		if (SideNodes[i] == NULL)
+		  UserWriteF("    SideNode[%d]: create=%d old=%x",i,toCreate,SideNodes[i]);
+		else
+		  UserWriteF("    SideNode[%d]: create=%d old=%x oldID=%d",i,toCreate,
+					 SideNodes[i],ID(SideNodes[i]));
+		if (SideNodes[i] != NULL)
+			if (START(SideNodes[i])!=NULL) {
+				LINK *sidelink;
+				UserWriteF("\n NO_OF_ELEM of EDGES:");
+				for (sidelink=START(SideNodes[i]); sidelink!=NULL; sidelink=NEXT(sidelink)) 
+					UserWriteF(" NO=%d NodeTo=%d",NO_OF_ELEM(MYEDGE(sidelink)),
+							   ID(NBNODE(sidelink)));
+				UserWrite("\n");
+			}
+		ENDDEBUG
+
+		if (toCreate) {
+
+			theNeighbor = NBELEM(theElement,i);
+
+			IFDEBUG(gm,0)
+			if (theNeighbor != NULL) {
+				IFDEBUG(gm,3)
+				  UserWriteF("    ID(theNeighbor)=%d nbadr=%x:\n",ID(theNeighbor),
+							 theNeighbor);
+				ENDDEBUG
+			}
+			else {
+				/* this must be a boundary side */
+				ASSERT(SIDE(theElement,i)!=NULL);
+			}
+			ENDDEBUG
+
+/*
+			if (DIM==3 && TAG(theNeighbor)==HEXAHEDRON && 
+				MARKCLASS(theNeighbor)==GREEN_CLASS && USED(theNeighbor)==0) {
+*/
+			if (theNeighbor !=NULL) {
+
+				IFDEBUG(gm,3)
+				UserWriteF("    	Searching for side node allocated by green neighbor:\n");
+				ENDDEBUG
+
+				/* check for side node */
+				theNode = NULL;
+				theNode0 = MidNodes[EDGE_OF_SIDE(theElement,i,0)];
+				theNode1 = MidNodes[EDGE_OF_SIDE(theElement,i,2)];
+				l = 0;
+				if (theNode0 != NULL && theNode1 != NULL)
+				  for (theLink0=START(theNode0); theLink0!=NULL; theLink0=NEXT(theLink0)) {
+					for (theLink1=START(theNode1); theLink1!=NULL; theLink1=NEXT(theLink1)) 
+						if (NBNODE(theLink0) == NBNODE(theLink1)) {
+							IFDEBUG(gm,3)
+							UserWriteF("    		possible node ID=%d\n",ID(NBNODE(theLink0)));
+							ENDDEBUG
+
+							if (NTYPE(NBNODE(theLink0)) == SIDE_NODE) {
+								theNode = NBNODE(theLink0);
+								l++;
+								IFDEBUG(gm,3)
+								UserWriteF("    		FOUND node ID=%d\n",ID(NBNODE(theLink0)));
+								continue;
+								ENDDEBUG
+								break;
+							}
+						}
+					if (theNode != NULL) {
+						IFDEBUG(gm,3)
+						continue;
+						ENDDEBUG
+						break;
+					}
+				}
+				ASSERT(l==0 || l==1);
+
+				SideNodes[i] = theNode;
+			}
+
+/***** TODO: delete */
+			if (0 && REFINE(theNeighbor)!=NO_REFINEMENT && !REF_TYPE_CHANGES(theNeighbor) &&
+					 (DIM!=3 || TAG(theNeighbor)!=HEXAHEDRON || MARKCLASS(theNeighbor)!=GREEN_CLASS))
+			{
+				/* get the side node */
+				nbrule = MARK2RULEADR(theNeighbor,Refine);
+				for (j=0; j<SIDES_OF_ELEM(theNeighbor); j++) {
+					if (NBELEM(theNeighbor,j) == theElement) break;			
+				}
+				ASSERT(j<SIDES_OF_ELEM(theNeighbor));
+				GetSons(theNeighbor,NeighborSonList);
+				theNeighbor = NeighborSonList[SON_OF_NODE_OF_RULE(nbrule,EDGES_OF_ELEM(theNeighbor)+j)];
+				SideNodes[i] = CORNER(theNeighbor,SONNODE_OF_NODE_OF_RULE(nbrule,EDGES_OF_ELEM(theNeighbor)+j));
+			}
+/******/
+
+			if (SideNodes[i] == NULL) {
+
+				/* allocate the sidenode */
+				if ((SideNodes[i] = CreateSideNode(theGrid,theElement,i)) == NULL) RETURN(GM_FATAL);
+			}
+
+			IFDEBUG(gm,0)
+			ASSERT(SideNodes[i]!=NULL);
+			for (j=0; j<EDGES_OF_SIDE(theElement,i); j++) {
+
+				fatherEdge = GetEdge(CORNER(theElement,
+							 		CORNER_OF_EDGE(theElement,EDGE_OF_SIDE(theElement,i,j),0)),
+									 CORNER(theElement,
+									 CORNER_OF_EDGE(theElement,EDGE_OF_SIDE(theElement,i,j),1)));
+				Node0 = MIDNODE(fatherEdge);
+				/* if side node exists all mid nodes must exist */
+				ASSERT(Node0 != NULL);
+			}
 			ENDDEBUG
 		}
+
+		IFDEBUG(gm,2)
+		if (SideNodes[i] != NULL) 
+		  UserWriteF(" new=%x newID=%d\n",SideNodes[i],ID(SideNodes[i]));
+		else
+		  UserWriteF(" new=%x\n",SideNodes[i]);
+		ENDDEBUG
+	}
 	#endif
 	
 	/* allocate center node */
-	CenterNode = theElementContext+CORNERS_OF_ELEM(theElement)+CENTER_NODE_INDEX(theElement);
+	CenterNode = MidNodes+CENTER_NODE_INDEX(theElement);
 	CenterNode[0] = NULL;
 
 	toCreate = 0;
 	if (CenterNode[0] == NULL) {
-		if (DIM==3 && TAG(theElement)==HEXAHEDRON && MARKCLASS(theElement) == GREEN_CLASS) {
+
+		if (DIM==3 && TAG(theElement)==HEXAHEDRON && MARKCLASS(theElement)==GREEN_CLASS) {
 			toCreate = 1;
 		}
 		else if (NODE_OF_RULE(theElement,Mark,CENTER_NODE_INDEX(theElement))){
+
 				toCreate = 1;
 		}
 	}
 
 	IFDEBUG(gm,2)
 	if (CenterNode[0] == NULL)
-	  UserWriteF("    CenterNode: delete=%d create=%d old=%x",toDelete,toCreate,CenterNode[0]);
+	  UserWriteF("    CenterNode: create=%d old=%x",toCreate,CenterNode[0]);
 	else
-	  UserWriteF("    CenterNode: delete=%d create=%d old=%x oldID=%d",toDelete,toCreate,CenterNode[0],ID(CenterNode[0]));
+	  UserWriteF("    CenterNode: create=%d old=%x oldID=%d",toCreate,
+				 CenterNode[0],ID(CenterNode[0]));
 	ENDDEBUG
 
-	if (toCreate)
-	  {
+	if (toCreate) {
 		if ((CenterNode[0] = CreateCenterNode(theGrid,theElement)) == NULL)
 		  RETURN(GM_FATAL);
-	  }
+	}
 
 	IFDEBUG(gm,2)
 	if (CenterNode[0] != NULL) 
@@ -1604,6 +1572,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 	else
 	  UserWriteF(" new=%x\n",CenterNode[0]);
 	ENDDEBUG
+
 	return(GM_OK);
 }
 
@@ -1641,7 +1610,7 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement)
 		SETMARK(theSon,NO_REFINEMENT);
 		if (IS_REFINED(theSon))
 		{
-				if (UnrefineElement(theGrid->finer,theSon)) RETURN(GM_FATAL);
+				if (UnrefineElement(UPGRID(theGrid),theSon)) RETURN(GM_FATAL);
 		}
 	}
 
@@ -1652,8 +1621,8 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement)
 	/* remove son elements */
 	IFDEBUG(gm,1)
 	if (DIM!=3 || TAG(theElement)!=HEXAHEDRON || REFINECLASS(theElement)!=GREEN_CLASS) {
-		if (NSONS(theElement) != MARK2RULEADR(theElement,REFINE(theElement))->nsons) 
-			UserWriteF("ERROR: NSONS=%d but rule.sons=%d\n",NSONS(theElement),MARK2RULEADR(theElement,REFINE(theElement))->nsons);
+		if (NSONS(theElement) != NSONS_OF_RULE(MARK2RULEADR(theElement,REFINE(theElement)))) 
+			UserWriteF("ERROR: NSONS=%d but rule.sons=%d\n",NSONS(theElement),NSONS_OF_RULE(MARK2RULEADR(theElement,REFINE(theElement))));
 	}
 	ENDDEBUG
 	for (s=0; s<NSONS(theElement); s++)
@@ -1682,7 +1651,7 @@ static INT UnrefineElement (GRID *theGrid, ELEMENT *theElement)
 /*																			*/
 /* Param:	  GRID *theGrid: grid level of sons of theElement				*/
 /*			  ELEMENT *theElement: element to refine						*/
-/*			  NODE   **theContext: nodes needed for new elements
+/*			  NODE   **theContext: nodes needed for new elements			*/
 /*																			*/
 /* return:	  INT 0: ok 													*/
 /*			  INT 1: fatal memory error 									*/
@@ -1706,7 +1675,7 @@ static INT RefineElementYellow (fineGrid,theElement,theContext)
 /*																			*/
 /* Param:	  GRID *theGrid: grid level of sons of theElement				*/
 /*			  ELEMENT *theElement: element to refine						*/
-/*			  NODE   **theContext: nodes needed for new elements
+/*			  NODE   **theContext: nodes needed for new elements			*/
 /*																			*/
 /* return:	  INT 0: ok 													*/
 /*			  INT 1: fatal memory error 									*/
@@ -1784,49 +1753,49 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 
 	/* init indices for son elements */
 	/* outer side for tetrahedra is side 0 */
-	tetNode0 = element_descriptors[TETRAHEDRON]->corner_of_side[0][0];
-	tetNode1 = element_descriptors[TETRAHEDRON]->corner_of_side[0][1];
-	tetNode2 = element_descriptors[TETRAHEDRON]->corner_of_side[0][2];
+	tetNode0 = CORNER_OF_SIDE_TAG(TETRAHEDRON,0,0);
+	tetNode1 = CORNER_OF_SIDE_TAG(TETRAHEDRON,0,1);
+	tetNode2 = CORNER_OF_SIDE_TAG(TETRAHEDRON,0,2);
 
-	tetEdge0 = element_descriptors[TETRAHEDRON]->edge_of_side[0][0];
-	tetEdge1 = element_descriptors[TETRAHEDRON]->edge_of_side[0][1];
-	tetEdge2 = element_descriptors[TETRAHEDRON]->edge_of_side[0][2];
+	tetEdge0 = EDGE_OF_SIDE_TAG(TETRAHEDRON,0,0);
+	tetEdge1 = EDGE_OF_SIDE_TAG(TETRAHEDRON,0,1);
+	tetEdge2 = EDGE_OF_SIDE_TAG(TETRAHEDRON,0,2);
 
-	tetSideNode0Node1 = element_descriptors[TETRAHEDRON]->side_with_edge[tetEdge0][0];
-	if (tetSideNode0Node1 == 0) tetSideNode0Node1 = element_descriptors[TETRAHEDRON]->side_with_edge[tetEdge0][1];
+	tetSideNode0Node1 = SIDE_WITH_EDGE_TAG(TETRAHEDRON,tetEdge0,0);
+	if (tetSideNode0Node1 == 0) tetSideNode0Node1 = SIDE_WITH_EDGE_TAG(TETRAHEDRON,tetEdge0,1);
 
-	tetSideNode1Node2 = element_descriptors[TETRAHEDRON]->side_with_edge[tetEdge1][0];
-	if (tetSideNode1Node2 == 0) tetSideNode1Node2 = element_descriptors[TETRAHEDRON]->side_with_edge[tetEdge1][1];
+	tetSideNode1Node2 = SIDE_WITH_EDGE_TAG(TETRAHEDRON,tetEdge1,0);
+	if (tetSideNode1Node2 == 0) tetSideNode1Node2 = SIDE_WITH_EDGE_TAG(TETRAHEDRON,tetEdge1,1);
 
-	tetSideNode0Node2 = element_descriptors[TETRAHEDRON]->side_with_edge[tetEdge2][0];
-	if (tetSideNode0Node2 == 0) tetSideNode0Node2 = element_descriptors[TETRAHEDRON]->side_with_edge[tetEdge2][1];
+	tetSideNode0Node2 = SIDE_WITH_EDGE_TAG(TETRAHEDRON,tetEdge2,0);
+	if (tetSideNode0Node2 == 0) tetSideNode0Node2 = SIDE_WITH_EDGE_TAG(TETRAHEDRON,tetEdge2,1);
 	
 	/* outer side for pyramid has 4 corners */
-	for (i=0; i<element_descriptors[PYRAMID]->sides_of_elem; i++)
-		if (element_descriptors[PYRAMID]->corners_of_side[i] == 4)
+	for (i=0; i<SIDES_OF_TAG(PYRAMID); i++)
+		if (CORNERS_OF_SIDE_TAG(PYRAMID,i) == 4)
 			break;
 	pyrSide = i;
-	pyrNode0 = element_descriptors[PYRAMID]->corner_of_side[i][0];
-	pyrNode1 = element_descriptors[PYRAMID]->corner_of_side[i][1];
-	pyrNode2 = element_descriptors[PYRAMID]->corner_of_side[i][2];
-	pyrNode3 = element_descriptors[PYRAMID]->corner_of_side[i][3];
+	pyrNode0 = CORNER_OF_SIDE_TAG(PYRAMID,i,0);
+	pyrNode1 = CORNER_OF_SIDE_TAG(PYRAMID,i,1);
+	pyrNode2 = CORNER_OF_SIDE_TAG(PYRAMID,i,2);
+	pyrNode3 = CORNER_OF_SIDE_TAG(PYRAMID,i,3);
 
-	pyrEdge0 = element_descriptors[PYRAMID]->edge_of_side[i][0];
-	pyrEdge1 = element_descriptors[PYRAMID]->edge_of_side[i][1];
-	pyrEdge2 = element_descriptors[PYRAMID]->edge_of_side[i][2];
-	pyrEdge3 = element_descriptors[PYRAMID]->edge_of_side[i][3];
+	pyrEdge0 = EDGE_OF_SIDE_TAG(PYRAMID,i,0);
+	pyrEdge1 = EDGE_OF_SIDE_TAG(PYRAMID,i,1);
+	pyrEdge2 = EDGE_OF_SIDE_TAG(PYRAMID,i,2);
+	pyrEdge3 = EDGE_OF_SIDE_TAG(PYRAMID,i,3);
 
-	pyrSideNode0Node1 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge0][1];
-	if (pyrSideNode0Node1 == i) pyrSideNode0Node1 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge0][0];
+	pyrSideNode0Node1 = SIDE_WITH_EDGE_TAG(PYRAMID,pyrEdge0,1);
+	if (pyrSideNode0Node1 == i) pyrSideNode0Node1 = SIDE_WITH_EDGE_TAG(PYRAMID,pyrEdge0,0);
 
-	pyrSideNode1Node2 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge1][1];
-	if (pyrSideNode1Node2 == i) pyrSideNode1Node2 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge1][0];
+	pyrSideNode1Node2 = SIDE_WITH_EDGE_TAG(PYRAMID,pyrEdge1,1);
+	if (pyrSideNode1Node2 == i) pyrSideNode1Node2 = SIDE_WITH_EDGE_TAG(PYRAMID,pyrEdge1,0);
 
-	pyrSideNode2Node3 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge2][1];
-	if (pyrSideNode2Node3 == i) pyrSideNode2Node3 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge2][0];
+	pyrSideNode2Node3 = SIDE_WITH_EDGE_TAG(PYRAMID,pyrEdge2,1);
+	if (pyrSideNode2Node3 == i) pyrSideNode2Node3 = SIDE_WITH_EDGE_TAG(PYRAMID,pyrEdge2,0);
 
-	pyrSideNode0Node3 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge3][1];
-	if (pyrSideNode0Node3 == i) pyrSideNode0Node3 = element_descriptors[PYRAMID]->side_with_edge[pyrEdge3][0];
+	pyrSideNode0Node3 = SIDE_WITH_EDGE_TAG(PYRAMID,pyrEdge3,1);
+	if (pyrSideNode0Node3 == i) pyrSideNode0Node3 = SIDE_WITH_EDGE_TAG(PYRAMID,pyrEdge3,0);
 
 	/* create edges on inner of sides, create son elements and connect them */
 	for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
@@ -1842,10 +1811,10 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 
 		k = 0;
 		for (j=0; j<EDGES_OF_SIDE(theElement,i); j++) {
-			edge = element_descriptors[HEXAHEDRON]->edge_of_side[i][j];
+			edge = EDGE_OF_SIDE_TAG(HEXAHEDRON,i,j);
 			for (l=0; l<MAX_SIDES_OF_ELEM; l++)
-				if (element_descriptors[HEXAHEDRON]->side_with_edge[edge][l] != i) {
-					sides[k++] = element_descriptors[HEXAHEDRON]->side_with_edge[edge][l]+MAX_GREEN_SONS;
+				if (SIDE_WITH_EDGE_TAG(HEXAHEDRON,edge,l) != i) {
+					sides[k++] = SIDE_WITH_EDGE_TAG(HEXAHEDRON,edge,l)+MAX_GREEN_SONS;
 					break;
 				}
 			ASSERT(l<2);
@@ -2222,7 +2191,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 			ENDDEBUG
 
 			k = l = 0;
-			for (j=0; j<element_descriptors[sons[i].tag]->corners_of_elem; j++) {
+			for (j=0; j<CORNERS_OF_TAG(sons[i].tag); j++) {
 				if (sons[i].corners[j] != NULL) {
 					ElementNodes[j] = sons[i].corners[j];	
 					k++;
@@ -2234,7 +2203,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 				}
 			}
 			ASSERT(l == 1);
-			ASSERT(k == element_descriptors[sons[i].tag]->corners_of_elem);
+			ASSERT(k == CORNERS_OF_TAG(sons[i].tag));
 
 			if (sons[i].bdy == 1) 
 				sons[i].theSon = CreateElement(theGrid,sons[i].tag,BEOBJ,ElementNodes);
@@ -2314,8 +2283,8 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 			theSon = sons[i*5+j].theSon;
 			side = 0;
 			if (sons[i*5+j].tag == PYRAMID) {
-				for (k=0; k<element_descriptors[PYRAMID]->sides_of_elem; k++)
-					if (element_descriptors[PYRAMID]->corners_of_side[k] == 4)
+				for (k=0; k<SIDES_OF_TAG(PYRAMID); k++)
+					if (CORNERS_OF_SIDE_TAG(PYRAMID,k) == 4)
 					break;
 				side = k;
 			}
@@ -2337,6 +2306,7 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 				if (CreateSonElementSide(theGrid,theElement,i,sons[i*5+j].theSon,side)!=GM_OK) RETURN(GM_FATAL);
 			}
 			else {
+
 				/* search neighboring element */
 				NbElement = NBELEM(theElement,i);
 				ASSERT(NbElement != NULL);
@@ -2344,12 +2314,14 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 				for (l=0; l<SIDES_OF_ELEM(NbElement); l++)
 					if (NBELEM(NbElement,l) == theElement)
 						break;
+
 				ASSERT(l<SIDES_OF_ELEM(NbElement));
+
 				IFDEBUG(gm,2)
-				UserWriteF("     SIDE=%d NBSIDE=%d ID(theElement)=%d ID(NbElement)=%d\n"\
-						   "     NbREFINECLASS=%d NbMARKCLASS=%d NbREFINE=%d NbMARK=%d\n",
-						   i,l,ID(theElement),ID(NbElement),REFINECLASS(NbElement),
-						   MARKCLASS(NbElement),REFINE(NbElement),MARK(NbElement));
+				UserWriteF("        Connect side=%d nbside=%d nb ID=%d TAG=%d REFINECLASS=%d MARKCLASS=%d REFINE=%d "
+					"MARK=%d COARSEN=%d USED=%d\n",i,l,ID(NbElement),TAG(NbElement),REFINECLASS(NbElement),
+					MARKCLASS(NbElement),REFINE(NbElement),MARK(NbElement),COARSEN(NbElement),
+					USED(NbElement));
 				ENDDEBUG
 
 				switch (MARKCLASS(NbElement)) {
@@ -2451,10 +2423,10 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 						found = 0;
 						if (GetSons(NbElement,NbSonList)!=GM_OK)
 							RETURN(GM_FATAL);
-						for (s2=0; s2<NbRule->nsons; s2++) {
-							sdata2 = &(NbRule->sons[s2]);
+						for (s2=0; s2<NSONS_OF_RULE(NbRule); s2++) {
+							sdata2 = SON_OF_RULE(NbRule,s2);
 							for (k=0; k<SIDES_OF_ELEM(NbSonList[s2]); k++) {
-								if (sdata2->nb[k] != FATHER_SIDE_OFFSET+l) continue;
+								if (SON_NB(sdata2,k) != FATHER_SIDE_OFFSET+l) continue;
 
 								IFDEBUG(gm,2)
 									UserWriteF("elid=%3d: side:",ID(theSon));
@@ -2582,14 +2554,14 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 	/* TODO: delete special debug */ PRINTELEMID(-2)
 
 	/* create elements */
-	for (s=0; s<rule->nsons; s++)
+	for (s=0; s<NSONS_OF_RULE(rule); s++)
 	{
 		boundaryelement = 0;
 		/* TODO: how can boundary detection be generalized */
 		if (OBJT(theElement) == BEOBJ)
-			for (i=0; i<SIDES_OF_ELEMDESC(rule->sons[s].tag); i++) {
+			for (i=0; i<SIDES_OF_TAG(SON_TAG_OF_RULE(rule,s)); i++) {
 					/* TODO: delete special debug */ PRINTELEMID(-2)
-					if ( (side = rule->sons[s].nb[i]) >= FATHER_SIDE_OFFSET )  /* exterior side */
+					if ( (side = SON_NB_OF_RULE(rule,s,i)) >= FATHER_SIDE_OFFSET )  /* exterior side */
 						if (SIDE(theElement,side-FATHER_SIDE_OFFSET)!=NULL) 	/* at the boundary */
 						{
 							boundaryelement = 1;
@@ -2597,16 +2569,16 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 						}
 			}
 
-		for (i=0; i<element_descriptors[rule->sons[s].tag]->corners_of_elem; i++) {
-			ASSERT(theElementContext[rule->sons[s].corners[i]]!=NULL);
-			ElementNodes[i] = theElementContext[rule->sons[s].corners[i]];
+		for (i=0; i<CORNERS_OF_TAG(SON_TAG_OF_RULE(rule,s)); i++) {
+			ASSERT(theElementContext[SON_CORNER_OF_RULE(rule,s,i)]!=NULL);
+			ElementNodes[i] = theElementContext[SON_CORNER_OF_RULE(rule,s,i)];
 		}
 
 		/* TODO: delete special debug */ PRINTELEMID(-2)
 		if (boundaryelement)
-				theSon = CreateElement(theGrid,rule->sons[s].tag,BEOBJ,ElementNodes);
+				theSon = CreateElement(theGrid,SON_TAG_OF_RULE(rule,s),BEOBJ,ElementNodes);
 		else
-				theSon = CreateElement(theGrid,rule->sons[s].tag,IEOBJ,ElementNodes);
+				theSon = CreateElement(theGrid,SON_TAG_OF_RULE(rule,s),IEOBJ,ElementNodes);
 		if (theSon==NULL) RETURN(GM_ERROR);
 
 		/* TODO: delete special debug */ PRINTELEMID(-2)
@@ -2617,7 +2589,7 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 	}
 
 	/* TODO: delete special debug */ PRINTELEMID(-2)
-	SETNSONS(theElement,rule->nsons);
+	SETNSONS(theElement,NSONS_OF_RULE(rule));
 	#ifdef __TWODIM__
 	for (i=0;i<NSONS(theElement); i++) SET_SON(theElement,i,SonList[i]);
 	#endif
@@ -2628,13 +2600,13 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 	/* TODO: delete special debug */ PRINTELEMID(-2)
 	/* create element sides at the boundary */
 	if (OBJT(theElement)==BEOBJ)
-		for(s=0; s<rule->nsons; s++)
+		for(s=0; s<NSONS_OF_RULE(rule); s++)
 		{
 				if (OBJT(SonList[s]) != BEOBJ) continue;
 				for (j=0; j<SIDES_OF_ELEM(SonList[s]); j++)
 				{
 					SET_SIDE(SonList[s],j,NULL);
-					if ((side = rule->sons[s].nb[j]) < FATHER_SIDE_OFFSET) continue;
+					if ((side = SON_NB_OF_RULE(rule,s,j)) < FATHER_SIDE_OFFSET) continue;
 					side -= FATHER_SIDE_OFFSET;
 					if ((oldSide = SIDE(theElement,side)) == NULL) continue;
 
@@ -2644,16 +2616,16 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 	
 	/* TODO: delete special debug */ PRINTELEMID(-2)
 	/* connect elements */
-	for (s=0; s<rule->nsons; s++)
+	for (s=0; s<NSONS_OF_RULE(rule); s++)
 	{
-		sdata = &(rule->sons[s]);
+		sdata = SON_OF_RULE(rule,s);
 		for (i=0; i<SIDES_OF_ELEM(SonList[s]); i++)
 		{
 			/* TODO: delete special debug */ PRINTELEMID(-2)
 			SET_NBELEM(SonList[s],i,NULL);
 
-			/* an interior triangle face */
-			if ( (side = sdata->nb[i]) < FATHER_SIDE_OFFSET )
+			/* an interior face */
+			if ( (side = SON_NB(sdata,i)) < FATHER_SIDE_OFFSET )
 			{
 				SET_NBELEM(SonList[s],i,SonList[side]);
 
@@ -2715,8 +2687,8 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 
 					if (l<SIDES_OF_ELEM(SonList[side])) {
 						/* assert consistency of rule set */
-						ASSERT(rule->sons[side].nb[l]==s);
-						ASSERT(rule->sons[s].nb[i]==side);
+						ASSERT(SON_NB_OF_RULE(rule,side,l)==s);
+						ASSERT(SON_NB_OF_RULE(rule,s,i)==side);
 						ASSERT(NBELEM(SonList[s],i)==SonList[side] && NBELEM(SonList[side],l)==SonList[s]);
 						if (DisposeDoubledSideVector(theGrid,SonList[s],i,SonList[side],l)) RETURN(GM_FATAL);
 					}
@@ -2762,13 +2734,20 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 
 			ASSERT(l<SIDES_OF_ELEM(theNeighbor));			
 	
+			IFDEBUG(gm,2)
+			UserWriteF("        Connect side=%d nbside=%d nb ID=%d TAG=%d REFINECLASS=%d MARKCLASS=%d REFINE=%d "
+				"MARK=%d COARSEN=%d USED=%d\n",i,l,ID(theNeighbor),TAG(theNeighbor),REFINECLASS(theNeighbor),
+				MARKCLASS(theNeighbor),REFINE(theNeighbor),MARK(theNeighbor),COARSEN(theNeighbor),
+				USED(theNeighbor));
+			ENDDEBUG
+
 			/* TODO: delete special debug */ PRINTELEMID(-2)
 			/* connect green hexahedral neighbor which have no rule */
 			if (DIM==3 && TAG(theNeighbor)==HEXAHEDRON && MARKCLASS(theNeighbor)==GREEN_CLASS) {
 
 				/* outer side for pyramid has 4 corners */
-				for (n=0; n<element_descriptors[PYRAMID]->sides_of_elem; n++)
-					if (element_descriptors[PYRAMID]->corners_of_side[n] == 4)
+				for (n=0; n<SIDES_OF_TAG(PYRAMID); n++)
+					if (CORNERS_OF_SIDE_TAG(PYRAMID,n) == 4)
 						break;
 				pyrSide = n;
 
@@ -2866,13 +2845,13 @@ static int RefineElementRed (GRID *theGrid, ELEMENT *theElement, NODE **theEleme
 			found = 0;
 			if (GetSons(theNeighbor,SonList2)!=GM_OK)
 				RETURN(GM_FATAL);
-			for (s2=0; s2<rule2->nsons; s2++)
+			for (s2=0; s2<NSONS_OF_RULE(rule2); s2++)
 			{
 				/* TODO: delete special debug */ PRINTELEMID(-2)
-				sdata2 = &(rule2->sons[s2]);
+				sdata2 = SON_OF_RULE(rule2,s2);
 				for (j=0; j<SIDES_OF_ELEM(SonList2[s2]); j++)
 				{
-					if (sdata2->nb[j] != FATHER_SIDE_OFFSET+l) continue;
+					if (SON_NB(sdata2,j) != FATHER_SIDE_OFFSET+l) continue;
 
 					IFDEBUG(gm,2)
 						UserWriteF("elid=%3d: side:",ID(SonList[s]));
@@ -2975,18 +2954,18 @@ static int RefineGrid (GRID *theGrid)
 	GRID *fineGrid;
 	NODE *theNode;
 	
-	fineGrid = theGrid->finer;
+	fineGrid = UPGRID(theGrid);
 	if (fineGrid==NULL) RETURN(GM_FATAL);
 
 	IFDEBUG(gm,1)
 	UserWrite("RefineGrid():\n");
-	for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 		UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),ECLASS(theElement),REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),COARSEN(theElement));
 	ENDDEBUG
 	
 	/* refine elements */
 	RESETGSTATUS(fineGrid,GRID_CHANGED);
-	for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 	{
 		/* TODO: delete special debug */ PRINTELEMID(-2)
 
@@ -3079,13 +3058,13 @@ static int RefineGrid (GRID *theGrid)
 
 	IFDEBUG(gm,1)
 	UserWrite("RefineGrid():\n");
-	for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 		UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),ECLASS(theElement),REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),COARSEN(theElement));
 	ENDDEBUG
 	
 if (0) {
 	/* reset coarse flags */
-	for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement)) {
+	for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
 		SETCOARSEN(theElement,0);
 	}
 }
@@ -3136,14 +3115,14 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
 
 	REFINE_MULTIGRID_LIST(1,theMG,"RefineMultiGrid()","","")
 	
-	j = theMG->topLevel;
+	j = TOPLEVEL(theMG);
 	for (level=toplevel; level>0; level--)
 	IFDEBUG(gm,1)
 	UserWrite("RefineMultiGrid():\n");
 	for (k=j; k>=0; k--)
 	{
 		theGrid = GRID_ON_LEVEL(theMG,k);
-		for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement)) {
+		for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
 			UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d Refine=%d "\
 			"Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),ECLASS(theElement),\
 			REFINECLASS(theElement),MARKCLASS(theElement),REFINE(theElement),MARK(theElement),\
@@ -3161,13 +3140,13 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
 			IFDEBUG(gm,1)
 			UserWriteF("Begin CloseGrid(%d):\n",k);
 			ENDDEBUG
-			if ((r = CloseGrid(theMG->grids[k]))<0) {
+			if ((r = CloseGrid(GRID_ON_LEVEL(theMG,k)))<0) {
 				PrintErrorMessage('E',"RefineMultiGrid","error in CloseGrid");
 		}
 
 			IFDEBUG(gm,1)
 			UserWriteF("End CloseGrid(%d):\n",k);
-			for (theElement=theMG->grids[k]->elements; theElement!=NULL; theElement=SUCCE(theElement))
+			for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,k)); theElement!=NULL; theElement=SUCCE(theElement))
 				UserWriteF("EID=%d TAG=%d ECLASS=%d EFATHERID=%d RefineClass=%d "\
 					"MarkClass=%d Refine=%d Mark=%d Coarse=%d\n",ID(theElement),\
 					TAG(theElement),ECLASS(theElement),ID(EFATHER(theElement)),\
@@ -3176,11 +3155,11 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
 
 		REFINE_GRID_LIST(1,theMG,level-1,("End RestrictMarks(%d,down):\n",level),"");
 	}
-		if (RestrictMarks(theMG->grids[k-1])!=GM_OK) RETURN(GM_ERROR);
+		if (RestrictMarks(GRID_ON_LEVEL(theMG,k-1))!=GM_OK) RETURN(GM_ERROR);
 	#ifdef ModelP
 		IFDEBUG(gm,1)
 		UserWriteF("End RestrictMarks(%d):\n",k-1);
-		for (theElement=theMG->grids[k-1]->elements; theElement!=NULL; theElement=SUCCE(theElement))
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,k-1)); theElement!=NULL; theElement=SUCCE(theElement))
 		  if (k-1 == 0)
 			UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d" \
 				"Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),\
@@ -3205,12 +3184,12 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
 
 		if (hFlag)
 		{
-		for (theNode=theGrid->firstNode; theNode!=NULL; theNode=SUCCN(theNode)) SETMODIFIED(theNode,0);
+			/* leave only regular marks */
 			for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 			{
 				if ((ECLASS(theElement)==RED_CLASS) && MARKCLASS(theElement)==RED_CLASS) continue;
 				SETMARK(theElement,NO_REFINEMENT);
-			for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+			for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 
 			PRINTDEBUG(gm,1,("Begin GridClosure(%d,up):\n",level));
 
@@ -3226,7 +3205,7 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
 
 			IFDEBUG(gm,1)
 			UserWriteF("End 2. CloseGrid(%d):\n",k);
-			for (theElement=theMG->grids[k]->elements; theElement!=NULL; theElement=SUCCE(theElement))
+			for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,k)); theElement!=NULL; theElement=SUCCE(theElement))
 			  {
 				if (k>0)
 				  UserWriteF("EID=%d TAG=%d ECLASS=%d EFATHERID=%d RefineClass=%d "\
@@ -3292,19 +3271,19 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
 	#endif
 
 	if (CreateAlgebra(theMG) != GM_OK)
-	if (theMG->topLevel > 0) DisposeTopLevel(theMG);
-	theMG->currentLevel = theMG->topLevel;
+        REP_ERR_RETURN (GM_ERROR);
+
 
 	/* set grid status of grid 0 */
-	RESETGSTATUS(theMG->grids[0],GRID_CHANGED);
+	RESETGSTATUS(GRID_ON_LEVEL(theMG,0),GRID_CHANGED);
 
 	IFDEBUG(gm,1)
 	UserWrite("END RefineMultiGrid():\n");
-	j = theMG->topLevel;
+	j = TOPLEVEL(theMG);
 	for (k=j; k>=0; k--)
 	{
 		theGrid = GRID_ON_LEVEL(theMG,k);
-		for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+		for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
 			UserWriteF("EID=%d TAG=%d ECLASS=%d RefineClass=%d MarkClass=%d "\
 				"Refine=%d Mark=%d Coarse=%d\n",ID(theElement),TAG(theElement),\
 				ECLASS(theElement),REFINECLASS(theElement),MARKCLASS(theElement),\
