@@ -106,6 +106,7 @@ typedef struct
   INT levelLimit;                            /* stop if -level>levelLimit       */
   INT aggLimit;                              /* agglomerate to one processor    */
   /* if level <= aggLimit            */
+  INT agglevel;                          /* agglomerated bottom level       */
   INT symmetric;                             /* symmetric stiffness matrix      */
 
   INT explicitFlag;                          /* clear only by npexecute         */
