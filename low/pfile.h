@@ -57,18 +57,47 @@ typedef struct {
         #endif
 } PFILE ;
 
+typedef struct {
+  INT nints;
+  INT nfloats;
+  INT nbytes;
+  INT first_key, last_key;
+} PFILE_STATE_BIN;
+
+typedef struct {
+  FILE *stream;
+  PFILE_STATE_BIN local;
+  INT valid_state[PFILE_MAX_TREE+1];
+  PFILE_STATE_BIN state[PFILE_MAX_TREE+1];
+  INT robin;
+#ifdef ModelP
+  INT buf_INT[PFILE_BUFFER_SIZE];
+  INT buf_INT2[PFILE_BUFFER_SIZE];
+  FLOAT buf_FLOAT[PFILE_BUFFER_SIZE];
+  FLOAT buf_FLOAT2[PFILE_BUFFER_SIZE];
+  unsigned char buf_BYTE[PFILE_BUFFER_SIZE];
+  unsigned char buf_BYTE2[PFILE_BUFFER_SIZE];
+#endif
+} PFILE_BIN ;
+
 /****************************************************************************/
 /*                                                                          */
 /* function declarations                                                    */
 /*                                                                          */
 /****************************************************************************/
 
-PFILE *pfile_open        (char *name);
-INT    pfile_master_puts (PFILE *pf, char *s);
-INT    pfile_puts        (PFILE *pf, char *s);
-INT    pfile_tagged_puts (PFILE *pf, char *s, INT key);
-INT    pfile_sync        (PFILE *pf);
-INT    pfile_close       (PFILE *pf);
-
+PFILE *pfile_open               (char *name);
+INT    pfile_master_puts        (PFILE *pf, char *s);
+INT    pfile_puts               (PFILE *pf, char *s);
+INT    pfile_tagged_puts        (PFILE *pf, char *s, INT key);
+INT    pfile_sync               (PFILE *pf);
+INT    pfile_close              (PFILE *pf);
+PFILE_BIN *pfile_open_bin           (char *name);
+INT        pfile_tagged_write_INT   (PFILE_BIN *pf, INT *values, int n, INT key);
+INT        pfile_tagged_write_FLOAT (PFILE_BIN *pf, FLOAT *values, int n, INT key);
+/* TODO: pfile_tagged_write_BYTE works only in seq Mode !!! */
+INT        pfile_tagged_write_BYTE  (PFILE_BIN *pf, unsigned char *values, int n, INT key);
+INT        pfile_sync_bin           (PFILE_BIN *pf);
+INT        pfile_close_bin          (PFILE_BIN *pf);
 
 #endif

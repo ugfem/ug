@@ -152,9 +152,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 PFILE *pfile_open (char *name)
 {
-        #ifndef ModelP
+#ifndef ModelP
   return( (PFILE *) fileopen(name,"w") );
-        #else
+#else
   PFILE *pf;
   FILE *stream;
   INT i,error;
@@ -200,7 +200,7 @@ PFILE *pfile_open (char *name)
   /* and return */
   return(pf);
 
-        #endif
+#endif
 }
 
 
@@ -233,12 +233,12 @@ PFILE *pfile_open (char *name)
 
 INT pfile_master_puts (PFILE *pf, char *s)
 {
-        #ifndef ModelP
+#ifndef ModelP
   fputs(s,(FILE *) pf);
-        #else
+#else
   if (me == master)
     fputs(s,pf->stream);
-        #endif
+#endif
 
   return(0);
 }
@@ -279,10 +279,10 @@ static INT flush_buffer (PFILE *pf)
     {
       GetConcentrate(i,pf->state+i,sizeof(PFILE_STATE));
       pf->valid_state[i] = 1;
-                        #ifdef LOCAL_DEBUG
+#ifdef LOCAL_DEBUG
       UserWriteF("receiving state from %d: n=%d, fst=%d, lst=%d\n",
                  i,pf->state[i].nchars,pf->state[i].first_key,pf->state[i].last_key);
-                        #endif
+#endif
     }
   /* now we have a valid state from all downtree nodes	*/
   /* and ourself.											*/
@@ -300,9 +300,9 @@ static INT flush_buffer (PFILE *pf)
   }
   pf->robin = (pf->robin+1) % (degree+1);
   /* now we know the smallest key and its owner */
-        #ifdef LOCAL_DEBUG
+#ifdef LOCAL_DEBUG
   UserWriteF("min_index=%d, min_key=%d\n",min_index,min_key);
-        #endif
+#endif
 
   /* now the termination protocol:							*/
   /* if no smallest key has been found subtree including me	*/
@@ -325,9 +325,9 @@ static INT flush_buffer (PFILE *pf)
         pf->valid_state[i] = 0;                               /* state is invalid */
       }
     }
-                #ifdef LOCAL_DEBUG
+#ifdef LOCAL_DEBUG
     UserWriteF("finish=%d\n",finish);
-                #endif
+#endif
 
     /* now we are either finished or we will find min_key == PFILE_MAX_INT	*/
     /* when we enter next time                                                                                  */
@@ -340,9 +340,9 @@ static INT flush_buffer (PFILE *pf)
   if (min_index==degree)
   {
     /* it is our own data */
-                #ifdef LOCAL_DEBUG
+#ifdef LOCAL_DEBUG
     UserWriteF("Writing my own buffer, nchars=%d\n",pf->local.nchars);
-                #endif
+#endif
     buffer = pf->buffer;
     nchars = pf->local.nchars;
     pf->local.nchars = 0;             /* buffer is empty again */
@@ -352,9 +352,9 @@ static INT flush_buffer (PFILE *pf)
   {
     /* fetch downtree data, we have only state ! */
     GetConcentrate(min_index,pf->buffer2,pf->state[min_index].nchars+1);
-                #ifdef LOCAL_DEBUG
+#ifdef LOCAL_DEBUG
     UserWriteF("Writing buffer from %d, nchars=%d\n",min_index,pf->state[min_index].nchars);
-                #endif
+#endif
     buffer = pf->buffer2;
     nchars = pf->state[min_index].nchars;
     pf->valid_state[min_index] = 0;             /* get new state next time */
@@ -405,9 +405,9 @@ static INT flush_buffer (PFILE *pf)
 
 INT pfile_puts (PFILE *pf, char *s)
 {
-        #ifndef ModelP
+#ifndef ModelP
   fputs(s,(FILE *) pf);
-        #else
+#else
   INT n;
 
   /* do not change keys here */
@@ -438,7 +438,7 @@ INT pfile_puts (PFILE *pf, char *s)
     strcpy(&(pf->buffer[pf->local.nchars]),s);
     pf->local.nchars += n;
   }
-        #endif
+#endif
 
   return(0);
 }
@@ -479,10 +479,10 @@ static INT append_buffer (PFILE *pf, char *s, INT key)
 {
   INT n;
 
-        #ifdef LOCAL_DEBUG
+#ifdef LOCAL_DEBUG
   UserWriteF("appending %s with key %d, nchars=%d, lst=%d\n",s,key,
              pf->local.nchars,pf->local.last_key);
-        #endif
+#endif
   n = strlen(s);
   if (n+pf->local.nchars<PFILE_BUFFER_SIZE)
   {
@@ -511,9 +511,9 @@ static INT append_buffer (PFILE *pf, char *s, INT key)
 
 INT pfile_tagged_puts (PFILE *pf, char *s, INT key)
 {
-        #ifndef ModelP
+#ifndef ModelP
   fputs(s,(FILE *) pf);
-        #else
+#else
   /* check order of keys */
   if ( (pf->local.nchars > 0) && (key < pf->local.last_key) )
   {
@@ -537,7 +537,7 @@ INT pfile_tagged_puts (PFILE *pf, char *s, INT key)
     }
     append_buffer(pf,s,key);
   }
-        #endif
+#endif
 
   return(0);
 }
@@ -570,10 +570,10 @@ INT pfile_tagged_puts (PFILE *pf, char *s, INT key)
 
 INT pfile_sync (PFILE *pf)
 {
-        #ifdef ModelP
+#ifdef ModelP
   /* wait until all processors reach end of segment */
   while (!flush_buffer(pf)) ;
-        #endif
+#endif
 
   return(0);
 }
@@ -607,7 +607,7 @@ INT pfile_sync (PFILE *pf)
 
 INT pfile_close (PFILE *pf)
 {
-        #ifdef ModelP
+#ifdef ModelP
   /* wait until all processors reach end of segment */
   while (!flush_buffer(pf)) ;
 
@@ -616,9 +616,505 @@ INT pfile_close (PFILE *pf)
 
   /* free data structure */
   free(pf);
-        #else
+#else
   fclose( (FILE *) pf );
-        #endif
+#endif
 
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   pfile_open_bin - open a parallel binary file
+
+   SYNOPSIS:
+   PFILE_BIN *pfile_open_bin (char *name);
+
+   PARAMETERS:
+   .  name - filename, relative paths are allowed
+
+   DESCRIPTION:
+   Allocates a new PFILE_BIN data structure on all processors and
+   returns a pointer to it. This function has to be called by
+   all processes, but the file is only opened on the master.
+   The PFILE_BIN data structure contains 2 buffers, one for integers
+   and one for floats. The size of the buffer can be adjusted
+   in pfile.h .
+
+   RETURN VALUE:
+   .n NULL if any errors are encountered, this is a global state
+   .n valid pointer if allocate successful on all processors
+
+   SEE ALSO:
+   'pfile_sync_bin', 'pfile_close_bin'
+   D*/
+/****************************************************************************/
+
+PFILE_BIN *pfile_open_bin (char *name)
+{
+#ifndef ModelP
+  return( (PFILE_BIN *) fileopen(name,"wb") );
+#else
+  PFILE_BIN *pf;
+  FILE *stream;
+  INT i,error;
+
+  /* allocate PFILE_BIN data structure */
+  error = 0;
+  pf = malloc(sizeof(PFILE_BIN));
+  if (pf == NULL) error=1;
+  error = UG_GlobalMaxINT(error);
+  if (error) {
+    if (pf != NULL) free(pf);
+    return(NULL);
+  }
+
+  /* open file */
+  error = 0;
+  if (me == master) {
+    stream = fileopen(name,"w");
+    if (stream == NULL) error = 1;
+  } else
+    stream = NULL;
+  error = UG_GlobalMaxINT(error);
+  if (error) {
+    free(pf);
+    return(NULL);
+  }
+
+  /* init structure */
+  pf->stream = stream;
+
+  pf->local.nints = 0;
+  pf->local.nfloats = 0;
+  pf->local.first_key = 0;
+  pf->local.last_key = 0;
+
+  for (i=0; i<PFILE_MAX_TREE; i++)
+    pf->valid_state[i] = 0;
+
+  pf->robin = 0;
+
+  /* and return */
+  return(pf);
+#endif
+}
+
+#ifdef ModelP
+/****************************************************************************/
+/* change for BYTES not finished ! */
+static INT flush_buffer_bin (PFILE_BIN *pf)
+{
+  INT i,j,min_key,min_index,finish=0;
+  INT *buf_INT;
+  FLOAT *buf_FLOAT;
+  INT nints, nfloats;
+
+  /* copy local state to array */
+  pf->state[degree] = pf->local;
+
+  /* update downtree states */
+  for (i=0; i<degree; i++)
+    if (!pf->valid_state[i]) {
+      GetConcentrate(i,pf->state+i,sizeof(PFILE_STATE_BIN));
+      pf->valid_state[i] = 1;
+#ifdef LOCAL_DEBUG
+      UserWriteF("receiving state from %d: nints=%d, nfloats=%d fst=%d, lst=%d\n",
+                 i,pf->state[i].nints,pf->state[i].nfloats,pf->state[i].first_key,pf->state[i].last_key);
+#endif
+    }
+  /* now we have a valid state from all downtree nodes	*/
+  /* and ourself.											*/
+
+  /* determine smallest key */
+  min_key = PFILE_MAX_INT;
+  for (j=0; j<=degree; j++) {
+    i = (pf->robin+j) % (degree+1);             /* makes load balancing in case of equal keys */
+    if ( ((pf->state[i].nints>0) || (pf->state[i].nfloats>0)) && (pf->state[i].first_key<min_key) ) {
+      min_key = pf->state[i].first_key;
+      min_index = i;
+    }
+  }
+  pf->robin = (pf->robin+1) % (degree+1);
+  /* now we know the smallest key and its owner */
+#ifdef LOCAL_DEBUG
+  UserWriteF("min_index=%d, min_key=%d\n",min_index,min_key);
+#endif
+
+  /* now the termination protocol:							*/
+  /* if no smallest key has been found subtree including me	*/
+  /* is finished, if me==master then all are finished			*/
+  if (min_key == PFILE_MAX_INT) {
+    if (me == master)
+      finish = 1;                   /* now all are finished */
+    else {
+      Concentrate(&pf->local,sizeof(PFILE_STATE_BIN));                   /* has (nints && nfloats)==0 !  */
+      GetSpread(&finish,sizeof(INT));                                            /* the global state */
+    }
+
+    /* now we have finish from uptree */
+    if (finish)     {
+      /* all are finished, inform downtree nodes */
+      for (i=0; i<degree; i++) {
+        Spread(i,&finish,sizeof(INT));
+        pf->valid_state[i] = 0;                               /* state is invalid */
+      }
+    }
+#ifdef LOCAL_DEBUG
+    UserWriteF("finish=%d\n",finish);
+#endif
+
+    /* now we are either finished or we will find min_key == PFILE_MAX_INT	*/
+    /* when we enter next time                                                                                  */
+    return(finish);
+  }
+
+  /* a smallest key has been found, so buffer is written to	*/
+  /* output file or passed uptree.							*/
+  /* first, lets get the data                                                           */
+  if (min_index==degree) {
+    /* it is our own data */
+#ifdef LOCAL_DEBUG
+    UserWriteF("Writing my own buffer, nints=%d, nfloats=%d\n",pf->local.nints,pf->local.nfloats);
+#endif
+    buf_INT = pf->buf_INT;
+    buf_FLOAT = pf->buf_FLOAT;
+    nints = pf->local.nints;
+    nfloats = pf->local.nfloats;
+    pf->local.nints = pf->local.nfloats = 0;              /* buffer is empty again */
+    pf->local.first_key = pf->local.last_key = 0;
+  } else {
+    /* fetch downtree data, we have only state ! */
+    GetConcentrate(min_index,pf->buf_INT2,pf->state[min_index].nints*sizeof(INT));
+    GetConcentrate(min_index,pf->buf_FLOAT2,pf->state[min_index].nfloats*sizeof(FLOAT));
+#ifdef LOCAL_DEBUG
+    UserWriteF("Writing buffer from %d, nints=%d, nfloats=%d\n",/
+               min_index,pf->state[min_index].nints,pf->state[min_index].nfloats);
+#endif
+    buf_INT = pf->buf_INT2;
+    buf_FLOAT = pf->buf_FLOAT2;
+    nints = pf->state[min_index].nints;
+    nfloats = pf->state[min_index].nfloats;
+    pf->valid_state[min_index] = 0;             /* get new state next time */
+  }
+  /* now process data */
+  if (me==master) {
+    if (nints>0) fwrite(buf_INT, sizeof(INT), nints, pf->stream);
+    if (nfloats>0) fwrite(buf_FLOAT, sizeof(FLOAT), nfloats, pf->stream);
+  }
+  else {
+    Concentrate(pf->state+min_index,sizeof(PFILE_STATE_BIN));             /* send state */
+    Concentrate(buf_INT,nints*sizeof(INT));                               /* send INT data  */
+    Concentrate(buf_FLOAT,nfloats*sizeof(FLOAT));                         /* send FLOAT data  */
+  }
+
+  /* Note: While sending data uptree we don't expect to get	*/
+  /* an answer from uptree!									*/
+  return(0);       /* we are not finished yet */
+}
+#endif
+
+/****************************************************************************/
+/*D
+   pfile_tagged_write_INT - write tagged sequence of integers to
+   parallel binary file
+
+   SYNOPSIS:
+   INT pfile_tagged_write_INT (PFILE_BIN *pf, INT *values, int n, INT key);
+
+   PARAMETERS:
+   .  pf - pointer to parallel binary file
+   .  values - integers to be written
+   .  n - number of integers
+   .  key - key for this sequence of integers
+
+   DESCRIPTION:
+   Writes a tagged item to the output file. Tags should be globally
+   unique and locally increasing within each segment. If tags
+   are out of order, a warning is issued and the item is treated
+   as in order.
+
+   Any number of calls to pfile_tagged_write_INT may be issued by
+   a single process.
+
+   RETURN VALUE:
+   .n 0 if ok.
+   .n >0 if any errors are encountered, this is a LOCAL state
+
+   SEE ALSO:
+   'pfile_sync_bin', 'pfile_open_bin', 'pfile_close_bin'
+   D*/
+/****************************************************************************/
+
+#ifdef ModelP
+static INT append_buffer_bin_INT (PFILE_BIN *pf, INT *values, int n, INT key)
+{
+  int i;
+#ifdef LOCAL_DEBUG
+  UserWriteF("appending %d INTs with key %d, nints=%d, lst=%d\n",n,key,
+             pf->local.nints,pf->local.last_key);
+#endif
+  if (n+pf->local.nints<PFILE_BUFFER_SIZE)
+  {
+    /* initialize keys if buffer is empty */
+    if (pf->local.nints == 0) pf->local.first_key = key;
+
+    /* append to buffer */
+    for (i=0; i<n; i++)
+      pf->buf_INT[pf->local.nints+i]=values[i];
+    pf->local.nints += n;
+
+    /* update last key */
+    pf->local.last_key = key;
+
+    return(1);             /* append successful */
+  }
+
+  if (n>PFILE_BUFFER_SIZE)
+  {
+    PrintErrorMessage('E',"pfile_puts","string larger than buffer");
+    return(1);             /* treat as appended ! */
+  }
+
+  return(0);       /* could not append */
+}
+#endif
+
+INT pfile_tagged_write_INT (PFILE_BIN *pf, INT *values, int n, INT key)
+{
+#ifndef ModelP
+  fwrite(values, sizeof(INT), n, (FILE *) pf);
+#else
+  /* check order of keys */
+  if ( (pf->local.nints > 0) && (key < pf->local.last_key) )
+  {
+    PrintErrorMessage('W',"pfile_tagged_write_INT","keys locally not ordered");
+    key = pf->local.last_key+1;             /* treat as in order ! */
+  }
+
+  if ( (pf->local.nints > 0) && (key > pf->local.last_key+1) )       /* not consecutive case */
+    if (flush_buffer_bin(pf))
+    {
+      PrintErrorMessage('E',"pfile_tagged_write_INT","unxepected finish");
+      return(1);
+    }
+
+  if (!append_buffer_bin_INT(pf,values,n,key))
+  {
+    if (flush_buffer_bin(pf))
+    {
+      PrintErrorMessage('E',"pfile_tagged_write_INT","unxepected finish");
+      return(1);
+    }
+    append_buffer_bin_INT(pf,values,n,key);
+  }
+#endif
+  return(0);
+}
+
+/****************************************************************************/
+#ifdef ModelP
+static INT append_buffer_bin_FLOAT (PFILE_BIN *pf, FLOAT *values, int n, INT key)
+{
+  int i;
+#ifdef LOCAL_DEBUG
+  UserWriteF("appending %d FLOATs with key %d, nfloats=%d, lst=%d\n",n,key,
+             pf->local.nfloats,pf->local.last_key);
+#endif
+  if (n+pf->local.nfloats<PFILE_BUFFER_SIZE)
+  {
+    /* initialize keys if buffer is empty */
+    if (pf->local.nfloats == 0) pf->local.first_key = key;
+
+    /* append to buffer */
+    for (i=0; i<n; i++)
+      pf->buf_FLOAT[pf->local.nfloats+i]=values[i];
+    pf->local.nfloats += n;
+
+    /* update last key */
+    pf->local.last_key = key;
+
+    return(1);             /* append successful */
+  }
+
+  if (n>PFILE_BUFFER_SIZE)
+  {
+    PrintErrorMessage('E',"pfile_puts","string larger than buffer");
+    return(1);             /* treat as appended ! */
+  }
+
+  return(0);       /* could not append */
+}
+#endif
+
+INT pfile_tagged_write_FLOAT (PFILE_BIN *pf, FLOAT *values, int n, INT key)
+{
+#ifndef ModelP
+  fwrite(values, sizeof(FLOAT), n, (FILE *) pf);
+#else
+  /* check order of keys */
+  if ( (pf->local.nfloats > 0) && (key < pf->local.last_key) )
+  {
+    PrintErrorMessage('W',"pfile_tagged_write_INT","keys locally not ordered");
+    key = pf->local.last_key+1;             /* treat as in order ! */
+  }
+
+  if ( (pf->local.nfloats > 0) && (key > pf->local.last_key+1) )       /* not consecutive case */
+    if (flush_buffer_bin(pf))
+    {
+      PrintErrorMessage('E',"pfile_tagged_write_INT","unxepected finish");
+      return(1);
+    }
+
+  if (!append_buffer_bin_FLOAT(pf,values,n,key))
+  {
+    if (flush_buffer_bin(pf))
+    {
+      PrintErrorMessage('E',"pfile_tagged_write_INT","unxepected finish");
+      return(1);
+    }
+    append_buffer_bin_FLOAT(pf,values,n,key);
+  }
+#endif
+  return(0);
+}
+
+/****************************************************************************/
+#ifdef ModelP
+static INT append_buffer_bin_BYTE (PFILE_BIN *pf, unsigned char *values, int n, INT key)
+{
+  int i;
+#ifdef LOCAL_DEBUG
+  UserWriteF("appending %d BYTEs with key %d, nbytes=%d, lst=%d\n",n,key,
+             pf->local.nbytes,pf->local.last_key);
+#endif
+  if (n+pf->local.nbytes<PFILE_BUFFER_SIZE)
+  {
+    /* initialize keys if buffer is empty */
+    if (pf->local.nbytes == 0) pf->local.first_key = key;
+
+    /* append to buffer */
+    for (i=0; i<n; i++)
+      pf->buf_BYTE[pf->local.nbytes+i]=values[i];
+    pf->local.nbytes += n;
+
+    /* update last key */
+    pf->local.last_key = key;
+
+    return(1);             /* append successful */
+  }
+
+  if (n>PFILE_BUFFER_SIZE)
+  {
+    PrintErrorMessage('E',"pfile_puts","string larger than buffer");
+    return(1);             /* treat as appended ! */
+  }
+
+  return(0);       /* could not append */
+}
+#endif
+
+INT pfile_tagged_write_BYTE (PFILE_BIN *pf, unsigned char *values, int n, INT key)
+{
+#ifndef ModelP
+  fwrite(values, sizeof(unsigned char), n, (FILE *) pf);
+#else
+  /* check order of keys */
+  if ( (pf->local.nbytes > 0) && (key < pf->local.last_key) )
+  {
+    PrintErrorMessage('W',"pfile_tagged_write_INT","keys locally not ordered");
+    key = pf->local.last_key+1;             /* treat as in order ! */
+  }
+
+  if ( (pf->local.nbytes > 0) && (key > pf->local.last_key+1) )       /* not consecutive case */
+    if (flush_buffer_bin(pf))
+    {
+      PrintErrorMessage('E',"pfile_tagged_write_INT","unxepected finish");
+      return(1);
+    }
+
+  if (!append_buffer_bin_BYTE(pf,values,n,key))
+  {
+    if (flush_buffer_bin(pf))
+    {
+      PrintErrorMessage('E',"pfile_tagged_write_INT","unxepected finish");
+      return(1);
+    }
+    append_buffer_bin_FLOAT(pf,values,n,key);
+  }
+#endif
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   pfile_sync_bin - indicate end of binary file segment
+
+   SYNOPSIS:
+   INT pfile_sync_bin (PFILE_BIN *pf);
+
+   PARAMETERS:
+   .  pf - pointer to parallel binary file
+
+   DESCRIPTION:
+   At the end of a segment this function has to be called by
+   all processes. The function returns when all process
+   have reached the end the current segment. Then the segment
+   counter is increased.
+
+   RETURN VALUE:
+   .n 0 if ok.
+   .n >0 if any errors are encountered, this is a LOCAL state
+
+   SEE ALSO:
+   'pfile_open_bin', 'pfile_close_bin'
+   D*/
+/****************************************************************************/
+
+INT pfile_sync_bin (PFILE_BIN *pf)
+{
+#ifdef ModelP
+  while (!flush_buffer_bin(pf)) ;
+#endif
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   pfile_close_bin - indicate end of binary file
+
+   SYNOPSIS:
+   INT pfile_close_bin (PFILE_BIN *pf);
+
+   PARAMETERS:
+   .  pf - pointer to parallel binary file
+
+   DESCRIPTION:
+   At the end of the file this function has to be called by
+   all processes. The function returns when all process
+   have reached the end of file. Then the file is closed
+   and buffer space is released.
+
+   RETURN VALUE:
+   .n 0 if ok.
+   .n >0 if any errors are encountered, this is a LOCAL state
+
+   SEE ALSO:
+   'pfile_open_bin', 'pfile_sync_bin'
+   D*/
+/****************************************************************************/
+
+INT pfile_close_bin (PFILE_BIN *pf)
+{
+#ifndef ModelP
+  fclose( (FILE *) pf);
+#else
+  /* wait until all processors reach end of segment */
+  while (!flush_buffer_bin(pf)) ;
+  /* close output file */
+  if (me == master) fclose(pf->stream);
+  /* free data structure */
+  free(pf);
+#endif
   return(0);
 }
