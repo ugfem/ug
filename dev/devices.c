@@ -745,10 +745,11 @@ INT InitDevices (int *argcp, char **argv)
   INT with_defaultOuputDevice;
 #       endif
   char buffer[256];
-  int ival;
 
   /* get default mutelevel from defaults file */
-  if (GetDefaultValue(DEFAULTSFILENAME,"mutelevel",buffer)==0) {
+  if (GetDefaultValue(DEFAULTSFILENAME,"mutelevel",buffer)==0)
+  {
+    int ival = 0;
     sscanf(buffer," %d ",&ival);
     SetMuteLevel ((INT) ival);
   }
