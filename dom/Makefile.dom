@@ -1,0 +1,33 @@
+##############################################################################
+#																			 #
+#	Makefile for all modules of ug version 3								 #
+#																			 #
+#	created 16 December 1994												 #
+#																			 #
+##############################################################################
+
+# load architecture dependent makefile	
+include ../ug.arch
+
+# architecture-dependent makefile entries
+include ../machines/mk.$(ARCHDIR)
+
+# load configuration switches
+include ../ug.conf
+
+LCFLAGS = -I../low -I../dev
+
+OBJECTS = domain.o
+
+all : $(OBJECTS) $(DOM_MODULE) Makefile.dom
+	ar $(ARFLAGS) ../lib/libdom$(DOMSUFFIX).a $(OBJECTS)
+
+.c.o:
+	$(CC) $(UGDEFINES) $(LCFLAGS) $(CFLAGS) $<
+
+STD_DOMAIN:
+	cd std; make -f Makefile.std; cd ..;
+
+clean:
+	rm $(OBJECTS)
+	cd std;  make -f Makefile.std  clean; cd ..;
