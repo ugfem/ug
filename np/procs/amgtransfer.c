@@ -868,13 +868,32 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       /* set the index field on the new grid
          (even if the ordering might be changed again) */
       l_setindex(newGrid);
-      if (np->display == PCR_FULL_DISPLAY) {
+      if (np->display == PCR_FULL_DISPLAY)
+      {
         VECTOR *v;
+
         INT nv=0;
+                #ifdef ModelP
+        INT nv_m=0;
+        INT nv_d=0;
+
+        for (v=FIRSTVECTOR(newGrid); v!=NULL; v=SUCCVC(v))
+          if (PRIO(v) == PrioMaster)
+            nv_m++;
+        for (v=FIRSTVECTOR(newGrid); v!=NULL; v=SUCCVC(v))
+          if (VECSKIP(v))
+            nv_d++;
+        nv_m = UG_GlobalSumINT(nv_m);
+        nv_d = UG_GlobalSumINT(nv_d);
+                #endif
         for (v=FIRSTVECTOR(newGrid); v!=NULL; v=SUCCVC(v)) nv++;
         UserWriteF(DISPLAY_NP_AMG_FORMAT,
                    (int)level-1,(int)nv,
                    (int)newGrid->nCon,(int)theGrid->nIMat);
+                        #ifdef ModelP
+        UserWriteF(" master vectors %d  Dirichlet vectors %d\n",
+                   (int)nv_m,(int)nv_d);
+                #endif
       }
       sprintf(varname,":amg:vect%d",level-1);
       SetStringValue(varname,(double)NVEC(newGrid));
@@ -958,6 +977,12 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     if (AllocVDFromVD(theMG,theMG->bottomLevel,tl,b,&(np->p)))
       REP_ERR_RETURN(1);
   }
+
+        #ifdef ModelP
+  /* rebuild DDD-interfaces because distributed vectors have been
+     deleted without communication */
+  DDD_IFRefreshAll();
+        #endif
 
   /* we set the baselevel for the following cycle!! */
   *fl=theMG->bottomLevel;
