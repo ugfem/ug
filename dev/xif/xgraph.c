@@ -83,8 +83,6 @@
 
 #define NTOOLS                  7                               /* this is the number of tools		*/
 
-#define _LITTLE_ENDIAN   (*(char *) &WhichEndian)
-
 /* bitmaps for icons */
 #include "view-icon"
 #include "tool0"
@@ -119,8 +117,6 @@ static int MoveMouse = 1;                               /* some local vars for m
 static int StoredMousePos = 0;
 static int MouseX,MouseY;
 
-static int WhichEndian = 1;             /* to get byte order                */
-
 static Colormap our_cmap;             /* may be a private one               */
 static int true_color;                /* whether we have true color visual  */
 static int current_color;             /* index to current foreground color  */
@@ -135,11 +131,81 @@ static int red_shift, green_shift, blue_shift;
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-/****************************************************************************/
-/*																			*/
-/* forward declarations of functions used before they are defined			*/
-/*																			*/
-/****************************************************************************/
+/***************************************************************************/
+/*                                                                         */
+/*  Routine to rasterize lines via DDA algorithm:                          */
+/*                                                                         */
+/*  The XDrawLine routine in some X servers rasterizes a line drawn from   */
+/*  A to B sometimes into different pixels than a line from B to A. This   */
+/*  results in lines with varying width when drawing surroundings and      */
+/*  simply looks ugly.                                                     */
+/*                                                                         */
+/*  Affected are, for example, XFree86's XMach64 and XF68_FBDev X servers  */
+/*  when used with an ATI Rage Pro chip.                                   */
+/*                                                                         */
+/*  Define UGLY_LINES if you have this problem and want to cure it.        */
+/*                                                                         */
+/*  Limitations:                                                           */
+/*  - line style settings are ignored (not a great thing)                  */
+/*  - slower than XDrawLine (if you use a remote connection)               */
+/*                                                                         */
+/***************************************************************************/
+
+#ifdef UGLY_LINES
+
+static void MyDrawLine(Drawable d, GC gc, int x1, int y1, int x2, int y2)
+{
+  int x, y, t, dx, dy;
+  float X, Y, m;
+
+  dx = x2-x1;
+  dy = y2-y1;
+
+  if (dx == 0 && dy == 0) {
+    XDrawPoint(display, d, gc, x1, y1);
+    return;
+  }
+
+  if (ABS(dy) <= ABS(dx)) {
+    if (x1 > x2) {
+      SWAP(x1, x2, t);
+      SWAP(y1, y2, t);
+    }
+    m = (float)dy/(float)dx;
+    Y = (float)y1+0.5;
+    for (x = x1; x <= x2; x++) {
+      XDrawPoint(display, d, gc, x, (int)Y);
+      Y += m;
+    }
+  }
+  else {
+    if (y1 > y2) {
+      SWAP(x1, x2, t);
+      SWAP(y1, y2, t);
+    }
+    m = (float)dx/(float)dy;
+    X = (float)x1+0.5;
+    for (y = y1; y <= y2; y++) {
+      XDrawPoint(display, d, gc, (int)X, y);
+      X += m;
+    }
+  }
+}
+
+static void MyDrawLines(Drawable d, GC gc, XPoint *p, int n)
+{
+  int i;
+
+  for (i = 0; i < n-1; i++)
+    MyDrawLine(d, gc, p[i].x, p[i].y, p[i+1].x, p[i+1].y);
+}
+
+#define XDrawLine(d, w, c, x1, y1, x2, y2)   MyDrawLine(w, c, x1, y1, x2, y2)
+#define XDrawLines(d, w, c, p, n, m)         MyDrawLines(w, c, p, n)
+
+#endif /* UGLY_LINES */
+
+/*--------------------------------------------------------------------------*/
 
 unsigned long UGBlack (void)
 {
@@ -647,7 +713,95 @@ static void IFFlush (void)
   return;
 }
 
-static void IFPlotPixelBuffer(void *buffer, void *data, INT len, int x, int y, int w, int h)
+
+/*--------------------------------------------------------------------------*
+*   Convert pixel buffer to XImage data: one has to copy the 8, 16 or 32   *
+*   lower bits of the pixel values keeping the clients byte order.         *
+*--------------------------------------------------------------------------*/
+
+static void MakeXImageData(void *buffer, void *data, INT len, int pad)
+{
+  unsigned char  *p;
+  unsigned char  *q0;
+  unsigned short *q1;
+  unsigned int   *q2;
+  unsigned long pixel;
+  INT i;
+
+  p = buffer;
+  switch(pad)
+  {
+  case 8 :
+    for (i=0; i<len; i++) {
+      *p = ctab[*p].pixel;
+      p++;
+    }
+    break;
+
+  case 16 :
+    if (sizeof(*q1) == 2) {
+      q1 = data;
+      for (i=0; i<len; i++)
+        *q1++ = ctab[*p++].pixel;
+    }
+    else {
+      q0 = data;
+#ifdef __SWAPBYTES__
+      for (i=0; i<len; i++) {
+        pixel = ctab[*p++].pixel;
+        *q0++ = pixel & 0x00FF;
+        *q0++ = pixel >> 8;
+      }
+#else
+      for (i=0; i<len; i++) {
+        pixel = ctab[*p++].pixel;
+        *q0++ = pixel >> 8;
+        *q0++ = pixel & 0x00FF;
+      }
+#endif
+    }
+    break;
+
+  case 32 :
+    if (sizeof(*q1) == 4) {
+      q1 = data;
+      for (i=0; i<len; i++)
+        *q1++ = ctab[*p++].pixel;
+    }
+    else if (sizeof(*q2) == 4) {
+      q2 = data;
+      for (i=0; i<len; i++)
+        *q2++ = ctab[*p++].pixel;
+    }
+    else {
+      q0 = data;
+#ifdef __SWAPBYTES__
+      for (i=0; i<len; i++) {
+        pixel = ctab[*p++].pixel;
+        *q0++ = pixel & 0x000000FF;
+        *q0++ = (pixel & 0x0000FF00) >> 8;
+        *q0++ = (pixel & 0x00FF0000) >> 16;
+        *q0++ = pixel >> 24;
+      }
+#else
+      for (i=0; i<len; i++) {
+        pixel = ctab[*p++].pixel;
+        *q0++ = pixel >> 24;
+        *q0++ = (pixel & 0x00FF0000) >> 16;
+        *q0++ = (pixel & 0x0000FF00) >> 8;
+        *q0++ = pixel & 0x000000FF;
+      }
+#endif
+    }
+  }
+}
+
+/*--------------------------------------------------------------------------*
+*   write the pixel buffer to the screen                                   *
+*--------------------------------------------------------------------------*/
+
+static void IFPlotPixelBuffer(void *buffer, void *data, INT len,
+                              int x, int y, int w, int h)
 {
   HEAP *heap;
   XImage *image;
@@ -655,10 +809,6 @@ static void IFPlotPixelBuffer(void *buffer, void *data, INT len, int x, int y, i
   unsigned long pixel;
   int bitmap_pad;
   INT mem_allocated, key, i;
-
-  unsigned char  *q0;
-  unsigned short *q1;
-  unsigned int   *q2;
 
   /* how many bits per pixel do we need? */
   if (default_depth <= 8)
@@ -676,83 +826,18 @@ static void IFPlotPixelBuffer(void *buffer, void *data, INT len, int x, int y, i
     heap = GetCurrentMultigrid()->theHeap;
     MarkTmpMem(heap, &key);
     if ((data = GetTmpMem(heap, len * bitmap_pad/8, key)) == NULL) {
-      UserWrite("IFPlotPixelBuffer: Sorry, not enough memory to build XImage.\n");
+      UserWrite("IFPlotPixelBuffer: Sorry, not enough memory.\n");
       ReleaseTmpMem(heap, key);
       return;
     }
     mem_allocated = YES;
   }
 
-  /*  Convert pixel buffer to XImage data:                                         */
-  /*  We have to copy the 8, 16 or 32 lower bits of a pixel value to to a portion  */
-  /*  of memory of the same size keeping the clients byte order. Only 8 bit chars  */
-  /*  are assumed.                                                                 */
+  MakeXImageData(buffer, data, len, bitmap_pad);
 
-  p = buffer;
-  switch(bitmap_pad)
-  {
-  case 8 :
-    for (i=0; i<len; i++)
-      *p++ = ctab[*p].pixel;
-    break;
-
-  case 16 :
-    if (sizeof(*q1) == 2) {
-      q1 = data;
-      for (i=0; i<len; i++)
-        *q1++ = ctab[*p++].pixel;
-    }
-    else {
-      q0 = data;
-      if (_LITTLE_ENDIAN)
-        for (i=0; i<len; i++) {
-          pixel = ctab[*p++].pixel;
-          *q0++ = pixel & 0x00FF;
-          *q0++ = pixel >> 8;
-        }
-      else
-        for (i=0; i<len; i++) {
-          pixel = ctab[*p++].pixel;
-          *q0++ = pixel >> 8;
-          *q0++ = pixel & 0x00FF;
-        }
-    }
-    break;
-
-  case 32 :
-    if (sizeof(*q1) == 4) {
-      q1 = data;
-      for (i=0; i<len; i++)
-        *q1++ = ctab[*p++].pixel;
-    }
-    else if (sizeof(*q2) == 4) {
-      q2 = data;
-      for (i=0; i<len; i++)
-        *q2++ = ctab[*p++].pixel;
-    }
-    else {
-      q0 = data;
-      if (_LITTLE_ENDIAN)
-        for (i=0; i<len; i++) {
-          pixel = ctab[*p++].pixel;
-          *q0++ = pixel & 0x000000FF;
-          *q0++ = (pixel & 0x0000FF00) >> 8;
-          *q0++ = (pixel & 0x00FF0000) >> 16;
-          *q0++ = pixel >> 24;
-        }
-      else
-        for (i=0; i<len; i++) {
-          pixel = ctab[*p++].pixel;
-          *q0++ = pixel >> 24;
-          *q0++ = (pixel & 0x00FF0000) >> 16;
-          *q0++ = (pixel & 0x0000FF00) >> 8;
-          *q0++ = pixel & 0x000000FF;
-        }
-    }
-  }
-
-  /* allocate XImage and write it to the screen */
-  image = XCreateImage(display, default_visual, default_depth, ZPixmap, 0, data, w, h, bitmap_pad, 0);
+  /* create XImage structure and write image to the screen */
+  image = XCreateImage(display, default_visual, default_depth, ZPixmap, 0,
+                       data, w, h, bitmap_pad, 0);
   XPutImage(display, gw->win, gw->gc, image, 0, 0, x, y, w, h);
   if (!gw->backing_store)
     XPutImage(display, gw->pixmap, gw->gc, image, 0, 0, x, y, w, h);
@@ -764,7 +849,7 @@ static void IFPlotPixelBuffer(void *buffer, void *data, INT len, int x, int y, i
 
 /*--------------------------------------------------------------------------*/
 
-int get_component_shift(unsigned long mask)
+static int get_component_shift(unsigned long mask)
 {
   int shift;
 
@@ -816,13 +901,27 @@ void InitXPort (OUTPUTDEVICE *thePort)
   /* print display type */
   switch (default_visual->class)
   {
-  case PseudoColor : printf("visual=%s depth=%d\n","PseudoColor",default_depth); break;
-  case GrayScale : printf("visual=%s depth=%d\n","GrayScale",default_depth); break;
-  case DirectColor : printf("visual=%s depth=%d\n","DirectColor",default_depth); break;
-  case TrueColor : printf("visual=%s depth=%d\n","TrueColor",default_depth); break;
-  case StaticGray : printf("visual=%s depth=%d\n","StaticGray",default_depth); break;
-  case StaticColor : printf("visual=%s depth=%d\n","StaticColor",default_depth); break;
-  default : printf("visual=%s depth=%d\n","unknown",default_depth); break;
+  case PseudoColor :
+    printf("visual=%s depth=%d\n","PseudoColor",default_depth);
+    break;
+  case GrayScale :
+    printf("visual=%s depth=%d\n","GrayScale",default_depth);
+    break;
+  case DirectColor :
+    printf("visual=%s depth=%d\n","DirectColor",default_depth);
+    break;
+  case TrueColor :
+    printf("visual=%s depth=%d\n","TrueColor",default_depth);
+    break;
+  case StaticGray :
+    printf("visual=%s depth=%d\n","StaticGray",default_depth);
+    break;
+  case StaticColor :
+    printf("visual=%s depth=%d\n","StaticColor",default_depth);
+    break;
+  default :
+    printf("visual=%s depth=%d\n","unknown",default_depth);
+    break;
   }
 
   /* get info on pixel structure if true color */
@@ -1017,7 +1116,7 @@ void InitXPort (OUTPUTDEVICE *thePort)
     if (private)
       printf("Using private color map with %d entries\n",ncolors);
     else
-      printf("Using color map with %d entries\n",ncolors);
+      printf("Using default color map with %d entries\n",ncolors);
   }
 
   if (ncolors==0)
@@ -1469,7 +1568,7 @@ WINDOWID X11_OpenOutput (const char *title, INT rename, INT x, INT y, INT width,
   if ((width<DEFAULTMINX)||(height<DEFAULTMINY))
   {
     *error=1;
-    UserWriteF("X11_OpenOutput(): ERROR window size too big for screen\n");
+    UserWriteF("X11_OpenOutput(): ERROR inappropriate window size\n");
     return(0);
   }
 
