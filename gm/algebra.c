@@ -3686,7 +3686,7 @@ INT ClearVectorClasses (GRID *theGrid)
   VECTOR *theVector;
 
   /* reset class of each vector to 0 */
-  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
     SETVCLASS(theVector,0);
 
   return(0);
@@ -3729,7 +3729,7 @@ static int Scatter_VectorVClass (DDD_OBJ obj, void *data)
 {
   VECTOR *theVector = (VECTOR *)obj;
 
-  SETVNCLASS(theVector,MAX(VCLASS(theVector),((INT *)data)[0]));
+  SETVCLASS(theVector,MAX(VCLASS(theVector),((INT *)data)[0]));
 
   PRINTDEBUG(gm,2,(PFMT "Scatter_VectorVNClass(): v=" ID_FMTX " vclass=%d\n",
                    me,ID_PRTX(theVector),VCLASS(theVector)))
