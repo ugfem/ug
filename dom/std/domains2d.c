@@ -1863,8 +1863,6 @@ static INT InitHoles (void)
 {
   DOUBLE radius,MidPoint[2];
 
-  INT i;
-
   /* allocate new domain structure */
   MidPoint[0] = 2.5;
   MidPoint[1] = 1.5;

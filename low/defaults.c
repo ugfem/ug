@@ -87,11 +87,12 @@ static char *defaults_buffer=NULL;
 INT GetDefaultValue (const char *filename, const char *name, char *value)
 {
   FILE *defaultsFile;
-  char Name[NAMESIZE], buffer[BUFFSIZE], *curr;
-  int file_ok;
+  char Name[NAMESIZE], buffer[BUFFSIZE];
 
         #ifdef ModelP
+  int file_ok;
   size_t fsize,actsize;
+  char *curr;
 
   if (defaults_buffer==NULL)
   {
