@@ -33,6 +33,7 @@
 #include <math.h>
 
 #include "general.h"
+#include "debug.h"
 #include "ugstruct.h"
 #include "devices.h"
 #include "debug.h"
@@ -108,6 +109,8 @@ typedef struct
 /****************************************************************************/
 
 static VEC_SCALAR Factor_One;
+
+REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -458,33 +461,18 @@ static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
 
   bl = 0;
   for (i=1; i<nev; i++)
-    if (AllocVDFromVD(theNP->base.mg,bl,level,ev[0],&ev[i])) {
-      result[0] = __LINE__;
-      return(1);
-    }
-  if (AllocVDFromVD(theNP->base.mg,bl,level,ev[0],&np->r)) {
-    result[0] = __LINE__;
-    return(1);
-  }
-  if (AllocMDFromVD(theNP->base.mg,bl,level,ev[0],ev[0],&np->M)) {
-    result[0] = __LINE__;
-    return(1);
-  }
+    if (AllocVDFromVD(theNP->base.mg,bl,level,ev[0],&ev[i])) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theNP->base.mg,bl,level,ev[0],&np->r)) NP_RETURN(1,result[0]);
+  if (AllocMDFromVD(theNP->base.mg,bl,level,ev[0],ev[0],&np->M)) NP_RETURN(1,result[0]);
   if (Assemble->PreProcess != NULL)
     if ((*Assemble->PreProcess)(Assemble,bl,level,ev[0],result))
       return(1);
   if (np->assemble) {
-    if (AllocVDFromVD(theNP->base.mg,bl,level,ev[0],&np->t)) {
-      result[0] = __LINE__;
-      return(1);
-    }
+    if (AllocVDFromVD(theNP->base.mg,bl,level,ev[0],&np->t)) NP_RETURN(1,result[0]);
     if ((*Assemble->NLAssembleMatrix)(Assemble,bl,level,
                                       ev[0],np->r,np->t,np->M,result))
       return(1);
-    if (FreeVD(theNP->base.mg,bl,level,np->t)) {
-      result[0] = __LINE__;
-      return(1);
-    }
+    if (FreeVD(theNP->base.mg,bl,level,np->t)) NP_RETURN(1,result[0]);
     if (np->LS->PreProcess != NULL)
       if ((*np->LS->PreProcess)(np->LS,level,ev[0],np->r,np->M,
                                 &np->baselevel,result))
@@ -493,10 +481,7 @@ static INT EWPreProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
   }
   if (np->reset)
     for (i=0; i<nev; i++)
-      if (SetUnsymmetric(theNP->base.mg,bl,level,ev[i],EVERY_CLASS)) {
-        result[0] = __LINE__;
-        return(1);
-      }
+      if (SetUnsymmetric(theNP->base.mg,bl,level,ev[i],EVERY_CLASS)) NP_RETURN(1,result[0]);
   np->reset = 0;
   if (np->interpolate) {
     if (np->Transfer->PreProcessSolution != NULL)
@@ -520,18 +505,9 @@ static INT Rayleigh (NP_EW_SOLVER *theNP, INT level,
   NP_EW *np;
 
   np = (NP_EW *) theNP;
-  if (np->M == NULL) {
-    result[0] = __LINE__;
-    return(1);
-  }
-  if (np->r == NULL) {
-    result[0] = __LINE__;
-    return(1);
-  }
-  if (np->t == NULL) {
-    result[0] = __LINE__;
-    return(1);
-  }
+  if (np->M == NULL) NP_RETURN(1,result[0]);
+  if (np->r == NULL) NP_RETURN(1,result[0]);
+  if (np->t == NULL) NP_RETURN(1,result[0]);
   if ((*Assemble->NLAssembleDefect)(Assemble,0,level,ev,np->r,np->M,result))
     return(1);
 
@@ -542,14 +518,8 @@ static INT Rayleigh (NP_EW_SOLVER *theNP, INT level,
   PrintVector(GRID_ON_LEVEL(theNP->base.mg,level),ev,3,3);
   ENDDEBUG
 
-  if (RayleighQuotient(theNP->base.mg,np->M,ev,np->r,np->t,a)) {
-    result[0] = __LINE__;
-    return(1);
-  }
-  if (a[1] <= ABS(a[0]) * VERY_SMALL) {
-    result[0] = __LINE__;
-    return(1);
-  }
+  if (RayleighQuotient(theNP->base.mg,np->M,ev,np->r,np->t,a)) NP_RETURN(1,result[0]);
+  if (a[1] <= ABS(a[0]) * VERY_SMALL) NP_RETURN(1,result[0]);
   *q = a[0] / a[1];
 
   PRINTDEBUG(np,1,("a %f %f q %f\n",a[0],a[1],*q));
@@ -573,32 +543,20 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
   theMG = theNP->base.mg;
   bl = 0;
 
-  if (Assemble->NLAssembleDefect == NULL) {
-    ewresult->error_code = __LINE__;
-    return(1);
-  }
+  if (Assemble->NLAssembleDefect == NULL) NP_RETURN(1,ewresult->error_code);
   i = 0;
   if (np->Neumann) {                   /* set ev[0] = 1 */
-    if (s_dset(theMG,bl,level,ev[0],1.0)) {
-      ewresult->error_code = __LINE__;
-      return(1);
-    }
+    if (s_dset(theMG,bl,level,ev[0],1.0)) NP_RETURN(1,ewresult->error_code);
     if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,ev[0],np->r,np->M,
                                       &ewresult->error_code))
       return(1);
-    if (s_ddot(theMG,0,level,ev[0],np->r,scal) != NUM_OK) {
-      ewresult->error_code = __LINE__;
-      return(1);
-    }
+    if (s_ddot(theMG,0,level,ev[0],np->r,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
     a[1] = 0.0;
     for (j=0; j<VD_NCOMP(np->r); j++)
       a[1] += scal[j];
     for (j=0; j<VD_NCOMP(np->r); j++)
       scal[j] = 1.0 / sqrt(a[1]);
-    if (a_dscale(theMG,0,level,ev[0],EVERY_CLASS,scal)) {
-      ewresult->error_code = __LINE__;
-      return(1);
-    }
+    if (a_dscale(theMG,0,level,ev[0],EVERY_CLASS,scal)) NP_RETURN(1,ewresult->error_code);
     ew[0] = 0.0;
     i++;
   }
@@ -607,10 +565,7 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
       UserWriteF("%s:\n",ENVITEM_NAME(ev[i]));
 
     /* orthogonalize iteration vector */
-    if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t)) {
-      ewresult->error_code = __LINE__;
-      return(1);
-    }
+    if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t)) NP_RETURN(1,ewresult->error_code);
     if (np->Orthogonalize) {
       if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
                                         ev[i],np->t,np->M,
@@ -618,70 +573,34 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
         return(1);
     }
     else {
-      if (s_dset(theMG,0,level,np->t,0.0)) {
-        ewresult->error_code = __LINE__;
-        return(1);
-      }
+      if (s_dset(theMG,0,level,np->t,0.0)) NP_RETURN(1,ewresult->error_code);
       if (s_dmatmul (theMG,0,level,np->t,np->M,ev[i],EVERY_CLASS)
-          != NUM_OK) {
-        ewresult->error_code = __LINE__;
-        return(1);
-      }
+          != NUM_OK) NP_RETURN(1,ewresult->error_code);
     }
-    if (Orthogonalize(theMG,level,i,ev,np->t,np->display)) {
-      ewresult->error_code = __LINE__;
-      return(1);
-    }
+    if (Orthogonalize(theMG,level,i,ev,np->t,np->display)) NP_RETURN(1,ewresult->error_code);
     if (Rayleigh(&(np->ew),level,ev[i],Assemble,a,&rq,
                  &ewresult->error_code))
       return(1);
     if (np->display == PCR_FULL_DISPLAY)
       UserWriteF("Rayleigh quotient %lf\n",rq);
     if (np->Orthogonalize) {
-      if (a[1] <= 0.0) {
-        ewresult->error_code = __LINE__;
-        return(1);
-      }
+      if (a[1] <= 0.0) NP_RETURN(1,ewresult->error_code);
       for (j=0; j<VD_NCOMP(np->r); j++)
         scal[j] = 1.0 / sqrt(a[1]);
     }
     else {
-      if (a[0] <= 0.0) {
-        ewresult->error_code = __LINE__;
-        return(1);
-      }
+      if (a[0] <= 0.0) NP_RETURN(1,ewresult->error_code);
       for (j=0; j<VD_NCOMP(np->r); j++)
         scal[j] = 1.0 / sqrt(a[0]);
     }
-    if(a_dscale(theMG,bl,level,ev[i],EVERY_CLASS,scal) != NUM_OK) {
-      ewresult->error_code = __LINE__;
-      return(1);
-    }
-    if(a_dscale(theMG,bl,level,np->r,EVERY_CLASS,scal) != NUM_OK) {
-      ewresult->error_code = __LINE__;
-      return(1);
-    }
-    if(a_dscale(theMG,bl,level,np->t,EVERY_CLASS,scal) != NUM_OK) {
-      ewresult->error_code = __LINE__;
-      return(1);
-    }
+    if(a_dscale(theMG,bl,level,ev[i],EVERY_CLASS,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
+    if(a_dscale(theMG,bl,level,np->r,EVERY_CLASS,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
+    if(a_dscale(theMG,bl,level,np->t,EVERY_CLASS,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
     CenterInPattern(text,DISPLAY_WIDTH," inverse iteration ",'%',"\n");
-    if (PreparePCR(np->r,np->display,text,&PrintID))  {
-      ewresult->error_code = __LINE__;
-      return(1);
-    }
-    if (RayleighDefect(theMG,np->r,np->t,rq,defect)) {
-      ewresult->error_code = __LINE__;
-      return(1);
-    }
-    if (sc_mul(defect2reach,defect,reduction,np->t)) {
-      ewresult->error_code = __LINE__;
-      return(1);
-    }
-    if (DoPCR(PrintID,defect,PCR_CRATE)) {
-      ewresult->error_code = __LINE__;
-      return(1);
-    }
+    if (PreparePCR(np->r,np->display,text,&PrintID)) NP_RETURN(1,ewresult->error_code);
+    if (RayleighDefect(theMG,np->r,np->t,rq,defect)) NP_RETURN(1,ewresult->error_code);
+    if (sc_mul(defect2reach,defect,reduction,np->t)) NP_RETURN(1,ewresult->error_code);
+    if (DoPCR(PrintID,defect,PCR_CRATE)) NP_RETURN(1,ewresult->error_code);
     for (iter=0; iter<np->maxiter; iter++) {
       if (sc_cmp(defect,defect2reach,np->t))
         break;
@@ -695,33 +614,18 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
           return(1);
       }
       else {
-        if (s_dset(theMG,0,level,np->t,0.0)) {
-          ewresult->error_code = __LINE__;
-          return(1);
-        }
+        if (s_dset(theMG,0,level,np->t,0.0)) NP_RETURN(1,ewresult->error_code);
         if (s_dmatmul (theMG,0,level,np->t,np->M,ev[i],EVERY_CLASS)
-            != NUM_OK) {
-          ewresult->error_code = __LINE__;
-          return(1);
-        }
+            != NUM_OK) NP_RETURN(1,ewresult->error_code);
       }
-      if (Orthogonalize(theMG,level,i,ev,np->t,np->display)) {
-        ewresult->error_code = __LINE__;
-        return(1);
-      }
+      if (Orthogonalize(theMG,level,i,ev,np->t,np->display)) NP_RETURN(1,ewresult->error_code);
       if (Rayleigh(&(np->ew),level,ev[i],Assemble,a,&rq,
                    &ewresult->error_code))
         return(1);
       for (j=0; j<VD_NCOMP(np->r); j++)
         scal[j] = rq;
-      if (s_dscale(theMG,0,level,np->r,scal) != NUM_OK) {
-        ewresult->error_code = __LINE__;
-        return(1);
-      }
-      if (FreeVD(theMG,bl,level,np->t)) {
-        ewresult->error_code = __LINE__;
-        return(1);
-      }
+      if (s_dscale(theMG,0,level,np->r,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
+      if (FreeVD(theMG,bl,level,np->t)) NP_RETURN(1,ewresult->error_code);
       /* solve */
       if ((*np->LS->Defect)(np->LS,level,ev[i],np->r,np->M,
                             &ewresult->error_code))
@@ -734,52 +638,28 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
                             &ewresult->lresult[i]))
         return (1);
 
-      if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t)) {
-        ewresult->error_code = __LINE__;
-        return(1);
-      }
+      if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t)) NP_RETURN(1,ewresult->error_code);
       if (Rayleigh(&(np->ew),level,ev[i],Assemble,a,&rq,
                    &ewresult->error_code))
         return(1);
       if (np->display == PCR_FULL_DISPLAY)
         UserWriteF("Rayleigh quotient %lf\n",rq);
       if (np->Orthogonalize) {
-        if (a[1] <= 0.0) {
-          ewresult->error_code = __LINE__;
-          return(1);
-        }
+        if (a[1] <= 0.0) NP_RETURN(1,ewresult->error_code);
         for (j=0; j<VD_NCOMP(np->r); j++)
           scal[j] = 1.0 / sqrt(a[1]);
       }
       else {
-        if (a[0] <= 0.0) {
-          ewresult->error_code = __LINE__;
-          return(1);
-        }
+        if (a[0] <= 0.0) NP_RETURN(1,ewresult->error_code);
         for (j=0; j<VD_NCOMP(np->r); j++)
           scal[j] = 1.0 / sqrt(a[0]);
       }
-      if(a_dscale(theMG,bl,level,ev[i],EVERY_CLASS,scal) != NUM_OK) {
-        ewresult->error_code = __LINE__;
-        return(1);
-      }
-      if(a_dscale(theMG,bl,level,np->r,EVERY_CLASS,scal) != NUM_OK) {
-        ewresult->error_code = __LINE__;
-        return(1);
-      }
-      if(a_dscale(theMG,bl,level,np->t,EVERY_CLASS,scal) != NUM_OK) {
-        ewresult->error_code = __LINE__;
-        return(1);
-      }
+      if(a_dscale(theMG,bl,level,ev[i],EVERY_CLASS,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
+      if(a_dscale(theMG,bl,level,np->r,EVERY_CLASS,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
+      if(a_dscale(theMG,bl,level,np->t,EVERY_CLASS,scal) != NUM_OK) NP_RETURN(1,ewresult->error_code);
       /* print defect */
-      if (RayleighDefect(theMG,np->r,np->t,rq,defect)) {
-        ewresult->error_code = __LINE__;
-        return(1);
-      }
-      if (FreeVD(theMG,bl,level,np->t)) {
-        ewresult->error_code = __LINE__;
-        return(1);
-      }
+      if (RayleighDefect(theMG,np->r,np->t,rq,defect)) NP_RETURN(1,ewresult->error_code);
+      if (FreeVD(theMG,bl,level,np->t)) NP_RETURN(1,ewresult->error_code);
       if (DoPCR(PrintID,defect,PCR_CRATE))
         return(1);
     }
@@ -808,18 +688,9 @@ static INT EWPostProcess (NP_EW_SOLVER *theNP, INT level, INT nev,
   bl = 0;
 
   for (i=1; i<nev; i++)
-    if (FreeVD(theNP->base.mg,bl,level,ev[i])) {
-      result[0] = __LINE__;
-      return(1);
-    }
-  if (FreeVD(theNP->base.mg,bl,level,np->r)) {
-    result[0] = __LINE__;
-    return(1);
-  }
-  if (FreeMD(theNP->base.mg,bl,level,np->M)) {
-    result[0] = __LINE__;
-    return(1);
-  }
+    if (FreeVD(theNP->base.mg,bl,level,ev[i])) NP_RETURN(1,result[0]);
+  if (FreeVD(theNP->base.mg,bl,level,np->r)) NP_RETURN(1,result[0]);
+  if (FreeMD(theNP->base.mg,bl,level,np->M)) NP_RETURN(1,result[0]);
   if (Assemble->PostProcess != NULL)
     if ((*Assemble->PostProcess)(Assemble,bl,level,ev[0],
                                  np->r,np->M,result))

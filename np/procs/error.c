@@ -41,6 +41,7 @@
 #include "quadrature.h"
 #include "disctools.h"
 #include "general.h"
+#include "debug.h"
 #include "devices.h"
 #include "ugstruct.h"
 
@@ -78,6 +79,17 @@ typedef struct {
   INT project;
 
 } NP_INDICATOR;
+
+/****************************************************************************/
+/*																			*/
+/* definition of variables global to this source file only (static!)		*/
+/*																			*/
+/****************************************************************************/
+
+REP_ERR_FILE;
+
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*D
@@ -460,17 +472,11 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x,
   theMG = theNP->base.mg;
 
   if (SurfaceIndicator(theMG,x,np->refine,np->coarse,
-                       np->project,np->from,np->to,np->clear,eresult) == -1) {
-    eresult->error_code = __LINE__;
-    return(1);
-  }
+                       np->project,np->from,np->to,np->clear,eresult) == -1) NP_RETURN(1,eresult->error_code);
   i = 0;
   if (np->update) {
     i = 1;
-    if (RefineMultiGrid(theMG,GM_REFINE_TRULY_LOCAL) != GM_OK) {
-      eresult->error_code = __LINE__;
-      return(1);
-    }
+    if (RefineMultiGrid(theMG,GM_REFINE_TRULY_LOCAL) != GM_OK) NP_RETURN(1,eresult->error_code);
     UserWrite("[r]");
   }
   if (np->interpolate) {
@@ -479,10 +485,7 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x,
       if (GSTATUS(theGrid)&1) {
         GSTATUS(theGrid) &= 0xFFFFFFFE;
         if (StandardInterpolateNewVectors
-              (theGrid,(const VECDATA_DESC *)x) != NUM_OK) {
-          eresult->error_code = __LINE__;
-          return(1);
-        }
+              (theGrid,(const VECDATA_DESC *)x) != NUM_OK) NP_RETURN(1,eresult->error_code);
         UserWriteF(" [i%d]",i);
       }
     }

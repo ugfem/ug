@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "general.h"
+#include "debug.h"
 #include "devices.h"
 #include "gm.h"
 #include "disctools.h"
@@ -71,6 +72,8 @@
 
 static DOUBLE *mat,*sol,*def;
 static INT *vecskip;
+
+REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -460,14 +463,8 @@ static INT Assemble (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
   for (l=0; l<=level; l++) {
     UserWriteF(" [%d:",l);
     theGrid = GRID_ON_LEVEL(theMG,l);
-    if (l_dset(theGrid,b,EVERY_CLASS,0.0)!=NUM_OK) {
-      result[0] = __LINE__;
-      return(1);
-    }
-    if (l_dmatset(theGrid,A,0.0)!=NUM_OK) {
-      result[0] = __LINE__;
-      return(1);
-    }
+    if (l_dset(theGrid,b,EVERY_CLASS,0.0)!=NUM_OK) NP_RETURN(1,result[0]);
+    if (l_dmatset(theGrid,A,0.0)!=NUM_OK) NP_RETURN(1,result[0]);
     CLEAR_VECSKIP_OF_GRID(theGrid);
     for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
          theElement=SUCCE(theElement)) {

@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "general.h"
+#include "debug.h"
 #include "devices.h"
 #include "gm.h"
 #include "pcr.h"
@@ -90,6 +91,8 @@ typedef struct
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
+
+REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -548,10 +551,7 @@ static INT RestrictDefect (NP_TRANSFER *theNP, INT level,
 
     #ifdef ModelP
   if (l_ghostvector_collect(GRID_ON_LEVEL(theNP->base.mg,level-1),to)
-      != NUM_OK) {
-    result[0] = __LINE__;
-    return (1);
-  }
+      != NUM_OK) NP_RETURN(1,result[0]);
         #endif
 
   return(result[0]);
@@ -569,10 +569,7 @@ static INT InterpolateCorrection (NP_TRANSFER *theNP, INT level,
     #ifdef ModelP
   if (np->meanvalue)
     if (l_vector_meanvalue(GRID_ON_LEVEL(theNP->base.mg,level),to)
-        != NUM_OK) {
-      result[0] = __LINE__;
-      return (1);
-    }
+        != NUM_OK) NP_RETURN(1,result[0]);
         #endif
 
   return(result[0]);
@@ -607,18 +604,9 @@ static INT AdaptCorrection (NP_TRANSFER *theNP, INT level,
   np = (NP_STANDARD_TRANSFER *) theNP;
   if (np->level) {
     theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
-    if (AllocVDFromVD(theNP->base.mg,level,level,c,&np->t)) {
-      result[0] = __LINE__;
-      return(1);
-    }
-    if (MinimizeLevel(theGrid,c,b,A,np->t,np->display)) {
-      result[0] = __LINE__;
-      return(1);
-    }
-    if (FreeVD(theNP->base.mg,level,level,np->t)) {
-      result[0] = __LINE__;
-      return(1);
-    }
+    if (AllocVDFromVD(theNP->base.mg,level,level,c,&np->t)) NP_RETURN(1,result[0]);
+    if (MinimizeLevel(theGrid,c,b,A,np->t,np->display)) NP_RETURN(1,result[0]);
+    if (FreeVD(theNP->base.mg,level,level,np->t)) NP_RETURN(1,result[0]);
   }
 
   return(0);
