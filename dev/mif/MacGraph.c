@@ -60,7 +60,6 @@
 
 /* standard C includes */
 #include <string.h>
-#include <strings.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -247,9 +246,10 @@ static void Marker (SHORT_POINT point)
 {
   Rect r;
   PolyHandle myPoly;
-  short n,s,x,y;
+  short n,s,S,x,y;
 
   s = currgw->marker_size/2;
+  S = 1.41*s;
   n = currgw->marker_id;
 
   x = point.x;
@@ -282,20 +282,20 @@ static void Marker (SHORT_POINT point)
     PaintOval(&r);
     break;
   case EMPTY_RHOMBUS_MARKER :
-    MoveTo(x,y+s);
-    LineTo(x+s,y);
-    LineTo(x,y-s);
-    LineTo(x-s,y);
-    LineTo(x,y+s);
+    MoveTo(x,y+S);
+    LineTo(x+S,y);
+    LineTo(x,y-S);
+    LineTo(x-S,y);
+    LineTo(x,y+S);
     break;
   case GRAY_RHOMBUS_MARKER :
     PenPat(qdgray);
     myPoly = OpenPoly();
-    MoveTo(x,y+s);
-    LineTo(x+s,y);
+    MoveTo(x,y+S);
+    LineTo(x+S,y);
     LineTo(x,y-s);
-    LineTo(x-s,y);
-    LineTo(x,y+s);
+    LineTo(x-S,y);
+    LineTo(x,y+S);
     ClosePoly();
     PaintPoly(myPoly);
     KillPoly(myPoly);
@@ -303,11 +303,11 @@ static void Marker (SHORT_POINT point)
     break;
   case FILLED_RHOMBUS_MARKER :
     myPoly = OpenPoly();
-    MoveTo(x,y+s);
-    LineTo(x+s,y);
-    LineTo(x,y-s);
-    LineTo(x-s,y);
-    LineTo(x,y+s);
+    MoveTo(x,y+S);
+    LineTo(x+S,y);
+    LineTo(x,y-S);
+    LineTo(x-S,y);
+    LineTo(x,y+S);
     ClosePoly();
     PaintPoly(myPoly);
     KillPoly(myPoly);
@@ -873,11 +873,6 @@ INT DragGraphWindow (GRAPH_WINDOW *gw, EventRecord *theEvent, DOC_DRAG_EVENT *do
   docDrag->Global_LL[1] = gw->Global_LL[1] += DelBottom;
   docDrag->Global_UR[0] = gw->Global_UR[0] += DelRight;
   docDrag->Global_UR[1] = gw->Global_UR[1] += DelTop;
-
-  gw->Local_LL[0] += DelLeft;
-  gw->Local_LL[1] += DelBottom;
-  gw->Local_UR[0] += DelRight;
-  gw->Local_UR[1] += DelTop;
 
   return (POS_CHANGE);
 }
