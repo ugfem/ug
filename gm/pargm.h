@@ -392,7 +392,8 @@ extern DDD_IF BorderVectorIF, BorderVectorSymmIF,
               OuterVectorIF, OuterVectorSymmIF,
               VectorVIF, VectorVAllIF, VectorAllIF;
 #ifdef __THREEDIM__
-extern DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF, EdgeAllIF;
+extern DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF, EdgeVHIF,
+              EdgeSymmVHIF;
 #endif
 #endif
 
