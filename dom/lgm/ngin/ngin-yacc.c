@@ -71,7 +71,7 @@ static ELEMENT Elem;
 typedef union
 {
   /* put RCS string here in order to get it into yacc-generated header file
-     static char RCS_ID("$Header: /hosts/dom/cvs/df/gen/problems/dfcfg/dfcfg.y,v 0
+     static char RCS_ID("$Header: /hosts/dom/cvs/df/gen/problems/dfcfg/dfcfg.y,v 1.1
      1998/02/20 16:58:46 birken Exp $",UG_RCS_STRING);
    */
 
@@ -97,7 +97,7 @@ typedef union
 
 
 
-#define YYFINAL         64
+#define YYFINAL         67
 #define YYFLAG          -32768
 #define YYNTBASE        12
 
@@ -136,8 +136,8 @@ static const char ngtranslate[] = {     0,
 static const short ngprhs[] = {     0,
                                     0,     4,     7,     9,    12,    13,    14,    20,    22,    25,
                                     29,    34,    40,    47,    55,    61,    68,    76,    86,    91,
-                                    97,    99,   102,   108,   110,   113,   114,   115,   121,   123,
-                                    125,   128,   131,   137,   141,   143,   145};
+                                    97,    99,   102,   108,   110,   113,   114,   115,   124,   126,
+                                    128,   131,   134,   140,   144,   146,   148};
 
 static const short ngrhs[] = {    22,
                                   20,    13,     0,    22,    13,     0,    14,     0,    13,    14,
@@ -151,10 +151,10 @@ static const short ngrhs[] = {    22,
                                   30,    30,    30,    30,     0,    10,    30,    30,    30,     0,
                                   10,    30,    30,    30,    30,     0,    21,     0,    20,    21,
                                   0,     5,    29,    29,    29,    11,     0,    23,     0,    22,
-                                  23,     0,     0,     0,     6,    24,    26,    25,    11,     0,
-                                  27,     0,    28,     0,    26,    27,     0,    26,    28,     0,
-                                  7,    30,    30,    29,    29,     0,     8,    30,    29,     0,
-                                  4,     0,     3,     0,     4,     0};
+                                  23,     0,     0,     0,     6,    29,    29,    29,    24,    26,
+                                  25,    11,     0,    27,     0,    28,     0,    26,    27,     0,
+                                  26,    28,     0,     7,    30,    30,    29,    29,     0,     8,
+                                  30,    29,     0,     4,     0,     3,     0,     4,     0};
 
 #endif
 
@@ -162,8 +162,8 @@ static const short ngrhs[] = {    22,
 static const short ngrline[] = { 0,
                                  78,    80,    82,    84,    86,    90,    94,    95,    97,    98,
                                  99,   100,   101,   102,   104,   114,   124,   135,   149,   158,
-                                 168,   170,   172,   181,   183,   185,   187,   189,   190,   196,
-                                 201,   206,   212,   221,   228,   230,   232};
+                                 168,   170,   172,   181,   183,   185,   193,   195,   196,   202,
+                                 207,   212,   218,   227,   234,   236,   238};
 #endif
 
 
@@ -185,52 +185,54 @@ static const short ngr1[] = {     0,
 static const short ngr2[] = {     0,
                                   3,     2,     1,     2,     0,     0,     5,     1,     2,     3,
                                   4,     5,     6,     7,     5,     6,     7,     9,     4,     5,
-                                  1,     2,     5,     1,     2,     0,     0,     5,     1,     1,
+                                  1,     2,     5,     1,     2,     0,     0,     8,     1,     1,
                                   2,     2,     5,     3,     1,     1,     1};
 
 static const short ngdefact[] = {     0,
-                                      26,     0,    24,     0,     0,     5,     2,     3,     0,    21,
-                                      25,     0,     0,    27,    29,    30,    36,    35,     0,     0,
-                                      4,     1,    22,    37,     0,     0,     0,    31,    32,     0,
-                                      6,     8,     0,     0,    34,    28,     0,     0,     0,     9,
-                                      0,     0,    23,     7,     0,    10,     0,    33,     0,    11,
-                                      0,    19,    12,    15,    20,    13,    16,    14,    17,     0,
-                                      18,     0,     0,     0};
+                                      0,     0,    24,    36,    35,     0,     0,     5,     2,     3,
+                                      0,    21,    25,     0,     0,     0,     4,     1,    22,    26,
+                                      0,    37,     6,     8,     0,     0,     0,     0,     0,     9,
+                                      0,     0,     0,    27,    29,    30,    23,     7,     0,    10,
+                                      0,     0,     0,     0,    31,    32,     0,    11,     0,     0,
+                                      34,    28,    19,    12,    15,     0,    20,    13,    16,    33,
+                                      14,    17,     0,    18,     0,     0,     0};
 
-static const short ngdefgoto[] = {    62,
-                                      7,     8,    20,    38,    31,    32,    40,     9,    10,     2,
-                                      3,     4,    27,    14,    15,    16,    19,    25};
+static const short ngdefgoto[] = {    65,
+                                      9,    10,    16,    28,    23,    24,    30,    11,    12,     2,
+                                      3,    26,    44,    34,    35,    36,     6,    25};
 
 static const short ngpact[] = {    -3,
-                                   -32768,    18,-32768,    22,    39,-32768,     1,-32768,    -1,-32768,
-                                   -32768,     2,     2,    22,-32768,-32768,-32768,-32768,    39,     2,
-                                   -32768,     1,-32768,-32768,     2,    39,     3,-32768,-32768,    39,
-                                   -32768,     9,     2,    39,-32768,-32768,    11,    20,     2,     9,
-                                   2,    39,-32768,-32768,     2,     9,     2,-32768,     2,     9,
-                                   2,     2,     9,     2,-32768,     9,     2,-32768,     2,     2,
-                                   -32768,    33,    35,-32768};
+                                   24,     1,-32768,-32768,-32768,    24,    24,-32768,    -4,-32768,
+                                   9,-32768,-32768,    24,    24,     7,-32768,    -4,-32768,-32768,
+                                   24,-32768,-32768,     6,     7,    28,     8,    11,     7,     6,
+                                   7,     7,     7,    28,-32768,-32768,-32768,-32768,     7,     6,
+                                   7,     7,    24,    18,-32768,-32768,     7,     6,     7,    24,
+                                   -32768,-32768,     7,     6,     7,    24,-32768,     6,     7,-32768,
+                                   -32768,     7,     7,-32768,    32,    38,-32768};
 
 static const short ngpgoto[] = {-32768,
-                                28,    -6,-32768,-32768,-32768,-32768,   -35,-32768,    31,-32768,
-                                43,-32768,-32768,-32768,    34,    36,   -17,   -13};
+                                29,    -5,-32768,-32768,-32768,-32768,   -28,-32768,    31,-32768,
+                                41,-32768,-32768,-32768,    12,    14,    -6,    -8};
 
 
-#define YYLAST          50
+#define YYLAST          55
 
 
-static const short ngtable[] = {    26,
-                                    21,    30,     1,     5,    46,    24,    33,     6,    35,     6,
-                                    50,    34,    37,    36,    53,    21,    42,    56,    39,    41,
-                                    58,    43,     5,     1,    48,    45,     6,    47,    12,    13,
-                                    44,    49,    63,    51,    64,    52,    22,    54,    55,    23,
-                                    57,    17,    18,    59,    11,    60,    61,    28,     0,    29};
+static const short ngtable[] = {    14,
+                                    15,    40,     1,    17,     8,     7,     1,    20,    21,     8,
+                                    22,    48,    17,     7,    27,    29,    31,     8,    37,    54,
+                                    39,    38,    41,    42,    43,    58,     4,     5,    52,    61,
+                                    47,    66,    49,    50,    32,    33,    51,    67,    53,    18,
+                                    55,    19,    13,    56,    57,    45,    59,    46,     0,    60,
+                                    62,     0,     0,    63,    64};
 
-static const short ngcheck[] = {    13,
-                                    7,    19,     6,     5,    40,     4,    20,     9,    26,     9,
-                                    46,    25,    30,    11,    50,    22,    34,    53,    10,    33,
-                                    56,    11,     5,     6,    42,    39,     9,    41,     7,     8,
-                                    11,    45,     0,    47,     0,    49,     9,    51,    52,     9,
-                                    54,     3,     4,    57,     2,    59,    60,    14,    -1,    14};
+static const short ngcheck[] = {     6,
+                                     7,    30,     6,     9,     9,     5,     6,    14,    15,     9,
+                                     4,    40,    18,     5,    21,    10,    25,     9,    11,    48,
+                                     29,    11,    31,    32,    33,    54,     3,     4,    11,    58,
+                                     39,     0,    41,    42,     7,     8,    43,     0,    47,    11,
+                                     49,    11,     2,    50,    53,    34,    55,    34,    -1,    56,
+                                     59,    -1,    -1,    62,    63};
 /* -*-C-*-  Note some compilers choke on comments on `#line' lines.  */
 #line 3 "/rlocal/bison-1.25/share/bison.simple"
 
@@ -840,14 +842,21 @@ ngreduce:
     }
   case 26 :
 #line 186 "ngin.y"
-    {BndNode.n_lp=BndNode.n_sp=0;;
-     break;}
+    {
+      BndNode.n_lp=BndNode.n_sp=0;
+      BndNode.global[0]=ngvsp[-2].dval;
+      BndNode.global[1]=ngvsp[-1].dval;
+      BndNode.global[2]=ngvsp[0].dval;
+      ngval.bs=&BndNode;
+      ;
+      break;
+    }
   case 27 :
-#line 187 "ngin.y"
+#line 193 "ngin.y"
     {PutBndNode(&BndNode);;
      break;}
   case 29 :
-#line 191 "ngin.y"
+#line 197 "ngin.y"
     {
       SP_COPY(&(BndNode.sp[BndNode.n_sp]),ngvsp[0].sp);
       BndNode.n_sp++;
@@ -856,7 +865,7 @@ ngreduce:
       break;
     }
   case 30 :
-#line 196 "ngin.y"
+#line 202 "ngin.y"
     {
       LP_COPY(&(BndNode.lp[BndNode.n_lp]),ngvsp[0].lp);
       BndNode.n_lp++;
@@ -865,7 +874,7 @@ ngreduce:
       break;
     }
   case 31 :
-#line 201 "ngin.y"
+#line 207 "ngin.y"
     {
       SP_COPY(&(BndNode.sp[BndNode.n_sp]),ngvsp[0].sp);
       BndNode.n_sp++;
@@ -874,7 +883,7 @@ ngreduce:
       break;
     }
   case 32 :
-#line 206 "ngin.y"
+#line 212 "ngin.y"
     {
       LP_COPY(&(BndNode.lp[BndNode.n_lp]),ngvsp[0].lp);
       BndNode.n_lp++;
@@ -883,7 +892,7 @@ ngreduce:
       break;
     }
   case 33 :
-#line 213 "ngin.y"
+#line 219 "ngin.y"
     {
       SurfPos.surf_id=(int)ngvsp[-3].ival;
       SurfPos.tri_id=(int)ngvsp[-2].ival;
@@ -894,7 +903,7 @@ ngreduce:
       break;
     }
   case 34 :
-#line 222 "ngin.y"
+#line 228 "ngin.y"
     {
       LinePos.line_id=(int)ngvsp[-1].ival;
       LinePos.local=(float)ngvsp[0].dval;
@@ -903,11 +912,11 @@ ngreduce:
       break;
     }
   case 35 :
-#line 229 "ngin.y"
+#line 235 "ngin.y"
     {ngval.dval=(double)ngvsp[0].ival;;
      break;}
   case 37 :
-#line 233 "ngin.y"
+#line 239 "ngin.y"
     {ngval.ival=ngvsp[0].ival;;
      break;}
   }
@@ -1108,7 +1117,7 @@ ngerrhandle:
   ngstate = ngn;
   goto ngnewstate;
 }
-#line 237 "ngin.y"
+#line 243 "ngin.y"
 
 
 
