@@ -145,6 +145,10 @@ static DOMAIN_INFO_TYP *DomainInfo_Pointer;
 
 static char ProblemName[31];
 
+double ZoomFactorX;
+double ZoomFactorY;
+double ZoomFactorZ;
+
 INT komponentenzaehler;
 INT *KomponentenIndexArray; /* diese Array beinhaltet die IDs der einzelnen
                                Komponenten aus dem CAD File,
@@ -368,6 +372,67 @@ char* stringconvert(INT i,char **string)
 }
 
 /*/ / ReadLine already exists in ANSI-C twice : getline() or fgets() !!!*/
+
+
+/************************************************************************************/
+/*	INPUT  : linebuffer,  current line  of the CADOutputFile                                                */
+/* purpose: function reads zoomfactor for z direction				*/
+/************************************************************************************/
+int ZoomFct(char *linebuffer,char axis)
+{
+  INT z,w,u;
+  INT index,elem_surf_cond;
+  char *endp,*s;
+
+  INT help,ind,already,i,offset,stop;
+  DOUBLE aid;
+
+  index = 1;
+  elem_surf_cond = 0;
+
+
+  endp = &(linebuffer[index]);
+
+  s = &(endp[1]);
+
+  switch(axis)
+  {
+  case 'x' :
+    ZoomFactorX=(double)(strtod(s,&endp));
+    if(ZoomFactorX <0.0)
+    {
+      PrintErrorMessage('E',"ZoomFct","ZoomFactorX ivalid use ZF_X<0.0");
+      return(1);
+    }
+    break;
+  case 'y' :
+    ZoomFactorY=(double)(strtod(s,&endp));
+    if(ZoomFactorY <0.0)
+    {
+      PrintErrorMessage('E',"ZoomFct","ZoomFactorY ivalid use ZF_Y<0.0");
+      return(1);
+    }
+    break;
+  case 'z' :
+    ZoomFactorZ=(double)(strtod(s,&endp));
+    if(ZoomFactorZ <0.0)
+    {
+      PrintErrorMessage('E',"ZoomFct","ZoomFactorZ ivalid use ZF_Z<0.0");
+      return(1);
+    }
+    break;
+  default :
+  {
+    PrintErrorMessage('E',"ZoomFct","axis must be x, y or z");
+    return(1);
+  }
+
+  }
+
+
+  return(0);
+}
+
 
 
 
@@ -746,6 +811,27 @@ INT ReadCADFile(char *CADOutputFileName, INT *statistik, DOUBLE *abx,INT *condit
   {
     switch(linebuffer[0])
     {
+    case 'X' :
+      if ((rgw =ZoomFct(linebuffer,'x')) != 0)
+      {
+        PrintErrorMessage('E',"ZoomFct","execution failed");
+        return(1);
+      }
+      break;
+    case 'Y' :
+      if ((rgw =ZoomFct(linebuffer,'y')) != 0)
+      {
+        PrintErrorMessage('E',"ZoomFct","execution failed");
+        return(1);
+      }
+      break;
+    case 'Z' :
+      if ((rgw =ZoomFct(linebuffer,'z')) != 0)
+      {
+        PrintErrorMessage('E',"ZoomFct","execution failed");
+        return(1);
+      }
+      break;
     case 'K' :
       if ((rgw =KomponentFct(linebuffer)) != 0)
       {
@@ -7318,6 +7404,11 @@ int LGM_ANSYS_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_in
   char helpstring[50];
   INT i;
 
+  /*Default ZoomFactorZ in z-Direction in Promille; */
+  ZoomFactorX = 1.0;      /*so gibt es keine Aenderung*/
+  ZoomFactorY = 1.0;      /*so gibt es keine Aenderung*/
+  ZoomFactorZ = 1.0;      /*so gibt es keine Aenderung*/
+
   TmpMemArray = NULL;
   ExchangeVar_2_Pointer = &ExchangeVar_2;
   ExchangeVar_1_Pointer = &ExchangeVar_1;
@@ -7899,11 +7990,23 @@ int LGM_ANSYS_ReadPoints (LGM_POINT_INFO *lgm_point_info)
   {
     hilf = p*3;
 
-    lgm_point_info[p].position[0] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[hilf];
-    hilf++;
-    lgm_point_info[p].position[1] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[hilf];
-    hilf++;
-    lgm_point_info[p].position[2] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[hilf];
+    if((ZoomFactorX != 1.0) || (ZoomFactorY != 1.0) || (ZoomFactorZ != 1.0))
+    {
+      lgm_point_info[p].position[0] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[hilf] * (ZoomFactorX);
+      hilf++;
+      lgm_point_info[p].position[1] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[hilf] * (ZoomFactorY);
+      hilf++;
+      /*lgm_point_info[p].position[2] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[hilf] * ((float)ZoomFactorZ);*/
+      lgm_point_info[p].position[2] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[hilf] * (ZoomFactorZ);
+    }
+    else
+    {
+      lgm_point_info[p].position[0] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[hilf];
+      hilf++;
+      lgm_point_info[p].position[1] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[hilf];
+      hilf++;
+      lgm_point_info[p].position[2] = (EXCHNG_TYP1_KOORDS(ExchangeVar_1_Pointer))[hilf];
+    }
   }
 
 
@@ -7962,9 +8065,19 @@ int FillPositionInformations(LGM_MESH_INFO *theMesh)
       PrintErrorMessage('E',"FillPositionInformations"," ERROR: No memory for (theMesh->BndPosition)[bndpindex]");
       return(1);
     }
-    ((theMesh->BndPosition)[bndpindex])[0] = n_koord_array_UG[h];h++;
-    ((theMesh->BndPosition)[bndpindex])[1] = n_koord_array_UG[h];h++;
-    ((theMesh->BndPosition)[bndpindex])[2] = n_koord_array_UG[h];h++;
+    if((ZoomFactorX != 1.0) || (ZoomFactorY != 1.0) || (ZoomFactorZ != 1.0))
+    {
+      ((theMesh->BndPosition)[bndpindex])[0] = n_koord_array_UG[h] * (ZoomFactorX) ;h++;
+      ((theMesh->BndPosition)[bndpindex])[1] = n_koord_array_UG[h] * (ZoomFactorY) ;h++;
+      /*((theMesh->BndPosition)[bndpindex])[2] = n_koord_array_UG[h] - ((float)ZoomFactorZ/1000.0) * n_koord_array_UG[h];h++; */
+      ((theMesh->BndPosition)[bndpindex])[2] = n_koord_array_UG[h] * (ZoomFactorZ);h++;
+    }
+    else
+    {
+      ((theMesh->BndPosition)[bndpindex])[0] = n_koord_array_UG[h];h++;
+      ((theMesh->BndPosition)[bndpindex])[1] = n_koord_array_UG[h];h++;
+      ((theMesh->BndPosition)[bndpindex])[2] = n_koord_array_UG[h];h++;
+    }
   }
 
   /*Feld anlegen fuer theMesh->InnPosition == Feld fuer Zeiger auf InnerPointKoordinatenpaare-tripel*/
@@ -7986,9 +8099,19 @@ int FillPositionInformations(LGM_MESH_INFO *theMesh)
       PrintErrorMessage('E',"FillPositionInformations"," ERROR: No memory for (theMesh->InnPosition)[innpindex]");
       return(1);
     }
-    ((theMesh->InnPosition)[innpindex])[0] = n_koord_array_UG[h];h++;
-    ((theMesh->InnPosition)[innpindex])[1] = n_koord_array_UG[h];h++;
-    ((theMesh->InnPosition)[innpindex])[2] = n_koord_array_UG[h];h++;
+    if((ZoomFactorX != 1.0) || (ZoomFactorY != 1.0) || (ZoomFactorZ != 1.0))
+    {
+      ((theMesh->InnPosition)[innpindex])[0] = n_koord_array_UG[h] * ZoomFactorX;h++;
+      ((theMesh->InnPosition)[innpindex])[1] = n_koord_array_UG[h] * ZoomFactorY;h++;
+      /*((theMesh->InnPosition)[innpindex])[2] = n_koord_array_UG[h] - ((float)ZoomFactor/1000.0) * n_koord_array_UG[h];h++;*/
+      ((theMesh->InnPosition)[innpindex])[2] = n_koord_array_UG[h] * ZoomFactorZ;h++;
+    }
+    else
+    {
+      ((theMesh->InnPosition)[innpindex])[0] = n_koord_array_UG[h];h++;
+      ((theMesh->InnPosition)[innpindex])[1] = n_koord_array_UG[h];h++;
+      ((theMesh->InnPosition)[innpindex])[2] = n_koord_array_UG[h];h++;
+    }
   }
 
   return (0);
