@@ -69,6 +69,14 @@ BEGIN
 		return $ret;
 	}
 }
+
+sub usage_error
+{
+	my $cmd=shift;
+	my $usage=shift;
+	die "ERROR in usage of '$cmd':\nusage: '$usage'\n";
+}
+
 sub set
 {
 	print IN "set $_[0]\n";
@@ -110,18 +118,14 @@ sub ug
 	}
 
 	# scan arguments (used for some commands)
-	@in%2==1 or die "odd number of arguments provided with command '$in[0]'\n";
+	@in%2==1 or die "ERROR: odd number of arguments provided with command '@in'\n";
 	($dummy,%argv)=@in; 
 	SWITCH:
 	{
 		# debug
 		if ($command eq "debug")
 		{
-			if (@in!=3 || ($in[2]!=0 && $in[2]!=1))
-            {
-                die "ERROR: provide [0|1] with 'debug'\n";
-            }
-			debug $in[2];
+			debug $argv{'d'};
 			return;
 		}
 
@@ -141,23 +145,23 @@ sub ug
 		# command 'set'
 		if ($command eq "set")
 		{
-			if(@in!=2)
-            {   
-                die "ERROR: provide one option with 'set'\n";
-            }
-			print IN "set $in[1]\n";
+			@in==3 or usage_error('set','set "v"=><name>');
+			print IN "set $argv{'v'}\n";
 			return split /[=\s]+/,out($print);
 		}
 
 		# command 'start'
 		if ($command eq "start")
 		{
-			if(@in!=3)
+			if(@in!=5)
         	{   
-        	    die 'ERROR: usage: ug "start", "p"=>"program";'."\n";
+        	    die 'ERROR: usage: ug "start", "p"=>"program", "x"=>[0|1];'."\n";
         	} 
+			-e $argv{'p'} or die "ERROR: programm '$argv{'p'}' does not exist\n";
+			$argv{'x'}==0 || $argv{'x'}==1 or die "ERROR: wrong specification of 'x'-option\n";
 			
-			$ui="-ui c";
+			if ($argv{'x'}==1) { $ui="-ui c"; }
+			else { $ui="-ui cn"; }
         	open2(*OUT,*IN,"$argv{'p'} $ui -perl");
 			IN->autoflush(1); OUT->autoflush(1);
 			return out($print);
