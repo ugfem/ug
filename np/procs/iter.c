@@ -268,6 +268,7 @@ typedef struct
   NP_ITER *v_iter;
   NP_ITER *p_iter;
   NP_LINEAR_SOLVER *u_solver;
+  NP_LINEAR_SOLVER *p_solver;
 
   VEC_SCALAR red;
 
@@ -2268,7 +2269,37 @@ INT l_block (GRID *theGrid,
     INT cnt = 0;
     INT i,j,k,l;
 
-    if (pcomp == 0) continue;
+    if (pcomp == 0)
+    {
+      INT ncomp = VD_NCMPS_IN_TYPE(ub,ptype);
+      DOUBLE mat[MAX_SINGLE_MAT_COMP];
+      MATRIX *mm = START(v);
+
+      for (i=0; i<ncomp; i++)
+        def[i] = VVALUE(v,VD_CMP_OF_TYPE(ub,ptype,i));
+      for (i=0; i<ncomp*ncomp; i++)
+        mat[i] = MVALUE(mm,MD_MCMP_OF_RT_CT(uuA,ptype,ptype,i));
+      for (mm = MNEXT(mm); mm!=NULL; mm=NEXT(mm)) {
+        VECTOR *vv = MDEST(mm);
+        for (j=0; j<VD_NCMPS_IN_TYPE(ux,VTYPE(vv)); j++)
+          for (i=0; i<ncomp; i++)
+            def[i] -=
+              MVALUE(mm,MD_IJ_CMP_OF_RT_CT(uuA,ptype,
+                                           VTYPE(vv),i,j))
+              * VVALUE(vv,VD_CMP_OF_TYPE(ux,VTYPE(vv),j));
+        for (j=0; j<VD_NCMPS_IN_TYPE(px,VTYPE(vv)); j++)
+          for (i=0; i<ncomp; i++)
+            def[i] -=
+              MVALUE(mm,MD_IJ_CMP_OF_RT_CT(upA,ptype,
+                                           VTYPE(vv),i,j))
+              * VVALUE(vv,VD_CMP_OF_TYPE(px,VTYPE(vv),j));
+      }
+      SolveFullMatrix2(ncomp,cor,mat,def);
+      for (i=0; i<ncomp; i++)
+        VVALUE(v,VD_CMP_OF_TYPE(ux,ptype,i)) += cor[i];
+
+      continue;
+    }
     ASSERT(ptype==NODEVEC);
     ndata = (DOUBLE *)NDATA((NODE*)VOBJECT(v));
 
@@ -3758,6 +3789,366 @@ static INT TSConstruct (NP_BASE *theNP)
   np->PreProcess = TSPreProcess;
   np->Iter = TSSmoother;
   np->PostProcess = TSPostProcess;
+
+  return(0);
+}
+
+static INT APInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_TS *np;
+  INT i;
+
+  np = (NP_TS *) theNP;
+  np->u = ReadArgvVecDesc(theNP->mg,"U",argc,argv);
+  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+  np->s = ReadArgvVecDesc(theNP->mg,"s",argc,argv);
+  np->p = ReadArgvVecDesc(theNP->mg,"P",argc,argv);
+  np->q = ReadArgvVecDesc(theNP->mg,"q",argc,argv);
+  np->r = ReadArgvVecDesc(theNP->mg,"r",argc,argv);
+  np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
+
+  np->vt = ReadArgvVecTemplateSub(MGFORMAT(theNP->mg),
+                                  "u",argc,argv,&(np->u_sub));
+  if (np->vt == NULL) {
+    UserWriteF("TSInit: no subtemplate u found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->vt = ReadArgvVecTemplateSub(MGFORMAT(theNP->mg),
+                                  "p",argc,argv,&(np->p_sub));
+  if (np->vt == NULL) {
+    UserWriteF("TSInit: no subtemplate p found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
+                                  "uu",argc,argv,&(np->uu_sub));
+  if (np->mt == NULL) {
+    UserWriteF("TSInit: no subtemplate uu found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
+                                  "up",argc,argv,&(np->up_sub));
+  if (np->mt == NULL) {
+    UserWriteF("TSInit: no subtemplate up found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
+                                  "pu",argc,argv,&(np->pu_sub));
+  if (np->mt == NULL) {
+    UserWriteF("TSInit: no subtemplate pu found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  np->mt = ReadArgvMatTemplateSub(MGFORMAT(theNP->mg),
+                                  "pp",argc,argv,&(np->pp_sub));
+  if (np->mt == NULL) {
+    UserWriteF("TSInit: no subtemplate pp found\n");
+    return(NP_NOT_ACTIVE);
+  }
+  for (i=0; i<MAX_VEC_COMP; i++) np->damp[i] = 1.0;
+  sc_read(np->damp,NP_FMT(np),np->iter.b,"damp",argc,argv);
+  for (i=0; i<MAX_VEC_COMP; i++) np->red[i] = 0.0;
+  sc_read(np->red,NP_FMT(np),np->iter.b,"red",argc,argv);
+
+  np->u_iter = (NP_ITER *)
+               ReadArgvNumProc(theNP->mg,"UI",ITER_CLASS_NAME,argc,argv);
+  if (np->u_iter == NULL) {
+    np->u_solver = (NP_LINEAR_SOLVER *)
+                   ReadArgvNumProc(theNP->mg,"UI",LINEAR_SOLVER_CLASS_NAME,argc,argv);
+    if (np->u_solver == NULL) {
+      UserWriteF("TSInit: no iter UI and no solver UI found\n");
+      return(NP_NOT_ACTIVE);
+    }
+    np->p_solver = (NP_LINEAR_SOLVER *)
+                   ReadArgvNumProc(theNP->mg,"PI",LINEAR_SOLVER_CLASS_NAME,argc,argv);
+    if (np->p_solver == NULL) {
+      UserWriteF("TSInit: no iter PI and no solver PI found\n");
+      return(NP_NOT_ACTIVE);
+    }
+  }
+  else
+    np->u_solver = NULL;
+  np->v_iter = (NP_ITER *)
+               ReadArgvNumProc(theNP->mg,"VI",ITER_CLASS_NAME,argc,argv);
+  if (np->v_iter == NULL) np->v_iter = np->u_iter;
+  np->p_iter = (NP_ITER *)
+               ReadArgvNumProc(theNP->mg,"PI",ITER_CLASS_NAME,argc,argv);
+    #ifdef ModelP
+  if (ReadArgvOption("M",argc,argv))
+    np->cons_mode = MAT_CONS;
+  else if (ReadArgvOption("D",argc,argv))
+    np->cons_mode = MAT_DIAG_CONS;
+  else
+    np->cons_mode = MAT_MASTER_CONS;
+        #endif
+  if (ReadArgvINT("dc",&np->dc,argc,argv))
+    np->dc = 0;
+  np->extra = ReadArgvOption("extra",argc,argv);
+  np->ls = ReadArgvOption("ls",argc,argv);
+  np->diag = ReadArgvOption("diag",argc,argv);
+  np->display = ReadArgvDisplay(argc,argv);
+  np->dc_max = 0;
+  if (ReadArgvDOUBLE("thresh",&np->thresh,argc,argv))
+    np->thresh = 0.0;
+
+  return (NPIterInit(&np->iter,argc,argv));
+}
+
+static INT APDisplay (NP_BASE *theNP)
+{
+  NP_TS *np;
+
+  np = (NP_TS *) theNP;
+
+  NPIterDisplay(&np->iter);
+  UserWrite("configuration parameters:\n");
+  if (sc_disp(np->damp,np->iter.b,"damp")) REP_ERR_RETURN (1);
+  if (sc_disp(np->red,np->iter.b,"red")) REP_ERR_RETURN (1);
+    #ifdef ModelP
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"cons_mode",(int)np->cons_mode);
+        #endif
+  if (np->u_iter != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"UI",ENVITEM_NAME(np->u_iter));
+  if (np->u_solver != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"UI",ENVITEM_NAME(np->u_solver));
+  if (np->p_solver != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"UI",ENVITEM_NAME(np->p_solver));
+  if (np->v_iter != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"VI",ENVITEM_NAME(np->v_iter));
+  if (np->p_iter != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"PI",ENVITEM_NAME(np->p_iter));
+  if (np->u != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"U",ENVITEM_NAME(np->u));
+  if (np->r != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"r",ENVITEM_NAME(np->r));
+  if (np->t != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+  if (np->s != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"s",ENVITEM_NAME(np->s));
+  if (np->p != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"P",ENVITEM_NAME(np->p));
+  if (np->q != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"q",ENVITEM_NAME(np->q));
+  if (np->L != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"L",ENVITEM_NAME(np->L));
+  if (np->S != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"S",ENVITEM_NAME(np->S));
+  if (np->vt != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"vt",ENVITEM_NAME(np->vt));
+  if (np->mt != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"mt",ENVITEM_NAME(np->mt));
+  if (np->ux != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"ux",ENVITEM_NAME(np->ux));
+  if (np->px != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"px",ENVITEM_NAME(np->px));
+  if (np->ub != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"ub",ENVITEM_NAME(np->ub));
+  if (np->pb != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"pb",ENVITEM_NAME(np->pb));
+  if (np->uuA != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"uuA",ENVITEM_NAME(np->uuA));
+  if (np->puA != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"puA",ENVITEM_NAME(np->puA));
+  if (np->upA != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"upA",ENVITEM_NAME(np->upA));
+  if (np->ppA != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"ppA",ENVITEM_NAME(np->ppA));
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"u_sub",(int)np->u_sub);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"p_sub",(int)np->p_sub);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"uu_sub",(int)np->uu_sub);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"up_sub",(int)np->up_sub);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"pu_sub",(int)np->pu_sub);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"pp_sub",(int)np->pp_sub);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"dc",(int)np->dc);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"dc_max",(int)np->dc_max);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"extra",(int)np->extra);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"ls",(int)np->ls);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"diag",(int)np->diag);
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"thresh",(float)np->thresh);
+
+  if (np->display == PCR_NO_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
+  else if (np->display == PCR_RED_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
+  else if (np->display == PCR_FULL_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
+
+  return (0);
+}
+
+static INT APPreProcess  (NP_ITER *theNP, INT level,
+                          VECDATA_DESC *x, VECDATA_DESC *b,
+                          MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+  NP_TS *np = (NP_TS *) theNP;
+  GRID *theGrid = NP_GRID(theNP,level);
+
+  if (VDsubDescFromVT(x,np->vt,np->u_sub,&np->ux))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(x,np->vt,np->p_sub,&np->px))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(b,np->vt,np->u_sub,&np->ub))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(b,np->vt,np->p_sub,&np->pb))
+    NP_RETURN(1,result[0]);
+  if (MDsubDescFromMT(A,np->mt,np->uu_sub,&np->uuA))
+    NP_RETURN(1,result[0]);
+  if (MDsubDescFromMT(A,np->mt,np->up_sub,&np->upA))
+    NP_RETURN(1,result[0]);
+  if (MDsubDescFromMT(A,np->mt,np->pu_sub,&np->puA))
+    NP_RETURN(1,result[0]);
+  if (MDsubDescFromMT(A,np->mt,np->pp_sub,&np->ppA))
+    NP_RETURN(1,result[0]);
+
+  if (np->u_solver != NULL)
+    if (np->u_solver->PreProcess != NULL)
+      if ((*np->u_solver->PreProcess)
+            (np->u_solver,level,np->ux,np->ub,np->uuA,
+            baselevel,result))
+        REP_ERR_RETURN(1);
+  if (np->p_solver != NULL)
+    if (np->p_solver->PreProcess != NULL)
+      if ((*np->p_solver->PreProcess)
+            (np->p_solver,level,np->px,np->pb,np->ppA,
+            baselevel,result))
+        REP_ERR_RETURN(1);
+
+  return (0);
+}
+
+static INT APSmoother (NP_ITER *theNP, INT level,
+                       VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                       INT *result)
+{
+  NP_TS *np = (NP_TS *) theNP;
+  MULTIGRID *theMG = NP_MG(theNP);
+  VEC_SCALAR defect2reach,defect;
+  DOUBLE rho,lambda;
+  INT i,PrintID;
+  char text[DISPLAY_WIDTH+4],text1[DISPLAY_WIDTH];
+  DOUBLE eunorm;
+  LRESULT lresult;
+
+  /* get storage for extra temp */
+  if (VDsubDescFromVT(x,np->vt,np->u_sub,&np->ux))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(x,np->vt,np->p_sub,&np->px))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(b,np->vt,np->u_sub,&np->ub))
+    NP_RETURN(1,result[0]);
+  if (VDsubDescFromVT(b,np->vt,np->p_sub,&np->pb))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theMG,level,level,np->ux,&np->u))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theMG,level,level,np->ux,&np->t))
+    NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theMG,level,level,np->px,&np->s))
+    NP_RETURN(1,result[0]);
+  if (dcopy(theMG,level,level,ALL_VECTORS,np->t,np->ub) != NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (dcopy(theMG,level,level,ALL_VECTORS,np->s,np->pb) != NUM_OK)
+    NP_RETURN(1,result[0]);
+    #ifdef ModelP
+  if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),np->t)!=NUM_OK)
+    NP_RETURN(1,result[0]);
+    #endif
+  if (dset(theMG,level,level,ALL_VECTORS,x,0.0)!= NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  if ((*np->u_solver->Residuum)
+        (np->u_solver,0,level,np->ux,np->t,np->uuA,&lresult))
+    NP_RETURN(1,result[0]);
+  if ((*np->u_solver->Solver)(np->u_solver,level,
+                              np->ux,np->t,np->uuA,
+                              np->u_solver->abslimit,
+                              np->u_solver->reduction,&lresult))
+    NP_RETURN(1,result[0]);
+
+  if (dmatmul_minus(theMG,level,level,ALL_VECTORS,np->s,np->puA,np->ux)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+    #ifdef ModelP
+  if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),np->s)!=NUM_OK)
+    NP_RETURN(1,result[0]);
+    #endif
+  if (dset(theMG,level,level,ALL_VECTORS,np->r,0.0)!= NUM_OK)
+    NP_RETURN(1,result[0]);
+  if ((*np->p_iter->Iter)(np->p_iter,level,np->r,np->q,np->S,result))
+    REP_ERR_RETURN(1);
+  if (dmatmul(theMG,level,level,ALL_VECTORS,np->t,np->upA,np->px)
+      != NUM_OK)
+    NP_RETURN(1,result[0]);
+
+    #ifdef ModelP
+  if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),np->t)!=NUM_OK)
+    NP_RETURN(1,result[0]);
+    #endif
+  if (dset(theMG,level,level,ALL_VECTORS,np->u,0.0)!= NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (np->v_iter != NULL) {
+    if ((*np->v_iter->Iter)(np->v_iter,level,
+                            np->u,np->t,np->uuA,result))
+      REP_ERR_RETURN(1);
+  }
+  else {
+    if ((*np->u_solver->Residuum)
+          (np->u_solver,0,level,
+          np->u,np->t,np->uuA,&lresult))
+      NP_RETURN(1,result[0]);
+    if ((*np->u_solver->Solver)(np->u_solver,level,
+                                np->u,np->t,np->uuA,
+                                np->u_solver->abslimit,
+                                np->u_solver->reduction,&lresult))
+      NP_RETURN(1,result[0]);
+  }
+  if (dsub(theMG,level,level,ALL_VECTORS,np->ux,np->u) != NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  /* damp */
+  if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,x,np->damp)!= NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  /* update defect */
+  if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,x)!= NUM_OK)
+    NP_RETURN(1,result[0]);
+
+  FreeVD(NP_MG(theNP),level,level,np->u);
+  FreeVD(NP_MG(theNP),level,level,np->t);
+  FreeVD(NP_MG(theNP),level,level,np->s);
+
+  return (0);
+}
+
+static INT APPostProcess (NP_ITER *theNP, INT level,
+                          VECDATA_DESC *x, VECDATA_DESC *b,
+                          MATDATA_DESC *A, INT *result)
+{
+  NP_TS *np = (NP_TS *) theNP;
+
+  FreeMD(NP_MG(theNP),level,level,np->S);
+
+  if (np->u_solver != NULL)
+    if (np->u_solver->PostProcess != NULL)
+      if ((*np->u_solver->PostProcess)
+            (np->u_solver,level,np->ux,np->ub,np->uuA,result))
+        REP_ERR_RETURN(1);
+  if (np->p_solver != NULL)
+    if (np->p_solver->PostProcess != NULL)
+      if ((*np->p_solver->PostProcess)
+            (np->p_solver,level,np->px,np->pb,np->ppA,result))
+        REP_ERR_RETURN(1);
+
+  return(0);
+}
+
+static INT APConstruct (NP_BASE *theNP)
+{
+  NP_ITER *np = (NP_ITER *) theNP;
+
+  theNP->Init     = APInit;
+  theNP->Display  = APDisplay;
+  theNP->Execute  = NPIterExecute;
+  np->PreProcess  = APPreProcess;
+  np->Iter        = APSmoother;
+  np->PostProcess = APPostProcess;
 
   return(0);
 }
@@ -8977,6 +9368,8 @@ INT InitIter ()
   if (CreateClass(ITER_CLASS_NAME ".block",sizeof(NP_BLOCK),BLOCKConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ts",sizeof(NP_TS),TSConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".ap",sizeof(NP_TS),APConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ii",sizeof(NP_II),IIConstruct))
     REP_ERR_RETURN (__LINE__);
