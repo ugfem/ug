@@ -87,6 +87,8 @@ VEC_TEMPLATE *ReadArgvVecTemplate               (const FORMAT *fmt, const char *
                                                  INT argc, char **argv);
 VEC_TEMPLATE *ReadArgvVecTemplateSub    (const FORMAT *fmt, const char *name,
                                          INT argc, char **argv, INT *sub);
+MAT_TEMPLATE *ReadArgvMatTemplateSub    (const FORMAT *fmt, const char *name,
+                                         INT argc, char **argv, INT *sub);
 MATDATA_DESC *ReadArgvMatDesc                   (MULTIGRID *theMG, const char *name,
                                                  INT argc, char **argv);
 

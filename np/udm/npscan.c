@@ -305,6 +305,64 @@ VEC_TEMPLATE *ReadArgvVecTemplateSub (const FORMAT *fmt, const char *name,
 
 /****************************************************************************/
 /*D
+   ReadArgvMatTemplateSub - read vec template sub descriptor from command string
+
+   SYNOPSIS:
+   MAT_TEMPLATE *ReadArgvMatTemplateSub (const FORMAT *fmt, const char *name,
+                                                                           INT argc, char **argv, INT *sub)
+
+   PARAMETERS:
+   .  fmt - pointer to a format
+   .  name - name of the argument
+   .  argc - argument counter
+   .  argv - argument vector
+   .  sub - index of sub descriptor in template
+
+   DESCRIPTION:
+   This function reads a vector template name and the name of one of its sub descriptors
+   from the command strings and returns a pointer to the corresponding vector template plus
+   the index of the sub descriptor in the template.
+
+   SYNTAX:
+   '$<name> <vec template name> <sub descriptor name>'
+
+   RETURN VALUE:
+   VECDATA_DESC *
+   .n    pointer to vector descriptor
+   .n    NULL if error occurs
+   D*/
+/****************************************************************************/
+
+MAT_TEMPLATE *ReadArgvMatTemplateSub (const FORMAT *fmt, const char *name,
+                                      INT argc, char **argv, INT *sub)
+{
+  MAT_TEMPLATE *mt;
+  INT i;
+  char value[VALUELEN],mtname[NAMESIZE],subname[NAMESIZE];
+
+  if (ReadArgvChar(name,value,argc,argv))
+    REP_ERR_RETURN (NULL);
+
+  if (sscanf(value,expandfmt(CONCAT5("%",NAMELENSTR,"[a-zA-Z0-9_] %",NAMELENSTR,"[a-zA-Z0-9_]")),mtname,subname)!=2)
+    REP_ERR_RETURN (NULL);
+
+  mt = GetMatrixTemplate(fmt,mtname);
+  if (mt==NULL)
+    REP_ERR_RETURN(NULL);
+
+  for (i=0; i<MT_NSUB(mt); i++)
+    if (strcmp(SUBM_NAME(MT_SUB(mt,i)),subname)==0)
+      break;
+  if (i>=MT_NSUB(mt))
+    REP_ERR_RETURN(NULL);
+
+  *sub = i;
+
+  return (mt);
+}
+
+/****************************************************************************/
+/*D
    ReadArgvMatDesc - Read command strings
 
    SYNOPSIS:
