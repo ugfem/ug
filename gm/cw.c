@@ -76,7 +76,7 @@ CONTROL_WORD control_words[MAX_CONTROL_WORDS] = {
   {GRID_CW_OFFSET, 0},
   {GRID_STATUS_OFFSET, 0},
   {MULTIGRID_STATUS_OFFSET, 0},
-  {0, 0},
+  {BLOCKVECTOR_OFFSET, 0},
   {0, 0},
   {0, 0},
   {0, 0},
@@ -85,6 +85,11 @@ CONTROL_WORD control_words[MAX_CONTROL_WORDS] = {
   {0, 0},
   {0, 0}
 } ;
+
+/* After extending this list update the corresponding line
+   #define NPREDEFOBJ xxx
+   in the file gm.h
+ */
 
 CONTROL_ENTRY control_entries[MAX_CONTROL_ENTRIES];
 
@@ -112,6 +117,8 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {1,CEXTRA_CE,           MATRIX_CW,      CEXTRA_SHIFT,           CEXTRA_LEN              },
   {1,MDOWN_CE,            MATRIX_CW,      MDOWN_SHIFT,            MDOWN_LEN               },
   {1,MUP_CE,                      MATRIX_CW,      MUP_SHIFT,                      MUP_LEN                 },
+
+  {1,BVDOWNTYPE_CE,       BLOCKVECTOR_CW, BVDOWNTYPE_SHIFT,       BVDOWNTYPE_LEN  },
 
   {1,OBJ_CE,                      GENERAL_CW, OBJ_SHIFT,                  OBJ_LEN                 },
   {1,USED_CE,             GENERAL_CW, USED_SHIFT,                 USED_LEN                },
@@ -156,7 +163,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {1,EDGEPATTERN_CE,      FLAG_CW,        EDGEPATTERN_SHIFT,      EDGEPATTERN_LEN },
   {1,SIDEPATTERN_CE,      FLAG_CW,        SIDEPATTERN_SHIFT,      SIDEPATTERN_LEN },
   {1,MARKCLASS_CE,        FLAG_CW,        MARKCLASS_SHIFT,        MARKCLASS_LEN   }
-}; /* last entry used: 66 for NPROP_CE */
+}; /* last entry used: 66 for BVDOWNTYPE_CE */
 
 /****************************************************************************/
 /*                                                                          */

@@ -14,6 +14,8 @@ matrix structure. You can have different numbers of degrees of freedom
 in nodes, edges, sides
 and elements of a three-dimensional mesh. Therefore the data structure
 can be used e.g. also for non-conforming or mixed finite element discretizations.
+To structure the data you can group vectors by using 'BLOCKVECTOR's; this
+yields blockmatrices too.
 
 UGs refinement module can refine and coarsen a given mesh structure. In
 order to do that it needs a complete description of the geometry of the

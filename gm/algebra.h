@@ -14,7 +14,18 @@
 /*			  6900 Heidelberg												*/
 /*			  internet: johannse@iwr1.iwr.uni-heidelberg.de                                 */
 /*																			*/
-/* History:   1.12.93 begin, ug 3d											*/
+/*			  blockvector data structure:									*/
+/*			  Christian Wrobel                                                                              */
+/*			  Institut fuer Computeranwendungen III                                                 */
+/*			  Universitaet Stuttgart										*/
+/*			  Pfaffenwaldring 27											*/
+/*			  70569 Stuttgart												*/
+/*			  email: christian@ica3.uni-stuttgart.de					    */
+/*			  phone: 0049-(0)711-685-7006									*/
+/*			  fax  : 0049-(0)711-685-7000									*/
+/*																			*/
+/* History:    1.12.93 begin, ug 3d											*/
+/*			  27.09.95 blockvector implemented (Christian Wrobel)			*/
 /*																			*/
 /* Remarks:                                                                                                                             */
 /*																			*/
@@ -30,7 +41,6 @@
 
 #ifndef __ALGEBRA__
 #define __ALGEBRA__
-
 
 #ifndef __COMPILER__
 #include "compiler.h"

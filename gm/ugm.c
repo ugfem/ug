@@ -1172,6 +1172,8 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
   theGrid->sides = NULL;
   theGrid->firstNode = theGrid->lastNode = NULL;
   theGrid->firstVector = theGrid->lastVector = NULL;
+  GFIRSTBV(theGrid) = NULL;
+  GLASTBV(theGrid) = NULL;
   if (l>0)
   {
     theGrid->coarser = theMG->grids[l-1];

@@ -13,8 +13,19 @@
 /*			  6900 Heidelberg												*/
 /*			  internet: johannse@iwr1.iwr.uni-heidelberg.de                                 */
 /*																			*/
+/*			  blockvector data structure:									*/
+/*			  Christian Wrobel                                                                              */
+/*			  Institut fuer Computeranwendungen III                                                 */
+/*			  Universitaet Stuttgart										*/
+/*			  Pfaffenwaldring 27											*/
+/*			  70569 Stuttgart												*/
+/*			  email: christian@ica3.uni-stuttgart.de						*/
+/*			  phone: 0049-(0)711-685-7006									*/
+/*			  fax  : 0049-(0)711-685-7000									*/
+/*																			*/
 /* History:    1.12.93 begin, ug 3d                                                                             */
 /*			  26.10.94 begin combination 2D/3D version						*/
+/*			  28.09.95 blockvector implemented (Christian Wrobel)			*/
 /*																			*/
 /* Remarks:                                                                                                                             */
 /*																			*/
@@ -62,6 +73,10 @@
 /*																			*/
 /****************************************************************************/
 
+/* constants for the direction of domain halfening */
+#define BV_VERTICAL     0
+#define BV_HORIZONTAL   1
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -76,6 +91,69 @@ static INT theAlgDepVarID;                      /* env type for Format vars     
 
 /****************************************************************************/
 /*																			*/
+/* definition of exported global variables									*/
+/*																			*/
+/****************************************************************************/
+
+/* 2 often used blockvector description formats */
+const BV_DESC_FORMAT DH_bvdf =
+{ 2, 16,
+  { (BVD_ENTRY_TYPE)0x03,        (BVD_ENTRY_TYPE)0x0f,
+            (BVD_ENTRY_TYPE)0x03f,       (BVD_ENTRY_TYPE)0x0ff,
+            (BVD_ENTRY_TYPE)0x03ff,      (BVD_ENTRY_TYPE)0x0fff,
+            (BVD_ENTRY_TYPE)0x03fff,     (BVD_ENTRY_TYPE)0x0ffff,
+            (BVD_ENTRY_TYPE)0x03ffff,    (BVD_ENTRY_TYPE)0x0fffff,
+            (BVD_ENTRY_TYPE)0x03fffff,   (BVD_ENTRY_TYPE)0x0ffffff,
+            (BVD_ENTRY_TYPE)0x03ffffff,  (BVD_ENTRY_TYPE)0x0fffffff,
+            (BVD_ENTRY_TYPE)0x3fffffff,  (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff,  (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff,  (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff,  (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff,  (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff,  (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff,  (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff,  (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff,  (BVD_ENTRY_TYPE)0xffffffff},
+  { (BVD_ENTRY_TYPE)0xfffffffc, (BVD_ENTRY_TYPE)0xfffffff3,
+            (BVD_ENTRY_TYPE)0xffffffcf, (BVD_ENTRY_TYPE)0xffffff3f,
+            (BVD_ENTRY_TYPE)0xfffffcff, (BVD_ENTRY_TYPE)0xfffff3ff,
+            (BVD_ENTRY_TYPE)0xffffcfff, (BVD_ENTRY_TYPE)0xffff3fff,
+            (BVD_ENTRY_TYPE)0xfffcffff, (BVD_ENTRY_TYPE)0xfff3ffff,
+            (BVD_ENTRY_TYPE)0xffcfffff, (BVD_ENTRY_TYPE)0xff3fffff,
+            (BVD_ENTRY_TYPE)0xfcffffff, (BVD_ENTRY_TYPE)0xf3ffffff,
+            (BVD_ENTRY_TYPE)0xcfffffff, (BVD_ENTRY_TYPE)0x3fffffff,
+            (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+            (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff}};
+
+const BV_DESC_FORMAT one_level_bvdf =
+{ 32, 1,
+  {     (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
+                (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff},
+  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+
+/****************************************************************************/
+/*																			*/
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
@@ -84,6 +162,14 @@ static INT ConnectionType [2][MAXVECTORS][MAXVECTORS];
 
 /* data for CVS */
 static char rcsid[] = "$Header$";
+
+/****************************************************************************/
+/*																			*/
+/* forward declarations of functions used before they are defined			*/
+/*																			*/
+/****************************************************************************/
+
+INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation );
 
 #ifdef __version3__
 
@@ -132,6 +218,212 @@ static void CheckMatrixList (VECTOR *theVector)
       sprintf (buffer,"adj of matrix ??? does not point back\n");
       UserWrite(buffer);
     }
+  }
+}
+
+/****************************************************************************/
+/*D
+   InitBVDF - Initialize a blockvector description format
+
+   SYNOPSIS:
+   INT InitBVDF( BV_DESC_FORMAT *bvdf, BLOCKNUMBER max_blocks )
+
+   PARAMETERS:
+   .  bvdf - blockvector description format to be initialized
+   .  max_blocks - maximum number of blocks provided for each blockvector level
+
+   DESCRIPTION:
+   All routines working with a 'blockvector description' need a explanation
+   of the internal encoding used in the description. This routine generates
+   this necessary explanation. Since the encoding depends on the number
+   of blockvectors you want to use on each blockvector level, you have to
+   specify this quantity. The background is, that a sequence of blockvector
+   numbers is encoded in a bitstring and the number of bits used for each
+   level has to be fixed before the first use. In order to get fast access
+   to the stored information, a couple of bitmasks are necessary and are
+   precalculated and stored in the 'blockvector description format' by this
+   function. The memory to store the information is provided by the caller.
+
+   HINTS:
+   Since the hole amount of bits available for encoding a sequence of
+   blockvector numbers is constant, you may use only few blocks on each
+   level and for that have many levels available; or if you have many
+   blocks on each level you can work only with few levels at all. Thus you
+   have to find a trade off of your requirements.
+
+   Since the relevant information of the 'max_blocks' parameter is only
+   the number of bits, necessary to encode this number, all numbers up to
+   the next power of 2 will have the same result.
+
+   PREDEFINED FORMATS:
+   There are predefined 'blockvector description formats', which are
+   often used. This formats you can use without initialization.
+   .  DH_bvdf  - useful for domain halfening methods (up to 4 blocks per level)
+   .  one_level_bvdf - max. number of blocks but only 1 level
+
+   EXAMPLE:
+   To create a format for managing a octree-like structure (that is
+   subdividing a 3D cube into 8 subcubes) you can use the following
+   created format:
+   .vb
+   BV_DESC_FORMAT my_bvdf;
+
+   InitBVDF( &my_bvdf, 8 );
+   .ve
+
+   RETURN VALUE:
+   INT
+   .n GM_OK if ok
+   .n GM_OUT_OF_RANGE if 'max_blocks' < 2 or if 'max_blocks' greater than possible
+
+   SEE ALSO:
+   BLOCKVECTOR, BV_DESC, BV_DESC_FORMAT
+
+   D*/
+/****************************************************************************/
+
+INT InitBVDF( BV_DESC_FORMAT *bvdf, BLOCKNUMBER max_blocks )
+{
+  INT bits;
+  INT level;
+  BVD_ENTRY_TYPE mask;
+
+  /* calculate number of bits to represent the numbers 0..max_blocks-1,
+     i.e. the next integer greater or equal to the logarithmus dualis
+     of max_blocks-1 */
+  if ( max_blocks < (BLOCKNUMBER)2 )
+    return GM_OUT_OF_RANGE;
+  max_blocks--;
+  bits = 0;
+  while( max_blocks > (BLOCKNUMBER)0 )
+  {
+    max_blocks >>= 1;
+    bits++;
+  }
+
+
+  bvdf->bits = bits;
+  bvdf->max_level = BVD_MAX_ENTRIES / bits;
+  if ( bvdf->max_level == 0 )
+    return GM_OUT_OF_RANGE;
+
+  /* calculate the necessary bitmasks */
+  mask = ((BVD_ENTRY_TYPE)1 << bits) - (BVD_ENTRY_TYPE)1;
+  bvdf->level_mask[0] = mask;
+  bvdf->neg_digit_mask[0] = ~mask;
+  for ( level = 1; level < BVD_MAX_ENTRIES; level ++ )
+  {
+    mask <<= bits;
+    bvdf->level_mask[level] = bvdf->level_mask[level-1] | mask;
+    bvdf->neg_digit_mask[level] = ~mask;
+  }
+
+  return GM_OK;
+}
+
+/****************************************************************************/
+/*D
+   PushEntry - Adds a further blockvector number to the existing sequence
+
+   SYNOPSIS:
+   INT PushEntry( BV_DESC *bvd, BLOCKNUMBER bnr, const BV_DESC_FORMAT *bvdf )
+
+   PARAMETERS:
+   .  bvd - blockvector description to which a further blocknumber is added
+   .  bnr - blocknumber to be added
+   .  bvdf - blockvector description format to work on the 'bvd'
+
+   DESCRIPTION:
+   In a blockvector description the position of a blockvector in a blockvector
+   hierarchy is stored as a sequence of blocknumbers. With this function you
+   can add a further number to the existing sequence, i.e. to describe
+   a subblock of the smallest already existing block in the 'bvd'.
+
+   This function is embedded in the macro 'BVD_PUSH_ENTRY' and provides
+   together with the macro 'BVD_DISCARD_LAST_ENTRY' a stack-mechanism
+   for storing a sequence of blockvector numbers.
+
+   RETURN VALUE:
+   INT
+   .n GM_OK if ok
+   .n GM_OUT_OF_RANGE if the maximum number of blockvector levels is exeeded
+
+   SEE ALSO:
+   BLOCKVECTOR, BV_DESC
+
+   D*/
+/****************************************************************************/
+
+INT PushEntry( BV_DESC *bvd, BLOCKNUMBER bnr, const BV_DESC_FORMAT *bvdf )
+{
+  /* exist, if there is no space for a further number */
+  if ( bvd->current >= bvdf->max_level )
+    return GM_OUT_OF_RANGE;
+
+  /* store the number */
+  BVD_SET_ENTRY( bvd, bvd->current, bnr, bvdf );
+  bvd->current++;
+
+  return GM_OK;
+}
+
+/****************************************************************************/
+/*D
+   FindBV - Find the described blockvector
+
+   SYNOPSIS:
+   BLOCKVECTOR *FindBV( const GRID *grid, BV_DESC *bvd, const BV_DESC_FORMAT *bvdf )
+
+   PARAMETERS:
+   .  grid - the grid, which in the blockvector is to be searched
+   .  bvd - blockvector description specifying the blockvector
+   .  bvdf - blockvector description format to read the 'bvd'
+
+   DESCRIPTION:
+   Returns the blockvector specified by 'bvd'.
+
+   RETURN VALUE:
+   BLOCKVECTOR *
+   .n pointer to the specified blockvector
+   .n NULL if the specified blockvector does not exist
+
+   SEE ALSO:
+   BLOCKVECTOR, BV_DESC, BVD_PUSH_ENTRY
+
+   D*/
+/****************************************************************************/
+
+BLOCKVECTOR *FindBV( const GRID *grid, BV_DESC *bvd, const BV_DESC_FORMAT *bvdf )
+{
+  register BLOCKVECTOR *bv;
+  register BLOCKNUMBER nr;
+
+  /* initialize the search with the topmost blockvector in the grid */
+  bv = GFIRSTBV( grid );
+  BVD_INIT_SEQ_READ( bvd );
+  nr = BVD_READ_NEXT_ENTRY( bvd, bvdf );
+
+  /* search trough all blockvector levels defined in bvd */
+  while ( TRUE )
+  {
+    while ( BVNUMBER(bv) != nr )             /* search block with number nr in block list*/
+    {
+      bv = BVSUCC( bv );
+      if( bv == NULL )
+        return bv;                              /* desired number not found, return NULL */
+    }
+
+    /* block with number nr found, prepare search on next block level */
+    nr = BVD_READ_NEXT_ENTRY( bvd, bvdf  );
+    if ( nr != NO_BLOCKVECTOR )
+      /* there is a further blockvector level specified */
+      if ( BV_IS_LEAF_BV( bv ) )
+        return NULL;                            /* more block level specified than present */
+      else
+        bv = BVDOWNBV( bv );                            /* go to next blockvector level */
+    else
+      /* no more block level specified, current block is the result */
+      return bv;
   }
 }
 
@@ -347,6 +639,7 @@ INT CreateVector (GRID *theGrid, VECTOR *After, INT VectorType, VECTOR **VectorH
   SETVBUILDCON(pv,1);
   SETVNEW(pv,1);
   SETVCNEW(pv,1);
+  BVD_INIT( &VBVD( pv ) );
   pv->object = NULL;
   pv->index  = (long)theGrid->nVector;
   pv->skip   = 0;
@@ -379,6 +672,57 @@ INT CreateVector (GRID *theGrid, VECTOR *After, INT VectorType, VECTOR **VectorH
 
   return (0);
 }
+
+/****************************************************************************/
+/*D
+   CreateBlockvector -  Return pointer to a new blockvector structure
+
+   SYNOPSIS:
+   INT CreateBlockvector( GRID *theGrid, BLOCKVECTOR **BVHandle )
+
+   PARAMETERS:
+   .  theGrid - grid where blockvector should be inserted
+   .  BVHandle - handle of new blockvector, i.e. a pointer to a pointer where
+   a pointer to the new blockvector is placed. Is NULL if there was no more
+   memory.
+
+   DESCRIPTION:
+   This function returns pointer to a new blockvector structure. First
+   the free list is checked for a free entry, if none is available,
+   a new structure is allocated from the heap.
+
+   RETURN VALUE:
+   INT
+   .n      GM_OK if ok
+   .n      GM_OUT_OF_MEM if there is not not enough memory available
+   D*/
+/****************************************************************************/
+
+INT CreateBlockvector( GRID *theGrid, BLOCKVECTOR **BVHandle )
+{
+  MULTIGRID *theMG;
+  BLOCKVECTOR *bv;
+  INT ds, Size;
+
+  theMG = MYMG(theGrid);
+
+  /* try to find an entry in the free list */
+  if ( ( bv = (BLOCKVECTOR*)GetFreeObject( theMG, BLOCKVOBJ ) ) == NULL )
+    /* if not found, allocate new memory */
+    if ( ( bv = GetMem( MGHEAP(theMG), sizeof(BLOCKVECTOR), FROM_BOTTOM ) )
+         == NULL )
+    {
+      *BVHandle = NULL;
+      return GM_OUT_OF_MEM;
+    }
+
+  memset( bv, 0, sizeof(BLOCKVECTOR) );
+
+  *BVHandle = bv;
+
+  return GM_OK;
+}
+
 
 /****************************************************************************/
 /*D
@@ -615,6 +959,108 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
 
   return(0);
 }
+
+/****************************************************************************/
+/*D
+   DisposeBlockvector - Dispose blockvector
+
+   SYNOPSIS:
+   INT DisposeBlockvector( GRID *theGrid, BLOCKVECTOR *bv )
+
+   PARAMETERS:
+   .  theGrid - grid level where bv is in.
+   .  bv - 'BLOCKVECTOR' to be disposed.
+
+   DESCRIPTION:
+   This function places the blockvector in the free list. The data structure
+   must be kept consistent by the caller!
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT DisposeBlockvector( GRID *theGrid, BLOCKVECTOR *bv )
+{
+  return PutFreeObject( MYMG(theGrid), bv);
+}
+
+/****************************************************************************/
+/*D
+   FreeAllBV - Frees all allocated blockvectors in the grid
+
+   SYNOPSIS:
+   void FreeAllBV( GRID *grid )
+
+   PARAMETERS:
+   .  grid - the grid from which all blockvectors are to be removed
+
+   DESCRIPTION:
+   Frees all allocated blockvectors in the grid and resets GFIRSTBV(grid)
+   to NULL.
+
+   RETURN VALUE:
+   void
+
+   SEE ALSO:
+   BLOCKVECTOR, FreeBVList
+
+   D*/
+/****************************************************************************/
+
+void FreeAllBV( GRID *grid )
+{
+  FreeBVList( grid, GFIRSTBV( grid ) );
+  GFIRSTBV( grid ) = NULL;
+  GLASTBV( grid ) = NULL;
+}
+
+/****************************************************************************/
+/*D
+   FreeBVList - Frees blockvector-list and all its sons
+
+   SYNOPSIS:
+   void FreeBV( GRID *grid, BLOCKVECTOR *bv )
+
+   PARAMETERS:
+   .  grid - the grid from which the blockvectors are to be removed
+   .  bv - start of the blockvector-list to be removed
+
+   DESCRIPTION:
+   Frees double linked blockvector-list, starting with 'bv', and all
+   its sons recursively, i.e. all the
+   subblockvectors. The vectors belonging to the blockvectors
+   are not influenced.
+
+   RETURN VALUE:
+   void
+
+   SEE ALSO:
+   BLOCKVECTOR, FreeAllBV
+
+   D*/
+/****************************************************************************/
+
+void FreeBVList( GRID *grid, BLOCKVECTOR *bv )
+{
+  register BLOCKVECTOR *bv_h;
+
+  /* free all blocks in the current block list */
+  for ( ; bv != NULL; )
+  {
+    /* free rekursively all higher block levels */
+    if ( !BV_IS_LEAF_BV( bv ) )
+      FreeBVList( grid, BVDOWNBV( bv ) );
+
+    /* free the current block and go to the next */
+    bv_h = BVSUCC( bv );
+    DisposeBlockvector( grid, bv );
+    bv = bv_h;
+  }
+}
+
 
 /****************************************************************************/
 /*D
@@ -2204,14 +2650,13 @@ INT VectorPosition (VECTOR *theVector, COORD *position)
     for (i=0; i<DIM; i++)
       position[i] = CVECT(MYVERTEX((NODE*)VOBJECT(theVector)))[i];
     return (0);
-    break;
+
   case (EDGEVECTOR) :
     theEdge = (EDGE*)VOBJECT(theVector);
     for (i=0; i<DIM; i++)
       position[i] = 0.5*(CVECT(MYVERTEX(NBNODE(LINK0(theEdge))))[i] +
                          CVECT(MYVERTEX(NBNODE(LINK1(theEdge))))[i]   );
     return (0);
-    break;
                 #ifdef __THREEDIM__
   case (SIDEVECTOR) :
     theElement = (ELEMENT *)VOBJECT(theVector);
@@ -2224,7 +2669,6 @@ INT VectorPosition (VECTOR *theVector, COORD *position)
       position[i] /= CORNERS_OF_SIDE(theElement,theSide);
     }
     return (0);
-    break;
                 #endif
   case (ELEMVECTOR) :
     theElement = (ELEMENT *) VOBJECT(theVector);
@@ -2236,7 +2680,6 @@ INT VectorPosition (VECTOR *theVector, COORD *position)
       position[i] /= CORNERS_OF_ELEM(theElement);
     }
     return (0);
-    break;
   }
 
   return (GM_ERROR);
@@ -3095,6 +3538,356 @@ static INT LexAlgDep (GRID *theGrid, char *data)
 
   return (0);
 }
+
+/****************************************************************************/
+/*D
+   CreateBVStripe - Creates a stripewise domain decomposition
+
+   SYNOPSIS:
+   INT CreateBVStripe( GRID *grid, INT points, INT points_per_stripe )
+
+   PARAMETERS:
+   .  grid - the grid containing the vectors to be structured
+   .  points  - number of vectors, i.e. gridpoints
+   .  points_per_stripe - number of points a stripe should contain
+
+   DESCRIPTION:
+   From the list of vectors the blockvector-list is generated in
+   the following way: beginning
+   at the start of the vector-list, blocks are constructed containing
+   'points_per_stripe' consecutive vectors. The start of the new
+   blockvector-list is anchored in the 'grid'. The blockvectors are
+   numbered beginning from 0 along the construction. If the vector-list
+   is longer than 'points', the function will not be troubled (this
+   overlapping vectors might be for example dirichlet boundary vectors).
+
+   APPLICATION:
+   If the vector-list is ordered lexicographic, each line resp. column
+   containing 'points_per_stripe' vectors, then this function constructs
+   the blockvector structure belonging to a
+   `linewise domain decomposition`.
+
+   If 'points_per_stripe' is a natural multiple of the actual linewidth
+   (resp. columnlength), this function constructs the blockvector
+   structure belonging to a `stripewise domain decomposition`, each stripe
+   consisting of 'points_per_stripe'/linewidth lines (resp. columns).
+
+   RETURN VALUE:
+
+   .n GM_OK if ok
+   .n GM_OUT_OF_MEM if there was not enough memory to allocate all blockvectors
+   .n GM_INCONSISTANCY if the vector-list was too short
+
+   SEE ALSO:
+   BLOCKVECTOR, CreateBVDomainHalfening
+
+   D*/
+/****************************************************************************/
+
+INT CreateBVStripe( GRID *grid, INT points, INT points_per_stripe )
+{
+  BLOCKVECTOR *bv;
+  register BLOCKVECTOR *prev;
+  register INT i, j, nr_blocks;
+  register VECTOR *v;
+
+  /* number of blockvectors to be constructed */
+  nr_blocks = ( points + points_per_stripe - 1) / points_per_stripe;
+
+  v = FIRSTVECTOR( grid );
+
+  /* construct each blockvector */
+  for ( i = 0; (i < nr_blocks) && (v != NULL); i++ )
+  {
+    (void)CreateBlockvector( grid, &bv );
+
+    if ( i == 0 )
+    {
+      GFIRSTBV( grid ) = bv;                    /* anchor blockvector list in the grid */
+      BVPRED( bv ) = NULL;
+    }
+    else
+    {
+      BVSUCC( prev ) = bv;                              /* continue blockvector list */
+      BVPRED( bv ) = prev;
+    }
+
+    prev = bv;                                                  /* prepare for the next loop */
+
+    if ( bv == NULL )
+      return GM_OUT_OF_MEM;
+
+    SETBVDOWNTYPE( bv, BVDOWNTYPEVECTOR );              /* block is at last block level */
+    BVNUMBER( bv ) = i;
+
+    /* let the blockvector point to the vector */
+    BVDOWNVECTOR( bv ) = v;
+    BVFIRSTVECTOR( bv ) = v;
+
+    /* find successor of the last vector of this blockvector and store it;
+       update the blockvector description for all vectors of this
+       blockvector
+     */
+    for ( j = points_per_stripe; (j > 0) && (v != NULL); j-- )
+    {
+      BVD_PUSH_ENTRY( &VBVD( v ), i, &one_level_bvdf );
+      v = SUCCVC( v );
+    }
+    BVENDVECTOR( bv ) = v;
+  }
+
+  BVSUCC( bv ) = NULL;                          /* end of the blockvector list */
+  GLASTBV( grid ) = bv;
+
+  /* the for loop exited premature because of v == NULL */
+  if ( i < nr_blocks )
+    return GM_INCONSISTANCY;
+
+  return GM_OK;
+}
+
+/****************************************************************************/
+/*D
+   CreateBVDomainHalfening - Creates a recursive domain halfening decomposition
+
+   SYNOPSIS:
+   INT CreateBVDomainHalfening( GRID *grid, INT side )
+
+   PARAMETERS:
+   .  grid - the grid containing the vectors to be structured
+   .  side - number of points on the side of the quadratic mesh
+
+   DESCRIPTION:
+   The grid must be similar to a quadratic mesh. The vectors must be numbered
+   linewise lexicographic. Then this function constructs a hierarchy
+   of blockvectors describing a recursive domain halfening.
+
+   A quadratic domain is halfened by cutting along a vertical line. The
+   points on this line are gathered into subdomain with number 2. The points
+   left to this interface-line are collected in subdomain 0, the right ones
+   into subdomain 1. The subdomains are listed according to their numbers.
+   Each of the 2 resulting subdomains 0 and 1 are now halfened horizontally
+   and processed analogical. The halfening is recursively proceeded until
+   a subdomain consists of less than 10 points. The initial grid should have
+   a side length allowing all halfening without a remainder.
+
+   RETURN VALUE:
+   INT
+   .n GM_OK if ok
+   .n GM_OUT_OF_MEM if there is not enough memory to allocate the blockvectors
+
+   SEE ALSO:
+   BLOCKVECTOR, CreateBVStripe
+
+   D*/
+/****************************************************************************/
+
+INT CreateBVDomainHalfening( GRID *grid, INT side )
+{
+  BLOCKVECTOR *bv;
+  register VECTOR *v;
+  INT ret;
+
+  /* create first block of the hierarchy */
+  (void)CreateBlockvector( grid, &bv );
+  GFIRSTBV( grid ) = bv;
+  if ( bv == NULL )
+    return GM_OUT_OF_MEM;
+  SETBVDOWNTYPE( bv, BVDOWNTYPEVECTOR );
+  BVDOWNVECTOR( bv ) = FIRSTVECTOR( grid );
+  BVPRED( bv ) = NULL;
+  BVSUCC( bv ) = NULL;
+  BVNUMBER( bv ) = 0;
+  BVENDVECTOR( bv ) = NULL;
+  BVFIRSTVECTOR( bv ) = FIRSTVECTOR( grid );
+
+  ret = BlockHalfening( grid, bv, 0, 0, side, side, side, BV_VERTICAL );
+
+  /* set FIRST- and LASTVECTOR */
+  v = FIRSTVECTOR( grid ) = BVFIRSTVECTOR( bv );
+  for ( ; SUCCVC( v ) != NULL; v = SUCCVC( v ) )
+    ;
+  LASTVECTOR( grid ) = v;
+
+  /* set last blockvector */
+  while ( BVSUCC( bv ) != NULL )
+    bv = BVSUCC( bv );
+  GLASTBV( grid ) = bv;
+
+  if ( ret != GM_OK )
+  {
+    FreeAllBV( grid );
+    GFIRSTBV( grid ) = NULL;
+  }
+
+  return ret;
+}
+
+/****************************************************************************/
+/*
+   BlockHalfening - internal function to perform the work of CreateBVDomainHalfening
+
+   SYNOPSIS:
+   INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation )
+
+   PARAMETERS:
+   .  grid - the grid containing the vectors to be structured
+   .  bv - blockvector to be subdivided
+   .  left - left side of the rectangle representing the 'bv' in the virtual mesh
+   .  bottom - bottom side of the rectangle representing the 'bv' in the virtual mesh
+   .  width -  sidewidth of the rectangle representing the 'bv' in the virtual mesh
+   .  height - sideheight of the rectangle representing the 'bv' in the virtual mesh
+   .  side - sidelength of the original square
+   .  orientation - gives the orientation of the cutting line (horizontal or vertical)
+
+   DESCRIPTION:
+   Performs the work described for the function CreateBVDomainHalfening
+   above.
+
+   Consider a virtual equidistant mesh with meshwidth 1 in both directions.
+   Together with the linewise lexicographic numbering of the vectors you can
+   easily calculate the geometric position of each vector according to his
+   number in this mesh. In this way it is easy to determine to which
+   subdomain a given vector belongs. The "geometric" information to this
+   function are related to this virtual mesh.
+
+   RETURN VALUE:
+   INT
+   .n GM_OK if ok
+   .n GM_OUT_OF_MEM if there is not enough memory to allocate the blockvectors
+
+ */
+/****************************************************************************/
+
+INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation )
+{
+  VECTOR *v, *end_v, **v0, **v1, **vi;
+  BLOCKVECTOR *bv0, *bv1, *bvi;
+  register INT index, interface;
+  INT bn_next;
+
+  /* create a double linked list of 3 blockvectors */
+  v = BVFIRSTVECTOR( bv );
+  end_v = BVENDVECTOR( bv );
+
+  if ( CreateBlockvector( grid, &bv0 ) != GM_OK )
+    return GM_OUT_OF_MEM;
+
+  BVPRED( bv0 ) = NULL;
+  SETBVDOWNTYPE( bv0, BVDOWNTYPEVECTOR );
+  BVNUMBER( bv0 ) = 0;
+  v0 = &BVDOWNVECTOR( bv0 );
+
+  if ( CreateBlockvector( grid, &bv1 ) != GM_OK )
+  {
+    DisposeBlockvector( grid, bv0 );
+    return GM_OUT_OF_MEM;
+  }
+
+  BVSUCC( bv0 ) = bv1;
+  BVPRED( bv1 ) = bv0;
+  SETBVDOWNTYPE( bv1, BVDOWNTYPEVECTOR );
+  BVNUMBER( bv1 ) = 1;
+  v1 = &BVDOWNVECTOR( bv1 );
+
+  if ( CreateBlockvector( grid, &bvi ) != GM_OK )
+  {
+    DisposeBlockvector( grid, bv1 );
+    DisposeBlockvector( grid, bv0 );
+    return GM_OUT_OF_MEM;
+  }
+
+  BVSUCC( bv1 ) = bvi;
+  BVPRED( bvi ) = bv1;
+  SETBVDOWNTYPE( bvi, BVDOWNTYPEVECTOR );
+  BVNUMBER( bvi ) = 2;
+  BVSUCC( bvi ) = NULL;
+  vi = &BVDOWNVECTOR( bvi );
+
+  /* all necessary memory allocated; insert new block list in father block */
+  SETBVDOWNTYPE( bv, BVDOWNTYPEBV );
+  BVDOWNBV( bv ) = bv0;
+
+  /* coordinate of the interface line */
+  interface = ( (orientation == BV_VERTICAL) ? (width-1)/2 + left : bottom + (height-1)/2 );
+
+  /* sort each vector in one of the 3 subdomains */
+  for ( ; v != end_v; v = SUCCVC( v ) )
+  {
+    /* calculate row/column number from index */
+    index = ( (orientation == BV_VERTICAL) ? VINDEX(v) % side : VINDEX(v) / side );
+
+    if ( index < interface )
+    {
+      /* vector belongs to subdomain 0 */
+      *v0 = v;
+      v0 = &SUCCVC( v );
+      BVD_PUSH_ENTRY( &VBVD( v ), 0, &DH_bvdf );
+    }
+    else if ( index > interface )
+    {
+      /* vector belongs to subdomain 1 */
+      *v1 = v;
+      v1 = &SUCCVC( v );
+      BVD_PUSH_ENTRY( &VBVD( v ), 1, &DH_bvdf );
+    }
+    else
+    {
+      /* vector belongs to subdomain 2 (interface) */
+      *vi = v;
+      vi = &SUCCVC( v );
+      BVD_PUSH_ENTRY( &VBVD( v ), 2, &DH_bvdf );
+    }
+
+  }
+  /* complete the relation between blockvectors and vectors */
+  BVENDVECTOR( bv0 ) = BVDOWNVECTOR( bv1 );
+  BVENDVECTOR( bv1 ) = BVDOWNVECTOR( bvi );
+  BVENDVECTOR( bvi ) = end_v;
+
+  BVFIRSTVECTOR( bv0 ) = BVDOWNVECTOR( bv0 );
+  BVFIRSTVECTOR( bv1 ) = BVDOWNVECTOR( bv1 );
+  BVFIRSTVECTOR( bvi ) = BVDOWNVECTOR( bvi );
+
+  /* relink the 3 subdomain lists to the global vector list */
+  *v0 = BVDOWNVECTOR( bv1 );
+  *v1 = BVDOWNVECTOR( bvi );
+  *vi = end_v;
+
+  /* next loop */
+
+  if ( orientation == BV_VERTICAL )
+  {
+    /* new dimensions */
+    width = ( width - 1 ) / 2;
+
+    /* if there are too many points per subdomain halfen them */
+    if ( ( width * height ) > 9 )
+    {
+      if ( BlockHalfening( grid, bv0, left, bottom, width, height, side, BV_HORIZONTAL ) == GM_OUT_OF_MEM )
+        return GM_OUT_OF_MEM;
+      if ( BlockHalfening( grid, bv1, left+width+1, bottom, width, height, side, BV_HORIZONTAL ) == GM_OUT_OF_MEM )
+        return GM_OUT_OF_MEM;
+    }
+  }
+  else       /* orientation == BV_HORIZONTAL */
+  {
+    /* new dimensions */
+    height = ( height - 1 ) / 2;
+
+    /* if there are too many points per subdomain halfen them */
+    if ( ( width * height ) > 9 )
+    {
+      if ( BlockHalfening( grid, bv0, left, bottom, width, height, side, BV_VERTICAL ) == GM_OUT_OF_MEM )
+        return GM_OUT_OF_MEM;
+      if ( BlockHalfening( grid, bv1, left, bottom +height+1, width, height, side, BV_VERTICAL ) == GM_OUT_OF_MEM )
+        return GM_OUT_OF_MEM;
+    }
+  }
+
+  return GM_OK;
+}
+
 
 
 /****************************************************************************/
