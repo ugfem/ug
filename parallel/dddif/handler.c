@@ -489,7 +489,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, int new)
 	GRID    *theGrid = GetGridOnDemand(dddctrl.currMG,level);
 	INT		old = DDD_InfoPriority(PARHDR(pv));
 
-	PRINTDEBUG(dddif,0,("%2d: VectorPriorityUpdate(): v=%08x/%x old=%d new=%d level=%d\n",me,\
+	PRINTDEBUG(dddif,2,("%2d: VectorPriorityUpdate(): v=%08x/%x old=%d new=%d level=%d\n",me,\
 		DDD_InfoGlobalId(PARHDR(pv)),pv,old,new,level))
 
 	if (pv == NULL) return;
@@ -873,7 +873,7 @@ void NodePriorityUpdate (DDD_OBJ obj, int new)
 	GRID    *theGrid = GetGridOnDemand(dddctrl.currMG,level);
 	INT		old = DDD_InfoPriority(PARHDR(pn));
 
-	PRINTDEBUG(dddif,0,("%2d: NodePriorityUpdate(): n=%08x/%x old=%d new=%d level=%d\n",me,\
+	PRINTDEBUG(dddif,2,("%2d: NodePriorityUpdate(): n=%08x/%x old=%d new=%d level=%d\n",me,\
 		DDD_InfoGlobalId(PARHDR(pn)),pn,old,new,level))
 
 	if (pn == NULL) return;
@@ -1283,7 +1283,7 @@ void ElementPriorityUpdate (DDD_OBJ obj, int new)
 	GRID    *theGrid = GetGridOnDemand(dddctrl.currMG,level);
 	INT		old = DDD_InfoPriority(PARHDRE(pe));
 
-	PRINTDEBUG(dddif,0,("%2d: ElementPriorityUpdate(): e=%08x/%x old=%d new=%d level=%d\n",me,\
+	PRINTDEBUG(dddif,2,("%2d: ElementPriorityUpdate(): e=%08x/%x old=%d new=%d level=%d\n",me,\
 		DDD_InfoGlobalId(PARHDRE(pe)),pe,old,new,level))
 
 	if (pe == NULL) return;
@@ -1459,7 +1459,11 @@ void ddd_HandlerInit (INT handlerSet)
 	IElemHandlerInit(TypeTeElem, handlerSet);
 	BElemHandlerInit(TypeTeBElem, handlerSet);
 
-	/* TODO: achtung, hier fehlen handler! */
+	IElemHandlerInit(TypePyElem, handlerSet);
+	BElemHandlerInit(TypePyBElem, handlerSet);
+
+	IElemHandlerInit(TypeHeElem, handlerSet);
+	BElemHandlerInit(TypeHeBElem, handlerSet);
 
 	#endif
 

@@ -108,8 +108,10 @@ void *memmgr_AllocOMEM (size_t size, int ddd_type, int prio, int attr)
 
   buffer = GetFreelistMemory(MGHEAP(dddctrl.currMG), size);
 
-  printf("%4d: memmgr_AllocOMem: size=%05d ddd_type=%02d prio=%d attr=%d\n",
-         me,size,ddd_type,prio,attr);
+  /*
+     printf("%4d: memmgr_AllocOMem: size=%05d ddd_type=%02d prio=%d attr=%d\n",
+     me,size,ddd_type,prio,attr);
+   */
 
   return(buffer);
 }
@@ -117,7 +119,9 @@ void *memmgr_AllocOMEM (size_t size, int ddd_type, int prio, int attr)
 
 void memmgr_FreeOMEM (void *buffer, size_t size, int ddd_type)
 {
-  printf("%d: memmgr_FreeOMEM(): buffer=%x, ddd_type=%d\n", me, buffer, ddd_type);
+  /*
+     printf("%d: memmgr_FreeOMEM(): buffer=%x, ddd_type=%d\n", me, buffer, ddd_type);
+   */
 
   PutFreelistMemory(MGHEAP(dddctrl.currMG), buffer, size);
 }

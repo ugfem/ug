@@ -497,22 +497,33 @@ static void ddd_DefineTypes (void)
 /*																			*/
 /****************************************************************************/
 
-#ifdef __TWODIM__
 static void ddd_IfInit (void)
 {
   DDD_TYPE O[8];
+  int nO;
   int A[8];
   int B[8];
 
+#ifdef __TWODIM__
   O[0] = TypeTrElem; O[1] = TypeTrBElem;
+  O[2] = TypeQuElem; O[3] = TypeQuBElem;
+  nO = 4;
+#endif
+
+#ifdef __THREEDIM__
+  O[0] = TypeTeElem; O[1] = TypeTeBElem;
+  O[2] = TypeHeElem; O[3] = TypeHeBElem;
+  O[4] = TypePyElem; O[5] = TypePyBElem;
+  nO = 6;
+#endif
+
   A[0] = PrioMaster;
   B[0] = PrioGhost;
-  ElementIF = DDD_IFDefine(2,O,1,A,1,B);
+  ElementIF = DDD_IFDefine(nO,O,1,A,1,B);
 
-  O[0] = TypeTrElem; O[1] = TypeTrBElem;
   A[0] = PrioMaster; A[1] = PrioGhost;
   B[0] = PrioMaster; B[1] = PrioGhost;
-  ElementSymmIF = DDD_IFDefine(2,O,2,A,2,B);
+  ElementSymmIF = DDD_IFDefine(nO,O,2,A,2,B);
 
   O[0] = TypeNode;
   A[0] = PrioBorder;
@@ -549,7 +560,6 @@ static void ddd_IfInit (void)
   B[0] = PrioMaster;
   VertexIF = DDD_IFDefine(2,O,1,A,1,B);
 }
-#endif
 
 
 
@@ -704,9 +714,7 @@ int InitParallel (int *argc, char ***argv)
 
   DomInitParallel(TypeBndP,TypeBndS);
 
-        #ifdef __TWODIM__
   ddd_IfInit();
-        #endif
 
   return 0;          /* no error */
 }
