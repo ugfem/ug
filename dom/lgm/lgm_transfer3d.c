@@ -356,8 +356,9 @@ int LGM_ReadSizes (LGM_SIZES *lgm_sizes)
 
 int LGM_ReadLines (int dummy, LGM_LINE_INFO *line_info)
 {
-  int i,n;
+  int i,n, old_i, error, line_id;
 
+  error = 0;
   if(dummy == 0)
     if (fsetpos(stream, &fileposline))
       return (1);
@@ -367,10 +368,12 @@ int LGM_ReadLines (int dummy, LGM_LINE_INFO *line_info)
     return (1);
   if (fscanf(stream,"line %d:",&i)!=1)
     return (1);
+  line_id = i;
 
   if (SkipBTN()) return (1);
   if (fscanf(stream,"points: %d",&i)!=1)
     return (1);
+  old_i = i;
   n=0;
   line_info->point[n++] = i;
   while (1)
@@ -379,8 +382,14 @@ int LGM_ReadLines (int dummy, LGM_LINE_INFO *line_info)
       return (1);
     if (fscanf(stream,"%d",&i)!=1)
       break;
+    if(old_i==i)
+      error++;
     line_info->point[n++] = i;
+    old_i = i;
   }
+
+  if(error>0)
+    UserWriteF("%s %d\n", "Error in Line", line_id);
 
   return (0);
 }
@@ -647,8 +656,9 @@ static int Search_Neighbours(LGM_SURFACE_INFO *surface_info, int **point_list, i
 
 int LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
 {
-  int i,k,n,i1,i2,i3,surface_id;;
+  int i,k,n,i1,i2,i3,surface_id, error;
 
+  error = 0;
   if(dummy == 0)
     if (fsetpos(stream, &filepossurface))
       return (1);
@@ -700,30 +710,47 @@ int LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
   if (fscanf(stream,"triangles: %d %d %d;",&i1,&i2,&i3)!=3)
     return (1);
   k = 0;
-  surface_info->Triangle[k].corner[0] = i1;
-  surface_info->Triangle[k].corner[1] = i2;
-  surface_info->Triangle[k].corner[2] = i3;
-  surface_info->Triangle[k].neighbor[0] = 0;
-  surface_info->Triangle[k].neighbor[1] = 0;
-  surface_info->Triangle[k].neighbor[2] = 0;
-
-  while (1)
+  if((i1!=i2)&&(i1!=i3)&&(i2!=i3))
   {
-    if (SkipBTN())
-      return (1);
-    if (fscanf(stream,"%d %d %d;",&i1,&i2,&i3)!=3)
-      break;
-    k++;
     surface_info->Triangle[k].corner[0] = i1;
     surface_info->Triangle[k].corner[1] = i2;
     surface_info->Triangle[k].corner[2] = i3;
     surface_info->Triangle[k].neighbor[0] = 0;
     surface_info->Triangle[k].neighbor[1] = 0;
     surface_info->Triangle[k].neighbor[2] = 0;
+  }
+  else
+  {
+    error++;
+    UserWriteF("%s %d %s %d\n", "Error in Surface", surface_id, "; triangle ", k+error);
+    k--;
+  }
+  while (1)
+  {
+    if (SkipBTN())
+      return (1);
+    if (fscanf(stream,"%d %d %d;",&i1,&i2,&i3)!=3)
+      break;
+    if((i1!=i2)&&(i1!=i3)&&(i2!=i3))
+    {
+      k++;
+      surface_info->Triangle[k].corner[0] = i1;
+      surface_info->Triangle[k].corner[1] = i2;
+      surface_info->Triangle[k].corner[2] = i3;
+      surface_info->Triangle[k].neighbor[0] = 0;
+      surface_info->Triangle[k].neighbor[1] = 0;
+      surface_info->Triangle[k].neighbor[2] = 0;
+    }
+    else
+    {
+      error++;
+      UserWriteF("%s %d %s %d\n", "Error in Surface", surface_id, "; triangle ", k+error);
+    }
     if (SkipBTN())
       return (1);
   }
 
+  surface_info->nTriangles = k+1;
   /* search neighbours */
   Search_Neighbours(surface_info, surface_info->point_list, surface_info->length);
 

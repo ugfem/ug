@@ -215,7 +215,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   if ((theLineInfo.point=(int*)GetTmpMem(theHeap,sizeof(int)*MaxPointPerLine,MarkKey))==NULL) return (NULL);
 
   /* allocate lines */
-  if ((LinePtrList=(LGM_LINE**)GetTmpMem(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline,MarkKey)) == NULL) return (NULL);
+  if ((LinePtrList=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL) return (NULL);
         #ifdef ModelP
   if ((LinePtrArray=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL) return (NULL);
         #endif
@@ -413,7 +413,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
       return(NULL);
 
   /* allocate lines */
-  if ((LinePtrList=(LGM_LINE**)GetTmpMem(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline,MarkKey)) == NULL)
+  if ((LinePtrList=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL)
     return (NULL);
   for (i=0; i<theDomInfo.nPolyline; i++)
   {
@@ -441,7 +441,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   }
 
   /* allocate surfaces */
-  if ((SurfacePtrList=(LGM_SURFACE**)GetTmpMem(theHeap,sizeof(LGM_SURFACE*)*theDomInfo.nSurface,MarkKey)) == NULL)
+  if ((SurfacePtrList=(LGM_SURFACE**)GetFreelistMemory(theHeap,sizeof(LGM_SURFACE*)*theDomInfo.nSurface)) == NULL)
     return (NULL);
         #ifdef ModelP
   if ((SurfacePtrArray=(LGM_SURFACE**)GetFreelistMemory(theHeap,sizeof(LGM_SURFACE*)*theDomInfo.nSurface)) == NULL)
@@ -467,7 +467,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
 
     LGM_SURFACE_NPOINT(SurfacePtrList[i])           = lgm_sizes.Surf_nPoint[i];
     LGM_SURFACE_ID(SurfacePtrList[i])                       = i;
-    LGM_SURFACE_NTRIANGLE(SurfacePtrList[i])        = lgm_sizes.Surf_nTriangle[i];
+    LGM_SURFACE_NTRIANGLE(SurfacePtrList[i])        = theSurfaceInfo.nTriangles;
     LGM_SURFACE_LEFT(SurfacePtrList[i])             = theSurfaceInfo.left;
     LGM_SURFACE_RIGHT(SurfacePtrList[i])            = theSurfaceInfo.right;
     LGM_SURFACE_NLINE(SurfacePtrList[i])            = lgm_sizes.Surf_nPolyline[i];
@@ -524,7 +524,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   }
 
   /* read points */
-  if ((piptr=(LGM_POINT_INFO*)GetTmpMem(theHeap,sizeof(LGM_POINT_INFO)*theDomInfo.nPoint,MarkKey)) == NULL)
+  if ((piptr=(LGM_POINT_INFO*)GetFreelistMemory(theHeap,sizeof(LGM_POINT_INFO)*theDomInfo.nPoint)) == NULL)
     return (NULL);
 
   if ((*ReadPoints)(piptr))

@@ -183,11 +183,18 @@
 #define LGM_LINEDISC_NPOINT(p)                          ((p)->npoint)
 #define LGM_LINEDISC_LOCAL(p,i)                         ((p)->local[(i)])
 
+/* macros for LGM_LINEDISCNEW */
+#define LGM_LINEDISCNEW_NPOINT(p)                       ((p)->npoints)
+#define LGM_LINEDISCNEW_START(p)                        ((p)->start)
+#define LGM_LINEDISCNEW_POINT(p)                        ((p)->point)
+
 /* macros for LGM_SURFDISC */
 #define LGM_SURFDISC_NPOINT(p)                          ((p)->npoint)
 #define LGM_SURFDISC_NTRIANGLE(p)                       ((p)->ntriangle)
 #define LGM_SURFDISC_LOCAL(p,i,j)                       ((p)->local[(i)][(j)])
 #define LGM_SURFDISC_TRIANGLE(p,i,j)            ((p)->triangle[(i)][(j)])
+#define LGM_SURFDISC_MESH_ID(p,i)                       ((p)->mesh_id[i])
+#define LGM_SURFDISC_FMESH_ID(p)                        ((p)->mesh_id)
 
 /* macros for LGM_LINE */
 #define LGM_LINE_ID(p)                                          ((p)->id)
@@ -195,6 +202,7 @@
 #define LGM_LINE_NPOINT(p)                                      ((p)->nPoint)
 #define LGM_LINE_POINT(p,i)                                     ((p)->point+(i))
 #define LGM_LINE_LINEDISC(p)                            ((p)->ldisc)
+#define LGM_LINE_LINEDISCNEW(p)                         ((p)->ldiscnew)
 #define LGM_LINE_BEGIN(p)                                       ((p)->begin)
 #define LGM_LINE_END(p)                                         ((p)->end)
 #define LGM_LINE_USED(p)                                        ((p)->used)
@@ -244,10 +252,14 @@
 #define LGM_DOMAIN_S2P(p,s)                                     ((p)->s2p[s])
 
 /* macros for LGM_BNDP */
-#define LGM_BNDP_N(p)                                           ((p)->n)
+#define LGM_BNDP_NLINE(p)                                       ((p)->nlines)
+#define LGM_BNDP_LINES(p,i)                                     ((p)->Line[(i)])
+#define LGM_BNDP_LINE(p,i)                                      ((p)->Line[(i)].theLine)
+#define LGM_BNDP_LINE_LEFT(p,i)                         ((p)->Line[(i)].local_left)
+#define LGM_BNDP_LINE_RIGHT(p,i)                        ((p)->Line[(i)].local_right)
+#define LGM_BNDP_N(p)                                           ((p)->nsurf)
 #define LGM_BNDP_SURFACES(p,i)                          ((p)->Surf[(i)])
 #define LGM_BNDP_SURFACE(p,i)                           ((p)->Surf[(i)].theSurf)
-#define LGM_BNDP_TRIANGLE(p,i)                          ((p)->Surf[(i)].triangle)
 #define LGM_BNDP_LOCAL(p,i)                                     ((p)->Surf[(i)].local)
 #define LGM_BNDP_SURFACE_GSURFACE(p)            ((p).theSurf)
 #define LGM_BNDP_SURFACE_LOCAL(p)                       ((p).local)
@@ -402,10 +414,26 @@ struct lgm_point {
   DOUBLE position[LGM_DIM];                     /* position of corner						*/
 };
 
+struct linepoint
+{
+  DOUBLE local;
+  struct linepoint *next;
+};
+
+typedef struct linepoint LINEPOINT;
+
+struct linediscnew
+{
+  INT npoints;
+  LINEPOINT *start;
+  LINEPOINT *point;
+};
+
+typedef struct linediscnew LINEDISCNEW;
+
 struct linedisc {
 
   INT npoint;                                                   /* nb. of discretization points on the line	*/
-  /*	DOUBLE local[1];	*/			/* local coorddinates of the points			*/
   DOUBLE *local;                                        /* local coorddinates of the points			*/
 };
 
@@ -415,6 +443,7 @@ struct lgm_line {
   INT nPoint;                                                   /* nb. of points on the line	*/
   INT begin, end;                                       /* global id's starting from 0	*/
   struct linedisc *ldisc;                       /* discretization of the line	*/
+  LINEDISCNEW *ldiscnew;                        /* discretization of the line	*/
 
   /* specials for grape */
         #ifdef Grape
@@ -429,6 +458,7 @@ struct surfdisc {
   INT npoint;                                                   /* nb. of discretization points on the surface*/
   INT ntriangle;                                        /* nb. of ggtriangles on the surface		*/
   DOUBLE **local;                                       /* local coorddinates of the points			*/
+  INT *mesh_id;                                         /* id of point in mesh-structure			*/
   INT **triangle;                                       /* triangle-list							*/
   INT dummy;                                                    /* to fill according to the needs                       */
 };
@@ -520,17 +550,25 @@ struct lgm_domain {
   struct lgm_subdom *theSubdom[1];              /* begin of subdom reference field				*/
 };
 
+struct lgm_bndp_line {
+
+  struct lgm_line *theLine;                             /* line										*/
+  DOUBLE local_left;                                            /* local coordinate of the left neighbor		*/
+  DOUBLE local_right;                                           /* local coordinate of the right neighbor		*/
+};
+
 struct lgm_bndp_surf {
 
   struct lgm_surface *theSurf;                  /* surface										*/
-  /*	struct lgm_triangle *triangle;	*/	/* ptr to triangle								*/
   DOUBLE local[2];                                              /* local coordinate								*/
 };
 
 struct lgm_bndp {
 
-  INT n;                                /* number of surfaces                                   */
-  struct lgm_bndp_surf Surf[1];         /* surface(s)					                */
+  INT nlines;                                                           /* number of lines								*/
+  struct lgm_bndp_line *Line;                           /* line(s)										*/
+  INT nsurf;                            /* number of surfaces                                   */
+  struct lgm_bndp_surf *Surf;           /* surface(s)					                */
 };
 
 struct lgm_bnds_triangle {
@@ -549,6 +587,7 @@ struct lgm_bnds {
 
 typedef struct lgm_point LGM_POINT;
 typedef struct linedisc LGM_LINEDISC;
+typedef struct linediscnew LGM_LINEDISCNEW;
 typedef struct lgm_line LGM_LINE;
 typedef struct surfdisc LGM_SURFDISC;
 typedef struct lgm_triangle LGM_TRIANGLE;
@@ -559,6 +598,7 @@ typedef struct lgm_domain LGM_DOMAIN;
 typedef struct lgm_problem LGM_PROBLEM;
 typedef struct lgm_bndp LGM_BNDP;
 typedef struct lgm_bnds LGM_BNDS;
+typedef struct lgm_bndp_line LGM_BNDP_PLINE;
 typedef struct lgm_bndp_surf LGM_BNDP_PSURFACE;
 
 #endif
