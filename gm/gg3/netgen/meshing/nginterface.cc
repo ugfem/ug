@@ -83,13 +83,62 @@ int my_meshing3 :: SavePoint (const POINT3D & p)
   return points -> Append (p);
 }
 
+#define V3_ADD(A,B,C)                              {(C)[0] = (A)[0] + (B)[0];\
+                                                    (C)[1] = (A)[1] + (B)[1];\
+                                                    (C)[2] = (A)[2] + (B)[2];}
 
+#define V3_SCALE(c,C)                              {(C)[0] = (c)*(C)[0];\
+                                                    (C)[1] = (c)*(C)[1];\
+                                                    (C)[2] = (c)*(C)[2];}
+
+#define V3_EUKLIDNORM_OF_DIFF(A,B,b)    (b) = (sqrt((double)(((A)[0]-(B)[0])*((A)[0]-(B)[0])+((A)[1]-(B)[1])*((A)[1]-(B)[1])+((A)[2]-(B)[2])*((A)[2]-(B)[2]))));
+
+#define V3_CLEAR(A)                                {(A)[0] = 0.0; (A)[1]= 0.0; (A)[2] = 0.0;}
 
 void my_meshing3 :: SaveElement (const ELEMENT & elem)
 {
+  float x[4][3],diam,fac,global[3],inndiam,dist;
+  int i,n;
+
+  n = 4;
+  x[0][0] = points -> Get(elem.PNum(1)).X();
+  x[0][1] = points -> Get(elem.PNum(1)).Y();
+  x[0][2] = points -> Get(elem.PNum(1)).Z();
+  x[1][0] = points -> Get(elem.PNum(2)).X();
+  x[1][1] = points -> Get(elem.PNum(2)).Y();
+  x[1][2] = points -> Get(elem.PNum(2)).Z();
+  x[2][0] = points -> Get(elem.PNum(3)).X();
+  x[2][1] = points -> Get(elem.PNum(3)).Y();
+  x[2][2] = points -> Get(elem.PNum(3)).Z();
+  x[3][0] = points -> Get(elem.PNum(4)).X();
+  x[3][1] = points -> Get(elem.PNum(4)).Y();
+  x[3][2] = points -> Get(elem.PNum(4)).Z();
+
+  V3_CLEAR(global);
+  for (i=0; i<n; i++)
+    V3_ADD(x[i],global,global);
+  fac = 1.0 / n;
+  V3_SCALE(fac,global);
+  diam = 0.0;
+  inndiam = 100000000.0;
+  for (i=0; i<n; i++)
+  {
+    V3_EUKLIDNORM_OF_DIFF(x[i],global,fac);
+    if (fac < inndiam)
+      inndiam = fac;
+    if (fac > diam)
+      diam = fac;
+  }
+  dist = sqrt(global[0]*global[0]+global[1]*global[1]+global[2]*global[2]);
+
   volelements -> Append (elem);
-  UserWriteF("%4d",volelements -> Size());
-  if (volelements -> Size()%10 == 0) UserWriteF ("\n");
+
+  UserWriteF(" ID(Elem)=%4d midPoint %6.2f %6.2f %6.2f dist %6.2f diam %6.2f %6.2f\n",
+             volelements -> Size(),global[0],global[1],global[2],
+             dist,inndiam,diam);
+
+  /*UserWriteF("%4d",volelements -> Size());
+     if (volelements -> Size()%10 == 0)   UserWriteF ("\n");*/
 }
 
 
