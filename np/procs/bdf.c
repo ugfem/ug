@@ -303,7 +303,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1;
   DOUBLE Factor[MAX_VEC_COMP];
   INT n_unk;
-  INT i,k;
+  INT i,k,mg_changed;
   INT low,nlinterpolate,last_number_of_nonlinear_iterations;
   INT verygood,bad;
   NLRESULT nlresult;
@@ -454,10 +454,21 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
             NP_RETURN(1,res[0]);
         if (bdf->Break) return(0);
 Continue:
-        if (eresult.refine + eresult.coarse > 0) {
-          if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL,GM_REFINE_PARALLEL) != GM_OK)
+        if (eresult.refine + eresult.coarse > 0)
+          if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL,
+                              GM_REFINE_PARALLEL) != GM_OK)
             NP_RETURN(1,res[0]);
+        if (level != TOPLEVEL(mg)) {
           level = TOPLEVEL(mg);
+          mg_changed = 1;
+        }
+        else {
+          mg_changed = 0;
+          for (i=0; i<=level; i++)
+            if (GSTATUS(GRID_ON_LEVEL(mg,i)) & GRID_CHANGED)
+              mg_changed = 1;
+        }
+        if (mg_changed) {
           k = level - 1;
           if (bdf->trans->PreProcessSolution != NULL)
             if ((*bdf->trans->PreProcessSolution)
