@@ -9,9 +9,8 @@ AM_CONFIG_HEADER([config.h])
 
 AM_MAINTAINER_MODE
 
-# Checks for programs.
-AC_PROG_CXX
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_MAKE_SET
 AC_PROG_LN_S
 # for dom/lgm/ngin
@@ -104,10 +103,16 @@ if test x$debug = xyes ; then
 fi
 
 # the DUNE-test for MPI-package and parameters
+
+# use C++-test and hope that the flags will work in the C-case as well
+# Unfortunately the AC_LANG-mechanism is evaluated by m4 and not
+# during runtime of ./configure
+AC_LANG_PUSH([C++])
 DUNE_MPI
 if test x$parallel = xyes -a x$with_mpi == xno ; then
    AC_MSG_ERROR([MPI needed for the parallel UG-lib!])
 fi
+AC_LANG_POP([C++])
 
 # set results as automake-conditionals
 AM_CONDITIONAL(PARALLEL, test x$parallel = xyes)
