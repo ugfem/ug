@@ -126,6 +126,25 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 	DOUBLE *x[MAX_CORNERS_OF_ELEM];
 
 	nerrors = 0;
+	if (SONNODE(theNode) == NULL) 
+	{
+	    INT cnt = NOOFNODE(theVertex);
+		NODE *Node = theNode;
+
+		while (CORNERTYPE(Node)) {
+		    cnt--;
+			Node = (NODE*) NFATHER(Node);
+		}
+		if (cnt != 1) {
+		    UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX 
+					   " vertex=" VID_FMTX
+					   " NOOFNODE %d wrong\n",
+					   me,EID_PRTX(theElement),ID_PRTX(theNode),
+					   VID_PRTX(theVertex), NOOFNODE(theVertex));
+		    nerrors = 1;
+		}
+	}
+
 	if (theFather==NULL && MASTER(theNode) && LEVEL(theVertex)>0)
 	{
         #ifdef ModelP
