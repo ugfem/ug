@@ -996,6 +996,7 @@ PATCH *BVP_GetFirstPatch (BVP *theBVP)
    .n      1 if error.
    D*/
 /****************************************************************************/
+
 INT Patch_global2local (PATCH *aPatch, COORD *global, COORD *local)
 {
   BndSegFuncPtr BndSegFunc;

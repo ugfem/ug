@@ -32,10 +32,6 @@
 #include "compiler.h"
 #endif
 
-#ifndef __SWITCH__
-#include "switch.h"
-#endif
-
 #ifndef __UGENV__
 #include "ugenv.h"
 #endif
@@ -49,6 +45,33 @@
 /*		  macros															*/
 /*																			*/
 /****************************************************************************/
+
+#ifdef _2
+        #ifdef _3
+        #error ****	define EITHER dimension _2 OR _3	   ****
+        #endif
+#define __TWODIM__
+#define DIM 2
+#define DIM_OF_BND 1
+#define CORNERS_OF_BND_SEG      2
+#endif
+
+#ifdef _3
+#define __THREEDIM__
+#define DIM 3
+#define DIM_OF_BND 2
+#define CORNERS_OF_BND_SEG 4
+#endif
+
+#ifndef _2
+#ifndef _3
+#error ****	define at least dimension two OR three		****
+#endif
+#endif
+
+#ifndef __version23__
+#define __version3__
+#endif
 
 /* compile time constants */
 #define BVPD_MAX_COEFFFCTS              10

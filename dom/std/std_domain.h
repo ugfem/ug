@@ -28,10 +28,6 @@
 #ifndef __STD_DOMAIN__
 #define __STD_DOMAIN__
 
-#ifndef __SWITCH__
-#include "switch.h"
-#endif
-
 #ifndef __COMPILER__
 #include "compiler.h"
 #endif
