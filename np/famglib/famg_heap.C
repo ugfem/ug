@@ -75,7 +75,7 @@ void *FAMGHeap::GetMem(unsigned long size, int mode)
         top -= size;
         if(top < bottom)
         {
-            ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": not enough memory for << size << byte." << endl;
+            ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": not enough memory for " << size << " byte." << endl;
             FAMGError(ostr);
             return(NULL);
         }
@@ -87,7 +87,7 @@ void *FAMGHeap::GetMem(unsigned long size, int mode)
         bottom += size;
         if(top < bottom) 
         {
-            ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": not enough memory." << endl;
+            ostrstream ostr; ostr << __FILE__ << ", line " << __LINE__ << ": not enough memory for " << size << " byte." << endl;
             FAMGError(ostr);
             return(NULL);
         }
