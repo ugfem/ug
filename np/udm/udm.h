@@ -55,7 +55,7 @@ typedef struct {
   /* fields for environment list variable */
   ENVVAR v;
 
-  INT type;                        /* VECTOR_DATA or MATRIX_DATA		    */
+  INT locked;                          /* locked for dynamic allocation         */
   char compNames[MAX_VEC_COMP];    /* names for symbol components           */
   SHORT NCmpInType[NVECTYPES];     /* number of components of a vector      */
                                    /* per type                              */
@@ -75,7 +75,7 @@ typedef struct {
 
   ENVVAR v;
 
-  INT type;                         /* VECTOR_DATA or MATRIX_DATA           */
+  INT locked;                          /* locked for dynamic allocation         */
   char compNames[2*MAX_MAT_COMP];   /* names for symbol components          */
   SHORT RowsInType[NMATTYPES];          /* number of rows of a matrix per type  */
   SHORT ColsInType[NMATTYPES];          /* number of columns of a matrix        */
@@ -108,8 +108,10 @@ typedef DOUBLE VEC_SCALAR[MAX_VEC_COMP];
 /*																			*/
 /****************************************************************************/
 
-VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, INT *NCmpInType);
-MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, INT *RowsInType, INT *ColsInType);
+VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, char *name, char *compNames,
+                             SHORT *NCmpInType);
+MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, char *name, char *compNames,
+                             SHORT *RowsInType, SHORT *ColsInType);
 
 VECDATA_DESC *GetVecDataDescByName (MULTIGRID *theMG, char *name);
 MATDATA_DESC *GetMatDataDescByName (MULTIGRID *theMG, char *name);
@@ -120,7 +122,10 @@ INT AllocMDfromVD (MULTIGRID *theMG, INT fl, INT tl,
                    VECDATA_DESC *x, VECDATA_DESC *y, MATDATA_DESC **new_desc);
 INT AllocMDfromMD (MULTIGRID *theMG, INT fl, INT tl,
                    MATDATA_DESC *template_desc, MATDATA_DESC **new_desc);
-INT FreeVD        (MULTIGRID *theMG, VECDATA_DESC *x);
-INT FreeMD        (MULTIGRID *theMG, MATDATA_DESC *A);
+INT FreeVD        (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *x);
+INT FreeMD        (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *A);
+
+/* init user data manager */
+INT InitUserDataManager (void);
 
 #endif

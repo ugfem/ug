@@ -9,7 +9,7 @@
 # include configuration and all makefile macro definitions
 include $(UGROOT)/ug.conf
 
-OBJECTS = pcr.o disctools.o scan.o
+OBJECTS = pcr.o disctools.o scan.o udm.o
 
 # local C compiler flags
 LCFLAGS = -I $(UGROOT)/include

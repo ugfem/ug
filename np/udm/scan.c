@@ -204,19 +204,19 @@ INT ReadArgvChar (char *name, char *buffer, INT argc, char **argv)
   char option[OPTIONLEN];
   char value[VALUELEN];
 
+  buffer = NULL;
   for (i=0; i<argc; i++)
-    if (argv[i][0]==name[0])
-    {
-      if (sscanf(argv[i],"%s %s",option,value)!=2)
+    if (argv[i][0]==name[0]) {
+      if (sscanf(argv[i],
+                 expandfmt(CONCAT5("%",OPTIONLENSTR,"[a-zA-Z0-9_] %",
+                                   VALUELENSTR,"[ -~]")),option,value)!=2)
         continue;
-      if (strcmp(option,name) == 0)
-      {
+      if (strcmp(option,name) == 0) {
         strcpy(buffer,value);
         return(0);
       }
     }
 
-  buffer = NULL;
   return (1);
 }
 
@@ -374,6 +374,7 @@ INT ReadArgvPosition (char *name, INT argc, char **argv, COORD *pos)
    DESCRIPTION:
    This function reads a symbol name from the command strings and returns
    a pointer to the corresponding vector descriptor.
+   This call locks the vector descriptor for dynamic allocation.
 
    RETURN VALUE:
    VECDATA_DESC *
@@ -385,17 +386,16 @@ INT ReadArgvPosition (char *name, INT argc, char **argv, COORD *pos)
 VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, char *name,
                                INT argc, char **argv)
 {
-  INT i;
-  char option[OPTIONLEN],value[VALUELEN];
+  VECDATA_DESC *vd;
+  char value[VALUELEN];
 
-  for (i=0; i<argc; i++)
-    if (sscanf(argv[i],
-               expandfmt(CONCAT5("%",OPTIONLENSTR,"[a-zA-Z0-9_] %",
-                                 VALUELENSTR,"[ -~]")),option,value)==2)
-      if (strcmp(option,name) == 0)
-        return(GetVecDataDescByName(theMG,value));
+  if (ReadArgvChar(name,value,argc,argv))
+    return (NULL);
 
-  return (NULL);
+  vd = GetVecDataDescByName(theMG,value);
+  if (vd != NULL) VM_LOCKED(vd) = 1;
+
+  return(vd);
 }
 
 /****************************************************************************/
@@ -415,6 +415,7 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, char *name,
    DESCRIPTION:
    This function reads a symbol name from the command strings and returns
    a pointer to the corresponding matrix descriptor.
+   This call locks the matrix descriptor for dynamic allocation.
 
    RETURN VALUE:
    MATDATA_DESC *
@@ -426,17 +427,16 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, char *name,
 MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, char *name,
                                INT argc, char **argv)
 {
-  INT i;
-  char option[OPTIONLEN],value[VALUELEN];
+  MATDATA_DESC *md;
+  char value[VALUELEN];
 
-  for (i=0; i<argc; i++)
-    if (sscanf(argv[i],
-               expandfmt(CONCAT5("%",OPTIONLENSTR,"[a-zA-Z0-9_] %",
-                                 VALUELENSTR,"[ -~]")),option,value)==2)
-      if (strcmp(option,name) == 0)
-        return(GetMatDataDescByName(theMG,value));
+  if (ReadArgvChar(name,value,argc,argv))
+    return (NULL);
 
-  return (NULL);
+  md = GetMatDataDescByName(theMG,value);
+  if (md != NULL) VM_LOCKED(md) = 1;
+
+  return(md);
 }
 
 /****************************************************************************/
