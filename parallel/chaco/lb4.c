@@ -69,6 +69,7 @@
 #include "debug.h"
 #include "refine.h"
 #include "rm.h"
+#include "ugm.h"
 #include "cmdint.h"
 #include "./main/defs.h"
 #include "./main/structs.h"
@@ -161,7 +162,15 @@ static int InitClustering (MULTIGRID *mg, ELEMENT ***elements)
 
 	/* allocate storage for clusters in each processor */
 	PRINTDEBUG(dddif,1,("%d: InitClustering() GetMem bytes=%d\n",me,MAXCLUSTERS*sizeof(CLUSTER)));
-	clusters = GetMemUsingKey(MGHEAP(mg),MAXCLUSTERS*sizeof(CLUSTER),FROM_BOTTOM,MarkKeyBottom);
+
+    #ifndef DYNAMIC_MEMORY_ALLOCMODEL
+	clusters = GetMemUsingKey(MGHEAP(mg),MAXCLUSTERS*sizeof(CLUSTER),
+							  FROM_BOTTOM,MarkKeyBottom);
+    #else
+	clusters = GetMemoryForObject(mg,MAXCLUSTERS*sizeof(CLUSTER),
+								  MAOBJ);
+	#endif
+
 	if (clusters==NULL) return(1);
 	for (i=0; i<MAXSETS; i++)
 	{
@@ -173,7 +182,12 @@ static int InitClustering (MULTIGRID *mg, ELEMENT ***elements)
 
 	/* allocate array of cluster pointers for sorting */
 	PRINTDEBUG(dddif,1,("%d: InitClustering() GetMem bytes=%d\n",me,MAXCLUSTERS*sizeof(clusters)));
+    #ifndef DYNAMIC_MEMORY_ALLOCMODEL
 	sort_clusters = (CLUSTER **) GetMemUsingKey(MGHEAP(mg),MAXCLUSTERS*sizeof(clusters),FROM_BOTTOM,MarkKeyBottom);
+    #else
+	sort_clusters = (CLUSTER **) GetMemoryForObject(mg,MAXCLUSTERS*sizeof(clusters),MAOBJ);
+	#endif
+
 	if (sort_clusters==NULL) return(1);
 
 	/* allocate memory for array of pointers to elements used in load transfer */
@@ -209,7 +223,12 @@ static int InitMemLB1 (MULTIGRID *mg)
 	int i;
 
 	/* allocate memory for storing load per level in each processor */
+    #ifndef DYNAMIC_MEMORY_ALLOCMODEL
 	load = GetMem(MGHEAP(mg),procs*MAXLEVEL*sizeof(INT),FROM_BOTTOM);
+    #else
+	load = GetMemoryForObject(mg,procs*MAXLEVEL*sizeof(INT),MAOBJ);
+	#endif
+
 	if (load==NULL) return(1);
 	for (i=0; i<procs*MAXLEVEL; i++) load[i] = 0;
 
@@ -1079,7 +1098,11 @@ static int balance_ccptm (MULTIGRID *mg, int Const, int strategy, int eigen,
 	/* smalloc/sfree functions by GetMem/DisposeMem of ugp        */
 	max_size = HeapSize(MGHEAP(mg)) - HeapUsed(MGHEAP(mg)) - sizeof(BLOCK);
 	max_size = max_size - ((ALIGNMENT-((max_size)&(ALIGNMENT-1)))&(ALIGNMENT-1));
+    #ifndef DYNAMIC_MEMORY_ALLOCMODEL
 	heap_memory = GetMem(MGHEAP(mg), max_size, FROM_BOTTOM);
+    #else
+	heap_memory = GetMemoryForObject(mg, max_size,MAOBJ);
+	#endif
 	heap = NewHeap(GENERAL_HEAP, max_size, (void *)heap_memory); 
 
 	/* allocate map for glob to loc numbering */
