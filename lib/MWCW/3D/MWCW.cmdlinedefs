@@ -1,0 +1,19 @@
+/********************************************************************************/
+/*																				*/
+/*	the Metrowerks CodeWarrior compiler doesn't allow for commandline defines	*/
+/*																				*/
+/********************************************************************************/
+
+/* define dimension
+	_3		3D version
+*/
+#define _3
+
+/* define Debug for inline debugging */
+#define Debug
+
+/* set 3D net generator
+	NETGENF		off
+	NETGENT		on
+*/
+#define NETGENF
