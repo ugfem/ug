@@ -708,7 +708,8 @@ static int Gather_ProjectVectorComp (DDD_OBJ obj, void *data)
   if (VOTYPE(pv) == NODEVEC) {
     theNode = SONNODE(VMYNODE(pv));
     if (theNode != NULL)
-      if (MASTER(NVECTOR(theNode)))
+      if (MASTER(NVECTOR(theNode))
+          || (PRIO(NVECTOR(theNode)) == PrioBorder))
         ((INT *)data)[0] = 0;
   }
   if (((INT *)data)[0])
