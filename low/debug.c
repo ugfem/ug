@@ -194,12 +194,17 @@ int SetPrintDebugToFile (const char *fname)
 int RemoveDebugFileIfEmpty (void)
 {
 #       ifndef ModelP
+  char c;
+
   if (debugfile==NULL)
     return (1);
   if (debugfilename==NULL)
     return (1);
-  rewind(debugfile);
-  if (getc(debugfile)==EOF)
+  if (fclose(debugfile))
+    return (1);
+  if ((debugfile=fileopen(debugfilename,"r"))==NULL)
+    return (1);
+  if ((c=getc(debugfile))==EOF)
   {
     if (fclose(debugfile))
       return (1);
@@ -207,6 +212,23 @@ int RemoveDebugFileIfEmpty (void)
       return (1);
   }
 #       endif
+  return (0);
+}
+
+INT PrintRepErrStack (PrintfProcPtr print)
+{
+  if (rep_err_count==0)
+    UserWrite("no errors are reported\n");
+  else
+  {
+    INT i;
+
+    UserWrite("reported errors are:\n\n");
+
+    for (i=0; i<rep_err_count; i++)
+      print("%2d: File: %20s, Line: %5d\n",i,rep_err_file[i],rep_err_line[i]);
+  }
+
   return (0);
 }
 
