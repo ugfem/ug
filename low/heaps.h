@@ -69,9 +69,9 @@
 /* by convention, tempory memory on a simple heap should allocated FROM_TOP */
 /* the Freelist memory is allocated FROM_BOTTOM                             */
 
-#define MarkTmpMem(p)     Mark(p,FROM_TOP)
-#define GetTmpMem(p,n)    GetMem(p,n,FROM_TOP)
-#define ReleaseTmpMem(p)  Release(p,FROM_TOP)
+#define MarkTmpMem(p,kp)     Mark(p,FROM_TOP,kp)
+#define GetTmpMem(p,n,k)         GetMemUsingKey(p,n,FROM_TOP,k)
+#define ReleaseTmpMem(p,k)       Release(p,FROM_TOP,k)
 
 /****************************************************************************/
 /* defines and macros for the virtual heap management                       */
@@ -175,13 +175,14 @@ INT          InitHeaps                (void);
 /* functions for the simple and general heap management */
 HEAP        *NewHeap                (INT type, MEM size, void *buffer);
 void        *GetMem                 (HEAP *theHeap, MEM n, INT mode);
+void            *GetMemUsingKey                 (HEAP *theHeap, MEM n, INT mode, INT key);
 void         DisposeMem             (HEAP *theHeap, void *buffer);
 
 void        *GetFreelistMemory      (HEAP *theHeap, INT size);
 INT          PutFreelistMemory      (HEAP *theHeap, void *object, INT size);
 
-INT          Mark                   (HEAP *theHeap, INT mode);
-INT          Release                (HEAP *theHeap, INT mode);
+INT          Mark                   (HEAP *theHeap, INT mode, INT *key);
+INT          Release                (HEAP *theHeap, INT mode, INT key);
 
 MEM          HeapSize               (const HEAP *theHeap);
 MEM          HeapUsed               (const HEAP *theHeap);

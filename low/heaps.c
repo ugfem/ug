@@ -68,6 +68,8 @@
 /*                                                                          */
 /****************************************************************************/
 
+REP_ERR_FILE;
+
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -313,6 +315,61 @@ void *GetMem (HEAP *theHeap, MEM n, INT mode)
   return(NULL);
 }
 
+void *GetMemUsingKey (HEAP *theHeap, MEM n, INT mode, INT key)
+{
+  if (theHeap->type==SIMPLE_HEAP)
+  {
+    if (mode==FROM_TOP)
+    {
+      if (theHeap->topStackPtr>0)
+      {
+        if (key>theHeap->topStackPtr)
+        {
+          /* Mark/Release calls not balanced */
+          ASSERT(FALSE);
+          return(NULL);
+        }
+        if (key<theHeap->topStackPtr)
+        {
+          /* stack pos already released */
+          ASSERT(FALSE);
+          return(NULL);
+        }
+        return(GetMem(theHeap,n,mode));
+      }
+      /* not marked */
+      ASSERT(FALSE);
+      return(NULL);
+    }
+    if (mode==FROM_BOTTOM)
+    {
+      if (theHeap->bottomStackPtr>0)
+      {
+        if (key>theHeap->bottomStackPtr)
+        {
+          /* Mark/Release calls not balanced */
+          ASSERT(FALSE);
+          return(NULL);
+        }
+        if (key<theHeap->bottomStackPtr)
+        {
+          /* stack pos already released */
+          ASSERT(FALSE);
+          return(NULL);
+        }
+        return(GetMem(theHeap,n,mode));
+      }
+      /* not marked */
+      ASSERT(FALSE);
+      return(NULL);
+    }
+    /* wrong mode */
+    ASSERT(FALSE);
+    return(NULL);
+  }
+  /* no key for GENERAL_HEAP */
+  return (GetMem(theHeap,n,mode));
+}
 
 /****************************************************************************/
 /*D
@@ -339,7 +396,7 @@ void DisposeMem (HEAP *theHeap, void *buffer)
   BLOCK *newBlock,*theBlock,*nextBlock;
   MEM b,n,p;
 
-  if (theHeap->type!=GENERAL_HEAP) return;
+  if (theHeap->type!=GENERAL_HEAP) REP_ERR_RETURN_VOID;
 
   /* reconstruct BLOCK */
   newBlock = (BLOCK *) (((char *)buffer)-ALIGNMENT);
@@ -611,7 +668,7 @@ INT PutFreelistMemory (HEAP *theHeap, void *object, INT size)
    Mark - Mark heap position for future release
 
    SYNOPSIS:
-   INT Mark (HEAP *theHeap, INT mode);
+   INT Mark (HEAP *theHeap, INT mode, INT *key);
 
    PARAMETERS:
    .  theHeap - heap to mark
@@ -628,7 +685,7 @@ INT PutFreelistMemory (HEAP *theHeap, void *object, INT size)
    D*/
 /****************************************************************************/
 
-INT Mark (HEAP *theHeap, INT mode)
+INT Mark (HEAP *theHeap, INT mode, INT *key)
 {
   if (theHeap->type!=SIMPLE_HEAP) return(1);
 
@@ -638,6 +695,7 @@ INT Mark (HEAP *theHeap, INT mode)
     {
       theHeap->topStack[theHeap->topStackPtr++] =
         ((MEM)theHeap->heapptr) + ((MEM)theHeap->heapptr->size);
+      *key = theHeap->topStackPtr;
       return(0);
     }
   }
@@ -647,6 +705,7 @@ INT Mark (HEAP *theHeap, INT mode)
     {
       theHeap->bottomStack[theHeap->bottomStackPtr++] =
         ((MEM)theHeap->heapptr);
+      *key = theHeap->bottomStackPtr;
       return(0);
     }
   }
@@ -658,7 +717,7 @@ INT Mark (HEAP *theHeap, INT mode)
    Release - Release to next stack position
 
    SYNOPSIS:
-   INT Release (HEAP *theHeap, INT mode);
+   INT Release (HEAP *theHeap, INT mode, INT key);
 
    PARAMETERS:
    .  theHeap - heap to release
@@ -675,7 +734,7 @@ INT Mark (HEAP *theHeap, INT mode)
    D*/
 /****************************************************************************/
 
-INT Release (HEAP *theHeap, INT mode)
+INT Release (HEAP *theHeap, INT mode, INT key)
 {
   MEM oldsize;
   MEM newsize;
@@ -686,6 +745,18 @@ INT Release (HEAP *theHeap, INT mode)
   {
     if (theHeap->topStackPtr>0)
     {
+      if (key>theHeap->topStackPtr)
+      {
+        /* Mark/Release calls not balanced */
+        ASSERT(FALSE);
+        return(1);
+      }
+      if (key<theHeap->topStackPtr)
+      {
+        /* stack pos already released */
+        ASSERT(FALSE);
+        return(2);
+      }
       oldsize = theHeap->heapptr->size;
       newsize = theHeap->topStack[--theHeap->topStackPtr]-((MEM)theHeap->heapptr);
       theHeap->heapptr->size = newsize;
@@ -697,6 +768,18 @@ INT Release (HEAP *theHeap, INT mode)
   {
     if (theHeap->bottomStackPtr>0)
     {
+      if (key>theHeap->bottomStackPtr)
+      {
+        /* Mark/Release calls not balanced */
+        ASSERT(FALSE);
+        return(3);
+      }
+      if (key<theHeap->bottomStackPtr)
+      {
+        /* stack pos already released */
+        ASSERT(FALSE);
+        return(4);
+      }
       oldsize = theHeap->heapptr->size;
       newsize = (((MEM)theHeap->heapptr)+((MEM)theHeap->heapptr->size))
                 -theHeap->bottomStack[--theHeap->bottomStackPtr];
@@ -706,7 +789,7 @@ INT Release (HEAP *theHeap, INT mode)
       return(0);
     }
   }
-  return(1);
+  return(5);
 }
 
 /****************************************************************************/
