@@ -269,6 +269,10 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   Mesh->nSubDomains       = 0;
   Mesh->nbElements        = NULL;
   Mesh->nElements = NULL;
+  Mesh->VertexLevel = NULL;
+  Mesh->VertexPrio = NULL;
+  Mesh->ElementLevel = NULL;
+  Mesh->ElementPrio = NULL;
 
   return ((BVP *)theDomain);
 }
