@@ -107,6 +107,32 @@ typedef struct {
   ELEMENT *thenewElement;
 } ELEMENT_CONTEXT;
 
+struct delaunay_context
+{
+  DOUBLE midp[2];
+  DOUBLE radius;
+};
+
+typedef struct delaunay_context DELAUNAY_CONTEXT;
+
+struct element_2d
+{
+  ELEMENT_CONTEXT elem_context;
+  DELAUNAY_CONTEXT del_context;
+  struct element_2d *succel;
+};
+
+typedef struct element_2d ELEMENT_2D;
+
+struct mesh2d
+{
+  INT *nElements;
+  ELEMENT_2D **start;
+  ELEMENT_2D **Element;
+};
+
+typedef struct mesh2d MESH2D;
+
 /****************************************************************************/
 /*                                                                          */
 /* definition of exported global variables                                  */
@@ -130,6 +156,7 @@ static INT doedge;      /* if TRUE MakeElement uses accelerator with edgetree*/
 static INT doangle;     /* if TRUE MakeElement uses accelerator with angletree		*/
 static INT doEdge;      /* if TRUE MakeElement uses smallest edge without accelerator*/
 static INT doAngle;     /* if TRUE MakeElement uses smallest angle without accelerator*		*/
+static INT doConstDel;  /* if TRUE Constrained Delaunay Triangulation*		*/
 
 static INT ElemID;
 static INT equilateral;
@@ -1963,7 +1990,7 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   V2_SCALE(0.3333333333333333,position);
   if (BVP_SetBVPDesc(MG_BVP(MYMG(theGrid)),&theBVPDesc)) return (1);
   V2_EUKLIDNORM_OF_DIFF(theBVPDesc.midpoint,position,diff);
-  if (diff>theBVPDesc.radius*1.5)
+  if (diff>theBVPDesc.radius)
   {
     UserWrite("\nERROR: trying to create element outside bounding sphere of domain\n");
     return (1);
@@ -2099,6 +2126,9 @@ static INT CalcNewPoint (FRONTLIST *myFL,FRONTCOMP *theFC, DOUBLE xt[3], DOUBLE 
     hight = sqrt(hight);
   }
   else
+  if(doConstDel)
+    hight = meshsize/1.2;
+  else
     hight = meshsize;
 
   xt[2] = 0.5*(xt[0]+xt[1]) + yP1minusP2*hight/norm;
@@ -2216,6 +2246,254 @@ static FRONTCOMP *CreateOrSelectFC (
   return (thenewFC);
 }
 
+static INT CheckNewElement(FRONTLIST *theFL,  DOUBLE xt[3], DOUBLE yt[3])
+{
+  FRONTCOMP *thecompFC;
+  VERTEX *theVertex;
+  DOUBLE xM, yM, xR, yR, xQ, yQ, lambda1, lambda2;
+  DOUBLE xMQ,yMQ,xMR,yMR,denominator;
+  DOUBLE lambdacomp = MAX_C;
+  INT i;
+
+  xM = 0.5*(xt[0] + xt[1]);
+  yM = 0.5*(yt[0] + yt[1]);
+
+  thecompFC=STARTFC(theFL);
+  for(i=0; i<theFL->nFrontcomp; i++)
+  {
+    /* calculation of the coordinates of the FC's to proove */
+    theVertex = MYVERTEX(FRONTN(SUCCFC(thecompFC)));
+    xR = XC(theVertex);
+    yR = YC(theVertex);
+    theVertex = MYVERTEX(FRONTN(thecompFC));
+    xQ = XC(theVertex);
+    yQ = YC(theVertex);
+
+    denominator = (yR-yQ)*(xt[2]-xM)-(xR-xQ)*(yt[2]-yM);
+    if (fabs(denominator)<SMALLDOUBLE)
+      if (thecompFC==LASTFC(theFL))
+        break;
+      else
+        continue;                               /* lines are parallel */
+
+    if (fabs(xt[2]-xM)<SMALLDOUBLE)
+    {
+      lambda2 = (xR-xM)/(xR-xQ);
+      lambda1 = (yR-yM - lambda2*(yR-yQ)) / (yt[2]-yM);
+    }
+    else
+    {
+      lambda2=((yR-yM)*(xt[2]-xM)-(xR-xM)*(yt[2]-yM))/denominator;
+      lambda1=(xR-xM-lambda2*(xR-xQ))/(xt[2]-xM);
+    }
+    if (lambda1 < 0.9999999999 && lambda1 > 0.000000001 && lambda2 < 0.9999999999 && lambda2 > 0.000000001)
+      return(0);
+    thecompFC=SUCCFC(thecompFC);
+  }
+  return(1);
+}
+
+static INT Cross_Point(DOUBLE p0[2], DOUBLE n0[2], DOUBLE p1[2], DOUBLE n1[2], DOUBLE *cp)
+{
+  DOUBLE lambda0, lambda1, a, cp0[2], cp1[2];
+
+  a = - n0[0] * n1[1] + n0[1] * n1[0];
+
+  lambda0 = ( n1[1] * (p0[0] - p1[0]) - n1[0] * (p0[1] - p1[1]) ) / a;
+  lambda1 = ( n0[1] * (p0[0] - p1[0]) - n0[0] * (p0[1] - p1[1]) ) / a;
+
+  cp0[0] = p0[0] + lambda0 * n0[0];
+  cp0[1] = p0[1] + lambda0 * n0[1];
+
+  cp1[0] = p1[0] + lambda1 * n1[0];
+  cp1[1] = p1[1] + lambda1 * n1[1];
+
+  /*	if(sqrt( (cp0[0]-cp1[0])*(cp0[0]-cp1[0]) + (cp0[1]-cp1[1])*(cp0[1]-cp1[1]) )>SMALLDOUBLE)
+                  printf("%s\n", "ERROR");*/
+
+  cp[0] = cp0[0];
+  cp[1] = cp0[1];
+  return(0);
+}
+
+static DOUBLE Calc_Circumcircusmidpoint(DOUBLE xt[3], DOUBLE yt[3], DOUBLE *midp)
+{
+  DOUBLE p0[2], p1[2], p2[2], n0[2], n1[2], n2[2], cp01[2], cp12[2], cp20[2], l, circ;
+
+  /* edgemidpoints */
+  p0[0] = 0.5 * ( xt[0] + xt[1] );
+  p0[1] = 0.5 * ( yt[0] + yt[1] );
+
+  p1[0] = 0.5 * ( xt[1] + xt[2] );
+  p1[1] = 0.5 * ( yt[1] + yt[2] );
+
+  p2[0] = 0.5 * ( xt[2] + xt[0] );
+  p2[1] = 0.5 * ( yt[2] + yt[0] );
+
+  /* normals */
+  n0[0] = - (yt[1] - yt[0]);
+  n0[1] =   (xt[1] - xt[0]);
+  l = sqrt(n0[0]*n0[0]+n0[1]*n0[1]);
+  n0[0] = n0[0] / l;
+  n0[1] = n0[1] / l;
+
+  n1[0] = - (yt[2] - yt[1]);
+  n1[1] =   (xt[2] - xt[1]);
+  l = sqrt(n1[0]*n1[0]+n1[1]*n1[1]);
+  n1[0] = n1[0] / l;
+  n1[1] = n1[1] / l;
+
+  n2[0] = - (yt[0] - yt[2]);
+  n2[1] =   (xt[0] - xt[2]);
+  l = sqrt(n2[0]*n2[0]+n2[1]*n2[1]);
+  n2[0] = n2[0] / l;
+  n2[1] = n2[1] / l;
+
+  Cross_Point(p0, n0, p1, n1, cp01);
+  /*	Cross_Point(p1, n1, p2, n2, cp12);
+          Cross_Point(p2, n2, p0, n0, cp20);
+
+          if( (sqrt( (cp01[0]-cp12[0])*(cp01[0]-cp12[0]) + (cp01[1]-cp12[1])*(cp01[1]-cp12[1]) )>SMALLDOUBLE) ||
+              (sqrt( (cp12[0]-cp20[0])*(cp12[0]-cp20[0]) + (cp12[1]-cp20[1])*(cp12[1]-cp20[1]) )>SMALLDOUBLE) ||
+              (sqrt( (cp20[0]-cp01[0])*(cp20[0]-cp01[0]) + (cp20[1]-cp01[1])*(cp20[1]-cp01[1]) )>SMALLDOUBLE))
+          {
+                  printf("%s\n", "ERROR");
+                  midp[0] = MAXDOUBLE;
+                  midp[1] = MAXDOUBLE;
+          }
+          else
+          {
+                  midp[0] = cp01[0];
+                  midp[1] = cp01[1];
+          }*/
+
+  midp[0] = cp01[0];
+  midp[1] = cp01[1];
+  return(0.0);
+}
+
+static FRONTCOMP *CreateDelaunayTriangle (
+  GRID *theGrid,
+  MESH2D mesh_2d,
+  INDEPFRONTLIST *theIFL,
+  FRONTLIST *theFL,
+  FRONTCOMP *theFC,
+  DOUBLE xt[3], DOUBLE yt[3])
+{
+  FRONTCOMP *thenewFC, *thereturnFC;
+  NODE *theNode;
+  VERTEX *theVertex;
+  DOUBLE meshsize, pos[2], circ, min_circ;
+  INT i, subdomain, ok;
+  DOUBLE midp[2], np_midp[2], np[2];
+  DOUBLE circ0, circ1, circ2, np_circ;
+  ELEMENT_2D *help;
+
+  min_circ = MAXDOUBLE;
+  thereturnFC = NULL;
+  subdomain = theFL->SubdomainID;
+
+  pos[0] = 0.5*(xt[0]+xt[1]);
+  pos[1] = 0.5*(yt[0]+yt[1]);
+  (*nominal_h)(pos,&meshsize);
+
+  /* first: test the new point */
+  if(CheckNewElement(theFL, xt, yt))                            /* no crossing with the Front */
+  {
+    Calc_Circumcircusmidpoint(xt, yt, np_midp);
+    np_circ = sqrt( (np_midp[0]-xt[0])*(np_midp[0]-xt[0]) + (np_midp[1]-yt[0])*(np_midp[1]-yt[0]) );
+    np[0] = xt[2];
+    np[1] = yt[2];
+  }
+  else
+    np_circ = MAXDOUBLE;
+
+  thenewFC=SUCCFC(SUCCFC(theFC));
+  for(i=0; i<theFL->nFrontcomp-2; i++)
+  {
+    theVertex = MYVERTEX(FRONTN(thenewFC));
+    xt[2] = XC(theVertex);
+    yt[2] = YC(theVertex);
+
+    if( ( ( (xt[1]-xt[0])*(yt[2]-yt[0])-(yt[1]-yt[0])*(xt[2]-xt[0]) )>SMALLDOUBLE ) )
+      if(CheckNewElement(theFL, xt, yt))                                        /* no crossing with the Front */
+      {
+        Calc_Circumcircusmidpoint(xt, yt, midp);
+        /*				circ0 = sqrt( (midp[0]-xt[0])*(midp[0]-xt[0]) + (midp[1]-yt[0])*(midp[1]-yt[0]) );
+                                        circ1 = sqrt( (midp[0]-xt[1])*(midp[0]-xt[1]) + (midp[1]-yt[1])*(midp[1]-yt[1]) );
+                                        circ2 = sqrt( (midp[0]-xt[2])*(midp[0]-xt[2]) + (midp[1]-yt[2])*(midp[1]-yt[2]) );
+                                        if( (sqrt((circ0-circ1)*(circ0-circ1))<SMALLDOUBLE) &&
+                                            (sqrt((circ1-circ2)*(circ1-circ2))<SMALLDOUBLE) &&
+                                                (sqrt((circ2-circ0)*(circ2-circ0))<SMALLDOUBLE) )
+                                                circ = circ1;
+                                        else
+                                                printf("%s\n", "ERROR");*/
+
+        circ = sqrt( (midp[0]-xt[0])*(midp[0]-xt[0]) + (midp[1]-yt[0])*(midp[1]-yt[0]) );
+        if(min_circ>circ)
+        {
+          min_circ = circ;
+          thereturnFC = thenewFC;
+        }
+      }
+    thenewFC = SUCCFC(thenewFC);
+  }
+
+  if(min_circ>1.5*np_circ)                              /* take the new point */
+  {
+    /* first check, if new point lies in the circumcircle of a created element */
+    ok = 1;
+    help = mesh_2d.start[subdomain];
+    for(i=0; i<mesh_2d.nElements[subdomain]; i++)
+    {
+      if(sqrt( (help->del_context.midp[0]-np[0])*(help->del_context.midp[0]-np[0])
+               +(help->del_context.midp[1]-np[1])*(help->del_context.midp[1]-np[1]) )
+         < help->del_context.radius)
+        ok = 0;
+      help = help->succel;
+    }
+    ok = 1;
+    if(ok)                                                              /* everything ok */
+    {
+      pos[0] = np[0];
+      pos[1] = np[1];
+      xt[2] = np[0];
+      yt[2] = np[1];
+      theNode = InsertInnerNode (theGrid,pos);
+      if (theNode == NULL)
+        return(NULL);
+
+      thereturnFC = CreateFrontComp (theFL, theFC, 1, &theNode);
+      if (thereturnFC==NULL)
+      {
+        PrintErrorMessage('E',"CreateOrSelectFC","no storage for new FC");
+        return (NULL);
+      }
+    }
+    else
+    if(min_circ>meshsize)
+    {
+      /*	help = mesh_2d.start[subdomain];
+              for(i=0;i<mesh_2d.nElements[subdomain];i++)
+              {
+                      if(sqrt( (help->del_context.midp[0]-np[0])*(help->del_context.midp[0]-np[0])
+         +(help->del_context.midp[1]-np[1])*(help->del_context.midp[1]-np[1]) )
+                                      < help->del_context.radius)
+                      {
+                              if(help->succel!=NULL)
+                                      help->succel = help->succel->succel;
+                              mesh_2d.nElements[subdomain]--;
+                      }
+                      help = help->succel;
+              }*/
+
+    }
+  }
+
+  return (thereturnFC);
+}
+
+
 /****************************************************************************/
 /*                                                                          */
 /* Function:  FillElementContext                                                */
@@ -2296,6 +2574,31 @@ static INT FillElementContext(INT FlgForAccel, ELEMENT_CONTEXT* theElementContex
   return(0);
 }
 
+static INT FillDelContext(ELEMENT_CONTEXT* theElementContext, DELAUNAY_CONTEXT* theDelaunayContext)
+{
+  DOUBLE xt[3], yt[3], midp[2], radius;
+  INT i, j;
+
+  for(i=0; i<3; i++)
+  {
+    xt[i] = XC(MYVERTEX(theElementContext->theNode[i]));
+    yt[i] = YC(MYVERTEX(theElementContext->theNode[i]));
+  }
+
+  Calc_Circumcircusmidpoint(xt, yt, midp);
+
+  radius = sqrt( (midp[0]-xt[0])*(midp[0]-xt[0]) + (midp[1]-yt[0])*(midp[1]-yt[0]) );
+
+  theDelaunayContext->midp[0] = midp[0];
+  theDelaunayContext->midp[1] = midp[1];
+  theDelaunayContext->radius = radius;
+
+  if(theDelaunayContext == NULL)
+    return(1);
+  return(0);
+}
+
+
 /****************************************************************************/
 /*                                                                          */
 /* Function:  FrontcomponentUpdate                                              */
@@ -2349,6 +2652,36 @@ static INT FL_FC_Disposer(FRONTCOMP *disp_FC, FRONTLIST *disp_FL)
   return(0);
 }
 
+static INT PrintFront(MULTIGRID *theMG)
+{
+  INDEPFRONTLIST *theIFL;
+  FRONTLIST *theFL;
+  FRONTCOMP *theFC;
+  VERTEX *theVertex;
+  INT i, j, l;
+
+  theIFL=LASTIFL(myMGdata);
+  for(i=0; i<myMGdata->nIndepFrontlist; i++)
+  {
+    theFL=LASTFL(theIFL);
+    for(j=0; j<theIFL->nFrontlist; j++)
+    {
+      theFC=STARTFC(theFL);
+      for(l=0; l<theFL->nFrontcomp; l++)
+      {
+        theVertex = MYVERTEX(FRONTN(theFC));
+        printf("%lf %lf\n", XC(theVertex), YC(theVertex));
+        theFC = SUCCFC(theFC);
+      }
+      printf("\n");
+      theFL=PREDFL(theFL);
+    }
+    printf("####\n");
+    theIFL=PREDIFL(theIFL);
+  }
+  printf("#################################################\n");
+
+}
 
 /****************************************************************************/
 /*D
@@ -2382,9 +2715,12 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
   FRONTCOMP *theFC,*thesuccFC,*thenewFC;
   FRONTCOMP *the_old_succ;
   DOUBLE xt[3],yt[3];
-  INT printelem,FlgForAccel,nElement;
+  INT printelem,FlgForAccel,nElement, i, j;
   FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS];
   ELEMENT_CONTEXT theElementContext;
+  ELEMENT_2D *elem_context_list, *elem_con_input, *w;
+  MESH2D mesh_2d;
+  ELEMENT_2D *elem_2d;
 
   FRONTCOMP *disp_FC;
   FRONTLIST *disp_FL;
@@ -2422,16 +2758,18 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
   doangle         = MyArgs->doangle;
   doEdge          = MyArgs->doEdge;
   doAngle         = MyArgs->doAngle;
+  doConstDel  = MyArgs->doConstDel;
 
-  if(((doedge == YES) && ((doangle || doEdge || doAngle) == YES )) ||
-     ((doangle == YES) && ((doedge || doEdge || doAngle) == YES )) ||
-     ((doEdge == YES) && ((doangle || doedge || doAngle) == YES )) ||
-     ((doAngle == YES) && ((doangle || doEdge || doedge) == YES )) ||
-     ((doAngle || doangle || doEdge || doedge) == NO ))
-  {
-    PrintErrorMessage('E',"GenerateGrid","no variable chosen for accelerate or not!");
-    return (2);
-  }
+  if(!(doConstDel))
+    if(((doedge == YES) && ((doangle || doEdge || doAngle) == YES )) ||
+       ((doangle == YES) && ((doedge || doEdge || doAngle) == YES )) ||
+       ((doEdge == YES) && ((doangle || doedge || doAngle) == YES )) ||
+       ((doAngle == YES) && ((doangle || doEdge || doedge) == YES )) ||
+       ((doAngle || doangle || doEdge || doedge) == NO ))
+    {
+      PrintErrorMessage('E',"GenerateGrid","no variable chosen for accelerate or not!");
+      return (2);
+    }
 
   /* are there already indep front lists? */
   if (STARTIFL(myMGdata)!=NULL)
@@ -2440,281 +2778,424 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
     return (4);
   }
 
-
-  for (SingleMode=1; SingleMode<=mesh->nSubDomains; SingleMode++) {
-
-
-    if (AssembleFrontLists (theMG,mesh)!=0)
-    {
-      return (5);
-    }
-
-    /* now we can create all element sides that will be needed by the MakeElement fct. */
-
-    if (doAngle || doEdge)
-      if (AccelInit(theGrid, doAngle, doEdge, myPars)!=0) return(1);
-
-
-
-    /*************************************************************************************/
-    /*                                                                                           */
-    /* creating inner nodes	and vertices for automatically triangulation                             */
-    /* loops for the indep. front lists and front lists begin at the end of the lists    */
-    /* according to the possibility of creating of new indep. front lists or front lists */
-    /*                                                                                           */
-    /*************************************************************************************/
-
-    for (theIFL=LASTIFL(myMGdata); theIFL!=NULL; theIFL=nextIFL)
-    {
-      if (doAngle || doEdge)
-        while ((theFC=AccelBaseTreeSearch(&myList)) != NULL)
-        {
-          theIFL = myList->myIFL;
-          the_old_succ = SUCCFC(theFC);
-          /* are there only 3 FCs left and lie they not on an inner hole? */
-          if (PREDFC(theFC)==SUCCFC(SUCCFC(theFC)) && NFL(theIFL) == 1)
-          {
-            /* we make this last element and dispose the list */
-            /* accelerator final case */
-            FlgForAccel = FINALCASE;
-            AccelUpdate( theFC, PREDFC(theFC), the_old_succ, FlgForAccel,doAngle,doEdge);
-
-            if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
-              return (1);
-
-            if (MakeElement(theGrid, &theElementContext ))
-              return (8);
-            if (display>0)
-            {
-              nElement++;
-              if (nElement%display==0)
-              {
-                if (nElement%(10*display)==0) UserWrite("\n");
-                UserWriteF("[%d] ",(int)nElement);
-              }
-            }
-            DisposeFrontList(myList);
-
-            /* in this case "FrontcomponentUpdate(...);" is redundant*/
-
-            continue;
-          }
-
-          CalcNewPoint (myList,theFC,xt,yt);
-
-          thesuccFC = SUCCFC(theFC);
-
-          theIntersectfoundPoints[0] = NULL;
-
-          if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
-            return (9);
-
-          FlgForAccel = NORMALCASE;
-
-          disp_FC = NULL;
-          disp_FL = NULL;
-
-          if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
-            return (10);
-
-          if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ ))
-            return (1);
-
-          AccelUpdate( theFC, thenewFC, the_old_succ, FlgForAccel, doAngle, doEdge);
-
-          if (MakeElement(theGrid,&theElementContext))
-            return (11);
-          if (display>0)
-          {
-            nElement++;
-            if (nElement%display==0)
-            {
-              if (nElement%(10*display)==0) UserWrite("\n");
-              UserWriteF("[%d] ",(int)nElement);
-            }
-          }
-
-          if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
-            return (1);
-
-          if(FL_FC_Disposer(disp_FC, disp_FL))
-            return (1);
-
-
-
-          if (printelem)
-          {
-            sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
-            UserWrite(buffer);
-          }
-        }                 /* while */
-      else
-      if (doedge)
-        while ((theFC=ChooseFCminside(theIFL,&myList)) != NULL)
-        {
-          theIFL = myList->myIFL;
-          the_old_succ = SUCCFC(theFC);
-          /* are there only 3 FCs left and lie they not on an inner hole? */
-          if (PREDFC(theFC)==SUCCFC(SUCCFC(theFC)) && NFL(theIFL) == 1)
-          {
-            FlgForAccel = FINALCASE;
-            /* we make this last element and dispose the list */
-            if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
-              return (1);
-            if (MakeElement(theGrid, &theElementContext))
-              return (12);
-            if (display>0)
-            {
-              nElement++;
-              if (nElement%display==0)
-              {
-                if (nElement%(10*display)==0) UserWrite("\n");
-                UserWriteF("[%d] ",(int)nElement);
-              }
-            }
-
-            /* in this case "FrontcomponentUpdate(...);" is redundant*/
-
-            DisposeFrontList(myList);
-            continue;
-          }
-
-          CalcNewPoint (myList,theFC,xt,yt);
-
-          thesuccFC = SUCCFC(theFC);
-
-          theIntersectfoundPoints[0] = NULL;
-
-          if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
-            return (13);
-
-          FlgForAccel = NORMALCASE;
-
-          disp_FC = NULL;
-          disp_FL = NULL;
-
-          if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
-            return (10);
-
-          if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
-            return (1);
-
-          if (MakeElement(theGrid, &theElementContext))
-            return (15);
-
-          if (display>0)
-          {
-            nElement++;
-            if (nElement%display==0)
-            {
-              if (nElement%(10*display)==0) UserWrite("\n");
-              UserWriteF("[%d] ",(int)nElement);
-            }
-          }
-
-          if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
-            return (1);
-
-          debug++;
-          if (debug==17)
-            debug=debug;
-          if (debug==19)
-            debug=debug;
-
-          if(FL_FC_Disposer(disp_FC, disp_FL))
-            return (1);
-
-          if (printelem)
-          {
-            sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
-            UserWrite(buffer);
-          }
-        }                         /* while */
-      else
-        while ((theFC=ChooseFCminangle(theIFL,&myList)) != NULL)
-        {
-          theIFL = myList->myIFL;
-          the_old_succ = SUCCFC(theFC);
-          /* are there only 3 FCs left and lie they not on an inner hole? */
-          if (PREDFC(theFC)==SUCCFC(SUCCFC(theFC)) && NFL(theIFL) == 1)
-          {
-            FlgForAccel = FINALCASE;
-
-            if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
-              return (1);
-
-            /* we make this last element and dispose the list */
-            if (MakeElement(theGrid, &theElementContext ))
-              return (16);
-            if (display>0)
-            {
-              nElement++;
-              if (nElement%display==0)
-              {
-                if (nElement%(10*display)==0) UserWrite("\n");
-                UserWriteF("[%d] ",(int)nElement);
-              }
-            }
-            DisposeFrontList(myList);
-            /* in this case "FrontcomponentUpdate(...);" is redundant*/
-            continue;
-          }
-
-          CalcNewPoint (myList,theFC,xt,yt);
-
-          thesuccFC = SUCCFC(theFC);
-
-          theIntersectfoundPoints[0] = NULL;
-
-          if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
-            return (17);
-
-          FlgForAccel = NORMALCASE;
-
-          disp_FC = NULL;
-          disp_FL = NULL;
-
-          if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
-            return (10);
-
-
-          if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
-            return (1);
-
-          if (MakeElement(theGrid, &theElementContext))
-            return (19);
-
-          if (display>0)
-          {
-            nElement++;
-            if (nElement%display==0)
-            {
-              if (nElement%(10*display)==0) UserWrite("\n");
-              UserWriteF("[%d] ",(int)nElement);
-            }
-          }
-          if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
-            return (1);
-
-          if(FL_FC_Disposer(disp_FC, disp_FL))
-            return (1);
-
-          if (printelem)
-          {
-            sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
-            UserWrite(buffer);
-          }
-        }                         /* while */
-
-
-      nextIFL = PREDIFL(theIFL);                        /* remember pred before disposing */
-      DisposeIndepFrontList(theIFL);
-
-    }
-
-    STARTIFL(myMGdata) = NULL;
+  if (AssembleFrontLists (theMG,mesh)!=0)
+  {
+    return (5);
   }
 
+  /* now we can create all element sides that will be needed by the MakeElement fct. */
+
+  if (doAngle || doEdge)
+    if (AccelInit(theGrid, doAngle, doEdge, myPars)!=0) return(1);
+
+  if (doConstDel)
+  {
+    /* allocate memory for mesh_2d */
+    elem_context_list = NULL;
+    mesh_2d.nElements = (INT *) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(INT));
+    if (mesh_2d.nElements == NULL)
+      return(NULL);
+    mesh_2d.Element = (ELEMENT_2D**) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(ELEMENT_2D*));
+    if (mesh_2d.Element == NULL)
+      return(NULL);
+    mesh_2d.start = (ELEMENT_2D**) GetTmpMem(theMG->theHeap,(theMG->theBVPD.nSubDomains+1)*sizeof(ELEMENT_2D*));
+    if (mesh_2d.start == NULL)
+      return(NULL);
+    for(i=1; i<=theMG->theBVPD.nSubDomains; i++)
+    {
+      mesh_2d.Element[i] = NULL;
+      mesh_2d.start[i] = NULL;
+      mesh_2d.nElements[i] = 0;
+    }
+  }
+
+
+
+  /*************************************************************************************/
+  /*                                                                                     */
+  /* creating inner nodes	and vertices for automatically triangulation                             */
+  /* loops for the indep. front lists and front lists begin at the end of the lists      */
+  /* according to the possibility of creating of new indep. front lists or front lists */
+  /*                                                                                     */
+  /*************************************************************************************/
+
+  for (theIFL=LASTIFL(myMGdata); theIFL!=NULL; theIFL=nextIFL)
+  {
+    if (doAngle || doEdge)
+      while ((theFC=AccelBaseTreeSearch(&myList)) != NULL)
+      {
+        theIFL = myList->myIFL;
+        the_old_succ = SUCCFC(theFC);
+        /* are there only 3 FCs left and lie they not on an inner hole? */
+        if (PREDFC(theFC)==SUCCFC(SUCCFC(theFC)) && NFL(theIFL) == 1)
+        {
+          /* we make this last element and dispose the list */
+          /* accelerator final case */
+          FlgForAccel = FINALCASE;
+          AccelUpdate( theFC, PREDFC(theFC), the_old_succ, FlgForAccel,doAngle,doEdge);
+
+          if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
+            return (1);
+
+          if (MakeElement(theGrid, &theElementContext ))
+            return (8);
+          if (display>0)
+          {
+            nElement++;
+            if (nElement%display==0)
+            {
+              if (nElement%(10*display)==0) UserWrite("\n");
+              UserWriteF("[%d] ",(int)nElement);
+            }
+          }
+          DisposeFrontList(myList);
+
+          /* in this case "FrontcomponentUpdate(...);" is redundant*/
+
+          continue;
+        }
+
+        CalcNewPoint (myList,theFC,xt,yt);
+
+        thesuccFC = SUCCFC(theFC);
+
+        theIntersectfoundPoints[0] = NULL;
+
+        if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
+          return (9);
+
+        FlgForAccel = NORMALCASE;
+
+        disp_FC = NULL;
+        disp_FL = NULL;
+
+        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
+          return (10);
+
+        if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ ))
+          return (1);
+
+        AccelUpdate( theFC, thenewFC, the_old_succ, FlgForAccel, doAngle, doEdge);
+
+        if (MakeElement(theGrid,&theElementContext))
+          return (11);
+        if (display>0)
+        {
+          nElement++;
+          if (nElement%display==0)
+          {
+            if (nElement%(10*display)==0) UserWrite("\n");
+            UserWriteF("[%d] ",(int)nElement);
+          }
+        }
+
+        if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
+          return (1);
+
+        if(FL_FC_Disposer(disp_FC, disp_FL))
+          return (1);
+
+
+
+        if (printelem)
+        {
+          sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
+          UserWrite(buffer);
+        }
+      }                   /* while */
+    else
+    if (doedge)
+      while ((theFC=ChooseFCminside(theIFL,&myList)) != NULL)
+      {
+        theIFL = myList->myIFL;
+        the_old_succ = SUCCFC(theFC);
+        /* are there only 3 FCs left and lie they not on an inner hole? */
+        if (PREDFC(theFC)==SUCCFC(SUCCFC(theFC)) && NFL(theIFL) == 1)
+        {
+          FlgForAccel = FINALCASE;
+          /* we make this last element and dispose the list */
+          if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
+            return (1);
+          if (MakeElement(theGrid, &theElementContext))
+            return (12);
+          if (display>0)
+          {
+            nElement++;
+            if (nElement%display==0)
+            {
+              if (nElement%(10*display)==0) UserWrite("\n");
+              UserWriteF("[%d] ",(int)nElement);
+            }
+          }
+
+          /* in this case "FrontcomponentUpdate(...);" is redundant*/
+
+          DisposeFrontList(myList);
+          continue;
+        }
+
+        CalcNewPoint (myList,theFC,xt,yt);
+
+        thesuccFC = SUCCFC(theFC);
+
+        theIntersectfoundPoints[0] = NULL;
+
+        if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
+          return (13);
+
+        FlgForAccel = NORMALCASE;
+
+        disp_FC = NULL;
+        disp_FL = NULL;
+
+        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
+          return (10);
+
+        if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
+          return (1);
+
+        if (MakeElement(theGrid, &theElementContext))
+          return (15);
+
+        if (display>0)
+        {
+          nElement++;
+          if (nElement%display==0)
+          {
+            if (nElement%(10*display)==0) UserWrite("\n");
+            UserWriteF("[%d] ",(int)nElement);
+          }
+        }
+
+        if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
+          return (1);
+
+        debug++;
+
+        if(FL_FC_Disposer(disp_FC, disp_FL))
+          return (1);
+
+        if (printelem)
+        {
+          sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
+          UserWrite(buffer);
+        }
+      }                           /* while */
+    else
+    if (doConstDel)
+    {
+      while ((theFC=ChooseFCminside(theIFL,&myList)) != NULL)
+      {
+        theIFL = myList->myIFL;
+        the_old_succ = SUCCFC(theFC);
+        /* are there only 3 FCs left and lie they not on an inner hole? */
+        if (PREDFC(theFC)==SUCCFC(SUCCFC(theFC)) && NFL(theIFL) == 1)
+        {
+          FlgForAccel = FINALCASE;
+          /* we make this last element and dispose the list */
+
+          elem_2d = (ELEMENT_2D *) GetTmpMem(theMG->theHeap,sizeof(ELEMENT_2D));
+          if (elem_2d == NULL)
+            return(NULL);
+          elem_2d->succel = NULL;
+
+          if (FillElementContext(FlgForAccel, &(elem_2d->elem_context), theFC, PREDFC(theFC), the_old_succ))
+            return (1);
+
+          if (FillDelContext(&(elem_2d->elem_context), &(elem_2d->del_context)))
+            return (1);
+
+          if(mesh_2d.nElements[MYFL(theFC)->SubdomainID]==0)
+          {
+            mesh_2d.start[MYFL(theFC)->SubdomainID] = elem_2d;
+            mesh_2d.Element[MYFL(theFC)->SubdomainID] = elem_2d;
+          }
+          else
+          {
+            mesh_2d.Element[MYFL(theFC)->SubdomainID]->succel = elem_2d;
+            mesh_2d.Element[MYFL(theFC)->SubdomainID] = mesh_2d.Element[MYFL(theFC)->SubdomainID]->succel;
+          }
+          mesh_2d.nElements[MYFL(theFC)->SubdomainID]++;
+
+          if (display>0)
+          {
+            nElement++;
+            if (nElement%display==0)
+            {
+              if (nElement%(10*display)==0) UserWrite("\n");
+              UserWriteF("[%d] ",(int)nElement);
+            }
+          }
+
+          /* in this case "FrontcomponentUpdate(...);" is redundant*/
+
+          DisposeFrontList(myList);
+          continue;
+        }
+
+        CalcNewPoint (myList,theFC,xt,yt);
+
+        /*	PrintFront(theMG);*/
+        thesuccFC = SUCCFC(theFC);
+
+        theIntersectfoundPoints[0] = NULL;
+
+        if ((thenewFC=CreateDelaunayTriangle(theGrid,mesh_2d,theIFL,myList,theFC,xt,yt))==NULL)
+          return (13);
+
+        FlgForAccel = NORMALCASE;
+
+        disp_FC = NULL;
+        disp_FL = NULL;
+
+        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
+          return (10);
+
+        elem_2d = (ELEMENT_2D *) GetTmpMem(theMG->theHeap,sizeof(ELEMENT_2D));
+        if (elem_2d == NULL)
+          return(NULL);
+        elem_2d->succel = NULL;
+
+        if (FillElementContext(FlgForAccel, &(elem_2d->elem_context), theFC, thenewFC, the_old_succ))
+          return (1);
+
+        if (FillDelContext(&(elem_2d->elem_context), &(elem_2d->del_context)))
+          return (1);
+
+        if (display>0)
+        {
+          nElement++;
+          if (nElement%display==0)
+          {
+            if (nElement%(10*display)==0) UserWrite("\n");
+            UserWriteF("[%d] ",(int)nElement);
+          }
+        }
+
+        if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &(elem_2d->elem_context)))
+          return (1);
+
+        if(mesh_2d.nElements[MYFL(theFC)->SubdomainID]==0)
+        {
+          mesh_2d.start[MYFL(theFC)->SubdomainID] = elem_2d;
+          mesh_2d.Element[MYFL(theFC)->SubdomainID] = elem_2d;
+        }
+        else
+        {
+          mesh_2d.Element[MYFL(theFC)->SubdomainID]->succel = elem_2d;
+          mesh_2d.Element[MYFL(theFC)->SubdomainID] = mesh_2d.Element[MYFL(theFC)->SubdomainID]->succel;
+        }
+        mesh_2d.nElements[MYFL(theFC)->SubdomainID]++;
+
+        debug++;
+
+        if(FL_FC_Disposer(disp_FC, disp_FL))
+          return (1);
+
+        if (printelem)
+        {
+          sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
+          UserWrite(buffer);
+        }
+      }
+    }
+    else
+      while ((theFC=ChooseFCminangle(theIFL,&myList)) != NULL)
+      {
+        theIFL = myList->myIFL;
+        the_old_succ = SUCCFC(theFC);
+        /* are there only 3 FCs left and lie they not on an inner hole? */
+        if (PREDFC(theFC)==SUCCFC(SUCCFC(theFC)) && NFL(theIFL) == 1)
+        {
+          FlgForAccel = FINALCASE;
+
+          if (FillElementContext(FlgForAccel, &theElementContext, theFC, PREDFC(theFC), the_old_succ))
+            return (1);
+
+          /* we make this last element and dispose the list */
+          if (MakeElement(theGrid, &theElementContext ))
+            return (16);
+          if (display>0)
+          {
+            nElement++;
+            if (nElement%display==0)
+            {
+              if (nElement%(10*display)==0) UserWrite("\n");
+              UserWriteF("[%d] ",(int)nElement);
+            }
+          }
+          DisposeFrontList(myList);
+          /* in this case "FrontcomponentUpdate(...);" is redundant*/
+          continue;
+        }
+
+        CalcNewPoint (myList,theFC,xt,yt);
+
+        thesuccFC = SUCCFC(theFC);
+
+        theIntersectfoundPoints[0] = NULL;
+
+        if ((thenewFC=CreateOrSelectFC(theGrid,theIFL,myList,theFC,NULL, theIntersectfoundPoints, xt,yt,CHECKALL,0, &theElementContext))==NULL)
+          return (17);
+
+        FlgForAccel = NORMALCASE;
+
+        disp_FC = NULL;
+        disp_FL = NULL;
+
+        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
+          return (10);
+
+
+        if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
+          return (1);
+
+        if (MakeElement(theGrid, &theElementContext))
+          return (19);
+
+        if (display>0)
+        {
+          nElement++;
+          if (nElement%display==0)
+          {
+            if (nElement%(10*display)==0) UserWrite("\n");
+            UserWriteF("[%d] ",(int)nElement);
+          }
+        }
+        if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
+          return (1);
+
+        if(FL_FC_Disposer(disp_FC, disp_FL))
+          return (1);
+
+        if (printelem)
+        {
+          sprintf(buffer,"ELEMID %ld done\n",ID(LASTELEMENT(theGrid)));
+          UserWrite(buffer);
+        }
+      }                                   /* while */
+
+
+    nextIFL = PREDIFL(theIFL);                          /* remember pred before disposing */
+    DisposeIndepFrontList(theIFL);
+
+  }
+
+  if(doConstDel)
+  {
+    /* transfer elements to theGrid */
+    for(i=1; i<=theMG->theBVPD.nSubDomains; i++)
+    {
+      mesh_2d.Element[i] = mesh_2d.start[i];
+      for(j=0; j<mesh_2d.nElements[i]; j++)
+      {
+
+        if (MakeElement(theGrid, &(mesh_2d.Element[i]->elem_context)))
+          return (15);
+        mesh_2d.Element[i] = mesh_2d.Element[i]->succel;
+      }
+    }
+  }
 
   SetStringValue(":gg:nElem",(double) theGrid->nElem);
   SetStringValue(":gg:nNode",(double) theGrid->nNode);

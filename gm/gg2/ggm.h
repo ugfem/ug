@@ -160,6 +160,7 @@ typedef struct {
   INT doangle;
   INT doEdge;
   INT doAngle;
+  INT doConstDel;
 } GG_ARG;
 
 
