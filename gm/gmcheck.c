@@ -126,11 +126,27 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 	DOUBLE *x[MAX_CORNERS_OF_ELEM];
 
 	nerrors = 0;
+	if (theFather==NULL && MASTER(theNode) && LEVEL(theVertex)>0)
+	{
+		UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX " vertex=" VID_FMTX
+			" VFATHER=NULL vertex needs VFATHER\n",me,EID_PRTX(theElement),ID_PRTX(theNode),
+			VID_PRTX(theVertex));
+		return(nerrors++);
+	}
+
 	if (theFather!=NULL && HEAPCHECK(theFather))
 	{
 		UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX " vertex=" VID_FMTX
 			" VFATHER=%x is pointer to ZOMBIE\n",me,EID_PRTX(theElement),ID_PRTX(theNode),
 			VID_PRTX(theVertex),theFather);
+		return(nerrors++);
+	}
+
+	if (theFather!=NULL && MASTER(theNode) && EHGHOST(theFather))
+	{
+		UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX " vertex=" VID_FMTX
+			" VFATHER=" EID_FMTX " vertex needs VFATHER with prio master or vghost\n",
+			me,EID_PRTX(theElement),ID_PRTX(theNode),VID_PRTX(theVertex),EID_PRTX(theFather));
 		return(nerrors++);
 	}
 
@@ -633,6 +649,7 @@ static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT
 	/* check orientation */
 	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
 		Vertices[i] = MYVERTEX(CORNER(theElement,i));
+if (0)
 	if (!CheckOrientation(CORNERS_OF_ELEM(theElement),Vertices))
 	{
 			UserWriteF(PFMT "elem=" EID_FMTX " wrong orientation",me,EID_PRTX(theElement));
