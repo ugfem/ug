@@ -4946,7 +4946,7 @@ void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT ma
 /****************************************************************************/
 
 #ifdef ModelP
-void CheckLists(GRID *theGrid)
+void CheckLists (GRID *theGrid)
 {
   int objs = 0;
   ELEMENT *theElement;
@@ -4994,7 +4994,7 @@ void CheckLists(GRID *theGrid)
   printf("%d: nNm=%d nnodes=%d\n",me,objs,NN(theGrid));
   printf("\n");
 
-  printf ("%d: checking vectorlist:\n");
+  printf ("%d: checking vectorlist:\n",me);
   printf ("%d: vfg=%x vlg=%x vfb=%x vlb=%x vfm=%x vlm=%x\n",me,
           LISTPART_FIRSTVECTOR(theGrid,0),LISTPART_LASTVECTOR(theGrid,0),
           LISTPART_FIRSTVECTOR(theGrid,1),LISTPART_LASTVECTOR(theGrid,1),
@@ -5565,28 +5565,23 @@ INT CheckGrid (GRID *theGrid) /* 3D VERSION */
     for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
     {
                     #ifdef ModelP
-      if (ID(NBNODE(theLink))>ID(theNode))
+      theEdge = MYEDGE(theLink);
+      if (!USED(theEdge))
       {
-        theEdge = MYEDGE(theLink);
-        if (!USED(theEdge))
+        UserWriteF("edge between %ld and %ld has no element, NO_OF_ELEM=%d \n",
+                   (long)ID(theNode),(long)ID(NBNODE(theLink)),NO_OF_ELEM(theEdge));
         {
-          UserWriteF("edge between %ld and %ld dead, NO_OF_ELEM=%d \n",
-                     (long)ID(theNode),(long)ID(NBNODE(theLink)),NO_OF_ELEM(theEdge));
+          NODE *nb;
+          nb = NBNODE(theLink);
           {
-            NODE *nb;
-            nb = NBNODE(theLink);
-            {
-              LINK *theLink;
-              UserWriteF("linklist of nbnode %d:",ID(nb));
-              for (theLink=START(nb); theLink!=NULL; theLink=NEXT(theLink)) {
-                UserWriteF(" %d-%d",ID(NBNODE(theLink)),ID(NBNODE(REVERSE(theLink))));
-              }
+            LINK *theLink;
+            UserWriteF("linklist of nbnode %d:",ID(nb));
+            for (theLink=START(nb); theLink!=NULL; theLink=NEXT(theLink)) {
+              UserWriteF(" %d-%d",ID(NBNODE(theLink)),ID(NBNODE(REVERSE(theLink))));
             }
-            UserWrite("\n");
           }
+          UserWrite("\n");
         }
-        else
-          SETUSED(theEdge,0);
       }
                         #endif
     }
