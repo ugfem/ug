@@ -90,9 +90,38 @@ static int CollectElementsNearSegment(MULTIGRID *theMG,
   return(0);
 }
 
+static int CreateDD(GRID *theGrid, int hor_boxes, int vert_boxes )
+{
+  ELEMENT *theElement;
+  INT i;
+  DOUBLE *coord, xmax, ymax;
+
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
+       theElement=SUCCE(theElement))
+  {
+    ASSERT(CORNERS_OF_ELEM(theElement)==4);             /* works only for quadrilateral grids */
+
+    /* calculate the coordinates xmax, ymax of the element */
+    xmax = ymax = 0.0;
+    for( i=0; i<4; i++ )
+    {
+      coord = CVECT(MYVERTEX(CORNER(theElement,i)));
+      xmax = MAX(xmax,coord[0]);
+      ymax = MAX(ymax,coord[1]);
+    }
+    printf( PFMT "element coord %g %g %d %d\n", me, xmax, ymax, hor_boxes, vert_boxes );
+
+    /* the according subdomain is determined by the upper right corner */
+    PARTITION(theElement) = (int)(ymax*vert_boxes - 0.5) * hor_boxes + (int)(xmax*hor_boxes - 0.5);
+    printf( PFMT "element partition %d\n", me, PARTITION(theElement) );
+  }
+
+  return(0);
+}
+
 void ddd_test (char *argv, MULTIGRID *theMG)
 {
-  int mode,param,fromlevel,tolevel,part;
+  int mode,param,fromlevel,tolevel,part,hor_boxes, vert_boxes;
 
   mode = param = fromlevel = tolevel = 0;
 
@@ -174,6 +203,13 @@ void ddd_test (char *argv, MULTIGRID *theMG)
     if (sscanf(argv,"%d %d",&param,&part) != 2) break;
     fromlevel = CURRENTLEVEL(theMG);
     CollectElementsNearSegment(theMG,fromlevel,part,0);
+    break;
+
+  /* dies erzeugt eine regelmaessige Domain Decomposition */
+  case (6) :
+    if (sscanf(argv,"%d %d %d",&param,&hor_boxes,&vert_boxes) != 3) break;
+    ASSERT(hor_boxes*vert_boxes == procs );
+    CreateDD(GRID_ON_LEVEL(theMG,TOPLEVEL(theMG)),hor_boxes,vert_boxes);
     break;
 
   default : break;
