@@ -1069,16 +1069,7 @@ static INT CreateAllElementSides  (MULTIGRID *theMG)
         }
 
         /* create side and fill data */
-        theSide = CreateElementSide(theGrid);
-        if (theSide==NULL)
-        {
-          UserWrite("could not create element side\n");
-          DisposeElement(theGrid,theElement,TRUE);
-          return(5);
-        }
-        ES_PATCH(theSide)   = thePatch;
-        PARAM(theSide,0,0) = aLambda;
-        PARAM(theSide,1,0) = bLambda;
+        theSide = NULL;
 
         /* linkinfo_disposed */
         FCSIDE(theFC) = theSide;
