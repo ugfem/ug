@@ -164,6 +164,7 @@ typedef struct
 
   DOUBLE rho, omega;
   VEC_SCALAR weight;
+  VEC_SCALAR old_defect;
   VECDATA_DESC *r;
   VECDATA_DESC *p;
   VECDATA_DESC *v;
@@ -1569,6 +1570,7 @@ static INT BCGSDisplay (NP_BASE *theNP)
 static INT BCGSPreProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
 {
   NP_BCGS *np;
+  INT i;
 
   np = (NP_BCGS *) theNP;
 
@@ -1584,6 +1586,8 @@ static INT BCGSPreProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, 
   if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->s)) NP_RETURN(1,result[0]);
   if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->t)) NP_RETURN(1,result[0]);
   if (AllocVDFromVD(np->ls.base.mg,np->baselevel,level,x,&np->q)) NP_RETURN(1,result[0]);
+
+  for (i=0; i<VD_NCOMP(x); i++) np->old_defect[i] = -1.0;
 
   return(0);
 }
@@ -1617,7 +1621,7 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
 {
   NP_BCGS *np;
   VEC_SCALAR defect2reach;
-  INT i,PrintID,restart;
+  INT i,j,PrintID,restart,eq_count;
   char text[DISPLAY_WIDTH+4];
   DOUBLE alpha,rho_new,beta,tt;
   double ti;
@@ -1656,6 +1660,7 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
 
   /* go */
   restart = 1;
+  eq_count = 0;
   for (i=0; i<np->maxiter; i++)
   {
     if (lresult->converged) break;
@@ -1767,6 +1772,14 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     if (sc_cmp(lresult->last_defect,abslimit,b) || sc_cmp(lresult->last_defect,defect2reach,b))
     {
       lresult->converged = 1;
+      break;
+    }
+    if (sc_eq (lresult->last_defect,np->old_defect,1e-4,x)) eq_count++;
+    else eq_count=0;
+    for (j=0; j<VD_NCOMP(x); j++) np->old_defect[j] = lresult->last_defect[j];
+    if (eq_count>4)
+    {
+      lresult->converged = 0;
       break;
     }
   }
