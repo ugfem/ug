@@ -766,7 +766,9 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
   theMG = theNP->base.mg;
   bl = 0;
 
-  if (Assemble->NLAssembleDefect == NULL) NP_RETURN(1,ewresult->error_code);
+  if (Assemble->NLAssembleDefect == NULL)
+    NP_RETURN(1,ewresult->error_code);
+  ewresult->error_code = 0;
   i = 0;
   if (np->Neumann) {                   /* set ev[0] = 1 */
     if (s_dset(theMG,bl,level,ev[0],1.0))
@@ -956,7 +958,7 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
           return (1);
         if ((*np->LS->Residuum)(np->LS,level,level,np->t,np->r,np->M,
                                 &ewresult->lresult[i]))
-          return (1);
+          NP_RETURN(1,ewresult->error_code);
 
         PRINTDEBUG(np,2,("res1 %f\n",
                          ewresult->lresult[0].last_defect[0]));
@@ -990,14 +992,14 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
           NP_RETURN(1,ewresult->error_code);
         if ((*np->LS->Defect)(np->LS,level,ev[i],np->r,np->M,
                               &ewresult->error_code))
-          return (1);
+          NP_RETURN(1,ewresult->error_code);
         if ((*np->LS->Residuum)(np->LS,level,level,ev[i],np->r,np->M,
                                 &ewresult->lresult[i]))
-          return (1);
+          NP_RETURN(1,ewresult->error_code);
         if ((*np->LS->Solver)(np->LS,level,ev[i],np->r,np->M,
                               abslimit,reduction,
                               &ewresult->lresult[i]))
-          return (1);
+          NP_RETURN(1,ewresult->error_code);
       }
       if (AllocVDFromVD(theMG,bl,level,ev[0],&np->t))
         NP_RETURN(1,ewresult->error_code);
