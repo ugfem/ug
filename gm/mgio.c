@@ -142,7 +142,7 @@ int Read_OpenMGFile (char *filename)
   if (mgpathes_set) stream = FileOpenUsingSearchPaths(filename,"r","mgpaths");
   else stream = fileopen(filename,"r");
 #else
-  stream = fileopen(filename,"r");
+  stream = fopen(filename,"r");
 #endif
 
   if (stream==NULL) return (1);
@@ -179,7 +179,7 @@ int Write_OpenMGFile (char *filename)
   if (mgpathes_set) stream = FileOpenUsingSearchPaths(filename,"w","mgpaths");
   else stream = fileopen(filename,"w");
 #else
-  stream = fileopen(filename,"w");
+  stream = fopen(filename,"w");
 #endif
 
   if (stream==NULL) return (1);

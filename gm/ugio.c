@@ -320,7 +320,7 @@ static INT Write_RefRules (MULTIGRID *theMG, INT *RefRuleOffset)
 
   /* write refrules */
   RR = Refrule = (MGIO_RR_RULE *)GetTmpMem(theHeap,nRules*sizeof(MGIO_RR_RULE));
-  if (Refrule==NULL) return (1);
+  if (Refrule==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for refrules\n",(int)nRules*sizeof(MGIO_RR_RULE)); return (1);}
   for (t=0; t<TAGS; t++)
   {
     ug_refrule = RefRules[t];
@@ -655,6 +655,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   theGrid = GRID_ON_LEVEL(theMG,0);
   n = NV(theGrid)*sizeof(MGIO_CG_POINT);
   cg_point = (MGIO_CG_POINT *)GetTmpMem(theHeap,n);
+  if (cg_point==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for cg_points\n",(int)n); return (1);}
   for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
     for (j=0; j<MGIO_DIM; j++)
       cg_point[ID(theNode)].position[j] = CVECT(MYVERTEX(theNode))[j];
@@ -665,6 +666,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   theGrid = GRID_ON_LEVEL(theMG,0);
   n = NT(theGrid); hr_max=0;
   cg_element = (MGIO_CG_ELEMENT*)GetTmpMem(theHeap,n*sizeof(MGIO_CG_ELEMENT));
+  if (cg_element==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for cg_elements\n",(int)n*sizeof(MGIO_CG_ELEMENT)); return (1);}
   for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
     i = ID(theElement);
@@ -691,6 +693,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
 
   /* write bnd information */
   BndPList = (BNDP**)GetTmpMem(theHeap,nbv*sizeof(BNDP*));
+  if (BndPList==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for BndPList\n",(int)nbv*sizeof(BNDP*)); return (1);}
   for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,0)); theNode!=NULL; theNode=SUCCN(theNode))
     if (OBJT(MYVERTEX(theNode))==BVOBJ)
     {
@@ -701,6 +704,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
 
   /* save refinement */
   refinement = (MGIO_REFINEMENT *)GetTmpMem(theHeap,hr_max*sizeof(MGIO_REFINEMENT));
+  if (refinement==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for refinement\n",(int)hr_max*sizeof(MGIO_REFINEMENT)); return (1);}
   theGrid = GRID_ON_LEVEL(theMG,0);
   for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
@@ -1124,7 +1128,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   /* read refrule information */
   if (Read_RR_General(&rr_general))                                                                   {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   rr_rules = (MGIO_RR_RULE *)GetTmpMem(theHeap,rr_general.nRules*sizeof(MGIO_RR_RULE));
-  if (rr_rules==NULL)                                                                                                     {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (rr_rules==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for rr_rules\n",(int)rr_general.nRules*sizeof(MGIO_RR_RULE)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (Read_RR_Rules(rr_general.nRules,rr_rules))                                          {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   /* read general information about coarse grid */
@@ -1132,7 +1136,9 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
 
   /* read coarse grid points and elements */
   cg_point = (MGIO_CG_POINT *)GetTmpMem(theHeap,cg_general.nPoint*sizeof(MGIO_CG_POINT));
+  if (cg_point==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for cg_points\n",(int)cg_general.nPoint*sizeof(MGIO_CG_POINT)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   cg_element = (MGIO_CG_ELEMENT *)GetTmpMem(theHeap,cg_general.nElement*sizeof(MGIO_CG_ELEMENT));
+  if (cg_element==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for cg_elements\n",(int)cg_general.nElement*sizeof(MGIO_CG_ELEMENT)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (Read_CG_Points(cg_general.nPoint,cg_point))                                         {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (Read_CG_Elements(cg_general.nElement,cg_element))                           {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
@@ -1141,15 +1147,20 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
 
   /* read bnd points */
   BndPList = (BNDP**)GetTmpMem(theHeap,bd_general.nBndP*sizeof(BNDP*));
-  if (BndPList==NULL)                                                                                                     {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (BndPList==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for BndPList\n",(int)bd_general.nBndP*sizeof(BNDP*)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (Read_PBndDesc (theBVP,theHeap,bd_general.nBndP,BndPList))           {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   /* create and insert coarse mesh: prepare */
   theMesh.nBndP = cg_general.nBndPoint;
   theMesh.theBndPs = BndPList;
   theMesh.nInnP = cg_general.nInnerPoint;
-  theMesh.Position = (COORD**)GetTmpMem(theHeap,cg_general.nInnerPoint*sizeof(COORD*));
-  Positions = (COORD*)GetTmpMem(theHeap,MGIO_DIM*cg_general.nInnerPoint*sizeof(COORD));
+  if (cg_general.nInnerPoint>0)
+  {
+    theMesh.Position = (COORD**)GetTmpMem(theHeap,cg_general.nInnerPoint*sizeof(COORD*));
+    if (theMesh.Position==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for theMesh.Position\n",(int)cg_general.nInnerPoint*sizeof(COORD*)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+    Positions = (COORD*)GetTmpMem(theHeap,MGIO_DIM*cg_general.nInnerPoint*sizeof(COORD));
+    if (Positions==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for Positions\n",(int)MGIO_DIM*cg_general.nInnerPoint*sizeof(COORD)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  }
   for (i=0; i<cg_general.nInnerPoint; i++)
     theMesh.Position[i] = Positions+MGIO_DIM*i;
   for (i=0; i<cg_general.nInnerPoint; i++)
@@ -1157,12 +1168,12 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
       theMesh.Position[i][j] = cg_point[cg_general.nBndPoint+i].position[j];
   theMesh.nSubDomains = theBVPDesc.nSubDomains;
   theMesh.nElements = (INT*)GetTmpMem(theHeap,(theMesh.nSubDomains+1)*sizeof(INT));
-  if (theMesh.nElements==NULL)                                                                            {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (theMesh.nElements==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for theMesh.nElements\n",(int)(theMesh.nSubDomains+1)*sizeof(INT)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   for (i=0; i<=theMesh.nSubDomains; i++) theMesh.nElements[i] = 0;theMesh.nElements[1] = cg_general.nElement;
 
   /* nb of corners of elements */
   Element_corner_uniq_subdom  = (INT*)GetTmpMem(theHeap,cg_general.nElement*sizeof(INT));
-  if (Element_corner_uniq_subdom==NULL)                                                           {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Element_corner_uniq_subdom==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for Element_corner_uniq_subdom\n",(int)cg_general.nElement*sizeof(INT)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   max = 0;
   for (i=0; i<cg_general.nElement; i++)
   {
@@ -1175,9 +1186,9 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
 
   /* corners ids of elements */
   Element_corner_ids_uniq_subdom  = (INT**)GetTmpMem(theHeap,cg_general.nElement*sizeof(INT*));
-  if (Element_corner_ids_uniq_subdom==NULL)                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Element_corner_ids_uniq_subdom==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for Element_corner_ids_uniq_subdom\n",(int)cg_general.nElement*sizeof(INT*)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   Element_corner_ids  = (INT*)GetTmpMem(theHeap,max*cg_general.nElement*sizeof(INT));
-  if (Element_corner_ids==NULL)                                                                           {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Element_corner_ids==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for Element_corner_ids\n",(int)max*cg_general.nElement*sizeof(INT)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   for (i=0; i<cg_general.nElement; i++)
     Element_corner_ids_uniq_subdom[i] = Element_corner_ids+max*i;
   for (i=0; i<cg_general.nElement; i++)
@@ -1188,9 +1199,9 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
 
   /* nb of elements */
   Element_nb_uniq_subdom  = (INT**)GetTmpMem(theHeap,cg_general.nElement*sizeof(INT*));
-  if (Element_nb_uniq_subdom==NULL)                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Element_nb_uniq_subdom==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for Element_nb_uniq_subdom\n",(int)cg_general.nElement*sizeof(INT*)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   Element_nb_ids  = (INT*)GetTmpMem(theHeap,max*cg_general.nElement*sizeof(INT));
-  if (Element_nb_ids==NULL)                                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (Element_nb_ids==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for Element_nb_ids\n",(int)max*cg_general.nElement*sizeof(INT)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   for (i=0; i<cg_general.nElement; i++)
     Element_nb_uniq_subdom[i] = Element_nb_ids+max*i;
   for (i=0; i<cg_general.nElement; i++)
@@ -1226,7 +1237,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   theGrid = GRID_ON_LEVEL(theMG,0); max=0;
   for (i=0; i<cg_general.nElement; i++) max = MAX(max,cg_element[i].nhe);
   refinement = (MGIO_REFINEMENT*)GetTmpMem(theHeap,max*sizeof(MGIO_REFINEMENT));
-  if (refinement==NULL)                                                                                           {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  if (refinement==NULL) {UserWriteF("ERROR: cannot allocate %d bytes for refinement\n",(int)max*sizeof(MGIO_REFINEMENT)); CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (Set_Get_Sons_of_ElementSideProc(IO_Get_Sons_of_ElementSide))        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
