@@ -165,6 +165,7 @@ int stoploop = 0;
 int count = 0;
 int n_pic, i_pic, f_offset, nbreak;
 char *mfile[MAX_FILES];
+static int run_max, run_count;
 
 static int littleEndian = 1; /* needed for check LITTLE/BIG-ENDIAN */
 
@@ -1755,6 +1756,8 @@ static Boolean run_film (void)
       else
         printf("\n");
     }
+    run_count++;
+    if (run_count==run_max) exit(0);
   }
 
   for (i_pic=0; i_pic<n_pic; i_pic++)
@@ -1850,7 +1853,7 @@ char* argv[];
   }
 
   if (argc < 2) {
-    printf("usage: xugv [<nb of files>] file [file2] [file3] ... [-v[n]] [-f first last] [-q increment] [-o extension] [-c] [-s] [-N <nBreak>]\n");
+    printf("usage: xugv [<nb of files>] file [file2] [file3] ... [-v[n]] [-f first last] [-q increment] [-o extension] [-c] [-s] [-N <nBreak>] [-n]\n");
     exit(-1);
   }
 
@@ -1915,7 +1918,7 @@ char* argv[];
     if (argv[i][1]=='N')
     {
       if (i+1>=argc) {
-        printf("not enough arguments for n option\n");
+        printf("not enough arguments for N option\n");
         exit(-1);
       }
       sscanf(argv[i+1],"%d",&nbreak);
@@ -1924,6 +1927,18 @@ char* argv[];
         exit(-1);
       }
       nopt=1;
+      i+=2;
+      continue;
+    }
+
+    if (argv[i][1]=='y')
+    {
+      if (i+1>=argc) {
+        printf("not enough arguments for n option\n");
+        exit(-1);
+      }
+      run_max = 0;
+      sscanf(argv[i+1],"%d",&run_max);
       i+=2;
       continue;
     }
@@ -2160,6 +2175,7 @@ char* argv[];
     ignore = 1;
 
     /* main loop for event processing */
+    run_count = 0;
     XtAppMainLoop (kontext);
   }
 }
