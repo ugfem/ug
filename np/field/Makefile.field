@@ -1,0 +1,31 @@
+##############################################################################
+#																			 #
+#	Makefile for all modules of ug version 3								 #
+#																			 #
+#	created 16 December 1994												 #
+#																			 #
+##############################################################################
+
+# include configuration and all makefile macro definitions
+include $(UGROOT)/ug.conf
+
+OBJECTS = stoch.o
+
+$(UG_LIB) : $(OBJECTS) Makefile.field
+	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
+
+ar :
+	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
+
+.SUFFIXES: .o .c
+
+.c.o:
+	$(ARCH_CC) $(UG_CFLAGS) $<
+
+clean:
+	rm -f *.o
+
+extract:
+	$(ARCH_AR) $(ARCH_EXFLAGS) $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
+
+xmc: extract $(UG_LIB) clean
