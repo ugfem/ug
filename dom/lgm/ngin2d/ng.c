@@ -229,7 +229,7 @@ int PutBndNode (BND_NODE *BndNode)
     if (Global_Mesh->BndP_lcoord[n_bn]==NULL) return (1);
     for (i=0; i<BndNode->n_lp; i++)
       Global_Mesh->BndP_lcoord[n_bn][i]=BndNode->lp[i].local;
-    Global_Mesh->BndPosition[n_bn]=(float*)NG_MALLOC(Global_Heap,2*sizeof(float),Global_MarkKey);
+    Global_Mesh->BndPosition[n_bn]=(double*)NG_MALLOC(Global_Heap,2*sizeof(double),Global_MarkKey);
     if (Global_Mesh->BndPosition[n_bn]==NULL) return (1);
     Global_Mesh->BndPosition[n_bn][0]=BndNode->global[0];
     Global_Mesh->BndPosition[n_bn][1]=BndNode->global[1];
@@ -356,7 +356,7 @@ int NG_ReadMesh (char *name, HEAP *Heap, LGM_MESH_INFO *theMesh, int MarkKey)
   theMesh->BndP_nLine=(int*)NG_MALLOC(Heap,n_bn*sizeof(int),MarkKey);                                             if (theMesh->BndP_nLine==NULL) NG_HEAPFAULT;
   theMesh->BndP_LineID=(int**)NG_MALLOC(Heap,n_bn*sizeof(int*),MarkKey);                                          if (theMesh->BndP_LineID==NULL) NG_HEAPFAULT;
   theMesh->BndP_lcoord=(float**)NG_MALLOC(Heap,n_bn*sizeof(float*),MarkKey);                                      if (theMesh->BndP_lcoord==NULL) NG_HEAPFAULT;
-  theMesh->BndPosition=(float**)NG_MALLOC(Heap,n_bn*sizeof(float*),MarkKey);                                      if (theMesh->BndPosition==NULL) NG_HEAPFAULT;
+  theMesh->BndPosition=(double**)NG_MALLOC(Heap,n_bn*sizeof(double*),MarkKey);                                    if (theMesh->BndPosition==NULL) NG_HEAPFAULT;
   theMesh->nbElements=NULL;
   theMesh->Element_SideOnBnd=NULL;
   Line_npoints=(int*)NG_MALLOC(Heap,(lineid_max+1)*sizeof(int),MarkKey);                                          if (Line_npoints==NULL) NG_HEAPFAULT;
