@@ -6565,17 +6565,24 @@ static INT ExtraConnectionCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
+
 /****************************************************************************/
 /*D
    check - check consistency of the data structure
 
    DESCRIPTION:
    This command checks consistency of the data structure, using
-   the functions 'CheckGrid' and 'CheckConnections'.
+   the function 'CheckGrid'. Dependent on the options are called inside
+   'CheckGrid' one or more of 'CheckGeometry' 'CheckAlgebra', 'CheckLists'
+   and 'CheckInterfaces'. Default check is 'CheckGeometry'.
 
-   'check [$c]'
+   'check {$a | $g | $c | $l | $i}*'
 
-   .  $c - also check the connections
+   .  $a - all possible checks are done
+   .  $g - check the geometric part of data structures (default)
+   .  $c - also check the algebraic part of data structures
+   .  $l - also check the lists of objects and counters of a grid
+   .  $i - also check interfaces (only parallel version)
    D*/
 /****************************************************************************/
 
@@ -6604,7 +6611,11 @@ static INT CheckCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   GRID *theGrid;
-  INT checkconn,level,err,i,checkbvp;
+  INT checkgeom,checkalgebra,checklists,checkbvp;
+        #ifdef ModelP
+  INT checkif;
+        #endif
+  INT level,err,i;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -6613,14 +6624,41 @@ static INT CheckCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  /* check options */
-  checkconn = checkbvp = FALSE;
+  /* set default options */
+  checkgeom = TRUE;
+  checkalgebra = checklists = checkbvp = FALSE;
+        #ifdef ModelP
+  checkif = FALSE;
+        #endif
+
+  /* read options */
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
-    case 'c' :
-      checkconn = TRUE;
+    case 'a' :
+      checkgeom = checkalgebra = checklists = TRUE;
+                                #ifdef ModelP
+      checkif = TRUE;
+                                #endif
       break;
+
+    case 'c' :
+      checkalgebra = TRUE;
+      break;
+
+    case 'g' :
+      checkgeom = TRUE;
+      break;
+
+    case 'l' :
+      checklists = TRUE;
+      break;
+
+                        #ifdef ModelP
+    case 'i' :
+      checkif = TRUE;
+      break;
+                        #endif
 
     case 'b' :
       checkbvp = TRUE;
@@ -6641,41 +6679,23 @@ static INT CheckCommand (INT argc, char **argv)
   for (level=0; level<=TOPLEVEL(theMG); level++)
   {
     theGrid = GRID_ON_LEVEL(theMG,level);
-    sprintf(buffer,"[%d:",(int)level);
-    UserWrite(buffer);
-    if (CheckGrid(theGrid)!=GM_OK)
+    UserWriteF("[%d:",(int)level);
+
+                #ifndef ModelP
+    if (CheckGrid(theGrid,checkgeom,checkalgebra,checklists)!=GM_OK)
+                #else
+    if (CheckGrid(theGrid,checkgeom,checkalgebra,checklists,checkif)!=GM_OK)
+                #endif
     {
       err++;
-      UserWrite(" grid bad");
+      UserWriteF(", grid BAD");
     }
     else
-      UserWrite("ok");
+      UserWriteF(", grid ok");
 
-    if (checkconn)
-    {
-      UserWrite(", algebra ");
-      if (CheckAlgebra(theGrid)!=GM_OK)
-      {
-        err++;
-        UserWrite(" algebra bad");
-      }
-      else
-        UserWrite(" ok");
-    }
-
-    UserWrite("] ");
+    UserWrite("]\n");
   }
   UserWrite("\n");
-
-        #ifdef ModelP
-  for (level=0; level<=TOPLEVEL(theMG); level++)
-  {
-    theGrid = GRID_ON_LEVEL(theMG,level);
-
-    CheckLists(theGrid);
-    fflush(stdout);
-  }
-        #endif
 
   if (err)
     return (CMDERRORCODE);
