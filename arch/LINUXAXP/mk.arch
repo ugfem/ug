@@ -1,0 +1,27 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for LinuxAXP / CCC / CPML
+#
+
+ARCH_TYPE     = __LINUXAXP__
+
+ARCH_MAKE     = make
+ARCH_CC       = ccc
+ARCH_C++      =
+ARCH_LINK     = ccc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK = true
+
+ARCH_LIBS     = -lcpml
+
+ARCH_CFLAGS   =
+ARCH_NOOPTIM  = -g
+ARCH_OPTIM    = -O2
+ARCH_C++FLAGS =
+ARCH_LFLAGS   =
+ARCH_ARFLAGS  = rus
+
+ARCH_XINCLUDES = -I/usr/X11R6/include
+ARCH_XLIBS     = -L/usr/X11R6/lib -lXaw -lXt -lX11

@@ -84,6 +84,7 @@ extern "C" {
 /*          __NEXTSTEP__ NEXTSTEP operating system                          */
 /*          __OPENSTEP__ OPENSTEP                                           */
 /*          __LINUXPPC__                                                    */
+/*          __LINUXAXP__                                                    */
 /*                                                                          */
 /* #define this if you are using NXLib                                      */
 /*          __NXLIB__    NXLIB Paragon Library                              */
@@ -517,6 +518,38 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
+
+#endif
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for LINUXAXP                                                 */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __LINUXAXP__
+#undef __MWCW__
+
+#define ARCHNAME        "LINUXAXP"
+
+/* basic types */
+#define SHORT  short
+#define INT    long                     /* sizeof(int) != sizeof(void *) !! */
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+
+/* memory */
+#define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
+#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym) lsym
+
+/* current time as DOUBLE value */
+#undef CURRENT_TIME
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
 #endif
 
@@ -1019,6 +1052,7 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
 #include <nxmalloc.h>                   /* redefine malloc and related calls*/
 
 #endif
+
 
 /****************************************************************************/
 /*                                                                          */
