@@ -320,7 +320,7 @@ extern "C" {
 /*                                                                          */
 /****************************************************************************/
 
-#if (defined(__POWERGC__) || defined(__CC__))
+#if defined(__POWERGC__)
 #undef __MWCW__
 
 /* basic types */
@@ -334,6 +334,25 @@ extern "C" {
 /* memory */
 #define ALIGNMENT 8               /* power of 2 and >=sizeof(int) !  */
 #define ALIGNMASK 0xFFFFFFF8     /*  compatible to alignment */
+
+#endif
+
+
+
+#if defined(__CC__)
+#undef __MWCW__
+
+/* basic types */
+#define SHORT  short
+#define INT    int
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+
+/* memory */
+#define ALIGNMENT 4               /* power of 2 and >=sizeof(int) !  */
+#define ALIGNMASK 0xFFFFFFFC     /*  compatible to alignment */
 
 #endif
 
