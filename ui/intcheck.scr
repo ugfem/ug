@@ -1,0 +1,82 @@
+# This script checks the interpreter. If it performs correctly
+# no error should occur and the output should be consistent.
+#
+mute -1;
+cs :;
+
+# check assignments
+a=1.2e5;
+b=-1.3e-5;
+c="abc";
+d="abc";
+e=2*a+1/b;
+
+# check comparisons
+print "The next line should show six times 'ok':";
+if (c==d) print "ok ",; else print "not ok ",;
+if (c!="abc") print "not ok ",; else print "ok ",;
+if ("abc"<c) print "not ok ",; else print "ok ",;
+if (10<a) print "ok ",; else print "not ok ",;
+if (a<"1e6") print "ok ",; else print "not ok ",;
+if (("abc"<'cde')*(a>=2)) print "ok ",; else print "not ok ",;
+print; print;
+
+dv a; dv b; dv c; dv d; dv e;
+
+# check arithmetic operations
+print "The following two lines should be equal:";
+print "2 -0.75680249530793 -0.65364362086361 54.598150033144 1.3862943611199 4 4";
+print sqrt(4)," ",sin(4)," ",cos(4)," ",exp(4)," ",log(4)," ",floor(4.5)," ",fabs(-4);
+print;
+
+# check procedure execution and loop commands
+xx="{
+	i=1;
+	repeat
+	{
+		print i,' ',;
+		if (i==10) break;
+		i=i+1;
+	}
+	print;
+}";
+
+yy="{
+	i=0;
+	repeat
+	{
+		i=i+1;
+		print i,' ',;
+		if (i<10) continue;
+		print;
+		break;
+	}
+}";
+
+print "The following three lines should be equal:";
+print "1 2 3 4 5 6 7 8 9 10";
+@xx;
+@yy;
+
+dv xx; dv yy; dv i;
+print;
+
+# check structure directories and array simulation
+ms zz; cs zz;
+x1=100; x2=10; x3=-10
+cs :;
+if (zz:x[1]/zz:x[2]+:zz:x[3]==0) print "ok"; else print "not ok";
+print;
+cs zz; set x1; set x2; set x3; cs :; ds zz;
+print;
+
+# check input
+repeat
+{
+	print "Please enter 'ok' : ",; input answer;
+	if (answer=="ok") {print answer; break;}
+}
+dv answer;
+
+mute 0;
+
