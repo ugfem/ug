@@ -4,17 +4,17 @@
 /*                                                                          */
 /* File:      ggmain.c                                                      */
 /*                                                                          */
-/* Purpose:   central grid generator functions				                        */
+/* Purpose:   central grid generator functions                              */
 /*                                                                          */
-/* Author:    Wolfgang Hoffmann, Henrik Renz-Reichert	                    */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart, Germany										*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
-/*																			*/
+/* Author:    Wolfgang Hoffmann, Henrik Renz-Reichert                       */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart, Germany                                      */
+/* email:     ug@ica3.uni-stuttgart.de                                      */
+/*                                                                          */
 /* History:   08.03.94 begin, ug version 2.2                                */
-/*                15.10.95 implemented in ug31                                  */
+/*            15.10.95 implemented in ug31                                  */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -59,7 +59,7 @@
 #include "algebra.h"
 #include "evm.h"
 
-/* TODO: hierarchy conflict due to UserRead, UserInterrupt */
+/** \todo hierarchy conflict due to UserRead, UserInterrupt */
 #include "uginterface.h"
 
 
@@ -186,7 +186,7 @@ static INT FcObj;
 /*                                                                          */
 /* forward declarations of functions used before they are defined           */
 /*                                                                          */
-/*****************************************************************************/
+/****************************************************************************/
 
 static DOUBLE H_global;
 
@@ -2558,7 +2558,7 @@ static FRONTCOMP *CreateDelaunayTriangle (
 
 /****************************************************************************/
 /*                                                                          */
-/* Function:  FillElementContext                                                */
+/* Function:  FillElementContext                                            */
 /*                                                                          */
 /* Purpose:   create the ElementContext for MakeElement                             */
 /*                                                                          */
@@ -2695,11 +2695,11 @@ static INT FrontcomponentUpdate(INT FlgForAccel, FRONTCOMP* theFC, FRONTCOMP* th
 
 /****************************************************************************/
 /*                                                                          */
-/* Function:  FL_FC_Disposer                                                            */
+/* Function:  FL_FC_Disposer                                                */
 /*                                                                          */
-/* Purpose:   disposing of frontcomponents and Frontlists                                       */
+/* Purpose:   disposing of frontcomponents and Frontlists                   */
 /*                                                                          */
-/* Input:    FRONTCOMP *disp_FC, FRONTLIST *disp_FL							*/
+/* Input:    FRONTCOMP *disp_FC, FRONTLIST *disp_FL                         */
 /*                                                                          */
 /* Output:	  returns 1 if error occurs                                     */
 /*																			*/
@@ -2747,30 +2747,24 @@ static INT PrintFront(MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/*D
-   GenerateGrid - Create the advancing frontlists and generates the grid in 2d
+/** \brief Create the advancing frontlists and generates the grid in 2d
 
-   SYNOPSIS:
-   INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param);
+   \param theMG - pointer to the multigrid
+   \param MyArgs - structure for reading grid generator parameters
+   \param param -  structure for reading the grid generating control parameters
 
-    PARAMETERS:
-   .   theMG - pointer to the multigrid
-   .   MyArgs - structure for reading grid generator parameters
-   .   param -  structure for reading the grid generating control parameters
+   This function creates automatical the triangular grid in 2d.
 
-    DESCRIPTION:
-        This function creates automatical the triangular grid in 2d.
-
-    RETURN VALUE:
-    INT
-   .n     0 if ok
-   .n     1 if error occured.
-   D*/
+   \return <ul>
+   <li> 0 if ok </li>
+   <li> 1 if error occured. </li>
+   </ul>
+ */
 /****************************************************************************/
 
 static INT debug;
 
-INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh, CoeffProcPtr coeff, INT Single_Mode, INT display)
+INT NS_PREFIX GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh, CoeffProcPtr coeff, INT Single_Mode, INT display)
 {
   GRID *theGrid;
   INDEPFRONTLIST *theIFL,*nextIFL;
@@ -2876,11 +2870,11 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
 
 
   /*************************************************************************************/
-  /*                                                                                     */
-  /* creating inner nodes	and vertices for automatically triangulation                             */
-  /* loops for the indep. front lists and front lists begin at the end of the lists      */
+  /*                                                                                   */
+  /* creating inner nodes and vertices for automatically triangulation                 */
+  /* loops for the indep. front lists and front lists begin at the end of the lists    */
   /* according to the possibility of creating of new indep. front lists or front lists */
-  /*                                                                                     */
+  /*                                                                                   */
   /*************************************************************************************/
 
   for (theIFL=LASTIFL(myMGdata); theIFL!=NULL; theIFL=nextIFL)
@@ -3274,17 +3268,17 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
 
 /****************************************************************************/
 /*                                                                          */
-/* initialization for this source file					                                */
+/* initialization for this source file                                      */
 /*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
 /*                                                                          */
-/* initialization for grid generator library			                                */
+/* initialization for grid generator library                                */
 /*                                                                          */
 /****************************************************************************/
 
-INT InitGG ()
+INT NS_PREFIX InitGG ()
 {
   if (MakeStruct(":gg")!=0) return(__LINE__);
 

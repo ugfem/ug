@@ -5,18 +5,18 @@
 /* File:      ugio.c                                                        */
 /*                                                                          */
 /* Purpose:   ug's grid input/output                                        */
-/*																			*/
-/* Author:	  Peter Bastian                                                                                                 */
-/*			  Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen	*/
-/*			  Universitaet Heidelberg										*/
-/*			  Im Neuenheimer Feld 368										*/
-/*			  6900 Heidelberg												*/
-/*			  email: ug@ica3.uni-stuttgart.de					            */
-/*																			*/
-/* History:   29.01.92 begin, ug version 2.0								*/
-/*																			*/
-/* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                          */
+/* Author:    Peter Bastian                                                 */
+/*            Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
+/*            Universitaet Heidelberg                                       */
+/*            Im Neuenheimer Feld 368                                       */
+/*            6900 Heidelberg                                               */
+/* email:     ug@ica3.uni-stuttgart.de                                      */
+/*                                                                          */
+/* History:   29.01.92 begin, ug version 2.0                                */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 #ifdef __MPW32__
@@ -26,8 +26,8 @@
 #define EXTRACT_RULES           1       /* 1: use er.c, 0: use old version			*/
 
 /****************************************************************************/
-/*																			*/
-/* include files															*/
+/*                                                                          */
+/* include files                                                            */
 /*			  system include files											*/
 /*			  application include files                                                                     */
 /*																			*/
@@ -3424,28 +3424,18 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
 #ifdef __TWODIM__
 /****************************************************************************/
-/*
-   SaveCNomGridAndValues - Save 2d grid & data in cnom format
+/** \brief Save 2d grid & data in cnom format
 
-   SYNOPSIS:
-   INT SaveCNomGridAndValues (MULTIGRID *theMG, FILE *stream, char *symname)
+   \param theMG - pointer to multigrid structure
+   \param stream - file on which data is written
+   \param symname - name of data field
 
-   PARAMETERS:
-   .  theMG - pointer to multigrid structure
-   .  stream - file on which data is written
-   .  symname - name of data field
-
-   DESCRIPTION:
    Is called by the CnomCommand.
 
-   RETURN VALUE:
-   INT
-   .n    NULL if an error occured
-   .n    else pointer to new 'MULTIGRID'
  */
 /****************************************************************************/
 
-INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, char *tag)
+INT NS_PREFIX SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, char *tag)
 {
   ELEMENT *theElement;
   VERTEX *theVertex;

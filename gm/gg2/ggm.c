@@ -6,15 +6,15 @@
 /*                                                                          */
 /* Purpose:   manager for grid generator                                    */
 /*                                                                          */
-/* Author:    Wolfgang Hoffmann, Henrik Renz-Reichert	                    */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart, Germany										*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
-/*																			*/
+/* Author:    Wolfgang Hoffmann, Henrik Renz-Reichert                       */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart, Germany                                      */
+/* email:     ug@ica3.uni-stuttgart.de                                      */
+/*                                                                          */
 /* History:   08.03.94 begin, ug version 2.2                                */
-/*                15.10.95 implemented in ug31                                  */
+/*            15.10.95 implemented in ug31                                  */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -100,17 +100,17 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*                                                                          */
 /****************************************************************************/
 
-INT SetFlagsfortemporaryGGObjects(INT IflObject,INT FlObject,INT FcObject)
+INT NS_PREFIX SetFlagsfortemporaryGGObjects(INT IflObject,INT FlObject,INT FcObject)
 {
   IflObj = IflObject;
   FlObj  = FlObject;
   FcObj  = FcObject;
 
-        #ifdef ModelP
+#ifdef ModelP
   IflObj = MAOBJ;
   FlObj  = MAOBJ;
   FcObj  = MAOBJ;
-    #endif
+#endif
 
   return(0);
 
@@ -129,7 +129,7 @@ INT SetFlagsfortemporaryGGObjects(INT IflObject,INT FlObject,INT FcObject)
 /*                                                                          */
 /****************************************************************************/
 
-INDEPFRONTLIST *CreateIndepFrontList (GRID *theGrid)
+INDEPFRONTLIST* NS_PREFIX CreateIndepFrontList (GRID *theGrid)
 {
   INDEPFRONTLIST *ipfl;
 
@@ -172,7 +172,7 @@ INDEPFRONTLIST *CreateIndepFrontList (GRID *theGrid)
 /*                                                                          */
 /****************************************************************************/
 
-FRONTLIST *CreateFrontList (INDEPFRONTLIST *myIFL, INT SubdomainID)
+FRONTLIST* NS_PREFIX CreateFrontList (INDEPFRONTLIST *myIFL, INT SubdomainID)
 {
   FRONTLIST *pfl;
 
@@ -216,7 +216,7 @@ FRONTLIST *CreateFrontList (INDEPFRONTLIST *myIFL, INT SubdomainID)
 /*                                                                          */
 /****************************************************************************/
 
-FRONTCOMP *CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, INT ncomp, NODE **NodeHandle)
+FRONTCOMP* NS_PREFIX CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, INT ncomp, NODE **NodeHandle)
 {
   MULTIGRID *theMG;
   FRONTCOMP *pfc,*FChandle;
@@ -347,7 +347,7 @@ FRONTCOMP *CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, INT ncomp, NODE
 /*                                                                          */
 /****************************************************************************/
 
-INT DisposeADVfront (GRID *theGrid)
+INT NS_PREFIX DisposeADVfront (GRID *theGrid)
 {
   INDEPFRONTLIST *theIFL,*nextIFL;
 
@@ -378,7 +378,7 @@ INT DisposeADVfront (GRID *theGrid)
 /*                                                                          */
 /****************************************************************************/
 
-INT DisposeIndepFrontList (INDEPFRONTLIST *theIFL)
+INT NS_PREFIX DisposeIndepFrontList (INDEPFRONTLIST *theIFL)
 {
   GRID *theGrid;
   FRONTLIST *theFL;
@@ -461,7 +461,7 @@ INT NS_PREFIX DisposeFrontComp (FRONTLIST *myList, FRONTCOMP *theFC)
 /*                                                                          */
 /****************************************************************************/
 
-INT DisposeFrontList (FRONTLIST *theFL)
+INT NS_PREFIX DisposeFrontList (FRONTLIST *theFL)
 {
   MULTIGRID *theMG;
   INDEPFRONTLIST *myIFL;
@@ -507,7 +507,7 @@ INT DisposeFrontList (FRONTLIST *theFL)
 /*                                                                          */
 /****************************************************************************/
 
-MG_GGDATA *GetMGdataPointer (MULTIGRID *theMG)
+MG_GGDATA* NS_PREFIX GetMGdataPointer (MULTIGRID *theMG)
 {
   myMGdata  = &MGdata;
 

@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      smooth.c	                                                        */
+/* File:      smooth.c                                                      */
 /*                                                                          */
 /* Purpose:   smoothing a grid                                              */
 /*                                                                          */
@@ -71,21 +71,13 @@ REP_ERR_FILE;
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*
-   OneSideMove - calculate displacement of the center point along one local coordinate
+/** \brief Calculate displacement of the center point along one local coordinate
 
-   SYNOPSIS
-   static DOUBLE OneSideMoveCP(DOUBLE *CenterPVertex, DOUBLE *sideMid,
-                         DOUBLE *CenterPointNeEL)
+   \param CenterPVertex    - global coordinates of center vertex to move
+   \param sideMid          - global coordinates of side mid vertex on the side located on the father and neighbour element
+   \param CenterPointNeEl  - global coordinates of center vertex of the neighbour element
 
-   PARAMETERS:
-   . CenterPVertex    - global coordinates of center vertex to move
-   . sideMid          - global coordinates of side mid vertex on the side located on the father
-                   and neighbour element
-   . CenterPointNeEl  - global coordinates of center vertex of the neighbour element
-
-   DESCRIPTION:
-   move center point of father element according to the size of the neighbour element
+   Move center point of father element according to the size of the neighbour element
 
    CP: center point of father element; SM: side mid of side between father and neighbour element;
    CPNE: center point of neighbour element
@@ -108,9 +100,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    moving distance in direction SM-CP in local coordinates:
    LocalMove = 1/2 *(y1/x1) - 1/2
 
-   RETURN VALUE:
-   DOUBLE
-   .n  LocalMove  - local coordinate of displacement (moving direction is from CenterPVertex to sideMid)
+   \return
+   LocalMove  - local coordinate of displacement (moving direction is from CenterPVertex to sideMid)
  */
 /***************************************************************/
 
@@ -1615,13 +1606,8 @@ static INT SplineSmooth(NODE *theNode, DOUBLE *newPos)
 }
 
 /****************************************************************************/
-/*D
-   SmoothGrid - resize all quadrilaterals and triangles on specified grids according
+/** \brief Resize all quadrilaterals and triangles on specified grids according
              to the element sizes of grid (l-1)
-
-   SYNOPSIS
-   static INT SmoothGrid (MULTIGRID *theMG, INT fl, INT tl, const DOUBLE LimitLocDis,
-                       const INT bnd_num, const INT *bnd, const INT option)
 
    PARAMETERS
    .  theMG        - the Multigrid
@@ -1656,8 +1642,8 @@ static INT SplineSmooth(NODE *theNode, DOUBLE *newPos)
    D*/
 /****************************************************************************/
 
-INT SmoothGrid (MULTIGRID *theMG, INT fl, INT tl, const DOUBLE LimitLocDis,
-                const INT bnd_num, const INT *bnd, const INT option)
+INT NS_PREFIX SmoothGrid (MULTIGRID *theMG, INT fl, INT tl, const DOUBLE LimitLocDis,
+                          const INT bnd_num, const INT *bnd, const INT option)
 {
   GRID *theGrid;
   ELEMENT *fatherElement, *nbElement[MAX_SIDES_OF_ELEM], *Level0Father, *boundaryFather;
@@ -2012,11 +1998,7 @@ exit:
 
 }
 /****************************************************************************/
-/*
-   SmoothGridReset - reset all nodes on specified grids to the default refinement position
-
-   SYNOPSIS
-   static INT SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
+/** \brief Reset all nodes on specified grids to the default refinement position
 
    PARAMETERS
    .  theMG        - Multigrid
@@ -2032,7 +2014,7 @@ exit:
  */
 /****************************************************************************/
 
-INT SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
+INT NS_PREFIX SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
 {
   GRID *theGrid;
   ELEMENT *fatherElement;
@@ -2152,18 +2134,13 @@ INT SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
 }
 
 /****************************************************************************/
-/*D
-   SmoothMultiGrid - Interprete and execute a smooth multigrid command
-
-   SYNOPSIS:
-   INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag);
+/** \brief Interpret and execute a smooth multigrid command
 
    PARAMETERS:
    .  theMG - pointer to multigrid
    .  niter - number of iterations to do
    .  bdryFlag - see 'smoothmg' command.
 
-   DESCRIPTION:
    This function smoothes all grid levels of a multigrid hierarchy.
    It processes all grid levels from bottom to top. Within each grid
    level all nodes that are not already in coarser levels are set to

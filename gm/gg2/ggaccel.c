@@ -4,11 +4,11 @@
 /*                                                                          */
 /* File:      ggaccel.c                                                     */
 /*                                                                          */
-/* Purpose:   accelerating grid generator					                        */
+/* Purpose:   accelerating grid generator                                   */
 /*                                                                          */
-/* Author:    Dirk Feuchter			                                        */
+/* Author:    Dirk Feuchter                                                 */
 /*                                                                          */
-/* History:   10.05.95					                                        */
+/* History:   10.05.95                                                      */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -119,7 +119,7 @@ static INT InitAccelObjs (MULTIGRID *theMG)
 /*                                                                          */
 /****************************************************************************/
 
-INT TerminateAccel (MULTIGRID *theMG, INT flag)
+INT NS_PREFIX TerminateAccel (MULTIGRID *theMG, INT flag)
 {
   ReleaseOBJT(QuObj);
   ReleaseOBJT(ScObj);
@@ -1696,13 +1696,7 @@ static void BaseTreeUpdate( FRONTCOMP* P, FRONTCOMP* Q, FRONTCOMP* S, int ch,
 
 
 /****************************************************************************/
-/*D
-   AccelUpdate - updates the quadtree and the bintree
-
-   SYNOPSIS:
-   void AccelUpdate(FRONTCOMP* theFC,  FRONTCOMP* thenewFC,
-   FRONTCOMP* the_old_succ, int cas,  int anglecrit,
-   int edgecrit);
+/** \brief Updates the quadtree and the bintree
 
    PARAMETERS:
    .  theFC - pointer to left frontcomponent of the basical edge
@@ -1712,16 +1706,13 @@ static void BaseTreeUpdate( FRONTCOMP* P, FRONTCOMP* Q, FRONTCOMP* S, int ch,
    .  anglecrit - flag for the angle criterion
    .  edgecrit - flag for the edge criterion
 
-   DESCRIPTION:
    This function is responsible for updating the quadtree and the basetree
    distinguishs the different cases of new elements.
 
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
-void AccelUpdate( FRONTCOMP* theFC,  FRONTCOMP* thenewFC, FRONTCOMP* the_old_succ, int cas,  int anglecrit,  int edgecrit )
+void NS_PREFIX AccelUpdate( FRONTCOMP* theFC,  FRONTCOMP* thenewFC, FRONTCOMP* the_old_succ, int cas,  int anglecrit,  int edgecrit )
 {
   switch (cas)
   {
@@ -1846,11 +1837,7 @@ void AccelUpdate( FRONTCOMP* theFC,  FRONTCOMP* thenewFC, FRONTCOMP* the_old_suc
 
 
 /****************************************************************************/
-/*D
-   AccelInit - initiates and prepairs the accelerator structures
-
-   SYNOPSIS:
-   INT AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params);
+/** \brief Initiates and prepairs the accelerator structures
 
    PARAMETERS:
    .  the_Grid - pointer to grid, gives the Domain, necessary for surrounding quadrangle
@@ -1858,7 +1845,6 @@ void AccelUpdate( FRONTCOMP* theFC,  FRONTCOMP* thenewFC, FRONTCOMP* the_old_suc
    .  edgecrit - flag for the edge criterion
    .  params - pointer to necessary grid parameters
 
-   DESCRIPTION:
    This function sets necessary start parameters of the accelerator structures
    inserts all edges respectively all angles of the beginning advancing front
    in the edgetree / angletree, it
@@ -1875,7 +1861,7 @@ void AccelUpdate( FRONTCOMP* theFC,  FRONTCOMP* thenewFC, FRONTCOMP* the_old_suc
 /****************************************************************************/
 
 
-int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
+int NS_PREFIX AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
 {
   int l;
   BVP *theBVP;
@@ -1894,8 +1880,7 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
 
   InitAccelObjs(MG);
   del_edg_fnd = 0;
-  startpointer = (QUADTREETYP *)GetMemoryForObject( MG, sizeof(QUADTREETYP),
-                                                    QuObj);
+  startpointer = (QUADTREETYP *)GetMemoryForObject( MG, sizeof(QUADTREETYP), QuObj);
   if ( startpointer == NULL )
   {
     PrintErrorMessage('E',"bnodes","ERROR: No memory !!!");
@@ -1950,14 +1935,7 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
 
 
 /****************************************************************************/
-/*D
-   AccelFCTreeSearch - searchs problematic frontcomponents
-
-   SYNOPSIS:
-   INT AccelFCTreeSearch(INDEPFRONTLIST *theIFL,
-   FRONTCOMP* thefoundPoints[MAXNPOINTS],
-   FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS],
-   DOUBLE xt[3], DOUBLE yt[3], DOUBLE searchradis);
+/** \brief Searchs problematic frontcomponents
 
    PARAMETERS:
    .  theIFL - pointer to the concerning independant frontlist, in which the new
@@ -1970,7 +1948,6 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
    .  yt[3] - y-coordinates of the eps-skin of the suggested triangle
    .  searchradis - radius of a circle surrounding the new frontcomponent
 
-   DESCRIPTION:
    Before completing and including a suggested element in the data structure of
    the grid, 'AccelFCTreeSearch(...)' checks whether there is any other
    frontcomponent of the advancing front (= 'AF') within or near the suggested
@@ -1988,9 +1965,9 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
    D*/
 /****************************************************************************/
 
-int AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOINTS],
-                      FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS], DOUBLE xt[3],
-                      DOUBLE yt[3], DOUBLE searchradis)
+int NS_PREFIX AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOINTS],
+                                FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS], DOUBLE xt[3],
+                                DOUBLE yt[3], DOUBLE searchradis)
 {
   SOURCETYP *srce;
   SOURCETYP *search_sq_ld, *search_sq_ru;
@@ -2088,16 +2065,11 @@ int AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOIN
 
 
 /****************************************************************************/
-/*D
-   AccelBaseTreeSearch - delivers the ideal basis for the next element
-
-   SYNOPSIS:
-   FRONTCOMP* AccelBaseTreeSearch(FRONTLIST** myList);
+/** \brief Delivers the ideal basis for the next element
 
    PARAMETERS:
    .  myList - reference value for the frontlist of the found frontcomponent
 
-   DESCRIPTION:
    This function
    delivers the FC (and its frontlist) with the smallest edge respectively
    the FC with the smallest angle as the base node for the next tiangle
@@ -2105,14 +2077,13 @@ int AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOIN
    left frontcomponent is the best one.
 
    RETURN VALUE:
-   FRONTCOMP*
    .n    pointer to ideal frontcomponent if ok
    .n    NULL if error occured.
    D*/
 /****************************************************************************/
 
 
-FRONTCOMP* AccelBaseTreeSearch(FRONTLIST** myList)
+FRONTCOMP* NS_PREFIX AccelBaseTreeSearch(FRONTLIST** myList)
 {
   BALTREETYP* p;
   p = btree_rootpointer;
