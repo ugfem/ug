@@ -57,7 +57,7 @@
 /****************************************************************************/
 
 /* switch on blasm calls */
-#undef _SPARSE_
+#define _SPARSE_
 
 #define SMALL_DET                       1e-15
 #define MAX_DEPTH           MAX_NODAL_VECTORS
@@ -458,7 +458,7 @@ INT jacBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvd
 /****************************************************************************/
 
 #ifdef _SPARSE_
-INT l_lgs (GRID *grid, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT l_lgs (GRID *grid, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, VECDATA_DESC *diag)
 {
   if (MG_Matrix_Loop(grid->mg, grid->level, grid->level,
                      ((ALL_VECTORS&BLAS_SURFACE)<<BLAS_MODE_SHIFT) |
