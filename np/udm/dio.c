@@ -73,7 +73,7 @@
 /*																			*/
 /****************************************************************************/
 
-
+int datapathes_set;                             /* pathes used in ug			*/
 
 /****************************************************************************/
 /*																			*/
@@ -82,7 +82,6 @@
 /****************************************************************************/
 
 static FILE *stream;                            /* file                                                 */
-static int datapathes_set;                      /* pathes used in ug			*/
 static char buffer[DIO_BUFFERSIZE]; /* general purpose buffer		*/
 static int intList[DIO_INTSIZE];        /* general purpose integer list */
 

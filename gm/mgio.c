@@ -102,7 +102,7 @@
 /*																			*/
 /****************************************************************************/
 
-
+int mgpathes_set;                               /* pathes used in ug			*/
 
 /****************************************************************************/
 /*																			*/
@@ -111,7 +111,6 @@
 /****************************************************************************/
 
 static FILE *stream;                            /* file                                                 */
-static int mgpathes_set;                        /* pathes used in ug			*/
 static int rw_mode;                                     /* ASCII or ... (see header)	*/
 static char buffer[MGIO_BUFFERSIZE]; /* general purpose buffer		*/
 static int intList[MGIO_INTSIZE];       /* general purpose integer list */

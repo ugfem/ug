@@ -69,6 +69,7 @@
 #include "ugm.h"
 #include "algebra.h"
 #include "shapes.h"
+#include "mgio.h"
 
 /* grid generator module */
 #ifdef __TWODIM__
@@ -105,6 +106,7 @@
 #include "cmdline.h"
 #include "helpmsg.h"
 #include "mmio.h"
+#include "dio.h"
 
 #ifdef ModelP
 #include "parallel.h"
@@ -2234,7 +2236,7 @@ static INT OpenCommand (INT argc, char **argv)
   char Multigrid[NAMESIZE],File[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE],type[NAMESIZE];
   char *theBVP,*theFormat,*theMGName;
   MEM heapSize;
-  INT i,force,IEopt,autosave,try_load;
+  INT i,force,IEopt,autosave,try_load,fqn,mgpathes_set_old;
 
   /* get multigrid name */
   if ((sscanf(argv[0],expandfmt(CONCAT3(" open %",NAMELENSTR,"[ -~]")),File)!=1) || (strlen(File)==0))
@@ -2246,7 +2248,7 @@ static INT OpenCommand (INT argc, char **argv)
   /* get problem and format */
   strcpy(type,"asc");
   theBVP = theFormat = theMGName = NULL;
-  heapSize = force = autosave = 0;
+  heapSize = force = autosave = fqn = 0;
   try_load = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -2311,15 +2313,27 @@ static INT OpenCommand (INT argc, char **argv)
       }
       break;
 
+    case 'z' :
+      fqn = 1;
+      break;
+
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("open",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
 
+  if (fqn) {
+    mgpathes_set_old = mgpathes_set;
+    mgpathes_set = 0;
+  }
+
   /* allocate the multigrid structure */
   theMG = LoadMultiGrid(theMGName,File,type,theBVP,theFormat,
                         heapSize,force,IEopt,autosave);
+
+  if (fqn) mgpathes_set = mgpathes_set_old;
+
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"open","could not open multigrid");
@@ -3240,7 +3254,7 @@ static INT LoadDataCommand (INT argc, char **argv)
 {
   char FileName[NAMESIZE],type[NAMESIZE],mname[NAMESIZE];
   VECDATA_DESC *theVDList[NM_MAX];
-  INT i,m,n,number,force,ret,nm;
+  INT i,m,n,number,force,ret,nm,fqn,datapathes_set_old;
   int iValue;
   MEM heapSize;
 
@@ -3250,6 +3264,7 @@ static INT LoadDataCommand (INT argc, char **argv)
   strcpy(type,"asc");
   heapSize=0;
   force=0;
+  fqn=0;
   number = -1;
   nm=0;
   for (i=1; i<argc; i++)
@@ -3303,7 +3318,15 @@ static INT LoadDataCommand (INT argc, char **argv)
         return(PARAMERRORCODE);
       }
       break;
+    case 'z' :
+      fqn = 1;
+      break;
     }
+
+  if (fqn) {
+    datapathes_set_old = datapathes_set;
+    datapathes_set = 0;
+  }
 
   /* open or reopen multigrid */
   if (force)
@@ -3348,6 +3371,8 @@ static INT LoadDataCommand (INT argc, char **argv)
 
   if (m<=0) return (PARAMERRORCODE);
   if (LoadData(currMG,FileName,type,number,m,theVDList)) return (CMDERRORCODE);
+
+  if (fqn) datapathes_set = datapathes_set_old;
 
   return(OKCODE);
 }
