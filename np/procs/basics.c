@@ -165,14 +165,14 @@ static INT CV_Display (NP_BASE *theNP)
 static INT CV_Execute (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_CLEAR_VEC *theCV;
-  INT i;
+  INT cl;
 
   theCV   = (NP_CLEAR_VEC*)theNP;
   if (theCV->x == NULL) return(1);
 
-  for (i=0; i<=CURRENTLEVEL(theNP->mg); i++)
-    if (l_dset (GRID_ON_LEVEL(theNP->mg,i),theCV->x,1,0.0))
-      return (1);
+  cl = CURRENTLEVEL(NP_MG(theNP));
+  if (dset(NP_MG(theNP),0,cl,ALL_VECTORS,theCV->x,0.0))
+    return (1);
 
   return (0);
 }
@@ -238,14 +238,12 @@ static INT CM_Display (NP_BASE *theNP)
 static INT CM_Execute (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_CLEAR_MAT *theCM;
-  INT i;
 
   theCM   = (NP_CLEAR_MAT*)theNP;
   if (theCM->A == NULL) return(1);
 
-  for (i=0; i<=CURRENTLEVEL(theNP->mg); i++)
-    if (l_dmatset(GRID_ON_LEVEL(theNP->mg,i),theCM->A,0.0))
-      return (1);
+  if (dmatset(NP_MG(theNP),0,CURRENTLEVEL(NP_MG(theNP)),ALL_VECTORS,theCM->A,0.0))
+    return (1);
 
   return (0);
 }
@@ -324,13 +322,14 @@ static INT EU_Execute (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_EUNORM_VEC *theEU;
   VEC_SCALAR eunorm;
+  INT cl;
 
   theEU   = (NP_EUNORM_VEC*)theNP;
 
   if (theEU->x == NULL) return(1);
 
-  if (l_eunorm(GRID_ON_LEVEL(theNP->mg,CURRENTLEVEL(theNP->mg)),
-               theEU->x,1,eunorm))
+  cl = CURRENTLEVEL(NP_MG(theNP));
+  if (dnrm2x(NP_MG(theNP),cl,cl,ALL_VECTORS,theEU->x,eunorm))
     return (1);
 
   if (WriteVEC_SCALAR(theEU->x,eunorm,EU_STRDIR(theEU)))
@@ -405,15 +404,13 @@ static INT COPYV_Display (NP_BASE *theNP)
 static INT COPYV_Execute (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_COPY_VEC *np;
-  INT i;
 
   np = (NP_COPY_VEC*)theNP;
 
   if ((np->d == NULL)  || (np->s == NULL)) return(1);
 
-  for (i=0; i<=CURRENTLEVEL(theNP->mg); i++)
-    if (l_dcopy (GRID_ON_LEVEL(theNP->mg,i),np->d,1,np->s))
-      return (1);
+  if (dcopy(NP_MG(theNP),0,CURRENTLEVEL(NP_MG(theNP)),ALL_VECTORS,np->d,np->s))
+    return (1);
 
   return (0);
 }

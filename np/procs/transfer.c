@@ -483,40 +483,29 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
 INT MinimizeLevel (GRID *theGrid, VECDATA_DESC *c, VECDATA_DESC *b,
                    MATDATA_DESC *A, VECDATA_DESC *t, INT display)
 {
-  VEC_SCALAR scal;
+  MULTIGRID *mg;
   DOUBLE a0,a1;
-  INT j,ncomp;
+  INT ncomp,lev;
 
   ncomp = VD_NCOMP(c);
-  if (l_dset(theGrid,t,EVERY_CLASS,0.0) != NUM_OK)
-    return(1);
-  if (l_dmatmul(theGrid,t,EVERY_CLASS,A,c,EVERY_CLASS) != NUM_OK)
+  lev = GLEVEL(theGrid);
+  mg = MYMG(theGrid);
+  if (dmatmul(mg,lev,lev,ALL_VECTORS,t,A,c) != NUM_OK)
     return(1);
     #ifdef ModelP
   if (l_vector_collect(theGrid,t) != NUM_OK)
     return (1);
     #endif
-  if (l_ddot (theGrid,t,EVERY_CLASS,b,scal) != NUM_OK)
+  if (ddot(mg,lev,lev,ALL_VECTORS,t,b,&a0) != NUM_OK)
     return(1);
-  a0 = 0.0;
-  for (j=0; j<ncomp; j++)
-    a0 += scal[j];
-  if (l_ddot (theGrid,t,EVERY_CLASS,t,scal) != NUM_OK)
+  if (dnrm2(mg,lev,lev,ALL_VECTORS,t,&a1) != NUM_OK)
     return(1);
-  a1 = 0.0;
-  for (j=0; j<ncomp; j++)
-    a1 += scal[j];
-  if (a1 <= 0.0)
-    return(1);
+  a1 *= a1;                     /* need norm^2 */
   if (display == PCR_FULL_DISPLAY)
     UserWriteF("       min  %7.4lf\n",1+a0/a1);
-  for (j=0; j<ncomp; j++)
-    scal[j] = 1 + a0 / a1;
-  if (l_dscale (theGrid,c,EVERY_CLASS,scal))
+  if (dscal(mg,lev,lev,ALL_VECTORS,c,1 + a0 / a1))
     return(1);
-  for (j=0; j<ncomp; j++)
-    scal[j] = - a0 / a1;
-  if (l_daxpy (theGrid,b,EVERY_CLASS,scal,t))
+  if (daxpy(mg,lev,lev,ALL_VECTORS,b,- a0 / a1,t))
     return(1);
 
   return(0);
@@ -651,7 +640,7 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 #       endif
 
   np = (NP_STANDARD_TRANSFER *) theNP;
-  theMG = theNP->base.mg;
+  theMG = NP_MG(theNP);
 
   if (np->amg != NULL) {
     if (*fl == 0)
@@ -671,17 +660,17 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   if (np->mode == SCALEDMG_MODE)
   {
                 #ifdef ModelP
-    if (AllocMDFromMD(theNP->base.mg,*fl,tl,A,&np->L)) {
+    if (AllocMDFromMD(NP_MG(theNP),*fl,tl,A,&np->L)) {
+      result[0] = __LINE__;
+      return (1);
+    }
+    if (dmatcopy(theMG,*fl,tl,ALL_VECTORS,np->L,A) != NUM_OK) {
       result[0] = __LINE__;
       return (1);
     }
     for (i=tl; i>=*fl; i--)
     {
       theGrid = GRID_ON_LEVEL(theMG,i);
-      if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) {
-        result[0] = __LINE__;
-        return (1);
-      }
       if (l_matrix_consistent(theGrid,np->L,MAT_GHOST_DIAG_CONS) != NUM_OK) {
         result[0] = __LINE__;
         return (1);
@@ -707,7 +696,7 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         return (1);
       }
                 #ifdef ModelP
-    FreeMD(theNP->base.mg,*fl,tl,np->L);
+    FreeMD(NP_MG(theNP),*fl,tl,np->L);
                 #endif
   }
 
@@ -723,14 +712,14 @@ static INT RestrictDefect (NP_TRANSFER *theNP, INT level,
 
   np = (NP_STANDARD_TRANSFER *) theNP;
   if (level < 1)
-    result[0] = RestrictByMatrix(GRID_ON_LEVEL(theNP->base.mg,level),
+    result[0] = RestrictByMatrix(GRID_ON_LEVEL(NP_MG(theNP),level),
                                  to,from,damp);
   else
-    result[0] = (*np->res)(GRID_ON_LEVEL(theNP->base.mg,level),
+    result[0] = (*np->res)(GRID_ON_LEVEL(NP_MG(theNP),level),
                            to,from,damp);
 
     #ifdef ModelP
-  if (l_ghostvector_collect(GRID_ON_LEVEL(theNP->base.mg,level-1),to)
+  if (l_ghostvector_collect(GRID_ON_LEVEL(NP_MG(theNP),level-1),to)
       != NUM_OK) NP_RETURN(1,result[0]);
         #endif
 
@@ -746,19 +735,19 @@ static INT InterpolateCorrection (NP_TRANSFER *theNP, INT level,
 
   np = (NP_STANDARD_TRANSFER *) theNP;
     #ifdef ModelP
-  if (l_ghostvector_consistent(GRID_ON_LEVEL(theNP->base.mg,level-1),from)
+  if (l_ghostvector_consistent(GRID_ON_LEVEL(NP_MG(theNP),level-1),from)
       != NUM_OK) NP_RETURN(1,result[0]);
         #endif
   if (level < 1)
     result[0] =
-      InterpolateCorrectionByMatrix(GRID_ON_LEVEL(theNP->base.mg,level),
+      InterpolateCorrectionByMatrix(GRID_ON_LEVEL(NP_MG(theNP),level),
                                     to,from,damp);
   else
     result[0] =
-      (*np->intcor)(GRID_ON_LEVEL(theNP->base.mg,level),to,from,damp);
+      (*np->intcor)(GRID_ON_LEVEL(NP_MG(theNP),level),to,from,damp);
     #ifdef ModelP
   if (np->meanvalue)
-    if (l_vector_meanvalue(GRID_ON_LEVEL(theNP->base.mg,level),to)
+    if (l_vector_meanvalue(GRID_ON_LEVEL(NP_MG(theNP),level),to)
         != NUM_OK) NP_RETURN(1,result[0]);
         #endif
 
@@ -774,10 +763,10 @@ static INT InterpolateNewVectors (NP_TRANSFER *theNP,  INT fl, INT tl,
   np = (NP_STANDARD_TRANSFER *) theNP;
   for (i=fl+1; i<=tl; i++) {
         #ifdef ModelP
-    if (l_ghostvector_consistent(GRID_ON_LEVEL(theNP->base.mg,i-1),x)
+    if (l_ghostvector_consistent(GRID_ON_LEVEL(NP_MG(theNP),i-1),x)
         != NUM_OK) NP_RETURN(1,result[0]);
         #endif
-    result[0] = (*np->intnew)(GRID_ON_LEVEL(theNP->base.mg,i),x);
+    result[0] = (*np->intnew)(GRID_ON_LEVEL(NP_MG(theNP),i),x);
     if (result[0]) NP_RETURN(1,result[0]);
   }
 
@@ -791,10 +780,10 @@ static INT ProjectSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
 
   result[0] = 0;
   for (i=tl-1; i>=fl; i--) {
-    result[0] = StandardProject(GRID_ON_LEVEL(theNP->base.mg,i),x,x);
+    result[0] = StandardProject(GRID_ON_LEVEL(NP_MG(theNP),i),x,x);
     if (result[0]) NP_RETURN(1,result[0]);
         #ifdef ModelP
-    if (l_ghostvector_project(GRID_ON_LEVEL(theNP->base.mg,i),x)
+    if (l_ghostvector_project(GRID_ON_LEVEL(NP_MG(theNP),i),x)
         != NUM_OK) NP_RETURN(1,result[0]);
         #endif
   }
@@ -811,10 +800,10 @@ static INT AdaptCorrection (NP_TRANSFER *theNP, INT level,
 
   np = (NP_STANDARD_TRANSFER *) theNP;
   if (np->level) {
-    theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
-    if (AllocVDFromVD(theNP->base.mg,level,level,c,&np->t)) NP_RETURN(1,result[0]);
+    theGrid = GRID_ON_LEVEL(NP_MG(theNP),level);
+    if (AllocVDFromVD(NP_MG(theNP),level,level,c,&np->t)) NP_RETURN(1,result[0]);
     if (MinimizeLevel(theGrid,c,b,A,np->t,np->display)) NP_RETURN(1,result[0]);
-    if (FreeVD(theNP->base.mg,level,level,np->t)) NP_RETURN(1,result[0]);
+    if (FreeVD(NP_MG(theNP),level,level,np->t)) NP_RETURN(1,result[0]);
   }
 
   return(0);

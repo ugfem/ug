@@ -527,10 +527,10 @@ static INT Smoother (NP_ITER *theNP, INT level,
     #ifdef ModelP
   if (l_vector_consistent(theGrid,x) != NUM_OK) NP_RETURN(1,result[0]);
     #endif
-  if (l_dscale(theGrid,x,EVERY_CLASS,np->damp) != NUM_OK)
+  if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,x,np->damp) != NUM_OK)
     NP_RETURN(1,result[0]);
-  if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,x,EVERY_CLASS)
-      != NUM_OK) NP_RETURN(1,result[0]);
+  if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,x)!= NUM_OK)
+    NP_RETURN(1,result[0]);
 
   return (0);
 }
@@ -543,7 +543,7 @@ static INT SmootherPostProcess (NP_ITER *theNP, INT level,
 
   np = (NP_SMOOTHER *) theNP;
   if (np->L != NULL)
-    FreeMD(theNP->base.mg,level,level,np->L);
+    FreeMD(NP_MG(theNP),level,level,np->L);
 
   return(0);
 }
@@ -582,15 +582,13 @@ static INT JacobiPreProcess  (NP_ITER *theNP, INT level,
                               VECDATA_DESC *x, VECDATA_DESC *b,
                               MATDATA_DESC *A, INT *baselevel, INT *result)
 {
-  NP_SMOOTHER *np;
-  GRID *theGrid;
-
-  np = (NP_SMOOTHER *) theNP;
+  NP_SMOOTHER *np=(NP_SMOOTHER *) theNP;
 
         #ifdef ModelP
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) NP_RETURN(1,result[0]);
+  GRID *theGrid;
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L)) NP_RETURN(1,result[0]);
   theGrid = NP_GRID(theNP,level);
-  if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
   if (l_matrix_consistent(theGrid,np->L,MAT_DIAG_CONS) != NUM_OK) NP_RETURN(1,result[0]);
         #else
   np->L = A;
@@ -661,15 +659,14 @@ static INT GSPreProcess  (NP_ITER *theNP, INT level,
                           VECDATA_DESC *x, VECDATA_DESC *b,
                           MATDATA_DESC *A, INT *baselevel, INT *result)
 {
-  NP_SMOOTHER *np;
-  GRID *theGrid;
+  GRID *theGrid=NP_GRID(theNP,level);
 
-  theGrid = NP_GRID(theNP,level);
         #ifdef ModelP
-  np = (NP_SMOOTHER *) theNP;
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L))
+  NP_SMOOTHER *np=(NP_SMOOTHER *) theNP;
+
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L))
     NP_RETURN(1,result[0]);
-  if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
   if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
     NP_RETURN(1,result[0]);
         #endif
@@ -829,8 +826,7 @@ static INT BCGSSStep (NP_SMOOTHER *theNP, INT level,
                       INT *result)
 {
   NP_BCGSSMOOTHER *np;
-  VEC_SCALAR scal;
-  INT i,j,restart;
+  INT i,restart;
   DOUBLE alpha,rho_new,beta,tt;
 
   np = (NP_BCGSSMOOTHER *) theNP;
@@ -840,64 +836,58 @@ static INT BCGSSStep (NP_SMOOTHER *theNP, INT level,
     /* restart ? */
     if ((np->restart>0 && i%np->restart==0) || restart)
     {
-      if (l_dset(NP_GRID(theNP,level),np->p,EVERY_CLASS,0.0)!= NUM_OK) REP_ERR_RETURN (1);
-      if (l_dset(NP_GRID(theNP,level),np->v,EVERY_CLASS,0.0)!= NUM_OK) REP_ERR_RETURN (1);
-      if (l_dcopy(NP_GRID(theNP,level),np->r,EVERY_CLASS,b)!= NUM_OK) REP_ERR_RETURN (1);
+      if (dset(NP_MG(theNP),level,level,ALL_VECTORS,np->p,0.0)!= NUM_OK) REP_ERR_RETURN (1);
+      if (dset(NP_MG(theNP),level,level,ALL_VECTORS,np->v,0.0)!= NUM_OK) REP_ERR_RETURN (1);
+      if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->r,b)!= NUM_OK) REP_ERR_RETURN (1);
       alpha = np->rho = np->omega = 1.0;
       restart = 0;
     }
 
     /* update x, b */
-    if (l_ddot_sv (NP_GRID(theNP,level),b,EVERY_CLASS,np->r,Factor_One,&rho_new)!=NUM_OK) REP_ERR_RETURN (1);
-    beta=rho_new*alpha/np->rho/np->omega;
-    for (j=0; j<VD_NCOMP(x); j++) scal[j]=beta;
-    if (l_dscale (NP_GRID(theNP,level),np->p,EVERY_CLASS,scal)) REP_ERR_RETURN (1);
-    if (l_daxpy (NP_GRID(theNP,level),np->p,EVERY_CLASS,Factor_One,b)!= NUM_OK) REP_ERR_RETURN (1);
-    for (j=0; j<VD_NCOMP(x); j++) scal[j]=-beta*np->omega;
-    if (l_daxpy (NP_GRID(theNP,level),np->p,EVERY_CLASS,scal,np->v)!= NUM_OK) REP_ERR_RETURN (1);
+    if (ddot(NP_MG(theNP),level,level,ALL_VECTORS,b,np->r,&rho_new)!=NUM_OK) REP_ERR_RETURN (1);
+    beta = rho_new*alpha/np->rho/np->omega;
+    if (dscal(NP_MG(theNP),level,level,ALL_VECTORS,np->p,beta)) REP_ERR_RETURN (1);
+    if (dadd(NP_MG(theNP),level,level,ALL_VECTORS,np->p,b)!= NUM_OK) REP_ERR_RETURN (1);
+    if (daxpy(NP_MG(theNP),level,level,ALL_VECTORS,np->p,-beta*np->omega,np->v)!= NUM_OK) REP_ERR_RETURN (1);
     if (np->Iter!=NULL)
     {
-      if (l_dset(NP_GRID(theNP,level),np->q,EVERY_CLASS,0.0)!= NUM_OK) REP_ERR_RETURN (1);
-      if (l_dcopy(NP_GRID(theNP,level),np->s,EVERY_CLASS,np->p)!= NUM_OK) REP_ERR_RETURN (1);
+      if (dset(NP_MG(theNP),level,level,ALL_VECTORS,np->q,0.0)!= NUM_OK) REP_ERR_RETURN (1);
+      if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->s,np->p)!= NUM_OK) REP_ERR_RETURN (1);
       if ((*np->Iter->Iter)(np->Iter,level,np->q,np->p,A,result)) REP_ERR_RETURN (1);
-      if (l_dcopy(NP_GRID(theNP,level),np->p,EVERY_CLASS,np->s)!= NUM_OK) REP_ERR_RETURN (1);
-      if (l_dmatmul_set(NP_GRID(theNP,level),np->v,EVERY_CLASS,A,np->q,EVERY_CLASS)) REP_ERR_RETURN (1);
-      if (l_ddot_sv (NP_GRID(theNP,level),np->v,EVERY_CLASS,np->r,Factor_One,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
+      if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->p,np->s)!= NUM_OK) REP_ERR_RETURN (1);
+      if (dmatmul(NP_MG(theNP),level,level,ALL_VECTORS,np->v,A,np->q)) REP_ERR_RETURN (1);
+      if (ddot(NP_MG(theNP),level,level,ALL_VECTORS,np->v,np->r,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
       alpha = rho_new/alpha;
-      for (j=0; j<VD_NCOMP(x); j++) scal[j]=alpha;
-      if (l_daxpy (NP_GRID(theNP,level),x,EVERY_CLASS,scal,np->q)!= NUM_OK) REP_ERR_RETURN (1);
+      if (daxpy(NP_MG(theNP),level,level,ALL_VECTORS,x,alpha,np->q)!= NUM_OK) REP_ERR_RETURN (1);
     }
     else
     {
-      if (l_dmatmul_set(NP_GRID(theNP,level),np->v,EVERY_CLASS,A,np->p,EVERY_CLASS)) REP_ERR_RETURN (1);
-      if (l_ddot_sv (NP_GRID(theNP,level),np->v,EVERY_CLASS,np->r,Factor_One,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
+      if (dmatmul(NP_MG(theNP),level,level,ALL_VECTORS,np->v,A,np->p)) REP_ERR_RETURN (1);
+      if (ddot(NP_MG(theNP),level,level,ALL_VECTORS,np->v,np->r,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
       alpha = rho_new/alpha;
-      for (j=0; j<VD_NCOMP(x); j++) scal[j]=alpha;
-      if (l_daxpy (NP_GRID(theNP,level),x,EVERY_CLASS,scal,np->p)!= NUM_OK) REP_ERR_RETURN (1);
+      if (daxpy(NP_MG(theNP),level,level,ALL_VECTORS,x,alpha,np->p)!= NUM_OK) REP_ERR_RETURN (1);
     }
-    if (l_dcopy(NP_GRID(theNP,level),np->s,EVERY_CLASS,b)!= NUM_OK) REP_ERR_RETURN (1);
-    for (j=0; j<VD_NCOMP(x); j++) scal[j]=-alpha;
-    if (l_daxpy (NP_GRID(theNP,level),np->s,EVERY_CLASS,scal,np->v)!= NUM_OK) REP_ERR_RETURN (1);
+    if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->s,b)!= NUM_OK) REP_ERR_RETURN (1);
+    if (daxpy(NP_MG(theNP),level,level,ALL_VECTORS,np->s,-alpha,np->v)!= NUM_OK) REP_ERR_RETURN (1);
     if (np->Iter!=NULL)
     {
-      if (l_dset(NP_GRID(theNP,level),np->q,EVERY_CLASS,0.0)!= NUM_OK) REP_ERR_RETURN (1);
-      if (l_dcopy(NP_GRID(theNP,level),np->t,EVERY_CLASS,np->s)!= NUM_OK) REP_ERR_RETURN (1);
+      if (dset(NP_MG(theNP),level,level,ALL_VECTORS,np->q,0.0)!= NUM_OK) REP_ERR_RETURN (1);
+      if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->t,np->s)!= NUM_OK) REP_ERR_RETURN (1);
       if ((*np->Iter->Iter)(np->Iter,level,np->q,np->s,A,result)) REP_ERR_RETURN (1);
-      if (l_dcopy(NP_GRID(theNP,level),np->s,EVERY_CLASS,np->t)!= NUM_OK) REP_ERR_RETURN (1);
+      if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->s,np->t)!= NUM_OK) REP_ERR_RETURN (1);
     }
     else
     {
-      if (l_dcopy(NP_GRID(theNP,level),np->q,EVERY_CLASS,np->s)!= NUM_OK) REP_ERR_RETURN (1);
+      if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->q,np->s)!= NUM_OK) REP_ERR_RETURN (1);
     }
-    if (l_dmatmul_set(NP_GRID(theNP,level),np->t,EVERY_CLASS,A,np->q,EVERY_CLASS)) REP_ERR_RETURN (1);
-    if (l_ddot_sv (NP_GRID(theNP,level),np->t,EVERY_CLASS,np->t,Factor_One,&tt)!=NUM_OK) REP_ERR_RETURN (1);
-    if (l_ddot_sv (NP_GRID(theNP,level),np->s,EVERY_CLASS,np->t,Factor_One,&(np->omega))!=NUM_OK) REP_ERR_RETURN (1);
+    if (dmatmul(NP_MG(theNP),level,level,ALL_VECTORS,np->t,A,np->q)) REP_ERR_RETURN (1);
+    if (dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,np->t,&tt)!=NUM_OK) REP_ERR_RETURN (1);
+    tt *= tt;
+    if (ddot(NP_MG(theNP),level,level,ALL_VECTORS,np->s,np->t,&(np->omega))!=NUM_OK) REP_ERR_RETURN (1);
     np->omega /= tt;
-    for (j=0; j<VD_NCOMP(x); j++) scal[j]=np->omega;
-    if (l_daxpy (NP_GRID(theNP,level),x,EVERY_CLASS,scal,np->q)!= NUM_OK) REP_ERR_RETURN (1);
-    if (l_dcopy(NP_GRID(theNP,level),b,EVERY_CLASS,np->s)!= NUM_OK) REP_ERR_RETURN (1);
-    for (j=0; j<VD_NCOMP(x); j++) scal[j]=-np->omega;
-    if (l_daxpy (NP_GRID(theNP,level),b,EVERY_CLASS,scal,np->t)!= NUM_OK) REP_ERR_RETURN (1);
+    if (daxpy(NP_MG(theNP),level,level,ALL_VECTORS,x,np->omega,np->q)!= NUM_OK) REP_ERR_RETURN (1);
+    if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,b,np->s)!= NUM_OK) REP_ERR_RETURN (1);
+    if (daxpy(NP_MG(theNP),level,level,ALL_VECTORS,b,-np->omega,np->t)!= NUM_OK) REP_ERR_RETURN (1);
     np->rho = rho_new;
   }
 
@@ -913,7 +903,7 @@ static INT BCGSSmootherPostProcess (NP_ITER *theNP, INT level,
   NP_BCGSSMOOTHER *np;
 
   nps = (NP_SMOOTHER *) theNP;
-  if (nps->L != NULL) FreeMD(theNP->base.mg,level,level,nps->L);
+  if (nps->L != NULL) FreeMD(NP_MG(theNP),level,level,nps->L);
   np = (NP_BCGSSMOOTHER *) theNP;
   FreeVD(nps->iter.base.mg,level,level,np->r);
   FreeVD(nps->iter.base.mg,level,level,np->p);
@@ -1007,15 +997,14 @@ static INT SGSPreProcess  (NP_ITER *theNP, INT level,
                            VECDATA_DESC *x, VECDATA_DESC *b,
                            MATDATA_DESC *A, INT *baselevel, INT *result)
 {
-  NP_SMOOTHER *np;
-  GRID *theGrid;
+  GRID *theGrid=NP_GRID(theNP,level);
 
-  theGrid = NP_GRID(theNP,level);
         #ifdef ModelP
-  np = (NP_SMOOTHER *) theNP;
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L))
+  NP_SMOOTHER *np=(NP_SMOOTHER *) theNP;
+
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L))
     NP_RETURN(1,result[0]);
-  if (l_dmatcopy(theGrid,np->L,A) != NUM_OK)
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
     NP_RETURN(1,result[0]);
   if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK)
     NP_RETURN(1,result[0]);
@@ -1025,7 +1014,7 @@ static INT SGSPreProcess  (NP_ITER *theNP, INT level,
   *baselevel = level;
 
   /* get storage for extra temp */
-  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NP_SGS_t((NP_SGS *)theNP)))
+  if (AllocVDFromVD(NP_MG(theNP),level,level,x,&NP_SGS_t((NP_SGS *)theNP)))
     NP_RETURN(1,result[0]);
 
   return (0);
@@ -1066,12 +1055,11 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
     #endif
 
   /* damp */
-  if (l_dscale(theGrid,NP_SGS_t(np),EVERY_CLASS,np->smoother.damp)
-      != NUM_OK)
+  if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,NP_SGS_t(np),np->smoother.damp)!= NUM_OK)
     NP_RETURN(1,result[0]);
 
   /* update defect */
-  if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,NP_SGS_t(np),EVERY_CLASS)
+  if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,NP_SGS_t(np))
       != NUM_OK) NP_RETURN(1,result[0]);
 
   /* iterate backward */
@@ -1092,14 +1080,13 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
     #endif
 
   /* damp */
-  if (l_dscale(theGrid,x,EVERY_CLASS,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
+  if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,x,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
 
   /* update defect */
-  if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,x,EVERY_CLASS)
-      != NUM_OK) NP_RETURN(1,result[0]);
+  if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,x)!= NUM_OK) NP_RETURN(1,result[0]);
 
   /* now add the two corrections */
-  if (l_daxpy(theGrid,x,EVERY_CLASS,Factor_One,NP_SGS_t(np)) != NUM_OK) NP_RETURN(1,result[0]);
+  if (dadd(NP_MG(theNP),level,level,ALL_VECTORS,x,NP_SGS_t(np)) != NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
 }
@@ -1112,7 +1099,7 @@ static INT SGSPostProcess (NP_ITER *theNP, INT level,
 
   np = (NP_SGS *) theNP;
   if (np->smoother.L != NULL)
-    FreeMD(theNP->base.mg,level,level,np->smoother.L);
+    FreeMD(NP_MG(theNP),level,level,np->smoother.L);
   FreeVD(NP_MG(theNP),level,level,NP_SGS_t(np));
 
   return(0);
@@ -1205,9 +1192,9 @@ static INT PGSPreProcess  (NP_ITER *theNP, INT level,
   np = (NP_PGS *) theNP;
   theGrid = NP_GRID(theNP,level);
         #ifdef ModelP
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L))
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L))
     NP_RETURN(1,result[0]);
-  if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK)
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK)
     NP_RETURN(1,result[0]);
   if (l_matrix_consistent(theGrid,np->smoother.L,MAT_CONS) != NUM_OK)
     NP_RETURN(1,result[0]);
@@ -1217,7 +1204,7 @@ static INT PGSPreProcess  (NP_ITER *theNP, INT level,
   *baselevel = level;
 
   /* get storage for extra temp */
-  if (AllocVDFromVD(theNP->base.mg,level,level,x,&np->t))
+  if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->t))
     NP_RETURN(1,result[0]);
 
   return (0);
@@ -1252,13 +1239,11 @@ static INT PGSSmoother (NP_ITER *theNP, INT level,
     #endif
 
   /* damp */
-  if (l_dscale(theGrid,x,EVERY_CLASS,np->smoother.damp)
-      != NUM_OK)
+  if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,x,np->smoother.damp)!= NUM_OK)
     NP_RETURN(1,result[0]);
 
   /* update defect */
-  if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,x,EVERY_CLASS)
-      != NUM_OK)
+  if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,x)!= NUM_OK)
     NP_RETURN(1,result[0]);
 
   return (0);
@@ -1272,7 +1257,7 @@ static INT PGSPostProcess (NP_ITER *theNP, INT level,
 
   np = (NP_PGS *) theNP;
   if (np->smoother.L != NULL)
-    FreeMD(theNP->base.mg,level,level,np->smoother.L);
+    FreeMD(NP_MG(theNP),level,level,np->smoother.L);
   FreeVD(NP_MG(theNP),level,level,np->t);
 
   return(0);
@@ -1334,9 +1319,9 @@ static INT SORPreProcess  (NP_ITER *theNP, INT level,
   GRID *theGrid;
 
   np = (NP_SMOOTHER *) theNP;
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) NP_RETURN(1,result[0]);
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L)) NP_RETURN(1,result[0]);
   theGrid = NP_GRID(theNP,level);
-  if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
   if (l_matrix_consistent(theGrid,np->L,TRUE) != NUM_OK) NP_RETURN(1,result[0]);
         #endif
   *baselevel = level;
@@ -1378,7 +1363,7 @@ static INT SORSmoother (NP_ITER *theNP, INT level,
     #ifdef ModelP
   if (l_vector_consistent(theGrid,x) != NUM_OK) NP_RETURN(1,result[0]);
     #endif
-  if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,x,EVERY_CLASS)
+  if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,x)
       != NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
@@ -1795,9 +1780,11 @@ static INT SBGSSmoother (NP_ITER *theNP, INT level,
        the corr-field is updated already
        we have to update the remaining defects */
 
-    if (l_dmatmul_minus(theGrid,SBGS_VD_ro(theSBGS,bl),EVERY_CLASS,
-                        SBGS_MD_Ao(theSBGS,bl),
-                        SBGS_VD_cd(theSBGS),EVERY_CLASS)) NP_RETURN (1,result[0]);
+    if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,
+                      SBGS_VD_ro(theSBGS,bl),
+                      SBGS_MD_Ao(theSBGS,bl),
+                      SBGS_VD_cd(theSBGS)))
+      NP_RETURN (1,result[0]);
   }
 
   return (0);
@@ -1878,8 +1865,8 @@ static INT GBGSPreProcess (NP_ITER *theNP, INT level,
   np = (NP_SMOOTHER*) theNP;
   theGrid = NP_GRID(theNP,level);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) NP_RETURN(1,result[0]);
-  if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L)) NP_RETURN(1,result[0]);
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
         #ifdef ModelP
   if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
         #endif
@@ -1993,9 +1980,9 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
   np = (NP_ILU *) theNP;
   theGrid = NP_GRID(theNP,level);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L))
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L))
     NP_RETURN(1,result[0]);
-  if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK)
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK)
     NP_RETURN(1,result[0]);
         #ifdef ModelP
   if (l_matrix_consistent(theGrid,np->smoother.L,np->smoother.cons_mode)
@@ -2096,8 +2083,8 @@ static INT FILUPreProcess (NP_ITER *theNP, INT level,
   np = (NP_ILU *) theNP;
   theGrid = NP_GRID(theNP,level);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
-  if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
         #ifdef ModelP
   if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
         #endif
@@ -2210,8 +2197,8 @@ static INT THILUPreProcess (NP_ITER *theNP, INT level,
   np = (NP_THILU *) theNP;
   theGrid = NP_GRID(theNP,level);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
-  if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
         #ifdef ModelP
   if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
         #endif
@@ -2330,9 +2317,9 @@ static INT SPILUPreProcess (NP_ITER *theNP, INT level,
   np = (NP_SPILU *) theNP;
   theGrid = NP_GRID(theNP,level);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
-  if (AllocVDFromVD(theNP->base.mg,level,level,x,&tmp)) NP_RETURN(1,result[0]);
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
-  if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(NP_MG(theNP),level,level,x,&tmp)) NP_RETURN(1,result[0]);
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
         #ifdef ModelP
   if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
         #endif
@@ -2343,7 +2330,7 @@ static INT SPILUPreProcess (NP_ITER *theNP, INT level,
   }
   *baselevel = level;
 
-  FreeVD(theNP->base.mg,level,level,tmp);
+  FreeVD(NP_MG(theNP),level,level,tmp);
 
   return (0);
 }
@@ -2405,8 +2392,8 @@ static INT ICPreProcess (NP_ITER *theNP, INT level,
   np = (NP_ILU *) theNP;
   theGrid = NP_GRID(theNP,level);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
-  if (l_dmatcopy(theGrid,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L)) NP_RETURN(1,result[0]);
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->smoother.L,A) != NUM_OK) NP_RETURN(1,result[0]);
         #ifdef ModelP
   if (l_matrix_consistent(theGrid,np->smoother.L,MAT_MASTER_CONS)!=NUM_OK) NP_RETURN(1,result[0]);
         #endif
@@ -2493,8 +2480,8 @@ static INT LUPreProcess (NP_ITER *theNP, INT level,
 
   theGrid = NP_GRID(theNP,level);
   if (l_setindex(theGrid)) NP_RETURN(1,result[0]);
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->L)) NP_RETURN(1,result[0]);
-  if (l_dmatcopy(theGrid,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L)) NP_RETURN(1,result[0]);
+  if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
         #ifdef ModelP
   if (l_matrix_consistent(theGrid,np->L,MAT_MASTER_CONS) != NUM_OK) NP_RETURN(1,result[0]);
         #endif
@@ -2871,14 +2858,14 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
   NPIT_c(theNP) = x;
   NPIT_b(theNP) = b;
 
-  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L))
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->smoother.L))
     NP_RETURN(1,result[0]);
-  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPFF_tv(np)))
+  if (AllocVDFromVD(NP_MG(theNP),level,level,x,&NPFF_tv(np)))
     NP_RETURN(1,result[0]);
 
   if (NPFF_DO_FF(np))
   {
-    if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPFF_tv2(np)))
+    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&NPFF_tv2(np)))
       NP_RETURN(1,result[0]);
   }
 
@@ -2974,7 +2961,7 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
 
   for( i=1; i<=n; i++ )
   {
-    if (AllocMDFromMD(theNP->base.mg,level,level,A,FF_MATDATA_DESC_ARRAY+i))
+    if (AllocMDFromMD(NP_MG(theNP),level,level,A,FF_MATDATA_DESC_ARRAY+i))
       NP_RETURN(1,result[0]);
     if ( FF_Mats[i] == DUMMY_COMP )
       FF_Mats[i] = MD_SCALCMP( FF_MATDATA_DESC_ARRAY[i] );
@@ -3005,7 +2992,7 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
 
   for( i=0; i<n; i++ )
   {
-    if (AllocVDFromVD(theNP->base.mg,level,level,x,FF_VECDATA_DESC_ARRAY+i))
+    if (AllocVDFromVD(NP_MG(theNP),level,level,x,FF_VECDATA_DESC_ARRAY+i))
       NP_RETURN(1,result[0]);
     FF_Vecs[i] = VD_SCALCMP( FF_VECDATA_DESC_ARRAY[i] );
   }
@@ -3235,7 +3222,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
   {             /* smooth for all testvector frequencies */
 
     /* alloc temp. for correction update (in x!) */
-    if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPFF_t(np))) NP_RETURN(1,result[0]);
+    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&NPFF_t(np))) NP_RETURN(1,result[0]);
 
     if ( NPFF_DISPLAY(np) != PCR_NO_DISPLAY )
       if(eunormBS( GFIRSTBV(theGrid), VD_SCALCMP( b ), &new_norm ) ) NP_RETURN(1,result[0]);
@@ -3297,7 +3284,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
       }
     }
 
-    FreeVD(theNP->base.mg,level,level,NPFF_t(np));
+    FreeVD(NP_MG(theNP),level,level,NPFF_t(np));
   }
 
   /* set all vectors with VCLASS < ACTIVE_CLASS to 0.0
@@ -3503,9 +3490,9 @@ static INT Lmgc (NP_ITER *theNP, INT level,
           (np->BaseSolver,np->baselevel,level,c,b,A,&lresult))
       REP_ERR_RETURN(1);
     IFDEBUG(np,4)
-    l_eunorm(GRID_ON_LEVEL(theNP->base.mg,level),b,EVERY_CLASS,&eunorm);
+    dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
     UserWriteF("defect before base solver : %f\n",eunorm);
-    l_eunorm(GRID_ON_LEVEL(theNP->base.mg,level),c,EVERY_CLASS,&eunorm);
+    dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,c,&eunorm);
     UserWriteF("norm before base solver : %f\n",eunorm);
     ENDDEBUG
 
@@ -3513,9 +3500,9 @@ static INT Lmgc (NP_ITER *theNP, INT level,
                                   np->BaseSolver->abslimit,
                                   np->BaseSolver->reduction,&lresult)) NP_RETURN(1,result[0]);
     IFDEBUG(np,4)
-    l_eunorm(GRID_ON_LEVEL(theNP->base.mg,level),b,EVERY_CLASS,&eunorm);
+    dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
     UserWriteF("defect after base solver : %f\n",eunorm);
-    l_eunorm(GRID_ON_LEVEL(theNP->base.mg,level),c,EVERY_CLASS,&eunorm);
+    dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,c,&eunorm);
     UserWriteF("norm after base solver : %f\n",eunorm);
     ENDDEBUG
 
@@ -3523,11 +3510,11 @@ static INT Lmgc (NP_ITER *theNP, INT level,
       PrintErrorMessage('W',"Lmgc","no convergence of BaseSolver");
     return(0);
   }
-  theMG = theNP->base.mg;
+  theMG = NP_MG(theNP);
   theGrid = GRID_ON_LEVEL(theMG,level);
 
   IFDEBUG(np,4)
-  l_eunorm(theGrid,b,EVERY_CLASS,&eunorm);
+  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
   UserWriteF("defect before smoothing : %f\n",eunorm);
   ENDDEBUG
 
@@ -3535,11 +3522,11 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   for (i=0; i<np->nu1; i++) {
     if ((*np->PreSmooth->Iter)(np->PreSmooth,level,np->t,b,A,result))
       REP_ERR_RETURN(1);
-    if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
+    if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK) NP_RETURN(1,result[0]);
   }
 
   IFDEBUG(np,4)
-  l_eunorm(theGrid,b,EVERY_CLASS,&eunorm);
+  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
   UserWriteF("after presmoothing : %f\n",eunorm);
   ENDDEBUG
 
@@ -3547,7 +3534,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
         (np->Transfer,level,b,b,A,Factor_One,result))
     REP_ERR_RETURN(1);
 
-  if (l_dset(DOWNGRID(theGrid),c,EVERY_CLASS,0.0) != NUM_OK) NP_RETURN(1,result[0]);
+  if (dset(theMG,level-1,level-1,ALL_VECTORS,c,0.0) != NUM_OK) NP_RETURN(1,result[0]);
   for (i=0; i<np->gamma; i++)
     if (Lmgc(theNP,level-1,c,b,A,result))
       REP_ERR_RETURN(1);
@@ -3555,25 +3542,25 @@ static INT Lmgc (NP_ITER *theNP, INT level,
         (np->Transfer,level,np->t,c,A,Factor_One,result))
     REP_ERR_RETURN(1);
   IFDEBUG(np,4)
-  l_eunorm(theGrid,np->t,EVERY_CLASS,&eunorm);
+  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,np->t,&eunorm);
   UserWriteF("norm of interpolated correction : %f\n",eunorm);
   ENDDEBUG
-  if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,np->t,EVERY_CLASS) != NUM_OK) NP_RETURN(1,result[0]);
+  if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK) NP_RETURN(1,result[0]);
+  if (dmatmul_minus(theMG,level,level,ALL_VECTORS,b,A,np->t) != NUM_OK) NP_RETURN(1,result[0]);
   IFDEBUG(np,4)
-  l_eunorm(theGrid,b,EVERY_CLASS,&eunorm);
+  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
   UserWriteF("defect after CG correction : %f\n",eunorm);
   ENDDEBUG
   for (i=0; i<np->nu2; i++) {
     if ((*np->PostSmooth->Iter)(np->PostSmooth,level,np->t,b,A,result))
       REP_ERR_RETURN(1);
-    if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
+    if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK) NP_RETURN(1,result[0]);
   }
   IFDEBUG(np,4)
-  l_eunorm(theGrid,b,EVERY_CLASS,&eunorm);
+  dnrm2(NP_MG(theNP),level,level,ALL_VECTORS,b,&eunorm);
   UserWriteF("defect after post smoothing : %f\n",eunorm);
   ENDDEBUG
-  FreeVD(theNP->base.mg,level,level,np->t);
+  FreeVD(NP_MG(theNP),level,level,np->t);
   if (np->Transfer->AdaptCorrection != NULL)
     if ((*np->Transfer->AdaptCorrection)(np->Transfer,level,c,b,A,result))
       REP_ERR_RETURN(1);
@@ -3758,7 +3745,6 @@ static INT Addmgc (NP_ITER *theNP, INT level,
   NP_LMGC *np;
   MULTIGRID *theMG;
   GRID *theGrid;
-  LRESULT lresult;
   INT i;
   INT mylevel;
 
@@ -3768,7 +3754,7 @@ static INT Addmgc (NP_ITER *theNP, INT level,
   NPIT_b(theNP) = b;
 
   np = (NP_LMGC *) theNP;
-  theMG = theNP->base.mg;
+  theMG = NP_MG(theNP);
   for (mylevel=level; mylevel > np->baselevel ; mylevel--)
     if ((*np->Transfer->RestrictDefect)
           (np->Transfer,mylevel,b,b,A,Factor_One,result))
@@ -3786,10 +3772,10 @@ static INT Addmgc (NP_ITER *theNP, INT level,
       if ((*np->PreSmooth->Iter)
             (np->PreSmooth,mylevel,np->t,b,A,result))
         REP_ERR_RETURN(1);
-      if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK)
+      if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK)
         NP_RETURN(1,result[0]);
     }
-    FreeVD(theNP->base.mg,mylevel,mylevel,np->t);
+    FreeVD(NP_MG(theNP),mylevel,mylevel,np->t);
   }
     #ifdef ModelP
   if (a_vector_consistent(theMG,np->baselevel,level,np->t) != NUM_OK)
@@ -3801,11 +3787,12 @@ static INT Addmgc (NP_ITER *theNP, INT level,
     if ((*np->Transfer->InterpolateCorrection)
           (np->Transfer,mylevel,np->t,c,A,Factor_One,result))
       REP_ERR_RETURN(1);
-    if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK)
+    if (dadd(theMG,level,level,ALL_VECTORS,c,np->t) != NUM_OK)
       NP_RETURN(1,result[0]);
-    if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,np->t,EVERY_CLASS)
-        != NUM_OK) NP_RETURN(1,result[0]);
-    FreeVD(theNP->base.mg,mylevel,mylevel,np->t);
+    if (dmatmul_minus(theMG,level,level,ALL_VECTORS,b,A,np->t)!= NUM_OK)
+      NP_RETURN(1,result[0]);
+
+    FreeVD(NP_MG(theNP),mylevel,mylevel,np->t);
   }
   return (0);
 }
@@ -4055,15 +4042,11 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   FIFO myfifo;
   void *buffer;
   VECTOR **vlist;
-  VECTOR *theV,*theW;
+  VECTOR *theV;
   MATRIX *theM;
   HEAP *theHeap;
   GRID *theGrid;
-  INT bw,ment,i,j,k,n,index,cindex,ctype,ccomp,rindex,rtype,rcomp,max;
-  DOUBLE f;
-  DOUBLE *DMat;
-  FLOAT *FMat;
-  SHORT *comp;
+  INT bw,i,k,n,index,max;
 
   np = (NP_EX *) theNP;
   *baselevel = level;
@@ -4297,10 +4280,10 @@ static INT EXSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC 
   }
 
   /* damp */
-  if (l_dscale(theGrid,x,EVERY_CLASS,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
+  if (dscalx(NP_MG(theNP),level,level,ALL_VECTORS,x,np->smoother.damp) != NUM_OK) NP_RETURN(1,result[0]);
 
   /* update defect */
-  if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,x,EVERY_CLASS)!= NUM_OK) NP_RETURN(1,result[0]);
+  if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,x)!= NUM_OK) NP_RETURN(1,result[0]);
 
   return (0);
 }

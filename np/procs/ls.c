@@ -248,8 +248,6 @@ typedef struct np_ldcs NP_LDCS;
 /*																			*/
 /****************************************************************************/
 
-static VEC_SCALAR Factor_One;
-
 REP_ERR_FILE;
 
 /* RCS string */
@@ -555,7 +553,7 @@ static INT LinearDefect (NP_LINEAR_SOLVER *theNP, INT level,
   NP_LS *np;
 
   np = (NP_LS *) theNP;
-  if (s_dmatmul_minus(theNP->base.mg,np->baselevel,level,b,A,x,EVERY_CLASS)
+  if (dmatmul_minus(NP_MG(theNP),np->baselevel,level,ON_SURFACE,b,A,x)
       != NUM_OK) NP_RETURN(1,result[0]);
 
   return (*result);
@@ -570,10 +568,10 @@ static INT LinearResiduum (NP_LINEAR_SOLVER *theNP, INT bl, INT level,
   np = (NP_LS *) theNP;
 
         #ifdef ModelP
-  if (a_vector_collect(theNP->base.mg,bl,level,b))
+  if (a_vector_collect(NP_MG(theNP),bl,level,b))
     NP_RETURN(1,lresult->error_code);
         #endif
-  if (s_eunorm(theNP->base.mg,bl,level,b,lresult->last_defect))
+  if (dnrm2x(NP_MG(theNP),bl,level,ON_SURFACE,b,lresult->last_defect))
     NP_RETURN(1,lresult->error_code);
 
   return(0);
@@ -604,7 +602,7 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VE
   bl = np->baselevel;
   if (np->Iter->Iter == NULL) NP_RETURN(1,lresult->error_code);
   if (np->Update == NULL) NP_RETURN(1,lresult->error_code);
-  if (AllocVDFromVD(theNP->base.mg,bl,level,x,&np->c)) NP_RETURN(1,lresult->error_code);
+  if (AllocVDFromVD(NP_MG(theNP),bl,level,x,&np->c)) NP_RETURN(1,lresult->error_code);
   if (np->Prepare != NULL)
     if ((*np->Prepare)(np,level,x,&lresult->error_code)) REP_ERR_RETURN (1);
 
@@ -624,7 +622,7 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VE
   for (i=0; i<np->maxiter; i++)
   {
     if (lresult->converged) break;
-    if (l_dset(GRID_ON_LEVEL(theNP->base.mg,level),np->c,EVERY_CLASS,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+    if (dset(NP_MG(theNP),level,level,ALL_VECTORS,np->c,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
     if ((*np->Iter->Iter)(np->Iter,level,np->c,b,A,&lresult->error_code)) REP_ERR_RETURN (1);
     if ((*np->Update)(np,level,x,np->c,b,A,&lresult->error_code)) REP_ERR_RETURN (1);
     if (LinearResiduum(theNP,bl,level,x,b,A,lresult)) REP_ERR_RETURN(1);
@@ -639,7 +637,7 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VE
   }
   if (!lresult->converged)
     lresult->number_of_linear_iterations=i;
-  FreeVD(theNP->base.mg,bl,level,np->c);
+  FreeVD(NP_MG(theNP),bl,level,np->c);
   if (np->Close != NULL)
     if ((*np->Close)(np,level,&lresult->error_code))
       REP_ERR_RETURN (1);
@@ -734,8 +732,7 @@ static INT LinearSolverPostProcess (NP_LINEAR_SOLVER *theNP,
 static INT LSUpdate (NP_LS *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *c,
                      VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
 {
-  if (a_daxpy (theNP->ls.base.mg,theNP->baselevel,level,
-               x,EVERY_CLASS,Factor_One,c) != NUM_OK) NP_RETURN(1,result[0]);
+  if (dadd(theNP->ls.base.mg,theNP->baselevel,level,ALL_VECTORS,x,c) != NUM_OK) NP_RETURN(1,result[0]);
 
   return(0);
 }
@@ -834,8 +831,7 @@ static INT CGPrepare (NP_LS *theNP, INT level, VECDATA_DESC *x, INT *result)
   np = (NP_CG *) theNP;
   if (AllocVDFromVD(theNP->ls.base.mg,theNP->baselevel,level,x,&np->p))
     NP_RETURN(1,result[0]);
-  if (a_dset(theNP->ls.base.mg,theNP->baselevel,level,np->p,EVERY_CLASS,0.0)
-      != NUM_OK) NP_RETURN(1,result[0]);
+  if (dset(NP_MG(theNP),theNP->baselevel,level,ALL_VECTORS,np->p,0.0)!= NUM_OK) NP_RETURN(1,result[0]);
   np->rho = 1.0;
 
   return(0);
@@ -846,48 +842,34 @@ static INT CGUpdate (NP_LS *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *c,
 {
   NP_CG *np;
   MULTIGRID *theMG;
-  VEC_SCALAR scal;
   DOUBLE lambda;
-  INT ncomp,j;
+  INT ncomp;
 
   np = (NP_CG *) theNP;
   theMG = theNP->ls.base.mg;
   ncomp = VD_NCOMP(x);
   if (AllocVDFromVD(theMG,theNP->baselevel,level,x,&np->t))
     NP_RETURN(1,result[0]);
-  if (a_dset(theMG,theNP->baselevel,level,np->t,EVERY_CLASS,0.0) != NUM_OK)
+  if (dmatmul(theMG,theNP->baselevel,level,ALL_VECTORS,np->t,A,c)!=NUM_OK)
     NP_RETURN(1,result[0]);
-  for (j=theNP->baselevel; j<=level; j++)
-    if (l_dmatmul(GRID_ON_LEVEL(theMG,j),np->t,EVERY_CLASS,A,c,EVERY_CLASS)
-        !=NUM_OK) NP_RETURN(1,result[0]);
-  if (a_daxpy(theMG,theNP->baselevel,level,b,EVERY_CLASS,Factor_One,np->t))
+  if (dadd(theMG,theNP->baselevel,level,ALL_VECTORS,b,np->t))
     NP_RETURN(1,result[0]);
-  if (s_ddot(theMG,theNP->baselevel,level,c,b,scal) !=NUM_OK)
+  if (ddot(theMG,theNP->baselevel,level,ON_SURFACE,c,b,&lambda) !=NUM_OK)
     NP_RETURN(1,result[0]);
-  lambda = 0.0;
-  for (j=0; j<ncomp; j++) lambda += scal[j];
-  for (j=0; j<ncomp; j++) scal[j] = lambda / np->rho;
+  if (dscal(theMG,theNP->baselevel,level,ALL_VECTORS,np->p,lambda / np->rho)!= NUM_OK)
+    NP_RETURN(1,result[0]);
   np->rho = lambda;
-  if (a_dscale(theMG,theNP->baselevel,level,np->p,EVERY_CLASS,scal)
-      != NUM_OK) NP_RETURN(1,result[0]);
-  if (a_daxpy (theMG,theNP->baselevel,level,np->p,EVERY_CLASS,Factor_One,c)
-      != NUM_OK) NP_RETURN(1,result[0]);
-  if (a_dset(theMG,theNP->baselevel,level,np->t,EVERY_CLASS,0.0) != NUM_OK)
+  if (dadd(theMG,theNP->baselevel,level,ALL_VECTORS,np->p,c)!= NUM_OK)
     NP_RETURN(1,result[0]);
-  for (j=theNP->baselevel; j<=level; j++)
-    if (l_dmatmul (GRID_ON_LEVEL(theMG,j),np->t,EVERY_CLASS,
-                   A,np->p,EVERY_CLASS) != NUM_OK) NP_RETURN(1,result[0]);
-  if (s_ddot (theMG,theNP->baselevel,level,np->t,np->p,scal) != NUM_OK)
+  if (dmatmul(theMG,theNP->baselevel,level,ALL_VECTORS,np->t,A,np->p) != NUM_OK)
     NP_RETURN(1,result[0]);
-  lambda = 0.0;
-  for (j=0; j<ncomp; j++) lambda += scal[j];
+  if (ddot(theMG,theNP->baselevel,level,ON_SURFACE,np->t,np->p,&lambda) != NUM_OK)
+    NP_RETURN(1,result[0]);
   if (lambda == 0.0) NP_RETURN(1,result[0]);
-  for (j=0; j<ncomp; j++) scal[j] = np->rho / lambda;
-  if (a_daxpy(theMG,theNP->baselevel,level,x,EVERY_CLASS,scal,np->p)
-      != NUM_OK) NP_RETURN(1,result[0]);
-  for (j=0; j<ncomp; j++) scal[j] = - np->rho / lambda;
-  if (a_daxpy (theMG,theNP->baselevel,level,b,EVERY_CLASS,scal,np->t)
-      != NUM_OK) NP_RETURN(1,result[0]);
+  if (daxpy(theMG,theNP->baselevel,level,ALL_VECTORS,x,np->rho / lambda,np->p)!= NUM_OK)
+    NP_RETURN(1,result[0]);
+  if (daxpy(theMG,theNP->baselevel,level,ALL_VECTORS,b,- np->rho / lambda,np->t)!= NUM_OK)
+    NP_RETURN(1,result[0]);
   FreeVD(theNP->ls.base.mg,theNP->baselevel,level,np->t);
   if (theNP->display == PCR_FULL_DISPLAY)
     UserWriteF("      rho %-.4g \n",np->rho);
@@ -1060,7 +1042,7 @@ static void PrintEunorm (MULTIGRID *theMG, VECDATA_DESC *v, char *name)
 {
   DOUBLE eu;
 
-  s_eunorm(theMG,0,0,v,&eu);
+  dnrm2(theMG,0,0,ON_SURFACE,v,&eu);
   UserWriteF("EUNORM(%s): %f\n",name,(float)eu);
 
   return;
@@ -1069,8 +1051,8 @@ static void PrintEunorm (MULTIGRID *theMG, VECDATA_DESC *v, char *name)
 static INT CRSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, VEC_SCALAR abslimit, VEC_SCALAR reduction, LRESULT *lresult)
 {
   NP_CR *np;
-  VEC_SCALAR defect2reach,scal,alpha0, alpha1;
-  INT i,j,bl,PrintID,restart;
+  VEC_SCALAR defect2reach,scal;
+  INT i,bl,PrintID,restart;
   char text[DISPLAY_WIDTH+4];
   DOUBLE s,t;
 
@@ -1084,9 +1066,9 @@ static INT CRSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDAT
   /* prepare */
   np = (NP_CR *) theNP;
   bl = np->baselevel;
-  if (AllocVDFromVD(theNP->base.mg,bl,level,x,&np->h1)) NP_RETURN(1,lresult->error_code);
-  if (AllocVDFromVD(theNP->base.mg,bl,level,x,&np->h2)) NP_RETURN(1,lresult->error_code);
-  if (AllocVDFromVD(theNP->base.mg,bl,level,x,&np->h3)) NP_RETURN(1,lresult->error_code);
+  if (AllocVDFromVD(NP_MG(theNP),bl,level,x,&np->h1)) NP_RETURN(1,lresult->error_code);
+  if (AllocVDFromVD(NP_MG(theNP),bl,level,x,&np->h2)) NP_RETURN(1,lresult->error_code);
+  if (AllocVDFromVD(NP_MG(theNP),bl,level,x,&np->h3)) NP_RETURN(1,lresult->error_code);
 
   /* print defect */
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
@@ -1099,45 +1081,41 @@ static INT CRSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDAT
   else lresult->converged = 0;
   lresult->number_of_linear_iterations = 0;
 
-  if (s_dcopy(theNP->base.mg,np->baselevel,level,np->h1,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-  if (s_dset(theNP->base.mg,np->baselevel,level,np->p,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+  if (dcopy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h1,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+  if (dset(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->p,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
   if (np->Iter!=NULL)
   {
     if ((*np->Iter->Iter)(np->Iter,level,np->p,np->h1,A,&lresult->error_code)) REP_ERR_RETURN (1);
   }
   else
   {
-    if (s_dcopy(theNP->base.mg,np->baselevel,level,np->p,np->h1)!= NUM_OK) REP_ERR_RETURN (1);
+    if (dcopy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->p,np->h1)!= NUM_OK) REP_ERR_RETURN (1);
   }
-  if (s_dset(theNP->base.mg,np->baselevel,level,np->pp,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-  if (s_dset(theNP->base.mg,np->baselevel,level,np->t,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+  if (dset(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->pp,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+  if (dset(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->t,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
   np->sp = 1.0; restart = 0;
   for (i=0; i<np->maxiter; i++)
   {
     if (lresult->converged) break;
 
     /* update x, b */
-    if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->h2,A,np->p,EVERY_CLASS)) REP_ERR_RETURN (1);
-    if (s_dcopy(theNP->base.mg,np->baselevel,level,np->h1,np->h2)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-    if (s_dset(theNP->base.mg,np->baselevel,level,np->h3,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+    if (dmatmul(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h2,A,np->p)) REP_ERR_RETURN (1);
+    if (dcopy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h1,np->h2)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+    if (dset(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h3,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
     if (np->Iter!=NULL)
     {
       if ((*np->Iter->Iter)(np->Iter,level,np->h3,np->h2,A,&lresult->error_code)) REP_ERR_RETURN (1);
     }
     else
     {
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->h3,np->h2)!= NUM_OK) REP_ERR_RETURN (1);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h3,np->h2)!= NUM_OK) REP_ERR_RETURN (1);
     }
-    if (s_ddot (theNP->base.mg,np->baselevel,level,np->h1,np->h3,scal)!=NUM_OK) REP_ERR_RETURN (1);
-    s=0.0; for (j=0; j<VD_NCOMP(x); j++) s += np->weight[j]*scal[j];
-    if (s_ddot (theNP->base.mg,np->baselevel,level,b,np->h3,scal)!=NUM_OK) REP_ERR_RETURN (1);
-    t=0.0; for (j=0; j<VD_NCOMP(x); j++) t += np->weight[j]*scal[j];
+    if (ddotw(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h1,np->h3,np->weight,&s)!=NUM_OK) REP_ERR_RETURN (1);
+    if (ddotw(NP_MG(theNP),np->baselevel,level,ON_SURFACE,b,np->h3,np->weight,&t)!=NUM_OK) REP_ERR_RETURN (1);
     if (ABS(s)>1e-3*ABS(t) || (np->restart>0 && s!=0.0))
     {
-      for (j=0; j<VD_NCOMP(x); j++) scal[j] = t/s;
-      if (s_daxpy (theNP->base.mg,np->baselevel,level,x,scal,np->p)!= NUM_OK) REP_ERR_RETURN (1);
-      for (j=0; j<VD_NCOMP(x); j++) scal[j] = -scal[j];
-      if (s_daxpy (theNP->base.mg,np->baselevel,level,b,scal,np->h1)!= NUM_OK) REP_ERR_RETURN (1);
+      if (daxpy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,x,t/s,np->p)!= NUM_OK) REP_ERR_RETURN (1);
+      if (daxpy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,b,-t/s,np->h1)!= NUM_OK) REP_ERR_RETURN (1);
     }
     else
     {
@@ -1148,35 +1126,31 @@ static INT CRSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDAT
     if ((np->restart>0 && i%np->restart==0) || restart==1)
     {
       restart = 0;
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->h1,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (s_dset(theNP->base.mg,np->baselevel,level,np->p,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h1,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dset(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->p,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
       if (np->Iter!=NULL)
       {
         if ((*np->Iter->Iter)(np->Iter,level,np->p,np->h1,A,&lresult->error_code)) REP_ERR_RETURN (1);
       }
       else
       {
-        if (s_dcopy(theNP->base.mg,np->baselevel,level,np->p,np->h1)!= NUM_OK) REP_ERR_RETURN (1);
+        if (dcopy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->p,np->h1)!= NUM_OK) REP_ERR_RETURN (1);
       }
-      if (s_dset(theNP->base.mg,np->baselevel,level,np->pp,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (s_dset(theNP->base.mg,np->baselevel,level,np->t,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dset(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->pp,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dset(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->t,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
       np->sp = 1.0;
     }
     else
     {
-      if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->h2,A,np->h3,EVERY_CLASS)) REP_ERR_RETURN (1);
-      if (s_ddot (theNP->base.mg,np->baselevel,level,np->h2,np->h3,scal)!=NUM_OK) REP_ERR_RETURN (1);
-      t=0.0; for (j=0; j<VD_NCOMP(x); j++) t += np->weight[j]*scal[j];
-      for (j=0; j<VD_NCOMP(x); j++) alpha0[j] = -t/s;
-      if (s_ddot (theNP->base.mg,np->baselevel,level,np->h2,np->t,scal)!=NUM_OK) REP_ERR_RETURN (1);
-      t=0.0; for (j=0; j<VD_NCOMP(x); j++) t += np->weight[j]*scal[j];
-      for (j=0; j<VD_NCOMP(x); j++) alpha1[j] = -t/np->sp;
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->t,np->h3)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->h1,np->pp)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->pp,np->p)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->p,np->h3)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (s_daxpy (theNP->base.mg,np->baselevel,level,np->p,alpha0,np->pp)!= NUM_OK) REP_ERR_RETURN (1);
-      if (s_daxpy (theNP->base.mg,np->baselevel,level,np->p,alpha1,np->h1)!= NUM_OK) REP_ERR_RETURN (1);
+      if (dmatmul(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h2,A,np->h3)) REP_ERR_RETURN (1);
+      if (ddotx(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h2,np->h3,scal)!=NUM_OK) REP_ERR_RETURN (1);
+      if (ddotw(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h2,np->t,np->weight,&t)!=NUM_OK) REP_ERR_RETURN (1);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->t,np->h3)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h1,np->pp)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->pp,np->p)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->p,np->h3)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (daxpy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->p,-t/s,np->pp)!= NUM_OK) REP_ERR_RETURN (1);
+      if (daxpy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->p,-t/np->sp,np->h1)!= NUM_OK) REP_ERR_RETURN (1);
       np->sp = s;
     }
 
@@ -1191,9 +1165,9 @@ static INT CRSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDAT
       break;
     }
   }
-  FreeVD(theNP->base.mg,bl,level,np->h1);
-  FreeVD(theNP->base.mg,bl,level,np->h2);
-  FreeVD(theNP->base.mg,bl,level,np->h3);
+  FreeVD(NP_MG(theNP),bl,level,np->h1);
+  FreeVD(NP_MG(theNP),bl,level,np->h2);
+  FreeVD(NP_MG(theNP),bl,level,np->h3);
   if (np->display > PCR_NO_DISPLAY)
   {
     if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) NP_RETURN(1,lresult->error_code);
@@ -1331,10 +1305,10 @@ static INT BCGPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, 
 static INT BCGSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, VEC_SCALAR abslimit, VEC_SCALAR reduction, LRESULT *lresult)
 {
   NP_BCG *np;
-  VEC_SCALAR defect2reach,alpha,alpha_m,beta;
-  INT i,j,PrintID,restart;
+  VEC_SCALAR defect2reach;
+  INT i,PrintID,restart;
   char text[DISPLAY_WIDTH+4];
-  DOUBLE sigma,rbr_new;
+  DOUBLE sigma,rbr_new,beta,alpha,alpha_m;
 
   /* store passed reduction and abslimit */
   for (i=0; i<VD_NCOMP(x); i++)
@@ -1345,7 +1319,7 @@ static INT BCGSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDA
 
   /* prepare */
   np = (NP_BCG *) theNP;
-  if (AllocVDFromVD(theNP->base.mg,level,level,x,&np->h)) NP_RETURN(1,lresult->error_code);
+  if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->h)) NP_RETURN(1,lresult->error_code);
 
   /* print defect */
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
@@ -1367,27 +1341,29 @@ static INT BCGSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDA
     /* restart ? */
     if ((np->restart>0 && i%np->restart==0) || restart)
     {
-      if (s_dset(theNP->base.mg,np->baselevel,level,np->p,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (s_dset(theNP->base.mg,np->baselevel,level,np->pb,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->rb,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dset(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->p,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dset(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->pb,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->rb,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
       np->rbr = 1.0;
       restart = 0;
     }
 
     /* update x, b */
-    if (s_ddot_sv (theNP->base.mg,np->baselevel,level,b,np->rb,Factor_One,&rbr_new)!=NUM_OK) REP_ERR_RETURN (1);
-    for (j=0; j<VD_NCOMP(x); j++) beta[j]=rbr_new/np->rbr;np->rbr = rbr_new;
-    if (s_dscale (theNP->base.mg,np->baselevel,level,np->p,beta)) REP_ERR_RETURN (1);
-    if (s_dscale (theNP->base.mg,np->baselevel,level,np->pb,beta)) REP_ERR_RETURN (1);
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,np->p,Factor_One,b)!= NUM_OK) REP_ERR_RETURN (1);
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,np->pb,Factor_One,np->rb)!= NUM_OK) REP_ERR_RETURN (1);
-    if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->h,A,np->p,EVERY_CLASS)) REP_ERR_RETURN (1);
-    if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->h,np->pb,Factor_One,&sigma)!=NUM_OK) REP_ERR_RETURN (1);
-    for (j=0; j<VD_NCOMP(x); j++) {alpha[j]=np->rbr/sigma; alpha_m[j]=-np->rbr/sigma;}
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,x,alpha,np->p)!= NUM_OK) REP_ERR_RETURN (1);
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,b,alpha_m,np->h)!= NUM_OK) REP_ERR_RETURN (1);
-    if (s_dtpmatmul_set(theNP->base.mg,np->baselevel,level,np->h,A,np->pb,EVERY_CLASS)) REP_ERR_RETURN (1);
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,np->rb,alpha_m,np->h)!= NUM_OK) REP_ERR_RETURN (1);
+    if (ddot(NP_MG(theNP),np->baselevel,level,ON_SURFACE,b,np->rb,&rbr_new)!=NUM_OK) REP_ERR_RETURN (1);
+    beta = rbr_new/np->rbr;
+    np->rbr = rbr_new;
+    if (dscal(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->p,beta)) REP_ERR_RETURN (1);
+    if (dscal(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->pb,beta)) REP_ERR_RETURN (1);
+    if (dadd(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->p,b)!= NUM_OK) REP_ERR_RETURN (1);
+    if (dadd(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->pb,np->rb)!= NUM_OK) REP_ERR_RETURN (1);
+    if (dmatmul(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h,A,np->p)) REP_ERR_RETURN (1);
+    if (ddot(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h,np->pb,&sigma)!=NUM_OK) REP_ERR_RETURN (1);
+    alpha   = np->rbr/sigma;
+    if (daxpy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,x,alpha,np->p)!= NUM_OK) REP_ERR_RETURN (1);
+    alpha_m = -np->rbr/sigma;
+    if (daxpy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,b,alpha_m,np->h)!= NUM_OK) REP_ERR_RETURN (1);
+    if (s_dtpmatmul_set(NP_MG(theNP),np->baselevel,level,np->h,A,np->pb,EVERY_CLASS)) REP_ERR_RETURN (1);
+    if (daxpy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->rb,alpha_m,np->h)!= NUM_OK) REP_ERR_RETURN (1);
 
     /* redisuum */
     if (LinearResiduum(theNP,np->baselevel,level,x,b,A,lresult)) REP_ERR_RETURN (1);
@@ -1400,7 +1376,7 @@ static INT BCGSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDA
       break;
     }
   }
-  FreeVD(theNP->base.mg,level,level,np->h);
+  FreeVD(NP_MG(theNP),level,level,np->h);
   if (np->display > PCR_NO_DISPLAY)
   {
     if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) NP_RETURN(1,lresult->error_code);
@@ -1571,8 +1547,8 @@ static INT BCGSPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x,
 static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, VEC_SCALAR abslimit, VEC_SCALAR reduction, LRESULT *lresult)
 {
   NP_BCGS *np;
-  VEC_SCALAR defect2reach,scal;
-  INT i,j,PrintID,restart;
+  VEC_SCALAR defect2reach;
+  INT i,PrintID,restart;
   char text[DISPLAY_WIDTH+4];
   DOUBLE alpha,rho_new,beta,tt;
   double ti;
@@ -1616,66 +1592,60 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     /* restart ? */
     if ((np->restart>0 && i%np->restart==0) || restart)
     {
-      if (a_dset(theNP->base.mg,np->baselevel,level,np->p,EVERY_CLASS,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (a_dset(theNP->base.mg,np->baselevel,level,np->v,EVERY_CLASS,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (a_dcopy(theNP->base.mg,np->baselevel,level,np->r,EVERY_CLASS,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dset(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->p,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dset(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->v,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->r,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
       alpha = np->rho = np->omega = 1.0;
       restart = 0;
     }
 
     /* update x, b */
-    if (s_ddot_sv (theNP->base.mg,np->baselevel,level,b,np->r,np->weight,&rho_new)!=NUM_OK) REP_ERR_RETURN (1);
+    if (ddotw(NP_MG(theNP),np->baselevel,level,ON_SURFACE,b,np->r,np->weight,&rho_new)!=NUM_OK) REP_ERR_RETURN (1);
     beta=rho_new*alpha/np->rho/np->omega;
-    for (j=0; j<VD_NCOMP(x); j++) scal[j]=beta;
-    if (a_dscale (theNP->base.mg,np->baselevel,level,np->p,EVERY_CLASS,scal)) REP_ERR_RETURN (1);
-    if (a_daxpy (theNP->base.mg,np->baselevel,level,np->p,EVERY_CLASS,Factor_One,b)!= NUM_OK) REP_ERR_RETURN (1);
-    for (j=0; j<VD_NCOMP(x); j++) scal[j]=-beta*np->omega;
-    if (a_daxpy (theNP->base.mg,np->baselevel,level,np->p,EVERY_CLASS,scal,np->v)!= NUM_OK) REP_ERR_RETURN (1);
+    if (dscal(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->p,beta)) REP_ERR_RETURN (1);
+    if (dadd(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->p,b)!= NUM_OK) REP_ERR_RETURN (1);
+    if (daxpy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->p,-beta*np->omega,np->v)!= NUM_OK) REP_ERR_RETURN (1);
     if (np->Iter!=NULL)
     {
-      if (a_dset(theNP->base.mg,np->baselevel,level,np->q,EVERY_CLASS,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (a_dcopy(theNP->base.mg,np->baselevel,level,np->s,EVERY_CLASS,np->p)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dset(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->q,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->s,np->p)!= NUM_OK) NP_RETURN(1,lresult->error_code);
       if ((*np->Iter->Iter)(np->Iter,level,np->q,np->p,A,&lresult->error_code)) REP_ERR_RETURN (1);
-      if (a_dcopy(theNP->base.mg,np->baselevel,level,np->p,EVERY_CLASS,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->v,A,np->q,EVERY_CLASS)) REP_ERR_RETURN (1);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->p,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dmatmul(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->v,A,np->q)) REP_ERR_RETURN (1);
             #ifdef ModelP
-      if (a_vector_collect(theNP->base.mg,np->baselevel,level,np->v)
+      if (a_vector_collect(NP_MG(theNP),np->baselevel,level,np->v)
           != NUM_OK)
         NP_RETURN(1,lresult->error_code);
             #endif
-      if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->v,np->r,np->weight,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
+      if (ddotw(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->v,np->r,np->weight,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
       alpha = rho_new/alpha;
-      for (j=0; j<VD_NCOMP(x); j++) scal[j]=alpha;
-      if (a_daxpy (theNP->base.mg,np->baselevel,level,x,EVERY_CLASS,scal,np->q)!= NUM_OK) REP_ERR_RETURN (1);
+      if (daxpy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,x,alpha,np->q)!= NUM_OK) REP_ERR_RETURN (1);
     }
     else
     {
             #ifdef ModelP
-      if (a_vector_consistent(theNP->base.mg,np->baselevel,level,np->p)
+      if (a_vector_consistent(NP_MG(theNP),np->baselevel,level,np->p)
           != NUM_OK)
         NP_RETURN(1,lresult->error_code);
             #endif
-      if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->v,A,np->p,EVERY_CLASS)) REP_ERR_RETURN (1);
+      if (dmatmul(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->v,A,np->p)) REP_ERR_RETURN (1);
             #ifdef ModelP
-      if (a_vector_collect(theNP->base.mg,np->baselevel,level,np->v)
+      if (a_vector_collect(NP_MG(theNP),np->baselevel,level,np->v)
           != NUM_OK)
         NP_RETURN(1,lresult->error_code);
             #endif
-      if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->v,np->r,np->weight,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
+      if (ddotw(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->v,np->r,np->weight,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
       alpha = rho_new/alpha;
-      for (j=0; j<VD_NCOMP(x); j++) scal[j]=alpha;
-      if (a_daxpy (theNP->base.mg,np->baselevel,level,x,EVERY_CLASS,scal,np->p)!= NUM_OK) REP_ERR_RETURN (1);
+      if (daxpy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,x,alpha,np->p)!= NUM_OK) REP_ERR_RETURN (1);
     }
     lresult->number_of_linear_iterations++;
-    if (a_dcopy(theNP->base.mg,np->baselevel,level,np->s,EVERY_CLASS,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-    for (j=0; j<VD_NCOMP(x); j++) scal[j]=-alpha;
-    if (a_daxpy (theNP->base.mg,np->baselevel,level,np->s,EVERY_CLASS,scal,np->v)!= NUM_OK) REP_ERR_RETURN (1);
+    if (dcopy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->s,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+    if (daxpy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->s,-alpha,np->v)!= NUM_OK) REP_ERR_RETURN (1);
     if (LinearResiduum(theNP,np->baselevel,level,x,np->s,A,lresult))
       REP_ERR_RETURN (1);
     if (sc_cmp(lresult->last_defect,abslimit,b) || sc_cmp(lresult->last_defect,defect2reach,b))
     {
-      if (a_dcopy(theNP->base.mg,np->baselevel,level,b,EVERY_CLASS,np->s) != NUM_OK)
-        NP_RETURN(1,lresult->error_code);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,b,np->s) != NUM_OK) NP_RETURN(1,lresult->error_code);
       lresult->converged = 1;
       if (np->display > PCR_NO_DISPLAY)
         if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE))
@@ -1684,38 +1654,36 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     }
     if (np->Iter!=NULL)
     {
-      if (a_dset(theNP->base.mg,np->baselevel,level,np->q,EVERY_CLASS,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-      if (a_dcopy(theNP->base.mg,np->baselevel,level,np->t,EVERY_CLASS,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dset(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->q,0.0)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->t,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
       if ((*np->Iter->Iter)(np->Iter,level,np->q,np->s,A,&lresult->error_code)) REP_ERR_RETURN (1);
-      if (a_dcopy(theNP->base.mg,np->baselevel,level,np->s,EVERY_CLASS,np->t)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->s,np->t)!= NUM_OK) NP_RETURN(1,lresult->error_code);
     }
     else
     {
-      if (a_dcopy(theNP->base.mg,np->baselevel,level,np->q,EVERY_CLASS,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,np->q,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
             #ifdef ModelP
-      if (a_vector_consistent(theNP->base.mg,np->baselevel,level,np->q)
+      if (a_vector_consistent(NP_MG(theNP),np->baselevel,level,np->q)
           != NUM_OK)
         NP_RETURN(1,lresult->error_code);
             #endif
     }
-    if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->t,A,np->q,EVERY_CLASS)) REP_ERR_RETURN (1);
+    if (dmatmul(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->t,A,np->q)) REP_ERR_RETURN (1);
         #ifdef ModelP
-    if (a_vector_collect(theNP->base.mg,np->baselevel,level,np->t)
+    if (a_vector_collect(NP_MG(theNP),np->baselevel,level,np->t)
         != NUM_OK)
       NP_RETURN(1,lresult->error_code);
         #endif
-    if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->t,np->t,np->weight,&tt)!=NUM_OK) REP_ERR_RETURN (1);
-    if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->s,np->t,np->weight,&(np->omega))!=NUM_OK) REP_ERR_RETURN (1);
+    if (ddotw(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->t,np->t,np->weight,&tt)!=NUM_OK) REP_ERR_RETURN (1);
+    if (ddotw(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->s,np->t,np->weight,&(np->omega))!=NUM_OK) REP_ERR_RETURN (1);
     PRINTDEBUG(np,2,("tt %f omega %f\n",tt,np->omega));
     if (tt!=0.0)
       np->omega /= tt;
     else
       np->omega /= 1.0E-20;
-    for (j=0; j<VD_NCOMP(x); j++) scal[j]=np->omega;
-    if (a_daxpy (theNP->base.mg,np->baselevel,level,x,EVERY_CLASS,scal,np->q)!= NUM_OK) REP_ERR_RETURN (1);
-    if (a_dcopy(theNP->base.mg,np->baselevel,level,b,EVERY_CLASS,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
-    for (j=0; j<VD_NCOMP(x); j++) scal[j]=-np->omega;
-    if (a_daxpy (theNP->base.mg,np->baselevel,level,b,EVERY_CLASS,scal,np->t)!= NUM_OK) REP_ERR_RETURN (1);
+    if (daxpy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,x,np->omega,np->q)!= NUM_OK) REP_ERR_RETURN (1);
+    if (dcopy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,b,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+    if (daxpy(NP_MG(theNP),np->baselevel,level,ALL_VECTORS,b,-np->omega,np->t)!= NUM_OK) REP_ERR_RETURN (1);
     np->rho = rho_new;
 
     /* redisuum */
@@ -1993,7 +1961,7 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
                         LRESULT *lresult)
 {
   NP_GMRES *np;
-  VEC_SCALAR defect2reach,rnorm,scal;
+  VEC_SCALAR defect2reach;
   INT i,bl,PrintID;
   char text[DISPLAY_WIDTH+4];
   double ti;
@@ -2004,8 +1972,8 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
   DOUBLE cs[MAX_RESTART];
   DOUBLE sn[MAX_RESTART];
   DOUBLE y[MAX_RESTART];
-  DOUBLE lambda;
-  DOUBLE tol;
+  DOUBLE lambda,rnorm;
+  DOUBLE tol,sp;
   INT k,j;
   INT it,i1,i2,ncomp,*result;
   MULTIGRID *theMG;
@@ -2024,7 +1992,7 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
   bl = np->baselevel;
   if (np->Iter->Iter == NULL)
     NP_RETURN(1,lresult->error_code);
-  theMG = theNP->base.mg;
+  theMG = NP_MG(theNP);
   ncomp = VD_NCOMP(x);
 
   /* print defect */
@@ -2054,45 +2022,40 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
   for (it=0; it<np->maxiter; it++) {
     if (lresult->converged) break;
 
-    if (s_ddot(theMG,bl,level,b,b,rnorm) !=NUM_OK)
+    if (dnrm2(theMG,bl,level,ON_SURFACE,b,&rnorm) !=NUM_OK)
       NP_RETURN(1,result[0]);
-    lambda = 0.0;
-    for (j=0; j<ncomp; j++) lambda += rnorm[j];
+    lambda = rnorm*rnorm;
     printf("res %12.8f\n",lambda);
-    if (s_dcopy(theMG,bl,level,np->s,b)!= NUM_OK)
+    if (dcopy(theMG,bl,level,ON_SURFACE,np->s,b)!= NUM_OK)
       NP_RETURN(1,lresult->error_code);
 
     /* Solve preconditioner for the initial residual */
-    if (a_dset(theMG,bl,level,np->r,EVERY_CLASS,0.0) != NUM_OK)
+    if (dset(theMG,bl,level,ALL_VECTORS,np->r,0.0) != NUM_OK)
       NP_RETURN(1,result[0]);
     if ((*np->Iter->Iter)(np->Iter,level,np->r,np->s,A,
                           &lresult->error_code))
       REP_ERR_RETURN (1);
     /* form the norm of the initial residual */
                 #ifdef ModelP
-    if (s_dcopy(theMG,bl,level,np->s,np->r)!= NUM_OK)
+    if (dcopy(theMG,bl,level,ON_SURFACE,np->s,np->r)!= NUM_OK)
       NP_RETURN(1,lresult->error_code);
     if (a_vector_makeinconsistent(theMG,bl,level,np->s) != NUM_OK)
       NP_RETURN(1,lresult->error_code);
-    if (s_ddot(theMG,bl,level,np->s,np->r,rnorm) !=NUM_OK)
+    if (ddot(theMG,bl,level,ON_SURFACE,np->s,np->r,&sp) !=NUM_OK)
       NP_RETURN(1,result[0]);
+    lambda = 1.0/sqrt(sp);
                 #else
-    if (s_ddot(theMG,bl,level,np->r,np->r,rnorm) !=NUM_OK)
-      NP_RETURN(1,result[0]);
+    if (dnrm2(theMG,bl,level,ON_SURFACE,np->r,&rnorm) !=NUM_OK)
+      lambda = 1.0/rnorm;
+    NP_RETURN(1,result[0]);
                 #endif
 
-    lambda = 0.0;
-    for (j=0; j<ncomp; j++) lambda += rnorm[j];
-    if (lambda <= 0.0) NP_RETURN(1,result[0]);
-    lambda = 1.0/sqrt(lambda);
-
     /* copy the initial residual into v[0] */
-    if (s_dcopy(theNP->base.mg,bl,level,np->v[0],np->r) != NUM_OK)
+    if (dcopy(NP_MG(theNP),bl,level,ON_SURFACE,np->v[0],np->r) != NUM_OK)
       NP_RETURN(1,lresult->error_code);
 
     /* scale v[0] = r/norm(r) */
-    for (j=0; j<ncomp; j++) rnorm[j] = lambda;
-    if (a_dscale(theMG,bl,level,np->v[0],EVERY_CLASS,rnorm) != NUM_OK)
+    if (dscal(theMG,bl,level,ALL_VECTORS,np->v[0],lambda) != NUM_OK)
       NP_RETURN(1,result[0]);
 
     /* form s = norm(r)*e1 */
@@ -2106,10 +2069,10 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
       printf("####   s[0]: %12.8f\n",s[0]);
       lresult->number_of_linear_iterations++;
       /* Matrix-vector mutliply: A*v[i] */
-      if (s_dmatmul_set(theMG,bl,level,np->s,A,np->v[i],EVERY_CLASS))
+      if (dmatmul(theMG,bl,level,ON_SURFACE,np->s,A,np->v[i]))
         NP_RETURN(1,lresult->error_code);
       /* preconditioner solve: Mw = A*v[i] */
-      if (a_dset(theMG,bl,level,np->w,EVERY_CLASS,0.0) != NUM_OK)
+      if (dset(theMG,bl,level,ALL_VECTORS,np->w,0.0) != NUM_OK)
         NP_RETURN(1,result[0]);
       if ((*np->Iter->Iter)(np->Iter,level,np->w,np->s,A,
                             &lresult->error_code))
@@ -2120,56 +2083,51 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
       for (k=0; k<=i; k++) {
         /* form an entry of the upper Hessenberg matrix */
                             #ifdef ModelP
-        if (s_dcopy(theMG,bl,level,np->s,np->w)!= NUM_OK)
+        if (dcopy(theMG,bl,level,ON_SURFACE,np->s,np->w)!= NUM_OK)
           NP_RETURN(1,lresult->error_code);
         if (a_vector_makeinconsistent(theMG,bl,level,np->s) != NUM_OK)
           NP_RETURN(1,lresult->error_code);
-        if (s_ddot(theMG,bl,level,np->s,np->v[k],rnorm) !=NUM_OK)
+        if (ddot(theMG,bl,level,ON_SURFACE,np->s,np->v[k],&sp) !=NUM_OK)
           NP_RETURN(1,result[0]);
                                 #else
-        if (s_ddot(theMG,bl,level,np->w,np->v[k],rnorm) !=NUM_OK)
+        if (ddot(theMG,bl,level,ON_SURFACE,np->w,np->v[k],&sp) !=NUM_OK)
           NP_RETURN(1,result[0]);
                                 #endif
-        lambda = 0.0;
-        for (j=0; j<ncomp; j++) lambda += rnorm[j];
+        lambda = sp;
         H[k][i] = lambda;
         printf("#### H[k,i]: %8.4f \n",H[k][i]);
 
         /* update the vector w  = w-h[k,i]*v */
-        for (j=0; j<ncomp; j++) scal[j] = -lambda;
-        if (a_daxpy(theMG,bl,level,np->w,EVERY_CLASS,scal,np->v[k])
+        if (daxpy(theMG,bl,level,ALL_VECTORS,np->w,-lambda,np->v[k])
             != NUM_OK)
           NP_RETURN(1,result[0]);
       }                   /* k */
 
       /* form H[i+1][i] = norm(w) */
                         #ifdef ModelP
-      if (s_dcopy(theMG,bl,level,np->s,np->w)!= NUM_OK)
+      if (dcopy(theMG,bl,level,ON_SURFACE,np->s,np->w)!= NUM_OK)
         NP_RETURN(1,lresult->error_code);
       if (a_vector_makeinconsistent(theMG,bl,level,np->s) != NUM_OK)
         NP_RETURN(1,lresult->error_code);
-      if (s_ddot(theMG,bl,level,np->s,np->w,rnorm) !=NUM_OK)
+      if (ddot(theMG,bl,level,ON_SURFACE,np->s,np->w,&sp) !=NUM_OK)
         NP_RETURN(1,result[0]);
+      lambda = sqrt(sp);
                         #else
-      if (s_ddot(theMG,bl,level,np->w,np->w,rnorm) !=NUM_OK)
+      if (dnrm2(theMG,bl,level,ON_SURFACE,np->w,&lambda) !=NUM_OK)
         NP_RETURN(1,result[0]);
                         #endif
-      lambda = 0.0;
-      for (j=0; j<ncomp; j++) lambda += rnorm[j];
-      lambda = sqrt(lambda);
       H[i+1][i] = lambda;
       printf("####norm(w): %8.4f \n",H[i+1][i]);
 
       /* set v[i+1] = w/H[i+1][i] */ /* #### check scaling #### */
-      if (s_dcopy(theNP->base.mg,bl,level,np->v[i+1],np->w)!= NUM_OK)
+      if (dcopy(NP_MG(theNP),bl,level,ON_SURFACE,np->v[i+1],np->w)!= NUM_OK)
         NP_RETURN(1,lresult->error_code);
-      for (j=0; j<ncomp; j++) rnorm[j] = 1.0/lambda;
-      if (a_dscale(theMG,bl,level,np->v[i+1],EVERY_CLASS,rnorm)!=NUM_OK)
+      if (dscal(theMG,bl,level,ALL_VECTORS,np->v[i+1],1.0/lambda)!=NUM_OK)
         NP_RETURN(1,result[0]);
 
       /* apply Givens rotations */
       for (k=0; k<i; k++) {
-        lambda   =  cs[k]*H[k][i] + sn[k]*H[k+1][i];
+        lambda    =  cs[k]*H[k][i] + sn[k]*H[k+1][i];
         H[k+1][i] = -sn[k]*H[k][i] + cs[k]*H[k+1][i];
         H[k][i]   = lambda;
       }                   /* k */
@@ -2239,18 +2197,17 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
        (NOT THE COEFFICIENT MATRIX!) */
     /*x = x + V(:,1:i)*y; */
 
-    if (s_dset(theMG,bl,level,np->c,0.0)!= NUM_OK)
+    if (dset(theMG,bl,level,ON_SURFACE,np->c,0.0)!= NUM_OK)
       NP_RETURN(1,lresult->error_code);
 
     for (i1=0; i1<=i; i1++) {
-      for (j=0; j<ncomp; j++) scal[j] = y[i1];
-      if (a_daxpy(theMG,bl,level,np->c,EVERY_CLASS,scal,np->v[i1])
+      if (daxpy(theMG,bl,level,ALL_VECTORS,np->c,y[i1],np->v[i1])
           != NUM_OK)
         NP_RETURN(1,lresult->error_code);
     }
-    if (a_daxpy(theMG,bl,level,x,EVERY_CLASS,Factor_One,np->c) != NUM_OK)
+    if (dadd(theMG,bl,level,ALL_VECTORS,x,np->c) != NUM_OK)
       NP_RETURN(1,lresult->error_code);
-    if (s_dmatmul_minus(theMG,bl,level,b,A,np->c,EVERY_CLASS) != NUM_OK)
+    if (dmatmul_minus(theMG,bl,level,ON_SURFACE,b,A,np->c) != NUM_OK)
       NP_RETURN(1,result[0]);
     if (LinearResiduum(theNP,bl,level,x,b,A,lresult))
       NP_RETURN(1,lresult->error_code);
@@ -2406,8 +2363,8 @@ static INT SQCGPostProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x,
 static INT SQCGSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, VEC_SCALAR abslimit, VEC_SCALAR reduction, LRESULT *lresult)
 {
   NP_SQCG *np;
-  VEC_SCALAR defect2reach,scal;
-  INT i,j,PrintID,restart;
+  VEC_SCALAR defect2reach;
+  INT i,PrintID,restart;
   char text[DISPLAY_WIDTH+4];
   DOUBLE s,t,lambda;
 
@@ -2441,27 +2398,25 @@ static INT SQCGSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     /* restart ? */
     if ((np->restart>0 && i%np->restart==0) || restart)
     {
-      if (s_dtpmatmul_set(theNP->base.mg,np->baselevel,level,np->r,A,b,EVERY_CLASS)) REP_ERR_RETURN (1);
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->p,np->r)!= NUM_OK) NP_RETURN(1,lresult->error_code);
+      if (s_dtpmatmul_set(NP_MG(theNP),np->baselevel,level,np->r,A,b,EVERY_CLASS)) REP_ERR_RETURN (1);
+      if (dcopy(NP_MG(theNP),np->baselevel,ON_SURFACE,level,np->p,np->r)!= NUM_OK) NP_RETURN(1,lresult->error_code);
       restart = 0;
     }
 
     /* update x, b */
-    if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->p,np->r,Factor_One,&s)!=NUM_OK) REP_ERR_RETURN (1);
-    if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->h,A,np->p,EVERY_CLASS)) REP_ERR_RETURN (1);
-    if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->h,np->h,Factor_One,&t)!=NUM_OK) REP_ERR_RETURN (1);
+    if (ddot(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->p,np->r,&s)!=NUM_OK) REP_ERR_RETURN (1);
+    if (dmatmul(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h,A,np->p)) REP_ERR_RETURN (1);
+    if (dnrm2(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->h,&t)!=NUM_OK) REP_ERR_RETURN (1);
+    t *= t;
     lambda = s/t;
-    for (j=0; j<VD_NCOMP(x); j++) scal[j]=lambda;
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,x,scal,np->p)!= NUM_OK) REP_ERR_RETURN (1);
-    for (j=0; j<VD_NCOMP(x); j++) scal[j]=-lambda;
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,b,scal,np->h)!= NUM_OK) REP_ERR_RETURN (1);
-    if (s_dtpmatmul_set(theNP->base.mg,np->baselevel,level,np->d,A,np->h,EVERY_CLASS)) REP_ERR_RETURN (1);
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,np->r,scal,np->d)!= NUM_OK) REP_ERR_RETURN (1);
-    if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->d,np->r,Factor_One,&s)!=NUM_OK) REP_ERR_RETURN (1);
+    if (daxpy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,x,lambda,np->p)!= NUM_OK) REP_ERR_RETURN (1);
+    if (daxpy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,b,-lambda,np->h)!= NUM_OK) REP_ERR_RETURN (1);
+    if (s_dtpmatmul_set(NP_MG(theNP),np->baselevel,level,np->d,A,np->h,EVERY_CLASS)) REP_ERR_RETURN (1);
+    if (daxpy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->r,-lambda,np->d)!= NUM_OK) REP_ERR_RETURN (1);
+    if (ddot(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->d,np->r,&s)!=NUM_OK) REP_ERR_RETURN (1);
     lambda = s/t;
-    for (j=0; j<VD_NCOMP(x); j++) scal[j]=-lambda;
-    if (s_dscale (theNP->base.mg,np->baselevel,level,np->p,scal)) REP_ERR_RETURN (1);
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,np->p,Factor_One,np->r)!= NUM_OK) REP_ERR_RETURN (1);
+    if (dscal(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->p,-lambda)) REP_ERR_RETURN (1);
+    if (dadd(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->p,np->r)!= NUM_OK) REP_ERR_RETURN (1);
 
     /* redisuum */
     if (LinearResiduum(theNP,np->baselevel,level,x,b,A,lresult)) REP_ERR_RETURN (1);
@@ -2675,9 +2630,9 @@ static INT LDCSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
   if (sc_cmp(lresult->first_defect,abslimit,b)) lresult->converged = 1;
   else lresult->converged = 0;
   lresult->number_of_linear_iterations = 0;
-  if (AllocVDFromVD(theNP->base.mg,np->baselevel,level,x,&np->b)) REP_ERR_RETURN(1);
-  if (AllocVDFromVD(theNP->base.mg,np->baselevel,level,x,&np->c)) REP_ERR_RETURN(1);
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+  if (AllocVDFromVD(NP_MG(theNP),np->baselevel,level,x,&np->b)) REP_ERR_RETURN(1);
+  if (AllocVDFromVD(NP_MG(theNP),np->baselevel,level,x,&np->c)) REP_ERR_RETURN(1);
+  theGrid = GRID_ON_LEVEL(NP_MG(theNP),level);
   for (i=0; i<np->maxiter; i++)
   {
     if (lresult->converged) break;
@@ -2685,29 +2640,29 @@ static INT LDCSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     /* dc smoother */
     for (j=0; j<np->ndc; j++)
     {
-      if (l_dcopy(theGrid,np->b,EVERY_CLASS,b)!= NUM_OK) REP_ERR_RETURN(1);
+      if (dcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->b,b)!= NUM_OK) REP_ERR_RETURN(1);
       if ((*np->DCSmooth->Iter)(np->DCSmooth,level,np->c,np->b,np->DC,&result)) REP_ERR_RETURN(1);
-      if (l_daxpy(theGrid,x,EVERY_CLASS,Factor_One,np->c) != NUM_OK) REP_ERR_RETURN(1);
-      if (l_dmatmul_minus(theGrid,b,EVERY_CLASS,A,np->c,EVERY_CLASS)) REP_ERR_RETURN(1);
+      if (dadd(NP_MG(theNP),level,level,ALL_VECTORS,x,np->c) != NUM_OK) REP_ERR_RETURN(1);
+      if (dmatmul_minus(NP_MG(theNP),level,level,ALL_VECTORS,b,A,np->c)) REP_ERR_RETURN(1);
     }
 
     /* solve first */
-    if (s_dcopy(theNP->base.mg,np->baselevel,level,np->b,b)) REP_ERR_RETURN(1);
-    if (s_dset(theNP->base.mg,np->baselevel,level,np->c,0.0)) REP_ERR_RETURN(1);
+    if (dcopy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->b,b)) REP_ERR_RETURN(1);
+    if (dset(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->c,0.0)) REP_ERR_RETURN(1);
     if ((*linsol->Residuum)(linsol,np->baselevel,level,np->c,np->b,np->DC,&linsolresult)) NP_RETURN(1,lresult->error_code);
     if ((*linsol->Solver)(linsol,level,np->c,np->b,np->DC,linsol->abslimit,linsol->reduction,&linsolresult)) REP_ERR_RETURN (1);
-    if (s_daxpy (theNP->base.mg,np->baselevel,level,x,Factor_One,np->c)) REP_ERR_RETURN(1);
-    if (s_dmatmul_minus(theNP->base.mg,np->baselevel,level,b,A,np->c,EVERY_CLASS)) REP_ERR_RETURN(1);
+    if (dadd(NP_MG(theNP),np->baselevel,level,ON_SURFACE,x,np->c)) REP_ERR_RETURN(1);
+    if (dmatmul_minus(NP_MG(theNP),np->baselevel,level,ON_SURFACE,b,A,np->c)) REP_ERR_RETURN(1);
 
     /* solve second */
     if (linsol2!=NULL)
     {
-      if (s_dcopy(theNP->base.mg,np->baselevel,level,np->b,b)) REP_ERR_RETURN(1);
-      if (s_dset(theNP->base.mg,np->baselevel,level,np->c,0.0)) REP_ERR_RETURN(1);
+      if (dcopy(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->b,b)) REP_ERR_RETURN(1);
+      if (dset(NP_MG(theNP),np->baselevel,level,ON_SURFACE,np->c,0.0)) REP_ERR_RETURN(1);
       if ((*linsol2->Residuum)(linsol2,np->baselevel,level,np->c,np->b,np->DC2,&linsolresult)) NP_RETURN(1,lresult->error_code);
       if ((*linsol2->Solver)(linsol2,level,np->c,np->b,np->DC2,linsol->abslimit,linsol2->reduction,&linsolresult)) REP_ERR_RETURN (1);
-      if (s_daxpy (theNP->base.mg,np->baselevel,level,x,Factor_One,np->c)) REP_ERR_RETURN(1);
-      if (s_dmatmul_minus(theNP->base.mg,np->baselevel,level,b,A,np->c,EVERY_CLASS)) REP_ERR_RETURN(1);
+      if (dadd(NP_MG(theNP),np->baselevel,level,ON_SURFACE,x,np->c)) REP_ERR_RETURN(1);
+      if (dmatmul_minus(NP_MG(theNP),np->baselevel,ON_SURFACE,level,b,A,np->c)) REP_ERR_RETURN(1);
     }
 
     /* calculate residuum */
@@ -2721,8 +2676,8 @@ static INT LDCSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
       break;
     }
   }
-  FreeVD(theNP->base.mg,np->baselevel,level,np->b);
-  FreeVD(theNP->base.mg,np->baselevel,level,np->c);
+  FreeVD(NP_MG(theNP),np->baselevel,level,np->b);
+  FreeVD(NP_MG(theNP),np->baselevel,level,np->c);
   if (np->display > PCR_NO_DISPLAY)
   {
     if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) NP_RETURN(1,lresult->error_code);
@@ -2794,8 +2749,6 @@ static INT LDCSConstruct (NP_BASE *theNP)
 
 INT InitLinearSolver ()
 {
-  INT i;
-
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".ls",sizeof(NP_LS),LSConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".cg",sizeof(NP_CG),CGConstruct))
@@ -2813,7 +2766,6 @@ INT InitLinearSolver ()
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".ldcs",sizeof(NP_LDCS),LDCSConstruct))
     REP_ERR_RETURN (__LINE__);
 
-  for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
   if (MakeStruct(":ls")) REP_ERR_RETURN(__LINE__);
   if (MakeStruct(":ls:avg")) REP_ERR_RETURN(__LINE__);
 

@@ -612,12 +612,12 @@ static INT LocalAssemble (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
   INT i,l,m;
 
   np = (NP_LOCAL_ASSEMBLE *) theNP;
-  theMG = theNP->base.mg;
+  theMG = NP_MG(theNP);
   for (l=0; l<=level; l++) {
     UserWriteF(" [%d:",l);
     theGrid = GRID_ON_LEVEL(theMG,l);
-    if (l_dset(theGrid,b,EVERY_CLASS,0.0)!=NUM_OK) NP_RETURN(1,result[0]);
-    if (l_dmatset(theGrid,A,0.0)!=NUM_OK) NP_RETURN(1,result[0]);
+    if (dset(theMG,l,l,ALL_VECTORS,b,0.0)!=NUM_OK) NP_RETURN(1,result[0]);
+    if (dmatset(theMG,l,l,ALL_VECTORS,A,0.0)!=NUM_OK) NP_RETURN(1,result[0]);
     CLEAR_VECSKIP_OF_GRID(theGrid);
     for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
          theElement=SUCCE(theElement)) {

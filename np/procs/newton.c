@@ -244,15 +244,14 @@ static INT NonLinearDefect (MULTIGRID *mg, INT level, INT init, VECDATA_DESC *x,
 
   /* compute new nonlinear defect */
   CSTART();
-  for (i=0; i<=level; i++)
-    l_dset(GRID_ON_LEVEL(mg,i),newton->d,EVERY_CLASS,0.0);
+  dset(mg,0,level,ALL_VECTORS,newton->d,0.0);
   if ((*ass->NLAssembleDefect)(ass,0,level,x,newton->d,newton->J,&error)) {
     error = __LINE__;
     REP_ERR_RETURN(error);
   }
   CSTOP(defect_t,defect_c);
   if (newton->lineSearch == 3)
-    a_dcopy(mg,0,level,newton->dsave,EVERY_CLASS,newton->d);
+    dcopy(mg,0,level,ALL_VECTORS,newton->dsave,newton->d);
   if (UG_math_error) {
     UserWrite("math error in NLAssembleDefect\n");
     UG_math_error = 0;
@@ -346,7 +345,6 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   DOUBLE rhomin;                                                /* best reduction if !accept			*/
   INT best_ls;                                                  /* best ls if !accept					*/
   INT accept;                                                           /* line search accepted					*/
-  DOUBLE Factor[MAX_VEC_COMP];                  /* for damping factor					*/
   INT bl;                                                               /* baselevel returned by preprocess		*/
   INT error;                                                            /* for return value						*/
   LRESULT lr;                                                           /* result of linear solver				*/
@@ -463,8 +461,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
     /* compute jacobian */
     CSTART();
-    for (i=0; i<=level; i++)
-      l_dset(GRID_ON_LEVEL(mg,i),newton->v,EVERY_CLASS,0.0);
+    dset(mg,0,level,ALL_VECTORS,newton->v,0.0);
     if (reassemble)
     {
       if ((*ass->NLAssembleMatrix)(ass,0,level,x,newton->d,newton->v,newton->J,&error)) {
@@ -542,7 +539,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     /* save current solution for line search */
     if (AllocVDFromVD(mg,0,level,x,  &(newton->s)))
     {res->error_code = __LINE__; REP_ERR_RETURN(res->error_code);}
-    a_dcopy(mg,0,level,newton->s,EVERY_CLASS,x);
+    dcopy(mg,0,level,ALL_VECTORS,newton->s,x);
 
     /* do a line search */
     la = newton->lambda; accept=0;
@@ -561,40 +558,24 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
         else {
 
 
-          if (s_ddot(mg,0,level,newton->dold,newton->dold,Factor)
-              !=NUM_OK)
+          if (dnrm2(mg,0,level,ON_SURFACE,newton->dold,&s_tmp)!=NUM_OK)
             NP_RETURN(1,res->error_code);
-          s_tmp = 0.0;
-          for (i=0; i<n_unk; i++) s_tmp += Factor[i];
-          s_tmp = sqrt(s_tmp);
           UserWriteF("kk %d s_old %f\n",kk,s_tmp);
 
-          if (s_ddot(mg,0,level,newton->dsave,newton->dsave,Factor)
-              !=NUM_OK)
+          if (dnrm2(mg,0,level,ON_SURFACE,newton->dsave,&s_tmp)!=NUM_OK)
             NP_RETURN(1,res->error_code);
-          s_tmp = 0.0;
-          for (i=0; i<n_unk; i++) s_tmp += Factor[i];
-          s_tmp = sqrt(s_tmp);
           UserWriteF("kk %d s_save %f\n",kk,s_tmp);
 
-          for (i=0; i<n_unk; i++) Factor[i] = lambda_old - 1.0;
-          if (a_dscale(mg,0,level,newton->dold,EVERY_CLASS,Factor))
+          if (dscal(mg,0,level,ALL_VECTORS,newton->dold,lambda_old - 1.0))
             REP_ERR_RETURN (1);
-          for (i=0; i<n_unk; i++) Factor[i] = 1.0;
-          if (a_daxpy(mg,0,level,newton->dold,EVERY_CLASS,
-                      Factor,newton->dsave) != NUM_OK)
+          if (dadd(mg,0,level,ALL_VECTORS,newton->dold,newton->dsave) != NUM_OK)
             REP_ERR_RETURN (1);
-          if (s_ddot(mg,0,level,newton->dold,newton->dold,Factor)
-              !=NUM_OK)
+          if (dnrm2(mg,0,level,ON_SURFACE,newton->dold,&s_tmp)!=NUM_OK)
             NP_RETURN(1,res->error_code);
-          s_tmp = 0.0;
-          for (i=0; i<n_unk; i++) s_tmp += Factor[i];
-          for (i=0; i<n_unk; i++) Factor[i] = -1.0;
-          if (a_daxpy(mg,0,level,newton->dold,EVERY_CLASS,
-                      Factor,newton->dsave) != NUM_OK)
+          s_tmp *= s_tmp;
+          if (dsub(mg,0,level,ALL_VECTORS,newton->dold,newton->dsave) != NUM_OK)
             REP_ERR_RETURN (1);
-          for (i=0; i<n_unk; i++) Factor[i] = 1.0 / (lambda_old - 1.0);
-          if (a_dscale(mg,0,level,newton->dold,EVERY_CLASS,Factor))
+          if (dscal(mg,0,level,ALL_VECTORS,newton->dold,1.0 / (lambda_old - 1.0)))
             REP_ERR_RETURN (1);
           if (s_tmp <= 0.0)
             la = lambda_old * LINE_SEARCH_REDUCTION;
@@ -616,18 +597,14 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
         }
         if (kk == 1)
           if (newton->lineSearch == 3)
-            a_dcopy(mg,0,level,newton->dold,EVERY_CLASS,newton->dsave);
+            dcopy(mg,0,level,ALL_VECTORS,newton->dold,newton->dsave);
         la = MAX(la,lambda_min);
         lambda_old = la;
       }
 
-
-      /* set lambda factor */
-      for (i=0; i<n_unk; i++) Factor[i] = -la;
-
       /* update solution */
-      a_dcopy(mg,0,level,x,EVERY_CLASS,newton->s);
-      a_daxpy(mg,0,level,x,EVERY_CLASS,Factor,newton->v);
+      dcopy(mg,0,level,ALL_VECTORS,x,newton->s);
+      daxpy(mg,0,level,ALL_VECTORS,x,-la,newton->v);
 
       if (NonLinearDefect(mg,level,FALSE,x,newton,ass,defect)!=0)
       {
@@ -684,12 +661,11 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
         /* set lambda factor */
         la = newton->lambda * pow(LINE_SEARCH_REDUCTION,best_ls-1);
-        for (i=0; i<n_unk; i++) Factor[i] = -la;
         lambda_old = la;
 
         /* update solution */
-        a_dcopy(mg,0,level,x,EVERY_CLASS,newton->s);
-        a_daxpy(mg,0,level,x,EVERY_CLASS,Factor,newton->v);
+        dcopy(mg,0,level,ALL_VECTORS,x,newton->s);
+        daxpy(mg,0,level,ALL_VECTORS,x,-la,newton->v);
 
         if (NonLinearDefect(mg,level,FALSE,x,newton,ass,defect)!=0)
         {

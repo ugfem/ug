@@ -521,7 +521,7 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x,
   INT i;
 
   np = (NP_INDICATOR*) theNP;
-  theMG = theNP->base.mg;
+  theMG = NP_MG(theNP);
 
   if (SurfaceIndicator(theMG,x,np->refine,np->coarse,
                        np->project,np->from,np->to,np->clear,eresult) == -1) NP_RETURN(1,eresult->error_code);

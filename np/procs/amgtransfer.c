@@ -567,7 +567,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   NP_AMG_TRANSFER *np;
   MULTIGRID *theMG;
   GRID *theGrid,*newGrid;
-  INT i,error,level,nVect,nMat,unifiedlevel;
+  INT level,nVect,nMat,unifiedlevel;
   char varname[32];
   char text[DISPLAY_WIDTH+4];
 
@@ -582,7 +582,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     REP_ERR_RETURN(result[0]);
   }
 
-  theMG = theNP->base.mg;
+  theMG = NP_MG(theNP);
   np = (NP_AMG_TRANSFER *) theNP;
 
   /* we do nothing, if levels are to be built up and destroyed
@@ -675,7 +675,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         result[0]=1;
         REP_ERR_RETURN(1);
       }
-      if (l_dmatset(GRID_ON_LEVEL(theMG,level-1),A,0.0) != NUM_OK) {
+      if (dmatset(theMG,level-1,level-1,ALL_VECTORS,A,0.0) != NUM_OK) {
         result[0]=1;
         REP_ERR_RETURN(1);
       }
@@ -733,7 +733,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     for (level=0; level>theMG->bottomLevel; level--) {
       if (AllocMDFromMD(theMG,level-1,level-1,A,&A))
         REP_ERR_RETURN(1);
-      if (l_dmatset(GRID_ON_LEVEL(theMG,level-1),A,0.0) != NUM_OK)
+      if (dmatset(theMG,level-1,level-1,ALL_VECTORS,A,0.0) != NUM_OK)
         REP_ERR_RETURN(1);
       if ((result[0]=(np->SetupCG)(theGrid,A,NULL /* preliminary!! */,
                                    np->symmetric))!=0)
@@ -761,7 +761,7 @@ static INT RestrictDefect (NP_TRANSFER *theNP, INT level,
   NP_AMG_TRANSFER *np;
 
   np = (NP_AMG_TRANSFER *) theNP;
-  result[0] = RestrictByMatrix(GRID_ON_LEVEL(theNP->base.mg,level),
+  result[0] = RestrictByMatrix(GRID_ON_LEVEL(NP_MG(theNP),level),
                                to,from,damp);
 
   return(result[0]);
@@ -776,7 +776,7 @@ static INT InterpolateCorrection (NP_TRANSFER *theNP, INT level,
 
   np = (NP_AMG_TRANSFER *) theNP;
   result[0] =
-    InterpolateCorrectionByMatrix(GRID_ON_LEVEL(theNP->base.mg,level),
+    InterpolateCorrectionByMatrix(GRID_ON_LEVEL(NP_MG(theNP),level),
                                   to,from,damp);
 
   return(result[0]);
@@ -793,7 +793,7 @@ static INT AMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 
   result[0]=0;
   np = (NP_AMG_TRANSFER *) theNP;
-  theMG = theNP->base.mg;
+  theMG = NP_MG(theNP);
 
   for (level=-1; level>=theMG->bottomLevel; level--)
     if (FreeMD(theMG,level,level,A))

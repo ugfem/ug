@@ -179,7 +179,7 @@ static INT BDFAssembleDefect
   }
 
   /* copy precomputed part of defect */
-  a_dcopy(ass->base.mg,fl,tl,d,EVERY_CLASS,bdf->b);
+  dcopy(NP_MG(ass),fl,tl,ALL_VECTORS,d,bdf->b);
 
   /* call function from time assemble interface */
   return( (*tass->TAssembleDefect)(tass,fl,tl,bdf->t_p1,s_m,s_a,u,d,J,res) );
@@ -354,13 +354,11 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
     else nlinterpolate = 0;
 
     /* predict to new time step on level low */
-    a_dcopy(mg,0,low,bdf->y_p1,EVERY_CLASS,bdf->y_0);
+    dcopy(mg,0,low,ALL_VECTORS,bdf->y_p1,bdf->y_0);
     if (bdf->predictorder==1 && bdf->t_0>0.0)
     {
-      for (i=0; i<n_unk; i++) Factor[i] = (bdf->t_p1-bdf->t_m1)/dt_0;
-      a_dscale(mg,0,low,bdf->y_p1,EVERY_CLASS,Factor);
-      for (i=0; i<n_unk; i++) Factor[i] = 1.0-(bdf->t_p1-bdf->t_m1)/dt_0;
-      a_daxpy(mg,0,low,bdf->y_p1,EVERY_CLASS,Factor,bdf->y_m1);
+      dscal(mg,0,low,ALL_VECTORS,bdf->y_p1,(bdf->t_p1-bdf->t_m1)/dt_0);
+      daxpy(mg,0,low,ALL_VECTORS,bdf->y_p1,1.0-(bdf->t_p1-bdf->t_m1)/dt_0,bdf->y_m1);
     }
 
     if ( (*tass->TAssemblePreProcess)(tass,0,level,
@@ -381,7 +379,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
       if (bdf->nested) UserWriteF("Nested Iteration on level %d\n",k);
 
       /* prepare constant part of defect */
-      a_dset(mg,0,k,bdf->b,EVERY_CLASS,0.0);
+      dset(mg,0,k,ALL_VECTORS,bdf->b,0.0);
       if (bdf->order==1)
       {
         if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_0,-1.0,0.0,bdf->y_0,bdf->b,NULL,res) )
@@ -524,8 +522,10 @@ Continue:
     return(__LINE__);
 
   /* accept new time step */
-  a_dcopy(mg,0,level,bdf->y_m1,EVERY_CLASS,bdf->y_0 ); bdf->t_m1 = bdf->t_0;
-  a_dcopy(mg,0,level,bdf->y_0 ,EVERY_CLASS,bdf->y_p1); bdf->t_0  = bdf->t_p1;
+  dcopy(mg,0,level,ALL_VECTORS,bdf->y_m1,bdf->y_0 );
+  bdf->t_m1 = bdf->t_0;
+  dcopy(mg,0,level,ALL_VECTORS,bdf->y_0 ,bdf->y_p1);
+  bdf->t_0  = bdf->t_p1;
   bdf->step++;
 
   /* write time to shell */
