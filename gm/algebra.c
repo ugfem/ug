@@ -593,6 +593,7 @@ VECTOR *CreateVector (GRID *theGrid, INT VectorType, GEOM_OBJECT *object)
   return (pv);
 }
 
+#ifdef __THREEDIM__
 VECTOR *CreateSideVector (GRID *theGrid, INT side, GEOM_OBJECT *object)
 {
   VECTOR *pv;
@@ -606,6 +607,7 @@ VECTOR *CreateSideVector (GRID *theGrid, INT side, GEOM_OBJECT *object)
 
   return (pv);
 }
+#endif
 
 /****************************************************************************/
 /*D
@@ -2434,7 +2436,7 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
             else SETCUSED(theCon,1);
           }
       }
-    RETURN (ReturnCode);
+    return (ReturnCode);
   }
 
   cnt1 = GetAllVectorsOfElement(theGrid,Elem1,vec1);
@@ -2457,7 +2459,7 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
         }
     }
 
-  RETURN (ReturnCode);
+  return (ReturnCode);
 }
 
 static ELEMENT *CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *centerElement, INT *ConDepth, INT ActDepth, INT MaxDepth, INT *MatSize)
@@ -2552,6 +2554,185 @@ INT CheckConnections (GRID *theGrid)
 
   for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
     if (ElementCheckConnection(theGrid,theElement)!=NULL) errors++;
+
+  if (errors>0) return(GM_ERROR);else return(GM_OK);
+}
+
+
+/****************************************************************************/
+/*D
+   CheckVector - Checks validity of geom_object	and its vector
+
+   SYNOPSIS:
+   INT CheckVector (GEOM_OBJECT *theObject, VECTOR *theVector);
+
+   PARAMETERS:
+   .  theObject - the object which points to theVector
+   .  theVector - the vector of theObject
+
+   DESCRIPTION:
+   This function checks the consistency between an geom_object and
+   its vector.
+
+   RETURN VALUE:
+   INT
+   .n     GM_OK if ok
+   .n     GM_ERROR	if error occured.
+   D*/
+/****************************************************************************/
+
+INT CheckVector (GEOM_OBJECT *theObject, char *ObjectString, VECTOR *theVector, int VectorType)
+{
+  GEOM_OBJECT *VecObject;
+  INT error=GM_OK;
+
+  if (theVector == NULL) {
+    UserWriteF("%d: %s ID=%ld  has NO VECTOR\n",me, ObjectString, ID(theObject));
+    error = GM_ERROR;
+  }
+  else {
+    SETUSED(theVector,1);
+
+    VecObject = VOBJECT(theVector);
+    if (VecObject == NULL) {
+      UserWriteF("%d: vector ID=%ld %s ID=%ld  has NO BACKPTR\n",
+                 me, (long) ID(theVector), ObjectString, (long) ID(theObject));
+      error = GM_ERROR;
+    }
+    else {
+      if (VTYPE(theVector) != VectorType) {
+        UserWriteF("%d: %s vector ID=%ld has incompatible type=%d, should be type=%d\n",
+                   me, ObjectString, (long) ID(theVector), VTYPE(theVector), VectorType);
+        error = GM_ERROR;
+      }
+
+      if (VecObject != theObject) {
+        if (OBJT(VecObject) != OBJT(theObject)) {
+          UserWriteF("%d: vector ID=%ld has type %s, but points to wrong obj=%x type OBJT=%ld\n",
+                     me, (long) ID(theVector), VecObject, (long) OBJT(VecObject));
+          error = GM_ERROR;
+        }
+        else {
+                                        #ifdef __THREEDIM__
+          if (VectorType == SIDEVECTOR) {
+            /* TODO: check side vector */
+          }
+          else
+                                        #endif
+          {
+            UserWriteF("%d: %s vector ID=%ld is referenced by obj0=%x, but points to wrong obj1=%x\n",
+                       me, ObjectString, (long) ID(theVector), theObject, VecObject);
+            if (strcmp(ObjectString,"EDGE")==0)
+              UserWriteF("%d: obj0: n0=%d n1=%d  obj1: n0=%d n1=%d\n",me,
+                         DDD_InfoGlobalId(PARHDR(NBNODE(LINK0(&(theObject->ed))))),
+                         DDD_InfoGlobalId(PARHDR(NBNODE(LINK1(&(theObject->ed))))),
+                         DDD_InfoGlobalId(PARHDR(NBNODE(LINK0(&(VecObject->ed))))),
+                         DDD_InfoGlobalId(PARHDR(NBNODE(LINK1(&(VecObject->ed))))) );
+            error = GM_ERROR;
+          }
+        }
+      }
+    }
+  }
+
+  return(error);
+}
+
+/****************************************************************************/
+/*D
+   CheckAlgebra - Check the algebraic part of the data structure
+
+   SYNOPSIS:
+   INT CheckAlgebra (GRID *theGrid);
+
+   PARAMETERS:
+   .  theGrid -  grid level to check
+
+   DESCRIPTION:
+   This function checks the consistency of the algebraic data structures
+   and involves the interconnection between the geometric part.
+   This function assumes a correct geometric data structure.
+
+   RETURN VALUE:
+   INT
+   .n     GM_OK if ok
+   .n     GM_ERROR	if error occured.
+   D*/
+/****************************************************************************/
+
+INT CheckAlgebra (GRID *theGrid)
+{
+  ELEMENT *theElement;
+  NODE *theNode, *Node0, *Node1;
+  VECTOR *theVector;
+  EDGE *theEdge;
+  LINK *theLink;
+  GEOM_OBJECT *theObject;
+  INT errors,i;
+
+  errors = GM_OK;
+
+  /* reset USED flag */
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector)) {
+    SETUSED(theVector,0);
+  }
+
+  /* check pointers to element, side, edge vector */
+  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
+
+    /* check element vectors */
+    if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR)) {
+      theVector = EVECTOR(theElement);
+      errors += CheckVector((GEOM_OBJECT *) theElement, "ELEMENT", theVector, ELEMVECTOR);
+    }
+
+                #ifdef __THREEDIM__
+    /* check side vectors */
+    if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR)) {
+      for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
+        theVector = SVECTOR(theElement,i);
+        errors += CheckVector((GEOM_OBJECT *) theElement, "ELEMSIDE", theVector, SIDEVECTOR);
+      }
+    }
+                #endif
+  }
+
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
+
+    /* check node vectors */
+    if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR)) {
+      theVector = NVECTOR(theNode);
+      errors += CheckVector((GEOM_OBJECT *) theNode, "NODE", theVector, NODEVECTOR);
+    }
+
+    /* check edge vectors */
+    if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR)) {
+      for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink)) {
+        theEdge = GetEdge(theNode,NBNODE(theLink));
+        if (theEdge != NULL) {
+          theVector = EDVECTOR(theEdge);
+          errors += CheckVector((GEOM_OBJECT *) theEdge, "EDGE", theVector, EDGEVECTOR);
+        }
+      }
+    }
+  }
+
+  /* check USED flag */
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector)) {
+    if (USED(theVector) != 1) {
+      UserWriteF("%d: vector ID=%d NOT referenced by an geom_object: vtype=%d, objptr=%x",
+                 me, ID(theVector), VTYPE(theVector), VOBJECT(theVector));
+      if (VOBJECT(theVector) != NULL)
+        UserWriteF(" objtype=%d\n",OBJT(VOBJECT(theVector)));
+      else
+        UserWrite("\n");
+    }
+    else
+      SETUSED(theVector,0);
+  }
+
+  /* check validity of all defined connections */
+  errors += CheckConnections(theGrid);
 
   if (errors>0) return(GM_ERROR);else return(GM_OK);
 }
