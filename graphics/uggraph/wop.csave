@@ -34,6 +34,7 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <memory.h>
 
 #include "compiler.h"
 #include "debug.h"
@@ -550,6 +551,17 @@ static VW_GetNextVectorProcPtr		WOP_VW_GetNextVectorProc;
 static VW_EvaluateProcPtr			WOP_VW_EvaluateProc;
 static EXT_EvaluateProcPtr			WOP_EXT_EvaluateProc;
 static RECURSIVE_EvaluateProcPtr	WOP_RECURSIVE_EvaluateProc;
+
+/*---------- variables for parallel extensions ----------------------------*/
+#ifdef ModelP
+static DRAWINGOBJ          WOP_DO_Buffer[WOP_DOWN_CHANNELS+1]
+                                        [DO_BUFFER_SLOTS][DO_SLOT_SIZE];
+static VChannelPtr         WOP_UpChannel;
+static VChannelPtr         WOP_DownChannel[WOP_DOWN_CHANNELS];
+static INT                 WOP_NbDesc[WOP_DOWN_CHANNELS];
+static DRAWINGOBJ          *WOP_DObjPnt;
+#endif
+
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -4347,6 +4359,12 @@ printf( "%d %d %d %d\n", pos_parent,width_parent,	pos_own,width_own);
 	if ((*ExecuteProc)(theStartDO)) 
 		return (1);
 	
+/* TODO: does not work in parallel (s.l.)
+	#ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
+*/
+		
 	if ( BV_IS_LEAF_BV( bv ) )
 		return (0);
 	
@@ -4393,6 +4411,12 @@ static INT RECURSIVE_BVEval (DRAWINGOBJ *theDO, GEN_ExecuteProcPtr ExecuteProc)
 	DO_2C(theDO) = MAT_XC(MAT_maxrow);  DO_inc(theDO); DO_2C(theDO) = MAT_YC(MAT_maxrow);   DO_inc(theDO);
 		
 	DO_2c(theDO) = DO_NO_INST;
+
+/* TODO: does not work in parallel
+	#ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
+*/
 	
 	if ((*ExecuteProc)(theStartDO)) 
 		return (1);
@@ -4663,6 +4687,10 @@ static INT VW_MatrixEval (VECTOR *vec, DRAWINGOBJ *theDO)
 		DO_2C(theDO) = max; DO_inc(theDO);
 	}
 	DO_2c(theDO) = DO_NO_INST;
+
+	#ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	return (0);
 }
@@ -5432,6 +5460,10 @@ static INT EW_BndOfElemEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	}
 		
 	DO_2c(theDO) = DO_NO_INST;
+
+	#ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	return (0);
 }
@@ -5493,6 +5525,9 @@ static INT EW_BndEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	if (!BND_PlotBoundary || OBJT(theElement)==IEOBJ)
 	{
 		DO_2c(theDO) = DO_NO_INST;
+		#ifdef ModelP
+	        WOP_DObjPnt = theDO;
+	        #endif
 		return (0);
 	}
 	
@@ -5532,6 +5567,11 @@ static INT EW_BndEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	  }
 
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
+
 	return (0);
 }
 
@@ -5731,6 +5771,11 @@ static INT VW_MatEval (VECTOR *vec, DRAWINGOBJ *theDO)
 	if (!VM_Type[VTYPE(vec)])
 	{
 		DO_2c(theDO) = DO_NO_INST;
+
+                #ifdef ModelP
+	        WOP_DObjPnt = theDO;
+	        #endif
+
 		return (0);
 	}
 	
@@ -5800,6 +5845,10 @@ static INT VW_MatEval (VECTOR *vec, DRAWINGOBJ *theDO)
 	}
 	
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	return (0);
 }
@@ -5815,6 +5864,11 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
 	if (!VM_Type[VTYPE(vec)])
 	{
 		DO_2c(theDO) = DO_NO_INST;
+
+                #ifdef ModelP
+	        WOP_DObjPnt = theDO;
+	        #endif
+
 		return (0);
 	}
 	
@@ -5925,6 +5979,10 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
 	}
 	
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	return (0);
 }
@@ -6030,6 +6088,11 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
 		if (V2_ISEQUAL(MousePos,MN_LastMousePos))
 		{
 			DO_2c(theDO) = DO_NO_INST;
+
+                        #ifdef ModelP
+	                WOP_DObjPnt = theDO;
+	                #endif
+
 			return (0);
 		}
 		
@@ -6037,12 +6100,22 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
 		if ((MousePos[0]<MN_xmin) || (MousePos[0]>MN_xmax))
 		{
 			DO_2c(theDO) = DO_NO_INST;
+
+			#ifdef ModelP
+	                WOP_DObjPnt = theDO;
+	                #endif
+
 			MN_accept = FALSE;
 			return (0);
 		}
 		if ((MousePos[1]<MN_ymin) || (MousePos[1]>MN_ymax))
 		{
 			DO_2c(theDO) = DO_NO_INST;
+
+                        #ifdef ModelP
+	                WOP_DObjPnt = theDO;
+	                #endif
+
 			MN_accept = FALSE;
 			return (0);
 		}
@@ -6075,6 +6148,11 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
 		    if (theElement == NULL)
 			  {
 				DO_2c(theDO) = DO_NO_INST;
+
+                                #ifdef ModelP
+	                        WOP_DObjPnt = theDO;
+	                        #endif
+
 				MN_accept = FALSE;
 				return(0);
 			  }
@@ -6107,6 +6185,11 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
 		if (bestDist2 == MAX_C)
 		  {
 			DO_2c(theDO) = DO_NO_INST;
+
+                        #ifdef ModelP
+	                WOP_DObjPnt = theDO;
+                        #endif
+
 			MN_accept = FALSE;
 			return(0);
 		  }
@@ -6122,6 +6205,10 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
 		  }
 		
 		DO_2c(theDO) = DO_NO_INST;
+
+                #ifdef ModelP
+	        WOP_DObjPnt = theDO;
+	        #endif
 		
 		MN_accept = TRUE;
 		
@@ -6139,6 +6226,11 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
 			V2_COPY(nbpos,DO_2Cp(theDO)); DO_inc_n(theDO,2);
 		  }
 		DO_2c(theDO) = DO_NO_INST;
+
+                #ifdef ModelP
+	        WOP_DObjPnt = theDO;
+	        #endif
+
 	}
 	*end = TRUE;
 	return (0);
@@ -6959,6 +7051,10 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	}
 
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	return (0);
 }
@@ -6983,6 +7079,10 @@ static INT EW_ElementBdryEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	}
 		
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	return (0);
 }
@@ -7056,6 +7156,10 @@ static INT NW_NodesEval2D (NODE *theNode, DRAWINGOBJ *theDO)
 	}
 
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	return (0);
 }
@@ -7116,6 +7220,10 @@ static INT EXT_NodesEval2D (DRAWINGOBJ *theDO, INT *end)
 	}
 
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	*end = TRUE;
 	
@@ -7765,6 +7873,10 @@ static INT EW_EScalar2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		{
 			/* element and phys rect don't intersect: nothing to do */
 			DO_2c(theDO) = DO_NO_INST;
+
+                        #ifdef ModelP
+	                WOP_DObjPnt = theDO;
+	                #endif
 			
 			return (0);
 		}
@@ -7801,6 +7913,11 @@ static INT EW_EScalar2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	}
 	
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
+
 	DO_2C(range) = EScalar2D_minValue; DO_inc(range);
 	DO_2C(range) = EScalar2D_maxValue;
 	
@@ -7918,6 +8035,10 @@ static INT EW_LineElement2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	
 	}
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 #ifdef __DO_HEAP_USED__
 		n = (INT)theDO - (INT)p;
@@ -8204,6 +8325,10 @@ static INT EW_EVector2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		{
 			/* element and phys rect don't intersect: nothing to do */
 			DO_2c(theDO) = DO_NO_INST;
+
+                        #ifdef ModelP
+	                WOP_DObjPnt = theDO;
+	                #endif
 			
 			return (0);
 		}
@@ -8249,6 +8374,10 @@ static INT EW_EVector2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	}
 			
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	return (0);
 }
@@ -10493,6 +10622,10 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	INT Viewable[MAX_SIDES_OF_ELEM];
 	
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	if (!CUT_CutExisting || CUTMODE(theElement)==CM_BEHIND)
 	{
@@ -10878,6 +11011,10 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		}
 	}
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	return (0);
 }
@@ -10923,6 +11060,10 @@ static INT EW_ECutBnd3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	COORD_VECTOR Line[2];
 	
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	if (CUTMODE(theElement)==CM_INTERSECT && OBJT(theElement)==BEOBJ && CUT_CutAtFront)
 	{
@@ -10972,6 +11113,10 @@ static INT EW_ECutBnd3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		}
 	}
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	return (0);
 }
@@ -13030,6 +13175,10 @@ static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	DRAWINGOBJ *range;
 	
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	/* get node order */
 	NodeOrder = NODE_ORDER(theElement);
@@ -13107,6 +13256,11 @@ static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	}
 	
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
+
 	DO_2C(range) = EScalar3D_minValue; DO_inc(range);
 	DO_2C(range) = EScalar3D_maxValue;
 		
@@ -13245,6 +13399,11 @@ static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	if (n<=2)
 	{
 		DO_2c(theDO) = DO_NO_INST;
+
+                #ifdef ModelP
+	        WOP_DObjPnt = theDO;
+	        #endif
+
 		return (0);
 	}
 	
@@ -13305,6 +13464,10 @@ static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	DO_2C(theDO) = max/EVector_V2L_factor; DO_inc(theDO);
 			
 	DO_2c(theDO) = DO_NO_INST;
+
+        #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
 	
 	return (0);
 }
@@ -13522,6 +13685,893 @@ INT ErasePicture (PICTURE *thePicture)
 	return (0);
 }
 
+
+/****************************************************************************
+*****************************************************************************
+
+            Parallel Extensions for WorkOnPicture
+
+*****************************************************************************
+****************************************************************************/
+
+
+
+/****************************************************************************/
+/*
+   ConnectWopTree - connects the tree for communicating DOs
+
+   SYNOPSIS:
+   void ConnectWopTree() 
+
+   PARAMETERS:
+   none
+
+   DESCRIPTION:
+   This function connects the tree for communicating DrawingObjects.
+   (parallel version only)
+
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
+
+#ifdef ModelP
+
+void ConnectWopTree()  
+{
+  INT i, k;
+
+  /* setup connections ... */
+
+  WOP_UpChannel = NULL;
+  for (i=0; i<WOP_DOWN_CHANNELS; i++) WOP_DownChannel[i] = NULL;
+
+  if (me != master) 
+    WOP_UpChannel = ConnASync((me-1)/WOP_DOWN_CHANNELS, 4711);
+  for (i=0; i<WOP_DOWN_CHANNELS; i++) {
+    k = me * WOP_DOWN_CHANNELS + i + 1;
+    if (k < procs)
+      WOP_DownChannel[i] = ConnASync(k, 4711);
+    else
+      break;
+  }
+
+  /* ... and wait for completion */
+
+  if (me != master)
+    while (InfoAConn(WOP_UpChannel) != 1);
+  for (i=0; i<WOP_DOWN_CHANNELS; i++) {
+    k = me * WOP_DOWN_CHANNELS + i + 1;
+    if (k < procs) 
+      while (InfoAConn(WOP_DownChannel[i]) != 1);
+    else
+      break;
+  }
+}
+
+
+/****************************************************************************/
+/*
+   NumberOfDesc - computes the number of descandants of every node
+
+   SYNOPSIS:
+   void NumberOfDesc(INT *nbDesc)
+
+   PARAMETERS:
+   nbDesc - array to store computed number of descandants 
+
+   DESCRIPTION:
+   This function computes the number of descandants of every node in the
+   tree for communicationg DOs.
+
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
+
+void NumberOfDesc(INT *nbDesc)
+{
+  msgid umid, dmid[WOP_DOWN_CHANNELS];
+  INT   uerr, derr[WOP_DOWN_CHANNELS];
+  INT   sum;
+  INT   i, noDesc;
+
+  noDesc = 1;
+  for (i=0; i<WOP_DOWN_CHANNELS; i++) {
+    nbDesc[i] = 0;
+    noDesc    = (noDesc && WOP_DownChannel[i] == NULL);
+  }
+  if (noDesc) {
+    sum  = 1;
+    umid = SendASync(WOP_UpChannel, &sum, sizeof(sum), &uerr);
+    while (InfoASend(WOP_UpChannel, umid) != 1);
+  }
+  else {
+    for (i=0; i<WOP_DOWN_CHANNELS; i++) {
+      if (WOP_DownChannel[i] != NULL) {
+	dmid[i] = RecvASync(WOP_DownChannel[i], &nbDesc[i], 
+			    sizeof(INT), &derr[i]);
+	while (InfoARecv(WOP_DownChannel[i], dmid[i]) != 1);
+      }
+      else 
+	break;
+    }
+    if (WOP_UpChannel != NULL) {
+      sum = 0;
+      for (i=0; i<WOP_DOWN_CHANNELS; i++)
+	sum += nbDesc[i];
+      sum++;
+      umid = SendASync(WOP_UpChannel, &sum, sizeof(sum), &uerr);
+      while (InfoASend(WOP_UpChannel, umid) != 1);
+    }
+  }
+}
+#endif
+
+
+/****************************************************************************/
+/*
+   WorkEW - does work elementwise
+
+   SYNOPSIS:
+   INT WorkEW()
+
+   PARAMETERS:
+   none
+
+   DESCRIPTION:
+   
+   This function evaluates all elements and executes the produced DOs.
+   The parallel version sends them to the master to get them executed there.
+
+   RETURN VALUE:
+   INT
+.n     0 if ok
+.n     1 if en arror occured.
+*/
+/****************************************************************************/
+
+INT WorkEW()
+{
+  #ifndef ModelP
+  
+  /*** Sequential Version ***/
+
+  for (WOP_Element=(*WOP_EW_GetFirstElementProc)(WOP_MG,0,
+                                                 WOP_MG->currentLevel);
+                     WOP_Element!=NULL;
+                     WOP_Element=(*WOP_EW_GetNextElementProc)(WOP_Element))
+  {
+    if ((*WOP_EW_EvaluateProc)(WOP_Element,WOP_DrawingObject))  return (1);
+    if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))	        return (1);
+  }
+  return (0);
+
+  #else
+
+  /*** Parallel Version ***/
+
+  INT sending  [WOP_DOWN_CHANNELS+1]; /* indicates sending from buffer i  */
+  INT receiving[WOP_DOWN_CHANNELS];   /* indicates receiving in buffer i  */
+  INT nbTokens [WOP_DOWN_CHANNELS];   /* nb of tokens seen from channel i */
+  INT more     [WOP_DOWN_CHANNELS+1]; /* more to receive from channel i   */
+  INT count    [WOP_DOWN_CHANNELS+1]; /* slots used in buffer i           */
+  INT front    [WOP_DOWN_CHANNELS+1]; /* next free slot in buffer i       */
+  INT rear     [WOP_DOWN_CHANNELS+1]; /* first nonempty slot in buffer i  */
+  INT sError   [WOP_DOWN_CHANNELS+1]; /* error for sending on channel i   */
+  INT rError   [WOP_DOWN_CHANNELS];   /* error for receiving on channel i */
+  msgid outmsg [WOP_DOWN_CHANNELS+1]; /* IDs for messages being sent      */
+  msgid inmsg  [WOP_DOWN_CHANNELS];   /* IDs for messages being received  */
+  
+  DRAWINGOBJ *p;                      /* running Pnt in own slot          */
+  DRAWINGOBJ *p1;                     /* Pnt to beginning of own slot     */
+  INT        currDoLen;               /* length of current DO             */ 
+
+  INT i, quit;
+
+  /* inits for buffering */
+
+  for (i=0; i<WOP_DOWN_CHANNELS; i++) {
+    sending[i]   = 0;
+    receiving[i] = 0; 
+    nbTokens[i]  = 0;
+    count[i]     = 0;
+    front[i]     = 0;
+    rear[i]      = 0;
+    more[i]      = (WOP_DownChannel[i] != NULL);
+  }
+  sending[WOP_DOWN_CHANNELS] = 0;
+  count  [WOP_DOWN_CHANNELS] = 0;
+  front  [WOP_DOWN_CHANNELS] = 0;
+  rear   [WOP_DOWN_CHANNELS] = 0;
+  more   [WOP_DOWN_CHANNELS] = 1;
+
+  currDoLen = 0;
+
+  /* inits for work */
+
+  WOP_Element=(*WOP_EW_GetFirstElementProc)(WOP_MG, 0, WOP_MG->currentLevel);
+
+  /* main loop for communication and doing work */
+ 
+  if (me == master) {
+
+    /* master's part */
+
+    for (;;) {
+
+      /* test for end of main loop */
+
+      quit = 1;
+      for (i = 0; i <= WOP_DOWN_CHANNELS; i++) 
+        quit = (quit && !more[i] && count[i] == 0);
+      if (quit) break;
+
+      /* handle communication */
+
+      for (i = 0; i < WOP_DOWN_CHANNELS; i++) {
+	if (receiving[i])
+          if (InfoARecv(WOP_DownChannel[i], inmsg[i]) == 1) {
+	    receiving[i] = 0;
+	    if (DO_2c(WOP_DO_Buffer[i][front[i]]) == DO_END_TOKEN) 
+	      more[i] = (++nbTokens[i] < WOP_NbDesc[i]);
+            count[i]++;
+	    front[i] = (front[i] + 1) % DO_BUFFER_SLOTS;
+	  }
+	if (more[i] && !receiving[i])
+	  if (count[i] < DO_BUFFER_SLOTS) {
+	    receiving[i] = 1;
+	    inmsg[i] = RecvASync(WOP_DownChannel[i], WOP_DO_Buffer[i][front[i]], 
+                                 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &rError[i]);
+	  }
+      }
+
+      /* execute received and own DOs */
+
+      for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+	if (count[i] > 0) {
+	  p1 = WOP_DO_Buffer[i][rear[i]];
+          DO_inc(p1);
+          (*WOP_GEN_ExecuteProc)(p1);
+          count[i]--;
+          rear[i] = (rear[i] + 1) % DO_BUFFER_SLOTS;
+	}
+      
+      /* fill own buffer */
+
+      i = WOP_DOWN_CHANNELS;
+      if (more[i] && count[i] < DO_BUFFER_SLOTS) {
+	p = p1 = WOP_DO_Buffer[i][front[i]];
+	DO_inc(p);
+	DO_2c(p1) = DO_NO_INST;
+	do {
+	  if (currDoLen > 0) {
+	    memcpy(p, WOP_DrawingObject, (size_t)(currDoLen));
+	    p = (DRAWINGOBJ *) (DO_2cp(p) + currDoLen);
+	  }
+	  if (WOP_Element == NULL) {
+	    DO_2c(p1) = DO_END_TOKEN;
+	    more[i] = 0;
+	    break;
+	  }
+	  else {
+	    (*WOP_EW_EvaluateProc)(WOP_Element, WOP_DrawingObject);
+	    currDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
+	    WOP_Element = (*WOP_EW_GetNextElementProc)(WOP_Element);
+	  }
+	} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
+                                                             > currDoLen);
+	DO_2c(p) = DO_NO_INST;
+        count[i]++;
+	front[i] = (front[i] + 1) % DO_BUFFER_SLOTS;
+      }
+    }
+  }
+  else {
+
+    /* everybody else's part */
+
+    for (;;) {
+
+      /* test for end of main loop */
+
+      quit = 1;
+      for (i = 0; i <= WOP_DOWN_CHANNELS; i++) 
+        quit = (quit && !more[i] && count[i] == 0);
+      if (quit) break;
+
+      /* handle communication */
+
+      for (i = 0; i < WOP_DOWN_CHANNELS; i++) {
+	if (receiving[i])
+          if (InfoARecv(WOP_DownChannel[i], inmsg[i]) == 1) {
+	    count[i]++;
+            receiving[i] = 0;
+            if (DO_2c(WOP_DO_Buffer[i][front[i]]) == DO_END_TOKEN)
+	      more[i] = (++nbTokens[i] < WOP_NbDesc[i]);
+	    front[i] = (front[i] + 1) % DO_BUFFER_SLOTS;
+	  }
+	if (sending[i])
+	  if (InfoASend(WOP_UpChannel, outmsg[i]) == 1) {
+            count[i]--;
+	    sending[i] = 0;
+            rear[i] = (rear[i] + 1) % DO_BUFFER_SLOTS;
+	  }
+	if (!sending[i])
+	  if (count[i] > 0) {
+	    sending[i] = 1;
+	    outmsg[i] = SendASync(WOP_UpChannel, WOP_DO_Buffer[i][rear[i]], 
+				  DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &sError[i]);
+	  }
+	if (more[i] && !receiving[i])
+	  if (count[i] < DO_BUFFER_SLOTS) {
+	    receiving[i] = 1;
+	    inmsg[i] = RecvASync(WOP_DownChannel[i],
+				 WOP_DO_Buffer[i][front[i]], 
+                                 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &rError[i]);
+	  }
+      }
+      
+      /* send own buffer */
+
+      i = WOP_DOWN_CHANNELS;
+      if (sending[i])
+        if (InfoASend(WOP_UpChannel, outmsg[i]) == 1) {
+            count[i]--;
+	    sending[i] = 0;
+            rear[i] = (rear[i] + 1) % DO_BUFFER_SLOTS;
+	  }
+      if (!sending[i])
+        if (count[i] > 0) {
+          sending[i] = 1;
+          outmsg[i] = SendASync(WOP_UpChannel, WOP_DO_Buffer[i][rear[i]], 
+      			  DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &sError[i]);
+        }
+
+      /* fill own buffer */
+
+      if (more[i] && count[i] < DO_BUFFER_SLOTS) {
+	p = p1 = WOP_DO_Buffer[i][front[i]];
+	DO_inc(p);
+	DO_2c(p1) = DO_NO_INST;
+	do {
+	  if (currDoLen > 0) {
+	    memcpy(p, WOP_DrawingObject, (size_t)currDoLen);
+	    p = (DRAWINGOBJ *) (DO_2cp(p) + currDoLen);
+	  }
+	  if (WOP_Element == NULL) {
+	    DO_2c(p1) = DO_END_TOKEN;
+	    more[i] = 0;
+	    break;
+	  }
+	  else {
+	    (*WOP_EW_EvaluateProc)(WOP_Element, WOP_DrawingObject);
+	    currDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
+	    WOP_Element = (*WOP_EW_GetNextElementProc)(WOP_Element);
+	  }
+	} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p)-(INT)(p1)) 
+                                                            >currDoLen);
+	DO_2c(p) = DO_NO_INST;
+	front[i] = (front[i] + 1) % DO_BUFFER_SLOTS;
+	count[i]++;
+      }
+    }
+  }	    
+
+  return (0);
+
+  #endif
+}
+
+
+/****************************************************************************/
+/*
+   WorkNW - does work nodewise
+
+   SYNOPSIS:
+   INT WorkNW()
+
+   PARAMETERS:
+   none
+
+   DESCRIPTION:
+   This function evaluates all nodes and executes the produced DOs.
+   The parallel version sends them to the master to get them executed there.
+
+   RETURN VALUE:
+   INT
+.n     0 if ok
+.n     1 if en arror occured.
+*/
+/****************************************************************************/
+
+INT WorkNW()
+{
+  #ifndef ModelP
+
+  /*** Sequential Version ***/
+
+  for (WOP_Node=(*WOP_NW_GetFirstNodeProc)(WOP_MG,0,
+                                           WOP_MG->currentLevel); 
+       WOP_Node!=NULL; 
+       WOP_Node=(*WOP_NW_GetNextNodeProc)(WOP_Node))
+  {
+    if ((*WOP_NW_EvaluateProc)(WOP_Node,WOP_DrawingObject)) return (1);
+    if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))	    return (1);
+  }
+  return (0);
+
+  #else
+
+  /*** Parallel Version ***/
+
+  INT sending  [WOP_DOWN_CHANNELS+1]; /* indicates sending from buffer i  */
+  INT receiving[WOP_DOWN_CHANNELS];   /* indicates receiving in buffer i  */
+  INT nbTokens [WOP_DOWN_CHANNELS];   /* nb of tokens seen from channel i */
+  INT more     [WOP_DOWN_CHANNELS+1]; /* more to receive from channel i   */
+  INT count    [WOP_DOWN_CHANNELS+1]; /* slots used in buffer i           */
+  INT front    [WOP_DOWN_CHANNELS+1]; /* next free slot in buffer i       */
+  INT rear     [WOP_DOWN_CHANNELS+1]; /* first nonempty slot in buffer i  */
+  INT sError   [WOP_DOWN_CHANNELS+1]; /* error for sending on channel i   */
+  INT rError   [WOP_DOWN_CHANNELS];   /* error for receiving on channel i */
+  msgid outmsg [WOP_DOWN_CHANNELS+1]; /* IDs for messages being sent      */
+  msgid inmsg  [WOP_DOWN_CHANNELS];   /* IDs for messages being received  */
+  
+  DRAWINGOBJ *p;                      /* running Pnt in own slot          */
+  DRAWINGOBJ *p1;                     /* Pnt to beginning of own slot     */
+  INT        currDoLen;               /* length of current DO             */ 
+
+  INT i, quit;
+
+  /* inits for buffering */
+
+  for (i=0; i<WOP_DOWN_CHANNELS; i++) {
+    sending[i]   = 0;
+    receiving[i] = 0; 
+    nbTokens[i]  = 0;
+    count[i]     = 0;
+    front[i]     = 0;
+    rear[i]      = 0;
+    more[i]      = (WOP_DownChannel[i] != NULL);
+  }
+  sending[WOP_DOWN_CHANNELS] = 0;
+  count  [WOP_DOWN_CHANNELS] = 0;
+  front  [WOP_DOWN_CHANNELS] = 0;
+  rear   [WOP_DOWN_CHANNELS] = 0;
+  more   [WOP_DOWN_CHANNELS] = 1;
+
+  currDoLen = 0;
+
+  /* inits for work */
+
+  WOP_Node=(*WOP_NW_GetFirstNodeProc)(WOP_MG, 0, WOP_MG->currentLevel);
+
+  /* main loop for communication and doing work */
+ 
+  if (me == master) {
+
+    /* master's part */
+
+    for (;;) {
+
+      /* test for end of main loop */
+
+      quit = 1;
+      for (i = 0; i <= WOP_DOWN_CHANNELS; i++) 
+        quit = (quit && !more[i] && count[i] == 0);
+      if (quit) break;
+
+      /* handle communication */
+
+      for (i = 0; i < WOP_DOWN_CHANNELS; i++) {
+	if (receiving[i])
+          if (InfoARecv(WOP_DownChannel[i], inmsg[i]) == 1) {
+	    receiving[i] = 0;
+	    if (DO_2c(WOP_DO_Buffer[i][front[i]]) == DO_END_TOKEN) 
+	      more[i] = (++nbTokens[i] < WOP_NbDesc[i]);
+            count[i]++;
+	    front[i] = (front[i] + 1) % DO_BUFFER_SLOTS;
+	  }
+	if (more[i] && !receiving[i])
+	  if (count[i] < DO_BUFFER_SLOTS) {
+	    receiving[i] = 1;
+	    inmsg[i] = RecvASync(WOP_DownChannel[i], WOP_DO_Buffer[i][front[i]], 
+                                 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &rError[i]);
+	  }
+      }
+
+      /* execute received and own DOs */
+
+      for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+	if (count[i] > 0) {
+	  p1 = WOP_DO_Buffer[i][rear[i]];
+          DO_inc(p1);
+          (*WOP_GEN_ExecuteProc)(p1);
+          count[i]--;
+          rear[i] = (rear[i] + 1) % DO_BUFFER_SLOTS;
+	}
+      
+      /* fill own buffer */
+
+      i = WOP_DOWN_CHANNELS;
+      if (more[i] && count[i] < DO_BUFFER_SLOTS) {
+	p = p1 = WOP_DO_Buffer[i][front[i]];
+	DO_inc(p);
+	DO_2c(p1) = DO_NO_INST;
+	do {
+	  if (currDoLen > 0) {
+	    memcpy(p, WOP_DrawingObject, (size_t)(currDoLen));
+	    p = (DRAWINGOBJ *) (DO_2cp(p) + currDoLen);
+	  }
+	  if (WOP_Node == NULL) {
+	    DO_2c(p1) = DO_END_TOKEN;
+	    more[i] = 0;
+	    break;
+	  }
+	  else {
+	    (*WOP_NW_EvaluateProc)(WOP_Node, WOP_DrawingObject);
+	    currDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
+	    WOP_Node = (*WOP_NW_GetNextNodeProc)(WOP_Node);
+	  }
+	} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
+                                                             > currDoLen);
+	DO_2c(p) = DO_NO_INST;
+        count[i]++;
+	front[i] = (front[i] + 1) % DO_BUFFER_SLOTS;
+      }
+    }
+  }
+  else {
+
+    /* everybody else's part */
+
+    for (;;) {
+
+      /* test for end of main loop */
+
+      quit = 1;
+      for (i = 0; i <= WOP_DOWN_CHANNELS; i++) 
+        quit = (quit && !more[i] && count[i] == 0);
+      if (quit) break;
+
+      /* handle communication */
+
+      for (i = 0; i < WOP_DOWN_CHANNELS; i++) {
+	if (receiving[i])
+          if (InfoARecv(WOP_DownChannel[i], inmsg[i]) == 1) {
+	    count[i]++;
+            receiving[i] = 0;
+            if (DO_2c(WOP_DO_Buffer[i][front[i]]) == DO_END_TOKEN)
+	      more[i] = (++nbTokens[i] < WOP_NbDesc[i]);
+	    front[i] = (front[i] + 1) % DO_BUFFER_SLOTS;
+	  }
+	if (sending[i])
+	  if (InfoASend(WOP_UpChannel, outmsg[i]) == 1) {
+            count[i]--;
+	    sending[i] = 0;
+            rear[i] = (rear[i] + 1) % DO_BUFFER_SLOTS;
+	  }
+	if (!sending[i])
+	  if (count[i] > 0) {
+	    sending[i] = 1;
+	    outmsg[i] = SendASync(WOP_UpChannel, WOP_DO_Buffer[i][rear[i]], 
+				  DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &sError[i]);
+	  }
+	if (more[i] && !receiving[i])
+	  if (count[i] < DO_BUFFER_SLOTS) {
+	    receiving[i] = 1;
+	    inmsg[i] = RecvASync(WOP_DownChannel[i],
+				 WOP_DO_Buffer[i][front[i]], 
+                                 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &rError[i]);
+	  }
+      }
+      
+      /* send own buffer */
+
+      i = WOP_DOWN_CHANNELS;
+      if (sending[i])
+        if (InfoASend(WOP_UpChannel, outmsg[i]) == 1) {
+            count[i]--;
+	    sending[i] = 0;
+            rear[i] = (rear[i] + 1) % DO_BUFFER_SLOTS;
+	  }
+      if (!sending[i])
+        if (count[i] > 0) {
+          sending[i] = 1;
+          outmsg[i] = SendASync(WOP_UpChannel, WOP_DO_Buffer[i][rear[i]], 
+      			  DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &sError[i]);
+        }
+
+      /* fill own buffer */
+
+      if (more[i] && count[i] < DO_BUFFER_SLOTS) {
+	p = p1 = WOP_DO_Buffer[i][front[i]];
+	DO_inc(p);
+	DO_2c(p1) = DO_NO_INST;
+	do {
+	  if (currDoLen > 0) {
+	    memcpy(p, WOP_DrawingObject, (size_t)currDoLen);
+	    p = (DRAWINGOBJ *) (DO_2cp(p) + currDoLen);
+	  }
+	  if (WOP_Node == NULL) {
+	    DO_2c(p1) = DO_END_TOKEN;
+	    more[i] = 0;
+	    break;
+	  }
+	  else {
+	    (*WOP_NW_EvaluateProc)(WOP_Node, WOP_DrawingObject);
+	    currDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
+	    WOP_Node = (*WOP_NW_GetNextNodeProc)(WOP_Node);
+	  }
+	} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p)-(INT)(p1)) 
+                                                            >currDoLen);
+	DO_2c(p) = DO_NO_INST;
+	front[i] = (front[i] + 1) % DO_BUFFER_SLOTS;
+	count[i]++;
+      }
+    }
+  }	    
+
+  return (0);
+
+  #endif
+}
+
+
+/****************************************************************************/
+/*
+   WorkVW - does work vectorwise
+
+   SYNOPSIS:
+   INT WorkVW()
+
+   PARAMETERS:
+   none
+
+   DESCRIPTION:
+   This function evaluates all vectors and executes the produced DOs.
+   The parallel version sends them to the master to get them executed there.
+
+   RETURN VALUE:
+   INT
+.n     0 if ok
+.n     1 if en arror occured.
+*/
+/****************************************************************************/
+
+INT WorkVW()
+{
+  #ifndef ModelP
+
+  /*** Sequential Version ***/
+
+  for (WOP_Vector=(*WOP_VW_GetFirstVectorProc)(WOP_MG,0,
+                                               WOP_MG->currentLevel); 
+                   WOP_Vector!=NULL; 
+                   WOP_Vector=(*WOP_VW_GetNextVectorProc)(WOP_Vector))
+  {
+    if ((*WOP_VW_EvaluateProc)(WOP_Vector,WOP_DrawingObject)) return (1);
+    if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))	      return (1);
+  }
+  return (0);
+
+  #else
+
+    /*** Parallel Version ***/
+
+  INT sending  [WOP_DOWN_CHANNELS+1]; /* indicates sending from buffer i  */
+  INT receiving[WOP_DOWN_CHANNELS];   /* indicates receiving in buffer i  */
+  INT nbTokens [WOP_DOWN_CHANNELS];   /* nb of tokens seen from channel i */
+  INT more     [WOP_DOWN_CHANNELS+1]; /* more to receive from channel i   */
+  INT count    [WOP_DOWN_CHANNELS+1]; /* slots used in buffer i           */
+  INT front    [WOP_DOWN_CHANNELS+1]; /* next free slot in buffer i       */
+  INT rear     [WOP_DOWN_CHANNELS+1]; /* first nonempty slot in buffer i  */
+  INT sError   [WOP_DOWN_CHANNELS+1]; /* error for sending on channel i   */
+  INT rError   [WOP_DOWN_CHANNELS];   /* error for receiving on channel i */
+  msgid outmsg [WOP_DOWN_CHANNELS+1]; /* IDs for messages being sent      */
+  msgid inmsg  [WOP_DOWN_CHANNELS];   /* IDs for messages being received  */
+  
+  DRAWINGOBJ *p;                      /* running Pnt in own slot          */
+  DRAWINGOBJ *p1;                     /* Pnt to beginning of own slot     */
+  INT        currDoLen;               /* length of current DO             */ 
+
+  INT i, quit;
+
+  /* inits for buffering */
+
+  for (i=0; i<WOP_DOWN_CHANNELS; i++) {
+    sending[i]   = 0;
+    receiving[i] = 0; 
+    nbTokens[i]  = 0;
+    count[i]     = 0;
+    front[i]     = 0;
+    rear[i]      = 0;
+    more[i]      = (WOP_DownChannel[i] != NULL);
+  }
+  sending[WOP_DOWN_CHANNELS] = 0;
+  count  [WOP_DOWN_CHANNELS] = 0;
+  front  [WOP_DOWN_CHANNELS] = 0;
+  rear   [WOP_DOWN_CHANNELS] = 0;
+  more   [WOP_DOWN_CHANNELS] = 1;
+
+  currDoLen = 0;
+
+  /* inits for work */
+
+  WOP_Vector=(*WOP_VW_GetFirstVectorProc)(WOP_MG, 0, WOP_MG->currentLevel);
+
+  /* main loop for communication and doing work */
+ 
+  if (me == master) {
+
+    /* master's part */
+
+    for (;;) {
+
+      /* test for end of main loop */
+
+      quit = 1;
+      for (i = 0; i <= WOP_DOWN_CHANNELS; i++) 
+        quit = (quit && !more[i] && count[i] == 0);
+      if (quit) break;
+
+      /* handle communication */
+
+      for (i = 0; i < WOP_DOWN_CHANNELS; i++) {
+	if (receiving[i])
+          if (InfoARecv(WOP_DownChannel[i], inmsg[i]) == 1) {
+	    receiving[i] = 0;
+	    if (DO_2c(WOP_DO_Buffer[i][front[i]]) == DO_END_TOKEN) 
+	      more[i] = (++nbTokens[i] < WOP_NbDesc[i]);
+            count[i]++;
+	    front[i] = (front[i] + 1) % DO_BUFFER_SLOTS;
+	  }
+	if (more[i] && !receiving[i])
+	  if (count[i] < DO_BUFFER_SLOTS) {
+	    receiving[i] = 1;
+	    inmsg[i] = RecvASync(WOP_DownChannel[i], WOP_DO_Buffer[i][front[i]], 
+                                 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &rError[i]);
+	  }
+      }
+
+      /* execute received and own DOs */
+
+      for (i = 0; i <= WOP_DOWN_CHANNELS; i++)
+	if (count[i] > 0) {
+	  p1 = WOP_DO_Buffer[i][rear[i]];
+          DO_inc(p1);
+          (*WOP_GEN_ExecuteProc)(p1);
+          count[i]--;
+          rear[i] = (rear[i] + 1) % DO_BUFFER_SLOTS;
+	}
+      
+      /* fill own buffer */
+
+      i = WOP_DOWN_CHANNELS;
+      if (more[i] && count[i] < DO_BUFFER_SLOTS) {
+	p = p1 = WOP_DO_Buffer[i][front[i]];
+	DO_inc(p);
+	DO_2c(p1) = DO_NO_INST;
+	do {
+	  if (currDoLen > 0) {
+	    memcpy(p, WOP_DrawingObject, (size_t)(currDoLen));
+	    p = (DRAWINGOBJ *) (DO_2cp(p) + currDoLen);
+	  }
+	  if (WOP_Vector == NULL) {
+	    DO_2c(p1) = DO_END_TOKEN;
+	    more[i] = 0;
+	    break;
+	  }
+	  else {
+	    (*WOP_VW_EvaluateProc)(WOP_Vector, WOP_DrawingObject);
+	    currDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
+	    WOP_Vector = (*WOP_VW_GetNextVectorProc)(WOP_Vector);
+	  }
+	} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p) - (INT)(p1)) 
+                                                             > currDoLen);
+	DO_2c(p) = DO_NO_INST;
+        count[i]++;
+	front[i] = (front[i] + 1) % DO_BUFFER_SLOTS;
+      }
+    }
+  }
+  else {
+
+    /* everybody else's part */
+
+    for (;;) {
+
+      /* test for end of main loop */
+
+      quit = 1;
+      for (i = 0; i <= WOP_DOWN_CHANNELS; i++) 
+        quit = (quit && !more[i] && count[i] == 0);
+      if (quit) break;
+
+      /* handle communication */
+
+      for (i = 0; i < WOP_DOWN_CHANNELS; i++) {
+	if (receiving[i])
+          if (InfoARecv(WOP_DownChannel[i], inmsg[i]) == 1) {
+	    count[i]++;
+            receiving[i] = 0;
+            if (DO_2c(WOP_DO_Buffer[i][front[i]]) == DO_END_TOKEN)
+	      more[i] = (++nbTokens[i] < WOP_NbDesc[i]);
+	    front[i] = (front[i] + 1) % DO_BUFFER_SLOTS;
+	  }
+	if (sending[i])
+	  if (InfoASend(WOP_UpChannel, outmsg[i]) == 1) {
+            count[i]--;
+	    sending[i] = 0;
+            rear[i] = (rear[i] + 1) % DO_BUFFER_SLOTS;
+	  }
+	if (!sending[i])
+	  if (count[i] > 0) {
+	    sending[i] = 1;
+	    outmsg[i] = SendASync(WOP_UpChannel, WOP_DO_Buffer[i][rear[i]], 
+				  DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &sError[i]);
+	  }
+	if (more[i] && !receiving[i])
+	  if (count[i] < DO_BUFFER_SLOTS) {
+	    receiving[i] = 1;
+	    inmsg[i] = RecvASync(WOP_DownChannel[i],
+				 WOP_DO_Buffer[i][front[i]], 
+                                 DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &rError[i]);
+	  }
+      }
+      
+      /* send own buffer */
+
+      i = WOP_DOWN_CHANNELS;
+      if (sending[i])
+        if (InfoASend(WOP_UpChannel, outmsg[i]) == 1) {
+            count[i]--;
+	    sending[i] = 0;
+            rear[i] = (rear[i] + 1) % DO_BUFFER_SLOTS;
+	  }
+      if (!sending[i])
+        if (count[i] > 0) {
+          sending[i] = 1;
+          outmsg[i] = SendASync(WOP_UpChannel, WOP_DO_Buffer[i][rear[i]], 
+      			  DO_SLOT_SIZE*sizeof(DRAWINGOBJ), &sError[i]);
+        }
+
+      /* fill own buffer */
+
+      if (more[i] && count[i] < DO_BUFFER_SLOTS) {
+	p = p1 = WOP_DO_Buffer[i][front[i]];
+	DO_inc(p);
+	DO_2c(p1) = DO_NO_INST;
+	do {
+	  if (currDoLen > 0) {
+	    memcpy(p, WOP_DrawingObject, (size_t)currDoLen);
+	    p = (DRAWINGOBJ *) (DO_2cp(p) + currDoLen);
+	  }
+	  if (WOP_Vector == NULL) {
+	    DO_2c(p1) = DO_END_TOKEN;
+	    more[i] = 0;
+	    break;
+	  }
+	  else {
+	    (*WOP_VW_EvaluateProc)(WOP_Vector, WOP_DrawingObject);
+	    currDoLen = (INT)(WOP_DObjPnt) - (INT)(WOP_DrawingObject);
+	    WOP_Vector = (*WOP_VW_GetNextVectorProc)(WOP_Vector);
+	  }
+	} while (DO_SLOT_SIZE*sizeof(DRAWINGOBJ) - ((INT)(p)-(INT)(p1)) 
+                                                            >currDoLen);
+	DO_2c(p) = DO_NO_INST;
+	front[i] = (front[i] + 1) % DO_BUFFER_SLOTS;
+	count[i]++;
+      }
+    }
+  }	    
+
+  return (0);
+
+  #endif
+}
+
+
 /****************************************************************************/
 /*D
    WorkOnPicture - Work on picture
@@ -13548,7 +14598,7 @@ D*/
 
 INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 {
-	INT i, end;
+	INT i, end, error;
 
 #ifdef __DO_HEAP_USED__
 	char buffer[128];
@@ -13593,7 +14643,11 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 	#ifdef ModelP
 	if (me == master)
 	#endif
-	if (PrepareGraph(WOP_Picture))
+	error=PrepareGraph(WOP_Picture);
+        #ifdef ModelP
+        Broadcast(&error, sizeof(error));
+        #endif
+        if (error)
 	{
 		UserWrite("cannot activate low level graphic\n");
 		return (1);
@@ -13606,15 +14660,27 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 	}
 	
 	/* clear if if DRAW_WORK */
-	#ifdef ModelP
-	if (me == master)
-	#endif
+
 	if (W_ID(theWork) == DRAW_WORK)
 	{
-		if (PO_CBD(PIC_PO(WOP_Picture)) == YES)
-			if (ErasePicture(WOP_Picture)) 
-				return (1);
-		if (DrawPictureFrame(WOP_Picture,WOP_WORKING)) return (1);
+	        if (PO_CBD(PIC_PO(WOP_Picture)) == YES) {
+                        #ifdef ModelP
+                        if (me == master)
+			#endif
+			error = (ErasePicture(WOP_Picture));
+                        #ifdef ModelP
+                        Broadcast(&error, sizeof(error));
+                        #endif 
+			if (error) return (1);
+                }
+                #ifdef ModelP
+                if (me == master)
+	        #endif
+		error = DrawPictureFrame(WOP_Picture,WOP_WORKING);
+                #ifdef ModelP
+                Broadcast(&error, sizeof(error));
+                #endif 
+                if (error) return(1);
 	}
 			
 	for (i=0; i<POH_NBCYCLES(WOP_PlotObjHandling,W_ID(WOP_Work)); i++)
@@ -13654,78 +14720,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 					if ((*WOP_GEN_PreProcessProc)(WOP_Picture,WOP_Work))
 						break;
 
-			#ifdef ModelP
-			{
-				VChannelPtr gpipe;
-				INT token,n=0;
-				if (me == master) {
-					PRINTDEBUG(graph,1,("%d: plottype ELEMENTWISE\n",me));
-				}
-
-				if (me != master) {
-
-					PRINTDEBUG(graph,1,("%d: connecting to master=%d\n",me,master));
-					gpipe = ConnSync(master, 123);
-				}
-					
-				if (CONTEXT(me))
-				#endif
-				for (WOP_Element=(*WOP_EW_GetFirstElementProc)(WOP_MG,0,WOP_MG->currentLevel); WOP_Element!=NULL; WOP_Element=(*WOP_EW_GetNextElementProc)(WOP_Element))
-				{
-					if ((*WOP_EW_EvaluateProc)(WOP_Element,WOP_DrawingObject))				return (1);
-					#ifdef ModelP
-					if (me == master) {
-					#endif
-						if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))							return (1);
-					#ifdef ModelP
-					}
-					else {
-						PRINTDEBUG(graph,1,("%d: sending plotbuffer=%d\n",me,n));
-						SendSync(gpipe,(void *)WOP_DrawingObject,DO_SIZE);
-						n++;
-					}
-					#endif
-				}
-
-
-				#ifdef ModelP
-				if (me == master) {
-					VChannelPtr gpipe;
-					INT p,i;
-					INT n = 0; 
-
-					for (i=1,p=master+1; i<procs; i++,p=(p+1)%procs) {
-						if (!CONTEXT(p)) {
-							PRINTDEBUG(graph,1,("%d: NOT connecting to slave=%d\n",me,p));
-							continue;
-						}
-						PRINTDEBUG(graph,1,("%d: connecting to slave=%d\n",me,p));
-						gpipe = ConnSync(p, 123);
-						while (1) {
-							char endtoken;
-
-							PRINTDEBUG(graph,1,("%d: receiving from %d plotbuffer=%d\n",me,p,n));
-							RecvSync(gpipe,(void *)WOP_DrawingObject,DO_SIZE);
-							n++;
-							endtoken = DO_2c(WOP_DrawingObject);
-							if (endtoken == DO_END_GPIPE) break;
-
-								if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))						return (1);
-						}
-						PRINTDEBUG(graph,1,("%d: disconnecting gpipe to slave=%d\n",me,p));
-						DiscSync(gpipe);
-					}
-				}
-				else {
-					/* send ready token */
-					DO_2c(WOP_DrawingObject) = DO_END_GPIPE;
-					PRINTDEBUG(graph,1,("%d: sending stoptoken in plotbuffer=%d\n",me,n));
-					SendSync(gpipe,(void *)WOP_DrawingObject,DO_SIZE);
-					PRINTDEBUG(graph,1,("%d: disconnecting gpipe to master=%d\n",me,master));
-					DiscSync(gpipe);
-				}
-			}
-			#endif
+                                if (WorkEW()) return (1);
 
 				if (WOP_GEN_PostProcessProc!=NULL)
 					if ((*WOP_GEN_PostProcessProc)(WOP_Picture,WOP_Work))			return (1);
@@ -13752,79 +14747,9 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 				if (WOP_GEN_PreProcessProc!=NULL)
 					if ((*WOP_GEN_PreProcessProc)(WOP_Picture,WOP_Work))
 						break;
-
-			#ifdef ModelP
-			{
-				VChannelPtr gpipe;
-				INT token,n=0;
-
-				if (me == master) {
-					PRINTDEBUG(graph,1,("%d: plottype NODEWISE\n",me));
-				}
-				if (me != master) {
-
-					PRINTDEBUG(graph,1,("%d: connecting to master=%d\n",me,master));
-					gpipe = ConnSync(master, 123);
-				}
-					
-				if (CONTEXT(me))
-				#endif
-				for (WOP_Node=(*WOP_NW_GetFirstNodeProc)(WOP_MG,0,WOP_MG->currentLevel); WOP_Node!=NULL; WOP_Node=(*WOP_NW_GetNextNodeProc)(WOP_Node))
-				{
-					if ((*WOP_NW_EvaluateProc)(WOP_Node,WOP_DrawingObject)) 				return (1);
-					#ifdef ModelP
-					if (me == master) {
-					#endif
-						if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))							return (1);
-					#ifdef ModelP
-					}
-					else {
-						PRINTDEBUG(graph,1,("%d: sending plotbuffer=%d\n",me,n));
-						SendSync(gpipe,(void *)WOP_DrawingObject,DO_SIZE);
-						n++;
-					}
-					#endif
-				}
-
-				#ifdef ModelP
-				if (me == master) {
-					VChannelPtr gpipe;
-					INT p,i;
-					INT n = 0; 
-
-					for (i=1,p=master+1; i<procs; i++,p=(p+1)%procs) {
-						if (!CONTEXT(p)) {
-							PRINTDEBUG(graph,1,("%d: NOT connecting to slave=%d\n",me,p));
-							continue;
-						}
-						PRINTDEBUG(graph,1,("%d: connecting to slave=%d\n",me,p));
-						gpipe = ConnSync(p, 123);
-						while (1) {
-							char endtoken;
-
-							PRINTDEBUG(graph,1,("%d: receiving from %d plotbuffer=%d\n",me,p,n));
-							RecvSync(gpipe,(void *)WOP_DrawingObject,DO_SIZE);
-							n++;
-							endtoken = DO_2c(WOP_DrawingObject);
-							if (endtoken == DO_END_GPIPE) break;
-
-								if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))						return (1);
-						}
-						PRINTDEBUG(graph,1,("%d: disconnecting gpipe to slave=%d\n",me,p));
-						DiscSync(gpipe);
-					}
-				}
-				else {
-					/* send ready token */
-					DO_2c(WOP_DrawingObject) = DO_END_GPIPE;
-					PRINTDEBUG(graph,1,("%d: sending stoptoken in plotbuffer=%d\n",me,n));
-					SendSync(gpipe,(void *)WOP_DrawingObject,DO_SIZE);
-					PRINTDEBUG(graph,1,("%d: disconnecting gpipe to master=%d\n",me,master));
-					DiscSync(gpipe);
-				}
-			}
-			#endif
-
+                                
+                                if (WorkNW()) return (1);
+                                
 				if (WOP_GEN_PostProcessProc!=NULL)
 					if ((*WOP_GEN_PostProcessProc)(WOP_Picture,WOP_Work))			return (1);
 				break;
@@ -13844,11 +14769,9 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 				if (WOP_GEN_PreProcessProc!=NULL)
 					if ((*WOP_GEN_PreProcessProc)(WOP_Picture,WOP_Work))
 						break;
-				for (WOP_Vector=(*WOP_VW_GetFirstVectorProc)(WOP_MG,0,WOP_MG->currentLevel); WOP_Vector!=NULL; WOP_Vector=(*WOP_VW_GetNextVectorProc)(WOP_Vector))
-				{
-					if ((*WOP_VW_EvaluateProc)(WOP_Vector,WOP_DrawingObject))				return (1);
-					if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))							return (1);
-				}
+                                  
+                                if (WorkVW()) return (1);
+
 				if (WOP_GEN_PostProcessProc!=NULL)
 					if ((*WOP_GEN_PostProcessProc)(thePicture,WOP_Work))			return (1);
 				break;
@@ -13922,6 +14845,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 		
 	return (0);
 }
+
 
 /****************************************************************************/
 /*D
@@ -14886,6 +15810,11 @@ INT InitWOP (void)
 		
 	/* set PlotObjTypes of PlotObjHandlings */
 	if (InitPlotObjTypes()) return (__LINE__);
+
+        #ifdef ModelP
+        ConnectWopTree();
+        NumberOfDesc(WOP_NbDesc);
+        #endif
 
 	return(0);
 }
