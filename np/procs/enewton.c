@@ -371,7 +371,7 @@ static INT ENewtonSolver (NP_ENL_SOLVER *nls, INT level, EVECDATA_DESC *x, NP_EN
       res->max_linear_iterations = MAX(res->max_linear_iterations,lr.number_of_linear_iterations);
       for (j=0; j<newton->d->n; j++)
       {
-        if (ddot(mg,0,level,ALL_VECTORS,newton->J->em[j],newton->v->vd,&(sc[i*newton->d->n+j])))
+        if (ddot(mg,0,level,ON_SURFACE,newton->J->em[j],newton->v->vd,&(sc[i*newton->d->n+j])))
         {
           res->error_code = __LINE__;
           goto exit;
@@ -393,7 +393,7 @@ static INT ENewtonSolver (NP_ENL_SOLVER *nls, INT level, EVECDATA_DESC *x, NP_EN
     res->max_linear_iterations = MAX(res->max_linear_iterations,lr.number_of_linear_iterations);
     for (i=0; i<newton->d->n; i++)
     {
-      if (ddot(mg,0,level,ALL_VECTORS,newton->J->em[i],newton->v->vd,&(eh[i])))
+      if (ddot(mg,0,level,ON_SURFACE,newton->J->em[i],newton->v->vd,&(eh[i])))
       {
         res->error_code = __LINE__;
         goto exit;
@@ -544,7 +544,7 @@ static INT ENewtonInit (NP_BASE *base, INT argc, char **argv)
   }
   if (esc_read(newton->linMinRed,NP_FMT(newton),newton->d,"linminred",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++)
-      newton->linMinRed[i] = 0.001;
+      newton->linMinRed[i] = 1e-4;
 
   for (i=0; i<MAX_VEC_COMP; i++)
     if ((newton->linMinRed[i]<0.0)||(newton->linMinRed[i]>=1.0))
