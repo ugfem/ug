@@ -932,32 +932,45 @@ static void IFRebuildAll (void)
   IFCreateFromScratch(NULL, STD_INTERFACE);
 
 
-  if (nIFs>1 && nCplItems>0)
+  if (nIFs>1)
   {
     int i;
-    COUPLING **tmpcpl;
 
-    /* allocate temporary cpl-list, this will be too large for
-       average interfaces. */
-    tmpcpl = (COUPLING **) AllocTmp(sizeof(COUPLING *)*nCplItems);
-    if (tmpcpl==NULL)
+    if (nCplItems>0)
     {
-      DDD_PrintError('E', 4000, STR_NOMEM " in IFAllFromScratch");
-      HARD_EXIT;
-    }
+      COUPLING **tmpcpl;
 
-    /* TODO: ausnutzen, dass STD_IF obermenge von allen interfaces ist */
-    for(i=1; i<nIFs; i++)
+      /* allocate temporary cpl-list, this will be too large for
+              average interfaces. */
+      tmpcpl = (COUPLING **) AllocTmp(sizeof(COUPLING *)*nCplItems);
+      if (tmpcpl==NULL)
+      {
+        DDD_PrintError('E', 4000, STR_NOMEM " in IFAllFromScratch");
+        HARD_EXIT;
+      }
+
+      /* TODO: ausnutzen, dass STD_IF obermenge von allen interfaces ist */
+      for(i=1; i<nIFs; i++)
+      {
+        IFCreateFromScratch(tmpcpl, i);
+
+        /*
+           DDD_InfoIFImpl(i);
+         */
+      }
+
+      /* free temporary array */
+      FreeTmp(tmpcpl);
+    }
+    else
     {
-      IFCreateFromScratch(tmpcpl, i);
-
-      /*
-         DDD_InfoIFImpl(i);
-       */
+      /* delete old interface structures */
+      for(i=1; i<nIFs; i++)
+      {
+        /* delete possible old interface */
+        IFDeleteAll(i);
+      }
     }
-
-    /* free temporary array */
-    FreeTmp(tmpcpl);
   }
 }
 
