@@ -3176,7 +3176,7 @@ INT MD_rows_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mo
         REP_ERR_RETURN (-2);
   }
   else if (mode!=NON_STRICT)
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN (1);
 
   return (nrow);
 }
@@ -3246,7 +3246,7 @@ INT MD_cols_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT mo
         REP_ERR_RETURN (-2);
   }
   else if (mode!=NON_STRICT)
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN (1);
 
   return (ncol);
 }
@@ -3325,7 +3325,7 @@ INT MD_rows_cols_in_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, I
         REP_ERR_RETURN (2);
   }
   else if (mode!=NON_STRICT)
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN (1);
 
   *nr = nrow;
   *nc = ncol;
@@ -3410,7 +3410,7 @@ INT MD_mcmp_of_ro_co_mod (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i,
         REP_ERR_RETURN (-2);
   }
   else if (mode!=NON_STRICT)
-    REP_ERR_RETURN (NULL);
+    REP_ERR_RETURN (1);
 
   return (off);
 }
