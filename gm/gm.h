@@ -748,15 +748,6 @@ struct grid {
   BLOCKVECTOR *lastblockvector;         /* pointer to the last blockvector		*/
   struct grid *coarser, *finer;         /* coarser and finer grids				*/
   struct multigrid *mg;                         /* corresponding multigrid structure	*/
-        #ifdef ModelP
-  /* pointers to seperate ghost and master objects						*/
-  /* element list contains in parallel version first all ghostelements	*/
-  /* and then all master elements                                                                               */
-  /* ghostlastelement successor is pointer to elements		                        */
-  /* instead firstelements predecessor is NULL							*/
-  union  element *ghostelements;                /* pointer to first ghost element       */
-  union  element *lastghostelement;             /* pointer to last ghost element	*/
-        #endif
 } ;
 
 struct multigrid {
