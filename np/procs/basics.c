@@ -102,6 +102,25 @@ typedef struct
 
 } NP_LC_VEC;
 
+typedef struct
+{
+  NP_BASE base;
+
+  VEC_SCALAR sp;
+  VECDATA_DESC *x;
+  VECDATA_DESC *y;
+
+} NP_SCP_VEC;
+
+typedef struct
+{
+  NP_BASE base;
+
+  DOUBLE a;
+  VECDATA_DESC *f;
+
+} NP_SCALE_VEC;
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/
@@ -449,6 +468,84 @@ static INT COPYV_Construct (NP_BASE *theNP)
 
 /****************************************************************************/
 /*D
+    scpv - numproc scalar product
+
+   DESCRIPTION:
+   This num proc performs a scalar product of two vectors
+
+   'npinit <name>  $x <sym> $y <sym>'
+
+   .  <name> - num proc name
+   .  $x~<sym> - name of the first vector descriptor
+   .  $y~<sym> - name of the second vector descriptor
+
+   'npexecute <name>'
+
+   EXAMPLE:
+   .vb
+   npcreate scpv $c copyv;
+   npinit scpv $a a $b b;
+   npexecute scpv;
+   .ve
+   D*/
+/****************************************************************************/
+
+static INT SCPV_Init (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_SCP_VEC *np;
+
+  np= (NP_SCP_VEC*)theNP;
+
+  np->x = ReadArgvVecDesc(theNP->mg,"x",argc,argv);
+  np->y = ReadArgvVecDesc(theNP->mg,"y",argc,argv);
+
+  if ((np->x == NULL) || (np->y == NULL))
+    return (NP_NOT_ACTIVE);
+
+  return (NP_EXECUTABLE);
+}
+
+static INT SCPV_Display (NP_BASE *theNP)
+{
+  NP_SCP_VEC *np;
+
+  np = (NP_SCP_VEC*)theNP;
+
+  UserWrite("symbolic user data:\n");
+  if (np->x != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(np->x));
+  if (np->y != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"y",ENVITEM_NAME(np->y));
+  sc_disp(np->sp,np->x,"scp");
+
+  return (0);
+}
+
+static INT SCPV_Execute (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_SCP_VEC *np;
+
+  np = (NP_SCP_VEC*)theNP;
+
+  if ((np->x == NULL)  || (np->y == NULL)) return(1);
+
+  if (ddotx(NP_MG(theNP),0,CURRENTLEVEL(NP_MG(theNP)),ON_SURFACE,np->x,np->y,np->sp)) return (1);
+  sc_disp(np->sp,np->x,"sp");
+
+  return (0);
+}
+
+static INT SCPV_Construct (NP_BASE *theNP)
+{
+  theNP->Init = SCPV_Init;
+  theNP->Display = SCPV_Display;
+  theNP->Execute = SCPV_Execute;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
    lcv - linear combination of two vectors
 
    DESCRIPTION:
@@ -549,6 +646,78 @@ static INT LCV_Construct (NP_BASE *theNP)
 
 /****************************************************************************/
 /*D
+   scalev - scale a vector
+
+   DESCRIPTION:
+   This num proc scales a vector by a factor
+
+   'npinit <name>  $f <sym> $a <value>'
+
+   .  <name> - num proc name
+   .  $a~<value> - scaling factor
+   .  $f~<sym> - name of the vector descriptor
+
+   'npexecute <name>'
+
+   EXAMPLE:
+   .vb
+   npcreate scale $c scalev;
+   npinit scale $a -1.0 $f sol;
+   npexecute scale;
+   .ve
+   D*/
+/****************************************************************************/
+
+static INT SCALEV_Init (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_SCALE_VEC *np;
+
+  np= (NP_SCALE_VEC*)theNP;
+
+  np->f = ReadArgvVecDesc(theNP->mg,"f",argc,argv);
+  if (ReadArgvDOUBLE("a",&np->a,argc,argv)) np->a = 1.0;
+
+  if (np->f == NULL) return (NP_NOT_ACTIVE);
+  return (NP_EXECUTABLE);
+}
+
+static INT SCALEV_Display (NP_BASE *theNP)
+{
+  NP_SCALE_VEC *np;
+
+  np= (NP_SCALE_VEC*)theNP;
+
+  UserWrite("symbolic user data:\n");
+  if (np->f != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"f",ENVITEM_NAME(np->f));
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"a",(float)np->a);
+
+  return (0);
+}
+
+static INT SCALEV_Execute (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_SCALE_VEC *np;
+
+  np= (NP_SCALE_VEC*)theNP;
+
+  if (np->f==NULL) return(1);
+  if (dscal(NP_MG(theNP),0,CURRENTLEVEL(NP_MG(theNP)),ALL_VECTORS,np->f,np->a)) return (1);
+
+  return (0);
+}
+
+static INT SCALEV_Construct (NP_BASE *theNP)
+{
+  theNP->Init = SCALEV_Init;
+  theNP->Display = SCALEV_Display;
+  theNP->Execute = SCALEV_Execute;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
    InitBasics - Enrol basics
 
    SYNOPSIS:
@@ -579,6 +748,10 @@ INT InitBasics (void)
   if (CreateClass(BASE_CLASS_NAME ".copyv",sizeof(NP_COPY_VEC),COPYV_Construct))
     return (__LINE__);
   if (CreateClass(BASE_CLASS_NAME ".lcv",sizeof(NP_LC_VEC),LCV_Construct))
+    return (__LINE__);
+  if (CreateClass(BASE_CLASS_NAME ".scpv",sizeof(NP_SCP_VEC),SCPV_Construct))
+    return (__LINE__);
+  if (CreateClass(BASE_CLASS_NAME ".scalev",sizeof(NP_SCALE_VEC),SCALEV_Construct))
     return (__LINE__);
 
   return (0);
