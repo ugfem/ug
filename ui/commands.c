@@ -11109,7 +11109,7 @@ static INT CopyCommand (INT argc, char **argv)
 
   if (ReadArgvOption("a",argc,argv)) fl = 0;
 
-  if (dcopy(theMG,fl,tl,ALL_VECTORS,from,to) != NUM_OK)
+  if (dcopy(theMG,fl,tl,ALL_VECTORS,to,from) != NUM_OK)
     return (CMDERRORCODE);
 
   return (OKCODE);
