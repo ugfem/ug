@@ -975,7 +975,9 @@ INT FFDecomp( DOUBLE wavenr,
     {
       /* construct FF filtered approximation of the leaf blocks of the schur complement */
       /* the determination of the "lines" block is only a quick hack!!! */
-      ConstructSchurFFApprox( bv_im1, bv_i, bvd_im1, bvd_i, bvdf, tv1_comp, tv2_comp, grid );
+
+      /* Next line temporarily uncommented */
+      /*ConstructSchurFFApprox( bv_im1, bv_i, bvd_im1, bvd_i, bvdf, tv1_comp, tv2_comp, grid );*/
 
                         #ifdef ModelP
       ASSERT(grid!=NULL);
