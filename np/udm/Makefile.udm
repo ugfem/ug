@@ -11,8 +11,8 @@ include $(UGROOT)/ug.conf
 
 OBJECTS = pcr.o disctools.o scan.o udm.o formats.o numproc.o dio.o data_io.o
 
-all : $(OBJECTS) Makefile.udm
-	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
+$(UG_LIB) : $(OBJECTS) Makefile.udm
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
 
 .SUFFIXES: .o .c
 
