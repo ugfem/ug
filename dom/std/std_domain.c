@@ -1981,7 +1981,7 @@ static INT TriangulatePatch (HEAP *Heap, PATCH *p, BNDP **bndp,
                              INT *siden)
 {
   BND_PS *ps;
-  INT i,j,k,n,left,right,nside;
+  INT i,j,k,left,right,nside;
   COORD lvect[DIM-1],gvect[DIM],gvect1[DIM];
   COORD next_local[CORNERS_OF_BND_SEG][DIM-1];
   DOUBLE lambda,dist,step;
@@ -2001,7 +2001,7 @@ static INT TriangulatePatch (HEAP *Heap, PATCH *p, BNDP **bndp,
     for (k=2; k<npc; k++)
       for (i=0; i<DIM-1; i++)
         next_local[k][i] = local[k][i];
-    next_siden[0] = n;
+    next_siden[0] = siden[0];
     next_siden[1] = siden[1] - 1;
     next_siden[2] = siden[2];
     next_siden[npc-1] = siden[npc-1] - 1;
@@ -2131,9 +2131,6 @@ static INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
   INT *vlist;
   INT cornerid[CORNERS_OF_BND_SEG],npc;
   INT sideid[CORNERS_OF_BND_SEG][2],siden[CORNERS_OF_BND_SEG];
-
-  for (j=0; j<=theBVP->numOfSubdomains; j++)
-    PRINTDEBUG(dom,1,("  g h       nside %d %d %d\n",nside,n,sides[j]));
 
   nc = theBVP->ncorners;
   nodeid = nc;
