@@ -145,6 +145,17 @@ INT ce_ELEMORD;
 #define Z_MIN(i)              (OE_BE_Data[i].zMin)
 #define Z_MAX(i)              (OE_BE_Data[i].zMax)
 
+#ifdef ModelP
+#define OS_LINK(p)            (*(OS_DATA **)((INT *)(p)+1))
+#define GAP(p)                (OS_LINK(p)->gap)
+#define PLOT_ID(p)            (OS_LINK(p)->plotId)
+#define N_LOCAL_SONS(p)       (OS_LINK(p)->nLocalSons)
+#define N_GLOBAL_SONS(p)      (OS_LINK(p)->nGlobalSons)
+#endif
+
+/* Miscellaneous */
+#define MAXINT              2147483647
+
 /* pixel resolution for inserting boundary nodes */
 #define SMALLPIX 			4
 
@@ -187,6 +198,13 @@ typedef struct {
 	DOUBLE       zMin;
 	DOUBLE       zMax;
 } BE_DATA;
+
+typedef struct {
+	INT          gap;
+	INT          plotId;
+	INT          nLocalSons;
+	INT          nGlobalSons;
+} OS_DATA;
 
 /****************************************************************************/
 /*																			*/
@@ -3030,6 +3048,9 @@ static NODE *NW_GetNextNode_hor_bw_down (NODE *theNode)
 /*																			*/
 /****************************************************************************/
 
+/* REMARK: since topnode is removed from struct vertex these functions are
+		 no more available (sl 970411) */
+#ifdef TOPNODE
 static NODE *NW_GetNextNode_leave_fw (NODE *theNode)
 {
 	INT currLevel;
@@ -3048,13 +3069,14 @@ static NODE *NW_GetNextNode_leave_fw (NODE *theNode)
 		else
 			theNode=TOPNODE(theVertex);
 		ASSERT(theNode!=NULL);
-		while (LEVEL(theNode)>GNode_toLevel && theNode!=NULL) theNode=NFATHER(theNode);
+		while (LEVEL(theNode)>GNode_toLevel && CORNERTYPE(theNode)) theNode=NFATHER(theNode);
 		if (theNode==NULL) return (NULL);
 	}
 	while (!USED(theNode));
 	
 	return (theNode);
 }
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -3068,6 +3090,9 @@ static NODE *NW_GetNextNode_leave_fw (NODE *theNode)
 /*																			*/
 /****************************************************************************/
 
+/* REMARK: since topnode is removed from struct vertex these functions are
+		 no more available (sl 970411) */
+#ifdef TOPNODE
 static NODE *NW_GetNextNode_leave_bw (NODE *theNode)
 {
 	INT currLevel;
@@ -3085,13 +3110,14 @@ static NODE *NW_GetNextNode_leave_bw (NODE *theNode)
 		}
 		else
 			theNode = TOPNODE(theVertex); 
-		while (LEVEL(theNode)>GNode_toLevel && theNode!=NULL) theNode=NFATHER(theNode);
+		while (LEVEL(theNode)>GNode_toLevel && CORNERTYPE(theNode)) theNode=NFATHER(theNode);
 		if (theNode==NULL) return (NULL);
 	}
 	while (!USED(theNode));
 	
 	return (theNode);
 }
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -3273,6 +3299,9 @@ static NODE *NW_GetFirstNode_hor_bw_down (MULTIGRID *theMG, INT fromLevel, INT t
 /*																			*/
 /****************************************************************************/
 
+/* REMARK: since topnode is removed from struct vertex these functions are
+		 no more available (sl 970411) */
+#ifdef TOPNODE
 static NODE *NW_GetFirstNode_leave_fw (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 {
 	NODE *theNode;
@@ -3294,7 +3323,7 @@ static NODE *NW_GetFirstNode_leave_fw (MULTIGRID *theMG, INT fromLevel, INT toLe
 	GNode_toLevel	= toLevel;
 	
 	theNode = TOPNODE(FIRSTVERTEX(GRID_ON_LEVEL(theMG,fromLevel)));
-	while (LEVEL(theNode)>GNode_toLevel && theNode!=NULL) theNode=NFATHER(theNode);
+	while (LEVEL(theNode)>GNode_toLevel && CORNERTYPE(theNode)) theNode=NFATHER(theNode);
 	if (theNode==NULL) return (NULL);
 	
 	if (theNode==NULL)
@@ -3304,6 +3333,7 @@ static NODE *NW_GetFirstNode_leave_fw (MULTIGRID *theMG, INT fromLevel, INT toLe
 	else
 		return (NW_GetNextNode_leave_fw(theNode));
 }
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -3317,6 +3347,9 @@ static NODE *NW_GetFirstNode_leave_fw (MULTIGRID *theMG, INT fromLevel, INT toLe
 /*																			*/
 /****************************************************************************/
 
+/* REMARK: since topnode is removed from struct vertex these functions are
+		 no more available (sl 970411) */
+#ifdef TOPNODE
 static NODE *NW_GetFirstNode_leave_bw (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 {
 	NODE *theNode;
@@ -3338,7 +3371,7 @@ static NODE *NW_GetFirstNode_leave_bw (MULTIGRID *theMG, INT fromLevel, INT toLe
 	GNode_toLevel	= toLevel;
 	
 	theNode = LASTNODE(GRID_ON_LEVEL(GNode_MG,fromLevel));
-	while (LEVEL(theNode)>GNode_toLevel && theNode!=NULL) theNode=NFATHER(theNode);
+	while (LEVEL(theNode)>GNode_toLevel && CORNERTYPE(theNode)) theNode=NFATHER(theNode);
 	if (theNode==NULL) return (NULL);
 	
 	if (theNode==NULL)
@@ -3351,6 +3384,7 @@ static NODE *NW_GetFirstNode_leave_bw (MULTIGRID *theMG, INT fromLevel, INT toLe
 	else
 		return (NW_GetNextNode_leave_bw(theNode));
 }
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -3364,6 +3398,9 @@ static NODE *NW_GetFirstNode_leave_bw (MULTIGRID *theMG, INT fromLevel, INT toLe
 /*																			*/
 /****************************************************************************/
 
+/* REMARK: since topnode is removed from struct vertex these functions are
+		 no more available (sl 970411) */
+#ifdef TOPNODE
 static NW_GetFirstNodeProcPtr NW_GetFirstNode_leave_fw_Proc (VIEWEDOBJ *theViewedObj)
 {
 	return (NW_GetFirstNode_leave_fw);
@@ -3373,6 +3410,7 @@ static NW_GetFirstNodeProcPtr NW_GetFirstNode_leave_bw_Proc (VIEWEDOBJ *theViewe
 {
 	return (NW_GetFirstNode_leave_bw);
 }
+#endif
 
 static NW_GetFirstNodeProcPtr NW_GetFirstNode_hor_fw_up_Proc (VIEWEDOBJ *theViewedObj)
 {
@@ -3406,6 +3444,9 @@ static NW_GetFirstNodeProcPtr NW_GetFirstNode_hor_bw_down_Proc (VIEWEDOBJ *theVi
 /*																			*/
 /****************************************************************************/
 
+/* REMARK: since topnode is removed from struct vertex these functions are
+		 no more available (sl 970411) */
+#ifdef TOPNODE
 static NW_GetNextNodeProcPtr NW_GetNextNode_leave_fw_Proc (VIEWEDOBJ *theViewedObj)
 {
 	return (NW_GetNextNode_leave_fw);
@@ -3415,6 +3456,7 @@ static NW_GetNextNodeProcPtr NW_GetNextNode_leave_bw_Proc (VIEWEDOBJ *theViewedO
 {
 	return (NW_GetNextNode_leave_bw);
 }
+#endif
 
 static NW_GetNextNodeProcPtr NW_GetNextNode_hor_fw_up_Proc (VIEWEDOBJ *theViewedObj)
 {
@@ -12770,7 +12812,11 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 	/* init list and numbers */
 	LastShellBegin = 0;
 	ActualPosition = 0;
-	nsons = NSONS(theElement);
+
+	/* count local sons */
+	for (nsons = 0; nsons < MAX_SONS; nsons++)
+		if (SonList[nsons] == NULL) break;
+
 	for  (i=0; i<nsons; i++)
 	{
 		SonElement = SonList[i];
@@ -12797,7 +12843,7 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 	NewShellBegin = ActualPosition;
 	
 	/* create list */
-	while (ActualPosition<nsons)
+	while (ActualPosition < nsons)
 	{
 		if (LastShellBegin == NewShellBegin) {
 			UserWrite("OrderSons failed\n");
@@ -13249,8 +13295,8 @@ static INT OrderFathersNNS (ELEMENT **table, HEAP *heap, INT n)
 .  nu - index to element1
 
    DESCRIPTION:
-   This function tests, whether a (boundary) element hides another one
-   significantly. (derived from CompareElements)
+   This function tests, whether an element hides another. It works
+   very much like CompareElements, but tests only boundary sides.
 
    RETURN VALUE:
    INT
@@ -13678,7 +13724,24 @@ static void BSearch2(INT root)
 	}
 }
 
-/* ------------------------------------------------------------------------- */
+/****************************************************************************/
+/*
+   Id2Index - map element ID to element index
+
+   SYNOPSIS:
+   static INT Id2Index(INT id)
+
+   PARAMETERS:
+   id - element id
+ 
+   DESCRIPTION:
+   maps element ID to element index
+
+   RETURN VALUE:
+   INT
+.n    element index
+*/
+/****************************************************************************/
 
 static INT Id2Index(INT id)
 {
@@ -13698,6 +13761,82 @@ static INT Id2Index(INT id)
 	}
 }
 
+/****************************************************************************/
+/*
+   ComputeOS_Data -
+
+   SYNOPSIS:
+
+   PARAMETERS:
+ 
+   DESCRIPTION:
+
+   RETURN VALUE:
+   void
+*/
+/****************************************************************************/
+
+#ifdef ModelP
+
+static INT GatherOS_Data(DDD_OBJ obj, void *data)
+{
+	ELEMENT *p;
+	INT *d;
+
+	p  = (ELEMENT *)obj;
+	d  = (INT *)data;
+	*d = GAP(p);  d++;
+	*d = N_LOCAL_SONS(p);
+}
+
+static INT ScatterOS_Data(DDD_OBJ obj, void *data)
+{
+	ELEMENT *p;
+	INT *d;
+
+	p = (ELEMENT *)obj;
+	d = (INT *)data;
+	GAP(p) += *d; d++;
+	N_GLOBAL_SONS(p) += *d;
+}
+
+static void ComputeOS_Data(MULTIGRID *mg)
+{
+	INT i, j, prio, gap, nb;
+	GRID *grid;
+	ELEMENT *p, *sonList[MAX_SONS];
+
+	for (i = mg->topLevel; i >= 0; i--) {
+		grid = mg->grids[i];
+		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p)) {
+			prio = DDD_InfoPriority(PARHDRE(p));
+			if (prio == PrioGhost) continue;
+			if (prio == PrioMaster)
+				gap = 1;
+			else
+				gap = 0;
+			GetAllSons(p, sonList);
+			nb = 0;
+			for (j = 0; j < MAX_SONS; j++) {
+				if (sonList[j] == NULL) break;
+				if (DDD_InfoPriority(PARHDRE(sonList[j])) != PrioMaster) continue;
+				nb++;
+				gap += GAP(sonList[j]);
+			}
+			GAP(p) = gap;
+			N_LOCAL_SONS(p)  = nb;
+			N_GLOBAL_SONS(p) = nb;
+		}
+		DDD_IFAOneway(ElementVIF, i, IF_BACKWARD, 2*sizeof(INT),
+					   GatherOS_Data, ScatterOS_Data);
+		for (p = PFIRSTELEMENT(grid); p != NULL; p = SUCCE(p)) 
+			if (GAP(p) > 1) GAP(p)--;
+	}
+    /*	DDD_IFOneway(ElementVIF, IF_FORWARD, sizeof(INT),
+				 GatherGaps, ScatterGaps2); */
+}
+
+#endif
 
 /****************************************************************************/
 /*
@@ -13705,12 +13844,10 @@ static INT Id2Index(INT id)
                      level 0 by extended shell algorithm
 
    SYNOPSIS:
-   static INT OrderFathersXSH(GRID *grid, HEAP *heap, ELEMENT **table)
+   static INT OrderFathersXSH(MULTIGRID *mg, ELEMENT **table)
 
    PARAMETERS:
-   grid  - pointer to level zero grid to be ordered
-   heap  - pointer to heap 
-   table - array to store pointers to ordered elements (output) 
+
  
    DESCRIPTION:
    This function orders elements with respect to view orientation on level 0.
@@ -13723,9 +13860,11 @@ static INT Id2Index(INT id)
 */
 /****************************************************************************/
 
-static INT OrderFathersXSH_New (GRID *grid, HEAP *heap, ELEMENT **table)
+static INT OrderFathersXSH_New (MULTIGRID *mg, ELEMENT **table)
 {
 	ELEMENT *p, *q;
+	GRID *grid;
+	HEAP *heap;
 	ILIST *h;
     DOUBLE minx, maxx, miny, maxy, minz, maxz, dummy;
     COORD_POINT t;
@@ -13735,17 +13874,19 @@ static INT OrderFathersXSH_New (GRID *grid, HEAP *heap, ELEMENT **table)
 
     /* count boundary elements */
 	OE_nBndElem = 0;
+	grid = mg->grids[0];
 	for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
 		if (OBJT(p) == BEOBJ)
 			OE_nBndElem++;
 
 	/* allocate Arrays */
+	heap = mg->theHeap;
 	Mark(heap, FROM_TOP);
 	OE_Map     = (MAP *)     GetMem(heap, OE_nBndElem*sizeof(MAP),     FROM_TOP);
     OE_BE_Data = (BE_DATA *) GetMem(heap, OE_nBndElem*sizeof(BE_DATA), FROM_TOP);
     OE_BoxTab  = (INT *)     GetMem(heap, OE_nBndElem*sizeof(INT),     FROM_TOP);
 	
-	if (OE_Map == NULL || OE_BE_Data == NULL || OE_BoxTab == NULL) {
+	if (OE_Map == NULL || OE_BE_Data == NULL || OE_BoxTab == NULL || table == NULL) {
 		UserWrite("Insufficient Memory: can't order coarse grid\n");
 		return 2;
 	}
@@ -13888,8 +14029,11 @@ static INT OrderFathersXSH_New (GRID *grid, HEAP *heap, ELEMENT **table)
 	   newBegin  = pos;
    }
    Release(heap, FROM_TOP);
-   return (pos == grid->nElem ? 0 : 1);
+   if (pos != grid->nElem) return 1;
+
+   return 0;
 }
+
 static INT OrderFathersXSH(GRID *grid, HEAP *heap, ELEMENT **table)
 {
 	ELEMENT *p, *q;
@@ -13923,120 +14067,69 @@ static INT OrderFathersXSH(GRID *grid, HEAP *heap, ELEMENT **table)
 			count = 0;
             for (j = 0; j < SIDES_OF_ELEM(p); j++) {
 				q = NBELEM(p, j);
-				if (q != NULL && !VIEWABLE(p, j))
-					count++;
+				if (q != NULL && !USED(q)) {
+					if (OBJT(q) == BEOBJ) {
+						k = Id2Index(ID(q));
+						count = BCOUNT(k)-1;
+						if (count == 0) {
+							table[pos++] = q;
+							SETUSED(q, 1);
+						}
+						else
+							BCOUNT(k) = count;
+					}
+					else {
+						count = COUNT(q)-1;
+						if (count == 0) {
+							table[pos++] = q;
+							SETUSED(q, 1);
+						}
+						else
+							SETCOUNT(q, count);
+					}
+				}
 			}
-			SETCOUNT(p, count);
+			if (OBJT(p) == BEOBJ) {
+				for (h = HIDDEN_BY(Id2Index(ID(p))) ; h != NULL; h = h->next) {
+					k = h->index;
+					if(--BCOUNT(k) == 0) {
+						q = OE_Map[k].elem;
+						table[pos++] = q;
+						SETUSED(q, 1);
+					}
+				}
+			}
 		}
+		lastBegin = newBegin;
+		newBegin  = pos;
 	}
-
-	/* sort map */
-	qsort((void *)OE_Map, OE_nBndElem, sizeof(MAP), CompareIDs);
-
-	/* init boundary elements */
-	for (i = 0; i < OE_nBndElem; i++) 
-	{
-		p = OE_Map[i].elem;
-
-		/* set counters */
-		count = 0;
-        for (j = 0; j < SIDES_OF_ELEM(p); j++) {
-				q = NBELEM(p, j);
-				if (q != NULL && !VIEWABLE(p, j))
-					count++;
-		}
-		BCOUNT(i) = count;
-
-		/* clear list of elems this one is hidden by */
-		HIDDEN_BY(i) = NULL;
-
-		/* set bounding boxes */
-        V3_TRAFOM4_V3(CVECT(MYVERTEX(CORNER(p, 0))), ObsTrafo, temp);
-        (*OBS_ProjectProc)(temp, &t);
-        minx = maxx = t.x;
-		miny = maxy = t.y;
-		for (j = 1; j < CORNERS_OF_ELEM(p); j++) {
-			V3_TRAFOM4_V3(CVECT(MYVERTEX(CORNER(p, j))), ObsTrafo, temp);
-            (*OBS_ProjectProc)(temp, &t);
-            if (t.x < minx) minx = t.x;
-            if (t.x > maxx) maxx = t.x;
-			if (t.y < miny) miny = t.y;
-			if (t.y > maxy) maxy = t.y;
-		}
-		U1(i) = minx;
-        V1(i) = maxx;
-        U2(i) = miny;
-		V2(i) = maxy;
-	}
-
-    /* build box tree */
-    for (i = 0; i < OE_nBndElem; i++)
-		BT(i) = i;
-	BSort1(0, OE_nBndElem-1, &root, &dummy, &dummy, &dummy, &dummy);
-
-	/* complete boundary element init */
-    OE_Heap = heap;
-	for (i = 0; i < OE_nBndElem; i++) {
-		OE_QueryBox = i;
-		BSearch1(root);
-	}
-
-	/* find first shell */
-	pos = 0;
-	for (i = 0; i < OE_nBndElem; i++)
-		if (BCOUNT(i) == 0) {
-			p = OE_Map[i].elem;
-			SETUSED(p, 1);
-			table[pos++] = p;
-		}
+	Release(heap, FROM_TOP);
+	if (pos != grid->nElem) return 1;
 	
-	/* create new shell from last one */
-   lastBegin = 0;
-   newBegin  = pos;
-   while (lastBegin < newBegin) {
-	   for (i = lastBegin; i<newBegin; i++) {
-		   p = table[i];
-		   for (j = 0; j < SIDES_OF_ELEM(p); j++) {
-			   q = NBELEM(p, j);
-			   if (q != NULL && !USED(q)) {
-				   if (OBJT(q) == BEOBJ) {
-					   k = Id2Index(ID(q));
-					   count = BCOUNT(k)-1;
-					   if (count == 0) {
-						   table[pos++] = q;
-						   SETUSED(q, 1);
-					   }
-					   else
-						   BCOUNT(k) = count;
-				   }
-				   else {
-					   count = COUNT(q)-1;
-					   if (count == 0) {
-						   table[pos++] = q;
-						   SETUSED(q, 1);
-					   }
-					   else
-						   SETCOUNT(q, count);
-				   }
-			   }
-		   }
-		   if (OBJT(p) == BEOBJ) {
-			   for (h = HIDDEN_BY(Id2Index(ID(p))) ; h != NULL; h = h->next) {
-				   k = h->index;
-				   if(--BCOUNT(k) == 0) {
-					   q = OE_Map[k].elem;
-					   table[pos++] = q;
-					   SETUSED(q, 1);
-				   }
-			   }
-		   }
-	   }
-	   lastBegin = newBegin;
-	   newBegin  = pos;
-   }
-   Release(heap, FROM_TOP);
-   return (pos == grid->nElem ? 0 : 1);
+	return 0;
 }
+
+
+static INT OrderHirarchically(MULTIGRID *mg)
+{
+	INT i;
+	GRID *grid;
+	ELEMENT *p, *table[MAX_SONS];
+	HEAP *heap;
+
+	for (i=0; i<mg->topLevel; i++)
+	{
+		grid = mg->grids[i];
+		for (p = FIRSTELEMENT(grid); p != NULL; p = SUCCE(p))
+		{
+			if (NSONS(p) <= 0) continue;
+			OrderSons(table, p);
+			if (PutAtEndOfList(UPGRID(grid), NSONS(p), table) != GM_OK) return 1;
+		}
+	}
+	return 0;
+}
+
 
 /****************************************************************************/
 /*
@@ -14076,6 +14169,202 @@ static INT SettingsEqual (const VIEWEDOBJ *vo, const WOP_MG_DATA *data)
 				return (YES);
 	return (NO);
 }
+
+
+#ifdef MERGE_CHAOS_FROM_REV87_AND_REV94
+/* TODO: if all goes right please delete this stuff 970505 (sl) */
+/* I haven't done this merge, therefore I have taken the function
+	OrderElements_3D from revision 1.94 without doing any changes */
+
+static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
+{
+	HEAP *theHeap;
+	ELEMENT **table, *p;
+	GRID *theGrid;
+	INT i, res;
+	WOP_MG_DATA *myMGdata;
+	MEM offset;
+<<<<<<< wop.c
+	INT i, res, curr, next;
+=======
+    clock_t start, stop;
+>>>>>>> 1.94
+
+<<<<<<< wop.c
+	/* check if multigrid is already ordered */
+#ifndef ModelP
+=======
+>>>>>>> 1.94
+	offset   = OFFSET_IN_MGUD(wopMGUDid);
+	myMGdata = (WOP_MG_DATA*) GEN_MGUD_ADR(theMG,offset);
+	
+	if (myMGdata==NULL)
+		return (1);
+	
+	/* check if multigrid is already ordered */
+	if (myMGdata->init==0)
+		/* not yet initialized */
+		SaveSettings(theViewedObj,myMGdata);
+<<<<<<< wop.c
+	else if (SettingsEqual(theViewedObj,myMGdata))
+		/* no ordering neccessary */
+		return (0);
+	else
+		/* save changed settings */
+		SaveSettings(theViewedObj,myMGdata);
+#endif	
+=======
+	else if (!OE_force_ordering)
+	{
+		if (SettingsEqual(theViewedObj,myMGdata))
+			if (ELEMORD(theMG))
+				/* no ordering neccessary */
+				return (0);
+	}
+	
+	OE_force_ordering = FALSE;
+	
+>>>>>>> 1.94
+	/* inits */
+	OE_ViewedObj = theViewedObj;	
+		
+	/* calculate the viewable sides of all elements on all levels */
+	for (i=0; i<=theMG->topLevel; i++)	
+		CalcViewableSidesOnGrid(theMG->grids[i]);
+	
+   	/* order elements on level zero */
+	theHeap = theMG->theHeap;
+	#ifdef ModelP
+	if (me == master) {
+	#endif
+	theGrid = theMG->grids[0];
+<<<<<<< wop.c
+	Mark(theHeap, FROM_TOP);
+	table = (ELEMENT **) GetMem(theHeap, (theGrid->nElem)*sizeof(ELEMENT *), 
+								FROM_TOP);
+	res = OrderFathersXSH(theMG, table);
+	#ifdef ModelP
+	}
+	Broadcast(&res, sizeof(res));
+	#endif
+	if (res != 0) RETURN(1);
+	#ifndef ModelP
+	if (PutAtEndOfList(theGrid,theGrid->nElem,table)!=GM_OK) return (1);    
+	Release(theHeap, FROM_TOP);
+	#else
+	Mark(theHeap, FROM_TOP);
+	for (i = theMG->topLevel; i >= 0; i--) {
+		theGrid = theMG->grids[i];
+		for (p = PFIRSTELEMENT(theGrid); p != NULL; p = SUCCE(p))
+			OS_LINK(p) = (OS_DATA *) GetMem(theHeap, sizeof(OS_DATA), FROM_TOP);
+=======
+	if (theGrid->nElem<1)
+	  return(0);
+	theHeap = theMG->theHeap;
+	Mark(theHeap,FROM_TOP);
+	if ( (table=(ELEMENT **)GetMem(theHeap,MAX(theGrid->nElem,MAX_SONS)*sizeof(ELEMENT *),FROM_TOP)) == NULL )
+	{
+		Release(theHeap,FROM_TOP);
+		UserWrite("ERROR: could not allocate memory from the MGHeap\n");
+		RETURN(1);
+>>>>>>> 1.94
+	}
+<<<<<<< wop.c
+	ComputeOS_Data(theMG);
+	if (me == master) { 
+		for (p = FIRSTELEMENT(theGrid); p != NULL; p = SUCCE(p))
+			printf("%10d %10d %10d\n", GAP(p), N_LOCAL_SONS(p), N_GLOBAL_SONS(p));
+=======
+	
+	/* order elements on level zero */
+
+    start = clock();    
+	OE_nCompareElements = 0;
+
+	switch (OE_OrderStrategy) /* select order strategy */
+	{
+	case 0:
+		res = OrderFathersXSH(theGrid, theHeap, table);
+		switch (res) 
+		{
+		case 0:
+			break;
+		case 1:
+			UserWrite("Cycle detected while ordering coarse grid.\n");
+			UserWrite("Falling back on slow method ... \n");
+			i=0;
+			for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
+				table[i++] = theElement;
+			SelectionSort((void *)table,i,sizeof(*table),CompareElements);
+			break;
+		case 2:
+			return 1;
+		}
+		break;
+
+	case 1:
+		i=0;
+		for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
+			table[i++] = theElement;
+        #ifndef ModelP
+		if (i!=NT(theGrid)) return (1);
+        #endif
+	    if (OrderFathersNNS(table, theHeap, i)) RETURN(1);
+		break;
+
+	case 2:
+		i=0;
+		for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
+			table[i++] = theElement;
+        #ifndef ModelP
+		if (i!=NT(theGrid)) return (1);
+        #endif
+		SelectionSort((void *)table,i,sizeof(*table),CompareElements);
+		break;
+>>>>>>> 1.94
+	}
+<<<<<<< wop.c
+	#endif
+=======
+
+	stop = clock();
+    
+    UserWriteF( "order strategy:                %d\n",OE_OrderStrategy);
+    UserWriteF( "time for ordering coarse grid: %7.2f s\n", 
+			     (stop-start)/(DOUBLE)CLOCKS_PER_SEC);
+	UserWriteF( "number of CompareElements    : %9d\n", OE_nCompareElements);
+
+	if (PutAtEndOfList(theGrid,theGrid->nElem,table)!=GM_OK) RETURN(1);	
+>>>>>>> 1.94
+
+	/* now order level 1 to toplevel hirarchically */
+<<<<<<< wop.c
+	if (OrderHirarchically(theMG)) RETURN(1);
+	Release(theHeap, FROM_TOP);
+=======
+	for (i=0; i<theMG->topLevel; i++)
+	{
+		theGrid = theMG->grids[i];
+		for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
+		{
+			if (NSONS(theElement)<=0) continue;
+			OrderSons(table,theElement);
+			if (PutAtEndOfList(UPGRID(theGrid),NSONS(theElement),table)!=GM_OK) RETURN(1);
+		}
+	}
+	
+	/* release heap */
+	Release(theHeap,FROM_TOP);
+	
+	/* save changed settings */
+	SaveSettings(theViewedObj,myMGdata);
+	SETELEMORD(theMG,TRUE);
+	
+>>>>>>> 1.94
+	return (0);
+}
+#endif /* MERGE_CHAOS */
+
 
 static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 {
@@ -14213,7 +14502,7 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
    static INT OrderNodes (MULTIGRID *theMG);
 
    PARAMETERS:
-.  theMG - pointer to multigrid	
+.  theMG - pointer to multigrid	 
 
    DESCRIPTION:
    This function orders nodes in elements with respect to cutting orientation 
