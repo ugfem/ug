@@ -678,6 +678,13 @@ LGM_SURFACE                     *FirstSurface           (LGM_DOMAIN *theDomain);
 LGM_SURFACE                     *NextSurface            (LGM_DOMAIN *theDomain);
 LGM_LINE                                *FirstLine                      (LGM_DOMAIN *theDomain);
 LGM_LINE                                *NextLine                       (LGM_DOMAIN *theDomain);
+
+#ifdef NO_PROJECT
+/*for evaluation of global coordinates*/
+INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);
+INT Line_Local2GlobalNew (LGM_LINE *theLine, DOUBLE *global, DOUBLE local);
+#endif
+
 #endif
 
 #ifndef Grape

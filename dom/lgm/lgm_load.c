@@ -609,6 +609,13 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
   INT lfv;
   LGM_LINE *theLine;
 
+        #ifdef NO_PROJECT
+  /* new variables for evaluation of global coordinates */
+  DOUBLE local_cooordinate[2];
+  DOUBLE global_cooordinate[3];
+  INT ret_val;
+        #endif
+
   /* if impossible to read mesh, return 1 */
   if (ReadMesh==NULL) return (1);
 
@@ -694,6 +701,16 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
 
       /* add the local coordinates: thereby triangleId is added*/
                         #ifdef NO_PROJECT
+      local_cooordinate[0] = ((lgm_mesh_info.BndP_Cor_TriaID)[i])[j] + (((lgm_mesh_info.BndP_lcoord)[i])[j])[0];
+      local_cooordinate[1] = ((lgm_mesh_info.BndP_Cor_TriaID)[i])[j] + (((lgm_mesh_info.BndP_lcoord)[i])[j])[1];
+      if((ret_val = Surface_Local2Global (theSurface, global_cooordinate, local_cooordinate)) == 1)
+      {
+        PrintErrorMessage('E',"LGM_LoadMesh","Error from Surface_Local2Global");
+        return(1);
+      }
+      (LGM_BNDP_GLOBAL((LGM_BNDP*)(theMesh->theBndPs[i]),j))[0] = global_cooordinate[0];
+      (LGM_BNDP_GLOBAL((LGM_BNDP*)(theMesh->theBndPs[i]),j))[1] = global_cooordinate[1];
+      (LGM_BNDP_GLOBAL((LGM_BNDP*)(theMesh->theBndPs[i]),j))[2] = global_cooordinate[2];
                         #else
       (LGM_BNDP_LOCAL((LGM_BNDP*)(theMesh->theBndPs[i]),j))[0] = ((lgm_mesh_info.BndP_Cor_TriaID)[i])[j] +  (((lgm_mesh_info.BndP_lcoord)[i])[j])[0];
       (LGM_BNDP_LOCAL((LGM_BNDP*)(theMesh->theBndPs[i]),j))[1] = ((lgm_mesh_info.BndP_Cor_TriaID)[i])[j] +  (((lgm_mesh_info.BndP_lcoord)[i])[j])[1];
@@ -726,7 +743,45 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
 
       /* add the local coordinates */
                                 #ifdef NO_PROJECT
-      /* ... */
+      /*left point*/
+      if( ((lgm_mesh_info.BndP_lcoord_left)[i])[j] == -1.0 )
+      {
+        /*special case*/
+        global_cooordinate[0] = -MAXFLOAT;
+        global_cooordinate[1] = -MAXFLOAT;
+        global_cooordinate[2] = -MAXFLOAT;
+      }
+      else                                   /*eval global coordinate for left LinePoint*/
+      {
+        if((ret_val = Line_Local2GlobalNew (theLine, global_cooordinate, ((lgm_mesh_info.BndP_lcoord_left)[i])[j] )) == 1)
+        {
+          PrintErrorMessage('E',"LGM_LoadMesh","Error from Line_Local2GlobalNew");
+          return(1);
+        }
+      }
+      (LGM_BNDP_LINE_GLOBALLEFT((LGM_BNDP*)(theMesh->theBndPs[i]),j))[0] = global_cooordinate[0];
+      (LGM_BNDP_LINE_GLOBALLEFT((LGM_BNDP*)(theMesh->theBndPs[i]),j))[1] = global_cooordinate[1];
+      (LGM_BNDP_LINE_GLOBALLEFT((LGM_BNDP*)(theMesh->theBndPs[i]),j))[2] = global_cooordinate[2];
+
+      /*right point*/
+      if( ((lgm_mesh_info.BndP_lcoord_right)[i])[j] == 12345677890.0 )
+      {
+        /*special case*/
+        global_cooordinate[0] = MAXFLOAT;
+        global_cooordinate[1] = MAXFLOAT;
+        global_cooordinate[2] = MAXFLOAT;
+      }
+      else                                   /*eval global coordinate for right LinePoint*/
+      {
+        if((ret_val = Line_Local2GlobalNew (theLine, global_cooordinate, ((lgm_mesh_info.BndP_lcoord_right)[i])[j] )) == 1)
+        {
+          PrintErrorMessage('E',"LGM_LoadMesh","Error from Line_Local2GlobalNew");
+          return(1);
+        }
+      }
+      (LGM_BNDP_LINE_GLOBALRIGHT((LGM_BNDP*)(theMesh->theBndPs[i]),j))[0] = global_cooordinate[0];
+      (LGM_BNDP_LINE_GLOBALRIGHT((LGM_BNDP*)(theMesh->theBndPs[i]),j))[1] = global_cooordinate[1];
+      (LGM_BNDP_LINE_GLOBALRIGHT((LGM_BNDP*)(theMesh->theBndPs[i]),j))[2] = global_cooordinate[2];
                                 #else
       LGM_BNDP_LINE_LEFT((LGM_BNDP*)(theMesh->theBndPs[i]),j) = ((lgm_mesh_info.BndP_lcoord_left)[i])[j];
       LGM_BNDP_LINE_RIGHT((LGM_BNDP*)(theMesh->theBndPs[i]),j) = ((lgm_mesh_info.BndP_lcoord_right)[i])[j];
