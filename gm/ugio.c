@@ -1859,6 +1859,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   GRID *theGrid;
   ELEMENT *theElement,*ENext;
   NODE *theNode;
+  VECTOR *theVector;
   HEAP *theHeap;
   MGIO_MG_GENERAL mg_general;
   MGIO_GE_GENERAL ge_general;
@@ -2289,6 +2290,14 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     ReleaseTmpMem(theHeap);
     if (CloseMGFile ())                                                                                             {DisposeMultiGrid(theMG); return (NULL);}
 
+    for (theVector=PFIRSTVECTOR(GRID_ON_LEVEL(theMG,0));
+         theVector!=NULL; theVector=SUCCVC(theVector)) {
+      SETVCLASS(theVector,3);
+      SETVNCLASS(theVector,0);
+      SETNEW_DEFECT(theVector,1);
+      SETFINE_GRID_DOF(theVector,1);
+    }
+
     /* saved */
     MG_SAVED(theMG) = 1;
     strcpy(MG_FILENAME(theMG),filename);
@@ -2358,6 +2367,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     {
       SETMARK(theElement,0);
       SETMARKCLASS(theElement,NO_CLASS);
+      SETEBUILDCON(theElement,1);
     }
   for (i=0; i<=TOPLEVEL(theMG); i++)
   {
@@ -2377,7 +2387,6 @@ nparfiles = UG_GlobalMinINT(nparfiles);
           if (DisposeDoubledSideVector (theGrid,theElement,j,theNeighbor,k))      {DisposeMultiGrid(theMG); return (NULL);}
         }
 #endif
-
     if (GridCreateConnection(theGrid))                                                              {DisposeMultiGrid(theMG); return (NULL);}
     ClearVectorClasses(theGrid);
     ClearNextVectorClasses(theGrid);
