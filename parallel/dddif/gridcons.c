@@ -126,6 +126,8 @@
 /*																			*/
 /****************************************************************************/
 
+REP_ERR_FILE;
+
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -240,7 +242,10 @@ void SetGhostObjectPriorities (GRID *theGrid)
 			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 			{
 				theVector = SVECTOR(theElement,i);
-				SETUSED(theVector,0); SETTHEFLAG(theVector,0);
+				if (theVector != NULL) { 
+				    SETUSED(theVector,0); 
+					SETTHEFLAG(theVector,0);
+				}
 			}
 	}
 	/* to reset also nodes which are at corners of the boundary */
@@ -307,10 +312,14 @@ void SetGhostObjectPriorities (GRID *theGrid)
 			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 			{
 				theVector = SVECTOR(theElement,i);
-				if (vghost) SETTHEFLAG(theVector,1);
-				if (hghost) SETUSED(theVector,1);
+				if (theVector != NULL) {
+				    if (vghost) SETTHEFLAG(theVector,1);
+					if (hghost) SETUSED(theVector,1);
+				}
 			}
 	}
+
+	DEBUG_TIME(0);
 
 	/* set USED flag for objects of master elements */
 	/* reset FLAG for objects of master elements  */
@@ -338,9 +347,14 @@ void SetGhostObjectPriorities (GRID *theGrid)
 			for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 			{
 				theVector = SVECTOR(theElement,i);
-				SETUSED(theVector,0); SETTHEFLAG(theVector,0);
+				if (theVector != NULL) {
+				    SETUSED(theVector,0); 
+					SETTHEFLAG(theVector,0);
+				}
 			}
 	}
+
+	DEBUG_TIME(0);
 
 	/* set object priorities for ghostelements */
 	for (theElement=PFIRSTELEMENT(theGrid);
@@ -359,7 +373,8 @@ void SetGhostObjectPriorities (GRID *theGrid)
 			if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
 			{
 				theVector = EVECTOR(theElement);
-				SETPRIOX(theVector,prio);
+				if (theVector != NULL) 
+				    SETPRIOX(theVector,prio);
 			}
 		}
 
@@ -458,12 +473,31 @@ void ConstructConsistentGrid (GRID *theGrid)
 	/*   available in SetGhostObjectPriorities()                       */
 	/* - setting of the border priorities can only be done if all      */
 	/*   ghost objects have their proper priority                      */
+
+	DEBUG_TIME(0);
+
 	DDD_XferBegin();
+
+	DEBUG_TIME(0);
+
 	SetGhostObjectPriorities(theGrid);
+
+	DEBUG_TIME(0);
+
 	DDD_XferEnd();
+
+	DEBUG_TIME(0);
+
+
+
 	DDD_XferBegin();
 	SetBorderPriorities(theGrid);
+
+	DEBUG_TIME(0);
+
 	DDD_XferEnd();
+
+	DEBUG_TIME(0);
 
     #ifdef __TWODIM__
 	for (theVertex = PFIRSTVERTEX(theGrid); theVertex != NULL;
@@ -691,7 +725,8 @@ INT CheckNodePrio (ELEMENT *theElement, NODE *theNode)
 	}
 
 	if (dddctrl.nodeData)
-		nerrors += CheckVectorPrio(theElement,NVECTOR(theNode));
+	    if (NVECTOR(theNode) != NULL) 
+		    nerrors += CheckVectorPrio(theElement,NVECTOR(theNode));
 
 	return(nerrors);
 }
@@ -807,12 +842,14 @@ INT CheckElementPrio (ELEMENT *theElement)
 	}
 
 	if (dddctrl.elemData)
-		nerrors += CheckVectorPrio(theElement,EVECTOR(theElement));
+	    if (EVECTOR(theElement) != NULL)
+		    nerrors += CheckVectorPrio(theElement,EVECTOR(theElement));
 
 	if (dddctrl.sideData)
 	{
 		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-			nerrors += CheckVectorPrio(theElement,SVECTOR(theElement,i));
+		    if (SVECTOR(theElement,i) != NULL)
+			    nerrors += CheckVectorPrio(theElement,SVECTOR(theElement,i));
 	}
 
 	for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -851,11 +888,13 @@ INT CheckInterfaces(GRID *theGrid)
 		{
 			SETUSED(theElement,j);
 			if (dddctrl.elemData)
-				SETUSED(EVECTOR(theElement),j);
+			    if (EVECTOR(theElement) != NULL)
+				    SETUSED(EVECTOR(theElement),j);
 			if (dddctrl.sideData)
 			{
 				for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-					SETUSED(SVECTOR(theElement,i),j);
+				    if (SVECTOR(theElement,i) != NULL)
+					    SETUSED(SVECTOR(theElement,i),j);
 			}
 
 			for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -863,7 +902,8 @@ INT CheckInterfaces(GRID *theGrid)
 				theNode = CORNER(theElement,i);
 				SETUSED(theNode,j);
 				if (dddctrl.nodeData)
-					SETUSED(NVECTOR(theNode),j);
+				    if (NVECTOR(theNode) != NULL)
+					    SETUSED(NVECTOR(theNode),j);
 				SETUSED(MYVERTEX(theNode),j);
 			}
 
