@@ -1487,3 +1487,42 @@ INT EXApplyLUDOUBLE (DOUBLE *Mat, INT bw, INT n, DOUBLE *Vec)
   }
   return (0);
 }
+
+/****************************************************************************/
+/*D
+   LineISTriangle3D -  gives intersection-point of a line with a triangle in 3D
+
+   SYNOPSIS:
+   INT LineISTriangle3D (c1, c2, c3, p1, p2, lambda);
+
+   PARAMETERS:
+   .  c1,c2,c3 - corners of the triangle
+   .  p1,p2 - endpoints of the line
+   .  lambda - local variable of intersection-point on line
+
+   DESCRIPTION:
+   This function  gives intersection-point of a line with a triangle
+   in 3D if existing
+
+   RETURN VALUE:
+   INT  0: no intersection
+        1: intersection
+
+   SEE ALSO:
+   D*/
+/****************************************************************************/
+
+INT LineISTriangle3D (const DOUBLE *c1, const DOUBLE *c2, const DOUBLE *c3, const DOUBLE *p1, const DOUBLE *p2, DOUBLE *lamda)
+{
+  DOUBLE M[9],Inv[9],sol[3],rhs[3];
+
+  M[0]=c1[0]-c3[0];   M[3]=c2[0]-c3[0];   M[6]=p1[0]-p2[0];   rhs[0]=p1[0]-c3[0];
+  M[1]=c1[1]-c3[1];   M[4]=c2[1]-c3[1];   M[7]=p1[1]-p2[1];   rhs[1]=p1[1]-c3[1];
+  M[2]=c1[2]-c3[2];   M[5]=c2[2]-c3[2];   M[8]=p1[2]-p2[2];   rhs[2]=p1[2]-c3[2];
+  if (M3_Invert(Inv,M)) return (0);
+  M3_TIMES_V3(Inv,rhs,sol);
+  if (sol[0]<0.0 || sol[1]<0.0 || sol[0]+sol[1]>1.0 || sol[2]<0.0 || sol[2]>1.0) return (0);
+  *lamda=sol[2];
+
+  return (1);
+}
