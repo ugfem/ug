@@ -6329,7 +6329,12 @@ static INT MakeGridCommand  (INT argc, char **argv)
 #ifdef __THREEDIM__
 static INT MakeGridCommand  (INT argc, char **argv)
 {
-  if (GenerateGrid3d())
+  INT smooth;
+
+  if (ReadArgvINT("s",&smooth,argc,argv))
+    smooth = 0;
+
+  if (GenerateGrid3d(smooth))
   {
     PrintErrorMessage('E',"makegrid","execution failed");
     return (CMDERRORCODE);
