@@ -610,6 +610,45 @@ static INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
   return(GM_OK);
 }
 
+static void MarkAsOrphan( GRID *theGrid, ELEMENT *theElement)
+{
+  ELEMENT *succe          = SUCCE(theElement);
+  ELEMENT *theFather      = EFATHER(theElement);
+
+  assert(EGHOST(theElement) || LEVEL(theElement)==0);
+
+  if (theFather != NULL)
+  {
+    int index = PRIO2INDEX(EPRIO(theElement));
+    ELEMENT *Next = NULL;
+    ASSERT(index!=-1 && index<2);
+
+    /* this is an orphan */
+    SETTHEFLAG(theElement,1);
+    if (0)
+    {
+      if (SON(theFather,index) == theElement)
+      {
+        if (succe != NULL)
+        {
+          if (EFATHER(succe)==theFather)
+            if (EPRIO(succe) == EPRIO(theElement))
+            {
+              Next = succe;
+            }
+        }
+        SET_SON(theFather,index,Next);
+      }
+
+      SETNSONS(theFather,NSONS(theFather)-1);
+      SET_EFATHER(theElement,NULL);
+      GRID_UNLINK_ELEMENT(theGrid,theElement);
+      GRID_LINK_ELEMENT(theGrid,theElement,EPRIO(theElement));
+    }
+    PRINTDEBUG(gm,1,(PFMT "OrphanCons(): new orphan elem=" EID_FMTX "\n",
+                     me,EID_PRTX(theElement)));
+  }
+}
 static INT OrphanCons(MULTIGRID *theMG)
 {
   INT i,j,error,orphan;
@@ -667,7 +706,7 @@ static INT OrphanCons(MULTIGRID *theMG)
       }
 
       /* there exists a second case in which an artificial orphanisation is necessary:
-         if we have 2 neigboring elements, whose fathers are different, are neighbors
+         if we have 2 neigboring elements, whose fathers are different and are neighbors
          but have no neighbor-pointers to each other (for examples if both fathers are
          ghosts since 2 ghosts do not have to have neighbor-pointers to each other).
          In this situation the 2 children will not get their neighbor-pointers to
@@ -680,8 +719,15 @@ static INT OrphanCons(MULTIGRID *theMG)
 
          TODO: solve the following listed drawbacks. Christian Wrobel 980313.
 
-         A preliminary proceeding to do this is: orphanise both childs. This increases
-         the number of orphans more than necessary, but is safe.
+         //The old idea was:
+         //    A preliminary proceeding to do this is: orphanise both children. This increases
+         //    the number of orphans more than necessary, but it is safe.
+         //But this is impossible if a child is a master element (masters are not allowed to be
+         //orpahns).
+         //The new idea:
+
+         Orphanise fathers if they are VGhosts or VHGhosts. This situation is handled already
+         correctly.
 
          In contradiction the requirement to the fathers may be too weak. The faulty
          situation could perhaps be: also for the fathers holds the same case as for
@@ -691,8 +737,8 @@ static INT OrphanCons(MULTIGRID *theMG)
          grid level-wise and ensure the consistancy for this level before proceeding
          to the next one; but this is not done in ug.
        */
-      if( !orphan && EGHOST(theElement) )
-      {                         /* && EGHOST(theElement) necessary because of the assertion below in this function */
+      if( !orphan && EMASTER(theElement) )                   /* only a master element must know its neighbors */
+      {
         el_father = EFATHER(theElement);
         if( el_father != NULL )
         {
@@ -703,27 +749,40 @@ static INT OrphanCons(MULTIGRID *theMG)
           }
           else
           {
+            ASSERT(EVGHOST(el_father));                                         /* it is impossible that a master el has a HGHOST-father,
+                                                                                                           must be V[H]GHOST */
+
             for( j=0; j<SIDES_OF_ELEM(theElement); j++ )
             {
               nb_el = NBELEM(theElement,j);
               if (nb_el == NULL)
-                continue;                                                               /* this is an ERROR!!!*/
+                continue;
               nb_el_father = EFATHER(nb_el);
               if( nb_el_father == el_father )
-                continue;                                                 /* the elements have the same father; thus the know
+                continue;                                                 /* the elements have the same father; thus they know
                                                                                      each other and can set their neighbor-pointers */
-              if( nb_el_father==NULL || !EMASTER(nb_el_father) )
+
+              if( nb_el_father==NULL )
               {
-                /* the fathers will perhaps have no neighbor-pointers because they
-                   are both ghosts (for whome neighbor-pointers aren't mandatory).
-                   Orphanise the child to force saving the necessary information */
-                orphan = 1;
-                break;
+                /* the neighbor nb_el will be orphanised because of father==NULL
+                   and theElement will know an orphan-neighbor */
               }
-              else
+              else if(EMASTER(nb_el_father))
               {
                 /* the nb-father will know all his neighbors because he is a master.
                    Will this be true in all situations??? Refer to the above TODO. */
+              }
+              else
+              {
+                /* the fathers will perhaps have no neighbor-pointers because they
+                   are both ghosts (for which neighbor-pointers isn't mandatory).
+                   Orphanise the V[H]Ghost-father to force saving the necessary
+                   information. Pure HGhost fathers aren't orphanized. */
+                PRINTDEBUG(gm,1,("OrphanCons(): orphanize father "EID_FMTX " of element "EID_FMTX "\n", EID_PRTX(el_father), EID_PRTX(theElement)));
+                PRINTDEBUG(gm,1,("OrphanCons(): orphanize father "EID_FMTX " of neighbor element "EID_FMTX "\n", EID_PRTX(nb_el_father), EID_PRTX(nb_el)));
+                MarkAsOrphan(theGrid,el_father);
+                /*if(EVGHOST(nb_el_father)) HGHOST-fathers must be orphanized too! */
+                MarkAsOrphan(theGrid,nb_el_father);
               }
 
             }
@@ -742,43 +801,7 @@ static INT OrphanCons(MULTIGRID *theMG)
       }
 
       if (orphan)
-      {
-        ELEMENT *succe          = SUCCE(theElement);
-        ELEMENT *theFather      = EFATHER(theElement);
-
-        assert(EGHOST(theElement) || LEVEL(theElement)==0);
-        if (theFather != NULL)
-        {
-          int index = PRIO2INDEX(EPRIO(theElement));
-          ELEMENT *Next = NULL;
-          ASSERT(index!=-1 && index<2);
-
-          /* this is an orphan */
-          SETTHEFLAG(theElement,1);
-          if (0)
-          {
-            if (SON(theFather,index) == theElement)
-            {
-              if (succe != NULL)
-              {
-                if (EFATHER(succe)==theFather)
-                  if (EPRIO(succe) == EPRIO(theElement))
-                  {
-                    Next = succe;
-                  }
-              }
-              SET_SON(theFather,index,Next);
-            }
-
-            SETNSONS(theFather,NSONS(theFather)-1);
-            SET_EFATHER(theElement,NULL);
-            GRID_UNLINK_ELEMENT(theGrid,theElement);
-            GRID_LINK_ELEMENT(theGrid,theElement,EPRIO(theElement));
-          }
-          PRINTDEBUG(gm,1,(PFMT "OrphanCons(): new orphan elem=" EID_FMTX "\n",
-                           me,EID_PRTX(theElement)));
-        }
-      }
+        MarkAsOrphan(theGrid,theElement);
     }
   }
 
@@ -1533,6 +1556,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
       if (!EORPHAN(theElement)) continue;
       assert(id==ID(theElement));
       assert(id<n);
+      PRINTDEBUG(gm,1,("write orphan element "EID_FMTX "\n", EID_PRTX(theElement)));
 
       if (MGIO_PARFILE)
       {
@@ -2105,9 +2129,19 @@ static INT CheckLocalElementKeys (ELEMENT *theElement, MGIO_REFINEMENT *ref, INT
       {
         if ( ref->mycornerfatherkey[j] != KeyForObject((KEY_OBJECT *)NFATHER(corner_node)) )
         {
-          printf(PFMT " IO_Loc: father corner relation, element: " EID_FMTX ", corner[%d]: " ID_FMTX " fathercorner: " ID_FMTX ":exp.key %d does not match\n",
-                 me,EID_PRTX(theElement),j,ID_PRTX(corner_node),ID_PRTX(NFATHER(corner_node)),ref->mycornerfatherkey[j]);
-          assert(0);
+          if ( ref->mycornerfatherkey[j] != -1 )
+          {
+            printf(PFMT " IO_Loc: father corner relation, element: " EID_FMTX ", corner[%d]: " ID_FMTX " fathercorner: " ID_FMTX ":exp.key %d does not match\n",
+                   me,EID_PRTX(theElement),j,ID_PRTX(corner_node),ID_PRTX(NFATHER(corner_node)),ref->mycornerfatherkey[j]);
+            assert(0);
+          }
+          else
+          {
+            IFDEBUG(gm,1)
+            printf(PFMT " IO_Loc NOTE: father corner relation, element: " EID_FMTX ", corner[%d]: " ID_FMTX " fathercorner: " ID_FMTX " wasn't here at save time\n",
+                   me,EID_PRTX(theElement),j,ID_PRTX(corner_node),ID_PRTX(NFATHER(corner_node)));
+            ENDDEBUG
+          }
         }
       }
       else
@@ -3168,6 +3202,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
         cge = MGIO_CG_ELEMENT_PS(cg_element,ID(theElement));
         if (Read_pinfo (TAG(theElement),&cg_pinfo))     {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
         if (Evaluate_pinfo(theGrid,theElement,&cg_pinfo))       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+        PRINTDEBUG(gm,1,("read orphan element "EID_FMTX "\n", EID_PRTX(theElement)));
       }
     }
   }
@@ -3257,7 +3292,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
       SETMARKCLASS(theElement,NO_CLASS);
       if (LEVEL(theElement)==0) SETECLASS(theElement,RED_CLASS);
 #ifdef ModelP
-      else assert(EGHOST(theElement));                          /* masters elements must have a father or be on level 0 */
+      else assert(EGHOST(theElement));                          /* masters elements must have a father or be on level 0*/
 #else
       else assert(0);                           /* all orphans must be on level 0 in sequential mode */
 #endif
