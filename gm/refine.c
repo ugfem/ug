@@ -5145,6 +5145,8 @@ INT CheckMultiGrid (MULTIGRID *theMG)
 
 	for (level=0; level<=TOPLEVEL(theMG); level++)
 		#ifdef ModelP
+		CheckGrid(GRID_ON_LEVEL(theMG,level),1,1,1,1);
+		#else
 		CheckGrid(GRID_ON_LEVEL(theMG,level),1,1,1);
 		#endif
 
@@ -5152,6 +5154,8 @@ INT CheckMultiGrid (MULTIGRID *theMG)
 
 	return(0);
 }
+
+
 /****************************************************************************/
 /*
    RefineMultiGrid - refine whole multigrid structure
@@ -5359,42 +5363,35 @@ if (1)
 {
 		DDD_IdentifyEnd();
 
-/*
-if (level == 0)
-{
-	dddiflevel=Debugdddif;
-	Debugdddif = 0;
-}
-*/
-
-CheckConsistency(theMG,level,debugstart,gmlevel,&check);
-
 		DDD_IdentifyBegin();
 }
 
 	DEBUG_TIME(0);
-CheckConsistency(theMG,level,debugstart,gmlevel,&check);
-
 
 		if (Identify_SonNodesAndSonEdges(theGrid))	RETURN(GM_FATAL);
 
 		DDD_IdentifyEnd();
 
-CheckConsistency(theMG,level,debugstart,gmlevel,&check);
-
 
 		if (level<toplevel || newlevel)
-CheckConsistency(theMG,level,debugstart,gmlevel,&check);
-
-		DDD_XferBegin();
 			if (UpdateGridOverlap(theGrid))				RETURN(GM_FATAL);
 			DDD_XferEnd();
+
+	DEBUG_TIME(0);
+
+			DDD_XferBegin();
+			if (ConnectGridOverlap(theGrid))			RETURN(GM_FATAL);
+
+			/* sample scene: a ghost element is needed as overlap  	*/
+			/* element must eventually be downgraded from master    */
+			/* to ghost prio (s.l. 971020)                          */
+			ConstructConsistentGrid(FinerGrid);
+		}
+
 	DEBUG_TIME(0);
 
 
-		DDD_XferEnd();
-		if (level<toplevel || newlevel)
-			if (ConnectGridOverlap(theGrid))			RETURN(GM_FATAL);
+CheckConsistency(theMG,level,debugstart,gmlevel,&check);
 }
 #endif
 		{
