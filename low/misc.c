@@ -671,10 +671,13 @@ void NS_PREFIX QSort (void *base, INT n, INT size, int (*cmp)(const void *, cons
 void NS_PREFIX SelectionSort (void *base, INT n, INT size, int (*cmp)(const void *, const void *))
 {
   INT i,j,k1,k2,s;
-  char Smallest[4];
-  char *Base;
+  char *Smallest,*Base;
 
   if (n<2) return;
+
+  if ((Smallest=malloc(size))==NULL)
+    return;
+
   Base = (char*)base;
 
   for (i=0; i<n; i++)
@@ -699,6 +702,7 @@ void NS_PREFIX SelectionSort (void *base, INT n, INT size, int (*cmp)(const void
     Copy(Base+i*size,Base+k1*size,size);
     Copy(Base+k1*size,Smallest,size);
   }
+  free(Smallest);
 }
 
 
