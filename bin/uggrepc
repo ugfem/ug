@@ -14,11 +14,11 @@ fi
 # if one parameter is specified search all ug modules for $1
 if test $# -eq 1
 then
-	find ${UGROOT} \( -name '*.c' \) -exec grep -e $1 {} \; -print
+	find ${UGROOT} \( -name '*.c' \) -exec egrep $1 {} \; -print
 fi
 
 # if two parameters are specified search the specific module for $1
 if test $# -eq 2
 then
-	find ${UGROOT}/$2 \( -name '*.c' \) -exec grep -e $1 {} \; -print
+	find ${UGROOT}/$2 \( -name '*.c' \) -exec egrep $1 {} \; -print
 fi
