@@ -66,6 +66,14 @@
 #include "ugblas.h"
 #include "blasm.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -227,7 +235,7 @@ INT TraceUGBlas (INT trace)
    D*/
 /****************************************************************************/
 
-INT VecCheckConsistency (const VECDATA_DESC *x, const VECDATA_DESC *y)
+INT NS_PREFIX VecCheckConsistency (const VECDATA_DESC *x, const VECDATA_DESC *y)
 {
   INT vtype;
 
@@ -270,7 +278,7 @@ INT VecCheckConsistency (const VECDATA_DESC *x, const VECDATA_DESC *y)
    D*/
 /****************************************************************************/
 
-INT MatmulCheckConsistency (const VECDATA_DESC *x, const MATDATA_DESC *M, const VECDATA_DESC *y)
+INT NS_PREFIX MatmulCheckConsistency (const VECDATA_DESC *x, const MATDATA_DESC *M, const VECDATA_DESC *y)
 {
   INT rtype,ctype,mtype,maxsmallblock;
 

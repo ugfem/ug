@@ -1,22 +1,22 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  amgtools.h													*/
-/*																			*/
-/* Purpose:   header for amgtools.c			                                                                */
-/*																			*/
-/* Author:	  Nicolas Neuss                                                                         */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70550 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de				                        */
-/*																			*/
-/* History:   29.01.92 begin, ug version 2.0								*/
-/*																			*/
+/*                                                                                                                                                      */
+/* File:          amgtools.h                                                                                                    */
+/*                                                                                                                                                      */
+/* Purpose:   header for amgtools.c                                                                                     */
+/*                                                                                                                                                      */
+/* Author:        Nicolas Neuss                                                                         */
+/*                        Institut fuer Computeranwendungen III                                                 */
+/*                        Universitaet Stuttgart                                                                                */
+/*                        Pfaffenwaldring 27                                                                                    */
+/*                        70550 Stuttgart                                                                                               */
+/*                        email: ug@ica3.uni-stuttgart.de                                                       */
+/*                                                                                                                                                      */
+/* History:   29.01.92 begin, ug version 2.0                                                            */
+/*                                                                                                                                                      */
 /* Remarks:                                                                                                                             */
-/*																			*/
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 
@@ -25,9 +25,9 @@
  */
 
 /****************************************************************************/
-/*																			*/
-/* auto include mechanism and other include files							*/
-/*																			*/
+/*                                                                                                                                                      */
+/* auto include mechanism and other include files                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #ifndef __AMGTOOLS__
@@ -35,14 +35,25 @@
 
 #include "np.h"
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*                                                                                                                                                      */
+/* defines in the following order                                                                                       */
+/*                                                                                                                                                      */
+/*                compile time constants defining static data size (i.e. arrays)        */
+/*                other constants                                                                                                       */
+/*                macros                                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 #define MAXNEIGHBORS 128
@@ -425,9 +436,9 @@
                                             *c_++ += (*A_++) * (*b_++); }}}
 
 /****************************************************************************/
-/*																			*/
-/* data structures exported by the corresponding source file				*/
-/*																			*/
+/*                                                                                                                                                      */
+/* data structures exported by the corresponding source file                            */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* the following structure is used to be able to do arbitrarily complex
@@ -444,16 +455,16 @@ typedef struct avector AVECTOR;
 
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 
 /****************************************************************************/
-/*																			*/
-/* function declarations													*/
-/*																			*/
+/*                                                                                                                                                      */
+/* function declarations                                                                                                        */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT UnmarkAll             (GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp);
@@ -501,4 +512,10 @@ INT NBTransformDefect     (GRID *theGrid, const VECDATA_DESC *to,
 INT NBFineGridCorrection  (GRID *theGrid, const VECDATA_DESC *to,
                            const VECDATA_DESC *from,
                            const MATDATA_DESC *Mat, INT decoupled);
+
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
+
 #endif

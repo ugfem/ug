@@ -55,6 +55,14 @@
 
 #include "bdf.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -79,18 +87,18 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 /****************************************************************************/
 /*                                                                          */
-/* Nonlinear Assemble Interface provided to nonlinear solver				*/
-/* REMEMBER: NP_T_SOLVER is derived from NP_NL_ASSEMBLE.                                */
+/* Nonlinear Assemble Interface provided to nonlinear solver		    */
+/* REMEMBER: NP_T_SOLVER is derived from NP_NL_ASSEMBLE.                    */
 /*                                                                          */
 /****************************************************************************/
 /****************************************************************************/
 
-INT BDFPreProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, INT *res)
+INT NS_PREFIX BDFPreProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, INT *res)
 {
   return(0);
 }
 
-INT BDFAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, INT *res)
+INT NS_PREFIX BDFAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -104,7 +112,7 @@ INT BDFAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, I
   return((*tass->TAssembleSolution)(tass,fl,tl,bdf->t_p1,u,res));
 }
 
-INT BDFAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
+INT NS_PREFIX BDFAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -140,7 +148,7 @@ INT BDFAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VEC
   return( (*tass->TAssembleDefect)(tass,fl,tl,bdf->t_p1,s_m,s_a,u,d,J,res) );
 }
 
-INT BDFAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
+INT NS_PREFIX BDFAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -173,7 +181,7 @@ INT BDFAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VEC
   return( (*tass->TAssembleMatrix)(tass,fl,tl,bdf->t_p1,s_a,u,d,v,J,res) );
 }
 
-INT BDFNAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, NODE *n, VECDATA_DESC *u, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
+INT NS_PREFIX BDFNAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, NODE *n, VECDATA_DESC *u, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -206,7 +214,7 @@ INT BDFNAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, NODE *n, VECDATA_DE
   return( (*tass->TNAssembleMatrix)(tass,fl,tl,n,bdf->t_p1,s_a,u,d,v,J,res) );
 }
 
-INT BDFPostProcess
+INT NS_PREFIX BDFPostProcess
   (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x,
   VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
 {
@@ -221,7 +229,7 @@ INT BDFPostProcess
 /****************************************************************************/
 /****************************************************************************/
 
-INT BDFTimePreProcess (NP_T_SOLVER *ts, INT level, INT *res)
+INT NS_PREFIX BDFTimePreProcess (NP_T_SOLVER *ts, INT level, INT *res)
 {
   NP_BDF *bdf;
 
@@ -244,7 +252,7 @@ INT BDFTimePreProcess (NP_T_SOLVER *ts, INT level, INT *res)
   return(0);
 }
 
-INT BDFTimeInit (NP_T_SOLVER *ts, INT level, INT *res)
+INT NS_PREFIX BDFTimeInit (NP_T_SOLVER *ts, INT level, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -887,7 +895,7 @@ output:         /* output */
 }
 
 
-INT BDFTimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
+INT NS_PREFIX BDFTimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -928,7 +936,7 @@ INT BDFTimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
 /*																			*/
 /****************************************************************************/
 
-INT BDFInit (NP_BASE *base, INT argc, char **argv)
+INT NS_PREFIX BDFInit (NP_BASE *base, INT argc, char **argv)
 {
   NP_BDF *bdf;
   VECDATA_DESC *tmp;
@@ -1093,7 +1101,7 @@ INT BDFInit (NP_BASE *base, INT argc, char **argv)
 /*																			*/
 /****************************************************************************/
 
-INT BDFDisplay (NP_BASE *theNumProc)
+INT NS_PREFIX BDFDisplay (NP_BASE *theNumProc)
 {
   NP_BDF *bdf;
 

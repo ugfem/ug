@@ -2,11 +2,11 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      ts.c                                                              */
+/* File:      ts.c                                                          */
 /*                                                                          */
 /* Purpose:   time-stepping scheme for (non-)linear time-dependent problems */
 /*                                                                          */
-/* Author:    Peter Bastian                                                                                             */
+/* Author:    Peter Bastian                                                 */
 /*            Institut fuer Computeranwendungen III                         */
 /*            Universitaet Stuttgart                                        */
 /*            Pfaffenwaldring 27                                            */
@@ -47,6 +47,14 @@
 #include "assemble.h"
 #include "transfer.h"
 #include "ts.h"
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
 
 /****************************************************************************/
 /*                                                                          */

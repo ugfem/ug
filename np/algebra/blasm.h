@@ -80,6 +80,17 @@
   #define __BLAS__
 #endif
 
+/**************************************************/
+/* A namespace for the c++ version                */
+/**************************************************/
+#ifdef __cplusplus
+#ifdef __TWODIM__
+namespace UG2d {
+#else
+namespace UG3d {
+#endif
+#endif
+
 /* loop type */
 #define BLAS_LOOP_M     0x0000
 #define BLAS_LOOP_MN    0x0001
@@ -127,5 +138,10 @@ INT MG_Matrix_Loop(MULTIGRID *mg, INT fl, INT tl, INT mode,
                    const MATDATA_DESC *M, const MATDATA_DESC *N,
                    const VECDATA_DESC *x, const VECDATA_DESC *y,
                    int N_vals, const DOUBLE *value, DOUBLE *result);
+
+
+#ifdef __cplusplus
+}  /* namespace UG{2|3}d */
+#endif
 
 #endif /* __BLASM__ */

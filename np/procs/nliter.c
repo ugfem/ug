@@ -54,6 +54,14 @@
 #include "fas.h"
 #include "nliter.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -285,7 +293,7 @@ static INT MySolveSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol, const SH
 /****************************************************************************/
 /****************************************************************************/
 
-INT NPNLIterInit (NP_NL_ITER *np, INT argc , char **argv)
+INT NS_PREFIX NPNLIterInit (NP_NL_ITER *np, INT argc , char **argv)
 {
   np->A = ReadArgvMatDesc(np->base.mg,"A",argc,argv);
   np->x = ReadArgvVecDesc(np->base.mg,"x",argc,argv);
@@ -302,7 +310,7 @@ INT NPNLIterInit (NP_NL_ITER *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NPNLIterDisplay (NP_NL_ITER *np)
+INT NS_PREFIX NPNLIterDisplay (NP_NL_ITER *np)
 {
   if ((np->A == NULL) && (np->x == NULL) && (np->b == NULL))
     return(0);
@@ -318,7 +326,7 @@ INT NPNLIterDisplay (NP_NL_ITER *np)
   return(0);
 }
 
-INT NPNLIterExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX NPNLIterExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_NL_ITER *np;
   INT result,bl,level;

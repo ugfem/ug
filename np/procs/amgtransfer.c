@@ -4,16 +4,16 @@
 /*                                                                          */
 /* File:      amgtransfer.c                                                 */
 /*                                                                          */
-/* Purpose:   algebraic multigrid numproc                                           */
+/* Purpose:   algebraic multigrid numproc                                   */
 /*                                                                          */
-/* Author:	  Nicolas Neuss                                                                                     */
-/*			  Institut fuer Angewandte Mathematik                           */
-/*			  Universitaet Heidelberg										*/
-/*			  Im Neuenheimer Feld 294										*/
-/*			  69120 Heidelberg												*/
-/*			  email: neuss@iwr.uni-heidelberg.de			                        */
-/*																			*/
-/* History:   1994-1995 in old ug2.0							            */
+/* Author:    Nicolas Neuss                                                 */
+/*            Institut fuer Angewandte Mathematik                           */
+/*            Universitaet Heidelberg                                       */
+/*            Im Neuenheimer Feld 294                                       */
+/*            69120 Heidelberg                                              */
+/*            email: neuss@iwr.uni-heidelberg.de                            */
+/*                                                                          */
+/* History:   1994-1995 in old ug2.0                                        */
 /*            May-June 1997 in new ug3.7                                    */
 /*                                                                          */
 /* Remarks:                                                                 */
@@ -49,8 +49,18 @@
 #include "amgtools.h"
 #include "amgtransfer.h"
 
+
 #ifdef ModelP
 #include "pargm.h"
+#endif
+
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
 #endif
 
 /****************************************************************************/
@@ -71,9 +81,9 @@
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                            */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                            */
 /****************************************************************************/
 
 REP_ERR_FILE;
@@ -107,45 +117,45 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
    typedef struct
    {
-        NP_TRANSFER transfer;
-        INT display;
+   NP_TRANSFER transfer;
+   INT display;
 
-        MarkConnectionsProcPtr *MarkStrong;
-        DOUBLE thetaS;
-        INT compS;
+   MarkConnectionsProcPtr *MarkStrong;
+   DOUBLE thetaS;
+   INT compS;
 
-        CoarsenProcPtr Coarsen;
+   CoarsenProcPtr Coarsen;
 
-        MATDATA_DESC *I;
-        SetupIRMatProcPtr SetupIR;
+   MATDATA_DESC *I;
+   SetupIRMatProcPtr SetupIR;
 
-        SetupCGMatProcPtr SetupCG;
-        INT CMtype;
+   SetupCGMatProcPtr SetupCG;
+   INT CMtype;
 
-        MarkConnectionsProcPtr *MarkKeep;
-        DOUBLE thetaK;
-        INT compK;
-        INT sparsenFlag;
+   MarkConnectionsProcPtr *MarkKeep;
+   DOUBLE thetaK;
+   INT compK;
+   INT sparsenFlag;
 
-        INT reorderFlag;
+   INT reorderFlag;
 
-        INT fgcstep;
-        VECDATA_DESC *p;
+   INT fgcstep;
+   VECDATA_DESC *p;
 
-        INT vectLimit;
-        INT matLimit;
-        DOUBLE bandLimit;
-        DOUBLE vRedLimit;
-        DOUBLE mRedLimit;
-        INT levelLimit;
-        INT aggLimit;
+   INT vectLimit;
+   INT matLimit;
+   DOUBLE bandLimit;
+   DOUBLE vRedLimit;
+   DOUBLE mRedLimit;
+   INT levelLimit;
+   INT aggLimit;
 
-        INT symmetric;
+   INT symmetric;
 
-        INT explicitFlag;
-        INT hold;
+   INT explicitFlag;
+   INT hold;
 
-        INT symmIR;
+   INT symmIR;
 
    } NP_AMG_TRANSFER;
    .ve
@@ -171,7 +181,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    in
 
    'S.~F.~McCormick (editor): Multigrid~methods
-        SIAM Philadelphia, Pennsylvania (1987)'
+   SIAM Philadelphia, Pennsylvania (1987)'
 
    The numproc 'clusterAMG' defines an AMG where the coarsening is done by
    clustering. A prototype is the algorithm described by Vanek, et al. (1994)
@@ -190,21 +200,21 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    npcreate <name> $c {selectionAMG | clusterAMG};
    npinit <name> {$strongAll | $strongOffDiag | $strongAbs <thetaS> [<compS>] | $strongRel <thetaS> [<compS>]
  | $strongVanek  <thetaS> [<compS>]}
-                {$C {Average | Greedy | BFS | RugeStueben} | $C {VanekNeuss}}
-                {$I {Average | RugeStueben
+   {$C {Average | Greedy | BFS | RugeStueben} | $C {VanekNeuss}}
+   {$I {Average | RugeStueben
  | Wagner  | WagnerReducedFFGraph  | WagnerDecoupled
  | Reusken | ReuskenReducedFFGraph | ReuskenDecoupled }
  | $I {PiecewiseConstant | Vanek}}
-                [$fgc] [$transdef]
-                {$CM {Galerkin | FastGalerkin} [$CMtype]}
-                [{$keepAbs <thetaK> [<compK>] | $keepRel <thetaK> [<compK>]} [$lump] ]
-                                [{$coarsefine | $finecoarse}]
-                            [$display {full|red|no}]
-                                [$vectLimit] [$matLimit] [$bandLimit]
-                                [$vRedLimit] [$mRedLimit]
-                                [$levelLimit] [$aggLimit]
-                                [$explicit]
-                                [$hold];
+   [$fgc] [$transdef]
+   {$CM {Galerkin | FastGalerkin} [$CMtype]}
+   [{$keepAbs <thetaK> [<compK>] | $keepRel <thetaK> [<compK>]} [$lump] ]
+   [{$coarsefine | $finecoarse}]
+   [$display {full|red|no}]
+   [$vectLimit] [$matLimit] [$bandLimit]
+   [$vRedLimit] [$mRedLimit]
+   [$levelLimit] [$aggLimit]
+   [$explicit]
+   [$hold];
    .ve
 
    .  $strong... - defines strong connection type for coarsening:
@@ -290,7 +300,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
 {
   INT i,schurType=0;
   NP_AMG_TRANSFER *np;
@@ -298,7 +308,7 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
 
   np = (NP_AMG_TRANSFER *) theNP;
 
-  np->transfer.baselevel=0;       /* is only used as return value */
+  np->transfer.baselevel=0;   /* is only used as return value */
 
   /* definition of strong criterion, must be set */
   np->MarkStrong=NULL;
@@ -376,7 +386,7 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
     REP_ERR_RETURN(NP_NOT_ACTIVE);
   }
   np->SetupIR = NULL;
-  np->symmIR = 1;       /* R=I^t, should be set to 0 by some SetupIR-routines */
+  np->symmIR = 1;   /* R=I^t, should be set to 0 by some SetupIR-routines */
   if (np->AMGtype==SELECTION_AMG)
   {
     if (strcmp(buffer,"Average") == 0)
@@ -556,7 +566,7 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
 }
 
 
-INT AMGTransferDisplay (NP_BASE *theNP)
+INT NS_PREFIX AMGTransferDisplay (NP_BASE *theNP)
 {
   NP_AMG_TRANSFER *np;
 
@@ -816,17 +826,17 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
           PRINTDEBUG(np,1,(" on level %d\n",level));
         }
 
-            #ifdef ModelP
+#ifdef ModelP
       breakflag = UG_GlobalSumINT(breakflag);
-                        #endif
+#endif
 
       PRINTDEBUG(np,1,("%d: breakflag limit %d\n",me,breakflag));
 
       if (breakflag>0) {
-                #ifdef ModelP
+#ifdef ModelP
         /* Do agglomeration only if it hasn't been done yet and if
-               aggLimit has been set to a value that indicates that
-               coarse grid agglomeration is desired. */
+           aggLimit has been set to a value that indicates that
+           coarse grid agglomeration is desired. */
         if (level>np->agglevel && np->levelLimit>=np->aggLimit) {
           PRINTDEBUG(np,1,("%d: start aggl on level %d\n",me,level));
           AMGAgglomerate(theMG);
@@ -835,7 +845,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
           PRINTDEBUG(np,1,("%3d: Coarse Grid agglomeration",me));
           PRINTDEBUG(np,1,(" on level %d\n",level));
         }
-                #endif
+#endif
         break;
       }
 
@@ -874,15 +884,15 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
           REP_ERR_RETURN(result[0]);
         }
       }
-      else                    /* level <= 0 */
+      else        /* level <= 0 */
       {
         PRINTDEBUG(np,1,("%d: AGG %d agglev %d\n",
                          me,level-1,np->agglevel));
 
         breakflag = (np->Coarsen)(theGrid);
-                #ifdef ModelP
+#ifdef ModelP
         breakflag = UG_GlobalSumINT(breakflag);
-                                #endif
+#endif
         if (breakflag)
         {
           result[0]=breakflag;
@@ -897,12 +907,12 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       newGrid=theGrid->coarser;
       ASSERT(newGrid!=NULL);
 
-            #ifdef ModelP
+#ifdef ModelP
       if (a_vector_vecskip(theMG,level-1,level-1,x) != NUM_OK) {
         result[0]=1;
         REP_ERR_RETURN(1);
       }
-            #endif
+#endif
 
       if ((result[0]=(np->SetupIR)(theGrid,A,NULL /*preliminary!*/))!=0)
         REP_ERR_RETURN(result[0]);
@@ -940,7 +950,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         VECTOR *v;
 
         INT nv=0;
-                #ifdef ModelP
+#ifdef ModelP
         INT nv_m=0;
         INT nv_d=0;
 
@@ -953,15 +963,15 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
               nv_d++;
         nv_m = UG_GlobalSumINT(nv_m);
         nv_d = UG_GlobalSumINT(nv_d);
-                #endif
+#endif
         for (v=FIRSTVECTOR(newGrid); v!=NULL; v=SUCCVC(v)) nv++;
         UserWriteF(DISPLAY_NP_AMG_FORMAT,
                    (int)level-1,(int)nv,
                    (int)newGrid->nCon,(int)theGrid->nIMat);
-                        #ifdef ModelP
+#ifdef ModelP
         UserWriteF(" master vectors %d  Dirichlet vectors %d\n",
                    (int)nv_m,(int)nv_d);
-                #endif
+#endif
       }
       sprintf(varname,":amg:vect%d",level-1);
       SetStringValue(varname,(double)NVEC(newGrid));
@@ -971,7 +981,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       SetStringValue(varname,(double)theGrid->nIMat);
       SetStringValue(":amg:blevel",(double)theMG->bottomLevel);
 
-                        #ifdef ModelP
+#ifdef ModelP
       /* Do agglomeration (only if it has not been done yet). */
       if (level-1==np->aggLimit && np->agglevel<-MAXLEVEL) {
         PRINTDEBUG(np,1,("%d: AGG %d\n",me,level-1));
@@ -983,7 +993,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                          " on level %d due to aggLimit criterion\n",
                          me,level-1));
       }
-                        #endif
+#endif
 
       breakflag = 0;
       if (np->vRedLimit!=0.0) {
@@ -998,14 +1008,14 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         PRINTDEBUG(np,1,("%3d: bandLimit reached",me));
         PRINTDEBUG(np,1,(" on level %d\n",level));
       }
-                        #ifdef ModelP
+#ifdef ModelP
       breakflag = UG_GlobalSumINT(breakflag);
       PRINTDEBUG(np,1,("%d: breakflag bandlimit %d\n",me,breakflag));
-                        #endif
+#endif
       if (breakflag>0) break;
       level--;
-    }              /* end while (level > np->levelLimit) */
-  }            /* end if ((theGrid->coarser == NULL) || (np->hold == 0) ) */
+    }      /* end while (level > np->levelLimit) */
+  }        /* end if ((theGrid->coarser == NULL) || (np->hold == 0) ) */
   else {
     /* keep coarsening and interpolation, recompute matrices */
     for (level=tl; level>theMG->bottomLevel; level--) {
@@ -1019,20 +1029,20 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 
       if (np->display == PCR_FULL_DISPLAY)
         UserWriteF(" [%d:g]",level);
-                        #ifdef ModelP
+#ifdef ModelP
       if (level-1==np->agglevel) {
         l_amgmatrix_collect(GRID_ON_LEVEL(theMG,level-1),A);
         PRINTDEBUG(np,1,("%3d: Coarse Grid agglomeration"
                          " on level %d due to aggLimit criterion\n",
                          me,level-1));
       }
-                        #endif
+#endif
     }
     if (np->display == PCR_FULL_DISPLAY)
       UserWriteF("\n");
   }
 
-  /*	Set_AMG_Vecskipflags(theMG,x);*/
+  /*    Set_AMG_Vecskipflags(theMG,x);*/
   for (level=tl; level >= theMG->bottomLevel; level--)
     if (AssembleDirichletBoundary (GRID_ON_LEVEL(theMG,level),A,x,b)) {
       result[0]=1;
@@ -1047,11 +1057,11 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       REP_ERR_RETURN(1);
   }
 
-        #ifdef ModelP
+#ifdef ModelP
   /* rebuild DDD-interfaces because distributed vectors have been
      deleted without communication */
   DDD_IFRefreshAll();
-        #endif
+#endif
 
   /* we set the baselevel for the following cycle!! */
   *fl=theMG->bottomLevel;
@@ -1066,7 +1076,7 @@ static INT RestrictDefect (NP_TRANSFER *theNP, INT level,
                            INT *result)
 {
   NP_AMG_TRANSFER *np;
-  VECDATA_DESC *td;       /* transformed or untransformed defect */
+  VECDATA_DESC *td;   /* transformed or untransformed defect */
 
   np = (NP_AMG_TRANSFER *) theNP;
 
@@ -1089,7 +1099,7 @@ static INT RestrictDefect (NP_TRANSFER *theNP, INT level,
                                         td,from,A,1,0))
         REP_ERR_RETURN(result[0]);
     }
-    else if ( np->SetupIR==IpWagnerDecoupled )             /* not reduced! */
+    else if ( np->SetupIR==IpWagnerDecoupled )         /* not reduced! */
     {
       if (result[0] = NBTransformDefect(GRID_ON_LEVEL(NP_MG(theNP),level),
                                         td,from,A,0,1))
@@ -1101,8 +1111,8 @@ static INT RestrictDefect (NP_TRANSFER *theNP, INT level,
         REP_ERR_RETURN(result[0]);
     }
   }
-  else if (np->fgcstep)       /* unfortunately we must copy the untransformed defect since
-                                                         otherwise we can't do the fgc-step in InterpolateCorrection */
+  else if (np->fgcstep)   /* unfortunately we must copy the untransformed defect since
+                             otherwise we can't do the fgc-step in InterpolateCorrection */
   {
     if ((result[0]=dcopy(NP_MG(theNP),level,level,ALL_VECTORS,td,from))!=0)
       REP_ERR_RETURN(result[0]);
@@ -1274,7 +1284,7 @@ INT AMGTransferExecute (NP_BASE *theNP, INT argc , char **argv)
   return(0);
 }
 
-INT AMGTransferConstruct (NP_BASE *theNP)
+INT NS_PREFIX AMGTransferConstruct (NP_BASE *theNP)
 {
   NP_TRANSFER *np;
 
@@ -1328,7 +1338,7 @@ static INT ClusterAMGConstruct (NP_BASE *theNP)
 
 /****************************************************************************/
 /*
-   InitAMGTransfer	- Init this file
+   InitAMGTransfer    - Init this file
 
    SYNOPSIS:
    INT InitPlotProc ();

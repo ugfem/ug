@@ -50,6 +50,14 @@
 #include "transfer.h"
 #include "enewton.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -88,6 +96,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 typedef struct
 {
+
   NP_ENL_SOLVER nlsolver;               /* derived from abstract class NP_ENL_SOLVER		*/
 
   /* parameters to be set via npinit */

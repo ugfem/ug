@@ -54,6 +54,14 @@
 #include "transfer.h"
 #include "fas.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
@@ -72,6 +80,8 @@
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
+
+extern INT n_offset[TAGS];
 
 static DOUBLE Factor_One[MAX_VEC_COMP];
 static DOUBLE Factor_Minus_One[MAX_VEC_COMP];

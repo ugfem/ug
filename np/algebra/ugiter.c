@@ -46,6 +46,14 @@
 #include "blasm.h"
 #include "block.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -116,6 +124,10 @@
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
+
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+  control_entries[MAX_CONTROL_ENTRIES];
 
 /****************************************************************************/
 /*																			*/
@@ -2347,7 +2359,7 @@ INT l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
    D*/
 /****************************************************************************/
 
-INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VEC_SCALAR threshold, const VECDATA_DESC *VD_rest, const VEC_SCALAR oldrestthresh)
+INT NS_PREFIX l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VEC_SCALAR threshold, const VECDATA_DESC *VD_rest, const VEC_SCALAR oldrestthresh)
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
@@ -4599,7 +4611,7 @@ INT l_lrdecompB (GRID *g, const MATDATA_DESC *M)
    D*/
 /****************************************************************************/
 
-INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT NS_PREFIX l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*last_vec;
   INT rtype,ctype,myindex,err;

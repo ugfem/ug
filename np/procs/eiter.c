@@ -64,6 +64,14 @@
 #include "ugeblas.h"
 #include "order.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -153,7 +161,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-INT NPEIterInit (NP_EITER *np, INT argc , char **argv)
+INT NS_PREFIX NPEIterInit (NP_EITER *np, INT argc , char **argv)
 {
   np->A = ReadArgvEMatDesc(np->base.mg,"A",argc,argv);
   np->c = ReadArgvEVecDesc(np->base.mg,"c",argc,argv);
@@ -165,7 +173,7 @@ INT NPEIterInit (NP_EITER *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NPEIterDisplay (NP_EITER *np)
+INT NS_PREFIX NPEIterDisplay (NP_EITER *np)
 {
   if ((np->A == NULL) && (np->b == NULL) && (np->c == NULL))
     return(0);
@@ -182,7 +190,7 @@ INT NPEIterDisplay (NP_EITER *np)
 }
 
 
-INT NPEIterExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX NPEIterExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   REP_ERR_RETURN (1);
 }

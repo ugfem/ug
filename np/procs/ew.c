@@ -61,6 +61,14 @@
 
 #include "project.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -221,7 +229,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NPEWSolverInit (NP_EW_SOLVER *np, INT argc , char **argv)
+INT NS_PREFIX NPEWSolverInit (NP_EW_SOLVER *np, INT argc , char **argv)
 {
   INT i;
   int n;
@@ -273,7 +281,7 @@ INT NPEWSolverInit (NP_EW_SOLVER *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NPEWSolverDisplay (NP_EW_SOLVER *np)
+INT NS_PREFIX NPEWSolverDisplay (NP_EW_SOLVER *np)
 {
   INT i;
 

@@ -48,6 +48,14 @@
 #include "eiter.h"
 #include "els.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -239,7 +247,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NPELinearSolverInit (NP_ELINEAR_SOLVER *np, INT argc , char **argv)
+INT NS_PREFIX NPELinearSolverInit (NP_ELINEAR_SOLVER *np, INT argc , char **argv)
 {
   INT i;
 
@@ -288,7 +296,7 @@ INT NPELinearSolverDisplay (NP_ELINEAR_SOLVER *np)
   return(0);
 }
 
-INT NPELinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX NPELinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_ELINEAR_SOLVER *np;
   ELRESULT lresult;

@@ -48,6 +48,14 @@
 #include "disctools.h"
 #include "transgrid.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -68,6 +76,13 @@
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
+
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+  control_entries[MAX_CONTROL_ENTRIES];
+
+extern INT n_offset[TAGS];
+extern INT sons_offset[TAGS];
 
 /****************************************************************************/
 /*																			*/

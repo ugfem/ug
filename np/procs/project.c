@@ -51,6 +51,14 @@
 #include "evm.h"
 #include "gm.h"
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -67,6 +75,8 @@
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
+
+extern INT n_offset[TAGS];
 
 typedef struct
 {
@@ -102,7 +112,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-INT Project_Init (NP_PROJECT *theNP, INT argc, char **argv)
+INT NS_PREFIX Project_Init (NP_PROJECT *theNP, INT argc, char **argv)
 {
   MULTIGRID *theMG;
   theMG = theNP->base.mg ;
@@ -114,7 +124,7 @@ INT Project_Init (NP_PROJECT *theNP, INT argc, char **argv)
   return (NP_ACTIVE);
 }
 
-INT Project_Display (NP_PROJECT *theNP)
+INT NS_PREFIX Project_Display (NP_PROJECT *theNP)
 {
 
   if ((theNP->x) != NULL)
