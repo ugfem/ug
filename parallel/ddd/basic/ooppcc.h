@@ -215,7 +215,8 @@ int nSegms;
 
 int nDiscarded;
 Class_Data_End
-Method_New_     (_NEWPARAMS_OR_VOID);
+Method_New_           (_NEWPARAMS_OR_VOID);
+void    Method(Free)          (DefThis);
 CN(SegmListOf) *Method(NewItem) (DefThis);
 void    Method(DiscardItem)   (DefThis);
 void    Method(Reset)         (DefThis);
@@ -234,6 +235,12 @@ Method_New_ (_NEWPARAMS_OR_VOID)
   This->nSegms = 0;
   This->nDiscarded = 0;
   return(This);
+}
+
+void Method(Free) (ParamThis)
+{
+  CALL(CSegmList,Reset) (This);
+  Destruct(This);
 }
 
 

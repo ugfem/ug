@@ -1,5 +1,16 @@
 ---------------------------
 
+CHANGES 1.8.19 -> 1.8.20
+
+---------------------------
+980525 kb
+changed memory handling in Ident.
+	- similar to changes in Xfer module for ddd-1.8.18, the
+	  Identify-module memory management has been revised.
+	  Memory allocation and freeing may now be done more
+	  specifically.
+---------------------------
+
 CHANGES 1.8.18 -> 1.8.19
 
 ---------------------------

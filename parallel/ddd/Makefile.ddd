@@ -169,6 +169,8 @@ Ident-o = ident.o
 
 
 ident.o: $(SrcPth)/dddi.h	\
+		$(BasicPth)/oopp.h   \
+		$(BasicPth)/ooppcc.h \
 		$(IdentPth)/ident.c
 	$(DDD_CC) $(SrcOpt) $(IdentPth)/ident.c
 

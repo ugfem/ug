@@ -49,7 +49,7 @@
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.19"
+#define DDD_VERSION    "1.8.20"
 
 
 /****************************************************************************/
@@ -271,7 +271,9 @@ enum TMemRequsts {
 
   TMEM_JOIN    = 0x2000,
 
-  TMEM_CONS    = 0x3000
+  TMEM_CONS    = 0x3000,
+
+  TMEM_IDENT   = 0x4000
 };
 
 
