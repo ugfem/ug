@@ -6763,7 +6763,7 @@ void NS_PREFIX SetLevelnumberBV( BLOCKVECTOR *bv, INT level )
  *   <li>GM_OK if ok </li>
  *   <li>GM_OUT_OF_MEM if there was not enough memory to allocate all blockvectors </li>
  *   <li>GM_INCONSISTANCY if the vector-list was too short </li>
-
+   </ul>
  * \sa
    BLOCKVECTOR, CreateBVStripe2D, CreateBVStripe3D, CreateBVDomainHalfening
 
@@ -6963,19 +6963,13 @@ INT NS_PREFIX CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_stripe 
 
 
 /****************************************************************************/
-/** \brief
-   CreateBVStripe3D - Creates a plane- and stripewise domain decomposition of a 3D rectangular domain with a regular mesh
+/** \brief Creates a plane- and stripewise domain decomposition of a 3D rectangular domain with a regular mesh
 
-   SYNOPSIS:
-   INT CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT vectors_per_stripe );
-
-   PARAMETERS:
  * @param grid - the grid containing the vectors to be structured
  * @param inner_vectors  - number of vectors, i.e. gridpoints, in the inner
  * @param stripes_per_plane - number of stripes forming a plane
  * @param vectors_per_stripe - number of vectors a stripe should contain
 
-   DESCRIPTION:
    From the list of vectors the blockvector-list is generated in
    the following way:
    The first blockvector level consists of 2 blockvectors: the first
@@ -7007,11 +7001,10 @@ INT NS_PREFIX CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_stripe 
    to a `plane- and linewise domain decomposition`.
 
  * @return <ul>
-
- *   <li>GM_OK if ok
- *   <li>GM_OUT_OF_MEM if there was not enough memory to allocate all blockvectors
- *   <li>GM_INCONSISTANCY if the vector-list was too short
-
+ *   <li>GM_OK if ok </li>
+ *   <li>GM_OUT_OF_MEM if there was not enough memory to allocate all blockvectors </li>
+ *   <li>GM_INCONSISTANCY if the vector-list was too short </li>
+ * </ul>
  * \sa
    BLOCKVECTOR, CreateBVStripe2D, CreateBVDomainHalfening
 
@@ -7133,17 +7126,11 @@ INT NS_PREFIX CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_p
 
 
 /****************************************************************************/
-/** \brief
-   CreateBVDomainHalfening - Creates a recursive domain halfening decomposition
+/** \brief Creates a recursive domain halfening decomposition
 
-   SYNOPSIS:
-   INT CreateBVDomainHalfening( GRID *grid, INT side )
-
-   PARAMETERS:
  * @param grid - the grid containing the vectors to be structured
  * @param side - number of points on the side of the quadratic mesh
 
-   DESCRIPTION:
    The grid must be similar to a quadratic mesh. The vectors must be numbered
    linewise lexicographic. Then this function constructs a hierarchy
    of blockvectors describing a recursive domain halfening.
@@ -7167,10 +7154,9 @@ INT NS_PREFIX CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_p
    setting after returning from this routine.
 
  * @return <ul>
-   INT
- *   <li>GM_OK if ok
- *   <li>GM_OUT_OF_MEM if there is not enough memory to allocate the blockvectors
-
+ *   <li> GM_OK if ok </li>
+ *   <li> GM_OUT_OF_MEM if there is not enough memory to allocate the blockvectors </li>
+ **</ul>
  * \sa
    BLOCKVECTOR, CreateBVStripe
 
@@ -7234,14 +7220,8 @@ INT NS_PREFIX CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
 
 #ifdef __BLOCK_VECTOR_DESC__
 /****************************************************************************/
-/* (without *D, since only internal function)
+/** \brief Internal function to perform the work of CreateBVDomainHalfening
 
-   BlockHalfening - internal function to perform the work of CreateBVDomainHalfening
-
-   SYNOPSIS:
-   static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, INT width, INT height, INT side, INT orientation )
-
-   PARAMETERS:
  * @param grid - the grid containing the vectors to be structured
  * @param bv - blockvector to be subdivided
  * @param left - left side of the rectangle representing the 'bv' in the virtual mesh
@@ -7251,7 +7231,6 @@ INT NS_PREFIX CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
  * @param side - sidelength of the original square
  * @param orientation - gives the orientation of the cutting line (horizontal or vertical)
 
-   DESCRIPTION:
    Performs the work described for the function CreateBVDomainHalfening
    above.
 
@@ -7263,10 +7242,9 @@ INT NS_PREFIX CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
    function are related to this virtual mesh.
 
  * @return <ul>
-   INT
- *   <li>GM_OK if ok
- *   <li>GM_OUT_OF_MEM if there is not enough memory to allocate the blockvectors
-
+ *   <li> GM_OK if ok </li>
+ *   <li> GM_OUT_OF_MEM if there is not enough memory to allocate the blockvectors </li>
+ * </ul>
  */
 /****************************************************************************/
 
@@ -7438,20 +7416,13 @@ static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, IN
 
 
 /****************************************************************************/
-/** \brief
-   MoveVector - Move vector within the vector list of the grid
+/** \brief Move vector within the vector list of the grid
 
-   SYNOPSIS:
-   INT MoveVector (GRID *theGrid, VECTOR *moveVector,
-   VECTOR *destVector, INT after);
-
-   PARAMETERS:
  * @param theGrid - pointer to grid
  * @param moveVector - vector to move
  * @param destVector - vector before or after which 'moveVector' will be inserted
  * @param after - true (1) or false (0)
 
-   DESCRIPTION:
    This function moves a 'VECTOR' within the double linked list. If 'after' is
    true then 'moveVector' will be inserted immediately after 'destVector', if
    'after' is false then it will be inserted immediately before. If 'destVector'
@@ -7459,9 +7430,9 @@ static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, IN
    and at the end of the list when 'after' is false.
 
  * @return <ul>
-   INT
- *   <li>    0 if ok
- *   <li>    1 if error occured.
+ *   <li>    0 if ok </li>
+ *   <li>    1 if error occured. </li>
+ * </ul>
  */
 /****************************************************************************/
 
@@ -7520,25 +7491,19 @@ INT NS_PREFIX MoveVector (GRID *theGrid, VECTOR *moveVector, VECTOR *destVector,
 #ifdef __INTERPOLATION_MATRIX__
 
 /****************************************************************************/
-/** \brief
-   CreateIMatrix -  Return pointer to a new interpolation matrix structure
+/** \brief Return pointer to a new interpolation matrix structure
 
-   SYNOPSIS:
-   MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec);
-
-   PARAMETERS:
  * @param theGrid - fine grid
  * @param fvec - fine grid vector
  * @param cvec - coarse grid vector
 
-   DESCRIPTION:
    This function allocates a new 'MATRIX' structures in the
    'imatrix' list of 'fvec'.
 
  * @return <ul>
-   MATRIX *
- *   <li>   pointer to the new matrix
- *   <li>   NULL if error occured.
+ *   <li>   pointer to the new matrix </li>
+ *   <li>   NULL if error occured. </li>
+ * </ul>
  */
 /****************************************************************************/
 
@@ -7587,24 +7552,18 @@ MATRIX *NS_PREFIX CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
 }
 
 /****************************************************************************/
-/** \brief
-   DisposeIMatrices - Remove interpolation matrix from the data structure
+/** \brief Remove interpolation matrix from the data structure
 
-   SYNOPSIS:
-   static INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix);
-
-   PARAMETERS:
  * @param theGrid - the grid to remove from
  * @param theMatrix - start of matrix list to dispose
 
-   DESCRIPTION:
    This function removes an interpolation  matrix list from the data
    structure.
 
  * @return <ul>
-   INT
- *   <li>   0 if ok
- *   <li>   1 if error occured.
+ *   <li>   0 if ok </li>
+ *   <li>   1 if error occured. </li>
+ * </ul>
  */
 /****************************************************************************/
 
@@ -7659,24 +7618,18 @@ INT NS_PREFIX DisposeIMatricesInMultiGrid (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/** \brief
-   GetIMatrix - Return pointer to interpolation matrix if it exists
+/** \brief Return pointer to interpolation matrix if it exists
 
-   SYNOPSIS:
-   MATRIX *GetIMatrix (VECTOR *FineVector, VECTOR *CoarseVector);
-
-   PARAMETERS:
  * @param FineVector - fine grid vector
  * @param CoarseVector - coarse grid vector
 
-   DESCRIPTION:
    This function returns pointer to interpolation matrix.
    If it does not exist already, it returns NULL.
 
  * @return <ul>
-   MATRIX *
- *   <li>      pointer to Matrix,
- *   <li>      NULL if no Matrix exists.
+ *   <li>      pointer to Matrix, </li>
+ *   <li>      NULL if no Matrix exists. </li>
+ * </ul>
  */
 /****************************************************************************/
 
@@ -7701,8 +7654,9 @@ MATRIX *NS_PREFIX GetIMatrix (VECTOR *FineVector, VECTOR *CoarseVector)
  * This function inits algebra.
  *
  * @return <ul>
- *   <li>   0 if ok
- *   <li>   1 if error occured.
+ *   <li>   0 if ok </li>
+ *   <li>   1 if error occured. </li>
+ * </ul>
  */
 /****************************************************************************/
 
