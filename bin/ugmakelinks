@@ -34,6 +34,8 @@ then
 fi	
 mkdir include.tmp;
 
+if test -x /bin/uname
+then
 case `/bin/uname | cut -f1 -d ' ' ` in
 	AIX | Paragon)
 		FOLLOW_LINKS=
@@ -43,6 +45,10 @@ case `/bin/uname | cut -f1 -d ' ' ` in
 		FOLLOW_LINKS=-follow
 		;;
 esac;
+else
+	FOLLOW_LINKS=
+	echo "not following symbolic links"
+fi
 
 find ${UGROOT} \
 	-type d -name include.tmp -prune -o \
