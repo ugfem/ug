@@ -194,6 +194,30 @@ extern "C" {
 
 /****************************************************************************/
 /*                                                                          */
+/* Definitions for Solaris Version                                          */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __SOLARIS__
+#undef __MWCW__
+#include <stddef.h>
+
+/* basic types */
+#define SHORT  short
+#define INT    int
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+
+/* memory */
+#define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
+#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment */
+
+#endif
+
+/****************************************************************************/
+/*                                                                          */
 /* Definitions for Sun station 4 version                                    */
 /*                                                                          */
 /****************************************************************************/
