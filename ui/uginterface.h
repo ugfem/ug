@@ -92,6 +92,6 @@ INT                     UserInterrupt                                   (const c
 INT                     UserIn                                                  (char *String);
 INT                     UserRead                                                (char *String);
 
-INT                     SetRefreshState                                 (INT status);
+INT SetRefreshState (INT status, INT bullet, DOUBLE factor);
 
 #endif

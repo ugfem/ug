@@ -99,6 +99,8 @@ static UGWINDOW *currUgWindow;
 static PICTURE *currPicture;
 
 static INT autoRefresh;                                 /* ON or OFF						*/
+static INT use_bullet = NO;             /* whether auto refresh uses bullet */
+static DOUBLE offset_factor = 1.0;      /* offset factor for bullet         */
 
 static char *ArrowToolFuncs[N_ARROW_FUNCS]={"pointer",
                                             "pan",
@@ -854,11 +856,20 @@ static INT ProcessEvent (char *String, INT EventMask)
           for (thePic=GetFirstPicture(theUgW); thePic!=NULL; thePic=GetNextPicture(thePic))
             if (PIC_VALID(thePic)==NO && VO_STATUS(PIC_VO(thePic))==ACTIVE)
             {
-              if (DrawUgPicture(thePic))
-              {
-                autoRefresh = FALSE;
-                PrintErrorMessage('W',"ProcessEvent","autorefresh is switched OFF");
-                return (PE_OTHER);
+              if (use_bullet) {
+                if (BulletDrawUgPicture(thePic, offset_factor)) {
+                  autoRefresh = FALSE;
+                  PrintErrorMessage('W',"ProcessEvent","autorefresh is switched OFF");
+                  return (PE_OTHER);
+                }
+              }
+              else {
+                if (DrawUgPicture(thePic))
+                {
+                  autoRefresh = FALSE;
+                  PrintErrorMessage('W',"ProcessEvent","autorefresh is switched OFF");
+                  return (PE_OTHER);
+                }
               }
               if (thePic==currPicture) DrawPictureFrame(thePic,WOP_ACTIVE);
               else DrawPictureFrame(thePic,WOP_NOT_ACTIVE);
@@ -1364,9 +1375,12 @@ INT UserRead (char *String)
    D*/
 /****************************************************************************/
 
-INT SetRefreshState (INT status)
+INT SetRefreshState (INT status, INT bullet, DOUBLE factor)
 {
   autoRefresh = status;
+  use_bullet = bullet;
+  offset_factor = factor;
+
   return (0);
 }
 

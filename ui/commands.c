@@ -9898,10 +9898,6 @@ static INT DragCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   double dx,dy;
 
-    #ifdef ModelP
-  if (me!=master) return (OKCODE);
-    #endif
-
   NO_OPTION_CHECK(argc,argv);
 
   /* current picture */
@@ -12231,7 +12227,9 @@ static INT ListCommandKeysCommand (INT argc, char **argv)
    This command sets the refresh state on: The pictures on the screen
    device will be updated instantaneously.
 
-   'refreshon'
+   'refreshon [$b [factor]]'
+
+   .  $b - use bullet plotter for refresh
 
    KEYWORDS:
    graphics, plot, window, picture, plotobject, invalid, update
@@ -12243,12 +12241,17 @@ static INT ListCommandKeysCommand (INT argc, char **argv)
 
 static INT RefreshOnCommand (INT argc, char **argv)
 {
-  NO_OPTION_CHECK(argc,argv);
+  DOUBLE factor = 1.0;
 
     #ifdef ModelP
   UserWrite("refreshon: not implemented in parallel\n");
     #else
-  SetRefreshState(ON);
+  if (argv[1][0] == 'b') {
+    sscanf(argv[1],"b %lf", &factor);
+    SetRefreshState(ON, YES, factor);
+  }
+  else
+    SetRefreshState(ON, NO, factor);
     #endif
 
   return(OKCODE);
@@ -12275,7 +12278,7 @@ static INT RefreshOffCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
 
-  SetRefreshState(OFF);
+  SetRefreshState(OFF, NO, 1.0);
   return(OKCODE);
 }
 
