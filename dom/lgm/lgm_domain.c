@@ -381,7 +381,7 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
     return(NULL);
   }
 
-  return(BNDP_InsertBndP(Heap,aBVP,global));
+  return((BNDP *)BNDP_InsertBndP(Heap,aBVP,global));
         #endif
 
   return (NULL);
