@@ -216,8 +216,6 @@ void JacobiSmoothFG( VT &sol, const MT &M, const VT &def )
 	typename VT::Iterator viter(sol); 
 	typename VT::VectorEntry ve; 
 
-	double d,m,s;
-	
 	while(viter(ve))
 		if( sol.IsFG(ve) )
 			sol[ve] += def[ve] / M.DiagValue(ve);
