@@ -18,10 +18,10 @@ ARCH_LIBS     = -lrpclib -lm
 
 ARCH_CFLAGS   = -pipe
 ARCH_NOOPTIM  = -g -Wall -Wno-unused -Wno-parentheses
-ARCH_OPTIM    = -s -O3 -march=i686 -fomit-frame-pointer -funroll-loops
+ARCH_OPTIM    = -s -O3 -march=i686 -fomit-frame-pointer -funroll-loops -fno-strict-aliasing
 ARCH_C++FLAGS = -fpermissive
 ARCH_LFLAGS   =
 ARCH_ARFLAGS  = rus
 
 ARCH_XINCLUDES = -I/usr/X11R6/include
-ARCH_XLIBS     = -L/usr/X11R6/lib -lXaw -lXt -lXmu -lX11 -lXext -lXpm -lSM -lICE
+ARCH_XLIBS     = -L/usr/X11R6/lib -lXaw -lXt -lXpm -lXmu -lX11 -lXext -lSM -lICE
