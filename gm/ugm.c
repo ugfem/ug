@@ -1351,6 +1351,8 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, ch
   DOMAIN *theDomain;
   PROBLEM *theProblem;
   FORMAT *theFormat;
+  INT maxNsubdomain,minNsubdomain,Nsubdomain,err;
+  INT *counter;
 
   theDomain = GetDomain(domain);
   if (theDomain==NULL)
@@ -1384,7 +1386,6 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, ch
     DisposeMultiGrid(theMG);
     return(NULL);
   }
-
 
   /* allocate user data from that heap */
 
@@ -1494,9 +1495,13 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, ch
   }
 
   /* check if all pointers are correctly defined */
+  maxNsubdomain = -MAX_I;
+  minNsubdomain =  MAX_I;
   for (i=0; i<n; i++)
   {
-    if (theMG->segments[i].theSegment==NULL)
+    theSegment = theMG->segments[i].theSegment;
+
+    if (theSegment==NULL)
     {
       PrintErrorMessage('E',"CreateMultiGrid","boundary segment not found");
       DisposeMultiGrid(theMG);
@@ -1508,7 +1513,51 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, ch
       DisposeMultiGrid(theMG);
       return(NULL);
     }
+    if (theSegment->left==theSegment->right)
+    {
+      sprintf(buffer,"ERROR: left==right for segment %d",i);
+      PrintErrorMessage('E',"CreateMultiGrid",buffer);
+      DisposeMultiGrid(theMG);
+      return(NULL);
+    }
+    maxNsubdomain = MAX(maxNsubdomain,MAX(theSegment->left,theSegment->right));
+    minNsubdomain = MIN(minNsubdomain,MIN(theSegment->left,theSegment->right));
   }
+
+  /* check subdomains */
+
+  if (minNsubdomain!=0)
+  {
+    PrintErrorMessage('E',"CreateMultiGrid","ERROR: subdomain IDs must be >= 0");
+    DisposeMultiGrid(theMG);
+    return(NULL);
+  }
+
+  /* get storage for subdomain counters */
+  Nsubdomain = maxNsubdomain+1;
+  Mark(theHeap,FROM_TOP);
+  counter = (INT *) GetMem(theHeap,Nsubdomain*sizeof(INT),FROM_TOP);
+  for (i=0; i<Nsubdomain; i++) counter[i] = 0;
+  for (i=0; i<n; i++)
+  {
+    counter[LEFT(theMG->segments+i)]++;
+    counter[RIGHT(theMG->segments+i)]++;
+  }
+  err = 0;
+  for (i=0; i<Nsubdomain; i++)
+    if (counter[i]<=0)
+    {
+      err++;
+      sprintf(buffer,"ERROR: subdomain ID %d not used\n",i);
+      UserWrite(buffer);
+    }
+  Release(theHeap,FROM_TOP);
+  if (err)
+  {
+    free(theHeap);
+    return (NULL);
+  }
+  theMG->numOfSubdomains = Nsubdomain;
 
   /* allocate corner vertices pointers */
   n = theDomain->numOfCorners;
@@ -1527,6 +1576,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, ch
     pn = CreateNode(theGrid,NULL);
     if (pn==NULL) { DisposeMultiGrid(theMG); return(NULL); }
     MYVERTEX(pn) = pv[i];
+    TOPNODE(pv[i]) = pn;
   }
 
   /* create and fill segment data of vertex */
