@@ -18,3 +18,4 @@ ui/commands.c
 ui/interpreter.doc
 ui/tecplot.c
 ui/uginterface.c
+ui/dataexplorer.c
