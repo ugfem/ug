@@ -197,6 +197,7 @@ struct lgm_mesh_info {
   int nBndP;                         /* nb. of boundary points              */
   int *BndP_nSurf;                   /* nb. of surfaces per bound. point    */
   int **BndP_SurfID;                 /* id of each surface                  */
+  int **BndP_Cor_TriaID;                 /* id of corr. triangle of each surface*/
   float ***BndP_lcoord;              /* local coord of BndP on each surface */
   float **BndPosition;                           /* list of boundary points	            */
   int nInnP;                         /* nb. of inner nodes                  */
