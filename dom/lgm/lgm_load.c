@@ -617,7 +617,7 @@ INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh)
   theMesh->Side_corners             = lgm_mesh_info.Side_corners;
   theMesh->Side_corner_ids          = lgm_mesh_info.Side_corner_ids;
   theMesh->nElements                = lgm_mesh_info.nElements;
-  theMesh->Element_corners          = lgm_mesh_info.>Element_corners;
+  theMesh->Element_corners          = lgm_mesh_info.Element_corners;
   theMesh->Element_corner_ids       = lgm_mesh_info.Element_corner_ids;
   theMesh->nbElements               = lgm_mesh_info.nbElements;
   for (i=0; i<lgm_mesh_info.nBndP; i++)
