@@ -35,7 +35,7 @@ then
 	cd $UGROOT;
 	for i in *.c *.h
 	do
-		doctext -latex -mpath $UGROOT/doc/ug3/ug -heading ug/dev -quotefmt $i
+		doctext -latex -mpath $UGROOT/doc/ug3/ug -heading ug -quotefmt $i
 	done
 	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug -quotefmt *.doc
 
@@ -47,6 +47,34 @@ then
 	done
 	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/dev -quotefmt *.doc
 
+	# generate dev man pages
+	cd $UGROOT/dev/xif;
+	for i in *.c *.h
+	do
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/dev -heading ug/dev/xif -quotefmt $i
+	done
+
+	# generate dev man pages
+	cd $UGROOT/dev/sif;
+	for i in *.c *.h
+	do
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/dev -heading ug/dev/sif -quotefmt $i
+	done
+
+	# generate dev man pages
+	cd $UGROOT/dev/meta;
+	for i in *.c *.h
+	do
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/dev -heading ug/dev/meta -quotefmt $i
+	done
+
+	# generate dev man pages
+	cd $UGROOT/dev/ps;
+	for i in *.c *.h
+	do
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/dev -heading ug/dev/ps -quotefmt $i
+	done
+
 	# generate gm man pages
 	cd $UGROOT/gm;
 	for i in *.c *.h
@@ -55,11 +83,27 @@ then
 	done
 	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/gm -quotefmt *.doc
 
+	# generate gg2 man pages
+	cd $UGROOT/gm/gg2;
+	for i in *.c *.h
+	do
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/gm/gg2 -heading ug/gm/gg2 -quotefmt $i
+	done
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/gm/gg2 -quotefmt *.doc
+
+	# generate gg3 man pages
+	cd $UGROOT/gm/gg3;
+	for i in *.c *.h
+	do
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/gm/gg3 -heading ug/gm/gg3 -quotefmt $i
+	done
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/gm/gg3 -quotefmt *.doc
+
 	# generate dom man pages
 	cd $UGROOT/dom;
 	for i in *.c *.h
 	do
-		doctext -latex -mpath $UGROOT/doc/ug3/ug/gm -heading ug/dom -quotefmt $i
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/dom -heading ug/dom -quotefmt $i
 	done
 	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/dom -quotefmt *.doc
 
@@ -67,7 +111,7 @@ then
 	cd $UGROOT/dom/std;
 	for i in *.c *.h
 	do
-		doctext -latex -mpath $UGROOT/doc/ug3/ug/gm -heading ug/dom/std -quotefmt $i
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/dom/std -heading ug/dom/std -quotefmt $i
 	done
 	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/dom/std -quotefmt *.doc
 
@@ -75,29 +119,29 @@ then
 	cd $UGROOT/../simple;
 	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading simple -quotefmt *.doc
 
-	# generate gg man pages
-	cd $UGROOT/gg;
+	# generate graph man pages
+	cd $UGROOT/graphics;
 	for i in *.c *.h
 	do
-		doctext -latex -mpath $UGROOT/doc/ug3/ug/gg -heading ug/gg -quotefmt $i
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/graphics -heading ug/graphics -quotefmt $i
 	done
-	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/gg -quotefmt *.doc
-
-	# generate gg3d man pages
-	cd $UGROOT/gg3d;
-	for i in *.c *.h
-	do
-		doctext -latex -mpath $UGROOT/doc/ug3/ug/gg -heading ug/gg3d -quotefmt $i
-	done
-	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/gg3d -quotefmt *.doc
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/graphics -quotefmt *.doc
 
 	# generate graph man pages
-	cd $UGROOT/graph;
+	cd $UGROOT/graphics/grape;
 	for i in *.c *.h
 	do
-		doctext -latex -mpath $UGROOT/doc/ug3/ug/graph -heading ug/graph -quotefmt $i
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/graphics -heading ug/graphics/grape -quotefmt $i
 	done
-	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/graph -quotefmt *.doc
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/graphics/grape -quotefmt *.doc
+
+	# generate graph man pages
+	cd $UGROOT/graphics/uggraph;
+	for i in *.c *.h
+	do
+		doctext -latex -mpath $UGROOT/doc/ug3/ug/graphics -heading ug/graphics/uggraph -quotefmt $i
+	done
+	doctext -latex -mpath $UGROOT/doc/ug3/ug/overview -heading ug/graphics/uggraph -quotefmt *.doc
 
 	# generate low man pages
 	cd $UGROOT/low;
