@@ -240,6 +240,23 @@ typedef struct
 
 } NP_THILU;
 
+struct np_bcgssmoother {
+
+  NP_SMOOTHER np_smoother;
+
+  NP_ITER *Iter;
+  DOUBLE rho, omega;
+  INT maxiter;
+  INT restart;
+  VECDATA_DESC *r;
+  VECDATA_DESC *p;
+  VECDATA_DESC *v;
+  VECDATA_DESC *s;
+  VECDATA_DESC *t;
+  VECDATA_DESC *q;
+};
+typedef struct np_bcgssmoother NP_BCGSSMOOTHER;
+
 typedef struct
 {
   NP_ITER iter;
@@ -630,6 +647,228 @@ static INT GSConstruct (NP_BASE *theNP)
   np->iter.Iter = Smoother;
   np->iter.PostProcess = SmootherPostProcess;
   np->Step = GSStep;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   bcgss - numproc for bi-cg-stab-smoother
+
+   DESCRIPTION:
+   This numproc executes a bi-cg-stab as smoother.
+
+   .vb
+   npinit [$c <cor>] [$b <rhs>] [$A <mat>] [$I iter]
+       $n <it> $damp <sc double list>
+   .ve
+
+   .  $c~<sol> - correction vector
+   .  $b~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $n~<it> - number of iterations
+   .  $damp~<sc~double~list> - damping factors for each component
+
+   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
+
+   'npexecute <name> [$i] [$s] [$p]'
+
+   .  $i - preprocess
+   .  $s - smooth
+   .  $p - postprocess
+   D*/
+/****************************************************************************/
+
+static INT BCGSSmootherInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_BCGSSMOOTHER *np;
+  INT i;
+
+  np = (NP_BCGSSMOOTHER *) theNP;
+
+  np->r = ReadArgvVecDesc(theNP->mg,"r",argc,argv);
+  np->p = ReadArgvVecDesc(theNP->mg,"p",argc,argv);
+  np->v = ReadArgvVecDesc(theNP->mg,"v",argc,argv);
+  np->s = ReadArgvVecDesc(theNP->mg,"s",argc,argv);
+  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+  np->q = ReadArgvVecDesc(theNP->mg,"q",argc,argv);
+  if (ReadArgvINT("m",&(np->maxiter),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (ReadArgvINT("R",&(np->restart),argc,argv))
+    np->restart = 0;
+  if (np->restart<0) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  np->Iter = (NP_ITER *) ReadArgvNumProc(theNP->mg,"I",ITER_CLASS_NAME,argc,argv);
+
+  return (SmootherInit(theNP,argc,argv));
+}
+
+static INT BCGSSmootherDisplay (NP_BASE *theNP)
+{
+  NP_BCGSSMOOTHER *np;
+
+  SmootherDisplay(theNP);
+  np = (NP_BCGSSMOOTHER *) theNP;
+  if (np->r != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"r",ENVITEM_NAME(np->r));
+  if (np->p != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"p",ENVITEM_NAME(np->p));
+  if (np->v != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"v",ENVITEM_NAME(np->v));
+  if (np->s != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"s",ENVITEM_NAME(np->s));
+  if (np->t != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+  if (np->q != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"q",ENVITEM_NAME(np->q));
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"m",(int)np->maxiter);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"R",(int)np->restart);
+  if (np->Iter != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"Iter",ENVITEM_NAME(np->Iter));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"Iter","---");
+
+  return (0);
+}
+
+static INT BCGSSPreProcess  (NP_ITER *theNP, INT level,
+                             VECDATA_DESC *x, VECDATA_DESC *b,
+                             MATDATA_DESC *A, INT *baselevel, INT *result)
+{
+  NP_BCGSSMOOTHER *np;
+
+  *baselevel = level;
+  np = (NP_BCGSSMOOTHER *) theNP;
+
+  if (np->Iter!=NULL)
+    if (np->Iter->PreProcess != NULL)
+      if ((*np->Iter->PreProcess)(np->Iter,level,x,b,A,baselevel,result)) REP_ERR_RETURN(1);
+
+  if (AllocVDFromVD(np->np_smoother.iter.base.mg,level,level,x,&np->r)) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(np->np_smoother.iter.base.mg,level,level,x,&np->p)) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(np->np_smoother.iter.base.mg,level,level,x,&np->v)) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(np->np_smoother.iter.base.mg,level,level,x,&np->s)) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(np->np_smoother.iter.base.mg,level,level,x,&np->t)) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(np->np_smoother.iter.base.mg,level,level,x,&np->q)) NP_RETURN(1,result[0]);
+
+  return (0);
+}
+
+
+static INT BCGSSStep (NP_SMOOTHER *theNP, INT level,
+                      VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                      MATDATA_DESC *L,
+                      INT *result)
+{
+  NP_BCGSSMOOTHER *np;
+  VEC_SCALAR scal;
+  INT i,j,restart;
+  DOUBLE alpha,rho_new,beta,tt;
+
+  np = (NP_BCGSSMOOTHER *) theNP;
+  restart = 1;
+  for (i=0; i<np->maxiter; i++)
+  {
+    /* restart ? */
+    if ((np->restart>0 && i%np->restart==0) || restart)
+    {
+      if (l_dset(NP_GRID(theNP,level),np->p,EVERY_CLASS,0.0)!= NUM_OK) REP_ERR_RETURN (1);
+      if (l_dset(NP_GRID(theNP,level),np->v,EVERY_CLASS,0.0)!= NUM_OK) REP_ERR_RETURN (1);
+      if (l_dcopy(NP_GRID(theNP,level),np->r,EVERY_CLASS,b)!= NUM_OK) REP_ERR_RETURN (1);
+      alpha = np->rho = np->omega = 1.0;
+      restart = 0;
+    }
+
+    /* update x, b */
+    if (l_ddot_sv (NP_GRID(theNP,level),b,EVERY_CLASS,np->r,Factor_One,&rho_new)!=NUM_OK) REP_ERR_RETURN (1);
+    beta=rho_new*alpha/np->rho/np->omega;
+    for (j=0; j<VD_NCOMP(x); j++) scal[j]=beta;
+    if (l_dscale (NP_GRID(theNP,level),np->p,EVERY_CLASS,scal)) REP_ERR_RETURN (1);
+    if (l_daxpy (NP_GRID(theNP,level),np->p,EVERY_CLASS,Factor_One,b)!= NUM_OK) REP_ERR_RETURN (1);
+    for (j=0; j<VD_NCOMP(x); j++) scal[j]=-beta*np->omega;
+    if (l_daxpy (NP_GRID(theNP,level),np->p,EVERY_CLASS,scal,np->v)!= NUM_OK) REP_ERR_RETURN (1);
+    if (np->Iter!=NULL)
+    {
+      if (l_dset(NP_GRID(theNP,level),np->q,EVERY_CLASS,0.0)!= NUM_OK) REP_ERR_RETURN (1);
+      if (l_dcopy(NP_GRID(theNP,level),np->s,EVERY_CLASS,np->p)!= NUM_OK) REP_ERR_RETURN (1);
+      if ((*np->Iter->Iter)(np->Iter,level,np->q,np->p,A,result)) REP_ERR_RETURN (1);
+      if (l_dcopy(NP_GRID(theNP,level),np->p,EVERY_CLASS,np->s)!= NUM_OK) REP_ERR_RETURN (1);
+      if (l_dmatmul_set(NP_GRID(theNP,level),np->v,EVERY_CLASS,A,np->q,EVERY_CLASS)) REP_ERR_RETURN (1);
+      if (l_ddot_sv (NP_GRID(theNP,level),np->v,EVERY_CLASS,np->r,Factor_One,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
+      alpha = rho_new/alpha;
+      for (j=0; j<VD_NCOMP(x); j++) scal[j]=alpha;
+      if (l_daxpy (NP_GRID(theNP,level),x,EVERY_CLASS,scal,np->q)!= NUM_OK) REP_ERR_RETURN (1);
+    }
+    else
+    {
+      if (l_dmatmul_set(NP_GRID(theNP,level),np->v,EVERY_CLASS,A,np->p,EVERY_CLASS)) REP_ERR_RETURN (1);
+      if (l_ddot_sv (NP_GRID(theNP,level),np->v,EVERY_CLASS,np->r,Factor_One,&alpha)!=NUM_OK) REP_ERR_RETURN (1);
+      alpha = rho_new/alpha;
+      for (j=0; j<VD_NCOMP(x); j++) scal[j]=alpha;
+      if (l_daxpy (NP_GRID(theNP,level),x,EVERY_CLASS,scal,np->p)!= NUM_OK) REP_ERR_RETURN (1);
+    }
+    if (l_dcopy(NP_GRID(theNP,level),np->s,EVERY_CLASS,b)!= NUM_OK) REP_ERR_RETURN (1);
+    for (j=0; j<VD_NCOMP(x); j++) scal[j]=-alpha;
+    if (l_daxpy (NP_GRID(theNP,level),np->s,EVERY_CLASS,scal,np->v)!= NUM_OK) REP_ERR_RETURN (1);
+    if (np->Iter!=NULL)
+    {
+      if (l_dset(NP_GRID(theNP,level),np->q,EVERY_CLASS,0.0)!= NUM_OK) REP_ERR_RETURN (1);
+      if (l_dcopy(NP_GRID(theNP,level),np->t,EVERY_CLASS,np->s)!= NUM_OK) REP_ERR_RETURN (1);
+      if ((*np->Iter->Iter)(np->Iter,level,np->q,np->s,A,result)) REP_ERR_RETURN (1);
+      if (l_dcopy(NP_GRID(theNP,level),np->s,EVERY_CLASS,np->t)!= NUM_OK) REP_ERR_RETURN (1);
+    }
+    else
+    {
+      if (l_dcopy(NP_GRID(theNP,level),np->q,EVERY_CLASS,np->s)!= NUM_OK) REP_ERR_RETURN (1);
+    }
+    if (l_dmatmul_set(NP_GRID(theNP,level),np->t,EVERY_CLASS,A,np->q,EVERY_CLASS)) REP_ERR_RETURN (1);
+    if (l_ddot_sv (NP_GRID(theNP,level),np->t,EVERY_CLASS,np->t,Factor_One,&tt)!=NUM_OK) REP_ERR_RETURN (1);
+    if (l_ddot_sv (NP_GRID(theNP,level),np->s,EVERY_CLASS,np->t,Factor_One,&(np->omega))!=NUM_OK) REP_ERR_RETURN (1);
+    np->omega /= tt;
+    for (j=0; j<VD_NCOMP(x); j++) scal[j]=np->omega;
+    if (l_daxpy (NP_GRID(theNP,level),x,EVERY_CLASS,scal,np->q)!= NUM_OK) REP_ERR_RETURN (1);
+    if (l_dcopy(NP_GRID(theNP,level),b,EVERY_CLASS,np->s)!= NUM_OK) REP_ERR_RETURN (1);
+    for (j=0; j<VD_NCOMP(x); j++) scal[j]=-np->omega;
+    if (l_daxpy (NP_GRID(theNP,level),b,EVERY_CLASS,scal,np->t)!= NUM_OK) REP_ERR_RETURN (1);
+    np->rho = rho_new;
+  }
+
+
+  return (0);
+}
+
+static INT BCGSSmootherPostProcess (NP_ITER *theNP, INT level,
+                                    VECDATA_DESC *x, VECDATA_DESC *b,
+                                    MATDATA_DESC *A, INT *result)
+{
+  NP_SMOOTHER *nps;
+  NP_BCGSSMOOTHER *np;
+
+  nps = (NP_SMOOTHER *) theNP;
+  if (nps->L != NULL) FreeMD(theNP->base.mg,level,level,nps->L);
+  np = (NP_BCGSSMOOTHER *) theNP;
+  FreeVD(nps->iter.base.mg,level,level,np->r);
+  FreeVD(nps->iter.base.mg,level,level,np->p);
+  FreeVD(nps->iter.base.mg,level,level,np->v);
+  FreeVD(nps->iter.base.mg,level,level,np->s);
+  FreeVD(nps->iter.base.mg,level,level,np->t);
+  FreeVD(nps->iter.base.mg,level,level,np->q);
+
+  if (np->Iter!=NULL)
+  {
+    if (np->Iter->PostProcess == NULL) return(0);
+    return((*np->Iter->PostProcess)(np->Iter,level,x,b,A,result));
+  }
+  else
+    return (0);
+
+  return(0);
+}
+
+static INT BCGSSConstruct (NP_BASE *theNP)
+{
+  NP_SMOOTHER *np;
+
+  theNP->Init = BCGSSmootherInit;
+  theNP->Display = BCGSSmootherDisplay;
+  theNP->Execute = NPIterExecute;
+
+  np = (NP_SMOOTHER *) theNP;
+  np->iter.PreProcess = BCGSSPreProcess;
+  np->iter.Iter = Smoother;
+  np->iter.PostProcess = BCGSSmootherPostProcess;
+  np->Step = BCGSSStep;
 
   return(0);
 }
@@ -3093,6 +3332,8 @@ INT InitIter ()
   if (CreateClass(ITER_CLASS_NAME ".jac",sizeof(NP_SMOOTHER),JacobiConstruct))
     return (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".gs",sizeof(NP_SMOOTHER),GSConstruct))
+    return (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".bcgss",sizeof(NP_BCGSSMOOTHER),BCGSSConstruct))
     return (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".sgs",sizeof(NP_SGS),SGSConstruct))
     return (__LINE__);
