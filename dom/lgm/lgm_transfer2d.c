@@ -140,9 +140,9 @@ static int nSubdomain, nLine;
 static fpos_t filepos,filepos2,UnitInfoFilepos;
 static HEAP *theHeap;
 
-int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info)
+int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, INT dummy)
 {
-  int i,nUnit;
+  int i;
   char buffer[256];
 
   /* store heapptr */

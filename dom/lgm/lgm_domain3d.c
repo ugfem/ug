@@ -65,6 +65,9 @@
 
 static char buffer[LGM_BUFFERLEN];
 
+/* global mark key for temp mem */
+static INT LGM_MarkKey;
+
 static INT SurfaceInfoId;
 static INT LineInfoId;
 static INT LGM_DEBUG = 0;
@@ -387,7 +390,7 @@ static INT PrintSurfaceInfo (LGM_SURFACE *aSurface)
   return (0);
 }
 
-INT Line_Local2Global (LGM_LINE *theLine, DOUBLE *global, INT i)
+static INT Line_Local2Global (LGM_LINE *theLine, DOUBLE *global, INT i)
 {
   DOUBLE slocal;
   INT ilocal;
@@ -515,7 +518,7 @@ INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, ch
 /* domain interface function: for description see domain.h */
 INT BVP_Check (BVP *aBVP)
 {
-  INT i,i2,j,j2,k,p,ret,at_begin,at_left,flags,sbd,sfce,left,right,l,found,m, m2;
+  INT i,i2,j,j2,p,ret,sbd,sfce,left,right,l,m, m2;
   INT commmonIDs_Counter, tr_index, ntr_index, richtung_TheTria, richtung_TheNgbTria;
   LGM_POINT **TemporaryPointArray;
   INT indexesTheTria[2];
@@ -892,17 +895,20 @@ INT BVP_Check (BVP *aBVP)
       /*Laufe ueber Surfaces ...*/
       for (j=0; j<LGM_SUBDOMAIN_NSURFACE(theSD); j++)
       {
+        INT MarkKey;
+
         theSF = LGM_SUBDOMAIN_SURFACE(theSD,j);
         /*Laufe ueber Points*/
 
         lgmd = (LGM_DOMAIN*)aBVP;
-        MarkTmpMem(lgmd->theHeap);
+        MarkTmpMem(lgmd->theHeap,&MarkKey);
 
         memsize_variable = LGM_SURFACE_NPOINT(theSF)*sizeof(LGM_POINT*);
 
-        if ((TemporaryPointArray = GetTmpMem(lgmd->theHeap,memsize_variable))==NULL)
+        if ((TemporaryPointArray = GetTmpMem(lgmd->theHeap,memsize_variable,MarkKey))==NULL)
         {
           PrintErrorMessage('E',"BVP_Check","  ERROR: No memory for TemporaryPointArray");
+          ReleaseTmpMem(lgmd->theHeap,MarkKey);
           return(1);
         }
         /* Mustermemset(nodeflag_array,0,(statistik[0]+1)*sizeof(INT)); */
@@ -1026,7 +1032,7 @@ INT BVP_Check (BVP *aBVP)
           }
         }
 
-        ReleaseTmpMem(lgmd->theHeap);
+        ReleaseTmpMem(lgmd->theHeap,MarkKey);
 
       }
     }
@@ -1288,7 +1294,7 @@ static DOUBLE Calc_Triangle_Angle(LGM_SURFACE *theSurface, INT i,  INT j)
 
 static INT Count_Folds_Surface(LGM_SURFACE *theSurface)
 {
-  INT i, j, folds, a;
+  INT i, j, folds;
   DOUBLE scalarproduct;
 
   folds = 0;
@@ -1309,7 +1315,7 @@ static INT Count_Folds_Surface(LGM_SURFACE *theSurface)
   return(folds);
 }
 
-INT POINT_DIST(LGM_POINT *p0, LGM_POINT *p1)
+static INT POINT_DIST(LGM_POINT *p0, LGM_POINT *p1)
 {
   DOUBLE x, y, z;
 
@@ -1324,10 +1330,9 @@ INT POINT_DIST(LGM_POINT *p0, LGM_POINT *p1)
     return(0);
 }
 
-INT AddPoint2List(LGM_POINT *Point, LGM_POINT *pointlist, INT *norp)
+static INT AddPoint2List(LGM_POINT *Point, LGM_POINT *pointlist, INT *norp)
 {
   int i, flag;
-  DOUBLE x1, y1, z1;
   LGM_POINT p;
 
   flag = 0;
@@ -1346,9 +1351,10 @@ INT AddPoint2List(LGM_POINT *Point, LGM_POINT *pointlist, INT *norp)
     pointlist[(*norp)].position[2] = LGM_POINT_POS(Point)[2];
     (*norp)++;
   }
+  return (0);
 }
 
-INT ResolvePoints(HEAP *Heap, LGM_DOMAIN *theDomain, LGM_POINT *pointlist, INT *norp)
+static INT ResolvePoints(HEAP *Heap, LGM_DOMAIN *theDomain, LGM_POINT *pointlist, INT *norp)
 {
   INT i, j;
   DOUBLE scalarproduct;
@@ -1378,7 +1384,7 @@ INT ResolvePoints(HEAP *Heap, LGM_DOMAIN *theDomain, LGM_POINT *pointlist, INT *
 }
 
 /* domain interface function: for description see domain.h */
-MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
+MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey)
 {
   LGM_DOMAIN *theDomain;
   LGM_SURFACE *theSurface;
@@ -1392,7 +1398,10 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   DOUBLE h;
   INT coeff;
   INT old;
-  INT npoints,npsurface, norp;
+  INT norp;
+
+  /* make MarkKey global */
+  LGM_MarkKey = MarkKey;
 
   old = 0;
   /* read h-option */
@@ -1438,7 +1447,7 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   }
 
   /* allocate mesh */
-  mesh = (MESH *) GetTmpMem(Heap,sizeof(MESH));
+  mesh = (MESH *) GetTmpMem(Heap,sizeof(MESH),LGM_MarkKey);
   if (mesh == NULL)
     return(NULL);
 
@@ -1451,23 +1460,23 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   mesh->nSubDomains = LGM_DOMAIN_NSUBDOM(theDomain);
 
   /* get heap for surface-mesh-substructures: the subdomain-dependence */
-  mesh->nSides = (INT *) GetTmpMem(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT));
+  mesh->nSides = (INT *) GetTmpMem(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT),LGM_MarkKey);
   if (mesh->nSides==NULL)
     return(NULL);
   for (i=0; i<=LGM_DOMAIN_NSUBDOM(theDomain); i++)
     mesh->nSides[i] = 0;
 
 
-  mesh->Side_corners = (INT **) GetTmpMem(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT*));
+  mesh->Side_corners = (INT **) GetTmpMem(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT*),LGM_MarkKey);
   if (mesh->Side_corners == NULL)
     return (NULL);
-  mesh->Side_corner_ids = (INT ***) GetTmpMem(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT**));
+  mesh->Side_corner_ids = (INT ***) GetTmpMem(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT**),LGM_MarkKey);
   if (mesh->Side_corner_ids == NULL)
     return (NULL);
 
   /* search points, which must be resolved by DiscretizeLine and DiscretizeSurface */
   norp = 0;
-  pointlist = (LGM_POINT *)GetTmpMem(Heap,100*sizeof(LGM_POINT));
+  pointlist = (LGM_POINT *)GetTmpMem(Heap,100*sizeof(LGM_POINT),LGM_MarkKey);
 
   ResolvePoints(Heap, theDomain, pointlist, &norp);
 
@@ -1482,7 +1491,7 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   /* discretize lines */
   for (theLine=FirstLine(theDomain); theLine!=NULL; theLine=NextLine(theDomain))
   {
-    theLine->ldisc = (LGM_LINEDISC*)GetTmpMem(Heap,sizeof(LGM_LINEDISC)*1);
+    theLine->ldisc = (LGM_LINEDISC*)GetTmpMem(Heap,sizeof(LGM_LINEDISC)*1,LGM_MarkKey);
     if( (theLine->ldisc==NULL) )
     {
       printf("%s\n", "Not enough memory");
@@ -1497,7 +1506,7 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   /* discretize surfaces */
   for (theSurface=FirstSurface(theDomain); theSurface!=NULL; theSurface=NextSurface(theDomain))
   {
-    LGM_SURFACE_DISC(theSurface) = (LGM_SURFDISC*)GetTmpMem(Heap,sizeof(LGM_SURFDISC)*1);
+    LGM_SURFACE_DISC(theSurface) = (LGM_SURFDISC*)GetTmpMem(Heap,sizeof(LGM_SURFDISC)*1,LGM_MarkKey);
     if( (LGM_SURFACE_DISC(theSurface)==NULL) )
     {
       printf("%s\n", "Not enough memory");
@@ -1534,13 +1543,13 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
 
   for (i=0; i<=LGM_DOMAIN_NSUBDOM(theDomain); i++)
   {
-    mesh->Side_corners[i]    = (INT *)  GetTmpMem(Heap,sizeof(INT)*BNDS_Per_Subdom[i]);
+    mesh->Side_corners[i]    = (INT *)  GetTmpMem(Heap,sizeof(INT)*BNDS_Per_Subdom[i],LGM_MarkKey);
     if (mesh->Side_corners[i]==NULL)
       return (NULL);
-    mesh->Side_corner_ids[i] = (INT **) GetTmpMem(Heap,sizeof(INT*)*BNDS_Per_Subdom[i]);
+    mesh->Side_corner_ids[i] = (INT **) GetTmpMem(Heap,sizeof(INT*)*BNDS_Per_Subdom[i],LGM_MarkKey);
     if (mesh->Side_corner_ids[i]==NULL)
       return (NULL);
-    p = (INT *) GetTmpMem(Heap,3*sizeof(INT)*BNDS_Per_Subdom[i]);
+    p = (INT *) GetTmpMem(Heap,3*sizeof(INT)*BNDS_Per_Subdom[i],LGM_MarkKey);
     for (j=0; j<BNDS_Per_Subdom[i]; j++)
       mesh->Side_corner_ids[i][j] = p+3*j;
   }
@@ -1586,7 +1595,7 @@ static INT Get_NBNDS_Per_Subdomain (HEAP *Heap, LGM_DOMAIN *theDomain, INT **siz
   LGM_SURFACE *theSurface;
 
   /* get heap for information */
-  p = (INT *) GetTmpMem(Heap,sizeof(INT)*(LGM_DOMAIN_NSUBDOM(theDomain)+1));
+  p = (INT *) GetTmpMem(Heap,sizeof(INT)*(LGM_DOMAIN_NSUBDOM(theDomain)+1),LGM_MarkKey);
   if (p == NULL) return(1);
   *sizes = p;
 
@@ -1637,7 +1646,7 @@ static DOUBLE Calc_Local_Coord(DOUBLE *p0, DOUBLE*p1, DOUBLE *p2, DOUBLE *global
   INT i,j;
   DOUBLE e0[3],e1[3],e2[3];
   DOUBLE n0[3],n1[3],n2[3],p[3],np[3],hp[3],l;
-  DOUBLE a[9],b[3],c[3];
+  DOUBLE a[9];
   DOUBLE aa[4],bb[2],cc[2];
 
   Minus(e0,global,p0);
@@ -1928,10 +1937,11 @@ INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
   local[1] = lam[1] + mi;
 
   /*	printf("%f %f %d %f %f %f\n", local[0], local[1], mi, global[0], global[1], global[2]);*/
-  /*	Surface_Local2Global(theSurface, new_global, local);
 
-          if(LGM_DEBUG)
+  /*	if(LGM_DEBUG)
           {
+                  DOUBLE new_global[3];
+                  Surface_Local2Global(theSurface, new_global, local);
                   printf("%f %f %f\n", global[0], global[1], global[2]);
                   printf("%f %f %f\n", new_global[0], new_global[1], new_global[2]);
           }*/
@@ -1999,12 +2009,9 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
 {
   LGM_SURFACE *theSurface;
   LGM_LINE *theLine;
-  LGM_TRIANGLE *theTriangle;
-  LGM_BNDP *theBndP,*testBndP;
-  INT ii, i,j,n,m,id, l;
+  INT i,j;
   INT *nRef, *newID;
-  INT size,a,b,flag, counter;
-  DOUBLE local1,local2;
+  INT size,a,flag;
   DOUBLE global[3],local[2];
   LGM_POINT *PointList, Point;
   INT npoints, npsurface, nPointList;
@@ -2021,13 +2028,13 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
     npoints = npoints + npsurface;
   }
 
-  PointList = (LGM_POINT *) GetTmpMem(Heap,(npoints+1)*sizeof(LGM_POINT));
+  PointList = (LGM_POINT *) GetTmpMem(Heap,(npoints+1)*sizeof(LGM_POINT),LGM_MarkKey);
   if (PointList==NULL)
     return (1);
-  nRef = (INT *) GetTmpMem(Heap,(npoints+1)*sizeof(INT));
+  nRef = (INT *) GetTmpMem(Heap,(npoints+1)*sizeof(INT),LGM_MarkKey);
   if (nRef==NULL)
     return (1);
-  newID = (INT *) GetTmpMem(Heap,(npoints+1)*sizeof(INT));
+  newID = (INT *) GetTmpMem(Heap,(npoints+1)*sizeof(INT),LGM_MarkKey);
   if (newID==NULL)
     return (1);
   for (i=0; i<=npoints; i++)
@@ -2066,7 +2073,7 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
     }
   }
 
-  theMesh->theBndPs = (BNDP**)GetTmpMem(Heap,sizeof(LGM_BNDP*)*(nPointList+1));
+  theMesh->theBndPs = (BNDP**)GetTmpMem(Heap,sizeof(LGM_BNDP*)*(nPointList+1),LGM_MarkKey);
   if (theMesh->theBndPs == NULL)
     return (NULL);
 
@@ -2131,8 +2138,8 @@ static DOUBLE Calc_Line_Segment_Angle(LGM_LINE *theLine, INT i,  INT j,  INT k)
 static INT Point_Counter(LGM_LINE *theLine, DOUBLE h, INT StartIndex, INT EndIndex)
 {
   int i,j,k,npoints;
-  DOUBLE length_of_line,lenght_of_segment,dist,dist1,dist2,dist3,slocal;
-  DOUBLE lh, lh1, lh2, rest_length, x, y, z, in[5], dummy;
+  DOUBLE length_of_line,dist,dist1,dist2,dist3,slocal;
+  DOUBLE lh, lh1, lh2, rest_length, in[5];
 
   if(h>0.0)
   {
@@ -2274,7 +2281,7 @@ static INT DiscretizeLineSegment(LGM_LINE *theLine, DOUBLE h, INT StartIndex, IN
 {
   int i,j,k,npoints, sv, from_id, to_id;
   DOUBLE length_of_line,lenght_of_segment,dist,dist1,dist2,dist3,slocal;
-  DOUBLE lh, lh1, lh2, rest_length, x, y, z, in[5], dummy;
+  DOUBLE lh, lh1, lh2, rest_length, in[5], dummy;
 
   /* calculate number of points on the line */
   npoints = Point_Counter(theLine, h, StartIndex, EndIndex);
@@ -2539,11 +2546,12 @@ static INT DiscretizeLineSegment(LGM_LINE *theLine, DOUBLE h, INT StartIndex, IN
       }
     }
   }
+  return (0);
 }
 
 static INT DiscretizeLine (HEAP *Heap, LGM_LINE *theLine, DOUBLE h, LGM_POINT *pointlist, INT norp)
 {
-  INT i, j, k, np, npoints, folds, StartIndex, EndIndex, Disc_nPoints, resolve;
+  INT i, j, np, npoints, folds, StartIndex, EndIndex, Disc_nPoints, resolve;
   DOUBLE scalarprodukt;
   LGM_POINT p;
 
@@ -2589,7 +2597,7 @@ static INT DiscretizeLine (HEAP *Heap, LGM_LINE *theLine, DOUBLE h, LGM_POINT *p
   LGM_LINEDISC_NPOINT(LGM_LINE_LINEDISC(theLine)) = npoints;
 
   /* allocate memery for local coordinates */
-  LGM_LINE_LINEDISC(theLine)->local = (DOUBLE*)GetTmpMem(Heap,sizeof(DOUBLE)*(npoints+5));
+  LGM_LINE_LINEDISC(theLine)->local = (DOUBLE*)GetTmpMem(Heap,sizeof(DOUBLE)*(npoints+5),LGM_MarkKey);
 
   Disc_nPoints = 0;
   /* generate the new points on the line */
@@ -2651,7 +2659,7 @@ static INT TransferLines2Mesh (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh,
     nl = nl + LGM_SURFACE_NLINE(theSurface);
   /* ************************************************** */
 
-  nRef = (INT *) GetTmpMem(Heap,(nl+1)*sizeof(INT));
+  nRef = (INT *) GetTmpMem(Heap,(nl+1)*sizeof(INT),LGM_MarkKey);
   if (nRef==NULL)
     return (1);
   for (i=0; i<nl; i++)
@@ -2768,13 +2776,12 @@ static INT TransferLines2Mesh (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh,
 
 static INT TransferSurfaces2Mesh (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h)
 {
-  INT i,j,offset,id;
-  LGM_BNDP *theBndPList;
+  INT i,j,id;
   DOUBLE global[3],globalbndp[3],local[2];
   INT *newId,newpoints,oldpoints,size;
 
   /* find id's of the trianglecorners */
-  newId = (INT*)GetTmpMem(Heap,LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface))*sizeof(INT));
+  newId = (INT*)GetTmpMem(Heap,LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface))*sizeof(INT),LGM_MarkKey);
   for(i=0; i<LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)); i++)
     newId[i] = - 1;
 
@@ -3046,13 +3053,13 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
   for(i=0; i<LGM_SURFACE_NLINE(theSurface); i++)
     nsp = nsp + LGM_LINEDISC_NPOINT(LGM_LINE_LINEDISC(LGM_SURFACE_LINE(theSurface,i)))-1;
 
-  LGM_SURFACE_DISC(theSurface)->local = (DOUBLE **) GetTmpMem(Heap,10*nsp*nsp*sizeof(DOUBLE*));
+  LGM_SURFACE_DISC(theSurface)->local = (DOUBLE **) GetTmpMem(Heap,10*nsp*nsp*sizeof(DOUBLE*),LGM_MarkKey);
   for(i=0; i<10*nsp*nsp; i++)
-    LGM_SURFACE_DISC(theSurface)->local[i] = (DOUBLE *)  GetTmpMem(Heap,3*sizeof(DOUBLE));
+    LGM_SURFACE_DISC(theSurface)->local[i] = (DOUBLE *)  GetTmpMem(Heap,3*sizeof(DOUBLE),LGM_MarkKey);
 
-  LGM_SURFACE_DISC(theSurface)->triangle = (INT **) GetTmpMem(Heap,10*nsp*nsp*sizeof(INT*));
+  LGM_SURFACE_DISC(theSurface)->triangle = (INT **) GetTmpMem(Heap,10*nsp*nsp*sizeof(INT*),LGM_MarkKey);
   for(i=0; i<10*nsp*nsp; i++)
-    LGM_SURFACE_DISC(theSurface)->triangle[i] = (INT *)  GetTmpMem(Heap,4*sizeof(INT));
+    LGM_SURFACE_DISC(theSurface)->triangle[i] = (INT *)  GetTmpMem(Heap,4*sizeof(INT),LGM_MarkKey);
 
   InitSurface(LOCAL_H);
 
@@ -3112,7 +3119,7 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
 
   /* allocate lines */
   if(folds>0)
-    if ((lineptr=(LGM_LINE**)GetTmpMem(Heap,sizeof(LGM_LINE*)*folds)) == NULL)
+    if ((lineptr=(LGM_LINE**)GetTmpMem(Heap,sizeof(LGM_LINE*)*folds,LGM_MarkKey)) == NULL)
       return (NULL);
 
   for (i=0; i<folds; i++)
@@ -3126,7 +3133,7 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
 
   for (i=0; i<folds; i++)
   {
-    lineptr[i]->ldisc = (LGM_LINEDISC*)GetTmpMem(Heap,sizeof(LGM_LINEDISC)*1);
+    lineptr[i]->ldisc = (LGM_LINEDISC*)GetTmpMem(Heap,sizeof(LGM_LINEDISC)*1,LGM_MarkKey);
     if( (lineptr[i]->ldisc==NULL) )
     {
       printf("%s\n", "Not enough memory");
@@ -3705,7 +3712,6 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   LGM_SURFACE *theSurface;
   DOUBLE global[DOM_PARAM_OFFSET];
   DOUBLE global0[3],global1[3],global2[3],new_global[3];
-  DOUBLE bnds_local[2],new_local[2];
   DOUBLE loc0[2],loc1[2],loc2[2],loc[2];
 
   theBndS = BNDS2LGM(aBndS);

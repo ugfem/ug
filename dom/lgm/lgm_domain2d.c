@@ -68,6 +68,7 @@
 /****************************************************************************/
 
 static char buffer[LGM_BUFFERLEN];
+static INT LGM_MarkKey;
 
 /****************************************************************************/
 /*																			*/
@@ -314,7 +315,7 @@ static INT Get_NBNDP                            (LGM_DOMAIN *theDomain, INT *nBN
 static INT DiscretizeDomain             (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DOUBLE h);
 
 /* domain interface function: for description see domain.h */
-MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
+MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey)
 {
   LGM_DOMAIN *theDomain;
   LGM_LINE *theLine;
@@ -323,6 +324,9 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   INT *BNDS_Per_Subdom, *p;
   float fValue;
   DOUBLE h;
+
+  /* make mark key global */
+  LGM_MarkKey = MarkKey;
 
   /* read h-option */
   h = 0.0;
@@ -348,7 +352,7 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   if (theDomain==NULL) return (NULL);
 
   /* allocate mesh */
-  mesh = (MESH *) GetTmpMem(Heap,sizeof(MESH));
+  mesh = (MESH *) GetTmpMem(Heap,sizeof(MESH),LGM_MarkKey);
   if (mesh == NULL) return(NULL);
 
   /* init mesh: only surface-mesh */
@@ -357,26 +361,26 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   mesh->nSubDomains = LGM_DOMAIN_NSUBDOM(theDomain);
 
   /* get heap for surface-mesh-substructures: the subdomain-dependence */
-  mesh->nSides = (INT *) GetTmpMem(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT));
+  mesh->nSides = (INT *) GetTmpMem(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT),LGM_MarkKey);
   if (mesh->nSides==NULL) return(NULL);
   for (i=0; i<=LGM_DOMAIN_NSUBDOM(theDomain); i++) mesh->nSides[i] = 0;
-  mesh->Side_corners = (INT **) GetTmpMem(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT*));
+  mesh->Side_corners = (INT **) GetTmpMem(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT*),LGM_MarkKey);
   if (mesh->Side_corners == NULL) return (NULL);
-  mesh->Side_corner_ids = (INT ***) GetTmpMem(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT**));
+  mesh->Side_corner_ids = (INT ***) GetTmpMem(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT**),LGM_MarkKey);
   if (mesh->Side_corner_ids == NULL) return (NULL);
 
   /* allocate further substructers */
   if (Get_NBNDS_Per_Subdomain(Heap,theDomain,&BNDS_Per_Subdom,h)) return (NULL);
   for (i=0; i<=LGM_DOMAIN_NSUBDOM(theDomain); i++)
   {
-    mesh->Side_corners[i]    = (INT *)  GetTmpMem(Heap,sizeof(INT)*BNDS_Per_Subdom[i]);
-    mesh->Side_corner_ids[i] = (INT **) GetTmpMem(Heap,sizeof(INT*)*BNDS_Per_Subdom[i]);
-    p = (INT *) GetTmpMem(Heap,2*sizeof(INT)*BNDS_Per_Subdom[i]);
+    mesh->Side_corners[i]    = (INT *)  GetTmpMem(Heap,sizeof(INT)*BNDS_Per_Subdom[i],LGM_MarkKey);
+    mesh->Side_corner_ids[i] = (INT **) GetTmpMem(Heap,sizeof(INT*)*BNDS_Per_Subdom[i],LGM_MarkKey);
+    p = (INT *) GetTmpMem(Heap,2*sizeof(INT)*BNDS_Per_Subdom[i],LGM_MarkKey);
     for (j=0; j<BNDS_Per_Subdom[i]; j++)
       mesh->Side_corner_ids[i][j] = p+2*j;
   }
   if (Get_NBNDP(theDomain,&nBNDP_on_Domain,h)) return (NULL);
-  mesh->theBndPs = (BNDP**)GetTmpMem(Heap,sizeof(LGM_BNDP*)*nBNDP_on_Domain);
+  mesh->theBndPs = (BNDP**)GetTmpMem(Heap,sizeof(LGM_BNDP*)*nBNDP_on_Domain,LGM_MarkKey);
 
   /* prepare for surface-mesh */
   mesh->nBndP = 0;
@@ -420,7 +424,7 @@ static INT Get_NBNDS_Per_Subdomain (HEAP *Heap, LGM_DOMAIN *theDomain, INT **siz
   LGM_LINE *theLine;
 
   /* get heap for information */
-  p = (INT *) GetTmpMem(Heap,sizeof(INT)*(LGM_DOMAIN_NSUBDOM(theDomain)+1));
+  p = (INT *) GetTmpMem(Heap,sizeof(INT)*(LGM_DOMAIN_NSUBDOM(theDomain)+1),LGM_MarkKey);
   if (p == NULL) return(1);
   *sizes = p;
 
@@ -474,8 +478,8 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
     n = MAX(n,LGM_LINE_BEGIN(theLine));
     n = MAX(n,LGM_LINE_END(theLine));
   }
-  nRef = (INT *) GetTmpMem(Heap,(n+1)*sizeof(INT)); if (nRef==NULL) return (1);
-  newID = (INT *) GetTmpMem(Heap,(n+1)*sizeof(INT)); if (newID==NULL) return (1);
+  nRef = (INT *) GetTmpMem(Heap,(n+1)*sizeof(INT),LGM_MarkKey); if (nRef==NULL) return (1);
+  newID = (INT *) GetTmpMem(Heap,(n+1)*sizeof(INT),LGM_MarkKey); if (newID==NULL) return (1);
   for (i=0; i<=n; i++) {nRef[i] = 0; newID[i] = -1;}
   for (theLine=FirstLine(theDomain); theLine!=NULL; theLine=NextLine(theDomain))
   {
@@ -1160,6 +1164,7 @@ INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, ch
   int i,j,npoints,act,nlines;
   LGM_POINT *PointList;
   INT *FlagList;
+  INT MarkKey;
 
   /* init */
   lgm_domain = (LGM_DOMAIN*)theBVP;
@@ -1177,28 +1182,28 @@ INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, ch
   if (fprintf(stream,"convex = %d\n\n",lgm_domain->convex)<0) return (1);
 
   /* create point lists */
-  MarkTmpMem(theHeap);
+  MarkTmpMem(theHeap,&MarkKey);
   npoints = LGM_DOMAIN_NPOINT(lgm_domain);
-  PointList = (LGM_POINT *) GetTmpMem(theHeap,npoints*sizeof(LGM_POINT));
+  PointList = (LGM_POINT *) GetTmpMem(theHeap,npoints*sizeof(LGM_POINT),MarkKey);
   if (PointList==NULL)
   {
     UserWrite("ERROR: cannot allocate memory for PointList\n");
     return (1);
   }
-  FlagList = (INT *) GetTmpMem(theHeap,npoints*sizeof(INT));
+  FlagList = (INT *) GetTmpMem(theHeap,npoints*sizeof(INT),MarkKey);
   if (FlagList==NULL)
   {
     UserWrite("ERROR: cannot allocate memory for FlagList\n");
-    ReleaseTmpMem(theHeap);
+    ReleaseTmpMem(theHeap,MarkKey);
     return (1);
   }
   for (i=0; i<npoints; i++) FlagList[i]=0;
   nlines=0; for (theLine=FirstLine(lgm_domain); theLine!=NULL; theLine=NextLine(lgm_domain)) nlines++;
-  LinePtrList = (LGM_LINE **) GetTmpMem(theHeap,nlines*sizeof(LGM_LINE *));
+  LinePtrList = (LGM_LINE **) GetTmpMem(theHeap,nlines*sizeof(LGM_LINE *),MarkKey);
   if (LinePtrList==NULL)
   {
     UserWrite("ERROR: cannot allocate memory for LineIDList\n");
-    ReleaseTmpMem(theHeap);
+    ReleaseTmpMem(theHeap,MarkKey);
     return (1);
   }
   for (i=0; i<nlines; i++) LinePtrList[i]=NULL;
@@ -1246,7 +1251,7 @@ INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, ch
     if (LGM_LINE_ID(theLine)>=nlines || LGM_LINE_ID(theLine)<0)
     {
       UserWrite("ERROR: LineID out of range\n");
-      ReleaseTmpMem(theHeap);
+      ReleaseTmpMem(theHeap,MarkKey);
       return (1);
     }
     if (LinePtrList[LGM_LINE_ID(theLine)]==NULL)
@@ -1254,7 +1259,7 @@ INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, ch
     else
     {
       UserWrite("ERROR: LineID exists twice\n");
-      ReleaseTmpMem(theHeap);
+      ReleaseTmpMem(theHeap,MarkKey);
       return (1);
     }
   }
@@ -1264,7 +1269,7 @@ INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, ch
     if (theLine==NULL)
     {
       UserWrite("ERROR: LinePtr not set\n");
-      ReleaseTmpMem(theHeap);
+      ReleaseTmpMem(theHeap,MarkKey);
       return (1);
     }
     if (fprintf(stream,"line %d: left=%d; right=%d; points: %d",(int)LGM_LINE_ID(theLine),(int)LGM_LINE_LEFT(theLine),(int)LGM_LINE_RIGHT(theLine),(int)LGM_LINE_BEGIN(theLine))<0) return (1);
@@ -1274,7 +1279,7 @@ INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, ch
       if (act>=npoints)
       {
         UserWrite("ERROR in FlagList\n");
-        ReleaseTmpMem(theHeap);
+        ReleaseTmpMem(theHeap,MarkKey);
         return (1);
       }
       if (fprintf(stream," %d",act)<0) return (1);
@@ -1292,19 +1297,19 @@ INT BVP_Save (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, ch
     if (FlagList[i]==0)
     {
       UserWrite("ERROR: FlagList-error, not all points are set correctly\n");
-      ReleaseTmpMem(theHeap);
+      ReleaseTmpMem(theHeap,MarkKey);
       return (1);
     }
     if (fprintf(stream,"%g %g;\n",(float)PointList[i].position[0],(float)PointList[i].position[1])<0)
     {
       UserWrite("ERROR: cannot save points\n");
-      ReleaseTmpMem(theHeap);
+      ReleaseTmpMem(theHeap,MarkKey);
       return (1);
     }
   }
 
   /* release tmp mem */
-  ReleaseTmpMem(theHeap);
+  ReleaseTmpMem(theHeap,MarkKey);
 
   /* close file */
   if (fclose(stream)==EOF) return (1);

@@ -161,17 +161,17 @@ BVP *BVP_GetNext (BVP *theBVP)
 }
 
 /* domain interface function: for description see domain.h */
-BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
+BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
 {
   LGM_DOMAIN *theDomain;
   LGM_PROBLEM *theProblem;
   BndCondProcPtr BndCond;
-  INT ret,i,nSubDom,conf_df_problem;
+  INT i,nSubDom,conf_df_problem;
   char **argv;
 
   if ((theDomain = (LGM_DOMAIN *)BVP_GetByName(name))==NULL)
   {
-    if ((theDomain = LGM_LoadDomain(name,name,Heap,theLGMDomainVarID))==NULL)
+    if ((theDomain = LGM_LoadDomain(name,name,Heap,theLGMDomainVarID,MarkKey))==NULL)
     {
       UserWrite("ERROR in BVP_Init: cannot load domain\n");
       return (NULL);
@@ -195,11 +195,11 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
     /* initialize problem */
     if (conf_df_problem)
     {
-      INT l, maxLineId = 0;
+      INT maxLineId = 0;
 
       if (theProblem->InitProblem==NULL) return (NULL);
       nSubDom = LGM_DOMAIN_NSUBDOM(theDomain);
-      argv = (char **) GetTmpMem(Heap, sizeof(char *)*(nSubDom+1));
+      argv = (char **) GetTmpMem(Heap, sizeof(char *)*(nSubDom+1),MarkKey);
       if (argv==NULL)
       {
         UserWrite("ERROR in BVP_Init: cannot allocate argv\n");

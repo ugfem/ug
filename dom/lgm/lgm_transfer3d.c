@@ -116,7 +116,7 @@ static fpos_t filepos, UnitInfoFilepos;
 static fpos_t fileposline;
 static fpos_t filepossurface;
 
-int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info)
+int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, INT MarkKey)
 {
   int i,i0,i1,i2;
   char buffer[256];
