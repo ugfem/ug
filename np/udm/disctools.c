@@ -944,6 +944,7 @@ INT AddVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
         for (l=0; l<vncomp[j]; l++)
           mptr[comp[k*vncomp[j]+l]] += value[(m1+k)*m+m2+l];
       mptr = MVALUEPTR(MADJ(theMatrix),0);
+      comp = Comp[j][i];
       for (k=0; k<vncomp[i]; k++)
         for (l=0; l<vncomp[j]; l++)
           mptr[comp[l*vncomp[i]+k]] += value[(m2+l)*m+m1+k];
