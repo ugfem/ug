@@ -67,7 +67,7 @@ static char buffer[LGM_BUFFERLEN];
 
 static INT SurfaceInfoId;
 static INT LineInfoId;
-static INT LGM_DEBUG = 1;
+static INT LGM_DEBUG = 0;
 #define SMALL 0.00001
 static INT VAR_H = 1;
 
