@@ -612,6 +612,10 @@ Continue:
   sprintf(buffer,"%12.4lE",bdf->dt);
   SetStringVar("TIMESTEP",buffer);
   SetStringVar(":BDF:DT",buffer);
+  sprintf(buffer,"%12.4lE",bdf->t_0/bdf->exec_time);
+  SetStringVar(":BDF:AEFF",buffer);
+  sprintf(buffer,"%12.4lE",bdf->dt/nlresult.exec_time);
+  SetStringVar(":BDF:EFF",buffer);
 
   UserWriteF("TIMESTEP %4d: TIME=%10.4lg DT=%10.4lg EXECT=%10.4lg NLIT=%5d LIT=%5d MAXLIT=%3d QFM=%d\n",
              bdf->step,bdf->t_0,bdf->dt,bdf->exec_time,bdf->number_of_nonlinear_iterations,
@@ -625,7 +629,7 @@ Continue:
     {
       /* fill in result */
       bdf->list_dt[bdf->list_i]    = bdf->dt;
-      bdf->list_work[bdf->list_i] = (DOUBLE)(bdf->number_of_nonlinear_iterations - last_number_of_nonlinear_iterations)/bdf->dt;
+      bdf->list_work[bdf->list_i] = nlresult.exec_time/bdf->dt;
       bdf->list_i = (bdf->list_i+1)%bdf->hist;
       bdf->list_n++;
       bdf->list_n = MIN(bdf->list_n,bdf->hist);
