@@ -1556,9 +1556,6 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
   /* counters */
   theGrid->nEdge++;
 
-  PRINTDEBUG(dddif,1,(PFMT " CreateEdge(): n=" ID_FMTX " OBJT=%d\n",
-                      me,ID_PRTX(pe),OBJT(pe)));
-
   /* return ok */
   return(pe);
 }
