@@ -55,6 +55,20 @@ AM_CONDITIONAL(NETGEN, false)
 
 # Checks for header files.
 AC_PATH_XTRA
+if test x$have_x = xyes ; then
+  save_LIBS="$LIBS"
+  LIBS="$X_PRE_LIBS $X_LIBS $X_EXTRA_LIBS"
+  AC_CHECK_LIB([Xaw], [XawTextGetInsertionPoint],
+  [have_xaw=yes],[have_xaw=no])
+
+  # !!! find out if UG without Xaw really works (deactivate define in xmain.c)
+  if test x$have_xaw != xyes ; then
+     AC_MSG_ERROR([You need to have libXaw installed!])
+  fi
+
+  AC_DEFINE(USE_XAW, 1, [use the Athena Text Widget])
+  LIBS="$save_LIBS"
+fi
 AM_CONDITIONAL(X11, test x$have_x = xyes)
 AC_FUNC_ALLOCA
 AC_HEADER_DIRENT
