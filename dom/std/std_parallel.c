@@ -44,6 +44,7 @@
 
 /* parallel modules */
 #include "parallel.h"
+#include "memmgr.h"
 
 /* domain module */
 #include "domain.h"
