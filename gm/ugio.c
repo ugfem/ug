@@ -623,7 +623,8 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
                           INT *RefRuleOffset)
 {
   REFRULE *theRule;
-  INT i,j,n,sonRefined,sonex,nex;
+  INT i,j,n,sonRefined,sonex,nex,refined;
+  ELEMENT *SonSonList[MAX_SONS];
 
   if (nmax==0) return (0);
   refinement->refrule = REFINE(theElement) + RefRuleOffset[TAG(theElement)];
@@ -654,7 +655,11 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
   for (i=0,n=0; i<nmax; i++)
   {
     if (SonList[i]==NULL) continue;
-    if (REFINE(SonList[i])!=NO_REFINEMENT && NSONS(SonList[i])>0) sonRefined |= (1<<i);
+    GetAllSons(SonList[i],SonSonList);
+    refined = 0;
+    for (j=0; SonSonList[j]!=NULL; j++)
+      if (!EORPHAN(SonSonList[j])) refined = 1;
+    if (REFINE(SonList[i])!=NO_REFINEMENT && refined) sonRefined |= (1<<i);
     if (MGIO_PARFILE)
     {
       sonex |= (1<<i);
@@ -741,6 +746,8 @@ static INT SetHierRefinement (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMEN
   ELEMENT *theSon;
   ELEMENT *SonList[MAX_SONS];
   NODE *NodeContext[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
+
+  /*PRINTDEBUG(gm,0,(PFMT "SetHierRefinement(): level=%d elem=" EID_FMTX "\n",me,LEVEL(theGrid),EID_PRTX(theElement)));*/
 
   /* sequential part */
   if (REFINE(theElement)==NO_REFINEMENT) return (0);
@@ -1810,6 +1817,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
     }
     theSonElem[k] = NULL;
     if (Get_Sons_of_ElementSide (theElement,i,&Sons_of_Side,theSonElem,SonSides,0,1)) REP_ERR_RETURN(1);
+
     if (Connect_Sons_of_ElementSide(UPGRID(theGrid),theElement,i,Sons_of_Side,theSonElem,SonSides,0,1)) REP_ERR_RETURN(1);
   }
 
