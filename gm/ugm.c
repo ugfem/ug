@@ -1172,11 +1172,11 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   VECTOR *pv;
 
   if (objtype == IEOBJ)
-    pe = GetMemoryForObject(MYMG(theGrid),INNER_SIZE(tag),
-                            MAPPED_INNER_OBJT(tag));
+    pe = GetMemoryForObject(MYMG(theGrid),INNER_SIZE_TAG(tag),
+                            MAPPED_INNER_OBJT_TAG(tag));
   else if (objtype == BEOBJ)
-    pe = GetMemoryForObject(MYMG(theGrid),BND_SIZE(tag),
-                            MAPPED_BND_OBJT(tag));
+    pe = GetMemoryForObject(MYMG(theGrid),BND_SIZE_TAG(tag),
+                            MAPPED_BND_OBJT_TAG(tag));
 
   if (pe==NULL) return(NULL);
 
@@ -2272,15 +2272,15 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
   tag = TAG(theElement);
   if (OBJT(theElement)==BEOBJ)
   {
-    SETOBJT(theElement,MAPPED_BND_OBJT(tag));
+    SETOBJT(theElement,MAPPED_BND_OBJT_TAG(tag));
     PutFreeObject(theGrid->mg,theElement,
-                  BND_SIZE(tag),MAPPED_BND_OBJT(tag));
+                  BND_SIZE_TAG(tag),MAPPED_BND_OBJT_TAG(tag));
   }
   else
   {
-    SETOBJT(theElement,MAPPED_INNER_OBJT(tag));
-    PutFreeObject(theGrid->mg,theElement,INNER_SIZE(tag),
-                  MAPPED_INNER_OBJT(tag));
+    SETOBJT(theElement,MAPPED_INNER_OBJT_TAG(tag));
+    PutFreeObject(theGrid->mg,theElement,INNER_SIZE_TAG(tag),
+                  MAPPED_INNER_OBJT_TAG(tag));
   }
 
   theGrid->nElem--;

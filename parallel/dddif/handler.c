@@ -1030,7 +1030,7 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 		ELEMENT *f = EFATHER(pe);
 		if (f!=NULL)
 			DDD_XferCopyObjX(PARHDRE(f), proc, prio,
-				(OBJT(f)==BEOBJ) ? BND_SIZE(TAG(f)) : INNER_SIZE(TAG(f))
+				(OBJT(f)==BEOBJ) ? BND_SIZE_TAG(TAG(f)) : INNER_SIZE_TAG(TAG(f))
         	);
 	}
 

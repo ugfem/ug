@@ -233,7 +233,7 @@ static void XferElemsAndOverlap (GRID *theGrid)
     DDD_XferCopyObjX(PARHDRE(elem),
                      PARTITION(elem),
                      PrioMaster,
-                     (OBJT(elem)==BEOBJ) ? BND_SIZE(TAG(elem)) : INNER_SIZE(TAG(elem))
+                     (OBJT(elem)==BEOBJ) ? BND_SIZE_TAG(TAG(elem)) : INNER_SIZE_TAG(TAG(elem))
                      );
 
 
@@ -251,8 +251,8 @@ static void XferElemsAndOverlap (GRID *theGrid)
                            PARTITION(nb),
                            PrioGhost,
                            (OBJT(elem)==BEOBJ) ?
-                           BND_SIZE(TAG(elem)) :
-                           INNER_SIZE(TAG(elem))
+                           BND_SIZE_TAG(TAG(elem)) :
+                           INNER_SIZE_TAG(TAG(elem))
                            );
         }
 

@@ -177,9 +177,9 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
     DDD_TypeDefine(dddType, ge, EL_END, desc->inner_size);
 
     /* init type mapping arrays */
-    dddctrl.ugtypes[dddType] = MAPPED_INNER_OBJT(tag);
-    dddctrl.types[MAPPED_INNER_OBJT(tag)] = dddType;
-    dddctrl.dddObj[MAPPED_INNER_OBJT(tag)] = TRUE;
+    dddctrl.ugtypes[dddType] = MAPPED_INNER_OBJT_TAG(tag);
+    dddctrl.types[MAPPED_INNER_OBJT_TAG(tag)] = dddType;
+    dddctrl.dddObj[MAPPED_INNER_OBJT_TAG(tag)] = TRUE;
   }
   else
   {
@@ -188,9 +188,9 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
                    EL_END, desc->bnd_size);
 
     /* init type mapping arrays */
-    dddctrl.ugtypes[dddType] = MAPPED_BND_OBJT(tag);
-    dddctrl.types[MAPPED_BND_OBJT(tag)] = dddType;
-    dddctrl.dddObj[MAPPED_BND_OBJT(tag)] = TRUE;
+    dddctrl.ugtypes[dddType] = MAPPED_BND_OBJT_TAG(tag);
+    dddctrl.types[MAPPED_BND_OBJT_TAG(tag)] = dddType;
+    dddctrl.dddObj[MAPPED_BND_OBJT_TAG(tag)] = TRUE;
   }
 
 }

@@ -41,7 +41,7 @@ int TransferGrid (MULTIGRID *theMG)
       DDD_XferCopyObjX(PARHDRE(e),
                        PARTITION(e),
                        0,
-                       (OBJT(e)==BEOBJ) ? BND_SIZE(TAG(e)) : INNER_SIZE(TAG(e))
+                       (OBJT(e)==BEOBJ) ? BND_SIZE_TAG(TAG(e)) : INNER_SIZE_TAG(TAG(e))
                        );
     }
   }
