@@ -108,14 +108,14 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /*************************************************************************/
 
-static INT PreprocessNodeValue (const char *name, MULTIGRID *theMG)
+static INT PreProcessNodeValue (const char *name, MULTIGRID *theMG)
 {
   VECDATA_DESC *theVD;
 
   theVD = GetVecDataDescByName(theMG,(char *)name);
 
   if (theVD == NULL) {
-    PrintErrorMessage('E',"PreprocessNodeValue","cannot find symbol");
+    PrintErrorMessage('E',"PreProcessNodeValue","cannot find symbol");
     return (1);
   }
 
@@ -163,14 +163,14 @@ static DOUBLE NodeValue (const ELEMENT *theElement,
  */
 /*************************************************************************/
 
-static INT PreprocessNodeVector (const char *name, MULTIGRID *theMG)
+static INT PreProcessNodeVector (const char *name, MULTIGRID *theMG)
 {
   VECDATA_DESC *theVD;
   INT i;
 
   theVD = GetVecDataDescByName(theMG,(char *)name);
   if (theVD == NULL) {
-    PrintErrorMessage('E',"PreprocessNodeVector","cannot find symbol");
+    PrintErrorMessage('E',"PreProcessNodeVector","cannot find symbol");
     return (1);
   }
   NodeVectorComp = VD_CMP_OF_TYPE(theVD,NODEVECTOR,0);
@@ -238,6 +238,16 @@ static void NodeVector (const ELEMENT *theElement, const DOUBLE **theCorners,
    D*/
 /*************************************************************************/
 
+static INT PreProcessRefMarks (const char *name, MULTIGRID *theMG)
+{
+  if (CURRENTLEVEL(theMG) != TOPLEVEL(theMG)) {
+    PrintErrorMessage('E',"PreProcessRefMarks",
+                      "ref marks can be plotted on toplevel only");
+    return (1);
+  }
+  return (0);
+}
+
 static DOUBLE RefMarks (const ELEMENT *theElement,
                         const DOUBLE **CornersCoord, DOUBLE *LocalCoord)
 {
@@ -276,13 +286,14 @@ static DOUBLE RefMarks (const ELEMENT *theElement,
 INT InitPlotProc ()
 {
   /* install general plot procs */
-  if (CreateElementValueEvalProc("nvalue",PreprocessNodeValue,
+  if (CreateElementValueEvalProc("nvalue",PreProcessNodeValue,
                                  NodeValue) == NULL)
     return(1);
-  if (CreateElementVectorEvalProc("nvector",PreprocessNodeVector,
+  if (CreateElementVectorEvalProc("nvector",PreProcessNodeVector,
                                   NodeVector,DIM) == NULL)
     return(1);
-  if (CreateElementValueEvalProc("refmarks",NULL,RefMarks) == NULL)
+  if (CreateElementValueEvalProc("refmarks",PreProcessRefMarks,
+                                 RefMarks) == NULL)
     return(1);
 
   return (0);
