@@ -469,12 +469,13 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
       la = 0.5*la;
     }
 
-    /* reduce time step if not accepted */
-    if (!accept) {
-      UserWrite("line search not accepted, Newton diverged\n");
-      res->error_code = 0;
-      goto exit;
-    }
+    /* if not accepted break iteration */
+    if (newton->lineSearch)
+      if (!accept) {
+        UserWrite("line search not accepted, Newton diverged\n");
+        res->error_code = 0;
+        goto exit;
+      }
 
     /* print norm of defect */
     if (DoPCR(PrintID,defect,PCR_CRATE)) {res->error_code = __LINE__; return(res->error_code);}
@@ -502,7 +503,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   /* print norm of defect */
   if (DoPCR(PrintID,defect,PCR_AVERAGE))  {res->error_code = __LINE__; return(res->error_code);}
 
-  /* if converged, then accept new time step */
+  /* if converged, then report results and mean execution times */
   if (res->converged) {
     res->error_code = 0;
     res->number_of_nonlinear_iterations = newton_c;
@@ -570,16 +571,18 @@ static INT NewtonInit (NP_BASE *base, INT argc, char **argv)
     PrintErrorMessage('E',"NewtonInit","maxLineSearch <= 20");
     return(NP_NOT_ACTIVE);
   }
+  if (ReadArgvINT("line",&(newton->lineSearch),argc,argv)) {
+    newton->lineSearch = 0;
+    newton->maxLineSearch=1;
+  }
+  if ((newton->lineSearch<0)||(newton->lineSearch>1)) {
+    PrintErrorMessage('E',"NewtonInit","line = 0 or 1");
+    return(NP_NOT_ACTIVE);
+  }
   if (ReadArgvINT("maxit",&(newton->maxit),argc,argv))
     newton->maxit = 50;
   if ((newton->maxit<0)||(newton->maxit>1000)) {
     PrintErrorMessage('E',"NewtonInit","maxit <= 1000");
-    return(NP_NOT_ACTIVE);
-  }
-  if (ReadArgvINT("line",&(newton->lineSearch),argc,argv))
-    newton->lineSearch = 1;
-  if ((newton->lineSearch<0)||(newton->lineSearch>1)) {
-    PrintErrorMessage('E',"NewtonInit","line = 0 or 1");
     return(NP_NOT_ACTIVE);
   }
   if (ReadArgvINT("linrate",&(newton->linearRate),argc,argv))
