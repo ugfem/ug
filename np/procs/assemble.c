@@ -424,6 +424,11 @@ INT NPLocalAssemblePostMatrix (NP_LOCAL_ASSEMBLE *theNP, INT level,
 {
   INT lev;
 
+        #ifdef ModelP
+  if (a_vector_vecskip(theNP->assemble.base.mg,0,level,x) != NUM_OK)
+    return (1);
+        #endif
+
   for (lev=0; lev<=level; lev++)
     AssembleDirichletBoundary(GRID_ON_LEVEL(theNP->assemble.base.mg,lev),
                               A,x,b);
