@@ -4693,7 +4693,7 @@ static INT RefineCommand (INT argc, char **argv)
    This command marks elements with refinement type,
    calling the function 'MarkForRefinement'.
 
-   'mark [$h | {[<rule> [<side>]] [$a | $i <Id> | $s]} | $c] [$pos <x y [z]>] [$z <z>]'
+   'mark [$h | {[<rule> [<side>]] [$a | $i <Id> | $s]} | $c] [$pos <x y [z]>] [$x <x>] [$y <y>] [$z <z>]'
 
    .  <rule>                 - specify a refinement rule ("red" is default)
    .  <side>                 - has to be specified if the corresponding rule can be applied in several orientations
@@ -4701,6 +4701,8 @@ static INT RefineCommand (INT argc, char **argv)
    .  $i <Id>                - refine the element with <Id>
    .  $s                     - refine all elements from the current selection
    .  $h                     - show available rules
+   .  $x                     - marks elements with corner[0] < x
+   .  $y                     - marks elements with corner[1] < y
    .  $z                     - marks elements with corner[2] < z
    D*/
 /****************************************************************************/
@@ -4712,7 +4714,7 @@ static INT MarkCommand (INT argc, char **argv)
   char rulename[32];
   INT i,j,l,mode,rv,Rule;
   COORD_VECTOR global;
-  DOUBLE z;
+  DOUBLE x,y,z;
   long nmarked;
 
   /* following variables: keep type for sscanf */
@@ -4747,7 +4749,39 @@ static INT MarkCommand (INT argc, char **argv)
     return(OKCODE);
   }
 
-    #ifdef __THREEDIM__
+  if (ReadArgvDOUBLE("x",&x,argc, argv)==0)
+  {
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+            if (XC(MYVERTEX(CORNER(theElement,j))) < x)
+              MarkForRefinement(theElement,RED,NULL);
+
+    UserWriteF("all elements in x < %f marked for refinement\n",
+               (float) x);
+
+    return(OKCODE);
+  }
+
+  if (ReadArgvDOUBLE("y",&y,argc, argv)==0)
+  {
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+            if (YC(MYVERTEX(CORNER(theElement,j))) < y)
+              MarkForRefinement(theElement,RED,NULL);
+
+    UserWriteF("all elements in y < %f marked for refinement\n",
+               (float) y);
+
+    return(OKCODE);
+  }
+
+#ifdef __THREEDIM__
   if (ReadArgvDOUBLE("z",&z,argc, argv)==0)
   {
     for (l=0; l<=TOPLEVEL(theMG); l++)
