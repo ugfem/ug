@@ -27,6 +27,11 @@
    $Header$
  */
 
+// if defined, only one type of alegra data structure is active (ug DS if USE_UG_DS is
+// defined otherwise array DS); this avoids the use of virtual classes and is thus
+// much faster
+#define ONLY_ONE_ALGEBRA_DS
+
 // TODO: remove it:
 //#define SIMULATE_HALFENING
 
@@ -40,6 +45,8 @@ class FAMGGraph;
 class FAMGGrid;
 class FAMGVectorIter;
 class FAMGMatrixAlg;
+
+#ifndef ONLY_ONE_ALGEBRA_DS
 
 //
 // vector stuff
@@ -97,6 +104,9 @@ private:
 class FAMGGridVector
 {
 public:
+  typedef class FAMGuVectorEntry VectorEntry;
+  typedef class FAMGugVectorIter Iterator;
+
   virtual ~FAMGGridVector() {};                 // nothing to do
 
   virtual int is_valid( const FAMGVectorEntry& ve ) const = 0;
@@ -110,17 +120,14 @@ public:
   virtual int IsFG( const FAMGVectorEntry& ve ) const = 0;
   virtual void SetCG( const FAMGVectorEntry& ve ) const = 0;
   virtual void SetFG( const FAMGVectorEntry& ve ) const = 0;
-
-  // rarely used functions (no specialized implementations)
-  void MarkUnknowns(FAMGGraph *graph);
 };
 
 class FAMGVector
 {
+public:
   friend class FAMGVectorIter;
   friend class FAMGVectorRevIter;
 
-public:
   FAMGVector(const FAMGGridVector & gridvec) : mygridvector(gridvec) {}
   virtual ~FAMGVector() {};                     // nothing to do
   virtual FAMGVector* create_new() const = 0;                           // create copy of my; incl. memory for data but without copying the data
@@ -304,6 +311,8 @@ private:
   FAMGMatrixEntry current_me;
 };
 
+#endif  // ONLY_ONE_ALGEBRA_DS
+
 //
 // template functions to profit by special implementations
 //		implementation in algebra.C
@@ -362,5 +371,15 @@ void JacobiSmoothFG( VT &sol, const MT &M, const VT &def );
 
 template<class MT>
 int ConstructGalerkinMatrix( MT &Mcg, const FAMGGrid &fg );
+
+#ifdef ONLY_ONE_ALGEBRA_DS
+
+#ifdef USE_UG_DS
+#include "famg_onlyugalgebra.h"
+#else
+#error not yet implemented
+#endif
+
+#endif  // ONLY_ONE_ALGEBRA_DS
 
 #endif

@@ -32,7 +32,6 @@ extern "C" {
 $Header$
 */
 
-
 FAMGVector* FAMGugVector::create_new() const
 {
 	FAMGugGridVector &gridvector = (FAMGugGridVector&)GetGridVector();
@@ -54,6 +53,7 @@ FAMGVector* FAMGugVector::create_new() const
 	return new_v;
 };
 
+#ifndef ONLY_ONE_ALGEBRA_DS
 FAMGugVector::~FAMGugVector()
 {
 	if( allocatedVD == 1 )
@@ -65,6 +65,7 @@ FAMGugVector::~FAMGugVector()
 		allocatedVD = 0;
 	}
 }
+#endif	// ONLY_ONE_ALGEBRA_DS
 
 #ifdef WEG // wird wahrscheinlich nicht mehr benoetigt
 void FAMGugMatrix::SetNumbers()

@@ -49,6 +49,9 @@ extern "C"
 #define IS_FAMG_GHOST(vec)  (PRIO(vec)<=PrioBorder)
 #endif
 
+
+#ifndef ONLY_ONE_ALGEBRA_DS
+
 class FAMGugVectorEntryRef : public FAMGVectorEntryRef
 {
 public:
@@ -549,4 +552,19 @@ inline int FAMGugMatrix::ConstructGalerkinMatrix( const FAMGGrid &fg )
 {
   return ::ConstructGalerkinMatrix(*this, fg);
 }
+
+#else   // ONLY_ONE_ALGEBRA_DS
+//
+// stuff for compatibility
+//
+typedef class FAMGVectorEntryRef FAMGugVectorEntryRef;
+typedef class FAMGVectorEntry FAMGugVectorEntry;
+typedef class FAMGGridVector FAMGugGridVector;
+typedef class FAMGVector FAMGugVector;
+typedef class FAMGMatrixEntry FAMGugMatrixEntry;
+typedef class FAMGMatrixAlg FAMGugMatrix;
+typedef class FAMGMatrixIter FAMGugMatrixIter;
+
+#endif  // ONLY_ONE_ALGEBRA_DS
+
 #endif

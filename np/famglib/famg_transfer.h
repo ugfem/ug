@@ -103,9 +103,15 @@ private:
 
 
 #ifdef USE_UG_DS
+        #ifdef ONLY_ONE_ALGEBRA_DS
+inline FAMGVectorEntry FAMGTransferEntry::GetCol() const {
+  return (FAMGVectorEntry)(MDEST((MATRIX*)this));
+}
+        #else
 inline FAMGVectorEntry FAMGTransferEntry::GetCol() const {
   return FAMGVectorEntry(new FAMGugVectorEntryRef(MDEST((MATRIX*)this)));
 }
+        #endif
 inline FAMGTransferEntry *FAMGTransferEntry::GetNext() const {
   return (FAMGTransferEntry*)MNEXT((MATRIX*)this);
 }
@@ -170,7 +176,7 @@ public:
   FAMGTransferEntry* NewEntry(const FAMGVectorEntry& fg_vec, const FAMGVectorEntry& cg_vec);
   int SetEntries(const FAMGVectorEntry& fg_vec, const FAMGVectorEntry& cg_vec,double prolongation_val, double restriction_val);
   int SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg );
-#ifdef USE_UG_DS
+#if defined  USE_UG_DS && !defined ONLY_ONE_ALGEBRA_DS
   FAMGTransferEntry* GetFirstEntry(const FAMGugVectorEntry& fg_vec) const;
 #else
 #endif
@@ -189,9 +195,11 @@ private:
 inline FAMGTransferEntry *FAMGTransfer::GetFirstEntry(const FAMGVectorEntry& fg_vec) const {
   return (FAMGTransferEntry*)VISTART(((FAMGugVectorEntryRef*)(fg_vec.GetPointer()))->myvector());
 }
+#ifndef ONLY_ONE_ALGEBRA_DS
 inline FAMGTransferEntry *FAMGTransfer::GetFirstEntry(const FAMGugVectorEntry& fg_vec) const {
   return (FAMGTransferEntry*)VISTART(fg_vec.myvector());
 }
+#endif
 #else
 inline FAMGTransferEntry *FAMGTransfer::GetFirstEntry(const FAMGVectorEntry& fg_vec) const {
   return row_array[((FAMGarrayVectorEntry*)(fg_vec->GetPointer()))->myid()];

@@ -35,21 +35,6 @@ $Header$
 #define typename
 #endif
 
-void FAMGGridVector::MarkUnknowns(FAMGGraph *graph)
-{
-	FAMGVectorEntry ve;
-	FAMGVectorIter viter(*this);
-	
-	while(viter(ve))
-		if (graph->GetNode(ve)->IsFGNode())	
-			SetFG(ve);
-		else
-			SetCG(ve);
-			
-
-    return;
-}
-
 //
 // template functions to profit by special implementations
 //
