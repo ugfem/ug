@@ -43,6 +43,7 @@
 #include <X11/Intrinsic.h>
 #include <X11/Vendor.h>
 #include <X11/StringDefs.h>
+#include <X11/Shell.h>
 #include <X11/Xaw/XawInit.h>
 #include <X11/Xaw/AsciiText.h>
 #include <X11/Xaw/Text.h>
@@ -509,6 +510,10 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
 {
   OUTPUTDEVICE *d;
   char buf[128];
+        #ifdef USE_XAW
+  int n;
+  Arg args[20];
+        #endif
 
   /* copy parameters to globals */
   if_argc = *argcp;
@@ -520,11 +525,16 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
   argv[0] = buf;
 
         #ifdef USE_XAW
+  /* set input focus to true, due to problems with some
+     window manager implemtations, DEC, LINUX, SUN      */
+  n=0;
+  XtSetArg(args[n], XtNinput, TRUE); n++;
+
   toplevel = XtAppInitialize (&context, "Xug3",
                               (XrmOptionDescRec*)NULL, 0,
                               argcp, argv,
                               (String*)NULL,
-                              (Arg*)NULL, 0);
+                              args, n);
 
   display = XtDisplay(toplevel);
         #else /* USE_XAW */
