@@ -10,7 +10,7 @@
 # include configuration and all makefile macro definitions
 include ../../ug.conf
 
-OBJECTS = std_domain.o domains$(DIM)d.o std_parallel.o
+OBJECTS = std_domain.o domains$(DIM)d.o std_parallel.o repair.o
 
 # local C compiler flags
 LCFLAGS = -I../../include

@@ -1002,6 +1002,10 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
 
   fclose(stream);
 
+#       ifdef __THREEDIM__
+  RepairMesh(Heap,MarkKey,Mesh);
+#       endif
+
   STD_BVP_NDOMPART(theBVP) = 1;
   STD_BVP_NSUBDOM(theBVP) = 1;
   STD_BVP_S2P_PTR(theBVP) = (INT *)
