@@ -1147,7 +1147,7 @@ INT VDinterfaceDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DE
 
 static INT ScanVecOption (      INT argc, char **argv,                  /* option list						*/
                                 INT *curropt,                                                           /* next option to scan				*/
-                                const INT po2t[][MAXVOBJECTS],                          /* part-obj to type table			*/
+                                INT po2t[][MAXVOBJECTS],                                    /* part-obj to type table			*/
                                 INT MaxType,                                                            /* bound for type id				*/
                                 const char TypeNames[],                                         /* names of types					*/
                                 INT TypeUsed[],                                                         /* indicate whether type is used	*/
@@ -1327,7 +1327,7 @@ static INT ScanVecOption (      INT argc, char **argv,                  /* optio
 
 static INT ScanMatOption (      INT argc, char **argv,                  /* option list						*/
                                 INT *curropt,                                                           /* next option to scan				*/
-                                const INT po2t[][MAXVOBJECTS],                          /* part-obj to type table			*/
+                                INT po2t[][MAXVOBJECTS],                                    /* part-obj to type table			*/
                                 INT MaxType,                                                            /* bound for type id				*/
                                 const char TypeNames[],                                         /* names of types					*/
                                 const INT TypeUsed[],                                           /* indicate whether type is used	*/
