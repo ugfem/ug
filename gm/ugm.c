@@ -5298,7 +5298,7 @@ INT CheckOrientation (INT n, VERTEX **vertices)
   INT i;
 
   /* TODO: this case */
-  if (n == 8 || n==6)
+  if (n == 8 || n==6 || n==5)
     return(1);
 
   for (i=1; i<n; i++)
