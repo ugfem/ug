@@ -230,7 +230,9 @@ INT BNDP_BndPDesc (BNDP *theBndP, INT *move, INT *part)
 
 INT BNDP_BndEDesc (BNDP *theBndP0, BNDP *theBndP1, INT *part)
 {
-  return(1);
+  *part = 0;
+
+  return(0);
 }
 
 BNDS* BNDP_CreateBndS (HEAP *Heap, BNDP **theBndP, INT n)
