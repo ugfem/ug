@@ -2170,6 +2170,111 @@ static INT InitHoles4 (void)
   return(0);
 }
 
+
+static INT InitHoles5 (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  /* allocate new domain structure */
+  MidPoint[0] = 2.5;
+  MidPoint[1] = 1.5;
+  radius = 3.0;
+  if (CreateDomain("Holes5",MidPoint,radius,20,20,NO)==NULL)
+    return(1);
+
+  if (CreateBoundarySegment2D("start5_1" ,1,0,0,0,1,1.0,0.0,1.0,
+                              Start1Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_2" ,1,0,1,1,2,1.0,0.0,1.0,
+                              Start13Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_3" ,1,0,2,2,3,1.0,0.0,1.0,
+                              Start21Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_8" ,1,0,7,7,8,1.0,0.0,1.0,
+                              Start50Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_9" ,1,0,8,8,9,1.0,0.0,1.0,
+                              Start51Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_10",1,0,9,9,10,1.0,0.0,1.0,
+                              Start39Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_11",1,0,10,10,11,1.0,0.0,1.0,
+                              Start31Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_12",1,0,11,11,12,1.0,0.0,1.0,
+                              Start19Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_13",1,0,12,12,13,1.0,0.0,1.0,
+                              Start11Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_14",1,0,13,13,14,1.0,0.0,1.0,
+                              Start12Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_15",1,0,14,14,18,1.0,0.0,1.0,
+                              Start9Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_16",1,0,15,15,0,1.0,0.0,1.0,
+                              Start4Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_17",1,0,16,16,17,1.0,0.0,1.0,
+                              Start15Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_18",1,0,17,17,15,1.0,0.0,1.0,
+                              Start3Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_19",1,0,18,18,19,1.0,0.0,1.0,
+                              Start17Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_20",1,0,19,19,16,1.0,0.0,1.0,
+                              Start28Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("start5_4" ,1,0,3,3,4,1.0,0.0,1.0,
+                              Start22Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_5" ,1,0,4,4,5,1.0,0.0,1.0,
+                              Start26Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_6" ,1,0,5,5,6,1.0,0.0,1.0,
+                              Start37Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_7" ,1,0,6,6,7,1.0,0.0,1.0,
+                              Start49Boundary,NULL)==NULL) return(1);
+
+  return(0);
+}
+
+static INT InitHoles6 (void)
+{
+  DOUBLE radius,MidPoint[2];
+
+  /* allocate new domain structure */
+  MidPoint[0] = 2.5;
+  MidPoint[1] = 1.5;
+  radius = 3.0;
+  if (CreateDomain("Holes6",MidPoint,radius,16,16,NO)==NULL)
+    return(1);
+
+  if (CreateBoundarySegment2D("start5_3" ,1,0,2,2,3,1.0,0.0,1.0,
+                              Start21Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_8" ,1,0,7,7,8,1.0,0.0,1.0,
+                              Start50Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_9" ,1,0,8,8,9,1.0,0.0,1.0,
+                              Start51Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_10",1,0,9,9,10,1.0,0.0,1.0,
+                              Start39Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_11",1,0,10,10,11,1.0,0.0,1.0,
+                              Start31Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_12",1,0,11,11,12,1.0,0.0,1.0,
+                              Start19Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_13",1,0,12,12,13,1.0,0.0,1.0,
+                              Start11Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_14",1,0,13,13,14,1.0,0.0,1.0,
+                              Start12Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_15",1,0,14,14,15,1.0,0.0,1.0,
+                              Start9Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_16",1,0,15,15,0,1.0,0.0,1.0,
+                              Start17Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("start5_4" ,1,0,3,3,4,1.0,0.0,1.0,
+                              Start22Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_5" ,1,0,4,4,5,1.0,0.0,1.0,
+                              Start26Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_6" ,1,0,5,5,6,1.0,0.0,1.0,
+                              Start37Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_7" ,1,0,6,6,7,1.0,0.0,1.0,
+                              Start49Boundary,NULL)==NULL) return(1);
+
+  if (CreateBoundarySegment2D("start5_1" ,1,0,0,0,1,1.0,0.0,1.0,
+                              Start28Boundary,NULL)==NULL) return(1);
+  if (CreateBoundarySegment2D("start5_2" ,1,0,1,1,2,1.0,0.0,1.0,
+                              Start24Boundary,NULL)==NULL) return(1);
+  return(0);
+}
+
 /****************************************************************************/
 /*                                                                          */
 /*  define a variable ring                                                  */
@@ -4080,6 +4185,16 @@ INT STD_BVP_Configure (INT argc, char **argv)
     else if (strcmp(DomainName,"Holes4") == 0)
     {
       if (InitHoles4())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Holes5") == 0)
+    {
+      if (InitHoles5())
+        return(1);
+    }
+    else if (strcmp(DomainName,"Holes6") == 0)
+    {
+      if (InitHoles6())
         return(1);
     }
     else if (strcmp(DomainName,"Skin") == 0)
