@@ -71,6 +71,7 @@ enum Priorities
 #ifdef ModelP
 
 /* define number of priorities for objects */
+#define MAX_PRIOS                               6
 #define ELEMENT_PRIOS                   4
 #define NODE_PRIOS                              5
 #define VECTOR_PRIOS                    5
@@ -136,10 +137,11 @@ enum Priorities
 #else   /* not ModelP */
 
 /* define number of priorities for objects */
-#define ELEMENT_PRIOS                   4
-#define NODE_PRIOS                              5
-#define VECTOR_PRIOS                    5
-#define VERTEX_PRIOS                    5
+#define MAX_PRIOS                               1
+#define ELEMENT_PRIOS                   1
+#define NODE_PRIOS                              1
+#define VECTOR_PRIOS                    1
+#define VERTEX_PRIOS                    1
 
 /* define number of listparts for objects */
 #define MAX_LISTPARTS                   1
