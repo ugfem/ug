@@ -174,25 +174,56 @@ int ADFRONT3 :: GetLocals (ARRAY<Point3d> & locpoints,
   int minval, hi;
   INDEX pi;
   Point3d midp, p0;
-
+  double min,f;
 
   minval = INT_MAX;
+  min = INT_MAX;
 
-  for (i = 1; i<= faces.Size(); i++)
+  // Auswahl des Frontelements nach Schoeberl
+
+  /*  for (i = 1; i<= faces.Size(); i++)
+      {
+     // ******************** bug **********************************
+      hi = faces.Get(i).QualClass();
+      hi = faces.Get(i).QualClass() +
+           2 * min (points.Get(faces.Get(i).Face().PNum(1)).FrontNr(),
+                    points.Get(faces.Get(i).Face().PNum(2)).FrontNr(),
+                    points.Get(faces.Get(i).Face().PNum(3)).FrontNr() );
+
+      if (hi < minval || i == 1)
+        {
+        minval = hi;
+        fstind = i;
+        }
+      }*/
+
+  // Neues Auswahlkriterium
+
+  j = 1;
+  fstind = -1;
+  do
   {
-    /* ******************** bug ********************************** */
-    hi = faces.Get(i).QualClass();
-    /*    hi = faces.Get(i).QualClass() +
-             2 * min (points.Get(faces.Get(i).Face().PNum(1)).FrontNr(),
-                      points.Get(faces.Get(i).Face().PNum(2)).FrontNr(),
-                      points.Get(faces.Get(i).Face().PNum(3)).FrontNr() );*/
-
-    if (hi < minval || i == 1)
+    for (i = 1; i<= faces.Size(); i++)
     {
-      minval = hi;
-      fstind = i;
+      if(faces.Get(i).QualClass()==j)
+      {
+        // Flaeche = Grundseite * Hoehe / 2
+        f = 0.5 * Dist(points.Get(faces.Get(i).Face().PNum(1)).P(),
+                       points.Get(faces.Get(i).Face().PNum(2)).P())
+            * Dist(points.Get(faces.Get(i).Face().PNum(3)).P(),
+                   Center(points.Get(faces.Get(i).Face().PNum(1)).P(),
+                          points.Get(faces.Get(i).Face().PNum(2)).P()));
+        f = f;
+        if (f < min /* || i == 1*/)
+        {
+          min = f;
+          fstind = i;
+        }
+      }
     }
+    j++;
   }
+  while(fstind<0);
 
   pstind = faces[fstind].Face().PNum(1);
   p0 = points[pstind].P();

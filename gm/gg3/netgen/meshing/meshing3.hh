@@ -52,8 +52,10 @@ public:
 
   virtual int SavePoint (const Point3d & /* p */) { return 0; }
   virtual void SaveElement (const Element & /* elem */) { };
+  virtual void Get_Local_h_3d(double *in,double *out) { };
 
   friend void PlotVolMesh (const ROT3D & r, char key);
   friend void TestRules ();
+
 };
 #endif

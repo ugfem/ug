@@ -179,25 +179,57 @@ int ADFRONT2 :: GetLocals (ARRAY<Point3d> & locpoints,
   INDEX pi;
   Point3d midp, p0;
   int minval, hi;
-
+  double min,l;
 
   minval = INT_MAX;
+  min = INT_MAX;
 
-  for (i = 1; i<= lines.Size(); i++)
-    if (lines.Get(i).Valid())
+  // Auswahl der Frontkante nach Schoeberl
+
+  /*  for (i = 1; i<= lines.Size(); i++)
+      if (lines.Get(i).Valid())
+        {
+        hi = lines.Get(i).LineClass() +
+             2 * min (points.Get(lines.Get(i).L().I1()).FrontNr(),
+                      points.Get(lines.Get(i).L().I2()).FrontNr());
+     cout << lines.Get(i).LineClass() << "  "
+       << points.Get(lines.Get(i).L().I1()).FrontNr() << "  "
+       << points.Get(lines.Get(i).L().I2()).FrontNr() << endl;
+        if (hi < minval)
+          {
+          minval = hi;
+          lstind = i;
+          }
+        }
+   */
+
+  // Neues Auswahlkriterium
+
+  // Neues Auswahlkriterium
+
+  j = 1;
+  lstind = -1;
+  do
+  {
+    for (i = 1; i<= lines.Size(); i++)
     {
-      hi = lines.Get(i).LineClass() +
-           2 * min (points.Get(lines.Get(i).L().I1()).FrontNr(),
-                    points.Get(lines.Get(i).L().I2()).FrontNr());
-      /*cout << lines.Get(i).LineClass() << "  "
-           << points.Get(lines.Get(i).L().I1()).FrontNr() << "  "
-           << points.Get(lines.Get(i).L().I2()).FrontNr() << endl;*/
-      if (hi < minval)
+      if( (lines.Get(i).LineClass()==j) && (lines.Get(i).Valid()) )
       {
-        minval = hi;
-        lstind = i;
+        l = Dist(points.Get(lines.Get(i).L().I1()).P(),points.Get(lines.Get(i).L().I2()).P());
+        /*				cout << i << "  "
+                                                 << j << "  "
+                                                 << lines.Get(i).LineClass() << endl;*/
+        if (l < min /*|| i == 1*/)
+        {
+          min = l;
+          lstind = i;
+        }
       }
     }
+    j++;
+  }
+  while(lstind<0);
+
 
   asurfaceind = lines[lstind].SurfaceIndex();
 

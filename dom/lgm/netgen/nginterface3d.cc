@@ -48,7 +48,6 @@ extern "C"
 extern "C"
 void UserWriteF (char * ch, ...);
 
-
 /*void MyError (char * ch)
    {
    UserWriteF (ch);
@@ -751,7 +750,6 @@ static const surfacemeshing * meshthis;
 
 //static surfacemeshing * meshing;
 
-
 int AddGeomPoint (int id, double x, double y, double z)
 {
   geompoints.Append (geompoint3d());
@@ -827,10 +825,12 @@ void surfacemeshing :: Mesh (double gh)
   char ch, found;
   INDEX globind;
   int old;
+  double in[5];
   static ARRAY<Point3d> locp;
 
   double h;
-  Point2d bemp, bemp1, bemp2;
+  /*  Point2d bemp, bemp1, bemp2;*/
+  Point3d bemp, bemp1, bemp2;
 
   // cout << "Inputpoints for netgen" << endl;
   for (i = 1; i <= geompoints.Size(); i++)
@@ -862,30 +862,46 @@ void surfacemeshing :: Mesh (double gh)
 
   {
 
-    qualclass =
-      adfront ->GetLocals (locpoints, loclines, pindex, lindex,
-                           surfind, 3 * gh);
+    h = gh;
+    if (h>0.0)
+      qualclass =
+        adfront ->GetLocals (locpoints, loclines, pindex, lindex,
+                             surfind, 3 * h);
+    else
+      qualclass =
+        adfront ->GetLocals (locpoints, loclines, pindex, lindex,
+                             surfind, -3 * h);
     oldnp = locpoints.Size();
     oldnl = loclines.Size();
 
 
+    /*    bemp1.X() = locpoints[loclines[1].I1()].X();
+        bemp1.Y() = locpoints[loclines[1].I1()].Y();
+        bemp2.X() = locpoints[loclines[1].I2()].X();
+        bemp2.Y() = locpoints[loclines[1].I2()].Y();
+
+        bemp = Center (bemp1, bemp2);
+        bemp.Y() += 0.1 * (bemp2.X() - bemp1.X());
+        bemp.X() -= 0.1 * (bemp2.Y() - bemp1.Y());*/
+
     bemp1.X() = locpoints[loclines[1].I1()].X();
     bemp1.Y() = locpoints[loclines[1].I1()].Y();
+    bemp1.Z() = locpoints[loclines[1].I1()].Z();
     bemp2.X() = locpoints[loclines[1].I2()].X();
     bemp2.Y() = locpoints[loclines[1].I2()].Y();
+    bemp2.Z() = locpoints[loclines[1].I2()].Z();
 
     bemp = Center (bemp1, bemp2);
-    bemp.Y() += 0.1 * (bemp2.X() - bemp1.X());
-    bemp.X() -= 0.1 * (bemp2.Y() - bemp1.Y());
 
-    h = CalcLocalH (Point3d (bemp.X(), bemp.Y(), 0), surfind, gh);
+    if(gh<=0.0)
+    {
+      in[0] = bemp.X();
+      in[1] = bemp.Y();
+      in[2] = bemp.Z();
+      in[3] = gh;
+      Get_Local_h(in,&h);
+    }
 
-    /*    if (LGM_DEBUG) printf("%f %f %f %f %f %f\n",locpoints[loclines[1].I1()].X(),
-                                 locpoints[loclines[1].I1()].Y(),
-                                 locpoints[loclines[1].I1()].Z(),
-                                 locpoints[loclines[1].I2()].X(),
-                                 locpoints[loclines[1].I2()].Y(),
-                                 locpoints[loclines[1].I2()].Z());*/
     DefineTransformation (surfind, locpoints[loclines[1].I1()],
                           locpoints[loclines[1].I2()]);
 
@@ -1041,8 +1057,8 @@ int StartSurfaceNetgen (double h, int smooth, int display)
   meshing -> Mesh (h);
 
   //  for (i=0; i<smooth; i++)
-  //	meshing -> ImproveMesh (*points, *volelements, nbp, h);
-
+  //	meshing -> ImproveMesh (points, elements, 0, nbp, h,20,1);
+  //points, elements, 0, nbp, h, 20, 1
   //  UserWriteF("\n");
   for (i = nbp + 1; i <= points.Size(); i++)
     AddInnerNode2ug (points.Get(i).X(),

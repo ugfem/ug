@@ -66,6 +66,7 @@ public:
   my_meshing3 (char * rulefilename);
   virtual int SavePoint (const Point3d & p);
   virtual void SaveElement (const Element & elem);
+  virtual void Get_Local_h_3d(double *in,double *out);
 
   friend int StartNetgen (double h, int smooth, int display);
 };
@@ -141,6 +142,11 @@ void my_meshing3 :: SaveElement (const Element & elem)
                volelements -> Size(),global[0],global[1],global[2],
                dist,inndiam,diam,percent);
   }
+}
+
+void my_meshing3 :: Get_Local_h_3d(double *in,double *out)
+{
+  Get_h(in,out);
 }
 
 
