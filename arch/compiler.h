@@ -81,6 +81,8 @@ extern "C" {
 #ifdef __MPW32__
 #undef __MWCW__
 
+#define ARCHNAME        "MPW32"
+
 /* basic types */
 #define SHORT  short
 #define INT    int
@@ -118,6 +120,8 @@ extern "C" {
 #ifdef __SGI__
 #undef __MWCW__
 
+#define ARCHNAME        "SGI"
+
 #include <time.h>
 
 /* basic types */
@@ -149,6 +153,8 @@ extern "C" {
 
 #ifdef __PARIX__
 #undef __MWCW__
+
+#define ARCHNAME        "PARIX"
 
 /* basic types */
 #define SHORT  short
@@ -182,6 +188,8 @@ extern "C" {
 #ifdef __AIX__
 #undef __MWCW__
 
+#define ARCHNAME        "AIX"
+
 /* basic types */
 #define SHORT  short
 #define INT    int
@@ -212,6 +220,8 @@ extern "C" {
 
 #ifdef __PARAGON__
 #undef __MWCW__
+
+#define ARCHNAME        "PARAGON"
 
 #include <nx.h>
 
@@ -245,6 +255,9 @@ extern "C" {
 
 #ifdef __SOLARIS__
 #undef __MWCW__
+
+#define ARCHNAME        "SOLARIS"
+
 #include <stddef.h>
 
 /* basic types */
@@ -275,6 +288,9 @@ extern "C" {
 
 #ifdef __SUN4GCC__
 #undef __MWCW__
+
+#define ARCHNAME        "SUN4GCC"
+
 #include <stddef.h>
 
 /* basic types */
@@ -306,6 +322,8 @@ extern "C" {
 
 #ifdef __HP__
 #undef __MWCW__
+
+#define ARCHNAME        "HP"
 
 #include <time.h>
 
@@ -339,6 +357,8 @@ extern "C" {
 #ifdef __SUN__
 #undef __MWCW__
 
+#define ARCHNAME        "SUN"
+
 /* basic types */
 #define SHORT  short
 #define INT    int
@@ -369,6 +389,8 @@ extern "C" {
 #ifdef __DEC__
 #undef __MWCW__
 
+#define ARCHNAME        "DEC"
+
 /* basic types */
 #define SHORT  short
 #define INT    long
@@ -398,6 +420,8 @@ extern "C" {
 
 #ifdef __PC__
 #undef __MWCW__
+
+#define ARCHNAME        "PC"
 
 /* basic types */
 #define SHORT  short
@@ -430,6 +454,8 @@ extern "C" {
 #ifdef __MKLINUX__
 #undef __MWCW__
 
+#define ARCHNAME        "MKLINUX"
+
 /* basic types */
 #define SHORT  short
 #define INT    int
@@ -460,6 +486,8 @@ extern "C" {
 
 #ifdef __T3D__
 #undef __MWCW__
+
+#define ARCHNAME        "T3D"
 
 #include <time.h>       /* for rtclock()   */
 #include <unistd.h>     /* for _SC_CLK_TCK */
@@ -495,6 +523,8 @@ extern "C" {
 #ifdef __T3E__
 #undef __MWCW__
 
+#define ARCHNAME        "T3E"
+
 #include <time.h>       /* for rtclock()   */
 #include <unistd.h>     /* for _SC_CLK_TCK */
 
@@ -528,6 +558,8 @@ extern "C" {
 #if defined(__POWERGC__)
 #undef __MWCW__
 
+#define ARCHNAME        "POWERGC"
+
 /* basic types */
 #define SHORT  short
 #define INT    int
@@ -560,6 +592,8 @@ extern "C" {
 #ifdef __CC__
 #undef __MWCW__
 
+#define ARCHNAME        "CC"
+
 /* basic types */
 #define SHORT  short
 #define INT    int
@@ -589,6 +623,8 @@ extern "C" {
 
 #ifdef __C90__
 #undef __MWCW__
+
+#define ARCHNAME        "C90"
 
 /* basic types */
 #define SHORT  short
@@ -621,6 +657,8 @@ extern "C" {
 #ifdef __YMP__
 #undef __MWCW__
 
+#define ARCHNAME        "YMP"
+
 /* basic types */
 #define SHORT  short
 #define INT    int
@@ -650,6 +688,8 @@ extern "C" {
 
 #ifdef __NECSX4__
 #undef __MWCW__
+
+#define ARCHNAME        "NECSX4"
 
 #include <time.h>
 
@@ -685,6 +725,8 @@ extern "C" {
 #ifdef __SR2201__
 #undef __MWCW__
 
+#define ARCHNAME        "SR2201"
+
 /* basic types */
 #define SHORT  short
 #define INT    long    /* sizeof(int) != sizeof(void *) !! */
@@ -714,6 +756,8 @@ extern "C" {
 
 #ifdef __NEXTSTEP__
 #undef __MWCW__
+
+#define ARCHNAME        "NEXTSTEP"
 
 /* basic types */
 #define SHORT         short
@@ -746,6 +790,8 @@ extern "C" {
 /****************************************************************************/
 
 #ifdef __MWCW__
+
+#define ARCHNAME        "MWCW"
 
 #define USES_UNIVERSAL_HEADERS
 
