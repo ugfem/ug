@@ -60,6 +60,10 @@
 
 #define A_REASONABLE_NUMBER             100
 
+/* for SwapPartInterfaceData */
+#define SWAP_VEC_DATA(v,pf,pt)          {tmp = VVALUE(v,*pf); VVALUE(v,*pf) = VVALUE(v,*pt); VVALUE(v,*pf) = tmp;}
+#define SWAP_MAT_DATA(m,pf,pt)          {tmp = MVALUE(m,*pf); MVALUE(m,*pf) = MVALUE(m,*pt); MVALUE(m,*pf) = tmp;}
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -550,7 +554,7 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
    CreateSubVecDesc - create a sub-vecdesc for a given vector and fill extra data
 
    SYNOPSIS:
-   VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const VECDATA_DESC *theVD, const char *name,
+   VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const char *name,
                                                                 const SHORT *NCmpInType, const SHORT *Comps, const char *CompNames)
 
    PARAMETERS:
@@ -572,12 +576,11 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
    D*/
 /****************************************************************************/
 
-VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const VECDATA_DESC *theVD, const char *name,
+VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const char *name,
                                 const SHORT *NCmpInType, const SHORT *Comps, const char *CompNames)
 {
   VECDATA_DESC *vd;
   SHORT offset[NVECOFFSETS];
-  const SHORT *offptr;
   INT j,k,tp,ncmp,size;
   char buffer[NAMESIZE];
 
@@ -589,7 +592,6 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const VECDATA_DESC *theVD, con
   if (ChangeEnvDir("Vectors") == NULL) REP_ERR_RETURN (NULL);
   ConstructVecOffsets(NCmpInType,offset);
   ncmp = offset[NVECTYPES];
-  offptr = VD_OFFSETPTR(theVD);
   if (ncmp <= 0) REP_ERR_RETURN (NULL);
   size = sizeof(VECDATA_DESC)+(ncmp-1)*sizeof(SHORT);
   if (name != NULL)
@@ -702,6 +704,52 @@ VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_
   VM_LOCKED(vd) = 0;
 
   return (vd);
+}
+
+/****************************************************************************/
+/*D
+   VDequal - compare vec data descriptors
+
+   SYNOPSIS:
+   INT VDequal (const VECDATA_DESC *vd0, const VECDATA_DESC *vd1)
+
+   PARAMETERS:
+   .  vd0 - first  vec data descriptor
+   .  vd1 - second vec data descriptor
+
+   DESCRIPTION:
+   This function compares two vec data descriptors. It returns YES iff
+   they coincide in all components of all types.
+
+   RETURN VALUE:
+   INT
+   .n      YES if vec data descriptors are equal
+   .n      NO  else
+ */
+/****************************************************************************/
+
+INT VDequal (const VECDATA_DESC *vd0, const VECDATA_DESC *vd1)
+{
+  INT tp,i,n;
+  SHORT *c0,*c1;
+
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (VD_NCMPS_IN_TYPE(vd0,tp)==VD_NCMPS_IN_TYPE(vd1,tp))
+    {
+      n  = VD_NCMPS_IN_TYPE(vd0,tp);
+      if (n<=0)
+        continue;
+
+      c0 = VD_CMPPTR_OF_TYPE(vd0,tp);
+      c1 = VD_CMPPTR_OF_TYPE(vd1,tp);
+      for (i=0; i<n; i++)
+        if (c0[i]!=c1[i])
+          return (NO);
+    }
+    else
+      return (NO);
+
+  return (YES);
 }
 
 /****************************************************************************/
@@ -907,6 +955,45 @@ INT FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
 
 /****************************************************************************/
 /*D
+   DisposeVD - remove VECDATA_DESC from objects of multigrid
+
+   SYNOPSIS:
+   INT DisposeVD (VECDATA_DESC *vd)
+
+   PARAMETERS:
+   .  vd - vector descriptor
+
+   DESCRIPTION:
+   This function removes a vector descriptor from the objects of the multigrid. The part
+   of environment memory it occupies is freed. The functions calls
+   'RemoveEnvItem'.
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occurred
+ */
+/****************************************************************************/
+
+INT DisposeVD (VECDATA_DESC *vd)
+{
+  if (vd==NULL) REP_ERR_RETURN (NUM_ERROR);
+  if (VM_LOCKED(vd)) REP_ERR_RETURN (NUM_ERROR);
+
+  ENVITEM_LOCKED(vd) = 0;
+
+  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN (NULL);
+  if (ChangeEnvDir(ENVITEM_NAME(VD_MG(vd))) == NULL) REP_ERR_RETURN (NULL);
+  if (ChangeEnvDir("Vectors") == NULL) REP_ERR_RETURN (NULL);
+
+  if (RemoveEnvItem((ENVITEM*)vd))
+    REP_ERR_RETURN (NULL);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    DisplayVecDataDesc - Display VECDATA_DESC entries
 
    SYNOPSIS:
@@ -989,6 +1076,74 @@ VECDATA_DESC *GetVecDataDescByName (const MULTIGRID *theMG, char *name)
   if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
   return((VECDATA_DESC *) SearchEnv(name,"Vectors",
                                     VectorVarID,VectorDirID));
+}
+
+/****************************************************************************/
+/*D
+        VDinterfaceDesc - an interface VECDATA_DESC is created
+
+        SYNOPSIS:
+        INT VDinterfaceDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
+
+    PARAMETERS:
+   .   vd			- make a sub desc of this VECDATA_DESC
+   .   vds			- an existing sub desc of vd
+   .   vdi			- handle to new interface desc
+
+        DESCRIPTION:
+        This function creates a sub descriptor to a given VECDATA_DESC such that all components
+        from vds are taken of types in which vds is defined but where vds is a true subset of vd.
+
+        RETURN VALUE:
+        INT
+   .n   0: ok
+   .n      n: if an error occured
+   D*/
+/****************************************************************************/
+
+INT VDinterfaceDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
+{
+  SHORT SubComp[MAX_VEC_COMP],SubNCmp[NVECTYPES];
+  INT i,k,n,ns,tp;
+  char SubName[MAX_VEC_COMP];
+
+  k = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (VD_ISDEF_IN_TYPE(vds,tp))
+    {
+      if (!VD_ISDEF_IN_TYPE(vd,tp))
+        REP_ERR_RETURN (1);
+
+      n  = VD_NCMPS_IN_TYPE(vd,tp);
+      ns = VD_NCMPS_IN_TYPE(vds,tp);
+      if (ns<n)
+      {
+        /* copy all components from vds */
+        for (i=0; i<ns; i++)
+        {
+          ASSERT(k<MAX_MAT_COMP);
+
+          SubComp[k] = VD_CMP_OF_TYPE(vds,tp,i);;
+          SubName[k] = VM_COMP_NAME(vds,VD_OFFSET(vds,tp)+i);
+          k++;
+        }
+        SubNCmp[tp] = ns;
+      }
+      else if (ns==n)
+      {
+        /* no components here */
+        SubNCmp[tp] = 0;
+      }
+      else
+        /* vd does not contain vds */
+        REP_ERR_RETURN (1);
+    }
+
+  *vdi = CreateSubVecDesc(VD_MG(vd),NULL,SubNCmp,SubComp,SubName);
+  if (*vdi == NULL)
+    REP_ERR_RETURN (1);
+
+  return (0);
 }
 
 /****************************************************************************/
@@ -1217,6 +1372,38 @@ INT ConstructMatOffsets (const SHORT *RowsInType, const SHORT *ColsInType, SHORT
   offset[0] = 0;
   for (type=1; type<NMATOFFSETS; type++)
     offset[type] = offset[type-1] + RowsInType[type-1]*ColsInType[type-1];
+
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*D
+   ConstructMatOffsetsAlt - Calculate offsets for MAT_SCALARs
+
+   SYNOPSIS:
+   INT ConstructMatOffsetsAlt (const SHORT *CmpsInType, SHORT *offset)
+
+
+   PARAMETERS:
+   .  CmpsInType - the numbers of components is used for the calculation of offsets
+   .  offset - array of length NMATOFFSETS (!)
+
+   DESCRIPTION:
+   This function calculates offsets for MAT_SCALARs.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK
+   D*/
+/****************************************************************************/
+
+INT ConstructMatOffsetsAlt (const SHORT *CmpsInType, SHORT *offset)
+{
+  INT type;
+
+  offset[0] = 0;
+  for (type=1; type<NMATOFFSETS; type++)
+    offset[type] = offset[type-1] + CmpsInType[type-1];
 
   return (NUM_OK);
 }
@@ -1500,9 +1687,9 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *com
    CreateSubMatDesc - create a matrix and fill extra data
 
    SYNOPSIS:
-   MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
-                                                                const char *name, const SHORT *RowsInType,
-                                                                const SHORT *ColsInType, const SHORT *Comps, const char *CompNames)
+   MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const char *name,
+                                                                const SHORT *RowsInType, const SHORT *ColsInType,
+                                                                const SHORT *Comps, const char *CompNames)
 
    PARAMETERS:
    .  theMG - create sub-matrix for this multigrid
@@ -1524,14 +1711,13 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *com
    D*/
 /****************************************************************************/
 
-MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
-                                const char *name, const SHORT *RowsInType,
-                                const SHORT *ColsInType, const SHORT *Comps, const char *CompNames)
+MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const char *name,
+                                const SHORT *RowsInType, const SHORT *ColsInType,
+                                const SHORT *Comps, const char *CompNames)
 {
   MATDATA_DESC *md;
   SHORT offset[NMATOFFSETS];
-  const SHORT *offptr;
-  INT j,tp,ncmp,size;
+  INT k,j,tp,ncmp,size;
   char buffer[NAMESIZE];
 
   if (theMG == NULL)
@@ -1542,7 +1728,6 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
   if (ChangeEnvDir("Matrices") == NULL) REP_ERR_RETURN (NULL);
   ConstructMatOffsets(RowsInType,ColsInType,offset);
   ncmp = offset[NMATTYPES];
-  offptr = MD_OFFSETPTR(theMD);
   if (ncmp <= 0) REP_ERR_RETURN (NULL);
   size = sizeof(MATDATA_DESC)+(ncmp-1)*sizeof(SHORT);
   if (name != NULL)
@@ -1554,13 +1739,13 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
   /* fill data in mat data desc */
   MD_MG(md) = theMG;
   strncpy(VM_COMP_NAMEPTR(md),CompNames,2*ncmp);
+  k = 0;
   for (tp=0; tp<NMATTYPES; tp++) {
     MD_ROWS_IN_MTYPE(md,tp) = RowsInType[tp];
     MD_COLS_IN_MTYPE(md,tp) = ColsInType[tp];
     MD_MCMPPTR_OF_MTYPE(md,tp) = VM_COMPPTR(md) + offset[tp];
     for (j=0; j<RowsInType[tp]*ColsInType[tp]; j++) {
-      MD_MCMP_OF_MTYPE(md,tp,j) =
-        MD_MCMP_OF_MTYPE(theMD,tp,Comps[tp]+j);
+      MD_MCMP_OF_MTYPE(md,tp,j) = Comps[k++];
     }
   }
   for (tp=0; tp<NMATOFFSETS; tp++)
@@ -2050,6 +2235,117 @@ INT FreeMD (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *md)
 
 /****************************************************************************/
 /*D
+   DisposeMD - remove MATDATA_DESC from objects of multigrid
+
+   SYNOPSIS:
+   INT DisposeMD (MATDATA_DESC *md)
+
+   PARAMETERS:
+   .  md - matrix descriptor
+
+   DESCRIPTION:
+   This function removes a matrix descriptor from the objects of the multigrid. The part
+   of environment memory it occupies is freed. The functions calls
+   'RemoveEnvItem'.
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occurred
+ */
+/****************************************************************************/
+
+INT DisposeMD (MATDATA_DESC *md)
+{
+  if (md==NULL) REP_ERR_RETURN (NUM_ERROR);
+  if (VM_LOCKED(md)) REP_ERR_RETURN (NUM_ERROR);
+
+  ENVITEM_LOCKED(md) = 0;
+
+  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN (NULL);
+  if (ChangeEnvDir(ENVITEM_NAME(VD_MG(md))) == NULL) REP_ERR_RETURN (NULL);
+  if (ChangeEnvDir("Matrices") == NULL) REP_ERR_RETURN (NULL);
+
+  if (RemoveEnvItem((ENVITEM*)md))
+    REP_ERR_RETURN (NULL);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+        MDinterfaceDesc - an interface MATDATA_DESC is created
+
+        SYNOPSIS:
+        INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi)
+
+    PARAMETERS:
+   .   md			- make a sub desc of this MATDATA_DESC
+   .   mds			- an existing sub desc of md
+   .   mdi			- handle to new interface desc
+
+        DESCRIPTION:
+        This function creates a sub descriptor to a given MATDATA_DESC such that all components
+        from mds are taken of types in which mds is defined but where mds is a true subset of md.
+
+        RETURN VALUE:
+        INT
+   .n   0: ok
+   .n      n: if an error occured
+   D*/
+/****************************************************************************/
+
+INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi)
+{
+  SHORT SubComp[MAX_MAT_COMP],SubRCmp[NMATTYPES],SubCCmp[NMATTYPES];
+  INT i,k,l,n,ns,tp;
+  char SubName[2*MAX_MAT_COMP];
+
+  k = 0;
+  for (tp=0; tp<NMATTYPES; tp++)
+    if (MD_ISDEF_IN_MTYPE(mds,tp))
+    {
+      if (!MD_ISDEF_IN_MTYPE(md,tp))
+        REP_ERR_RETURN (1);
+
+      n  = MD_ROWS_IN_MTYPE(md,tp) * MD_COLS_IN_MTYPE(md,tp);
+      ns = MD_ROWS_IN_MTYPE(mds,tp) * MD_COLS_IN_MTYPE(mds,tp);
+      if (ns<n)
+      {
+        /* copy all components from mds */
+        for (i=0; i<ns; i++)
+        {
+          ASSERT(k<MAX_MAT_COMP);
+
+          SubComp[k] = MD_MCMP_OF_MTYPE(mds,tp,i);;
+          l = MD_MTYPE_OFFSET(mds,tp)+i;
+          SubName[2*k]   = VM_COMP_NAME(mds,2*l);
+          SubName[2*k+1] = VM_COMP_NAME(mds,2*l+1);
+          k++;
+        }
+        SubRCmp[tp] = MD_ROWS_IN_MTYPE(mds,tp);
+        SubCCmp[tp] = MD_COLS_IN_MTYPE(mds,tp);
+      }
+      else if (ns==n)
+      {
+        /* no components here */
+        SubRCmp[tp] = 0;
+        SubCCmp[tp] = 0;
+      }
+      else
+        /* md does not contain mds */
+        REP_ERR_RETURN (1);
+    }
+
+  *mdi = CreateSubMatDesc(VD_MG(md),NULL,SubRCmp,SubCCmp,SubComp,SubName);
+  if (*mdi == NULL)
+    REP_ERR_RETURN (1);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    MD_rows_in_ro_co - return number of row comps in row/col object if unique, -1 else
 
    SYNOPSIS:
@@ -2405,6 +2701,290 @@ SHORT *MD_nr_nc_mcmpptr_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj
   if (nc!=NULL) *nc = ncol;
 
   return (cptr);
+}
+
+/****************************************************************************/
+/*D
+   SwapPartInterfaceData - swap data at domain part interface
+
+   SYNOPSIS:
+   INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
+
+   PARAMETERS:
+   .  fl - from level
+   .  tl - to   level
+   .  spid - data structure holding the XXXDATA_DESCs to be swapped
+   .  direction - forth or back
+
+   DESCRIPTION:
+   Suppose the domain is split into two parts coinciding with two subdomains and
+   a third part on the interface (inner boundary) between the subdomains.
+   Say we want to have only nodal degrees of freedom (dof) all over the domain.
+   Say further we want to solve a PDE X with n unknowns in part 0 and a second one (Y)
+   with m unknowns in part 1. Then we need n+m dofs in the interface part (number 2)
+   because we have to implement boundary equations for both PDEs there.
+
+   Now for actions to be performed on the data of PDE X we may wish to have all
+   data with the same offset in node vectors. This is the purpose of
+   'SwapPartInterfaceData'.
+
+   The swapped data are described by one or more pairs of VEC/MATDATA_DESCs. The first
+   (SPID_VD) of each pair describes the data of PDE X including the interface (and
+   thus covers parts 0 and 2 in our example). The second one (SPID_VDI) describes
+   the data of PDE X on the interface only (part 2 in our example).
+   'SwapPartInterfaceData' with direction SPID_FORTH then swaps the interface data
+   (n for a vector in the example) in a way that they occupy the same positions in
+   the NODEVEC as the corresponding data do in NODEVECs of part 0.
+
+   After swapping it is possible to perform an action on the data and using the same
+   offset in both part 0 and part 2.
+
+   NOTE:
+   The SPID_VD descriptors are changed such that they describe the new situation.
+
+   IMPORTANT:
+   To restore the original state (this includes reverting the SPID_VD descriptors)
+   call 'SwapPartInterfaceData' again (now with SPID_BACK)!
+
+   RETURN VALUE:
+   INT
+   .n      0: ok
+   .n      n: else
+   D*/
+/****************************************************************************/
+
+INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction)
+{
+  MULTIGRID *mg;
+  VECTOR *vec;
+  MATRIX *mat;
+  VECDATA_DESC *vd,*vdi;
+  MATDATA_DESC *md,*mdi;
+  DOUBLE tmp;
+  INT tp,tpn,rt,ct,i,j,n,nn,ni,kn,ki,lev,consider_mat;
+  INT nv,nm;
+  SHORT *vcmp,*mcmp,*pn,*pi;
+  SHORT nvn[NVECTYPES],nvi[NVECTYPES];
+  SHORT vn[SPID_NVD_MAX*MAX_VEC_COMP],vi[SPID_NVD_MAX*MAX_VEC_COMP];
+  SHORT vnoffset[NVECOFFSETS],vioffset[NVECOFFSETS];
+  SHORT nmn[NMATTYPES],nmi[NMATTYPES];
+  SHORT mn[SPID_NMD_MAX*MAX_MAT_COMP],mi[SPID_NMD_MAX*MAX_MAT_COMP];
+  SHORT mnoffset[NMATOFFSETS],mioffset[NMATOFFSETS];
+  static INT old_direction=SPID_BACK;
+
+  /* check that direction has changed */
+  if (direction==old_direction)
+    REP_ERR_RETURN(1);
+  old_direction = direction;
+
+  if (SPID_NVD(spid)>0)
+    mg = VD_MG(SPID_VD(spid,0));
+  else if (SPID_NMD(spid)>0)
+    mg = MD_MG(SPID_MD(spid,0));
+  else
+    /* neither vds nor mds defined */
+    REP_ERR_RETURN (1);
+  ASSERT(fl>=BOTTOMLEVEL(mg));
+  ASSERT(tl<=TOPLEVEL(mg));
+
+  /* get interface components to copy from
+     and non-interface components to copy to */
+
+
+  /*****************/
+  /* VECDATA_DESCs */
+  /*****************/
+
+  nn = ni = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+  {
+    kn = ki = 0;
+    for (i=0; i<SPID_NVD(spid); i++)
+      if (VD_ISDEF_IN_TYPE(SPID_VDI(spid,i),tp))
+      {
+        /* this is the interface */
+        vd = SPID_VDI(spid,i);
+        n  = VD_NCMPS_IN_TYPE(vd,tp);
+        for (j=0; j<n; j++)
+        {
+          ASSERT(ni<SPID_NVD_MAX*MAX_VEC_COMP);
+          vi[ni++] = VD_CMP_OF_TYPE(vd,tp,j);
+          ki++;
+        }
+      }
+      else if (VD_ISDEF_IN_TYPE(SPID_VD(spid,i),tp))
+      {
+        /* this is non-interface */
+        vd = SPID_VD(spid,i);
+        n  = VD_NCMPS_IN_TYPE(vd,tp);
+        for (j=0; j<n; j++)
+        {
+          ASSERT(nn<SPID_NVD_MAX*MAX_VEC_COMP);
+          vn[nn++] = VD_CMP_OF_TYPE(vd,tp,j);
+          kn++;
+        }
+      }
+    nvi[tp] = ki;
+    nvn[tp] = kn;
+  }
+  ConstructVecOffsets(nvi,vioffset);
+  ConstructVecOffsets(nvn,vnoffset);
+
+  /* check that only one non-interface type exists (for uniqueness) */
+  vcmp = NULL;
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (nvn[tp])
+    {
+      if (vcmp==NULL)
+        REP_ERR_RETURN(1);
+      vcmp = vn+vnoffset[tp];
+      nv   = nvn[tp];
+      tpn  = tp;
+    }
+
+  /* check that number of interface and non-interface comps coincide */
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (nvi[tp]>0)
+      if (nvi[tp]!=nv)
+        REP_ERR_RETURN(1);
+
+  /* finally change comps of VD on interface to describe data after swapping */
+  for (tp=0; tp<NVECTYPES; tp++)
+    for (i=0; i<SPID_NVD(spid); i++)
+      if (VD_ISDEF_IN_TYPE(SPID_VDI(spid,i),tp))
+      {
+        /* this is the interface */
+        vdi = SPID_VDI(spid,i);
+        vd  = SPID_VD(spid,i);
+        n   = VD_NCMPS_IN_TYPE(vd,tp);
+        ASSERT(n==VD_NCMPS_IN_TYPE(vd,tpn));
+        if (direction==SPID_FORTH)
+          /* get comps from non-interface */
+          for (j=0; j<n; j++)
+            VD_CMP_OF_TYPE(vd,tp,j) = VD_CMP_OF_TYPE(vd,tpn,j);
+        else if (direction==SPID_BACK)
+          /* get comps from interface */
+          for (j=0; j<n; j++)
+            VD_CMP_OF_TYPE(vd,tp,j) = VD_CMP_OF_TYPE(vdi,tp,j);
+        else
+          REP_ERR_RETURN(1);
+      }
+
+  /*****************/
+  /* MATDATA_DESCs */
+  /*****************/
+
+  nn = ni = 0;
+  for (tp=0; tp<NMATTYPES; tp++)
+  {
+    kn = ki = 0;
+    for (i=0; i<SPID_NMD(spid); i++)
+      if (MD_ISDEF_IN_MTYPE(SPID_MDI(spid,i),tp))
+      {
+        /* this is the interface */
+        md = SPID_MDI(spid,i);
+        n  = MD_ROWS_IN_MTYPE(md,tp)*MD_COLS_IN_MTYPE(md,tp);
+        for (j=0; j<n; j++)
+        {
+          ASSERT(ni<SPID_NMD_MAX*MAX_MAT_COMP);
+          mi[ni++] = MD_MCMP_OF_MTYPE(md,tp,j);
+          ki++;
+        }
+      }
+      else if (MD_ISDEF_IN_MTYPE(SPID_MD(spid,i),tp))
+      {
+        /* this is non-interface */
+        md = SPID_MD(spid,i);
+        n  = MD_ROWS_IN_MTYPE(md,tp)*MD_COLS_IN_MTYPE(md,tp);
+        for (j=0; j<n; j++)
+        {
+          ASSERT(nn<SPID_NMD_MAX*MAX_MAT_COMP);
+          mn[nn++] = MD_MCMP_OF_MTYPE(md,tp,j);
+          kn++;
+        }
+      }
+    nmi[tp] = ki;
+    nmn[tp] = kn;
+  }
+  ConstructMatOffsetsAlt(nmi,mioffset);
+  ConstructMatOffsetsAlt(nmn,mnoffset);
+
+  /* check that only one non-interface type exists (for uniqueness) */
+  mcmp = NULL;
+  for (tp=0; tp<NMATTYPES; tp++)
+    if (nmn[tp])
+    {
+      ASSERT(mcmp!=NULL);
+      mcmp = mn+mnoffset[tp];
+      nm   = nmn[tp];
+      ASSERT(tp==tpn*NVECTYPES+tpn);
+      tpn  = tp;
+    }
+
+  /* check that number of interface and non-interface comps coincide */
+  for (tp=0; tp<NMATTYPES; tp++)
+    if (nmi[tp]>0)
+      if (nmi[tp]!=nm)
+        REP_ERR_RETURN(1);
+
+  /* finally change comps of MD on interface to describe data after swapping */
+  for (tp=0; tp<NMATTYPES; tp++)
+    for (i=0; i<SPID_NMD(spid); i++)
+      if (MD_ISDEF_IN_MTYPE(SPID_MDI(spid,i),tp))
+      {
+        /* this is the interface */
+        mdi = SPID_MDI(spid,i);
+        md  = SPID_MD(spid,i);
+        n   = MD_ROWS_IN_MTYPE(md,tp)*MD_COLS_IN_MTYPE(md,tp);
+        ASSERT(n==MD_ROWS_IN_MTYPE(md,tpn)*MD_COLS_IN_MTYPE(md,tpn));
+        if (direction==SPID_FORTH)
+          /* get comps from non-interface */
+          for (j=0; j<n; j++)
+            MD_MCMP_OF_MTYPE(md,tp,j) = MD_MCMP_OF_MTYPE(md,tpn,j);
+        else if (direction==SPID_BACK)
+          /* get comps from interface */
+          for (j=0; j<n; j++)
+            MD_MCMP_OF_MTYPE(md,tp,j) = MD_MCMP_OF_MTYPE(mdi,tp,j);
+        else
+          REP_ERR_RETURN(1);
+      }
+
+
+  /*********************************/
+  /* now loop vectors and matrices */
+  /*              and swap data			 */
+  /*********************************/
+
+  consider_mat = (SPID_NMD(spid)>0);
+  for (lev=fl; lev<=tl; lev++)
+    for (vec=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); vec!=NULL; vec=SUCCVC(vec))
+    {
+      rt = VTYPE(vec);
+      n  = nvi[rt];
+      if (n>0)
+      {
+        pn = vcmp;
+        pi = vi+vioffset[rt];
+        for (i=0; i<nv; i++,pi++,pn++)
+          SWAP_VEC_DATA(vec,pi,pn);
+      }
+      if (consider_mat)
+        for (mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat))
+        {
+          ct = VTYPE(MDEST(mat));
+          tp = MTP(rt,ct);
+          n  = nmi[tp];
+          if (n>0)
+          {
+            pn = mcmp;
+            pi = mi+mioffset[tp];
+            for (i=0; i<nm; i++,pi++,pn++)
+              SWAP_MAT_DATA(mat,pi,pn);
+          }
+        }
+    }
+
+  return (0);
 }
 
 /****************************************************************************/

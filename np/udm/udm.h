@@ -119,6 +119,19 @@
 #define VM_COMPPTR(p)                      ((p)->Components)
 #define VM_LOCKED(p)                       ((p)->locked)
 
+/* swapping part interface data */
+#define SPID_NVD_MAX            4
+#define SPID_NMD_MAX            2
+#define SPID_FORTH                      69
+#define SPID_BACK                       96
+
+#define SPID_NVD(p)                     ((p)->nvd)
+#define SPID_VD(p,i)            ((p)->vd[i])
+#define SPID_VDI(p,i)           ((p)->vdi[i])
+#define SPID_NMD(p)                     ((p)->nmd)
+#define SPID_MD(p,i)            ((p)->md[i])
+#define SPID_MDI(p,i)           ((p)->mdi[i])
+
 /****************************************************************************/
 /*																			*/
 /* data structures                                                                                                                      */
@@ -185,6 +198,18 @@ typedef struct {
 
 typedef DOUBLE VEC_SCALAR[MAX_VEC_COMP];
 
+typedef struct {
+
+  INT nvd;                                                      /* number of vec data descriptors		*/
+  VECDATA_DESC *vd[SPID_NVD_MAX];       /* vec data descriptors					*/
+  VECDATA_DESC *vdi[SPID_NVD_MAX];      /* vec data interface descriptors		*/
+
+  INT nmd;                                                      /* number of mat data descriptors		*/
+  MATDATA_DESC *md[SPID_NMD_MAX];       /* mat data descriptors					*/
+  MATDATA_DESC *mdi[SPID_NMD_MAX];      /* mat data interface descriptors		*/
+
+} SPID_DESC;
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported data structures									*/
@@ -206,13 +231,15 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
                              const SHORT *NCmpInType);
 MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *compNames,
                              const SHORT *RowsInType, const SHORT *ColsInType);
-VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const VECDATA_DESC *theVD, const char *name,
+VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const char *name,
                                 const SHORT *NCmpInType, const SHORT *Comps, const char *CompNames);
-MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
+MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG,
                                 const char *name, const SHORT *RowsInType,
                                 const SHORT *ColsInType, const SHORT *Comps, const char *CompNames);
 VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_DESC **theVDs,
                               const INT nrOfVDs);
+
+INT VDequal (const VECDATA_DESC *vd0, const VECDATA_DESC *vd1);
 
 INT FillRedundantComponentsOfVD (VECDATA_DESC *vd);
 INT FillRedundantComponentsOfMD (MATDATA_DESC *md);
@@ -244,9 +271,20 @@ INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
 INT FreeVD        (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *x);
 INT FreeMD        (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *A);
 
+/* disposing of vector and matrix descriptors */
+INT DisposeVD     (VECDATA_DESC *vd);
+INT DisposeMD     (MATDATA_DESC *md);
+
+/* constructing part interface descriptors */
+INT VDinterfaceDesc                                             (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi);
+INT MDinterfaceDesc                                             (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi);
+
 INT ConstructVecOffsets (const SHORT *NCmpInType, SHORT *offset);
 INT ConstructMatOffsets (const SHORT *RowsInType, const SHORT *ColsInType, SHORT *offset);
+INT ConstructMatOffsetsAlt (const SHORT *CmpsInType, SHORT *offset);
 
+/* swapping data on part interfaces */
+INT SwapPartInterfaceData (INT fl, INT tl, SPID_DESC *spid, INT direction);
 
 /****************************************************************************/
 /*	getting object type specific information from XXXDATA_DESCs
