@@ -523,6 +523,7 @@ typedef struct marc_bnds M_BNDS;
 
 #       ifdef __THREEDIM__
 INT RepairMesh (HEAP *Heap, INT MarkKey, MESH *mesh);
+INT CheckPrisms (INT *corner, INT n0, INT n1 , INT n2, INT n3);
 #       endif
 void SetBVPType(INT type);
 
