@@ -221,10 +221,8 @@ static void XferGridWithOverlap (GRID *theGrid)
     int j;
 
     /* create Master copy */
-    if (PARTITION(elem)!=me)
-    {
-      XferElement(elem, PARTITION(elem), PrioMaster);
-    }
+    XferElement(elem, PARTITION(elem), PrioMaster);
+
 
 
     /* create 1-overlapping of elements */
