@@ -26,8 +26,8 @@ dnl Substitute LTDLINCL and LIBLTDL in the Makefiles
 AC_SUBST(LTDLINCL)
 AC_SUBST(LIBLTDL)
 # was für libs wollen wir:
-#AC_ENABLE_SHARED
-#AC_DISABLE_STATIC
+AC_DISABLE_SHARED
+AC_ENABLE_STATIC
 dnl Check for dlopen support
 AC_LIBTOOL_DLOPEN
 dnl Configure libtool
