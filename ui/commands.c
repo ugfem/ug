@@ -8330,11 +8330,16 @@ static INT OpenWindowCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   int x,y,w,h;
         #ifdef ModelP
-  if (!CONTEXT(me)) {
+  if (!CONTEXT(me))
     PRINTDEBUG(ui,0,("%2d: OpenWindowCommand(): me not in Context," \
                      "  no window structure allocated\n",me))
-    return(OKCODE);
-  }
+    /* Note: it is forbidden that a part of the processors leave this function premature
+       since in the subsequent CreateUgWindow communication occures, whis requires
+       all processors to participate. Thus ensure that all or none processor leaves.
+       Christian Wrobel 990329 */
+    for(i=0; i<procs; i++)
+      if(!CONTEXT(i))                   /* each procesor has the same context; thus no communication is required */
+        return(CMDERRORCODE);
         #endif
 
   /* scan parameters */
@@ -8437,7 +8442,17 @@ static INT CloseWindowCommand (INT argc, char **argv)
   INT i,aopt;
 
         #ifdef ModelP
-  if (me!=master) return (OKCODE);
+  /*if (me!=master) return (OKCODE); since OpenWindow allocates structures for all procs, CloseWindow must deallocate for all those (and not only for master). Christian Wrobel 990326 */
+  if (!CONTEXT(me))
+    PRINTDEBUG(ui,0,("%2d: CloseWindowCommand(): me not in Context," \
+                     "  no window structure closed\n",me))
+    /* Note: it is forbidden that a part of the processors leave this function premature
+       since all allocated structures must be deallocated.
+       Thus ensure that all or none processor leaves.
+       Christian Wrobel 990329 */
+    for(i=0; i<procs; i++)
+      if(!CONTEXT(i))                   /* each procesor has the same context; thus no communication is required */
+        return(CMDERRORCODE);
         #endif
 
   currWin = GetCurrentUgWindow();
