@@ -162,7 +162,7 @@ static void PSFilledCircle (SHORT_POINT point, short r)
   yr = TRFMY(aux);
   r  = sqrt(xr*xr+yr*yr);
   fprintf(currPSF,"N\n");
-  fprintf(currPSF,"%g %g moveto\n",TRFMX(point)+r,TRFMY(point));
+  fprintf(currPSF,"%g %g M\n",TRFMX(point)+r,TRFMY(point));
   fprintf(currPSF,"%g %g %g %g %g arc\n",TRFMX(point),TRFMY(point),(float)r,(float)0,(float)360);
 
   fprintf(currPSF,"C\n");
@@ -206,11 +206,19 @@ static void PSErasePolygon (SHORT_POINT *points, INT nb)
   return;
 }
 
+void PSPrintColor (float color)
+{
+  if (color==0.0) fprintf(currPSF,"%d ",0);
+  else if (color==1.0) fprintf(currPSF,"%d ",1);
+  else fprintf(currPSF,"%.3f ",color);
+  return;
+}
+
 static void PSGrayForeground (void)
 {
   if (PScc==GRAY_CC) return;
 
-  fprintf(currPSF,"%.3f %.3f %.3f R\n",GRAY,GRAY,GRAY);
+  fprintf(currPSF,"%.1f %.1f %.1f R\n",GRAY,GRAY,GRAY);
   PScc = GRAY_CC;
   return;
 }
@@ -219,7 +227,10 @@ static void PSForeground (long index)
 {
   if (PScc==index) return;
 
-  fprintf(currPSF,"%.3f %.3f %.3f R\n",(float)red[index],(float)green[index],(float)blue[index]);
+  PSPrintColor((float)red[index]);
+  PSPrintColor((float)green[index]);
+  PSPrintColor((float)blue[index]);
+  fprintf(currPSF,"R\n");
   PScc = index;
   return;
 }
@@ -360,7 +371,7 @@ static void PSText (const char *s, INT mode)
   fprintf(currPSF,"%g %g M\n",TRFMX(PScp),TRFMY(PScp));
   if (landscape) fprintf(currPSF,"90 rotate\n");
   PrintPSString(s);
-  fprintf(currPSF," show newpath\n");
+  fprintf(currPSF," show N\n");
   if (landscape) fprintf(currPSF,"-90 rotate\n");
   return;
 }
@@ -383,7 +394,7 @@ static void PSSetLineWidth (short n)
   if (n<1) n=1;
   if (n==PSlw) return;
 
-  fprintf(currPSF,"%.3f setlinewidth\n",LW_FACTOR+((float)(n-1))*LW_SCALE*LW_FACTOR);
+  fprintf(currPSF,"%.3f W\n",LW_FACTOR+((float)(n-1))*LW_SCALE*LW_FACTOR);
   PSlw = n;
   return;
 }
@@ -414,7 +425,10 @@ static void PSSetPaletteEntry (long index, short r, short g, short b)
   red[index]   = ((float)r)/255.0;
   green[index] = ((float)g)/255.0;
   blue[index]  = ((float)b)/255.0;
-  fprintf(currPSF,"%.3f %.3f %.3f R\n",(float)red[index],(float)green[index],(float)blue[index]);
+  PSPrintColor((float)red[index]);
+  PSPrintColor((float)green[index]);
+  PSPrintColor((float)blue[index]);
+  fprintf(currPSF,"R\n");
   PScc = index;
   return;
 }
@@ -430,7 +444,10 @@ static void PSSetPalette (long x, long count, short *r, short *g, short *b)
     green[i] = ((float)g[i-x])/255.0;
     blue[i]  = ((float)b[i-x])/255.0;
   }
-  fprintf(currPSF,"%.3f %.3f %.3f R\n",(float)red[x],(float)green[x],(float)blue[x]);
+  PSPrintColor((float)red[x]);
+  PSPrintColor((float)green[x]);
+  PSPrintColor((float)blue[x]);
+  fprintf(currPSF,"R\n");
   PScc = (unsigned char) x;
   return;
 }
@@ -599,6 +616,7 @@ static INT WritePSHeader (FILE *file, const char *title, INT x, INT y, INT w, IN
   fprintf(file,"/C {closepath fill} def\n");
   fprintf(file,"/N {newpath} def\n");
   fprintf(file,"/R {setrgbcolor} def\n");
+  fprintf(file,"/W {setlinewidth} def\n");
 
   fprintf(file,"\n");
 

@@ -187,6 +187,7 @@ FILE  *OpenPSFile(char *filename, char *title, int x, int y, int w, int h )
   fprintf(file,"/C {closepath fill} def\n");
   fprintf(file,"/N {newpath} def\n");
   fprintf(file,"/R {setrgbcolor} def\n");
+  fprintf(file,"/W {setlinewidth} def\n");
 
   fprintf(file,"\n");
 
@@ -386,10 +387,10 @@ static void PrintPSString(char *s)
 
 void IF_Text (char *s)
 {
-  fprintf(psfile,"%g %g moveto\n",TRFMX(IF_cx,IF_cy),TRFMY(IF_cx,IF_cy));
+  fprintf(psfile,"%g %g M\n",TRFMX(IF_cx,IF_cy),TRFMY(IF_cx,IF_cy));
   if (landscape) fprintf(psfile,"90 rotate\n");
   PrintPSString(s);
-  fprintf(psfile," show newpath\n");
+  fprintf(psfile,"show N\n");
   if (landscape) fprintf(psfile,"-90 rotate\n");
   return;
 }
@@ -405,7 +406,7 @@ void IF_LineWidth (short n)
   if (n<1) n=1;
   if (n==IF_lw) return;
 
-  fprintf(psfile,"%.3f setlinewidth\n",LW_FACTOR+((float)(n-1))*LW_SCALE*LW_FACTOR);
+  fprintf(psfile,"%.3f W\n",LW_FACTOR+((float)(n-1))*LW_SCALE*LW_FACTOR);
   IF_lw = n;
   return;
 }
@@ -420,11 +421,22 @@ void IF_TextSize (short n)
   return;
 }
 
+void IF_PrintColor (float color)
+{
+  if (color==0.0) fprintf(psfile,"%d ",0);
+  else if (color==1.0) fprintf(psfile,"%d ",1);
+  else fprintf(psfile,"%.3f ",color);
+  return;
+}
+
 void IF_Foreground (unsigned char n)
 {
   if (IF_cc==n) return;
 
-  fprintf(psfile,"%.3f %.3f %.3f R\n",red[n],green[n],blue[n]);
+  IF_PrintColor(red[n]);
+  IF_PrintColor(green[n]);
+  IF_PrintColor(blue[n]);
+  fprintf(psfile,"R\n");
   IF_cc = n;
   return;
 }
@@ -434,7 +446,11 @@ void IF_SetEntry (unsigned char n, short r, short g, short b)
   red[n] = ((float)r)/255.0;
   green[n] = ((float)g)/255.0;
   blue[n] = ((float)b)/255.0;
-  fprintf(psfile,"%.3f %.3f %.3f R\n",red[n],green[n],blue[n]);
+
+  IF_PrintColor(red[n]);
+  IF_PrintColor(green[n]);
+  IF_PrintColor(blue[n]);
+  fprintf(psfile,"R\n");
   IF_cc = n;
   return;
 }
@@ -449,7 +465,10 @@ void IF_SetPalette (short x, short y, short *r, short *g, short *b)
     green[i] = ((float)g[i-x])/255.0;
     blue[i] = ((float)b[i-x])/255.0;
   }
-  fprintf(psfile,"%.3f %.3f %.3f R\n",red[x],green[x],blue[x]);
+  IF_PrintColor(red[x]);
+  IF_PrintColor(green[x]);
+  IF_PrintColor(blue[x]);
+  fprintf(psfile,"R\n");
   IF_cc = (unsigned char) x;
   return;
 }
