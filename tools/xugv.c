@@ -33,6 +33,7 @@
 
 /* general header files */
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <math.h>
 #include <malloc.h>
@@ -154,6 +155,7 @@ short vwidth,
       pheight;
 int dispcells;            /* number of available displaycells */
 int incr=1,first,last,film,frame_number;
+int _wait=0;                      /* wait for file creation, if file does not exist */
 int ignore=0;
 char frame[50];
 int outopt=0;
@@ -164,6 +166,7 @@ int count = 0;
 int n_pic, i_pic, f_offset, nbreak;
 char *mfile[MAX_FILES];
 static int run_max, run_count;
+static unsigned int sleep_seconds = 1;
 
 static int littleEndian = 1; /* needed for check LITTLE/BIG-ENDIAN */
 
@@ -204,6 +207,20 @@ static long swap_long (long data)
   return(res);
 }
 
+FILE *fopen_with_wait (const char *name, const char *type)
+{
+  FILE *stream = NULL;
+
+  do
+  {
+    stream = fopen(name,type);
+    if (stream == NULL) sleep(sleep_seconds);
+    else break;
+  }
+  while (1);
+
+  return(stream);
+}
 
 int GetFileScreen (FILE *stream, short *fx, short *fy)
 {
@@ -1844,9 +1861,16 @@ static Boolean run_film (void)
   for (i_pic=0; i_pic<n_pic; i_pic++)
   {
     sprintf(frame,"%s.%04d",mfile[i_pic],frame_number);
-    mstream[i_pic] = fopen(frame,"r");
-    if (mstream[i_pic]==NULL)
-      exit(-1);
+    if (!_wait)
+    {
+      mstream[i_pic] = fopen(frame,"r");
+      if (mstream[i_pic]==NULL) exit(-1);
+    }
+    else
+    {
+      mstream[i_pic] = fopen_with_wait(frame,"r");
+      break;
+    }
   }
 
   for (i_pic=0; i_pic<n_pic; i_pic++)
@@ -1961,6 +1985,7 @@ char* argv[];
   {
     if (argv[i][1]=='v') {option = argv[i]; i++; continue;}
     if (argv[i][1]=='c') {count = 1; i++; continue;}
+    if (argv[i][1]=='w') {_wait = 1; i++; continue;}
     if (argv[i][1]=='s') {stoploop = 1; i++; continue;}
     if (argv[i][1]=='f')
     {
@@ -2152,9 +2177,18 @@ char* argv[];
     {
       sprintf(frame,"%s.%04d",argv[f_offset+i_pic],first);
       mfile[i_pic] = argv[f_offset+i_pic];
-      mstream[i_pic] = fopen(frame,"r");
-      if (mstream[i_pic]==NULL) break;
-      i_pic++;
+      if (!_wait)
+      {
+        mstream[i_pic] = fopen(frame,"r");
+        if (mstream[i_pic]==NULL) break;
+        i_pic++;
+      }
+      else
+      {
+        mstream[i_pic] = fopen_with_wait(frame,"r");
+        i_pic++;
+        break;
+      }
     }
     if (i_pic<1)
     {
