@@ -300,6 +300,7 @@ int surfacemeshing :: DefineTransformation_OLD (INDEX surfind, Point3d & p1, Poi
      trid = mi;
      tripoint = p;*/
 
+  return (0);
 }
 
 void surfacemeshing :: TransformToPlain (INDEX surfind, const Point3d & locpoint,
