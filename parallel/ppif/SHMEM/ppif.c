@@ -100,10 +100,11 @@
 #define PACKSIZE          8   /* value must be depend of PCKSIZE4BYTE 4 or 8  */
 #endif
 
-#define MAXPROC         256   /* max number of processors                     */
-#define MAXT              8   /* maximum number of downtree nodes max log2(P) */
-#define SYNCMAX         256   /* maximum number of sync virtual channels      */
-#define ASYNCMAX        256   /* maximum number of async virtual channels     */
+/* when increasing MAXPROC aption of MAXT to log2(MAXPROC) is necessary !!!   */
+#define MAXPROC           512 /* max number of processors                     */
+#define MAXT              9   /* maximum number of downtree nodes max log2(P) */
+#define SYNCMAX         MAXPROC /* maximum number of sync virtual channels     */
+#define ASYNCMAX        MAXPROC /* maximum number of async virtual channels    */
 #define ASYNCSENDMAX     64   /* max of send messages at one time             */
 #define ASYNCRECEIVEMAX  64   /* max of receive messages at one time          */
 #define MAILMAX         256   /* max of mails one PE cna handle at one time   */
@@ -664,6 +665,12 @@ int InitPPIF (int *argcp, char ***argvp)
   {
     printf("master is PE %d,", me);
     printf("procs = %d\n", procs);
+  }
+
+  if (procs>=MAXPROC && me==master)
+  {
+    printf("if SHMEM doesn't work correctly increase MAXPROC define"
+           "in SHMEM/ppif.c and recompile\n");
   }
 
   /* assemble command line options */
