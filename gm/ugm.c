@@ -1283,6 +1283,9 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
   PRINTDEBUG(gm,2,(PFMT " GetSideNode(): elem=" EID_FMTX
                    " side=%d nb. of midnodes=%d\n",
                    me,EID_PRTX(theElement),side,n));
+#ifdef ModelP
+  if (TAG(theElement)==PYRAMID && side!=0) return(NULL);
+#endif
   theNode = GetSideNodeX(theElement,side,n,MidNodes);
     #ifdef ModelP
   if (theNode != NULL)

@@ -264,6 +264,7 @@ void ConstructConsistentGridLevel (GRID *theGrid)
         case (SIDE_NODE) :
           /* always compute new coords for this case! */
           k =  GetSideIDFromScratch(theElement,theNode);
+          if (TAG(theFather) == PYRAMID) k=0;
           ASSERT(k < SIDES_OF_ELEM(theFather));
 
           SETONSIDE(theVertex,k);
