@@ -2607,6 +2607,7 @@ static INT FeedbackVertexVectors (GRID *theGrid, VECTOR **CutVectors, INT *nb)
    .n    1 if error occured.
  */
 /****************************************************************************/
+
 static INT OrderVectorAlgebraic (GRID *theGrid, INT mode)
 {
   VECTOR **VectorList,**CutList;
@@ -2618,11 +2619,14 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode)
   INT LAST_nextin,LAST_nextout;
   INT ncut, currentCUT_start, up, down, l, f;
   char buffer[64];
+  INT mutelevel;
 
   NoOfVectors = theGrid->nVector;
 
+  mutelevel = GetMuteLevel();
+
   sprintf(buffer,"total=%d\n",(int)NoOfVectors);
-  UserWrite(buffer);
+  if (mutelevel>=0) UserWrite(buffer);
 
   /* get storage from the MG-heap for VectorList and CutList */
   theHeap = theGrid->mg->theHeap;
@@ -2645,9 +2649,9 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode)
   }
 
 
-  /****************************************************************************/
-  /*	init																	*/
-  /****************************************************************************/
+  /********************************************************************/
+  /*	init	                                                                                                        */
+  /********************************************************************/
 
   /* init USED, N_INFLOW and N_OUTFLOW */
   for (theVector=theGrid->firstVector; theVector!=NULL; theVector=SUCCVC(theVector))
@@ -2683,18 +2687,21 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode)
     }
   }
 
-  sprintf(buffer,"init first=%d\n",(int)FIRST_nextin);
-  UserWrite(buffer);
-  sprintf(buffer,"init last= %d\n",(int)(NoOfVectors-1-LAST_nextin));
-  UserWrite(buffer);
+  if (mutelevel>=0)
+  {
+    sprintf(buffer,"init first=%d\n",(int)FIRST_nextin);
+    UserWrite(buffer);
+    sprintf(buffer,"init last= %d\n",(int)(NoOfVectors-1-LAST_nextin));
+    UserWrite(buffer);
+  }
   f = FIRST_nextin; l = LAST_nextin;
 
   currentCUT_start = 0;
   while ((FIRST_nextin+currentCUT_start) <= LAST_nextin)
   {
-    /****************************************************************************/
-    /*	find next FIRST-set in vectors not used                                                                 */
-    /****************************************************************************/
+    /********************************************************************/
+    /*	find next FIRST-set in vectors not used                                         */
+    /********************************************************************/
 
     while (FIRST_nextout<FIRST_nextin)
       for (theMatrix=MNEXT(VSTART(VectorList[FIRST_nextout++])); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
@@ -2715,12 +2722,12 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode)
       }
 
     sprintf(buffer,"first=%d\n",(int)(FIRST_nextin-f));
-    UserWrite(buffer);
+    if (mutelevel>=0) UserWrite(buffer);
     f = FIRST_nextin;
 
-    /****************************************************************************/
-    /*	find next LAST-set in vectors not used									*/
-    /****************************************************************************/
+    /********************************************************************/
+    /*	find next LAST-set in vectors not used			                        */
+    /********************************************************************/
 
     while (LAST_nextin<LAST_nextout)
       for (theMatrix=MNEXT(VSTART(VectorList[LAST_nextout--])); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
@@ -2742,14 +2749,14 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode)
 
 
     sprintf(buffer,"last= %d\n",(int)(l-LAST_nextin));
-    UserWrite(buffer);
+    if (mutelevel>=0) UserWrite(buffer);
     l = LAST_nextin;
 
     if (FIRST_nextin+currentCUT_start > LAST_nextin) break;                     /* we are done */
 
-    /****************************************************************************/
-    /*	get CUT (or Feedback Vertex)-set and do what need to be done			*/
-    /****************************************************************************/
+    /*********************************************************************/
+    /*	get CUT (or Feedback Vertex)-set and do what need to be done	 */
+    /*********************************************************************/
 
     if (mode==GM_FCFCLL)
     {
@@ -3012,6 +3019,23 @@ static INT LexAlgDep (GRID *theGrid, char *data)
         case 'z' :
           index[i]=2;
           c2=1;
+          break;
+        }
+    }
+    else if (strlen(data)==2)
+    {
+      c2 = 1;
+      index[2] = 2;
+      for(i=0; i<2; i++)
+        switch(data[i])
+        {
+        case 'x' :
+          index[i]=0;
+          c0=1;
+          break;
+        case 'y' :
+          index[i]=1;
+          c1=1;
           break;
         }
     }
