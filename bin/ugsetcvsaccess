@@ -12,7 +12,7 @@ then
 	exit 1;
 fi
 
-DEFAULT=stefan,klaus,birken,henrik,peter,wieners,christia,niko
+DEFAULT=stefan,klaus,birken,henrik,peter,wieners,christia,niko,ug
 ERRORFILE=$UGROOT/bin/cvsaccess
 UG=`dirname $UGROOT`
 
@@ -43,11 +43,13 @@ cvs admin -aniko np 2>> $ERRORFILE;
 
 cd $UGROOT;
 cvs admin -e bin 2>> $ERRORFILE;
-cvs admin -abirken,wieners,stefan,peter,henrik bin 2>> $ERRORFILE;
+cvs admin -abirken,wieners,stefan,peter,henrik,ug bin 2>> $ERRORFILE;
 
 cd $UGROOT;
 cvs admin -e parallel 2>> $ERRORFILE;
-cvs admin -abirken,stefan parallel 2>> $ERRORFILE;
+cvs admin -abirken,stefan,ug parallel 2>> $ERRORFILE;
+cd $UGROOT/parallel
+cvs admin -awieners dddif 2>> $ERRORFILE;
 
 if test `grep failed $ERRORFILE | wc -l` -ge 1
 then 
