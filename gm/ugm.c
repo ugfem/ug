@@ -115,7 +115,7 @@ static VIRT_HEAP_MGMT *theGenMGUDM; /* general user data space management	*/
 static INT theMGDirID;                          /* env var ID for the multigrids		*/
 static INT theMGRootDirID;                      /* env dir ID for the multigrids		*/
 
-static INT UsedOBJT;                            /* for the dynamic OBJECT management	*/
+static unsigned INT UsedOBJT;           /* for the dynamic OBJECT management	*/
 
 /* used by OrderNodesInGrid */
 static const INT *Order,*Sign;
@@ -3677,6 +3677,11 @@ INT DisposeMultiGrid (MULTIGRID *theMG)
   DDD_IFRefreshAll();
         #endif
 
+  /* TODO: normally the MG-heap should be cleaned-up before freeing.
+           DDD depends on storage in the heap, even if no DDD objects
+                   are allocated!! (due to free-lists, DDD type definitions
+                   etc.) therefore, repeated new/close commands are inhibited
+                   explicitly in parallel/dddif/initddd.c(InitCurrMG()). */
   if (MGHEAP(theMG)!=NULL)
     free(MGHEAP(theMG));
 
