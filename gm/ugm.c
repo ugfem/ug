@@ -84,6 +84,10 @@
 #define ORDERRES                1e-3    /* resolution for OrderNodesInGrid			*/
 #define LINKTABLESIZE   32              /* max number of inks per node for ordering	*/
 
+#ifdef __MWCW__
+#define printf                                          PrintDebug
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -998,8 +1002,12 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
               return(theNode);
           }
           else if (theFather == NBELEM(theElement,side)) {
-            SETONNBSIDE(theVertex,side);
-            return(theNode);
+            int nbside = SideOfNbElement(theElement,side);
+            if (nbside==ONSIDE(theVertex))
+            {
+              SETONNBSIDE(theVertex,side);
+              return(theNode);
+            }
           }
           else if (theFather == NULL) {
             VFATHER(theVertex) = theElement;
@@ -2588,7 +2596,7 @@ MULTIGRID *GetNextMultigrid (const MULTIGRID *theMG)
 /****************************************************************************/
 
 MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
-                            char *format, MEM heapSize, INT optimizedIE)
+                            char *format, MEM heapSize, INT optimizedIE, INT insertMesh)
 {
   HEAP *theHeap,*theUserHeap;
   MULTIGRID *theMG;
@@ -2632,7 +2640,10 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   MarkTmpMem(theHeap,&MarkKey);
   MG_MARK_KEY(theMG) = MarkKey;
 
-  theBVP = BVP_Init(BndValProblem,theHeap,&mesh,MarkKey);
+  if (insertMesh)
+    theBVP = BVP_Init(BndValProblem,theHeap,&mesh,MarkKey);
+  else
+    theBVP = BVP_Init(BndValProblem,theHeap,NULL,MarkKey);
   if (theBVP==NULL)
   {
     PrintErrorMessage('E',"CreateMultiGrid","BVP not found");
@@ -2734,11 +2745,12 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
         #ifdef ModelP
   if (me==master)
         #endif
-  if (InsertMesh(theMG,&mesh))
-  {
-    DisposeMultiGrid(theMG);
-    return(NULL);
-  }
+  if (insertMesh)
+    if (InsertMesh(theMG,&mesh))
+    {
+      DisposeMultiGrid(theMG);
+      return(NULL);
+    }
   /* return ok */
   return(theMG);
 }
