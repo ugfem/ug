@@ -1526,3 +1526,42 @@ INT LineISTriangle3D (const DOUBLE *c1, const DOUBLE *c2, const DOUBLE *c3, cons
 
   return (1);
 }
+
+/****************************************************************************/
+/*D
+   V2_apbmin2c - Find point with minimal distance on line.
+
+   SYNOPSIS:
+   INT V2_apbmin2c (const DOUBLE *a, const DOUBLE *b, DOUBLE *d, DOUBLE *r)
+
+   PARAMETERS:
+   .  a,b - line: a+alpha*b
+   .  c - find point with minimal distance to c
+   .  d - distance r-c
+   .  r - resulting vector
+
+   DESCRIPTION:
+   This function finds a 'r' on the line with minimal distance to c.
+
+   RETURN VALUE:
+   INT
+   .n    0 if o.k.
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+INT V2_apbmin2c (const DOUBLE *a, const DOUBLE *b, const DOUBLE *c, DOUBLE *d, DOUBLE *r)
+{
+  DOUBLE normb, scprd;
+  DOUBLE_VECTOR diff;
+
+  normb = b[0]*b[0]+b[1]*b[1];
+  if (normb==0.0) return (1);
+  V2_SUBTRACT(c,a,diff);
+  V2_SCALAR_PRODUCT(diff,b,scprd);
+  scprd /=normb;
+  V2_LINCOMB(1.0,a,scprd,b,r);
+  V_DIM_EUKLIDNORM_OF_DIFF(c,r,*d);
+
+  return (0);
+}

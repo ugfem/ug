@@ -588,6 +588,7 @@ DOUBLE		vp									(const DOUBLE x1, const DOUBLE y1, const DOUBLE x2, const DOU
 INT 		V2_Normalize						(DOUBLE *a);
 INT 		V2_Rotate							(DOUBLE *vector, DOUBLE alpha);
 INT			V2_IntersectLineSegments			(const DOUBLE_VECTOR a0, const DOUBLE_VECTOR a1, const DOUBLE_VECTOR b0, const DOUBLE_VECTOR b1, DOUBLE *lambda);
+INT 		V2_apbmin2c 						(const DOUBLE *a, const DOUBLE *b, const DOUBLE *c, DOUBLE *d, DOUBLE *r);
 DOUBLE		tarea								(DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2);
 DOUBLE		qarea								(DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBLE x3,DOUBLE y3);
 DOUBLE		c_tarea								(const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2);
