@@ -583,7 +583,7 @@ static INT AVSCommand (INT argc, char **argv)
                         #ifdef ModelP
       sprintf(it,"%d %d ",ID(el),me);
                         #else
-      sprintf(it,"%d %d ",ID(el),1);
+      sprintf(it,"%d %d ",ID(el),SUBDOMAIN(el));
                         #endif
       strcpy(item+ic,it); ic+=strlen(it);
 
@@ -766,7 +766,7 @@ static INT AVSCommand (INT argc, char **argv)
                                         #ifdef ModelP
           value = (DOUBLE) me;
                                         #else
-          value = 1.0;
+          value = SUBDOMAIN(el);
                                         #endif
           sprintf(it,"%lg ",value);
           strcpy(item+ic,it); ic+=strlen(it);
