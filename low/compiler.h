@@ -104,10 +104,10 @@
 /* basic types */
 #define SHORT  short
 #define INT    int
-#define FLOAT  double
+#define FLOAT  float
 #define DOUBLE double
-#define COORD  double
-#define SCREEN_COORD  double
+#define COORD  float
+#define SCREEN_COORD  float
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) ! */
