@@ -3197,8 +3197,9 @@ MULTIGRID * NS_DIM_PREFIX CreateMultiGrid (char *MultigridName, char *BndValProb
   theHeap = NewHeap(SIMPLE_HEAP, heapSize, malloc(heapSize));
   if (theHeap==NULL)
   {
-    PRINTDEBUG(gm,0,("CreateMultiGrid: cannot allocate %ld bytes\n",
-                     heapSize));
+    UserWriteF("CreateMultiGrid: cannot allocate %ld bytes\n", heapSize);
+    PrintErrorMessage('E', "CreateMultiGrid","Cannot allocate heap!");
+
     DisposeMultiGrid(theMG);
     return(NULL);
   }
