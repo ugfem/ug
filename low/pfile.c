@@ -163,7 +163,7 @@ PFILE *pfile_open (char *name)
 
   /* allocate PFILE data structure */
   error = 0;
-  pf = malloc(sizeof(PFILE));
+  pf = (PFILE*)malloc(sizeof(PFILE));
   if (pf == NULL) error=1;
   error = UG_GlobalMaxINT(error);
   if (error) {
@@ -663,7 +663,7 @@ PFILE_BIN *pfile_open_bin (char *name)
 
   /* allocate PFILE_BIN data structure */
   error = 0;
-  pf = malloc(sizeof(PFILE_BIN));
+  pf = (PFILE_BIN*)malloc(sizeof(PFILE_BIN));
   if (pf == NULL) error=1;
   error = UG_GlobalMaxINT(error);
   if (error) {
