@@ -115,15 +115,14 @@ INT CenterInPattern (char *str, INT PatLen, const char *text, char p, const char
   if (TextLen>PatLen)
     return (CenterInPattern(str,PatLen," text too long ",p,end));
 
-  for (i=0; i<TextBegin; i++)
+  for (i=0; i<TextBegin-1; i++)
     str[i] = p;
-
+  str[i] = ' ';
   for (i=TextBegin; i<TextEnd; i++)
     str[i] = *(text++);
-
+  str[i++] = ' ';
   for (i=TextEnd; i<PatLen; i++)
     str[i] = p;
-
   str[PatLen] = '\0';
   strcat(str,end);
 
