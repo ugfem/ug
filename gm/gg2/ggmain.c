@@ -211,6 +211,10 @@ INT GenerateBnodes  (MULTIGRID *theMG, COORD RelRasterSize,
   theGrid = GRID_ON_LEVEL(theMG,0);
   MeshSize = MG_GetCoeffFct (theMG,meshsizecoeffno);
 
+
+
+
+
   Mark(MGHEAP(theMG),FROM_TOP);
   Vertex = (VERTEX**) GetMem(MGHEAP(theMG),
                              ncorners*sizeof(VERTEX*),FROM_TOP);
@@ -513,7 +517,7 @@ static INT HandleClosedBoundary (FRONTLIST *theFL, SEGMENTINFO *closedbInfo, INT
         if (Patch_GetPatchID(FIRSTPATCH(MYVERTEX(theNode)))==segID && MOVE(MYVERTEX(theNode)) != 0)
           NodeHandle[i++] = theNode;
 
-      qsort(NodeHandle,nNodes,sizeof(NODE *),(int (*)(const void *, const void *))LambdaCompare);
+      qsort(NodeHandle,nNodes,sizeof(NODE *),(INT (*)(const void *, const void *))LambdaCompare);
 
       if ((lastFC = CreateFrontComp (theFL, lastFC, nNodes, NodeHandle))==NULL)
       {
@@ -1966,7 +1970,7 @@ static INT RedistributeFLs (FRONTLIST *myList,FRONTLIST *thenewFL)
 /*                                                                          */
 /****************************************************************************/
 
-static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myList,FRONTCOMP *theFC,FRONTCOMP *thenewFC, int* FlgForAccel, FRONTCOMP *the_old_succ)
+static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myList,FRONTCOMP *theFC,FRONTCOMP *thenewFC, int* FlgForAccel, FRONTCOMP *the_old_succ, FRONTCOMP **disp_FC, FRONTLIST **disp_FL)
 {
 
   MULTIGRID *theMG;
@@ -2010,8 +2014,9 @@ static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myLi
     {
       *FlgForAccel = FINALCASE;
 
-
-      DisposeFrontComp (myList, SUCCFC(theFC));
+      *disp_FC = SUCCFC(theFC);
+      *disp_FL = myList;
+      /* no more here: DisposeFrontComp (myList, SUCCFC(theFC)); */
       return (0);
 
     }             /* end of final case in rightneighbourcase */
@@ -2023,8 +2028,9 @@ static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myLi
     /* In this case SUCCFC(SUCCFC(theFC)) <--> thenewFC */
 
 
-
-    DisposeFrontComp (myList, SUCCFC(theFC));
+    *disp_FC = SUCCFC(theFC);
+    *disp_FL = myList;
+    /* no more here:DisposeFrontComp (myList, SUCCFC(theFC));*/
     return (0);
   }       /* the end of rightneighbourcase */
 
@@ -2040,7 +2046,9 @@ static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myLi
     {
       *FlgForAccel = FINALCASE;
 
-      DisposeFrontComp (myList, SUCCFC(theFC));
+      *disp_FC = SUCCFC(theFC);
+      *disp_FL = myList;
+      /*no more here: DisposeFrontComp (myList, SUCCFC(theFC));*/
       return (0);
 
     }               /* end of final case in leftneighbourcase */
@@ -2049,8 +2057,9 @@ static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myLi
 
 
 
-
-    DisposeFrontComp (myList, theFC);
+    *disp_FC = theFC;
+    *disp_FL = myList;
+    /*no more here: DisposeFrontComp (myList, theFC);*/
     return (0);
   }
 
@@ -2210,7 +2219,9 @@ static INT FrontLineUpDate (GRID *theGrid,INDEPFRONTLIST *theIFL,FRONTLIST *myLi
 
     /* indicate that myfoundFL is empty now and dispose it */
     STARTFC(myfoundFL) = NULL;
-    DisposeFrontList(myfoundFL);
+
+    *disp_FL = myfoundFL;
+    /*no more here: DisposeFrontList (myfoundFL);*/
   }
 
 #if (defined __MPW32__ || defined __MWCW__)
@@ -2271,7 +2282,8 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
             ID(Neighbor[i])*/
 
 
-  InsertElement (MYMG(theGrid),n,Node,NULL);
+  InsertElement (MYMG(theGrid),n,Node,Neighbor,NeighborSide);
+  /* alternativ O(N*N): InsertElement (MYMG(theGrid),n,Node,NULL,NULL);*/
 
 
   /* TODO: repair this:
@@ -2652,6 +2664,28 @@ static int FrontcomponentUpdate(INT FlgForAccel, FRONTCOMP* theFC, FRONTCOMP* th
 }
 
 /****************************************************************************/
+/*                                                                          */
+/* Function:  FL_FC_Disposer                                                            */
+/*                                                                          */
+/* Purpose:   disposing of frontcomponents and Frontlists                                       */
+/*                                                                          */
+/* Input:    FRONTCOMP *disp_FC, FRONTLIST *disp_FL							*/
+/*                                                                          */
+/* Output:	  returns 1 if error occurs                                     */
+/*																			*/
+/****************************************************************************/
+
+static int FL_FC_Disposer(FRONTCOMP *disp_FC, FRONTLIST *disp_FL)
+{
+  if (disp_FC != NULL)
+    DisposeFrontComp (disp_FL, disp_FC);
+  else if (disp_FL != NULL)
+    DisposeFrontList(disp_FL);
+  return(0);
+}
+
+
+/****************************************************************************/
 /*D
    GenerateGrid - Create the advancing frontlists and generates the grid in 2d
 
@@ -2682,12 +2716,15 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
   FRONTCOMP *theFC,*thesuccFC,*thenewFC;
   FRONTCOMP *the_old_succ;
   COORD xt[3],yt[3];
-  INT printelem;
-  int FlgForAccel;
+  INT printelem,FlgForAccel;
   FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS];
   ELEMENT_CONTEXT theElementContext;
   BVP             *theBVP;
   BVP_DESC theBVPDesc;
+
+  FRONTCOMP *disp_FC;
+  FRONTLIST *disp_FL;
+
 
   InitGGObjs(theMG);
   theBVP = MG_BVP(theMG);
@@ -2817,6 +2854,12 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
 
         FlgForAccel = NORMALCASE;
 
+        disp_FC = NULL;
+        disp_FL = NULL;
+
+        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
+          return (10);
+
         if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ ))
           return (1);
 
@@ -2828,8 +2871,10 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
         if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
           return (1);
 
-        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
-          return (10);
+        if(FL_FC_Disposer(disp_FC, disp_FL))
+          return (1);
+
+
 
         if (printelem)
         {
@@ -2869,6 +2914,13 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
           return (13);
 
         FlgForAccel = NORMALCASE;
+
+        disp_FC = NULL;
+        disp_FL = NULL;
+
+        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
+          return (10);
+
         if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
           return (1);
 
@@ -2878,8 +2930,8 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
         if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
           return (1);
 
-        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
-          return (14);
+        if(FL_FC_Disposer(disp_FC, disp_FL))
+          return (1);
 
         if (printelem)
         {
@@ -2918,6 +2970,14 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
           return (17);
 
         FlgForAccel = NORMALCASE;
+
+        disp_FC = NULL;
+        disp_FL = NULL;
+
+        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ, &disp_FC, &disp_FL))
+          return (10);
+
+
         if (FillElementContext(FlgForAccel, &theElementContext, theFC, thenewFC, the_old_succ))
           return (1);
 
@@ -2927,8 +2987,8 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
         if (FrontcomponentUpdate(FlgForAccel, theFC, the_old_succ, thenewFC, &theElementContext))
           return (1);
 
-        if (FrontLineUpDate (theGrid,theIFL,myList,theFC,thenewFC,&FlgForAccel, the_old_succ))
-          return (18);
+        if(FL_FC_Disposer(disp_FC, disp_FL))
+          return (1);
 
         if (printelem)
         {
@@ -2953,7 +3013,7 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)
   {
     UserWrite("could not create connection in multigrid\n");
     DisposeMultiGrid(theMG);
-    return(1);
+    return(NULL);
   }
 
   TerminateGG(theMG,0);
