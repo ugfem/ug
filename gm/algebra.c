@@ -930,6 +930,10 @@ INT CreateElementList (GRID *theGrid, NODE *theNode, ELEMENT *theElement)
 {
   ELEMENTLIST *pel;
 
+  for (pel=NODE_ELEMENT_LIST(theNode); pel!=NULL; pel=NEXT(pel))
+    if(pel->el==theElement)
+      return(0);
+
   pel = (ELEMENTLIST *)GetMemoryForObject(theGrid->mg,sizeof(ELEMENTLIST),-1);
   if (pel == NULL)
     return(1);
@@ -1409,14 +1413,13 @@ INT     DisposeElementFromElementList (GRID *theGrid, NODE *theNode,
   if (pel == NULL) return(0);
   if (pel->el == theElement) {
     NDATA(theNode) = (void *) pel->next;
-    if (PutFreeObject(theGrid->mg,pel,sizeof(ELEMENTLIST),-1))
-      return(1);
+    return(PutFreeObject(theGrid->mg,pel,sizeof(ELEMENTLIST),-1));
   }
   next = pel->next;
   while (next != NULL) {
     if (next->el == theElement) {
       pel->next = next->next;
-      return(PutFreeObject(theGrid->mg,pel,sizeof(ELEMENTLIST),-1));
+      return(PutFreeObject(theGrid->mg,next,sizeof(ELEMENTLIST),-1));
     }
     pel = next;
     next = pel->next;
