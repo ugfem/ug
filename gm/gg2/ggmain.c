@@ -1106,7 +1106,7 @@ static INT CreateAllElementSides  (MULTIGRID *theMG)
         if (theSide==NULL)
         {
           UserWrite("could not create element side\n");
-          DisposeElement(theGrid,theElement);
+          DisposeElement(theGrid,theElement,TRUE);
           return(5);
         }
         ES_PATCH(theSide)   = thePatch;
