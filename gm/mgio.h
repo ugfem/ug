@@ -199,11 +199,9 @@ struct mgio_movedcorner {
   double position[MGIO_DIM];                            /* position of the point							*/
 };
 
-struct mgio_cg_element {
+struct mgio_he_element {
 
   int ge;                                                                               /* id of general element					*/
-  int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of corners							*/
-  int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
   int refrule;                                                                  /* id of refinement rule					*/
   int nnewcorners;                                                              /* nb of new corners on next level			*/
   int newcornerid[MGIO_MAX_NEW_CORNERS];                /* ids of corners on next level				*/
@@ -211,11 +209,11 @@ struct mgio_cg_element {
   struct mgio_movedcorner mvcorner[MGIO_MAX_NEW_CORNERS];       /* array of moved corners		*/
 };
 
-struct mgio_he_element {
+struct mgio_cg_element {
 
-  int refrule;                                                                  /* id of refinement rule					*/
-  int nmoved;                                                                           /* n new corners moved						*/
-  struct mgio_movedcorner mvcorner[1];                  /* array of moved corners					*/
+  struct mgio_he_element he;                                            /* the hierarical element					*/
+  int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of corners							*/
+  int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
 };
 
 struct mgio_bd_general {

@@ -61,6 +61,12 @@
 #define MGIO_CHECK_DOUBLESIZE(n)        if ((n)>MGIO_DOUBLESIZE) return (1)
 #define MGIO_CHECK_BUFFERIZE(s)         if (strlen(s)>MGIO_BUFFERSIZE) return (1)
 
+#define MGIO_ECTRL(ge,ref,nf,nm)                                ((ge)&15) | (((nf)&31)<<4) | (((nm)&31)<<9)  | (((ref)&131071)<<14)
+#define MGIO_ECTRL_GE(ctrl)                                             ((ctrl)&15)
+#define MGIO_ECTRL_NC(ctrl)                                             (((ctrl)>>4)&31)
+#define MGIO_ECTRL_NM(ctrl)                                             (((ctrl)>>9)&31)
+#define MGIO_ECTRL_REF(ctrl)                                    (((ctrl)>>14)&131071)
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -916,17 +922,17 @@ int Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
 
 /****************************************************************************/
 /*
-   Read_CG_Elements - reads coarse grid elements
+   Read_HE_Refinement - reads hierarchical elements
 
    SYNOPSIS:
-   int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element);
+   int Read_HE_Refinement (MGIO_HE_ELEMENT *he_element);
 
    PARAMETERS:
-   .  n - nb of coarse grid elements to read
-   .  cg_element - first coarse grid element
+   .  n - nb of hierarchical elements to read
+   .  he_element - hierarchical element
 
    DESCRIPTION:
-   function reads coarse grid elements
+   function reads hierarchical elements
 
    RETURN VALUE:
    INT
@@ -937,31 +943,18 @@ int Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
  */
 /****************************************************************************/
 
-#define MGIO_ECTRL(ge,ref,nf,nm)                                ((ge)&15) | (((nf)&31)<<4) | (((nm)&31)<<9)  | (((ref)&131071)<<14)
-#define MGIO_ECTRL_GE(ctrl)                                             ((ctrl)&15)
-#define MGIO_ECTRL_NC(ctrl)                                             (((ctrl)>>4)&31)
-#define MGIO_ECTRL_NM(ctrl)                                             (((ctrl)>>9)&31)
-#define MGIO_ECTRL_REF(ctrl)                                    (((ctrl)>>14)&131071)
-
-int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
+int Read_HE_Refinement (int n, MGIO_HE_ELEMENT *he_element)
 {
-  int i,j,k,m,s;
+  int i,j,k,s;
   unsigned int ctrl;
-  MGIO_CG_ELEMENT *pe;
+  MGIO_HE_ELEMENT *pe;
 
-  pe = cg_element;
+  pe = he_element;
   for (i=0; i<n; i++)
   {
     if ((*Read_mint)(1,intList)) return (1);
     ctrl = intList[0];
     pe->ge = MGIO_ECTRL_GE(ctrl);
-    m=lge[pe->ge].nCorner+lge[pe->ge].nSide;
-    if ((*Read_mint)(m,intList)) return (1);
-    s=0;
-    for (j=0; j<lge[pe->ge].nCorner; j++)
-      pe->cornerid[j] = intList[s++];
-    for (j=0; j<lge[pe->ge].nSide; j++)
-      pe->nbid[j] = intList[s++];
     pe->refrule = MGIO_ECTRL_REF(ctrl)-1;
     if (pe->refrule>-1)
     {
@@ -983,6 +976,111 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
             pe->mvcorner[j].position[k] = doubleList[s++];
       }
     }
+    pe++;
+  }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
+   Write_HE_Refinement - writes hierarchical elements
+
+   SYNOPSIS:
+   int Write_HE_Refinement (int n, MGIO_HE_ELEMENT *he_element);
+
+   PARAMETERS:
+   .  n - nb of hierarchical elements to write
+   .  he_element - hierarchical element
+
+   DESCRIPTION:
+   function writes hierarchical elements
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if read error.
+
+   SEE ALSO:
+ */
+/****************************************************************************/
+
+int Write_HE_Refinement (int n, MGIO_HE_ELEMENT *he_element)
+{
+  int i,j,k,s,t;
+  MGIO_HE_ELEMENT *pe;
+
+  pe = he_element;
+  for (i=0; i<n; i++)
+  {
+    s=t=0;
+    intList[s++] = MGIO_ECTRL(pe->ge,pe->refrule+1,pe->nnewcorners,pe->nmoved);
+    if (pe->refrule>-1)
+    {
+      for (j=0; j<pe->nnewcorners; j++)
+        intList[s++] = pe->newcornerid[j];
+      for (j=0; j<pe->nmoved; j++)
+        intList[s++] = pe->mvcorner[j].id;
+      for (j=0; j<pe->nmoved; j++)
+        for (k=0; k<MGIO_DIM; k++)
+          doubleList[t++] = pe->mvcorner[j].position[k];
+    }
+
+    MGIO_CHECK_INTSIZE(s);
+    if ((*Write_mint)(s,intList)) return (1);
+    MGIO_CHECK_DOUBLESIZE(t);
+    if (t>0) if ((*Write_mdouble)(t,doubleList)) return (1);
+
+    pe++;
+  }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
+   Read_CG_Elements - reads coarse grid elements
+
+   SYNOPSIS:
+   int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element);
+
+   PARAMETERS:
+   .  n - nb of coarse grid elements to read
+   .  cg_element - first coarse grid element
+
+   DESCRIPTION:
+   function reads coarse grid elements
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if read error.
+
+   SEE ALSO:
+ */
+/****************************************************************************/
+
+int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
+{
+  int i,j,k,m,s;
+  unsigned int ctrl;
+  MGIO_CG_ELEMENT *pe;
+
+  pe = cg_element;
+  for (i=0; i<n; i++)
+  {
+    /* hierarchical part */
+    if (Read_HE_Refinement (1,&(pe->he))) return (1);
+
+    /* coarse grid part */
+    m=lge[pe->he.ge].nCorner+lge[pe->he.ge].nSide;
+    if ((*Read_mint)(m,intList)) return (1);
+    s=0;
+    for (j=0; j<lge[pe->he.ge].nCorner; j++)
+      pe->cornerid[j] = intList[s++];
+    for (j=0; j<lge[pe->he.ge].nSide; j++)
+      pe->nbid[j] = intList[s++];
+
     pe++;
   }
 
@@ -1014,94 +1112,29 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 
 int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 {
-  int i,j,k,s,t;
+  int i,j,k,s;
   MGIO_CG_ELEMENT *pe;
 
   pe = cg_element;
   for (i=0; i<n; i++)
   {
-    s=t=0;
-    intList[s++] = MGIO_ECTRL(pe->ge,pe->refrule+1,pe->nnewcorners,pe->nmoved);
-    for (j=0; j<lge[pe->ge].nCorner; j++)
+    /* hierarchical part */
+    if (Write_HE_Refinement (1,&(pe->he))) return (1);
+
+    /* coarse grid part */
+    s=0;
+    for (j=0; j<lge[pe->he.ge].nCorner; j++)
       intList[s++] = pe->cornerid[j];
-    for (j=0; j<lge[pe->ge].nSide; j++)
+    for (j=0; j<lge[pe->he.ge].nSide; j++)
       intList[s++] = pe->nbid[j];
-    if (pe->refrule>-1)
-    {
-      for (j=0; j<pe->nnewcorners; j++)
-        intList[s++] = pe->newcornerid[j];
-      for (j=0; j<pe->nmoved; j++)
-        intList[s++] = pe->mvcorner[j].id;
-      for (j=0; j<pe->nmoved; j++)
-        for (k=0; k<MGIO_DIM; k++)
-          doubleList[t++] = pe->mvcorner[j].position[k];
-    }
 
     MGIO_CHECK_INTSIZE(s);
     if ((*Write_mint)(s,intList)) return (1);
-    MGIO_CHECK_DOUBLESIZE(t);
-    if (t>0) if ((*Write_mdouble)(t,doubleList)) return (1);
 
     pe++;
   }
 
   return (0);
-}
-
-/****************************************************************************/
-/*
-   Read_HE_Refinement - reads hierarchical elements
-
-   SYNOPSIS:
-   int Read_HE_Refinement (MGIO_HE_ELEMENT *he_element);
-
-   PARAMETERS:
-   .  n - nb of hierarchical elements to read
-   .  he_element - hierarchical element
-
-   DESCRIPTION:
-   function reads hierarchical elements
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if read error.
-
-   SEE ALSO:
- */
-/****************************************************************************/
-
-int Read_HE_Refinement (int n, MGIO_HE_ELEMENT *he_element)
-{
-  return (1);
-}
-
-/****************************************************************************/
-/*
-   Write_HE_Refinement - writes hierarchical elements
-
-   SYNOPSIS:
-   int Write_HE_Refinement (int n, MGIO_HE_ELEMENT *he_element);
-
-   PARAMETERS:
-   .  n - nb of hierarchical elements to write
-   .  he_element - hierarchical element
-
-   DESCRIPTION:
-   function writes hierarchical elements
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if read error.
-
-   SEE ALSO:
- */
-/****************************************************************************/
-
-int Write_HE_Refinement (int n, MGIO_HE_ELEMENT *he_element)
-{
-  return (1);
 }
 
 /****************************************************************************/

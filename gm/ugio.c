@@ -502,7 +502,13 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   {
     i = ID(theElement);
 
-    cg_element[i].ge = TAG(theElement);
+    /* hierarchical part */
+    cg_element[i].he.ge = TAG(theElement);
+    cg_element[i].he.refrule = -1;
+    cg_element[i].he.nnewcorners = 0;
+    cg_element[i].he.nmoved = 0;
+
+    /* coarse grid part */
     for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
       cg_element[i].cornerid[j] = ID(CORNER(theElement,j));
     for (j=0; j<SIDES_OF_ELEM(theElement); j++)
@@ -510,9 +516,6 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
         cg_element[i].nbid[j] = ID(NBELEM(theElement,j));
       else
         cg_element[i].nbid[j] = -1;
-    cg_element[i].refrule = -1;
-    cg_element[i].nnewcorners = 0;
-    cg_element[i].nmoved = 0;
   }
   if (Write_CG_Elements((int)n,cg_element)) return (1);
   ReleaseTmpMem(theHeap);
@@ -683,9 +686,9 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   max = 0;
   for (i=0; i<cg_general.nElement; i++)
   {
-    Element_corner_uniq_subdom[i] = ge_element[cg_element[i].ge].nCorner;
-    max = MAX(max,ge_element[cg_element[i].ge].nCorner);
-    max = MAX(max,ge_element[cg_element[i].ge].nSide);
+    Element_corner_uniq_subdom[i] = ge_element[cg_element[i].he.ge].nCorner;
+    max = MAX(max,ge_element[cg_element[i].he.ge].nCorner);
+    max = MAX(max,ge_element[cg_element[i].he.ge].nSide);
   }
   Ecusdp[1] = Element_corner_uniq_subdom;
   theMesh.Element_corners = Ecusdp;
@@ -711,7 +714,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   for (i=0; i<cg_general.nElement; i++)
     Element_nb_uniq_subdom[i] = Element_nb_ids+max*i;
   for (i=0; i<cg_general.nElement; i++)
-    for (j=0; j<ge_element[cg_element[i].ge].nSide; j++)
+    for (j=0; j<ge_element[cg_element[i].he.ge].nSide; j++)
       Element_nb_uniq_subdom[i][j] = cg_element[i].nbid[j];
   Enusdp[1] = Element_nb_uniq_subdom;
   theMesh.nbElements = Enusdp;
