@@ -196,7 +196,7 @@ INT ReadArgvINT (const char *name, INT *j, INT argc, char **argv)
 
    DESCRIPTION:
    This function reads command strings and returns an string value in 'buffer'.
-
+   The buffer should have at least the length VALUELEN.
    RETURN VALUE:
    INT
    .n    0 if the argument was found and a value could be read

@@ -679,8 +679,7 @@ INT GetElementNewVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD,
 
    RETURN VALUE:
    INT
-   .n    NUM_OK if ok
-   .n    NUM_ERROR if error occured
+   .n    number of dofs
    D*/
 /****************************************************************************/
 
