@@ -397,6 +397,7 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
   np = (NP_LINEAR_SOLVER *) theNP;
   level = CURRENTLEVEL(theNP->mg);
   result = 0;
+  bl = 0;
 
   if (np->x == NULL) {
     PrintErrorMessage('E',"NPLinearSolverExecute","no vector x");

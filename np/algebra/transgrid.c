@@ -1427,8 +1427,9 @@ INT InterpolateCorrectionByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
   if (CheckDamp(VD_NCOMP(to),damp))
     if (dscalx(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
                ALL_VECTORS,(VECDATA_DESC *)to,(DOUBLE *)damp))
+      return (NUM_ERROR);
 
-      return (NUM_OK);
+  return (NUM_OK);
 }
 
 INT InterpolateCorrectionByMatrix_NoSkip (GRID *FineGrid, const VECDATA_DESC *to,
