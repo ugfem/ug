@@ -56,9 +56,9 @@
 
 #define MAX_SINGLE_VEC_COMP             40      /* max nb of vec comps in one TYPE      */
 #define MAX_SINGLE_MAT_COMP       1600  /* max nb of mat comps in one TYPE		*/
-#define MAX_VEC_COMP                    40      /* max nb of comps in one VECDATA_DESC	*/
-#define MAX_MAT_COMP              2000  /* max nb of comps in one MATDATA_DESC  */
-#define MAX_MAT_COMP_TOTAL        2000  /* max#(comp) in one MATDATA_DESC       */
+#define MAX_VEC_COMP                40  /* max nb of comps in one VECDATA_DESC	*/
+#define MAX_MAT_COMP              7000  /* max nb of comps in one MATDATA_DESC  */
+#define MAX_MAT_COMP_TOTAL        7000  /* max#(comp) in one MATDATA_DESC       */
 
 #define NVECOFFSETS                             (NVECTYPES+1)
 /* for offset component in VECDATA_DESC	*/
