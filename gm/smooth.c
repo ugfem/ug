@@ -1174,8 +1174,6 @@ INT SmoothGridReset (GRID *theGrid, INT *MoveInfo)
    of the algorithm. Caution! The algorithm may produce undesirable
    results for non-convex domains.
 
-   `This function is available in 2D version only!`
-
    RETURN VALUE:
    INT
    .n    0 if ok
@@ -1185,20 +1183,20 @@ INT SmoothGridReset (GRID *theGrid, INT *MoveInfo)
 
 INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
 {
-  INT l,i,n,m;
+  INT l,i,n,m,k;
   DOUBLE N;
   GRID *theGrid;
   NODE *node;
   ELEMENT *eptr;
+  EDGE *theEdge;
   VERTEX *vptr;
   LINK *lptr;
   DOUBLE *corn[MAX_CORNERS_OF_ELEM],*y,*cvect;
   DOUBLE x[DIM],old_x[DIM];
 
-  if (bdryFlag)
-  {
+  if (bdryFlag) {
     PrintErrorMessage('E',"SmoothMultiGrid",
-                      "Smoothing boundary nodes not implemented for 3d");
+                      "Smoothing boundary nodes not implemented");
     return(GM_ERROR);
   }
 
@@ -1253,7 +1251,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
           eptr = FindFather(vptr);
           if (eptr == NULL)
           {
-            PrintErrorMessage('W',"MoveNode",
+            PrintErrorMessage('W',"SmoothGrid",
                               "cannot find father element");
             V_DIM_COPY(old_x,cvect);
             return(GM_ERROR);
@@ -1263,10 +1261,18 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
             CORNER_COORDINATES(eptr,m,corn);
             UG_GlobalToLocal(m,(const DOUBLE **)corn,
                              cvect,LCVECT(vptr));
+            for (k=0; k<EDGES_OF_ELEM(eptr); k++) {
+              theEdge =
+                GetEdge(CORNER(eptr,CORNER_OF_EDGE(eptr,k,0)),
+                        CORNER(eptr,CORNER_OF_EDGE(eptr,k,1)));
+              if (MIDNODE(theEdge) == node) {
+                SETONEDGE(vptr,k);
+                break;
+              }
+            }
             VFATHER(vptr) = eptr;
           }
         }
-
       }
     }
   }
