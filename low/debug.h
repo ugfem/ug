@@ -91,7 +91,7 @@
 /*																			*/
 /****************************************************************************/
 
-typedef int (*PrintDebugProcPtr)(const char *, ...);
+typedef int (*PrintfProcPtr)(const char *, ...);
 
 /****************************************************************************/
 /*																			*/
@@ -127,7 +127,7 @@ extern const char  *rep_err_file[REP_ERR_MAX];
 /*																			*/
 /****************************************************************************/
 
-void SetPrintDebugProc          (PrintDebugProcPtr print);
+void SetPrintDebugProc          (PrintfProcPtr print);
 void PrintDebug                         (const char *format, ...);
 int  PrintDebugToFile           (const char *format, ...);
 int  SetPrintDebugToFile        (const char *fname);

@@ -93,7 +93,7 @@ extern int me, master;
 /*																			*/
 /****************************************************************************/
 
-static PrintDebugProcPtr printdebug=printf;
+static PrintfProcPtr printdebug=printf;
 static FILE                                     *debugfile;
 
 /* RCS string */
@@ -150,7 +150,7 @@ else
   va_end(args);
 }
 
-void SetPrintDebugProc (PrintDebugProcPtr print)
+void SetPrintDebugProc (PrintfProcPtr print)
 {
   printdebug = print;
 }
