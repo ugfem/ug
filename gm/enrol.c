@@ -246,7 +246,9 @@ FORMAT *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
         mDesc[i].size>0 && mDesc[i].depth>=0)
     {
       newFormat->MatrixSizes[MatrixType[mDesc[i].from][mDesc[i].to]] = mDesc[i].size;
+#ifdef __INTERPOLATION_MATRIX__
       newFormat->IMatrixSizes[MatrixType[mDesc[i].from][mDesc[i].to]] = mDesc[i].isize;
+#endif
       newFormat->ConnectionDepth[MatrixType[mDesc[i].from][mDesc[i].to]] = mDesc[i].depth;
       MaxDepth = MAX(MaxDepth,mDesc[i].depth);
       if ((mDesc[i].from==ELEMVECTOR)&&(mDesc[i].to==ELEMVECTOR))
