@@ -612,9 +612,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
   else {
     strcpy(filename_grid, filename);
     c_ptr=strrchr(filename_grid,'.');
-    memset(c_ptr, '\0', 1);
-    c_ptr=strrchr(filename_grid,'.');
-    memset(c_ptr, '\0', 1);
+    if ( c_ptr!=NULL ) memset(c_ptr, '\0', 1);
     if (binaryOutput)
       strcat(filename_grid, ".0000.bin");
     else
