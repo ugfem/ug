@@ -4051,7 +4051,7 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 
 	/* get sons of neighbor to connect */
 	Get_Sons_of_ElementSide(theNeighbor,nbside,&Sons_of_NbSide,
-		Sons_of_NbSide_List,NbSonSides,1,0);
+		Sons_of_NbSide_List,NbSonSides,1,ioflag);
 	
 	#ifdef ModelP
 	if (!ioflag)
