@@ -29,7 +29,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#if !defined __MWCW__ && !defined __CYGWIN__
+#ifndef __MWCW__
 #include <rpc/rpc.h>    /* to include xdr.h in a portable way */
 #endif
 
@@ -74,7 +74,7 @@ typedef int (*RW_string_proc)(char *string);
 static FILE *stream;
 static int n_byte;
 static fpos_t pos;
-#if !defined __MWCW__ && !defined __CYGWIN__
+#ifndef __MWCW__
 static XDR xdrs;
 #endif
 
@@ -97,7 +97,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /* debug i/o																*/
 /*																			*/
 /****************************************************************************/
-#if !defined __MWCW__ && !defined __CYGWIN__
+#ifndef __MWCW__
 
 static int XDR_Read_mint (int n, int *intList)
 {
@@ -354,7 +354,7 @@ int Bio_Initialize (FILE *file, int mode, char rw)
 
   switch (mode)
   {
-                #if !defined __MWCW__ && !defined __CYGWIN__
+                #ifndef __MWCW__
   case BIO_XDR :
     if (rw=='r') xdrstdio_create(&xdrs,file,XDR_DECODE);
     else if (rw=='w') xdrstdio_create(&xdrs,file,XDR_ENCODE);
