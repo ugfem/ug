@@ -2491,11 +2491,11 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement)
   if (DisposeConnectionFromElement(theGrid,theElement))
     return(1);
 
-  /* dispose vectors in sides if */
+  /* reset neighbor pointers referencing element and dispose vectors in sides if */
         #ifdef __THREEDIM__
-  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
-    for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-    {
+  for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+  {
+    if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR)) {
       theVector = SVECTOR(theElement,i);
       assert (VCOUNT(theVector) != 0);
       assert (VCOUNT(theVector) != 3);
@@ -2513,6 +2513,15 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement)
         SETVCOUNT(SVECTOR(theElement,i),1);
       }
     }
+    if (NBELEM(theElement,i)!=NULL) {
+      for (j=0; j<SIDES_OF_ELEM(NBELEM(theElement,i)); j++)
+        if (NBELEM(NBELEM(theElement,i),j)==theElement) {
+          SET_NBELEM(NBELEM(theElement,i),j,NULL);
+          break;
+        }
+      assert(j<SIDES_OF_ELEM(NBELEM(theElement,i)));
+    }
+  }
     #endif
 
   /* dispose vector in center of element */
