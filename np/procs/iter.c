@@ -146,6 +146,9 @@ struct np_smoother {
   VEC_SCALAR damp;
   MATDATA_DESC *L;
   NP_ORDER *Order;
+  INT AutoDamp;
+  INT mcomp;
+  VECDATA_DESC *DampVector;
 
     #ifdef ModelP
   INT cons_mode;
@@ -2784,21 +2787,66 @@ static INT BHRConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
+static INT SetAutoDamp (GRID *g, MATDATA_DESC *A, INT mcomp, VECDATA_DESC *adv)
+{
+  INT i,n,comp,cc[4];
+  SHORT *advcomp;
+  VECTOR *v;
+  MATRIX *m;
+  DOUBLE diag,sum,ddiag[4],ssum[4],h[4],abs[4];
+
+  advcomp = VD_ncmp_cmpptr_of_otype(adv,NODEVEC,&n);
+  comp = MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,mcomp);
+  for (v=FIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
+  {
+    diag=ABS(MVALUE(VSTART(v),comp));
+    if (diag==0.0) return(1);
+    sum=0.0;
+    for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
+      sum+=ABS(MVALUE(m,comp));
+    if (diag>=sum) VVALUE(v,advcomp[0])=1.0;
+    else VVALUE(v,advcomp[0])=diag/sum;
+    for (i=1; i<n; i++)
+      VVALUE(v,advcomp[1])=VVALUE(v,advcomp[0]);
+  }
+
+  return(0);
+}
+
+static INT SORInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_SMOOTHER *np;
+
+  np = (NP_SMOOTHER *) theNP;
+  if (ReadArgvOption("autodamp",argc,argv)) np->AutoDamp=1;
+  else np->AutoDamp=0;
+  if (ReadArgvINT("comp",&np->mcomp,argc,argv)) np->mcomp=0;
+  return (SmootherInit(theNP,argc,argv));
+}
+
 static INT SORPreProcess  (NP_ITER *theNP, INT level,
                            VECDATA_DESC *x, VECDATA_DESC *b,
                            MATDATA_DESC *A, INT *baselevel, INT *result)
 {
-        #ifdef ModelP
   NP_SMOOTHER *np;
   GRID *theGrid;
 
   np = (NP_SMOOTHER *) theNP;
-  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L)) NP_RETURN(1,result[0]);
   theGrid = NP_GRID(theNP,level);
+  if (np->AutoDamp)
+  {
+    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector)) NP_RETURN(1,result[0]);
+    if (SetAutoDamp(theGrid,A,np->mcomp,np->DampVector)) NP_RETURN(1,result[0]);
+  }
+        #ifdef ModelP
+  if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L)) NP_RETURN(1,result[0]);
   if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
   if (l_matrix_consistent(theGrid,np->L,TRUE) != NUM_OK) NP_RETURN(1,result[0]);
         #endif
-  *baselevel = level;
+  if (np->Order!=NULL)
+    if ((*np->Order->Order)(np->Order,level,A,result)) NP_RETURN(1,result[0]);
+  if (l_setindex(theGrid))
+    *baselevel = level;
 
   return (0);
 }
@@ -2809,10 +2857,20 @@ static INT SORStep (NP_SMOOTHER *theNP, INT level,
                     MATDATA_DESC *L,
                     INT *result)
 {
+  NP_SMOOTHER *np;
+
+  np = (NP_SMOOTHER *) theNP;
     #ifdef ModelP
   if (l_lsor(NP_GRID(theNP,level),x,L,b,theNP->damp) != NUM_OK) NP_RETURN(1,result[0]);
     #else
-  if (l_lsor(NP_GRID(theNP,level),x,A,b,theNP->damp) != NUM_OK) NP_RETURN(1,result[0]);
+  if (np->AutoDamp)
+  {
+    if (l_lsor_ld(NP_GRID(theNP,level),x,A,b,np->DampVector) != NUM_OK) NP_RETURN(1,result[0]);
+  }
+  else
+  {
+    if (l_lsor(NP_GRID(theNP,level),x,A,b,theNP->damp) != NUM_OK) NP_RETURN(1,result[0]);
+  }
     #endif
 
   return (0);
@@ -2843,18 +2901,29 @@ static INT SORSmoother (NP_ITER *theNP, INT level,
   return (0);
 }
 
+static INT SORPostProcess (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  NP_SMOOTHER *np;
+
+  np = (NP_SMOOTHER *) theNP;
+  if (np->AutoDamp)
+    if (FreeVD(np->iter.base.mg,level,level,np->DampVector)) REP_ERR_RETURN(1);
+
+  return(SmootherPostProcess(theNP,level,x,b,A,result));
+}
+
 static INT SORConstruct (NP_BASE *theNP)
 {
   NP_SMOOTHER *np;
 
-  theNP->Init = SmootherInit;
+  theNP->Init = SORInit;
   theNP->Display = SmootherDisplay;
   theNP->Execute = NPIterExecute;
 
   np = (NP_SMOOTHER *) theNP;
   np->iter.PreProcess = SORPreProcess;
   np->iter.Iter = SORSmoother;
-  np->iter.PostProcess = SmootherPostProcess;
+  np->iter.PostProcess = SORPostProcess;
   np->Step = SORStep;
 
   return(0);
