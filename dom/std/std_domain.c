@@ -53,9 +53,6 @@
 #include "std_domain.h"
 #include "domain.h"
 
-/* TODO: hierarchy conflict */
-#include "evm.h"
-
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -2761,23 +2758,21 @@ static INT SideIsCooriented (BND_PS *ps)
 #       endif
 
 #       ifdef __THREEDIM__
-  INT i, n, m;
   DOUBLE vp, x0[2], x1[2];
 
-  n = BND_N(ps);
-  m = 0;
-  for (i=0; i<n; i++)
-  {
-    V2_SUBTRACT(BND_LOCAL(ps,(i+1)%n), BND_LOCAL(ps,i), x0);
-    V2_SUBTRACT(BND_LOCAL(ps,(i+n-1)%n), BND_LOCAL(ps,i), x1);
-    V2_VECTOR_PRODUCT(x0, x1, vp);
-    if (vp>SMALL_C)
-      m--;
-    else
-      m++;
-  }
-  if              (m== n) return (YES);
-  else if (m==-n) return (NO);
+  ASSERT(BND_N(ps)>=3);
+
+  /* check whether an (arbitrary) angle of the side is > 180 degree */
+  V2_SUBTRACT(BND_LOCAL(ps,1), BND_LOCAL(ps,0), x0);
+  V2_SUBTRACT(BND_LOCAL(ps,2), BND_LOCAL(ps,1), x1);
+  V2_VECTOR_PRODUCT(x0, x1, vp);
+
+  ASSERT(fabs(vp)>SMALL_C);
+
+  if (vp>SMALL_C)
+    return (YES);
+  else
+    return (NO);
 
   return (2);
 
