@@ -78,6 +78,7 @@ public:
 
   void GetPoints (ARRAY<Point3d> & apoints) const;
   void Print (ostream & ost) const;
+  void ugPrint (ostream & ost) const;
 
   int Empty () const;
 

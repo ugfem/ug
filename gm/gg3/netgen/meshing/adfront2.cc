@@ -322,3 +322,22 @@ void ADFRONT2 :: Print (ostream & ost) const
 
   ost << flush;
 }
+
+void ADFRONT2 :: ugPrint (ostream & ost) const
+{
+  INDEX i;
+
+  ost << points.Size() << endl;
+  for (i = 1; i <= points.Size(); i++)
+    if (points[i].Valid())
+      ost << " " << points[i].P().X()
+          << " " << points[i].P().Y()
+          << " " << points[i].P().Z() << endl;
+
+  ost << nfl << endl;
+  for (i = 1; i <= lines.Size(); i++)
+    if (lines[i].Valid())
+      ost << lines[i].L().I1() << " " << lines[i].L().I2() << endl;
+
+  ost << flush;
+}
