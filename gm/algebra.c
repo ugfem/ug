@@ -3828,15 +3828,12 @@ INT VectorPosition (const VECTOR *theVector, DOUBLE *position)
     return (0);
                 #endif
   case ELEMVEC :
-    theElement = (ELEMENT *) VOBJECT(theVector);
-    for (i=0; i<DIM; i++)
-    {
-      position[i] = 0.0;
-      for(j=0; j<CORNERS_OF_ELEM(theElement); j++)
-        position[i] += CVECT(MYVERTEX(CORNER(theElement,j)))[i];
-      position[i] /= CORNERS_OF_ELEM(theElement);
-    }
+    /* calculate center of mass */
+    CalculateCenterOfMass( (ELEMENT *) VOBJECT(theVector), position );
     return (0);
+
+  default : PrintErrorMessage('E',"VectorPosition","unrecognized object type for vector");
+    assert(0);
   }
 
   RETURN (GM_ERROR);
