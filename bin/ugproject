@@ -8,6 +8,9 @@ ugconf 2TFFF
 ugmake ug uglib
 ugmake dev
 ugmake dom
+ugconf 2FTFF
+ugmake ug -i ifdef
+ugmake ug uglib
 ugconf 3TFFF
 ugmake ug -i ifdef
 ugmake ug uglib
