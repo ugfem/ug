@@ -642,7 +642,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
    D*/
 /****************************************************************************/
 
-INT SaveData (MULTIGRID *theMG, char *name, INT rename, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec, char **NameList)
+INT SaveData (MULTIGRID *theMG, char *name, INT rename, INT save_without_mg, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec, char **NameList)
 {
   INT i,j,k,l,ncomp,s,t,*entry,nNode,store_from_eval,id,tag,coe,q,mode,nparfiles;
   DIO_GENERAL dio_general;
@@ -665,21 +665,28 @@ INT SaveData (MULTIGRID *theMG, char *name, INT rename, char *type, INT number, 
 
   /* init */
   if (theMG==NULL) return (1);
-  saved = MG_SAVED(theMG);
-#ifdef ModelP
-  saved = UG_GlobalMinINT(saved);
-#endif
-  if (!saved)
-  {
-    if (SaveMultiGrid (theMG,NULL,NULL,NULL,1,rename))
-    {
-      UserWrite("ERROR: cannot autosave multigrid\n");
+  if (save_without_mg) {
+    if (RenumberMultiGrid(theMG,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0)!=GM_OK) {
+      UserWrite("ERROR: cannot renumber multigrid\n");
       return (1);
     }
-    if (!MG_SAVED(theMG))
+  } else {
+    saved = MG_SAVED(theMG);
+#ifdef ModelP
+    saved = UG_GlobalMinINT(saved);
+#endif
+    if (!saved)
     {
-      UserWrite("ERROR: autosave of multigrid failed\n");
-      return (1);
+      if (SaveMultiGrid (theMG,NULL,NULL,NULL,1,rename))
+      {
+        UserWrite("ERROR: cannot autosave multigrid\n");
+        return (1);
+      }
+      if (!MG_SAVED(theMG))
+      {
+        UserWrite("ERROR: autosave of multigrid failed\n");
+        return (1);
+      }
     }
   }
   theHeap = MGHEAP(theMG);
@@ -735,7 +742,8 @@ INT SaveData (MULTIGRID *theMG, char *name, INT rename, char *type, INT number, 
   /* write general information */
   dio_general.mode = mode;
   strcpy(dio_general.version,DIO_VERSION);
-  strcpy(dio_general.mgfile,MG_FILENAME(theMG));
+  if (save_without_mg) strcpy(dio_general.mgfile,"saved_without_mg");
+  else strcpy(dio_general.mgfile,MG_FILENAME(theMG));
   p = GetStringVar (":IDENTIFICATION");
   if (p!=NULL) strcpy(dio_general.ident,p);
   else strcpy(dio_general.ident,"---");

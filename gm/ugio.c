@@ -250,100 +250,6 @@ static INT RenumberNodes (MULTIGRID *theMG, INT *foid, INT *non)
   return (0);
 }
 
-INT RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, NODE ***vid_n, INT *foid, INT *non, INT MarkKey)
-{
-  NODE *theNode;
-  ELEMENT *theElement;
-  INT i,n_ioe,n_boe,vid,n_iov,n_bov,eid,lfoid,lnon,j;
-
-  /* init used-flags */
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-    {
-      SETUSED(theNode,0);
-      SETUSED(MYVERTEX(theNode),0);
-      SETTHEFLAG(MYVERTEX(theNode),0);
-    }
-
-  /* renumber elements and set orphan-flags for nodes and vertices */
-  eid=n_ioe=n_boe=0;
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-    for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
-      if (EFATHER(theElement)==NULL || THEFLAG(theElement)==1)
-      {
-        ID(theElement) = eid++;
-        if (OBJT(theElement)==BEOBJ) n_boe++;
-        else n_ioe++;
-        for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
-        {
-          SETUSED(CORNER(theElement,j),1);
-          SETUSED(MYVERTEX(CORNER(theElement,j)),1);
-        }
-                                #ifdef ModelP
-        assert(i==0 || EGHOST(theElement));
-                                #endif
-      }
-
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-    for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
-      if (EFATHER(theElement)!=NULL && THEFLAG(theElement)==0)
-        ID(theElement) = eid++;
-  if (nboe!=NULL) *nboe = n_boe;
-  if (nioe!=NULL) *nioe = n_ioe;
-
-  /* renumber vertices */
-  vid=n_iov=n_bov=0;
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-      if (THEFLAG(MYVERTEX(theNode))==0 && USED(MYVERTEX(theNode)) && OBJT(MYVERTEX(theNode))==BVOBJ)
-      {
-        ID(MYVERTEX(theNode)) = vid++;
-        n_bov++;
-        SETTHEFLAG(MYVERTEX(theNode),1);
-      }
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-      if (THEFLAG(MYVERTEX(theNode))==0 && USED(MYVERTEX(theNode)) && OBJT(MYVERTEX(theNode))==IVOBJ)
-      {
-        ID(MYVERTEX(theNode)) = vid++;
-        n_iov++;
-        SETTHEFLAG(MYVERTEX(theNode),1);
-      }
-  if (vid_n!=NULL)
-  {
-    *vid_n = (NODE**)GetTmpMem(MGHEAP(theMG),(n_iov+n_bov)*sizeof(NODE*),MarkKey);
-    for (i=0; i<n_iov+n_bov; i++) (*vid_n)[i] = NULL;
-    for (i=0; i<=TOPLEVEL(theMG); i++)
-      for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-        if (USED(theNode))
-        {
-          assert(ID(MYVERTEX(theNode))<n_iov+n_bov);
-          if ((*vid_n)[ID(MYVERTEX(theNode))]!=NULL) continue;
-          (*vid_n)[ID(MYVERTEX(theNode))] = theNode;
-        }
-    IFDEBUG(gm,4)
-    for (i=0; i<n_iov+n_bov; i++)
-      assert((*vid_n)[i] != NULL);
-    ENDDEBUG
-  }
-  for (i=0; i<=TOPLEVEL(theMG); i++)                                            /* not neccessary for i/o */
-    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
-      if (THEFLAG(MYVERTEX(theNode))==0 && !USED(MYVERTEX(theNode)))
-      {
-        ID(MYVERTEX(theNode)) = vid++;
-        SETTHEFLAG(MYVERTEX(theNode),1);
-      }
-  if (nbov!=NULL) *nbov = n_bov;
-  if (niov!=NULL) *niov = n_iov;
-
-  /* renumber nodes */
-  if (RenumberNodes(theMG,&lfoid,&lnon)) return (1);
-  if (foid!=NULL) *foid = lfoid;
-  if (non!=NULL) *non = lnon;
-
-  return (0);
-}
-
 /****************************************************************************/
 /*D
         SaveMultiGrid - Save complete multigrid structure in a text file
@@ -762,6 +668,106 @@ static INT OrphanCons(MULTIGRID *theMG)
   }
 
   return(error);
+}
+
+INT RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, NODE ***vid_n, INT *foid, INT *non, INT MarkKey)
+{
+  NODE *theNode;
+  ELEMENT *theElement;
+  INT i,n_ioe,n_boe,vid,n_iov,n_bov,eid,lfoid,lnon,j;
+
+  /* if called from shell, call OrphanCons first */
+  if (nboe==NULL && nioe==NULL && nbov==NULL && niov==NULL && vid_n==NULL && foid==NULL && non==NULL) {
+    i=OrphanCons(theMG);
+    if (i!=0) REP_ERR_RETURN (1);
+  }
+
+  /* init used-flags */
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+    {
+      SETUSED(theNode,0);
+      SETUSED(MYVERTEX(theNode),0);
+      SETTHEFLAG(MYVERTEX(theNode),0);
+    }
+
+  /* renumber elements and set orphan-flags for nodes and vertices */
+  eid=n_ioe=n_boe=0;
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
+      if (EFATHER(theElement)==NULL || THEFLAG(theElement)==1)
+      {
+        ID(theElement) = eid++;
+        if (OBJT(theElement)==BEOBJ) n_boe++;
+        else n_ioe++;
+        for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+        {
+          SETUSED(CORNER(theElement,j),1);
+          SETUSED(MYVERTEX(CORNER(theElement,j)),1);
+        }
+                                #ifdef ModelP
+        assert(i==0 || EGHOST(theElement));
+                                #endif
+      }
+
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
+      if (EFATHER(theElement)!=NULL && THEFLAG(theElement)==0)
+        ID(theElement) = eid++;
+  if (nboe!=NULL) *nboe = n_boe;
+  if (nioe!=NULL) *nioe = n_ioe;
+
+  /* renumber vertices */
+  vid=n_iov=n_bov=0;
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+      if (THEFLAG(MYVERTEX(theNode))==0 && USED(MYVERTEX(theNode)) && OBJT(MYVERTEX(theNode))==BVOBJ)
+      {
+        ID(MYVERTEX(theNode)) = vid++;
+        n_bov++;
+        SETTHEFLAG(MYVERTEX(theNode),1);
+      }
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+      if (THEFLAG(MYVERTEX(theNode))==0 && USED(MYVERTEX(theNode)) && OBJT(MYVERTEX(theNode))==IVOBJ)
+      {
+        ID(MYVERTEX(theNode)) = vid++;
+        n_iov++;
+        SETTHEFLAG(MYVERTEX(theNode),1);
+      }
+  if (vid_n!=NULL)
+  {
+    *vid_n = (NODE**)GetTmpMem(MGHEAP(theMG),(n_iov+n_bov)*sizeof(NODE*),MarkKey);
+    for (i=0; i<n_iov+n_bov; i++) (*vid_n)[i] = NULL;
+    for (i=0; i<=TOPLEVEL(theMG); i++)
+      for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+        if (USED(theNode))
+        {
+          assert(ID(MYVERTEX(theNode))<n_iov+n_bov);
+          if ((*vid_n)[ID(MYVERTEX(theNode))]!=NULL) continue;
+          (*vid_n)[ID(MYVERTEX(theNode))] = theNode;
+        }
+    IFDEBUG(gm,4)
+    for (i=0; i<n_iov+n_bov; i++)
+      assert((*vid_n)[i] != NULL);
+    ENDDEBUG
+  }
+  for (i=0; i<=TOPLEVEL(theMG); i++)                                            /* not neccessary for i/o */
+    for (theNode=PFIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
+      if (THEFLAG(MYVERTEX(theNode))==0 && !USED(MYVERTEX(theNode)))
+      {
+        ID(MYVERTEX(theNode)) = vid++;
+        SETTHEFLAG(MYVERTEX(theNode),1);
+      }
+  if (nbov!=NULL) *nbov = n_bov;
+  if (niov!=NULL) *niov = n_iov;
+
+  /* renumber nodes */
+  if (RenumberNodes(theMG,&lfoid,&lnon)) return (1);
+  if (foid!=NULL) *foid = lfoid;
+  if (non!=NULL) *non = lnon;
+
+  return (0);
 }
 
 static INT Write_RefRules (MULTIGRID *theMG, INT *RefRuleOffset, INT MarkKey)
@@ -2590,6 +2596,8 @@ static int Gather_EClasses (DDD_OBJ obj, void *data)
   p  = (ELEMENT *)obj;
   d  = (int *)data;
   *d = ECLASS(p);
+
+  return (0);
 }
 
 static int Scatter_EClasses(DDD_OBJ obj, void *data)
@@ -2600,6 +2608,8 @@ static int Scatter_EClasses(DDD_OBJ obj, void *data)
   p = (ELEMENT *)obj;
   d = (int *)data;
   SETECLASS(p,*d);
+
+  return (0);
 }
 
 void CommunicateEClasses (MULTIGRID *theMG)
