@@ -800,7 +800,7 @@ else {
   }
 }
 
-Broadcast(&with_defaultOuputDevice, sizeof(int));
+Broadcast(&with_defaultOuputDevice, sizeof(INT));
 if (with_defaultOuputDevice)
 {
   if (me!=master)
