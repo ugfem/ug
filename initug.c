@@ -30,6 +30,7 @@
 
 /* ANSI-C includes */
 #include <stdio.h>
+#include <string.h>
 
 /* low module */
 #include "initlow.h"
@@ -113,7 +114,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 INT InitUg (int *argcp, char ***argvp)
 {
   INT err;
-        #if (defined Debug && defined __MWCW__)
+        #ifdef Debug
   char buffer[256];
   char debugfilename[NAMESIZE];
         #endif
@@ -189,7 +190,8 @@ INT InitUg (int *argcp, char ***argvp)
     return (1);
   }
 
-        #if (defined Debug && defined __MWCW__)
+        #ifdef Debug
+        #ifdef __MWCW__
   if ((GetDefaultValue(DEFAULTSFILENAME,UGDEBUGRFILE,buffer)==0)
       && (sscanf(buffer," %s ",&debugfilename)==1))
   {
@@ -206,6 +208,31 @@ INT InitUg (int *argcp, char ***argvp)
     SetPrintDebugProc(UserWriteF);
     UserWriteF("debug info is printed to ug's shell window\n");
   }
+        #else
+  {
+    int i;
+    for (i=1; i<*argcp; i++)
+      if (strncmp((*argvp)[i],"-dbgfile",8)==0)
+        break;
+    if ((i<*argcp)
+        && (GetDefaultValue(DEFAULTSFILENAME,UGDEBUGRFILE,buffer)==0)
+        && (sscanf(buffer," %s ",&debugfilename)==1))
+    {
+      if (SetPrintDebugToFile(debugfilename)!=0)
+      {
+        printf("ERROR while opening debug file '%s'\n",debugfilename);
+        printf ("aborting ug\n");
+        return (1);
+      }
+      UserWriteF("debug info is captured to file '%s'\n",debugfilename);
+    }
+    else
+    {
+      SetPrintDebugProc(printf);
+      UserWriteF("debug info is printed to stdout\n");
+    }
+  }
+        #endif
         #endif
 
   /* init the domain module */
