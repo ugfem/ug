@@ -70,6 +70,11 @@
 #define VALUELEN                        64
 #define VALUELENSTR                     "63"
 
+/* matrix consitency modes */
+#define MAT_DIAG_CONS         0
+#define MAT_CONS              1
+#define MAT_MASTER_CONS       2
+
 /****************************************************************************/
 /*																			*/
 /* macros concerned with solving											*/
@@ -135,7 +140,7 @@ INT a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
 INT l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x);
 INT l_vector_collect (GRID *g, const VECDATA_DESC *x);
 INT a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
-INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT offdiag);
+INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode);
 INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x);
 INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x);
 #endif

@@ -1111,6 +1111,46 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 	return(0);
 }
 
+static int Scatter_OffDiagMasterMatrixComp (DDD_OBJ obj, void *data,
+											DDD_PROC proc, DDD_PRIO prio)
+{
+	VECTOR *pv = (VECTOR *)obj;
+	MATRIX *m;
+	DOUBLE *msgbuf = (DOUBLE *)data;
+	INT   i,j,k, *proclist,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
+	const SHORT *Comp;	
+
+	if (VSTART(pv) == NULL) return(0);
+	if (me == master)
+		return(Scatter_OffDiagMatrixComp(obj,data,proc,prio));
+
+	PRINTDEBUG(np,1,("%2d: Scatter_OffDiagMasterMatrixComp\n",me));
+
+	if (MD_IS_SCALAR(ConsMatrix)) {
+		if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv)) {
+		    if (VECSKIP(pv) != 0) return(0);
+			mc = MD_SCALCMP(ConsMatrix);
+			masc =MD_SCAL_CTYPEMASK(ConsMatrix);
+			for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
+			    if (masc  & VDATATYPE(MDEST(m))) 
+					MVALUE(m,mc) = 0.0;
+		}
+		return(0);
+	}
+
+	vtype = VTYPE(pv);
+	vecskip = VECSKIP(pv);
+	rcomp = MD_ROWS_IN_MTYPE(ConsMatrix,MTP(vtype,vtype));
+	for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
+		mtype = MTP(vtype,MDESTTYPE(m));
+		Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
+		for (j=0; j<MD_COLS_IN_MTYPE(ConsMatrix,mtype)*rcomp; j++)
+			MVALUE(m,Comp[j]) = 0.0;
+	}
+
+	return(0);
+}
+
 static int sort_MatArray (const void *e1, const void *e2)
 {
     MATRIX  *m1 = *((MATRIX **)e1);
@@ -1184,7 +1224,7 @@ static int CountInconsMatrices (DDD_OBJ obj)
 	diag. and off-diag. matrix entries.
 */
 
-INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT offdiag)
+INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 {
     INT mt;
 
@@ -1199,15 +1239,24 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT offdiag)
 	DDD_IFAExchange(BorderVectorSymmIF, GLEVEL(g), MaxBlockSize * sizeof(DOUBLE),
 					Gather_DiagMatrixComp, Scatter_DiagMatrixComp);
 
-    if (!offdiag) return (NUM_OK);
+    if (mode == MAT_DIAG_CONS) return (NUM_OK);
+
+	PRINTDEBUG(np,1,("%2d: l_matrix_consistent mode\n",me,mode));
 
 	/* now make off-diagonal entries consistent */
 	MaximumInconsMatrices=0;
 	DDD_IFAExecLocal(BorderVectorSymmIF, GLEVEL(g), CountInconsMatrices);
 	MaximumInconsMatrices = UG_GlobalMaxINT(MaximumInconsMatrices);
-	DDD_IFAExchangeX(BorderVectorSymmIF, GLEVEL(g),
-					 MaxBlockSize*MaximumInconsMatrices*sizeof(DOUBLE),
-					 Gather_OffDiagMatrixComp, Scatter_OffDiagMatrixComp);
+    if (mode == MAT_CONS) 
+		DDD_IFAExchangeX(BorderVectorSymmIF, GLEVEL(g),
+						 MaxBlockSize*MaximumInconsMatrices*sizeof(DOUBLE),
+						 Gather_OffDiagMatrixComp, Scatter_OffDiagMatrixComp);
+    else if (mode == MAT_MASTER_CONS)
+ 	/* TODO: use smaller interface! */
+		DDD_IFAExchangeX(BorderVectorSymmIF, GLEVEL(g),
+						 MaxBlockSize*MaximumInconsMatrices*sizeof(DOUBLE),
+						 Gather_OffDiagMatrixComp, 
+						 Scatter_OffDiagMasterMatrixComp);
 
 	return (NUM_OK);
 }
@@ -1349,8 +1398,7 @@ INT a_dset (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DO
    s_dset - set all components of a vector to a given value
 
    SYNOPSIS:
-   INT s_dset (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, 
-   INT xclass, DOUBLE a);
+   INT s_dset (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE a);
 
    PARAMETERS:
 .  mg - pointer to multigrid 
