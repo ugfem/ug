@@ -413,6 +413,7 @@ static const DOUBLE Quadrature2D_Triangle_P2_N3b_W[] =
  0.33333333333333333333333333333333333,
  0.33333333333333333333333333333333333};
 
+
 static QUADRATURE Quadrature2D_Triangle_P2_N3b = {
   /* Number of Gauss Points */
   3,
@@ -2625,7 +2626,7 @@ QUADRATURE *GetQuadratureRule(INT dim, INT n, INT order)
     case 4 :
       switch (order)
       {
-      case 0 :       return(&Quadrature2D40);
+      case 0 :
       case 1 :       return(&Quadrature2D_Quad_P1_N1);
       case 2 :       return(&Quadrature2D_Quad_P2_N4);
       case 3 :       return(&Quadrature2D_Quad_P3_N4a);
