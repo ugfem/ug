@@ -262,9 +262,11 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 				SETPRIO(newvec,PRIO(vec));
 				VECSKIP(newvec)=VECSKIP(vec);
 				SETVCCOARSE(newvec,0);
+#ifdef DYNAMIC_MEMORY_ALLOCMODEL
 				VSTART(newvec) = NULL;
 				VISTART(newvec) = NULL;
-				
+#endif
+
 				// store a temporary link from the geometric-level vector to its amg-level copy
 				// use therefore the geom_object field
 				vec->object = (union geom_object *)newvec;
@@ -292,9 +294,11 @@ static INT FAMGPreProcess  (MULTIGRID *mg, INT *mark_key, INT level,
 			SETPRIO(newvec,PRIO(vec));
 			VECSKIP(newvec)=VECSKIP(vec);
 			SETVCCOARSE(newvec,0);
+#ifdef DYNAMIC_MEMORY_ALLOCMODEL
 			VSTART(newvec) = NULL;
 			VISTART(newvec) = NULL;
-			
+#endif
+
 			// store a temporary link from the geometric-level vector to its amg-level copy
 			// use therefore the geom_object field
 			vec->object = (union geom_object *)newvec;

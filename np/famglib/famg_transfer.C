@@ -213,9 +213,11 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 			SETPRIO(ugnew_vec,PRIO(ugfg_vec));
 			VECSKIP(ugnew_vec)=VECSKIP(ugfg_vec);
 			SETVCCOARSE(ugnew_vec,0);
+#ifdef DYNAMIC_MEMORY_ALLOCMODEL
 			VSTART(ugnew_vec) = NULL;
 			VISTART(ugnew_vec) = NULL;
-			
+#endif
+
 			#ifdef ModelP
 			if (DDD_InfoPrioCopies(PARHDR(ugfg_vec)) > 0) {
 			    int *proclist = DDD_InfoProcList(PARHDR(ugfg_vec));
