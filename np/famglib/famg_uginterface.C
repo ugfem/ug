@@ -86,6 +86,7 @@ static void ReadParameter(FAMGParameter *parameter, FAMGParameter_ug *in_paramet
     parameter->Setilut(in_parameter->ilut);
     parameter->Setcgilut(in_parameter->cgilut);
     parameter->Setcgnodes(in_parameter->cgnodes);
+    parameter->Setcglevels(in_parameter->cglevels);
     parameter->Setconloops(in_parameter->conloops);
     parameter->Setmincoarse(in_parameter->mincoarse);
     parameter->Settype(in_parameter->type);

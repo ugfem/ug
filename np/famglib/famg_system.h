@@ -52,6 +52,7 @@ public:
   double Getcgilut();
   double Getilut();
   int Getcgnodes();
+  int Getcglevels();
   double Getmincoarse();
   int Getconloops();
   int Gettype();
@@ -80,6 +81,7 @@ public:
   void Setilut(double d);
   void Setcgilut(double d);
   void Setcgnodes(int i);
+  void Setcglevels(int i);
   void Setmincoarse(double d);
   void Setconloops(int i);
   void Settype(int i);
@@ -108,6 +110,7 @@ private:
   double ilut;
   double cgilut;
   int cgnodes;
+  int cglevels;
   double mincoarse;
   int conloops;
   int type;
@@ -152,6 +155,9 @@ inline double FAMGParameter::Getcgilut() {
 }
 inline int FAMGParameter::Getcgnodes() {
   return cgnodes;
+}
+inline int FAMGParameter::Getcglevels() {
+  return cglevels;
 }
 inline double FAMGParameter::Getmincoarse() {
   return mincoarse;
@@ -234,6 +240,9 @@ inline void FAMGParameter::Setn2(int i) {
 }
 inline void FAMGParameter::Setcgnodes(int i) {
   cgnodes = i;
+}
+inline void FAMGParameter::Setcglevels(int i) {
+  cglevels = i;
 }
 inline void FAMGParameter::Setmincoarse(double d) {
   mincoarse = d;

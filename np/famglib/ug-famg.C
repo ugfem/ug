@@ -131,6 +131,8 @@ static void FAMGReadArgvParameter(INT argc, char **argv)
 		famg_parameter.gamma = 1;
 	if (ReadArgvINT("cgn",&(famg_parameter.cgnodes),argc,argv))
 		famg_parameter.cgnodes = 1;
+	if (ReadArgvINT("cgl",&(famg_parameter.cglevels),argc,argv))
+		famg_parameter.cglevels = 100;
 
 	
     famg_parameter.ilut = 1e+10;
@@ -743,6 +745,7 @@ static INT FAMGIterInit (NP_BASE *theNP, INT argc, char **argv)
     np->n2 = famg_parameter.n2;
     np->gamma = famg_parameter.gamma;
     np->cgnodes = famg_parameter.cgnodes;
+    np->cglevels = famg_parameter.cglevels;
     np->maxit = famg_parameter.maxit;
     np->alimit = famg_parameter.alimit;
     np->rlimit = famg_parameter.rlimit;
@@ -766,6 +769,7 @@ static INT FAMGIterDisplay (NP_BASE *theNP)
 	UserWriteF(DISPLAY_NP_FORMAT_SI,"n2",(int)np->n2);
 	UserWriteF(DISPLAY_NP_FORMAT_SI,"g",(int)np->gamma);
 	UserWriteF(DISPLAY_NP_FORMAT_SI,"cgn",(int)np->cgnodes);
+	UserWriteF(DISPLAY_NP_FORMAT_SI,"cgl",(int)np->cglevels);
 	UserWriteF(DISPLAY_NP_FORMAT_SI,"maxit",(int)np->maxit);
 	UserWriteF(DISPLAY_NP_FORMAT_SE,"alimit",(double)np->alimit);
 	UserWriteF(DISPLAY_NP_FORMAT_SE,"rlimit",(double)np->rlimit);
@@ -1471,12 +1475,12 @@ INT FAMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 
 #ifdef ModelP
 	// coarse grid agglomeration
-prm(mg->bottomLevel,0);
+//prm(mg->bottomLevel,0);
 	AMGAgglomerate(mg);
 	l_amgmatrix_collect(GRID_ON_LEVEL(mg,mg->bottomLevel),A);
 	UserWrite("coarse grid agglomerated\n");
 	printf("coarse grid agglomerated\n");
-prm(mg->bottomLevel,0);
+//prm(mg->bottomLevel,0);
 #endif
 	
 	return res;

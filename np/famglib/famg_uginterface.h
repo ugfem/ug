@@ -71,6 +71,7 @@ struct FAMGParameter_ug
   double ilut;
   double cgilut;
   int cgnodes;
+  int cglevels;
   double mincoarse;
   int conloops;
   int type;

@@ -64,6 +64,7 @@ int FAMGMultiGrid::Construct()
 
     // read parameter
     const int cgnodes = FAMGGetParameter()->Getcgnodes();
+    const int cglevels = FAMGGetParameter()->Getcglevels();
     const double mincoarse = FAMGGetParameter()->Getmincoarse();
     const int gamma = FAMGGetParameter()->Getgamma();
 	if ((strcmp("ilut",FAMGGetParameter()->Getpresmoother()) == 0)
@@ -85,7 +86,7 @@ int FAMGMultiGrid::Construct()
     {
         g->Stencil();
         nn = g->GetN();
-        if ((nn <= cgnodes) && (gamma > 0)) break;
+        if ((nn <= cgnodes || level>=cglevels) && (gamma > 0)) break;
 
 #ifdef FAMG_ILU
         if(ilu)
@@ -110,10 +111,10 @@ int FAMGMultiGrid::Construct()
         grid[n] = cg;
         g = cg;
         n++;
-printf("after Galerkin:\n");
-prm(0,0);
-prm(0,1);
-prm(-1,0);
+//printf("after Galerkin:\n");
+//prm(0,0);
+//prm(0,1);
+//prm(-1,0);
         if(nnc > nn*mincoarse)
 			break;
     }

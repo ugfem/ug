@@ -44,6 +44,7 @@ typedef struct
   INT n2;
   INT gamma;
   INT cgnodes;
+  INT cglevels;
   DOUBLE coarsening;
   DOUBLE strong;
   INT adaptive;
