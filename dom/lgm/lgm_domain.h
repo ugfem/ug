@@ -193,8 +193,10 @@
 #define LGM_SURFDISC_NTRIANGLE(p)                       ((p)->ntriangle)
 #define LGM_SURFDISC_LOCAL(p,i,j)                       ((p)->local[(i)][(j)])
 #define LGM_SURFDISC_TRIANGLE(p,i,j)            ((p)->triangle[(i)][(j)])
+#define LGM_SURFDISC_TRIANGLE_NEIGHBOUR(p,i,j)          ((p)->neighbour[(i)][(j)])
 #define LGM_SURFDISC_MESH_ID(p,i)                       ((p)->mesh_id[i])
 #define LGM_SURFDISC_FMESH_ID(p)                        ((p)->mesh_id)
+#define LGM_SURFDISC_XY_ID(p,i)                         ((p)->xy_id[i])
 
 /* macros for LGM_LINE */
 #define LGM_LINE_ID(p)                                          ((p)->id)
@@ -467,6 +469,8 @@ struct surfdisc {
   DOUBLE **local;                                       /* local coorddinates of the points			*/
   INT *mesh_id;                                         /* id of point in mesh-structure			*/
   INT **triangle;                                       /* triangle-list							*/
+  INT *xy_id;                                                   /* triangle-list							*/
+  INT **neighbour;                                      /* triangle-neighbour-list							*/
   INT dummy;                                                    /* to fill according to the needs                       */
 };
 

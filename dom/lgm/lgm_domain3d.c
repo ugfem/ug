@@ -71,12 +71,17 @@ static INT LGM_MarkKey;
 static INT SurfaceInfoId;
 static INT LineInfoId;
 static INT LGM_DEBUG = 0;
-static INT SAVE_SURFACE = 0;
+static INT SAVE_SURFACE;
+static INT SURFACE_ADAPT;
 static DOUBLE LINE_DISTANCE = 0.05;
-#define SMALL 1e-8
+#define SMALL_FAK 1e-8
+DOUBLE SMALL;
 static INT VAR_H = 1;
+#define SMALL1 1e-8
 
-static DOUBLE cosAngle = 0.99;          /* Winkel zwischen Inputdreiecken */
+/*static DOUBLE cosAngle = 0.99;		komplex3d */
+/*static DOUBLE cosAngle = 0.99999;	*/
+static DOUBLE cosAngle;         /* Winkel zwischen Inputdreiecken */
 static DOUBLE Triangle_Angle2 = 40.0;
 static DOUBLE EPS = 0.1;
 
@@ -88,12 +93,16 @@ static INT DiscretizeLine                               (HEAP *Heap, LGM_LINE *t
 static INT DiscretizeLineNew                    (HEAP *Heap, LGM_LINE *theLine, DOUBLE h, LGM_POINT *pointlist, INT norp, INT MarkKey);
 static INT Get_NBNDP                                    (LGM_DOMAIN *theDomain, INT *nBND, DOUBLE h);
 static INT DiscretizeDomain                     (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, DOUBLE h, INT MarkKey);
-static INT DiscretizeSurface                    (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h, LGM_POINT *pointlist, INT norp, INT MarkKey);
+static INT DiscretizeSurface                    (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h, LGM_POINT *pointlist,
+                                                 INT norp, INT D, INT MarkKey);
 static INT TransferSurfaces2Mesh                (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h);
 static INT P_Dist(DOUBLE *p1, DOUBLE *p2);
 static DOUBLE E_Distance(DOUBLE *p1, DOUBLE *p2);
 
-extern INT GenerateSurfaceGrid (HEAP *theHeap, INT MarkKey, LGM_SURFACE *aSurface, DOUBLE h, INT smooth,INT display);
+
+INT TEST(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);
+
+extern INT GenerateSurfaceGrid (HEAP *theHeap, INT MarkKey, LGM_SURFACE *aSurface, DOUBLE h, INT smooth,INT display,INT D);
 extern INT InitSurface(CoeffProcPtr Coeff);
 extern int AddGeomElement (int node0, int node1, int node2, int neigbor0, int neigbor1, int neigbor2);
 
@@ -106,6 +115,42 @@ static CoeffProcPtr Coefficients[8];
 static CoeffProcPtr LOCAL_H;
 
 static LGM_SURFACE *Surf;
+static LGM_SURFACE *xy_Surface;
+static LGM_LINE *xy_Line[4];
+static LGM_POINT *xy_Point[4];
+static INT xy_bpoints;
+static DOUBLE xy_n[3];
+static DOUBLE **xy_lcoord;
+static INT *xy_flag;
+static INT *xy_new_id;
+static INT *xy_element_id;
+
+static INT P_Dist(DOUBLE *p1, DOUBLE *p2)
+{
+  DOUBLE x, y, z, r;
+
+  x = p1[0] - p2[0];
+  y = p1[1] - p2[1];
+  z = p1[2] - p2[2];
+
+  r = sqrt(x*x+y*y+z*z);
+  if(r<SMALL)
+    return(1);
+  else
+    return(0);
+}
+
+static DOUBLE E_Distance(DOUBLE *p1, DOUBLE *p2)
+{
+  DOUBLE d;
+
+  d = sqrt( (p1[0]-p2[0])*(p1[0]-p2[0])
+            +     (p1[1]-p2[1])*(p1[1]-p2[1])
+            +     (p1[2]-p2[2])*(p1[2]-p2[2]) );
+  return(d);
+}
+
+
 
 static INT ResetSurfaceFlags (LGM_DOMAIN *theDomain)
 {
@@ -320,6 +365,7 @@ INT SetDomainSize (LGM_DOMAIN *theDomain)
     if ((*LGM_PROBLEM_DOMCONFIG (theProblem))(min,max))
       return (1);
 
+  SMALL = SMALL_FAK * LGM_DOMAIN_RADIUS(theDomain);
   return (0);
 }
 
@@ -441,7 +487,8 @@ INT Line_Local2GlobalNew (LGM_LINE *theLine, DOUBLE *global, DOUBLE local)
   ilocal = floor(local);
   slocal = local - ilocal;
 
-  assert(slocal>=0.0);
+  if(slocal<0.0)
+    assert(slocal>=0.0);
   assert(ilocal<LGM_LINE_NPOINT(theLine) && ilocal>=0);
 
   if (ilocal<LGM_LINE_NPOINT(theLine)-1)
@@ -491,7 +538,7 @@ INT Line_Global2Local (LGM_LINE *theLine, DOUBLE *global, DOUBLE *local)
       else
       {
         lambda[j] = (global[j] - start[j]) / (end[j] - start[j]);
-        if( (lambda[j]>0.0-SMALL)&&(lambda[j]<1.0+SMALL) )
+        if( (lambda[j]>=0.0)&&(lambda[j]<=1.0) )
         {
           r = j;
           id[j] = 1;
@@ -1362,18 +1409,18 @@ static INT Normal_Vector(DOUBLE *p0, DOUBLE *p1, DOUBLE *p2, DOUBLE *n)
   n1[2] = p2[2] - p0[2];
 
   l1 = Lenght(n1);
-  Scale(n1, 1/l1);
+  Scale(n1, 1.0/l1);
 
   n2[0] = p2[0] - p1[0];
   n2[1] = p2[1] - p1[1];
   n2[2] = p2[2] - p1[2];
 
   l2 = Lenght(n2);
-  Scale(n2, 1/l2);
+  Scale(n2, 1.0/l2);
 
   Cross(n, n1, n2);
   l = Lenght(n);
-  Scale(n, 1/l);
+  Scale(n, 1.0/l);
 
   return(0);
 }
@@ -1491,6 +1538,33 @@ static INT ResolvePoints(HEAP *Heap, LGM_DOMAIN *theDomain, LGM_POINT *pointlist
   return(0);
 }
 
+static INT Count_Points(LGM_DOMAIN *theDomain)
+{
+  INT i, j, npoints;
+  DOUBLE scalarproduct;
+  LGM_SURFACE *theSurface;
+
+  npoints = 0;
+  for (theSurface=FirstSurface(theDomain); theSurface!=NULL; theSurface=NextSurface(theDomain))
+  {
+    for(i=0; i<LGM_SURFACE_NTRIANGLE(theSurface); i++)
+    {
+      for(j=0; j<3; j++)
+      {
+        if(LGM_TRIANGLE_NEIGHBOR(LGM_SURFACE_TRIANGLE(theSurface,i),j)!=-1)
+        {
+          scalarproduct = Calc_Triangle_Angle(theSurface, i, LGM_TRIANGLE_NEIGHBOR(LGM_SURFACE_TRIANGLE(theSurface,i),j));
+
+          if(scalarproduct < cosAngle)
+            npoints = npoints + 2;
+        }
+      }
+    }
+
+  }
+  return(npoints);
+}
+
 static INT Write_Line(LGM_LINE *theLine)
 {
   char buff[5], name[12], name1[16];
@@ -1539,27 +1613,14 @@ static INT Write_Line(LGM_LINE *theLine)
 }
 
 
-static INT Write_Surface(LGM_SURFACE *theSurface)
+static INT Write_Surface(LGM_SURFACE *theSurface, char *name, char *name1)
 {
-  char buff[5], name[12], name1[16];
+  char buff[5];
   INT i, j, id;
   FILE *stream;
   DOUBLE local[3], global[3];
 
   id = LGM_SURFACE_ID(theSurface);
-  name[0] = 's';
-  name[1] = 'u';
-  name[2] = 'r';
-  name[3] = 'f';
-  name[4] = 'a';
-  name[5] = 'c';
-  name[6] = 'e';
-  sprintf(buff,"%d",id);
-  name[7] = buff[0];
-  name[8] = buff[1];
-  name[9] = buff[2];
-  name[10] = buff[3];
-  name[11] = buff[4];
 
   stream = fopen(name,"w+");
   if (stream==NULL)
@@ -1572,7 +1633,7 @@ static INT Write_Surface(LGM_SURFACE *theSurface)
   {
     local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),i,0);
     local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),i,1);
-    fprintf(stream, "%lf %lf\n", local[0], local[1]);
+    fprintf(stream, "%20.16lf %20.16lf\n", local[0], local[1]);
   }
   fprintf(stream, "%d\n", LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)));
   for(i=0; i<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)); i++)
@@ -1581,24 +1642,15 @@ static INT Write_Surface(LGM_SURFACE *theSurface)
             LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface),i,1),
             LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface),i,2));
   }
+  if(SURFACE_ADAPT)
+    if(LGM_SURFACE_ID(theSurface)!=-1)
+    {
+      for(i=0; i<LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(xy_Surface)); i++)
+        fprintf(stream,"%d\n",xy_new_id[i]);
+      for(i=0; i<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(xy_Surface)); i++)
+        fprintf(stream,"%d\n",xy_element_id[i]);
+    }
   fclose(stream);
-
-  name1[0] = 's';
-  name1[1] = 'u';
-  name1[2] = 'r';
-  name1[3] = 'f';
-  name1[4] = 'a';
-  name1[5] = 'c';
-  name1[6] = 'e';
-  name1[7] = 'm';
-  name1[8] = 'e';
-  name1[9] = 's';
-  name1[10] = 'h';
-  name1[11] = buff[0];
-  name1[12] = buff[1];
-  name1[13] = buff[2];
-  name1[14] = buff[3];
-  name1[15] = buff[4];
 
   stream = fopen(name1,"w+");
   if (stream==NULL)
@@ -1627,29 +1679,51 @@ static INT Write_Surface(LGM_SURFACE *theSurface)
   return(0);
 }
 
-static INT Read_Surface(HEAP *Heap, LGM_SURFACE *theSurface, INT MarkKey)
+static DOUBLE Calc_Angle_to_Normal(LGM_SURFACE *theSurface, INT i, DOUBLE *n)
 {
-  char buff[5], name[12];
-  INT i, j, d, d1, d2, d3, buflen;
+  DOUBLE n1[3], *p0, *p1, *p2, scalarproduct;
+
+  p0 = (DOUBLE*)LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,i),0);
+  p1 = (DOUBLE*)LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,i),1);
+  p2 = (DOUBLE*)LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,i),2);
+
+  /* get Normalvector to the Triangle i */
+  Normal_Vector(p0, p1, p2, &n1[0]);
+
+  scalarproduct =  Mult(n1, n);
+  return(scalarproduct);
+}
+
+static INT Surface_Plane(LGM_SURFACE *theSurface)
+{
+  INT i, j, plain1, plain2;
+  DOUBLE sp;
+
+  plain1 = 1;
+  plain2 = 1;
+  for(i=0; i<LGM_SURFACE_NTRIANGLE(theSurface); i++)
+  {
+    sp = Calc_Angle_to_Normal(theSurface, i, xy_n);
+    if(sp<0.995)
+      plain1 = 0;
+    if(sp>-0.995)
+      plain2 = 0;
+  }
+  if(plain1||plain2)
+    return(1);
+  else
+    return(0);
+}
+
+static INT Read_Surface(HEAP *Heap, LGM_SURFACE *theSurface, INT MarkKey, char name[12])
+{
+  char buff[5];
+  INT i, j, k, d, d1, d2, d3, buflen, a, b, dummy, mi;
   FILE *stream;
   DOUBLE local[3], global[3], local0, local1;
   char buffer[256];
 
   buflen = 256;
-  name[0] = 's';
-  name[1] = 'u';
-  name[2] = 'r';
-  name[3] = 'f';
-  name[4] = 'a';
-  name[5] = 'c';
-  name[6] = 'e';
-  sprintf(buff,"%d",LGM_SURFACE_ID(theSurface));
-  name[7] = buff[0];
-  name[8] = buff[1];
-  name[9] = buff[2];
-  name[10] = buff[3];
-  name[11] = buff[4];
-
   stream = fopen(name,"r+");
   if (stream==NULL)
   {
@@ -1657,35 +1731,503 @@ static INT Read_Surface(HEAP *Heap, LGM_SURFACE *theSurface, INT MarkKey)
     return(1);
   }
 
-  fgets(buffer,buflen,stream);
-  sscanf(buffer,"%d",&d);
+  fscanf(stream,"%d\n",&d);
   LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)) = d;
 
   LGM_SURFACE_DISC(theSurface)->local = (DOUBLE **) GetTmpMem(Heap,(d+1)*sizeof(DOUBLE*), MarkKey);
+  if(LGM_SURFACE_DISC(theSurface)->local==NULL)
+  {
+    printf("%s\n","Not enough memory");
+    assert(0);
+  }
   for(i=0; i<d; i++)
   {
     LGM_SURFACE_DISC(theSurface)->local[i] = (DOUBLE *)  GetTmpMem(Heap,3*sizeof(DOUBLE), MarkKey);
-    fgets(buffer,buflen,stream);
-    sscanf(buffer,"%lf %lf",&local0, &local1);
+    if(LGM_SURFACE_DISC(theSurface)->local[i]==NULL)
+    {
+      printf("%s\n","Not enough memory");
+      assert(0);
+    }
+    fscanf(stream,"%lg %lg\n",&local0, &local1);
     LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),i,0) = local0;
     LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),i,1) = local1;
   }
 
-  fgets(buffer,buflen,stream);
-  sscanf(buffer,"%d",&d);
+  fscanf(stream,"%d",&d);
   LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)) = d;
 
   LGM_SURFACE_DISC(theSurface)->triangle = (INT **) GetTmpMem(Heap,(d+1)*sizeof(INT*), MarkKey);
+  if(LGM_SURFACE_DISC(theSurface)->triangle==NULL)
+  {
+    printf("%s\n","Not enough memory");
+    assert(0);
+  }
   for(i=0; i<d; i++)
   {
     LGM_SURFACE_DISC(theSurface)->triangle[i] = (INT *)  GetTmpMem(Heap,4*sizeof(INT), MarkKey);
-    fgets(buffer,buflen,stream);
-    sscanf(buffer,"%d %d %d",&d1, &d2, &d3);
+    if(LGM_SURFACE_DISC(theSurface)->triangle[i]==NULL)
+    {
+      printf("%s\n","Not enough memory");
+      assert(0);
+    }
+    fscanf(stream,"%d %d %d\n",&d1, &d2, &d3);
     LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface),i,0) = d1;
     LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface),i,1) = d2;
     LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface),i,2) = d3;
   }
+  if(SURFACE_ADAPT)
+    if(LGM_SURFACE_ID(theSurface)!=-1)
+    {
+      for(i=0; i<LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(xy_Surface)); i++)
+      {
+        fscanf(stream,"%d\n",&d1);
+        xy_new_id[i] = d1;
+      }
+      for(i=0; i<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(xy_Surface)); i++)
+      {
+        fscanf(stream,"%d\n",&d1);
+        xy_element_id[i] = d1;
+      }
+    }
   fclose(stream);
+
+  return(0);
+}
+
+static INT Generate_Basis_Mesh(LGM_DOMAIN *theDomain, DOUBLE h, HEAP *Heap, INT D, INT MarkKey)
+{
+  INT i, j, size;
+  DOUBLE min[3], max[3];
+  char name[11], name1[15], buff[5];
+  LGM_LINE *theLine;
+  LGM_POINT *thePoint;
+  FILE *stream;
+
+  min[0]=min[1]=min[2]=MAX_C;
+  max[0]=max[1]=max[2]=-MAX_C;
+
+  xy_n[0] = 0.0;
+  xy_n[1] = 0.0;
+  xy_n[2] = 1.0;
+
+  for (theLine=FirstLine(theDomain); theLine!=NULL; theLine=NextLine(theDomain))
+    for (i=0; i<LGM_LINE_NPOINT(theLine); i++)
+    {
+      min[0] = MIN(LGM_POINT_POS(LGM_LINE_POINT(theLine,i))[0],min[0]);
+      min[1] = MIN(LGM_POINT_POS(LGM_LINE_POINT(theLine,i))[1],min[1]);
+      min[2] = MIN(LGM_POINT_POS(LGM_LINE_POINT(theLine,i))[2],min[2]);
+      max[0] = MAX(LGM_POINT_POS(LGM_LINE_POINT(theLine,i))[0],max[0]);
+      max[1] = MAX(LGM_POINT_POS(LGM_LINE_POINT(theLine,i))[1],max[1]);
+      max[2] = MAX(LGM_POINT_POS(LGM_LINE_POINT(theLine,i))[2],max[2]);
+    }
+
+  for (i=0; i<4; i++)
+    if ((xy_Point[i] = (LGM_POINT*)GetTmpMem(Heap,sizeof(LGM_POINT), MarkKey)) == NULL)
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
+
+  LGM_POINT_POS(xy_Point[0])[0] = min[0] - 2 * h;
+  LGM_POINT_POS(xy_Point[0])[1] = min[1] - 2 * h;
+  LGM_POINT_POS(xy_Point[0])[2] = 0.0;
+
+  LGM_POINT_POS(xy_Point[1])[0] = max[0] + 2 * h;
+  LGM_POINT_POS(xy_Point[1])[1] = min[1] - 2 * h;
+  LGM_POINT_POS(xy_Point[1])[2] = 0.0;
+
+  LGM_POINT_POS(xy_Point[2])[0] = max[0] + 2 * h;
+  LGM_POINT_POS(xy_Point[2])[1] = max[1] + 2 * h;
+  LGM_POINT_POS(xy_Point[2])[2] = 0.0;
+
+  LGM_POINT_POS(xy_Point[3])[0] = min[0] - 2 * h;
+  LGM_POINT_POS(xy_Point[3])[1] = max[1] + 2 * h;
+  LGM_POINT_POS(xy_Point[3])[2] = 0.0;
+
+  for (i=0; i<4; i++)
+  {
+    size = sizeof(LGM_LINE) + (2)*sizeof(LGM_POINT);
+    if ((xy_Line[i] = (LGM_LINE*)GetTmpMem(Heap,size, MarkKey)) == NULL)
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
+
+    LGM_LINE_NPOINT(xy_Line[i]) = 2;
+    LGM_LINE_ID(xy_Line[i])  = i;
+  }
+
+  LGM_LINE_BEGIN(xy_Line[0]) = 0;
+  LGM_LINE_BEGIN(xy_Line[1]) = 1;
+  LGM_LINE_BEGIN(xy_Line[2]) = 2;
+  LGM_LINE_BEGIN(xy_Line[3]) = 3;
+  LGM_LINE_END(xy_Line[0]) = 1;
+  LGM_LINE_END(xy_Line[1]) = 2;
+  LGM_LINE_END(xy_Line[2]) = 3;
+  LGM_LINE_END(xy_Line[3]) = 0;
+
+  for (i=0; i<4; i++)
+  {
+    for(j=0; j<3; j++)
+    {
+      LGM_POINT_POS(LGM_LINE_POINT(xy_Line[i], 0))[j] = LGM_POINT_POS(xy_Point[LGM_LINE_BEGIN(xy_Line[i])])[j];
+      LGM_POINT_POS(LGM_LINE_POINT(xy_Line[i], 1))[j] = LGM_POINT_POS(xy_Point[LGM_LINE_END(xy_Line[i])])[j];
+    }
+  }
+  for (i=0; i<4; i++)
+  {
+    xy_Line[i]->ldiscnew = (LGM_LINEDISCNEW*)GetTmpMem(Heap,sizeof(LGM_LINEDISCNEW)*1, MarkKey);
+    if( (xy_Line[i]->ldiscnew==NULL) )
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
+    if (DiscretizeLineNew(Heap,xy_Line[i],h,NULL, 0, MarkKey))
+      return(1);
+    if(LGM_DEBUG) PrintLineInfo(xy_Line[i]);
+  }
+  xy_bpoints =    LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(xy_Line[0]))
+               +       LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(xy_Line[1]))
+               +       LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(xy_Line[2]))
+               +       LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(xy_Line[3])) - 4;
+
+  size = sizeof(LGM_SURFACE)+(4)*sizeof(LGM_POINT);
+  if ((xy_Surface=(LGM_SURFACE*)GetTmpMem(Heap,size, MarkKey)) == NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+
+  if ((LGM_SURFACE_FPOINT(xy_Surface) = (LGM_POINT*)GetTmpMem(Heap,sizeof(LGM_POINT)*4, MarkKey)) == NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+  if ((LGM_SURFACE_FTRIANGLE(xy_Surface) = (LGM_TRIANGLE*)GetTmpMem(Heap,sizeof(LGM_TRIANGLE)*2, MarkKey)) == NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+
+  LGM_SURFACE_NPOINT(xy_Surface)          = 4;
+  LGM_SURFACE_ID(xy_Surface)                      = -1;
+  LGM_SURFACE_NTRIANGLE(xy_Surface)       = 2;
+  LGM_SURFACE_LEFT(xy_Surface)            = 0;
+  LGM_SURFACE_RIGHT(xy_Surface)           = 0;
+  LGM_SURFACE_NLINE(xy_Surface)           = 4;
+  LGM_SURFACE_DISC(xy_Surface)            = NULL;
+  LGM_SURFACE_BNDCOND(xy_Surface)         = NULL;
+
+  for (j=0; j<LGM_SURFACE_NLINE(xy_Surface); j++)
+    LGM_SURFACE_LINE(xy_Surface,j) = xy_Line[j];
+
+  LGM_POINT_POS(LGM_SURFACE_POINT(xy_Surface,0))[0] = min[0] - 2 * h;
+  LGM_POINT_POS(LGM_SURFACE_POINT(xy_Surface,0))[1] = min[1] - 2 * h;
+  LGM_POINT_POS(LGM_SURFACE_POINT(xy_Surface,0))[2] = 0.0;
+
+  LGM_POINT_POS(LGM_SURFACE_POINT(xy_Surface,1))[0] = max[0] + 2 * h;
+  LGM_POINT_POS(LGM_SURFACE_POINT(xy_Surface,1))[1] = min[1] - 2 * h;
+  LGM_POINT_POS(LGM_SURFACE_POINT(xy_Surface,1))[2] = 0.0;
+
+  LGM_POINT_POS(LGM_SURFACE_POINT(xy_Surface,2))[0] = max[0] + 2 * h;
+  LGM_POINT_POS(LGM_SURFACE_POINT(xy_Surface,2))[1] = max[1] + 2 * h;
+  LGM_POINT_POS(LGM_SURFACE_POINT(xy_Surface,2))[2] = 0.0;
+
+  LGM_POINT_POS(LGM_SURFACE_POINT(xy_Surface,3))[0] = min[0] - 2 * h;
+  LGM_POINT_POS(LGM_SURFACE_POINT(xy_Surface,3))[1] = max[1] + 2 * h;
+  LGM_POINT_POS(LGM_SURFACE_POINT(xy_Surface,3))[2] = 0.0;
+
+  LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(xy_Surface,0),0) = LGM_SURFACE_POINT(xy_Surface,0);
+  LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(xy_Surface,0),1) = LGM_SURFACE_POINT(xy_Surface,1);
+  LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(xy_Surface,0),2) = LGM_SURFACE_POINT(xy_Surface,2);
+  LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(xy_Surface,1),0) = LGM_SURFACE_POINT(xy_Surface,0);
+  LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(xy_Surface,1),1) = LGM_SURFACE_POINT(xy_Surface,2);
+  LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(xy_Surface,1),2) = LGM_SURFACE_POINT(xy_Surface,3);
+
+  LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(xy_Surface,0),0) = 0;
+  LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(xy_Surface,0),1) = 1;
+  LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(xy_Surface,0),2) = 2;
+  LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(xy_Surface,1),0) = 0;
+  LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(xy_Surface,1),1) = 2;
+  LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(xy_Surface,1),2) = 3;
+
+  for(i=0; i<2; i++)
+    for(j=0; j<3; j++)
+      LGM_TRIANGLE_NEIGHBOR(LGM_SURFACE_TRIANGLE(xy_Surface,i),j) = -1;
+
+  LGM_SURFACE_DISC(xy_Surface) = (LGM_SURFDISC*)GetTmpMem(Heap,sizeof(LGM_SURFDISC)*1,MarkKey);
+  if( (LGM_SURFACE_DISC(xy_Surface)==NULL) )
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+
+  if(SAVE_SURFACE)
+  {
+    name[0] = 'x';
+    name[1] = 'y';
+    name[2] = '_';
+    name[3] = 's';
+    name[4] = 'u';
+    name[5] = 'r';
+    name[6] = 'f';
+    name[7] = 'a';
+    name[8] = 'c';
+    name[9] = 'e';
+    name[10] = '\0';
+
+    name1[0] = 'x';
+    name1[1] = 'y';
+    name1[2] = '_';
+    name1[3] = 's';
+    name1[4] = 'u';
+    name1[5] = 'r';
+    name1[6] = 'f';
+    name1[7] = 'a';
+    name1[8] = 'c';
+    name1[9] = 'e';
+    name1[10] = 'm';
+    name1[11] = 'e';
+    name1[12] = 's';
+    name1[13] = 'h';
+    name1[14] = '\0';
+
+    stream = fopen(name,"r+");
+    if (stream==NULL)
+    {
+      fclose(stream);
+      printf("%s\n", "xy_Surface not triangulated, do now");
+
+      if (DiscretizeSurface(Heap,xy_Surface,NULL,h,NULL,0,D,MarkKey))
+        return(1);
+      Write_Surface(xy_Surface, name, name1);
+    }
+    else
+    {
+      fclose(stream);
+      printf("%s %d\n", "Read Surface ", LGM_SURFACE_ID(xy_Surface));
+      Read_Surface(Heap, xy_Surface, MarkKey, name);
+    }
+  }
+  else
+  {
+    if (DiscretizeSurface(Heap,xy_Surface,NULL,h,NULL,0,D,MarkKey))
+      return(1);
+  }
+
+  size = LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(xy_Surface)) + 1;
+  xy_lcoord = (DOUBLE**)GetTmpMem(Heap,sizeof(DOUBLE*)*size, MarkKey);
+  if(xy_lcoord==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+  for(i=0; i<size; i++)
+  {
+    xy_lcoord[i] = (DOUBLE*)GetTmpMem(Heap,sizeof(DOUBLE)*2, MarkKey);
+    if(xy_lcoord[i]==NULL)
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
+  }
+  xy_flag = (INT*)GetTmpMem(Heap,sizeof(INT)*size, MarkKey);
+  if(xy_flag==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+  xy_new_id = (INT*)GetTmpMem(Heap,sizeof(INT)*size, MarkKey);
+  if(xy_new_id==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+  xy_element_id = (INT*)GetTmpMem(Heap,sizeof(INT)*(LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(xy_Surface))+1), MarkKey);
+  if(xy_element_id==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+  return(0);
+}
+
+#define MAX_T 30
+
+INT Aux_Check(HEAP *Heap, LGM_DOMAIN *theDomain, INT MarkKey)
+{
+  INT i, j, k, l, ni, sid, ntriangle, npoint, **point_list, **nb1, **nb2, corner_id, max_tr;
+  INT a, b, c, d, flag1, flag2, return_flag1, return_flag2, **triangle_list, ntr;
+  LGM_SURFACE *theSurface;
+
+  return_flag1 = return_flag2 = 0;
+  npoint = LGM_DOMAIN_NPOINT(theDomain);
+  point_list = (INT **) GetTmpMem(Heap,(npoint+1)*sizeof(INT*), LGM_MarkKey);
+  if(point_list==NULL)
+  {
+    printf("%s\n","Not enough memory");
+    assert(0);
+  }
+  for(i=0; i<npoint; i++)
+  {
+    point_list[i] = (INT *)  GetTmpMem(Heap,MAX_T*sizeof(INT),LGM_MarkKey);
+    if(point_list[i]==NULL)
+    {
+      printf("%s\n","Not enough memory");
+      assert(0);
+    }
+  }
+
+  max_tr = 0;
+  for(sid=1; sid<=LGM_DOMAIN_NSUBDOM(theDomain); sid++)
+  {
+    ntriangle = 0;
+    for(theSurface=FirstSurface(theDomain); theSurface!=NULL; theSurface=NextSurface(theDomain))
+      if( (LGM_SURFACE_LEFT(theSurface)==sid)||(LGM_SURFACE_RIGHT(theSurface)==sid) )
+        ntriangle = ntriangle + LGM_SURFACE_NTRIANGLE(theSurface);
+    if(max_tr<ntriangle)
+      max_tr = ntriangle;
+  }
+
+  nb1 = (INT **) GetTmpMem(Heap,(max_tr+1)*sizeof(INT*), LGM_MarkKey);
+  if(nb1==NULL)
+  {
+    printf("%s\n","Not enough memory");
+    assert(0);
+  }
+  for(i=0; i<max_tr; i++)
+  {
+    nb1[i] = (INT *)  GetTmpMem(Heap,3*sizeof(INT),LGM_MarkKey);
+    if(nb1[i]==NULL)
+    {
+      printf("%s\n","Not enough memory");
+      assert(0);
+    }
+  }
+  nb2 = (INT **) GetTmpMem(Heap,(max_tr+1)*sizeof(INT*), LGM_MarkKey);
+  if(nb2==NULL)
+  {
+    printf("%s\n","Not enough memory");
+    assert(0);
+  }
+  for(i=0; i<max_tr; i++)
+  {
+    nb2[i] = (INT *)  GetTmpMem(Heap,3*sizeof(INT),LGM_MarkKey);
+    if(nb2[i]==NULL)
+    {
+      printf("%s\n","Not enough memory");
+      assert(0);
+    }
+  }
+  triangle_list = (INT **) GetTmpMem(Heap,(max_tr+1)*sizeof(INT*), LGM_MarkKey);
+  if(triangle_list==NULL)
+  {
+    printf("%s\n","Not enough memory");
+    assert(0);
+  }
+  for(i=0; i<max_tr; i++)
+  {
+    triangle_list[i] = (INT *)  GetTmpMem(Heap,3*sizeof(INT),LGM_MarkKey);
+    if(triangle_list[i]==NULL)
+    {
+      printf("%s\n","Not enough memory");
+      assert(0);
+    }
+  }
+
+  for(sid=1; sid<=LGM_DOMAIN_NSUBDOM(theDomain); sid++)
+  {
+    ntriangle = 0;
+    ntr = 0;
+    for(theSurface=FirstSurface(theDomain); theSurface!=NULL; theSurface=NextSurface(theDomain))
+      if( (LGM_SURFACE_LEFT(theSurface)==sid)||(LGM_SURFACE_RIGHT(theSurface)==sid) )
+      {
+        ntriangle = ntriangle + LGM_SURFACE_NTRIANGLE(theSurface);
+        for(i=0; i<LGM_SURFACE_NTRIANGLE(theSurface); i++)
+        {
+          if(LGM_SURFACE_LEFT(theSurface)==sid)
+          {
+            triangle_list[ntr][0] = LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(theSurface, i), 0);
+            triangle_list[ntr][1] = LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(theSurface, i), 1);
+            triangle_list[ntr][2] = LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(theSurface, i), 2);
+          }
+          if(LGM_SURFACE_RIGHT(theSurface)==sid)
+          {
+            triangle_list[ntr][0] = LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(theSurface, i), 1);
+            triangle_list[ntr][1] = LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(theSurface, i), 0);
+            triangle_list[ntr][2] = LGM_TRIANGLE_CORNERID(LGM_SURFACE_TRIANGLE(theSurface, i), 2);
+          }
+          ntr++;
+        }
+      }
+    assert(ntr=ntriangle);
+    for(i=0; i<ntriangle; i++)
+      for(j=0; j<3; j++)
+      {
+        nb1[i][j] = -1;
+        nb2[i][j] = -1;
+      }
+
+    for(i=0; i<npoint; i++)
+    {
+      point_list[i][0] = 0;
+      for(j=1; j<MAX_T; j++)
+        point_list[i][j] = -1;
+    }
+
+    for(i=0; i<ntriangle; i++)
+      for(j=0; j<3; j++)
+      {
+        corner_id = triangle_list[i][j];
+        point_list[corner_id][++point_list[corner_id][0]] = i;
+      }
+
+    for(ni=0; ni<npoint; ni++)
+      for(i=1; i<=point_list[ni][0]; i++)
+        for(j=1; j<=point_list[ni][0]; j++)
+          if(i!=j)
+            for(k=0; k<3; k++)
+              for(l=0; l<3; l++)
+              {
+                a = triangle_list[point_list[ni][i]][(k+1)%3];
+                b = triangle_list[point_list[ni][i]][(k+2)%3];
+                c = triangle_list[point_list[ni][j]][(l+2)%3];
+                d = triangle_list[point_list[ni][j]][(l+1)%3];
+                if( ((a==c)&&(b==d)) )
+                  nb1[point_list[ni][i]][k] = point_list[ni][j];
+                if( ((a==c)&&(b==d))||((a==d)&&(b==c)) )
+                  nb2[point_list[ni][i]][k] = point_list[ni][j];
+
+              }
+
+    flag1 = flag2 = 0;
+    for(i=0; i<ntriangle; i++)
+      for(j=0; j<3; j++)
+      {
+        if(nb1[i][j]==-1)
+          flag1 = 1;
+        if(nb2[i][j]==-1)
+          flag2 = 1;
+      }
+
+    if(flag2)
+    {
+      UserWriteF("%s %d %s\n","Subdomain", sid, "not closed");
+      UserWriteF("%s\n","Check the geometry file");
+      return_flag2 = 1;
+    }
+    if(!flag2&&flag1)
+    {
+      UserWriteF("%s %d %s\n","Orientation of surfaces in subdoamin", sid, "is wrong");
+      UserWriteF("%s\n","Check the geometry file");
+      return_flag1 = 1;
+    }
+
+  }
+
+  if(return_flag1||return_flag2)
+    return(1);
+
   return(0);
 }
 
@@ -1697,39 +2239,63 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
   LGM_LINE *theLine;
   MESH *mesh;
   LGM_POINT *pointlist;
-  INT i,j;
-  INT *BNDS_Per_Subdom, *p;
   float fValue;
-  int iValue;
+  int iValue, D;
   DOUBLE h;
-  INT coeff;
-  INT old;
-  INT npoints,npsurface, norp;
-  char buff[5], name[12];
+  INT i, j, k, *BNDS_Per_Subdom, *p, coeff, old, surf_id[3], xy_id[3], npoints,npsurface, norp, np;
+  char buff[5], name[12], name1[16];
   FILE *stream;
 
   /* make MarkKey global */
   LGM_MarkKey = MarkKey;
 
   old = 0;
-  /* read h-option */
   h = 0.0;
+  D = 1;
+  coeff = 0;
+  SURFACE_ADAPT = 0;
+  cosAngle = 0.94;
+  SAVE_SURFACE = 0;
   for (i=1; i<argc; i++)
-    if (argv[i][0] == 'h')
+  {
+    if (argv[i][0] == 'a')                      /* read option for surface adaption */
+    {
+      if (sscanf(argv[i],"a %d",&iValue) != 1)
+        return (NULL);
+      SURFACE_ADAPT = iValue;
+    }
+    if (argv[i][0] == 'h')                      /* read h-option */
     {
       if (sscanf(argv[i],"h %f",&fValue) != 1)
         return (NULL);
       h = fValue;
     }
-  coeff = 0;
-  for (i=1; i<argc; i++)
     if (argv[i][0] == 'c')
     {
       if (sscanf(argv[i],"c %d",&iValue) != 1)
         return (NULL);
       coeff = iValue;
     }
-  /*	if (h<=0.0) return (NULL);*/
+    if (argv[i][0] == 'D')                      /* display all D surface triangles */
+    {
+      if (sscanf(argv[i],"D %d",&iValue) != 1)
+        return (NULL);
+      D = iValue;
+    }
+    if (argv[i][0] == 'w')                      /* resolve angle */
+    {
+      if (sscanf(argv[i],"w %f",&fValue) != 1)
+        return (NULL);
+      cosAngle = cos(PI*(180-fValue)/180);
+    }
+    if (argv[i][0] == 's')                      /* save surfaces and volumes */
+    {
+      if (sscanf(argv[i],"s %d",&iValue) != 1)
+        return (NULL);
+      SAVE_SURFACE = iValue;
+    }
+
+  }
 
   if(h<=0.0)
   {
@@ -1739,6 +2305,8 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
     LOCAL_H = Coefficients[coeff];
   }
 
+  if(h<0.0)
+    SURFACE_ADAPT = 0;
   /* set LGM_BVP */
   theDomain = BVP2LGM(aBVP);
   if (theDomain==NULL)
@@ -1753,6 +2321,9 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
     /*	for (theLine=FirstLine(theDomain); theLine!=NULL; theLine=NextLine(theDomain))
        PrintLineInfo(theLine);	*/
   }
+
+  if(Aux_Check(Heap, theDomain, LGM_MarkKey))
+    return(NULL);
 
   /* allocate mesh */
   mesh = (MESH *) GetTmpMem(Heap,sizeof(MESH),LGM_MarkKey);
@@ -1786,17 +2357,30 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
     return (NULL);
   for(i=0; i<LGM_DOMAIN_NSUBDOM(theDomain)+1; i++)
     mesh->Side_corners[i] = NULL;
+  mesh->xy_Side = (INT **) GetTmpMem(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT*),LGM_MarkKey);
+  if (mesh->xy_Side == NULL)
+    return (NULL);
+  for(i=0; i<LGM_DOMAIN_NSUBDOM(theDomain)+1; i++)
+    mesh->xy_Side[i] = NULL;
   mesh->Side_corner_ids = (INT ***) GetTmpMem(Heap,(LGM_DOMAIN_NSUBDOM(theDomain)+1)*sizeof(INT**),LGM_MarkKey);
   if (mesh->Side_corner_ids == NULL)
     return (NULL);
 
+  if((SURFACE_ADAPT)&&(h>0.0))
+  {
+    Generate_Basis_Mesh(theDomain, h, Heap, D, MarkKey);
+  }
   /* search points, which must be resolved by DiscretizeLine and DiscretizeSurface */
   norp = 0;
-  pointlist = (LGM_POINT *)GetTmpMem(Heap,1500*sizeof(LGM_POINT),LGM_MarkKey);
+  np = Count_Points(theDomain);
+  pointlist = (LGM_POINT *)GetTmpMem(Heap,(np+1)*sizeof(LGM_POINT),LGM_MarkKey);
+  if(pointlist==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
 
   ResolvePoints(Heap, theDomain, pointlist, &norp);
-  if(norp>1499)
-    assert(0);
 
   if(LGM_DEBUG)
     for(i=0; i<norp; i++)
@@ -1827,8 +2411,8 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
       return(NULL);
     if (LGM_DEBUG)
       PrintLineInfo(theLine);
-    if(SAVE_SURFACE)
-      Write_Line(theLine);
+    /*		if(SAVE_SURFACE)
+                            Write_Line(theLine);*/
   }
 
   /* discretize surfaces */
@@ -1859,39 +2443,54 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
       name[10] = buff[3];
       name[11] = buff[4];
 
+      name1[0] = 's';
+      name1[1] = 'u';
+      name1[2] = 'r';
+      name1[3] = 'f';
+      name1[4] = 'a';
+      name1[5] = 'c';
+      name1[6] = 'e';
+      name1[7] = 'm';
+      name1[8] = 'e';
+      name1[9] = 's';
+      name1[10] = 'h';
+      sprintf(buff,"%d",LGM_SURFACE_ID(theSurface));
+      name1[11] = buff[0];
+      name1[12] = buff[1];
+      name1[13] = buff[2];
+      name1[14] = buff[3];
+      name1[15] = buff[4];
       stream = fopen(name,"r+");
       if (stream==NULL)
       {
         fclose(stream);
         printf("%s %d %s\n", "Surface ", LGM_SURFACE_ID(theSurface), "not triangulated, do now");
 
-        if (DiscretizeSurface(Heap,theSurface,mesh,h,pointlist,norp,MarkKey))
+        if (DiscretizeSurface(Heap,theSurface,mesh,h,pointlist,norp, D,MarkKey))
           return(NULL);
-        Write_Surface(theSurface);
+        Write_Surface(theSurface, name, name1);
       }
       else
       {
         fclose(stream);
         printf("%s %d\n", "Read Surface ", LGM_SURFACE_ID(theSurface));
-        Read_Surface(Heap, theSurface, MarkKey);
+        Read_Surface(Heap, theSurface, MarkKey, name);
       }
     }
     else
     {
-      if (DiscretizeSurface(Heap,theSurface,mesh,h,pointlist,  norp, MarkKey))
+      if (DiscretizeSurface(Heap,theSurface,mesh,h,pointlist,norp,D,MarkKey))
         return(NULL);
     }
 
-    if(LGM_SURFACE_ID(theSurface)==100)
-      Surf = theSurface;
-
     LGM_SURFDISC_FMESH_ID(LGM_SURFACE_DISC(theSurface)) =
       (INT*)GetTmpMem(Heap,(LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface))+1)*sizeof(INT),LGM_MarkKey);
-    /*		if( (LGM_SURFACE_FMESH_ID(LGM_SURFACE_DISC(theSurface))==NULL) )
-                    {
-                            printf("%s\n", "Not enough memory");
-                            return(NULL);
-                    }*/
+    if(LGM_SURFDISC_FMESH_ID(LGM_SURFACE_DISC(theSurface))==NULL)
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
+
     for(i=0; i<LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)); i++)
       LGM_SURFDISC_MESH_ID(LGM_SURFACE_DISC(theSurface), i) = -1;
 
@@ -1900,8 +2499,44 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
       PrintSurfaceInfo(theSurface);
       printf("%s\n", "#####################################################");
     }
-  }
 
+    if(SURFACE_ADAPT)
+    {
+      if(LGM_SURFACE_ID(theSurface)!=-1)
+      {
+        LGM_SURFACE_DISC(theSurface)->xy_id = (INT *) GetTmpMem(Heap,(LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface))+1)*sizeof(INT), LGM_MarkKey);
+        if(LGM_SURFACE_DISC(theSurface)->xy_id==NULL)
+        {
+          printf("%s\n","Not enough memory");
+          assert(0);
+        }
+        for(i=0; i<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)); i++)
+          LGM_SURFDISC_XY_ID(LGM_SURFACE_DISC(theSurface), i) = -1;
+
+        for(i=0; i<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(xy_Surface)); i++)
+        {
+          if(xy_element_id[i])
+          {
+            for(k=0; k<3; k++)
+              xy_id[k] = xy_new_id[LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(xy_Surface), i, k)]-1;
+            for(j=0; j<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)); j++)
+            {
+              for(k=0; k<3; k++)
+                surf_id[k] = LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), j, k);
+              if( ( (xy_id[0]==surf_id[0]) && (xy_id[1]==surf_id[1]) && (xy_id[2]==surf_id[2]) )
+                  ||  ( (xy_id[0]==surf_id[1]) && (xy_id[1]==surf_id[2]) && (xy_id[2]==surf_id[0]) )
+                  ||  ( (xy_id[0]==surf_id[2]) && (xy_id[1]==surf_id[0]) && (xy_id[2]==surf_id[1]) )
+                  ||  ( (xy_id[1]==surf_id[0]) && (xy_id[0]==surf_id[1]) && (xy_id[2]==surf_id[2]) )
+                  ||  ( (xy_id[1]==surf_id[1]) && (xy_id[0]==surf_id[2]) && (xy_id[2]==surf_id[0]) )
+                  ||  ( (xy_id[1]==surf_id[2]) && (xy_id[0]==surf_id[0]) && (xy_id[2]==surf_id[1]) ) )
+                LGM_SURFDISC_XY_ID(LGM_SURFACE_DISC(theSurface), j) = i;
+            }
+          }
+        }
+      }
+      if (LGM_DEBUG) printf("%s\n","huhu");
+    }
+  }
   /* discretize domain */
   if (DiscretizeDomain(Heap,theDomain,mesh,h, MarkKey))
     return(NULL);
@@ -1914,10 +2549,20 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
     mesh->Side_corners[i]    = (INT *)  GetTmpMem(Heap,sizeof(INT)*(BNDS_Per_Subdom[i]+1),LGM_MarkKey);
     if (mesh->Side_corners[i]==NULL)
       return (NULL);
+    mesh->xy_Side[i] = (INT *)  GetTmpMem(Heap,sizeof(INT)*(BNDS_Per_Subdom[i]+1),LGM_MarkKey);
+    if (mesh->xy_Side[i]==NULL)
+      return (NULL);
+    for(j=0; j<BNDS_Per_Subdom[i]; j++)
+      mesh->xy_Side[i][j] = -1;
     mesh->Side_corner_ids[i] = (INT **) GetTmpMem(Heap,sizeof(INT*)*(BNDS_Per_Subdom[i]+1),LGM_MarkKey);
     if (mesh->Side_corner_ids[i]==NULL)
       return (NULL);
     p = (INT *) GetTmpMem(Heap,3*sizeof(INT)*BNDS_Per_Subdom[i],LGM_MarkKey);
+    if(p==NULL)
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
     for (j=0; j<BNDS_Per_Subdom[i]; j++)
       mesh->Side_corner_ids[i][j] = p+3*j;
   }
@@ -1939,8 +2584,8 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
       return (NULL);
 
   if (LGM_DEBUG) printf("%s\n","und tschuessss");
-  return (mesh);
 
+  return (mesh);
 }
 
 static INT InnerPointsPerSurfaceSegment (LGM_SURFACE *theSurface, DOUBLE h, INT i, INT *n)
@@ -2009,15 +2654,15 @@ static DOUBLE Calc_Local_Coord(DOUBLE *p0, DOUBLE*p1, DOUBLE *p2, DOUBLE *global
   /* compute 2 vectors in the plane + normalvector */
   Minus(n0,e2,e0);
   l = Lenght(n0);
-  Scale(n0,1/l);
+  Scale(n0,1.0/l);
 
   Minus(n1,e2,e1);
   l = Lenght(n1);
-  Scale(n1,1/l);
+  Scale(n1,1.0/l);
 
   Cross(n2,n0,n1);
   l = Lenght(n2);
-  Scale(n2,1/l);
+  Scale(n2,1.0/l);
 
   p[0] = global[0];
   p[1] = global[1];
@@ -2053,8 +2698,7 @@ static DOUBLE Calc_Local_Coord(DOUBLE *p0, DOUBLE*p1, DOUBLE *p2, DOUBLE *global
   aa[3] = a[4] - a[5];
 
   det = Det2d(aa);
-  if((det>SMALL)||(det<-SMALL))
-  /*	if(Det2d(aa)!=0)*/
+  if(Det2d(aa)!=0)
   {
     cc[0] = p[0] - a[2];
     cc[1] = p[1] - a[5];
@@ -2067,8 +2711,7 @@ static DOUBLE Calc_Local_Coord(DOUBLE *p0, DOUBLE*p1, DOUBLE *p2, DOUBLE *global
     aa[2] = a[6] - a[8];
     aa[3] = a[7] - a[8];
     det = Det2d(aa);
-    if((det>SMALL)||(det<-SMALL))
-    /*		if(Det2d(aa)!=0)*/
+    if(Det2d(aa)!=0)
     {
       cc[0] = p[0] - a[2];
       cc[1] = p[2] - a[8];
@@ -2081,8 +2724,7 @@ static DOUBLE Calc_Local_Coord(DOUBLE *p0, DOUBLE*p1, DOUBLE *p2, DOUBLE *global
       aa[2] = a[6] - a[8];
       aa[3] = a[7] - a[8];
       det = Det2d(aa);
-      if((det>SMALL)||(det<-SMALL))
-      /*			if(Det2d(aa)!=0)*/
+      if(Det2d(aa)!=0)
       {
         cc[0] = p[1] - a[5];
         cc[1] = p[2] - a[8];
@@ -2108,12 +2750,12 @@ static INT NormalVector(LGM_TRIANGLE *theSurfaceTriangle, DOUBLE *n)
   p2 = (DOUBLE*)LGM_TRIANGLE_CORNER(theSurfaceTriangle,2);
 
   V_DIM_SUBTRACT(p2, p0, n0);
-  V_DIM_SCALE(1/sqrt(V_DIM_SCAL_PROD(n0, n0)), n0);
+  V_DIM_SCALE(1.0/sqrt(V_DIM_SCAL_PROD(n0, n0)), n0);
   V_DIM_SUBTRACT(p2, p1, n1);
-  V_DIM_SCALE(1/sqrt(V_DIM_SCAL_PROD(n1, n1)), n1);
+  V_DIM_SCALE(1.0/sqrt(V_DIM_SCAL_PROD(n1, n1)), n1);
 
   V_DIM_VECTOR_PRODUCT(n0, n1, n);
-  V_DIM_SCALE(1/sqrt(V_DIM_SCAL_PROD(n, n)), n);
+  V_DIM_SCALE(1.0/sqrt(V_DIM_SCAL_PROD(n, n)), n);
 
   return(0);
 }
@@ -2153,7 +2795,7 @@ static INT CASE1(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *lam, DOUBLE *d
       p2 = (DOUBLE*)LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,i),2);
 
       dist = Calc_Local_Coord(p0, p1, p2, global, lam);
-      if( (lam[0]>=-SMALL) && (lam[1]>=-SMALL) && (lam[2]>=-SMALL) && (dist<SMALL) )
+      if( (lam[0]>=-SMALL1) && (lam[1]>=-SMALL1) && (lam[2]>=-SMALL1) && (dist<SMALL1) )
       {
         mi = i;
         d[0] = dist;
@@ -2201,7 +2843,7 @@ static INT CASE2(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *lam, DOUBLE *n
       p2 = (DOUBLE*)LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,i),2);
 
       dist1 = Calc_Local_Coord(p0, p1, p2, global, lam);
-      if( (lam[0]>=-SMALL) && (lam[1]>=-SMALL) && (lam[2]>=-SMALL) && (dist1<min) )
+      if( (lam[0]>=-SMALL1) && (lam[1]>=-SMALL1) && (lam[2]>=-SMALL1) && (dist1<min) )
       {
         mi1 = i;
         min = dist1;
@@ -2360,6 +3002,8 @@ INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE
     if( (lam[1]<0.0) && (lam[1]>-SMALL) )
       lam[1] = 0.0;
   }
+  if(lam[0]<0.0) lam[0] = 0.0;
+  if(lam[1]<0.0) lam[1] = 0.0;
 
   local[0] = lam[0] + mi;
   local[1] = lam[1] + mi;
@@ -2376,6 +3020,34 @@ INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE
                   printf("%f %f %f\n", new_global[0], new_global[1], new_global[2]);
                   assert(0);
           }*/
+  return(mi);
+}
+
+INT Project2Surface(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE *n)
+{
+  INT i,j,min,mi;
+  DOUBLE *p0,*p1,*p2;
+  DOUBLE lam[3], dist, min_dist;
+
+  dist = MAXDOUBLE;
+  mi = -1;
+  for(i=0; i<LGM_SURFACE_NTRIANGLE(theSurface); i++)
+  {
+    p0 = (DOUBLE*)LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,i),0);
+    p1 = (DOUBLE*)LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,i),1);
+    p2 = (DOUBLE*)LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,i),2);
+
+    dist = Calc_Local_Coord(p0, p1, p2, global, lam);
+    if( (lam[0]>=-SMALL1) && (lam[1]>=-SMALL1) && (lam[2]>=-SMALL1))
+    {
+      mi = i;
+      break;
+    }
+  }
+
+  local[0] = lam[0] + mi;
+  local[1] = lam[1] + mi;
+
   return(mi);
 }
 
@@ -2428,9 +3100,12 @@ DOUBLE Check_Surface(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
 
 static INT Compare_Points(LGM_POINT *p, DOUBLE *global)
 {
-  if( sqrt( (LGM_POINT_POS(p)[0]-global[0])*(LGM_POINT_POS(p)[0]-global[0])
+  DOUBLE d;
+
+  d = sqrt( (LGM_POINT_POS(p)[0]-global[0])*(LGM_POINT_POS(p)[0]-global[0])
             +         (LGM_POINT_POS(p)[1]-global[1])*(LGM_POINT_POS(p)[1]-global[1])
-            +         (LGM_POINT_POS(p)[2]-global[2])*(LGM_POINT_POS(p)[2]-global[2]) ) < SMALL )
+            +         (LGM_POINT_POS(p)[2]-global[2])*(LGM_POINT_POS(p)[2]-global[2]) );
+  if( d < SMALL )
     return(1);
   else
     return(0);
@@ -2442,10 +3117,10 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
   LGM_LINE *theLine;
   INT i,j;
   INT *nRef, *newID, *nRefLines;
-  INT size,a,flag;
-  DOUBLE global[3],local[2], line_local, local_left, local_right, local1, local2;
+  INT size,a,flag, dummy;
+  DOUBLE global[3],local[2], line_local, local_left, local_right, local1, local2, g[3], g1[3];
   LGM_POINT *PointList, Point;
-  INT npoints, npsurface, nPointList;
+  INT npoints, npsurface, nPointList, nbndpoints, ID;
   LINEPOINT *help;
 
   /* allocate Memory for the mesh */
@@ -2462,16 +3137,28 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
 
   PointList = (LGM_POINT *) GetTmpMem(Heap,(npoints+1)*sizeof(LGM_POINT),LGM_MarkKey);
   if (PointList==NULL)
-    return (1);
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
   nRef = (INT *) GetTmpMem(Heap,(npoints+1)*sizeof(INT),LGM_MarkKey);
   if (nRef==NULL)
-    return (1);
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
   newID = (INT *) GetTmpMem(Heap,(npoints+1)*sizeof(INT),LGM_MarkKey);
   if (newID==NULL)
-    return (1);
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
   nRefLines = (INT *) GetTmpMem(Heap,(npoints+1)*sizeof(INT),LGM_MarkKey);
   if (nRefLines==NULL)
-    return (1);
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
 
   for (i=0; i<=npoints; i++)
   {
@@ -2483,12 +3170,15 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
   nPointList = 0;
   for (theSurface=FirstSurface(theDomain); theSurface!=NULL; theSurface=NextSurface(theDomain))
   {
-    for(j=0; j<LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)); j++)
+    nbndpoints = 0;
+    for(i=0; i<LGM_SURFACE_NLINE(theSurface); i++)
+      nbndpoints = nbndpoints + LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(LGM_SURFACE_LINE(theSurface, i)));
+
+    for(j=0; j<MIN(nbndpoints, LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface))); j++)
     {
       local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,0);
       local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,1);
       Surface_Local2Global(theSurface,global,local);
-
       flag = -1;
       for(i=0; i<nPointList; i++)
       {
@@ -2510,12 +3200,28 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
         nRef[i]++;
       }
     }
+    for(j=MIN(nbndpoints, LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface))); j<LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)); j++)
+    {
+      local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,0);
+      local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,1);
+      Surface_Local2Global(theSurface,global,local);
+      PointList[nPointList].position[0] =  global[0];
+      PointList[nPointList].position[1] =  global[1];
+      PointList[nPointList].position[2] =  global[2];
+      LGM_SURFDISC_MESH_ID(LGM_SURFACE_DISC(theSurface), j) = nPointList;
+      nRef[nPointList]++;
+      nPointList++;
+    }
   }
 
   for (theLine=FirstLine(theDomain); theLine!=NULL; theLine=NextLine(theDomain))
   {
+    if(LGM_LINE_BEGIN(theLine)==LGM_LINE_END(theLine))
+      dummy = 1;
+    else
+      dummy = 0;
     help = LGM_LINEDISCNEW_START(LGM_LINE_LINEDISCNEW(theLine));
-    for(j=0; j<LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(theLine)); j++)
+    for(j=0; j<LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(theLine))-dummy; j++)
     {
       line_local = help->local;
       Line_Local2GlobalNew(theLine, global, line_local);
@@ -2534,6 +3240,13 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
     }
   }
 
+  /*	for(i=0;i<nPointList;i++)
+                  printf("%d %lf %lf %lf %d %d\n", i,
+                                                                                  PointList[i].position[0],
+                                                                                  PointList[i].position[1],
+                                                                                  PointList[i].position[2],
+                                                                                  nRef[i],
+                                                                                  nRefLines[i]);*/
 
   theMesh->theBndPs = (BNDP**)GetFreelistMemory(Heap,sizeof(LGM_BNDP*)*(nPointList+1));
   if (theMesh->theBndPs == NULL)
@@ -2554,6 +3267,8 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
       BNDP2LGM(theMesh->theBndPs[i])->Line = NULL;
     LGM_BNDP_NLINE(BNDP2LGM(theMesh->theBndPs[i])) = 0;
     BNDP2LGM(theMesh->theBndPs[i])->Surf = (LGM_BNDP_PSURFACE*)GetFreelistMemory(Heap,(nRef[i]+1)*sizeof(LGM_BNDP_PSURFACE));
+    if((nRef[i]>1)&&(nRefLines[i]==0))
+      assert(0);
     if(BNDP2LGM(theMesh->theBndPs[i])->Surf==NULL)
       return(NULL);
     LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[i])) = 0;
@@ -2562,7 +3277,11 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
 
   for (theSurface=FirstSurface(theDomain); theSurface!=NULL; theSurface=NextSurface(theDomain))
   {
-    for(j=0; j<LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)); j++)
+    nbndpoints = 0;
+    for(i=0; i<LGM_SURFACE_NLINE(theSurface); i++)
+      nbndpoints = nbndpoints + LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(LGM_SURFACE_LINE(theSurface, i)));
+
+    for(j=0; j<MIN(nbndpoints, LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface))); j++)
     {
       local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,0);
       local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,1);
@@ -2582,13 +3301,29 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
 
       }
     }
+    for(j=MIN(nbndpoints, LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface))); j<LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)); j++)
+    {
+      local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,0);
+      local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,1);
+      Surface_Local2Global(theSurface,global,local);
+      ID = LGM_SURFDISC_MESH_ID(LGM_SURFACE_DISC(theSurface), j);
+
+      LGM_BNDP_LOCAL(BNDP2LGM(theMesh->theBndPs[ID]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[ID])))[0] = local[0];
+      LGM_BNDP_LOCAL(BNDP2LGM(theMesh->theBndPs[ID]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[ID])))[1] = local[1];
+      LGM_BNDP_SURFACE(BNDP2LGM(theMesh->theBndPs[ID]),LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[ID]))) = theSurface;
+      LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[ID]))++;
+    }
   }
 
   for (theLine=FirstLine(theDomain); theLine!=NULL; theLine=NextLine(theDomain))
   {
+    if(LGM_LINE_BEGIN(theLine)==LGM_LINE_END(theLine))
+      dummy = 1;
+    else
+      dummy = 0;
     help = LGM_LINEDISCNEW_START(LGM_LINE_LINEDISCNEW(theLine));
     local1 = local2 = 0;
-    for(j=0; j<LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(theLine)); j++)
+    for(j=0; j<LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(theLine))-dummy; j++)
     {
       line_local = help->local;
       Line_Local2GlobalNew(theLine, global, line_local);
@@ -2618,6 +3353,17 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
       assert(flag<2);
     }
   }
+
+  /*	for(i=0;i<nPointList;i++)
+          {
+                  printf("%d ", i);
+                  for(j=0;j<LGM_BNDP_N(BNDP2LGM(theMesh->theBndPs[i]));j++)
+                          printf("%d ", LGM_SURFACE_ID(LGM_BNDP_SURFACE(BNDP2LGM(theMesh->theBndPs[i]),j)));
+                  printf("\n");
+          }*/
+
+
+
   return (0);
 }
 
@@ -3156,6 +3902,11 @@ static INT AddPoint2Line(HEAP *Heap, LGM_LINE *theLine, DOUBLE local, INT k, INT
   if(k==0)
   {
     help1 = (LINEPOINT*)GetTmpMem(Heap,sizeof(LINEPOINT), MarkKey);
+    if(help1==NULL)
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
     help1->local = local;
     help1->next = NULL;
     LGM_LINEDISCNEW_POINT(LGM_LINE_LINEDISCNEW(theLine)) = help1;
@@ -3169,6 +3920,11 @@ static INT AddPoint2Line(HEAP *Heap, LGM_LINE *theLine, DOUBLE local, INT k, INT
       help = help->next;
 
     help1 = (LINEPOINT*)GetTmpMem(Heap,sizeof(LINEPOINT), MarkKey);
+    if(help1==NULL)
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
     help1->local = local;
     help1->next = help->next;
     help->next = help1;
@@ -3645,27 +4401,14 @@ static INT TransferSurfaces2Mesh (HEAP *Heap, LGM_SURFACE *theSurface, MESH *the
 
   /* find id's of the trianglecorners */
   newId = (INT*)GetTmpMem(Heap,(LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface))+1)*sizeof(INT),LGM_MarkKey);
+  if(newId==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+
   for(i=0; i<LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)); i++)
     newId[i] = - 1;
-
-  /*	for (i=0;i<LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface));i++)
-          {
-                  local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),i,0);
-                  local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),i,1);
-                  if(Surface_Local2Global(theSurface,global,local))
-                          return(1);
-
-                  for (j=0;j<theMesh->nBndP;j++)
-                  {
-                          if (BNDP_Global(theMesh->theBndPs[j],globalbndp))
-                                  return (1);
-
-                          if( sqrt( (global[0]-globalbndp[0]) * (global[0]-globalbndp[0])
-   + (global[1]-globalbndp[1]) * (global[1]-globalbndp[1])
-   + (global[2]-globalbndp[2]) * (global[2]-globalbndp[2]) ) < SMALL )
-                                  newId[i] = j;
-                  }
-          }*/
 
   for (i=0; i<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)); i++)
   {
@@ -3673,6 +4416,8 @@ static INT TransferSurfaces2Mesh (HEAP *Heap, LGM_SURFACE *theSurface, MESH *the
     if (id!=0)
     {
       theMesh->Side_corners[id][theMesh->nSides[id]] = 3;
+      if(SURFACE_ADAPT)
+        theMesh->xy_Side[id][theMesh->nSides[id]] = LGM_SURFDISC_XY_ID(LGM_SURFACE_DISC(theSurface), i);
       theMesh->Side_corner_ids[id][theMesh->nSides[id]][0] =
         LGM_SURFDISC_MESH_ID(LGM_SURFACE_DISC(theSurface), LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface),i,0));
       theMesh->Side_corner_ids[id][theMesh->nSides[id]][1] =
@@ -3685,6 +4430,8 @@ static INT TransferSurfaces2Mesh (HEAP *Heap, LGM_SURFACE *theSurface, MESH *the
     if (id!=0)
     {
       theMesh->Side_corners[id][theMesh->nSides[id]] = 3;
+      if(SURFACE_ADAPT)
+        theMesh->xy_Side[id][theMesh->nSides[id]] = LGM_SURFDISC_XY_ID(LGM_SURFACE_DISC(theSurface), i);
       theMesh->Side_corner_ids[id][theMesh->nSides[id]][0] =
         LGM_SURFDISC_MESH_ID(LGM_SURFACE_DISC(theSurface), LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface),i,0));
       theMesh->Side_corner_ids[id][theMesh->nSides[id]][1] =
@@ -3714,7 +4461,7 @@ static INT Get_Folds_Surface(LGM_SURFACE *theSurface, LGM_LINE **lineptr)
         scalarproduct = Calc_Triangle_Angle(theSurface, i, LGM_TRIANGLE_NEIGHBOR(LGM_SURFACE_TRIANGLE(theSurface,i),j));
         if(scalarproduct < cosAngle)
         {
-          LGM_LINE_ID((lineptr)[folds]) = 42;
+          LGM_LINE_ID((lineptr)[folds]) = -1;
           LGM_LINE_NPOINT((lineptr)[folds]) = 2;
           LGM_LINE_BEGIN((lineptr)[folds]) = (j+1)%3;
           LGM_LINE_END((lineptr)[folds]) = (j+2)%3;
@@ -3741,10 +4488,10 @@ static INT Get_Folds_Surface(LGM_SURFACE *theSurface, LGM_LINE **lineptr)
 }
 
 static INT Get_Id(LGM_LINE *theLine, LGM_SURFACE *theSurface, INT index1, INT index2,
-                  DOUBLE **line_points, INT *nline_points)
+                  DOUBLE **line_points, INT *nline_points, DOUBLE **lcoord_lpoints)
 {
   INT i, j, k,  flag1, flag2, start_id, end_id;
-  DOUBLE global[3], startpoint[3], endpoint[3], local[2], n[3];
+  DOUBLE global[3], startpoint[3], endpoint[3], local, n[3];
   LINEPOINT *help;
 
   flag1 = 0;
@@ -3776,6 +4523,9 @@ static INT Get_Id(LGM_LINE *theLine, LGM_SURFACE *theSurface, INT index1, INT in
     AddLinePoint(start_id+1, startpoint[0],startpoint[1],startpoint[2]);
     for(i=0; i<3; i++)
       line_points[*nline_points][i] = startpoint[i];
+    Line_Global2Local(theLine, startpoint, &local);
+    lcoord_lpoints[*nline_points][0] = - (DOUBLE) LGM_LINE_ID(theLine) - 2.0;
+    lcoord_lpoints[*nline_points][1] = local;
     (*nline_points)++;
   }
 
@@ -3795,6 +4545,9 @@ static INT Get_Id(LGM_LINE *theLine, LGM_SURFACE *theSurface, INT index1, INT in
     AddLinePoint(end_id+1, endpoint[0],endpoint[1],endpoint[2]);
     for(i=0; i<3; i++)
       line_points[*nline_points][i] = endpoint[i];
+    Line_Global2Local(theLine, endpoint, &local);
+    lcoord_lpoints[*nline_points][0] = - (DOUBLE) LGM_LINE_ID(theLine) - 2.0;
+    lcoord_lpoints[*nline_points][1] = local;
     (*nline_points)++;
   }
 
@@ -3807,7 +4560,8 @@ static INT TransferLine2Surface(LGM_LINE *theLine,
                                 LGM_SURFACE *theSurface,
                                 INT direction,
                                 DOUBLE **line_points,
-                                INT *nline_points)
+                                INT *nline_points,
+                                DOUBLE **lcoord_lpoints)
 {
   INT i, j, k, flag1, flag2, start_id, end_id;
   DOUBLE global[3], startpoint[3], endpoint[3], local[2];
@@ -3816,17 +4570,17 @@ static INT TransferLine2Surface(LGM_LINE *theLine,
   if(direction==1)
   {
     for(j=0; j<LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(theLine))-1; j++)
-      Get_Id(theLine, theSurface, j, j+1, line_points, nline_points);
+      Get_Id(theLine, theSurface, j, j+1, line_points, nline_points, lcoord_lpoints);
   }
   if(direction==-1)
   {
     for(j=LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(theLine))-1; j>0; j--)
-      Get_Id(theLine, theSurface, j, j-1, line_points, nline_points);
+      Get_Id(theLine, theSurface, j, j-1, line_points, nline_points, lcoord_lpoints);
   }
   if(direction==-2)
   {
     for(j=0; j<LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(theLine))-1; j++)
-      Get_Id(theLine, theSurface, j, j+1, line_points, nline_points);
+      Get_Id(theLine, theSurface, j, j+1, line_points, nline_points, lcoord_lpoints);
   }
   return(0);
 }
@@ -3894,11 +4648,11 @@ static INT Get_Direction(LGM_SURFACE *theSurface, LGM_LINE *theLine)
   return(direction);
 }
 
-static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h, LGM_POINT *pointlist, INT norp, INT MarkKey)
+static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h, LGM_POINT *pointlist, INT norp,INT D, INT MarkKey)
 {
-  INT i,n,ni,j,k,offset,nils,id,ls_offset;
+  INT i,n,ni,j,k,offset,nils,id,ls_offset, mi, dummy;
   LGM_BNDP *theBndPList, *theBndP;
-  DOUBLE global[3],globalbndp[3],local[2], x1, y1, z1, x2, y2, z2;
+  DOUBLE global[3], globalnew[3],globalbndp[3],local[2], x1, y1, z1, x2, y2, z2;
   INT ii,oldline,newline,direction,a,b;
   INT nnew[5],*pi;
   INT *oldId,nsp,aksp;
@@ -3906,13 +4660,16 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
   LGM_POINT **ptrlst;
   LGM_LINE **lineptr, *theLine;
   DOUBLE startpoint[3], endpoint[3];
-  INT start_id, end_id, flag, all_used, nline_points;
-  DOUBLE **line_points;
+  INT start_id, end_id, flag, all_used, nline_points, nlp;
+  DOUBLE **line_points, **lcoord_lpoints;
 
   ptrlst = (LGM_POINT**)GetTmpMem(Heap,(LGM_SURFACE_NPOINT(theSurface)+1)*sizeof(LGM_POINT*),MarkKey);
 
   if(ptrlst==NULL)
-    return(1);
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
 
   for(j=0; j<LGM_SURFACE_NPOINT(theSurface); j++)
     ptrlst[j] = LGM_SURFACE_POINT(theSurface,j);
@@ -3964,13 +4721,19 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
   /* allocate lines */
   if(folds>0)
     if ((lineptr=(LGM_LINE**)GetTmpMem(Heap,sizeof(LGM_LINE*)*(folds+1),LGM_MarkKey)) == NULL)
-      return (NULL);
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
 
   for (i=0; i<folds; i++)
   {
     size = sizeof(LGM_LINE) + 2*sizeof(LGM_POINT);
-    if ((lineptr[i] = (LGM_LINE*)GetFreelistMemory(Heap,size)) == NULL)
-      return (NULL);
+    if ((lineptr[i] = (LGM_LINE*)GetTmpMem(Heap,size,LGM_MarkKey)) == NULL)
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
   }
 
   Get_Folds_Surface(theSurface, lineptr);
@@ -4005,11 +4768,35 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
 
   line_points = (DOUBLE **) GetTmpMem(Heap,(nsp+1)*sizeof(DOUBLE*),LGM_MarkKey);
   if(line_points==NULL)
-    return(1);
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
   for(i=0; i<nsp+1; i++)
+  {
     line_points[i] = (DOUBLE *) GetTmpMem(Heap,3*sizeof(DOUBLE),LGM_MarkKey);
+    if(line_points[i]==NULL)
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
+  }
   nline_points = 0;
-
+  lcoord_lpoints = (DOUBLE **) GetTmpMem(Heap,(nsp+1)*sizeof(DOUBLE*),LGM_MarkKey);
+  if(lcoord_lpoints==NULL)
+  {
+    printf("%s\n", "Not enough memory");
+    assert(0);
+  }
+  for(i=0; i<nsp+1; i++)
+  {
+    lcoord_lpoints[i] = (DOUBLE *) GetTmpMem(Heap,2*sizeof(DOUBLE),LGM_MarkKey);
+    if(lcoord_lpoints[i]==NULL)
+    {
+      printf("%s\n", "Not enough memory");
+      assert(0);
+    }
+  }
   InitSurface(LOCAL_H);
 
   LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)) = 0;
@@ -4030,7 +4817,7 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
     if(direction==0)
       return(NULL);
 
-    TransferLine2Surface(theLine, theSurface, direction, line_points, &nline_points);
+    TransferLine2Surface(theLine, theSurface, direction, line_points, &nline_points, lcoord_lpoints);
 
     for(i=1; i<LGM_SURFACE_NLINE(theSurface); i++)
     {
@@ -4049,7 +4836,7 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
               theLine = LGM_SURFACE_LINE(theSurface,newline);
               if(LGM_LINE_USED(theLine)==1)
                 break;
-              TransferLine2Surface(theLine, theSurface, direction, line_points, &nline_points);
+              TransferLine2Surface(theLine, theSurface, direction, line_points, &nline_points, lcoord_lpoints);
               oldline = newline;
               break;
             }
@@ -4061,7 +4848,7 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
               theLine = LGM_SURFACE_LINE(theSurface,newline);
               if(LGM_LINE_USED(theLine)==1)
                 break;
-              TransferLine2Surface(theLine, theSurface, direction, line_points, &nline_points);
+              TransferLine2Surface(theLine, theSurface, direction, line_points, &nline_points, lcoord_lpoints);
               oldline = newline;
               break;
             }
@@ -4076,7 +4863,7 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
               theLine = LGM_SURFACE_LINE(theSurface,newline);
               if(LGM_LINE_USED(theLine)==1)
                 break;
-              TransferLine2Surface(theLine, theSurface, direction, line_points, &nline_points);
+              TransferLine2Surface(theLine, theSurface, direction, line_points, &nline_points, lcoord_lpoints);
               oldline = newline;
               break;
             }
@@ -4088,7 +4875,7 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
               theLine = LGM_SURFACE_LINE(theSurface,newline);
               if(LGM_LINE_USED(theLine)==1)
                 break;
-              TransferLine2Surface(theLine, theSurface, direction, line_points, &nline_points);
+              TransferLine2Surface(theLine, theSurface, direction, line_points, &nline_points, lcoord_lpoints);
               oldline = newline;
               break;
             }
@@ -4115,7 +4902,7 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
   for (i=0; i<folds; i++)
   {
     theLine = lineptr[i];
-    TransferLine2Surface(theLine, theSurface, -2, line_points, &nline_points);
+    TransferLine2Surface(theLine, theSurface, -2, line_points, &nline_points, lcoord_lpoints);
   }
 
   /* check used-flags */
@@ -4124,54 +4911,198 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
 
   oldnb = LGM_SURFACE_NPOINT(theSurface);
 
-  GenerateSurfaceGrid (Heap, MarkKey, theSurface, h, 5, 1);
+  if(SURFACE_ADAPT)
+    if(LGM_SURFACE_ID(theSurface)!=-1)
+      if(Surface_Plane(theSurface))
+      {
+        if(LGM_DEBUG)
+          printf("%s %d %s\n", "Surface", LGM_SURFACE_ID(theSurface), "is plain");
+        nlp = nline_points + 1;
+        id = 0;
+        for(i=0; i<LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(xy_Surface)); i++)
+        {
+          xy_flag[i] = 0;
+          xy_new_id[i] = -1;
+        }
+        for(i=0; i<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(xy_Surface)); i++)
+          xy_element_id[i] = 0;
+        for(i=xy_bpoints; i<LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(xy_Surface)); i++)
+        {
+          local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(xy_Surface),i,0);
+          local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(xy_Surface),i,1);
+          Surface_Local2Global(xy_Surface, global, local);
+          mi = Project2Surface(theSurface, global, local, xy_n);
+          /*mi = GetLocalKoord(theSurface, global, local, xy_n);*/
+          if(mi!=-1)
+          {
+            Surface_Local2Global(theSurface, global, local);
+            flag = 0;
+            for(j=0; j<nline_points; j++)
+            {
+              /*local[0] = lcoord_lpoints[j][0];
+                 local[1] = lcoord_lpoints[j][1];
+                 Surface_Local2Global(theSurface, globalnew, local);*/
+              for(k=0; k<3; k++)
+                globalnew[k] = line_points[j][k];
+              if(E_Distance(global, globalnew)<h)
+                flag = 1;
+            }
+            if(flag==0)
+            {
+              xy_lcoord[i][0] = local[0];
+              xy_lcoord[i][1] = local[1];
+              xy_flag[i] = 1;
+            }
+            else
+              xy_flag[i] = 0;
+          }
+          else
+            xy_flag[i] = 0;
+        }
 
+        for(i=0; i<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(xy_Surface)); i++)
+        {
+          for(j=0; j<3; j++)
+            if( (xy_flag[LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(xy_Surface), i, (j+0)%3)]>0)
+                &&  (xy_flag[LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(xy_Surface), i, (j+1)%3)]>0) )
+            {
+              xy_flag[LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(xy_Surface), i, (j+0)%3)] = 2;
+              xy_flag[LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(xy_Surface), i, (j+1)%3)] = 2;
+            }
+        }
+
+        for(i=0; i<LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(xy_Surface)); i++)
+          if(xy_flag[i]==2)
+          {
+            local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(xy_Surface),i,0);
+            local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(xy_Surface),i,1);
+            Surface_Local2Global(xy_Surface, global, local);
+
+            mi = Project2Surface(theSurface, global, local, xy_n);
+            Surface_Local2Global(theSurface, global, local);
+
+            if(LGM_DEBUG)
+              printf("%d %d\n", i, nlp);
+            xy_new_id[i] = nlp;
+            AddLinePoint(nlp, global[0], global[1], global[2]);
+            nlp++;
+          }
+        for(i=0; i<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(xy_Surface)); i++)
+        {
+          dummy = 0;
+          for(j=0; j<3; j++)
+          {
+            a = LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(xy_Surface), i, (j+0)%3);
+            b = LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(xy_Surface), i, (j+1)%3);
+            /*						printf("%d %d\n", a, b);*/
+            if( (xy_flag[LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(xy_Surface), i, (j+0)%3)]==2)
+                &&  (xy_flag[LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(xy_Surface), i, (j+1)%3)]==2) )
+            {
+              if(LGM_DEBUG)
+                printf("%d %d\n", xy_new_id[LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(xy_Surface), i, (j+0)%3)],
+                       xy_new_id[LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(xy_Surface), i, (j+1)%3)]);
+              AddLineSegment( xy_new_id[LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(xy_Surface), i, (j+0)%3)],
+                              xy_new_id[LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(xy_Surface), i, (j+1)%3)]);
+              dummy++;
+            }
+          }
+          if(dummy==3)
+            xy_element_id[i] = 1;
+        }
+      }
+
+  UserWriteF("Triangulate surface %4d: ", LGM_SURFACE_ID(theSurface));
+
+  GenerateSurfaceGrid (Heap, MarkKey, theSurface, h, 5, 1, D);
+
+  j = 0;
+  for(i=0; i<nline_points; i++)
+  {
+    if((INT)lcoord_lpoints[i][0]!=-1)
+    {
+      LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,0) = lcoord_lpoints[i][0];
+      LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),j,1) = lcoord_lpoints[i][1];
+      j++;
+    }
+  }
+
+  UserWriteF("\n");
   UserWriteF(" Surface %4d: %4d Triangles\n",
              LGM_SURFACE_ID(theSurface),
              LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)));
-
-  /*	for (i=0; i<folds; i++)
-                  DisposeMem(Heap, lineptr[i]);
-          DisposeMem(Heap, lineptr);*/
 
   return (0);
 }
 
 #else
 
-static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h, LGM_POINT *pointlist, INT norp, INT MarkKey)
+static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh, DOUBLE h, LGM_POINT *pointlist, INT norp, INT D, MarkKey)
 {
   return (1);
 }
 
 #endif
 
+INT TEST(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
+{
+  INT i, ilocal,ilocal1,id;
+  DOUBLE slocal[2],sloc;
+  LGM_LINE *theLine;
+  if(local[0]<0.0)
+  {
+    /* point is on the boundary of the surface */
+    id = - (INT)floor(local[0]) - 2;
+    ilocal = floor(local[1]);
+    sloc = local[1]-ilocal;
+    for(i=0; i<LGM_SURFACE_NLINE(theSurface); i++)
+      if(LGM_LINE_ID(LGM_SURFACE_LINE(theSurface, i))==id)
+        theLine = LGM_SURFACE_LINE(theSurface, i);
+    Line_Local2GlobalNew(theLine,global,local[1]);
+  }
+  return(0);
+}
+
 INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
 {
-  INT ilocal,ilocal1;
-  DOUBLE slocal[2];
+  INT i, ilocal,ilocal1,id;
+  DOUBLE slocal[2],sloc;
+  LGM_LINE *theLine;
 
-  ilocal = floor(local[0]);
-  ilocal1 = floor(local[1]);
-  if(ilocal>ilocal1)
-    ilocal = ilocal1;
-  slocal[0] = local[0]-ilocal;
-  slocal[1] = local[1]-ilocal;
-
-  assert(slocal[0]>=0.0);
-  assert(slocal[1]>=0.0);
-  assert(ilocal<LGM_SURFACE_NTRIANGLE(theSurface) && ilocal>=0);
-  if (ilocal<LGM_SURFACE_NTRIANGLE(theSurface))
+  if(local[0]<0.0)
   {
-    global[0] = slocal[0]                           *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),0))[0]
-                + slocal[1]                           *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),1))[0]
-                + (1-slocal[0]-slocal[1])     *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),2))[0];
-    global[1] = slocal[0]                           *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),0))[1]
-                + slocal[1]                           *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),1))[1]
-                + (1-slocal[0]-slocal[1])     *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),2))[1];
-    global[2] = slocal[0]                           *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),0))[2]
-                + slocal[1]                           *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),1))[2]
-                + (1-slocal[0]-slocal[1])     *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),2))[2];
+    /* point is on the boundary of the surface */
+    id = - (INT)floor(local[0]) - 2;
+    ilocal = floor(local[1]);
+    sloc = local[1]-ilocal;
+    for(i=0; i<LGM_SURFACE_NLINE(theSurface); i++)
+      if(LGM_LINE_ID(LGM_SURFACE_LINE(theSurface, i))==id)
+        theLine = LGM_SURFACE_LINE(theSurface, i);
+    Line_Local2GlobalNew(theLine,global,local[1]);
+  }
+  else
+  {
+    ilocal = floor(local[0]);
+    ilocal1 = floor(local[1]);
+    if(ilocal>ilocal1)
+      ilocal = ilocal1;
+    slocal[0] = local[0]-ilocal;
+    slocal[1] = local[1]-ilocal;
+
+    assert(slocal[0]>=0.0);
+    assert(slocal[1]>=0.0);
+    assert(ilocal<LGM_SURFACE_NTRIANGLE(theSurface) && ilocal>=0);
+    if (ilocal<LGM_SURFACE_NTRIANGLE(theSurface))
+    {
+      global[0] = slocal[0]                           *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),0))[0]
+                  + slocal[1]                           *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),1))[0]
+                  + (1-slocal[0]-slocal[1])     *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),2))[0];
+      global[1] = slocal[0]                           *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),0))[1]
+                  + slocal[1]                           *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),1))[1]
+                  + (1-slocal[0]-slocal[1])     *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),2))[1];
+      global[2] = slocal[0]                           *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),0))[2]
+                  + slocal[1]                           *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),1))[2]
+                  + (1-slocal[0]-slocal[1])     *LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),2))[2];
+    }
   }
 
   return (0);
@@ -4273,31 +5204,6 @@ INT BNDP_BndPDesc (BNDP *aBndP, INT *move, INT *part)
   return(0);
 }
 
-static INT P_Dist(DOUBLE *p1, DOUBLE *p2)
-{
-  DOUBLE x, y, z, r;
-
-  x = p1[0] - p2[0];
-  y = p1[1] - p2[1];
-  z = p1[2] - p2[2];
-
-  r = sqrt(x*x+y*y+z*z);
-  if(r<SMALL)
-    return(1);
-  else
-    return(0);
-}
-
-static DOUBLE E_Distance(DOUBLE *p1, DOUBLE *p2)
-{
-  DOUBLE d;
-
-  d = sqrt( (p1[0]-p2[0])*(p1[0]-p2[0])
-            +     (p1[1]-p2[1])*(p1[1]-p2[1])
-            +     (p1[2]-p2[2])*(p1[2]-p2[2]) );
-  return(d);
-}
-
 static INT Check_Local_Coord(LGM_SURFACE *theSurface, DOUBLE *local)
 {
   INT ilocal, ilocal1;
@@ -4329,10 +5235,13 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   DOUBLE globalp0[3],globalp1[3],globalp2[3], global[3], globalnew[3];
   DOUBLE small, sp, d, min_d, l, l1;
   DOUBLE A[3], B[3], BNDP_NV[3], Surface_NV[3];
-  DOUBLE p0[3], p1[3], p2[3], m1[3], m2[3], m3[3], area;
+  DOUBLE p0[3], p1[3], p2[3], m1[3], m2[3], m3[3], area, g[3];
   INT mi;
 
   small = 0.000001;
+
+  if(n!=3)
+    return(NULL);
   assert(n==3);
   theBndP1 = BNDP2LGM(aBndP[0]);
   theBndP2 = BNDP2LGM(aBndP[1]);
@@ -4354,7 +5263,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   B[1] = globalp2[1] - globalp1[1];
   B[2] = globalp2[2] - globalp1[2];
   LGM_VECTOR_PRODUCT(A, B, BNDP_NV);
-  V_DIM_SCALE(1/sqrt(V_DIM_SCAL_PROD(BNDP_NV, BNDP_NV)),BNDP_NV);
+  V_DIM_SCALE(1.0/sqrt(V_DIM_SCAL_PROD(BNDP_NV, BNDP_NV)),BNDP_NV);
 
   /* check */
   for(i=0; i<3; i++)
@@ -4717,7 +5626,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
   LGM_SURFACE *theSurface,*s, *Surfaces[MAX_SURFACES], *theNewSurface;
   LGM_LINE *theLine, *Lines[MAX_LINES], *l1, *l2;
   INT i,j, k,count,size, max, ilocal, ilocal1, flag, flag1, nlines, found, iold, jold;
-  DOUBLE globalp1[3],globalp2[3],global[3],local[2], slocal[2], nv[3], local1, local2, min_d, globalnew[3], d, midp[3], newlocal;
+  DOUBLE globalp1[3],globalp2[3],global[3],global1[3],g[3],local[2], slocal[2], nv[3], local1, local2, min_d, globalnew[3], d, midp[3], newlocal;
   DOUBLE localp1, localp2, av, bv, cv, dv, ev, fv, gv, hv, aw, bw, cw, dw;
 
   theBndP1 = BNDP2LGM(aBndP0);
@@ -4729,9 +5638,24 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
   BNDP_Global(aBndP0,globalp1);
   BNDP_Global(aBndP1,globalp2);
 
-  /*	printf("%s\n", "bndp");
-          printf("%lf %lf %lf\n", globalp1[0], globalp1[1], globalp1[2]);
-          printf("%lf %lf %lf\n", globalp2[0], globalp2[1], globalp2[2]);	*/
+  /* print information about the 2 BndP's */
+  /*	printf("%s\n", "BNDP_CreateBndP");
+          printf("%20.12lf %20.12lf %20.12lf\n", globalp1[0], globalp1[1], globalp1[2]);
+          printf("%d\n", LGM_BNDP_NLINE(theBndP1));
+          for(i=0;i<LGM_BNDP_NLINE(theBndP1);i++)
+                  printf("%20.12lf %20.12lf\n", LGM_BNDP_LINE_LEFT(theBndP1, i), LGM_BNDP_LINE_RIGHT(theBndP1, i));
+          printf("%d\n", LGM_BNDP_N(theBndP1));
+          for(i=0;i<LGM_BNDP_N(theBndP1);i++)
+                  printf("%20.12lf %20.12lf\n",	LGM_BNDP_LOCAL(theBndP1,i)[0],
+                                                                                  LGM_BNDP_LOCAL(theBndP1,i)[1]);
+          printf("%20.12lf %20.12lf %20.12lf\n", globalp2[0], globalp2[1], globalp2[2]);
+          printf("%d\n", LGM_BNDP_NLINE(theBndP2));
+          for(i=0;i<LGM_BNDP_NLINE(theBndP2);i++)
+                  printf("%20.12lf %20.12lf\n", LGM_BNDP_LINE_LEFT(theBndP2, i), LGM_BNDP_LINE_RIGHT(theBndP2, i));
+          printf("%d\n", LGM_BNDP_N(theBndP2));
+          for(i=0;i<LGM_BNDP_N(theBndP2);i++)
+                  printf("%20.12lf %20.12lf\n",	LGM_BNDP_LOCAL(theBndP2,i)[0],
+                                                                                  LGM_BNDP_LOCAL(theBndP2,i)[1]);*/
 
   /* check */
   assert(E_Distance(globalp1, globalp2)>SMALL);
@@ -4756,28 +5680,38 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
         Line_Global2Local(LGM_BNDP_LINE(theBndP1, i), globalp1, &localp1);
         Line_Global2Local(LGM_BNDP_LINE(theBndP2, j), globalp2, &localp2);
         /* teste, ob BndP's benachbart sind */
-        av = LGM_BNDP_LINE_LEFT(theBndP1, i);
-        bv = LGM_BNDP_LINE_RIGHT(theBndP1, i);
-        cv = LGM_BNDP_LINE_LEFT(theBndP2, j);
-        dv = LGM_BNDP_LINE_RIGHT(theBndP2, j);
-        ev = ABS(LGM_BNDP_LINE_RIGHT(theBndP1, i) - localp2);
-        fv = ABS(LGM_BNDP_LINE_LEFT (theBndP2, j) - localp1);
-        gv = ABS(LGM_BNDP_LINE_LEFT (theBndP1, i) - localp2);
-        hv = ABS(LGM_BNDP_LINE_RIGHT(theBndP2, j) - localp1);
-        l1 = LGM_BNDP_LINE(theBndP1, i);
-        l2 = LGM_BNDP_LINE(theBndP2, j);
-        if((    (ABS(LGM_BNDP_LINE_RIGHT(theBndP1, i) - localp2)<SMALL)
-                ||  (ABS(LGM_BNDP_LINE_LEFT (theBndP2, j) - localp1)<SMALL) )
-           || (    (ABS(LGM_BNDP_LINE_LEFT (theBndP1, i) - localp2)<SMALL)
-                   ||  (ABS(LGM_BNDP_LINE_RIGHT(theBndP2, j) - localp1)<SMALL) ))
+        if(LGM_LINE_BEGIN(LGM_BNDP_LINE(theBndP1, i))==LGM_LINE_END(LGM_BNDP_LINE(theBndP1, i)))
         {
-          theLine = LGM_BNDP_LINE(theBndP1, i);
-          found++;
+          /* line cyclic */
+
+        }
+        else
+        {
+          /* line not cyclic */
+          av = LGM_BNDP_LINE_LEFT(theBndP1, i);
+          bv = LGM_BNDP_LINE_RIGHT(theBndP1, i);
+          cv = LGM_BNDP_LINE_LEFT(theBndP2, j);
+          dv = LGM_BNDP_LINE_RIGHT(theBndP2, j);
+          ev = ABS(LGM_BNDP_LINE_RIGHT(theBndP1, i) - localp2);
+          fv = ABS(LGM_BNDP_LINE_LEFT (theBndP2, j) - localp1);
+          gv = ABS(LGM_BNDP_LINE_LEFT (theBndP1, i) - localp2);
+          hv = ABS(LGM_BNDP_LINE_RIGHT(theBndP2, j) - localp1);
+          l1 = LGM_BNDP_LINE(theBndP1, i);
+          l2 = LGM_BNDP_LINE(theBndP2, j);
+          if((    (ABS(LGM_BNDP_LINE_RIGHT(theBndP1, i) - localp2)<SMALL)
+                  ||  (ABS(LGM_BNDP_LINE_LEFT (theBndP2, j) - localp1)<SMALL) )
+             || (    (ABS(LGM_BNDP_LINE_LEFT (theBndP1, i) - localp2)<SMALL)
+                     ||  (ABS(LGM_BNDP_LINE_RIGHT(theBndP2, j) - localp1)<SMALL) ))
+          {
+            theLine = LGM_BNDP_LINE(theBndP1, i);
+            found++;
+          }
         }
       }
-  assert(found<2);
+  if(found>1)
+    assert(found<2);
 
-  if(found==1)                                  /* projziere auf die Linie */
+  if(found==1)                                  /* projeziere auf die Linie */
   {
     Line_Global2Local(theLine, globalp1, &local1);
     Line_Global2Local(theLine, globalp2, &local2);
@@ -4841,18 +5775,23 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
       for(j=0; j<LGM_SURFACE_NLINE(Surfaces[i]); j++)
         if(LGM_SURFACE_LINE(Surfaces[i], j)==theLine)
         {
-          V_DIM_CLEAR(nv);
-          GetLocalKoord(Surfaces[i],global,local, nv);
-          Surface_Local2Global(Surfaces[i], globalnew, local);
-          if( Check_Local_Coord(Surfaces[i], local) )
-          {
-            LGM_BNDP_SURFACE(theBndP,LGM_BNDP_N(theBndP)) = Surfaces[i];
-            LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[0] = local[0];
-            LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[1] = local[1];
-            LGM_BNDP_N(theBndP)++;
-            if( (local[0]<0.0) || (local[1]<0.0) )
-              assert(0);
-          }
+          /*					V_DIM_CLEAR(nv);
+                                                  GetLocalKoord(Surfaces[i],global,local, nv);
+                                                  Surface_Local2Global(Surfaces[i], globalnew, local);
+                                                  if( Check_Local_Coord(Surfaces[i], local) )
+                                                  {
+                                                          LGM_BNDP_SURFACE(theBndP,LGM_BNDP_N(theBndP)) = Surfaces[i];
+                                                          LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[0] = local[0];
+                                                          LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[1] = local[1];
+                                                          LGM_BNDP_N(theBndP)++;
+                                                          if( (local[0]<0.0) || (local[1]<0.0) )
+                                                                  assert(0);
+                                                  }*/
+          Line_Global2Local(theLine, global, local);
+          LGM_BNDP_SURFACE(theBndP,LGM_BNDP_N(theBndP)) = Surfaces[i];
+          LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[0] = - (DOUBLE) LGM_LINE_ID(theLine) - 2.0;
+          LGM_BNDP_LOCAL(theBndP,LGM_BNDP_N(theBndP))[1] = local[0];
+          LGM_BNDP_N(theBndP)++;
         }
     ASSERT(max==LGM_BNDP_N(theBndP));
   }
@@ -4916,7 +5855,7 @@ INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
 
   theBndP = BNDP2LGM(aBndP);
   if (LGM_BNDP_NLINE(theBndP)>0)
-    PutFreelistMemory(Heap,theBndP->Line,sizeof(LGM_BNDP_PLINE));
+    PutFreelistMemory(Heap,theBndP->Line,LGM_BNDP_NLINE(theBndP)*sizeof(LGM_BNDP_PLINE));
   ASSERT(LGM_BNDP_N(theBndP)>0);
   PutFreelistMemory(Heap,theBndP->Surf,LGM_BNDP_N(theBndP)*sizeof(LGM_BNDP_PSURFACE));
 
@@ -5035,7 +5974,7 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
   LGM_BNDS *theBndS;
   LGM_SURFACE *theSurface;
   DOUBLE global[DOM_PARAM_OFFSET];
-  DOUBLE global0[3],global1[3],global2[3],new_global[3];
+  DOUBLE global0[3],global1[3],global2[3],new_global[DIM+1];
   DOUBLE bnds_local[2],new_local[2];
   DOUBLE loc0[2],loc1[2],loc2[2],loc[2], nv[3];
 
