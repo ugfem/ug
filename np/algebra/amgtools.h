@@ -70,17 +70,27 @@
 #define VECT(avect) (avect->vect)
 
 /* some useful macros for avects (see below) */
-#define ELIMINATE_LIST1(ls,p) {if ((p)->pred!=NULL) (p)->pred->succ=(p)->succ;else ls=(p)->succ;if ((p)->succ!=NULL) (p)->succ->pred=(p)->pred;}
-#define ELIMINATE_LIST2(ls,le,p) {if ((p)->pred!=NULL) (p)->pred->succ=(p)->succ;else ls=(p)->succ;if ((p)->succ!=NULL) (p)->succ->pred=(p)->pred;else le=(p)->pred;}
+#ifndef ModelP
+        #define ELIMINATE_LIST1(ls,p) {if ((p)->pred!=NULL) (p)->pred->succ=(p)->succ;else ls=(p)->succ;if ((p)->succ!=NULL) (p)->succ->pred=(p)->pred;}
+        #define ELIMINATE_LIST2(ls,le,p) {if ((p)->pred!=NULL) (p)->pred->succ=(p)->succ;else ls=(p)->succ;if ((p)->succ!=NULL) (p)->succ->pred=(p)->pred;else le=(p)->pred;}
 
-#define ADDATSTART_LIST1(ls,p) {(p)->succ=ls; (p)->pred=NULL; if (ls!=NULL) ls->pred=(p);ls=(p);}
-#define ADDATSTART_LIST2(ls,le,p) {(p)->succ=ls; (p)->pred=NULL; if (ls!=NULL) ls->pred=(p);else le=(p);ls=(p);}
+        #define ADDATSTART_LIST1(ls,p) {(p)->succ=ls; (p)->pred=NULL; if (ls!=NULL) ls->pred=(p);ls=(p);}
+        #define ADDATSTART_LIST2(ls,le,p) {(p)->succ=ls; (p)->pred=NULL; if (ls!=NULL) ls->pred=(p);else le=(p);ls=(p);}
 
-#define ADDATEND_LIST2(ls,le,p) {(p)->pred=le; (p)->succ=NULL; if (le!=NULL) (le)->succ=(p);else ls=(p);le=(p);}
+        #define ADDATEND_LIST2(ls,le,p) {(p)->pred=le; (p)->succ=NULL; if (le!=NULL) (le)->succ=(p);else ls=(p);le=(p);}
 
-#define ADDBEFORE_LIST2(ls,le,pa,p) {(p)->succ=(pa); if (((p)->pred=(pa)->pred)==NULL) ls=(p);else (p)->pred->succ=(p);(pa)->pred=p;}
-#define APPEND_LIST2(la,le,aa,ae) { if ((aa)!=NULL) {if ((la)==NULL) {la=(aa); le=(ae);} else {(le)->succ=(aa); (aa)->pred=(le); le=(ae);}} }
-
+        #define ADDBEFORE_LIST2(ls,le,pa,p) {(p)->succ=(pa); if (((p)->pred=(pa)->pred)==NULL) ls=(p);else (p)->pred->succ=(p);(pa)->pred=p;}
+        #define APPEND_LIST2(la,le,aa,ae) { if ((aa)!=NULL) {if ((la)==NULL) {la=(aa); le=(ae);} else {(le)->succ=(aa); (aa)->pred=(le); le=(ae);}} }
+#else
+/* does not yet run in parallel version */
+        #define ELIMINATE_LIST1(ls,p) {(p)=NULL;}
+        #define ELIMINATE_LIST2(ls,le,p) {(p)=NULL;}
+        #define ADDATSTART_LIST1(ls,p) {(p)=NULL;}
+        #define ADDATSTART_LIST2(ls,le,p) {(p)=NULL;}
+        #define ADDATEND_LIST2(ls,le,p) {(p)=NULL;}
+        #define ADDBEFORE_LIST2(ls,le,pa,p) {(p)=NULL;}
+        #define APPEND_LIST2(la,le,aa,ae) {(aa)=NULL;}
+#endif
 
 /****************************************************************************/
 /*																			*/
