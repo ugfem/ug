@@ -1558,6 +1558,10 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
       /* the father element on level 0 must be a boundary element */
       theVertex=MYVERTEX(theNode);
       fatherElement = VFATHER(theVertex);
+
+      /* skip node if it is not on a regular refined element */
+      if (REFINECLASS(fatherElement)!=RED_CLASS) continue;
+
       Level0Father=fatherElement;
       for (i=GLEVEL(theGrid)-1; i>0; i--) Level0Father=EFATHER(Level0Father);     /* new */
       if (OBJT(Level0Father)!=BEOBJ) continue;        /* new */
@@ -1610,6 +1614,8 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
         for (boundaryFather=NBELEM(fatherElement,side); boundaryFather!=0;
              boundaryFather=NBELEM(boundaryFather,side))
         {
+          /* otherwise we will never find the correct boundary element */
+          if (REFINECLASS(boundaryFather)!=RED_CLASS) break;
           if(OBJT(boundaryFather)==BEOBJ)
           {
             if (EqualDistInnerElem(fatherElement,boundaryFather,side,theNode,
