@@ -630,6 +630,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
           DIM, gnumVertices, out_form, filename_grid, dat_pos);
   strcpy(item+ic,it); ic+=strlen(it);
   pfile_master_puts(pf,item); ic=0;
+  pfile_sync(pf);
   if (binaryOutput)
     dat_pos+=DIM*gnumVertices*sizeof(FLOAT);
 
@@ -691,7 +692,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
       }
     }
   }
-  pfile_sync(pf);
   if (binaryOutput)
     pfile_sync_bin(pf_bin);
   else {
@@ -758,6 +758,8 @@ static INT DataExplorerCommand (INT argc, char **argv)
   }
   strcpy(item+ic,it); ic+=strlen(it);
   pfile_master_puts(pf,item); ic=0;
+
+  pfile_sync(pf);
 
   counter = 0;
   for (k=0; k<=TOPLEVEL(mg); k++) {
@@ -937,7 +939,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
     }
   }
 
-  pfile_sync(pf);
   if (binaryOutput)
     pfile_sync_bin(pf_bin);
   else {
@@ -1049,6 +1050,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
 #endif
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
+    pfile_sync(pf);
 
     counter = 0;
     for (k=0; k<=TOPLEVEL(mg); k++) {
@@ -1131,7 +1133,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
         }
       }
     }
-    pfile_sync(pf);
     if(binaryOutput)
       pfile_sync_bin(pf_bin);
     else {
@@ -1187,6 +1188,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
 #endif
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
+    pfile_sync(pf);
 
     counter = 0;
     for (k=0; k<=TOPLEVEL(mg); k++) {
@@ -1265,7 +1267,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
         }
       }
     }
-    pfile_sync(pf);
     if (binaryOutput)
       pfile_sync_bin(pf_bin);
     else {
@@ -1292,10 +1293,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
     pfile_master_puts(pf,item); ic=0;
   }
 
-
-  /* delete map array */
-  /*    ReleaseTmpMem(heap, key); */
-
   /* reset data file position counter if grid has not been written */
   if (!writeGrid)
     dat_pos=0;
@@ -1321,6 +1318,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
       dat_pos+=gnumVertices*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
+    pfile_sync(pf);
 
     for (k=0; k<=TOPLEVEL(mg); k++)
       for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
@@ -1363,7 +1361,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
         }
       }
     }
-    pfile_sync(pf);
     if (binaryOutput)
       pfile_sync_bin(pf_bin);
     else {
@@ -1449,6 +1446,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
       dat_pos+=DIM*gnumVertices*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
+    pfile_sync(pf);
 
     for (k=0; k<=TOPLEVEL(mg); k++)
       for (vx=FIRSTVERTEX(GRID_ON_LEVEL(mg,k)); vx!=NULL; vx=SUCCV(vx))
@@ -1503,7 +1501,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
         }
       }
     }
-    pfile_sync(pf);
     if (binaryOutput)
       pfile_sync_bin(pf_bin);
     else {
@@ -1593,6 +1590,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
       dat_pos+=gnumElements*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
+    pfile_sync(pf);
 
     counter=0;
     for (k=0; k<=TOPLEVEL(mg); k++) {
@@ -1626,7 +1624,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
         counter++;
       }
     }
-    pfile_sync(pf);
     if (binaryOutput)
       pfile_sync_bin(pf_bin);
     else {
@@ -1716,6 +1713,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
       dat_pos+=DIM*gnumElements*sizeof(FLOAT);
     strcpy(item+ic,it); ic+=strlen(it);
     pfile_master_puts(pf,item); ic=0;
+    pfile_sync(pf);
 
     counter=0;
     for (k=0; k<=TOPLEVEL(mg); k++) {
@@ -1759,7 +1757,6 @@ static INT DataExplorerCommand (INT argc, char **argv)
         counter++;
       }
     }
-    pfile_sync(pf);
     if (binaryOutput)
       pfile_sync_bin(pf_bin);
     else {
