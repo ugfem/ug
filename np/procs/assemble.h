@@ -115,6 +115,65 @@ typedef INT (*AssembleMatrixProcPtr)                                        \
 typedef INT (*PostProcessAssembleProcPtr)                                   \
   (NP_ASSEMBLE *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
 
+struct np_local_assemble {
+
+  NP_ASSEMBLE assemble;                      /* inherits assemble class         */
+
+  /* data */
+  INT galerkin;                              /* Galerkin assembling             */
+
+  /* functions */
+  INT (*PreProcess)
+    (struct np_local_assemble *,             /* pointer to (derived) object     */
+    INT,                                         /* level                           */
+    VECDATA_DESC *,                              /* solution vector                 */
+    VECDATA_DESC *,                              /* defect vector                   */
+    MATDATA_DESC *,                              /* matrix                          */
+    DOUBLE **,                           /* local solution                  */
+    DOUBLE **,                           /* local defect                    */
+    DOUBLE **,                           /* local matrix                    */
+    INT **,                              /* local vecskip                   */
+    INT *);                                      /* result                          */
+  INT (*AssembleLocal)
+    (ELEMENT *,                              /* pointer to an element           */
+    INT *);                                      /* result                          */
+  INT (*AssembleLocalDefect)
+    (ELEMENT *,                              /* pointer to an element           */
+    INT *);                                      /* result                          */
+  INT (*AssembleLocalMatrix)
+    (ELEMENT *,                              /* pointer to an element           */
+    INT *);                                      /* result                          */
+  INT (*PostMatrix)
+    (struct np_local_assemble *,             /* pointer to (derived) object     */
+    INT,                                         /* level                           */
+    VECDATA_DESC *,                              /* solution vector                 */
+    VECDATA_DESC *,                              /* defect vector                   */
+    MATDATA_DESC *,                              /* matrix                          */
+    INT *);                                      /* result                          */
+  INT (*PostProcess)
+    (struct np_local_assemble *,             /* pointer to (derived) object     */
+    INT,                                         /* level                           */
+    VECDATA_DESC *,                              /* solution vector                 */
+    VECDATA_DESC *,                              /* defect vector                   */
+    MATDATA_DESC *,                              /* matrix                          */
+    INT *);                                      /* result                          */
+};
+typedef struct np_local_assemble NP_LOCAL_ASSEMBLE;
+
+typedef INT (*PreProcessLocalAssembleProcPtr)                               \
+  (NP_ASSEMBLE *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *,       \
+  DOUBLE **, DOUBLE **, DOUBLE **, INT **, INT *);
+typedef INT (*AssembleLocalProcPtr)                                         \
+  (ELEMENT *, INT *);
+typedef INT (*AssembleLocalDefectProcPtr)                                   \
+  (ELEMENT *, INT *);
+typedef INT (*AssembleLocalMatrixProcPtr)                                   \
+  (ELEMENT *, INT *);
+typedef INT (*PostMatrixLocalAssembleProcPtr)                               \
+  (NP_ASSEMBLE *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
+typedef INT (*PostProcessLocalAssembleProcPtr)                              \
+  (NP_ASSEMBLE *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported functions											*/
@@ -129,6 +188,15 @@ INT NPAssembleDisplay (NP_ASSEMBLE *theNP);
 
 /* generic execute function for Assemble num procs */
 INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv);
+
+/* generic init function for LocalAssemble num procs */
+INT NPLocalAssembleInit (NP_LOCAL_ASSEMBLE *theNP, INT argc , char **argv);
+
+/* generic display function for LocalAssemble num procs */
+INT NPLocalAssembleDisplay (NP_LOCAL_ASSEMBLE *theNP);
+
+/* generic construction of NP_ASSEMBLE from NP_LOCAL_ASSEMBLE */
+INT LocalAssembleConstruct (NP_ASSEMBLE *theNP);
 
 /* create standard Assemble num proc type
    INT InitAssemble (void); */

@@ -34,6 +34,7 @@
 
 #include "general.h"
 #include "gm.h"
+#include "disctools.h"
 #include "np.h"
 
 #include "assemble.h"
@@ -66,6 +67,9 @@
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
+
+static DOUBLE *mat,*sol,*def;
+static INT *vecskip;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -230,6 +234,163 @@ INT NPAssmbleExecute (NP_BASE *theNP, INT argc , char **argv)
       return (1);
     }
   }
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   NP_LOCAL_ASSEMBLE - type definition for local assembling
+
+   DESCRIPTION:
+   This numproc type is used for the description of local assembling.
+   It can be called by the given interface from a nonlinear multigrid
+   solver.
+   Initializing the data is optional; it can with
+
+   'INT NPLocalAssembleInit (NP_ASSEMBLE *theNP, INT argc , char **argv);'
+
+   This routine returns 'EXECUTABLE' if the initizialization is complete
+   and  'ACTIVE' else.
+   The data they can be displayed and the num proc can be executed by
+
+   'INT NPLocalAssembleDisplay (NP_ASSEMBLE *theNP);'
+   'INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv);'
+
+   The interface functions 'AssemblePreProcess', 'Assemble'
+   'AssembleDefect', 'AssembleMatrix' and 'AssemblePostProcess'
+   of NP_ASSEMBLE can be constructed by the interface of NP_LOCAL_ASSEMBLE
+   by
+
+   'INT LocalAssembleConstruct (NP_ASSEMBLE *theNP);'
+
+   .vb
+
+
+   ..... fill in data structure here when the realizition is finished
+
+
+   .ve
+
+   SEE ALSO:
+   num_proc
+   D*/
+/****************************************************************************/
+
+INT NPLocalAssembleInit (NP_LOCAL_ASSEMBLE *np, INT argc , char **argv)
+{
+  if (ReadArgvINT("g",&np->galerkin,argc,argv))
+    np->galerkin = 0;
+
+  return(NPAssembleInit(&np->assemble,argc,argv));
+}
+
+INT NPLocalAssembleDisplay (NP_LOCAL_ASSEMBLE *np)
+{
+  NPAssembleDisplay(&np->assemble);
+
+  UserWrite("configuration parameters:\n");
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"g",(int)np->galerkin);
+
+  return(0);
+}
+
+static INT AssemblePreProcess (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
+                               VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  NP_LOCAL_ASSEMBLE *np;
+
+  np = (NP_LOCAL_ASSEMBLE *) theNP;
+  if ((*np->PreProcess)(np,level,x,b,A,&sol,&mat,&def,&vecskip,result)) {
+    UserWriteF("PreProcess failed, error code %d\n",result[0]);
+    return (1);
+  }
+
+  return(0);
+}
+
+static INT Assemble (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
+                     VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  NP_LOCAL_ASSEMBLE *np;
+  MULTIGRID *theMG;
+  GRID *theGrid;
+  ELEMENT *theElement;
+  DOUBLE *mptr[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
+  DOUBLE *sptr[MAX_NODAL_VALUES];
+  DOUBLE *rptr[MAX_NODAL_VALUES];
+  INT i,j,l,m;
+
+  np = (NP_LOCAL_ASSEMBLE *) theNP;
+  theMG = theNP->base.mg;
+  for (l=0; l<level; l++) {
+    theGrid = GRID_ON_LEVEL(theMG,l);
+    if (l_dset(theGrid,b,EVERY_CLASS,0.0)!=NUM_OK) {
+      result[0] = __LINE__;
+      return(1);
+    }
+    if (l_dmatset(theGrid,A,0.0)!=NUM_OK) {
+      result[0] = __LINE__;
+      return(1);
+    }
+    CLEAR_VECSKIP_OF_GRID(theGrid);
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
+         theElement=SUCCE(theElement)) {
+      if (np->galerkin)
+        if (NSONS(theElement) > 2) continue;
+      m = GetElementVVMPtrs(theElement,x,b,A,sptr,rptr,mptr,vecskip);
+      for (i=0; i<m; i++) sol[i] = *sptr[i];
+      for (i=0; i<m; i++) def[i] = 0.0;
+      for (i=0; i<m*m; i++) mat[i] = 0.0;
+      if ((*np->AssembleLocal)(theElement,result)) {
+        UserWriteF("AssembleLocal failed for element, error code %d\n",
+                   ID(theElement),result[0]);
+        return (1);
+      }
+      for (i=0; i<m; i++) *rptr[i] += def[i];
+      for (i=0; i<m*m; i++) *mptr[i] += mat[i];
+      for (i=0; i<m; i++) *sptr[i] = sol[i];
+      if (OBJT(theElement) == BEOBJ)
+        SetElementDirichletFlags(theElement,x,vecskip);
+    }
+  }
+  if (theNP->AssembleSolution != NULL)
+    if ((*theNP->AssembleSolution)(theNP,level,x,result)) {
+      UserWriteF("(AssembleSolution failed, error code %d\n",result[0]);
+      return (1);
+    }
+  if (np->PostMatrix != NULL)
+    if ((*np->PostMatrix)(np,level,x,b,A,result)) {
+      UserWriteF("(PostMatrix failed, error code %d\n",result[0]);
+      return (1);
+    }
+
+  return(0);
+}
+
+static INT AssemblePostProcess (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
+                                VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+{
+  NP_LOCAL_ASSEMBLE *np;
+
+  np = (NP_LOCAL_ASSEMBLE *) theNP;
+  if ((*np->PreProcess)
+        (np,level,x,b,A,&sol,&mat,&def,&vecskip,result)) {
+    UserWriteF("PreProcess failed, error code %d\n",result[0]);
+    return (1);
+  }
+
+  return(0);
+}
+
+INT LocalAssembleConstruct (NP_ASSEMBLE *np)
+{
+  np->PreProcess = AssemblePreProcess;
+  np->Assemble = Assemble;
+  /* np->AssembleSolution  depends on the application */
+  np->AssembleDefect = NULL;       /* TODO  */
+  np->AssembleMatrix = NULL;       /* TODO */
+  np->PostProcess = AssemblePostProcess;
 
   return(0);
 }

@@ -654,8 +654,8 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   for (i=0; i<np->nu1; i++)
     if ((*np->PostSmooth->Iter)(np->PostSmooth,level,c,b,A,result))
       return(1);
-  if (np->Transfer->ProjectSolution != NULL)
-    if ((*np->Transfer->ProjectSolution)(np->Transfer,level,c,result))
+  if (np->Transfer->AdaptCorrection != NULL)
+    if ((*np->Transfer->AdaptCorrection)(np->Transfer,level,c,b,A,result))
       return(1);
 
   return (0);
