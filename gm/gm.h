@@ -761,7 +761,7 @@ struct grid {
 struct multigrid {
 
   /* env item */
-  ENVVAR v;
+  ENVDIR v;
 
   /* variables */
   INT status;                                           /* possible values, see above			*/
