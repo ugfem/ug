@@ -59,7 +59,8 @@ chdir $ugroot or die "Couldn't change dir to $ugroot";
 app_aliases();
 
 # create aliases for ug
-ug_aliases();
+$alias{"ug"} = "cd \$UGROOT";
+ug_aliases(".","");
 
 write_aliasfile();
 
@@ -97,14 +98,14 @@ sub app_aliases {
 			else {
 				print "    name clash: $v is either \"cd $fullpath\" or \"$alias{$v}\"\n";
 			}
-			work_on_directory($file,"..");
+			work_on_app_directory($file,"..");
 		}
 	}
 }
 
 
 
-sub work_on_directory {
+sub work_on_app_directory {
 
 	# $path is the path from $ugroot
 	# $dir is the directory name
@@ -138,14 +139,57 @@ sub work_on_directory {
 			else {
 				print "    name clash: $v is either \"cd $thefile\" or \"$alias{$v}\"\n";
 			}
-            work_on_directory($file,$pathto);
+            work_on_app_directory($file,$pathto);
         }
     }
 }
 
 
 sub ug_aliases { 
-	work_on_directory(".","");
+   # $path is the path from $ugroot
+    # $dir is the directory name
+    local($dir,$path) = @_;
+
+    my $pathto;
+    if ( $path eq "" )  { $pathto = $dir; }
+    else                { $pathto = $path . "/" . $dir; }
+
+    opendir DIR, $pathto or die "Couldn't open dir $pathto";
+
+    local @files = readdir DIR;
+    closedir DIR;
+
+    my $file;
+    foreach $file (@files) {
+
+        my $thefile = $pathto . "/" . $file;
+		
+        # don't use directories starting with . or those specified with -e or -p
+        if ( exists($exact{$file}) || $file =~ /$pattern/ || substr($file,0,1) eq "." ) {
+            next;
+        }
+
+        if ( -d $thefile ) {
+
+            my $v;
+			($v = $file ) =~ s/[^\w\d]//g;
+			
+
+			# remove leading "./"
+			if ( substr($thefile,0,1) eq "." && substr($thefile,1,1) eq "/" ) {
+				$thefile = substr($thefile,2,length($thefile)-1);
+			}
+
+            if ( !exists($alias{$v}) ) {
+                $alias{$v} = "cd \$UGROOT/$thefile";
+            }
+            else {
+                print "    name clash: $v is either \"cd $thefile\" or \"$alias{$v}\"\n";
+            }
+            ug_aliases($file,$pathto);
+        }
+    }
+
 }
 
 sub write_aliasfile {
