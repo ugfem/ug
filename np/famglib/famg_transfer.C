@@ -295,10 +295,7 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 
 	#ifdef ModelP
 	DDD_IdentifyBegin();
-	DDD_XferBegin();	// SETPRIO needs it
-	#ifdef DDDOBJMGR
-	DDD_ObjMgrBegin();
-	#endif
+	DDD_PrioBegin();	// SETPRIO needs it
 	#endif
 
 	// first step: create the coarse grid vectors and the transfer matrix to them
@@ -386,10 +383,7 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 	}
 
 	#ifdef ModelP
-	#ifdef DDDOBJMGR
-	DDD_ObjMgrEnd();
-	#endif
-	DDD_XferEnd();
+	DDD_PrioEnd();
 	DDD_IdentifyEnd();	// this constructs distributed objects; afterwards XferEnd to update prio info
 	#endif
 	
