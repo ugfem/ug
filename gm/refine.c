@@ -4067,13 +4067,15 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 				ELEMENT *Sons_of_Side_List[MAX_SONS];
 				INT SonSides[MAX_SIDE_NODES];
 				for (j=0; j<Sons_of_Side; j++)
-				if ((OBJT(theElement)==BEOBJ && SIDE_ON_BND(theElement,i)) ||
-					NBELEM(theElement,i) == NULL ||
-					(prio = DDD_InfoPriority(PARHDRE(NBELEM(theElement,i)))) ==
-					PrioGhost) 
-				{
-						continue;
-				}
+                                if (OBJT(theElement)==BEOBJ
+                                        && SIDE_ON_BND(theElement,i)
+                                        && !INNER_BOUNDARY(theElement,i)) continue;
+
+                                if (NBELEM(theElement,i) == NULL)       continue;
+
+                                if ((prio = DDD_InfoPriority(PARHDRE(NBELEM(theElement,i))))
+                                        == PrioGhost)
+                                        continue;
 
 				if (Get_Sons_of_ElementSide(theElement,i,&Sons_of_Side,
 						Sons_of_Side_List,SonSides,1)!=GM_OK) RETURN(GM_FATAL);
