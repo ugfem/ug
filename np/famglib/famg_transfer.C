@@ -341,7 +341,7 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 			    int *proclist = DDD_InfoProcList(PARHDR(ugfg_vec));
 
 				proclist += 2;
-				PRINTDEBUG(np,3,("%d: ind %d gid %08x n %d ",me,VINDEX(ugfg_vec),
+				PRINTDEBUG(np,3,("%d: ind %d gid %08x n %d\n",me,VINDEX(ugfg_vec),
 								 DDD_InfoGlobalId(PARHDR(ugfg_vec)),
 								 DDD_InfoNCopies(PARHDR(ugfg_vec))));
 				while (*proclist != -1) {
@@ -353,12 +353,10 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 					}
 					proclist += 2;
 				}
-				PRINTDEBUG(np,3,(" prio new %d, prio old %d, attr %d\n",
+				PRINTDEBUG(np,3,("%d: prio new %d, prio old %d, attr %d\n", me,
 								 DDD_InfoPriority(PARHDR(ugnew_vec)),
 								 DDD_InfoPriority(PARHDR(ugfg_vec)),
 								 DDD_InfoAttr(PARHDR(ugnew_vec))));
-
-				PRINTDEBUG(np,3,("\n"));
 			}
 			#endif
 
@@ -415,5 +413,6 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 #else
 	assert(0); // to implement
 #endif
+
 	return 0;
 }
