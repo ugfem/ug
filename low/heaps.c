@@ -49,7 +49,6 @@
 #include "mgheapmgr.h"
 #include "namespace.h"
 USING_UG_NAMESPACE
-NS_DIM_PREFIX MULTIGRID * NS_DIM_PREFIX GetCurrentMultigrid();
 #else
 USING_UG_NAMESPACE
 #endif
