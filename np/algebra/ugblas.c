@@ -398,6 +398,63 @@ INT l_vector_consistent (GRID *g, const VECDATA_DESC *x)
 
 /****************************************************************************/
 /*D
+   l_vector_consistent_noskip - builds the sum of the vector values on all copies
+
+   SYNOPSIS:
+   INT l_vector_consistent_noskip (GRID *g, const VECDATA_DESC *x);
+
+   PARAMETERS:
+   .  g - pointer to grid
+   .  x - vector data descriptor
+
+   DESCRIPTION:
+   This function builds the sum of the vector values for all border vectors.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+   D*/
+/****************************************************************************/
+
+static int Scatter_VectorComp_noskip (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+  INT i,type;
+  const SHORT *Comp;
+
+  if (VD_IS_SCALAR(ConsVector)) {
+    if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
+      VVALUE(pv,VD_SCALCMP(ConsVector)) += *((DOUBLE *)data);
+
+    return (NUM_OK);
+  }
+
+  type = VTYPE(pv);
+  Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
+  for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+    VVALUE(pv,Comp[i]) += ((DOUBLE *)data)[i];
+
+  return (NUM_OK);
+}
+
+INT l_vector_consistent_noskip (GRID *g, const VECDATA_DESC *x)
+{
+  INT tp,m;
+
+  ConsVector = (VECDATA_DESC *)x;
+
+  m = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+
+  DDD_IFAExchange(BorderVectorSymmIF, GRID_ATTR(g), m * sizeof(DOUBLE),
+                  Gather_VectorComp, Scatter_VectorComp_noskip);
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*D
    a_vector_consistent - builds the sum of the vector values on all copies
 
    SYNOPSIS:
@@ -438,6 +495,29 @@ INT a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
                       GRID_ATTR(GRID_ON_LEVEL(mg,level)),
                       m * sizeof(DOUBLE),
                       Gather_VectorComp, Scatter_VectorComp);
+
+  return (NUM_OK);
+}
+
+INT a_vector_consistent_noskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
+{
+  INT level,tp,m;
+
+  ConsVector = (VECDATA_DESC *)x;
+
+  m = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+
+  if ((fl==BOTTOMLEVEL(mg)) && (tl==TOPLEVEL(mg)))
+    DDD_IFExchange(BorderVectorSymmIF, m * sizeof(DOUBLE),
+                   Gather_VectorComp, Scatter_VectorComp_noskip);
+  else
+    for (level=fl; level<=tl; level++)
+      DDD_IFAExchange(BorderVectorSymmIF,
+                      GRID_ATTR(GRID_ON_LEVEL(mg,level)),
+                      m * sizeof(DOUBLE),
+                      Gather_VectorComp, Scatter_VectorComp_noskip);
 
   return (NUM_OK);
 }
