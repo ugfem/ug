@@ -6,22 +6,18 @@
 #																			 #
 ##############################################################################
 
-
 # include configuration and all makefile macro definitions
 include ../../ug.conf
 
 OBJECTS = gg3d.o
 
-# local C compiler flags
-LCFLAGS = -I../../include
-
 # $(NETGEN) is set to ON or OFF in ug.conf
 
-all: $(OBJECTS) $(NETGEN) Makefile.gg3
-	$(ARCH_AR) $(ARCH_ARFLAGS) ../../lib/libgg3.a $(OBJECTS) 
+$(UG_LIB): $(OBJECTS) $(NETGEN) Makefile.gg3
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 
 .c.o:
-	$(ARCH_CC) $(UG_CFLAGS) $(NETGEN_CFLAGS) $(LCFLAGS) $<
+	$(ARCH_CC) $(UG_CFLAGS) $(NETGEN_CFLAGS) $<
 
 ON:
 	echo "creating netgen"
