@@ -1229,7 +1229,7 @@ INT CheckDistributedObjects(GRID *theGrid)
 	INT size = 4;	/* compare the 3/4 node ids */
 	#endif
 	#ifdef __THREEDIM__
-	INT size = 20	/* compare 8 nodes + 12 edges */
+	INT size = 20;	/* compare 8 nodes + 12 edges */
 	#endif
 
 	check_distributed_objects_errors = 0;
