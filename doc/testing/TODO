@@ -52,14 +52,24 @@
 				    month jump does not work
 			- netscape6 month jump does not work
 
-	15. handling of DartTestfile for applications
-		new file in UG/ with name DartTestFiles
-		this allow to switch on and off application tests
+*	15. handling of DartTestfile for applications
+*		new file in UG/ with name DartTestFiles
+*		this allow to switch on and off application tests
 20040310:
 	16. Handling of ConfigureCommand output:
 		- ConfigureCommand is defined in DartConfiguration.tcl
 		- Configure.tcl provides Client-Side functionality
 		- Configure.xsl provides Server-Side functionality
 		--> web documents explaining tcl, xml, tsl easy and short
-		--> Learn TCL, TSL, XML as necessary
+		--> Learn TCL, XSLT, XML as necessary
+20040323:
+	17. Management of all situations:
+ 		1. -e lib_all: build ug with all possible configurations
+		2. -e test_all:
+		3. -e all: all tests and all lib
+		4. -e test -c <appl1:<testnames>>
+		5. -e lib -c <lib:<testnames>>
+	18. Extensions to multiple basis libs
+		<CFS> = <LIB1:<CFS1>...<LIBN><CFSN>>
+
 
