@@ -6741,6 +6741,29 @@ static INT QualityCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
+/** \brief Implementation of \ref fiflel. */
+#ifdef __THREEDIM__
+static INT FindFlippedElementsCommand(INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  INT verbose;
+
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"fiflel","no current multigrid");
+    return (CMDERRORCODE);
+  }
+
+  /* verbose mode */
+  verbose = ReadArgvOption("v",argc,argv);
+
+  if(FindFlippedElements(theMG,verbose))
+    return (CMDERRORCODE);
+
+  return(OKCODE);
+}
+#endif
 
 /** \brief Implementation of \ref makegrid. */
 static INT MakeGridCommand  (INT argc, char **argv)
@@ -11876,6 +11899,9 @@ INT NS_DIM_PREFIX InitCommands ()
   if (CreateCommand("quality",            QualityCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("makegrid",           MakeGridCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("status",                     StatusCommand                                   )==NULL) return (__LINE__);
+#ifdef __THREEDIM__
+  if (CreateCommand("fiflel",                     FindFlippedElementsCommand              )==NULL) return (__LINE__);
+#endif
 
 #if defined(CAD) && defined(__THREEDIM__)
   if (CreateCommand("cadconvert",     CADGridConvertCommand           )==NULL) return (__LINE__);
