@@ -59,7 +59,7 @@
 #define FATAL                   9999    /* fatal error, quit program				*/
 
 #define MAXOPTIONS              100             /* maximum number of options for a command	*/
-#define OPTIONBUFFERLEN 1024    /* length of option buffer					*/
+#define OPTIONBUFFERLEN 16384   /* length of option buffer					*/
 
 /****************************************************************************/
 /*																			*/
