@@ -1030,6 +1030,23 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 				return 0;
     }
 #else
+#ifdef SIMULATE_HALFENING	// TODO: remove it
+	VECTOR *vec;
+	MATRIX *mat;
+	DOUBLE pos[3];
+	
+    for(i = 0; i < n; i++)
+    {
+        nodei = graph->GetNode(i);
+		vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
+		
+		VectorPosition(vec,pos);
+
+		if( fabs(pos[0]-0.5)<1e-3 )	// insert the middle col of the domain into the list
+			if(InsertNode(gridptr, nodei))
+				return 0;
+	}
+#else
 	// put all nodes into the list
     for(i = 0; i < n; i++)
     {
@@ -1037,6 +1054,7 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 		if(InsertNode(gridptr, nodei))
 			return 0;
     }
+#endif
 #endif
 	
     return 0;

@@ -27,6 +27,10 @@
    $Header$
  */
 
+// TODO: remove it:
+//#define SIMULATE_HALFENING
+
+
 // forward declarations
 class FAMGGraph;
 class FAMGGrid;
