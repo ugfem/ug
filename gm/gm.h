@@ -48,6 +48,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 #ifndef __COMPILER__
 #include "compiler.h"
@@ -1364,6 +1365,26 @@ enum GM_CE {
 /*																			*/
 /****************************************************************************/
 
+/* macros to calculate from a coordinate (2D/3D) a hopefully unique ID */
+#define SIGNIFICANT_DIGITS(d,exp_ptr) (ceil(frexp((d),(exp_ptr))*1e5))
+
+/* the idea to calculate from a 2d/3D position a (hopefully) unique key:
+   add the weighted significant digits of the coordinates; the weights
+   may not have a common divisor to ensure uniqueness of the result;
+   take from this again the sigificant digits */
+#ifdef __TWODIM__
+#define COORDINATE_TO_KEY(coord,dummy_int_ptr)  ((INT)(SIGNIFICANT_DIGITS((SIGNIFICANT_DIGITS((coord)[0],(dummy_int_ptr)) + \
+                                                                           SIGNIFICANT_DIGITS((coord)[1],(dummy_int_ptr))*PI)\
+                                                                          , (dummy_int_ptr))))
+#endif
+
+#ifdef __THREEDIM__
+#define COORDINATE_TO_KEY(coord,dummy_int_ptr)  ((INT)(SIGNIFICANT_DIGITS((SIGNIFICANT_DIGITS((coord)[0],(dummy_int_ptr)) + \
+                                                                           SIGNIFICANT_DIGITS((coord)[1],(dummy_int_ptr))*PI + \
+                                                                           SIGNIFICANT_DIGITS((coord)[2],(dummy_int_ptr))*0.76453456834568356936598)\
+                                                                          , (dummy_int_ptr))))
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* macros for VECTORs														*/
@@ -2043,7 +2064,6 @@ enum GM_OBJECTS {
 #define PARHDRE(p)                      (&((p)->ge.ddd))
 #endif
 
-
 /*******************************/
 /* the general element concept */
 /*******************************/
@@ -2674,14 +2694,14 @@ INT         MultiGridStatus         (MULTIGRID *theMG, INT gridflag, INT greenfl
 void            ListGrids                               (const MULTIGRID *theMG);
 void            ListNode                                (MULTIGRID *theMG, NODE *theNode,               INT dataopt, INT bopt, INT nbopt, INT vopt);
 void            ListNodeSelection               (MULTIGRID *theMG,                                              INT dataopt, INT bopt, INT nbopt, INT vopt);
-void            ListNodeRange                   (MULTIGRID *theMG, INT from, INT to,    INT gidopt, INT dataopt, INT bopt, INT nbopt, INT vopt);
+void            ListNodeRange                   (MULTIGRID *theMG, INT from, INT to,    INT idopt, INT dataopt, INT bopt, INT nbopt, INT vopt);
 void            ListElement                     (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, INT nbopt, INT vopt);
 void            ListElementSelection    (MULTIGRID *theMG,                                              INT dataopt, INT bopt, INT nbopt, INT vopt);
-void            ListElementRange                (MULTIGRID *theMG, INT from, INT to,    INT gidopt, INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt);
+void            ListElementRange                (MULTIGRID *theMG, INT from, INT to,    INT idopt, INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt);
 void            ListVector                              (MULTIGRID *theMG, VECTOR *theVector,   INT matrixopt, INT dataopt);
 void            ListVectorSelection     (MULTIGRID *theMG,                                              INT matrixopt, INT dataopt);
 void            ListVectorOfElementSelection(MULTIGRID *theMG,                                  INT matrixopt, INT dataopt);
-void            ListVectorRange                 (MULTIGRID *theMG,                      INT fl, INT tl, INT fromV, INT toV, INT gidopt, INT matrixopt, INT dataopt);
+void            ListVectorRange                 (MULTIGRID *theMG,                      INT fl, INT tl, INT fromV, INT toV, INT idopt, INT matrixopt, INT dataopt);
 
 /* query */
 LINK            *GetLink                                (NODE *from, NODE *to);
@@ -2767,5 +2787,7 @@ INT         SetEdgeSubdomainFromElements        (GRID *theGrid);
 INT         SetSubdomainIDfromBndInfo           (MULTIGRID *theMG);
 INT         FixCoarseGrid                       (MULTIGRID *theMG);
 INT                     ClearMultiGridUsedFlags                         (MULTIGRID *theMG, INT FromLevel, INT ToLevel, INT mask);
+void            CalculateCenterOfMass                           (ELEMENT *theElement, DOUBLE_VECTOR center_of_mass);
+INT             KeyForObject                                            (SELECTION_OBJECT *obj );
 
 #endif
