@@ -631,6 +631,16 @@ static void ClearNewEVector(MULTIGRID *mg, int o, int n)
   NEWEL_LOOP_END
 }
 
+static void MarkAllNew(MULTIGRID *mg)
+{
+  int i;
+  ELEMENT *e;
+
+  for (i = 0; i < TOPLEVEL(mg); i++)
+    for (e = FIRSTELEMENT(GRID_ON_LEVEL(mg, i)); e != NULL; e = SUCCE(e))
+      SETNEWEL(e, 1);
+}
+
 static int ParseArgumentsR(int argc, char **argv, MULTIGRID *mg, char *fname,
                            int *no_ns, SHORT *ns,
                            int *no_nv, SHORT *nv,
@@ -643,7 +653,10 @@ static int ParseArgumentsR(int argc, char **argv, MULTIGRID *mg, char *fname,
 
   *no_ns = *no_nv = *no_es = *no_ev = 0;
   for(i=1; i<argc; i++) {
-    if (strncmp(argv[i],"ns",2) == 0) {
+    if (strncmp(argv[i],"f",1) == 0) {
+      MarkAllNew(mg);
+    }
+    else if (strncmp(argv[i],"ns",2) == 0) {
       vd = ReadArgvVecDescX(mg, "ns", argc, argv, NO);
       if (vd == NULL) return 1;
       /* clear some vectors somehow... */
