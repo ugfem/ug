@@ -621,6 +621,7 @@ INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh, INT MarkKey)
   {
     theMesh->theBndPs[i] = NULL;
   }
+  theMesh->ElemSideOnBnd            = NULL;
 
   return (1);
 }

@@ -397,6 +397,7 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
 
   mesh->VertexLevel = NULL;
   mesh->VertexPrio = NULL;
+  mesh->ElemSideOnBnd = NULL;
 
   return (mesh);
 }

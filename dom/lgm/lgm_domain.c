@@ -242,6 +242,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
     Mesh->VertexPrio    = NULL;
     Mesh->ElementLevel  = NULL;
     Mesh->ElementPrio   = NULL;
+    Mesh->ElemSideOnBnd = NULL;
   }
 
   /* allocate s2p table */

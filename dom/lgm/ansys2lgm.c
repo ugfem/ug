@@ -1630,12 +1630,12 @@ NOT YET	*/
 								
 
 			/*newer version : O (c1/2 N*N) */
-	/*InsertElement(theMG,h,ndlist,NULL,NULL);*/
+	/*InsertElement(theMG,h,ndlist,NULL,NULL);
     if ((theElem=InsertElement(theMG,h,ndlist,NULL,NULL))==NULL)
 	{
         PrintErrorMessage('E',"cadconvert","did not get an ELEMENT* from InsertElement");
         return(NULL);
-    } 
+    }*/ 
 	
 			/*nnn++;*/
 			
