@@ -432,7 +432,7 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid)
   INT ds;
   INT i;
 
-  pv = GetMemoryForObject(MYMG(theGrid),sizeof(struct bvertex),BVOBJ);
+  pv = (VERTEX*)GetMemoryForObject(MYMG(theGrid),sizeof(struct bvertex),BVOBJ);
   if (pv==NULL) return(NULL);
   if ((ds=FMT_S_VERTEX(MGFORMAT(MYMG(theGrid))))>0)
   {
@@ -493,7 +493,7 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
   INT ds;
   INT i;
 
-  pv = GetMemoryForObject(MYMG(theGrid),sizeof(struct ivertex),IVOBJ);
+  pv = (VERTEX*)GetMemoryForObject(MYMG(theGrid),sizeof(struct ivertex),IVOBJ);
   if (pv==NULL) return(NULL);
   if ((ds=FMT_S_VERTEX(MGFORMAT(MYMG(theGrid))))>0)
   {
@@ -2028,9 +2028,9 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
   }
 
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
-    pe = GetMemoryForObject(theGrid->mg,sizeof(EDGE),EDOBJ);
+    pe = (EDGE*)GetMemoryForObject(theGrid->mg,sizeof(EDGE),EDOBJ);
   else
-    pe = GetMemoryForObject(theGrid->mg,sizeof(EDGE)-sizeof(VECTOR*),EDOBJ);
+    pe = (EDGE*)GetMemoryForObject(theGrid->mg,sizeof(EDGE)-sizeof(VECTOR*),EDOBJ);
   if (pe==NULL) return(NULL);
 
   /* initialize data */
@@ -2312,11 +2312,11 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
   void *q;
 
   if (objtype == IEOBJ)
-    pe = GetMemoryForObject(MYMG(theGrid),INNER_SIZE_TAG(tag),
-                            MAPPED_INNER_OBJT_TAG(tag));
+    pe = (ELEMENT*)GetMemoryForObject(MYMG(theGrid),INNER_SIZE_TAG(tag),
+                                      MAPPED_INNER_OBJT_TAG(tag));
   else if (objtype == BEOBJ)
-    pe = GetMemoryForObject(MYMG(theGrid),BND_SIZE_TAG(tag),
-                            MAPPED_BND_OBJT_TAG(tag));
+    pe = (ELEMENT*)GetMemoryForObject(MYMG(theGrid),BND_SIZE_TAG(tag),
+                                      MAPPED_BND_OBJT_TAG(tag));
 
   if (pe==NULL) return(NULL);
 
@@ -2562,7 +2562,7 @@ GRID *CreateNewLevel (MULTIGRID *theMG, INT algebraic)
   else l = TOPLEVEL(theMG)+1;
 
   /* allocate grid object */
-  theGrid = GetMemoryForObject(theMG,sizeof(GRID),GROBJ);
+  theGrid = (GRID*)GetMemoryForObject(theMG,sizeof(GRID),GROBJ);
   if (theGrid==NULL) return(NULL);
 
   /* fill in data */
@@ -2646,7 +2646,7 @@ GRID *CreateNewLevelAMG (MULTIGRID *theMG)
   l = theMG->bottomLevel-1;
 
   /* allocate grid object */
-  theGrid = GetMemoryForObject(theMG,sizeof(GRID),GROBJ);
+  theGrid = (GRID*)GetMemoryForObject(theMG,sizeof(GRID),GROBJ);
   if (theGrid==NULL) return(NULL);
 
   /* fill in data */
@@ -3052,7 +3052,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   if(optimizedIE == TRUE)
   {
     if ((MGNDELEMPTRARRAY(theMG)=
-           GetTmpMem(theHeap,NDELEM_BLKS_MAX*sizeof(ELEMENT**),MarkKey))==NULL)
+           (ELEMENT***)GetTmpMem(theHeap,NDELEM_BLKS_MAX*sizeof(ELEMENT**),MarkKey))==NULL)
     {
       ReleaseTmpMem(theHeap,MarkKey);
       PrintErrorMessage('E',"CreateMultiGrid",
@@ -4167,7 +4167,7 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT Also
   /* allocate memory for the node list */
   theHeap = MGHEAP(theMG);
   MarkTmpMem(theHeap,&MarkKey);
-  if ((table=GetTmpMem(theHeap,entries*sizeof(NODE *),MarkKey))==NULL)
+  if ((table=(NODE**)GetTmpMem(theHeap,entries*sizeof(NODE *),MarkKey))==NULL)
   {
     ReleaseTmpMem(theHeap,MarkKey);
     PrintErrorMessage('E',"OrderNodesInGrid","ERROR: could not allocate memory from the MGHeap");
@@ -5960,7 +5960,7 @@ static INT NdElPtrArray_GetMemAndCheckIDs(INT n, MULTIGRID *theMG, INT *h_ID, NO
           /*
              MGNDELEMBLK(theMG,j) = malloc(maxi);
            */
-          if ((MGNDELEMBLK(theMG,j)=GetTmpMem(MGHEAP(theMG),maxi,MarkKey))==NULL)
+          if ((MGNDELEMBLK(theMG,j)=(ELEMENT**)GetTmpMem(MGHEAP(theMG),maxi,MarkKey))==NULL)
           {
             PrintErrorMessage('E',"InsertElement","  ==> NdElPtrArray_GetMemAndCheckIDs( ) ERROR: No memory for MGNDELEMBLK(theMG,j)");
             return(1);
@@ -7531,21 +7531,21 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
   /* set heap info in refine info */
   if (gridflag)
   {
-    float new;
+    float New;
     float newpergreen;
     float predmax;
 
     SETMARKCOUNT(REFINEINFO(theMG),markcount[MAXLEVEL]);
 
-    new = markcount[MAXLEVEL]*(2<<(DIM-1))*mg_sum_div_red;
-    SETPREDNEW0(REFINEINFO(theMG),new);
+    New = markcount[MAXLEVEL]*(2<<(DIM-1))*mg_sum_div_red;
+    SETPREDNEW0(REFINEINFO(theMG),New);
 
     if (mg_greenrules[MAXLEVEL] > 0)
       newpergreen = ((float)mg_greenrulesons[MAXLEVEL][MAX_SONS])/mg_greenrules[MAXLEVEL];
     else
       newpergreen = 0;
-    new = markcount[MAXLEVEL]*(2<<(DIM-1))+newpergreen*closuresides[MAXLEVEL];
-    SETPREDNEW1(REFINEINFO(theMG),new);
+    New = markcount[MAXLEVEL]*(2<<(DIM-1))+newpergreen*closuresides[MAXLEVEL];
+    SETPREDNEW1(REFINEINFO(theMG),New);
 
     SETREAL(REFINEINFO(theMG),mg_sum);
     if (mg_sum_size_div_red > 0.0)
@@ -10190,7 +10190,7 @@ INT InitUGManager ()
 {
   INT i;
 
-  theGenMGUDM = malloc(SIZEOF_VHM);
+  theGenMGUDM = (VIRT_HEAP_MGMT*)malloc(SIZEOF_VHM);
   if (theGenMGUDM==NULL)
     return (__LINE__);
 
