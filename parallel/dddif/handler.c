@@ -175,30 +175,6 @@ void VectorUpdate (DDD_OBJ obj)
     /* insert in vector list */
 	GRID_LINK_VECTOR(theGrid,pv,prio)
 
-/* TODO: delete this */
-if (0) {
-    if (after==NULL)
-    {
-        SUCCVC(pv) = (VECTOR*)FIRSTVECTOR(theGrid);
-        PREDVC(pv) = NULL;
-        if (SUCCVC(pv)!=NULL)
-            PREDVC(SUCCVC(pv)) = pv;
-        SFIRSTVECTOR(theGrid) = (void*)pv;
-        if (LASTVECTOR(theGrid)==NULL)
-            LASTVECTOR(theGrid) = (void*)pv;
-    }
-    else
-    {
-        SUCCVC(pv) = SUCCVC(after);
-        PREDVC(pv) = after;
-        if (SUCCVC(pv)!=NULL)
-            PREDVC(SUCCVC(pv)) = pv;
-        else
-            LASTVECTOR(theGrid) = (void*)pv;
-        SUCCVC(after) = pv;
-    }
-}
-
 	VSTART(pv) = NULL;
 
     /* counters */
@@ -563,13 +539,17 @@ void VertexUpdate (DDD_OBJ obj)
 	ELEMENT *theElement;
 	GRID  *theGrid;
 	int  level = DDD_InfoAttr(PARHDRV(pv));
+	int    prio = DDD_InfoPriority(PARHDRV(pv));
 
 	PRINTDEBUG(dddif,1,("%2d: VertexUpdate(): v=%x I/BVOBJ=%d\n",me,pv,OBJT(pv)))
 
 	theGrid = GRID_ON_LEVEL(dddctrl.currMG,level);
 	after = LASTVERTEX(theGrid);
 
+	GRID_LINK_VERTEX(theGrid,pv,prio);
+/* TODO: delete this */
         /* insert in vertex list */
+/*
         if (after==NULL)
         {
                 SUCCV(pv) = FIRSTVERTEX(theGrid);
@@ -586,6 +566,7 @@ void VertexUpdate (DDD_OBJ obj)
                 else LASTVERTEX(theGrid) = pv;
                 SUCCV(after) = pv;
         }
+*/
 
         /* counters */
         theGrid->nVert++;
@@ -613,6 +594,39 @@ void BVertexScatter (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
     BVertexScatterBndP (&(V_BNDP((VERTEX *)obj)),cnt,Data);
 }
 
+
+void VertexPriorityUpdate (DDD_OBJ obj, int new)
+{
+    VERTEX *pv = (VERTEX *)obj;
+    INT     level = DDD_InfoAttr(PARHDRV(pv));
+    GRID    *theGrid = GetGridOnDemand(dddctrl.currMG,level);
+    INT     old = DDD_InfoPriority(PARHDRV(pv));
+
+    PRINTDEBUG(dddif,2,("%2d: VertexPriorityUpdate(): v=%08x/%x old=%d new=%d level=%d\n",me,\
+        DDD_InfoGlobalId(PARHDRV(pv)),pv,old,new,level))
+
+    if (pv == NULL) return;
+    if (old == new) return;
+
+    if (old == PrioNone) {
+        /* only valid for masters */
+        ASSERT(new == PrioMaster);
+        return;
+    }
+    if (new == PrioNone) {
+        /* only valid when prio undefined */
+        printf("prio=%d\n",old);
+        fflush(stdout);
+        ASSERT(old <= 0);
+        return;
+    }
+
+    GRID_UNLINK_VERTEX(theGrid,pv)
+
+    GRID_LINK_VERTEX(theGrid,pv,new)
+
+    return;
+}
 
 /****************************************************************************/
 /****************************************************************************/
@@ -1164,6 +1178,7 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data)
 		MIDNODE(enew) = MIDNODE(ecopy);
 		if (dddctrl.edgeData)
 		{
+			EDVECTOR(enew) = EDVECTOR(ecopy);
 			VOBJECT(EDVECTOR(enew)) = (void *)enew;
 		}
 
@@ -1441,6 +1456,7 @@ void ddd_HandlerInit (INT handlerSet)
 		HANDLER_XFERCOPY,		BVertexXferCopy,
 		HANDLER_XFERGATHER,		BVertexGather,
 		HANDLER_XFERSCATTER,	BVertexScatter,
+		HANDLER_SETPRIORITY,	VertexPriorityUpdate,
 		HANDLER_END
 	);
 
