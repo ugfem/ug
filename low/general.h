@@ -60,8 +60,10 @@
   " DEBUG_MODE=" # debug_mode " $"
 
 #define RCSID(header,module_rcs_string) RCSIDAUX(header,module_rcs_string)
-
 #define RCSIDAUX(header,module_rcs_string) static char rcsid[] = header module_rcs_string;
+
+#define RCS_ID(header,module_rcs_string) RCS_ID_AUX(header,module_rcs_string)
+#define RCS_ID_AUX(header,module_rcs_string) rcsid[] = header module_rcs_string
 
 
 /****************************************************************************/
