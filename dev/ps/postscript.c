@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/****************************************************************************/
-/*																			*/
+/****************************************************************************a
+   /*																			*/
 /* File:	  postscript.c													*/
 /*																			*/
 /* Purpose:   write graphics postscript files                                                           */
@@ -214,16 +214,29 @@ static void PSInversePolygon (SHORT_POINT *points, INT nb)
   return;
 }
 
-static void PSErasePolygon (SHORT_POINT *points, INT nb)
-{
-  return;
-}
-
 static void PSPrintColor (float color)
 {
   if (color==0.0) fprintf(currPSF,"%d ",0);
   else if (color==1.0) fprintf(currPSF,"%d ",1);
   else fprintf(currPSF,"%.3f ",color);
+  return;
+}
+
+static void PSErasePolygon (SHORT_POINT *points, INT nb)
+{
+  long saved;
+
+  saved = PScc;
+  PSPrintColor(1.0);
+  PSPrintColor(1.0);
+  PSPrintColor(1.0);
+  fprintf(currPSF,"R\n");
+  PSPolygon(points,nb);
+  PSPrintColor((float)red[PScc]);
+  PSPrintColor((float)green[PScc]);
+  PSPrintColor((float)blue[PScc]);
+  fprintf(currPSF,"R\n");
+
   return;
 }
 
