@@ -74,7 +74,6 @@
 
 20040405:
 *	18. not DONE
-
 20040504:
 *	16. DONE
 *	17. DONE
@@ -86,14 +85,22 @@
 *	    README_SCRIPTS.txt
 *	21. add README_TESTS.txt
 	22. overwork all scripts to get a final version
-	23. add a UG logo on the dashboard
-	24. update the scripts on hal and change the bin directory
-	    from /home/ugtest/bin to .../UG/ug/bin
-	25. describe make build in README_TESTS.txt
-	26. enable purify functionality
+*	23. add a UG logo on the dashboard
+*	24. update the scripts on hal and change the bin directory
+*	    from /home/ugtest/bin to .../UG/ug/bin
+*	25. describe make build in README_TESTS.txt
+*	26. enable purify functionality
+20040510:
+*	23. DONE
+*	24. DONE
+*	25. DONE
 
-
-
-
+20040523:
+*	26. DONE
+20040525:
+	27. UG/ug/TestCasesAll with all 48 important testcases
+	28. C++ compilation of UGlib
+	29. valgrind patch for Dart
+	30. Dashboard open from 20:00 to 8.00
 
 
