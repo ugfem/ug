@@ -417,7 +417,6 @@ static INT SPS_Step (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, EVECDAT
     do_nls=0;
   else
     do_nls=1;
-  if (sps->n_step>0) do_nls=0;
 
   /* assemble */
   current_pstep = pstep;
