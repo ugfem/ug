@@ -23,7 +23,7 @@
 #pragma segment ugio
 #endif
 
-#define EXTRACT_RULES           1       /* 1: use er.c, 0: use old version			*/
+#define EXTRACT_RULES           0       /* 1: use er.c, 0: use old version			*/
 
 /****************************************************************************/
 /*																			*/
