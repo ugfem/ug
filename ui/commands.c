@@ -6922,7 +6922,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
 #endif
 #if defined __THREEDIM__ && defined _NETGEN
   INT smooth, from, to, prism, save;
-  DOUBLE h, sc_x, sc_y, sc_z, sc[9], vol_h, a1, a2, a3, a4, a5, a6, a7, a8, a9;
+  DOUBLE h,vol_h;
   INT coeff;
 #endif
 
@@ -7118,27 +7118,6 @@ static INT MakeGridCommand  (INT argc, char **argv)
     if(h<0)
       if (ReadArgvINT("c",&coeff,argc,argv)) coeff = 0;
 
-    sc[0] = 1.0; sc[1] = 0.0; sc[2] = 0.0;
-    sc[3] = 0.0; sc[4] = 1.0; sc[5] = 0.0;
-    sc[6] = 0.0; sc[7] = 0.0; sc[8] = 1.0;
-    for (i=1; i<argc; i++)
-      switch (argv[i][0])
-      {
-      case 'i' :
-        if (sscanf(argv[i],"i %lf %lf %lf %lf %lf %lf %lf %lf %lf",&a1,&a2,&a3,&a4,&a5,&a6,&a7,&a8,&a9)!=9)
-          break;
-        sc[0] = a1;
-        sc[1] = a2;
-        sc[2] = a3;
-        sc[3] = a4;
-        sc[4] = a5;
-        sc[5] = a6;
-        sc[6] = a7;
-        sc[7] = a8;
-        sc[8] = a9;
-        break;
-      }
-
     if (ReadArgvINT("s",&save,argc,argv))
       save = 0;
     if (ReadArgvINT("p",&prism,argc,argv))
@@ -7155,7 +7134,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
     if (ReadArgvDOUBLE("v",&vol_h,argc,argv))
       vol_h = h;
 
-    if (GenerateGrid3d(theMG,mesh,vol_h,smooth,ReadArgvOption("d",argc,argv),coeff, sc, from, to, prism, save))
+    if (GenerateGrid3d(theMG,mesh,vol_h,smooth,ReadArgvOption("d",argc,argv),coeff, from, to, prism, save, argc, argv))
     {
       PrintErrorMessage('E',"makegrid","execution failed");
       ReleaseTmpMem(MGHEAP(theMG),MarkKey);
