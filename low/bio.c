@@ -28,6 +28,7 @@
 /****************************************************************************/
 
 #include <stdio.h>
+#include <string.h>
 
 #include "general.h"
 
@@ -414,7 +415,6 @@ int Bio_Jump_From (void)
 int Bio_Jump_To (void)
 {
   fpos_t act;
-  int jump;
 
   if (fgetpos(stream,&act)) return (1);
   if (fsetpos(stream,&pos)) return (1);

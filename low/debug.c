@@ -77,6 +77,9 @@ int Debugmachines   =       0;
 int Debugnumerics   =       0;
 int Debugui                 =       0;      /* temporary setting for debugging ModelP */
 
+int rep_err_count;
+int rep_err_line[REP_ERR_MAX];
+const char  *rep_err_file[REP_ERR_MAX];
 
 /* from dddif/ppif.h */
 extern int me, master;
