@@ -2557,6 +2557,11 @@ void CommandLoop (int argc, char **argv)
   char c,errLine[256],spcLine[256],buffer[256];
   char *inpLine;
   char *strStart;
+  int batch = FALSE;
+
+  for (i=1; i<argc; i++)
+    if (argv[i][0]!='-')
+      batch = TRUE;
 
   /* alloc input line buffer */
   if ((inpLine=(char *)malloc(cmdintbufsize))==NULL)
@@ -2592,7 +2597,7 @@ void CommandLoop (int argc, char **argv)
   }
 
 
-  if (argc<2)
+  if (!batch)
   {
     while (!doneFlag)
     {
