@@ -9026,6 +9026,8 @@ static INT DragCommand (INT argc, char **argv)
 static INT RotateCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
+  VIEWEDOBJ *theVO;
+  DOUBLE ex,ey,norm;
 
   /* following variables: keep type for sscanf */
   float angle;
@@ -9044,15 +9046,23 @@ static INT RotateCommand (INT argc, char **argv)
     PrintErrorMessage('E',"rotate","there's no current picture");
     return (CMDERRORCODE);
   }
+  theVO=PIC_VO(thePic);
 
   if (sscanf(argv[0],"rotate %f",&angle)!=1)
   {
-    PrintErrorMessage('E',"rotate","angle required");
-    return (PARAMERRORCODE);
+    V_DIM_EUKLIDNORM(VO_PXD(theVO),norm);
+    if (norm==0.0) return(CMDERRORCODE);
+    ex=VO_PXD(theVO)[DIM-1]/norm;
+    V_DIM_EUKLIDNORM(VO_PYD(theVO),norm);
+    if (norm==0.0) return(CMDERRORCODE);
+    ey=VO_PYD(theVO)[DIM-1]/norm;
+    if (ex==0.0 && ey==0.0) return(CMDERRORCODE);
+    angle=-atan2(ex,ey);
+    if (ey*cos(angle)<ex*sin(angle))
+      angle+=PI;
   }
-
-  /* transform degree into arclength */
-  angle *= PI/180.0;
+  else
+    angle *= PI/180.0;
 
   if (RotateProjectionPlane(thePic,angle)!=0)
   {
