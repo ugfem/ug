@@ -86,6 +86,7 @@ static INT TransferSurfaces2Mesh                (HEAP *Heap, LGM_SURFACE *theSur
 
 extern INT GenerateSurfaceGrid (LGM_SURFACE *aSurface, DOUBLE h, INT smooth,INT display);
 extern INT InitSurface(CoeffProcPtr Coeff);
+extern int AddGeomElement (int node0, int node1, int node2, int neigbor0, int neigbor1, int neigbor2);
 
 /* data for CVS */
 /*static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -1523,9 +1524,9 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   if (DiscretizeDomain(Heap,theDomain,mesh,h))
     return(NULL);
 
-  if (LGM_DEBUG)
-    if (PrintMeshInfo(mesh))
-      return (NULL);
+  /*	if (LGM_DEBUG)
+                  if (PrintMeshInfo(mesh))
+                          return (NULL);*/
 
   /* discretize lines */
   /*	if (TransferLines2Mesh(Heap,theDomain,mesh,h))
@@ -1556,9 +1557,9 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   {
     if (TransferSurfaces2Mesh(Heap,theSurface,mesh,h))
       return(NULL);
-    if (LGM_DEBUG)
-      if (PrintMeshInfo(mesh))
-        return (NULL);
+    /*		if (LGM_DEBUG)
+                            if (PrintMeshInfo(mesh))
+                                    return (NULL);*/
   }
 
   mesh->VertexLevel = NULL;
@@ -1746,7 +1747,7 @@ static DOUBLE Calc_Local_Coord(DOUBLE *p0, DOUBLE*p1, DOUBLE *p2, DOUBLE *global
   return(Lenght(hp));
 }
 
-static INT CASE1(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *lam)
+static INT CASE1(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *lam, DOUBLE *d)
 {
   DOUBLE small, dist;
   INT i, mi;
@@ -1758,7 +1759,7 @@ static INT CASE1(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *lam)
    * ist es egal welches genommen wird
    */
   small = 0.000001;
-
+  dist = 10000000.0;
   mi = -1;
   for(i=0; i<LGM_SURFACE_NTRIANGLE(theSurface); i++)
   {
@@ -1770,6 +1771,7 @@ static INT CASE1(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *lam)
     if( (lam[0]>=-small) && (lam[1]>=-small) && (lam[2]>=-small) && (dist<small) )
     {
       mi = i;
+      d[0] = dist;
       break;
     }
   }
@@ -1911,7 +1913,7 @@ INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
 {
   INT i,j,test,min,mi, dist_i;
   DOUBLE *p0,*p1,*p2,e0[3],e1[3],e2[3],eps;
-  DOUBLE n0[3],n1[3],n2[3],p[3],np[3],hp[3],l;
+  DOUBLE n0[3],n1[3],n2[3],p[3],np[3],hp[3],l, d;
   DOUBLE a[9],b[3],c[3];
   DOUBLE aa[4],bb[2],cc[2];
   DOUBLE lam[3],small, dist, min_dist, new_lam[3], A, B, m, point[3], dist_vec[3],pp0[3], pp1[3], new_global[3];
@@ -1922,7 +1924,7 @@ INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
   mi = -1;
   small = 0.000001;
 
-  mi = CASE1(theSurface, global, lam);
+  mi = CASE1(theSurface, global, lam, &d);
   if(mi==-1)
     mi = CASE2(theSurface, global, lam);
   if(mi==-1)
@@ -1949,6 +1951,38 @@ INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
           }*/
   return(0);
 }
+
+DOUBLE Check_Surface(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE *d)
+{
+  INT i,j,test,min,mi, dist_i;
+  DOUBLE *p0,*p1,*p2,e0[3],e1[3],e2[3],eps;
+  DOUBLE n0[3],n1[3],n2[3],p[3],np[3],hp[3],l;
+  DOUBLE a[9],b[3],c[3];
+  DOUBLE aa[4],bb[2],cc[2];
+  DOUBLE lam[3],small, dist, min_dist, new_lam[3], A, B, m, point[3], dist_vec[3],pp0[3], pp1[3], new_global[3];
+  min = 10000000.0;
+  min_dist = 10000000.0;
+
+  dist_i = -1;
+  mi = -1;
+  small = 0.000001;
+
+  mi = CASE1(theSurface, global, lam, d);
+
+  if( (lam[0]<0.0) || (lam[1]<0.0) )
+  {
+    if( (lam[0]<0.0) && (lam[0]>-0.000001) )
+      lam[0] = 0.0;
+    if( (lam[1]<0.0) && (lam[1]>-0.000001) )
+      lam[1] = 0.0;
+  }
+
+  local[0] = lam[0] + mi;
+  local[1] = lam[1] + mi;
+
+  return(0);
+}
+
 INT GetLocalKoord1(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
 {
   INT i,min,mi;
@@ -3085,6 +3119,9 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
 
   ptrlst = (LGM_POINT**)GetTmpMem(Heap,LGM_SURFACE_NPOINT(theSurface)*sizeof(LGM_POINT*));
 
+  if(ptrlst==NULL)
+    return(1);
+
   for(j=0; j<LGM_SURFACE_NPOINT(theSurface); j++)
     ptrlst[j] = LGM_SURFACE_POINT(theSurface,j);
 
@@ -3298,7 +3335,7 @@ static INT DiscretizeSurface (HEAP *Heap, LGM_SURFACE *theSurface, MESH *theMesh
 
   oldnb = LGM_SURFACE_NPOINT(theSurface);
 
-  GenerateSurfaceGrid (theSurface, h, 1, 1);
+  GenerateSurfaceGrid (theSurface, h, 5, 1);
 
   UserWriteF(" Surface %4d: %4d Triangles\n",
              LGM_SURFACE_ID(theSurface),
@@ -3448,7 +3485,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   LGM_BNDS *theBndS;
   DOUBLE loc1[2], loc2[2], loc3[2], local[2], slocal[2];
   DOUBLE globalp0[3],globalp1[3],globalp2[3], global[3];
-  DOUBLE small, sp;
+  DOUBLE small, sp, d, min_d;
   DOUBLE A[3], B[3], BNDP_NV[3], Surface_NV[3];
 
   small = 0.000001;
@@ -3466,6 +3503,7 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   global[2] = ( globalp0[2] + globalp1[2] +  globalp2[2] ) / 3;
 
   count = 0;
+  min_d = 1000000.0;
   for (i=0; i<LGM_BNDP_N(theBndP1); i++)
     for (j=0; j<LGM_BNDP_N(theBndP2); j++)
       for (k=0; k<LGM_BNDP_N(theBndP3); k++)
@@ -3475,29 +3513,36 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
         {
           /* Zusatzabfrage fuer den Fall, dass 3 Punkte auf zwei Surfaces liegen */
           theSurface = LGM_BNDP_SURFACE(theBndP1,i);
-          GetLocalKoord(theSurface,global,local);
-          ilocal = floor(local[0]);
-          ilocal1 = floor(local[1]);
-          if(ilocal>ilocal1)
-            ilocal = ilocal1;
-          slocal[0] = local[0]-ilocal;
-          slocal[1] = local[1]-ilocal;
-          /* Punkt liegt im Innern des Dreiecks */
-          if( (slocal[0]>-small) && (slocal[0]<1.0+small)
-              && (slocal[1]>-small) && (slocal[1]<1.0+small)
-              && (1-slocal[0]-slocal[1]>-small) && (1-slocal[0]-slocal[1]<1.0+small) )
+          Check_Surface(theSurface,global,local,&d);
+          if(d<min_d)
           {
-            theSurface = LGM_BNDP_SURFACE(theBndP1,i);
-            count++;
-            i0=i;
-            j0=j;
-            k0=k;
+            min_d = d;
+            ilocal = floor(local[0]);
+            ilocal1 = floor(local[1]);
+            if(ilocal>ilocal1)
+              ilocal = ilocal1;
+            slocal[0] = local[0]-ilocal;
+            slocal[1] = local[1]-ilocal;
+            /* Punkt liegt im Innern des Dreiecks */
+            if( (slocal[0]>-small) && (slocal[0]<1.0+small)
+                && (slocal[1]>-small) && (slocal[1]<1.0+small)
+                && (1-slocal[0]-slocal[1]>-small) && (1-slocal[0]-slocal[1]<1.0+small)
+                )
+            {
+              theSurface = LGM_BNDP_SURFACE(theBndP1,i);
+              count++;
+              i0=i;
+              j0=j;
+              k0=k;
+            }
           }
         }
       }
 
-  if (count!=1)
+  if (count==0)
     return (NULL);
+
+  theSurface = LGM_BNDP_SURFACE(theBndP1,i0);
 
   loc1[0] = LGM_BNDP_LOCAL(theBndP1,i0)[0];
   loc1[1] = LGM_BNDP_LOCAL(theBndP1,i0)[1];
