@@ -1666,7 +1666,7 @@ void EdgeUpdate (DDD_OBJ obj)
 	NE(theGrid)++;
 }	
 
-void EdgeXferCopy (DDD_OBJ obj, int proc, int prio) 
+void EdgeXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio) 
 {
 	EDGE *pe	=	(EDGE *)obj;
 
