@@ -22,6 +22,6 @@ ARCH_CFLAGS   = -I /usr/include/mpp   # -g
 ARCH_LFLAGS   = # -g
 ARCH_ARFLAGS  = ru
 
-ARCH_XINCLUDE =
-ARCH_XLIB     = 
+ARCH_XINCLUDES =
+ARCH_XLIBS     = 
 

@@ -20,6 +20,6 @@ ARCH_CFLAGS   = -A  # -g -Xc -O1 -Mnoperfmon -Mvect
 ARCH_LFLAGS   = # -Mdebug -Mframe -O0
 ARCH_ARFLAGS  = ru
 
-ARCH_XINCLUDE =
-ARCH_XLIB     = -lX11 -lXt -lXaw -lXmu -lXext -lX11 -lXt
+ARCH_XINCLUDES =
+ARCH_XLIBS     = -lX11 -lXt -lXaw -lXmu -lXext -lX11 -lXt
 

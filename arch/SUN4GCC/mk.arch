@@ -20,6 +20,6 @@ ARCH_CFLAGS   =  # -g
 ARCH_LFLAGS   = 
 ARCH_ARFLAGS  = ru
 
-ARCH_XINCLUDE = -I/usr/openwin/include
-ARCH_XLIB     = -L/usr/openwin/lib -lX11 -lXt -lXaw -lXmu -lXext
+ARCH_XINCLUDES = -I/usr/openwin/include
+ARCH_XLIBS     = -L/usr/openwin/lib -lX11 -lXt -lXaw -lXmu -lXext
 

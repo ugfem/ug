@@ -20,6 +20,6 @@ ARCH_CFLAGS   = -y -z -Aa +w2 # -g
 ARCH_LFLAGS   = -z /usr/lib/end.o
 ARCH_ARFLAGS  = ru
 
-ARCH_XINCLUDE = -I/rlocal/X11R5/include
-ARCH_XLIB     = -L/rlocal/X11R5/lib -lX11 -lXt -lXaw -lXmu -lXext
+ARCH_XINCLUDES = -I/rlocal/X11R5/include
+ARCH_XLIBS     = -L/rlocal/X11R5/lib -lX11 -lXt -lXaw -lXmu -lXext
 
