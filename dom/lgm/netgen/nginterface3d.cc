@@ -89,6 +89,11 @@ static int oldnl;
 static int qualclass, surfind;
 static int LGM_DEBUG = 0;
 static double SMALL = 0.0005;
+static double Triangle_Angle2 = 60.0;
+double hh;
+
+int GetEdgeId(const Point3d & ep1, Point3d & ep2);
+int Calc_Coord_Vectors(const Point3d p1,const Point3d p2,const int mi,Vec3d & nx,Vec3d & ny,Vec3d & nz);
 
 class surfacemeshing
 {
@@ -121,7 +126,8 @@ public:
 protected:
   virtual void StartMesh ();
   virtual void EndMesh ();
-  virtual void DefineTransformation (INDEX surfind, Point3d & p1, Point3d & p2);
+  virtual int DefineTransformation (INDEX surfind, Point3d & p1, Point3d & p2);
+  virtual int DefineTransformation_OLD (INDEX surfind, Point3d & p1, Point3d & p2);
   virtual void TransformToPlain (INDEX ind, const Point3d & locpoint,
                                  Point2d & plainpoint, double h);
   virtual void TransformFromPlain (INDEX surfind, Point2d & plainpoint,
@@ -247,47 +253,53 @@ int GetTriangleId(const Point3d & pp, Point3d & pnew)
 }
 
 
-void surfacemeshing :: DefineTransformation (INDEX surfind, Point3d & p1, Point3d & p2)
+int surfacemeshing :: DefineTransformation (INDEX surfind, Point3d & p1, Point3d & p2)
 {
-  Vec3d n1,e1,e2,e3,ex1,ez1,ez2;
-  Point3d ep11,ep12,ep13,p,pnew;
-  Point3d ep21,ep22,ep23;
-  Point3d ep1,ep2,ep3;
-  double min,test;
   int mi,i;
-  int m1,m2;
 
-  p = Center(p1,p2);
-  mi = GetTriangleId(p,pnew);
+  mi = GetEdgeId(p1,p2);
 
-  ep1 = geompoints[geomelements[mi].PNum(1)].p;
-  ep2 = geompoints[geomelements[mi].PNum(2)].p;
-  ep3 = geompoints[geomelements[mi].PNum(3)].p;
+  Calc_Coord_Vectors(p1,p2,mi,ex,ey,ez);
 
-  ex = p2 - p1;
-  ex /= ex.Length();
-  ez = Cross(ep3 - ep2, ep3 - ep1);
-  ez = ez - (ez * ex) * ex;
-  ez /= ez.Length();
-
-  ey = Cross(ex,ez);
-  //  ey = ey - (ey * ex) * ey - (ey * ez) * ey;
-  ey /= ey.Length();
-
+  //  globp1 = Center(p1,p2);
   globp1 = p1;
-  trid = mi;
-  tripoint = p;
 
-  /*  cout << "input " <<  mi << endl;
-     cout << p1.X() << "  " << p1.Y() << "  " << p1.Z() << endl;
-     cout << p2.X() << "  " << p2.Y() << "  " << p2.Z() << endl;
-     cout << ex.X() << "  " << ex.Y() << "  " << ex.Z() << endl;
-     cout << ey.X() << "  " << ey.Y() << "  " << ey.Z() << endl;
-     cout << ez.X() << "  " << ez.Y() << "  " << ez.Z() << endl;
+  return(mi);
+}
 
-     cout << ex*ex << "  " << ex*ey << "  " << ex*ez  << endl;
-     cout << ey*ex << "  " << ey*ey << "  " << ey*ez  << endl;
-     cout << ez*ex << "  " << ez*ey << "  " << ez*ez  << endl;*/
+int surfacemeshing :: DefineTransformation_OLD (INDEX surfind, Point3d & p1, Point3d & p2)
+{
+  /*
+
+     Vec3d n1,e1,e2,e3,ex1,ez1,ez2;
+     Point3d ep11,ep12,ep13,p,pnew;
+     Point3d ep21,ep22,ep23;
+     Point3d ep1,ep2,ep3;
+     double min,test;
+     int mi,i;
+     int m1,m2;
+
+     p = Center(p1,p2);
+     mi = GetTriangleId(p,pnew);
+
+     ep1 = geompoints[geomelements[mi].PNum(1)].p;
+     ep2 = geompoints[geomelements[mi].PNum(2)].p;
+     ep3 = geompoints[geomelements[mi].PNum(3)].p;
+
+     ex = p2 - p1;
+     ex /= ex.Length();
+     ez = Cross(ep3 - ep2, ep3 - ep1);
+     ez = ez - (ez * ex) * ex;
+     ez /= ez.Length();
+
+     ey = Cross(ex,ez);
+     //  ey = ey - (ey * ex) * ey - (ey * ez) * ey;
+     ey /= ey.Length();
+
+     globp1 = p1;
+     trid = mi;
+     tripoint = p;*/
+
 }
 
 void surfacemeshing :: TransformToPlain (INDEX surfind, const Point3d & locpoint,
@@ -873,6 +885,11 @@ void surfacemeshing :: Mesh (double gh)
   while (ch != 'e' && !adfront ->Empty() /*&& cntelem<test*/)
 
   {
+    // adfront->Print(cout);
+    locpoints.SetSize(0);
+    loclines.SetSize(0);
+    pindex.SetSize(0);
+    lindex.SetSize(0);
 
     h = gh;
     if (h>0.0)
@@ -883,6 +900,8 @@ void surfacemeshing :: Mesh (double gh)
       qualclass =
         adfront ->GetLocals (locpoints, loclines, pindex, lindex,
                              surfind, -3 * h);
+    //	cout << "qualclass:   " << qualclass << endl;
+
     oldnp = locpoints.Size();
     oldnl = loclines.Size();
 
@@ -905,6 +924,13 @@ void surfacemeshing :: Mesh (double gh)
 
     bemp = Center (bemp1, bemp2);
 
+    bemp.Y() += 0.1 * (bemp2.X() - bemp1.X());
+    bemp.X() -= 0.1 * (bemp2.Y() - bemp1.Y());
+
+    locpoints.SetSize(0);
+    loclines.SetSize(0);
+    pindex.SetSize(0);
+    lindex.SetSize(0);
     if(gh<=0.0)
     {
       in[0] = bemp.X();
@@ -913,6 +939,12 @@ void surfacemeshing :: Mesh (double gh)
       in[3] = gh;
       Get_Local_h(in,&h);
     }
+    qualclass =
+      adfront ->GetLocals (locpoints, loclines, pindex, lindex,
+                           surfind, 3 * h);
+
+    oldnp = locpoints.Size();
+    oldnl = loclines.Size();
 
     DefineTransformation (surfind, locpoints[loclines[1].I1()],
                           locpoints[loclines[1].I2()]);
@@ -1003,16 +1035,16 @@ void surfacemeshing :: Mesh (double gh)
           //          locelements[i].PNum(j) = pindex[locelements[i].PNum(j)];
           //	  cout << old << "  " << locelements[i].PNum(j)<< endl;
         }
-        /*	cout << endl;
-                cout << locelements[i].NP() << "  "
-                     << locelements[i].PNum(1) << "  "
-                     << locelements[i].PNum(2) << "  "
-                     << locelements[i].PNum(3) << endl;*/
 
         locelements[i].SetSurfaceIndex (surfind);
 
         SaveElement (locelements[i]);
         cntelem++;
+        if(LGM_DEBUG)
+          cout << cntelem << "  "
+               << locelements[i].PNum(1) << "  "
+               << locelements[i].PNum(2) << "  "
+               << locelements[i].PNum(3) << endl;
       }
 
       for (i = 1; i <= dellines.Size(); i++)
@@ -1419,6 +1451,358 @@ int Project_Point2Surface(Point3d &inpoint, Point3d &outpoint)
 // ***********************************************************************************
 //
 // ***********************************************************************************
+
+// ***********************************************************************************
+//
+// ***********************************************************************************
+
+
+
+int case1(const Point3d & ep1, Point3d & ep2)
+{
+  int i,j,triang[10][4],trnb, mi, nn1, nn2, np1, np2;
+  double lam[3],prod,help,det;
+  Point3d p,p0,p1,p2,inp;
+  Vec3d edge,geomedge,n0,n1,n2,np;
+  InputElement es;
+
+  // Punkt liegt genau auf der Kante zwischen 2 Dreiecken
+  // passiert fuer erkannte Kanten auf der Surface
+
+  mi = 0;
+  trnb = 0;
+  inp = Center(ep1,ep2);
+  Project_Point2Surface(inp,p);
+  for(i=1; i<=geomelements.Size(); i++)
+  {
+
+    edge = ep2 - ep1;
+    edge /= edge.Length();
+    p0 = geompoints[geomelements[i].PNum(1)].p;
+    p1 = geompoints[geomelements[i].PNum(2)].p;
+    p2 = geompoints[geomelements[i].PNum(3)].p;
+
+    det = Calc_Local_Coordinates(p0,p1,p2,p,lam[0],lam[1],lam[2]);
+
+    Calc_Vectors(p0,p1,p2,n0,n1,n2);
+    help = Project2Plane(p,np,p0,n0,n1,n2);
+
+    //cout << i << "  " << lam[0] << "  " << lam[1] << "  " << lam[2] << "  " << help << endl;
+
+    if( (lam[0]>=-SMALL) && (lam[1]>=-SMALL) && (lam[2]>=-SMALL) && (help<SMALL) )
+    {
+      triang[trnb][0] = i;
+      triang[trnb][1] = -1;
+      triang[trnb][2] = -1;
+      triang[trnb][3] = -1;
+      Calc_Vectors(p0,p1,p2,n0,n1,n2);
+      help = Project2Plane(p,np,p0,n0,n1,n2);
+      for(j=0; j<3; j++)
+        if(lam[j]<SMALL/det)
+          triang[trnb][j+1] = j;
+      trnb++;
+    }
+  }
+
+  if(trnb==1)
+  {
+    mi = triang[0][0];
+    return(mi);
+  }
+  else
+  {
+    for(i=0; i<trnb; i++)
+    {
+      if( (triang[i][1]==-1) && (triang[i][2]==-1) && (triang[i][3]==-1) )
+        return(triang[i][0]);
+
+      for(j=1; j<=3; j++)
+      {
+        if(triang[i][j]!=-1)
+        {
+          nn1 = (triang[i][j]+1)%3+1;
+          nn2 = (triang[i][j]+2)%3+1;
+          es = geomelements[triang[i][0]];
+          np1 = es.PNum(nn1);
+          np2 = es.PNum(nn2);
+          geomedge = geompoints[np1].p - geompoints[np2].p;
+          geomedge /= geomedge.Length();
+          prod = edge*geomedge;
+          if(prod<=0)
+            mi = triang[i][0];
+        }
+      }
+    }
+  }
+
+  return(mi);
+}
+
+int case2(const Point3d & ep1, Point3d & ep2)
+{
+  int i,j, mi;
+  double lam[3],help,min;
+  Point3d p,p0,p1,p2,inp;
+  Vec3d edge,geomedge,n0,n1,n2,np;
+
+  // Punkt liegt nicht auf der Surface, eps<lam[i]<1-eps
+  // fuer mehrere Dreiecke
+  // Waehle Dreieck mit kleinstem Abstand
+
+  mi = 0;
+  min = 1000000.0;
+  inp = Center(ep1,ep2);
+  Project_Point2Surface(inp,p);
+  for(i=1; i<=geomelements.Size(); i++)
+  {
+    p0 = geompoints[geomelements[i].PNum(1)].p;
+    p1 = geompoints[geomelements[i].PNum(2)].p;
+    p2 = geompoints[geomelements[i].PNum(3)].p;
+
+    Calc_Local_Coordinates(p0,p1,p2,p,lam[0],lam[1],lam[2]);
+
+    Calc_Vectors(p0,p1,p2,n0,n1,n2);
+    help = Project2Plane(p,np,p0,n0,n1,n2);
+
+    if(help<min)
+      if( (lam[0]>=0.0) && (lam[0]<=1.0) )
+        if( (lam[1]>=0.0) && (lam[1]<=1.0) )
+          if( (lam[2]>=0.0) && (lam[2]<=1.0) )
+          {
+            min = help;
+            mi = i;
+          }
+  }
+  if(min > 0.2*hh)
+    return(0);
+  else
+    return(mi);
+}
+
+int case3(const Point3d & ep1, Point3d & ep2)
+{
+  int i,j, mi;
+  double lam[3],help,min;
+  Point3d p,p0,p1,p2,inp;
+  Vec3d edge,geomedge,n0,n1,n2,np;
+
+  // Punkt auf der Startfront. Aufgrund der neuen LineDisc
+  // liegt die aktuelle Front ausserhalb der Dreiecke
+  // Finde Dreieck, mit geringstem Abstand
+  // Kante-Punkt
+
+  mi = 0;
+  min = 1000000.0;
+  inp = Center(ep1,ep2);
+  Project_Point2Surface(inp,p);
+  for(i=1; i<=geomelements.Size(); i++)
+  {
+    for(j=0; j<3; j++)
+    {
+      p0 = geompoints[geomelements[i].PNum((j)%3+1)].p;
+      p1 = geompoints[geomelements[i].PNum((j+1)%3+1)].p;
+
+      help = Dist(Center(p0, p1), p);
+      if(help<min)
+      {
+        min = help;
+        mi =i;
+      }
+    }
+  }
+  if(min > 0.2*hh)
+    return(0);
+  else
+    return(mi);
+}
+
+int case4(const Point3d & ep1, Point3d & ep2)
+{
+  int i,j, mi;
+  double lam[3],help,min,m,dist;
+  Point3d p,p0,p1,p2,cp,point,returnpoint,inp;
+  Vec3d edge,geomedge,n0,n1,n2,np,dist_vec;
+
+  // Punkt auf der Startfront. Aufgrund der neuen LineDisc
+  // liegt die aktuelle Front ausserhalb der Dreiecke
+  // Finde Dreieck, mit geringstem Abstand
+  // Kante-Punkt
+
+  mi = 0;
+  min = 1000000.0;
+
+  inp = Center(ep1,ep2);
+  Project_Point2Surface(inp,p);
+  for(i=1; i<=geomelements.Size(); i++)
+  {
+    for(j=0; j<3; j++)
+    {
+      p.X() = cp.X();
+      p.Y() = cp.Y();
+      p.Z() = cp.Z();
+      p0 = geompoints[geomelements[i].PNum(j%3+1)].p;
+      p1 = geompoints[geomelements[i].PNum((j+1)%3+1)].p;
+
+      m = ( (p1 - p0) * (p - p0) ) / ( (p1 - p0) * (p1 - p0) );
+
+      point = p0 + m * (p1 - p0);
+
+      dist_vec = p - point;
+      dist = dist_vec.Length();
+
+      if( (dist<min) /*&& (m>=0.0) && (m<=1.0) */)
+      {
+        mi = i;
+        min = dist;
+        returnpoint.X()=point.X();
+        returnpoint.Y()=point.Y();
+        returnpoint.Z()=point.Z();
+      }
+    }
+  }
+
+  help = Dist(returnpoint, cp);
+
+  if(min > 0.2*hh)
+    return(0);
+  else
+    return(mi);
+}
+
+int GetEdgeId(const Point3d & ep1, Point3d & ep2)
+{
+  Vec3d e0,e1,e2,n0,n1,n2,hp,edge,geomedge,np,vec;
+  Point3d p0,p1,p2,pold,p,em;
+  double lam[3],prod;
+  int mi ,i,j,triang[10][4],trnb, lam_i;
+  double help, min, min_i,min_lam;
+  InputElement es1,es2;
+  int nn1,nn2,np1,np2;
+  double fall1,fall2;
+  int fall1_i,fall2_i;
+
+  mi = 0;
+  mi = case1(ep1, ep2);
+  if(mi==0)
+    mi = case2(ep1, ep2);
+  if(mi==0)
+    mi = case3(ep1, ep2);
+  if(mi==0)
+    mi = case4(ep1, ep2);
+  if(mi==0)
+  {
+    cout << ep1 << endl;
+    cout << ep2 << endl;
+
+    printf("%s\n","schotter");
+  }
+  return(mi);
+}
+
+Vec3d NormalVector(InputElement e)
+{
+  Vec3d e1,e2,e3,n1,n2,n3,np;
+  Point3d ep1,ep2,ep3,pold,p;
+  double min,test,dist;
+  int mi,i;
+
+  ep1 = geompoints[e.PNum(1)].p;
+  ep2 = geompoints[e.PNum(2)].p;
+  ep3 = geompoints[e.PNum(3)].p;
+
+  n1 = ep3 - ep1;
+  n1 /= n1.Length();
+  n2 = ep3 - ep2;
+  n2 /= n2.Length();
+  n3 = Cross(n1,n2);
+  n3 /= n3.Length();
+
+  return(n3);
+}
+
+double Calc_Angle(InputElement e1, InputElement e2)
+{
+  Vec3d n1, n2;
+  float sp;
+
+  n1 = NormalVector(e1);
+  n2 = NormalVector(e2);
+
+  sp = n1*n2;
+  return(acos(sp));
+}
+
+int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh)
+{
+  Point3d midp,midsp,ep0,ep1,ep2;
+  Vec3d n0,n1,n2,np,front_vec, triang_direction,dist_vec;
+  int front_id, line_id;
+  double angle,help1,help2,nh,sp,help,L;
+
+  midp = Center (p1,p2);
+  midsp = Center (sp1,sp2);
+
+  nh = Dist(sp1,sp2);
+  nh = xh;
+  if(Dist (midp, midsp) > nh*2/3)
+    return(0);
+  else
+  {
+
+    front_id = GetEdgeId(sp1,sp2);
+    line_id = GetEdgeId(p1,p2);
+
+    ep0 = geompoints[geomelements[front_id].PNum(1)].p;
+    ep1 = geompoints[geomelements[front_id].PNum(2)].p;
+    ep2 = geompoints[geomelements[front_id].PNum(3)].p;
+
+    Calc_Vectors(ep0,ep1,ep2,n0,n1,n2);
+
+    help1 = Project2Plane(p1,np,ep0,n0,n1,n2);
+    help2 = Project2Plane(p2,np,ep0,n0,n1,n2);
+
+
+    // Angle of Visibility
+
+    front_vec = sp2 - sp1;
+    triang_direction = Cross(n2,front_vec);
+    dist_vec = midp - midsp;
+
+    if(dist_vec*triang_direction<=0.0)
+      return(0);
+
+
+
+
+
+    help = Project2Plane(midp,np,ep0,n0,n1,n2);
+    // vielleicht Dist(sp1,p1)
+    L = Dist(p1,p2);
+
+    if( (help1>0.5*nh/3) || (help2>0.5*nh/3) )
+      return(0);
+
+    angle = Calc_Angle(geomelements[front_id], geomelements[line_id]);
+    if(angle>=3.1415*Triangle_Angle2/180)
+      return(0);
+
+    if(front_id==line_id)
+    {
+      if(help > 0.3*nh/3)
+      {
+        return(0);
+      }
+    }
+    /*	  else
+                    if(angle<help/L)
+                    return(0);*/
+
+    return(1);
+  }
+}
+
+
+
 
 
 void Smooth_SurfaceMesh (ARRAY<Point3d> & points, const ARRAY<Element> & elements, int numboundarypoints, int steps)

@@ -75,6 +75,7 @@ static INT triangleid;
 static INT left;
 static INT right;
 static double h_global;
+static int LGM_DEBUG = 0;
 
 static INT ntriangle;
 
@@ -111,13 +112,24 @@ int AddInnerNode2ug (double x, double y, double z)
   global[1] = y;
   global[2] = z;
 
-  /*printf("%s %f %f %f\n","outputpoint from netgen ",x,y,z);*/
+  if(LGM_DEBUG)
+    printf("%f %f %f\n",x,y,z);
 
   GetLocalKoord(theSurface,global,local);
 
   LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)),0) = local[0];
   LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)),1) = local[1];
   LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface))++;
+
+  global[0] = 0.0;
+  global[1] = 0.0;
+  global[2] = 0.0;
+  Surface_Local2Global(theSurface, global, local);
+  if(LGM_DEBUG)
+    printf("%f %f %f\n",global[0], global[1], global[2]);
+
+  assert( sqrt( (global[0]-x)*(global[0]-x) + (global[1]-y)*(global[1]-y) + (global[2]-z)*(global[2]-z) ) < 0.00001 );
+
   return(0);
 }
 
