@@ -1311,9 +1311,11 @@ enum GM_CE {
   ONNBSIDE_CE,
   NOOFNODE_CE,
   NSUBDOM_CE,
-  MODIFIED_CE,
   NTYPE_CE,
   NPROP_CE,
+  MODIFIED_CE,
+  NCLASS_CE,
+  NNCLASS_CE,
   LOFFSET_CE,
   NO_OF_ELEM_CE,
   AUXEDGE_CE,
@@ -1957,6 +1959,16 @@ enum GM_OBJECTS {
 #define MODIFIED_LEN                            1
 #define MODIFIED(p)                             CW_READ_STATIC(p,MODIFIED_,NODE_)
 #define SETMODIFIED(p,n)                        CW_WRITE_STATIC(p,MODIFIED_,NODE_,n)
+
+#define NCLASS_SHIFT                16
+#define NCLASS_LEN                  2
+#define NCLASS(p)                   CW_READ_STATIC(p,NCLASS_,NODE_)
+#define SETNCLASS(p,n)              CW_WRITE_STATIC(p,NCLASS_,NODE_,n)
+
+#define NNCLASS_SHIFT               18
+#define NNCLASS_LEN                 2
+#define NNCLASS(p)                  CW_READ_STATIC(p,NNCLASS_,NODE_)
+#define SETNNCLASS(p,n)             CW_WRITE_STATIC(p,NNCLASS_,NODE_,n)
 
 #if defined ModelP && defined __OVERLAP2__
 #define NO_DELETE_OVERLAP2_LEN                 1
