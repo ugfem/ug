@@ -147,7 +147,6 @@ struct np_smoother {
   MATDATA_DESC *L;
   NP_ORDER *Order;
   INT AutoDamp;
-  INT mcomp;
   VECDATA_DESC *DampVector;
 
     #ifdef ModelP
@@ -2787,28 +2786,27 @@ static INT BHRConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-static INT SetAutoDamp (GRID *g, MATDATA_DESC *A, INT mcomp, VECDATA_DESC *adv)
+static INT SetAutoDamp (GRID *g, MATDATA_DESC *A, VECDATA_DESC *adv)
 {
-  INT i,n,comp,cc[4];
+  INT i,n,comp;
   SHORT *advcomp;
   VECTOR *v;
   MATRIX *m;
-  DOUBLE diag,sum,ddiag[4],ssum[4],h[4],abs[4];
+  DOUBLE diag,sum;
 
   advcomp = VD_ncmp_cmpptr_of_otype(adv,NODEVEC,&n);
-  comp = MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,mcomp);
   for (v=FIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
-  {
-    diag=ABS(MVALUE(VSTART(v),comp));
-    if (diag==0.0) return(1);
-    sum=0.0;
-    for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
-      sum+=ABS(MVALUE(m,comp));
-    if (diag>=sum) VVALUE(v,advcomp[0])=1.0;
-    else VVALUE(v,advcomp[0])=diag/sum;
-    for (i=1; i<n; i++)
-      VVALUE(v,advcomp[i]) = VVALUE(v,advcomp[0]);
-  }
+    for (i=0; i<n; i++)
+    {
+      comp = MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,i*(n+1));
+      diag=ABS(MVALUE(VSTART(v),comp));
+      if (diag==0.0) return(1);
+      sum=0.0;
+      for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
+        sum+=ABS(MVALUE(m,comp));
+      if (diag>=sum) VVALUE(v,advcomp[i])=1.0;
+      else VVALUE(v,advcomp[i])=diag/sum;
+    }
 
   return(0);
 }
@@ -2819,8 +2817,6 @@ static INT SORInit (NP_BASE *theNP, INT argc , char **argv)
 
   np = (NP_SMOOTHER *) theNP;
   np->AutoDamp = ReadArgvOption("autodamp",argc,argv);
-  if (ReadArgvINT("comp",&np->mcomp,argc,argv))
-    np->mcomp=0;
   np->DampVector = ReadArgvVecDesc(NP_MG(np),"dv",argc,argv);
 
   return (SmootherInit(theNP,argc,argv));
@@ -2833,7 +2829,6 @@ static INT SORDisplay (NP_BASE *theNP)
   NPIterDisplay(&np->iter);
   UserWrite("configuration parameters:\n");
   UserWriteF(DISPLAY_NP_FORMAT_SI,"autodamp",np->AutoDamp);
-  UserWriteF(DISPLAY_NP_FORMAT_SI,"comp",np->mcomp);
   if (np->DampVector != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"dv",ENVITEM_NAME(np->DampVector));
 
@@ -2853,7 +2848,7 @@ static INT SORPreProcess  (NP_ITER *theNP, INT level,
   {
     if (AllocVDFromVD(NP_MG(theNP),level,level,x,&np->DampVector))
       NP_RETURN(1,result[0]);
-    if (SetAutoDamp(theGrid,A,np->mcomp,np->DampVector))
+    if (SetAutoDamp(theGrid,A,np->DampVector))
       NP_RETURN(1,result[0]);
   }
         #ifdef ModelP
