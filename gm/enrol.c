@@ -12,7 +12,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de						        */
 /*																			*/
 /* History:   12.11.94 begin, ug version 3.0								*/
 /*																			*/
@@ -1006,9 +1006,9 @@ FORMAT *GetFormat (const char *name)
 
 INT ChangeToFormatDir (const char *name)
 {
-  if (ChangeEnvDir("/Formats")!=0)
+  if (ChangeEnvDir("/Formats")==NULL)
     return (1);
-  if (ChangeEnvDir(name)!=0)
+  if (ChangeEnvDir(name)==NULL)
     return (2);
 
   return (0);
