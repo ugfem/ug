@@ -893,7 +893,7 @@ int Read_pinfo (int ge, MGIO_PARINFO *pinfo)
   nb++;
 
   s=0;
-  m = 3+3*lge[ge].nCorner;
+  m = 3+6*lge[ge].nCorner;
   if (Bio_Read_mint(m,intList)) return (1);
   pinfo->prio_elem = intList[s++];
   assert(pinfo->prio_elem<32);
@@ -907,6 +907,14 @@ int Read_pinfo (int ge, MGIO_PARINFO *pinfo)
     pinfo->ncopies_node[i] = intList[s++];
     np+= pinfo->ncopies_node[i];
     pinfo->n_ident[i] = intList[s++];
+  }
+  for (i=0; i<lge[ge].nCorner; i++)
+  {
+    pinfo->prio_vertex[i] = intList[s++];
+    assert(pinfo->prio_vertex[i]<32);
+    pinfo->ncopies_vertex[i] = intList[s++];
+    np+= pinfo->ncopies_vertex[i];
+    pinfo->v_ident[i] = intList[s++];
   }
 #if (MGIO_DIM==3)
   s=0;
@@ -956,6 +964,13 @@ int Write_pinfo (int ge, MGIO_PARINFO *pinfo)
     intList[s++] = pinfo->ncopies_node[i];
     np+= pinfo->ncopies_node[i];
     intList[s++] = pinfo->n_ident[i];
+  }
+  for (i=0; i<lge[ge].nCorner; i++)
+  {
+    intList[s++] = pinfo->prio_vertex[i];
+    intList[s++] = pinfo->ncopies_vertex[i];
+    np+= pinfo->ncopies_vertex[i];
+    intList[s++] = pinfo->v_ident[i];
   }
   if (Bio_Write_mint(s,intList)) RETURN (1);
 #if (MGIO_DIM==3)
