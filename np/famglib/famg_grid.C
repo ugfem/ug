@@ -1276,20 +1276,21 @@ int FAMGGrid::Construct(FAMGGrid *fg)
 #define xCOORD 2
 #define yCOORD 3
 #define BufferSizeGlobalBestChoice 4
+#define eps 0.00001
 
-void FAMG_GlobalBestChoice( INT choice[BufferSizeGlobalBestChoice] )
+void FAMG_GlobalBestChoice( DOUBLE choice[BufferSizeGlobalBestChoice] )
 // OLD: Global optimum is: min data (and within them: min pe --- to be unique)
 // Global optimum is: min data (and within them: lexicogrphic smallest); MIN_pe currently not used 
 // or equivalently: search global node with lex. min. of (data,x,y)
 {
 	int l;
-	INT n[BufferSizeGlobalBestChoice];
+	DOUBLE n[BufferSizeGlobalBestChoice];
 
 	for (l=degree-1; l>=0; l--)
 	{
-		GetConcentrate(l,n,BufferSizeGlobalBestChoice*sizeof(INT));
+		GetConcentrate(l,n,BufferSizeGlobalBestChoice*sizeof(DOUBLE));
 		// OLD: if( (n[MIN_data] < choice[MIN_data]) || ( (n[MIN_data] == choice[MIN_data]) && (n[MIN_pe] < choice[MIN_pe]) ) )
-		if( (n[MIN_data] < choice[MIN_data]) || ( (n[MIN_data] == choice[MIN_data]) && ((n[xCOORD] < choice[xCOORD]) || ( (n[xCOORD]==choice[xCOORD]) && (n[yCOORD] < choice[yCOORD]) )) ) ) 
+		if( (n[MIN_data] < choice[MIN_data]-eps) || ( (ABSDIFF(n[MIN_data],choice[MIN_data])<eps) && ((n[xCOORD] < choice[xCOORD]-eps) || ( (ABSDIFF(n[xCOORD],choice[xCOORD])<eps) && (n[yCOORD] < choice[yCOORD]-eps) )) ) )
 		{
 			choice[MIN_data] = n[MIN_data];
 			choice[MIN_pe] = n[MIN_pe];
@@ -1297,8 +1298,8 @@ void FAMG_GlobalBestChoice( INT choice[BufferSizeGlobalBestChoice] )
 			choice[yCOORD] = n[yCOORD];
 		}
 	}
-	Concentrate(choice,BufferSizeGlobalBestChoice*sizeof(INT));
-	Broadcast(choice,BufferSizeGlobalBestChoice*sizeof(INT));
+	Concentrate(choice,BufferSizeGlobalBestChoice*sizeof(DOUBLE));
+	Broadcast(choice,BufferSizeGlobalBestChoice*sizeof(DOUBLE));
 	return;
 }
 #endif // FAMG_SINGLESTEP
@@ -1358,7 +1359,8 @@ int FAMGGrid::ConstructTransfer()
 	#define DUMMY_PE (procs+1)
 	#define DUMMY_COORD MAX_D
 
-	INT choice[BufferSizeGlobalBestChoice], finished, step=0;
+	INT finished, step=0;
+	DOUBLE choice[BufferSizeGlobalBestChoice];
 
 	#if !defined __TWODIM__
 	#error only for 2 dim
@@ -1375,11 +1377,11 @@ int FAMGGrid::ConstructTransfer()
 	if( graph->InsertHelplist() ) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
 
 	finished = 0;
-	//prv(level,0);prm(level,1);
+	//prv(level,0);//prm(level,1);
 
 	while( !finished )
 	{
-		//printlist(graph);
+		//cout<<me<<": #"<<step<<endl; printlist(graph);
 
 		// taken from FAMGGrid::EliminateNodes
 		if( graph->GetList() == NULL ) 
@@ -1399,7 +1401,6 @@ int FAMGGrid::ConstructTransfer()
 			// search node from the first sublist, which is lexicographic the smallest
 			DOUBLE xmin=DUMMY_COORD, ymin=DUMMY_COORD;
 			FAMGNode *nod = nodei;
-			static const DOUBLE eps = 0.00001;
 
 			while( nod != NULL )
 			{
@@ -1446,8 +1447,8 @@ int FAMGGrid::ConstructTransfer()
 			{
 				choice[MIN_data] = nodei->GetData();
 				choice[MIN_pe] = me;
-				choice[xCOORD] = (INT)(xmin/eps);	// dirty trick: make double to comparable int!
-				choice[yCOORD] = (INT)(ymin/eps);
+				choice[xCOORD] = xmin;
+				choice[yCOORD] = ymin;
 				//cout<<me<<": "<<step<<"! sbuf "<<xmin<<" "<<ymin<< " "<<choice[xCOORD]<<" "<<choice[yCOORD]<<endl;
 			}
 		}
@@ -1457,11 +1458,11 @@ int FAMGGrid::ConstructTransfer()
 		FAMG_GlobalBestChoice ( choice );
 		//cout << me<<": "<<step<<"! choice nach "<< choice[MIN_data]<<" pe "<<choice[MIN_pe] <<endl;
 
-		finished = (choice[MIN_pe]==DUMMY_PE); // no PE left which has a node to be eliminated
+		finished = (ABSDIFF(choice[MIN_pe],DUMMY_PE)<eps); // no PE left which has a node to be eliminated
 
 		if( !finished )
 		{
-			if( me == choice[MIN_pe] )
+			if( ABSDIFF(me,choice[MIN_pe])<eps )
 			{	// Do the elimination
 				//cout << me<<": "<<step<<"! el "<<nodei->GetId()<<" w= "<<choice[MIN_data]<<" x= "<<choice[xCOORD]<<" y= "<<choice[yCOORD]<<endl;
 				graph->Remove(nodei);
@@ -1983,34 +1984,26 @@ static int SendToOverlap1FULL( DDD_OBJ obj)
 {
 	VECTOR *vec = (VECTOR *)obj, *w;
 	MATRIX *mat;
-	int *proclist_vec, *proclist_w, i, size, dest_pe, found, *destPE_vec_ptr;
+	int dest_pe;
 	
 	if( !IS_FAMG_MASTER(vec) )
 		return 0;		// we want only master vectors here
 
 	PRINTDEBUG(np,1,("%d: SendToOverlap1: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 
-	// construct list of all pes where vec has a copy
-	destPE_vec_ptr = CopyPEBuffer;	// init
-	proclist_vec = DDD_InfoProcList(PARHDR(vec));
-	proclist_vec += 2; 	// skip entry for me
-	while( (*destPE_vec_ptr++ = proclist_vec[0]) != -1 )
-	{
-		proclist_vec += 2;
-	}
-	
 	// traverse all pes where vec has a border/ghost copy
-	for( destPE_vec_ptr = CopyPEBuffer; *destPE_vec_ptr!=-1; destPE_vec_ptr++ )
+	for( dest_pe=0; dest_pe<procs; dest_pe++ )
 	{
-		dest_pe = *destPE_vec_ptr;
-		
-			// now we found a pe that should receive the neighborhood of vec (incl. vec)
-			for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
-			{
-				w = MDEST(mat);
-				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,dest_pe,VINDEX_PRTX(w)));
-				TransferVector(w, dest_pe);
-			}
+		if( me == dest_pe )
+			continue;	// skip myself
+
+		// now we found a pe that should receive the neighborhood of vec (incl. vec)
+		for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+		{
+			w = MDEST(mat);
+			PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,dest_pe,VINDEX_PRTX(w)));
+			TransferVector(w, dest_pe);
+		}
 	}
 
 	return 0;

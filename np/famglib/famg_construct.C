@@ -893,7 +893,7 @@ int FAMGNode::Eliminate(FAMGGrid *grid)
 			x2 = MAX_D;
 			y1 = MAX_D;
 			y2 = MAX_D;
-		//cout<<me<<": Eli no pa "<<endl;
+			//cout<<me<<": Eli no pa "<<endl;
 		}
 		else
 		{
