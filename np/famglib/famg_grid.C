@@ -1272,7 +1272,7 @@ void CountOverlap (GRID *g)	// only for testing; TODO: remove
 	VECTOR *vec, *nb;
 	MATRIX *mat;
 	int nrborder = NVEC_PRIO(g,PrioBorder), level, i;
-	int shelllevel[ 10000 ];
+	int shelllevel[ 10000 ], inside, outside;
 	
 	for ( level = 0; level < 10000; level++ )
 		shelllevel[level] = 0;
@@ -1325,8 +1325,12 @@ void CountOverlap (GRID *g)	// only for testing; TODO: remove
 	}
 	assert( nrborder== 0 );
 	
-	printf (PFMT"GLEVEL %d : %d Bordervec on %d shelllevels:", me, GLEVEL(g), NVEC_PRIO(g,PrioBorder), level);
-	for( i = 1; i<= level; i++ )
+	inside = shelllevel[1]+shelllevel[2];
+	outside = 0;
+	for( i = 3; i <= level; i++ )
+		outside += shelllevel[i];
+	printf ("%d: GLEVEL %d %d Bordervec on %d shelllevels in %d out %d:", me, GLEVEL(g), NVEC_PRIO(g,PrioBorder), level, inside, outside);
+	for( i = 1; i <= level; i++ )
 		printf (" [ %d ]= %d", i, shelllevel[i]);
 	printf ("\n");
 }
