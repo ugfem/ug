@@ -124,9 +124,9 @@ void CheckNSons (ELEMENT *theElement, char *buffer)
   nsons = NSONS(theElement);
   if(i != nsons)
   {
-    if (1) PrintSons(theElement);
     printf(PFMT "%s: elem=" EID_FMTX " ERROR nsons=%d NSONS=%d\n\n",
            me,buffer,EID_PRTX(theElement),i,nsons);
+    if (1) PrintSons(theElement);
     fflush(stdout);
   }
 }
@@ -1645,6 +1645,8 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
   INT i,j;
   INT lostson         = 0;
   ELEMENT *pe                     = (ELEMENT *)obj;
+  ELEMENT *succe          = SUCCE(pe);
+  ELEMENT *Next           = NULL;
   INT prio            = EPRIO(pe);
   ELEMENT *theFather      = EFATHER(pe);
   ELEMENT *NbElement;
@@ -1697,7 +1699,7 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
                   This applies only for ghost sons, since master sons
                   avoid deleting of their fathers?!
    */
-  if (0 && newness != XFER_NEW)
+  if (newness != XFER_NEW)
   {
     if (prio == PrioMaster)
       return;
@@ -1720,6 +1722,21 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
 
       lostson = 1;
       GRID_UNLINK_ELEMENT(theGrid,pe);
+
+      if (SON(theFather,PRIO2INDEX(prio)) == pe)
+      {
+        if (succe != NULL)
+        {
+          if (EFATHER(succe)==theFather)
+                    #ifdef ModelP
+            if (PRIO2INDEX(EPRIO(succe)) == PRIO2INDEX(prio))
+                    #endif
+          {
+            Next = succe;
+          }
+        }
+        SET_SON(theFather,PRIO2INDEX(prio),Next);
+      }
     }
   }
 
@@ -1747,17 +1764,14 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
 
         SET_SON(theFather,where,pe);
 
-        if (0)
+        /* every successor of pe was decoupled before */
+        /* -> correct NSONS                          */
+        next = SUCCE(pe);
+        while (next!=NULL && PRIO2INDEX(EPRIO(next))==PRIO2INDEX(prio)
+               && theFather==EFATHER(next))
         {
-          /* every successor of pe was decoupled before */
-          /* -> correct NSONS                          */
-          next = SUCCE(pe);
-          while (next!=NULL && PRIO2INDEX(EPRIO(next))==PRIO2INDEX(prio)
-                 && theFather==EFATHER(next))
-          {
-            SETNSONS(theFather,NSONS(theFather)+1);
-            next = SUCCE(next);
-          }
+          SETNSONS(theFather,NSONS(theFather)+1);
+          next = SUCCE(next);
         }
       }
       SETNSONS(theFather,NSONS(theFather)+1);
@@ -1889,29 +1903,28 @@ void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
   }
 
   /* check whether element and father are decoupled */
-  if (0)
-    if (theFather != NULL)
+  if (theFather != NULL)
+  {
+    ELEMENT *SonList[MAX_SONS];
+    int i;
+
+    if (GetAllSons(theFather,SonList)) ASSERT(0);
+    i = 0;
+    while (SonList[i] != NULL)
     {
-      ELEMENT *SonList[MAX_SONS];
-      int i;
-
-      if (GetAllSons(theFather,SonList)) ASSERT(0);
-      i = 0;
-      while (SonList[i] != NULL)
-      {
-        if (SonList[i] == pe) lostson = 0;
-        i++;
-      }
-
-      PRINTDEBUG(dddif,1,(PFMT "  ElementPriorityUpdate(): father: f="
-                          EID_FMTX " lost son=" EID_FMTX " nsons=%d\n",me,
-                          EID_PRTX(theFather),EID_PRTX(pe),NSONS(theFather)));
-
-      if (lostson == 1)
-        SETNSONS(theFather,NSONS(theFather)+1);
-      else if (old == new)
-        return;
+      if (SonList[i] == pe) lostson = 0;
+      i++;
     }
+
+    PRINTDEBUG(dddif,1,(PFMT "  ElementPriorityUpdate(): father: f="
+                        EID_FMTX " lost son=" EID_FMTX " nsons=%d\n",me,
+                        EID_PRTX(theFather),EID_PRTX(pe),NSONS(theFather)));
+
+    if (lostson == 1)
+      SETNSONS(theFather,NSONS(theFather)+1);
+    else if (old == new)
+      return;
+  }
 
   GRID_UNLINK_ELEMENT(theGrid,pe);
 
