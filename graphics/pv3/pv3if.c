@@ -16,8 +16,8 @@
 /*                                                                          */
 /* Remarks:   Don't despair. pV3 is written in Fortran 77 ;-)               */
 /*                                                                          */
-/*            TODO: 1) support for grid adaptivity                          */
-/*                  2) support for on-line visualization                    */
+/*            TODO: 1) support for on-line visualization                    */
+/*                  2) give pV3 info about partition boundaries             */
 /*                                                                          */
 /****************************************************************************/
 
@@ -53,6 +53,17 @@
 
 #undef MIN
 #define MIN(a, b)   ((a)<=(b) ? (a) : (b))
+
+#define SURFACE_LOOP_BEGIN(mg, e) \
+  { \
+    int _i; \
+    for (_i = 0; _i <= TOPLEVEL(mg); _i++) \
+      for (e = FIRSTELEMENT(GRID_ON_LEVEL(mg, _i)); e != NULL; e = SUCCE(e)) { \
+        if (!EstimateHere(e)) continue;
+
+#define SURFACE_LOOP_END \
+  } \
+  }
 
 /****************************************************************************/
 /*                                                                          */
@@ -131,45 +142,41 @@ void pVSTRUC(int *knode, int *kequiv, int *kcel1, int *kcel2, int *kcel3,
   *knode = *kcel1 = *kcel2 = *kcel3 = *kcel4 = *ksurf = 0;
   mg = GetCurrentMultigrid();
   ClearVertexMarkers(mg);
-  for (e = FIRSTELEMENT(GRID_ON_LEVEL(mg,TOPLEVEL(mg))); e != NULL; e = SUCCE(e)) {
-    switch (TAG(e))
-    {
-    case TETRAHEDRON :
-      (*kcel1)++;
-      break;
-    case PYRAMID :
-      (*kcel2)++;
-      break;
-    case PRISM :
-      (*kcel3)++;
-      break;
-    case HEXAHEDRON :
-      (*kcel4)++;
-    }
-    for (i = 0; i < CORNERS_OF_ELEM(e); i++) {
-      v = MYVERTEX(CORNER(e, i));
-      if (USED(v)) continue;
-      SETUSED(v, 1);
-      ID(v) = *knode;                         /* number vertices */
-      (*knode)++;
-    }
-    /* check for domain boundary sides */
-    if (OBJT(e) == BEOBJ) {
-      for (i = 0; i < SIDES_OF_ELEM(e); i++)
-        if (SIDE_ON_BND(e, i) && !InnerBoundary(e, i))
-          (*ksurf)++;
-    }
-    /* check for partition boundary sides */
+  SURFACE_LOOP_BEGIN(mg, e)
+  switch (TAG(e))
+  {
+  case TETRAHEDRON :
+    (*kcel1)++;
+    break;
+  case PYRAMID :
+    (*kcel2)++;
+    break;
+  case PRISM :
+    (*kcel3)++;
+    break;
+  case HEXAHEDRON :
+    (*kcel4)++;
+  }
+  for (i = 0; i < CORNERS_OF_ELEM(e); i++) {
+    v = MYVERTEX(CORNER(e, i));
+    if (USED(v)) continue;
+    SETUSED(v, 1);
+    ID(v) = *knode;                           /* number vertices */
+    (*knode)++;
+  }
+  /* check for domain boundary sides */
+  if (OBJT(e) == BEOBJ) {
     for (i = 0; i < SIDES_OF_ELEM(e); i++)
-      if (NBELEM(e, i) != NULL && EPRIO(NBELEM(e, i)) != PrioMaster)
+      if (SIDE_ON_BND(e, i) && !InnerBoundary(e, i))
         (*ksurf)++;
   }
+  SURFACE_LOOP_END
   *kequiv  = 0;
   *knptet  = 0;
   *kptet   = 0;
   *knblock = 0;
   *kphedra = 0;
-  *knsurf  = 2;
+  *knsurf  = 1;
 }
 
 /****************************************************************************/
@@ -184,46 +191,46 @@ void pVCELL(int *cel1, int *cel2, int *cel3, int *cel4, int *nptet, int *ptet)
   ELEMENT *e;
 
   mg = GetCurrentMultigrid();
-  for (e = FIRSTELEMENT(GRID_ON_LEVEL(mg,TOPLEVEL(mg))); e != NULL; e = SUCCE(e)) {
-    switch (TAG(e))
-    {
-    case TETRAHEDRON :
-      cel1[0] = ID(MYVERTEX(CORNER(e, 3)))+1;
-      cel1[1] = ID(MYVERTEX(CORNER(e, 0)))+1;
-      cel1[2] = ID(MYVERTEX(CORNER(e, 1)))+1;
-      cel1[3] = ID(MYVERTEX(CORNER(e, 2)))+1;
-      cel1 += 4;
-      break;
-    case PYRAMID :
-      cel2[0] = ID(MYVERTEX(CORNER(e, 0)))+1;
-      cel2[1] = ID(MYVERTEX(CORNER(e, 1)))+1;
-      cel2[2] = ID(MYVERTEX(CORNER(e, 2)))+1;
-      cel2[3] = ID(MYVERTEX(CORNER(e, 3)))+1;
-      cel2[4] = ID(MYVERTEX(CORNER(e, 4)))+1;
-      cel2 += 5;
-      break;
-    case PRISM :
-      cel3[0] = ID(MYVERTEX(CORNER(e, 1)))+1;
-      cel3[1] = ID(MYVERTEX(CORNER(e, 4)))+1;
-      cel3[2] = ID(MYVERTEX(CORNER(e, 5)))+1;
-      cel3[3] = ID(MYVERTEX(CORNER(e, 2)))+1;
-      cel3[4] = ID(MYVERTEX(CORNER(e, 3)))+1;
-      cel3[5] = ID(MYVERTEX(CORNER(e, 0)))+1;
-      cel3 += 6;
-      break;
-    case HEXAHEDRON :
-      cel4[0] = ID(MYVERTEX(CORNER(e, 0)))+1;
-      cel4[1] = ID(MYVERTEX(CORNER(e, 1)))+1;
-      cel4[2] = ID(MYVERTEX(CORNER(e, 2)))+1;
-      cel4[3] = ID(MYVERTEX(CORNER(e, 3)))+1;
-      cel4[4] = ID(MYVERTEX(CORNER(e, 4)))+1;
-      cel4[5] = ID(MYVERTEX(CORNER(e, 5)))+1;
-      cel4[6] = ID(MYVERTEX(CORNER(e, 6)))+1;
-      cel4[7] = ID(MYVERTEX(CORNER(e, 7)))+1;
-      cel4 += 8;
-      break;
-    }
+  SURFACE_LOOP_BEGIN(mg, e)
+  switch (TAG(e))
+  {
+  case TETRAHEDRON :
+    cel1[0] = ID(MYVERTEX(CORNER(e, 3)))+1;
+    cel1[1] = ID(MYVERTEX(CORNER(e, 0)))+1;
+    cel1[2] = ID(MYVERTEX(CORNER(e, 1)))+1;
+    cel1[3] = ID(MYVERTEX(CORNER(e, 2)))+1;
+    cel1 += 4;
+    break;
+  case PYRAMID :
+    cel2[0] = ID(MYVERTEX(CORNER(e, 0)))+1;
+    cel2[1] = ID(MYVERTEX(CORNER(e, 1)))+1;
+    cel2[2] = ID(MYVERTEX(CORNER(e, 2)))+1;
+    cel2[3] = ID(MYVERTEX(CORNER(e, 3)))+1;
+    cel2[4] = ID(MYVERTEX(CORNER(e, 4)))+1;
+    cel2 += 5;
+    break;
+  case PRISM :
+    cel3[0] = ID(MYVERTEX(CORNER(e, 1)))+1;
+    cel3[1] = ID(MYVERTEX(CORNER(e, 4)))+1;
+    cel3[2] = ID(MYVERTEX(CORNER(e, 5)))+1;
+    cel3[3] = ID(MYVERTEX(CORNER(e, 2)))+1;
+    cel3[4] = ID(MYVERTEX(CORNER(e, 3)))+1;
+    cel3[5] = ID(MYVERTEX(CORNER(e, 0)))+1;
+    cel3 += 6;
+    break;
+  case HEXAHEDRON :
+    cel4[0] = ID(MYVERTEX(CORNER(e, 0)))+1;
+    cel4[1] = ID(MYVERTEX(CORNER(e, 1)))+1;
+    cel4[2] = ID(MYVERTEX(CORNER(e, 2)))+1;
+    cel4[3] = ID(MYVERTEX(CORNER(e, 3)))+1;
+    cel4[4] = ID(MYVERTEX(CORNER(e, 4)))+1;
+    cel4[5] = ID(MYVERTEX(CORNER(e, 5)))+1;
+    cel4[6] = ID(MYVERTEX(CORNER(e, 6)))+1;
+    cel4[7] = ID(MYVERTEX(CORNER(e, 7)))+1;
+    cel4 += 8;
+    break;
   }
+  SURFACE_LOOP_END
 }
 
 /****************************************************************************/
@@ -241,16 +248,16 @@ void pVGRID(float *xyz)
 
   mg = GetCurrentMultigrid();
   ClearVertexMarkers(mg);
-  for (e = FIRSTELEMENT(GRID_ON_LEVEL(mg,TOPLEVEL(mg))); e != NULL; e = SUCCE(e)) {
-    for (i = 0; i < CORNERS_OF_ELEM(e); i++) {
-      v = MYVERTEX(CORNER(e, i));
-      if (USED(v)) continue;
-      SETUSED(v, 1);
-      *xyz++ = XC(v);
-      *xyz++ = YC(v);
-      *xyz++ = ZC(v);
-    }
+  SURFACE_LOOP_BEGIN(mg, e)
+  for (i = 0; i < CORNERS_OF_ELEM(e); i++) {
+    v = MYVERTEX(CORNER(e, i));
+    if (USED(v)) continue;
+    SETUSED(v, 1);
+    *xyz++ = XC(v);
+    *xyz++ = YC(v);
+    *xyz++ = ZC(v);
   }
+  SURFACE_LOOP_END
 }
 
 /****************************************************************************/
@@ -270,29 +277,11 @@ void pVSURFACE(int *nsurf, int *scon, int *scel, char *tsurf, int tsurf_len)
 
   /* domain surface */
   n = 0;
-  for (e = FIRSTELEMENT(GRID_ON_LEVEL(mg,TOPLEVEL(mg))); e != NULL; e = SUCCE(e)) {
-    if (OBJT(e) == BEOBJ) {
-      for (i = 0; i < SIDES_OF_ELEM(e); i++)
-        if (SIDE_ON_BND(e, i) && !InnerBoundary(e, i)) {
-          *scon++ = 0;
-          scel[3] = 0;
-          for (j = 0; j < CORNERS_OF_SIDE(e, i); j++)
-            scel[j] = ID(MYVERTEX(CORNER(e, CORNER_OF_SIDE(e, i, j))))+1;
-          scel += 4;
-          n++;
-        }
-    }
-  }
-  nsurf[0] = n;
-  nsurf[1] = 2;
-  nsurf[2] = 1;
-  fstring(tsurf, "Domain Surface", 20);
-
-  /* partition boundary */
-  for (e = FIRSTELEMENT(GRID_ON_LEVEL(mg,TOPLEVEL(mg))); e != NULL; e = SUCCE(e)) {
+  SURFACE_LOOP_BEGIN(mg, e)
+  if (OBJT(e) == BEOBJ) {
     for (i = 0; i < SIDES_OF_ELEM(e); i++)
-      if (NBELEM(e, i) != NULL && EPRIO(NBELEM(e, i)) != PrioMaster) {
-        *scon++ = -1;
+      if (SIDE_ON_BND(e, i) && !InnerBoundary(e, i)) {
+        *scon++ = 0;
         scel[3] = 0;
         for (j = 0; j < CORNERS_OF_SIDE(e, i); j++)
           scel[j] = ID(MYVERTEX(CORNER(e, CORNER_OF_SIDE(e, i, j))))+1;
@@ -300,10 +289,11 @@ void pVSURFACE(int *nsurf, int *scon, int *scel, char *tsurf, int tsurf_len)
         n++;
       }
   }
-  nsurf[3] = n;
-  nsurf[4] = 0;
-  nsurf[5] = 0;
-  fstring(tsurf+20, "Partition Boundary", 20);
+  SURFACE_LOOP_END
+    nsurf[0] = n;
+  nsurf[1] = 2;
+  nsurf[2] = 1;
+  fstring(tsurf, "Domain Surface", 20);
 }
 
 /****************************************************************************/
@@ -329,17 +319,17 @@ void pVSCAL(int *key, float *s)
   foo = eval[k].s->EvalProc;
   mg = GetCurrentMultigrid();
   ClearVertexMarkers(mg);
-  for (e = FIRSTELEMENT(GRID_ON_LEVEL(mg,TOPLEVEL(mg))); e != NULL; e = SUCCE(e)) {
-    for (i = 0; i < CORNERS_OF_ELEM(e); i++)
-      cc[i] = CVECT(MYVERTEX(CORNER(e, i)));
-    for (i = 0; i < CORNERS_OF_ELEM(e); i++) {
-      v = MYVERTEX(CORNER(e, i));
-      if (USED(v)) continue;
-      SETUSED(v, 1);
-      LocalCornerCoordinates(3, TAG(e), i, lc);
-      *s++ = (float)foo(e, cc, lc);
-    }
+  SURFACE_LOOP_BEGIN(mg, e)
+  for (i = 0; i < CORNERS_OF_ELEM(e); i++)
+    cc[i] = CVECT(MYVERTEX(CORNER(e, i)));
+  for (i = 0; i < CORNERS_OF_ELEM(e); i++) {
+    v = MYVERTEX(CORNER(e, i));
+    if (USED(v)) continue;
+    SETUSED(v, 1);
+    LocalCornerCoordinates(3, TAG(e), i, lc);
+    *s++ = (float)foo(e, cc, lc);
   }
+  SURFACE_LOOP_END
 }
 
 /****************************************************************************/
@@ -365,20 +355,20 @@ void pVVECT(int *key, float *V)
   foo = eval[k].v->EvalProc;
   mg = GetCurrentMultigrid();
   ClearVertexMarkers(mg);
-  for (e = FIRSTELEMENT(GRID_ON_LEVEL(mg,TOPLEVEL(mg))); e != NULL; e = SUCCE(e)) {
-    for (i = 0; i < CORNERS_OF_ELEM(e); i++)
-      cc[i] = CVECT(MYVERTEX(CORNER(e, i)));
-    for (i = 0; i < CORNERS_OF_ELEM(e); i++) {
-      v = MYVERTEX(CORNER(e, i));
-      if (USED(v)) continue;
-      SETUSED(v, 1);
-      LocalCornerCoordinates(3, TAG(e), i, lc);
-      foo(e, cc, lc, vv);
-      *V++ = (float)vv[0];
-      *V++ = (float)vv[1];
-      *V++ = (float)vv[2];
-    }
+  SURFACE_LOOP_BEGIN(mg, e)
+  for (i = 0; i < CORNERS_OF_ELEM(e); i++)
+    cc[i] = CVECT(MYVERTEX(CORNER(e, i)));
+  for (i = 0; i < CORNERS_OF_ELEM(e); i++) {
+    v = MYVERTEX(CORNER(e, i));
+    if (USED(v)) continue;
+    SETUSED(v, 1);
+    LocalCornerCoordinates(3, TAG(e), i, lc);
+    foo(e, cc, lc, vv);
+    *V++ = (float)vv[0];
+    *V++ = (float)vv[1];
+    *V++ = (float)vv[2];
   }
+  SURFACE_LOOP_END
 }
 
 /****************************************************************************/
