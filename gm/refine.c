@@ -2972,6 +2972,11 @@ static int compare_nodes (const void *ce0, const void *ce1)
 	return(0);
 }
 
+#ifdef __MWCW__
+#pragma global_optimizer on
+#pragma optimization_level 1
+#endif
+
 INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT notHanging)
 {
 	COMPARE_RECORD ElemSonTable[MAX_SONS];
@@ -3197,6 +3202,10 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 
 	return(GM_OK);
 }
+
+#ifdef __MWCW__
+#pragma global_optimizer off
+#endif
 
 /****************************************************************************/
 /*																			*/
