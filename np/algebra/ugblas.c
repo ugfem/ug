@@ -2826,7 +2826,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 #define T_FUNCNAME      dnrm2
 #define T_ARGS          ,DOUBLE *a
-#define T_CONFIG        register DOUBLE s, sum;
+#define T_CONFIG        register DOUBLE s, sum = 0.0;
 #define T_MOD_SCAL      s = VVALUE(v,xc); sum += s*s;
 #define T_MOD_VECTOR_1  s = VVALUE(v,cx0); sum += s*s;
 #define T_MOD_VECTOR_2  s = VVALUE(v,cx1); sum += s*s;
