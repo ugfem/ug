@@ -11,7 +11,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de					                */
 /*																			*/
 /* History:   14.06.93 begin, ug version ug21Xmas3d                                             */
 /*			  16.12.94 restructured for ug version 3.0						*/
@@ -325,7 +325,7 @@ INT               WriteLogFile                          (const char *text);
 void              WriteString                           (const char *s);
 
 /* event input */
-INT               GetNextUGEvent                        (EVENT *theEvent, INT EventMask);
+INT               GetNextUGEvent                        (EVENT *theEvent, INT Eventmask);
 
 /* mouse functions */
 void              MousePosition                         (INT *ScreenCoord);
