@@ -11,6 +11,17 @@ then
 	exit 1;
 fi
 
+case `/bin/uname` in
+	AIX)
+		FOLLOW_LINKS=
+		echo "not following symbolic links"
+		;;
+	*)
+		FOLLOW_LINKS=-follow
+		;;
+esac;
+
+
 # if one parameter is specified search all ug modules for $1
 if test $# -eq 1
 then
@@ -19,12 +30,14 @@ then
 			-type d -name doc -prune -o \
 			-type d -name man -prune -o \
 			\( -name '*.h' -o -name '*.c' -o -name '*.cc' -o -name '*.hh' \) \
-			-follow -exec egrep $1 {} \; -print
+			${FOLLOW_LINKS} -exec egrep $1 {} \; -print
 fi
 
 # if two parameters are specified search the specific module for $1
 if test $# -eq 2
 then
-	find ${UGROOT}/$2 \( -name '*.h' -o -name '*.c' \) -follow -exec egrep $1 {} \; -print
+	find ${UGROOT}/$2 \
+		\( -name '*.h' -o -name '*.c' \) \
+		${FOLLOW_LINKS} -exec egrep $1 {} \; -print
 fi
 
