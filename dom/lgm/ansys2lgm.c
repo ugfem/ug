@@ -43,9 +43,9 @@
 
 #include "compiler.h"
 #include "fileopen.h"
-
+#include "general.h"
 #include "heaps.h"
-
+#include "gm.h"
 #include "misc.h"
 
 #include "devices.h"
@@ -823,7 +823,7 @@ INT ReadAnsysFile(char *filename)
 
 	FILE *filePtr;
 
-	MULTIGRID *theMG;
+	/*MULTIGRID *theMG;*/
 	
 	char *Multigridname;
 	char *Problemname;

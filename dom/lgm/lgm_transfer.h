@@ -193,29 +193,29 @@ struct lgm_point_info {
 };
 
 struct lgm_mesh_info {
-  {
-    int nBndP;                       /* nb. of boundary points              */
-    DOUBLE **BndPosition;                        /* list of boundary points	            */
-    int nInnP;                       /* nb. of inner nodes                  */
-    DOUBLE **InnPosition;            /* positions of inner nodes            */
-    int nSubDomains;                 /* nb. of subdomains                   */
-    int *nSides;                     /* nb. of boundary sides per subdomain */
-    int **Side_corners;              /* nb. of side corners                 */
-    int ***Side_corner_ids;              /* corner ids                          */
-    int *nElements;                  /* nb. of element corners              */
-    int **Element_corners;           /* nb. of element corners              */
-    int ***Element_corner_ids;       /* nb. of side corners                 */
-    int ***nbElements;               /* nb. of side corners                 */
-  };
 
-  typedef struct lgm_domain_info LGM_DOMAIN_INFO;
-  typedef struct lgm_sizes LGM_SIZES;
-  typedef struct lgm_subdomain_info LGM_SUBDOMAIN_INFO;
-  typedef struct lgm_triangle_info LGM_TRIANGLE_INFO;
-  typedef struct lgm_surface_info LGM_SURFACE_INFO;
-  typedef struct lgm_line_info LGM_LINE_INFO;
-  typedef struct lgm_point_info LGM_POINT_INFO;
-  typedef struct lgm_mesh_info LGM_MESH_INFO;
+  int nBndP;                         /* nb. of boundary points              */
+  DOUBLE **BndPosition;                          /* list of boundary points	            */
+  int nInnP;                         /* nb. of inner nodes                  */
+  DOUBLE **InnPosition;              /* positions of inner nodes            */
+  int nSubDomains;                   /* nb. of subdomains                   */
+  int *nSides;                       /* nb. of boundary sides per subdomain */
+  int **Side_corners;                /* nb. of side corners                 */
+  int ***Side_corner_ids;                /* corner ids                          */
+  int *nElements;                    /* nb. of element corners              */
+  int **Element_corners;             /* nb. of element corners              */
+  int ***Element_corner_ids;         /* nb. of side corners                 */
+  int ***nbElements;                 /* nb. of side corners                 */
+};
+
+typedef struct lgm_domain_info LGM_DOMAIN_INFO;
+typedef struct lgm_sizes LGM_SIZES;
+typedef struct lgm_subdomain_info LGM_SUBDOMAIN_INFO;
+typedef struct lgm_triangle_info LGM_TRIANGLE_INFO;
+typedef struct lgm_surface_info LGM_SURFACE_INFO;
+typedef struct lgm_line_info LGM_LINE_INFO;
+typedef struct lgm_point_info LGM_POINT_INFO;
+typedef struct lgm_mesh_info LGM_MESH_INFO;
 
 #endif
 

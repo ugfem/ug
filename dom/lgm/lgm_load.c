@@ -71,7 +71,7 @@ typedef int (*ReadSizesProc)(LGM_SIZES *lgm_sizes);
 typedef int (*ReadSubDomainProc)(int i, LGM_SUBDOMAIN_INFO *subdom_info);
 typedef int (*ReadLinesProc)(int i, LGM_LINE_INFO *line_info);
 typedef int (*ReadPointsProc)(LGM_POINT_INFO *lgm_point_info);
-typedef int (*ReadMeshProc)(LGM_MESH_INFO *lgm_mesh_info);
+typedef int (*ReadMeshProc)(HEAP *theHeap, LGM_MESH_INFO *lgm_mesh_info);
 
 #if (LGM_DIM==3)
 typedef int (*ReadSurfaceProc)(int i, LGM_SURFACE_INFO *surface_info);
@@ -610,7 +610,7 @@ INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh)
 
   /* copy mesh_info to mesh and create BNDPs */
   theMesh->nBndP                    = lgm_mesh_info.nBndP;
-  theMesh->InnP                     = lgm_mesh_info.nInnP;
+  theMesh->nInnP                     = lgm_mesh_info.nInnP;
   theMesh->Position                 = lgm_mesh_info.InnPosition;
   theMesh->nSubDomains              = lgm_mesh_info.nSubDomains;
   theMesh->nSides                   = lgm_mesh_info.nSides;
@@ -622,7 +622,7 @@ INT LGM_LoadMesh (HEAP *theHeap, MESH *theMesh)
   theMesh->nbElements               = lgm_mesh_info.nbElements;
   for (i=0; i<lgm_mesh_info.nBndP; i++)
   {
-    theMesh->BndP[i] = NULL;
+    theMesh->theBndPs[i] = NULL;
   }
 
   return (1);
