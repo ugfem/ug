@@ -406,6 +406,7 @@ fi
 if test $# -eq 0
 then 
 	echo "current ug configuration is:";
+	echo "UGROOT = $UGROOT";
 	grep_valid_entries $UGROOT/ug.conf;
 	if test "$USE_OBJDB" = "true"
 	then
