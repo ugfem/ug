@@ -11,10 +11,12 @@ include ../../ug.conf
 
 OBJECTS = gg3d.o
 
+GG_LIB = $(UGROOT)/lib/libgg2.a
+
 # $(NETGEN) is set to ON or OFF in ug.conf
 
-$(UG_LIB): $(OBJECTS) $(NETGEN) Makefile.gg3
-	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
+$(GG_LIB): $(OBJECTS) $(NETGEN) Makefile.gg3
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(GG_LIB) $(OBJECTS) 
 
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $(NETGEN_CFLAGS) $<
@@ -26,12 +28,11 @@ ON:
 OFF:
 	echo "no netgen"
 
-
 clean:
 	rm -f *.o
 	cd netgen; make -f Makefile.netgen clean; cd ..;
 
 extract:
-	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libgg3.a $(OBJECTS)
+	$(ARCH_AR) $(ARCH_EXFLAGS)  $(GG_LIB) $(OBJECTS)
 
 xmc: extract all clean
