@@ -8,6 +8,8 @@
 
 #include "parallel.h"
 #include "general.h"
+#include "ugm.h"
+
 
 /* RCS string */
 RCSID("$Header$",UG_RCS_STRING)
