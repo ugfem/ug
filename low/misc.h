@@ -114,8 +114,10 @@ extern int UG_math_error;
 #endif
 
 #ifndef ModelP
-extern int me;  /* to have in the serial case this variable as a dummy */
-extern int procs; /* to have in the serial case this variable as a dummy */
+extern int me;          /* to have in the serial case this variable as a dummy */
+extern int procs;       /* to have in the serial case this variable as a dummy */
+extern int _proclist_;  /* to have in the serial case this variable as a dummy */
+extern int _partition_; /* to have in the serial case this variable as a dummy */
 #endif
 
 /****************************************************************************/
