@@ -588,7 +588,7 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
     return (1);
   }
         #ifdef ModelP
-  if (l_matrix_consistent(theGrid,np->L,TRUE) != NUM_OK) {
+  if (l_matrix_consistent(theGrid,np->smoother.L,TRUE) != NUM_OK) {
     result[0] = __LINE__;
     return (1);
   }
