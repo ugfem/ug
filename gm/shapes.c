@@ -892,6 +892,7 @@ INT GNs (INT n, COORD *ip_local, DOUBLE *result)
 		result[1] = Xi;
 		result[2] = Eta;
 		result[3] = Mu;
+		return (0);
 	  case 5:
 		if (Xi > Eta)
 		  {
