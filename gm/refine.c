@@ -1728,7 +1728,7 @@ struct compare_record {
 typedef struct compare_record COMPARE_RECORD;
 
 
-static INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, NODE *SideNodes[MAX_SIDE_NODES])
+INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, NODE *SideNodes[MAX_SIDE_NODES])
 {
   EDGE *theEdge;
   INT i,ncorners,nedges;
@@ -1830,8 +1830,8 @@ static INT compare_node (const void *e0, const void *e1)
   return(0);
 }
 
-static INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
-                                    ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons)
+INT Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
+                             ELEMENT *SonList[MAX_SONS], INT *SonSides, INT NeedSons)
 {
   INT i,j,nsons,markclass;
 
