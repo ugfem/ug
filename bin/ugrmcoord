@@ -37,12 +37,12 @@ do
 				if test "$j" != "*.c" -a "$j" != "*.h" -a "$j" != "*.doc"
 				then	
 					echo "substituting in $j"
-					#sed 's/COORDI/KOORDI/g'               $j      > $j.tmp
-					#sed 's/COORD_VECTOR/DOUBLE_VECTOR/g'  $j.tmp  > $j
-					#sed 's/COORD_/KOORD_/g'               $j      > $j.tmp
-					#sed 's/COORD/DOUBLE/g'                $j.tmp  > $j
-					#sed 's/KOORD/COORD/g'                 $j      > $j.tmp
-					#mv $j.tmp $j
+					sed 's/COORDI/KOORDI/g'               $j      > $j.tmp
+					sed 's/COORD_VECTOR/DOUBLE_VECTOR/g'  $j.tmp  > $j
+					sed 's/COORD_/KOORD_/g'               $j      > $j.tmp
+					sed 's/COORD/DOUBLE/g'                $j.tmp  > $j
+					sed 's/KOORD/COORD/g'                 $j      > $j.tmp
+					mv $j.tmp $j
 				fi
 			done
             cd $ROOTPWD
