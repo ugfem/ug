@@ -771,6 +771,7 @@ INT CreateVector (GRID *theGrid, INT VectorObjType, GEOM_OBJECT *object, VECTOR 
   MULTIGRID *mg;
   INT part;
 
+  *vHandle = NULL;
   mg = MYMG(theGrid);
   part = GetDomainPart(BVPD_S2P_PTR(MG_BVPD(mg)),object,NOSIDE);
   if (part < 0)
@@ -787,6 +788,7 @@ INT CreateSideVector (GRID *theGrid, INT side, GEOM_OBJECT *object, VECTOR **vHa
   MULTIGRID *mg;
   INT part;
 
+  *vHandle = NULL;
   mg = MYMG(theGrid);
   part = GetDomainPart(BVPD_S2P_PTR(MG_BVPD(mg)),object,side);
   if (part<0)
@@ -2853,6 +2855,24 @@ INT GridCreateConnection (GRID *theGrid)
   /* set EBUILDCON-flags also in elements accessing a vector with VBUILDCON true */
   for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
+    if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
+      if (EBUILDCON(theElement)) {
+        EDGE *ed;
+
+        for (i=0; i<EDGES_OF_ELEM(theElement); i++) {
+          ed = GetEdge(CORNER(theElement,
+                              CORNER_OF_EDGE(theElement,i,0)),
+                       CORNER(theElement,
+                              CORNER_OF_EDGE(theElement,i,1)));
+          ASSERT (ed != NULL);
+          if (EDVECTOR(ed) == NULL) {
+            CreateVector(theGrid,EDGEVEC,(GEOM_OBJECT *)ed,vList);
+            EDVECTOR(ed) = vList[0];
+          }
+        }
+        continue;
+      }
+
     /* see if it is set */
     if (EBUILDCON(theElement)) continue;
 

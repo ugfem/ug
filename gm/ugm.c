@@ -1121,6 +1121,7 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex)
         moved += MOVED(VertexOnEdge[j]);
       }
     }
+                #ifdef MOVE_MIDNODE
                 #ifndef ModelP
     if (moved == 1) {
       for (j=0; j<EDGES_OF_ELEM(theElement); j++)
@@ -1151,6 +1152,7 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex)
         VFATHER(theVertex) = theElement;
       }
     }
+            #endif
             #endif
   }
 
@@ -1771,15 +1773,16 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
     SET_CORNER(pe,i,nodes[i]);
 
   /* create edges */
-  for (i=0; i<EDGES_OF_ELEM(pe); i++)
+  for (i=0; i<EDGES_OF_ELEM(pe); i++) {
     if ((ed=CreateEdge(theGrid,
                        nodes[CORNER_OF_EDGE(pe,i,0)],
                        nodes[CORNER_OF_EDGE(pe,i,1)],
-                       with_vector)) == NULL)
-    {
+                       FALSE)) == NULL) {
       DisposeElement(theGrid,pe,TRUE);
       return(NULL);
     }
+    SETEDSUBDOM(ed,s_id);
+  }
 
   /* create element vector if */
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
@@ -1902,6 +1905,14 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
     ReinspectSonSideVector(theGrid,theSon,son_side,&vec);
     SET_SVECTOR(theSon,son_side,vec);
   }
+    #ifdef __TWODIM__
+  theEdge = GetEdge(CORNER(theSon,CORNER_OF_EDGE(theSon,son_side,0)),
+                    CORNER(theSon,CORNER_OF_EDGE(theSon,son_side,1)));
+  ASSERT(theEdge != NULL);
+  SETEDSUBDOM(theEdge,0);
+        #endif
+
+    #ifdef __THREEDIM__
   /* TODO: is this necessary? */
   for (i=0; i<EDGES_OF_SIDE(theSon,son_side); i++) {
     k  = EDGE_OF_SIDE(theElement,son_side,i);
@@ -1910,6 +1921,7 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
     ASSERT(theEdge != NULL);
     SETEDSUBDOM(theEdge,0);
   }
+        #endif
 
   return(GM_OK);
 }
