@@ -724,7 +724,7 @@ void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
   }
 
   /* dispose connections for geom levels not for amg levels */
-#if !(defined __OVERLAP2__ || define USE_FAMG)
+#if !(defined __OVERLAP2__ || defined USE_FAMG)
   if (level>=0)
     if (GHOSTPRIO(new))
     {
