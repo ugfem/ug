@@ -97,26 +97,15 @@ if ("$ARCH" == "SGI") then
 	#  Convert to rgb files
 	#
 	echo converting meta to rgb
-	@ iin = $fs
-	@ iout = $fs
-	while ( $iin <= $fe )
-	  set file = `echo $base $iin | awk '{printf "%s.%04d",$1,$2}'` 
-	  echo Converting $file to $file.rgb
-	  ugv $file -p
-	  touch $file.rgb
-      set junk = `du -s $file.rgb | cat`
-	  @ sizea = $junk[1]
-	  @ sizeb = $sizea + 1
-	  while ($sizea != $sizeb)
-	    sleep 2
-		@ sizeb = $sizea
-        set junk = `du -s $file.rgb | cat`
-	    @ sizea = $junk[1]
-	  end
-	  ugkillall ugv
-	  @ iin += $fi
-	  @ iout++
+	set file = `echo $base $fe | awk '{printf "%s.%04d",$1,$2}'`
+	rm -f $file.rgb
+	echo ugv $base -f $fs $fe -p
+	ugv $base -f $fs $fe -p
+	while (! -f $file.rgb )
+		sleep 2
 	end
+	sleep 5
+	ugkillall ugv
 	#
 	# get size of the first image and use for the rest.
 	#
