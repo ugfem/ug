@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "general.h"
 #include "bio.h"
@@ -60,7 +61,7 @@
 #define MGIO_DOUBLESIZE                         200
 #define MGIO_BUFFERSIZE                         1024
 
-#define MGIO_CHECK_INTSIZE(n)           if ((n)>MGIO_INTSIZE) return (1)
+#define MGIO_CHECK_INTSIZE(n)           if ((n)>MGIO_INTSIZE) assert(0) /*return (1)*/
 #define MGIO_CHECK_DOUBLESIZE(n)        if ((n)>MGIO_DOUBLESIZE) return (1)
 #define MGIO_CHECK_BUFFERIZE(s)         if (strlen(s)>MGIO_BUFFERSIZE) return (1)
 
@@ -288,7 +289,7 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
   if (Bio_Read_string(mg_general->DomainName)) return (1);
   if (Bio_Read_string(mg_general->MultiGridName)) return (1);
   if (Bio_Read_string(mg_general->Formatname)) return (1);
-  if (Bio_Read_mint(10,intList)) return (1);
+  if (Bio_Read_mint(11,intList)) return (1);
   mg_general->dim                 = intList[0];
   mg_general->magic_cookie= intList[1];
   mg_general->heapsize    = intList[2];
@@ -299,6 +300,7 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
   mg_general->VectorTypes = intList[7];
   mg_general->me                  = intList[8];
   mg_general->nparfiles   = intList[9];
+  if (intList[10]!=MGIO_DEBUG) assert(0);                /* check debug-level of file: 0: no debug information */
 
   /* init global parameters */
   nparfiles                               = mg_general->nparfiles;
@@ -357,7 +359,8 @@ int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
   intList[7] = mg_general->VectorTypes;
   intList[8] = mg_general->me;
   intList[9] = mg_general->nparfiles;
-  if (Bio_Write_mint(10,intList)) return (1);
+  intList[10]= MGIO_DEBUG;
+  if (Bio_Write_mint(11,intList)) return (1);
 
   /* init global parameters */
   nparfiles                               = mg_general->nparfiles;
@@ -1045,7 +1048,7 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
     m=lge[pe->ge].nCorner+lge[pe->ge].nSide+3;
     if (Bio_Read_mint(m,intList)) return (1);
     s=0;
-    pe->nhe = intList[s++];
+    pe->nref = intList[s++];
     for (j=0; j<lge[pe->ge].nCorner; j++)
       pe->cornerid[j] = intList[s++];
     for (j=0; j<lge[pe->ge].nSide; j++)
@@ -1059,6 +1062,20 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
       s=0;
       pe->level = intList[s++];
     }
+
+#if (MGIO_DEBUG>0)
+    /* read debug extension */
+    m = 2 + lge[pe->ge].nCorner + lge[pe->ge].nSide;
+    if (Bio_Read_mint(m,intList)) return (1);
+    s=0;
+    pe->mykey = intList[s++];
+    pe->fatherkey = intList[s++];
+    for (j=0; j<lge[pe->ge].nCorner; j++)
+      pe->nodekey[j] = intList[s++];
+    for (j=0; j<lge[pe->ge].nSide; j++)
+      pe->neighborkey[j] = intList[s++];
+#endif
+
   }
 
   return (0);
@@ -1099,7 +1116,7 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
     /* coarse grid part */
     s=0;
     intList[s++] = pe->ge;
-    intList[s++] = pe->nhe;
+    intList[s++] = pe->nref;
     for (j=0; j<lge[pe->ge].nCorner; j++)
       intList[s++] = pe->cornerid[j];
     for (j=0; j<lge[pe->ge].nSide; j++)
@@ -1115,6 +1132,19 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
       intList[s++] = pe->level;
       if (Bio_Write_mint(s,intList)) return (1);
     }
+
+#if (MGIO_DEBUG>0)
+    /* write debug extension */
+    s=0;
+    intList[s++] = pe->mykey;
+    intList[s++] = pe->fatherkey;
+    for (j=0; j<lge[pe->ge].nCorner; j++)
+      intList[s++] = pe->nodekey[j];
+    for (j=0; j<lge[pe->ge].nSide; j++)
+      intList[s++] = pe->neighborkey[j];
+    if (Bio_Write_mint(s,intList)) return (1);
+#endif
+
   }
 
   return (0);
@@ -1149,11 +1179,11 @@ int Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
   unsigned int ctrl;
   char buffer[128];
 
-  if (Bio_Read_string(buffer)) return (1);
-  if(strcmp(buffer,"REFINEMENT_BEGIN")!=0) return (1);
-  if (Bio_Read_mint(1,intList)) return (1);
+  if (Bio_Read_string(buffer)) assert(0);                                                  /*return (1);*/
+  if(strcmp(buffer,"REFINEMENT_BEGIN")!=0) assert(0);                              /*return (1);*/
+  if (Bio_Read_mint(1,intList)) assert(0);       /*return (1);*/
 
-  if (Bio_Read_mint(2,intList)) return (1);
+  if (Bio_Read_mint(2,intList)) assert(0);       /*return (1);*/
   ctrl = intList[0];
   pr->sonref = intList[1];
   pr->refrule = MGIO_ECTRL_RF(ctrl)-1;
@@ -1163,7 +1193,7 @@ int Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
     pr->nmoved = MGIO_ECTRL_NM(ctrl);
     pr->refclass = MGIO_ECTRL_RC(ctrl);
     if (pr->nnewcorners+pr->nmoved>0)
-      if (Bio_Read_mint(pr->nnewcorners+pr->nmoved,intList)) return (1);
+      if (Bio_Read_mint(pr->nnewcorners+pr->nmoved,intList)) assert(0);                   /*return (1);*/
     s=0;
     for (j=0; j<pr->nnewcorners; j++)
       pr->newcornerid[j] = intList[s++];
@@ -1171,7 +1201,7 @@ int Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
       pr->mvcorner[j].id = intList[s++];
     if (pr->nmoved>0)
     {
-      if (Bio_Read_mdouble(MGIO_DIM*pr->nmoved,doubleList)) return (1);
+      if (Bio_Read_mdouble(MGIO_DIM*pr->nmoved,doubleList)) assert(0);                   /*return (1);*/
       s=0;
       for (j=0; j<pr->nmoved; j++)
         for (k=0; k<MGIO_DIM; k++)
@@ -1183,7 +1213,7 @@ int Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
   {
     pr->orphanid_ex = MGIO_ECTRL_ON(ctrl);
     s=2; if (pr->orphanid_ex) s+= pr->nnewcorners;
-    if (Bio_Read_mint(s,intList)) return (1);
+    if (Bio_Read_mint(s,intList)) assert(0);             /*return (1);*/
     s=0;
     pr->sonex = intList[s++];
     pr->nbid_ex = intList[s++];
@@ -1194,16 +1224,61 @@ int Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
       if ((pr->sonex>>k)&1)
       {
         tag = rr_rules[pr->refrule].sons[k].tag;
-        if (Read_pinfo(tag,&pr->pinfo[k])) return (1);
+        if (Read_pinfo(tag,&pr->pinfo[k])) assert(0);                         /*return (1);*/
         if ((pr->nbid_ex>>k)&1)
         {
-          if (Bio_Read_mint(lge[tag].nSide,intList)) return (1);
+          if (Bio_Read_mint(lge[tag].nSide,intList)) assert(0);                               /*return (1);*/
           for (j=0; j<lge[tag].nSide; j++)
             pr->nbid[k][j] = intList[j];
         }
       }
   }
 
+#if (MGIO_DEBUG>0)
+  /* read debug extension */
+
+  /* read mykey */
+  if (Bio_Read_mint(1,&(pr->mykey))) assert(0);       /*return (1);*/
+
+  /* read nbkey[] */
+  if (Bio_Read_mint(MGIO_MAX_SIDES_OF_ELEM,pr->nbkey)) assert(0);       /*return (1);*/
+
+  /* read mycorners */
+  if (Bio_Read_mint(1,&(pr->mycorners))) assert(0);       /*return (1);*/
+  assert(pr->mycorners>0);
+
+  if (Bio_Read_mint(3*pr->mycorners,intList)) assert(0);   /*return (1);*/
+  s=0;
+  for (j=0; j<pr->mycorners; j++)
+  {
+    pr->mycornerkey[j] = intList[s++];
+    pr->mycornerfatherkey[j] = intList[s++];
+    pr->mycornersonkey[j] = intList[s++];
+  }
+
+  if (pr->refrule>-1)
+  {
+    if (MGIO_PARFILE)
+    {
+      /* read sonskey[], sonsnbkey[][] and nbkey[][] */
+      for (k=0; k<MGIO_MAX_SONS_OF_ELEM; k++)
+        if ((pr->sonex>>k)&1)
+        {
+          tag = rr_rules[pr->refrule].sons[k].tag;
+          s = 1+lge[tag].nSide;
+          if (Bio_Read_mint(s,intList)) assert(0);                               /*return (1);*/
+
+          s=0;
+          pr->sonskey[k] = intList[s++];
+          for (j=0; j<lge[tag].nSide; j++)
+            pr->sonsnbkey[k][j] = intList[s++];
+        }
+        else
+          pr->sonskey[k] = -1 ;
+    }
+
+  }
+#endif
   return (0);
 }
 
@@ -1280,6 +1355,53 @@ int Write_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
         }
       }
   }
+
+#if (MGIO_DEBUG>0)
+  /* write debug extension */
+
+  /* write mykey */
+  if (Bio_Write_mint(1,&(pr->mykey))) assert(0);       /*return (1);*/
+
+  /* write nbkey[] */
+  MGIO_CHECK_INTSIZE(MGIO_MAX_SIDES_OF_ELEM);
+  if (Bio_Write_mint(MGIO_MAX_SIDES_OF_ELEM,pr->nbkey)) assert(0);       /*return (1);*/
+
+  /* write mycorners */
+  if (Bio_Write_mint(1,&(pr->mycorners))) assert(0);       /*return (1);*/
+  assert(pr->mycorners > 0);
+
+  s=0;
+  for (j=0; j<pr->mycorners; j++)
+  {
+    intList[s++] = pr->mycornerkey[j];
+    intList[s++] = pr->mycornerfatherkey[j];
+    intList[s++] = pr->mycornersonkey[j];
+  }
+  MGIO_CHECK_INTSIZE(s);
+  if (Bio_Write_mint(s,intList)) assert(0);   /*return (1);*/
+
+  if (pr->refrule>-1)
+  {
+    if (MGIO_PARFILE)
+    {
+      /* write sonskey[], sonsnbkey[][] and nbkey[][] */
+      for (k=0; k<MGIO_MAX_SONS_OF_ELEM; k++)
+        if ((pr->sonex>>k)&1)
+        {
+          s=0;
+          tag = rr_rules[pr->refrule].sons[k].tag;
+          intList[s++] = pr->sonskey[k];
+
+          for (j=0; j<lge[tag].nSide; j++)
+            intList[s++] = pr->sonsnbkey[k][j];
+
+          MGIO_CHECK_INTSIZE(s);
+          if (Bio_Write_mint(s,intList)) assert(0);                               /*return (1);*/
+        }
+    }
+  }
+
+#endif
 
   return (0);
 }

@@ -68,6 +68,7 @@
         #include "domain.h"
 
         #define MGIO_PARFILE                                            (nparfiles>1)
+    #define MGIO_DEBUG                          1
 
         #define MGIO_BNDP                                                       BNDP
         #define MGIO_BNDS                                                       BNDS
@@ -93,6 +94,7 @@
 
 #else
 
+    #define MGIO_DEBUG                          0          /* DO NOT TOUCH !!!!! */
         #define MGIO_PAR                                                        0
         #define MGIO_MAXLEVEL                                           32
         #define MGIO_TAGS                                                       8
@@ -252,12 +254,20 @@ struct mgio_parinfo {
 struct mgio_cg_element_seq {
 
   int ge;                                                                               /* id of general element					*/
-  int nodeid[MGIO_MAX_CORNERS_OF_ELEM];                 /* ids of nodes (data reference)			*/
+  int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of nodes (data reference)			*/
   int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
   int side_on_bnd;                                      /* side lies on bnd (used bitwise)              */
-  int nhe;                                                                              /* nb of he_elements of this element		*/
+  int nref;                                                                             /* nb of refinements for this element		*/
   /* if 0 element not refined					*/
   int subdomain;                                                                /* id of subdomain							*/
+
+#if (MGIO_DEBUG>0)
+  /* debug extension */
+  int mykey;                                                                            /* keys of mine                                         */
+  int fatherkey;                                                                /* keys of my father                            */
+  int nodekey[MGIO_MAX_CORNERS_OF_ELEM];                /* keys of nodes                                        */
+  int neighborkey[MGIO_MAX_SIDES_OF_ELEM];              /* keys of neighbors                                    */
+#endif
 };
 
 struct mgio_cg_element {
@@ -266,12 +276,21 @@ struct mgio_cg_element {
   int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of nodes (data reference)			*/
   int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
   int side_on_bnd;                                      /* side lies on bnd (used bitwise)              */
-  int nhe;                                                                              /* nb of he_elements of this element		*/
+  int nref;                                                                             /* nb of refinements for this element		*/
   /* if 0 element not refined					*/
   int subdomain;                                                                /* id of subdomain							*/
 
+#if (MGIO_DEBUG>0)
+  /* debug extension */
+  int mykey;                                                                            /* keys of mine                                         */
+  int fatherkey;                                                                /* keys of my father                            */
+  int nodekey[MGIO_MAX_CORNERS_OF_ELEM];                /* keys of nodes                                        */
+  int neighborkey[MGIO_MAX_SIDES_OF_ELEM];              /* keys of neighbors                                    */
+#endif
+
   /* (procs>1)-extension */
   int level;
+
 };
 
 struct mgio_refinement_seq {                                    /* used only for sizeof						*/
@@ -303,6 +322,21 @@ struct mgio_refinement {
   int nbid[MGIO_MAX_SONS_OF_ELEM][MGIO_MAX_SIDES_OF_ELEM];       /* nb-elem-ids of non-orphan   */
   /* elems referring to orphan elems if nec.  */
   struct mgio_parinfo pinfo[MGIO_MAX_SONS_OF_ELEM];
+
+#if (MGIO_DEBUG>0)
+  /* debug extension */
+  int mykey;                                                                                                       /* key of the element itself */
+  int mycorners;                                               /* number of element corners */
+  int mycornerkey[MGIO_MAX_CORNERS_OF_ELEM];               /* keys of the element's corners */
+  int mycornerfatherkey[MGIO_MAX_CORNERS_OF_ELEM];  /* keys of the element's corners fathers*/
+  int mycornersonkey[MGIO_MAX_CORNERS_OF_ELEM];        /* keys of the element's corners sons*/
+  int nbkey[MGIO_MAX_SIDES_OF_ELEM];                                                            /* nb-elem-keys element */
+
+  /* (procs>1)-extension */
+  int sonskey[MGIO_MAX_SONS_OF_ELEM];                           /* keys of sons of element					*/
+  int sonsnbkey[MGIO_MAX_SONS_OF_ELEM][MGIO_MAX_SIDES_OF_ELEM];      /* keys of neighbors of
+                                                                                                                                    sons of element			*/
+#endif
 };
 
 struct mgio_bd_general {
