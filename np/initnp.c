@@ -60,6 +60,10 @@
 #include "numproc.h"
 #include "amg_ug.h"
 
+#ifdef USE_FAMG
+#include "ug-famg.h"
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
