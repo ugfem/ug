@@ -232,6 +232,7 @@ sub ug
 		if ($command eq "start")
 		{
 			my ($exec,$appl,$e,$r,$amp,$model,$a_mode,$m_mode,$p_mode,$r_mode,$pre,@name);
+			$e=0;
 			if(@in!=7)
         	{   
         	    die 'ERROR: usage: ug "start", "p"=>"program", "x"=>[0|1], "n"=><# of procs>;'."\n";
@@ -317,6 +318,14 @@ sub ug
 					($e,$exec)=ugp::run('n'=>$argv{'n'},'p'=>"$argv{'p'} $ui -perl",'b'=>0,'r'=>0);
 					last SWITCH;
 				}
+			}
+			if ($e)
+			{
+			    if ($exec==0) { die "crun: $argv{'n'} is not a valid number of pocessors\n"; }
+			    if ($exec==1) { die "crun: cannot find/execute $appl\n"; }
+			    if ($exec==2) { die "crun: error in usage of batch option\n"; }
+			    if ($exec==3) { die "crun: Huh\n"; }
+			    if ($exec==4) { die "crun: cannot get $argv{'n'} processors\n"; }
 			}
 
 			# run ug 
