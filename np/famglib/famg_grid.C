@@ -1982,6 +1982,9 @@ void CountOverlap (GRID *g)	// only for testing; TODO: remove
 static void TransferVector( VECTOR *v, DDD_PROC dest_pe )
 {	
 	int size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(v));
+
+	// Vector transfer sends also matrix info. But the processing of the received
+	// message reconstructs only the matrix-connectivity info and NO matrix entry values!
 	DDD_XferCopyObjX(PARHDR(v), dest_pe, PrioBorder, size);
 	
 #ifndef FAMG_SEND_NODES
@@ -2020,12 +2023,14 @@ static int SendToMaster( DDD_OBJ obj)
 	
 	PRINTDEBUG(np,1,("%d: SendToMaster: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 	
-	for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
-		if( IS_FAMG_MASTER(MDEST(mat)) )
-			break;	// now vec is in overlap1 without core partition
-	
-	if( mat==NULL )
-		return 0;	// vec has no master neighbor; hence is not in overlap1
+	// We cannot restrict the actions on overlap1 (the meaning of the following block)
+	// because outside overlap1 there may be further copies which is bad to forget.
+	//for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+	//	if( IS_FAMG_MASTER(MDEST(mat)) )
+	//		break;	// now vec is in overlap1 without core partition
+	//
+	//if( mat==NULL )
+	//	return 0;	// vec has no master neighbor; hence is not in overlap1
 	
 	proclist = DDD_InfoProcList(PARHDR(vec));
 	masterPe = (DDD_PROC)me;	// init with an unpossible value
