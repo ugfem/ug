@@ -6,6 +6,7 @@
 
 ARCH_TYPE     = __CC__
 
+ARCH_MAKE     = make
 ARCH_CC       = px3 ancc.px
 ARCH_LINK     = px3 ancc.px
 ARCH_AR       = px3 ar

@@ -6,6 +6,7 @@
 
 ARCH_TYPE     = __T3E__
 
+ARCH_MAKE     = make
 ARCH_CC       = cc
 ARCH_LINK     = cc
 ARCH_F77      = f90

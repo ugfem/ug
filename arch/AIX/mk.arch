@@ -6,6 +6,7 @@
 
 ARCH_TYPE     = __AIX__
 
+ARCH_MAKE     = make
 ARCH_CC       = cc
 ARCH_C++      = cc
 ARCH_LINK     = cc

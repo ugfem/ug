@@ -5,6 +5,7 @@
 
 ARCH_TYPE     = __AIX__
 
+ARCH_MAKE     = make
 ARCH_CC       = gcc
 ARCH_C++      = g++
 ARCH_LINK     = g++

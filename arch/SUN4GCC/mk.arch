@@ -7,6 +7,7 @@
 
 ARCH_TYPE     = __SUN4GCC__
 
+ARCH_MAKE     = make
 ARCH_CC       = gcc
 ARCH_C++      = g++
 ARCH_LINK     = gcc

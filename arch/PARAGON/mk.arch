@@ -6,6 +6,7 @@
 
 ARCH_TYPE     = __PARAGON__
 
+ARCH_MAKE     = gmake
 ARCH_CC       = cc
 ARCH_C++      = CC --no_bool --no_namespaces --no_rtti
 ARCH_F77      = f77

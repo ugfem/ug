@@ -6,6 +6,7 @@
 
 ARCH_TYPE     = __POWERGC__
 
+ARCH_MAKE     = make
 ARCH_CC       = px ancc.px
 ARCH_LINK     = px ancc.px
 ARCH_AR       = px ar

@@ -6,6 +6,7 @@
 
 ARCH_TYPE     = __DEC__
 
+ARCH_MAKE     = make
 #ARCH_CC       = gcc
 ARCH_CC       = cc
 ARCH_C++      = g++

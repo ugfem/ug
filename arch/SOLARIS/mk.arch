@@ -7,6 +7,7 @@
 
 ARCH_TYPE     = __SUN__
 
+ARCH_MAKE     = make
 ARCH_CC       = cc
 ARCH_C++      = cc
 ARCH_LINK     = cc

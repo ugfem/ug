@@ -6,6 +6,7 @@
 
 ARCH_TYPE     = __HP__
 
+ARCH_MAKE     = make
 ARCH_CC       = /opt/ansic/bin/cc
 ARCH_C++      = CC
 ARCH_LINK     = cc

@@ -6,6 +6,7 @@
 
 ARCH_TYPE     = __PC__
 
+ARCH_MAKE     = make
 ARCH_CC       = gcc
 ARCH_C++      = g++
 ARCH_F77      = f77

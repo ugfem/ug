@@ -6,6 +6,7 @@
 
 ARCH_TYPE     = __C90__
 
+ARCH_MAKE     = make
 ARCH_CC       = cc
 ARCH_C++      = 
 ARCH_LINK     = ld

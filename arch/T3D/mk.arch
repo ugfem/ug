@@ -14,6 +14,7 @@
 
 ARCH_TYPE     = __T3D__
 
+ARCH_MAKE     = make
 ARCH_CC       = cc
 ARCH_LINK     = /mpp/bin/mppld
 ARCH_F77      = cf77

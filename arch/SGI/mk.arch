@@ -6,6 +6,7 @@
 
 ARCH_TYPE     = __SGI__
 
+ARCH_MAKE     = make
 ARCH_CC       = cc
 ARCH_C++      = DCC
 ARCH_F77      = f77 -g
