@@ -3411,6 +3411,43 @@ INT dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M)
 
 #include "matfunc.ct"
 
+
+#define T_FUNCNAME     dmataddunit
+#define T_ARGS         ,const MATDATA_DESC *M,DOUBLE a
+#define T_PR_DBG                (" M=%s a=%e",ENVITEM_NAME(M),(double)a)
+#define T_ARGS_BV      ,INT mc,DOUBLE a
+#define T_MOD_SCAL     MVALUE(mat,mc)*=a;
+#define T_PREP_SWITCH  INT mcomp;
+#define T_MOD_11       MVALUE(mat,m00)+=a;
+#define T_MOD_12       ;
+#define T_MOD_13       ;
+#define T_MOD_21       ;
+#define T_MOD_22       MVALUE(mat,m00)+=a; MVALUE(mat,m11)+=a;
+#define T_MOD_23       ;
+#define T_MOD_31       ;
+#define T_MOD_32       ;
+#define T_MOD_33       MVALUE(mat,m00)+=a; MVALUE(mat,m11)+=a; MVALUE(mat,m22)+=a;
+#define T_PREP_N       mcomp = nr * nc;
+#define T_MOD_N        if (nr==nc) for (i=0; i<nr; i++) MVALUE(mat,MD_MCMP_OF_RT_CT(M,rtype,ctype,i*i)) += a;
+
+#define T_SPARSE_CALL \
+  int i, size = 0;\
+  DOUBLE value[MAX_MAT_COMP];\
+  SPARSE_MATRIX *sm;\
+  for (i=0; i<NMATTYPES; i++)\
+    if ((sm=MD_SM(M,i))!=NULL)\
+      size += SM_Compute_Reduced_Size(sm);\
+  for (i=0; i<size; i++) value[i]=a;\
+  if (MG_Matrix_Loop(mg, fl, tl,\
+                     ( ( (mode&1)<<BLAS_MODE_SHIFT) | (BLAS_LOOP_M<<BLAS_LOOP_SHIFT) |\
+                       (MBLAS_ALL<<MBLAS_MTYPE_SHIFT) | (BLAS_M_SET<<BLAS_OP_SHIFT) ),\
+                     M, NULL, NULL, NULL, size, value, NULL)\
+      < 0) REP_ERR_RETURN (-1);
+
+#include "matfunc.ct"
+
+
+
 /****************************************************************************/
 /*D
    dmatcopy - copy a matrix
