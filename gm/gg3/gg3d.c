@@ -96,11 +96,21 @@ static INT from_sub,  to_sub;
 INT **point_list, **elem_list;
 
 static INT GG3_DEBUG = 0;
-static SAVE_VOLUME = 1;
+static INT SAVE;
 static CoeffProcPtr Coefficients[8];
 static CoeffProcPtr LOCAL_H;
 
 static INT GG3_MarkKey;
+
+#define M_TIMES_M(A,B,C)                           {(C)[0][0] = (A)[0][0]*(B)[0][0]+(A)[0][1]*(B)[1][0]+(A)[0][2]*(B)[2][0];\
+                                                    (C)[0][1] = (A)[0][0]*(B)[0][1]+(A)[0][1]*(B)[1][1]+(A)[0][2]*(B)[2][1];\
+                                                    (C)[0][2] = (A)[0][0]*(B)[0][2]+(A)[0][1]*(B)[1][2]+(A)[0][2]*(B)[2][2];\
+                                                    (C)[1][0] = (A)[1][0]*(B)[0][0]+(A)[1][1]*(B)[1][0]+(A)[1][2]*(B)[2][0];\
+                                                    (C)[1][1] = (A)[1][0]*(B)[0][1]+(A)[1][1]*(B)[1][1]+(A)[1][2]*(B)[2][1];\
+                                                    (C)[1][2] = (A)[1][0]*(B)[0][2]+(A)[1][1]*(B)[1][2]+(A)[1][2]*(B)[2][2];\
+                                                    (C)[2][0] = (A)[2][0]*(B)[0][0]+(A)[2][1]*(B)[1][0]+(A)[2][2]*(B)[2][0];\
+                                                    (C)[2][1] = (A)[2][0]*(B)[0][1]+(A)[2][1]*(B)[1][1]+(A)[2][2]*(B)[2][1];\
+                                                    (C)[2][2] = (A)[2][0]*(B)[0][2]+(A)[2][1]*(B)[1][2]+(A)[2][2]*(B)[2][2];}
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -184,7 +194,7 @@ int AllMemElements(int nelements)
   char buff[3], name[6];
   FILE *stream;
 
-  if(SAVE_VOLUME)
+  if(SAVE)
   {
     name[0] = 'v';
     name[1] = 'o';
@@ -1124,25 +1134,22 @@ static INT Write_Domain(MESH *mesh)
 /****************************************************************************/
 
 INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
-                    INT display, INT coeff, DOUBLE *sc, INT from, INT to, INT prism, INT save)
+                    INT display, INT coeff, INT from, INT to, INT prism, INT save,
+                    INT argc, char **argv)
 {
   NODE *theNode;
   VERTEX *theVertex;
   INT sid,i,j, k, nodelist[6], Id[6], bnds_flag[6], k1, k2;
   char rulefilename[128];
-  DOUBLE global[3], newglobal[3], det;
+  DOUBLE global[3], newglobal[3], det, vec[3], a1, a2, a3, n1[3], n2[3], n3[3], n[3], m[3], lam1, lam2, lam3, scal;
+  DOUBLE T[3][3], T1[3][3], Diag[3][3], dummy[3][3];
   char buff[3], name[6];
   FILE *stream;
   ELEMENT *theElement;
+  char buffer[512];
 
   GG3_MarkKey = MG_MARK_KEY(theMG);
-
-  scale[0][0] = sc[0]; scale[0][1] = sc[1]; scale[0][2] = sc[2];
-  scale[1][0] = sc[3]; scale[1][1] = sc[4]; scale[1][2] = sc[5];
-  scale[2][0] = sc[6]; scale[2][1] = sc[7]; scale[2][2] = sc[8];
-
-  M_DIM_INVERT(scale,invscale,det);
-
+  SAVE = save;
   from_sub = from;
   to_sub = to;
 
@@ -1220,6 +1227,75 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
   {
     subdomain = sid;
 
+    sprintf(buffer,"%s%d","vx",(int)sid);
+    if (ReadArgvDOUBLE(buffer,&a1,argc,argv))
+      a1 = 0.0;
+    sprintf(buffer,"%s%d","vy",(int)sid);
+    if (ReadArgvDOUBLE(buffer,&a2,argc,argv))
+      a2 = 0.0;
+    sprintf(buffer,"%s%d","vz",(int)sid);
+    if (ReadArgvDOUBLE(buffer,&a3,argc,argv))
+      a3 = 1.0;
+    vec[0] = a1;
+    vec[1] = a2;
+    vec[2] = a3;
+
+    V_DIM_EUKLIDNORM(vec, lam1);
+    V_DIM_SCALE(1/lam1,vec);
+    V_DIM_COPY(vec, n1);
+    lam2 = 1.0;
+    lam3 = 1.0;
+
+    V_DIM_SET(0.0,n2);
+    V_DIM_SET(0.0,n3);
+    V_DIM_SET(0.0,m);
+
+    n[0] = 1.0; n[1] = 0.0; n[2] = 0.0;
+    V_DIM_SCALAR_PRODUCT(n1, n, scal);
+    V_DIM_COPY(n1, m);
+    V_DIM_SCALE(scal, m);
+    V_DIM_SUBTRACT(n, m, n2);
+    V_DIM_EUKLIDNORM(n2, scal);
+    if(scal<1e-4)
+    {
+      n[0] = 0.0; n[1] = 1.0; n[2] = 0.0;
+      V_DIM_SCALAR_PRODUCT(n1, n, scal);
+      V_DIM_COPY(n1, m);
+      V_DIM_SCALE(scal, m);
+      V_DIM_SUBTRACT(n, m, n2);
+      V_DIM_EUKLIDNORM(n2, scal);
+      if(scal<1e-4)
+      {
+        n[0] = 0.0; n[1] = 0.0; n[2] = 1.0;
+        V_DIM_SCALAR_PRODUCT(n1, n, scal);
+        V_DIM_COPY(n1, m);
+        V_DIM_SCALE(scal, m);
+        V_DIM_SUBTRACT(n, m, n2);
+        V_DIM_EUKLIDNORM(n2, scal);
+        if(scal<1e-4)
+          assert(0);
+      }
+    }
+    V_DIM_EUKLIDNORM(n2, scal);
+    V_DIM_SCALE(1/scal,n2);
+
+    V_DIM_VECTOR_PRODUCT(n1, n2, n3);
+    V_DIM_EUKLIDNORM(n3, scal);
+    V_DIM_SCALE(1/scal,n3);
+
+    T[0][0] = n1[0]; T[0][1] = n2[0]; T[0][2] = n3[0];
+    T[1][0] = n1[1]; T[1][1] = n2[1]; T[1][2] = n3[1];
+    T[2][0] = n1[2]; T[2][1] = n2[2]; T[2][2] = n3[2];
+    M_DIM_INVERT(T,T1,det);
+
+    Diag[0][0] = lam1; Diag[0][1] = 0.0; Diag[0][2] = 0.0;
+    Diag[1][0] = 0.0; Diag[1][1] = lam2; Diag[1][2] = 0.0;
+    Diag[2][0] = 0.0; Diag[2][1] = 0.0; Diag[2][2] = lam3;
+
+    M_TIMES_M(T, Diag, dummy);
+    M_TIMES_M(dummy, T1, scale);
+    M_DIM_INVERT(scale,invscale,det);
+
     if (GetDefaultValue(DEFAULTSFILENAME,"netgenrules",rulefilename))
       strcpy(rulefilename,"tetra.rls");
                 #ifdef _NETGEN
@@ -1291,7 +1367,7 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
       fclose(stream);
       printf("%s %d %s\n", "Subdomain ", subdomain, "not triangulated, do now");
 
-      if(SAVE_VOLUME)
+      if(SAVE)
         Write_SurfaceMesh(mesh, theMG);
       if(Check_Volume(mesh, sid))
       {
@@ -1302,7 +1378,7 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
                         #ifdef _NETGEN
       if (StartNetgen(h,smooth,display, prism)) return(1);
                         #endif
-      if(save)
+      if(SAVE)
         Write_VolumeMesh(mesh, theMG);
     }
     else
@@ -1392,7 +1468,7 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
     if(GG3_DEBUG)
       printf("%s %d %d %d\n", "subdomain ", sid, k1, k2);
   }
-  if(GG3_DEBUG)
+  if(SAVE)
     Write_Domain(mesh);
   return(0);
 }
