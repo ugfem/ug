@@ -3842,7 +3842,7 @@ ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList
     return(NULL);
   }
 
-  if (MGNDELEMPTRARRAYFLAG(theMG) == 1)
+  if (MGNDELEMPTRARRAYFLAG(theMG) == 1 && ElemList==NULL)
   {
     /* update of the node-element-pointer-array */
     if ( (rv = NdElPtrArray_Update(MIndex, MBlock, theElement, theMG)) == 1)
