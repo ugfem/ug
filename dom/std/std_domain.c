@@ -2228,7 +2228,7 @@ static BNDP *CreateBndPOnPoint (HEAP *Heap, PATCH *p)
     if (BND_DATA(ps)==NULL)
       REP_ERR_RETURN (NULL);
 
-    if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
+    if (BndPointGlobal((BNDP *)ps,(DOUBLE *)BND_DATA(ps)))
       REP_ERR_RETURN (NULL);
   }
   return((BNDP *)ps);
@@ -3196,7 +3196,7 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
     if (BND_DATA(ps)==NULL)
       return (NULL);
 
-    if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
+    if (BndPointGlobal((BNDP *)ps,(DOUBLE *)BND_DATA(ps)))
       return (NULL);
   }
 
@@ -3321,7 +3321,7 @@ static INT GenerateBnodes (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
           if (BND_DATA(ps)==NULL)
             return (1);
 
-          if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
+          if (BndPointGlobal((BNDP *)ps,(DOUBLE *)BND_DATA(ps)))
             return (1);
         }
       }
@@ -3460,7 +3460,7 @@ static INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
           if (BND_DATA(ps)==NULL)
             return (1);
 
-          if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
+          if (BndPointGlobal((BNDP *)ps,(DOUBLE *)BND_DATA(ps)))
             return (1);
         }
       }
@@ -3760,7 +3760,7 @@ static INT TriangulatePatch (HEAP *Heap, PATCH *p, BNDP **bndp,
           if (BND_DATA(ps)==NULL)
             return (1);
 
-          if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
+          if (BndPointGlobal((BNDP *)ps,(DOUBLE *)BND_DATA(ps)))
             return (1);
         }
         bndp[nodeid++] = (BNDP *)ps;
@@ -4418,7 +4418,7 @@ BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
     if (BND_DATA(pp)==NULL)
       return (NULL);
 
-    if (FreeBNDS_Global(ps,pp->local[0],BND_DATA(pp)))
+    if (FreeBNDS_Global(ps,pp->local[0],(DOUBLE *)BND_DATA(pp)))
       return (NULL);
   }
 
