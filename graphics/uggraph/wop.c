@@ -6697,18 +6697,18 @@ static INT EW_PreProcess_PlotBndOfElem2D (PICTURE *thePicture, WORK *theWork)
 
 static INT EW_PreProcess_PlotBlackBnd2D (PICTURE *thePicture, WORK *theWork)
 {
-	struct ElemScalarPlotObj2D *theEspo;
+/*  struct ElemScalarPlotObj2D *theEspo; */
 	OUTPUTDEVICE *theOD;
 	MULTIGRID *theMG;
 	
-	theEspo = &(PIC_PO(thePicture)->theEspo);
+/*	theEspo = &(PIC_PO(thePicture)->theEspo); */
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theMG  = PO_MG(PIC_PO(thePicture));
 	
 	/* see if boundary has to be plotted */
-	if (theEspo->PlotBoundary == NO)
+/*	if (theEspo->PlotBoundary == NO)
 		return (1); 
-	
+*/	
 	EE2D_NoColor[COLOR_BND] 		= 1;	
 	EE2D_Color[COLOR_BND]			= theOD->black;
 	EE2D_Elem2Plot[PLOT_ALL]		= 1;
