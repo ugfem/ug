@@ -2600,7 +2600,7 @@ static INT ScanTypeOptions (INT argc, char **argv, INT po2t[][MAXVOBJECTS], INT 
   return (0);
 }
 
-static INT CleanupTempDir ()
+static INT CleanupTempDir (void)
 {
   return (RemoveFormatWithSubs("newformat"));
 }
