@@ -5607,7 +5607,7 @@ static INT EXT_PreProcess_InsertNode2D (PICTURE *thePicture, WORK *theWork)
     bestDist2 = MAX_C;
     for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
     {
-      if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return (NULL);
+      if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return (1);
       dl = (PATCH_LCVECT(thePatchDesc,1)[0]-PATCH_LCVECT(thePatchDesc,0)[0])/ PATCH_RES(thePatchDesc);
 
       /* scan resolution points of the segment */
@@ -5651,7 +5651,7 @@ static INT EXT_PreProcess_InsertNode2D (PICTURE *thePicture, WORK *theWork)
     if (found)
     {
       /* we will insert a boundary vertex */
-      if (Patch_GetPatchDesc(MyPatch,&MyPatchDesc)) return (NULL);
+      if (Patch_GetPatchDesc(MyPatch,&MyPatchDesc)) return (1);
       if (InsertBoundaryNode(theMG,PATCH_ID(MyPatchDesc),&MyLambda)!=GM_OK)
       {
         PrintErrorMessage('E',"work","inserting a boundary node failed");

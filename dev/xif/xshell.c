@@ -254,7 +254,7 @@ int ShellOpen (ShellWindow *sh)
   for (i=0; i<MAXLINES; i++)
   {
     /* malloc a buffer line */
-    sh->lineStart[i] = calloc(MAXCOLS+1,sizeof(char));
+    sh->lineStart[i] = (char *)calloc(MAXCOLS+1,sizeof(char));
     if (sh->lineStart[i] == NULL)
     {
       fprintf(stderr,"%s could not allocate line %d\n",prog_name,i);
@@ -418,7 +418,7 @@ int ShellOpen (ShellWindow *sh)
     if (n>0) MaxLines = n;
     else printf("shellbuffersize variable in defaults file = %d  - should be a positve integer (>0)\n",n);
   }
-  LineBuffer = calloc(MaxLines,sizeof(int));
+  LineBuffer = (int *) calloc(MaxLines,sizeof(int));
         #endif
 
   /* und tschuess */

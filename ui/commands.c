@@ -608,7 +608,8 @@ static INT CheckHelpCommand (INT argc, char **argv)
 
 static INT CreateMetafileNameCommand (INT argc, char **argv)
 {
-  INT res,frame;
+  INT res;
+  int frame;
   char name[LONGSTRSIZE];
   char fullname[LONGSTRSIZE];
 
@@ -4590,7 +4591,8 @@ static INT MarkCommand (INT argc, char **argv)
   long nmarked;
 
   /* following variables: keep type for sscanf */
-  int id,idfrom,idto,Side;
+  int id,idfrom,idto;
+  INT Side;
   float x,y,z;
 
         #ifdef ModelP

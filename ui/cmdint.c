@@ -813,7 +813,8 @@ static INT GetFactor (OPERAND *result)
   char *stringAdr;
   char *savedCmdPtr;
   int k;
-  INT error,itemType;
+  INT error;
+  int itemType;
   int signflag;
   DOUBLE sign,t;
   OPERAND newResult;
