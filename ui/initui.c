@@ -46,6 +46,7 @@
 #include "tecplot.h"
 #include "avs.h"
 #include "dataexplorer.h"
+#include "fieldio.h"
 
 /* own header */
 #include "initui.h"
@@ -167,6 +168,13 @@ INT InitUi (INT argc, char **argv)
 
   /* matrix market input/output */
   if ((err=InitMMIO())!=0)
+  {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* fieldio module */
+  if ((err=InitFieldIO())!=0)
   {
     SetHiWrd(err,__LINE__);
     return (err);
