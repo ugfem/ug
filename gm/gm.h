@@ -2609,17 +2609,18 @@ INT         GetCenterNodeParam      (NODE * theNode, DOUBLE *lambda);
 NODE            GetSideNodeParam        (NODE * theNode, DOUBLE *lambda);
 INT                     GetSideIDFromScratch    (ELEMENT *theElement, NODE *theNode);
 #endif
-INT         MoveMidNode             (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda);
+INT         MoveMidNode             (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda, INT update);
+INT         MoveBndMidNode          (MULTIGRID *theMG, VERTEX *theVertex);
 INT         MoveCenterNode          (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda);
 #ifdef __THREEDIM__
 INT         MoveSideNode             (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda);
 #endif
-INT         MoveNode                (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos);
+INT         MoveNode                (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos, INT update);
 INT                     MoveFreeBoundaryVertex  (MULTIGRID *theMG, VERTEX *vert, const DOUBLE *newPos);
 INT                     FinishMovingFreeBoundaryVertices (MULTIGRID *theMG);
 INT             SmoothMultiGrid                 (MULTIGRID *theMG, INT niter, INT bdryFlag);
-INT         SmoothGrid              (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const INT ForceLevelSet, const INT bnd_num, const INT *bnd);
-INT         SmoothGridReset         (GRID *theGrid, INT *MoveInfo);
+INT         SmoothGrid              (MULTIGRID *theMG, INT fl, INT tl, const DOUBLE LimitLocDis, const INT bnd_num, const INT *bnd, const INT option);
+INT         SmoothGridReset         (MULTIGRID *theMG, INT fl, INT tl);
 
 /* handling struct blockvector_description_format (BV_DESC_FORMAT) */
 INT InitBVDF                                            ( BV_DESC_FORMAT *bvdf, BLOCKNUMBER max_blocks );

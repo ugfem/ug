@@ -1093,6 +1093,7 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
   EDGE *theEdge;
   DOUBLE fac;
   DOUBLE *x[MAX_CORNERS_OF_ELEM];
+  DOUBLE len_opp, len_bnd;
 
   /* check if moved side nodes exist */
   CORNER_COORDINATES(theElement,n,x);
@@ -1121,6 +1122,17 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
                       0.5,CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)))),
                       diff);
         V_DIM_LINCOMB(1.0,CVECT(VertexOnEdge[j]),-1.0,diff,diff);
+        /* scale diff according to length of edges */
+        V_DIM_EUKLIDNORM_OF_DIFF(
+          CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)))),
+          CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)))),len_bnd);
+        V_DIM_EUKLIDNORM_OF_DIFF(
+          CVECT(MYVERTEX(CORNER(theElement,
+                                CORNER_OF_EDGE(theElement,OPPOSITE_EDGE(theElement,j),0)))),
+          CVECT(MYVERTEX(CORNER(theElement,
+                                CORNER_OF_EDGE(theElement,OPPOSITE_EDGE(theElement,j),1)))),
+          len_opp);
+        V_DIM_SCALE(len_opp/len_bnd,diff);
         global = CVECT(theVertex);
         V_DIM_LINCOMB(1.0,global,0.5,diff,global);
         SETMOVED(VertexOnEdge[OPPOSITE_EDGE(theElement,j)],1);
@@ -4020,15 +4032,14 @@ INT DeleteNodeWithID (GRID *theGrid, INT id)
 ELEMENT *FindFather (VERTEX *theVertex)
 {
   ELEMENT *theElement;
-#       ifdef TOPNODE
-  NODE *theNode;
-#       endif
   INT i;
 
   theElement = VFATHER(theVertex);
 
   if (theElement == NULL)
     return(NULL);
+
+  if (OBJT(theElement)==BEOBJ && MOVED(theVertex)) return(theElement);
 
   if (PointInElement(CVECT(theVertex),theElement))
     return(theElement);
@@ -4040,14 +4051,6 @@ ELEMENT *FindFather (VERTEX *theVertex)
   if (i == SIDES_OF_ELEM(theElement))
     if (OBJT(theVertex) == BVOBJ)
       return(theElement);
-
-        #ifdef TOPNODE
-  if (OBJT(theElement)==BEOBJ)
-  {
-    for (theNode=TOPNODE(theVertex); theNode!=0; theNode=(NODE *)NFATHER(theNode))
-      if (NTYPE(theNode)==CENTER_NODE) return(theElement);
-  }
-        #endif
 
   return(NULL);
 }
@@ -4142,6 +4145,121 @@ static INT RecreateBNDSofNode (MULTIGRID *theMG, NODE *theNode)
 
 /****************************************************************************/
 /*D
+   MoveBndMidNode - set new position for a midnode on a boundary
+
+   SYNOPSIS:
+   INT MoveBndMidNode (MULTIGRID *theMG, VERTEX *theVertex);
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+   .  theVertex - vertex to move
+
+   DESCRIPTION:
+   This function moves a given boundary vertex according to ist actual local
+   coordinates. This function should only be called by MoveMidNode.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK when ok
+   .n   GM_ERROR when error occured.
+   D*/
+/****************************************************************************/
+
+INT MoveBndMidNode (MULTIGRID *theMG, VERTEX *theVertex)
+{
+  ELEMENT *theElement;
+  NODE *Node0,*Node1,*sonNode, *theNode;
+  EDGE *theEdge;
+  BNDP *bndp;
+  BNDS *bnds;
+  DOUBLE *global,*local, diffmin, lambda_min;
+  DOUBLE_VECTOR bnd_global, bnd_local, VecA, VecB, BndPoint;
+  DOUBLE diff, lambda[DIM_OF_BND], *CornerPtrs[MAX_CORNERS_OF_ELEM], VecLen;
+  INT co0,co1,edge,coe,n, ndiff;
+
+  theElement = VFATHER(theVertex);
+  edge = ONEDGE(theVertex);
+  bnds = ELEM_BNDS(theElement,edge);
+  if (bnds==NULL) return(GM_OK);
+
+  co0 = CORNER_OF_EDGE(theElement,edge,0);
+  co1 = CORNER_OF_EDGE(theElement,edge,1);
+  theEdge=GetEdge(CORNER(theElement,co0),CORNER(theElement,co1));
+  if (theEdge==NULL) return(GM_OK);    /* this should not happen */
+  theNode = MIDNODE(theEdge);
+  if (theNode==NULL) return(GM_OK);
+
+  /* check actual local and global coordinates */
+  local = LCVECT(theVertex);
+  global = CVECT(theVertex);
+  CORNER_COORDINATES(theElement,coe,CornerPtrs);
+  UG_GlobalToLocal(coe,(const DOUBLE **)CornerPtrs,global,bnd_local);
+  if (V_DIM_ISEQUAL(bnd_local,local)) return(GM_OK);    /* nothing to do */
+
+  /* calculate new lambda according to old local coordinates */
+  Node0 = CORNER(theElement,co0);
+  Node1 = CORNER(theElement,co1);
+  /* global coordinates w.r.t. actual local coordinates */
+  LOCAL_TO_GLOBAL(coe,CornerPtrs,local,bnd_global);
+
+  /* find lambda with minimum distance to bnd_global */
+  diffmin = 1E30;
+  for (n=1; n<=100; n++)
+  {
+    lambda[0] = n/100.;
+    BNDS_Global(bnds,lambda,BndPoint);
+    V_DIM_EUKLIDNORM_OF_DIFF(BndPoint,bnd_global,diff);
+    if (diff < diffmin)
+    {
+      diffmin = diff;
+      lambda_min = lambda[0];
+      ndiff = n;
+    }
+  }
+  /* more accurate */
+  for (n=1; n<=100; n++)
+  {
+    lambda[0] = n/100./100. + ndiff/100.;
+    BNDS_Global(bnds,lambda,BndPoint);
+    V_DIM_EUKLIDNORM_OF_DIFF(BndPoint,bnd_global,diff);
+    if (diff < diffmin)
+    {
+      diffmin = diff;
+      lambda_min = lambda[0];
+    }
+  }
+
+  /* delete bndp ... */
+  if (BNDP_Dispose(MGHEAP(theMG),V_BNDP(theVertex)))
+    return(GM_ERROR);
+  /* and create a new one */
+  bndp = BNDP_CreateBndP(MGHEAP(theMG),V_BNDP(MYVERTEX(Node0)),
+                         V_BNDP(MYVERTEX(Node1)),lambda_min);
+  if (bndp == NULL)
+    return(GM_ERROR);
+  V_BNDP(theVertex) = bndp;
+  /* new global coordinates */
+  if (BNDP_Global(bndp,global))
+    RETURN(GM_ERROR);
+
+  /* global coordinates on a straight boundary */
+  LOCAL_TO_GLOBAL(coe,CornerPtrs,local,bnd_global);
+
+  V_DIM_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
+  if (diff > MAX_PAR_DIST) {
+    SETMOVED(theVertex,1);
+    UG_GlobalToLocal(coe,(const DOUBLE **)CornerPtrs,global,local);
+  }
+  /* update neighboring bnds */
+  RecreateBNDSofNode(theMG,theNode);
+  for (sonNode=SONNODE(theNode); sonNode!=0; sonNode=SONNODE(sonNode))
+    RecreateBNDSofNode(theMG,sonNode);
+
+  return(GM_OK);
+}
+
+/****************************************************************************/
+/*D
    MoveMidNode - set new position for a midnode
 
    SYNOPSIS:
@@ -4164,7 +4282,7 @@ static INT RecreateBNDSofNode (MULTIGRID *theMG, NODE *theNode)
    D*/
 /****************************************************************************/
 
-INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda)
+INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda, INT update)
 {
   ELEMENT *theElement;
   NODE *Node0,*Node1,*sonNode;
@@ -4219,6 +4337,7 @@ INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda)
       RecreateBNDSofNode(theMG,sonNode);
   }
 
+  if (update==FALSE) return(GM_OK);
   /* Warning: O(n) Operation! */
   for(k=LEVEL(theNode)+1; k<=TOPLEVEL(theMG); k++)
     for (theVertex=FIRSTVERTEX(GRID_ON_LEVEL(theMG,k));
@@ -4227,8 +4346,10 @@ INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda)
         CORNER_COORDINATES(VFATHER(theVertex),n,x);
         LOCAL_TO_GLOBAL(n,x,LCVECT(theVertex),CVECT(theVertex));
       }
-
-
+      else
+      {
+        if(MoveBndMidNode(theMG,theVertex)) return(GM_ERROR);
+      }
   return(GM_OK);
 }
 
@@ -4436,7 +4557,7 @@ INT MoveSideNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda)
    D*/
 /****************************************************************************/
 
-INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos)
+INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos, INT update)
 {
   VERTEX *theVertex;
   EDGE *theEdge;
@@ -4463,8 +4584,8 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos)
     theElement = FindFather(theVertex);
     if (theElement == NULL)
     {
-      PrintErrorMessage('W',"MoveNode",
-                        "cannot find father element");
+      PrintErrorMessageF('W',"MoveNode",
+                         "cannot find father element for Node %d",ID(theNode));
       V_DIM_COPY(oldPos,CVECT(theVertex));
       return(GM_ERROR);
     }
@@ -4487,6 +4608,7 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos)
   else
     V_DIM_COPY(newPos,CVECT(theVertex));
 
+  if (update==FALSE) return(GM_OK);
   /* Warning: O(n) Operation! */
   for(k=LEVEL(theNode)+1; k<=TOPLEVEL(theMG); k++)
     for (theVertex=FIRSTVERTEX(GRID_ON_LEVEL(theMG,k));
@@ -4496,6 +4618,7 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos)
         CORNER_COORDINATES(VFATHER(theVertex),n,x);
         LOCAL_TO_GLOBAL(n,x,LCVECT(theVertex),CVECT(theVertex));
       }
+
 
   return(GM_OK);
 }
