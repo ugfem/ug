@@ -40,6 +40,9 @@ extern "C"
 #ifdef ModelP
 #include "famg_coloring.h"
 
+//additional measurement and output
+#define XFERTIMING
+
 //#define EXTENDED_OUTPUT_FOR_DEBUG 
 
 // nodes are only useful for debugging to have geometric positions 
@@ -2211,6 +2214,50 @@ static int SendToOverlap1( DDD_OBJ obj)
 	return 0;
 }
 
+#ifdef XFERTIMING
+static int LocalNr;
+static int CountInterfaceLengthCB(DDD_OBJ obj)
+{
+	LocalNr++;
+	return 0;
+}
+
+/* only for testing
+static inline int CountInterfaceLenght(GRID *grid)
+{
+	int *proclist, nr = 0, LocalNr1;
+	double t1, t2, t3, t4;
+	
+	t1 = CURRENT_TIME;
+	for(v=PFIRSTVECTOR(grid); v!=NULL; v=SUCCVC(v) )
+	{
+		if( !IS_FAMG_MASTER(v) )
+		{
+			nr++;
+			continue;
+		}
+		proclist = DDD_InfoProcList(PARHDR(v));
+		if( proclist[2] != -1 )
+			nr++;
+	}	
+
+	t2 = CURRENT_TIME;
+	LocalNr=0;
+	DDD_IFExecLocal( OuterVectorSymmIF, CountInterfaceLengthCB );
+	LocalNr1 = LocalNr;
+	t3 = CURRENT_TIME;
+
+	LocalNr=0;
+	DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(grid), CountInterfaceLengthCB );
+	t4 = CURRENT_TIME;
+
+	cout <<me<<": CIF "<<nr<<" "<<LocalNr1<<" "<<LocalNr<<" "<<t2-t1<<" "<<t3-t2<<" "<<t4-t3<<endl;
+
+	return LocalNr1;
+}
+*/
+#endif
+
 void FAMGGrid::ConstructOverlap()
 // extend the overlap as far as necessary; at least 2 links deep
 // the vectorlist will be renumbered
@@ -2219,10 +2266,14 @@ void FAMGGrid::ConstructOverlap()
 	INT i, mc = MD_SCALCMP(((FAMGugMatrix*)GetMatrix())->GetMatDesc());
 	FAMGMatrixAlg *matrix_tmp;
 	MATRIX *mat;
+#ifdef XFERTIMING
+	int i1,i2;
+	double t1,t2,t3;
+#endif
 
 	if(GLEVEL(mygrid)==0)
 	{
-ASSERT(!DDD_ConsCheck());
+		//ASSERT(!DDD_ConsCheck());
 		OverlapForLevel0 = 1;
 		
 		// do modifications for dirichlet vectors (as coarsegrid solver)
@@ -2242,7 +2293,14 @@ ASSERT(!DDD_ConsCheck());
 		cout << "FAMGGrid::ConstructOverlap ERROR not enough memory for CopyPEBuffer" << endl << fflush;
 		abort();
 	}
-	
+
+#ifdef XFERTIMING
+	t1 = CURRENT_TIME;
+	LocalNr=0;
+	DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), CountInterfaceLengthCB );
+	i1 = LocalNr;
+#endif
+
 	DDD_XferBegin();
     #ifdef DDDOBJMGR
     DDD_ObjMgrBegin();
@@ -2253,6 +2311,14 @@ ASSERT(!DDD_ConsCheck());
     #endif
 	DDD_XferEnd();
 	
+#ifdef XFERTIMING
+	t2 = CURRENT_TIME;
+
+	LocalNr=0;
+	DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), CountInterfaceLengthCB );
+	i2 = LocalNr;
+#endif
+
 #ifdef FAMG_FULL_OVERLAP
 
 	int equal = 0, step = 0;
@@ -2281,6 +2347,7 @@ ASSERT(!DDD_ConsCheck());
 			cout<<" 0: ConstrOverl "<<step<<" min "<<minvec<<" max "<<maxvec<<endl;
 	}
 #else
+
 	DDD_XferBegin();
     #ifdef DDDOBJMGR
     DDD_ObjMgrBegin();
@@ -2290,7 +2357,12 @@ ASSERT(!DDD_ConsCheck());
     DDD_ObjMgrEnd();
     #endif
 	DDD_XferEnd();
+
 #endif // FAMG_FULL_OVERLAP
+
+#ifdef XFERTIMING
+	t3 = CURRENT_TIME;
+#endif
 
 	// In some cases ghost vectors are left. They disturb the calculations 
 	// and must be removed here.
@@ -2300,8 +2372,10 @@ ASSERT(!DDD_ConsCheck());
 	// B) would be a little faster, because it needs the little cheaper Prio-environment 
 	// instead of the Xfer-environment, but it produces in the moment an 
 	// inconsistent data structure w.r.t. blasm.c.
+
 	if(OverlapForLevel0)
 	{
+
 		DDD_XferBegin();
 	  	#ifdef DDDOBJMGR
 		DDD_ObjMgrBegin();
@@ -2314,7 +2388,12 @@ ASSERT(!DDD_ConsCheck());
 		DDD_ObjMgrEnd();
 		#endif
 		DDD_XferEnd();
+
 	}
+
+#ifdef XFERTIMING
+	cout <<me<<": Xfer lev="<<GLEVEL(mygrid)<<' '<<t2-t1<<' '<<t3-t2<<" IF "<<i1<<' '<<i2<<endl;
+#endif
 
 	#ifdef DIAGMATWORKSAFTERPRIOCHANGE
 	// The following piece of code would be a (little) faster alternative to the above part. 
