@@ -17749,6 +17749,7 @@ static INT EW_PreProcess_EScalar3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theMG  = PO_MG(PIC_PO(thePicture));
 	
+	EE3D_EdgeColor 						= theEspo->EdgeColor;
 	EE3D_AmbientLight                   = theEspo->AmbientLight;
 
 	EE3D_NoColor[COLOR_CUT_EDGE]		= 1;
@@ -17878,6 +17879,7 @@ static INT EW_PreProcess_EVector3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theMG  = PO_MG(PIC_PO(thePicture));
 	
+	EE3D_EdgeColor 						= theEvpo->EdgeColor;
 	EE3D_AmbientLight                   = theEvpo->AmbientLight;
 
 	EE3D_NoColor[COLOR_CUT_EDGE]		= 1;

@@ -4575,7 +4575,8 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   for (i=1; i<argc; i++)
     if (argv[i][0]=='x')
     {
-      theGpo->EdgeColor = 1;
+      if (sscanf(argv[i],"x %d",&iValue)!=1) break;
+      theGpo->EdgeColor = iValue;
       break;
     }
 
@@ -4756,6 +4757,7 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
                                                           CAUTION: may slow down dramatically!)
    .    $m COLOR|CONTOURS_EQ	- mode: color or equidistant contour lines
    .    $n~<levels>			- number of levels for contour lines
+   .    $x~0|1                 - color edges themselves or like their elements (back grid)
    .    $a~0..1                - contribution of ambient light to face intensity (back grid)
 
 
@@ -4788,6 +4790,7 @@ static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
     theEspo->max                    = 1.0;
     theEspo->mode                   = PO_COLOR;
     theEspo->numOfContours  = 10;
+    theEspo->EdgeColor      = 0;
     theEspo->AmbientLight   = 1.0;
   }
 
@@ -4885,6 +4888,14 @@ static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
     }
 
   for (i=1; i<argc; i++)
+    if (argv[i][0]=='x')
+    {
+      if (sscanf(argv[i],"x %d",&iValue)!=1) break;
+      theEspo->EdgeColor = iValue;
+      break;
+    }
+
+  for (i=1; i<argc; i++)
     if (argv[i][0]=='a')
     {
       if (sscanf(argv[i], "a %f", &fValue) != 1) break;
@@ -4945,6 +4956,7 @@ static INT DisplayScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj)
 
   UserWriteF(DISPLAY_PO_FORMAT_SFF,"Range",(float)theEspo->min,(float)theEspo->max);
   UserWriteF(DISPLAY_PO_FORMAT_SI,"Depth",(int)theEspo->depth);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"EdgeColor", (int)theEspo->EdgeColor);
   switch (theEspo->mode)
   {
   case PO_COLOR :
@@ -5021,6 +5033,7 @@ static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
     theEvpo->RasterSize     = PO_RADIUS(thePlotObj)/10.0;
     theEvpo->EvalFct                = NULL;
     theEvpo->CutLenFactor   = 0.9;
+    theEvpo->EdgeColor      = 0;
     theEvpo->AmbientLight   = 1.0;
   }
 
@@ -5120,6 +5133,14 @@ static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
     }
 
   for (i=1; i<argc; i++)
+    if (argv[i][0]=='x')
+    {
+      if (sscanf(argv[i],"x %d",&iValue)!=1) break;
+      theEvpo->EdgeColor = iValue;
+      break;
+    }
+
+  for (i=1; i<argc; i++)
     if (argv[i][0]=='a')
     {
       if (sscanf(argv[i], "a %f", &fValue) != 1) break;
@@ -5169,6 +5190,7 @@ static INT DisplayVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj)
   UserWriteF(DISPLAY_PO_FORMAT_SFF,"Range",0.0,(float)theEvpo->max);
   UserWriteF(DISPLAY_PO_FORMAT_SF,"RasterSize",(float)theEvpo->RasterSize);
   UserWriteF(DISPLAY_PO_FORMAT_SF,"CutLenFactor",(float)theEvpo->CutLenFactor);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"EdgeColor", (int)theEvpo->EdgeColor);
 
   if (theEvpo->CutVector == YES)
     UserWriteF(DISPLAY_PO_FORMAT_SS,"CutVector","YES");

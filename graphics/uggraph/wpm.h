@@ -361,6 +361,7 @@ struct ElemScalarPlotObj3D {
   INT depth;                                                                    /* depth of recoursive subdevision of elements	*/
   INT numOfContours;                                                    /* nb of contourlines if used					*/
   DOUBLE contValues[PO_MAXCONTOURS];                    /* contour values if used						*/
+  INT EdgeColor;                                                        /* color themselves (0) / color like element (1)*/
   DOUBLE AmbientLight;
 };
 
@@ -376,6 +377,7 @@ struct ElemVectorPlotObj3D {
   INT ProjectVector;                                                    /* YES or NO									*/
   DOUBLE CutLenFactor;                                          /* vector will be cut if longer then                    */
   /*	'CutLenFactor*RasterSize'					*/
+  INT EdgeColor;                                                        /* color themselves (0) / color like element (1)*/
   DOUBLE AmbientLight;
 };
 
