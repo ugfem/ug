@@ -1900,7 +1900,7 @@ INT GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 		while (SUCCE(son) != NULL)
 		{
 			if (EFATHER(SUCCE(son)) == theElement
-				&& EPRIO(son)==EPRIO(SUCCE(son))
+				&& PRIO2INDEX(EPRIO(son))==PRIO2INDEX(EPRIO(SUCCE(son)))
 				)
 			{
 				SonList[SonID++] = SUCCE(son);
@@ -1920,11 +1920,7 @@ INT GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 {
 	int SonID,tag;
-	#ifdef __THREEDIM__
-	REFRULE *theRule;
-	ELEMENT *theSon;
-	int PathPos,nsons;
-	#endif
+	ELEMENT *son;
 	
 	if (theElement==NULL) RETURN(GM_ERROR);
 	
@@ -1933,167 +1929,28 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 
 	if (NSONS(theElement) == 0) return(GM_OK);
 	
+	SonID = 0;
+	SonList[SonID++] = son = SON(theElement,PRIO2INDEX(PrioMaster));
+
+	if (son == NULL) return(GM_OK);
+
+	while (SUCCE(son) != NULL)
 	{
-		ELEMENT *son;
-
-		SonID = 0;
-		SonList[SonID++] = son = SON(theElement,
-					PRIO2INDEX(PrioMaster));
-
-		if (son == NULL) return(GM_OK);
-
-		while (SUCCE(son) != NULL)
+		if (EFATHER(SUCCE(son)) == theElement
+			#ifdef ModelP
+			&& PRIO2INDEX(EPRIO(son))==PRIO2INDEX(EPRIO(SUCCE(son)))
+			#endif
+			)
 		{
-			if (EFATHER(SUCCE(son)) == theElement
-				#ifdef ModelP
-				&& EPRIO(son)==EPRIO(SUCCE(son))
-				#endif
-				)
-			{
-				SonList[SonID++] = SUCCE(son);
-				son = SUCCE(son);
-				ASSERT(SonID <= MAX_SONS);
-			}
-			else
-				break;
-		
+			SonList[SonID++] = SUCCE(son);
+			son = SUCCE(son);
+			ASSERT(SonID <= MAX_SONS);
 		}
-
-		return(GM_OK);
-	}
-
-/*  old style				*/
-assert(0);
-
-	#if defined(ModelP) && defined(__THREEDIM__)
-	/* TODO: really ugly more than quick fix */
-	/* ghost elements have not all sons, search through element list */
-	/* has not 0(n) complexity !!! */
-	if (EHGHOST(theElement))
-	{
-		ELEMENT *theSon;
-
-		SonList[0] = SON(theElement,0);
-		theSon = SON(theElement,0);
-		nsons = 1;
-		/* search forward */
-		while (nsons < NSONS(theElement))
-		{
-			theSon = SUCCE(theSon);
-			if (theSon == NULL) break;
-			if (EFATHER(theSon) == EFATHER(SonList[0]))
-			{
-				SonList[nsons++] = theSon;
-			}
-		}	
-
-		/* search backward */
-		theSon = SON(theElement,0);
-		while (nsons < NSONS(theElement))
-		{
-			theSon = PREDE(theSon);
-			if (theSon == NULL) break;
-			if (EFATHER(theSon) == EFATHER(SonList[0]))
-			{
-				SonList[nsons++] = theSon;
-			}
-		}
-		assert(nsons == NSONS(theElement));
-
-		return(GM_OK);
-	}
-	#endif
-
-	switch (TAG(theElement))
-	{
-		#ifdef __TWODIM__
-		case (TRIANGLE):
-			for (SonID=0;SonID<NSONS(theElement);SonID++)	
-				SonList[SonID] = SON(theElement,SonID);
+		else
 			break;
-
-		case (QUADRILATERAL):
-			for (SonID=0;SonID<NSONS(theElement);SonID++)	
-				SonList[SonID] = SON(theElement,SonID);
-			break;
-		#endif
-
-		#ifdef __THREEDIM__
-		case (TETRAHEDRON):
-			SonList[0] = SON(theElement,0);
-			
-			/* get other sons from path info in rules */
-			theRule = MARK2RULEADR(theElement,REFINE(theElement));
-			
-			for (SonID=1; SonID<NSONS_OF_RULE(theRule); SonID++)
-			{
-				theSon = SonList[0];
-				for (PathPos=0; 
-					 PathPos<PATHDEPTH(SON_PATH_OF_RULE(theRule,SonID)); 
-					 PathPos++)
-				{
-					theSon = NBELEM(theSon,NEXTSIDE(SON_PATH_OF_RULE(theRule,
-								SonID),PathPos));
-				}
-				
-				if (theSon==NULL) RETURN(GM_ERROR);
-				
-				SonList[SonID] = theSon;
-			}
-			break;
-
-		case (PYRAMID):
-		case (PRISM):
-		case (HEXAHEDRON):
-			SonList[0] = SON(theElement,0);
-
-			if (REFINECLASS(theElement) == GREEN_CLASS)
-			{
-				if (NSONS(theElement)==0 || SonList[0]==NULL) RETURN(GM_ERROR);
-				nsons = 1;
-				if (NSONS(theElement)>1)
-					nsons = GetNeighborSons(theElement,SonList[0],SonList,1,
-								NSONS(theElement));
-
-				if (nsons != NSONS(theElement))
-				{
-					PRINTDEBUG(gm,2,("GetSons(): ERROR! Element ID=%d, "
-						"NSONS=%d but nsons=%d\n",ID(theElement),
-						NSONS(theElement),nsons))
-					RETURN(GM_ERROR);
-				}
-			}
-			else
-			{
-				/* get other sons from path info in rules */
-				theRule = MARK2RULEADR(theElement,REFINE(theElement));
-				
-				for (SonID=1; SonID<NSONS_OF_RULE(theRule); SonID++)
-				{
-					theSon = SonList[0];
-					for (PathPos=0; 
-						 PathPos<PATHDEPTH(SON_PATH_OF_RULE(theRule,SonID)); 
-						 PathPos++)
-					{
-						theSon = NBELEM(theSon,NEXTSIDEHEX(SON_PATH_OF_RULE(
-									theRule,SonID),PathPos));
-					}
-					
-					if (theSon==NULL)
-						RETURN(GM_ERROR);
-					
-					SonList[SonID] = theSon;
-				}
-			}
-			break;
-		#endif
-
-		default:
-			UserWriteF("GetSons(): ERROR TAG(e=%x)=%d !\n",theElement,
-				tag=TAG(theElement));
-			RETURN(GM_ERROR);
-	}
 	
+	}
+
 	return(GM_OK);
 }
 
