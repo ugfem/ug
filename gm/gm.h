@@ -1809,6 +1809,7 @@ INT             DisposeMultiGrid                (MULTIGRID *theMG);
 /* coarse grid manipulations */
 INT             InsertInnerNode                 (MULTIGRID *theMG, COORD *pos);
 INT             InsertBoundaryNode              (MULTIGRID *theMG, INT bnd_seg_id, COORD *pos);
+INT         InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos);
 INT             DeleteNodeWithID                (MULTIGRID *theMG, INT id);
 INT             DeleteNode                              (MULTIGRID *theMG, NODE *theNode);
 INT             InsertElementFromIDs    (MULTIGRID *theMG, INT n, INT  *idList);
