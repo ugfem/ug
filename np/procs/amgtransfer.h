@@ -1,23 +1,23 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* File:          amgtransfer.h                                                                                                 */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* File:      amgtransfer.h                                                 */
+/*                                                                          */
 /* Purpose:   initialization for algebraic multigrid                        */
 /*                                                                          */
-/* Author:        Nicolas Neuss                                                                                     */
-/*                        Institut fuer Angewandte Mathematik                           */
-/*                        Universitaet Heidelberg                                                                               */
-/*                        Im Neuenheimer Feld 294                                                                               */
-/*                        69120 Heidelberg                                                                                              */
-/*                        email: neuss@iwr.uni-heidelberg.de                                            */
-/*                                                                                                                                                      */
-/* History:   1994-1995 in old ug2.0                                                                */
+/* Author:    Nicolas Neuss                                                 */
+/*            Institut fuer Angewandte Mathematik                           */
+/*            Universitaet Heidelberg                                       */
+/*            Im Neuenheimer Feld 294                                       */
+/*            69120 Heidelberg                                              */
+/*            email: neuss@iwr.uni-heidelberg.de                            */
+/*                                                                          */
+/* History:   1994-1995 in old ug2.0                                        */
 /*            May 1997  in new ug3.7                                        */
-/*                                                                                                                                                      */
-/* Remarks:                                                                                                                             */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -26,9 +26,9 @@
  */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* auto include mechanism and other include files                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __AMGTRANSFER__
@@ -42,13 +42,13 @@
 START_UGDIM_NAMESPACE
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* defines in the following order                                                                                       */
-/*                                                                                                                                                      */
-/*                compile time constants defining static data size (i.e. arrays)        */
-/*                other constants                                                                                                       */
-/*                macros                                                                                                                        */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*    compile time constants defining static data size (i.e. arrays)        */
+/*    other constants                                                       */
+/*    macros                                                                */
+/*                                                                          */
 /****************************************************************************/
 
 #define SELECTION_AMG 1
@@ -59,12 +59,12 @@ START_UGDIM_NAMESPACE
 #define DISPLAY_NP_AMG_FORMAT "%3d   %8d   %8d   %8d\n"
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* data structures exported by the corresponding source file                            */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* data structures exported by the corresponding source file                */
+/*                                                                          */
 /****************************************************************************/
 
-/* a data type for returning the status of the coarsening procedure         */
+/** \brief Data type for returning the status of the coarsening procedure */
 typedef struct {
   INT nVects;
   INT nMats;
@@ -72,9 +72,15 @@ typedef struct {
 } CLRESULT;
 
 typedef struct {
-  INT error_code;                           /* error code                       */
-  INT nLevels;                              /* number of created CG levels      */
-  CLRESULT clres[MAXLEVEL];                 /* data for each level              */
+
+  /** \brief Error code */
+  INT error_code;
+
+  /** \brief Number of created CG levels */
+  INT nLevels;
+
+  /** \brief Data for each level */
+  CLRESULT clres[MAXLEVEL];
 } CRESULT;
 
 typedef INT (*MarkConnectionsProcPtr)(GRID *, MATDATA_DESC *, DOUBLE, INT);
@@ -85,60 +91,103 @@ typedef INT (*SetupCGMatProcPtr)(GRID *, MATDATA_DESC *, MATDATA_DESC *, INT);
 typedef struct
 {
   NP_TRANSFER transfer;
-  INT display;                               /* display modus                   */
 
-  INT AMGtype;                               /* type of AMG                     */
-  MarkConnectionsProcPtr MarkStrong;         /* mark strong connections         */
-  DOUBLE thetaS;                             /* parameter                       */
-  INT compS;                                 /* (vector) component to be used   */
+  /** \brief Display mode */
+  INT display;
 
-  CoarsenProcPtr Coarsen;                    /* the coarsening routine          */
+  /** \brief Type of AMG                     */
+  INT AMGtype;
 
-  SetupIRMatProcPtr SetupIR;                 /* setup interpolation/restriction */
+  /** \brief Mark strong connections         */
+  MarkConnectionsProcPtr MarkStrong;
 
-  SetupCGMatProcPtr SetupCG;                 /* setup coarse grid matrix        */
-  INT CMtype;                                /* Bits 0:symm & 1:R=Inj & 2:P=Inj */
+  /** \brief Parameter                       */
+  DOUBLE thetaS;
 
-  MarkConnectionsProcPtr MarkKeep;           /* mark connections to keep        */
-  DOUBLE thetaK;                             /* parameter                       */
-  INT compK;                                 /* (vector) component to be used   */
-  INT sparsenFlag;                           /* if set, lump to diagonal        */
+  /** \brief (vector) component to be used   */
+  INT compS;
 
-  INT reorderFlag;                           /* ordering of fine grid points    */
+  /** \brief The coarsening routine          */
+  CoarsenProcPtr Coarsen;
 
-  INT transformdef;                          /* transform defect in RS scheme   */
+  /** \brief Setup interpolation/restriction */
+  SetupIRMatProcPtr SetupIR;
 
-  INT fgcstep;                                   /* do fine grid correction step in */
-  /* Reusken/Wagner scheme           */
-  VECDATA_DESC *p;                           /* for fgcstep                     */
+  /** \brief Setup coarse grid matrix        */
+  SetupCGMatProcPtr SetupCG;
 
-  INT vectLimit;                             /* stop if vects<vectLimit         */
-  INT matLimit;                              /* stop if matrices<matLimit       */
-  DOUBLE bandLimit;                          /* stop if matrices/vects>bandLimit*/
-  DOUBLE vRedLimit;                          /* stop if vectReduction<vRedLimit */
-  DOUBLE mRedLimit;                          /* stop if matReduction<mRedLimit  */
-  INT levelLimit;                            /* stop if -level>levelLimit       */
-  INT aggLimit;                              /* agglomerate to one processor    */
-  /* if level <= aggLimit            */
-  INT agglevel;                          /* agglomerated bottom level       */
+  /** \brief Bits 0:symm & 1:R=Inj & 2:P=Inj */
+  INT CMtype;
 
-  INT explicitFlag;                          /* clear only by npexecute         */
-  INT hold;                                  /* no clear in postprocess         */
+  /** \brief Mark connections to keep        */
+  MarkConnectionsProcPtr MarkKeep;
 
-  INT symmIR;                                /* internal: 1 if R=I^t, 0 else    */
+  /** \brief Parameter                       */
+  DOUBLE thetaK;
+
+  /** \brief (vector) component to be used   */
+  INT compK;
+
+  /** \brief If set, lump to diagonal        */
+  INT sparsenFlag;
+
+  /** \brief Ordering of fine grid points    */
+  INT reorderFlag;
+
+  /** \brief Transform defect in RS scheme   */
+  INT transformdef;
+
+  /** \brief Do fine grid correction step in Reusken/Wagner scheme */
+  INT fgcstep;
+
+  /** \brief For fgcstep                     */
+  VECDATA_DESC *p;
+
+  /** \brief Stop if vects<vectLimit         */
+  INT vectLimit;
+
+  /** \brief Stop if matrices<matLimit       */
+  INT matLimit;
+
+  /** \brief Stop if matrices/vects>bandLimit*/
+  DOUBLE bandLimit;
+
+  /** \brief Stop if vectReduction<vRedLimit */
+  DOUBLE vRedLimit;
+
+  /** \brief Stop if matReduction<mRedLimit  */
+  DOUBLE mRedLimit;
+
+  /** \brief Stop if -level>levelLimit       */
+  INT levelLimit;
+
+  /** \brief Agglomerate to one processor if level <= aggLimit   */
+  INT aggLimit;
+
+  /** \brief Agglomerated bottom level       */
+  INT agglevel;
+
+  /** \brief Clear only by npexecute         */
+  INT explicitFlag;
+
+  /** \brief No clear in postprocess         */
+  INT hold;
+
+  /** \brief Internal: 1 if R=I^t, 0 else    */
+  INT symmIR;
 
 } NP_AMG_TRANSFER;
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* definition of exported global variables                                                                      */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* function declarations                                                                                                        */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* function declarations                                                    */
+/*                                                                          */
 /****************************************************************************/
 
 INT AMGTransferInit       (NP_BASE *np, INT argc , char **argv);
