@@ -1051,6 +1051,108 @@ INT RestrictByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
   return (NUM_OK);
 }
 
+INT RestrictByMatrix_s (GRID *FineGrid, const VECDATA_DESC *to,
+                        const VECDATA_DESC *from, const DOUBLE *damp)
+{
+  MATRIX *m;
+  VECTOR *v,*w;
+  DOUBLE sum,*vptr,*wptr,*mptr;
+  INT vtype,wtype,vncomp,wncomp,vecskip;
+  register SHORT i,j,xc,yc,xmask,ymask;
+  const SHORT *offset;
+
+  if (DOWNGRID(FineGrid)==NULL)
+    return (NUM_NO_COARSER_GRID);
+
+  if (VD_IS_SCALAR(to) && VD_IS_SCALAR(from))
+  {
+    xc    = VD_SCALCMP(to);
+    yc    = VD_SCALCMP(from);
+    xmask = VD_SCALTYPEMASK(to);
+    ymask = VD_SCALTYPEMASK(from);
+
+    for (w=FIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
+      if ( (VDATATYPE(w)&xmask) && (VNCLASS(w)>=NEWDEF_CLASS) )
+        VVALUE(w,xc) = 0.0;
+
+    for (v=FIRSTVECTOR(FineGrid); v!=NULL; v=SUCCVC(v))
+      if ( (VDATATYPE(v)&ymask) && (VCLASS(v)>=NEWDEF_CLASS) )
+        for (m=VISTART(v); m!= NULL; m = NEXT(m))
+        {
+          w = MDEST(m);
+          if ( (VDATATYPE(w)&xmask) && (VECSKIP(w) == 0) )
+            VVALUE(w,xc) += MVALUE(m,1) * VVALUE(v,yc);
+        }
+    if (damp[0] != 1.0)
+      for (w=FIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
+        if ( (VDATATYPE(w)&xmask) && (VNCLASS(w)>=NEWDEF_CLASS) )
+          VVALUE(w,xc) *= damp[0];
+
+    return (NUM_OK);
+  }
+
+  for (w=FIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
+    if (VNCLASS(w)>=NEWDEF_CLASS)
+    {
+      wtype = VTYPE(w);
+      wncomp = VD_NCMPS_IN_TYPE(to,wtype);
+      wptr = VVALUEPTR(w,VD_CMP_OF_TYPE(to,wtype,0));
+      for (i=0; i<wncomp; i++)
+        wptr[i] = 0.0;
+    }
+
+  for (v=FIRSTVECTOR(FineGrid); v!=NULL; v=SUCCVC(v))
+  {
+    if (VCLASS(v)<NEWDEF_CLASS)
+      continue;
+    vtype = VTYPE(v);
+    vncomp = VD_NCMPS_IN_TYPE(from,vtype);
+    vptr = VVALUEPTR(v,VD_CMP_OF_TYPE(from,vtype,0));
+    for (m=VISTART(v); m!= NULL; m = NEXT(m))
+    {
+      w = MDEST(m);
+      wtype = VTYPE(w);
+      vecskip = VECSKIP(w);
+      wncomp = VD_NCMPS_IN_TYPE(to,wtype);
+      mptr = MVALUEPTR(m,0);
+      wptr = VVALUEPTR(w,VD_CMP_OF_TYPE(to,wtype,0));
+      if (vecskip == wncomp*vncomp)
+        for (i=0; i<wncomp; i++)
+        {
+          sum = 0.0;
+          for (j=0; j<vncomp; j++)
+            sum += mptr[i*vncomp+j] * vptr[j];
+          wptr[i] += sum;
+        }
+      else
+        for (i=0; i<wncomp; i++)
+          if (!(vecskip & (1<<i)))
+          {
+            sum = 0.0;
+            for (j=0; j<vncomp; j++)
+              sum += mptr[i*vncomp+j] * vptr[j];
+            wptr[i] += sum;
+          }
+    }
+  }
+
+  if (CheckDamp(VD_NCOMP(to),damp))
+  {
+    offset = VD_OFFSETPTR(to);
+    for (w=FIRSTVECTOR(DOWNGRID(FineGrid)); w!= NULL; w=SUCCVC(w))
+      if (VNCLASS(w)>=NEWDEF_CLASS)
+      {
+        wtype = VTYPE(w);
+        wncomp = VD_NCMPS_IN_TYPE(to,wtype);
+        wptr = VVALUEPTR(w,VD_CMP_OF_TYPE(to,wtype,0));
+        for (i=0; i<wncomp; i++)
+          wptr[i] *= damp[offset[wtype]+i];
+      }
+  }
+
+  return (NUM_OK);
+}
+
 /****************************************************************************/
 /*D
    InterpolateCorrectionByMatrix - Interpolates the correction of the coarse grids
@@ -1155,6 +1257,73 @@ INT InterpolateCorrectionByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
               sum += mptr[j*vncomp+i] * wptr[j];
             vptr[i] += sum;
           }
+      }
+    }
+  }
+
+  if (CheckDamp(VD_NCOMP(to),damp))
+    if (l_dscale (FineGrid,to,EVERY_CLASS,damp))
+      return (NUM_ERROR);
+
+  return (NUM_OK);
+}
+
+INT InterpolateCorrectionByMatrix_NoSkip (GRID *FineGrid, const VECDATA_DESC *to,
+                                          const VECDATA_DESC *from,
+                                          const DOUBLE *damp)
+{
+  MATRIX *m;
+  VECTOR *v,*w;
+  DOUBLE sum,*vptr,*wptr,*mptr;
+  INT vtype,wtype,vncomp,wncomp,vecskip;
+  register SHORT i,j,xc,yc,xmask,ymask;
+
+  if (DOWNGRID(FineGrid)==NULL)
+    return (NUM_NO_COARSER_GRID);
+
+  l_dset (FineGrid,to,EVERY_CLASS,0.0);
+
+  if (VD_IS_SCALAR(to) && VD_IS_SCALAR(from))
+  {
+    xc    = VD_SCALCMP(to);
+    yc    = VD_SCALCMP(from);
+    xmask = VD_SCALTYPEMASK(to);
+    ymask = VD_SCALTYPEMASK(from);
+
+    for (v=FIRSTVECTOR(FineGrid); v!=NULL; v=SUCCVC(v))
+      if ((VDATATYPE(v)&xmask))
+        for (m=VISTART(v); m!= NULL; m = NEXT(m))
+        {
+          w = MDEST(m);
+          if ( (VDATATYPE(w)&ymask) )
+            VVALUE(v,xc) += MVALUE(m,0) * VVALUE(w,yc);
+        }
+    if (damp[0] != 1.0)
+      if (l_dscale (FineGrid,to,EVERY_CLASS,damp))
+        return (NUM_ERROR);
+
+    return (NUM_OK);
+  }
+
+  for (v=FIRSTVECTOR(FineGrid); v!=NULL; v=SUCCVC(v))
+  {
+    vtype = VTYPE(v);
+    vncomp = VD_NCMPS_IN_TYPE(to,vtype);
+    vptr = VVALUEPTR(v,VD_CMP_OF_TYPE(to,vtype,0));
+    vecskip = VECSKIP(v);
+    for (m=VISTART(v); m!= NULL; m = NEXT(m))
+    {
+      w = MDEST(m);
+      mptr = MVALUEPTR(m,0);
+      wtype = VTYPE(w);
+      wptr = VVALUEPTR(w,VD_CMP_OF_TYPE(from,wtype,0));
+      wncomp = VD_NCMPS_IN_TYPE(from,wtype);
+      for (i=0; i<vncomp; i++)
+      {
+        sum = 0.0;
+        for (j=0; j<wncomp; j++)
+          sum += mptr[j*vncomp+i] * wptr[j];
+        vptr[i] += sum;
       }
     }
   }
