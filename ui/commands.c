@@ -8933,6 +8933,111 @@ static INT ClearCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   mflop - floating point speed meassuring
+
+   DESCRIPTION:
+   This function tests the performance of the UG specific blas routines.
+
+   'mflop $x <vec> [$y <tmp>] [$A <mat>] [$l <loop>]'
+
+   .  $x~<vec>   - vector
+   .  $y~<tmp>   - second vector
+   .  $A~<mat>   - matrix
+   .  $l~<loop>  - loop number
+   D*/
+/****************************************************************************/
+
+static INT MFLOPCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  GRID *g;
+  INT i,j,l;
+  INT ncomp;
+  VECDATA_DESC *x,*y;
+  MATDATA_DESC *A;
+  DOUBLE sum;
+  VECTOR *v;
+  MATRIX *mat;
+  INT n,m,loop;
+  DOUBLE nop;
+  VEC_SCALAR scal;
+  DOUBLE time_ddot, time_matmul;
+
+  /* get MG */
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"value","no current multigrid");
+    return(CMDERRORCODE);
+  }
+  l = CURRENTLEVEL(theMG);
+  g = GRID_ON_LEVEL(theMG,l);
+
+  /* read arguments, allocate two vectors and a matrix */
+  A = ReadArgvMatDesc(theMG,"A",argc,argv);
+  x = ReadArgvVecDesc(theMG,"x",argc,argv);
+  y = ReadArgvVecDesc(theMG,"y",argc,argv);
+  if (x == NULL)
+  {
+    PrintErrorMessage('E',"x","could not read symbol");
+    return (PARAMERRORCODE);
+  }
+  if (AllocVDFromVD(theMG,l,l,x,&y))
+    return (CMDERRORCODE);
+  if (AllocMDFromVD(theMG,l,l,x,x,&A))
+    return (CMDERRORCODE);
+  if (ReadArgvINT("loop",&loop,argc,argv))
+  {
+    loop = 1;
+  }
+
+  /* gather statistics */
+  n = m = 0;
+  for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+  {
+    n++;
+    for (mat=VSTART(v); mat!=NULL; mat = MNEXT(mat))
+      m++;
+  }
+  ncomp = VD_NCMPS_IN_TYPE(x,NODEVECTOR);
+  if ((ncomp == 0) || (VD_NCOMP(x) != ncomp)) {
+    PrintErrorMessage('E',"mflop","olny for NODEVECTOR");
+    return (PARAMERRORCODE);
+  }
+
+  /* initialize */
+  l_dset(g,x,EVERY_CLASS,1.0);
+  l_dset(g,y,EVERY_CLASS,0.0);
+  l_dmatset(g,A,0.0);
+
+  /* loop */
+  time_ddot = CURRENT_TIME;
+  for (i=1; i<=loop; i++)
+    l_ddot(g,y,EVERY_CLASS,x,scal);
+  time_ddot = CURRENT_TIME - time_ddot;
+
+  time_matmul = CURRENT_TIME;
+  for (i=1; i<=loop; i++)
+    l_dmatmul(g,y,EVERY_CLASS,A,x,EVERY_CLASS);
+  time_matmul = CURRENT_TIME - time_matmul;
+
+  FreeMD(theMG,l,l,A);
+  FreeVD(theMG,l,l,y);
+
+  nop = 2*n*ncomp*loop;
+  UserWriteF("DDOT t=%12.4lE op=%12.4lE mflop=%12.6lf\n",
+             (double)time_ddot,(double)nop,
+             (double)0.000001*nop/time_ddot);
+  nop = m*ncomp*ncomp*2*loop;
+  UserWriteF("MMUL t=%12.4lE op=%12.4lE mflop=%12.6lf\n",
+             (double)time_matmul,(double)nop,
+             (double)0.000001*nop/time_matmul);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
    rand - assign a value to a symbolic vector
 
    DESCRIPTION:
@@ -11840,6 +11945,8 @@ INT InitCommands ()
 
   /* vectors and matrices */
   if (CreateCommand("clear",                      ClearCommand                                    )==NULL) return (__LINE__);
+  if (CreateCommand("mflop",          MFLOPCommand                    )==NULL) return (__LINE__);
+
   if (CreateCommand("rand",                       RandCommand                                             )==NULL) return (__LINE__);
   if (CreateCommand("copy",                       CopyCommand                                             )==NULL) return (__LINE__);
   if (CreateCommand("homotopy",       HomotopyCommand                 )==NULL) return(__LINE__);
