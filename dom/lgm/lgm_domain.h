@@ -206,6 +206,7 @@
 #define LGM_LINE_BEGIN(p)                                       ((p)->begin)
 #define LGM_LINE_END(p)                                         ((p)->end)
 #define LGM_LINE_USED(p)                                        ((p)->used)
+#define LGM_LINE_ID_2_LINE(i)                           (LinePtrArray[i])
 
 /* macros for LGM_TRIANGLE */
 #define LGM_TRIANGLE_CORNER(p,i)                        ((p)->corner[(i)])
@@ -257,6 +258,9 @@
 #define LGM_BNDP_LINE(p,i)                                      ((p)->Line[(i)].theLine)
 #define LGM_BNDP_LINE_LEFT(p,i)                         ((p)->Line[(i)].local_left)
 #define LGM_BNDP_LINE_RIGHT(p,i)                        ((p)->Line[(i)].local_right)
+#define LGM_BNDP_LINE_GLINE(p)                          ((p).theLine)
+#define LGM_BNDP_LOCAL_LEFT(p)                          ((p).local_left)
+#define LGM_BNDP_LOCAL_RIGHT(p)                         ((p).local_right)
 #define LGM_BNDP_N(p)                                           ((p)->nsurf)
 #define LGM_BNDP_SURFACES(p,i)                          ((p)->Surf[(i)])
 #define LGM_BNDP_SURFACE(p,i)                           ((p)->Surf[(i)].theSurf)
