@@ -74,9 +74,10 @@ int Debuggm                 =       0;
 int Debuggraph              =       0;
 int Debuglow                =       0;
 int Debugmachines   =       0;
-int Debugnumerics   =       0;
 int Debugnp         =       0;
-int Debugui                 =       0;      /* temporary setting for debugging ModelP */
+int Debugui                 =       0;
+int Debugappl               =       0;
+int Debugpclib              =       0;
 
 int rep_err_count;
 int rep_err_line[REP_ERR_MAX];

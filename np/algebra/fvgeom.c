@@ -380,7 +380,7 @@ INT EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
     return(__LINE__);
   }
 
-  IFDEBUG(numerics,0)
+  IFDEBUG(np,0)
   for (k=0; k<coe; k++)               /* check sign */
     if (SCV_VOL(FVG_SCV(geo,k))<0.0)
       UserWriteF("w: scv negative e=%5d k=%1d v=%10.4lg\n",ID(e),k,SCV_VOL(FVG_SCV(geo,k)));
@@ -407,7 +407,7 @@ INT EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
     Q_AREA_3D(FVG_GEM(geo,k),FVG_GSM(geo,r),FVG_GCM(geo),FVG_GSM(geo,l),SCVF_NORMAL(scvf));
 #               endif
 
-    IFDEBUG(numerics,0)
+    IFDEBUG(np,0)
     /* check sign */
     V_DIM_SUBTRACT(FVG_GCO(geo,j),FVG_GCO(geo,i),s);
     if (V_DIM_SCAL_PROD(s,SCVF_NORMAL(scvf))<0.0)
