@@ -1172,17 +1172,21 @@ INT GetLPSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[
   nco = FVG_NSCV(geo);
   for (ip=0; ip<FVG_NSCVF(geo); ip++)
   {
+    DOUBLE_VECTOR vel;
+
     side = -1;
 
     for (corn=0; corn<nco; corn++)
       Shape[ip][corn] = 0.0;
 
-    if (V_DIM_ISZERO(IPVel[ip]))
+    V_DIM_COPY(IPVel[ip],vel);
+
+    if (V_DIM_Normalize(vel))
       continue;
 
     /* find upwind point on element side */
     for (sd=0; sd<SIDES_OF_TAG(tag); sd++)
-      if (SideIsCut(tag,x,SCVF_GIP(FVG_SCVF(geo,ip)),IPVel[ip],sd,y))
+      if (SideIsCut(tag,x,SCVF_GIP(FVG_SCVF(geo,ip)),vel,sd,y))
       {
         side = sd;
         break;
