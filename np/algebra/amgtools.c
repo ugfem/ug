@@ -69,6 +69,8 @@
 #define REUSKEN 0
 #define WAGNER 1
 
+#define LEN_MAX DIM*DIM*DIM
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -538,12 +540,8 @@ static INT GenerateNewGrid(GRID *theGrid)
   }
   m = noc * nof;
     #ifdef ModelP
-  PRINTDEBUG(np,3,("%d: noc * nof %d\n",me,m));
-        #ifdef Debug
-  if (rep_err_count > 0) m = 0;
-        #endif
-  m = UG_GlobalMinINT(m);
-  PRINTDEBUG(np,1,("%d: noc * nof %d\n",me,m));
+  m = UG_GlobalMaxINT(m);
+  PRINTDEBUG(np,3,("%d: noc * nof max %d\n",me,m));
         #endif
   if (m == 0)
     REP_ERR_RETURN(1);
@@ -892,356 +890,425 @@ static INT CountCoarse (VECTOR *theV)
   return(c);
 }
 
-INT CoarsenAverage (GRID *theGrid)
+static DOUBLE Dist (VECTOR *v, VECTOR *w)
 {
-  INT error;
-  FIFO myfifo;
-  void *buffer;
-  VECTOR *theV,*theW,**vlist;
-  NODE *theNode;
-  MATRIX *theM;
-  HEAP *theHeap = MGHEAP(MYMG(theGrid));
-  INT MarkKey;
-  INT i,n,m,d,dmin,dmax;
+  DOUBLE_VECTOR a,b;
+  DOUBLE s;
 
-  /* reorder vector-list */
-  n = 0;
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    n++;
-    assert(VSTART(theV) != NULL);
-  }
-  MarkTmpMem(theHeap,&MarkKey);
-  buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
-  if (buffer == NULL) {
-    ReleaseTmpMem(theHeap,MarkKey);
-    return(1);
-  }
-  fifo_init(&myfifo,buffer,sizeof(void *) * n);
-  vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-    SETVCUSED(theV,0);
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    if (VECSKIP(theV) == 0) continue;
-    break;
-  }
-  if (theV == NULL)
-    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-      if (VecOnBnd(theV) == 0) continue;
-      break;
-    }
-    #ifdef ModelP
-  if (theV == NULL)
-    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-      if (VecOnPBnd(theV) == 0) continue;
-      break;
-    }
-        #endif
-  if (theV == NULL)
-    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-      break;
-    }
-  if (theV == NULL) return(1);
-  SETVCUSED(theV,1);
-  fifo_in(&myfifo,(void *)theV);
-  while(!fifo_empty(&myfifo)) {
-    theV = (VECTOR *)fifo_out(&myfifo);
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-      if (!VCUSED(MDEST(theM))) {
-        fifo_in(&myfifo,(void *)MDEST(theM));
-        SETVCUSED(MDEST(theM),1);
-      }
-  }
-  fifo_in(&myfifo,(void *)theV);
-  SETVCUSED(theV,0);
-  i=0;
-  while(!fifo_empty(&myfifo)) {
-    theV = (VECTOR *)fifo_out(&myfifo);
-    vlist[i++] = theV;
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-      if (VCUSED(MDEST(theM))) {
-        fifo_in(&myfifo,(void *)MDEST(theM));
-        SETVCUSED(MDEST(theM),0);
-      }
-  }
-  assert(i==n);
-  for (i=0; i<n; i++)
-    GRID_UNLINK_VECTOR(theGrid,vlist[i]);
-  for (i=0; i<n; i++)
-    GRID_LINK_VECTOR(theGrid,vlist[i],PRIO(vlist[i]));
-  for (i=0; i<n; i++)
-    SETVCUSED(vlist[i],0);
-  m = 0;
-  for (i=0; i<n; i++)
-    if (VECSKIP(vlist[i]) != 0) {
-      SETVCUSED(vlist[i],1);
-      fifo_in(&myfifo,(void *)vlist[i]);
-      m++;
-    }
-  for (i=0; i<n; i++)
-    if (VCUSED(vlist[i]) == 0)
-      if (VecOnBnd(vlist[i]) != 0) {
-        SETVCUSED(vlist[i],1);
-        fifo_in(&myfifo,(void *)vlist[i]);
-        m++;
-      }
-    #ifdef ModelP
-  for (i=0; i<n; i++)
-    if (VCUSED(vlist[i]) == 0)
-      if (VecOnPBnd(vlist[i]) != 0) {
-        SETVCUSED(vlist[i],1);
-        fifo_in(&myfifo,(void *)vlist[i]);
-        m++;
-      }
-        #endif
-  for (i=0; i<n; i++)
-    if (VCUSED(vlist[i]) == 0) {
-      fifo_in(&myfifo,(void *)vlist[i]);
-      m++;
-    }
-  assert(m == n);
-  m = 0;
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-    SETVCUSED(theV,0);
-  m = n;
-  while(!fifo_empty(&myfifo)) {
-    theV = (VECTOR *)fifo_out(&myfifo);
-    if (VCUSED(theV)) continue;
-    m--;
-    SETVCCOARSE(theV,1);
-    SETVCUSED(theV,1);
-    PRINTDEBUG(np,3,("\n%d:c %d",me,VINDEX(theV)));
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-      theW = MDEST(theM);
-      if (VCUSED(theW)) continue;
-      m--;
-      SETVCUSED(theW,1);
-      SETVCCOARSE(theW,0);
-      PRINTDEBUG(np,3,(" f %d",VINDEX(theW)));
-    }
-  }
-  ReleaseTmpMem(theHeap,MarkKey);
-        #ifdef ModelP
-  PRINTDEBUG(np,3,("%d: m %d\n",me,m));
-  m = UG_GlobalMaxINT(m) - UG_GlobalMinINT(m);
-  PRINTDEBUG(np,3,("%d: m %d\n",me,m));
-        #endif
-  PRINTDEBUG(np,3,("%d: m %d n%d\n",me,m,n));
-  assert(m == 0);
-  /* improving */
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    if (VCCOARSE(theV)) continue;
-    m = 0;
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-      theW = MDEST(theM);
-      if (VCCOARSE(theW)) m++;
-    }
-    VINDEX(theV) = m;
-  }
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    if (VCCOARSE(theV)) continue;
-    if (VINDEX(theV) != 1) continue;
-    m = 100000;
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-      if (VCCOARSE(theV)) continue;
-      theW = MDEST(theM);
-      m = MIN(m,VINDEX(theW));
-    }
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-      theW = MDEST(theM);
-      if (VINDEX(theW) != m) continue;
-      SETVCCOARSE(theW,1);
-      break;
-    }
-  }
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    VINDEX(theV) = m++;
-    SETVCUSED(theV,0);
-  }
-  error = GenerateNewGrid(theGrid);
-  return(error);
+  VectorPosition(v,a);
+  VectorPosition(w,b);
+
+  V_DIM_EUKLIDNORM_OF_DIFF(a,b,s);
+
+  return(s);
 }
 
-INT CoarsenAverage2 (GRID *theGrid)
-{
-  INT error;
-  FIFO myfifo;
-  void *buffer;
-  VECTOR *theV,*theW,**vlist;
-  NODE *theNode;
-  MATRIX *theM;
-  HEAP *theHeap = MGHEAP(MYMG(theGrid));
-  INT MarkKey;
-  INT i,n,m,d,dmin,dmax;
+static VECTOR *compVec;
 
-  /* reorder vector-list */
-  n = 0;
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    n++;
-    assert(VSTART(theV) != NULL);
+static int compDist (const void *e1, const void *e2)
+{
+  MATRIX  *m1 = *((MATRIX **)e1);
+  MATRIX  *m2 = *((MATRIX **)e2);
+  DOUBLE d1 = Dist(compVec,MDEST(m1));
+  DOUBLE d2 = Dist(compVec,MDEST(m2));
+
+  if (d1<d2) return(-1);
+
+  return(1);
+}
+
+static INT SortMatrixByDist (VECTOR *v, void *buffer)
+{
+  MATRIX *m,**mlist = (MATRIX **)buffer;
+  int j,n=0;
+
+  compVec = v;
+  for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
+    mlist[n++] = m;
+
+  if (n>1) {
+    qsort(mlist,n,sizeof(VECTOR *),compDist);
+    m=VSTART(v);
+    for(j=0; j<n; j++) {
+      MNEXT(m) = mlist[j];
+      m = MNEXT(m);
+    }
+    MNEXT(m)=NULL;
   }
-  MarkTmpMem(theHeap,&MarkKey);
-  buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
-  if (buffer == NULL) {
-    ReleaseTmpMem(theHeap,MarkKey);
+  return(0);
+}
+
+static INT MarcForCoarse (VECTOR *theV, INT *m)
+{
+  VECTOR *theW;
+  MATRIX *theM;
+
+  if (VCUSED(theV) == 0) (*m)--;
+  if (VCUSED(theV))
+    if (VCCOARSE(theV))
+      return(0);
+  SETVCCOARSE(theV,1);
+  SETVCUSED(theV,1);
+  PRINTDEBUG(np,3,("\n%d:c %d",me,VINDEX(theV)));
+  for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
+    theW = MDEST(theM);
+    if (VCUSED(theW)) continue;
+    (*m)--;
+    SETVCUSED(theW,1);
+    SETVCCOARSE(theW,0);
+    PRINTDEBUG(np,3,(" f %d",VINDEX(theW)));
+  }
+  return(0);
+}
+
+static INT ComputeLocalCoord (DOUBLE_VECTOR x, DOUBLE_VECTOR *y, DOUBLE *s)
+{
+  DOUBLE IMdet,t;
+  DOUBLE_VECTOR a,M[DIM],IM[DIM];
+  INT i;
+
+  TRANSFORMATION(DIM+1,y,s,M);
+    #ifdef __TWODIM__
+  IMdet = M[0][0]*M[1][1]-M[1][0]*M[0][1];
+    #endif
+    #ifdef __THREEDIM__
+  IMdet = M[0][0]*M[1][1]*M[2][2]
+          + M[0][1]*M[1][2]*M[2][0]
+          + M[0][2]*M[1][0]*M[2][1]
+          - M[0][2]*M[1][1]*M[2][0]
+          - M[0][0]*M[1][2]*M[2][1]
+          - M[0][1]*M[1][0]*M[2][2];
+    #endif
+  if (ABS(IMdet) < SMALL_C)
+  {
+        #ifdef __THREEDIM__
+    for (i=0; i<=DIM; i++)
+    {
+      DOUBLE_VECTOR y1[DIM+1];
+      INT j;
+
+      for (j=0; j<=DIM; j++)
+        V_DIM_COPY(y[j],y1[j]);
+      V_DIM_COPY(x,y1[i]);
+      TRANSFORMATION(DIM+1,y1,s,M);
+            #ifdef __TWODIM__
+      IMdet = M[0][0]*M[1][1]-M[1][0]*M[0][1];
+            #endif
+            #ifdef __THREEDIM__
+      IMdet = M[0][0]*M[1][1]*M[2][2]
+              + M[0][1]*M[1][2]*M[2][0]
+              + M[0][2]*M[1][0]*M[2][1]
+              - M[0][2]*M[1][1]*M[2][0]
+              - M[0][0]*M[1][2]*M[2][1]
+              - M[0][1]*M[1][0]*M[2][2];
+            #endif
+      if (ABS(IMdet) < SMALL_C)
+      {
+        DOUBLE A[3][2];
+        INT k = 0;
+
+        for (j=0; j<=DIM; j++)
+          if (j != i) {
+            V_DIM_COPY(y[j],y1[k]);
+            k++;
+          }
+        V_DIM_SUBTRACT(x,y1[DIM-1],M[DIM-1]);
+        for (j=0; j<DIM-1; j++)
+          V_DIM_SUBTRACT(y1[j],y1[DIM-1],M[j]);
+        for (j=0; j<DIM-1; j++)
+          for (k=0; k<DIM; k++)
+            V_DIM_SCALAR_PRODUCT(M[k],M[j],A[k][j]);
+        IMdet = A[0][0]*A[1][1] - A[1][0]*A[0][1];
+        if (ABS(IMdet) < SMALL_C) continue;
+        s[0] = (A[2][0]*A[1][1] - A[1][0]*A[2][1]) / IMdet;
+        s[1] = (A[0][0]*A[2][1] - A[2][0]*A[0][1]) / IMdet;
+        s[DIM-1] = 1.0;
+        for (j=0; j<DIM-1; j++)
+          s[DIM-1] -= s[j];
+        for (j=0; j<DIM; j++)
+          if (s[j] < -0.01) break;
+        if (j < DIM) continue;
+
+        if (0) {
+          V_DIM_LINCOMB(s[0],M[0],s[1],M[1],a);
+          V_DIM_LINCOMB(1.0,y1[2],1.0,a,a);
+          for (j=0; j<DIM; j++)
+            printf("         y1[%d] %f %f %f  s %f x %f a %f\n",j,
+                   y1[j][0],y1[j][1],y1[j][2],s[j],x[j],a[j]);
+        }
+
+        for (j=DIM; j>=i; j--)
+          s[j+1] = s[j];
+        s[i] = 0.0;
+
+        if (0) {
+          V_DIM_LINCOMB(s[0],y[0],s[DIM],y[DIM],a);
+          for (j=1; j<DIM; j++)
+            V_DIM_LINCOMB(s[j],y[j],1.0,a,a);
+
+          printf("x%d  %f %f %f %f x %f %f %f y %f %f %f\n",i,
+                 s[0],s[1],s[2],s[3],
+                 x[0],x[1],x[2],a[0],a[1],a[2]);
+
+
+        }
+
+
+
+        return(0);
+      }
+    }
+        #endif
+    for (i=0; i<=DIM; i++)
+      s[i] = 1.0 / (DIM + 1.0);
+
+    /*
+            if (KeyForObject((KEY_OBJECT *)compVec) == -52016)
+                for (i=0; i<=DIM; i++)
+                        printf("w[%d] = sss %f\n",i,s[i]);
+     */
+
     return(1);
   }
-  fifo_init(&myfifo,buffer,sizeof(void *) * n);
-  vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
+  if (IMdet < 0.0) {
+    V_DIM_COPY(y[0],a);
+    V_DIM_COPY(y[1],y[0]);
+    V_DIM_COPY(a,y[1]);
+  }
+  M_DIM_INVERT(M,IM,IMdet);
+  V_DIM_SUBTRACT(x,y[0],a);
+  MT_TIMES_V_DIM(IM,a,s+1);
+  s[0] = 1.0;
+  for (i=0; i<DIM; i++)
+    s[0] -= s[i+1];
+  if (IMdet < 0.0) {
+    V_DIM_COPY(y[0],a);
+    V_DIM_COPY(y[1],y[0]);
+    V_DIM_COPY(a,y[1]);
+    t = s[0];
+    s[0] = s[1];
+    s[1] = t;
+  }
+
+  /*
+          if (KeyForObject((KEY_OBJECT *)compVec) == -52016)
+              for (i=0; i<=DIM; i++)
+                      printf("w[%d] = s %f\n",i,s[i]);
+   */
+  for (i=0; i<=DIM; i++)
+    if (s[i] < -0.001) return(1);
+
+  return(0);
+}
+
+static INT subset (INT n, INT m, INT *k,
+                   DOUBLE_VECTOR x, DOUBLE_VECTOR *y, DOUBLE *s)
+{
+  INT k1[DIM+2],l,j;
+  DOUBLE_VECTOR y1[DIM+1];
+
+  /*	printf("k %d %d %d  n %d m %d\n",k[0],k[1],k[2],n,m); */
+
+  for (l=0; l<=DIM; l++)
+    V_DIM_COPY(y[k[l]],y1[l]);
+  if (ComputeLocalCoord(x,y1,s) == 0)
+    return(1);
+  /*
+          if (KeyForObject((KEY_OBJECT *)compVec) == -52016)
+              printf("k %d %d %d %d   n %d m %d   s %f %f %f %f\n",
+                             k[0],k[1],k[2],k[3],n,m,s[0],s[1],s[2],s[3]);
+   */
+
+  if (m < 0) return(0);
+  for (l=0; l<=DIM+1; l++)
+    k1[l] = k[l];
+  for (l=k[m]+1; l<k[m+1]; l++) {
+    k[m] = l;
+    if (subset(n,m-1,k,x,y,s))
+      return(1);
+    for (j=0; j<=DIM; j++)
+      k[j] = k1[j];
+  }
+  return(0);
+}
+
+static INT FindCoarseVectors (INT n, VECTOR *v, VECTOR **w, DOUBLE *s)
+{
+  VECTOR *theW,*w1[DIM+1];
+  DOUBLE_VECTOR y[LEN_MAX],x;
+  MATRIX *theM;
+  INT j,k[DIM+2],l;
+
+  compVec = v;
+
+  /*
+          if (KeyForObject((KEY_OBJECT *)v) == -52016)
+              for (j=0; j<n; j++)
+                      printf(" find w[%d] = %d\n",j,KeyForObject((KEY_OBJECT *)w[j]));
+   */
+
+  VectorPosition(v,x);
+  for (j=0; j<n; j++)
+    VectorPosition(w[j],y[j]);
+  for (j=0; j<=DIM; j++)
+    k[j] = j;
+  k[DIM+1] = n;
+  if (subset(n,DIM,k,x,y,s)) {
+    for (l=0; l<=DIM; l++)
+      w1[l] = w[k[l]];
+    for (l=0; l<=DIM; l++)
+      w[l] = w1[l];
+    return(0);
+  }
+  return(1);
+}
+
+static INT failed = 0;
+static INT add_mark = 0;
+
+static INT SearchCoarse (VECTOR *theV, INT *m)
+{
+  VECTOR *theW,*w[LEN_MAX];
+  MATRIX *theM;
+  DOUBLE_VECTOR x,y[LEN_MAX];
+  DOUBLE s[LEN_MAX];
+  INT i,n = 0;
+
+  for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
+    theW = MDEST(theM);
+    if (VCCOARSE(theW)) {
+      w[n++] = theW;
+      if (n >= LEN_MAX)
+        break;
+    }
+  }
+  VectorPosition(theV,x);
+  i = n;
+  for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
+    theW = MDEST(theM);
+    if (VCUSED(theW)) continue;
+    w[n++] = theW;
+    if (n >= LEN_MAX)
+      break;
+  }
+  if (n < LEN_MAX)
+    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
+      theW = MDEST(theM);
+      if (VCUSED(theW) == 0) continue;
+      if (VCCOARSE(theW)) continue;
+      w[n++] = theW;
+      if (n >= LEN_MAX)
+        break;
+    }
+  /* if (n < DIM) printf("n %d i %d\n",n,i); */
+  if (n > DIM) {
+    if (FindCoarseVectors(n,theV,w,s) == 0) {
+      for (i=0; i<=DIM; i++)
+        MarcForCoarse (w[i],m);
+      /*        printf("m%d",n); */
+      /*
+              if (KeyForObject((KEY_OBJECT *)theV) == -52016)
+                  for (i=0; i<=DIM; i++)
+                          printf(" found w[%d] = %d %f\n",
+                              i,KeyForObject((KEY_OBJECT *)w[i]),s[i]);
+       */
+
+      return(0);
+    }
+    /* else printf("s%d",n); */
+  }
+  if (add_mark) return(0);
+
+  MarcForCoarse(theV,m);
+  VINDEX(theV) = -n;
+  failed++;
+
+  return(0);
+}
+
+static int compIndex (const void *e1, const void *e2)
+{
+  VECTOR  *v1 = *((VECTOR **)e1);
+  VECTOR  *v2 = *((VECTOR **)e2);
+
+  if (VINDEX(v1) > VINDEX(v2)) return(-1);
+
+  return(1);
+}
+
+static INT CoarsenAverageCycle (GRID *theGrid, INT n,
+                                FIFO myfifo, VECTOR **vlist)
+{
+  VECTOR *theV,*theW;
+  MATRIX *theM;
+  INT failed_old;
+  INT i,m = 0;
+
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
+    SETVCUSED(theV,0);
+    SETVCCOARSE(theV,0);
+  }
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-    SETVCUSED(theV,0);
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    if (VECSKIP(theV) == 0) continue;
-    break;
-  }
-  if (theV == NULL)
-    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-      if (VecOnBnd(theV) == 0) continue;
-      break;
-    }
-    #ifdef ModelP
-  if (theV == NULL)
-    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-      if (VecOnPBnd(theV) == 0) continue;
-      break;
-    }
-        #endif
-  if (theV == NULL)
-    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-      break;
-    }
-  if (theV == NULL) return(1);
-  SETVCUSED(theV,1);
-  fifo_in(&myfifo,(void *)theV);
-  while(!fifo_empty(&myfifo)) {
-    theV = (VECTOR *)fifo_out(&myfifo);
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-      if (!VCUSED(MDEST(theM))) {
-        fifo_in(&myfifo,(void *)MDEST(theM));
-        SETVCUSED(MDEST(theM),1);
-      }
-  }
-  fifo_in(&myfifo,(void *)theV);
-  SETVCUSED(theV,0);
-  i=0;
-  while(!fifo_empty(&myfifo)) {
-    theV = (VECTOR *)fifo_out(&myfifo);
-    vlist[i++] = theV;
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-      if (VCUSED(MDEST(theM))) {
-        fifo_in(&myfifo,(void *)MDEST(theM));
-        SETVCUSED(MDEST(theM),0);
-      }
-  }
-  assert(i==n);
-  for (i=0; i<n; i++)
-    GRID_UNLINK_VECTOR(theGrid,vlist[i]);
-  for (i=0; i<n; i++)
-    GRID_LINK_VECTOR(theGrid,vlist[i],PRIO(vlist[i]));
-  for (i=0; i<n; i++)
-    SETVCUSED(vlist[i],0);
-  m = 0;
-  for (i=0; i<n; i++)
-    if (VECSKIP(vlist[i]) != 0) {
-      SETVCUSED(vlist[i],1);
-      fifo_in(&myfifo,(void *)vlist[i]);
+    if (VINDEX(theV) < 0) {
+      SETVCUSED(theV,1);
+      vlist[m++] = theV;
       m++;
     }
-  for (i=0; i<n; i++)
-    if (VCUSED(vlist[i]) == 0)
-      if (VecOnBnd(vlist[i]) != 0) {
-        SETVCUSED(vlist[i],1);
-        fifo_in(&myfifo,(void *)vlist[i]);
+  if (m > 1)
+    qsort(vlist,m,sizeof(VECTOR *),compIndex);
+  for (i=0; i<m; i++)
+    fifo_in(&myfifo,vlist[i]);
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    if (VCUSED(theV) == 0)
+      if (VECSKIP(theV) != 0) {
+        SETVCUSED(theV,1);
+        fifo_in(&myfifo,(void *)theV);
         m++;
       }
-    #ifdef ModelP
-  for (i=0; i<n; i++)
-    if (VCUSED(vlist[i]) == 0)
-      if (VecOnPBnd(vlist[i]) != 0) {
-        SETVCUSED(vlist[i],1);
-        fifo_in(&myfifo,(void *)vlist[i]);
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    if (VCUSED(theV) == 0)
+      if (VCCOARSE(theV)) {
+        SETVCUSED(theV,1);
+        fifo_in(&myfifo,(void *)theV);
         m++;
       }
-        #endif
-  for (i=0; i<n; i++)
-    if (VCUSED(vlist[i]) == 0) {
-      fifo_in(&myfifo,(void *)vlist[i]);
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    if (VCUSED(theV) == 0) {
+      fifo_in(&myfifo,(void *)theV);
       m++;
     }
   assert(m == n);
   m = 0;
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    VINDEX(theV) = m++;
     SETVCUSED(theV,0);
+    SETVCCOARSE(theV,0);
+    VINDEX(theV) = 0;
   }
-  assert(m == n);
+  m = n;
+  failed_old = failed;
+  failed = 0;
   while(!fifo_empty(&myfifo)) {
     theV = (VECTOR *)fifo_out(&myfifo);
     if (VCUSED(theV)) {
-      if (VCCOARSE(theV)) continue;
-      if ((VecOnBnd(theV) || VECSKIP(theV)) == 1) continue;
-      continue;
-      for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-        theW = MDEST(theM);
-        if (VCUSED(theW)) continue;
-        if ((VecOnBnd(theW) || VECSKIP(theW)) == 1) continue;
-        break;
-      }
-            #ifdef ModelP
-      if (theM == NULL)
-        for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-          theW = MDEST(theM);
-          if (VCUSED(theW)) continue;
-          if (VecOnPBnd(theW) == 1) continue;
-          break;
-        }
-            #endif
-      if (theM == NULL)
-        for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-          theW = MDEST(theM);
-          if (VCUSED(theW)) continue;
-          break;
-        }
-      if (theM != NULL) {
-        m--;
-        SETVCUSED(theW,1);
-        SETVCCOARSE(theW,1);
-      }
+      if (VCCOARSE(theV) == 0)
+        SearchCoarse(theV,&m);
       continue;
     }
-    m--;
-    SETVCCOARSE(theV,1);
-    SETVCUSED(theV,1);
-    PRINTDEBUG(np,3,("\n%d:c %d",me,VINDEX(theV)));
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-      theW = MDEST(theM);
-      if (VCUSED(theW)) continue;
-      m--;
-      SETVCUSED(theW,1);
-      SETVCCOARSE(theW,0);
-      PRINTDEBUG(np,3,(" f %d",VINDEX(theW)));
-    }
+    MarcForCoarse(theV,&m);
   }
-  ReleaseTmpMem(theHeap,MarkKey);
-        #ifdef ModelP
-  PRINTDEBUG(np,3,("%d: m %d\n",me,m));
-  m = UG_GlobalMaxINT(m) - UG_GlobalMinINT(m);
-  PRINTDEBUG(np,3,("%d: m %d\n",me,m));
-        #endif
-  PRINTDEBUG(np,3,("%d: m %d n%d\n",me,m,n));
-  assert(m == 0);
-  error = GenerateNewGrid(theGrid);
-  return(error);
+  /*	printf("failed %d\n",failed); */
+  if (failed >= failed_old) return(1);
+
+  return(0);
 }
 
-INT CoarsenAverage1 (GRID *theGrid)
+INT CoarsenAverage (GRID *theGrid)
 {
-  INT error;
+  HEAP *theHeap = MGHEAP(MYMG(theGrid));
   FIFO myfifo;
   void *buffer;
   VECTOR *theV,*theW,**vlist;
-  NODE *theNode;
   MATRIX *theM;
-  HEAP *theHeap = MGHEAP(MYMG(theGrid));
   INT MarkKey;
   INT i,n,m,d,dmin,dmax;
 
@@ -1254,9 +1321,12 @@ INT CoarsenAverage1 (GRID *theGrid)
   MarkTmpMem(theHeap,&MarkKey);
   buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
   if (buffer == NULL) {
-    ReleaseTmpMem(theHeap,MarkKey);
-    return(1);
+    if (n == 0)
+      goto exit;
+    REP_ERR_RETURN(1);
   }
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    SortMatrixByDist(theV,buffer);
   fifo_init(&myfifo,buffer,sizeof(void *) * n);
   vlist = (VECTOR**)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
@@ -1281,7 +1351,13 @@ INT CoarsenAverage1 (GRID *theGrid)
     for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
       break;
     }
-  if (theV == NULL) return(1);
+  if (theV == NULL)
+    #ifdef ModelP
+    goto exit;
+        #else
+    return(1);
+        #endif
+
   SETVCUSED(theV,1);
   fifo_in(&myfifo,(void *)theV);
   while(!fifo_empty(&myfifo)) {
@@ -1309,122 +1385,28 @@ INT CoarsenAverage1 (GRID *theGrid)
     GRID_UNLINK_VECTOR(theGrid,vlist[i]);
   for (i=0; i<n; i++)
     GRID_LINK_VECTOR(theGrid,vlist[i],PRIO(vlist[i]));
-  for (i=0; i<n; i++)
-    SETVCUSED(vlist[i],0);
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    VINDEX(theV) = 0;
+  add_mark = 0;
+  for (i=0; i<10; i++)
+    if (CoarsenAverageCycle(theGrid,n,myfifo,vlist))
+      if (i > 2)
+        break;
+  add_mark = 1;
+  CoarsenAverageCycle(theGrid,n,myfifo,vlist);
+  /*
+          for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+              if (VCCOARSE(theV) == 0)
+                      SearchCoarse(theV,&m);
+   */
   m = 0;
-  for (i=0; i<n; i++)
-    if (VECSKIP(vlist[i]) != 0) {
-      SETVCUSED(vlist[i],1);
-      fifo_in(&myfifo,(void *)vlist[i]);
-      m++;
-    }
-  for (i=0; i<n; i++)
-    if (VCUSED(vlist[i]) == 0)
-      if (VecOnBnd(vlist[i]) != 0) {
-        SETVCUSED(vlist[i],1);
-        fifo_in(&myfifo,(void *)vlist[i]);
-        m++;
-      }
-    #ifdef ModelP
-  for (i=0; i<n; i++)
-    if (VCUSED(vlist[i]) == 0)
-      if (VecOnPBnd(vlist[i]) != 0) {
-        SETVCUSED(vlist[i],1);
-        fifo_in(&myfifo,(void *)vlist[i]);
-        m++;
-      }
-        #endif
-  for (i=0; i<n; i++)
-    if (VCUSED(vlist[i]) == 0) {
-      fifo_in(&myfifo,(void *)vlist[i]);
-      m++;
-    }
-  assert(m == n);
-  m = n;
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
     VINDEX(theV) = m++;
     SETVCUSED(theV,0);
   }
-  assert(m == n);
-  m = 0;
-  while(!fifo_empty(&myfifo)) {
-    theV = (VECTOR *)fifo_out(&myfifo);
-    if (VCUSED(theV)) continue;
-    m--;
-    SETVCCOARSE(theV,1);
-    SETVCUSED(theV,1);
-    PRINTDEBUG(np,3,("\n%d:c %d",me,VINDEX(theV)));
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-      theW = MDEST(theM);
-      if (VCUSED(theW)) continue;
-      m--;
-      SETVCUSED(theW,1);
-      SETVCCOARSE(theW,0);
-      PRINTDEBUG(np,3,(" f %d",VINDEX(theW)));
-    }
-  }
-
-
-  while(!fifo_empty(&myfifo)) {
-    theV = (VECTOR *)fifo_out(&myfifo);
-
-    if (VCUSED(theV)) continue;
-    if (VCUSED(theV))
-    {
-      INT maxc=-1,c;
-
-      continue;
-      if (VCCOARSE(theV)) continue;
-      for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-        theW = MDEST(theM);
-        if (VCUSED(theW)) continue;
-        c = CountCoarse(theW);
-        maxc = MAX(c,maxc);
-      }
-      if (maxc == -1) continue;
-      for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-        theW = MDEST(theM);
-        if (VCUSED(theW)) continue;
-        if (maxc = CountCoarse(theW)) break;
-      }
-      if (theW != NULL) {
-        m--;
-        SETVCCOARSE(theW,1);
-        SETVCUSED(theW,1);
-      }
-      continue;
-    }
-    m--;
-    SETVCCOARSE(theV,1);
-    SETVCUSED(theV,1);
-    PRINTDEBUG(np,3,("\n%d:c %d",me,VINDEX(theV)));
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) {
-      theW = MDEST(theM);
-      if (VCUSED(theW)) continue;
-      m--;
-      SETVCUSED(theW,1);
-      SETVCCOARSE(theW,0);
-      /*
-         if (VECSKIP(theW) == 0)
-          if (VecOnBnd(theW) == 0)
-         #ifdef ModelP
-                  if (VecOnPBnd(theW) == 0)
-         #endif
-                          fifo_in(&myfifo,(void *)theW);
-       */
-      PRINTDEBUG(np,3,(" f %d",VINDEX(theW)));
-    }
-  }
+exit:
   ReleaseTmpMem(theHeap,MarkKey);
-        #ifdef ModelP
-  PRINTDEBUG(np,3,("%d: m %d\n",me,m));
-  m = UG_GlobalMaxINT(m) - UG_GlobalMinINT(m);
-  PRINTDEBUG(np,3,("%d: m %d\n",me,m));
-        #endif
-  PRINTDEBUG(np,3,("%d: m %d n%d\n",me,m,n));
-  assert(m == 0);
-  error = GenerateNewGrid(theGrid);
-  return(error);
+  return(GenerateNewGrid(theGrid));
 }
 
 /****************************************************************************/
@@ -2072,70 +2054,9 @@ INT CoarsenVanek(GRID *theGrid)
 /*                                                                          */
 /****************************************************************************/
 
-static DOUBLE Dist (VECTOR *v, VECTOR *w)
-{
-  DOUBLE_VECTOR a,b;
-  DOUBLE s;
-
-  VectorPosition(v,a);
-  VectorPosition(w,b);
-
-  V_DIM_EUKLIDNORM_OF_DIFF(a,b,s);
-
-  return(s);
-}
-
-static INT ComputeLocalCoord(DOUBLE_VECTOR x, DOUBLE_VECTOR *y, DOUBLE *s)
-{
-  DOUBLE detJ,IMdet;
-  DOUBLE_VECTOR a,b,c,M[DIM],IM[DIM];
-  INT i;
-
-    #ifdef __TWODIM__
-  V2_SUBTRACT(y[0],x,a);
-  V2_SUBTRACT(y[1],x,b);
-  V2_VECTOR_PRODUCT(a,b,detJ);
-    #endif
-    #ifdef __THREEDIM__
-  V3_SUBTRACT(y[1],y[0],a);
-  V3_SUBTRACT(y[2],y[0],b);
-  V3_VECTOR_PRODUCT(a,b,c);
-  V3_SUBTRACT(x,y[0],a);
-  V3_SCALAR_PRODUCT(a,c,detJ);
-    #endif
-  if (detJ == 0.0) {
-    for (i=0; i<=DIM; i++)
-      s[i] = 1.0 / (DIM + 1.0);
-    return(0);
-  }
-  if (detJ < 0.0) {
-    V_DIM_COPY(y[0],a);
-    V_DIM_COPY(y[1],y[0]);
-    V_DIM_COPY(a,y[1]);
-  }
-  V_DIM_SUBTRACT(x,y[0],a);
-  TRANSFORMATION(DIM+1,y,s,M);
-  M_DIM_INVERT(M,IM,IMdet);
-  if (IMdet==0)
-    RETURN(1);
-  MT_TIMES_V_DIM(IM,a,s);
-  if (detJ < 0.0) {
-    s[DIM] = s[0];
-    s[0] = s[1];
-    s[1] = s[DIM];
-  }
-  s[DIM] = 1.0 - s[0] - s[1];
-  for (i=0; i<=DIM; i++)
-    if (s[i] < - 0.1) return(1);
-
-  return(0);
-}
-
-#define LEN_MAX DIM*DIM+1
-
 INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
-  INT ncomp,i,j,n,nmax,cnt;
+  INT ncomp,i,j,k,n,nmax,cnt;
   DOUBLE s[LEN_MAX],sum;
   GRID *newGrid;
   VECTOR *vect,*dest,*newVect,*w[LEN_MAX];
@@ -2154,266 +2075,71 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
   PRINTDEBUG(np,3,("%d:Ip nmax %d\n",me,nmax));
   for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
     if (VCCOARSE(vect) == 0) {
-      for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat))
-        SETMUSED(mat,0);
       ncomp = MD_COLS_IN_RT_CT(A,VTYPE(vect),VTYPE(vect));
       n = 0;
-            #ifdef ModelP
-      if (VecOnPBnd(vect)) {
-        for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat))
-          if (VecOnPBnd(MDEST(mat)))
-            if (VCCOARSE(MDEST(mat))==1) {
-              SETMUSED(mat,1);
-              n++;
-            }
+      for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
+        dest = MDEST(mat);
+        if (VCCOARSE(dest) == 0) continue;
+        w[n++] = dest;
+        if (n >= LEN_MAX) break;
       }
-      else
-            #endif
-      if (VecOnBnd(vect) || VECSKIP(vect)) {
-        for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat))
-          if (VecOnBnd(MDEST(mat)) || VECSKIP(MDEST(mat)))
-            if (VCCOARSE(MDEST(mat))==1) {
-              SETMUSED(mat,1);
-              n++;
-            }
-      }
-      if (n == 0)
-        for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
-          if (VCCOARSE(MDEST(mat))==1) {
-            SETMUSED(mat,1);
-            n++;
-          }
-        }
-      PRINTDEBUG(np,1,("%d:%d flag%d\n",VINDEX(vect),n,
-                       (VecOnBnd(vect) || VECSKIP(vect)) ));
-      while (n >= LEN_MAX) {
-        sum = 0.0;
-        for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
-          if (!MUSED(mat)) continue;
-          dest = MDEST(mat);
-          sum = MAX(sum,Dist(vect,dest));
-        }
-        for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
-          if (!MUSED(mat)) continue;
-          dest = MDEST(mat);
-          if (sum == Dist(vect,dest)) {
-            n--;
-            SETMUSED(mat,0);
-          }
-        }
-        PRINTDEBUG(np,1,("%d: red %d\n",VINDEX(vect),n));
-      }
-      if (n == 0) {
-        PrintErrorMessage('E',"IpAverage",
-                          "can't build Interpolation matrix (n = 0)");
-        REP_ERR_RETURN(1);
-      }
+      /*
+              if (KeyForObject((KEY_OBJECT *)vect) == -52016)
+                  for (i=0; i<n; i++)
+                          printf("w[%d] = %d\n",i,KeyForObject((KEY_OBJECT *)w[i]));
+       */
+      assert(n != 0);
       if (n == 1) {
         s[0] = 1.0;
       }
-      else if (n > 1)
+      else if (n == 2)
       {
-        i = 0;
-        VectorPosition(vect,x);
-        for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
-          if (!MUSED(mat)) continue;
-          VectorPosition(MDEST(mat),y[i]);
-          w[i++] = MDEST(mat);
-        }
-        if (n == 2)
-        {
-          DOUBLE d0 = Dist(vect,w[0]);
-          DOUBLE d1 = Dist(vect,w[1]);
-          DOUBLE d = d0 + d1;
+        DOUBLE d0 = Dist(vect,w[0]);
+        DOUBLE d1 = Dist(vect,w[1]);
+        DOUBLE d = d0 + d1;
 
-          assert(d != 0.0);
-          s[0] = d1 / d;
-          s[1] = d0 / d;
-        }
-        else if (n == DIM + 1)
-        {
-          if (ComputeLocalCoord(x,y,s)) {
-            if (s[0] < - 0.1) s[0] = -0.1;
-            if (s[1] < - 0.1) s[1] = -0.1;
-            s[2] = 1.0 - s[0] - s[1];
-            if (s[2] < - 0.1) {
-              s[2] = s[0] + s[1];
-              s[0] *= 1.05 / s[2];
-              s[1] *= 1.05 / s[2];
-              s[2] = 1.0 - s[0] - s[1];
-            }
-          }
-        }
+        assert(d != 0.0);
+        s[0] = d1 / d;
+        s[1] = d0 / d;
+      }
+            #ifdef __THREEDIM__
+      else if (n == 3)
+      {
+        DOUBLE d0 = Dist(vect,w[0]);
+        DOUBLE d1 = Dist(vect,w[1]);
+        DOUBLE d2 = Dist(vect,w[2]);
+        DOUBLE d;
+
+        assert(d0 != 0.0);
+        assert(d1 != 0.0);
+        assert(d2 != 0.0);
+        d = 1.0/d0 + 1.0/d1 + 1.0/d2;
+        d = 1.0/d;
+        s[0] = d  / d0;
+        s[1] = d  / d1;
+        s[2] = d  / d2;
+      }
+            #endif
+      else {
+        if (FindCoarseVectors(n,vect,w,s) == 0)
+          n = DIM + 1;
         else
           for (i=0; i<n; i++)
             s[i] = 1.0 / n;
       }
-
       /*
-         if (n < 0* DIM)
-         {
-          DOUBLE detJ,IMdet;
-              DOUBLE_VECTOR a,b,c,M[DIM],IM[DIM];
-
-          VectorPosition(vect,x);
-              cnt = 0;
-              for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
-                  if (!MUSED(mat))
-                          continue;
-                      if (cnt >= LEN_MAX) {
-                              SETMUSED(mat,0);
-                              continue;
-                      }
-                      dest = MDEST(mat);
-                      VectorPosition(dest,y[cnt]);
-                      cnt++;
-                      if (cnt == DIM) {
-         #ifdef __TWODIM__
-                          V2_SUBTRACT(y[0],x,a);
-                              V2_SUBTRACT(y[1],x,b);
-                              V2_VECTOR_PRODUCT(a,b,detJ);
-         #endif
-         #ifdef __THREEDIM__
-                              V3_SUBTRACT(y[1],y[0],a);
-                              V3_SUBTRACT(y[2],y[0],b);
-                              V3_VECTOR_PRODUCT(a,b,c);
-                              V3_SUBTRACT(x,y[0],a);
-                              V3_SCALAR_PRODUCT(a,c,detJ);
-         #endif
-                              ASSERT(detJ != 0.0);
-                              if (detJ < 0.0) {
-                                  V_DIM_COPY(y[0],a);
-                                      V_DIM_COPY(y[1],y[0]);
-                                      V_DIM_COPY(a,y[1]);
-                              }
-                          V_DIM_SUBTRACT(x,y[0],a);
-                      }
-                      else if (cnt == DIM+1) {
-                              TRANSFORMATION(DIM+1,y,loc,M);
-                              M_DIM_INVERT(M,IM,IMdet);
-                              if (IMdet==0)
-                                RETURN(1);
-                              MT_TIMES_V_DIM(IM,a,loc);
-                              if ((loc[0] < 0.0)
-       || (loc[1] < 0.0)
-       || (loc[0]+loc[1] > 1.0)) {
-                                  SETMUSED(mat,0);
-                                      cnt--;
-                                      continue;
-                              }
-
-                                printf("%f %f  %f %f   %f %f\n gl  %f %f loc  %f %f",
-                                y[0][0],
-                                y[0][1],
-                                y[1][0],
-                                y[1][1],
-                                y[2][0],
-                                y[2][1],x[0],x[1],loc[0],loc[1]);
-
-                                LOCAL_TO_GLOBAL(DIM+1,y,loc,x);
-
-                                printf("  gl %f %f\n",x[0],x[1]);
-
-                      }
-                      else if (cnt > DIM+1) {
-                              SETMUSED(mat,0);
-                              continue;
-                      }
-              }
-              GNs(DIM+1,loc,s);
-              if (detJ < 0.0) {
-                  a[0] = s[DIM];
-                      s[DIM] = s[DIM-1];
-                      s[DIM-1] = a[0];
-              }
-              if (cnt < DIM+1)
-                  n = cnt;
-         }
-         if (n == 2) {
-          s[0] = 1.0;
-         }
-         else if (n < DIM + 1) {
-          sum = 0.0;
-              for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
-                  if (!MUSED(mat)) continue;
-                      dest = MDEST(mat);
-                      sum += 1.0 / Dist(vect,dest);
-              }
-              cnt = 0;
-              for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
-                  if (!MUSED(mat)) continue;
-                      dest = MDEST(mat);
-                      s[cnt] = 1.0 / (Dist(vect,dest) * sum);
-                      cnt++;
-              }
-         }
-         else
-
-
-         if (n == DIM + 1)
-         {
-          DOUBLE detJ,IMdet;
-              DOUBLE_VECTOR a,b,c,M[DIM],IM[DIM];
-
-
-
-
-
-              if (detJ == 0)
-                printf("%f %f  %f %f   %f %f\n",
-                               y[0][0],
-                               y[0][1],
-                               y[1][0],
-                               y[1][1],
-                               y[2][0],
-                               y[2][1]);
-
-
-              ASSERT(detJ != 0.0);
-              if (detJ < 0.0) {
-                  V_DIM_COPY(y[DIM],a);
-                  V_DIM_COPY(y[DIM-1],y[DIM]);
-                  V_DIM_COPY(a,y[DIM-1]);
-              }
-              V_DIM_SUBTRACT(x,y[0],a);
-              TRANSFORMATION(DIM+1,y,loc,M);
-              M_DIM_INVERT(M,IM,IMdet);
-              if (IMdet==0)
-                  RETURN(1);
-              MT_TIMES_V_DIM(IM,a,loc);
-
-                printf("%f %f  %f %f   %f %f\n gl   %f %f loc   %f %f",
-                               y[0][0],
-                               y[0][1],
-                               y[1][0],
-                               y[1][1],
-                               y[2][0],
-                               y[2][1],x[0],x[1],loc[0],loc[1]);
-
-                LOCAL_TO_GLOBAL(DIM+1,y,loc,x);
-
-                printf("  gl %f %f\n",x[0],x[1]);
-
-
-
-         }
-         else
-          for (i=0; i<=DIM; i++)
-                  s[i] = 1.0 / n;
+                              if (n != DIM + 1) printf("%d: n %d  v %d\n",me,n,
+                                                                                KeyForObject((KEY_OBJECT *)vect));
        */
-      cnt = 0;
-      for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
-        if (!MUSED(mat)) continue;
-        if (cnt > LEN_MAX) continue;
-        dest = MDEST(mat);
-        PRINTDEBUG(np,3,(" %d",VINDEX(dest)));
-        if (MD_COLS_IN_RT_CT(A,VTYPE(vect),VTYPE(dest)) != ncomp) {
-          PrintErrorMessage('E',"IpAverage",
-                            "can't handle this format");
-          REP_ERR_RETURN(1);
-        }
-        assert(VISTART(dest)!=NULL);
-        newVect = MDEST(VISTART(dest));
+      /*
+         printf("n %d: ",n);
+         for (i=0; i<n; i++)
+         printf(" %5.3f",s[i]);
+         printf("\n",n);
+       */
+      for (i=0; i<n; i++) {
+        assert(VISTART(w[i])!=NULL);
+        newVect = MDEST(VISTART(w[i]));
         assert(newVect!=NULL);
         if ((imat=CreateIMatrix(theGrid,vect,newVect))==NULL) {
           PrintErrorMessage('E',"IpAverage",
@@ -2421,14 +2147,12 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
           REP_ERR_RETURN(1);
         }
         SETMDIAG(imat,1);
-        for (i=0; i<ncomp; i++)
+        for (k=0; k<ncomp; k++)
           for (j=0; j<ncomp; j++) {
-            if (i == j) MVALUE(imat,i*ncomp+j) = s[cnt];
-            else MVALUE(imat,i*ncomp+j) = 0.0;
+            if (k == j) MVALUE(imat,k*ncomp+j) = s[i];
+            else MVALUE(imat,k*ncomp+j) = 0.0;
           }
-        cnt++;
       }
-      PRINTDEBUG(np,3,("\n"));
     }
     else {
       ncomp = MD_COLS_IN_RT_CT(A,VTYPE(vect),VTYPE(vect));
