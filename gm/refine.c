@@ -4454,78 +4454,82 @@ SYNOPSIS:
                                     REFINE(theElement),MARK(theElement),COARSEN(theElement));
                      }
                      ENDDEBUG
-                     ComputeCopies(theGrid);
-                     /* by the neighborhood of elements were MARK != REFINE.                                     */
+                     if (hFlag)
                      {
-                       for (theElement=FIRSTELEMENT(FinerGrid); theElement!=NULL; theElement=SUCCE(theElement))
+                       ComputeCopies(theGrid);
+                       /* by the neighborhood of elements were MARK != REFINE.                                   */
+                       /* This will leave some flags where to rebuild connections later			 */
+                       if (level<toplevel)
                        {
-                         if (k<j)
-                           if (REFINE(EFATHER(theElement))!=MARK(EFATHER(theElement)))
-                             if (DisposeConnectionsInNeighborhood(FinerGrid,theElement)!=GM_OK)
-                               RETURN(GM_FATAL);
+                         for (theElement=FIRSTELEMENT(FinerGrid); theElement!=NULL; theElement=SUCCE(theElement))
+                         {
+                           if (k<j)
+                             if (REFINE(EFATHER(theElement))!=MARK(EFATHER(theElement)))
+                               if (DisposeConnectionsInNeighborhood(FinerGrid,theElement)!=GM_OK)
+                                 RETURN(GM_FATAL);
+                         }
                        }
                      }
-                   }
 
-                   /* TODO: bug fix to force new level creation */
-                   if (!hFlag)
-                   {
-                     /* set this variable>0 */
-                     /* TODO: delete special debug */ PRINTELEMID(-1)
+                     /* TODO: bug fix to force new level creation */
+                     if (!hFlag)
+                     {
+                       /* set this variable>0 */
+                       /* TODO: delete special debug */ PRINTELEMID(-1)
 
-                     nrefined = 1;
-                   }
+                       nrefined = 1;
+                     }
 
-                   /* create a new grid level, if at least one element is refined on finest level */
-                   r = 1;
+                     /* create a new grid level, if at least one element is refined on finest level */
+                     r = 1;
 #ifdef ModelP
-                   newlevel = UG_GlobalMaxINT(newlevel);
+                     newlevel = UG_GlobalMaxINT(newlevel);
 #endif
-                   if ( (r>0) && (k==j) )
+                     if ( (r>0) && (k==j) )
 
-                     newlevel = 1;
-                   if (CreateNewLevel(theMG,0)==NULL)
-                     RETURN(GM_FATAL);
-                   FinerGrid = GRID_ON_LEVEL(theMG,j+1);
-
-
-                   PRINTDEBUG(gm,1,(PFMT "RefineMultiGrid(): r=%d newlevel=%d\n",me,r,newlevel));
-#ifdef ModelP
-                   if ( k<j || newlevel )
-                     if (RefineGrid(theGrid)!=GM_OK)
+                       newlevel = 1;
+                     if (CreateNewLevel(theMG,0)==NULL)
                        RETURN(GM_FATAL);
+                     FinerGrid = GRID_ON_LEVEL(theMG,j+1);
 
-                   /* TODO: delete special debug */ PRINTELEMID(-1)
-                   /* This flag has been set either by GridDisposeConnection or by CreateElement	*/
-                   if ((k<j)||(newlevel))
 
-                     /* and compute the vector classes on the new (or changed) level */
-                     ClearVectorClasses(FinerGrid);
+                     PRINTDEBUG(gm,1,(PFMT "RefineMultiGrid(): r=%d newlevel=%d\n",me,r,newlevel));
+#ifdef ModelP
+                     if ( k<j || newlevel )
+                       if (RefineGrid(theGrid)!=GM_OK)
+                         RETURN(GM_FATAL);
 
-                   if (ECLASS(theElement)>=GREEN_CLASS || (rFlag==GM_COPY_ALL))
-                     SeedVectorClasses(FinerGrid,theElement);
-                   PropagateVectorClasses(FinerGrid);
-                   if (ECLASS(theElement)>=GREEN_CLASS)
                      /* TODO: delete special debug */ PRINTELEMID(-1)
-                     DEBUG_TIME(0);
+                     /* This flag has been set either by GridDisposeConnection or by CreateElement	*/
+                     if ((k<j)||(newlevel))
 
-                 }
+                       /* and compute the vector classes on the new (or changed) level */
+                       ClearVectorClasses(FinerGrid);
+
+                     if (ECLASS(theElement)>=GREEN_CLASS || (rFlag==GM_COPY_ALL))
+                       SeedVectorClasses(FinerGrid,theElement);
+                     PropagateVectorClasses(FinerGrid);
+                     if (ECLASS(theElement)>=GREEN_CLASS)
+                       /* TODO: delete special debug */ PRINTELEMID(-1)
+                       DEBUG_TIME(0);
+
+                   }
         #endif
 
-                   DisposeTopLevel(theMG);
-                   if (!refine_seq)
-                   {
-                     INT FromLevel = MAX(TOPLEVEL(theMG)-1,0);
-                     INT ToLevel = MAX(TOPLEVEL(theMG),0);
+                     DisposeTopLevel(theMG);
+                     if (!refine_seq)
+                     {
+                       INT FromLevel = MAX(TOPLEVEL(theMG)-1,0);
+                       INT ToLevel = MAX(TOPLEVEL(theMG),0);
 
-                     /* identify multiply created objects */
-                     IdentifyGridLevels(theMG,FromLevel,ToLevel);
+                       /* identify multiply created objects */
+                       IdentifyGridLevels(theMG,FromLevel,ToLevel);
 
-                     /* create one-element-overlapping for multigrid */
-                     CreateGridOverlap(theMG,FromLevel);
-                     ConnectNewOverlap(theMG,FromLevel);
-                     SetOverlapPriorities(GRID_ON_LEVEL(theMG,TOPLEVEL(theMG)));
-                   }
+                       /* create one-element-overlapping for multigrid */
+                       CreateGridOverlap(theMG,FromLevel);
+                       ConnectNewOverlap(theMG,FromLevel);
+                       SetOverlapPriorities(GRID_ON_LEVEL(theMG,TOPLEVEL(theMG)));
+                     }
         #endif
 
 if (CreateAlgebra(theMG) != GM_OK)
