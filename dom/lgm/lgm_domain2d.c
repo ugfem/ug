@@ -914,7 +914,8 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   loc2 = LGM_BNDP_LOCAL(theBndP2,j0);
   k = (loc1<loc2) ? floor(loc1) : floor(loc2);
   if (loc1-k>1.0 || loc2-k>1.0) return (NULL);
-  theBndS = (LGM_BNDS *)GetFreelistMemory(Heap,sizeof(LGM_BNDS));
+  if ((theBndS = (LGM_BNDS *)GetFreelistMemory(Heap,sizeof(LGM_BNDS)))==NULL)
+    return (NULL);
   LGM_BNDS_LINE(theBndS) = theLine;
   LGM_BNDS_LOCAL(theBndS,0) = LGM_BNDP_LOCAL(theBndP1,i0);
   LGM_BNDS_LOCAL(theBndS,1) = LGM_BNDP_LOCAL(theBndP2,j0);
