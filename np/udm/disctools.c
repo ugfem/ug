@@ -1193,7 +1193,7 @@ INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
    INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
                                                                                          DOUBLE **vptrlist[MAXVD],
                                                                                          DOUBLE **mptrlist[MAXMD],
-                                                                                         INT *vecskip, INT *nvec)
+                                                                                         INT *vecskip, INT *vtype, INT nvec[MAXVD])
 
 
    PARAMETERS:
@@ -1232,7 +1232,7 @@ INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
 INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
                               DOUBLE **vptrlist[MAXVD],
                               DOUBLE **mptrlist[MAXMD],
-                              INT *vecskip, INT *nvec)
+                              INT *vecskip, INT *vtype, INT nvec[MAXVD])
 {
   VECTOR *theVec[MAX_NODAL_VECTORS],*rv,*cv;
   MATRIX *mat;
@@ -1243,7 +1243,8 @@ INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
   if (GetVectorsOfDataTypesInObjects(elem,MVMD_DATATYPES(mvmd),MVMD_OBJTYPES(mvmd),&cnt,theVec)!=GM_OK)
     return (-1);
 
-  *nvec = cnt;
+  for (i=0; i<MAXVD; i++)
+    nvec[i] = 0;
 
   nskip = 0;
   for (l=0; l<MVMD_NVD(mvmd); l++) vc[l] = 0;
@@ -1261,13 +1262,17 @@ INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
     /* get VECDATA_DESC ptrs */
     for (l=0; l<MVMD_NVD(mvmd); l++)
       if (VD_ISDEF_IN_TYPE(MVMD_VD(mvmd,l),rt))
+      {
+        if (l==0)
+          vtype[nvec[l]] = rt;
+        nvec[l]++;
         if (MVMD_VDSUBSEQ(mvmd,l))
         {
           /* by convention only return ptr to first component */
           /* TODO: possibly increase speed by introducing offset pointers
                            VVALUEPTR(rv,VD_CMP_OF_TYPE(MVMD_VD(mvmd,l),rt,0));
                            which are computed by PrepareElementMultipleVMPtrs for
-                           all element types */
+                           all vector types */
           vptrlist[l][vc[l]++] = VVALUEPTR(rv,VD_CMP_OF_TYPE(MVMD_VD(mvmd,l),rt,0));
         }
         else
@@ -1276,6 +1281,7 @@ INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
           for (k=0; k<VD_NCMPS_IN_TYPE(MVMD_VD(mvmd,l),rt); k++)
             vptrlist[l][vc[l]++] = VVALUEPTR(rv,VD_CMP_OF_TYPE(MVMD_VD(mvmd,l),rt,k));
         }
+      }
 
     if (MVMD_NMD(mvmd)<=0)
       continue;
@@ -1362,17 +1368,127 @@ INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
    D*/
 /****************************************************************************/
 
-INT ClearVecskipFlags (GRID *theGrid, VECDATA_DESC *theVD)
+INT ClearVecskipFlags (GRID *theGrid, const VECDATA_DESC *theVD)
 {
   VECTOR *theVector;
-  INT j,vtype;
+  INT j,n;
 
-  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL;
-       theVector=SUCCVC(theVector)) {
-    vtype = VTYPE(theVector);
-    for (j=0; j<VD_NCMPS_IN_TYPE (theVD,vtype); j++)
-      VECSKIP(theVector) =  (VECSKIP(theVector) & (~(1<<j)) | (0<<j));
+  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector))
+  {
+    n = VD_NCMPS_IN_TYPE(theVD,VTYPE(theVector));
+    for (j=0; j<n; j++)
+      VECSKIP(theVector) =  CLEAR_FLAG(VECSKIP(theVector),(1<<j));
   }
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+   ComputePartVecskip - set bits where skip component of vectors have to be cleared
+
+   SYNOPSIS:
+   INT ComputePartVecskip (const VECDATA_DESC *vd, const VECDATA_DESC *vds,
+                                                                INT n[NVECTYPES], INT typeskip[NVECTYPES],
+                                                                INT co_n[NVECTYPES], INT co_typeskip[NVECTYPES])
+
+   PARAMETERS:
+   .  vd - descriptor of the global data
+   .  vds - sub descriptor of vd describing the part to be cleared
+   .  n - number of components at interface
+   .  typeskip - bits are set where comps of vds relative to vd
+   .  co_n - number of co-components at interface
+   .  co_typeskip - bits are set where not comps of vds relative to vd
+
+   DESCRIPTION:
+   This function sets bits where skip the component of vectors have to be cleared.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+INT ComputePartVecskip (const VECDATA_DESC *vd, const VECDATA_DESC *vds,
+                        INT typeskip[NVECTYPES],
+                        INT co_typeskip[NVECTYPES])
+{
+  INT tp,n,ns,i,j,cmp;
+
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (VD_ISDEF_IN_TYPE(vds,tp))
+    {
+      if (!VD_ISDEF_IN_TYPE(vd,tp))
+        REP_ERR_RETURN (1);
+
+      n  = VD_NCMPS_IN_TYPE(vd,tp);
+      ns = VD_NCMPS_IN_TYPE(vds,tp);
+      if (ns<n)
+      {
+        /* set all bits of comps in vds relative to vd */
+        typeskip[tp] = co_typeskip[tp] = 0;
+        for (i=0; i<n; i++)
+        {
+          cmp = VD_CMP_OF_TYPE(vd,tp,i);
+          for (j=0; j<ns; j++)
+            if (VD_CMP_OF_TYPE(vds,tp,i)==cmp)
+              break;
+          if (j<ns)
+            /* cmp contained in vds */
+            typeskip[tp] |= 1<<i;
+          else
+            co_typeskip[tp] |= 1<<i;
+        }
+      }
+      else if (ns==n)
+      {
+        /* all/no bits here */
+        typeskip[tp] = ~0;
+        co_typeskip[tp] = 0;
+      }
+      else
+        /* vd does not contain vds */
+        REP_ERR_RETURN (1);
+    }
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   ClearPartVecskipFlags - set vecskip bits to 0 in part of the domain
+
+   SYNOPSIS:
+   INT ClearPartVecskipFlags (GRID *theGrid, const INT typeskip[NVECTYPES])
+
+   PARAMETERS:
+   .  theGrid - pointer to a grid
+   .  typeskip - clear flags where bits are set
+
+   DESCRIPTION:
+   This function resets the vecskip flags in all vectors of a grid at positions
+   where flags are set in typeskip.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK if ok
+   .n    NUM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+INT ClearPartVecskipFlags (GRID *theGrid, const INT typeskip[NVECTYPES])
+{
+  VECTOR *theVector;
+  INT pattern[NVECTYPES];
+  INT tp;
+
+  for (tp=0; tp<NVECTYPES; tp++)
+    pattern[tp] = ~typeskip[tp];
+
+  /* compute skip positions of each type */
+  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector))
+    VECSKIP(theVector) &= pattern[VTYPE(theVector)];
+
   return(0);
 }
 
