@@ -43,7 +43,7 @@
 #include "refine.h"
 #include "devices.h"
 
-#define SMALL_LOCAL    5.E-3
+#define SMALL_LOCAL    2.E-4
 
 #define LOCAL_EQUAL(A,V)     (ABS((A)-(V))< (SMALL_LOCAL))
 #define IS_VALUE2(A,V)     (ABS((A)-(V))< (SMALL_C))
@@ -101,14 +101,14 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 static DOUBLE OneSideMoveCP(DOUBLE *CenterPVertex, DOUBLE *sideMid,
                             DOUBLE *CenterPointNeEL)
 {
-  DOUBLE x1,x2,y1;
+  DOUBLE x1,x2,yc1;
   DOUBLE LocalMove;
 
   V_DIM_EUKLIDNORM_OF_DIFF(sideMid,CenterPVertex,x1);
   V_DIM_EUKLIDNORM_OF_DIFF(CenterPointNeEL,sideMid,x2);
   assert(x1!=0 && x2!=0);
-  y1 = 2*x1/(1+sqrt(x2/x1));
-  LocalMove = 0.5*(y1/x1) - 0.5;
+  yc1 = 2*x1/(1+sqrt(x2/x1));
+  LocalMove = 0.5*(yc1/x1) - 0.5;
   return(LocalMove);
 }
 
@@ -117,12 +117,11 @@ static DOUBLE OneSideMoveCP(DOUBLE *CenterPVertex, DOUBLE *sideMid,
    NewPosCenterNodeCurved - modify displacement of center node according to a curved boundary
 
    SYNOPSIS
-   static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, DOUBLE *LocCoord)
+   static INT NewPosCenterNodeCurved(ELEMENT *theElement, DOUBLE *LocCoord)
 
    PARAMETERS
    .  theElement     - father element of the center node
-   .  centerNode     - center node of the element
-   .  LocCoord       - new local coordinates of center node
+   .  LocCoord       - new local coordinates of center node of theElement
 
    DESCRIPTION
    For boundary father elements on a curved boundary it exists one midnode with a 'MOVED' vertex on the
@@ -136,18 +135,17 @@ static DOUBLE OneSideMoveCP(DOUBLE *CenterPVertex, DOUBLE *sideMid,
  */
 /****************************************************************************/
 
-static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, DOUBLE *LocCoord)
+static INT NewPosCenterNodeCurved(ELEMENT *theElement, DOUBLE *LocCoord)
 {
   INT i,j,n,nmoved,found;
-  ELEMENT *sonElement;
+  ELEMENT *sonElement, *fatherElement;
   ELEMENT *SonList[MAX_SONS];
   NODE *theNode[MAX_SIDES_OF_ELEM];
   VERTEX *bndVertex[MAX_SIDES_OF_ELEM],*theVertex;
 #ifdef __TWODIM__
-  LINK *theLink;
   NODE *cornerNode[MAX_CORNERS_OF_SIDE];
   DOUBLE lcorn0[DIM],lcorn1[DIM],*lmid,totalLocal,*theCorners[MAX_CORNERS_OF_ELEM];
-  INT nbn,ncorn;
+  INT ncorn,edge,co0,co1;
 #endif
 
 #ifdef __THREEDIM__
@@ -155,6 +153,7 @@ static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, DOUBLE *
   return(1);
 #endif
   nmoved = 0;
+  /*  printf("fatherElement %ld, centerNode %ld, x , y %f %f \n",ID(theElement),ID(centerNode),XC(MYVERTEX(centerNode)),YC(MYVERTEX(centerNode))); */
   /* find boundary sides with moved vertices */
   GetAllSons(theElement, SonList);
   for (i=0; i<NSONS(theElement); i++)
@@ -189,16 +188,24 @@ static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, DOUBLE *
   {
     lmid = LCVECT(bndVertex[n]);
     /* find the two corner nodes of the Element on the boundary */
-    nbn = 0;
-    for (theLink=START(theNode[n]); theLink!=0; theLink=NEXT(theLink))
-    {
-      if (CORNERTYPE(NBNODE(theLink)))
-      {
-        cornerNode[nbn] = NBNODE(theLink);
-        nbn++;
-      }
-    }
-    assert(nbn==2);
+    edge = ONEDGE(bndVertex[n]);
+    fatherElement = VFATHER(bndVertex[n]);
+    co0 = CORNER_OF_EDGE(fatherElement,edge,0);
+    co1 = CORNER_OF_EDGE(fatherElement,edge,1);
+    cornerNode[0] = SONNODE(CORNER(fatherElement,co0));
+    cornerNode[1] = SONNODE(CORNER(fatherElement,co1));
+
+    /*      nbn = 0;
+          for (theLink=START(theNode[n]);theLink!=0;theLink=NEXT(theLink))
+            {
+              if (CORNERTYPE(NBNODE(theLink)))
+                {
+                  cornerNode[nbn] = NBNODE(theLink);
+                  nbn++;
+                }
+            }
+          assert(nbn==2); */
+
 
     CORNER_COORDINATES(theElement,ncorn,theCorners);
     UG_GlobalToLocal(ncorn,(const DOUBLE **)theCorners,
@@ -227,8 +234,8 @@ static INT NewPosCenterNodeCurved(ELEMENT *theElement,NODE *centerNode, DOUBLE *
   }
   if (found==FALSE)
   {
-    /*        printf("NewPosCenterNodeCurved lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]); */
-    /*        printf("center node nacher: xi=%f  eta=%f \n",LocCoord[0],LocCoord[1]); */
+    printf("NewPosCenterNodeCurved lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]);
+    printf("center node nacher: xi=%f  eta=%f \n",LocCoord[0],LocCoord[1]);
   }
 #endif
   return(0);
@@ -285,12 +292,11 @@ static INT MovedNode (ELEMENT *theElement)
 
    SYNOPSIS
    static INT NewPosCenterNode(ELEMENT *fatherElement, ELEMENT *nbElement[MAX_SIDES_OF_ELEM],
-                            NODE *theNode, DOUBLE LimitLocDis, DOUBLE *newPos)
+                            DOUBLE LimitLocDis, DOUBLE *newPos)
 
    PARAMETERS
    .  fatherElement     - father element of the center node
    .  nbElement         - neighbouring elements of the father element
-   .  theNode           - the center node
    .  LimitLocDis       - maximum displacement in local coordinates
    .  newPos            - new position of the center nodes in global coordinates
 
@@ -306,9 +312,8 @@ static INT MovedNode (ELEMENT *theElement)
 /****************************************************************************/
 
 static INT NewPosCenterNode(ELEMENT *fatherElement, ELEMENT *nbElement[MAX_SIDES_OF_ELEM],
-                            NODE *theNode, DOUBLE LimitLocDis, DOUBLE *newPos)
+                            DOUBLE LimitLocDis, DOUBLE *newPos)
 {
-  VERTEX *theVertex;
   DOUBLE sideMid[DIM],CenterPoint[DIM];
   DOUBLE *nbCorners[MAX_CORNERS_OF_ELEM],*fatherCorners[MAX_CORNERS_OF_ELEM],CenterPVertex[DIM];
   INT i,j,k,coe,fcorn,numOfSides,nmove[DIM];
@@ -322,20 +327,16 @@ static INT NewPosCenterNode(ELEMENT *fatherElement, ELEMENT *nbElement[MAX_SIDES
   PrintErrorMessage('E',"NewPosCenterNode","3D not implemented yet");
   return(1);
 #endif
-  /*    printf("NewPosCenterNode EL-ID %ld, NODE-ID %ld x, y %f %f\n",ID(fatherElement),ID(theNode),XC(MYVERTEX(theNode)),YC(MYVERTEX(theNode)));*/
 
-  /* old local coordinates of center node */
-  theVertex = MYVERTEX(theNode);
 #ifdef __TWODIM__
-  LocCoord[_X_] = 0.5; /*XI(theVertex); */
-  LocCoord[_Y_] = 0.5; /*ETA(theVertex); */
+  LocCoord[_X_] = 0.5;
+  LocCoord[_Y_] = 0.5;
 #else
-  LocCoord[_X_] = XI(theVertex);
-  LocCoord[_Y_] = ETA(theVertex);
-  LocCoord[_Z_] = NU(theVertex);
+  LocCoord[_X_] = 0.5;
+  LocCoord[_Y_] = 0.5;
+  LocCoord[_Z_] = 0.5;
 #endif
-  /* old coordinates of center node */
-  /*   CenterPVertex = CVECT(theVertex); */
+
   numOfSides = SIDES_OF_ELEM(fatherElement);
   CORNER_COORDINATES(fatherElement,fcorn,fatherCorners);
   /* calculate old global coordinates of center node according to xi=eta=0.5 */
@@ -400,17 +401,17 @@ static INT NewPosCenterNode(ELEMENT *fatherElement, ELEMENT *nbElement[MAX_SIDES
     }
     if (found==FALSE)
     {
-      /*           printf("father corners %f  %f \n",fatherCorners[0][0],fatherCorners[0][1]); */
-      /*           printf("father corners %f  %f \n",fatherCorners[1][0],fatherCorners[1][1]); */
-      /*           printf("father corners %f  %f \n",fatherCorners[2][0],fatherCorners[2][1]); */
-      /*           printf("father corners %f  %f \n",fatherCorners[3][0],fatherCorners[3][1]); */
-      /*           printf("father corners %f  %f \n",CVECT(MYVERTEX(CORNER(fatherElement,co0)))[0], */
-      /*                  CVECT(MYVERTEX(CORNER(fatherElement,i)))[1]); */
+      printf("father corners %f  %f \n",fatherCorners[0][0],fatherCorners[0][1]);
+      printf("father corners %f  %f \n",fatherCorners[1][0],fatherCorners[1][1]);
+      printf("father corners %f  %f \n",fatherCorners[2][0],fatherCorners[2][1]);
+      printf("father corners %f  %f \n",fatherCorners[3][0],fatherCorners[3][1]);
+      printf("father corners %f  %f \n",CVECT(MYVERTEX(CORNER(fatherElement,co0)))[0],
+             CVECT(MYVERTEX(CORNER(fatherElement,i)))[1]);
       UG_GlobalToLocal(fcorn,(const DOUBLE **)fatherCorners,
                        CVECT(MYVERTEX(CORNER(fatherElement,co0))),lcorn0);
       UG_GlobalToLocal(fcorn,(const DOUBLE **)fatherCorners,
                        CVECT(MYVERTEX(CORNER(fatherElement,co1))),lcorn1);
-      /*           printf("NewPosCenterNode lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]); */
+      printf("NewPosCenterNode lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]);
     }
 #endif
   }
@@ -432,7 +433,7 @@ static INT NewPosCenterNode(ELEMENT *fatherElement, ELEMENT *nbElement[MAX_SIDES
   /* direction must be performed                                                       */
   if (OBJT(fatherElement)==BEOBJ)
     if (MovedNode(fatherElement)==1)
-      if (NewPosCenterNodeCurved(fatherElement,theNode,LocCoord)!=0) return(1);
+      if (NewPosCenterNodeCurved(fatherElement,LocCoord)!=0) return(1);
 
   /* calculate new global coordinates of center node */
   LOCAL_TO_GLOBAL(fcorn,fatherCorners,LocCoord,newPos);
@@ -607,8 +608,8 @@ static INT LambdaFromQuad (ELEMENT *theElement,VERTEX *centerVertex,
     coord = 0;
   else
   {
-    /*       printf("LambdaFromQuad lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]); */
-    /*       printf("center node nacher: xi=%f  eta=%f \n",LocalCoord[0],LocalCoord[1]); */
+    printf("LambdaFromQuad lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]);
+    printf("center node nacher: xi=%f  eta=%f \n",LocalCoord[0],LocalCoord[1]);
     *lambda = 0.5;
     return(0);
   }
@@ -666,8 +667,8 @@ static INT LambdaFromQuad (ELEMENT *theElement,VERTEX *centerVertex,
     coord = 0;
   else
   {
-    /*       printf("LambdaFromQuadCurved lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]); */
-    /*       printf("center node nacher: xi=%f  eta=%f \n",LocalCoord[0],LocalCoord[1]); */
+    printf("LambdaFromQuadCurved lcorn0: %f %f, lcorn1: %f %f \n",lcorn0[0],lcorn0[1],lcorn1[0],lcorn1[1]);
+    printf("center node nacher: xi=%f  eta=%f \n",LocalCoord[0],LocalCoord[1]);
     *lambda = 0.5;
     return(0);
   }
@@ -727,6 +728,471 @@ static INT DefaultBndElemCenterLocal(NODE *centerNode, DOUBLE *defaultLocal)
   }
   return(0);
 }
+#ifdef __TWODIM__
+static INT LambdaOrthoBnd2D(const ELEMENT *fatherElement, const INT side, const NODE *MidNode,
+                            const NODE *Node0, const NODE *Node1, const NODE *CenterNode,
+                            DOUBLE *lambda)
+{
+  VERTEX *theVertex;
+  DOUBLE_VECTOR BndPoint0,BndPoint1,midBndPoint,MPVec,TangVec,NormVec;
+  DOUBLE Lambda0, midLambda, Lambda1,bndLambda[DIM-1],veclen ;
+  DOUBLE *CenterPoint;
+  DOUBLE_VECTOR VecA,VecB,VecC;
+  DOUBLE prod0,prod1;
+  BNDS *bnds;
+  DOUBLE min_fac,area,min_diff;
+  INT maxiter,iter,straight,orientation,concave;
+
+  straight=FALSE;
+  concave=FALSE;
+  /* check if boundary is convex */
+  V_DIM_SUBTRACT(CVECT(MYVERTEX(Node1)),CVECT(MYVERTEX(Node0)),VecA);
+  V_DIM_SUBTRACT(CVECT(MYVERTEX(MidNode)),CVECT(MYVERTEX(Node0)),VecB);
+  V_DIM_SUBTRACT(CVECT(MYVERTEX(CenterNode)),CVECT(MYVERTEX(Node0)),VecC);
+  V_DIM_VECTOR_PRODUCT(VecA,VecB,prod0);
+  V_DIM_VECTOR_PRODUCT(VecA,VecC,prod1);
+  V_DIM_EUKLIDNORM(VecA,veclen);
+  /* is the boundary a straight line ? */
+  if (fabs(prod0/(veclen*veclen)) < 100*SMALL_C) straight=TRUE;
+  if (prod0*prod1 < 0 && straight==FALSE) concave=TRUE;    /* boundary is concave */
+
+  if ((prod1 > 0. && concave==FALSE) || (prod1 < 0. && concave==TRUE))
+    orientation = 1;     /* CenterPoint and midNode are left from line Node0->Node1 */
+  else
+    orientation = 2;     /* CenterPoint and midNode are right from line Node0->Node1 */
+
+  CenterPoint = CVECT(MYVERTEX(CenterNode));
+  min_fac = 0.0001;
+  maxiter = 50;
+
+  theVertex = MYVERTEX(MidNode);
+  if (OBJT(theVertex) != BVOBJ) return(GM_ERROR);
+
+  bnds = ELEM_BNDS(fatherElement,side);
+  min_diff = min_fac;
+
+  Lambda0 = 0.;
+  Lambda1 = 1.;
+  iter=0;
+
+  /*     printf("midnode %ld  ",ID(MidNode));  */
+  while (fabs(Lambda1-Lambda0)>fabs(5.*min_diff) && iter<maxiter)
+  {
+    iter++;
+    midLambda = 0.5*(Lambda0+Lambda1);
+    do
+    {
+      bndLambda[0] = midLambda-min_diff;
+      bndLambda[0] = MAX(bndLambda[0],0.); bndLambda[0] = MIN(bndLambda[0],1.);
+      BNDS_Global(bnds,bndLambda,BndPoint0);
+      bndLambda[0]=midLambda+min_diff;
+      bndLambda[0] = MAX(bndLambda[0],0.); bndLambda[0] = MIN(bndLambda[0],1.);
+      BNDS_Global(bnds,bndLambda,BndPoint1);
+      min_diff *=2;
+    }
+    while (V_DIM_ISEQUAL(BndPoint0,BndPoint1));
+    /* reset min_diff */
+    min_diff = min_fac;
+    bndLambda[0]=midLambda;
+    BNDS_Global(bnds,bndLambda,midBndPoint);
+
+    V_DIM_SUBTRACT(BndPoint1,BndPoint0,TangVec);
+    V_DIM_EUKLIDNORM(TangVec,veclen);
+
+    V_DIM_SCALE(1./veclen,TangVec);
+
+    /* vector normal to the boundary with direction into domain */
+    if (orientation==1)
+    {
+      NormVec[0] = - TangVec[1]; NormVec[1] = TangVec[0];
+    }
+    else
+    {
+      NormVec[0] = TangVec[1]; NormVec[1] = -TangVec[0];
+    }
+    /* calculate direction MidNode -> CenterNode  */
+    V_DIM_SUBTRACT(CenterPoint,midBndPoint,MPVec);
+    V_DIM_EUKLIDNORM(MPVec,veclen);
+    V_DIM_SCALE(1./veclen,MPVec);
+
+    /* calculate vector product */
+    V_DIM_VECTOR_PRODUCT(MPVec,NormVec,area);
+    if (area==0.) break;
+    if (concave==TRUE)
+    {
+      if ( (area>0 && orientation==1) || (area<0 && orientation==2))
+      {
+        Lambda0 = midLambda;
+      }
+      else
+      {
+        Lambda1 = midLambda;
+      }
+    }
+    else
+    {
+      if ( (area>0 && orientation==1) || (area<0 && orientation==2))
+      {
+        Lambda0 = midLambda;
+      }
+      else
+      {
+        Lambda1 = midLambda;
+      }
+    }
+  }
+
+  bndLambda[0] = 0.;
+  BNDS_Global(bnds,bndLambda,BndPoint0);
+
+  if (V_DIM_ISEQUAL(CVECT(MYVERTEX(Node0)),BndPoint0))
+    *lambda = midLambda;
+  else if (V_DIM_ISEQUAL(CVECT(MYVERTEX(Node1)),BndPoint0))
+    *lambda = 1.-midLambda;
+  else
+    return(1);
+  if (iter > 40)
+    printf ("iter %d, midnode-id %ld, midlambda %f, lambda %f,  area %lf\n",
+            iter,ID(MidNode),midLambda,*lambda,area);
+  return(0);
+}
+#endif
+/*******************************************************************/
+/*                                                                 */
+/*                                                                 */
+/*   CornerNodes[1]       SideNodes[2]         CornerNodes[0]      */
+/*     #----------------------#-------------------#                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |            CenterNode|                   |                */
+/*     #----------------------#-------------------#SideNodes[0]    */
+/*     |SideNodes[1]          |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     #----------------------#-------------------#                */
+/*    BndNodes[1]           BndNode             BndNodes[0]        */
+/*                                                                 */
+/*******************************************************************/
+static INT EqualDistBndElem(ELEMENT *fatherElement, INT side, NODE *CenterNode, DOUBLE *CenterNodeCoord,
+                            NODE **SideNode, DOUBLE *SideNodeCoord)
+{
+  NODE *SideNodes[3], *BndNodes[2], *BndNode, *CornerNodes[2];
+  LINK *theLink;
+  DOUBLE dist0, dist1, distmax, CenterNodeDist, SideNodeDist, Lambda0, Lambda1, midLambda, bndLambda[DIM_OF_BND];
+  DOUBLE *BndPoint, BndPoint0[DIM],BndPoint1[DIM];
+  DOUBLE TangVec[DIM],NormVec[DIM],veclen ;
+  DOUBLE OldNormVec[DIM],prod,min_diff,min_fac;
+  INT i,j,k,nlinks;
+  BNDS *bnds;
+
+  /* find side nodes */
+  i = nlinks = 0;
+  for (theLink=START(CenterNode); theLink!=0; theLink=NEXT(theLink))
+  {
+    if (OBJT(MYVERTEX(NBNODE(theLink)))==BVOBJ)
+      BndNode = NBNODE(theLink);
+    else
+      SideNodes[i++] = NBNODE(theLink);
+    nlinks++;
+  }
+  assert(nlinks==4);
+  assert(i==3);
+
+  /* find boundary nodes of father element */
+  j = k = 0;
+  for (i=0; i<CORNERS_OF_ELEM(fatherElement); i++)
+  {
+    if (OBJT(MYVERTEX(CORNER(fatherElement,i)))==BVOBJ)
+      BndNodes[j++] = CORNER(fatherElement,i);
+    else
+      CornerNodes[k++] = CORNER(fatherElement,i);
+  }
+  assert(j==2);
+  assert(k==2);
+
+  /* find lambda of BndNode */
+  Lambda0 = 0.;
+  Lambda1 = 1.;
+  BndPoint = CVECT(MYVERTEX(BndNode));
+  bnds = ELEM_BNDS(fatherElement,side);
+  do
+  {
+    midLambda = 0.5*(Lambda0+Lambda1);
+    bndLambda[0] = Lambda0;
+    BNDS_Global(bnds,bndLambda,BndPoint0);
+    bndLambda[0]= midLambda;
+    BNDS_Global(bnds,bndLambda,BndPoint1);
+    V_DIM_EUKLIDNORM_OF_DIFF(BndPoint1,BndPoint0,dist1);
+    V_DIM_EUKLIDNORM_OF_DIFF(BndPoint,BndPoint0,dist0);
+    if (dist0<dist1)
+      Lambda1 = midLambda;
+    else
+      Lambda0 = midLambda;
+  }
+  while (!V_DIM_ISEQUAL(BndPoint0,BndPoint1));
+
+  /* calculate new boundary distance of CenterNode */
+  CenterNodeDist = distmax = 0;
+  for (i=0; i<3; i++)
+  {
+    V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(SideNodes[i])),CVECT(MYVERTEX(BndNodes[0])),dist0);
+    V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(SideNodes[i])),CVECT(MYVERTEX(BndNodes[1])),dist1);
+    dist0 = MIN(dist0,dist1);
+    if (dist0>distmax)
+    {
+      distmax = dist0;
+      SideNode[0] = SideNodes[i];
+    }
+    CenterNodeDist += dist0;
+  }
+  CenterNodeDist = (CenterNodeDist-distmax)*0.5;
+
+  /* calculate new boundary distance of SideNode[2] */
+  SideNodeDist = 0.;
+  for (i=0; i<2; i++)
+  {
+    V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(CornerNodes[i])),CVECT(MYVERTEX(BndNodes[0])),dist0);
+    V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(CornerNodes[i])),CVECT(MYVERTEX(BndNodes[1])),dist1);
+    dist0 = MIN(dist0,dist1);
+    SideNodeDist += dist0;
+  }
+  SideNodeDist *= 0.5;
+
+  /* calculate tangential vector */
+  min_fac = 0.0001;
+  min_diff = min_fac;
+  do
+  {
+    bndLambda[0] = midLambda-min_diff;
+    bndLambda[0] = MAX(bndLambda[0],0.); bndLambda[0] = MIN(bndLambda[0],1.);
+    BNDS_Global(bnds,bndLambda,BndPoint0);
+    bndLambda[0]=midLambda+min_diff;
+    bndLambda[0] = MAX(bndLambda[0],0.); bndLambda[0] = MIN(bndLambda[0],1.);
+    BNDS_Global(bnds,bndLambda,BndPoint1);
+    min_diff *=2;
+  }
+  while (V_DIM_ISEQUAL(BndPoint0,BndPoint1));
+
+  V_DIM_SUBTRACT(BndPoint1,BndPoint0,TangVec);
+  V_DIM_EUKLIDNORM(TangVec,veclen);
+
+  V_DIM_SCALE(1./veclen,TangVec);
+
+  /* old normal vector */
+  V_DIM_SUBTRACT(CVECT(MYVERTEX(CenterNode)),CVECT(MYVERTEX(BndNode)),OldNormVec);
+  /* find correct orientation for normal vector */
+  NormVec[0] = - TangVec[1]; NormVec[1] = TangVec[0];
+  V_DIM_SCALAR_PRODUCT(OldNormVec,NormVec,prod);
+  if (prod<0)
+  {
+    V_DIM_SCALE(-1.,NormVec);
+  }
+
+  V_DIM_LINCOMB(1.,BndPoint,CenterNodeDist,NormVec,CenterNodeCoord);
+  V_DIM_LINCOMB(1.,BndPoint,SideNodeDist,NormVec,SideNodeCoord);
+
+  return(0);
+}
+
+/*******************************************************************/
+/*        fatherElement                                            */
+/*        -------------                                            */
+/*   CornerNodes[1]       SideNodes[2]         CornerNodes[0]      */
+/*     #----------------------#-------------------#                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |            CenterNode|                   |                */
+/*     #----------------------#-------------------#SideNodes[0]    */
+/*     |SideNodes[1]          |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     #----------------------#-------------------#                */
+/*                         SideNodes[3]                            */
+/*                                                                 */
+/*        boundaryFather                                           */
+/*        --------------                                           */
+/*                                                                 */
+/*     #----------------------#-------------------#                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     #----------------------#-------------------#                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     |                      |                   |                */
+/*     #----------------------#-------------------#                */
+/*    BndNodes[1]           BndNode             BndNodes[0]        */
+/*                                                                 */
+/*******************************************************************/
+static INT EqualDistInnerElem(ELEMENT *fatherElement, ELEMENT *boundaryFather, INT side, NODE *CenterNode,
+                              DOUBLE *CenterNodeCoord, NODE **SideNode, DOUBLE *SideNodeCoord)
+{
+  NODE *SideNodes[4], *BndNodes[2], *BndNode, *CornerNodes[2], *NearestNode;
+  LINK *theLink,*theLink1;
+  DOUBLE dist0, dist1, dist2, distmax, distmin, CenterNodeDist, SideNodeDist;
+  DOUBLE Lambda0, Lambda1, midLambda, bndLambda[DIM_OF_BND];
+  DOUBLE *BndPoint, BndPoint0[DIM],BndPoint1[DIM];
+  DOUBLE TangVec[DIM],NormVec[DIM],veclen ;
+  DOUBLE OldNormVec[DIM],prod,min_diff,min_fac;
+  INT i,j,iter;
+  BNDS *bnds;
+
+  /* find side nodes */
+  i = 0;
+  for (theLink=START(CenterNode); theLink!=0; theLink=NEXT(theLink))
+    SideNodes[i++] = NBNODE(theLink);
+  assert(i==4);
+
+  /* find boundary nodes of boundary father element  */
+  j = 0;
+  for (i=0; i<CORNERS_OF_ELEM(boundaryFather); i++)
+  {
+    if (OBJT(MYVERTEX(CORNER(boundaryFather,i)))==BVOBJ)
+      BndNodes[j++] = CORNER(boundaryFather,i);
+  }
+  assert(j==2);
+  /* find son boundary node of boundary father element */
+  i = 0;
+  for (theLink=START(SONNODE(BndNodes[0])); theLink!=0; theLink=NEXT(theLink))
+  {
+    for (theLink1=START(SONNODE(BndNodes[1])); theLink1!=0; theLink1=NEXT(theLink1))
+    {
+      if (NBNODE(theLink)==NBNODE(theLink1))
+      {
+        BndNode = NBNODE(theLink);
+        i++;
+      }
+    }
+  }
+  assert(i==1);
+  assert(OBJT(MYVERTEX(BndNode))==BVOBJ);
+
+  /* find lambda of BndNode */
+  Lambda0 = 0.;
+  Lambda1 = 1.;
+  iter=0;
+  BndPoint = CVECT(MYVERTEX(BndNode));
+  bnds = ELEM_BNDS(boundaryFather,side);
+  do
+  {
+    midLambda = 0.5*(Lambda0+Lambda1);
+    bndLambda[0] = Lambda0;
+    BNDS_Global(bnds,bndLambda,BndPoint0);
+    bndLambda[0]= midLambda;
+    BNDS_Global(bnds,bndLambda,BndPoint1);
+    V_DIM_EUKLIDNORM_OF_DIFF(BndPoint1,BndPoint0,dist1);
+    V_DIM_EUKLIDNORM_OF_DIFF(BndPoint,BndPoint0,dist0);
+    if (dist0<dist1)
+      Lambda1 = midLambda;
+    else
+      Lambda0 = midLambda;
+  }
+  while (!V_DIM_ISEQUAL(BndPoint0,BndPoint1));
+
+  /* order side nodes */
+  /* side node with maximum wall distance */
+  distmax = 0;
+  for (i=0; i<4; i++)
+  {
+    V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(SideNodes[i])),CVECT(MYVERTEX(BndNodes[0])),dist0);
+    V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(SideNodes[i])),CVECT(MYVERTEX(BndNodes[1])),dist1);
+    V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(SideNodes[i])),CVECT(MYVERTEX(BndNode)),dist2);
+    dist0 = MIN(MIN(dist0,dist1),dist2);
+    if (dist0>distmax)
+    {
+      SideNode[0] = SideNodes[i];
+      distmax = dist0;
+    }
+  }
+  /* side node with minimum wall distance */
+  distmin = MAX_D;
+  for (i=0; i<4; i++)
+  {
+    /*         V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(SideNodes[i])),CVECT(MYVERTEX(BndNodes[0])),dist0); */
+    /*         V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(SideNodes[i])),CVECT(MYVERTEX(BndNodes[1])),dist1); */
+    V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(SideNodes[i])),CVECT(MYVERTEX(BndNode)),dist2);
+    dist0 = dist2;     /* MIN(MIN(dist0,dist1),dist2); */
+    if (dist0<distmin)
+    {
+      NearestNode = SideNodes[i];
+      distmin = dist0;
+    }
+  }
+
+  /* calculate new boundary distance of CenterNode */
+  CenterNodeDist = 0;
+  for (i=0; i<4; i++)
+  {
+    if (SideNodes[i]==NearestNode || SideNodes[i]==SideNode[0]) continue;
+    V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(SideNodes[i])),CVECT(MYVERTEX(BndNodes[0])),dist0);
+    V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(SideNodes[i])),CVECT(MYVERTEX(BndNodes[1])),dist1);
+    CenterNodeDist += MIN(dist0,dist1);
+  }
+  CenterNodeDist *= 0.5;
+
+  /* calculate new boundary distance of farest SideNode[2] */
+  CornerNodes[0] = CORNER(fatherElement,(side+2)%4);
+  CornerNodes[1] = CORNER(fatherElement,(side+3)%4);
+  SideNodeDist = 0.;
+  for (i=0; i<2; i++)
+  {
+    V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(CornerNodes[i])),CVECT(MYVERTEX(BndNodes[0])),dist0);
+    V_DIM_EUKLIDNORM_OF_DIFF(CVECT(MYVERTEX(CornerNodes[i])),CVECT(MYVERTEX(BndNodes[1])),dist1);
+    dist0 = MIN(dist0,dist1);
+    SideNodeDist += dist0;
+  }
+  SideNodeDist *= 0.5;
+
+  /* calculate tangential vector */
+  min_fac = 0.0001;
+  min_diff = min_fac;
+  do
+  {
+    bndLambda[0] = midLambda-min_diff;
+    bndLambda[0] = MAX(bndLambda[0],0.); bndLambda[0] = MIN(bndLambda[0],1.);
+    BNDS_Global(bnds,bndLambda,BndPoint0);
+    bndLambda[0]=midLambda+min_diff;
+    bndLambda[0] = MAX(bndLambda[0],0.); bndLambda[0] = MIN(bndLambda[0],1.);
+    BNDS_Global(bnds,bndLambda,BndPoint1);
+    min_diff *=2;
+  }
+  while (V_DIM_ISEQUAL(BndPoint0,BndPoint1));
+
+  V_DIM_SUBTRACT(BndPoint1,BndPoint0,TangVec);
+  V_DIM_EUKLIDNORM(TangVec,veclen);
+
+  V_DIM_SCALE(1./veclen,TangVec);
+
+  /* old normal vector */
+  V_DIM_SUBTRACT(CVECT(MYVERTEX(CenterNode)),CVECT(MYVERTEX(BndNode)),OldNormVec);
+  /* find correct orientation for normal vector */
+  NormVec[0] = - TangVec[1]; NormVec[1] = TangVec[0];
+  V_DIM_SCALAR_PRODUCT(OldNormVec,NormVec,prod);
+  if (prod<0)
+  {
+    V_DIM_SCALE(-1.,NormVec);
+  }
+
+  V_DIM_LINCOMB(1.,BndPoint,CenterNodeDist,NormVec,CenterNodeCoord);
+  V_DIM_LINCOMB(1.,BndPoint,SideNodeDist,NormVec,SideNodeCoord);
+
+  return(0);
+}
 
 
 /****************************************************************************/
@@ -755,22 +1221,26 @@ static INT DefaultBndElemCenterLocal(NODE *centerNode, DOUBLE *defaultLocal)
  */
 /****************************************************************************/
 
-INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const INT ForceLevelSet)
+INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const INT ForceLevelSet,
+                const INT bnd_num, const INT *bnd)
 {
   MULTIGRID *theMG;
-  ELEMENT *fatherElement,*nbElement[MAX_SIDES_OF_ELEM];
+  ELEMENT *fatherElement,*nbElement[MAX_SIDES_OF_ELEM],*Level0Father,*boundaryFather;
   ELEMENT *SonList[MAX_SONS];
   VERTEX *theVertex;
-  NODE *theNode;
-  DOUBLE *CornerPtrs[MAX_CORNERS_OF_ELEM],LocalCenter[3]={0.5,0.5,0.5};
+  NODE *theNode, *theSideNode[1];
+  DOUBLE *CornerPtrs[MAX_CORNERS_OF_ELEM];
   DOUBLE newPos[DIM],newLocal[DIM];
-  INT i,coe,numOfSides,OnlyRedSons;
+  INT i,coe,numOfSides,OnlyRedSons,ortho_used;
 #ifdef __TWODIM__
   LINK *theLink;
   NODE *CornerNodes[2],*CenterNodes[2],*node0,*node1;
   ELEMENT *oppositeElement;
   DOUBLE lambda,lambda0,lambda1,lambda_old,x1,x2;
-  INT ceN,Eside,nlinks;
+  INT coN,ceN,Eside,nlinks,j,type[3],side,sidefound,eqdist;
+  DOUBLE dummyValues[10];
+  DOUBLE CenterNodeCoord[DIM],SideNodeCoord[DIM];
+  static DOUBLE local[] = {0.5};
   INT edge,co0,co1;
 #endif
 
@@ -829,7 +1299,7 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
     }
 
     /* calculate new global coordinates of center node*/
-    if (NewPosCenterNode(fatherElement,nbElement,theNode,LimitLocDis,newPos)!=0) return(1);
+    if (NewPosCenterNode(fatherElement,nbElement,LimitLocDis,newPos)!=0) return(1);
 
     /* calculate new local coordinates of center node */
     CORNER_COORDINATES(fatherElement,coe,CornerPtrs);
@@ -845,7 +1315,7 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
     if ( (LOCAL_EQUAL(XI(theVertex),(0.5+LimitLocDis)) || LOCAL_EQUAL(XI(theVertex),(0.5-LimitLocDis))) ||
          (LOCAL_EQUAL(ETA(theVertex),(0.5+LimitLocDis)) || LOCAL_EQUAL(ETA(theVertex),(0.5-LimitLocDis))))
     {
-      /*             printf("center-node %ld, father-elem%ld reached limit\n",ID(theNode),ID(fatherElement)); */
+      printf("center-node %ld, father-elem%ld reached limit\n",ID(theNode),ID(fatherElement));
       MoveInfo[2]++;
     }
   }
@@ -876,6 +1346,11 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
     nlinks = 0;
     for (theLink=START(theNode); theLink!=0; theLink=NEXT(theLink))
     {
+      /*            if (NTYPE(NBNODE(theLink))==CORNER_NODE)
+                  {
+                      CornerNodes[coN] = NBNODE(theLink);
+                      coN++;
+                  }  */
       if (NTYPE(NBNODE(theLink))==CENTER_NODE)
       {
         CenterNodes[ceN] = NBNODE(theLink);
@@ -886,12 +1361,52 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
 
     /* 5 possibilities of element neighbourship relationships */
 
+    ortho_used = FALSE;
     /* quadrilateral is boundary element */
     if (nlinks==3 && ceN==1)
     {
       fatherElement = VFATHER(MYVERTEX(CenterNodes[0]));
-      if (LambdaFromQuad(fatherElement,MYVERTEX(CenterNodes[0]),theNode,CornerNodes,&lambda)!=0)
-        continue;
+      if (OBJT(fatherElement)!=BEOBJ) printf("elem-id %ld, node-id %ld, X %f %f\n",ID(fatherElement),ID(theNode),XC(MYVERTEX(theNode)),YC(MYVERTEX(theNode)));
+      if (bnd_num==0 || OBJT(MYVERTEX(theNode))!=BVOBJ)
+      {
+        if (LambdaFromQuad(fatherElement,MYVERTEX(CenterNodes[0]),theNode,CornerNodes,&lambda)!=0)
+          continue;
+      }
+      else
+      {
+        /* move boundary side nodes of quadrilaterals in order to get orthogonal boundary elements  on
+           specified boundaries */
+        sidefound = FALSE;
+        for (i=0; i<SIDES_OF_ELEM(fatherElement); i++)
+        {
+          if (!SIDE_ON_BND(fatherElement,i) || INNER_BOUNDARY(fatherElement,i)) continue;
+          SideBndCond(fatherElement,i,local,dummyValues,type);
+          for (j=0; j<bnd_num; j++)
+            if (type[1]==bnd[j])
+            {
+              sidefound = TRUE;
+              side = i;
+            }
+        }
+        if (sidefound==FALSE)
+        {
+          if (LambdaFromQuad(fatherElement,MYVERTEX(CenterNodes[0]),theNode,CornerNodes,&lambda)!=0)
+            continue;
+        }
+        else
+        {
+          /* apply 'ortho' option for boundary mid-node if possible */
+          if (LambdaOrthoBnd2D(fatherElement,side,theNode,(NODE *)NFATHER(CornerNodes[0]),
+                               (NODE *)NFATHER(CornerNodes[1]),CenterNodes[0],&lambda)!=0)
+          {
+            if (LambdaFromQuad(fatherElement,MYVERTEX(CenterNodes[0]),theNode,CornerNodes,&lambda)!=0)
+              continue;
+          }
+          else
+            ortho_used=TRUE;
+        }
+      }
+
     }
     /* triangle is boundary element */
     else if (nlinks==4 && ceN==0)
@@ -1013,9 +1528,10 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
     /* move boundary node */
     if (MoveMidNode(theMG,theNode,lambda)!=0) return(1);
     MoveInfo[1]++;
+    if (ortho_used) MoveInfo[4]++;
     if (LOCAL_EQUAL(lambda,(0.5+LimitLocDis)) || LOCAL_EQUAL(lambda,(0.5-LimitLocDis)) )
     {
-      /*             printf("mid-node %ld, father-elem%ld reached limit\n",ID(theNode),ID(fatherElement)); */
+      printf("mid-node %ld, father-elem%ld reached limit\n",ID(theNode),ID(fatherElement));
       MoveInfo[3]++;
     }
 #else
@@ -1023,6 +1539,93 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
     return(1);
 #endif
   }
+
+#ifdef __TWODIM__
+  /* move all son nodes of an level-0-boundary-element in order to get 'orthogonal' elements */
+  eqdist = TRUE;
+  if (eqdist==TRUE && bnd_num > 0)
+  {
+    /*    move center nodes of quadrilaterals  */
+    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+    {
+      /* skip node if it is a copy from a lower level */
+      if (CORNERTYPE(theNode)) continue;
+
+      /* skip node if it is not a center node */
+      if (NTYPE(theNode)!=CENTER_NODE) continue;
+
+      /* use only boundary father elements  */
+      /* the father element on level 0 must be a boundary element */
+      theVertex=MYVERTEX(theNode);
+      fatherElement = VFATHER(theVertex);
+      Level0Father=fatherElement;
+      for (i=GLEVEL(theGrid)-1; i>0; i--) Level0Father=EFATHER(Level0Father);     /* new */
+      if (OBJT(Level0Father)!=BEOBJ) continue;        /* new */
+      /*             if (OBJT(fatherElement)!=BEOBJ) continue; */
+
+      if (OBJT(fatherElement)==BEOBJ)
+      {
+        /* check if father element is on wall boundary */
+        sidefound = FALSE;
+        for (i=0; i<SIDES_OF_ELEM(fatherElement); i++)
+        {
+          if (!SIDE_ON_BND(fatherElement,i) || INNER_BOUNDARY(fatherElement,i)) continue;
+          SideBndCond(fatherElement,i,local,dummyValues,type);
+          for (j=0; j<bnd_num; j++)
+            if (type[1]==bnd[j])
+            {
+              sidefound = TRUE;
+              side = i;
+            }
+        }
+        if (sidefound==FALSE) continue;
+
+        if (EqualDistBndElem(fatherElement,side,theNode,CenterNodeCoord,theSideNode,SideNodeCoord)!=0) continue;
+
+        /* move center node */
+        if (MoveNode(theMG,theNode,CenterNodeCoord)!=0) return(1);
+        /*             MoveInfo[0]++; */
+        /* move side node */
+        if (MoveNode(theMG,theSideNode[0],SideNodeCoord)!=0) return(1);
+        /*             MoveInfo[1]++; */
+      }
+      else
+      {
+        /* check if father element is on wall boundary */
+        sidefound = FALSE;
+        for (i=0; i<SIDES_OF_ELEM(Level0Father); i++)
+        {
+          if (!SIDE_ON_BND(Level0Father,i) || INNER_BOUNDARY(Level0Father,i)) continue;
+          SideBndCond(Level0Father,i,local,dummyValues,type);
+          for (j=0; j<bnd_num; j++)
+            if (type[1]==bnd[j])
+            {
+              sidefound = TRUE;
+              side = i;
+            }
+        }
+        if (sidefound==FALSE) continue;
+
+        /* find corresponding element at the boundary */
+        for (boundaryFather=NBELEM(fatherElement,side); boundaryFather!=0;
+             boundaryFather=NBELEM(boundaryFather,side))
+        {
+          if(OBJT(boundaryFather)==BEOBJ)
+          {
+            if (EqualDistInnerElem(fatherElement,boundaryFather,side,theNode,
+                                   CenterNodeCoord,theSideNode,SideNodeCoord)!=0) continue;
+            /* move center node */
+            if (MoveNode(theMG,theNode,CenterNodeCoord)!=0) return(1);
+            /*             MoveInfo[0]++; */
+            /* move side node */
+            if (MoveNode(theMG,theSideNode[0],SideNodeCoord)!=0) return(1);
+            /*             MoveInfo[1]++; */
+          }
+        }
+      }
+    }
+  }
+#endif
   return(0);
 }
 /****************************************************************************/

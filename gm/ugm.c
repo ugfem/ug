@@ -4022,7 +4022,7 @@ ELEMENT *FindFather (VERTEX *theVertex)
         #ifdef TOPNODE
   if (OBJT(theElement)==BEOBJ)
   {
-    for (theNode=TOPNODE(theVertex); theNode!=0; theNode=NFATHER(theNode))
+    for (theNode=TOPNODE(theVertex); theNode!=0; theNode=(NODE *)NFATHER(theNode))
       if (NTYPE(theNode)==CENTER_NODE) return(theElement);
   }
         #endif
