@@ -259,8 +259,6 @@ INT NS_PREFIX InitNumerics ()
     return (err);
   }
 
-
-  /* Unfortunately, SLU does not compile as c++ */
   /* init slu */
   if ((err=InitSLU())!=0) {
     SetHiWrd(err,__LINE__);
