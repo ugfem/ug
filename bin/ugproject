@@ -34,19 +34,46 @@ ug3 ()
 
 appl2 () 
 {
-	ugmake simple
-	ugmake diff2da
-	ugmake ns2da 
-	ugmake fema 
-	ugmake cda 
-	ugmake scalar2d
+    if test -d $UGROOT/../simple
+	then
+		ugmake simple
+	fi
+    if test -d $UGROOT/../diff2da
+	then
+		ugmake diff2da
+	fi
+    if test -d $UGROOT/../cda
+	then
+		ugmake cda
+	fi
+    if test -d $UGROOT/../fem
+	then
+		ugmake fema
+	fi
+    if test -d $UGROOT/../ns2d
+	then
+		ugmake ns2d
+	fi
+    if test -d $UGROOT/../scalar2d
+	then
+		ugmake scalar2d
+	fi
 }
 
 appl3 () 
 {
-	ugmake cda 
-	ugmake fema 
-	ugmake scalar3d
+    if test -d $UGROOT/../cd
+	then
+		ugmake cda 
+	fi
+    if test -d $UGROOT/../fem
+	then
+		ugmake fema
+	fi
+    if test -d $UGROOT/../scalar
+	then
+		ugmake scalar3d
+	fi
 }
 
 if test "$1" = "ug2"
@@ -90,10 +117,23 @@ if test "$1" = "netgen"
 then
     ugconf NETGEN
 fi
+
+# clean 2d opjects
+
 ugmake ug -i ifdef
-ugmake cda -i ifdef
-ugmake fem -i ifdef
-ugmake scalar -i clean
+if test -d $UGROOT/../cd
+then
+	ugmake cda -i ifdef
+fi
+if test -d $UGROOT/../fem
+then
+	ugmake fem -i ifdef
+fi
+if test -d $UGROOT/../scalar
+then
+	ugmake scalar -i clean
+fi
+
 ( ug3 );
 ( appl3 );
 
