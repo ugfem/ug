@@ -2203,7 +2203,7 @@ INT NS_DIM_PREFIX PrintVectorX (const GRID *g, const VECDATA_DESC *X, INT vclass
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
+INT NS_DIM_PREFIX PrintVector (GRID *g, const VECDATA_DESC *X, INT vclass, INT vnclass)
 {
   return (PrintVectorX(g,X,vclass,vnclass,UserWriteF));
 }

@@ -6,14 +6,14 @@
 /*                                                                          */
 /* Purpose:   tools for assembling (header file)                            */
 /*                                                                          */
-/* Author:    Christian Wieners                                                                             */
-/*            Institut fuer Computeranwendungen III                                                 */
-/*            Universitaet Stuttgart                                                                                */
-/*            Pfaffenwaldring 27                                                                                    */
-/*            70569 Stuttgart                                                                                               */
-/*            email: ug@ica3.uni-stuttgart.de                                                           */
-/*                                                                                                                                                      */
-/* History:   Nov 27 95                                                                                 */
+/* Author:    Christian Wieners                                             */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
+/* History:   Nov 27 95                                                     */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -203,7 +203,7 @@ INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
 INT ConvertMatrix                               (GRID *theGrid, NS_PREFIX HEAP *theHeap, INT MarkKey,
                                                  MATDATA_DESC *A, INT symmetric,
                                                  int *pn, int **pia, int **pja, double **pa);
-INT PrintVector                                 (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass);
+INT PrintVector                                 (GRID *g, const VECDATA_DESC *X, INT vclass, INT vnclass);
 INT PrintVectorListX                    (const VECTOR *vlist[], const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf);
 INT PrintVectorX                                (const GRID *g, const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf);
 INT PrintSVector                                (MULTIGRID *mg, VECDATA_DESC *X);
