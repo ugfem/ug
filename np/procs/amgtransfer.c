@@ -881,8 +881,9 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
           if (PRIO(v) == PrioMaster)
             nv_m++;
         for (v=FIRSTVECTOR(newGrid); v!=NULL; v=SUCCVC(v))
-          if (VECSKIP(v))
-            nv_d++;
+          if (PRIO(v) == PrioMaster)
+            if (VECSKIP(v))
+              nv_d++;
         nv_m = UG_GlobalSumINT(nv_m);
         nv_d = UG_GlobalSumINT(nv_d);
                 #endif

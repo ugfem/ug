@@ -1370,17 +1370,25 @@ INT CoarsenAverage (GRID *theGrid)
         SETVCUSED(MDEST(theM),1);
       }
   }
-  fifo_in(&myfifo,(void *)theV);
-  SETVCUSED(theV,0);
+  for (theW=FIRSTVECTOR(theGrid); theW!=NULL; theW=SUCCVC(theW))
+    SETVCUSED(theW,1);
   i=0;
-  while(!fifo_empty(&myfifo)) {
-    theV = (VECTOR *)fifo_out(&myfifo);
-    vlist[i++] = theV;
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
-      if (VCUSED(MDEST(theM))) {
-        fifo_in(&myfifo,(void *)MDEST(theM));
-        SETVCUSED(MDEST(theM),0);
-      }
+  while (theV != NULL) {
+    fifo_in(&myfifo,(void *)theV);
+    SETVCUSED(theV,0);
+    while(!fifo_empty(&myfifo)) {
+      theV = (VECTOR *)fifo_out(&myfifo);
+      vlist[i++] = theV;
+      for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM))
+        if (VCUSED(MDEST(theM))) {
+          fifo_in(&myfifo,(void *)MDEST(theM));
+          SETVCUSED(MDEST(theM),0);
+        }
+    }
+    PRINTDEBUG(np,1,("%d: shell i %d n %d\n",me,i,n));
+    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+      if (VCUSED(theV))
+        break;
   }
   assert(i==n);
   for (i=0; i<n; i++)
