@@ -83,17 +83,32 @@
 #endif
 
 /* offset of additional parameters for boundary condition function call */
-#define DOM_PARAM_OFFSET        (DIM+1)
+enum DOM_IN_PARAMS {
+
+  DOM_GLB_X,                                            /* general bnd cond. x-coordinate               */
+  DOM_GLB_Y,                                            /* general bnd cond. y-coordinate               */
+#ifdef __THREEDIM__
+  DOM_GLB_Z,                                            /* general bnd cond. z-coordinate               */
+#endif
+  DOM_EVAL_FOR_SD,                              /* evaluate bc for this subdomain		*/
+  DOM_N_IN_PARAMS
+};
+
+#define DOM_LOC_X       DOM_GLB_X       /* parametrized bnd cond. local x-coord.*/
+#ifdef __THREEDIM__
+#define DOM_LOC_Y       DOM_GLB_Y       /* parametrized bnd cond. local y-coord.*/
+#endif
+
+#define DOM_PARAM_OFFSET        DOM_N_IN_PARAMS
+
+/* subdomain of BC evaluation unknown */
+#define DOM_EVAL_SD_UNKNOWN             -1.0
 
 /* boundary types */
 #define FIXED         0
 #define FREE          1
 #define PERIODIC      2
 #define NON_PERIODIC  3
-
-/* position of element relative to boundary */
-#define ELEM_IS_LEFT   -1.0
-#define ELEM_IS_RIGHT   1.0
 
 /* function formats */
 typedef INT (*ConfigProcPtr)(INT argc, char **argv);
@@ -319,11 +334,12 @@ BVP        *BVP_GetByName         (char *name);
    BVP_Init - initialize a BVP and return a mesh
 
    SYNOPSIS:
-   INT BVP_Init (char *name, HEAP *Heap, MESH *Mesh);
+   INT BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey);
 
    PARAMETERS:
    .  filename - name of file
    .  theHeap - heap
+   .  MarkKey - use key for temporary memory allocation (do not Mark/Release)
 
    DESCRIPTION:
    Function initialize a BVP and returns a mesh.
@@ -336,7 +352,7 @@ BVP        *BVP_GetByName         (char *name);
    SEE ALSO:
  */
 /****************************************************************************/
-BVP        *BVP_Init              (char *name, HEAP *Heap, MESH *Mesh);
+BVP        *BVP_Init              (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey);
 
 /****************************************************************************/
 /*D
@@ -500,7 +516,7 @@ BNDP*           BVP_InsertBndP            (HEAP *Heap, BVP *theBVP, INT argc, ch
    D*/
 /****************************************************************************/
 INT         BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size);
-MESH       *BVP_GenerateMesh      (HEAP *Heap, BVP *theBVP, INT argc, char **argv);
+MESH       *BVP_GenerateMesh      (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey);
 
 /****************************************************************************/
 /*																			*/
@@ -564,9 +580,9 @@ INT BNDP_Move (BNDP *aBndP, const DOUBLE global[]);
 
    PARAMETERS:
    .  aBndP - BNDP structure
-   .  i	 - ?
+   .  i	 - evaluate on patch i
    .  n     - number of BNDS
-   .  in    - input vector
+   .  in    - input vector (if !=NULL has to be allocated with >= DOM_N_IN_PARAMS DOUBLES)
    .  type  - type of bnd cond
    .  value - values
 
@@ -782,7 +798,7 @@ INT         BNDS_Global           (BNDS *theBndS, DOUBLE *local, DOUBLE *global)
    PARAMETERS:
    .  aBndS - BNDS structure
    .  local - local coordinate on BNDS
-   .  in    - input vector
+   .  in    - input vector (if !=NULL has to be allocated with >= DOM_N_IN_PARAMS DOUBLES)
    .  type  - type of bnd cond
    .  value - values
 
