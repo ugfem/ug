@@ -512,7 +512,7 @@ INT M3_Invert (COORD *Inverse, const COORD *Matrix)
 
 /****************************************************************************/
 /*D
-   V2_Normalize	- Normalize a 2D vector a
+   V2_Normalize	- Normalize a 2D vector
 
    SYNOPSIS:
    INT V2_Normalize (COORD *a);
@@ -521,7 +521,7 @@ INT M3_Invert (COORD *Inverse, const COORD *Matrix)
    .  a - input 2D vector (a[0],a[1])
 
    DESCRIPTION:
-   This function normalizes vector a 2D vector.
+   This function normalizes the 2D vector a.
 
    RETURN VALUE:
    INT
