@@ -731,6 +731,10 @@ int InitParallel (int *argc, char ***argv)
   /* show messages during transfer, for debugging */
   DDD_SetOption(OPT_DEBUG_XFERMESGS, OPT_OFF);
 
+  /* TODO: remove this, reference collision with Edge orientation
+     in 3D */
+  DDD_SetOption(OPT_WARNING_REF_COLLISION, OPT_OFF);
+
   /* treat identify tokens for one object as set */
   DDD_SetOption(OPT_IDENTIFY_MODE, IDMODE_SETS);
 
