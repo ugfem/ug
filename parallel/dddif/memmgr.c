@@ -461,22 +461,64 @@ void memmgr_FreeTMEM (void *buffer)
 
 /****************************************************************************/
 
-void *memmgr_AllocHMEM (unsigned long size)
+void *memmgr_AllocHMEM (size_t size)
 {
-  return(NULL);
+  void *buffer;
+  buffer = GetTmpMem(MGHEAP(dddctrl.currMG), size);
+
+  return(buffer);
 }
 
 void memmgr_FreeHMEM (void *buffer)
 {}
 
 void memmgr_MarkHMEM (void)
-{}
+{
+  MarkTmpMem(MGHEAP(dddctrl.currMG));
+}
 
 void memmgr_ReleaseHMEM (void)
-{}
+{
+  ReleaseTmpMem(MGHEAP(dddctrl.currMG));
+}
 
 
 /****************************************************************************/
+
+#define MAX_MALLOCS 256
+
+static size_t MemFree (void)
+{
+  void *buffers[MAX_MALLOCS];
+  size_t s = 1024*1024*1024;
+  size_t all = 0;
+  int i = 0;
+
+  do {
+    buffers[i] =(void *) malloc(s);
+    if (buffers[i]==NULL)
+    {
+      /* couldnt get memory of size s, try with half size */
+      s = s/2;
+    }
+    else
+    {
+      /* could allocate mem, continue */
+      all += s;
+      i++;
+    }
+  } while (i<MAX_MALLOCS && s>32);
+
+  /* free memory */
+  while (i>0)
+  {
+    i--;
+    free(buffers[i]);
+  };
+
+  return(all);
+}
+
 
 void memmgr_Init (void)
 {
@@ -492,6 +534,10 @@ void memmgr_Init (void)
 
     myheap = NewHeap(GENERAL_HEAP,HEAP_SIZE,buffer);
   }
+        #else
+  /* check for allocatable memory */
+  printf("%4d: MemMgr. size of allocatable memory: %ld\n", me,
+         (unsigned long)MemFree());
         #endif
 
 
