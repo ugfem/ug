@@ -34,17 +34,24 @@ double SuperLU_timer_() {
 
 #else
 
+#ifndef __MWCW__
 #include <time.h>
 #include <sys/times.h>
+#endif
 
 double SuperLU_timer_()
 {
+#ifndef __MWCW__
   struct tms use;
   double tmp;
   times(&use);
   tmp = use.tms_utime;
   tmp += use.tms_stime;
   return (double)tmp / (double)CLK_TCK;
+#else
+  /* do nothing */
+  return 0.0;
+#endif
 }
 
 #endif
