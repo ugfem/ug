@@ -193,15 +193,11 @@ INT MGSetVectorClasses (MULTIGRID *theMG)
 
 static INT SaveSurfaceGrid  (MULTIGRID *theMG, FILE *stream)
 {
-  GRID *theGrid;
   NODE *theNode;
   ELEMENT *theElement;
   VERTEX *theVertex;
   DOUBLE *global;
-  time_t Time;
-  char *fmt;
   char buffer[BUFFERSIZE];
-  BVP_DESC theBVPDesc;
   INT i,id,move,l,tl;
 
   tl = CURRENTLEVEL(theMG);
@@ -1028,7 +1024,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   {
     if (theRule->pattern[i]!=1)
     {
-      NodeList[l_entry++]==NULL;
+      NodeList[l_entry++] = NULL;
       continue;
     }
     n0 = CORNER_OF_EDGE(theElement,i,0);
@@ -1050,7 +1046,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   {
     if (theRule->pattern[i+nedge]!=1)
     {
-      NodeList[l_entry++]==NULL;
+      NodeList[l_entry++] = NULL;
       continue;
     }
     if (IO_GetSideNode(theElement,i,&(NodeList[l_entry]),&nbside)) return (1);
