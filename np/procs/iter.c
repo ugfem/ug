@@ -919,6 +919,28 @@ static INT BCGSSConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
+static INT SGSInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_SGS *np;
+
+  np = (NP_SGS *) theNP;
+  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+
+  return (SmootherInit(theNP,argc,argv));
+}
+
+static INT SGSDisplay (NP_BASE *theNP)
+{
+  NP_SGS *np;
+
+  SmootherDisplay(theNP);
+  np = (NP_SGS *) theNP;
+  if (np->t != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+
+  return (0);
+}
+
 static INT SGSPreProcess  (NP_ITER *theNP, INT level,
                            VECDATA_DESC *x, VECDATA_DESC *b,
                            MATDATA_DESC *A, INT *baselevel, INT *result)
@@ -945,15 +967,6 @@ static INT SGSPreProcess  (NP_ITER *theNP, INT level,
   return (0);
 }
 
-
-static INT SGSStep (NP_SMOOTHER *theNP, INT level,
-                    VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                    MATDATA_DESC *L,
-                    INT *result)
-{
-  return (0);
-}
-
 static INT SGSSmoother (NP_ITER *theNP, INT level,
                         VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
                         INT *result)
@@ -972,7 +985,7 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
   /* iterate forward */
     #ifdef ModelP
   if (l_vector_collect(theGrid,b)!=NUM_OK) NP_RETURN(1,result[0]);
-  if (l_lgs(theGrid,NP_SGS_t(np),(const MATDATA_DESC *)&np->smoother.L,b)
+  if (l_lgs(theGrid,NP_SGS_t(np),np->smoother.L,b)
       != NUM_OK)
     NP_RETURN(1,result[0]);
   if (l_vector_consistent(theGrid,NP_SGS_t(np)) != NUM_OK)
@@ -991,7 +1004,7 @@ static INT SGSSmoother (NP_ITER *theNP, INT level,
   /* iterate backward */
     #ifdef ModelP
   if (l_vector_collect(theGrid,b)!=NUM_OK) NP_RETURN(1,result[0]);
-  if (l_ugs(theGrid,x,(const MATDATA_DESC *)&np->smoother.L,b))
+  if (l_ugs(theGrid,x,np->smoother.L,b))
     NP_RETURN(1,result[0]);
   if (l_vector_consistent(theGrid,x) != NUM_OK) NP_RETURN(1,result[0]);
         #else
@@ -1027,17 +1040,16 @@ static INT SGSPostProcess (NP_ITER *theNP, INT level,
 
 static INT SGSConstruct (NP_BASE *theNP)
 {
-  NP_SMOOTHER *np;
+  NP_ITER *np;
 
-  theNP->Init = SmootherInit;
-  theNP->Display = SmootherDisplay;
+  theNP->Init = SGSInit;
+  theNP->Display = SGSDisplay;
   theNP->Execute = NPIterExecute;
 
-  np = (NP_SMOOTHER *) theNP;
-  np->iter.PreProcess = SGSPreProcess;
-  np->iter.Iter = SGSSmoother;
-  np->iter.PostProcess = SGSPostProcess;
-  np->Step = SGSStep;
+  np = (NP_ITER *) theNP;
+  np->PreProcess = SGSPreProcess;
+  np->Iter = SGSSmoother;
+  np->PostProcess = SGSPostProcess;
 
   return(0);
 }
@@ -1571,17 +1583,16 @@ static INT SBGSPostProcess (NP_ITER *theNP, INT level,
 
 static INT SBGSConstruct (NP_BASE *theNP)
 {
-  NP_SMOOTHER *np;
+  NP_ITER *np;
 
   theNP->Init = SBGS_Init;
   theNP->Display = SBGS_Display;
   theNP->Execute = NPIterExecute;
 
-  np = (NP_SMOOTHER *) theNP;
-  np->iter.PreProcess = SBGSPreProcess;
-  np->iter.Iter = SBGSSmoother;
-  np->iter.PostProcess = SBGSPostProcess;
-  np->Step = SGSStep;
+  np = (NP_ITER *) theNP;
+  np->PreProcess = SBGSPreProcess;
+  np->Iter = SBGSSmoother;
+  np->PostProcess = SBGSPostProcess;
 
   return(0);
 }
