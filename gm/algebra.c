@@ -3712,10 +3712,43 @@ INT ClearVectorClasses (GRID *theGrid)
    D*/
 /****************************************************************************/
 
+#ifdef ModelP
+static int Gather_VectorVClass (DDD_OBJ obj, void *data)
+{
+  VECTOR *theVector = (VECTOR *)obj;
+
+  PRINTDEBUG(gm,2,(PFMT "Gather_VectorVClass(): v=" ID_FMTX " vclass=%d\n",
+                   me,ID_PRTX(theVector),VCLASS(theVector)))
+
+    ((INT *)data)[0] = VCLASS(theVector);
+
+  return(GM_OK);
+}
+
+static int Scatter_VectorVClass (DDD_OBJ obj, void *data)
+{
+  VECTOR *theVector = (VECTOR *)obj;
+
+  SETVNCLASS(theVector,MAX(VCLASS(theVector),((INT *)data)[0]));
+
+  PRINTDEBUG(gm,2,(PFMT "Scatter_VectorVNClass(): v=" ID_FMTX " vclass=%d\n",
+                   me,ID_PRTX(theVector),VCLASS(theVector)))
+
+  return(GM_OK);
+}
+#endif
+
 INT PropagateVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
   MATRIX *theMatrix;
+
+#ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses(): 1. communication\n",me))
+  /* exchange VCLASS of vectors */
+  DDD_IFAOneway(OuterVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+                Gather_VectorVClass, Scatter_VectorVClass);
+#endif
 
   /* set vector classes in the algebraic neighborhood to 2 */
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
@@ -3725,6 +3758,13 @@ INT PropagateVectorClasses (GRID *theGrid)
             (CEXTRA(MMYCON(theMatrix))!=1))
           SETVCLASS(MDEST(theMatrix),2);
 
+#ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses(): 2. communication\n",me))
+  /* exchange VCLASS of vectors */
+  DDD_IFAOneway(OuterVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+                Gather_VectorVClass, Scatter_VectorVClass);
+#endif
+
   /* set vector classes in the algebraic neighborhood to 1 */
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
     if ((VCLASS(theVector)==2)&&(VSTART(theVector)!=NULL))
@@ -3732,6 +3772,13 @@ INT PropagateVectorClasses (GRID *theGrid)
         if ((VCLASS(MDEST(theMatrix))<2)&&
             (CEXTRA(MMYCON(theMatrix))!=1))
           SETVCLASS(MDEST(theMatrix),1);
+
+#ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses(): 3. communication\n",me))
+  /* exchange VCLASS of vectors */
+  DDD_IFAOneway(OuterVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+                Gather_VectorVClass, Scatter_VectorVClass);
+#endif
 
   return(0);
 }
