@@ -32,6 +32,7 @@
 #define __FILEOPEN__
 
 #include <stdio.h>
+#include <fcntl.h>
 
 #ifndef __COMPILER__
 #include "compiler.h"
