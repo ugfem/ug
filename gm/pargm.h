@@ -346,6 +346,8 @@ enum Priorities
 #define HGHOST(p)               0
 #define VGHOST(p)               0
 #define PRIO(p)                 0
+#define EPRIO(p)                0
+#define VXPRIO(p)               0
 #define SETPRIO(p,i)    ;
 #define PROCLIST(p)             (&_proclist_)
 #define NCOPIES(p)              1
