@@ -513,6 +513,8 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
 Continue:
           if (eresult.refine + eresult.coarse > 0)
           {
+            for (i=0; i<=level; i++)
+              RESETGSTATUS(GRID_ON_LEVEL(mg,i),GSTATUS_BDF);
             if (RefineMultiGrid(mg,bdf->refarg,
                                 GM_REFINE_PARALLEL,
                                 GM_REFINE_NOHEAPTEST) != GM_OK)
@@ -556,6 +558,20 @@ Continue:
               if ((*bdf->trans->InterpolateNewVectors)
                     (bdf->trans,0,level,bdf->y_p1,res))
                 NP_RETURN(1,res[0]);
+              if (bdf->step==0) {
+                if (tass->TAssembleInitial != NULL)
+                  if ( (*tass->TAssembleInitial)(tass,0,level,bdf->t_0,bdf->y_0,res) )
+                    return(1);
+                if ( (*tass->TAssembleSolution)(tass,0,level,bdf->t_0,bdf->y_0,res) )
+                  return(1);
+              }
+              if (bdf->step==1) {
+                if (tass->TAssembleInitial != NULL)
+                  if ( (*tass->TAssembleInitial)(tass,0,level,bdf->t_m1,bdf->y_m1,res) )
+                    return(1);
+                if ( (*tass->TAssembleSolution)(tass,0,level,bdf->t_m1,bdf->y_m1,res) )
+                  return(1);
+              }
               if (bdf->trans->PostProcessSolution != NULL)
                 if ((*bdf->trans->PostProcessSolution)
                       (bdf->trans,0,level,bdf->y_p1,res))
