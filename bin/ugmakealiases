@@ -28,9 +28,38 @@ UGALIASESFILE=$UGROOT/bin/ugaliases
 cd $UGROOT;
 rm -f $UGROOT/bin/ugaliases;
 
-echo " creating aliases ...";
+echo " creating aliases for ug...";
+
+# create aliases for applications
+cd ..;
+for i in *
+do
+	if test "$i" != "ug"
+	then
+		if test -d $i -a ! -h $i
+		then
+			if test "`basename $i`" != "CVS"
+			then
+				echo "alias cd`basename $i` 'cd \$UGROOT/../$i'" >> $UGALIASESFILE;
+			fi
+			for j in $i/*
+			do
+				if test -d $j -a ! -h $j
+				then
+					if test "`basename $j`" != "CVS"
+					then
+						echo "alias cd`basename $i``basename $j` 'cd \$UGROOT/../$j'" >> $UGALIASESFILE;
+					fi
+				fi
+			done
+		fi
+	fi
+done
+
+cd $UGROOT;
 
 # create aliases for ug directory
+echo "alias cdug 'cd \$UGROOT'" >> $UGALIASESFILE;
 for i in * */* */*/* */*/*/* 
 do
 	if test -d $i -a ! -h $i
