@@ -15,13 +15,17 @@ ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lm -lc
 ARCH_PLIBS    = -lpthread
-#   -pvctl,nomsg     switch off messages from vectorizer
+#   -D_MALLOC64       enable patch to allocate more then 2GB memory
+#   -pvctl,nomsg      switch off messages from vectorizer
 #   -h2               optimization
 #   pthread_specific  every thread its own data area 
 #                     (does not work together with X)
-ARCH_CFLAGS   = -Xc -pvctl,nomsg -h2
+#   -hacct            produce accounting information (mips, mflops, ... )
+#ARCH_CFLAGS   = -D_MALLOC64 -Xc -pvctl,nomsg -h2,acct
+# -Xa temporary neccessary because of malloc > 2 GB (long long)
+ARCH_CFLAGS   = -D_MALLOC64 -Xa -pvctl,nomsg -h2,acct
 ARCH_C++FLAGS = 
-ARCH_LFLAGS   = 
+ARCH_LFLAGS   = -D_MALLOC64 -h2,acct
 ARCH_ARFLAGS  = ru
 
 ARCH_XINCLUDES = -I/usr/include/X11
