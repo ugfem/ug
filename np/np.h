@@ -182,6 +182,8 @@ INT dadd           (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC 
                     const VECDATA_DESC *y);
 INT dsub           (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
                     const VECDATA_DESC *y);
+INT dminusadd      (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
+                    const VECDATA_DESC *y);
 INT daxpy          (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
                     DOUBLE a, const VECDATA_DESC *y);
 INT daxpyx         (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x,
@@ -325,23 +327,23 @@ INT l_dsetfunc          (GRID *g,                                               
 INT l_mean                      (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *sp);
 
 /* blas level 1 (BLOCKVECTOR operations) on one gridlevel */
-INT dsetBS                      ( const BLOCKVECTOR *bv, INT xc, DOUBLE a);
-INT dcopyBS             ( const BLOCKVECTOR *bv, INT xc, INT yc);
-INT dscalBS             ( const BLOCKVECTOR *bv, INT xc, DOUBLE a);
-INT daddBS                      ( const BLOCKVECTOR *bv, INT xc, INT yc);
-INT dsubBS                      ( const BLOCKVECTOR *bv, INT xc, INT yc);
-INT dminusaddBS         ( const BLOCKVECTOR *bv, INT xc, INT yc);
-INT daxpyBS             ( const BLOCKVECTOR *bv, INT xc, DOUBLE a, INT yc);
-INT ddotBS                      ( const BLOCKVECTOR *bv, INT xc, INT yc,   DOUBLE *a);
-INT dnrm2BS             ( const BLOCKVECTOR *bv, INT xc, DOUBLE *a);
+INT dsetBS                      (const BLOCKVECTOR *bv, INT xc, DOUBLE a);
+INT dcopyBS             (const BLOCKVECTOR *bv, INT xc, INT yc);
+INT dscalBS             (const BLOCKVECTOR *bv, INT xc, DOUBLE a);
+INT daddBS                      (const BLOCKVECTOR *bv, INT xc, INT yc);
+INT dsubBS                      (const BLOCKVECTOR *bv, INT xc, INT yc);
+INT dminusaddBS         (const BLOCKVECTOR *bv, INT xc, INT yc);
+INT daxpyBS             (const BLOCKVECTOR *bv, INT xc, DOUBLE a, INT yc);
+INT ddotBS                      (const BLOCKVECTOR *bv, INT xc, INT yc,   DOUBLE *a);
+INT dnrm2BS             (const BLOCKVECTOR *bv, INT xc, DOUBLE *a);
 
 /* blas level 2 (matrix (BLOCKVECTOR) operations) on one gridlevel */
-INT dmatsetBS           ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT mc, DOUBLE a);
-INT dmatcopyBS          ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT mc, INT nc);
-INT dmataddBS           ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT mc, INT nc);
-INT dmatmulBS           ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
-INT dmatmul_addBS       ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
-INT dmatmul_minusBS     ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
+INT dmatsetBS           (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT mc, DOUBLE a);
+INT dmatcopyBS          (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT mc, INT nc);
+INT dmataddBS           (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT mc, INT nc);
+INT dmatmulBS           (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
+INT dmatmul_addBS       (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
+INT dmatmul_minusBS     (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
 
 INT d2matmulBS          (const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, GRID *grid );
 INT d2matmul_minusBS(const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, GRID *grid );
