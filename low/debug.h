@@ -71,10 +71,12 @@
                                  rep_err_count = (rep_err_count+1)%REP_ERR_MAX;}
 #ifdef ModelP
 #define REP_ERR_RETURN(err)             { assert(((err)==0));return (err);}
+#define REP_ERR_RETURN_PTR(p)   { assert(((p)!=NULL));return (p);}
 #define REP_ERR_RETURN_VOID             { assert(FALSE);return;}
 #define REP_ERR_GOTO(st,lbl)    { st; assert(FALSE); goto lbl;}
 #else
 #define REP_ERR_RETURN(err)             { if (err) REP_ERR_INC  return (err);}
+#define REP_ERR_RETURN_PTR(p)   { if (p == NULL) REP_ERR_INC  return (p);}
 #define REP_ERR_RETURN_VOID             { REP_ERR_INC  return;}
 #define REP_ERR_GOTO(st,lbl)    { REP_ERR_INC st; goto lbl;}
 #endif
@@ -102,6 +104,7 @@
 #define ASSERT(exp)
 
 #define REP_ERR_RETURN(err)             {return (err);}
+#define REP_ERR_RETURN_PTR(p)   {return (p);}
 #define REP_ERR_RETURN_VOID             {return;}
 #define REP_ERR_GOTO(st,lbl)    {st; goto lbl;}
 #define REP_ERR_ENCOUNTERED             (FALSE)
