@@ -5413,8 +5413,8 @@ BNDP_SaveInsertedBndP (BNDP * theBndP, char *data, INT max_data_size)
 
 /* domain interface function: for description see domain.h */
 INT
-BNDP_BndCond (BNDP * aBndP, INT * n, INT i, DOUBLE * in, DOUBLE * value,
-              INT * type)
+NS_PREFIX BNDP_BndCond (BNDP * aBndP, INT * n, INT i, DOUBLE * in, DOUBLE * value,
+                        INT * type)
 {
   BND_PS *ps;
   PATCH *p;

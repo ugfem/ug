@@ -7,13 +7,13 @@
 /* Purpose:   quadrature formulas                                           */
 /*                                                                          */
 /* Author:    Christian Wieners                                             */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							    */
-/*																			*/
-/* History:   Sep 25 95 begin                                                                           */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
+/* History:   Sep 25 95 begin                                               */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -3553,7 +3553,7 @@ static void TestQuadratureRules( void )
 
 }
 
-INT GaussPoints(INT dim, INT n, INT order, DOUBLE_VECTOR *x, GAUSS_POINT *gp)
+INT NS_PREFIX GaussPoints(INT dim, INT n, INT order, DOUBLE_VECTOR *x, GAUSS_POINT *gp)
 {
   DOUBLE Jdet,area;
   INT ip,nip;

@@ -11,9 +11,9 @@
 /*            Universitaet Stuttgart                                        */
 /*            Pfaffenwaldring 27                                            */
 /*            70569 Stuttgart                                               */
-/*			  email: ug@ica3.uni-stuttgart.de				                        */
-/*																			*/
-/* History:   Sep 4, 1996, ug version 3.4                                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
+/* History:   Sep 4, 1996, ug version 3.4                                   */
 /*            December 8, 1996, new np subsystem                            */
 /*                                                                          */
 /* Remarks:                                                                 */
@@ -90,9 +90,9 @@ typedef struct {
 typedef DOUBLE (*ElementIndicatorProcPtr)(ELEMENT *, INT, VECDATA_DESC *);
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 static ElementIndicatorProcPtr ElementIndicator;
@@ -198,7 +198,7 @@ INT NS_PREFIX NPErrorDisplay (NP_ERROR *np)
   return(0);
 }
 
-INT NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_ERROR *np;
   DOUBLE Time,step;
