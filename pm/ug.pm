@@ -79,7 +79,7 @@ BEGIN
 		my $name=shift;
 
 		$TimeHiRes or return (-1,-1);
-		defined $time{$name} or die "time_eval: using evaluation on undefined entry '$name'\n";
+		defined $time{$name} or return (0,0);
 		if ($time{"running $name"})
 		{
 			time_stop($name);
