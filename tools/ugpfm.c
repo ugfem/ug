@@ -603,7 +603,7 @@ int MergeMultigrid (char *in, int rename)
   MGIO_CG_POINT **cg_point;
   struct mgio_cg_point_seq *cg_point_out;
   MGIO_CG_ELEMENT **cg_element,*o_element,*elem;
-  MGIO_BD_GENERAL *bd_general;
+  MGIO_BD_GENERAL *bd_general,bd_general_out;
   MGIO_PARINFO cg_pinfo;
   MGIO_REFINEMENT ***refinement,*ref;
   unsigned short *ProcList;
@@ -979,7 +979,7 @@ int MergeMultigrid (char *in, int rename)
   {printf("ERROR in 'MergeMultigrid': cannot write 'cg_point_out' to output file\n");return (1);}
   ht_cge=NULL;
   for (i=0; i<nparfiles; i++)
-    for (j=0; j<cg_general[i].nElement; j++)
+    for (j=0; j<ncge[i]; j++)
       if (cg_element[i][j].ge!=-1)
       {
         key[0]=1; key[1]=cg_element[i][j].level;
@@ -995,15 +995,57 @@ int MergeMultigrid (char *in, int rename)
     for (i=0; i<ge_element[elem->ge].nSide; i++)
     {
       if (elem->nbid[i]==-1) continue;
-      key[0]=1; key[1]=elem->nbid;
+      key[0]=1; key[1]=elem->nbid[i];
       if (LocalIndexHash(ht_cge,key,&lid))                             {printf("ERROR in 'MergeMultigrid': cannot 'LocalIndexHash'of 'ht_cge' for output file\n");return (1);}
       assert(lid>=0);
       assert(lid<cg_general_out.nElement);
       elem->nbid[i]=lid;
     }
+    for (i=0; i<ge_element[elem->ge].nCorner; i++)
+    {
+      key[0]=1; key[1]=elem->cornerid[i];
+      if (LocalIndexHash(ht_cgv,key,&lid))                 {printf("ERROR in 'MergeMultigrid': cannot 'LocalIndexHash'of 'ht_cgv' for output file\n");return (1);}
+      assert(lid!=-1);
+      elem->cornerid[i]=lid;
+    }
+    elem->nref=0;
   }
   if (EndHashGet(ht_cge))                                     {printf("ERROR in 'MergeMultigrid': cannot 'EndHashGet' of 'ht_cge' for output file\n");return (1);}
-
+#ifdef MERGE_DEBUG
+  HashTablePrint(ht_cge,"cge");
+#endif
+  for (i=0; i<nparfiles; i++)
+    for (j=0; j<ncge[i]; j++)
+      if (cg_element[i][j].ge!=-1)
+        if (Write_CG_Elements(1,cg_element[i]+j))               {printf("ERROR in 'MergeMultigrid': cannot 'Write_CG_Elements' for output file\n");return (1);}
+  if (Bio_Jump_From ())                                                                           {printf("ERROR in 'MergeMultigrid': cannot 'Bio_Jump_From' for output file\n");return (1);}
+  bd_general_out.nBndP=cg_general_out.nBndPoint;
+  if (Write_BD_General(&bd_general_out))                                          {printf("ERROR in 'MergeMultigrid': cannot 'Write_BD_General' for output file\n");return (1);}
+  BndPList=(BNDP**)malloc(bd_general_out.nBndP*sizeof(BNDP*));
+  if (BndPList==NULL)                                                                                     {printf("ERROR in 'MergeMultigrid': cannot allocate 'BndPList' for output file\n");return (1);}
+#ifdef MERGE_DEBUG
+  for (i=0; i<bd_general_out.nBndP; i++)
+    BndPList[i]=NULL;
+#endif
+  if (BeginHashGet(ht_bnp))                                                                       {printf("ERROR in 'MergeMultigrid': cannot 'BeginHashGet' of 'ht_bnp' for output file\n");return (1);}
+  while (1)
+  {
+    if (HashGet(ht_bnp,&object,key,&lid,&found))            {printf("ERROR in 'MergeMultigrid': cannot 'HashGet' of 'ht_cge' for output file\n");return (1);}
+    if (!found) break;
+    assert(lid>=0);
+    assert(lid<bd_general_out.nBndP);
+#ifdef MERGE_DEBUG
+    assert(BndPList[lid]==NULL);
+#endif
+    BndPList[lid]=(BNDP*)object;
+  }
+  if (EndHashGet(ht_bnp))                                     {printf("ERROR in 'MergeMultigrid': cannot 'EndHashGet' of 'ht_bnp' for output file\n");return (1);}
+#ifdef MERGE_DEBUG
+  for (i=0; i<bd_general_out.nBndP; i++)
+    assert(BndPList[i]!=NULL);
+#endif
+  if (Write_PBndDesc(-bd_general_out.nBndP,BndPList))                     {printf("ERROR in 'MergeMultigrid': cannot 'Write_PBndDesc' of 'BndPList' for output file\n");return (1);}
+  if (Bio_Jump_To ())                                                                             {printf("ERROR in 'MergeMultigrid': cannot 'Bio_Jump_To' for output file\n");return (1);}
 
 
   /* cross-check */
