@@ -39,7 +39,9 @@
 #include "general.h"
 #include "fileopen.h"
 
+#ifdef ModelP
 #include "parallel.h"
+#endif
 
 #include "pfile.h"
 
