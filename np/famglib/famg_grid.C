@@ -1635,7 +1635,8 @@ void CountOverlap (GRID *g)	// only for testing; TODO: remove
 {
 	VECTOR *vec, *nb;
 	MATRIX *mat;
-	int nrborder = NVEC_PRIO(g,PrioBorder), level, i;
+	unsigned int level, i;
+	int nrborder = NVEC_PRIO(g,PrioBorder);
 	int shelllevel[ 10000 ], inside, outside;
 	
 	for ( level = 0; level < 10000; level++ )
@@ -2358,7 +2359,7 @@ INT l_vector_collectAll (GRID *g, const VECDATA_DESC *x)
 	return (NUM_OK);
 }
 
-ppal( FAMGNode *node )
+void ppal( FAMGNode *node )
 {
 	FAMGPaList *palist = node->GetPaList();
 
@@ -2376,7 +2377,6 @@ ppal( FAMGNode *node )
 		palist = palist->GetNext();
 	}
 	//cout << "\n";	
-	return 0;
 }
 
 
@@ -2424,7 +2424,5 @@ void printlist(FAMGGraph *graph)
 		n = n->GetSucc();
 	}
 	cout<<endl<<flush;
-
-	return 0;
 }
 #endif

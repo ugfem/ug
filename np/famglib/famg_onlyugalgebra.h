@@ -178,7 +178,7 @@ class FAMGVector
 		FAMGVector(const FAMGGridVector& gridvec) : mygridvector(gridvec) {}
 		~FAMGVector();
 		FAMGVector( const FAMGGridVector& gridvec, VECDATA_DESC *vec_desc ) : mygridvector(gridvec), mydesc(vec_desc) {allocatedVD=0; assert(VD_IS_SCALAR(vec_desc)); comp = VD_SCALCMP(vec_desc);}
-		FAMGVector( const FAMGGridVector& gridvec, const FAMGVector &pattern_vec) : mygridvector(gridvec), comp(pattern_vec.comp), mydesc(pattern_vec.mydesc) {}
+		FAMGVector( const FAMGGridVector& gridvec, const FAMGVector &pattern_vec) : mygridvector(gridvec), mydesc(pattern_vec.mydesc), comp(pattern_vec.comp) {}
 		FAMGVector* create_new() const;		// create copy of my; incl. memory for data but without copying the data
 		const FAMGGridVector& GetGridVector() const {return mygridvector;}
 				
@@ -353,8 +353,8 @@ class FAMGMatrixAlg
 		typedef class FAMGMatrixIter Iterator;
 
 		FAMGMatrixAlg( int nr_vecs, int nr_links ) : n(nr_vecs), nlinks(nr_links) {}
-		FAMGMatrixAlg( GRID *grid, MATDATA_DESC *md, int nrVec, int nrLink ) : n(nrVec), nlinks(nrLink), mygrid(grid), matdesc(md), comp(MD_SCALCMP(md)) {assert(MD_IS_SCALAR(md));}
-		FAMGMatrixAlg( GRID *grid, MATDATA_DESC *md ) : n(0), nlinks(0), mygrid(grid), matdesc(md), comp(MD_SCALCMP(md)) {assert(MD_IS_SCALAR(md));} // CAUTION: set N and NLinks explicitly
+		FAMGMatrixAlg( GRID *grid, MATDATA_DESC *md, int nrVec, int nrLink ) : n(nrVec), nlinks(nrLink), comp(MD_SCALCMP(md)), mygrid(grid), matdesc(md) {assert(MD_IS_SCALAR(md));}
+		FAMGMatrixAlg( GRID *grid, MATDATA_DESC *md ) : n(0), nlinks(0), comp(MD_SCALCMP(md)), mygrid(grid), matdesc(md) {assert(MD_IS_SCALAR(md));} // CAUTION: set N and NLinks explicitly
 		FAMGMatrixAlg( GRID *grid, const FAMGMatrixAlg &pattern_mat) :  n(0), nlinks(0), mygrid(grid) { matdesc = NULL; if(pattern_mat.GetMatDesc()->locked) matdesc = pattern_mat.GetMatDesc(); else AllocMDFromMD(MYMG(grid), GLEVEL(grid), GLEVEL(grid), pattern_mat.GetMatDesc(), &matdesc); assert(matdesc!=NULL); assert(MD_IS_SCALAR(matdesc)); comp = MD_SCALCMP(matdesc);}
 		~FAMGMatrixAlg() {if (FreeMD(MYMG(GetMyGrid()),GLEVEL(GetMyGrid()),GLEVEL(GetMyGrid()),GetMatDesc())) assert(0);}
 		double operator[]( const FAMGMatrixEntry& me ) const {return MVALUE(me.GetMyMatrix(),GetComp());}
