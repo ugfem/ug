@@ -155,3 +155,14 @@ A: The right hand rule applies in the following way: Consider
   of nodes 0, 1 and 2 the thumb of your right hand points into the 
   left subdomain. 
 
+
+UG/ug/arch:
+--------
+
+Q: Why does my newly compiled UG application fail during load migration
+	with an error signal?
+
+A: Compile again.  Do a "module switch cc cc.3.3.0.1" before recompilation!
+	The new cray compiler has an unfixed bug.
+
+
