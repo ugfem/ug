@@ -774,9 +774,7 @@ INT NS_DIM_PREFIX SaveData (MULTIGRID *theMG, char *name, INT rename, INT save_w
       if (NameList==NULL) strcpy(dio_general.VDname[i],ENVITEM_NAME(theVDList[i]));
       else strcpy(dio_general.VDname[i],NameList[i]);
       ncomp += dio_general.VDncomp[i] = ncmp[i];
-      if (dio_general.VDncomp[i]==3)
-        dio_general.VDtype[i] = DIO_VECTOR;
-      else if (dio_general.VDncomp[i]==1)
+      if (dio_general.VDncomp[i]==1)
         dio_general.VDtype[i] = DIO_SCALAR;
       else
         dio_general.VDtype[i] = DIO_MULTIPLE_SCALAR;
