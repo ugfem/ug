@@ -10,11 +10,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#ifndef __MACOSXSERVER__
-#ifndef __MWCW__
-#include <malloc.h>
-#endif
-#endif
 
 #include <ctype.h>
 
