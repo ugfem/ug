@@ -1,0 +1,1630 @@
+#!/usr/bin/perl -w 
+
+#######################################################################
+###																	###
+###	File:	lgm+star2ng												###
+###																	###
+###	Purpose: generates <name>.ng file from <name>.lgm- and			###
+###			 star_<name>.vrt/inp/cel								###			 
+###																	###
+###	Author: Andreas Hauser											###
+###			IWR-Technische Simulation								###
+### 		Universitaet Heidelberg									###
+### 		Im Neuenheimer Feld 368									###
+###			69129 Heidelberg										###
+###			email: Andreas.Hauser@iwr.uni-heidelberg.de				###
+###																	###
+###	Hist:	Finished 09/2002										###
+###																	###
+#######################################################################
+
+use strict;
+use Fcntl;
+#use Devel::DProf;
+use tree;
+
+use vars qw ($real $LGM $VRT $CEL $NG $INP %VERT %BN %TOS %LGM_VERT);
+use vars qw ($F_LOC $R_EPS %POL $EPS_ABS $EPS_LOC %A2B $tetra_min );
+use vars qw ($EPS_C $T_TREE $L_TREE $E_TREE $HUGE %FOUND %SD);
+use vars qw ($TIN $SFN $SDN $N_SURF %P2L %TRIN2S %N2S);
+
+$real='[+-]*\d+\.*\d*[eE][+-]\d+|[+-]*\d+\.\d*|\d+|[+-]\d+';
+
+@ARGV>0 or die "usage: lgm+star2ng <file>\n";
+$HUGE = 99999999999999999;
+
+#######################################################################
+### Be sure of the applied epsilons. The best way is to have a 		###
+### geometry with 1000 in size and the below proposed epsilons		###
+#######################################################################
+
+## Take the least accurate number representation of the lgm- or 	##
+## the star_cd-file respectively (e.g. 1e-10)						##
+$EPS_ABS=1e-10;
+
+## Estimate the accuracy of the calculated local coordinates. 		##
+## Orientation is the R_EPS calculated and displayed.				##
+$EPS_LOC=1.0e-6;
+$F_LOC='%.20f';
+
+#######################################################################
+### file handler 													###
+#######################################################################
+$LGM=$ARGV[0].'.lgm';
+$TIN=$ARGV[0].'.tin';
+$SFN=$ARGV[0].'.sfn';
+$SDN=$ARGV[0].'.sdn';
+$VRT="star_$ARGV[0].vrt";
+$CEL="star_$ARGV[0].cel";
+$INP="star_$ARGV[0].inp";
+$NG=$ARGV[0].'.ng';
+
+#######################################################################
+### Read Vertices from star.vrt										###
+####################################################################### 
+{
+	my ($a,$b,$c,$max_co,$tmp1);
+
+	$max_co=0.0;
+
+	sysopen(FH,$VRT,O_RDONLY)
+		or die "Cannot open file $VRT !\n";
+
+	## Get maximal coordinate ##
+	while(<FH>){
+		if($_=~/\s*(\d+)\s+($real)\s*($real)\s*($real)/){
+			$a=$2; $b=$3; $c=$4;
+			if($a=~/(\d+)E[+-]/){$a=~s/E/e/}
+			if($b=~/(\d+)E[+-]/){$b=~s/E/e/}
+			if($c=~/(\d+)E[+-]/){$c=~s/E/e/}
+			if( ($a * $a) > $max_co ){$max_co=$a}
+			if( ($b * $b) > $max_co ){$max_co=$b}
+			if( ($c * $c) > $max_co ){$max_co=$c}
+		}
+	}
+	close(FH);
+
+	## print out epsilon info for user ##
+	print"-------------------------------------------\n";
+	print"Epsilon global:			$EPS_ABS\n";
+	print"Epsilon local:			$EPS_LOC\n";
+
+	## Read vertices and 											   ##
+	## scale relative accuracy with max coordinate for global accuracy ##
+	sysopen(FH,$VRT,O_RDONLY);
+	while(<FH>){
+		if($_=~/\s*(\d+)\s+($real)\s*($real)\s*($real)/){
+			$a=$2;$b=$3;$c=$4;
+			$tmp1=$1;
+			if($a=~/(\d+)E[+-]/){$a=~s/E/e/}
+			if($b=~/(\d+)E[+-]/){$b=~s/E/e/};
+			if($c=~/(\d+)E[+-]/){$c=~s/E/e/};
+			$VERT{$tmp1}="$a $b $c";
+		}
+	}
+	close(FH);
+}
+#######################################################################
+### Read Boundary Nodes from star.cel								###
+####################################################################### 
+{
+	my (%tri,$min,$max,$line);
+
+	$tetra_min=1000000000;
+	sysopen(FH,$CEL,O_RDONLY) or die "Cannot open file $CEL !\n";
+	while($line=<FH>){
+		if($line=~s/\s*(\d+)//){
+			if($line=~/\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/){
+				if($5==0 && $6==0 && $7==0 && $8==0){
+					$BN{$1}=$VERT{$1};
+					$BN{$2}=$VERT{$2};
+					$BN{$3}=$VERT{$3};
+					$BN{$4}=$VERT{$4};
+		
+					## %tri for getting smallest side of triangle ##
+					%tri=();
+					$tri{$1}=$VERT{$1};
+					$tri{$2}=$VERT{$2};
+					$tri{$3}=$VERT{$3};
+					$tri{$4}=$VERT{$4};
+					($min,$max)=GetMinMaxOfTriangle(\%tri);
+					if($min<0){die "modulus must be >0 $!\n";}
+					if($min<$tetra_min){
+						$tetra_min=$min;	
+					}
+				}
+			}
+		}
+	}
+	close(FH);
+}
+#######################################################################
+### Read Vertices of Points and Points on Lines from <file>.lgm		###
+####################################################################### 
+{
+	my ($i,$flag,$a,$b,$c,%tri,$tri,$lgm_max,$lid,$line,$lgm_min);
+	my ($min,$max);
+
+	sysopen(FH,$LGM,O_RDONLY)
+		or die "Cannot open file $LGM !\n";
+
+	$flag=$i=0;
+	while($line=<FH>){
+		
+		## Get points on lines ##
+		if($line=~s/line\s+(\d+)//g){
+			$lid=$1;
+			while($line=~/(\d+)/g){
+				$POL{$lid}.="$1 ";
+				$P2L{$1} .= "$lid ";
+			}
+		}
+		
+
+		## Get point coordinates ##
+		if($line=~/\s*Point-Info/){
+			$flag=1;	
+		}	
+		if($flag){
+			if($line=~/\s*($real)\s+($real)\s+($real)/){
+				$a=sqrt($1*$1);
+				$b=sqrt($2*$2);
+				$c=sqrt($3*$3);
+				if($a<$EPS_ABS){
+					$a=0;}
+				else{$a=$1}
+				if($b<$EPS_ABS){
+					$b=0;}
+				else{$b=$2}
+				if($c<$EPS_ABS){
+					$c=0;}
+				else{$c=$3;}
+				$LGM_VERT{$i++}="$a $b $c";
+			}
+		}
+	}
+	close(FH);
+
+	## Determining largest side of a lgm-triangle ##
+	$lgm_max=-10000000;
+	$lgm_min=10000000;
+	sysopen(FH,$LGM,O_RDONLY);
+	while(<FH>){
+		if($_=~/triangles:(.+)/){
+			$tri=$1;
+			$tri=~s/;/ /;
+			while($tri=~/\s*(\d+)\s+(\d+)\s+(\d+)/g){
+				%tri=();
+				$tri{$1}=$LGM_VERT{$1};	
+				$tri{$2}=$LGM_VERT{$2};	
+				$tri{$3}=$LGM_VERT{$3};	
+				($min,$max)=GetMinMaxOfTriangle(\%tri);
+				if(($min<0) || ($max<0)){die "Edge of triangle must be >= 0 $!\n";}
+				if($max>$lgm_max){
+					if($lgm_max==0){die "Max edge of triangle must not be 0 $!\n";}
+					$lgm_max=$max;	
+				}
+				if($min<$lgm_min){
+					if($lgm_min==0){die "Min edge of triangle must not be 0 $!\n";}
+					$lgm_min=$min;
+				}
+			}
+		}
+	}
+	close(FH);
+
+	## Determine <smallest side of element>/<largest side of triangle>
+	$R_EPS=$tetra_min/$lgm_max;	
+	$EPS_C=$lgm_min/5.0;
+	printf("Min Edge of Tetra: 		%7.2e\n",$tetra_min);
+	printf("Max side of lgm-triangle: 	%7.2e\n",$lgm_max);
+	printf("(Min Edge)/(Max Side): 		%7.2e\n",$R_EPS);
+	printf("Epsilon coincident:		%7.2e\n",$EPS_C);
+	print"-------------------------------------------\n";
+}
+#######################################################################
+### Read triangles on each surface into hash-table					###
+### Map triangle-id to surface										###
+####################################################################### 
+{
+	my ($id,$tri_id,@ar,$i,$k);
+	
+	### Read triangles per surface ###
+	sysopen(FH,$LGM,O_RDONLY);
+	$N_SURF=0;
+	while(<FH>){
+		if($_=~/triangles:(.+)/){
+			$TOS{$N_SURF}=$1;
+			$TOS{$N_SURF}=~s/;//g;	
+
+			@ar=split /\s+/,$TOS{$N_SURF};
+			$tri_id=0;
+			$k=1;
+			while($k<@ar){
+				$id=0;
+				for($i=0; $i<3; $i++){
+					$N2S{$ar[$k+$i]}.="$ar[$k] $ar[$k+1] $ar[$k+2] $N_SURF $tri_id ";
+					$TRIN2S{$ar[$k+$i]}.="$N_SURF $tri_id $id ";		
+					$id++;
+				}
+				$tri_id++;
+				$k+=3;
+			}
+			$N_SURF++;
+		}
+	}
+	close(FH);
+}
+#######################################################################
+### Assigning tin-surface names to lgm-surface-ids					###
+#######################################################################
+## takes very long, if surface names are not needed to assigned, just
+## say if(0)
+if(0){
+	my ($s,$tin_sname,$n_points,$n_triangles,$flag,$nl,$np);
+	my (%Tin_S_Tri,%Tin_S_Points,$nco,@tin_tri,%points);
+	my (@lgm_tri,%SurfName,$gotcha,%tos,%known);
+
+	## Read in tin-surface info ##
+	sysopen(FH,$TIN,O_RDONLY);
+	
+	$flag=0;
+	while(<FH>){
+		if(($_=~/material_point/) || ($_=~/affix/)){
+			last;
+		}
+		if($_=~/define_surface\s+name\s+(.+)/){
+			$s=$1;
+			if($s=~/Default/){
+				next;
+			}
+			if($s=~/(.+)family/){
+				$tin_sname=$1;
+				$flag=1;
+				next;
+			}
+		}
+		if($_=~/unstruct_mesh\s+n_points\s+(\d+)\s+n_triangles\s+(\d+)/){
+			$n_points=$1; $n_triangles=$2;
+			$nl=0;
+			next;
+		}
+		if($flag){
+			if($_=~/\s*($real)\s+($real)\s+($real)/){
+				if($nl>=$n_points){
+					$Tin_S_Tri{$tin_sname}.="$1 $2 $3 ";
+				}else{
+					$Tin_S_Points{$tin_sname}.="$1 $2 $3 ";
+				}
+				$nl++;
+			}
+		}
+	}
+	close(FH);
+
+	sysopen(FH,$SFN, O_WRONLY | O_CREAT | O_TRUNC);
+	print(FH "","# UG LGM surface names\n");
+	
+	## Compare tin-triangle with lgm-triangle ##
+	TIN_SURF:foreach $tin_sname (keys %Tin_S_Tri){
+		$nco=$np=$gotcha=0;
+		%points=();
+		while($Tin_S_Points{$tin_sname}=~/\s*($real)\s+($real)\s+($real)/g){
+			$points{$np}="$1 $2 $3 ";
+			$np++;
+		}
+		while(($Tin_S_Tri{$tin_sname}=~/($real)/g) && ($nco<3)){
+			$tin_tri[$nco]=$points{$1};
+			$nco++;
+		}
+
+		## lgm-triangle ##
+		%tos=%TOS;
+		foreach $s (keys %tos){
+			while(($tos{$s}=~/\s*(\d+)\s+(\d+)\s+(\d+)\s*/g) ){
+				$lgm_tri[0]=$LGM_VERT{$1};
+				$lgm_tri[1]=$LGM_VERT{$2};
+				$lgm_tri[2]=$LGM_VERT{$3};
+				if(SameTriangle(\@tin_tri,\@lgm_tri)){
+					$SurfName{$s}="$tin_sname";
+					if(exists($known{$s})){
+						print(FH "","$s \t\t $SurfName{$s}  (Coinciding surfaces will be renamed)\n");
+					}else{
+						print(FH "","$s \t\t $SurfName{$s}\n");
+						$known{$s}=1;
+					}
+					$gotcha=1;
+					next TIN_SURF;
+				}
+			}
+		}
+		if(!$gotcha){
+			print"Could not find coinciding triangle\n";
+			print"Tin-surface $tin_sname, tin-triangle: $tin_tri[0] $tin_tri[1] $tin_tri[2]\n";
+			die;
+		}
+	}
+	close(FH);
+}
+#######################################################################
+### Assigning tin-material names to lgm-subdomain-id				###
+#######################################################################
+{
+	my @s;
+
+	sysopen(FH1,$SDN, O_WRONLY | O_CREAT | O_TRUNC);
+	print(FH1 "","# UG subdomain names\n");
+	if(sysopen(FH,$TIN,O_RDONLY)){
+		while(<FH>){
+			if($_=~/ORFN/){
+				next}
+			if($_=~/material_point\s+(.+)/){
+				@s=split /name\s+/,$1;
+				@s=split /family/,$s[1];
+				if($s[1]=~/(\d+)/){
+					print(FH1 "","$1 \t $s[0]\n");
+				}else{
+					die "Could not detect Material assignment $!\n"}
+			}
+		}
+		close(FH);
+	}
+	else{print"WARNING: cannot open *.tin, no name association possible!\n"}
+	close(FH1);
+	
+}
+#######################################################################
+### Create tree for linesegments									###
+####################################################################### 
+{
+	my ($k,$np,$j,$i,$count,@boxes,@objects,@points,@d);	
+
+	$count = 0;
+
+	## creating boxes
+	print"->Generating linesegment boxes.\n";
+
+	foreach $k(keys %POL ){
+		$np = 0;
+
+		## process all points on one line ##
+		while($POL{$k}=~/($real)/g){
+			$points[$np++]=$1;
+		}
+		for($j=0; $j<$np-1; $j++){
+
+			my(@ur,@ll,%obj,@p1,@p2);
+			
+			## starting and end point of a segment of a line ##
+			@p1=split / /,$LGM_VERT{$points[$j]};
+			@p2=split / /,$LGM_VERT{$points[$j+1]};
+
+			if( ($#p1 != 2) || ($#p2 !=2) ){die "Number of dimensions must be 3 $!\n";}
+			
+			## get dimension of boxes
+			for($i=0; $i<3; $i++){
+				$ll[$i] = $ur[$i] = $p1[$i];
+				$ll[$i] = min($ll[$i], $p2[$i]);
+				$ur[$i] = max($ur[$i], $p2[$i]);
+				$d[$i] = $ur[$i] - $ll[$i];
+			}
+			if( Mod(@d) < $EPS_LOC){
+			   die "Length of a segment is smaller than EPS_LOC $!\n"}	
+			$obj{line} = $k;
+			$obj{p1} = \@p1;
+			$obj{p2} = \@p2;
+			$objects[$count] = \%obj;
+			$boxes[$count] = BBT_NewBBox(3,\@ll,\@ur,$objects[$count]);
+			$count++;
+		}	
+	}
+	print"->Building linesegment-tree (#segments $count).\n";
+	$L_TREE = BBT_NewTree(\@boxes,$count,3);
+}
+#######################################################################
+### Callback Function for triangles									###
+####################################################################### 
+sub Triangle_Callback
+{
+	my($x,$obj)=@_;
+	my(@p0,@p1,@p2,@a,@b,@c,@p,$i,$ma,$mb,$mc,@tmp,@cp,$d,$md,@dist,$tmp);
+	my($xi,$eta,$mcp,@n);
+
+	$tmp = $obj->{p0}; @p0 = @$tmp;
+	$tmp = $obj->{p1}; @p1 = @$tmp;
+	$tmp = $obj->{p2}; @p2 = @$tmp;
+
+	## Point lies not inside triangle 
+	if(!(GetLocalCoordinates(\@p0,\@p1,\@p2,$x,\$xi,\$eta))){
+		return $HUGE;}
+	
+	for($i=0; $i<3; $i++){
+		$a[$i]=$x->[$i]-$p0[$i];
+		$b[$i]=$x->[$i]-$p1[$i];
+		$c[$i]=$x->[$i]-$p2[$i];
+	}
+
+	## norms ##
+	$ma=Mod(@a);
+	$mb=Mod(@b);
+	$mc=Mod(@c);
+
+	## Find closest Point of triangle P0,P1,P2 to x -> Pref=P0 ##
+	if( ($mc<$ma) && ($mc<$mb) ){
+		@tmp = @p0;
+		@p0  = @p2;
+		@p2  = @tmp;
+	}elsif( ($mb<$ma) && ($mb<$mc) ){
+		@tmp = @p0;
+		@p0  = @p1;	
+		@p1  = @tmp;
+	}
+
+	## vectors ##
+	@a=@b=@c=();
+	for($i=0;$i<3;$i++){
+		$a[$i]=$p1[$i]-$p0[$i];
+		$b[$i]=$p2[$i]-$p0[$i];
+		$c[$i]=$p2[$i]-$p1[$i];
+		$p[$i]=$x->[$i]-$p0[$i];
+	}
+
+	## normal vector ##
+	@cp=CrossProduct(\@a,\@b);
+	$mcp = Mod(@cp);
+	for($i=0; $i<3; $i++){
+		$n[$i] = $cp[$i]/$mcp;
+	}
+	
+	## distance from P normal to plane axb ##
+	$d=DotProduct(\@p,\@cp);
+
+	## point is too far from plane axb ##
+	$md=sqrt($d*$d);
+	if($md > $EPS_LOC){ $md=$md/(Mod(@p)*Mod(@cp))}
+	if($md>$EPS_LOC){
+		return $HUGE;
+	}
+
+	## Projected point = reference point P0 + dist ##
+	for($i=0;$i<3;$i++){
+		$dist[$i]=(-$d)*$n[$i];
+		$obj->{p_proj}->[$i] = $x->[$i] + $dist[$i];
+	}
+	
+	return(Mod(@dist));
+}
+#######################################################################
+### Create tree for triangles										###
+####################################################################### 
+{
+	my($i,$s,@keys,@boxes,$count,@objects);
+
+	$count = 0;
+	
+	## create boxes
+	print"->Generating triangle boxes.\n";
+	foreach $s(keys %TOS){
+		my($tri_id);
+
+		$tri_id=0;
+
+		while($TOS{$s}=~/\s*(\d+)\s+(\d+)\s+(\d+)/g){
+
+			my (@ur,@ll,%obj,@p0,@p1,@p2,@tri);
+	
+			$tri[0] = $1; $tri[1] = $2; $tri[2] = $3; 
+		
+			## Get coordinates of points ##
+			@p0=split / /,$LGM_VERT{$1};
+			@p1=split / /,$LGM_VERT{$2};
+			@p2=split / /,$LGM_VERT{$3};
+			
+			## get dimension of boxes ##
+			for($i=0; $i<3; $i++){
+				$ll[$i] = $ur[$i] = $p0[$i];
+				$ll[$i] = min($ll[$i], $p1[$i]);
+				$ll[$i] = min($ll[$i], $p2[$i]);
+				$ur[$i] = max($ur[$i], $p1[$i]);
+				$ur[$i] = max($ur[$i], $p2[$i]);
+			}
+
+			## store relevant data into box object ##
+			$obj{tri_id} = $tri_id;
+			$obj{surf} = $s;
+			$obj{tri} = \@tri;
+			$obj{p0} = \@p0;
+			$obj{p1} = \@p1;
+			$obj{p2} = \@p2;
+			$objects[$count] = \%obj;
+			$boxes[$count] = BBT_NewBBox(3,\@ll,\@ur,$objects[$count]);
+			$tri_id++;
+			$count++;
+		}
+	}
+	print"->Building triangle-tree (#triangles $count).\n";
+	$T_TREE = BBT_NewTree(\@boxes,$count,3);
+}
+
+
+#######################################################################
+### Processing each Boundary Node									###
+####################################################################### 
+{
+	my (@keys,$bn,$surf,$xi,$eta,@BN,$tri,$tri_id,$i);
+	my ($n,$inside,$node,$line,$flag,$tmp,$P0,$P1,$P2,$line_id,$loc,$BN);
+	my (%line,$perc,%display,%stat_pos,%stat_neg,$k,@stat);
+
+	my (@DP_L,@XI_L,@ETA_L,@GAMMA_L);
+
+
+	sysopen(FH,$NG, O_WRONLY | O_CREAT | O_TRUNC)
+		or die "Cannot open file $NG !\n";
+
+	print(FH "","# Boundary nodes\n");
+	$inside=$node=$line=0;
+	$i=0;
+
+	## Init Statistics ##
+	@stat=&InitStatistics;
+	
+	## user display: start processing boundary nodes ##
+	@keys=sort{$a<=>$b}(keys %BN);
+	print"===================================\n";
+	print"Processing ",$#keys+1," Boundary Nodes\n";
+	print"===================================\n";
+
+	### loop over each boundary node ###
+	$flag=0;
+	BN:foreach $bn (@keys){
+
+		@BN=split /\s+/,$BN{$bn};
+		if($#BN !=2){die "Number of dimensions must be 3 ! $!\n";}
+		
+		## user display: processed bn ##
+		&display_processed($#keys,$i);
+
+		## map arbitrary order of bn->order of listing Nodes in ng-file ##
+		$flag=0;
+		$A2B{$bn}=$i;
+
+		## Determine local parameters and check, whether BN	##
+		## lies inside triangle								##
+		
+		if(FindLgmTriangle(\@BN,\$surf,\$P0,\$P1,\$P2,\$tri,\$tri_id)){
+			GetLocalCoordinates($P0,$P1,$P2,\@BN,\$xi,\$eta);	
+
+			my (%P,$j);
+
+			### BN lies on a Node ### 
+			if( (eq0($xi) && eq0($eta)) || (eq0($xi) && eq1($eta)) || (eq1($xi) && eq0($eta)) ){
+				&BnOnNode($xi,$eta,$tri->[0],$tri->[1],$tri->[2],\$i,$bn,@BN);
+				$node++;
+				$flag=1;
+				next BN;
+			}
+			
+			### BN may lie on a line ###
+			elsif( ((eq0($xi) || eq1($xi)) && (g0($eta) && l1($eta)) && (eq1($xi+$eta) || le1($xi+$eta)) ) ||
+					((eq0($eta) || eq1($eta)) && (g0($xi) && l1($xi)) && (eq1($xi+$eta) || le1($xi+$eta)) ) ||
+					( eq1($xi+$eta) && l1($xi) && g0($xi)  && g0($eta) && l1($eta) )){
+					&BnMayLayOnLine($xi,$eta,$tri->[0],$tri->[1],$tri->[2],\@BN,$P1,$P2,\%BN,$bn,\$i,\$surf,$tri_id);
+					$line++;
+					$flag=1;
+					next BN;
+			}
+			### BN lies inside triangle ###
+			elsif((g0($xi) && l1($xi)) && (g0($eta) && l1($eta))) {
+				print(FH "","B $BN{$bn}  #(",$i++,") bn=$bn\n");
+				print(FH "","S $surf $tri_id $xi $eta;\n"); 
+				print(FH "","# Point inside a triangle\n");
+				$inside++;
+				$flag=1;
+				next BN;
+			}
+			else{
+				die "Something wrong bn=$bn surf=$surf tri_id=$tri_id xi=$xi eta=$eta \n $!";
+			}
+		}
+	if($flag==0){die "Nothing found for BN $BN{$bn}\n";}
+	}
+
+	## User output: all boundary nodes processed ##
+	print $#keys+1," Boundary Nodes processed \n";
+
+	### destroy hash for more cache ###
+	%BN=();
+
+	if($#ARGV>0){
+		if($ARGV[1] eq '-s'){
+			## user output: statistics for epsilon_dotproduct ##
+			print"0 - DOTPRODUCT\n";
+			print"1 - XI\n";
+			print"2 - ETA\n";
+			print"3 - GAMMA\n";
+			for($i=0;$i<4;$i++){
+				print"=======================\n";
+				print"i=$i\n";
+				print"=======================\n";
+				&OutputStatistics($stat[$i]);
+			}
+		}
+	}
+	close(FH);
+}
+#######################################################################
+### Get number of subdomains from <file.inp>						###
+####################################################################### 
+{
+	sysopen(FH,$INP,O_RDONLY)
+		or die "Cannot open file $INP !\n";
+	
+	### Get number of subdomains from <file.inp> ###
+	while(<FH>){
+		if($_=~/rname,(\d+),mat(\d+)/){
+			$SD{$1}=$2;
+		}
+	}
+	close(FH);
+}
+
+sub GetCommonTetSidesFromTetNodes
+{
+	my ($no,$n2s,$found)=@_;
+	my (@a,$j,@a0,@a1,@a2,@a3,@isect,%isect,%union,$i,%n2a,@no);	
+	
+	$$found = ();
+
+	@no = @$no;
+	
+	for($i=0; $i<=$#no; $i++){
+		my @tmp;
+		@tmp = split / /,$n2s->{$$no[$i]};
+		$a[$i] = \@tmp;
+	}
+
+	for($i=0; $i<=$#no; $i++){
+		my (@tmp,$tmp,$j);
+		
+		$tmp = $a[$i];
+		@tmp = @$tmp;
+		for($j=0; $j<=$#tmp; $j++){
+			$n2a{$tmp[$j]} .= "$j ";
+		}
+	}
+
+	foreach $i(keys %n2a){
+		@a = split / /,$n2a{$i};
+		if($#a > 1){
+			$$found .="$i ";
+		}
+	}
+	if(!(defined($$found))){
+		return 0;
+	}
+	@a = split / /,$$found;
+	if( $#a < 0 ){
+		return 0}
+	@a = split / /,$$found;
+
+	return 1;
+}
+#######################################################################
+### Inner Nodes and Elements										###
+####################################################################### 
+{
+	my (%N,$k,$n,$line,%bn,@keys,@N,@bn,@n,$NElem,$nelem,$e,@uniq,%seen);
+	my ($i,$tmp,%n2e,@surf_nodes,$j,%n2s,@a,@sidenodes,$found);
+
+	$n=0;
+	sysopen(FH,$CEL,O_RDONLY);
+	
+	### Get Vertices and Boundary Nodes ###
+	while($line=<FH>){
+		if($line=~s/\s*(\d+)//){
+			$tmp=$1;
+			if($line=~/\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/){
+				if($5!=0 && $6!=0 && $7!=0 && $8!=0){
+
+					## Vertices ##
+					$N{$1}=$VERT{$1};
+					$N{$2}=$VERT{$2};
+					$N{$3}=$VERT{$3};
+					$N{$4}=$VERT{$4};
+					$N{$5}=$VERT{$5};
+					$N{$6}=$VERT{$6};
+					$N{$7}=$VERT{$7};
+					$N{$8}=$VERT{$8};
+				}
+				else{
+
+					## Boundary Nodes ##
+					$BN{$1}=$VERT{$1};
+					$BN{$2}=$VERT{$2};
+					$BN{$3}=$VERT{$3};
+					$BN{$4}=$VERT{$4};
+					
+					## Boundary elements
+					push(@{$bn{$tmp}},$A2B{$1},$A2B{$2},$A2B{$3},$A2B{$4});
+
+					## mark surface nodes
+					$n2e{$A2B{$1}}++; $n2e{$A2B{$2}}++; $n2e{$A2B{$3}}++;
+
+					## map nodes to tetra surfaces
+	 				$n2s{$A2B{$1}}.="$tmp ";
+	 				$n2s{$A2B{$2}}.="$tmp ";
+	 				$n2s{$A2B{$3}}.="$tmp ";
+				}
+			}
+		}
+	}
+	close(FH);
+
+	### delete multiple nodes in %bn ###
+	foreach $k(keys %bn){
+		%seen=();
+		@uniq=();
+		@bn=@{$bn{$k}};
+		foreach $e(@bn){
+			push(@uniq,$e) unless $seen{$e}++;
+		}
+		$bn{$k}=();
+		push(@{$bn{$k}},@uniq);
+	}
+	
+	### Inner Nodes ###	
+	@n=keys %BN; 
+	$n=$#n+1; 	# number of boundary nodes
+	sysopen(FH,$NG, O_WRONLY | O_APPEND);
+
+	print(FH "","\n\n# inner nodes\n");
+	foreach $k(keys %N){
+		if(!(exists $BN{$k})){
+			print(FH "","I $N{$k};  # ($n)\n");	
+			$A2B{$k}=$n;
+			$n++;
+		}
+	}
+
+
+	### Elements ###
+	
+	## get number of elements ##
+	sysopen(FH1,$CEL,O_RDONLY);
+	$n=0;
+	while($line=<FH1>){
+		if($line=~s/\s*(\d+)//){
+			$tmp=$1;
+			if($line=~/s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/){
+				$n++;
+				if($5==0 && $6==0 && $7==0 && $8==0){
+					$NElem=$tmp;
+					last;
+				}
+			}
+		}
+	}
+	$NElem--;
+	close(FH1);
+
+	## check whether elements in cel-file are counted sequentially ##
+	if(($n-1)!=$NElem){die "n=$n NElem=$NElem\n";}
+
+	## Status processing elements ##
+	print"=========================\n";
+	print"Processing $NElem Elements\n";
+	print"=========================\n";
+
+	## read volume mesh from cel file ## 
+	print(FH "","\n# Elements\n");
+	sysopen(FH1,$CEL,O_RDONLY);
+
+	## start reading file ##
+	$n=$nelem=0;
+	while($line=<FH1>){
+		if($line=~s/\s*(\d+)//){
+			if($line=~s/s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)//){
+				if($5==0 && $6==0 && $7==0 && $8==0){
+					last}
+
+				## User display: Processed Elements ##
+				&display_processed($NElem,$nelem);
+				$nelem++;
+
+				## Read all tetra-elements ##
+				if($5!=0 && $6!=0 && $7!=0 && $8!=0){
+
+					$N[0]=$A2B{$1};
+					$N[1]=$A2B{$2};
+					$N[2]=$A2B{$3};
+					$N[3]=$A2B{$5};
+	
+					### Write some  data into file ###
+					print(FH "","E $SD{$9} $N[0] $N[1] $N[2] $N[3]");
+
+					@surf_nodes=();
+					$i=0;
+					for($k=0;$k<4;$k++){
+						if(exists($n2e{$N[$k]})){
+							$surf_nodes[$i]=$N[$k];
+							$i++;
+						}
+					}
+
+					if($i>2){
+
+						## get the common tetra faces
+						if(GetCommonTetSidesFromTetNodes(\@surf_nodes,\%n2s,\$found)){
+							@a = split / /,$found;
+							for($k=0; $k<=$#a; $k++){
+								@sidenodes = @{$bn{$a[$k]}};
+								print(FH ""," F $sidenodes[0] $sidenodes[1] $sidenodes[2]");
+							}
+						
+						}
+					}
+					print(FH "","; # (",$n++,")\n");
+				}
+			}
+		}
+	}
+	
+	## User output: all boundary nodes processed ##
+	print "$NElem Elements processed \n";
+	
+	close(FH);
+	close(FH1);
+}
+#######################################################################
+### misc subroutines												###
+#######################################################################
+#######################################################################
+### Are two triangles coincident									###
+#######################################################################
+sub SameTriangle
+{
+	my ($tin_tri,$lgm_tri)=@_;
+	my ($nc,$i,$j,$point,@lgm_x,$count);
+
+	$point=0;
+	## loop over triangle corner ##
+	for($i=0;$i<3;$i++){
+
+		## get coordinates ##
+		$nc=0;	
+		while(($$lgm_tri[$i]=~/\s*($real)/g) && ($nc<3)){
+			$lgm_x[$nc]=$1;
+			$nc++;
+		}
+
+		## loop over tin-triangle corner ##
+		for($j=0;$j<3;$j++){
+			$nc=$count=0;
+
+			## get coordinates ##
+			while(($$tin_tri[$j]=~/\s*($real)/g) && ($nc<3)){
+				if(sqrt(($lgm_x[$nc]-$1)*($lgm_x[$nc]-$1))<$EPS_C){
+					$count++;
+				}
+				$nc++;
+			}
+			## all 3 coordinates of one corner concide ##
+			if($count==3){
+				$point++;
+			}
+		}
+	}
+	if($point==3){ return 1}
+	else{ return 0}
+}
+
+#######################################################################
+### Boundary Node may lay on a Line 								###
+#######################################################################
+sub BnMayLayOnLine
+{
+	my ($xi,$eta,$N0,$N1,$N2,$BN,$P1,$P2,$hBN,$bn,$i,$surf,$tri)=@_;
+	my (@keys,@tri_id,@locx,@locy,@surf_id,$j,$loc,$n1,$n2,$k,$np,@a);
+	my $line_id;
+
+	## BN lies on line P2-P0, param starts from P0 ##
+	if(eq0($xi)){
+		$n1=$N0; $n2=$N2;
+		$loc=$eta;
+	}
+
+	## BN lies on line P1-P0, param starts from P0 ##
+	elsif(eq0($eta)){
+		$n1=$N0; $n2=$N1;
+		$loc=$xi;
+	}
+
+	## BN lies on line P2-P1, param starts from P1 ##
+	elsif(eq1($xi+$eta)){
+		$n1=$N1; $n2=$N2;	
+		$loc=$eta;
+	}else{
+		die "Something wrong xi=$xi eta=$eta\n $!";
+	}
+
+	## BN lies on line ##
+	if(&BnOnLine($n1,$n2,\$line_id,\@a,\$np)){
+
+		## 2 points are used for detection for the point lying on a line ##
+		if($#a!=1){die "Number of points of triangle ",$#a+1," !=2$!\n"}
+
+		## orient parameter direction ##
+		if($a[0]!=$n1){
+			$loc=1-$loc;	
+		}
+
+		## adding segment number of lgm-line to parameter ##
+		$loc=$loc+$np;
+		
+		## print loc into right format due to accuracy ##
+		$loc=sprintf("$F_LOC",$loc);
+
+		## print into file ##
+		print(FH "","B ",$hBN->{$bn},"  #(",$$i++,") bn=$bn\n");
+		print(FH "","S $$surf $tri $xi $eta L $line_id $loc\n"); 
+
+		## Get all surfaces adjoning the boundary node ##
+		if(&GetSurfacesAtLine($BN,$n1,$n2,$$surf,$loc,\@surf_id,\@tri_id,\@locx,\@locy)){
+			for($j=0;$j<=$#surf_id;$j++){
+				print(FH "","S $surf_id[$j] $tri_id[$j] $locx[$j] $locy[$j]\n");
+			}
+			print(FH "","# Point lies on a line\n");
+		}
+		else{
+			die "Although on line, no second triangle ! $!\n";
+		}
+	}
+
+	## BN not on line => lies only on triangle edge ##
+	else{
+		print(FH "","B ",$hBN->{$bn},"  #(",$$i++,") bn=$bn\n");
+		print(FH "","S $$surf $tri $xi $eta \n"); 
+		print(FH "","# Point lies on a triangle edge (not on a line)\n");
+	}
+	print(FH "",";\n");
+}
+#######################################################################
+### Boundary Node lays on a Node 									###
+#######################################################################
+sub BnOnNode
+{
+	my ($xi,$eta,$a,$b,$c,$i,$bn,@BN)=@_;
+	my ($BN,@line,@surf,@loc,@par,%locx,%locy,%tri,$k,$j);
+
+	if( eq0($xi)&& eq0($eta)){
+		$BN=$a;
+	}
+	elsif( eq1($xi)&& eq0($eta)){
+		$BN=$b;
+	}
+	elsif( eq0($xi)&& eq1($eta)){
+		$BN=$c;
+	}else{
+		die "Point not on a Node ! $!\n";
+	}
+
+	print(FH "","B @BN  # (",$$i++,") bn=$bn\n");
+
+	### find all lines ###
+	if(&FindLines($BN,\@line,\@par)){
+		for($j=0;$j<=$#line;$j++){
+			print(FH "","L $line[$j] $par[$j]\n");
+		}
+	}
+	### find all surfaces ###
+	if(&FindSurfaces($BN,\%tri,\%locx,\%locy)){
+		foreach $k (keys %locx){
+			print(FH "","S $k $tri{$k} $locx{$k} $locy{$k}\n");
+		}
+	}
+	print(FH "",";			# Point on Node\n");
+}
+
+#######################################################################
+### find all surfaces referring to the Boundary Node				###
+#######################################################################
+sub GetSurfacesAtLine
+{
+	my ($BN,$P1,$P2,$surf,$loc,$surf_id,$tri,$xi,$eta)=@_;
+	my ($k,$i,$tri_id,%P,@P0,@P1,@P2,%tos,$flag,@a,$j,$n,,@ar);
+	my ($locx,$locy,$locz);
+
+	$i=$flag=$n=0;
+	@ar=split / /,$N2S{$P1};
+	if(($#ar+1)%5 !=0){die}
+	for($k=0;$k<=@ar;$k++){
+		if( ($i %  5)==0){
+			for($j=0; $j<@a-2; $j++){
+				if( ($a[$j]==$P2) && ($a[3]!=$surf)){
+					@P0=split /\s+/,$LGM_VERT{$a[0]};
+					@P1=split /\s+/,$LGM_VERT{$a[1]};
+					@P2=split /\s+/,$LGM_VERT{$a[2]};
+					if(!(&GetLocalCoordinates(\@P0,\@P1,\@P2,$BN,\$locx,\$locy))){
+						die;
+					}
+					$$xi[$n]=$locx;
+					$$eta[$n]=$locy;
+					$$surf_id[$n]=$a[3];		
+					$$tri[$n]=$a[4];
+					$flag=1;
+					$n++;
+				}
+			}
+			@a=();
+			$i=0;
+		}	
+		$a[$i]=$ar[$k];
+		$i++;
+	}
+	if($flag){return 1}
+	else{return 0}
+}
+
+sub FindSurfaces
+{
+	my ($BN,$tri,$locx,$locy)=@_;
+	my ($k,$t,$flag,%tos);
+
+	## TRIN2S="<surf_id> <tri_id> <trinode_id> ##
+	while($TRIN2S{$BN}=~/\s*(\d+)\s+(\d+)\s+(\d+)\s*/g){
+		$flag=0;
+		if($3==0){
+			$$locx{$1}=sprintf("$F_LOC",0);
+			$$locy{$1}=sprintf("$F_LOC",0);
+			$$tri{$1}=$2;
+			$flag=1;
+		}elsif($3==1){
+			$$locx{$1}=sprintf("$F_LOC",1);
+			$$locy{$1}=sprintf("$F_LOC",0);
+			$$tri{$1}=$2;
+			$flag=1;
+		}elsif($3==2){
+			$$locx{$1}=sprintf("$F_LOC",0);
+			$$locy{$1}=sprintf("$F_LOC",1);
+			$$tri{$1}=$2;
+			$flag=1;
+		}else{die}
+		if(!$flag){die}
+	}
+	return 1;
+}
+	
+sub FindLines
+{
+	my($BN,$line,$par)=@_;
+	my ($i,$flag,$k,@keys,$j,%pol);
+	my ($d,$robj);
+
+	## perl discrepancy: if global variable %POL is used##
+	## some entries are not pattern-matched !!!			##
+	%pol=%POL;
+	
+	$i=$flag=0;
+	@keys = sort {$a<=>$b}(keys %pol);
+	LINEID:foreach $j(@keys){
+		$k=0;
+		while($pol{$j}=~/\s*(\d+)\s*/g){
+			if($1==$BN){
+				$$line[$i]=$j;
+				$$par[$i]=sprintf("$F_LOC",$k);
+				$flag=1;
+				$i++;
+				next LINEID;
+			}
+		$k++	
+		}
+	}
+	
+	if($flag){
+		return 1}
+	else{
+		return 0}
+}
+sub BnOnLine
+{
+	my ($P1,$P2,$line_id,$aa,$np)=@_;
+	my ($k,@ta,@keys,$j,%pol,$line1,$found,@p);
+
+
+	if( (!exists($P2L{$P1})) || (!exists($P2L{$P2}))){
+		return 0;
+	}
+
+	## perl discrepancy: if global variable %POL is used##
+	## some entries are not pattern-matched !!!			##
+	%pol=%POL;
+	$found = 0;
+	while($P2L{$P1}=~/\s*(\d+)\s*/g){
+		$line1 = $1;
+		while($P2L{$P2}=~/\s*(\d+)\s*/g){
+			if($line1 == $1){
+				$$line_id = $1;
+				$found++;
+			}
+		}
+	}
+	
+	if($found > 1){
+		die "Not more than one line can be found for 2 points $!\n";}
+	elsif($found){
+		$$np = 0;
+		@p = split / /,$pol{$$line_id};
+		while($$np < $#p){
+			if($P1 == $p[$$np]){
+				if($p[$$np+1] == $P2){
+					$$aa[0] = $P1;
+					$$aa[1] = $P2;
+					return 1;
+				}else{die}
+			}elsif($P2 == $p[$$np]){
+				if($p[$$np+1] == $P1){
+					$$aa[0] = $P2;
+					$$aa[1] = $P1;
+					return 1;
+				}else{die}
+			}
+			$$np++;
+		}
+	}else{
+		return 0;}
+}
+#######################################################################
+### Find nearest triangle											###
+####################################################################### 
+sub  FindLgmTriangle
+{
+	my ($P,$surf,$P0,$P1,$P2,$tri,$tri_id)=@_;
+	my($i,@p,$robj,$d,%obj);
+
+	$d = BBT_TreePointDistance($T_TREE,$P,\$robj,\&Triangle_Callback,$HUGE);
+
+	%obj = %$robj;
+
+	if($d > $EPS_LOC){
+		return 0;
+	}else{
+		$$P0 = $obj{p0};
+		$$P1 = $obj{p1};
+		$$P2 = $obj{p2};
+		$$tri = $obj{tri};
+		$$tri_id = $obj{tri_id};
+		$$surf = $obj{surf};
+		return 1;
+	}
+}
+
+sub InitStatistics
+{
+	my ($i,@a);
+		
+	for($i=0;$i<4;$i++){
+		$a[$i]=&InitPosNegI;
+	}
+	return @a;	
+}
+sub InitPosNegI
+{
+	my (%pos,%neg,$ind,@a);
+	my $i;
+	
+	## positive range for statistics ##
+	for($i=10;$i>-11;$i--){
+		$pos{$i}=0;
+	}
+	## negative range for statistics ##
+	for($i=10;$i>-11;$i--){
+		$neg{$i}=0;
+	}
+	$ind=0;
+
+	$a[0]=\%pos;
+	$a[1]=\%neg;
+	$a[2]=\$ind;
+	
+	return \@a;
+}
+
+sub Statistics
+{
+	my ($f,$stat)=@_;
+	my ($i,$j,$v1,$v2,@keys,%stat_pos,%stat_neg,$ind);
+	my ($flag,$flag2);
+
+	
+	## Dereference hash ##
+	$i=$stat->[0];
+	%stat_pos=%$i;
+	$i=$stat->[1];
+	%stat_neg=%$i;
+	$i=$stat->[2];
+	$$i++;
+	$stat->[2]=$i;
+
+
+	## check min and max values of categories for f ##
+	if( ($f> 1e+10) || ($f<-1e+10) ){
+		die "$f Too large value for statistics ! $!\n";
+	}
+
+	## positive range for statistics ##
+	$flag=0;
+	$flag2=0;
+	@keys=sort{$a<=>$b}(keys %stat_pos);
+	foreach $i (@keys){
+		$j=$i-1;
+		if($i<0){
+			$v1='1e'."$i";
+		}
+		else{
+			$v1='1e+'."$i";
+			if( ($j>0) || ($j==0)){
+				$j='+'."$j";	
+			}
+		}
+		$v2='1e'."$j";
+		## 1e-x < f < -1e-x ##
+		if(!$flag2){
+			if( (($f<$v2) || ($f==$v2)) && ($f > -$v2) ){
+				$stat_pos{$i}=$stat_pos{$i}+1;
+			}
+			$flag2=1;
+			$flag=1;
+			#last;
+		}
+		if( ( ($f<$v1) || ($f==$v1) ) && ($f>$v2) ){
+			$stat_pos{$i}=$stat_pos{$i}+1;
+			$flag=1;
+			#last;
+		}
+	}
+
+	## negative range for statistics ##
+	@keys=sort{$a<=>$b}(keys %stat_neg);
+	foreach $i (@keys){
+		$j=$i-1;
+		if($i<0){
+			$v1='-1e'."$i";
+		}
+		else{
+			$v1='-1e+'."$i";
+			if( ($j>0) || ($j==0)){
+				$j='+'."$j";	
+			}
+		}
+		$v2='-1e'."$j";
+
+		if( ( ($f>$v1) || ($f==$v1) ) && ($f<$v2)  ){
+			$stat_neg{$i}=$stat_neg{$i}+1;
+			$flag=1;
+			#last;
+		}
+	}
+	if(!$flag){die "Value $f not in Range for statistics ! $!\n";}
+
+	## put hashes back into pointer structure ##
+	$stat->[0]=\%stat_pos;
+	$stat->[1]=\%stat_neg;
+}
+sub OutputStatistics
+{
+	my ($stat)=@_;
+	my ($N,$i,$j,@keys,$s,$flag,$sum,%stat_pos,%stat_neg,$perc);
+
+	## demanding references ##
+	$i=$stat->[0];	
+	%stat_pos=%$i;
+	$i=$stat->[1];	
+	%stat_neg=%$i;
+	$i=$stat->[2];
+	$N=$$i;
+	
+	## User display: total number ##
+	print"Total Number $N\n";
+	
+	## User display: categorized positive values ##
+	print"----------------------\n";
+	print"Positive Bandwitdth\n";
+	print"----------------------\n";
+	
+	$flag=$sum=0;
+	@keys=sort{$a<=>$b}(keys %stat_pos);
+	foreach $i (@keys){
+		$j=$i-1;
+		if($i<0){
+			$s='1e'.$i;
+			$j='1e'.$j;
+		}
+		else{
+			$s='1e+'.$i;
+			if( ($j>0) || ($j==0)){
+				$j='1e+'."$j";	
+			}
+			else{
+				$j='1e'."$j";
+			}
+		}
+		if(!$flag){
+			$s='0'.'..'."$s";
+			$flag=1;
+		}
+		else{
+			$s=$s.'..'.$j;
+		}
+		$sum+=$stat_pos{$i};
+		$perc=$stat_pos{$i}/($N-1)*100;
+		printf("\[%14s): %10.d (%.3f",$s,$stat_pos{$i},$perc);
+		print"%)\n";
+	}
+
+	## User display: categorized negative values ##
+	print"----------------------\n";
+	print"Negative Bandwitdth\n";
+	print"----------------------\n";
+
+	@keys=sort{$a<=>$b}(keys %stat_neg);
+	foreach $i (@keys){
+		$j=$i-1;
+		if($i<0){
+			$s='-1e'.$i;
+			$j='1e'.$j;
+		}
+		else{
+			$s='-1e+'.$i;
+			if( ($j>0) || ($j==0)){
+				$j='-1e+'."$j";	
+			}
+			else{
+				$j='-1e'."$j";
+			}
+		}
+		$s=$s.'..'.$j;
+	
+		$sum+=$stat_neg{$i};
+		$perc=$stat_neg{$i}/($N-1)*100;
+		printf("\[%14s): %10.d (%.3f",$s,$stat_neg{$i},$perc);
+		print"%)\n";
+	}
+	print "N=$N sum=$sum\n";
+	if($sum!=$N){die "Values not categorized correctly !$!\n"}
+}
+sub GetLocalCoordinates
+{
+	my($P0,$P1,$P2,$P,$xi,$eta)=@_;
+	my (@a,@b,@c,@p,@q,@sp,$sum,@lambda,$mcp,$i,@cp,@n);
+	my ($tmp,$ma,$mp,$mb,$mc,$mq,@sp1,@v1,@v2,$m,$dv1v2,@cv1v2,$mcv1v2);
+
+	## Determine vectors ##
+	for($i=0;$i<3;$i++){
+		$a[$i]=$P1->[$i]-$P0->[$i];
+		$b[$i]=$P2->[$i]-$P0->[$i];
+		$c[$i]=$P2->[$i]-$P1->[$i];
+		$p[$i]=$P->[$i]-$P0->[$i];
+		$q[$i]=$P->[$i]-$P1->[$i];
+	}
+	$ma=Mod(@a);
+	$mb=Mod(@b);
+	$mc=Mod(@c);
+	$mp=Mod(@p);
+	$mq=Mod(@q);
+
+	## double area of triangle ##
+	@cp=CrossProduct(\@a,\@b);
+	$mcp=Mod(@cp);
+
+	## normal vector
+	for($i=0;$i<3;$i++){
+		$n[$i]=$cp[$i]/$mcp;
+	}
+
+	## get spatproducts
+	$sp1[0]=Spat(\@p,\@b,\@n);
+	$sp1[1]=Spat(\@a,\@p,\@n);
+	$sp1[2]=Spat(\@c,\@q,\@n);
+	
+	## Get relationship vol of one triangle/vol of whole triangle ##
+	$sum=0;
+	for($i=0;$i<3;$i++){
+		$lambda[$i]=$sp1[$i]/$mcp;
+		$sum+=$lambda[$i];
+	}
+
+	## sum of params must be 1 ##
+	if(($sum<= (1-$EPS_LOC)) || ($sum>=1+$EPS_LOC) ){
+		return 0;
+	}
+		
+	## last check ##	
+	for($i=0;$i<3;$i++){
+		if( ($lambda[$i] > (1.0+$EPS_LOC)) || ($lambda[$i] < (0-$EPS_LOC)) ){
+			return 0;
+	   }
+	}
+
+	$$xi = $lambda[0];
+	$$eta = $lambda[1];
+	
+	##$$xi=sprintf("$F_LOC",$lambda[0]);
+	##$$eta=sprintf("$F_LOC",$lambda[1]);
+
+	return 1;
+}
+sub Spat
+{
+	my ($a,$b,$c)=@_;
+	return((($a->[1]*$b->[2] - $a->[2]*$b->[1])*$c->[0])+
+		(($a->[2]*$b->[0] - $a->[0]*$b->[2])*$c->[1])+
+		(($a->[0]*$b->[1] - $a->[1]*$b->[0])*$c->[2]))
+}
+sub DotProduct
+{
+	my ($a,$b)=@_;
+	return($a->[0]*$b->[0]+$a->[1]*$b->[1]+$a->[2]*$b->[2]);
+}
+sub CrossProduct
+{
+	my ($a,$b)=@_;
+	my @cp;
+	 
+	$cp[0]=$a->[1]*$b->[2]-$a->[2]*$b->[1];
+	$cp[1]=$a->[2]*$b->[0]-$a->[0]*$b->[2];
+	$cp[2]=$a->[0]*$b->[1]-$a->[1]*$b->[0];
+	return @cp;
+}
+sub Mod
+{
+	my (@a)=@_;
+	
+	return(sqrt($a[0]*$a[0]+$a[1]*$a[1]+$a[2]*$a[2]));
+}
+sub GetMinMaxOfTriangle
+{
+	my ($bn)=@_;
+	my (@p,$i,$k,$ma,$mb,$mc,@a,@b,@c,@p0,@p1,@p2);
+	
+	$i=0;
+	foreach $k(keys %$bn){
+		$p[$i++]=$$bn{$k};
+	}
+
+	## 3 points ##
+	@p0=split / /,$p[0];
+	@p1=split / /,$p[1];
+	@p2=split / /,$p[2];
+
+	## 3 vectors ##
+	for($i=0;$i<3;$i++){
+		$a[$i]=$p1[$i]-$p0[$i];	
+		$b[$i]=$p2[$i]-$p0[$i];	
+		$c[$i]=$p2[$i]-$p1[$i];	
+	}
+	
+	## get modulus of 3 vectors ##
+	$ma=Mod(@a);
+	$mb=Mod(@b);
+	$mc=Mod(@c);
+
+	## get smallest vector ##
+	return(min($ma,$mb,$mc),max($ma,$mb,$mc));
+}
+
+## minimum of several values ##
+sub min
+{
+	my ($min,$i);
+
+	$min=1000000;
+	for ($i=0; $i<@_; $i++){
+		if ($min>$_[$i]){
+			$min=$_[$i];
+		}
+	}
+	return ($min);
+}
+## maximum of several values ##
+sub max
+{
+	my ($max,$i);
+
+	$max=-1000000;
+	for ($i=0; $i<@_; $i++){
+		if ($max<$_[$i]){
+			$max=$_[$i];
+		}
+	}
+	return ($max);
+}
+### compare 0 with epsilon ###
+sub eq0
+{
+	my $a=$_[0];
+	if( ($a>-$EPS_LOC) && ($a<$EPS_LOC)){
+		return 1}
+	return 0;
+}
+
+### a==1 ? ###
+sub eq1
+{
+	my $a=$_[0];
+	if( ((1.0-$EPS_LOC)<$a) && ((1.0+$EPS_LOC)>$a)){
+	   	return 1}
+	return 0;
+}
+### compare with epsilon a smaller 1 ###
+sub l1
+{
+	my $a=$_[0];
+	if($a<(1.0-$EPS_LOC)){
+		return 1}
+	return 0;
+}
+### compare with epsilon a larger 0 ###
+sub g0 
+{
+	my $a=$_[0];
+	if($a>$EPS_LOC){
+		return 1}
+	return 0;
+}
+### compare with epsilon a smaller-equal 1 ###
+sub le1
+{
+	my $a=$_[0];
+	if(eq1($a) || l1($a)){
+		return 1}
+	return 0;
+}
+
+### display processed boundary nodes ###
+sub display_processed
+{
+	my ($N,$i)=@_;
+	my ($perc,%display,$last);
+
+	$perc=$i/$N*100;
+	$perc=int $perc;
+	$last=($i-1)/$N*100;
+	$last=int $last;
+	if((($perc % 1)==0) && !(exists $display{$perc}) && ($last!=$perc)){
+		## flush buffer ##
+		$|=1;
+		printf("%3d ",$perc);
+		print"%\r";
+		$display{$perc}=1;
+	}
+}
+
+### print hash ###
+sub print_hash
+{
+	my ($value,@values,$key);
+	my @keys=();
+	my %myhash=@_;
+
+	@keys = sort {$a <=> $b} (keys %myhash);
+	print "\@keys=@keys\n";
+	foreach $key (@keys){
+		print "myhash{$key}=",$myhash{$key},"\n";
+	}
+}
+sub print_hash_ref
+{
+	my ($value,@values,$key);
+	my @keys=();
+	my %myhash=@_;
+
+	@keys = sort {$a <=> $b} (keys %myhash);
+	foreach $key (@keys){
+		print "key=",$key," ";
+		@values = @{$myhash{$key}};
+		foreach $value(@values){
+			print $value, " ";
+		}
+		print "\n";
+	}
+}

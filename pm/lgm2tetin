@@ -1,0 +1,513 @@
+#!/usr/bin/perl -w
+
+#######################################################################
+###																	###
+###	File:	lgm2tetin												###
+###																	###
+###	Purpose: converts lgm-file into ICEMCFD format tetin			###
+###																	###
+###	Author: Andreas Hauser											###
+###			IWR-Technische Simulation								###
+### 		Universitaet Heidelberg									###
+### 		Im Neuenheimer Feld 368									###
+###			69129 Heidelberg										###
+###			email: Andreas.Hauser@iwr.uni-heidelberg.de				###
+###																	###
+###	Hist:	Finished 09/2002										###
+###																	###
+#######################################################################
+# Convert lgm-file into ICEMCFD format tetin
+
+use strict;
+use Fcntl;
+use Time::localtime;
+use vars qw ($SINK $SOURCE $real $N_SD %NODES %EDGES %SURF $EPS %MP);
+use vars qw (@PRES_P %SD2Lines %SD2Points %SD2Surf $NP);
+
+$real='[+-]*\d+\.*\d*e[+-]\d+|[+-]*\d+\.\d*|\d+|[+-]\d+';
+
+@ARGV==1 or die "usage: lgm2tetin <file.lgm>\n";
+substr($ARGV[0],-4) eq '.lgm' or die "Read only <file.lgm>\n";
+
+$SOURCE=$ARGV[0];
+$SINK=substr($ARGV[0],0,-4).'.tin';
+
+
+## TODO
+$NP=3;
+#######################################################################
+# Read no of subdomains
+####################################################################### 
+{	
+	sysopen(FH,$SOURCE,O_RDONLY);
+
+	while(<FH>){
+		if($_=~/\s*unit\s+(\d+)/){
+			$N_SD=$1;
+		}
+	}	
+	close(FH);
+}
+#######################################################################
+# Read point-info and get bounding box of whole model
+####################################################################### 
+{
+	my ($i,$flag,@max,@min);
+	sysopen(FH,$SOURCE,O_RDONLY);
+	
+	$flag=$i=0;
+	$max[0]=$max[1]=$max[2]=-10000000.0;
+	$min[0]=$min[1]=$min[2]=10000000.0;
+
+	while(<FH>){
+		if($_=~/\s*Point-Info/){
+			$flag=1;	
+		}	
+		if($flag){
+			if(/\s*($real)\s+($real)\s+($real)/){
+				$NODES{$i++}="$1 $2 $3";
+				if($1>$max[0]){
+					$max[0]=$1;
+				}
+				if($2>$max[1]){
+					$max[1]=$2;
+				}
+				if($1>$max[2]){
+					$max[2]=$3;
+				}
+				if($1<$min[0]){
+					$min[0]=$1;
+				}
+				if($2<$min[1]){
+					$min[1]=$2;
+				}
+				if($3<$min[2]){
+					$min[2]=$3;
+				}
+			}
+		}
+	}
+	if($max[0]-$min[0] > $max[1]-$min[1] && 
+	   $max[0]-$min[0] > $max[2]-$min[2]){	
+		$EPS = ($max[0]-$min[0])/1000.0;
+	}
+	elsif($max[1]-$min[1] > $max[2]-$min[2]){
+		$EPS = ($max[1]-$min[1])/1000.0;
+	}
+	else{
+		$EPS = ($max[2]-$min[2])/1000.0;
+	}
+	
+	close(FH);
+}
+#######################################################################
+# Read line-info 
+####################################################################### 
+{	
+	my ($line,$i,$tmp,@p,$flag,$s,$j);
+	my(@a,%p,@keys,$n);
+
+	sysopen(FH,$SOURCE,O_RDONLY);
+
+	%EDGES=();
+	$i=$n=0;
+	while(<FH>){
+		if($_=~/\s*line\s+(\d+)\s*:\s*points\s*:(.+)/){
+			if($n++!=$1){die}
+			$tmp=$1;
+			$s=$2;
+			$s=~s/;//;
+			@a=();
+			@a=split /\s+/,$s;
+			for($j=1; $j<=$#a; $j++){
+				$EDGES{$tmp}.="$NODES{$a[$j]} ";
+			}
+			$tmp=$#a;
+			$s=int $tmp/$NP;
+			$p{$a[1]}++;
+			if($s!=0){
+				for($j=1; $j<$NP;$j++){
+					$p{$a[1+$j*$s]}++;
+					$i++;
+				}
+			}
+			$p{$a[$tmp]}++;
+
+		}
+	}
+
+	@keys = sort{$a<=>$b}(keys %p);
+	$j=0;
+	foreach $i (@keys){
+		$PRES_P[$j++]=$i;
+	}
+	
+	close(FH);
+
+}
+#######################################################################
+# Read surface-info 
+####################################################################### 
+{
+	my $i;
+	sysopen(FH,$SOURCE,O_RDONLY);
+	
+	$i=0;
+	while(<FH>){
+		if($_=~/triangles:(.+)/){
+			$SURF{$i}=$1;
+			$SURF{$i}=~s/;//g;
+			$i++;
+		}
+	}
+	close(FH);
+}
+#######################################################################
+# Refer subdomains to edges, prescribed points and surfaces
+####################################################################### 
+{
+	my ($i,$s,$line,$l,$r,@a,$k,@keys,%isect,%union,$e);
+
+	sysopen(FH,$SOURCE,O_RDONLY);
+
+	$i=0;
+	while(<FH>){
+		if($_=~/left\s*=\s*(\d+)\s*;\s*right\s*=\s*(\d+)/){
+			$l=$1; $r=$2;
+
+			## Get Lines corresponding to a subdomain ## 
+			if($_=~/lines:(.+)/){
+				$s=$1;
+				$s=~s/triangles:(.+)//;
+				while($s=~/\s*(\d+)/g){
+					$SD2Lines{$l}.="$1 ";
+					$SD2Lines{$r}.="$1 ";
+				}
+			}
+
+			## Get Points corresponding to a subdomain ## 
+			if($_=~/points:(.+)/){
+				$s=$1;
+				$s=~s/lines:(.+)//;
+				while($s=~/\s*(\d+)/g){
+					$SD2Points{$l}.="$1 ";
+					$SD2Points{$r}.="$1 ";
+				}
+			}
+			## Get Surfaces corresponding to a subdomain ## 
+			$SD2Surf{$l}.="$i ";
+			$SD2Surf{$r}.="$i ";
+			$i++;
+		}
+	}
+
+	## delete multiple entries  SD2Lines ##
+	@keys=sort{$a<=>$b} (keys %SD2Lines);
+	foreach $k(@keys){
+		@a=split /\s+/,$SD2Lines{$k};
+		$SD2Lines{$k}=();
+		@a=delete_multiple_entries(@a);
+		for($i=0;$i<=$#a;$i++){
+			$SD2Lines{$k}.="$a[$i] ";
+		}
+	}
+	
+	## delete multiple entries  SD2Points and filter out ##
+	## prescribed points ##
+	@keys=sort{$a<=>$b} (keys %SD2Points);
+	foreach $k(@keys){
+		@a=split /\s+/,$SD2Points{$k};
+		$SD2Points{$k}=();
+		@a=delete_multiple_entries(@a);
+		%isect=%union=();
+		foreach $e(@a,@PRES_P){
+			$union{$e}++ && $isect{$e}++;
+		}
+		@a=keys %isect;	
+		for($i=0;$i<=$#a;$i++){
+			$SD2Points{$k}.="$a[$i] ";
+		}
+	}
+	
+	## delete multiple entries  SD2Surf ##
+	@keys=sort{$a<=>$b} (keys %SD2Surf);
+	foreach $k(@keys){
+		@a=split /\s+/,$SD2Surf{$k};
+		$SD2Surf{$k}=();
+		@a=delete_multiple_entries(@a);
+		for($i=0;$i<=$#a;$i++){
+			$SD2Surf{$k}.="$a[$i] ";
+		}
+	}
+
+	close(FH);
+}
+
+#######################################################################
+# Read and create material point inside each subdomain 
+####################################################################### 
+{
+	my ($mp,@n0,@n1,@n2,$l,$r,$s,@tri);
+	
+	sysopen(FH,$SOURCE,O_RDONLY);
+	while(<FH>){
+		if($_=~/left\s*=\s*(\d+)\s*;\s*right\s*=\s*(\d+)/){
+			if(exists($MP{$1}) && exists($MP{$2})){
+				next;
+			}
+			$l=$1;$r=$2;
+			if($_=~/triangles:(.+)/){
+				$s=$1;
+				if($s=~/\s*(\d+)\s+(\d+)\s+(\d+)/){
+					if($r==0 && (! exists($MP{$l}) )){
+						$tri[0]=$1; $tri[1]=$2; $tri[2]=$3;
+						$mp=$l;
+					}
+					elsif(!exists($MP{$l})){
+						$tri[0]=$1; $tri[1]=$2; $tri[2]=$3;
+						$mp=$l;
+					}
+					elsif(!exists($MP{$r})){
+						$tri[0]=$1; $tri[1]=$3; $tri[2]=$2;
+						$mp=$r;
+					}
+					else{
+						die;
+					}
+					@n0=split / /,$NODES{$tri[0]};
+					@n1=split / /,$NODES{$tri[1]};
+					@n2=split / /,$NODES{$tri[2]};
+					&determine_materialpoint($mp,\@n0,\@n1,\@n2);
+					$mp++;
+				}
+			}
+		}	
+	}
+	close(FH);
+}
+
+#######################################################################
+# Write tetin format
+####################################################################### 
+{
+	my ($i,$j,$s,$time,$tm,$sec,$min,$hour,$day,$month,$year,%map);
+	my (@keys,$k,$n,@s,@nod,$sd,@ksd,$c);
+	
+	sysopen(FH,$SINK,O_WRONLY|O_CREAT|O_TRUNC);
+	
+	$tm=localtime(time);
+	$sec=$tm->sec;	
+	$min=$tm->min;	
+	$hour=$tm->hour;	
+	$day=$tm->mday;	
+	$month=$tm->mon;	
+	$year=$tm->year;	
+
+	## number of subdomains ##
+	@ksd = sort {$a <=> $b} (keys %SD2Lines);
+	## delete subdomain 0 ##
+	shift @ksd;
+
+	### Write intro,triangulation tolerance and material block ###
+	print(FH "","// tetin file version 1.0\n");	
+	$s="// written by lgm2tetin on ";
+	$s.=sprintf("%02d/%02d/%04d  %02d:%02d:%02d\n",$day,$month+1, 
+		$year+1900,$hour,$min,$sec);
+	print(FH "","$s\n");	
+
+	foreach $sd(@ksd){
+		print(FH "","define_family SD.$sd color 12465088\n");	
+	}
+	print(FH "","\n");
+
+
+	### Write curve-info ###
+
+	## loop over all subdomains ##
+	foreach $sd(@ksd){
+		$c=0;
+		@keys = split / /,$SD2Lines{$sd};
+		foreach $k (@keys){
+			print(FH "","define_curve family SD.$sd name SD.$sd/0.0.$c\n");
+			$n=0;
+			while($EDGES{$k}=~/\s*($real)\s+($real)\s+($real)/g){
+				$s[$n++]="$1 $2 $3";
+			}
+			print(FH "","unstruct_curve n_points $n n_edges ",$n-1,"\n");
+			for($i=0;$i<$n;$i++){
+				print(FH "","$s[$i]\n");
+			}
+			for($i=0;$i<$n-1;$i++){
+				print(FH "",$i++, " ",$i--);
+				if($i<$n-2){print(FH "","\n");}
+			}
+			print(FH "","\n");
+			$c++;
+		}
+	}	
+	### Write point-info ###
+	## loop over all subdomains ##
+	foreach $sd(@ksd){
+		@keys = split / /,$SD2Points{$sd};
+		$c=0;
+		foreach $k(@keys){
+			print(FH "","prescribed_point ",$NODES{$k}," family SD.$sd name SD.$sd.$c\n");
+			$c++;
+		}
+	}
+
+	### Write surface-info ###
+	## loop over all subdomains ##
+	foreach $sd(@ksd){
+		@keys = split / /,$SD2Surf{$sd};
+		$c=0;
+		foreach $k(@keys){
+			$n=0;
+			@s=();
+			while($SURF{$k}=~/\s*($real)\s+($real)\s+($real)/g){
+				$s[$n++]=$1; $s[$n++]=$3; $s[$n++]=$2; 	
+			}
+			## map global node numbering to local surf-based numbering ## 
+			$i=0;$j=0;
+			%map=();
+			while($i<$n){
+				if(! exists ($map{$s[$i]})){
+					$map{$s[$i]}=$j;
+					$j++;
+				}
+				$i++;
+			}
+			## write surface header ##
+			@nod=@s;
+			@nod=&delete_multiple_entries(@nod); 
+			print(FH "","define_surface name SD.$sd/0.$c family SD.$sd \n");
+			print(FH "","unstruct_mesh n_points ",$#nod+1," n_triangles ",$n/3,"\n");
+			## write coordinates of surface ##
+			$i=0;
+			while($i<=$#nod){
+				print(FH "","$NODES{$nod[$i]}\n");
+				$i++;
+			}
+			## write nodes of triangles ##
+			$i=0;
+			while($i<$n){
+				print(FH "","$map{$s[$i]} ");
+				$i++;
+				print(FH "","$map{$s[$i++]} ");
+				print(FH "","$map{$s[$i++]} \n");
+			}
+			$c++;
+		}
+	}
+
+	### Write affix, not used ###
+	#print(FH "","affix=0\n");
+
+	### Material Points ###
+	for($i=1;$i<=$N_SD;$i++){
+		print(FH "","material_point ",$MP{$i}," name MAT.$i.0 family MAT$i\n");
+	}	
+
+	### Write final block ###
+	print(FH "","define_model 1 reference_size 1 edge_criterion 0.2\n");
+	print(FH "","return");
+	
+	close(FH);
+}
+
+#######################################################################
+# subroutines
+#######################################################################
+sub delete_multiple_entries
+{
+	my (%seen,@uniq,$nod,@nod);
+
+	$nod=join ' ', @_;
+	@nod=split / /,$nod;
+	@uniq =grep{! $seen{$_}++} @nod;
+	return @uniq;
+}
+
+sub determine_materialpoint
+{
+	my ($i,$n0,$n1,$n2)=@_;
+	my (@vm,@nm,@v0,@v1,@n,$mod,@mp,@n0,@n1,@n2,$j);
+	my (@cp,$mcp);
+
+	for($j=0;$j<3;$j++){
+
+		## vector v0 ##
+		$v0[$j]=$n1->[$j]-$n0->[$j];
+
+		## vector v1 ##
+		$v1[$j]=$n2->[$j]-$n0->[$j];
+
+		## vector vm pointing to triangle center ##
+		$vm[$j]=0.25*($v0[$j]+$v1[$j]);
+
+		## midpoint ##
+		$nm[$j]=$n0->[$j]+$vm[$j];
+
+	}
+	
+	## normal of triangle ##
+	@cp=CrossProduct(\@v0,\@v1);
+	$mcp=Mod(@cp);
+	for($j=0;$j<3;$j++){
+
+		## vector with length epsilon ##
+		$n[$j]=$cp[$j]/$mcp*$EPS;
+
+		## material point ##
+		$mp[$j]=$nm[$j]+$n[$j];	
+	}
+
+	$MP{$i}="$mp[0] $mp[1] $mp[2]";
+}
+sub CrossProduct
+{
+	my ($a,$b)=@_;
+	my @cp;
+	 
+	$cp[0]=$a->[1]*$b->[2]-$a->[2]*$b->[1];
+	$cp[1]=$a->[2]*$b->[0]-$a->[0]*$b->[2];
+	$cp[2]=$a->[0]*$b->[1]-$a->[1]*$b->[0];
+	return @cp;
+}
+sub Mod
+{
+	my (@a)=@_;
+	
+	return(sqrt($a[0]*$a[0]+$a[1]*$a[1]+$a[2]*$a[2]));
+}
+
+### print hash ###
+sub print_hash
+{
+	my ($value,@values,$key);
+	my @keys=();
+	my %myhash=@_;
+
+	@keys = sort {$a <=> $b} (keys %myhash);
+	print "\@keys=@keys\n";
+	foreach $key (@keys){
+		print "myhash{$key}=",$myhash{$key},"\n";
+	}
+}
+sub print_hash_ref
+{
+	my ($value,@values,$key);
+	my @keys=();
+	my %myhash=@_;
+
+	@keys = sort {$a <=> $b} (keys %myhash);
+	foreach $key (@keys){
+		print "key=",$key," ";
+		@values = @{$myhash{$key}};
+		foreach $value(@values){
+			print $value, " ";
+		}
+		print "\n";
+	}
+}
+

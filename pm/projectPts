@@ -1,0 +1,1007 @@
+#!/usr/bin/perl -w 
+#######################################################################
+###																	###
+###	File:	project													###
+###																	###
+###	Purpose: Generates new star_<name>.vrt file, in which every 	###
+###			 boundary node is projected on a point, line or the		###
+###			 plane of a lgm-triangle.								### 
+###																	###
+###	Author: Andreas Hauser											###
+###			IWR-Technische Simulation								###
+### 		Universitaet Heidelberg									###
+### 		Im Neuenheimer Feld 368									###
+###			69129 Heidelberg										###
+###			email: Andreas.Hauser@iwr.uni-heidelberg.de				###
+###																	###
+###	Hist:	Finished 11/2002										###
+###																	###
+#######################################################################
+
+use strict;
+use Fcntl;
+use tree;
+use POSIX;
+
+use vars qw ($real $LGM $VRT $CEL $INP $NG %VERT %BN $SSideOfElement %LGM_VERT);
+use vars qw (%POL $EPS_POINT $EPS_LINE $EPS_TRI $STAR_PROJ %P_PROJ %L_PROJ);
+use vars qw (%S_TRI %T_PROJ $STAT @TMP $SSideOfTriangle $EPS_LOC %DONE);
+use vars qw ($HUGE $DIM $P_TREE $T_TREE $L_TREE $EPS_PROJ);
+
+$real='[+-]*\d+\.*\d*[eE][+-]\d+|[+-]*\d+\.\d*|\d+|[+-]\d+';
+
+@ARGV==1 or die "usage: project <file>\n";
+
+$HUGE = 9999999999999.9;
+$DIM = 3;
+
+#######################################################################
+###  epsilon (local !!!!)											###
+#######################################################################
+$EPS_LOC=1e-6;
+
+#######################################################################
+###  epsilon for the projection distance							###
+#######################################################################
+$EPS_PROJ = 2.2;
+
+#######################################################################
+### file handler 													###
+#######################################################################
+$VRT=$ARGV[0];
+@TMP=split /star_/,$ARGV[0];
+@TMP=split /\./,$TMP[1];
+$LGM=$TMP[0].'.lgm';
+$CEL="star_$TMP[0].cel";
+$INP="star_$TMP[0].inp";
+$NG=$TMP[0].'.ng';
+$STAR_PROJ="star_$TMP[0].vrt".'.proj';
+$STAT="$TMP[0].stat";
+
+#######################################################################
+### Read Vertices from star.vrt										###
+####################################################################### 
+{
+	my ($a,$b,$c,$max_co,$tmp1,$tmp2,$count,@keys);
+
+	$max_co=0.0;
+	$count = 0;
+
+	sysopen(FH,$VRT,O_RDONLY) 
+		or die "Cannot open file $VRT\n";;
+
+		while(<FH>){
+		if($_=~/\s*(\d+)\s+($real)\s*($real)\s*($real)/){
+			if(1){	
+				$a=$2;$b=$3;$c=$4;
+				$tmp1=$1;
+				if($a=~/(\d+)E[+-]/){$a=~s/E/e/}
+				if($b=~/(\d+)E[+-]/){$b=~s/E/e/};
+				if($c=~/(\d+)E[+-]/){$c=~s/E/e/};
+				$VERT{$tmp1}="$a $b $c";
+				$count++;
+			}
+		}
+	}
+	#&print_hash(%VERT);
+	print"================================================\n";
+	print"#star-vertices $count\n";
+	close(FH);
+}
+
+#######################################################################
+### Read Boundary Nodes from star.cel								###
+####################################################################### 
+{
+	my ($line,%bn,$tmp,@keys);
+
+	$SSideOfElement=1000000000;
+
+	sysopen(FH,$CEL,O_RDONLY)
+		or die "Cannot open file $CEL\n";
+
+	while($line=<FH>){
+		if($line=~s/\s*(\d+)//){
+			if($line=~/\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/){
+				if($5==0 && $6==0 && $7==0 && $8==0){
+
+					$BN{$1}=$VERT{$1};
+					$BN{$2}=$VERT{$2};
+					$BN{$3}=$VERT{$3};
+					$BN{$4}=$VERT{$4};
+
+					## %bn for getting smallest side of triangle ##
+					%bn=();
+					$bn{$1}=$VERT{$1};
+					$bn{$2}=$VERT{$2};
+					$bn{$3}=$VERT{$3};
+					$bn{$4}=$VERT{$4};
+					$tmp=GetSmallestSideOfElement(\%bn);
+					if($tmp<0){die "modulus must be >=0 $!\n";}
+					if($tmp<$SSideOfElement){
+						$SSideOfElement=$tmp;	
+					}
+				}
+			}
+		}
+	}
+	#&print_hash(%BN);
+	@keys = keys %BN;
+	print"#boundary nodes ",$#keys+1," \n";
+	close(FH);
+}
+#######################################################################
+### Read lgm point positions from lgm file							###
+####################################################################### 
+{
+	my ($np,$flag);
+	
+	sysopen(FH,$LGM,O_RDONLY)
+		or die "Cannot open file $LGM !\n";
+	
+	$np=$flag=0;
+	while(<FH>){
+		if($_=~/Point-Info/){
+			$flag=1;
+		}
+		if($flag){
+			if($_=~/\s*($real)\s+($real)\s+($real)/)
+			{
+				$LGM_VERT{$np}="$1 $2 $3";
+				$np++;
+			}
+		}
+	}
+	
+	close(FH);
+}
+#######################################################################
+### Read points on line from lgm file								###
+####################################################################### 
+{
+	my ($nl,$count,$line);
+	
+	sysopen(FH,$LGM,O_RDONLY);
+	
+	$count=0;
+	while($line=<FH>){
+		if($line=~s/line\s+(\d+)//){
+			$nl=$1;
+			while($line=~/(\d+)/g)
+			{
+				$POL{$nl}.="$1 ";
+			}
+			$count++;
+		}
+	}
+	if(($count-1)!=$nl){
+		die "Something wrong with the numbering of nodes $count $!\n";
+	}
+	
+	close(FH);
+}
+
+#######################################################################
+### Read lgm-triangles and get smallest side of a lgm-triangle		###
+####################################################################### 
+{
+	my ($ns,$line,%tri,$tmp,$smin);
+	
+	sysopen(FH,$LGM,O_RDONLY);
+	
+	$ns=0;
+	$SSideOfTriangle=100000000;
+	while($line=<FH>){
+		if($line=~/triangles:(.+)/){
+			$line=$1;
+			$line=~s/;/ /;
+			while($line=~/\s*(\d+)\s+(\d+)\s+(\d+)/g){
+				%tri=();
+				$S_TRI{$ns++}="$1 $2 $3";
+				$tri{$1}=$LGM_VERT{$1};
+				$tri{$2}=$LGM_VERT{$2};
+				$tri{$3}=$LGM_VERT{$3};
+				$tmp=GetSmallestSideOfTriangle(\%tri);
+				if($tmp<0){die "modulus must be >=0 $!\n";}
+				if($tmp<$SSideOfTriangle){
+					$SSideOfTriangle=$tmp;	
+				}
+			}
+		}
+	}
+	
+	close(FH);
+
+	## Determine <smallest side of element>/<largest side of triangle>
+	#print"R_EPS=$SSideOfElement/$LSideOfElement=$R_EPS\n";
+	printf("Smallest edge of Element on surface:	%7.2e\n",$SSideOfElement);
+	printf("Smallest side of lgm-triangle:		%7.2e\n",$SSideOfTriangle);
+
+	$smin=mmin($SSideOfElement,$SSideOfTriangle);
+	
+	## Determine epsilons ##
+	$EPS_POINT=0.25*$smin;
+	$EPS_POINT=sprintf("%.3e",$EPS_POINT);
+	$EPS_LINE=$EPS_TRI=$EPS_POINT;
+	#$EPS_DP = $EPS_POINT;
+	if(($EPS_POINT<=0.0) || ($EPS_LINE<=0.0) || ($EPS_TRI<=0.0)){
+		die "epsilons must be > 0 \n";
+	}
+
+	printf("Epsilon for points:    			%7.2e\n",$EPS_POINT);
+	printf("Epsilon for lines:    			%7.2e\n",$EPS_LINE);
+	printf("Epsilon for triangles:    		%7.2e\n",$EPS_TRI);
+	printf("Epsilon for projection distance:%7.2e\n",$EPS_PROJ);
+
+}
+#######################################################################
+### Callback Function for points									###
+####################################################################### 
+sub Point_Callback
+{
+	my($x, $obj) = @_;
+	my ($i,@d);
+
+	#for($i=0;$i<3;$i++){
+	#	print"x[$i]=$x->[$i] ll[$i]=$obj->{ll}->[$i] ur[$i]=$obj->{ur}->[$i] lgm_point[$i]=$obj->{lgm_point}->[$i]\n";
+	#}
+	for($i=0; $i<$DIM; $i++){
+		if( ($x->[$i] < $obj->{ll}->[$i]) || ($x->[$i] > $obj->{ur}->[$i])){
+			return ($HUGE);
+		}
+		$d[$i] = $x->[$i] - $obj->{lgm_point}->[$i];
+	}
+
+	return(Mod(@d));
+}
+#######################################################################
+### Create tree for points											###
+####################################################################### 
+{
+	my($k,$i,@objects,$count,@boxes,@keys);
+	
+	## creating boxes
+	print"->Generating point boxes.\n";
+	$count = 0;
+	@keys = sort{$a<=>$b}(keys %LGM_VERT);
+	foreach $k(@keys){
+		my (%obj,@ur,@ll,@p);
+		@p = split / /,$LGM_VERT{$k};
+		if($#p != 2){die}
+		for($i=0; $i<3; $i++){
+			$ll[$i] = $p[$i] - $EPS_POINT;
+			$ur[$i] = $p[$i] + $EPS_POINT;
+		}
+		$obj{ll} = \@ll;	
+		$obj{ur} = \@ur;	
+		$obj{lgm_point} = \@p;
+		$obj{np} = $k;
+		$objects[$count] = \%obj;
+		$boxes[$count] = BBT_NewBBox($DIM,\@ll,\@ur,$objects[$count]);
+		#rint"$boxes[$count]\n";
+		$count++;
+	}
+
+	print"->Building point-tree (#points $count).\n";
+	$P_TREE = BBT_NewTree(\@boxes,$count,$DIM);
+}
+#######################################################################
+### Callback Function for linesegments								###
+####################################################################### 
+sub Line_Callback
+{
+	my($x, $obj) = @_;
+	my(@a,@pv,$i,$dp,$ma2,@pa,@d,$md);
+	my(@alpha,$alpha,$diff,$found,$tmp);
+
+	## vector of p1-p2 and p1-p ##
+	for($i=0; $i<$DIM; $i++){
+		$a[$i]=$obj->{p2}->[$i]-$obj->{p1}->[$i];
+		$pv[$i]=$x->[$i]-$obj->{p1}->[$i];
+	}
+
+	if(Mod(@a) < $EPS_POINT){
+		die"EPS_POINT is too large. Length of segment between p1-p2 is smaller than EPS_POINT.\n";
+	}
+
+	$dp = DotProduct(\@a,\@pv);
+	$ma2 = Mod2(@a);
+	
+	## pa means p projected on a ##
+	$found=0;
+	for($i=0; $i<3; $i++){
+
+		## projected point ##
+		$pa[$i]=$dp/$ma2*$a[$i];
+
+		if(($a[$i]*$a[$i]/$ma2) > $EPS_LOC*$EPS_LOC){
+			$alpha[$i] = $pa[$i]/$a[$i]	;
+			$found=1;
+		}
+
+		## check parameter ##
+		$tmp=$alpha[$i];
+		if(defined($tmp)){
+			if( ($alpha[$i]<-$EPS_LOC) || ($alpha[$i]>1.0+$EPS_LOC) ){
+				return $HUGE;}
+		}
+	}
+	if(!$found){die}
+	
+	$alpha=mmax(@alpha);
+
+
+	for($i=0; $i<3; $i++){
+		
+		## new projected point lying on line exactly ##
+		$obj->{p_proj}->[$i] = $obj->{p1}->[$i] + $alpha*$a[$i]; 
+
+		## distance between point p and projected point ##
+		$d[$i] = $pv[$i] - ($obj->{p_proj}->[$i]-$obj->{p1}->[$i]);
+	}
+	
+	$md=Mod(@d);
+
+	return($md);
+}
+#######################################################################
+### Create tree for linesegments									###
+####################################################################### 
+{
+	my (@keys,$k,$np,$j,$i,$count,@boxes,@objects,@points,@d);	
+
+	$count = 0;
+
+	## creating boxes
+	print"->Generating linesegment boxes.\n";
+
+	@keys = sort{$a<=>$b}(keys %POL);
+	foreach $k(@keys ){
+		$np = 0;
+
+		## process all points on one line ##
+		while($POL{$k}=~/($real)/g){
+			$points[$np++]=$1;
+		}
+		for($j=0; $j<$np-1; $j++){
+
+			my(@ur,@ll,%obj,@p1,@p2);
+			
+			## starting and end point of a segment of a line ##
+			@p1=split / /,$LGM_VERT{$points[$j]};
+			@p2=split / /,$LGM_VERT{$points[$j+1]};
+
+			if( ($#p1 != 2) || ($#p2 !=2) ){die "Number of dimensions must be $DIM $!\n";}
+			
+			## get dimension of boxes
+			for($i=0; $i<$DIM; $i++){
+				$ll[$i] = $ur[$i] = $p1[$i];
+				$ll[$i] = min($ll[$i], $p2[$i]);
+				$ur[$i] = max($ur[$i], $p2[$i]);
+				$d[$i] = $ur[$i] - $ll[$i];
+			}
+			if( Mod(@d) < $EPS_POINT){
+			   die "Length of a segment is smaller than EPS_POINT $!\n"}	
+			$obj{line} = $k;
+			$obj{p1} = \@p1;
+			$obj{p2} = \@p2;
+			$objects[$count] = \%obj;
+			$boxes[$count] = BBT_NewBBox($DIM,\@ll,\@ur,$objects[$count]);
+			$count++;
+		}	
+	}
+	print"->Building linesegment-tree (#segments $count).\n";
+	$L_TREE = BBT_NewTree(\@boxes,$count,$DIM);
+}
+#######################################################################
+### Callback Function for triangles									###
+####################################################################### 
+sub Triangle_Callback
+{
+	my($x,$obj)=@_;
+	my(@p0,@p1,@p2,@a,@b,@c,@p,$i,$ma,$mb,$mc,@tmp,@cp,$mcp,@n,$d,$md,@dist);
+	my($tmp,$dummy);
+
+	$tmp = $obj->{p0}; @p0 = @$tmp;
+	$tmp = $obj->{p1}; @p1 = @$tmp;
+	$tmp = $obj->{p2}; @p2 = @$tmp;
+
+	## point lies not inside extruded triangle area
+	if(!(GetLocalCoordinates(\@p0,\@p1,\@p2,$x,$dummy,$dummy))){
+		return $HUGE;
+	}
+	
+
+	for($i=0; $i<$DIM; $i++){
+		$a[$i]=$x->[$i]-$p0[$i];
+		$b[$i]=$x->[$i]-$p1[$i];
+		$c[$i]=$x->[$i]-$p2[$i];
+	}
+
+
+	## norms ##
+	$ma=Mod(@a);
+	$mb=Mod(@b);
+	$mc=Mod(@c);
+
+	## Find closest Point of triangle P0,P1,P2 to x -> Pref=P0 ##
+	if( ($mc<$ma) && ($mc<$mb) ){
+		@tmp = @p0;
+		@p0  = @p2;
+		@p2  = @tmp;
+	}elsif( ($mb<$ma) && ($mb<$mc) ){
+		@tmp = @p0;
+		@p0  = @p1;	
+		@p1  = @tmp;
+	}
+
+	## vectors ##
+	@a=@b=@c=();
+	for($i=0;$i<$DIM;$i++){
+		$a[$i]=$p1[$i]-$p0[$i];
+		$b[$i]=$p2[$i]-$p0[$i];
+		$c[$i]=$p2[$i]-$p1[$i];
+		$p[$i]=$x->[$i]-$p0[$i];
+	}
+
+	## normal vector ##
+	@cp=CrossProduct(\@a,\@b);
+	$mcp=Mod(@cp);
+	for($i=0;$i<$DIM;$i++){
+		$n[$i]=$cp[$i]/$mcp;
+	}
+	
+	## distance from P normal to plane axb ##
+	$d=DotProduct(\@p,\@n);
+
+	## point is too far from plane axb ##
+	$md=sqrt($d*$d);
+	if($md>$EPS_PROJ){
+		return $HUGE;
+	}
+	
+	## Projected point = reference point P0 + dist ##
+	for($i=0;$i<$DIM;$i++){
+		$dist[$i]=(-$d)*$n[$i];	
+		$obj->{p_proj}->[$i] = $x->[$i] + $dist[$i];
+	}
+	return(Mod(@dist));
+}
+#######################################################################
+### Create tree for triangles										###
+####################################################################### 
+{
+	my($k,$i,$count,@objects,@boxes);
+
+	$count = 0;
+	
+	## create boxes
+	print"->Generating triangle boxes.\n";
+	foreach $k(keys %S_TRI){
+	
+		if($S_TRI{$k}=~/\s*(\d+)\s+(\d+)\s+(\d+)/){
+
+			my (@p0,@p1,@p2,@ur,@ll,%obj);
+
+			## Get coordinates of points ##
+			@p0=split / /,$LGM_VERT{$1};
+			@p1=split / /,$LGM_VERT{$2};
+			@p2=split / /,$LGM_VERT{$3};
+			
+			## get dimension of boxes
+			for($i=0; $i<$DIM; $i++){
+				$ll[$i] = $ur[$i] = $p0[$i];
+				$ll[$i] = min($ll[$i], $p1[$i]);
+				$ll[$i] = min($ll[$i], $p2[$i]);
+				$ur[$i] = max($ur[$i], $p1[$i]);
+				$ur[$i] = max($ur[$i], $p2[$i]);
+			}
+			$obj{tri} = $k;
+			$obj{p0} = \@p0;
+			$obj{p1} = \@p1;
+			$obj{p2} = \@p2;
+			$objects[$count] = \%obj;
+			$boxes[$count] = BBT_NewBBox($DIM,\@ll,\@ur,$objects[$count]);
+			$count++;
+		}else{
+			die "Could not read Triangle coordinates correctly \n$!"}
+	}
+	print"->Building triangle-tree (#triangles $count).\n";
+	$T_TREE = BBT_NewTree(\@boxes,$count,$DIM);
+
+}
+#######################################################################
+### Process each boundary node and write into file					###
+####################################################################### 
+{
+	my ($v,@keys,$count,$thePoint,$file,$tri,$s,$np,$line,$inner);
+	my ($mdist_p,$mdist_l,$mdist_t,@proj,$min,@p,$p0,$p1,$p2,$i);
+
+	$mdist_p=$mdist_l=$mdist_t=$inner=$count=0;
+	
+	sysopen(FH,$STAR_PROJ, O_WRONLY | O_CREAT | O_TRUNC)
+		or die "Cannot open file $STAR_PROJ !\n";
+
+	## user display: start processing boundary nodes ##
+	@keys = sort{$a<=>$b}(keys %BN);	
+	print"Processing ",$#keys+1," boundary nodes\n";
+
+	### loop over each boundary node ###
+	foreach $v(@keys){
+
+		## user display: processed bn ##
+		display_processed($#keys,$v);
+
+		
+		## Get distances to objects ##
+		FindLgmPointsAndProject(\$BN{$v},$v,\$np,\$p[0],\$mdist_p);
+		FindLgmLinesAndProject(\$BN{$v},$v,\$line,\$p[1],\$mdist_l);
+		FindLgmTrianglesAndProject(\$BN{$v},$v,\$tri,\$p[2],\$p0,\$p1,\$p2,\$mdist_t);
+
+		## priority is on distance to point (mdist_p) ##
+		$mdist_p *=0.8;
+		$mdist_l *=0.9;
+
+
+		## Get minimum distances ##
+		$min=mmin($mdist_p,$mdist_l,$mdist_t);
+
+		if($min>$EPS_PROJ){
+			die"Point $BN{$v} lies too far away from object. Min distance: $min$!\n"
+		}elsif( $mdist_p<$EPS_POINT ){
+			$BN{$v}=$p[0];
+			$s="# projected on point $np (EPS_POINT)";
+		}elsif($mdist_l<$EPS_LINE){
+			$BN{$v}=$p[1];
+			$s="# projected on line $line (EPS_LINE)";
+		}elsif($min==$mdist_p){
+			$BN{$v}=$p[0];
+			$s="# projected on point $np (EPS_PROJ)";
+		}elsif($min==$mdist_l){
+			$BN{$v}=$p[1];
+			$s="# projected on line $line (EPS_PROJ)";
+		}elsif($min==$mdist_t){
+			$BN{$v}=$p[2];
+			$s="# projected on triangle $tri\: p0=($$p0[0] $$p0[1] $$p0[2]) p1=($$p1[0] $$p1[1] $$p1[2]) p2=($$p2[0] $$p2[1] $$p2[2]) (EPS_PROJ)";
+		}else{die}
+		WriteIntoFile($BN{$v},$v,$s);
+		$count++;
+	}
+	## User output: all boundary nodes processed ##
+	print $count," Boundary Nodes processed \n";
+
+	## user display: start processing inner nodes ##
+	@keys = sort{$a<=>$b}(keys %VERT);	
+	print"Processing ",$#keys+1-$count," inner nodes\n";
+
+	foreach $v (@keys){
+		if(!(exists($BN{$v}))){
+			$s="# no projection => inner nodes";
+			&WriteIntoFile($VERT{$v},$v,$s);
+			$inner++;
+		}
+	}
+	close(FH);
+
+	## User output: all boundary nodes processed ##
+	print $inner," Inner Nodes processed \n";
+
+	## Write statistics into file ## 
+	sysopen(FH,$STAT,O_WRONLY|O_CREAT|O_TRUNC)
+		or die "Cannot open file $STAT !\n"; 
+	
+	### write maximum projection distances ###
+	print(FH "","max point projection distance: $mdist_p\n");
+	print(FH "","max line projection distance: $mdist_l\n");
+	print(FH "","max triangle projection distance: $mdist_t\n");
+
+	@keys=sort{$a<=>$b}(keys %P_PROJ);
+	print(FH "","=====================================\n");
+	print(FH "","star-points projected on lgm-points\n");
+	print(FH "","=====================================\n");
+	foreach $v(@keys){
+		print(FH "","$v : $BN{$v}  \n");
+	}
+
+	@keys=sort{$a<=>$b}(keys %L_PROJ);
+	print(FH "","=====================================\n");
+	print(FH "","star-points projected on lgm-line\n");
+	print(FH "","=====================================\n");
+	foreach $v(@keys){
+		print(FH "","$v  $BN{$v}\n");
+	}
+
+	@keys=sort{$a<=>$b}(keys %T_PROJ);
+	print(FH "","=====================================\n");
+	print(FH "","star-points projected on lgm-triangle\n");
+	print(FH "","=====================================\n");
+	foreach $v(@keys){
+		print(FH "","no. points on triangle $v : $T_PROJ{$v}\n");
+	}
+
+	close(FH);
+
+	## copy original star_<filename>.vrt -> star_<filename>.vrt.og 	##
+	## and replace the original file with new one 					##
+	$file="$VRT".'.og';
+	system("cp $VRT $file");
+	system("mv $STAR_PROJ $VRT");
+
+}
+#######################################################################
+### Write projected points into file								###
+####################################################################### 
+sub WriteIntoFile
+{
+	my ($P,$n,$proj)=@_;
+	my($i,@p);
+
+	@p=split / /,$P;
+	$P=();
+	for($i=0;$i<3;$i++){
+		$p[$i]=sprintf("%.15e",$p[$i]);
+		$P.=$p[$i].' ';
+	}
+	print(FH "","$n   $P\t\t\t\t$proj\n");
+
+}
+#######################################################################
+### Project star-point onto lgm-line, if the distance < EPS_TRI		###
+####################################################################### 
+sub  FindLgmTrianglesAndProject
+{
+	my ($BN,$n,$tri,$P,$p0,$p1,$p2,$dist)=@_;
+	my($i,@p,$robj,$d,%obj);
+
+	## read in coordinates of boundary node ##
+	while($$BN=~/($real)/g){
+		$p[$i++]=$1;
+	}
+
+	## only 3 coordinates possible ##
+	if($i!=$DIM){
+		die "Number of coordinates must be $DIM ! $!\n"}
+
+	$d = BBT_TreePointDistance($T_TREE,\@p,\$robj,\&Triangle_Callback,$HUGE);
+	$$dist=$d;
+
+
+	if($d<$HUGE){
+		%obj = %$robj;
+	
+		## For statistics
+		$T_PROJ{$n}++;
+	
+		## Get maximum projected distance for statistics
+		if($d > $$dist){$$dist=$d}
+	
+		$$P = "$obj{p_proj}->[0] $obj{p_proj}->[1] $obj{p_proj}->[2]";
+		$$tri = $obj{tri};
+		$$p0 = $obj{p0};
+		$$p1 = $obj{p1};
+		$$p2 = $obj{p2};
+	}
+}
+
+#######################################################################
+### Project star-point onto lgm-line, if the distance < EPS_LINE	###
+####################################################################### 
+sub FindLgmLinesAndProject
+{
+	my ($BN,$n,$line,$P,$dist)=@_;
+	my ($i,@p,$robj,%obj,$d);
+
+	## read coordinates of boundary node ##
+	while($$BN=~/($real)/g){
+		$p[$i++]=$1;
+	}
+	if($i!=3){
+		die "Number of coordinates must be 3 ! $!\n"}
+
+	$d = BBT_TreePointDistance($L_TREE,\@p,\$robj,\&Line_Callback,$HUGE);
+	$$dist=$d;
+
+
+	if($d<$HUGE){
+		## For statistics
+		$L_PROJ{$n}++;
+
+		%obj = %$robj;
+		$$P = "$obj{p_proj}->[0] $obj{p_proj}->[1] $obj{p_proj}->[2]";
+		$$line = $obj{line};	
+	}
+}
+
+#######################################################################
+### Project star-point onto lgm-point, if the distance < EPS_POINT  ###
+####################################################################### 
+sub FindLgmPointsAndProject
+{
+	my ($BN,$n,$np,$P,$dist)=@_;
+	my ($i,$d,%obj,$robj,@p);
+
+	## read in coordinates ##
+	while($$BN=~/($real)/g){
+		$p[$i++]=$1;
+	}
+	## only 3 coordinates possible ##
+	if($i!=3){
+		die "Number of coordinates must be 3 ! $!\n"}
+	
+	## Get distance to nearest point 
+	$d = BBT_TreePointDistance($P_TREE, \@p, \$robj, \&Point_Callback,$HUGE);
+	$$dist=$d;
+
+
+	if($d<$HUGE){
+
+		## Rounding
+		#$d = sprintf("%.12e",$d);
+		%obj = %$robj;
+		if(exists($P_PROJ{$np})) {
+			die "Cannot decide onto which lgm-point to project star-point n=$n$!\n"; }
+	
+		## For statistics 
+		$P_PROJ{$n}++;
+	
+		## Get maximum projected distance for statistics
+		if($d > $$dist){$$dist=$d}
+	
+		## Take original lgm-point
+		$$P = "$obj{lgm_point}->[0] $obj{lgm_point}->[1] $obj{lgm_point}->[2]";  
+		$$np = $obj{np};
+		if($DONE{$$np}){
+			die "Another point is already projected on $$np: $DONE{$$np} \n";}
+		$DONE{$$np}=$$np;
+	}
+}
+sub DotProduct
+{
+	my ($a,$b)=@_;
+	return($a->[0]*$b->[0]+$a->[1]*$b->[1]+$a->[2]*$b->[2]);
+}
+sub CrossProduct
+{
+	my ($a,$b)=@_;
+	my @cp;
+	 
+	$cp[0]=$a->[1]*$b->[2]-$a->[2]*$b->[1];
+	$cp[1]=$a->[2]*$b->[0]-$a->[0]*$b->[2];
+	$cp[2]=$a->[0]*$b->[1]-$a->[1]*$b->[0];
+	return @cp;
+}
+
+sub GetSmallestSideOfElement
+{
+	my ($bn)=@_;
+	my (@p,$i,$k,$ma,$mb,$mc,@a,@b,@c,@p0,@p1,@p2);
+	
+	$i=0;
+	foreach $k(keys %$bn){
+		$p[$i++]=$$bn{$k};
+	}
+
+	## 3 points ##
+	@p0=split / /,$p[0];
+	@p1=split / /,$p[1];
+	@p2=split / /,$p[2];
+
+	## 3 vectors ##
+	for($i=0;$i<3;$i++){
+		$a[$i]=$p1[$i]-$p0[$i];	
+		$b[$i]=$p2[$i]-$p0[$i];	
+		$c[$i]=$p2[$i]-$p1[$i];	
+	}
+	
+	## get modulus of 3 vectors ##
+	$ma=Mod(@a);
+	$mb=Mod(@b);
+	$mc=Mod(@c);
+
+	return(mmin($ma,$mb,$mc));
+}
+sub GetLocalCoordinates
+{
+	my($P0,$P1,$P2,$P,$xi,$eta)=@_;
+	my (@a,@b,@c,@p,@q,@sp,$sum,@lambda,$mcp,$i,@cp,@n);
+
+	for($i=0;$i<3;$i++){
+		#print "P->[$i]=$P->[$i] P0->[$i]=$P0->[$i] P1->[$i]=$P1->[$i] P2->[$i]=$P2->[$i]\n";
+	}
+
+	## Determine vectors ##
+	for($i=0;$i<3;$i++){
+		$a[$i]=$P1->[$i]-$P0->[$i];
+		$b[$i]=$P2->[$i]-$P0->[$i];
+		$c[$i]=$P2->[$i]-$P1->[$i];
+		$p[$i]=$P->[$i]-$P0->[$i];
+		$q[$i]=$P->[$i]-$P1->[$i];
+	}
+
+
+	## double area of triangle ##
+	@cp=CrossProduct(\@a,\@b);
+	$mcp=Mod(@cp);
+	for($i=0;$i<3;$i++){
+		$n[$i]=$cp[$i]/$mcp;
+	}
+
+	## Get the spat ##
+	$sp[0]=Spat(\@a,\@p,\@n);
+	$sp[1]=Spat(\@p,\@b,\@n);
+	$sp[2]=Spat(\@c,\@q,\@n);
+
+	## TODO: not needed
+	## check, whether point lies inside triangle ##
+	#for($i=0;$i<3;$i++){
+	#	if( ($sp[$i]/$mcp) < (0-$EPS_LOC) ){
+	#		return 0;
+	#	}
+	#}
+	
+	## Get relationship vol of one triangle/vol of whole triangle ##
+	$sum=0;
+	for($i=0;$i<3;$i++){
+		$lambda[$i]=$sp[$i]/$mcp;
+		$sum+=$lambda[$i];
+	}
+
+	## check sum params must be 1 ##
+	if(($sum<= (1-$EPS_LOC)) || ($sum>=1+$EPS_LOC) ){
+		return 0;
+		#die "Sum of parameters must be 1 ! $!\n";
+	}
+		
+	## last check ##	
+	for($i=0;$i<3;$i++){
+		if( ($lambda[$i] > (1.0+$EPS_LOC)) || ($lambda[$i] < (0-$EPS_LOC)) ){
+			#die "lambda[$i]=$lambda[$i] <0 || > 1 $!\n";
+			return 0;	
+	   }
+	}
+
+	return 1;
+}
+sub Spat
+{
+	my ($a,$b,$c)=@_;
+	return((($a->[1]*$b->[2] - $a->[2]*$b->[1])*$c->[0])+
+		(($a->[2]*$b->[0] - $a->[0]*$b->[2])*$c->[1])+
+		(($a->[0]*$b->[1] - $a->[1]*$b->[0])*$c->[2]))
+}
+sub GetSmallestSideOfTriangle
+{
+	my ($bn)=@_;
+	my (@p,$i,$k,$ma,$mb,$mc,@a,@b,@c,@p0,@p1,@p2);
+	
+	$i=0;
+	foreach $k(keys %$bn){
+		$p[$i++]=$$bn{$k};
+	}
+
+	## 3 points ##
+	@p0=split / /,$p[0];
+	@p1=split / /,$p[1];
+	@p2=split / /,$p[2];
+
+	## 3 vectors ##
+	for($i=0;$i<3;$i++){
+		$a[$i]=$p1[$i]-$p0[$i];	
+		$b[$i]=$p2[$i]-$p0[$i];	
+		$c[$i]=$p2[$i]-$p1[$i];	
+	}	
+
+	## get modulus of 3 vectors ##
+	$ma=Mod(@a);
+	$mb=Mod(@b);
+	$mc=Mod(@c);
+
+	return(mmin($ma,$mb,$mc));
+}
+
+### Modulus ###
+sub Mod
+{
+	my (@a)=@_;
+	return(sqrt($a[0]*$a[0]+$a[1]*$a[1]+$a[2]*$a[2]));
+}
+sub Mod2
+{
+	my (@a)=@_;
+	return($a[0]*$a[0]+$a[1]*$a[1]+$a[2]*$a[2]);
+}
+
+## minimum of several values ##
+sub mmin
+{
+	my ($min,$i);
+
+	$min=1000000;
+	for ($i=0; $i<@_; $i++){
+		if(defined($_[$i])){
+			if ($min>$_[$i]){
+				$min=$_[$i];
+			}
+		}
+	}
+	return ($min);
+}
+## maximum of several values ##
+sub mmax
+{
+	my ($max,$i);
+
+	$max=-1000000;
+	for ($i=0; $i<@_; $i++){
+		if(defined($_[$i])){
+			if ($max<$_[$i]){
+				$max=$_[$i];
+			}
+		}
+	}
+	return ($max);
+}
+## smallest out of 2 values
+sub min
+{
+	my ($a,$b)=@_;
+	if($a < $b){return $a}
+	else{return $b}
+}
+## largest out of 2 values
+sub  max
+{
+	my ($a,$b)=@_;
+	if($a > $b){return $a}
+	else{return $b}
+}
+
+### display processed boundary nodes ###
+sub display_processed
+{
+	my ($N,$i)=@_;
+	my ($perc,%display,$last);
+
+	$perc=$i/$N*100;
+	$perc=int $perc;
+	$last=($i-1)/$N*100;
+	$last=int $last;
+	if((($perc % 1)==0) && !(exists $display{$perc}) && ($last!=$perc)){
+		## flush buffer ##
+		$|=1;
+		printf("%3d ",$perc);
+		print"%\r";
+		$display{$perc}=1;
+	}
+}
+
+### print hash ###
+sub print_hash
+{
+	my ($value,@values,$key);
+	my @keys=();
+	my %myhash=@_;
+
+	@keys = sort {$a <=> $b} (keys %myhash);
+	print "\@keys=@keys\n";
+	foreach $key (@keys){
+		print "myhash{$key}=",$myhash{$key},"\n";
+	}
+}
+sub print_hash_ref
+{
+	my ($value,@values,$key);
+	my @keys=();
+	my %myhash=@_;
+
+	@keys = sort {$a <=> $b} (keys %myhash);
+	foreach $key (@keys){
+		print "key=",$key," ";
+		@values = @{$myhash{$key}};
+		foreach $value(@values){
+			print $value, " ";
+		}
+		print "\n";
+	}
+}
+

@@ -1,0 +1,479 @@
+#!/usr/bin/perl -w
+#######################################################################
+###																	###
+###	File:	fnf2lgmAcc												###
+###																	###
+###	Purpose: converts 3D geometry description in fnf-file format 	###
+###			 lgm-file format 										###
+###																	###
+###	Author: Andreas Hauser											###
+###			IWR-Technische Simulation								###
+### 		Universitaet Heidelberg									###
+### 		Im Neuenheimer Feld 368									###
+###			69129 Heidelberg										###
+###			email: Andreas.Hauser@iwr.uni-heidelberg.de				###
+###																	###
+###	Hist:	Finished 09/2002										###
+###																	###
+#######################################################################
+
+
+## important for ProE: for setting pressure, it is important that the
+##  box is the last geometry in the model tree !!!
+
+######################################################################  
+# some declarations and preprocessing
+######################################################################  
+use strict;
+use vars qw (@ARGV $SINK $SOURCE %ELEM %NODE %EDGE %SURF);
+use vars qw (%S_P %S_L %S_T %S_LR $real $NSD %P2E);	
+use Fcntl;
+
+$real='[+-]*\d+\.*\d*e[+-]\d+|[+-]*\d+\.\d*|\d+|[+-]\d+';
+
+@ARGV==1 or die "usage: lgm2fnf <file.lgm>\n";
+substr($ARGV[0],-4) eq '.fnf' or die "Read only <file.fnf>\n";
+
+$SOURCE=$ARGV[0];
+$SINK=substr($ARGV[0],0,-4).'.lgm';
+
+#######################################################################
+# Nodes in fnf-file are not necessarily counted in a sequence, which is
+# mandatory for lgm-format.
+####################################################################### 
+sub CountInSequence
+{
+	my ($key,@keys,@nodes,@new_nodes,$i);
+	my %myh=@_;
+	
+	# Nodes on Elements
+	@keys = sort {$a<=>$b}(keys %ELEM);
+	foreach $key (@keys){
+		@nodes=@new_nodes=();
+		@nodes=@{$ELEM{$key}};
+		for($i=0;$i<=$#nodes;$i++){
+			$new_nodes[$i]=$myh{$nodes[$i]};
+		}
+		@{$ELEM{$key}}=@new_nodes;
+	}
+	
+	# Nodes on Edges
+	@keys = sort {$a<=>$b}(keys %EDGE);
+	foreach $key (@keys){
+		@nodes=@new_nodes=();
+		@nodes=@{$EDGE{$key}};
+		for($i=0;$i<=$#nodes;$i++){
+			$new_nodes[$i]=$myh{$nodes[$i]};
+		}
+		@{$EDGE{$key}}=@new_nodes;
+	}	
+}
+
+#######################################################################
+# Surfaces in fnf format are counted starting from 1, in lgm starting
+# from 0
+####################################################################### 
+sub CountFromZero
+{
+	my (@values,$key,@new,$i);
+	my @keys=();
+	my %myhash=@_;
+	
+	@keys = sort {$a <=> $b} (keys %myhash);
+	foreach $key (@keys){
+		@values=@new=();
+		@values = @{$myhash{$key}};
+		for($i=0;$i<=$#values;$i++){
+			$new[$i]=$values[$i]-1;
+		}
+		@{$myhash{$key}}=@new;
+	}
+}
+#######################################################################
+# Only for printout of hash-tables 
+####################################################################### 
+sub print_hash_ref
+{
+	my %myhash=@_;
+	my ($value,@values,$key);
+	my @keys=();
+
+	@keys = sort {$a <=> $b} (keys %myhash);
+	print"keys=@keys\n";
+	foreach $key (@keys){
+		print "key=",$key," ";
+		@values = @{$myhash{$key}};
+		foreach $value(@values){
+			print $value, " ";
+		}
+		print "\n";
+	}
+}
+#######################################################################
+# Only for printout of hash-tables 
+####################################################################### 
+sub print_hash
+{
+	my ($value,@values,$key);
+	my @keys=();
+	my %myhash=@_;
+
+	@keys = sort {$a <=> $b} (keys %myhash);
+	print "\@keys=@keys\n";
+	foreach $key (@keys){
+		print "myhash{$key}=",$myhash{$key},"\n";
+	}
+}
+#######################################################################
+# Read whole necessary information from fnf file and rearrange a bit
+####################################################################### 
+{
+	my ($line,$nkey,$ekey,$edkey,$skey,%nid);
+	my ($t,@tmp,$tmp,@keys,%used);
+
+	print"-> Reading info and rearrange.\n"; 
+
+	$nkey=$ekey=$edkey=$skey=0;
+	%nid=();
+	
+	sysopen(FH,$SOURCE,O_RDONLY);	
+
+	while($line=<FH>){
+		if($line=~/\%ELEM /g){
+			$line=~s/\%ELEM\s+\d+\s+DEF\s+:\s+\d+\s+\d+\s+\d+\s+//g;
+			if ($line=~/(\d+)\s+(\d+)\s+(\d+)/){
+				$used{$1}++; $used{$2}++; $used{$3}++;
+			}
+		}
+	}
+
+	close(FH);
+
+
+	sysopen(FH,$SOURCE,O_RDONLY);	
+	while(defined($line=<FH>)){
+		#Delete Continuation Characters
+		chomp $line;
+		if($line=~s/\\\s*//){
+			$line.=<FH>;
+			redo unless eof(FH);
+		}
+		# Get Nodes
+		if($line=~/\%NODE /g){
+			$line=~s/\%NODE\s+//g;
+
+			# map sequence of node ids
+			if($line=~/(\d+)/){$nid{$1}=$nkey}
+			if(exists($used{$1})){ 
+				$line=~s/\s*\d+\s+DEF\s+:\s+//g;
+				if ($line=~/($real)\s*($real)\s*($real)/){
+					push(@{ $NODE{$nkey++}},$1,$2,$3);  
+				}
+			}
+		# Get Nodes of Elements
+		} elsif($line=~/\%ELEM /g){
+			$line=~s/\%ELEM\s+\d+\s+DEF\s+:\s+\d+\s+\d+\s+\d+\s+//g;
+			if ($line=~/(\d+)\s+(\d+)\s+(\d+)/){
+				push(@{ $ELEM{$ekey++}},$2,$1,$3); 
+			}
+		# Get Nodes on Edges
+		} elsif($line=~/\%EDGE /g && $line=~/NODES /g){
+			$line=~s/\%EDGE\s+\d+\s+NODES\s+:\s+//g;
+			while(1){
+				if($line=~/(\d+)\s*/){
+					if(exists($used{$1})){ 
+						push(@{ $EDGE{$edkey}},$1);
+						$P2E{$nid{$1}} .= "$edkey ";		
+					}
+				}else{last;}
+				$line=~s/(\d+)\s*//;
+			}
+			$edkey++;
+		# Get Elements on Surfaces
+		} elsif($line=~/\%SURFACE /g && $line=~/FACES /g){
+			$line=~s/\%SURFACE\s+(\d+)\s+FACES\s+:\s+//g;
+			while(1){
+				if($line=~/(\d+)\s+(\d+)\s*/){
+					push(@{ $SURF{$skey}},$1);
+					if($2 !=1){die "orientation of element on surface !\n";} 
+				}else{last;}
+				$line=~s/(\d+)\s+(\d+)\s*//;
+			}
+			$skey++;
+		}
+	}
+	&CountInSequence(%nid);
+	&CountFromZero(%SURF);
+	close(FH);
+
+	if(0){
+		@keys = sort {$a<=>$b}(keys %P2E);
+		foreach $t(@keys){
+			print"P2E{$t}=$P2E{$t}\n";
+		}
+	}
+}
+
+#######################################################################
+#Detect contact surfaces in order to determine which subdomain is 'left'
+#and 'right' of a surface.
+####################################################################### 
+{
+	my ($line,%val,@a,$j,$i,$nsurf,$n,$load);
+	my (@keys);
+
+	print"-> Detecting contact surfaces.\n";
+
+	## consider only face pressure
+	sysopen(FH,$SOURCE,O_RDONLY);
+	while($line=<FH>){
+		if($line=~/\%LOAD_TYPE\s+(\d+)\s+DEF\s*:\s*PRESSURE\s+FACE\s+SCALAR/){
+			$load=$1;
+		}
+	}
+	close(FH);
+
+	%S_LR=();	
+	
+	sysopen(FH,$SOURCE,O_RDONLY);
+
+	## read pressure per surface
+	while($line=<FH>){
+		if($line=~/\%LOAD\s+(\d+)\s+VAL\s*:\s*(\d+)\s+($real)/){
+			if($1==$load){
+				$val{$2} .= "$3 ";
+			}
+		}
+	}
+	$j=$NSD=0;
+	@keys = sort{$a<=>$b}(keys %val);
+
+	## loop over surfaces
+	foreach $i(@keys ){
+
+		#array of pressure
+		@a=split / /,$val{$i};
+
+		## one pressure on one surface
+		if($#a==0){
+
+			## integer
+			if($a[0]=~/^(\d+)$/){
+
+				## surface of bounding box
+				push(@{$S_LR{$j}},$a[0],0);			
+
+				if($NSD<$1){$NSD=$1}
+
+			## decimal
+			}else{
+
+				## surface inside bounding box
+				if($a[0]=~/^(\d+)\.(\d+)$/){
+					push(@{$S_LR{$j}},$1,$2);			
+				}else{die "Expected number x.y not true $!\n";}
+				if($NSD<$1){$NSD=$1}
+				elsif($NSD<$2){$NSD=$2}
+			}
+
+		## more than one pressure on one surface
+		}elsif($#a==1){
+
+			if($NSD<$a[0]){$NSD=$a[0]}
+			if($NSD<$a[1]){$NSD=$a[1]}
+
+			## surface at bounding box
+			if($a[0]==0){
+				if($a[1]=~/^(\d+)\.(\d+)$/){
+					push(@{$S_LR{$j}},$1,$2);			
+				}else{die "Expected number x.y not true $!\n";}
+			}elsif($a[1]==0){
+				if($a[0]=~/^(\d+)\.(\d+)$/){
+					push(@{$S_LR{$j}},$1,0);			
+				}else{die "Expected number x.y not true $!\n";}
+			}else{
+				if($a[0]=~/^(\d+)/){ $a[0]=$1;}else{die}
+				if($a[1]=~/^(\d+)/){ $a[1]=$1;}else{die}
+				if($a[0]>$a[1]){
+					push(@{$S_LR{$j}},$a[1],$a[0]);
+				}
+				else{
+					push(@{$S_LR{$j}},$a[0],$a[1]);
+				}
+			}	
+		}else{
+			die "Not more than 2 pressures on lgm-surface $j  allowed $!\n";
+		}
+		$j++;
+	}
+}
+
+#######################################################################
+# Rearrange necessary fnf information in order to have all surface id
+# information. 
+####################################################################### 
+{
+	my (%temp,%seen,@uniq,%done,@edkeys,$edkey,@epoints,$n,@surfs,);
+	my ($surf,@elems,$elem,@points,$point,$i,$j,%found,@edges);
+		
+	@surfs = sort {$a <=> $b} (keys %SURF);
+
+	# get all nodes on surface
+	$n=0; 
+	foreach $surf (@surfs){
+		@elems = @{$SURF{$surf}};
+		foreach $elem (@elems){
+			@points = @{$ELEM{$elem}};
+			foreach $point (@points){
+					push(@{ $temp{$surf}},$point);
+				}
+		}
+		$n++;
+	}
+
+	# delete multiple nodes
+	foreach $surf (@surfs){
+		%seen = (); 
+		@elems = @uniq = ();
+		@elems = @{$temp{$surf}};
+		foreach $elem(@elems){
+			push(@uniq,$elem) unless $seen{$elem}++;
+		}
+		push(@{ $S_P{$surf}},@uniq);
+	}
+
+	# get nodes of triangle lying on a surface 
+	print"-> Mapping nodes of triangle to surfaces.\n";
+
+	foreach $surf (@surfs){
+		&display_processed($n-1,$surf);
+		@points=@elems=();
+		@points=@{$S_P{$surf}};
+		@elems=@{$SURF{$surf}};
+		foreach $elem (@elems){
+			@epoints=@{$ELEM{$elem}};
+			push(@{$S_T{$surf}},@epoints);
+		}
+	}
+	
+	print"-> Mapping lines to surfaces.\n";
+	@edkeys = sort {$a <=> $b} (keys %EDGE);
+
+	foreach $surf(@surfs){
+		&display_processed($n-1,$surf);
+		@elems = @{$SURF{$surf}};
+		%done = ();
+		foreach $elem(@elems){
+			@epoints = ();
+			%found = ();
+			@epoints = @{$ELEM{$elem}};
+			for($i=0; $i<3; $i++){
+				if(exists($P2E{$epoints[$i]})){
+					@edges = split / /,$P2E{$epoints[$i]};
+					for($j=0; $j<=$#edges; $j++){
+						if(exists($done{$edges[$j]})){next}
+						$found{$edges[$j]}++;
+						if($found{$edges[$j]}>1){
+							push(@{$S_L{$surf}},$edges[$j]);
+							$done{$edges[$j]}++;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+#######################################################################
+#Write geometry description into lgm file 
+####################################################################### 
+{
+	my ($id,@skeys,$skey,@lr,$last,@p,@l,@t,$value,$i,$nt);
+
+	print"-> Writing Geometry into lgm-file.\n";
+
+	## write Domain-Info and Unit-Info 
+	sysopen(FH,$SINK,O_WRONLY|O_CREAT|O_TRUNC);
+	print(FH "","# Domain-Info\n");
+	print(FH "","name = ernst\n");
+	print(FH "","problemname = CAD\n");
+	print(FH "","convex = 1\n\n");
+	print(FH "","# Unit-Info\n");	
+	for($i=1;$i<=$NSD;$i++){
+		print(FH "","unit $i Material_$i\n");
+	}
+
+	# write line info
+	print(FH "","\n#Line-Info\n");
+	$id=0;
+	@skeys= sort {$a <=> $b} (keys %EDGE);
+	foreach $skey (@skeys){
+		@l=@{$EDGE{$skey}};
+		print(FH "","line ",$id++,": points: ");
+		foreach $value (@l){
+			print(FH ""," ",$value);
+		}
+		print(FH ""," ;\n");
+	}
+		
+	#write surface info
+	print(FH "","\n#Surface-Info\n");
+	$id=0;@l=();	
+	@skeys=();
+	@skeys = sort {$a <=> $b} (keys %SURF);
+	foreach $skey (@skeys){
+		@lr=@p=@l=@t=();
+		@lr=@{$S_LR{$skey}};
+		@p=@{$S_P{$skey}};
+		@l=@{$S_L{$skey}};
+		@t=@{$S_T{$skey}};
+		$nt=($#t+1)/3;
+		$last=$#lr;
+		print(FH "","surface ",$id++,": left=",$lr[$last-1],"; right=");
+		print(FH "",$lr[$last],"; points:");
+	   	foreach $value(@p){
+			print(FH ""," ",$value);
+		}
+		print(FH "","; lines: ");
+		foreach $value(@l){
+			print(FH ""," ",$value);
+		}	
+		print(FH "","; triangles: ");
+		for($i=0;$i<$nt;$i++){
+			print(FH ""," ",$t[$i*3]," ",$t[$i*3+1]," ",$t[$i*3+2],"; ");
+		}
+		print(FH "","\n");
+	}	
+
+	#write point info
+	print(FH "","\n#Point-Info\n");
+	@skeys=();
+	@skeys = sort {$a <=> $b} (keys %NODE);
+	@p=();
+	foreach $skey (@skeys){
+		@p=@{$NODE{$skey}};
+		foreach $value(@p){
+			#$value=sprintf("%13.5e",$value);
+			print(FH "",$value," ")
+		}
+		print(FH "",";\n");
+   }	   
+	close(FH);
+}
+### display processed boundary nodes ###
+sub display_processed
+{
+	my ($N,$i)=@_;
+	my ($perc,%display,$last);
+
+	$perc=$i/$N*100;
+	$perc=int $perc;
+	$last=($i-1)/$N*100;
+	$last=int $last;
+	if((($perc % 1)==0) && !(exists $display{$perc}) && ($last!=$perc)){
+		## flush buffer ##
+		$|=1;
+		printf("%3d ",$perc);
+		print"%\r";
+		$display{$perc}=1;
+	}
+}
