@@ -140,7 +140,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-static INT WriteElementParInfo (ELEMENT *theElement, MGIO_PARINFO *pinfo);
+static INT WriteElementParInfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pinfo);
 
 /****************************************************************************/
 /*																			*/
@@ -621,7 +621,10 @@ static INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **So
   return (0);
 }
 
-static INT SetRefinement (ELEMENT *theElement, NODE **NodeContext, ELEMENT *SonList[MAX_SONS], INT nmax, MGIO_REFINEMENT *refinement, INT *RefRuleOffset)
+static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
+                          NODE **NodeContext, ELEMENT *SonList[MAX_SONS],
+                          INT nmax, MGIO_REFINEMENT *refinement,
+                          INT *RefRuleOffset)
 {
   REFRULE *theRule;
   INT i,j,n,sonRefined,sonex,nex;
@@ -659,7 +662,8 @@ static INT SetRefinement (ELEMENT *theElement, NODE **NodeContext, ELEMENT *SonL
     if (MGIO_PARFILE)
     {
       sonex |= (1<<i);
-      if (WriteElementParInfo(SonList[i],&refinement->pinfo[i])) return (1);
+      if (WriteElementParInfo(theGrid,SonList[i],&refinement->pinfo[i]))
+        return (1);
       for (j=0; j<SIDES_OF_ELEM(SonList[i]); j++)
         if (NBELEM(SonList[i],j)!=NULL && EORPHAN(NBELEM(SonList[i],j)))
         {
@@ -735,7 +739,7 @@ static INT RemoveOrphanSons (ELEMENT **SonList, INT *nmax)
   return(0);
 }
 
-static INT SetHierRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, INT *RefRuleOffset)
+static INT SetHierRefinement (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT *refinement, INT *RefRuleOffset)
 {
   INT i,nmax;
   ELEMENT *theSon;
@@ -748,7 +752,7 @@ static INT SetHierRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, 
   if (GetOrderedSons(theElement,NodeContext,SonList,&nmax)) return (1);
   if (RemoveOrphanSons(SonList,&nmax)) return(1);
   if (nmax==0) return (0);
-  if (SetRefinement (theElement,NodeContext,SonList,nmax,refinement,RefRuleOffset)) return (1);
+  if (SetRefinement (theGrid,theElement,NodeContext,SonList,nmax,refinement,RefRuleOffset)) return (1);
   if (Write_Refinement (refinement,rr_rules)) return (1);
 
   /* recursive call */
@@ -757,7 +761,8 @@ static INT SetHierRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, 
     theSon = SonList[i];
     if (theSon==NULL) continue;
     if (REFINE(theSon)!=NO_REFINEMENT)
-      if (SetHierRefinement(theSon,refinement,RefRuleOffset)) return (1);
+      if (SetHierRefinement(theGrid,theSon,refinement,RefRuleOffset))
+        return (1);
   }
 
   return (0);
@@ -811,13 +816,16 @@ static INT WriteCG_Vertices (MULTIGRID *theMG, INT nov)
 }
 
 #ifdef ModelP
-static INT WriteElementParInfo (ELEMENT *theElement, MGIO_PARINFO *pinfo)
+static INT WriteElementParInfo (GRID *theGrid,
+                                ELEMENT *theElement, MGIO_PARINFO *pinfo)
 {
   INT i,j,k,s,n_max;
   int *pl;
   NODE *theNode;
   VERTEX *theVertex;
   EDGE *theEdge;
+
+  memset(pinfo,0,sizeof(MGIO_PARINFO));
 
   n_max = PROCLISTSIZE-(ActProcListPos-ProcList);
 
@@ -860,22 +868,45 @@ static INT WriteElementParInfo (ELEMENT *theElement, MGIO_PARINFO *pinfo)
     }
     pinfo->v_ident[k] = VXGID(theVertex);
   }
+
+#ifdef __TWODIM__
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
+  {
+    VECTOR *v;
+    for (k=0; k<EDGES_OF_ELEM(theElement); k++) {
+      theEdge=GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,k,0)),
+                      CORNER(theElement,CORNER_OF_EDGE(theElement,k,1)));
+      v = EDVECTOR(theEdge);
+      pinfo->prio_edge[k] = DDD_InfoPriority(PARHDR(v));
+      pinfo->ncopies_edge[k] = DDD_InfoNCopies(PARHDR(v));
+      if (n_max<pinfo->ncopies_edge[k]+s) RETURN (1);
+      pinfo->ed_ident[k] = GID(v);
+      if (pinfo->ncopies_edge[k]>0) {
+        pl = DDD_InfoProcList(PARHDR(v));
+        for (i=0,j=2; i<pinfo->ncopies_edge[k]; i++,j+=2)
+          ActProcListPos[s++] = pl[j];
+      }
+    }
+  }
+#endif
+
 #ifdef __THREEDIM__
   for (k=0; k<EDGES_OF_ELEM(theElement); k++)
   {
-    theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,k,0)),CORNER(theElement,CORNER_OF_EDGE(theElement,k,1)));
+    theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,k,0)),
+                      CORNER(theElement,CORNER_OF_EDGE(theElement,k,1)));
     pinfo->prio_edge[k] = DDD_InfoPriority(PARHDR(theEdge));
     pinfo->ncopies_edge[k] = DDD_InfoNCopies(PARHDR(theEdge));
     if (n_max<pinfo->ncopies_edge[k]+s) RETURN (1);
-    if (pinfo->ncopies_edge[k]>0)
-    {
+    if (pinfo->ncopies_edge[k]>0) {
       pl = DDD_InfoProcList(PARHDR(theEdge));
       for (i=0,j=2; i<pinfo->ncopies_edge[k]; i++,j+=2)
         ActProcListPos[s++] = pl[j];
     }
-    pinfo->ed_ident[k] = GID(GetEdge(CORNER_OF_EDGE_PTR(theElement,k,0),CORNER_OF_EDGE_PTR(theElement,k,1)));
+    pinfo->ed_ident[k] = GID(theEdge);
   }
 #endif
+
   if (s>0) pinfo->proclist = ActProcListPos;
   else pinfo->proclist = NULL;
   ActProcListPos += s;
@@ -883,7 +914,7 @@ static INT WriteElementParInfo (ELEMENT *theElement, MGIO_PARINFO *pinfo)
   return (0);
 }
 #else
-static INT WriteElementParInfo (ELEMENT *theElement, MGIO_PARINFO *pinfo)
+static INT WriteElementParInfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pinfo)
 {
   return (1);
 }
@@ -1200,7 +1231,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
       for (theElement = PFIRSTELEMENT(GRID_ON_LEVEL(theMG,level)); theElement!=NULL; theElement=SUCCE(theElement))
         if (EORPHAN(theElement))
         {
-          if (WriteElementParInfo(theElement,&cg_pinfo)) RETURN (1);
+          if (WriteElementParInfo(theGrid, theElement,&cg_pinfo)) RETURN (1);
           if (Write_pinfo (TAG(theElement),&cg_pinfo)) RETURN (1);
         }
   }
@@ -1211,14 +1242,17 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   if (procs>1) tl=TOPLEVEL(theMG);
   else tl=0;
   id=0;
-  for (level=0; level<=tl; level++)
-    for (theElement = PFIRSTELEMENT(GRID_ON_LEVEL(theMG,level)); theElement!=NULL; theElement=SUCCE(theElement))
-    {
+  for (level=0; level<=tl; level++) {
+    theGrid = GRID_ON_LEVEL(theMG,level);
+    for (theElement = PFIRSTELEMENT(theGrid);
+         theElement!=NULL; theElement=SUCCE(theElement)) {
       if (!EORPHAN(theElement)) continue;
       assert(id==ID(theElement));
-      if (SetHierRefinement (theElement,refinement,RefRuleOffset)) return (1);
+      if (SetHierRefinement(theGrid,theElement,refinement,RefRuleOffset))
+        return (1);
       id++;
     }
+  }
 
   /* release tmp mem */
   ReleaseTmpMem(theHeap);
@@ -1281,10 +1315,7 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
   NODE            *theNode;
   VERTEX          *theVertex;
   VECTOR          *theVector;
-#if (MGIO_DIM==3)
   EDGE            *theEdge;
-#endif
-
 
   evec = VEC_DEF_IN_OBJ_OF_MG(MYMG(theGrid),ELEMVEC);
   nvec = VEC_DEF_IN_OBJ_OF_MG(MYMG(theGrid),NODEVEC);
@@ -1394,6 +1425,32 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
     else
       s += pinfo->ncopies_vertex[j];
   }
+
+#ifdef __TWODIM__
+  if (edvec) {
+    for (j=0; j<EDGES_OF_ELEM(theElement); j++) {
+      theEdge=GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)),
+                      CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)));
+      if (USED(theEdge) == 0) {
+        theVector = EDVECTOR(theEdge);
+        if ((prio = pinfo->prio_edge[j]) != PrioMaster) {
+          GRID_UNLINK_VECTOR(theGrid,theVector);
+          SETPRIO(theVector,prio);
+          GRID_LINK_VECTOR(theGrid,theVector,prio);
+        }
+        for (i=0; i<pinfo->ncopies_edge[j]; i++) {
+          DDD_IdentifyNumber(PARHDR(theVector),
+                             pinfo->proclist[s],pinfo->ed_ident[j]);
+          s++;
+        }
+        SETUSED(theEdge,1);
+      }
+      else
+        s += pinfo->ncopies_edge[j];
+    }
+  }
+#endif
+
 #if (MGIO_DIM==3)
   for (j=0; j<EDGES_OF_ELEM(theElement); j++)
   {
@@ -1979,8 +2036,6 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     return(theMG);
   }
 #endif
-
-
 
   /* read coarse grid points and elements */
   cg_point = (MGIO_CG_POINT *)GetTmpMem(theHeap,cg_general.nPoint*sizeof(MGIO_CG_POINT));

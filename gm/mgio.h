@@ -244,12 +244,9 @@ struct mgio_parinfo {
   unsigned short prio_vertex[MGIO_MAX_CORNERS_OF_ELEM];
   unsigned short ncopies_vertex[MGIO_MAX_CORNERS_OF_ELEM];
   int v_ident[MGIO_MAX_CORNERS_OF_ELEM];                /* identification of vertices of elem			*/
-
-#if (MGIO_DIM==3)
   unsigned short prio_edge[MGIO_MAX_EDGES_OF_ELEM];
   unsigned short ncopies_edge[MGIO_MAX_EDGES_OF_ELEM];
   int ed_ident[MGIO_MAX_EDGES_OF_ELEM];                 /* identification of edges of element		*/
-#endif
 };
 
 struct mgio_cg_element_seq {
