@@ -28,6 +28,14 @@
 #ifndef __GENERAL__
 #define __GENERAL__
 
+#ifndef __COMPILER__
+#include "compiler.h"
+#endif
+
+#ifdef __MWCW__
+#include "MWCW.cmdlinedefs"
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
