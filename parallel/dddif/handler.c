@@ -227,16 +227,16 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
     #ifdef __EXCHANGE_CONNECTIONS__
   if (!GHOSTPRIO(prio))
   {
-    for(mat=VSTART(pv); mat!=NULL; mat=MNEXT(mat))
-    {
-      ASSERT(nmat<256);
-      sizeArray[nmat++] = MSIZE(mat);
+    if (DDD_XferWithAddData()) {
+      for(mat=VSTART(pv); mat!=NULL; mat=MNEXT(mat)) {
+        ASSERT(nmat<256);
+        sizeArray[nmat++] = MSIZE(mat);
+      }
+
+      PRINTDEBUG(dddif,2,(PFMT " VectorXferCopy(): v=" VINDEX_FMTX
+                          " AddData nmat=%d\n",me,VINDEX_PRTX(pv),nmat))
+      DDD_XferAddDataX(nmat,TypeMatrix,sizeArray);
     }
-
-    PRINTDEBUG(dddif,2,(PFMT " VectorXferCopy(): v=" VINDEX_FMTX
-                        " AddData nmat=%d\n",me,VINDEX_PRTX(pv),nmat))
-
-    DDD_XferAddDataX(nmat,TypeMatrix,sizeArray);
   }
         #else
   {
@@ -1260,15 +1260,18 @@ void ElementXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
     BElementXferBndS(bnds,nsides,proc,prio);
   }
 
-  if (EDATA_DEF_IN_MG(dddctrl.currMG))
-    DDD_XferAddData(EDATA_DEF_IN_MG(dddctrl.currMG), DDD_USER_DATA);
+  if (DDD_XferWithAddData()) {
 
-  /* add edges of element */
-  /* must be done before any XferCopyObj-call! herein    */
-  /* or directly after XferCopyObj-call for this element */
-        #ifdef __TWODIM__
-  DDD_XferAddData(EDGES_OF_ELEM(pe), TypeEdge);
-        #endif
+    if (EDATA_DEF_IN_MG(dddctrl.currMG))
+      DDD_XferAddData(EDATA_DEF_IN_MG(dddctrl.currMG), DDD_USER_DATA);
+
+    /* add edges of element */
+    /* must be done before any XferCopyObj-call! herein    */
+    /* or directly after XferCopyObj-call for this element */
+            #ifdef __TWODIM__
+    DDD_XferAddData(EDGES_OF_ELEM(pe), TypeEdge);
+            #endif
+  }
 
   /* copy corner nodes */
   for(i=0; i<CORNERS_OF_ELEM(pe); i++)
@@ -1458,11 +1461,11 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
     else {
       enew = GetEdge(NBNODE(LINK0(ecopy)),
                      NBNODE(LINK1(ecopy)));
-      /* TODO: up to now, DDD does not guarantee the the first call
-         is with XFER_NEW */
       if (enew == NULL) {
         enew = CreateEdge(theGrid, NBNODE(LINK0(ecopy)),
                           NBNODE(LINK1(ecopy)), FALSE);
+        /* TODO: remove this check if the first call is with XFER_NEW */
+        ASSERT(0);
         DEC_NO_OF_ELEM(enew);
       }
     }
