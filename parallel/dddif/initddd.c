@@ -109,7 +109,8 @@ DDD_TYPE TypeBndS;
 /* DDD interfaces needed for distributed computation */
 DDD_IF ElementIF, ElementSymmIF, ElementVIF, ElementSymmVIF,
        ElementVHIF, ElementSymmVHIF;
-DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF;
+DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF,
+       NodeIF;
 DDD_IF BorderVectorIF, BorderVectorSymmIF,
        OuterVectorIF, OuterVectorSymmIF,
        VectorVIF, VectorVAllIF;
@@ -686,6 +687,11 @@ static void ddd_IfInit (void)
   B[0] = PrioVGhost;
   NodeVIF = DDD_IFDefine(1,O,1,A,1,B);
   DDD_IFSetName(NodeVIF, "NodeVIF: Master->VGhost");
+
+  A[0] = PrioMaster;
+  B[0] = PrioVGhost; B[1] = PrioGhost;
+  NodeIF = DDD_IFDefine(1,O,1,A,2,B);
+  DDD_IFSetName(NodeIF, "NodeIF: Master->Ghost");
 
 
   /* define vector interfaces */
