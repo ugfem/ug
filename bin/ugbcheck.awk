@@ -33,12 +33,20 @@ BEGIN {
 	expecting = "header";
 	no_headers = 0;
 	no_states = 0;
+	no_aliens = 0;
 }
 
 
 ########################################################################
 
-/Header/ {
+/Header/ && ($0 !~ header_condition) {
+	# count number of Header-lines which don't contain header_condition
+	# as a reg-expr.
+	no_aliens++;
+}
+
+
+/Header/ && ($0 ~ header_condition) {
 
 	# reset first and last entry
 	$1 = ""
@@ -179,6 +187,11 @@ function print_verbose_report ()
 
 	if (no_states<no_headers)
 		print_missing_states();
+
+	if (no_aliens>0)
+		printf("lines containing Header-keyword, but without \"%s\": %d\n",
+			header_condition, no_aliens);
+
 
 	print "--------------------------------------------------";
 }
