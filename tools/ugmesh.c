@@ -65,6 +65,7 @@ typedef struct {
   int property;
   int P[8];
   int F[6];
+  int S[6];
   int C[6];
 
 } CELL;
@@ -102,7 +103,7 @@ typedef struct {
 
 } LINE;
 
-void PrintCell (CELL C, FACE *F)
+void PrintCell (CELL C, POINT *P)
 {
   printf("id %d n %d subdomain %d property %d\n",
          C.id,
@@ -110,14 +111,14 @@ void PrintCell (CELL C, FACE *F)
          C.subdomain,
          C.property);
   printf("   points %d %d %d %d %d %d %d %d\n",
-         C.P[0],
-         C.P[1],
-         C.P[2],
-         C.P[3],
-         C.P[4],
-         C.P[5],
-         C.P[6],
-         C.P[7]);
+         P[C.P[0]].id,
+         P[C.P[1]].id,
+         P[C.P[2]].id,
+         P[C.P[3]].id,
+         P[C.P[4]].id,
+         P[C.P[5]].id,
+         P[C.P[6]].id,
+         P[C.P[7]].id);
   printf("   faces %d %d %d %d %d %d\n",
          C.F[0],
          C.F[1],
@@ -125,14 +126,13 @@ void PrintCell (CELL C, FACE *F)
          C.F[3],
          C.F[4],
          C.F[5]);
-  if (F != NULL)
-    printf("   segments %d %d %d %d %d %d\n",
-           F[C.F[0]].S,
-           F[C.F[1]].S,
-           F[C.F[2]].S,
-           F[C.F[3]].S,
-           F[C.F[4]].S,
-           F[C.F[5]].S);
+  printf("   segments %d %d %d %d %d %d\n",
+         C.S[0],
+         C.S[1],
+         C.S[2],
+         C.S[3],
+         C.S[4],
+         C.S[5]);
   printf("   cells %d %d %d %d %d %d\n",
          C.C[0],
          C.C[1],
@@ -159,8 +159,9 @@ void PrintFace (FACE F)
 
 void PrintPoint (POINT P)
 {
-  printf("id %d P %f %f %f\n",
+  printf("id %d bnd %d P %f %f %f\n",
          P.id,
+         P.bnd,
          P.x[0],
          P.x[1],
          P.x[2]);
@@ -173,6 +174,7 @@ void ReadPoint (char *line, POINT *P)
   int k = sscanf(line,"c %d %lf %lf %lf",&id,&x,&y,&z);
   assert(k == 4);
   P->id = id-1;
+  P->bnd = 0;
   P->x[0] = x;
   P->x[1] = y;
   P->x[2] = z;
@@ -217,6 +219,7 @@ void ReadCell (char *line, CELL *C, int *nF, FACE *F)
     }
     C->F[i] = (*nF)++;
     C->C[i] = -1-f[i];
+    C->S[i] = f[i];
   }
 }
 
@@ -241,22 +244,12 @@ static void Sort (int *f, int *ff)
       }
     ff[j] = f[i];
   }
-
-  printf("f  %d %d %d %d\nff %d %d %d %d\n",
-         f[0],
-         f[1],
-         f[2],
-         f[3],
-         ff[0],
-         ff[1],
-         ff[2],
-         ff[3]);
 }
 
-static int FaceCompare (FACE **F, FACE **G)
+static int FaceCompare (FACE *F, FACE *G)
 {
-  int *f = F[0]->P;
-  int *g = G[0]->P;
+  int *f = F->P;
+  int *g = G->P;
   int ff[4],gg[4];
   int i;
 
@@ -274,9 +267,9 @@ int main (int argc, char **argv)
 {
   FILE *file;
   char line[MAX_LEN],name[MAX_LEN];
-  int i,nP,nF,nC;
+  int i,n,nP,nF,nC,nBP;
   CELL *C;
-  FACE *F,**FF;
+  FACE *F;
   POINT *P;
 
   if (argc<2)     {
@@ -303,7 +296,6 @@ int main (int argc, char **argv)
   P = (POINT *) malloc(nP*sizeof(POINT));
   C = (CELL *) malloc(nC*sizeof(CELL));
   F = (FACE *) malloc(6*nC*sizeof(FACE));
-  FF = (FACE **) malloc(6*nC*sizeof(FACE *));
 
   file = fopen(name,"r");
   nC = 0;
@@ -316,72 +308,117 @@ int main (int argc, char **argv)
   }
   fclose(file);
 
-  for (i=0; i<nF; i++)
-    FF[i] = F+i;
+  if (C[nC-1].id == C[nC-2].id) {
+    fprintf(stderr,"add newline at the end of %s\n",name);
+    return(1);
+  }
 
-  qsort(FF,nF,sizeof(FACE *),
+  /* sort faces */
+  qsort(F,nF,sizeof(FACE),
         (int (*)(const void *, const void *))FaceCompare);
 
-  for (i=1; i<nF; i++) {
-
-    PrintFace(FF[i-1][0]);
-    PrintFace(FF[i][0]);
-
-    printf("comp %d\n",FaceCompare(&(FF[i-1]),&(FF[i])));
-
-    if (FaceCompare(&(FF[i-1]),&(FF[i])) == 0) {
-      C[FF[i-1]->C].C[FF[i-1]->side] = FF[i]->C;
-      C[FF[i]->C].C[FF[i]->side] = FF[i-1]->C;
+  /* install neighborhoods */
+  for (i=1; i<nF; i++)
+    if (FaceCompare(&(F[i-1]),&(F[i])) == 0) {
+      C[F[i-1].C].C[F[i-1].side] = F[i].C;
+      C[F[i].C].C[F[i].side] = F[i-1].C;
       i++;
     }
-  }
-  for (i=0; i<nF; i++)
-    PrintFace(FF[i][0]);
-  for (i=0; i<nP; i++)
-    PrintPoint(P[i]);
+  /* label boundary */
   for (i=0; i<nC; i++)
-    PrintCell(C[i],F);
+  {
+    int j;
 
+    for (j=0; j<6; j++)
+    {
+      int k;
 
-  /*
+      if (C[i].C[j] >= 0) continue;
+      for (k=0; k<4; k++)
+        P[C[i].P[faces[j][k]]].bnd = 1;
+    }
+  }
+  /* renumber points */
+  n = 0;
+  for (i=0; i<nP; i++)
+    if (P[i].bnd == 1)
+      P[i].id = n++;
+  nBP = n;
+  for (i=0; i<nP; i++)
+    if (P[i].bnd == 0)
+      P[i].id = n++;
 
+  if (argc>=3) {
+    if ((argv[2][0] == '-') && (argv[2][1] == 'v')) {
+      for (i=0; i<nF; i++)
+        PrintFace(F[i]);
+      for (i=0; i<nP; i++)
+        if (P[i].bnd == 1)
+          PrintPoint(P[i]);
+      for (i=0; i<nP; i++)
+        if (P[i].bnd == 0)
+          PrintPoint(P[i]);
+      for (i=0; i<nC; i++)
+        PrintCell(C[i],P);
+    }
+  }
+  strcpy(name,argv[1]);
+  strcat(name,".fem");
+  file = fopen(name,"w");
+  fprintf(file,"connectivity\n\n");
+  n = 0;
+  for (i=0; i<nC; i++)
+  {
+    int j;
 
+    for (j=0; j<6; j++)
+    {
+      int k;
 
-     strcpy(name,argv[1]);
-     strcat(name,".fem");
-     file = fopen(name,"w");
-     fprintf(file,"connectivity\n\n");
-     for (i=0; i<nf; i++)
-      fprintf(file,"%5d%5d%5d%5d%5d\n",i+1,3,
-                          f[3*i],
-                          f[3*i+1],
-                          f[3*i+2]);
-     fprintf(file,"coordinates\n%5d%5d\n",3,m);
-     for (i=0; i<m; i++)
-      fprintf(file,"%5d%8.5f+0%8.4f+0%8.4f+0\n",
-                          i+1,c[3*i],c[3*i+1],c[3*i+2]);
-     fclose(file);
+      if (C[i].C[j] >= 0) continue;
+      fprintf(file,"%5d",1+n++);
+      for (k=0; k<4; k++)
+        fprintf(file,"%5d",P[C[i].P[faces[j][k]]].id+1);
+      fprintf(file,"\n");
+    }
+  }
+  fprintf(file,"coordinates\n%5d%5d\n",3,nBP);
+  n = 0;
+  for (i=0; i<nP; i++)
+    if (P[i].bnd == 1)
+      fprintf(file,"%5d%8.2f+0%8.2f+0%8.2f+0\n",
+              1+n++,P[i].x[0],P[i].x[1],P[i].x[2]);
+  fclose(file);
 
-     strcpy(name,argv[1]);
-     strcat(name,".feb");
-     file = fopen(name,"w");
-     fprintf(file,"connectivity\n\n");
-     for (i=0; i<ne; i++)
-      fprintf(file,"%5d%5d%5d%5d%5d%5d\n",i+1,3,
-                          e[4*i],
-                          e[4*i+1],
-                          e[4*i+2],
-                          e[4*i+3]);
-     fprintf(file,"coordinates\n%5d%5d\n",3,nv);
-     for (i=0; i<nv; i++)
-      fprintf(file,"%5d%8.5f+0%8.4f+0%8.4f+0\n",
-                          i+1,c[3*i],c[3*i+1],c[3*i+2]);
-     fprintf(file,"end option\nsurface contact\n");
-     for (i=0; i<m; i++)
-      fprintf(file,"%5d%5d%5d\n",i+1,0,0);
-     fprintf(file,"end\n");
-     fclose(file);
-   */
+  strcpy(name,argv[1]);
+  strcat(name,".feb");
+  file = fopen(name,"w");
+  fprintf(file,"connectivity\n\n");
+  n=0;
+  for (i=0; i<nC; i++)
+  {
+    int j;
+
+    fprintf(file,"%5d%5d",1+n++,C[i].n-1);
+    for (j=0; j<C[i].n; j++)
+      fprintf(file,"%5d",P[C[i].P[j]].id+1);
+    fprintf(file,"\n");
+  }
+  fprintf(file,"coordinates\n%5d%5d\n",3,nP);
+  n = 0;
+  for (i=0; i<nP; i++)
+    if (P[i].bnd == 1)
+      fprintf(file,"%5d%8.3f+0%8.3f+0%8.3f+0\n",
+              1+n++,P[i].x[0],P[i].x[1],P[i].x[2]);
+  for (i=0; i<nP; i++)
+    if (P[i].bnd == 0)
+      fprintf(file,"%5d%8.2f+0%8.2f+0%8.2f+0\n",
+              1+n++,P[i].x[0],P[i].x[1],P[i].x[2]);
+  fprintf(file,"end option\nsurface contact\n");
+  for (i=0; i<nBP; i++)
+    fprintf(file,"%5d%5d%5d\n",i+1,0,0);
+  fprintf(file,"end\n");
+  fclose(file);
 
   return(0);
 }
