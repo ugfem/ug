@@ -155,6 +155,9 @@ INT InitUg (int *argcp, char ***argvp)
     return(__LINE__);
   if (SetStringValue("conf:chaco",0.0))
     return(__LINE__);
+  if (SetStringVar("conf:arch",ARCHNAME))
+    return(__LINE__);
+
   /* set variable for parallel modus */
         #ifdef ModelP
   if (SetStringValue("conf:parallel",1.0))
