@@ -2854,26 +2854,37 @@ INT GridCreateConnection (GRID *theGrid)
   if (theGrid == NULL)
     return (0);
 
+    #ifdef ModelP
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
+    DDD_XferBegin();
+        #endif
+
   /* set EBUILDCON-flags also in elements accessing a vector with VBUILDCON true */
-  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
     if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
-      if (EBUILDCON(theElement)) {
-        EDGE *ed;
+    {
+      EDGE *ed;
 
-        for (i=0; i<EDGES_OF_ELEM(theElement); i++) {
-          ed = GetEdge(CORNER(theElement,
-                              CORNER_OF_EDGE(theElement,i,0)),
-                       CORNER(theElement,
-                              CORNER_OF_EDGE(theElement,i,1)));
-          ASSERT (ed != NULL);
-          if (EDVECTOR(ed) == NULL) {
-            CreateVector(theGrid,EDGEVEC,(GEOM_OBJECT *)ed,vList);
-            EDVECTOR(ed) = vList[0];
-          }
+      for (i=0; i<EDGES_OF_ELEM(theElement); i++) {
+        ed = GetEdge(CORNER(theElement,
+                            CORNER_OF_EDGE(theElement,i,0)),
+                     CORNER(theElement,
+                            CORNER_OF_EDGE(theElement,i,1)));
+        ASSERT (ed != NULL);
+        if (EDVECTOR(ed) == NULL) {
+          CreateVector(theGrid,EDGEVEC,(GEOM_OBJECT *)ed,vList);
+          EDVECTOR(ed) = vList[0];
+                    #ifdef ModelP
+          SETPRIO(EDVECTOR(ed),PRIO(ed));
+                    #endif
         }
-        continue;
       }
+    }
+
+            #ifdef ModelP
+    if (!EMASTER(theElement)) continue;
+                #endif
 
     /* see if it is set */
     if (EBUILDCON(theElement)) continue;
@@ -2902,6 +2913,11 @@ INT GridCreateConnection (GRID *theGrid)
         if (VBUILDCON(vList[i])) {SETEBUILDCON(theElement,1); break;}
     }
   }
+
+    #ifdef ModelP
+  if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
+    DDD_XferEnd();
+        #endif
 
   /* run over all elements with EBUILDCON true and build connections */
   for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
@@ -3426,8 +3442,15 @@ static INT CheckVector (const FORMAT *fmt, const INT s2p[], GEOM_OBJECT *theObje
     if (ds>0)
     {
       errors++;
-      UserWriteF("%d: %s ID=%ld  has NO VECTOR\n",me, ObjectString,
+      UserWriteF("%d: %s ID=%ld  has NO VECTOR",me, ObjectString,
                  ID(theObject));
+                        #ifdef ModelP
+                        #ifdef __THREEDIM__
+      if (VectorObjType == EDGEVEC)
+        UserWriteF(" prio=%d",PRIO((EDGE*)theObject));
+                        #endif
+                        #endif
+      UserWrite("\n");
     }
   }
   else
