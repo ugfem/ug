@@ -31,6 +31,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "general.h"
 #include "debug.h"
@@ -41,10 +42,16 @@
 #include "np.h"
 #include "devices.h"
 #include "udm.h"
+#include "pcr.h"
+#include "debug.h"
 
 #include "transfer.h"
 #include "ls.h"
 #include "iter.h"
+
+#include "ff_gen.h"
+#include "tff.h"
+
 
 /****************************************************************************/
 /*																			*/
@@ -56,12 +63,31 @@
 /*																			*/
 /****************************************************************************/
 
+#define NPTFF_FF(p)                             (((p)->FF))
+#define NPTFF_FF3D(p)                   (((p)->FF3D))
+#define NPTFF_aux(p)                    (((p)->aux))
+#define NPTFF_aux3D(p)                  (((p)->aux3D))
+#define NPTFF_aux2(p)                   (((p)->aux2))
+#define NPTFF_aux3(p)                   (((p)->aux3))
+#define NPTFF_aux4(p)                   (((p)->aux4))
+#define NPTFF_aux5(p)                   (((p)->aux5))
+#define NPTFF_aux6(p)                   (((p)->aux6))
+#define NPTFF_tv(p)                             (((p)->tv))
+#define NPTFF_t(p)                              (((p)->t))
+
+#define NPTFF_MESHWIDTH(p)              ((p)->meshwidth)
+#define NPTFF_WaveNrRel(p)              ((p)->wave_nr_rel)
+#define NPTFF_WaveNrRel3D(p)    ((p)->wave_nr_rel3D)
+#define NPTFF_ALLFREQ(p)                ((p)->all_freq)
+#define NPTFF_DISPLAY(p)                ((p)->display)
+#define NPTFF_BVDF(p)                   (&(p)->bvdf)
+
 /* macros for the symmetric Gauss-Seidel smoother */
-#define NP_SGS_t(p)             ((p)->t)
+#define NP_SGS_t(p)                             ((p)->t)
 
 /* macros for the Block Gauss-Seidel smoother */
-#define MAX_BLOCKS                  3
-#define MAX_ORDER                   6
+#define MAX_BLOCKS                        3
+#define MAX_ORDER                         6
 #define NP_BGS_NBLOCKS(p)             ((p)->nBlocks)
 #define NP_BGS_BLOCKS(p)              ((p)->Block)
 #define NP_BGS_BLOCKSTART(p,i)        ((p)->Block[i])
@@ -142,6 +168,36 @@ typedef struct
 {
   NP_SMOOTHER smoother;
 
+  /* abstract memory description */
+  MATDATA_DESC *FF;
+  MATDATA_DESC *FF3D;
+  MATDATA_DESC *LU;
+  VECDATA_DESC *aux;
+  VECDATA_DESC *aux3D;
+  VECDATA_DESC *aux2;
+  VECDATA_DESC *aux3;
+  VECDATA_DESC *aux4;
+  VECDATA_DESC *aux5;
+  VECDATA_DESC *aux6;
+  VECDATA_DESC *tv;
+  VECDATA_DESC *t;              /* temp. vector for the update of the correction */
+
+  /* configuration */
+  DOUBLE meshwidth;
+  DOUBLE wave_nr_rel;
+  DOUBLE wave_nr_rel3D;
+  INT all_freq;
+  INT display;
+#ifdef __BLOCK_VECTOR_DESC__
+  BV_DESC_FORMAT bvdf;
+#endif
+
+} NP_TFF;
+
+typedef struct
+{
+  NP_SMOOTHER smoother;
+
   VEC_SCALAR beta;
   INT mode;
 
@@ -212,7 +268,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
    This routine returns 'EXECUTABLE' if the initizialization is complete
    and  'ACTIVE' else.
-   The data they can be displayed and the num proc can be executed by
+   The data can be displayed and the num proc can be executed by
 
    'INT NPIterDisplay (NP_ITER *theNP);'
    'INT NPIterExecute (NP_BASE *theNP, INT argc , char **argv);'
@@ -1483,7 +1539,6 @@ static INT THILUInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_THILU *np;
   INT i;
-
   np = (NP_THILU *) theNP;
 
   for (i=0; i<MAX_VEC_COMP; i++) np->beta[i] = np->thresh[i] = 0.0;
@@ -1664,7 +1719,6 @@ static INT SPILUConstruct (NP_BASE *theNP)
 
   return(0);
 }
-
 /****************************************************************************/
 /*D
    ic - numproc for point block icncomplete Cholesky smoother
@@ -1851,6 +1905,640 @@ static INT LUConstruct (NP_BASE *theNP)
 
   return(0);
 }
+
+
+/****************************************************************************/
+/*D
+   tff - numproc for tangential frequency filtering solver
+
+   DESCRIPTION:
+   This numproc solves an equation with the tangential frequency filtering method.
+
+   .vb
+   npinit $x <sol sym> $b <rhs sym> $c <cor sym> $aux <temp sym> $A <mat sym>
+       $FF <FF-mat sym> $FF3D <3D FF-mat sym> $LU <LU mat sym>
+           $tv <testvector sym> $aux3D <3D temp sym>
+           $aux2 <temp2 sym> $aux3 <temp3 sym> $aux4 <temp4 sym>
+           $aux5 <temp5 sym> $aux6 <temp6 sym> $display {no|red|full} $wr all $wr3D 0
+   .ve
+
+   .  $x~<sol~sym> - symbol for the solution vector
+   .  $b~<rhs~sym> - symbol for the right hand side vector
+   .  $c~<cor~sym> - symbol for the correction vector
+   .  $aux~<temp~sym> - symbol for a temporary vector
+   .  $A~<mat~sym> - symbol for the stiffness matrix
+   .  $FF~<FF-mat~sym> - symbol for the frequency filtered matrix
+   .  $FF3D~<3D~FF-mat~sym> - symbol for an additional frequency filtered matrix for 3D
+   .  $LU~<LU-mat~sym> - symbol for the LU decomposed matrix
+   .  $tv~<testvector~sym> - symbol for the testvector
+   .  $aux3D~<3D~temp~sym> - additional temporary symbol for the testvector for 3D
+   .  $aux2~<temp2~sym> - symbol for a further temporary vector
+   .  $aux3~<temp3~sym> - symbol for a further temporary vector
+   .  $aux4~<temp4~sym> - symbol for a further temporary vector
+   .  $aux5~<temp5~sym> - symbol for a further temporary vector
+   .  $aux6~<temp6~sym> - symbol for a further temporary vector
+   .  $display - display mode: 'no', 'red'uced or 'full'
+   .  $wr - relative frequency [0..1] for 2D OR 'all' for the whole logarithmic sequence of frequencies
+   .  $wr3D - relative frequency [0..1] for 3D
+
+   'npexecute <name> [$i] [$f]'
+
+   .  $i - computes the defect in the vector 'b' before solving and prepares data structures.
+   .  $f - frees all temporary allocated memory and repairs modified grid structure after solving.
+   .  $e - absolute value of defect that is considered as a converged solution
+
+   `CAUTION:` tff modifies the vector 'b'.
+
+   EXAMPLE:
+   .vb
+   npcreate tff $t tff $f scalar_1_5;
+   scnp tff;
+   npinit $x x $b b $c c $aux aux $A MAT $FF FF $LU LU $tv tv $aux2 aux2 $aux3 aux3;
+   npexecute tff $i $f;
+   .ve
+   D*/
+/****************************************************************************/
+
+/****************************************************************************/
+/*
+   TFFInit - Init tangential frequency filtering iterator numproc
+
+   SYNOPSIS:
+   static INT TFFInit (NP_BASE *theNP, INT argc , char **argv);
+
+   PARAMETERS:
+   .  theNP - pointer to numproc
+   .  argc - argument counter
+   .  argv - argument vector
+
+   DESCRIPTION:
+   This function inits the numerical procedure for
+   tangential frequency filtering iterator. The data descriptors,
+   the display mode and the blockvector description format are set.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT TFFInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_TFF *np;
+  char buffer[128];
+  MULTIGRID *theMG;
+
+#ifdef __BLOCK_VECTOR_DESC__
+
+  np = (NP_TFF *) theNP;
+  theMG = np->smoother.iter.base.mg;
+
+  NPTFF_FF(np) = ReadArgvMatDesc(theMG,"FF",argc,argv);
+
+#ifdef __THREEDIM__
+  NPTFF_FF3D(np) = ReadArgvMatDesc(theMG,"FF3D",argc,argv);
+  NPTFF_aux3D(np) = ReadArgvVecDesc(theMG,"aux3D",argc,argv);
+  if ( ReadArgvChar ( "wr3D", buffer, argc, argv) )
+  {
+    PrintErrorMessage('E',"TFFInit", "Option $wr3D mandatory");
+    REP_ERR_RETURN(1);
+  }
+  sscanf(buffer,"%lf", &NPTFF_WaveNrRel3D(np) );
+#else
+  NPTFF_FF3D(np) = NULL;
+  NPTFF_aux3D(np) = NULL;
+  NPTFF_WaveNrRel3D(np) = -1.0;
+#endif
+
+  NPTFF_aux(np) = ReadArgvVecDesc(theMG,"aux",argc,argv);
+  NPTFF_tv(np)  = ReadArgvVecDesc(theMG,"tv",argc,argv);
+  NPTFF_t(np)   = ReadArgvVecDesc(theMG,"t",argc,argv);
+
+  NPTFF_aux2(np) = ReadArgvVecDesc(theMG,"aux2",argc,argv);
+  NPTFF_aux3(np) = ReadArgvVecDesc(theMG,"aux3",argc,argv);
+  NPTFF_aux4(np) = ReadArgvVecDesc(theMG,"aux4",argc,argv);
+  NPTFF_aux5(np) = ReadArgvVecDesc(theMG,"aux5",argc,argv);
+  NPTFF_aux6(np) = ReadArgvVecDesc(theMG,"aux6",argc,argv);
+
+
+  NPTFF_DISPLAY(np) = ReadArgvDisplay(argc,argv);
+  NPTFF_MESHWIDTH(np) = 0.0;
+
+  if ( ReadArgvChar ( "wr", buffer, argc, argv) )
+  {
+    PrintErrorMessage('E',"TFFInit", "Option $wr mandatory");
+    REP_ERR_RETURN(1);
+  }
+  if( strcmp( buffer, "ALL") == 0 || strcmp( buffer, "all") == 0 )
+  {
+    NPTFF_ALLFREQ(np) = TRUE;
+    NPTFF_WaveNrRel(np) = -1.0;
+  }
+  else
+  {
+    NPTFF_ALLFREQ(np) = FALSE;
+    sscanf(buffer,"%lf", &NPTFF_WaveNrRel(np) );
+  }
+
+#ifdef __TWODIM__
+  *NPTFF_BVDF(np) = two_level_bvdf;
+#else
+  *NPTFF_BVDF(np) = three_level_bvdf;
+#endif
+
+  /* reset other parameters */
+  NPTFF_MESHWIDTH(np) = 0.0;
+
+  return (SmootherInit(theNP,argc,argv));
+
+#else
+  PrintErrorMessage( 'E', "TFFInit", "__BLOCK_VECTOR_DESC__ must be defined in gm.h" );
+  return 1;
+#endif /* __BLOCK_VECTOR_DESC__ */
+}
+
+/****************************************************************************/
+/*
+   TFFDisplay - Display tangential frequency filtering iterator numproc
+
+   SYNOPSIS:
+   static INT TFFDisplay (NP_BASE *theNP);
+
+   PARAMETERS:
+   .  theNP - pointer to numproc
+
+   DESCRIPTION:
+   This function displays the parameters set for the tangential frequency
+   filtering iterator numerical procedure.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+
+static INT TFFDisplay (NP_BASE *theNP)
+{
+  NP_TFF *np;
+
+  SmootherDisplay(theNP);
+  np = (NP_TFF *) theNP;
+
+  UserWriteF("TFF specific data:\n");
+  if (NPTFF_FF(np) != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"FF",ENVITEM_NAME(NPTFF_FF(np)));
+
+#ifdef __THREEDIM__
+  if (NPTFF_FF3D(np) != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"FF3D",ENVITEM_NAME(NPTFF_FF3D(np)));
+  if (NPTFF_aux3D(np) != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux3D",ENVITEM_NAME(NPTFF_aux3D(np)));
+#endif
+
+  if (NPTFF_aux(np) != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux",ENVITEM_NAME(NPTFF_aux(np)));
+  if (NPTFF_tv(np) != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"tv",ENVITEM_NAME(NPTFF_tv(np)));
+  if (NPTFF_aux2(np) != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux2",ENVITEM_NAME(NPTFF_aux2(np)));
+  if (NPTFF_aux3(np) != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux3",ENVITEM_NAME(NPTFF_aux3(np)));
+  if (NPTFF_aux4(np) != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux4",ENVITEM_NAME(NPTFF_aux4(np)));
+  if (NPTFF_aux5(np) != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux5",ENVITEM_NAME(NPTFF_aux5(np)));
+  if (NPTFF_aux6(np) != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux6",ENVITEM_NAME(NPTFF_aux6(np)));
+
+  UserWriteF(DISPLAY_NP_FORMAT_SF,"meshwidth",(double)NPTFF_MESHWIDTH(np));
+
+  if ( NPTFF_ALLFREQ(np) == TRUE )
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"frequency","ALL");
+  else
+  {
+                #ifdef __THREEDIM__
+    UserWriteF(DISPLAY_NP_FORMAT_SF,"frequency (2D)",(double)NPTFF_WaveNrRel(np));
+    UserWriteF(DISPLAY_NP_FORMAT_SF,"frequency (3D)",(double)NPTFF_WaveNrRel3D(np));
+                #else
+    UserWriteF(DISPLAY_NP_FORMAT_SF,"frequency",(double)NPTFF_WaveNrRel(np));
+                #endif
+  }
+
+  if (NPTFF_DISPLAY(np) == PCR_NO_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
+  else if (NPTFF_DISPLAY(np) == PCR_RED_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","RED_DISPLAY");
+  else if (NPTFF_DISPLAY(np) == PCR_FULL_DISPLAY)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   TFFPreProcess - Prepare tangential frequency filtering solver
+
+   SYNOPSIS:
+   static INT TFFPreProcess (NP_ITER *theNP, INT level,
+                                                  VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                                                  INT *baselevel, INT *result);
+   PARAMETERS:
+   .  theNP - pointer to numproc
+   .  level - gridlevel to be prepared
+   .  x - solution vector
+   .  b - defect vector
+   .  A - stiffness matrix
+   .  baselevel - output: baselevel used by iter (== level)
+   .  result - return value of the function
+
+   DESCRIPTION:
+   This function prepares a tangential frequency filtering iteration:
+   set the grid on the current level as the grid on which to compute,
+   determine the meshwidth of this grid, construct the linewise (and in
+   3D additional planewise) blockvector decomposition, computes the
+   defect and store it on the right hand side and disposes all connections
+   consisting of matrixvalues 0.
+
+   Points must be ordered lexicographic, boundary nodes at the end of the
+   list. The grid must be a square.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+static INT TFFPreProcess (NP_ITER *theNP, INT level,
+                          VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                          INT *baselevel, INT *result)
+{
+  NP_TFF *np;
+  GRID *theGrid;
+  DOUBLE wavenr, wavenr3D, meshwidth;
+  INT n;
+#ifdef __BLOCK_VECTOR_DESC__
+  BV_DESC bvd;
+
+  np = (NP_TFF *) theNP;
+  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+
+  BVD_INIT( &bvd );
+  BVD_PUSH_ENTRY( &bvd, 0, NPTFF_BVDF(np) );
+
+  /* store passed XXXDATA_DESCs */
+  NPIT_A(theNP) = A;
+  NPIT_c(theNP) = x;
+  NPIT_b(theNP) = b;
+
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&np->smoother.L)) {
+    result[0] = __LINE__;
+    return (1);
+  }
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&NPTFF_FF(np))) {
+    result[0] = __LINE__;
+    return (1);
+  }
+  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPTFF_aux(np))) {
+    result[0] = __LINE__;
+    return (1);
+  }
+  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPTFF_tv(np))) {
+    result[0] = __LINE__;
+    return (1);
+  }
+#ifdef __THREEDIM__
+  if (AllocMDFromMD(theNP->base.mg,level,level,A,&NPTFF_FF3D(np))) {
+    result[0] = __LINE__;
+    return (1);
+  }
+  if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPTFF_aux3D(np))) {
+    result[0] = __LINE__;
+    return (1);
+  }
+#endif
+
+  /* check if all objects are valid and scalar */
+  if ( A == NULL )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol A is not defined" );
+    result[0] = __LINE__;
+    return (1);
+  }
+  if ( !MD_IS_SCALAR(A) )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol A is not scalar" );
+    result[0] = __LINE__;
+    return (1);
+  }
+
+  if ( NPTFF_FF(np) == NULL )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol FF is not defined" );
+    result[0] = __LINE__;
+    return (1);
+  }
+  if ( !MD_IS_SCALAR( NPTFF_FF(np) ) )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol FF is not scalar" );
+    result[0] = __LINE__;
+    return (1);
+  }
+
+#ifdef __THREEDIM__
+  if ( NPTFF_FF3D(np) == NULL )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol FF3D is not defined" );
+    result[0] = __LINE__;
+    return (1);
+  }
+  if ( !MD_IS_SCALAR( NPTFF_FF3D(np) ) )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol FF3D is not scalar" );
+    result[0] = __LINE__;
+    return (1);
+  }
+#endif
+
+  if ( np->smoother.L == NULL )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol L is not defined" );
+    result[0] = __LINE__;
+    return (1);
+  }
+  if ( !MD_IS_SCALAR( np->smoother.L ) )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol L is not scalar" );
+    result[0] = __LINE__;
+    return (1);
+  }
+
+
+  if ( x == NULL )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol x is not defined" );
+    result[0] = __LINE__;
+    return (1);
+  }
+  if ( !VD_IS_SCALAR( x ) )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol x is not scalar" );
+    result[0] = __LINE__;
+    return (1);
+  }
+
+  if ( b == NULL )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol b is not defined" );
+    result[0] = __LINE__;
+    return (1);
+  }
+  if ( !VD_IS_SCALAR( b ) )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol b is not scalar" );
+    result[0] = __LINE__;
+    return (1);
+  }
+
+  if ( NPTFF_aux(np) == NULL )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol aux is not defined" );
+    result[0] = __LINE__;
+    return (1);
+  }
+  if ( !VD_IS_SCALAR( NPTFF_aux(np) ) )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol aux is not scalar" );
+    result[0] = __LINE__;
+    return (1);
+  }
+
+  if ( NPTFF_tv(np) == NULL )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol tv is not defined" );
+    result[0] = __LINE__;
+    return (1);
+  }
+  if ( !VD_IS_SCALAR( NPTFF_tv(np) ) )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol tv is not scalar" );
+    result[0] = __LINE__;
+    return (1);
+  }
+
+#ifdef __THREEDIM__
+  if ( NPTFF_aux3D(np) == NULL )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol aux3D is not defined" );
+    result[0] = __LINE__;
+    return (1);
+  }
+  if ( !VD_IS_SCALAR( NPTFF_aux3D(np) ) )
+  {
+    PrintErrorMessage( 'E', "TFFPreProcess", "Symbol aux3D is not scalar" );
+    result[0] = __LINE__;
+    return (1);
+  }
+#endif
+
+
+  if (FF_PrepareGrid( theGrid, &meshwidth, TRUE, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPTFF_BVDF(np) )!=NUM_OK)
+  {
+    PrintErrorMessage('E',"TFFPreProcess","preparation of the grid failed");
+    result[0] = __LINE__;
+    return (1);
+  }
+  NPTFF_MESHWIDTH(np) = meshwidth;
+
+  if ( !NPTFF_ALLFREQ(np) )
+  {
+    n = (INT)( log(1.0/meshwidth)/M_LN2 + 0.5 );
+    wavenr = (DOUBLE)(1<<(INT)( (n-1) * NPTFF_WaveNrRel(np) + 0.5 ));
+    wavenr3D = (DOUBLE)(1<<(INT)( (n-1) * NPTFF_WaveNrRel3D(np) + 0.5 ));
+
+    if (TFFDecomp( wavenr, wavenr3D, GFIRSTBV(theGrid), &bvd,
+                   NPTFF_BVDF(np),
+                   MD_SCALCMP( np->smoother.L ),
+                   MD_SCALCMP( NPTFF_FF(np) ),
+                   MD_SCALCMP( A ),
+                   VD_SCALCMP( NPTFF_tv(np) ),
+                   VD_SCALCMP( NPTFF_aux(np) ),
+                   NPTFF_aux3D(np)==NULL ? -1 : VD_SCALCMP( NPTFF_aux3D(np) ),
+                   NPTFF_FF3D(np)==NULL ? -1 : MD_SCALCMP( NPTFF_FF3D(np) ),
+                   theGrid ) != NUM_OK )
+    {
+      PrintErrorMessage('E',"TFFPreProcess","decomposition failed");
+      result[0] = __LINE__;
+      return (1);
+    }
+  }
+
+  *baselevel = level;
+
+  return (0);
+
+#else
+  PrintErrorMessage( 'E', "TFFPreProcess", "__BLOCK_VECTOR_DESC__ must be defined in gm.h" );
+  return (1);
+#endif
+}
+
+static INT TFFPostProcess (NP_ITER *theNP, INT level,
+                           VECDATA_DESC *x, VECDATA_DESC *b,
+                           MATDATA_DESC *A, INT *result)
+{
+  NP_TFF *np;
+  MULTIGRID *theMG;
+
+  np = (NP_TFF *) theNP;
+  theMG = np->smoother.iter.base.mg;
+
+  if (NPTFF_FF(np) != NULL)
+    FreeMD(theMG,level,level,NPTFF_FF(np));
+  if (NPTFF_FF3D(np) != NULL)
+    FreeMD(theMG,level,level,NPTFF_FF3D(np));
+  if (NPTFF_tv(np) != NULL)
+    FreeVD(theMG,level,level,NPTFF_tv(np));
+  if (NPTFF_aux(np) != NULL)
+    FreeVD(theMG,level,level,NPTFF_aux(np));
+  if (NPTFF_aux3D(np) != NULL)
+    FreeVD(theMG,level,level,NPTFF_aux3D(np));
+
+  FreeAllBV( GRID_ON_LEVEL(theMG,level) );
+  if (MGCreateConnection(theMG))        /* restore the disposed connections */
+  {
+    PrintErrorMessage('E',"TFFPostProcess","MGCreateConnection failed");
+    result[0] = __LINE__;
+    return (1);
+  }
+  return (SmootherPostProcess (theNP, level, x, b, A, result));
+}
+
+
+/* similiar tp Smoother */
+static INT TFFIter (NP_ITER *theNP, INT level,
+                    VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                    INT *result)
+{
+#ifdef __BLOCK_VECTOR_DESC__
+  NP_TFF *np;
+  BV_DESC bvd;
+  GRID *theGrid;
+  INT i,j;
+  DOUBLE end_wave, wavenr;
+
+
+  np = (NP_TFF *) theNP;
+  BVD_INIT( &bvd );
+  BVD_PUSH_ENTRY( &bvd, 0, NPTFF_BVDF(np) );
+
+  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
+
+  /* make a copy for displaying */
+  np->smoother.iter.c = x;
+
+  if ( !NPTFF_ALLFREQ(np) )
+  {             /* smooth only for 1 testvector frequency */
+                /* copy defect to aux because TFFMultWithMInv destroys its defect */
+    dcopyBS( GFIRSTBV(theGrid), VD_SCALCMP( NPTFF_aux(np) ), VD_SCALCMP( b ) );
+    if (TFFMultWithMInv( GFIRSTBV(theGrid), &bvd, NPTFF_BVDF(np),
+                         VD_SCALCMP( x ),
+                         MD_SCALCMP( A ),
+                         MD_SCALCMP( np->smoother.L ),
+                         VD_SCALCMP( NPTFF_aux(np) ),
+                         VD_SCALCMP( NPTFF_tv(np) ),
+                         NPTFF_aux3D(np)==NULL ? 0 : VD_SCALCMP( NPTFF_aux3D(np) ),
+                         NPTFF_FF3D(np)==NULL ? 0 : MD_SCALCMP( NPTFF_FF3D(np) ) ) != NUM_OK)
+    {
+      PrintErrorMessage('E',"TFFStep","inversion failed");
+      result[0] = __LINE__;
+      return (1);
+    }
+    /* defect -= A * corr_update */
+    dmatmul_minusBS( GFIRSTBV(theGrid), &bvd, NPTFF_BVDF(np),
+                     VD_SCALCMP( b ), MD_SCALCMP( A ), VD_SCALCMP( x ));
+  }
+  else
+  {             /* smooth for all testvector frequencies */
+
+    /* alloc temp. for correction update (in x!) */
+    if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPTFF_t(np))) {
+      result[0] = __LINE__;
+      return(1);
+    }
+    end_wave = 1.0 / NPTFF_MESHWIDTH(np) - 0.5;             /* rounding */
+    for ( wavenr = 1.0; wavenr < end_wave; wavenr *= 2.0 )
+    {                   /* wave 1.0 ... (1/h)/2 */
+      if (TFFDecomp( wavenr, wavenr, GFIRSTBV(theGrid), &bvd,
+                     NPTFF_BVDF(np),
+                     MD_SCALCMP( np->smoother.L ),
+                     MD_SCALCMP( NPTFF_FF(np) ),
+                     MD_SCALCMP( A ),
+                     VD_SCALCMP( NPTFF_tv(np) ),
+                     VD_SCALCMP( NPTFF_aux(np) ),
+                     NPTFF_aux3D(np)==NULL ? -1 : VD_SCALCMP( NPTFF_aux3D(np) ),
+                     NPTFF_FF3D(np)==NULL ? -1 : MD_SCALCMP( NPTFF_FF3D(np) ),
+                     theGrid ) != NUM_OK )
+      {
+        PrintErrorMessage('E',"TFFStep","decomposition failed");
+        result[0] = __LINE__;
+        return (1);
+      }
+
+      /* copy defect to aux because TFFMultWithMInv destroys its defect */
+      dcopyBS( GFIRSTBV(theGrid), VD_SCALCMP( NPTFF_aux(np) ), VD_SCALCMP( b ) );
+      if (TFFMultWithMInv( GFIRSTBV(theGrid), &bvd, NPTFF_BVDF(np),
+                           VD_SCALCMP( NPTFF_t(np) ),
+                           MD_SCALCMP( A ),
+                           MD_SCALCMP( np->smoother.L ),
+                           VD_SCALCMP( NPTFF_aux(np) ),
+                           VD_SCALCMP( NPTFF_tv(np) ),
+                           NPTFF_aux3D(np)==NULL ? 0 : VD_SCALCMP( NPTFF_aux3D(np) ),
+                           NPTFF_FF3D(np)==NULL ? 0 : MD_SCALCMP( NPTFF_FF3D(np) ) ) != NUM_OK)
+      {
+        PrintErrorMessage('E',"TFFStep","inversion failed");
+        result[0] = __LINE__;
+        return (1);
+      }
+
+      /* corr += corr_update */
+      daddBS( GFIRSTBV(theGrid), VD_SCALCMP( x ), VD_SCALCMP( NPTFF_t(np) ) );
+
+      /* defect -= A * corr_update */
+      dmatmul_minusBS( GFIRSTBV(theGrid), &bvd, NPTFF_BVDF(np),
+                       VD_SCALCMP( b ), MD_SCALCMP( A ), VD_SCALCMP( NPTFF_t(np) ));
+    }
+
+    FreeVD(theNP->base.mg,level,level,NPTFF_t(np));
+
+  }
+
+  return (0);
+#else
+  PrintErrorMessage( 'E', "TFFStep", "__BLOCK_VECTOR_DESC__ must be defined in gm.h" );
+  return (1);
+#endif
+}
+
+static INT TFFConstruct (NP_BASE *theNP)
+{
+  NP_SMOOTHER *np;
+
+  theNP->Init = TFFInit;
+  theNP->Display = TFFDisplay;
+  theNP->Execute = NPIterExecute;
+
+  np = (NP_SMOOTHER *) theNP;
+  np->iter.PreProcess = TFFPreProcess;
+  np->iter.Iter = TFFIter;
+  np->iter.PostProcess = TFFPostProcess;
+  np->Step = NULL;
+
+  return(0);
+}
+
 
 /****************************************************************************/
 /*D
@@ -2155,6 +2843,8 @@ INT InitIter ()
   if (CreateClass(ITER_CLASS_NAME ".spilu",sizeof(NP_ILU),SPILUConstruct))
     return (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".ic",sizeof(NP_ILU),ICConstruct))
+    return (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".tff",sizeof(NP_TFF),TFFConstruct))
     return (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".lu",sizeof(NP_SMOOTHER),LUConstruct))
     return (__LINE__);
