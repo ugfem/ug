@@ -2816,7 +2816,7 @@ static INT CheckOrientation (INT n, VERTEX **vertices)
   return(1);
 }
 
-#define SWAP(a,i,j,t)                   {t = a[i]; a[i] = a[j]; a[j] = t;}
+#define SWAP_IJ(a,i,j,t)                        {t = a[i]; a[i] = a[j]; a[j] = t;}
 
 INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
 {
@@ -2857,33 +2857,33 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE *Node[4]) /* 2D VERSION */
   if (!CheckOrientation(n,Vertex))
   {
     /* flip order */
-    SWAP(Node,      0,n/2,theNode);
-    SWAP(Vertex,0,n/2,theVertex);
+    SWAP_IJ(Node,   0,n/2,theNode);
+    SWAP_IJ(Vertex,0,n/2,theVertex);
 
     if (!CheckOrientation(n,Vertex))
     {
       /* this was the only possibility for a triangle: so is a nonconvex quadrilateral */
       /* interchange first two nodes and try again */
-      SWAP(Node,      0,1,theNode);
-      SWAP(Vertex,0,1,theVertex);
+      SWAP_IJ(Node,   0,1,theNode);
+      SWAP_IJ(Vertex,0,1,theVertex);
       if (!CheckOrientation(n,Vertex))
       {
         /* flip order */
-        SWAP(Node,      0,n/2,theNode);
-        SWAP(Vertex,0,n/2,theVertex);
+        SWAP_IJ(Node,   0,n/2,theNode);
+        SWAP_IJ(Vertex,0,n/2,theVertex);
         if (!CheckOrientation(n,Vertex))
         {
           /* flip order back */
-          SWAP(Node,      0,n/2,theNode);
-          SWAP(Vertex,0,n/2,theVertex);
+          SWAP_IJ(Node,   0,n/2,theNode);
+          SWAP_IJ(Vertex,0,n/2,theVertex);
           /* interchange second two nodes and try again */
-          SWAP(Node,      1,2,theNode);
-          SWAP(Vertex,1,2,theVertex);
+          SWAP_IJ(Node,   1,2,theNode);
+          SWAP_IJ(Vertex,1,2,theVertex);
           if (!CheckOrientation(n,Vertex))
           {
             /* flip order */
-            SWAP(Node,      0,n/2,theNode);
-            SWAP(Vertex,0,n/2,theVertex);
+            SWAP_IJ(Node,   0,n/2,theNode);
+            SWAP_IJ(Vertex,0,n/2,theVertex);
             if (!CheckOrientation(n,Vertex))
             {
               PrintErrorMessage('E',"InsertElement","Huh???");
