@@ -3398,8 +3398,8 @@ INT MoveMidNode (MULTIGRID *theMG,
   {
     co0 = CORNER_OF_EDGE(theElement,edge,1);
     co1 = CORNER_OF_EDGE(theElement,edge,0);
-    if ((CORNER(theElement,co0)!=Node1)
-        || (CORNER(theElement,co1)!=Node0))
+    if ((CORNER(theElement,co0)!=Node0)
+        || (CORNER(theElement,co1)!=Node1))
       return(GM_ERROR);
   }
   else
