@@ -32,7 +32,13 @@
 // much faster
 #define ONLY_ONE_ALGEBRA_DS
 
+#ifdef ModelP
+
 #define FAMG_INNER_FIRST
+
+//#define FAMG_SINGLESTEP
+
+#endif
 
 // TODO: remove it:
 //#define SIMULATE_HALFENING

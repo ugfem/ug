@@ -1270,6 +1270,39 @@ int FAMGGrid::Construct(FAMGGrid *fg)
     return 0;
 }
 
+#ifdef FAMG_SINGLESTEP
+#define MIN_data 0
+#define MIN_pe 1
+#define xCOORD 2
+#define yCOORD 3
+#define BufferSizeGlobalBestChoice 4
+
+void FAMG_GlobalBestChoice( INT choice[BufferSizeGlobalBestChoice] )
+// OLD: Global optimum is: min data (and within them: min pe --- to be unique)
+// Global optimum is: min data (and within them: lexicogrphic smallest); MIN_pe currently not used 
+// or equivalently: search global node with lex. min. of (data,x,y)
+{
+	int l;
+	INT n[BufferSizeGlobalBestChoice];
+
+	for (l=degree-1; l>=0; l--)
+	{
+		GetConcentrate(l,n,BufferSizeGlobalBestChoice*sizeof(INT));
+		// OLD: if( (n[MIN_data] < choice[MIN_data]) || ( (n[MIN_data] == choice[MIN_data]) && (n[MIN_pe] < choice[MIN_pe]) ) )
+		if( (n[MIN_data] < choice[MIN_data]) || ( (n[MIN_data] == choice[MIN_data]) && ((n[xCOORD] < choice[xCOORD]) || ( (n[xCOORD]==choice[xCOORD]) && (n[yCOORD] < choice[yCOORD]) )) ) ) 
+		{
+			choice[MIN_data] = n[MIN_data];
+			choice[MIN_pe] = n[MIN_pe];
+			choice[xCOORD] = n[xCOORD];
+			choice[yCOORD] = n[yCOORD];
+		}
+	}
+	Concentrate(choice,BufferSizeGlobalBestChoice*sizeof(INT));
+	Broadcast(choice,BufferSizeGlobalBestChoice*sizeof(INT));
+	return;
+}
+#endif // FAMG_SINGLESTEP
+
 
 int FAMGGrid::ConstructTransfer()
 // Do not leave this function premature in ModelP! This can cause deadlocks.
@@ -1319,6 +1352,137 @@ int FAMGGrid::ConstructTransfer()
     transfer = (FAMGTransfer *) FAMGGetMem(sizeof(FAMGTransfer),FAMG_FROM_TOP);
     if(transfer == NULL) assert(0);
     if (transfer->Init(this)) assert(0);
+
+#ifdef FAMG_SINGLESTEP
+	#define DUMMY_DATA MAX_I
+	#define DUMMY_PE (procs+1)
+	#define DUMMY_COORD MAX_D
+
+	INT choice[BufferSizeGlobalBestChoice], finished, step=0;
+
+	#if !defined __TWODIM__
+	#error only for 2 dim
+	#endif
+
+	GraphColorTime = -999.999;	// init
+	BorderTime = -999.999;		// init
+
+	if( level == 0 )
+	{
+		if (graph->EliminateDirichletNodes(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+		CommunicateNodeStatus();
+	}
+	if( graph->InsertHelplist() ) {FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+
+	finished = 0;
+	//prv(level,0);prm(level,1);
+
+	while( !finished )
+	{
+		//printlist(graph);
+
+		// taken from FAMGGrid::EliminateNodes
+		if( graph->GetList() == NULL ) 
+			nodei = NULL;
+		else 
+			nodei = graph->GetList()->GetFirst();
+
+		if( nodei==NULL )
+		{
+			choice[MIN_data] = DUMMY_DATA;
+			choice[MIN_pe] = DUMMY_PE;
+			choice[xCOORD] = DUMMY_COORD;
+			choice[yCOORD] = DUMMY_COORD;
+		}
+		else
+		{
+			// search node from the first sublist, which is lexicographic the smallest
+			DOUBLE xmin=DUMMY_COORD, ymin=DUMMY_COORD;
+			FAMGNode *nod = nodei;
+			static const DOUBLE eps = 0.00001;
+
+			while( nod != NULL )
+			{
+				DOUBLE pos[DIM];
+				VECTOR *vec = ((FAMGugVectorEntryRef*)(nod->GetVec().GetPointer()))->myvector();
+				VectorPosition(vec,pos);
+
+				if( (pos[0] < xmin-eps) || ( (ABSDIFF(pos[0],xmin)<eps) && (pos[1] < ymin-eps) ) )
+				{
+					nodei = nod;
+					xmin = pos[0];
+					ymin = pos[1];
+				}
+
+				nod = nod->GetSucc();
+				//cout<<me<<": "<<step<<"! sc "<<pos[0]<<" "<<pos[1]<<" "<<xmin<<" "<<ymin<<VINDEX(vec)<<endl;
+			}
+
+
+			if(nodei->GetPaList() == NULL)
+			{
+				// done
+				choice[MIN_data] = DUMMY_DATA;
+				choice[MIN_pe] = DUMMY_PE;
+				choice[xCOORD] = DUMMY_COORD;
+				choice[yCOORD] = DUMMY_COORD;
+				//cout << me<<": "<<step<<"! choice palist=0 "<<"node "<<nodei->GetId()<<endl;
+			}
+			else if (nodei->CheckPaList(graph))
+			{
+				//cout << me<<": "<<step<<"! choice checkpalist "<<"node "<<nodei->GetId()<<endl;
+				// CheckPaList is necessary for non structure
+				//   symmetric matrices. It is not nice and
+				//   should be avoided. 
+				graph->Remove(nodei);
+				nodei->ComputeTotalWeight();
+				if(graph->Insert(nodei)) RETURN(1);
+				choice[MIN_data] = DUMMY_DATA;
+				choice[MIN_pe] = DUMMY_PE;
+				choice[xCOORD] = DUMMY_COORD;
+				choice[yCOORD] = DUMMY_COORD;
+			}           
+			else
+			{
+				choice[MIN_data] = nodei->GetData();
+				choice[MIN_pe] = me;
+				choice[xCOORD] = (INT)(xmin/eps);	// dirty trick: make double to comparable int!
+				choice[yCOORD] = (INT)(ymin/eps);
+				//cout<<me<<": "<<step<<"! sbuf "<<xmin<<" "<<ymin<< " "<<choice[xCOORD]<<" "<<choice[yCOORD]<<endl;
+			}
+		}
+
+		// Communicate global best choice
+		//cout << me<<": "<<step<<"! choice vor "<< choice[MIN_data] <<" node "<<nodei->GetId()<<endl;
+		FAMG_GlobalBestChoice ( choice );
+		//cout << me<<": "<<step<<"! choice nach "<< choice[MIN_data]<<" pe "<<choice[MIN_pe] <<endl;
+
+		finished = (choice[MIN_pe]==DUMMY_PE); // no PE left which has a node to be eliminated
+
+		if( !finished )
+		{
+			if( me == choice[MIN_pe] )
+			{	// Do the elimination
+				//cout << me<<": "<<step<<"! el "<<nodei->GetId()<<" w= "<<choice[MIN_data]<<" x= "<<choice[xCOORD]<<" y= "<<choice[yCOORD]<<endl;
+				graph->Remove(nodei);
+				if(nodei->Eliminate(this)) RETURN(1);
+				if(nodei->UpdateNeighborsFG(this)) RETURN(1); 
+				if(graph->InsertHelplist()) RETURN(1);
+			}
+
+
+			CommunicateNodeStatus();
+			if(graph->InsertHelplist()) RETURN(1);
+		}
+
+		step++;
+	}
+
+	if(graph->InsertHelplist()) RETURN(1);
+	if (graph->RemainingNodes()) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
+	CommunicateNodeStatus();
+
+#else // FAMG_SINGLESTEP
 
 #ifdef ModelP
 	if( level == 0 )
@@ -1491,7 +1655,9 @@ int FAMGGrid::ConstructTransfer()
 
 #endif
 #endif // #if !(defined ModelP && defined FAMG_INNER_FIRST)
-	
+
+#endif //FAMG_SINGLESTEP
+
     nf = graph->GetNF();
     // TODO: not neceassary any more: matrix->MarkUnknowns(graph);
  
@@ -1810,6 +1976,47 @@ static int SendToMaster( DDD_OBJ obj)
 	return 0;
 }
 
+#ifdef FAMG_SINGLESTEP
+static int SendToOverlap1FULL( DDD_OBJ obj)
+// every master sends itself and its neighbors to each processor where it is a border and a neighbor has a master copy
+// the reason: on that processor the vector is in overlap1 and must extend with its neighbors the overlap2
+{
+	VECTOR *vec = (VECTOR *)obj, *w;
+	MATRIX *mat;
+	int *proclist_vec, *proclist_w, i, size, dest_pe, found, *destPE_vec_ptr;
+	
+	if( !IS_FAMG_MASTER(vec) )
+		return 0;		// we want only master vectors here
+
+	PRINTDEBUG(np,1,("%d: SendToOverlap1: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
+
+	// construct list of all pes where vec has a copy
+	destPE_vec_ptr = CopyPEBuffer;	// init
+	proclist_vec = DDD_InfoProcList(PARHDR(vec));
+	proclist_vec += 2; 	// skip entry for me
+	while( (*destPE_vec_ptr++ = proclist_vec[0]) != -1 )
+	{
+		proclist_vec += 2;
+	}
+	
+	// traverse all pes where vec has a border/ghost copy
+	for( destPE_vec_ptr = CopyPEBuffer; *destPE_vec_ptr!=-1; destPE_vec_ptr++ )
+	{
+		dest_pe = *destPE_vec_ptr;
+		
+			// now we found a pe that should receive the neighborhood of vec (incl. vec)
+			for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+			{
+				w = MDEST(mat);
+				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,dest_pe,VINDEX_PRTX(w)));
+				TransferVector(w, dest_pe);
+			}
+	}
+
+	return 0;
+}
+#endif // FAMG_SINGLESTEP
+
 static int SendToOverlap1( DDD_OBJ obj)
 // every master sends itself and its neighbors to each processor where it is a border and a neighbor has a master copy
 // the reason: on that processor the vector is in overlap1 and must extend with its neighbors the overlap2
@@ -1886,6 +2093,11 @@ void FAMGGrid::ConstructOverlap()
 	{
 ASSERT(!DDD_ConsCheck());
 		OverlapForLevel0 = 1;
+		
+		// do modifications for dirichlet vectors (as coarsegrid solver)
+		// communicate vecskip flags and dirichlet values 
+		if (a_vector_vecskip(MYMG(mygrid),0,0,((FAMGugVector*)GetVector(FAMGUNKNOWN))->GetUgVecDesc()) != NUM_OK)
+			abort();		
 	}
 	else
 	{
@@ -1910,6 +2122,33 @@ ASSERT(!DDD_ConsCheck());
     #endif
 	DDD_XferEnd();
 	
+#ifdef FAMG_SINGLESTEP
+	int equal = 0, step = 0;
+	int minvec, maxvec;
+
+	while( !equal )
+	{
+		DDD_XferBegin();
+    	#ifdef DDDOBJMGR
+   		DDD_ObjMgrBegin();
+    	#endif
+			DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), SendToOverlap1FULL );
+    	#ifdef DDDOBJMGR
+    	DDD_ObjMgrEnd();
+    	#endif
+		DDD_XferEnd();
+
+		minvec = maxvec = NVEC(mygrid);
+		minvec = UG_GlobalMinINT(minvec);
+		maxvec = UG_GlobalMaxINT(maxvec);
+
+		equal = (minvec==maxvec);	
+
+		step++;
+		if( me == master )
+			cout<<" 0: ConstrOverl "<<step<<" min "<<minvec<<" max "<<maxvec<<endl;
+	}
+#else
 	DDD_XferBegin();
     #ifdef DDDOBJMGR
     DDD_ObjMgrBegin();
@@ -1919,6 +2158,7 @@ ASSERT(!DDD_ConsCheck());
     DDD_ObjMgrEnd();
     #endif
 	DDD_XferEnd();
+#endif // FAMG_SINGLESTEP
 
 	// In some cases ghost vectors are left. They disturb the calculations 
 	// and must be removed here.
@@ -1999,19 +2239,23 @@ ASSERT(!DDD_ConsCheck());
 	if( matrix_tmp!=NULL)
 		matrix_tmp->GetN() = n;
 	
-	
+
 	if(GLEVEL(mygrid)==0)
 	{		
+		// For saftey: once again make consistent Dirichlet information; could be skipped perhaps? 
 		// do modifications for dirichlet vectors (as coarsegrid solver)
 		// communicate vecskip flags and dirichlet values
 		if (a_vector_vecskip(MYMG(mygrid),0,0,((FAMGugVector*)GetVector(FAMGUNKNOWN))->GetUgVecDesc()) != NUM_OK)
 			abort();		
+
 		// set dirichlet modification in the matrix
 		if (AssembleDirichletBoundary (mygrid,((FAMGugMatrix*)GetMatrix())->GetMatDesc(),((FAMGugVector*)GetVector(FAMGUNKNOWN))->GetUgVecDesc(),((FAMGugVector*)GetVector(FAMGDEFECT))->GetUgVecDesc()))
 			abort();
 	}	
 
 }
+
+
 #endif
 
 
@@ -2202,6 +2446,7 @@ static int Scatter_NodeStatus (DDD_OBJ obj, void *data)
 			node->SetPaList(palist);
 		
 			// process node as fine node
+    	    Communication_Graph->Remove(node);
 			node->Eliminate(Communication_Grid);
 			node->UpdateNeighborsFG(Communication_Grid);
 		}
@@ -2466,6 +2711,8 @@ void ppal( FAMGNode *node )
 			cout << palist->GetPa(i);
 		}
 		cout << ")";
+		//cout << "A"<<palist->GetApprox()<<"L"<<palist->GetNewLinks()<<"C"<<palist->GetNewCG();
+		//cout << "T"<<palist->TotalWeight();
 		palist = palist->GetNext();
 	}
 	//cout << "\n";	

@@ -213,9 +213,9 @@ void prv( int level, int x_nr )
 		}
 		printf("  index = %d %c ", VINDEX( v ) , VCCOARSE(v)?'C':'F' );
 		printf("u[%d]=%15.8f GID %08x",x_nr,VVALUE(v,x_nr), GID(v));
-		/*printf("   cl %d %d sk ",VCLASS(v),VNCLASS(v));*/
-		/*for (j=0; j<ncomp; j++)
-			printf("%d ",((VECSKIP(v) & (1<<j))!=0));*/
+		//printf("   cl %d %d sk ",VCLASS(v),VNCLASS(v));
+		//for (int j=0; j<ncomp; j++)
+		//	printf("%d ",((VECSKIP(v) & (1<<j))!=0));
 		printf("\n");
 	}
 	return;
@@ -863,16 +863,96 @@ int FAMGNode::Eliminate(FAMGGrid *grid)
 	FAMGGraph *graph = grid->GetGraph();
     FAMGPaList *pl, *minpl = NULL;
     double weight, minweight;
+#ifdef FAMG_SINGLESTEP
+	DOUBLE xmin1=MAX_D, xmin2=MAX_D, ymin1=MAX_D, ymin2=MAX_D;
+#endif
 
+	//cout<<me<<": Eli node "<<GetId()<<endl;
     minweight = 1e+10;
     for(pl = GetPaList(); pl != NULL; pl = pl->GetNext())
     {
         weight = pl->TotalWeight();
+#ifdef FAMG_SINGLESTEP
+		// to make the decision unique: chose the parent-(pair) with the lexicographic smallest coordinate	
+		// CAUTION: we need all 4 coordinates, because it is possible, that 2 pairs contain the same node
+		//          and this node is the lex. smallest of all 3 envolved nodes; thus the 2 further node
+		//          must make the decision unique.
+		#if !defined __TWODIM__
+		#error only for 2 dim
+		#endif
+
+		DOUBLE x1, x2, y1, y2, pos[DIM];
+		FAMGNode *nod;
+		VECTOR *vec;
+		static const DOUBLE eps = 0.00001;
+
+		assert( pl->GetNp() >= 0 );
+		if( pl->GetNp() == 0 )
+		{
+			x1 = MAX_D;
+			x2 = MAX_D;
+			y1 = MAX_D;
+			y2 = MAX_D;
+		//cout<<me<<": Eli no pa "<<endl;
+		}
+		else
+		{
+			nod = grid->GetGraph()->GetNode(pl->GetPa(0));
+			vec = ((FAMGugVectorEntryRef*)(nod->GetVec().GetPointer()))->myvector();
+			assert(vec!=NULL);
+			assert( VOBJECT(vec) != NULL );
+			VectorPosition(vec,pos);
+			x1 = pos[0];
+			y1 = pos[1];
+			x2 = MAX_D;
+			y2 = MAX_D;
+			//cout<<me<<": Eli node 1. "<<nod->GetId()<<" "<<x1<<" "<<y1<<endl;
+
+			if( pl->GetNp() > 1 )
+			{
+				assert( pl->GetNp() == 2 );
+				nod = grid->GetGraph()->GetNode(pl->GetPa(1));
+				vec = ((FAMGugVectorEntryRef*)(nod->GetVec().GetPointer()))->myvector();
+				assert(vec!=NULL);
+				assert( VOBJECT(vec) != NULL );
+				VectorPosition(vec,pos);
+				//cout<<me<<": Eli node 2. "<<nod->GetId()<<" "<<pos[0]<<" "<<pos[1]<<endl;
+			
+				if( (pos[0] < x1-eps) || ( (ABSDIFF(pos[0],x1)<eps) && (pos[1] < y1-eps) ) )	
+				{	// pa_node2 < pa_node1
+					x2 = x1;
+					y2 = y1;
+					x1 = pos[0];
+					y1 = pos[1];
+					//cout<<me<<": Eli node resorted "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<endl;
+				}
+				else
+				{	// pa_node1 < pa_node2 ( pa_node1==pa_node2 impossible)
+					x2 = pos[0];
+					y2 = pos[1];
+				}
+			}
+		}
+		// now the coordinates of the parent are in x1, y1, x2 and y2
+		//cout<<me<<": Eli pa kkord "<<weight<<" "<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<" "<<minweight<<" "<<xmin1<<" "<<ymin1<<" "<<xmin2<<" "<<ymin2<<endl;
+
+        if ( (weight < minweight) || ( (weight==minweight) && ((x1 < xmin1-eps) || ( (ABSDIFF(x1,xmin1)<eps) && (y1 < ymin1-eps) || (ABSDIFF(y1,ymin1)<eps) && ( (x2 < xmin2-eps) || ( (ABSDIFF(x2,xmin2)<eps) && ( (y2 < ymin2-eps))))))))
+        {
+            minpl = pl;
+            minweight = weight;
+			xmin1 = x1;
+			ymin1 = y1;
+			xmin2 = x2;
+			ymin2 = y2;
+			//cout<<me<<": Eli took better"<<endl;			
+        }
+#else
         if (weight < minweight)
         {
             minpl = pl;
             minweight = weight;
         }
+#endif
     }
     
     graph->MarkFGNode(this);
@@ -1208,6 +1288,19 @@ int FAMGGraph::Construct(FAMGGrid *gridptr)
 			// a ghost neighbor was not found
 			if(InsertNode(gridptr, nodei))
 				RETURN(0);
+    }
+#elif defined FAMG_SINGLESTEP
+	// put all nodes into the list
+    for(i = 0; i < n; i++)
+    {
+        nodei = graph->GetNode(i);
+		vec = ((FAMGugVectorEntryRef*)(nodei->GetVec().GetPointer()))->myvector();
+
+		if( IS_FAMG_GHOST(vec) )
+			continue; // take only master vectors 
+
+		if(InsertNode(gridptr, nodei))
+			return 0;
     }
 #else
 	// in the first step eliminate only nodes in the border of the core partition
