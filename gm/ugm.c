@@ -3704,7 +3704,7 @@ INT NS_DIM_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispos
         theNode = CORNER(SonList[i],j);
                                 #ifndef __CENTERNODE__
         if (CENTERTYPE(theNode) && NFATHER(theNode)!=NULL)
-          SET_NFATHER(theNode,NULL);
+          SETNFATHER(theNode,NULL);
                                 #endif
         theVertex = MYVERTEX(theNode);
         if (VFATHER(theVertex) != NULL && VFATHER(theVertex) == theElement)
