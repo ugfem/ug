@@ -345,58 +345,6 @@ INT RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *n
 }
 
 /****************************************************************************/
-/*																			*/
-/* Function:  MGSetVectorClasses											*/
-/*																			*/
-/* Purpose:   Returns highest vector class of a dof on next level			*/
-/*																			*/
-/* Input:	  *theElement													*/
-/*																			*/
-/* Output:	  INT															*/
-/*																			*/
-/****************************************************************************/
-
-INT MGSetVectorClasses (MULTIGRID *theMG)
-{
-  INT i;
-  GRID *theGrid;
-  ELEMENT *theElement;
-
-  assert(0);    /* this function is corrupted (says Chr. Wieners) and should never be used */
-  /* TODO: remove this function */
-
-  /* set vector classes */
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-  {
-    theGrid = GRID_ON_LEVEL(theMG,i);
-    if (ClearVectorClasses(theGrid)) REP_ERR_RETURN(1);
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-    {
-      if (ECLASS(theElement)!=RED_CLASS && ECLASS(theElement)!=GREEN_CLASS) continue;
-      if (SeedVectorClasses(theGrid,theElement)) REP_ERR_RETURN(1);
-    }
-    if (PropagateVectorClasses(theGrid)) REP_ERR_RETURN(1);
-  }
-
-  /* set NextVectorClasses */
-  if (ClearNextVectorClasses(GRID_ON_LEVEL(theMG,TOPLEVEL(theMG)))) REP_ERR_RETURN(1);
-  for (i=0; i<TOPLEVEL(theMG); i++)
-  {
-    theGrid = GRID_ON_LEVEL(theMG,i);
-    if (ClearNextVectorClasses(theGrid)) REP_ERR_RETURN(1);
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-    {
-      if (NSONS(theElement)==0) continue;
-      if (ECLASS(SON(theElement,0))!=RED_CLASS && ECLASS(SON(theElement,0))!=GREEN_CLASS) continue;
-      if (SeedNextVectorClasses(theGrid,theElement)) REP_ERR_RETURN(1);
-    }
-    if (PropagateNextVectorClasses(theGrid)) REP_ERR_RETURN(1);
-  }
-
-  return (0);
-}
-
-/****************************************************************************/
 /*D
         SaveMultiGrid - Save complete multigrid structure in a text file
 
@@ -3383,7 +3331,36 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   }
         #ifdef DYNAMIC_MEMORY_ALLOCMODEL
   if (MGCreateConnection(theMG))                                  {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-        #endif
+  theGrid = GRID_ON_LEVEL(theMG,0);
+  ClearNextNodeClasses(theGrid);
+  for (theElement=FIRSTELEMENT(theGrid);
+       theElement!=NULL; theElement=SUCCE(theElement))
+    if (REFINECLASS(theElement)>=GREEN_CLASS)
+      SeedNextNodeClasses(theElement);
+  PropagateNextNodeClasses(theGrid);
+  for (i=1; i<TOPLEVEL(theMG); i++) {
+    theGrid = GRID_ON_LEVEL(theMG,i);
+    ClearNodeClasses(theGrid);
+    ClearNextNodeClasses(theGrid);
+    for (theElement=FIRSTELEMENT(theGrid);
+         theElement!=NULL; theElement=SUCCE(theElement)) {
+      if (ECLASS(theElement)>=GREEN_CLASS)
+        SeedNodeClasses(theElement);
+      if (REFINECLASS(theElement)>=GREEN_CLASS)
+        SeedNextNodeClasses(theElement);
+    }
+    PropagateNodeClasses(theGrid);
+    PropagateNextNodeClasses(theGrid);
+  }
+  theGrid = GRID_ON_LEVEL(theMG,TOPLEVEL(theMG));
+  ClearNodeClasses(theGrid);
+  ClearNextNodeClasses(theGrid);
+  for (theElement=FIRSTELEMENT(theGrid);
+       theElement!=NULL; theElement=SUCCE(theElement))
+    if (ECLASS(theElement)>=GREEN_CLASS)
+      SeedNodeClasses(theElement);
+  PropagateNodeClasses(theGrid);
+        #else
   for (i=0; i<=TOPLEVEL(theMG); i++)
   {
     theGrid = GRID_ON_LEVEL(theMG,i);
@@ -3399,6 +3376,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     PropagateVectorClasses(theGrid);
     PropagateNextVectorClasses(theGrid);
   }
+        #endif
   if (PrepareAlgebraModification(theMG))                  {DisposeMultiGrid(theMG); return (NULL);}
 
   /* set DOFs on vectors */
