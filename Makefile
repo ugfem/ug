@@ -65,10 +65,12 @@ clean:
 	cd numerics; make -f Makefile.numerics clean; cd ..;
 	cd graph; make -f Makefile.graph clean; cd ..;
 	cd ui; make -f Makefile.ui clean; cd ..;
+	cd gg; make -f Makefile.gg clean; cd ..;
 
 ifdef:
 	cd gm; make -f Makefile.gm clean; cd ..;
 	cd numerics; make -f Makefile.numerics clean; cd ..;
 	cd graph; make -f Makefile.graph clean; cd ..;
 	cd ui; rm commands.o ; cd ..;
+	rm initug.o;
 
