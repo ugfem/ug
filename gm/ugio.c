@@ -98,11 +98,9 @@
 /*  n_elem = 6+30 (6 h-ghosts, 30 v-ghosts)											*/
 /*  n_edge = 12*30 (12 max_edges_of_elem) (30 probably 30 elements per edge)		*/
 /*  n_node = 100*8 (8 max_node_of_elem) 100 probably elements per node)				*/
-#ifdef ModelP
 /*#define PROCLISTSIZE      (ELEMPROCLISTSIZE*MAX_SONS * 2) size not enough and change to static variable; Christian Wrobel 980128 */
 #define PROCLISTSIZE_VALUE      (ELEMPROCLISTSIZE*MAX_SONS * MAX(5,(int)(2.0+log((double)procs))))
 #define PROCLISTSIZE            proc_list_size
-#endif
 
 /* orphan condition for elements */
 #define EORPHAN(e)              (EFATHER(e)==NULL || THEFLAG(e))
