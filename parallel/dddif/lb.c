@@ -73,6 +73,8 @@ void ddd_test (char *argv, MULTIGRID *theMG)
 {
   int mode,param,fromlevel,tolevel;
 
+  mode = param = fromlevel = tolevel = 0;
+
   sscanf(argv,"%d %d %d",&param,&fromlevel,&tolevel);
   UserWriteF(PFMT "ddd_test() mode=%d fromlevel=%d tolevel=%d\n",
              me,mode,fromlevel,tolevel);
