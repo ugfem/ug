@@ -98,7 +98,10 @@
 /*                                                                          */
 /****************************************************************************/
 
-typedef unsigned int VChannelPtr;
+typedef unsigned long VChannelPtr;
+/* it's really int, but as ppif.h declares this void*, this fits for ILP32, */
+/* ILP64 and LP64. Should be ok for the next 100 years :-)                  */
+
 typedef struct message *msgid;
 
 enum directions {north,east,south,west,up,down};
