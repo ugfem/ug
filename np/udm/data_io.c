@@ -521,7 +521,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   }
   if (DTIO_PARFILE)
   {
-    sprintf(buf,"/data.%06d",(int)me);
+    sprintf(buf,"/data.%04d",(int)me);
     strcat(FileName,buf);
   }
 #endif
