@@ -30,6 +30,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "devices.h"
 #include "general.h"
@@ -55,6 +56,15 @@
 /****************************************************************************/
 
 #define ABS_LIMIT 1e-10
+
+#ifdef ModelP
+#include "ppif.h"
+#define CSTART()    clock_start=CurrentTime()
+#define CSTOP(t,c)  t+=(CurrentTime()-clock_start);c++
+#else
+#define CSTART()    clock_start=clock()
+#define CSTOP(t,c)  t+=((double)(clock()-clock_start))/((double)CLOCKS_PER_SEC);c++
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -535,6 +545,13 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VE
   VEC_SCALAR defect2reach;
   INT i,bl,PrintID;
   char text[DISPLAY_WIDTH+4];
+  double ti;
+  int ii;
+#ifdef ModelP
+  double clock_start;
+#else
+  clock_t clock_start;
+#endif
 
   /* store passed reduction and abslimit */
   for (i=0; i<VD_NCOMP(x); i++)
@@ -555,6 +572,7 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VE
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
   if (np->display > PCR_NO_DISPLAY)
     if (PreparePCR(x,np->display,text,&PrintID)) NP_RETURN(1,lresult->error_code);
+  CSTART(); ti=0; ii=0;
   for (i=0; i<VD_NCOMP(x); i++)
     lresult->first_defect[i] = lresult->last_defect[i];
   if (sc_mul_check(defect2reach,lresult->first_defect,reduction,b)) NP_RETURN(1,lresult->error_code);
@@ -579,15 +597,22 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VE
       break;
     }
   }
+  if (!lresult->converged)
+    lresult->number_of_linear_iterations=i;
   FreeVD(theNP->base.mg,bl,level,np->c);
   if (np->Close != NULL)
     if ((*np->Close)(np,level,&lresult->error_code))
       REP_ERR_RETURN (1);
+  CSTOP(ti,ii);
+
   if (np->display > PCR_NO_DISPLAY)
   {
     if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) NP_RETURN(1,lresult->error_code);
     if (PostPCR(PrintID,":ls:avg")) NP_RETURN(1,lresult->error_code);
     if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1))) NP_RETURN(1,lresult->error_code);
+    UserWriteF("LS  : L=%2d N=%2d TSOLVE=%10.4lg TIT=%10.4lg\n",level,
+               lresult->number_of_linear_iterations,ti,
+               ti/lresult->number_of_linear_iterations);
   }
 
   return (0);
@@ -1495,6 +1520,13 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
   INT i,j,PrintID,restart;
   char text[DISPLAY_WIDTH+4];
   DOUBLE alpha,rho_new,beta,tt;
+  double ti;
+  int ii;
+#ifdef ModelP
+  double clock_start;
+#else
+  clock_t clock_start;
+#endif
 
   /* store passed reduction and abslimit */
   for (i=0; i<VD_NCOMP(x); i++)
@@ -1509,6 +1541,9 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
   /* print defect */
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
   if (np->display > PCR_NO_DISPLAY) if (PreparePCR(x,np->display,text,&PrintID)) NP_RETURN(1,lresult->error_code);
+
+  CSTART(); ti=0; ii=0;
+
   for (i=0; i<VD_NCOMP(x); i++)
     lresult->first_defect[i] = lresult->last_defect[i];
   if (sc_mul_check(defect2reach,lresult->first_defect,reduction,b)) NP_RETURN(1,lresult->error_code);
@@ -1576,6 +1611,7 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
       for (j=0; j<VD_NCOMP(x); j++) scal[j]=alpha;
       if (s_daxpy (theNP->base.mg,np->baselevel,level,x,scal,np->p)!= NUM_OK) REP_ERR_RETURN (1);
     }
+    lresult->number_of_linear_iterations++;
     if (s_dcopy(theNP->base.mg,np->baselevel,level,np->s,b)!= NUM_OK) NP_RETURN(1,lresult->error_code);
     for (j=0; j<VD_NCOMP(x); j++) scal[j]=-alpha;
     if (s_daxpy (theNP->base.mg,np->baselevel,level,np->s,scal,np->v)!= NUM_OK) REP_ERR_RETURN (1);
@@ -1586,7 +1622,6 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
       if (s_dcopy(theNP->base.mg,np->baselevel,level,b,np->s) != NUM_OK)
         NP_RETURN(1,lresult->error_code);
       lresult->converged = 1;
-      lresult->number_of_linear_iterations=i+1;
       if (np->display > PCR_NO_DISPLAY)
         if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE))
           NP_RETURN(1,lresult->error_code);
@@ -1632,18 +1667,23 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     if (LinearResiduum(theNP,np->baselevel,level,x,b,A,lresult)) REP_ERR_RETURN (1);
     if (np->display > PCR_NO_DISPLAY)
       if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE)) NP_RETURN(1,lresult->error_code);
+    lresult->number_of_linear_iterations++;
     if (sc_cmp(lresult->last_defect,abslimit,b) || sc_cmp(lresult->last_defect,defect2reach,b))
     {
       lresult->converged = 1;
-      lresult->number_of_linear_iterations=i+1;
       break;
     }
   }
+  CSTOP(ti,ii);
+
   if (np->display > PCR_NO_DISPLAY)
   {
     if (DoPCR(PrintID,lresult->last_defect,PCR_AVERAGE)) NP_RETURN(1,lresult->error_code);
     if (PostPCR(PrintID,":ls:avg")) NP_RETURN(1,lresult->error_code);
     if (SetStringValue(":ls:avg:iter",(DOUBLE) (i+1))) NP_RETURN(1,lresult->error_code);
+    UserWriteF("BCGS: L=%2d N=%2d TSOLVE=%10.4lg TIT=%10.4lg\n",level,
+               lresult->number_of_linear_iterations,ti,
+               ti/lresult->number_of_linear_iterations);
   }
 
   return (0);
