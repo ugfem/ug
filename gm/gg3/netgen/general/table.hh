@@ -1,131 +1,58 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/************************************************************************/
-/*                                                                      */
-/* This file is a part of NETGEN                                        */
-/*                                                                      */
-/* File:   table.hh                                                     */
-/* Author: Joachim Schoeberl                                            */
-/*                                                                      */
-/************************************************************************/
-
-
 #ifndef FILE_TABLE
 #define FILE_TABLE
 
+/**************************************************************************/
+/* File:   table.hh                                                       */
+/* Author: Joachim Schoeberl                                              */
+/* Date:   01. Jun. 95                                                    */
+/**************************************************************************/
+
+/*
+   Abstract data type TABLE
+
+   To an integer i in the range from 1 to size a set of elements of the
+   generic type T is associated.
+ */
+
 
 class BASE_TABLE
-
 {
-
 protected:
 
-
-
   class linestruct
-
   {
-
   public:
-
     int size, maxsize;
-
     void * col;
-
   };
-
-
 
   ARRAY<linestruct> data;
 
-
-
 public:
-
   BASE_TABLE (int size);
-
   ~BASE_TABLE ();
-
+  void SetSize (int size);
   void IncSize (int i, int elsize);
-
 };
-
-
-
 
 
 template <class T>
-
 class TABLE : public BASE_TABLE
-
 {
-
 public:
 
-
-
-  inline TABLE (int size) : BASE_TABLE (size)
-
-  {
-
-    ;
-
-  }
-
-
-
-  inline void Add (INDEX i, const T & acont)
-
-  {
-
-    IncSize (i, sizeof (T));
-
-    ((T*)data.Elem(i).col)[data.Elem(i).size-1] = acont;
-
-  }
-
-
-
-  inline void Set (INDEX i, int nr, const T & acont)
-
-  {
-
-    ((T*)data.Get(i).col)[nr-1] = acont;
-
-  }
-
-
-
-  inline const T & Get (INDEX i, int nr) const
-
-  {
-
-    return ((T*)data.Get(i).col)[nr-1];
-
-  }
-
-
-
-  inline int Size () const
-
-  {
-
-    return data.Size();
-
-  }
-
-
-
-  inline int EntrySize (int i) const
-
-  {
-
-    return data.Get(i).size;
-
-  }
-
+  inline TABLE ();
+  inline TABLE (int size);
+  inline void SetSize (int size);
+  inline void Add (INDEX i, const T & acont);
+  inline void Set (INDEX i, int nr, const T & acont);
+  inline const T & Get (INDEX i, int nr) const;
+  inline int Size () const;
+  inline int EntrySize (int i) const;
 };
 
-
+#include <table.icc>
 
 #endif
