@@ -44,6 +44,7 @@
 #include "dio.h"
 #include "num.h"
 #include "ugm.h"
+#include "fileopen.h"
 
 #include "data_io.h"
 
@@ -56,6 +57,8 @@
 /*		  macros															*/
 /*																			*/
 /****************************************************************************/
+
+#define DTIO_PARFILE    (nparfiles > 1)
 
 /****************************************************************************/
 /*																			*/
@@ -339,7 +342,8 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
 
 INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec)
 {
-  INT i,j,k,l,ncomp,s,t,*e_per_n,*entry,nNode,store_from_eval,id,tag,coe,q,mode;
+  INT i,j,k,l,ncomp,s,t,*e_per_n,*entry,nNode,store_from_eval,id,tag,coe,q,mode,nparfiles,error;
+  int ftype;
   unsigned long m;
   DIO_GENERAL dio_general;
   HEAP *theHeap;
@@ -352,6 +356,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   DOUBLE value;
   DOUBLE_VECTOR vector;
   char FileName[NAMESIZE],NumberString[6];
+  char buf[64];
   SHORT *cp[DIO_VDMAX];
   INT ncmp[DIO_VDMAX];
 
@@ -386,18 +391,48 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   }
 
   /* open file */
+  nparfiles = procs;
   if (strcmp(type,"dbg")==0) mode = BIO_DEBUG;
   else if (strcmp(type,"asc")==0) mode = BIO_ASCII;
   else if (strcmp(type,"bin")==0) mode = BIO_BIN;
   else return (1);
   strcpy(FileName,name);
-  strcat(FileName,".ug.data.");
   if (number!=-1)
   {
     sprintf(NumberString,"%04d.",(int)number);
     strcat(FileName,NumberString);
   }
+  strcat(FileName,".ug.data.");
   strcat(FileName,type);
+#ifdef ModelP
+  error = 0;
+  if (me == master)
+  {
+    if (DTIO_PARFILE)
+    {
+      ftype = DTIO_filetype(FileName);
+      if (ftype == FT_FILE)
+      {
+        error = -1;
+      }
+      else if (ftype == FT_UNKNOWN)
+      {
+        if (DTIO_dircreate(FileName)) error = -1;
+      }
+    }
+  }
+  Broadcast(&error,sizeof(int));
+  if (error == -1)
+  {
+    UserWriteF("SaveData(): error during file/directory creation\n");
+    return(1);
+  }
+  if (DTIO_PARFILE)
+  {
+    sprintf(buf,"/data.%04d",(int)me);
+    strcat(FileName,buf);
+  }
+#endif
   if (Write_OpenDTFile (FileName)) return (1);
 
   /* write general information */
@@ -498,7 +533,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   for (i=0; i<=TOPLEVEL(theMG); i++)
   {
     theGrid = GRID_ON_LEVEL(theMG,i);
-    for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+    for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
     {
       theV = NVECTOR(theNode);
       for (j=0; j<ncomp; j++)
