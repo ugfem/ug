@@ -209,8 +209,10 @@ void FAMGugMatrix::AddEntry(double mval, const FAMGugVectorEntry &row, const FAM
 #endif
     MVALUE(newmat,GetComp())=mval;
 
-
-	GetNLinks()++;
+	if( row.myvector() == ug_col_vec )
+		GetNLinks()++;		// diag mat counts 1
+	else
+		GetNLinks() += 2;	// offdiag mats counts 2
 }
 
 #ifdef FAMG_SPARSE_BLOCK
@@ -250,6 +252,7 @@ void FAMGugMatrix::AddEntry(const FAMGSparseBlock *sbm, const double *mval, cons
         val = GetValuePtr(newmat);
         SparseBlockMSet(sb,val,0.0);
         SparseBlockMMAdd(sb,sbm,val,mval);
+		GetNLinks()++;		// diag mat counts 1
     }
     else 
     {
@@ -259,11 +262,8 @@ void FAMGugMatrix::AddEntry(const FAMGSparseBlock *sbm, const double *mval, cons
         SparseBlockMSet(sb,val,0.0);
         SparseBlockMSet(sbT,valT,0.0);
         SparseBlockMMAdd(sb,sbm,val,mval);
+		GetNLinks() += 2;	// offdiag mats counts 2
     }
-
-
-
-	GetNLinks()++;
 }
 
 void FAMGugMatrix::AddEntry(const FAMGSparseBlock *sbm, const double *mval, const FAMGugVectorEntry &row, const FAMGugVectorEntry &col,double factor)
@@ -302,6 +302,7 @@ void FAMGugMatrix::AddEntry(const FAMGSparseBlock *sbm, const double *mval, cons
         val = GetValuePtr(newmat);
         SparseBlockMSet(sb,val,0.0);
         SparseBlockMMAdd(sb,sbm,val,mval,factor);
+		GetNLinks()++;		// diag mat counts 1
     }
     else 
     {
@@ -311,10 +312,7 @@ void FAMGugMatrix::AddEntry(const FAMGSparseBlock *sbm, const double *mval, cons
         SparseBlockMSet(sb,val,0.0);
         SparseBlockMSet(sbT,valT,0.0);
         SparseBlockMMAdd(sb,sbm,val,mval,factor);
+		GetNLinks() += 2;	// offdiag mats counts 2
     }
-
-
-
-	GetNLinks()++;
 }
 #endif
