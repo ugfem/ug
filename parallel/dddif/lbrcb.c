@@ -36,6 +36,10 @@
 #include "ugm.h"
 #include "ugdevices.h"
 
+#include "namespace.h"
+
+USING_UG_NAMESPACES
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
