@@ -176,6 +176,54 @@ INT ReadArgvINT (const char *name, INT *j, INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   ReadArgvDOUBLE_INT - Read DOUBLE and INT from an option
+
+   SYNOPSIS:
+   INT ReadArgvDOUBLE_INT (const char *name, DOUBLE *a, INT *j, INT argc, char **argv);
+
+   PARAMETERS:
+   .  name - name of the argument
+   .  a - DOUBLE value
+   .  m - INT value
+   .  argc - argument counter
+   .  argv - argument vector
+
+   DESCRIPTION:
+   This function reads command strings and sets a DOUBLE value and an
+   optional INT-Value.
+
+   RETURN VALUE:
+   INT
+   .n    0 - !!!! no argument was found !!!!
+   .n    1,2 - number of arguments
+   D*/
+/****************************************************************************/
+
+INT ReadArgvDOUBLE_INT (const char *name, DOUBLE *a, INT *j, INT argc, char **argv)
+{
+  INT i,k;
+  char option[OPTIONLEN];
+  double value;
+  int ivalue;
+
+  for (i=0; i<argc; i++)
+    if (argv[i][0]==name[0])
+    {
+      if ((k=sscanf(argv[i],"%s %lf %d",option,&value,&ivalue))<2)
+        continue;
+      if (strcmp(option,name) == 0)
+      {
+        *a = value;
+        if (k==3) *j = ivalue;else *j=0;
+        return(k-1);
+      }
+    }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    ReadArgvChar - Read command strings
 
    SYNOPSIS:
@@ -271,10 +319,8 @@ INT ReadArgvMEM (const char *name, MEM *mem_size, INT argc, char **argv)
         switch(ReadMemSizeFromString( size_input, mem_size ))
         {
         case 0 : return(0);
-        case 1 : PrintErrorMessage( 'E', "ReadArgvMEM", "invalid integer number read" );
-          return(1);
-        case 2 : PrintErrorMessage( 'E', "ReadArgvMEM", "invalid unit specifier read" );
-          return(1);
+        case 1 : return(1);
+        case 2 : return(1);
         default : assert(0);
         }
       }
