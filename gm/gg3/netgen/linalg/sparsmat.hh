@@ -50,18 +50,18 @@ public:
   virtual BaseMatrix * Copy () const;
 
 
-  void GSStep (const Vector & b, Vector & x, double dump) const;
-  void GSStepBack (const Vector & b, Vector & x, double dump) const;
+  /*void GSStep (const Vector & b, Vector & x, double dump) const;
+     void GSStepBack (const Vector & b, Vector & x, double dump) const;
 
-  void GSStepInner (const Vector & b, Vector & x, double dump,
-                    const BitArray & inner) const;
-  void GSStepBackInner (const Vector & b, Vector & x, double dump,
-                        const BitArray & inner) const;
+     void GSStepInner (const Vector & b, Vector & x, double dump,
+      const BitArray & inner) const;
+     void GSStepBackInner (const Vector & b, Vector & x, double dump,
+      const BitArray & inner) const;
 
-  void GSStepToInner (const Vector & b, Vector & x, double dump,
-                      const BitArray & inner) const;
-  void GSStepBackToInner (const Vector & b, Vector & x, double dump,
-                          const BitArray & inner) const;
+     void GSStepToInner (const Vector & b, Vector & x, double dump,
+      const BitArray & inner) const;
+     void GSStepBackToInner (const Vector & b, Vector & x, double dump,
+      const BitArray & inner) const;*/
 
   friend void Transpose (const SparseMatrix & m1, SparseMatrix & m2);
 
