@@ -772,7 +772,7 @@ INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
 		  Comp = VD_CMPPTR_OF_TYPE(x,type);
 		  m = DDD_InfoNCopies(PARHDR(v)) + 1;
 		  for (i=0; i<VD_NCMPS_IN_TYPE(x,type); i++)
-		      VVALUE(v,Comp[i]) = 1.0 / m;
+		      VVALUE(v,Comp[i]) *= 1.0 / m;
 		}
 
 	return (l_vector_consistent(g,x));
@@ -808,7 +808,7 @@ INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
     INT level; 
 
 	for (level=fl; level<=tl; level++) 
-	    if (l_vector_meanvalue(GRID_ON_LEVEL(theMG,level),x))
+	    if (l_vector_meanvalue(GRID_ON_LEVEL(mg,level),x))
 			return(NUM_ERROR);
 
 	return (NUM_OK);
