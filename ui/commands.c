@@ -4138,6 +4138,8 @@ static INT RefineCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   INT i,mode,rv;
+  char buffer[128];
+  EVECTOR *theElemEvalDirection;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -4147,6 +4149,7 @@ static INT RefineCommand (INT argc, char **argv)
   }
 
   /* check options */
+  theElemEvalDirection = NULL;
   mode = GM_REFINE_TRULY_LOCAL;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -4154,13 +4157,21 @@ static INT RefineCommand (INT argc, char **argv)
     case 'g' :
       mode = GM_COPY_ALL;
       break;
+#ifdef __THREEDIM__
+    case 'a' :
+      if (sscanf(argv[i],"a %s",buffer)==1)
+        theElemEvalDirection = GetElementVectorEvalProc(buffer);
+      if (theElemEvalDirection==NULL)
+        UserWrite("direction eval fct not found: taking shortest interior edge\n");
+      break;
+#endif
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("refine",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
 
-  rv = RefineMultiGrid(theMG,mode);
+  rv = RefineMultiGrid(theMG,mode,theElemEvalDirection);
 
   InvalidatePicturesOfMG(theMG);
   InvalidateUgWindowsOfMG(theMG);
@@ -4365,6 +4376,7 @@ static INT MarkCommand (INT argc, char **argv)
     for (l=0; l<=TOPLEVEL(theMG); l++)
       for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l)); theElement!=NULL; theElement=SUCCE(theElement))
         if (EstimateHere(theElement))
+        {
           if ((rv = MarkForRefinement(theElement,Rule,Side))!=0)
           {
             l = TOPLEVEL(theMG);
@@ -4372,6 +4384,7 @@ static INT MarkCommand (INT argc, char **argv)
           }
           else
             nmarked++;
+        }
     break;
 
   case MARK_ID :
