@@ -3100,7 +3100,7 @@ static NODE *NW_GetNextNode_hor_fw_up (NODE *theNode)
 		else
 			theNode = SUCCN(theNode);
 	}
-	while (!USED(theNode));
+	while (theNode!=NULL && !USED(theNode));
 	
 	return (theNode);
 }
