@@ -247,7 +247,10 @@ INT InvertSmallBlock (SHORT n, const SHORT *mcomp,
   {
   case 1 :
     if (fabs(mat[mcomp[0]])<SMALL_DET)
+    {
+      UserWriteF("n=%d, c0=%d, m[c0]=%lf\n",(int)n,(int)(mcomp[0]),mat[mcomp[0]]);
       break;                            /* singular */
+    }
     invmat[0] = 1.0 / mat[mcomp[0]];
     return (NUM_OK);
 

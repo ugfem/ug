@@ -45,6 +45,7 @@
 #include "pcr.h"
 #include "formats.h"
 #include "np.h"
+#include "ugstruct.h"
 
 #include "assemble.h"
 #include "transfer.h"
