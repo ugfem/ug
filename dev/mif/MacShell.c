@@ -87,7 +87,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define SHELLTITLE      "<<<<< ug shell >>>>>"
+#define SHELLTITLE      "<<<<< "UG_VERSION " shell >>>>>"
 
 #define TERMHMIN        200             /* minimum horizontal size of term window	*/
 #define TERMVMIN        100             /* minimum vertical size of term window         */
@@ -158,7 +158,7 @@ INT GrowShellWindow (EventRecord *theEvent)
   Rect r,sizeRect,beforeRect,afterRect,viewRect;
   WindowPtr theWindow;
 
-  /* get event… */
+  /* get eventä */
   theWindow = MAC_WIN(shell);
   SetPort(theWindow);
 
