@@ -16,30 +16,28 @@ MODULES = DEV DOM $(UGMODULES)
 # modules for ug server daemon
 UGDMODULES = LOW DEV 
 
-
-# local C compiler flags
-LCFLAGS = -I./include
-
 # object files for both dimensions
 OBJECTS = initug.o
-
 
 ##############################################################################
 
 # make all
-all: include $(OBJECTS) $(MODULES)
-	$(ARCH_AR) $(ARCH_ARFLAGS) lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
+all: include $(MODULES)
+	make $(UG_LIB) 	
 	echo "libug, libdom and libdev compiled"
 
 uglib: include $(OBJECTS) $(UGMODULES)
-	$(ARCH_AR) $(ARCH_ARFLAGS) lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
+	make $(UG_LIB) 	
 	echo "libug compiled"
 
-UGD:  include $(UGDMODULES) ugd.o
+UGD: include $(UGDMODULES) ugd.o
+	make $(UG_LIB) 	
 	$(UG_LINK) -o bin/ugd $(ARCH_LFLAGS) ugd.o lib/libdev.a \
-		lib/libug$(UG_LIBSUFFIX).a $(UG_LFLAGS)
+                          $(UG_LIB) $(UG_LFLAGS)
 	echo "ugd compiled"
 
+$(UG_LIB): $(OBJECTS) 
+	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 
 ##############################################################################
 
@@ -112,7 +110,7 @@ ifdef: $(MODEL_TARGET)_clean
 	cd np; make -f Makefile.np clean; cd ..;
 	cd graphics; make -f Makefile.graphics clean; cd ..;
 	cd dom; make -f Makefile.dom clean; cd ..;
-	cd ui; rm -f commands.o avs.o tecplot.o; cd ..;
+	cd ui; make -f Makefile.ui clean; cd ..;
 	rm -f initug.o;
 
 extract:
