@@ -805,13 +805,17 @@ static INT CGUpdate (NP_LS *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *c,
   np = (NP_CG *) theNP;
   theMG = theNP->ls.base.mg;
   ncomp = VD_NCOMP(x);
-  if (AllocVDFromVD(theMG,theNP->baselevel,level,x,&np->t)) NP_RETURN(1,result[0]);
-  if (a_dset(theMG,theNP->baselevel,level,np->t,EVERY_CLASS,0.0) != NUM_OK) NP_RETURN(1,result[0]);
+  if (AllocVDFromVD(theMG,theNP->baselevel,level,x,&np->t))
+    NP_RETURN(1,result[0]);
+  if (a_dset(theMG,theNP->baselevel,level,np->t,EVERY_CLASS,0.0) != NUM_OK)
+    NP_RETURN(1,result[0]);
   for (j=theNP->baselevel; j<=level; j++)
     if (l_dmatmul(GRID_ON_LEVEL(theMG,j),np->t,EVERY_CLASS,A,c,EVERY_CLASS)
         !=NUM_OK) NP_RETURN(1,result[0]);
-  if (a_daxpy(theMG,theNP->baselevel,level,b,EVERY_CLASS,Factor_One,np->t)) NP_RETURN(1,result[0]);
-  if (s_ddot(theMG,theNP->baselevel,level,c,b,scal) !=NUM_OK) NP_RETURN(1,result[0]);
+  if (a_daxpy(theMG,theNP->baselevel,level,b,EVERY_CLASS,Factor_One,np->t))
+    NP_RETURN(1,result[0]);
+  if (s_ddot(theMG,theNP->baselevel,level,c,b,scal) !=NUM_OK)
+    NP_RETURN(1,result[0]);
   lambda = 0.0;
   for (j=0; j<ncomp; j++) lambda += scal[j];
   for (j=0; j<ncomp; j++) scal[j] = lambda / np->rho;
@@ -820,13 +824,16 @@ static INT CGUpdate (NP_LS *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *c,
       != NUM_OK) NP_RETURN(1,result[0]);
   if (a_daxpy (theMG,theNP->baselevel,level,np->p,EVERY_CLASS,Factor_One,c)
       != NUM_OK) NP_RETURN(1,result[0]);
-  if (a_dset(theMG,theNP->baselevel,level,np->t,EVERY_CLASS,0.0) != NUM_OK) NP_RETURN(1,result[0]);
+  if (a_dset(theMG,theNP->baselevel,level,np->t,EVERY_CLASS,0.0) != NUM_OK)
+    NP_RETURN(1,result[0]);
   for (j=theNP->baselevel; j<=level; j++)
     if (l_dmatmul (GRID_ON_LEVEL(theMG,j),np->t,EVERY_CLASS,
                    A,np->p,EVERY_CLASS) != NUM_OK) NP_RETURN(1,result[0]);
-  if (s_ddot (theMG,theNP->baselevel,level,np->t,np->p,scal) != NUM_OK) NP_RETURN(1,result[0]);
+  if (s_ddot (theMG,theNP->baselevel,level,np->t,np->p,scal) != NUM_OK)
+    NP_RETURN(1,result[0]);
   lambda = 0.0;
   for (j=0; j<ncomp; j++) lambda += scal[j];
+  if (lambda == 0.0) NP_RETURN(1,result[0]);
   for (j=0; j<ncomp; j++) scal[j] = np->rho / lambda;
   if (a_daxpy(theMG,theNP->baselevel,level,x,EVERY_CLASS,scal,np->p)
       != NUM_OK) NP_RETURN(1,result[0]);
