@@ -1847,6 +1847,7 @@ static INT CASE2(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *lam)
    */
 
   /* kuerzeste Abstand zur einem Dreieck */
+  small = 0.000001;
   min = 10000000.0;
   mi1 = -1;
   for(i=0; i<LGM_SURFACE_NTRIANGLE(theSurface); i++)
