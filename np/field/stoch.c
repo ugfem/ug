@@ -1554,9 +1554,12 @@ INT Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
     alpha[i] = Pos[i] * np->cor[i] / np->cs[i];
     node[i] = ((INT) alpha[i]) % np->size[i];
     if (node[i] < 0)
+    {
       node[i] += np->size[i];
-
-    alpha[i] -= (INT) alpha[i];
+      alpha[i] = ((INT) alpha[i]) - alpha[i];
+    }
+    else
+      alpha[i] -= (INT) alpha[i];
   }
 #ifdef __THREEDIM__
   switch(np->inttype)
