@@ -14170,202 +14170,6 @@ static INT SettingsEqual (const VIEWEDOBJ *vo, const WOP_MG_DATA *data)
 	return (NO);
 }
 
-
-#ifdef MERGE_CHAOS_FROM_REV87_AND_REV94
-/* TODO: if all goes right please delete this stuff 970505 (sl) */
-/* I haven't done this merge, therefore I have taken the function
-	OrderElements_3D from revision 1.94 without doing any changes */
-
-static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
-{
-	HEAP *theHeap;
-	ELEMENT **table, *p;
-	GRID *theGrid;
-	INT i, res;
-	WOP_MG_DATA *myMGdata;
-	MEM offset;
-<<<<<<< wop.c
-	INT i, res, curr, next;
-=======
-    clock_t start, stop;
->>>>>>> 1.94
-
-<<<<<<< wop.c
-	/* check if multigrid is already ordered */
-#ifndef ModelP
-=======
->>>>>>> 1.94
-	offset   = OFFSET_IN_MGUD(wopMGUDid);
-	myMGdata = (WOP_MG_DATA*) GEN_MGUD_ADR(theMG,offset);
-	
-	if (myMGdata==NULL)
-		return (1);
-	
-	/* check if multigrid is already ordered */
-	if (myMGdata->init==0)
-		/* not yet initialized */
-		SaveSettings(theViewedObj,myMGdata);
-<<<<<<< wop.c
-	else if (SettingsEqual(theViewedObj,myMGdata))
-		/* no ordering neccessary */
-		return (0);
-	else
-		/* save changed settings */
-		SaveSettings(theViewedObj,myMGdata);
-#endif	
-=======
-	else if (!OE_force_ordering)
-	{
-		if (SettingsEqual(theViewedObj,myMGdata))
-			if (ELEMORD(theMG))
-				/* no ordering neccessary */
-				return (0);
-	}
-	
-	OE_force_ordering = FALSE;
-	
->>>>>>> 1.94
-	/* inits */
-	OE_ViewedObj = theViewedObj;	
-		
-	/* calculate the viewable sides of all elements on all levels */
-	for (i=0; i<=theMG->topLevel; i++)	
-		CalcViewableSidesOnGrid(theMG->grids[i]);
-	
-   	/* order elements on level zero */
-	theHeap = theMG->theHeap;
-	#ifdef ModelP
-	if (me == master) {
-	#endif
-	theGrid = theMG->grids[0];
-<<<<<<< wop.c
-	Mark(theHeap, FROM_TOP);
-	table = (ELEMENT **) GetMem(theHeap, (theGrid->nElem)*sizeof(ELEMENT *), 
-								FROM_TOP);
-	res = OrderFathersXSH(theMG, table);
-	#ifdef ModelP
-	}
-	Broadcast(&res, sizeof(res));
-	#endif
-	if (res != 0) RETURN(1);
-	#ifndef ModelP
-	if (PutAtEndOfList(theGrid,theGrid->nElem,table)!=GM_OK) return (1);    
-	Release(theHeap, FROM_TOP);
-	#else
-	Mark(theHeap, FROM_TOP);
-	for (i = theMG->topLevel; i >= 0; i--) {
-		theGrid = theMG->grids[i];
-		for (p = PFIRSTELEMENT(theGrid); p != NULL; p = SUCCE(p))
-			OS_LINK(p) = (OS_DATA *) GetMem(theHeap, sizeof(OS_DATA), FROM_TOP);
-=======
-	if (theGrid->nElem<1)
-	  return(0);
-	theHeap = theMG->theHeap;
-	Mark(theHeap,FROM_TOP);
-	if ( (table=(ELEMENT **)GetMem(theHeap,MAX(theGrid->nElem,MAX_SONS)*sizeof(ELEMENT *),FROM_TOP)) == NULL )
-	{
-		Release(theHeap,FROM_TOP);
-		UserWrite("ERROR: could not allocate memory from the MGHeap\n");
-		RETURN(1);
->>>>>>> 1.94
-	}
-<<<<<<< wop.c
-	ComputeOS_Data(theMG);
-	if (me == master) { 
-		for (p = FIRSTELEMENT(theGrid); p != NULL; p = SUCCE(p))
-			printf("%10d %10d %10d\n", GAP(p), N_LOCAL_SONS(p), N_GLOBAL_SONS(p));
-=======
-	
-	/* order elements on level zero */
-
-    start = clock();    
-	OE_nCompareElements = 0;
-
-	switch (OE_OrderStrategy) /* select order strategy */
-	{
-	case 0:
-		res = OrderFathersXSH(theGrid, theHeap, table);
-		switch (res) 
-		{
-		case 0:
-			break;
-		case 1:
-			UserWrite("Cycle detected while ordering coarse grid.\n");
-			UserWrite("Falling back on slow method ... \n");
-			i=0;
-			for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
-				table[i++] = theElement;
-			SelectionSort((void *)table,i,sizeof(*table),CompareElements);
-			break;
-		case 2:
-			return 1;
-		}
-		break;
-
-	case 1:
-		i=0;
-		for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
-			table[i++] = theElement;
-        #ifndef ModelP
-		if (i!=NT(theGrid)) return (1);
-        #endif
-	    if (OrderFathersNNS(table, theHeap, i)) RETURN(1);
-		break;
-
-	case 2:
-		i=0;
-		for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
-			table[i++] = theElement;
-        #ifndef ModelP
-		if (i!=NT(theGrid)) return (1);
-        #endif
-		SelectionSort((void *)table,i,sizeof(*table),CompareElements);
-		break;
->>>>>>> 1.94
-	}
-<<<<<<< wop.c
-	#endif
-=======
-
-	stop = clock();
-    
-    UserWriteF( "order strategy:                %d\n",OE_OrderStrategy);
-    UserWriteF( "time for ordering coarse grid: %7.2f s\n", 
-			     (stop-start)/(DOUBLE)CLOCKS_PER_SEC);
-	UserWriteF( "number of CompareElements    : %9d\n", OE_nCompareElements);
-
-	if (PutAtEndOfList(theGrid,theGrid->nElem,table)!=GM_OK) RETURN(1);	
->>>>>>> 1.94
-
-	/* now order level 1 to toplevel hirarchically */
-<<<<<<< wop.c
-	if (OrderHirarchically(theMG)) RETURN(1);
-	Release(theHeap, FROM_TOP);
-=======
-	for (i=0; i<theMG->topLevel; i++)
-	{
-		theGrid = theMG->grids[i];
-		for (theElement=FIRSTELEMENT(theGrid); theElement!= NULL; theElement=SUCCE(theElement))
-		{
-			if (NSONS(theElement)<=0) continue;
-			OrderSons(table,theElement);
-			if (PutAtEndOfList(UPGRID(theGrid),NSONS(theElement),table)!=GM_OK) RETURN(1);
-		}
-	}
-	
-	/* release heap */
-	Release(theHeap,FROM_TOP);
-	
-	/* save changed settings */
-	SaveSettings(theViewedObj,myMGdata);
-	SETELEMORD(theMG,TRUE);
-	
->>>>>>> 1.94
-	return (0);
-}
-#endif /* MERGE_CHAOS */
-
-
 static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 {
 	HEAP *theHeap;
@@ -14420,7 +14224,7 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 
     start = clock();    
 	OE_nCompareElements = 0;
-
+	i=0;
 	switch (OE_OrderStrategy) /* select order strategy */
 	{
 	case 0:
@@ -14470,7 +14274,7 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 			     (stop-start)/(DOUBLE)CLOCKS_PER_SEC);
 	UserWriteF( "number of CompareElements    : %9d\n", OE_nCompareElements);
 
-	if (PutAtEndOfList(theGrid,theGrid->nElem,table)!=GM_OK) RETURN(1);	
+	if (PutAtEndOfList(theGrid,i,table)!=GM_OK) RETURN(1);	
 
 	/* now order level 1 to toplevel hirarchically */
 	for (i=0; i<theMG->topLevel; i++)
