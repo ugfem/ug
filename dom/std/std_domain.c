@@ -3231,7 +3231,7 @@ BVP *BVP_Load (char *name, INT argc, char **argv)
    .  stream - file
 
    DESCRIPTION:
-   This function saves a BNDP
+   This function saves a BNDP on a file.
 
    RETURN VALUE:
    INT
@@ -3240,9 +3240,20 @@ BVP *BVP_Load (char *name, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-INT BNDP_SaveBndP (BNDP *theBndP, FILE *stream)
+INT BNDP_SaveBndP (BNDP *BndP, FILE *stream)
 {
-  return(1);
+  BND_PS *bp;
+  INT i,j;
+
+  if (fprintf(stream,"%d %d ",(int)BND_PATCH_ID(BndP),(int)BND_N(BndP)) < 0)
+    return (1);
+  bp = (BND_PS *)BndP;
+  for (i=0; i<BND_N(BndP); i++)
+    for (j=0; j<DIM-1; j++)
+      if (fprintf(stream,"%lf ",(double)bp->local[i][j])<0)
+        return (1);
+
+  return(0);
 }
 
 /****************************************************************************/
@@ -3250,14 +3261,15 @@ INT BNDP_SaveBndP (BNDP *theBndP, FILE *stream)
    BVP_LoadBndP - load a BNDP
 
    SYNOPSIS:
-   INT BVP_SaveBndP (BVP *theBVP, BNDP *theBndP, char *data, INT *size);
+   BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap, FILE *stream);
 
    PARAMETERS:
+   .  theBndP - BNDP
    .  Heap - heap
    .  stream - file
 
    DESCRIPTION:
-   This function saves a BNDP
+   This function loads a BNDP with the format given by BVP_SaveBndP.
 
    RETURN VALUE:
    INT
@@ -3268,7 +3280,24 @@ INT BNDP_SaveBndP (BNDP *theBndP, FILE *stream)
 
 BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap, FILE *stream)
 {
-  return(NULL);
+  BND_PS *bp;
+  int i,j,pid,n;
+  double local;
+
+  if (fscanf(stream,"%d %d ",&pid,&n) != 2)
+    return (NULL);
+  bp = (BND_PS *)GetFreelistMemory(Heap,(n-1)*sizeof(COORD_BND_VECTOR)
+                                   + sizeof(BND_PS));
+  bp->n = n;
+  bp->patch_id = pid;
+  for (i=0; i<n; i++)
+    for (j=0; j<DIM-1; j++) {
+      if (fscanf(stream,"%lf ",&local) != 1)
+        return (NULL);
+      bp->local[i][j] = local;
+    }
+
+  return((BNDP *)bp);
 }
 
 /****************************************************************************/
