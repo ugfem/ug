@@ -10789,7 +10789,8 @@ static INT NumProcInitCommand (INT argc, char **argv)
     theNumProc = GetNumProcByName (theMG,theNumProcName,"");
     if (theNumProc == NULL)
     {
-      PrintErrorMessage('E',"npinit","cannot find specified numerical procedure");
+      sprintf(buffer,"cannot find specified numerical procedure '%s'",theNumProcName);
+      PrintErrorMessage('E',"npinit",buffer);
       return (CMDERRORCODE);
     }
   }
