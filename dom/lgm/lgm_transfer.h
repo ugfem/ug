@@ -39,6 +39,11 @@
 
 #include "heaps.h"
 
+#include "namespace.h"
+
+START_NAMESPACE
+
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -272,5 +277,8 @@ int HGM_ReadSurface             (int i, LGM_SURFACE_INFO *surface_info);
 
 FILE *LGM_WriteOpenFile         (char* name);
 INT InitLGMTransfer             (void);
+
+END_NAMESPACE
+
 
 #endif

@@ -94,6 +94,9 @@
 #include "bbtree.h"
 #endif
 
+#include "namespace.h"
+
+START_NAMESPACE
 
 
 /****************************************************************************/
@@ -721,8 +724,8 @@ INT                                     LGM_BNDS_SurfId         (BNDS *aBndS);
 
 #ifdef NO_PROJECT
 /*for evaluation of global coordinates*/
-INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);
 INT Line_Local2GlobalNew (LGM_LINE *theLine, DOUBLE *global, DOUBLE local);
+INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);
 #endif
 
 #endif
@@ -741,4 +744,8 @@ INT SetDomainSize (LGM_DOMAIN *theDomain);
 INT GetMaximumSurfaceID (LGM_DOMAIN *theDomain);
 INT OuterBndSurfaceIDs (LGM_DOMAIN *theDomain, INT *sf); /* OS_CHANGED */
 INT SurfaceIDsOfSubdomain (LGM_DOMAIN *theDomain, INT *sf, INT i); /* OS_CHANGED */
+
+
+END_NAMESPACE
+
 #endif

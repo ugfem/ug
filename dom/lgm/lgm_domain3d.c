@@ -49,6 +49,11 @@
 
 #include "ugdevices.h"
 
+#include "namespace.h"
+
+USING_UG_NAMESPACES
+
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -64,6 +69,7 @@
 #define BVP2LGM(p)                                                      ((LGM_DOMAIN*)(p))
 #define BNDP2LGM(p)                                                     ((LGM_BNDP*)(p))
 #define BNDS2LGM(p)                                                     ((LGM_BNDS*)(p))
+
 
 static char buffer[LGM_BUFFERLEN];
 
@@ -91,7 +97,7 @@ static DOUBLE cosAngle;         /* Winkel zwischen Inputdreiecken */
 static DOUBLE Triangle_Angle2 = 40.0;
 static DOUBLE EPS = 0.1;
 
-INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);
+INT NS_PREFIX Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);
 INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE *n);
 
 static INT Get_NBNDS_Per_Subdomain              (HEAP *Heap, LGM_DOMAIN *theDomain, INT **sizes, DOUBLE h);
@@ -175,7 +181,7 @@ static INT ResetSurfaceFlags (LGM_DOMAIN *theDomain)
   return (0);
 }
 
-LGM_SURFACE *FirstSurface (LGM_DOMAIN *theDomain)
+LGM_SURFACE *NS_PREFIX FirstSurface (LGM_DOMAIN *theDomain)
 {
   LGM_SURFACE *theSurface;
 
@@ -212,7 +218,7 @@ static LGM_SURFACE *helpNextSurface (LGM_DOMAIN *theDomain)
   return (NULL);
 }
 
-LGM_SURFACE *NextSurface (LGM_DOMAIN *theDomain)
+LGM_SURFACE *NS_PREFIX NextSurface (LGM_DOMAIN *theDomain)
 {
   LGM_SURFACE *theSurface;
 
@@ -252,7 +258,8 @@ static INT ResetLineFlags (LGM_DOMAIN *theDomain)
   return (0);
 }
 
-LGM_LINE *FirstLine (LGM_DOMAIN *theDomain)
+LGM_LINE *NS_PREFIX
+FirstLine (LGM_DOMAIN *theDomain)
 {
   LGM_LINE *theLine;
 
@@ -300,7 +307,8 @@ static LGM_LINE *helpNextLine (LGM_DOMAIN *theDomain)
   return (NULL);
 }
 
-LGM_LINE *NextLine (LGM_DOMAIN *theDomain)
+LGM_LINE *NS_PREFIX
+NextLine (LGM_DOMAIN *theDomain)
 {
   LGM_LINE *theLine;
 
@@ -457,7 +465,7 @@ static INT Line_Local2Global (LGM_LINE *theLine, DOUBLE *global, INT i)
   DOUBLE slocal;
   INT ilocal;
 
-  ilocal = floor(LGM_LINEDISC_LOCAL(LGM_LINE_LINEDISC(theLine),i));
+  ilocal = (int)floor(LGM_LINEDISC_LOCAL(LGM_LINE_LINEDISC(theLine),i));
   slocal = LGM_LINEDISC_LOCAL(LGM_LINE_LINEDISC(theLine),i) - ilocal;
 
   assert(slocal>=0.0);
@@ -487,12 +495,12 @@ static INT Line_Local2Global (LGM_LINE *theLine, DOUBLE *global, INT i)
   return(0);
 }
 
-INT Line_Local2GlobalNew (LGM_LINE *theLine, DOUBLE *global, DOUBLE local)
+INT NS_PREFIX Line_Local2GlobalNew (LGM_LINE *theLine, DOUBLE *global, DOUBLE local)
 {
   DOUBLE slocal;
   INT ilocal;
 
-  ilocal = floor(local);
+  ilocal = (int)floor(local);
   slocal = local - ilocal;
 
   if(slocal<0.0)
@@ -1075,7 +1083,7 @@ INT BVP_Check (BVP *aBVP)
           return(1);
         }
         /* Mustermemset(nodeflag_array,0,(statistik[0]+1)*sizeof(INT)); */
-        memset(TemporaryPointArray,NULL,memsize_variable);
+        memset(TemporaryPointArray,0,memsize_variable);
 
 
         /*den allerersten Corner vor der Schleife eintargen*/
@@ -1602,7 +1610,7 @@ static INT Write_Line(LGM_LINE *theLine)
 
   fprintf(stream, "%d\n", LGM_LINE_NPOINT(theLine));
   for(i=0; i<LGM_LINE_NPOINT(theLine); i++)
-    fprintf(stream, "%lf %lf %lf\n",LGM_LINE_POINT(theLine,i)->position[0],
+    fprintf(stream, "%f %f %f\n",LGM_LINE_POINT(theLine,i)->position[0],
             LGM_LINE_POINT(theLine,i)->position[1],
             LGM_LINE_POINT(theLine,i)->position[2]);
 
@@ -1611,7 +1619,7 @@ static INT Write_Line(LGM_LINE *theLine)
   for(i=0; i<LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(theLine)); i++)
   {
     Line_Local2GlobalNew(theLine,global,help->local);
-    fprintf(stream, "%lf %lf %lf\n",global[0],global[1],global[2]);
+    fprintf(stream, "%f %f %f\n",global[0],global[1],global[2]);
     help = help->next;
   }
 
@@ -1641,7 +1649,7 @@ static INT Write_Surface(LGM_SURFACE *theSurface, char *name, char *name1)
   {
     local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),i,0);
     local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),i,1);
-    fprintf(stream, "%20.16lf %20.16lf\n", local[0], local[1]);
+    fprintf(stream, "%20.16f %20.16f\n", local[0], local[1]);
   }
   fprintf(stream, "%d\n", LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)));
   for(i=0; i<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)); i++)
@@ -1673,7 +1681,7 @@ static INT Write_Surface(LGM_SURFACE *theSurface, char *name, char *name1)
     local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),i,0);
     local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),i,1);
     Surface_Local2Global(theSurface, global, local);
-    fprintf(stream, "%lf %lf %lf\n", global[0], global[1], global[2]);
+    fprintf(stream, "%f %f %f\n", global[0], global[1], global[2]);
   }
   fprintf(stream, "%d\n", LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)));
   for(i=0; i<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)); i++)
@@ -1744,9 +1752,9 @@ static INT Read_Line(HEAP *Heap, LGM_LINE *theLine, INT MarkKey, char name[12])
   fscanf(stream, "%d\n",&d);
   LGM_LINE_NPOINT(theLine) = d;
   for(i=0; i<LGM_LINE_NPOINT(theLine); i++)
-    fscanf(stream, "%lf %lf %lf\n",LGM_LINE_POINT(theLine,i)->position[0],
-           LGM_LINE_POINT(theLine,i)->position[1],
-           LGM_LINE_POINT(theLine,i)->position[2]);
+    fscanf(stream, "%lf %lf %lf\n",&LGM_LINE_POINT(theLine,i)->position[0],
+           &LGM_LINE_POINT(theLine,i)->position[1],
+           &LGM_LINE_POINT(theLine,i)->position[2]);
 
   fscanf(stream, "%d\n",&d);
   LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(theLine)) = d;
@@ -1754,7 +1762,7 @@ static INT Read_Line(HEAP *Heap, LGM_LINE *theLine, INT MarkKey, char name[12])
   for(i=0; i<LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(theLine)); i++)
   {
     help = (LINEPOINT*)GetTmpMem(Heap,sizeof(LINEPOINT), MarkKey);
-    fscanf(stream, "%lf %lf %lf\n",global[0],global[1],global[2]);
+    fscanf(stream, "%lf %lf %lf\n",&global[0],&global[1],&global[2]);
     Line_Local2GlobalNew(theLine,global,help->local);
     help = help->next;
   }
@@ -2383,7 +2391,7 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKe
     return(NULL);
 
   /* init mesh: only surface-mesh */
-  mesh->nInnP = NULL;
+  mesh->nInnP = 0;
   mesh->Position = NULL;
   mesh->nElements = NULL;
   mesh->nbElements        = NULL;
@@ -3805,7 +3813,7 @@ static INT Point_Counter(LGM_LINE *theLine, DOUBLE h, INT StartIndex, INT EndInd
       length_of_line = length_of_line + LGM_POINT_DIST(LGM_LINE_POINT(theLine,i),LGM_LINE_POINT(theLine,i+1));
 
     /* calculate number of points on the line */
-    npoints = floor(length_of_line / h + 0.51) + 1;
+    npoints = (int)floor(length_of_line / h + 0.51) + 1;
     if(npoints<2)
       npoints = 2;
     /*		if(StartIndex!=0)
@@ -4352,9 +4360,9 @@ static DOUBLE LinePointDistance(LGM_LINE *theLine, INT Index)
   start_local = help->local;
   end_local = (help->next)->local;
 
-  start_i = floor(start_local);
+  start_i = (int)floor(start_local);
   start_s = start_local - start_i;
-  end_i = floor(end_local);
+  end_i = (int)floor(end_local);
   end_s = end_local - end_i;
 
   length_of_segment = 0;
@@ -4389,9 +4397,9 @@ static INT Check_Line_Linedisc_Distance(HEAP *Heap, LGM_LINE *theLine, INT Index
   start_local = help->local;
   end_local = (help->next)->local;
 
-  start_i = floor(start_local);
+  start_i = (int)floor(start_local);
   start_s = start_local - start_i;
-  end_i = floor(end_local);
+  end_i = (int)floor(end_local);
   end_s = end_local - end_i;
   mid_i = -1;
   mid_local = 0.0;
@@ -4475,9 +4483,9 @@ static INT RefineLine(HEAP *Heap, LGM_LINE *theLine, INT Index, DOUBLE h, INT Ma
   start_local = help->local;
   end_local = (help->next)->local;
 
-  start_i = floor(start_local);
+  start_i = (int)floor(start_local);
   start_s = start_local - start_i;
-  end_i = floor(end_local);
+  end_i = (int)floor(end_local);
   end_s = end_local - end_i;
 
   length_of_linesegment = 0;
@@ -4489,7 +4497,7 @@ static INT RefineLine(HEAP *Heap, LGM_LINE *theLine, INT Index, DOUBLE h, INT Ma
   {
     if(h>0.0)
     {
-      npoints = ceil(length_of_linesegment / h + 0.51);
+      npoints = (int)ceil(length_of_linesegment / h + 0.51);
       /* uniform dicretisation */
       length_of_segment = length_of_linesegment / npoints;
 
@@ -5462,7 +5470,7 @@ INT TEST(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
   {
     /* point is on the boundary of the surface */
     id = - (INT)floor(local[0]) - 2;
-    ilocal = floor(local[1]);
+    ilocal = (INT)floor(local[1]);
     sloc = local[1]-ilocal;
     for(i=0; i<LGM_SURFACE_NLINE(theSurface); i++)
       if(LGM_LINE_ID(LGM_SURFACE_LINE(theSurface, i))==id)
@@ -5472,7 +5480,7 @@ INT TEST(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
   return(0);
 }
 
-INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
+INT NS_PREFIX Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
 {
   INT i, ilocal,ilocal1,id;
   DOUBLE slocal[2],sloc;
@@ -5490,7 +5498,7 @@ INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local
   {
     /* point is on the boundary of the surface */
     id = - (INT)floor(local[0]) - 2;
-    ilocal = floor(local[1]);
+    ilocal = (int)floor(local[1]);
     sloc = local[1]-ilocal;
     for(i=0; i<LGM_SURFACE_NLINE(theSurface); i++)
       if(LGM_LINE_ID(LGM_SURFACE_LINE(theSurface, i))==id)
@@ -5499,8 +5507,8 @@ INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local
   }
   else
   {
-    ilocal = floor(local[0]);
-    ilocal1 = floor(local[1]);
+    ilocal = (int)floor(local[0]);
+    ilocal1 = (int)floor(local[1]);
     if(ilocal>ilocal1)
       ilocal = ilocal1;
     slocal[0] = local[0]-ilocal;
@@ -5527,7 +5535,7 @@ INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local
 }
 
 /* domain interface function: for description see domain.h */
-INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
+INT NS_PREFIX BNDP_Global (BNDP *aBndP, DOUBLE *global)
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;
@@ -5666,8 +5674,8 @@ static INT Check_Local_Coord(LGM_SURFACE *theSurface, DOUBLE *local)
   INT ilocal, ilocal1;
   DOUBLE slocal[2];
 
-  ilocal = floor(local[0]);
-  ilocal1 = floor(local[1]);
+  ilocal = (INT)floor(local[0]);
+  ilocal1 = (INT)floor(local[1]);
   if(ilocal>ilocal1)
     ilocal = ilocal1;
   slocal[0] = local[0]-ilocal;
@@ -5680,6 +5688,8 @@ static INT Check_Local_Coord(LGM_SURFACE *theSurface, DOUBLE *local)
     return(1);
   else
     assert(0);
+
+  return(0);
 }
 
 BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
@@ -5930,8 +5940,8 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
 
   V_DIM_CLEAR(nv);
   GetLocalKoord(theSurface, global, local, nv);
-  ilocal = floor(local[0]);
-  ilocal1 = floor(local[1]);
+  ilocal = (INT)floor(local[0]);
+  ilocal1 = (INT)floor(local[1]);
   if(ilocal>ilocal1)
     ilocal = ilocal1;
 
@@ -5967,9 +5977,9 @@ static DOUBLE LinePointDistance_local(LGM_LINE *theLine, DOUBLE *globalp1, DOUBL
   int i, start_i, end_i;
   DOUBLE length_of_segment, start_s, end_s;
 
-  start_i = floor(*start_local);
+  start_i = (int)floor(*start_local);
   start_s = *start_local - start_i;
-  end_i = floor(*end_local);
+  end_i = (int)floor(*end_local);
   end_s = *end_local - end_i;
 
   length_of_segment = 0;
@@ -6000,9 +6010,9 @@ static int Find_Midpoint(LGM_LINE *theLine, DOUBLE *globalp1, DOUBLE *globalp2, 
   for(i=0; i<3; i++)
     mid_p[i] = 0.5 * (globalp1[i] + globalp2[i]);
 
-  start_i = floor(*start_local);
+  start_i = (int)floor(*start_local);
   start_s = *start_local - start_i;
-  end_i = floor(*end_local);
+  end_i = (int)floor(*end_local);
   end_s = *end_local - end_i;
   if(start_i>end_i)
   {

@@ -37,6 +37,9 @@
 #include "general.h"
 #include "ng.h"
 
+#include "namespace.h"
+
+USING_UG_NAMESPACES
 
 static FILE *stream;
 static INT lgmdomainpathes_set;

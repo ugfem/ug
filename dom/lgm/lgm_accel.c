@@ -26,6 +26,11 @@
 #include "tree.h"
 #include "fifo.h"
 
+#include "namespace.h"
+
+USING_UG_NAMESPACES
+
+
 #ifdef LGM_ACCELERATE
 /*****************************************************************************
 * defines in the following order                                            *

@@ -15,6 +15,12 @@
 *****************************************************************************/
 #ifndef __LGM_ACCEL__
 #define __LGM_ACCEL__
+
+#include "namespace.h"
+
+START_NAMESPACE
+
+
 /*****************************************************************************
 * defines in the following order:                                           *
 *        compile time constants defining static data size (i.e. arrays)     *
@@ -35,4 +41,7 @@
 * public function declarations                                              *
 *****************************************************************************/
 INT LGM_InitAcceleration(HEAP *theHeap, LGM_SURFACE **sf, INT nsf);
+
+END_NAMESPACE
+
 #endif

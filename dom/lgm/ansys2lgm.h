@@ -29,6 +29,11 @@
 /*                                                                          */
 /****************************************************************************/
 
+#include "namespace.h"
+
+START_NAMESPACE
+
+
 /****************************************************************************/
 /*                                                                          */
 /* data structures exported by the corresponding source file                */
@@ -321,7 +326,8 @@ typedef struct {
                                                                                         15.7801, 15.7802, 15.7803, 15.7804 und 15.7805*/
 
 #define MAXLINE                         100
-#define MAX_INT                         2147483648
+/*#define MAX_INT				2147483648*/
+#define MAX_INT                         2147483647
 #define NMBOFCNDS                       30
 
 #define NMBOFLOCLCOORDS         2
@@ -359,3 +365,5 @@ int LGM_ANSYS_ReadLines                         (int i, LGM_LINE_INFO *line_info
 int LGM_ANSYS_ReadPoints                        (LGM_POINT_INFO *lgm_point_info);
 int LGM_ANSYS_ReadSurface                       (int i, LGM_SURFACE_INFO *surface_info);
 int LGM_ANSYS_ReadMesh              (char *name, HEAP *Heappointer, LGM_MESH_INFO *theMesh, int MarkKey);
+
+END_NAMESPACE

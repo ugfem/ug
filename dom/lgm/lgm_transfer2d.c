@@ -42,6 +42,11 @@
 #include "general.h"
 #include "ng2d.h"
 
+#include "namespace.h"
+
+USING_UG_NAMESPACES
+
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/

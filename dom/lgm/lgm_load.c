@@ -55,6 +55,11 @@
 #include "lgm_accel.h"
 #endif
 
+#include "namespace.h"
+
+USING_UG_NAMESPACES
+
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/

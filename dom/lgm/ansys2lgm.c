@@ -62,6 +62,13 @@
 #include "ansys2lgm.h" /*%%%%%*/
 /*#include "cadconvert.h"*/
 /*%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
+
+#include "namespace.h"
+
+USING_UG_NAMESPACES
+
+
+
 #define T 1
 #define F 0
 

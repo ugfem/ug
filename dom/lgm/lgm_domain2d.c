@@ -44,6 +44,10 @@
 #include "general.h"
 #include "lgm_transfer.h"
 
+#include "namespace.h"
+
+USING_UG_NAMESPACES
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -116,7 +120,7 @@ static INT ResetLineFlags (LGM_DOMAIN *theDomain)
   return (0);
 }
 
-LGM_LINE *FirstLine (LGM_DOMAIN *theDomain)
+LGM_LINE * NS_PREFIX FirstLine (LGM_DOMAIN *theDomain)
 {
   LGM_LINE *theLine;
 
@@ -151,7 +155,7 @@ static LGM_LINE *helpNextLine (LGM_DOMAIN *theDomain)
   return (NULL);
 }
 
-LGM_LINE *NextLine (LGM_DOMAIN *theDomain)
+LGM_LINE * NS_PREFIX NextLine (LGM_DOMAIN *theDomain)
 {
   LGM_LINE *theLine;
 
@@ -1073,7 +1077,7 @@ BNDP *BNDP_LoadBndP_Ext (void)
 /****************************************************************************/
 
 /* domain interface function: for description see domain.h */
-INT BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
+INT NS_PREFIX BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 {
   LGM_BNDS *theBndS;
   LGM_LINE *theLine;

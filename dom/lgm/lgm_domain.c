@@ -43,6 +43,12 @@
 #include "misc.h"
 #include "general.h"
 
+#include "namespace.h"
+
+USING_UG_NAMESPACES
+
+
+
 #define BVP2LGM(p)                                                      ((LGM_DOMAIN*)(p))
 #define BNDP2LGM(p)                                                     ((LGM_BNDP*)(p))
 #define BNDS2LGM(p)                                                     ((LGM_BNDS*)(p))
@@ -163,7 +169,8 @@ static LGM_PROBLEM *Lgm_Problem_GetByName (char *name)
 }
 
 /* domain interface function: for description see domain.h */
-BVP *BVP_GetByName (char *name)
+BVP *NS_PREFIX
+BVP_GetByName (char *name)
 {
   return((BVP *) SearchEnv(name,"/LGM_BVP",theLGMDomainVarID,theBVPDirID));
 }
