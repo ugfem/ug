@@ -22,28 +22,30 @@ mv $UGROOT/gm/gm.h.tmp $UGROOT/gm/gm.h
 sed 's/COORD/KOORD/g' $UGROOT/arch/compiler.h > $UGROOT/arch/compiler.h.tmp
 mv $UGROOT/arch/compiler.h.tmp $UGROOT/arch/compiler.h
 
+ROOTPWD=$PWD;
+echo $0: working in dirtree $ROOTPWD;
 for i in . * */* */*/* */*/*/* */*/*/*/*
 do
 	if test -d $i -a ! -h $i
 	then
-		if test "$i" != "bin" -a "$i" != "include" -a `basename $i` != "doc" -a `basename $i` != "CVS"
+		if test `basename $i` != "bin" -a `basename $i` != "include" -a `basename $i` != "doc" -a `basename $i` != "CVS"
         then
-			echo "cd " $i
 			cd $i
+			echo "current dir:" $i
 			for j in *.c *.h *.doc
 			do
 				if test "$j" != "*.c" -a "$j" != "*.h" -a "$j" != "*.doc"
 				then	
-			    	echo $j
-					sed 's/COORDI/KOORDI/g'               $j      > $j.tmp
-					sed 's/COORD_VECTOR/DOUBLE_VECTOR/g'  $j.tmp  > $j
-					sed 's/COORD_/KOORD_/g'               $j      > $j.tmp
-					sed 's/COORD/DOUBLE/g'                $j.tmp  > $j
-					sed 's/KOORD/COORD/g'                 $j      > $j.tmp
-					mv $j.tmp $j
+					echo "substituting in $j"
+					#sed 's/COORDI/KOORDI/g'               $j      > $j.tmp
+					#sed 's/COORD_VECTOR/DOUBLE_VECTOR/g'  $j.tmp  > $j
+					#sed 's/COORD_/KOORD_/g'               $j      > $j.tmp
+					#sed 's/COORD/DOUBLE/g'                $j.tmp  > $j
+					#sed 's/KOORD/COORD/g'                 $j      > $j.tmp
+					#mv $j.tmp $j
 				fi
 			done
-            cd $PWD
+            cd $ROOTPWD
         fi
 	fi
 done
