@@ -318,7 +318,7 @@
 #define GlobalToLocal(n,c,e,l)		 GlobalToLocal2d (n,c,e,l)
 #endif
 #ifdef __THREEDIM__
-#define GlobalToLocal(n,c,e,l)		 GlobalToLocal3d (c,e,l)
+#define GlobalToLocal(n,c,e,l)		 GlobalToLocal3d (n,c,e,l)
 #endif
 
 /****************************************************************************/
@@ -368,7 +368,7 @@ INT		specialGlobalToLocal2d (INT n, const COORD **Corners, const COORD_VECTOR Ev
 #ifdef __THREEDIM__
 INT TransformGlobalToLocal3D(ELEMENT *theElement, COORD_VECTOR Global, COORD_VECTOR Local);
 DOUBLE  N                   (const INT i, const COORD *LocalCoord);
-INT     GlobalToLocal3d     (const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);
+INT     GlobalToLocal3d     (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);
 INT     TetraDerivative     (ELEMENT *theElement, const COORD **theCorners, COORD_VECTOR theGradient[MAX_CORNERS_OF_ELEM]);
 INT     TetraVolume         (const COORD **theCorners, COORD *volume);
 INT     FV_TetInfo          (const COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], COORD_VECTOR GIP[MAX_EDGES_OF_ELEM]);

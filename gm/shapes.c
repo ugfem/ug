@@ -48,7 +48,7 @@
 /*																			*/
 /****************************************************************************/
 
-
+#define SMALL_DET 1e-50
 
 /****************************************************************************/
 /*																			*/
@@ -499,7 +499,7 @@ INT Gradients (INT n, const COORD **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_V
 	dxdt = 0.0; for (j=0; j<n; j++) dxdt += dNdt(n,j,ips,ipt)*theCorners[j][0];
 	dxds = 0.0; for (j=0; j<n; j++) dxds += dNds(n,j,ips,ipt)*theCorners[j][0];
 	detJ = dxds*dydt-dyds*dxdt;
-	if (fabs(detJ)<=SMALL_D) return(1);
+    if (fabs(detJ)<=SMALL_DET) return(1);
 	for (j=0; j<n; j++)
 	{
 		Gradient[j][_X_] = ( dydt*dNds(n,j,ips,ipt)-dyds*dNdt(n,j,ips,ipt))/detJ;
@@ -1217,7 +1217,7 @@ INT TransformGlobalToLocal3D(ELEMENT *theElement, COORD_VECTOR Global, COORD_VEC
     if(TAG(theElement)==TETRAHEDRON) {
         for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
             x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
-        return(GlobalToLocal3d(x,Global,Local));
+        return(GlobalToLocal3d(4,x,Global,Local));
     }
     if(TAG(theElement)==HEXAHEDRON){
         TransformCoefficients (theElement);
@@ -1231,9 +1231,11 @@ INT TransformGlobalToLocal3D(ELEMENT *theElement, COORD_VECTOR Global, COORD_VEC
    GlobalToLocal3d - Transform global coordinates to local
 
    SYNOPSIS:
-   INT GlobalToLocal3d (const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);
+   INT GlobalToLocal3d (INT n, const COORD **Corners, const COORD *EvalPoint, 
+   COORD *LocalCoord);
 
    PARAMETERS:
+.  n - number of corners
 .  Corners - coordinates of corners 
 .  EvalPoint - global coordinates
 .  LocalCoord - local coordinates 
@@ -1250,19 +1252,46 @@ D*/
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT GlobalToLocal3d (const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord)
+INT GlobalToLocal3d (INT n, const COORD **Corners, 
+					 const COORD *EvalPoint, COORD *LocalCoord)
 {
 	COORD_VECTOR a;
 	COORD M[9],I[9];
 
-	V3_SUBTRACT(EvalPoint,Corners[0],a)
-	V3_SUBTRACT(Corners[1],Corners[0],M)
-	V3_SUBTRACT(Corners[2],Corners[0],M+3)
-	V3_SUBTRACT(Corners[3],Corners[0],M+6)
-	if (M3_Invert(I,M)) return (1);
-	M3_TIMES_V3(I,a,LocalCoord)
+	if (n == 4)
+	  {
+		V3_SUBTRACT(EvalPoint,Corners[0],a);
+		V3_SUBTRACT(Corners[1],Corners[0],M);
+		V3_SUBTRACT(Corners[2],Corners[0],M+3);
+		V3_SUBTRACT(Corners[3],Corners[0],M+6);
+		if (M3_Invert(I,M)) return (1);
+		M3_TIMES_V3(I,a,LocalCoord);
 
-	return(0);
+		return(0);
+	  }
+	else if (n == 8)
+	  {
+		V3_COPY(Corners[0],TransfCoeff[0]);
+		
+		V3_SUBTRACT(Corners[1],Corners[0],TransfCoeff[1]);
+		V3_SUBTRACT(Corners[3],Corners[0],TransfCoeff[2]);
+		V3_SUBTRACT(Corners[4],Corners[0],TransfCoeff[3]);
+		
+		V3_SUBTRACT(Corners[2],Corners[1],TransfCoeff[4]);
+		V3_SUBTRACT(Corners[7],Corners[3],TransfCoeff[5]);
+		V3_ADD(TransfCoeff[4],TransfCoeff[5],TransfCoeff[7]);
+		
+		V3_SUBTRACT(TransfCoeff[4],TransfCoeff[2],TransfCoeff[4]);
+		V3_SUBTRACT(Corners[5],Corners[1],TransfCoeff[6]);
+		V3_SUBTRACT(TransfCoeff[6],TransfCoeff[3],TransfCoeff[6]);	
+		V3_SUBTRACT(TransfCoeff[5],TransfCoeff[3],TransfCoeff[5]);
+		
+		V3_SUBTRACT(TransfCoeff[3],TransfCoeff[7],TransfCoeff[7]);
+		V3_SUBTRACT(TransfCoeff[7],Corners[5],TransfCoeff[7]);
+		V3_ADD(TransfCoeff[7],Corners[6],TransfCoeff[7]);
+	
+		return(GlobalToLocalHEX((COORD *)EvalPoint,LocalCoord));
+	  } 
 }
 #endif
 
@@ -1344,7 +1373,7 @@ INT TetMaxSideAngle (ELEMENT *theElement, const COORD **theCorners, COORD *MaxAn
 	COORD max,help;
 	INT i;
 
-	if (TetraSideNormals (theElement,theCorners,theNormal)) return (1);
+	if (TetraSideNormals (theElement,(COORD **)theCorners,theNormal)) return (1);
 	max = -1.0;
 	for (i=0; i<EDGES_OF_ELEM(theElement); i++)
 	{
@@ -1571,7 +1600,7 @@ INT FV_TetInfo (const COORD **theCorners, COORD_VECTOR Area[MAX_EDGES_OF_ELEM], 
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-static INT FindCrossParam3D (COORD_VECTOR p1, COORD_VECTOR p2, COORD_VECTOR p3, COORD_VECTOR p4, DOUBLE_VECTOR v, COORD_VECTOR param)
+static INT FindCrossParam3D (COORD *p1, COORD *p2, COORD *p3, COORD *p4, DOUBLE_VECTOR v, COORD *param)
 {
 	COORD M[9], I[9];
 	
@@ -1750,7 +1779,11 @@ INT FV_AliTetInfo (const COORD **CornerPoints, COORD_VECTOR Area[6], DOUBLE_VECT
 			EdgeF1B0 = EdgeWithCorners[FrontCorner[1]][BackCorner[0]];
 			EdgeF1B1 = EdgeWithCorners[FrontCorner[1]][BackCorner[1]];
 			
-			if (FindCrossParam3D(CornerPoints[FrontCorner[0]],CornerPoints[FrontCorner[1]],CornerPoints[BackCorner[0]],CornerPoints[BackCorner[1]],conv,param)) return (1);
+			if (FindCrossParam3D((COORD *)CornerPoints[FrontCorner[0]],
+								 (COORD *)CornerPoints[FrontCorner[1]],
+								 (COORD *)CornerPoints[BackCorner[0]],
+								 (COORD *)CornerPoints[BackCorner[1]],
+								 conv,param)) return (1);
 			if (param[0]<0.0 || param[0]>1.0 || param[1]<0.0 || param[1]>1.0)
 				i=i;
 			changed=0;
