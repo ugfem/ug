@@ -12227,6 +12227,10 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 					}
 				}
 			}
+		/* z coordinates of corners in cut system */
+		for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+			V3_TRAFO4_SC(x[i],CutTrafo,z[i])
+		
 		if (EE3D_Nodes)
 			theDO = ElementNodes(theElement,theDO,Viewable,co,z);
 		else if (EE3D_Vectors)
