@@ -215,11 +215,18 @@ static void theRCB (LB_INFO *theItems, int nItems, int px, int py, int dx, int d
 static void XferElemsAndOverlap (GRID *theGrid)
 {
   ELEMENT *elem;
+  NODE *node;
+
+  /* by default, no node stores its vector */
+  for(node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
+  {
+    SETXFERNODE(node,DEL_VECTOR);
+  }
 
 
   for(elem=FIRSTELEMENT(theGrid); elem!=NULL; elem=SUCCE(elem))
   {
-    int has_local_nb = 0;
+    int has_local_nb = FALSE;
     int j;
 
     /* create Master copy */
@@ -251,7 +258,7 @@ static void XferElemsAndOverlap (GRID *theGrid)
 
         /* remember any local neighbour element */
         if (PARTITION(nb)==me)
-          has_local_nb = 1;
+          has_local_nb = TRUE;
       }
     }
 
@@ -267,6 +274,15 @@ static void XferElemsAndOverlap (GRID *theGrid)
       {
         /* element isn't needed */
         DDD_XferDeleteObj(PARHDRE(elem));
+      }
+    }
+    else
+    {
+      /* element will be local master */
+      int n;
+      for(n=0; n<CORNERS_OF_ELEM(elem); n++)
+      {
+        SETXFERNODE(CORNER(elem,n),KEEP_VECTOR);
       }
     }
 
@@ -285,8 +301,14 @@ static void XferElemsAndOverlap (GRID *theGrid)
                     }
      */
   }
-}
 
+  /* evaluate _VECTOR flag for nodes */
+  for(node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
+  {
+    if (XFERNODE(node)==DEL_VECTOR)
+      DDD_XferDeleteObj(PARHDR(NVECTOR(node)));
+  }
+}
 
 
 

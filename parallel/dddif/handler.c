@@ -38,12 +38,14 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "debug.h"
 #include "compiler.h"
 #include "domain.h"
 #include "parallel.h"
 #include "heaps.h"
+#include "ugm.h"
 #include "general.h"
 
 /****************************************************************************/
@@ -56,7 +58,6 @@
 /*																			*/
 /****************************************************************************/
 
-#define MAX_EDGES 50
 
 /****************************************************************************/
 /*																			*/
@@ -237,7 +238,7 @@ void VectorGatherMatX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 		if (cnt<nmat+1)
 		{
 			PRINTDEBUG(dddif,0,("%2d:  VectorGatherMatX(): v=%x cnt=%d nmat=%d type=%d veobj=%d\n",me,vec,cnt,nmat,type_id,OBJT(vec)))
-			return;
+			assert(0);
 		}
 		ENDDEBUG
 
@@ -401,10 +402,71 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void **Data)
 void VectorObjMkCons(DDD_OBJ obj)
 {
 	VECTOR *vec = (VECTOR *) obj;
+	MATRIX *m;
 
-	PRINTDEBUG(dddif,2,("%2d: VectorObjMkCons(): v=%x VEOBJ=%d\n",me,vec,OBJT(vec)))
+	PRINTDEBUG(dddif,2,("%2d: VectorObjMkCons(): v=%08x/%x VEOBJ=%d\n",me,DDD_InfoGlobalId(PARHDR(vec)),vec,OBJT(vec)))
+	
+/*
+	NOTE (TODO): this might be too less. for n2n transfer, connections
+	might be set up consisting of two matrix structures transfered from
+	different procs. this code will NOT handle that case, the connection
+	will be created with the first matrix and destructed here. when the
+	second message arrives, the second matrix will lead to construction
+	of a second connection, which will also be deleted here. we would
+	need a mkcons after all messages to handle that case. (NIY in ddd 1.6.5)
+*/
+
+	/* find and kill useless connections */
+	for (m=VSTART((VECTOR *)vec); m!=NULL; m=MNEXT(m))
+	{
+		if (MDEST(MADJ(m))==NULL)
+		{
+			PRINTDEBUG(dddif,4,("%2d:  VectorObjMkCons(): v=%x mat=%x vectoID=%d, find&kill, TODO\n",me,vec,m,ID(MDEST(m))))
+			/* TODO find & kill is not done!!! */
+		}
+	}
 }
 
+
+
+/****************************************************************************/
+/*																			*/
+/* Function:  VectorDelete													*/
+/*																			*/
+/* Purpose:   remove vector from UG data structure.							*/
+/*			  current implementation only for level 0 grids					*/
+/*																			*/
+/* Input:	  DDD_OBJ	obj:	the vector to handle						*/
+/*																			*/
+/* Output:	  void															*/
+/*																			*/
+/****************************************************************************/
+
+void VectorDelete (DDD_OBJ obj)
+{
+	VECTOR		*pv = (VECTOR *)obj;
+	GRID		*theGrid = NULL;
+	int         level = DDD_InfoAttr(PARHDR(pv));
+
+	PRINTDEBUG(dddif,2,("%2d: VectorDelete(): v=%08x/%x VOBJ=%d l=%d\n",me,\
+		DDD_InfoGlobalId(PARHDR(pv)),pv,OBJT(pv),level))
+
+	theGrid = GetGridOnDemand(dddctrl.currMG,level);
+
+	/* remove vector from its object */
+	if (VTYPE(pv)==NODEVECTOR)
+	{
+		NVECTOR((NODE *)VOBJECT(pv))  = NULL;
+	}
+	else
+	{
+		PRINTDEBUG(dddif,0,("%2d: VectorDelete(): VTYPE=%d not implemented yet\n", me, VTYPE(pv)))
+		assert(0);
+	}
+
+	/* dispose vector itself */
+	DisposeVector(theGrid, pv, FALSE);
+}
 
 
 /****************************************************************************/
@@ -483,6 +545,7 @@ void BVertexXferCopy (DDD_OBJ obj, int proc, int prio)
 	if (nvseg>0)	DDD_XferAddData(nvseg,TypeVSegment); 
 }
 
+
 void BVertexGatherVSegment (DDD_OBJ ver, int cnt, DDD_TYPE type_id, void *Data)
 {
 	char *data;
@@ -505,6 +568,7 @@ void BVertexGatherVSegment (DDD_OBJ ver, int cnt, DDD_TYPE type_id, void *Data)
 			me,ver,vseg,id))
 	}
 }
+
 
 void BVertexScatterVSegment (DDD_OBJ ver, int cnt, DDD_TYPE type_id, void *Data)
 {
@@ -546,6 +610,7 @@ void BVertexScatterVSegment (DDD_OBJ ver, int cnt, DDD_TYPE type_id, void *Data)
 	
 	MNEXT(vseg) = NULL;
 }
+
 
 /****************************************************************************/
 /****************************************************************************/
@@ -617,7 +682,7 @@ void NodeObjMkCons(DDD_OBJ obj)
 	}
 
 	/* reconstruct node pointer */
-	if (dddctrl.nodeData) VOBJECT(NVECTOR(node)) = (void*)node;
+	if (dddctrl.nodeData && NVECTOR(node)) VOBJECT(NVECTOR(node)) = (void*)node;
 
 }
 
@@ -694,77 +759,9 @@ void NodeXferCopy (DDD_OBJ obj, int proc, int prio)
 	LINK	*link;
 	NODE	*node = (NODE *)obj;
 	VECTOR	*vec = NULL;
-	VECTOR	*vectors[MAX_EDGES];
 
-	PRINTDEBUG(dddif,1,("%2d: NodeXferCopy(): n=%x COPYFLAG already set for LINK=%x\n",me,node,link))
+	PRINTDEBUG(dddif,1,("%2d: NodeXferCopy(): n=%08x/%x proc=%d prio=%d\n",me,DDD_InfoGlobalId(PARHDR(node)),node,proc,prio))
 
-	bzero(vectors,MAX_EDGES*sizeof(VECTOR *));
-
-	/* add links of node */
-	for (link=START(node); link!=NULL; link=NEXT(link))
-	{
-
-		if (XFERLINK(link) == COPY) 
-		{
-			PRINTDEBUG(dddif,3,("%2d: NodeXferCopy(): n=%x COPYFLAG already set for LINK=%x\n",me,node,link))
-			continue;
-		}
-
-
-		/* check whether corresponding node of this edge is also transferred */
-		if (XFERLINK(link) == TOUCHED)
-		{
-			/* set XFERLINK to copy */
-			SETXFERLINK(link,COPY);
-
-			PRINTDEBUG(dddif,3,("%2d: NodeXferCopy():  n=%x link=%x XFERLINK=%d\n",me,node,link,XFERLINK(link)))
-
-			/* increment counter for links to copy for this node */
-			nlink++;
-
-			/* store vector of this edge */	 
-			if (dddctrl.edgeData)
-			{
-				vec = EDVECTOR(MYEDGE(link));
-
-				  /* TODO: */
-				  /* CAUTION: must be called after XferAddData because */
-                  /* of reference                                      */
-				  /* to primary element, which is here node			   */
-/*
-   DDD_XferCopyObjX(PARHDR(vec), proc, prio, dddctrl.currMG->theFormat->VectorSizes[VTYPE(vec)]);
-*/
-				if (i<MAX_EDGES) vectors[i++] = vec;
-				else 
-					PRINTDEBUG(dddif,0,("%2d: NodeXferCopy():  ERROR node=%x vec=%x number of vectors to send too big! ENLARGE MAXEDGES=%d\n",me,node,vec,MAX_EDGES));
-			}
-		}
-		else
-		{
-			/* set XFERFLAG of corresponding link to TOUCHED */
-			SETXFERLINK(REVERSE(link),TOUCHED);
-		}
-	}
-
-	/* TODO: only send link whose corresponding node is also sent */
-	/* CAUTION: must be called before any XferCopy because of reference */
-	/*			to primary element, which is here the node      		*/
-   	if (nlink>0)
-	{
-		PRINTDEBUG(dddif,2,("%2d: NodeXferCopy():  n=%x AddData nlink=%d\n",me,node,nlink))
-
-		if (nlink >0)	DDD_XferAddData(nlink,TypeEdge);    
-	}
-
-	/* send vectors */
-	if (dddctrl.edgeData) {
-		if (vectors[0] != NULL)
-			Size = sizeof(VECTOR)-sizeof(DOUBLE)+dddctrl.currMG->theFormat->VectorSizes[VTYPE(vectors[0])];
-		for (i=0; i<MAX_EDGES && vectors[i]!=NULL; i++) {
-			PRINTDEBUG(dddif,3,("%2d: NodeXferCopy():  n=%x EDGEVEC=%x size=%d\n",me,node,vec,Size))
-			DDD_XferCopyObjX(PARHDR(vectors[i]), proc, prio, Size);
-		}
-	}
 
 	/* copy vertex */
 	PRINTDEBUG(dddif,2,("%2d: NodeXferCopy(): n=%x Xfer v=%x\n",me,node,MYVERTEX(node)))
@@ -772,7 +769,7 @@ void NodeXferCopy (DDD_OBJ obj, int proc, int prio)
 	DDD_XferCopyObj(PARHDRV(MYVERTEX(node)), proc, PrioVertex);
 
 	/* copy vector if defined */
-	if (dddctrl.nodeData)
+	if (dddctrl.nodeData && prio==PrioMaster)
 	  {
 		vec = NVECTOR(node);
 		Size = sizeof(VECTOR)-sizeof(DOUBLE)+dddctrl.currMG->theFormat->VectorSizes[VTYPE(vec)];
@@ -782,6 +779,7 @@ void NodeXferCopy (DDD_OBJ obj, int proc, int prio)
 		  DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
 	  }
 }
+
 
 void NodeGatherEdge (DDD_OBJ n, int cnt, DDD_TYPE type_id, void *Data)
 {
@@ -820,6 +818,7 @@ void NodeGatherEdge (DDD_OBJ n, int cnt, DDD_TYPE type_id, void *Data)
 		}
 	}
 }
+
 
 void NodeScatterEdge (DDD_OBJ n, int cnt, DDD_TYPE type_id, void *Data)
 {
@@ -877,6 +876,7 @@ void NodeScatterEdge (DDD_OBJ n, int cnt, DDD_TYPE type_id, void *Data)
 	MNEXT(link) = NULL;
 }
 	
+
 /****************************************************************************/
 /****************************************************************************/
 /*																			*/
@@ -903,13 +903,12 @@ void ElementLDataConstructor (DDD_OBJ obj)
 	int			i,sides;
 	ELEMENT		*pe = (ELEMENT *)obj;
 	ELEMENT		*after = NULL;
-	GRID		*theGrid = NULL;
 	int         level = DDD_InfoAttr(PARHDRE(pe));
+	GRID        *theGrid = GetGridOnDemand(dddctrl.currMG,level);
 
 	PRINTDEBUG(dddif,2,("%2d: ElementUpdate(): e=%x EOBJ=%d l=%d\n",\
 		me,pe,OBJT(pe),level))
 
-	theGrid = GetGridOnDemand(dddctrl.currMG,level);
 	after = LASTELEMENT(theGrid);
 	SETLEVEL(pe,level);
 	sides = 0;
@@ -973,7 +972,7 @@ void ElementDelete (DDD_OBJ obj)
 		DDD_InfoGlobalId(PARHDRE(pe)),pe,OBJT(pe),level))
 
 	theGrid = GetGridOnDemand(dddctrl.currMG,level);
-	DisposeElement(theGrid, pe);
+	DisposeElement(theGrid, pe, FALSE);
 }
 
 
@@ -1004,7 +1003,8 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 		"pe=%08x/%x proc=%d prio=%d EOBJT=%d\n", me,\
 		DDD_InfoGlobalId(PARHDRE(pe)), pe, proc, prio, OBJT(pe)))
 
-	/* add element sides; must be done before any XferCopyObj-call! herein */
+	/* add element sides */
+	/* must be done before any XferCopyObj-call! herein */
 	/* or directly after XferCopyObj-call */
 	nelemside = 0;
 	if (OBJT(pe)==BEOBJ)
@@ -1017,6 +1017,13 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 		if (nelemside>0) DDD_XferAddData(nelemside,TypeElementSide);
 	}
 
+
+	/* add edges of element */
+	/* must be done before any XferCopyObj-call! herein */
+	/* or directly after XferCopyObj-call */
+	DDD_XferAddData(EDGES_OF_ELEM(pe), TypeEdge);
+
+
 	/* send father element. this is a temporary solution, which will
 	   be removed lateron when thinking about real load balancing. */
 	{
@@ -1026,19 +1033,36 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 				(OBJT(f)==BEOBJ) ? BND_SIZE(TAG(f)) : INNER_SIZE(TAG(f))
         	);
 	}
+
 	
 	/* copy corner nodes */
 	for(i=0; i<CORNERS_OF_ELEM(pe); i++)
 	{
 		node = CORNER(pe,i);
-		if (XFERNODE(node) == 0)
-		{
-			PRINTDEBUG(dddif,2,("%2d: ElementXferCopy():  e=%x Xfer n=%x i=%d\n",\
+
+		PRINTDEBUG(dddif,2,("%2d: ElementXferCopy():  e=%x Xfer n=%x i=%d\n",\
 				me, pe, node, i))
-			DDD_XferCopyObj(PARHDR(node), proc, PrioNode);
-			SETXFERNODE(node,1);
+		DDD_XferCopyObj(PARHDR(node), proc, prio);
+	}
+
+
+
+	/* send edge vectors */
+	if (dddctrl.edgeData) {
+		for (i=0; i<EDGES_OF_ELEM(pe); i++)
+		{
+			int Size;
+			EDGE *edge = GetEdge(CORNER(pe,CORNER_OF_EDGE(pe,i,0)),
+							 	CORNER(pe,CORNER_OF_EDGE(pe,i,1)));
+			VECTOR *vec = EDVECTOR(edge);
+
+			Size = sizeof(VECTOR)-sizeof(DOUBLE)+dddctrl.currMG->theFormat->VectorSizes[VTYPE(vec)];
+			PRINTDEBUG(dddif,3,("%2d: ElemXferCopy():  e=%x EDGEVEC=%x size=%d\n",me,pe,vec,Size))
+			DDD_XferCopyObjX(PARHDR(vec), proc, prio, Size);
 		}
 	}
+
+
 
 	/* copy element vector */
 	if (dddctrl.elemData)
@@ -1070,17 +1094,74 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 }
 
 
-void ElemGatherElemSide (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
+/****************************************************************************/
+
+static void ElemGatherEdge (ELEMENT *pe, int cnt, char *data)
 {
 	int i;
-	char *data;
+	int size = sizeof(EDGE) - ((dddctrl.edgeData)? 0 : sizeof(VECTOR*));
+
+	PRINTDEBUG(dddif,3,("%2d:  ElemGatherEdge(): pe=%08x/%x cnt=%d size=%d\n",me,DDD_InfoGlobalId(PARHDRE(pe)),pe,cnt,size))
+
+	/* copy edges into message */
+	for (i=0; i<EDGES_OF_ELEM(pe); i++)
+	{
+		EDGE *edge = GetEdge(CORNER(pe,CORNER_OF_EDGE(pe,i,0)),
+							 CORNER(pe,CORNER_OF_EDGE(pe,i,1)));
+
+		memcpy(data, (char *)edge, size);
+		data += CEIL(size);
+
+		
+		PRINTDEBUG(dddif,4,("%2d:  ElemGatherEdge(): pe=%x i=%d n1=%08x n2=%08x nmid=%08x\n",me,pe,i,(edge->links[0].nbnode),edge->links[1].nbnode,edge->midnode))
+/*
+		PRINTDEBUG(dddif,4,("%2d:  ElemGatherEdge(): pe=%x i=%d n1=%08x n2=%08x nmid=%08x\n",me,pe,i,DDD_InfoGlobalId(PARHDR(edge->links[0].nbnode)),DDD_InfoGlobalId(PARHDR(edge->links[1].nbnode)),DDD_InfoGlobalId(PARHDR(edge->midnode))))
+*/
+	}
+}
+
+
+static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data)
+{
+	int i;
+	int size = sizeof(EDGE) - ((dddctrl.edgeData)? 0 : sizeof(VECTOR*));
+	int    level = DDD_InfoAttr(PARHDRE(pe));
+	GRID  *theGrid = GetGridOnDemand(dddctrl.currMG,level);
+
+
+	PRINTDEBUG(dddif,3,("%2d:  ElemScatterEdge(): pe=%08x/%x cnt=%d\n",me,DDD_InfoGlobalId(PARHDRE(pe)),pe,cnt))
+
+	/* retrieve edges from message */
+	for (i=0; i<cnt; i++)
+	{
+		EDGE *enew, *ecopy = (EDGE *)data;
+		data += CEIL(size);
+
+		PRINTDEBUG(dddif,4,("%2d:  ElemScatterEdge(): pe=%x i=%d n1=%08x n2=%08x nmid=%08x\n",me,pe,i,NBNODE(LINK0(ecopy)),ecopy->links[1].nbnode,ecopy->midnode))
+
+		enew = CreateEdge(theGrid, NBNODE(LINK0(ecopy)), NBNODE(LINK1(ecopy)), FALSE);
+		/* TODO error handling */
+
+		MIDNODE(enew) = MIDNODE(ecopy);
+		if (dddctrl.edgeData)
+		{
+			VOBJECT(EDVECTOR(enew)) = (void *)enew;
+		}
+
+/*
+		PRINTDEBUG(dddif,4,("%2d:  ElemScatterEdge(): pe=%x i=%d n1=%08x n2=%08x nmid=%08x\n",me,pe,i,DDD_InfoGlobalId(PARHDR(edge->links[0].nbnode)),DDD_InfoGlobalId(PARHDR(edge->links[1].nbnode)),DDD_InfoGlobalId(PARHDR(edge->midnode))))
+*/
+	}
+}
+
+
+static void ElemGatherElemSide (ELEMENT *pe, int cnt, char *data)
+{
+	int i;
     INT id;
 	ELEMENTSIDE *elemside;
-	ELEMENT  *pe	=	(ELEMENT *)obj;
 
-	data = (char *)Data;
-
-	PRINTDEBUG(dddif,3,("%2d:  ElemGatherElemSide(): pe=%x nelemside=%d type=%d bvobj=%d\n",me,pe,cnt,type_id,OBJT(pe)))
+	PRINTDEBUG(dddif,3,("%2d:  ElemGatherElemSide(): pe=%x nelemside=%d bvobj=%d\n",me,pe,cnt,OBJT(pe)))
 
 	for (i=0; i<SIDES_OF_ELEM(pe); i++)
 	{
@@ -1096,19 +1177,16 @@ void ElemGatherElemSide (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
 	}
 }
 
-void ElemScatterElemSide (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
+
+static void ElemScatterElemSide (ELEMENT *pe, int cnt, char *data)
 {
-	char *data;
 	int i;
 	INT segmentid;
 	ELEMENTSIDE *elemside;
-	ELEMENT  *pe	=	(ELEMENT *)obj;
-	GRID *theGrid = NULL;
+	int  level = DDD_InfoAttr(PARHDRE(pe));
+	GRID *theGrid = GRID_ON_LEVEL(dddctrl.currMG,level);
 
-	theGrid = GRID_ON_LEVEL(dddctrl.currMG,0);
-	data = (char *)Data;
-
-	PRINTDEBUG(dddif,3,("%2d: ElemScatterElemSide(): pe=%x nelemside=%d type=%d obj=%d\n",me,pe,cnt,type_id,OBJT(pe)))
+	PRINTDEBUG(dddif,3,("%2d: ElemScatterElemSide(): pe=%x nelemside=%d obj=%d\n",me,pe,cnt,OBJT(pe)))
 
 	for (i=0; i<SIDES_OF_ELEM(pe); i++)
 	{
@@ -1136,6 +1214,52 @@ void ElemScatterElemSide (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data)
 	}
 }
 
+
+/****************************************************************************/
+
+
+void ElemGatherI (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
+{
+	/* type_id is always TypeEdge */
+	ElemGatherEdge((ELEMENT *)obj, cnt, (char *)data);
+}
+
+
+void ElemScatterI (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
+{
+	/* type_id is always TypeEdge */
+	ElemScatterEdge((ELEMENT *)obj, cnt, (char *)data);
+}
+
+
+
+void ElemGatherB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
+{
+	/* type_id is TypeEdge or TypeElementSide */
+	if (type_id==TypeEdge)
+	{
+		ElemGatherEdge((ELEMENT *)obj, cnt, (char *)data);
+	} else
+	{
+		ElemGatherElemSide((ELEMENT *)obj, cnt, (char *)data);
+	}
+}
+
+
+void ElemScatterB (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *data)
+{
+	/* type_id is TypeEdge or TypeElementSide */
+	if (type_id==TypeEdge)
+	{
+		ElemScatterEdge((ELEMENT *)obj, cnt, (char *)data);
+	} else
+	{
+		ElemScatterElemSide((ELEMENT *)obj, cnt, (char *)data);
+	}
+}
+
+
+/****************************************************************************/
 
 void ElementObjMkCons(DDD_OBJ obj)
 {
@@ -1182,8 +1306,9 @@ void EdgeUpdate (DDD_OBJ obj)
 
 /****************************************************************************/
 
-/* init handlers for inner element */
-static void IElemHandlerInit (DDD_TYPE etype)
+
+/* init handlers for all element */
+static void ElemHandlerInit (DDD_TYPE etype)
 {
 	DDD_HandlerRegister(etype,
 		HANDLER_LDATACONSTRUCTOR, ElementLDataConstructor,
@@ -1195,16 +1320,31 @@ static void IElemHandlerInit (DDD_TYPE etype)
 }
 
 
+/* init handlers for inner element */
+static void IElemHandlerInit (DDD_TYPE etype)
+{
+	/* init standard elem handlers */
+	ElemHandlerInit(etype);
+
+	/* init additional handlers, necessary for inside management */
+	DDD_HandlerRegister(etype,
+		HANDLER_XFERGATHER,		  ElemGatherI,
+		HANDLER_XFERSCATTER,	  ElemScatterI,
+		HANDLER_END
+	);
+}
+
+
 /* init handlers for boundary element */
 static void BElemHandlerInit (DDD_TYPE etype)
 {
-	/* init handlers for inner elem */
-	IElemHandlerInit(etype);
+	/* init standard elem handlers */
+	ElemHandlerInit(etype);
 
 	/* init additional handlers, necessary for boundary management */
 	DDD_HandlerRegister(etype,
-		HANDLER_XFERGATHER,		  ElemGatherElemSide,
-		HANDLER_XFERSCATTER,	  ElemScatterElemSide,
+		HANDLER_XFERGATHER,		  ElemGatherB,
+		HANDLER_XFERSCATTER,	  ElemScatterB,
 		HANDLER_END
 	);
 }
@@ -1219,7 +1359,8 @@ void ddd_HandlerInit (void)
 {
 
 	DDD_HandlerRegister(TypeVector,
-		HANDLER_UPDATE,		VectorUpdate,
+		HANDLER_UPDATE,		    VectorUpdate,
+		HANDLER_DELETE,         VectorDelete,
 		HANDLER_XFERCOPY,		VectorXferCopy,
 		HANDLER_XFERGATHERX,	VectorGatherMatX,
 		HANDLER_XFERSCATTERX,	VectorScatterConnX,
@@ -1247,8 +1388,10 @@ void ddd_HandlerInit (void)
 		HANDLER_OBJMKCONS,			NodeObjMkCons,
 		HANDLER_UPDATE,				NodeUpdate,
 		HANDLER_XFERCOPY,			NodeXferCopy,
+/*
 		HANDLER_XFERGATHER,			NodeGatherEdge,
 		HANDLER_XFERSCATTER,		NodeScatterEdge,
+*/
 		HANDLER_END
 	);
 

@@ -77,6 +77,11 @@ enum Priorities
 #define COPY        1 /* object is definitely to be copied   */
 #define CLEAR       0 /* clear xfer flag					*/
 
+/* CE for nodes */
+#define KEEP_VECTOR  0 /* this is a node with vector */
+#define DEL_VECTOR  1  /* this is a node without vector */
+
+
 
 /* map pointer to structure onto a pointer to its DDD_HDR */
 #define PARHDR(obj)    (&((obj)->ddd))
