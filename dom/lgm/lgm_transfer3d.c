@@ -33,16 +33,16 @@
 #include "lgm_domain.h"
 #include "lgm_transfer.h"
 #include "heaps.h"
-
-
-/* RCS string */
-static char RCS_ID("$Header$",UG_RCS_STRING);
+#include "general.h"
 
 
 static FILE *stream;
 static INT lgmdomainpathes_set;
 static INT LGM_DEBUG = 0;
 static HEAP *theHeap;
+
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 static int SkipBTN (void)
 {
