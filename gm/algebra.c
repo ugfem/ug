@@ -67,6 +67,7 @@
 #include "evm.h"
 #include "misc.h"
 #include "algebra.h"
+#include "dlmgr.h"
 
 #ifdef ModelP
 #include "parallel.h"

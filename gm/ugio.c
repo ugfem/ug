@@ -857,6 +857,42 @@ static INT IO_GetSideNode (ELEMENT *theElement, INT side, NODE **theNode, INT *n
 
 #endif
 
+INT IO_Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side, ELEMENT *SonList[MAX_SONS], INT SonSides[MAX_SONS], INT dummy)
+{
+  INT i,j;
+  MGIO_RR_RULE *theRule;
+  struct mgio_sondata *son;
+
+  /* init */
+  *Sons_of_Side = 0;
+  theRule = rr_rules + REFINE(theElement);
+
+#ifdef __TWODIM__
+  for (i=0; i<NSONS(theElement); i++) SonList[i] = SON(theElement,i);
+#endif
+#ifdef __THREEDIM__
+  if (IO_GetSons(theElement,SonList) != GM_OK) RETURN(GM_FATAL);
+#endif
+
+  for (i=0; i<theRule->nsons; i++)
+  {
+    son = &(theRule->sons[i]);
+    for (j=0; j<SIDES_OF_TAG(son->tag); j++)
+      if (son->nb[j]==20+side)
+      {
+        SonList[*Sons_of_Side] = SonList[i];
+        SonSides[*Sons_of_Side] = j;
+        (*Sons_of_Side)++;
+      }
+  }
+
+  /* fill remaining with zero */
+  for (i=*Sons_of_Side; i<MAX_SONS; i++) SonList[i] = NULL;
+
+  return(GM_OK);
+}
+
+
 static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT *refinement)
 {
   INT i,j,n,nedge,type,sonRefined,n0,n1,Sons_of_Side,Sons_of_Side_List[MAX_SONS],nbside;
@@ -1014,41 +1050,6 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
       if (InsertLocalTree (upGrid,theSonElem[i],NULL)) return (1);
 
   return (0);
-}
-
-INT IO_Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side, ELEMENT *SonList[MAX_SONS], INT SonSides[MAX_SONS], INT dummy)
-{
-  INT i,j;
-  MGIO_RR_RULE *theRule;
-  struct mgio_sondata *son;
-
-  /* init */
-  *Sons_of_Side = 0;
-  theRule = rr_rules + REFINE(theElement);
-
-#ifdef __TWODIM__
-  for (i=0; i<NSONS(theElement); i++) SonList[i] = SON(theElement,i);
-#endif
-#ifdef __THREEDIM__
-  if (IO_GetSons(theElement,SonList) != GM_OK) RETURN(GM_FATAL);
-#endif
-
-  for (i=0; i<theRule->nsons; i++)
-  {
-    son = &(theRule->sons[i]);
-    for (j=0; j<SIDES_OF_TAG(son->tag); j++)
-      if (son->nb[j]==20+side)
-      {
-        SonList[*Sons_of_Side] = SonList[i];
-        SonSides[*Sons_of_Side] = j;
-        (*Sons_of_Side)++;
-      }
-  }
-
-  /* fill remaining with zero */
-  for (i=*Sons_of_Side; i<MAX_SONS; i++) SonList[i] = NULL;
-
-  return(GM_OK);
 }
 
 MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, char *format, unsigned long heapSize)

@@ -39,6 +39,7 @@
 #include "misc.h"
 #include "general.h"
 #include "debug.h"
+#include "devices.h"
 
 /****************************************************************************/
 /*                                                                          */
@@ -521,7 +522,6 @@ void *GetFreelistMemory (HEAP *theHeap, INT size)
   {
     printf( "ERROR in low/heaps.c/GetFreelistMemory: not enough memory for %d bytes.\n", size );
     fprintf( stderr, "ERROR in low/heaps.c/GetFreelistMemory: not enough memory for %d bytes.\n", size );
-    UserWriteF( stderr, "ERROR in low/heaps.c/GetFreelistMemory: not enough memory for %d bytes.\n", size );
   }
 
   if (obj != NULL)

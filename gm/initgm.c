@@ -48,6 +48,7 @@
 #include "elements.h"
 #include "refine.h"
 #include "rm.h"
+#include "ugstruct.h"
 
 #ifdef __TWODIM__
 /* grid generator module */

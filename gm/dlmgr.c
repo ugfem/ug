@@ -74,3 +74,6 @@
 #define PRED   PREDVC
 #define SUCC   SUCCVC
 #include "dlmgr.t"
+#undef OTYPE
+#undef PRED
+#undef SUCC

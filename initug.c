@@ -36,6 +36,7 @@
 #include "misc.h"
 #include "general.h"
 #include "defaults.h"
+#include "ugstruct.h"
 
 /* parallelization module */
 #ifdef ModelP

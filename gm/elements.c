@@ -26,7 +26,6 @@
 #include <assert.h>
 
 #include "general.h"
-
 #include "devices.h"
 
 #include "switch.h"

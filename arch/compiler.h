@@ -563,8 +563,8 @@ extern "C" {
 
 /* memory */
 #include <Memory.h>
-#define malloc(n) ((void *) NewPtr((Size) n))
-#define free(p) DisposPtr((Ptr) p)
+/*#define malloc(n) ((void *) NewPtr((Size) n))
+ #define free(p) DisposPtr((Ptr) p)*/
 #define ALIGNMENT 4                     /* power of 2 and >= sizeof(int) ! */
 #define ALIGNMASK 0xFFFFFFFC            /* compatible to alignment */
 

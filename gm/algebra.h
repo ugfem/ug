@@ -130,6 +130,7 @@ INT         CreateAlgebra                               (GRID *theGrid);
 
 /* check algebra */
 ELEMENT         *ElementCheckConnection                 (GRID *theGrid, ELEMENT *theElement);
+INT             CheckAlgebra                                    (GRID *theGrid);
 
 /* determination of vector classes */
 INT             ClearVectorClasses                              (GRID *theGrid);
