@@ -1,7 +1,7 @@
 #
 #	ARCH MAKEFILE OPTIONS
 #
-#	for Linux-PC (with GCC)
+#	for Linux-PC (with gcc)
 #
 
 ARCH_TYPE     = __PC__
@@ -9,7 +9,7 @@ ARCH_TYPE     = __PC__
 ARCH_MAKE     = make
 ARCH_CC       = gcc
 ARCH_C++      = g++
-ARCH_LINK     = g++
+ARCH_LINK     = gcc
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = true
@@ -18,10 +18,10 @@ ARCH_LIBS     = -lm
 
 ARCH_CFLAGS   = -pipe
 ARCH_NOOPTIM  = -g -Wall -Wno-unused -Wno-parentheses
-ARCH_OPTIM    = -s -O3 -march=i686 -fomit-frame-pointer -funroll-loops -fstrict-aliasing
-ARCH_C++FLAGS = # -fpermissive
+ARCH_OPTIM    = -s -O3 -march=i686 -fomit-frame-pointer -funroll-loops -fno-strict-aliasing
+ARCH_C++FLAGS = -fpermissive #-Wno-deprecated
 ARCH_LFLAGS   =
 ARCH_ARFLAGS  = rus
 
-ARCH_XINCLUDES =
+ARCH_XINCLUDES = -I/usr/X11R6/include
 ARCH_XLIBS     = -L/usr/X11R6/lib -lXaw -lXt -lX11
