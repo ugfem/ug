@@ -117,6 +117,7 @@ typedef struct
   INT restart;
 
   VEC_SCALAR rho;
+  VEC_SCALAR weight;
   VECDATA_DESC *p;
   VECDATA_DESC *h1;
   VECDATA_DESC *h2;
@@ -753,8 +754,11 @@ static INT CGConstruct (NP_BASE *theNP)
 static INT CRInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_CR *np;
+  INT i;
 
   np = (NP_CR *) theNP;
+  if (sc_read (np->weight,NULL,"weight",argc,argv))
+    for (i=0; i<MAX_VEC_COMP; i++) np->weight[i] = 1.0;
   np->p = ReadArgvVecDesc(theNP->mg,"p",argc,argv);
   np->h1 = ReadArgvVecDesc(theNP->mg,"h1",argc,argv);
   np->h2 = ReadArgvVecDesc(theNP->mg,"h2",argc,argv);
@@ -789,6 +793,7 @@ static INT CRDisplay (NP_BASE *theNP)
   if (np->h1 != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"h1",ENVITEM_NAME(np->h1));
   if (np->h2 != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"h2",ENVITEM_NAME(np->h2));
   if (np->h3 != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"h3",ENVITEM_NAME(np->h3));
+  if (np->p != NULL) if (sc_disp(np->weight,np->p,"weight")) REP_ERR_RETURN (1);
 
   return (0);
 }
@@ -870,9 +875,9 @@ static INT CRSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDAT
     if ((*np->Iter->Iter)(np->Iter,level,np->h2,np->h1,A,&lresult->error_code)) REP_ERR_RETURN (1);
     if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->h1,A,np->p,EVERY_CLASS)) REP_ERR_RETURN (1);
     if (s_ddot (theNP->base.mg,np->baselevel,level,np->h1,np->h2,t_scal)!=NUM_OK) REP_ERR_RETURN (1);
-    s=0.0; for (j=0; j<VD_NCOMP(x); j++) s += t_scal[j];
+    s=0.0; for (j=0; j<VD_NCOMP(x); j++) s += np->weight[j]*t_scal[j];
     if (s_ddot (theNP->base.mg,np->baselevel,level,b,np->h2,t_scal)!=NUM_OK) REP_ERR_RETURN (1);
-    t=0.0; for (j=0; j<VD_NCOMP(x); j++) t += t_scal[j];
+    t=0.0; for (j=0; j<VD_NCOMP(x); j++) t += np->weight[j]*t_scal[j];
     for (j=0; j<VD_NCOMP(x); j++) t_scal[j] = t/s;
     if (s_daxpy (theNP->base.mg,np->baselevel,level,x,t_scal,np->p)!= NUM_OK) REP_ERR_RETURN (1);
     for (j=0; j<VD_NCOMP(x); j++) t_scal[j] = -t_scal[j];
@@ -892,7 +897,7 @@ static INT CRSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECDAT
       if ((*np->Iter->Iter)(np->Iter,level,np->h3,np->h1,A,&lresult->error_code)) REP_ERR_RETURN (1);
       if (s_dmatmul_set(theNP->base.mg,np->baselevel,level,np->h1,A,np->h3,EVERY_CLASS)) REP_ERR_RETURN (1);
       if (s_ddot (theNP->base.mg,np->baselevel,level,np->h1,np->h2,t_scal)!=NUM_OK) REP_ERR_RETURN (1);
-      t=0.0; for (j=0; j<VD_NCOMP(x); j++) t += t_scal[j];
+      t=0.0; for (j=0; j<VD_NCOMP(x); j++) t += np->weight[j]*t_scal[j];
       for (j=0; j<VD_NCOMP(x); j++) np->rho[j] = -t/s;
       if (s_dscale(theNP->base.mg,np->baselevel,level,np->p,np->rho)) REP_ERR_RETURN (1);
       if (s_daxpy (theNP->base.mg,np->baselevel,level,np->p,Factor_One,np->h3)!= NUM_OK) REP_ERR_RETURN (1);
