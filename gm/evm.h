@@ -228,6 +228,10 @@
 #define V_DIM_CLEAR(A) 						V2_CLEAR(A)
 #define V_DIM_SCALAR_PRODUCT(A,B,c)			V2_SCALAR_PRODUCT(A,B,c)
 #define V_DIM_ISZERO(A)						V2_ISZERO(A)
+#define M_TIMES_V_DIM(M,A,B)	            {(B)[0] = (M)[0][0]*(A)[0]    \
+											   + (M)[0][1]*(A)[1];        \
+										     (B)[1] = (M)[1][0]*(A)[0]    \
+											   + (M)[1][1]*(A)[1];}
 
 #endif
 
@@ -246,6 +250,15 @@
 #define V_DIM_CLEAR(A) 						V3_CLEAR(A)
 #define V_DIM_SCALAR_PRODUCT(A,B,c)			V3_SCALAR_PRODUCT(A,B,c)
 #define V_DIM_ISZERO(A)						V3_ISZERO(A)
+#define M_TIMES_V_DIM(M,A,B)			    {(B)[0] = (M)[0][0]*(A)[0]    \
+											   + (M)[0][1]*(A)[1]         \
+											   + (M)[0][2]*(A)[2];        \
+										     (B)[1] = (M)[1][0]*(A)[0]    \
+											   + (M)[1][1]*(A)[1]         \
+											   + (M)[1][2]*(A)[2];        \
+											 (B)[2] = (M)[2][0]*(A)[0]    \
+											   + (M)[2][1]*(A)[1]         \
+											   + (M)[2][2]*(A)[2];}
 
 #endif
 
