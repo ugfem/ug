@@ -25,7 +25,7 @@
 	
 	To give you a deeper understanding of the program we will start from the beginning again and go on step by step to reproduce this
 	result. We will not concentrate on the details of every command but on the basic structure of ug31.
-	For more details , please see the manpages.
+	For more details, please see the manpages.
 	
 	First of all we have to leave the ug-shell again. At the prompt type
 
@@ -74,7 +74,7 @@
 	composed of two halves and the two coincidence points describe two nodes. The nodes with the id-number 0,1,3,4  lie on the 
 	boundary, the one with id-number 2 in the center of the circle. 
 
-	The cells of the grid are greated by combining  three nodes. To use the command "insert element" (ie) we have to add the
+	The cells of the grid are created by combining  three nodes. To use the command "insert element" (ie) we have to add the
 	id-numbers of the three nodes we want to combine.  The next steps to do are :~
 	
 .n	'>   ie 2 0 3    <return>'
@@ -104,7 +104,7 @@
 
 	At the ug-shell you get the information that we used multigrid as solver and Gauss-seidel as smoother. In addition you see that the 
 	linear iteration  stopped after two steps because the error was under the given limit. To plot the solution we have to open another
-	window beneath the old one:~ 
+	window beside the old one:~ 
 	
 .n 	'>   openwindow 360 100 320 320 $n Solution      <return>'
 .n	'>   openpicture $s 10 10 300 300 $n sol         <return>'
@@ -123,7 +123,7 @@
 .n	'>   estimator = "residual"     <return>'
 .n	'>   tol = 8.0   <return>'
 .n	'>   frac = 0.4   <return>'
-.n	'>   estimate     <return>~~~~~     Step 1'
+.n	'>   estimate     <return>~~~~~Step 1'
 
 	you get the information that the estimator indicated all four cells to be refined. Using the command 
 	
@@ -149,41 +149,13 @@
 	red maximum values. From analytical calculations we know that in center of the circle should be a maximum as we already find it in
 	the plot of the solution. Therefore the grid refinement should mainly be located around the red quater in the center. By typing
 	
-.n	'>   estimate     <return>~~~~~     Step 1'
+.n	'>   estimate     <return>~~~~~Step 1'
 .n	'>   refine     <return>~~~~~Step 2'
 
-	we can observe that our suggestion was wright. Only eight of the 16 elements were refined.
+	we can observe that our suggestion was right. Only eight of the 16 elements were refined.
 	To get a new solution on the fine grid we have to go on with Step 3 - 9.
 	
 	To observe continuely the relation between solution and adaptive grid refinement we have to execute Step 1 - 9 several times. 
 	After having refined the grid nine times we get the same result as in the beginning of this session by executing the script
 	'circle.scr'.
-
-	
-
-	  
-	
- 
-
-	
-	  
-
-	    
-	
-	
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-	
 D*/
