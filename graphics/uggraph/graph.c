@@ -726,6 +726,11 @@ static INT ClipPolygon (COORD_POINT *in, INT nin,
 
 void UgMove (COORD_POINT in)
 {
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
   CurrCursor      = in;
 }
 
@@ -752,6 +757,11 @@ void UgDraw (COORD_POINT point)
 {
   SHORT_POINT out1,out2;
   INT reject,dummy;
+
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
 
   if (ClipLine (CurrCursor,point,&out1,&out2,&reject,&dummy,&dummy)) return;
   if (!reject)
@@ -786,6 +796,11 @@ void UgLine (COORD_POINT point1, COORD_POINT point2)
   SHORT_POINT out1,out2;
   INT reject,dummy;
 
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
   if (ClipLine (point1,point2,&out1,&out2,&reject,&dummy,&dummy)) return;
   if (!reject)
   {
@@ -818,6 +833,11 @@ void UgInverseLine (COORD_POINT point1, COORD_POINT point2)
   SHORT_POINT out[2];
   INT reject,dummy;
 
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
   if (ClipLine (point1,point2,&(out[0]),&(out[1]),&reject,&dummy,&dummy)) return;
   if (!reject) (*CurrentOutputDevice->InversePolyline)(out,2);
 }
@@ -845,6 +865,11 @@ void UgPolyLine (COORD_POINT *points, INT n)
 {
   SHORT_POINT out1,out2;
   INT reject,dummy,k;
+
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
 
   for (k=1; k<n; k++)
     if (ClipLine ( points[k-1],points[k],&out1,&out2,&reject,&dummy,&dummy))
@@ -880,6 +905,11 @@ void UgPolygon (COORD_POINT *points, INT n)
   INT nout;
   SHORT_POINT out[MAX_POINTS_OF_POLY];
 
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
   if (ClipPolygon(points, n, out, &nout)) return;
   if (nout<2) return;
   (*CurrentOutputDevice->Polygon)(out, nout);
@@ -907,6 +937,11 @@ void UgInversePolygon (COORD_POINT *points, INT n)
 {
   INT nout;
   SHORT_POINT out[MAX_POINTS_OF_POLY];
+
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
 
   if (ClipPolygon(points, n, out, &nout)) return;
   if (nout<2) return;
@@ -937,6 +972,11 @@ void UgErasePolygon (COORD_POINT *points, INT n)
   INT nout;
   SHORT_POINT out[MAX_POINTS_OF_POLY];
 
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
   if (ClipPolygon(points, n, out, &nout)) return;
   if (nout<2) return;
   (*CurrentOutputDevice->ErasePolygon)(out, nout);
@@ -966,6 +1006,11 @@ void UgPolymark (COORD_POINT *points, INT n)
 {
   INT k,reject;
   SHORT_POINT out;
+
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
 
   for (k=0; k<n; k++)
   {
@@ -1000,6 +1045,11 @@ void UgText (const char *s, INT mode)
   char *p,*next,*move;
   short baseline;
   short TextSize;
+
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
 
   ClipPoint(CurrCursor,&out,&reject);
   if (reject)
@@ -1090,6 +1140,11 @@ void UgCenteredText (COORD_POINT point, const char *s, INT mode)
   INT reject;
   SHORT_POINT out;
 
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
   ClipPoint(point,&out,&reject);
   if (!reject)
   {
@@ -1117,6 +1172,11 @@ void UgCenteredText (COORD_POINT point, const char *s, INT mode)
 
 void UgSetColor (long colorIndex)
 {
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
   (*CurrentOutputDevice->SetColor)(colorIndex);
 }
 
@@ -1140,6 +1200,11 @@ void UgSetColor (long colorIndex)
 
 void UgSetMarker (short index)
 {
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
   (*CurrentOutputDevice->SetMarker)(index);
 }
 
@@ -1163,6 +1228,11 @@ void UgSetMarker (short index)
 
 void UgSetMarkerSize (short Index)
 {
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
   (*CurrentOutputDevice->SetMarkerSize)(Index);
 }
 
@@ -1186,6 +1256,11 @@ void UgSetMarkerSize (short Index)
 
 void UgSetTextSize (short size)
 {
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
   CurrTextSize = size;
   (*CurrentOutputDevice->SetTextSize)(size);
 }
@@ -1210,6 +1285,10 @@ void UgSetTextSize (short size)
 
 void UgSetLineWidth (short width)
 {
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
   (*CurrentOutputDevice->SetLineWidth)(width);
 }
 
@@ -1233,6 +1312,11 @@ void UgSetLineWidth (short width)
 
 void UgClearViewPort (void)
 {
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
   (*CurrentOutputDevice->ClearViewPort)();
 }
 
@@ -1256,6 +1340,11 @@ void UgClearViewPort (void)
 
 void UgFlush (void)
 {
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
   (*CurrentOutputDevice->Flush)();
 }
 
