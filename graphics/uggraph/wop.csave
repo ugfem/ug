@@ -11449,6 +11449,7 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 		NODE *theNode;
 		INT  nodes = 0;
 
+		theGrid = GRID_ON_LEVEL(theMG,0);
 		EE3D_PartShrinkFactor			= theGpo->PartShrinkFactor;
 		if (EE3D_PartShrinkFactor < 1.0)
 		{
@@ -13122,10 +13123,13 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 					if ((*WOP_GEN_PreProcessProc)(WOP_Picture,WOP_Work))
 						break;
 
-				#ifdef ModelP
-				{
+			#ifdef ModelP
+			{
 				VChannelPtr gpipe;
-				INT token,n;
+				INT token,n=0;
+				if (me == master) {
+					PRINTDEBUG(graph,1,("%d: plottype ELEMENTWISE\n",me));
+				}
 
 				if (me != master) {
 
@@ -13151,6 +13155,8 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 					}
 					#endif
 				}
+
+
 				#ifdef ModelP
 				if (me == master) {
 					VChannelPtr gpipe;
@@ -13167,7 +13173,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 						while (1) {
 							char endtoken;
 
-							PRINTDEBUG(graph,1,("%d: receiving plotbuffer=%d\n",n));
+							PRINTDEBUG(graph,1,("%d: receiving from %d plotbuffer=%d\n",me,p,n));
 							RecvSync(gpipe,(void *)WOP_DrawingObject,DO_SIZE);
 							n++;
 							endtoken = DO_2c(WOP_DrawingObject);
@@ -13175,7 +13181,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 
 								if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))						return (1);
 						}
-						PRINTDEBUG(graph,1,("%d: disconnecting gpipe to slave=%d\n",me,n));
+						PRINTDEBUG(graph,1,("%d: disconnecting gpipe to slave=%d\n",me,p));
 						DiscSync(gpipe);
 					}
 				}
@@ -13187,8 +13193,10 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 					PRINTDEBUG(graph,1,("%d: disconnecting gpipe to master=%d\n",me,master));
 					DiscSync(gpipe);
 				}
-				}
-				#endif
+			}
+			Synchronize();
+			#endif
+
 				if (WOP_GEN_PostProcessProc!=NULL)
 					if ((*WOP_GEN_PostProcessProc)(WOP_Picture,WOP_Work))			return (1);
 				break;
@@ -13215,11 +13223,14 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 					if ((*WOP_GEN_PreProcessProc)(WOP_Picture,WOP_Work))
 						break;
 
-				#ifdef ModelP
-				{
+			#ifdef ModelP
+			{
 				VChannelPtr gpipe;
-				INT token,n;
+				INT token,n=0;
 
+				if (me == master) {
+					PRINTDEBUG(graph,1,("%d: plottype NODEWISE\n",me));
+				}
 				if (me != master) {
 
 					PRINTDEBUG(graph,1,("%d: connecting to master=%d\n",me,master));
@@ -13234,7 +13245,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 					#ifdef ModelP
 					if (me == master) {
 					#endif
-					if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))							return (1);
+						if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))							return (1);
 					#ifdef ModelP
 					}
 					else {
@@ -13261,7 +13272,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 						while (1) {
 							char endtoken;
 
-							PRINTDEBUG(graph,1,("%d: receiving plotbuffer=%d\n",n));
+							PRINTDEBUG(graph,1,("%d: receiving from %d plotbuffer=%d\n",me,p,n));
 							RecvSync(gpipe,(void *)WOP_DrawingObject,DO_SIZE);
 							n++;
 							endtoken = DO_2c(WOP_DrawingObject);
@@ -13269,7 +13280,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 
 								if ((*WOP_GEN_ExecuteProc)(WOP_DrawingObject))						return (1);
 						}
-						PRINTDEBUG(graph,1,("%d: disconnecting gpipe to slave=%d\n",me,n));
+						PRINTDEBUG(graph,1,("%d: disconnecting gpipe to slave=%d\n",me,p));
 						DiscSync(gpipe);
 					}
 				}
@@ -13281,8 +13292,10 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 					PRINTDEBUG(graph,1,("%d: disconnecting gpipe to master=%d\n",me,master));
 					DiscSync(gpipe);
 				}
-				}
-				#endif
+			}
+			Synchronize();
+			#endif
+
 				if (WOP_GEN_PostProcessProc!=NULL)
 					if ((*WOP_GEN_PostProcessProc)(WOP_Picture,WOP_Work))			return (1);
 				break;
