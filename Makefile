@@ -79,7 +79,7 @@ include:
 	ugmakelinks;
 
 # default rule
-.c.o:
+.c.o: include
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
 
 
