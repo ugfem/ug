@@ -104,6 +104,7 @@
 #define MAX_CORNERS_OF_EDGE             2                       /* an edge has always two corners.. */
 #define MAX_SIDES_OF_EDGE               2                       /* two sides have one edge in common*/
 #define MAX_SONS                        30          /* max number of sons of an element */
+#define MAX_SIDE_NODES                  9                       /* max number of nodes on elem side */
 
 #define MAX_SIDES_TOUCHING              10                      /* max #fine sides touching a coarse*/
 
@@ -427,6 +428,10 @@ struct edge {                                           /* undirected edge of th
 
   /* variables */
   struct link links[2];                         /* two links							*/
+
+        #if defined(ModelP) && defined(__THREEDIM__)
+  DDD_HEADER ddd;
+        #endif
 
   struct node *midnode;                         /* pointer to mid node on next finer gri*/
 
