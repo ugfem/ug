@@ -1698,12 +1698,12 @@ static INT GetFullPathName (char *buffer)
   }
 }
 
-FILE *FOpenScript (const char *script)
+FILE *FOpenScript (const char *script, const char *mode)
 {
   if (scriptpaths_set)
-    return FileOpenUsingSearchPaths(script,"r","scriptpaths");
+    return FileOpenUsingSearchPaths(script,mode,"scriptpaths");
   else
-    return fileopen(script,"r");
+    return fileopen(script,mode);
 }
 
 /****************************************************************************/
@@ -2248,12 +2248,12 @@ static INT InterpretString (void)
       if ((error=GetFullPathName(buffer))!=DONE)
         return(error);
 
-      filePtr = FOpenScript(buffer);
+      filePtr = FOpenScript(buffer,"r");
       if (filePtr==NULL)
       {
         strcpy(filename,buffer);
         strcat(filename,".scr");
-        filePtr = FOpenScript(filename);
+        filePtr = FOpenScript(filename,"r");
       }
 
       if (filePtr==NULL)
@@ -2585,9 +2585,20 @@ void CommandLoop (int argc, char **argv)
   if (argc != -1)
   {
     /* execute init script */
-    if (GetDefaultValue(DEFAULTSFILENAME,"initscript",buffer)==0) {
-      strcpy(inpLine,"execute ");
-      strcat(inpLine,buffer);
+    if (GetDefaultValue(DEFAULTSFILENAME,"initscript",buffer)==0)
+    {
+      char *cmds = strchr(buffer,'"');
+      if (cmds!=NULL)
+      {
+        char *p = strchr(buffer+1,'"');
+        if (p!=NULL) *p = '\0';
+        strcpy(inpLine,cmds+1);
+      }
+      else
+      {
+        strcpy(inpLine,"execute ");
+        strcat(inpLine,buffer);
+      }
       error = InterpretCommand(inpLine);
       if (error==QUITCODE)
         doneFlag=TRUE;
