@@ -1391,7 +1391,7 @@ INT GetSideIDFromScratchSpecialRule (ELEMENT *theElement, NODE *theNode)
   return(GetSideIDFromScratchSpecialRule22Tet(theElement,theNode));
 }
 
-INT GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
+INT NS_DIM_PREFIX GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
 {
   ELEMENT *theFather;
   NODE *nd[MAX_EDGES_OF_ELEM];
