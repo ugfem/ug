@@ -1,0 +1,33 @@
+#!/bin/sh
+if test $# -eq 0 -o $# -ge 2 -o "$1" = "-help"
+then
+	echo "usage: $0 <applicationname> - kill processes by name";
+	exit 1;
+fi
+
+if test "x$UGROOT" = "x"
+then 
+	echo "$0: to use $0 set shell environment variable UGROOT!";
+	exit 1;
+fi
+
+# if one parameter is specified create new pvm context
+if test $# -eq 1
+then
+
+echo searching...
+
+if test `ps -edalf | grep $1 | grep -v grep | awk '{ print $4 }' -|wc -l` -eq 0
+then
+	echo "$0: no processes with name $1 found!";
+	exit 1;
+fi
+
+# kill processes 
+echo killing processes:
+#echo `ps -edalf | grep $1 | grep -v grep `
+echo `ps -edalf | grep $1 | grep -v grep | awk '{ print $4 }' -`
+kill `ps -edalf | grep $1 | grep -v grep | awk '{ print $4 }' -`
+
+fi
+
