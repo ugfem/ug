@@ -171,14 +171,14 @@ static double CalcElementBadness_new (const ARRAY<Point3d> & points,
                    << longest_edge/incircle
                    << endl;*/
 
-  if(minfl<0.1)
-    return(1e10);
+  /*	if(minfl<0.1)
+                  return(1e10);*/
 
   if(minalpha>1.57)
     cout << "schotter" << endl;
   if (vol < 1e-8)
     return 1e10;
-  if(maxalpha>3.0)
+  if(maxalpha>3.14)
     return(1e10);
   if(minalpha<0.1e-8)
     return(1e10);

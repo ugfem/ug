@@ -170,7 +170,7 @@ int ADFRONT3 :: GetLocals (ARRAY<Point3d> & locpoints,
   char found;
   int minval, hi;
   INDEX pi;
-  Point3d midp, p0;
+  Point3d midp,p0,p1,p2,p3;
   double min,f;
 
   minval = INT_MAX;
@@ -223,7 +223,14 @@ int ADFRONT3 :: GetLocals (ARRAY<Point3d> & locpoints,
   while(fstind<0);
 
   pstind = faces[fstind].Face().PNum(1);
-  p0 = points[pstind].P();
+  //  p0 = points[pstind].P();
+
+  p1 =  points[faces[fstind].Face().PNum(1)].P();
+  p2 =  points[faces[fstind].Face().PNum(2)].P();
+  p3 =  points[faces[fstind].Face().PNum(3)].P();
+  p0.X() = (p1.X()+p2.X()+p3.X())/3;
+  p0.Y() = (p1.Y()+p2.Y()+p3.Y())/3;
+  p0.Z() = (p1.Z()+p2.Z()+p3.Z())/3;
 
   locfaces.Append(faces[fstind].Face());
   findex.Append(fstind);
@@ -232,8 +239,15 @@ int ADFRONT3 :: GetLocals (ARRAY<Point3d> & locpoints,
   {
     if (faces.Get(i).Valid() && i != fstind)
     {
-      midp = Center (points.Get(faces.Get(i).Face().PNum(1)).P(),
-                     points.Get(faces.Get(i).Face().PNum(2)).P());
+      //      midp = Center (points.Get(faces.Get(i).Face().PNum(1)).P(),
+      //                     points.Get(faces.Get(i).Face().PNum(2)).P());
+
+      p1 = points.Get(faces.Get(i).Face().PNum(1)).P();
+      p2 = points.Get(faces.Get(i).Face().PNum(2)).P();
+      p3 = points.Get(faces.Get(i).Face().PNum(3)).P();
+      midp.X() = (p1.X()+p2.X()+p3.X())/3;
+      midp.Y() = (p1.Y()+p2.Y()+p3.Y())/3;
+      midp.Z() = (p1.Z()+p2.Z()+p3.Z())/3;
 
       // Center genauer !!!
 

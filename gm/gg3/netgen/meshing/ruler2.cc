@@ -87,6 +87,7 @@ static double CalcElementBadness (const ARRAY<Point2d> & points,
 
   if(minalpha<1e-6)
     return(1e10);
+  return( 0.5*(0.5-cos(maxalpha)) + 0.5*(max_l/l-0.707)/2 );
 
   max_l = l12;
   if(max_l<l13)
@@ -108,7 +109,8 @@ static double CalcElementBadness (const ARRAY<Point2d> & points,
   }
 
   //	return((0.5-cos(maxalpha))  );
-  return( 0.5*(0.5-cos(maxalpha)) + 0.5*(max_l/l-0.707)/4 );
+  //	return( 0.5*(0.5-cos(maxalpha)) + 0.5*(max_l/l-0.707)/4 );
+  return( 0.5*(0.5-cos(maxalpha)) + 0.5*(max_l/l-0.707)/2 );
 }
 
 

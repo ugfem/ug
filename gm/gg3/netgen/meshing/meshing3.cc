@@ -255,6 +255,7 @@ void Meshing3 :: Mesh (double ah)
 
   int pause = 1, redraw = 1, shouldredraw = 1;
 
+  //ah = 5;
 
   h = ah;
   meshing = this;

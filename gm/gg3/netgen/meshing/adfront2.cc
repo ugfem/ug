@@ -4,6 +4,7 @@
    Advancing front class for surfaces
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <fstream.h>
 #include <math.h>
@@ -15,6 +16,7 @@
 #include <geom/geom3d.hh>
 
 extern int Test_Line(Point3d p1, Point3d p2, Point3d sp1, Point3d sp2, double xh);
+extern int Test_Point(Point3d p, Point3d sp1, Point3d sp2, double xh);
 
 
 
@@ -166,11 +168,8 @@ void ADFRONT2 :: ResetClass (INDEX li)
 
 
 
-
-
-
 int ADFRONT2 :: GetLocals (ARRAY<Point3d> & locpoints,
-                           ARRAY<ILINE> & loclines,       // local index
+                           ARRAY<ILINE> & loclines,   // local index
                            ARRAY<INDEX> & pindex,
                            ARRAY<INDEX> & lindex,
                            int & asurfaceind,
@@ -182,31 +181,31 @@ int ADFRONT2 :: GetLocals (ARRAY<Point3d> & locpoints,
   INDEX pi;
   Point3d midp, p0,p1,p2,sp1,sp2,p;
   int minval, hi, flag;
-  double min,minn,l;
+  double min,l;
+  int minn, qual;
 
   minval = INT_MAX;
   min = INT_MAX;
 
-  // Auswahl der Frontkante nach Schoeberl
-
   /*  for (i = 1; i<= lines.Size(); i++)
       if (lines.Get(i).Valid())
         {
+                  minn = points.Get(lines.Get(i).L().I1()).FrontNr();
+                  if(minn >points.Get(lines.Get(i).L().I1()).FrontNr())
+                   minn =	points.Get(lines.Get(i).L().I2()).FrontNr();
         hi = lines.Get(i).LineClass() +
-             2 * min (points.Get(lines.Get(i).L().I1()).FrontNr(),
-                      points.Get(lines.Get(i).L().I2()).FrontNr());
-     cout << lines.Get(i).LineClass() << "  "
-       << points.Get(lines.Get(i).L().I1()).FrontNr() << "  "
-       << points.Get(lines.Get(i).L().I2()).FrontNr() << endl;
+              (points.Get(lines.Get(i).L().I1()).FrontNr()+
+                      points.Get(lines.Get(i).L().I2()).FrontNr())/2;
+        hi = lines.Get(i).LineClass()+minn;
+        //cout << lines.Get(i).LineClass() << "  "
+        //     << points.Get(lines.Get(i).L().I1()).FrontNr() << "  "
+        //     << points.Get(lines.Get(i).L().I2()).FrontNr() << endl;
         if (hi < minval)
           {
           minval = hi;
           lstind = i;
           }
-        }
-   */
-
-  // Neues Auswahlkriterium
+        }*/
 
   // Neues Auswahlkriterium
 
@@ -216,13 +215,14 @@ int ADFRONT2 :: GetLocals (ARRAY<Point3d> & locpoints,
   {
     for (i = 1; i<= lines.Size(); i++)
     {
-      if( (lines.Get(i).LineClass()==j) && (lines.Get(i).Valid()) )
+      qual = points.Get(lines.Get(i).L().I1()).FrontNr();
+      if(qual > points.Get(lines.Get(i).L().I2()).FrontNr())
+        qual = points.Get(lines.Get(i).L().I2()).FrontNr();
+      qual = qual + lines.Get(i).LineClass();
+      if( (qual==j) && (lines.Get(i).Valid()) )
       {
         l = Dist(points.Get(lines.Get(i).L().I1()).P(),points.Get(lines.Get(i).L().I2()).P());
-        /*				cout << i << "  "
-                                                 << j << "  "
-                                                 << lines.Get(i).LineClass() << endl;*/
-        if (l < min /*|| i == 1*/)
+        if (l < min)
         {
           min = l;
           lstind = i;
@@ -232,34 +232,18 @@ int ADFRONT2 :: GetLocals (ARRAY<Point3d> & locpoints,
     j++;
   }
   while(lstind<0);
-
-
+  //	cout << lstind << endl;
+  //  cin >> lstind;
+  //lstind = 50;
   asurfaceind = lines[lstind].SurfaceIndex();
 
   pstind = lines[lstind].L().I1();
+  sp1 = points.Get(lines.Get(lstind).L().I1()).P();
+  sp2 = points.Get(lines.Get(lstind).L().I2()).P();
   p0 = points[pstind].P();
 
   loclines.Append(lines[lstind].L());
   lindex.Append(lstind);
-
-  /*  for (i = 1; i <= lines.Size(); i++)
-      {
-      if (lines.Get(i).Valid() && i != lstind &&
-          lines.Get(i).SurfaceIndex() == asurfaceind)
-        {
-        midp = Center (points.Get(lines.Get(i).L().I1()).P(),
-                       points.Get(lines.Get(i).L().I2()).P());
-
-        if (Dist (midp, p0) <= xh)
-          {
-          loclines.Append(lines.Get(i).L());
-          lindex.Append(i);
-          }
-        }
-      }
-   */
-  sp1 = points.Get(lines.Get(lstind).L().I1()).P();
-  sp2 = points.Get(lines.Get(lstind).L().I2()).P();
 
   for (i = 1; i <= lines.Size(); i++)
   {
@@ -304,8 +288,29 @@ int ADFRONT2 :: GetLocals (ARRAY<Point3d> & locpoints,
     }
   }
 
+  for(i=1; i<=points.Size(); i++)
+  {
+    p1 = points.Get(i).P();
+    flag = 0;
+    for(j=1; j<=locpoints.Size(); j++)
+    {
+      p2 = locpoints.Get(j);
+      if( (p1.X()==p2.X()) && (p1.Y()==p2.Y()) && (p1.Z()==p2.Z()) )
+        flag = 1;
+    }
+    /*		if(flag==0)
+                            if(Test_Point(p1,sp1,sp2,xh))
+                            {
+                                    pindex.Append (i);
+                                    locpoints.Append (points.Get(i).P());
+                            }*/
+  }
   return lines.Get(lstind).LineClass();
+
 }
+
+
+
 
 INDEX ADFRONT2 :: GetGlobalIndex (INDEX pi) const
 {
@@ -350,18 +355,19 @@ void ADFRONT2 :: Print (ostream & ost) const
 void ADFRONT2 :: ugPrint (ostream & ost) const
 {
   INDEX i;
+  FILE *file;
 
-  ost << points.Size() << endl;
+  file = fopen("netgen","a");
+  fprintf(file, "%d\n",points.Size());
   for (i = 1; i <= points.Size(); i++)
     if (points[i].Valid())
-      ost << " " << points[i].P().X()
-          << " " << points[i].P().Y()
-          << " " << points[i].P().Z() << endl;
-
-  ost << nfl << endl;
+      fprintf(file, "%f %f %f\n", points[i].P().X(),
+              points[i].P().Y(),
+              points[i].P().Z());
+  fprintf(file, "%d\n",nfl);
   for (i = 1; i <= lines.Size(); i++)
     if (lines[i].Valid())
-      ost << lines[i].L().I1() << " " << lines[i].L().I2() << endl;
-
-  ost << flush;
+      fprintf(file, "%d %d\n",        lines[i].L().I1(),
+              lines[i].L().I2());
+  fclose(file);
 }

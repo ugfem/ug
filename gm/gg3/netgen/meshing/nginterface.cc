@@ -102,7 +102,7 @@ void my_meshing3 :: SaveElement (const Element & elem)
   float x[4][3],diam,fac,global[3],inndiam,dist,percent,vol;
   int i,n;
   FILE *file;
-
+  char name[10],buff[5];
   if (disp)
   {
     n = 4;
@@ -148,26 +148,37 @@ void my_meshing3 :: SaveElement (const Element & elem)
 
     percent = 100.0 * adfront->Volume() / vol0;
 
-    UserWriteF(" ID(Elem)=%4d midPoint %6.2f %6.2f %6.2f dist %6.2f diam %6.2f %6.2f vol %10.6f\%\n",
+    UserWriteF(" ID(Elem)=%4d midPoint %6.2f %6.2f %6.2f dist %6.2f diam %6.2f %6.2f vol %10.6f%\n",
                volelements -> Size(),global[0],global[1],global[2],
                dist,inndiam,diam,percent);
     /*	  UserWriteF("%10.6f\%\n",-vol);*/
   }
-  if(LGM_DEBUG)
-    if(volelements->Size()==100)
-    {
-      file = fopen("grape100","w");
-      fprintf(file, "%d\n", points->Size());
-      for(i=1; i<=points->Size(); i++)
-        fprintf(file, "%f %f %f\n", points->Get(i).X(), points->Get(i).Y(), points->Get(i).Z());
-      fprintf(file, "%d\n", volelements->Size());
-      for(i=1; i<=volelements->Size(); i++)
-        fprintf(file, "%d %d %d %d\n", volelements->Get(i).PNum(1),
-                volelements->Get(i).PNum(2),
-                volelements->Get(i).PNum(3),
-                volelements->Get(i).PNum(4));
-      fclose(file);
-    }
+  /*	if(volelements->Size() % 50 == 0)
+          {
+                  name[0] = 'g';
+                  name[1] = 'r';
+                  name[2] = 'a';
+                  name[3] = 'p';
+                  name[4] = 'e';
+                  sprintf(buff,"%d",volelements->Size());
+                  name[5] = buff[0];
+                  name[6] = buff[1];
+                  name[7] = buff[2];
+                  name[8] = buff[3];
+                  name[9] = buff[4];
+                  file = fopen(name,"w");
+                  fprintf(file, "%s\n", "volmesh");
+                  fprintf(file, "%d\n", volelements->Size());
+                  for(i=1;i<=volelements->Size();i++)
+                          fprintf(file, "%d %d %d %d\n",  volelements->Get(i).PNum(1)-1,
+                                                                                          volelements->Get(i).PNum(2)-1,
+                                                                                          volelements->Get(i).PNum(3)-1,
+                                                                                          volelements->Get(i).PNum(4)-1);
+                  fprintf(file, "%d\n", points->Size());
+                  for(i=1;i<=points->Size();i++)
+                          fprintf(file, "%f %f %f\n", points->Get(i).X(), points->Get(i).Y(), points->Get(i).Z());
+                  fclose(file);
+          }*/
 }
 
 void my_meshing3 :: Get_Local_h_3d(double *in,double *out)
@@ -226,18 +237,15 @@ int StartNetgen (double h, int smooth, int display)
   for (i=0; i<smooth; i++)
     meshing -> ImproveMesh (*points, *volelements, nbp, h);
 
-  UserWriteF("\n");
+  AllMemInnerPoints(points -> Size()-nbp);
   for (i = nbp + 1; i <= points -> Size(); i++)
   {
-    if(LGM_DEBUG)
-      cout << points -> Get(i).X() << "  "
-           << points -> Get(i).Y() << "  "
-           << points -> Get(i).Z() << endl;
-    AddInnerNode (points -> Get(i).X(),
-                  points -> Get(i).Y(),
-                  points -> Get(i).Z()/1);
+    AddInnerNode (  points -> Get(i).X(),
+                    points -> Get(i).Y(),
+                    points -> Get(i).Z()/1);
   }
 
+  AllMemElements(volelements -> Size());
   for (i = 1; i <= volelements -> Size(); i++)
   {
     AddTetrahedron (volelements -> Get(i).PNum(1) - 1,
@@ -245,5 +253,7 @@ int StartNetgen (double h, int smooth, int display)
                     volelements -> Get(i).PNum(3) - 1,
                     volelements -> Get(i).PNum(4) - 1);
   }
-  return 0;
+  volelements->SetSize(0);
+  points->SetSize(0);
+  return (0);
 }
