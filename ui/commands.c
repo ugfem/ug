@@ -11528,6 +11528,7 @@ static INT InitScreenSize (void)
  */
 /****************************************************************************/
 
+#ifdef ModelP
 static INT LBCommand (INT argc, char **argv)
 {
                 #ifndef ModelP
@@ -11696,8 +11697,6 @@ static INT LBCommand (INT argc, char **argv)
                 #endif
 }
 
-
-#ifdef ModelP
 
 /****************************************************************************/
 /*
@@ -13253,10 +13252,10 @@ INT InitCommands ()
   if (CreateCommand("timing",             TimingCommand                               )==NULL) return (__LINE__);
         #endif
   if (CreateCommand("showconfig",         ShowConfigCommand                           )==NULL) return (__LINE__);
-  if (CreateCommand("lb",                         LBCommand                                               )==NULL) return (__LINE__);
 
 #ifdef ModelP
   /* commands for parallel version */
+  if (CreateCommand("lb",                         LBCommand                                               )==NULL) return (__LINE__);
   if (CreateCommand("ptest",                      LBSCommand                                      )==NULL) return (__LINE__);
   if (CreateCommand("lbs",                        LBSCommand                                      )==NULL) return (__LINE__);
   if (CreateCommand("context",            ContextCommand                              )==NULL) return (__LINE__);
