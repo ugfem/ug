@@ -97,18 +97,21 @@
 #include "cmdline.h"
 #include "helpmsg.h"
 
-/* own header */
-#include "commands.h"
-
-
 #ifdef ModelP
 #include "parallel.h"
+#endif
+
+#ifdef CHACOT
+#include "lb4.h"
 #endif
 
 #ifdef __NECSX4__
 #include <sys/types.h>
 #include <sys/syssx.h>
 #endif
+
+/* own header */
+#include "commands.h"
 
 /****************************************************************************/
 /*																			*/
@@ -2276,7 +2279,7 @@ static INT OpenCommand (INT argc, char **argv)
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"open","could not open multigrid");
-    return(CMDERRORCODE);
+    RETURN(CMDERRORCODE);
   }
   currMG = theMG;
 
@@ -9181,7 +9184,9 @@ static INT ClearCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   VECDATA_DESC *theVD;
-  INT i,fl,tl,skip;
+  VECTOR *v;
+  INT i,fl,tl,n,skip;
+  int j;
   float value;
 
   theMG = currMG;
@@ -9195,6 +9200,7 @@ static INT ClearCommand (INT argc, char **argv)
   fl = tl = CURRENTLEVEL(theMG);
   skip = FALSE;
   value = 0.0;
+  j = -1;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -9204,6 +9210,14 @@ static INT ClearCommand (INT argc, char **argv)
 
     case 's' :
       skip = TRUE;
+      break;
+
+    case 'i' :
+      if (sscanf(argv[i],"i %d",&j)!=1)
+      {
+        PrintErrorMessage('E',"clear","could not read value");
+        return(CMDERRORCODE);
+      }
       break;
 
     case 'v' :
@@ -9225,6 +9239,18 @@ static INT ClearCommand (INT argc, char **argv)
   if (theVD == NULL) {
     PrintErrorMessage('E',"clear","could not read data descriptor");
     return (PARAMERRORCODE);
+  }
+
+  if (j >= 0) {
+    for (v = FIRSTVECTOR(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)));
+         v != NULL; v = SUCCVC(v)) {
+      n = VD_NCMPS_IN_TYPE(theVD,VTYPE(v));
+      if (j < n) {
+        VVALUE(v,VD_CMP_OF_TYPE(theVD,VTYPE(v),j)) = value;
+        return (OKCODE);
+      }
+      j -= n;
+    }
   }
 
   if (skip)
