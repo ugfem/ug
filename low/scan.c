@@ -124,7 +124,7 @@ INT ReadArgvDOUBLE (const char *name, DOUBLE *a, INT argc, char **argv)
       }
     }
 
-  REP_ERR_RETURN (1);
+  return (1);
 }
 
 /****************************************************************************/
@@ -168,7 +168,7 @@ INT ReadArgvINT (const char *name, INT *j, INT argc, char **argv)
       }
     }
 
-  REP_ERR_RETURN (1);
+  return (1);
 }
 
 /****************************************************************************/
@@ -213,7 +213,7 @@ INT ReadArgvChar (const char *name, char *buffer, INT argc, char **argv)
       }
     }
 
-  REP_ERR_RETURN (1);
+  return (1);
 }
 
 /****************************************************************************/
