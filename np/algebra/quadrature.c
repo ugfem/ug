@@ -363,10 +363,10 @@ static const DOUBLE Quadrature3D84_w[] =
  W_1*W_2*W_1,W_2*W_2*W_1,W_1*W_2*W_1,
  W_1*W_1*W_1,W_2*W_1*W_1,W_1*W_1*W_1,
  W_1*W_1*W_2,W_2*W_1*W_2,W_1*W_1*W_2,
- W_1*W_2*W_2,W_2*W_1*W_2,W_1*W_2*W_2,
+ W_1*W_2*W_2,W_2*W_2*W_2,W_1*W_2*W_2,
  W_1*W_1*W_2,W_2*W_1*W_2,W_1*W_1*W_2,
  W_1*W_1*W_1,W_2*W_1*W_1,W_1*W_1*W_1,
- W_1*W_2*W_1,W_2*W_1*W_1,W_1*W_2*W_1,
+ W_1*W_2*W_1,W_2*W_2*W_1,W_1*W_2*W_1,
  W_1*W_1*W_1,W_2*W_1*W_1,W_1*W_1*W_1};
 static QUADRATURE Quadrature3D84 = {27, Quadrature3D84_l, Quadrature3D84_w};
 
