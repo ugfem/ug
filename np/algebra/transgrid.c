@@ -962,7 +962,7 @@ INT RestrictByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
   if (DOWNGRID(FineGrid)==NULL)
     return (NUM_NO_COARSER_GRID);
 
-  if (VD_IS_SCALAR(to))
+  if (VD_IS_SCALAR(to) && VD_IS_SCALAR(from))
   {
     xc    = VD_SCALCMP(to);
     yc    = VD_SCALCMP(from);
@@ -1092,7 +1092,7 @@ INT InterpolateCorrectionByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
 
   l_dset (FineGrid,to,EVERY_CLASS,0.0);
 
-  if (VD_IS_SCALAR(to))
+  if (VD_IS_SCALAR(to) && VD_IS_SCALAR(from))
   {
     xc    = VD_SCALCMP(to);
     yc    = VD_SCALCMP(from);

@@ -3105,10 +3105,8 @@ INT l_ddot (const GRID *g, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC
   	spoff = VD_OFFSETPTR(x);				
 
 	/* clear sp */
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-			for (i=0; i<VD_NCMPS_IN_TYPE(x,vtype); i++)
-				sp[spoff[vtype]+i] = 0.0;
+	for (i=0; i<VD_NCOMP(x); i++)
+	    sp[i] = 0.0;
 	
 	first_v = FIRSTVECTOR(g);
 	
@@ -3204,10 +3202,8 @@ INT a_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xcla
   	spoff = VD_OFFSETPTR(x);				
 	
 	/* clear sp */
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-			for (i=0; i<VD_NCMPS_IN_TYPE(x,vtype); i++)
-				sp[spoff[vtype]+i] = 0.0;
+	for (i=0; i<VD_NCOMP(x); i++)
+	    sp[i] = 0.0;
 	
 	for (vtype=0; vtype<NVECTYPES; vtype++)
 		if (VD_ISDEF_IN_TYPE(x,vtype))
@@ -3299,11 +3295,9 @@ INT s_ddot (const MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const VE
   	spoff = VD_OFFSETPTR(x);				
 	
 	/* clear sp */
-	for (vtype=0; vtype<NVECTYPES; vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype))
-			for (i=0; i<VD_NCMPS_IN_TYPE(x,vtype); i++)
-				sp[spoff[vtype]+i] = 0.0;
-	
+	for (i=0; i<VD_NCOMP(x); i++)
+	    sp[i] = 0.0;
+
 	for (vtype=0; vtype<NVECTYPES; vtype++)
 		if (VD_ISDEF_IN_TYPE(x,vtype))
 		{
@@ -4530,7 +4524,7 @@ INT l_dmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M
 	
 	first_v = FIRSTVECTOR(g);
 	
-	if (MD_IS_SCALAR(M))
+	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
 	{
 		xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(M);
@@ -4849,7 +4843,7 @@ INT l_dmatmul_minus (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_D
 	
 	first_v = FIRSTVECTOR(g);
 	
-	if (MD_IS_SCALAR(M))
+	if (MD_IS_SCALAR(M) && VD_IS_SCALAR(y) && VD_IS_SCALAR(x))
 	{
 		xc    = VD_SCALCMP(x);
 		mc    = MD_SCALCMP(M);

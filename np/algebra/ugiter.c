@@ -438,7 +438,7 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
 
   first_vec = FIRSTVECTOR(g);
 
-  if (MD_IS_SCALAR(M))
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
   {
     vc    = VD_SCALCMP(v);
     mc    = MD_SCALCMP(M);
@@ -743,7 +743,7 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
 
   last_vec = LASTVECTOR(g);
 
-  if (MD_IS_SCALAR(M))
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
   {
     vc    = VD_SCALCMP(v);
     mc    = MD_SCALCMP(M);
@@ -3684,7 +3684,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
   first_vec = FIRSTVECTOR(g);
   last_vec  = LASTVECTOR(g);
 
-  if (MD_IS_SCALAR(M))
+  if (MD_IS_SCALAR(M) && VD_IS_SCALAR(v) && VD_IS_SCALAR(d))
   {
     vc    = VD_SCALCMP(v);
     mc    = MD_SCALCMP(M);
