@@ -39,6 +39,7 @@
 #include "disctools.h"
 #include "np.h"
 
+#include "devices.h"
 #include "assemble.h"
 
 /****************************************************************************/
@@ -51,12 +52,27 @@
 /*																			*/
 /****************************************************************************/
 
+#define MAX_PA                          2
+
+#define PA_NASS(pa)                     ((pa)->nass)
+#define PA_ASS(pa,i)            ((pa)->ass[i])
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
+
+typedef struct
+{
+  NP_NL_ASSEMBLE pa;                                    /* class for nonlinear ass routines		*/
+
+  /* additional data */
+  INT nass;                                                     /* number of part assembling numprocs	*/
+  NP_NL_ASSEMBLE *ass[MAX_PA];          /* pointers to part assembling numprocs	*/
+
+} NP_NL_PARTASS;
 
 /****************************************************************************/
 /*																			*/
@@ -473,8 +489,8 @@ INT NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
    'INT NPLocalAssembleDisplay (NP_LOCAL_ASSEMBLE *theNP);'
    'INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv);'
 
-   The interface functions 'AssemblePreProcess', 'Assemble'
-   'AssembleDefect', 'AssembleMatrix' and 'AssemblePostProcess'
+   The interface functions 'LocalAssemblePreProcess', 'LocalAssemble'
+   'AssembleDefect', 'AssembleMatrix' and 'LocalAssemblePostProcess'
    of NP_ASSEMBLE can be constructed by the interface of NP_LOCAL_ASSEMBLE
    by
 
@@ -569,8 +585,8 @@ INT NPLocalAssemblePostMatrix (NP_LOCAL_ASSEMBLE *theNP, INT level,
   return(0);
 }
 
-static INT AssemblePreProcess (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
-                               VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+static INT LocalAssemblePreProcess (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
+                                    VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
 {
   NP_LOCAL_ASSEMBLE *np;
 
@@ -583,8 +599,8 @@ static INT AssemblePreProcess (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
   return(0);
 }
 
-static INT Assemble (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
-                     VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+static INT LocalAssemble (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
+                          VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
 {
   NP_LOCAL_ASSEMBLE *np;
   MULTIGRID *theMG;
@@ -634,8 +650,8 @@ static INT Assemble (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
   return(0);
 }
 
-static INT AssemblePostProcess (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
-                                VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
+static INT LocalAssemblePostProcess (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
+                                     VECDATA_DESC *b, MATDATA_DESC *A, INT *result)
 {
   NP_LOCAL_ASSEMBLE *np;
 
@@ -652,9 +668,218 @@ static INT AssemblePostProcess (NP_ASSEMBLE *theNP, INT level, VECDATA_DESC *x,
 
 INT NPLocalAssembleConstruct (NP_ASSEMBLE *np)
 {
-  np->PreProcess = AssemblePreProcess;
-  np->Assemble = Assemble;
-  np->PostProcess = AssemblePostProcess;
+  np->PreProcess          = LocalAssemblePreProcess;
+  np->Assemble            = LocalAssemble;
+  np->PostProcess         = LocalAssemblePostProcess;
+
+  return(0);
+}
+
+/****************************************************************************/
+/*D
+        partass - nonlinear assemble numproc calling several assembling numprocs
+
+        DESCRIPTION:
+   .vb
+        npcreate pa $c partass
+        npinit	$A <mat data desc>
+                        $s <vec data desc>
+                        $r <vec data desc>
+
+                        {$ass <nl part ass>}+
+   .ve
+        Data descriptors:~
+   .   A~<mat~data~desc>		- stiffnes matrix to assemble
+   .   s~<vec~data~desc>		- current solution
+   .   r~<vec~data~desc>                - source term
+
+        Parameters:~
+   .   ass~<nl~part~ass>		- specification of a nonlinear assembling numproc called by 'pa'
+
+        DESCRIPTION:
+        The numerical procedure class 'partass' can call several nonlinear
+        assembling numprocs. 'partass' does not check any compatibility or
+        consistency!
+
+        This numproc is useful for coupled problems using different discretizations
+        in different parts of the domain.
+
+        KEYWORDS:
+        assemble, part
+   D*/
+/****************************************************************************/
+
+static INT NLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
+{
+  NP_NL_PARTASS *thePA;
+  NP_NL_ASSEMBLE *ass;
+  INT r,i,nass;
+  char name[NAMESIZE];
+
+  r = NPNLAssembleInit(theNP,argc,argv);
+
+  thePA = (NP_NL_PARTASS*)theNP;
+
+  PA_NASS(thePA) = nass = 0;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'a' :
+      if (nass>=MAX_PA)
+      {
+        PrintErrorMessage('E',"NLPartAssInit","max number of part assembling numprocs exceeded");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      if (sscanf(argv[i],expandfmt(CONCAT3("ass %",NAMELENSTR,"[ -~]")),name)!=1)
+      {
+        PrintErrorMessage('E',"NLPartAssInit","specify a nonlinear assembling numproc with $ass");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      ass = (NP_NL_ASSEMBLE*) GetNumProcByName (NP_MG(theNP),name,NL_ASSEMBLE_CLASS_NAME);
+      if (ass == NULL)
+      {
+        PrintErrorMessage('E',"NLPartAssInit",
+                          "cannot find specified numerical procedure");
+        REP_ERR_RETURN (NP_NOT_ACTIVE);
+      }
+      PA_ASS(thePA,nass++) = ass;
+      break;
+    }
+  if (nass==0)
+  {
+    PrintErrorMessage('E',"NLPartAssInit","specify at least one nonlinear assembling numproc with $ass");
+    REP_ERR_RETURN (NP_NOT_ACTIVE);
+  }
+  PA_NASS(thePA) = nass;
+
+  if (!((r==NP_ACTIVE) || (r==NP_EXECUTABLE)))
+    return (r);
+  else
+    REP_ERR_RETURN (r);
+}
+
+/****************************************************************************/
+/*
+        the follwing functions do nothing but just calling the corresponding
+        routines of the nonlinear assembling numprocs specified when initializing
+        the numproc
+ */
+/****************************************************************************/
+
+static INT NLPartAssDisplay (NP_BASE *theNP)
+{
+  NP_NL_PARTASS *thePA;
+  INT i;
+  char text[8];
+
+  NPNLAssembleDisplay(theNP);
+
+  thePA   = (NP_NL_PARTASS*)theNP;
+
+  UserWrite("\npart assembling numprocs:\n");
+  for (i=0; i<PA_NASS(thePA); i++)
+  {
+    sprintf(text,"ass%d",i);
+    UserWriteF(DISPLAY_NP_FORMAT_SS,text,ENVITEM_NAME(PA_ASS(thePA,i)));
+  }
+
+  return (0);
+}
+
+static INT NLPartAssPreProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, INT *res)
+{
+  NP_NL_PARTASS *thePA;
+  INT i;
+
+  thePA   = (NP_NL_PARTASS*)ass;
+
+  /* call prep routines */
+  for (i=0; i<PA_NASS(thePA); i++)
+    if (NPANL_PRE(PA_ASS(thePA,i))!=NULL)
+      if (NPANL_PRE(PA_ASS(thePA,i)) (PA_ASS(thePA,i),fl,tl,x,res))
+        REP_ERR_RETURN(1);
+
+  return(0);
+}
+
+static INT NLPartAssPostProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x,
+                                 VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
+{
+  NP_NL_PARTASS *thePA;
+  INT i;
+
+  thePA   = (NP_NL_PARTASS*)ass;
+
+  /* call post routines */
+  for (i=0; i<PA_NASS(thePA); i++)
+    if (NPANL_POST(PA_ASS(thePA,i))!=NULL)
+      if (NPANL_POST(PA_ASS(thePA,i)) (PA_ASS(thePA,i),fl,tl,x,d,J,res))
+        REP_ERR_RETURN(1);
+
+  return(0);
+}
+
+static INT NLPartAssAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, INT *res)
+{
+  NP_NL_PARTASS *thePA;
+  INT i;
+
+  thePA   = (NP_NL_PARTASS*)ass;
+
+  /* call assemble solution routines */
+  for (i=0; i<PA_NASS(thePA); i++)
+    if (NPANL_ASSSOL(PA_ASS(thePA,i)) (PA_ASS(thePA,i),fl,tl,u,res))
+      REP_ERR_RETURN(1);
+
+  return(0);
+}
+
+static INT NLPartAssAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *s,
+                                    VECDATA_DESC *r, MATDATA_DESC *A, INT *res)
+{
+  NP_NL_PARTASS *thePA;
+  INT i;
+
+  thePA   = (NP_NL_PARTASS*)ass;
+
+  /* call assemble defect routines */
+  for (i=0; i<PA_NASS(thePA); i++)
+    if (NPANL_ASSDEF(PA_ASS(thePA,i)) (PA_ASS(thePA,i),fl,tl,s,r,A,res))
+      REP_ERR_RETURN(1);
+
+  return(0);
+}
+
+static INT NLPartAssAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *s,
+                                    VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *A, INT *res)
+{
+  NP_NL_PARTASS *thePA;
+  INT i;
+
+  thePA   = (NP_NL_PARTASS*)ass;
+
+  /* call assemble defect routines */
+  for (i=0; i<PA_NASS(thePA); i++)
+    if (NPANL_ASSMAT(PA_ASS(thePA,i)) (PA_ASS(thePA,i),fl,tl,s,d,v,A,res))
+      REP_ERR_RETURN(1);
+
+  return(0);
+}
+
+static INT NLPartAssembleConstruct (NP_BASE *theNP)
+{
+  NP_NL_ASSEMBLE *np;
+
+  np = (NP_NL_ASSEMBLE *) theNP;
+
+  np->base.Init                       = NLPartAssInit;
+  np->base.Display            = NLPartAssDisplay;
+  np->base.Execute            = NPNLAssembleExecute;
+  np->PreProcess                      = NLPartAssPreProcess;
+  np->PostProcess             = NLPartAssPostProcess;
+  np->NLAssembleSolution      = NLPartAssAssembleSolution;
+  np->NLAssembleDefect        = NLPartAssAssembleDefect;
+  np->NLAssembleMatrix        = NLPartAssAssembleMatrix;
 
   return(0);
 }
@@ -754,4 +979,36 @@ INT NPTAssembleDisplay (NP_BASE *theNP)
 INT NPTAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   return(1);   /* never executable */
+}
+
+/****************************************************************************/
+/*D
+        InitAssemble - init the file assemble.c
+
+        SYNOPSIS:
+        INT InitAssemble (void)
+
+    PARAMETERS:
+   .   void -
+
+        DESCRIPTION:
+        Create a numerical procedure class 'partass' which can call several
+        assembling numprocs. 'partass' does not check any compatibility or
+        consistency!
+
+        RETURN VALUE:
+        INT
+   .n   __LINE__: CreateClass failed
+   .n   0: ok
+   D*/
+/****************************************************************************/
+
+INT InitAssemble (void)
+{
+  /* create partass class */
+  if (CreateClass(NL_ASSEMBLE_CLASS_NAME ".partass",
+                  sizeof(NP_NL_PARTASS), NLPartAssembleConstruct))
+    REP_ERR_RETURN (__LINE__);
+
+  return(0);
 }

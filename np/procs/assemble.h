@@ -394,4 +394,7 @@ INT NPTAssembleInit     (NP_BASE *theNP, INT argc , char **argv);
 INT NPTAssembleDisplay  (NP_BASE *theNP);
 INT NPTAssembleExecute  (NP_BASE *theNP, INT argc , char **argv);
 
+/* init tis file */
+INT InitAssemble (void);
+
 #endif
