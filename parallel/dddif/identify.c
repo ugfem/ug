@@ -607,6 +607,8 @@ static void IdentifyNode (GRID *theGrid, ELEMENT *theNeighbor, NODE *theNode,
       IdentObjectHdr[nobject++] = PARHDR(NVECTOR(theNode));
 
                         #ifdef __TWODIM__
+    if (!NPROP(theNode)) break;
+
     /* 2D: identify to proclist of neighbor element */
     proclist = DDD_InfoProcList(PARHDRE(theNeighbor));
                         #endif
@@ -1069,6 +1071,188 @@ INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
    */
 }
 
+#ifdef IDENT_ONLY_NEW
+static int Gather_NewNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  NODE *theNode = (NODE *)obj;
+  NODE *SonNode = SONNODE(theNode);
+
+  /* identification is only done between master objects */
+  ASSERT(identlevel-1 == LEVEL(theNode));
+
+  if (SonNode!=NULL && NPROP(SonNode))
+  {
+    UserWriteF(PFMT "new son node=" ID_FMTX  "node=" ID_FMTX "\n",
+               me,ID_PRTX(SonNode),ID_PRTX(theNode));
+    *((int *)data) = 1;
+  }
+  else
+    *((int *)data) = 0;
+
+  return(0);
+}
+
+static int Scatter_NewNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  NODE    *theNode        = (NODE *)obj;
+  NODE    *SonNode        = SONNODE(theNode);
+  int has_newsonnode  = *((int *)data);
+
+  /* identification is only done between master objects */
+  ASSERT(identlevel-1 == LEVEL(theNode));
+
+  if (SonNode!=NULL && has_newsonnode) SETNPROP(SonNode,1);
+
+  return(0);
+}
+
+/*************************/
+
+static int Gather_NodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  NODE *theNode = (NODE *)obj;
+
+  ASSERT(identlevel == LEVEL(theNode));
+
+  if (!CORNERTYPE(theNode))
+  {
+    *((int *)data) = 0;
+    return(0);
+  }
+
+  *((int *)data) = NPROP(theNode);
+
+  return(0);
+}
+
+static int Scatter_NodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  NODE    *theNode = (NODE *)obj;
+  int nprop    = *((int *)data);
+
+  ASSERT(identlevel == LEVEL(theNode));
+
+  if (!CORNERTYPE(theNode)) return(0);
+
+  if (0) if (NPROP(theNode)) assert(NFATHER(theNode) != NULL);
+
+  if (nprop)
+  {
+    SETNPROP(theNode,1);
+    if (NFATHER(theNode) == NULL)
+    {
+      UserWriteF(PFMT "isolated node=" ID_FMTX "\n",
+                 me,ID_PRTX(theNode));
+      if (0) assert(0);
+    }
+    if (0) assert(NFATHER(theNode) != NULL);
+  }
+
+  return(0);
+}
+
+/*************************/
+
+static int Gather_TestNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  NODE *theNode = (NODE *)obj;
+
+  ASSERT(identlevel == LEVEL(theNode));
+
+  ((int *)data)[0] = NPROP(theNode);
+  if (NPROP(theNode)) assert(NFATHER(theNode) != NULL);
+
+  return(0);
+}
+
+static int Scatter_TestNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  NODE    *theNode        = (NODE *)obj;
+  int nprop   = *((int *)data);
+
+  ASSERT(identlevel == LEVEL(theNode));
+
+  if (NPROP(theNode) != nprop)
+  {
+    UserWriteF(PFMT "nprop wrong mynprop=%d hisnprop=%d theNode=" ID_FMTX " LEVEL=%d PROC=%d PRIO=%d\n",
+               me,NPROP(theNode),nprop,ID_PRTX(theNode),LEVEL(theNode),proc,prio);
+    fflush(stdout);
+    assert(0);
+  }
+
+  return(0);
+}
+
+/*************************/
+
+static int Gather_IdentSonNode (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  NODE *theNode = (NODE *)obj;
+  NODE *SonNode = SONNODE(theNode);
+
+  /* identification is only done between master objects */
+  ASSERT(identlevel-1 == LEVEL(theNode));
+
+  ((int *)data)[0] = 0;
+  ((int *)data)[1] = 0;
+
+  if (SonNode != NULL)
+  {
+    ((int *)data)[0] = 1;
+    ((int *)data)[1] = NPROP(SonNode);
+  }
+
+  return(0);
+}
+
+static int Scatter_IdentSonNode (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  NODE    *theNode        = (NODE *)obj;
+  NODE    *SonNode        = SONNODE(theNode);
+  int sonnode         = ((int *)data)[0];
+  int newsonnode      = ((int *)data)[1];
+
+  /* identification is only done between master objects */
+  ASSERT(identlevel-1 == LEVEL(theNode));
+
+  if (SonNode!=NULL)
+  {
+    /*
+            if (1 || NPROP(SonNode))
+     */
+    if (NPROP(SonNode))
+    {
+      if(sonnode)
+      {
+        if (!newsonnode)
+        {
+          UserWriteF(PFMT "theNode=" ID_FMTX " LEVEL=%d PROC=%d PRIO=%d sonnprop=%d\n",
+                     me,ID_PRTX(theNode),LEVEL(theNode),proc,prio,NPROP(SonNode));
+          fflush(stdout);
+          assert(0);
+        }
+
+        DDD_IdentifyObject(PARHDR(SonNode),proc,PARHDR(theNode));
+        if (dddctrl.nodeData && NVECTOR(SonNode)!=NULL)
+          DDD_IdentifyObject(PARHDR(NVECTOR(SonNode)),proc,PARHDR(theNode));
+      }
+    }
+    else
+    {
+      if (newsonnode)
+      {
+        UserWriteF(PFMT "theNode=" ID_FMTX " LEVEL=%d PROC=%d PRIO=%d sonnprop=%d\n",
+                   me,ID_PRTX(theNode),LEVEL(theNode),proc,prio,NPROP(SonNode));
+        fflush(stdout);
+        assert(0);
+      }
+    }
+  }
+
+  return(0);
+}
+
+#endif
 
 /****************************************************************************/
 /*
@@ -1090,6 +1274,7 @@ INT     IdentifyGridLevels (MULTIGRID *theMG, INT FromLevel, INT ToLevel)
  */
 /****************************************************************************/
 
+#ifndef IDENT_ONLY_NEW
 static int Gather_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
   NODE *theNode = (NODE *)obj;
@@ -1104,7 +1289,7 @@ static int Gather_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
 
   return(0);
 }
-
+#endif
 
 /****************************************************************************/
 /*
@@ -1126,6 +1311,7 @@ static int Gather_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
  */
 /****************************************************************************/
 
+#ifndef IDENT_ONLY_NEW
 static int Scatter_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
   NODE    *theNode        = (NODE *)obj;
@@ -1155,6 +1341,7 @@ static int Scatter_SonNodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO
 
   return(0);
 }
+#endif
 
 #ifdef __THREEDIM__
 
@@ -1275,8 +1462,25 @@ INT Identify_SonNodesAndSonEdges (GRID *theGrid)
   identlevel = GLEVEL(theGrid)+1;
         #endif
 
+#ifdef IDENT_ONLY_NEW
+  DDD_IFAOnewayX(NodeAllIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(int),
+                 Gather_NewNodeInfo,Scatter_NewNodeInfo);
+
+  if (UPGRID(theGrid) != NULL)
+  {
+    DDD_IFAOnewayX(NodeAllIF,GRID_ATTR(UPGRID(theGrid)),IF_FORWARD,sizeof(int),
+                   Gather_NodeInfo,Scatter_NodeInfo);
+    if (0)
+      DDD_IFAOnewayX(NodeAllIF,GRID_ATTR(UPGRID(theGrid)),IF_FORWARD,sizeof(int),
+                     Gather_TestNodeInfo,Scatter_TestNodeInfo);
+  }
+
+  DDD_IFAOnewayX(NodeAllIF,GRID_ATTR(theGrid),IF_FORWARD,2*sizeof(int),
+                 Gather_IdentSonNode,Scatter_IdentSonNode);
+#else
   DDD_IFAOnewayX(NodeAllIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(int),
                  Gather_SonNodeInfo,Scatter_SonNodeInfo);
+#endif
 
         #ifdef __THREEDIM__
   /* identify the sonedges */
@@ -1315,7 +1519,11 @@ INT Identify_Objects_of_ElementSide(GRID *theGrid, ELEMENT *theElement, INT i)
   if (theNeighbor == NULL) return(GM_OK);
 
   prio = EPRIO(theNeighbor);
-  if (!HGHOSTPRIO(prio) || NSONS(theNeighbor)!=0) return(GM_OK);
+  /*  is the case NSONS > 0 valid or possible ??? */
+  if (!EHGHOSTPRIO(prio) || NSONS(theNeighbor)!=0) return(GM_OK);
+  /*
+          if (!EHGHOSTPRIO(prio)) return(GM_OK);
+   */
 
         #ifdef Debug
   identlevel = GLEVEL(theGrid);
