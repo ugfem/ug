@@ -4348,6 +4348,7 @@ static INT RefineCommand (INT argc, char **argv)
    If the coarse grid is build interactively by 'ie', this command
    terminates this process and calls 'FixCoarseGrid'.
 
+   SYNTAX:
    'fixcoarsegrid'
 
    KEYWORDS:
@@ -4384,6 +4385,7 @@ static INT FixCoarseGridCommand (INT argc, char **argv)
    This command marks elements with refinement type,
    calling the function 'MarkForRefinement'.
 
+   SYNTAX:
    'mark [$h | {[<rule> [<side>]] [$a | $i <Id> | $s]} | $c] [$pos <x y [z]>] [$x <x>] [$y <y>] [$z <z>]'
 
    .  <rule>     - specify a refinement rule ("red" is default)
@@ -4745,6 +4747,7 @@ static INT MarkCommand (INT argc, char **argv)
    This command invokes hierarchical multigrid smoother,
    calling the function 'SmoothMultiGrid'.
 
+   SYNTAX:
    'smooth <nIt> [$b] [$nc]'
 
    .    <nIt>   - number of iterations
