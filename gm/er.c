@@ -716,16 +716,20 @@ static INT ExtractERule (ELEMENT *elem, ERULE *er)
     REP_ERR_RETURN(1);
 
   /* get sons with master priority */
-  if (GetSons(elem,sons))
+  if (GetAllSons(elem,sons))
     REP_ERR_RETURN(1);
 
-  ER_NSONS(er) = nsons;
+  ER_NSONS(er) = 0;
   for (s=0; s<nsons; s++)
   {
     ELEMENT *son = sons[s];
     int coe = CORNERS_OF_ELEM(son);
     SHORT corners[MAX_CORNERS_OF_ELEM_DIM];
     int k,j;
+
+    if (EGHOST(son)) continue;
+
+    ER_NSONS(er)++;
 
     /* corners and dcorners */
     ER_NCO(er,s) = coe;
