@@ -1625,6 +1625,20 @@ stage1: /* compute total number of clusters or error */
 
 	DDD_XferEnd();
 
+    /* remove all connections for vectors with PrioGhost */
+    {
+        int  g;
+        for(g=TOPLEVEL(mg); g>=0; g--)
+        {
+            GRID *grid = GRID_ON_LEVEL(mg,g);
+            VECTOR *vec;
+
+            for(vec=PRIO_LASTVECTOR(grid,PrioGhost); vec!=NULL; vec=PREDVC(vec))
+            {
+                DisposeConnectionFromVector(grid, vec);
+            }
+        }
+    }
 
 	/* set priorities of border nodes */
 	/* TODO this is an extra communication. eventually integrate this
