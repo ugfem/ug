@@ -1447,12 +1447,14 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
     ASSERT(NBNODE(LINK1(ecopy)) != NULL);
     if (newness == XFER_NEW) {
       enew = CreateEdge(theGrid,pe,i, FALSE);
+      SETEDSUBDOM(enew,EDSUBDOM(ecopy));
     }
     else {
       enew = GetEdge(NBNODE(LINK0(ecopy)),
                      NBNODE(LINK1(ecopy)));
       if (enew == NULL) {
         enew = CreateEdge(theGrid,pe,i,FALSE);
+        SETEDSUBDOM(enew,EDSUBDOM(ecopy));
         /* TODO: remove this check if the first call is with XFER_NEW */
         ASSERT(0);
         DEC_NO_OF_ELEM(enew);
