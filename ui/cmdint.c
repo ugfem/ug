@@ -45,6 +45,7 @@
 #include "ugenv.h"
 #include "misc.h"
 #include "defaults.h"
+#include "general.h"
 
 /* dev module */
 #include "devices.h"
@@ -163,8 +164,8 @@ static int mutelevel=0;
 static char execCmdBuffer[MAXCMDSIZE];
 #endif
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/
@@ -2411,6 +2412,9 @@ void CommandLoop (int argc, char **argv)
   }
 
   UserWrite(ver);
+  /* execute init script */
+  if (GetDefaultValue(DEFAULTSFILENAME,"initscript",inpLine)==0)
+    InterpretCommand(strcat("execute ",inpLine));
 
   /* TODO: delete this old code
      if (argc<2 || argv[1][1] == 's') */
@@ -2530,6 +2534,8 @@ void CommandLoop (int argc, char **argv)
 }
 else
 {
+  if (GetDefaultValue(DEFAULTSFILENAME,"initscript",inpLine)==0)
+    ParExecCommand(inpLine);
   /* TODO: delete this old code
      if (argc<2 || argv[1][1] == 's')  */
   if (argc<2 || strcmp(argv[1],"-sz")==0)
