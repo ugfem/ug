@@ -1372,8 +1372,8 @@ INT InterpolateCorrectionByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
             VVALUE(v,xc) += MVALUE(m,0) * VVALUE(w,yc);
         }
     if (damp[0] != 1.0)
-      if (dscalex(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
-                  ALL_VECTORS,(VECDATA_DESC *)to,(DOUBLE *)damp))
+      if (dscalx(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
+                 ALL_VECTORS,(VECDATA_DESC *)to,(DOUBLE *)damp))
         return (NUM_ERROR);
 
     return (NUM_OK);
@@ -1425,8 +1425,8 @@ INT InterpolateCorrectionByMatrix (GRID *FineGrid, const VECDATA_DESC *to,
   }
 
   if (CheckDamp(VD_NCOMP(to),damp))
-    if (dscalex(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
-                ALL_VECTORS,(VECDATA_DESC *)to,(DOUBLE *)damp))
+    if (dscalx(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
+               ALL_VECTORS,(VECDATA_DESC *)to,(DOUBLE *)damp))
 
       return (NUM_OK);
 }
@@ -1463,8 +1463,8 @@ INT InterpolateCorrectionByMatrix_NoSkip (GRID *FineGrid, const VECDATA_DESC *to
             VVALUE(v,xc) += MVALUE(m,0) * VVALUE(w,yc);
         }
     if (damp[0] != 1.0)
-      if (dscalex(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
-                  ALL_VECTORS,(VECDATA_DESC *)to,(DOUBLE *)damp))
+      if (dscalx(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
+                 ALL_VECTORS,(VECDATA_DESC *)to,(DOUBLE *)damp))
         return (NUM_ERROR);
 
     return (NUM_OK);
@@ -1494,8 +1494,8 @@ INT InterpolateCorrectionByMatrix_NoSkip (GRID *FineGrid, const VECDATA_DESC *to
   }
 
   if (CheckDamp(VD_NCOMP(to),damp))
-    if (dscalex(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
-                ALL_VECTORS,(VECDATA_DESC *)to,(DOUBLE *)damp))
+    if (dscalx(MYMG(FineGrid),GLEVEL(FineGrid),GLEVEL(FineGrid),
+               ALL_VECTORS,(VECDATA_DESC *)to,(DOUBLE *)damp))
       return (NUM_ERROR);
 
   return (NUM_OK);

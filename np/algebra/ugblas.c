@@ -1921,6 +1921,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 }
 #endif /* ModelP */
 
+
 /****************************************************************************/
 /*D
    dset - set all components of a vector to a given value
@@ -1998,10 +1999,10 @@ D*/
 
 /****************************************************************************/
 /*D
-   dscale - scaling x with a
+   dscal - scaling x with a
 
    SYNOPSIS:
-   INT dscalex (MULTIGRID *mg, INT fl, INT tl, INT mode, 
+   INT dscal (MULTIGRID *mg, INT fl, INT tl, INT mode, 
    VECDATA_DESC *x, DOUBLE a);
 
    PARAMETERS:
@@ -2022,7 +2023,7 @@ D*/
 D*/
 /****************************************************************************/
 
-#define T_FUNCNAME      dscale
+#define T_FUNCNAME      dscal
 #define T_ARGS          ,DOUBLE a
 #define T_CONFIG        DOUBLE *value;
 #define T_MOD_SCAL      VVALUE(v,xc) *= a;
@@ -2036,10 +2037,10 @@ D*/
 
 /****************************************************************************/
 /*D
-   dscalex - scaling x with a
+   dscalx - scaling x with a
 
    SYNOPSIS:
-   INT dscalex (MULTIGRID *mg, INT fl, INT tl, INT mode, 
+   INT dscalx (MULTIGRID *mg, INT fl, INT tl, INT mode, 
    VECDATA_DESC *x, DOUBLE *a);
 
    PARAMETERS:
@@ -2061,7 +2062,7 @@ D*/
 D*/
 /****************************************************************************/
 
-#define T_FUNCNAME      dscalex
+#define T_FUNCNAME      dscalx
 #define T_ARGS          ,DOUBLE *a
 #define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x);	              \
                         DEFINE_VS_CMPS(a); DOUBLE *value;
@@ -2190,7 +2191,7 @@ D*/
 #define T_USE_Y
 #define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value; \
                         DEFINE_VS_CMPS(a);
-#define T_MOD_SCAL      VVALUE(v,xc) += *a * VVALUE(v,yc);
+#define T_MOD_SCAL      VVALUE(v,xc) += a[aoff[VTYPE(v)]] * VVALUE(v,yc);
 #define T_PREP_SWITCH   value = a+aoff[vtype];
 #define T_MOD_VECTOR_1  VVALUE(v,cx0) += value[0] * VVALUE(v,cy0);
 #define T_MOD_VECTOR_2  VVALUE(v,cx1) += value[1] * VVALUE(v,cy1);
@@ -2298,7 +2299,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 #define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value;   \
                         DEFINE_VS_CMPS(a);                                    \
 						for (i=0; i<VD_NCOMP(x); i++) a[i] = 0.0;
-#define T_MOD_SCAL      *a += VVALUE(v,xc) * VVALUE(v,yc);
+#define T_MOD_SCAL      a[aoff[VTYPE(v)]] += VVALUE(v,xc) * VVALUE(v,yc);
 #define T_PREP_SWITCH   value = a+aoff[vtype];
 #define T_MOD_VECTOR_1  value[0] += VVALUE(v,cx0) * VVALUE(v,cy0);
 #define T_MOD_VECTOR_2  value[1] += VVALUE(v,cx1) * VVALUE(v,cy1);
@@ -2387,7 +2388,7 @@ D*/
 #define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value;   \
                         DEFINE_VS_CMPS(a); DOUBLE s;                          \
 						for (i=0; i<VD_NCOMP(x); i++) a[i] = 0.0;
-#define T_MOD_SCAL      s = VVALUE(v,xc); *a += s*s;
+#define T_MOD_SCAL      s = VVALUE(v,xc); a[aoff[VTYPE(v)]] += s*s;
 #define T_PREP_SWITCH   value = a+aoff[vtype];
 #define T_MOD_VECTOR_1  s = VVALUE(v,cx0); value[0] += s*s;
 #define T_MOD_VECTOR_2  s = VVALUE(v,cx1); value[1] += s*s;
@@ -2435,15 +2436,14 @@ D*/
 #define T_MOD_VECTOR_1  s = VVALUE(v,cx0); *a += s*s;
 #define T_MOD_VECTOR_2  s = VVALUE(v,cx1); *a += s*s;
 #define T_MOD_VECTOR_3  s = VVALUE(v,cx2); *a += s*s;
-#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++) {                              \
-						   s = VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i));            \
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++) {                             \
+						   s = VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i));           \
 						   *a += s*s; }
 #define T_POST_PAR      if (UG_GlobalSumNDOUBLE_X(1,a))                       \
                             REP_ERR_RETURN(NUM_ERROR);
 #define T_POST          *a = SQRT(*a);
 
 #include "vecfunc.ct"
-
 
 /****************************************************************************/
 /*D

@@ -25,12 +25,7 @@ INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode T_ARGS)
 	register VECTOR *v;
 	register MATRIX *mat;
 	INT lev,rtype,ctype,nr,nc,i,j;
-	DEFINE_MD_CMPS(m);
-	#ifdef T_USE_X
-	DEFINE_VD_CMPS(cx);
-	#endif
 	#ifdef T_USE_Y
-	DEFINE_VD_CMPS(cy);
 	register VECTOR *w;
 	#endif
 

@@ -35,7 +35,7 @@ $Header$
 						#ifdef T_USE_Y
 						w = MDEST(mat);
 						#endif
-						#ifdef T_RTYPE
+						#ifdef T_CTYPE
 						if (T_CTYPE) 
 						#endif
 						{
@@ -60,7 +60,7 @@ $Header$
 					#ifdef T_USE_Y
 					w = MDEST(mat);
 					#endif
-					#ifdef T_RTYPE
+					#ifdef T_CTYPE
 					if (T_CTYPE) 
 					#endif
 					{
@@ -86,7 +86,7 @@ $Header$
 					#ifdef T_USE_Y
 					w = MDEST(mat);
 					#endif
-					#ifdef T_RTYPE
+					#ifdef T_CTYPE
 					if (T_CTYPE) 
 					#endif
 					{

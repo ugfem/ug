@@ -21,7 +21,11 @@ $Header$
 */
 
 #ifdef T_MOD_SCAL
-if (VD_IS_SCALAR(x)) {
+if (VD_IS_SCALAR(x)
+	#ifdef T_USE_Y
+    && VD_IS_SCALAR(y)
+	#endif
+) {
 	register SHORT xc = VD_SCALCMP(x);
 	register SHORT mask = VD_SCALTYPEMASK(x);
 	#ifdef T_USE_Y
