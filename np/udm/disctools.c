@@ -1618,7 +1618,7 @@ INT ClearVecskipFlags (GRID *theGrid, const VECDATA_DESC *theVD)
   VECTOR *theVector;
   INT j,n;
 
-  for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector))
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector))
   {
     n = VD_NCMPS_IN_TYPE(theVD,VTYPE(theVector));
     for (j=0; j<n; j++)
