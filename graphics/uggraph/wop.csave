@@ -39,19 +39,12 @@
 #include "wpm.h"
 #include "misc.h"
 #include "evm.h"
-#include "simplex.h"
 #include "cw.h"
 #include "graph.h"
 #include "gm.h"
 #include "ugm.h"
 #include "num.h"
-
-#ifdef __TWODIM__
-#include "shapes2d.h"
-#endif
-#ifdef __THREEDIM__
-#include "shapes3d.h"
-#endif
+#include "shapes.h"
 
 /****************************************************************************/
 /*																			*/
@@ -81,7 +74,7 @@
 
 /* ctrl entries of element ctrl */
 INT ce_VSIDES;
-#define VSIDES_LEN                                              4
+#define VSIDES_LEN                                              6
 #define VSIDES(p)                                               CW_READ(p,ce_VSIDES)
 #define SETVSIDES(p,n)                                  CW_WRITE(p,ce_VSIDES,n)
 #define VIEWABLE(p,i)                                   (VSIDES(p) & (1<<i))
@@ -105,6 +98,11 @@ INT ce_CUTMODE;
 #define CM_BEHIND                                               0
 #define CM_INTERSECT                                    1
 #define CM_INFRONT                                              2
+
+/* Macros for PYRAMIDS and HEXAHEDRONS */
+#define GETBITS(x,p)     (((x)>>((p)+1-(3)))&~(~0<<(3)))
+#define SETBITS(x,p,y)   (((y)<<((p)+1-(3)))|(x))
+#define CORNER_OF_SIDE0(t,s,c) (element_descriptors[t]->corner_of_side[(s)][(c)])
 
 /* pixel resolution for inserting boundary nodes */
 #define SMALLPIX                        4
@@ -145,6 +143,44 @@ static INT OrderIndex[64] = {23,17,-1,15,  21,-1,11,9,   -1,-1,-1,14,  -1,-1,-1,
                              -1,-1,-1,-1,  20,-1,10,-1,  -1,-1,-1,-1,  -1,-1,7,6,
                              22,16,-1,-1,  -1,-1,-1,-1,  -1,13,-1,12,  -1,-1,-1,-1,
                              19,-1,-1,-1,  18,-1,-1,-1,   5,3,-1,2,         4,-1,1,0        };
+
+
+/*  CornerIndex[24][MAX_CORNERS_OF_ELEM] */
+static INT CornerIndex[24][4] = {
+  {0,1,2,3},{0,1,3,2},{0,2,1,3},{0,2,3,1},{0,3,1,2},{0,3,2,1},
+  {1,0,2,3},{1,0,3,2},{1,2,0,3},{1,2,3,0},{1,3,0,2},{1,3,2,0},
+  {2,0,1,3},{2,0,3,1},{2,1,0,3},{2,1,3,0},{2,3,0,1},{2,3,1,0},
+  {3,0,1,2},{3,0,2,1},{3,1,0,2},{3,1,2,0},{3,2,0,1},{3,2,1,0}
+};
+
+/*  SideCornerIndex[MAX_SIDES_OF_ELEM][24][MAX_CORNERS_OF_SIDE] */
+static INT SideCornerIndex[4][24][3] =
+{
+  {
+    {0,1,2},{0,1,2},{0,2,1},{0,2,1},{0,1,2},{0,2,1},
+    {1,0,2},{1,0,2},{1,2,0},{1,2,0},{1,0,2},{1,2,0},
+    {2,0,1},{2,0,1},{2,1,0},{2,1,0},{2,0,1},{2,1,0},
+    {0,1,2},{0,2,1},{1,0,2},{1,2,0},{2,0,1},{2,1,0}
+  },
+  {
+    {1,2,3},{1,3,2},{2,1,3},{2,3,1},{3,1,2},{3,2,1},
+    {1,2,3},{1,3,2},{1,2,3},{1,2,3},{1,3,2},{1,3,2},
+    {2,1,3},{2,3,1},{2,1,3},{2,1,3},{2,3,1},{2,3,1},
+    {3,1,2},{3,2,1},{3,1,2},{3,1,2},{3,2,1},{3,2,1}
+  },
+  {
+    {0,2,3},{0,3,2},{0,2,3},{0,2,3},{0,3,2},{0,3,2},
+    {0,2,3},{0,3,2},{2,0,3},{2,3,0},{3,0,2},{3,2,0},
+    {2,0,3},{2,0,3},{2,0,3},{2,3,0},{2,3,0},{2,3,0},
+    {3,0,2},{3,0,2},{3,0,2},{3,2,0},{3,2,0},{3,2,0}
+  },
+  {
+    {0,1,3},{0,1,3},{0,1,3},{0,3,1},{0,3,1},{0,3,1},
+    {1,0,3},{1,0,3},{1,0,3},{1,3,0},{1,3,0},{1,3,0},
+    {0,1,3},{0,3,1},{1,0,3},{1,3,0},{3,0,1},{3,1,0},
+    {3,0,1},{3,0,1},{3,1,0},{3,1,0},{3,0,1},{3,1,0}
+  }
+};
 
 static INT NoOfViewableSides[16] =      {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4}; /* get number of viewable sides	*/
 
@@ -7836,11 +7872,227 @@ static INT EW_PreProcess_EVector2D_FR (PICTURE *thePicture, WORK *theWork)
 
 #endif /* __TWODIM__ */
 
-/**********************************************************************************************************/
-/************************************ Part only for 3D Version ********************************************/
-/**********************************************************************************************************/
+/*********************** Part only for 3D Version **********************/
 
 #ifdef __THREEDIM__
+
+static INT SideCornerIndexPYR (ELEMENT *theElement, INT side, INT NodeOrder, INT i[4], INT icon[4][2])
+{
+  INT k, corner[4], b,j,n, cornercon[4][2], ncorners;
+
+  ncorners = CORNERS_OF_SIDE(theElement,side);
+
+  /* get corner number of this side */
+  for (k=0; k<ncorners; ++k)
+    corner[k] = CORNER_OF_SIDE(theElement,side,k);
+
+  /* init the corner connection field */
+  switch (ncorners) {
+  case (3) :
+    cornercon[0][0] = corner[1]; cornercon[0][1] = corner[2];
+    cornercon[1][0] = corner[0]; cornercon[1][1] = corner[2];
+    cornercon[2][0] = corner[0]; cornercon[2][1] = corner[1];
+    cornercon[3][0] = -1; cornercon[3][1] = -1;
+    break;
+  case (4) :
+    cornercon[0][0] = corner[1]; cornercon[0][1] = corner[3];
+    cornercon[1][0] = corner[0]; cornercon[1][1] = corner[2];
+    cornercon[2][0] = corner[1]; cornercon[2][1] = corner[3];
+    cornercon[3][0] = corner[0]; cornercon[3][1] = corner[2];
+    break;
+  default :
+    return(1);
+  }
+
+  j = 0;
+  for (k=0; k<CORNERS_OF_ELEM(theElement); ++k)
+  {
+    b = GETBITS(NodeOrder, 3*k+2);
+    if ((ncorners==3)&&(b!=corner[0])&&(b!=corner[1])&&(b!=corner[2])) continue;
+    if ((ncorners==4)&&(b!=corner[0])&&(b!=corner[1])&&(b!=corner[2])&&(b!=corner[3])) continue;
+    i[j] = b;
+    ++j;
+  }
+
+  for (k=0; k<ncorners; ++k)
+  {
+    for (j=0; j<ncorners; ++j)
+      if (corner[k]==i[j]) break;
+
+    for (n=0; n<ncorners; ++n)
+      if (cornercon[k][0]==i[n]) break;
+    icon[j][0] = n;
+    for (n=0; n<ncorners; ++n)
+      if (cornercon[k][1]==i[n]) break;
+    icon[j][1] = n;
+  }
+  return (0);
+}
+
+static INT SideCornerIndexHEX (ELEMENT *theElement, INT side, INT NodeOrder, INT i[4], INT icon[4][2])
+{
+  INT k, corner[4], b,j,n, cornercon[4][2];
+
+  for (k=0; k<4; ++k)                    /* 4=number of corners of hexahedron side */
+    corner[k] = CORNER_OF_SIDE0(TAG(theElement),side,k);
+
+  cornercon[0][0] = corner[1]; cornercon[0][1] = corner[3];
+  cornercon[1][0] = corner[0]; cornercon[1][1] = corner[2];
+  cornercon[2][0] = corner[1]; cornercon[2][1] = corner[3];
+  cornercon[3][0] = corner[0]; cornercon[3][1] = corner[2];
+
+  j = 0;
+  for (k=0; k<8; ++k)
+  {
+    b = GETBITS(NodeOrder, 3*k+2);
+    if ((b!=corner[0])&&(b!=corner[1])&&(b!=corner[2])&&(b!=corner[3])) continue;
+    i[j] = b;
+    ++j;
+  }
+
+  for (k=0; k<4; ++k)
+  {
+    for (j=0; j<4; ++j)
+      if (corner[k]==i[j]) break;
+
+    for (n=0; n<4; ++n)
+      if (cornercon[k][0]==i[n]) break;
+    icon[j][0] = n;
+    for (n=0; n<4; ++n)
+      if (cornercon[k][1]==i[n]) break;
+    icon[j][1] = n;
+  }
+  return (0);
+}
+
+
+/* TODO: this is not the fine way, better use general element concept */
+static INT PCornerOrder[5][4] = {{1,3,4,-1},{0,2,4,-1},{1,3,4,-1},{0,2,4,-1},{0,1,2,3}};
+
+static INT CornerIndexPYR (INT NodeOrder, INT i[8], INT icon[8][4])
+{
+  INT k,j,n;
+
+  for (k=0; k<5; ++k)
+    i[k] = GETBITS(NodeOrder, 3*k+2);
+
+  for (k=0; k<5; ++k)
+  {
+    for (j=0; j<5; ++j)
+      if (i[j] == k) break;
+
+    for (n=0; n<5; ++n)
+      if (PCornerOrder[k][0]==i[n]) break;
+    icon[j][0] = n;
+    for (n=0; n<5; ++n)
+      if (PCornerOrder[k][1]==i[n]) break;
+    icon[j][1] = n;
+    for (n=0; n<5; ++n)
+      if (PCornerOrder[k][2]==i[n]) break;
+    icon[j][2] = n;
+    if (PCornerOrder[k][3]==-1)
+      icon[j][3] = -1;
+    else {
+      for (n=0; n<5; ++n)
+        if (PCornerOrder[k][3]==i[n]) break;
+      icon[j][3] = n;
+    }
+  }
+  return (0);
+}
+
+
+/* TODO: this is not the fine way, better use general element concept */
+static INT ECornerOrder[8][3] = {{1,3,4},{0,2,5},{1,3,6},{0,2,7},
+                                 {0,5,7},{1,4,6},{2,5,7},{3,4,6}};
+
+static INT CornerIndexHEX (INT NodeOrder, INT i[8], INT icon[8][3])
+{
+  INT k,j,n;
+
+  for (k=0; k<8; ++k)
+    i[k] = GETBITS(NodeOrder, 3*k+2);
+
+  for (k=0; k<8; ++k)
+  {
+    for (j=0; j<8; ++j)
+      if (i[j] == k) break;
+
+    for (n=0; n<8; ++n)
+      if (ECornerOrder[k][0]==i[n]) break;
+    icon[j][0] = n;
+    for (n=0; n<8; ++n)
+      if (ECornerOrder[k][1]==i[n]) break;
+    icon[j][1] = n;
+    for (n=0; n<8; ++n)
+      if (ECornerOrder[k][2]==i[n]) break;
+    icon[j][2] = n;
+  }
+  return (0);
+}
+
+
+static DefinePolygon (COORD_VECTOR *Poly, INT Number)
+{
+  int i,j,n;
+  COORD Center[3], rad[6][3],  MaxCos, Cos, Direction[3], tmp;
+
+  Center[0]=Center[1]=Center[2]=0.0;
+  /* define center of mass of polygon */
+  for (i=0; i<Number; ++i)
+    V3_ADD(Poly[i],Center,Center)
+    V3_SCALE(1.0/(COORD)Number,Center)
+
+    for (i=0; i<Number; ++i)
+    {
+      V3_SUBTRACT(Poly[i],Center,rad[i])
+      V3_EUKLIDNORM(rad[i],Cos)
+      V3_SCALE(1.0/Cos,rad[i])
+    }
+
+  MaxCos = -1;
+  for (j=1; j<Number; ++j) {
+    V3_SCALAR_PRODUCT(rad[0],rad[j],Cos)
+    MaxCos = MAX(Cos,MaxCos);
+    if (MaxCos==Cos) n = j;
+  }
+  V3_COPY(Poly[1], Center)
+  V3_COPY(Poly[n],Poly[1])
+  V3_COPY(Center, Poly[n])
+
+  V3_COPY(rad[1], Center)
+  V3_COPY(rad[n], rad[1])
+  V3_COPY(Center, rad[n])
+
+  V3_VECTOR_PRODUCT(rad[0],rad[1],Direction)
+
+
+  for (i=1; i<Number-1; ++i)
+  {
+    MaxCos = -1;
+    for (j=i+1; j<Number; ++j) {
+      V3_SCALAR_PRODUCT(rad[i],rad[j],Cos)
+      tmp = MAX(Cos,MaxCos);
+      if (tmp==Cos)
+      {
+        V3_VECTOR_PRODUCT(rad[i],rad[j],Center)
+        V3_SCALAR_PRODUCT(Center,Direction,Cos)
+        if (Cos>=0.0) {
+          n = j;
+          MaxCos = tmp;
+        }
+      }
+    }
+    V3_COPY(Poly[i+1],Center)
+    V3_COPY(Poly[n],Poly[i+1])
+    V3_COPY(Center, Poly[n])
+
+    V3_COPY(rad[i+1],Center)
+    V3_COPY(rad[n],rad[i+1])
+    V3_COPY(Center, rad[n])
+  }
+  return (0);
+}
 
 /****************************************************************************/
 /*
@@ -7870,15 +8122,15 @@ static INT EW_PreProcess_EVector2D_FR (PICTURE *thePicture, WORK *theWork)
  */
 /****************************************************************************/
 
-static INT GetPolyElemSideISHalfSpace (COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Poly, INT *Number)
+static INT GetPolyElemSideISHalfSpaceTET (ELEMENT *theElement, COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Poly, INT *Number)
 {
-  INT i, j, count1, count2, count3;
-  COORD *x[CORNERS_OF_TETRASIDE], Z[CORNERS_OF_TETRASIDE];
+  INT i, j, count1, count2, count3, SwitchMode;
+  COORD *x[MAX_CORNERS_OF_SIDE], Z[MAX_CORNERS_OF_SIDE];
 
   /* get corners of the element side */
   count1 = 0;
   count2 = 0;
-  for (i=0; i<CORNERS_OF_TETRASIDE; i++)
+  for (i=0; i<CORNERS_OF_SIDE(theElement,side); i++)
   {
     j = SideCornerIndex[side][NodeOrder][i];
     x[i] = Corners[j];
@@ -7888,18 +8140,18 @@ static INT GetPolyElemSideISHalfSpace (COORD **Corners, COORD *CutZCoord, INT No
     if (Z[i] < 0.0)
       count2++;
   }
-  count3 = CORNERS_OF_TETRASIDE-count1-count2;
+  count3 = CORNERS_OF_SIDE(theElement,side)-count1-count2;
 
   /* build the polygon */
   *Number = 0;
-  if (count1+count3 >= CORNERS_OF_TETRASIDE)
+  if (count1+count3 >= CORNERS_OF_SIDE(theElement,side))
     return (0);
   for (i=0; i<count2+count3; i++)
     for (j=0; j<DIM; j++)
-      Poly[i][j] = x[CORNERS_OF_TETRASIDE-i-1][j];
+      Poly[i][j] = x[CORNERS_OF_SIDE(theElement,side)-i-1][j];
   *Number = count2+count3;
 
-  if (*Number == CORNERS_OF_TETRASIDE)
+  if (*Number == CORNERS_OF_SIDE(theElement,side))
     return (0);
   switch (count1)
   {
@@ -7920,42 +8172,427 @@ static INT GetPolyElemSideISHalfSpace (COORD **Corners, COORD *CutZCoord, INT No
   return (1);
 }
 
+
 /****************************************************************************/
-/*
-   GetLineElemSideISCutPlane - Get line
-
-   SYNOPSIS:
-   static INT GetLineElemSideISCutPlane (COORD **Corners,
-   COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Line,
-   INT *Number);
-
-   PARAMETERS:
-   .  Corners -
-   .  CutZCoord -
-   .  NodeOrder -
-   .  side -
-   .  Line -
-   .  Number -
-
-   DESCRIPTION:
-   This function gets line being the intersection of an elementside of an
-   tetrahedron an the cut plane.
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
+/*																			*/
+/* Function:  GetPolyElemSideISHalfSpacePYR									*/
+/*																			*/
+/* Purpose:   get polygon being the intersection of an elementside of an	*/
+/*			  pyramid and the half space behind cut plane					*/
+/*																			*/
+/* Input :	  all you need													*/
+/*																			*/
+/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/* Return:	  INT 0: ok                                                                                                     */
+/*			  INT 1: an error occurred										*/
+/*																			*/
 /****************************************************************************/
 
-static INT GetLineElemSideISCutPlane (COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Line, INT *Number)
+static INT GetPolyElemSideISHalfSpacePYR (ELEMENT *theElement, COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Poly, INT *Number)
+{
+  INT i, j, count1, count2, order[4], ordercon[4][2], ncorners;
+  COORD *x[4], Z[4];        /* 4=number of corners of hexahedron side */
+
+  /* get corners of the element side */
+  ncorners = CORNERS_OF_SIDE(theElement,side);
+  count1 = 0;
+  count2 = 0;
+  SideCornerIndexPYR (theElement, side, NodeOrder, order, ordercon);
+  for (i=0; i<ncorners; i++)
+  {
+    j = order[i];
+    x[i] = Corners[j];
+    Z[i] = CutZCoord[j];
+    if (Z[i] > SMALL_C)
+      count1++;
+    if (Z[i] < -SMALL_C)
+      count2++;
+  }
+
+  *Number = 0;
+  switch (ncorners) {
+  case (3) :
+    switch (count1)
+    {
+    case (0) :
+      switch (count2)
+      {
+      case (0) :
+        return (1);
+      case (1) :
+      case (2) :
+      case (3) :
+        V3_COPY(x[0], Poly[0])
+        V3_COPY(x[1], Poly[1])
+        i = 0;
+        if (ordercon[1][0]==0) i = 1;
+        V3_COPY(x[ordercon[1][i]], Poly[2])
+        *Number = 3;
+        return (0);
+      default :
+        return (1);
+        break;
+      }
+    case (1) :
+      switch (count2)
+      {
+      case (0) :
+        return (0);
+      case (1) :
+        V3_COPY(x[1], Poly[0])
+        V3_COPY(x[2], Poly[1])
+        i = 0;
+        if (ordercon[0][0] == 1) i = 1;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[2])
+        *Number = 3;
+        return (0);
+      case (2) :
+        V3_COPY(x[1], Poly[0])
+        V3_COPY(x[2], Poly[1])
+        i = 0;
+        if (ordercon[0][0] == 1) i = 1;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[2])
+        i = 0;
+        if (ordercon[0][0] == 2) i = 1;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[3])
+        *Number = 4;
+        return (0);
+      default :
+        return (1);
+        break;
+      }
+    case (2) :
+      switch (count2)
+      {
+      case (0) :
+        return (0);
+      case (1) :
+        V3_COPY(x[2], Poly[0])
+        i = 0;
+        V3_LINCOMB(Z[ordercon[2][i]]/(Z[ordercon[2][i]]-Z[2]), x[2], -Z[2]/(Z[ordercon[2][i]]-Z[2]), x[ordercon[2][i]], Poly[1])
+        i = 1;
+        V3_LINCOMB(Z[ordercon[2][i]]/(Z[ordercon[2][i]]-Z[2]), x[2], -Z[2]/(Z[ordercon[2][i]]-Z[2]), x[ordercon[2][i]], Poly[2])
+        *Number = 3;
+        return (0);
+      default :
+        return (1);
+        break;
+      }
+    case (3) :
+      switch (count2)
+      {
+      case (0) :
+        return (0);
+      default :
+        return (1);
+        break;
+      }
+    }
+    break;
+  case (4) :
+    switch (count1)
+    {
+    case (0) :
+      switch (count2)
+      {
+      case (0) :
+      case (1) :
+        return (1);
+      case (2) :
+      case (3) :
+      case (4) :
+        V3_COPY(x[0], Poly[0])
+        V3_COPY(x[1], Poly[1])
+        i = 0;
+        if (ordercon[1][0]==0) i = 1;
+        V3_COPY(x[ordercon[1][i]], Poly[2])
+        i = 0;
+        if (ordercon[0][0]==1) i = 1;
+        V3_COPY(x[ordercon[0][i]], Poly[3])
+        *Number = 4;
+        return (0);
+      default :
+        return (1);
+        break;
+      }
+    case (1) :
+      switch (count2)
+      {
+      case (0) :
+        return (1);
+      case (1) :
+        V3_COPY(x[1], Poly[0])
+        V3_COPY(x[2], Poly[1])
+        V3_COPY(x[3], Poly[2])
+        *Number = 3;
+        return (0);
+      case (2) :
+        V3_COPY(x[1], Poly[0])
+        i = 0;
+        if (ordercon[0][0] == 1) i = 1;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[1])
+        V3_COPY(x[ordercon[0][i]], Poly[2])
+        i = 0;
+        if (ordercon[1][0] == 0) i = 1;
+        V3_COPY(x[ordercon[1][i]], Poly[3])
+        *Number = 4;
+        return (0);
+      case (3) :
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][0]]), x[ordercon[0][0]], -Z[ordercon[0][0]]/(Z[0]-Z[ordercon[0][0]]), x[0], Poly[0])
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][1]]), x[ordercon[0][1]], -Z[ordercon[0][1]]/(Z[0]-Z[ordercon[0][1]]), x[0], Poly[1])
+        V3_COPY(x[ordercon[0][1]], Poly[2])
+        V3_COPY(x[ordercon[0][0]], Poly[4])
+        i = ordercon[0][1];
+        j = 0;
+        if (ordercon[i][0] == 0) j = 1;
+        V3_COPY(x[ordercon[i][j]], Poly[3])
+        *Number = 5;
+        return (0);
+      default :
+        return (1);
+        break;
+      }
+    case (2) :
+      switch (count2)
+      {
+      case (0) :
+        return (0);
+      case (1) :
+        V3_COPY(x[2], Poly[0])
+        V3_COPY(x[3], Poly[1])
+        i = 0;
+        if (ordercon[3][0] == 2) i = 1;
+        V3_LINCOMB(Z[ordercon[3][i]]/(Z[ordercon[3][i]]-Z[3]), x[3], -Z[3]/(Z[ordercon[3][i]]-Z[3]), x[ordercon[3][i]], Poly[2])
+        *Number = 3;
+        return (0);
+      case (2) :
+        i = 0;
+        if (ordercon[0][0] == 1) i = 1;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[0])
+        V3_COPY(x[ordercon[0][i]], Poly[1]);
+        i = 0;
+        if (ordercon[1][0] == 0) i = 1;
+        V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[3])
+        V3_COPY(x[ordercon[1][i]],Poly[2]);
+        *Number = 4;
+        return (0);
+      default :
+        return (1);
+        break;
+      }
+    case (3) :
+      switch (count2)
+      {
+      case (0) :
+        return (0);
+      case (1) :
+        for (i=0; i<2; ++i)
+          V3_LINCOMB(Z[ordercon[3][i]]/(Z[ordercon[3][i]]-Z[3]), x[3], -Z[3]/(Z[ordercon[3][i]]-Z[3]), x[ordercon[3][i]], Poly[i])
+          V3_COPY(x[3], Poly[2])
+          *Number = 3;
+        return (0);
+      default :
+        return (1);
+        break;
+      }
+    case (4) :
+      switch (count2)
+      {
+      case (0) :
+        return (0);
+      default :
+        return (1);
+        break;
+      }
+    }
+    break;
+  default :
+    return(1);
+  }
+
+  return (1);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  GetPolyElemSideISHalfSpaceHEX									*/
+/*																			*/
+/* Purpose:   get polygon being the intersection of an elementside of an	*/
+/*			  hexahedron an the half space behind cut plane				    */
+/*																			*/
+/* Input :	  all you need													*/
+/*																			*/
+/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/*																			*/
+/* Return:	  INT 0: ok                                                                                                     */
+/*			  INT 1: an error occurred										*/
+/*																			*/
+/****************************************************************************/
+
+static INT GetPolyElemSideISHalfSpaceHEX (ELEMENT *theElement, COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Poly, INT *Number)
+{
+  INT i, j, count1, count2, order[4], ordercon[4][2];
+  COORD *x[4], Z[4];        /* 4=number of corners of hexahedron side */
+
+  /* get corners of the element side */
+  count1 = 0;
+  count2 = 0;
+  SideCornerIndexHEX (theElement, side, NodeOrder, order, ordercon);
+  for (i=0; i<4; i++)       /* 4=number of corners of hexahedron side */
+  {
+    j = order[i];
+    x[i] = Corners[j];
+    Z[i] = CutZCoord[j];
+    if (Z[i] > SMALL_C)
+      count1++;
+    if (Z[i] < -SMALL_C)
+      count2++;
+  }
+
+  *Number = 0;
+  switch (count1)
+  {
+  case (0) :
+    switch (count2)
+    {
+    case (0) :
+    case (1) :
+      return (1);
+    case (2) :
+    case (3) :
+    case (4) :
+      V3_COPY(x[0], Poly[0])
+      V3_COPY(x[1], Poly[1])
+      i = 0;
+      if (ordercon[1][0]==0) i = 1;
+      V3_COPY(x[ordercon[1][i]], Poly[2])
+      i = 0;
+      if (ordercon[0][0]==1) i = 1;
+      V3_COPY(x[ordercon[0][i]], Poly[3])
+      *Number = 4;
+      return (0);
+    default :
+      return (1);
+      break;
+    }
+  case (1) :
+    switch (count2)
+    {
+    case (0) :
+      return (1);
+    case (1) :
+      V3_COPY(x[1], Poly[0])
+      V3_COPY(x[2], Poly[1])
+      V3_COPY(x[3], Poly[2])
+      *Number = 3;
+      return (0);
+    case (2) :
+      V3_COPY(x[1], Poly[0])
+      i = 0;
+      if (ordercon[0][0] == 1) i = 1;
+      V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[1])
+      V3_COPY(x[ordercon[0][i]], Poly[2])
+      i = 0;
+      if (ordercon[1][0] == 0) i = 1;
+      V3_COPY(x[ordercon[1][i]], Poly[3])
+      *Number = 4;
+      return (0);
+    case (3) :
+      V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][0]]), x[ordercon[0][0]], -Z[ordercon[0][0]]/(Z[0]-Z[ordercon[0][0]]), x[0], Poly[0])
+      V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][1]]), x[ordercon[0][1]], -Z[ordercon[0][1]]/(Z[0]-Z[ordercon[0][1]]), x[0], Poly[1])
+      V3_COPY(x[ordercon[0][1]], Poly[2])
+      V3_COPY(x[ordercon[0][0]], Poly[4])
+      i = ordercon[0][1];
+      j = 0;
+      if (ordercon[i][0] == 0) j = 1;
+      V3_COPY(x[ordercon[i][j]], Poly[3])
+      *Number = 5;
+      return (0);
+    default :
+      return (1);
+      break;
+    }
+  case (2) :
+    switch (count2)
+    {
+    case (0) :
+      return (0);
+    case (1) :
+      V3_COPY(x[2], Poly[0])
+      V3_COPY(x[3], Poly[1])
+      i = 0;
+      if (ordercon[3][0] == 2) i = 1;
+      V3_LINCOMB(Z[ordercon[3][i]]/(Z[ordercon[3][i]]-Z[3]), x[3], -Z[3]/(Z[ordercon[3][i]]-Z[3]), x[ordercon[3][i]], Poly[2])
+      *Number = 3;
+      return (0);
+    case (2) :
+      i = 0;
+      if (ordercon[0][0] == 1) i = 1;
+      V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[0])
+      V3_COPY(x[ordercon[0][i]], Poly[1]);
+      i = 0;
+      if (ordercon[1][0] == 0) i = 1;
+      V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[3])
+      V3_COPY(x[ordercon[1][i]],Poly[2]);
+      *Number = 4;
+      return (0);
+    default :
+      return (1);
+      break;
+    }
+  case (3) :
+    switch (count2)
+    {
+    case (0) :
+      return (0);
+    case (1) :
+      for (i=0; i<2; ++i)
+        V3_LINCOMB(Z[ordercon[3][i]]/(Z[ordercon[3][i]]-Z[3]), x[3], -Z[3]/(Z[ordercon[3][i]]-Z[3]), x[ordercon[3][i]], Poly[i])
+        V3_COPY(x[3], Poly[2])
+        *Number = 3;
+      return (0);
+    default :
+      return (1);
+      break;
+    }
+  case (4) :
+    switch (count2)
+    {
+    case (0) :
+      return (0);
+    default :
+      return (1);
+      break;
+    }
+  }
+
+  return (1);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  GetLineElemSideISCutPlaneTET									*/
+/*																			*/
+/* Purpose:   get line being the intersection of an elementside of an		*/
+/*			  tetrahedron an the cut plane									*/
+/*																			*/
+/* Input :	  all you need													*/
+/*																			*/
+/* Output:	  COORD_VECTOR *Line, INT *Number: output polygon: 0 or 2		*/
+/*																	        */
+/* Return:	  INT 0: ok                                                                                                     */
+/*			  INT 1: an error occurred										*/
+/*																			*/
+/****************************************************************************/
+
+static INT GetLineElemSideISCutPlaneTET (ELEMENT *theElement, COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Line, INT *Number)
 {
   INT i, j, c;
-  COORD *x[CORNERS_OF_TETRASIDE], Z[CORNERS_OF_TETRASIDE];
+  COORD *x[MAX_CORNERS_OF_SIDE], Z[MAX_CORNERS_OF_SIDE];
 
   /* get corners of the element side */
   c = 0;
-  for (i=0; i<CORNERS_OF_TETRASIDE; i++)
+  for (i=0; i<CORNERS_OF_SIDE(theElement,side); i++)
   {
     j = SideCornerIndex[side][NodeOrder][i];
     x[i] = Corners[j];
@@ -7974,6 +8611,70 @@ static INT GetLineElemSideISCutPlane (COORD **Corners, COORD *CutZCoord, INT Nod
   case (2) :
     V3_LINCOMB(Z[0]/(Z[0]-Z[2]), x[2], -Z[2]/(Z[0]-Z[2]), x[0], Line[0])
     V3_LINCOMB(Z[1]/(Z[1]-Z[2]), x[2], -Z[2]/(Z[1]-Z[2]), x[1], Line[1])
+    *Number = 2;
+    return (0);
+  default :
+    *Number = 0;
+    return (0);
+  }
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  GetLineElemSideISCutPlaneHEX									*/
+/*																			*/
+/* Purpose:   get line being the intersection of an elementside of an		*/
+/*			  hexahedron an the cut plane									*/
+/*																			*/
+/* Input :	  all you need													*/
+/*																			*/
+/* Output:	  COORD_VECTOR *Line, INT *Number: output polygon: 0 or 2		*/
+/*																			*/
+/* Return:	  INT 0: ok                                                                                                     */
+/*			  INT 1: an error occurred										*/
+/*																			*/
+/****************************************************************************/
+
+static INT GetLineElemSideISCutPlaneHEX (ELEMENT* theElement, COORD **Corners, COORD *CutZCoord, INT NodeOrder, INT side, COORD_VECTOR *Line, INT *Number)
+{
+  INT i, j, c, order[4], ordercon[4][2];
+  COORD *x[4], Z[4];
+
+  /* get corners of the element side */
+  c = 0;
+  switch (TAG(theElement)) {
+  case (PYRAMID) : SideCornerIndexPYR (theElement, side, NodeOrder, order, ordercon); break;
+  case (HEXAHEDRON) : SideCornerIndexHEX (theElement, side, NodeOrder, order, ordercon); break;
+  default : return(1);
+  }
+  for (i=0; i<CORNERS_OF_SIDE(theElement,side); i++)
+  {
+    j = order[i];
+    x[i] = Corners[j];
+    Z[i] = CutZCoord[j];
+    if (Z[i] > SMALL_C) c++;
+  }
+
+  /* build the polygon */
+  switch (c)
+  {
+  case (1) :
+    V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][0]]), x[ordercon[0][0]], -Z[ordercon[0][0]]/(Z[0]-Z[ordercon[0][0]]), x[0], Line[0])
+    V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][1]]), x[ordercon[0][1]], -Z[ordercon[0][1]]/(Z[0]-Z[ordercon[0][1]]), x[0], Line[1])
+    *Number = 2;
+    return (0);
+  case (2) :
+    i = 0;
+    if (ordercon[0][0] == 1) i=1;
+    V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Line[0])
+    i = 0;
+    if (ordercon[1][0] == 0) i=1;
+    V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Line[1])
+    *Number = 2;
+    return (0);
+  case (3) :
+    V3_LINCOMB(Z[ordercon[3][0]]/(Z[ordercon[3][0]]-Z[3]), x[3], -Z[3]/(Z[ordercon[3][0]]-Z[3]), x[ordercon[3][0]], Line[0])
+    V3_LINCOMB(Z[ordercon[3][1]]/(Z[ordercon[3][1]]-Z[3]), x[3], -Z[3]/(Z[ordercon[3][1]]-Z[3]), x[ordercon[3][1]], Line[1])
     *Number = 2;
     return (0);
   default :
@@ -8008,9 +8709,25 @@ static INT GetLineElemSideISCutPlane (COORD **Corners, COORD *CutZCoord, INT Nod
  */
 /****************************************************************************/
 
-static INT GetPolyElemISCutPlane (COORD **CornerDC, COORD *CutZCoord, INT NodeOrder, COORD_VECTOR *Poly, INT *Number)
+/****************************************************************************/
+/*																			*/
+/* Function:  GetPolyElemISCutPlaneTET                                                                          */
+/*																			*/
+/* Purpose:   get polygon being the intersection of an tetrahedron and the	*/
+/*			  cut plane                                                                                                     */
+/*																			*/
+/* Input :	  all you need													*/
+/*																			*/
+/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/*																			*/
+/* Return:	  INT 0: ok                                                                                                     */
+/*			  INT 1: an error occurred										*/
+/*																			*/
+/****************************************************************************/
+
+static INT GetPolyElemISCutPlaneTET (COORD **CornerDC, COORD *CutZCoord, INT NodeOrder, COORD_VECTOR *Poly, INT *Number)
 {
-  INT i, j, count1, count2;
+  INT i, j, count1, count2, SwitchMode;
   COORD *x[MAX_CORNERS_OF_ELEM], Z[MAX_CORNERS_OF_ELEM];
 
   /* get corners of the element side */
@@ -8122,6 +8839,723 @@ static INT GetPolyElemISCutPlane (COORD **CornerDC, COORD *CutZCoord, INT NodeOr
 }
 
 /****************************************************************************/
+/*																			*/
+/* Function:  GetPolyElemISCutPlanePYR										*/
+/*																			*/
+/* Purpose:   get polygon being the intersection of a pyramid and the		*/
+/*			  cut plane                                                                                                     */
+/*																			*/
+/* Input :	  all you need													*/
+/*																			*/
+/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/*																			*/
+/* Return:	  INT 0: ok                                                                                                     */
+/*			  INT 1: an error occurred										*/
+/*																			*/
+/****************************************************************************/
+
+static INT GetPolyElemISCutPlanePYR (COORD **CornerDC, COORD *CutZCoord, INT NodeOrder, COORD_VECTOR *Poly, INT *Number)
+{
+  INT i, j, count1, count2, order[5], ordercon[5][4];
+  COORD *x[MAX_CORNERS_OF_ELEM], Z[MAX_CORNERS_OF_ELEM];
+
+  /* get corners of the element side */
+  count1 = 0;
+  count2 = 0;
+  CornerIndexPYR (NodeOrder, order, ordercon);
+  for (i=0; i<5; i++)           /* 5=Corners of pyramid */
+  {
+    j = order[i];
+    x[i] = CornerDC[j];
+    Z[i] = CutZCoord[j];
+    if (Z[i] > SMALL_C)
+      count1++;
+    if (Z[i] < -SMALL_C)
+      count2++;
+  }
+
+  /* build the polygon */
+  *Number = 0;
+  switch (count1)
+  {
+  case (0) :
+    switch (count2)
+    {
+    case (0) :
+      return (1);
+    case (1) :
+    case (2) :
+    case (3) :
+    case (4) :
+    case (5) :
+      return (0);
+    }
+  case (1) :
+    switch (count2)
+    {
+    case (0) :
+      if (ordercon[0][3]==-1)
+        return(1);
+      else
+        return(0);
+    case (1) :
+      if (ordercon[0][3]==-1) {
+        V3_COPY(x[1], Poly[0])
+        V3_COPY(x[2], Poly[1])
+        V3_COPY(x[3], Poly[2])
+        *Number = 3;
+        return (0);
+      }
+      else
+        return(1);
+    case (2) :
+      V3_COPY(x[1], Poly[0])
+      V3_COPY(x[2], Poly[1])
+      i = 0;
+      if (ordercon[0][i]==1 || ordercon[0][i]==2) {
+        i++;
+        if (ordercon[0][i]==1 || ordercon[0][i]==2) {
+          i++;
+        }
+      }
+      V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[2])
+      if (ordercon[0][3]==-1) {
+        *Number = 3;
+      }
+      else {
+        i++;
+        if (ordercon[0][i]==1 || ordercon[0][i]==2) {
+          i++;
+          if (ordercon[0][i]==1 || ordercon[0][i]==2) {
+            i++;
+          }
+        }
+        assert(i<4);
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[3])
+        *Number = 4;
+        DefinePolygon (Poly, *Number);
+      }
+      return (0);
+    case (3) :
+      V3_COPY(x[1], Poly[0])
+      i = 0;
+      if (ordercon[0][i]==1) i++;
+      V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[1])
+      i++;
+      if (ordercon[0][i]==1) i++;
+      assert(i<3);
+      V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[2])
+      if (ordercon[0][3]==-1) {
+        *Number = 3;
+      }
+      else {
+        if (ordercon[0][i]==1) i++;
+        assert(i<4);
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[3])
+        *Number = 4;
+        DefinePolygon (Poly, *Number);
+      }
+      return (0);
+    case (4) :
+      i = 0;
+      V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[0])
+      i++;
+      V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[1])
+      i++;
+      V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[2])
+      if (ordercon[0][3]==-1) {
+        *Number = 3;
+      }
+      else {
+        i++;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[3])
+        *Number = 4;
+        DefinePolygon (Poly, *Number);
+      }
+      return (0);
+    default :
+      return (1);
+      break;
+    }
+  case (2) :
+    switch (count2)
+    {
+    case (0) :
+      return (0);
+    case (1) :
+      j = 0;
+      V3_COPY(x[2],Poly[j++])
+      V3_COPY(x[3],Poly[j++])
+      i = 0;
+      if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)) i++;
+      if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)) i++;
+      V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j++])
+      i = 0;
+      if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)) i++;
+      if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)) i++;
+      V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j++])
+      *Number = 4;
+      DefinePolygon (Poly, *Number);
+      return(0);
+    case (2) :
+      j = 0;
+      V3_COPY(x[2],Poly[j++])
+      i = 0;
+      if ((ordercon[0][i]==1)||(ordercon[0][i]==2)) i++;
+      if ((ordercon[0][i]==1)||(ordercon[0][i]==2)) i++;
+      V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j++])
+      i++;
+      if ((ordercon[0][i]!=1)&&(ordercon[0][i]!=2))
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j++])
+        i = 0;
+      if ((ordercon[1][i]==0)||(ordercon[1][i]==2)) i++;
+      if ((ordercon[1][i]==0)||(ordercon[1][i]==2)) i++;
+      V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j++])
+      i++;
+      if ((ordercon[1][i]!=0)&&(ordercon[1][i]!=2))
+        V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j++])
+        assert(j==4);
+      *Number = 4;
+      DefinePolygon (Poly, *Number);
+      return(0);
+    case (3) :
+      j = 0;
+      i = 0;
+      if (ordercon[0][i]==1) i++;
+      V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j++])
+      i++;
+      if (ordercon[0][i]==1) i++;
+      V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j++])
+      i = 0;
+      if (ordercon[1][i]==0) i++;
+      V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j++])
+      i++;
+      if (ordercon[1][i]==0) i++;
+      V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j++])
+      *Number = 4;
+      DefinePolygon (Poly, *Number);
+      return (0);
+    default :
+      return (1);
+      break;
+    }
+  case (3) :
+    switch (count2)
+    {
+    case (0) :
+      return(1);
+    case (1) :
+      j = 0;
+      V3_COPY(x[3],Poly[j++])
+      i = 0;
+      if (ordercon[4][i]==3) i++;
+      V3_LINCOMB(-Z[4]/(Z[4]-Z[ordercon[4][i]]), x[ordercon[4][i]], Z[ordercon[4][i]]/(Z[1]-Z[ordercon[4][i]]), x[4], Poly[j++])
+      i++;
+      if (ordercon[4][i]==3) i++;
+      V3_LINCOMB(-Z[4]/(Z[4]-Z[ordercon[4][i]]), x[ordercon[4][i]], Z[ordercon[4][i]]/(Z[1]-Z[ordercon[4][i]]), x[4], Poly[j++])
+      *Number = 3;
+      return(0);
+    case (2) :
+      j = 0;
+      i = 0;
+      if (ordercon[3][i]==4) i++;
+      V3_LINCOMB(-Z[3]/(Z[3]-Z[ordercon[3][i]]), x[ordercon[3][i]], Z[ordercon[3][i]]/(Z[1]-Z[ordercon[3][i]]), x[3], Poly[j++])
+      i++;
+      if (ordercon[3][i]==4) i++;
+      V3_LINCOMB(-Z[3]/(Z[3]-Z[ordercon[3][i]]), x[ordercon[3][i]], Z[ordercon[3][i]]/(Z[1]-Z[ordercon[3][i]]), x[3], Poly[j++])
+      i = 0;
+      if (ordercon[4][i]==3) i++;
+      V3_LINCOMB(-Z[4]/(Z[4]-Z[ordercon[4][i]]), x[ordercon[4][i]], Z[ordercon[4][i]]/(Z[1]-Z[ordercon[4][i]]), x[4], Poly[j++])
+      i++;
+      if (ordercon[4][i]==3) i++;
+      V3_LINCOMB(-Z[4]/(Z[4]-Z[ordercon[4][i]]), x[ordercon[4][i]], Z[ordercon[4][i]]/(Z[1]-Z[ordercon[4][i]]), x[4], Poly[j++])
+      *Number = 4;
+      DefinePolygon (Poly, *Number);
+      return (0);
+    default :
+      return (1);
+    }
+  case (4) :
+    switch (count2)
+    {
+    case (0) :
+      return (0);
+    case (1) :
+      j = 0;
+      i = 0;
+      V3_LINCOMB(-Z[4]/(Z[4]-Z[ordercon[4][i]]), x[ordercon[4][i]], Z[ordercon[4][i]]/(Z[1]-Z[ordercon[4][i]]), x[4], Poly[j++])
+      i++;
+      V3_LINCOMB(-Z[4]/(Z[4]-Z[ordercon[4][i]]), x[ordercon[4][i]], Z[ordercon[4][i]]/(Z[1]-Z[ordercon[4][i]]), x[4], Poly[j++])
+      i++;
+      V3_LINCOMB(-Z[4]/(Z[4]-Z[ordercon[4][i]]), x[ordercon[4][i]], Z[ordercon[4][i]]/(Z[1]-Z[ordercon[4][i]]), x[4], Poly[j++])
+      i++;
+      if (ordercon[4][i]==-1)
+        *Number = 3;
+      else {
+        V3_LINCOMB(-Z[4]/(Z[4]-Z[ordercon[4][i]]), x[ordercon[4][i]], Z[ordercon[4][i]]/(Z[1]-Z[ordercon[4][i]]), x[4], Poly[j++])
+        *Number = 4;
+      }
+      if (*Number>3) DefinePolygon (Poly, *Number);
+      return (0);
+    default :
+      return (1);
+    }
+  case (5) :
+    return(0);
+  }
+
+  return (1);
+}
+
+/****************************************************************************/
+/*																			*/
+/* Function:  GetPolyElemISCutPlaneHEX										*/
+/*																			*/
+/* Purpose:   get polygon being the intersection of an hexahedron and the	*/
+/*			  cut plane                                                                                                     */
+/*																			*/
+/* Input :	  all you need													*/
+/*																			*/
+/* Output:	  COORD_VECTOR *Poly, INT *Number: output polygon				*/
+/*																			*/
+/* Return:	  INT 0: ok                                                                                                     */
+/*			  INT 1: an error occurred										*/
+/*																			*/
+/****************************************************************************/
+
+static INT GetPolyElemISCutPlaneHEX (COORD **CornerDC, COORD *CutZCoord, INT NodeOrder, COORD_VECTOR *Poly, INT *Number)
+{
+  INT i, j, count1, count2, order[8], ordercon[8][3];
+  COORD *x[MAX_CORNERS_OF_ELEM], Z[MAX_CORNERS_OF_ELEM];
+
+  /* get corners of the element side */
+  count1 = 0;
+  count2 = 0;
+  CornerIndexHEX (NodeOrder, order, ordercon);
+  for (i=0; i<8; i++)           /* 8=Corners of hexahedron */
+  {
+    j = order[i];
+    x[i] = CornerDC[j];
+    Z[i] = CutZCoord[j];
+    if (Z[i] > SMALL_C)
+      count1++;
+    if (Z[i] < -SMALL_C)
+      count2++;
+  }
+
+  /* build the polygon */
+  *Number = 0;
+  switch (count1)
+  {
+  case (0) :
+    switch (count2)
+    {
+    case (0) :
+    case (1) :
+    case (2) :
+    case (3) :
+      return (1);
+    case (4) :
+      for (i=0; i<4; ++i)
+        V3_COPY(x[i], Poly[i])
+        *Number = 4;
+      DefinePolygon (Poly, *Number);
+      return (0);
+    case (5) :
+      return (1);
+    case (6) :
+    case (7) :
+    case (8) :
+      return (0);
+    }
+  case (1) :
+    switch (count2)
+    {
+    case (0) :
+    case (1) :
+    case (2) :
+    case (3) :
+      return (1);
+    case (4) :
+      V3_COPY(x[1], Poly[0])
+      V3_COPY(x[2], Poly[1])
+      V3_COPY(x[3], Poly[2])
+      *Number = 3;
+      return (0);
+    case (5) :
+      V3_COPY(x[1], Poly[0])
+      V3_COPY(x[2], Poly[1])
+      for (i=0; i<3; ++i) {
+        if ((ordercon[0][i]==1)||(ordercon[0][i]==2)) continue;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[2])
+      }
+      *Number = 3;
+      return (0);
+    case (6) :
+      V3_COPY(x[1], Poly[0])
+      j = 0;
+      for (i=0; i<3; ++i) {
+        if ((ordercon[0][i]==1)) continue;
+        ++j;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+      }
+      *Number = 3;
+      return (0);
+    case (7) :
+      for (i=0; i<3; ++i)
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[i])
+        *Number = 3;
+      return (0);
+    default :
+      return (1);
+      break;
+    }
+  case (2) :
+    switch (count2)
+    {
+    case (0) :
+    case (1) :
+      return (1);
+    case (2) :
+      V3_COPY(x[2],Poly[0])
+      V3_COPY(x[3],Poly[1])
+      V3_COPY(x[4],Poly[2])
+      V3_COPY(x[5],Poly[3])
+      *Number = 4;
+      DefinePolygon (Poly, *Number);
+      return (0);
+    case (3) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)||(ordercon[0][i]==4)) continue;
+        ++j;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)||(ordercon[1][i]==4)) continue;
+        ++j;
+        V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+      }
+      ++j; V3_COPY(x[2],Poly[j])
+      ++ j; V3_COPY(x[3],Poly[j])
+      ++ j; V3_COPY(x[4],Poly[j])
+      *Number = j + 1;
+      if (*Number>3) DefinePolygon (Poly, *Number);
+      return (0);
+    case (4) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)) continue;
+        ++j;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)) continue;
+        ++j;
+        V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+      }
+      ++j; V3_COPY(x[2],Poly[j])
+      ++ j; V3_COPY(x[3],Poly[j])
+      *Number = j + 1;
+      if (*Number>3) DefinePolygon (Poly, *Number);
+      return (0);
+    case (5) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        if ((ordercon[0][i]==1)||(ordercon[0][i]==2)) continue;
+        ++j;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[1][i]==0)||(ordercon[1][i]==2)) continue;
+        ++j;
+        V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+      }
+      ++j; V3_COPY(x[2],Poly[j])
+      *Number = j + 1;
+      if (*Number>3) DefinePolygon (Poly, *Number);
+      return (0);
+    case (6) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        if (ordercon[0][i]==1) continue;
+        ++j;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if (ordercon[1][i]==0) continue;
+        ++j;
+        V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+      }
+      assert(j==3);
+      *Number = 4;
+      DefinePolygon (Poly, *Number);
+      return (0);
+    default :
+      return (1);
+      break;
+    }
+  case (3) :
+    switch (count2)
+    {
+    case (0) :
+    case (1) :
+    case (2) :
+      return (1);
+    case (3) :
+    case (4) :
+    case (5) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        if ((ordercon[0][i]==1)||(ordercon[0][i]==2)) continue;
+        ++j;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[1][i]==0)||(ordercon[1][i]==2)) continue;
+        ++j;
+        V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[2][i]==0)||(ordercon[2][i]==1)) continue;
+        ++j;
+        V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
+      }
+      assert(j==4);
+      *Number = 5;
+      DefinePolygon (Poly, *Number);
+      return (0);
+    default :
+      return (1);
+    }
+  case (4) :
+    switch (count2)
+    {
+    case (0) :
+      return (0);
+    case (1) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)||(ordercon[0][i]==4)||(ordercon[0][i]==5)||(ordercon[0][i]==6)) continue;
+        ++j;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)||(ordercon[1][i]==4)||(ordercon[1][i]==5)||(ordercon[1][i]==6)) continue;
+        ++j;
+        V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[2][i]==0)||(ordercon[2][i]==1)||(ordercon[2][i]==3)||(ordercon[2][i]==4)||(ordercon[2][i]==5)||(ordercon[2][i]==6)) continue;
+        ++j;
+        V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[3][i]==0)||(ordercon[3][i]==1)||(ordercon[3][i]==2)||(ordercon[3][i]==4)||(ordercon[3][i]==5)||(ordercon[3][i]==6)) continue;
+        ++j;
+        V3_LINCOMB(Z[3]/(Z[3]-Z[ordercon[3][i]]), x[ordercon[3][i]], -Z[ordercon[3][i]]/(Z[3]-Z[ordercon[3][i]]), x[3], Poly[j])
+      }
+      ++j; V3_COPY(x[4],Poly[j])
+      ++ j; V3_COPY(x[5],Poly[j])
+      ++ j; V3_COPY(x[6],Poly[j])
+      *Number = j + 1;
+      if (*Number>3) DefinePolygon (Poly, *Number);
+      return (0);
+    case (2) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)||(ordercon[0][i]==4)||(ordercon[0][i]==5)) continue;
+        ++j;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)||(ordercon[1][i]==4)||(ordercon[1][i]==5)) continue;
+        ++j;
+        V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[2][i]==0)||(ordercon[2][i]==1)||(ordercon[2][i]==3)||(ordercon[2][i]==4)||(ordercon[2][i]==5)) continue;
+        ++j;
+        V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[3][i]==0)||(ordercon[3][i]==1)||(ordercon[3][i]==2)||(ordercon[3][i]==4)||(ordercon[3][i]==5)) continue;
+        ++j;
+        V3_LINCOMB(Z[3]/(Z[3]-Z[ordercon[3][i]]), x[ordercon[3][i]], -Z[ordercon[3][i]]/(Z[3]-Z[ordercon[3][i]]), x[3], Poly[j])
+      }
+      ++j; V3_COPY(x[4],Poly[j])
+      ++ j; V3_COPY(x[5],Poly[j])
+      *Number = j + 1;
+      if (*Number>3) DefinePolygon (Poly, *Number);
+      return (0);
+    case (3) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)||(ordercon[0][i]==4)) continue;
+        ++j;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)||(ordercon[1][i]==4)) continue;
+        ++j;
+        V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[2][i]==0)||(ordercon[2][i]==1)||(ordercon[2][i]==3)||(ordercon[2][i]==4)) continue;
+        ++j;
+        V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[3][i]==0)||(ordercon[3][i]==1)||(ordercon[3][i]==2)||(ordercon[3][i]==4)) continue;
+        ++j;
+        V3_LINCOMB(Z[3]/(Z[3]-Z[ordercon[3][i]]), x[ordercon[3][i]], -Z[ordercon[3][i]]/(Z[3]-Z[ordercon[3][i]]), x[3], Poly[j])
+      }
+      ++j; V3_COPY(x[4],Poly[j])
+      *Number = j + 1;
+      DefinePolygon (Poly, *Number);
+      return (0);
+    case (4) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        if ((ordercon[0][i]==1)||(ordercon[0][i]==2)||(ordercon[0][i]==3)) continue;
+        ++j;
+        V3_LINCOMB(Z[0]/(Z[0]-Z[ordercon[0][i]]), x[ordercon[0][i]], -Z[ordercon[0][i]]/(Z[0]-Z[ordercon[0][i]]), x[0], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[1][i]==0)||(ordercon[1][i]==2)||(ordercon[1][i]==3)) continue;
+        ++j;
+        V3_LINCOMB(Z[1]/(Z[1]-Z[ordercon[1][i]]), x[ordercon[1][i]], -Z[ordercon[1][i]]/(Z[1]-Z[ordercon[1][i]]), x[1], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[2][i]==0)||(ordercon[2][i]==1)||(ordercon[2][i]==3)) continue;
+        ++j;
+        V3_LINCOMB(Z[2]/(Z[2]-Z[ordercon[2][i]]), x[ordercon[2][i]], -Z[ordercon[2][i]]/(Z[2]-Z[ordercon[2][i]]), x[2], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[3][i]==0)||(ordercon[3][i]==1)||(ordercon[3][i]==2)) continue;
+        ++j;
+        V3_LINCOMB(Z[3]/(Z[3]-Z[ordercon[3][i]]), x[ordercon[3][i]], -Z[ordercon[3][i]]/(Z[3]-Z[ordercon[3][i]]), x[3], Poly[j])
+      }
+      *Number = j + 1;
+      DefinePolygon (Poly, *Number);
+      return (0);
+    default :
+      return (1);
+    }
+  case (5) :
+    switch (count2)
+    {
+    case (1) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        if ((ordercon[7][i]==6)||(ordercon[7][i]==5)) continue;
+        ++j;
+        V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
+      }
+      ++j; V3_COPY(x[5],Poly[j]);
+      ++j; V3_COPY(x[6],Poly[j]);
+      *Number = j+1;
+      if (*Number>3) DefinePolygon (Poly, *Number);
+      return (0);
+    case (2) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        if ((ordercon[7][i]==6)||(ordercon[7][i]==5)) continue;
+        ++j;
+        V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[6][i]==7)||(ordercon[6][i]==5)) continue;
+        ++j;
+        V3_LINCOMB(Z[6]/(Z[6]-Z[ordercon[6][i]]), x[ordercon[6][i]], -Z[ordercon[6][i]]/(Z[6]-Z[ordercon[6][i]]), x[6], Poly[j])
+      }
+      ++j;
+      V3_COPY(x[5],Poly[j]);
+      *Number = j+1;
+      if (*Number>3) DefinePolygon (Poly, *Number);
+      return (0);
+    case (3) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        if ((ordercon[7][i]==5)||(ordercon[7][i]==6)) continue;
+        ++j;
+        V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[6][i]==5)||(ordercon[6][i]==7)) continue;
+        ++j;
+        V3_LINCOMB(Z[6]/(Z[6]-Z[ordercon[6][i]]), x[ordercon[6][i]], -Z[ordercon[6][i]]/(Z[6]-Z[ordercon[6][i]]), x[6], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[5][i]==6)||(ordercon[5][i]==7)) continue;
+        ++j;
+        V3_LINCOMB(Z[5]/(Z[5]-Z[ordercon[5][i]]), x[ordercon[5][i]], -Z[ordercon[5][i]]/(Z[5]-Z[ordercon[5][i]]), x[5], Poly[j])
+      }
+      *Number = j + 1;
+      if (*Number>3) DefinePolygon (Poly, *Number);
+      return (0);
+    default :
+      return (1);
+    }
+  case (6) :
+    switch (count2)
+    {
+    case (0) :
+      return (0);
+    case (1) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        if ((ordercon[7][i]==6)) continue;
+        ++j;
+        V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
+      }
+      ++j; V3_COPY(x[6],Poly[j]);
+      *Number = j+1;
+      if (*Number>3) DefinePolygon (Poly, *Number);
+      return (0);
+    case (2) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        if ((ordercon[7][i]==6)) continue;
+        ++j;
+        V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
+      }
+      for (i=0; i<3; ++i) {
+        if ((ordercon[6][i]==7)) continue;
+        ++j;
+        V3_LINCOMB(Z[6]/(Z[6]-Z[ordercon[6][i]]), x[ordercon[6][i]], -Z[ordercon[6][i]]/(Z[6]-Z[ordercon[6][i]]), x[6], Poly[j])
+      }
+      *Number = j + 1;
+      if (*Number>3) DefinePolygon (Poly, *Number);
+      return (0);
+    default :
+      return (1);
+    }
+  case (7) :
+    switch (count2)
+    {
+    case (0) :
+      return (0);
+    case (1) :
+      j = -1;
+      for (i=0; i<3; ++i) {
+        ++j;
+        V3_LINCOMB(Z[7]/(Z[7]-Z[ordercon[7][i]]), x[ordercon[7][i]], -Z[ordercon[7][i]]/(Z[7]-Z[ordercon[7][i]]), x[7], Poly[j])
+      }
+      *Number = j + 1;
+      if (*Number>3) DefinePolygon (Poly, *Number);
+      return (0);
+    default :
+      return (1);
+    }
+  case (8) :
+    return (0);
+  }
+
+  return (1);
+}
+
+/****************************************************************************/
 /*
    EW_ElementEval3D - Evaluate geometry of TetraHedron
 
@@ -8145,8 +9579,9 @@ static INT GetPolyElemISCutPlane (COORD **CornerDC, COORD *CutZCoord, INT NodeOr
 static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
   INT i, j, NodeOrder, n;
+  COORD_POINT CornersOfTriangle[MAX_CORNERS_OF_SIDE];
   COORD *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR Polygon[MAX_POINTS_OF_POLY];
+  COORD_VECTOR xs, Polygon[MAX_POINTS_OF_POLY];
   INT Viewable[MAX_SIDES_OF_ELEM];
 
   DO_2c(theDO) = DO_NO_INST;
@@ -8191,18 +9626,18 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
         if (EE3D_NoColor[COLOR_LOWER_LEVEL])
         {
           DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO)
-          DO_2c(theDO) = 3; DO_inc(theDO)
+          DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO)
         }
         else
         {
           DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO)
-          DO_2c(theDO) = 3; DO_inc(theDO)
+          DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO)
           DO_2l(theDO) = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
         }
         DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
-        for (j=0; j<CORNERS_OF_TETRASIDE; j++)
+        for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
         {
-          V3_COPY(x[CornerOfSide[i][j]],DO_2Cp(theDO));
+          V3_COPY(x[CORNER_OF_SIDE(theElement,i,j)],DO_2Cp(theDO));
           DO_inc_n(theDO,3);
         }
       }
@@ -8214,18 +9649,18 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
         if (EE3D_NoColor[ECLASS(theElement)])
         {
           DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO)
-          DO_2c(theDO) = 3; DO_inc(theDO)
+          DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO)
         }
         else
         {
           DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO)
-          DO_2c(theDO) = 3; DO_inc(theDO)
+          DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO)
           DO_2l(theDO) = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
         }
         DO_2l(theDO) = EE3D_Color[COLOR_EDGE]; DO_inc(theDO);
-        for (j=0; j<CORNERS_OF_TETRASIDE; j++)
+        for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
         {
-          V3_COPY(x[CornerOfSide[i][j]],DO_2Cp(theDO));
+          V3_COPY(x[CORNER_OF_SIDE(theElement,i,j)],DO_2Cp(theDO));
           DO_inc_n(theDO,3);
         }
 
@@ -8234,9 +9669,9 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
         {
           DO_2c(theDO) = DO_INVERSE_POLYGON; DO_inc(theDO)
           DO_2c(theDO) = 3; DO_inc(theDO)
-          for (j=0; j<CORNERS_OF_TETRASIDE; j++)
+          for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
           {
-            V3_COPY(x[CornerOfSide[i][j]],DO_2Cp(theDO));
+            V3_COPY(x[CORNER_OF_SIDE(theElement,i,j)],DO_2Cp(theDO));
             DO_inc_n(theDO,3);
           }
         }
@@ -8276,7 +9711,19 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     }
 
     /* get node order */
-    NodeOrder = NORDER(theElement);
+    switch (TAG(theElement)) {
+    case (TETRAHEDRON) :
+      NodeOrder = NORDER(theElement);
+      break;
+    case (PYRAMID) :
+      NodeOrder = theElement->py.property;
+      break;
+    case (HEXAHEDRON) :
+      NodeOrder = theElement->he.property;
+      break;
+    default :
+      return(1);
+    }
 
     /* plot that parts of the viewable sides of the element lying behind cut plane */
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
@@ -8284,8 +9731,23 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
       if (!Viewable[i]) continue;
 
       /* determine polygon arising from intersection of triangle with half space behind cut plane */
-      if (GetPolyElemSideISHalfSpace (x,z,NodeOrder,i,Polygon,&n))
-        return (1);
+      switch (TAG(theElement)) {
+      case (TETRAHEDRON) :
+        if (GetPolyElemSideISHalfSpaceTET (theElement,x,z,NodeOrder,i,Polygon,&n))
+          return(1);
+        break;
+      case (PYRAMID) :
+        if (GetPolyElemSideISHalfSpacePYR (theElement,x,z,NodeOrder,i,Polygon,&n))
+          return(1);
+        break;
+      case (HEXAHEDRON) :
+        if (GetPolyElemSideISHalfSpaceHEX (theElement,x,z,NodeOrder,i,Polygon,&n))
+          return(1);
+        break;
+      default :
+        return(1);
+      }
+
       if (n<=2) continue;
 
       /* store on drawing object */
@@ -8346,8 +9808,22 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     /* plot intersection of element with cut plane if */
     if (CUT_CutAtFront)
     {
-      if (GetPolyElemISCutPlane(x,z,NodeOrder,Polygon,&n))
-        return (1);
+      switch (TAG(theElement)) {
+      case (TETRAHEDRON) :
+        if (GetPolyElemISCutPlaneTET(x,z,NodeOrder,Polygon,&n))
+          return(1);
+        break;
+      case (PYRAMID) :
+        if (GetPolyElemISCutPlanePYR(x,z,NodeOrder,Polygon,&n))
+          return(1);
+        break;
+      case (HEXAHEDRON) :
+        if (GetPolyElemISCutPlaneHEX(x,z,NodeOrder,Polygon,&n))
+          return(1);
+        break;
+      default :
+        return(1);
+      }
 
       /* store on drawing object */
       if (n>2)
@@ -8454,6 +9930,19 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
  */
 /****************************************************************************/
 
+/****************************************************************************/
+/*																			*/
+/* Function:  EW_ECutBnd3D													*/
+/*																			*/
+/* Purpose:   evaluate geometry of TetraHedron								*/
+/*																			*/
+/* Input:	  ELEMENT *theElement, char *theDrawingObject					*/
+/*																			*/
+/* Output:	  INT 0: ok                                                                                                     */
+/*				  1: error													*/
+/*																			*/
+/****************************************************************************/
+
 static INT EW_ECutBnd3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
   INT i, NodeOrder, n;
@@ -8472,16 +9961,41 @@ static INT EW_ECutBnd3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     }
 
     /* get node order */
-    NodeOrder = NORDER(theElement);
-
+    switch (TAG(theElement)) {
+    case (TETRAHEDRON) :
+      NodeOrder = NORDER(theElement);
+      break;
+    case (PYRAMID) :
+      NodeOrder = theElement->py.property;
+      break;
+    case (HEXAHEDRON) :
+      NodeOrder = theElement->he.property;
+      break;
+    default :
+      return(1);
+    }
     /* plot boundary side intersection with cut-plane */
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
     {
       if (SIDE(theElement,i)==NULL) continue;
 
       /* determine line arising from intersection of side with cut plane */
-      if (GetLineElemSideISCutPlane (x,z,NodeOrder,i,Line,&n))
-        return (1);
+      switch (TAG(theElement)) {
+      case (TETRAHEDRON) :
+        if (GetLineElemSideISCutPlaneTET(theElement,x,z,NodeOrder,i,Line,&n))
+          return (1);
+        break;
+      case (PYRAMID) :
+        if (GetLineElemSideISCutPlaneHEX(theElement,x,z,NodeOrder,i,Line,&n))
+          return (1);
+        break;
+      case (HEXAHEDRON) :
+        if (GetLineElemSideISCutPlaneHEX(theElement,x,z,NodeOrder,i,Line,&n))
+          return (1);
+        break;
+      default :
+        return(1);
+      }
       if (n<2) continue;
 
       /* store line on drawing object */
@@ -8634,49 +10148,181 @@ static void CalcViewableSides (ELEMENT *theElement)
 {
   COORD_VECTOR Vector, Vector01, Vector02, Vector03, ViewDirection;
   INT Viewablility;
-  INT i;
-  COORD *x[MAX_CORNERS_OF_ELEM];
+  INT i,j;
+  COORD *x[MAX_CORNERS_OF_ELEM], xc[3], xcs[3];
+  COORD *nz;
   COORD ScalarPrd;
 
   /* load corners of the element */
   for( i=0; i<CORNERS_OF_ELEM(theElement); i++)
     x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 
-  /* set view direction */
-  if (OBS_Perspective == YES)
-  {
-    Viewablility = 0;
-    for( i=0; i<SIDES_OF_ELEM(theElement); i++ )
+  switch (TAG(theElement)) {
+  case (TETRAHEDRON) :
+    /* set view direction */
+    if (OBS_Perspective == YES)
     {
-      V3_SUBTRACT(VO_VP(OE_ViewedObj),x[CornerOfSide[i][0]],ViewDirection)
-      V3_SUBTRACT(x[CornerOfSide[i][1]],x[CornerOfSide[i][0]],Vector01)
-      V3_SUBTRACT(x[CornerOfSide[i][2]],x[CornerOfSide[i][0]],Vector02)
-      V3_SUBTRACT(x[ OppositeCorner[i]],x[CornerOfSide[i][0]],Vector03)
-      V3_VECTOR_PRODUCT(Vector01,Vector02,Vector)
-      V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
-      if (ScalarPrd>0)
-        V3_SCALE(-1.0, Vector)
-        if (Vector[0]*ViewDirection[0]+Vector[1]*ViewDirection[1]+Vector[2]*ViewDirection[2]>0)
-          Viewablility |= (1<<i);
+      Viewablility = 0;
+      for( i=0; i<SIDES_OF_ELEM(theElement); i++ )
+      {
+        j = CORNER_OF_SIDE(theElement,i,0);
+        V3_SUBTRACT(VO_VP(OE_ViewedObj),x[j],ViewDirection)
+        V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,1)],x[j],Vector01)
+        V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,2)],x[j],Vector02)
+        V3_SUBTRACT(x[CORNER_OPP_TO_SIDE(theElement,i)],x[j],Vector03)
+        V3_VECTOR_PRODUCT(Vector01,Vector02,Vector)
+        V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
+        if (ScalarPrd>0)
+          V3_SCALE(-1.0, Vector)
+          if (Vector[0]*ViewDirection[0]+Vector[1]*ViewDirection[1]+Vector[2]*ViewDirection[2]>0)
+            Viewablility |= (1<<i);
+      }
     }
-  }
-  else
-  {
-    V3_SUBTRACT(VO_VP(OE_ViewedObj),VO_VT(OE_ViewedObj),ViewDirection);
-    Viewablility = 0;
-    for( i=0; i<SIDES_OF_ELEM(theElement); i++ )
+    else
     {
-      V3_SUBTRACT(x[CornerOfSide[i][1]], x[CornerOfSide[i][0]], Vector01)
-      V3_SUBTRACT(x[CornerOfSide[i][2]], x[CornerOfSide[i][0]], Vector02)
-      V3_SUBTRACT(x[ OppositeCorner[i]], x[CornerOfSide[i][0]], Vector03)
-      V3_VECTOR_PRODUCT(Vector01, Vector02, Vector)
-      V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
-      if (ScalarPrd>0)
-        V3_SCALE(-1.0, Vector)
-        if (Vector[0]*ViewDirection[0]+Vector[1]*ViewDirection[1]+Vector[2]*ViewDirection[2]>0)
-          Viewablility |= (1<<i);
+      V3_SUBTRACT(VO_VP(OE_ViewedObj),VO_VT(OE_ViewedObj),ViewDirection);
+      Viewablility = 0;
+      for( i=0; i<SIDES_OF_ELEM(theElement); i++ )
+      {
+        j = CORNER_OF_SIDE(theElement,i,0);
+        V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,1)], x[j], Vector01)
+        V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,2)], x[j], Vector02)
+        V3_SUBTRACT(x[CORNER_OPP_TO_SIDE(theElement,i)], x[j], Vector03)
+        V3_VECTOR_PRODUCT(Vector01, Vector02, Vector)
+        V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
+        if (ScalarPrd>0)
+          V3_SCALE(-1.0, Vector)
+          if (Vector[0]*ViewDirection[0]+Vector[1]*ViewDirection[1]+Vector[2]*ViewDirection[2]>0)
+            Viewablility |= (1<<i);
+      }
     }
+    break;
+
+  case (PYRAMID) :
+    /* compute center of  mass */
+    V3_CLEAR(xc)
+    for( i=0; i<CORNERS_OF_ELEM(theElement); i++)
+      V3_ADD(x[i],xc,xc)
+      V3_SCALE(1.0/CORNERS_OF_ELEM(theElement),xc)
+
+      /* set view direction */
+      if (OBS_Perspective == YES)
+      {
+        Viewablility = 0;
+        for( i=0; i<SIDES_OF_ELEM(theElement); i++ )
+        {
+          /* compute senter of side */
+          V3_CLEAR(xcs)
+          for (j=0; j<CORNERS_OF_SIDE(theElement,i); ++j)
+            V3_ADD(x[CORNER_OF_SIDE(theElement,i,j)],xcs,xcs)
+            V3_SCALE(1.0/CORNERS_OF_SIDE(theElement,i),xcs)
+
+            V3_SUBTRACT(VO_VP(OE_ViewedObj),xcs,ViewDirection)
+            V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,0)],xcs,Vector01)
+            V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,1)],xcs,Vector02)
+            V3_SUBTRACT(xc,xcs,Vector03)
+            V3_VECTOR_PRODUCT(Vector01,Vector02,Vector)
+            V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
+            if (ScalarPrd>0)
+              V3_SCALE(-1.0, Vector)
+              if (Vector[0]*ViewDirection[0]+Vector[1]*ViewDirection[1]+Vector[2]*ViewDirection[2]>0)
+              {
+                Viewablility |= (1<<i);
+              }
+        }
+      }
+      else
+      {
+        V3_SUBTRACT(VO_VP(OE_ViewedObj),VO_VT(OE_ViewedObj),ViewDirection);
+        Viewablility = 0;
+        for( i=0; i<SIDES_OF_ELEM(theElement); i++ )
+        {
+          /* compute senter of side */
+          V3_CLEAR(xcs)
+          for (j=0; j<CORNERS_OF_SIDE(theElement,i); ++j)
+            V3_ADD(x[CORNER_OF_SIDE(theElement,i,j)],xcs,xcs)
+            V3_SCALE(1.0/CORNERS_OF_SIDE(theElement,i),xcs)
+
+            V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,0)],xcs,Vector01)
+            V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,1)],xcs,Vector02)
+            V3_SUBTRACT(xc,xcs,Vector03)
+            V3_VECTOR_PRODUCT(Vector01, Vector02, Vector)
+            V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
+            if (ScalarPrd>0)
+              V3_SCALE(-1.0, Vector)
+              if (Vector[0]*ViewDirection[0]+Vector[1]*ViewDirection[1]+Vector[2]*ViewDirection[2]>0)
+              {
+                Viewablility |= (1<<i);
+              }
+        }
+      }
+    break;
+
+  case (HEXAHEDRON) :
+    /* compute center of  mass */
+    V3_CLEAR(xc)
+    for( i=0; i<CORNERS_OF_ELEM(theElement); i++)
+      V3_ADD(x[i],xc,xc)
+      V3_SCALE(0.125,xc)
+
+      /* set view direction */
+      if (OBS_Perspective == YES)
+      {
+        Viewablility = 0;
+        for( i=0; i<SIDES_OF_ELEM(theElement); i++ )
+        {
+          /* compute senter of side */
+          V3_CLEAR(xcs)
+          for (j=0; j<CORNERS_OF_SIDE(theElement,i); ++j)
+            V3_ADD(x[CORNER_OF_SIDE(theElement,i,j)],xcs,xcs)
+            V3_SCALE(0.25,xcs)
+
+            V3_SUBTRACT(VO_VP(OE_ViewedObj),xcs,ViewDirection)
+            V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,0)],xcs,Vector01)
+            V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,1)],xcs,Vector02)
+            V3_SUBTRACT(xc,xcs,Vector03)
+            V3_VECTOR_PRODUCT(Vector01,Vector02,Vector)
+            V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
+            if (ScalarPrd>0)
+              V3_SCALE(-1.0, Vector)
+              if (Vector[0]*ViewDirection[0]+Vector[1]*ViewDirection[1]+Vector[2]*ViewDirection[2]>0)
+              {
+                Viewablility |= (1<<i);
+              }
+        }
+      }
+      else
+      {
+        V3_SUBTRACT(VO_VP(OE_ViewedObj),VO_VT(OE_ViewedObj),ViewDirection);
+        Viewablility = 0;
+        for( i=0; i<SIDES_OF_ELEM(theElement); i++ )
+        {
+          /* compute senter of side */
+          V3_CLEAR(xcs)
+          for (j=0; j<CORNERS_OF_SIDE(theElement,i); ++j)
+            V3_ADD(x[CORNER_OF_SIDE(theElement,i,j)],xcs,xcs)
+            V3_SCALE(0.25,xcs)
+
+            V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,0)],xcs,Vector01)
+            V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,i,1)],xcs,Vector02)
+            V3_SUBTRACT(xc,xcs,Vector03)
+            V3_VECTOR_PRODUCT(Vector01, Vector02, Vector)
+            V3_SCALAR_PRODUCT(Vector,Vector03,ScalarPrd)
+            if (ScalarPrd>0)
+              V3_SCALE(-1.0, Vector)
+              if (Vector[0]*ViewDirection[0]+Vector[1]*ViewDirection[1]+Vector[2]*ViewDirection[2]>0)
+              {
+                Viewablility |= (1<<i);
+              }
+        }
+      }
+    break;
+
+  default :
+    UserWriteF("CalcViewableSides() not implemented for elementype=%d\n",TAG(theElement));
+    return;
   }
+
   SETVSIDES(theElement,Viewablility);
 }
 
@@ -8750,12 +10396,12 @@ static void CalcViewableSidesOnGrid (GRID *theGrid)
 
 static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
 {
-  INT i, j, Count, nsons;
+  INT i, j, Count, nsons, Neighbor;
   INT LastShellBegin, NewShellBegin, ActualPosition;
   ELEMENT *NbElement, *SonElement, *SonList[MAX_SONS];
 
   /* get son list (not stored in element) */
-  if (GetSons(theElement,SonList)!=0) return(1);
+  if (GetSons(theElement,SonList)!=0) return;
 
   /* init list and numbers */
   LastShellBegin = 0;
@@ -8768,7 +10414,7 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
     /* count how many neighbor-sons are overlapped by SonElement */
     Count = 0;
     for (j=0; j<SIDES_OF_ELEM(SonElement); j++)
-      if (NBELEM(SonElement,j)!=NULL && EFATHER(NBELEM(SonElement,j))==theElement && (!VIEWABLE(SonElement,j))) Count++;
+      if (EFATHER(NBELEM(SonElement,j))==theElement && (!VIEWABLE(SonElement,j))) Count++;
     if (Count)
     {
       SETCOUNT(SonElement,Count);
@@ -8832,19 +10478,20 @@ static INT OrderSons (ELEMENT **table,ELEMENT *theElement)
  */
 /****************************************************************************/
 
-static INT CompareTriangles (COORD_VECTOR Triangle[2][3], COORD_POINT ScreenPoint[2][3])
+/* static INT CompareTriangles (COORD_VECTOR Triangle[2][3], COORD_POINT ScreenPoint[2][3]) */
+static INT CompareTriangles (COORD_VECTOR Triangle[2][4], COORD_POINT ScreenPoint[2][4])
 {
   COORD alpha, beta, z[2];
   COORD lambda[3], rhs[3], M[9], Inverse[9];
   int i, i1, j, j1;
 
   /* decide if sides of triangle are crossing */
-  for (i=0; i<CORNERS_OF_TETRASIDE; i++)
+  for (i=0; i<3; i++)
   {
-    i1 = (i+1)%CORNERS_OF_TETRASIDE;
-    for( j=0; j<CORNERS_OF_TETRASIDE; j++ )
+    i1 = (i+1)%3;
+    for( j=0; j<3; j++ )
     {
-      j1 = (j+1)%CORNERS_OF_TETRASIDE;
+      j1 = (j+1)%3;
       if (!CalcCrossingPoint(ScreenPoint[0][i],ScreenPoint[0][i1],ScreenPoint[1][j], ScreenPoint[1][j1],&alpha,&beta)) continue;
 
       /* crossing found, now decide which hides the other */
@@ -8888,6 +10535,80 @@ static INT CompareTriangles (COORD_VECTOR Triangle[2][3], COORD_POINT ScreenPoin
   return (0);
 }
 
+static INT CompareQuadrilaterals (COORD_VECTOR Triangle[2][4], COORD_POINT ScreenPoint[2][4], INT Corners[2])
+{
+  COORD alpha, beta, z[2], Xmax[2], Xmin[2], Ymax[2], Ymin[2];
+  COORD lambda[3], rhs[3], M[9], Inverse[9];
+  int i, i1, j, j1;
+
+  /* decide if sides of triangle are crossing */
+  for (i=0; i<Corners[0]; i++)
+  {
+    i1 = (i+1)%Corners[0];
+    for( j=0; j<Corners[1]; j++ )
+    {
+      j1 = (j+1)%Corners[1];
+      if (!CalcCrossingPoint(ScreenPoint[0][i],ScreenPoint[0][i1],ScreenPoint[1][j], ScreenPoint[1][j1],&alpha,&beta)) continue;
+
+      /* crossing found, now decide which hides the other */
+      z[0] = (1.0-alpha)*Triangle[0][i][2] + alpha*Triangle[0][i1][2];
+      z[1] = (1.0-beta)*Triangle[1][j][2] + beta*Triangle[1][j1][2];
+      if (ABS(z[0]-z[1])<SMALL_C) continue;
+      if (z[0]>z[1])
+        return (1);
+      else
+        return (-1);
+    }
+  }
+
+  /* now check, if one side contains the other. In that case, the */
+  /* covering side also covers the other one's center of mass.    */
+
+  for (i=0; i<2; i++)
+  {
+    Xmax[i]=Xmin[i]=(COORD)ScreenPoint[i][0].x;
+    Ymax[i]=Ymin[i]=(COORD)ScreenPoint[i][0].y;
+    for (j=0; j<Corners[i]; ++j)
+    {
+      Xmax[i] = MAX(Xmax[i],(COORD)ScreenPoint[i][j].x);
+      Xmin[i] = MIN(Xmin[i],(COORD)ScreenPoint[i][j].x);
+      Ymax[i] = MAX(Ymax[i],(COORD)ScreenPoint[i][j].y);
+      Ymin[i] = MIN(Ymin[i],(COORD)ScreenPoint[i][j].y);
+    }
+  }
+  for (i=0; i<2; i++)
+  {
+    j=1-i;
+    if (((Xmin[i]<=Xmin[j])&&(Xmax[i]>=Xmax[j])) &&
+        ((Ymin[i]<=Ymin[j])&&(Ymax[i]>=Ymax[j])))
+    {
+      /* Now, quadrangle 'i' on the screen contains quadrangle 'j' */
+      /* So, we must find the point in quadrangle 'i' where to     */
+      /* compare Z-components.                                     */
+      /* Do this as in the case of comparing trisngles.            */
+
+      M[0]=(COORD)ScreenPoint[i][0].x, M[3]=(COORD)ScreenPoint[i][1].x, M[6] =(COORD)ScreenPoint[i][2].x;
+      M[1]=(COORD)ScreenPoint[i][0].y, M[4]=(COORD)ScreenPoint[i][1].y, M[7] =(COORD)ScreenPoint[i][2].y;
+      M[2]=1.0,                        M[5]=1.0,                        M[8] =1.0;
+
+      if (M3_Invert(Inverse, M)) continue;
+      rhs[0] =(COORD) ScreenPoint[j][0].x;
+      rhs[1] =(COORD) ScreenPoint[j][0].y;
+      rhs[2] = 1.0;
+      M3_TIMES_V3(Inverse,rhs,lambda)
+
+      z[i] = lambda[0]*Triangle[i][0][2] + lambda[1]*Triangle[i][1][2] + lambda[2]*Triangle[i][2][2];
+      z[j] = Triangle[j][0][2];
+      if (z[i]>z[j])
+        return ((i>j) ? (-1) : (1));
+      else
+        return ((i>j) ? (1) : (-1));
+    }
+
+  }
+  return (0);
+}
+
 /****************************************************************************/
 /*
    CompareElements - Test, whether a element hides another
@@ -8910,49 +10631,48 @@ static INT CompareTriangles (COORD_VECTOR Triangle[2][3], COORD_POINT ScreenPoin
  */
 /****************************************************************************/
 
-static int CompareElements (const void *ElementHandle0, const void *ElementHandle1)
+static INT CompareElements (const void *ElementHandle0, const void *ElementHandle1)
 {
-  ELEMENT *theElement0, *theElement1;
-  INT i, j, k, i1, k1, b0, b1, found, view0, view1, num0, num1;
-  COORD radius[2], norm, alpha, beta[2];
-  COORD *Corners[2][4];
-  COORD_VECTOR VectorMid[2], ViewDir[2], Vector0, Vector1, Triangle[2][3];
-  COORD_POINT ScreenPoints[2][3];
+  ELEMENT *theElement[2];
+  INT i, j, k, i1, k1, b0, b1, found, view0, view1, num0, num1, NCorners[2];
+  COORD radius[2], norm, alpha, beta[2], scale;
+  COORD *Corners[2][8];
+  COORD_VECTOR VectorMid[2], ViewDir[2], Vector0, Vector1, Triangle[2][4];
+  COORD_POINT ScreenPoints[2][4];
 
-  theElement0 = *((ELEMENT **)ElementHandle0);
-  theElement1 = *((ELEMENT **)ElementHandle1);
+  theElement[0] = *((ELEMENT **)ElementHandle0);
+  theElement[1] = *((ELEMENT **)ElementHandle1);
 
   /* test, if elements have a common side */
-  for (i=0; i<SIDES_OF_ELEM(theElement0); i++)
-    if( NBELEM(theElement0,i) == theElement1 )
+  for (i=0; i<SIDES_OF_ELEM(theElement[0]); i++)
+    if( NBELEM(theElement[0],i) == theElement[1] )
     {
-      if (VIEWABLE(theElement0,i))
+      if (VIEWABLE(theElement[0],i))
         return(-1);
-      for (j=0; j<SIDES_OF_ELEM(theElement1); j++)
-        if( NBELEM(theElement1,j) == theElement0 )
-          if (VIEWABLE(theElement1,j))
+      for (j=0; j<SIDES_OF_ELEM(theElement[1]); j++)
+        if( NBELEM(theElement[1],j) == theElement[0] )
+          if (VIEWABLE(theElement[1],j))
             return(1);
       return(0);
     }
 
   /* do some initializing */
-  V3_CLEAR(VectorMid[0])
-  V3_CLEAR(VectorMid[1])
-  for (i=0; i<4; i++)
-  {
-    Corners[0][i] = CVECT(MYVERTEX(CORNER(theElement0,i)));
-    Corners[1][i] = CVECT(MYVERTEX(CORNER(theElement1,i)));
-    V3_ADD(Corners[0][i],VectorMid[0],VectorMid[0])
-    V3_ADD(Corners[1][i],VectorMid[1],VectorMid[1])
+  for (j=0; j<2; ++j) {
+    V3_CLEAR(VectorMid[j])
+    for (i=0; i<CORNERS_OF_ELEM(theElement[j]); i++)
+    {
+      Corners[j][i] = CVECT(MYVERTEX(CORNER(theElement[j],i)));
+      V3_ADD(Corners[j][i],VectorMid[j],VectorMid[j])
+    }
+    scale = (COORD)(1.0/(COORD)CORNERS_OF_ELEM(theElement[j]));
+    V3_SCALE(scale,VectorMid[j])
   }
-  V3_SCALE(0.25,VectorMid[0])
-  V3_SCALE(0.25,VectorMid[1])
 
   radius[0] = radius[1] = 0.0;
-  for (i=0; i<EDGES_OF_ELEM(theElement0); i++)
-    for (j=0; j<2; j++)
+  for (j=0; j<2; j++)
+    for (i=0; i<EDGES_OF_ELEM(theElement[j]); i++)
     {
-      V3_SUBTRACT(Corners[j][CornerOfEdge[i][0]],Corners[j][CornerOfEdge[i][1]],Vector0)
+      V3_SUBTRACT(Corners[j][CORNER_OF_EDGE(theElement[j],i,0)],Corners[j][CORNER_OF_EDGE(theElement[j],i,1)],Vector0)
       V3_EUKLIDNORM(Vector0,norm)
       radius[j] = MAX(radius[j],norm);
     }
@@ -8984,16 +10704,19 @@ static int CompareElements (const void *ElementHandle0, const void *ElementHandl
   }
 
   /* determine the viewable sides and its numbers */
-  view0  = VSIDES(theElement0);
-  view1  = VSIDES(theElement1);
+  view0  = VSIDES(theElement[0]);
+  view1  = VSIDES(theElement[1]);
   num0   = NoOfViewableSides[view0];
   num1   = NoOfViewableSides[view1];
 
   /* use visible or unvisible sides, depending on which are less */
   b0 = (num0>2);
   b1 = (num1>2);
-  if (b0) num0 = 4 - num0;
-  if (b1) num1 = 4 - num1;
+  if (b0) num0 = SIDES_OF_ELEM(theElement[0]) - num0;
+  if (b1) num1 = SIDES_OF_ELEM(theElement[1]) - num1;
+
+  NCorners[0] = CORNERS_OF_SIDE(theElement[0],0);
+  NCorners[1] = CORNERS_OF_SIDE(theElement[1],0);
 
   /* test the tetrahedrons by testing triangles */
   i1=0;
@@ -9001,9 +10724,9 @@ static int CompareElements (const void *ElementHandle0, const void *ElementHandl
   {
     /* determine triangle of theElement0 */
     while( ((view0>>i1)&1) == b0) i1++;
-    for (j=0; j<CORNERS_OF_TETRASIDE; j++)
+    for (j=0; j<CORNERS_OF_SIDE(theElement[0],0); j++)
     {
-      V3_TRAFOM4_V3(Corners[0][CornerOfSide[i1][j]],ObsTrafo,Triangle[0][j])
+      V3_TRAFOM4_V3(Corners[0][CORNER_OF_SIDE(theElement[0],i1,j)],ObsTrafo,Triangle[0][j])
       (*OBS_ProjectProc)(Triangle[0][j],&(ScreenPoints[0][j]));
     }
 
@@ -9012,12 +10735,15 @@ static int CompareElements (const void *ElementHandle0, const void *ElementHandl
     for (k=0; k<num1; k++)
     {
       while ( ((view1>>k1)&1) == b1 ) k1++;
-      for (j=0; j<CORNERS_OF_TETRASIDE; j++)
+      for (j=0; j<CORNERS_OF_SIDE(theElement[1],0); j++)
       {
-        V3_TRAFOM4_V3(Corners[1][CornerOfSide[k1][j]],ObsTrafo,Triangle[1][j])
+        V3_TRAFOM4_V3(Corners[1][CORNER_OF_SIDE(theElement[1],k1,j)],ObsTrafo,Triangle[1][j])
         (*OBS_ProjectProc)(Triangle[1][j],&(ScreenPoints[1][j]));
       }
-      found = CompareTriangles(Triangle,ScreenPoints);
+      if ((NCorners[0]==3)&&(NCorners[1]==3))
+        found = CompareTriangles(Triangle,ScreenPoints);
+      else
+        found = CompareQuadrilaterals (Triangle,ScreenPoints,NCorners);
       if (found)
         return (found);
       k1++;
@@ -9704,9 +11430,10 @@ static INT EW_PreProcess_EVector3D_FR (PICTURE *thePicture, WORK *theWork)
  */
 /****************************************************************************/
 
-static INT PlotColorTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *TP0, COORD *TP1, COORD *TP2, INT depth, DRAWINGOBJ **theDO)
+static INT PlotColorTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *TP0, COORD *TP1, COORD *TP2,
+                                COORD *LP0, COORD *LP1, COORD *LP2, INT depth, DRAWINGOBJ **theDO)
 {
-  COORD_VECTOR EvalPoint, LocalCoord, MP0, MP1, MP2;
+  COORD_VECTOR EvalPoint, LocalCoord, MP0, MP1, MP2, LMP0, LMP1, LMP2;
   INT i;
   long Color;
   DOUBLE value;
@@ -9714,9 +11441,10 @@ static INT PlotColorTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, COOR
   if (depth<=0)
   {
     /* get values */
-    for (i=0; i<DIM; i++)
+    for (i=0; i<DIM; i++) {
       EvalPoint[i] = (TP0[i]+TP1[i]+TP2[i])/3.0;
-    if (GlobalToLocal3d(CornersOfElem,EvalPoint,LocalCoord)) return (1);
+      LocalCoord[i]= (LP0[i]+LP1[i]+LP2[i])/3.0;
+    }
     value = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LocalCoord);
     Color = (long)(EScalar3D_V2C_factor*value+EScalar3D_V2C_offset);
     Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
@@ -9736,17 +11464,17 @@ static INT PlotColorTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, COOR
   }
   else
   {
-    /* find corners of subdivided triangles */
+    /* find corners of subdivided triangles in global and local coord. */
     for (i=0; i<DIM; i++)
-    {
-      MP0[i] = 0.5*(TP0[i]+TP1[i]);
-      MP1[i] = 0.5*(TP1[i]+TP2[i]);
-      MP2[i] = 0.5*(TP2[i]+TP0[i]);
+    {                   /* global */                   /* local */
+      MP0[i] = 0.5*(TP0[i]+TP1[i]);  LMP0[i] = 0.5*(LP0[i]+LP1[i]);
+      MP1[i] = 0.5*(TP1[i]+TP2[i]);  LMP1[i] = 0.5*(LP1[i]+LP2[i]);
+      MP2[i] = 0.5*(TP2[i]+TP0[i]);  LMP2[i] = 0.5*(LP2[i]+LP0[i]);
     }
-    if (PlotColorTriangle3D(theElement,CornersOfElem,TP0,MP0,MP2,depth-1,theDO)) return (1);
-    if (PlotColorTriangle3D(theElement,CornersOfElem,MP0,TP1,MP1,depth-1,theDO)) return (1);
-    if (PlotColorTriangle3D(theElement,CornersOfElem,TP2,MP2,MP1,depth-1,theDO)) return (1);
-    if (PlotColorTriangle3D(theElement,CornersOfElem,MP0,MP1,MP2,depth-1,theDO)) return (1);
+    if (PlotColorTriangle3D(theElement,CornersOfElem,TP0,MP0,MP2,LP0,LMP0,LMP2,depth-1,theDO)) return (1);
+    if (PlotColorTriangle3D(theElement,CornersOfElem,MP0,TP1,MP1,LMP0,LP1,LMP1,depth-1,theDO)) return (1);
+    if (PlotColorTriangle3D(theElement,CornersOfElem,TP2,MP2,MP1,LP2,LMP2,LMP1,depth-1,theDO)) return (1);
+    if (PlotColorTriangle3D(theElement,CornersOfElem,MP0,MP1,MP2,LMP0,LMP1,LMP2,depth-1,theDO)) return (1);
   }
   return (0);
 }
@@ -9780,20 +11508,22 @@ static INT PlotColorTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, COOR
  */
 /****************************************************************************/
 
-static INT PlotColorQuadrilateral3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *QP0, COORD *QP1, COORD *QP2, COORD *QP3, INT depth, DRAWINGOBJ **theDO)
+static INT PlotColorQuadrilateral3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *QP0, COORD *QP1, COORD *QP2, COORD *QP3,
+                                     COORD *LQP0, COORD *LQP1, COORD *LQP2, COORD *LQP3,INT depth, DRAWINGOBJ **theDO)
 {
-  COORD_VECTOR EVP, LocalCoord, MP0, MP1, MP2, MP3;
-  INT i;
+  COORD_VECTOR EVP, LEVP, LocalCoord, MP0, MP1, MP2, MP3, LMP0, LMP1, LMP2, LMP3;
+  INT i, j;
   long Color;
   DOUBLE value;
 
-  for (i=0; i<DIM; i++)
+  for (i=0; i<DIM; i++) {
     EVP[i] = (QP0[i]+QP1[i]+QP2[i]+QP3[i])*0.25;
+    LEVP[i] = (LQP0[i]+LQP1[i]+LQP2[i]+LQP3[i])*0.25;
+  }
   if (depth<=0)
   {
     /* get values */
-    if (GlobalToLocal3d(CornersOfElem,EVP,LocalCoord)) return (1);
-    value = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LocalCoord);
+    value = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LEVP);
     Color = (long)(EScalar3D_V2C_factor*value+EScalar3D_V2C_offset);
     Color = MIN(Color,WOP_OutputDevice->spectrumEnd);
     Color = MAX(Color,WOP_OutputDevice->spectrumStart);
@@ -9813,18 +11543,68 @@ static INT PlotColorQuadrilateral3D (ELEMENT *theElement, COORD **CornersOfElem,
   }
   else
   {
-    /* find corners of subdivided quadrilaterals */
+    /* find corners of subdivided quadrilaterals in global and local coord. */
     for (i=0; i<DIM; i++)
     {
-      MP0[i] = 0.5*(QP0[i]+QP1[i]);
-      MP1[i] = 0.5*(QP1[i]+QP2[i]);
-      MP2[i] = 0.5*(QP2[i]+QP3[i]);
-      MP3[i] = 0.5*(QP3[i]+QP0[i]);
+      MP0[i] = 0.5*(QP0[i]+QP1[i]); LMP0[i] = 0.5*(LQP0[i]+LQP1[i]);
+      MP1[i] = 0.5*(QP1[i]+QP2[i]); LMP1[i] = 0.5*(LQP1[i]+LQP2[i]);
+      MP2[i] = 0.5*(QP2[i]+QP3[i]); LMP2[i] = 0.5*(LQP2[i]+LQP3[i]);
+      MP3[i] = 0.5*(QP3[i]+QP0[i]); LMP3[i] = 0.5*(LQP3[i]+LQP0[i]);
     }
-    if (PlotColorQuadrilateral3D(theElement,CornersOfElem,QP0,MP0,EVP,MP3,depth-1,theDO)) return (1);
-    if (PlotColorQuadrilateral3D(theElement,CornersOfElem,MP0,QP1,MP1,EVP,depth-1,theDO)) return (1);
-    if (PlotColorQuadrilateral3D(theElement,CornersOfElem,EVP,MP1,QP2,MP2,depth-1,theDO)) return (1);
-    if (PlotColorQuadrilateral3D(theElement,CornersOfElem,EVP,MP2,QP3,MP3,depth-1,theDO)) return (1);
+    if (PlotColorQuadrilateral3D(theElement,CornersOfElem,QP0,MP0,EVP,MP3,LQP0,LMP0,LEVP,LMP3,depth-1,theDO)) return (1);
+    if (PlotColorQuadrilateral3D(theElement,CornersOfElem,MP0,QP1,MP1,EVP,LMP0,LQP1,LMP1,LEVP,depth-1,theDO)) return (1);
+    if (PlotColorQuadrilateral3D(theElement,CornersOfElem,EVP,MP1,QP2,MP2,LEVP,LMP1,LQP2,LMP2,depth-1,theDO)) return (1);
+    if (PlotColorQuadrilateral3D(theElement,CornersOfElem,EVP,MP2,QP3,MP3,LEVP,LMP2,LQP3,LMP3,depth-1,theDO)) return (1);
+  }
+  return (0);
+}
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/*  PlotColorContourPolygon3D:                                              */
+/*  plots color (key=0) or contour (key=1) polygon (n>3)                    */
+/*                      by plotting corresponding triangles,                */
+/*                      which are obtained  by connecting center of mass of */
+/*                      the polygon with its corners.                       */
+/*                                                                          */
+/****************************************************************************/
+
+static INT PlotColorContourPolygon3D(INT key, INT n, ELEMENT *theElement, COORD **CornersOfElem, COORD_VECTOR Poly[MAX_POINTS_OF_POLY], COORD_VECTOR PolyLoc[MAX_POINTS_OF_POLY],INT depth, DRAWINGOBJ **theDO)
+{
+  int i;
+  COORD CM[3], LCM[3], Tr[3][3], LTr[3][3];
+
+  /* center of mass of polygon */
+  CM[0]=CM[1]=CM[2]=LCM[0]=LCM[1]=LCM[2]=0.0;
+  for (i=0; i<n; ++i) {
+    V3_ADD(Poly[i], CM, CM)
+    V3_ADD(PolyLoc[i],LCM,LCM)
+  }
+  V3_SCALE(1.0/(COORD)n,CM)
+  V3_SCALE(1.0/(COORD)n,LCM)
+
+  /* plot each of the triangles */
+  for (i=0; i<n; ++i)
+  {
+    /* define triangle */
+    V3_COPY(CM, Tr[0])
+    V3_COPY(LCM, LTr[0])
+
+    V3_COPY(Poly[i%n], Tr[1])
+    V3_COPY(Poly[(i+1)%n], Tr[2])
+
+    V3_COPY(PolyLoc[i%n], LTr[1])
+    V3_COPY(PolyLoc[(i+1)%n], LTr[2])
+
+    /* plot triangle */
+    if (key==0) {
+      if (PlotColorTriangle3D(theElement,CornersOfElem,Tr[0],Tr[1],Tr[2],LTr[0],LTr[1],LTr[2],depth,theDO)) return (1);
+    }
+    if (key==1) {
+      if (PlotContourTriangle3D(theElement,CornersOfElem,Tr[0],Tr[1],Tr[2],LTr[0],LTr[1],LTr[2],depth,theDO)) return (1);
+    }
   }
   return (0);
 }
@@ -9905,9 +11685,10 @@ static INT PointOnLine3D (DOUBLE contourValue, DOUBLE value0, DOUBLE value1, COO
  */
 /****************************************************************************/
 
-static INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *TP0, COORD *TP1, COORD *TP2, INT depth, DRAWINGOBJ **theDO)
+static INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, COORD *TP0, COORD *TP1, COORD *TP2,
+                                  COORD *LTP0, COORD *LTP1, COORD *LTP2, INT depth, DRAWINGOBJ **theDO)
 {
-  COORD_VECTOR LocalCoord, MP0, MP1, MP2, PointMid, Point[3];
+  COORD_VECTOR LocalCoord, MP0, MP1, MP2, LMP0, LMP1, LMP2,PointMid, Point[3];
   INT i, j, n, min, max;
   long Color;
   DOUBLE v0, v1, v2, vmin, vmax;
@@ -9915,12 +11696,9 @@ static INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, CO
   if (depth<=0)
   {
     /* get values at the corners */
-    if (GlobalToLocal3d(CornersOfElem,TP0,LocalCoord)) return (1);
-    v0      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal3d(CornersOfElem,TP1,LocalCoord)) return (1);
-    v1      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LocalCoord);
-    if (GlobalToLocal3d(CornersOfElem,TP2,LocalCoord)) return (1);
-    v2      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LocalCoord);
+    v0      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LTP0);
+    v1      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LTP1);
+    v2      = (*EScalar3D_EvalFct)(theElement,CornersOfElem,LTP2);
     vmin = MIN(v0,v1); vmin = MIN(vmin,v2);
     vmax = MAX(v0,v1); vmax = MAX(vmax,v2);
 
@@ -9979,14 +11757,14 @@ static INT PlotContourTriangle3D (ELEMENT *theElement, COORD **CornersOfElem, CO
     /* find corners of subdivided triangles */
     for (i=0; i<DIM; i++)
     {
-      MP0[i] = 0.5*(TP0[i]+TP1[i]);
-      MP1[i] = 0.5*(TP1[i]+TP2[i]);
-      MP2[i] = 0.5*(TP2[i]+TP0[i]);
+      MP0[i] = 0.5*(TP0[i]+TP1[i]); LMP0[i] = 0.5*(LTP0[i]+LTP1[i]);
+      MP1[i] = 0.5*(TP1[i]+TP2[i]); LMP1[i] = 0.5*(LTP1[i]+LTP2[i]);
+      MP2[i] = 0.5*(TP2[i]+TP0[i]); LMP2[i] = 0.5*(LTP2[i]+LTP0[i]);
     }
-    if (PlotContourTriangle3D(theElement,CornersOfElem,TP0,MP0,MP2,depth-1,theDO)) return (1);
-    if (PlotContourTriangle3D(theElement,CornersOfElem,MP0,TP1,MP1,depth-1,theDO)) return (1);
-    if (PlotContourTriangle3D(theElement,CornersOfElem,TP2,MP2,MP1,depth-1,theDO)) return (1);
-    if (PlotContourTriangle3D(theElement,CornersOfElem,MP0,MP1,MP2,depth-1,theDO)) return (1);
+    if (PlotContourTriangle3D(theElement,CornersOfElem,TP0,MP0,MP2,LTP0,LMP0,LMP2,depth-1,theDO)) return (1);
+    if (PlotContourTriangle3D(theElement,CornersOfElem,MP0,TP1,MP1,LMP0,LTP1,LMP1,depth-1,theDO)) return (1);
+    if (PlotContourTriangle3D(theElement,CornersOfElem,TP2,MP2,MP1,LTP2,LMP2,LMP1,depth-1,theDO)) return (1);
+    if (PlotContourTriangle3D(theElement,CornersOfElem,MP0,MP1,MP2,LMP0,LMP1,LMP2,depth-1,theDO)) return (1);
   }
   return (0);
 }
@@ -10145,14 +11923,26 @@ static INT PlotContourQuadrilateral3D (ELEMENT *theElement, COORD **CornersOfEle
 static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
   INT i, n, NodeOrder;
-  COORD_VECTOR Poly[MAX_POINTS_OF_POLY];
-  COORD *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
+  COORD_VECTOR Poly[MAX_POINTS_OF_POLY], PolyLoc[MAX_POINTS_OF_POLY];
+  COORD *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM], loc[3], glob[3];
   DRAWINGOBJ *range;
 
   DO_2c(theDO) = DO_NO_INST;
 
   /* get node order */
-  NodeOrder = NORDER(theElement);
+  switch (TAG(theElement)) {
+  case (TETRAHEDRON) :
+    NodeOrder = NORDER(theElement);
+    break;
+  case (PYRAMID) :
+    NodeOrder = theElement->py.property;
+    break;
+  case (HEXAHEDRON) :
+    NodeOrder = theElement->he.property;
+    break;
+  default :
+    return(1);
+  }
 
   /* get coordinates of corners of the element and their z coordinates in cut system */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -10162,33 +11952,62 @@ static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   }
 
   /* determine polygon being intersection of element wth cut plane */
-  if (GetPolyElemISCutPlane(x,z,NodeOrder,Poly,&n))
-    return (1);
+  switch (TAG(theElement)) {
+  case (TETRAHEDRON) :
+    if (GetPolyElemISCutPlaneTET(x,z,NodeOrder,Poly,&n))
+      return(1);
+    break;
+  case (PYRAMID) :
+    if (GetPolyElemISCutPlanePYR(x,z,NodeOrder,Poly,&n))
+      return(1);
+    break;
+  case (HEXAHEDRON) :
+    if (GetPolyElemISCutPlaneHEX(x,z,NodeOrder,Poly,&n))
+      return(1);
+    break;
+  default :
+    return(1);
+  }
+
   if (n<=2) return (0);
 
   /* draw polygon with depth */
   EScalar3D_minValue = MAX_D; EScalar3D_maxValue = -MAX_D;
   DO_2c(theDO) = DO_RANGE; DO_inc(theDO); range = theDO; DO_inc_n(theDO,2);
+
+  /* Find local coordinates of polygon verticies */
+  for (i=0; i<n; ++i)
+  {
+    glob[0]=Poly[i][0]; glob[1]=Poly[i][1]; glob[2]=Poly[i][2];
+    loc[0]=loc[1]=loc[2]=0.5;
+    if(TransformGlobalToLocal3D(theElement,glob,loc)!=0) return(1);
+    PolyLoc[i][0]=loc[0]; PolyLoc[i][1]=loc[1]; PolyLoc[i][2]=loc[2];
+  }
+
   switch (EScalar3D_mode)
   {
   case PO_COLOR :
     if (n==TRIANGLE)
     {
-      if (PlotColorTriangle3D(theElement,x,Poly[0],Poly[1],Poly[2],EScalar3D_depth,&theDO)) return (1);
+      if (PlotColorTriangle3D(theElement,x,Poly[0],Poly[1],Poly[2],PolyLoc[0],PolyLoc[1],PolyLoc[2],EScalar3D_depth,&theDO)) return (1);
     }
-    else
+    else if (n==4)
     {
-      if (PlotColorQuadrilateral3D(theElement,x,Poly[0],Poly[1],Poly[2],Poly[3],EScalar3D_depth,&theDO)) return (1);
+      if (PlotColorQuadrilateral3D(theElement,x,Poly[0],Poly[1],Poly[2],Poly[3],PolyLoc[0],PolyLoc[1],PolyLoc[2],PolyLoc[3],EScalar3D_depth,&theDO)) return (1);
+    }
+    else if ((n==5)||(n==6))
+    {
+      if (PlotColorContourPolygon3D(0, n, theElement, x, Poly, PolyLoc,EScalar3D_depth,&theDO)) return (1);
     }
     break;
   case PO_CONTOURS_EQ :
     if (n==TRIANGLE)
     {
-      if (PlotContourTriangle3D(theElement,x,Poly[0],Poly[1],Poly[2],EScalar3D_depth,&theDO)) return (1);
+      if (PlotContourTriangle3D(theElement,x,Poly[0],Poly[1],Poly[2],PolyLoc[0],PolyLoc[1],PolyLoc[2],EScalar3D_depth,&theDO)) return (1);
     }
-    else
+    else if ((n==4)||(n==5)||(n==6))
     {
-      if (PlotContourQuadrilateral3D(theElement,x,Poly[0],Poly[1],Poly[2],Poly[3],EScalar3D_depth,&theDO)) return (1);
+      if (PlotColorContourPolygon3D(1, n, theElement, x, Poly, PolyLoc,EScalar3D_depth,&theDO)) return (1);
     }
     break;
   default :
@@ -10227,7 +12046,6 @@ static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
    .n     1 if en arror occured.
  */
 /****************************************************************************/
-
 
 static INT FindRasterPoints3D (COORD RasterSize, COORD_VECTOR *Polygon, INT Number, COORD_VECTOR *RasterPoints, INT *RPNumber)
 {
@@ -10302,7 +12120,19 @@ static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   DOUBLE_VECTOR Arrow;
 
   /* get node order */
-  NodeOrder = NORDER(theElement);
+  switch (TAG(theElement)) {
+  case (TETRAHEDRON) :
+    NodeOrder = NORDER(theElement);
+    break;
+  case (PYRAMID) :
+    NodeOrder = theElement->py.property;
+    break;
+  case (HEXAHEDRON) :
+    NodeOrder = theElement->he.property;
+    break;
+  default :
+    return(1);
+  }
 
   /* get coordinates of corners of the element and their z coordinates in cut system */
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
@@ -10312,8 +12142,23 @@ static INT EW_EVector3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   }
 
   /* determine polygon being intersection of element wth cut plane */
-  if (GetPolyElemISCutPlane(x,z,NodeOrder,Poly,&n))
-    return (1);
+  switch (TAG(theElement)) {
+  case (TETRAHEDRON) :
+    if (GetPolyElemISCutPlaneTET(x,z,NodeOrder,Poly,&n))
+      return(1);
+    break;
+  case (PYRAMID) :
+    if (GetPolyElemISCutPlanePYR(x,z,NodeOrder,Poly,&n))
+      return(1);
+    break;
+  case (HEXAHEDRON) :
+    if (GetPolyElemISCutPlaneHEX(x,z,NodeOrder,Poly,&n))
+      return(1);
+    break;
+  default :
+    return(1);
+  }
+
   if (n<=2)
   {
     DO_2c(theDO) = DO_NO_INST;
