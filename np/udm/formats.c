@@ -347,11 +347,12 @@ VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
 
 INT CreateVecDescCmd (MULTIGRID *theMG, INT argc, char **argv)
 {
-  char *token,template[NAMESIZE];
+  char *token,*template,buffer[NAMESIZE];
 
-  if (ReadArgvChar("t",template,argc,argv))
+  if (ReadArgvChar("t",buffer,argc,argv))
     template = NULL;
-
+  else
+    template = buffer;
   token = strtok(argv[0],BLANKS);
   token = strtok(NULL,BLANKS);
   while (token!=NULL) {
@@ -428,10 +429,12 @@ MATDATA_DESC *CreateMatDescOfTemplate (MULTIGRID *theMG,
 
 INT CreateMatDescCmd (MULTIGRID *theMG, INT argc, char **argv)
 {
-  char *token,template[NAMESIZE];
+  char *token,*template,buffer[NAMESIZE];
 
-  if (ReadArgvChar("t",template,argc,argv))
+  if (ReadArgvChar("t",buffer,argc,argv))
     template = NULL;
+  else
+    template = buffer;
   token = strtok(argv[0],BLANKS);
   token = strtok(NULL,BLANKS);
   while (token!=NULL) {
