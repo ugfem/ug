@@ -8671,6 +8671,7 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
 
   if (vopt)
   {
+    UserWriteF("subdomain=%d \n", SUBDOMAIN(theElement));
     for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     {
       UserWriteF("    N%d=" ID_FMTX,i,ID_PRTX(CORNER(theElement,i)));
