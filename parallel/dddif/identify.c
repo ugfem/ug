@@ -1113,6 +1113,8 @@ static int Gather_NodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pri
   return(0);
 }
 
+#define IDENTASSERT 0
+
 static int Scatter_NodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
   NODE    *theNode = (NODE *)obj;
@@ -1122,7 +1124,7 @@ static int Scatter_NodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pr
 
   if (!CORNERTYPE(theNode)) return(0);
 
-  if (0) if (NEW_NIDENT(theNode)) assert(NFATHER(theNode) != NULL);
+  if (IDENTASSERT) if (NEW_NIDENT(theNode)) assert(NFATHER(theNode) != NULL);
 
   if (nprop)
   {
@@ -1131,9 +1133,9 @@ static int Scatter_NodeInfo (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO pr
     {
       UserWriteF(PFMT "isolated node=" ID_FMTX "\n",
                  me,ID_PRTX(theNode));
-      if (0) assert(0);
+      if (IDENTASSERT) assert(0);
     }
-    if (0) assert(NFATHER(theNode) != NULL);
+    if (IDENTASSERT) assert(NFATHER(theNode) != NULL);
   }
 
   return(0);
