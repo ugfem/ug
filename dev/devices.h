@@ -77,7 +77,7 @@
 #define circleToolName                  "insert in tool"
 #define handToolName                    "select nd tool"
 #define heartToolName                   "select el tool"
-#define gnoedelToolName                 "mark for ref tool"
+#define gnoedelToolName                 "mark red tool"
 
 /* text modes */
 #define TEXT_REGULAR                    0
