@@ -65,8 +65,6 @@
 /*
 #define DEBUGNSONS(pe,m)
 */
-#define AMG_CONV(l)	((((int)l)>MAXLEVEL)?(((int)l)-256):l)
-
 
 /****************************************************************************/
 /*																			*/
@@ -199,7 +197,7 @@ static GRID *GetGridOnDemand (MULTIGRID *mg, int level)
 void VectorUpdate (DDD_OBJ obj)
 {
 	VECTOR	*pv			= (VECTOR *)obj;
-	INT		level		= AMG_CONV(DDD_InfoAttr(PARHDR(pv)));
+	INT		level		= ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(pv)));
 	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 	INT		prio		= DDD_InfoPriority(PARHDR(pv));
 
@@ -208,7 +206,6 @@ void VectorUpdate (DDD_OBJ obj)
 
 	/* insert in vector list */
 	GRID_LINK_VECTOR(theGrid,pv,prio);
-
 }
 
 
@@ -218,7 +215,7 @@ void VectorXferCopy (DDD_OBJ obj, DDD_PROC proc, DDD_PRIO prio)
 	INT		nmat	= 0;
 	MATRIX	*mat;
 	VECTOR	*pv		= (VECTOR *)obj;
-	INT		level		= AMG_CONV(DDD_InfoAttr(PARHDR(pv)));
+	INT		level		= ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(pv)));
 	GRID		*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 	/* TODO: define this static global                    */
 	/* TODO: take size as maximum of possible connections */
@@ -301,7 +298,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
 	VECTOR		*vec		= (VECTOR *)obj;
 	CONNECTION	*first		= NULL,
 				*last		= NULL;
-	INT			level		= AMG_CONV(DDD_InfoAttr(PARHDR(vec)));
+	INT			level		= ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(vec)));
 	GRID		*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 	INT			prio 		= DDD_InfoPriority(PARHDR(vec));
 	INT			i;
@@ -503,7 +500,7 @@ void VectorObjMkCons (DDD_OBJ obj, int newness)
 {
 	VECTOR		*vec		= (VECTOR *) obj;
 	MATRIX 		*theMatrix,*Prev,*Next;
-	INT			level		= AMG_CONV(DDD_InfoAttr(PARHDR(vec)));
+	INT			level		= ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(vec)));
 	GRID        *theGrid    = GRID_ON_LEVEL(dddctrl.currMG,level);
 
 
@@ -570,7 +567,7 @@ void VectorObjMkCons (DDD_OBJ obj, int newness)
 void VectorDelete (DDD_OBJ obj)
 {
 	VECTOR		*pv			= (VECTOR *)obj;
-	INT			level		= AMG_CONV(DDD_InfoAttr(PARHDR(pv)));
+	INT			level		= ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(pv)));
 	GRID		*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 
 	PRINTDEBUG(dddif,2,(PFMT " VectorDelete(): v=" VINDEX_FMTX 
@@ -596,7 +593,7 @@ void VectorDelete (DDD_OBJ obj)
 void VectorPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
 	VECTOR	*pv			= (VECTOR *)obj;
-	INT		level		= AMG_CONV(DDD_InfoAttr(PARHDR(pv)));
+	INT		level		= ATTR_TO_GLEVEL(DDD_InfoAttr(PARHDR(pv)));
 	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 	INT		old			= DDD_InfoPriority(PARHDR(pv));
 
@@ -692,7 +689,7 @@ void BVertexLDataConstructor (DDD_OBJ obj)
 void VertexUpdate (DDD_OBJ obj)
 {
 	VERTEX	*theVertex	= (VERTEX *) obj;
-	INT		level		= DDD_InfoAttr(PARHDRV(theVertex));
+	INT		level		= LEVEL(theVertex);
 	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 	INT		prio		= DDD_InfoPriority(PARHDRV(theVertex));
 
@@ -750,7 +747,7 @@ void BVertexScatter (DDD_OBJ obj, int cnt, DDD_TYPE type_id, void *Data, int new
 void VertexPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
     VERTEX	*theVertex			= (VERTEX *)obj;
-    INT		level		= DDD_InfoAttr(PARHDRV(theVertex));
+    INT		level		= LEVEL(theVertex);
     GRID	*theGrid 	= GetGridOnDemand(dddctrl.currMG,level);
     INT		old			= DDD_InfoPriority(PARHDRV(theVertex));
 
@@ -876,7 +873,7 @@ void NodeUpdate (DDD_OBJ obj)
 {
 	NODE	*theNode	= (NODE *)obj;
 	VERTEX	*theVertex	= MYVERTEX(theNode);
-	INT		level		= DDD_InfoAttr(PARHDR(theNode));
+	INT		level		= LEVEL(theNode);
 	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 	INT		prio		= DDD_InfoPriority(PARHDR(theNode));
 
@@ -1035,7 +1032,7 @@ void NodeScatterEdge (DDD_OBJ n, int cnt, DDD_TYPE type_id, void *Data)
 	EDGE	*edge;
 	LINK	*link,*prev;
 	NODE	*node		= (NODE *) n;
-	INT		level		= DDD_InfoAttr(PARHDR(node));
+	INT		level		= LEVEL(node);
 	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 
 	data = (char *)Data;
@@ -1092,7 +1089,7 @@ void NodeScatterEdge (DDD_OBJ n, int cnt, DDD_TYPE type_id, void *Data)
 void NodePriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
 	NODE	*pn			= (NODE *)obj;
-	INT		level		= DDD_InfoAttr(PARHDR(pn));
+	INT		level		= LEVEL(pn);
 	GRID	*theGrid	= GetGridOnDemand(dddctrl.currMG,level);
 	INT		old			= DDD_InfoPriority(PARHDR(pn));
 
@@ -1170,7 +1167,7 @@ void ElementLDataConstructor (DDD_OBJ obj)
 {
 	INT		i;
 	ELEMENT	*pe			= (ELEMENT *)obj;
-	INT		level		= DDD_InfoAttr(PARHDRE(pe));
+	INT		level		= LEVEL(pe);
 	GRID	*theGrid	= GetGridOnDemand(dddctrl.currMG,level);
 	INT		prio		= DDD_InfoPriority(PARHDRE(pe));
 	void    *q;
@@ -1246,7 +1243,7 @@ void ElementUpdate (DDD_OBJ obj)
 void ElementDelete (DDD_OBJ obj)
 {
 	ELEMENT	*pe			= (ELEMENT *)obj;
-	INT		level		= DDD_InfoAttr(PARHDRE(pe));
+	INT		level		= LEVEL(pe);
 	GRID	*theGrid	= GRID_ON_LEVEL(dddctrl.currMG,level);
 
 	PRINTDEBUG(dddif,1,(PFMT " ElementDelete(): e=" EID_FMTX " EOBJ=%d l=%d "
@@ -1451,7 +1448,7 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
 {
 	INT		i;
 	INT		size	= sizeof(EDGE) - ((dddctrl.edgeData)? 0 : sizeof(VECTOR*));
-	INT		level	= DDD_InfoAttr(PARHDRE(pe));
+	INT		level	= LEVEL(pe);
 	GRID	*theGrid = GetGridOnDemand(dddctrl.currMG,level);
 
 	PRINTDEBUG(dddif,3,(PFMT " ElemScatterEdge(): pe=" EID_FMTX 
@@ -1684,7 +1681,7 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
 	INT		prio 		= DDD_InfoPriority(PARHDRE(pe));
 	ELEMENT *theFather	= EFATHER(pe);
 	ELEMENT *NbElement;
-	INT		level		= DDD_InfoAttr(PARHDRE(pe));
+	INT		level		= LEVEL(pe);
 	GRID	*theGrid 	= GetGridOnDemand(dddctrl.currMG,level);
 
 
@@ -1930,7 +1927,7 @@ void ElementPriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 	ELEMENT	*pe			= (ELEMENT *)obj;
 	ELEMENT *theFather	= EFATHER(pe);
 	ELEMENT *succe		= SUCCE(pe);
-	INT		level		= DDD_InfoAttr(PARHDRE(pe));
+	INT		level		= LEVEL(pe);
 	GRID	*theGrid	= GetGridOnDemand(dddctrl.currMG,level);
 	INT		old			= DDD_InfoPriority(PARHDRE(pe));
 	INT		lostson		= 1;
@@ -2085,7 +2082,7 @@ void EdgeUpdate (DDD_OBJ obj)
 	EDGE	*pe			= (EDGE *)obj;
 	LINK	*link0,
 			*link1;
-	INT		level		= DDD_InfoAttr(PARHDR(NBNODE(LINK0(pe))));
+	INT		level		= LEVEL(NBNODE(LINK0(pe)));
 	GRID	*theGrid	= GetGridOnDemand(dddctrl.currMG,level);
 
 	PRINTDEBUG(dddif,1,(PFMT " EdgeUpdate(): edge=%x/%08x EDOBJT=%d "
@@ -2132,7 +2129,7 @@ void EdgeUpdate (DDD_OBJ obj)
 void EdgePriorityUpdate (DDD_OBJ obj, DDD_PRIO new)
 {
 	EDGE	*theEdge	= (EDGE *)obj;
-	INT		level		= ATTR(theEdge);
+	INT		level		= LEVEL(theEdge);
 	GRID	*theGrid	= GetGridOnDemand(dddctrl.currMG,level);
 	INT		old			= PRIO(theEdge);
 

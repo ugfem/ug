@@ -157,7 +157,8 @@ enum HandlerSets
 
 #define GIDFMT                                                  "%08x"
 
-#define GRID_ATTR(g) ((DDD_ATTR) (GLEVEL(g) + 32))
+#define GRID_ATTR(g) ((unsigned char) (GLEVEL(g)+32))
+#define ATTR_TO_GLEVEL(i) (i-32)
 
 #define __EXCHANGE_CONNECTIONS__
 

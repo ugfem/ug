@@ -320,14 +320,14 @@ void SetOverlapPriorities (GRID *theGrid)
 {
   DDD_XferBegin();
 
-  DDD_IFAExecLocal(BorderNodeSymmIF, GLEVEL(theGrid),
+  DDD_IFAExecLocal(BorderNodeSymmIF,GRID_ATTR(theGrid),
                    ComputeNodeBorderPrios);
 
-  DDD_IFAExecLocal(BorderVectorSymmIF, GLEVEL(theGrid),
+  DDD_IFAExecLocal(BorderVectorSymmIF,GRID_ATTR(theGrid),
                    ComputeVectorBorderPrios);
 
 #ifdef __THREEDIM__
-  DDD_IFAExecLocal(BorderEdgeSymmIF, GLEVEL(theGrid),
+  DDD_IFAExecLocal(BorderEdgeSymmIF,GRID_ATTR(theGrid),
                    ComputeEdgeBorderPrios);
 #endif
 
