@@ -66,7 +66,9 @@
 #include "domain.h"
 #endif
 
+#ifndef __PARGM_H__
 #include "pargm.h"
+#endif
 
 /* if interpolation matrix is stored */
 #define __INTERPOLATION_MATRIX__
