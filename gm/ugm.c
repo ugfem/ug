@@ -13,11 +13,11 @@
 /*            6900 Heidelberg                                               */
 /*            email: ug@ica3.uni-stuttgart.de                               */
 /*                                                                          */
-/* History:   09.03.92 begin, ug version 2.0								*/
-/*			  Aug 28 1996, ug version 3.4                                                                   */
-/*																			*/
-/* Remarks:                                                                                                                             */
-/*																			*/
+/* History:   09.03.92 begin, ug version 2.0                                */
+/*            Aug 28 1996, ug version 3.4                                   */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 #ifdef __MPW32__
@@ -25,9 +25,9 @@
 #endif
 
 /****************************************************************************/
-/*																			*/
-/*		defines to exclude functions										*/
-/*																			*/
+/*                                                                          */
+/*        defines to exclude functions                                      */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
@@ -117,9 +117,9 @@ using namespace UG3d;
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 #if defined ModelP && defined __OVERLAP2__
@@ -128,9 +128,9 @@ INT ce_NO_DELETE_OVERLAP2 = -1;
 
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 static char buffer[4*256];                      /* general purpose text buffer			*/
@@ -242,17 +242,15 @@ INT NS_PREFIX GetFreeOBJT ()
 /****************************************************************************/
 /** \brief Release an object type id not needed anymore
  *
-   PARAMETERS:
  * @param  type - object type
-
-   DESCRIPTION:
-   This function releases an object type id not needed anymore.
-
-   @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR when error occured.
-   </ul> */
+ *
+ * This function releases an object type id not needed anymore.
+ *
+ * @return <ul>
+ * <li>   GM_OK if ok </li>
+ * <li>   GM_ERROR when error occured. </li>
+ * </ul>
+ */
 /****************************************************************************/
 
 INT NS_PREFIX ReleaseOBJT (INT type)
@@ -273,23 +271,18 @@ INT NS_PREFIX ReleaseOBJT (INT type)
 /** \brief Get an object from free list if possible
    \fn GetMemoryForObject
 
-   SYNOPSIS:
-   void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type);
-
-   PARAMETERS:
  * @param  theMG - pointer to multigrid
  * @param  size - size of the object
  * @param  type - type of the requested object
 
-   DESCRIPTION:
    This function gets an object of type `type` from free list if possible,
    otherwise it allocates memory from the multigrid heap using 'GetMem'.
 
    @return <ul>
-   void *
-   <li>   pointer to an object of the requested type
-   <li>   NULL if object of requested type is not available
-   </ul> */
+   <li>   pointer to an object of the requested type </li>
+   <li>   NULL if object of requested type is not available </li>
+ * </ul>
+ */
 /****************************************************************************/
 
 #ifdef ModelP
@@ -366,23 +359,17 @@ void * NS_PREFIX GetMemoryForObjectNew (HEAP *theHeap, INT size, INT type)
 /** \brief  Put an object in the free list
    \fn PutFreeObject
 
-   SYNOPSIS:
-   INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type);
-
-   PARAMETERS:
  * @param  theMG - pointer to multigrid
  * @param  object - object to insert in free list
  * @param  size - size of the object
  * @param  type - type of the requested object
 
-   DESCRIPTION:
    This function puts an object in the free list.
 
    @return <ul>
-   INT
-   <li>   0 if ok
-   <li>   1 when error occured.
-   </ul> */
+   <li>   0 if ok </li>
+   <li>   1 when error occured. </li>
+ * </ul> */
 /****************************************************************************/
 
 #ifdef ModelP
@@ -518,8 +505,8 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid)
  * and returns a pointer to it.
  *
  * @return <ul>
-   <li>   pointer to requested object
-   <li>   NULL if out of memory
+   <li>   pointer to requested object </li>
+   <li>   NULL if out of memory </li>
    </ul> */
 /****************************************************************************/
 
@@ -565,21 +552,18 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
 /****************************************************************************/
 /** \brief Return pointer to a new node structure
 
-   PARAMETERS:
  * @param  theGrid - grid where vertex should be inserted
  * @param  vertex  - vertex of the node
  * @param  FatherNode - father node (may be NULL)
  * @param  NodeType - node type (CORNER_NODE..., cf. gm.h)
  * @param   with_vector
 
-   DESCRIPTION:
    This function creates and initializes a new node structure
    and returns a pointer to it.
 
    @return <ul>
-   NODE *
-   <li>   pointer to requested object
-   <li>   NULL if out of memory
+   <li>   pointer to requested object </li>
+   <li>   NULL if out of memory </li>
    </ul> */
 /****************************************************************************/
 
@@ -668,17 +652,15 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
 /****************************************************************************/
 /** \brief Return pointer to a new node structure on an edge
 
-   PARAMETERS:
  * @param   theGrid - grid where vertex should be inserted
  * @param   FatherNode - node father
 
-   DESCRIPTION:
    This function creates and initializes a new node structure
    at the midpoint of an element edge and returns a pointer to it.
 
    @return <ul>
-   <li>   pointer to requested object
-   <li>   NULL if out of memory
+   <li>   pointer to requested object </li>
+   <li>   NULL if out of memory </li>
    </ul> */
 /****************************************************************************/
 
@@ -704,7 +686,6 @@ NODE *NS_PREFIX CreateSonNode (GRID *theGrid, NODE *FatherNode)
 /****************************************************************************/
 /** \brief Return pointer to a new node structure on an edge
 
-   PARAMETERS:
  * @param   theGrid - grid where node should be inserted
  * @param   theElement - pointer to an element
  * @param   theVertex - pointer to vertex if already existing
@@ -714,8 +695,8 @@ NODE *NS_PREFIX CreateSonNode (GRID *theGrid, NODE *FatherNode)
    at the midpoint of an element edge and returns a pointer to it.
 
    @return <ul>
-   <li>   pointer to requested object
-   <li>   NULL if out of memory
+   <li>   pointer to requested object </li>
+   <li>   NULL if out of memory </li>
    </ul> */
 /****************************************************************************/
 
@@ -888,7 +869,6 @@ static INT SideOfNbElement(ELEMENT *theElement, INT side)
 /****************************************************************************/
 /** \brief Return pointer to a new node structure on a side (3d)
 
-   PARAMETERS:
  * @param   theGrid - grid where vertex should be inserted
  * @param   theElement - pointer to an element
  * @param   theVertex - pointer vertex
@@ -898,8 +878,8 @@ static INT SideOfNbElement(ELEMENT *theElement, INT side)
    at the midpoint of an element side and returns a pointer to it.
 
    @return <ul>
-   <li>   pointer to requested object
-   <li>   NULL if out of memory
+   <li>   pointer to requested object </li>
+   <li>   NULL if out of memory </li>
    </ul> */
 /****************************************************************************/
 
@@ -1005,7 +985,6 @@ NODE *NS_PREFIX CreateSideNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theV
    DESCRIPTION:
 
    @return
-   NODE
  */
 /****************************************************************************/
 
@@ -1354,8 +1333,8 @@ INT NS_PREFIX GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
  * This function gets the center node of an element of next finer level
 
    @return <ul>
-   <li>   pointer to center node
-   <li>   NULL  no node found
+   <li>   pointer to center node </li>
+   <li>   NULL  no node found </li>
    </ul> */
 /****************************************************************************/
 
@@ -1391,8 +1370,9 @@ NODE * NS_PREFIX GetCenterNode (ELEMENT *theElement)
  * Includes vertex
  * best fit boundary coordinates and local coordinates.
  *
- * @return <ul>:  pointer to new node
- *			  NULL	: could not allocate
+ * @return <ul>
+ *    <li> pointer to new node </li>
+ *    <li> NULL: could not allocate </li>
    </ul> */
 /****************************************************************************/
 /* #define MOVE_MIDNODE */
@@ -1519,7 +1499,6 @@ NODE * NS_PREFIX CreateCenterNode (GRID *theGrid, ELEMENT *theElement, VERTEX *t
 /****************************************************************************/
 /** \brief Get all nodes related to this element on next level
 
-   PARAMETERS:
  * @param   theElement - element for context
  * @param   theElementContext - node context of this element
 
@@ -1527,8 +1506,8 @@ NODE * NS_PREFIX CreateCenterNode (GRID *theGrid, ELEMENT *theElement, VERTEX *t
    finer level. The ordering is according to the reference numbering.
 
    @return <ul>
-   <li>   GM_OK    if ok
-   <li>   != GM_OK if not ok
+   <li>   GM_OK    if ok </li>
+   <li>   != GM_OK if not ok </li>
    </ul> */
 /****************************************************************************/
 
@@ -1593,7 +1572,6 @@ INT NS_PREFIX GetNodeContext (ELEMENT *theElement, NODE **theElementContext)
 /****************************************************************************/
 /** \brief Return matching side of the neighboring element
 
-   PARAMETERS:
  * @param   theNeighbor - element to test for matching side
  * @param   nbside - the matching side
  * @param   theElement - element with side to match
@@ -1646,8 +1624,8 @@ void NS_PREFIX GetNbSideByNodes (ELEMENT *theNeighbor, INT *nbside, ELEMENT *the
  * This function returns the pointer to the son edge if it exists.
  *
  * @return <ul>
-   <li>   pointer to specified object
-   <li>   NULL if not found
+   <li>   pointer to specified object </li>
+   <li>   NULL if not found </li>
    </ul> */
 /****************************************************************************/
 
@@ -1673,19 +1651,13 @@ EDGE * NS_PREFIX GetSonEdge (EDGE *theEdge)
 /** \brief
    GetSonEdges - Return pointer to son edges if it exists
 
-   SYNOPSIS:
-   INT GetSonEdges (EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES]);
-
-   PARAMETERS:
  * @param   theEdge - edge for which son is searched
  * @param   SonEdges - array of pointers will be filled with son edges
 
-   DESCRIPTION:
    This function returns the pointer to the son edges if existing.
 
    @return <ul>
-   INT
-   <li>   number of found edges (0,1,2)
+   <li>   number of found edges (0,1,2) </li>
    </ul> */
 /****************************************************************************/
 
@@ -1742,19 +1714,13 @@ INT NS_PREFIX GetSonEdges (EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES])
 /** \brief
    GetFatherEdge - Return pointer to father edge if it exists
 
-   SYNOPSIS:
-   EDGE *GetFatherEdge (EDGE *theEdge)
-
-   PARAMETERS:
  * @param   theEdge - edge for which father is searched
 
-   DESCRIPTION:
    This function returns the pointer to the father edge if it exists.
 
    @return <ul>
-   EDGE *
-   <li>   pointer to specified object
-   <li>   NULL if not found
+   <li>   pointer to specified object </li>
+   <li>   NULL if not found </li>
    </ul> */
 /****************************************************************************/
 
@@ -1816,22 +1782,16 @@ EDGE * NS_PREFIX GetFatherEdge (EDGE *theEdge)
 /** \brief
    FatherEdge - Return pointer to father edge if it exists
 
-   SYNOPSIS:
-   EDGE *FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge)
-
-   PARAMETERS:
  * @param   SideNodes - nodes of the side
  * @param   ncorners - number of sidenodes
  * @param   Nodes - corners of edge for which father is searched
  * @param   theEdge - edge for which father is searched
 
-   DESCRIPTION:
    This function returns the pointer to the father edge if it exists.
 
    @return <ul>
-   EDGE *
-   <li>   pointer to specified object
-   <li>   NULL if not found
+   <li>   pointer to specified object </li>
+   <li>   NULL if not found </li>
    </ul> */
 /****************************************************************************/
 
@@ -1962,20 +1922,14 @@ EDGE * NS_PREFIX FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE 
 /** \brief
    GetEdge - Return pointer to edge if it exists
 
-   SYNOPSIS:
-   EDGE *GetEdge (NODE *from, NODE *to);
-
-   PARAMETERS:
  * @param   from - starting node of edge
  * @param   to - end node of edge
 
-   DESCRIPTION:
    This function returns the pointer to the specified edge if it exists.
 
    @return <ul>
-   EDGE *
-   <li>   pointer to specified object
-   <li>   NULL if not found
+   <li>   pointer to specified object </li>
+   <li>   NULL if not found </li>
    </ul> */
 /****************************************************************************/
 
@@ -1996,22 +1950,16 @@ EDGE * NS_PREFIX GetEdge (NODE *from, NODE *to)
 /** \brief
    CreateEdge - Return pointer to a new edge structure
 
-   SYNOPSIS:
-   EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector);
-
-   PARAMETERS:
  * @param   theGrid - grid where vertex should be inserted
  * @param   theElement - pointer to element
  * @param   edge - number of edge
  * @param   with_vector - also create vector for edge (TRUE/FALSE)
 
-   DESCRIPTION:
    This function returns a pointer to a new edge structure.
 
    @return <ul>
-   EDGE *
-   <li>   pointer to requested object
-   <li>   NULL if out of memory
+   <li>   pointer to requested object </li>
+   <li>   NULL if out of memory </li>
    </ul> */
 /****************************************************************************/
 
@@ -2264,20 +2212,14 @@ EDGE * CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector
 /** \brief
    GetLink - Return pointer to link if it exists
 
-   SYNOPSIS:
-   LINK *GetLink (NODE *from, NODE *to);
-
-   PARAMETERS:
  * @param   from - starting node of link
  * @param   to - end node of link
 
-   DESCRIPTION:
    This function returns the pointer to the specified link if it exists.
 
    @return <ul>
-   INT
-   <li>   pointer to specified link
-   <li>   NULL if not found.
+   <li>   pointer to specified link </li>
+   <li>   NULL if not found. </li>
    </ul> */
 /****************************************************************************/
 
@@ -2298,11 +2240,6 @@ LINK *GetLink (NODE *from, NODE *to)
 /** \brief
    CreateElement - Return a pointer to  a new element structure
 
-   SYNOPSIS:
-   ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
-   NODE **nodes, ELEMENT *Father, INT with_vector);
-
-   PARAMETERS:
  * @param   theGrid - grid structure to extend
  * @param   tag - the element type
  * @param   objtype - inner element (IEOBJ) or boundary element (BEOBJ)
@@ -2310,13 +2247,11 @@ LINK *GetLink (NODE *from, NODE *to)
  * @param   Father - pointer to father element (NULL on base level)
  * @param   with_vector -
 
-   DESCRIPTION:
    This function creates and initializes a new element and returns a pointer to it.
 
    @return <ul>
-   ELEMENT *
-   <li>   pointer to requested object
-   <li>   NULL if out of memory
+   <li>   pointer to requested object </li>
+   <li>   NULL if out of memory </li>
    </ul> */
 /****************************************************************************/
 
@@ -2434,18 +2369,12 @@ ELEMENT * NS_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **n
 /** \brief
    CreateSonElementSide - creates the element sides of son elements
 
-   SYNOPSIS:
-   INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
-   ELEMENT *theSon, INT son_side);
-
-   PARAMETERS:
  * @param   theGrid - grid for which to create
  * @param   theElement - pointer to a boundary element
  * @param   side - side id of a side of the element
  * @param   theSon - pointer to a son element
  * @param   son_side - side id of a side of the son
 
-   DESCRIPTION:
    This function creates and initializes an element side of a son element.
    Here also the side vector (iff at all) is inspected in 'ReinspectSonSideVector'.
    The latter function eventually reallocates the vector if its size has changed and
@@ -2455,9 +2384,8 @@ ELEMENT * NS_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **n
    the connections of the side-vector.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -2539,7 +2467,7 @@ INT NS_PREFIX CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side
         #endif
 
     #ifdef __THREEDIM__
-  /* TODO: is this necessary?
+  /** \todo is this necessary?
      for (i=0; i<EDGES_OF_SIDE(theSon,son_side); i++) {
           int k  = EDGE_OF_SIDE(theSon,son_side,i);
           theEdge = GetEdge(CORNER(theSon,CORNER_OF_EDGE(theSon,k,0)),
@@ -2556,20 +2484,14 @@ INT NS_PREFIX CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side
 /** \brief
    CreateNewLevel - Return pointer to new grid structure
 
-   SYNOPSIS:
-   GRID *CreateNewLevel (MULTIGRID *theMG, INT algebraic);
-
-   PARAMETERS:
  * @param   theMG - multigrid structure
 
-   DESCRIPTION:
    This function creates and initialized a new grid structure for top level + 1
    and returns a pointer to it.
 
    @return <ul>
-   GRID *
-   <li>   pointer to requested object
-   <li>   NULL if out of memory
+   <li>   pointer to requested object </li>
+   <li>   NULL if out of memory </li>
    </ul> */
 /****************************************************************************/
 
@@ -2641,20 +2563,14 @@ GRID * NS_PREFIX CreateNewLevel (MULTIGRID *theMG, INT algebraic)
 /** \brief
    CreateNewLevelAMG - Create new amg level
 
-   SYNOPSIS:
-   GRID *CreateNewLevelAMG (MULTIGRID *theMG);
-
-   PARAMETERS:
  * @param   theMG - multigrid structure
 
-   DESCRIPTION:
    This function creates and initialized a new grid structure for bottomLevel - 1
    and returns a pointer to it.
 
    @return <ul>
-   GRID *
-   <li>   pointer to requested object
-   <li>   NULL if out of memory
+   <li>   pointer to requested object </li>
+   <li>   NULL if out of memory </li>
    </ul> */
 /****************************************************************************/
 
@@ -2707,19 +2623,13 @@ GRID * NS_PREFIX CreateNewLevelAMG (MULTIGRID *theMG)
 /** \brief
    MakeMGItem - Create a multigrid environment item
 
-   SYNOPSIS:
-   MULTIGRID *MakeMGItem (const char *name);
-
-   PARAMETERS:
  * @param   name - name of the multigrid
 
-   DESCRIPTION:
    This function creates a multigrid environment directory.
 
    @return <ul>
-   MULTIGRID *
-   <li>   pointer to new MULTIGRID
-   <li>   NULL if error occured
+   <li>   pointer to new MULTIGRID </li>
+   <li>   NULL if error occured </li>
    </ul> */
 /****************************************************************************/
 
@@ -2736,13 +2646,8 @@ MULTIGRID * NS_PREFIX MakeMGItem (const char *name)
 }
 
 /****************************************************************************/
-/*
-   ClearMultiGridUsedFlags -
+/** \todo Please doc me!
 
-   SYNOPSIS:
-   INT ClearMultiGridUsedFlags (MULTIGRID *theMG, INT FromLevel, INT ToLevel, INT mask);
-
-   PARAMETERS:
  * @param   theMG
  * @param   FromLevel
  * @param   ToLevel
@@ -2818,20 +2723,14 @@ INT NS_PREFIX ClearMultiGridUsedFlags (MULTIGRID *theMG, INT FromLevel, INT ToLe
 /** \brief
    GetMultigrid - Find the multigrid environment item with name
 
-   SYNOPSIS:
-   MULTIGRID *GetMultigrid (const char *name);
-
-   PARAMETERS:
  * @param   name - name of the multigrid to find
 
-   DESCRIPTION:
    This function find the multigrid environment item with `name` and
    returns a pointer to the multigrid structure.
 
    @return <ul>
-   MULTIGRID *
-   <li>   pointer to MULTIGRID
-   <li>   NULL if not found.
+   <li>   pointer to MULTIGRID  </li>
+   <li>   NULL if not found. </li>
    </ul> */
 /****************************************************************************/
 
@@ -2845,20 +2744,14 @@ MULTIGRID * NS_PREFIX GetMultigrid (const char *name)
 /** \brief
    GetFirstMultigrid - Return a pointer to the first multigrid
 
-   SYNOPSIS:
-   MULTIGRID *GetFirstMultigrid ();
-
-   PARAMETERS:
  * @param   void
 
-   DESCRIPTION:
    This function returns a pointer to the first multigrid in the /Multigrids
    directory.
 
    @return <ul>
-   MULTIGRID *
-   <li>   pointer to MULTIGRID
-   <li>   NULL if not found.
+   <li>   pointer to MULTIGRID </li>
+   <li>   NULL if not found. </li>
    </ul> */
 /****************************************************************************/
 
@@ -2884,23 +2777,16 @@ MULTIGRID * NS_PREFIX GetFirstMultigrid ()
 }
 
 /****************************************************************************/
-/** \brief
-   GetNextMultigrid - Return a pointer to the next multigrid
+/** \brief Return a pointer to the next multigrid
 
-   SYNOPSIS:
-   MULTIGRID *GetNextMultigrid (const MULTIGRID *theMG);
-
-   PARAMETERS:
  * @param   theMG - multigrid structure
 
-   DESCRIPTION:
    This function returns a pointer to the next multigrid in the /Multigrids
    directory.
 
    @return <ul>
-   MULTIGRID *
-   <li>   pointer to MULTIGRID
-   <li>   NULL if not found.
+   <li>   pointer to MULTIGRID </li>
+   <li>   NULL if not found. </li>
    </ul> */
 /****************************************************************************/
 
@@ -2924,11 +2810,6 @@ MULTIGRID * NS_PREFIX GetNextMultigrid (const MULTIGRID *theMG)
 /** \brief
    CreateMultiGrid - Return a pointer to new multigrid structure
 
-   SYNOPSIS:
-   MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
-   char *format, MEM heapSize, INT optimizedIE);
-
-   PARAMETERS:
  * @param   MultigridName - name of multigrid
  * @param   domain - name of domain description from environment
  * @param   problem - name of problem description from environment
@@ -2936,15 +2817,13 @@ MULTIGRID * NS_PREFIX GetNextMultigrid (const MULTIGRID *theMG)
  * @param   heapSize - size of heap to allocate for that multigrid in bytes
  * @param   optimizedIE - alloccate NodeElementList
 
-   DESCRIPTION:
    This function creates and initializes a new multigrid structure including
    allocation of heap, combining the domain and the boundary conditions
    and creation of the fixed corners of the domain.
 
    @return <ul>
-   MULTIGRID *
-   <li>   pointer to new object
-   <li>   NULL if an error occured.
+   <li>   pointer to new object </li>
+   <li>   NULL if an error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -3126,24 +3005,17 @@ MULTIGRID * NS_PREFIX CreateMultiGrid (char *MultigridName, char *BndValProblem,
 }
 
 /****************************************************************************/
-/** \brief
-   DisposeEdge - Remove edge from the data structure
+/** \brief Remove edge from the data structure
 
-   SYNOPSIS:
-   static INT DisposeEdge (GRID *theGrid, EDGE *theEdge);
-
-   PARAMETERS:
  * @param   theGrid - grid to remove from
  * @param   theEdge - edge to remove
 
-   DESCRIPTION:
    This function remove an edge from the data structure including its
    vector (if one) and inserts them into the free list.
 
    @return <ul>
-   INT
-   <li>   0 if ok
-   <li>   1 if an error occured.
+   <li>   0 if ok </li>
+   <li>   1 if an error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -3223,24 +3095,17 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
 }
 
 /****************************************************************************/
-/** \brief
-   DisposeNode - Remove node including its edges from the data structure
+/** \brief Remove node including its edges from the data structure
 
-   SYNOPSIS:
-   INT DisposeNode (GRID *theGrid, NODE *theNode);
-
-   PARAMETERS:
  * @param   theGrid - grid to remove from
  * @param   theNode - node to remove
 
-   DESCRIPTION:
    This function removes node including its edges and vector (if one)
    from the data structure and inserts all objects into the free list.
 
    @return <ul>
-   INT
-   <li>   0 if ok
-   <li>   1 when error occured.
+   <li>   0 if ok </li>
+   <li>   1 when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -3293,7 +3158,7 @@ INT NS_PREFIX DisposeNode (GRID *theGrid, NODE *theNode)
     }
   }
 
-  /* TODO delete old vertex handling */
+  /** \todo delete old vertex handling */
   if (0)
     if (theVertex != NULL)
     {
@@ -3349,21 +3214,15 @@ INT NS_PREFIX DisposeNode (GRID *theGrid, NODE *theNode)
 /** \brief
    DisposeVertex - Remove vertex from the data structure
 
-   SYNOPSIS:
-   static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex);
-
-   PARAMETERS:
  * @param   theGrid - grid to remove from
  * @param   theVertex - vertex to remove
 
-   DESCRIPTION:
    This function removes a vertex from the data structure
    and puts it into the free list.
 
    @return <ul>
-   INT
-   <li>   0 if ok
-   <li>   1 no valid object number
+   <li>   0 if ok </li>
+   <li>   1 no valid object number </li>
    </ul> */
 /****************************************************************************/
 
@@ -3394,23 +3253,17 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
 /** \brief
    DisposeElement - Remove element from the data structure
 
-   SYNOPSIS:
-   INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections);
-
-   PARAMETERS:
  * @param   theGrid - grid to remove from
  * @param   theElement - element to remove
  * @param   dispose_connections - also dispose connections (TRUE/FALSE)
 
-   DESCRIPTION:
    This function removes an element from the data structure and inserts it
    into the free list. This includes all elementsides, sidevectors and the
    elementvector if they exist.
 
    @return <ul>
-   INT
-   <li>   0 if ok
-   <li>   1 no valid object number.
+   <li>   0 if ok </li>
+   <li>   1 no valid object number. </li>
    </ul> */
 /****************************************************************************/
 
@@ -3481,7 +3334,7 @@ INT NS_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_co
 
         #ifdef ModelP
   /* reset father pointers of sons */
-  /* TODO: possibly some son cannot be reached by GetAllSons, */
+  /** \todo possibly some son cannot be reached by GetAllSons, */
   /* because their father has not been on this proc and       */
   /* they lost their father pointers                          */
   if (NSONS(theElement)>0)
@@ -3654,7 +3507,7 @@ INT NS_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_co
       RETURN(1);
 
   /* reset neighbor pointers referencing element and dispose vectors in sides if */
-  /* TODO: delete */
+  /** \todo delete */
   if (0)
   {
         #ifdef __TWODIM__
@@ -3758,21 +3611,15 @@ INT NS_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_co
 /** \brief
    Collapse - construct coarse grid from surface
 
-   SYNOPSIS:
-   INT Collapse (MULTIGRID *theMG);
-
-   PARAMETERS:
  * @param   theMG - multigrid to collapse
 
-   DESCRIPTION:
    This function constructs coarse grid from surface. ATTENTION: Use refine $g
    to cover always the whole domain with the grid on each level.
 
    @return <ul>
-   INT
-   <li>   0 if ok
-   <li>   1 no valid object number
-   <li>   2 grid structure not empty or level 0
+   <li>   0 if ok </li>
+   <li>   1 no valid object number </li>
+   <li>   2 grid structure not empty or level 0 </li>
    </ul> */
 /****************************************************************************/
 
@@ -3924,20 +3771,14 @@ INT NS_PREFIX Collapse (MULTIGRID *theMG)
 /** \brief
    DisposeTopLevel - Remove top level grid from multigrid  structure
 
-   SYNOPSIS:
-   INT DisposeTopLevel (MULTIGRID *theMG);
-
-   PARAMETERS:
  * @param   theMG - multigrid to remove from
 
-   DESCRIPTION:
    This function removes the top level grid from multigrid structure.
 
    @return <ul>
-   INT
-   <li>   0 if ok
-   <li>   1 no valid object number
-   <li>   2 grid structure not empty or level 0
+   <li>   0 if ok </li>
+   <li>   1 no valid object number </li>
+   <li>   2 grid structure not empty or level 0 </li>
    </ul> */
 /****************************************************************************/
 
@@ -3981,20 +3822,14 @@ INT NS_PREFIX DisposeTopLevel (MULTIGRID *theMG)
 /** \brief
    DisposeGrid - dispose top level grid
 
-   SYNOPSIS:
-   INT DisposeGrid (GRID *theGrid);
-
-   PARAMETERS:
  * @param   theGrid - grid to be removed
 
-   DESCRIPTION:
    This function removes the top level grid from multigrid structure.
 
    @return <ul>
-   INT
-   <li>   0 if ok
-   <li>   1 no valid object number
-   <li>   2 grid structure not empty or level 0
+   <li>   0 if ok </li>
+   <li>   1 no valid object number </li>
+   <li>   2 grid structure not empty or level 0 </li>
    </ul> */
 /****************************************************************************/
 
@@ -4048,20 +3883,14 @@ INT NS_PREFIX DisposeGrid (GRID *theGrid)
 /** \brief
    DisposeAMGLevel - dispose bottom AMG level
 
-   SYNOPSIS:
-   INT DisposeAMGLevel (MULTIGRID *theMG);
-
-   PARAMETERS:
  * @param   theMG - multigrid to remove from
 
-   DESCRIPTION:
    This function removes the bottom AMG level from multigrid structure.
 
    @return <ul>
-   INT
-   <li>   0 if ok
-   <li>   1 no valid object number
-   <li>   2 no AMG levels
+   <li>   0 if ok </li>
+   <li>   1 no valid object number </li>
+   <li>   2 no AMG levels </li>
    </ul> */
 /****************************************************************************/
 
@@ -4109,19 +3938,13 @@ static INT DisposeAMGLevel (MULTIGRID *theMG)
 /** \brief
    DisposeAMGLevels - dispose all AMG level
 
-   SYNOPSIS:
-   INT DisposeAMGLevels (MULTIGRID *theMG);
-
-   PARAMETERS:
  * @param   theMG - multigrid to remove from
 
-   DESCRIPTION:
    This function removes all AMG level from multigrid structure.
 
    @return <ul>
-   INT
-   <li>   0 if ok
-   <li>   1 if error occured
+   <li>   0 if ok </li>
+   <li>   1 if error occured </li>
    </ul> */
 /****************************************************************************/
 
@@ -4166,16 +3989,13 @@ INT NS_PREFIX DisposeAMGLevels (MULTIGRID *theMG)
 /****************************************************************************/
 /** \brief Release memory for the whole multigrid  structure
 
-   PARAMETERS:
  * @param   theMG - multigrid to remove
 
-   DESCRIPTION:
    This function releases the memory for the whole multigrid  structure.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -4235,18 +4055,13 @@ INT NS_PREFIX DisposeMultiGrid (MULTIGRID *theMG)
 /*
    LexCompare - Define relation for lexicographic ordering
 
-   SYNOPSIS:
-   static int LexCompare (NODE **pnode1, NODE **pnode2);
-
-   PARAMETERS:
  * @param   pnode1 - first node to compare
  * @param   pnode2 - second node to compare
 
-   DESCRIPTION:
    This function defines a relation for lexicographic ordering
 
    @return
-   INT
+   \todo Doc return value!
  */
 /****************************************************************************/
 
@@ -4286,18 +4101,12 @@ static INT LexCompare (NODE **pnode1, NODE **pnode2)
 /*
    LinkCompare - Define relation for lexicographic ordering of links
 
-   SYNOPSIS:
-   static int LinkCompare (LINK **LinkHandle1, LINK **LinkHandle2)
-
-   PARAMETERS:
  * @param   LinkHandle1 - first link to compare
  * @param   LinkHandle2 - second link to compare
 
-   DESCRIPTION:
    This function defines a relation for lexicographic ordering of links
 
-   @return
-   INT
+   \todo Doc return value!
  */
 /****************************************************************************/
 
@@ -4318,24 +4127,18 @@ static int LinkCompare (LINK **LinkHandle1, LINK **LinkHandle2)
 /** \brief
    OrderNodesInGrid - reorder double linked 'NODE' list
 
-   SYNOPSIS:
-   INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT AlsoOrderLinks);
-
-   PARAMETERS:
  * @param   theGrid - grid to order
  * @param   order - precedence of coordinate directions
  * @param   sign - respective ordering direction
  * @param   AlsoOrderLinks - if 'TRUE' also order links
 
-   DESCRIPTION:
    This function reorders the double linked 'NODE' list of the grid with
    qsort and order criteria LexCompare(). If specified the 'LINK's are ordered
    corresponding to the 'NODE' order.
 
    @return <ul>
-   INT
-   <li>   0 if ok
-   <li>   >0 when error occured.
+   <li>   0 if ok </li>
+   <li>   >0 when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -4437,20 +4240,14 @@ INT NS_PREFIX OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign
 /** \brief
    PutAtEndOfList - reorder a given set of elements and put them first in the list
 
-   SYNOPSIS:
-   INT PutAtEndOfList (GRID *theGrid, INT cnt, ELEMENT **elemList);
-
-   PARAMETERS:
  * @param   theGrid - elements are part of that level (not checked)
  * @param   cnt - number of elements in list
  * @param   elemList - list of elements to reorder
 
-   DESCRIPTION:
    This function reorders a given set of elements and put them last in the list.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
+   <li>   GM_OK if ok </li>
    </ul> */
 /****************************************************************************/
 
@@ -4505,24 +4302,18 @@ INT NS_PREFIX PutAtEndOfList (GRID *theGrid, INT cnt, ELEMENT **elemList)
 
 /****************************************************************************/
 /** \brief
-   FindNeighborElement - Determine neighbor and side of neighbor that goes back to elem
-
-   SYNOPSIS:
-   INT FindNeighborElement (const ELEMENT *theElement, INT Side, ELEMENT **theNeighbor, INT *NeighborSide);
-
-   PARAMETERS:
+ *     Determine neighbor and side of neighbor that goes back to element
+ *
  * @param   theElement - considered element
  * @param   Side - side of that element
  * @param   theNeighbor - handle to neighbor
  * @param   NeighborSide - number of side of neighbor that goes back to elem
-
-   DESCRIPTION:
+ *
    This function determines the neighbor and side of the neighbor that goes back to elem.
 
    @return <ul>
-   INT
-   <li>   0 if ok
-   <li>   1 when error occured.
+   <li>   0 if ok </li>
+   <li>   1 when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -4596,20 +4387,14 @@ NODE * NS_PREFIX InsertInnerNode (GRID *theGrid, DOUBLE *pos)
 /** \brief
    InsertBoundaryNode - Insert a boundary node
 
-   SYNOPSIS:
-   NODE *InsertBoundaryNode (GRID *theGrid, BNDP *bndp);
-
-   PARAMETERS:
  * @param   theGrid - grid structure
  * @param   bndp - boundary point descriptor
 
-   DESCRIPTION:
    This function inserts a boundary node into level 0.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -4668,20 +4453,14 @@ NODE * NS_PREFIX InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
 /** \brief
    DeleteNode - Delete a node
 
-   SYNOPSIS:
-   INT DeleteNode (GRID *theGrid, NODE *theNode);
-
-   PARAMETERS:
  * @param   theGrid - grid structure
  * @param   theNode - node to delete
 
-   DESCRIPTION:
    This function deletes a node from level 0.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -4724,20 +4503,14 @@ INT NS_PREFIX DeleteNode (GRID *theGrid, NODE *theNode)
 /** \brief
    DeleteNodeWithID - Delete the node with id
 
-   SYNOPSIS:
-   INT DeleteNodeWithID (GRID *theGrid, INT id);
-
-   PARAMETERS:
  * @param   theGrid - grid structure
  * @param   id - id of node to delete
 
-   DESCRIPTION:
    This function deletes the node with id `id`.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -4760,21 +4533,15 @@ INT NS_PREFIX DeleteNodeWithID (GRID *theGrid, INT id)
 /** \brief
    FindFather - Find the new father element
 
-   SYNOPSIS:
-   ELEMENT *FindFather(VERTEX *theVertex);
-
-   PARAMETERS:
  * @param   theVertex -
 
-   DESCRIPTION:
    This function finds the new father element of the given vertex.
    It assumes that the  new father is one of the neighbors of the
    old father element.
 
    @return <ul>
-   ELEMENT *
-   <li>     pointer to an element
-   <li>     NULL if none or no correct father is found or vertex is level 0
+   <li>     pointer to an element </li>
+   <li>     NULL if none or no correct father is found or vertex is level 0 </li>
    </ul> */
 /****************************************************************************/
 
@@ -4808,22 +4575,16 @@ ELEMENT * NS_PREFIX FindFather (VERTEX *theVertex)
 /** \brief
    RecreateBNDSofNode - searche the boundary sides and recreate the corresponding BNDS
 
-   SYNOPSIS:
-   static INT RecreateBNDSofNode(MULTIGRID *theMG, NODE *theNode)
-
-   PARAMETERS:
  * @param   theMG - multigrid structure
  * @param   theNode - node with new BNDP
 
-   DESCRIPTION:
    This function searches the boundary sides located at 'theNode' and recreate
    the corresponding BNDSs of these sides.
    It assumes that 'theNode' and the neighbour boundary nodes are in the same patch.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -4896,21 +4657,15 @@ static INT RecreateBNDSofNode (MULTIGRID *theMG, NODE *theNode)
 /** \brief
    MoveBndMidNode - set new position for a midnode on a boundary
 
-   SYNOPSIS:
-   INT MoveBndMidNode (MULTIGRID *theMG, VERTEX *theVertex);
-
-   PARAMETERS:
  * @param   theMG - pointer to multigrid
  * @param   theVertex - vertex to move
 
-   DESCRIPTION:
    This function moves a given boundary vertex according to ist actual local
    coordinates. This function should only be called by MoveMidNode.
 
    @return <ul>
-   INT
-   <li>   GM_OK when ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK when ok </li>
+   <li>   GM_ERROR when error occured.	 </li>
    </ul> */
 /****************************************************************************/
 
@@ -5011,24 +4766,18 @@ INT NS_PREFIX MoveBndMidNode (MULTIGRID *theMG, VERTEX *theVertex)
 /** \brief
    MoveMidNode - set new position for a midnode
 
-   SYNOPSIS:
-   INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda, INT update);
-
-   PARAMETERS:
  * @param   theMG - pointer to multigrid
  * @param   theNode - node to move
  * @param   lambda - parameter on the edge
  * @param   update -
 
-   DESCRIPTION:
    This function moves a given node to a new position. The complete
    multigrid structure is moved hierachically, that all global coordinates
    of nodes are updated in order to reflect the changes on coarser grids.
 
    @return <ul>
-   INT
-   <li>   GM_OK when ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK when ok </li>
+   <li>   GM_ERROR when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -5107,23 +4856,17 @@ INT NS_PREFIX MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda, INT u
 /** \brief
    MoveCenterNode - set new position for a centernode
 
-   SYNOPSIS:
-   INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda);
-
-   PARAMETERS:
  * @param   theMG - pointer to multigrid
  * @param   theNode - node to move
  * @param   lambda - local coordinate in the father element
 
-   DESCRIPTION:
    This function moves a given node to a new position. The complete
    multigrid structure is moved hierachically, that all global coordinates
    of nodes are updated in order to reflect the changes on coarser grids.
 
    @return <ul>
-   INT
-   <li>   GM_OK when ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK when ok </li>
+   <li>   GM_ERROR when error occured. </li>
  */
 /****************************************************************************/
 
@@ -5178,23 +4921,17 @@ INT NS_PREFIX MoveCenterNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda)
 /** \brief
    MoveSideNode - set new position for a sidenode
 
-   SYNOPSIS:
-   INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda);
-
-   PARAMETERS:
  * @param   theMG - pointer to multigrid
  * @param   theNode - node to move
  * @param   lambda - local coordinate on the father element side
 
-   DESCRIPTION:
    This function moves a given node to a new position. The complete
    multigrid structure is moved hierachically, that all global coordinates
    of nodes are updated in order to reflect the changes on coarser grids.
 
    @return <ul>
-   INT
-   <li>   GM_OK when ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK when ok </li>
+   <li>   GM_ERROR when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -5287,24 +5024,18 @@ INT NS_PREFIX MoveSideNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda)
 /** \brief
    MoveNode - Let user enter a new position for an inner node
 
-   SYNOPSIS:
-   INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos, INT update);
-
-   PARAMETERS:
  * @param   theMG - pointer to multigrid
  * @param   theNode - node to move
  * @param   newPos - global coordinate for new position
  * @param   update -
 
-   DESCRIPTION:
    This function moves a given node to a new position. The complete
    multigrid structure is moved hierachically, that all global coordinates
    of nodes are updated in order to reflect the changes on coarser grids.
 
    @return <ul>
-   INT
-   <li>   GM_OK when ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK when ok </li>
+   <li>   GM_ERROR when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -5379,24 +5110,18 @@ INT NS_PREFIX MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos, INT upd
 
 /****************************************************************************/
 /** \brief
-   SetVertexGlobalAndLocal - assign new local and global coords to a vertex
+ *    Assign new local and global coords to a vertex
 
-   SYNOPSIS:
-   INT SetVertexGlobalAndLocal (VERTEX *vert, const DOUBLE *global, const DOUBLE *local)
-
-   PARAMETERS:
  * @param   theMG - pointer to multigrid
  * @param   vert - vertex to move
  * @param   newPos - global coordinate for new position
 
-   DESCRIPTION:
    This function assigns new global and local coordinates to a vertex (MOVE==DIM).
    It is meant for restoring former consistent positions.
 
    @return <ul>
-   INT
-   <li>   GM_OK when ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK when ok </li>
+   <li>   GM_ERROR when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -5418,15 +5143,10 @@ INT NS_PREFIX SetVertexGlobalAndLocal (VERTEX *vert, const DOUBLE *global, const
 /** \brief
    MoveFreeBoundaryVertex - move a vertex on a free boundary
 
-   SYNOPSIS:
-   INT MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, const DOUBLE *newPos)
-
-   PARAMETERS:
  * @param   theMG - pointer to multigrid
  * @param   vert - vertex to move
  * @param   newPos - global coordinate for new position
 
-   DESCRIPTION:
    This function moves a given vertex to a new position. The complete
    multigrid structure is moved hierachically, that all global coordinates
    of nodes are updated in order to reflect the changes on coarser grids.
@@ -5434,12 +5154,11 @@ INT NS_PREFIX SetVertexGlobalAndLocal (VERTEX *vert, const DOUBLE *global, const
    called after having done the last call of 'MoveFreeBoundaryVertex'.
 
    @return <ul>
-   INT
-   <li>   GM_OK when ok
-   <li>   GM_ERROR when error occured.
-
-   SEE ALSO:
-   FinishMovingFreeBoundaryVertices
+   <li>   GM_OK when ok </li>
+   <li>   GM_ERROR when error occured. </li>
+   </ul>
+ *
+   \sa FinishMovingFreeBoundaryVertices
  */
 /****************************************************************************/
 
@@ -5469,23 +5188,16 @@ INT NS_PREFIX MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, const DOUB
 /** \brief
    FinishMovingFreeBoundaryVertices - finish moving of free boundary vertices
 
-   SYNOPSIS:
-   INT FinishMovingFreeBoundaryVertices (MULTIGRID *theMG)
-
-   PARAMETERS:
  * @param   theMG - pointer to multigrid
 
-   DESCRIPTION:
    The complete multigrid structure is moved hierachically such that all global coordinates
    of nodes are updated in order to reflect the changes on coarser grids.
 
    @return <ul>
-   INT
-   <li>   GM_OK when ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK when ok </li>
+   <li>   GM_ERROR when error occured. </li>
 
-   SEE ALSO:
-   MoveFreeBoundaryVertex
+ * \sa   MoveFreeBoundaryVertex
  */
 /****************************************************************************/
 
@@ -5528,22 +5240,16 @@ INT NS_PREFIX FinishMovingFreeBoundaryVertices (MULTIGRID *theMG)
 /** \brief
    GetMidNodeParam - Get local position of a midnode on an edge
 
-   SYNOPSIS:
-   INT GetMidNodeParam (NODE * theNode, DOUBLE *lambda)
-
-   PARAMETERS:
  * @param   theNode - midnode
  * @param   lambda  - local coordinate of midnode w.r.t. the edge
 
-   DESCRIPTION:
    This function gives the local coordinate of a midnode with respect to its edge
    (0 < lambda < 1). The function is called by SmoothGrid and can only be applied
    in 2D.
 
    @return <ul>
-   INT
-   <li>   GM_OK when ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK when ok </li>
+   <li>   GM_ERROR when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -5622,13 +5328,14 @@ INT NS_PREFIX GetMidNodeParam (NODE * theNode, DOUBLE *lambda)
 
 
 /****************************************************************************/
-/*
+/** \todo Please doc me!
+
    CheckOrientation -
 
    SYNOPSIS:
    INT CheckOrientation (INT n, VERTEX **vertices);
 
-   PARAMETERS:
+
  * @param   n
  * @param   vertices
 
@@ -5665,13 +5372,13 @@ INT NS_PREFIX CheckOrientation (INT n, VERTEX **vertices)
 
 
 /****************************************************************************/
-/*
+/** \todo Please doc me!
    CheckOrientation -
 
    SYNOPSIS:
    INT CheckOrientation (INT n, VERTEX **vertices);
 
-   PARAMETERS:
+
  * @param   n
  * @param   vertices
 
@@ -5706,13 +5413,13 @@ INT NS_PREFIX CheckOrientation (INT n, VERTEX **vertices)
 
 
 /****************************************************************************/
-/*
+/** \todo Please doc me!
    CheckOrientationInGrid -
 
    SYNOPSIS:
    INT CheckOrientationInGrid (GRID *theGrid);
 
-   PARAMETERS:
+
  * @param   theGrid
 
    DESCRIPTION:
@@ -5746,13 +5453,13 @@ INT NS_PREFIX CheckOrientationInGrid (GRID *theGrid)
 
 
 /****************************************************************************/
-/*
+/** \todo Please doc me!
    NeighborSearch_O_n -
 
    SYNOPSIS:
    static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, ELEMENT **Nbr);
 
-   PARAMETERS:
+
  * @param   n
  * @param   Node
  * @param   theMG
@@ -5896,13 +5603,13 @@ static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, E
 
 
 /****************************************************************************/
-/*
+/** \todo Please doc me!
    NeighborSearch_O_nn -
 
    SYNOPSIS:
    static INT NeighborSearch_O_nn(INT n, NODE **Node, GRID *theGrid, INT *NghbrSide, ELEMENT **Nghbr);
 
-   PARAMETERS:
+
  * @param   n
  * @param   Node
  * @param   theGrid
@@ -5974,13 +5681,13 @@ static INT NeighborSearch_O_nn(INT n, NODE **Node, GRID *theGrid, INT *NghbrSide
 
 
 /****************************************************************************/
-/*
+/** \todo Please doc me!
    NdElPtrArray_evalIndexes -
 
    SYNOPSIS:
    static INT NdElPtrArray_evalIndexes(INT n, INT *cornerID, MULTIGRID *theMG, INT *MIndex, INT *MBlock, NODE **Node, GRID *theGrid, INT* NbrS, ELEMENT** Nbr);
 
-   PARAMETERS:
+
  * @param   n
  * @param   cornerID
  * @param   theMG
@@ -6082,13 +5789,13 @@ static INT NdElPtrArray_evalIndexes(INT n, INT *cornerID, MULTIGRID *theMG, INT 
 
 
 /****************************************************************************/
-/*
+/** \todo Please doc me!
    NdElPtrArray_GetMemAndCheckIDs -
 
    SYNOPSIS:
    static INT NdElPtrArray_GetMemAndCheckIDs(INT n, MULTIGRID *theMG, INT *h_ID, NODE **c_Node, INT *c_ID, NODE **Node);
 
-   PARAMETERS:
+
  * @param   n
  * @param   theMG
  * @param   h_ID
@@ -6170,13 +5877,13 @@ static INT NdElPtrArray_GetMemAndCheckIDs(INT n, MULTIGRID *theMG, INT *h_ID, NO
 
 
 /****************************************************************************/
-/*
+/** \todo Please doc me!
    Neighbor_Direct_Insert -
 
    SYNOPSIS:
    static INT Neighbor_Direct_Insert(INT n, ELEMENT **ElemList, INT *NbgSdList, INT* NbrS, ELEMENT **Nbr);
 
-   PARAMETERS:
+
  * @param   n
  * @param   ElemList
  * @param   NbgSdList
@@ -6205,13 +5912,13 @@ static INT Neighbor_Direct_Insert(INT n, ELEMENT **ElemList, INT *NbgSdList, INT
 
 
 /****************************************************************************/
-/*
+/** \todo Please doc me!
    NdElPtrArray_Update -
 
    SYNOPSIS:
    static INT NdElPtrArray_Update(INT *MIndex, INT *MBlock, ELEMENT *theElement, MULTIGRID *theMG);
 
-   PARAMETERS:
+
  * @param   MIndex
  * @param   MBlock
  * @param   theElement
@@ -6246,10 +5953,6 @@ static INT NdElPtrArray_Update(INT *MIndex, INT *MBlock, ELEMENT *theElement, MU
 /** \brief
    InsertElement - Insert an element
 
-   SYNOPSIS:
-   ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, INT *NbgSdList, INT *bnds_flag);
-
-   PARAMETERS:
  * @param   theGrid - grid structure
  * @param   n
  * @param   Node
@@ -6257,11 +5960,10 @@ static INT NdElPtrArray_Update(INT *MIndex, INT *MBlock, ELEMENT *theElement, MU
  * @param   NbgSdList
  * @param   bnds_flag
 
-   DESCRIPTION:
    This function inserts an element
 
-   @return
-   INT
+   \todo Please doc the return value!
+
  */
 /****************************************************************************/
 
@@ -6585,22 +6287,16 @@ ELEMENT * NS_PREFIX InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **
 /** \brief
    InsertElementFromIDs - Insert element with node ids
 
-   SYNOPSIS:
-   ELEMENT *InsertElementFromIDs (GRID *theGrid, INT n, INT *idList);
-
-   PARAMETERS:
  * @param   theGrid - grid structure
  * @param   n - number of nodes in node id list
  * @param   idList - ids of the nodes
 
-   DESCRIPTION:
    This function inserts an element with nodes that have the ids
    given in `idList`,  on level 0.
 
    @return <ul>
-   INT
-   <li>   pointer to an element if ok
-   <li>   NULL when error occured.
+   <li>   pointer to an element if ok </li>
+   <li>   NULL when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -6660,20 +6356,14 @@ ELEMENT * NS_PREFIX InsertElementFromIDs (GRID *theGrid, INT n, INT *idList, INT
 /** \brief
    DeleteElement - Delete an element
 
-   SYNOPSIS:
-   INT DeleteElement (MULTIGRID *theMG, ELEMENT *theElement);
-
-   PARAMETERS:
  * @param   theMG - multigrid structure
  * @param   theElement - element to delete
 
-   DESCRIPTION:
    This function deletes an element from level 0.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -6717,13 +6407,13 @@ INT NS_PREFIX DeleteElement (MULTIGRID *theMG, ELEMENT *theElement) /* 3D VERSIO
 
 
 /****************************************************************************/
-/*
+/** \todo Please doc me!
    DeleteElementWithID -
 
    SYNOPSIS:
    INT DeleteElementWithID (MULTIGRID *theMG, INT id);
 
-   PARAMETERS:
+
  * @param   theMG
  * @param   id
 
@@ -6763,17 +6453,14 @@ INT NS_PREFIX DeleteElementWithID (MULTIGRID *theMG, INT id)
 /** \brief
    InsertMesh - Insert a mesh described by the domain
 
-   PARAMETERS:
  * @param   theMG - multigrid structure
  * @param   theMesh - mesh structure
 
-   DESCRIPTION:
    This function inserts all nodes and elements given by the mesh.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR when error occured.
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR when error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -6901,19 +6588,13 @@ INT NS_PREFIX InsertMesh (MULTIGRID *theMG, MESH *theMesh)
 /** \brief
    FindNodeFromId - Find a node with given id
 
-   SYNOPSIS:
-   NODE *FindNodeFromId (GRID *theGrid, INT id);
-
-   PARAMETERS:
  * @param   theGrid - grid level to search.
 
-   DESCRIPTION:
    This function finds a node with given id.
 
    @return <ul>
-   NODE *
-   <li>   pointer to that NODE
-   <li>   NULL if not found.
+   <li>   pointer to that NODE </li>
+   <li>   NULL if not found. </li>
    </ul> */
 /****************************************************************************/
 
@@ -6932,21 +6613,15 @@ NODE * NS_PREFIX FindNodeFromId (GRID *theGrid, INT id)
 /** \brief
    FindNodeFromPosition - Find node from position
 
-   SYNOPSIS:
-   NODE *FindNodeFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol);
-
-   PARAMETERS:
  * @param   theGrid - grid level to search
  * @param   pos - given position
  * @param   tol - tolerance to accept
 
-   DESCRIPTION:
    This function finds the first node within `tol` from `pos` in 1-norm.
 
    @return <ul>
-   NODE *
-   <li>   pointer to NODE
-   <li>   NULL if not found.
+   <li>   pointer to NODE  </li>
+   <li>   NULL if not found. </li>
    </ul> */
 /****************************************************************************/
 
@@ -6970,21 +6645,15 @@ NODE * NS_PREFIX FindNodeFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol)
 /** \brief
    FindVectorFromPosition - Find vector from position
 
-   SYNOPSIS:
-   VECTOR *FindVectorFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol);
-
-   PARAMETERS:
  * @param   theGrid - grid level to search
  * @param   pos - given position
  * @param   tol - tolerance to accept
 
-   DESCRIPTION:
    This function finds the first vector within `tol` from `pos` in 1-norm.
 
    @return <ul>
-   NODE *
-   <li>   pointer to NODE
-   <li>   NULL if not found.
+   <li>   pointer to NODE  </li>
+   <li>   NULL if not found. </li>
    </ul> */
 /****************************************************************************/
 
@@ -7010,20 +6679,14 @@ VECTOR * NS_PREFIX FindVectorFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *t
 /** \brief
    FindVectorFromIndex - Find vector from Index
 
-   SYNOPSIS:
-   VECTOR *FindVectorFromIndex (GRID *theGrid, INT index);
-
-   PARAMETERS:
  * @param   theGrid - grid level to search
  * @param   index - given index
 
-   DESCRIPTION:
    This function finds the first vector with index.
 
    @return <ul>
-   NODE *
-   <li>   pointer to VECTOR
-   <li>   NULL if not found.
+   <li>   pointer to VECTOR  </li>
+   <li>   NULL if not found. </li>
    </ul> */
 /****************************************************************************/
 
@@ -7042,21 +6705,15 @@ VECTOR * NS_PREFIX FindVectorFromIndex (GRID *theGrid, INT index)
 /** \brief
    FindElementFromId - Find element with id
 
-   SYNOPSIS:
-   ELEMENT *FindElementFromId (GRID *theGrid, INT id);
-
-   PARAMETERS:
  * @param   theGrid - grid level to search
  * @param   id - id to search
 
-   DESCRIPTION:
    This function finds an element with the identification `id`. In parallel
    also ghost elements are searched.
 
    @return <ul>
-   ELEMENT *
-   <li>   pointer to that ELEMENT
-   <li>   NULL if not found.
+   <li>   pointer to that ELEMENT </li>
+   <li>   NULL if not found. </li>
    </ul> */
 /****************************************************************************/
 
@@ -7075,25 +6732,19 @@ ELEMENT * NS_PREFIX FindElementFromId (GRID *theGrid, INT id)
 /** \brief
    PointInElement - Determine whether point is contained in element
 
-   SYNOPSIS:
-   INT PointInElement (const DOUBLE *x, const ELEMENT *theElement);
-
-   PARAMETERS:
  * @param   x - coordinates of given point
  * @param   theElement - element to scan
 
-   DESCRIPTION:
    This function determines whether a given point specified by coordinates `x`
    is contained in an element.
 
    @return <ul>
-   INT
-   <li>   0 an error occurred
-   <li>   1 point is contained in the element
-   <li>   2 point is nearly on one side of the the element
-   <li>   3 point is nearly on one edge of the the element
-   <li>   4 point is nearly one of the corners of the the element
-   <li>   5 point is not contained in the element
+   <li>   0 an error occurred </li>
+   <li>   1 point is contained in the element </li>
+   <li>   2 point is nearly on one side of the the element </li>
+   <li>   3 point is nearly on one edge of the the element </li>
+   <li>   4 point is nearly one of the corners of the the element </li>
+   <li>   5 point is not contained in the element </li>
    </ul> */
 /****************************************************************************/
 
@@ -7156,15 +6807,10 @@ INT NS_PREFIX PointInElement (const DOUBLE *global, const ELEMENT *theElement)
 /** \brief
    PointOnSide - Determine whether point is on an element side
 
-   SYNOPSIS:
-   INT PointInElement (const DOUBLE *x, const ELEMENT *theElement, INT side);
-
-   PARAMETERS:
  * @param   x - coordinates of given point
  * @param   theElement - element to scan
  * @param   side - the element side
 
-   DESCRIPTION:
    This function determines whether a given point specified by coordinates `x`
    is contained in an element side.
 
@@ -7172,9 +6818,8 @@ INT NS_PREFIX PointInElement (const DOUBLE *global, const ELEMENT *theElement)
    The point could be outside the element side area.
 
    @return <ul>
-   INT
-   <li>   0 not on side
-   <li>   1 x is on side
+   <li>   0 not on side </li>
+   <li>   1 x is on side </li>
    </ul> */
 /****************************************************************************/
 
@@ -7230,15 +6875,10 @@ INT NS_PREFIX PointOnSide(const DOUBLE *global, const ELEMENT *theElement, INT s
 /** \brief
    DOUBLESide - Determine distance of a point to an element side
 
-   SYNOPSIS:
-   DOUBLE DOUBLEElement (const DOUBLE *x, const ELEMENT *theElement, INT side);
-
-   PARAMETERS:
  * @param   x - coordinates of given point
  * @param   theElement - element to scan
  * @param   side - the element side
 
-   DESCRIPTION:
    This function determines the distance of a given point specified by coordinates `x`
    from an element side.
 
@@ -7246,9 +6886,8 @@ INT NS_PREFIX PointOnSide(const DOUBLE *global, const ELEMENT *theElement, INT s
    The point could be outside the element side area.
 
    @return <ul>
-   INT
-   <li>   0 not on side
-   <li>   1 x is on side
+   <li>   0 not on side </li>
+   <li>   1 x is on side </li>
    </ul> */
 /****************************************************************************/
 
@@ -7300,20 +6939,14 @@ DOUBLE NS_PREFIX DistanceFromSide(const DOUBLE *global, const ELEMENT *theElemen
 /** \brief
    FindElementFromPosition - Find element containing position
 
-   SYNOPSIS:
-   ELEMENT *FindElementFromPosition (GRID *theGrid, DOUBLE *pos)
-
-   PARAMETERS:
  * @param   theGrid - grid level to search
  * @param   pos - given position
 
-   DESCRIPTION:
    This function finds the first element containing the position `pos`.
 
    @return <ul>
-   ELEMENT *
-   <li>   pointer to ELEMENT
-   <li>   NULL if not found.
+   <li>   pointer to ELEMENT </li>
+   <li>   NULL if not found. </li>
    </ul> */
 /****************************************************************************/
 
@@ -7353,20 +6986,14 @@ ELEMENT * NS_PREFIX FindElementFromPosition (GRID *theGrid, DOUBLE *pos)
 /** \brief
    FindElementFromPosition - Find element containing position
 
-   SYNOPSIS:
-   ELEMENT *FindElementFromPosition (MULTIGRID *theMG, DOUBLE *global)
-
-   PARAMETERS:
  * @param   theMG - multigrid level to search
  * @param   global - given position
 
-   DESCRIPTION:
    This function finds the first element containing the position `pos`.
 
    @return <ul>
-   ELEMENT *
-   <li>   pointer to ELEMENT
-   <li>   NULL if not found.
+   <li>   pointer to ELEMENT </li>
+   <li>   NULL if not found. </li>
    </ul> */
 /****************************************************************************/
 
@@ -7387,20 +7014,14 @@ ELEMENT * NS_PREFIX FindElementOnSurface (MULTIGRID *theMG, DOUBLE *global)
 /** \brief
    FindElementOnSurfaceCached - Find element containing position
 
-   SYNOPSIS:
-   ELEMENT *FindElementOnSurfaceCached (MULTIGRID *theMG, DOUBLE *global)
-
-   PARAMETERS:
  * @param   theMG - multigrid level to search
  * @param   global - given position
 
-   DESCRIPTION:
    This function finds the first element containing the position `pos`.
 
    @return <ul>
-   ELEMENT *
-   <li>   pointer to ELEMENT
-   <li>   NULL if not found.
+   <li>   pointer to ELEMENT </li>
+   <li>   NULL if not found. </li>
    </ul> */
 /****************************************************************************/
 
@@ -7436,13 +7057,13 @@ ELEMENT * NS_PREFIX FindElementOnSurfaceCached (MULTIGRID *theMG, DOUBLE *global
 
 
 /****************************************************************************/
-/*
+/** \todo Please doc me!
    InnerBoundary -
 
    SYNOPSIS:
    INT InnerBoundary (ELEMENT *t, INT side);
 
-   PARAMETERS:
+
  * @param   t
  * @param   side
 
@@ -7470,20 +7091,14 @@ INT NS_PREFIX InnerBoundary (ELEMENT *t, INT side)
 /** \brief
    NeighbourElement - get the neighbouring element
 
-   SYNOPSIS:
-   ELEMENT *NeighbourElement (ELEMENT *t, INT side);
-
-   PARAMETERS:
  * @param   theElement - pointer to an element
  * @param   side - number of an element side
 
-   DESCRIPTION:
    This function returns a pointer to the element on the given side.
 
    @return <ul>
-   ELEMENT *
-   <li>    pointer to an element
-   <li>    NULL if error occured.
+   <li>    pointer to an element </li>
+   <li>    NULL if error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -7600,13 +7215,8 @@ static void CalculateCenterOfMassOfSide(ELEMENT *theElement, int side, DOUBLE_VE
 /** \brief
    KeyForObject - calculate an (hopefully) unique key for the geometric object
 
-   SYNOPSIS:
-   INT KeyForObject( KEY_OBJECT *obj );
-
-   PARAMETERS:
  * @param   obj - geometric object which from the key is needed (can be one of VERTEX, ELEMENT, NODE or VECTOR)
 
-   DESCRIPTION:
    This function calculates an (hopefully) unique key for VERTEX,
    ELEMENT, NODE, EDGE and VECTOR typed objects.
 
@@ -7620,11 +7230,10 @@ static void CalculateCenterOfMassOfSide(ELEMENT *theElement, int side, DOUBLE_VE
         NODE *theNode;
                 KeyForObject((KEY_OBJECT *)theNode);
 
-   SEE ALSO:
-   VERTEX, ELEMENT, NODE, EDGE, VECTOR
+ * \sa   VERTEX, ELEMENT, NODE, EDGE, VECTOR
 
-   @return <ul>
-   INT - the resulting key
+   @return
+ *   the resulting key
  */
 /****************************************************************************/
 
@@ -7695,19 +7304,12 @@ INT NS_PREFIX KeyForObject( KEY_OBJECT *obj )
 /** \brief
    ListMultiGrid - List general information about multigrid structure
 
-   SYNOPSIS:
-   void ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const INT longformat);
-
-   PARAMETERS:
  * @param   theMG - structure to list
  * @param   isCurrent - is `theMG` current multigrid
  * @param   longformat - print all information or only name of `theMG`
 
-   DESCRIPTION:
    This function lists general information about a multigrid structure.
 
-   @return
-   void
  */
 /****************************************************************************/
 
@@ -7744,21 +7346,15 @@ void NS_PREFIX ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const INT l
 /** \brief
    MultiGridStatus - List information about refinement type distribution
 
-   SYNOPSIS:
-   INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, INT verbose)
-
-   PARAMETERS:
  * @param   theMG - structure to list
  * @param   gridflag -
  * @param   greenflag
  * @param   lbflag
  * @param   verbose
 
-   DESCRIPTION:
    This function lists information about multigrids element types.
 
-   @return <ul>
-   INT
+ * \todo Please return value!
  */
 /****************************************************************************/
 
@@ -8223,17 +7819,10 @@ INT NS_PREFIX MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, IN
 /** \brief
    ListGrids - list general information about grids of multigrid
 
-   SYNOPSIS:
-   void ListGrids (const MULTIGRID *theMG);
-
-   PARAMETERS:
  * @param   theMG - multigrid structure
 
-   DESCRIPTION:
    This function lists general information about the grids of a multigrid.
 
-   @return
-   void
  */
 /****************************************************************************/
 
@@ -8536,10 +8125,6 @@ void NS_PREFIX ListGrids (const MULTIGRID *theMG)
 /** \brief
    ListNode - List information about node in multigrid
 
-   SYNOPSIS:
-   void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt, INT vopt);
-
-   PARAMETERS:
  * @param   theMG - structure containing the node
  * @param   theNode - node to list
  * @param   dataopt - list user data if true
@@ -8547,11 +8132,8 @@ void NS_PREFIX ListGrids (const MULTIGRID *theMG)
  * @param   nbopt - list info about neighbors if true
  * @param   vopt - list more information
 
-   DESCRIPTION:
    This function lists information about a node in a multigrid.
 
-   @return
-   void
  */
 /****************************************************************************/
 
@@ -8668,21 +8250,14 @@ void NS_PREFIX ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt,
 /** \brief
    ListNodeSelection - List information about all nodes in selection
 
-   SYNOPSIS:
-   void ListNodeSelection (MULTIGRID *theMG, INT dataopt, INT bopt, INT nbopt, INT vopt);
-
-   PARAMETERS:
  * @param   theMG - structure containing the nodes
  * @param   dataopt - list user data if true
  * @param   bopt - list boundary info if true
  * @param   nbopt - list info about neighbors if true
  * @param   vopt - list more information
 
-   DESCRIPTION:
    This function lists information about all nodes in the selection.
 
-   @return
-   void
  */
 /****************************************************************************/
 
@@ -8705,23 +8280,17 @@ void NS_PREFIX ListNodeSelection (MULTIGRID *theMG, INT dataopt, INT bopt, INT n
 
 
 /****************************************************************************/
-/** \brief
-   IsNodeSelected - Check if element is in selection list
-
-   SYNOPSIS:
-   INT IsNodeSelected (MULTIGRID *theMG, NODE *theNode);
-
-   PARAMETERS:
+/** \brief Check if element is in selection list
+ *
  * @param   theMG - multigrid structure
  * @param   theNode - node to check
-
-   DESCRIPTION:
-   This function checks if an element is in the selection list.
-
-   @return <ul>
-   INT
-   <li>   0 if NOT in list
-   <li>   1 if in list.
+ *
+ * This function checks if an element is in the selection list.
+ *
+ * @return <ul>
+ * <li>   0 if NOT in list
+ * <li>   1 if in list.
+ * </ul>
  */
 /****************************************************************************/
 
@@ -8741,10 +8310,6 @@ INT NS_PREFIX IsNodeSelected (MULTIGRID *theMG, NODE *theNode)
 /** \brief
    ListNodeRange - List information about nodes in given range of ids
 
-   SYNOPSIS:
-   void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataopt, INT bopt, INT nbopt, INT vopt)
-
-   PARAMETERS:
  * @param   theMG - structure to list
  * @param   from - first id
  * @param   to - last id
@@ -8754,11 +8319,8 @@ INT NS_PREFIX IsNodeSelected (MULTIGRID *theMG, NODE *theNode)
  * @param   nbopt - list info about neighbors if true
  * @param   vopt - list more information
 
-   DESCRIPTION:
    This function list information about all nodes in a given range of ids.
 
-   @return
-   void
  */
 /****************************************************************************/
 
@@ -8798,20 +8360,13 @@ void NS_PREFIX ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT
 /** \brief
    ListElement - List information about element
 
-   SYNOPSIS:
-   void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, INT nbopt, INT vopt)
-
-   PARAMETERS:
  * @param   theMG -  structure to list
  * @param   theElement - element to list
  * @param   dataopt - list user data if true
  * @param   vopt - list more information
 
-   DESCRIPTION:
    This function lists information about an element
 
-   @return
-   void
  */
 /****************************************************************************/
 
@@ -8865,14 +8420,14 @@ void NS_PREFIX ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, 
       UserWriteF("    FA=NULL");
 
     UserWriteF("  NSONS=%d\n",NSONS(theElement));
-    /* TODO: delete this
+    /** \todo delete this
        #ifdef __TWODIM__
-                    for (i=0; i<SONS_OF_ELEM(theElement); i++)
-                            if (SON(theElement,i)!=NULL)
-                            {
-                                    UserWriteF("    S%d=" EID_FMTX ,
-                                            i,EID_PRTX(SON(theElement,i)));
-                            }
+       for (i=0; i<SONS_OF_ELEM(theElement); i++)
+            if (SON(theElement,i)!=NULL)
+            {
+                    UserWriteF("    S%d=" EID_FMTX ,
+                            i,EID_PRTX(SON(theElement,i)));
+            }
        #endif
        #ifdef __THREEDIM__
      */
@@ -8925,19 +8480,12 @@ void NS_PREFIX ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, 
 /** \brief
     ListElementSelection - list information about elements in selection
 
-   SYNOPSIS:
-   void ListElementSelection (MULTIGRID *theMG, INT dataopt, INT bopt, INT nbopt, INT vopt);
-
-   PARAMETERS:
-   .  theMG: multigrid structure to list
+ * @param  theMG multigrid structure to list
  * @param   dataopt - list user data if true
  * @param   vopt - list more information
 
-   DESCRIPTION:
    This function lists information about all elements in the selection.
 
-   @return
-   void
  */
 /****************************************************************************/
 
@@ -8964,20 +8512,14 @@ void NS_PREFIX ListElementSelection (MULTIGRID *theMG, INT dataopt, INT bopt, IN
 /** \brief
    IsElementSelected - Check whether element is in selection list
 
-   SYNOPSIS:
-   INT IsElementSelected (MULTIGRID *theMG, ELEMENT *theElement);
-
-   PARAMETERS:
  * @param   theMG - multigrid structure
  * @param   theElement - element to check
 
-   DESCRIPTION:
    This function checks whether an element is in the selection list.
 
    @return <ul>
-   INT
-   <li>   0 if NOT in list
-   <li>   1 if in list.
+   <li>   0 if NOT in list </li>
+   <li>   1 if in list.  </li>
    </ul> */
 /****************************************************************************/
 
@@ -8997,10 +8539,6 @@ INT NS_PREFIX IsElementSelected (MULTIGRID *theMG, ELEMENT *theElement)
 /** \brief
    ListElementRange - List information about elements in range of ids
 
-   SYNOPSIS:
-   void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt);
-
-   PARAMETERS:
  * @param   theMG - multigrid structure to list
  * @param   from - first id
  * @param   to - last id
@@ -9008,11 +8546,8 @@ INT NS_PREFIX IsElementSelected (MULTIGRID *theMG, ELEMENT *theElement)
  * @param   dataopt - list user data if true
  * @param   vopt - list more information
 
-   DESCRIPTION:
    This function lists information about all elements in a range of ids.
 
-   @return
-   void
  */
 /****************************************************************************/
 
@@ -9060,21 +8595,14 @@ void NS_PREFIX ListElementRange (MULTIGRID *theMG, INT from, INT to, INT idopt, 
 /** \brief
    ListVector - List information about vector
 
-   SYNOPSIS:
-   void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt, INT modifiers);
-
-   PARAMETERS:
  * @param   theMG - multigrid structure to list
  * @param   theVector - vector to list
  * @param   matrixopt - list line of matrix corresponding to theVector
  * @param   dataopt - list user data if true
  * @param   modifiers - flags modifying output style and verbose level
 
-   DESCRIPTION:
    This function lists information about a vector.
 
-   @return
-   void
  */
 /****************************************************************************/
 
@@ -9213,20 +8741,13 @@ void NS_PREFIX ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, I
 /** \brief
    ListVectorOfElementSelection - List info about vectors of elements in selection
 
-   SYNOPSIS:
-   void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modifiers);
-
-   PARAMETERS:
  * @param   theMG -  structure to list
  * @param   matrixopt - list line of matrix corresponding to theVector
  * @param   dataopt - list user data if true
  * @param   modifiers - flags modifying output style and verbose level
 
-   DESCRIPTION:
    This function lists info about all vectors of elements in the selection.
 
-   @return
-   void
  */
 /****************************************************************************/
 
@@ -9276,20 +8797,13 @@ void NS_PREFIX  ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, I
 /** \brief
    ListVectorSelection - list information about vectors in selection
 
-   SYNOPSIS:
-   void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modifiers)
-
-   PARAMETERS:
  * @param   theMG: multigrid structure to list
  * @param   matrixopt - list matrices of this vector
  * @param   dataopt - list user data if true
  * @param   modifiers - flags modifying output style and verbose level
 
-   DESCRIPTION:
    This function lists information about all elements in the selection.
 
-   @return
-   void
  */
 /****************************************************************************/
 
@@ -9315,20 +8829,14 @@ void NS_PREFIX ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt
 /** \brief
    IsVectorSelected - Check whether vector is in selection list
 
-   SYNOPSIS:
-   INT IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector);
-
-   PARAMETERS:
  * @param   theMG - multigrid structure
  * @param   theVector - vector to check
 
-   DESCRIPTION:
    This function checks whether an element is in the selection list.
 
    @return <ul>
-   INT
-   <li>   0 if NOT in list
-   <li>   1 if in list.
+   <li>   0 if NOT in list </li>
+   <li>   1 if in list.  </li>
    </ul> */
 /****************************************************************************/
 
@@ -9347,11 +8855,6 @@ INT NS_PREFIX IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
 /** \brief
    ListVectorRange - list information about vectors in range of ids
 
-   SYNOPSIS:
-   void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to,
-                                INT idopt, INT matrixopt, INT dataopt, INT datatypes, INT modifiers)
-
-   PARAMETERS:
  * @param   theMG - structure to list
  * @param   from - first index
  * @param   to - last index
@@ -9361,11 +8864,8 @@ INT NS_PREFIX IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
  * @param   datatypes - list vectors with type in datatypes
  * @param   modifiers - flags modifying output style and verbose level
 
-   DESCRIPTION:
    This function lists information about all vectors in a given range of indices.
 
-   @return
-   void
  */
 /****************************************************************************/
 
@@ -9422,17 +8922,10 @@ void NS_PREFIX ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT 
 /** \brief
    ClearSelection - Clear selection buffer
 
-   SYNOPSIS:
-   void ClearSelection (MULTIGRID *theMG);
-
-   PARAMETERS:
  * @param   theMG - multigrid structure
 
-   DESCRIPTION:
    This function clears the selection buffer of a multigrid.
 
-   @return
-   void
  */
 /****************************************************************************/
 
@@ -9543,8 +9036,8 @@ INT NS_PREFIX AddElementToSelection (MULTIGRID *theMG, ELEMENT *theElement)
  * in the list.
  *
  * @return <ul>
- *   <li>   GM_OK if ok
- *   <li>   GM_ERROR if an  error occured.
+ *   <li>   GM_OK if ok </li>
+ *   <li>   GM_ERROR if an  error occured. </li>
  * </ul>
  */
 /****************************************************************************/
@@ -9581,20 +9074,14 @@ INT NS_PREFIX AddVectorToSelection (MULTIGRID *theMG, VECTOR *theVector)
 /*
    RemoveNodeFromSelection - Remove node from selection buffer
 
-   SYNOPSIS:
-   INT RemoveNodeFromSelection (MULTIGRID *theMG, NODE *theNode);
-
-   PARAMETERS:
  * @param   theMG - multigrid structure
  * @param   theNode - node to remove
 
-   DESCRIPTION:
    This function removes an node from the selection buffer.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR if an error occured.
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR if an error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -9632,20 +9119,15 @@ INT NS_PREFIX RemoveNodeFromSelection (MULTIGRID *theMG, NODE *theNode)
 /*
    RemoveElementFromSelection - Remove element from selection buffer
 
-   SYNOPSIS:
-   INT RemoveElementFromSelection (MULTIGRID *theMG, ELEMENT *theElement);
-
-   PARAMETERS:
  * @param   theMG - multigrid structure
  * @param   theElement - element to remove
 
-   DESCRIPTION:
    This function removes an element from the selection buffer.
 
    @return <ul>
    INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR if an error occured.
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR if an error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -9682,20 +9164,14 @@ INT NS_PREFIX RemoveElementFromSelection (MULTIGRID *theMG, ELEMENT *theElement)
 /*
    RemoveVectorFromSelection - Remove vector from selection buffer
 
-   SYNOPSIS:
-   INT RemoveVectorFromSelection (MULTIGRID *theMG, VECTOR *theVector);
-
-   PARAMETERS:
  * @param   theMG - multigrid structure
  * @param   theVector - vector to remove
 
-   DESCRIPTION:
    This function removes a vector from the selection buffer.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR if an error occured.
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR if an error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -9728,13 +9204,13 @@ INT NS_PREFIX RemoveVectorFromSelection (MULTIGRID *theMG, VECTOR *theVector)
   return(GM_OK);
 }
 /****************************************************************************/
-/*
+/** \todo Please doc me!
    GetAngle -
 
    SYNOPSIS:
    static INT GetAngle(DOUBLE *angle,DOUBLE *n1, DOUBLE *n2);
 
-   PARAMETERS:
+
  * @param   angle
  * @param   n1
  * @param   n2
@@ -9768,13 +9244,13 @@ static INT GetAngle(DOUBLE *angle,DOUBLE *n1, DOUBLE *n2)
 
 
 /****************************************************************************/
-/*
+/** \todo Please doc me!
    SetNormal-
 
    SYNOPSIS:
    static INT SetNormal(DOUBLE *n, DOUBLE **x, INT nc);
 
-   PARAMETERS:
+
  * @param   n
  * @param   x
  * @param   nc
@@ -9816,21 +9292,15 @@ static INT SetNormal(DOUBLE *n, DOUBLE **x, INT nc)
 /** \brief
    MinMaxAngle - Determine min and max angle in degrees
 
-   SYNOPSIS:
-   INT MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax);
-
-   PARAMETERS:
  * @param   theElement - element to check
  * @param   amin - minimum angle
  * @param   amax - maximum angle
 
-   DESCRIPTION:
    This function determines min and max angle in degrees.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR if an error occured.
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR if an error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -9914,20 +9384,14 @@ static INT MinMaxEdge (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
 /** \brief
    DefineMGUDBlock - Define block in general MG user data space
 
-   SYNOPSIS:
-   INT DefineMGUDBlock (BLOCK_ID id, MEM size);
-
-   PARAMETERS:
  * @param   id - the id of the block to be allocated
  * @param   size - size of the data block
 
-   DESCRIPTION:
    This function defines a block in the general MG user data space.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR if an  error occured.
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR if an  error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -9944,19 +9408,13 @@ INT NS_PREFIX DefineMGUDBlock (BLOCK_ID id, MEM size)
 /** \brief
    FreeMGUDBlock - Free block in general MG user data space
 
-   SYNOPSIS:
-   INT FreeMGUDBlock (BLOCK_ID id);
-
-   PARAMETERS:
  * @param   id: the id of the block to be allocated
 
-   DESCRIPTION:
    This function frees a block in the general MG user data space.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR if an error occured.
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR if an error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -9972,19 +9430,13 @@ INT NS_PREFIX FreeMGUDBlock (BLOCK_ID id)
 /** \brief
    GetMGUDBlockDescriptor - Return pointer to block descriptor with id
 
-   SYNOPSIS:
-   BLOCK_DESC  *GetMGUDBlockDescriptor (BLOCK_ID id);
-
-   PARAMETERS:
  * @param   id - the id of the block to be allocated
 
-   DESCRIPTION:
    This function returns a pointer to the block descriptor with id.
 
-   @return
-   BLOCK_DESC *
-   <li>   pointer to BLOCK_DESC
-   <li>   NULL if an error occured.
+   @return <ul>
+   <li>   pointer to BLOCK_DESC </li>
+   <li>   NULL if an error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -10002,20 +9454,14 @@ VIRT_HEAP_MGMT * NS_PREFIX GetGenMGUDM()
 /** \brief
    MaxNodeClass - Returns highest Node class of a dof on next level
 
-   SYNOPSIS:
-   static INT MaxNodeClass (ELEMENT *theElement);
-
-   PARAMETERS:
  * @param   theElement - pointer to a element
 
-   DECRIPTION:
    This function returns highest 'NCLASS' of a Node associated with the
    element.
 
    @return <ul>
-   INT
-   <li>    0 if ok
-   <li>    1 if error occured.
+   <li>    0 if ok </li>
+   <li>    1 if error occured.		 </li>
    </ul> */
 /****************************************************************************/
 
@@ -10037,20 +9483,14 @@ static INT MaxNodeClass (ELEMENT *theElement)
 /** \brief
    MaxNextNodeClass - Returns highest Node class of a dof on next level
 
-   SYNOPSIS:
-   INT MaxNextNodeClass (ELEMENT *theElement);
-
-   PARAMETERS:
  * @param   theElement - pointer to a element
 
-   DECRIPTION:
    This function returns highest 'NNCLASS' of a Node associated with the
    element.
 
    @return <ul>
-   INT
-   <li>    0 if ok
-   <li>    1 if error occured.
+   <li>    0 if ok </li>
+   <li>    1 if error occured.  </li>
    </ul> */
 /****************************************************************************/
 
@@ -10100,20 +9540,14 @@ INT NS_PREFIX MaxPeriodicNextNodeClass (ELEMENT *theElement)
 /** \brief
    MinNodeClass - Returns minimal Node class of a dof on next level
 
-   SYNOPSIS:
-   INT MinNodeClass (ELEMENT *theElement);
-
-   PARAMETERS:
  * @param   theElement - pointer to a element
 
-   DECRIPTION:
    This function returns highest 'NNCLASS' of a Node associated with the
    element.
 
    @return <ul>
-   INT
-   <li>    0 if ok
-   <li>    1 if error occured.
+   <li>    0 if ok </li>
+   <li>    1 if error occured.  </li>
    </ul> */
 /****************************************************************************/
 
@@ -10135,20 +9569,14 @@ INT NS_PREFIX MinNodeClass (ELEMENT *theElement)
 /** \brief
    MinNextNodeClass - Returns minimal Node class of a dof on next level
 
-   SYNOPSIS:
-   INT MinNextNodeClass (ELEMENT *theElement);
-
-   PARAMETERS:
  * @param   theElement - pointer to a element
 
-   DECRIPTION:
    This function returns highest 'NNCLASS' of a Node associated with the
    element.
 
    @return <ul>
-   INT
-   <li>    0 if ok
-   <li>    1 if error occured.
+   <li>    0 if ok </li>
+   <li>    1 if error occured.  </li>
    </ul> */
 /****************************************************************************/
 
@@ -10170,20 +9598,14 @@ INT NS_PREFIX MinNextNodeClass (ELEMENT *theElement)
 /** \brief
    SeedNodeClasses - Initialize node classes
 
-   SYNOPSIS:
-   INT SeedNodeClasses (ELEMENT *theElement);
-
-   PARAMETERS:
  * @param   theGrid - given grid
  * @param   theElement - given element
 
-   DESCRIPTION:
    Initialize Node class in all nodes associated with given element with 3.
 
    @return <ul>
-   INT
-   <li>    0 if ok
-   <li>    1 if error occured.
+   <li>    0 if ok </li>
+   <li>    1 if error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -10201,19 +9623,13 @@ INT NS_PREFIX SeedNodeClasses (ELEMENT *theElement)
 /** \brief
    ClearNodeClasses - Reset node classes
 
-   SYNOPSIS:
-   INT ClearNodeClasses (GRID *theGrid);
-
-   PARAMETERS:
  * @param   theGrid - pointer to grid
 
-   DESCRIPTION:
    Reset all node classes in all nodes of given grid to 0.
 
    @return <ul>
-   INT
-   <li>     0 if ok
-   <li>     1 if error occured.
+   <li>     0 if ok </li>
+   <li>     1 if error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -10231,20 +9647,14 @@ INT NS_PREFIX ClearNodeClasses (GRID *theGrid)
 /** \brief
    PropagateNodeClasses - Compute Node classes after initialization
 
-   SYNOPSIS:
-   INT PropagateNodeClasses (GRID *theGrid);
-
-   PARAMETERS:
  * @param   theGrid - pointer to grid
 
-   DESCRIPTION:
    After Node classes have been reset and initialized, this function
    now computes the class 2 and class 1 Nodes.
 
    @return <ul>
-   INT
-   <li>      0 if ok
-   <li>      1 if error occured
+   <li>      0 if ok </li>
+   <li>      1 if error occured </li>
    </ul> */
 /****************************************************************************/
 
@@ -10472,21 +9882,15 @@ INT NS_PREFIX PropagateNodeClasses (GRID *theGrid)
 /****************************************************************************/
 /** \brief Reset class of the Nodes on the next level
 
-   SYNOPSIS:
-   INT ClearNextNodeClasses (GRID *theGrid);
-
-   PARAMETERS:
  * @param   theGrid - pointer to grid
 
-   DESCRIPTION:
    This function clears NNCLASS flag in all Nodes. This is the first step to
    compute the class of the dofs on the *NEXT* level, which
    is also the basis for determining copies.
 
    @return <ul>
-   INT
-   <li>     0 if ok
-   <li>     1 if error occured.
+   <li>     0 if ok </li>
+   <li>     1 if error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -10507,19 +9911,13 @@ INT NS_PREFIX ClearNextNodeClasses (GRID *theGrid)
 /** \brief
    SeedNextNodeClasses - Set 'NNCLASS' in all Nodes associated with element
 
-   SYNOPSIS:
-   INT SeedNextNodeClasses (ELEMENT *theElement);
-
-   PARAMETERS:
  * @param   theElement - pointer to element
 
-   DESCRIPTION:
    Set 'NNCLASS' in all nodes associated with the element to 3.
 
    @return <ul>
-   INT
-   <li>     0 if ok
-   <li>     1 if error occured.
+   <li>     0 if ok  </li>
+   <li>     1 if error occured. </li>
    </ul> */
 /****************************************************************************/
 
@@ -10537,19 +9935,13 @@ INT NS_PREFIX SeedNextNodeClasses (ELEMENT *theElement)
 /** \brief
    PropagateNextNodeClasses - Compute 'NNCLASS' in all Nodes of a grid level
 
-   SYNOPSIS:
-   INT PropagateNextNodeClasses (GRID *theGrid);
-
-   PARAMETERS:
  * @param   theGrid - pointer to grid
 
-   DESCRIPTION:
    Computes values of 'NNCLASS' field in all nodes after seed.
 
    @return <ul>
-   INT
-   <li>    0 if ok
-   <li>    1 if error occured
+   <li>    0 if ok  </li>
+   <li>    1 if error occured </li>
    </ul> */
 /****************************************************************************/
 
@@ -10769,19 +10161,13 @@ INT NS_PREFIX PropagateNextNodeClasses (GRID *theGrid)
 /** \brief
    SetEdgeAndNodeSubdomainFromElements - set subdomain id on level 0 edges
 
-   SYNOPSIS:
-   INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
-
-   PARAMETERS:
  * @param   id - the id of the block to be allocated
 
-   DESCRIPTION:
    This function sets the subdomain id taken from the elements for level 0 edges.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR if error occured
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR if error occured </li>
    </ul> */
 /****************************************************************************/
 
@@ -10857,20 +10243,14 @@ static INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
 /** \brief
    RemoveSpuriousBoundarySides - remove boundary side of element and neighbour
 
-   SYNOPSIS:
-   static INT RemoveSpuriousBoundarySides (ELEMENT *elem, INT side)
-
-   PARAMETERS:
  * @param   elem - element
  * @param   side - boundary side to remove
 
-   DESCRIPTION:
    This function removes the boundary side of element and neighbour.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR if error occured
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR if error occured </li>
    </ul> */
 /****************************************************************************/
 
@@ -10917,8 +10297,8 @@ static INT RemoveSpuriousBoundarySides (HEAP *heap, ELEMENT *elem, INT side)
  * This function replaces a boundary by an inner element.
  *
  * @return <ul>
- *   <li>   GM_OK if ok
- *   <li>   GM_ERROR if error occured
+ *   <li>   GM_OK if ok </li>
+ *   <li>   GM_ERROR if error occured </li>
  **</ul>
  */
 /****************************************************************************/
@@ -10974,19 +10354,13 @@ static INT BElem2IElem (GRID *grid, ELEMENT **elemH)
 /** \brief
    FinishGrid - remove erroneously introduced bsides and propagate sub domain IDs
 
-   SYNOPSIS:
-   static INT FinishGrid (MULTIGRID *mg)
-
-   PARAMETERS:
  * @param   mg - multigrid
 
-   DESCRIPTION:
    This function removes erroneously introduced bsides and propagates sub domain IDs.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR if error occured
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR if error occured </li>
    </ul> */
 /****************************************************************************/
 
@@ -11247,19 +10621,13 @@ static INT FinishGrid (MULTIGRID *mg)
 /** \brief
    SetSubdomainIDfromBndInfo - set subdomain id on level 0 elements and edges
 
-   SYNOPSIS:
-   INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
-
-   PARAMETERS:
  * @param   id - the id of the block to be allocated
 
-   DESCRIPTION:
    This function sets the subdomain for level 0 elements and edges.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR if error occured
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR if error occured </li>
    </ul> */
 /****************************************************************************/
 
@@ -12674,7 +12042,7 @@ INT NS_PREFIX Grid_GeometricToPeriodic (GRID *g)
    SYNOPSIS:
    INT MG_GeometricToPeriodic (MULTIGRID *mg)
 
-   PARAMETERS:
+
    .  mg - multigrid to work on
 
    DESCRIPTION:
@@ -12685,8 +12053,8 @@ INT NS_PREFIX Grid_GeometricToPeriodic (GRID *g)
 
    @return <ul>
    INT
-   .n   GM_OK if ok
-   <li>   GM_ERROR if error occured
+   .n   GM_OK if ok </li>
+   <li>   GM_ERROR if error occured </li>
    </ul> */
 /****************************************************************************/
 
@@ -12711,7 +12079,7 @@ INT NS_PREFIX MG_GeometricToPeriodic (MULTIGRID *mg, INT fl, INT tl)
    SYNOPSIS:
    INT Grid_CheckPeriodicity (GRID *grid)
 
-   PARAMETERS:
+
  * @param   grid - grid to work on
 
    DESCRIPTION:
@@ -12719,8 +12087,8 @@ INT NS_PREFIX MG_GeometricToPeriodic (MULTIGRID *mg, INT fl, INT tl)
 
    @return <ul>
    INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR if error occured
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR if error occured </li>
    </ul> */
 /****************************************************************************/
 
@@ -12900,21 +12268,15 @@ static INT Grid_ListPeriodicPos (GRID *g, DOUBLE_VECTOR pos)
 /** \brief
    MG_ListPeriodicPos - list periodic positions and node-vector(-proc) info
 
-   SYNOPSIS:
-   INT MG_ListPeriodicPos (MULTIGRID *mg, INT fl, INT tl, DOUBLE_VECTOR pos)
-
-   PARAMETERS:
  * @param   mg - multigrid to work on
 
-   DESCRIPTION:
    This function list periodic positions including vector and information
    of all periodic boundaries. In parallel also proclist are printed.
    This should give a clear view onto the periodic data structure.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR if error occured
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR if error occured </li>
  */
 /****************************************************************************/
 
@@ -12946,17 +12308,15 @@ INT NS_PREFIX MG_ListPeriodicPos (MULTIGRID *mg, INT fl, INT tl, DOUBLE_VECTOR p
 /****************************************************************************/
 /** \brief Do all that is necessary to complete the coarse grid
 
-   PARAMETERS:
  * @param   id - the id of the block to be allocated
 
-   DESCRIPTION:
    This function does all that is necessary to complete the coarse grid.
    Finally the MG_COARSE_FIXED flag is set.
 
    @return <ul>
-   INT
-   <li>   GM_OK if ok
-   <li>   GM_ERROR if error occured
+   <li>   GM_OK if ok </li>
+   <li>   GM_ERROR if error occured </li>
+ * </ul>
  */
 /****************************************************************************/
 
@@ -12964,11 +12324,11 @@ INT NS_PREFIX FixCoarseGrid (MULTIGRID *theMG)
 {
   if (MG_COARSE_FIXED(theMG)) return (GM_OK);
 
-  /* TODO (HRR 971031): check that before check-in!
+  /** \todo (HRR 971031): check that before check-in!
      if (FinishGrid(theMG))
           REP_ERR_RETURN (GM_ERROR);*/
 
-  /* TODO (HRR 971031): remove if above works */
+  /** \todo (HRR 971031): remove if above works */
   if (SetSubdomainIDfromBndInfo(theMG))
     REP_ERR_RETURN (GM_ERROR);
 
