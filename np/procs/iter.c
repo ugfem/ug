@@ -1732,8 +1732,8 @@ static INT TSPreProcess  (NP_ITER *theNP, INT level,
         #endif
   if (AllocMDFromMD(NP_MG(theNP),level,level,np->ppA,&np->S))
     NP_RETURN(1,result[0]);
-  if (AssembleTotalDirichletBoundary(theGrid,A,x,b))
-    NP_RETURN(1,result[0]);
+  /*	if (AssembleTotalDirichletBoundary(theGrid,A,x,b))
+      NP_RETURN(1,result[0]); */
   if (ConstructSchurComplement(theGrid,np->L,np->upA,np->puA,np->ppA,
                                np->S,np->extra))
     NP_RETURN(1,result[0]);
@@ -5108,6 +5108,8 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
       UserWriteF("EX: cannot allocate %d bytes\n",np->mem);
       REP_ERR_RETURN(1);
     }
+    else
+      UserWriteF("EX: allocated %d bytes\n",np->mem);
     memset((void*)np->FMat,0,np->mem);
     if (EXCopyMatrixFLOAT (theGrid,x,A,np->bw,np->FMat))
       REP_ERR_RETURN(1);
