@@ -1382,8 +1382,6 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem, char *form
   PATCH *thePatch, **PatchList;
   PATCH_DESC thePatchDesc;
   FORMAT *theFormat;
-  INT maxNsubdomain,minNsubdomain,Nsubdomain,err;
-  INT *counter;
 
   theFormat = GetFormat(format);
   if (theFormat==NULL)
@@ -4081,18 +4079,12 @@ void ListGrids (const MULTIGRID *theMG)
 
 void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt, INT vopt)
 {
-  FORMAT *theFormat;
   VERTEX *theVertex;
   VSEGMENT *vs;
   LINK *theLink;
   int i;
-  BVP             *theBVP;
   PATCH_DESC thePatchDesc;
 
-  /* get BVP description */
-  theBVP = MG_BVP(theMG);
-
-  theFormat = MGFORMAT(theMG);
   theVertex = MYVERTEX(theNode);
 
   /******************************/
@@ -4366,7 +4358,6 @@ void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT dataopt, INT bopt, I
 
 void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, INT nbopt, INT vopt)
 {
-  FORMAT *theFormat;
   char etype[10];
   int i,j,k;
   ELEMENTSIDE *theSide;
@@ -4374,8 +4365,6 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
   ELEMENT *SonList[MAX_SONS];
         #endif
   PATCH_DESC thePatchDesc;
-
-  theFormat = MGFORMAT(theMG);
 
   if (ECLASS(theElement)==COPY_CLASS) strcpy(etype,"COPY ");
   if (ECLASS(theElement)==IRREGULAR_CLASS) strcpy(etype,"IRREG");

@@ -14,9 +14,6 @@
 /*                                                                          */
 /****************************************************************************/
 
-
-
-
 /****************************************************************************/
 /*                                                                          */
 /* include files                                                            */
@@ -32,7 +29,6 @@
 #include  "gm.h"
 #include  "ugm.h"
 #include  "ggm.h"
-
 
 /****************************************************************************/
 /*                                                                          */
@@ -62,20 +58,14 @@
 /* definition of variables global to this source file only (static!)        */
 /*                                                                          */
 /****************************************************************************/
+
 static QUADTREETYP *startpointer;
-
 static MULTIGRID *MG;
-
 static COORD startwidth;
-
 static SOURCETYP *source;
-
 static BALTREETYP **q, *btree_rootpointer;
-
 static int del_edg_fnd;
-
 static MG_GGDATA *myMGdata;
-
 static GG_PARAM *myPars;
 
 /* data for CVS */
@@ -368,39 +358,6 @@ static INT PointInCircle (COORD pt[DIM], COORD x, COORD y, COORD searchrad2)
 }
 
 /******************* end of function PointInCircle **************************/
-
-
-
-
-
-
-
-/****************************************************************************/
-/*                                                                          */
-/* Function:  distance                                                                  */
-/*                                                                          */
-/* Purpose:   evaluates the distance between two nodes                                          */
-/*                                                                          */
-/* Input:     FRONTCOMP *p1, FRONTCOMP *p2: the two nodes                                       */
-/*                                                                          */
-/* Output:    the squared distance in floating point                            */
-/*                        Using the square root is not necessary						*/
-/*                                                                          */
-/****************************************************************************/
-
-static COORD distance(FRONTCOMP *p1, FRONTCOMP *p2)
-{
-  COORD dist;
-
-  dist = pow( (XC(MYVERTEX(FRONTN(p2))) - XC(MYVERTEX(FRONTN(p1)))), 2 ) +
-         pow( (YC(MYVERTEX(FRONTN(p2))) - YC(MYVERTEX(FRONTN(p1)))), 2 ) ;
-  return(dist);
-}
-
-/******************* end of function PointInCircle **************************/
-
-
-
 
 /****************************************************************************/
 /*                                                                          */

@@ -11,7 +11,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 294										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de                            */
+/*			  email: ug@ica3.uni-stuttgart.de                                               */
 /*																			*/
 /*			  blockvector data structure:									*/
 /*			  Christian Wrobel                                                                              */
@@ -19,7 +19,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						*/
+/*			  email: ug@ica3.uni-stuttgart.de						        */
 /*																			*/
 /* History:    1.12.93 begin, ug 3d                                                                             */
 /*			  26.10.94 begin combination 2D/3D version						*/
@@ -3184,7 +3184,7 @@ INT MaxNextVectorClass (ELEMENT *theElement)
 /*                                                                          */
 /****************************************************************************/
 
-static int LexCompare (VECTOR **pvec1, VECTOR **pvec2)
+static INT LexCompare (VECTOR **pvec1, VECTOR **pvec2)
 {
   COORD_VECTOR pv1,pv2;
   COORD diff[DIM];
@@ -3786,7 +3786,6 @@ INT CheckVectorList (GRID *theGrid)
 
 INT CheckBVList (GRID *theGrid)
 {
-  INT i;
   BLOCKVECTOR *theBV;
 
   /* check # members of succ list */
@@ -3835,7 +3834,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   VECTOR FIRST_handle,CUT_handle,LAST_handle;
   VECTOR *FIRST_next_out,*FIRST_last_in;
   VECTOR *LAST_next_out,*LAST_last_in;
-  VECTOR *CUT_next_out,*CUT_last_in,*CUT_begin;
+  VECTOR *CUT_begin;
   VECTOR *theVector,*theNbVector,*succVector,*predVector, *theFirstVector;
   MATRIX *theMatrix;
   DOUBLE a;
@@ -3844,11 +3843,10 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   INT up, down;
   HEAP *theHeap;
   INT nb[2];
-  char buffer[128];
 
-  /****************************************************************************/
-  /*	init																	*/
-  /****************************************************************************/
+  /********************************************************************/
+  /*	init				                                                                                        */
+  /********************************************************************/
 
   /* cancel all BLOCKVECTORS */
   FreeAllBV(theGrid);
@@ -3879,7 +3877,6 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   PREDVC(FIRST_last_in) = NULL; nFIRST = 0;
   LAST_next_out  = LAST_last_in  = &LAST_handle;
   PREDVC(LAST_last_in) = NULL; nLAST  = 0;
-  CUT_next_out   = CUT_last_in   = &CUT_handle;
   nCUT   = 0;
   theFirstBV = theLastBV = theCutBV = NULL;
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
@@ -4097,32 +4094,25 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     for (theBV=GLASTBV(theGrid); BVPRED(theBV)!=NULL; theBV=BVPRED(theBV))
     {
       takeOut = BVPRED(theBV);
-
-      if (CheckBVList(theGrid))
-        i=i;
       GetBVNumber(takeOut,nb,0);
       GetBVNumberInGrid(theGrid,nb);
 
       if (BVNUMBER(takeOut)%3==2)
       {
-        if (CutBlockvector_l0(theGrid,takeOut,YES)) return (1);
+        if (CutBlockvector_l0(theGrid,takeOut,YES))
+          return (1);
 
-        if (CheckBVList(theGrid))
-          i=i;
         GetBVNumber(takeOut,nb,1);
         GetBVNumberInGrid(theGrid,nb);
 
-        if (InsertBlockvector_l0(theGrid,takeOut,NULL,0,YES)) return (1);
+        if (InsertBlockvector_l0(theGrid,takeOut,NULL,0,YES))
+          return (1);
 
-        if (CheckBVList(theGrid))
-          i=i;
         GetBVNumber(takeOut,nb,0);
         GetBVNumberInGrid(theGrid,nb);
 
         theBV = BVSUCC(theBV);
       }
-      if (CheckVectorList (theGrid))
-        i = i;
     }
   }
   else if (mode==GM_FFLCLC)
@@ -4315,7 +4305,6 @@ static INT LexAlgDep (GRID *theGrid, const char *data)
   MATRIX *theMatrix;
   COORD_VECTOR pos,nbpos;
   COORD diff[DIM];
-  DOUBLE InvMeshSize;
   INT i,order,res;
   INT Sign[DIM],Order[DIM],xused,yused,zused,error,SpecialTreatSkipVecs;
   char ord[3];

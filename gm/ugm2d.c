@@ -11,7 +11,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de							*/
+/*			  email: ug@ica3.uni-stuttgart.de					                */
 /*																			*/
 /* History:   13.12.94 begin, ug version 3.0								*/
 /*																			*/
@@ -278,7 +278,6 @@ static INT Local2Global (MULTIGRID *theMG, VERTEX *vptr)
    D*/
 /***************************************************************************/
 
-
 static INT Global2Local (MULTIGRID *theMG, VERTEX *vptr)
 {
   short n,side;
@@ -497,7 +496,7 @@ static INT Global2Local (MULTIGRID *theMG, VERTEX *vptr)
 
 INT MoveInnerNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
 {
-  GRID *theGrid,*theGrid2;
+  GRID *theGrid2;
   int k,k2;
   NODE *theNode2;
   VERTEX *theVertex,*theVertex2;
@@ -505,7 +504,6 @@ INT MoveInnerNode (MULTIGRID *theMG, NODE *theNode, COORD *newPos)
   double x,y,oldx,oldy;
 
   k = LEVEL(theNode);
-  theGrid = GRID_ON_LEVEL(theMG,k);
 
   /* set k (and theNode) to the level where the node appears the first time */
   while ((theNode2=NFATHER(theNode))!=NULL)
@@ -790,7 +788,6 @@ INT MoveBoundaryNode (MULTIGRID *theMG, NODE *theNode, INT patchid, COORD *newPo
 INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
 {
   int l,i,n;
-  INT status;
   double ratio;
   DOUBLE N;
   /* COORD beta,gamma; */
@@ -801,13 +798,11 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
   ELEMENTSIDE *eside;
   VERTEX *vptr0,*vptr1,*vptr2,*vptra,*vptre,*vptr;
   LINK *lptr;
-  BVP *theBVP;
   PATCH *thePatch;
   PATCH_DESC thePatchDesc;
 
   COORD x[2];
 
-  theBVP = MG_BVP(theMG);
   n = niter;
   if (n<=0) n = 1;
   if (n>50) n = 50;
@@ -827,7 +822,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
           {
             vptr=MYVERTEX(node);
             if ((OBJT(vptr)!=BVOBJ)||(bdryFlag!=0))
-              if ((status=Local2Global(theMG,vptr))!=0)
+              if (Local2Global(theMG,vptr)!=0)
                 return(GM_ERROR);
           }
 
@@ -925,7 +920,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
             if (Patch_local2global(thePatch,PVECT(VSEG(vptr0)),CVECT(vptr0))) return (GM_ERROR);
 
             /* set local boundary coordinates */
-            if ((status=Global2Local(theMG,vptr0))!=0)
+            if (Global2Local(theMG,vptr0)!=0)
               return(GM_ERROR);
           }
         }
@@ -959,7 +954,7 @@ INT SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
             if ((eptr=FindFather(vptr0))!=NULL)
             {
               VFATHER(vptr0)=eptr;
-              if ((status=Global2Local(theMG,vptr0))!=0)
+              if (Global2Local(theMG,vptr0)!=0)
                 return(GM_ERROR);
             }
             else
