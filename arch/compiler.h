@@ -636,6 +636,8 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 
 #define ARCHNAME    "AMD64"
 
+#include <time.h>
+
 /* basic types */
 #define SHORT  short
 #define INT    long                     /* sizeof(int) != sizeof(void *) !! */
