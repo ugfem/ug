@@ -1018,7 +1018,7 @@ int FAMGGraph::EliminateDirichletNodes(FAMGGrid *gridptr)
 			}
 			// the list may have became empty and is now not valid any more; thus refresh
 			list = GetList();
-			if( list->GetData() != 0 )
+			if( list==NULL || list->GetData()!=0 )
 				break;	// there are no more Dirichlet nodes because all nodes have data > 0
 		} 
 		while( NodeRemoved );
