@@ -21,8 +21,8 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef __FAMG_INTERFACE__
-#define __FAMG_INTERFACE__
+#ifndef __FAMG_UGINTERFACE__
+#define __FAMG_UGINTERFACE__
 
 /* RCS_ID
    $Header$

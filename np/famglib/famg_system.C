@@ -655,10 +655,9 @@ int FAMGSystem::BiCGStab()
 
         return 0;
     }
-
-    
-    return 1;
 #endif
+	
+    return 1;
 }
 
     // GMRES
@@ -870,9 +869,9 @@ int FAMGSystem::Arnoldi(FAMGMultiGrid *mg0, double **vec, double *H, double *G, 
          oldgamma = gamma;
 
      }
+#endif
 
      return 0;
-#endif
 }
 
 int FAMGSystem::UpdateSolution(FAMGMultiGrid *mg0, double **vec, double *H, double *Q, double &q0, int con)
@@ -904,10 +903,9 @@ int FAMGSystem::UpdateSolution(FAMGMultiGrid *mg0, double **vec, double *H, doub
     {
         mg0->SGSStep(0);
     }
-
+#endif
 
     return 0;
-#endif
 }
 
 int FAMGSystem::ComputeEigenVector(FAMGMultiGrid *mg0, double **vec, double *G, double *P, int con)
@@ -949,9 +947,9 @@ int FAMGSystem::ComputeEigenVector(FAMGMultiGrid *mg0, double **vec, double *G, 
 
         return -1;
     }
+#endif
 
     return 0;
-#endif
 }
             
 int FAMGSystem::GMRES()
@@ -1065,8 +1063,8 @@ int FAMGSystem::GMRES()
 
         return 0;
     }
+#endif
 
     return 1;
-#endif
 }
 

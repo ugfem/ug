@@ -109,7 +109,7 @@ void CopyValue( VT &dest, const VT &source )
 	
 	while(viter(ve))
 		dest[ve] = source[ve];
-};		
+}	
 
 template<class VT>
 double norm( const VT& v )

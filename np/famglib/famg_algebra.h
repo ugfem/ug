@@ -40,18 +40,18 @@ class FAMGMatrixAlg;
 class FAMGVectorEntryRef        // a single VectorEntryRef must be able to denote all corresponding entries in different vectors
 {       // abstract base class
 public:
-  virtual FAMGVectorEntryRef* clone() = NULL;
+  virtual FAMGVectorEntryRef* clone() = 0;
 
-  virtual FAMGVectorEntryRef& operator++ () = NULL;                     // prefix
+  virtual FAMGVectorEntryRef& operator++ () = 0;                // prefix
   FAMGVectorEntryRef& operator++ (int) {FAMGVectorEntryRef& tmp = *this; ++*this; return tmp;}              // postfix
-  virtual FAMGVectorEntryRef& operator-- () = NULL;                     // prefix
+  virtual FAMGVectorEntryRef& operator-- () = 0;                // prefix
   FAMGVectorEntryRef& operator-- (int) {FAMGVectorEntryRef& tmp = *this; --*this; return tmp;}              // postfix
   int operator==( const FAMGVectorEntryRef & ve ) const {return (comparable_value()==ve.comparable_value());}
 
-  virtual int GetIndex() const = NULL;
+  virtual int GetIndex() const = 0;
 
 protected:
-  virtual size_t comparable_value() const = NULL;
+  virtual size_t comparable_value() const = 0;
 };
 
 class FAMGVectorEntry
@@ -87,17 +87,17 @@ class FAMGGridVector
 public:
   virtual ~FAMGGridVector() {};                 // nothing to do
 
-  virtual int is_valid( const FAMGVectorEntry& ve ) const = NULL;
-  virtual int is_end( const FAMGVectorEntry& ve ) const = NULL;
-  virtual int is_beforefirst( const FAMGVectorEntry& ve ) const = NULL;
-  virtual FAMGVectorEntry firstEntry() const = NULL;
-  virtual FAMGVectorEntry lastEntry() const = NULL;
-  virtual FAMGVectorEntry endEntry() const = NULL;
+  virtual int is_valid( const FAMGVectorEntry& ve ) const = 0;
+  virtual int is_end( const FAMGVectorEntry& ve ) const = 0;
+  virtual int is_beforefirst( const FAMGVectorEntry& ve ) const = 0;
+  virtual FAMGVectorEntry firstEntry() const = 0;
+  virtual FAMGVectorEntry lastEntry() const = 0;
+  virtual FAMGVectorEntry endEntry() const = 0;
 
-  virtual int IsCG( const FAMGVectorEntry& ve ) const = NULL;
-  virtual int IsFG( const FAMGVectorEntry& ve ) const = NULL;
-  virtual void SetCG( const FAMGVectorEntry& ve ) const = NULL;
-  virtual void SetFG( const FAMGVectorEntry& ve ) const = NULL;
+  virtual int IsCG( const FAMGVectorEntry& ve ) const = 0;
+  virtual int IsFG( const FAMGVectorEntry& ve ) const = 0;
+  virtual void SetCG( const FAMGVectorEntry& ve ) const = 0;
+  virtual void SetFG( const FAMGVectorEntry& ve ) const = 0;
 
   // rarely used functions (no specialized implementations)
   void MarkUnknowns(FAMGGraph *graph);
@@ -111,19 +111,19 @@ class FAMGVector
 public:
   FAMGVector(const FAMGGridVector & gridvec) : mygridvector(gridvec) {}
   virtual ~FAMGVector() {};                     // nothing to do
-  virtual FAMGVector* create_new() const = NULL;                        // create copy of my; incl. memory for data but without copying the data
+  virtual FAMGVector* create_new() const = 0;                           // create copy of my; incl. memory for data but without copying the data
   const FAMGGridVector& GetGridVector() const {
     return mygridvector;
   }
 
-  virtual double& operator[] ( const FAMGVectorEntry & ve ) = NULL;
-  virtual double operator[] ( const FAMGVectorEntry & ve ) const = NULL;
-  virtual FAMGVector& operator=( const FAMGVector &v ) = NULL;
-  virtual FAMGVector& operator+=( const FAMGVector &v ) = NULL;
-  virtual FAMGVector& operator-=( const FAMGVector &v ) = NULL;
-  virtual double operator=(double val) = NULL;
-  virtual double operator*(const FAMGVector &v) = NULL;                 // scalar product
-  virtual FAMGVector& operator*=(double scale) = NULL;
+  virtual double& operator[] ( const FAMGVectorEntry & ve ) = 0;
+  virtual double operator[] ( const FAMGVectorEntry & ve ) const = 0;
+  virtual FAMGVector& operator=( const FAMGVector &v ) = 0;
+  virtual FAMGVector& operator+=( const FAMGVector &v ) = 0;
+  virtual FAMGVector& operator-=( const FAMGVector &v ) = 0;
+  virtual double operator=(double val) = 0;
+  virtual double operator*(const FAMGVector &v) = 0;                    // scalar product
+  virtual FAMGVector& operator*=(double scale) = 0;
 
   int is_valid( const FAMGVectorEntry& ve ) const {
     return GetGridVector().is_valid(ve);
@@ -157,18 +157,18 @@ public:
     GetGridVector().SetFG(ve);
   }
 
-  virtual double norm() const = NULL;
-  virtual double sum() const = NULL;
-  virtual void AddScaledVec( double scale, const FAMGVector &source ) = NULL;
-  virtual void VecMinusMatVec( const FAMGVector &rhs, const FAMGMatrixAlg &mat, const FAMGVector &sol ) = NULL;
-  virtual void MatVec( const FAMGMatrixAlg &mat, const FAMGVector &source ) = NULL;
+  virtual double norm() const = 0;
+  virtual double sum() const = 0;
+  virtual void AddScaledVec( double scale, const FAMGVector &source ) = 0;
+  virtual void VecMinusMatVec( const FAMGVector &rhs, const FAMGMatrixAlg &mat, const FAMGVector &sol ) = 0;
+  virtual void MatVec( const FAMGMatrixAlg &mat, const FAMGVector &source ) = 0;
 
-  virtual void JacobiSmoother( const FAMGMatrixAlg &mat, const FAMGVector &def ) = NULL;
-  virtual void dampedJacobiSmoother( const FAMGMatrixAlg &mat, const FAMGVector &def ) = NULL;
-  virtual void FGSSmoother( const FAMGMatrixAlg &mat, FAMGVector &def ) = NULL;
-  virtual void BGSSmoother( const FAMGMatrixAlg &mat, FAMGVector &def ) = NULL;
-  virtual void SGSSmoother( const FAMGMatrixAlg &mat, FAMGVector &def ) = NULL;
-  virtual void JacobiSmoothFG( const FAMGMatrixAlg &mat, const FAMGVector &def ) = NULL;
+  virtual void JacobiSmoother( const FAMGMatrixAlg &mat, const FAMGVector &def ) = 0;
+  virtual void dampedJacobiSmoother( const FAMGMatrixAlg &mat, const FAMGVector &def ) = 0;
+  virtual void FGSSmoother( const FAMGMatrixAlg &mat, FAMGVector &def ) = 0;
+  virtual void BGSSmoother( const FAMGMatrixAlg &mat, FAMGVector &def ) = 0;
+  virtual void SGSSmoother( const FAMGMatrixAlg &mat, FAMGVector &def ) = 0;
+  virtual void JacobiSmoothFG( const FAMGMatrixAlg &mat, const FAMGVector &def ) = 0;
 protected:
   const FAMGGridVector &mygridvector;
 };
@@ -214,12 +214,12 @@ private:
 class FAMGMatrixEntryRef
 {       // abstract base class
 public:
-  virtual FAMGMatrixEntryRef* clone() = NULL;
+  virtual FAMGMatrixEntryRef* clone() = 0;
 
-  virtual FAMGMatrixEntryRef& operator++ () = NULL;                     // prefix
+  virtual FAMGMatrixEntryRef& operator++ () = 0;                // prefix
   FAMGMatrixEntryRef& operator++ (int) {FAMGMatrixEntryRef& tmp = *this; ++*this; return tmp;}              // postfix
 
-  virtual FAMGVectorEntry dest() const = NULL;
+  virtual FAMGVectorEntry dest() const = 0;
 };
 
 class FAMGMatrixEntry
@@ -251,16 +251,16 @@ class FAMGMatrixAlg
 {
 public:
   FAMGMatrixAlg( int nr_vecs, int nr_links ) : n(nr_vecs), nlinks(nr_links) {}
-  virtual double operator[] ( const FAMGMatrixEntry & me ) const = NULL;
-  virtual double& operator[] ( const FAMGMatrixEntry & me ) = NULL;
-  virtual int is_valid( const FAMGVectorEntry& row_ve, const FAMGMatrixEntry& me ) const = NULL;
-  virtual int is_end( const FAMGVectorEntry& row_ve, const FAMGMatrixEntry& me ) const = NULL;
-  virtual FAMGMatrixEntry firstEntry( const FAMGVectorEntry& row_ve ) const = NULL;
-  virtual FAMGMatrixEntry endEntry( const FAMGVectorEntry& row_ve ) const  = NULL;
-  virtual double DiagValue( const FAMGVectorEntry& row_ve ) const  = NULL;
-  virtual double GetAdjData( const FAMGMatrixEntry& me ) const = NULL;
+  virtual double operator[] ( const FAMGMatrixEntry & me ) const = 0;
+  virtual double& operator[] ( const FAMGMatrixEntry & me ) = 0;
+  virtual int is_valid( const FAMGVectorEntry& row_ve, const FAMGMatrixEntry& me ) const = 0;
+  virtual int is_end( const FAMGVectorEntry& row_ve, const FAMGMatrixEntry& me ) const = 0;
+  virtual FAMGMatrixEntry firstEntry( const FAMGVectorEntry& row_ve ) const = 0;
+  virtual FAMGMatrixEntry endEntry( const FAMGVectorEntry& row_ve ) const  = 0;
+  virtual double DiagValue( const FAMGVectorEntry& row_ve ) const  = 0;
+  virtual double GetAdjData( const FAMGMatrixEntry& me ) const = 0;
 
-  virtual int ConstructGalerkinMatrix( const FAMGGrid &fg ) = NULL;
+  virtual int ConstructGalerkinMatrix( const FAMGGrid &fg ) = 0;
 
   int &GetN() {
     return n;

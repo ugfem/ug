@@ -450,55 +450,55 @@ inline int FAMGugVector::IsFG( const FAMGugVectorEntry& ve ) const {
   return ((FAMGugGridVector&)GetGridVector()).IsFG(ve);
 }
 inline void FAMGugVector::SetCG( const FAMGugVectorEntry& ve ) {
-  return ((FAMGugGridVector&)GetGridVector()).SetCG(ve);
+  ((FAMGugGridVector&)GetGridVector()).SetCG(ve);
 }
 inline void FAMGugVector::SetFG( const FAMGugVectorEntry& ve ) {
-  return ((FAMGugGridVector&)GetGridVector()).SetFG(ve);
+  ((FAMGugGridVector&)GetGridVector()).SetFG(ve);
 }
 
 inline void FAMGugVector::AddScaledVec( double scale, const FAMGVector &source )
 {
-  return ::AddScaledValue( *this, scale, (FAMGugVector&)source);
+  ::AddScaledValue( *this, scale, (FAMGugVector&)source);
 }
 
 inline void FAMGugVector::VecMinusMatVec( const FAMGVector &rhs, const FAMGMatrixAlg &mat, const FAMGVector &sol )
 {
-  return ::VecMinusMatVec( *this, (FAMGugVector&)rhs, (FAMGugMatrix&)mat, (FAMGugVector&)sol);
+  ::VecMinusMatVec( *this, (FAMGugVector&)rhs, (FAMGugMatrix&)mat, (FAMGugVector&)sol);
 }
 
 inline void FAMGugVector::MatVec( const FAMGMatrixAlg &mat, const FAMGVector &source )
 {
-  return ::MatVec( *this, (FAMGugMatrix&)mat, (FAMGugVector&)source);
+  ::MatVec( *this, (FAMGugMatrix&)mat, (FAMGugVector&)source);
 }
 
 inline void FAMGugVector::JacobiSmoother( const FAMGMatrixAlg &mat, const FAMGVector &def )
 {
-  return ::JacobiSmoother( *this, (FAMGugMatrix&)mat, (FAMGugVector&)def );
+  ::JacobiSmoother( *this, (FAMGugMatrix&)mat, (FAMGugVector&)def );
 }
 
 inline void FAMGugVector::dampedJacobiSmoother( const FAMGMatrixAlg &mat, const FAMGVector &def )
 {
-  return ::dampedJacobiSmoother( *this, (FAMGugMatrix&)mat, (FAMGugVector&)def );
+  ::dampedJacobiSmoother( *this, (FAMGugMatrix&)mat, (FAMGugVector&)def );
 }
 
 inline void FAMGugVector::FGSSmoother( const FAMGMatrixAlg &mat, FAMGVector &def )
 {
-  return ::FGSSmoother( *this, (FAMGugMatrix&)mat, (FAMGugVector&)def );
+  ::FGSSmoother( *this, (FAMGugMatrix&)mat, (FAMGugVector&)def );
 }
 
 inline void FAMGugVector::BGSSmoother( const FAMGMatrixAlg &mat, FAMGVector &def )
 {
-  return ::BGSSmoother( *this, (FAMGugMatrix&)mat, (FAMGugVector&)def );
+  ::BGSSmoother( *this, (FAMGugMatrix&)mat, (FAMGugVector&)def );
 }
 
 inline void FAMGugVector::SGSSmoother( const FAMGMatrixAlg &mat, FAMGVector &def )
 {
-  return ::SGSSmoother( *this, (FAMGugMatrix&)mat, (FAMGugVector&)def );
+  ::SGSSmoother( *this, (FAMGugMatrix&)mat, (FAMGugVector&)def );
 }
 
 inline void FAMGugVector::JacobiSmoothFG( const FAMGMatrixAlg &mat, const FAMGVector &def )
 {
-  return ::JacobiSmoothFG( *this, (FAMGugMatrix&)mat, (FAMGugVector&)def );
+  ::JacobiSmoothFG( *this, (FAMGugMatrix&)mat, (FAMGugVector&)def );
 }
 
 //
