@@ -105,6 +105,40 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*D
+   INT_2_bitpattern	- transform an INT into a bitpattern string
+
+   SYNOPSIS:
+   static void INT_2_bitpattern (INT n, char *text)
+
+   PARAMETERS:
+   .  n - integer to convert
+   .  text - string of size >= 33 for conversion
+
+   DESCRIPTION:
+   This function transforms an INT into a bitpattern string consisting of 0s
+   and 1s only.
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void INT_2_bitpattern (INT n, char text[33])
+{
+  INT i;
+
+  memset(text,'0',32*sizeof(char));
+
+  for (i=0; i<32; i++)
+    if ((1<<i)&n)
+      text[31-i] = '1';
+  text[32] = '\0';
+
+  return;
+}
+
+/****************************************************************************/
+/*D
    expandfmt - Expand (make explicit) charset-ranges in scanf
 
    SYNOPSIS:

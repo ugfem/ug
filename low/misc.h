@@ -137,6 +137,7 @@ extern int _partition_; /* to have in the serial case this variable as a dummy*/
 /****************************************************************************/
 
 /* general routines */
+void            INT_2_bitpattern        (INT n, char text[33]);
 char       *StrTok              (char *s, const char *ct);
 char       *expandfmt           (const char *fmt);
 const char *strntok             (const char *str, const char *sep, int n, char *token);
