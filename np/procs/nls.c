@@ -178,7 +178,7 @@ INT NPNLSolverExecute (NP_BASE *theNP, INT argc , char **argv)
   }
 
   if (ReadArgvOption("i",argc,argv)) {
-    if (*np->PreProcess != NULL)
+    if (np->PreProcess != NULL)
       if ((*np->PreProcess)(np,level,&result)) {
         UserWriteF("NPNLSolverExecute: PreProcess failed, error code %d\n",
                    result);

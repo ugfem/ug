@@ -524,3 +524,42 @@ INT NPLocalAssembleConstruct (NP_ASSEMBLE *np)
 
   return(0);
 }
+
+
+/****************************************************************************/
+/*D
+   NP_T_ASSEMBLE - type definition for time dependent assembling
+
+   DESCRIPTION:
+   This is the interface for a time dependent problem as it is required
+   by the tsolver. An NP_T_ASSEMBLE object is never executable, only its
+   functional interface is used.
+
+
+   .vb
+
+
+   ..... fill in data structure here when the realizition is finished
+
+
+   .ve
+
+   SEE ALSO:
+   num_proc
+   D*/
+/****************************************************************************/
+
+INT NPTAssembleInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  return(NP_ACTIVE);
+}
+
+INT NPTAssembleDisplay (NP_BASE *theNP)
+{
+  return(0);
+}
+
+INT NPTAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
+{
+  return(1);   /* never executable */
+}

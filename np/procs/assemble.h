@@ -42,6 +42,7 @@
 
 #define ASSEMBLE_CLASS_NAME     "assemble"
 #define NL_ASSEMBLE_CLASS_NAME  "nlass"
+#define T_ASSEMBLE_CLASS_NAME   "tass"
 
 /****************************************************************************/
 /*																			*/
@@ -233,6 +234,90 @@ typedef INT (*PostProcessNLAssembleProcPtr)                                  \
 
 /****************************************************************************/
 /*																			*/
+/* time-dependent assemble interface										*/
+/*																			*/
+/****************************************************************************/
+
+struct np_t_assemble {
+
+  NP_BASE base;                              /* inherits base class             */
+
+  /* functions */
+  INT (*TAssemblePreProcess)                     /* call at begin of timestep	        */
+    (struct np_t_assemble *,                 /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    DOUBLE,                                                              /* time t_k+1						*/
+    DOUBLE,                                                              /* time t_k						*/
+    DOUBLE,                                                              /* time t_k-1						*/
+    VECDATA_DESC *,                              /* (unknown) solution at t_k+1         */
+    VECDATA_DESC *,                              /* solution vector at t_k          */
+    VECDATA_DESC *,                              /* solution vector at t_k-1        */
+    INT *);                                      /* result                          */
+  INT (*TAssembleInitial)                        /* set initial values				*/
+    (struct np_t_assemble *,                 /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    VECDATA_DESC *,                              /* solution vector at time t       */
+    INT *);                                      /* result                          */
+  INT (*TAssembleSolution)               /* set dirichlet conditions in sol.*/
+    (struct np_t_assemble *,                 /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    DOUBLE,                                                              /* time value t					*/
+    VECDATA_DESC *,                              /* solution vector at time t       */
+    INT *);                                      /* result                          */
+  INT (*TAssembleDefect)                     /* accumulate to defect vector		*/
+    (struct np_t_assemble *,                 /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    DOUBLE,                                                              /* time value t					*/
+    DOUBLE,                                                              /* scaling for m-term: s_m			*/
+    DOUBLE,                                                              /* scaling for a-term: s_a			*/
+    VECDATA_DESC *,                              /* solution vector y               */
+    VECDATA_DESC *,                              /* accumulate s_m*m(t,y)+s_a*a(t,y)*/
+    MATDATA_DESC *,                              /* matrix may be handy for Picard  */
+    INT *);                                      /* result                          */
+  INT (*TAssembleMatrix)                         /* compute linearization (Jacobian)*/
+    (struct np_t_assemble *,                 /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    DOUBLE,                                                              /* time value t					*/
+    DOUBLE,                                                              /* scaling for a-term: s_a	(s_m=1!)*/
+    VECDATA_DESC *,                                          /* current sol (linearization pt)  */
+    VECDATA_DESC *,                                          /* defect for current solution     */
+    VECDATA_DESC *,                                          /* correction to be computed               */
+    MATDATA_DESC *,                              /* matrix                          */
+    INT *);                                      /* result                          */
+  INT (*TAssemblePostProcess)                /* call after solution t_k+1 known */
+    (struct np_t_assemble *,                 /* pointer to (derived) object     */
+    INT,                                         /* from level                      */
+    INT,                                         /* to level                        */
+    DOUBLE,                                                              /* time t_k+1						*/
+    DOUBLE,                                                              /* time t_k						*/
+    DOUBLE,                                                              /* time t_k-1						*/
+    VECDATA_DESC *,                              /* solution t_k+1 (just computed!)	*/
+    VECDATA_DESC *,                              /* solution vector at t_k          */
+    VECDATA_DESC *,                              /* solution vector at t_k-1        */
+    INT *);                                      /* result                          */
+};
+typedef struct np_t_assemble NP_T_ASSEMBLE;
+
+typedef INT (*TAssemblePreProcessProcPtr)                                     \
+  (NP_T_ASSEMBLE *, INT, INT, DOUBLE, DOUBLE, DOUBLE, VECDATA_DESC *, VECDATA_DESC *, VECDATA_DESC *, INT *);
+typedef INT (*TAssembleInitialProcPtr)                                       \
+  (NP_T_ASSEMBLE *, INT, INT, VECDATA_DESC *, INT *);
+typedef INT (*TAssembleSolutionProcPtr)                                      \
+  (NP_T_ASSEMBLE *, INT, INT, DOUBLE, VECDATA_DESC *, INT *);
+typedef INT (*TAssembleDefectProcPtr)                                        \
+  (NP_T_ASSEMBLE *, INT, INT, DOUBLE, DOUBLE, DOUBLE, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
+typedef INT (*TAssembleMatrixProcPtr)                                        \
+  (NP_T_ASSEMBLE *, INT, INT, DOUBLE, DOUBLE, VECDATA_DESC *, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
+typedef INT (*TAssemblePostProcessProcPtr)                                    \
+  (NP_T_ASSEMBLE *, INT, INT, DOUBLE, DOUBLE, DOUBLE, VECDATA_DESC *, VECDATA_DESC *, VECDATA_DESC *, INT *);
+
+/****************************************************************************/
+/*																			*/
 /* definition of exported functions											*/
 /*																			*/
 /****************************************************************************/
@@ -268,5 +353,10 @@ INT NPNLAssembleDisplay (NP_BASE *theNP);
 
 /* generic execute function for NLAssemble num procs */
 INT NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv);
+
+/* default functions for time--dependent assembly */
+INT NPTAssembleInit     (NP_BASE *theNP, INT argc , char **argv);
+INT NPTAssembleDisplay  (NP_BASE *theNP);
+INT NPTAssembleExecute  (NP_BASE *theNP, INT argc , char **argv);
 
 #endif

@@ -80,8 +80,8 @@ struct np_nl_solver {
     INT,                                         /* level                           */
     VECDATA_DESC *,                              /* solution vector                 */
     NP_NL_ASSEMBLE *,                                /* the assemble numproc			*/
-    VEC_SCALAR,                                  /* reduction factor                */
     VEC_SCALAR,                                  /* absolute limit for the defect   */
+    VEC_SCALAR,                                  /* reduction factor                */
     NLRESULT *);                                 /* result structure                */
   INT (*PostProcess)
     (struct np_nl_solver *,                  /* pointer to (derived) object     */
