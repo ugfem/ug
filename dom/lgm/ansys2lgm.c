@@ -49,7 +49,7 @@
 #include "gm.h"
 #include "misc.h"
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "cmdline.h"
 /*#include "problem.h"*/
 

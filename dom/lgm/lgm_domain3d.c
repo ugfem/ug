@@ -45,7 +45,7 @@
 #include "lgm_macros.h"
 #include "lgm_gginterface.h"
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "values.h"
 
 /****************************************************************************/
@@ -1597,7 +1597,7 @@ static INT Write_Line(LGM_LINE *theLine)
 
   fprintf(stream, "%d\n", LGM_LINE_NPOINT(theLine));
   for(i=0; i<LGM_LINE_NPOINT(theLine); i++)
-    fprintf(stream, "%lf %lf %lf\n",LGM_LINE_POINT(theLine,i)->position[0],
+    fprintf(stream, "%f %f %f\n",LGM_LINE_POINT(theLine,i)->position[0],
             LGM_LINE_POINT(theLine,i)->position[1],
             LGM_LINE_POINT(theLine,i)->position[2]);
 
@@ -1606,7 +1606,7 @@ static INT Write_Line(LGM_LINE *theLine)
   for(i=0; i<LGM_LINEDISCNEW_NPOINT(LGM_LINE_LINEDISCNEW(theLine)); i++)
   {
     Line_Local2GlobalNew(theLine,global,help->local);
-    fprintf(stream, "%lf %lf %lf\n",global[0],global[1],global[2]);
+    fprintf(stream, "%f %f %f\n",global[0],global[1],global[2]);
     help = help->next;
   }
 
@@ -1636,7 +1636,7 @@ static INT Write_Surface(LGM_SURFACE *theSurface, char *name, char *name1)
   {
     local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),i,0);
     local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),i,1);
-    fprintf(stream, "%20.16lf %20.16lf\n", local[0], local[1]);
+    fprintf(stream, "%20.16f %20.16f\n", local[0], local[1]);
   }
   fprintf(stream, "%d\n", LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)));
   for(i=0; i<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)); i++)
@@ -1668,7 +1668,7 @@ static INT Write_Surface(LGM_SURFACE *theSurface, char *name, char *name1)
     local[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),i,0);
     local[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),i,1);
     Surface_Local2Global(theSurface, global, local);
-    fprintf(stream, "%lf %lf %lf\n", global[0], global[1], global[2]);
+    fprintf(stream, "%f %f %f\n", global[0], global[1], global[2]);
   }
   fprintf(stream, "%d\n", LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)));
   for(i=0; i<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)); i++)
@@ -3252,7 +3252,7 @@ static INT DiscretizeDomain (HEAP *Heap, LGM_DOMAIN *theDomain, MESH *theMesh, D
   }
 
   /*	for(i=0;i<nPointList;i++)
-                  printf("%d %lf %lf %lf %d %d\n", i,
+                  printf("%d %f %f %f %d %d\n", i,
                                                                                   PointList[i].position[0],
                                                                                   PointList[i].position[1],
                                                                                   PointList[i].position[2],
@@ -5316,9 +5316,9 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   BNDP_Global(aBndP[2],globalp2);
 
   /*	printf("%s\n", "bnds");
-          printf("%lf %lf %lf\n", globalp0[0], globalp0[1], globalp0[2]);
-          printf("%lf %lf %lf\n", globalp1[0], globalp1[1], globalp1[2]);
-          printf("%lf %lf %lf\n", globalp2[0], globalp2[1], globalp2[2]);*/
+          printf("%f %f %f\n", globalp0[0], globalp0[1], globalp0[2]);
+          printf("%f %f %f\n", globalp1[0], globalp1[1], globalp1[2]);
+          printf("%f %f %f\n", globalp2[0], globalp2[1], globalp2[2]);*/
 
   A[0] = globalp2[0] - globalp0[0];
   A[1] = globalp2[1] - globalp0[1];

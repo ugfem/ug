@@ -43,7 +43,7 @@
 #include "bio.h"
 #include "ugstruct.h"
 
-#include "devices.h"
+#include "ugdevices.h"
 
 #include "gm.h"
 #include "algebra.h"

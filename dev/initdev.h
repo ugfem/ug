@@ -38,12 +38,12 @@
 #endif
 
 #ifndef __DEVICESH__
-#include "devices.h"
+#include "ugdevices.h"
 #endif
 
 /****************************************************************************/
 /*																			*/
-/* init and exit functions called internally by devices.c							*/
+/* init and exit functions called internally by ugdevices.c							*/
 /*																			*/
 /****************************************************************************/
 

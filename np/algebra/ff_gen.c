@@ -36,7 +36,7 @@
 
 #include "compiler.h"
 #include "gm.h"          /* for data structure               */
-#include "devices.h"     /* for UserWrite, PrintErrorMessage */
+#include "ugdevices.h"     /* for UserWrite, PrintErrorMessage */
 #include "commands.h"    /* for GetCurrentMultigrid              */
 #include "cmdint.h"      /* for CreateCommand                */
 #include "debug.h"
@@ -271,7 +271,7 @@ void printv( INT x_nr )
     printf("z=%5.2f ",pos[2]);
 #endif
     printf("  index = %d  ", VINDEX( v ) );
-    printf("u[%d]=%15.8lf ",x_nr,VVALUE(v,x_nr));
+    printf("u[%d]=%15.8f ",x_nr,VVALUE(v,x_nr));
     /*printf("   cl %d %d sk ",VCLASS(v),VNCLASS(v));*/
     /*for (j=0; j<ncomp; j++)
             printf("%d ",((VECSKIP(v) & (1<<j))!=0));*/
@@ -297,7 +297,7 @@ void printvgrid( GRID *g, INT x_nr )
     printf("z=%5.2f ",pos[2]);
 #endif
     printf("  index = %d  ", VINDEX( v ) );
-    printf("u[%d]=%15.8lf ",x_nr,VVALUE(v,x_nr));
+    printf("u[%d]=%15.8f ",x_nr,VVALUE(v,x_nr));
     /*printf("   cl %d %d sk ",VCLASS(v),VNCLASS(v));*/
     /*for (j=0; j<ncomp; j++)
             printf("%d ",((VECSKIP(v) & (1<<j))!=0));*/
@@ -355,7 +355,7 @@ void printm( INT m_nr )
       for (m=VSTART(v); m!=NULL; m = MNEXT(m))
         if ( MDEST( m ) == w )
         {
-          printf("%5.2lf",(double)MVALUE(m,m_nr));
+          printf("%5.2f",(double)MVALUE(m,m_nr));
           break;
         }
       if ( m == NULL )
@@ -387,7 +387,7 @@ void printmgrid( GRID *g, INT m_nr )
       for (m=VSTART(v); m!=NULL; m = MNEXT(m))
         if ( MDEST( m ) == w )
         {
-          printf("%5.2lf",(double)MVALUE(m,m_nr));
+          printf("%5.2f",(double)MVALUE(m,m_nr));
           break;
         }
       if ( m == NULL )
@@ -420,7 +420,7 @@ void printmMG( MULTIGRID *theMG, INT m_nr )
         for (m=VSTART(v); m!=NULL; m = MNEXT(m))
           if ( MDEST( m ) == w )
           {
-            printf("%5.2lf",(double)MVALUE(m,m_nr));
+            printf("%5.2f",(double)MVALUE(m,m_nr));
             break;
           }
         if ( m == NULL )
@@ -460,7 +460,7 @@ void printmBS( const BLOCKVECTOR *bv_row, const BLOCKVECTOR *bv_col, INT m_nr )
       for (m=VSTART(v); m!=NULL; m = MNEXT(m))
         if ( MDEST( m ) == w )
         {
-          printf("%7.4lf",(double)MVALUE(m,m_nr));
+          printf("%7.4f",(double)MVALUE(m,m_nr));
           break;
         }
       if ( m == NULL )

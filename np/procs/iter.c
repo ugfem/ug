@@ -41,7 +41,7 @@
 #include "scan.h"
 #include "numproc.h"
 #include "np.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "udm.h"
 #include "pcr.h"
 #include "debug.h"
@@ -4347,8 +4347,8 @@ static INT FFIter (NP_ITER *theNP, INT level,
         if( fabs(start_norm)<1e-20)
           printf(PFMT " start_norm == 0\n",me);
         else
-          UserWriteF( "Wnr plane = %4g Wnr line = %4g new defect = %12lg "
-                      "conv. rate = %12lg\n", wavenr, wavenr, new_norm,
+          UserWriteF( "Wnr plane = %4g Wnr line = %4g new defect = %12g "
+                      "conv. rate = %12g\n", wavenr, wavenr, new_norm,
                       new_norm/start_norm );
       }
     }
@@ -5888,7 +5888,7 @@ static INT EXPRJSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   for (i=0; i<n0+d; i++)
   {
     for (j=0; j<n0; j++)
-      UserWriteF("%8.3lf",a[i*n0+j]);
+      UserWriteF("%8.3f",a[i*n0+j]);
     UserWriteF("\n");
   }
   UserWriteF("\n");
@@ -5896,7 +5896,7 @@ static INT EXPRJSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   UserWriteF("b \n");
   for (i=0; i<n0+d; i++)
   {
-    UserWriteF("%8.3lf",r[i]);
+    UserWriteF("%8.3f",r[i]);
   }
   UserWriteF("\n");
   ENDDEBUG
@@ -5935,7 +5935,7 @@ static INT EXPRJSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   for (i=0; i<n0; i++)
   {
     for (j=0; j<n0; j++)
-      UserWriteF("%8.3lf",a_neu[i*n0+j]);
+      UserWriteF("%8.3f",a_neu[i*n0+j]);
     UserWriteF("\n");
   }
   UserWriteF("\n");
@@ -5943,7 +5943,7 @@ static INT EXPRJSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   UserWriteF("b_neu \n");
   for (i=0; i<n0; i++)
   {
-    UserWriteF("%8.3lf",r_neu[i]);
+    UserWriteF("%8.3f",r_neu[i]);
   }
   UserWriteF("\n");
   ENDDEBUG
@@ -5970,7 +5970,7 @@ static INT EXPRJSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   for (i=0; i<n0; i++)
   {
     for (j=0; j<n0; j++)
-      UserWriteF("%8.3lf",inv_a_neu[i*n0+j]);
+      UserWriteF("%8.3f",inv_a_neu[i*n0+j]);
     UserWriteF("\n");
   }
   UserWriteF("\n");
@@ -5991,7 +5991,7 @@ static INT EXPRJSmoother (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
   IFDEBUG(np,4)
   UserWriteF("x_neu \n");
   for (i=0; i<n0; i++)
-    UserWriteF("%8.3lf",x_neu[i]);
+    UserWriteF("%8.3f",x_neu[i]);
   UserWriteF("\n");
 
   ENDDEBUG

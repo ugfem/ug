@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "lgm_domain.h"
 #include "lgm_load.h"
 #include "lgm_transfer.h"

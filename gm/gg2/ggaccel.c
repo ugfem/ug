@@ -25,7 +25,7 @@
 #include  <stdlib.h>
 #include  "ggaccel.h"
 #include  "misc.h"
-#include  "devices.h"
+#include  "ugdevices.h"
 #include  "gm.h"
 #include  "ugm.h"
 #include  "ggm.h"

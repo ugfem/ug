@@ -10,7 +10,7 @@
 #include "parallel.h"
 #include "general.h"
 #include "ugm.h"
-#include "devices.h"
+#include "ugdevices.h"
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -471,7 +471,7 @@ static void buggy_Search (MULTIGRID *theMG, DDD_GID gid)
                                         Cout << me <<"    node " << hex
                                                  << node->InfoGlobalId()
                                                  << dec << cr;
-                                        fprintf(f,"%lf %lf\n",node->x[0],node->x[1]);
+                                        fprintf(f,"%f %f\n",node->x[0],node->x[1]);
                                 }
                                 fprintf(f,"\n");
                         }

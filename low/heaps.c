@@ -39,7 +39,7 @@
 #include "misc.h"
 #include "general.h"
 #include "debug.h"
-#include "devices.h"
+#include "ugdevices.h"
 
 /****************************************************************************/
 /*                                                                          */

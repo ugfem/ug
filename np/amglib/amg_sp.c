@@ -42,6 +42,9 @@
 #include "amg_low.h"
 #include "amg_sp.h"
 
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -77,9 +80,6 @@
 /*																			*/
 /****************************************************************************/
 
-/* RCS_ID
-   $Header$
- */
 
 /****************************************************************************/
 /*D
@@ -514,7 +514,7 @@ int AMG_PrintVector (int k, AMG_VECTOR **vlist, char *text)
       sprintf(line,"%1d",component); AMG_Print(line);
       for (i=0; i<k; i++)
       {
-        sprintf(line,"  %12.4le",AMG_VECTOR_ENTRY(vlist[i],block,component));
+        sprintf(line,"  %12.4e",AMG_VECTOR_ENTRY(vlist[i],block,component));
         AMG_Print(line);
       }
       AMG_Print("\n");
@@ -563,11 +563,11 @@ int AMG_PrintMatrix (AMG_MATRIX *A, char *text)
     for (i=0; i<n; i++)
     {
       sprintf(line,"\nR %4d ",i); AMG_Print(line);
-      sprintf(line,"[%4d:%12.4le] ",i,a[ra[i]]); AMG_Print(line);
+      sprintf(line,"[%4d:%12.4e] ",i,a[ra[i]]); AMG_Print(line);
       for (k=1; k<ja[ra[i]]; k++)
       {
         if (k%AMG_COLS_PER_LINE==0) AMG_Print("\n       ");
-        sprintf(line,"[%4d:%12.4le] ",ja[k+ra[i]],a[k+ra[i]]);
+        sprintf(line,"[%4d:%12.4e] ",ja[k+ra[i]],a[k+ra[i]]);
         AMG_Print(line);
       }
       AMG_Print("\n");
@@ -582,7 +582,7 @@ int AMG_PrintMatrix (AMG_MATRIX *A, char *text)
       sprintf(line,"[%4d:",i); AMG_Print(line);
       aa = a+(b*b*ra[i]);
       for (c=0; c<b*b; c++) {
-        sprintf(line," %12.4le",i,aa[c]); AMG_Print(line);
+        sprintf(line," %12.4e",i,aa[c]); AMG_Print(line);
       }
       AMG_Print("]\n");
       for (k=ra[i]; k<ra[i]+ja[ra[i]]; k++)
@@ -591,7 +591,7 @@ int AMG_PrintMatrix (AMG_MATRIX *A, char *text)
         sprintf(line,"[%4d:",ja[k]); AMG_Print(line);
         aa = a+(b*b*k);
         for (c=0; c<b*b; c++) {
-          sprintf(line," %12.4le",i,aa[c]); AMG_Print(line);
+          sprintf(line," %12.4e",i,aa[c]); AMG_Print(line);
         }
         AMG_Print("]\n");
       }

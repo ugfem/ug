@@ -36,7 +36,7 @@
 #include <assert.h>
 
 #include "compiler.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "misc.h"
 #include "gm.h"
 #include "algebra.h"
@@ -118,12 +118,12 @@ INT GetStrINTinRange (const char *str, INT min, INT max, INT *value)
   }
   if (iValue<min)
   {
-    PrintErrorMessageF('E',"GetStrINTinRange","value (%d) < min (%lg)",iValue,min);
+    PrintErrorMessageF('E',"GetStrINTinRange","value (%d) < min (%g)",iValue,min);
     return(3);
   }
   if (iValue>max)
   {
-    PrintErrorMessageF('E',"GetStrINTinRange","value (%d) > max (%lg)",iValue,max);
+    PrintErrorMessageF('E',"GetStrINTinRange","value (%d) > max (%g)",iValue,max);
     return(4);
   }
   *value = (INT) iValue;
@@ -156,12 +156,12 @@ INT GetStrDOUBLEinRange (const char *str, DOUBLE min, DOUBLE max, DOUBLE *value)
   }
   if (fValue<min)
   {
-    PrintErrorMessageF('E',"GetStrDOUBLEinRange","value (%d) < min (%lg)",fValue,min);
+    PrintErrorMessageF('E',"GetStrDOUBLEinRange","value (%d) < min (%g)",fValue,min);
     return(3);
   }
   if (fValue>max)
   {
-    PrintErrorMessageF('E',"GetStrDOUBLEinRange","value (%d) > max (%lg)",fValue,max);
+    PrintErrorMessageF('E',"GetStrDOUBLEinRange","value (%d) > max (%g)",fValue,max);
     return(4);
   }
   *value = (DOUBLE) fValue;

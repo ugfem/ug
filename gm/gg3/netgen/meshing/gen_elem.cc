@@ -217,7 +217,7 @@ int Save_local_Situation(       ARRAY<Point3d> & lpoints,
   file = fopen("grape", "w+");
   fprintf(file, "%d\n", lpoints.Size());
   for (i=1; i<=lpoints.Size(); i++)
-    fprintf(file, "%lf %lf %lf\n", lpoints[i].X(), lpoints[i].Y(), lpoints[i].Z());
+    fprintf(file, "%f %f %f\n", lpoints[i].X(), lpoints[i].Y(), lpoints[i].Z());
   fprintf(file, "%d\n", lfaces.Size());
   for (i=1; i<=lfaces.Size(); i++)
   {
@@ -244,7 +244,7 @@ static Local_Out(ARRAY<Point3d> & lpoints,ARRAY<Element> & lfaces, ARRAY<int> & 
 
   printf("%s\n","points");
   for(i=1; i<=lpoints.Size(); i++)
-    printf("%lf %lf %lf\n",lpoints[i].X(),lpoints[i].Y(),lpoints[i].Z());
+    printf("%f %f %f\n",lpoints[i].X(),lpoints[i].Y(),lpoints[i].Z());
   printf("%s\n","faces");
   for(i=1; i<=lfaces.Size(); i++)
   {
@@ -460,23 +460,23 @@ int Generate_Prism (ARRAY<Point3d> & lpoints, ARRAY<Element> & lfaces,
   {
     printf("%s\n","AL");
     for(i=1; i<=AL.Size(); i++)
-      printf("%lf %lf %lf %d\n",AL[i].X(),AL[i].Y(),AL[i].Z(),id_AL[i]);
+      printf("%f %f %f %d\n",AL[i].X(),AL[i].Y(),AL[i].Z(),id_AL[i]);
     printf("%s\n","BL");
     for(i=1; i<=BL.Size(); i++)
-      printf("%lf %lf %lf %d\n",BL[i].X(),BL[i].Y(),BL[i].Z(),id_BL[i]);
+      printf("%f %f %f %d\n",BL[i].X(),BL[i].Y(),BL[i].Z(),id_BL[i]);
     printf("%s\n","CL");
     for(i=1; i<=CL.Size(); i++)
-      printf("%lf %lf %lf %d\n",CL[i].X(),CL[i].Y(),CL[i].Z(),id_CL[i]);
+      printf("%f %f %f %d\n",CL[i].X(),CL[i].Y(),CL[i].Z(),id_CL[i]);
     printf("%s\n","################");
     printf("%s\n","ASL");
     for(i=1; i<=ASL.Size(); i++)
-      printf("%lf %lf %lf %d\n",ASL[i].X(),ASL[i].Y(),ASL[i].Z(),id_ASL[i]);
+      printf("%f %f %f %d\n",ASL[i].X(),ASL[i].Y(),ASL[i].Z(),id_ASL[i]);
     printf("%s\n","BSL");
     for(i=1; i<=BSL.Size(); i++)
-      printf("%lf %lf %lf %d\n",BSL[i].X(),BSL[i].Y(),BSL[i].Z(),id_BSL[i]);
+      printf("%f %f %f %d\n",BSL[i].X(),BSL[i].Y(),BSL[i].Z(),id_BSL[i]);
     printf("%s\n","CSL");
     for(i=1; i<=CSL.Size(); i++)
-      printf("%lf %lf %lf %d\n",CSL[i].X(),CSL[i].Y(),CSL[i].Z(),id_CSL[i]);
+      printf("%f %f %f %d\n",CSL[i].X(),CSL[i].Y(),CSL[i].Z(),id_CSL[i]);
   }
 
   face_id = Search_PrismTriangle(lpoints,lfaces,ASL,BSL,CSL,id_ASL,id_BSL,id_CSL, prism_flags, id1, id2, id3);
@@ -606,7 +606,7 @@ int Order_List3(ARRAY<Point3d> & lpoints,
   if(DEBUG)
   {
     for(i=1; i<=OL.Size(); i++)
-      printf("%lf %lf %lf %d %lf %lf\n",OL[i].X(),OL[i].Y(),OL[i].Z(),id_OL[i],distance[i],distance1[i]);
+      printf("%f %f %f %d %f %f\n",OL[i].X(),OL[i].Y(),OL[i].Z(),id_OL[i],distance[i],distance1[i]);
     printf("\n");
   }
   return(1);

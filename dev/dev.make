@@ -25,7 +25,7 @@
 DEVICES = META MIF PS
 
 # list of source files
-OBJECTS = devices.c.o
+OBJECTS = ugdevices.c.o
 
 # local C compiler flags
 LCFLAGS = -i "::low"
@@ -35,8 +35,8 @@ all Ÿ {OBJECTS} {DEVICES} dev.make
 	Lib -o "::lib:libdev.a" {OBJECTS}
 
 # compile all source files
-devices.c.o Ÿ  devices.c
-	 C {COPTS} {LCFLAGS} devices.c
+ugdevices.c.o Ÿ  ugdevices.c
+	 C {COPTS} {LCFLAGS} ugdevices.c
 
 # build devices
 META Ÿ

@@ -35,7 +35,7 @@
 #include <math.h>
 #include <time.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "enrol.h"
 #include "compiler.h"
 #include "misc.h"
@@ -560,7 +560,7 @@ static INT AVSCommand (INT argc, char **argv)
           z += scale * VVALUE(NVECTOR(CORNER(el,i)),comp[2]);
                                         #endif
         }
-        sprintf(it,"%d %lg %lg %lg\n",ID(vx),x,y,z);
+        sprintf(it,"%d %g %g %g\n",ID(vx),x,y,z);
         pfile_tagged_puts(pf,it,counter+on);
         counter++;
       }
@@ -759,7 +759,7 @@ static INT AVSCommand (INT argc, char **argv)
           {
             eval_s = es[v]->EvalProc;
             value = eval_s(el,(const DOUBLE **)CornersCoord,LocalCoord);
-            sprintf(it,"%lg ",value);
+            sprintf(it,"%g ",value);
             strcpy(item+ic,it); ic+=strlen(it);
           }
 
@@ -768,7 +768,7 @@ static INT AVSCommand (INT argc, char **argv)
                                         #else
           value = SUBDOMAIN(el);
                                         #endif
-          sprintf(it,"%lg ",value);
+          sprintf(it,"%g ",value);
           strcpy(item+ic,it); ic+=strlen(it);
 
           /* vector components */
@@ -777,9 +777,9 @@ static INT AVSCommand (INT argc, char **argv)
             eval_v = ev[v]->EvalProc;
             eval_v(el,(const DOUBLE **)CornersCoord,LocalCoord,vval);
             if (DIM==2)
-              sprintf(it,"%lg %lg ",vval[0],vval[1]);
+              sprintf(it,"%g %g ",vval[0],vval[1]);
             else
-              sprintf(it,"%lg %lg %lg ",vval[0],vval[1],vval[2]);
+              sprintf(it,"%g %g %g ",vval[0],vval[1],vval[2]);
             strcpy(item+ic,it); ic+=strlen(it);
           }
 
@@ -889,7 +889,7 @@ static INT AVSCommand (INT argc, char **argv)
         {
           eval_s = es_cell[v]->EvalProc;
           value = eval_s(el,(const DOUBLE **)CornersCoord,LocalCoord);
-          sprintf(it,"%lg ",value);
+          sprintf(it,"%g ",value);
           strcpy(item+ic,it); ic+=strlen(it);
         }
 
@@ -899,9 +899,9 @@ static INT AVSCommand (INT argc, char **argv)
           eval_v = ev_cell[v]->EvalProc;
           eval_v(el,(const DOUBLE **)CornersCoord,LocalCoord,vval);
           if (DIM==2)
-            sprintf(it,"%lg %lg ",vval[0],vval[1]);
+            sprintf(it,"%g %g ",vval[0],vval[1]);
           else
-            sprintf(it,"%lg %lg %lg ",vval[0],vval[1],vval[2]);
+            sprintf(it,"%g %g %g ",vval[0],vval[1],vval[2]);
           strcpy(item+ic,it); ic+=strlen(it);
         }
 

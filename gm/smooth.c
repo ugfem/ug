@@ -41,7 +41,7 @@
 #include "ugenv.h"
 #include "algebra.h"
 #include "refine.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "udm.h"
 #include "pargm.h"
 
@@ -871,7 +871,7 @@ static INT LambdaOrthoBnd2D(const ELEMENT *fatherElement, const INT edge, const 
   *lambda = midLambda;
 
   if (iter > 40)
-    printf ("iter %d, midnode-id %ld, midlambda %f, lambda %f,  area %lf\n",
+    printf ("iter %d, midnode-id %ld, midlambda %f, lambda %f,  area %f\n",
             iter,ID(MidNode),midLambda,*lambda,area);
   return(0);
 }

@@ -34,7 +34,7 @@
 #include <time.h>
 #include <math.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "general.h"
 #include "debug.h"
 #include "gm.h"
@@ -446,7 +446,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   s2reach = s*sred;
   if (newton->lineSearch)
     if (newton->displayMode == PCR_FULL_DISPLAY)
-      UserWriteF(" ++ s=%12.4lE Initial nonlinear residual\n",s);
+      UserWriteF(" ++ s=%12.4E Initial nonlinear residual\n",s);
 
   /* check if iteration is necessary */
   if (sc_cmp(defect,abslimit,newton->d)) {
@@ -639,7 +639,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
       /* print results */
       if (newton->lineSearch)
         if (newton->displayMode == PCR_FULL_DISPLAY)
-          UserWriteF(" ++ ls=%2d, s=%12.4lE, rho=%8.4lg, lambda= %8.4lg\n",
+          UserWriteF(" ++ ls=%2d, s=%12.4E, rho=%8.4g, lambda= %8.4g\n",
                      kk,sprime,rho[kk],fabs(la));
 
       if (sprime/s<=1-0.25*fabs(la) || !newton->lineSearch) {
@@ -745,7 +745,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
   res->number_of_line_searches = defect_c;
   for (i=0; i<n_unk; i++) res->last_defect[i] = defect[i];
   if (!res->converged) UserWriteF("NL SOLVER: desired convergence not reached\n");
-  UserWriteF("AVG EXEC TIMES: DEF[%2d]=%10.4lg JAC[%2d]=%10.4lg LIN[%2d]=%10.4lg\n",
+  UserWriteF("AVG EXEC TIMES: DEF[%2d]=%10.4g JAC[%2d]=%10.4g LIN[%2d]=%10.4g\n",
              defect_c,defect_t/defect_c,newton_c,newton_t/newton_c,linear_c,linear_t/linear_c);
   res->exec_time = defect_t+newton_t+linear_t;
 

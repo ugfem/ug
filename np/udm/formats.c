@@ -32,7 +32,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "enrol.h"
 #include "compiler.h"
 #include "misc.h"
@@ -60,8 +60,8 @@
 #define MAX_PRINT_SYM                                   5
 
 /* format for PrintVectorData and PrintMatrixData */
-#define VFORMAT                                                 " %c=%11.4lE"
-#define MFORMAT                                                 " %c%c=%11.4lE"
+#define VFORMAT                                                 " %c=%11.4E"
+#define MFORMAT                                                 " %c%c=%11.4E"
 
 /* seperators */
 #define NAMESEP                                                 ':'

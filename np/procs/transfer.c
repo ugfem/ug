@@ -34,7 +34,7 @@
 
 #include "general.h"
 #include "debug.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "gm.h"
 #include "formats.h"
 #include "pcr.h"
@@ -503,7 +503,7 @@ INT MinimizeLevel (GRID *theGrid, VECDATA_DESC *c, VECDATA_DESC *b,
     return(1);
   a1 *= a1;                     /* need norm^2 */
   if (display == PCR_FULL_DISPLAY)
-    UserWriteF("       min  %7.4lf\n",1+a0/a1);
+    UserWriteF("       min  %7.4f\n",1+a0/a1);
   if (dscal(mg,lev,lev,ALL_VECTORS,c,1 + a0 / a1))
     return(1);
   if (daxpy(mg,lev,lev,ALL_VECTORS,b,- a0 / a1,t))

@@ -29,7 +29,7 @@
 #include "fileopen.h"
 #include "defaults.h"
 #include "misc.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "lgm_domain.h"
 #include "lgm_transfer.h"
 #include "heaps.h"

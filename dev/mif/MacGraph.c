@@ -67,7 +67,7 @@
 #include "general.h"
 
 /* interface includes */
-#include "devices.h"
+#include "ugdevices.h"
 #include "initdev.h"
 
 /* mif includes */

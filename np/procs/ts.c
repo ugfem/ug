@@ -33,7 +33,7 @@
 #include <time.h>
 #include <math.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "general.h"
 #include "gm.h"
 #include "scan.h"

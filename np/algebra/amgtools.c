@@ -38,7 +38,7 @@
 #include "cmdline.h"
 #include "compiler.h"
 #include "debug.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "evm.h"
 #include "general.h"
 #include "gm.h"

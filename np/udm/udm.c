@@ -34,7 +34,7 @@
 #include "debug.h"
 #include "gm.h"
 #include "ugenv.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "np.h"
 
 #include "udm.h"

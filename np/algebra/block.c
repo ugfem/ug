@@ -29,7 +29,7 @@
 
 #include <math.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "compiler.h"
 #include "gm.h"
 #include "np.h"
@@ -255,7 +255,7 @@ INT InvertSmallBlock (SHORT n, const SHORT *mcomp,
   case 1 :
     if (fabs(mat[mcomp[0]])<SMALL_DET)
     {
-      UserWriteF("n=%d, c0=%d, m[c0]=%lf\n",(int)n,(int)(mcomp[0]),mat[mcomp[0]]);
+      UserWriteF("n=%d, c0=%d, m[c0]=%f\n",(int)n,(int)(mcomp[0]),mat[mcomp[0]]);
       break;                            /* singular */
     }
     invmat[0] = 1.0 / mat[mcomp[0]];

@@ -34,7 +34,7 @@
 #include <ctype.h>
 #include <math.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "enrol.h"
 #include "compiler.h"
 #include "misc.h"

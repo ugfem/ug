@@ -65,7 +65,7 @@
 #include "defaults.h"
 #include "general.h"
 #include "ugenv.h"
-#include "devices.h"
+#include "ugdevices.h"
 
 #include "fileopen.h"
 

@@ -38,7 +38,7 @@
 #include "helpmsg.h"
 #include "defaults.h"
 #include "cmdline.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "misc.h"
 #include "fileopen.h"
 #include "general.h"

@@ -39,7 +39,7 @@
 #include "ugm.h"
 #include "evm.h"
 #include "shapes.h"
-#include "devices.h"
+#include "ugdevices.h"
 
 /****************************************************************************/
 /*																			*/

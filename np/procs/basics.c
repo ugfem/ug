@@ -29,7 +29,7 @@
 
 #include <string.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 
 #include "numproc.h"
 #include "np.h"

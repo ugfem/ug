@@ -35,7 +35,7 @@
 #include <ctype.h>
 #include <math.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "enrol.h"
 #include "compiler.h"
 #include "misc.h"
@@ -249,7 +249,7 @@ static INT TecplotCommand (INT argc, char **argv)
         vc = NVECTOR(CORNER(el,i));
         if (VCFLAG(vc)) continue;                       /* we have this one already */
         SETVCFLAG(vc,1);                                        /* tag vector as visited */
-        fprintf(stream,"%lg ",(double)XC(MYVERTEX(CORNER(el,i))));
+        fprintf(stream,"%g ",(double)XC(MYVERTEX(CORNER(el,i))));
         counter++;                                                              /* count values	*/
         if (counter%VALUES_PER_LINE==0)
           fprintf(stream,"\n");
@@ -269,7 +269,7 @@ static INT TecplotCommand (INT argc, char **argv)
         vc = NVECTOR(CORNER(el,i));
         if (VCFLAG(vc)) continue;                       /* we have this one already */
         SETVCFLAG(vc,1);                                        /* tag vector as visited */
-        fprintf(stream,"%lg ",(double)YC(MYVERTEX(CORNER(el,i))));
+        fprintf(stream,"%g ",(double)YC(MYVERTEX(CORNER(el,i))));
         counter++;                                                              /* count values	*/
         if (counter%VALUES_PER_LINE==0)
           fprintf(stream,"\n");
@@ -290,7 +290,7 @@ static INT TecplotCommand (INT argc, char **argv)
           vc = NVECTOR(CORNER(el,i));
           if (VCFLAG(vc)) continue;                             /* we have this one already */
           SETVCFLAG(vc,1);                                              /* tag vector as visited */
-          fprintf(stream,"%lg ",(double)ZC(MYVERTEX(CORNER(el,i))));
+          fprintf(stream,"%g ",(double)ZC(MYVERTEX(CORNER(el,i))));
           counter++;                                                                    /* count values	*/
           if (counter%VALUES_PER_LINE==0)
             fprintf(stream,"\n");
@@ -329,7 +329,7 @@ static INT TecplotCommand (INT argc, char **argv)
 
           /* call eval function */
           value = eval(el,(const DOUBLE **)CornersCoord,LocalCoord);
-          fprintf(stream,"%lg ",value);
+          fprintf(stream,"%g ",value);
           counter++;                                                                    /* count values	*/
           if (counter%VALUES_PER_LINE==0)
             fprintf(stream,"\n");

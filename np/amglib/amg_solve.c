@@ -44,6 +44,9 @@
 #include "amg_coarsen.h"
 #include "amg_solve.h"
 
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -87,9 +90,6 @@ static IterProcPtr preconditioner;
 /*																			*/
 /****************************************************************************/
 
-/* RCS_ID
-   $Header$
- */
 
 /****************************************************************************/
 /*																			*/
@@ -462,7 +462,7 @@ static int ls_solve (AMG_VECTOR *x_in, AMG_VECTOR *b_in)
   dnorm=dnorm0=dnormlast=sqrt(AMG_ddot(d[0],d[0]));
   if (sc->verbose>0)
   {
-    sprintf(buf,"%4d %12.4lE \n",0,dnorm);
+    sprintf(buf,"%4d %12.4E \n",0,dnorm);
     AMG_Print(buf);
   }
   for (i=0; i<sc->maxit; i++)
@@ -473,7 +473,7 @@ static int ls_solve (AMG_VECTOR *x_in, AMG_VECTOR *b_in)
     dnorm=sqrt(AMG_ddot(d[0],d[0]));
     if (sc->verbose>0)
     {
-      sprintf(buf,"%4d %12.4lE %12.4lg\n",i+1,dnorm,dnorm/dnormlast);
+      sprintf(buf,"%4d %12.4E %12.4g\n",i+1,dnorm,dnorm/dnormlast);
       AMG_Print(buf);
     }
     dnormlast=dnorm;
@@ -614,7 +614,7 @@ static int cg_solve (AMG_VECTOR *x, AMG_VECTOR *b)
   dnorm=dnorm0=dnormlast=sqrt(AMG_ddot(r[0],r[0]));
   if (sc->verbose>0)
   {
-    sprintf(buf,"%4d %12.4lE \n",0,dnorm);
+    sprintf(buf,"%4d %12.4E \n",0,dnorm);
     AMG_Print(buf);
   }
   if (dnorm<sc->dnorm_min) return(0);
@@ -635,7 +635,7 @@ static int cg_solve (AMG_VECTOR *x, AMG_VECTOR *b)
     dnorm=sqrt(AMG_ddot(r[0],r[0]));
     if (sc->verbose>0)
     {
-      sprintf(buf,"%4d %12.4lE %12.4lg\n",i+1,dnorm,dnorm/dnormlast);
+      sprintf(buf,"%4d %12.4E %12.4g\n",i+1,dnorm,dnorm/dnormlast);
       AMG_Print(buf);
     }
     dnormlast=dnorm;
@@ -772,7 +772,7 @@ static int bcgs_solve (AMG_VECTOR *x, AMG_VECTOR *b)
   dnorm=dnorm0=dnormlast=sqrt(AMG_ddot(r[0],r[0]));
   if (sc->verbose>0)
   {
-    sprintf(buf,"%4d %12.4lE \n",0,dnorm);
+    sprintf(buf,"%4d %12.4E \n",0,dnorm);
     AMG_Print(buf);
   }
   if (dnorm<sc->dnorm_min) return(0);
@@ -811,7 +811,7 @@ static int bcgs_solve (AMG_VECTOR *x, AMG_VECTOR *b)
     {
       if (sc->verbose>0)
       {
-        sprintf(buf,"%4d %12.4lE %12.4lg\n",i+1,dnorm,dnorm/dnormlast);
+        sprintf(buf,"%4d %12.4E %12.4g\n",i+1,dnorm,dnorm/dnormlast);
         AMG_Print(buf);
       }
       break;
@@ -829,7 +829,7 @@ static int bcgs_solve (AMG_VECTOR *x, AMG_VECTOR *b)
     dnorm=sqrt(AMG_ddot(r[0],r[0]));
     if (sc->verbose>0)
     {
-      sprintf(buf,"%4d %12.4lE %12.4lg\n",i+1,dnorm,dnorm/dnormlast);
+      sprintf(buf,"%4d %12.4E %12.4g\n",i+1,dnorm,dnorm/dnormlast);
       AMG_Print(buf);
     }
     dnormlast=dnorm;

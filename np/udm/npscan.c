@@ -39,7 +39,7 @@
 
 #include "gm.h"
 #include "ugenv.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "evm.h"
 
 #include "formats.h"

@@ -303,10 +303,10 @@
                                         *c_++ += s;};\
                                 } }
 
-#define BLOCK_WRITEOUT(A) {if (scalar) UserWriteF("A = %lg\n",*A);\
+#define BLOCK_WRITEOUT(A) {if (scalar) UserWriteF("A = %g\n",*A);\
                            else {register int i,j,m=0; register DOUBLE *A_=A;\
                                  for (i=blockN; i>0; i--) {\
-                                   for (j=blockN; j>0; j--) UserWriteF("A[%d] = %lg\n",m++,*A_++);\
+                                   for (j=blockN; j>0; j--) UserWriteF("A[%d] = %g\n",m++,*A_++);\
                                    UserWrite("\n");\
                                  } } }
 

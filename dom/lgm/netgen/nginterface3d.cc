@@ -330,7 +330,7 @@ int surfacemeshing :: Write_Surface_Grid ()
   fprintf(file,"%s\n","surfacemesh");
   fprintf(file,"%d\n",points.Size());
   for(i=1; i<=points.Size(); i++)
-    fprintf(file,"%lf %lf %lf\n",points[i].X(),points[i].Y(),points[i].Z());
+    fprintf(file,"%f %f %f\n",points[i].X(),points[i].Y(),points[i].Z());
   fprintf(file,"%d\n",elements.Size());
   for(i=1; i<=elements.Size(); i++)
     fprintf(file,"%d %d %d\n",elements[i].PNum(1)-1,elements[i].PNum(2)-1,elements[i].PNum(3)-1);

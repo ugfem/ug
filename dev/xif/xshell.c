@@ -57,7 +57,7 @@
 
 /* interface includes */
 #include "compiler.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "initdev.h"
 #include "defaults.h"
 #include "general.h"

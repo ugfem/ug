@@ -36,7 +36,7 @@
 #include "gm.h"       /* for data structure               */
 #include "evm.h"      /* for data structure               */
 #include "general.h"
-#include "devices.h"
+#include "ugdevices.h"
 
 #include "ugblas.h"
 #include "disctools.h"
@@ -2257,7 +2257,7 @@ static void PrintSingleVectorX (const VECTOR *v, const VECDATA_DESC *X, INT vcla
       i += sprintf(buffer+i,"        ");
   }
   for (j=0; j<ncomp; j++)
-    i += sprintf(buffer+i,"u[%d]=%15.8lf ",j,VVALUE(v,comp+j));
+    i += sprintf(buffer+i,"u[%d]=%15.8f ",j,VVALUE(v,comp+j));
   i += sprintf(buffer+i,"   cl %d %d sk ",VCLASS(v),VNCLASS(v));
   for (j=0; j<ncomp; j++)
     i += sprintf(buffer+i,"%d ",((VECSKIP(v) & (1<<j))!=0));
@@ -2316,7 +2316,7 @@ INT PrintSVector (MULTIGRID *mg, VECDATA_DESC *X)
       if (DIM == 3)
         UserWriteF("z=%5.2f ",pos[2]);
       for (j=0; j<ncomp; j++)
-        UserWriteF("u[%d]=%15.8lf ",j,VVALUE(v,comp+j));
+        UserWriteF("u[%d]=%15.8f ",j,VVALUE(v,comp+j));
       UserWriteF("   cl %d %d sk ",VCLASS(v),VNCLASS(v));
       for (j=0; j<ncomp; j++)
         UserWriteF("%d ",((VECSKIP(v) & (1<<j))!=0));
@@ -2328,7 +2328,7 @@ INT PrintSVector (MULTIGRID *mg, VECDATA_DESC *X)
       if (DIM == 3)
         UserWriteF("z=%5.2f ",pos[2]);
       for (j=0; j<ncomp; j++)
-        UserWriteF("u[%d]=%15.8lf ",j,VVALUE(v,comp+j));
+        UserWriteF("u[%d]=%15.8f ",j,VVALUE(v,comp+j));
       UserWriteF("   cl %d %d sk ",VCLASS(v),VNCLASS(v));
       for (j=0; j<ncomp; j++)
         UserWriteF("%d ",((VECSKIP(v) & (1<<j))!=0));
@@ -2387,7 +2387,7 @@ INT PrintMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
           UserWrite("wrong type\n");
         Mcomp = MD_MCMP_OF_RT_CT(Mat,rtype,ctype,i*ccomp);
         for (j=0; j<ccomp; j++)
-          UserWriteF("%4.2lf ",MVALUE(m,Mcomp+j));
+          UserWriteF("%4.2f ",MVALUE(m,Mcomp+j));
       }
       UserWrite("\n");
     }
@@ -2416,7 +2416,7 @@ INT PrintTMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
         rcomp = MD_ROWS_IN_RT_CT(Mat,rtype,ctype);
         Mcomp = MD_MCMP_OF_RT_CT(Mat,rtype,ctype,0);
         for (j=0; j<rcomp; j++)
-          UserWriteF("%4.2lf ",MVALUE(MADJ(m),Mcomp+j*ccomp+i));
+          UserWriteF("%4.2f ",MVALUE(MADJ(m),Mcomp+j*ccomp+i));
       }
       UserWrite("\n");
     }
@@ -2458,7 +2458,7 @@ INT PrintDiagMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
         i += sprintf(buffer+i,"        ");
     }
     for (j=0; j<ccomp; j++)
-      i += sprintf(buffer+i,"d[%d]=%15.8lf ",j,
+      i += sprintf(buffer+i,"d[%d]=%15.8f ",j,
                    MVALUE(m,Mcomp+j*ccomp+j));
     i += sprintf(buffer+i,"\n");
     UserWrite(buffer);
@@ -2515,7 +2515,7 @@ INT PrintIMatrix (GRID *g, VECDATA_DESC *V, INT vclass, INT vnclass)
         ccomp = VD_NCMPS_IN_TYPE(V,MDESTTYPE(m));
         Mcomp = i * ccomp;
         for (j=0; j<ccomp; j++)
-          UserWriteF("%4.2lf ",MVALUE(m,i+j*rcomp));
+          UserWriteF("%4.2f ",MVALUE(m,i+j*rcomp));
       }
       UserWrite("\n");
     }

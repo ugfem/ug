@@ -47,7 +47,7 @@
 #endif
 
 /* devices module */
-#include "devices.h"
+#include "ugdevices.h"
 
 /* domain module */
 #include "domain.h"

@@ -35,7 +35,7 @@
 
 #include "compiler.h"
 #include "fileopen.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "defaults.h"
 #include "misc.h"
 #include "lgm_transfer.h"

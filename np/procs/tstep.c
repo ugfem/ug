@@ -33,7 +33,7 @@
 #include <time.h>
 #include <math.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "general.h"
 #include "debug.h"
 #include "ugstruct.h"
@@ -215,7 +215,7 @@ INT BE_TimeInit (NP_T_STEP *tstep, INT level, DOUBLE t, VECDATA_DESC *sol, INT *
   if ((*tass->TAssembleSolution)(tass,0,level,t,sol,res)) return(1);
 
   /* write time to shell */
-  sprintf(buffer,"%12.4lE",t);
+  sprintf(buffer,"%12.4E",t);
   SetStringVar(":BE:T0",buffer);
 
   *res = 0;
@@ -323,9 +323,9 @@ static INT BE_TimeStep (NP_T_STEP *tstep, INT level, DOUBLE t0, VECDATA_DESC *so
   if ((*tass->TAssemblePostProcess)(tass,0,level,t1,t0,0.0,sol_t1,sol_t0,NULL,&res)) NP_RETURN(1,res);
 
   /* write time to shell */
-  sprintf(buffer,"%12.4lE",t0);
+  sprintf(buffer,"%12.4E",t0);
   SetStringVar(":BE:T0",buffer);
-  sprintf(buffer,"%12.4lE",t1);
+  sprintf(buffer,"%12.4E",t1);
   SetStringVar(":BE:T1",buffer);
 
   if (be->displayMode == PCR_RED_DISPLAY || be->displayMode == PCR_FULL_DISPLAY )

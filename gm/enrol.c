@@ -53,7 +53,7 @@
 #include "debug.h"
 
 /* devices module */
-#include "devices.h"
+#include "ugdevices.h"
 
 /* grid manager module */
 #include "gm.h"

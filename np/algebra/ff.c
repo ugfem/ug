@@ -38,7 +38,7 @@
 #include "gm.h"          /* for data structure               */
 #include "ugstruct.h"    /* for GetStringValue               */
 #include "misc.h"        /* for MIN, MAX, PI, ...            */
-#include "devices.h"     /* for UserWrite, PrintErrorMessage */
+#include "ugdevices.h"     /* for UserWrite, PrintErrorMessage */
 #include "commands.h"    /* for GetCurrentMultigrid          */
 #include "debug.h"
 
@@ -1488,18 +1488,18 @@ INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *
     new_norm = CalculateDefectAndNormBS( bv, bvd, bvdf, f_comp, f_comp, K_comp, cor_comp );
 
 #ifdef __TWODIM__
-    UserWriteF( "Wavenumber = %2d new defect = %12lg conv. rate = %12lg\n", 1<<i, new_norm, new_norm/step_norm );
+    UserWriteF( "Wavenumber = %2d new defect = %12g conv. rate = %12g\n", 1<<i, new_norm, new_norm/step_norm );
 #endif
 
 #ifdef __THREEDIM__
-    UserWriteF( "Wnr plane = %2d Wnr line = %2d new defect = %12lg conv. rate = %12lg\n", 1<<j, 1<<i, new_norm, new_norm/step_norm );
+    UserWriteF( "Wnr plane = %2d Wnr line = %2d new defect = %12g conv. rate = %12g\n", 1<<j, 1<<i, new_norm, new_norm/step_norm );
 #endif
   }               /* for */
 
-  UserWriteF( "new defect = %4lg conv. rate = %12lg\n", new_norm, new_norm/old_norm );
+  UserWriteF( "new defect = %4g conv. rate = %12g\n", new_norm, new_norm/old_norm );
 }         /* while */
 
-UserWriteF( "avarage of convergency rate ( %d iterations) = %12lg\n", it, pow( new_norm / start_norm, 1.0 / (DOUBLE)it ) );
+UserWriteF( "avarage of convergency rate ( %d iterations) = %12g\n", it, pow( new_norm / start_norm, 1.0 / (DOUBLE)it ) );
 
 return(NUM_OK);
 }

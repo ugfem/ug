@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "ugenv.h"
 
 #include "scan.h"

@@ -34,7 +34,7 @@
 #include <assert.h>
 
 #include "compiler.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "misc.h"
 #include "defaults.h"
 #include "general.h"

@@ -40,7 +40,7 @@
 #endif
 
 #ifndef __DEVICESH__
-#include "devices.h"
+#include "ugdevices.h"
 #endif
 
 /****************************************************************************/

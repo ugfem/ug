@@ -34,7 +34,7 @@
 #define __WPM__
 
 #include "compiler.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "ugenv.h"
 #include "gm.h"
 #include "num.h"

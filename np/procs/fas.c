@@ -36,7 +36,7 @@
 #include <time.h>
 #include <assert.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "general.h"
 #include "debug.h"
 #include "gm.h"

@@ -42,7 +42,7 @@
 #include "debug.h"
 
 /* dev modules */
-#include "devices.h"
+#include "ugdevices.h"
 
 /* domain module */
 #include "std_domain.h"

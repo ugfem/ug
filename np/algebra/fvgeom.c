@@ -33,7 +33,7 @@
 #include <ctype.h>
 #include <math.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "enrol.h"
 #include "compiler.h"
 #include "misc.h"
@@ -354,7 +354,7 @@ INT EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
   IFDEBUG(np,0)
   for (k=0; k<coe; k++)               /* check sign */
     if (SCV_VOL(FVG_SCV(geo,k))<0.0)
-      UserWriteF("w: scv negative e=%5d k=%1d v=%10.4lg\n",ID(e),k,SCV_VOL(FVG_SCV(geo,k)));
+      UserWriteF("w: scv negative e=%5d k=%1d v=%10.4g\n",ID(e),k,SCV_VOL(FVG_SCV(geo,k)));
   ENDDEBUG
 
   /* sub control volume faces */

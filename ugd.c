@@ -45,7 +45,7 @@
 #include "compiler.h"
 #endif
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "sockcomm.h"
 
 #include "debug.h"

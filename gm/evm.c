@@ -37,7 +37,7 @@
 #include "misc.h"
 #include "evm.h"
 #include "general.h"
-#include "devices.h"
+#include "ugdevices.h"
 
 /****************************************************************************/
 /*																			*/

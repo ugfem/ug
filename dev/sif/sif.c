@@ -36,7 +36,7 @@
 
 /* interface includes */
 #include "compiler.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "initdev.h"
 #include "general.h"
 

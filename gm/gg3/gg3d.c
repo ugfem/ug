@@ -33,7 +33,7 @@
 #include <math.h>
 
 #include "compiler.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "defaults.h"
 #include "gm.h"
 #include "evm.h"
@@ -171,7 +171,7 @@ int AddInnerNode (double x, double y, double z)
 {
   DOUBLE xc[3], nxc[3];
 
-  PRINTDEBUG(dom,1,(" add inner node %4d %6.3lf %6.3lf %6.3lf\n",
+  PRINTDEBUG(dom,1,(" add inner node %4d %6.3f %6.3f %6.3f\n",
                     nodeid,x,y,z));
 
   xc[0] = x;
@@ -414,7 +414,7 @@ static INT Write_SurfaceMesh(MESH *mesh, MULTIGRID *theMG)
 
       MM_TIMES_V_DIM(scale, global, newglobal);
 
-      fprintf(stream,"%lf %lf %lf\n",newglobal[0], newglobal[1], newglobal[2]);
+      fprintf(stream,"%f %f %f\n",newglobal[0], newglobal[1], newglobal[2]);
     }
   }
 
@@ -493,11 +493,11 @@ static INT Write_VolumeMesh(MESH *mesh, MULTIGRID *theMG)
     {
       if (BNDP_Global(mesh->theBndPs[i],global))
         return (1);
-      fprintf(stream,"%20.16lf %20.16lf %20.16lf\n",global[0], global[1], global[2]);
+      fprintf(stream,"%20.16f %20.16f %20.16f\n",global[0], global[1], global[2]);
     }
   }
   for (i=0; i<nInnP[subdomain]; i++)
-    fprintf(stream,"%20.16lf %20.16lf %20.16lf\n",Position[subdomain][i][0], Position[subdomain][i][1], Position[subdomain][i][2]);
+    fprintf(stream,"%20.16f %20.16f %20.16f\n",Position[subdomain][i][0], Position[subdomain][i][1], Position[subdomain][i][2]);
 
   fclose(stream);
   return(0);
@@ -534,7 +534,7 @@ static INT Get_Ang(DOUBLE *n0, DOUBLE *n1)
 
   s = V_DIM_SCAL_PROD(n0, n1);
   s=MIN(1,s); s=MAX(-1,s);
-  /*	printf("%lf %lf\n", s, acos(s));*/
+  /*	printf("%f %f\n", s, acos(s));*/
   /*	if(s>1-0.00001)
                   angle = 3.141592654;
           else

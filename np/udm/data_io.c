@@ -37,7 +37,7 @@
 #include "ugstruct.h"
 #include "general.h"
 #include "debug.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "gm.h"
 #include "algebra.h"
 #include "misc.h"

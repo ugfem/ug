@@ -35,7 +35,7 @@
 #include "compiler.h"
 #include "disctools.h"
 #include "debug.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "general.h"
 #include "gm.h"
 #include "misc.h"
@@ -1330,8 +1330,8 @@ INT gs_solveBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
 
     if ( verbose )
     {
-      UserWriteF( "gauss seidel avarage of convergency rate ( %d iterations) = %12lg, end defect = %g\n", it, pow( new_norm / start_norm, 1.0 / (DOUBLE)it ), new_norm );
-      printf( "gauss seidel avarage of convergency rate ( %d iterations) = %12lg, end defect = %g\n", it, pow( new_norm / start_norm, 1.0 / (DOUBLE)it ), new_norm );
+      UserWriteF( "gauss seidel avarage of convergency rate ( %d iterations) = %12g, end defect = %g\n", it, pow( new_norm / start_norm, 1.0 / (DOUBLE)it ), new_norm );
+      printf( "gauss seidel avarage of convergency rate ( %d iterations) = %12g, end defect = %g\n", it, pow( new_norm / start_norm, 1.0 / (DOUBLE)it ), new_norm );
     }
   }
 

@@ -48,7 +48,7 @@
 #include "general.h"
 
 /* dev module */
-#include "devices.h"
+#include "ugdevices.h"
 #include "debug.h"
 
 /* ui module */
@@ -2443,7 +2443,7 @@ static INT InterpretString (void)
       switch (result.ro.type)
       {
       case NUMBERID :
-        sprintf(valueStr,"%-.14lg",(double)result.ro.value);
+        sprintf(valueStr,"%-.14g",(double)result.ro.value);
                                         #ifdef ModelP
         PRINTDEBUG(ui,2,("%2d: set NUMBERID=%s\n",me,valueStr))
         sprintf(execCmdBuffer,"set %s %s",buffer,valueStr);

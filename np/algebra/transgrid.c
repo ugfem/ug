@@ -33,11 +33,11 @@
 #include <assert.h>
 
 #include "compiler.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "misc.h"
 #include "gm.h"
 #include "algebra.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "evm.h"
 #include "shapes.h"
 #include "debug.h"
@@ -2148,7 +2148,7 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
       Dcoarse = &(MVALUE(VSTART(vc),0));
       if (InvertSmallBlock(ncomp,comps,Dcoarse,Dcoarseinv)!=NUM_OK)
       {
-        UserWriteF("ncomp=%d, comps[0]=%d, Dcoarse=%lf\n",ncomp,comps[0],*Dcoarse);
+        UserWriteF("ncomp=%d, comps[0]=%d, Dcoarse=%f\n",ncomp,comps[0],*Dcoarse);
         REP_ERR_RETURN(1);
       }
       for (i=0; i<ncomp; i++)
@@ -2234,7 +2234,7 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
   UserWriteF("---- LEVEL %d ----\n",GLEVEL(FineGrid));
   for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {
-    UserWriteF("*NODE (%12.4lg,%12.4lg) %ld\n",(DOUBLE)XC(MYVERTEX(theNode)),
+    UserWriteF("*NODE (%12.4g,%12.4g) %ld\n",(DOUBLE)XC(MYVERTEX(theNode)),
                (DOUBLE)YC(MYVERTEX(theNode)),ID(theNode));
 
     v = NVECTOR(theNode);
@@ -2244,10 +2244,10 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
       vecskip = VECSKIP(vc);
       for (i=0; i<ncomp; i++)
       {
-        UserWriteF(" DEST (%12.4lg,%12.4lg) %5ld, ",
+        UserWriteF(" DEST (%12.4g,%12.4g) %5ld, ",
                    (DOUBLE)XC(MYVERTEX(VMYNODE(vc))),(DOUBLE)YC(MYVERTEX(VMYNODE(vc))),ID(VMYNODE(vc)));
         for (k=0; k<ncomp*ncomp; k++)
-          UserWriteF(" %12.4lE",MVALUE(im,k));
+          UserWriteF(" %12.4E",MVALUE(im,k));
         UserWrite("\n");
       }
     }

@@ -36,7 +36,7 @@
 #include "compiler.h"
 #include "heaps.h"
 #include "bio.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "domain.h"
 #include "lgm_load.h"
 #include "lgm_domain.h"

@@ -36,7 +36,7 @@
 
 #include "debug.h"
 #include "ugstruct.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "debug.h"
 #include "gm.h"
 #include "ugblas.h"
@@ -406,7 +406,7 @@ static INT Ortho (MULTIGRID *theMG, INT level, INT m,
     if (ddot(theMG,0,level,ON_SURFACE,ev[i],b,&scalP) != NUM_OK)
       return(1);
     if (display == PCR_FULL_DISPLAY)
-      UserWriteF(" %lf",scalP);
+      UserWriteF(" %f",scalP);
     if (daxpy(theMG,0,level,ALL_VECTORS,ev[m],-scalP,ev[i]) != NUM_OK)
       return(1);
   }
@@ -750,7 +750,7 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
       return(1);
 
     if (np->display == PCR_FULL_DISPLAY)
-      UserWriteF("Rayleigh quotient %lf\n",rq);
+      UserWriteF("Rayleigh quotient %f\n",rq);
     if (np->Orthogonalize) {
       if (ABS(a[1]) <= VERY_SMALL) NP_RETURN(1,ewresult->error_code);
       s = 1.0 / sqrt(ABS(a[1]));
@@ -899,7 +899,7 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
                    &ewresult->error_code))
         return(1);
       if (np->display == PCR_FULL_DISPLAY)
-        UserWriteF("Rayleigh quotient %lf\n",rq);
+        UserWriteF("Rayleigh quotient %f\n",rq);
       if (np->Orthogonalize) {
         if (ABS(a[1]) <= VERY_SMALL) NP_RETURN(1,ewresult->error_code);
         s = 1.0 / sqrt(ABS(a[1]));

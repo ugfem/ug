@@ -1149,7 +1149,7 @@ INT SetStringValue (const char *name, double value)
 {
   char buffer[30];
 
-  sprintf(buffer,"%-.14lg",value);
+  sprintf(buffer,"%-.14g",value);
   return(SetStringVar(name,buffer));
 }
 

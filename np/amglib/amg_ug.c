@@ -44,7 +44,7 @@
 #include <time.h>
 
 #include "compiler.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "gm.h"
 #include "misc.h"
 #include "evm.h"
@@ -354,7 +354,7 @@ else
   theAMGC->AMG_Build_failed=0;
   CSTOP(ti,ii);
   if (theAMGC->sc.verbose>0)
-    UserWriteF("AMG : L=%2d BUILD=%10.4lg\n",level,ti);
+    UserWriteF("AMG : L=%2d BUILD=%10.4g\n",level,ti);
 
   return(0);       /* ok, matrix is set up */
 
@@ -558,11 +558,11 @@ static INT AMGSolver (NP_LINEAR_SOLVER *theNP, INT level,
   if (theAMGC->sc.verbose>0)
   {
     if (lresult->number_of_linear_iterations != 0)
-      UserWriteF("AMG : L=%2d N=%2d TSOLVE=%10.4lg TIT=%10.4lg\n",level,
+      UserWriteF("AMG : L=%2d N=%2d TSOLVE=%10.4g TIT=%10.4g\n",level,
                  lresult->number_of_linear_iterations,ti,
                  ti/lresult->number_of_linear_iterations);
     else
-      UserWriteF("AMG : L=%2d N=%2d TSOLVE=%10.4lg\n",level,
+      UserWriteF("AMG : L=%2d N=%2d TSOLVE=%10.4g\n",level,
                  lresult->number_of_linear_iterations,ti);
   }
 

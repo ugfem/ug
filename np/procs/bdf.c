@@ -33,7 +33,7 @@
 #include <time.h>
 #include <math.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "general.h"
 #include "debug.h"
 #include "ugstruct.h"
@@ -343,10 +343,10 @@ INT BDFTimeInit (NP_T_SOLVER *ts, INT level, INT *res)
     }
 
   /* write time to shell */
-  sprintf(buffer,"%12.4lE",bdf->t_0);
+  sprintf(buffer,"%12.4E",bdf->t_0);
   SetStringVar("TIME",buffer);
   SetStringVar(":BDF:TIME",buffer);
-  sprintf(buffer,"%12.4lE",bdf->dt);
+  sprintf(buffer,"%12.4E",bdf->dt);
   SetStringVar("TIMESTEP",buffer);
   SetStringVar(":BDF:DT",buffer);
   SetStringVar(":BDF:SDT",buffer);
@@ -675,20 +675,20 @@ Continue:
   bdf->step++;
 
   /* write time to shell */
-  sprintf(buffer,"%12.4lE",bdf->t_0);
+  sprintf(buffer,"%12.4E",bdf->t_0);
   SetStringVar("TIME",buffer);
   SetStringVar(":BDF:TIME",buffer);
-  sprintf(buffer,"%12.4lE",bdf->dt);
+  sprintf(buffer,"%12.4E",bdf->dt);
   SetStringVar("TIMESTEP",buffer);
   SetStringVar(":BDF:DT",buffer);
   if (bdf->exec_time!=0.0)
   {
-    sprintf(buffer,"%12.4lE",bdf->t_0/bdf->exec_time);
+    sprintf(buffer,"%12.4E",bdf->t_0/bdf->exec_time);
     SetStringVar(":BDF:AEFF",buffer);
   }
   if (nlresult.exec_time!=0.0)
   {
-    sprintf(buffer,"%12.4lE",bdf->dt/nlresult.exec_time);
+    sprintf(buffer,"%12.4E",bdf->dt/nlresult.exec_time);
     SetStringVar(":BDF:EFF",buffer);
   }
 
@@ -841,7 +841,7 @@ output:         /* output */
   }
 
   /* save suggested timestep */
-  sprintf(buffer,"%12.4lE",bdf->dt);
+  sprintf(buffer,"%12.4E",bdf->dt);
   SetStringVar(":BDF:SDT",buffer);
 
   return(0);

@@ -42,7 +42,7 @@
 #include "ugstruct.h"
 
 /* dev */
-#include "devices.h"
+#include "ugdevices.h"
 #ifdef __MPW32__
 #include "MacGui.h"
 #endif
@@ -2674,7 +2674,7 @@ static INT PrintFront(MULTIGRID *theMG)
       for(l=0; l<theFL->nFrontcomp; l++)
       {
         theVertex = MYVERTEX(FRONTN(theFC));
-        printf("%lf %lf\n", XC(theVertex), YC(theVertex));
+        printf("%f %f\n", XC(theVertex), YC(theVertex));
         theFC = SUCCFC(theFC);
       }
       printf("\n");

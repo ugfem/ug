@@ -23,7 +23,7 @@
 #include <assert.h>
 
 #include "general.h"
-#include "devices.h"
+#include "ugdevices.h"
 
 #include "gm.h"
 #include "ugm.h"

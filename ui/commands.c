@@ -59,7 +59,7 @@
 #include "general.h"
 
 /* devices module */
-#include "devices.h"
+#include "ugdevices.h"
 
 /* grid manager module */
 #include "gm.h"
@@ -4447,7 +4447,7 @@ static int WriteMatrix (char *name, int n, int *ia, int *ja, double *a)
     fprintf(stream," %d ",ja[i]);
   fprintf(stream,"\n");
   for (i=0; i<ia[n]; i++)
-    fprintf(stream," %lf ",a[i]);
+    fprintf(stream," %f ",a[i]);
   fprintf(stream,"\n");
   fclose(stream);
 
@@ -4468,7 +4468,7 @@ static int WriteMatrixfmt (char *name, int n, int *ia, int *ja, double *a,
   }
   for (i=0; i<ia[n]; i++) {
     if ((i%3) == 0) fprintf(stream,"\n");
-    fprintf(stream,"%6d %18.9lf",ja[i]+inc,a[i]);
+    fprintf(stream,"%6d %18.9f",ja[i]+inc,a[i]);
   }
   fprintf(stream,"\n");
   fclose(stream);
@@ -10890,11 +10890,11 @@ static INT MFLOPSCommand (INT argc, char **argv)
   if (FreeVD(theMG,l,l,y)) REP_ERR_RETURN(CMDERRORCODE);
 
   nop = 2*n*ncomp*loop;
-  UserWriteF("DDOT t=%12.4lE op=%12.4lE MFLOPs=%12.6lf\n",
+  UserWriteF("DDOT t=%12.4E op=%12.4E MFLOPs=%12.6f\n",
              (double)time_ddot,(double)nop,
              (double)0.000001*nop/time_ddot);
   nop = m*ncomp*ncomp*2*loop;
-  UserWriteF("MMUL t=%12.4lE op=%12.4lE MFLOPs=%12.6lf\n",
+  UserWriteF("MMUL t=%12.4E op=%12.4E MFLOPs=%12.6f\n",
              (double)time_matmul,(double)nop,
              (double)0.000001*nop/time_matmul);
 
@@ -14045,7 +14045,7 @@ static DumpAlgCommand(INT argc, char **argv)
                       {
                           for (j=0; j<MD_COLS_IN_RT_CT(m,VTYPE(vec),VTYPE(MDEST(mat))); j+
      +)
-                              fprintf(fptr,"\t%.9le",(double)MVALUE(mat,MD_IJ_CMP_OF_RT_CT
+                              fprintf(fptr,"\t%.9e",(double)MVALUE(mat,MD_IJ_CMP_OF_RT_CT
           (m,VTYPE(vec),VTYPE(MDEST(mat)),i,j)));
                           fprintf(fptr,"\n\t");
                       }

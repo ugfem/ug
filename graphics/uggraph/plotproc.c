@@ -37,7 +37,7 @@
 #include "gm.h"
 #include "ugenv.h"
 #include "evm.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "shapes.h"
 #include "num.h"
 

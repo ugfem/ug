@@ -29,7 +29,7 @@
 
 #include <math.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "compiler.h"
 #include "gm.h"
 #include "np.h"

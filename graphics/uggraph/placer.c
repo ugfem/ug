@@ -415,7 +415,7 @@ static double Place (PRectPtr *order, int n, PRect *win)
 
 
   /*
-     printf("win=%lf a_sum=%lf  iod=%lf eval=%lf\n",
+     printf("win=%f a_sum=%f  iod=%f eval=%f\n",
      win->sx*win->sy, area_sum*scale_factor,
      input_order_dist*INPUT_ORDER_WEIGHT,
      eval_func);

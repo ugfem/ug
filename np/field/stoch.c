@@ -42,7 +42,7 @@
 #include "general.h"
 
 /* dev module */
-#include "devices.h"
+#include "ugdevices.h"
 #include "debug.h"
 
 /* np module */

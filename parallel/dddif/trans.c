@@ -41,7 +41,7 @@
 #include "refine.h"
 #include "algebra.h"
 #include "debug.h"
-#include "devices.h"
+#include "ugdevices.h"
 
 /****************************************************************************/
 /*																			*/

@@ -42,7 +42,7 @@
 #include "disctools.h"
 #include "general.h"
 #include "debug.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "ugstruct.h"
 
 #include "error.h"
@@ -562,9 +562,9 @@ static INT IndicatorDisplay (NP_BASE *theNumProc)
   UserWriteF(DISPLAY_NP_FORMAT_SI,"from level",(int)theNP->from);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"to level",(int)theNP->to);
   if (theNP->refine < 1.0)
-    UserWriteF("%-16.13s = %-12.9lf\n","refine",theNP->refine);
+    UserWriteF("%-16.13s = %-12.9f\n","refine",theNP->refine);
   if (theNP->coarse > 0.0)
-    UserWriteF("%-16.13s = %-12.9lf\n","coarse",theNP->coarse);
+    UserWriteF("%-16.13s = %-12.9f\n","coarse",theNP->coarse);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"p",(int)theNP->project);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"r",(int)theNP->update);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"i",(int)theNP->interpolate);

@@ -38,7 +38,7 @@
 #include "misc.h"
 #include "ugenv.h"
 #include "cmdline.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "general.h"
 
 /****************************************************************************/

@@ -36,7 +36,7 @@
 
 #include "defaults.h"
 #include "fileopen.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "initdev.h"
 #include "general.h"
 

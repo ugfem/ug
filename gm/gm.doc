@@ -774,7 +774,7 @@ static INT PrintFullScalarNodeData (void *data, const char *indent, char *s)
     DOUBLE *vector;
    
     vector = (DOUBLE *) data;
-    sprintf(s,"  x=%11.4lE   b=%11.4lE   v=%11.4lE  t=%11.4lE",
+    sprintf(s,"  x=%11.4E   b=%11.4E   v=%11.4E  t=%11.4E",
               (double)vector[0],(double)vector[1],(double)vector[2],(double)vector[3]);
     return(0);
 }
@@ -784,7 +784,7 @@ static INT PrintFullScalarLinkData (void *data, const char *indent, char *s)
     DOUBLE *vector;
 
     vector = (DOUBLE *) data;
-    sprintf(s,"  A=%11.4lE  LU=%11.4lE",(double)vector[0],(double)vector[1]);
+    sprintf(s,"  A=%11.4E  LU=%11.4E",(double)vector[0],(double)vector[1]);
     return(0);
 }
 .ve

@@ -39,7 +39,7 @@
 #include "misc.h"
 #include "scan.h"
 
-#include "devices.h"    /* TODO (HRR 971105): hierarchy conflict */
+#include "ugdevices.h"  /* TODO (HRR 971105): hierarchy conflict */
 
 /****************************************************************************/
 /*																			*/

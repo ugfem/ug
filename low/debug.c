@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "fileopen.h"
 #include "debug.h"
 

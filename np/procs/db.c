@@ -29,7 +29,7 @@
 
 #include <string.h>
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "ugenv.h"
 
 #include "scan.h"

@@ -42,7 +42,7 @@
 #include "general.h"
 
 /* dev module */
-#include "devices.h"
+#include "ugdevices.h"
 
 /* gm module */
 #include "algebra.h"

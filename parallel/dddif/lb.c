@@ -34,7 +34,7 @@
 #include "parallel.h"
 #include "general.h"
 #include "ugm.h"
-#include "devices.h"
+#include "ugdevices.h"
 
 /****************************************************************************/
 /*																			*/

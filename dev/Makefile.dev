@@ -13,7 +13,7 @@ include ../ug.conf
 
 # select your devices: one of { NIF, XIF, SIF, RIF }. META and PS are optional
 DEVICES = $(IF)IF META PS
-OBJECTS = devices.o sockcomm.o
+OBJECTS = ugdevices.o sockcomm.o
 
 
 # local C compiler flags

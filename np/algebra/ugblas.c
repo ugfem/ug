@@ -49,7 +49,7 @@
 #include "evm.h"
 #include "gm.h"
 #include "algebra.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "general.h"
 #include "debug.h"
 #ifdef ModelP
@@ -2224,7 +2224,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #define T_FUNCNAME      dset
 #define T_ARGS          ,DOUBLE a
-#define T_PR_DBG                (" a=%le",(double)a)
+#define T_PR_DBG                (" a=%e",(double)a)
 #define T_PR_IN                 PRINTVEC(x)
 #define T_PR_OUT                PRINTVEC(x)
 #define T_MOD_SCAL      VVALUE(v,xc) = a;
@@ -2367,7 +2367,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #define T_FUNCNAME      dscal
 #define T_ARGS          ,DOUBLE a
-#define T_PR_DBG                (" a=%le",(double)a)
+#define T_PR_DBG                (" a=%e",(double)a)
 #define T_PR_IN                 PRINTVEC(x)
 #define T_PR_OUT                PRINTVEC(x)
 #define T_MOD_SCAL      VVALUE(v,xc) *= a;
@@ -2760,7 +2760,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #define T_FUNCNAME      daxpy
 #define T_ARGS          ,DOUBLE a,const VECDATA_DESC *y
-#define T_PR_DBG                (" a=%le y=%s",(double)a,ENVITEM_NAME(y))
+#define T_PR_DBG                (" a=%e y=%s",(double)a,ENVITEM_NAME(y))
 #define T_PR_IN                 {PRINTVEC(x); PRINTVEC(y)}
 #define T_PR_OUT                PRINTVEC(x)
 #define T_ARGS_BV       ,DOUBLE a,INT yc
@@ -3184,7 +3184,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 #define T_FUNCNAME     dmatset
 #define T_ARGS         ,const MATDATA_DESC *M,DOUBLE a
-#define T_PR_DBG                (" M=%s a=%le",ENVITEM_NAME(M),(double)a)
+#define T_PR_DBG                (" M=%s a=%e",ENVITEM_NAME(M),(double)a)
 #define T_ARGS_BV      ,INT mc,DOUBLE a
 #define T_MOD_SCAL     MVALUE(mat,mc)=a;
 #define T_PREP_SWITCH  INT mcomp;

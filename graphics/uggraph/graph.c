@@ -36,7 +36,7 @@
 
 #include "graph.h"
 #include "wpm.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "misc.h"
 #include "general.h"
 

@@ -59,7 +59,7 @@
 /*  #include <Files.h> */
 
 /* interface includes */
-#include "devices.h"
+#include "ugdevices.h"
 #include "debug.h"
 #include "initdev.h"
 

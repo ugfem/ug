@@ -63,7 +63,7 @@
 #include "general.h"
 
 /* interface includes */
-#include "devices.h"
+#include "ugdevices.h"
 
 /* mif includes */
 #include "MacMain.m"

@@ -33,13 +33,16 @@
 /****************************************************************************/
 
 #include "bullet.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "commands.h"
 #include "heaps.h"
 #ifdef ModelP
 #include "parallel.h"
 #include "ppif.h"
 #endif
+
+/* RCS string */
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/

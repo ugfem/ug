@@ -34,7 +34,7 @@
 #include <string.h>
 
 #include "debug.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "disctools.h"
 #include "evm.h"
 #include "general.h"

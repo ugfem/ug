@@ -36,7 +36,7 @@
 #include <assert.h>
 
 #include "compiler.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "gm.h"
 #include "misc.h"
 #include "algebra.h"

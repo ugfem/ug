@@ -34,7 +34,7 @@
 #include "misc.h"
 #include "evm.h"
 #include "ugenv.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "gm.h"
 #include "wpm.h"
 #include "wop.h"

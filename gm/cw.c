@@ -25,7 +25,7 @@
 /* define this to exclude extern definition of global arrays */
 #define __COMPILE_CW__
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "debug.h"
 #include "general.h"
 

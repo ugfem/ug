@@ -50,7 +50,7 @@
 #include "misc.h"
 #include "ugstruct.h"
 
-#include "devices.h"
+#include "ugdevices.h"
 #ifdef ModelP
 #include "parallel.h"
 #endif
@@ -3522,7 +3522,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
         {
           theVertex=MYVERTEX(CORNER(theElement,i));
           if (USED(theVertex)) continue;
-          fprintf(stream," %15.8lE",(double)XC(theVertex));
+          fprintf(stream," %15.8E",(double)XC(theVertex));
           ID(theVertex)=id++;
           if (id%5==0) fprintf(stream,"\n");
           SETUSED(theVertex,1);
@@ -3542,7 +3542,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
         {
           theVertex=MYVERTEX(CORNER(theElement,i));
           if (USED(theVertex)==0) continue;
-          fprintf(stream," %15.8lE",(double)YC(theVertex));
+          fprintf(stream," %15.8E",(double)YC(theVertex));
           id++;
           if (id%5==0) fprintf(stream,"\n");
           SETUSED(theVertex,0);
@@ -3581,7 +3581,7 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
           theVertex=MYVERTEX(CORNER(theElement,i));
           if (USED(theVertex)) continue;
           val=(*PlotProcInfo->EvalProc)(theElement, (const DOUBLE **) CoordOfCornerPtr,  LOCAL_COORD_OF_ELEM(theElement,i));
-          fprintf(stream," %15.8lE",val);
+          fprintf(stream," %15.8E",val);
           id++;
           if (id%5==0) fprintf(stream,"\n");
           SETUSED(theVertex,1);

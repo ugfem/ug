@@ -58,7 +58,7 @@
 #include "debug.h"
 #include "general.h"
 
-#include "devices.h"
+#include "ugdevices.h"
 
 #include "dlmgr.h"
 #include "gm.h"

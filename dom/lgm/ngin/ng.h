@@ -39,7 +39,7 @@
 #include "general.h"
 #include "heaps.h"
 #include "lgm_transfer.h"
-#include "devices.h"
+#include "ugdevices.h"
 #endif
 
 /****************************************************************************/

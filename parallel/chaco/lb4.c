@@ -1179,7 +1179,7 @@ static int balance_ccptm (MULTIGRID *mg, int Const, int strategy, int eigen,
 		/* if (quiet_level<1) */
 		if (1)
 		{
-			sprintf(buffer,"lb4: level=%2d p=%3d nc=%5d avg=%10.3lg max=%10.3lg imbal=%10.3lg\n",
+			sprintf(buffer,"lb4: level=%2d p=%3d nc=%5d avg=%10.3g max=%10.3g imbal=%10.3g\n",
 					maxlevel,p,nc,average,maximum,ABS(maximum/average-1.0)*100.0);
 			UserWrite(buffer);
 		}

@@ -53,7 +53,7 @@
 #include "general.h"
 #include "fifo.h"
 
-#include "devices.h"
+#include "ugdevices.h"
 
 #include "evm.h"
 #include "gm.h"

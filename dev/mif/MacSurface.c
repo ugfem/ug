@@ -46,7 +46,7 @@
 #include <assert.h>
 
 /* dev interface */
-#include "devices.h"
+#include "ugdevices.h"
 
 /* interface includes */
 #include "compiler.h"

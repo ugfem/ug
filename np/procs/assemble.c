@@ -34,12 +34,12 @@
 
 #include "general.h"
 #include "debug.h"
-#include "devices.h"
+#include "ugdevices.h"
 #include "gm.h"
 #include "disctools.h"
 #include "np.h"
 
-#include "devices.h"
+#include "ugdevices.h"
 #include "assemble.h"
 
 /****************************************************************************/

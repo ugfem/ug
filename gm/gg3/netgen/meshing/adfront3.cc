@@ -745,7 +745,7 @@ void ADFRONT3 :: Grape () const
   fprintf(file, "%d\n", n);
 
   for (i=1; i<=points.Size(); i++)
-    fprintf(file, "%lf %lf %lf\n", points[i].P().X(), points[i].P().Y(), points[i].P().Z());
+    fprintf(file, "%f %f %f\n", points[i].P().X(), points[i].P().Y(), points[i].P().Z());
 
   n = 0;
   for (i=1; i<=faces.Size(); i++)
