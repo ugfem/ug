@@ -59,6 +59,7 @@
 
 #include "ff_gen.h"
 #include "ff.h"
+#include "ugblas.h"
 
 
 /****************************************************************************/
@@ -98,6 +99,8 @@ enum LU_REGULARIZE {
 #define NPFF_BVDF(p)                    (&(p)->bvdf)
 #define NPFF_ParSim(p)                  ((p)->par_sim)
 #define NPFF_AssDirichlet(p)    ((p)->ass_dirichlet)
+#define NPFF_SymmFrq(p)                 ((p)->symm_frq)
+#define NPFF_CheckSymm(p)               ((p)->check_symm)
 
 /* macros for the symmetric Gauss-Seidel smoother */
 #define NP_SGS_t(p)                             ((p)->t)
@@ -288,6 +291,9 @@ typedef struct
   INT display;
   INT par_sim;                          /* temp for: simulating parallel algo on SEQ */
   INT ass_dirichlet;                    /* assemble Dirichlet boundary condition (only necessary if not done otherwise (fetransfer) */
+  INT symm_frq;                         /* TRUE, if series of testfrequencies should be symmetric, i.e. 1,2,4,8,...,n-1,n,n-1,...,8,4,2,1 */
+  INT check_symm;                       /* check, whether the preconditioner is symmetric.
+                                           This is done by checking <M^-1*M^-1*d,d> == <M^-1*d,M^-1*d>*/
 #ifdef __BLOCK_VECTOR_DESC__
   BV_DESC_FORMAT bvdf;
 #endif
@@ -3553,6 +3559,8 @@ static INT LUConstruct (NP_BASE *theNP)
    .  $wr3D - relative frequency [0..1] for 3D
    .  $AssDirichlet - assemble Dirichlet boundary conditions
    .  $parsim~[0|1] - perform simulation of the parallel algorithm on a sequential machine
+   .  $SymmFrq~[0|1] - symmetric sequence of testfrequencies 1,2,4,...,n,...,4,2,1
+   .  $CheckSymm~[0|1] - check if the preconditioner is symmetric
 
    'npexecute <name> [$i] [$s] [$p]'
 
@@ -3696,6 +3704,8 @@ static INT FFInit (NP_BASE *theNP, INT argc , char **argv)
     NPFF_ParSim(np) = (NPFF_ParSim(np)==1);
 
   NPFF_AssDirichlet(np) = ReadArgvOption("AssDirichlet",argc,argv);
+  NPFF_SymmFrq(np) = ReadArgvOption("SymmFrq",argc,argv);
+  NPFF_CheckSymm(np) = ReadArgvOption("CheckSymm",argc,argv);
 
 
 #ifdef __TWODIM__
@@ -3798,6 +3808,8 @@ static INT FFDisplay (NP_BASE *theNP)
 
   UserWriteF(DISPLAY_NP_FORMAT_SI,"ParSim",(int)NPFF_ParSim(np));
   UserWriteF(DISPLAY_NP_FORMAT_SI,"AssDirichlet",(int)NPFF_AssDirichlet(np));
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"SymmFrq",(int)NPFF_SymmFrq(np));
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"CheckSymm",(int)NPFF_CheckSymm(np));
 
   return (0);
 }
@@ -4221,31 +4233,18 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
    D*/
 /****************************************************************************/
 
-static INT FFIter (NP_ITER *theNP, INT level,
-                   VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
-                   INT *result)
+static INT FFApplyPreconditioner( NP_FF *np, INT level,VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *result, BV_DESC *bvd, GRID *theGrid)
 {
 #ifdef __BLOCK_VECTOR_DESC__
-  NP_FF *np;
-  BV_DESC bvd;
-  GRID *theGrid;
   DOUBLE end_wave, wavenr, start_norm, new_norm;
-
-  np = (NP_FF *) theNP;
-  theGrid = NP_GRID(theNP,level);
-
-  BVD_INIT( &bvd );
-  BVD_PUSH_ENTRY( &bvd, BVNUMBER(GFIRSTBV(theGrid)), NPFF_BVDF(np) );
-
-  /* make a copy for displaying */
-  np->smoother.iter.c = x;
+  INT ascending_frq;
 
   if ( !NPFF_ALLFREQ(np) )
   {             /* smooth only for 1 testvector frequency */
                 /* copy defect to tv because FFMultWithMInv destroys its defect */
     dcopyBS( GFIRSTBV(theGrid), VD_SCALCMP( NPFF_tv(np) ), VD_SCALCMP( b ) );
 #ifdef ModelP
-    if (FFMultWithMInv( GFIRSTBV(theGrid), &bvd, NPFF_BVDF(np),
+    if (FFMultWithMInv( GFIRSTBV(theGrid), bvd, NPFF_BVDF(np),
                         VD_SCALCMP( x ),
                         VD_SCALCMP( NPFF_tv(np)),
                         x,
@@ -4255,7 +4254,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
       NP_RETURN(1,result[0]);
     }
 #else
-    if (FFMultWithMInv( GFIRSTBV(theGrid), &bvd, NPFF_BVDF(np),
+    if (FFMultWithMInv( GFIRSTBV(theGrid), bvd, NPFF_BVDF(np),
                         VD_SCALCMP( x ),
                         VD_SCALCMP( NPFF_tv(np) ) ) != NUM_OK)
     {
@@ -4264,24 +4263,27 @@ static INT FFIter (NP_ITER *theNP, INT level,
     }
 #endif
     /* defect -= A * corr_update */
-    dmatmul_minusBS( GFIRSTBV(theGrid), &bvd, NPFF_BVDF(np),
+    dmatmul_minusBS( GFIRSTBV(theGrid), bvd, NPFF_BVDF(np),
                      VD_SCALCMP( b ), MD_SCALCMP( A ), VD_SCALCMP( x ));
   }
   else
   {             /* smooth for all testvector frequencies */
 
     /* alloc temp. for correction update (in x!) */
-    if (AllocVDFromVD(NP_MG(theNP),level,level,x,&NPFF_t(np))) NP_RETURN(1,result[0]);
+    if (AllocVDFromVD(NP_MG((NP_ITER*)np),level,level,x,&NPFF_t(np))) NP_RETURN(1,result[0]);
 
     if ( NPFF_DISPLAY(np) != PCR_NO_DISPLAY )
       if(dnrm2BS( GFIRSTBV(theGrid), VD_SCALCMP( b ), &new_norm ) ) NP_RETURN(1,result[0]);
 
+    ascending_frq = 1;
     end_wave = 1.0 / NPFF_MESHWIDTH(np) - 0.5;             /* rounding */
-    for ( wavenr = 1.0; wavenr < end_wave; wavenr *= 2.0 )
+    /*for ( wavenr = 1.0; wavenr < end_wave; wavenr *= 2.0 )*/
+    wavenr = 1.0;
+    while (1)
     {                   /* wave 1.0 ... (1/h)/2 */
       if (NPFF_DO_TFF(np) )
       {
-        if ( TFFDecomp( wavenr, wavenr, GFIRSTBV(theGrid), &bvd,
+        if ( TFFDecomp( wavenr, wavenr, GFIRSTBV(theGrid), bvd,
                         NPFF_BVDF(np),
                         VD_SCALCMP( NPFF_tv(np) ),
                         theGrid ) != NUM_OK )
@@ -4294,7 +4296,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
       {
         /*if (wavenr == 2.0) wavenr = 3.0;*/ /* wavenr==2 already in the last step */
         /*printf("wavenr %g\n", wavenr);*/
-        if (FFDecomp( wavenr, wavenr, GFIRSTBV(theGrid), &bvd,
+        if (FFDecomp( wavenr, wavenr, GFIRSTBV(theGrid), bvd,
                       NPFF_BVDF(np),
                       VD_SCALCMP( NPFF_tv(np) ),
                       VD_SCALCMP( NPFF_tv2(np) ),
@@ -4308,7 +4310,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
       /* copy defect to aux because FFMultWithMInv destroys its defect */
       dcopyBS( GFIRSTBV(theGrid), VD_SCALCMP( NPFF_t(np) ), VD_SCALCMP( b ) );
 #ifdef ModelP
-      if (FFMultWithMInv( GFIRSTBV(theGrid), &bvd, NPFF_BVDF(np),
+      if (FFMultWithMInv( GFIRSTBV(theGrid), bvd, NPFF_BVDF(np),
                           VD_SCALCMP( NPFF_t(np) ),
                           VD_SCALCMP( NPFF_t(np) ),
                           NPFF_t(np),
@@ -4321,7 +4323,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
       /* NOTE: the corr update is already consistent from FFMultWithMInv!
                don't try to make it consistent again! */
 #else
-      if (FFMultWithMInv( GFIRSTBV(theGrid), &bvd, NPFF_BVDF(np),
+      if (FFMultWithMInv( GFIRSTBV(theGrid), bvd, NPFF_BVDF(np),
                           VD_SCALCMP( NPFF_t(np) ),
                           VD_SCALCMP( NPFF_t(np) ) ) != NUM_OK)
       {
@@ -4333,7 +4335,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
       daddBS( GFIRSTBV(theGrid), VD_SCALCMP( x ), VD_SCALCMP( NPFF_t(np) ) );
 
       /* defect -= A * corr_update */
-      dmatmul_minusBS( GFIRSTBV(theGrid), &bvd, NPFF_BVDF(np),
+      dmatmul_minusBS( GFIRSTBV(theGrid), bvd, NPFF_BVDF(np),
                        VD_SCALCMP( b ), MD_SCALCMP( A ), VD_SCALCMP( NPFF_t(np) ));
 
       if ( NPFF_DISPLAY(np) != PCR_NO_DISPLAY )
@@ -4351,9 +4353,196 @@ static INT FFIter (NP_ITER *theNP, INT level,
                       "conv. rate = %12g\n", wavenr, wavenr, new_norm,
                       new_norm/start_norm );
       }
+
+      if ( ascending_frq )
+      {
+        wavenr *= 2.0;
+        if( wavenr >= end_wave )
+        {
+          if( !NPFF_SymmFrq(np) )
+            break;
+          wavenr /= 4.0;
+          ascending_frq = 0;
+        }
+      }
+      else
+      {
+        wavenr /= 2.0;
+        if ( wavenr < 0.999 )
+          break;
+      }
     }
 
-    if (FreeVD(NP_MG(theNP),level,level,NPFF_t(np))) REP_ERR_RETURN(1);
+    if (FreeVD(NP_MG((NP_ITER*)np),level,level,NPFF_t(np))) REP_ERR_RETURN(1);
+  }
+#else
+  PrintErrorMessage( 'E', "FFApplyPreconditioner", "__BLOCK_VECTOR_DESC__ must be defined in gm.h" );
+  REP_ERR_RETURN (1);
+#endif
+}
+
+static void FFGenerateCheckA( BLOCKVECTOR *bv, INT v_comp, INT nr_of_call, INT scaling_comp )
+/* the result is inconsistent */
+{
+  register VECTOR *v;
+  DOUBLE pos[DIM];
+
+  BLOCK_L_VLOOP( v, BVFIRSTVECTOR(bv), BVENDVECTOR( bv ) )
+  {
+    VectorPosition(v,pos);
+    VVALUE( v, v_comp ) = exp(pos[0])*(1.0-pos[1]);
+    if( nr_of_call > 1 )
+      VVALUE( v, v_comp ) *= VVALUE( v, scaling_comp );
+  }
+}
+
+static void FFGenerateCheckB( BLOCKVECTOR *bv, INT v_comp, INT nr_of_call, INT scaling_comp )
+/* the result is inconsistent */
+{
+  register VECTOR *v;
+  DOUBLE pos[DIM];
+
+  BLOCK_L_VLOOP( v, BVFIRSTVECTOR(bv), BVENDVECTOR( bv ) )
+  {
+    VectorPosition(v,pos);
+    VVALUE( v, v_comp ) = sin(13.423*pos[0])*exp(1.0-pos[1]);
+    if( nr_of_call > 1 )
+      VVALUE( v, v_comp ) *= VVALUE( v, scaling_comp );
+  }
+}
+
+void FFCopyVector( GRID *grid, INT dest, INT source )
+/* copy the whole vector in the grid; vectors are identified by their component number */
+{
+  register VECTOR *v;
+
+  for( v=PFIRSTVECTOR(grid); v!=NULL; v=SUCCVC(v) )
+    VVALUE(v,dest) = VVALUE(v,source);
+}
+
+
+static INT FFIter (NP_ITER *theNP, INT level,
+                   VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                   INT *result)
+{
+#ifdef __BLOCK_VECTOR_DESC__
+  NP_FF *np;
+  BV_DESC bvd;
+  GRID *theGrid;
+  INT err;
+  INT x_save, b_start_save, b_end_save;
+
+  np = (NP_FF *) theNP;
+  theGrid = NP_GRID(theNP,level);
+
+  BVD_INIT( &bvd );
+  BVD_PUSH_ENTRY( &bvd, BVNUMBER(GFIRSTBV(theGrid)), NPFF_BVDF(np) );
+
+  /* make a copy for displaying */
+  np->smoother.iter.c = x;
+
+  if ( NPFF_CheckSymm(np) )
+  {
+    x_save =  GET_AUX_VEC;
+    b_start_save =  GET_AUX_VEC;
+    b_end_save =  GET_AUX_VEC;
+
+    FFCopyVector( theGrid, b_start_save, VD_SCALCMP( b ) );
+  }
+
+  if( (err = FFApplyPreconditioner( np, level, x, b, A, result, &bvd, theGrid)) != 0 )
+    REP_ERR_RETURN (err);
+
+  if ( NPFF_CheckSymm(np) )
+  {
+    /* the idea for the symmetry check: if M^-1 is symmetric, then for any
+       2 arbitrary vectors (M^-1 * a, b) == ( a, M^-1 * b ) must hold,
+       especially for a:=M^-1*d and b:=d. Thus we check:
+       (M^-1 * M^-1*d, d) == ( M^-1*d, M^-1 * d ). */
+
+    DOUBLE norm1, norm2;
+    register VECTOR *v;
+    static INT nr_of_call=0;
+
+    nr_of_call++;
+
+    /* save x and b, the actual results of this routine */
+    FFCopyVector( theGrid, b_end_save, VD_SCALCMP( b ) );
+    FFCopyVector( theGrid, x_save, VD_SCALCMP( x ) );
+
+    /* norm2 := ( M^-1*d, M^-1 * d ) notice: x contains in this Moment M^-1*d, the approximate solution of Mx=d with initial guess x=0 */
+    /* make x collect to can apply ddot; consider now x is consistent!  */
+    for( v=FIRSTVECTOR(theGrid); v!=NULL; v=SUCCVC(v) )
+      if(PRIO(v)==PrioBorder)
+        VVALUE(v,VD_SCALCMP( x )) = 0.0;
+    if( ddot(NP_MG((NP_ITER*)np),level,level,ALL_VECTORS,x,x,&norm2) != NUM_OK )
+      REP_ERR_RETURN (1);
+
+    /* set up for solving Mx=M^-1*d */
+    /* note: x already has been made inconsistent, which is necessary for b */
+    FFCopyVector( theGrid, VD_SCALCMP( b ), VD_SCALCMP( x ) );
+    dsetBS( GFIRSTBV(theGrid), VD_SCALCMP( x ), 0.0 );
+
+    /* solving Mx=M^-1*d */
+    UserWrite("Solving with FF for symmetry check (A):\n");
+    if( (err = FFApplyPreconditioner( np, level, x, b, A, result, &bvd, theGrid)) != 0 )
+      REP_ERR_RETURN (err);
+
+    /* norm1 := (M^-1 * M^-1*d, d), x containing M^-1 * M^-1*d, b containing d */
+    FFCopyVector( theGrid, VD_SCALCMP( b ), b_start_save );
+    if( ddot(NP_MG((NP_ITER*)np),level,level,ALL_VECTORS,b,x,&norm1) != NUM_OK )
+      REP_ERR_RETURN (1);
+
+    /* check whether the 2 norms are equal or not
+       use a relative criterion */
+    if ( fabs( (norm1-norm2) / (norm1+norm2) ) > 1e-5 )
+    /* do not expect too accurate identity */
+    {
+      UserWriteF( "(A) FF preconditioner is NOT symmetric: (M^-1M^-1d,d)=%17.15g<>%17.15g=(M^-1d,M^-1d), difference=%17.15g\n", norm1, norm2, fabs(norm1-norm2) );
+    }
+    else
+    {
+      UserWriteF( "(A) FF preconditioner is symmetric: (M^-1M^-1d,d)=%17.15g==%17.15g=(M^-1d,M^-1d)\n", norm1, norm2 );
+    }
+
+    /* second kind of check: arbitrary, but fixed vectors; caled after the first call by x resp. b */
+    FFGenerateCheckA( GFIRSTBV(theGrid), VD_SCALCMP( b ), nr_of_call, x_save );
+    dsetBS( GFIRSTBV(theGrid), VD_SCALCMP( x ), 0.0 );
+    UserWrite("Solving with FF for symmetry check (B):\n");
+    if( (err = FFApplyPreconditioner( np, level, x, b, A, result, &bvd, theGrid)) != 0 )
+      REP_ERR_RETURN (err);
+    FFGenerateCheckB( GFIRSTBV(theGrid), VD_SCALCMP( b ), nr_of_call, b_start_save );
+    if( ddot(NP_MG((NP_ITER*)np),level,level,ALL_VECTORS,b,x,&norm1) != NUM_OK )
+      REP_ERR_RETURN (1);
+
+    FFGenerateCheckB( GFIRSTBV(theGrid), VD_SCALCMP( b ), nr_of_call, b_start_save );
+    dsetBS( GFIRSTBV(theGrid), VD_SCALCMP( x ), 0.0 );
+    UserWrite("Solving with FF for symmetry check (B):\n");
+    if( (err = FFApplyPreconditioner( np, level, x, b, A, result, &bvd, theGrid)) != 0 )
+      REP_ERR_RETURN (err);
+    FFGenerateCheckA( GFIRSTBV(theGrid), VD_SCALCMP( b ), nr_of_call, x_save );
+    if( ddot(NP_MG((NP_ITER*)np),level,level,ALL_VECTORS,b,x,&norm2) != NUM_OK )
+      REP_ERR_RETURN (1);
+
+    /* check whether the 2 norms are equal or not
+       use a relative criterion */
+    if ( fabs( (norm1-norm2) / (norm1+norm2) ) > 1e-5 )
+    /* do not expect too accurate identity */
+    {
+      UserWriteF( "(B) FF preconditioner is NOT symmetric: (M^-1a,b)=%17.15g<>%17.15g=(a,M^-1b), difference=%17.15g\n", norm1, norm2, fabs(norm1-norm2) );
+    }
+    else
+    {
+      UserWriteF( "(B) FF preconditioner is symmetric: (M^-1a,b)=%17.15g==%17.15g=(a,M^-1b)\n", norm1, norm2 );
+    }
+
+    /* restore the saved values */
+    FFCopyVector( theGrid, VD_SCALCMP( b ), b_end_save );
+    FFCopyVector( theGrid, VD_SCALCMP( x ), x_save );
+
+    FREE_AUX_VEC(b_end_save);
+    FREE_AUX_VEC(b_start_save);
+    FREE_AUX_VEC(x_save);
   }
 
   /* set all vectors with VCLASS < ACTIVE_CLASS to 0.0
