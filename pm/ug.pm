@@ -38,7 +38,7 @@ BEGIN
 	}
 
 	# time
-	$TimeHiRes=0; if (module('Time')) { require Time::HiRes; $TimeHiRes=1; };
+	$TimeHiRes=0; if (module('Time/HiRes.pm')) { require Time::HiRes; $TimeHiRes=1; };
 	sub gettimeofday
 	{
 		if (!$TimeHiRes) { return -1; }
@@ -78,13 +78,13 @@ BEGIN
 		my $diff;
 		my $name=shift;
 
-		defined $time{$name} or return (-1,-1);
+		$TimeHiRes or return (-1,-1);
+		defined $time{$name} or die "time_eval: using evaluation on undefined entry '$name'\n";
 		if ($time{"running $name"})
 		{
 			time_stop($name);
 			time_start($name);
 		}
-		$TimeHiRes or return (-1,-1);
 		$diff=$time{"diff $name"}; $time{"diff $name"}=0;
 		return ($time{"total $name"},$diff);
 	}
