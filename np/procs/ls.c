@@ -2170,8 +2170,11 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
     if (i>=np->restart) i=np->restart-1;
     PRINTDEBUG(np,1,("#####################################\n"));
     /* solve the upper Hessenberg system */
+    for (i1=0; i1<(i+1)*(i+1); i1++)
+      Hsq[i1] = 0;
+
     for (i1=0; i1<=i; i1++)
-      for (i2=0; i2<=i; i2++)
+      for (i2=i1; i2<=i; i2++)
         Hsq[i1*(i+1)+i2] = H[i1][i2];
     for (i1=0; i1<=i; i1++) {
       PRINTDEBUG(np,1,("% i  @@@@ ",i1));
@@ -2181,7 +2184,7 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
     }
 
     if (SolveFullMatrix(i+1,y,Hsq,s)) {
-      UserWriteF("GMRESSolver: decompostion failed");
+      UserWriteF("GMRESSolver: decomposition failed");
       NP_RETURN(1,lresult->error_code);
     }
     PRINTDEBUG(np,1,("y "));
@@ -2210,6 +2213,7 @@ static INT GMRESSolver (NP_LINEAR_SOLVER *theNP, INT level,
       NP_RETURN(1,result[0]);
     if (LinearResiduum(theNP,bl,level,x,b,A,lresult))
       NP_RETURN(1,lresult->error_code);
+
     if (np->display > PCR_NO_DISPLAY)
       if (DoPCR(PrintID, lresult->last_defect,PCR_CRATE))
         NP_RETURN(1,lresult->error_code);
