@@ -57,13 +57,6 @@
 #include "fileopen.h"
 
 
-/* #defines and typedefs to encapsulate implementation dependent stuff */
-#ifndef __MACINTOSH__
-        #include <dirent.h>
-typedef struct dirent DIRENT;
-        #define D_NAME(d)               ((d)->d_name)
-#endif
-
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -80,6 +73,11 @@ typedef struct dirent DIRENT;
 #define SEPERATOR                       " \t"
 
 #define MAX_PATH_LEN            1024
+#define BASE_PATH_SIZE          512
+
+#ifndef __MACINTOSH__
+        #define ConvertFileName(fname)          fname
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -110,7 +108,10 @@ typedef struct
 static INT thePathsDirID;
 static INT thePathsVarID;
 
-static char fullpath[MAXPATHLENGTH];
+static char based_filename[MAXPATHLENGTH];
+
+static char OldBasePath[BASE_PATH_SIZE];
+static char BasePath[BASE_PATH_SIZE] = "./";
 
 REP_ERR_FILE;
 
@@ -183,8 +184,9 @@ static PATHS *GetPaths (const char *name)
 #ifdef __MACINTOSH__
 
 /* Macintosh computers */
-const char *ConvertFileName (const char *fname)
+static const char *ConvertFileName (const char *fname)
 {
+  static char fullpath[MAXPATHLENGTH];
   int pos;
 
   if (*fname=='/')
@@ -216,6 +218,13 @@ const char *ConvertFileName (const char *fname)
       }
       else if (fname[1]=='/')
       {
+        if (pos)
+        {
+          /* eat ./ */
+          fname += 2;
+          continue;
+        }
+
         /* "./" --> ":" */
         fullpath[pos++] = ':';
         fname += 2;
@@ -246,7 +255,44 @@ const char *ConvertFileName (const char *fname)
 
 #endif
 
+const char *BasedConvertedFilename (const char *fname)
+{
+  PRINTDEBUG(low,2,("BasedConvertedFilename: fname at %p\n",fname));
+  PRINTDEBUG(low,2,("BasedConvertedFilename: based_filename at %p\n",based_filename));
+  PRINTDEBUG(low,1,("BasedConvertedFilename: fname= '%s'\n",fname));
+  strcpy(based_filename,BasePath);
+  PRINTDEBUG(low,2,("BasedConvertedFilename: based_filename= '%s'\n",based_filename));
+  strcat(based_filename,fname);
+  PRINTDEBUG(low,2,("BasedConvertedFilename: based_filename= '%s'\n",based_filename));
+  SimplifyPath(based_filename);
+  PRINTDEBUG(low,1,("BasedConvertedFilename: based_filename= '%s'\n",based_filename));
 
+  return ConvertFileName(based_filename);
+}
+
+FILE *fopen_r (const char *fname, const char *mode, int do_rename)
+{
+  FILE *f;
+
+  if (do_rename && (f=fopen(fname,"r"))!=NULL)
+  {
+    time_t Time;
+    struct stat fstat;
+    char new_fname[128];
+
+    fclose(f);
+
+    strcpy(new_fname,fname);
+
+    if (stat(fname, &fstat)<0)
+      return(FT_UNKNOWN);
+    Time = fstat.st_mtime;
+    strftime(new_fname+strlen(fname),64,"%y%m%d%H%M",localtime(&Time));
+
+    rename(fname,new_fname);                    /* TODO: check success? */
+  }
+  return fopen(fname,mode);
+}
 
 /****************************************************************************/
 /*D
@@ -276,7 +322,8 @@ size_t filesize (const char *fname)
   struct stat fstat;
 
   /* get (Unix) file descriptor */
-  if (stat(ConvertFileName(fname), &fstat)<0)
+  PRINTDEBUG(low,1,("filesize\n"));
+  if (stat(BasedConvertedFilename(fname), &fstat)<0)
     return(0);
 
   return((size_t)fstat.st_size);
@@ -311,7 +358,8 @@ int filetype (const char *fname)
   int r;
 
   /* get Unix file descriptor */
-  if ((r=stat(ConvertFileName(fname), &fstat))<0)
+  PRINTDEBUG(low,1,("filetype\n"));
+  if ((r=stat(BasedConvertedFilename(fname), &fstat))<0)
     return(FT_UNKNOWN);
 
         #ifdef __CC__
@@ -362,10 +410,19 @@ int filetype (const char *fname)
 
 INT DirWalk (const char *dir, ProcessFileProc fcn)
 {
-#ifndef __MACINTOSH__
-#ifndef __CC__
-  DIR *dfd = opendir(dir);
+
+  /* encapsulate implementation dependent stuff for DirWalk */
+#if defined __HP__ || __SGI__
+        #include <dirent.h>
+  typedef struct dirent DIRENT;
+        #define D_NAME(d)               ((d)->d_name)
+
+  const char *cb_dir = BasedConvertedFilename(dir);
+  DIR *dfd = opendir(cb_dir);
   int ft = filetype(dir);
+
+  PRINTDEBUG(low,1,("DirWalk: dir   = '%s'\n",dir));
+  PRINTDEBUG(low,1,("DirWalk: cb_dir= '%s'\n",cb_dir));
 
   if (ft!=FT_DIR)
     REP_ERR_RETURN (PATH_NO_DIR)
@@ -398,7 +455,8 @@ INT DirWalk (const char *dir, ProcessFileProc fcn)
   closedir(dfd);
   return 0;
 #endif
-#endif
+
+  printf("fileopen.c: DirWalk() not implemented for architecture: %s\n",ARCHNAME);
 
   REP_ERR_RETURN (NOT_IMPLEMENTED);
 }
@@ -463,7 +521,10 @@ INT ReadSearchingPaths (const char *filename, const char *paths)
   /* fill data */
   thePaths->nPaths = nPaths;
   for (i=0; i<nPaths; i++)
+  {
     strcpy(thePaths->path[i],Path[i]);
+    AppendTrailingSlash(thePaths->path[i]);
+  }
 
   return (0);
 }
@@ -504,11 +565,10 @@ int DirCreateUsingSearchPaths (const char *fname, const char *paths)
 {
   PATHS *thePaths;
 
-  const char *real_name = ConvertFileName(fname);
   char fullname[MAXPATHLENGTH];
   INT i,fnamelen,mode,error;
 
-  fnamelen = strlen(real_name);
+  fnamelen = strlen(fname);
         #ifndef __MACINTOSH__
   mode = S_IRUSR | S_IWUSR | S_IXUSR |
          S_IRGRP | S_IXGRP;
@@ -516,8 +576,9 @@ int DirCreateUsingSearchPaths (const char *fname, const char *paths)
   mode = 0;       /* ignored on Macintosh */
         #endif
 
+  PRINTDEBUG(low,1,("DirCreateUsingSearchPaths\n"));
   if (paths == NULL)
-    if ((error=mkdir(real_name,mode))!=0) return (1);
+    if ((error=mkdir(BasedConvertedFilename(fname),mode))!=0) return (1);
 
   if ((thePaths=GetPaths(paths))==NULL)
     return (0);
@@ -528,10 +589,9 @@ int DirCreateUsingSearchPaths (const char *fname, const char *paths)
       return (0);
 
     strcpy(fullname,thePaths->path[i]);
-    strcat(fullname,"/");
     strcat(fullname,fname);
 
-    if ((error=mkdir(ConvertFileName(fullname),mode))!=0)
+    if ((error=mkdir(BasedConvertedFilename(fullname),mode))!=0)
       return (1);
   }
   return (0);
@@ -588,7 +648,6 @@ FILE *FileOpenUsingSearchPaths (const char *fname, const char *mode, const char 
       return (NULL);
 
     strcpy(fullname,thePaths->path[i]);
-    strcat(fullname,"/");
     strcat(fullname,fname);
 
     if ((theFile=fileopen(fullname,mode))!=NULL)
@@ -631,7 +690,6 @@ FILE *FileOpenUsingSearchPath (const char *fname, const char *mode, const char *
     return (NULL);
 
   strcpy(fullname,path);
-  strcat(fullname,"/");
   strcat(fullname,fname);
 
   if ((theFile=fileopen(fullname,mode))!=NULL)
@@ -673,7 +731,6 @@ FILE *FileOpenUsingSearchPath_r (const char *fname, const char *mode, const char
     return (NULL);
 
   strcpy(fullname,path);
-  strcat(fullname,"/");
   strcat(fullname,fname);
 
   if ((theFile=fileopen_r(fullname,mode,rename))!=NULL)
@@ -733,7 +790,6 @@ int FileTypeUsingSearchPaths (const char *fname, const char *paths)
       return (0);
 
     strcpy(fullname,thePaths->path[i]);
-    strcat(fullname,"/");
     strcat(fullname,fname);
 
     if ((ftype=filetype(fullname))!=FT_UNKNOWN)
@@ -743,28 +799,92 @@ int FileTypeUsingSearchPaths (const char *fname, const char *paths)
   return (FT_UNKNOWN);
 }
 
-FILE *fopen_r (const char *fname, const char *mode, int do_rename)
+int AppendTrailingSlash (char *path)
 {
-  FILE *f;
-
-  if (do_rename && (f=fopen(fname,"r"))!=NULL)
+  if (path[strlen(path)-1]!='/')
   {
-    time_t Time;
-    struct stat fstat;
-    char new_fname[128];
-
-    fclose(f);
-
-    strcpy(new_fname,fname);
-    /*time(&Time);*/
-    if (stat(fname, &fstat)<0)
-      return(FT_UNKNOWN);
-    Time = fstat.st_mtime;
-    strftime(new_fname+strlen(fname),64,"%y%m%d%H%M",localtime(&Time));
-
-    rename(fname,new_fname);                    /* don't check success? */
+    strcat(path,"/");
+    return YES;
   }
-  return fopen(fname,mode);
+  return NO;
+}
+
+char *SimplifyPath (char *path)
+{
+  const char *pf = path;
+  char       *pt = path;
+
+  /* cancel ./ (not first one) */
+  pf = pt = strchr(path,'/');
+  if (pf!=NULL)
+  {
+    for (; *pf; pf++,pt++)
+    {
+      if (pf[0]=='.' && pf[1]=='/')
+        if (*(pf-1)=='/')
+        {
+          /* eat ./ */
+          pf += 2;
+        }
+      if (pt!=pf)
+        *pt = *pf;
+    }
+    *pt = '\0';
+  }
+
+  /* cancel ../ where possible */
+  for (; *pf; pf++,pt++)
+  {
+    if (pf[0]=='.' && pf[1]=='.' && pf[2]=='/')
+      if (pf==path || *(pf-1)=='/')
+      {
+        char *pd = pt-1;
+
+        while (pd>path)
+          if (*(--pd)=='/')
+            break;
+        if (*pd=='/' && !(pd[0]=='/' && pd[1]=='.' && pd[2]=='.' && pd[3]=='/'))
+        {
+          /* eat ../ and reset pt */
+          pf += 2;
+          pt = pd;
+          continue;
+        }
+      }
+    *pt = *pf;
+  }
+  *pt = '\0';
+
+  return path;
+}
+
+const char *GetBasePath (void)
+{
+  return BasePath;
+}
+
+const char *SetBasePath (const char *path)
+{
+  strcpy(OldBasePath,path);
+  strcpy(BasePath,path);
+  AppendTrailingSlash(BasePath);
+
+  PRINTDEBUG(low,1,("SetBasePath: based_filename= '%s'\n",BasePath));
+
+  return OldBasePath;
+}
+
+const char *AddBasePath (const char *path)
+{
+  strcpy(OldBasePath,path);
+  strcat(BasePath,path);
+  AppendTrailingSlash(BasePath);
+
+  SimplifyPath(BasePath);
+
+  PRINTDEBUG(low,1,("AddBasePath: based_filename= '%s'\n",BasePath));
+
+  return OldBasePath;
 }
 
 /****************************************************************************/

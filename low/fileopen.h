@@ -51,8 +51,8 @@
 /* return constants for filetype() */
 enum FileTypes { FT_UNKNOWN, FT_FILE, FT_DIR, FT_LINK };
 
-#define fileopen(fname,mode)            fopen(ConvertFileName(fname),mode)
-#define fileopen_r(fname,mode,r)        fopen_r(ConvertFileName(fname),mode,r)
+#define fileopen(fname,mode)            fopen(BasedConvertedFilename(fname),mode)
+#define fileopen_r(fname,mode,r)        fopen_r(BasedConvertedFilename(fname),mode,r)
 
 enum DIRWALK_ERR
 {
@@ -82,11 +82,7 @@ typedef void (*ProcessFileProc)(const char *fname);
 /*																			*/
 /****************************************************************************/
 
-#ifdef __MACINTOSH__
-const char      *ConvertFileName                        (const char *fname);
-#else
-#define         ConvertFileName(fname)          fname
-#endif
+const char*     BasedConvertedFilename          (const char *fname);
 size_t          filesize                    (const char *fname);
 int             filetype                    (const char *fname);
 INT                     DirWalk                                         (const char *dir, ProcessFileProc fcn);
@@ -97,6 +93,12 @@ FILE            *FileOpenUsingSearchPath        (const char *fname, const char *
 FILE            *FileOpenUsingSearchPath_r      (const char *fname, const char *mode, const char *path, int rename);
 int             FileTypeUsingSearchPaths        (const char *fname, const char *pathsvar);
 FILE            *fopen_r                                        (const char *fname, const char *mode, int rename);
+
+int                     AppendTrailingSlash                     (char *path);
+char*           SimplifyPath                            (char *path);
+const char*     GetBasePath                                     (void);
+const char*     SetBasePath                                     (const char *path);
+const char*     AddBasePath                                     (const char *path);
 
 INT                     InitFileOpen                            (void);
 
