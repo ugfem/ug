@@ -715,7 +715,7 @@ static INT CreateVectorInPart (GRID *theGrid, INT DomPart, INT VectorObjType,
   SETVNCLASS(pv,0);
   SETVBUILDCON(pv,1);
   SETVNEW(pv,1);
-  SETPRIO(pv,PrioMaster);
+  /*SETPRIO(pv,PrioMaster);*/
 
     #ifdef __BLOCK_VECTOR_DESC__
   BVD_INIT( &VBVD( pv ) );

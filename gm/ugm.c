@@ -244,7 +244,7 @@ void *GetMemoryForObject_par (HEAP *theHeap, INT size, INT type)
     {
       DDD_TYPE dddtype = DDDTYPE(type);
       DDD_HDR dddhdr = (DDD_HDR)(((char *)obj) + DDD_InfoHdrOffset(dddtype));
-      DDD_HdrConstructor(dddhdr, dddtype, PrioNone, 0);
+      DDD_HdrConstructor(dddhdr, dddtype, PrioMaster, 0);
     }
   }
 
@@ -346,7 +346,7 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid)
   SETMOVE(pv,DIM_OF_BND);
         #ifdef ModelP
   DDD_AttrSet(PARHDRV(pv),GRID_ATTR(theGrid));
-  SETVXPRIO(pv,PrioMaster);
+  /*SETVXPRIO(pv,PrioMaster);*/
         #endif
 
   /* insert in vertex list */
@@ -406,7 +406,7 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
   SETMOVE(pv,DIM);
         #ifdef ModelP
   DDD_AttrSet(PARHDRV(pv),GRID_ATTR(theGrid));
-  SETVXPRIO(pv,PrioMaster);
+  /*SETVXPRIO(pv,PrioMaster);*/
         #endif
   for (i=0; i<DIM; i++) LCVECT(pv)[i] = 0.0;
 
@@ -461,7 +461,7 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
   SETLEVEL(pn,theGrid->level);
         #ifdef ModelP
   DDD_AttrSet(PARHDR(pn),GRID_ATTR(theGrid));
-  SETPRIO(pn,PrioMaster);
+  /*SETPRIO(pn,PrioMaster);*/
         #endif
   ID(pn) = (theGrid->mg->nodeIdCounter)++;
   START(pn) = NULL;
@@ -1604,7 +1604,7 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
   SETLEVEL(pe,GLEVEL(theGrid));
         #if (defined ModelP) && (defined __THREEDIM__)
   DDD_AttrSet(PARHDR(pe), GRID_ATTR(theGrid));
-  SETPRIO(pe,PrioMaster);
+  /*SETPRIO(pe,PrioMaster);*/
         #endif
   NBNODE(link0) = to;
   NBNODE(link1) = from;
@@ -1740,7 +1740,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
   SETLEVEL(pe,theGrid->level);
         #ifdef ModelP
   DDD_AttrSet(PARHDRE(pe),GRID_ATTR(theGrid));
-  SETEPRIO(pe,PrioMaster);
+  /*SETEPRIO(pe,PrioMaster);*/
   PARTITION(pe) = me;
         #endif
   SETEBUILDCON(pe,1);
