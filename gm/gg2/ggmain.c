@@ -984,7 +984,6 @@ static INT CreateAllElementSides  (MULTIGRID *theMG)
   FRONTCOMP *theFC;
   NODE *aNode,*bNode;
   VERTEX *aVertex,*bVertex;
-  EDGE *theEdge;
   ELEMENTSIDE *theSide;
   ELEMENT *theElement;
   PATCH *aPatch,*bPatch,*thePatch;
@@ -1114,19 +1113,10 @@ static INT CreateAllElementSides  (MULTIGRID *theMG)
         PARAM(theSide,0,0) = aLambda;
         PARAM(theSide,1,0) = bLambda;
 
-        /* create Link */
-        theEdge = CreateEdge(theGrid,aNode,bNode);
-        if (theEdge==NULL)
-        {
-          UserWrite("could not create edge\n");
-          return(1);
-        }
-
         /* linkinfo_disposed */
         FCSIDE(theFC) = theSide;
         FCNGB(theFC) = NULL;
         FCNGBS(theFC) = -1;
-        /* no more needed			BNDSIDE(LINK0(theEdge)) = theSide; */
 
         if (theFC==LASTFC(theFL))
           break;
@@ -2675,19 +2665,6 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
   found = 0;
   for (i=0; i<n; i++)
   {
-    theLink = GetLink(Node[i],Node[(i+1)%n]);
-    if (theLink==NULL)
-    {
-      theEdge = CreateEdge(theGrid,Node[i],Node[(i+1)%n]);
-      if (theEdge==NULL)
-      {
-        UserWrite("could not create edge\n");
-        return(1);
-      }
-      theLink = LINK0(theEdge);
-
-    }
-
     theElemSide[i]  = theElementContext->theElementside[i];
     Neighbor[i]     = theElementContext->theNeighbour[i];
     NeighborSide[i] = theElementContext->Neighbourside[i];
@@ -2698,9 +2675,9 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
 
   /* create element */
   if (found>0)
-    theElement = CreateBoundaryElement(theGrid,NULL,n);
+    theElement = CreateElement(theGrid,n,BEOBJ,Node,NULL);
   else
-    theElement = CreateInnerElement(theGrid,NULL,n);
+    theElement = CreateElement(theGrid,n,IEOBJ,Node,NULL);
   if (theElement==NULL)
   {
     UserWrite("could not create element record\n");
@@ -2714,25 +2691,12 @@ static INT MakeElement (GRID *theGrid, ELEMENT_CONTEXT* theElementContext)
       SET_SIDE(theElement,i,theElemSide[i]);
 
   /* fill element data */
-  SETTAG(theElement,n);
   for (i=0; i<n; i++)
   {
-    SET_CORNER(theElement,i, Node[i]);
     SET_NBELEM(theElement,i, Neighbor[i]);
     if (Neighbor[i]!=NULL)
       SET_NBELEM(Neighbor[i],NeighborSide[i],theElement);
   }
-
-  for (i=0; i<n; i++)
-  {
-    theLink = GetLink(Node[(i+1)%n],Node[i]);
-    if (theLink==NULL)
-    {
-      PrintErrorMessage('E',"MakeElement","big surprise: no link at this point !!!");
-      return(1);
-    }
-  }
-
 
   theElementContext->thenewElement = theElement;
 
