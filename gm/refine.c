@@ -2957,6 +2957,7 @@ static int ComputeCopies (GRID *theGrid)
 #ifdef __PERIODIC_BOUNDARY__
 	int npercopies;
 #endif
+	PRINTDEBUG(gm,1,("ComputeCopies on level %d\n",GLEVEL(theGrid)));
 	
 	/* set class of all dofs on next level to 0 */
     #ifdef DYNAMIC_MEMORY_ALLOCMODEL
@@ -6886,8 +6887,18 @@ if (1)
 				SeedVectorClasses(FinerGrid,theElement);
 #endif
 			  }
-			
+
             #ifdef DYNAMIC_MEMORY_ALLOCMODEL
+			#ifdef __PERIODIC_BOUNDARY__
+			{
+			  /* for periodic boundaries set class 3 on both periodic sides for nodes */
+			  NODE *node;
+
+			  for (node=FIRSTNODE(FinerGrid); node!=NULL; node=SUCCN(node))
+				SETNCLASS(node,MAX(NCLASS(node),VCLASS(NVECTOR(node))));
+			}
+			#endif
+			
 			PropagateNodeClasses(FinerGrid);
             #else
 			PropagateVectorClasses(FinerGrid);

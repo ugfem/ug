@@ -4354,17 +4354,6 @@ static INT PropagateVectorClass (GRID *theGrid, INT vclass)
   VECTOR *theVector;
   MATRIX *theMatrix;
 
-  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
-       theVector=SUCCVC(theVector))
-    if ((VCLASS(theVector)==vclass)&&(VSTART(theVector)!=NULL))
-      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
-           theMatrix=MNEXT(theMatrix))
-        if ((VCLASS(MDEST(theMatrix))<vclass)
-            &&(CEXTRA(MMYCON(theMatrix))!=1))
-          SETVCLASS(MDEST(theMatrix),vclass-1);
-
-
-
   /* set vector classes in the algebraic neighborhood to vclass-1 */
   /* use matrices to determine next vectors!!!!!                   */
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
@@ -4387,29 +4376,16 @@ static INT PropagatePeriodicVectorClass (GRID *theGrid, INT vclass)
   VECTOR *theVector;
   MATRIX *theMatrix;
 
-  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
-       theVector=SUCCVC(theVector))
+  /* set vector classes in the algebraic neighborhood to vclass-1 */
+  /* use matrices to determine next vectors!!!!!                   */
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
     if ((VCLASS(theVector)==vclass)&&(VSTART(theVector)!=NULL))
       for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
            theMatrix=MNEXT(theMatrix))
         if ((VCLASS(MDEST(theMatrix))<vclass)
             &&(CEXTRA(MMYCON(theMatrix))!=1)) {
           SETVCLASS(MDEST(theMatrix),vclass);
-          PRINTDEBUG(gm,1,("VCLASS(%d)=%d\n",VINDEX(MDEST(theMatrix)),vclass));
         }
-
-
-
-  /* set vector classes in the algebraic neighborhood to vclass-1 */
-  /* use matrices to determine next vectors!!!!!                   */
-  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL;
-       theVector=SUCCVC(theVector))
-    if ((VCLASS(theVector)==vclass)&&(VSTART(theVector)!=NULL))
-      for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL;
-           theMatrix=MNEXT(theMatrix))
-        if ((VCLASS(MDEST(theMatrix))<vclass)
-            &&(CEXTRA(MMYCON(theMatrix))!=1))
-          SETVCLASS(MDEST(theMatrix),vclass);
 
   /* only for this value valid */
   ASSERT(vclass==1);
@@ -4418,6 +4394,7 @@ static INT PropagatePeriodicVectorClass (GRID *theGrid, INT vclass)
 }
 #endif
 
+#ifdef _SCHALE_X_
 static INT PropagateVectorClassX (GRID *theGrid, INT vclass)
 {
   VECTOR *theVector;
@@ -4430,19 +4407,30 @@ static INT PropagateVectorClassX (GRID *theGrid, INT vclass)
            theMatrix=MNEXT(theMatrix))
         if ((VCLASS(MDEST(theMatrix))<vclass)
             &&(CEXTRA(MMYCON(theMatrix))!=1))
-          SETVCLASS(MDEST(theMatrix),vclass);
+          SETVCLASS(MDEST(theMatrix),vclass-1);
+
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+    if (VCLASS(theVector)==(vclass-1))
+      SETVCLASS(theVector,vclass);
 
   return(0);
 }
-
-
+#endif
 
 INT PropagateVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
   MATRIX *theMatrix;
 
-#if defined(_SCHALE_X_)&&!defined(__PERIODIC_BOUNDARY__)
+#if defined(_SCHALE_X_) && !defined(DYNAMIC_MEMORY_ALLOCMODEL)
+    #ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses():"
+                   " 0. communication on level %d\n",me,GLEVEL(theGrid)))
+  /* exchange VCLASS of vectors */
+  DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_VectorVClass, Scatter_VectorVClass);
+    #endif
+
   /* This call enlarges the set of 3-vector by one shell */
   /* larger overlap needed according to theory of CW     */
   /* added December 2000 for DG with local refinement    */
@@ -4471,17 +4459,28 @@ INT PropagateVectorClasses (GRID *theGrid)
   /* set vector classes in the algebraic neighborhood to 1 */
   if (PropagateVectorClass(theGrid,2)) REP_ERR_RETURN(1);
 
-#ifdef __PERIODIC_BOUNDARY__
-  /* set vector classes in the periodic neighbourhood to 1 */
-  if (PropagatePeriodicVectorClass(theGrid,1)) REP_ERR_RETURN(1);
-#endif
-
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses(): 3. communication\n",
                    me))
   /* exchange VCLASS of vectors */
   DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
                   Gather_VectorVClass, Scatter_VectorVClass);
+    #endif
+
+#ifdef __PERIODIC_BOUNDARY__
+  /* set vector classes in the periodic neighbourhood to 1 */
+  if (PropagatePeriodicVectorClass(theGrid,1)) REP_ERR_RETURN(1);
+
+    #ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateVectorClasses(): 4. communication\n",
+                   me))
+  /* exchange VCLASS of vectors */
+  DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_VectorVClass, Scatter_VectorVClass);
+        #endif
+#endif
+
+        #ifdef ModelP
   /* send VCLASS to ghosts */
   DDD_IFAOneway(VectorIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
                 Gather_VectorVClass, Scatter_GhostVectorVClass);
@@ -4673,7 +4672,13 @@ static INT PropagateNextVectorClassX (GRID *theGrid, INT vnclass)
            theMatrix=MNEXT(theMatrix))
         if ((VNCLASS(MDEST(theMatrix))<vnclass)
             &&(CEXTRA(MMYCON(theMatrix))!=1))
-          SETVNCLASS(MDEST(theMatrix),vnclass);
+          SETVNCLASS(MDEST(theMatrix),vnclass-1);
+
+  /* set class to vnclass if class==vnclass-1
+         otherwise dependence on ordering not connectivity! */
+  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+    if (VNCLASS(theVector)==(vnclass-1))
+      SETVNCLASS(theVector,vnclass);
 
   /* only for this values valid */
   ASSERT(vnclass==3 || vnclass==2);
@@ -4711,7 +4716,14 @@ INT PropagateNextVectorClasses (GRID *theGrid)
   VECTOR *theVector;
   MATRIX *theMatrix;
 
-#if defined(_SCHALE_X_)&&!defined(__PERIODIC_BOUNDARY__)
+#if defined(_SCHALE_X_) && !defined(DYNAMIC_MEMORY_ALLOCMODEL)
+    #ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 0. communication\n",me))
+  /* exchange VNCLASS of vectors */
+  DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
+                  Gather_VectorVNClass, Scatter_VectorVNClass);
+    #endif
+
   /* This call enlarges the set of 3-vector by one shell */
   /* larger overlap needed according to theory of CW     */
   /* added December 2000 for DG with local refinement    */
@@ -4745,13 +4757,16 @@ INT PropagateNextVectorClasses (GRID *theGrid)
 
 #ifdef __PERIODIC_BOUNDARY__
   if (PropagatePeriodicNextVectorClass(theGrid)) REP_ERR_RETURN(1);
-#endif
 
     #ifdef ModelP
   PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 4. communication\n",me))
   /* exchange VNCLASS of vectors */
   DDD_IFAExchange(BorderVectorSymmIF,GRID_ATTR(theGrid),sizeof(INT),
                   Gather_VectorVNClass, Scatter_VectorVNClass);
+        #endif
+#endif
+
+        #ifdef ModelP
   /* send VCLASS to ghosts */
   DDD_IFAOneway(VectorIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
                 Gather_VectorVNClass, Scatter_GhostVectorVNClass);

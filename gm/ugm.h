@@ -156,9 +156,8 @@ INT             MG_GeometricToPeriodic          (MULTIGRID *mg, INT fl, INT tl);
 INT                     Grid_GeometricToPeriodic        (GRID *g);
 INT                     MGSetPerVecCount                        (MULTIGRID *mg);
 INT                     GridSetPerVecCount                      (GRID *g);
-#ifdef ModelP
 INT                     SetPerVecVOBJECT                        (GRID *g);
-#endif
+INT                     Grid_CheckPeriodicity           (GRID *g);
 #endif
 
 #endif
