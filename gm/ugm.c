@@ -51,6 +51,7 @@
 #include "ugenv.h"
 #include "debug.h"
 #include "general.h"
+#include "fifo.h"
 
 #include "devices.h"
 
