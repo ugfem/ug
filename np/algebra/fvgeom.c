@@ -146,7 +146,7 @@ typedef struct {
 static LOCAL_DOUBLES LocalCoords[TAGS];
 
 /* data for CVS */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -973,8 +973,8 @@ INT GetMJRawRegularUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECT
    D*/
 /****************************************************************************/
 
-INT GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF],
-                                  DOUBLE NodalShape[MAXF][MAXNC], DOUBLE IPShape[MAXF][MAXF])
+static INT OLD_GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF],
+                                             DOUBLE NodalShape[MAXF][MAXNC], DOUBLE IPShape[MAXF][MAXF])
 {
 #   ifdef __TWODIM__
 
@@ -990,12 +990,22 @@ INT GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VEC
       IPShape[ip][i] = 0.0;
 
     if (V2_ISZERO(IPVel[ip]))
-      continue;
+    {
+      /* HRR test
+         NodalShape[ip][0] = 1.0;
+         continue;
+         HRR test end */
+    }
 
     /* determine upwind node and upwind ip */
     V2_SCALAR_PRODUCT(IPVel[ip],SCVF_NORMAL(FVG_SCVF(geo,ip)),ipflow);
     if (fabs(ipflow)<SMALL_C)
     {
+      /* HRR test
+         NodalShape[ip][0] = 1.0;
+         continue;
+         HRR test end */
+
       /* the convection is parallel to the subcontrol volume surface */
       V2_VECTOR_PRODUCT(IPVel[ip],SCVF_NORMAL(FVG_SCVF(geo,ip)),dir);
       if (dir>0)
@@ -1025,6 +1035,10 @@ INT GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VEC
       upip = (ip+1)%nc;
     }
     V2_SCALAR_PRODUCT(IPVel[upip],SCVF_NORMAL(FVG_SCVF(geo,upip)),upflow);
+    /* HRR test
+       if (fabs(upflow)<SMALL_C)
+            upflow = 0.0;
+       HRR test end */
 
     ratio = upflow/ipflow;
     coeff = MAX(MIN(ratio,1.0),0.0);
@@ -1039,6 +1053,109 @@ INT GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VEC
   return (__LINE__);
 #   endif
 
+  return (0);
+}
+
+INT GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF],
+                                  DOUBLE NodalShape[MAXF][MAXNC], DOUBLE IPShape[MAXF][MAXF])
+{
+  DOUBLE dimlessflow,ipflow[MAXF];
+  DOUBLE vel,len;
+  DOUBLE f_in,f_out,flux,sum,f[MAX_EDGES_OF_CORNER];
+  INT ip,ni,nc,corn,i,j,n,found;
+  INT scvip[MAX_EDGES_OF_CORNER];
+  INT noflow[MAXF];
+
+  nc = FVG_NSCV(geo);
+  ni = FVG_NSCVF(geo);
+
+  /* compute fluxes at ips */
+  found = 0;
+  for (ip=0; ip<ni; ip++)
+  {
+    for (corn=0; corn<nc; corn++)
+      NodalShape[ip][corn] = 0.0;
+    for (i=0; i<FVG_NSCVF(geo); i++)
+      IPShape[ip][i] = 0.0;
+
+    if (V2_ISZERO(IPVel[ip]))
+      dimlessflow = 0.0;
+    else
+    {
+      /* compute fluxes */
+      V_DIM_SCALAR_PRODUCT(IPVel[ip],SCVF_NORMAL(FVG_SCVF(geo,ip)),ipflow[ip]);
+      V_DIM_SCALAR_PRODUCT(IPVel[ip],IPVel[ip],vel);
+      V_DIM_SCALAR_PRODUCT(SCVF_NORMAL(FVG_SCVF(geo,ip)),SCVF_NORMAL(FVG_SCVF(geo,ip)),len);
+
+      dimlessflow = ipflow[ip]/sqrt(vel*len);
+    }
+
+    if (fabs(dimlessflow)<=SMALL_C)
+    {
+      /* dimensionless flux is small */
+      ipflow[ip] = 0.0;
+      noflow[ip] = TRUE;
+      found++;
+
+      /* set arbitrary NodalShape = 1 (no contribution anyways) */
+      NodalShape[ip][0] = 1.0;
+    }
+    else
+      noflow[ip] = FALSE;
+  }
+
+  if (found==ni)
+    return (0);
+
+  /* loop SCVs */
+  for (corn=0; corn<nc; corn++)
+  {
+    f_in  = 0.0;
+    f_out = 0.0;
+    n = 0;
+    for (ip=0; ip<ni; ip++)
+      if (!noflow[ip])
+        if ((SCVF_FROM(FVG_SCVF(geo,ip))==corn))
+        {
+          /* normal directed outward */
+          scvip[n] = ip;
+          f[n++] = flux = ipflow[ip];
+          f_in  += -MIN(flux,0);
+          f_out +=  MAX(flux,0);
+        }
+        else if (SCVF_TO(FVG_SCVF(geo,ip))==corn)
+        {
+          /* normal directed to the interior */
+          scvip[n] = ip;
+          f[n++] = flux = -ipflow[ip];
+          f_in  += -MIN(flux,0);
+          f_out +=  MAX(flux,0);
+        }
+    if (n==0) continue;
+
+    flux = MAX(f_in,f_out);
+
+    /* now we know noflow[scvip[i]] is FALSE */
+    for (i=0; i<n; i++)
+      if (f[i]>0)
+      {
+        /* here we have an outflow ip: set shape values of scvip[i] */
+        sum = 0.0;
+        for (j=0; j<n; j++)
+          if (f[j]<0)
+          {
+            /* this is an inflow ip */
+            ASSERT(IPShape[scvip[i]][scvip[j]]==0.0);
+            sum += IPShape[scvip[i]][scvip[j]] = -f[j]/flux;
+            ASSERT(IPShape[scvip[i]][scvip[j]]>0);
+            ASSERT(IPShape[scvip[i]][scvip[j]]<=1);
+          }
+        ASSERT(NodalShape[scvip[i]][corn]==0.0);
+        NodalShape[scvip[i]][corn] = 1.0-sum;
+        ASSERT(NodalShape[scvip[i]][corn]>=0.0);
+        ASSERT(NodalShape[scvip[i]][corn]<=1.0);
+      }
+  }
   return (0);
 }
 
