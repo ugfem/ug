@@ -10,8 +10,8 @@
 include ug.conf
 
 # the following list may be extended
-MODULES = LOW DEV DOM GM NUMERICS GRAPHICS UI $(MODEL_TARGET)
 UGMODULES = LOW GM NUMERICS GRAPHICS UI $(MODEL_TARGET)
+MODULES = DEV DOM $(UGMODULES)
 
 # modules for ug server daemon
 UGDMODULES = LOW DEV 
