@@ -272,7 +272,9 @@ static INT DataExplorerCommand (INT argc, char **argv)
   INT notOnlyTetra;                 /* flag for tetrahedrons only grids         */
   INT notOnlyTriang;                /* flag for triangles only boundaries       */
   INT nibnd;                        /* number of inner boundary faces/lines     */
+  INT gnibnd;                       /* global number of inner bndary faces/lines*/
   INT nobnd;                        /* number of outer boundary faces/lines     */
+  INT gnobnd;                       /* global number of outer bndary faces/lines*/
   INT writeBnds=0;                  /* flag: write boundaries? (1=Inner, 2=All) */
   INT binaryOutput=0;               /* flag: write data in binary? (0=No|1=Yes) */
   INT writeGrid=1;                  /* flag: write grid? (0=No|1=Yes)           */
@@ -286,6 +288,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
   time_t ltime;
 
   INT oe,ov;
+  INT oibnd,oobnd;
   INT blocks;
 
   INT *Id2Position, key;
@@ -957,12 +960,15 @@ static INT DataExplorerCommand (INT argc, char **argv)
 
         SETUSED(el,1);
         for (i=0; i<SIDES_OF_ELEM(el); i++) {
+#ifndef ModelP
           if (NBELEM(el,i)!=NULL && USED(NBELEM(el,i))) continue;
+#else
+          if (NBELEM(el,i)!=NULL && !EGHOST(NBELEM(el,i)) && USED(NBELEM(el,i))) continue;
+#endif
           if (SIDE_ON_BND(el,i)) {
             if (NBELEM(el,i)==NULL) nobnd++;
             else nibnd++;
-#ifdef __TWODIM__
-#else
+#ifdef __THREEDIM
             if (CORNERS_OF_SIDE(el,i)!=3) notOnlyTriang=1;
 #endif
           }
@@ -972,7 +978,19 @@ static INT DataExplorerCommand (INT argc, char **argv)
 #ifdef ModelP
     k = UG_GlobalSumINT(notOnlyTriang);
     notOnlyTetra = k;
+    gnibnd = UG_GlobalSumINT(nibnd);
+    oibnd = get_offset(nibnd);
+
+    gnobnd = UG_GlobalSumINT(nobnd);
+    oobnd = get_offset(nobnd);
+
+#else
+    gnibnd = nibnd;
+    gnobnd = nobnd;
+    oibnd = 0;
+    oobnd = 0;
 #endif
+
   }
 
   if (writeBnds) {
@@ -986,20 +1004,20 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
 #ifdef __TWODIM__
     sprintf(it,"object 3 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
-            2, nibnd, out_form, filename_grid, dat_pos);
+            2, gnibnd, out_form, filename_grid, dat_pos);
     if (binaryOutput)
-      dat_pos+=2*nibnd*sizeof(INT);
+      dat_pos+=2*gnibnd*sizeof(INT);
 #else
     if (notOnlyTriang) {
       sprintf(it,"object 3 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
-              4, nibnd, out_form, filename_grid, dat_pos);
+              4, gnibnd, out_form, filename_grid, dat_pos);
       if (binaryOutput)
-        dat_pos+=4*nibnd*sizeof(INT);
+        dat_pos+=4*gnibnd*sizeof(INT);
     } else {
       sprintf(it,"object 3 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
-              3, nibnd, out_form, filename_grid, dat_pos);
+              3, gnibnd, out_form, filename_grid, dat_pos);
       if (binaryOutput)
-        dat_pos+=3*nibnd*sizeof(INT);
+        dat_pos+=3*gnibnd*sizeof(INT);
     }
 #endif
     strcpy(item+ic,it); ic+=strlen(it);
@@ -1014,7 +1032,11 @@ static INT DataExplorerCommand (INT argc, char **argv)
 
         SETUSED(el,1);
         for (i=0; i<SIDES_OF_ELEM(el); i++) {
+#ifndef ModelP
           if (NBELEM(el,i)!=NULL && USED(NBELEM(el,i))) continue;
+#else
+          if (NBELEM(el,i)!=NULL && !EGHOST(NBELEM(el,i)) && USED(NBELEM(el,i))) continue;
+#endif
           if (SIDE_ON_BND(el,i) && NBELEM(el,i)!=NULL) {
             switch(CORNERS_OF_SIDE(el,i))
             {
@@ -1071,10 +1093,10 @@ static INT DataExplorerCommand (INT argc, char **argv)
               break;
             }
             if (binaryOutput)
-              pfile_tagged_write_INT(pf_bin, buffer_INT, usedBuf, counter+oe);
+              pfile_tagged_write_INT(pf_bin, buffer_INT, usedBuf, counter+oibnd);
             else {
               if (writeGrid)
-                pfile_tagged_puts(pf_txt,it,counter+oe);
+                pfile_tagged_puts(pf_txt,it,counter+oibnd);
               old_pos+=strlen(it);
             }
             counter++;
@@ -1120,20 +1142,20 @@ static INT DataExplorerCommand (INT argc, char **argv)
     strcpy(item+ic,it); ic+=strlen(it);
 #ifdef __TWODIM__
     sprintf(it,"object 4 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
-            2, nobnd, out_form, filename_grid, dat_pos);
+            2, gnobnd, out_form, filename_grid, dat_pos);
     if (binaryOutput)
-      dat_pos+=2*nobnd*sizeof(INT);
+      dat_pos+=2*gnobnd*sizeof(INT);
 #else
     if (notOnlyTriang) {
       sprintf(it,"object 4 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
-              4, nobnd, out_form, filename_grid, dat_pos);
+              4, gnobnd, out_form, filename_grid, dat_pos);
       if (binaryOutput)
-        dat_pos+=4*nobnd*sizeof(INT);
+        dat_pos+=4*gnobnd*sizeof(INT);
     } else {
       sprintf(it,"object 4 class array type int rank 1 shape %d items %d %s\ndata file %s,%d\n",
-              3, nobnd, out_form, filename_grid, dat_pos);
+              3, gnobnd, out_form, filename_grid, dat_pos);
       if (binaryOutput)
-        dat_pos+=3*nobnd*sizeof(INT);
+        dat_pos+=3*gnobnd*sizeof(INT);
     }
 #endif
     strcpy(item+ic,it); ic+=strlen(it);
@@ -1148,7 +1170,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
 
         SETUSED(el,1);
         for (i=0; i<SIDES_OF_ELEM(el); i++) {
-          if (NBELEM(el,i)!=NULL && USED(NBELEM(el,i))) continue;
+          if ( NBELEM(el,i)!=NULL ) continue;
           if (SIDE_ON_BND(el,i) && NBELEM(el,i)==NULL) {
             switch(CORNERS_OF_SIDE(el,i))
             {
@@ -1205,10 +1227,10 @@ static INT DataExplorerCommand (INT argc, char **argv)
               break;
             }
             if (binaryOutput)
-              pfile_tagged_write_INT(pf_bin, buffer_INT, usedBuf, counter+oe);
+              pfile_tagged_write_INT(pf_bin, buffer_INT, usedBuf, counter+oobnd);
             else {
               if (writeGrid)
-                pfile_tagged_puts(pf_txt,it,counter+oe);
+                pfile_tagged_puts(pf_txt,it,counter+oobnd);
               old_pos+=strlen(it);
             }
             counter++;
