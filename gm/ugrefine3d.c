@@ -2259,10 +2259,17 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
       /* This flag has been set either by GridDisposeConnection or by CreateElement	*/
       if (GridCreateConnection(FinerGrid)) return (GM_FATAL);
       /* and compute the vector classes on the new (or changed) level */
-      ClearVectorClasses(FinerGrid);
-      for (theElement=FIRSTELEMENT(FinerGrid); theElement!=NULL; theElement=SUCCE(theElement))
-        if (ECLASS(theElement)>=IRREGULAR_CLASS) SeedVectorClasses(theElement);
-      PropagateVectorClasses(FinerGrid);
+
+      if (rFlag==GM_COPY_ALL)
+        for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
+          SeedVectorClasses(theElement);
+      else
+      {
+        ClearVectorClasses(FinerGrid);
+        for (theElement=FIRSTELEMENT(FinerGrid); theElement!=NULL; theElement=SUCCE(theElement))
+          if (ECLASS(theElement)>=IRREGULAR_CLASS) SeedVectorClasses(theElement);
+        PropagateVectorClasses(FinerGrid);
+      }
     }
 
   }
