@@ -891,7 +891,7 @@ INT ScaleIVector (GRID *g, VECDATA_DESC *theVD)
 
    RETURN VALUE:
    INT
-   .n    m    number of vlaues in the father element
+   .n    m    number of values in the father element
  */
 /****************************************************************************/
 

@@ -4373,12 +4373,15 @@ static INT FFApplyPreconditioner( NP_FF *np, INT level,VECDATA_DESC *x, VECDATA_
       }
     }
 
-    if (FreeVD(NP_MG((NP_ITER*)np),level,level,NPFF_t(np))) REP_ERR_RETURN(1);
+
+    if (FreeVD(NP_MG((NP_ITER*)np),level,level,NPFF_t(np))!=NUM_OK) REP_ERR_RETURN(1);
   }
 #else
   PrintErrorMessage( 'E', "FFApplyPreconditioner", "__BLOCK_VECTOR_DESC__ must be defined in gm.h" );
   REP_ERR_RETURN (1);
 #endif
+
+  return (NUM_OK);
 }
 
 static void FFGenerateCheckA( BLOCKVECTOR *bv, INT v_comp, INT nr_of_call, INT scaling_comp )

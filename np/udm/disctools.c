@@ -40,6 +40,9 @@
 
 #include "ugblas.h"
 #include "disctools.h"
+#ifdef ModelP
+#include "parallel.h"   /* for PRIO */
+#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -2434,7 +2437,7 @@ INT PrintDiagMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
   MATRIX *m;
   INT Mcomp,ccomp,i,j,rtype;
 
-  for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+  for (v=PFIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
   {
     if (VCLASS(v) > vclass) continue;
     if (VNCLASS(v) > vnclass) continue;
@@ -2450,19 +2453,28 @@ INT PrintDiagMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
       i += sprintf(buffer,"x=%5.2f y=%5.2f ",pos[0],pos[1]);
       if (DIM == 3)
         i += sprintf(buffer+i,"z=%5.2f ",pos[2]);
+#ifdef ModelP
+      i += sprintf(buffer+i,"l %d p %d ",GLEVEL(g),PRIO(v));
+#endif
     }
     else {
       info = TRUE;
       i += sprintf(buffer,"                ");
       if (DIM == 3)
         i += sprintf(buffer+i,"        ");
+#ifdef ModelP
+      i += sprintf(buffer+i,"l %d p %d ",GLEVEL(g),-1);
+#endif
     }
     for (j=0; j<ccomp; j++)
       i += sprintf(buffer+i,"d[%d]=%15.8f ",j,
                    MVALUE(m,Mcomp+j*ccomp+j));
     i += sprintf(buffer+i,"\n");
     UserWrite(buffer);
+
+    PRINTDEBUG(np,1,("%d: %s",me,buffer));
   }
+
 
   if (info)
     UserWrite("NOTE: "
