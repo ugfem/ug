@@ -954,6 +954,31 @@ static int Scatter_VectorVecskip (DDD_OBJ obj, void *data)
   return (NUM_OK);
 }
 
+static int Scatter_GhostVectorVecskip (DDD_OBJ obj, void *data)
+{
+  VECTOR *pv = (VECTOR *)obj;
+  INT i,type;
+  unsigned INT vecskip;
+  const SHORT *Comp;
+
+  vecskip = ((DOUBLE *) data)[0];
+  VECSKIP(pv) = vecskip;
+  if (vecskip == 0) return (NUM_OK);
+
+  if (VD_IS_SCALAR(ConsVector)) {
+    if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
+      VVALUE(pv,VD_SCALCMP(ConsVector)) = ((DOUBLE *)data)[1];
+    return (NUM_OK);
+  }
+  type = VTYPE(pv);
+  Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
+  for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
+    if ((vecskip & (1<<i)))
+      VVALUE(pv,Comp[i]) = ((DOUBLE *)data)[i+1];
+
+  return (NUM_OK);
+}
+
 INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 {
   INT level,tp,m;
@@ -974,6 +999,16 @@ INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
                       GRID_ATTR(GRID_ON_LEVEL(mg,level)),
                       m * sizeof(DOUBLE),
                       Gather_VectorVecskip, Scatter_VectorVecskip);
+
+  if ((fl==BOTTOMLEVEL(mg)) && (tl==TOPLEVEL(mg)))
+    DDD_IFOneway(BorderVectorSymmIF, IF_FORWARD, m * sizeof(DOUBLE),
+                 Gather_VectorVecskip, Scatter_GhostVectorVecskip);
+  else
+    for (level=fl; level<=tl; level++)
+      DDD_IFAOneway(VectorVIF,
+                    GRID_ATTR(GRID_ON_LEVEL(mg,level)), IF_FORWARD,
+                    m * sizeof(DOUBLE),
+                    Gather_VectorVecskip, Scatter_GhostVectorVecskip);
 
   return (NUM_OK);
 }
