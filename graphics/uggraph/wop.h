@@ -90,7 +90,7 @@
 #define DO_INVERSE_POLYLINE                     15
 #define DO_STYLED_LINE                                  16
 #ifdef ModelP
-#define DO_END_GPIPE                                    17
+#define DO_END_TOKEN                            17
 #endif
 
 /* increment */
@@ -122,6 +122,21 @@
 #define DO_2l(p)                                                (*((long*)(p)))
 #define DO_2C(p)                                                (*((COORD*)(p)))
 #define DO_2Cp(p)                                               ((COORD*)(p))
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Defines for Parallel Extensions					    */
+/*									    */
+/****************************************************************************/
+
+#ifdef ModelP
+
+#define WOP_DOWN_CHANNELS  2
+#define DO_BUFFER_SLOTS    2
+#define DO_SLOT_SIZE       30001
+#endif
+
 
 /****************************************************************************/
 /*																			*/
