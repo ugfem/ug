@@ -7,6 +7,11 @@
  * \ingroup dom
  */
 
+/** \addtogroup dom
+ *
+ * @{
+ */
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -14,12 +19,12 @@
 /*                                                                          */
 /* Purpose:   standard header file template                                 */
 /*                                                                          */
-/* Author:      klaus Johannsen                                             */
-/*              Institut fuer Computeranwendungen III                       */
-/*              Universitaet Stuttgart                                      */
-/*              Pfaffenwaldring 27                                          */
-/*              70550 Stuttgart                                             */
-/*              email: ug@ica3.uni-stuttgart.de                             */
+/* Author:    klaus Johannsen                                               */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70550 Stuttgart                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
 /*                                                                          */
 /* History:   18.06.96 begin, ug version 3.2                                */
 /*                                                                          */
@@ -106,47 +111,54 @@ namespace UG3d {
 #endif
 #endif
 
-/* offset of additional parameters for boundary condition function call */
+/** \brief Offset of additional parameters for boundary condition function call */
 enum DOM_IN_PARAMS {
 
-  DOM_GLB_X,                                            /* general bnd cond. x-coordinate               */
-  DOM_GLB_Y,                                            /* general bnd cond. y-coordinate               */
+  DOM_GLB_X,              /*!< General bnd cond. x-coordinate               */
+  DOM_GLB_Y,              /*!< General bnd cond. y-coordinate               */
 #ifdef __THREEDIM__
-  DOM_GLB_Z,                                            /* general bnd cond. z-coordinate               */
+  DOM_GLB_Z,              /*!< General bnd cond. z-coordinate               */
 #endif
-  DOM_EVAL_FOR_SD,                              /* evaluate bc for this subdomain               */
+  DOM_EVAL_FOR_SD,        /*!< Evaluate bc for this subdomain               */
   DOM_N_IN_PARAMS
 };
 
-#define DOM_LOC_X       DOM_GLB_X       /* parametrized bnd cond. local x-coord.*/
+#define DOM_LOC_X       DOM_GLB_X       /*!< Parametrized bnd cond. local x-coord.*/
 #ifdef __THREEDIM__
-#define DOM_LOC_Y       DOM_GLB_Y       /* parametrized bnd cond. local y-coord.*/
+#define DOM_LOC_Y       DOM_GLB_Y       /*!< parametrized bnd cond. local y-coord.*/
 #endif
 
 #define DOM_PARAM_OFFSET        DOM_N_IN_PARAMS
 
-/* subdomain of BC evaluation unknown */
+/** \brief Subdomain of BC evaluation unknown */
 #define DOM_EVAL_SD_UNKNOWN             -1.0
 
-/* boundary types */
+/** @name Boundary types */
+/*@{*/
 #define FIXED         0
 #define FREE          1
 #define PERIODIC      2
 #define NON_PERIODIC  3
+/*@}*/
 
-/* status for mesh */
+/** @name Status for mesh */
+/*@{*/
 #define MESHSTAT_NOTINIT     0
 #define MESHSTAT_EMPTY       1
 #define MESHSTAT_CNODES      2
 #define MESHSTAT_SURFMESH    3
 #define MESHSTAT_MESH        4
+/*@}*/
 
-/* function formats */
+/** @name Function formats */
+/*@{*/
 typedef INT (*ConfigProcPtr)(INT argc, char **argv);
 typedef INT (*CoeffProcPtr)(DOUBLE *, DOUBLE *);
 typedef INT (*UserProcPtr)(DOUBLE *, DOUBLE *);
+/*@}*/
 
-/* macros for BVPDescriptor */
+/** @name Macros for BVPDescriptor */
+/*@{*/
 #define BVPD_NAME(d)         ((d)->name)
 #define BVPD_MIDPOINT(d)     ((d)->midpoint)
 #define BVPD_RADIUS(d)       ((d)->radius)
@@ -158,6 +170,7 @@ typedef INT (*UserProcPtr)(DOUBLE *, DOUBLE *);
 #define BVPD_S2P(d,s)        ((d)->s2p[s])
 #define BVPD_NCOEFFF(d)      ((d)->numOfCoeffFct)
 #define BVPD_NUSERF(d)       ((d)->numOfUserFct)
+/*@}*/
 
 /****************************************************************************/
 /*                                                                          */
@@ -165,58 +178,118 @@ typedef INT (*UserProcPtr)(DOUBLE *, DOUBLE *);
 /*                                                                          */
 /****************************************************************************/
 
-typedef void *BVP;                 /* structure handled by domain module    */
-typedef void *BNDS;                /* structure handled by domain module    */
-typedef void *BNDP;                /* structure handled by domain module    */
+typedef void *BVP;                 /*!< Structure handled by domain module    */
+typedef void *BNDS;                /*!< Structure handled by domain module    */
+typedef void *BNDP;                /*!< Structure handled by domain module    */
 
+/** \todo Please doc me! */
 struct BVP_Descriptor
 {
-  /* general part */
-  char name[NAMELEN];                /* name of the BVP                     */
+  /** @name General part */
+  /*@{*/
+  /** \brief Name of the BVP */
+  char name[NAMELEN];
+  /*@}*/
 
-  /* domain part */
-  DOUBLE midpoint[DIM];               /* sphere in which the domain lies     */
+  /** @name Domain part */
+  /*@{*/
+  /** \brief Midpoint of a sphere in which the domain lies     */
+  DOUBLE midpoint[DIM];
+
+  /** \brief Radius of a sphere in which the domain lies     */
   DOUBLE radius;
-  INT convex;                        /* 1 if domain is convex, 0 if not     */
-  INT nSubDomains;                   /* nb. of subdomains,
-                                                                                exterior not counted                */
-  INT nDomainParts;                                      /* number of parts in the domain               */
-  INT *s2p;                                                      /* pointer to table subbdom --> part   */
 
-  /* problem part */
-  ConfigProcPtr ConfigProc;          /* configuration function              */
-  INT numOfCoeffFct;                 /* nb. of coefficient functions        */
-  INT numOfUserFct;                  /* nb. of user functions               */
+  /** \brief 1 if domain is convex, 0 if not */
+  INT convex;
+
+  /** \brief Number of subdomains, exterior not counted                */
+  INT nSubDomains;
+
+  /** \brief Number of parts in the domain               */
+  INT nDomainParts;
+
+  /** \brief Pointer to table subbdom --> part   */
+  INT *s2p;
+  /*@}*/
+
+  /** @name Problem part */
+  /*@{*/
+  /** \brief Configuration function              */
+  ConfigProcPtr ConfigProc;
+
+  /** \brief Number of coefficient functions        */
+  INT numOfCoeffFct;
+
+  /** \brief Number of user functions               */
+  INT numOfUserFct;
+  /*@}*/
 };
 typedef struct BVP_Descriptor BVP_DESC;
 
+
+/** \todo Please doc me! */
 struct mesh
 {
-  INT mesh_status;                                       /* status see above                                    */
-  INT nBndP;                         /* nb. of boundary points              */
-  BNDP **theBndPs;                                       /* list of boundary points                 */
-  INT nInnP;                         /* nb. of inner nodes                  */
-  DOUBLE **Position;                 /* positions of inner nodes            */
-  INT nSubDomains;                   /* nb. of subdomains                   */
-  INT *nSides;                       /* nb. of boundary sides per subdomain */
-  INT **Side_corners;                /* nb. of side corners                 */
-  INT **xy_Side;                                         /* triangle_id for prism                */
-  INT ***Side_corner_ids;                /* corner ids                          */
-  INT *nElements;                    /* nb. of elements per subdomain       */
-  INT **Element_corners;             /* nb. of element corners              */
-  INT ***Element_corner_ids;         /* nb. of side corners                 */
-  INT ***nbElements;                 /* nb. of side corners                 */
-  INT **ElemSideOnBnd;               /* used bitwise: sides on bnd for elem */
 
-  /* parallel part */
-  char *VertexLevel;                                     /* level of vertex                                             */
-  /* NULL if all vertex on level 0               */
-  char *VertexPrio;                                      /* priority of vertex                                  */
-  /* NULL if all vertex are master               */
-  char **ElementLevel;                                   /* level of element in subdomain       */
-  /* NULL if all elements on level 0             */
-  char **ElementPrio;                                    /* priority of element in subdomain    */
-  /* NULL if all elements are master             */
+  /** \brief Status see above                                    */
+  INT mesh_status;
+
+  /** \brief Number of boundary points              */
+  INT nBndP;
+
+  /** \brief List of boundary points                 */
+  BNDP **theBndPs;
+
+  /** \brief Number of inner nodes                  */
+  INT nInnP;
+
+  /** \brief Positions of inner nodes            */
+  DOUBLE **Position;
+
+  /** \brief Number of subdomains                   */
+  INT nSubDomains;
+
+  /** \brief Number of boundary sides per subdomain */
+  INT *nSides;
+
+  /** \brief Number of side corners                 */
+  INT **Side_corners;
+
+  /** \brief Triangle_id for prism                */
+  INT **xy_Side;
+
+  /** \brief Corner ids                          */
+  INT ***Side_corner_ids;
+
+  /** \brief Number of elements per subdomain       */
+  INT *nElements;
+
+  /** \brief Number of element corners              */
+  INT **Element_corners;
+
+  /** \brief Number of side corners                 */
+  INT ***Element_corner_ids;
+
+  /** \brief Number of side corners                 */
+  INT ***nbElements;
+
+  /** \brief Used bitwise: sides on bnd for elem */
+  INT **ElemSideOnBnd;
+
+  /** @name Parallel part */
+  /*@}*/
+  /** \brief Level of vertex NULL if all vertex on level 0 */
+  char *VertexLevel;
+
+  /** \brief Priority of vertex   NULL if all vertex are master               */
+  char *VertexPrio;
+
+  /** \brief Level of element in subdomain   NULL if all elements on level 0             */
+  char **ElementLevel;
+
+  /** \brief Priority of element in subdomain  NULL if all elements are master             */
+  char **ElementPrio;
+  /*@}*/
 };
 typedef struct mesh MESH;
 
@@ -234,696 +307,517 @@ typedef struct mesh MESH;
 
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* functions for BVP                                                                                                            */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* functions for BVP                                                        */
+/*                                                                          */
 /****************************************************************************/
 
-/****************************************************************************/
-/** \brief
-   BVP_GetFirst - Return a pointer to the first BVP
-
-   SYNOPSIS:
-   BVP *BVP_GetFirst (void);
-
-   PARAMETERS:
-   .  void
-
-   DESCRIPTION:
-   This function returns a pointer to the first BVP defined in the domain
-   subsystem..
-
-   RETURN VALUE:
-   BVP *
-   .n   pointer to BVP
-   .n   NULL if not found.
- */
-/****************************************************************************/
 
 /****************************************************************************/
-/** \brief
-   BVP_GetNext - Return a pointer to the next BVP
+/*                                                                          */
+/* functions called by script commands                                      */
+/*                                                                          */
+/****************************************************************************/
 
-   SYNOPSIS:
-   BVP *BVP_GetNext (BVP *theBVP)
 
-   PARAMETERS:
-   .  theBVP - BVP structure
 
-   DESCRIPTION:
+/****************************************************************************/
+/*                                                                          */
+/* functions for BNDP                                                       */
+/*                                                                          */
+/****************************************************************************/
+
+
+
+
+
+
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* functions for BNDS                                                       */
+/*                                                                          */
+/****************************************************************************/
+
+
+
+
+
+
+/****************************************************************************/
+/** \brief Return a pointer to the next BVP
+
+ * @param theBVP - BVP structure
+
    This function returns a pointer to the next BVP defined in the domain
-   subsystem..
-
-   RETURN VALUE:
-   BVP *
-   .n   pointer to BVP
-   .n   NULL if not found.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BVP_Save - save a BVP
-
-   SYNOPSIS:
-   INT BVP_Save (BVP *theBVP, char *name, char argc, char **argv)
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  name - name of file
-   .  argc, argv - command parameters
-
-   DESCRIPTION:
-   This function saves a BVP to file named <name>.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BVP_Load - load a BVP
-
-   SYNOPSIS:
-   BVP *BVP_Load (char *name, INT argc, char **argv)
-
-   PARAMETERS:
-   .  name - name of file
-   .  argc, argv - command parameters
-
-   DESCRIPTION:
-   This function loads a BVP from file named <name>.
-
-   RETURN VALUE:
-   BVP *
-   .n   pointer to BVP
-   .n   NULL if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BVP_GetByName - get pointer to BVP by name
-
-   SYNOPSIS:
-   BVP *BVP_GetByName (char *name)
-
-   PARAMETERS:
-   .  name - name of BVP
-
-   DESCRIPTION:
-   This function returns the pointer to the BVP specified by its <name>.
-
-   RETURN VALUE:
-   BVP *
-   .n   pointer to BVP
-   .n   NULL if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/*
-   BVP_Init - initialize a BVP and return a mesh
-
-   SYNOPSIS:
-   INT BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
-
-   PARAMETERS:
-   .  filename - name of file
-   .  theHeap - heap
-   .  MarkKey - use key for temporary memory allocation (do not Mark/Release)
-
-   DESCRIPTION:
-   Function initialize a BVP and returns a mesh.
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if error.
-
-   SEE ALSO:
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BVP_Dispose - dispose a BVP
-
-   SYNOPSIS:
-   INT BVP_Dispose (BVP *theBVP)
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-
-   DESCRIPTION:
-   This function disposes a BVP.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-
-
-/****************************************************************************/
-/** \brief
-   BVP_SetCoeffFct - set coefficient function(s)
-
-   SYNOPSIS:
-   INT BVP_SetCoeffFct (BVP *theBVP, INT n, CoeffProcPtr *CoeffFct)
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  n - nb. of coefficient function or -1 for all
-
-   DESCRIPTION:
-   This function one or all coefficient functions.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BVP_SetUserFct - set coefficient function(s)
-
-   SYNOPSIS:
-   INT BVP_SetUserFct (BVP *theBVP, INT n, UserProcPtr *UserFct)
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  n - nb. of user function or -1 for all
-
-   DESCRIPTION:
-   This function gives one or all user functions.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BVP_Check - check consistency of BVP
-
-   SYNOPSIS:
-   INT BVP_Check (BVP *aBVP)
-
-   PARAMETERS:
-   .  aBVP - BVP structure
-   .  CheckResult - 0 if ok, 1 if error detected
-
-   DESCRIPTION:
-   This function checks consistency of BVP
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-
-/****************************************************************************/
-/*                                                                                                                                                      */
-/* functions called by script commands                                                                          */
-/*                                                                                                                                                      */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BVP_InsertBndP - sets a BNDP from command input
-
-   SYNOPSIS:
-   BNDP *BVP_InsertBndP (HEAP *Heap, BVP *theBVP, INT argc, char **argv)
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  argc, argv - command parameters
-   .  theBndP - the BNDP to set
-
-   DESCRIPTION:
-   This function sets a BNDP from command input parameters.
-   Options are implementation specific.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDP_SaveInsertedBndP - write command to insert this BNDP
-
-   SYNOPSIS:
-   INT BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size)
-
-   PARAMETERS:
-   .  theBndP - BNDP structure
-   .  data - string to store command
-   .  max_data_size - maximal datasize to use
-
-   DESCRIPTION:
-   This function writes a command to string which inserts the BNDP.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/*                                                                                                                                                      */
-/* functions for BNDP                                                                                                           */
-/*                                                                                                                                                      */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDP_Global - return global coordinates of BNDP
-
-   SYNOPSIS:
-   INT BNDP_Global (BNDP *aBndP, DOUBLE *global)
-
-   PARAMETERS:
-   .  aBndP - BNDP structure
-   .  global - global coordinates
-
-   DESCRIPTION:
-   This function returns global coordinates of BNDP
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDP_Move - change global coordinates of free boundary point
-
-   SYNOPSIS:
-   INT BNDP_Move (BNDP *aBndP, const DOUBLE global[])
-
-   PARAMETERS:
-   .  aBndP - BNDP structure
-   .  global - new global coordinates
-
-   DESCRIPTION:
-   This function sets global coordinates of a free BNDP. The local coordinates
-   will be kept fixed which implies that the topology of the boundary triangulation
-   must not be changed!
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDP_BndCond - gets bnd conditions for a BNDP
-
-   SYNOPSIS:
-   INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i,
-   DOUBLE *in, DOUBLE *value, INT *type)
-
-   PARAMETERS:
-   .  aBndP - BNDP structure
-   .  i     - evaluate on patch i
-   .  n     - number of BNDS
-   .  in    - input vector (if !=NULL has to be allocated with >= DOM_N_IN_PARAMS DOUBLES)
-   .  type  - type of bnd cond
-   .  value - values
-
-   DESCRIPTION:
-   This function gets bnd conditions for a BNDP
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDP_SurfaceId - gets surface ids for a BNDP
-
-   SYNOPSIS:
-   INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i)
-
-   PARAMETERS:
-   .  aBndP - BNDP structure
-   .  i     - evaluate on patch i
-   .  n     - number of BNDS
-
-   DESCRIPTION:
-   This function returns surface ids of the n surfaces on which
-   the BNDP resides
-
-   RETURN VALUE:
-   INT surface id
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDP_BndPDesc - sets descriptor for BNDP
-
-   SYNOPSIS:
-   INT BNDP_BndPDesc (BNDP *theBndP, INT *move, INT *part)
-
-   PARAMETERS:
-   .  aBndP - BNDP structure
-   .  move  - movable flag (0: no, 1:yes)
-   .  part  - domain part
-
-   DESCRIPTION:
-   This function sets the descriptor for a BNDP.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDP_BndEDesc - sets descriptor for BNDE (boundary edge)
-
-   SYNOPSIS:
-   INT BNDP_BndEDesc (BNDP *aBndP0, BNDP *aBndP1, INT *part)
-
-   PARAMETERS:
-   .  aBndP0 - first BNDP
-   .  aBndP1 - second BNDP
-   .  part   - domain part ID
-
-   DESCRIPTION:
-   This function sets the descriptor for a BNDE.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDP_CreateBndS - creates a BNDS from a nb of BNDPs
-
-   SYNOPSIS:
-   BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
-
-   PARAMETERS:
-   .  Heap  - heap to allocate from
-   .  aBndP - ptr to list of BNDP structures
-   .  n     - nb of BNDPs
-
-   DESCRIPTION:
-   This function creates a BNDS from n BNDPs
-
-   RETURN VALUE:
-   BNDS *
-   .n   pointer
-   .n   NULL if the points describe an inner side
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDP_CreateBndP - sets BNDP from a two of BNDPs
-
-   SYNOPSIS:
-   BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
-
-   PARAMETERS:
-   .  aBndP0 - first BNDP
-   .  aBndP1 - second BNDP
-   .  lcoord - local coordinate between P0 and P1 where the BNDP will be created
-
-   DESCRIPTION:
-   This function sets a BNDP from two BNDPs
-
-   RETURN VALUE:
-   BNDS *
-   .n   pointer
-   .n   NULL if the points describe an inner point
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDP_Dispose - dispose a BNDP
-
-   SYNOPSIS:
-   INT BNDP_Dispose (HEAP *Heap, BNDP *aBndP)
-
-   PARAMETERS:
-   .  Heap - heap
-   .  aBndP - BNDP
-
-   DESCRIPTION:
-   This function disposes a BNDP
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDP_SaveBndP - save a BNDP
-
-   SYNOPSIS:
-   INT BNDP_SaveBndP (BNDP *theBndP, FILE *stream)
-
-   PARAMETERS:
-   .  theBndP - BNDP
-   .  stream - file
-
-   DESCRIPTION:
-   This function saves a BNDP on a file.
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BVP_LoadBndP - load a BNDP
-
-   SYNOPSIS:
-   BNDP *BNDP_LoadBndP (BVP *theBVP, HEAP *Heap, FILE *stream)
-
-   PARAMETERS:
-   .  theBVP - BVP structure
-   .  Heap   - heap to allocate from
-   .  stream - file
-
-   DESCRIPTION:
-   This function loads a BNDP with the format given by BVP_SaveBndP and
-   allocates it from the given heap.
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if error.
- */
-/****************************************************************************/
-
-
-/****************************************************************************/
-/*                                                                                                                                                      */
-/* functions for BNDS                                                                                                           */
-/*                                                                                                                                                      */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDS_Global - gets global coordinates of local position on BNDS
-
-   SYNOPSIS:
-   INT BNDS_Local2Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
-
-   PARAMETERS:
-   .  aBndS  - BNDS structure
-   .  local  - local coordinate on BNDS
-   .  global - global coordinate
-
-   DESCRIPTION:
-   This function gets global coordinates of local position on BNDS
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDS_BndCond - gets bnd conditions of local position on BNDS
-
-   SYNOPSIS:
-   INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in,
-   INT *type, DOUBLE *value)
-
-   PARAMETERS:
-   .  aBndS - BNDS structure
-   .  local - local coordinate on BNDS
-   .  in    - input vector (if !=NULL has to be allocated with >= DOM_N_IN_PARAMS DOUBLES)
-   .  type  - type of bnd cond
-   .  value - values
-
-   DESCRIPTION:
-   This function gets bnd conditions of local position on BNDS.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDS_BndSDesc - sets descriptor for BNDS
-
-   SYNOPSIS:
-   INT BNDS_BndSDesc (BNDS *aBndS, INT *id, INT *nbid, INT *part)
-
-   PARAMETERS:
-   .  aBndS - BNDS structure
-   .  id  - subdomain ID of the element with aBndS
-   .  nbid  - subdomain ID of the neighbour element (across the boundary)
-   .  right - ID of right subdomain
-   .  part  - domain part
-
-   DESCRIPTION:
-   This function sets the descriptor for a BNDS.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDS_CreateBndP - create BNDP on BNDS
-
-   SYNOPSIS:
-   BNDP *BNDS_CreateBndP (HEAP *Heap, BNDS *aBndS, DOUBLE *local)
-
-   PARAMETERS:
-   .  Heap  - heap to allocate from
-   .  aBndS - BNDS structure
-   .  local - local coordinate on BNDS
-   .  size  - size used for aBndP
-
-   DESCRIPTION:
-   This function creates a boundary point (BNDP) on a BNDS
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
- */
-/****************************************************************************/
-
-/****************************************************************************/
-/** \brief
-   BNDS_Dispose - dispose BNDS
-
-   SYNOPSIS:
-   INT BNDS_Dispose (HEAP *Heap, BNDS *theBndS)
-
-   PARAMETERS:
-   .  Heap - heap
-   .  theBndS - BNDS struct
-
-   DESCRIPTION:
-   This function disposes a BNDS
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
+   subsystem.
+
+ * @return <ul>
+ *   <li> pointer to BVP </li>
+ *   <li> NULL if not found. </li>
+ * </ul>
  */
 /****************************************************************************/
 BVP        *BVP_GetNext           (BVP *theBVP);
+
+/****************************************************************************/
+/** \brief Save a BVP
+ *
+ * @param theBVP - BVP structure
+ * @param name - name of file
+ * @param argc, argv - command parameters
+
+   This function saves a BVP to file named <name>.
+
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul>
+ */
+/****************************************************************************/
 INT         BVP_Save              (BVP *theBVP, char *name, char *mgname, HEAP *theHeap, INT argc, char **argv);
+
+/****************************************************************************/
+/** \brief Load a BVP
+ *
+ * @param name - name of file
+ * @param argc, argv - command parameters
+
+   This function loads a BVP from file named <name>.
+
+ * @return <ul>
+ *   <li> pointer to BVP </li>
+ *   <li> NULL if error. </li>
+ * </ul>
+ */
+/****************************************************************************/
 BVP        *BVP_Load              (char *name, INT argc, char **argv);
+
+/****************************************************************************/
+/** \brief Get pointer to BVP by name
+ *
+ * @param name - name of BVP
+
+   This function returns the pointer to the BVP specified by its <name>.
+
+ * @return <ul>
+ *   <li> pointer to BVP </li>
+ *   <li> NULL if error. </li>
+ * </ul>
+ */
+/****************************************************************************/
 BVP        *BVP_GetByName         (char *name);
+
+/****************************************************************************/
+/** \brief Initialize a BVP and return a mesh
+ *
+ * @param filename - name of file
+ * @param theHeap - heap
+ * @param MarkKey - use key for temporary memory allocation (do not Mark/Release)
+
+   Function initialize a BVP and returns a mesh.
+
+ * @return <ul>
+ *   <li>    0 if ok  </li>
+ *   <li>    1 if error.       </li>
+ * </ul>
+ */
+/****************************************************************************/
 BVP        *BVP_Init              (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey);
+
+/****************************************************************************/
+/** \brief Dispose a BVP
+ *
+ * @param theBVP - BVP structure
+
+   This function disposes a BVP.
+
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul>
+ */
+/****************************************************************************/
 INT         BVP_Dispose           (BVP *theBVP);
 
 /****************************************************************************/
 /** \brief Set BVP-descriptor
  *
-   .  theBVP - BVP structure
-   .  theBVPDesc - descriptor to set
+ * @param theBVP - BVP structure
+ * @param theBVPDesc - descriptor to set
 
    This function sets the BVP descriptor according to the BVP.
 
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 if error.
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul>
  */
 /****************************************************************************/
 INT         BVP_SetBVPDesc        (BVP *theBVP, BVP_DESC *theBVPDesc);
 
 
+/****************************************************************************/
+/** \brief Set coefficient function(s)
+ *
+ * @param theBVP - BVP structure
+ * @param n - Number of coefficient function or -1 for all
+
+   This function one or all coefficient functions.
+
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul>
+ */
+/****************************************************************************/
 INT         BVP_SetCoeffFct       (BVP *theBVP, INT n, CoeffProcPtr *CoeffFct);
+
+/****************************************************************************/
+/** \brief Set coefficient function(s)
+ *
+ * @param theBVP - BVP structure
+ * @param n - Number of user function or -1 for all
+
+   This function gives one or all user functions.
+
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul>
+ */
+/****************************************************************************/
 INT         BVP_SetUserFct        (BVP *theBVP, INT n, UserProcPtr *UserFct);
+
+/****************************************************************************/
+/** \brief Check consistency of BVP
+ *
+ * @param aBVP - BVP structure
+ * @param CheckResult - 0 if ok, 1 if error detected
+
+   This function checks consistency of BVP
+
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul>
+ */
+/****************************************************************************/
 INT             BVP_Check                         (BVP *aBVP);
+
+/****************************************************************************/
+/** \brief Sets a BNDP from command input
+ *
+ * @param theBVP - BVP structure
+ * @param argc, argv - command parameters
+ * @param theBndP - the BNDP to set
+
+   This function sets a BNDP from command input parameters.
+   Options are implementation specific.
+
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul>
+ */
+/****************************************************************************/
 BNDP*           BVP_InsertBndP            (HEAP *Heap, BVP *theBVP, INT argc, char **argv);
+
+/****************************************************************************/
+/** \brief Write command to insert this BNDP
+ *
+ * @param theBndP - BNDP structure
+ * @param data - string to store command
+ * @param max_data_size - maximal datasize to use
+
+   This function writes a command to string which inserts the BNDP.
+
+ * @return <ul>
+ *   <li> 0 if ok
+ *   <li> 1 if error.
+ * </ul> */
+/****************************************************************************/
 INT         BNDP_SaveInsertedBndP (BNDP *theBndP, char *data, INT max_data_size);
+
 MESH       *BVP_GenerateMesh      (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey);
+
+/****************************************************************************/
+/** \brief Return global coordinates of BNDP
+ *
+ * @param aBndP - BNDP structure
+ * @param global - global coordinates
+
+   This function returns global coordinates of BNDP
+
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul> */
+/****************************************************************************/
 INT         BNDP_Global           (BNDP *theBndP, DOUBLE *global);
-INT                     BNDP_Move                         (BNDP *aBndP, const DOUBLE global[]);
+
+/****************************************************************************/
+/** \brief Change global coordinates of free boundary point
+ *
+ * @param aBndP - BNDP structure
+ * @param global - new global coordinates
+
+   This function sets global coordinates of a free BNDP. The local coordinates
+   will be kept fixed which implies that the topology of the boundary triangulation
+   must not be changed!
+
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul> */
+/****************************************************************************/
+INT         BNDP_Move                         (BNDP *aBndP, const DOUBLE global[]);
+
+/****************************************************************************/
+/** \brief Gets boundary conditions for a BNDP
+ *
+ * @param aBndP - BNDP structure
+ * @param i     - evaluate on patch i
+ * @param n     - number of BNDS
+ * @param in    - input vector (if !=NULL has to be allocated with >= DOM_N_IN_PARAMS DOUBLES)
+ * @param type  - type of bnd cond
+ * @param value - values
+
+   This function gets bnd conditions for a BNDP
+
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul> */
+/****************************************************************************/
 INT         BNDP_BndCond          (BNDP *theBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *type);
+
+/****************************************************************************/
+/** \brief Sets descriptor for BNDP
+ *
+ * @param aBndP - BNDP structure
+ * @param move  - movable flag (0: no, 1:yes)
+ * @param part  - domain part
+
+   This function sets the descriptor for a BNDP.
+
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul> */
+/****************************************************************************/
 INT         BNDP_BndPDesc         (BNDP *theBndP, INT *move, INT *part);
+
+/****************************************************************************/
+/** \brief Sets descriptor for BNDE (boundary edge)
+ *
+ * @param aBndP0 - first BNDP
+ * @param aBndP1 - second BNDP
+ * @param part   - domain part ID
+
+   This function sets the descriptor for a BNDE.
+
+ * @return <ul>
+ *   <li> 0 if ok
+ *   <li> 1 if error.
+ * </ul> */
+/****************************************************************************/
 INT         BNDP_BndEDesc         (BNDP *theBndP0, BNDP *theBndP1, INT *part);
+
+/****************************************************************************/
+/** \brief Creates a BNDS from a nb of BNDPs
+ *
+ * @param Heap  - heap to allocate from
+ * @param aBndP - ptr to list of BNDP structures
+ * @param n     - nb of BNDPs
+
+   This function creates a BNDS from n BNDPs
+
+ * @return <ul>
+ *   <li> pointer </li>
+ *   <li> NULL if the points describe an inner side </li>
+ * </ul> */
+/****************************************************************************/
 BNDS*       BNDP_CreateBndS       (HEAP *Heap, BNDP **theBndP, INT n);
+
+/****************************************************************************/
+/** \brief Sets BNDP from a two of BNDPs
+ *
+ * @param aBndP0 - first BNDP
+ * @param aBndP1 - second BNDP
+ * @param lcoord - local coordinate between P0 and P1 where the BNDP will be created
+
+   This function sets a BNDP from two BNDPs
+
+ * @return <ul>
+ *   <li> pointer </li>
+ *   <li> NULL if the points describe an inner point </li>
+ * </ul> */
+/****************************************************************************/
 BNDP*       BNDP_CreateBndP       (HEAP *Heap, BNDP *theBndP0, BNDP *theBndP1, DOUBLE lcoord);
+
+/****************************************************************************/
+/** \brief Dispose a BNDP
+ *
+ * @param Heap - heap
+ * @param aBndP - BNDP
+
+   This function disposes a BNDP
+
+ * @return <ul>
+ *   <li>    0 if ok  </li>
+ *   <li>    1 if error.    </li>
+ * </ul> */
+/****************************************************************************/
 INT         BNDP_Dispose          (HEAP *Heap, BNDP *theBndP);
+
+/****************************************************************************/
+/** \brief Save a BNDP
+ *
+ * @param theBndP - BNDP
+ * @param stream - file
+
+   This function saves a BNDP on a file.
+
+ * @return <ul>
+ *   <li>    0 if ok   </li>
+ *   <li>    1 if error.     </li>
+ * </ul> */
+/****************************************************************************/
 INT         BNDP_SaveBndP         (BNDP *theBndP);
 INT         BNDP_SaveBndP_Ext     (BNDP *theBndP);
+
+/****************************************************************************/
+/** \brief Load a BNDP
+ *
+ * @param theBVP - BVP structure
+ * @param Heap   - heap to allocate from
+ * @param stream - file
+
+   This function loads a BNDP with the format given by BVP_SaveBndP and
+   allocates it from the given heap.
+
+ * @return <ul>
+ *   <li>    0 if ok  </li>
+ *   <li>    1 if error.      </li>
+ * </ul> */
+/****************************************************************************/
 BNDP       *BNDP_LoadBndP         (BVP *theBVP, HEAP *Heap);
 BNDP       *BNDP_LoadBndP_Ext     (void);
+
+/****************************************************************************/
+/** \brief Gets global coordinates of local position on BNDS
+ *
+ * @param aBndS  - BNDS structure
+ * @param local  - local coordinate on BNDS
+ * @param global - global coordinate
+
+   This function gets global coordinates of local position on BNDS
+
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul> */
+/****************************************************************************/
 INT         BNDS_Global           (BNDS *theBndS, DOUBLE *local, DOUBLE *global);
+
+/****************************************************************************/
+/** \brief Gets boundary conditions of local position on BNDS
+ *
+ * @param aBndS - BNDS structure
+ * @param local - local coordinate on BNDS
+ * @param in    - input vector (if !=NULL has to be allocated with >= DOM_N_IN_PARAMS DOUBLES)
+ * @param type  - type of bnd cond
+ * @param value - values
+
+   This function gets bnd conditions of local position on BNDS.
+
+ * @return <ul>
+ *   <li> 0 if ok
+ *   <li> 1 if error.
+ * </ul> */
+/****************************************************************************/
 INT         BNDS_BndCond          (BNDS *theBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *type);
+
+/****************************************************************************/
+/** \brief Sets descriptor for BNDS
+ *
+ * @param aBndS - BNDS structure
+ * @param id  - subdomain ID of the element with aBndS
+ * @param nbid  - subdomain ID of the neighbour element (across the boundary)
+ * @param right - ID of right subdomain
+ * @param part  - domain part
+
+   This function sets the descriptor for a BNDS.
+
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul>
+ */
+/****************************************************************************/
 INT         BNDS_BndSDesc         (BNDS *theBndS, INT *id, INT *nbid, INT *part);
+
+/****************************************************************************/
+/** \brief Create BNDP on BNDS
+ *
+ * @param Heap  - heap to allocate from
+ * @param aBndS - BNDS structure
+ * @param local - local coordinate on BNDS
+ * @param size  - size used for aBndP
+
+   This function creates a boundary point (BNDP) on a BNDS
+
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul> */
+/****************************************************************************/
 BNDP*       BNDS_CreateBndP       (HEAP *Heap, BNDS *theBndS, DOUBLE *local);
+
+/****************************************************************************/
+/** \brief Return a pointer to the first BVP
+ *
+   This function returns a pointer to the first BVP defined in the domain
+   subsystem..
+
+ * @return <ul>
+ *   <li> pointer to BVP </li>
+ *   <li> NULL if not found. </li>
+ * </ul> */
+/****************************************************************************/
 BVP        *BVP_GetFirst          (void);
+
+/****************************************************************************/
+/** \brief Dispose BNDS
+ *
+ * @param Heap - heap
+ * @param theBndS - BNDS struct
+
+   This function disposes a BNDS
+
+ * @return <ul>
+ *   <li> 0 if ok </li>
+ *   <li> 1 if error. </li>
+ * </ul> */
+/****************************************************************************/
 INT         BNDS_Dispose          (HEAP *Heap, BNDS *theBndS);
+
+/****************************************************************************/
+/** \brief Gets surface ids for a BNDP
+ *
+ * @param aBndP - BNDP structure
+ * @param i     - evaluate on patch i
+ * @param n     - number of BNDS
+
+   This function returns surface ids of the n surfaces on which
+   the BNDP resides
+
+ * @return  surface id
+ */
+/****************************************************************************/
 INT         BNDP_SurfaceId        (BNDP *aBndP, INT *n, INT i);
 
 
@@ -950,3 +844,5 @@ INT         InitDom               (void);
 #endif
 
 #endif
+
+/** @} */
