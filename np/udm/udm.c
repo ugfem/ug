@@ -557,11 +557,11 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
     VD_OFFSET(vd,tp) = offset[tp];
 
   for (tp=0; tp<NVECTYPES; tp++) {
-    PRINTDEBUG(np,2,("offset %d comp ",offset[tp]));
+    PRINTDEBUG(np,6,("offset %d comp ",offset[tp]));
     for (i=0; i<VD_NCMPS_IN_TYPE(vd,tp); i++)
-      PRINTDEBUG(np,2,(" %d",VD_CMP_OF_TYPE(vd,tp,i)));
+      PRINTDEBUG(np,6,(" %d",VD_CMP_OF_TYPE(vd,tp,i)));
   }
-  PRINTDEBUG(np,2,("\n"));
+  PRINTDEBUG(np,6,("\n"));
 
   VD_NID(vd) = nId;
   VD_IDENT_PTR(vd) = Ident;
