@@ -1758,6 +1758,11 @@ INT FAMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 //prm(mg->bottomLevel,0);
 #endif
 	
+	delete famg_interface.vector[FAMG_TVA];	// free temp allocated symbols
+	famg_interface.vector[FAMG_TVA] = NULL;
+	delete famg_interface.vector[FAMG_TVB];	// free temp allocated symbols
+	famg_interface.vector[FAMG_TVB] = NULL;
+
 	cout << me << ": total time for constructing FAMG Transfer = " << CURRENT_TIME_LONG - StartTimeTotal << endl;
 	
 	return res;
@@ -1785,7 +1790,8 @@ static INT FAMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 	delete famg_interface.matrix;
 	
 	for(i = 0; i < FAMG_NVECTORS; i++)
-		delete famg_interface.vector[i];	// free temp allocated symbols
+		if( famg_interface.vector[i]!= NULL )
+			delete famg_interface.vector[i];	// free temp allocated symbols
 	
 	delete famg_interface.gridvector;
 	
