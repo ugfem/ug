@@ -1517,7 +1517,11 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector)
   link1 = LINK1(pe);
   SETOBJT(pe,EDOBJ);
   SETLOFFSET(link0,0);
+        #ifdef _DEBUG_CW_
+  SETOBJT(link1,LIOBJ);
+        #endif
   SETLOFFSET(link1,1);
+
   SETLEVEL(pe,GLEVEL(theGrid));
         #if (defined ModelP) && (defined __THREEDIM__)
   DDD_AttrSet(PARHDR(pe), GRID_ATTR(theGrid));
