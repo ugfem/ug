@@ -246,5 +246,7 @@ extern DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF;
 DOUBLE UG_GlobalSumDOUBLE (DOUBLE);
 INT UG_GlobalMaxINT (INT);
 void UG_GlobalSumNDOUBLE (INT, DOUBLE *);
+DOUBLE UG_GlobalMaxDOUBLE (DOUBLE i);
+DOUBLE UG_GlobalMinDOUBLE (DOUBLE i);
 
 #endif /* __PARGM_H__ */
