@@ -1202,11 +1202,11 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
 #endif
 
   theGrid->status       = 0;
-  FIRSTELEMENT(theGrid) = NULL;
-  LASTELEMENT(theGrid) = NULL;
+  GRID_INIT_ELEMENT_LIST(theGrid)
+  GRID_INIT_NODE_LIST(theGrid)
+  GRID_INIT_VECTOR_LIST(theGrid)
   theGrid->vertices = NULL;
-  FIRSTNODE(theGrid) = FIRSTNODE(theGrid) = NULL;
-  FIRSTVECTOR(theGrid) = LASTVECTOR(theGrid) = NULL;
+  theGrid->vertices = NULL;
   GFIRSTBV(theGrid) = NULL;
   GLASTBV(theGrid) = NULL;
   if (l>0)
@@ -1651,14 +1651,17 @@ static INT DisposeNode (GRID *theGrid, NODE *theNode)
   assert(SONNODE(theNode) == NULL);
 
   /* remove node from node list */
-  if (PREDN(theNode)!=NULL)
-    SUCCN(PREDN(theNode)) = SUCCN(theNode);
-  else
-    FIRSTNODE(theGrid) = SUCCN(theNode);
-  if (SUCCN(theNode)!=NULL)
-    PREDN(SUCCN(theNode)) = PREDN(theNode);
-  else
-    LASTNODE(theGrid) = PREDN(theNode);
+  GRID_UNLINK_NODE(theGrid,theNode)
+  /* TODO: delete
+          if (PREDN(theNode)!=NULL)
+                  SUCCN(PREDN(theNode)) = SUCCN(theNode);
+          else
+                  FIRSTNODE(theGrid) = SUCCN(theNode);
+          if (SUCCN(theNode)!=NULL)
+                  PREDN(SUCCN(theNode)) = PREDN(theNode);
+          else
+                  LASTNODE(theGrid) = PREDN(theNode);
+     } */
   theVertex = MYVERTEX(theNode);
   father = NFATHER(theNode);
   if (father != NULL)
@@ -2273,7 +2276,11 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT Also
   SUCCN(table[entries-1])  = NULL;
   PREDN(table[0]) = NULL;
 
+        #ifdef ModelP
+  LISTPART_FIRSTNODE(theGrid,2) = table[0];
+        #else
   FIRSTNODE(theGrid) = table[0];
+        #endif
   LASTNODE(theGrid)  = table[entries-1];
 
 
@@ -4891,7 +4898,7 @@ void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT ma
   VECTOR *theVector;
 
   for (level=fl; level<=tl; level++)
-    for (theVector=FIRSTVECTOR(GRID_ON_LEVEL(theMG,level)); theVector!=NULL; theVector=SUCCVC(theVector))
+    for (theVector=PFIRSTVECTOR(GRID_ON_LEVEL(theMG,level)); theVector!=NULL; theVector=SUCCVC(theVector))
     {
       if (VINDEX(theVector)>=from && VINDEX(theVector)<=to)
         ListVector(theMG,theVector,matrixopt,dataopt);
@@ -4917,6 +4924,82 @@ void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT ma
    .n   GM_ERROR if an error occured.
    D*/
 /****************************************************************************/
+
+        #ifdef ModelP
+void CheckLists(GRID *theGrid)
+{
+  int objs = 0;
+  ELEMENT *theElement;
+  NODE *theNode;
+  VECTOR  *theVector;
+
+  printf ("%d: checking elementlist:\n",me);
+  printf ("%d: efg=%x efg=%x efm=%x elm=%x\n",me,
+          LISTPART_FIRSTELEMENT(theGrid,0),LISTPART_LASTELEMENT(theGrid,0),
+          LISTPART_FIRSTELEMENT(theGrid,1),LISTPART_LASTELEMENT(theGrid,1));
+
+  objs = 0;
+  for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
+    objs++;
+    if (theElement == LISTPART_LASTELEMENT(theGrid,0)) {
+      printf("%d: nEg=%d   ",me,objs);
+      objs = 0;
+    }
+  }
+  printf("%d: nEm=%d nelems=%d\n",me,objs,NT(theGrid));
+  printf("\n");
+
+  printf ("%d: checking nodelist:\n",me);
+  printf ("%d: nfg=%x nlg=%x nfb=%x nlb=%x nfm=%x nlm=%x\n",me,
+          LISTPART_FIRSTNODE(theGrid,0),LISTPART_LASTNODE(theGrid,0),
+          LISTPART_FIRSTNODE(theGrid,1),LISTPART_LASTNODE(theGrid,1),
+          LISTPART_FIRSTNODE(theGrid,2),LISTPART_LASTNODE(theGrid,2));
+
+  objs = 0;
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
+    objs++;
+    if (theNode == LISTPART_LASTNODE(theGrid,0)) {
+      if (SUCCN(LISTPART_LASTNODE(theGrid,0))!= LISTPART_FIRSTNODE(theGrid,1))
+        printf("%d first pointer of listpart 1 dead\n",me);
+      printf("%d: nNg=%d   ",me,objs);
+      objs = 0;
+    }
+    if (theNode == LISTPART_LASTNODE(theGrid,1)) {
+      if (SUCCN(LISTPART_LASTNODE(theGrid,1))!= LISTPART_FIRSTNODE(theGrid,2))
+        printf("%d first pointer of listpart 2 dead\n",me);
+      printf("%d: nNb=%d   ",me,objs);
+      objs = 0;
+    }
+  }
+  printf("%d: nNm=%d nnodes=%d\n",me,objs,NN(theGrid));
+  printf("\n");
+
+  printf ("%d: checking vectorlist:\n");
+  printf ("%d: vfg=%x vlg=%x vfb=%x vlb=%x vfm=%x vlm=%x\n",me,
+          LISTPART_FIRSTVECTOR(theGrid,0),LISTPART_LASTVECTOR(theGrid,0),
+          LISTPART_FIRSTVECTOR(theGrid,1),LISTPART_LASTVECTOR(theGrid,1),
+          LISTPART_FIRSTVECTOR(theGrid,2),LISTPART_LASTVECTOR(theGrid,2));
+
+  objs = 0;
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector)) {
+    objs++;
+    if (theVector == LISTPART_LASTVECTOR(theGrid,0)) {
+      if (SUCCVC(LISTPART_LASTVECTOR(theGrid,0))!= LISTPART_FIRSTVECTOR(theGrid,1))
+        printf("%d first pointer of listpart 1 dead\n",me);
+      printf("%d: nVg=%d   ",me,objs);
+      objs = 0;
+    }
+    if (theVector == LISTPART_LASTVECTOR(theGrid,1)) {
+      if (SUCCVC(LISTPART_LASTVECTOR(theGrid,1))!= LISTPART_FIRSTVECTOR(theGrid,2))
+        printf("%d first pointer of listpart 2 dead\n",me);
+      printf("%d: nVb=%d   ",me,objs);
+      objs = 0;
+    }
+  }
+  printf("%d: nVm=%d nvectors=%d\n",me,objs,NVEC(theGrid));
+  printf("\n");
+}
+#endif
 
 #ifdef __TWODIM__
 static INT CheckElement (ELEMENT *theElement, INT *SideError, INT *EdgeError, INT *NodeError)
