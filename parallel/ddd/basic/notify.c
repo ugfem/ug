@@ -37,6 +37,7 @@
 #include "dddi.h"
 #include "basic/notify.h"
 
+USING_UG_NAMESPACES
 
 #define DebugNotify   10  /* 0 is all, 10 is off */
 

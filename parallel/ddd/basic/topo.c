@@ -34,7 +34,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "memmgr.h"
+
 #include "dddi.h"
+
+#include "namespace.h"
+
+USING_UG_NAMESPACES
 
 
 /****************************************************************************/

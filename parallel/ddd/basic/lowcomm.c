@@ -68,6 +68,7 @@
 #include "basic/lowcomm.h"
 #include "basic/notify.h"
 
+USING_UG_NAMESPACES
 
 #define DebugLowComm  10  /* 0 is all, 10 is off */
 
