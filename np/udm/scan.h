@@ -78,7 +78,7 @@ VECDATA_DESC *ReadArgvVecDesc      (MULTIGRID *theMG, const char *name,
 MATDATA_DESC *ReadArgvMatDesc      (MULTIGRID *theMG, const char *name,
                                     INT argc, char **argv);
 
-NP_BASE      *ReadArgvNumProc      (MULTIGRID *theMG, const char *name, const char *class,
+NP_BASE      *ReadArgvNumProc      (MULTIGRID *theMG, const char *name, const char *npclass,
                                     INT argc, char **argv);
 
 /* for reading damping factors etc. */

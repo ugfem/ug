@@ -140,7 +140,7 @@ typedef struct {
 
   ENVVAR v;
 
-  INT locked;                          /* locked for dynamic allocation         */
+  INT locked;                           /* locked for dynamic allocation         */
   char compNames[2*MAX_MAT_COMP];   /* names for symbol components          */
   SHORT RowsInType[NMATTYPES];          /* number of rows of a matrix per type  */
   SHORT ColsInType[NMATTYPES];          /* number of columns of a matrix        */
@@ -188,6 +188,8 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const VECDATA_DESC *theVD, con
 MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
                                 const char *name, const SHORT *RowsInType,
                                 const SHORT *ColsInType, const SHORT *Comps, const char *CompNames);
+VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_DESC **theVDs,
+                              const INT nrOfVDs);
 
 INT FillRedundantComponentsOfVD (VECDATA_DESC *vd);
 INT FillRedundantComponentsOfMD (MATDATA_DESC *md);

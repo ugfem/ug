@@ -123,7 +123,7 @@ int             Write_OpenDTFile        (char *filename);
 int             Write_DT_General        (DIO_GENERAL *dio_general);
 
 /* general functions */
-int     CloseDTFile                     ();
-int     DIO_Init                        ();
+int     CloseDTFile                     (void);
+int     DIO_Init                        (void);
 
 #endif

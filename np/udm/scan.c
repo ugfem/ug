@@ -475,7 +475,7 @@ MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, const char *name,
    ReadArgvNumProc - Read command strings
 
    SYNOPSIS:
-   NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, char *class,
+   NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, char *npclass,
    INT argc, char **argv);
 
    PARAMETERS:
@@ -496,7 +496,7 @@ MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, const char *name,
    D*/
 /****************************************************************************/
 
-NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, const char *class,
+NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, const char *npclass,
                           INT argc, char **argv)
 {
   char value[VALUELEN];
@@ -504,7 +504,7 @@ NP_BASE *ReadArgvNumProc (MULTIGRID *theMG, const char *name, const char *class,
   if (ReadArgvChar(name,value,argc,argv))
     REP_ERR_RETURN (NULL);
 
-  return(GetNumProcByName(theMG,value,class));
+  return(GetNumProcByName(theMG,value,npclass));
 }
 
 /****************************************************************************/

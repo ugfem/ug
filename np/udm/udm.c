@@ -467,6 +467,84 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const VECDATA_DESC *theVD, con
 
 /****************************************************************************/
 /*D
+   CombineVecDescs - combines a field of vecdescs to a new vecdesc
+
+   SYNOPSIS:
+   VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_DESC **theVDs,
+                                                                const INT nrOfVDs)
+
+   PARAMETERS:
+   .  theMG - create vector for this multigrid
+   .  name - create vecdesc with this name
+   .  theVDs - given vecdescs
+   .  nrOfVDs - nrOfVDs vecdescs
+
+   DESCRIPTION:
+   This function creates a 'VECDATA_DESC' from a field of vecdescs.
+   Components may occur several times! It is up to the user to remove
+   redundancies. The resulting vector does lose component names.
+
+   RETURN VALUE:
+   VECDATA_DESC *
+   .n    pointer to 'VECDATA_DESC' environment item
+   .n     NULL if failed
+   D*/
+/****************************************************************************/
+
+VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_DESC **theVDs,
+                              const INT nrOfVDs)
+{
+  VECDATA_DESC *vd;
+  SHORT offset;
+  INT i,j,k,type,ncmp,size;
+
+  if (theMG == NULL)
+    REP_ERR_RETURN (NULL);
+
+  if (ChangeEnvDir("/Multigrids") == NULL) REP_ERR_RETURN (NULL);
+  if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) REP_ERR_RETURN (NULL);
+  if (ChangeEnvDir("Vectors") == NULL) REP_ERR_RETURN (NULL);
+
+  /* compute size of resulting VD */
+  ncmp = 0;
+  for (i=0; i<nrOfVDs; i++)
+  {
+    for (type=0; type<NVECTYPES; type++)
+      ncmp += VD_NCMPPTR(theVDs[i])[type];
+  }
+  if (ncmp <= 0) REP_ERR_RETURN (NULL);
+
+  size = sizeof(VECDATA_DESC)+(ncmp-1)*sizeof(SHORT);
+  vd = (VECDATA_DESC *) MakeEnvItem (name,VectorVarID,size);
+  if (vd == NULL)
+    REP_ERR_RETURN (NULL);
+
+  /* fill data in vec data desc */
+  strcpy(VM_COMP_NAMEPTR(vd),"");       /* no component names */
+  offset=0;
+  for (type=0; type<NVECTYPES; type++) {
+    VD_OFFSET(vd,type) = offset;
+    VD_CMPPTR_OF_TYPE(vd,type) = VM_COMPPTR(vd) + offset;
+    k = 0;
+    for (i=0; i<nrOfVDs; i++)
+    {
+      for (j=0; j<VD_NCMPS_IN_TYPE(theVDs[i],type); j++)
+        VD_CMP_OF_TYPE(vd,type,k) = VD_CMP_OF_TYPE(theVDs[i],type,j);
+    }
+    VD_NCMPS_IN_TYPE(vd,type) = k;
+    offset += k;
+  }
+  VD_OFFSET(vd,type) = offset;       /* last one points to the end of the array */
+
+  /* fill fields with scalar properties */
+  SetScalVecSettings(vd);
+  VM_LOCKED(vd) = 0;
+
+  return (vd);
+}
+
+/****************************************************************************/
+/*D
    AllocVDfromVD - dynamic vector allocation
 
    SYNOPSIS:

@@ -113,7 +113,7 @@ INT SetVlistVValues             (INT cnt, VECTOR **theVec,
 INT GetElementVPtrsVecskip      (ELEMENT *theElement, const VECDATA_DESC *theTVD,
                                  DOUBLE **vptr, INT *vecskip);
 INT GetElementNewVPtrs          (ELEMENT *theElement, const VECDATA_DESC *theVD,
-                                 DOUBLE **vptr, INT *new);
+                                 DOUBLE **vptr, INT *newField);
 INT GetElementMPtrs                             (ELEMENT *theElement,
                                                  const MATDATA_DESC *theTMD, DOUBLE **mptr);
 INT GetVlistMValues             (INT cnt, VECTOR **theVec,

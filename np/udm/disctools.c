@@ -612,13 +612,13 @@ INT GetElementVPtrsVecskip (ELEMENT *theElement, const VECDATA_DESC *theVD,
 
    SYNOPSIS:
    INT GetElementNewVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD,
-   DOUBLE **vptr, INT *new);
+   DOUBLE **vptr, INT *newField);
 
    PARAMETERS:
    .  theElement - pointer to an element
    .  theVD - type vector descriptor
    .  vptr - pointer to double values
-   .  new - set 1 for new vectors, 0 else
+   .  newField - set 1 for new vectors, 0 else
 
    DESCRIPTION:
    This function gets all local vector pointers corresponding to an element.
@@ -632,7 +632,7 @@ INT GetElementVPtrsVecskip (ELEMENT *theElement, const VECDATA_DESC *theVD,
 /****************************************************************************/
 
 INT GetElementNewVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD,
-                        DOUBLE **vptr, INT *new)
+                        DOUBLE **vptr, INT *newField)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
   INT i,j,m,cnt,vtype,found;
@@ -650,7 +650,7 @@ INT GetElementNewVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD,
     for (j=0; j<VD_NCMPS_IN_TYPE (theVD,vtype); j++)
     {
       vptr[m] = VVALUEPTR(theVec[i],VD_CMP_OF_TYPE(theVD,vtype,j));
-      if ((new[m++] = VNEW(theVec[i])) > 0)
+      if ((newField[m++] = VNEW(theVec[i])) > 0)
         found++;
     }
   }
