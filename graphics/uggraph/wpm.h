@@ -509,7 +509,7 @@ struct placement_task {
   /* picture specification */
   INT n;                                        /* number of pictures                       */
   char pic_name[NAMESIZE][WPM_PLM_PMAX];        /* name of the pictures                     */
-  DOUBLE apect_ratio[WPM_PLM_PMAX];             /* aspect ratios                            */
+  DOUBLE aspect_ratio[WPM_PLM_PMAX];            /* aspect ratios                            */
   DOUBLE rel_size[WPM_PLM_PMAX];                /* relative sizes of the pictures           */
 };
 
