@@ -171,9 +171,9 @@ INT dset           (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
                     DOUBLE a);
 INT dcopy          (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
                     VECDATA_DESC *y);
-INT dscale         (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+INT dscal          (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
                     DOUBLE a);
-INT dscalex        (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
+INT dscalx         (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
                     DOUBLE *a);
 INT dadd           (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
                     VECDATA_DESC *y);
@@ -205,9 +205,9 @@ INT dnrm2x         (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x,
 #define a_dcopy(mg,fl,tl,x,xclass,y)       dcopy(mg,fl,tl,ALL_VECTORS,x,y)
 #define s_dcopy(mg,fl,tl,x,y)              dcopy(mg,fl,tl,ON_SURFACE,x,y)
 
-#define l_dscale(g,x,xclass,a)             dscalex(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,a)
-#define a_dscale(mg,fl,tl,x,xclass,a)      dscalex(mg,fl,tl,ALL_VECTORS,x,a)
-#define s_dscale(mg,fl,tl,x,a)             dscalex(mg,fl,tl,ON_SURFACE,x,a)
+#define l_dscale(g,x,xclass,a)             dscalx(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,a)
+#define a_dscale(mg,fl,tl,x,xclass,a)      dscalx(mg,fl,tl,ALL_VECTORS,x,a)
+#define s_dscale(mg,fl,tl,x,a)             dscalx(mg,fl,tl,ON_SURFACE,x,a)
 
 #define l_daxpy(g,x,xclass,a,y)            daxpyx(MYMG(g),GLEVEL(g),GLEVEL(g),ALL_VECTORS,x,a,y)
 #define a_daxpy(mg,fl,tl,x,xclass,a,y)     daxpyx(mg,fl,tl,ALL_VECTORS,x,a,y)
