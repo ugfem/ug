@@ -12,9 +12,9 @@ make
 cd $UGROOT/../diff2d/appl
 make
 # rely on uglib2TFFF
-cd $UGROOT/../ns2d/pclib
+#cd $UGROOT/../ns2d/pclib
 make
-cd $UGROOT/../ns2d/appl
+#cd $UGROOT/../ns2d/appl
 make
 # build 3TFFF lib
 cp $UGROOT/configs/3TFFF.conf $UGROOT/ug.conf
