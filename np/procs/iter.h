@@ -121,4 +121,7 @@ INT NPIterExecute (NP_BASE *theNP, INT argc , char **argv);
 /* create standard iter num proc type */
 INT InitIter (void);
 
+/* create standard iter num proc type */
+INT InitIter_2 (void);
+
 #endif
