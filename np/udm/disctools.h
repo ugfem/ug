@@ -167,7 +167,7 @@ INT GetBndVecMultipleVMPtrs             (const MVM_DESC *mvmd,
                                          VECTOR *VecList[],
                                          DOUBLE **vptrlist[MAXVD],
                                          DOUBLE **mptrlist[MAXMD],
-                                         INT *vecskip, INT *vtype, INT nvec[MAXVD], INT *end);
+                                         INT *vecskip, INT *vtype, INT nvec[MAXVD]);
 INT ResetBndVecMultipleVMPtrs   (void);
 INT FinishBndVecMultipleVMPtrs  (void);
 

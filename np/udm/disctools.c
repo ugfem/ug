@@ -1550,9 +1550,9 @@ INT GetBndVecMultipleVMPtrs (const MVM_DESC *mvmd,
                              VECTOR *VecList[],
                              DOUBLE **vptrlist[MAXVD],
                              DOUBLE **mptrlist[MAXMD],
-                             INT *vecskip, INT *vtype, INT nvec[MAXVD], INT *end)
+                             INT *vecskip, INT *vtype, INT nvec[MAXVD])
 {
-  if (GetBoundaryNeighbourVectors(MVMD_DATATYPES(mvmd),MVMD_OBJTYPES(mvmd),cnt,VecList,end)!=GM_OK)
+  if (GetBoundaryNeighbourVectors(MVMD_DATATYPES(mvmd),MVMD_OBJTYPES(mvmd),cnt,VecList)!=GM_OK)
     REP_ERR_RETURN (1);
 
   return (GetMultipleVMPtrs(mvmd,*cnt,VecList,vptrlist,mptrlist,vecskip,vtype,nvec));
