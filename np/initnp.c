@@ -38,10 +38,10 @@
 #include "ls.h"
 #include "nls.h"
 #include "error.h"
-
 #include "fvgeom.h"
-
 #include "udm.h"
+#include "formats.h"
+#include "dio.h"
 
 #include "initnp.h"
 
@@ -121,6 +121,12 @@ INT InitNumerics ()
     return (err);
   }
   if ((err=InitFormats())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* init data io */
+  if ((err=DIO_Init())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }
