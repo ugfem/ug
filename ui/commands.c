@@ -7152,7 +7152,7 @@ static INT QualityCommand (INT argc, char **argv)
 static INT MakeGridCommand  (INT argc, char **argv)
 {
   MULTIGRID *theMG;
-  INT i,Single_Mode;
+  INT i,Single_Mode,display;
   MESH *mesh;
     #ifdef __TWODIM__
   CoeffProcPtr coeff;
@@ -7185,6 +7185,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
     RETURN(GM_ERROR);
   }
   Single_Mode = 0;
+  display = 0;
 
   /* check options */
     #ifdef __TWODIM__
@@ -7309,14 +7310,16 @@ static INT MakeGridCommand  (INT argc, char **argv)
         if (sscanf(argv[i],"d %d",&iValue)!=1) break;
         Single_Mode = iValue;
         break;
+      case 'D' :
+        if (sscanf(argv[i],"D %d",&iValue)!=1) break;
+        display = iValue;
+        break;
       default :
-        sprintf(buffer," (unknown option '%s')",argv[i]);
-        PrintHelp("makegrid",HELPITEM,buffer);
-        return (PARAMERRORCODE);
+        break;
       }
     params.epsi = params.h_global * 0.125;
 
-    if (GenerateGrid(theMG, &args, &params, mesh, coeff, Single_Mode) != 0)
+    if (GenerateGrid(theMG, &args, &params, mesh, coeff, Single_Mode, display) != 0)
     {
       PrintErrorMessage('E',"makegrid","execution failed");
       Release(MGHEAP(theMG),FROM_TOP);
