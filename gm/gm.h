@@ -887,7 +887,7 @@ extern CONTROL_ENTRY
 /*																			*/
 /* vectors:                                                                                                                             */
 /* VTYPE	 |0 - 1 |*| | node-,edge-,side- or elemvector					*/
-/* VECTORSIDE|7 - 8 |*| | nb of side the side vect corr. to (in object elem)*/
+/* VECTORSIDE|7 - 9 |*| | nb of side the side vect corr. to (in object elem)*/
 /* VCLASS	 |11-12 |*| | class of v. (3: if corr. to red/green elem)		*/
 /*					  (2: if corr. to first algebraic nb.)					*/
 /*					  (1: if corr. to second algebraic nb.)                                 */
@@ -957,7 +957,7 @@ extern CONTROL_ENTRY
 
 #define VECTORSIDE_CE                           3
 #define VECTORSIDE_SHIFT                        7
-#define VECTORSIDE_LEN                          2
+#define VECTORSIDE_LEN                          3
 #define VECTORSIDE(p)                           CW_READ(p,VECTORSIDE_CE)
 #define SETVECTORSIDE(p,n)                      CW_WRITE(p,VECTORSIDE_CE,n)
 
