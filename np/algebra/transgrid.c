@@ -1515,6 +1515,50 @@ INT InterpolateNewVectorsByMatrix (GRID *FineGrid, const VECDATA_DESC *sol)
    D*/
 /****************************************************************************/
 
+static INT ClearGhostMatrix (GRID *g, MATDATA_DESC *Mat)
+{
+  VECTOR *v,*w;
+  MATRIX *m;
+  register DOUBLE *mptr;
+  INT vtype,mtype,rmask,cmask,mc,vncomp,wncomp;
+  register SHORT i,j,*mcomp;
+
+
+  if (MD_IS_SCALAR(Mat)) {
+    mc = MD_SCALCMP(Mat);
+    rmask = MD_SCAL_RTYPEMASK(Mat);
+    cmask = MD_SCAL_CTYPEMASK(Mat);
+
+    for (v=PFIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
+      if (VDATATYPE(v)&rmask)
+        for (m=VSTART(v); m!=NULL; m=MNEXT(m)) {
+          w = MDEST(m);
+          if (!(VDATATYPE(w)&cmask))
+            continue;
+          MVALUE(m,mc) = 0.0;
+        }
+    return (NUM_OK);
+  }
+  for (v=PFIRSTVECTOR(g); v!=NULL; v=SUCCVC(v)) {
+    vtype = VTYPE(v);
+    for (m=VSTART(v); m!=NULL; m=MNEXT(m)) {
+      w = MDEST(m);
+      mtype = MTP(vtype,VTYPE(w));
+      vncomp = MD_ROWS_IN_MTYPE(Mat,mtype);
+      if (vncomp == 0) continue;
+      wncomp = MD_COLS_IN_MTYPE(Mat,mtype);
+      if (wncomp == 0) continue;
+      mcomp = MD_MCMPPTR_OF_MTYPE(Mat,MTP(vtype,VTYPE(w)));
+      mptr = MVALUEPTR(m,0);
+      for (i=0; i<vncomp; i++)
+        for (j=0; j<wncomp; j++)
+          mptr[mcomp[i*wncomp+j]] = 0.0;
+    }
+  }
+
+  return (NUM_OK);
+}
+
 INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
 {
   GRID *CoarseGrid;
@@ -1529,6 +1573,10 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat, INT symmetric)
   CoarseGrid = DOWNGRID(FineGrid);
   if (CoarseGrid == NULL)
     return (NUM_NO_COARSER_GRID);
+
+    #ifdef ModelP
+  ClearGhostMatrix(CoarseGrid,Mat);
+    #endif
 
   if (MD_IS_SCALAR(Mat)) {
     mc = MD_SCALCMP(Mat);
