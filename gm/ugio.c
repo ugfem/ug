@@ -642,7 +642,7 @@ static INT SetRefinement (ELEMENT *theElement, NODE **NodeContext, ELEMENT *SonL
     if (NodeContext[i]!=NULL && ((nex>>i)&0x1))
       refinement->newcornerid[n++] = ID(NodeContext[i]);
   if (NodeContext[CORNERS_OF_ELEM(theElement)+CENTER_NODE_INDEX(theElement)]!=NULL)
-    refinement->newcornerid[n++] = ID(NodeContext[CENTER_NODE_INDEX(theElement)]);
+    refinement->newcornerid[n++] = ID(NodeContext[CORNERS_OF_ELEM(theElement)+CENTER_NODE_INDEX(theElement)]);
   refinement->nnewcorners = n;
 
   /* sons are refined ? */
