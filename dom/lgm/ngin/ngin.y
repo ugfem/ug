@@ -36,7 +36,7 @@ static BND_NODE BndNode;
 static INNER_NODE InnerNode;
 static ELEM_FACE ElemFace;
 static ELEMENT Elem;
- 
+
 %}
 
 %union 

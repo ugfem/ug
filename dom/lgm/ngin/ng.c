@@ -34,6 +34,7 @@
 
 #include "ng.h"
 #ifdef __USE_IN_UG__
+        #include "general.h"
         #include "fileopen.h"
         #include "defaults.h"
 #endif
@@ -87,6 +88,9 @@ static Global_MarkKey;
 #ifdef __USE_IN_UG__
 static lgmdomainpathes_set;
 #endif
+
+/* data for CVS */
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
