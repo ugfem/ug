@@ -1,12 +1,12 @@
 -
-*****************************************************************************************
-*                                                                                       *
-*                         ug.help: built-in commands                                    *
-*                                                                                       *
-*****************************************************************************************
+****************************************************************************  
+*                                                                          *
+*                         ug.help: built-in commands                       *
+*                                                                          *
+****************************************************************************
 
 -
-############################## general commands #########################################
+################# general commands #########################################
 
 -quit > all end bye exit
 quit            # end the application without saving open multigrids
@@ -43,7 +43,7 @@ date [$s] [$S]
     $S                      # print short version of date (format: yy.mm.dd)
 
 -
-############################## list environment #########################################
+#################### list environment #########################################
 
 -cd > all environment change directory
 cd              # change environment directory to specified path
@@ -97,7 +97,7 @@ set {<struct> <value>} | {[<structdir> | <struct>] [$r]}
                             # (see also: help structpath)
 
 -
-################################ protocol and log #######################################
+##################### protocol and log #######################################
 
 -protoon > all file output format open
 protoOn         # open a protocol file for specially formatted output to file
@@ -133,7 +133,7 @@ logoff          # switch off the logging mechanism
     $p                     # quit appending to already open protocol file (write 'endlog' mark)
 
 -
-################################ grid management ########################################
+###################### grid management ########################################
 
 -new > grid multigrid
 new              # allocate heap and new multigrid structure
@@ -400,7 +400,7 @@ select $c | $n {+|-} <Id> | $e {+|-} <Id>
     $e {+|-} <Id>          # add (+) or remove (-) the element with <Id> to (from) the selection buffer
 
 -
-################################ view management ########################################
+###################### view management ########################################
 
 -standardrefsys
 The standardRefSys has pos x-axis extending rightward and pos y-axis extending upward.
@@ -570,8 +570,599 @@ findrange [$z <zoom factor>] [$s] [$p]
 -updatedoc > window picture plot graphics
 updateDoc        # redraw all pictures of the current multigrid
 
+
 -
-################################# miscellaneous #########################################
+################### numerical procedures #####################################
+
+-npcreate > numproc
+npcreate         # create a num proc from a num proc type
+npcreate <num proc name> $c <constructor>
+
+-npinit > numproc
+npinit           # initialise current numproc
+npinit <num proc name> <argument list to be passed>
+
+-npexecute > numproc
+npexecute        # execute a num proc
+npexecute <num proc name> <argument list to be passed>
+
+-npdisplay > numproc
+npdisplay [<num proc name>  # display current num proc
+
+-scnp > numproc
+scnp [<num proc name>  # set current numproc
+
+-sc > typevecdesc scalar tvd numproc
+<sc double list>  := [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
+<sc int list>     := [nd <int     list>] | [ed <int     list>] | [el <int     list>] | [si <int     list>]
+<sc numproc list> := [nd <numproc list>] | [ed <numproc list>] | [el <numproc list>] | [si <numproc list>]
+<ord list>        := nd|ed|el|sd<number>{ nd|ed|el|sd<number>}*
+<<item> list>     := <item>{:<item>}*
+<item>            := <double>|<int>|<numproc>
+
+-cv > numproc
+cv  # clear vector
+npinit <name> $x <vec sym>;
+$x <vec sym>  # vector descriptor
+npexecute <name>
+
+-cm > numproc 
+cm  # clear matrix
+npinit <name> $A <mat sym>;
+$A <mat sym>  # matrix descriptor
+npexecute <name>
+
+-eu > numproc 
+eu  # compute Eucilian norm
+npinit <name>  $x <vec sym>;
+$x <vec sym>  # vector descriptor
+npexecute <name>
+
+-copyv > numproc
+copyv  # copy vector
+npinit <name>  $f <from sym> $t <to sym>;
+$f <vec sym>  # vector descriptor
+$t <vec sym>  # vector descriptor
+npexecute <name>
+
+-bdf > numproc
+bdf  # back Euler scheme of first and second order
+npinit <name> $y <sol> $A <tnlass> $S <nlsolver>
+          $T <transfer> [$baselevel <bl>] $order {1|2} 
+		  $predictorder {0|1} $nested {0|1}
+          $tstart <time> $dtstart <step> $dtmin <min step> $dtmax <max step> 
+          $dtscale <fac> $rhogood <rho> [$J <mat>];
+$y <sol>            # solution vector
+$A <tnlass>         # assemble numproc of type 'NP_T_ASSEMBLE'
+$S <nlsolver>       # nonlinear solver numproc of type 'NP_NL_SOLVER'
+$T <transfer>       # transfer numproc
+$baselevel <bl>     # baselevel for nested iteration
+$order {1|2}        # order of the time stepping scheme
+$predictorder {0|1} # order of the predictor for the next start vector
+$nested {0|1}       # flag nested nonlinear solver in every time step 
+$tstart <time>      # start time
+$dtstart <step>     # time step to begin with
+$dtmin <min step>   # smallest time step allowed	
+$dtmax <max step>   # largest time step allowed
+$dtscale <fac>      # scaling factor applied after step
+$rhogood <rho>      # threshold for step doubling 
+npexecute <name> [$pre] [$init] [$bdf1|$bdf1n|$bdf2|$bdf2n] [$post];
+$pre # preprocess
+$init # initialization
+$bdf1 # backward Euler of first order
+$bdf1n # nested backward Euler of first order
+$bdf1 # backward Euler of second order
+$bdf1n # nested backward Euler of second order
+$post # postprocess
+
+-indicator > numproc
+indicator  # error indicator
+npinit <name> $x <vec sym> [$coarse <val>] [$refine <val>];
+$x <vec sym>  # symbol for the (solution) vector
+$coarse <val> # bound for coarsening
+$refine <val> # bound for refinement
+npexecute <name> [$p] [$r] [$i];
+$p # calls StandardProject
+$r # calls RefineMultigrid
+$i # calls StandardInterpolateNewVectors
+
+-ew > numproc
+ew  # eigenvalue computation
+npinit <name> $e <sym list> [$t <tmp sym>] [$r <rhs sym>] [$M <mat sym>] 
+              [$d {no|red|full}] $m <maxit> [$O] [$N]
+	          $red <sc double list> [$damp <sc double list>]
+	          $L <linear solver> $A <assemble> $T <transfer>;
+$L <linear solver> # linear solver num proc
+$A <assemble> # assemble num proc
+$T <transfer> # transfer num proc
+$e <sym list> # list of symbols for the eigenvectors
+$r <rhs sym> # symbol for the right hnd side vector
+$t <tmp sym> # symbol for a tempory vector
+$m <maxit> # maximal number of multigrid cylces  
+$O # orthogonalize using right hand side
+$N # set the first eigenvector = 1 for Neumann problems
+$d # no, reduced or full display
+$red <sc double list> # reduction factors for each component
+$damp <sc double list> # damping factors for each component
+npexecute <name> [$i] [$a] [$r];
+$r # reset solution 
+$i # interpolate by the standard interpolation
+$a # assemble the matrix
+
+-jac > numproc
+jac  # jacobi smoother
+npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>];
+       $damp <sc double list> 
+$c <cor> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$damp <sc double list> # damping factors for each component
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-gs > numproc
+gs  # Gauss-Seidel-Smoother
+npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] 
+       $damp <sc double list>;
+$c <cor> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$damp <sc double list> # damping factors for each component
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-bcgss > numproc
+bcgss  # bi-cg-stab as smoother
+npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$I iter]
+       $m <it> $damp <sc double list> [$I <iteration>] [$R <restart>];
+$c <cor> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$m <it> # number of iterations
+$damp <sc double list> # damping factors for each component
+       $m <maxit>  [$w <sc double list>];
+$I <iteration> # iteration numproc
+$R <restart> # restart index
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-sgs > numproc
+sgs  # symmetric Gauss-Seidel smoother
+npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] 
+       $damp <sc double list>;
+$c <cor> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$damp <sc double list> # damping factors for each component
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-sor > numproc
+sor  # SOR smoother
+npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] 
+       $damp <sc double list>;
+$c <cor> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$damp <sc double list> # damping factors for each component
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-sbgs > numproc
+sbgs  # block Gauss-Seidel smoother
+npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] 
+               $damp <sc double list> 
+               $Blocking <sc int list> $BlockOrder <ord list> 
+               $BlockIter <sc numproc list>; 
+$c <cor> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$Blocking <sc int list> # describes the block structure (in ascending order starting always with 0)
+$BlockOrder <ord list> # describes the order of the blocks
+$BlockIter <numproc list> # smoother per block
+<sc double list>  # [nd <double list>] | [ed <double list>] | [el <double list>] | [si <double list>]
+<sc int list>     # [nd <int list>] | [ed <int list>] | [el <int list>] | [si <int list>]
+. <sc numproc list>  # [nd <numproc list>] | [ed <numproc list>] | [el <numproc list>] | [si <numproc list>]
+. <ord list>         # nd|ed|el|sd<number>{ nd|ed|el|sd<number>}+
+<double list>  # <double> {: <double>}*
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-gbgs > numproc
+gbgs  # Grid block Gauss-Seidel smoother
+npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>]
+              [$damp <sc double list>] [$L <mat>]
+$c <cor> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$L <mat> # decomposition matrix
+$damp <sc double list> # damping factors for each component
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-ilu > numproc
+ilu  # ILU smoother
+npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$L <mat>] 
+       [$damp <sc double list>] [$beta <sc double list>]
+$c <cor> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$L <mat> # decomposition matrix
+$damp <sc double list> # damping factors for each component
+$beta <sc double list> # parameter for modification of the diagonal
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-filu > numproc
+filu  # ILU smoother on fine grid nodes only
+npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$L <mat>] 
+       $damp <sc double list> $beta <sc double list>
+$c <cor> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$L <mat> # decomposition matrix
+$damp <sc double list> # damping factors for each component
+$beta <sc double list> # parameter for modification of the diagonal
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-thilu > numproc
+thilu  # ILU smoother with threshold
+npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$L <mat>] 
+       [$damp <sc double list>] [$beta <sc double list>] 
+	   [$thresh <sc double list>];
+$c <cor> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$L <mat> # decomposition matrix
+$damp <sc double list> # damping factors for each component
+$beta <sc double list> # parameter for modification of the diagonal
+$thresh <sc double list> # parameter for the threshold
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-spilu > numproc
+spilu  # spectral shifted ILU smoother
+npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$L <mat>] 
+       [$damp <sc double list>] [$beta <sc double list>]
+	   $mode {local|global};
+$c <cor> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$L <mat> # decomposition matrix
+$damp <sc double list> # damping factors for each component
+$beta <sc double list> # parameter for modification of the diagonal
+$mode {local|global} # global or local shift
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-ic > numproc
+ic  # incomlete Cholesky smoother
+npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$L <mat>] 
+       [$damp <sc double list>];
+$c <cor> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$L <mat> # decomposition matrix
+$damp <sc double list> # damping factors for each component
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-ff > numproc
+ff  # frequency filter
+npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$damp <sc double list>]
+       [$FF <FF-mat sym>] [$FF3D <3D FF-mat sym>] [$L <LU mat sym>] 
+       [$aux <temp sym>] [$tv <testvector sym>] [$tv2 <2. testvector sym>] 
+	   [$aux3D <3D temp sym>] [$aux2_3D <2. 3D temp sym>] [
+       $t <update for correction sym>]
+	   $display {no|red|full} $wr <"all"|number> $wr3D <number> $type <FF|TFF>
+	   [$aux2 <temp2 sym>] [$aux3 <temp3 sym>] [$aux4 <temp4 sym>]
+	   [$aux5 <temp5 sym>] [$aux6 <temp6 sym>];
+$c <cor> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$damp <sc double list> # damping factors for each component
+$FF <FF-mat sym> # symbol for the frequency filtered matrix
+$FF3D <3D FF-mat sym> # symbol for an additional frequency filtered matrix for 3D
+$L <LU-mat sym> # symbol for the LU decomposed matrix
+$tv <testvector sym> # symbol for the testvector
+$tv2 <2. testvector sym> # symbol for the second testvector if neccessary
+$aux <temp sym> # symbol for a temporary vector
+$aux3D <3D temp sym> # additional temporary symbol for the testvector for 3D
+$aux2_3D <2. 3D temp sym> # additional temporary symbol for the 2. testvector for 3D and FF
+$t <update for correction sym> # temp. vector
+$type <type of frequency filter> # "TFF" for Wagners or "FF" for Wittums
+$aux2 <temp2 sym> # symbol for a further temporary vector (neccessary for FF)
+$aux3 <temp3 sym> # symbol for a further temporary vector
+$aux4 <temp4 sym> # symbol for a further temporary vector
+$aux5 <temp5 sym> # symbol for a further temporary vector
+$aux6 <temp6 sym> # symbol for a further temporary vector
+$display # display mode: 'no', 'red'uced or 'full'
+$wr # relative frequency [0..1] for 2D OR 'all' for the whole logarithmic sequence of frequencies
+$wr3D # relative frequency [0..1] for 3D 
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-lu > numproc
+lu  # LU decomposition
+npinit <name> [$c <cor>] [$b <rhs>] [$A <mat>] [$L <mat>] 
+       [$damp <sc double list>];
+$c <cor> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$L <mat> # decomposition matrix
+$damp <sc double list> # damping factors for each component
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-lmgc > numproc
+lmgc  # linear multigrid cycle
+npinit <name> [$c <cor>] [$r <rhs>] [$A <mat>] 
+       $S <pre post base> $T <transfer>
+       [$b <baselevel>] [$g <gamma>] [$n1 <it>] [$n2 <it>]
+$c <cor> # correction vector
+$r <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$T <transfer> # transfer numproc
+$S <pre post base> # numprocs for pre- and postsmoother, base solver 
+$b <baselevel> # baselevel where the base solver is called 
+$g <gamma> # number of iterations of Lmgc per level (default gamma = 1)
+$n1 <it> # number of iterations of the presmoother (default n1 = 1)
+$n2 <it> # number of iteration of the postsmoother (default n2 = 1)
+
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # smooth
+$p # postprocess
+
+-ls > numproc
+ls  # linear solver
+npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>] 
+       [$red <sc double list>] [$abslimit <sc double list>]
+       $m <maxit> $I <iteration> [$d {full|red|no}];
+$x <sol> # solution vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$red <sc double list> # reduction factor
+$abslimit <sc double list> # absolute limit for the defect (default 1E-10) 
+$m <maxit> # maximal number of iterations
+$I <iteration> # iteration numproc
+$d {full|red|no} # display modus
+npexecute <name> [$i] [$d] [$r] [$s] [$p];
+$i # preprocess
+$d # replace right hand side by the defect
+$r # compute the residuum of the defect
+$s # solve
+$p # postprocess
+
+-cg > numproc
+cg  # conjugate gradient
+npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>] 
+       [$red <sc double list>] [$abslimit <sc double list>]
+       $m <maxit> $I <iteration> [$d {full|red|no}] 
+       [$p <con>] [$t <tmp>];
+$x <sol> # solution vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$red <sc double list> # reduction factor
+$abslimit <sc double list> # absolute limit for the defect (default 1E-10) 
+$m <maxit> # maximal number of iterations
+$I <iteration> # iteration numproc
+$d {full|red|no} # display modus
+$p <con> # conjugate vector
+$t <tmp> # temporaty vector
+npexecute <name> [$i] [$d] [$r] [$s] [$p];
+$i # preprocess
+$d # replace right hand side by the defect
+$r # compute the residuum of the defect
+$s # solve
+$p # postprocess
+
+-cr > numproc
+cr  # conjugate residual
+npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>] 
+       [$red <sc double list>] [$abslimit <sc double list>]
+       $m <maxit> $I <iteration> [$d {full|red|no}] 
+       [$p <con>] [$t <tmp>]
+	   [$r <restart>] [$w <sc double list>];
+$x <sol> # solution vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$red <sc double list> # reduction factor
+$abslimit <sc double list> # absolute limit for the defect (default 1E-10) 
+$m <maxit> # maximal number of iterations
+$I <iteration> # iteration numproc
+$d {full|red|no} # display modus
+$p <con> # conjugate vector
+$t <tmp> # temporaty vector
+$r <restart> # restart index
+$w <sc double list> # weighting factor
+npexecute <name> [$i] [$d] [$r] [$s] [$p];
+$i # preprocess
+$d # replace right hand side by the defect
+$r # compute the residuum of the defect
+$s # solve
+$p # postprocess
+
+-bgc > numproc
+bcg  # bi-cg method
+npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>] 
+       [$red <sc double list>] [$abslimit <sc double list>]
+       $m <maxit> $I <iteration> [$d {full|red|no}] 
+       [$p <con>] [$pb <p-bar>] [$rb <r-bar>] [$h <tmp>]
+	   [$r <restart>];
+$x <sol> # solution vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$red <sc double list> # reduction factor
+$abslimit <sc double list> # absolute limit for the defect (default 1E-10) 
+$m <maxit> # maximal number of iterations
+$I <iteration> # iteration numproc
+$d {full|red|no} # display modus
+$p <con> # conjugate vector
+$pb <p-bar> # temporaty vector
+$rb <r-bar> # temporaty vector
+$h <tmp> # temporaty vector
+$r <restart> # restart index
+npexecute <name> [$i] [$d] [$r] [$s] [$p];
+$i # preprocess
+$d # replace right hand side by the defect
+$r # compute the residuum of the defect
+$s # solve
+$p # postprocess
+
+-bcgs > numproc
+bcgs  # bi-cg-stab
+npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>] 
+       [$red <sc double list>] [$abslimit <sc double list>]
+       $m <maxit> $I <iteration> [$d {full|red|no}] 
+       [$p <con>] [$t <tmp>]
+	   [$R <restart>] [$w <sc double list>];
+$x <sol> # solution vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$red <sc double list> # reduction factor
+$abslimit <sc double list> # absolute limit for the defect (default 1E-10) 
+$m <maxit> # maximal number of iterations
+$I <iteration> # iteration numproc
+$d {full|red|no} # display modus
+$p <con> # conjugate vector
+$t <tmp> # temporaty vector
+$R <restart> # restart index
+$w <sc double list> # weighting factor
+npexecute <name> [$i] [$d] [$r] [$s] [$p];
+$i # preprocess
+$d # replace right hand side by the defect
+$r # compute the residuum of the defect
+$s # solve
+$p # postprocess
+
+-sqcg > numproc
+sqcg  # square cg method
+npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>] 
+       [$red <sc double list>] [$abslimit <sc double list>]
+       $m <maxit> $I <iteration> [$d {full|red|no}] 
+       [$p <con>] [$h <tmp>]
+	   [$R <restart>];
+$x <sol> # solution vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$red <sc double list> # reduction factor
+$abslimit <sc double list> # absolute limit for the defect (default 1E-10) 
+$m <maxit> # maximal number of iterations
+$I <iteration> # iteration numproc
+$d {full|red|no} # display modus
+$p <con> # conjugate vector
+$h <tmp> # temporaty vector
+$R <restart> # restart index
+npexecute <name> [$i] [$d] [$r] [$s] [$p];
+$i # preprocess
+$d # replace right hand side by the defect
+$r # compute the residuum of the defect
+$s # solve
+$p # postprocess
+
+-ldcg > numproc
+ldcs # numproc for defect correction linear solvers
+npinit <name> [$x <sol>] [$b <rhs>] [$A <mat sym>] 
+       [$red <sc double list>] [$abslimit <sc double list>]
+       $m <maxit> $LS <linear solver [$d {full|red|no}] 
+       $DC <mat sym>;
+$x <sol> # solution vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$red <sc double list> # reduction factor
+$abslimit <sc double list> # absolute limit for the defect (default 1E-10) 
+$m <maxit> # maximal number of iterations
+$LS <linear solver> # linear solver numproc
+$d {full|red|no} # display modus
+$DC <mat sym> # defect correction matrix
+npexecute <name> [$i] [$d] [$r] [$s] [$p];
+$i # preprocess
+$d # replace right hand side by the defect
+$r # compute the residuum of the defect
+$s # solve
+$p # postprocess
+
+-newton > numproc
+newton  # newton method
+npinit <name> $x <sol> 
+              $A <assemble> $T <transfer> $S <solver>
+              $abslimit <sc double list> $red <sc double list> 
+              $rhoreass <double> $lsteps <l> $maxit <m> $line {0|1} 
+			  $linrate {0|1|2} [$lambda {double}] 
+			  $linminred <sc double list> [$display {no|red|full}] [$J <mat>];
+$x <sol>           # solution vector
+$A <assemble>      # assemble numproc of type 'NP_NL_ASSEMBLE'
+$S <linear solver> # linear solver numproc of type 'NP_LINEAR_SOLVER'
+$T <transfer>      # transfer numproc
+$abslimit <sc double list>  # absolute limit for the defect (default 1.0E-10) 
+$red <sc double list> # reduction factor 
+$rhoreass <double>    # reassemble if nonlinear convergence rate worse than this 
+$lsteps <l>           # maximum number of line search steps		
+$maxit <m>            # maximum number of nonlinear iterations 
+$line {0|1}           # do line search 
+$linrate {0|1|2}      # 0: quadratic nonlin rate assumed, 1: nonquadratic nonlin rate assumed, 2: accept the corretion always
+$lambda {double}      # nonlinear damp factor 
+$linminred <sc double list> # minimum reduction for linear solver
+$display {no|red|full}] # display mode
+$J <mat>                # Jacobi matrix (optional)  
+npexecute <name> [$i] [$s] [$p];
+$i # preprocess
+$s # solve
+$p # postprocess
+
+-transfer > numproc
+transfer # transfer numproc
+npinit <name> [$x <sol>] [$c <cor>] [$b <rhs>] [$A <mat>] 
+              [$M] [$L] [$m] [$d {full|red|no}] [$S <cut>] 
+$x <sol> # solution vector
+$c <sol> # correction vector
+$b <rhs> # right hand side vector
+$A <mat> # stiffness matrix
+$M # use iterpolation matrix for transfer (default: standard transfer)
+$m # parallel nonconforming interpolation
+$L # level optimization 
+$d # display modus
+$S <cut> # scaled restriction with cut 
+npexecute <name> [$i] [$R] [$I] [$N] [$P] [$p];
+$i # preprocess
+$R # restrict defect
+$I # interpolate correction
+$N # interpolate new vectors
+$P # project solution
+$p # postprocess
+
+-
+####################### miscellaneous #########################################
 
 -defaults
 in the file 'defaults' in the application directory the user can specify the following
@@ -700,7 +1291,7 @@ setpf <format_name> [$V{0 | {+|-} {<vecsym_name>}+}]+ [$M{0 | {+|-} {<matsym_nam
 showpf           # show current printing format settings
 
 -
-##############################  PlotObjectTypes  #########################################
+##################  PlotObjectTypes  #########################################
 
 -matrix > setplotobject setview plot matrix blockmatrix blockvector block
 Matrix         # name of PlotObjType for plot Matrix where entries are indicated by colors
@@ -717,117 +1308,6 @@ Matrix [$e <matrix eval proc> | $M <scalar matrix symbol>] [$f <fromValue>] [$t 
                                     #     the border of the matrix
                                     #     <dash> gives the length of one small linesegment,
                                     #     <space> the space between such segments
--
-############################### numerical procedures #####################################
-
--npcreate > numproc
-npcreate         # create a num proc from a num proc type
-npcreate <num proc name> $t <num proc type> $f <format>
-
--npinit > numproc
-npinit           # initialise current numproc
-npinit <argument list to be passed>
-
--npexecute > numproc
-npexecute        # execute a num proc
-npexecute [<num proc name>] <argument list to be passed>
-
--npdisplay > numproc
-npdisplay        # display current num proc
-
--scnp > numproc
-scnp             # set current num proc
-scnp <num proc name>
-
--nplist > numproc
-nplist   # list numprocs
-
--pbjac > smoother numproc jacobi
-for initialisation of the damped point-block Jacobi use:
-npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
-       $damp <sc double list>
-
--pbgs > smoother numproc gauss-seidel
-for initialisation of the damped point-block Gauss-Seidel use:
-npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
-       $damp <sc double list>
-
--sympbgs > smoother numproc gauss-seidel
-for initialisation of the symmertic damped point-block Gauss-Seidel use:
-npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
-       $damp <sc double list>
-
--pbsor > smoother numproc sor
-for initialisation of the damped point-block sor (successive overrelaxation) use:
-npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
-       $damp <sc double list>
-
--pbilu > smoother numproc ilu-beta
-for initialisation of the damped point-block ilu with beta modification use:
-npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
-       $damp <sc double list> $L <lu mat sym> $beta <sc double list>
-       [$rest <rest vector symbol> [$ort <sc double list>]]
-
--pbilubt > smoother numproc ilu-beta threshold
-for initialisation of the damped point-block ilu with beta modification and threshold use:
-npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
-       $damp <sc double list> $thresh <sc double list> $L <lu mat sym> $beta <sc double list>
-       $rest <rest vector symbol>
-
--pbilusp > smoother numproc ilu-beta spectrally shifted
-for initialisation of the damped point-block spectrally shifted ilu use:
-npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
-       $damp <sc double list> $L <lu mat sym> $beta <sc double list> $mode local|global
-       [$rest <rest vector symbol> [$ort <sc double list>]]
-
--pblu > smoother numproc lu lr
-for initialisation of the point-block lu (with threshold and damping) use:
-npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
-       $L <lu mat sym>
-
--ebgs > smoother numproc gauss-seidel
-for initialisation of the equation-block Gauss-Seidel use:
-npinit $n <n-iter> $A <mat sym> $r <rhs sym> $x <sol sym> $t <temp sym> $D {no|red|full}
-       $Blocking <sc int list> $BlockOrder <ord list> $BlockIter <sc numproc list> $n 1 $D full;
-
--sc > typevecdesc scalar tvd numproc
-<sc double list>  := [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
-<sc int list>     := [nd <int     list>] | [ed <int     list>] | [el <int     list>] | [si <int     list>]
-<sc numproc list> := [nd <numproc list>] | [ed <numproc list>] | [el <numproc list>] | [si <numproc list>]
-<ord list>        := nd|ed|el|sd<number>{ nd|ed|el|sd<number>}+
-
-<<item> list>     := <item>{:<item>}*
-<item>            := <double>|<int>|<numproc>
-
--cv > numproc tvd
-cv  # clear vector
-cv <vec sym>
-
--cm > numproc 
-cm  # clear matrix
-cm <Mat sym>
-
--eu > numproc 
-eu  # compute Eucilian norm
-eu <vec sym>
-
--lmgc > numproc 
-lmgc # linear multigrid cycle
-for initialisation use:
-npinit $x <sol sym> $b <rhs sym> $c <cor sym> $t <temp sym> $A <mat sym> 
-       $m <maxit> $l <baselevel> $g <gamma> $s <sm1 sm2 basesm> $D{no|red|full}
-       $red <sc double list> [$p <cg sym>] [$abslimit <sc double list>]
-
--nl > numproc 
-nl # nonlinear solver
-for initialisation use:
-npinit $n <new sym> $o <old sym> $t <temp sym> $d {NO|RED|FULL} $m <maxit> 
-       $l <linear solver> $r <assemble> $Rel_Limit <sc double list> $Damp <sc double list>
-
--tnl > numproc
-tnl                  # time solver
-npinit $n <new sym> $o <old sym> $t <temp sym> $d {NO|RED|FULL} $m <maxit> 
-       $l <linear solver> $r <assemble> $Rel_Limit <sc double list> $Damp <sc double list> ??????
 
 -array > crar wrar rear saar loar clar
 array: family of commands to handle arrays of double. The commands are:
@@ -911,5 +1391,6 @@ $e                   # empty
   
 -showconfig > show config configuration ugconf debug
 showconfig           #  show the main configuration settings of this ug-program
+
 
 

@@ -6,7 +6,7 @@ no default sections
 5(5) Functions of modules gm
 6(6) Functions of module graphics
 7(7) Functions of module low
-8(8) Functions of module numerics
+8(8) Functions of module np
 9(9) Functions of module ui
 a(a) problem class & appl overview
 b(b) problem class diff2d 
