@@ -2887,7 +2887,7 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
    .  theMG - allocate descriptor for this multigrid
    .  fl - from level
    .  tl - to level
-   .  md - tempplate matrix descriptor
+   .  md - template matrix descriptor
    .  new_desc   - handle for descriptor
 
    DESCRIPTION:
