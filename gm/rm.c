@@ -70,6 +70,18 @@
 
 #define NOINDEX         -1
 
+/* rule count for element types */
+#ifdef __TWODIM__
+#define MAX_TRI_RULES   18
+#define MAX_QUA_RULES   17
+#else
+#ifndef TET_RULESET
+#define MAX_TET_RULES   6
+#endif
+#define MAX_PYR_RULES   3
+#define MAX_PRI_RULES   3
+#define MAX_HEX_RULES   3
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -118,7 +130,7 @@ static REFRULE Empty_Rule =
                         {-1,{-1,-1,-1,-1},{-1,-1,-1,-1},-1}}};
 
 /* define Rules for Triangles */
-static REFRULE TriangleRules[18] = {
+static REFRULE TriangleRules[MAX_TRI_RULES] = {
   /* T_NOREF */
   {TRIANGLE,T_NOREF,NO_CLASS,0,
    {0,0,0,0},0,
@@ -340,7 +352,7 @@ static REFRULE TriangleRules[18] = {
 };
 
 /* define Rules for Quadrilaterals */
-static REFRULE QuadrilateralRules[17] =
+static REFRULE QuadrilateralRules[MAX_QUA_RULES] =
 {
   /* Q_NOREF */
   {QUADRILATERAL,Q_NOREF,NO_CLASS,0,
@@ -590,7 +602,7 @@ static REFRULE Empty_Rule =
 
 #ifndef TET_RULESET
 /* define the regular rules for tetrahedron */
-static REFRULE TetrahedronRules[6] =
+static REFRULE TetrahedronRules[MAX_TET_RULES] =
 {
   /* TET_NO_REF */
   {TETRAHEDRON,0,NO_CLASS,0,
@@ -848,7 +860,7 @@ static REFRULE TetrahedronRules[6] =
 #endif
 
 /* define the regular rules for pyramids */
-static REFRULE PyramidRules[3] =
+static REFRULE PyramidRules[MAX_PYR_RULES] =
 {
   /* PYR_NO_REF */
   {PYRAMID,0,NO_CLASS,0,
@@ -970,7 +982,7 @@ static REFRULE PyramidRules[3] =
 };
 
 /* define the regular rules for prisms */
-static REFRULE PrismRules[3] =
+static REFRULE PrismRules[MAX_PRI_RULES] =
 {
   /* PRI_NO_REF */
   {PRISM,0,NO_CLASS,0,
@@ -1091,7 +1103,7 @@ static REFRULE PrismRules[3] =
 };
 
 /* define the regular rules for hexahedra */
-static REFRULE HexahedronRules[3] =
+static REFRULE HexahedronRules[MAX_HEX_RULES] =
 {
   /* HEX_NO_REF */
   {HEXAHEDRON,0,NO_CLASS,0,
@@ -2853,7 +2865,7 @@ static INT InitRuleManager3D (void)
   Broadcast(Pattern2Rule[TETRAHEDRON],nPatterns*sizeof(SHORT));
         #endif
 #else
-  nRules = 6;
+  nRules = MAX_TET_RULES;
 #endif
 
   /* now make rules for tetrahedrons globally available */
@@ -2874,7 +2886,7 @@ static INT InitRuleManager3D (void)
   /*																		*/
   /************************************************************************/
 
-  nRules = 3;
+  nRules = MAX_PYR_RULES;
 
   /* make rules for pyramids globally available */
   MaxRules[PYRAMID] = nRules;
@@ -2889,7 +2901,7 @@ static INT InitRuleManager3D (void)
   /*																		*/
   /************************************************************************/
 
-  nRules = 3;
+  nRules = MAX_PRI_RULES;
 
   /* make rules for prisms globally available */
   MaxRules[PRISM] = nRules;
@@ -2904,7 +2916,7 @@ static INT InitRuleManager3D (void)
   /*																		*/
   /************************************************************************/
 
-  nRules = 3;
+  nRules = MAX_HEX_RULES;
 
   /* make rules for tetrahedrons globally available */
   MaxRules[HEXAHEDRON] = nRules;
@@ -3043,7 +3055,7 @@ static INT InitRuleManager2D (void)
   Pattern2Rule[TRIANGLE][7] = T_RED;                            /* 1 1 1 */
 
   /* now make rules for tetrahedrons globally available */
-  MaxRules[TRIANGLE] = 18;
+  MaxRules[TRIANGLE] = MAX_TRI_RULES;
   MaxNewCorners[TRIANGLE] = 3;
   MaxNewEdges[TRIANGLE] = 9;
   CenterNodeIndex[TRIANGLE] = 4;
@@ -3101,7 +3113,7 @@ static INT InitRuleManager2D (void)
   Pattern2Rule[QUADRILATERAL][31] = Q_RED;                      /* 1 1 1 1 1 */
 
   /* now make rules for tetrahedrons globally available */
-  MaxRules[QUADRILATERAL] = 17;
+  MaxRules[QUADRILATERAL] = MAX_QUA_RULES;
   MaxNewCorners[QUADRILATERAL] = 4;
   MaxNewEdges[QUADRILATERAL] = 12;
   CenterNodeIndex[QUADRILATERAL] = 4;
