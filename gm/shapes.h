@@ -42,7 +42,12 @@
 /*																			*/
 /****************************************************************************/
 
-
+#ifdef __TWODIM__
+#define GlobalToLocal(n,c,e,l)           GlobalToLocal2d (n,c,e,l)
+#endif
+#ifdef __THREEDIM__
+#define GlobalToLocal(n,c,e,l)           GlobalToLocal3d (c,e,l)
+#endif
 
 /****************************************************************************/
 /*																			*/
