@@ -766,60 +766,6 @@ static INT Write_RefRules (MULTIGRID *theMG, INT *RefRuleOffset, INT MarkKey)
   return (0);
 }
 
-static INT GetOrderedSons (ELEMENT *theElement, NODE **NodeContext, ELEMENT **SonList, INT *nmax)
-{
-  INT i,j,k,l,nfound,found,refine;
-  MGIO_RR_RULE *theRule;
-  ELEMENT *NonorderedSonList[MAX_SONS];
-  NODE *theNode;
-
-  nfound = *nmax = 0;
-  refine = REFINE(theElement);
-  theRule = rr_rules + rr_rule_offsets[TAG(theElement)] + refine;
-  if (GetAllSons(theElement,NonorderedSonList)) REP_ERR_RETURN(1);
-  for (i=0; i<theRule->nsons; i++)
-  {
-    found=1;
-    for (j=0; j<CORNERS_OF_TAG(theRule->sons[i].tag); j++)
-      if (NodeContext[theRule->sons[i].corners[j]] == NULL)
-      {
-        found=0;
-        break;
-      }
-    if (!found)
-    {
-      SonList[i] = NULL;
-      continue;
-    }
-
-    /* identify (hopefully) an element of SonList */
-    for (j=0; NonorderedSonList[j]!=NULL; j++)
-    {
-      found=0;
-      for (l=0; l<CORNERS_OF_TAG(theRule->sons[i].tag); l++)
-      {
-        theNode = NodeContext[theRule->sons[i].corners[l]];
-        for (k=0; k<CORNERS_OF_ELEM(NonorderedSonList[j]); k++)
-          if (theNode==CORNER(NonorderedSonList[j],k))
-          {
-            found++;
-            break;
-          }
-      }
-      if (found==CORNERS_OF_TAG(theRule->sons[i].tag))
-      {
-        SonList[i] = NonorderedSonList[j];
-        *nmax = i+1;
-        break;
-      }
-      else
-        SonList[i] = NULL;
-    }
-  }
-
-  return (0);
-}
-
 static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
                           NODE **NodeContext, ELEMENT *SonList[MAX_SONS],
                           INT nmax, MGIO_REFINEMENT *refinement,
@@ -1027,13 +973,15 @@ static INT SetHierRefinement (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMEN
   ELEMENT *theSon;
   ELEMENT *SonList[MAX_SONS];
   NODE *NodeContext[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
+  MGIO_RR_RULE *theRule;
 
   /*PRINTDEBUG(gm,0,(PFMT "SetHierRefinement(): level=%d elem=" EID_FMTX "\n",me,LEVEL(theGrid),EID_PRTX(theElement)));*/
 
   /* sequential part */
   if (REFINE(theElement)==NO_REFINEMENT) return (0);
   if (GetNodeContext(theElement,NodeContext)) REP_ERR_RETURN(1);
-  if (GetOrderedSons(theElement,NodeContext,SonList,&nmax)) REP_ERR_RETURN(1);
+  theRule = rr_rules + rr_rule_offsets[TAG(theElement)] + REFINE(theElement);
+  if (GetOrderedSons(theElement,theRule,NodeContext,SonList,&nmax)) REP_ERR_RETURN(1);
   if (RemoveOrphanSons(SonList,&nmax)) REP_ERR_RETURN(1);
   if (SetRefinement (theGrid,theElement,NodeContext,SonList,nmax,refinement,RefRuleOffset)) REP_ERR_RETURN(1);
   if (Write_Refinement (refinement,rr_rules)) REP_ERR_RETURN(1);
@@ -2018,9 +1966,11 @@ static INT CheckLocalElementKeys (ELEMENT *theElement, MGIO_REFINEMENT *ref, INT
   if (MGIO_PARFILE)
   {
     NODE *NodeContext[MAX_NEW_CORNERS_DIM+MAX_CORNERS_OF_ELEM];
+    MGIO_RR_RULE *theRule;
 
     if (GetNodeContext(theElement,NodeContext)) REP_ERR_RETURN(1);
-    if (GetOrderedSons(theElement,NodeContext,SonList,&nmax)) REP_ERR_RETURN(1);
+    theRule = rr_rules + rr_rule_offsets[TAG(theElement)] + REFINE(theElement);
+    if (GetOrderedSons(theElement,theRule,NodeContext,SonList,&nmax)) REP_ERR_RETURN(1);
 
     /* check the sons */
     for (i=0; i<nmax; i++)
