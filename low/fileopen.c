@@ -49,9 +49,21 @@
 
 
 /* low module */
+/* avoid assertion in REP_ERR_RETURN for ModelP and GUI */
+#if defined(ModelP) && defined(__GUI__)
+#define PARALLEL
+#undef ModelP
+#endif
+
+#include "debug.h"
+
+#ifdef PARALLEL
+#define ModelP
+#undef PARALLEL
+#endif
+
 #include "defaults.h"
 #include "general.h"
-#include "debug.h"
 #include "ugenv.h"
 
 #include "fileopen.h"
@@ -412,6 +424,11 @@ int filetype (const char *fname)
    D*/
 /****************************************************************************/
 
+#ifdef ModelP
+#define PARALLEL
+#undef ModelP
+#endif
+
 INT DirWalk (const char *dir, ProcessFileProc fcn)
 {
 
@@ -464,6 +481,11 @@ INT DirWalk (const char *dir, ProcessFileProc fcn)
 
   REP_ERR_RETURN (NOT_IMPLEMENTED);
 }
+
+#ifdef PARALLEL
+#define ModelP
+#undef PARALLEL
+#endif
 
 /****************************************************************************/
 /*D
