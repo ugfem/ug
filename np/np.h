@@ -57,10 +57,6 @@
 /*#define FF_PARALLEL_SIMULATION*/
 /*#define FF_ModelP*/		/* um temp. Verweise von np nach fe/ff fuer die Allgemeinheit auszublenden */
 
-/* define USE_FAMG to use the frequencyfiltering algebraic multigrid in np/famglib
-   #define USE_FAMG
- */
-
 /* return codes of the numerics routines									*/
 #define NUM_OK                                  0       /* everything ok						*/
 #define NUM_OUT_OF_MEM                  1       /* could not allocate mem (for connect.)*/

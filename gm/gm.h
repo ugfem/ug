@@ -172,6 +172,9 @@
 /* if block vector descriptors are used*/
 #define __BLOCK_VECTOR_DESC__
 
+/* define USE_FAMG to use the frequencyfiltering algebraic multigrid in np/famglib */
+/*#define USE_FAMG*/
+
 #ifdef ModelP
 /* This ensures that for each master node-vector all matrix-neighbors in link depth 2 are
    at leat as a copy on the same processor and all connections are copied (even for ghosts) */

@@ -777,7 +777,20 @@ INT CreateVector (GRID *theGrid, INT VectorObjType, GEOM_OBJECT *object, VECTOR 
 
   *vHandle = NULL;
   mg = MYMG(theGrid);
+
+#ifdef USE_FAMG
+  /* for FAMG the following situation may occur: there are vectors on
+     algebraic levels which haven't a geometric object. Creating a coarse grid
+     instance from such a vector would result in a core dump because the
+     part can't be determined without a geometric object.
+     The quick hack for this: if no geometric object is given, set part = 0.
+   */
+  if( object==NULL )
+    part = 0;
+  else
+#endif
   part = GetDomainPart(BVPD_S2P_PTR(MG_BVPD(mg)),object,NOSIDE);
+
   if (part < 0)
     REP_ERR_RETURN(1);
   if (CreateVectorInPart(theGrid,part,VectorObjType,object,vHandle)) {
