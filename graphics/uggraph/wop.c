@@ -6147,37 +6147,26 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
 static INT EXT_PostProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
 {
 	VERTEX *theVertex;
-	ELEMENT *theElement;
-	INT edge;
 
-	if (!MN_accept)
-		return (0);
+	if (!MN_accept)	return (0);
 	
 	/* now we have to calculate the moved positions */
 	theVertex = MYVERTEX(MN_Node);
 	
-	if (OBJT(theVertex)==IVOBJ)
-	  {
+	if (OBJT(theVertex)==IVOBJ) {
 		if (MoveNode(MN_MG,MN_Node,MN_pos)!=GM_OK)
-		  return (1);
+			return (1);
 		return (0);
-	  }
-	else
-	  {
-		if (NTYPE(MN_Node) != MID_NODE)
-		  {
+	}
+	else {
+		if (NTYPE(MN_Node) != MID_NODE) {
 			PrintErrorMessage('E',"EXT_PostProcess_MoveNode2D",
 							  "on the boundary only midnodes can be moved");
 			return (1);
-		  }
-		edge = ONEDGE(theVertex);
-		theElement = VFATHER(theVertex);
-		if (MoveMidNode (MN_MG, 
-						 CORNER(theElement,CORNER_OF_EDGE(theElement,edge,0)),
-						 CORNER(theElement,CORNER_OF_EDGE(theElement,edge,1)),
-								MN_Node,MN_lambda))
-		  return (1);
-	  }
+		}
+		if (MoveMidNode (MN_MG,MN_Node,MN_lambda))
+			return (1);
+	}
 
 	return (0);
 }
