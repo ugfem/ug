@@ -64,7 +64,7 @@
 #define T 1
 #define F 0
 
-#define NUOFCLMS 40
+#define NUOFCLMS 50
 #define FALS 0
 #define TRU 1
 
@@ -146,7 +146,8 @@ INT *KomponentenIndexArray; /* diese Array beinhaltet die IDs der einzelnen
 			       ergaenzt wurden.
 			       Das array wir von 1 bis AnzahlAngaben gefuellt
 			       und hat die selbe ReihenfolÎge wie in der CAD-DAtei*/
-INT *bisherige_ID_array;    /* diese Array beinhaltet die Subdomain/Komponenten IDs
+/* DIRKS NEU : static bisherige_ID_array */
+static INT *bisherige_ID_array;    /* diese Array beinhaltet die Subdomain/Komponenten IDs
 			       aus dem CAD-Array ==> gefuellt sin die Plaetze 1
 		               bis AnzahlSbdms. Die Reihenfolge bezieht sich auf die
 			       SubdomainIDs des UGs !!!*/
@@ -165,6 +166,44 @@ static char *TmpMemArray;
 
 static TRIANGLE_TYP *New_Triangle_List;
 INT nmb_of_triangles;
+
+/*DIRKS NEU*/
+static INT NuClmsMINUS1;
+
+/*DIRKS NEU ... */
+static INT *node_element_matrix;
+/*      possesses for each node a list of all adjacent elements                 */
+static INT *el_array;
+	/*      possesses all elements; each element is represented by 8 numbers:       */
+	/*      NodeID_i, NodeID_j, NodeID_k, NodeID_l,                                 */
+	/*      NbourElem_ijk, NbourElem_ijl, NbourElemt_jkl and NbourElem_ilk          */
+static DOUBLE *n_koord_array_UG;
+static INT *point_array;
+static int nmbOfTetrhdrOfThisSbd;
+static int nmbOfSidesOfThisSbd;
+static int *el_besucht_array;
+static int *elemflag_array;
+	/*Bei der Bestimmung der Tetraeder-Subdomain-Zugehoerigkeit
+	wird el_besucht_array als Kennzeichnungsfeld verwendet
+	Jedes Tetraederelement erhaelt dort seine zugehoerige SubdomainID.
+	Initialisierung mit 0
+	In nmbOfTetrhdrOfThisSbd wird die Anzahl der Tetraeder je Subdomain gezaehlt.*/
+
+/* DIRKS NEU statistik[6]*/
+static INT statistik[7];
+	/*
+		statistic informations about the CAD-file :
+		===========================================
+		
+		statistik[0], used for number of inner nodes
+		statistik[1], used for number of boundary nodes
+		statistik[2], used for number of inner elements
+		statistik[3], used for number of boundary elements
+		statistik[4], used for number of boundary segments
+		statistik[5], used for number of different boundary conditions
+		statistik[6], used for number of elements == ( statistik[2] + statistik[3] )
+	*/
+/* ... DIRKS NEU */
 
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -505,7 +544,16 @@ int ElementLineFct(INT *ez,INT *el_array,INT *node_element_matrix,char *linebuff
 			help2 *= NUOFCLMS;
 			clm = 0;
 			while (node_element_matrix[help2+clm] != 0)
+			{
 				clm ++;
+				/* DIRKS NEU ... :*/
+				if (clm == NuClmsMINUS1)
+				{
+					 PrintErrorMessage('E',"ElementLineFct","more than NUOFCLMS-1  elements corresponding to one node");
+					 return(1);
+				}
+				/* ... DIRKS NEU */
+			}
 			node_element_matrix[help2+clm] = *ez;
 			ijkl++;
 		}
@@ -598,6 +646,18 @@ NOT YET */
           den negierten SFE-IdentifierValue zugewiesen wird.		
 	el_array[8*bndseg_array[help]+3+bndseg_array[help+1]]=(-1)*bndseg_array[help+2];
 NOT YET */
+
+/* DIRKS NEU : */
+/*	el_array[8*BND_SFE_ELEMENTID((&(bndseg_array[help])))+3+BND_SFE_SIDEID((&(bndseg_array[help])))]= -1;*/
+/* ... DIRKS NEU schon wieder alt : siehe in ReadANsysFile */
+
+
+    /* BND_SFE_ELEMENTID((&(bndseg_array[help])))  = zugehoerige ElementID */
+    /* BND_SFE_SIDEID((&(bndseg_array[help]))) = zugehoerige SideID */
+    /* BND_SFE_SFCIDF((&(bndseg_array[help]))) = zugehoerige Lastzahl */
+	/*help = sz = sfe-zaehler*/
+
+
 	w = BND_SFE_SIDEID((&(bndseg_array[sz])));
 	u = BND_SFE_ELEMENTID(8*(&(bndseg_array[sz])));
 	switch(w)
@@ -669,6 +729,10 @@ INT ReadCADFile(char *CADOutputFileName, INT *statistik, DOUBLE *abx,INT *condit
 		return (CMDERRORCODE);
 	}
 */	
+
+/*DIRKS NEU :	*/
+	NuClmsMINUS1 = NUOFCLMS -1 ;
+
 	while(linebuffer[0] != 'F')
 	{
 		switch(linebuffer[0])
@@ -731,18 +795,13 @@ INT ReadCADFile(char *CADOutputFileName, INT *statistik, DOUBLE *abx,INT *condit
 */		
 	}
 	
+	/* DIRKS NEU : An dieser Stelle waere eine statistische Fuellgradfunktion fuer die
+	   node_element_matrix ganz interessant um zu entscheiden ob ein Umstieg auf Listen sinvoll waere,
+	   bzw um NUOFCLMS ideal einzustellen.*/
+	
 	fclose(filePtr);
 	
 		
-	/* find neighbours */
-/* NOT YET	
-	if (FindElNeighbours(node_element_matrix,el_array,statistik[2]) != 0)
-	{
-		PrintErrorMessage('E',"ReadCADFile/FindElNeighbours","execution failed");
-		return (CMDERRORCODE);
-	}
- NOT YET */	
-	
 	
 	
 	/* sort element array */
@@ -759,6 +818,8 @@ INT ReadCADFile(char *CADOutputFileName, INT *statistik, DOUBLE *abx,INT *condit
 		if(elemflag_array[z] ==1) /* = boundary element */
 			statistik[3]++;		  /* increment number of boundary elements*/	
 	}
+	/*DIRKS NEU ... */
+	statistik[6]=statistik[2]; /* merke die GEsamtAnzahl der Elemente*/
 	statistik[2]-=statistik[3];/* evaluate number of inner elements: total number of elements minus number of boundary elements */
 	
 	return(0);
@@ -834,18 +895,6 @@ INT ReadAnsysFile(char *filename)
 	char *cndnameptr,*segnameptr,*tptr;
 	char chosenbc;
 
-	INT statistik[6];
-	/*
-		statistic informations about the CAD-file :
-		===========================================
-		
-		statistik[0], used for number of inner nodes
-		statistik[1], used for number of boundary nodes
-		statistik[2], used for number of inner elements
-		statistik[3], used for number of boundary elements
-		statistik[4], used for number of boundary segments
-		statistik[5], used for number of different boundary conditions
-	*/
 	
 	INT point[CORNERS_OF_BND_SEG];
 	INT linebufferlength;
@@ -892,18 +941,14 @@ INT ReadAnsysFile(char *filename)
 	INT *nodeflag_array;
 	/*      distinguishes between InnerNodes and BoundaryNodes                      */
 	/*                                                                              */
-	INT *point_array;
+	/*	INT *point_array;  DIRKS NEU static*/
 	/*      possesses the correct node IDs for UG                                   */
 	NODE **UGID_NdPtrarray;
 	/*  possesses the correct node adresses for UG */
 	/*                                                                              */
-	INT *elemflag_array;
+	/*INT *elemflag_array;	DIRKS NEU: jetzt statisch !								*/
 	/*      distinguishes between InnerElements and BoundaryElements                */
 	/*                                                                              */
-	INT *el_array;
-	/*      possesses all elements; each element is represented by 8 numbers:       */
-	/*      NodeID_i, NodeID_j, NodeID_k, NodeID_l,                                 */
-	/*      NbourElem_ijk, NbourElem_ijl, NbourElemt_jkl and NbourElem_ilk          */
 	/*                                                                              */
 	BND_SFE_TYP *bndseg_array;
 	/*      = "Surface-Part" of the ANSYS-File                                      */
@@ -920,13 +965,11 @@ INT ReadAnsysFile(char *filename)
 	/*      matches each Patch(resp. SurfaceTriangle/BoundarySegment) with the      */
 	/*      the corresponding BoundaryCondition 									*/
 	/*                                                                              */
-	INT *node_element_matrix;
-	/*      possesses for each node a list of all adjacent elements                 */
 	/*                                                                              */
 	DOUBLE *n_koord_array;
 	/*      coordinates in the sequence of the CAD-file                             */
 	/*                                                                              */
-	DOUBLE *n_koord_array_UG;
+	/* DIRKS NEU static 	DOUBLE *n_koord_array_UG; */
 	/*      UGID - coordinates od the CAD-file                         				*/
 	/*                                                                              */
 	DOUBLE *koord_array;
@@ -937,7 +980,7 @@ INT ReadAnsysFile(char *filename)
 	/********************************************************************************/
 
 
-	INT help1,ofs0,ofs1,ofs2,ofs3,i,helpi,intwert,helpint,h,h2,j,indize,nnn,dummy, nmofnds;
+	INT help1,ofs0,ofs1,ofs2,ofs3,i,helpi,intwert,helpint,h,h2,j,indize,nnn,dummy, nmofnds,ug_side_offset;
 	
 	if(ansysfilepathes_set != 1) /*wenn noch nicht gesetzt*/
 	{
@@ -962,6 +1005,8 @@ INT ReadAnsysFile(char *filename)
 	statistik[3]=0;			/*used for number of boundary elements*/ 
 	statistik[4]=0;			/*used for number of boundary segments*/ 
 	statistik[5]=0;			/*used for number of different boundary conditions*/ 
+	/* DIRKS NEU */
+	statistik[6]=0;			/*used for number of elements == statistik[2] + statistik[3]*/ 
 	
 	
  
@@ -1256,6 +1301,19 @@ NOT YET	*/
 	for(i=1;i<=statistik[4];i++)
 
 	{
+
+		/* DIRK NEU Setzen der -1 Eintraege bei den Elementnachbarn !*/
+		/*bzw. genauer -1 * Vorkammastelle der zugewiesenen CAD-Last.*/
+		switch(BND_SFE_SIDEID((&(bndseg_array[i]))))
+		{
+			case 1: ug_side_offset = 4; break;
+			case 2: ug_side_offset = 7; break;
+			case 3: ug_side_offset = 5; break;
+			case 4: ug_side_offset = 6;
+		}
+		el_array[ug_side_offset + (8 * (BND_SFE_ELEMENTID((&(bndseg_array[i])))))] = (int)(-1 * (floor(BND_SFE_SFCIDF((&(bndseg_array[i]))))));   
+		/* . . . ENDE DIRKS NEU */
+	
 		iminus1 = i-1;
 		s[3] = '\0';
 		
@@ -6207,7 +6265,7 @@ INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
 				/*  das noch prgrammieren*/
 				/*trage neue surfaces auch bei the_sbd_Double ein*/
 				/* the_sbd_Double->NMBsurfaces ++*/
-				if((neue_sfc_of_sbd_Double = GetTmpMem(theHeap,sizeof(SFC_TYP))) == NULL)
+				if((neue_sfc_of_sbd_Double = GetTmpMem(theHeap,sizeof(SFC_TYP),ANS_MarkKey)) == NULL)
 				{
 					PrintErrorMessage('E',"SplitSurface","got  no SFC_TYP memory  for  neue_sfc_of_sbd_Double !???!");
 					return(1);
@@ -7084,6 +7142,8 @@ INT Ansys2lgmUpdateSbdmIDs()
 
 	sd_pointer = EXCHNG_TYP2_ROOT_SBD(ExchangeVar_2_Pointer);
 	/*laufe ueber alle Subdomains*/
+	/*merke Dir dabei die Beziehung alte Sbd ---> neue Sbd in bisherige_ID_array*/
+	
 	for(i=1; i<=NMB_OF_SBDMS(DomainInfo_Pointer); i++)
 	{
 		if(sd_pointer != NULL)
@@ -7886,12 +7946,763 @@ int LGM_ANSYS_ReadPoints (LGM_POINT_INFO *lgm_point_info)
 }
 
 
-int LGM_ANSYS_ReadMesh (HEAP *theHeap, LGM_MESH_INFO *theMesh)
+
+
+
+/****************************************************************************/
+/*D
+   FillPositionInformations - creates and fills PointInformatioArrays	
+
+   SYNOPSIS:
+   int FillPositionInformations(LGM_MESH_INFO *theMesh)
+
+   PARAMETERS:
+.  theMesh - Pointer of the meshstructure to be filled
+
+   DESCRIPTION:
+   reads coordinformations for boundary points as well as 
+   innerpoint out of the array n_koord_array_UG 
+      
+   RETURN VALUE:
+   INT
+.n      1 if error occured						
+D*/
+/****************************************************************************/
+int FillPositionInformations(LGM_MESH_INFO *theMesh)
 {
-    return (1);
+	int bndpindex, innpindex, h, h2;
+	
+	/*Anzahl der BoundaryPoints*/
+	theMesh->nBndP = statistik[1];
+
+	/*Anzahl der InnerPoints*/
+	theMesh->nInnP = statistik[0];
+	
+	/*Feld anlegen fuer theMesh->BndPosition == Feld fuer Zeiger auf BndPointKoordinatenpaare-tripel*/
+	if ((theMesh->BndPosition = GetTmpMem(theHeap,(statistik[1])*sizeof(DOUBLE*), ANS_MarkKey)) == NULL) 	
+	{ 
+		PrintErrorMessage('E',"FillPositionInformations"," ERROR: No memory for theMesh->BndPosition");
+		return(1);
+	}
+
+	h=0;/*Hilfsvariable fuer Zugriff auf n_koord_array_UG --> wird bei den InnerPoints einfach
+	      ohne Neuinitialisierung weiterverwendet*/
+
+	/* Uebergabe der Koordinatenwerte der BoundaryPoints mit den IDs 0,1,2,...,m */
+	for(bndpindex=0; bndpindex<statistik[1]; bndpindex++)
+	{
+		if (((theMesh->BndPosition)[bndpindex]= GetTmpMem(theHeap,(DIMENSION)*sizeof(DOUBLE), ANS_MarkKey)) == NULL) 
+		{ 
+			PrintErrorMessage('E',"FillPositionInformations"," ERROR: No memory for (theMesh->BndPosition)[bndpindex]");
+			return(1);
+		}
+		((theMesh->BndPosition)[bndpindex])[0] = n_koord_array_UG[h];h++; 
+		((theMesh->BndPosition)[bndpindex])[1] = n_koord_array_UG[h];h++; 
+		((theMesh->BndPosition)[bndpindex])[2] = n_koord_array_UG[h];h++; 
+	}
+	
+	/*Feld anlegen fuer theMesh->InnPosition == Feld fuer Zeiger auf InnerPointKoordinatenpaare-tripel*/
+	/* wenn ueberhaupt innere Knoten existieren ... */
+	if(statistik[0] >0)
+	{
+		if ((theMesh->InnPosition = GetTmpMem(theHeap,(statistik[0])*sizeof(DOUBLE*), ANS_MarkKey)) == NULL) 	
+		{ 
+			PrintErrorMessage('E',"FillPositionInformations"," ERROR: No memory for theMesh->InnPosition");
+			return(1);
+		}
+	}
+	
+	/* Uebergabe der Koordinatenwerte der InnerPoints mit den IDs m,m+1,m+2,...n */
+	for(innpindex=0; innpindex<statistik[0]; innpindex++)
+	{
+		if (((theMesh->InnPosition)[innpindex]= GetTmpMem(theHeap,(DIMENSION)*sizeof(DOUBLE), ANS_MarkKey)) == NULL) 
+		{ 
+			PrintErrorMessage('E',"FillPositionInformations"," ERROR: No memory for (theMesh->InnPosition)[innpindex]");
+			return(1);
+		}
+		((theMesh->InnPosition)[innpindex])[0] = n_koord_array_UG[h];h++; 
+		((theMesh->InnPosition)[innpindex])[1] = n_koord_array_UG[h];h++; 
+		((theMesh->InnPosition)[innpindex])[2] = n_koord_array_UG[h];h++;
+	}
+
+	return (0);
 }
 
 
 
+/****************************************************************************/
+/*D
+   FindElNeighbours - create elementneighbourhoods	
+
+   SYNOPSIS:
+   INT FindElNeighbours(INT *node_element_matrix,INT *el_array,INT ne)
+
+   PARAMETERS:
+.  ne - number of elements
+
+   DESCRIPTION:
+   sets neighbours of elements with a O(n)-algorithm using a node-element matrix 
+      
+   RETURN VALUE:
+   INT
+.n      1 if error occured						
+D*/
+/****************************************************************************/
+INT FindElNeighbours(INT ne)
+{
+	INT elind,nbijkl,gefunden,kna,knb,knc,ela,elb,elc,a,b,c,elaindex,elbindex,elcindex;
+	INT realelind,realelemsurf,n[4],indexn,elgefstartindex,found,ofs;
+
+	
+	/*laufe ueber alle Elemente*/
+	for(elind=1;elind<=ne;elind++)
+	{
+		/*laufe ueber die 4 Nachbarn ... 4 bis 7, da im elarray, erst nach den 4 nodeids 0bis3
+		                                 die Nachbarids in 4 bis 7 folgen*/
+		for(nbijkl=4;nbijkl<8;nbijkl++)
+		{
+			realelind = elind * 8;
+			realelemsurf =realelind + nbijkl;/* == der Nachbar, um den es nun geht .*/
+			if(el_array[realelemsurf] == 0) /*no neighbour yet respectively no bndside <-1 * Vorkommanzahl der zugewiesenen CADLastzahl>*/
+											/*concerning <-1 * Vorkommanzahl der zugewiesenen CADLastzahl> 
+											see ReadAnsysFile*/
+			{
+				gefunden = FALS; /*noch keinen Nachbar gefunden*/
+				switch(nbijkl)
+				{
+					/*TODO : Die nunfolgende Fallunterscheidung realisiert die UG-Reihenfolge fuer
+					         Tetraeder aus elements.c bzgl. dem Referenzelement , d.h.
+					         die Vernachbarung erfolgt im Sinne von ug nicht im SInne des ANS-Formats*/
+					case 4: 
+						kna = 0;
+						knb = 2;
+						knc = 1;
+						break;
+					case 5: 
+						kna = 1;
+						knb = 2;
+						knc = 3;
+						break;
+					case 6: 
+						kna = 0;
+						knb = 3;
+						knc = 2;
+						break;
+					case 7: 
+						kna = 0;
+						knb = 1;
+						knc = 3;
+				}/*"switch(nbijkl)"*/
+				a = el_array[realelind + kna];
+				elaindex = NUOFCLMS * a;
+				ela = node_element_matrix[elaindex]; /*first element of node a*/
+				while ((ela != 0)  && (gefunden == FALS))
+				{
+					if(ela != elind)
+					{
+						b = el_array[realelind + knb];
+						elbindex = NUOFCLMS * b;
+						elb = node_element_matrix[elbindex]; /*first element of node b*/
+						while ((elb != 0) && (gefunden == FALS))
+						{
+							if(ela == elb)
+							{
+								c = el_array[realelind + knc];
+								elcindex = NUOFCLMS * c;
+								elc = node_element_matrix[elcindex]; /*first element of node c*/
+								while ((elc != 0) && (gefunden == FALS))
+								{
+									if(elb == elc)
+									{
+										gefunden = TRU; /*neighbour found*/
+										el_array[realelemsurf] = elc; /* forward connenction */
+										elgefstartindex = 8 * elc;
+										/*the four nodes of the found element: ...*/
+										n[0] = el_array[elgefstartindex];												
+										n[1] = el_array[elgefstartindex+1];												
+										n[2] = el_array[elgefstartindex+2];												
+										n[3] = el_array[elgefstartindex+3];
+										indexn = -1; found = FALS;
+										/*Welcher der 4 Knoten des gef. Tetraeders ist nicht betroffen*/
+										do
+										{
+											indexn++;
+											/* a,b,c : die 3 KnotenIDs der Sideflaeche, die hier betroffen ist*/
+											if(	(n[indexn] != a) &&
+												(n[indexn] != b) &&
+												(n[indexn] != c) )	found =TRU;
+										} while(found == 0);
+										switch (indexn) /*indexn is misser!*/
+										{
+											/*die folgenden Offsets beziehen sich auf UG, nicht auf ANSYS !*/
+											case 0: ofs = 1; break;
+											case 1: ofs = 2; break;
+											case 2: ofs = 3; break;
+											case 3: ofs = 0;
+										}/*"switch (indexn)"*/						
+										el_array[elgefstartindex+4+ofs] = elind; 
+										/* ... = backward connenction */
+									}/*"if(elb == elc)"*/
+									else
+									{
+										elcindex++;
+										elc = node_element_matrix[elcindex]; /*next element of node c*/
+									}
+								}/*"while ((elc != 0) && (gefunden == FALS))"*/
+							}/*"if(ela == elb)"*/
+							if(gefunden == FALS)
+							{
+								elbindex++;
+								elb = node_element_matrix[elbindex]; /*next element of node a*/
+							}
+						}/*"while ((elb != 0) && (gefunden == FALS))"*/
+					}/*"if(ela != elind)"*/
+					if(gefunden == FALS)
+					{
+						elaindex++;
+						ela = node_element_matrix[elaindex]; /*next element of node a*/
+					}
+				}/*"while ((ela != 0)  && (gefunden == FALS))"*/
+				
+				/*wenn kein Nachbar geunden wurde . . .*/
+				if(found != TRU)
+				{
+					PrintErrorMessage('E',"FindElNeighbours","no neighbour found");
+					return(1);
+				} 
+			}/*"if(el_array[realelemsurf] == 0)"*/
+		}/*"for(nbijkl=4;nbijkl<8;nbijkl++)"*/
+	}/* von "for(elind=1;elind<=ne;elind++)" */
+	return (0);
+}/*"INT FindElNeighbours(char *node_element_matrix,char *el_array,INT ne)"*/
 
 
+
+/****************************************************************************/
+/*
+FetchATetrahedronOfThisSbd - searches a tetrahedron element corresponding to Sbd
+   
+   SYNOPSIS:
+   int FetchATetrahedronOfThisSbd(SD_TYP *sbd)
+
+   PARAMETERS:
+.  sbd - Subdomainpointer
+   
+   DESCRIPTION:
+   runs over el_array and searches the first entry with -1 *  SD_NAME(sbd)
+   when succeeded the corresponding elementID is returned.
+   
+   RETURN VALUE:
+   INT
+.n      0 if ok 
+.n      -1 if read error.						
+   
+   SEE ALSO:
+ */
+/****************************************************************************/
+int FetchATetrahedronOfThisSbd(SD_TYP *sbd)
+{
+	/* Achtung Returnvalue -1 bei Fehler !! nicht 1 !!!*/
+	int i,gefTetraederelementID,lff,sbd_name,gefunde,maxwert;
+	
+	/*laufe ueber el_array und suche ein Element mit einem -1 * SD_NAME(sbd) --- Eintrag*/
+	sbd_name = (bisherige_ID_array[SD_NAME(sbd)]);
+	/* Im el_array ist nach dem negierten Wert zu suchen*/
+	sbd_name = -1 * sbd_name;
+
+	lff = 12; /*da kommt der erste Nachbareintrag des ersten Elements*/
+	maxwert = (statistik[6] * 8) + 8;
+	gefunde = FALS;
+	while((gefunde == FALS)&&(lff < maxwert))
+	{
+		for (i=0;i<4;i++)
+		{
+	/* DIRKS NEU, sbd_name oben  mit bisherige_ID_array modifiziert da el_array CAD IDs hat*/
+			if(sbd_name == el_array[lff])
+			{
+				gefunde = TRU;
+				gefTetraederelementID = lff / 8;/* DIV !!!*/
+				return(gefTetraederelementID);
+			}
+			lff ++;
+		}
+		lff += 4;
+	}
+	
+	PrintErrorMessage('E',"FetchATetrahedronOfThisSbd","did not find such a tetrahedron");
+	return(-1);
+}
+
+
+
+/****************************************************************************/
+/*
+SearchAllTetrahedronsOfThisSbd - searches all tetrahedron elements corresponding a special Sbd
+   
+   SYNOPSIS:
+   int SearchAllTetrahedronsOfThisSbd(int tetra_el_ID, int sbdname)
+
+   PARAMETERS:
+.  tetra_el_ID - TetraederelementID
+.  sbdname - Name of corresponding Subdomain
+   
+   DESCRIPTION:
+   runs recursively over el_array and searches the neighbours of tetra_el_ID
+   Thereby all elements of a special subdomain are found.
+   The variables nmbOfTetrhdrOfThisSbd und el_besucht_array
+   are updated.
+   
+   RETURN VALUE:
+   INT
+.n      0 if ok 
+.n      1 if  error occured						
+   
+   SEE ALSO:
+ */
+/****************************************************************************/
+int SearchAllTetrahedronsOfThisSbd(int Muster_tetra_el, int sbdname)
+{
+	int Nachbar_Tetra, stelle;
+	int tetraside; /*Laufvariable ueber die 4 Tetraederseiten */
+	int rv,rgbwrt;
+	int neubesetzt[4];
+		
+	neubesetzt[0] = F; neubesetzt[1] = F; neubesetzt[2] = F; neubesetzt[3] = F;
+	
+	/* Laufe ueber die 4 Tetraederseiten von Muster_tetra_el */
+	stelle = Muster_tetra_el * 8 + 4;
+	for(tetraside = 0; tetraside < 4; tetraside++)
+	{
+		Nachbar_Tetra =  el_array[stelle];
+		if(Nachbar_Tetra > 0)/*nur wenn ein Nachbartetr. existiert . . . */
+		{
+			/*natuerlich nur wenn dieser Nachbar nicht schon besucht wurde ...*/
+			if(el_besucht_array[Nachbar_Tetra] == 0)
+			{
+				
+				/*************************************************************/
+				/* Dieser Nachbartetr. gehoert folglich zur selben Subdomain ...*/
+				el_besucht_array[Nachbar_Tetra] = sbdname;
+				nmbOfTetrhdrOfThisSbd++;
+				neubesetzt[tetraside] = T;
+				/*Update of nmbOfSidesOfThisSbd reicht auch noch in FillSubdomainInformations*/
+				/*if(elemflag_array[Nachbar_Tetra] > 0)*/ /*wenn bndelement vorliegt...*/
+				/*{
+					stelle2 = Nachbar_Tetra * 8 + 4;
+					for(l = 0; l < 4; l++)
+					{
+						if(el_array[stelle2] < 0) *//*wenn das Element bzgl dieser Seite an eine Boundary angrenzt ... */
+					/*	{
+							nmbOfSidesOfThisSbd ++;
+						}
+						stelle2++;
+					}
+				}*/
+				/*************************************************************/
+			}
+			else
+			{
+				/*ldgl. eine Probe - kann spaeter wieder entfallen*/
+				if(el_besucht_array[Nachbar_Tetra] != sbdname)
+				{
+					
+					PrintErrorMessage('E',"SearchAllTetrahedronsOfThisSbd","tetr-element belongs to 2 diff sbds");
+					return(1);
+				}
+			}
+		}
+		stelle ++;
+	} /* von for */
+	
+	/*weiterer Lauf ueber die 4 Nachbarn, um die RekursionsHierarchie etwas kleiner zu halten*/
+	stelle = stelle - 4;
+	for(tetraside = 0; tetraside < 4; tetraside++)
+	{
+		/*nur die soeben neu besuchten Tetraeder sind fuer einen Rekursionschritt interessant*/
+		if(neubesetzt[tetraside] == T)
+		{
+			rgbwrt = SearchAllTetrahedronsOfThisSbd(el_array[stelle], sbdname);
+			/*ldgl. Probe:*/
+			if(rgbwrt == 1)
+				return (1);
+			/* . . . ldgl. Probe*/
+		}
+		stelle ++;
+	} /* von for */
+	
+	return(0);
+	
+}
+
+
+
+/****************************************************************************/
+/*
+FillSubdomainInformations - fills MeshStructure for UG with Subdomaininformations
+   
+   SYNOPSIS:
+   int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id)
+
+   PARAMETERS:
+.  theMesh - Pointer to mesh-structure
+.  SbdName - CAD-ID of the corresp. Sbd
+.  ug_lgm_id - LGM-ID of the corresp. Sbd
+   
+   DESCRIPTION:
+   fills the informations for all subdomains: 
+   Number of Sides
+   Number of Corners of each side
+   SideCornerIDs
+   Number of elements (tetrahedrons)
+   Number of elementcorners (4)
+   ElementCornerIDs
+   ElementNeighbours
+   
+   
+   RETURN VALUE:
+   INT
+.n      0 if ok 
+.n      1 if read error.						
+   
+   SEE ALSO:
+ */
+/****************************************************************************/
+int FillSubdomainInformations(LGM_MESH_INFO *theMesh, int SbdName, int ug_lgm_id)
+{
+	SD_TYP *sbd;
+	int nmbofsides,sides_zaehler,elems_zaehler, stelle, stelle2,help;
+	SFC_TYP *sd_sfc;
+	int ug_lgm_id_minus_1,lf,elem_lf; 
+	int ug_sd_offs[3];
+	/*only for debugging */
+	int hilfszaehler;	
+	/* bestimme Nmbofsides Info aus den bestehenden Austauschstrukturen*/
+	nmbofsides = 0;sides_zaehler =0;elems_zaehler=0;;
+	ug_lgm_id_minus_1 = ug_lgm_id -1;
+	sbd = EXCHNG_TYP2_ROOT_SBD(ExchangeVar_2_Pointer);
+	while (SD_NAME(sbd) != SbdName)
+	{
+		sbd = SD_NEXT(sbd);
+	}
+	sd_sfc = SD_SFCS(sbd);
+	while (sd_sfc != NULL)
+	{
+		nmbofsides = nmbofsides + SF_NMB_OF_TRIAS(SFC_SURF(sd_sfc));
+		sd_sfc = SFC_NEXT(sd_sfc);
+	}
+	/*Zuweisung Number of Sides*/
+	nmbOfSidesOfThisSbd = nmbofsides; 
+	/* TO ASK KLAUS : eine Spalte freilassen, da keine SbdID 0 ? vermutlich nein*/
+	(theMesh->nSides)[ug_lgm_id_minus_1] = nmbofsides;
+	
+	if(((theMesh->Side_corners)[ug_lgm_id_minus_1] = GetTmpMem(theHeap,(nmbofsides)*sizeof(INT), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Side_corners)[ug_lgm_id_minus_1]");
+		return(1);
+	}
+	memset(((theMesh->Side_corners)[ug_lgm_id_minus_1]),CORNERS_OF_BND_SIDE,(nmbofsides)*sizeof(INT));/*hier immer 3 da Tetraederseiten gemeint sind*/
+	
+	if(((theMesh->Side_corner_ids)[ug_lgm_id_minus_1] = GetTmpMem(theHeap,(nmbofsides)*sizeof(INT*), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Side_corner_ids)[ug_lgm_id_minus_1]");
+		return(1);
+	}
+	for(lf = 0; lf <nmbofsides; lf++)
+	{
+		if((((theMesh->Side_corner_ids)[ug_lgm_id_minus_1])[lf] = GetTmpMem(theHeap,(CORNERS_OF_BND_SIDE)*sizeof(INT), ANS_MarkKey)) == NULL)
+		{ 
+			PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for ((theMesh->Side_corner_ids)[ug_lgm_id_minus_1])[lf]");
+			return(1);
+		}
+	}
+	
+
+	/*elements*/
+	if(((theMesh->Element_corners)[ug_lgm_id_minus_1] = GetTmpMem(theHeap,(nmbOfTetrhdrOfThisSbd)*sizeof(INT), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Element_corners)[ug_lgm_id_minus_1]");
+		return(1);
+	}
+	memset(((theMesh->Element_corners)[ug_lgm_id_minus_1]),CORNERS_OF_ELEMENT,(nmbOfTetrhdrOfThisSbd)*sizeof(INT));/*hier immer 3 da Tetraederseiten gemeint sind*/
+
+	if(((theMesh->Element_corner_ids)[ug_lgm_id_minus_1] = GetTmpMem(theHeap,(nmbOfTetrhdrOfThisSbd)*sizeof(INT*), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for (theMesh->Element_corner_ids)[ug_lgm_id_minus_1]");
+		return(1);
+	}
+	for(lf = 0; lf <nmbOfTetrhdrOfThisSbd; lf++)
+	{
+		if((((theMesh->Element_corner_ids)[ug_lgm_id_minus_1])[lf] = GetTmpMem(theHeap,(CORNERS_OF_ELEMENT)*sizeof(INT), ANS_MarkKey)) == NULL)
+		{ 
+			PrintErrorMessage('E',"FillSubdomainInformations"," ERROR: No memory for ((theMesh->Element_corner_ids)[ug_lgm_id_minus_1])[lf]");
+			return(1);
+		}
+	}
+
+	
+	/*Lauf über el_besucht_array 
+	  nehme Tetraeder, die zur Sbd gehoeren zähle sie dabei zwecks Probe
+	  	trage die 4 CornerIDs ein in der Reihenfolge wie sie kommen Achtung UGIDs-stattCAD-IDs verwenden 
+	  	trage ggf. die SideCornerIDs ein - Achtung in UG-Reihenfolge 
+	  	dabei Update of nbofsides zwecks Probe*/
+	hilfszaehler = 0; /*only for debugging*/		
+	for(elem_lf=1; elem_lf<=statistik[6]; elem_lf++)
+	{
+		if (el_besucht_array[elem_lf] == SbdName)
+		{
+			/*wenn es sich also um ein Element dieser Subdomain handelt ...*/
+			stelle2 = stelle = elem_lf * 8;
+			/*trage die 4 ElementNdIDs ein*/
+			for (lf=0; lf<4; lf++)
+			{
+				(((theMesh->Element_corner_ids)[ug_lgm_id_minus_1])[elems_zaehler])[lf] = point_array[el_array[stelle]];
+				stelle++;
+			}
+			
+			elems_zaehler++;
+			
+			/*wenn überhaupt ein Boundaryelement...*/
+			if(elemflag_array[elem_lf] > 0)
+			{
+
+				hilfszaehler = 0;
+				/*stelle stimmt bereits , s.o */
+				for(lf = 0; lf < 4; lf++)
+				{
+					if(el_array[stelle] < 0) /*wenn das Element bzgl. dieser Seite an eine Boundary angrenzt ... */
+					{
+						/*SideCorners von dieser Side eintragen*/
+						switch (lf) 
+						{
+							/*die folgenden Zuw. beziehen sich auf UG, nicht auf ANSYS !*/
+							case 0: ug_sd_offs[0] = 0; ug_sd_offs[1] = 2; ug_sd_offs[2] = 1; break;
+							case 1: ug_sd_offs[0] = 1; ug_sd_offs[1] = 2; ug_sd_offs[2] = 3; break;
+							case 2: ug_sd_offs[0] = 0; ug_sd_offs[1] = 3; ug_sd_offs[2] = 2; break;
+							case 3: ug_sd_offs[0] = 0; ug_sd_offs[1] = 1; ug_sd_offs[2] = 3;
+						}/*"switch (lf)"*/	
+						for (help=0; help<3; help++)/*ueber die 3 sidenodeIDs*/
+						{
+							(((theMesh->Side_corner_ids)[ug_lgm_id_minus_1])[sides_zaehler])[help] = point_array[el_array[stelle2 + ug_sd_offs[help]]];
+						}
+						hilfszaehler ++;	
+						sides_zaehler ++;
+					}
+					stelle++;
+				}
+				if(hilfszaehler == 0)
+				{
+					UserWriteF("ERROR in FillSubdomainInformations Boundaryelement %d hat keine einzige BndSide\n",(int)elem_lf);
+					return(1);
+					}
+			} 
+		}
+	}
+	/*Probe:*/
+	if(elems_zaehler != nmbOfTetrhdrOfThisSbd)
+	{ 
+		PrintErrorMessage('E',"FillSubdomainInformations","elems_zaehler != nmbOfTetrhdrOfThisSbd");
+		return(1);
+	}
+	if(sides_zaehler != nmbOfSidesOfThisSbd)
+	{ 
+		PrintErrorMessage('E',"FillSubdomainInformations","sides_zaehler != nmbOfSidesOfThisSbd");
+		return(1);
+	}
+
+	return(0);
+}/*end of FillSubdomainInformations*/
+
+
+
+
+/****************************************************************************/
+/*
+LGM_ANSYS_ReadMesh - reads mesh from ANSYS-Output and returns corret Mesh for UG
+   
+   SYNOPSIS:
+   int LGM_ANSYS_ReadMesh (HEAP *theHeap, LGM_MESH_INFO *theMesh, int MarkKey) 
+
+   PARAMETERS:
+.  theHeap - heappointer.
+   
+   DESCRIPTION:
+   lreads all coordinates
+   
+   RETURN VALUE:
+   INT
+.n      0 if ok 
+.n      1 if read error.						
+   
+   SEE ALSO:
+ */
+/****************************************************************************/
+/* DIRKS NEU : theHeap gibts doch schon seit LGM_ANSYS_ReadDomain
+               und muss hier nicht nochmal uebergeben werden.*/
+/*int LGM_ANSYS_ReadMesh (HEAP *theHeap, LGM_MESH_INFO *theMesh)*/
+/* alte Version*/
+int LGM_ANSYS_ReadMesh (HEAP *Heappointer, LGM_MESH_INFO *theMesh, int MarkKey) /* DIRKS NEU MarkKey*/
+{
+	SD_TYP *sbd;
+	int i,TetraederelementID, ll, stelle, SbdName,elem_lf;
+	
+	/* DIRKS NEU :*/
+	theHeap = Heappointer;
+	ANS_MarkKey = MarkKey;
+	
+	/* fill PositionInformations of Inner- and BndPoints of theMesh */
+	if (FillPositionInformations(theMesh) != 0)
+	{
+		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh/FillPositionInformations","execution failed");
+		return (1);
+	}
+	
+	/*In el_array benoetigen alle Tetraederseiten, die auf einer Boundary liegen, den Eintrag -1;
+	  bzw. genauer -1 * Vorkammastellle der zugehoerigen Lastzahl
+	  dies wird moeglich durch einen Lauf uber alle SFEs , dies geschieht in ReadAnsysFile, s.o.
+	  Wichtig, da sonst keine Unterscheidung  zwischen sich beruehrenden Subdomains
+	  in SearchAllTetrahedronsOfThisSbd moeglich. s.o. unter ug_side_offset */
+	
+	/* find neighbours */
+	if (FindElNeighbours(statistik[6]) != 0)
+	{
+		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh/FindElNeighbours","execution failed");
+		return (1);
+	}
+	
+	/*Initialsierung des notwendigen KontrollFlagFeldes zur Steuerung der Elem_Sbd_Zgh. */
+	el_besucht_array = GetTmpMem(theHeap,(statistik[6]+1)*sizeof(INT), ANS_MarkKey);
+	if ( el_besucht_array == NULL ) 
+	{ 
+		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for el_besucht_array !!!");
+		return(1);
+	}
+	memset(el_besucht_array,0,(statistik[6]+1)*sizeof(INT));
+	
+	
+	/*the number of Subdomains:*/
+	theMesh->nSubDomains = NMB_OF_SBDMS(DomainInfo_Pointer);
+	/*allocate array for nmbofsides per sbd*/
+	if((theMesh->nSides = GetTmpMem(theHeap,(NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->nSides !!!");
+		return(1);
+	}
+	/*allocate array for nmbofelems per sbd*/
+	if((theMesh->nElements = GetTmpMem(theHeap,(NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(INT), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->nElements !!!");
+		return(1);
+	}
+	/*allocate array for SideCorners*/
+	if((theMesh->Side_corners = GetTmpMem(theHeap,(NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int*), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->nSides !!!");
+		return(1);
+	}
+	/*allocate array for SideCornerIds*/
+	if((theMesh->Side_corner_ids = GetTmpMem(theHeap,(NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int**), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->Side_corner_ids !!!");
+		return(1);
+	}
+	/*allocate array for Element_corners*/
+	if((theMesh->Element_corners = GetTmpMem(theHeap,(NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int*), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->Element_corners !!!");
+		return(1);
+	}
+	/*allocate array for Element_corner_ids*/
+	if((theMesh->Element_corner_ids = GetTmpMem(theHeap,(NMB_OF_SBDMS(DomainInfo_Pointer))*sizeof(int**), ANS_MarkKey)) == NULL)
+	{ 
+		PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR: No memory for theMesh->Element_corner_ids !!!");
+		return(1);
+	}
+	/*allocate array for nbElements*/
+	theMesh->nbElements = NULL; /*not yet*/
+	
+	/* for all subdomains ...*/
+	sbd = EXCHNG_TYP2_ROOT_SBD(ExchangeVar_2_Pointer);
+	for (i=1; i <= NMB_OF_SBDMS(DomainInfo_Pointer); i++) 
+	{
+		if(sbd != NULL)
+		{
+			SbdName = SD_NAME(sbd);
+			nmbOfTetrhdrOfThisSbd = 0; /*Zaehler fuer Sbd->Tetraederanzahl*/
+			nmbOfSidesOfThisSbd = 0; /*Zaehler fuer Sbd->Sidesanzahl*/
+
+			
+			if((TetraederelementID = FetchATetrahedronOfThisSbd(sbd)) == -1) /* -1 bei Fehler !!*/
+			{
+				UserWrite("ERROR: in LGM_ANSYS_ReadMesh: no tetrahedron out of FetchATetrahedronOfThisSbd");
+				return (1);
+			};
+			
+			/*erster Tetraeder der Subdomain sbd ist somit gefunden
+			  er wird nun im KontrollFlagFeld eingetragen */
+			el_besucht_array[TetraederelementID] = SbdName;
+			nmbOfTetrhdrOfThisSbd ++;
+			/* Update of nmbOfSidesOfThisSbd des ersten Mustertetraeders - dieser liegt 
+			ja auf jeden Fall auf dem Rand*/ 
+			/*reicht auch noch in FillSubdomainInformations */
+			/*stelle = TetraederelementID * 8 + 4;
+			for(ll = 0; ll < 4; ll++)
+			{
+				if(el_array[stelle] < 0) *//*wenn das Element bzgl dieser Seite an eine Boundary angrenzt ... */
+			/*	{
+					nmbOfSidesOfThisSbd ++;
+				}
+				stelle++;
+			}*/
+
+			/* GOON HERE MONDAY die zwei Funktionen SearchAllTetrahedronsOfThisSbd und
+			FillSubdomainInformations sind noch zu schreiben, ferner sollten Proben realisiert werden in der Art:
+			Am schluss muss el_besucht_array ueberall ausser bei 0 genau einmal besucht worden sein
+			In FillSubdomainInformations muss die AnzahlSidespersubdomain geprueft werden.
+			In SearchAllTetrahedronsOfThisSbd muss die Sbd-SideAnzahl noch nicht gezaehlt werden
+			Spaeter kann sie durch Addition der #Sbds->surfaces->'triangle gewaehlt werden*/
+			
+			/*Suche in einer rek. Funktion mit Hilfe der Nachbarschaftsbeziehungen
+			  alle Tetraeder die der aktuellen Subdomain angehoeren. Dabei muessen
+			  nmbOfTetrhdrOfThisSbd, nmbOfSidesOfThisSbd und el_besucht_array stets aktualisiert werden*/
+			
+			  
+			if (SearchAllTetrahedronsOfThisSbd(TetraederelementID,SbdName) == 1)
+			{
+				PrintErrorMessage('E',"LGM_ANSYS_ReadMesh"," ERROR out of SearchAllTetrahedronsOfThisSbd, = rekursive Funktion. !");
+				return(1);
+			}
+			
+			
+			(theMesh->nElements)[i-1] = nmbOfTetrhdrOfThisSbd; 
+			
+			if (FillSubdomainInformations(theMesh,SbdName,i) != 0) /*uses nmbOfTetrhdrOfThisSbd and el_besucht_array*/
+			{
+				PrintErrorMessage('E',"LGM_ANSYS_ReadMesh/FillSubdomainInformations","execution failed");
+				return (1);
+			}
+		}
+		else
+		{
+			UserWrite("ERROR: in LGM_ANSYS_ReadMesh: Subdomain is missing !!");
+			return (1);
+		}
+
+		/*weiter mit naechster Subdomain*/
+		sbd = SD_NEXT(sbd);
+	}
+
+	/*Probe:*/
+	for(elem_lf=1; elem_lf<=statistik[6]; elem_lf++)
+	{
+		/*Probe : wenn ein Element keiner Subdomain zugeordnet werden konnte . . .*/
+		if(el_besucht_array[elem_lf] == 0)
+		{
+			PrintErrorMessage('E',"LGM_ANSYS_ReadMesh","el_besucht_array nicht vollstaendig gefuellt");
+			return(1);
+		}
+	}
+	
+    UserWrite("ERROR: in LGM_ANSYS_ReadMesh: return1, da not finshed yet");
+    return (1);
+    /* TODO  BoundaryPoints !!! DIRKS NEU return 0  !!!*/
+}
