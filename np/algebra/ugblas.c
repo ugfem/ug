@@ -960,10 +960,9 @@ fflush(stdout);
 			mtype = MTP(vtype,MDESTTYPE(m));
 			Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
 			for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
-					 *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++) {
+					 *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++)
 				msgbuf[i] = MVALUE(m,Comp[i]);
-				msgbuf+=MaxBlockSize;
-			}
+			msgbuf+=MaxBlockSize;
 		}
 	}
 	for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
