@@ -113,6 +113,8 @@
                                                  m ## 10 = MD_MCMP_OF_RT_CT(M,rt,ct,3); m ## 11 = MD_MCMP_OF_RT_CT(M,rt,ct,4); m ## 12 = MD_MCMP_OF_RT_CT(M,rt,ct,5); \
                                                  m ## 20 = MD_MCMP_OF_RT_CT(M,rt,ct,6); m ## 21 = MD_MCMP_OF_RT_CT(M,rt,ct,7); m ## 22 = MD_MCMP_OF_RT_CT(M,rt,ct,8);}
 
+#define PRINTVEC(x)             {PrintDebug("contents of " STR(x) ":\n");PrintVectorX(GRID_ON_LEVEL(mg,tl),x,3,3,PrintDebug);}
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -162,6 +164,8 @@ static INT ConsComp;
 
 #endif
 
+static trace_ugblas=0;
+
 /* RCS string */
 const static char RCS_ID("$Header$",UG_RCS_STRING);
 
@@ -172,6 +176,11 @@ REP_ERR_FILE;
 /* forward declarations of functions used before they are defined			*/
 /*																			*/
 /****************************************************************************/
+
+INT TraceUGBlas (INT trace)
+{
+  return (trace_ugblas = trace);
+}
 
 /****************************************************************************/
 /*D
@@ -2148,7 +2157,7 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 /****************************************************************************/
 
 #ifdef __MWCW__
-#pragma mark blas_level_1
+#pragma mark *** blas_level_1 ***
 #endif
 
 /****************************************************************************/
@@ -2208,6 +2217,8 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #define T_FUNCNAME      dset
 #define T_ARGS          ,DOUBLE a
+#define T_PR_DBG                (" a=%le",(double)a)
+#define T_PR_VEC                PRINTVEC(x)
 #define T_MOD_SCAL      VVALUE(v,xc) = a;
 #define T_MOD_VECTOR_1  VVALUE(v,cx0) = a;
 #define T_MOD_VECTOR_2  VVALUE(v,cx1) = a;
@@ -2275,6 +2286,8 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #define T_FUNCNAME      dcopy
 #define T_ARGS          ,const VECDATA_DESC *y
+#define T_PR_DBG                (" y=%s",ENVITEM_NAME(y))
+#define T_PR_VEC                {PRINTVEC(x); PRINTVEC(y)}
 #define T_ARGS_BV       ,INT yc
 #define T_USE_Y
 #define T_MOD_SCAL      VVALUE(v,xc) = VVALUE(v,yc);
@@ -2345,6 +2358,8 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #define T_FUNCNAME      dscal
 #define T_ARGS          ,DOUBLE a
+#define T_PR_DBG                (" a=%le",(double)a)
+#define T_PR_VEC                PRINTVEC(x)
 #define T_MOD_SCAL      VVALUE(v,xc) *= a;
 #define T_MOD_VECTOR_1  VVALUE(v,cx0) *= a;
 #define T_MOD_VECTOR_2  VVALUE(v,cx1) *= a;
@@ -2387,6 +2402,8 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #define T_FUNCNAME      dscalx
 #define T_ARGS          ,const VEC_SCALAR a
+#define T_PR_DBG                (" a=VS")
+#define T_PR_VEC                PRINTVEC(x)
 #define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x);                  \
   DEFINE_VS_CMPS(a); const DOUBLE *value;
 #define T_PREP_1        SET_VS_CMP_1(a,a,aoff,vtype);
@@ -2460,6 +2477,8 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #define T_FUNCNAME      dadd
 #define T_ARGS          ,const VECDATA_DESC *y
+#define T_PR_DBG                (" y=%s",ENVITEM_NAME(y))
+#define T_PR_VEC                {PRINTVEC(x); PRINTVEC(y)}
 #define T_ARGS_BV       ,INT yc
 #define T_USE_Y
 #define T_MOD_SCAL      VVALUE(v,xc) += VVALUE(v,yc);
@@ -2530,6 +2549,8 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #define T_FUNCNAME      dsub
 #define T_ARGS          ,const VECDATA_DESC *y
+#define T_PR_DBG                (" y=%s",ENVITEM_NAME(y))
+#define T_PR_VEC                {PRINTVEC(x); PRINTVEC(y)}
 #define T_ARGS_BV       ,INT yc
 #define T_USE_Y
 #define T_MOD_SCAL      VVALUE(v,xc) -= VVALUE(v,yc);
@@ -2600,6 +2621,8 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #define T_FUNCNAME      dminusadd
 #define T_ARGS          ,const VECDATA_DESC *y
+#define T_PR_DBG                (" y=%s",ENVITEM_NAME(y))
+#define T_PR_VEC                {PRINTVEC(x); PRINTVEC(y)}
 #define T_ARGS_BV       ,INT yc
 #define T_USE_Y
 #define T_MOD_SCAL      VVALUE(v,xc) = VVALUE(v,yc) - VVALUE(v,xc);
@@ -2646,6 +2669,8 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #define T_FUNCNAME      daxpyx
 #define T_ARGS          ,const VEC_SCALAR a,const VECDATA_DESC *y
+#define T_PR_DBG                (" a=VS y=%s",ENVITEM_NAME(y))
+#define T_PR_VEC                {PRINTVEC(x); PRINTVEC(y)}
 #define T_USE_Y
 #define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); const DOUBLE *value;
 #define T_MOD_SCAL      VVALUE(v,xc) += a[aoff[VTYPE(v)]] * VVALUE(v,yc);
@@ -2720,6 +2745,8 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #define T_FUNCNAME      daxpy
 #define T_ARGS          ,DOUBLE a,const VECDATA_DESC *y
+#define T_PR_DBG                (" a=%le y=%s",(double)a,ENVITEM_NAME(y))
+#define T_PR_VEC                {PRINTVEC(x); PRINTVEC(y)}
 #define T_ARGS_BV       ,DOUBLE a,INT yc
 #define T_USE_Y
 #define T_MOD_SCAL      VVALUE(v,xc) += a * VVALUE(v,yc);
@@ -2788,6 +2815,8 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 #define T_FUNCNAME      ddotx
 #define T_ARGS          ,const VECDATA_DESC *y,VEC_SCALAR a
+#define T_PR_DBG                (" y=%s a=VS",ENVITEM_NAME(y))
+#define T_PR_VEC                {PRINTVEC(x); PRINTVEC(y)}
 #define T_USE_Y
 #define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value;   \
   for (i=0; i<VD_NCOMP(x); i++) a[i] = 0.0;
@@ -2840,6 +2869,8 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 #define T_FUNCNAME      ddotw
 #define T_ARGS          ,const VECDATA_DESC *y,const VEC_SCALAR w,DOUBLE *s
+#define T_PR_DBG                (" y=%s w=VS",ENVITEM_NAME(y))
+#define T_PR_VEC                {PRINTVEC(x); PRINTVEC(y)}
 #define T_USE_Y
 #define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value;   \
   VEC_SCALAR a;                                                                             \
@@ -2919,6 +2950,8 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 #define T_FUNCNAME      ddot
 #define T_ARGS          ,const VECDATA_DESC *y,DOUBLE *a
+#define T_PR_DBG                (" y=%s",ENVITEM_NAME(y))
+#define T_PR_VEC                {PRINTVEC(x); PRINTVEC(y)}
 #define T_ARGS_BV       ,INT yc,DOUBLE *a
 #define T_USE_Y
 #define T_CONFIG        register DOUBLE sum = 0.0;
@@ -2969,6 +3002,8 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 #define T_FUNCNAME      dnrm2x
 #define T_ARGS          ,VEC_SCALAR a
+#define T_PR_DBG                (" a=VS")
+#define T_PR_VEC                PRINTVEC(x)
 #define T_CONFIG        const SHORT *aoff = VD_OFFSETPTR(x); DOUBLE *value;   \
   register DOUBLE s;                                                                        \
   for (i=0; i<VD_NCOMP(x); i++) a[i] = 0.0;
@@ -3048,6 +3083,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 #define T_FUNCNAME      dnrm2
 #define T_ARGS          ,DOUBLE *a
 #define T_CONFIG        register DOUBLE s, sum = 0.0;
+#define T_PR_VEC                PRINTVEC(x)
 #define T_MOD_SCAL      s = VVALUE(v,xc); sum += s*s;
 #define T_MOD_VECTOR_1  s = VVALUE(v,cx0); sum += s*s;
 #define T_MOD_VECTOR_2  s = VVALUE(v,cx1); sum += s*s;
@@ -3068,7 +3104,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 /****************************************************************************/
 
 #ifdef __MWCW__
-#pragma mark blas_level_2
+#pragma mark *** blas_level_2 ***
 #endif
 
 /****************************************************************************/
@@ -3132,6 +3168,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 #define T_FUNCNAME     dmatset
 #define T_ARGS         ,const MATDATA_DESC *M,DOUBLE a
+#define T_PR_DBG                (" M=%s a=%le",ENVITEM_NAME(M),(double)a)
 #define T_ARGS_BV      ,INT mc,DOUBLE a
 #define T_MOD_SCAL     MVALUE(mat,mc)=a;
 #define T_PREP_SWITCH  INT mcomp;
@@ -3220,6 +3257,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 #define T_FUNCNAME     dmatcopy
 #define T_ARGS         ,const MATDATA_DESC *M,const MATDATA_DESC *N
+#define T_PR_DBG                (" M=%s N=%s",ENVITEM_NAME(M),ENVITEM_NAME(N))
 #define T_ARGS_BV      ,INT mc,INT nc
 #define T_PREP_SCAL    register SHORT nc = MD_SCALCMP(N);
 #define T_MOD_SCAL     MVALUE(mat,mc)=MVALUE(mat,nc);
@@ -3338,6 +3376,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 #define T_FUNCNAME     dmatadd
 #define T_ARGS         ,const MATDATA_DESC *M,const MATDATA_DESC *N
+#define T_PR_DBG                (" M=%s N=%s",ENVITEM_NAME(M),ENVITEM_NAME(N))
 #define T_ARGS_BV      ,INT mc,INT nc
 #define T_PREP_SCAL    register SHORT nc = MD_SCALCMP(N);
 #define T_MOD_SCAL     MVALUE(mat,mc)+=MVALUE(mat,nc);
@@ -3466,6 +3505,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 #define T_FUNCNAME     dmatmul
 #define T_ARGS         ,const VECDATA_DESC *x,const MATDATA_DESC *M,const VECDATA_DESC *y
+#define T_PR_DBG                (" x=%s M=%s y=%s",ENVITEM_NAME(x),ENVITEM_NAME(M),ENVITEM_NAME(y))
 #define T_ARGS_BV      ,INT xc,INT mc,INT yc
 #define T_USE_X
 #define T_USE_Y
@@ -3567,6 +3607,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 #define T_FUNCNAME     dmatmul_add
 #define T_ARGS         ,const VECDATA_DESC *x,const MATDATA_DESC *M,const VECDATA_DESC *y
+#define T_PR_DBG                (" x=%s M=%s y=%s",ENVITEM_NAME(x),ENVITEM_NAME(M),ENVITEM_NAME(y))
 #define T_ARGS_BV      ,INT xc,INT mc,INT yc
 #define T_USE_X
 #define T_USE_Y
@@ -3667,6 +3708,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 #define T_FUNCNAME     dmatmul_minus
 #define T_ARGS         ,const VECDATA_DESC *x,const MATDATA_DESC *M,const VECDATA_DESC *y
+#define T_PR_DBG                (" x=%s M=%s y=%s",ENVITEM_NAME(x),ENVITEM_NAME(M),ENVITEM_NAME(y))
 #define T_ARGS_BV      ,INT xc,INT mc,INT yc
 #define T_USE_X
 #define T_USE_Y

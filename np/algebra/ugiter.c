@@ -306,6 +306,8 @@ INT l_jac (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
   register SHORT n;
   DOUBLE s[MAX_SINGLE_VEC_COMP];
 
+  PRINTDEBUG(np,1,("l_jac: l=%d v=%s M=%s d=%s\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d)));
+
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
     REP_ERR_RETURN (err);
@@ -450,6 +452,8 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
   register SHORT *tmpptr,*vcomp;
+
+  PRINTDEBUG(np,1,("l_lgs: l=%d v=%s M=%s d=%s\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d)));
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -761,6 +765,8 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
   register SHORT *tmpptr,*vcomp;
+
+  PRINTDEBUG(np,1,("l_ugs: l=%d v=%s M=%s d=%s\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d)));
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -1383,6 +1389,8 @@ INT l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
   DEFINE_MD_CMPS(m);
   register SHORT *tmpptr;
 
+  PRINTDEBUG(np,1,("l_lsor: l=%d v=%s M=%s d=%s dmp=VS\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d)));
+
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
     REP_ERR_RETURN (err);
@@ -1610,6 +1618,8 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
   DOUBLE *Rest;
   SHORT *RestComp;
   INT flag;
+
+  PRINTDEBUG(np,1,("l_ilubthdecomp: l=%d M=%s bet=VS dmp=VS...\n",(int)GLEVEL(g),ENVITEM_NAME(M)));
 
   /* consistency check: diagonal blocks are supposed to be square matrices */
   for (type=0; type<NVECTYPES; type++)
@@ -2195,6 +2205,8 @@ INT l_icdecomp (GRID *g, const MATDATA_DESC *M)
   INT i,mc,mask;
   DOUBLE matdiag,invdiag;
 
+  PRINTDEBUG(np,1,("l_icdecomp: l=%d M=%s\n",(int)GLEVEL(g),ENVITEM_NAME(M)));
+
   /* consistency check: diagonal blocks are supposed to be square matrices */
   for (type=0; type<NVECTYPES; type++)
     if (MD_ROWS_IN_RT_CT(M,type,type)>0)
@@ -2487,6 +2499,8 @@ INT l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const 
   DOUBLE *Rest;
   SHORT *RestComp;
   INT flag;
+
+  PRINTDEBUG(np,1,("l_iluspdecomp: l=%d M=%s ...\n",(int)GLEVEL(g),ENVITEM_NAME(M)));
 
   if (t==NULL)
     REP_ERR_RETURN (1);
@@ -3006,6 +3020,8 @@ INT l_lrdecomp (GRID *g, const MATDATA_DESC *M)
   INT n,n2,nr,nnr,nc,nrnc;
   INT i,l,mc,mask;
   DOUBLE diag,invdiag,pivot;
+
+  PRINTDEBUG(np,1,("l_lrdecomp: l=%d M=%s\n",(int)GLEVEL(g),ENVITEM_NAME(M)));
 
   /* consistency check: diagonal blocks are supposed to be square matrices */
   for (type=0; type<NVECTYPES; type++)
@@ -3827,6 +3843,8 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
   register SHORT *tmpptr;
+
+  PRINTDEBUG(np,1,("l_luiter: l=%d v=%s M=%s d=%s\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d)));
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -4832,6 +4850,8 @@ INT l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECD
   DEFINE_MD_CMPS(m);
   register SHORT *tmpptr;
 
+  PRINTDEBUG(np,1,("l_lltiter: l=%d v=%s M=%s d=%s\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d)));
+
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
     REP_ERR_RETURN (err);
@@ -5160,6 +5180,8 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
   DOUBLE *Rest;
   SHORT *RestComp;
   INT flag;
+
+  PRINTDEBUG(np,1,("l_ilubthdecomp_fine: l=%d M=%s ...\n",(int)GLEVEL(g),ENVITEM_NAME(M)));
 
   /* consistency check: diagonal blocks are supposed to be square matrices */
   for (type=0; type<NVECTYPES; type++)
@@ -5550,6 +5572,8 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
   register SHORT *tmpptr;
+
+  PRINTDEBUG(np,1,("l_luiter_fine: l=%d v=%s M=%s d=%s\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d)));
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -5970,6 +5994,8 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
   DOUBLE check,nrm;
   INT cnt,m,i,k,l,ncomp,vcnt,vtype,wtype,wncomp;
   const SHORT *Comp,*VComp;
+
+  PRINTDEBUG(np,1,("l_pgs: l=%d v=%s M=%s d=%s depth=%d mode=%d\n",(int)GLEVEL(g),ENVITEM_NAME(v),ENVITEM_NAME(M),ENVITEM_NAME(d),(int)depth,(int)mode));
 
   t = NULL;
   if (depth > MAX_DEPTH) {

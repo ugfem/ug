@@ -60,6 +60,14 @@ INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode T_ARGS)
 	#endif
 
 	#ifdef Debug
+	if (trace_ugblas)
+	{
+		PrintDebug("-blas2-%s: fl=%2d tl=%2d mode=%c",STR(T_FUNCNAME),fl,tl,(mode==ALL_VECTORS)?'a':'s');
+		#ifdef T_PR_DBG
+			PrintDebug T_PR_DBG;
+		#endif
+		PrintDebug("\n");
+	}
 	ASSERT(fl<=tl);
 	ASSERT((mode != ON_SURFACE) || (fl <= FULLREFINELEVEL(mg)));
 	#if defined T_USE_X && defined T_USE_Y
@@ -169,6 +177,7 @@ INT CAT(T_FUNCNAME,BS) (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const
 
 #undef T_FUNCNAME 
 #undef T_ARGS 
+#undef T_PR_DBG
 #undef T_ARGS_BV 
 #undef T_USE_X
 #undef T_USE_Y

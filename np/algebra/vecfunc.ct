@@ -32,8 +32,20 @@ INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode, const VECDATA_DESC *x T
 	#ifdef T_CONFIG
 	T_CONFIG;
 	#endif
-
+	
 	#ifdef Debug
+	if (trace_ugblas>=TRBL_PARAMS)
+	{
+		PrintDebug("-blas1-%s: fl=%2d tl=%2d mode=%c x=%s",STR(T_FUNCNAME),fl,tl,(mode==ALL_VECTORS)?'a':'s',ENVITEM_NAME(x));
+		#ifdef T_PR_DBG
+			PrintDebug T_PR_DBG;
+		#endif
+		PrintDebug("\n");
+		#ifdef T_PR_VEC
+		if (trace_ugblas>=TRBL_VECS)
+			T_PR_VEC
+		#endif
+	}
 	ASSERT(fl<=tl);
 	ASSERT((mode != ON_SURFACE) || (fl <= FULLREFINELEVEL(mg)));
 	#ifdef T_CONS_CHECK
@@ -105,6 +117,8 @@ INT CAT(T_FUNCNAME,BS) (const BLOCKVECTOR *bv, INT xc T_ARGS_BV)
 
 #undef T_FUNCNAME 
 #undef T_ARGS 
+#undef T_PR_DBG
+#undef T_PR_VEC
 #undef T_ARGS_BV
 #undef T_USE_Y
 #undef T_CONFIG

@@ -59,6 +59,13 @@
 #define UPPER_TRIANGLE          1
 #define LOWER_TRIANGLE          -1
 
+enum TRACE_BLAS {
+
+  TRBL_NO,
+  TRBL_PARAMS,
+  TRBL_VECS
+};
+
 /* kinds of matrices														*/
 #define R1C1                            RCKIND(1,1)
 #define R1C2                            RCKIND(1,2)
@@ -361,5 +368,6 @@
 
 INT  VecCheckConsistency                        (const VECDATA_DESC *x, const VECDATA_DESC *y);
 INT  MatmulCheckConsistency             (const VECDATA_DESC *x, const MATDATA_DESC *M, const VECDATA_DESC *y);
+INT  TraceUGBlas                                        (INT trace);
 
 #endif
