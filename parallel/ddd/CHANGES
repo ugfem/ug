@@ -1,5 +1,91 @@
 ---------------------------
 
+CHANGES 1.8 -> 1.8.1
+
+---------------------------
+970303 kb
+added new function DDD_IFInfoMemory().
+	- this function returns the number of bytes used for representing
+	  a given DDD interface.
+	- available in all FRONTENDs.
+970303 kb
+cleanup of memory management.
+	- removed some memory leaks.
+	- improved performance by introducing segments of memory instead
+	  of doing many, many alloc/free requests. this was done in
+	  xfer/sll.ct (for auxiliary data structures in Xfer), and in
+	  xfer/supp.c (for AddData structures).
+	- memory for DDD interfaces is constructed exactly as large as needed.
+	  up to now, memory has been wasted (esp. when there were many DDD-types
+	  as distributed objects). memory usage for interfaces will be
+	  about factor 6-8 smaller now.
+970217 kb
+removed lots of warnings with C++ on SGI.
+---------------------------
+
+CHANGES 1.7.8 -> 1.8
+
+---------------------------
+970217 kb
+started to C++-ize PPIF and extended functionality.
+970212 kb
+added powerful memory-management debugging tool.
+	- some switches (CheckPMEM, CheckAMEM, CheckTMEM) can be
+	  set at compiletime in dddi.h in order to control the
+	  memory usage of the DDD-library. each allocated chunk
+	  will be sizeof(size_t) bigger, in the additional section
+	  the size of the allocated memory is stored. this is used
+	  for printing of MALL and FREE output.
+970212 kb
+revised handler handling. :-)
+	- now, for each DDD-handler there is a corresponding
+	  SetHandler function (e.g., DDD_SetHandlerUPDATE for
+	  UPDATE-handler). The first argument of each handler
+	  function is the DDD_TYPE for which the new handler
+	  should be registered, the second argument is a
+	  pointer to the handler function itself (e.g., of
+	  type HandlerUPDATE).
+	- in ddd.h there is a list of prototypes for all handlers,
+	  i.e., now the compiler can do static type checking for
+	  handler functions and their parameters.
+	- the old functionality DDD_HandlerRegister with variable
+	  argument list is supported for downward compatibility.
+970212 kb
+introduced OLDSTYLE-warnings.
+	- for functions which are supported for downward 
+	  compatibility only and which will be removed in some
+	  future version, a warning is issued each time the
+	  function is called.
+	- additionally, some hints are added how to upgrade to new
+	  version.
+	- with DDD_OPTION OPT_WARNING_OLDSTYLE these warnings can
+	  be switched off.
+970212 kb
+revised handler calls in F_FRONTEND.
+	- now all relevant handlers are called also in F_FRONTEND
+	  version (with call-by-reference parameters).
+970211 kb
+implemented object-oriented CPP_FRONTEND prototype.
+	- supports C-style objects (as structs or classes) and
+	  Fortran-style objects (as collections of distributed
+	  arrays).
+	- implementation as object-oriented class hierarchy encapsulated
+	  the ANSI C implementation of DDD.
+	- class DDD_Library with a single instance represents
+	  the DDD library.
+	- class DDD_Object represents a distributed object.
+	- class DDD_IndexObject represents a object stored in
+	  array-like manner.
+	- template classes DDD_ObjectOf<T> and DDD_IndexObjectOf<T>
+	  may be used for very elegant parallelization of sequential
+	  object-oriented codes.
+	- class DDD_Interface encapsulates a DDD interface, communication
+	  can be done via DDD_GatherScatter-objects.
+	- now, C_FRONTEND, F_FRONTEND and CPP_FRONTEND in one single
+	  code.
+	- see coming documentation and demo examples for using CPP_FRONTEND.
+---------------------------
+
 CHANGES 1.7.7 -> 1.7.8
 
 ---------------------------

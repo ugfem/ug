@@ -35,9 +35,6 @@
 /* linked list of items */
 extern T *list(T);
 
-/* free list of items */
-extern T *free(T);
-
 /* number of items in list */
 extern int n(T);
 
@@ -48,9 +45,8 @@ extern int n(T);
 /*                                                                          */
 /****************************************************************************/
 
-/* from xferlist.ct */
+/* from sll.ct */
 T *New(T) (void);
-T *Free(T) (T *);
 T **SortedArray(T) (int (*) (const void *, const void *));
 int Unify(T) (T **, int (*) (T **, T **));
 void OrigOrder(T) (T **, int);

@@ -223,11 +223,12 @@ static MSG_DESC *NewMsgDesc (void)
   else
   {
     /* freelist is empty */
-    md = (MSG_DESC *) AllocTmp(sizeof(MSG_DESC));
+    md = (MSG_DESC *) AllocCom(sizeof(MSG_DESC));
   }
 
   return(md);
 }
+
 
 static void FreeMsgDesc (MSG_DESC *md)
 {
@@ -338,7 +339,7 @@ void LC_SetTableSize (LC_MSGHANDLE msg, LC_MSGCOMP id, ULONG entries)
 void LC_MsgPrepareSend (LC_MSGHANDLE msg)
 {
   MSG_DESC   *md = (MSG_DESC *) msg;
-  ULONG offset, *hdr;
+  ULONG      *hdr;
   int i, j, n = md->msgType->nComps;
 
   /* compute size of header */
@@ -485,7 +486,7 @@ static void LC_MsgRecv (MSG_DESC *md)
 
 static int LC_PollSend (void)
 {
-  MSG_DESC *md, *prev, *next;
+  MSG_DESC *md, *prev, *next=0;
   int remaining, error;
 
   remaining = 0;
@@ -680,7 +681,10 @@ int LC_Connect (LC_MSGTYPE mtyp)
 
 
   /* create array of receive message handles */
-  theRecvArray = (LC_MSGHANDLE *)AllocTmp(sizeof(LC_MSGHANDLE)*nRecvs);
+  if (nRecvs>0)
+  {
+    theRecvArray = (LC_MSGHANDLE *)AllocTmp(sizeof(LC_MSGHANDLE)*nRecvs);
+  }
 
 
   /* create recv messages from notify array */
@@ -723,7 +727,6 @@ int LC_Connect (LC_MSGTYPE mtyp)
 
 LC_MSGHANDLE *LC_Communicate (void)
 {
-  LC_MSGHANDLE *recvMsgs;
   int leftSend, leftRecv;
 
 #       if DebugLowComm<=9
@@ -756,7 +759,7 @@ LC_MSGHANDLE *LC_Communicate (void)
 
 void LC_Cleanup (void)
 {
-  MSG_DESC *md, *next;
+  MSG_DESC *md, *next=0;
 
 #       if DebugLowComm<=9
   sprintf(cBuffer, "%4d: LC_Cleanup() ...\n", me);
@@ -774,10 +777,16 @@ void LC_Cleanup (void)
 
 
   if (nRecvs>0)
+  {
     FreeMsg(theRecvBuffer);
+    theRecvBuffer=NULL;
+  }
 
   if (theRecvArray!=NULL)
+  {
     FreeTmp(theRecvArray);
+    theRecvArray=NULL;
+  }
 
   LC_RecvQueue = NULL;
   nRecvs = 0;
@@ -802,7 +811,7 @@ LC_MSGTYPE LC_NewMsgType (char *msgname)
 {
   MSG_TYPE *mt;
 
-  mt = (MSG_TYPE *) AllocTmp(sizeof(MSG_TYPE));
+  mt = (MSG_TYPE *) AllocCom(sizeof(MSG_TYPE));
   /* TODO error handling */
   mt->name   = msgname;
   mt->nComps = 0;
@@ -820,6 +829,14 @@ LC_MSGCOMP LC_NewMsgChunk (LC_MSGTYPE mt)
   MSG_TYPE  *mtyp = (MSG_TYPE *)mt;
   LC_MSGCOMP id = mtyp->nComps++;
 
+  if (id>=MAX_COMPONENTS)
+  {
+    sprintf(cBuffer, "too many message components (max. %d)",
+            MAX_COMPONENTS);
+    DDD_PrintError('E', 6630, cBuffer);
+    HARD_EXIT;
+  }
+
   mtyp->comp[id].type = CT_CHUNK;
 
   return(id);
@@ -831,6 +848,14 @@ LC_MSGCOMP LC_NewMsgTable (LC_MSGTYPE mt, size_t size)
 {
   MSG_TYPE  *mtyp = (MSG_TYPE *)mt;
   LC_MSGCOMP id = mtyp->nComps++;
+
+  if (id>=MAX_COMPONENTS)
+  {
+    sprintf(cBuffer, "too many message components (max. %d)",
+            MAX_COMPONENTS);
+    DDD_PrintError('E', 6631, cBuffer);
+    HARD_EXIT;
+  }
 
   mtyp->comp[id].type = CT_TABLE;
   mtyp->comp[id].entry_size = size;

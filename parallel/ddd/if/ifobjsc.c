@@ -64,7 +64,7 @@ static void IFComputeShortcutTable (DDD_IF ifId)
 {
   int nItems = theIF[ifId].nItems;
   COUPLING  **cpls = theIF[ifId].cpl;
-  DDD_OBJ    *objs = theIF[ifId].obj;
+  IFObjPtr   *objs = theIF[ifId].obj;
   int i;
 
   /* mark obj-shortcut-table as valid */
@@ -76,7 +76,12 @@ static void IFComputeShortcutTable (DDD_IF ifId)
   /* fill in object pointers, this is the 4-fold indirection step */
   for(i=0; i<nItems; i++)
   {
+#ifdef CPP_FRONTEND
+    // TODO, avoid dirty cast!
+    objs[i] = (DDD_Object*)(cpls[i]->obj);
+#else
     objs[i] = OBJ_OBJ(cpls[i]->obj);
+#endif
     /*
        #ifdef F_FRONTEND
        printf("%4d: Shortcut IF=%d item=%d/%d %08x %d\n",
@@ -98,9 +103,8 @@ static void IFComputeShortcutTable (DDD_IF ifId)
 void IFCreateObjShortcut (DDD_IF ifId)
 {
   COUPLING    **cplarray = theIF[ifId].cpl;
-  DDD_OBJ     *objarray;
+  IFObjPtr     *objarray;
   IF_PROC     *ifHead;
-  int i;
 
   /* dont create shortcuts for STD_INTERFACE */
   if (ifId==STD_INTERFACE)
@@ -111,7 +115,7 @@ void IFCreateObjShortcut (DDD_IF ifId)
     return;
 
   /* get memory for addresses of objects inside IF */
-  objarray = (DDD_OBJ *) AllocIF(sizeof(DDD_OBJ)*theIF[ifId].nItems);
+  objarray = (IFObjPtr *) AllocIF(sizeof(IFObjPtr)*theIF[ifId].nItems);
   if (objarray==NULL) {
     DDD_PrintError('E', 4000, "not enough memory in IFCreateObjShortcut");
     HARD_EXIT;

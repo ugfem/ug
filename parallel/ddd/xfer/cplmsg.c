@@ -164,7 +164,6 @@ static int PrepareCplMsgs (
   iDC=0; iMC=0; iAC=0;
   while (iDC<nDC || iMC<nMC || iAC<nAC)
   {
-    int n;
     DDD_PROC pDC = (iDC<nDC) ? itemsDC[iDC]->to   : procs;
     DDD_PROC pMC = (iMC<nMC) ? itemsMC[iMC]->to   : procs;
     DDD_PROC pAC = (iAC<nAC) ? itemsAC[iAC]->to   : procs;
@@ -253,7 +252,7 @@ static int PrepareCplMsgs (
 }
 
 
-static int CplMsgSend (CPLMSG *theMsgs)
+static void CplMsgSend (CPLMSG *theMsgs)
 {
   CPLMSG *m;
 
@@ -414,7 +413,7 @@ void CommunicateCplMsgs (
   XIAddCpl **itemsAC, int nAC,
   DDD_HDR *localCplObjs, int nLCO)
 {
-  CPLMSG    *sendMsgs, *sm;
+  CPLMSG    *sendMsgs, *sm=0;
   LC_MSGHANDLE *recvMsgs;
   int i, nSendMsgs, nRecvMsgs;
 

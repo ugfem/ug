@@ -88,7 +88,7 @@ void IFGetMem (IF_PROC *ifHead, size_t itemSize, int lenIn, int lenOut)
         initiate asynchronous receive calls,
         return number of messages to be received
  */
-int IFInitComm (DDD_IF ifId, size_t itemSize)
+int IFInitComm (DDD_IF ifId)
 {
   IF_PROC   *ifHead;
   int error;
@@ -169,9 +169,9 @@ void IFInitSend (IF_PROC *ifHead)
  */
 int IFPollSend (DDD_IF ifId)
 {
-  int try;
+  int tries;
 
-  for(try=0; try<MAX_TRIES && send_mesgs>0; try++)
+  for(tries=0; tries<MAX_TRIES && send_mesgs>0; tries++)
   {
     IF_PROC   *ifHead;
 
@@ -204,8 +204,9 @@ int IFPollSend (DDD_IF ifId)
 
         fast version: uses object pointer shortcut
  */
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
 char *IFCommLoopObj (ComProcPtr LoopProc,
-                     DDD_OBJ *obj,
+                     IFObjPtr *obj,
                      char *buffer,
                      size_t itemSize,
                      int nItems)
@@ -214,9 +215,10 @@ char *IFCommLoopObj (ComProcPtr LoopProc,
 
   for(i=0; i<nItems; i++, buffer+=itemSize)
   {
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND)
     error = (*LoopProc)(obj[i], buffer);
-#else
+#endif
+#ifdef F_FRONTEND
     error = (*LoopProc)(obj+i, buffer);
 #endif
     /* TODO error abfrage */
@@ -224,21 +226,61 @@ char *IFCommLoopObj (ComProcPtr LoopProc,
 
   return(buffer);
 }
+#endif
 
+#ifdef CPP_FRONTEND
+char *IFCommLoopObjGather (DDD_GatherScatter& gs,
+                           IFObjPtr *obj,
+                           char *buffer,
+                           size_t itemSize,
+                           int nItems)
+{
+  int i, error;
+
+  for(i=0; i<nItems; i++, buffer+=itemSize)
+  {
+    error = gs.Gather(obj[i], buffer);
+    /* TODO error abfrage */
+  }
+
+  return(buffer);
+}
+
+char *IFCommLoopObjScatter (DDD_GatherScatter& gs,
+                            IFObjPtr *obj,
+                            char *buffer,
+                            size_t itemSize,
+                            int nItems)
+{
+  int i, error;
+
+  for(i=0; i<nItems; i++, buffer+=itemSize)
+  {
+    error = gs.Scatter(obj[i], buffer);
+    /* TODO error abfrage */
+  }
+
+  return(buffer);
+}
+#endif
+
+
+#ifndef CPP_FRONTEND  /* for debugging */
 
 /*
         simple variant of above routine. dont communicate,
         but call an application's routine.
  */
-void IFExecLoopObj (ExecProcPtr LoopProc, DDD_OBJ *obj, int nItems)
+void IFExecLoopObj (ExecProcPtr LoopProc, IFObjPtr *obj, int nItems)
 {
   int i, error;
 
   for(i=0; i<nItems; i++)
   {
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
     error = (*LoopProc)(obj[i]);
-#else
+#endif
+#ifdef F_FRONTEND
     error = (*LoopProc)(obj+i);
 #endif
     /* TODO error abfrage */
@@ -265,10 +307,15 @@ char *IFCommLoopCpl (ComProcPtr LoopProc,
 
   for(i=0; i<nItems; i++, buffer+=itemSize)
   {
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND)
     error = (*LoopProc)(OBJ_OBJ(cpl[i]->obj), buffer);
-#else
-    error = (*LoopProc)((DDD_OBJ *) &(OBJ_INDEX(cpl[i]->obj)), buffer);
+#endif
+#if defined(CPP_FRONTEND)
+    // TODO: dirty cast in first argument!
+    error = (*LoopProc)((DDD_Object*)(cpl[i]->obj), buffer);
+#endif
+#ifdef F_FRONTEND
+    error = (*LoopProc)((IFObjPtr *) &(OBJ_INDEX(cpl[i]->obj)), buffer);
 #endif
     /* TODO error abfrage */
   }
@@ -298,11 +345,17 @@ char *IFCommLoopCplX (ComProcXPtr LoopProc,
 
   for(i=0; i<nItems; i++, buffer+=itemSize)
   {
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND)
     error = (*LoopProc)(OBJ_OBJ(cpl[i]->obj),
                         buffer, cpl[i]->proc, cpl[i]->prio);
-#else
-    error = (*LoopProc)((DDD_OBJ *) &(OBJ_INDEX(cpl[i]->obj)),
+#endif
+#if defined(CPP_FRONTEND)
+    // TODO: dirty cast in first argument!
+    error = (*LoopProc)((DDD_Object*)(cpl[i]->obj),
+                        buffer, cpl[i]->proc, cpl[i]->prio);
+#endif
+#ifdef F_FRONTEND
+    error = (*LoopProc)((IFObjPtr *) &(OBJ_INDEX(cpl[i]->obj)),
                         buffer, (DDD_PROC *) &(cpl[i]->proc),
                         (DDD_PRIO *) &(cpl[i]->prio));
 #endif
@@ -314,7 +367,7 @@ char *IFCommLoopCplX (ComProcXPtr LoopProc,
 }
 
 
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 
 /*
         simple variant of above routine. dont communicate,
@@ -326,10 +379,15 @@ void IFExecLoopCplX (ExecProcXPtr LoopProc, COUPLING **cpl, int nItems)
 
   for(i=0; i<nItems; i++)
   {
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND)
     error = (*LoopProc)(OBJ_OBJ(cpl[i]->obj), cpl[i]->proc, cpl[i]->prio);
-#else
-    error = (*LoopProc)((DDD_OBJ *) &(OBJ_INDEX(cpl[i]->obj)),
+#endif
+#if defined(CPP_FRONTEND)
+    // TODO: dirty cast in first argument!
+    error = (*LoopProc)((DDD_Object*)(cpl[i]->obj), cpl[i]->proc, cpl[i]->prio);
+#endif
+#ifdef F_FRONTEND
+    error = (*LoopProc)((IFObjPtr *) &(OBJ_INDEX(cpl[i]->obj)),
                         (DDD_PROC *) &(cpl[i]->proc),
                         (DDD_PRIO *) &(cpl[i]->prio));
 #endif
@@ -338,5 +396,8 @@ void IFExecLoopCplX (ExecProcXPtr LoopProc, COUPLING **cpl, int nItems)
 }
 
 #endif
+
+
+#endif  /* for debugging */
 
 /****************************************************************************/

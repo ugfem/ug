@@ -31,6 +31,11 @@
 
 /****************************************************************************/
 
+#define SEGM_SIZE  256
+
+
+/****************************************************************************/
+
 /*
         which structure components are needed for each item?
  */
@@ -43,13 +48,23 @@
 /****************************************************************************/
 
 /*
+        macros for template support: datatypes
+ */
+#define _aSegm(T) aSegm ## T
+#define aSegm(T) _aSegm(T)
+
+#define _Segm(T) Segm ## T
+#define Segm(T) _Segm(T)
+
+
+/*
         macros for template support: variables
  */
+#define _segms(T) segms ## T
+#define segms(T) _segms(T)
+
 #define _list(T) list ## T
 #define list(T) _list(T)
-
-#define _free(T) free ## T
-#define free(T) _free(T)
 
 #define _n(T) n ## T
 #define n(T) _n(T)
@@ -58,11 +73,14 @@
 /*
         macros for template support: functions
  */
+#define _NewSegm(T) NewSegm ## T
+#define NewSegm(T) _NewSegm(T)
+
+#define _FreeSegms(T) FreeSegms ## T
+#define FreeSegms(T) _FreeSegms(T)
+
 #define _New(T) New ## T
 #define New(T) _New(T)
-
-#define _Free(T) Free ## T
-#define Free(T) _Free(T)
 
 #define _SortedArray(T) SortedArray ## T
 #define SortedArray(T) _SortedArray(T)

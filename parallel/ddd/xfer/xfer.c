@@ -35,11 +35,25 @@
 /* standard C library */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 
 #include "dddi.h"
 #include "xfer.h"
 
+
+/****************************************************************************/
+/*                                                                          */
+/* macros                                                                   */
+/*                                                                          */
+/****************************************************************************/
+
+/* helpful macros for FRONTEND switching, will be #undef'd at EOF */
+#ifdef F_FRONTEND
+#define _FADR     &
+#else
+#define _FADR
+#endif
 
 
 /****************************************************************************/
@@ -124,7 +138,7 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
     xi->new_owner = TRUE;
 
     /* look if there's a coupling for dest */
-    for(cpl=xicpl; cpl!=NULL; cpl=cpl->next)
+    for(cpl=xicpl; cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
       if (dest==cpl->proc)
       {
@@ -160,7 +174,7 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
       /* destination proc didn't have a copy before xfer */
 
       /* inform other owners of local copies (XINewCpl) */
-      for(cpl=xicpl; cpl!=NULL; cpl=cpl->next)
+      for(cpl=xicpl; cpl!=NULL; cpl=CPL_NEXT(cpl))
       {
         XINewCpl *xc = NewXINewCpl();
         xc->to      = cpl->proc;                           /* receiver of XINewCpl     */
@@ -173,7 +187,7 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
       /* note: destination proc can get this information
                multiple times, once for each incoming object
                with same gid (from different senders)  */
-      for(cpl=xicpl; cpl!=NULL; cpl=cpl->next)
+      for(cpl=xicpl; cpl!=NULL; cpl=CPL_NEXT(cpl))
       {
         XIOldCpl *xc = NewXIOldCpl();
         xc->to      = dest;                                    /* receiver of XIOldCpl */
@@ -267,7 +281,7 @@ XICopyObj **CplClosureEstimate (XICopyObj **items, int n, int *nRet)
  */
 
 
-static int BuildDepDataInfo (XFERMSG *xm, XICopyObj *xi)
+static void BuildDepDataInfo (XFERMSG *xm, XICopyObj *xi)
 {
   XFERADDDATA *xa;
   int ptr, chunks;
@@ -608,8 +622,11 @@ void ExecLocalXISetPrio (
       TYPE_DESC  *desc = &(theTypeDefs[typ]);
 
       /* call application handler for changing prio of dependent objects */
-      if (desc->handler[HANDLER_SETPRIORITY]!=NULL)
-        desc->handler[HANDLER_SETPRIORITY](HDR2OBJ(hdr,desc), newprio);
+      if (desc->handlerSETPRIORITY)
+      {
+        DDD_OBJ obj = HDR2OBJ(hdr,desc);
+        desc->handlerSETPRIORITY(_FADR obj, _FADR newprio);
+      }
 
       OBJ_PRIO(hdr) = newprio;
 
@@ -617,7 +634,7 @@ void ExecLocalXISetPrio (
       /* generate XIModCpl-items */
 
       /* 1. for all existing couplings */
-      for(cpl=THECOUPLING(hdr); cpl!=NULL; cpl=cpl->next)
+      for(cpl=THECOUPLING(hdr); cpl!=NULL; cpl=CPL_NEXT(cpl))
       {
         XIModCpl *xc = NewXIModCpl();
         xc->to      = cpl->proc;                               /* receiver of XIModCpl  */
@@ -675,28 +692,33 @@ void ExecLocalXIDelCmd (XIDelCmd  **itemsD, int nD)
   /* loop in original order (order of Del-cmd issueing) */
   for(iD=0; iD<nD; iD++)
   {
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
     REGISTER DDD_HDR hdr = origD[iD]->hdr;
     DDD_TYPE typ   = OBJ_TYPE(hdr);
     TYPE_DESC  *desc = &(theTypeDefs[typ]);
     DDD_OBJ obj   = HDR2OBJ(hdr,desc);
 
-
     /* do deletion */
-    if (desc->handler[HANDLER_DELETE])
-      desc->handler[HANDLER_DELETE](obj);
+    if (desc->handlerDELETE)
+      desc->handlerDELETE(_FADR obj);
     else
     {
       /* TODO the following three calls should be collected in
          one ObjMgr function */
 
       /* destruct LDATA and GDATA */
-      if (desc->handler[HANDLER_DESTRUCTOR]!=NULL)
-        desc->handler[HANDLER_DESTRUCTOR](obj);
+      if (desc->handlerDESTRUCTOR!=NULL)
+        desc->handlerDESTRUCTOR(_FADR obj);
 
       /* HdrDestructor will call XferRegisterDelete() */
       DDD_HdrDestructor(hdr);
       DDD_ObjDelete(obj, desc->size, typ);
     }
+#endif
+#ifdef CPP_FRONTEND
+    // call virtual destructor
+    delete origD[iD]->obj;
+#endif
   }
 
   FreeTmp(origD);
@@ -716,7 +738,6 @@ void ExecLocalXIDelObj (
   for(iD=0, iNO=0; iD<nD; iD++)
   {
     DDD_GID gid   = itemsD[iD]->gid;
-    COUPLING   *cpl;
 
 
     /* skip XICopyObj-items until entries for gid found */
@@ -733,7 +754,7 @@ void ExecLocalXIDelObj (
     {
       XIDelCpl *xc = NewXIDelCpl();
       xc->to      = itemsNO[iNO]->dest;                  /* receiver of XIDelCpl */
-      xc->prio    = -1;                                  /* dont remember priority   */
+      xc->prio    = PRIO_INVALID;                        /* dont remember priority   */
       xc->te.gid  = gid;                                 /* the object's gid     */
 
 
@@ -814,7 +835,7 @@ void PropagateCplInfos (
     {
       XIDelCpl *xc = NewXIDelCpl();
       xc->to      = arrayNC[iNC].dest;                   /* receiver of XIDelCpl */
-      xc->prio    = -1;
+      xc->prio    = PRIO_INVALID;
       xc->te.gid  = gid;                                 /* the object's gid     */
       /*
          printf("%4d: DelCpl 3      %08x %d %d\n",me,gid,xc->to,xc->prio);
@@ -853,7 +874,7 @@ void XferRegisterDelete (DDD_HDR hdr)
           coupling list, in case the object is received after deletion
           and the coupling list must be restored.
    */
-  for(cpl=THECOUPLING(hdr); cpl!=NULL; cpl=cpl->next)
+  for(cpl=THECOUPLING(hdr); cpl!=NULL; cpl=CPL_NEXT(cpl))
   {
     XIDelCpl *xc = NewXIDelCpl();
 
@@ -885,15 +906,9 @@ char *XferModeName (int mode)
 {
   switch(mode)
   {
-  case XMODE_IDLE :
-    return "idle-mode";
-    break;
-  case XMODE_CMDS :
-    return "commands-mode";
-    break;
-  case XMODE_BUSY :
-    return "busy-mode";
-    break;
+  case XMODE_IDLE : return "idle-mode";
+  case XMODE_CMDS : return "commands-mode";
+  case XMODE_BUSY : return "busy-mode";
   }
   return "unknown-mode";
 }
@@ -915,9 +930,9 @@ static int XferSuccMode (int mode)
 {
   switch(mode)
   {
-  case XMODE_IDLE : return XMODE_CMDS; break;
-  case XMODE_CMDS : return XMODE_BUSY; break;
-  case XMODE_BUSY : return XMODE_IDLE; break;
+  case XMODE_IDLE : return XMODE_CMDS;
+  case XMODE_CMDS : return XMODE_BUSY;
+  case XMODE_BUSY : return XMODE_IDLE;
   }
   return XMODE_IDLE;
 }
@@ -1000,6 +1015,11 @@ void ddd_XferExit (void)
   CplMsgExit();
 }
 
+
+
+/****************************************************************************/
+
+#undef _FADR
 
 
 /****************************************************************************/

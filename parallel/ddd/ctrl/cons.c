@@ -31,6 +31,7 @@
 /* standard C library */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "dddi.h"
 /*#include "xfer/xfer.h"*/
@@ -276,7 +277,7 @@ static int ConsCheckGlobalCpl (void)
   CONS_INFO *cplBuf;
   COUPLING     *cpl;
   int i, j, lenCplBuf, nRecvMsgs, nSendMsgs;
-  CONSMSG      *sendMsgs, *cm;
+  CONSMSG      *sendMsgs, *cm=0;
   LC_MSGHANDLE *recvMsgs;
   int error_cnt = 0;
 
@@ -291,7 +292,7 @@ static int ConsCheckGlobalCpl (void)
   /* copy CONS_INFOs into message buffer */
   for(i=0, j=0; i<nCpls; i++)
   {
-    for(cpl=theCpl[i]; cpl!=NULL; cpl=cpl->next)
+    for(cpl=theCpl[i]; cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
       if ((DDD_PROC)cpl->proc >= procs)
       {
@@ -389,7 +390,12 @@ static int ConsCheckDoubleObj (void)
 /*                                                                          */
 /****************************************************************************/
 
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
 int DDD_ConsCheck (void)
+#endif
+#ifdef CPP_FRONTEND
+int DDD_Library::ConsCheck (void)
+#endif
 {
   int total_errors=0;
 

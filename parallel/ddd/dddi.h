@@ -24,7 +24,11 @@
 
 
 /*
-   #define CheckMemoryUsage
+   #define CheckIFMEM
+   #define CheckPMEM
+   #define CheckCplMEM
+   #define CheckTmpMEM
+   #define CheckMsgMEM
  */
 
 
@@ -65,6 +69,14 @@
 /* #define HARD_EXIT  exit(1) */
 
 
+/*
+        macro for output of downward compatibility warning messages
+ */
+#define OLDSTYLE(txt) \
+  if (me==master && DDD_GetOption(OPT_WARNING_OLDSTYLE)==OPT_ON)  \
+  { DDD_PrintError('W', 8888, txt); }
+
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -78,7 +90,7 @@
 
 /*** DDD internal parameters ***/
 
-#define MAX_ELEMDESC   84    /* max. number of elements per TYPE_DESC       */
+#define MAX_ELEMDESC   64    /* max. number of elements per TYPE_DESC       */
 #define MAX_TYPEDESC   32    /* max. number of TYPE_DESC                    */
 #define MAX_PRIO       32    /* max. number of DDD_PRIO                     */
 
@@ -87,7 +99,7 @@
 
 #define MAX_TRIES 5000000    /* max. number of tries til timeout in IF-comm */
 
-#define MAX_PROCBITS_IN_GID 10  /* this allows 2^10 procs and 2^22 objects    */
+#define MAX_PROCBITS_IN_GID 10  /* this allows 2^10 procs and 2^22 objects  */
 
 /* use maximum as default, if no Priomerge-matrix is available */
 #define PRIOMERGE_DEFAULT PRIOMERGE_MAXIMUM
@@ -96,12 +108,14 @@
 
 /*** DDD internal constants ***/
 
-#define GID_INVALID -1       /* invalid global id */
-#define ERROR       -1       /* standard error indicator                    */
-
-
 /* maximum number of procs allowed (limited by GID construction) */
 #define MAX_PROCS   (1<<MAX_PROCBITS_IN_GID)
+
+
+#define GID_INVALID  -1            /* invalid global id                     */
+#define PRIO_INVALID (MAX_PRIO+1)  /* invalid priority                      */
+#define PROC_INVALID (MAX_PROCS+1) /* invalid processor number              */
+#define ERROR        -1            /* standard error indicator              */
 
 
 /* types of virtual channels (for ppif interface) */
@@ -122,6 +136,7 @@ enum PrioMergeVals {
 
 
 
+
 /****************************************************************************/
 
 
@@ -130,6 +145,9 @@ enum PrioMergeVals {
  */
 #ifdef C_FRONTEND
         #define INFO_FRONTEND "C_FRONTEND"
+#endif
+#ifdef CPP_FRONTEND
+        #define INFO_FRONTEND "CPP_FRONTEND"
 #endif
 #ifdef F_FRONTEND
         #define INFO_FRONTEND "F_FRONTEND"
@@ -173,7 +191,7 @@ enum PrioMergeVals {
 
 typedef struct obj_coupl
 {
-  struct obj_coupl *next;
+  struct obj_coupl *_next;
   unsigned short proc;
   unsigned char prio;
   unsigned char flags;
@@ -181,21 +199,30 @@ typedef struct obj_coupl
 } COUPLING;
 
 
+#define CPL_NEXT(cpl)   ((cpl)->_next)
+
+
 
 /****************************************************************************/
 /* ELEM_DESC: description of one element in DDD object structure description */
 /****************************************************************************/
 
+/* TODO, in CPP_FRONTEND only one of the versions for C_FRONTEND and
+        F_FRONTEND is needed, depending on setting of desc->storage.
+        this should be a union for memory efficiency reasons.
+ */
 typedef struct _ELEM_DESC
 {
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
   int offset;                         /* element offset from object address     */
-
   unsigned char *gbits;               /* ptr to gbits array, if type==EL_GBITS  */
-#else
+#endif
+
+#if defined(F_FRONTEND) || defined(CPP_FRONTEND)
   char     *array;                        /* pointer to the array of this element   */
   int msgoffset;                                          /* offset of this element in the message  */
 #endif
+
   size_t size;                        /* size of this element                   */
   int type;                           /* type of element, one of EL_xxx         */
   DDD_TYPE reftype;                   /* if EL_OBJPTR, type of ref. destination */
@@ -213,19 +240,55 @@ typedef struct _TYPE_DESC
   char     *name;                       /* textual object description           */
   int currTypeDefCall;                  /* number of current call to TypeDefine */
 
-#ifdef C_FRONTEND
+#ifdef CPP_FRONTEND
+  int storage;                          /* STORAGE_ARRAY or STORAGE_STRUCT      */
+
+  /* if storage==STORAGE_ARRAY */
+  int arraySize;                                        /* number of elements in the arrays     */
+  //int    nextFree;				/* next free object in arrays           */
+  int elemHeader;                       /* which rec. type-elem contains hdr?
+                                           (offsetHeader gives local offset)    */
+                                        /* (hasHeader must be TRUE)             */
+#endif
+
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+  /* if C_FRONTEND or (CPP_FRONTEND and storage==STORAGE_STRUCT) */
   int hasHeader;                        /* flag: real ddd type (with header)?   */
   int offsetHeader;                     /* offset of header from begin of obj   */
-#else
+#endif
+
+#ifdef F_FRONTEND
   int arraySize;                                                /* number of elements in the arrays     */
   int nextFree;                                                 /* next free object in arrays           */
   DDD_HDR hdr;                                          /* headers for all elements             */
 #endif
+
   ELEM_DESC element[MAX_ELEMDESC];       /* element description array           */
   int nElements;                        /* number of elements in object         */
   size_t size;                          /* size of object, correctly aligned    */
 
-  HandlerPtr handler[HANDLER_MAX];      /* pointer to handler functions         */
+
+  /* pointer to handler functions */
+  HandlerLDATACONSTRUCTOR handlerLDATACONSTRUCTOR;
+  HandlerDESTRUCTOR handlerDESTRUCTOR;
+  HandlerDELETE handlerDELETE;
+  HandlerUPDATE handlerUPDATE;
+  HandlerOBJMKCONS handlerOBJMKCONS;
+  HandlerSETPRIORITY handlerSETPRIORITY;
+  HandlerXFERCOPY handlerXFERCOPY;
+  HandlerXFERDELETE handlerXFERDELETE;
+  HandlerXFERGATHER handlerXFERGATHER;
+  HandlerXFERSCATTER handlerXFERSCATTER;
+  HandlerXFERGATHERX handlerXFERGATHERX;
+  HandlerXFERSCATTERX handlerXFERSCATTERX;
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+  HandlerXFERCOPYMANIP handlerXFERCOPYMANIP;
+#endif
+#ifdef F_FRONTEND
+  HandlerALLOCOBJ handlerALLOCOBJ;
+  HandlerFREEOBJ handlerFREEOBJ;
+#endif
+
 
   DDD_PRIO *prioMatrix;                 /* 2D matrix for comparing priorities   */
   int prioDefault;                      /* default mode for PrioMerge           */
@@ -327,12 +390,13 @@ extern VChannelPtr *theTopology;
 
 /* convert DDD_OBJ to DDD_HDR and vice versa */
 
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 #define OBJ2HDR(obj,desc)  ((DDD_HDR)(((char *)obj)+((desc)->offsetHeader)))
 #define HDR2OBJ(hdr,desc)  ((DDD_OBJ)(((char *)hdr)-((desc)->offsetHeader)))
 #define OBJ_OBJ(hdr)       ((DDD_OBJ)(((char *)hdr)- \
                                       (theTypeDefs[OBJ_TYPE(hdr)].offsetHeader)))
-#else
+#endif
+#ifdef F_FRONTEND
 #define OBJ2HDR(obj,desc) ((DDD_HDR)((desc)->hdr+(obj)))
 #define HDR2OBJ(hd,desc)  ((DDD_OBJ)(((char *)(hd)-(char*)((desc)->hdr))/ \
                                      sizeof(DDD_HEADER)))
@@ -376,32 +440,79 @@ extern VChannelPtr *theTopology;
 #define VCHAN_TO(p)   (theTopology[(p)])
 
 
+/* DDD_HDR may be invalid */
+#define MarkHdrInvalid(hdr)    OBJ_INDEX(hdr)=MAX_OBJ
+#define IsHdrInvalid(hdr)      OBJ_INDEX(hdr)==MAX_OBJ
 
 
-#ifdef CheckMemoryUsage
+
+
+#if defined(CheckPMEM) || defined(CheckIFMEM) || defined(CheckCplMEM) || defined(CheckMsgMEM) || defined(CheckTmpMEM)
+
 static void *dummy_ptr;
+
+#ifndef SST
+#define SST (CEIL(sizeof(size_t)))
+#define GET_SSTVAL(adr)   *(size_t *)(((char *)adr)-SST)
+#endif
+
 #endif
 
 
 /* memory management */
 
-/* mapping memory allocation calls to memmgr_ calls */
-#define AllocObj(s,t,p,a) memmgr_AllocOMEM((size_t)s,(int)t,(int)p,(int)a)
-#define AllocFix(s)       memmgr_AllocPMEM((size_t)s)
-#define AllocCpl(s)       memmgr_AllocAMEM((size_t)s)
-#define AllocIF(s)        memmgr_AllocAMEM((size_t)s)
-#define AllocHeap(s)      memmgr_AllocHMEM((size_t)s)
+/*** mapping memory allocation calls to memmgr_ calls ***/
 
-#ifdef CheckMemoryUsage
-#define AllocMsg(s)       (dummy_ptr=memmgr_AllocTMEM((size_t)s));\
-  printf("%4d: MALL L1 adr=%08x size=%ld file=%s line=%d\n",\
+#define AllocObj(s,t,p,a) memmgr_AllocOMEM((size_t)s,(int)t,(int)p,(int)a)
+#define AllocHeap(s)      memmgr_AllocHMEM((size_t)s)
+#define AllocCom(s)       memmgr_AllocAMEM((size_t)s)
+
+#ifdef CheckPMEM
+#define AllocFix(s)       (dummy_ptr=SST+(char *)memmgr_AllocPMEM(SST+(size_t)s));\
+  GET_SSTVAL(dummy_ptr) = s;                                    \
+  printf("%4d: MALL PFix adr=%08x size=%ld file=%s line=%d\n",\
          me,dummy_ptr,s,__FILE__,__LINE__)
-#define AllocTmp(s)       (dummy_ptr=memmgr_AllocTMEM((size_t)s));\
-  printf("%4d: MALL L2 adr=%08x size=%ld file=%s line=%d\n",\
+#else
+#define AllocFix(s)       memmgr_AllocPMEM((size_t)s)
+#endif
+
+
+#ifdef CheckMsgMEM
+#define AllocMsg(s)       (dummy_ptr=SST+(char *)memmgr_AllocTMEM(SST+(size_t)s));\
+  GET_SSTVAL(dummy_ptr) = s;                                    \
+  printf("%4d: MALL TMsg adr=%08x size=%ld file=%s line=%d\n",\
          me,dummy_ptr,s,__FILE__,__LINE__)
 #else
 #define AllocMsg(s)       memmgr_AllocTMEM((size_t)s)
+#endif
+
+
+#ifdef CheckTmpMEM
+#define AllocTmp(s)       (dummy_ptr=SST+(char *)memmgr_AllocTMEM(SST+(size_t)s));\
+  GET_SSTVAL(dummy_ptr) = s;                                    \
+  printf("%4d: MALL TTmp adr=%08x size=%ld file=%s line=%d\n",\
+         me,dummy_ptr,s,__FILE__,__LINE__)
+#else
 #define AllocTmp(s)       memmgr_AllocTMEM((size_t)s)
+#endif
+
+
+#ifdef CheckCplMEM
+#define AllocCpl(s)       (dummy_ptr=SST+(char *)memmgr_AllocAMEM(SST+(size_t)s));\
+  GET_SSTVAL(dummy_ptr) = s;                                    \
+  printf("%4d: MALL ACpl adr=%08x size=%ld file=%s line=%d\n",  \
+         me,dummy_ptr,s,__FILE__,__LINE__)
+#else
+#define AllocCpl(s)       memmgr_AllocAMEM((size_t)s)
+#endif
+
+#ifdef CheckIFMEM
+#define AllocIF(s)        (dummy_ptr=SST+(char *)memmgr_AllocAMEM(SST+(size_t)s));\
+  GET_SSTVAL(dummy_ptr) = s;                                    \
+  printf("%4d: MALL AIF  adr=%08x size=%ld file=%s line=%d\n",  \
+         me,dummy_ptr,s,__FILE__,__LINE__)
+#else
+#define AllocIF(s)        memmgr_AllocAMEM((size_t)s)
 #endif
 
 #ifdef F_FRONTEND
@@ -409,14 +520,63 @@ static void *dummy_ptr;
 #endif
 
 
-/* mapping memory free calls to memmgr calls */
+/*** mapping memory free calls to memmgr calls ***/
+
 #define FreeObj(mem,s,t)  memmgr_FreeOMEM(mem,(size_t)s,(int)t)
-#define FreeFix(mem)      memmgr_FreePMEM(mem)
-#define FreeCpl(mem)      memmgr_FreeAMEM(mem)
-#define FreeIF(mem)       memmgr_FreeAMEM(mem)
-#define FreeMsg(mem)      memmgr_FreeTMEM(mem)
-#define FreeTmp(mem)      memmgr_FreeTMEM(mem)
 #define FreeHeap(mem)     memmgr_FreeHMEM(mem)
+#define FreeCom(mem)      memmgr_FreeAMEM(mem)
+
+#ifdef CheckPMEM
+#define FreeFix(mem)      {               \
+    size_t s=GET_SSTVAL(mem); \
+    memmgr_FreePMEM(((char *)mem)-SST);  \
+    printf("%4d: FREE PFix adr=%08x size=%ld file=%s line=%d\n",\
+           me,mem,s,__FILE__,__LINE__); }
+#else
+#define FreeFix(mem)      memmgr_FreePMEM(mem)
+#endif
+
+#ifdef CheckMsgMEM
+#define FreeMsg(mem)      {   \
+    size_t s=GET_SSTVAL(mem); \
+    memmgr_FreeTMEM(((char *)mem)-SST);    \
+    printf("%4d: FREE TMsg adr=%08x size=%ld file=%s line=%d\n",\
+           me,mem,s,__FILE__,__LINE__); }
+#else
+#define FreeMsg(mem)      memmgr_FreeTMEM(mem)
+#endif
+
+
+#ifdef CheckTmpMEM
+#define FreeTmp(mem)      {                  \
+    size_t s=GET_SSTVAL(mem); \
+    memmgr_FreeTMEM(((char *)mem)-SST);       \
+    printf("%4d: FREE TTmp adr=%08x size=%ld file=%s line=%d\n",\
+           me,mem,s,__FILE__,__LINE__); }
+#else
+#define FreeTmp(mem)      memmgr_FreeTMEM(mem)
+#endif
+
+
+#ifdef CheckCplMEM
+#define FreeCpl(mem)      {                   \
+    size_t s=GET_SSTVAL(mem); \
+    memmgr_FreeAMEM(((char *)mem)-SST);     \
+    printf("%4d: FREE ACpl adr=%08x size=%ld file=%s line=%d\n",\
+           me,mem,s,__FILE__,__LINE__); }
+#else
+#define FreeCpl(mem)      memmgr_FreeAMEM(mem)
+#endif
+
+#ifdef CheckIFMEM
+#define FreeIF(mem)       { \
+    size_t s=GET_SSTVAL(mem); \
+    memmgr_FreeAMEM(((char *)mem)-SST);    \
+    printf("%4d: FREE AIF  adr=%08x size=%ld file=%s line=%d\n",\
+           me,mem,s,__FILE__,__LINE__); }
+#else
+#define FreeIF(mem)       memmgr_FreeAMEM(mem)
+#endif
 
 #ifdef F_FRONTEND
 #define FreeHdr(mem)      memmgr_FreeAMEM(mem)
@@ -430,14 +590,27 @@ static void *dummy_ptr;
 
 
 /****************************************************************************/
+
+/* macros for mapping internal usage of external functions */
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
+/* not used yet */
+#endif
+
+
+/****************************************************************************/
 /*                                                                          */
 /* function declarations                                                    */
 /*                                                                          */
 /****************************************************************************/
 
+/* ddd.c */
+int DDD_GetOption (DDD_OPTION);
+
 
 /* typemgr.c */
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
 void      ddd_TypeMgrInit (void);
+#endif
 void      ddd_TypeMgrExit (void);
 int       ddd_TypeDefined (TYPE_DESC *);
 
@@ -459,7 +632,6 @@ int PriorityMerge (TYPE_DESC *, DDD_PRIO, DDD_PRIO, DDD_PRIO *);
 /* if.c */
 void      ddd_IFInit (void);
 void      ddd_IFExit (void);
-void      IFCreateFromScratch (DDD_IF);
 void      IFAllFromScratch (void);
 void      DDD_InfoIFImpl (DDD_IF);
 void      IFInvalidateShortcuts (DDD_TYPE);
@@ -495,12 +667,18 @@ void      DDD_GetChannels (int);
 void      DDD_DisplayTopo (void);
 
 
+
 /* objmgr.c */
 void      DDD_HdrConstructorCopy (DDD_HDR, DDD_PRIO);
 void      ObjCopyGlobalData (TYPE_DESC *, DDD_OBJ, DDD_OBJ, size_t);
 DDD_HDR  *LocalObjectsList (void);
 DDD_HDR  *LocalCoupledObjectsList (void);
-
+#ifdef CPP_FRONTEND
+DDD_OBJ  DDD_ObjNew (size_t, DDD_TYPE, DDD_PRIO, DDD_ATTR);
+#endif
+#ifdef F_FRONTEND
+void      DDD_HdrDestructor (DDD_HDR);
+#endif
 
 /* reduct.c */
 int       ddd_GlobalSumInt  (int);

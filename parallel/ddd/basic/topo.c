@@ -32,6 +32,7 @@
 /* standard C library */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "dddi.h"
 
@@ -76,6 +77,7 @@ RCSID("$Header$",DDD_RCS_STRING)
 
 
 static DDD_PROC    *theProcArray;
+static int         *theProcFlags;
 
 
 /****************************************************************************/
@@ -111,6 +113,13 @@ void ddd_TopoInit (void)
     DDD_PrintError('E', 1510, "not enough memory in TopoInit");
     return;
   }
+
+  theProcFlags = (int *) AllocFix(procs*sizeof(int));
+  if (theProcFlags==NULL)
+  {
+    DDD_PrintError('E', 1511, "not enough memory in TopoInit");
+    return;
+  }
 }
 
 
@@ -119,6 +128,7 @@ void ddd_TopoExit (void)
   int i;
 
   FreeFix(theProcArray);
+  FreeFix(theProcFlags);
 
 
   /* disconnect channels */
@@ -162,10 +172,12 @@ void DDD_GetChannels (int nPartners)
     {
       theTopology[theProcArray[i]] = ConnASync(theProcArray[i], VC_TOPO);
       nConn++;
+
+      theProcFlags[i] = TRUE;
     }
     else
     {
-      theProcArray[i] = -1;                   /* TODO nicht sauber!, array sollte nicht veraendert werden */
+      theProcFlags[i] = FALSE;
     }
   }
 
@@ -175,11 +187,11 @@ void DDD_GetChannels (int nPartners)
   {
     for(i=0; i<nPartners; i++)
     {
-      if (theProcArray[i]!=-1)
+      if (theProcFlags[i])
       {
         if (InfoAConn(theTopology[theProcArray[i]])==1)
         {
-          theProcArray[i] = -1;
+          theProcFlags[i] = FALSE;
           nConn--;
         }
       }

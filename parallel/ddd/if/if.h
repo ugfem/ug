@@ -59,6 +59,12 @@ enum CplDir {
                             (iter)=(iter)->next)
 
 
+#ifdef CPP_FRONTEND
+typedef DDD_Object* IFObjPtr;
+#else
+typedef DDD_OBJ IFObjPtr;
+#endif
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -77,7 +83,7 @@ typedef struct if_attr
 
   /* note: the cplXX resp. objXX arrays are NOT contiguous in memory */
   COUPLING   **cplAB, **cplBA, **cplABA;
-  DDD_OBJ    *objAB,  *objBA,  *objABA;       /* object shortcut */
+  IFObjPtr   *objAB,  *objBA,  *objABA;       /* object shortcut */
   int nItems, nAB, nBA, nABA;
   DDD_ATTR attr;
 
@@ -97,7 +103,7 @@ typedef struct if_proc
 
   /* note: the cplXX resp. objXX arrays ARE contiguous in memory */
   COUPLING   **cpl, **cplAB, **cplBA, **cplABA;
-  DDD_OBJ     *obj,  *objAB,  *objBA,  *objABA;       /* object shortcut */
+  IFObjPtr   *obj,  *objAB,  *objBA,  *objABA;       /* object shortcut */
   int nItems, nAB, nBA, nABA;
   DDD_PROC proc;
 
@@ -123,7 +129,7 @@ typedef struct if_def
   COUPLING  **cpl;              /* list of couplings belonging to interface     */
   int nItems;                   /* overall number of items in this interface    */
 
-  DDD_OBJ    *obj;              /* shortcut: list of object addresses in interf */
+  IFObjPtr  *obj;              /* shortcut: list of object addresses in interf */
   int objValid;                 /* flag: is obj-table valid?                    */
 
   int nIfHeads;
@@ -165,16 +171,25 @@ extern int nIFs;
 
 /* ifuse.c */
 void    IFGetMem (IF_PROC *, size_t, int, int);
-int     IFInitComm (DDD_IF, size_t);
+int     IFInitComm (DDD_IF);
 void    IFExitComm (DDD_IF);
 void    IFInitSend (IF_PROC *);
 int     IFPollSend (DDD_IF);
-char *  IFCommLoopObj (ComProcPtr, DDD_OBJ *, char *, size_t, int);
+#ifdef CPP_FRONTEND
+char*  IFCommLoopObjGather (DDD_GatherScatter&, IFObjPtr*, char*, size_t, int);
+char*  IFCommLoopObjScatter (DDD_GatherScatter&, IFObjPtr*, char*, size_t, int);
+#else
+char *  IFCommLoopObj (ComProcPtr, IFObjPtr *, char *, size_t, int);
+#endif
+#ifndef CPP_FRONTEND
 char *  IFCommLoopCpl (ComProcPtr, COUPLING **, char *, size_t, int);
 char *  IFCommLoopCplX (ComProcXPtr, COUPLING **, char *, size_t , int);
-#ifdef C_FRONTEND
-void    IFExecLoopObj (ExecProcPtr, DDD_OBJ *, int);
+#endif
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+#ifndef CPP_FRONTEND
+void    IFExecLoopObj (ExecProcPtr, IFObjPtr *, int);
 void    IFExecLoopCplX (ExecProcXPtr, COUPLING **, int);
+#endif
 #endif
 
 

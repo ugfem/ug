@@ -25,6 +25,10 @@
 /*                                                                          */
 /****************************************************************************/
 
+#define _CAT(a,b)   a ## b
+#define CAT(a,b)    _CAT(a,b)
+
+
 #ifdef IF_WITH_ATTR
 #define PART ifAttr
 #else
@@ -33,20 +37,43 @@
 
 
 #ifdef IF_WITH_XARGS
-#define EXEC_LOOP(a,b,c)     IFExecLoopCplX(a,b,c)
-#define COMM_LOOP(a,b,c,d,e) IFCommLoopCplX(a,b,c,d,e)
-#define D_AB(p)              (p->cplAB)
-#define D_BA(p)              (p->cplBA)
-#define D_ABA(p)             (p->cplABA)
+	#define EXEC_LOOP(a,b,c)     IFExecLoopCplX(a,b,c)
+	#define COMM_LOOP(a,b,c,d,e) IFCommLoopCplX(a,b,c,d,e)
+	#define D_AB(p)              (p->cplAB)
+	#define D_BA(p)              (p->cplBA)
+	#define D_ABA(p)             (p->cplABA)
 #else
-#define EXEC_LOOP(a,b,c)     IFExecLoopObj(a,b,c)
-#define COMM_LOOP(a,b,c,d,e) IFCommLoopObj(a,b,c,d,e)
-#define D_AB(p)              (p->objAB)
-#define D_BA(p)              (p->objBA)
-#define D_ABA(p)             (p->objABA)
+	#define EXEC_LOOP(a,b,c)     IFExecLoopObj(a,b,c)
+	#ifdef CPP_FRONTEND
+	  #ifdef IF_CBR
+	    #define COMM_LOOP(a,b,c,d,e) \
+			CAT(IFCommLoopObj,a) (GatherScatter,b,c,d,e)
+	  #else
+	    #define COMM_LOOP(a,b,c,d,e) \
+			CAT(IFCommLoopObj,a) (*GatherScatter,b,c,d,e)
+	  #endif
+	#else
+	#define COMM_LOOP(a,b,c,d,e) IFCommLoopObj(a,b,c,d,e)
+	#endif
+	#define D_AB(p)              (p->objAB)
+	#define D_BA(p)              (p->objBA)
+	#define D_ABA(p)             (p->objABA)
 #endif
 
 
+#ifdef CPP_FRONTEND
+#define IF_FUNCNAME   CAT(DDD_Interface::,IF_NAME)
+#else
+#define IF_FUNCNAME   CAT(DDD_IF,IF_NAME)
+#endif
+
+#ifdef CPP_FRONTEND
+	#ifdef IF_CBR
+		#define REFDECL &
+	#else
+		#define REFDECL *
+	#endif
+#endif
 
 
 /****************************************************************************/
@@ -85,8 +112,11 @@
 /****************************************************************************/
 
 
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+void IF_FUNCNAME (
 #ifdef C_FRONTEND
-void IF_FUNCNAME (DDD_IF ifId,
+	DDD_IF ifId,
+#endif
 	#ifdef IF_WITH_ATTR
 		DDD_ATTR attr,
 	#endif
@@ -101,16 +131,30 @@ void IF_FUNCNAME (DDD_IF ifId,
 			int dir,
 		#endif
 		size_t itemSize,
+#ifdef C_FRONTEND
 		#ifdef IF_WITH_XARGS
 			ComProcXPtr Gather, ComProcXPtr Scatter)
 		#else
 			ComProcPtr Gather, ComProcPtr Scatter)
 		#endif
+#endif
+#ifdef CPP_FRONTEND
+		#ifdef IF_WITH_XARGS
+			DDD_GatherScatterX REFDECL GatherScatter)
+		#else
+			DDD_GatherScatter  REFDECL GatherScatter)
+		#endif
+#endif
 	#endif
 {
+	#ifdef CPP_FRONTEND
+		DDD_IF ifId     = _id;
+		//ComProcPtr Scatter = GatherScatter->Scatter;
+		//ComProcPtr Gather  = GatherScatter->Gather;
+	#endif
+#endif
 
-#else  /* F_FRONTEND */
-
+#ifdef F_FRONTEND
 void IF_FUNCNAME (DDD_IF *_ifId,
 	#ifdef IF_WITH_ATTR
 		DDD_ATTR *_attr,
@@ -144,10 +188,10 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 		#endif
 		size_t itemSize = *_itemSize;
 	#endif
-#endif  /* C_FRONTEND */
+#endif  /* F_FRONTEND */
 
 	IF_PROC		*ifHead;
-	int			try;
+	int			tries;
 	int         recv_mesgs;
 
 
@@ -230,7 +274,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 
 
 	/* init communication, initiate receives */
-	recv_mesgs = IFInitComm(ifId, itemSize);
+	recv_mesgs = IFInitComm(ifId);
 
 
 	/* build messages using gather-handler and send them away */
@@ -245,7 +289,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 			#ifdef IF_WITH_XARGS
 			COUPLING **datOut;
 			#else
-			DDD_OBJ  *datOut;
+			IFObjPtr  *datOut;
 			#endif
 		#endif
 
@@ -280,7 +324,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 
 
 	/* poll receives and scatter data */
-	for(try=0; try<MAX_TRIES && recv_mesgs>0; try++)
+	for(tries=0; tries<MAX_TRIES && recv_mesgs>0; tries++)
 	{
 		/* poll receive calls */
 		ForIF(ifId,ifHead)
@@ -297,7 +341,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 						#ifdef IF_WITH_XARGS
 						COUPLING **datIn;
 						#else
-						DDD_OBJ  *datIn;
+						IFObjPtr  *datIn;
 						#endif
 					#endif
 					#ifdef IF_WITH_ATTR
@@ -360,6 +404,7 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 
 /* undefs for all input macros and defines */
 
+#undef IF_NAME
 #undef IF_FUNCNAME
 
 #ifdef IF_ONEWAY
@@ -383,6 +428,10 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 #undef IF_WITH_XARGS
 #endif
 
+#ifdef IF_CBR
+#undef IF_CBR
+#endif
+
 
 
 /* undefs for derived macros */
@@ -393,6 +442,16 @@ void IF_FUNCNAME (DDD_IF *_ifId,
 #undef D_AB
 #undef D_BA
 #undef D_ABA
+
+
+#ifdef CPP_FRONTEND
+#undef REFDECL
+#endif
+
+
+#undef _CAT
+#undef CAT
+
 
 
 /****************************************************************************/

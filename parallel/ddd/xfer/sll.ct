@@ -12,6 +12,7 @@
 /*            internet: birken@ica3.uni-stuttgart.de                        */
 /*                                                                          */
 /* History:   960826 kb  created                                            */
+/*            970303 kb  added memory management in segms                   */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -25,14 +26,33 @@
 /*                                                                          */
 /****************************************************************************/
 
+/* segment of items */
+typedef struct aSegm(T)
+{
+	struct aSegm(T) *next;
+	int              nItems;
+
+	T                item[SEGM_SIZE];
+} Segm(T);
+
+
 /* linked list of items */
 T *list(T);
 
-/* free list of items */
-T *free(T);
 
-/* number of items in list */
+/* number of overall items */
 int n(T);
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* definition of local variables                                            */
+/*                                                                          */
+/****************************************************************************/
+
+/* linked list of segms of items */
+static Segm(T) *segms(T);
 
 
 
@@ -43,26 +63,55 @@ int n(T);
 /****************************************************************************/
 
 
-/*
-	create a new item of type T, get memory from AllocTmp
-	or from freelist for that type, if any.
-*/
+static Segm(T) *NewSegm(T) (void)
+{
+	Segm(T) *segm;
+
+	segm = (Segm(T) *) AllocTmp(sizeof(Segm(T)));
+
+	if (segm==NULL)
+	{
+		DDD_PrintError('F', 9999, "out of memory during XferEnd()");
+		HARD_EXIT;
+	}
+
+	segm->next   = segms(T);
+	segms(T)     = segm;
+	segm->nItems = 0;
+	
+	return(segm);
+}
+
+
+static void FreeSegms(T) (void)
+{
+	Segm(T) *segm = segms(T);
+	Segm(T) *next = NULL;
+
+	while (segm!=NULL)
+	{
+		next = segm->next;
+		FreeTmp(segm);
+
+		segm = next;
+	}
+
+	segms(T) = NULL;
+}
+
 
 T *New(T) (void)
 {
-	T *item;
+	Segm(T) *segm = segms(T);
+	T        *item;
 
-	if (free(T)==NULL)
+	if (segm==NULL || segm->nItems==SEGM_SIZE)
 	{
-		/* get memory from MemMgr */
-		item = (T *) AllocTmp(sizeof(T));
+		segm = NewSegm(T) ();
 	}
-	else
-	{
-		/* get memory from freelist */
-		item = free(T);
-		free(T) = item->sll_next;
-	}
+
+	item = &(segm->item[segm->nItems++]);
+
 
 	/* insert item into linked list and count it */
 	item->sll_next = list(T);
@@ -75,24 +124,6 @@ T *New(T) (void)
 	return(item);
 }
 
-
-
-
-/*
-	free item of type T. 
-*/
-
-T *Free(T) (T *item)
-{
-	/* save pointer to next item, for easier deleting of list */
-	T    *next = item->sll_next;
-
-	/* put memory into freelist */
-	item->sll_next = free(T);
-	free(T) = item;
-
-	return(next);
-}
 
 
 
@@ -212,7 +243,11 @@ void Init(T) (void)
 	list(T) = NULL;
 	n(T) = 0;
 
+	segms(T) = NULL;
+
+	/*
 	free(T) = NULL;
+	*/
 }
 
 
@@ -222,15 +257,10 @@ void Init(T) (void)
 */
 void FreeAll(T) (void)
 {
-	T *item = list(T);
-
-	while (item!=NULL)
-	{
-		item = Free(T) (item);
-	}
-
 	list(T) = NULL;
 	n(T) = 0;
+
+	FreeSegms(T) ();
 }
 
 

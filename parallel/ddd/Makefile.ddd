@@ -69,11 +69,11 @@ io.o:	$(ExtIncPth)/compiler.h	\
 		$(IncPth)/dddio.h	\
 		$(SrcPth)/dddi.h	\
 		$(BasicPth)/io.c
-	$(ARCH_CC) $(SrcOpt) $(BasicPth)/io.c
+	$(DDD_CC) $(SrcOpt) $(BasicPth)/io.c
 
 topo.o: $(SrcPth)/dddi.h	\
 		$(BasicPth)/topo.c
-	$(ARCH_CC) $(SrcOpt) $(BasicPth)/topo.c
+	$(DDD_CC) $(SrcOpt) $(BasicPth)/topo.c
 
 
 
@@ -83,19 +83,19 @@ $(BasicPth)/notify.h:	$(IncPth)/ddd.h
 notify.o: $(SrcPth)/dddi.h	\
 		$(BasicPth)/notify.h	\
 		$(BasicPth)/notify.c
-	$(ARCH_CC) $(SrcOpt) $(BasicPth)/notify.c
+	$(DDD_CC) $(SrcOpt) $(BasicPth)/notify.c
 
 
 reduct.o:	$(ExtIncPth)/ppif.h	\
 		$(BasicPth)/reduct.c
-	$(ARCH_CC) $(SrcOpt) $(BasicPth)/reduct.c
+	$(DDD_CC) $(SrcOpt) $(BasicPth)/reduct.c
 
 
 lowcomm.o: $(SrcPth)/dddi.h	\
 		$(BasicPth)/notify.h	\
 		$(BasicPth)/lowcomm.h	\
 		$(BasicPth)/lowcomm.c
-	$(ARCH_CC) $(SrcOpt) $(BasicPth)/lowcomm.c
+	$(DDD_CC) $(SrcOpt) $(BasicPth)/lowcomm.c
 
 
 ###########################################################
@@ -110,17 +110,17 @@ Ctrl-o = debug.o	\
 
 debug.o: $(SrcPth)/dddi.h	\
 		$(CtrlPth)/debug.c
-	$(ARCH_CC) $(SrcOpt) $(CtrlPth)/debug.c
+	$(DDD_CC) $(SrcOpt) $(CtrlPth)/debug.c
 
 cons.o: $(SrcPth)/dddi.h	\
 		$(BasicPth)/lowcomm.h	\
 		$(XferPth)/xfer.h	\
 		$(CtrlPth)/cons.c
-	$(ARCH_CC) $(SrcOpt) $(CtrlPth)/cons.c
+	$(DDD_CC) $(SrcOpt) $(CtrlPth)/cons.c
 
 stat.o: $(SrcPth)/dddi.h	\
 		$(CtrlPth)/stat.c
-	$(ARCH_CC) $(SrcOpt) $(CtrlPth)/stat.c
+	$(DDD_CC) $(SrcOpt) $(CtrlPth)/stat.c
 
 
 
@@ -138,23 +138,23 @@ Mgr-o = typemgr.o	\
 
 typemgr.o: $(SrcPth)/dddi.h	\
 		$(MgrPth)/typemgr.c
-	$(ARCH_CC) $(SrcOpt) $(MgrPth)/typemgr.c
+	$(DDD_CC) $(SrcOpt) $(MgrPth)/typemgr.c
 
 objmgr.o: $(SrcPth)/dddi.h	\
 		$(MgrPth)/objmgr.c
-	$(ARCH_CC) $(SrcOpt) $(MgrPth)/objmgr.c
+	$(DDD_CC) $(SrcOpt) $(MgrPth)/objmgr.c
 
 cplmgr.o: $(SrcPth)/dddi.h	\
 		$(MgrPth)/cplmgr.c
-	$(ARCH_CC) $(SrcOpt) $(MgrPth)/cplmgr.c
+	$(DDD_CC) $(SrcOpt) $(MgrPth)/cplmgr.c
 
 prio.o: $(SrcPth)/dddi.h	\
 		$(MgrPth)/prio.c
-	$(ARCH_CC) $(SrcOpt) $(MgrPth)/prio.c
+	$(DDD_CC) $(SrcOpt) $(MgrPth)/prio.c
 
 attr.o: $(SrcPth)/dddi.h	\
 		$(MgrPth)/attr.c
-	$(ARCH_CC) $(SrcOpt) $(MgrPth)/attr.c
+	$(DDD_CC) $(SrcOpt) $(MgrPth)/attr.c
 
 
 ###########################################################
@@ -167,7 +167,7 @@ Ident-o = ident.o
 
 ident.o: $(SrcPth)/dddi.h	\
 		$(IdentPth)/ident.c
-	$(ARCH_CC) $(SrcOpt) $(IdentPth)/ident.c
+	$(DDD_CC) $(SrcOpt) $(IdentPth)/ident.c
 
 
 ###########################################################
@@ -185,29 +185,29 @@ If-o = ifcreate.o	\
 ifcreate.o: $(SrcPth)/dddi.h	\
 		$(IfPth)/if.h	\
 		$(IfPth)/ifcreate.c
-	$(ARCH_CC) $(SrcOpt) $(IfPth)/ifcreate.c
+	$(DDD_CC) $(SrcOpt) $(IfPth)/ifcreate.c
 
 ifuse.o: $(SrcPth)/dddi.h	\
 		$(IfPth)/if.h	\
 		$(IfPth)/ifuse.c
-	$(ARCH_CC) $(SrcOpt) $(IfPth)/ifuse.c
+	$(DDD_CC) $(SrcOpt) $(IfPth)/ifuse.c
 
 ifcmds.o: $(SrcPth)/dddi.h	\
 		$(IfPth)/if.h	\
 		$(IfPth)/ifcmd.ct	\
 		$(IfPth)/ifcmds.c
-	$(ARCH_CC) $(SrcOpt) $(IfPth)/ifcmds.c
+	$(DDD_CC) $(SrcOpt) $(IfPth)/ifcmds.c
 
 ifobjsc.o: $(SrcPth)/dddi.h	\
 		$(IfPth)/if.h	\
 		$(IfPth)/ifobjsc.c
-	$(ARCH_CC) $(SrcOpt) $(IfPth)/ifobjsc.c
+	$(DDD_CC) $(SrcOpt) $(IfPth)/ifobjsc.c
 
 ifcheck.o: $(SrcPth)/dddi.h	\
 		$(BasicPth)/notify.h	\
 		$(IfPth)/if.h	\
 		$(IfPth)/ifcheck.c
-	$(ARCH_CC) $(SrcOpt) $(IfPth)/ifcheck.c
+	$(DDD_CC) $(SrcOpt) $(IfPth)/ifcheck.c
 
 
 ###########################################################
@@ -233,38 +233,38 @@ $(XferPth)/xfer.h:	$(BasicPth)/lowcomm.h	\
 xfer.o: $(SrcPth)/dddi.h	\
 		$(XferPth)/xfer.h	\
 		$(XferPth)/xfer.c
-	$(ARCH_CC) $(SrcOpt) $(XferPth)/xfer.c
+	$(DDD_CC) $(SrcOpt) $(XferPth)/xfer.c
 
 cmds.o: $(SrcPth)/dddi.h	\
 		$(XferPth)/xfer.h	\
 		$(XferPth)/cmds.c
-	$(ARCH_CC) $(SrcOpt) $(XferPth)/cmds.c
+	$(DDD_CC) $(SrcOpt) $(XferPth)/cmds.c
 
 pack.o: $(SrcPth)/dddi.h	\
 		$(XferPth)/xfer.h	\
 		$(XferPth)/pack.c
-	$(ARCH_CC) $(SrcOpt) $(XferPth)/pack.c
+	$(DDD_CC) $(SrcOpt) $(XferPth)/pack.c
 
 unpack.o: $(SrcPth)/dddi.h	\
 		$(XferPth)/xfer.h	\
 		$(XferPth)/unpack.c
-	$(ARCH_CC) $(SrcOpt) $(XferPth)/unpack.c
+	$(DDD_CC) $(SrcOpt) $(XferPth)/unpack.c
 
 ctrl.o: $(SrcPth)/dddi.h	\
 		$(XferPth)/xfer.h	\
 		$(XferPth)/ctrl.c
-	$(ARCH_CC) $(SrcOpt) $(XferPth)/ctrl.c
+	$(DDD_CC) $(SrcOpt) $(XferPth)/ctrl.c
 
 cplmsg.o: $(SrcPth)/dddi.h	\
 		$(XferPth)/xfer.h	\
 		$(XferPth)/cplmsg.c
-	$(ARCH_CC) $(SrcOpt) $(XferPth)/cplmsg.c
+	$(DDD_CC) $(SrcOpt) $(XferPth)/cplmsg.c
 
 supp.o: $(SrcPth)/dddi.h	\
 		$(XferPth)/xfer.h	\
 		$(XferPth)/sll.ct	\
 		$(XferPth)/supp.c
-	$(ARCH_CC) $(SrcOpt) $(XferPth)/supp.c
+	$(DDD_CC) $(SrcOpt) $(XferPth)/supp.c
 
 
 ###########################################################
@@ -274,7 +274,7 @@ supp.o: $(SrcPth)/dddi.h	\
 
 ddd.o: $(SrcPth)/dddi.h        \
 		$(SrcPth)/ddd.c
-	$(ARCH_CC) $(SrcOpt) $(SrcPth)/ddd.c
+	$(DDD_CC) $(SrcOpt) $(SrcPth)/ddd.c
 
 
 ###########################################################
@@ -287,7 +287,7 @@ Misc-o = inv.o
 
 inv.o: $(SrcPth)/dddi.h	\
 		$(SrcPth)/analyser/inv.c
-	$(ARCH_CC) $(SrcOpt) $(SrcPth)/analyser/inv.c
+	$(DDD_CC) $(SrcOpt) $(SrcPth)/analyser/inv.c
 
 
 
@@ -299,7 +299,7 @@ inv.o: $(SrcPth)/dddi.h	\
 
 f2c.o: $(SrcPth)/dddi.h	\
 		$(SrcPth)/f77/f2c.c
-	$(ARCH_CC) $(SrcOpt) $(SrcPth)/f77/f2c.c
+	$(DDD_CC) $(SrcOpt) $(SrcPth)/f77/f2c.c
 
 
 ###########################################################

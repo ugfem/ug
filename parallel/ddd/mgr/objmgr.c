@@ -32,6 +32,7 @@
 /* standard C library */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "dddi.h"
 
@@ -57,11 +58,6 @@
 #define ProcFromId(n)  ((n)&((1<<MAX_PROCBITS_IN_GID)-1))
 #define CountFromId(n) (((n)-((n)&((1<<MAX_PROCBITS_IN_GID)-1)))>>MAX_PROCBITS_IN_GID)
 
-
-
-/* DDD_HDR may be invalid */
-#define MarkHdrInvalid(hdr)    OBJ_INDEX(hdr)=MAX_OBJ
-#define IsHdrInvalid(hdr)      OBJ_INDEX(hdr)==MAX_OBJ
 
 
 
@@ -183,21 +179,21 @@ DDD_HDR *LocalCoupledObjectsList (void)
 /*                                                                          */
 /****************************************************************************/
 
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 
 DDD_OBJ DDD_ObjNew (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
 {
   DDD_OBJ obj;
 
   /* check input parameters */
-  if (prio<0 || prio>=MAX_PRIO)
+  if (prio>=MAX_PRIO)
   {
     sprintf(cBuffer,
             "priority must be less than %d in DDD_ObjNew", MAX_PRIO);
     DDD_PrintError('E', 2205, cBuffer);
     HARD_EXIT;
   }
-  if (typ<0 || typ>=MAX_TYPEDESC)
+  if (typ>=MAX_TYPEDESC)
   {
     sprintf(cBuffer,
             "DDD-type must be less than %d in DDD_ObjNew", MAX_TYPEDESC);
@@ -230,9 +226,9 @@ DDD_OBJ DDD_ObjNew (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
   TYPE_DESC *desc = &(theTypeDefs[typ]);
   DDD_OBJ obj;
 
-  if (desc->handler[HANDLER_ALLOCOBJ]!=NULL)
+  if (desc->handlerALLOCOBJ)
   {
-    desc->handler[HANDLER_ALLOCOBJ](&obj);
+    desc->handlerALLOCOBJ(&obj);
   }
   else
   {
@@ -291,11 +287,11 @@ DDD_OBJ DDD_ObjNew (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
 /*                                                                          */
 /****************************************************************************/
 
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 
 void DDD_ObjDelete (DDD_OBJ obj, size_t size, DDD_TYPE typ)
 {
-  FreeObj(obj, size, typ);
+  FreeObj((void *)obj, size, typ);
 }
 
 #else
@@ -305,9 +301,9 @@ void DDD_ObjDelete (DDD_OBJ obj, size_t size, DDD_TYPE typ)
 {
   TYPE_DESC *desc = &(theTypeDefs[typ]);
 
-  if (desc->handler [HANDLER_FREEOBJ])
+  if (desc->handlerFREEOBJ)
   {
-    desc->handler[HANDLER_FREEOBJ](&obj);
+    desc->handlerFREEOBJ(&obj);
   }
 
   DDD_HdrDestructor (OBJ2HDR(obj,desc));
@@ -330,58 +326,105 @@ void DDD_ObjDelete (DDD_OBJ obj, size_t size, DDD_TYPE typ)
 /*                                                                          */
 /****************************************************************************/
 
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
 void DDD_HdrConstructor (DDD_HDR hdr,DDD_TYPE typ,DDD_PRIO prio,DDD_ATTR attr)
 {
-  /* check input parameters */
-  if (prio<0 || prio>=MAX_PRIO)
+#endif
+
+#ifdef CPP_FRONTEND
+// construct as invalid DDD_Object
+DDD_Object::DDD_Object (void)
+{
+  /* invalidate this DDD_HDR */
+  MarkHdrInvalid(&_hdr);
+}
+
+
+
+// construct as valid DDD_Object
+DDD_Object::DDD_Object (DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
+{
+  Init(typ, prio, attr);
+}
+
+
+void DDD_Object::Init (DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
+{
+  DDD_HDR hdr = &_hdr;
+
+  if (! IsHdrInvalid(hdr))
   {
     sprintf(cBuffer,
-            "priority must be less than %d in DDD_HdrConstructor", MAX_PRIO);
-    DDD_PrintError('E', 2225, cBuffer);
+            "cannot initialize DDD_Object %08x twice in DDD_Object::Init",
+            OBJ_GID(hdr));
+    DDD_PrintError('E', 2250, cBuffer);
     HARD_EXIT;
   }
+#endif
 
-  /* check whether there are available objects */
-  if (nObjs==MAX_OBJ)
-  {
-    /* TODO update docu */
-    /* this is a fatal case. we cant register more objects here */
-    DDD_PrintError('F', 2220, "no more objects in DDD_HdrConstructor");
-    /* TODO one could try to expand the global tables here. */
-    HARD_EXIT;
-  }
+/* check input parameters */
+if (prio>=MAX_PRIO)
+{
+  sprintf(cBuffer,
+          "priority must be less than %d in DDD_HdrConstructor", MAX_PRIO);
+  DDD_PrintError('E', 2225, cBuffer);
+  HARD_EXIT;
+}
 
-  /* insert into theObj array */
-  theObj[nObjs] = hdr;
-  OBJ_INDEX(hdr) = nObjs;
-  nObjs++;
+/* check whether there are available objects */
+if (nObjs==MAX_OBJ)
+{
+  /* TODO update docu */
+  /* this is a fatal case. we cant register more objects here */
+  DDD_PrintError('F', 2220, "no more objects in DDD_HdrConstructor");
+  /* TODO one could try to expand the global tables here. */
+  HARD_EXIT;
+}
 
-  /* init object header with defaults */
-  OBJ_TYPE(hdr)  = typ;
-  OBJ_PRIO(hdr)  = prio;
-  OBJ_ATTR(hdr)  = attr;
-  OBJ_FLAGS(hdr) = 0;
+/* insert into theObj array */
+theObj[nObjs] = hdr;
+OBJ_INDEX(hdr) = nObjs;
+nObjs++;
 
-  /* create unique GID */
-  OBJ_GID(hdr)   = MakeUnique(theIdCount++);
+/* init object header with defaults */
+OBJ_TYPE(hdr)  = typ;
+OBJ_PRIO(hdr)  = prio;
+OBJ_ATTR(hdr)  = attr;
+OBJ_FLAGS(hdr) = 0;
 
-  /* check overflow of global id numbering */
-  if (MakeUnique(theIdCount) <= MakeUnique(theIdCount-1))
-  {
-    /* TODO update docu */
-    DDD_PrintError('F', 2221, "global ID overflow DDD_HdrConstructor");
-    /* TODO one could try to renumber all objects here. */
-    HARD_EXIT;
-  }
+/* create unique GID */
+OBJ_GID(hdr)   = MakeUnique(theIdCount++);
+
+/* check overflow of global id numbering */
+if (MakeUnique(theIdCount) <= MakeUnique(theIdCount-1))
+{
+  /* TODO update docu */
+  DDD_PrintError('F', 2221, "global ID overflow DDD_HdrConstructor");
+  /* TODO one could try to renumber all objects here. */
+  HARD_EXIT;
+}
 
 #       ifdef DebugCreation
-  sprintf(cBuffer, "%4d: DDD_HdrConstructor(adr=%08x, "
-          "typ=%d, prio=%d, attr=%d), "
-          "GID=%08x  INDEX=%d\n",
-          me, hdr, typ, prio, attr, OBJ_GID(hdr), OBJ_INDEX(hdr));
-  DDD_PrintDebug(cBuffer);
+sprintf(cBuffer, "%4d: DDD_HdrConstructor(adr=%08x, "
+        "typ=%d, prio=%d, attr=%d), "
+        "GID=%08x  INDEX=%d\n",
+        me, hdr, typ, prio, attr, OBJ_GID(hdr), OBJ_INDEX(hdr));
+DDD_PrintDebug(cBuffer);
 #       endif
 }
+
+
+
+#ifdef CPP_FRONTEND
+DDD_IndexObject::DDD_IndexObject (DDD_TYPE typ,
+                                  DDD_INDEX idx, DDD_PRIO prio, DDD_ATTR attr)
+  : DDD_Object(typ, prio, attr)
+{
+  _index = idx;
+}
+#endif
+
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -395,91 +438,97 @@ void DDD_HdrConstructor (DDD_HDR hdr,DDD_TYPE typ,DDD_PRIO prio,DDD_ATTR attr)
 /*                                                                          */
 /****************************************************************************/
 
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
+/* in F_FRONTEND, DDD_HdrDestructor is used internally */
 void DDD_HdrDestructor (DDD_HDR hdr)
 {
-  TYPE_DESC  *desc = &(theTypeDefs[OBJ_TYPE(hdr)]);
-  COUPLING   *cpl, *cplNext;
-  int objIndex, xfer_active = XferActive();
+#endif
+#ifdef CPP_FRONTEND
+DDD_Object::~DDD_Object (void)
+{
+  DDD_HDR hdr = &_hdr;
+#endif
+COUPLING   *cpl;
+int objIndex, xfer_active = XferActive();
 
 #       ifdef DebugDeletion
-  sprintf(cBuffer, "%4d: DDD_HdrDestructor(adr=%08x, "
-          "typ=%d, prio=%d, attr=%d), "
-          "GID=%08x  INDEX=%d\n",
-          me, hdr, OBJ_TYPE(hdr), OBJ_PRIO(hdr), OBJ_ATTR(hdr),
-          OBJ_GID(hdr), OBJ_INDEX(hdr));
-  DDD_PrintDebug(cBuffer);
+sprintf(cBuffer, "%4d: DDD_HdrDestructor(adr=%08x, "
+        "typ=%d, prio=%d, attr=%d), "
+        "GID=%08x  INDEX=%d\n",
+        me, hdr, OBJ_TYPE(hdr), OBJ_PRIO(hdr), OBJ_ATTR(hdr),
+        OBJ_GID(hdr), OBJ_INDEX(hdr));
+DDD_PrintDebug(cBuffer);
 #       endif
 
 
-  if (IsHdrInvalid(hdr))
-  {
-    /* DDD_HDR is invalid, so destructor is useless */
-    return;
-  }
-
-  /* formally, the object's GID should be returned here */
-
-
-  /* if currently in xfer, register deletion for other processors */
-  if (xfer_active)
-    XferRegisterDelete(hdr);
-
-
-  objIndex = OBJ_INDEX(hdr);
-
-  if (objIndex<nCpls)
-  {
-    /* this is an object with couplings */
-    cpl = theCpl[objIndex];
-
-    /* if not during xfer, deletion may be inconsistent */
-    if (!xfer_active)
-    {
-      /* deletion is dangerous, distributed object might get
-         inconsistent. */
-      if (DDD_GetOption(OPT_WARNING_DESTRUCT_HDR)==OPT_ON)
-      {
-        sprintf(cBuffer,
-                "inconsistency by deleting gid=%08x in DDD_HdrDestructor",
-                OBJ_GID(hdr));
-        DDD_PrintError('W', 2230, cBuffer);
-      }
-    }
-
-    nCpls--;
-    nObjs--;
-
-    /* fill slot of deleted obj with last cpl-obj */
-    theObj[objIndex] = theObj[nCpls];
-    theCpl[objIndex] = theCpl[nCpls];
-    theCplN[objIndex] = theCplN[nCpls];
-    OBJ_INDEX(theObj[objIndex]) = objIndex;
-
-    /* fill slot of last cpl-obj with last obj */
-    if (nCpls<nObjs)
-    {
-      theObj[nCpls] = theObj[nObjs];
-      OBJ_INDEX(theObj[nCpls]) = nCpls;
-    }
-
-    /* dispose all couplings */
-    DisposeCouplingList(cpl);
-  }
-  else
-  {
-    /* this is an object without couplings */
-    /* deletion is not dangerous (no consistency problem) */
-    nObjs--;
-
-    /* fill slot of deleted obj with last obj */
-    theObj[objIndex] = theObj[nObjs];
-    OBJ_INDEX(theObj[objIndex]) = objIndex;
-  }
-
-  /* invalidate this DDD_HDR */
-  MarkHdrInvalid(hdr);
+if (IsHdrInvalid(hdr))
+{
+  /* DDD_HDR is invalid, so destructor is useless */
+  return;
 }
 
+/* formally, the object's GID should be returned here */
+
+
+/* if currently in xfer, register deletion for other processors */
+if (xfer_active)
+  XferRegisterDelete(hdr);
+
+
+objIndex = OBJ_INDEX(hdr);
+
+if (objIndex<nCpls)
+{
+  /* this is an object with couplings */
+  cpl = theCpl[objIndex];
+
+  /* if not during xfer, deletion may be inconsistent */
+  if (!xfer_active)
+  {
+    /* deletion is dangerous, distributed object might get
+       inconsistent. */
+    if (DDD_GetOption(OPT_WARNING_DESTRUCT_HDR)==OPT_ON)
+    {
+      sprintf(cBuffer,
+              "inconsistency by deleting gid=%08x in DDD_HdrDestructor",
+              OBJ_GID(hdr));
+      DDD_PrintError('W', 2230, cBuffer);
+    }
+  }
+
+  nCpls--;
+  nObjs--;
+
+  /* fill slot of deleted obj with last cpl-obj */
+  theObj[objIndex] = theObj[nCpls];
+  theCpl[objIndex] = theCpl[nCpls];
+  theCplN[objIndex] = theCplN[nCpls];
+  OBJ_INDEX(theObj[objIndex]) = objIndex;
+
+  /* fill slot of last cpl-obj with last obj */
+  if (nCpls<nObjs)
+  {
+    theObj[nCpls] = theObj[nObjs];
+    OBJ_INDEX(theObj[nCpls]) = nCpls;
+  }
+
+  /* dispose all couplings */
+  DisposeCouplingList(cpl);
+}
+else
+{
+  /* this is an object without couplings */
+  /* deletion is not dangerous (no consistency problem) */
+  nObjs--;
+
+  /* fill slot of deleted obj with last obj */
+  theObj[objIndex] = theObj[nObjs];
+  OBJ_INDEX(theObj[objIndex]) = objIndex;
+}
+
+/* invalidate this DDD_HDR */
+MarkHdrInvalid(hdr);
+}
 
 
 
@@ -499,8 +548,7 @@ void DDD_HdrDestructor (DDD_HDR hdr)
 /*                                                                          */
 /****************************************************************************/
 
-#ifdef C_FRONTEND
-
+#if defined(C_FRONTEND)
 DDD_OBJ DDD_ObjGet (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
 {
   DDD_OBJ obj;
@@ -540,9 +588,9 @@ DDD_OBJ DDD_ObjGet (size_t size, DDD_TYPE typ, DDD_PRIO prio, DDD_ATTR attr)
 
   return(obj);
 }
+#endif
 
-#else
-
+#ifdef F_FRONTEND
 void DDD_ObjGet (DDD_TYPE *ftyp, DDD_PRIO *fprio, DDD_ATTR *fattr,
                  DDD_OBJ *fobj)
 {
@@ -562,8 +610,8 @@ void DDD_ObjGet (DDD_TYPE *ftyp, DDD_PRIO *fprio, DDD_ATTR *fattr,
 
   return;
 }
-
 #endif
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -577,8 +625,7 @@ void DDD_ObjGet (DDD_TYPE *ftyp, DDD_PRIO *fprio, DDD_ATTR *fattr,
 /*                                                                          */
 /****************************************************************************/
 
-#ifdef C_FRONTEND
-
+#if defined(C_FRONTEND)
 void DDD_ObjUnGet (DDD_HDR hdr, size_t size)
 
 {
@@ -598,9 +645,9 @@ void DDD_ObjUnGet (DDD_HDR hdr, size_t size)
   /* free raw memory */
   DDD_ObjDelete(obj, size, typ);
 }
+#endif
 
-#else
-
+#if defined(F_FRONTEND)
 void DDD_ObjUnGet (DDD_OBJ *fobj, DDD_TYPE *ftyp)
 
 {
@@ -614,7 +661,6 @@ void DDD_ObjUnGet (DDD_OBJ *fobj, DDD_TYPE *ftyp)
   /* free raw memory */
   DDD_ObjDelete (obj, 0, *ftyp);
 }
-
 #endif
 
 
@@ -634,7 +680,7 @@ void DDD_ObjUnGet (DDD_OBJ *fobj, DDD_TYPE *ftyp)
 void DDD_HdrConstructorCopy (DDD_HDR newhdr, DDD_PRIO prio)
 {
   /* check input parameters */
-  if (prio<0 || prio>=MAX_PRIO)
+  if (prio>=MAX_PRIO)
   {
     sprintf(cBuffer,
             "priority must be less than %d in DDD_HdrConstructorCopy", MAX_PRIO);
@@ -686,7 +732,6 @@ void DDD_HdrConstructorCopy (DDD_HDR newhdr, DDD_PRIO prio)
 
 void DDD_HdrConstructorMove (DDD_HDR newhdr, DDD_HDR oldhdr)
 {
-  TYPE_DESC  *desc = &(theTypeDefs[OBJ_TYPE(oldhdr)]);
   int objIndex = OBJ_INDEX(oldhdr);
 
 
@@ -709,7 +754,7 @@ void DDD_HdrConstructorMove (DDD_HDR newhdr, DDD_HDR oldhdr)
   {
     COUPLING *cpl = theCpl[objIndex];
 
-    for(; cpl!=NULL; cpl=cpl->next) {
+    for(; cpl!=NULL; cpl=CPL_NEXT(cpl)) {
       cpl->obj = newhdr;
     }
 
@@ -744,7 +789,7 @@ void DDD_HdrConstructorMove (DDD_HDR newhdr, DDD_HDR oldhdr)
 /*                                                                          */
 /****************************************************************************/
 
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 
 static void CopyByMask (TYPE_DESC *desc, DDD_OBJ target, DDD_OBJ source)
 {
@@ -850,20 +895,31 @@ void ObjCopyGlobalData (TYPE_DESC *desc, DDD_OBJ target, DDD_OBJ source,
 
 /****************************************************************************/
 
+#ifdef C_FRONTEND
 DDD_HDR DDD_SearchHdr (DDD_GID gid)
 {
-  int i;
+#endif
+#ifdef CPP_FRONTEND
+DDD_HDR DDD_Library::SearchHdr (DDD_GID gid)
+{
+#endif
+#ifdef F_FRONTEND
+DDD_HDR DDD_SearchHdr (DDD_GID *_gid)
+{
+  DDD_GID gid = *_gid;
+#endif
+int i;
 
-  i=0;
-  while (i<nObjs && OBJ_GID(theObj[i])!=gid)
-    i++;
+i=0;
+while (i<nObjs && OBJ_GID(theObj[i])!=gid)
+  i++;
 
-  if (i<nObjs)
-  {
-    return(theObj[i]);
-  }
-  else
-    return(NULL);
+if (i<nObjs)
+{
+  return(theObj[i]);
+}
+else
+  return(NULL);
 }
 
 

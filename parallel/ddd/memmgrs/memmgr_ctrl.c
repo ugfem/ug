@@ -50,8 +50,8 @@
 /****************************************************************************/
 
 
+/* constants for hashing of alloc/free requests (for debugging) */
 #define HASHTAB_SIZE  15731
-
 #define HASH_FUNC(k)   ((k)%HASHTAB_SIZE)
 
 
@@ -92,8 +92,10 @@ unsigned long memmgr_AllocatedTMEM;
 /*                                                                          */
 /****************************************************************************/
 
+/* hashing of alloc/free requests: hashtable and allocated entries */
 HASH_ENTRY *htab[HASHTAB_SIZE];
 int nHashEntries;
+
 
 
 /****************************************************************************/
@@ -101,6 +103,10 @@ int nHashEntries;
 /* routines                                                                 */
 /*                                                                          */
 /****************************************************************************/
+
+
+/* auxiliary routines for hashing alloc/free requests */
+
 
 
 HASH_ENTRY *NewHashEntry (void *ptr, size_t size)

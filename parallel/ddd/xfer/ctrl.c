@@ -57,6 +57,8 @@ RCSID("$Header$",DDD_RCS_STRING)
 /****************************************************************************/
 
 
+#ifdef DebugAllPointers
+
 static void XferPtr (LC_MSGHANDLE xm, char *buf)
 {
   SYMTAB_ENTRY *theSymTab;
@@ -89,7 +91,7 @@ static void XferPtr (LC_MSGHANDLE xm, char *buf)
       {
         int l;
 
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
         for(l=0; l<theElem->size; l+=sizeof(void *))
         {
           /* ref points to a reference inside objmem */
@@ -119,7 +121,7 @@ static void XferPtr (LC_MSGHANDLE xm, char *buf)
     }
   }
 }
-
+#endif
 
 
 void XferDisplayMsg (char *comment, LC_MSGHANDLE xm)
@@ -128,7 +130,7 @@ void XferDisplayMsg (char *comment, LC_MSGHANDLE xm)
   OBJTAB_ENTRY *theObjTab;
   TENewCpl     *theNewCpl;
   TEOldCpl     *theOldCpl;
-  char         *theObjects, *currObj;
+  char         *theObjects;
   char buf[30];
   int i, proc = LC_MsgGetProc(xm);
   int lenSymTab = (int) LC_GetTableLen(xm, xferGlobals.symtab_id);
@@ -174,7 +176,7 @@ void XferDisplayMsg (char *comment, LC_MSGHANDLE xm)
 
   for(i=0; i<lenObjTab; i++)
   {
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
     DDD_OBJ obj = (DDD_OBJ)(theObjects + theObjTab[i].offset);
 
     sprintf(cBuffer, "%s 10 objtab    %06d typ=%1d gid=%08x "

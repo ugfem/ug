@@ -62,32 +62,64 @@ RCSID("$Header$",DDD_RCS_STRING)
 /****************************************************************************/
 
 
+/*
+        description of input defines for ifcmd.ct
+
+        IF_NAME:   name of interface function
+        IF_CBR:    call by reference, otherwise call by address (CPP_FRONTEND)
+
+        TODO: more doc!
+ */
+
+
 /* with normal arguments for gather/scatter */
 
-#define IF_FUNCNAME DDD_IFExchange
+#define IF_NAME Exchange
 #define IF_EXCHANGE
 #include "ifcmd.ct"
 
-#define IF_FUNCNAME DDD_IFOneway
+#ifdef CPP_FRONTEND
+#define IF_NAME Exchange
+#define IF_EXCHANGE
+#define IF_CBR
+#include "ifcmd.ct"
+#endif
+
+
+
+#define IF_NAME Oneway
 #define IF_ONEWAY
 #include "ifcmd.ct"
 
-#define IF_FUNCNAME DDD_IFExecLocal
+#ifdef CPP_FRONTEND
+#define IF_NAME Oneway
+#define IF_ONEWAY
+#define IF_CBR
+#include "ifcmd.ct"
+#endif
+
+
+
+
+
+#ifndef CPP_FRONTEND
+
+#define IF_NAME ExecLocal
 #define IF_EXECLOCAL
 #include "ifcmd.ct"
 
 
-#define IF_FUNCNAME DDD_IFAExchange
+#define IF_NAME AExchange
 #define IF_EXCHANGE
 #define IF_WITH_ATTR
 #include "ifcmd.ct"
 
-#define IF_FUNCNAME DDD_IFAOneway
+#define IF_NAME AOneway
 #define IF_ONEWAY
 #define IF_WITH_ATTR
 #include "ifcmd.ct"
 
-#define IF_FUNCNAME DDD_IFAExecLocal
+#define IF_NAME AExecLocal
 #define IF_EXECLOCAL
 #define IF_WITH_ATTR
 #include "ifcmd.ct"
@@ -95,39 +127,40 @@ RCSID("$Header$",DDD_RCS_STRING)
 
 /* with extended arguments for gather/scatter */
 
-#define IF_FUNCNAME DDD_IFExchangeX
+#define IF_NAME ExchangeX
 #define IF_EXCHANGE
 #define IF_WITH_XARGS
 #include "ifcmd.ct"
 
-#define IF_FUNCNAME DDD_IFOnewayX
+#define IF_NAME OnewayX
 #define IF_ONEWAY
 #define IF_WITH_XARGS
 #include "ifcmd.ct"
 
-#define IF_FUNCNAME DDD_IFExecLocalX
+#define IF_NAME ExecLocalX
 #define IF_EXECLOCAL
 #define IF_WITH_XARGS
 #include "ifcmd.ct"
 
 
-#define IF_FUNCNAME DDD_IFAExchangeX
+#define IF_NAME AExchangeX
 #define IF_EXCHANGE
 #define IF_WITH_ATTR
 #define IF_WITH_XARGS
 #include "ifcmd.ct"
 
-#define IF_FUNCNAME DDD_IFAOnewayX
+#define IF_NAME AOnewayX
 #define IF_ONEWAY
 #define IF_WITH_ATTR
 #define IF_WITH_XARGS
 #include "ifcmd.ct"
 
-#define IF_FUNCNAME DDD_IFAExecLocalX
+#define IF_NAME AExecLocalX
 #define IF_EXECLOCAL
 #define IF_WITH_ATTR
 #define IF_WITH_XARGS
 #include "ifcmd.ct"
 
+#endif
 
 /****************************************************************************/

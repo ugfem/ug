@@ -31,6 +31,7 @@
 /* standard C library */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "dddi.h"
 #include "xfer.h"
@@ -57,6 +58,21 @@
 /* data structures                                                          */
 /*                                                                          */
 /****************************************************************************/
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* macros                                                                   */
+/*                                                                          */
+/****************************************************************************/
+
+/* helpful macros for FRONTEND switching, will be #undef'd at EOF */
+#ifdef F_FRONTEND
+#define _FADR     &
+#else
+#define _FADR
+#endif
 
 
 /****************************************************************************/
@@ -86,13 +102,18 @@ RCSID("$Header$",DDD_RCS_STRING)
 /****************************************************************************/
 
 
+#ifdef SORT_STATISTIK
 static int n34=0, n35=0, n36=0;
+#endif
 
 
 static int sort_SymTabEntries (const void *e1, const void *e2)
 {
   SYMTAB_ENTRY   *ci1, *ci2;
-  /*n34++;*/
+
+#ifdef SORT_STATISTIK
+  n34++;
+#endif
 
   ci1 = (SYMTAB_ENTRY *)e1;
   ci2 = (SYMTAB_ENTRY *)e2;
@@ -106,7 +127,10 @@ static int sort_SymTabEntries (const void *e1, const void *e2)
 static int sort_ObjTabEntries (const void *e1, const void *e2)
 {
   OBJTAB_ENTRY   *ci1, *ci2;
-  /*n35++;*/
+
+#ifdef SORT_STATISTIK
+  n35++;
+#endif
 
   ci1 = (OBJTAB_ENTRY *)e1;
   ci2 = (OBJTAB_ENTRY *)e2;
@@ -156,7 +180,7 @@ static int BuildSymTab (TYPE_DESC *desc, char *copy, SYMTAB_ENTRY *theSymTab)
       int l;
 
       /* loop over single pointer array */
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
       for(l=0; l<theElem->size; l+=sizeof(void *))
       {
         /* get address of outside reference */
@@ -245,9 +269,9 @@ static int GetDepData (char *data,
       chunk += CEIL(sizeof(int)+sizeof(DDD_TYPE));
 
       /* then all records should be gathered via handler */
-      if (desc->handler[HANDLER_XFERGATHER]!=NULL)
-        desc->handler[HANDLER_XFERGATHER](obj,
-                                          xa->addCnt, xa->addTyp, (void *)chunk);
+      if (desc->handlerXFERGATHER)
+        desc->handlerXFERGATHER(_FADR obj,
+                                _FADR xa->addCnt, _FADR xa->addTyp, (void *)chunk);
 
       if (xa->addTyp<DDD_USER_DATA || xa->addTyp>DDD_USER_DATA_MAX)
       {
@@ -283,9 +307,9 @@ static int GetDepData (char *data,
       next_chunk = adr;
 
       /* then all records should be gathered via handler */
-      if (desc->handler[HANDLER_XFERGATHERX]!=NULL)
-        desc->handler[HANDLER_XFERGATHERX](obj,
-                                           xa->addCnt, xa->addTyp, table1);
+      if (desc->handlerXFERGATHERX)
+        desc->handlerXFERGATHERX(_FADR obj,
+                                 _FADR xa->addCnt, _FADR xa->addTyp, table1);
 
       /* convert pointer table into offset table */
       table2 = (int *)table1;
@@ -405,7 +429,7 @@ static void XferPackSingleMsg (XFERMSG *msg)
     REGISTER DDD_HDR hdr   = xi->hdr;
     TYPE_DESC *desc = &theTypeDefs[OBJ_TYPE(hdr)];
     DDD_OBJ obj   = HDR2OBJ(hdr,desc);
-    COUPLING  *cpl;
+    /*COUPLING  *cpl;*/
     DDD_HDR copyhdr;
 
     /* build coupling table */
@@ -450,7 +474,7 @@ static void XferPackSingleMsg (XFERMSG *msg)
             equals desc->len for fixed-size objects.
      */
     STAT_RESET3;
-#ifdef C_FRONTEND
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
     memcpy(currObj, obj, xi->size);
     copyhdr = OBJ2HDR(currObj,desc);
 #else
@@ -467,16 +491,16 @@ static void XferPackSingleMsg (XFERMSG *msg)
     /* KB 941110:  moved from objmgr.c                  */
     /*
             Caution: this is a very, very dirty situation.
-            HANDLER_COPYMANIP is able to manipulate the
+            HANDLER_XFERCOPYMANIP is able to manipulate the
             obj-copy inside the message. this handler should
             be removed in future DDD versions.
      */
-#ifdef C_FRONTEND
-    if (desc->handler[HANDLER_COPYMANIP]!=NULL)
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+    if (desc->handlerXFERCOPYMANIP)
     {
       /*
               NOTE: OBJ_TYPE could change during the
-              execution of HANDLER_COPYMANIP. however,
+              execution of HANDLER_XFERCOPYMANIP. however,
               the position of DDD_HEADER inside the object
               should not change. therefore, we can remember
               the offsetHeader here and use it afterwards
@@ -485,7 +509,7 @@ static void XferPackSingleMsg (XFERMSG *msg)
       int offset = desc->offsetHeader;
 
       /* now call handler */
-      desc->handler[HANDLER_COPYMANIP](currObj);
+      desc->handlerXFERCOPYMANIP(currObj);
 
       /* adjust new description according to new type */
       desc = &(theTypeDefs[OBJ_TYPE((DDD_HDR)(currObj+offset))]);
@@ -536,12 +560,12 @@ static void XferPackSingleMsg (XFERMSG *msg)
   STAT_INCTIMER3(35); STAT_RESET3;
 
 
-  /*
-     sprintf(cBuffer, "ITEMS 34=%d, 35=%d, 36=%d\n", actSym,  msg->nObjects,  actNewCpl);
-     DDD_PrintDebug(cBuffer);
-     sprintf(cBuffer, "COMPS 34=%d, 35=%d, 36=%d\n", n34,  n35,  n36);
-     DDD_PrintDebug(cBuffer);
-   */
+#ifdef SORT_STATISTIK
+  sprintf(cBuffer, "ITEMS 34=%d, 35=%d, 36=%d\n", actSym,  msg->nObjects,  actNewCpl);
+  DDD_PrintDebug(cBuffer);
+  sprintf(cBuffer, "COMPS 34=%d, 35=%d, 36=%d\n", n34,  n35,  n36);
+  DDD_PrintDebug(cBuffer);
+#endif
 
 
   /* substitute all pointers by index into SymTab */
@@ -549,9 +573,10 @@ static void XferPackSingleMsg (XFERMSG *msg)
   for(mi=0; mi<actSym; mi++)
   {
     /* patch SymTab index into reference location inside message */
-#ifdef C_FRONTEND
-    *(theSymTab[mi].adr.ref) = (void *)(mi+1);
-#else
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+    *(theSymTab[mi].adr.ref) = (DDD_OBJ)(mi+1);
+#endif
+#ifdef F_FRONTEND
     *(theSymTab[mi].adr.ref) = (mi+1);
 #endif
   }
@@ -608,3 +633,11 @@ void XferPackMsgs (XFERMSG *theMsgs)
     LC_MsgSend(xm->msg_h);
   }
 }
+
+
+/****************************************************************************/
+
+#undef _FADR
+
+
+/****************************************************************************/

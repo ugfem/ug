@@ -64,7 +64,8 @@ RCSID("$Header$",DDD_RCS_STRING)
 
 
 static COUPLING *memlistCpl;
-
+static int *localIBuffer;
+static int nAllCplItems;
 
 
 /****************************************************************************/
@@ -84,10 +85,11 @@ static COUPLING *NewCoupling (void)
   else
   {
     cpl = memlistCpl;
-    memlistCpl = cpl->next;
+    memlistCpl = CPL_NEXT(cpl);
   }
 
   nCplItems++;
+  nAllCplItems++;
 
   return(cpl);
 }
@@ -95,7 +97,7 @@ static COUPLING *NewCoupling (void)
 
 static void DisposeCoupling (COUPLING *cpl)
 {
-  cpl->next = memlistCpl;
+  CPL_NEXT(cpl) = memlistCpl;
   memlistCpl = cpl;
 
   nCplItems--;
@@ -156,7 +158,7 @@ COUPLING *AddCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
   }
   else
   {
-    for(cp2=theCpl[objIndex]; cp2!=NULL; cp2=cp2->next)
+    for(cp2=theCpl[objIndex]; cp2!=NULL; cp2=CPL_NEXT(cp2))
     {
       if (cp2->proc==proc)
       {
@@ -189,7 +191,7 @@ COUPLING *AddCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
   cp->prio = prio;
 
   /* insert into theCpl array */
-  cp->next = theCpl[objIndex];
+  CPL_NEXT(cp) = theCpl[objIndex];
   theCpl[objIndex] = cp;
   theCplN[objIndex]++;
 
@@ -219,8 +221,7 @@ COUPLING *AddCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
 
 COUPLING *ModCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
 {
-  COUPLING        *cp, *cp2;
-  DDD_HDR oldObj;
+  COUPLING        *cp2;
   int objIndex;
 
 #       if DebugCoupling<=1
@@ -241,7 +242,7 @@ COUPLING *ModCoupling (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
   else
   {
     /* look if coupling exists and change it */
-    for(cp2=theCpl[objIndex]; cp2!=NULL; cp2=cp2->next)
+    for(cp2=theCpl[objIndex]; cp2!=NULL; cp2=CPL_NEXT(cp2))
     {
       if (cp2->proc==proc)
       {
@@ -283,14 +284,16 @@ void DelCoupling (DDD_HDR hdr, DDD_PROC proc)
 
   if (objIndex<nCpls)
   {
-    for(cpl=theCpl[objIndex], cplLast=NULL; cpl!=NULL; cpl=cpl->next)
+    for(cpl=theCpl[objIndex], cplLast=NULL; cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
       if(cpl->proc==proc)
       {
-        if (cplLast==NULL) {
-          theCpl[objIndex] = cpl->next;
-        } else {
-          cplLast->next = cpl->next;
+        if (cplLast==NULL)
+        {
+          theCpl[objIndex] = CPL_NEXT(cpl);
+        }
+        else {
+          CPL_NEXT(cplLast) = CPL_NEXT(cpl);
         }
 #                               if DebugCoupling<=1
         sprintf(cBuffer,"%4d: DelCoupling %07x on proc=%d, now %d cpls\n",
@@ -338,7 +341,7 @@ void DisposeCouplingList (COUPLING *cpl)
   c = cpl;
   while (c!=NULL)
   {
-    next = c->next;
+    next = CPL_NEXT(c);
     DisposeCoupling(c);
     c = next;
   }
@@ -354,7 +357,7 @@ void DisposeCouplingList (COUPLING *cpl)
 /*                                                                          */
 /* Input:     hdr: DDD-header of object with coupling                       */
 /*                                                                          */
-/* Output:    pointer to iBuffer, which has been filled with:               */
+/* Output:    pointer to localIBuffer, which has been filled with:          */
 /*               1) id of calling processor                                 */
 /*               2) priority of local object coppy on calling processor     */
 /*               3) id of processor which holds a object copy               */
@@ -364,30 +367,39 @@ void DisposeCouplingList (COUPLING *cpl)
 /*                                                                          */
 /****************************************************************************/
 
+#ifdef C_FRONTEND
 int *DDD_InfoProcList (DDD_HDR hdr)
 {
-  COUPLING *cpl;
-  int i, objIndex = OBJ_INDEX(hdr);
+#endif
+#ifdef CPP_FRONTEND
+int *DDD_Object::InfoProcList (void)
+{
+  DDD_HDR hdr = &_hdr;
+#endif
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+COUPLING *cpl;
+int i, objIndex = OBJ_INDEX(hdr);
 
-  /* insert description of own (i.e. local) copy */
-  iBuffer[0] = me;
-  iBuffer[1] = OBJ_PRIO(hdr);
+/* insert description of own (i.e. local) copy */
+localIBuffer[0] = me;
+localIBuffer[1] = OBJ_PRIO(hdr);
 
-  i=2;
+i=2;
 
-  /* append descriptions of foreign copies */
-  if (objIndex<nCpls) {
-    for(cpl=theCpl[objIndex]; cpl!=NULL; cpl=cpl->next, i+=2) {
-      iBuffer[i]   = cpl->proc;
-      iBuffer[i+1] = cpl->prio;
-    }
+/* append descriptions of foreign copies */
+if (objIndex<nCpls) {
+  for(cpl=theCpl[objIndex]; cpl!=NULL; cpl=CPL_NEXT(cpl), i+=2) {
+    localIBuffer[i]   = cpl->proc;
+    localIBuffer[i+1] = cpl->prio;
   }
-
-  /* append end mark */
-  iBuffer[i] = -1;
-
-  return(iBuffer);
 }
+
+/* append end mark */
+localIBuffer[i] = -1;
+
+return(localIBuffer);
+}
+#endif
 
 
 
@@ -412,7 +424,7 @@ DDD_PROC DDD_InfoProcPrio (DDD_HDR hdr, DDD_PRIO prio)
 
   /* append descriptions of foreign copies */
   if (objIndex<nCpls) {
-    for(cpl=theCpl[objIndex]; cpl!=NULL; cpl=cpl->next)
+    for(cpl=theCpl[objIndex]; cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
       if (cpl->prio == prio)
         return(cpl->proc);
@@ -440,7 +452,7 @@ int DDD_InfoNCopies (DDD_HDR hdr)
 
   if (HAS_COUPLING(hdr))
   {
-    for(cpl=theCpl[OBJ_INDEX(hdr)]; cpl!=NULL; cpl=cpl->next)
+    for(cpl=theCpl[OBJ_INDEX(hdr)]; cpl!=NULL; cpl=CPL_NEXT(cpl))
       n++;
   }
 
@@ -469,13 +481,39 @@ void DDD_InfoCoupling (DDD_HDR hdr)
           me, OBJ_GID(hdr), objIndex, nCpls);
   DDD_PrintLine(cBuffer);
 
-  if (objIndex<nCpls) {
-    for(cpl=theCpl[objIndex]; cpl!=NULL; cpl=cpl->next) {
+  if (objIndex<nCpls)
+  {
+    for(cpl=theCpl[objIndex]; cpl!=NULL; cpl=CPL_NEXT(cpl))
+    {
       sprintf(cBuffer, "%4d:    cpl %08x proc=%4d prio=%4d\n",
               me, cpl, cpl->proc, cpl->prio);
       DDD_PrintLine(cBuffer);
     }
   }
+}
+
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  DDD_InfoCplMemory                                             */
+/*                                                                          */
+/* Purpose:   returns number of bytes used for coupling data                */
+/*                                                                          */
+/* Input:     -                                                             */
+/*                                                                          */
+/* Output:    size of memory used for couplings                             */
+/*                                                                          */
+/****************************************************************************/
+
+size_t DDD_InfoCplMemory (void)
+{
+  size_t sum = 0;
+
+  sum += sizeof(COUPLING) * nAllCplItems;
+
+  return(sum);
 }
 
 
@@ -495,10 +533,24 @@ void DDD_InfoCoupling (DDD_HDR hdr)
 void ddd_CplMgrInit (void)
 {
   memlistCpl = NULL;
+  localIBuffer = (int*)AllocFix(2*procs*sizeof(int));
+  if (localIBuffer==NULL)
+  {
+    DDD_PrintError('E', 2532, "not enough memory for DDD_InfoProcList()");
+    HARD_EXIT;
+  }
+
+  nAllCplItems = 0;
 }
 
 
 void ddd_CplMgrExit (void)
 {
   /* TODO put freeing of memlist of unused COUPLINGS here */
+
+  FreeFix(localIBuffer);
 }
+
+
+
+/****************************************************************************/

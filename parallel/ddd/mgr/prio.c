@@ -30,6 +30,7 @@
 /* standard C library */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "dddi.h"
 
@@ -46,11 +47,12 @@
 
 
 /* get index for one-dimensional storage of twodimensional symm. matrix,
-   which is stored as lower triangle
+   which is stored as lower triangle and diagonal
 
    col must be <= row !
  */
 #define PM_ENTRY(pm,row,col)   (pm[((((row)+1)*(row))/2)+(col)])
+#define PM_SIZE  ((MAX_PRIO*(MAX_PRIO+1))/2)
 
 
 /* get priority-merge value for given default mode */
@@ -90,53 +92,59 @@ RCSID("$Header$",DDD_RCS_STRING)
 
 
 
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
 void DDD_PrioritySet (DDD_HDR hdr, DDD_PRIO prio)
 {
-  TYPE_DESC *desc =  &(theTypeDefs[OBJ_TYPE(hdr)]);
+#endif
+#ifdef CPP_FRONTEND
+void DDD_Object::PrioritySet (DDD_PRIO prio)
+{
+  DDD_HDR hdr = &_hdr;
+#endif
 
-  /* check input parameters */
-  if (prio<0 || prio>=MAX_PRIO)
-  {
-    sprintf(cBuffer,
-            "priority must be less than %d in DDD_PrioritySet", MAX_PRIO);
-    DDD_PrintError('E', 2305, cBuffer);
-    HARD_EXIT;
-  }
+/* check input parameters */
+if (prio>=MAX_PRIO)
+{
+  sprintf(cBuffer,
+          "priority must be less than %d in DDD_PrioritySet", MAX_PRIO);
+  DDD_PrintError('E', 2305, cBuffer);
+  HARD_EXIT;
+}
 
 
 #       ifdef LogObjects
-  sprintf(cBuffer, "%4d: LOG DDD_PrioritySet %08x old=%d new=%d\n",
-          me, OBJ_GID(hdr), OBJ_PRIO(hdr), prio);
-  DDD_PrintDebug(cBuffer);
+sprintf(cBuffer, "%4d: LOG DDD_PrioritySet %08x old=%d new=%d\n",
+        me, OBJ_GID(hdr), OBJ_PRIO(hdr), prio);
+DDD_PrintDebug(cBuffer);
 #       endif
 
-  if (XferActive())
+if (XferActive())
+{
+  /* we are during Xfer, therefore initiate PrioChange operation */
+  DDD_XferPrioChange(hdr, prio);
+}
+else
+{
+  if (! HAS_COUPLING(hdr))
   {
-    /* we are during Xfer, therefore initiate PrioChange operation */
-    DDD_XferPrioChange(hdr, prio);
+    /* just one local object, we can simply change its priority */
+    OBJ_PRIO(hdr) = prio;
   }
   else
   {
-    if (! HAS_COUPLING(hdr))
+    /* distributed object will get inconsistent here. issue warning. */
+    if (DDD_GetOption(OPT_WARNING_PRIOCHANGE)==OPT_ON)
     {
-      /* just one local object, we can simply change its priority */
-      OBJ_PRIO(hdr) = prio;
+      sprintf(cBuffer,
+              "creating inconsistency for gid=%08x in DDD_PrioritySet",
+              OBJ_GID(hdr));
+      DDD_PrintError('W', 2300, cBuffer);
     }
-    else
-    {
-      /* distributed object will get inconsistent here. issue warning. */
-      if (DDD_GetOption(OPT_WARNING_PRIOCHANGE)==OPT_ON)
-      {
-        sprintf(cBuffer,
-                "creating inconsistency for gid=%08x in DDD_PrioritySet",
-                OBJ_GID(hdr));
-        DDD_PrintError('W', 2300, cBuffer);
-      }
 
-      /* change priority, nevertheless */
-      OBJ_PRIO(hdr) = prio;
-    }
+    /* change priority, nevertheless */
+    OBJ_PRIO(hdr) = prio;
   }
+}
 }
 
 
@@ -211,7 +219,7 @@ static int SetPrioMatrix (TYPE_DESC *desc, int priomerge_mode)
   {
     /* prioMatrix has not been allocated before */
     desc->prioMatrix = (DDD_PRIO *)
-                       AllocFix((sizeof(DDD_PRIO)*MAX_PRIO*MAX_PRIO)/2);
+                       AllocFix(sizeof(DDD_PRIO)*PM_SIZE);
   }
 
   for(r=0; r<MAX_PRIO; r++)
@@ -255,19 +263,11 @@ static int CheckPrioMatrix (TYPE_DESC *desc)
     {
       DDD_PRIO p = PM_ENTRY(desc->prioMatrix,r,c);
 
-      if (p<0)
-      {
-        sprintf(cBuffer, "PriorityMerge(%d,%d) yields %d less than 0!",
-                r, c, p);
-        DDD_PrintError('E', 2340, cBuffer);
-        HARD_EXIT;
-      }
-
       if (p>=MAX_PRIO)
       {
         sprintf(cBuffer, "PriorityMerge(%d,%d) yields %d larger than %d!",
                 r, c, p, MAX_PRIO-1);
-        DDD_PrintError('E', 2341, cBuffer);
+        DDD_PrintError('E', 2340, cBuffer);
         HARD_EXIT;
       }
     }
@@ -330,19 +330,19 @@ void DDD_PrioMergeDefine (DDD_TYPE type_id,
 
   /* check input priorities */
 
-  if (p1<0 || p1>=MAX_PRIO)
+  if (p1>=MAX_PRIO)
   {
     sprintf(cBuffer, "invalid priority %d in " FUNCNAME, p1);
     DDD_PrintError('E', 2333, cBuffer);
     HARD_EXIT;
   }
-  if (p2<0 || p2>=MAX_PRIO)
+  if (p2>=MAX_PRIO)
   {
     sprintf(cBuffer, "invalid priority %d in " FUNCNAME, p2);
     DDD_PrintError('E', 2333, cBuffer);
     HARD_EXIT;
   }
-  if (pres<0 || pres>=MAX_PRIO)
+  if (pres>=MAX_PRIO)
   {
     sprintf(cBuffer, "invalid priority %d in " FUNCNAME, pres);
     DDD_PrintError('E', 2333, cBuffer);
@@ -393,13 +393,13 @@ DDD_PRIO DDD_PrioMerge (DDD_TYPE type_id, DDD_PRIO p1, DDD_PRIO p2)
   }
 
 
-  if (p1<0 || p1>=MAX_PRIO)
+  if (p1>=MAX_PRIO)
   {
     sprintf(cBuffer, "invalid priority %d in DDD_PrioMerge()", p1);
     DDD_PrintError('E', 2351, cBuffer);
     HARD_EXIT;
   }
-  if (p2<0 || p2>=MAX_PRIO)
+  if (p2>=MAX_PRIO)
   {
     sprintf(cBuffer, "invalid priority %d in DDD_PrioMerge()", p2);
     DDD_PrintError('E', 2351, cBuffer);

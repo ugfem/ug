@@ -43,8 +43,43 @@
 extern XICopyObj *theXIAddData;
 
 
+/****************************************************************************/
+/*                                                                          */
+/* definition of constants, macros                                          */
+/*                                                                          */
+/****************************************************************************/
 
-XFERADDDATA *freeXIAddData;
+#define ADDDATASEGM_SIZE 256
+#define SIZESSEGM_SIZE 2048
+
+
+
+
+/****************************************************************************/
+/*                                                                          */
+/* data types                                                               */
+/*                                                                          */
+/****************************************************************************/
+
+/* segment of AddDatas */
+typedef struct _AddDataSegm
+{
+  struct _AddDataSegm *next;
+  int nItems;
+
+  XFERADDDATA item[ADDDATASEGM_SIZE];
+} AddDataSegm;
+
+
+/* segment of AddData-Sizes */
+typedef struct _SizesSegm
+{
+  struct _SizesSegm   *next;
+  int current;
+
+  int data[SIZESSEGM_SIZE];
+} SizesSegm;
+
 
 
 
@@ -57,6 +92,10 @@ XFERADDDATA *freeXIAddData;
 
 /* Revision Control System string */
 RCSID("$Header$",DDD_RCS_STRING)
+
+
+static AddDataSegm *segmAddData = NULL;
+static SizesSegm   *segmSizes   = NULL;
 
 
 /****************************************************************************/
@@ -103,20 +142,97 @@ RCSID("$Header$",DDD_RCS_STRING)
 /****************************************************************************/
 
 
+static AddDataSegm *NewAddDataSegm (void)
+{
+  AddDataSegm *segm;
+
+  segm = (AddDataSegm *) AllocTmp(sizeof(AddDataSegm));
+
+  if (segm==NULL)
+  {
+    DDD_PrintError('F', 9999, "out of memory during XferEnd()");
+    HARD_EXIT;
+  }
+
+  segm->next   = segmAddData;
+  segmAddData  = segm;
+  segm->nItems = 0;
+
+  return(segm);
+}
+
+
+static void FreeAddDataSegms (void)
+{
+  AddDataSegm *segm = segmAddData;
+  AddDataSegm *next = NULL;
+
+  while (segm!=NULL)
+  {
+    next = segm->next;
+    FreeTmp(segm);
+
+    segm = next;
+  }
+
+  segmAddData = NULL;
+}
+
+
+/****************************************************************************/
+
+
+static SizesSegm *NewSizesSegm (void)
+{
+  SizesSegm *segm;
+
+  segm = (SizesSegm *) AllocTmp(sizeof(SizesSegm));
+
+  if (segm==NULL)
+  {
+    DDD_PrintError('F', 9999, "out of memory during XferEnd()");
+    HARD_EXIT;
+  }
+
+  segm->next    = segmSizes;
+  segmSizes     = segm;
+  segm->current = 0;
+
+  return(segm);
+}
+
+
+static void FreeSizesSegms (void)
+{
+  SizesSegm *segm = segmSizes;
+  SizesSegm *next = NULL;
+
+  while (segm!=NULL)
+  {
+    next = segm->next;
+    FreeTmp(segm);
+
+    segm = next;
+  }
+
+  segmSizes = NULL;
+}
+
+
+/****************************************************************************/
+
+
 XFERADDDATA *NewXIAddData (void)
 {
+  AddDataSegm *segm = segmAddData;
   XFERADDDATA *xa;
 
-  if (freeXIAddData==NULL)
+  if (segm==NULL || segm->nItems==ADDDATASEGM_SIZE)
   {
-    xa = (XFERADDDATA *) AllocTmp(sizeof(XFERADDDATA));
-  }
-  else
-  {
-    xa = freeXIAddData;
-    freeXIAddData = xa->next;
+    segm = NewAddDataSegm();
   }
 
+  xa = &(segm->item[segm->nItems++]);
   xa->next = theXIAddData->add;
   theXIAddData->add = xa;
 
@@ -124,40 +240,30 @@ XFERADDDATA *NewXIAddData (void)
 }
 
 
-XFERADDDATA *FreeXIAddData (XFERADDDATA *item)
-{
-  XFERADDDATA   *next = item->next;
-
-  if (item->sizes!=NULL)
-  {
-    FreeTmp(item->sizes);
-    item->sizes=NULL;
-  }
-
-  item->next = freeXIAddData;
-  freeXIAddData = item;
-
-  return(next);
-}
-
-
 
 void FreeAllXIAddData (void)
 {
-  XICopyObj *xi;
+  FreeAddDataSegms();
+  FreeSizesSegms();
+}
 
-  /* for all XICopyObj-items */
-  for(xi=listXICopyObj; xi!=NULL; xi=xi->sll_next)
+
+/****************************************************************************/
+
+int *AddDataAllocSizes (int cnt)
+{
+  SizesSegm *segm = segmSizes;
+  int *pos;
+
+  if (segm==NULL || segm->current+cnt>=SIZESSEGM_SIZE)
   {
-    XFERADDDATA *xa;
-
-    /* free XferAdd items, if necessary */
-    xa = xi->add;
-    while (xa!=NULL)
-    {
-      xa = FreeXIAddData(xa);
-    }
+    segm = NewSizesSegm();
   }
+
+  pos = segm->data + segm->current;
+  segm->current += cnt;
+
+  return(pos);
 }
 
 

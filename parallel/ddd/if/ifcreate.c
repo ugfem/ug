@@ -38,6 +38,7 @@
 /* standard C library */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 
 #include "dddi.h"
@@ -151,7 +152,7 @@ static int sort_int (const void *e1, const void *e2)
 /*                    (increasing order)                                    */
 /*                2. direction of interface according to priorities         */
 /*                    (increasing order)                                    */
-/*                3. attr property of objects                              */
+/*                3. attr property of objects                               */
 /*                    (decreasing order)                                    */
 /*                4. global ids of objects                                  */
 /*                    (increasing order)                                    */
@@ -212,7 +213,6 @@ void IFDeleteAll (DDD_IF ifId)
       ifr = ifrNext;
     }
 
-
     DisposeIFHead(ifh);
     ifh = ifhNext;
   }
@@ -237,10 +237,11 @@ void IFDeleteAll (DDD_IF ifId)
 
 
 
+
 /* TODO  el-set relation, VERY inefficient! */
 static int is_elem (unsigned int el, int n, unsigned int *set)
 {
-  int i;
+  REGISTER int i;
 
   for(i=0; i<n; i++)
     if (set[i]==el)
@@ -304,7 +305,7 @@ static COUPLING ** IFCollectStdCouplings (void)
   {
     COUPLING  *cpl;
 
-    for(cpl=theCpl[index]; cpl!=NULL; cpl=cpl->next)
+    for(cpl=theCpl[index]; cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
       cplarray[n] = cpl;
       n++;
@@ -320,7 +321,7 @@ static COUPLING ** IFCollectStdCouplings (void)
 
 /****************************************************************************/
 
-void IFCreateFromScratch (DDD_IF ifId)
+static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
 {
   IF_PROC     *ifHead, *lastIfHead;
   IF_ATTR    *ifAttr, *lastIfAttr;
@@ -340,27 +341,8 @@ void IFCreateFromScratch (DDD_IF ifId)
   {
     int index;
 
-    /* get memory for couplings inside IF */
-    if (nCplItems>0)
-    {
-      theIF[ifId].cpl = (COUPLING **) AllocIF(sizeof(COUPLING *)*nCplItems);
-      /* TODO: nCplItems will be too big for average interfaces! */
-      if (theIF[ifId].cpl==NULL)
-      {
-        sprintf(cBuffer,
-                "not enough memory for IF %02d in IFCreateFromScratch",
-                ifId);
-        DDD_PrintError('E', 4000, cBuffer);
-        HARD_EXIT;
-      }
-    }
-    else
-    {
-      theIF[ifId].cpl = NULL;
-    }
 
-
-    /* collect relevant couplings */
+    /* collect relevant couplings into tmpcpl array */
     n=0;
     for(index=0; index<nCpls; index++)
     {
@@ -379,7 +361,7 @@ void IFCreateFromScratch (DDD_IF ifId)
           COUPLING  *cpl;
 
           /* test coupling list */
-          for(cpl=theCpl[index]; cpl!=NULL; cpl=cpl->next)
+          for(cpl=theCpl[index]; cpl!=NULL; cpl=CPL_NEXT(cpl))
           {
             int cplInA, cplInB, dir;
 
@@ -395,14 +377,36 @@ void IFCreateFromScratch (DDD_IF ifId)
             if (dir > 0)
             {
               SETCPLDIR(cpl,dir);
-              theIF[ifId].cpl[n] = cpl;
+              tmpcpl[n] = cpl;
               n++;
             }
           }
         }
       }
     }
+
+    if (n>0)
+    {
+      /* re-alloc cpllist, now with correct size */
+      theIF[ifId].cpl = (COUPLING **) AllocIF(sizeof(COUPLING *)*n);
+      if (theIF[ifId].cpl==NULL)
+      {
+        sprintf(cBuffer,
+                "not enough memory for IF %02d in IFCreateFromScratch",
+                ifId);
+        DDD_PrintError('E', 4001, cBuffer);
+        HARD_EXIT;
+      }
+
+      /* copy data from temporary array */
+      memcpy((void *)theIF[ifId].cpl, (void *)tmpcpl, sizeof(COUPLING *)*n);
+    }
+    else
+    {
+      theIF[ifId].cpl = NULL;
+    }
   }
+
 
 
   /* sort IF couplings */
@@ -411,7 +415,7 @@ void IFCreateFromScratch (DDD_IF ifId)
 
 
   /* create IF_PROCs */
-  lastproc = -1;
+  lastproc = PROC_INVALID;
   lastIfHead  = NULL;
   theIF[ifId].nIfHeads = 0;
   for(i=0; i<n; i++)
@@ -525,11 +529,6 @@ void IFCreateFromScratch (DDD_IF ifId)
   theIF[ifId].nItems = n;
 
 
-  /* TODO: an dieser stelle koennte das alte (zu grosse!)
-          cpl-array gegen ein kleineres der groesse theIF[ifId].nItems
-          ausgetauscht werden ... */
-
-
   /* establish obj-table as an addressing shortcut */
   IFCreateObjShortcut(ifId);
 
@@ -541,12 +540,39 @@ void IFCreateFromScratch (DDD_IF ifId)
 }
 
 
+/****************************************************************************/
+
 #ifdef C_FRONTEND
 DDD_IF DDD_IFDefine (
   int nO, DDD_TYPE O[],
   int nA, DDD_PRIO A[],
   int nB, DDD_PRIO B[])
-#else
+{
+#endif
+#ifdef CPP_FRONTEND
+DDD_Interface::DDD_Interface (DDD_TYPE t, DDD_PRIO p1, DDD_PRIO p2, char* name)
+{
+  Init(1, &t, 1, &p1, 1, &p2, name);
+}
+
+DDD_Interface::DDD_Interface (
+  int nO, DDD_TYPE O[],
+  int nA, DDD_PRIO A[],
+  int nB, DDD_PRIO B[],
+  char *name)
+{
+  Init(nO, O, nA, A, nB, B, name);
+}
+
+void DDD_Interface::Init (
+  int nO, DDD_TYPE O[],
+  int nA, DDD_PRIO A[],
+  int nB, DDD_PRIO B[],
+  char *name)
+{
+  _id = nIFs;
+#endif
+#ifdef F_FRONTEND
 DDD_IF orgDDD_IFDefine(int, DDD_TYPE O[],int, DDD_PRIO A[],int, DDD_PRIO B[]);
 
 void DDD_IFDefine (
@@ -562,45 +588,74 @@ DDD_IF orgDDD_IFDefine (
   int nO, DDD_TYPE O[],
   int nA, DDD_PRIO A[],
   int nB, DDD_PRIO B[])
-#endif
 {
-  int i;
+#endif
+int i;
+COUPLING **tmpcpl;
 
-  if (nIFs==MAX_IF) {
-    DDD_PrintError('E', 4100, "no more interfaces in DDD_IFDefine");
-    return(0);
+if (nIFs==MAX_IF) {
+  DDD_PrintError('E', 4100, "no more interfaces in DDD_IFDefine");
+                #ifdef CPP_FRONTEND
+  HARD_EXIT;
+                #else
+  return(0);
+                #endif
+}
+
+/* construct interface definition */
+theIF[nIFs].nObjStruct = nO;
+theIF[nIFs].nPrioA     = nA;
+theIF[nIFs].nPrioB     = nB;
+memcpy(theIF[nIFs].O, O, nO*sizeof(DDD_TYPE));
+memcpy(theIF[nIFs].A, A, nA*sizeof(DDD_PRIO));
+memcpy(theIF[nIFs].B, B, nB*sizeof(DDD_PRIO));
+if (nO>1) qsort(theIF[nIFs].O, nO, sizeof(DDD_TYPE), sort_int);
+if (nA>1) qsort(theIF[nIFs].A, nA, sizeof(DDD_PRIO), sort_int);
+if (nB>1) qsort(theIF[nIFs].B, nB, sizeof(DDD_PRIO), sort_int);
+
+
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
+/* reset name string */
+theIF[nIFs].name[0] = 0;
+#endif
+#ifdef CPP_FRONTEND
+SetName(name);
+#endif
+
+
+/* compute hash tables for fast access */
+theIF[nIFs].maskO = 0;
+for(i=0; i<nO; i++)
+  theIF[nIFs].maskO |= (1<<(unsigned int)O[i]);
+
+
+/* create initial interface state */
+theIF[nIFs].ifHead = NULL;
+if (nCplItems>0)
+{
+  /* allocate temporary cpl-list, this will be too large for
+     average interfaces. */
+  tmpcpl = (COUPLING **) AllocTmp(sizeof(COUPLING *)*nCplItems);
+  if (tmpcpl==NULL) {
+    DDD_PrintError('E', 4002, "out of memory in IFDefine");
+    HARD_EXIT;
   }
 
-  /* construct interface definition */
-  theIF[nIFs].nObjStruct = nO;
-  theIF[nIFs].nPrioA     = nA;
-  theIF[nIFs].nPrioB     = nB;
-  memcpy(theIF[nIFs].O, O, nO*sizeof(DDD_TYPE));
-  memcpy(theIF[nIFs].A, A, nA*sizeof(DDD_PRIO));
-  memcpy(theIF[nIFs].B, B, nB*sizeof(DDD_PRIO));
-  if (nO>1) qsort(theIF[nIFs].O, nO, sizeof(DDD_TYPE), sort_int);
-  if (nA>1) qsort(theIF[nIFs].A, nA, sizeof(DDD_PRIO), sort_int);
-  if (nB>1) qsort(theIF[nIFs].B, nB, sizeof(DDD_PRIO), sort_int);
+  IFCreateFromScratch(tmpcpl, nIFs);
 
-
-  /* reset name string */
-  theIF[nIFs].name[0] = 0;
-
-
-  /* compute hash tables for fast access */
-  theIF[nIFs].maskO = 0;
-  for(i=0; i<nO; i++)
-    theIF[nIFs].maskO |= (1<<(unsigned int)O[i]);
-
-
-  /* create initial interface state */
-  theIF[nIFs].ifHead = NULL;
-  IFCreateFromScratch(nIFs);
-
-  nIFs++;
-
-  return(nIFs-1);
+  /* free temporary array */
+  FreeTmp(tmpcpl);
 }
+else
+  IFCreateFromScratch(NULL, nIFs);
+
+nIFs++;
+
+        #ifndef CPP_FRONTEND
+return(nIFs-1);
+        #endif
+}
+
 
 
 void StdIFDefine()
@@ -619,27 +674,38 @@ void StdIFDefine()
 
   /* create initial interface state */
   theIF[STD_INTERFACE].ifHead = NULL;
-  IFCreateFromScratch(STD_INTERFACE);
+  IFCreateFromScratch(NULL, STD_INTERFACE);
 }
 
 
+
+#ifdef C_FRONTEND
 void DDD_IFSetName (DDD_IF ifId, char *name)
 {
-  /* ensure maximum length */
-  if (strlen(name) > IF_NAMELEN-1)
-  {
-    name[IF_NAMELEN-1] = 0;
-  }
-
-  /* copy name string */
-  strcpy(theIF[ifId].name, name);
+#endif
+#ifdef CPP_FRONTEND
+void DDD_Interface::SetName (char *name)
+{
+  DDD_IF ifId = _id;
+#endif
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
+/* ensure maximum length */
+if (strlen(name) > IF_NAMELEN-1)
+{
+  name[IF_NAMELEN-1] = 0;
 }
 
+/* copy name string */
+strcpy(theIF[ifId].name, name);
+}
+#endif
+
+
+/****************************************************************************/
 
 void DDD_InfoIFImpl (DDD_IF ifId)
 {
   IF_PROC    *ifh;
-  IF_ATTR   *ifr;
 
   sprintf(cBuffer, "|\n| DDD_IFInfoImpl for proc=%03d, IF %02d\n", me, ifId);
   DDD_PrintLine(cBuffer);
@@ -773,30 +839,41 @@ static void IFDisplay (DDD_IF i)
 #ifdef C_FRONTEND
 void DDD_IFDisplay (DDD_IF ifId)
 {
-#else
+#endif
+#ifdef CPP_FRONTEND
+void DDD_Interface::Display (void)
+{
+  DDD_IF ifId = _id;
+#endif
+#ifdef F_FRONTEND
 void DDD_IFDisplay (DDD_IF *_ifId)
 {
   DDD_IF ifId = *_ifId;
 #endif
 
-  if (ifId<0 || ifId>=nIFs)
-  {
-    sprintf(cBuffer, "invalid IF %02d in DDD_IFDisplay", ifId);
-    DDD_PrintError('W', 4050, cBuffer);
-    return;
-  }
-
-
-  sprintf(cBuffer, "|\n| DDD_IF-Info for proc=%03d\n", me);
-  DDD_PrintLine(cBuffer);
-
-  IFDisplay(ifId);
-
-  DDD_PrintLine("|\n");
+if (ifId>=nIFs)
+{
+  sprintf(cBuffer, "invalid IF %02d in DDD_IFDisplay", ifId);
+  DDD_PrintError('W', 4050, cBuffer);
+  return;
 }
 
 
+sprintf(cBuffer, "|\n| DDD_IF-Info for proc=%03d\n", me);
+DDD_PrintLine(cBuffer);
+
+IFDisplay(ifId);
+
+DDD_PrintLine("|\n");
+}
+
+
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
 void DDD_IFDisplayAll (void)
+#endif
+#ifdef CPP_FRONTEND
+void DDD_Interface::DisplayAll (void)
+#endif
 {
   int i;
 
@@ -814,23 +891,48 @@ void DDD_IFDisplayAll (void)
 
 
 
+
 void IFAllFromScratch (void)
 {
-  int i;
   /*
      DDD_ConsCheck();
    */
 
-  /* TODO effizienter: ausnutzen, dass STD_IF obermenge von allen interfaces ist */
-  for(i=0; i<nIFs; i++)
+  /* create standard interface */
+  IFCreateFromScratch(NULL, STD_INTERFACE);
+
+
+  if (nIFs>1 && nCplItems>0)
   {
-    IFCreateFromScratch(i);
-    /*
-       DDD_InfoIFImpl(i);
-     */
+    int i;
+    COUPLING **tmpcpl;
+
+    /* allocate temporary cpl-list, this will be too large for
+       average interfaces. */
+    tmpcpl = (COUPLING **) AllocTmp(sizeof(COUPLING *)*nCplItems);
+    if (tmpcpl==NULL)
+    {
+      DDD_PrintError('E', 4000, "out of memory in IFAllFromScratch");
+      HARD_EXIT;
+    }
+
+    /* TODO: ausnutzen, dass STD_IF obermenge von allen interfaces ist */
+    for(i=1; i<nIFs; i++)
+    {
+      IFCreateFromScratch(tmpcpl, i);
+
+      /*
+         DDD_InfoIFImpl(i);
+       */
+    }
+
+    /* free temporary array */
+    FreeTmp(tmpcpl);
   }
 }
 
+
+/****************************************************************************/
 
 void ddd_IFInit (void)
 {
@@ -856,3 +958,79 @@ void ddd_IFExit (void)
   for(i=0; i<nIFs; i++)
     IFDeleteAll(i);
 }
+
+
+/****************************************************************************/
+
+
+static size_t IFInfoMemory (DDD_IF ifId)
+{
+  IF_PROC *ifp;
+  size_t sum=0;
+
+  sum += sizeof(IF_PROC)    * theIF[ifId].nIfHeads;         /* component ifHead */
+  sum += sizeof(COUPLING *) * theIF[ifId].nItems;           /* component cpl    */
+  sum += sizeof(IFObjPtr)   * theIF[ifId].nItems;           /* component obj    */
+
+  for(ifp=theIF[ifId].ifHead; ifp!=NULL; ifp=ifp->next)
+  {
+    sum += sizeof(IF_ATTR) * ifp->nAttrs;              /* component ifAttr */
+  }
+
+  return(sum);
+}
+
+
+
+#ifdef C_FRONTEND
+size_t DDD_IFInfoMemory (DDD_IF ifId)
+{
+#endif
+#ifdef CPP_FRONTEND
+size_t DDD_Interface::InfoMemory (void)
+{
+  DDD_IF ifId = _id;
+#endif
+#ifdef F_FRONTEND
+size_t DDD_IFInfoMemory (DDD_IF *_ifId)
+{
+  DDD_IF ifId = *_ifId;
+#endif
+
+
+if (ifId>=nIFs)
+{
+  sprintf(cBuffer, "invalid IF %02d in DDD_IFInfoMemory", ifId);
+  DDD_PrintError('W', 4051, cBuffer);
+  return;
+}
+
+return(IFInfoMemory(ifId));
+}
+
+
+
+#ifdef C_FRONTEND
+size_t DDD_IFInfoMemoryAll (void)
+#endif
+#ifdef CPP_FRONTEND
+size_t DDD_Interface::InfoMemoryAll (void)
+#endif
+#ifdef F_FRONTEND
+size_t DDD_IFInfoMemoryAll (void)
+#endif
+{
+  int i;
+  size_t sum = 0;
+
+
+  for(i=0; i<nIFs; i++)
+  {
+    sum += IFInfoMemory(i);
+  }
+
+  return(sum);
+}
+
+
+/****************************************************************************/

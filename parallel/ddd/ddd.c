@@ -34,8 +34,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "dddi.h"
+#include "basic/notify.h"
+#include "basic/lowcomm.h"
 
 
 
@@ -85,6 +88,7 @@ char       *cBuffer;        /* general bufferspace, integer */
 int theOptions[OPT_END];
 
 
+#define ddd_SetOption(o,v)      theOptions[o]=(v)
 
 
 /****************************************************************************/
@@ -108,8 +112,23 @@ int theOptions[OPT_END];
 /*                                                                          */
 /****************************************************************************/
 
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
 void DDD_Init (int *argcp, char ***argvp)
+#endif
+#ifdef CPP_FRONTEND
+DDD_Library::DDD_Library (int *argcp, char ***argvp)
+#endif
 {
+#ifdef CPP_FRONTEND
+  // check existence of another instance of DDD_Library
+  if (_instance!=0)
+  {
+    DDD_PrintError('E', 1021,
+                   "construction of two instances of DDD_Library is not allowed");
+    HARD_EXIT;
+  }
+#endif
+
   int buffsize;
 
   /* init lineout-interface to stdout */
@@ -162,15 +181,21 @@ void DDD_Init (int *argcp, char ***argvp)
   theIdCount = 1;        /* start with 1, for debugging reasons */
 
   /* set options on default values */
-  DDD_SetOption(OPT_WARNING_VARSIZE_OBJ, OPT_ON);
-  DDD_SetOption(OPT_WARNING_SMALLSIZE, OPT_ON);
-  DDD_SetOption(OPT_WARNING_PRIOCHANGE, OPT_ON);
-  DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_ON);
-  DDD_SetOption(OPT_DEBUG_XFERMESGS, OPT_OFF);
-  DDD_SetOption(OPT_QUIET_CONSCHECK, OPT_OFF);
-  DDD_SetOption(OPT_IDENTIFY_MODE, IDMODE_LISTS);
-  DDD_SetOption(OPT_WARNING_REF_COLLISION, OPT_ON);
-  DDD_SetOption(OPT_INFO_XFER, OPT_OFF);
+  ddd_SetOption(OPT_WARNING_VARSIZE_OBJ, OPT_ON);
+  ddd_SetOption(OPT_WARNING_SMALLSIZE, OPT_ON);
+  ddd_SetOption(OPT_WARNING_PRIOCHANGE, OPT_ON);
+  ddd_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_ON);
+  ddd_SetOption(OPT_DEBUG_XFERMESGS, OPT_OFF);
+  ddd_SetOption(OPT_QUIET_CONSCHECK, OPT_OFF);
+  ddd_SetOption(OPT_IDENTIFY_MODE, IDMODE_LISTS);
+  ddd_SetOption(OPT_WARNING_REF_COLLISION, OPT_ON);
+  ddd_SetOption(OPT_INFO_XFER, OPT_OFF);
+  ddd_SetOption(OPT_WARNING_OLDSTYLE, OPT_ON);
+
+#ifdef CPP_FRONTEND
+  // remember pointer to singleton
+  _instance = this;
+#endif
 }
 
 
@@ -187,7 +212,12 @@ void DDD_Init (int *argcp, char ***argvp)
 /*                                                                          */
 /****************************************************************************/
 
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
 void DDD_Exit (void)
+#endif
+#ifdef CPP_FRONTEND
+DDD_Library::~DDD_Library (void)
+#endif
 {
   /* free bufferspace */
   FreeFix(iBuffer);
@@ -205,6 +235,10 @@ void DDD_Exit (void)
 
   /* exit PPIF */
   ExitPPIF();
+
+#ifdef CPP_FRONTEND
+  _instance = 0;
+#endif
 }
 
 
@@ -221,13 +255,20 @@ void DDD_Exit (void)
 /*                                                                          */
 /****************************************************************************/
 
+#if defined(C_FRONTEND) || defined(F_FRONTEND)
 void DDD_Status (void)
+#endif
+#ifdef CPP_FRONTEND
+void DDD_Library::Status (void)
+#endif
 {
   sprintf(cBuffer, "| DDD_Status for proc=%03d, DDD-Version %s\n", me,
           DDD_VERSION);
   DDD_PrintLine(cBuffer);
-  sprintf(cBuffer, "|\n|     MAX_ELEMDESC = %3d\n", MAX_ELEMDESC);
-  sprintf(cBuffer, "|     MAX_TYPEDESC = %3d\n", MAX_TYPEDESC);
+  sprintf(cBuffer, "|\n|     MAX_ELEMDESC = %4d\n", MAX_ELEMDESC);
+  sprintf(cBuffer, "|     MAX_TYPEDESC = %4d\n", MAX_TYPEDESC);
+  sprintf(cBuffer, "|     MAX_PROCS    = %4d\n", MAX_PROCS);
+  sprintf(cBuffer, "|     MAX_PRIO     = %4d\n", MAX_PRIO);
   DDD_PrintLine(cBuffer);
   sprintf(cBuffer, "|\n|     MAX_OBJ = %8d  MAX_CPL = %8d\n", MAX_OBJ, MAX_CPL);
   DDD_PrintLine(cBuffer);
@@ -264,10 +305,17 @@ void DDD_Status (void)
 /*                                                                          */
 /****************************************************************************/
 
+#ifdef C_FRONTEND
 void DDD_LineOutRegister (void (*func)(char *s))
+#endif
+#ifdef CPP_FRONTEND
+void DDD_Library::LineOutRegister (void (*func)(char *))
+#endif
+#if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 {
   DDD_UserLineOutFunction = func;
 }
+#endif
 
 
 
@@ -285,15 +333,27 @@ void DDD_LineOutRegister (void (*func)(char *s))
 /*                                                                          */
 /****************************************************************************/
 
+#ifdef C_FRONTEND
 void DDD_SetOption (DDD_OPTION option, int val)
 {
-  if (option<0 || option>=OPT_END)
-  {
-    DDD_PrintError('E', 1999, "invalid DDD_OPTION in DDD_SetOption()");
-    return;
-  }
+#endif
+#ifdef CPP_FRONTEND
+void DDD_Library::SetOption (DDD_OPTION option, int val)
+{
+#endif
+#ifdef F_FRONTEND
+void DDD_SetOption (DDD_OPTION *_option, int *_val)
+{
+  DDD_OPTION option = *_option;
+  int val = *_val;
+#endif
+if (option>=OPT_END)
+{
+  DDD_PrintError('E', 1999, "invalid DDD_OPTION in DDD_SetOption()");
+  return;
+}
 
-  theOptions[option] = val;
+ddd_SetOption(option, val);
 }
 
 
@@ -312,7 +372,7 @@ void DDD_SetOption (DDD_OPTION option, int val)
 
 int DDD_GetOption (DDD_OPTION option)
 {
-  if (option<0 || option>=OPT_END)
+  if (option>=OPT_END)
   {
     DDD_PrintError('E', 1999, "invalid DDD_OPTION in DDD_GetOption()");
     return 0;
@@ -321,29 +381,79 @@ int DDD_GetOption (DDD_OPTION option)
   return theOptions[option];
 }
 
-
 /****************************************************************************/
 
 /*
         transparent access to global variables from PPIF
  */
 
+#ifdef C_FRONTEND
 DDD_PROC DDD_InfoMe (void)
 {
   return me;
 }
+#endif
+#ifdef CPP_FRONTEND
+DDD_PROC DDD_Library::InfoMe (void)
+{
+  return me;
+}
+#endif
 
 
+#ifdef C_FRONTEND
 DDD_PROC DDD_InfoMaster (void)
 {
   return master;
 }
+#endif
+#ifdef CPP_FRONTEND
+DDD_PROC DDD_Library::InfoMaster (void)
+{
+  return master;
+}
+#endif
 
 
+#ifdef C_FRONTEND
 DDD_PROC DDD_InfoProcs (void)
 {
   return procs;
 }
+#endif
+#ifdef CPP_FRONTEND
+DDD_PROC DDD_Library::InfoProcs (void)
+{
+  return procs;
+}
+#endif
+
+
+/****************************************************************************/
+
+#ifdef CPP_FRONTEND
+/*
+        implementation for DDD_Library class
+ */
+
+
+// pointer to single instance of DDD_Library
+DDD_Library* DDD_Library::_instance = 0;
+
+
+DDD_Library* DDD_Library::Instance (void)
+{
+  if (_instance==0)
+  {
+    DDD_PrintError('E', 1020, "no instance of DDD_Library exists");
+    HARD_EXIT;
+  }
+
+  return _instance;
+}
+
+
+#endif
 
 
 /****************************************************************************/

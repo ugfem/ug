@@ -128,6 +128,10 @@ typedef struct _XIDelCmd
   SLL_INFO(_XIDelCmd);
   DDD_HDR hdr;
 
+        #ifdef CPP_FRONTEND
+  DDD_Object *obj;
+        #endif
+
 } XIDelCmd;
 
 /* include template */
@@ -452,15 +456,15 @@ extern XFER_GLOBALS xferGlobals;
 
 /* supp.c */
 XFERADDDATA *NewXIAddData (void);
-XFERADDDATA *FreeXIAddData (XFERADDDATA *);
 void FreeAllXIAddData (void);
+int *AddDataAllocSizes(int);
 /* and others, via template mechanism */
 
 
 
 /* cplmsg.c */
-void CommunicateCplMsg (XIDelCpl **, int,
-                        XIModCpl **, int, XIAddCpl **, int, DDD_HDR *, int);
+void CommunicateCplMsgs (XIDelCpl **, int,
+                         XIModCpl **, int, XIAddCpl **, int, DDD_HDR *, int);
 void CplMsgInit (void);
 void CplMsgExit (void);
 
