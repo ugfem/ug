@@ -4092,6 +4092,15 @@ static INT RefineCommand (INT argc, char **argv)
       return (PARAMERRORCODE);
     }
 
+        #ifdef ModelP
+  /* currently only this is supported in parallel */
+  if (procs > 1)
+  {
+    mark = MARK_ALL;
+    mode = mode | GM_REFINE_NOT_CLOSED;
+  }
+        #endif
+
   if (mark == MARK_ALL)
   {
     INT l,nmarked;
