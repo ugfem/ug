@@ -51,6 +51,11 @@
 /*																			*/
 /****************************************************************************/
 
+#define LGM_VECTOR_PRODUCT(A,B,C)       {(C)[0] = (A)[1]*(B)[2] - (A)[2]*(B)[1];\
+                                         (C)[1] = (A)[2]*(B)[0] - (A)[0]*(B)[2];\
+                                         (C)[2] = (A)[0]*(B)[1] - (A)[1]*(B)[0];}
+#define LGM_SCALAR_PRODUCT(A,B,c)       (c) = ((A)[0]*(B)[0]+(A)[1]*(B)[1]+(A)[2]*(B)[2]);
+
 #define LGM_BUFFERLEN                                           128
 
 #define BVP2LGM(p)                                                      ((LGM_DOMAIN*)(p))
@@ -1949,9 +1954,8 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   LGM_BNDS *theBndS;
   DOUBLE loc, loc1[2], loc2[2], loc3[2], local[2], slocal[2];
   DOUBLE globalp0[3],globalp1[3],globalp2[3], global[3];
-  DOUBLE small;
-  DOUBLE local0[2], local1[2], local2[2];
-  DOUBLE corner_local0[2], corner_local1[2], corner_local2[2];
+  DOUBLE small, sp;
+  DOUBLE A[3], B[3], BNDP_NV[3], Surface_NV[3];
 
   small = 0.000001;
   assert(n==3);
@@ -1968,16 +1972,19 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   global[2] = ( globalp0[2] + globalp1[2] +  globalp2[2] ) / 3;
 
   count = 0;
-  ready = 0;
   for (i=0; i<LGM_BNDP_N(theBndP1); i++)
     for (j=0; j<LGM_BNDP_N(theBndP2); j++)
       for (k=0; k<LGM_BNDP_N(theBndP3); k++)
       {
-        if( (LGM_BNDP_SURFACE(theBndP1,i)==LGM_BNDP_SURFACE(theBndP2,j))
-            && (LGM_BNDP_SURFACE(theBndP2,j)==LGM_BNDP_SURFACE(theBndP3,k)) )
+        if(
+          (LGM_BNDP_SURFACE(theBndP1,i)==LGM_BNDP_SURFACE(theBndP2,j))
+          &&
+          (LGM_BNDP_SURFACE(theBndP2,j)==LGM_BNDP_SURFACE(theBndP3,k)) )
         {
-          /* Zusatzabfrage fuer den Fall, dass 3 Punkte auf zwei Surfaces liegen */
-          theSurface = LGM_BNDP_SURFACE(theBndP1,i);
+          /* Zusatzabfrage fuer den Fall, dass 3
+             Punkte auf zwei Surfaces liegen */
+          theSurface =
+            LGM_BNDP_SURFACE(theBndP1,i);
           GetLocalKoord(theSurface,global,local);
           ilocal = floor(local[0]);
           ilocal1 = floor(local[1]);
@@ -1985,112 +1992,21 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
             ilocal = ilocal1;
           slocal[0] = local[0]-ilocal;
           slocal[1] = local[1]-ilocal;
-          /* Punkt liegt im Innern des Dreiecks */
-          if( (slocal[0]>=small) && (slocal[0]<=1.0-small)
-              && (slocal[1]>=small) && (slocal[1]<=1.0-small)
-              && (1-slocal[0]-slocal[1]>=small) && (1-slocal[0]-slocal[1]<=1.0-small) )
+          /* Punkt liegt im Innern des Dreiecks
+           */
+          if( (slocal[0]>-small) &&
+              (slocal[0]<1.0+small)
+              && (slocal[1]>-small) &&
+              (slocal[1]<1.0+small)
+              && (1-slocal[0]-slocal[1]>-small) &&
+              (1-slocal[0]-slocal[1]<1.0+small) )
           {
-            theSurface = LGM_BNDP_SURFACE(theBndP1,i);
-            if(ready==0)
-              count++;
+            theSurface =
+              LGM_BNDP_SURFACE(theBndP1,i);
+            count++;
             i0=i;
             j0=j;
             k0=k;
-            ready = 1;
-          }
-          else
-          {
-            if( ((slocal[0]<small) || (slocal[0]>1.0-small))
-                || ((slocal[1]<small) || (slocal[1]>1.0-small))
-                || ((1-slocal[0]-slocal[1]<small) || (1-slocal[0]-slocal[1]>1.0-small)) )
-            /* Punkt liegt genau auf einer Kante zwischen 2 Dreiecken */
-            {
-              global[0] = 0.4 * globalp0[0] + 0.3 * globalp1[0] +  0.3 * globalp2[0];
-              global[1] = 0.4 * globalp0[1] + 0.3 * globalp1[1] +  0.3 * globalp2[1];
-              global[2] = 0.4 * globalp0[2] + 0.3 * globalp1[2] +  0.3 * globalp2[2];
-              theSurface = LGM_BNDP_SURFACE(theBndP1,i);
-              GetLocalKoord(theSurface,global,local);
-              ilocal = floor(local[0]);
-              ilocal1 = floor(local[1]);
-              if(ilocal>ilocal1)
-                ilocal = ilocal1;
-              slocal[0] = local[0]-ilocal;
-              slocal[1] = local[1]-ilocal;
-              if( (slocal[0]>=small) && (slocal[0]<=1.0-small)
-                  && (slocal[1]>=small) && (slocal[1]<=1.0-small)
-                  && (1-slocal[0]-slocal[1]>=small) && (1-slocal[0]-slocal[1]<=1.0-small) )
-              {
-                theSurface = LGM_BNDP_SURFACE(theBndP1,i);
-                if(ready==0)
-                  count++;
-                i0=i;
-                j0=j;
-                k0=k;
-                ready = 1;
-              }
-              else
-              {
-                if( ((slocal[0]<small) || (slocal[0]>1.0-small))
-                    || ((slocal[1]<small) || (slocal[1]>1.0-small))
-                    || ((1-slocal[0]-slocal[1]<small) || (1-slocal[0]-slocal[1]>1.0-small)) )
-                {
-                  global[0] = 0.3 * globalp0[0] + 0.4 * globalp1[0] +  0.3 * globalp2[0];
-                  global[1] = 0.3 * globalp0[1] + 0.4 * globalp1[1] +  0.3 * globalp2[1];
-                  global[2] = 0.3 * globalp0[2] + 0.4 * globalp1[2] +  0.3 * globalp2[2];
-                  theSurface = LGM_BNDP_SURFACE(theBndP1,i);
-                  GetLocalKoord(theSurface,global,local);
-                  ilocal = floor(local[0]);
-                  ilocal1 = floor(local[1]);
-                  if(ilocal>ilocal1)
-                    ilocal = ilocal1;
-                  slocal[0] = local[0]-ilocal;
-                  slocal[1] = local[1]-ilocal;
-                  if( (slocal[0]>=small) && (slocal[0]<=1.0-small)
-                      && (slocal[1]>=small) && (slocal[1]<=1.0-small)
-                      && (1-slocal[0]-slocal[1]>=small) && (1-slocal[0]-slocal[1]<=1.0-small) )
-                  {
-                    theSurface = LGM_BNDP_SURFACE(theBndP1,i);
-                    if(ready==0)
-                      count++;
-                    i0=i;
-                    j0=j;
-                    k0=k;
-                    ready = 1;
-                  }
-                }
-                else
-                {
-                  if( ((slocal[0]<small) || (slocal[0]>1.0-small))
-                      || ((slocal[1]<small) || (slocal[1]>1.0-small))
-                      || ((1-slocal[0]-slocal[1]<small) || (1-slocal[0]-slocal[1]>1.0-small)) )
-                  {
-                    global[0] = 0.3 * globalp0[0] + 0.3 * globalp1[0] +  0.4 * globalp2[0];
-                    global[1] = 0.3 * globalp0[1] + 0.3 * globalp1[1] +  0.4 * globalp2[1];
-                    global[2] = 0.3 * globalp0[2] + 0.3 * globalp1[2] +  0.4 * globalp2[2];
-                    theSurface = LGM_BNDP_SURFACE(theBndP1,i);
-                    GetLocalKoord(theSurface,global,local);
-                    ilocal = floor(local[0]);
-                    ilocal1 = floor(local[1]);
-                    if(ilocal>ilocal1)
-                      ilocal = ilocal1;
-                    slocal[0] = local[0]-ilocal;
-                    slocal[1] = local[1]-ilocal;
-                    if( (slocal[0]>=small) && (slocal[0]<=1.0-small)
-                        && (slocal[1]>=small) && (slocal[1]<=1.0-small)
-                        && (1-slocal[0]-slocal[1]>=small) && (1-slocal[0]-slocal[1]<=1.0-small) )
-                    {
-                      theSurface = LGM_BNDP_SURFACE(theBndP1,i);
-                      if(ready==0)
-                        count++;
-                      i0=i;
-                      j0=j;
-                      k0=k;
-                      ready = 1;
-                    }
-                  }
-                }
-              }
-            }
           }
         }
       }
@@ -2116,60 +2032,64 @@ BNDS *BNDP_CreateBndS (HEAP *Heap, BNDP **aBndP, INT n)
   LGM_BNDS_LOCAL(theBndS,2,1) = LGM_BNDP_LOCAL(theBndP3,k0)[1];
 
   /* lege Richtung fuer die BNDS fest */
+
+  /* bestimme den Normalenvektor der Ebene, die durch
+     die 3 BndP's festgelegt wird */
   found = 0;
   direction = 0;
 
-  for(l=0; l<LGM_SURFDISC_NTRIANGLE(LGM_SURFACE_DISC(theSurface)); l++)
-  {
-    local0[0] = LGM_BNDP_LOCAL(theBndP1, i)[0];
-    local0[1] = LGM_BNDP_LOCAL(theBndP1, i)[1];
-    local1[0] = LGM_BNDP_LOCAL(theBndP2, j)[0];
-    local1[1] = LGM_BNDP_LOCAL(theBndP2, j)[1];
-    local2[0] = LGM_BNDP_LOCAL(theBndP3, k)[0];
-    local2[1] = LGM_BNDP_LOCAL(theBndP3, k)[1];
+  A[0] = globalp2[0] - globalp0[0];
+  A[1] = globalp2[1] - globalp0[1];
+  A[2] = globalp2[2] - globalp0[2];
+  B[0] = globalp2[0] - globalp1[0];
+  B[1] = globalp2[1] - globalp1[1];
+  B[2] = globalp2[2] - globalp1[2];
 
-    corner_local0[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface), LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), l, 0), 0);
-    corner_local0[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface), LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), l, 0), 1);
-    corner_local1[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface), LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), l, 1), 0);
-    corner_local1[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface), LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), l, 1), 1);
-    corner_local2[0] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface), LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), l, 2), 0);
-    corner_local2[1] = LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface), LGM_SURFDISC_TRIANGLE(LGM_SURFACE_DISC(theSurface), l, 2), 1);
+  LGM_VECTOR_PRODUCT(A, B, BNDP_NV);
 
-    if( ( (ABS(local0[0]-corner_local0[0])<small) && (ABS(local0[1]-corner_local0[1])<small)
-          && (ABS(local1[0]-corner_local1[0])<small) && (ABS(local1[1]-corner_local1[1])<small)
-          && (ABS(local2[0]-corner_local2[0])<small) && (ABS(local2[1]-corner_local2[1])<small) )
-        || ( (ABS(local0[0]-corner_local1[0])<small) && (ABS(local0[1]-corner_local1[1])<small)
-             && (ABS(local1[0]-corner_local2[0])<small) && (ABS(local1[1]-corner_local2[1])<small)
-             && (ABS(local2[0]-corner_local0[0])<small) && (ABS(local2[1]-corner_local0[1])<small) )
-        || ( (ABS(local0[0]-corner_local2[0])<small) && (ABS(local0[1]-corner_local2[1])<small)
-             && (ABS(local1[0]-corner_local0[0])<small) && (ABS(local1[1]-corner_local0[1])<small)
-             && (ABS(local2[0]-corner_local1[0])<small) && (ABS(local2[1]-corner_local1[1])<small) ) )
-    {
-      found++;
-      direction = 1;
-      i0=i;
-      j0=j;
-      k0=k;
-    }
-    if( ( (ABS(local0[0]-corner_local0[0])<small) && (ABS(local0[1]-corner_local0[1])<small)
-          && (ABS(local1[0]-corner_local2[0])<small) && (ABS(local1[1]-corner_local2[1])<small)
-          && (ABS(local2[0]-corner_local1[0])<small) && (ABS(local2[1]-corner_local1[1])<small) )
-        || ( (ABS(local0[0]-corner_local2[0])<small) && (ABS(local0[1]-corner_local2[1])<small)
-             && (ABS(local1[0]-corner_local1[0])<small) && (ABS(local1[1]-corner_local1[1])<small)
-             && (ABS(local2[0]-corner_local0[0])<small) && (ABS(local2[1]-corner_local0[1])<small) )
-        || ( (ABS(local0[0]-corner_local1[0])<small) && (ABS(local0[1]-corner_local1[1])<small)
-             && (ABS(local1[0]-corner_local0[0])<small) && (ABS(local1[1]-corner_local0[1])<small)
-             && (ABS(local2[0]-corner_local2[0])<small) && (ABS(local2[1]-corner_local2[1])<small) ) )
-    {
-      found++;
-      direction = -1;
-      i0=i;
-      j0=j;
-      k0=k;
-    }
-  }
-  /* get orientation of BNDS */
-  if(direction == 1)
+  /* global ist der Scherpunkt der Dreiecks,
+     dass durch die 3 BNDP's aufgespannt wird.
+     Projeziere diesen Punkt auf die Surface und
+     finde das zugehoerige Inputdreieck */
+
+  GetLocalKoord(theSurface, global, local);
+  ilocal = floor(local[0]);
+  ilocal1 = floor(local[1]);
+  if(ilocal>ilocal1)
+    ilocal = ilocal1;
+
+  /* bestimme den Normalenvektor der des Surfacedreieck */
+  A[0] =
+    LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),2))[0]
+    -
+    LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),0))[0];
+  A[1] =
+    LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),2))[1]
+    -
+    LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),0))[1];
+  A[2] =
+    LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),2))[2]
+    -
+    LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),0))[2];
+  B[0] =
+    LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),2))[0]
+    -
+    LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),1))[0];
+  B[1] =
+    LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),2))[1]
+    -
+    LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),1))[1];
+  B[2] =
+    LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),2))[2]
+    -
+    LGM_POINT_POS(LGM_TRIANGLE_CORNER(LGM_SURFACE_TRIANGLE(theSurface,ilocal),1))[2];
+
+  LGM_VECTOR_PRODUCT(A, B, Surface_NV);
+
+  LGM_SCALAR_PRODUCT(BNDP_NV, Surface_NV, sp);
+
+
+  if(sp>1)
     LGM_BNDS_N(theBndS) = n;
   else
     LGM_BNDS_N(theBndS) = -n;
