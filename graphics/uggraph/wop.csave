@@ -7053,7 +7053,9 @@ static INT EW_PostProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 	DOUBLE_VECTOR p;
 	DRAWINGOBJ *theDO;
 
+#ifdef ModelP
 	if (me != master) return(0);
+#endif
 
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theLpo = &(PIC_PO(thePicture)->theLpo);
