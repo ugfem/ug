@@ -159,7 +159,8 @@ static char rcsid[] = "$Header$";
    .  ConversionProcPtr PrintElement -
    .  ConversionProcPtr PrintLink -
    .  ConversionProcPtr PrintEdge -
-   .  ConversionProcPtr PrintGrid -
+   .  ConversionProcPtr PrintGrid - though there are no user data associated directly with a grid, the user may
+                                                                        wish to print grid associated data from his multigrid user data space
    .  ConversionProcPtr PrintMultiGrid -
 
    DESCRIPTION:
@@ -355,7 +356,8 @@ FORMAT *Ugly_CreateFormat (char *name,
    .  sVertex - size of user data space in VERTEX counted in bytes
    .  sMultiGrid -  size of user data space in MULTIGRID counted in bytes
    .  PrintVertex - pointer to conversion procedure
-   .  PrintGrid - pointer to conversion procedure
+   .  PrintGrid - pointer to conversion procedure (though there are no user data associated directly with a grid,
+                                the user may wish to print grid associated data from his multigrid user data space)
    .  PrintMultigrid - pointer to conversion procedure
    .  nvDesc - number of vector descriptors
    .  vDesc - pointer to vector descriptor
@@ -614,7 +616,6 @@ FORMAT *GetNextFormat (FORMAT *fmt)
    RETURN VALUE:
    INT
    .n   0: ok
-   .n   1: could not change to /Formats dir
    .n   1: could not change to /Formats/<name> dir
    D*/
 /****************************************************/
