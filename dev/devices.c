@@ -656,9 +656,9 @@ INT InitDevices (int *argcp, char **argv)
   defaultOuputDevice = InitScreen(argcp,argv,&error);
   if (error) return(1);
 
+        #ifdef ModelP
   for (l=0; l<degree; l++)
     Spread(l,(void *)defaultOuputDevice,sizeof(OUTPUTDEVICE));
-        #ifdef ModelP
 }
 else {
   int l;
