@@ -1,0 +1,82 @@
+#!/bin/tcsh -f
+#
+# ugppm2avi: converts a series of ppm-files to an avi-clip
+# 
+# Michael Lampe, Mar 2003
+# 
+
+set help = "usage: ugppm2avi <basename> -f <first> <last> [-fi <increment>]"
+
+if ( $#argv != 4 && $#argv != 6 ) then
+	echo "$help"
+	exit
+endif
+
+#
+# defaults
+#
+
+@ fi = 1		# frame increment
+
+#
+# parse commandline
+#
+
+set base = $argv[1]
+
+if ( "$argv[2]" == "-f" ) then
+	@ fs = $argv[3]
+	@ fe = $argv[4]
+else
+	echo "$help"
+	exit
+endif
+
+if ( $#argv > 4 ) then
+	if ( "$argv[5]" == "-fi" )  then
+		@ fi = $argv[6]
+	else
+		echo "$help"
+		exit
+	endif
+endif
+
+#
+# convert PPMs to TGAs
+#
+
+echo ""
+
+@ i = $fs
+@ j = 1
+while ( $i <= $fe )
+	set infile = `echo $base $i | awk '{printf "%s.%04d",$1,$2}'`
+	set outfile = `echo ${base}_ $i | awk '{printf "%s.%04d",$1,$2}'`
+	echo "Converting PPM to TGA: $infile"
+	( ppmtotga -rgb $infile >$outfile ) >& /dev/null
+	echotc up
+	@ i += $fi
+	@ j++
+end
+echo "Converting PPM to TGA: done                                 "
+
+#
+# Now convert the TGAs to an AVI
+#
+
+echo "Converting TGA to AVI: wait..."
+
+rm -f frameno.avi
+mencoder ${base}_.\* -mf on:type=tga -ovc lavc -lavcopts vcodec=mpeg4:vpass=1 \
+    -o $base.avi >& /dev/null
+mencoder ${base}_.\* -mf on:type=tga -ovc lavc -lavcopts vcodec=mpeg4:vpass=2 \
+    -o $base.avi >& /dev/null
+
+rm -f ${base}_.*
+
+echotc up
+echo "Converting TGA to AVI: done          "
+echotc bl
+echo ""
+echo "$base.avi created." 
+echo ""
