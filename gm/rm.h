@@ -79,7 +79,11 @@
 #define RULE2MARK(e,r)          (RefRules[TAG(e)][r].mark)
 #define PATTERN2MARK(e,p)       (((PATTERN2RULE(e,p))>=0) ? (RefRules[TAG(e)][PATTERN2RULE(e,p)].mark) : -1)
 
+#ifdef __SR2201__
+#define NODE_OF_RULE(e,m,i) ((*MARK2RULEADR(e,m)).sonandnode[i][0]!=-1)
+#else
 #define NODE_OF_RULE(e,m,i)     (MARK2RULEADR(e,m)->sonandnode[i][0]!=-1)
+#endif
 
 #define CONCAT(a,b,c)            CONCAT_AUX(a,b,c)
 #define CONCAT_AUX(a,b,c)        a ## b ## c
@@ -193,10 +197,20 @@
 /*																			*/
 /****************************************************************************/
 
-#define TAG_OF_RULE(r)                          (r->tag)
-#define MARK_OF_RULE(r)                         (r->mark)
-#define CLASS_OF_RULE(r)                        (r->class)
-#define NSONS_OF_RULE(r)                        (r->nsons)
+/* Hacks for HITACHI SR2201 will be eliminated as soon as the HITACHI
+   compiler bug is removed */
+
+#define TAG_OF_RULE(r)              (r->tag)
+#define MARK_OF_RULE(r)             (r->mark)
+#ifdef __SR2201__
+#define CLASS_OF_RULE(r)            ((*r).class)
+#define NSONS_OF_RULE(r)            ((*r).nsons)
+#define SON_OF_RULE(r,s)            (&((*r).sons[s]))
+#else
+#define CLASS_OF_RULE(r)            (r->class)
+#define NSONS_OF_RULE(r)            (r->nsons)
+#define SON_OF_RULE(r,s)            (&(r->sons[s]))
+#endif
 #define PATTERN_OF_RULE(r,i)            (r->pattern[i])
 #define PAT_OF_RULE(r)                          (r->pat)
 #define SON_OF_NODE_OF_RULE(r,n)        (r->sonandnode[n][0])
@@ -206,7 +220,6 @@
 #define EDGE_FROM_OF_RULE(r,e)          (r->edges[e].from)
 #define EDGE_TO_OF_RULE(r,e)            (r->edges[e].to)
 #define EDGE_SIDE_OF_RULE(r,e)          (r->edges[e].side)
-#define SON_OF_RULE(r,s)                        (&(r->sons[s]))
 #define SON_TAG_OF_RULE(r,s)            (r->sons[s].tag)
 #define SON_CORNER_OF_RULE(r,s,n)       (r->sons[s].corners[n])
 #define SON_CORNER(s,n)                         (s->corners[n])
