@@ -5976,6 +5976,85 @@ static INT QualityCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   gridscript - write commands creating level 0 of the current grid when executed
+
+   DESCRIPTION:
+
+   'gridscript'
+
+   EXAMPLE:
+   .vb
+   logon grid.scr;
+   gridscript;
+   logoff;
+   .ve
+   D*/
+/****************************************************************************/
+
+static INT GridScriptCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  GRID *theGrid;
+  ELEMENT *elem;
+  VERTEX *vert;
+  NODE *node;
+  INT i,coe,id;
+
+  NO_OPTION_CHECK(argc,argv);
+
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"gridscript","no current multigrid");
+    return(CMDERRORCODE);
+  }
+  theGrid = GRID_ON_LEVEL(theMG,0);
+
+  UserWriteF("new mygrid $b %s $f %s $h %d;\n",ENVITEM_NAME(MG_BVP(theMG)),
+             ENVITEM_NAME(MGFORMAT(theMG)),
+             MGHEAP(theMG)->size);
+
+  UserWrite("\n# boundary nodes\n");
+  for (vert=FIRSTVERTEX(theGrid); vert!=NULL; vert=SUCCV(vert))
+    if (OBJT(vert)==BVOBJ)
+    {
+      if (MOVE(vert)==0) continue;                      /* corners are generated automatically */
+      UserWriteF("bn %d %10.4e;\n",
+                 (int)Patch_GetPatchID(FIRSTPATCH(vert)),
+                 (float)FIRSTLAMBDA(vert));
+    }
+
+  UserWrite("\n# inner nodes\n");
+  for (vert=FIRSTVERTEX(theGrid); vert!=NULL; vert=SUCCV(vert))
+    if (OBJT(vert)==IVOBJ)
+      UserWriteF("in %10.4e %10.4e;\n",(float)XC(vert),(float)YC(vert));
+
+  /* first renumber the nodes: CAUTION corners are first, then follow bnodes */
+  id = 0;
+  for (i=0; i<MGNOOFCORNERS(theMG); i++)
+    ID(TOPNODE(MGVERTEX(theMG,i))) = id++;
+  for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
+    if ((OBJT(MYVERTEX(node))==BVOBJ) && (MOVE(MYVERTEX(node))!=0))
+      ID(node) = id++;
+  for (node=FIRSTNODE(theGrid); node!=NULL; node=SUCCN(node))
+    if (OBJT(MYVERTEX(node))==IVOBJ)
+      ID(node) = id++;
+
+  UserWrite("\n# elements\n");
+  for (elem=FIRSTELEMENT(theGrid); elem!=NULL; elem=SUCCE(elem))
+  {
+    coe = CORNERS_OF_ELEM(elem);
+    UserWrite("ie");
+    for (i=0; i<coe; i++)
+      UserWriteF(" %2d",(int)ID(CORNER(elem,i)));
+    UserWrite(";\n");
+  }
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
    bnodes - generate boundary nodes
 
    DESCRIPTION:
@@ -7171,6 +7250,7 @@ static INT PicFrameCommand (INT argc, char **argv)
 
   return (OKCODE);
 }
+
 /****************************************************************************/
 /*D
    setview - specifies the view on the object
@@ -7827,6 +7907,35 @@ static INT RotateCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
+   textfac - set factor to zoom text sizes
+
+   DESCRIPTION:
+   This command sets factor to zoom text sizes.
+
+   SYMTAX:
+   'textfac <factor>'
+   D*/
+/****************************************************************************/
+
+static INT TextFacCommand (INT argc, char **argv)
+{
+  float fValue;
+
+  NO_OPTION_CHECK(argc,argv);
+
+  if (sscanf(argv[0],"textfac %f",&fValue)!=1)
+  {
+    PrintErrorMessage('E',"textfac","specify a factor");
+    return (PARAMERRORCODE);
+  }
+
+  SetTextFactor(fValue);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
    setplotobject - set plotting specification
 
    DESCRIPTION:
@@ -8473,6 +8582,100 @@ static INT ClearCommand (INT argc, char **argv)
     if (a_dset(theMG,fl,tl,SYM_VEC_DESC(sym),EVERY_CLASS,value)!=NUM_OK)
       return (CMDERRORCODE);
   }
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   copy - copy from one vector symbol to another one
+
+   DESCRIPTION:
+
+   'copy $f <from vec sym> $t <to vec sym>'
+
+   .  $f~<from~vec~sym>      - from vector symbol
+   .  $t~<from~vec~sym>      - to vector symbol
+
+   EXAMPLE:
+   'copy $f sol $t old;'
+   D*/
+/****************************************************************************/
+
+static INT CopyCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  SYMBOL *from,*to;
+
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"copy","no current multigrid");
+    return(CMDERRORCODE);
+  }
+
+  if (argc!=3)
+  {
+    PrintErrorMessage('E',"copy","specify exactly the f and t option");
+    return(PARAMERRORCODE);
+  }
+  if ((from=ReadVecSymbolOfFormat(ENVITEM_NAME(MGFORMAT(theMG)),"f",argc,argv))==NULL)
+  {
+    PrintErrorMessage('E',"copy","could not read 'f' symbol");
+    return (PARAMERRORCODE);
+  }
+  if ((to=ReadVecSymbolOfFormat(ENVITEM_NAME(MGFORMAT(theMG)),"t",argc,argv))==NULL)
+  {
+    PrintErrorMessage('E',"copy","could not read 't' symbol");
+    return (PARAMERRORCODE);
+  }
+
+  if (l_dcopy(GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG)),SYM_VEC_DESC(to),EVERY_CLASS,SYM_VEC_DESC(from))!=NUM_OK)
+    return (CMDERRORCODE);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   interpolate - (standard) interpolate a vector symbol to new vectors on the current level
+
+   DESCRIPTION:
+
+   'interpolate <vec sym>'
+
+   . <vec~sym>      - vector symbol to be interpolated
+
+   EXAMPLE:
+   'interpolate sol;'
+   D*/
+/****************************************************************************/
+
+static INT InterpolateCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  SYMBOL *sym;
+  INT lev,currlev;
+
+  NO_OPTION_CHECK(argc,argv);
+
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"interpolate","no current multigrid");
+    return(CMDERRORCODE);
+  }
+
+  if ((sym=ReadVecSymbolOfFormat(ENVITEM_NAME(MGFORMAT(theMG)),"interpolate",argc,argv))==NULL)
+  {
+    PrintErrorMessage('E',"interpolate","could not read symbol");
+    return (PARAMERRORCODE);
+  }
+
+  currlev = CURRENTLEVEL(theMG);
+  for (lev=1; lev<=currlev; lev++)
+    if (StandardInterpolateNewVectors(GRID_ON_LEVEL(theMG,lev),SYM_VEC_DESC(sym))!=NUM_OK)
+      return (CMDERRORCODE);
 
   return (OKCODE);
 }
@@ -9951,6 +10154,7 @@ INT InitCommands ()
   if (CreateCommand("slist",                      SelectionListCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("vmlist",             VMListCommand                                   )==NULL) return (__LINE__);
   if (CreateCommand("quality",            QualityCommand                                  )==NULL) return (__LINE__);
+  if (CreateCommand("gridscript",         GridScriptCommand                               )==NULL) return(__LINE__);
     #ifdef __TWODIM__
   if (CreateCommand("bnodes",                 BnodesCommand                                       )==NULL) return (__LINE__);
   if (CreateCommand("makegrid",           MakeGridCommand                                 )==NULL) return (__LINE__);
@@ -9958,7 +10162,7 @@ INT InitCommands ()
 
   /* commands for grape */
         #ifdef __GRAPE_TRUE__
-  if (CreateCommand("grape",              CallGrapeCommand                                )==NULL) return (__LINE__);
+  if (CreateCommand("grape",                      CallGrapeCommand                                )==NULL) return (__LINE__);
         #endif
 
   /* commands for window and picture management */
@@ -9979,6 +10183,7 @@ INT InitCommands ()
   if (CreateCommand("zoom",                       ZoomCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("drag",                       DragCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("rotate",             RotateCommand                                   )==NULL) return (__LINE__);
+  if (CreateCommand("textfac",            TextFacCommand                                  )==NULL) return (__LINE__);
   if (CreateCommand("setplotobject",      SetPlotObjectCommand                    )==NULL) return (__LINE__);
   if (CreateCommand("polist",             PlotObjectListCommand                   )==NULL) return (__LINE__);
   if (CreateCommand("plot",                       PlotCommand                                     )==NULL) return (__LINE__);
@@ -9987,7 +10192,6 @@ INT InitCommands ()
   if (CreateCommand("cmfn",                       CreateMetafileNameCommand               )==NULL) return (__LINE__);
 
   /* commands for problem management */
-  if (CreateCommand("clear",                      ClearCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("reinit",             ReInitCommand                                   )==NULL) return (__LINE__);
 
   /* commands for NumProc management */
@@ -10000,6 +10204,9 @@ INT InitCommands ()
 
   /* symbols */
   if (CreateCommand("symlist",            SymListCommand                                  )==NULL) return (__LINE__);
+  if (CreateCommand("clear",                      ClearCommand                                    )==NULL) return (__LINE__);
+  if (CreateCommand("copy",                       CopyCommand                                             )==NULL) return (__LINE__);
+  if (CreateCommand("interpolate",        InterpolateCommand                              )==NULL) return (__LINE__);
 
   /* formats */
   if (CreateCommand("newformat",          CreateFormatCommand                     )==NULL) return (__LINE__);
