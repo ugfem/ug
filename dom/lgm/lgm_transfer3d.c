@@ -33,16 +33,14 @@
 #include "lgm_domain.h"
 #include "lgm_transfer.h"
 #include "heaps.h"
+#include "fifo.h"
 #include "general.h"
 #include "ng.h"
 
 
 static FILE *stream;
 static INT lgmdomainpathes_set;
-static INT LGM_DEBUG = 0;
 static HEAP *theHeap;
-static int flag;
-
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -114,7 +112,7 @@ static int ReadCommentLine (char *comment)
 /****************************************************************************/
 
 static int nSubdomain, nSurface, nLine, nPoint;
-static fpos_t filepos, UnitInfoFilepos;
+static fpos_t UnitInfoFilepos;
 static fpos_t fileposline;
 static fpos_t filepossurface;
 
@@ -135,7 +133,7 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, IN
     stream = fileopen(filename,"r");
   if (stream==NULL)
   {
-    UserWriteF("cannot open file %s\n",filename);
+    UserWriteF("  cannot open file %s\n",filename);
     return(1);
   }
 
@@ -274,6 +272,7 @@ int LGM_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, IN
   nSurface = domain_info->nSurface;
   nLine = domain_info->nPolyline;
   nPoint = domain_info->nPoint;
+
   return (0);
 }
 
@@ -534,25 +533,17 @@ int LGM_ReadPoints (LGM_POINT_INFO *lgm_point_info)
   return (0);
 }
 
-static int Compare_Triangles(LGM_SURFACE_INFO *surface_info, int i, int j)
+static int Compare_Triangles(LGM_TRIANGLE_INFO* t1, LGM_TRIANGLE_INFO* t2)
 {
-  int a, b, c, d, e, f, k, l;
-
-  a = surface_info->Triangle[j].corner[0];
-  b = surface_info->Triangle[j].corner[1];
-  c = surface_info->Triangle[j].corner[2];
-
-  d = surface_info->Triangle[i].corner[0];
-  e = surface_info->Triangle[i].corner[1];
-  f = surface_info->Triangle[i].corner[2];
+  int a, b, c, d, k, l;
 
   for(k=0; k<3; k++)
     for(l=0; l<3; l++)
     {
-      a = surface_info->Triangle[j].corner[(k+1)%3];
-      b = surface_info->Triangle[j].corner[(k+2)%3];
-      c = surface_info->Triangle[i].corner[(l+2)%3];
-      d = surface_info->Triangle[i].corner[(l+1)%3];
+      a = t1->corner[(k+1)%3];
+      b = t1->corner[(k+2)%3];
+      c = t2->corner[(l+2)%3];
+      d = t2->corner[(l+1)%3];
       if( (a==c) && (b==d) )
         return(-1);
       if( (a==d) && (b==c) )
@@ -561,71 +552,112 @@ static int Compare_Triangles(LGM_SURFACE_INFO *surface_info, int i, int j)
 
   return(0);
 }
-static int Change_Triangle(LGM_SURFACE_INFO *surface_info, int n)
+
+static void Change_Triangle(LGM_TRIANGLE_INFO *tri)
 {
-  int a, b;
+  int tmp;
 
-  a = surface_info->Triangle[n].corner[0];
-  b = surface_info->Triangle[n].corner[1];
+  tmp = tri->corner[0];
+  tri->corner[0] = tri->corner[1];
+  tri->corner[1] = tmp;
 
-  surface_info->Triangle[n].corner[0] = b;
-  surface_info->Triangle[n].corner[1] = a;
-
-  a = surface_info->Triangle[n].neighbor[0];
-  b = surface_info->Triangle[n].neighbor[1];
-
-  surface_info->Triangle[n].neighbor[0] = b;
-  surface_info->Triangle[n].neighbor[1] = a;
-  /*	printf("%s\n", "triangle changed");*/
-  flag = 1;
-  return(0);
+  return;
 }
 
-static int Check_Orientation(LGM_SURFACE_INFO *surface_info)
+/* OS_CHANGED: faster, no malloc() and even works for non-connected surfaces */
+static int OrientateTriangles(LGM_SURFACE_INFO *surface_info, int tri_id, int *tr_used)
 {
-  int i, j, n_new, change;
-  int *tr_used;
+  HEAP *heap = theHeap;       /* global in this file */
+  FIFO shell;
+  LGM_TRIANGLE_INFO *triangles, *tri, *nb;
+  int err, n, j, nb_id, flip, changed, MarkKey;
+  void *buffer;
 
-  n_new = surface_info->nTriangles;
+  /* the 1st triangle is assumed to be already orientated */
+  assert(tr_used[tri_id]==1);
 
-  tr_used = malloc(n_new * sizeof(int));
+  changed = 0;
+  triangles = surface_info->Triangle;
+  n = surface_info->nTriangles;
 
-  for(i=0; i<n_new; i++)
-    tr_used[i] = -1;
+  /* init FIFO */
+  MarkTmpMem(heap,&MarkKey);
+  buffer=(void *)GetTmpMem(heap,sizeof(LGM_TRIANGLE_INFO*)*n,MarkKey);
+  assert(buffer!=NULL);
+  fifo_init(&shell,buffer,sizeof(LGM_TRIANGLE_INFO*)*n);
+  fifo_clear(&shell);
 
-  /* erstes Freieck legt die Orientierung fest */
-  tr_used[0] = 1;
-  do
+  /* put the first triangle as reference orientation into FIFO */
+  err = fifo_in(&shell,(void *)&triangles[tri_id]);
+  assert(!err);
+
+  while (!fifo_empty(&shell))
   {
-    for(i=0; i<surface_info->nTriangles; i++)
+    /* get one triangle from FIFO and orientate its neighbours */
+    tri = (LGM_TRIANGLE_INFO*) fifo_out(&shell);
+    for(j=0; j<3; j++)
     {
-      if(tr_used[i]==-1)
+      nb_id = tri->neighbor[j];
+      if (nb_id != -1)                   /* neighbour exists */
       {
-        /* versuche Orientierung von Nachbardreiecken zu vergleichen oder zu uebertragen */
-        for(j=0; j<3; j++)
+        if(!tr_used[nb_id])
         {
-          if(surface_info->Triangle[i].neighbor[j]!=-1)
+          nb = &triangles[nb_id];
+          flip = Compare_Triangles(tri, nb);
+          assert(flip != 0);                               /* Ensure they're neighbours! */
+          if(flip==1)
           {
-            /* Nachbar existiert */
-            if(tr_used[surface_info->Triangle[i].neighbor[j]]==1)
-            {
-              change = Compare_Triangles(surface_info, i, surface_info->Triangle[i].neighbor[j]);
-              if(change==0)
-                printf("%s\n", "schotter");
-              if(change==1)
-                Change_Triangle(surface_info, i);
-              tr_used[i] = 1;
-            }
+            Change_Triangle(nb);
+            changed = 1;
           }
+          assert(!fifo_full(&shell));
+          err = fifo_in(&shell,(void *)nb);
+          assert(!err);
+          tr_used[nb_id] = 1;
         }
       }
     }
-    flag = 0;
-    for(i=0; i<surface_info->nTriangles; i++)
-      if(tr_used[i]==-1)                                        /* noch nicht fertig */
-        flag = 1;
   }
-  while(flag);
+  ReleaseTmpMem(heap,MarkKey);
+  return changed;
+}
+
+static int Check_Orientation(LGM_SURFACE_INFO *surface_info, int id)
+{
+  HEAP *heap = theHeap;       /* global to this file */
+  int i, nsfparts, n, changed, MarkKey;
+  int *tr_used;
+
+  n = surface_info->nTriangles;
+
+  /* Init a flag-arry for already orientated triangles */
+  MarkTmpMem(heap,&MarkKey);
+  tr_used=(int *)GetTmpMem(heap,sizeof(int)*n,MarkKey);
+  assert(tr_used!=NULL);
+
+  for(i=0; i<n; i++)
+    tr_used[i] = 0;
+
+  i = nsfparts = 0;
+  do
+  {
+    /* Take triangle i as reference, try to orientate the others */
+    tr_used[i] = 1;
+    changed = OrientateTriangles(surface_info,i,tr_used);
+
+    /*
+     * Check if all triangles are oriented now - otherwise we have another
+     * non-connected part of the surface and we go on with the next non-
+     * oriented triangle.
+     */
+    for (i=0; i<n; i++) if (!tr_used[i]) break;
+    nsfparts++;
+  } while (i<n);
+
+  if (nsfparts > 1) UserWriteF("\n  * Surface %d has %d non-connected parts. *",
+                               id, nsfparts);
+  ReleaseTmpMem(heap,MarkKey);
+  return changed;
 }
 
 static int Search_Neighbours(LGM_SURFACE_INFO *surface_info, int **point_list, int nPoints)
@@ -770,15 +802,9 @@ int LGM_ReadSurface (int dummy, LGM_SURFACE_INFO *surface_info)
   }
 
   surface_info->nTriangles = k+1;
-  /* search neighbours */
   Search_Neighbours(surface_info, surface_info->point_list, surface_info->length);
-
-  /* check orientation of triangles */
-  flag = 0;
-  Check_Orientation(surface_info);
-
-  if(flag)
-    UserWriteF("Warning: Orientation of inputtriangles on surface %4d changed\n",surface_id);
+  if(Check_Orientation(surface_info, surface_id))
+    UserWriteF("Warning: Orientation of input triangles on surface %4d changed.\n",surface_id);
 
   return (0);
 }
