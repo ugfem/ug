@@ -115,7 +115,7 @@
 
 typedef INT (*SetFuncProcPtr)(const COORD_VECTOR, INT, DOUBLE *);
 typedef INT (*TransGridProcPtr)(GRID *, const VECDATA_DESC *, const VECDATA_DESC *, const DOUBLE *);
-typedef INT (*InterpolateSolutionProcPtr)(GRID *, const VECDATA_DESC *);
+typedef INT (*InterpolateNewVectorsProcPtr)(GRID *, const VECDATA_DESC *);
 
 /****************************************************************************/
 /*																			*/
