@@ -66,7 +66,7 @@ typedef int (*RW_string_proc)(char *string);
 /* file */
 static FILE *stream;
 static int n_byte;
-static fpos_t *pos;
+static fpos_t pos;
 
 
 /* low level read/write functions */
@@ -403,7 +403,7 @@ int Bio_Write_string (char *string)
 int Bio_Jump_From (void)
 {
   n_byte = 0;
-  if (fgetpos(stream,pos)) return (1);
+  if (fgetpos(stream,&pos)) return (1);
   if (fprintf(stream," %20d ",n_byte)<0) return (1);
 
   return (0);
@@ -411,13 +411,13 @@ int Bio_Jump_From (void)
 
 int Bio_Jump_To (void)
 {
-  fpos_t *act;
+  fpos_t act;
   int jump;
 
-  if (fgetpos(stream,act)) return (1);
-  if (fsetpos(stream,pos)) return (1);
+  if (fgetpos(stream,&act)) return (1);
+  if (fsetpos(stream,&pos)) return (1);
   if (fprintf(stream," %20d ",n_byte)<0) return (1);
-  if (fsetpos(stream,act)) return (1);
+  if (fsetpos(stream,&act)) return (1);
 
   return (0);
 }

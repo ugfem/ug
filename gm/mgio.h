@@ -40,7 +40,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define MGIO_VERSION                                    "UG_IO_1.4"
+#define MGIO_VERSION                                    "UG_IO_1.5"
 
 #define __MGIO_USE_IN_UG__
 #define MGIO_DIM                        3
