@@ -73,6 +73,7 @@
 /****************************************************************************/
 
 static INT NodeValueComp;
+static INT ElementValueComp;
 static INT NodeVectorComp;
 static INT GradientFlag;
 
@@ -138,6 +139,30 @@ static DOUBLE NodeValue (const ELEMENT *theElement, const DOUBLE **CornersCoord,
     phi += GN(n,i,LocalCoord)*VVALUE(NVECTOR(CORNER(theElement,i)),NodeValueComp);
 
   return(phi);
+}
+
+static INT PreProcessElementValue (const char *name, MULTIGRID *theMG)
+{
+  VECDATA_DESC *theVD;
+
+  theVD = GetVecDataDescByName(theMG,(char *)name);
+
+  if (theVD == NULL) {
+    PrintErrorMessage('E',"PreProcessNodeValue","cannot find symbol");
+    return (1);
+  }
+
+  if (VD_ncmps_in_otype(theVD,ELEMVEC)<1)
+    return (1);
+
+  ElementValueComp = VD_cmp_of_otype(theVD,ELEMVEC,0);
+
+  return (0);
+}
+
+static DOUBLE ElementValue (const ELEMENT *theElement, const DOUBLE **CornersCoord, DOUBLE *LocalCoord)
+{
+  return(VVALUE(EVECTOR(theElement),ElementValueComp));
 }
 
 static DOUBLE LevelValue (const ELEMENT *theElement, const DOUBLE **CornersCoord, DOUBLE *LocalCoord)
@@ -313,6 +338,7 @@ INT InitPlotProc ()
 {
   /* install general plot procs */
   if (CreateElementValueEvalProc("nvalue",PreProcessNodeValue,NodeValue) == NULL) return(1);
+  if (CreateElementValueEvalProc("evalue",PreProcessElementValue,ElementValue) == NULL) return(1);
   if (CreateElementValueEvalProc("level",NULL,LevelValue) == NULL) return(1);
   if (CreateElementVectorEvalProc("nvector",PreProcessNodeVector,NodeVector,DIM) == NULL) return(1);
   if (CreateElementValueEvalProc("refmarks",PreProcessRefMarks,RefMarks) == NULL) return(1);
