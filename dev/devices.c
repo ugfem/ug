@@ -769,7 +769,6 @@ INT InitDevices (int *argcp, char **argv)
   /* init screen device */
         #ifdef ModelP
   if (me == master) {
-    int l;
         #endif
 
   defaultOuputDevice = InitScreen(argcp,argv,&error);
@@ -782,7 +781,7 @@ INT InitDevices (int *argcp, char **argv)
   with_defaultOuputDevice = (defaultOuputDevice!=NULL);
 }
 else {
-  int l, i, new_argc;
+  int i, new_argc;
 
   /* get number of command line arguments after InitScreen() */
   Broadcast(&new_argc, sizeof(int));

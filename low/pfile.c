@@ -408,8 +408,7 @@ INT pfile_puts (PFILE *pf, char *s)
         #ifndef ModelP
   fputs(s,(FILE *) pf);
         #else
-  FILE *stream;
-  INT error,n;
+  INT n;
 
   /* do not change keys here */
 

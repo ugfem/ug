@@ -87,7 +87,7 @@ static char *defaults_buffer=NULL;
 INT GetDefaultValue (const char *filename, const char *name, char *value)
 {
   FILE *defaultsFile;
-  char Name[NAMESIZE], buffer[BUFFSIZE];
+  char Name[NAMESIZE];
 
         #ifdef ModelP
   int file_ok;
@@ -152,6 +152,7 @@ INT GetDefaultValue (const char *filename, const char *name, char *value)
 
 
         #else
+  char buffer[BUFFSIZE];
 
   /* sequential version */
   defaultsFile = fileopen(filename,"r");
