@@ -36,8 +36,8 @@
 #include "ugdevices.h"
 #include "commands.h"
 #include "heaps.h"
+#include "general.h"
 #ifdef ModelP
-#include "parallel.h"
 #include "ppif.h"
 #endif
 
@@ -84,8 +84,8 @@ static INT Width;                    /* current pictures width              */
 static INT Height;                   /* current pictures height             */
 static INT NbPixels;                 /* number of pixels                    */
 static INT Length;                   /* accumulated length of pixel & z buf.*/
-static DOUBLE XShift;                /* to shift x coordinates              */
-static DOUBLE YShift;                /* to shift y coordinates              */
+static DOUBLE XShift;                /* shift for x coordinates             */
+static DOUBLE YShift;                /* shift for y coordinates             */
 static DOUBLE zOffsetFactor;         /* see comment in DrawTriangle         */
 static INT MarkKey;                  /* for MarkTmpMem                      */
 static OUTPUTDEVICE *OutputDevice;   /* current pictures output device      */
@@ -102,6 +102,15 @@ static INT DitherMatrix[DM_ROWS][DM_COLS] =
  {51, 19, 59, 27, 49, 17, 57, 25},
  {15, 47,  7, 39, 13, 45,  5, 37},
  {63, 31, 55, 23, 61, 29, 53, 21}};
+
+/****************************************************************************/
+/*																			*/
+/* forward declarations of functions used before they are defined			*/
+/*																			*/
+/****************************************************************************/
+
+static void DrawLine(POINT p1, DOUBLE z1, POINT p2, DOUBLE z2, char c);
+
 
 /****************************************************************************/
 /*D
@@ -179,7 +188,7 @@ INT BulletOpen(PICTURE *picture, DOUBLE factor)
     *z++ = FAR_AWAY;
 
   /* init pixel buffer */
-  p = (char *)(PBuffer = (char *)z);
+  p = (char *)(PBuffer = (void *)z);
 #else
   p = (char *)(PBuffer = ZBuffer);
 #endif
@@ -270,6 +279,20 @@ static void MergeBuffers(void *buffer1, void *buffer2)
    D*/
 /****************************************************************************/
 
+static void FramePicture(void)
+{
+  POINT p1, p2;
+
+  p1.x = 0; p1.y = 0; p2.x = Width-1; p2.y = 0;
+  DrawLine(p1, -FAR_AWAY, p2, -FAR_AWAY, OutputDevice->black);
+  p1.x = Width-1; p1.y = Height-1;
+  DrawLine(p1, -FAR_AWAY, p2, -FAR_AWAY, OutputDevice->black);
+  p2.x = 0; p2.y = Height-1;
+  DrawLine(p1, -FAR_AWAY, p2, -FAR_AWAY, OutputDevice->black);
+  p1.x = 0; p1.y = 0;
+  DrawLine(p1, -FAR_AWAY, p2, -FAR_AWAY, OutputDevice->black);
+}
+
 void BulletPlot(void)
 {
   INT son;
@@ -291,11 +314,13 @@ void BulletPlot(void)
   }
   Concentrate(ZBuffer, Length);
 
-  /* plot buffer */
   if (me == master)
 #endif
-  (*OutputDevice->PlotPixelBuffer)(PBuffer, data, NbPixels,
-                                   XShift, YShift, Width, Height);
+  {
+    FramePicture();
+    (*OutputDevice->PlotPixelBuffer)(PBuffer, data, NbPixels,
+                                     XShift, YShift, Width, Height);
+  }
 }
 
 /*****************************************************************************
@@ -399,7 +424,7 @@ static void DrawSpan(INT x1, INT x2, INT y, DOUBLE z, DOUBLE dz, DOUBLE i, char 
           if (pd[x & (DM_COLS-1)] < threshold)
             *pp = c;
           else
-            *pp = (char)OutputDevice->black;;
+            *pp = (char)OutputDevice->black;
           *pz = z;
         }
 #else
@@ -443,7 +468,8 @@ static void DrawSpan(INT x1, INT x2, INT y, DOUBLE z, DOUBLE dz, DOUBLE i, char 
 
 *****************************************************************************/
 
-static void DrawTriangle(POINT p1, DOUBLE z1, POINT p2, DOUBLE z2, POINT p3, DOUBLE z3, DOUBLE i, char c)
+static void DrawTriangle(POINT p1, DOUBLE z1, POINT p2, DOUBLE z2,
+                         POINT p3, DOUBLE z3, DOUBLE i, char c)
 {
   POINT pt;
   DOUBLE z31, z21, mx1, mx2, mz, dzNdx, dzNdy, x1, x2, z, zt, o;
@@ -485,7 +511,7 @@ static void DrawTriangle(POINT p1, DOUBLE z1, POINT p2, DOUBLE z2, POINT p3, DOU
   dzNdy  = (DOUBLE)(x31*z21-z31*x21)/(DOUBLE)D;
 
   /* offset for z coords proportional to max. depth slope     */
-  /* should avoid line dropouts if sorrounding is drawn later */
+  /* should avoid line dropouts if surrounding is drawn later */
 
   o = zOffsetFactor * sqrt(dzNdx*dzNdx+dzNdy*dzNdy);
 
@@ -495,7 +521,7 @@ static void DrawTriangle(POINT p1, DOUBLE z1, POINT p2, DOUBLE z2, POINT p3, DOU
     x1 = x2 = (DOUBLE)p1.x + 0.5;
     z = z1-o;
     for (y = p1.y; y <= p2.y; y++) {
-      DrawSpan((INT)x1, (INT)x2, y, z, dzNdx, i,  c);
+      DrawSpan((INT)x1, (INT)x2, y, z, dzNdx, i, c);
       x1 += mx1;
       x2 += mx2;
       z  += mz;
@@ -538,20 +564,20 @@ static void DrawTriangle(POINT p1, DOUBLE z1, POINT p2, DOUBLE z2, POINT p3, DOU
 
 void BulletLine(DOUBLE *point1, DOUBLE *point2, long color)
 {
-  POINT pp1, pp2;
-  DOUBLE zz1, zz2;
+  POINT p1, p2;
+  DOUBLE z1, z2;
 
-  pp1.x = (INT)(point1[0] - XShift + 0.5);
-  pp1.y = (INT)(point1[1] - YShift + 0.5);
-  pp2.x = (INT)(point2[0] - XShift + 0.5);
-  pp2.y = (INT)(point2[1] - YShift + 0.5);
+  p1.x = (INT)(point1[0] - XShift + 0.5);
+  p1.y = (INT)(point1[1] - YShift + 0.5);
+  p2.x = (INT)(point2[0] - XShift + 0.5);
+  p2.y = (INT)(point2[1] - YShift + 0.5);
 #ifdef __THREEDIM__
-  zz1   = point1[2];
-  zz2   = point2[2];
+  z1   = point1[2];
+  z2   = point2[2];
 #else
-  zz1 = zz2 = 0.0;
+  z1 = z2 = 0.0;
 #endif
-  DrawLine(pp1, zz1, pp2, zz2, color);
+  DrawLine(p1, z1, p2, z2, color);
 }
 
 /****************************************************************************/
