@@ -1347,11 +1347,11 @@ static INT DisplayCutPlane (const CUT *theCut)
 /****************************************************************************/
 
 INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective,
-             INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal, DOUBLE vscale)
+             INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal, DOUBLE *scale)
 {
   VIEWEDOBJ *theViewedObj;
   PLOTOBJ *thePlotObj;
-  DOUBLE DefaultVP[3], DefaultVT[3], DefaultVTOld[3], DefaultPMP[3], DefaultPXD[3], DefaultPYD[3], DefaultPJ;
+  DOUBLE DefaultVP[3], DefaultVT[3], DefaultVTOld[3], DefaultPMP[3], DefaultPXD[3], DefaultPYD[3], DefaultPJ, DefaultSXD[3], DefaultSYD[3], DefaultSZD[3], DefaultScale[3];
   DOUBLE ViewDirection[3], ViewDirectionOld[3], CanvasRatio, RotationAxis[3];
   DOUBLE angle, norm;
   INT ViewedObjNotInit, viewpointcorrect;
@@ -1370,7 +1370,6 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
     UserWrite("specify object first\n");
     return (0);
   }
-  if (vscale<=0.0) vscale=1.0;
   CanvasRatio = ABS(((DOUBLE)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1]))/((DOUBLE)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
 
   /* set values */
@@ -1389,13 +1388,16 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
       if (CanvasRatio >= 1.0)
       {
         V2_SCALE(PO_RADIUS(thePlotObj),DefaultPXD)
-        V2_SCALE(PO_RADIUS(thePlotObj)*CanvasRatio/vscale,DefaultPYD)
+        V2_SCALE(PO_RADIUS(thePlotObj)*CanvasRatio,DefaultPYD)
       }
       else
       {
-        V2_SCALE(PO_RADIUS(thePlotObj)/CanvasRatio*vscale,DefaultPXD)
+        V2_SCALE(PO_RADIUS(thePlotObj)/CanvasRatio,DefaultPXD)
         V2_SCALE(PO_RADIUS(thePlotObj),DefaultPYD)
       }
+      V2_COPY(ex,VO_SXD(theViewedObj))
+      V2_COPY(ey,VO_SYD(theViewedObj))
+      DefaultScale[0] = DefaultScale[1] = 1.0;
     }
     else
     {
@@ -1404,6 +1406,9 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
       V2_COPY(VO_PMP(theViewedObj),DefaultPMP)
       V2_COPY(VO_PXD(theViewedObj),DefaultPXD)
       V2_COPY(VO_PYD(theViewedObj),DefaultPYD)
+      V2_COPY(VO_SXD(theViewedObj),DefaultSXD)
+      V2_COPY(VO_SYD(theViewedObj),DefaultSYD)
+      V2_COPY(VO_SCALE(theViewedObj),DefaultScale)
     }
 
     /* modify values */
@@ -1415,6 +1420,10 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
         V2_Rotate(DefaultPYD,PI/2.0);
         V2_SCALE(CanvasRatio,DefaultPYD)
       }
+    if (scale!=NULL)
+    {
+      V2_COPY(scale,DefaultScale);
+    }
 
     /* save values */
     V2_COPY(DefaultVT,VO_VT(theViewedObj))
@@ -1422,6 +1431,7 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
     /*V2_COPY(DefaultPMP,VO_PMP(theViewedObj))*/
     V2_COPY(DefaultPXD,VO_PXD(theViewedObj))
     V2_COPY(DefaultPYD,VO_PYD(theViewedObj))
+    V2_COPY(DefaultScale,VO_SCALE(theViewedObj))
 
     /* set status of ViewedObj */
     VO_STATUS(theViewedObj) = ACTIVE;
@@ -1900,7 +1910,7 @@ INT Walk (PICTURE *thePicture, const DOUBLE *vrsDelta)
   default :
     return (1);
   }
-  if (SetView(thePicture,VP,NULL,NULL,NULL,NO,NULL,NULL,1.0)) return (1);
+  if (SetView(thePicture,VP,NULL,NULL,NULL,NO,NULL,NULL,NULL)) return (1);
 
   return (0);
 }
@@ -1962,7 +1972,7 @@ INT RunAroundTargetPoint (PICTURE *thePicture, DOUBLE vrsDirectionAngle, DOUBLE 
     return (0);
   }
   V3_ADD(VO_VT(theViewedObj),ViewDirection,VP)
-  if (SetView(thePicture,VP,NULL,NULL,NULL,NO,NULL,NULL,1.0)) return (1);
+  if (SetView(thePicture,VP,NULL,NULL,NULL,NO,NULL,NULL,NULL)) return (1);
 
   return (0);
 }
@@ -2322,7 +2332,7 @@ INT SpecifyPlotObjOfViewedObject (PICTURE *thePicture, MULTIGRID *theMG, const c
     if (viewpointcorrect && VO_STATUS(theViewedObj)==ACTIVE)
       VO_STATUS(theViewedObj) = ACTIVE;
   }
-  if (SetView(thePicture,NULL,NULL,NULL,NULL,NO,NULL,NULL,1.0)) return (1);
+  if (SetView(thePicture,NULL,NULL,NULL,NULL,NO,NULL,NULL,NULL)) return (1);
 
   return (0);
 }

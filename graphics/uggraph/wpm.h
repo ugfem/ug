@@ -136,6 +136,10 @@
 #define VO_PMP(p)                               ((p)->PlaneMidpoint)
 #define VO_PXD(p)                               ((p)->PlaneXDir)
 #define VO_PYD(p)                               ((p)->PlaneYDir)
+#define VO_SXD(p)                               ((p)->ScaleXDir)
+#define VO_SYD(p)                               ((p)->ScaleYDir)
+#define VO_SZD(p)                               ((p)->ScaleZDir)
+#define VO_SCALE(p)                             ((p)->Scale)
 
 #define VO_TRAFO(p)                             ((p)->ObsTrafo)
 #define VO_INVTRAFO(p)                  ((p)->InvObsTrafo)
@@ -436,6 +440,8 @@ struct ViewedObj {
   DOUBLE ViewTarget[3];                                         /* View target point							*/
   DOUBLE PlaneMidpoint[3];                                      /* description of projection plane (the infinite*/
   DOUBLE PlaneXDir[3], PlaneYDir[3];            /* extension touches the ViewTarget)			*/
+  DOUBLE Scale[3];                              /* scaling factors of physikal space            */
+  DOUBLE ScaleXDir[3], ScaleYDir[3], ScaleZDir[3];        /* scaling directions                 */
 
   DOUBLE ObsTrafo[16];
   DOUBLE InvObsTrafo[16];
@@ -531,7 +537,7 @@ void                    ResetToolBoxState                               (UGWINDO
 
 /* initializing/changing view */
 INT                     SetView                                                 (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective,
-                                                                                 INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal, DOUBLE vscale);
+                                                                                 INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal, DOUBLE *scale);
 INT                             CopyView                                                (const PICTURE *mypic, INT all, INT cut);
 INT                             PrintViewSettings                               (const PICTURE *thePicture);
 INT                     DisplayViewOfViewedObject               (const PICTURE *thePicture);
