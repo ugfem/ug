@@ -80,8 +80,8 @@ extern "C" {
 /*                                                                          */
 /****************************************************************************/
 
-typedef int *VChannelPtr;   /* dummy definition, any pointer type is ok     */
-typedef int msgid;          /* type of return value for async comm !32bit!  */
+typedef void *VChannelPtr;   /* dummy definition, any pointer type is ok    */
+typedef void *msgid;         /* dummy definition, any pointer type is ok    */
 
 enum directions {north,east,south,west,up,down};
 

@@ -110,7 +110,7 @@ typedef struct {
 } VChannel;
 
 typedef VChannel *VChannelPtr;
-typedef int      *msgid;
+typedef void     *msgid;
 
 
 /****************************************************************************/
