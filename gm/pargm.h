@@ -331,6 +331,7 @@ extern DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF;
 DOUBLE UG_GlobalSumDOUBLE (DOUBLE);
 INT UG_GlobalSumINT (INT);
 INT UG_GlobalMaxINT (INT);
+INT UG_GlobalMinINT (INT);
 void UG_GlobalSumNDOUBLE (INT, DOUBLE *);
 DOUBLE UG_GlobalMaxDOUBLE (DOUBLE i);
 DOUBLE UG_GlobalMinDOUBLE (DOUBLE i);
