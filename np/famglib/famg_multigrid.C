@@ -166,15 +166,9 @@ int FAMGMultiGrid::Construct()
 		nnc = cg->GetNrMasterVectors();	// we are interested only in the master vectors
 #endif
 		coarsefrac = (double)nnc/nn;
-		cout << "amglevel " << -level;
-		if( nnc > 0 )
-		{
-			cout << " coarsening rate " << 1.0/coarsefrac << endl;
-		}
-		else
-		{
-			cout << " no coarsening" << endl;
-		}
+		if( nnc <= 0 )
+			coarsefrac = 0.000000999;	// dummy
+		cout << "amglevel " << -level << " coarsening rate " << 1.0/coarsefrac << endl;
     }
 
 
