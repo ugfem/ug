@@ -28,6 +28,8 @@
 /****************************************************************************/
 
 #include <stdio.h>
+#include <string.h>
+
 #include "bio.h"
 #include "dio.h"
 
@@ -37,7 +39,7 @@
 
         #include "defaults.h"
         #include "fileopen.h"
-        #include "np.h"
+        #include "num.h"
 
 #endif
 
