@@ -3926,4 +3926,7 @@ ENDDEBUG
 "%d (%d green marks)\n",No_Green_Update,Green_Marks);
 
 UserWriteF(" Number of green refinements not updated: %d (%d green marks)\n",No_Green_Update,Green_Marks);
+/*
+        /* reset status */
+RESETMGSTATUS(theMG);
 }

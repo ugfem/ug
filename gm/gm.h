@@ -41,6 +41,7 @@
 
 #include <limits.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #ifndef __COMPILER__
 #include "compiler.h"
@@ -765,6 +766,7 @@ struct multigrid {
 
   /* variables */
   INT status;                                           /* possible values, see above			*/
+  INT magic_cookie;                                     /* used for identification			*/
   INT vertIdCounter;                                    /* count objects in that multigrid		*/
   INT nodeIdCounter;                                    /* count objects in that multigrid		*/
   INT elemIdCounter;                                    /* count objects in that multigrid		*/
@@ -2024,9 +2026,11 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define MULTIGRID_STATUS_OFFSET                 (sizeof(ENVVAR))
 
 #define MGSTATUS(p)                     ((p)->status)
-#define VIDCNT(p)                               ((p)->vertIdCounter)
-#define NIDCNT(p)                               ((p)->nodeIdCounter)
-#define EIDCNT(p)                               ((p)->elemIdCounter)
+#define RESETMGSTATUS(p)                {(p)->status=0; (p)->magic_cookie = rand();}
+#define MG_MAGIC_COOKIE(p)              ((p)->magic_cookie)
+#define VIDCNT(p)                       ((p)->vertIdCounter)
+#define NIDCNT(p)                       ((p)->nodeIdCounter)
+#define EIDCNT(p)                       ((p)->elemIdCounter)
 #define TOPLEVEL(p)                     ((p)->topLevel)
 #define CURRENTLEVEL(p)                 ((p)->currentLevel)
 #define MGFORMAT(p)                     ((p)->theFormat)

@@ -1579,6 +1579,8 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   theMG->topLevel = -1;
   MG_BVP(theMG) = theBVP;
   MG_NPROPERTY(theMG) = BVPD_NSUBDOM(theBVPDesc);
+  RESETMGSTATUS(theMG);
+
 
   theMG->theHeap = theHeap;
   SELECTIONSIZE(theMG) = 0;
@@ -6361,6 +6363,57 @@ VIRT_HEAP_MGMT *GetGenMGUDM()
   return (theGenMGUDM);
 }
 
+
+/****************************************************************************/
+/*D
+   RenumberNodeElem - Init what is neccessary
+
+   SYNOPSIS:
+   INT RenumberNodeElem (MULTIGRID *theMG);
+
+   PARAMETERS:
+   .  theMG - ptr to multigrid
+
+   DESCRIPTION:
+   This function renumbers nodes and elements according to their double-linked
+   lists.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   > 0 line in which error occured.
+   D*/
+/****************************************************************************/
+
+INT RenumberNodeElem (MULTIGRID *theMG)
+{
+  INT i,nid,eid;
+  GRID *theGrid;
+  NODE *theNode;
+  ELEMENT *theElement;
+
+  nid=eid=0;
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,i);
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+      ID(theElement) = eid++;
+    if (i==0)
+    {
+      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+        if (OBJT(MYVERTEX(theNode))==BVOBJ)
+          ID(theNode) = nid++;
+      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+        if (OBJT(MYVERTEX(theNode))==IVOBJ)
+          ID(theNode) = nid++;
+    }
+    else
+      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+        ID(theNode) = nid++;
+  }
+
+  return (0);
+}
 
 /****************************************************************************/
 /*D

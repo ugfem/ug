@@ -294,36 +294,6 @@ INT SaveMultiGrid_SCR (MULTIGRID *theMG, char *name, char *comment)
   return(GM_OK);
 }
 
-static INT RenumberNE (MULTIGRID *theMG)
-{
-  INT i,nid,eid;
-  GRID *theGrid;
-  NODE *theNode;
-  ELEMENT *theElement;
-
-  nid=eid=0;
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-  {
-    theGrid = GRID_ON_LEVEL(theMG,i);
-    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
-      ID(theElement) = eid++;
-    if (i==0)
-    {
-      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-        if (OBJT(MYVERTEX(theNode))==BVOBJ)
-          ID(theNode) = nid++;
-      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-        if (OBJT(MYVERTEX(theNode))==IVOBJ)
-          ID(theNode) = nid++;
-    }
-    else
-      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
-        ID(theNode) = nid++;
-  }
-
-  return (0);
-}
-
 static INT Write_RefRules (MULTIGRID *theMG, INT *RefRuleOffset)
 {
   MGIO_RR_GENERAL rr_general;
@@ -607,6 +577,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   else if (strcmp(p,".bin")==0) mg_general.mode = BIO_BIN;
   else return (1);
   mg_general.dim                  = DIM;
+  mg_general.magic_cookie = MG_MAGIC_COOKIE(theMG);
   mg_general.heapsize             = MGHEAP(theMG)->size/1024;
   mg_general.nLevel               = TOPLEVEL(theMG) + 1;
   mg_general.nNode = mg_general.nPoint = mg_general.nElement;
@@ -678,7 +649,7 @@ INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   if (Write_CG_General(&cg_general)) return (1);
 
   /* write coarse grid points */
-  if (RenumberNE (theMG)) return (1);
+  if (RenumberNodeElem (theMG)) return (1);
   theGrid = GRID_ON_LEVEL(theMG,0);
   theHeap = MGHEAP(theMG);
   MarkTmpMem(theHeap);
@@ -1135,6 +1106,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
 
   /* create a virginenal multigrid on the BVP */
   theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize);
+  MG_MAGIC_COOKIE(theMG) = mg_general.magic_cookie;
   if (theMG==NULL)                                                                                                        {CloseMGFile (); return (NULL);}
   if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (CreateNewLevel(theMG)==NULL)                                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}

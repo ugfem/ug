@@ -125,6 +125,7 @@ struct mgio_mg_general {
   /* information about the file */
   int mode;                                     /* macros see above								*/
   char version[MGIO_NAMELEN];       /* version of i/o							*/
+  int magic_cookie;                             /* identification number					*/
 
   /* number of objects */
   int nLevel;                                   /* nb of levels of the mg						*/

@@ -226,14 +226,15 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
   if (Bio_Read_string(mg_general->DomainName)) return (1);
   if (Bio_Read_string(mg_general->MultiGridName)) return (1);
   if (Bio_Read_string(mg_general->Formatname)) return (1);
-  if (Bio_Read_mint(7,intList)) return (1);
+  if (Bio_Read_mint(8,intList)) return (1);
   mg_general->dim                 = intList[0];
-  mg_general->heapsize    = intList[1];
-  mg_general->nLevel              = intList[2];
-  mg_general->nNode               = intList[3];
-  mg_general->nPoint              = intList[4];
-  mg_general->nElement    = intList[5];
-  mg_general->VectorTypes = intList[6];
+  mg_general->magic_cookie= intList[1];
+  mg_general->heapsize    = intList[2];
+  mg_general->nLevel              = intList[3];
+  mg_general->nNode               = intList[4];
+  mg_general->nPoint              = intList[5];
+  mg_general->nElement    = intList[6];
+  mg_general->VectorTypes = intList[7];
 
   return (0);
 }
@@ -279,13 +280,14 @@ int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
   if (Bio_Write_string(mg_general->MultiGridName)) return (1);
   if (Bio_Write_string(mg_general->Formatname)) return (1);
   intList[0] = mg_general->dim;
-  intList[1] = mg_general->heapsize;
-  intList[2] = mg_general->nLevel;
-  intList[3] = mg_general->nNode;
-  intList[4] = mg_general->nPoint;
-  intList[5] = mg_general->nElement;
-  intList[6] = mg_general->VectorTypes;
-  if (Bio_Write_mint(7,intList)) return (1);
+  intList[1] = mg_general->magic_cookie;
+  intList[2] = mg_general->heapsize;
+  intList[3] = mg_general->nLevel;
+  intList[4] = mg_general->nNode;
+  intList[5] = mg_general->nPoint;
+  intList[6] = mg_general->nElement;
+  intList[7] = mg_general->VectorTypes;
+  if (Bio_Write_mint(8,intList)) return (1);
 
   return (0);
 }
