@@ -130,6 +130,13 @@ INT InitGm ()
     return (err);
   }
 
+  /* init evalproc.c */
+  if ((err=InitEvalProc())!=0)
+  {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
         #ifdef __TWODIM__
   /* ugrefine2d.c */
   if ((err=InitRefine2d())!=0)
