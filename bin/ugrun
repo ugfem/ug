@@ -30,6 +30,7 @@ case $MODEL in
 	NX)
 		echo isub -sz $PROC   $1;
 		isub -sz $PROC   $1;
+        ;;
     *)
         echo "MODEL $MODEL not supported";
         exit 1;
