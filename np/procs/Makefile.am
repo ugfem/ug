@@ -1,6 +1,6 @@
 # $Id$
 
-SOURCES = nls.c ls.c assemble.c basics.c iter.c transfer.c error.c newton.c ts.c bdf.c ew.c ewn.c amgtransfer.c freebnd.c db.c fas.c nliter.c project.c order.c tstep.c enewton.c pstep.c reinit.c els.c eiter.c iter_2.c amgtransfer.h assemble.h basics.h bdf.h db.h eiter.h els.h enewton.h error.h ew.h fas.h freebnd.h iter.h ls.h newton.h nliter.h nls.h order.h project.h pstep.h reinit.h transfer.h ts.h tstep.h
+SOURCES = nls.c ls.c assemble.c basics.c blocking.c iter.c transfer.c error.c newton.c ts.c bdf.c ew.c ewn.c amgtransfer.c freebnd.c db.c fas.c nliter.c project.c order.c tstep.c enewton.c pstep.c reinit.c els.c eiter.c iter_2.c amgtransfer.h assemble.h basics.h bdf.h blocking.h db.h eiter.h els.h enewton.h error.h ew.h fas.h freebnd.h iter.h ls.h newton.h nliter.h nls.h order.h project.h pstep.h reinit.h transfer.h ts.h tstep.h
 
 include_HEADERS = assemble.h transfer.h error.h ts.h nls.h ls.h
 
