@@ -462,7 +462,7 @@ static int simplex_boundary (HELEMENT *el, int np)
   ASSURE(el,"simplex_boundary: no element",return (0));
 
   if (OBJT(ELEMENT_ELEM(el))==IEOBJ) return (0);
-  return (SIDE(ELEMENT_ELEM(el),np)!=NULL);
+  return (SIDE_ON_BND(ELEMENT_ELEM(el),np));
 }
 
 /****************************************************************************/
