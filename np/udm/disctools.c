@@ -33,7 +33,6 @@
 #include <string.h>
 #include <assert.h>
 
-#include "switch.h"
 #include "gm.h"       /* for data structure               */
 #include "evm.h"      /* for data structure               */
 #include "general.h"
@@ -101,11 +100,11 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 CoeffProcPtr MG_GetCoeffFct (MULTIGRID *theMG, INT n)
 {
   BVP *myBVP;
-  BVP_DESC BVP_desc;
+  BVP_DESC *BVP_desc;
   CoeffProcPtr cpp;
 
   myBVP = MG_BVP(theMG);
-  BVP_SetBVPDesc (myBVP,&BVP_desc);
+  BVP_desc = MG_BVPD(theMG);
   cpp = NULL;
   if ((n >= 0) && (n < BVPD_NCOEFFF(BVP_desc)))
     BVP_SetCoeffFct       (myBVP,n,&cpp);
@@ -137,11 +136,11 @@ CoeffProcPtr MG_GetCoeffFct (MULTIGRID *theMG, INT n)
 UserProcPtr MG_GetUserFct (MULTIGRID *theMG, INT n)
 {
   BVP *myBVP;
-  BVP_DESC BVP_desc;
+  BVP_DESC *BVP_desc;
   UserProcPtr upp;
 
   myBVP = MG_BVP(theMG);
-  BVP_SetBVPDesc (myBVP,&BVP_desc);
+  BVP_desc = MG_BVPD(theMG);
   upp = NULL;
   if ((n >= 0) && (n < BVPD_NUSERF(BVP_desc)))
     BVP_SetUserFct (myBVP,n,&upp);
@@ -163,6 +162,7 @@ UserProcPtr MG_GetUserFct (MULTIGRID *theMG, INT n)
 
    DESCRIPTION:
    This function gets a list of vectors corresponding to an element.
+   It uses GetVectorsOfDataTypesInObjects (which should be preferred).
 
    RETURN VALUE:
    INT
@@ -174,36 +174,10 @@ UserProcPtr MG_GetUserFct (MULTIGRID *theMG, INT n)
 INT GetAllVectorsOfElementOfType (ELEMENT *theElement, VECTOR **vec,
                                   const VECDATA_DESC *theVD)
 {
-  INT i;
   INT cnt;
 
-  cnt = 0;
-  if (VD_NCMPS_IN_TYPE(theVD,NODEVECTOR)>0)
-  {
-    if (GetVectorsOfNodes(theElement,&i,vec) != GM_OK)
-      return(-1);
-    cnt += i;
-  }
-  if (VD_NCMPS_IN_TYPE(theVD,EDGEVECTOR)>0)
-  {
-    if (GetVectorsOfEdges(theElement,&i,vec+cnt) != GM_OK)
-      return(-1);
-    cnt += i;
-  }
-  if (VD_NCMPS_IN_TYPE(theVD,ELEMVECTOR)>0)
-  {
-    if (GetVectorsOfElement(theElement,&i,vec+cnt) != GM_OK)
-      return(-1);
-    cnt += i;
-  }
-    #ifdef __THREEDIM__
-  if (VD_NCMPS_IN_TYPE(theVD,SIDEVECTOR)>0)
-  {
-    if (GetVectorsOfSides(theElement,&i,vec+cnt) != GM_OK)
-      return(-1);
-    cnt += i;
-  }
-    #endif
+  if (GetVectorsOfDataTypesInObjects(theElement,VD_DATA_TYPES(theVD),VD_OBJ_USED(theVD),&cnt,vec))
+    return (-1);
 
   return (cnt);
 }
@@ -238,7 +212,7 @@ INT GetElementsideIndices (ELEMENT *theElement, INT side,
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
   INT vncomp;
-  INT i,j,k,l,m,cnt,vtype;
+  INT i,j,k,l,m,cnt,votype;
   INT itype[NVECTYPES];
 
   cnt = GetAllVectorsOfElementOfType(theElement,theVec,theVD);
@@ -253,35 +227,35 @@ INT GetElementsideIndices (ELEMENT *theElement, INT side,
   k = 0;
   for (i=0; i<cnt; i++)
   {
-    vtype = VTYPE(theVec[i]);
-    vncomp = VD_NCMPS_IN_TYPE(theVD,vtype);
-    if (vtype == NODEVECTOR)
-      if (itype[vtype] == 0)
+    votype = VOTYPE(theVec[i]);
+    vncomp = VD_NCMPS_IN_TYPE(theVD,VTYPE(theVec[i]));
+    if (votype == NODEVEC)
+      if (itype[votype] == 0)
         for (l=0; l<CORNERS_OF_SIDE(theElement,side); l++)
           for (j=0; j<vncomp; j++)
             index[k++] = m + CORNER_OF_SIDE(theElement,side,l)*vncomp + j;
-    if (vtype == EDGEVECTOR)
+    if (votype == EDGEVEC)
               #ifdef __TWODIM__
-      if (itype[vtype] == side)
+      if (itype[votype] == side)
         for (j=0; j<vncomp; j++)
           index[k++] = m + j;
           #else
-      if (itype[EDGEVECTOR] == 0)
+      if (itype[EDGEVEC] == 0)
         for (l=0; l<EDGES_OF_SIDE(theElement,side); l++)
           for (j=0; j<vncomp; j++)
             index[k++] = m + EDGE_OF_SIDE(theElement,side,l)*vncomp + j;
           #endif
-    if (vtype == SIDEVECTOR)
+    if (votype == SIDEVEC)
               #ifdef __TWODIM__
-      if (itype[vtype] == side)
+      if (itype[votype] == side)
         for (j=0; j<vncomp; j++)
           index[k++] = m + j;
           #else
-      if (itype[vtype] == side)
+      if (itype[votype] == side)
         for (j=0; j<vncomp; j++)
           index[k++] = m + j;
           #endif
-    itype[vtype] += 1;
+    itype[votype] += 1;
     m += vncomp;
   }
 
@@ -666,12 +640,12 @@ INT GetElementNewVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD,
    GetElementMPtrs - get list of DOUBLE pointers for matrices
 
    SYNOPSIS:
-   INT GetElementVMPtrs (ELEMENT *theElement, const MATDATA_DESC *theTMD,
+   INT GetElementVMPtrs (ELEMENT *theElement, const MATDATA_DESC *md,
                                           DOUBLE **mptr);
 
    PARAMETERS:
    .  theElement - pointer to an element
-   .  theTMD - matrix data descriptor
+   .  md - matrix data descriptor
    .  mptr - pointer to double values corresponding to the local stiffness matrix
 
    DESCRIPTION:
@@ -683,20 +657,20 @@ INT GetElementNewVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD,
    D*/
 /****************************************************************************/
 
-INT GetElementMPtrs (ELEMENT *theElement, const MATDATA_DESC *theTMD,
+INT GetElementMPtrs (ELEMENT *theElement, const MATDATA_DESC *md,
                      DOUBLE **mptr)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
   MATRIX *theMatrix;
   INT vncomp[MAX_NODAL_VECTORS];
   INT vtype[MAX_NODAL_VECTORS];
-  INT types[NVECTYPES];
+  SHORT types[NVECTYPES];
   INT i,j,k,l,m,m1,m2,cnt;
 
   for (i=0; i<NVECTYPES; i++)
-    types[i] = MD_ISDEF_IN_RT_CT(theTMD,i,i);
+    types[i] = MD_ISDEF_IN_RT_CT(md,i,i);
 
-  if (GetVectorsOfTypes(theElement,types,&cnt,theVec)!=GM_OK)
+  if (GetVectorsOfDataTypesInObjects(theElement,MD_ROW_DATA_TYPES(md),MD_ROW_OBJ_USED(md),&cnt,theVec)!=GM_OK)
     return (-1);
 
   if (cnt > MAX_NODAL_VECTORS || cnt < 1)
@@ -706,7 +680,7 @@ INT GetElementMPtrs (ELEMENT *theElement, const MATDATA_DESC *theTMD,
   for (i=0; i<cnt; i++)
   {
     vtype[i] = VTYPE(theVec[i]);
-    vncomp[i] = MD_ROWS_IN_RT_CT(theTMD,vtype[i],vtype[i]);
+    vncomp[i] = MD_ROWS_IN_RT_CT(md,vtype[i],vtype[i]);
     m += vncomp[i];
   }
 
@@ -718,7 +692,7 @@ INT GetElementMPtrs (ELEMENT *theElement, const MATDATA_DESC *theTMD,
       for (l=0; l<vncomp[i]; l++)
         mptr[(m1+k)*m+m1+l] =
           MVALUEPTR(theMatrix,
-                    MD_MCMP_OF_RT_CT(theTMD,vtype[i],vtype[i],k*vncomp[i]+l));
+                    MD_MCMP_OF_RT_CT(md,vtype[i],vtype[i],k*vncomp[i]+l));
     m2 = 0;
     for (j=0; j<i; j++)
     {
@@ -728,13 +702,13 @@ INT GetElementMPtrs (ELEMENT *theElement, const MATDATA_DESC *theTMD,
         for (l=0; l<vncomp[j]; l++)
           mptr[(m1+k)*m+m2+l] =
             MVALUEPTR(theMatrix,
-                      MD_MCMP_OF_RT_CT(theTMD,vtype[i],vtype[j],k*vncomp[j]+l));
+                      MD_MCMP_OF_RT_CT(md,vtype[i],vtype[j],k*vncomp[j]+l));
       theMatrix = MADJ(theMatrix);
       for (k=0; k<vncomp[i]; k++)
         for (l=0; l<vncomp[j]; l++)
           mptr[(m2+l)*m+m1+k] =
             MVALUEPTR(theMatrix,
-                      MD_MCMP_OF_RT_CT(theTMD,vtype[i],vtype[j],l*vncomp[i]+k));
+                      MD_MCMP_OF_RT_CT(md,vtype[i],vtype[j],l*vncomp[i]+k));
       m2 += vncomp[j];
     }
     m1 += vncomp[i];
@@ -773,7 +747,6 @@ INT GetVlistMValues (INT cnt, VECTOR **theVec,
   MATRIX *theMatrix;
   INT vncomp[MAX_NODAL_VECTORS];
   INT vtype[MAX_NODAL_VECTORS];
-  INT types[NVECTYPES];
   const SHORT *Comp[MAX_NODAL_VECTORS][MAX_NODAL_VECTORS];
   INT i,j,k,l,m,m1,m2;
   DOUBLE *mptr;
@@ -855,7 +828,6 @@ INT AddVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
   MATRIX *theMatrix;
   INT vncomp[MAX_NODAL_VECTORS];
   INT vtype[MAX_NODAL_VECTORS];
-  INT types[NVECTYPES];
   const SHORT *Comp[MAX_NODAL_VECTORS][MAX_NODAL_VECTORS],*comp;
   INT i,j,k,l,m,m1,m2;
   DOUBLE *mptr;
@@ -942,13 +914,13 @@ INT AddVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
 
    SYNOPSIS:
    INT GetElementVMPtrs (ELEMENT *theElement,
-   VECDATA_DESC *theVD, MATDATA_DESC *theTMD,
+   VECDATA_DESC *theVD, MATDATA_DESC *md,
    DOUBLE **vptr, DOUBLE **mptr);
 
    PARAMETERS:
    .  theElement - pointer to an element
    .  theVD - type vector descriptor
-   .  theTMD - type matrix descriptor
+   .  md - type matrix descriptor
    .  vptr - pointer to double values corresponding to the local right hand side
    .  mptr - pointer to double values corresponding to the local stiffness matrix
 
@@ -964,7 +936,7 @@ INT AddVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
 /****************************************************************************/
 
 INT GetElementVMPtrs (ELEMENT *theElement,
-                      const VECDATA_DESC *theVD, const MATDATA_DESC *theTMD,
+                      const VECDATA_DESC *theVD, const MATDATA_DESC *md,
                       DOUBLE **vptr, DOUBLE **mptr)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
@@ -995,7 +967,7 @@ INT GetElementVMPtrs (ELEMENT *theElement,
       for (l=0; l<vncomp[i]; l++)
         mptr[(m1+k)*m+m1+l] =
           MVALUEPTR(theMatrix,
-                    MD_MCMP_OF_RT_CT(theTMD,vtype[i],vtype[i],k*vncomp[i]+l));
+                    MD_MCMP_OF_RT_CT(md,vtype[i],vtype[i],k*vncomp[i]+l));
     m2 = 0;
     for (j=0; j<i; j++)
     {
@@ -1005,13 +977,13 @@ INT GetElementVMPtrs (ELEMENT *theElement,
         for (l=0; l<vncomp[j]; l++)
           mptr[(m1+k)*m+m2+l] =
             MVALUEPTR(theMatrix,
-                      MD_MCMP_OF_RT_CT(theTMD,vtype[i],vtype[j],k*vncomp[j]+l));
+                      MD_MCMP_OF_RT_CT(md,vtype[i],vtype[j],k*vncomp[j]+l));
       theMatrix = MADJ(theMatrix);
       for (k=0; k<vncomp[i]; k++)
         for (l=0; l<vncomp[j]; l++)
           mptr[(m2+l)*m+m1+k] =
             MVALUEPTR(theMatrix,
-                      MD_MCMP_OF_RT_CT(theTMD,vtype[i],vtype[j],l*vncomp[i]+k));
+                      MD_MCMP_OF_RT_CT(md,vtype[i],vtype[j],l*vncomp[i]+k));
       m2 += vncomp[j];
     }
     m1 += vncomp[i];
@@ -1026,14 +998,14 @@ INT GetElementVMPtrs (ELEMENT *theElement,
 
    SYNOPSIS:
    INT GetElementVVMPtrs (ELEMENT *theElement, VECDATA_DESC *theVD1,
-   VECDATA_DESC *theVD2, MATDATA_DESC *theTMD,
+   VECDATA_DESC *theVD2, MATDATA_DESC *md,
    DOUBLE **vptr1, DOUBLE **vptr2, DOUBLE **mptr, INT *vecskip);
 
    PARAMETERS:
    .  theElement - pointer to an element
    .  theVD1 - type vector descriptor
    .  theVD2 - type vector descriptor
-   .  theTMD - type matrix descriptor
+   .  md - type matrix descriptor
    .  vptr1 - pointer to double values corresponding to the local right hand side
    .  vptr2 - pointer to double values corresponding to the local right hand side
    .  mptr - pointer to double values corresponding to the local stiffness matrix
@@ -1053,7 +1025,7 @@ INT GetElementVMPtrs (ELEMENT *theElement,
 /****************************************************************************/
 
 INT GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD1,
-                       const VECDATA_DESC *theVD2, const MATDATA_DESC *theTMD,
+                       const VECDATA_DESC *theVD2, const MATDATA_DESC *md,
                        DOUBLE **vptr1, DOUBLE **vptr2, DOUBLE **mptr,
                        INT *vecskip)
 {
@@ -1091,7 +1063,7 @@ INT GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD1,
       for (l=0; l<vncomp[i]; l++)
         mptr[(m1+k)*m+m1+l] =
           MVALUEPTR(theMatrix,
-                    MD_MCMP_OF_RT_CT(theTMD,vtype[i],vtype[i],k*vncomp[i]+l));
+                    MD_MCMP_OF_RT_CT(md,vtype[i],vtype[i],k*vncomp[i]+l));
     m2 = 0;
     for (j=0; j<i; j++)
     {
@@ -1101,13 +1073,13 @@ INT GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD1,
         for (l=0; l<vncomp[j]; l++)
           mptr[(m1+k)*m+m2+l] =
             MVALUEPTR(theMatrix,
-                      MD_MCMP_OF_RT_CT(theTMD,vtype[i],vtype[j],k*vncomp[j]+l));
+                      MD_MCMP_OF_RT_CT(md,vtype[i],vtype[j],k*vncomp[j]+l));
       theMatrix = MADJ(theMatrix);
       for (k=0; k<vncomp[i]; k++)
         for (l=0; l<vncomp[j]; l++)
           mptr[(m2+l)*m+m1+k] =
             MVALUEPTR(theMatrix,
-                      MD_MCMP_OF_RT_CT(theTMD,vtype[i],vtype[j],l*vncomp[i]+k));
+                      MD_MCMP_OF_RT_CT(md,vtype[i],vtype[j],l*vncomp[i]+k));
       m2 += vncomp[j];
     }
     m1 += vncomp[i];
@@ -1129,7 +1101,7 @@ INT GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD1,
    DESCRIPTION:
    This function prepares the execution of GetElementMultipleVMPtrs in an element
    loop. It has to be called once before running the loop. The types needed are
-   evaluated and it is checked, wether the components described by the
+   evaluated and it is checked, whether the components described by the
    XXXDATA_DESCs passed are in subsequent order. In this case ONLY a pointer to
    the first component per type is returned. The pointer can be incremented by
    the user.
@@ -1145,7 +1117,17 @@ INT GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD1,
 
 INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
 {
+  FORMAT *fmt;
   INT tp,ctp,j,k,n,def;
+
+  /* get format */
+  if (MVMD_NVD(mvmd)>0)
+    fmt = MGFORMAT(VD_MG(MVMD_VD(mvmd,0)));
+  else if (MVMD_NMD(mvmd)>0)
+    fmt = MGFORMAT(MD_MG(MVMD_MD(mvmd,0)));
+  else
+    /* no XXXDATA_DESCs defined at all */
+    REP_ERR_RETURN (1);
 
   for (j=0; j<MVMD_NVD(mvmd); j++) MVMD_VDSUBSEQ(mvmd,j) = TRUE;
   for (j=0; j<MVMD_NMD(mvmd); j++) MVMD_MDSUBSEQ(mvmd,j) = TRUE;
@@ -1159,7 +1141,7 @@ INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
         def = TRUE;
         if (MVMD_VDSUBSEQ(mvmd,j))
         {
-          /* check wether components are arranged subsequently in VECTORs of tp */
+          /* check whether components are arranged subsequently in VECTORs of tp */
           n = VD_NCMPS_IN_TYPE(MVMD_VD(mvmd,j),tp)-1;
           for (k=0; k<n; k++)
             if (VD_CMP_OF_TYPE(MVMD_VD(mvmd,j),tp,k+1)!=VD_CMP_OF_TYPE(MVMD_VD(mvmd,j),tp,k)+1)
@@ -1176,7 +1158,7 @@ INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
         if (MVMD_VDSUBSEQ(mvmd,j))
           for (ctp=0; ctp<NVECTYPES; ctp++)
           {
-            /* check wether components are arranged subsequently in MATRIXs of tp,ctp */
+            /* check whether components are arranged subsequently in MATRIXs of tp,ctp */
             n = MD_ROWS_IN_RT_CT(MVMD_MD(mvmd,j),tp,ctp)*MD_COLS_IN_RT_CT(MVMD_MD(mvmd,j),tp,ctp)
                 -1;
             for (k=0; k<n; k++)
@@ -1190,6 +1172,16 @@ INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
 
     MVMD_TYPE(mvmd,tp) = def;
   }
+
+  /* fill data and object types */
+  MVMD_DATATYPES(mvmd) = MVMD_OBJTYPES(mvmd) = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (MVMD_TYPE(mvmd,tp))
+    {
+      MVMD_DATATYPES(mvmd) |= BITWISE_TYPE(tp);
+      MVMD_OBJTYPES(mvmd)  |= FMT_T2O(fmt,tp);
+    }
+
   return (0);
 }
 
@@ -1246,7 +1238,8 @@ INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
   INT i,j,k,l,nskip,cnt,rt,ct;
   INT vc[MAXVD],mc[MAXMD];
 
-  if (GetVectorsOfTypes(elem,MVMD_TYPES(mvmd),&cnt,theVec)!=GM_OK)
+
+  if (GetVectorsOfDataTypesInObjects(elem,MVMD_DATATYPES(mvmd),MVMD_OBJTYPES(mvmd),&cnt,theVec)!=GM_OK)
     return (-1);
 
   nskip = 0;
@@ -1652,7 +1645,7 @@ INT ModifyDirichletMatrix (GRID *theGrid, const MATDATA_DESC *Mat)
 INT ModifyDirichletDefect (GRID *theGrid, const VECDATA_DESC *Cor)
 {
   VECTOR *theVec;
-  INT i,j,comp1,ncomp,dcomp,type,dtype;
+  INT j,comp1,ncomp,type;
 
   for (theVec=FIRSTVECTOR(theGrid); theVec!= NULL; theVec=SUCCVC(theVec))
   {

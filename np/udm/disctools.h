@@ -55,6 +55,8 @@
 
 #define MVMD_TYPES(p)           ((p)->types)
 #define MVMD_TYPE(p,i)          (MVMD_TYPES(p)[i])
+#define MVMD_DATATYPES(p)       ((p)->datatypes)
+#define MVMD_OBJTYPES(p)        ((p)->objtypes)
 #define MVMD_VDSUBSEQ(p,i)      ((p)->vdsubseq[i])
 #define MVMD_MDSUBSEQ(p,i)      ((p)->mdsubseq[i])
 
@@ -73,7 +75,9 @@ typedef struct {
   const MATDATA_DESC *mdlist[MAXMD];
 
   /* filled by PrepareElementMultipleVMPtrs */
-  INT types[NVECTYPES];
+  SHORT types[NVECTYPES];
+  INT datatypes;
+  INT objtypes;
   INT vdsubseq[MAXVD];
   INT mdsubseq[MAXMD];
 
@@ -142,7 +146,7 @@ INT SetElementDirichletFlags    (ELEMENT *theElement, const VECDATA_DESC *theTVD
                                  INT *vecskip);
 INT ModifyDirichletMatrix               (GRID *theGrid, const MATDATA_DESC *Mat);
 INT ModifyDirichletDefect               (GRID *theGrid, const VECDATA_DESC *Def);
-INT ClearDirichletValues        (GRID *theGrid, VECDATA_DESC *x);
+INT ClearDirichletValues                (GRID *theGrid, VECDATA_DESC *x);
 INT AssembleDirichletBoundary   (GRID *theGrid, const MATDATA_DESC *Mat,
                                  const VECDATA_DESC *Sol, const VECDATA_DESC *Rhs);
 INT AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,

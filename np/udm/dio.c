@@ -33,6 +33,7 @@
 #include "bio.h"
 #include "dio.h"
 #include "ugstruct.h"
+#include "general.h"
 
 #define __MGIO_USE_IN_UG__
 

@@ -37,7 +37,6 @@
 #include "general.h"
 #include "debug.h"
 #include "devices.h"
-#include "switch.h"
 #include "gm.h"
 #include "algebra.h"
 #include "misc.h"
@@ -78,6 +77,8 @@
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
+
+REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -124,20 +125,24 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
   VECTOR *theV, **VectorList;
   GRID *theGrid;
   NODE *theNode;
+  SHORT *cp[DIO_VDMAX];
+  INT ncmp[DIO_VDMAX];
   char FileName[NAMESIZE], NumberString[6];
 
   if (theMG==NULL) return (1);
   theHeap = MGHEAP(theMG);
   if (n<1) return (1);
 
-  /* check if only NODEVECTORs */
+  /* check if only NODEVECTORs and thereby get components */
   for (i=0; i<n; i++)
   {
-    if (VD_NCMPS_IN_TYPE(theVDList[i],EDGEVECTOR)) return (1);
-    if (VD_NCMPS_IN_TYPE(theVDList[i],ELEMVECTOR)) return (1);
-#ifdef __THREEDIM__
-    if (VD_NCMPS_IN_TYPE(theVDList[i],SIDEVECTOR)) return (1);
-#endif
+    if (theVDList[i]==NULL) continue;
+    cp[i] = VD_ncmp_cmpptr_of_otype(theVDList[i],NODEVEC,ncmp+i);
+    if (ncmp[i]<=0)
+    {
+      PrintErrorMessageF('E',"LoadData","vd mismatch for io (no %d)",i);
+      REP_ERR_RETURN(1);
+    }
   }
 
   /* open file */
@@ -161,7 +166,7 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
   for (i=0; i<n; i++)
   {
     if (theVDList[i]!=NULL)
-      if (dio_general.VDncomp[i] != VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR)) {CloseDTFile(); UserWrite("vd-comp do not match\n"); return (1);}
+      if (dio_general.VDncomp[i] != ncmp[i]) {CloseDTFile(); UserWrite("vd-comp do not match\n"); return (1);}
     ncomp += dio_general.VDncomp[i];
   }
 
@@ -194,8 +199,10 @@ INT LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDA
   for (i=0; i<n; i++)
   {
     if (theVDList[i]!=NULL)
-      for (j=0; j<VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR); j++)
-        entry[s++] = VD_CMP_OF_TYPE(theVDList[i],NODEVECTOR,j);
+    {
+      for (j=0; j<dio_general.VDncomp[i]; j++)
+        entry[s++] = cp[i][j];
+    }
     else
       for (j=0; j<dio_general.VDncomp[i]; j++)
         entry[s++] = -1;
@@ -281,6 +288,8 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   DOUBLE value;
   DOUBLE_VECTOR vector;
   char FileName[NAMESIZE],NumberString[6];
+  SHORT *cp[DIO_VDMAX];
+  INT ncmp[DIO_VDMAX];
 
   /* init */
   if (theMG==NULL) return (1);
@@ -292,15 +301,16 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   theHeap = MGHEAP(theMG);
   if (n<1) return (1);
 
-  /* check if only NODEVECTORs */
+  /* check if only NODEVECTORs and thereby get components */
   for (i=0; i<n; i++)
   {
     if (theVDList[i]==NULL) continue;
-    if (VD_NCMPS_IN_TYPE(theVDList[i],EDGEVECTOR)) return (1);
-    if (VD_NCMPS_IN_TYPE(theVDList[i],ELEMVECTOR)) return (1);
-#ifdef __THREEDIM__
-    if (VD_NCMPS_IN_TYPE(theVDList[i],SIDEVECTOR)) return (1);
-#endif
+    cp[i] = VD_ncmp_cmpptr_of_otype(theVDList[i],NODEVEC,ncmp+i);
+    if (ncmp[i]<=0)
+    {
+      PrintErrorMessageF('E',"SaveData","vd mismatch for io (no %d)",i);
+      REP_ERR_RETURN(1);
+    }
   }
 
   /* open file */
@@ -332,15 +342,14 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
     if (theVDList[i]!=NULL)
     {
       strcpy(dio_general.VDname[i],ENVITEM_NAME(theVDList[i]));
-      dio_general.VDncomp[i] = VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR);
-      ncomp += VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR);
-      if (VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR)==3)
+      ncomp += dio_general.VDncomp[i] = ncmp[i];
+      if (dio_general.VDncomp[i]==3)
         dio_general.VDtype[i] = DIO_VECTOR;
-      else if (VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR)==1)
+      else if (dio_general.VDncomp[i]==1)
         dio_general.VDtype[i] = DIO_SCALAR;
       else
         dio_general.VDtype[i] = DIO_MULTIPLE_SCALAR;
-      for (j=0; j<VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR); j++)
+      for (j=0; j<dio_general.VDncomp[i]; j++)
         dio_general.VDcompNames[i][j] = theVDList[i]->compNames[j];
       dio_general.VDcompNames[i][j] = '\0';
     }
@@ -382,8 +391,8 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   for (i=0; i<n; i++)
   {
     if (theVDList[i]!=NULL)
-      for (j=0; j<VD_NCMPS_IN_TYPE(theVDList[i],NODEVECTOR); j++)
-        entry[s++] = VD_CMP_OF_TYPE(theVDList[i],NODEVECTOR,j);
+      for (j=0; j<dio_general.VDncomp[i]; j++)
+        entry[s++] = cp[i][j];
     else if (theEVal[i]!=NULL)
       entry[s++] = -1;
     else if (theEVec[i]!=NULL)

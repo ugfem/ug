@@ -50,6 +50,7 @@
 
 /* macros for NP_BASE access */
 #define NP_MG(p)                                (((NP_BASE*)(p))->mg)
+#define NP_FMT(p)                               MGFORMAT(((NP_BASE*)(p))->mg)
 #define NP_GRID(p,l)                    GRID_ON_LEVEL(NP_MG(p),l)
 #define NP_STATUS(p)                    (((NP_BASE*)(p))->status)
 #define NP_INIT(p)                              (((NP_BASE*)(p))->Init)
@@ -99,7 +100,7 @@ INT CreateClass (const char *classname, INT size, ConstructorProcPtr Construct);
 NP_CONSTRUCTOR *GetConstructor (const char *classname);
 INT CreateObject (MULTIGRID *theMG, const char *objectname, const char *classname);
 
-NP_BASE *GetNumProcByName (MULTIGRID *theMG, const char *objectname, const char *classname);
+NP_BASE *GetNumProcByName (const MULTIGRID *theMG, const char *objectname, const char *classname);
 
 INT InitNumProcManager (void);
 

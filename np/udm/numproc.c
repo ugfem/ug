@@ -240,7 +240,7 @@ INT CreateObject (MULTIGRID *theMG, const char *objectname, const char *classnam
    GetNumProcByName - find a numproc object
 
    SYNOPSIS:
-   NP_BASE *GetNumProcByName (MULTIGRID *theMG, char *object_name,
+   NP_BASE *GetNumProcByName (const MULTIGRID *theMG, char *object_name,
    char *abstract_class_name);
 
    PARAMETERS:
@@ -262,7 +262,7 @@ INT CreateObject (MULTIGRID *theMG, const char *objectname, const char *classnam
    D*/
 /****************************************************************************/
 
-NP_BASE *GetNumProcByName (MULTIGRID *theMG, const char *object_name, const char *abstract_class_name)
+NP_BASE *GetNumProcByName (const MULTIGRID *theMG, const char *object_name, const char *abstract_class_name)
 {
   ENVITEM *item;
   INT n,m,i;
