@@ -39,6 +39,7 @@
 #include "ugstruct.h"
 #include "gm.h"
 #include "scan.h"
+#include "block.h"
 #include "numproc.h"
 #include "pcr.h"
 #include "np.h"
@@ -353,10 +354,10 @@ INT NPLinearSolverInit (NP_LINEAR_SOLVER *np, INT argc , char **argv)
   np->A = ReadArgvMatDesc(np->base.mg,"A",argc,argv);
   np->x = ReadArgvVecDesc(np->base.mg,"x",argc,argv);
   np->b = ReadArgvVecDesc(np->base.mg,"b",argc,argv);
-  if (sc_read(np->abslimit,np->x,"abslimit",argc,argv))
+  if (sc_read(np->abslimit,NP_FMT(np),np->x,"abslimit",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++)
       np->abslimit[i] = ABS_LIMIT;
-  if (sc_read(np->reduction,NULL,"red",argc,argv))
+  if (sc_read(np->reduction,NP_FMT(np),NULL,"red",argc,argv))
     return(NP_ACTIVE);
 
   if ((np->x == NULL) || (np->b == NULL) || (np->A == NULL))
@@ -966,7 +967,7 @@ static INT CRInit (NP_BASE *theNP, INT argc , char **argv)
   INT i;
 
   np = (NP_CR *) theNP;
-  if (sc_read (np->weight,NULL,"weight",argc,argv))
+  if (sc_read (np->weight,NP_FMT(np),NULL,"weight",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++) np->weight[i] = 1.0;
   np->p  = ReadArgvVecDesc(theNP->mg,"p",argc,argv);
   np->pp = ReadArgvVecDesc(theNP->mg,"pp",argc,argv);
@@ -1467,7 +1468,7 @@ static INT BCGSInit (NP_BASE *theNP, INT argc , char **argv)
   INT i;
 
   np = (NP_BCGS *) theNP;
-  if (sc_read (np->weight,NULL,"weight",argc,argv))
+  if (sc_read (np->weight,NP_FMT(np),NULL,"weight",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++) np->weight[i] = 1.0;
   for (i=0; i<MAX_VEC_COMP; i++) np->weight[i] *= np->weight[i];
   np->r = ReadArgvVecDesc(theNP->mg,"r",argc,argv);
@@ -1800,7 +1801,7 @@ static INT GMRESInit (NP_BASE *theNP, INT argc , char **argv)
   INT i;
 
   np = (NP_GMRES *) theNP;
-  if (sc_read (np->weight,NULL,"weight",argc,argv))
+  if (sc_read (np->weight,NP_FMT(theNP),NULL,"weight",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++) np->weight[i] = 1.0;
   for (i=0; i<MAX_VEC_COMP; i++) np->weight[i] *= np->weight[i];
   np->c = ReadArgvVecDesc(theNP->mg,"c",argc,argv);

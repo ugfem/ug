@@ -245,10 +245,10 @@ INT NPEWSolverInit (NP_EW_SOLVER *np, INT argc , char **argv)
         }
     }
   np->nev = n;
-  if (sc_read(np->abslimit,np->ev[0],"abslimit",argc,argv))
+  if (sc_read(np->abslimit,NP_FMT(np),np->ev[0],"abslimit",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++)
       np->abslimit[i] = ABS_LIMIT;
-  if (sc_read(np->reduction,np->ev[0],"red",argc,argv))
+  if (sc_read(np->reduction,NP_FMT(np),np->ev[0],"red",argc,argv))
     return(NP_ACTIVE);
   np->Assemble = (NP_NL_ASSEMBLE *)
                  ReadArgvNumProc(np->base.mg,"A",NL_ASSEMBLE_CLASS_NAME,argc,argv);
@@ -1098,7 +1098,7 @@ static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
   np->M = ReadArgvMatDesc(theNP->mg,"M",argc,argv);
   np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
   np->r = ReadArgvVecDesc(theNP->mg,"r",argc,argv);
-  if (sc_read(np->damp,np->r,"damp",argc,argv))
+  if (sc_read(np->damp,NP_FMT(np),np->r,"damp",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++)
       np->damp[i] = 1.0;
   if (ReadArgvINT("m",&(np->maxiter),argc,argv))

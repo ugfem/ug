@@ -1916,24 +1916,11 @@ INT l_ilubdecomp_SB (BLOCKVECTOR *theBV, const MATDATA_DESC *M, const VEC_SCALAR
 {
   VECTOR *vi,*vj,*vk,*first_vec,*last_vec;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
-  DOUBLE InvMat[MAX_SINGLE_MAT_COMP],PivMat[MAX_SINGLE_MAT_COMP];
-  DOUBLE CorMat[MAX_SINGLE_MAT_COMP];
-  DOUBLE sum;
   INT offset[NVECTYPES+1],last_index;
-  register DOUBLE *Diag,*Piv,*Elm,*Mat,*Djj,*Dkk;
-  register SHORT *DiagComp,*PivComp,*ElmComp,*MatComp,*DjjComp,*DkkComp;
-  register INT i0,j0,k0,l,m;
-  INT type,ctype,rtype,PivIsZero,CorIsZero;
-  INT n,n2,nr,nnr,nc,nrnc;
+  INT type,ctype,rtype;
+  INT nr;
   INT i,mc,mask;
-  DOUBLE RowSum[MAX_SINGLE_VEC_COMP],Damp[MAX_SINGLE_VEC_COMP];
-  VEC_SCALAR j_Normalization,k_Normalization;
   DOUBLE diag,invdiag,pivot,AbsDjj;
-  const DOUBLE *TypeBeta,*TypeThresh;
-  const DOUBLE *TypeORT;
-  DOUBLE *Rest;
-  SHORT *RestComp;
-  INT flag;
 
   /* consistency check: diagonal blocks are supposed to be square matrices */
   for (type=0; type<NVECTYPES; type++)
@@ -4123,18 +4110,10 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
 INT l_luiter_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*last_vec;
-  INT rtype,ctype,myindex,err,first_index,last_index;
+  INT myindex,err,first_index,last_index;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
-  register SHORT *mcomp,*vcomp,*wcomp,*dcomp;
-  register SHORT i,j;
-  register SHORT n,nc;
   register DOUBLE sum;
-  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
-  DEFINE_VS_CMPS(s);
-  DEFINE_VD_CMPS(cy);
-  DEFINE_MD_CMPS(m);
-  register SHORT *tmpptr;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -4195,18 +4174,10 @@ INT l_luiter_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *
 INT l_tpluiter_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*last_vec;
-  INT rtype,ctype,myindex,err,first_index,last_index;
+  INT myindex,err,first_index,last_index;
   register MATRIX *mat;
   register SHORT vc,dc,mc,mask;
-  register SHORT *mcomp,*vcomp,*wcomp,*dcomp;
-  register SHORT i,j;
-  register SHORT n,nc;
   register DOUBLE sum;
-  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
-  DEFINE_VS_CMPS(s);
-  DEFINE_VD_CMPS(cy);
-  DEFINE_MD_CMPS(m);
-  register SHORT *tmpptr;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -5225,7 +5196,7 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
       i = VINDEX(vi);
 
       /* check coarse grid position */
-      if (VTYPE(vi)==NODEVECTOR)
+      if (VOTYPE(vi)==NODEVEC)
         if (CORNERTYPE(VMYNODE(vi))) continue;                         /* skip coarse grid node */
 
       /* now we are at line i */
@@ -5303,7 +5274,7 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
     n2       = n*n;
 
     /* check coarse grid position */
-    if (VTYPE(vi)==NODEVECTOR)
+    if (VOTYPE(vi)==NODEVEC)
       if (CORNERTYPE(VMYNODE(vi))) continue;                   /* skip coarse grid node */
 
     i = VINDEX(vi);
@@ -5543,7 +5514,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
     for (vec=first_vec; vec!= NULL; vec=SUCCVC(vec))
     {
       /* check coarse grid position */
-      if (VTYPE(vec)==NODEVECTOR)
+      if (VOTYPE(vec)==NODEVEC)
         if (CORNERTYPE(VMYNODE(vec))) {
           VVALUE(vec,vc) = 0.0;                                 /* no correction */
           continue;                                                             /* skip coarse grid node */
@@ -5567,7 +5538,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
     for (vec=last_vec; vec!= NULL; vec=PREDVC(vec))
     {
       /* check coarse grid position */
-      if (VTYPE(vec)==NODEVECTOR)
+      if (VOTYPE(vec)==NODEVEC)
         if (CORNERTYPE(VMYNODE(vec))) {
           VVALUE(vec,vc) = 0.0;                                 /* no correction */
           continue;                                                             /* skip coarse grid node */
@@ -5605,7 +5576,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
     myindex = VINDEX(vec);
 
     /* check coarse grid position */
-    if (rtype==NODEVECTOR)
+    if (VOTYPE(vec)==NODEVEC)
       if (CORNERTYPE(VMYNODE(vec))) {
         vcomp = VD_CMPPTR_OF_TYPE(v,rtype);
         vmat  = VVALPTR(vec);
@@ -5742,7 +5713,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
     myindex = VINDEX(vec);
 
     /* check coarse grid position */
-    if (rtype==NODEVECTOR)
+    if (VOTYPE(vec)==NODEVEC)
       if (CORNERTYPE(VMYNODE(vec))) {
         vcomp = VD_CMPPTR_OF_TYPE(v,rtype);
         vmat  = VVALPTR(vec);

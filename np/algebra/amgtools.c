@@ -404,7 +404,7 @@ static INT GenerateNewGrid(GRID *theGrid)
     if (VCCOARSE(vect))
     {
       /* generate coarse grid vector at end of list */
-      if ((newVect=CreateVector(newGrid,VTYPE(vect),vect->object))==NULL)
+      if (CreateVector(newGrid,VOTYPE(vect),VOBJECT(vect),&newVect))
       {
         PrintErrorMessage('E',"GenerateNewGrid",
                           "could not create vector");
@@ -1068,7 +1068,7 @@ static INT GenerateClusters(AVECTOR **Ua, AVECTOR **Ue, GRID *theGrid, GRID *new
       }
 
       /* generate a coarse grid vector for the cluster */
-      if ((newVect=CreateVector(newGrid,VTYPE(vect),vect->object))==NULL)
+      if (CreateVector(newGrid,VOTYPE(vect),VOBJECT(vect),&newVect))
       {
         PrintErrorMessage('E',"GenerateClusters","could not create vector");
         REP_ERR_RETURN(1);

@@ -123,6 +123,8 @@ INT AMGTransferDisplay    (NP_BASE *theNP);
 INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
                            VECDATA_DESC *x, VECDATA_DESC *b,
                            MATDATA_DESC *A, INT *result);
+INT AMGTransferExecute    (NP_BASE *theNP, INT argc , char **argv);
+
 INT InitAMGTransfer       (void);
 
 #endif

@@ -34,7 +34,6 @@
 #include <math.h>
 #include <time.h>
 
-#include "switch.h"             /* for  __TWODIM__ and  __THREEDIM__ */
 #include "compiler.h"
 #include "gm.h"          /* for data structure               */
 #include "ugstruct.h"    /* for GetStringValue               */
@@ -497,7 +496,7 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
    DESCRIPTION:
    Calculates for given Theta and T (d=dest, s=source)
                 T_dd += Theta_ds*T_ss*Theta_sd - Theta_ds*L_sd - L_ds*Theta_sd
-   If neccessary new connections are allocated as 'extra connections'.
+   If necessary new connections are allocated as 'extra connections'.
 
    RETURN VALUE:
    INT
@@ -975,7 +974,7 @@ INT FFDecomp( DOUBLE wavenr,
 /****************************************************************************/
 
 INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT K_comp, INT u_comp, INT f_comp, INT cor_comp, INT FF_comp, INT LU_comp, INT tv_comp, INT aux_comp, INT auxsub_comp, INT FFsub_comp, DOUBLE meshwidth, DOUBLE eps, GRID *grid )
-/* not neccessary for the new np */
+/* not necessary for the new np */
 {
   DOUBLE old_norm, new_norm, start_norm, step_norm, final_acc;
   INT i, j=0, it, nr_TFFs;

@@ -829,7 +829,7 @@ static INT NewtonInit (NP_BASE *base, INT argc, char **argv)
     PrintErrorMessage('E',"NewtonInit","lambda must be in (-2,2)");
     REP_ERR_RETURN(NP_NOT_ACTIVE);
   }
-  if (sc_read(newton->linMinRed,newton->s,"linminred",argc,argv))
+  if (sc_read(newton->linMinRed,NP_FMT(newton),newton->s,"linminred",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++)
       newton->linMinRed[i] = 0.001;
 

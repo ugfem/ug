@@ -163,11 +163,11 @@ INT NPNLSolverInit (NP_NL_SOLVER *np, INT argc , char **argv)
   if (np->x == NULL) r = NP_ACTIVE;
 
   /* abslimit is required for execution */
-  if (sc_read(np->abslimit,np->x,"abslimit",argc,argv))
+  if (sc_read(np->abslimit,NP_FMT(np),np->x,"abslimit",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++) np->abslimit[i] = 1.0E-10;             /* default */
 
   /* reduction factor is required for execution */
-  if (sc_read(np->reduction,NULL,"red",argc,argv))
+  if (sc_read(np->reduction,NP_FMT(np),NULL,"red",argc,argv))
     r = NP_ACTIVE;
 
   /* assemble numproc is required for execution */

@@ -146,7 +146,7 @@ typedef struct {
 static LOCAL_DOUBLES LocalCoords[TAGS];
 
 /* data for CVS */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 REP_ERR_FILE;
 

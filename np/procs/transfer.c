@@ -231,7 +231,7 @@ INT NPTransferInit (NP_TRANSFER *np, INT argc , char **argv)
   np->baselevel = 0;
   ReadArgvINT("baselevel",&(np->baselevel),argc,argv);
 
-  if (sc_read(np->damp,np->x,"damp",argc,argv))
+  if (sc_read(np->damp,NP_FMT(np),np->x,"damp",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++)
       np->damp[i] = 1.0;
 

@@ -510,7 +510,7 @@ static int Gather_ProjectVectorComp (DDD_OBJ obj, void *data)
 	const SHORT *Comp;	
 
 	((INT *)data)[0] = 1;
-	if (VTYPE(pv) == NODEVECTOR) {
+	if (VOTYPE(pv) == NODEVEC) {
 	    theNode = SONNODE(VMYNODE(pv));
 		if (theNode != NULL)
 		    if (MASTER(NVECTOR(theNode)))

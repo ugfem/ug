@@ -206,7 +206,7 @@ static INT HasDirichletNeighbour( const VECTOR *v )
   INT type;
 
   /* only node vectors are considered */
-  ASSERT( VTYPE(v) == NODEVECTOR );
+  ASSERT( VOTYPE(v) == NODEVEC );
 
   my_node = (NODE*)VOBJECT( v );
 
@@ -1215,9 +1215,12 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
                     INT b_comp )
 {
   register BLOCKVECTOR *bv_i, *bv_ip1, *bv_stop;
-  register BV_DESC *bvd_i, *bvd_ip1, *bvd_temp;
+  register BV_DESC *bvd_i=NULL, *bvd_ip1, *bvd_temp;
   BV_DESC bvd1, bvd2;
-  INT aux_comp, auxsub_comp, L_comp;
+  INT aux_comp, L_comp;
+#       ifdef MINV_2D_EXACT
+  INT auxsub_comp;
+#       endif
 
   if ( BV_IS_LEAF_BV(bv) )
   {

@@ -128,21 +128,21 @@ static INT StandardRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
   VECTOR *v,*vc;
   DOUBLE c[MAX_CORNERS_OF_ELEM],s[MAX_SINGLE_VEC_COMP];
   const SHORT *toComp,*fromComp;
-  INT i,j,n,ncomp,vecskip;
+  INT i,j,n,ncomp,vecskip,dt;
 
   CoarseGrid = DOWNGRID(FineGrid);
 
-  ncomp    = VD_NCMPS_IN_TYPE(to,NODEVECTOR);
-  if (ncomp == 0)
+  toComp    = VD_ncmp_cmpptr_of_otype(to,NODEVEC,&ncomp);
+  fromComp  = VD_cmpptr_of_otype(from,NODEVEC);
+  if (ncomp <= 0)
     return(NUM_ERROR);
   if (ncomp>MAX_SINGLE_VEC_COMP)
     return (NUM_BLOCK_TOO_LARGE);
-  toComp   = VD_CMPPTR_OF_TYPE(to,NODEVECTOR);
-  fromComp = VD_CMPPTR_OF_TYPE(from,NODEVECTOR);
 
   /* reset coarser defect at positions where a new defect is restricted */
+  dt = VD_DATA_TYPES(to);
   for (v=FIRSTVECTOR(CoarseGrid); v!= NULL; v=SUCCVC(v))
-    if (VTYPE(v)==NODEVECTOR)
+    if ((VOTYPE(v)==NODEVEC) && V_IN_DATATYPE(v,dt))
       if (VNCLASS(v)>=NEWDEF_CLASS)
         for (i=0; i<ncomp; i++)
           VVALUE(v,toComp[i]) = 0.0;
@@ -152,11 +152,12 @@ static INT StandardRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
   {
     v = NVECTOR(theNode);
     if (VCLASS(v)<NEWDEF_CLASS) continue;
+    if (!V_IN_DATATYPE(v,dt)) continue;
 
     if (CORNERTYPE(theNode))
     {
       vc = NVECTOR(NFATHER(theNode));
-      vecskip = VECSKIP(vc);
+      vecskip  = VECSKIP(vc);
       for (i=0; i<ncomp; i++)
         if (!(vecskip & (1<<i)))
           VVALUE(vc,toComp[i]) += damp[i] * VVALUE(v,fromComp[i]);
@@ -172,6 +173,12 @@ static INT StandardRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
       for (i=0; i<n; i++)
       {
         vc = NVECTOR(CORNER(theElement,i));
+
+        /* HRR_TODO: at coupling boundaries we want to avoid accessing vectors of
+           other parts. This may introduce a small error at curved inner coupling
+           boundaries where the vertex does not ly on the element edge */
+        if (!V_IN_DATATYPE(vc,dt)) continue;
+
         vecskip = VECSKIP(vc);
         for (j=0; j<ncomp; j++)
           if (!(vecskip & (1<<j)))
@@ -218,19 +225,19 @@ static INT StandardIntCorNodeVector (GRID *FineGrid, const VECDATA_DESC *to, con
   VECTOR *v,*vc,*cvec[MAX_CORNERS_OF_ELEM];
   DOUBLE c[MAX_CORNERS_OF_ELEM];
   const SHORT *toComp,*fromComp;
-  INT i,j,n,ncomp,vecskip,skip;
+  INT i,j,n,ncomp,vecskip,skip,dt;
 
   CoarseGrid = DOWNGRID(FineGrid);
 
-  ncomp    = VD_NCMPS_IN_TYPE(to,NODEVECTOR);
-  if (ncomp == 0)
+  toComp   = VD_ncmp_cmpptr_of_otype(to,NODEVEC,&ncomp);
+  fromComp = VD_cmpptr_of_otype(from,NODEVEC);
+  if (ncomp <= 0)
     return(NUM_ERROR);
-  toComp   = VD_CMPPTR_OF_TYPE(to,NODEVECTOR);
-  fromComp = VD_CMPPTR_OF_TYPE(from,NODEVECTOR);
 
   /* reset fine to field */
+  dt = VD_DATA_TYPES(to);
   for (v=FIRSTVECTOR(FineGrid); v!= NULL; v=SUCCVC(v))
-    if (VTYPE(v)==NODEVECTOR)
+    if ((VOTYPE(v)==NODEVEC) && V_IN_DATATYPE(v,dt))
       for (i=0; i<ncomp; i++)
         VVALUE(v,toComp[i]) = 0.0;
 
@@ -238,6 +245,7 @@ static INT StandardIntCorNodeVector (GRID *FineGrid, const VECDATA_DESC *to, con
   for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {
     v = NVECTOR(theNode);
+    if (!V_IN_DATATYPE(v,dt)) continue;
     vecskip = VECSKIP(v);
     skip = TRUE;
     for (i=0; i<ncomp; i++)
@@ -259,11 +267,19 @@ static INT StandardIntCorNodeVector (GRID *FineGrid, const VECDATA_DESC *to, con
       n = CORNERS_OF_ELEM(theElement);
       GNs(n,LCVECT(theVertex),c);
       for (i=0; i<n; i++)
+      {
         cvec[i] = NVECTOR(CORNER(theElement,i));
+        /* HRR_TODO: at coupling boundaries we want to avoid accessing vectors of
+           other parts. This may introduce a small error at curved inner coupling
+           boundaries where the vertex does not ly on the element edge */
+        if (!V_IN_DATATYPE(cvec[i],dt))
+          c[i] = 0.0;
+      }
       for (j=0; j<ncomp; j++)
         if (!(vecskip & (1<<j)))
           for (i=0; i<n; i++)
-            VVALUE(v,toComp[j]) += c[i]*damp[j] * VVALUE(cvec[i],fromComp[j]);
+            if (c[i]!=0.0)                                      /* since VVALUE(cvec[i],fromComp[j]) maybe not valid */
+              VVALUE(v,toComp[j]) += c[i]*damp[j] * VVALUE(cvec[i],fromComp[j]);
     }
   }
 
@@ -302,20 +318,21 @@ static INT StandardIntNewNodeVector (GRID *FineGrid, const VECDATA_DESC *Cor)
   VECTOR *v,*vc,*cvec[MAX_CORNERS_OF_ELEM];
   DOUBLE c[MAX_CORNERS_OF_ELEM];
   const SHORT *Comp;
-  INT i,j,n,ncomp;
+  INT i,j,n,ncomp,dt;
 
   CoarseGrid = DOWNGRID(FineGrid);
 
-  ncomp    = VD_NCMPS_IN_TYPE(Cor,NODEVECTOR);
-  if (ncomp == 0)
+  Comp   = VD_ncmp_cmpptr_of_otype(Cor,NODEVEC,&ncomp);
+  if (ncomp <= 0)
     return(NUM_ERROR);
-  Comp   = VD_CMPPTR_OF_TYPE(Cor,NODEVECTOR);
 
   /* interpolate values to all fine node vectors */
+  dt = VD_DATA_TYPES(Cor);
   for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {
     v = NVECTOR(theNode);
     if (!VNEW(v)) continue;
+    if (!V_IN_DATATYPE(v,dt)) continue;
 
     if (CORNERTYPE(theNode))
     {
@@ -330,12 +347,21 @@ static INT StandardIntNewNodeVector (GRID *FineGrid, const VECDATA_DESC *Cor)
       n   = CORNERS_OF_ELEM(theElement);
       GNs(n,LCVECT(theVertex),c);
       for (i=0; i<n; i++)
+      {
         cvec[i] = NVECTOR(CORNER(theElement,i));
+        /* HRR_TODO: at coupling boundaries we want to avoid accessing vectors of
+           other parts. This may introduce a small error at curved inner coupling
+           boundaries where the vertex does not ly on the element edge */
+        if (!V_IN_DATATYPE(cvec[i],dt))
+          c[i] = 0.0;
+      }
       for (j=0; j<ncomp; j++)
       {
         VVALUE(v,Comp[j]) = 0.0;
+
         for (i=0; i<n; i++)
-          VVALUE(v,Comp[j]) += c[i] * VVALUE(cvec[i],Comp[j]);
+          if (c[i]!=0.0)                                /* since VVALUE(cvec[i],fromComp[j]) maybe not valid */
+            VVALUE(v,Comp[j]) += c[i] * VVALUE(cvec[i],Comp[j]);
       }
     }
   }
@@ -380,21 +406,24 @@ INT StandardRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC
   offset = VD_OFFSETPTR(to);
 
   for (vtype=0; vtype<NVECTYPES; vtype++)
-    if (VD_NCMPS_IN_TYPE(to,vtype)>0)
-      switch (vtype)
+    if (VD_ISDEF_IN_TYPE(to,vtype))
+      switch (GetUniqueOTypeOfVType(MGFORMAT(MYMG(FineGrid)),vtype))
       {
-      case ELEMVECTOR :
+      case ELEMVEC :
         UserWrite("not implemented");
         return (NUM_ERROR);
-      case NODEVECTOR :
+      case NODEVEC :
         if ((rv=StandardRestrictNodeVector(FineGrid,to,from,damp+offset[vtype]))!=NUM_OK)
           return (rv);
         break;
-      case EDGEVECTOR :
+      case EDGEVEC :
         UserWrite("not implemented");
         return (NUM_ERROR);
-      case SIDEVECTOR :
+      case SIDEVEC :
         UserWrite("not implemented");
+        return (NUM_ERROR);
+      default :
+        UserWrite("not unique");
         return (NUM_ERROR);
       }
 
@@ -438,21 +467,24 @@ INT StandardInterpolateCorrection (GRID *FineGrid, const VECDATA_DESC *to, const
   offset = VD_OFFSETPTR(to);
 
   for (vtype=0; vtype<NVECTYPES; vtype++)
-    if (VD_NCMPS_IN_TYPE(to,vtype)>0)
-      switch (vtype)
+    if (VD_ISDEF_IN_TYPE(to,vtype))
+      switch (GetUniqueOTypeOfVType(MGFORMAT(MYMG(FineGrid)),vtype))
       {
-      case ELEMVECTOR :
+      case ELEMVEC :
         UserWrite("not implemented");
         return (NUM_ERROR);
-      case NODEVECTOR :
+      case NODEVEC :
         if ((rv=StandardIntCorNodeVector(FineGrid,to,from,damp+offset[vtype]))!=NUM_OK)
           return (rv);
         break;
-      case EDGEVECTOR :
+      case EDGEVEC :
         UserWrite("not implemented");
         return (NUM_ERROR);
-      case SIDEVECTOR :
+      case SIDEVEC :
         UserWrite("not implemented");
+        return (NUM_ERROR);
+      default :
+        UserWrite("not unique");
         return (NUM_ERROR);
       }
 
@@ -491,21 +523,24 @@ INT StandardInterpolateNewVectors (GRID *FineGrid, const VECDATA_DESC *Sol)
     return (NUM_NO_COARSER_GRID);
 
   for (vtype=0; vtype<NVECTYPES; vtype++)
-    if (VD_NCMPS_IN_TYPE(Sol,vtype)>0)
-      switch (vtype)
+    if (VD_ISDEF_IN_TYPE(Sol,vtype))
+      switch (GetUniqueOTypeOfVType(MGFORMAT(MYMG(FineGrid)),vtype))
       {
-      case ELEMVECTOR :
+      case ELEMVEC :
         UserWrite("not implemented");
         return (NUM_ERROR);
-      case NODEVECTOR :
+      case NODEVEC :
         if ((rv=StandardIntNewNodeVector(FineGrid,Sol))!=NUM_OK)
           return (rv);
         break;
-      case EDGEVECTOR :
+      case EDGEVEC :
         UserWrite("not implemented");
         return (NUM_ERROR);
-      case SIDEVECTOR :
+      case SIDEVEC :
         UserWrite("not implemented");
+        return (NUM_ERROR);
+      default :
+        UserWrite("not unique");
         return (NUM_ERROR);
       }
 
@@ -544,55 +579,57 @@ INT StandardProject (GRID *CoarseGrid, const VECDATA_DESC *to,
   NODE *theNode;
   DOUBLE *val;
   const SHORT *toComp,*fromComp,*edComp;
-  INT i,j,m,ncomp,edcomp;
+  INT i,j,m,ncomp,edcomp,nfrom,dt;
 
-  ncomp = VD_NCMPS_IN_TYPE(to,NODEVECTOR);
-  edcomp = VD_NCMPS_IN_TYPE(to,EDGEVECTOR);
-  toComp = VD_CMPPTR_OF_TYPE(to,NODEVECTOR);
-  edComp = VD_CMPPTR_OF_TYPE(to,EDGEVECTOR);
-  fromComp = VD_CMPPTR_OF_TYPE(from,NODEVECTOR);
+  toComp   = VD_ncmp_cmpptr_of_otype(to,NODEVEC,&ncomp);
+  edComp   = VD_ncmp_cmpptr_of_otype(to,EDGEVEC,&edcomp);
+  fromComp = VD_ncmp_cmpptr_of_otype(from,NODEVEC,&nfrom);
 
-  if (ncomp == 0)
+  if (ncomp <= 0)
     return (NUM_OK);
   if (ncomp < edcomp)
     return(NUM_ERROR);
-  if (VD_NCMPS_IN_TYPE(from,NODEVECTOR) < ncomp)
+  if (nfrom < ncomp)
     return(NUM_ERROR);
   if (ncomp>MAX_VEC_COMP)
     return (NUM_BLOCK_TOO_LARGE);
 
+  dt = VD_DATA_TYPES(to);
   for (v=FIRSTVECTOR(CoarseGrid); v!= NULL; v=SUCCVC(v))
-  {
-    if (VTYPE(v) == NODEVECTOR)
+    if (V_IN_DATATYPE(v,dt))
     {
-      theNode = SONNODE((NODE *)VOBJECT(v));
-      if (theNode ==  NULL)
-        continue;
-      val = VVALUEPTR(NVECTOR(theNode),0);
-      for (i=0; i<ncomp; i++)
-        VVALUE(v,toComp[i]) = val[fromComp[i]];
+      if (VOTYPE(v) == NODEVEC)
+      {
+        theNode = SONNODE((NODE *)VOBJECT(v));
+        if (theNode ==  NULL)
+          continue;
+        val = VVALUEPTR(NVECTOR(theNode),0);
+        for (i=0; i<ncomp; i++)
+          VVALUE(v,toComp[i]) = val[fromComp[i]];
+      }
+      else if (VOTYPE(v) == EDGEVEC)
+      {
+        theNode = MIDNODE((EDGE *)VOBJECT(v));
+        if (theNode ==  NULL)
+          continue;
+        val = VVALUEPTR(NVECTOR(theNode),0);
+        for (i=0; i<edcomp; i++)
+          VVALUE(v,edComp[i]) = val[fromComp[i]];
+      }
     }
-    else if (VTYPE(v) == EDGEVECTOR)
-    {
-      theNode = MIDNODE((EDGE *)VOBJECT(v));
-      if (theNode ==  NULL)
-        continue;
-      val = VVALUEPTR(NVECTOR(theNode),0);
-      for (i=0; i<edcomp; i++)
-        VVALUE(v,edComp[i]) = val[fromComp[i]];
-    }
-  }
 
-  if (edcomp == 0)
+  if (edcomp <= 0)
     return (NUM_OK);
 
-  fromComp = VD_CMPPTR_OF_TYPE(from,EDGEVECTOR);
+  fromComp = VD_cmpptr_of_otype(from,EDGEVEC);
   for (t=FIRSTELEMENT(CoarseGrid); t!=NULL; t=SUCCE(t))
   {
     if (NSONS(t) != 1)
       continue;
     GetVectorsOfEdges ((const ELEMENT *)t       ,&m,v0);
+    DataTypeFilterVList(dt,v0,&m);
     GetVectorsOfEdges ((const ELEMENT *)SON(t,0),&m,v1);
+    DataTypeFilterVList(dt,v1,&m);
     for (j=0; j<m; j++)
       for (i=0; i<edcomp; i++)
         VVALUE(v0[j],edComp[i]) = VVALUE(v1[j],fromComp[i]);
@@ -1975,21 +2012,20 @@ static INT ScaledMGRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
   VECTOR *v,*vc;
   const SHORT *toComp,*fromComp;
   INT i,k,ncomp,vecskip;
-  INT mtype;
+  INT dt;
   MATRIX *im;
 
   CoarseGrid = DOWNGRID(FineGrid);
 
-  ncomp    = VD_NCMPS_IN_TYPE(to,NODEVECTOR);
-  if (ncomp == 0) return(NUM_ERROR);
+  toComp   = VD_ncmp_cmpptr_of_otype(to,NODEVEC,&ncomp);
+  if (ncomp <= 0) return(NUM_ERROR);
   if (ncomp>MAX_SINGLE_VEC_COMP) return (NUM_BLOCK_TOO_LARGE);
-  toComp   = VD_CMPPTR_OF_TYPE(to,NODEVECTOR);
-  fromComp = VD_CMPPTR_OF_TYPE(from,NODEVECTOR);
-  mtype    = MTP(NODEVECTOR,NODEVECTOR);
+  fromComp = VD_cmpptr_of_otype(from,NODEVEC);
 
   /* reset coarser defect at positions where a new defect is restricted */
+  dt = VD_DATA_TYPES(to);
   for (v=FIRSTVECTOR(CoarseGrid); v!= NULL; v=SUCCVC(v))
-    if (VTYPE(v)==NODEVECTOR)
+    if ((VOTYPE(v)==NODEVEC) && V_IN_DATATYPE(v,dt))
       if (VNCLASS(v)>=NEWDEF_CLASS)
         for (i=0; i<ncomp; i++)
           VVALUE(v,toComp[i]) = 0.0;
@@ -1999,6 +2035,7 @@ static INT ScaledMGRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
   {
     v = NVECTOR(theNode);
     if (VCLASS(v)<NEWDEF_CLASS) continue;
+    if (!V_IN_DATATYPE(v,dt)) continue;
 
     for (im=VISTART(v); im!=NULL; im=MNEXT(im))
     {
@@ -2052,21 +2089,24 @@ INT ScaledMGRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC
 
   for (vtype=0; vtype<NVECTYPES; vtype++)
     if (VD_ISDEF_IN_TYPE(to,vtype))
-      switch (vtype)
+      switch (GetUniqueOTypeOfVType(MGFORMAT(MYMG(FineGrid)),vtype))
       {
-      case ELEMVECTOR :
+      case ELEMVEC :
         PrintErrorMessage('E',"MatDepRestrict","only node vector is implemented");
         return(NUM_ERROR);
-      case NODEVECTOR :
+      case NODEVEC :
         if ((rv=ScaledMGRestrictNodeVector(FineGrid,to,from,damp+offset[vtype]))!=NUM_OK)
           return (rv);
         break;
-      case EDGEVECTOR :
+      case EDGEVEC :
         PrintErrorMessage('E',"MatDepRestrict","only node vector is implemented");
         return(NUM_ERROR);
-      case SIDEVECTOR :
+      case SIDEVEC :
         PrintErrorMessage('E',"MatDepRestrict","only node vector is implemented");
         return(NUM_ERROR);
+      default :
+        UserWrite("not unique");
+        return (NUM_ERROR);
       }
 
   return (NUM_OK);
@@ -2103,8 +2143,8 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
 {
   NODE *theNode;
   VECTOR *vf,*vc;
-  INT i,j,k,n,l,ncomp,vecskip,A,mtype;
-  SHORT comps[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
+  INT i,j,k,n,l,ncomp,nc,vecskip,A,rdt;
+  SHORT *comps;
   DOUBLE Dcoarseinv[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
   DOUBLE Q[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
   DOUBLE F[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
@@ -2119,29 +2159,28 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
         #endif
 
   /* we handle only node vectors here ! */
-  mtype    = MTP(NODEVECTOR,NODEVECTOR);
-  ncomp    = MD_ROWS_IN_MTYPE(Mat,mtype);
-  if (ncomp == 0) return(__LINE__);
+  comps = MD_nr_nc_mcmpptr_of_ro_co(Mat,NODEVEC,NODEVEC,&ncomp,&nc);
+  if (ncomp <= 0) return(__LINE__);
   if (ncomp>MAX_SINGLE_VEC_COMP) return (__LINE__);
 
   /* check matrix format and get components */
-  if (MD_ROWS_IN_MTYPE(Mat,mtype)!=ncomp) return(__LINE__);
-  if (MD_COLS_IN_MTYPE(Mat,mtype)!=ncomp) return(__LINE__);
-  A = MD_MCMP_OF_MTYPE(Mat,mtype,0);
-  for (i=0; i<ncomp*ncomp; i++) {
-    if (MD_MCMP_OF_MTYPE(Mat,mtype,i)!=A+i)
+  if (nc!=ncomp) return(__LINE__);
+
+  A = comps[0];
+  for (i=0; i<ncomp*ncomp; i++)
+    if (comps[i]!=A+i)
     {
       PrintErrorMessage('E',"InstallRestrictionMatrix","matrix format incorrect");
       return(__LINE__);
     }
-    comps[i] = A+i;
-  }
 
   /* compute contributions of fine node to coarse nodes */
+  rdt = MD_ROW_DATA_TYPES(Mat);
   for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {
     vf = NVECTOR(theNode);
     if (VCLASS(vf)<NEWDEF_CLASS) continue;
+    if (!V_IN_DATATYPE(vf,rdt)) continue;
 
     /* fine grid diagonal block */
     Dfine = &(MVALUE(VSTART(vf),A));
@@ -2288,54 +2327,56 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
 INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const MATDATA_DESC *ConsMat, const VECDATA_DESC *rhs)
 {
   NODE *theNode;
-  INT A,ConsA,b,n,i,j,k,mtype;
+  INT A,ConsA,b,n,i,j,k;
   VECTOR *vi;
   MATRIX *mij;
-  SHORT comps[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
-  SHORT ConsComps[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
+  SHORT *comps,*p;
+  SHORT *ConsComps;
   DOUBLE Dfineinv[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
   DOUBLE Q[MAX_SINGLE_VEC_COMP*MAX_SINGLE_VEC_COMP];
   DOUBLE r[MAX_SINGLE_VEC_COMP];
   DOUBLE *Dfine,*bfine;
+  INT ncomp,nc;
 
-  /* check assumptions */
-  if (!VD_ISDEF_IN_TYPE(rhs,NODEVECTOR)) return(NUM_ERROR);
-  mtype = MTP(NODEVECTOR,NODEVECTOR);
-  if (!MD_ISDEF_IN_MTYPE(Mat,mtype)) return(NUM_ERROR);
-  if (!MD_ISDEF_IN_MTYPE(ConsMat,mtype)) return(NUM_ERROR);
+  /* check assumptions and get components */
 
-  n = VD_NCMPS_IN_TYPE(rhs,NODEVECTOR);
-  if (MD_ROWS_IN_MTYPE(Mat,mtype)!=n) return(NUM_ERROR);
-  if (MD_COLS_IN_MTYPE(Mat,mtype)!=n) return(NUM_ERROR);
-  if (MD_ROWS_IN_MTYPE(ConsMat,mtype)!=n) return(NUM_ERROR);
-  if (MD_COLS_IN_MTYPE(ConsMat,mtype)!=n) return(NUM_ERROR);
+  /* rhs */
+  p    = VD_ncmp_cmpptr_of_otype(rhs,NODEVEC,&n);
+  if (n <= 0) REP_ERR_RETURN(__LINE__);
+  if (n>MAX_SINGLE_VEC_COMP) REP_ERR_RETURN (__LINE__);
 
-  b = VD_CMP_OF_TYPE(rhs,NODEVECTOR,0);
-  A = MD_MCMP_OF_MTYPE(Mat,mtype,0);
-  ConsA = MD_MCMP_OF_MTYPE(ConsMat,mtype,0);
+  /* Mat */
+  comps = MD_nr_nc_mcmpptr_of_ro_co(Mat,NODEVEC,NODEVEC,&ncomp,&nc);
+  if (ncomp != n) REP_ERR_RETURN(__LINE__);
+  if (nc    != n) REP_ERR_RETURN(__LINE__);
 
+  /* ConsMat */
+  ConsComps = MD_nr_nc_mcmpptr_of_ro_co(ConsMat,NODEVEC,NODEVEC,&ncomp,&nc);
+  if (ncomp != n) REP_ERR_RETURN(__LINE__);
+  if (nc    != n) REP_ERR_RETURN(__LINE__);
+
+  /* check subsequence of components */
+  b = p[0];
   for (i=0; i<n; i++)
-    if (VD_CMP_OF_TYPE(rhs,NODEVECTOR,i)!=b+i)
+    if (p[i]!=b+i)
     {
       PrintErrorMessage('E',"ScaleSystem","vector format incorrect");
-      return(NUM_ERROR);
+      REP_ERR_RETURN(NUM_ERROR);
     }
-  for (i=0; i<n*n; i++) {
-    if (MD_MCMP_OF_MTYPE(Mat,mtype,i)!=A+i)
+  A = comps[0];
+  for (i=0; i<n*n; i++)
+    if (comps[i]!=A+i)
     {
       PrintErrorMessage('E',"ScaleSystem","matrix format incorrect");
-      return(NUM_ERROR);
+      REP_ERR_RETURN(NUM_ERROR);
     }
-    comps[i] = A+i;
-  }
-  for (i=0; i<n*n; i++) {
-    if (MD_MCMP_OF_MTYPE(ConsMat,mtype,i)!=ConsA+i)
+  ConsA = ConsComps[0];
+  for (i=0; i<n*n; i++)
+    if (ConsComps[i]!=ConsA+i)
     {
-      PrintErrorMessage('E',"ScaleSystem","matrix format incorrect");
-      return(NUM_ERROR);
+      PrintErrorMessage('E',"ScaleSystem","cons matrix format incorrect");
+      REP_ERR_RETURN(NUM_ERROR);
     }
-    ConsComps[i] = ConsA+i;
-  }
 
   /* scale system by (consistent !) point block diagonal */
   for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
@@ -2345,7 +2386,7 @@ INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const MATDATA_
 
     /* invert consistent diagonal block */
     Dfine = &(MVALUE(VSTART(vi),0));
-    if (InvertSmallBlock(n,ConsComps,Dfine,Dfineinv)!=NUM_OK) return (NUM_ERROR);
+    if (InvertSmallBlock(n,ConsComps,Dfine,Dfineinv)!=NUM_OK) REP_ERR_RETURN (NUM_ERROR);
 
     /* multiply row from left */
     for (mij=VSTART(vi); mij!=NULL; mij=MNEXT(mij))
@@ -2402,11 +2443,11 @@ INT CreateStandardNodeRestProl (GRID *FineGrid, INT ncomp)
 {
   NODE *theNode;
   VECTOR *vf,*vc;
-  INT i,j,k,n,l;
+  INT i,j,n,l;
   MATRIX *im;
   ELEMENT *theElement;
   VERTEX *theVertex;
-  DOUBLE c[MAX_CORNERS_OF_ELEM],s;
+  DOUBLE c[MAX_CORNERS_OF_ELEM];
 
   for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {

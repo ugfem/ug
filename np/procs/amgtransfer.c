@@ -400,7 +400,7 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
     np->hold=1;
 
   /* finally the usual TRANSFER data */
-  if (sc_read(np->transfer.damp,np->transfer.x,"damp",argc,argv))
+  if (sc_read(np->transfer.damp,NP_FMT(np),np->transfer.x,"damp",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++)
       np->transfer.damp[i] = 1.0;
 

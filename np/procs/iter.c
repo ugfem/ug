@@ -471,7 +471,7 @@ static INT SmootherInit (NP_BASE *theNP, INT argc , char **argv)
   np = (NP_SMOOTHER *) theNP;
 
   for (i=0; i<MAX_VEC_COMP; i++) np->damp[i] = 1.0;
-  sc_read(np->damp,np->iter.b,"damp",argc,argv);
+  sc_read(np->damp,NP_FMT(np),np->iter.b,"damp",argc,argv);
   np->L = ReadArgvMatDesc(theNP->mg,"L",argc,argv);
 
   return (NPIterInit(&np->iter,argc,argv));
@@ -1464,13 +1464,13 @@ static INT SBGS_Init (NP_BASE *theNP, INT argc , char **argv)
     {
       /* Blocking */
       if (strstr(option,"Blocking")!=NULL)
-        if (ReadVecTypeINTs(value,MAX_BLOCKS+1,nTypeBlocks,TypeBlocks)!=0)
+        if (ReadVecTypeINTs(MGFORMAT(NP_MG(theNP)),value,MAX_BLOCKS+1,nTypeBlocks,TypeBlocks)!=0)
           REP_ERR_RETURN (NP_NOT_ACTIVE)
           else {bopt = TRUE; continue;}
 
       /* BlockOrder */
       if (strstr(option,"BlockOrder")!=NULL)
-        if (ReadVecTypeOrder(value,MAX_ORDER,MAX_BLOCKS,&SBGS_NBLOCKITER(theSBGS),SBGS_BLOCKORDER(theSBGS))!=0)
+        if (ReadVecTypeOrder(MGFORMAT(NP_MG(theNP)),value,MAX_ORDER,MAX_BLOCKS,&SBGS_NBLOCKITER(theSBGS),SBGS_BLOCKORDER(theSBGS))!=0)
           REP_ERR_RETURN (NP_NOT_ACTIVE)
           else {boopt = TRUE; continue;}
 
@@ -1548,7 +1548,7 @@ static INT SBGS_Display (NP_BASE *theNP)
   UserWrite("Blocking:\n");
   for (i=0; i<SBGS_NBLOCKS(theSBGS); i++)
   {
-    sprintf(name," block%d(%s)",i,VecTypeName[SBGS_BLOCKDESC(theSBGS,i).tp]);
+    sprintf(name," block%d(%s)",i,ObjTypeName[SBGS_BLOCKDESC(theSBGS,i).tp]);
     UserWriteF(DISPLAY_NP_FORMAT_SII,name,SBGS_BLOCKDESC(theSBGS,i).fc,SBGS_BLOCKDESC(theSBGS,i).tc);
   }
 
@@ -1918,9 +1918,9 @@ static INT ILUInit (NP_BASE *theNP, INT argc , char **argv)
   np = (NP_ILU *) theNP;
 
   for (i=0; i<MAX_VEC_COMP; i++) np->beta[i] = 0.0;
-  sc_read(np->beta,np->smoother.iter.b,"beta",argc,argv);
+  sc_read(np->beta,NP_FMT(np),np->smoother.iter.b,"beta",argc,argv);
   for (i=0; i<MAX_VEC_COMP; i++) np->mindiag[i] = 0.0;
-  sc_read(np->mindiag,np->smoother.iter.b,"mindiag",argc,argv);
+  sc_read(np->mindiag,NP_FMT(np),np->smoother.iter.b,"mindiag",argc,argv);
 
   return (SmootherInit(theNP,argc,argv));
 }
@@ -2125,8 +2125,8 @@ static INT THILUInit (NP_BASE *theNP, INT argc , char **argv)
   np = (NP_THILU *) theNP;
 
   for (i=0; i<MAX_VEC_COMP; i++) np->beta[i] = np->thresh[i] = 0.0;
-  sc_read(np->beta,np->smoother.iter.b,"beta",argc,argv);
-  sc_read(np->thresh,np->smoother.iter.b,"thresh",argc,argv);
+  sc_read(np->beta,NP_FMT(np),np->smoother.iter.b,"beta",argc,argv);
+  sc_read(np->thresh,NP_FMT(np),np->smoother.iter.b,"thresh",argc,argv);
 
   return (SmootherInit(theNP,argc,argv));
 }
@@ -2228,7 +2228,7 @@ static INT SPILUInit (NP_BASE *theNP, INT argc , char **argv)
   np = (NP_SPILU *) theNP;
 
   for (i=0; i<MAX_VEC_COMP; i++) np->beta[i] = 0.0;
-  sc_read(np->beta,np->smoother.iter.b,"beta",argc,argv);
+  sc_read(np->beta,NP_FMT(np),np->smoother.iter.b,"beta",argc,argv);
 
   np->mode = SP_LOCAL;
   if (ReadArgvChar("mode",buffer,argc,argv))
@@ -2512,7 +2512,7 @@ static INT LUConstruct (NP_BASE *theNP)
    .  $FF3D~<3D~FF-mat~sym> - symbol for an additional frequency filtered matrix for 3D
    .  $L~<LU-mat~sym> - symbol for the LU decomposed matrix
    .  $tv~<testvector~sym> - symbol for the testvector
-   .  $tv2~<2.~testvector~sym> - symbol for the second testvector if neccessary
+   .  $tv2~<2.~testvector~sym> - symbol for the second testvector if necessary
    .  $t~<update~for~correction~sym> - temp. vector
    .  $type~<type of frequency filter> - "TFF" for Wagners or "FF" for Wittums
    .  $display - display mode: 'no', 'red'uced or 'full'
@@ -2765,7 +2765,7 @@ static INT FFDisplay (NP_BASE *theNP)
 
    DESCRIPTION:
    This function prepares a tangential frequency filtering iteration:
-   allocate temporarily the neccessary data descriptors,
+   allocate temporarily the necessary data descriptors,
    determine the meshwidth of the grid, construct the linewise (and in
    3D additional planewise) blockvector decomposition, puts the dirichlet
    values on the right hand side and disposes all connections

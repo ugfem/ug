@@ -58,6 +58,24 @@
 /*																			*/
 /****************************************************************************/
 
+INT TFFUpdateDiagBlock( const BLOCKVECTOR *bv_dest,
+                        const BV_DESC *bvd_dest,
+                        const BV_DESC *bvd_source,
+                        const BV_DESC_FORMAT *bvdf,
+                        INT T,
+                        INT DL,
+                        INT Theta,
+                        GRID *grid );
+
+INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
+                               const BLOCKVECTOR *bv_source,
+                               const BV_DESC *bvd_dest,
+                               const BV_DESC *bvd_source,
+                               const BV_DESC_FORMAT *bvdf,
+                               INT tv1_comp,
+                               INT tv2_comp );
+
+
 INT TFFDecomp( DOUBLE wavenr,
                DOUBLE wavenr3D,
                const BLOCKVECTOR *bv,

@@ -371,8 +371,8 @@ INT SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
   DOUBLE *List,min,max,est,rf,cr;
   INT k,toplevel,nel,mfr,mfc,ncomp;
 
-  ncomp = VD_NCMPS_IN_TYPE(theVD,NODEVECTOR);
-  if (ncomp == 0)
+  ncomp = VD_ncmps_in_otype(theVD,NODEVEC);
+  if (ncomp <= 0)
     return(1);
 
   /* toplevel */
