@@ -416,7 +416,7 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, char *name, char *compNames,
                              SHORT *RowsInType, SHORT *ColsInType)
 {
   MATDATA_DESC *md;
-  SHORT offset[NVECOFFSETS],*Comp;
+  SHORT offset[NMATOFFSETS],*Comp;
   char buffer[NAMESIZE];
   INT i,j,tp,ncmp,size;
 
