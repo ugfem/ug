@@ -40,7 +40,9 @@ list_options_arch()
 	echo "             PARAGON (set ARCH = PARAGON)";
 	echo "             PC (set ARCH = PC)";
 	echo "             PCGCOV (set ARCH = PCGCOV)";
+	echo "             PCCPP (set ARCH = PCCPP)";
 	echo "             PCI (set ARCH = PCI)";
+	echo "             PCICPP (set ARCH = PCICPP)";
 	echo "             PCCLUSTER (set ARCH = PCCLUSTER)";
 	echo "             PCICLUSTER (set ARCH = PCICLUSTER)";
 	echo "             POWERGC (set ARCH = POWERGC)";
@@ -100,6 +102,7 @@ then
 	echo "purpose: modify config file $UGROOT/ug.conf";
 	echo "Options are";
 	echo " -o:     use object database. trade time against diskspace.";
+	echo " -v:     print settings in any case.";
 	echo " <conf>:";
 
 	list_options_dim;
@@ -420,9 +423,15 @@ edit_ugconf()
 	PCGCOV)
 		sed 's/^ARCH.*$/ARCH = PCGCOV/' $1 > $1.tmp
 		;;
+	PCCPP)
+                sed 's/^ARCH.*$/ARCH = PCCPP/' $1 > $1.tmp
+                ;;
 	PCI)
 		sed 's/^ARCH.*$/ARCH = PCI/' $1 > $1.tmp
 		;;
+        PCICPP)
+                sed 's/^ARCH.*$/ARCH = PCICPP/' $1 > $1.tmp
+                ;;
 	PCCLUSTER)
 		sed 's/^ARCH.*$/ARCH = PCCLUSTER/' $1 > $1.tmp
 		mv $1.tmp $1
@@ -586,6 +595,29 @@ fi
 
 
 
+# test whether ugconf should print the settings 
+if test "$USE_OBJDB" = "false"
+then
+	if test "$1" = "-v"
+	then
+		VERBOSE="true"
+		shift
+	else
+	        VERBOSE="false"
+        fi
+else
+	if test "$2" = "-v"
+        then
+                VERBOSE="true"
+		shift
+        else
+                VERBOSE="false"
+        fi
+fi
+
+
+
+
 if test $# -eq 0
 then 
 	echo "current ug configuration is:";
@@ -632,6 +664,15 @@ then
 	fi
 	rm $UGROOT/ug.conf.old.1 $UGROOT/ug.conf.new.1
 	rm $UGROOT/ug.conf.new
+	if test "$VERBOSE" = "true"
+        then
+		grep_valid_entries $UGROOT/ug.conf;
+		if test "$USE_OBJDB" = "true"
+		then
+			echo
+			objdb_show_contents;
+		fi
+	fi
 	exit 0;
 fi
 fi
@@ -653,5 +694,23 @@ if test "$USE_OBJDB" = "true"
 then
 	objdb_restore_new;
 fi
+
+
+
+
+if test "$VERBOSE" = "true"
+then
+	grep_valid_entries $UGROOT/ug.conf;
+        if test "$USE_OBJDB" = "true"
+        then
+                echo
+                objdb_show_contents;
+        fi
+fi
+
+
+
+
+
 
 
