@@ -2401,19 +2401,6 @@ if (0)
 	#endif
 }
 
-
-{
-int si;
-
-/*if ((ID(theElement) == 949) ||(ID(theElement) == 953))*/ {
-	UserWriteF("\n el %d ", ID(theElement));
-	for (si=0; si<SIDES_OF_ELEM(theElement); si++)
-		if (NBELEM(theElement,si) != NULL) 
-				UserWriteF(" nb %d: %d  ",si,ID(NBELEM(theElement,si)));
-	UserWriteF("\n");
-}
-}
-
 	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 	{
 		ELEMENT *theNeighbor = NBELEM(theElement,i);
@@ -6209,7 +6196,10 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 {
 	ELEMENT *theFather = VFATHER(theVertex);
 	EDGE	*theEdge;
-	INT		i,nerrors;
+	INT		i,nerrors,n;
+	DOUBLE  *global,*local,diff;
+	DOUBLE_VECTOR global1;
+	DOUBLE *x[MAX_CORNERS_OF_ELEM];
 
 	nerrors = 0;
 	if (theFather!=NULL && HEAPCHECK(theFather))
@@ -6218,6 +6208,20 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 			" VFATHER=%x is pointer to ZOMBIE\n",me,EID_PRTX(theElement),ID_PRTX(theNode),
 			VID_PRTX(theVertex),theFather);
 		return(nerrors++);
+	}
+
+	if (theFather != NULL) {
+	    CORNER_COORDINATES(theFather,n,x);
+		global = CVECT(theVertex);
+		local = LCVECT(theVertex);
+		LOCAL_TO_GLOBAL(n,x,local,global1);
+		V_DIM_EUKLIDNORM_OF_DIFF(global1,global,diff);
+		if (diff > MAX_PAR_DIST) {
+		    UserWriteF(PFMT "elem=" EID_FMTX " node=" ID_FMTX " vertex=" VID_FMTX
+			" VFATHER=%x local and global coordinates don't match\n",me,EID_PRTX(theElement),ID_PRTX(theNode),
+			VID_PRTX(theVertex),theFather);
+			nerrors++;
+		}
 	}
 
 	switch (NTYPE(theNode))
@@ -6290,10 +6294,19 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 		case (CENTER_NODE):
 			if (theFather == NULL)
 			{
+				nerrors++;	
+                #ifdef ModelP
+				if (DDD_InfoPriority(PARHDRE(theElement)) == PrioGhost) {
+				    nerrors = 0;
+					IFDEBUG(gm,1)
+					    nerrors = 1;
+					ENDDEBUG
+				}
+                #endif
+				if (nerrors == 0) break;
 				UserWriteF(PFMT "EID=" EID_FMTX " NID=" ID_FMTX 
 					" VID=" VID_FMTX " CENTER_NODE VFATHER=NULL\n",
 					me,EID_PRTX(theElement),ID_PRTX(theNode),VID_PRTX(theVertex));
-				nerrors++;	
 				break;
 			}
 			break;
@@ -6390,8 +6403,10 @@ static INT CheckNode (ELEMENT *theElement, NODE* theNode, INT i)
 					}
 					else
 					{
+                        IFDEBUG(gm,1)
 						UserWriteF(PFMT " WARN midnode=" ID_FMTX " has no father level=%d\n",
 							me,ID_PRTX(theNode),LEVEL(theNode));
+						ENDDEBUG 
 					}
 					#endif
 				}
@@ -6473,6 +6488,16 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 	{
 		if (((REFINE(theElement) == RED) && (TAG(theElement) != TETRAHEDRON))
 		  || ((TAG(theElement) == TETRAHEDRON) && (NSONS(theElement) == 8))) {
+
+        #ifdef ModelP
+		if (DDD_InfoPriority(PARHDRE(theElement)) == PrioGhost) {
+		    nerrors = 0;
+			IFDEBUG(gm,1)
+			    nerrors = 1;
+			ENDDEBUG
+			if (nerrors) return(nerrors);
+		}
+	    #endif
 				UserWriteF(PFMT "elem=" EID_FMTX " edge%d=" EDID_FMTX " midnode NID=NULL" 
 				" BUT REFINE(elem)=RED\n",me,EID_PRTX(theElement),i,EDID_PRTX(theEdge));
 			return(nerrors++);
@@ -6533,21 +6558,6 @@ static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT
 	if (GLEVEL(theGrid) != LEVEL(theElement))
 		UserWriteF(PFMT "elem=" EID_FMTX " ERROR level=%2d but gridlevel=%2d\n",
 				me,EID_PRTX(theElement),LEVEL(theElement),LEVEL(theGrid));
-
-
-{
-int si;
-
-if ((ID(theElement) == 949) ||(ID(theElement) == 953)) {
-	UserWriteF("\n el %d ", ID(theElement));
-	for (si=0; si<SIDES_OF_ELEM(theElement); si++)
-		if (NBELEM(theElement,si) != NULL) 
-				UserWriteF(" nb %d: %d ",si,ID(NBELEM(theElement,si)));
-	UserWriteF("\n");
-}
-}
-
-
 
 	/* check side information */
 	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
@@ -6678,8 +6688,10 @@ if ((ID(theElement) == 949) ||(ID(theElement) == 953)) {
 							me,EID_PRTX(theFather),i);
 					#ifdef ModelP
 					else
+                        IFDEBUG(gm,1) 
 						UserWriteF(PFMT "ELEM(" EID_FMTX ") WARNING MIDNODE=NULL"
 							" for mid node=%d\n",me,EID_PRTX(theFather),i);
+					    ENDDEBUG 
 					#endif
 				}
 			}

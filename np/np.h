@@ -147,6 +147,7 @@ INT a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
 INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode);
 INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x);
 INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x);
+INT l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A);
 #endif
 
 /* blas level 1 (vector operations) */

@@ -58,6 +58,7 @@
 #endif
 
 #include "np.h"
+#include "disctools.h"
 #include "ugblas.h"
 
 /****************************************************************************/
@@ -139,6 +140,17 @@ static MATRIX *MatArrayLocal[MATARRAYSIZE];
 static MATRIX *MatArrayRemote[MATARRAYSIZE];
 static INT MaxBlockSize;
 static size_t DataSizePerVector;
+
+#ifdef __TWODIM__
+static INT max_vectors_of_type[NVECTYPES] = 
+{ MAX_CORNERS_OF_ELEM, MAX_EDGES_OF_ELEM, 1};
+#endif
+
+#ifdef __THREEDIM__
+static INT max_vectors_of_type[NVECTYPES] = 
+{ MAX_CORNERS_OF_ELEM, MAX_EDGES_OF_ELEM, 1, MAX_SIDES_OF_ELEM};
+#endif
+
 #endif
 
 /* RCS string */
@@ -809,6 +821,76 @@ INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x)
 
 	DDD_IFAOneway(VectorVIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
 				  Gather_VectorCompCollect, Scatter_VectorComp);
+
+	return (NUM_OK);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   l_ghostmatrix_collect - collects ghostmatrix entries for Galerkin assembling
+
+   SYNOPSIS:
+   INT l_ghostvector_collect (GRID *g, const MATDATA_DESC *A);
+
+   PARAMETERS:
+.  g - pointer to grid 
+.  A - matrix data descriptor
+
+   DESCRIPTION:
+   This function collects the matrix entries of ghost elements.
+   It is called in 'AssembleGalerkinByMatrix'.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK      if ok
+.n    NUM_ERROR   if error occurrs
+D*/
+/****************************************************************************/
+
+#ifdef ModelP
+static int Gather_MatrixCollect (DDD_OBJ obj, void *data)
+{
+	ELEMENT *pe = (ELEMENT *)obj;
+	DOUBLE *mptr[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
+	INT i,m;
+
+	m = GetElementMPtrs(pe,ConsMatrix,mptr);
+	for (i=0; i<m; i++) {
+	    ((DOUBLE *)data)[i] = *mptr[i];
+	    *mptr[i] = 0.0;
+	}
+
+	return (NUM_OK);
+}
+ 
+static int Scatter_MatrixCollect (DDD_OBJ obj, void *data)
+{
+	ELEMENT *pe = (ELEMENT *)obj;
+	DOUBLE *mptr[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
+	INT i,m;
+
+	m = GetElementMPtrs(pe,ConsMatrix,mptr);
+	for (i=0; i<m; i++) 
+	    *mptr[i] += ((DOUBLE *)data)[i];
+
+	return (NUM_OK);
+}
+
+INT l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A)
+{
+    INT rtp,ctp,m; 
+
+    ConsMatrix = (MATDATA_DESC *)A;
+	m = 0;
+	for (rtp=0; rtp<NVECTYPES; rtp++)
+	    for (ctp=rtp; ctp<NVECTYPES; ctp++)
+		    m += MD_NCMPS_IN_RT_CT(ConsMatrix,rtp,ctp) * 
+			    max_vectors_of_type[rtp] * max_vectors_of_type[ctp];
+	m = MIN(m,MAX_NODAL_VALUES*MAX_NODAL_VALUES);
+
+	DDD_IFAOneway(ElementVIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
+				  Gather_MatrixCollect, Scatter_MatrixCollect);
 
 	return (NUM_OK);
 }

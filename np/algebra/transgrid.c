@@ -1482,8 +1482,7 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat)
   if (CoarseGrid == NULL)
     return (NUM_NO_COARSER_GRID);
 
-  if (MD_IS_SCALAR(Mat))
-  {
+  if (MD_IS_SCALAR(Mat)) {
     mc = MD_SCALCMP(Mat);
     rmask = MD_SCAL_RTYPEMASK(Mat);
     cmask = MD_SCAL_CTYPEMASK(Mat);
@@ -1496,21 +1495,18 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat)
 
     for (v=FIRSTVECTOR(FineGrid); v!=NULL; v=SUCCVC(v))
       if (VDATATYPE(v)&rmask)
-        for (m=VSTART(v); m!=NULL; m=MNEXT(m))
-        {
+        for (m=VSTART(v); m!=NULL; m=MNEXT(m)) {
           w = MDEST(m);
           if (!(VDATATYPE(v)&cmask))
             continue;
           mvalue = MVALUE(m,mc);
-          for (im=VISTART(v); im!= NULL; im = NEXT(im))
-          {
+          for (im=VISTART(v); im!= NULL; im = NEXT(im)) {
             iv = MDEST(im);
             if (!(VDATATYPE(iv)&rmask))
               continue;
             imvalue = MVALUE(im,0);
             if (VNCLASS(iv)>1)
-              for (jm=VISTART(w); jm!= NULL; jm = NEXT(jm))
-              {
+              for (jm=VISTART(w); jm!= NULL; jm = NEXT(jm)) {
                 jv = MDEST(jm);
                 if (!(VDATATYPE(jv)&cmask))
                   continue;
@@ -1518,115 +1514,106 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat)
                 if (cm == NULL)
                   cm = CreateExtraConnection(CoarseGrid,iv,jv);
                 if (cm !=NULL)
-                  MVALUE(cm,mc) += imvalue * mvalue * MVALUE(jm,0);
-                else                                   /* connection not in pattern */
-                {
+                  MVALUE(cm,mc) +=
+                    imvalue * mvalue * MVALUE(jm,0);
+                else {                                                 /* connection not in pattern */
                   cm = GetMatrix(iv,iv);
                   ASSERT(cm !=NULL);
-                  MVALUE(cm,mc) += imvalue * mvalue * MVALUE(jm,0);
+                  MVALUE(cm,mc) +=
+                    imvalue * mvalue * MVALUE(jm,0);
                 }
               }
           }
         }
-
-    return (NUM_OK);
   }
-
-  for (v=FIRSTVECTOR(CoarseGrid); v!=NULL; v=SUCCVC(v))
-  {
-    vtype = VTYPE(v);
-    if (VNCLASS(v)>1)
-      for (cm=VSTART(v); cm!=NULL; cm=MNEXT(cm))
-      {
-        mtype = MTP(vtype,MDESTTYPE(cm));
-        mptr = MVALUEPTR(cm,0);
+  else {
+    for (v=FIRSTVECTOR(CoarseGrid); v!=NULL; v=SUCCVC(v)) {
+      vtype = VTYPE(v);
+      if (VNCLASS(v)>1)
+        for (cm=VSTART(v); cm!=NULL; cm=MNEXT(cm)) {
+          mtype = MTP(vtype,MDESTTYPE(cm));
+          mptr = MVALUEPTR(cm,0);
+          mcomp = MD_MCMPPTR_OF_MTYPE(Mat,mtype);
+          for (i=0; i<MD_COLS_IN_MTYPE(Mat,mtype)
+               *MD_ROWS_IN_MTYPE(Mat,mtype); i++)
+            mptr[mcomp[i]] = 0.0;
+        }
+    }
+    for (v=FIRSTVECTOR(FineGrid); v!=NULL; v=SUCCVC(v)) {
+      vtype = VTYPE(v);
+      for (m=VSTART(v); m!=NULL; m=MNEXT(m)) {
+        w = MDEST(m);
+        mtype = MTP(vtype,VTYPE(w));
+        mptr = MVALUEPTR(m,0);
         mcomp = MD_MCMPPTR_OF_MTYPE(Mat,mtype);
-        for (i=0; i<MD_COLS_IN_MTYPE(Mat,mtype)
-             *MD_ROWS_IN_MTYPE(Mat,mtype); i++)
-          mptr[mcomp[i]] = 0.0;
-      }
-  }
-
-  for (v=FIRSTVECTOR(FineGrid); v!=NULL; v=SUCCVC(v))
-  {
-    vtype = VTYPE(v);
-    for (m=VSTART(v); m!=NULL; m=MNEXT(m))
-    {
-      w = MDEST(m);
-      mtype = MTP(vtype,VTYPE(w));
-      mptr = MVALUEPTR(m,0);
-      mcomp = MD_MCMPPTR_OF_MTYPE(Mat,mtype);
-      vncomp = MD_ROWS_IN_MTYPE(Mat,mtype);
-      wncomp = MD_COLS_IN_MTYPE(Mat,mtype);
-      for (im=VISTART(v); im!= NULL; im = NEXT(im))
-      {
-        iv = MDEST(im);
-        ivtype = VTYPE(iv);
-        imptr = MVALUEPTR(im,0);
-        if (VNCLASS(iv)>1)
-          for (jm=VISTART(w); jm!= NULL; jm = NEXT(jm))
-          {
-            jv = MDEST(jm);
-            cm = GetMatrix(iv,jv);
-            if (cm == NULL)
-              cm = CreateExtraConnection(CoarseGrid,iv,jv);
-            if (cm !=NULL)
-            {
-              cmtype = MTP(ivtype,VTYPE(jv));
-              cmptr = MVALUEPTR(cm,0);
-              cmcomp = MD_MCMPPTR_OF_MTYPE(Mat,cmtype);
-              jmptr = MVALUEPTR(jm,0);
-              ivncomp = MD_ROWS_IN_MTYPE(Mat,cmtype);
-              jvncomp = MD_COLS_IN_MTYPE(Mat,cmtype);
-              for (i=0; i<ivncomp; i++)
-                for (j=0; j<jvncomp; j++)
-                {
-                  sum = 0.0;
-                  for (k=0; k<vncomp; k++)
-                    for (l=0; l<wncomp; l++)
-                    {
-                      sum += imptr[i*vncomp+k]
-                             * mptr[mcomp[k*wncomp+l]]
-                             * jmptr[j*wncomp+l];
-                    }
-                  cmptr[cmcomp[i*jvncomp+j]] += sum;
-                }
+        vncomp = MD_ROWS_IN_MTYPE(Mat,mtype);
+        wncomp = MD_COLS_IN_MTYPE(Mat,mtype);
+        for (im=VISTART(v); im!= NULL; im = NEXT(im)) {
+          iv = MDEST(im);
+          ivtype = VTYPE(iv);
+          imptr = MVALUEPTR(im,0);
+          if (VNCLASS(iv)>1)
+            for (jm=VISTART(w); jm!= NULL; jm = NEXT(jm)) {
+              jv = MDEST(jm);
+              cm = GetMatrix(iv,jv);
+              if (cm == NULL)
+                cm = CreateExtraConnection(CoarseGrid,iv,jv);
+              if (cm !=NULL) {
+                cmtype = MTP(ivtype,VTYPE(jv));
+                cmptr = MVALUEPTR(cm,0);
+                cmcomp = MD_MCMPPTR_OF_MTYPE(Mat,cmtype);
+                jmptr = MVALUEPTR(jm,0);
+                ivncomp = MD_ROWS_IN_MTYPE(Mat,cmtype);
+                jvncomp = MD_COLS_IN_MTYPE(Mat,cmtype);
+                for (i=0; i<ivncomp; i++)
+                  for (j=0; j<jvncomp; j++) {
+                    sum = 0.0;
+                    for (k=0; k<vncomp; k++)
+                      for (l=0; l<wncomp; l++) {
+                        sum += imptr[i*vncomp+k]
+                               * mptr[mcomp[k*wncomp+l]]
+                               * jmptr[j*wncomp+l];
+                      }
+                    cmptr[cmcomp[i*jvncomp+j]] += sum;
+                  }
+              }
+              else {                                           /* connection not in pattern */
+                cm = GetMatrix(jv,jv);
+                ASSERT(cm !=NULL);
+                cmtype = MTP(VTYPE(jv),VTYPE(jv));
+                jvncomp = MD_ROWS_IN_MTYPE(Mat,cmtype);
+                cm = GetMatrix(iv,iv);
+                ASSERT(cm !=NULL);
+                cmtype = MTP(ivtype,ivtype);
+                cmptr = MVALUEPTR(cm,0);
+                cmcomp = MD_MCMPPTR_OF_MTYPE(Mat,cmtype);
+                jmptr = MVALUEPTR(jm,0);
+                ivncomp = MD_ROWS_IN_MTYPE(Mat,cmtype);
+                for (i=0; i<ivncomp; i++)
+                  for (j=0; j<jvncomp; j++) {
+                    sum = 0.0;
+                    for (k=0; k<vncomp; k++)
+                      for (l=0; l<wncomp; l++) {
+                        sum += imptr[i*vncomp+k]
+                               * mptr[mcomp[k*wncomp+l]]
+                               * jmptr[j*wncomp+l];
+                      }
+                    cmptr[cmcomp[i*ivncomp+i]] += sum;
+                  }
+              }
             }
-            else                               /* connection not in pattern */
-            {
-              cm = GetMatrix(jv,jv);
-              ASSERT(cm !=NULL);
-              cmtype = MTP(VTYPE(jv),VTYPE(jv));
-              jvncomp = MD_ROWS_IN_MTYPE(Mat,cmtype);
-              cm = GetMatrix(iv,iv);
-              ASSERT(cm !=NULL);
-              cmtype = MTP(ivtype,ivtype);
-              cmptr = MVALUEPTR(cm,0);
-              cmcomp = MD_MCMPPTR_OF_MTYPE(Mat,cmtype);
-              jmptr = MVALUEPTR(jm,0);
-              ivncomp = MD_ROWS_IN_MTYPE(Mat,cmtype);
-              for (i=0; i<ivncomp; i++)
-                for (j=0; j<jvncomp; j++)
-                {
-                  sum = 0.0;
-                  for (k=0; k<vncomp; k++)
-                    for (l=0; l<wncomp; l++)
-                    {
-                      sum += imptr[i*vncomp+k]
-                             * mptr[mcomp[k*wncomp+l]]
-                             * jmptr[j*wncomp+l];
-                    }
-                  cmptr[cmcomp[i*ivncomp+i]] += sum;
-                }
-            }
-          }
+        }
       }
     }
   }
+        #ifdef ModelP
+  if (DOWNGRID(CoarseGrid) != NULL)
+    if (l_ghostmatrix_collect(CoarseGrid,Mat))
+      return(NUM_ERROR);
+        #endif
 
-  return (NUM_OK);
+  return(NUM_OK);
 }
-
 
 /****************************************************************************/
 /*D

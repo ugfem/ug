@@ -531,6 +531,7 @@ static INT LinearResiduum (NP_LINEAR_SOLVER *theNP, INT bl, INT level,
   NP_LS *np;
 
   np = (NP_LS *) theNP;
+
         #ifdef ModelP
   if (a_vector_collect(theNP->base.mg,bl,level,b)) NP_RETURN(1,lresult->error_code);
         #endif
