@@ -432,11 +432,11 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
   register SHORT i,j;
   register SHORT n,nc;
   register DOUBLE sum;
-  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat;
+  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
   DEFINE_VS_CMPS(s);
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
-  register SHORT *tmpptr;
+  register SHORT *tmpptr,*vcomp;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -455,10 +455,14 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
     /* solve LowerTriangle(v)=d */
     for (vec=first_vec; vec!= NULL; vec=SUCCVC(vec))
     {
-      myindex = VINDEX(vec);
-      if ( (VDATATYPE(vec)&mask) && (VCLASS(vec)>=ACTIVE_CLASS) )
+      if (VDATATYPE(vec)&mask)
       {
+        if (VCLASS(vec) < ACTIVE_CLASS) {
+          VVALUE(vec,vc) = 0.0;
+          continue;
+        }
         sum = 0.0;
+        myindex = VINDEX(vec);
         for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
         {
           w = MDEST(mat);
@@ -472,12 +476,19 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
     return (NUM_OK);
   }
 
-  L_VLOOP__CLASS(vec,first_vec,ACTIVE_CLASS)
+  L_VLOOP__CLASS(vec,first_vec,EVERY_CLASS)
   {
     rtype = VTYPE(vec);
 
     n     = VD_NCMPS_IN_TYPE(v,rtype);
     if (n == 0) continue;
+    vcomp = VD_CMPPTR_OF_TYPE(v,rtype);
+    vmat  = VVALPTR(vec);
+    if (VCLASS(vec) < ACTIVE_CLASS) {
+      for (i=0; i<n; i++)
+        vmat[vcomp[i]] = 0.0;
+      continue;
+    }
     dcomp = VD_CMPPTR_OF_TYPE(d,rtype);
     myindex = VINDEX(vec);
 
@@ -732,11 +743,11 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
   register SHORT i,j;
   register SHORT n,nc;
   register DOUBLE sum;
-  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat;
+  DOUBLE s[MAX_SINGLE_VEC_COMP],*wmat,*vmat;
   DEFINE_VS_CMPS(s);
   DEFINE_VD_CMPS(cy);
   DEFINE_MD_CMPS(m);
-  register SHORT *tmpptr;
+  register SHORT *tmpptr,*vcomp;
 
 #ifndef NDEBUG
   if ( (err = MatmulCheckConsistency(v,M,d)) != NUM_OK )
@@ -755,9 +766,13 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
     /* solve UpperTriangle(v)=d */
     for (vec=last_vec; vec!= NULL; vec=PREDVC(vec))
     {
-      myindex = VINDEX(vec);
-      if ( (VDATATYPE(vec)&mask) && (VCLASS(vec)>=ACTIVE_CLASS) )
+      if (VDATATYPE(vec)&mask)
       {
+        if (VCLASS(vec) < ACTIVE_CLASS) {
+          VVALUE(vec,vc) = 0.0;
+          continue;
+        }
+        myindex = VINDEX(vec);
         sum = 0.0;
         for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
         {
@@ -772,12 +787,19 @@ INT l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
     return (NUM_OK);
   }
 
-  L_REVERSE_VLOOP__CLASS(vec,last_vec,ACTIVE_CLASS)
+  L_REVERSE_VLOOP__CLASS(vec,last_vec,EVERY_CLASS)
   {
     rtype = VTYPE(vec);
 
     n               = VD_NCMPS_IN_TYPE(v,rtype);
     if (n == 0) continue;
+    vcomp = VD_CMPPTR_OF_TYPE(v,rtype);
+    vmat  = VVALPTR(vec);
+    if (VCLASS(vec) < ACTIVE_CLASS) {
+      for (i=0; i<n; i++)
+        vmat[vcomp[i]] = 0.0;
+      continue;
+    }
     dcomp   = VD_CMPPTR_OF_TYPE(d,rtype);
     myindex = VINDEX(vec);
 
@@ -3797,19 +3819,23 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
     mask  = VD_SCALTYPEMASK(v);
 
     /* solve LowerTriangle(v)=d */
-    for (vec=first_vec; vec!= NULL; vec=SUCCVC(vec))
-    {
-      myindex = VINDEX(vec);
-      if ( (VDATATYPE(vec)&mask) && (VCLASS(vec)>=ACTIVE_CLASS) )
-      {
-        sum = 0.0;
-        for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
-        {
-          w = MDEST(mat);
-          if ((VINDEX(w)<myindex) && (VDATATYPE(w)&mask) && (VCLASS(w)>=ACTIVE_CLASS) )
-            sum += MVALUE(mat,mc)*VVALUE(w,vc);
+    for (vec=first_vec; vec!= NULL; vec=SUCCVC(vec)) {
+      if (VDATATYPE(vec)&mask) {
+        if (VCLASS(vec)>=ACTIVE_CLASS) {
+          myindex = VINDEX(vec);
+          sum = 0.0;
+          for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat)) {
+            w = MDEST(mat);
+            if ((VINDEX(w)<myindex) &&
+                (VDATATYPE(w)&mask) &&
+                (VCLASS(w)>=ACTIVE_CLASS) )
+              sum += MVALUE(mat,mc)*VVALUE(w,vc);
+          }
+          VVALUE(vec,vc) = (VVALUE(vec,dc)-sum);
+          /* since Diag(L)=I per convention */
         }
-        VVALUE(vec,vc) = (VVALUE(vec,dc)-sum);                           /* since Diag(L)=I per convention */
+        else
+          VVALUE(vec,vc) = 0.0;
       }
     }
 
@@ -3837,12 +3863,19 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
   }
 
   /* solve lower traingle */
-  L_VLOOP__CLASS(vec,first_vec,ACTIVE_CLASS)
+  L_VLOOP__CLASS(vec,first_vec,EVERY_CLASS)
   {
     rtype = VTYPE(vec);
 
     n           = VD_NCMPS_IN_TYPE(v,rtype);
     if (n == 0) continue;
+    vcomp = VD_CMPPTR_OF_TYPE(v,rtype);
+    vmat  = VVALPTR(vec);
+    if (VCLASS(vec) < ACTIVE_CLASS) {
+      for (i=0; i<n; i++)
+        vmat[vcomp[i]] = 0.0;
+      continue;
+    }
     dcomp   = VD_CMPPTR_OF_TYPE(d,rtype);
     myindex = VINDEX(vec);
 
@@ -3957,8 +3990,6 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
         }
 
     /* solve (Diag(L)=I per convention) */
-    vcomp = VD_CMPPTR_OF_TYPE(v,rtype);
-    vmat  = VVALPTR(vec);
     for (i=0; i<n; i++)
       vmat[vcomp[i]] = s[i];
   }
@@ -5899,12 +5930,20 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
     UserWriteF("l_pgs: MAX_DEPTH too small\n");
     REP_ERR_RETURN (__LINE__);
   }
-  for (vec=FIRSTVECTOR(g); vec!= NULL; vec=SUCCVC(vec))
-    SETVCUSED(vec,0);
+  for (vec=FIRSTVECTOR(g); vec!= NULL; vec=SUCCVC(vec)) {
+    if (VCLASS(vec) < ACTIVE_CLASS) {
+      VComp = VD_CMPPTR_OF_TYPE(v,VTYPE(vec));
+      for (i=0; i<VD_NCMPS_IN_TYPE(v,VTYPE(vec)); i++)
+        VVALUE(vec,VComp[i]) = 0.0;
+      SETVCUSED(vec,1);
+    }
+    else if (START(vec) == NULL)
+      SETVCUSED(vec,1);
+    else
+      SETVCUSED(vec,0);
+  }
   for (vec=FIRSTVECTOR(g); vec!= NULL; vec=SUCCVC(vec)) {
     if (VCUSED(vec)) continue;
-    if (START(vec) == NULL) continue;
-    if (VCLASS(vec) < ACTIVE_CLASS) continue;
     cnt = 1;
     vlist[0] = vec;
     if (depth > 1)
@@ -5927,7 +5966,6 @@ INT l_pgs (GRID *g, const VECDATA_DESC *v,
       for (mat=MNEXT(VSTART(vlist[i])); mat!=NULL; mat=MNEXT(mat)) {
         w = MDEST(mat);
         if (!VCUSED(w)) continue;
-        if (VCLASS(w) < ACTIVE_CLASS) continue;
         wtype = VTYPE(w);
         Comp = MD_MCMPPTR_OF_MTYPE(M,MTP(vtype,wtype));
         wncomp = VD_NCMPS_IN_TYPE(d,wtype);
