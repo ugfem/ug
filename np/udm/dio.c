@@ -126,7 +126,7 @@ int Read_OpenDTFile (char *filename)
 {
 
 #ifdef __MGIO_USE_IN_UG__
-  if (datapaths_set) stream = FileOpenUsingSearchPaths(filename,"r","datapaths");
+  if (datapathes_set) stream = FileOpenUsingSearchPaths(filename,"r","datapaths");
   else stream = fileopen(filename,"r");
 #else
   stream = fopen(filename,"r");
@@ -163,7 +163,7 @@ int Write_OpenDTFile (char *filename)
 {
 
 #ifdef __MGIO_USE_IN_UG__
-  if (datapaths_set) stream = FileOpenUsingSearchPaths(filename,"w","datapaths");
+  if (datapathes_set) stream = FileOpenUsingSearchPaths(filename,"w","datapaths");
   else stream = fileopen(filename,"w");
 #else
   stream = fopen(filename,"w");
