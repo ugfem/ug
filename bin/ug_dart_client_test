@@ -1,0 +1,36 @@
+#!/bin/tcsh
+# complete Dart test cycle on the client
+
+# cd into the BuildDirectory which is necessary because the "DartConfiguration.tcl" 
+# file resides in this directory
+cd $DART_HOME/Source/Client/UG
+
+# DashboardManager.tcl controls the test cyle via DartConfiguration.tcl and parameters
+# 	testmode: 
+#		Nightly (tests regular all night or day :-)
+#		Continuous (tests whenever changes have been made to the reposoritory)
+#		Experimental (tests of software from local developer copy)
+#	command: Start, Update,	Configure, Build, Test, Coverage, Doxygen, Purify, Submit
+
+# the Start script creates the testing subtree which is needed to store the test results
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly Start 
+
+# the Update script makes an update against the cvs repository
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly Update 
+
+# the Configure script executes the configure command which is specified in 
+# "DartConfiguration.tcl" file
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly Configure 
+
+# the Build script executes the build command which is specified in 
+# "DartConfiguration.tcl" file 
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly Build
+
+# the Test scripts runs the tests which are specified in the several "DartTestfile.txt" files
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly Test
+
+# the Coverage script collects the coverage information which may be created with gcc
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly Coverage
+
+# the Submit script sends the test information to the server
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly Submit

@@ -1,0 +1,24 @@
+#!/bin/tcsh
+#
+# ug_dart_tree
+#
+# purpose: creates the directories needed by dart on the server
+
+cd $DART_HOME/Source/Server/UG
+mkdir Testing
+
+cd Testing
+mkdir HTML
+mkdir Temporary
+
+cd HTML
+mkdir TestingResults
+
+cd TestingResults
+mkdir Dashboard
+mkdir Icons
+mkdir Javascript
+mkdir Sites
+
+cd Dashboard
+mkdir MostRecentResults-Nightly

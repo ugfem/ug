@@ -1,0 +1,12 @@
+#!/bin/tcsh
+#
+# ug_dart_server_stop
+#
+# purpose: close a dashboard on the server and create HTML files out of the XSL files
+
+cd $DART_HOME/Source/Server/UG
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly DashboardEnd
+
+
+
+

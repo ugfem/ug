@@ -1,0 +1,27 @@
+#!/bin/tcsh
+#
+# ug_dart_co
+#
+# purpose: cvs checkout for either the client (MODE=Client) or the server (MODE=Server)
+
+# set up default mode
+set MODE = "Client";
+
+# set up the mode that is given on the command line
+if ( $#argv == 1 ) then
+	set MODE = $1;
+endif
+
+# if mode is client mode then checkout the UG sources and if mode is server mode then 
+# set up a directory called ".../UG" and only checkout the "DartConfiguration.tcl.proto" file
+if ( $MODE == "Client" ) then
+        cd $DART_HOME/Source/$1
+	setenv CVS_RSH ssh
+        cvs -d :ext:ugtest@speedo:/home/cvsroot co UG
+else if ( $MODE == "Server" ) then
+	echo "mode = Server"
+        cd $DART_HOME/Source/$1
+	mkdir UG
+	cvs -d :ext:ugtest@speedo:/home/cvsroot co -d UG UG/DartConfiguration.tcl.proto
+endif
+

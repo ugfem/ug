@@ -1,0 +1,12 @@
+#!/bin/tcsh
+#
+# ug_dart_server_start
+#
+# purpose: open a new Dashboard on the server
+
+cd $DART_HOME/Source/Server/UG
+tclsh $DART_HOME/Source/Client/DashboardManager.tcl DartConfiguration.tcl Nightly DashboardStart
+
+
+
+
