@@ -663,7 +663,6 @@ static INT CGUpdate (NP_LS *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *c,
 
   np = (NP_CG *) theNP;
   theMG = theNP->ls.base.mg;
-
   ncomp = VD_NCOMP(x);
   if (AllocVDFromVD(theMG,theNP->baselevel,level,x,&np->t)) {
     result[0] = __LINE__;

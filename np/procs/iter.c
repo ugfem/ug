@@ -596,6 +596,7 @@ static INT ILUPreProcess (NP_ITER *theNP, INT level,
         #endif
   if (l_ilubthdecomp(theGrid,np->smoother.L,np->beta,NULL,NULL,NULL)
       !=NUM_OK) {
+    PrintErrorMessage('E',"ILUPreProcess","decomposition failed");
     result[0] = __LINE__;
     return (1);
   }
@@ -724,6 +725,7 @@ static INT LUPreProcess (NP_ITER *theNP, INT level,
       return (1);
     }
     if (l_lrregularize(theGrid,np->L) !=NUM_OK) {
+      PrintErrorMessage('E',"LUPreProcess","cannot regularize");
       result[0] = __LINE__;
       return (1);
     }
@@ -921,7 +923,6 @@ static INT Lmgc (NP_ITER *theNP, INT level,
       PrintErrorMessage('W',"Lmgc","no convergence of BaseSolver");
     return(0);
   }
-
   theMG = theNP->base.mg;
   theGrid = GRID_ON_LEVEL(theMG,level);
   if (AllocVDFromVD(theMG,level,level,c,&np->t)) {
@@ -939,6 +940,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
   if ((*np->Transfer->RestrictDefect)
         (np->Transfer,level,b,b,A,Factor_One,result))
     return(1);
+
   if (l_dset(DOWNGRID(theGrid),c,EVERY_CLASS,0.0) != NUM_OK) {
     result[0] = __LINE__;
     return(1);

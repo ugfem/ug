@@ -516,8 +516,8 @@ static INT AdaptCorrection (NP_TRANSFER *theNP, INT level,
   INT j,ncomp;
 
   np = (NP_STANDARD_TRANSFER *) theNP;
-  theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
   if (np->level) {
+    theGrid = GRID_ON_LEVEL(theNP->base.mg,level);
     if (AllocVDFromVD(theNP->base.mg,level,level,c,&np->t)) {
       result[0] = __LINE__;
       return(1);
