@@ -3644,9 +3644,24 @@ INT DisposeMultiGrid (MULTIGRID *theMG)
   if (DisposeAMGLevels(theMG))
     RETURN(1);
 
+        #ifdef ModelP
+  /* tell DDD that we will 'inconsistently' delete objects.
+     this is a dangerous mode as it switches DDD warnings off. */
+  DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_OFF);
+        #endif
+
   for (level = TOPLEVEL(theMG); level >= 0; level --)
     if (DisposeGrid(GRID_ON_LEVEL(theMG,level)))
       RETURN(1);
+
+        #ifdef ModelP
+  /* stop dangerous mode. from now on DDD will issue warnings again. */
+  DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_ON);
+
+  /* rebuild DDD-interfaces because distributed vectors have been
+     deleted without communication */
+  DDD_IFRefreshAll();
+        #endif
 
   if (MGHEAP(theMG)!=NULL)
     free(MGHEAP(theMG));
@@ -7041,6 +7056,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
         lbinfo[me][ELEMENT_PRIOS*MAXLEVEL+3]++;
         break;
       default :
+        printf( PFMT "MultiGridStatus: wrong element prio %d\n",me,EPRIO(theElement));
         assert(0);
         break;
       }
