@@ -37,7 +37,7 @@
 #include "defaults.h"
 #include "gm.h"
 #include "evm.h"
-#include "uginterface.h"
+#include "gginterface.h"
 #include "general.h"
 #include "debug.h"
 
