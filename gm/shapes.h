@@ -119,14 +119,14 @@
    +(local)[0]*(x)[1][1] + (local)[1]*(x)[2][1]; }  
 
 #define LOCAL_TO_GLOBAL_QUADRILATERAL(x,local,global)                   \
- {(global)[0] = 0.25 * ((1.0-(local)[0])*(1.0-(local)[1])*(x)[1][0]     \
-                      + (1.0+(local)[0])*(1.0-(local)[1])*(x)[2][0]     \
-                      + (1.0+(local)[0])*(1.0+(local)[1])*(x)[3][0]     \
-                      + (1.0-(local)[0])*(1.0+(local)[1])*(x)[4][0]);   \
-  (global)[1] = 0.25 * ((1.0-(local)[0])*(1.0-(local)[1])*(x)[1][1]     \
-                      + (1.0+(local)[0])*(1.0-(local)[1])*(x)[2][1]     \
-                      + (1.0+(local)[0])*(1.0+(local)[1])*(x)[3][1]     \
-                      + (1.0-(local)[0])*(1.0+(local)[1])*(x)[4][1]);}
+ {(global)[0] = 0.25 * ((1.0-(local)[0])*(1.0-(local)[1])*(x)[0][0]     \
+                      + (1.0+(local)[0])*(1.0-(local)[1])*(x)[1][0]     \
+                      + (1.0+(local)[0])*(1.0+(local)[1])*(x)[2][0]     \
+                      + (1.0-(local)[0])*(1.0+(local)[1])*(x)[3][0]);   \
+  (global)[1] = 0.25 * ((1.0-(local)[0])*(1.0-(local)[1])*(x)[0][1]     \
+                      + (1.0+(local)[0])*(1.0-(local)[1])*(x)[1][1]     \
+                      + (1.0+(local)[0])*(1.0+(local)[1])*(x)[2][1]     \
+                      + (1.0-(local)[0])*(1.0+(local)[1])*(x)[3][1]);}
 
 #define LOCAL_TO_GLOBAL(n,x,local,global)                                 \
  {if ((n) == 3)      LOCAL_TO_GLOBAL_TRIANGLE((x),(local),(global))       \
@@ -193,47 +193,47 @@
   (global)[2] = (1.0-(local)[0]-(local)[1]-(local)[2])*(x)[0][2]          \
    +(local)[0]*(x)[1][2] + (local)[1]*(x)[2][2] + (local)[2]*(x)[3][2]; }  
 
-#define LOCAL_TO_GLOBAL_PYRAMID(x,local,global)                                 \
- {(global)[0] = 0.25 * ((1.0-(local)[0])*(1.0-(local)[1])*(1.0-(local)[2])*(x)[0][0]     \
-                  + (local)[0]*(1.0-(local)[1])*(1.0-(local)[2])*(x)[1][0]          \
-                  + (local)[0]*(local)[1]*(1.0-(local)[2])*(x)[2][0]                \
-                  + (1.0-(local)[0])*(local)[1]*(1.0-(local)[2])*(x)[3][0]          \
-                  + (1.0-(local)[0]-(local)[1])*(local)[2]*(x)[4][0]);              \
-  (global)[1] = 0.25 * ((1.0-(local)[0])*(1.0-(local)[1])*(1.0-(local)[2])*(x)[0][1]     \
-                  + (local)[0]*(1.0-(local)[1])*(1.0-(local)[2])*(x)[1][1]          \
-                  + (local)[0]*(local)[1]*(1.0-(local)[2])*(x)[2][1]                \
-                  + (1.0-(local)[0])*(local)[1]*(1.0-(local)[2])*(x)[3][1]          \
-                  + (1.0-(local)[0]-(local)[1])*(local)[2]*(x)[4][1]);              \
-  (global)[2] = 0.25 * ((1.0-(local)[0])*(1.0-(local)[1])*(1.0-(local)[2])*(x)[0][2]     \
-                  + (local)[0]*(1.0-(local)[1])*(1.0-(local)[2])*(x)[1][2]          \
-                  + (local)[0]*(local)[1]*(1.0-(local)[2])*(x)[2][2]                \
-                  + (1.0-(local)[0])*(local)[1]*(1.0-(local)[2])*(x)[3][2]          \
-                  + (1.0-(local)[0]-(local)[1])*(local)[2]*(x)[4][2]);}
+#define LOCAL_TO_GLOBAL_PYRAMID(x,local,global)                                         \
+ {(global)[0] = 0.25 * ((1.0-(local)[0])*(1.0-(local)[1])*(1.0-(local)[2])*(x)[0][0]    \
+                      + (local)[0]*(1.0-(local)[1])*(1.0-(local)[2])*(x)[1][0]          \
+                      + (local)[0]*(local)[1]*(1.0-(local)[2])*(x)[2][0]                \
+                      + (1.0-(local)[0])*(local)[1]*(1.0-(local)[2])*(x)[3][0]          \
+                      + (1.0-(local)[0]-(local)[1])*(local)[2]*(x)[4][0]);              \
+  (global)[1] = 0.25 * ((1.0-(local)[0])*(1.0-(local)[1])*(1.0-(local)[2])*(x)[0][1]    \
+                      + (local)[0]*(1.0-(local)[1])*(1.0-(local)[2])*(x)[1][1]          \
+                      + (local)[0]*(local)[1]*(1.0-(local)[2])*(x)[2][1]                \
+                      + (1.0-(local)[0])*(local)[1]*(1.0-(local)[2])*(x)[3][1]          \
+                      + (1.0-(local)[0]-(local)[1])*(local)[2]*(x)[4][1]);              \
+  (global)[2] = 0.25 * ((1.0-(local)[0])*(1.0-(local)[1])*(1.0-(local)[2])*(x)[0][2]    \
+                      + (local)[0]*(1.0-(local)[1])*(1.0-(local)[2])*(x)[1][2]          \
+                      + (local)[0]*(local)[1]*(1.0-(local)[2])*(x)[2][2]                \
+                      + (1.0-(local)[0])*(local)[1]*(1.0-(local)[2])*(x)[3][2]          \
+                      + (1.0-(local)[0]-(local)[1])*(local)[2]*(x)[4][2]);}
 #define LOCAL_TO_GLOBAL_HEXAHEDRON(x,local,global)                               \
  {(global)[0] = 0.125 * ((1.0-(local)[0])*(1.0-(local)[1])*(1.0-(local)[2])*(x)[0][0]     \
-                  + (local)[0]*(1.0-(local)[1])*(1.0-(local)[2])*(x)[1][0]           \
-                  + (local)[0]*(local)[1]*(1.0-(local)[2])*(x)[2][0]                 \
-                  + (1.0-(local)[0])*(local)[1]*(1.0-(local)[2])*(x)[3][0]           \
-                  + (1.0-(local)[0])*(1.0-(local)[1])*(local)[2]*(x)[4][0]           \
-                  + (local)[0]*(1.0-(local)[1])*(local)[2]*(x)[5][0]                 \
-                  + (local)[0]*(local)[1]*(local)[2]*(x)[6][0]                       \
-                  + (1.0-(local)[0])*(local)[1]*(local)[2]*(x)[7][0]);               \
+                       + (local)[0]*(1.0-(local)[1])*(1.0-(local)[2])*(x)[1][0]           \
+                       + (local)[0]*(local)[1]*(1.0-(local)[2])*(x)[2][0]                 \
+                       + (1.0-(local)[0])*(local)[1]*(1.0-(local)[2])*(x)[3][0]           \
+                       + (1.0-(local)[0])*(1.0-(local)[1])*(local)[2]*(x)[4][0]           \
+                       + (local)[0]*(1.0-(local)[1])*(local)[2]*(x)[5][0]                 \
+                       + (local)[0]*(local)[1]*(local)[2]*(x)[6][0]                       \
+                       + (1.0-(local)[0])*(local)[1]*(local)[2]*(x)[7][0]);               \
   (global)[1] = 0.125 * ((1.0-(local)[0])*(1.0-(local)[1])*(1.0-(local)[2])*(x)[0][1]     \
-                  + (local)[0]*(1.0-(local)[1])*(1.0-(local)[2])*(x)[1][1]           \
-                  + (local)[0]*(local)[1]*(1.0-(local)[2])*(x)[2][1]                 \
-                  + (1.0-(local)[0])*(local)[1]*(1.0-(local)[2])*(x)[3][1]           \
-                  + (1.0-(local)[0])*(1.0-(local)[1])*(local)[2]*(x)[4][1]           \
-                  + (local)[0]*(1.0-(local)[1])*(local)[2]*(x)[5][1]                 \
-                  + (local)[0]*(local)[1]*(local)[2]*(x)[6][1]                       \
-                  + (1.0-(local)[0])*(local)[1]*(local)[2]*(x)[7][1]);               \
+                       + (local)[0]*(1.0-(local)[1])*(1.0-(local)[2])*(x)[1][1]           \
+                       + (local)[0]*(local)[1]*(1.0-(local)[2])*(x)[2][1]                 \
+                       + (1.0-(local)[0])*(local)[1]*(1.0-(local)[2])*(x)[3][1]           \
+                       + (1.0-(local)[0])*(1.0-(local)[1])*(local)[2]*(x)[4][1]           \
+                       + (local)[0]*(1.0-(local)[1])*(local)[2]*(x)[5][1]                 \
+                       + (local)[0]*(local)[1]*(local)[2]*(x)[6][1]                       \
+                       + (1.0-(local)[0])*(local)[1]*(local)[2]*(x)[7][1]);               \
   (global)[2] = 0.125 * ((1.0-(local)[0])*(1.0-(local)[1])*(1.0-(local)[2])*(x)[0][2]     \
-                  + (local)[0]*(1.0-(local)[1])*(1.0-(local)[2])*(x)[1][2]           \
-                  + (local)[0]*(local)[1]*(1.0-(local)[2])*(x)[2][2]                 \
-                  + (1.0-(local)[0])*(local)[1]*(1.0-(local)[2])*(x)[3][2]           \
-                  + (1.0-(local)[0])*(1.0-(local)[1])*(local)[2]*(x)[4][2]           \
-                  + (local)[0]*(1.0-(local)[1])*(local)[2]*(x)[5][2]                 \
-                  + (local)[0]*(local)[1]*(local)[2]*(x)[6][2]                       \
-                  + (1.0-(local)[0])*(local)[1]*(local)[2]*(x)[7][2]);}
+                       + (local)[0]*(1.0-(local)[1])*(1.0-(local)[2])*(x)[1][2]           \
+                       + (local)[0]*(local)[1]*(1.0-(local)[2])*(x)[2][2]                 \
+                       + (1.0-(local)[0])*(local)[1]*(1.0-(local)[2])*(x)[3][2]           \
+                       + (1.0-(local)[0])*(1.0-(local)[1])*(local)[2]*(x)[4][2]           \
+                       + (local)[0]*(1.0-(local)[1])*(local)[2]*(x)[5][2]                 \
+                       + (local)[0]*(local)[1]*(local)[2]*(x)[6][2]                       \
+                       + (1.0-(local)[0])*(local)[1]*(local)[2]*(x)[7][2]);}
 
 #define LOCAL_TO_GLOBAL(n,x,local,global)                                 \
  {if ((n) == 4)      LOCAL_TO_GLOBAL_TETRAHEDRON((x),(local),(global))    \
@@ -290,7 +290,7 @@
 									  V3_VECTOR_PRODUCT(a,b,c);            \
 									  V3_SUBTRACT((x)[6],(x)[0],a);        \
 									  V3_SCALAR_PRODUCT(a,c,detJ);         \
-									  ar+= ABS(detJ)/6.0;                  \
+									  ar += ABS(detJ)/6.0;                 \
 									  V3_SUBTRACT((x)[3],(x)[7],a);        \
 									  V3_SUBTRACT((x)[4],(x)[7],b);        \
 									  V3_VECTOR_PRODUCT(a,b,c);            \
