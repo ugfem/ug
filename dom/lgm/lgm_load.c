@@ -478,7 +478,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     if ((theSubdom=(LGM_SUBDOMAIN*)GetFreelistMemory(theHeap,sizeof(LGM_SUBDOMAIN)+
                                                      (lgm_sizes.Subdom_nSurf[i]-1)*sizeof(void*)))==NULL)
       return (NULL);
-    strcpy(LGM_SUBDOMAIN_UNIT(theSubdom,i),theSubdomInfo.Unit);
+    strcpy(LGM_SUBDOMAIN_UNIT(theSubdom),theSubdomInfo.Unit);
     LGM_DOMAIN_SUBDOM(theDomain,i)                  = theSubdom;
     LGM_SUBDOMAIN_ID(theSubdom)                     = i;
     LGM_SUBDOMAIN_SDDATA(theSubdom)                 = NULL;             /* to fill later */
