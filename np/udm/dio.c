@@ -111,7 +111,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    .  filename - name of file
 
    DESCRIPTION:
-   opens a file with specified name for reading
+   Opens a file with specified name for reading.
+   The considered path entry is "datapaths".
 
    RETURN VALUE:
    int
@@ -139,16 +140,18 @@ int Read_OpenDTFile (char *filename)
 
 /****************************************************************************/
 /*D
-   Write_OpenDTFile - opens file for reading
+   Write_OpenDTFile - opens file for writing data
 
    SYNOPSIS:
-   int Write_OpenDTFile (char *filename);
+   int Write_OpenDTFile (char *filename, int rename);
 
    PARAMETERS:
    .  filename - name of file
+   .  rename - renaming option
 
    DESCRIPTION:
-   opens a file with specified name for writing data
+   Opens a file with specified name for writing data incl. renaming option.
+   The considered path entry is "datapaths".
 
    RETURN VALUE:
    int
@@ -164,7 +167,7 @@ int Write_OpenDTFile (char *filename, int rename)
 
 #ifdef __MGIO_USE_IN_UG__
   if (datapathes_set) stream = FileOpenUsingSearchPaths_r(filename,"w","datapaths",rename);
-  else stream = fileopen(filename,"w");
+  else stream = fileopen_r(filename,"w",rename);
 #else
   stream = fopen(filename,"w");
 #endif
@@ -173,12 +176,36 @@ int Write_OpenDTFile (char *filename, int rename)
   return (0);
 }
 
+/****************************************************************************/
+/*D
+        DTIO_dircreate - create a directory for data files
+
+   SYNOPSIS:
+   int DTIO_dircreate (char *filename, int rename);
+
+   PARAMETERS:
+   .  filename - name of directory
+   .  rename - renaming option
+
+   DESCRIPTION:
+   Create a directory with specified name for data files incl. renaming option.
+   The considered path entry is "datapaths".
+
+   RETURN VALUE:
+   int
+   .n    0 if ok
+   .n    1 when error occured.
+
+   SEE ALSO:
+   D*/
+/****************************************************************************/
+
 #ifdef __DTIO_USE_IN_UG__
-int DTIO_dircreate (char *filename)
+int DTIO_dircreate (char *filename, int rename)
 {
 
-  if (datapathes_set) return(DirCreateUsingSearchPaths(filename,"datapaths"));
-  else return(DirCreateUsingSearchPaths(filename,NULL));
+  if (datapathes_set) return(DirCreateUsingSearchPaths_r(filename,"datapaths",rename));
+  else return(DirCreateUsingSearchPaths_r(filename,NULL,rename));
 }
 #endif
 
@@ -199,6 +226,7 @@ int DTIO_dircreate (char *filename)
    int
    .n    FT_FILE if regular file
    .n    FT_DIR  if directory
+   .n    FT_LINK  if link and #define S_IFLNK
    .n    FT_UNKNOWN else
 
    SEE ALSO:

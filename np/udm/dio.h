@@ -131,7 +131,7 @@ int             Read_DT_General         (DIO_GENERAL *dio_general);
 
 /* misc functions */
 #ifdef __DTIO_USE_IN_UG__
-int             DTIO_dircreate          (char *filename);
+int             DTIO_dircreate          (char *filename, int rename);
 int             DTIO_filetype           (char *filename);
 #endif
 
