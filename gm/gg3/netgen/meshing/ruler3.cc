@@ -757,10 +757,11 @@ int ApplyVRules_new
               if (ok && teterr < 1e6 &&
                   (rule->TestFlag('b') || tolerance > 10) )
               {
-                cout << "Reset teterr "
-                     << rule->Name()
-                     << " err = " << teterr
-                     << endl;
+                //  cout << "Reset teterr "
+                //   << rule->Name()
+                //   << " err = " << teterr
+                //   << endl;
+                printf("Reset teterr %s err = %g\n",rule->Name(),teterr);
                 teterr = 1;
               }
 
