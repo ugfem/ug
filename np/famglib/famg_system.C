@@ -98,7 +98,8 @@ int FAMGSystem::ConstructSimple( FAMGMatrixAlg* stiffmat, FAMGVector* tvA, FAMGV
 
     // mg0 supposed to be constructed
     FAMGMultiGrid *mg0 = mg[0];
-    if(mg0 == NULL) return 1;
+    if(mg0 == NULL)
+		return 1;
 #ifdef FAMG_REORDERCOLUMN	
     if(mg0->Order()) return 1;
 #endif
@@ -176,9 +177,12 @@ int FAMGSystem::Construct( FAMGGridVector *gridvector, FAMGMatrixAlg* stiffmat, 
     }
 
     FAMGMultiGrid *mg0 = CreateMultiGrid();
-    if(mg0 == NULL) return 1;
-    if (mg0->Init(*this)) return 1;
-    if (mg0->Construct()) return 1;
+    if(mg0 == NULL)
+		return 1;
+    if (mg0->Init(*this))
+		return 1;
+    if (mg0->Construct())
+		return 1;
 
     return 0;
 }
@@ -205,7 +209,8 @@ int FAMGSystem::Solve(FAMGVector *rhs, FAMGVector *defect, FAMGVector *unknown)
     if((d == NULL) || (d == rhs))
     {
         d = rhs->create_new();
-        if (d == NULL) return 1;
+        if (d == NULL)
+			return 1;
 		d_alloc = 1;
     }
     vector[FAMGDEFECT] = d;
@@ -214,7 +219,8 @@ int FAMGSystem::Solve(FAMGVector *rhs, FAMGVector *defect, FAMGVector *unknown)
     if((u == NULL) || (u == rhs) || (u == defect) )
     {
         u = rhs->create_new();
-        if (u == NULL) return 1;
+        if (u == NULL) 
+			return 1;
 		u_alloc = 1;
     }
     vector[FAMGUNKNOWN] = u;
@@ -228,7 +234,8 @@ int FAMGSystem::Solve(FAMGVector *rhs, FAMGVector *defect, FAMGVector *unknown)
 #endif
 	
 	status = (this->*SolverPtr)();
-	if(status != NULL) return status;
+	if(status != 0)
+		return status;
        
 #ifdef FAMG_REORDERCOLUMN	
 	if(g->ReorderVector(FAMGRHS,g->GetMap())) return 1;
@@ -271,7 +278,9 @@ int FAMGSystem::Deconstruct()
 {
     FAMGMultiGrid *mg0=mg[0];
 
-    if(mg0 != NULL) if(mg0->Deconstruct()) return 1;
+    if(mg0 != NULL)
+		if(mg0->Deconstruct())
+			return 1;
 
     // repair matrix
 #ifdef FAMG_REORDERCOLUMN	
@@ -317,7 +326,8 @@ FAMGMultiGrid *FAMGSystem::CreateMultiGrid()
     FAMGMultiGrid *newmg;
    
     newmg = (FAMGMultiGrid *) FAMGGetMem(sizeof(FAMGMultiGrid),FAMG_FROM_TOP);
-    if(newmg == NULL) return(NULL);
+    if(newmg == NULL)
+		return(NULL);
     mg[nmg] = newmg;
     nmg++;
     
@@ -328,7 +338,8 @@ FAMGMultiGrid *FAMGSystem::CreateMultiGrid()
 static void FAMGWriteVector(int n, double *vec)
 {
     ofstream vfile("vec.dat",ios::out);
-    if (!vfile) return;
+    if (!vfile)
+		return;
     for(int i = 0; i < n; i++)
     {
         vfile << i << "\t" << vec[i] << endl;
@@ -521,17 +532,23 @@ int FAMGSystem::BiCGStab()
 
     FAMGMarkHeap(FAMG_FROM_BOTTOM);
     vec[FAMGX] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
-    if(vec[FAMGX] == NULL) return 1;
+    if(vec[FAMGX] == NULL)
+		return 1;
     vec[FAMGR] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
-    if(vec[FAMGR] == NULL) return 1;
+    if(vec[FAMGR] == NULL)
+		return 1;
     vec[FAMGV] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
-    if(vec[FAMGV] == NULL) return 1;
+    if(vec[FAMGV] == NULL)
+		return 1;
     vec[FAMGP] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
-    if(vec[FAMGP] == NULL) return 1;
+    if(vec[FAMGP] == NULL)
+		return 1;
     vec[FAMGT] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
-    if(vec[FAMGT] == NULL) return 1;
+    if(vec[FAMGT] == NULL)
+		return 1;
     vec[FAMGR0] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
-    if(vec[FAMGR0] == NULL) return 1;
+    if(vec[FAMGR0] == NULL)
+		return 1;
 
     maxit = famgparaptr->Getmaxit();
     rlimit = famgparaptr->Getrlimit();
@@ -572,7 +589,11 @@ int FAMGSystem::BiCGStab()
         FAMGCopyVector(n,vector[FAMGRHS],vec[FAMGP]);
         FAMGSetVector(n,vector[FAMGUNKNOWN],0.0);
         FAMGCopyVector(n,vector[FAMGDEFECT],vector[FAMGRHS]);
-        if(mg0->Step(0)) { mg0->Deconstruct(); return 1;}
+        if(mg0->Step(0))
+		{
+			mg0->Deconstruct();
+			return 1;
+		}
         FAMGSetSubVector(n,vec[FAMGV],vec[FAMGP],vector[FAMGDEFECT]);
 
         nenner = FAMGSum(n,vec[FAMGV]);
@@ -602,7 +623,11 @@ int FAMGSystem::BiCGStab()
         FAMGCopyVector(n,vector[FAMGRHS],vec[FAMGR]);
         FAMGSetVector(n,vector[FAMGUNKNOWN],0.0);
         FAMGCopyVector(n,vector[FAMGDEFECT],vector[FAMGRHS]);
-        if(mg0->Step(0)) { mg0->Deconstruct(); return 1;}
+        if(mg0->Step(0))
+		{
+			mg0->Deconstruct();
+			return 1;
+		}
         FAMGSetSubVector(n,vec[FAMGT],vec[FAMGR],vector[FAMGDEFECT]);
 
         omega = FAMGScalProd(n,vec[FAMGT],vec[FAMGR])/FAMGScalProd(n,vec[FAMGT],vec[FAMGT]);
@@ -820,7 +845,11 @@ int FAMGSystem::Arnoldi(FAMGMultiGrid *mg0, double **vec, double *H, double *G, 
          FAMGCopyVector(n,vector[FAMGDEFECT],vector[FAMGRHS]);
          if(con)
          {
-             if(mg0->Step(0)) { mg0->Deconstruct(); return 1;}
+             if(mg0->Step(0))
+			 {
+			 	mg0->Deconstruct();
+			 	return 1;
+			 }
          }
          else
          {
@@ -897,7 +926,11 @@ int FAMGSystem::UpdateSolution(FAMGMultiGrid *mg0, double **vec, double *H, doub
     
     if(con)
     {
-        if(mg0->Step(0)) { mg0->Deconstruct(); return 1;}
+        if(mg0->Step(0))
+		{
+			mg0->Deconstruct(); 
+			return 1;
+		}
     }
     else
     {
@@ -935,7 +968,11 @@ int FAMGSystem::ComputeEigenVector(FAMGMultiGrid *mg0, double **vec, double *G, 
         FAMGCopyVector(n,vector[FAMGDEFECT],vector[FAMGRHS]);
         if(con)
         {
-            if(mg0->Step(0)) { mg0->Deconstruct(); return 1;}
+            if(mg0->Step(0))
+			{
+				mg0->Deconstruct();
+				return 1;
+			}
         }
         else
         {
@@ -971,18 +1008,22 @@ int FAMGSystem::GMRES()
     FAMGMarkHeap(FAMG_FROM_BOTTOM);
 
     sol = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
-    if(sol == NULL) return 1;
+    if(sol == NULL)
+		return 1;
     rhs = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
-    if(rhs == NULL) return 1;
+    if(rhs == NULL)
+		return 1;
     
     // test
     def = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
-    if(def == NULL) return 1;
+    if(def == NULL)
+		return 1;
 
     for(i = 0; i < nv; i++)
     {
         vec[i] = (double *) FAMGGetMem(n*sizeof(double),FAMG_FROM_BOTTOM);
-        if(vec[i] == NULL) return 1;
+        if(vec[i] == NULL)
+			return 1;
     }
     
 
@@ -1013,9 +1054,11 @@ int FAMGSystem::GMRES()
         {
             if(con) 
             {
-                if(mg0->Deconstruct()) return 1;
+                if(mg0->Deconstruct())
+					return 1;
             }
-            if (mg0->Construct()) return 1;
+            if (mg0->Construct())
+				return 1;
             con = 1;
        }
 
@@ -1025,7 +1068,8 @@ int FAMGSystem::GMRES()
         //test
         FAMGCopyVector(n,def,vector[FAMGDEFECT]);
 
-        if(Arnoldi(mg0,vec,H,G,Q,P,q0,con)) return 1;
+        if(Arnoldi(mg0,vec,H,G,Q,P,q0,con))
+			return 1;
 
         newtv = 0;
         // status = ComputeEigenVector(mg0,vec,G,P,con);
@@ -1036,7 +1080,8 @@ int FAMGSystem::GMRES()
         // }
 
 
-        if(UpdateSolution(mg0,vec,H,Q,q0,con)) return 1;
+        if(UpdateSolution(mg0,vec,H,Q,q0,con))
+			return 1;
 
         FAMGAddVector(n,vector[FAMGUNKNOWN],sol);
 
