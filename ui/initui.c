@@ -110,7 +110,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 INT InitUi ()
 {
   INT err;
-  char buffer[BUFFSIZE];
 
   /* init ug interface */
   if ((err=InitUgInterface())!=0)
@@ -126,15 +125,11 @@ INT InitUi ()
     return (err);
   }
 
+  /* init help mechanism */
+  if ((err=InitHelpMsg())!=0)
+    PrintErrorMessage('W',"InitUi","help mechanism not working properly");
+
   /* init command interpreter */
-  if (GetDefaultValue(DEFAULTSFILENAME,"helpfiles",buffer)==0)
-  {
-    if ((err=InitHelpMsg(buffer))!=0)
-    {
-      SetHiWrd(err,__LINE__);
-      return (err);
-    }
-  }
   if ((err=InitCommandInterpreter())!=0)
   {
     SetHiWrd(err,__LINE__);
