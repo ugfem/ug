@@ -2050,7 +2050,7 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
   START(to) = link1;
 
   /* counters */
-  theGrid->nEdge++;
+  NE(theGrid)++;
 
   /* return ok */
   return(pe);
@@ -2382,7 +2382,7 @@ GRID *CreateNewLevel (MULTIGRID *theMG, INT algebraic)
   CTRL(theGrid) = 0;
   SETOBJT(theGrid,GROBJ);
   theGrid->level = l;
-  theGrid->nEdge = 0;
+  NE(theGrid) = 0;
   theGrid->nCon = 0;
   /* other counters are init in INIT fcts below */
 
@@ -2465,7 +2465,7 @@ GRID *CreateNewLevelAMG (MULTIGRID *theMG)
   CTRL(theGrid) = 0;
   SETOBJT(theGrid,GROBJ);
   theGrid->level = l;
-  theGrid->nEdge = 0;
+  NE(theGrid) = 0;
   theGrid->nCon = 0;
   /* other counters are init in INIT fcts below */
 
@@ -3005,7 +3005,7 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
   if (found!=2) RETURN(1);
 
   /* return ok */
-  theGrid->nEdge--;
+  NE(theGrid)--;
   return(0);
 }
 
@@ -7636,6 +7636,17 @@ void ListGrids (const MULTIGRID *theMG)
     UserWriteF("%c %3d %8d %8ld %8ld %8ld %8ld %8ld %8ld %8ld %8ld %9.3e %9.3e\n",c,l,(int)TOPLEVEL(theMG),
                (long)NV(theGrid),(long)NN(theGrid),(long)NE(theGrid),(long)NT(theGrid),
                (long)ns,(long)NVEC(theGrid),(long)NC(theGrid),(long)NIMAT(theGrid),(float)hmin,(float)hmax);
+                #if defined(ModelP) && defined(Debug)
+    /* output also the object priority counters on each level */
+    if (0)
+    {
+      INT i;
+      for (i=1; i<MAX_PRIOS; i++)
+        UserWriteF("%c %3d %8d %8ld %8ld %8ld %8ld %8ld %8ld %8ld %8ld %9.3e %9.3e\n",c,l,(int)TOPLEVEL(theMG),
+                   (long)NV_PRIO(theGrid,i),(long)NN_PRIO(theGrid,i),(long)NE(theGrid),(long)NT_PRIO(theGrid,i),
+                   (long)ns,(long)NVEC_PRIO(theGrid,i),(long)NC(theGrid),(long)NIMAT(theGrid),(float)hmin,(float)hmax);
+    }
+                #endif
 #else
     UserWriteF("%c %3d %8d %8ld %8ld %8ld %8ld %8ld %8ld %8ld %9.3e %9.3e\n",c,l,(int)TOPLEVEL(theMG),
                (long)NV(theGrid),(long)NN(theGrid),(long)NE(theGrid),(long)NT(theGrid),
