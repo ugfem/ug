@@ -20,7 +20,7 @@
 /****************************************************************************/
 
 
-#ifndef RIF_DISABLED   /* remote if must be enabled in ug.conf */
+#ifdef RIF_SOCKETS   /* remote if must be enabled in ug.conf */
 
 /****************************************************************************/
 /*																			*/

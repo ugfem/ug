@@ -20,7 +20,7 @@
 /****************************************************************************/
 
 
-#ifdef RIF_WITH_SOCKETS
+#ifdef RIF_SOCKETS
 
 #ifndef __KB_SOCK_H__
 #define __KB_SOCK_H__
