@@ -4544,7 +4544,7 @@ static INT OrderNodesCommand (INT argc, char **argv)
         #ifdef __TWODIM__
   res = sscanf(argv[0],expandfmt("ordernodes %2[rlud]"),ord);
         #else
-  res = sscanf(argv[0],expandfmt("ordernodes %2[rlbfud]"),ord);
+  res = sscanf(argv[0],expandfmt("ordernodes %3[rlbfud]"),ord);
         #endif
   if (res!=1)
   {
@@ -4705,7 +4705,7 @@ static INT LexOrderVectorsCommand (INT argc, char **argv)
         #ifdef __TWODIM__
   res = sscanf(argv[0],expandfmt("lexorderv %2[rlud]"),ord);
         #else
-  res = sscanf(argv[0],expandfmt("lexorderv %2[rlbfud]"),ord);
+  res = sscanf(argv[0],expandfmt("lexorderv %3[rlbfud]"),ord);
         #endif
   if (res!=1)
   {
