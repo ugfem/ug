@@ -332,7 +332,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
 
     /* predict to new time step on level low */
     a_dcopy(mg,0,low,bdf->y_p1,EVERY_CLASS,bdf->y_0);
-    if (bdf->predictorder==1 && bdf->step>0)
+    if (bdf->predictorder==1 && bdf->t_0>0.0)
     {
       for (i=0; i<n_unk; i++) Factor[i] = (bdf->t_p1-bdf->t_m1)/dt_0;
       a_dscale(mg,0,low,bdf->y_p1,EVERY_CLASS,Factor);
@@ -497,6 +497,7 @@ static INT TimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
 static INT BDFInit (NP_BASE *base, INT argc, char **argv)
 {
   NP_BDF *bdf;
+  VECDATA_DESC *tmp;
   INT r;
 
   /* get numprocs ... */
@@ -507,12 +508,12 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
 
   /* read data descs */
   bdf->y_0 = bdf->tsolver.y;       /* allocated already in tsolver */
-  if (ReadArgvOption("yp1",argc,argv))
-    bdf->y_p1 = ReadArgvVecDesc(base->mg,"yp1",argc,argv);
-  if (ReadArgvOption("ym1",argc,argv))
-    bdf->y_m1 = ReadArgvVecDesc(base->mg,"ym1",argc,argv);
-  if (ReadArgvOption("b",argc,argv))
-    bdf->b = ReadArgvVecDesc(base->mg,"b",argc,argv);
+  tmp = ReadArgvVecDesc(base->mg,"yp1",argc,argv);
+  if (tmp!=NULL) bdf->y_p1 = tmp;
+  tmp = ReadArgvVecDesc(base->mg,"ym1",argc,argv);
+  if (tmp!=NULL) bdf->y_m1 = tmp;
+  tmp = ReadArgvVecDesc(base->mg,"b",argc,argv);
+  if (tmp!=NULL) bdf->b = tmp;
 
   /* read other numprocs */
   bdf->trans = (NP_TRANSFER *) ReadArgvNumProc(base->mg,"T",TRANSFER_CLASS_NAME,argc,argv);
