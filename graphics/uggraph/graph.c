@@ -85,6 +85,8 @@ static DOUBLE currClipRegionMinY;               /*smallest values for each compo
 
 static COORD_POINT currClipRegionCorner[4];     /* corners of the view port */
 
+static DOUBLE TextFactor=1;
+
 static char buffer[256];                                                /* general purpose text buff*/
 
 /* RCS string */
@@ -1110,6 +1112,44 @@ void UgPolymark (COORD_POINT *points, INT n)
       (*CurrentOutputDevice->Polymark)(1,&out);
   }
 }
+
+/****************************************************************************/
+/*D
+   UgPolymark - Draw n marks
+
+   SYNOPSIS:
+   void UgPolymark (COORD_POINT *points, INT n);
+
+   PARAMETERS:
+   .  points - nb. of marks
+   .  n - nb. of marks
+
+   DESCRIPTION:
+   This function draw n marks.
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void UgInvPolymark (COORD_POINT *points, INT n)
+{
+  INT k,reject;
+  SHORT_POINT out;
+
+        #ifdef ModelP
+  if (me != master)
+    return;
+        #endif
+
+  for (k=0; k<n; k++)
+  {
+    ClipPoint (points[k],&out,&reject);
+    if (!reject)
+      (*CurrentOutputDevice->InvPolymark)(1,&out);
+  }
+}
+
 /****************************************************************************/
 /*D
    UgText -  Draw text s
@@ -1352,8 +1392,8 @@ void UgSetTextSize (short size)
     return;
         #endif
 
-  CurrTextSize = size;
-  (*CurrentOutputDevice->SetTextSize)(size);
+  CurrTextSize = TextFactor*size;
+  (*CurrentOutputDevice->SetTextSize)(TextFactor*size);
 }
 
 /****************************************************************************/
@@ -1468,4 +1508,50 @@ void UgWait (DOUBLE wait)
       break;                                    /* after wrap around */
 
   return;
+}
+
+/****************************************************************************/
+/*D
+   SetTextFactor - change the factor all textsizes are multiply with
+
+   SYNOPSIS:
+   INT SetTextFactor (DOUBLE textfactor)
+
+   PARAMETERS:
+   .  textfactor - factor all textsizes are multiply with
+
+   DESCRIPTION:
+   This function changes the factor all textsizes are multiply with.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   D*/
+/****************************************************************************/
+
+INT SetTextFactor (DOUBLE textfactor)
+{
+  TextFactor = textfactor;
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   GetTextFactor - return the factor all textsizes are multiply with
+
+   SYNOPSIS:
+   DOUBLE GetTextFactor (void)
+
+   DESCRIPTION:
+   This function returns the factor all textsizes are multiply with.
+
+   RETURN VALUE:
+   DOUBLE
+   .n     factor all textsizes are multiply with
+   D*/
+/****************************************************************************/
+
+DOUBLE GetTextFactor (void)
+{
+  return (TextFactor);
 }

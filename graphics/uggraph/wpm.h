@@ -112,6 +112,7 @@
 #define PO_RADIUS(p)                    ((p)->theHead.theRadius)
 #define PO_MG(p)                                ((p)->theHead.theMG)
 #define PO_NAME(p)                              ((p)->theHead.name)
+#define PO_USESCUT(p)                   ((p)->theHead.UsesCut)
 #define PO_DIM(p)                               (((p)->theHead.thePlotObjType==NULL) ? (NOT_DEFINED) : ((p)->theHead.thePlotObjType->Dimension))
 
 /****************************************************************************/
@@ -123,6 +124,7 @@
 #define VO_PO(p)                                (&((p)->thePlotObj))
 #define VO_DIM(p)                               (PO_DIM(&((p)->thePlotObj)))
 #define VO_STATUS(p)                    ((p)->status)
+#define VO_CUT(p)                               (&((p)->theCut))
 #define VO_PERSPECTIVE(p)               ((p)->perspective)
 #define VO_VP(p)                                ((p)->ViewPoint)
 #define VO_VT(p)                                ((p)->ViewTarget)
@@ -206,6 +208,7 @@ struct PlotObjHead {                                            /* head of all P
   DOUBLE theRadius;                                                     /* radius of covering 2/3D sphere				*/
   INT clearBeforeDraw;                                          /* YES or NO									*/
   char name[NAMESIZE];
+  INT UsesCut;                                                          /* YES or NO									*/
 };
 
 /*----------- application dimension independent PlotObj ---------------------*/
@@ -335,7 +338,6 @@ struct ElemScalarPlotObj3D {
   struct PlotObjHead theHead;                           /* the head                                                                     */
 
   /* data for 3D-View of elem scalar field */
-  struct Cut theCut;                                                    /* description of the cut						*/
   EVALUES *EvalFct;                                                     /* evaluation proceedure						*/
   DOUBLE min, max;                                                      /* range										*/
   INT mode;                                                                     /* COLOR or CONTOURS							*/
@@ -349,14 +351,24 @@ struct ElemVectorPlotObj3D {
   struct PlotObjHead theHead;                           /* the head                                                                     */
 
   /* data for 3D-View of elem vector field */
-  struct Cut theCut;                                                    /* description of the cut						*/
   EVECTOR *EvalFct;                                                     /* evaluation proceedure						*/
   DOUBLE max;                                                           /* range										*/
   DOUBLE RasterSize;                                                    /* size of raster used for arrows				*/
   INT CutVector;                                                        /* YES or NO									*/
   INT ProjectVector;                                                    /* YES or NO									*/
-  DOUBLE CutLenFactor;                                                  /* vector will be cut if longer then                    */
+  DOUBLE CutLenFactor;                                          /* vector will be cut if longer then                    */
   /*	'CutLenFactor*RasterSize'					*/
+};
+
+struct VecMatPlotObj3D {
+
+  struct PlotObjHead theHead;                           /* the head                                                                     */
+
+  /* data for 3D-View of VECTOR-MATRIX-data */
+  INT Type[MAXVECTORS];                                         /* which types if Vectors set					*/
+  INT Idx;                                                                      /* YES or NO									*/
+  VECDATA_DESC *vd;                                                     /* NULL or vector								*/
+  MATDATA_DESC *md;                                                     /* NULL or matrix                                                       */
 };
 
 struct GridPlotObj3D {
@@ -368,7 +380,11 @@ struct GridPlotObj3D {
         #ifdef ModelP
   DOUBLE PartShrinkFactor;                                      /* YES or NO									*/
         #endif
-  struct Cut theCut;                                                    /* description of the cut						*/
+  INT NodeMarkers;                                                      /* plot node markers (will only for shrink<1)	*/
+  INT NodeIndex;                                                        /* plot node indices (only together with marker)*/
+  INT Vectors;                                                          /* plot vectors (mutually exclusive with nodes)	*/
+  INT VecIndex;                                                         /* plot vector indices							*/
+  INT Type[MAXVECTORS];                                         /* which types if Vectors set					*/
   INT ElemColored;                                                      /* YES or NO									*/
   INT WhichElem;                                                        /* see above									*/
 };
@@ -393,6 +409,7 @@ union PlotObj {
   struct DomainPlotObj3D theDpo;
   struct ElemScalarPlotObj3D theEspo;
   struct ElemVectorPlotObj3D theEvpo;
+  struct VecMatPlotObj3D theVmo;
   struct GridPlotObj3D theGpo;
 #endif
 
@@ -413,6 +430,8 @@ struct ViewedObj {
 
   DOUBLE ObsTrafo[16];
   DOUBLE InvObsTrafo[16];
+
+  struct Cut theCut;
 };
 
 struct PICture {
@@ -471,6 +490,7 @@ typedef union  PlotObj PLOTOBJ;
 typedef struct ViewedObj VIEWEDOBJ;
 typedef struct PlotObjType PLOTOBJTYPE;
 typedef struct Cut CUT;
+typedef struct PlotObjHead PO_HEAD;
 
 /****************************************************************************/
 /*																			*/
@@ -501,7 +521,9 @@ void                    ResetToolBoxState                               (UGWINDO
 /*INT                   CopyViewedObjToPicture			(PICTURE *thePicture, VIEWEDOBJ *theViewedObj);*/
 
 /* initializing/changing view */
-INT                     SetView                                                 (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective);
+INT                     SetView                                                 (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective,
+                                                                                 INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal);
+INT                             CopyView                                                (const PICTURE *mypic, INT all, INT cut);
 INT                             PrintViewSettings                               (const PICTURE *thePicture);
 INT                     DisplayViewOfViewedObject               (const PICTURE *thePicture);
 INT                     Walk                                                    (PICTURE *thePicture, const DOUBLE *vrsDelta);

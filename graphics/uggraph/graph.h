@@ -76,6 +76,8 @@
 /* misc. functions */
 INT     PrepareGraph                            (const PICTURE *thePicture);
 INT     PrepareGraphWindow                      (const UGWINDOW *theWindow);
+INT             SetTextFactor                           (DOUBLE textfactor);
+DOUBLE  GetTextFactor                           (void);
 
 /* low level drawing functions */
 void    UgMove                                          (COORD_POINT in);
@@ -86,6 +88,7 @@ void    UgInverseLine                           (COORD_POINT point1, COORD_POINT
 void    UgPolyLine                                      (COORD_POINT *points, INT n);
 void    UgPolygon                                       (COORD_POINT *points, INT n);
 void    UgPolymark                                      (COORD_POINT *points, INT n);
+void    UgInvPolymark                           (COORD_POINT *points, INT n);
 void    UgText                                          (const char *s, INT mode);
 void    UgCenteredText                          (COORD_POINT point, const char *s, INT mode);
 void    UgClearViewPort                         (void);

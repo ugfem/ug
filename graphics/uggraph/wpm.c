@@ -72,6 +72,7 @@ static INT thePlotObjTypesVarID;
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
+
 /****************************************************************************/
 /*D
    CreatePicture - Allocate a new PICTURE
@@ -480,12 +481,8 @@ PICTURE *GetNextPicture (const PICTURE *thePicture)
 
 void ListWindowPictureHeader (void)
 {
-  char buffer[128];
-
-  sprintf(buffer,WPL_FORMAT,"","UgWindow","Picture","VO_Status","PlotObjType","PO_Status","Multigrid");
-  UserWrite(buffer);
-  sprintf(buffer,WPL_FORMAT,"","--------","-------","---------","-----------","---------","---------");
-  UserWrite(buffer);
+  UserWriteF(WPL_FORMAT,"","UgWindow","Picture","VO_Status","PlotObjType","PO_Status","Multigrid");
+  UserWriteF(WPL_FORMAT,"","--------","-------","---------","-----------","---------","---------");
   return;
 }
 /****************************************************************************/
@@ -509,11 +506,8 @@ void ListWindowPictureHeader (void)
 /****************************************************************************/
 void ListUgWindow (const UGWINDOW *theUgWindow, INT current)
 {
-  char buffer[128];
-
-  if (current) sprintf(buffer,WPL_FORMAT,"#",ENVITEM_NAME(theUgWindow),"","","","","");
-  else sprintf(buffer,WPL_FORMAT,"",ENVITEM_NAME(theUgWindow),"","","","","");
-  UserWrite(buffer);
+  if (current) UserWriteF(WPL_FORMAT,"#",ENVITEM_NAME(theUgWindow),"","","","","");
+  else UserWriteF(WPL_FORMAT,"",ENVITEM_NAME(theUgWindow),"","","","","");
   return;
 }
 /****************************************************************************/
@@ -540,7 +534,7 @@ void ListUgWindow (const UGWINDOW *theUgWindow, INT current)
 void ListPicture (const PICTURE *thePicture, INT current)
 {
   UGWINDOW *theUgW;
-  char b1[2], b2[11], b3[30], b4[30], b5[30], buffer[128];
+  char b1[2], b2[11], b3[30], b4[30], b5[30];
   INT VO_Status, PO_Status;
   int PO_Dim;
 
@@ -596,8 +590,7 @@ void ListPicture (const PICTURE *thePicture, INT current)
   default :
     return;
   }
-  sprintf(buffer,WPL_FORMAT,b1,ENVITEM_NAME(theUgW),ENVITEM_NAME(thePicture),b2,b3,b4,b5);
-  UserWrite(buffer);
+  UserWriteF(WPL_FORMAT,b1,ENVITEM_NAME(theUgW),ENVITEM_NAME(thePicture),b2,b3,b4,b5);
   return;
 }
 
@@ -1177,11 +1170,136 @@ static INT      CheckViewPoint (VIEWEDOBJ *theViewedObj, INT adjust, INT *viewpo
 
 /****************************************************************************/
 /*D
+   SetCutPlane - Initialization/change of cut plane (3D-View)
+
+   SYNOPSIS:
+   static INT SetCutPlane (CUT *theCut, INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal)
+
+   PARAMETERS:
+   .  theCut - the structure 'CUT' to be initialized
+   .  RemoveCut - remove (previously defined) cut
+   .  cutPoint - 3-vector for point in plane (NULL if not changed)
+   .  cutNormal - 3-vector for normal to plane (NULL if not changed)
+
+   DESCRIPTION:
+   This function initializes or changes the definition of the cut plane (only 3D-View).
+
+   If the cutplane is not initialized, both options have to be specified together,
+   if it is initialized, specifiing one option is possible to change the cutplane.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if error occured.
+   D*/
+/****************************************************************************/
+
+static INT SetCutPlane (CUT *theCut, INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal)
+{
+  INT cppopt, cnpopt;
+
+  /* check if initialized */
+  cppopt = cnpopt = 0;
+  if (CUT_STATUS(theCut) != NOT_INIT)
+    cppopt = cnpopt = 1;
+
+  if (RemoveCut)
+  {
+    CUT_STATUS(theCut) = NOT_INIT;
+    return (0);
+  }
+
+  /* cut plane point option */
+  if (cutPoint!=NULL)
+  {
+    cppopt = 1;
+    V3_COPY(cutPoint,CUT_PP(theCut));
+  }
+
+  /* cut normal direction option */
+  if (cutNormal!=NULL)
+  {
+    cnpopt = 1;
+    V3_COPY(cutNormal,CUT_PN(theCut));
+  }
+
+  if (CUT_STATUS(theCut)==NOT_INIT)
+    if (!(cppopt && cnpopt))
+    {
+      CUT_STATUS(theCut) = NOT_INIT;
+      PrintErrorMessage('W',"SetCutPlane","cutting normal is (nearly) zero\n");
+      return (0);
+    }
+
+  /* check how cut plane can now be (re)defined */
+  CUT_STATUS(theCut) = NOT_INIT;
+  if (cppopt && cnpopt)
+  {
+    if (V3_ISZERO(CUT_PN(theCut)))
+    {
+      PrintErrorMessage('W',"SetCutPlane","cutting normal is (nearly) zero\n");
+      CUT_STATUS(theCut) = NOT_ACTIVE;
+    }
+    else
+      CUT_STATUS(theCut) = ACTIVE;
+  }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   DisplayCutPlane - Display specification of the cut plane (3D)
+
+   SYNOPSIS:
+   static INT DisplayCutPlane (CUT *theCut);
+
+   PARAMETERS:
+   .  theCut - the 'CUT'plane to be displayed
+
+   DESCRIPTION:
+   This function displays specification of cut plane (only 3D). It is used
+   by the function by the display-functions for the special content of the
+   'PLOTOBJ'.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if error occured.
+   D*/
+/****************************************************************************/
+
+static INT DisplayCutPlane (const CUT *theCut)
+{
+  UserWrite("\n");
+
+  /* display content */
+  switch (CUT_STATUS(theCut))
+  {
+  case NOT_INIT :
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"CUT STATUS","NOT_INIT");
+    return (0);
+  case NOT_ACTIVE :
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"CUT STATUS","NOT_ACTIVE");
+    break;
+  case ACTIVE :
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"CUT STATUS","ACTIVE");
+    break;
+  }
+  UserWriteF(DISPLAY_PO_FORMAT_SFFF,"PlanePoint",(float)CUT_PP(theCut)[0],(float)CUT_PP(theCut)[1],(float)CUT_PP(theCut)[2]);
+  UserWriteF(DISPLAY_PO_FORMAT_SFFF,"PlaneNormal",(float)CUT_PN(theCut)[0],(float)CUT_PN(theCut)[1],(float)CUT_PN(theCut)[2]);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    SetView - Set the view
 
    SYNOPSIS:
-   INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint,
-   const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective);
+   INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetPoint,
+                                const DOUBLE *xAxis, const INT *perspective,
+                                INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal);
 
    PARAMETERS:
    .  thePicture - set view of that picture
@@ -1189,6 +1307,9 @@ static INT      CheckViewPoint (VIEWEDOBJ *theViewedObj, INT adjust, INT *viewpo
    .  targetPoint - new target point
    .  xAxis - new xAxis
    .  perspective - change of perspective
+   .  RemoveCut - remove (previously defined) cut
+   .  cutPoint - point in cutting plane
+   .  cutNormal - normal direction to cutting plane
 
    DESCRIPTION:
    This function initializes or changes the view.
@@ -1221,7 +1342,8 @@ static INT      CheckViewPoint (VIEWEDOBJ *theViewedObj, INT adjust, INT *viewpo
    D*/
 /****************************************************************************/
 
-INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective)
+INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetPoint, const DOUBLE *xAxis, const INT *perspective,
+             INT RemoveCut, const DOUBLE *cutPoint, const DOUBLE *cutNormal)
 {
   VIEWEDOBJ *theViewedObj;
   PLOTOBJ *thePlotObj;
@@ -1338,6 +1460,9 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
         V3_SCALE(PO_RADIUS(thePlotObj),DefaultPYD)
       }
       DefaultPJ = YES;
+
+      if (PO_USESCUT(thePlotObj))
+        CUT_STATUS(VO_CUT(theViewedObj))                        = NOT_INIT;
     }
     else
     {
@@ -1375,7 +1500,7 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
       DefaultPJ = *perspective;
 
     /* save values */
-    V3_COPY(DefaultVP,VO_VP(theViewedObj))                                                                                                                      /* save values 3D					*/
+    V3_COPY(DefaultVP,VO_VP(theViewedObj))
     V3_COPY(DefaultVT,VO_VT(theViewedObj))
     V3_COPY(DefaultPMP,VO_PMP(theViewedObj))
     V3_COPY(DefaultPXD,VO_PXD(theViewedObj))
@@ -1389,6 +1514,16 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
     if (CheckViewPoint(theViewedObj,NO,&viewpointcorrect)) return (1);
     if (viewpointcorrect==NO)
       VO_STATUS(theViewedObj) = NOT_ACTIVE;
+
+    if (PO_USESCUT(thePlotObj))
+    {
+      /* (re)define cut plane */
+      if (SetCutPlane(VO_CUT(theViewedObj),RemoveCut,cutPoint,cutNormal)) return (1);
+
+      /*if (CUT_STATUS(VO_CUT(theViewedObj))==NOT_ACTIVE)
+              CUT_STATUS(VO_CUT(theViewedObj)) = NOT_INIT;*/
+
+    }
     break;
 
   case NOT_DEFINED :
@@ -1412,6 +1547,82 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
   default :
     return (1);
   }
+}
+
+INT CopyView (const PICTURE *mypic, INT all, INT cut)
+{
+  UGWINDOW *myUGW,*theUGW;
+  MULTIGRID *myMG;
+  PICTURE *pic;
+  const VIEWEDOBJ *myvo;
+  VIEWEDOBJ *vo;
+  const PLOTOBJ *thePlotObj;
+  INT myViewDim;
+
+  /* basics */
+  if (mypic == NULL) return (1);
+
+  /* some inits */
+  myvo = PIC_VO(mypic);
+  if (VO_STATUS(myvo)!=ACTIVE)
+  {
+    UserWrite("view is not active\n");
+    return (0);
+  }
+  thePlotObj = VO_PO(myvo);
+  if (PO_STATUS(thePlotObj) == NOT_INIT)
+  {
+    UserWrite("specify object first\n");
+    return (0);
+  }
+  myUGW = PIC_UGW(mypic);
+  myMG  = PO_MG(PIC_PO(mypic));
+  myViewDim = PO_DIM(thePlotObj);
+
+  if (cut && !PO_USESCUT(VO_PO(myvo)))
+    cut = FALSE;
+
+  for (theUGW=GetFirstUgWindow(); theUGW!=NULL; theUGW=GetNextUgWindow(theUGW))
+  {
+    if (!all)
+      theUGW = myUGW;
+    for (pic=GetFirstPicture(myUGW); pic!=NULL; pic=GetNextPicture(pic))
+    {
+      if (pic==mypic) continue;
+
+      vo = PIC_VO(pic);
+      if ((PO_DIM(VO_PO(vo))==myViewDim) && (PO_MG(PIC_PO(mypic))==myMG))
+      {
+        /* same multigrid and same dimension */
+        switch (myViewDim)
+        {
+        case TYPE_2D :
+          V2_COPY(VO_VT(myvo),VO_VT(vo))
+          V2_COPY(VO_PMP(myvo),VO_PMP(vo))
+          V2_COPY(VO_PXD(myvo),VO_PXD(vo))
+          V2_COPY(VO_PYD(myvo),VO_PYD(vo))
+          break;
+
+        case TYPE_3D :
+          V3_COPY(VO_VP(myvo),VO_VP(vo))
+          V3_COPY(VO_VT(myvo),VO_VT(vo))
+          V3_COPY(VO_PMP(myvo),VO_PMP(vo))
+          V3_COPY(VO_PXD(myvo),VO_PXD(vo))
+          V3_COPY(VO_PYD(myvo),VO_PYD(vo))
+          VO_PERSPECTIVE(vo) = VO_PERSPECTIVE(myvo);
+          if (cut && PO_USESCUT(VO_PO(vo)))
+            if (SetCutPlane(VO_CUT(vo),NO,CUT_PP(VO_CUT(myvo)),CUT_PN(VO_CUT(myvo)))) return (1);
+          break;
+        }
+        VO_STATUS(vo) = ACTIVE;
+        PIC_VALID(pic) = NO;
+      }
+    }
+    if (!all)
+      break;
+  }
+
+  return (0);
 }
 
 /****************************************************************************/
@@ -1438,7 +1649,7 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
 INT PrintViewSettings (const PICTURE *thePicture)
 {
   const VIEWEDOBJ *theViewedObj;
-  const DOUBLE *obs,*tgt,*pxd;
+  const DOUBLE *obs,*tgt,*pxd,*pp,*pn;
 
   theViewedObj = PIC_VO(thePicture);
 
@@ -1461,12 +1672,20 @@ INT PrintViewSettings (const PICTURE *thePicture)
     break;
 
   case TYPE_3D :
-    UserWriteF("setview $i $o %g %g %g $t %g %g %g $x %g %g %g $p %c\n",
+    UserWriteF("setview $i\n\t\t$o %g %g %g\n\t\t$t %g %g %g\n\t\t$x %g %g %g\n\t\t$p %c",
                obs[_X_],obs[_Y_],obs[_Z_],
                tgt[_X_],tgt[_Y_],tgt[_Z_],
                pxd[_X_],pxd[_Y_],pxd[_Z_],
                (VO_PERSPECTIVE(theViewedObj)) ? '<' : '=');
-    UserWrite("sorry, not implemented\n");
+    if (PO_USESCUT(VO_PO(theViewedObj)) && (CUT_STATUS(VO_CUT(theViewedObj))==ACTIVE))
+    {
+      pp = CUT_PP(VO_CUT(theViewedObj));
+      pn = CUT_PN(VO_CUT(theViewedObj));
+      UserWriteF("\n\t\t$P %g %g %g\n\t\t$N %g %g %g",
+                 pp[_X_],pp[_Y_],pp[_Z_],
+                 pn[_X_],pn[_Y_],pn[_Z_]);
+    }
+    UserWrite(";\n");
     break;
   }
 
@@ -1497,7 +1716,6 @@ INT PrintViewSettings (const PICTURE *thePicture)
 INT DisplayViewOfViewedObject (const PICTURE *thePicture)
 {
   DOUBLE width;
-  char buffer[128];
 
   UserWrite("-----------------------\n");
   UserWrite(" Display of View of VO \n");
@@ -1506,17 +1724,14 @@ INT DisplayViewOfViewedObject (const PICTURE *thePicture)
   switch (VO_STATUS(PIC_VO(thePicture)))
   {
   case NOT_INIT :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"VO_STATUS","NOT_INIT");
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"VO_STATUS","NOT_INIT");
     return (0);
     break;
   case NOT_ACTIVE :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"VO_STATUS","NOT_ACTIVE");
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"VO_STATUS","NOT_ACTIVE");
     break;
   case ACTIVE :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"VO_STATUS","ACTIVE");
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"VO_STATUS","ACTIVE");
     break;
   default :
     return (1);
@@ -1525,30 +1740,26 @@ INT DisplayViewOfViewedObject (const PICTURE *thePicture)
   switch (VO_DIM(PIC_VO(thePicture)))
   {
   case NOT_DEFINED :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"Dim","NOT_DEFINED");
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"Dim","NOT_DEFINED");
     break;
   case TYPE_2D :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"Dim","TYPE_2D");
-    UserWrite(buffer);
-    sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"Target",(float)(VO_VT(PIC_VO(thePicture))[0]),(float)(VO_VT(PIC_VO(thePicture))[1]));
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"Dim","TYPE_2D");
+    UserWriteF(DISPLAY_PO_FORMAT_SFF,"Target",(float)(VO_VT(PIC_VO(thePicture))[0]),(float)(VO_VT(PIC_VO(thePicture))[1]));
     V2_EUKLIDNORM(VO_PXD(PIC_VO(thePicture)),width)
     width *= 2.0;
-    sprintf(buffer,DISPLAY_PO_FORMAT_SF,"WinWidth",(float)width);
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SF,"WinWidth",(float)width);
     break;
   case TYPE_3D :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"Dim","TYPE_3D");
-    UserWrite(buffer);
-    sprintf(buffer,DISPLAY_PO_FORMAT_SFFF,"Observer",(float)(VO_VP(PIC_VO(thePicture))[0]),(float)(VO_VP(PIC_VO(thePicture))[1]),(float)(VO_VP(PIC_VO(thePicture))[2]));
-    UserWrite(buffer);
-    sprintf(buffer,DISPLAY_PO_FORMAT_SFFF,"Target",(float)(VO_VT(PIC_VO(thePicture))[0]),(float)(VO_VT(PIC_VO(thePicture))[1]),(float)(VO_VT(PIC_VO(thePicture))[2]));
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"Dim","TYPE_3D");
+    UserWriteF(DISPLAY_PO_FORMAT_SFFF,"Observer",(float)(VO_VP(PIC_VO(thePicture))[0]),(float)(VO_VP(PIC_VO(thePicture))[1]),(float)(VO_VP(PIC_VO(thePicture))[2]));
+    UserWriteF(DISPLAY_PO_FORMAT_SFFF,"Target",(float)(VO_VT(PIC_VO(thePicture))[0]),(float)(VO_VT(PIC_VO(thePicture))[1]),(float)(VO_VT(PIC_VO(thePicture))[2]));
     V3_EUKLIDNORM(VO_PXD(PIC_VO(thePicture)),width)
     width *= 2.0;
-    sprintf(buffer,DISPLAY_PO_FORMAT_SF,"WinWidth",(float)width);
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SF,"WinWidth",(float)width);
+
+    /* print content of cut plane */
+    if (PO_USESCUT(PIC_PO(thePicture)))
+      if (DisplayCutPlane(VO_CUT(PIC_VO(thePicture)))) return (1);
     break;
   default :
     return (1);
@@ -1678,7 +1889,7 @@ INT Walk (PICTURE *thePicture, const DOUBLE *vrsDelta)
   default :
     return (1);
   }
-  if (SetView(thePicture,VP,NULL,NULL,NULL)) return (1);
+  if (SetView(thePicture,VP,NULL,NULL,NULL,NO,NULL,NULL)) return (1);
 
   return (0);
 }
@@ -1740,7 +1951,7 @@ INT RunAroundTargetPoint (PICTURE *thePicture, DOUBLE vrsDirectionAngle, DOUBLE 
     return (0);
   }
   V3_ADD(VO_VT(theViewedObj),ViewDirection,VP)
-  if (SetView(thePicture,VP,NULL,NULL,NULL)) return (1);
+  if (SetView(thePicture,VP,NULL,NULL,NULL,NO,NULL,NULL)) return (1);
 
   return (0);
 }
@@ -2007,6 +2218,7 @@ static INT SpecifyPlotObject (PLOTOBJ *thePlotObj, MULTIGRID *theMG, const char 
   PO_CBD(thePlotObj) = def;
 
   /* init object */
+  PO_USESCUT(thePlotObj) = NO;
   ret = (*PO_POT(thePlotObj)->SetPlotObjProc)(thePlotObj,argc,argv);
   switch(ret)
   {
@@ -2099,7 +2311,7 @@ INT SpecifyPlotObjOfViewedObject (PICTURE *thePicture, MULTIGRID *theMG, const c
     if (viewpointcorrect && VO_STATUS(theViewedObj)==ACTIVE)
       VO_STATUS(theViewedObj) = ACTIVE;
   }
-  if (SetView(thePicture,NULL,NULL,NULL,NULL)) return (1);
+  if (SetView(thePicture,NULL,NULL,NULL,NULL,NO,NULL,NULL)) return (1);
 
   return (0);
 }
@@ -2133,7 +2345,6 @@ INT SpecifyPlotObjOfViewedObject (PICTURE *thePicture, MULTIGRID *theMG, const c
 
 INT DisplayObject (PLOTOBJ *thePlotObj)
 {
-  char buffer[128];
   PLOTOBJTYPE *thePOT;
 
   if (thePlotObj==NULL) return (1);
@@ -2144,34 +2355,25 @@ INT DisplayObject (PLOTOBJ *thePlotObj)
   switch (PO_STATUS(thePlotObj))
   {
   case NOT_INIT :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"PO-NAME","---");
-    UserWrite(buffer);
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"MG-NAME","---");
-    UserWrite(buffer);
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"STATUS","NOT_INIT");
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"PO-NAME","---");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"MG-NAME","---");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"STATUS","NOT_INIT");
     return (0);
   case NOT_ACTIVE :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"PO-NAME",thePOT->v.name);
-    UserWrite(buffer);
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"MG-NAME",MGNAME(PO_MG(thePlotObj)));
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"PO-NAME",thePOT->v.name);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"MG-NAME",MGNAME(PO_MG(thePlotObj)));
     if (PO_DIM(thePlotObj) == TYPE_2D)
-      sprintf(buffer,DISPLAY_PO_FORMAT_SS,"STATUS","NOT_ACTIVE:2D");
+      UserWriteF(DISPLAY_PO_FORMAT_SS,"STATUS","NOT_ACTIVE:2D");
     else
-      sprintf(buffer,DISPLAY_PO_FORMAT_SS,"STATUS","NOT_ACTIVE:3D");
-    UserWrite(buffer);
+      UserWriteF(DISPLAY_PO_FORMAT_SS,"STATUS","NOT_ACTIVE:3D");
     break;
   case ACTIVE :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"PO-NAME",thePOT->v.name);
-    UserWrite(buffer);
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"MG-NAME",MGNAME(PO_MG(thePlotObj)));
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"PO-NAME",thePOT->v.name);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"MG-NAME",MGNAME(PO_MG(thePlotObj)));
     if (PO_DIM(thePlotObj) == TYPE_2D)
-      sprintf(buffer,DISPLAY_PO_FORMAT_SS,"STATUS","ACTIVE:2D");
+      UserWriteF(DISPLAY_PO_FORMAT_SS,"STATUS","ACTIVE:2D");
     else
-      sprintf(buffer,DISPLAY_PO_FORMAT_SS,"STATUS","ACTIVE:3D");
-    UserWrite(buffer);
+      UserWriteF(DISPLAY_PO_FORMAT_SS,"STATUS","ACTIVE:3D");
     break;
   }
   if (thePOT == NULL) return (0);
@@ -2179,16 +2381,12 @@ INT DisplayObject (PLOTOBJ *thePlotObj)
   switch (PO_DIM(thePlotObj))
   {
   case TYPE_2D :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"MIDPOINT",(float)PO_MIDPOINT(thePlotObj)[0],(float)PO_MIDPOINT(thePlotObj)[1]);
-    UserWrite(buffer);
-    sprintf(buffer,DISPLAY_PO_FORMAT_SF,"RADIUS",(float)PO_RADIUS(thePlotObj));
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SFF,"MIDPOINT",(float)PO_MIDPOINT(thePlotObj)[0],(float)PO_MIDPOINT(thePlotObj)[1]);
+    UserWriteF(DISPLAY_PO_FORMAT_SF,"RADIUS",(float)PO_RADIUS(thePlotObj));
     break;
   case TYPE_3D :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SFFF,"MIDPOINT",(float)PO_MIDPOINT(thePlotObj)[0],(float)PO_MIDPOINT(thePlotObj)[1],(float)PO_MIDPOINT(thePlotObj)[2]);
-    UserWrite(buffer);
-    sprintf(buffer,DISPLAY_PO_FORMAT_SF,"RADIUS",(float)PO_RADIUS(thePlotObj));
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SFFF,"MIDPOINT",(float)PO_MIDPOINT(thePlotObj)[0],(float)PO_MIDPOINT(thePlotObj)[1],(float)PO_MIDPOINT(thePlotObj)[2]);
+    UserWriteF(DISPLAY_PO_FORMAT_SF,"RADIUS",(float)PO_RADIUS(thePlotObj));
     break;
   }
   UserWrite("\n");
@@ -2383,150 +2581,6 @@ static INT DisplayMatrixPlotObject (PLOTOBJ *thePlotObj)
   if (theMpo->Matrix!=NULL)
     UserWriteF(DISPLAY_PO_FORMAT_SS,"Matrix",ENVITEM_NAME(theMpo->Matrix));
 #endif
-
-  return (0);
-}
-
-/****************************************************************************/
-/*D
-   SetCutPlane - Initialization/change of cut plane (3D-View)
-
-   SYNOPSIS:
-   static INT SetCutPlane (CUT *theCut, INT argc, char **argv);
-
-   PARAMETERS:
-   .  theCut - the structure 'CUT' to be initialized
-   .  argc,~argv - arguments coming from the 'COMMANDS'
-
-   DESCRIPTION:
-   This function initializes or changes of cut plane (only 3D-View).You can specify
-   the following 'COMMAND'-options
-
-   .  P - the planepoint, three double-values are needed to specify a point on the
-       cutplane
-   .  N - the normal vector, three double-values are needed to specify the normale
-       vector
-
-   If the cutplane is not initialized, both options have to be specified together,
-   if it is initialized, specifiing one option is possible to change the cutplane.
-
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 if error occured.
-   D*/
-/****************************************************************************/
-
-static INT SetCutPlane (CUT *theCut, INT argc, char **argv)
-{
-  INT i, res, cppopt, cnpopt;
-  float help[3];
-
-  /* check if initialized */
-  cppopt = cnpopt = 0;
-  if (CUT_STATUS(theCut) != NOT_INIT)
-    cppopt = cnpopt = 1;
-
-  /* cut plane point option */
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='P')
-    {
-      res = sscanf(argv[i],"P %g %g %g",help, help+1, help+2);
-      if (res!=3)
-      {
-        UserWrite("specify three values for cut plane point");
-        return(1);
-      }
-      cppopt = 1;
-      V3_COPY(help,theCut->PlanePoint);
-      break;
-    }
-
-  /* cut normal point option */
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='N')
-    {
-      res = sscanf(argv[i],"N %g %g %g",help, help+1, help+2);
-      if (res!=3)
-      {
-        UserWrite("specify three values for cut normal point");
-        return(1);
-      }
-      cnpopt = 1;
-      V3_COPY(help,theCut->PlaneNormal);
-      break;
-    }
-
-  /* check how cut plane can now be (re)defined */
-  CUT_STATUS(theCut) = NOT_INIT;
-  if (cppopt && cnpopt)
-  {
-    if (V3_ISZERO(theCut->PlaneNormal))
-    {
-      UserWrite("cutting normal is (nearly) zero\n");
-      CUT_STATUS(theCut) = NOT_ACTIVE;
-    }
-    else
-      CUT_STATUS(theCut) = ACTIVE;
-  }
-
-  /* reset cut plane */
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='R')
-    {
-      CUT_STATUS(theCut) = NOT_INIT;
-      break;
-    }
-
-  return (0);
-}
-
-/****************************************************************************/
-/*D
-   DisplayCutPlane - Display specification of the cut plane (3D)
-
-   SYNOPSIS:
-   static INT DisplayCutPlane (CUT *theCut);
-
-   PARAMETERS:
-   .  theCut - the 'CUT'plane to be displayed
-
-   DESCRIPTION:
-   This function displays specification of cut plane (only 3D). It is used
-   by the function by the display-functions for the special content of the
-   'PLOTOBJ'.
-
-   RETURN VALUE:
-   INT
-   .n     0 if ok
-   .n     1 if error occured.
-   D*/
-/****************************************************************************/
-
-static INT DisplayCutPlane (CUT *theCut)
-{
-  char buffer[128];
-
-  /* display content */
-  switch (CUT_STATUS(theCut))
-  {
-  case NOT_INIT :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"CUT STATUS","NOT_INIT");
-    UserWrite(buffer);
-    return (0);
-  case NOT_ACTIVE :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"CUT STATUS","NOT_ACTIVE");
-    UserWrite(buffer);
-    break;
-  case ACTIVE :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"CUT STATUS","ACTIVE");
-    UserWrite(buffer);
-    break;
-  }
-  sprintf(buffer,DISPLAY_PO_FORMAT_SFFF,"PlanePoint",(float)theCut->PlanePoint[0],(float)theCut->PlanePoint[1],(float)theCut->PlanePoint[2]);
-  UserWrite(buffer);
-  sprintf(buffer,DISPLAY_PO_FORMAT_SFFF,"PlaneNormal",(float)theCut->PlaneNormal[0],(float)theCut->PlaneNormal[1],(float)theCut->PlaneNormal[2]);
-  UserWrite(buffer);
 
   return (0);
 }
@@ -2751,7 +2805,6 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
 {
   struct GridPlotObj2D *theGpo;
-  char buffer[128];
 
   theGpo = &(thePlotObj->theGpo);
 
@@ -2761,57 +2814,50 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
   UserWriteF(DISPLAY_PO_FORMAT_SF,"PartShrinkFactor",(float)theGpo->PartShrinkFactor);
         #endif
   if (theGpo->PlotBoundary == YES)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"BND","YES");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"BND","YES");
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"BND","NO");
-  UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"BND","NO");
 
   if (theGpo->PlotNodes == YES)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"Node markers","YES");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"Node markers","YES");
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"Node markers","NO");
-  UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"Node markers","NO");
 
   if (theGpo->PlotRefMarks == YES)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"ref marks","YES");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"ref marks","YES");
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"ref marks","NO");
-  UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"ref marks","NO");
 
   if (theGpo->PlotIndMarks == YES)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"indicator marks","YES");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"indicator marks","YES");
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"indicator marks","NO");
-  UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"indicator marks","NO");
 
   if (theGpo->PlotElemID == YES)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"ElemID","YES");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"ElemID","YES");
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"ElemID","NO");
-  UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"ElemID","NO");
 
   if (theGpo->PlotNodeID == YES)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"NodeID","YES");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"NodeID","YES");
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"NodeID","NO");
-  UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"NodeID","NO");
 
   switch (theGpo->WhichElem)
   {
   case PO_COPY :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"WHICH_Elem","COPY");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"WHICH_Elem","COPY");
     break;
   case PO_IRR :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"WHICH_Elem","IRREGULAR");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"WHICH_Elem","IRREGULAR");
     break;
   case PO_REG :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"WHICH_Elem","REGULAR");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"WHICH_Elem","REGULAR");
     break;
   case PO_ALL :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"WHICH_Elem","ALL");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"WHICH_Elem","ALL");
     break;
   }
-  UserWrite(buffer);
 
   UserWriteF(DISPLAY_PO_FORMAT_SI,"COLORED",(int)theGpo->ElemColored);
 
@@ -2845,7 +2891,7 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   FORMAT *theFormat;
   struct VecMatPlotObj2D *theVmo;
   char name[NAMELEN];
-  INT i,rt,ct;
+  INT i,j,rt,ct;
   int iValue;
 
   theVmo = &(thePlotObj->theVmo);
@@ -2858,9 +2904,9 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   if (PO_STATUS(thePlotObj)==NOT_INIT)
   {
     theVmo->Marker                          = NO;
-    theVmo->Type[NODEVECTOR]        = YES;
-    theVmo->Type[EDGEVECTOR]        = YES;
-    theVmo->Type[ELEMVECTOR]        = YES;
+    theVmo->Type[NODEVECTOR]        = (theFormat->VectorSizes[NODEVECTOR]>0);
+    theVmo->Type[EDGEVECTOR]        = (theFormat->VectorSizes[EDGEVECTOR]>0);
+    theVmo->Type[ELEMVECTOR]        = (theFormat->VectorSizes[ELEMVECTOR]>0);
     theVmo->Connections                     = YES;
     theVmo->Extra                           = NO;
     theVmo->Idx                                     = NO;
@@ -2884,12 +2930,17 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
       break;
 
     case 't' :
-      if (strstr(argv[i],"nd")!=NULL) theVmo->Type[NODEVECTOR] = YES;
-      else theVmo->Type[NODEVECTOR] = NO;
-      if (strstr(argv[i],"ed")!=NULL) theVmo->Type[EDGEVECTOR] = YES;
-      else theVmo->Type[EDGEVECTOR] = NO;
-      if (strstr(argv[i],"el")!=NULL) theVmo->Type[ELEMVECTOR] = YES;
-      else theVmo->Type[ELEMVECTOR] = NO;
+      for (j=0; j<NVECTYPES; j++)
+        if (strstr(argv[i],VecTypeName[j])!=NULL)
+        {
+          if (theFormat->VectorSizes[j]==0)
+            PrintErrorMessageF('W',"InitVecMat_2D",
+                               "no degrees of freedom in %s-vectors",VecTypeName[j]);
+          else
+            theVmo->Type[j] = YES;
+        }
+        else
+          theVmo->Type[j] = NO;
       break;
 
     case 'c' :
@@ -3033,20 +3084,9 @@ static INT DisplayVecMat_2D (PLOTOBJ *thePlotObj)
   else
     UserWriteF(DISPLAY_PO_FORMAT_SS,"marker","NO");
 
-  if (theVmo->Type[NODEVECTOR] == YES)
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"node-vecs","YES");
-  else
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"node-vecs","NO");
-
-  if (theVmo->Type[EDGEVECTOR] == YES)
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"edge-vecs","YES");
-  else
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"edge-vecs","NO");
-
-  if (theVmo->Type[ELEMVECTOR] == YES)
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"elem-vecs","YES");
-  else
-    UserWriteF(DISPLAY_PO_FORMAT_SS,"elem-vecs","NO");
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"nd vectors",(int)theVmo->Type[NODEVECTOR]);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"ed vectors",(int)theVmo->Type[EDGEVECTOR]);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"el vectors",(int)theVmo->Type[ELEMVECTOR]);
 
   if (theVmo->Idx == YES)
     UserWriteF(DISPLAY_PO_FORMAT_SS,"index","YES");
@@ -3232,8 +3272,7 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
 
   if (theEspo->numOfContours >= PO_MAXCONTOURS)
   {
-    sprintf(buffer,"number of contours is greater than the limit (%d)",PO_MAXCONTOURS);
-    PrintErrorMessage('E',"InitScalarFieldPlotObject_2D",buffer);
+    PrintErrorMessageF('E',"InitScalarFieldPlotObject_2D","number of contours is greater than the limit (%d)",PO_MAXCONTOURS);
     ret = NOT_ACTIVE;
   }
 
@@ -3299,40 +3338,32 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
 static INT DisplayScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj)
 {
   struct ElemScalarPlotObj2D *theEspo;
-  char buffer[128];
 
   theEspo = &(thePlotObj->theEspo);
 
   /* print content */
   if (theEspo->EvalFct != NULL)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theEspo->EvalFct));
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theEspo->EvalFct));
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc","---");
-  UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc","---");
 
   UserWriteF(DISPLAY_PO_FORMAT_SS,"name",PO_NAME(theEspo));
 
   if (theEspo->PlotGrid == YES)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"Grid","YES");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"Grid","YES");
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"Grid","NO");
-  UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"Grid","NO");
 
-  sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"Range",(float)theEspo->min,(float)theEspo->max);
-  UserWrite(buffer);
-  sprintf(buffer,DISPLAY_PO_FORMAT_SI,"Depth",(int)theEspo->depth);
-  UserWrite(buffer);
+  UserWriteF(DISPLAY_PO_FORMAT_SFF,"Range",(float)theEspo->min,(float)theEspo->max);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"Depth",(int)theEspo->depth);
   switch (theEspo->mode)
   {
   case PO_COLOR :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"PlotMode","COLOR");
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"PlotMode","COLOR");
     break;
   case PO_CONTOURS_EQ :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"PlotMode","CONTOURS_EQ");
-    UserWrite(buffer);
-    sprintf(buffer,DISPLAY_PO_FORMAT_SI,"NbOfCont",(int)theEspo->numOfContours);
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"PlotMode","CONTOURS_EQ");
+    UserWriteF(DISPLAY_PO_FORMAT_SI,"NbOfCont",(int)theEspo->numOfContours);
   }
 
   return (0);
@@ -3514,7 +3545,6 @@ static INT InitVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
 static INT DisplayVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj)
 {
   struct ElemVectorPlotObj2D *theEvpo;
-  char buffer[128];
 
   theEvpo = &(thePlotObj->theEvpo);
 
@@ -3522,22 +3552,15 @@ static INT DisplayVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj)
 
   /* print content */
   UserWriteF(DISPLAY_PO_FORMAT_SS,"Grid",(theEvpo->PlotGrid) ? "YES" : "NO");
-  sprintf(buffer,DISPLAY_PO_FORMAT_SF,"maxValue",(float)theEvpo->max);
-  UserWrite(buffer);
-  sprintf(buffer,DISPLAY_PO_FORMAT_SF,"RasterSize",(float)theEvpo->RasterSize);
-  UserWrite(buffer);
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"maxValue",(float)theEvpo->max);
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"RasterSize",(float)theEvpo->RasterSize);
   if (theEvpo->CutVectors == YES)
   {
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"CutVectors","YES");
-    UserWrite(buffer);
-    sprintf(buffer,DISPLAY_PO_FORMAT_SF,"CutLenFactor",(float)theEvpo->CutLenFactor);
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"CutVectors","YES");
+    UserWriteF(DISPLAY_PO_FORMAT_SF,"CutLenFactor",(float)theEvpo->CutLenFactor);
   }
   else
-  {
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"CutVectors","NO");
-    UserWrite(buffer);
-  }
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"CutVectors","NO");
 
   return (0);
 }
@@ -3761,40 +3784,28 @@ static INT InitLinePlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 static INT DisplayLinePlotObject_2D (PLOTOBJ *thePlotObj)
 {
   struct LinePlotObj2D *theLpo;
-  char buffer[128];
 
   theLpo = &(thePlotObj->theLpo);
 
   /* print content */
   if (theLpo->EvalFct != NULL)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theLpo->EvalFct));
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theLpo->EvalFct));
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc","---");
-  UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc","---");
 
   UserWriteF(DISPLAY_PO_FORMAT_SS,"name",PO_NAME(theLpo));
 
-  sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"Range",(float)theLpo->min,(float)theLpo->max);
-  UserWrite(buffer);
-  sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"left",(float)theLpo->left[0],(float)theLpo->left[1]);
-  UserWrite(buffer);
-  sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"right",(float)theLpo->right[0],(float)theLpo->right[1]);
-  UserWrite(buffer);
-  sprintf(buffer,DISPLAY_PO_FORMAT_SI,"y-log",(int)theLpo->yLog);
-  UserWrite(buffer);
-  sprintf(buffer,DISPLAY_PO_FORMAT_SF,"color",(float)theLpo->color);
-  UserWrite(buffer);
-  sprintf(buffer,DISPLAY_PO_FORMAT_SF,"asp.ratio",(float)theLpo->aspectratio);
-  UserWrite(buffer);
-  sprintf(buffer,DISPLAY_PO_FORMAT_SI,"Depth",(int)theLpo->depth);
-  UserWrite(buffer);
+  UserWriteF(DISPLAY_PO_FORMAT_SFF,"Range",(float)theLpo->min,(float)theLpo->max);
+  UserWriteF(DISPLAY_PO_FORMAT_SFF,"left",(float)theLpo->left[0],(float)theLpo->left[1]);
+  UserWriteF(DISPLAY_PO_FORMAT_SFF,"right",(float)theLpo->right[0],(float)theLpo->right[1]);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"y-log",(int)theLpo->yLog);
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"color",(float)theLpo->color);
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"asp.ratio",(float)theLpo->aspectratio);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"Depth",(int)theLpo->depth);
   UserWrite("\ncomputed values:\n");
-  sprintf(buffer,DISPLAY_PO_FORMAT_SI,"nHit",(int)theLpo->nHit);
-  UserWrite(buffer);
-  sprintf(buffer,DISPLAY_PO_FORMAT_SF,"x-min",(float)theLpo->xmin);
-  UserWrite(buffer);
-  sprintf(buffer,DISPLAY_PO_FORMAT_SF,"x-max",(float)theLpo->xmax);
-  UserWrite(buffer);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"nHit",(int)theLpo->nHit);
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"x-min",(float)theLpo->xmin);
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"x-max",(float)theLpo->xmax);
 
   return (0);
 }
@@ -3868,13 +3879,184 @@ static INT InitDomainPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 static INT DisplayDomainPlotObject_3D (PLOTOBJ *thePlotObj)
 {
   struct DomainPlotObj3D *theDpo;
-  char buffer[128];
 
   theDpo = &(thePlotObj->theDpo);
 
   /* print content */
-  sprintf(buffer,"NbOfSteps  =%d\n",(int)theDpo->NbOfSteps);
-  UserWrite(buffer);
+  UserWriteF("NbOfSteps  =%d\n",(int)theDpo->NbOfSteps);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
+   InitVecMat_3D - Initialization of 2D vector-matrix graph object
+
+   SYNOPSIS:
+   static INT InitVecMat_3D (PLOTOBJ *thePlotObj, INT argc, char **argv);
+
+   PARAMETERS:
+   .  thePlotObj - the 'PLOTOBJ' to be initialized.
+   .  argc, argv -
+
+   DESCRIPTION:
+   This function does initialization of 2D vector-matrix graph object.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if error occured.
+ */
+/****************************************************************************/
+
+static INT InitVecMat_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
+{
+  BVP_DESC theBVPDesc;
+  FORMAT *theFormat;
+  struct VecMatPlotObj3D *theVmo;
+  char name[NAMELEN];
+  INT i,j,rt,ct;
+  int iValue;
+
+  theVmo = &(thePlotObj->theVmo);
+  theFormat = MGFORMAT(PO_MG(thePlotObj));
+  if (BVP_SetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  V2_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
+  PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
+
+  /* defaults */
+  if (PO_STATUS(thePlotObj)==NOT_INIT)
+  {
+    theVmo->Type[NODEVECTOR]        = (theFormat->VectorSizes[NODEVECTOR]>0);
+    theVmo->Type[EDGEVECTOR]        = (theFormat->VectorSizes[EDGEVECTOR]>0);
+    theVmo->Type[ELEMVECTOR]        = (theFormat->VectorSizes[ELEMVECTOR]>0);
+    theVmo->Type[SIDEVECTOR]        = (theFormat->VectorSizes[SIDEVECTOR]>0);
+    theVmo->vd                                      = NULL;
+    theVmo->md                                      = NULL;
+  }
+
+  /* color mode */
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 't' :
+      for (j=0; j<NVECTYPES; j++)
+        if (strstr(argv[i],VecTypeName[j])!=NULL)
+        {
+          if (theFormat->VectorSizes[j]==0)
+            PrintErrorMessageF('W',"InitVecMat_3D",
+                               "no degrees of freedom in %s-vectors",VecTypeName[j]);
+          else
+            theVmo->Type[j] = YES;
+        }
+        else
+          theVmo->Type[j] = NO;
+      break;
+
+    case 'i' :
+      if (sscanf(argv[i],"i %d",&iValue)!=1)
+        break;
+      if              (iValue==1) theVmo->Idx = YES;
+      else if (iValue==0) theVmo->Idx = NO;
+      break;
+
+    case 'V' :
+      if ((sscanf(argv[i],"V %s",name)!=1) ||
+          ((theVmo->vd =
+              GetVecDataDescByName(PO_MG(thePlotObj),name))==NULL))
+      {
+        UserWrite("no vector specified, vec data switched off\n");
+        theVmo->vd = NULL;
+      }
+      break;
+
+    case 'M' :
+      if ((sscanf(argv[i],"M %s",name)!=1) ||
+          ((theVmo->md =
+              GetMatDataDescByName(PO_MG(thePlotObj),name))==NULL))
+      {
+        UserWrite("no matrix specified, mat data switched off\n");
+        theVmo->md = NULL;
+      }
+      break;
+    }
+
+  /* check compatibility of vec and mat desc */
+  if (theVmo->vd || theVmo->md)
+    for (rt=0; rt<NVECTYPES; rt++)
+      if (theVmo->Type[rt])
+      {
+        if (theVmo->vd)
+          if (!VD_ISDEF_IN_TYPE(theVmo->vd,rt))
+          {
+            UserWrite("vec desc does not include types of specified types\n");
+            return (NOT_ACTIVE);
+          }
+        if (theVmo->md)
+          for (ct=0; ct<NVECTYPES; ct++)
+            if (theVmo->Type[ct])
+            {
+              if (!MD_ISDEF_IN_RT_CT(theVmo->md,rt,ct))
+              {
+                UserWrite("mat desc does not include column types of specified types\n");
+                return (NOT_ACTIVE);
+              }
+              if (theVmo->vd)
+                if (VD_NCMPS_IN_TYPE(theVmo->vd,ct)!=MD_ROWS_IN_RT_CT(theVmo->md,rt,ct))
+                {
+                  UserWrite("vec desc and mat desc incompatible\n");
+                  return (NOT_ACTIVE);
+                }
+            }
+      }
+
+  return (ACTIVE);
+}
+
+/****************************************************************************/
+/*
+   DisplayVecMat_3D - Display content of 2D vector-matrix graph object
+
+   SYNOPSIS:
+   static INT DisplayVecMat_3D (PLOTOBJ *thePlotObj);
+
+   PARAMETERS:
+   .  thePlotObj -
+
+   DESCRIPTION:
+   This function displays content of 2D vector-matrix graph object.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if error occured.
+ */
+/****************************************************************************/
+
+static INT DisplayVecMat_3D (PLOTOBJ *thePlotObj)
+{
+  struct VecMatPlotObj3D *theVmo;
+
+  theVmo = &(thePlotObj->theVmo);
+
+  /* print content */
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"nd vectors",(int)theVmo->Type[NODEVECTOR]);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"ed vectors",(int)theVmo->Type[EDGEVECTOR]);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"el vectors",(int)theVmo->Type[ELEMVECTOR]);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"sd vectors",(int)theVmo->Type[SIDEVECTOR]);
+
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"index",(theVmo->Idx) ? "YES" : "NO");
+
+#ifdef __NP__
+  if (theVmo->vd!=NULL)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"vec data",ENVITEM_NAME(theVmo->vd));
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"vec data","NO");
+  if (theVmo->md!=NULL)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"mat data",ENVITEM_NAME(theVmo->md));
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"mat data","NO");
+#endif
 
   return (0);
 }
@@ -3904,18 +4086,19 @@ static INT DisplayDomainPlotObject_3D (PLOTOBJ *thePlotObj)
 static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
   BVP_DESC theBVPDesc;
+  FORMAT *theFormat;
   struct GridPlotObj3D *theGpo;
-  CUT *theCut;
-  INT i;
+  INT i,j;
   int iValue;
   float fValue;
-  char buffer[64];
+  char buffer[64],c;
 
   theGpo = &(thePlotObj->theGpo);
+  theFormat = MGFORMAT(PO_MG(thePlotObj));
   if (BVP_SetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
   V3_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
   PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
-  theCut = &(theGpo->theCut);
+  PO_USESCUT(thePlotObj) = YES;
 
   /* defaults */
   if (PO_STATUS(thePlotObj)==NOT_INIT)
@@ -3924,9 +4107,16 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
                 #ifdef ModelP
     theGpo->PartShrinkFactor        = 1.0;
                 #endif
+    theGpo->NodeMarkers                     = NO;
+    theGpo->NodeIndex                       = NO;
+    theGpo->Vectors                         = NO;
+    theGpo->VecIndex                        = NO;
+    theGpo->Type[NODEVECTOR]        = (theFormat->VectorSizes[NODEVECTOR]>0);
+    theGpo->Type[EDGEVECTOR]        = (theFormat->VectorSizes[EDGEVECTOR]>0);
+    theGpo->Type[ELEMVECTOR]        = (theFormat->VectorSizes[ELEMVECTOR]>0);
+    theGpo->Type[SIDEVECTOR]        = (theFormat->VectorSizes[SIDEVECTOR]>0);
     theGpo->ElemColored             = NO;
     theGpo->WhichElem                       = PO_ALL;
-    CUT_STATUS(theCut)                      = NOT_INIT;
   }
 
   /* set shrink option */
@@ -3965,6 +4155,45 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     }
   if (theGpo->ElemColored<0 || theGpo->ElemColored>2) return (NOT_ACTIVE);
 
+  /* node markers and indices */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='n')
+    {
+      if (sscanf(argv[i],"n%c %d",&c,&iValue)!=2) break;
+      theGpo->NodeMarkers = iValue;
+      if (argv[i][1]=='i')
+        theGpo->NodeIndex = iValue;
+      break;
+    }
+
+  /* vector options */
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'v' :
+      if (sscanf(argv[i],"v%c %d",&c,&iValue)!=2)
+        break;
+      if              (iValue==1) {theGpo->Vectors = YES; theGpo->NodeMarkers = NO;}
+      else if (iValue==0) theGpo->Vectors = NO;
+      if (argv[i][1]=='i')
+        theGpo->VecIndex = iValue;
+      break;
+
+    case 't' :
+      for (j=0; j<NVECTYPES; j++)
+        if (strstr(argv[i],VecTypeName[j])!=NULL)
+        {
+          if (theFormat->VectorSizes[j]==0)
+            PrintErrorMessageF('W',"InitGridObject_3D",
+                               "no degrees of freedom in %s-vectors",VecTypeName[j]);
+          else
+            theGpo->Type[j] = YES;
+        }
+        else
+          theGpo->Type[j] = NO;
+      break;
+    }
+
   for (i=1; i<argc; i++)
   {
     if (argv[i][0]=='w')
@@ -3981,11 +4210,6 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
       break;
     }
   }
-
-  /* (re)define cut plane */
-  if (SetCutPlane(theCut,argc,argv)) return (1);
-
-  if (CUT_STATUS(theCut)==NOT_ACTIVE) return (NOT_ACTIVE);
   return (ACTIVE);
 }
 
@@ -4012,18 +4236,17 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
 {
   struct GridPlotObj3D *theGpo;
-  CUT *theCut;
   char buffer[128];
 
   theGpo = &(thePlotObj->theGpo);
-  theCut = &(theGpo->theCut);
+  PO_USESCUT(thePlotObj) = YES;
 
   /* print content */
   UserWriteF(DISPLAY_PO_FORMAT_SF,"ShrinkFactor",(float)theGpo->ShrinkFactor);
         #ifdef ModelP
   UserWriteF(DISPLAY_PO_FORMAT_SF,"PartShrinkFactor",(float)theGpo->PartShrinkFactor);
         #endif
-  UserWriteF(DISPLAY_PO_FORMAT_SI,"COLORED",(int)theGpo->ElemColored);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"colered elems",(int)theGpo->ElemColored);
 
   switch (theGpo->WhichElem)
   {
@@ -4040,11 +4263,16 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"WHICH_Elem","ALL");
     break;
   }
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"node markers",(int)theGpo->NodeMarkers);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"node indices",(int)theGpo->NodeIndex);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"vector markers",(int)theGpo->Vectors);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"vector indices",(int)theGpo->VecIndex);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"nd vectors",(int)theGpo->Type[NODEVECTOR]);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"ed vectors",(int)theGpo->Type[EDGEVECTOR]);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"el vectors",(int)theGpo->Type[ELEMVECTOR]);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"sd vectors",(int)theGpo->Type[SIDEVECTOR]);
   UserWrite(buffer);
   UserWrite("\n");
-
-  /* print content of cut plane */
-  if (DisplayCutPlane(theCut)) return (1);
 
   return (0);
 }
@@ -4075,7 +4303,6 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
 static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
   BVP_DESC theBVPDesc;
-  CUT *theCut;
   struct ElemScalarPlotObj3D *theEspo;
   char buffer[64];
   INT i, ret;
@@ -4086,7 +4313,7 @@ static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
   if (BVP_SetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
   V3_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
   PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
-  theCut = &(theEspo->theCut);
+  PO_USESCUT(thePlotObj) = YES;
   ret = ACTIVE;
 
   /* defaults */
@@ -4096,7 +4323,6 @@ static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
     theEspo->max                    = 1.0;
     theEspo->mode                   = PO_COLOR;
     theEspo->numOfContours  = 10;
-    CUT_STATUS(theCut)              = NOT_INIT;
   }
 
   /* set mode option */
@@ -4198,11 +4424,6 @@ static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
     ret = NOT_ACTIVE;
   }
 
-  /* (re)define cut plane */
-  if (SetCutPlane(theCut,argc,argv)) return (1);
-  if (CUT_STATUS(theCut)==NOT_ACTIVE)
-    ret = NOT_ACTIVE;
-
   /* do what is to do */
   if (theEspo->mode == PO_CONTOURS_EQ && ret == ACTIVE)
     for (i=0; i<theEspo->numOfContours; i++)
@@ -4234,42 +4455,30 @@ static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
 
 static INT DisplayScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj)
 {
-  CUT *theCut;
   struct ElemScalarPlotObj3D *theEspo;
-  char buffer[128];
 
   theEspo = &(thePlotObj->theEspo);
-  theCut = &(theEspo->theCut);
 
   /* print content */
   if (theEspo->EvalFct != NULL)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theEspo->EvalFct));
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theEspo->EvalFct));
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc","---");
-  UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc","---");
 
   UserWriteF(DISPLAY_PO_FORMAT_SS,"name",PO_NAME(theEspo));
 
-  sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"Range",(float)theEspo->min,(float)theEspo->max);
-  UserWrite(buffer);
-  sprintf(buffer,DISPLAY_PO_FORMAT_SI,"Depth",(int)theEspo->depth);
-  UserWrite(buffer);
+  UserWriteF(DISPLAY_PO_FORMAT_SFF,"Range",(float)theEspo->min,(float)theEspo->max);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"Depth",(int)theEspo->depth);
   switch (theEspo->mode)
   {
   case PO_COLOR :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"PlotMode","COLOR");
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"PlotMode","COLOR");
     break;
   case PO_CONTOURS_EQ :
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"PlotMode","CONTOURS_EQ");
-    UserWrite(buffer);
-    sprintf(buffer,DISPLAY_PO_FORMAT_SI,"NbOfCont",(int)theEspo->numOfContours);
-    UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"PlotMode","CONTOURS_EQ");
+    UserWriteF(DISPLAY_PO_FORMAT_SI,"NbOfCont",(int)theEspo->numOfContours);
   }
   UserWrite("\n");
-
-  /* print content of cut plane */
-  if (DisplayCutPlane(theCut)) return (1);
 
   return (0);
 }
@@ -4290,7 +4499,6 @@ static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
 {
   BVP_DESC theBVPDesc;
   struct ElemVectorPlotObj3D *theEvpo;
-  CUT *theCut;
   char buffer[64];
   INT i, ret;
   int iValue;
@@ -4300,7 +4508,7 @@ static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
   if (BVP_SetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
   V3_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
   PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
-  theCut = &(theEvpo->theCut);
+  PO_USESCUT(thePlotObj) = YES;
   ret = ACTIVE;
 
   /* defaults */
@@ -4415,11 +4623,6 @@ static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
     ret = NOT_ACTIVE;
   }
 
-  /* (re)define cut plane */
-  if (SetCutPlane(theCut,argc,argv)) return (1);
-  if (CUT_STATUS(theCut)==NOT_ACTIVE)
-    ret = NOT_ACTIVE;
-
   /* return */
   return (ret);
 }
@@ -4440,42 +4643,30 @@ static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
 static INT DisplayVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj)
 {
   struct ElemVectorPlotObj3D *theEvpo;
-  CUT *theCut;
-  char buffer[128];
 
   theEvpo = &(thePlotObj->theEvpo);
-  theCut = &(theEvpo->theCut);
 
   /* print content */
   if (theEvpo->EvalFct != NULL)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theEvpo->EvalFct));
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc",ENVITEM_NAME(theEvpo->EvalFct));
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"EvalProc","---");
-  UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"EvalProc","---");
 
   UserWriteF(DISPLAY_PO_FORMAT_SS,"name",PO_NAME(theEvpo));
 
-  sprintf(buffer,DISPLAY_PO_FORMAT_SFF,"Range",0.0,(float)theEvpo->max);
-  UserWrite(buffer);
-  sprintf(buffer,DISPLAY_PO_FORMAT_SF,"RasterSize",(float)theEvpo->RasterSize);
-  UserWrite(buffer);
-  sprintf(buffer,DISPLAY_PO_FORMAT_SF,"CutLenFactor",(float)theEvpo->CutLenFactor);
-  UserWrite(buffer);
+  UserWriteF(DISPLAY_PO_FORMAT_SFF,"Range",0.0,(float)theEvpo->max);
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"RasterSize",(float)theEvpo->RasterSize);
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"CutLenFactor",(float)theEvpo->CutLenFactor);
 
   if (theEvpo->CutVector == YES)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"CutVector","YES");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"CutVector","YES");
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"CutVector","NO");
-  UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"CutVector","NO");
   if (theEvpo->ProjectVector == YES)
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"ProjectVector","YES");
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"ProjectVector","YES");
   else
-    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"ProjectVector","NO");
-  UserWrite(buffer);
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"ProjectVector","NO");
   UserWrite("\n");
-
-  /* print content of cut plane */
-  if (DisplayCutPlane(theCut)) return (1);
 
   return (0);
 }
@@ -4555,6 +4746,11 @@ INT InitPlotObjTypes (void)
   thePOT->Dimension                               = TYPE_3D;
   thePOT->SetPlotObjProc                  = InitVectorFieldPlotObject_3D;
   thePOT->DispPlotObjProc                 = DisplayVectorFieldPlotObject_3D;
+
+  if ((thePOT=GetPlotObjType("VecMat"))  == NULL) return (1);
+  thePOT->Dimension                               = TYPE_3D;
+  thePOT->SetPlotObjProc                  = InitVecMat_3D;
+  thePOT->DispPlotObjProc                 = DisplayVecMat_3D;
 
   if ((thePOT=GetPlotObjType("Grid"))    == NULL) return (1);
   thePOT->Dimension                               = TYPE_3D;

@@ -85,12 +85,13 @@
 #define DO_ERASE_SURRPOLYGON                    10
 #define DO_TEXT                                                 11
 #define DO_POLYMARK                                     12
-#define DO_WAIT                                                 13
-#define DO_DEPEND                                               14
-#define DO_INVERSE_POLYLINE                     15
-#define DO_STYLED_LINE                                  16
+#define DO_INVPOLYMARK                                  13
+#define DO_WAIT                                                 14
+#define DO_DEPEND                                               15
+#define DO_INVERSE_POLYLINE                     16
+#define DO_STYLED_LINE                                  17
 #ifdef ModelP
-#define DO_END_TOKEN                            17
+#define DO_END_TOKEN                            18
 #endif
 
 /* increment */
@@ -114,6 +115,7 @@
 #define DO_inc_ERASE_SURRPOLYGON(p,d)   (p)+=3+((char*)(p+1))[0]*d;
 #define DO_inc_TEXT(p,d)                                (p)+=5+d+DO_strlen(p+5+d);
 #define DO_inc_POLYMARK(p,d)                    (p)+=5+((char*)(p+1))[0]*d;
+#define DO_inc_INVPOLYMARK(p,d)                 (p)+=4+((char*)(p+1))[0]*d;
 
 /* cast */
 #define DO_2c(p)                                                (*((char*)(p)))
@@ -469,8 +471,11 @@ INT             InitWOP                                 (void);
 
 INT             WorkOnPicture                   (PICTURE *thePicture, WORK *theWork);
 INT                     DrawWindowText                  (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT size, INT center, INT mode);
-INT                     DragPicture                             (PICTURE *thePicture, INT *MousePos);
-INT                     ZoomPicture                             (PICTURE *thePicture, INT *MousePos);
+INT                     DragPicture                             (PICTURE *thePicture, const INT *MousePos);
+INT                     ZoomPicture                             (PICTURE *thePicture, const INT *MousePos);
+INT                     RotatePicture                   (PICTURE *thePicture, const INT *OldMousePos);
+INT                     RotateCut                               (PICTURE *thePicture, const INT *OldMousePos);
+INT                     MoveCut                                 (PICTURE *thePicture, const INT *OldMousePos);
 INT             DrawUgPicture                   (PICTURE *thePicture);
 INT                     SetTextFactor                   (DOUBLE textfactor);
 INT                     SetDoFramePicture               (INT mode);

@@ -180,7 +180,25 @@ typedef struct {
 /*																			*/
 /****************************************************************************/
 
-typedef void (*ProjectionProcPtr) (DOUBLE *, COORD_POINT *); 
+typedef struct {
+	
+	INT init;			/* if 0 order and init								*/
+	
+	/* if one of these changes elements have to be ordered again */
+	DOUBLE vpt[3];		/* current observer stand							*/
+	DOUBLE tgt[3];		/* current target point								*/
+	DOUBLE pmp[3];		/* current plane mid point							*/
+
+} WOP_MG_DATA;
+
+typedef void (*ProjectionProcPtr) (const DOUBLE *, COORD_POINT *); 
+
+/* function to compute rotation matrix from new and old mouse psoition */
+typedef INT (*RotObsTrafoProcPtr) (const DOUBLE *mid,	/* midpoint of picture	*/
+								   const INT *old,		/* start mouse position	*/
+								   const INT *new,		/* current mouse pos	*/
+								   DOUBLE dx, DOUBLE dy,/* picture size			*/
+								   DOUBLE *rot);			/* returned rot matrix	*/
 
 /****************************************************************************/
 /*																			*/
@@ -188,10 +206,7 @@ typedef void (*ProjectionProcPtr) (DOUBLE *, COORD_POINT *);
 /*																			*/
 /****************************************************************************/
 
-#define WINDOW_TEXT_SIZE		(10*TextFactor)
-
-/* general multiplier for all text sizes */
-static DOUBLE TextFactor=1;
+#define WINDOW_TEXT_SIZE		10
 
 /************************************************************************/
 /************ ordinary static variables   *******************************/
@@ -276,9 +291,16 @@ static COORD_POINT					PhysRect[4];
 /*----------- used by DrawPictureFrame -------------------------------------*/
 static INT DoFramePicture=YES;
 
+/*----------- used by OrderElements_3D -------------------------------------*/
+static BLOCK_ID wopMGUDid;
+
 /****************************************************************************/
 /************ variables used for communication of functions *****************/
 /****************************************************************************/
+
+static UGWINDOW *myWin;		/* RotatePicture uses this to use infobox		*/
+static RotObsTrafoProcPtr RotObsTrafo3d;
+static RotObsTrafoProcPtr InitRotObsTrafo3d;
 
 /*---------- variables use by OrderElements etc ----------------------------*/
 static VIEWEDOBJ			*OE_ViewedObj;
@@ -314,14 +336,18 @@ static INT							GE_fromLevel,GE_toLevel;
 #define EE_MAX_PROP		    100
 
 /* defines 2D */
-#define EE2D_TEXTSIZE			(8*TextFactor)
-
+#define EE2D_TEXTSIZE		8
 #define COLOR_BND			(RED_CLASS+3)
 #define COLOR_ELEMID		(RED_CLASS+4)
 
 /* defines 3D */
-#define EE3D_TEXTSIZE			(8*TextFactor)
-
+#define EE3D_TEXTSIZE		8
+#define EE3D_ND_MARK		FILLED_SQUARE_MARKER
+#define	EE3D_ND_SIZE		6		/* node marker size						*/
+#define EE3D_NDV_MARK		FILLED_RHOMBUS_MARKER
+#define EE3D_SDV_MARK		FILLED_CIRCLE_MARKER
+#define EE3D_EDV_MARK		FILLED_SQUARE_MARKER
+#define	EE3D_VEC_SIZE		6		/* vector marker size					*/
 #define COLOR_CUT_EDGE		(RED_CLASS+3)
 
 /* 2D */
@@ -348,17 +374,34 @@ static long EE2D_PropertyColor[EE_MAX_PROP+1];	/* colors used			    */
 static INT	EE3D_Elem2Plot[10];	/* 1 if element has to be plotted			*/
 static long EE3D_NoColor[10];	/* 1 if no color (background color) used	*/
 static long EE3D_Color[10];		/* colors used								*/
-static INT EE3D_MaxLevel;		/* level considered to be the top level 	*/
+static INT	EE3D_MaxLevel;		/* level considered to be the top level 	*/
 static DOUBLE EE3D_ShrinkFactor;/* shrink factor, 1.0 if normal plot		*/
-static INT EE3D_Property;		/* 1 if plot property						*/
-static INT EE3D_NProperty;		/* nb of properties							*/
+static INT	EE3D_Property;		/* 1 if plot property						*/
+static INT	EE3D_NProperty;		/* nb of properties							*/
 static long EE3D_PropertyColor[EE_MAX_PROP+1];	/* colors used			    */
+static INT	EE3D_Nodes;			/* plot nodes markers						*/
+static INT	EE3D_NodeIndex;		/* plot nodes indices						*/
+static INT	EE3D_NdCol;			/* node marker color						*/
+static INT	EE3D_IDColor;		/* node ID color							*/
+static INT	EE3D_Vectors;		/* plot vector markers						*/
+static INT	EE3D_VecIndex;		/* plot vector indices						*/
+static INT *EE3D_Type;			/* vector types to display					*/
+static long EE3D_VecCol[NVECTYPES];
+static INT	EE3D_PlotNode[MAX_CORNERS_OF_ELEM];
+static VECTOR *EE3D_ndv[MAX_CORNERS_OF_ELEM];
+static VECTOR *EE3D_sdv[MAX_SIDES_OF_ELEM];
+static VECTOR *EE3D_edv[MAX_EDGES_OF_ELEM];
+static INT  EE3D_vtp[NVECTYPES];
 #ifdef ModelP
 static DOUBLE EE3D_PartShrinkFactor;
 								/* part. shrink factor, 1.0 if normal plot	*/
 static DOUBLE_VECTOR EE3D_PartMidPoint;
 #endif
 
+/* FindNode3D */
+#define FN3D_INVSIZE			10
+#define FN3D_ACC				3
+static COORD_POINT 	FN3D_MousePos;
 
 /*---------- working variables of 'NW_NodesEval2D' -------------------------*/
 static long NE_IDColor; 		/* color of node ID's                       */
@@ -412,13 +455,15 @@ static MULTIGRID *BND_MG;		/* mg pointer								*/
 
 /*---------- working variables of 'VW_VecMatEval' --------------------------*/
 #define VM_MARKERSIZE		6
-#define VM_TEXTSIZE			(8*TextFactor)
-#define VM_VECMAT_TEXTSIZE	(8*TextFactor)
+#define VM_TEXTSIZE			8
+#define VM_VECMAT_TEXTSIZE	8
 #define VM_LINEFAC			1.2
 
 static INT VM_Marker;			/* plot markers for Vectors					*/
 static long VN_MarkerColor[4];	/* colors of Markers (VCLASS dependent)		*/
 static INT VM_Type[MAXVECTORS];	/* plot only vectors of TRUE Types			*/
+static long VM_DiagCol;			/* color for diag entry						*/
+static long VM_OffCol;			/* color for offdiag entry					*/
 static long VM_MColor;			/* color of connections						*/
 static long VM_StrongColor;		/* color of strong connections				*/
 static INT VM_Connections;		/* also plot connections					*/
@@ -440,10 +485,11 @@ static INT VM_MatData;			/* plot matrix data							*/
 static VECDATA_DESC *VM_tvd;	/* vector descriptor						*/
 static MATDATA_DESC *VM_tmd;	/* matrix descriptor						*/
 static long VM_VecMatColor;		/* color of vector matrix data				*/
+static long VM_EdgeColor;		/* color of element edges					*/
 
 /*---------- working variables of 'Matrix' stuff ---------------------------*/
 #define MAT_FRAMESIZE			5
-#define MAT_TEXTSIZE			(8*TextFactor)
+#define MAT_TEXTSIZE			8
 
 static MatrixEvalProcPtr MAT_eval;/* evaluation function (if no symbol)		*/
 static MATDATA_DESC *MAT_md;	/* matrix descriptor (if symbol)			*/
@@ -648,7 +694,10 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-static INT PlotContourTriangle3D (ELEMENT *theElement, DOUBLE **CornersOfElem, 
+static void ResetNodeUsed (MULTIGRID *theMG);
+static void ResetVectorUsed (MULTIGRID *theMG);
+
+static INT  PlotContourTriangle3D (ELEMENT *theElement, DOUBLE **CornersOfElem, 
 								  DOUBLE *TP0, DOUBLE *TP1, DOUBLE *TP2, 
 								  DOUBLE *LTP0, DOUBLE *LTP1, DOUBLE *LTP2, 
 								  INT depth, DRAWINGOBJ **theDO);
@@ -739,7 +788,7 @@ static PLOTOBJHANDLING	*GetPlotObjHandling (char *PlotObjHandlingName)
 */
 /****************************************************************************/
 
-static void PerspectiveProjection (DOUBLE *in, COORD_POINT *ScreenPoint)
+static void PerspectiveProjection (const DOUBLE *in, COORD_POINT *ScreenPoint)
 {
 	DOUBLE k;
 
@@ -767,7 +816,7 @@ static void PerspectiveProjection (DOUBLE *in, COORD_POINT *ScreenPoint)
 */
 /****************************************************************************/
 
-static void NormalProjection (DOUBLE *in, COORD_POINT *ScreenPoint)
+static void NormalProjection (const DOUBLE *in, COORD_POINT *ScreenPoint)
 {
 	(*ScreenPoint).x = in[0];
 	(*ScreenPoint).y = in[1];
@@ -952,7 +1001,7 @@ static INT BuildCutTrafo (CUT *theCut, DOUBLE *theViewDir)
 	return (0);
 }
 
-static INT MousePullFrame (PICTURE *thePicture, INT OldMousePos[2], DOUBLE *frame_xmin, DOUBLE *frame_xmax, DOUBLE *frame_ymin, DOUBLE *frame_ymax)
+static INT MousePullFrame (PICTURE *thePicture, const INT OldMousePos[2], DOUBLE *frame_xmin, DOUBLE *frame_xmax, DOUBLE *frame_ymin, DOUBLE *frame_ymax)
 {
 	UGWINDOW *ugw;
 	COORD_POINT FrameLL,FrameLR,FrameUR,FrameUL;
@@ -3504,6 +3553,9 @@ static INT EW_DoNothing0D (DRAWINGOBJ *q)
 			case DO_POLYMARK:
 				DO_inc_POLYMARK(q,0);
 				break;
+			case DO_INVPOLYMARK:
+				DO_inc_POLYMARK(q,0);
+				break;
 			case DO_POLYGON:
 				DO_inc_POLYGON(q,0);
 				break;
@@ -3754,6 +3806,18 @@ static INT Draw2D (DRAWINGOBJ *q)
 				}
 				UgPolymark(point,n);
 				break;
+			case DO_INVPOLYMARK:
+				DO_inc(q)
+				n = DO_2c(q); DO_inc(q)
+				UgSetMarker(DO_2s(q)); DO_inc(q);
+				UgSetMarkerSize(DO_2s(q)); DO_inc(q);
+				for (j=0; j<n; j++)
+				{
+					V2_TRAFOM3_V2(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,2);
+					(*OBS_ProjectProc)(help,point+j);
+				}
+				UgInvPolymark(point,n);
+				break;
 			default:
 				RETURN(1);
 		}
@@ -3996,7 +4060,6 @@ static INT Draw3D (DRAWINGOBJ *q)
 				mode = DO_2c(q); DO_inc(q)
 				centered = DO_2c(q); DO_inc(q)
 				UgSetTextSize(DO_2s(q)); DO_inc(q);
-				if ((DO_2c(q)) == TEXT_CENTERED)
 				V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,3);
 				(*OBS_ProjectProc)(help,&a);
 				if (centered)
@@ -4020,6 +4083,18 @@ static INT Draw3D (DRAWINGOBJ *q)
 					(*OBS_ProjectProc)(help,point+j);
 				}
 				UgPolymark(point,n);
+				break;
+			case DO_INVPOLYMARK:
+				DO_inc(q)
+				n = DO_2c(q); DO_inc(q)
+				UgSetMarker(DO_2s(q)); DO_inc(q);
+				UgSetMarkerSize(DO_2s(q)); DO_inc(q);
+				for (j=0; j<n; j++)
+				{
+					V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,3);
+					(*OBS_ProjectProc)(help,point+j);
+				}
+				UgInvPolymark(point,n);
 				break;
 			default:
 				RETURN(1);
@@ -4085,6 +4160,9 @@ static INT EW_SelectElement2D (DRAWINGOBJ *q)
 				break;
 			case DO_POLYMARK:
 				DO_inc_POLYMARK(q,2);
+				break;
+			case DO_INVPOLYMARK:
+				DO_inc_INVPOLYMARK(q,2);
 				break;
 			case DO_POLYGON:
 			case DO_ERASE_SURRPOLYGON:
@@ -4210,6 +4288,9 @@ static INT FindRange2D (DRAWINGOBJ *q)
 			case DO_POLYMARK:
 				DO_inc_POLYMARK(q,2);
 				break;
+			case DO_INVPOLYMARK:
+				DO_inc_INVPOLYMARK(q,2);
+				break;
 			case DO_POLYGON:
 				DO_inc_POLYGON(q,2);
 				break;
@@ -4297,6 +4378,9 @@ static INT FindRange3D (DRAWINGOBJ *q)
 				break;
 			case DO_POLYMARK:
 				DO_inc_POLYMARK(q,3);
+				break;
+			case DO_INVPOLYMARK:
+				DO_inc_INVPOLYMARK(q,3);
 				break;
 			case DO_POLYGON:
 				DO_inc_POLYGON(q,3);
@@ -4665,7 +4749,7 @@ static INT VW_MatrixPreProcess (PICTURE *thePicture, WORK *theWork)
 	else
 		MAT_frame = FALSE;
 	
-	if (d>4*MAT_TEXTSIZE)
+	if (d>4*MAT_TEXTSIZE*GetTextFactor())
 		MAT_print = TRUE;
 	else
 		MAT_print = FALSE;
@@ -7090,19 +7174,21 @@ static INT PlotVecMatData2D (PICTURE *thePicture, VECTOR *vec)
 	COORD_POINT a,b;
 	VECTOR *nbvec;
 	MATRIX *mat;
-	INT rt,ct,i,n,nlines,line,nc;
+	INT rt,ct,i,n,nlines,line,nc,line_height;
 	char buffer[256];
 	
 	VectorPosition(vec,pos);
 	V2_TRAFOM3_V2(pos,ObsTrafo,help);
 	(*OBS_ProjectProc)(help,&a);
 	
+	line_height = VM_LINEFAC*VM_VECMAT_TEXTSIZE*GetTextFactor();
+	
 	rt = VTYPE(vec);
 	if (VM_MatData)
 		nlines = MD_ROWS_IN_RT_CT(VM_tmd,rt,rt);
 	else
 		nlines = VD_NCMPS_IN_TYPE(VM_tvd,rt);
-	a.y += PIC_SIGN_Y(thePicture) * 0.5*nlines * VM_VECMAT_TEXTSIZE*VM_LINEFAC;
+	a.y += PIC_SIGN_Y(thePicture) * 0.5*nlines * line_height;
 	
 	for (line=0; line<nlines; line++)
 	{
@@ -7123,7 +7209,7 @@ static INT PlotVecMatData2D (PICTURE *thePicture, VECTOR *vec)
 		UgCenteredText(a,buffer,TEXT_REGULAR);
 		
 		/* increment line position */
-		a.y -= PIC_SIGN_Y(thePicture) * VM_VECMAT_TEXTSIZE*VM_LINEFAC;
+		a.y -= PIC_SIGN_Y(thePicture) * line_height;
 	}
 	
 	if (VM_MatData)
@@ -7137,7 +7223,7 @@ static INT PlotVecMatData2D (PICTURE *thePicture, VECTOR *vec)
 			V2_TRAFOM3_V2(nbpos,ObsTrafo,help);
 			(*OBS_ProjectProc)(help,&b);
 			
-			b.y += PIC_SIGN_Y(thePicture) * 0.5*nlines * VM_VECMAT_TEXTSIZE*VM_LINEFAC;
+			b.y += PIC_SIGN_Y(thePicture) * 0.5*nlines * line_height;
 			
 			/* print data */
 			for (line=0; line<nlines; line++)
@@ -7153,7 +7239,7 @@ static INT PlotVecMatData2D (PICTURE *thePicture, VECTOR *vec)
 				UgCenteredText(b,buffer,TEXT_REGULAR);
 				
 				/* increment line position */
-				b.y -= PIC_SIGN_Y(thePicture) * VM_VECMAT_TEXTSIZE*VM_LINEFAC;
+				b.y -= PIC_SIGN_Y(thePicture) * line_height;
 			}
 		}
 	
@@ -11136,17 +11222,372 @@ static INT GetPolyElemISCutPlaneHEX (DOUBLE **CornerDC, DOUBLE *CutZCoord, INT N
 */
 /****************************************************************************/
 
+static DRAWINGOBJ *ElementNodes (ELEMENT *theElement, DRAWINGOBJ *theDO, INT Viewable[], DOUBLE *x[], DOUBLE z[])
+{
+	INT i, j, k, ninv, nplot, checkZ, corn;
+	INT InvNode[MAX_CORNERS_OF_ELEM];
+	
+	/* we have either case of
+		(1) !CUT_CutExisting || CUTMODE(theElement)==CM_BEHIND
+		(2) CUTMODE(theElement)==CM_INTERSECT
+	*/
+	checkZ = (CUTMODE(theElement)==CM_INTERSECT);
+	
+	/* collect nodes to be plotted */
+	ninv = nplot = 0;
+	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+	{
+		if (!Viewable[i]) continue;
+		for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
+		{
+			corn = CORNER_OF_SIDE(theElement,i,j);
+			if (USED(CORNER(theElement,corn)))
+				continue;
+			
+			if (checkZ && (z[corn]<=-SMALL_C))
+				continue;
+			
+			/* push if not already in list */
+			for (k=0; k<nplot; k++)
+				if (EE3D_PlotNode[k]==corn)
+					break;
+			if (k>=nplot)
+			{
+				SETUSED(CORNER(theElement,corn),TRUE);
+				EE3D_PlotNode[nplot++] = corn;
+				if (IsNodeSelected(GElem_MG,CORNER(theElement,corn)))
+					InvNode[ninv++] = corn;
+			}
+		}
+	}
+	
+	/* plot nodes */
+	if (nplot>0)
+	{
+		DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
+		DO_2c(theDO) = nplot; DO_inc(theDO) 
+		DO_2l(theDO) = EE3D_NdCol; DO_inc(theDO);
+		DO_2s(theDO) = EE3D_ND_MARK; DO_inc(theDO);
+		DO_2s(theDO) = EE3D_ND_SIZE; DO_inc(theDO);
+		for (j=0; j<nplot; j++)
+		{
+			/*UserWriteF("plotting node %d from elem %d\n",ID(CORNER(theElement,EE3D_PlotNode[j])),ID(theElement));*/
+			V3_COPY(x[EE3D_PlotNode[j]],DO_2Cp(theDO));
+			DO_inc_n(theDO,3);
+		}
+	}
+	
+	/* plot ids */
+	if (EE3D_NodeIndex)
+		for (j=0; j<nplot; j++)
+		{
+			DO_2c(theDO) = DO_TEXT; DO_inc(theDO) 
+			DO_2l(theDO) = EE3D_IDColor; DO_inc(theDO)
+			DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO) 
+			DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO) 
+			DO_2s(theDO) = EE3D_TEXTSIZE; DO_inc(theDO);
+			V3_COPY(x[EE3D_PlotNode[j]],DO_2Cp(theDO)); DO_inc_n(theDO,3);
+			#ifdef ModelP
+				sprintf(DO_2cp(theDO),"%d/%x",
+					(int)ID(CORNER(theElement,EE3D_PlotNode[j])),
+					(long)DDD_InfoGlobalId(PARHDR(CORNER(theElement,EE3D_PlotNode[j]))));
+				DO_inc_str(theDO);
+			#else
+				sprintf(DO_2cp(theDO),"%d",(int)ID(CORNER(theElement,EE3D_PlotNode[j]))); DO_inc_str(theDO);
+			#endif
+		}
+	
+	/* invert what is neccessary */
+	if (ninv>0)
+	{
+		DO_2c(theDO) = DO_INVPOLYMARK; DO_inc(theDO) 
+		DO_2c(theDO) = ninv; DO_inc(theDO) 
+		DO_2s(theDO) = EE3D_ND_MARK; DO_inc(theDO);
+		DO_2s(theDO) = EE3D_ND_SIZE; DO_inc(theDO);
+		for (j=0; j<ninv; j++)
+		{
+			/*UserWriteF("inverting node %d from elem %d\n",ID(CORNER(theElement,InvNode[j])),ID(theElement));*/
+			V3_COPY(x[InvNode[j]],DO_2Cp(theDO));
+			DO_inc_n(theDO,3);
+		}
+	}
+	return (theDO);
+}
+
+static DRAWINGOBJ *ElementVectors (ELEMENT *theElement, DRAWINGOBJ *theDO, INT Viewable[], DOUBLE *x[], DOUBLE z[])
+{
+	VECTOR *vec;
+	NODE *nd0,*nd1;
+	EDGE *theEdge;
+	INT i, j, k, checkZ, corn, co0, co1, edge, number=0;
+	INT nplotNDV,ninvNDV;
+	VECTOR *InvNDV[MAX_CORNERS_OF_ELEM];
+	INT nplotSDV,ninvSDV;
+	VECTOR *InvSDV[MAX_SIDES_OF_ELEM];
+	INT nplotEDV,ninvEDV;
+	VECTOR *InvEDV[MAX_EDGES_OF_ELEM];
+	DOUBLE_VECTOR pos;
+	DOUBLE myz;
+	
+	/* we have either case of
+		(1) !CUT_CutExisting || CUTMODE(theElement)==CM_BEHIND
+		(2) CUTMODE(theElement)==CM_INTERSECT
+	*/
+	checkZ = (CUTMODE(theElement)==CM_INTERSECT);
+	
+	/* collect vectors to be plotted */
+	ninvNDV = nplotNDV = ninvSDV = nplotSDV = ninvEDV = nplotEDV = 0;
+	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+	{
+		if (!Viewable[i]) continue;
+		
+		/* first corners */
+		if (EE3D_Type[NODEVECTOR])
+			for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
+			{
+				corn = CORNER_OF_SIDE(theElement,i,j);
+				
+				vec  = NVECTOR(CORNER(theElement,corn));
+				if (VCUSED(vec))
+					continue;
+				
+				if (checkZ && (z[corn]<=-SMALL_C))
+					continue;
+				
+				/* push if not already in list */
+				for (k=0; k<nplotNDV; k++)
+					if (EE3D_ndv[k]==vec)
+						break;
+				if (k>=nplotNDV)
+				{
+					SETVCUSED(vec,TRUE);
+					EE3D_ndv[nplotNDV++] = vec;
+					if (IsVectorSelected(GElem_MG,vec))
+						InvNDV[ninvNDV++] = vec;
+				}
+			}
+		/* now sides */
+		if (EE3D_Type[SIDEVECTOR])
+		{
+			myz = 0.0;
+			for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
+			{
+				corn = CORNER_OF_SIDE(theElement,i,j);
+				myz += z[corn];
+			}
+			myz /= CORNERS_OF_SIDE(theElement,i);
+			
+			if (checkZ && (myz<=-SMALL_C))
+				continue;
+			
+			/* we don«t have to check VCUSED flag */
+			vec = SVECTOR(theElement,i);
+			/*SETVCUSED(vec,TRUE);*/
+			EE3D_sdv[nplotSDV++] = vec;
+			if (IsVectorSelected(GElem_MG,vec))
+				InvSDV[ninvSDV++] = vec;
+		}
+		
+		/* now edges */
+		if (EE3D_Type[EDGEVECTOR])
+			for (j=0; j<EDGES_OF_SIDE(theElement,i); j++)
+			{
+				edge = EDGE_OF_SIDE(theElement,i,j);
+				co0 = CORNER_OF_EDGE(theElement,edge,0);
+				co1 = CORNER_OF_EDGE(theElement,edge,1);
+				nd0 = CORNER(theElement,co0);
+				nd1 = CORNER(theElement,co1);
+				if ((theEdge=GetEdge(nd0,nd1))==NULL)
+					return (theDO);
+				
+				vec  = EDVECTOR(theEdge);
+				if (VCUSED(vec))
+					continue;
+				
+				myz = 0.5*(z[co0]+z[co1]);
+				if (checkZ && (myz<=-SMALL_C))
+					continue;
+				
+				/* push if not already in list */
+				for (k=0; k<nplotEDV; k++)
+					if (EE3D_edv[k]==vec)
+						break;
+				if (k>=nplotEDV)
+				{
+					SETVCUSED(vec,TRUE);
+					EE3D_edv[nplotEDV++] = vec;
+					if (IsVectorSelected(GElem_MG,vec))
+						InvEDV[ninvEDV++] = vec;
+				}
+			}
+		
+		/* how about elem vectors (inside element)? */
+	}
+	
+	if (EE3D_Type[NODEVECTOR])
+	{
+		/* plot node vectors */
+		if (nplotNDV>0)
+		{
+			EE3D_vtp[number++] = NODEVECTOR;
+			DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
+			DO_2c(theDO) = nplotNDV; DO_inc(theDO) 
+			DO_2l(theDO) = EE3D_VecCol[NODEVECTOR]; DO_inc(theDO);
+			DO_2s(theDO) = EE3D_NDV_MARK; DO_inc(theDO);
+			DO_2s(theDO) = EE3D_VEC_SIZE; DO_inc(theDO);
+			for (j=0; j<nplotNDV; j++)
+			{
+				/*UserWriteF("plotting nodevec %d from elem %d\n",VINDEX(EE3D_ndv[j]),ID(theElement));*/
+				V3_COPY(CVECT(MYVERTEX((NODE*)VOBJECT(EE3D_ndv[j]))),DO_2Cp(theDO));
+				DO_inc_n(theDO,3);
+			}
+		}
+		
+		/* plot ids */
+		if (EE3D_VecIndex)
+			for (j=0; j<nplotNDV; j++)
+			{
+				DO_2c(theDO) = DO_TEXT; DO_inc(theDO) 
+				DO_2l(theDO) = EE3D_IDColor; DO_inc(theDO)
+				DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO) 
+				DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO) 
+				DO_2s(theDO) = EE3D_TEXTSIZE; DO_inc(theDO);
+				V3_COPY(CVECT(MYVERTEX((NODE*)VOBJECT(EE3D_ndv[j]))),DO_2Cp(theDO)); DO_inc_n(theDO,3);
+				sprintf(DO_2cp(theDO),"%d",(int)VINDEX(EE3D_ndv[j])); DO_inc_str(theDO);
+			}
+		
+		/* invert what is neccessary */
+		if (ninvNDV>0)
+		{
+			DO_2c(theDO) = DO_INVPOLYMARK; DO_inc(theDO) 
+			DO_2c(theDO) = ninvNDV; DO_inc(theDO) 
+			DO_2s(theDO) = EE3D_NDV_MARK; DO_inc(theDO);
+			DO_2s(theDO) = EE3D_VEC_SIZE; DO_inc(theDO);
+			for (j=0; j<ninvNDV; j++)
+			{
+				/*UserWriteF("inverting nodevec %d from elem %d\n",VINDEX(InvNDV[j]),ID(theElement));*/
+				V3_COPY(CVECT(MYVERTEX((NODE*)VOBJECT(InvNDV[j]))),DO_2Cp(theDO));
+				DO_inc_n(theDO,3);
+			}
+		}
+	}
+	if (EE3D_Type[SIDEVECTOR])
+	{
+		/* plot side vectors */
+		if (nplotSDV>0)
+		{
+			EE3D_vtp[number++] = SIDEVECTOR;
+			DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
+			DO_2c(theDO) = nplotSDV; DO_inc(theDO) 
+			DO_2l(theDO) = EE3D_VecCol[SIDEVECTOR]; DO_inc(theDO);
+			DO_2s(theDO) = EE3D_SDV_MARK; DO_inc(theDO);
+			DO_2s(theDO) = EE3D_VEC_SIZE; DO_inc(theDO);
+			for (j=0; j<nplotSDV; j++)
+			{
+				/*UserWriteF("plotting sidevec %d from elem %d\n",VINDEX(EE3D_sdv[j])),ID(theElement));*/
+				VectorPosition(EE3D_sdv[j],pos);
+				V3_COPY(pos,DO_2Cp(theDO));
+				DO_inc_n(theDO,3);
+			}
+		}
+		
+		/* plot ids */
+		if (EE3D_VecIndex)
+			for (j=0; j<nplotSDV; j++)
+			{
+				DO_2c(theDO) = DO_TEXT; DO_inc(theDO) 
+				DO_2l(theDO) = EE3D_IDColor; DO_inc(theDO)
+				DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO) 
+				DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO) 
+				DO_2s(theDO) = EE3D_TEXTSIZE; DO_inc(theDO);
+				VectorPosition(EE3D_sdv[j],pos);
+				V3_COPY(pos,DO_2Cp(theDO)); DO_inc_n(theDO,3);
+				sprintf(DO_2cp(theDO),"%d",(int)VINDEX(EE3D_sdv[j])); DO_inc_str(theDO);
+			}
+		
+		/* invert what is neccessary */
+		if (ninvSDV>0)
+		{
+			DO_2c(theDO) = DO_INVPOLYMARK; DO_inc(theDO) 
+			DO_2c(theDO) = ninvSDV; DO_inc(theDO) 
+			DO_2s(theDO) = EE3D_SDV_MARK; DO_inc(theDO);
+			DO_2s(theDO) = EE3D_VEC_SIZE; DO_inc(theDO);
+			for (j=0; j<ninvSDV; j++)
+			{
+				/*UserWriteF("inverting sidevec %d from elem %d\n",VINDEX(InvSDV[j]),ID(theElement));*/
+				VectorPosition(InvSDV[j],pos);
+				V3_COPY(pos,DO_2Cp(theDO));
+				DO_inc_n(theDO,3);
+			}
+		}
+	}
+	if (EE3D_Type[EDGEVECTOR])
+	{
+		/* plot edge vectors */
+		if (nplotEDV>0)
+		{
+			EE3D_vtp[number++] = EDGEVECTOR;
+			DO_2c(theDO) = DO_POLYMARK; DO_inc(theDO) 
+			DO_2c(theDO) = nplotEDV; DO_inc(theDO) 
+			DO_2l(theDO) = EE3D_VecCol[EDGEVECTOR]; DO_inc(theDO);
+			DO_2s(theDO) = EE3D_EDV_MARK; DO_inc(theDO);
+			DO_2s(theDO) = EE3D_VEC_SIZE; DO_inc(theDO);
+			for (j=0; j<nplotEDV; j++)
+			{
+				/*UserWriteF("plotting edgevec %d from elem %d\n",VINDEX(EE3D_edv[j]),ID(theElement));*/
+				VectorPosition(EE3D_edv[j],pos);
+				V3_COPY(pos,DO_2Cp(theDO));
+				DO_inc_n(theDO,3);
+			}
+		}
+		
+		/* plot ids */
+		if (EE3D_VecIndex)
+			for (j=0; j<nplotEDV; j++)
+			{
+				DO_2c(theDO) = DO_TEXT; DO_inc(theDO) 
+				DO_2l(theDO) = EE3D_IDColor; DO_inc(theDO)
+				DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO) 
+				DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO) 
+				DO_2s(theDO) = EE3D_TEXTSIZE; DO_inc(theDO);
+				VectorPosition(EE3D_edv[j],pos);
+				V3_COPY(pos,DO_2Cp(theDO)); DO_inc_n(theDO,3);
+				sprintf(DO_2cp(theDO),"%d",(int)VINDEX(EE3D_edv[j])); DO_inc_str(theDO);
+			}
+		
+		/* invert what is neccessary */
+		if (ninvEDV>0)
+		{
+			DO_2c(theDO) = DO_INVPOLYMARK; DO_inc(theDO) 
+			DO_2c(theDO) = ninvEDV; DO_inc(theDO) 
+			DO_2s(theDO) = EE3D_EDV_MARK; DO_inc(theDO);
+			DO_2s(theDO) = EE3D_VEC_SIZE; DO_inc(theDO);
+			for (j=0; j<ninvEDV; j++)
+			{
+				/*UserWriteF("inverting edgevec %d from elem %d\n",VINDEX(InvEDVy[j]),ID(theElement));*/
+				VectorPosition(InvEDV[j],pos);
+				V3_COPY(pos,DO_2Cp(theDO));
+				DO_inc_n(theDO,3);
+			}
+		}
+	}
+	return (theDO);
+}
+
 static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, j, NodeOrder, n;
-	DOUBLE *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
+	DOUBLE *x[MAX_CORNERS_OF_ELEM], *co[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
 	DOUBLE_VECTOR Polygon[MAX_POINTS_OF_POLY];
-	DOUBLE_VECTOR sx[MAX_CORNERS_OF_ELEM], MidPoint, help;
+	DOUBLE_VECTOR sx[MAX_CORNERS_OF_ELEM], MidPoint;
 	INT Viewable[MAX_SIDES_OF_ELEM];
+#	ifdef ModelP
+	DOUBLE_VECTOR help;
+#	endif
 	
 	DO_2c(theDO) = DO_NO_INST;
 
-        #ifdef ModelP
+    #ifdef ModelP
 	WOP_DObjPnt = theDO;
 	#endif
 	
@@ -11157,6 +11598,10 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		/* determine viewable sides */
 		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 			Viewable[i] = VIEWABLE(theElement,i);
+
+		/* get coordinates of corners of the element */
+		for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+			co[i] = x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 		
 		if (EE3D_ShrinkFactor==1.0)
 		{
@@ -11177,22 +11622,18 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 					if (NBELEM(theElement,i) != NULL)
 						if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
 							Viewable[i] = 0;
-
-			/* get coordinates of corners of the element */
-			for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-				x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 		}
 		else
 		{
 			/* get coordinates of corners of the element */
 			V3_CLEAR(MidPoint)
 			for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-				V3_ADD(CVECT(MYVERTEX(CORNER(theElement,i))),MidPoint,MidPoint)
+				V3_ADD(x[i],MidPoint,MidPoint)
 			V3_SCALE(1.0/CORNERS_OF_ELEM(theElement),MidPoint)
 			
 			for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
 			{
-				V3_LINCOMB(EE3D_ShrinkFactor,CVECT(MYVERTEX(CORNER(theElement,i))),1.0-EE3D_ShrinkFactor,MidPoint,sx[i])
+				V3_LINCOMB(EE3D_ShrinkFactor,x[i],1.0-EE3D_ShrinkFactor,MidPoint,sx[i])
 				x[i] = sx[i];
 			}
 		}
@@ -11292,7 +11733,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				if (IsElementSelected(GElem_MG,theElement))
 				{
 					DO_2c(theDO) = DO_INVERSE_POLYGON; DO_inc(theDO) 
-														   DO_2c(theDO) = 3; DO_inc(theDO) 
+					DO_2c(theDO) = CORNERS_OF_SIDE(theElement,i); DO_inc(theDO) 
 					for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++)
 					{
 						V3_COPY(x[CORNER_OF_SIDE(theElement,i,j)],DO_2Cp(theDO));
@@ -11300,6 +11741,10 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 					}
 				}
 			}
+		if (EE3D_Nodes)
+			theDO = ElementNodes(theElement,theDO,Viewable,co,z);
+		else if (EE3D_Vectors)
+			theDO = ElementVectors(theElement,theDO,Viewable,co,z);
 	}
 	else if (CUTMODE(theElement)==CM_INTERSECT)
 	{
@@ -11308,6 +11753,10 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		/* determine viewable sides */
 		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 			Viewable[i] = VIEWABLE(theElement,i);
+		
+		/* get coordinates of corners of the element and their z coordinates in cut system */
+		for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+			co[i] = x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
 		
 		if (EE3D_ShrinkFactor==1.0)
 		{
@@ -11329,29 +11778,24 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 					if (NBELEM(theElement,i) != NULL)
 						if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
 							Viewable[i] = 0;
-			
-			/* get coordinates of corners of the element and their z coordinates in cut system */
-			for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-			{
-				x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
-				V3_TRAFO4_SC(x[i],CutTrafo,z[i])
-			}
 		}
 		else
 		{
 			/* get coordinates of corners of the element */
 			V3_CLEAR(MidPoint)
 			for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-				V3_ADD(CVECT(MYVERTEX(CORNER(theElement,i))),MidPoint,MidPoint)
+				V3_ADD(x[i],MidPoint,MidPoint)
 			V3_SCALE(1.0/CORNERS_OF_ELEM(theElement),MidPoint)
 			
 			for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
 			{
-				V3_LINCOMB(EE3D_ShrinkFactor,CVECT(MYVERTEX(CORNER(theElement,i))),1.0-EE3D_ShrinkFactor,MidPoint,sx[i])
+				V3_LINCOMB(EE3D_ShrinkFactor,x[i],1.0-EE3D_ShrinkFactor,MidPoint,sx[i])
 				x[i] = sx[i];
-				V3_TRAFO4_SC(x[i],CutTrafo,z[i])
 			}
 		}	
+		/* z coordinates of corners in cut system */
+		for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+			V3_TRAFO4_SC(x[i],CutTrafo,z[i])
 		
 		/* get node order */
 		NodeOrder = NODE_ORDER(theElement);
@@ -11466,6 +11910,11 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 			}
 		}
 		
+		if (EE3D_Nodes)
+			theDO = ElementNodes(theElement,theDO,Viewable,co,z);
+		else if (EE3D_Vectors)
+			theDO = ElementVectors(theElement,theDO,Viewable,co,z);
+		
 		/* plot intersection of element with cut plane if */
 		if (CUT_CutAtFront)
 		{
@@ -11571,7 +12020,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	}
 	DO_2c(theDO) = DO_NO_INST;
 
-        #ifdef ModelP
+    #ifdef ModelP
 	WOP_DObjPnt = theDO;
 	#endif
 	
@@ -11741,6 +12190,9 @@ static INT EW_SelectElement3D (DRAWINGOBJ *q)
 			case DO_POLYMARK:
 				DO_inc_POLYMARK(q,3);
 				break;
+			case DO_INVPOLYMARK:
+				DO_inc_INVPOLYMARK(q,3);
+				break;
 			case DO_POLYGON:
 			case DO_ERASE_SURRPOLYGON:
 				DO_inc(q)
@@ -11764,14 +12216,7 @@ static INT EW_SelectElement3D (DRAWINGOBJ *q)
 				found |= PointInPolygon(point,j,FE3D_MousePos);
 				break;
 			case DO_SURRPOLYGON:
-				DO_inc(q)
-				n = DO_2c(q); DO_inc_n(q,3)
-				for (j=0; j<n; j++)
-				{
-					V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,3);
-					(*OBS_ProjectProc)(help,point+j);
-				}
-				found |= PointInPolygon(point,j,FE3D_MousePos);
+				DO_inc_SURRPOLYGON(q,3);
 				break;
 			default:
 				return (1);
@@ -11786,10 +12231,227 @@ static INT EW_SelectElement3D (DRAWINGOBJ *q)
 		if (SELECTIONMODE(WOP_MG)!=elementSelection)
 			ClearSelection(WOP_MG); 	
 		if (AddElementToSelection(WOP_MG,WOP_Element) == GM_ERROR)
-			if (RemoveElementFromSelection(WOP_MG,WOP_Element) == GM_ERROR)
-				return (1);
+			return (1);
 		
 		/* plot part lying in front */
+		if (EW_ElementEval3D(WOP_Element,WOP_DrawingObject)) 	return (1);
+		if (Draw3D(WOP_DrawingObject)) 							return (1);
+		WOP_EW_GetNextElementProc	= EW_GetNextElement_vert_fw_up;
+		WOP_GEN_ExecuteProc 		= Draw3D;
+	}
+	
+	return (0);
+}
+
+/****************************************************************************/
+/*
+   EW_SelectNodeVec3D - Find node/vector in 3D drawing object	
+
+   SYNOPSIS:
+   static INT EW_SelectNodeVec3D (DRAWINGOBJ *q);
+
+   PARAMETERS:
+.  q - the drawing object
+
+   DESCRIPTION:
+   This function finds a node in 3D drawing object.
+
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+*/											
+/****************************************************************************/
+
+static INT EW_SelectNode3D (DRAWINGOBJ *q)
+{
+	INT j, n, end=0, co=-1;
+	NODE *node;
+	DOUBLE help[3];
+	COORD_POINT pt;
+	
+	/* can only select on top level */
+	if (LEVEL(WOP_Element)<EE3D_MaxLevel)
+		return(0);
+	
+	while (!end)
+		switch (DO_2c(q))
+		{
+			case DO_NO_INST:
+				end = 1;
+				break;
+			case DO_RANGE:
+				DO_inc_RANGE(q);
+				break;
+			case DO_LINE:
+				DO_inc_LINE(q,3);
+				break;
+			case DO_STYLED_LINE:
+				DO_inc_STYLED_LINE(q,3);
+				break;
+			case DO_ARROW:
+				DO_inc_ARROW(q,3);
+				break;
+			case DO_DEPEND:
+				DO_inc_DEPEND(q,3);
+				break;
+			case DO_INVERSE_LINE:
+				DO_inc_INVERSE_LINE(q,3);
+				break;
+			case DO_POLYLINE:
+				DO_inc_POLYLINE(q,3);
+				break;
+			case DO_TEXT:
+				DO_inc_TEXT(q,3);
+				break;
+			case DO_POLYMARK:
+				DO_inc(q)
+				n = DO_2c(q); DO_inc_n(q,4)
+				for (j=0; j<n; j++)
+				{
+					V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,3);
+					(*OBS_ProjectProc)(help,&pt);
+					
+					/* check tolerance */
+					if (((pt.x-FN3D_ACC)<FN3D_MousePos.x) && ((pt.x+FN3D_ACC)>FN3D_MousePos.x))
+						if (((pt.y-FN3D_ACC)<FN3D_MousePos.y) && ((pt.y+FN3D_ACC)>FN3D_MousePos.y))
+							co = EE3D_PlotNode[j];
+				}
+				break;
+			case DO_INVPOLYMARK:
+				DO_inc_INVPOLYMARK(q,3);
+				break;
+			case DO_POLYGON:
+			case DO_ERASE_SURRPOLYGON:
+				DO_inc_ERASE_SURRPOLYGON(q,3);
+				break;
+			case DO_INVERSE_POLYGON:
+			case DO_ERASE_POLYGON:
+				DO_inc_ERASE_POLYGON(q,3);
+				break;
+			case DO_SURRPOLYGON:
+				DO_inc_SURRPOLYGON(q,3);
+				break;
+			default:
+				return (1);
+		}
+	
+	/* if found ... */
+	if (co>=0)
+	{
+		node = CORNER(WOP_Element,co);
+		
+		/* put in/delete from selection list */
+		if (SELECTIONMODE(WOP_MG)!=nodeSelection)
+			ClearSelection(WOP_MG); 	
+		if (AddNodeToSelection(WOP_MG,node) == GM_ERROR)
+			return (1);
+		
+		/*UserWriteF("found node %d from elem %d\n",ID(node),ID(WOP_Element));*/
+		
+		/* plot part lying in front */
+		ResetNodeUsed(WOP_MG);
+		if (EW_ElementEval3D(WOP_Element,WOP_DrawingObject)) 	return (1);
+		if (Draw3D(WOP_DrawingObject)) 							return (1);
+		WOP_EW_GetNextElementProc	= EW_GetNextElement_vert_fw_up;
+		WOP_GEN_ExecuteProc 		= Draw3D;
+	}
+	
+	return (0);
+}
+
+static INT EW_SelectVec3D (DRAWINGOBJ *q)
+{
+	INT j, n, end=0, number=0;
+	VECTOR *vec=NULL;
+	DOUBLE help[3];
+	COORD_POINT pt;
+	
+	/* can only select on top level */
+	if (LEVEL(WOP_Element)<EE3D_MaxLevel)
+		return(0);
+	
+	while (!end)
+		switch (DO_2c(q))
+		{
+			case DO_NO_INST:
+				end = 1;
+				break;
+			case DO_RANGE:
+				DO_inc_RANGE(q);
+				break;
+			case DO_LINE:
+				DO_inc_LINE(q,3);
+				break;
+			case DO_STYLED_LINE:
+				DO_inc_STYLED_LINE(q,3);
+				break;
+			case DO_ARROW:
+				DO_inc_ARROW(q,3);
+				break;
+			case DO_DEPEND:
+				DO_inc_DEPEND(q,3);
+				break;
+			case DO_INVERSE_LINE:
+				DO_inc_INVERSE_LINE(q,3);
+				break;
+			case DO_POLYLINE:
+				DO_inc_POLYLINE(q,3);
+				break;
+			case DO_TEXT:
+				DO_inc_TEXT(q,3);
+				break;
+			case DO_POLYMARK:
+				DO_inc(q)
+				n = DO_2c(q); DO_inc_n(q,4)
+				for (j=0; j<n; j++)
+				{
+					V3_TRAFOM4_V3(DO_2Cp(q),ObsTrafo,help); DO_inc_n(q,3);
+					(*OBS_ProjectProc)(help,&pt);
+					
+					/* check tolerance */
+					if (((pt.x-FN3D_ACC)<FN3D_MousePos.x) && ((pt.x+FN3D_ACC)>FN3D_MousePos.x))
+						if (((pt.y-FN3D_ACC)<FN3D_MousePos.y) && ((pt.y+FN3D_ACC)>FN3D_MousePos.y))
+							switch (EE3D_vtp[number])
+							{
+								case NODEVECTOR: vec = EE3D_ndv[j]; break;
+								case EDGEVECTOR: vec = EE3D_edv[j]; break;
+								case SIDEVECTOR: vec = EE3D_sdv[j]; break;
+							}
+				}
+				number++;
+				break;
+			case DO_INVPOLYMARK:
+				DO_inc_INVPOLYMARK(q,3);
+				break;
+			case DO_POLYGON:
+			case DO_ERASE_SURRPOLYGON:
+				DO_inc_ERASE_SURRPOLYGON(q,3);
+				break;
+			case DO_INVERSE_POLYGON:
+			case DO_ERASE_POLYGON:
+				DO_inc_ERASE_POLYGON(q,3);
+				break;
+			case DO_SURRPOLYGON:
+				DO_inc_SURRPOLYGON(q,3);
+				break;
+			default:
+				return (1);
+		}
+	
+	/* if found ... */
+	if (vec!=NULL)
+	{
+		/* put in/delete from selection list */
+		if (SELECTIONMODE(WOP_MG)!=vectorSelection)
+			ClearSelection(WOP_MG); 	
+		if (AddVectorToSelection(WOP_MG,vec) == GM_ERROR)
+			return (1);
+		
+		/*UserWriteF("found vec %d from elem %d\n",VINDEX(vec),ID(WOP_Element));*/
+		
+		/* plot part lying in front */
+		ResetVectorUsed(WOP_MG);
 		if (EW_ElementEval3D(WOP_Element,WOP_DrawingObject)) 	return (1);
 		if (Draw3D(WOP_DrawingObject)) 							return (1);
 		WOP_EW_GetNextElementProc	= EW_GetNextElement_vert_fw_up;
@@ -12444,7 +13106,7 @@ static COORD ZCoordInEyeSystem(DOUBLE *p)
            );
 }
 
-static INT CompareZCoord(void *p, void *q)
+static INT CompareZCoord(const void *p, const void *q)
 {
     ELEMENT *p1, *q1;
     
@@ -12643,7 +13305,7 @@ static INT CompareElementsXSH(ELEMENT *p, ELEMENT *q)
 
 /* -------------------------------------------------------------------------- */
 
-static INT CompareIDs(void *p, void *q)
+static INT CompareIDs (const void *p, const void *q)
 {
     INT a, b;
 
@@ -13174,17 +13836,50 @@ static INT OrderFathersXSH(GRID *grid, HEAP *heap, ELEMENT **table)
 */
 /****************************************************************************/
 
+static void SaveSettings (const VIEWEDOBJ *vo, WOP_MG_DATA *data)
+{
+	data->init = 1;
+	
+	V3_COPY(VO_VP(vo),data->vpt);
+	V3_COPY(VO_VT(vo),data->tgt);
+	V3_COPY(VO_PMP(vo),data->pmp);
+}
+
+static INT SettingsEqual (const VIEWEDOBJ *vo, const WOP_MG_DATA *data)
+{
+	if (V3_ISEQUAL(VO_VP(vo),data->vpt))
+		if (V3_ISEQUAL(VO_VT(vo),data->tgt))
+			if (V3_ISEQUAL(VO_PMP(vo),data->pmp))
+				return (YES);
+	return (NO);
+}
+
 static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 {
 	HEAP *theHeap;
 	ELEMENT **table, *theElement;
 	GRID *theGrid;
+	WOP_MG_DATA *myMGdata;
+	MEM offset;
 	INT i;
     clock_t start, stop;
-	char msg[80];
 
-	/* check if multigrid is allready ordered */
-	/*.....*/
+	/* check if multigrid is already ordered */
+	offset   = OFFSET_IN_MGUD(wopMGUDid);
+	myMGdata = (WOP_MG_DATA*) GEN_MGUD_ADR(theMG,offset);
+	
+	if (myMGdata==NULL)
+		return (1);
+
+	if (myMGdata->init==0)
+		/* not yet initialized */
+		SaveSettings(theViewedObj,myMGdata);
+	else if (SettingsEqual(theViewedObj,myMGdata))
+		/* no ordering neccessary */
+		return (0);
+	else
+		/* save changed settings */
+		SaveSettings(theViewedObj,myMGdata);
 	
 	/* inits */
 	OE_ViewedObj = theViewedObj;	
@@ -13239,11 +13934,9 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 
 	stop = clock();
     
-    sprintf(msg, "time for ordering coarse grid: %7.2f s\n", 
-			     (stop-start)/(DOUBLE)CLOCKS_PER_SEC); 
-	UserWrite(msg);
-	sprintf(msg, "number of CompareElements    : %9d\n", OE_nCompareElements);
-	UserWrite(msg);
+    UserWriteF( "time for ordering coarse grid: %7.2f s\n", 
+			     (stop-start)/(DOUBLE)CLOCKS_PER_SEC);
+	UserWriteF( "number of CompareElements    : %9d\n", OE_nCompareElements);
 
 	if (PutAtEndOfList(theGrid,theGrid->nElem,table)!=GM_OK) return (1);	
 
@@ -13386,6 +14079,173 @@ static INT OrderNodes (MULTIGRID *theMG, DOUBLE ShrinkFactor)
 	return(0);
 }
 
+static INT EXT_PreProcess_VecMat3D (PICTURE *thePicture, WORK *theWork)
+{
+	struct VecMatPlotObj3D *theVmo;
+	OUTPUTDEVICE *theOD;
+	
+	if ((SELECTIONMODE(WOP_MG)!=vectorSelection) || (SELECTIONSIZE(WOP_MG)==0))
+	{
+		PrintErrorMessage('E',"EXT_PreProcess_VecMat3D","no vector selected");
+		return (1);
+	}
+	
+	theVmo = &(PIC_PO(thePicture)->theVmo);
+	theOD  = PIC_OUTPUTDEV(thePicture);
+	
+	/* set globals for eval function */
+	VM_Type[NODEVECTOR]			= theVmo->Type[NODEVECTOR];
+	VM_Type[EDGEVECTOR]			= theVmo->Type[EDGEVECTOR];
+	VM_Type[ELEMVECTOR]			= theVmo->Type[ELEMVECTOR];
+	VM_Type[SIDEVECTOR]			= theVmo->Type[SIDEVECTOR];
+	VM_DiagCol					= theOD->red;
+	VM_OffCol					= theOD->black;
+	VM_Idx						= theVmo->Idx;
+	VM_IdxColor					= theOD->blue;
+	VM_VecData					= (theVmo->vd!=NULL);
+	VM_MatData					= (theVmo->md!=NULL);
+	VM_tvd						= theVmo->vd;
+	VM_tmd						= theVmo->md;
+	VM_EdgeColor				= theOD->blue;
+	
+	if (!VM_VecData && !VM_MatData)
+	{
+		PrintErrorMessage('E',"EXT_PreProcess_VecMat3D","no XXXDATA_DESC given");
+		return (1);
+	}
+	if (VM_VecData && !VD_IS_SCALAR(VM_tvd))
+	{
+		PrintErrorMessage('E',"EXT_PreProcess_VecMat3D","can only print scalar vectors");
+		return (1);
+	}
+	if (VM_MatData && !MD_IS_SCALAR(VM_tmd))
+	{
+		PrintErrorMessage('E',"EXT_PreProcess_VecMat3D","can only print scalar matrices");
+		return (1);
+	}
+	
+	return (0);
+}
+
+static DRAWINGOBJ *PlotElementEdges (ELEMENT *elem, DRAWINGOBJ *theDO)
+{
+	DOUBLE *x[MAX_CORNERS_OF_ELEM];
+	INT i,co0,co1;
+	
+	for (i=0; i<CORNERS_OF_ELEM(elem); i++)
+		x[i] = CVECT(MYVERTEX(CORNER(elem,i)));
+	
+	for (i=0; i<EDGES_OF_ELEM(elem); i++)
+	{
+		co0 = CORNER_OF_EDGE(elem,i,0);
+		co1 = CORNER_OF_EDGE(elem,i,1);
+		
+		DO_2c(theDO) = DO_LINE; DO_inc(theDO) 
+		DO_2l(theDO) = VM_EdgeColor; DO_inc(theDO)
+		V3_COPY(x[co0],DO_2Cp(theDO)); DO_inc_n(theDO,3);
+		V3_COPY(x[co1],DO_2Cp(theDO)); DO_inc_n(theDO,3);
+	}
+	return (theDO);
+}
+
+static INT EXT_VecMatEval3D (DRAWINGOBJ *theDO, INT *end)
+{
+	GRID *grid;
+	VECTOR *vec,*nbvec;
+	MATRIX *mat;
+	NODE *nd;
+	ELEMENT *elem;
+	DOUBLE_VECTOR pos;
+	INT i,rt,ct;
+	
+	vec = (VECTOR*)SELECTIONOBJECT(WOP_MG,0);
+	rt  = VTYPE(vec);
+	
+	grid = GRID_ON_LEVEL(WOP_MG,CURRENTLEVEL(WOP_MG));
+	
+	/* plot element edges as context */
+	switch (rt)
+	{
+		case NODEVECTOR:
+			nd = (NODE*)VOBJECT(vec);
+			for (elem=FIRSTELEMENT(grid); elem!=NULL; elem=SUCCE(elem))
+				for (i=0; i<CORNERS_OF_ELEM(elem); i++)
+					if (CORNER(elem,i)==nd)
+					{
+						theDO = PlotElementEdges(elem,theDO);
+						break;
+					}
+			
+			break;
+		
+		default:
+			PrintErrorMessage('E',"EXT_VecMatEval3D","element edges not implemented for this vec type");
+	}
+	
+	/* now plot vector and matrix entries */
+	DO_2c(theDO) = DO_TEXT; DO_inc(theDO) 
+	DO_2l(theDO) = VM_DiagCol; DO_inc(theDO)
+	DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO) 
+	DO_2c(theDO) = TEXT_CENTERED; DO_inc(theDO) 
+	DO_2s(theDO) = EE3D_TEXTSIZE; DO_inc(theDO);
+	VectorPosition(vec,pos);
+	V3_COPY(pos,DO_2Cp(theDO)); DO_inc_n(theDO,3);
+	if (VM_VecData && VM_MatData)
+	{
+		sprintf(DO_2cp(theDO),"%.2g %.2g",VecTypeName[rt],
+											(float)VVALUE(vec,VD_CMP_OF_TYPE(VM_tvd,rt,0)),
+											(float)MVALUE(VSTART(vec),MD_MCMP_OF_RT_CT(VM_tmd,rt,rt,0)));
+		DO_inc_str(theDO);
+	}
+	if (VM_MatData)
+	{
+		sprintf(DO_2cp(theDO),"%.2g",(float)MVALUE(VSTART(vec),MD_MCMP_OF_RT_CT(VM_tmd,rt,rt,0)));
+		DO_inc_str(theDO);
+	}
+	if (VM_VecData)
+	{
+		sprintf(DO_2cp(theDO),"%.2g",(float)VVALUE(vec,VD_CMP_OF_TYPE(VM_tvd,rt,0)));
+		DO_inc_str(theDO);
+	}
+	
+	if (VM_MatData)
+		for (mat=MNEXT(VSTART(vec)); mat!=NULL; mat=MNEXT(mat))
+		{
+			nbvec = MDEST(mat);
+			ct = VTYPE(nbvec);
+			
+			DO_2c(theDO) = DO_TEXT; DO_inc(theDO) 
+			DO_2l(theDO) = VM_OffCol; DO_inc(theDO)
+			DO_2c(theDO) = TEXT_REGULAR; DO_inc(theDO) 
+			DO_2c(theDO) = TEXT_CENTERED; DO_inc(theDO) 
+			DO_2s(theDO) = EE3D_TEXTSIZE; DO_inc(theDO);
+			VectorPosition(nbvec,pos);
+			V3_COPY(pos,DO_2Cp(theDO)); DO_inc_n(theDO,3);
+			
+			if (VM_VecData)
+			{
+				sprintf(DO_2cp(theDO),"%.2g %.2g",(float)VVALUE(nbvec,VD_CMP_OF_TYPE(VM_tvd,ct,0)),
+													(float)MVALUE(mat,MD_MCMP_OF_RT_CT(VM_tmd,rt,ct,0)));
+				DO_inc_str(theDO);
+			}
+			else
+			{
+				sprintf(DO_2cp(theDO),"%.2g",(float)MVALUE(mat,MD_MCMP_OF_RT_CT(VM_tmd,rt,ct,0)));
+				DO_inc_str(theDO);
+			}
+		}
+	
+	DO_2c(theDO) = DO_NO_INST;
+	
+    #ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
+	
+	*end = TRUE;
+	
+	return (0);
+}
+
 /****************************************************************************/
 /*
    EW_PreProcess_PlotGrid3D - Initialize input variables of EW_ElementEval3D for GridPlot3D
@@ -13407,9 +14267,30 @@ static INT OrderNodes (MULTIGRID *theMG, DOUBLE ShrinkFactor)
 */										
 /****************************************************************************/
 
+static void ResetNodeUsed (MULTIGRID *theMG)
+{
+	NODE *nd;
+	INT l;
+	
+	for (l=0; l<=CURRENTLEVEL(theMG); l++)
+		for (nd=FIRSTNODE(GRID_ON_LEVEL(theMG,l)); nd!=NULL; nd=SUCCN(nd))
+			SETUSED(nd,FALSE);
+}
+
+static void ResetVectorUsed (MULTIGRID *theMG)
+{
+	VECTOR *vec;
+	INT l;
+	
+	for (l=0; l<=CURRENTLEVEL(theMG); l++)
+		for (vec=FIRSTVECTOR(GRID_ON_LEVEL(theMG,l)); vec!=NULL; vec=SUCCVC(vec))
+			SETVCUSED(vec,FALSE);
+}
+
 static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 {
 	struct GridPlotObj3D *theGpo;
+	struct Cut *theCut;
 	OUTPUTDEVICE *theOD;
 	MULTIGRID *theMG;
 	INT i;
@@ -13469,6 +14350,27 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 	}
 	#endif
 	
+	if (EE3D_ShrinkFactor<1.0)
+	{
+		EE3D_Nodes					= theGpo->NodeMarkers;
+		EE3D_NodeIndex				= theGpo->NodeIndex;
+		EE3D_NdCol					= theOD->blue;
+		EE3D_IDColor				= theOD->black;
+		if (EE3D_Nodes)
+			ResetNodeUsed(theMG);
+		
+		EE3D_Vectors				= theGpo->Vectors;
+		EE3D_VecIndex				= theGpo->VecIndex;
+		EE3D_Type					= theGpo->Type;
+		EE3D_VecCol[NODEVECTOR]		= theOD->cyan;
+		EE3D_VecCol[EDGEVECTOR]		= theOD->blue;
+		EE3D_VecCol[ELEMVECTOR]		= theOD->orange;
+		EE3D_VecCol[SIDEVECTOR]		= theOD->magenta;
+		if (EE3D_Vectors)
+			ResetVectorUsed(theMG);
+	}
+	else
+		EE3D_Nodes = EE3D_Vectors	= FALSE;
 		
 	switch (theGpo->WhichElem)
 	{
@@ -13485,10 +14387,11 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 	}
 	
 	/* build cut trafo */
-	if (BuildCutTrafo(&(theGpo->theCut),OBS_ViewDirection)) return (1);
+	theCut = VO_CUT(PIC_VO(thePicture));
+	if (BuildCutTrafo(theCut,OBS_ViewDirection)) return (1);
 
 	/* order nodes if */
-	if (theGpo->theCut.status==ACTIVE)
+	if (theCut->status==ACTIVE)
 		if (OrderNodes(theMG,EE3D_ShrinkFactor)) return (1);
 	
 	/* mark surface elements */
@@ -13524,7 +14427,7 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 
 /****************************************************************************/
 /*
-   ClickAct_Grid3D - toll dependend act on click for 3D Grid
+   ClickAct_Grid3D - tool dependent act on click for 3D Grid
 
    SYNOPSIS:
    INT ClickAct_Grid3D (PICTURE *pic, INT tool, INT fct, const INT mp[2])
@@ -13532,11 +14435,14 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
    PARAMETERS:
 .  pic  - print info for this picture
 .  tool - current tool
-.  fct  - currenr tool function
+.  fct  - current tool function
 .  mp   - mouse position in window
 
    DESCRIPTION:
 .  heart - select element
+.  hand  - select node
+.  cross - select vector
+.  choice - rotate cut
 
    RETURN VALUE:
    INT
@@ -13556,6 +14462,17 @@ static INT ClickAct_Grid3D (PICTURE *pic, INT tool, INT fct, const INT mp[2])
 			W_SELECTELEMENT_WORK(&theWork)->PixelX = mp[0];
 			W_SELECTELEMENT_WORK(&theWork)->PixelY = mp[1];
 			break;
+		case handTool:
+			W_ID(&theWork) = SELECTNODE_WORK;
+			W_SELECTNODE_WORK(&theWork)->PixelX = mp[0];
+			W_SELECTNODE_WORK(&theWork)->PixelY = mp[1];
+			break;
+		case crossTool:
+			W_ID(&theWork) = SELECTVECTOR_WORK;
+			W_SELECTVECTOR_WORK(&theWork)->PixelX = mp[0];
+			W_SELECTVECTOR_WORK(&theWork)->PixelY = mp[1];
+			break;
+		
 		default:
 			return (1);
 	}
@@ -13598,6 +14515,47 @@ static INT EW_PreProcess_SelectElement3D (PICTURE *thePicture, WORK *theWork)
 	
 /****************************************************************************/
 /*
+   EW_PreProcess_SelectNode3D - Initialize input variables of EW_ElementEval3D for GridPlot3D
+
+   SYNOPSIS:
+   static INT EW_PreProcess_SelectNode3D (PICTURE *thePicture, WORK *theWork);
+
+   PARAMETERS:
+.  thePicture -
+.  theWork -
+
+   DESCRIPTION:
+   This function initializes input variables of EW_ElementEval3D for GridPlot3D.
+
+   RETURN VALUE:
+   INT
+.n     0 if ok
+.n     1 if an error occured.
+*/								
+/****************************************************************************/
+
+static INT EW_PreProcess_SelectNode3D (PICTURE *thePicture, WORK *theWork)
+{
+	FN3D_MousePos.x = W_SELECTNODE_WORK(theWork)->PixelX;
+	FN3D_MousePos.y = W_SELECTNODE_WORK(theWork)->PixelY;
+	
+	if (EW_PreProcess_PlotGrid3D (thePicture,theWork)) return (1);
+	
+	return (0);
+}
+
+static INT EW_PreProcess_SelectVec3D (PICTURE *thePicture, WORK *theWork)
+{
+	FN3D_MousePos.x = W_SELECTVECTOR_WORK(theWork)->PixelX;
+	FN3D_MousePos.y = W_SELECTVECTOR_WORK(theWork)->PixelY;
+	
+	if (EW_PreProcess_PlotGrid3D (thePicture,theWork)) return (1);
+	
+	return (0);
+}
+	
+/****************************************************************************/
+/*
    EW_PreProcess_EScalar3D_BackGrid - Initialize for plot of backgrid for 
    C(olor)C(ontour) plot 
 
@@ -13622,6 +14580,7 @@ static INT EW_PreProcess_SelectElement3D (PICTURE *thePicture, WORK *theWork)
 static INT EW_PreProcess_EScalar3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 {
 	struct ElemScalarPlotObj3D *theEspo;
+	struct Cut *theCut;
 	OUTPUTDEVICE *theOD;
 	MULTIGRID *theMG;
 	
@@ -13653,10 +14612,11 @@ static INT EW_PreProcess_EScalar3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	#endif
 	
 	/* build cut trafo */
-	if (BuildCutTrafo(&(theEspo->theCut),OBS_ViewDirection)) return (1);
+	theCut = VO_CUT(PIC_VO(thePicture));
+	if (BuildCutTrafo(theCut,OBS_ViewDirection)) return (1);
 
 	/* order nodes if */
-	if (theEspo->theCut.status==ACTIVE)
+	if (theCut->status==ACTIVE)
 		if (OrderNodes(theMG,1.0)) return (1);
 	
 	/* mark suface elements on boundary and cut if */
@@ -13695,20 +14655,22 @@ static INT EW_PreProcess_EScalar3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 static INT EW_PreProcess_CutBnd3D (PICTURE *thePicture, WORK *theWork)
 {
 	struct ElemScalarPlotObj3D *theEspo;
+	struct Cut *theCut;
 	OUTPUTDEVICE *theOD;
 	MULTIGRID *theMG;
 	
 	theEspo = &(PIC_PO(thePicture)->theEspo);
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theMG  = PO_MG(PIC_PO(thePicture));
+	theCut = VO_CUT(PIC_VO(thePicture));
 	
-	if (theEspo->theCut.status!=ACTIVE)
+	if (theCut->status!=ACTIVE)
 		return (1);
 	
 	EE3D_Color[COLOR_CUT_EDGE]		= theOD->black;
 		
 	/* build cut trafo */
-	if (BuildCutTrafo(&(theEspo->theCut),OBS_ViewDirection)) return (1);
+	if (BuildCutTrafo(theCut,OBS_ViewDirection)) return (1);
 
 	/* order nodes */
 	if (OrderNodes(theMG,1.0)) return (1);
@@ -13745,6 +14707,7 @@ static INT EW_PreProcess_CutBnd3D (PICTURE *thePicture, WORK *theWork)
 static INT EW_PreProcess_EVector3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 {
 	struct ElemVectorPlotObj3D *theEvpo;
+	struct Cut *theCut;
 	OUTPUTDEVICE *theOD;
 	MULTIGRID *theMG;
 	
@@ -13776,10 +14739,11 @@ static INT EW_PreProcess_EVector3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 	#endif
 
 	/* build cut trafo */
-	if (BuildCutTrafo(&(theEvpo->theCut),OBS_ViewDirection)) return (1);
+	theCut = VO_CUT(PIC_VO(thePicture));
+	if (BuildCutTrafo(theCut,OBS_ViewDirection)) return (1);
 
 	/* order nodes if */
-	if (theEvpo->theCut.status==ACTIVE)
+	if (theCut->status==ACTIVE)
 		if (OrderNodes(theMG,1.0)) return (1);
 	
 	/* mark suface elements on boundary and cut */
@@ -13877,14 +14841,16 @@ static INT EW_PreProcess_EScalar3D (PICTURE *thePicture, WORK *theWork)
 static INT EW_PreProcess_EScalar3D_FR (PICTURE *thePicture, WORK *theWork)
 {
 	struct ElemScalarPlotObj3D *theEspo;
+	struct Cut *theCut;
 	OUTPUTDEVICE *theOD;
 	MULTIGRID *theMG;
 	
 	theEspo = &(PIC_PO(thePicture)->theEspo);
 	theOD  = PIC_OUTPUTDEV(thePicture);
 	theMG  = PO_MG(PIC_PO(thePicture));
-
-	if (theEspo->theCut.status!=ACTIVE)	return (1);
+	theCut = VO_CUT(PIC_VO(thePicture));
+	
+	if (theCut->status!=ACTIVE)	return (1);
 	
 	EScalar3D_EvalFct	 = theEspo->EvalFct->EvalProc;
 	EScalar3D_V2C_factor = (theOD->spectrumEnd - theOD->spectrumStart);
@@ -13893,7 +14859,7 @@ static INT EW_PreProcess_EScalar3D_FR (PICTURE *thePicture, WORK *theWork)
 	EScalar3D_depth 		= theEspo->depth;
 	
 	/* build cut trafo */
-	if (BuildCutTrafo(&(theEspo->theCut),OBS_ViewDirection)) return (1);
+	if (BuildCutTrafo(theCut,OBS_ViewDirection)) return (1);
 
 	/* order nodes */
 	if (OrderNodes(theMG,1.0)) return (1);
@@ -13983,13 +14949,15 @@ static INT EW_PreProcess_EVector3D (PICTURE *thePicture, WORK *theWork)
 static INT EW_PreProcess_EVector3D_FR (PICTURE *thePicture, WORK *theWork)
 {
 	struct ElemVectorPlotObj3D *theEvpo;
+	struct Cut *theCut;
 	MULTIGRID *theMG;
 	
 	theEvpo = &(PIC_PO(thePicture)->theEvpo);
 	theMG  = PO_MG(PIC_PO(thePicture));
 
 	/* build cut trafo */
-	if (BuildCutTrafo(&(theEvpo->theCut),OBS_ViewDirection)) return (1);
+	theCut = VO_CUT(PIC_VO(thePicture));
+	if (BuildCutTrafo(theCut,OBS_ViewDirection)) return (1);
 
 	/* order nodes */
 	if (OrderNodes(theMG,1.0)) return (1);
@@ -14906,31 +15874,6 @@ INT DrawWindowText (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT siz
 		UgText(text,mode);
 	}
 	
-	return (0);
-}
-
-/****************************************************************************/
-/*D
-   SetTextFactor - set a factor to multiply textsizes with
-
-   SYNOPSIS:
-   INT SetTextFactor (DOUBLE textfactor)
-
-   PARAMETERS:
-.  mode - YES: do frame, NO: do not frame
-  
-   DESCRIPTION:
-   This function sets a factor to multiply textsizes with.
-
-   RETURN VALUE:
-   INT
-.n     0 if ok
-D*/
-/****************************************************************************/
-
-INT SetTextFactor (DOUBLE textfactor)
-{
-	TextFactor = textfactor;
 	return (0);
 }
 
@@ -15951,8 +16894,7 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 	
 	/* print heap used */
 #ifdef __DO_HEAP_USED__
-	sprintf(buffer,"Heap_min = %d\nHeap_max = %d\n",(int)Heap_Used_Min,(int)Heap_Used_Max);	
-	UserWrite(buffer);
+	UserWriteF("Heap_min = %d\nHeap_max = %d\n",(int)Heap_Used_Min,(int)Heap_Used_Max);
 #endif	
 		
 	return (0);
@@ -15981,13 +16923,13 @@ INT WorkOnPicture (PICTURE *thePicture, WORK *theWork)
 D*/
 /****************************************************************************/
 
-INT DragPicture (PICTURE *thePicture, INT *OldMousePos)
+INT DragPicture (PICTURE *thePicture, const INT *StartMousePos)
 {
 	VIEWEDOBJ *theViewedObj;
 	COORD_POINT FrameLL,FrameLR,FrameUR,FrameUL;
-	DOUBLE oldpos[2],pos[2],shift[2];
+	DOUBLE oldpos[3],pos[3],shift[3];
 	DOUBLE xmin,xmax,ymin,ymax;
-	INT LastMousePos[2],MousePos[2];
+	INT LastMousePos[3],OldMousePos[3],MousePos[2];
 	INT theViewDim,MouseMoved,rejected;
 
 	if (thePicture==NULL)	return (1);
@@ -15999,7 +16941,9 @@ INT DragPicture (PICTURE *thePicture, INT *OldMousePos)
 		return (0);
 	}
 	theViewDim 				= PO_DIM(PIC_PO(thePicture));
-	if (theViewDim != TYPE_2D) return (0);
+	
+	V2_COPY(StartMousePos,OldMousePos);
+	OldMousePos[2] = 0.0;
 	
 	/* build transformation */
 	if (BuildObsTrafo(thePicture))
@@ -16021,10 +16965,13 @@ INT DragPicture (PICTURE *thePicture, INT *OldMousePos)
 	ymax	= MAX(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
 	
 	/* old mouse position in the physical system */
-	V2_TRAFOM3_V2(OldMousePos,InvObsTrafo,oldpos);
+	if (theViewDim==TYPE_2D)
+		V2_TRAFOM3_V2(OldMousePos,InvObsTrafo,oldpos)
+	else
+		V3_TRAFOM4_V3(OldMousePos,InvObsTrafo,oldpos)
 	
 	rejected = MouseMoved = FALSE;
-	V2_COPY(OldMousePos,LastMousePos);
+	V3_COPY(OldMousePos,LastMousePos);
 	while (MouseStillDown())
 	{
 		MousePosition(MousePos);
@@ -16078,17 +17025,22 @@ INT DragPicture (PICTURE *thePicture, INT *OldMousePos)
 	
 	if (rejected) return (0);
 	
-	/* mouse position in the physical system */
-	V2_TRAFOM3_V2(MousePos,InvObsTrafo,pos);
-	
 	/* adjust view */
 	if (theViewDim==TYPE_2D)
 	{
+		V2_TRAFOM3_V2(LastMousePos,InvObsTrafo,pos)
 		V2_SUBTRACT(oldpos,pos,shift);
 		V2_ADD(VO_VT(theViewedObj),shift,VO_VT(theViewedObj));
 		V2_ADD(VO_PMP(theViewedObj),shift,VO_PMP(theViewedObj));
 	}
-	/* else if (theViewDim==TYPE_2D) <-- maybe extended later */
+	else if (theViewDim==TYPE_3D)
+	{
+		V3_TRAFOM4_V3(LastMousePos,InvObsTrafo,pos)
+		V3_SUBTRACT(oldpos,pos,shift);
+		V3_ADD(VO_VP(theViewedObj),shift,VO_VP(theViewedObj));
+		V3_ADD(VO_VT(theViewedObj),shift,VO_VT(theViewedObj));
+		V3_ADD(VO_PMP(theViewedObj),shift,VO_PMP(theViewedObj));
+	}
 	
 	PIC_VALID(thePicture) = NO;
 	
@@ -16118,10 +17070,10 @@ INT DragPicture (PICTURE *thePicture, INT *OldMousePos)
 D*/
 /****************************************************************************/
 
-INT ZoomPicture (PICTURE *thePicture, INT *OldMousePos)
+INT ZoomPicture (PICTURE *thePicture, const INT *OldMousePos)
 {
 	VIEWEDOBJ *theViewedObj;
-	DOUBLE MidPoint[2],pos[2];
+	DOUBLE MidPoint[3],pos[3],shift[3];
 	DOUBLE xmin,xmax,ymin,ymax;
 	DOUBLE CanvasRatio,FrameRatio,factor;
 	INT status,theViewDim;
@@ -16135,7 +17087,6 @@ INT ZoomPicture (PICTURE *thePicture, INT *OldMousePos)
 		return (0);
 	}
 	theViewDim 				= PO_DIM(PIC_PO(thePicture));
-	if (theViewDim != TYPE_2D) return (0);
 	
 	/* build transformation */
 	if (BuildObsTrafo(thePicture))
@@ -16157,26 +17108,834 @@ INT ZoomPicture (PICTURE *thePicture, INT *OldMousePos)
 		return (0);
 	
 	/* adjust view */
+	
+	/* new midpoint */
+	MidPoint[_X_] = 0.5*(xmin+xmax);
+	MidPoint[_Y_] = 0.5*(ymin+ymax);
+	MidPoint[_Z_] = 0.0;
 	if (theViewDim==TYPE_2D)
 	{
-		/* new midpoint */
-		MidPoint[_X_] = 0.5*(xmin+xmax);
-		MidPoint[_Y_] = 0.5*(ymin+ymax);
 		V2_TRAFOM3_V2(MidPoint,InvObsTrafo,pos);
 		V2_COPY(pos,VO_VT(theViewedObj));
 		V2_COPY(pos,VO_PMP(theViewedObj));
-		
-		/* zoom factor */
-		CanvasRatio = fabs(((DOUBLE)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1]))/((DOUBLE)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
-		FrameRatio  = (ymax-ymin) / (xmax-xmin);
-		if (FrameRatio>CanvasRatio)
-			factor = fabs((ymax-ymin)/((DOUBLE)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1])));
-		else
-			factor = fabs((xmax-xmin)/((DOUBLE)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
+	}
+	else
+	{
+		V3_TRAFOM4_V3(MidPoint,InvObsTrafo,pos)
+		V3_SUBTRACT(VO_PMP(theViewedObj),pos,shift);
+		V3_SUBTRACT(VO_VP(theViewedObj),shift,VO_VP(theViewedObj));
+		V3_SUBTRACT(VO_VT(theViewedObj),shift,VO_VT(theViewedObj));
+		V3_SUBTRACT(VO_PMP(theViewedObj),shift,VO_PMP(theViewedObj));
+	}
+	
+	/* zoom factor */
+	CanvasRatio = fabs(((DOUBLE)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1]))/((DOUBLE)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
+	FrameRatio  = (ymax-ymin) / (xmax-xmin);
+	if (FrameRatio>CanvasRatio)
+		factor = fabs((ymax-ymin)/((DOUBLE)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1])));
+	else
+		factor = fabs((xmax-xmin)/((DOUBLE)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
+	if (theViewDim==TYPE_2D)
+	{
 		V2_SCALE(factor,VO_PXD(theViewedObj))
 		V2_SCALE(factor,VO_PYD(theViewedObj))
 	}
-	/* else if (theViewDim==TYPE_3D) <-- maybe extended later */
+	else
+	{
+		V3_SCALE(factor,VO_PXD(theViewedObj))
+		V3_SCALE(factor,VO_PYD(theViewedObj))
+	}
+	
+	PIC_VALID(thePicture) = NO;
+	
+	return (0);
+}
+
+/****************************************************************************/
+/*D
+   RotatePicture - rotate a picture with the mouse
+
+   SYNOPSIS:
+   INT RotatePicture (PICTURE *thePicture, INT *MousePos)
+
+   PARAMETERS:
+.  thePicture - the picture to work on
+.  MousePos - current mouse position
+
+   DESCRIPTION:
+   This function follows the mouse as long as the button is down and rotates
+   the view.
+
+.  2D~view - the x- and y-direction are plotted at the target point
+.  3D~view - a cube along with x-, y- and z-axis are plotted at the target point.
+				Rotation uses Euler-angles: mouse movement in horizontal direction
+				rotates around vertical axes, mouse movement in horizontal
+				direction rotates araound the rotated (!) horizontal axis of the view.
+
+   RETURN VALUE:
+   INT
+.n     0 if ok
+.n     1 if en arror occured.
+D*/
+/****************************************************************************/
+
+#define GET_POINT3D(x,y,z,pt)	   {h[_X_] = x; h[_Y_] = y; h[_Z_] = z;			\
+									M3_TIMES_V3(Trafo,h,aux); V3_ADD(aux,ph,h);	\
+									V3_TRAFOM4_V3(h,ObsTrafo,help); 			\
+									(*OBS_ProjectProc)(help,&pt);}
+
+static void InvertTripod3d (const DOUBLE *sc, const DOUBLE *ph, const DOUBLE *Trafo, DOUBLE un)
+{
+	DOUBLE h[3];
+	DOUBLE help[3],aux[3],hu;
+	COORD_POINT op,ap,bp,cp,cube[7];
+	
+	/* half unit */
+	hu = 0.5*un;
+	
+	/* origin */
+	(*OBS_ProjectProc)(sc,&op);
+	
+	/* x,y,z unit vec */
+	GET_POINT3D(un,0.,0.,ap);
+	GET_POINT3D(0.,un,0.,bp);
+	GET_POINT3D(0.,0.,un,cp);
+	
+	UgInverseLine(op,ap);
+	UgMove(ap);
+	UgText("x",TEXT_INVERSE);
+	
+	UgInverseLine(op,bp);
+	UgMove(bp);
+	UgText("y",TEXT_INVERSE);
+	
+	UgInverseLine(op,cp);
+	UgMove(cp);
+	UgText("z",TEXT_INVERSE);
+	
+	/* little cube */
+	GET_POINT3D(hu,.0,.0,cube[0]);
+	GET_POINT3D(hu,hu,.0,cube[1]);
+	GET_POINT3D(.0,hu,.0,cube[2]);
+	GET_POINT3D(.0,.0,hu,cube[3]);
+	GET_POINT3D(hu,.0,hu,cube[4]);
+	GET_POINT3D(hu,hu,hu,cube[5]);
+	GET_POINT3D(.0,hu,hu,cube[6]);
+	UgInverseLine(cube[1],cube[0]);
+	UgInverseLine(cube[1],cube[2]);
+	UgInverseLine(cube[1],cube[5]);
+	UgInverseLine(cube[4],cube[0]);
+	UgInverseLine(cube[4],cube[5]);
+	UgInverseLine(cube[4],cube[3]);
+	UgInverseLine(cube[6],cube[2]);
+	UgInverseLine(cube[6],cube[3]);
+	UgInverseLine(cube[6],cube[5]);
+}
+
+static void InvertCut (const DOUBLE *sc, const DOUBLE *ph,
+						const DOUBLE *Trafo,
+						const DOUBLE *n, const DOUBLE *x, const DOUBLE *y)
+{
+	DOUBLE h[3];
+	DOUBLE help[3],aux[3];
+	COORD_POINT op,pt[5];
+	
+	/* origin */
+	(*OBS_ProjectProc)(sc,&op);
+	
+	/* x,y,z unit vec */
+	GET_POINT3D( n[_X_], n[_Y_], n[_Z_],pt[0]);
+	GET_POINT3D( x[_X_], x[_Y_], x[_Z_],pt[1]);
+	GET_POINT3D(-x[_X_],-x[_Y_],-x[_Z_],pt[2]);
+	GET_POINT3D( y[_X_], y[_Y_], y[_Z_],pt[3]);
+	GET_POINT3D(-y[_X_],-y[_Y_],-y[_Z_],pt[4]);
+	
+	UgMove(pt[0]);
+	UgText("N",TEXT_INVERSE);
+	
+	UgInverseLine(pt[1],pt[2]);
+	UgInverseLine(pt[3],pt[4]);
+	
+	UgInverseLine(pt[1],pt[0]);
+	UgInverseLine(pt[2],pt[0]);
+	UgInverseLine(pt[3],pt[0]);
+	UgInverseLine(pt[4],pt[0]);
+	
+	UgInverseLine(pt[1],pt[3]);
+	UgInverseLine(pt[3],pt[2]);
+	UgInverseLine(pt[2],pt[4]);
+	UgInverseLine(pt[4],pt[1]);
+}
+
+static INT CheckOrthogonality3x3(const DOUBLE *RotMat)
+{
+	DOUBLE RotMatT[9],UnitMat[9];
+	DOUBLE tmp;
+	
+	M3_COPY(RotMat,RotMatT);
+	SWAP(RotMatT[1],RotMatT[3],tmp);
+	SWAP(RotMatT[2],RotMatT[6],tmp);
+	SWAP(RotMatT[5],RotMatT[7],tmp);
+	M3_TIMES_M3(RotMat,RotMatT,UnitMat);
+	if ((fabs(UnitMat[0]-1.)>SMALL_C)
+		|| (fabs(UnitMat[1])>SMALL_C)
+		|| (fabs(UnitMat[2])>SMALL_C)
+		|| (fabs(UnitMat[3])>SMALL_C)
+		|| (fabs(UnitMat[4]-1.)>SMALL_C)
+		|| (fabs(UnitMat[5])>SMALL_C)
+		|| (fabs(UnitMat[6])>SMALL_C)
+		|| (fabs(UnitMat[7])>SMALL_C)
+		|| (fabs(UnitMat[8]-1.)>SMALL_C))
+			return (1);
+	
+	return (0);
+}
+
+static void Transpose3x3 (DOUBLE *RotMat)
+{
+	DOUBLE tmp;
+	
+	SWAP(RotMat[1],RotMat[3],tmp);
+	SWAP(RotMat[2],RotMat[6],tmp);
+	SWAP(RotMat[5],RotMat[7],tmp);
+}
+
+static INT GetRotMatForTripod (const DOUBLE *xAxis, const DOUBLE *yAxis, DOUBLE *RotMat)
+{
+	DOUBLE x[3],y[3],z[3];
+	
+	V3_COPY(xAxis,x);
+	V3_COPY(yAxis,y);
+	
+	if (V3_Normalize(x)) return (1);
+	if (V3_Normalize(y)) return (1);
+	
+	V3_VECTOR_PRODUCT(x,y,z);
+	
+	RotMat[0] = x[0]; RotMat[1] = y[0]; RotMat[2] = z[0];
+	RotMat[3] = x[1]; RotMat[4] = y[1]; RotMat[5] = z[1];
+	RotMat[6] = x[2]; RotMat[7] = y[2]; RotMat[8] = z[2];
+	
+	return (0);
+}
+
+/* the following two functions implement a rotation in the view reference system via
+   Euler angles (description see man page for RotatePicture) */
+
+/* another possibity would be a virtual sphere (one can think of it as a trackball) */
+
+static INT EulerRotObsTrafo3d (const DOUBLE *mid,
+							   const INT *old,
+							   const INT *mouse,
+							   DOUBLE dx, DOUBLE dy,
+							   DOUBLE *rot)
+{
+	DOUBLE cp,sp,ct,st,theta,phi;
+	char buffer[64];
+	
+	phi   =-2*PI*(mouse[_X_]-mid[_X_])/dx;
+	theta = 2*PI*(mouse[_Y_]-mid[_Y_])/dy;
+	
+	sprintf(buffer,"euler: %+3.0f,%+3.0f",phi*180/PI,theta*180/PI);
+	DrawInfoBox(UGW_IFWINDOW(myWin),buffer);
+	
+	cp = cos(phi);
+	sp = sin(phi);
+	ct = cos(theta);
+	st = sin(theta);
+	
+	rot[0] = cp;	rot[1] = 0.0;	rot[2] = sp;
+	rot[3] =-st*sp;	rot[4] = ct;	rot[5] = st*cp;
+	rot[6] =-ct*sp;	rot[7] =-st;	rot[8]= ct*cp;
+	
+	return (0);
+}
+
+static INT EulerInitRotObsTrafo3d (const DOUBLE *mid,
+								   const INT *old,
+								   const INT *mouse,
+								   DOUBLE dx, DOUBLE dy,
+								   DOUBLE *rot)
+{
+	return (EulerRotObsTrafo3d(mid,old,mouse,dx,dy,rot));
+}
+
+#define GET_POINT2D(x,y,pt)		   {h[_X_] = x; h[_Y_] = y;						\
+									M2_TIMES_V2(Trafo,h,aux); V2_ADD(aux,ph,h);	\
+									V2_TRAFOM3_V2(h,ObsTrafo,help); 			\
+									(*OBS_ProjectProc)(help,&pt);}
+
+static void InvertTripod2d (const DOUBLE *sc, const DOUBLE *ph, const DOUBLE *Trafo, DOUBLE un)
+{
+	DOUBLE h[3];
+	DOUBLE help[3],aux[3];
+	COORD_POINT op,xp,yp;
+	
+	/* origin */
+	(*OBS_ProjectProc)(sc,&op);
+	
+	GET_POINT2D(un,0.,xp);
+	GET_POINT2D(0.,un,yp);
+	
+	UgInverseLine(op,xp);
+	UgMove(xp);
+	UgText("x",TEXT_INVERSE);
+	
+	UgInverseLine(op,yp);
+	UgMove(yp);
+	UgText("y",TEXT_INVERSE);
+}
+
+static INT RotObsTrafo2d (const DOUBLE *mid,
+						  const INT *old,
+						  const INT *new,
+						  DOUBLE *rot)
+{
+	DOUBLE a[2],b[2],c[2];
+	DOUBLE la,lb,Cos,Sin;
+	char buffer[64];
+	
+	/* here we go: compute sin and cos of angle */
+	V2_SUBTRACT(mid,old,a);
+	V2_EUKLIDNORM(a,la);
+	V2_NORMAL(a,c);
+	V2_SUBTRACT(mid,new,b);
+	V2_EUKLIDNORM(b,lb);
+	
+	Cos = V2_SCAL_PROD(a,b)/(la*lb);
+	Sin = V2_SCAL_PROD(c,b)/(la*lb);
+	
+	sprintf(buffer,"%3.0f",acos(Cos)*180/PI);
+	DrawInfoBox(UGW_IFWINDOW(myWin),buffer);
+	
+	rot[0] = Cos; rot[1] = Sin;
+	rot[2] =-Sin; rot[3] = Cos;
+	
+	return (0);
+}
+
+static INT InitRotObsTrafo2d (const DOUBLE *mid,
+							  const INT *old,
+							  const INT *new,
+							  DOUBLE *rot)
+{
+	rot[0] = 1.0; rot[1] = 0.0;
+	rot[2] = 0.0; rot[3] = 1.0;
+	
+	return (0);
+}
+
+INT RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
+{
+	VIEWEDOBJ *theViewedObj;
+	DOUBLE  RotMat[9],			/* rotation in view refrence frame */
+			PhysRotMat[9],		/* the same rotation in physical frame */
+			ObsTrafoRot[9],		/* the rotational part of the trafo phys-->view (no scaling!) */
+			InvObsTrafoRot[9],	/* and its inverse */
+			AuxMat[9];
+	DOUBLE *TP_ph,TP_sc[3];		/* target point in phys and screen coordinates */
+	DOUBLE ScreenMid[3],help[3],norm,unit;
+	DOUBLE dx,dy,xmin,xmax,ymin,ymax;
+	INT LastMousePos[3],MousePos[2];
+	INT theViewDim,rejected,MouseMoved;
+	
+	if (thePicture==NULL)	return (1);
+	theViewedObj = PIC_VO(thePicture);
+	
+	if (VO_STATUS(theViewedObj) != ACTIVE)
+	{
+		PrintErrorMessage('W',"RotatePicture","PlotObject and View have to be initialized");
+		return (0);
+	}
+	theViewDim 				= PO_DIM(PIC_PO(thePicture));
+	
+	myWin = PIC_UGW(thePicture);
+	
+	/* build transformation */
+	if (BuildObsTrafo(thePicture))
+	{
+		PrintErrorMessage('E',"RotatePicture","cannot build transformation");
+		return (1);
+	}
+	
+	V2_COPY(OldMousePos,LastMousePos);
+	
+	xmin = MIN(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
+	xmax = MAX(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
+	ymin = MIN(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
+	ymax = MAX(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
+	
+	if (theViewDim==TYPE_2D)
+	{
+		DOUBLE tmp;
+		
+		/* use reasonable size for tripod */
+		V2_EUKLIDNORM(VO_PXD(theViewedObj),unit);
+		V2_EUKLIDNORM(VO_PYD(theViewedObj),norm);
+		if (unit>norm)
+			unit = norm;
+		
+		unit *= 0.5;
+		
+		/* get screenmid */
+		ScreenMid[_X_] = 0.5*(xmin+xmax);
+		ScreenMid[_Y_] = 0.5*(ymin+ymax);
+		
+		if (V2_ISEQUAL(OldMousePos,ScreenMid)) return (0);
+		
+		/* target point in physical and screen system */
+		TP_ph = VO_VT(theViewedObj);
+		V2_TRAFOM3_V2(TP_ph,ObsTrafo,TP_sc);
+		
+		if (InitRotObsTrafo2d(ScreenMid,OldMousePos,LastMousePos,RotMat))
+			return (1);
+		
+		/* invert tripod (dipod?) */
+		InvertTripod2d(TP_sc,TP_ph,RotMat,unit);
+		
+		rejected = MouseMoved = FALSE;
+		while (MouseStillDown())
+		{
+			MousePosition(MousePos);
+			
+			if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
+			
+			/* inside picture? */
+			if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+			{
+				rejected = TRUE;
+				break;
+			}
+			
+			/* invert last tripod (dipod?) */
+			InvertTripod2d(TP_sc,TP_ph,RotMat,unit);
+			
+			V2_COPY(MousePos,LastMousePos);
+			MouseMoved = TRUE;
+			
+			if (RotObsTrafo2d(ScreenMid,OldMousePos,LastMousePos,RotMat))
+				return (1);
+			
+			/* invert new tripod (dipod?) */
+			InvertTripod2d(TP_sc,TP_ph,RotMat,unit);
+		}
+		
+		/* invert last tripod (dipod?) */
+		InvertTripod2d(TP_sc,TP_ph,RotMat,unit);
+		
+		if (rejected) return (0);
+		if (V2_ISEQUAL(LastMousePos,ScreenMid)) return (0);
+		
+		/* invert by transposing */
+		SWAP(RotMat[1],RotMat[2],tmp);
+		
+		M2_TIMES_V2(RotMat,VO_PXD(theViewedObj),help);
+		V2_COPY(help,VO_PXD(theViewedObj));
+		
+		M2_TIMES_V2(RotMat,VO_PYD(theViewedObj),help);
+		V2_COPY(help,VO_PYD(theViewedObj));
+		
+		PIC_VALID(thePicture) = NO;
+	}
+	else
+	{
+		/* theViewDim==TYPE_3D */
+		
+		dx = xmax-xmin;
+		dy = ymax-ymin;
+		
+		LastMousePos[2] = 0;
+		
+		/* use reasonable size for tripod */
+		V3_EUKLIDNORM(VO_PXD(theViewedObj),unit);
+		V3_EUKLIDNORM(VO_PYD(theViewedObj),norm);
+		if (unit>norm)
+			unit = norm;
+		
+		unit *= 0.5;
+		
+		/* target point in physical and screen system */
+		TP_ph = VO_VT(theViewedObj);
+		V3_TRAFOM4_V3(TP_ph,ObsTrafo,TP_sc);
+		
+		/* plane midpoint in screen system */
+		V3_TRAFOM4_V3(VO_PMP(theViewedObj),ObsTrafo,ScreenMid);
+		
+		/* compute rotation matrix from physical to screen system and its inverse */
+		if (GetRotMatForTripod(VO_PXD(theViewedObj),VO_PYD(theViewedObj),ObsTrafoRot))
+			return (1);
+		IFDEBUG(graph,0)
+			if (CheckOrthogonality3x3(ObsTrafoRot)!=0)
+				return (1);
+		ENDDEBUG
+		M3_COPY(ObsTrafoRot,InvObsTrafoRot);
+		Transpose3x3(InvObsTrafoRot);
+		
+		/* init rotation matrix in screen system */
+		if ((*InitRotObsTrafo3d)(ScreenMid,OldMousePos,LastMousePos,dx,dy,RotMat))
+			return (1);
+		M3_TIMES_M3(InvObsTrafoRot,RotMat,AuxMat);
+		M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
+		
+		/* invert tripod */
+		InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
+		
+		rejected = MouseMoved = FALSE;
+		while (MouseStillDown())
+		{
+			MousePosition(MousePos);
+			
+			if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
+			
+			/* inside picture? */
+			if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+			{
+				rejected = TRUE;
+				break;
+			}
+			
+			/* invert last tripod */
+			InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
+			
+			V2_COPY(MousePos,LastMousePos);
+			MouseMoved = TRUE;
+			
+			if ((*RotObsTrafo3d)(ScreenMid,OldMousePos,LastMousePos,dx,dy,RotMat))
+				return (1);
+			M3_TIMES_M3(InvObsTrafoRot,RotMat,AuxMat);
+			M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
+			
+			/* invert new tripod */
+			InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
+		}
+		
+		/* invert last tripod */
+		InvertTripod3d(TP_sc,TP_ph,PhysRotMat,unit);
+		
+		if (rejected) return (0);
+		/*if (!MouseMoved) return (0);*/
+		
+		/* inverse of rot by taking transpose */
+		Transpose3x3(PhysRotMat);
+		
+		/* check orthogonality */
+		IFDEBUG(graph,0)
+			if (CheckOrthogonality3x3(PhysRotMat)!=0)
+				return (1);
+		ENDDEBUG
+		
+		/* here we go: rotate view point, plane midpoint and x,y directions around target */
+		V3_SUBTRACT(VO_VP(theViewedObj),VO_VT(theViewedObj),help);
+		M3_TIMES_V3(PhysRotMat,help,VO_VP(theViewedObj));
+		V3_ADD(VO_VP(theViewedObj),VO_VT(theViewedObj),VO_VP(theViewedObj));
+		
+		V3_SUBTRACT(VO_PMP(theViewedObj),VO_VT(theViewedObj),help);
+		M3_TIMES_V3(PhysRotMat,help,VO_PMP(theViewedObj));
+		V3_ADD(VO_PMP(theViewedObj),VO_VT(theViewedObj),VO_PMP(theViewedObj));
+		
+		V3_COPY(VO_PXD(theViewedObj),help);
+		M3_TIMES_V3(PhysRotMat,help,VO_PXD(theViewedObj));
+		
+		V3_COPY(VO_PYD(theViewedObj),help);
+		M3_TIMES_V3(PhysRotMat,help,VO_PYD(theViewedObj));
+		
+		PIC_VALID(thePicture) = NO;
+	}
+	
+	return (0);
+}
+
+INT RotateCut (PICTURE *thePicture, const INT *OldMousePos)
+{
+	VIEWEDOBJ *theViewedObj;
+	CUT *theCut;
+	DOUBLE  RotMat[9],			/* rotation in view refrence frame */
+			PhysRotMat[9],		/* the same rotation in physical frame */
+			ObsTrafoRot[9],		/* the rotational part of the trafo phys-->view (no scaling!) */
+			InvObsTrafoRot[9],	/* and its inverse */
+			AuxMat[9];
+	DOUBLE *PP_ph,PP_sc[3];		/* target point in phys and screen coordinates */
+	DOUBLE ScreenMid[3],cut_pn[3],cut_px[3],cut_py[3],help[3],norm,unit;
+	DOUBLE dx,dy,xmin,xmax,ymin,ymax;
+	INT LastMousePos[3],MousePos[2];
+	INT rejected,MouseMoved;
+	
+	if (thePicture==NULL)	return (1);
+	if (!PO_USESCUT(PIC_PO(thePicture))) return (1);
+	
+	theViewedObj = PIC_VO(thePicture);
+	theCut = VO_CUT(theViewedObj);
+	
+	if (VO_STATUS(theViewedObj) != ACTIVE)
+	{
+		PrintErrorMessage('W',"RotateCut","PlotObject and View have to be initialized");
+		return (0);
+	}
+	if (CUT_STATUS(theCut) != ACTIVE)
+	{
+		PrintErrorMessage('W',"RotateCut","cutting plane has to be initialized");
+		return (0);
+	}
+	
+	myWin = PIC_UGW(thePicture);
+	
+	/* build transformation */
+	if (BuildObsTrafo(thePicture))
+	{
+		PrintErrorMessage('E',"RotateCut","cannot build transformation");
+		return (1);
+	}
+	
+	V2_COPY(OldMousePos,LastMousePos);
+	LastMousePos[2] = 0;
+	
+	xmin = MIN(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
+	xmax = MAX(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
+	ymin = MIN(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
+	ymax = MAX(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
+
+	dx = xmax-xmin;
+	dy = ymax-ymin;
+	
+	/* use reasonable size for cut icon */
+	V3_EUKLIDNORM(VO_PXD(theViewedObj),unit);
+	V3_EUKLIDNORM(VO_PYD(theViewedObj),norm);
+	if (unit>norm)
+		unit = norm;
+	
+	unit *= 0.5;
+	
+	/* cut plane point in physical and screen system */
+	PP_ph = CUT_PP(theCut);
+	V3_TRAFOM4_V3(PP_ph,ObsTrafo,PP_sc);
+	
+	/* plane midpoint in screen system */
+	V3_TRAFOM4_V3(VO_PMP(theViewedObj),ObsTrafo,ScreenMid);
+	
+	/* we need an arbitrary vector in the cut plane:
+	   try orthogonalizing x-axis w.r.t. plane normal */
+	V3_COPY(CUT_PN(theCut),cut_pn);
+	V3_Normalize(cut_pn);
+	V3_Orthogonalize(ex,cut_pn,cut_px);
+	if (V3_Normalize(cut_px))
+	{
+		/* try orthogonalizing y-axis w.r.t. plane normal */
+		V3_Orthogonalize(ey,cut_pn,cut_px);
+		if (V3_Normalize(cut_px)) return (1);
+	}
+	V3_VECTOR_PRODUCT(cut_pn,cut_px,cut_py);
+	
+	/* scale normalized cut icon with unit */
+	V3_SCALE(unit,cut_pn);
+	V3_SCALE(0.5*unit,cut_px);
+	V3_SCALE(0.5*unit,cut_py);
+	
+	/* compute rotation matrix from physical to screen system and its inverse */
+	if (GetRotMatForTripod(VO_PXD(theViewedObj),VO_PYD(theViewedObj),ObsTrafoRot))
+		return (1);
+	IFDEBUG(graph,0)
+		if (CheckOrthogonality3x3(ObsTrafoRot)!=0)
+			return (1);
+	ENDDEBUG
+	M3_COPY(ObsTrafoRot,InvObsTrafoRot);
+	Transpose3x3(InvObsTrafoRot);
+	
+	/* init rotation matrix in screen system */
+	if ((*InitRotObsTrafo3d)(ScreenMid,OldMousePos,LastMousePos,dx,dy,RotMat))
+		return (1);
+	M3_TIMES_M3(InvObsTrafoRot,RotMat,AuxMat);
+	M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
+	
+	/* invert cut */
+	InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
+	
+	rejected = MouseMoved = FALSE;
+	while (MouseStillDown())
+	{
+		MousePosition(MousePos);
+		
+		if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
+		
+		/* inside picture? */
+		if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+		{
+			rejected = TRUE;
+			break;
+		}
+		
+		/* invert last cut icon */
+		InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
+		
+		V2_COPY(MousePos,LastMousePos);
+		MouseMoved = TRUE;
+		
+		if ((*RotObsTrafo3d)(ScreenMid,OldMousePos,LastMousePos,dx,dy,RotMat))
+			return (1);
+		M3_TIMES_M3(InvObsTrafoRot,RotMat,AuxMat);
+		M3_TIMES_M3(AuxMat,ObsTrafoRot,PhysRotMat);
+		
+		/* invert new cut icon */
+		InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
+	}
+	
+	/* invert last cut icon */
+	InvertCut(PP_sc,PP_ph,PhysRotMat,cut_pn,cut_px,cut_py);
+	
+	if (rejected) return (0);
+	/*if (!MouseMoved) return (0);*/
+	
+	/* check orthogonality */
+	IFDEBUG(graph,0)
+		if (CheckOrthogonality3x3(PhysRotMat)!=0)
+			return (1);
+	ENDDEBUG
+	
+	/* here we go: rotate plane normal */
+	V3_COPY(CUT_PN(theCut),help);
+	M3_TIMES_V3(PhysRotMat,help,CUT_PN(theCut));
+	
+	PIC_VALID(thePicture) = NO;
+	
+	return (0);
+}
+
+#define SLIDER_SIZE		3
+
+static void InvertControl (DOUBLE xa, DOUBLE xb, DOUBLE ym, DOUBLE curr)
+{
+	COORD_POINT fr,to;
+	
+	/* control */
+	fr.x = xa; fr.y = ym;
+	to.x = xb; to.y = ym;
+	UgInverseLine(fr,to);
+	to.x = xb-5;
+	UgMove(to);
+	UgText("N",TEXT_INVERSE);
+	
+	/* cross at current cut position */
+	fr.x = curr-SLIDER_SIZE; fr.y = ym-SLIDER_SIZE;
+	to.x = curr+SLIDER_SIZE; to.y = ym+SLIDER_SIZE;
+	UgInverseLine(fr,to);
+	fr.x = curr+SLIDER_SIZE; fr.y = ym-SLIDER_SIZE;
+	to.x = curr-SLIDER_SIZE; to.y = ym+SLIDER_SIZE;
+	UgInverseLine(fr,to);
+}
+
+static void InvertSlider (DOUBLE xm, DOUBLE dx, DOUBLE ym, DOUBLE curr, DOUBLE new)
+{
+	COORD_POINT fr,to;
+	char buffer[64];
+	
+	/* slider at new cut position */
+	fr.x = new; fr.y = ym-SLIDER_SIZE;
+	to.x = new; to.y = ym+SLIDER_SIZE;
+	UgInverseLine(fr,to);
+	
+	sprintf(buffer,"old: %+1.2f new: %+1.2f",2*(curr-xm)/dx,2*(new-xm)/dx);
+	DrawInfoBox(UGW_IFWINDOW(myWin),buffer);
+}
+
+INT MoveCut (PICTURE *thePicture, const INT *OldMousePos)
+{
+	VIEWEDOBJ *theViewedObj;
+	CUT *theCut;
+	DOUBLE dx,dy,xm,ym,xmin,xmax,ymin,ymax,curr,move,r,ppsect,mpsect;
+	DOUBLE PN[3];
+	INT LastMousePos[3],MousePos[2];
+	INT rejected,MouseMoved;
+	
+	if (thePicture==NULL)	return (1);
+	if (!PO_USESCUT(PIC_PO(thePicture))) return (1);
+	
+	theViewedObj = PIC_VO(thePicture);
+	theCut = VO_CUT(theViewedObj);
+	
+	if (VO_STATUS(theViewedObj) != ACTIVE)
+	{
+		PrintErrorMessage('W',"MoveCut","PlotObject and View have to be initialized");
+		return (0);
+	}
+	if (CUT_STATUS(theCut) != ACTIVE)
+	{
+		PrintErrorMessage('W',"MoveCut","cutting plane has to be initialized");
+		return (0);
+	}
+	
+	myWin = PIC_UGW(thePicture);
+	
+	V2_COPY(OldMousePos,LastMousePos);
+	
+	xmin = MIN(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
+	xmax = MAX(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
+	ymin = MIN(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
+	ymax = MAX(PIC_GLL(thePicture)[_Y_],PIC_GUR(thePicture)[_Y_]);
+	
+	xm = 0.5*(xmin+xmax);
+	ym = PIC_GLL(thePicture)[_Y_]+PIC_SIGN_Y(thePicture)*2*SLIDER_SIZE;
+	dx = xmax-xmin;
+	dy = ymax-ymin;
+	
+	/* project PP and MP onto PN and calc current cut pos */
+	r = PO_RADIUS(PIC_PO(thePicture));
+	V3_COPY(CUT_PN(theCut),PN);
+	V3_Normalize(PN);
+	V3_SCALAR_PRODUCT(CUT_PP(theCut),PN,ppsect);
+	V3_SCALAR_PRODUCT(PO_MIDPOINT(PIC_PO(thePicture)),PN,mpsect);
+	
+	/* current cut pos in units of 2r w.r.t midpoint-r in (0,1) */
+	curr = (ppsect-(mpsect-r))/(2.*r);
+	
+	/* current cut pos in screen units */
+	curr *= dx;
+	curr += xmin;
+	
+	/* invert slider */
+	InvertControl(xmin,xmax,ym,curr);
+	InvertSlider (xm,dx,ym,curr,LastMousePos[_X_]);
+	
+	rejected = MouseMoved = FALSE;
+	while (MouseStillDown())
+	{
+		MousePosition(MousePos);
+		
+		if (V2_ISEQUAL(MousePos,LastMousePos)) continue;
+		
+		/* inside picture? */
+		if ((MousePos[0]<xmin) || (MousePos[0]>xmax) || (MousePos[1]<ymin) || (MousePos[1]>ymax))
+		{
+			rejected = TRUE;
+			break;
+		}
+		
+		/* invert slider */
+		InvertSlider (xm,dx,ym,curr,LastMousePos[_X_]);
+		
+		V2_COPY(MousePos,LastMousePos);
+		MouseMoved = TRUE;
+		
+		/* invert slider */
+		InvertSlider (xm,dx,ym,curr,LastMousePos[_X_]);
+	}
+	
+	/* invert slider */
+	InvertControl(xmin,xmax,ym,curr);
+	InvertSlider (xm,dx,ym,curr,LastMousePos[_X_]);
+	
+	if (rejected) return (0);
+	/*if (!MouseMoved) return (0);*/
+	
+	/* cut movement in units of 2r in (-1,1) */
+	move = 2*(LastMousePos[_X_]-xm)/dx;
+	
+	/* in pysical coordinates */
+	move *= r;
+	
+	/* relative to projection of midpoint */
+	move += mpsect-ppsect;
+	
+	/* here we go: move cut plane point */
+	V3_LINCOMB(1.0,CUT_PP(theCut),move,PN,CUT_PP(theCut));
 	
 	PIC_VALID(thePicture) = NO;
 	
@@ -16245,10 +18004,20 @@ INT InitWOP (void)
 	ELEMWISEWORK *theEWW;
 	VECTORWISEWORK *theVWW;
     RECURSIVEWORK *theREW;
+    EXTERNWORK *theEXW;
 	#ifdef __TWODIM__
-	    EXTERNWORK *theEXW;
 		NODEWISEWORK *theNWW;
 	#endif
+	
+	/* set function ptrs for RotatePicture and RotateCut */
+	RotObsTrafo3d		= EulerRotObsTrafo3d;
+	InitRotObsTrafo3d	= EulerInitRotObsTrafo3d;
+	
+	/* allocate storage in general mg user data:
+	   store view to check neccessity for ordering elements */
+	wopMGUDid = GetNewBlockID();
+	
+	if (DefineMGUDBlock(wopMGUDid,sizeof(WOP_MG_DATA))!=GM_OK) return (__LINE__);
 	
 	/* create WorkHandling for 'Matrix' */
 	if ((thePOH=CreatePlotObjHandling ("Matrix"))	   == NULL) return (__LINE__);
@@ -16654,6 +18423,21 @@ INT InitWOP (void)
 			if (AllocateControlEntry(FLAG_CW,CUTMODE_LEN,&ce_CUTMODE) != GM_OK)
 				return (__LINE__);
 	
+		/* create WorkHandling for 'VecMat' */
+		if ((thePOH=CreatePlotObjHandling ("VecMat")) 	== NULL) return (__LINE__);
+		
+		/* draw work */
+		POH_NBCYCLES(thePOH,DRAW_WORK) = 1;
+		
+		theWP = POH_WORKPROGS(thePOH,DRAW_WORK,0);
+		WP_WORKMODE(theWP) = EXTERN;
+		theEXW = WP_EXTERNWISE(theWP);
+		theEXW->EXT_PreProcessProc				= EXT_PreProcess_VecMat3D;
+		theEXW->EXT_EvaluateProc				= EXT_VecMatEval3D;
+		theEXW->EXT_ExecuteProc					= Draw3D;
+		theEXW->EXT_PostProcessProc				= NULL;
+		
+		
 		/* create WorkHandling for 'Grid' */
 		if ((thePOH=CreatePlotObjHandling ("Grid")) 	== NULL) return (__LINE__);
 		
@@ -16686,6 +18470,38 @@ INT InitWOP (void)
 		theEWW->EW_GetNextElementProcProc		= EW_GetNextElement_vert_bw_up_Proc;
 		theEWW->EW_EvaluateProc 				= EW_ElementEval3D;
 		theEWW->EW_ExecuteProc					= EW_SelectElement3D;
+		theEWW->EW_PostProcessProc				= NULL;
+
+		/* selectnode work */
+		POH_NTOOLFUNC(thePOH,handTool) = 1;
+		strcpy(POH_TOOLNAME(thePOH,handTool,0),"select node");
+		
+		POH_NBCYCLES(thePOH,SELECTNODE_WORK) = 1;
+
+		theWP = POH_WORKPROGS(thePOH,SELECTNODE_WORK,0);
+		WP_WORKMODE(theWP) = ELEMENTWISE;
+		theEWW = WP_ELEMWISE(theWP);
+		theEWW->EW_PreProcessProc				= EW_PreProcess_SelectNode3D;
+		theEWW->EW_GetFirstElementProcProc		= EW_GetFirstElement_vert_bw_up_Proc;
+		theEWW->EW_GetNextElementProcProc		= EW_GetNextElement_vert_bw_up_Proc;
+		theEWW->EW_EvaluateProc 				= EW_ElementEval3D;
+		theEWW->EW_ExecuteProc					= EW_SelectNode3D;
+		theEWW->EW_PostProcessProc				= NULL;
+
+		/* selectvector work */
+		POH_NTOOLFUNC(thePOH,crossTool) = 1;
+		strcpy(POH_TOOLNAME(thePOH,crossTool,0),"select vector");
+		
+		POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 1;
+
+		theWP = POH_WORKPROGS(thePOH,SELECTVECTOR_WORK,0);
+		WP_WORKMODE(theWP) = ELEMENTWISE;
+		theEWW = WP_ELEMWISE(theWP);
+		theEWW->EW_PreProcessProc				= EW_PreProcess_SelectVec3D;
+		theEWW->EW_GetFirstElementProcProc		= EW_GetFirstElement_vert_bw_up_Proc;
+		theEWW->EW_GetNextElementProcProc		= EW_GetNextElement_vert_bw_up_Proc;
+		theEWW->EW_EvaluateProc 				= EW_ElementEval3D;
+		theEWW->EW_ExecuteProc					= EW_SelectVec3D;
 		theEWW->EW_PostProcessProc				= NULL;
 
 		
