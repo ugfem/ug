@@ -90,6 +90,7 @@ clean:
 #	cd machines/$(ARCHDIR); make clean; cd ..;
 
 ifdef:
+	cd dddif; make -f Makefile.dddif clean; cd ..;
 	cd gm; make -f Makefile.gm clean; cd ..;
 	cd numerics; make -f Makefile.numerics clean; cd ..;
 	cd graph; make -f Makefile.graph clean; cd ..;
