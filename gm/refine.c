@@ -1069,7 +1069,7 @@ static INT ComputePatterns (GRID *theGrid)
 static INT CorrectTetrahedronSidePattern (ELEMENT *theElement, INT i, ELEMENT *theNeighbor, INT j)
 {
 	INT		k;
-	INT		theEdgeNum,theEdgePattern;
+	INT		theEdgeNum,theEdgePattern=0;
 	INT		NbEdgeNum,NbEdgePattern,NbSidePattern,NbSideMask;
 	EDGE	*theEdge,*NbEdge;
 
