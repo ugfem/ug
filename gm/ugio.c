@@ -1886,6 +1886,11 @@ nparfiles = UG_GlobalMinINT(nparfiles);
  */
 /****************************************************************************/
 
+#ifdef __MWCW__
+#pragma global_optimizer on
+#pragma optimization_level 1
+#endif
+
 static DOUBLE LocalCoord[2][4][2]=
 { {{ 0, 0},{1, 0},{0,1},{ 0,0}},
   {{-1,-1},{1,-1},{1,1},{-1,1}} };
@@ -2056,7 +2061,12 @@ INT SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, 
 
   return(0);
 }
+
+#ifdef __MWCW__
+#pragma global_optimizer off
 #endif
+
+#endif  /* __TWODIM__ */
 
 INT InitUgio ()
 {
