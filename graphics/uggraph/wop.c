@@ -20549,10 +20549,35 @@ static INT EW_PreProcess_Isosurface3D(PICTURE *thePicture, WORK *theWork)
 	return 0;
 }
 
+static int ComparePolygons(const void *poly1, const void *poly2)
+{
+	POLY *poly[2];
+	DOUBLE_VECTOR Triangle[2][4];
+	COORD_POINT ScreenPoint[2][4];
+	INT i, j, Corners[2];
+
+	poly[0] = (POLY *)poly1;
+	poly[1] = (POLY *)poly2;
+
+	Corners[0] = poly[0]->n;
+	Corners[1] = poly[1]->n;
+
+	if (Corners[0] == 0 || Corners[1] == 0)
+		return 0;
+
+	for (i = 0; i < 2; i++)
+		for (j = 0; j < Corners[i]; j++) {
+			V3_TRAFOM4_V3(poly[i]->x[j], ObsTrafo, Triangle[i][j]);
+			(*OBS_ProjectProc)(Triangle[i][j], ScreenPoint[i]+j);
+		}
+
+	return CompareQuadrilaterals(Triangle, ScreenPoint, Corners);
+}
+
 static void SortPolygons(POLY *poly, INT npoly)
 {
-	/* TODO: sort polygons back to front */
-	return;
+	/* This is a special version from ug/low/misc.c!! */
+	SelectionSort(poly, npoly, sizeof(POLY), ComparePolygons);
 }
 
 static DOUBLE LightPolygon(POLY *poly)
@@ -20629,7 +20654,7 @@ static INT EW_Isosurface3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	/* extract & plot isosurface polygons */
 	ExtractElement(&cell, Isosurface3D_lambda, poly, &npoly);
 	if (npoly > 0) {
-		if (!do_bullet) SortPolygons(poly, npoly);
+		if (!do_bullet && npoly > 1) SortPolygons(poly, npoly);
 		for (i = 0; i < npoly; i++) {
 			if (poly[i].n == 0) continue;
 			if (Isosurface3D_AmbientLight < 1.0)
