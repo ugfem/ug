@@ -82,5 +82,6 @@ INT InvertSpdMatrix (INT n, DOUBLE mat[LOCAL_DIM][LOCAL_DIM],
                      DOUBLE invmat[LOCAL_DIM][LOCAL_DIM]);
 INT SolveFullMatrix (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs);
 INT InvertFullMatrix_piv (INT n, DOUBLE *mat, DOUBLE *inv);
+INT SolveFullMatrix2 (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs);
 
 #endif

@@ -720,3 +720,35 @@ INT InvertFullMatrix_piv (INT n, DOUBLE *mat, DOUBLE *inv)
 
   return (NUM_OK);
 }
+
+INT SolveFullMatrix2 (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
+{
+  DOUBLE imat[LOCAL_DIM*LOCAL_DIM];
+  DOUBLE mat1[LOCAL_DIM*LOCAL_DIM];
+  DOUBLE sum;
+  INT i,j;
+
+  for (i=0; i<n*n; i++)
+    mat1[i] = mat[i];
+  if (InvertFullMatrix_piv(n,mat,imat))
+    return(NUM_ERROR);
+  for (i=0; i<n; i++) {
+    sum = 0.0;
+    for (j=0; j<n; j++)
+      sum += imat[i*n+j] * rhs[j];
+    sol[i] = sum;
+  }
+  for (i=0; i<n; i++) {
+    sum = rhs[i];
+    for (j=0; j<n; j++)
+      sum -= mat1[i*n+j] * sol[j];
+    rhs[i] = sum;
+  }
+  for (i=0; i<n; i++) {
+    sum = 0.0;
+    for (j=0; j<n; j++)
+      sum += imat[i*n+j] * rhs[j];
+    sol[i] += sum;
+  }
+  return(NUM_OK);
+}
