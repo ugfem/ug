@@ -506,13 +506,12 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
 
    SYNOPSIS:
    MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName,
-      char *domain, char *problem, char *format, unsigned long heapSize);
+   char *BVPName, char *format, unsigned long heapSize);
 
    PARAMETERS:
    .  MultigridName - Name of the new 'MULTIGRID' structure in memory.
    .  FileName - Name of the file to be read.
-   .  domain - `Name` of the 'DOMAIN' to be used for the 'MULTIGRID'.
-   .  problem - `Name` of the 'PROBLEM' to be used for the 'MULTIGRID'.
+   .  BVPName - `Name` of the BVP used for the 'MULTIGRID'.
    .  format - `Name` of the 'FORMAT' to be used for the 'MULTIGRID'.
    .  heapSize - Size of the heap in bytes that will be allocated for the 'MULTIGRID'.
 
@@ -526,7 +525,8 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
    D*/
 /****************************************************************************/
 
-MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, char *problem, char *format, unsigned long heapSize)
+MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
+                          char *format, unsigned long heapSize)
 {
   FILE *stream;
   FORMAT *theFormat;
