@@ -127,11 +127,13 @@
 /****************************************************************************/
 
 /* local midpoints */
-static DOUBLE_VECTOR_2D LMP_Triangle 		= {0.33333333333, 0.33333333333};
+static DOUBLE_VECTOR_2D LMP_Triangle 		= {0.333333333333333333, 
+											   0.333333333333333333};
 static DOUBLE_VECTOR_2D LMP_Quadrilateral	= {0.5, 0.5};
 static DOUBLE_VECTOR_3D LMP_Tetrahedron		= {0.25, 0.25, 0.25};
 static DOUBLE_VECTOR_3D LMP_Pyramid   		= {0.5, 0.5, 0.33333333333333333};
-static DOUBLE_VECTOR_3D LMP_Prism    		= {0.33333333333,0.3333333333,0.5};
+static DOUBLE_VECTOR_3D LMP_Prism    		= {0.333333333333333333,
+                                               0.333333333333333333,0.5};
 static DOUBLE_VECTOR_3D LMP_Hexahedron		= {0.5, 0.5, 0.5};
 
 /* RCS string */

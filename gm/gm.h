@@ -759,7 +759,7 @@ struct multigrid {
 
   /* variables */
   INT status;                                           /* possible values, see above			*/
-  INT magic_cookie;                                     /* used for identification			*/
+  INT magic_cookie;                                     /* used for identification			    */
   INT vertIdCounter;                                    /* count objects in that multigrid		*/
   INT nodeIdCounter;                                    /* count objects in that multigrid		*/
   INT elemIdCounter;                                    /* count objects in that multigrid		*/
@@ -1670,14 +1670,12 @@ extern CONTROL_ENTRY
 #define NSONS(p)                                                CW_READ(p,NSONS_CE)
 #define SETNSONS(p,n)                                   CW_WRITE(p,NSONS_CE,n)
 
+/* macros for flag word                           */
 #define NEWEL_CE                                                48
 #define NEWEL_SHIFT                                     15
 #define NEWEL_LEN                                               1
 #define NEWEL(p)                                                CW_READ(p,NEWEL_CE)
 #define SETNEWEL(p,n)                                   CW_WRITE(p,NEWEL_CE,n)
-
-/* macros for flag word                           */
-/* are obviously all for internal use */
 
 /* the property field */
 #define SUBDOMAIN_CE                    75
@@ -2040,7 +2038,7 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 
 /* control word identifier */
 #define MULTIGRID_STATUS                                11
-#define MULTIGRID_STATUS_OFFSET                 (sizeof(ENVDIR))
+#define MULTIGRID_STATUS_OFFSET           ((sizeof(ENVDIR))/sizeof(unsigned INT))
 
 #define MGSTATUS(p)                     ((p)->status)
 #define SETMGSTATUS(p,n)                ((p)->status|=n)

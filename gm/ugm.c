@@ -1115,6 +1115,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   SETOBJT(pe,objtype);
   SETTAG(pe,tag);
   SETLEVEL(pe,theGrid->level);
+  SETNEWEL(pe,1);
         #ifdef ModelP
   DDD_AttrSet(PARHDRE(pe),theGrid->level);
   DDD_PrioritySet(PARHDRE(pe),PrioMaster);
