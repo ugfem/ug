@@ -342,7 +342,7 @@ static INT OrderBW (NP_ORDER *theNP, INT level, MATDATA_DESC *A, INT *result)
   }
   assert(i==n);
   for (i=0; i<n; i++) GRID_UNLINK_VECTOR(theGrid,vlist[i]);
-  for (i=0; i<n; i++) GRID_LINK_VECTOR(theGrid,vlist[i],PrioMaster);
+  for (i=0; i<n; i++) GRID_LINK_VECTOR(theGrid,vlist[i],PRIO(vlist[i]));
   ReleaseTmpMem(theHeap,MarkKey);
 
   /* determine bandwidth */
@@ -563,7 +563,7 @@ static INT DFCFCLL_ModePost (GRID *theGrid)
   INT i;
 
   for (i=0; i<DFCFCLL_n; i++)
-    GRID_LINK_VECTOR(theGrid,DFCFCLL_vlist[i],PrioMaster);
+    GRID_LINK_VECTOR(theGrid,DFCFCLL_vlist[i],PRIO(DFCFCLL_vlist[i]));
 
   theHeap = MGHEAP(MYMG(theGrid));
   ReleaseTmpMem(theHeap,DFCFCLL_MarkKey);
