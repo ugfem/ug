@@ -1574,7 +1574,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   MG_NPROPERTY(theMG) = BVPD_NSUBDOM(theBVPDesc);
         #endif
   RESETMGSTATUS(theMG);
-
+  MG_GENPURP(theMG) = NULL;
 
   theMG->theHeap = theHeap;
   SELECTIONSIZE(theMG) = 0;

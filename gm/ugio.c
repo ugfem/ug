@@ -630,7 +630,7 @@ static INT nHierElements (ELEMENT *theElement, INT *n)
 
 #endif
 
-static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
+static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char * type, char *comment)
 {
   GRID *theGrid;
   NODE *theNode;
@@ -646,42 +646,31 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   MGIO_CG_ELEMENT *cg_element;
   MGIO_REFINEMENT *refinement;
   MGIO_BD_GENERAL bd_general;
-  INT i,j,k,niv,nbv,nie,nbe,n,nhe,hr_max;
+  INT i,j,k,niv,nbv,nie,nbe,n,nhe,hr_max,mode;
   INT RefRuleOffset[TAGS];
   char *p;
   BNDP **BndPList;
-#       ifndef __MWCW__
-  char sysCom[NAMESIZE];
-  INT zip;
-#       endif
+  char filename[NAMESIZE];
 
   /* check */
   if (theMG==NULL) return (1);
   theHeap = MGHEAP(theMG);
   MarkTmpMem(theHeap);
 
-#ifndef __MWCW__
-  /* zip if */
-  zip = 0;
-  p = name + strlen(name) - 3;
-  if (strcmp(p,".gz")==0)
-  {
-    zip = 1;
-    p[0] = '\0';
-  }
-#endif
-
   /* open file */
-  if (Write_OpenMGFile (name)) return (1);
+  if (strcmp(type,"dbg")==0) mode = BIO_DEBUG;
+  else if (strcmp(type,"asc")==0) mode = BIO_ASCII;
+  else if (strcmp(type,"bin")==0) mode = BIO_BIN;
+  else return (1);
+  strcpy(filename,name);
+  strcat(filename,".ug.mg.");
+  strcat(filename,type);
+  if (Write_OpenMGFile (filename)) return (1);
 
   /* write general information */
   theBVP = MG_BVP(theMG);
   if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (1);
-  p = name + strlen(name) - 4;
-  if (strcmp(p,".dbg")==0) mg_general.mode = BIO_DEBUG;
-  else if (strcmp(p,".asc")==0) mg_general.mode = BIO_ASCII;
-  else if (strcmp(p,".bin")==0) mg_general.mode = BIO_BIN;
-  else return (1);
+  mg_general.mode                 = mode;
   mg_general.dim                  = DIM;
   mg_general.magic_cookie = MG_MAGIC_COOKIE(theMG);
   mg_general.heapsize             = MGHEAP(theMG)->size/1024;
@@ -829,20 +818,14 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *comment)
   /* close file */
   if (CloseMGFile ()) return (1);
 
-#ifndef __MWCW__
-  /* zip if */
-  if (zip)
-  {
-    strcpy(sysCom,"gzip -f ");
-    strcat(sysCom,name);
-    if (system(sysCom)==-1) return (1);
-  }
-#endif
+  /* saved */
+  MG_SAVED(theMG) = 1;
+  strcpy(MG_FILENAME(theMG),filename);
 
   return (0);
 }
 
-INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
+INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment)
 {
   char *p;
 
@@ -854,7 +837,7 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   }
   else
   {
-    if (SaveMultiGrid_SPF (theMG,name,comment)) return (1);
+    if (SaveMultiGrid_SPF (theMG,name,type,comment)) return (1);
   }
   return (0);
 }
@@ -1154,7 +1137,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   return (0);
 }
 
-MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, char *format, unsigned long heapSize)
+MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize)
 {
   MULTIGRID *theMG;
   GRID *theGrid;
@@ -1174,33 +1157,18 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   BVP *theBVP;
   BVP_DESC theBVPDesc;
   MESH theMesh;
-  char FormatName[NAMESIZE], BndValName[NAMESIZE], MGName[NAMESIZE];
+  char FormatName[NAMESIZE], BndValName[NAMESIZE], MGName[NAMESIZE], filename[NAMESIZE];
   INT i,j,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],**Element_corner_ids_uniq_subdom,*Element_corner_ids,max,**Element_nb_uniq_subdom,*Element_nb_ids;
-#       ifndef __MWCW__
-  char sysCom[NAMESIZE],*p;
-  INT zip;
-#       endif
 #       ifdef __THREEDIM__
   INT k;
   ELEMENT *theNeighbor;
 #       endif
 
-#ifndef __MWCW__
-  /* unzip if */
-  zip = 0;
-  p = FileName + strlen(FileName) - 3;
-  if (strcmp(p,".gz")==0)
-  {
-    zip = 1;
-    strcpy(sysCom,"gzip -d -f ");
-    strcat(sysCom,FileName);
-    if (system(sysCom)==-1) return (NULL);
-    p[0] = '\0';
-  }
-#endif
-
   /* open file */
-  if (Read_OpenMGFile (FileName))                                                                         {return (NULL);}
+  strcpy(filename,name);
+  strcat(filename,".ug.mg.");
+  strcat(filename,type);
+  if (Read_OpenMGFile (filename))                                                                         {return (NULL);}
   if (Read_MG_General(&mg_general))                                                                       {CloseMGFile (); return (NULL);}
   if (mg_general.dim!=DIM)                                                                                        {UserWrite("ERROR: wrong dimension\n");CloseMGFile (); return (NULL);}
   if (strcmp(mg_general.version,MGIO_VERSION)!=0)                                         {UserWrite("ERROR: wrong version\n");CloseMGFile (); return (NULL);}
@@ -1400,15 +1368,9 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName, ch
   ReleaseTmpMem(theHeap);
   if (CloseMGFile ())                                                                                                     {DisposeMultiGrid(theMG); return (NULL);}
 
-#ifndef __MWCW__
-  /* zip if */
-  if (zip)
-  {
-    strcpy(sysCom,"gzip -f ");
-    strcat(sysCom,FileName);
-    if (system(sysCom)==-1)                                                                                 {DisposeMultiGrid(theMG); return (NULL);}
-  }
-#endif
+  /* saved */
+  MG_SAVED(theMG) = 1;
+  strcpy(MG_FILENAME(theMG),filename);
 
   return (theMG);
 }
