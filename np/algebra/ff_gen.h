@@ -80,7 +80,9 @@
 #endif
 
 /* if defined, special BV communication routines are used */
+#ifdef FF_ModelP
 #define FFCOMM
+#endif
 
 /* solve subproblems in MultWithMInv exactly by recursive solving */
 #define MINV_EXACTQQQ
