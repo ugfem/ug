@@ -90,7 +90,7 @@ INT l_coord_project (GRID *g, const VECDATA_DESC *x)
 	DDD_IFAOneway(BorderVectorIF, GRID_ATTR(g), IF_BACKWARD, DIM * sizeof(DOUBLE),
 				  Gather_CoordVectorComp, Scatter_CoordVectorComp);
 
-	DDD_IFAOneway(VectorVIF, GRID_ATTR(g), IF_BACKWARD, DIM * sizeof(DOUBLE),
+	DDD_IFAOneway(VectorIF, GRID_ATTR(g), IF_FORWARD, DIM * sizeof(DOUBLE),
 				  Gather_CoordVectorComp, Scatter_CoordVectorComp);
 
 	return NUM_OK;
@@ -249,8 +249,8 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
         RETURN(1);
     }
 
-    GlobalVec1 = FIRSTVECTOR(grid);
-    GlobalVec2 = FIRSTVECTOR(grid);
+    GlobalVec1 = PFIRSTVECTOR(grid);
+    GlobalVec2 = PFIRSTVECTOR(grid);
     GlobalIds = theObj->ids;
     LineWidth = theObj->LineWidth;
 
@@ -283,8 +283,12 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
 		for( i=0; i>=level; i-- )
 		{
 			grid = GRID_ON_LEVEL(mg,i);
-			for( vec=PFIRSTVECTOR(grid); vec!=NULL; vec=SUCCVC(vec) )
+
+			// only for master neccessary
+			for( vec=FIRSTVECTOR(grid); vec!=NULL; vec=SUCCVC(vec) )
 			{
+				if( !VCCOARSE(vec) )
+					continue;
 				im = VISTART(vec);
 				if( im!=NULL && MNEXT(im)==NULL )
 				{	// this vector has exactly 1 interpolation matrix entry; thus it is a coarse grid vector and its coord value must be restricted to its coarse grid instance
@@ -295,7 +299,7 @@ static INT PreProcessFAMGGraph (PICTURE *thePicture, WORK *theWork)
 			}
 			
 			#ifdef ModelP
-			// communicate the coord info to copies
+			// communicate the coord info from master to all copies
 			l_coord_project (DOWNGRID(grid), theObj->CoordVec);
 			#endif
 		}
