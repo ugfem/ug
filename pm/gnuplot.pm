@@ -84,6 +84,22 @@ sub gnuplot
 			return;
         }
 	
+		# command 'write'
+        if ($command eq "write")
+        {
+			my ($s,$i);
+            if(@_!=3)
+            {
+                die "ERROR: usage: gnuplot 'write',<filename>,<array-reference>\n";
+            }
+			open(FILE,">$_[1]");
+			$s=$_[2];
+			for ($i=0; $i<@$s; $i+=2) { print FILE "$$s[$i] $$s[$i+1]\n"; }
+			close(FILE);
+			
+			return;
+        }
+	
 		# std command
         if (@_==1)
         {
