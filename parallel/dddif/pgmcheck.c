@@ -454,9 +454,9 @@ INT CheckElementPrio (ELEMENT *theElement)
  */
 /****************************************************************************/
 
-static int Gather_ObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+static int Gather_ElemObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
-  INT i;
+  INT i,j;
   ELEMENT *theElement = (ELEMENT *)obj;
 
   /* copy node gids into buffer */
@@ -467,18 +467,19 @@ static int Gather_ObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO p
 
         #ifdef __THREEDIM__
   /* copy edge gids into buffer */
-  for (i=CORNERS_OF_ELEM(theElement); i<EDGES_OF_ELEM(theElement); i++)
+  for (i=CORNERS_OF_ELEM(theElement),j=0; i<EDGES_OF_ELEM(theElement); i++,j++)
   {
-    EDGE *theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
-                            CORNER_OF_EDGE_PTR(theElement,i,1));
+    EDGE *theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),
+                            CORNER_OF_EDGE_PTR(theElement,j,1));
+    assert(theEdge!=NULL);
     ((unsigned int *)data)[i] = GID(theEdge);
   }
         #endif
 }
 
-static int Scatter_ObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+static int Scatter_ElemObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
 {
-  INT i;
+  INT i,j;
   ELEMENT *theElement = (ELEMENT *)obj;
   NODE    *theNode;
   EDGE    *theEdge;
@@ -499,10 +500,11 @@ static int Scatter_ObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
 
         #ifdef __THREEDIM__
   /* compare edge gids with buffer gids */
-  for (i=CORNERS_OF_ELEM(theElement); i<EDGES_OF_ELEM(theElement); i++)
+  for (i=CORNERS_OF_ELEM(theElement),j=0; i<EDGES_OF_ELEM(theElement); i++,j++)
   {
-    theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,i,0),
-                      CORNER_OF_EDGE_PTR(theElement,i,1));
+    theEdge = GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),
+                      CORNER_OF_EDGE_PTR(theElement,j,1));
+    assert(theEdge!=NULL);
     if (((unsigned int *)data)[i] != GID(theEdge))
     {
       UserWriteF(PFMT "ELEM=" EID_FMTX " #ERROR#: EDGE=" ID_FMTX " gids don't match "
@@ -515,20 +517,127 @@ static int Scatter_ObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO 
         #endif
 }
 
+#ifdef __THREEDIM__
+static int Gather_EdgeObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  INT i;
+  EDGE *theEdge = (EDGE *)obj;
+  NODE *theNode0, *theNode1, *MidNode;
+
+  i = 0;
+
+  theNode0 = NBNODE(LINK0(theEdge));
+  theNode1 = NBNODE(LINK1(theEdge));
+  MidNode  = MIDNODE(theEdge);
+
+  /* copy node gids into buffer */
+  ((unsigned int *)data)[i++] = GID(theNode0);
+  ((unsigned int *)data)[i++] = GID(theNode1);
+  if (MidNode != NULL)
+    ((unsigned int *)data)[i++] = GID(MidNode)+1;
+  else
+    ((unsigned int *)data)[i++] = 0;
+
+}
+
+static int Scatter_EdgeObjectGids (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PRIO prio)
+{
+  INT i,remotegid;
+  EDGE *theEdge = (EDGE *)obj;
+  NODE *theNode0, *theNode1, *MidNode;
+  int *proclist = PROCLIST(theEdge);
+
+  /* this check allows no edges copies of type VGHOST */
+  /* since then midnode might be NULL due to local    */
+  /* load balancing situation                         */
+  while (*proclist != -1)
+  {
+    if (VGHOSTPRIO(*(proclist+1))) return(0);
+    proclist += 2;
+  }
+
+  i = 0;
+
+  theNode0 = NBNODE(LINK0(theEdge));
+  theNode1 = NBNODE(LINK1(theEdge));
+  MidNode  = MIDNODE(theEdge);
+
+  /* compare node0 gids with buffer gids */
+  if (((unsigned int *)data)[i] != GID(theNode0))
+  {
+    UserWriteF(PFMT "EDGE=" ID_FMTX " #ERROR#: NODE0=" ID_FMTX " gids don't match "
+               "local=%08x remote=%08x remoteproc/prio=%d/%d\n",
+               me,ID_PRTX(theEdge),ID_PRTX(theNode0),
+               GID(theNode0),((unsigned int *)data)[i],proc,prio);
+    check_distributed_objects_errors++;
+    assert(0);
+  }
+  i++;
+
+  /* compare node1 gids with buffer gids */
+  if (((unsigned int *)data)[i] != GID(theNode1))
+  {
+    UserWriteF(PFMT "EDGE=" ID_FMTX " #ERROR#: NODE1=" ID_FMTX " gids don't match "
+               "local=%08x remote=%08x remoteproc/prio=%d/%d\n",
+               me,ID_PRTX(theEdge),ID_PRTX(theNode1),
+               GID(theNode1),((unsigned int *)data)[i],proc,prio);
+    check_distributed_objects_errors++;
+    assert(0);
+  }
+  i++;
+
+  /* compare node0 gids with buffer gids */
+  if (((unsigned int *)data)[i]>0)
+    remotegid = ((unsigned int *)data)[i]-1;
+
+  if (MidNode != NULL)
+  {
+    if (remotegid != GID(MidNode))
+    {
+      UserWriteF(PFMT "EDGE=" ID_FMTX " #ERROR#: MIDNODE=" ID_FMTX " gids don't match "
+                 "local=%08x remote=%08x remoteproc/prio=%d/%d\n",
+                 me,ID_PRTX(theEdge),ID_PRTX(MidNode),
+                 GID(MidNode),remotegid,proc,prio);
+      check_distributed_objects_errors++;
+      assert(0);
+    }
+  }
+  else
+  {
+
+    if (remotegid != 0)
+    {
+      UserWriteF(PFMT "EDGE=" ID_FMTX " #ERROR#: MIDNODE=NULL gids don't match "
+                 "local=%08x remote=%08x remoteproc/prio=%d/%d\n",
+                 me,ID_PRTX(theEdge),0,remotegid,proc,prio);
+      check_distributed_objects_errors++;
+      assert(0);
+    }
+  }
+  i++;
+}
+#endif
+
 INT CheckDistributedObjects (GRID *theGrid)
 {
   INT nerrors;
         #ifdef __TWODIM__
-  INT size = 4;         /* compare the 3/4 node ids */
+  INT size = MAX_CORNERS_OF_ELEM;       /* compare the 3/4 node ids */
         #endif
         #ifdef __THREEDIM__
-  INT size = 20;        /* compare 8 nodes + 12 edges */
+  INT size = MAX_CORNERS_OF_ELEM+MAX_EDGES_OF_ELEM;             /* compare 8 nodes + 12 edges */
         #endif
 
   check_distributed_objects_errors = 0;
 
   DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_BACKWARD,size*sizeof(unsigned int),
-                 Gather_ObjectGids, Scatter_ObjectGids);
+                 Gather_ElemObjectGids, Scatter_ElemObjectGids);
+
+        #ifdef __THREEDIM__
+  if (0)
+    DDD_IFAOnewayX(BorderEdgeSymmIF,GRID_ATTR(theGrid),IF_BACKWARD,3*sizeof(unsigned int),
+                   Gather_EdgeObjectGids, Scatter_EdgeObjectGids);
+        #endif
 
   nerrors = check_distributed_objects_errors;
   return(nerrors);
