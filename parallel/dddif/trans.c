@@ -37,7 +37,7 @@
 #include "evm.h"
 #include "general.h"
 #include "ugm.h"
-
+#include "debug.h"
 
 /****************************************************************************/
 /*																			*/
@@ -53,8 +53,8 @@ enum GhostCmds { GC_Keep, GC_ToMaster, GC_Delete };
 
 
 #define XferElement(elem,dest,prio) \
-  { printf("%4d: XferElement(): XferCopy elem=%08x dest=%d prio=%d\n", \
-           me,DDD_InfoGlobalId(PARHDRE(elem)), dest, prio); \
+  { PRINTDEBUG(dddif,1,("%4d: XferElement(): XferCopy elem=%08x dest=%d prio=%d\n", \
+                        me,DDD_InfoGlobalId(PARHDRE(elem)), dest, prio)); \
     DDD_XferCopyObjX(PARHDRE(elem), dest, prio, \
                      (OBJT(elem)==BEOBJ) ?   \
                      BND_SIZE_TAG(TAG(elem)) :   \
@@ -252,8 +252,8 @@ static void XferGridWithOverlap (GRID *theGrid)
       if (!has_local_nb)
       {
         /* element isn't needed */
-        printf("%d: XferGridWithOverlap(): XferDel elem=%d to p=%d prio=%d\n",
-               me,DDD_InfoGlobalId(PARHDRE(elem)),PARTITION(elem),PrioGhost);
+        PRINTDEBUG(dddif,1,("%d: XferGridWithOverlap(): XferDel elem=%d to p=%d prio=%d\n",
+                            me,DDD_InfoGlobalId(PARHDRE(elem)),PARTITION(elem),PrioGhost));
         DDD_XferDeleteObj(PARHDRE(elem));
       }
     }
