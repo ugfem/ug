@@ -539,6 +539,7 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #define DOUBLE double
 #define COORD  float
 #define SCREEN_COORD  float
+#define __SWAPBYTES__ 1
 
 /* memory */
 #define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
