@@ -48,6 +48,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <assert.h>
 
 #include "pvm3.h"
 
@@ -526,6 +527,7 @@ int Broadcast (void *data, int size)
     if (VERBOSE)
     {
       printf("%4d: BCAST dst=xx id=%5d data=%8x size=%7d\n",me,TREEID,data,size);
+      fflush(stdout);
     }
     error = pvm_mcast(&tids[1],procs-1,TREEID);
     if (error<0) return(-error);
@@ -535,6 +537,7 @@ int Broadcast (void *data, int size)
     if (VERBOSE)
     {
       printf("%4d: BCRCV src= 0 id=%5d data=%8x size=%7d\n",me,TREEID,data,size);
+      fflush(stdout);
     }
     bufid = pvm_recv(tids[0],TREEID);
     if (bufid<0) return(1);
@@ -622,6 +625,7 @@ int SendSync (VChannelPtr vc, void *data, int size)
   if (VERBOSE)
   {
     printf("%4d: SSEND dst=%2d id=%5d data=%8x size=%7d\n",me,GETPROC(vc),GETID(vc),data,size);
+    fflush(stdout);
   }
   error = pvm_send(tids[GETPROC(vc)],GETID(vc));
   if (error<0) return(-1);
@@ -635,6 +639,7 @@ int RecvSync (VChannelPtr vc, void *data, int size)
   if (VERBOSE)
   {
     printf("%4d: SRECV src=%2d id=%5d data=%8x size=%7d\n",me,GETPROC(vc),GETID(vc),data,size);
+    fflush(stdout);
   }
   bufid = pvm_recv(tids[GETPROC(vc)],GETID(vc));
   if (bufid<0) return(-1);
@@ -671,6 +676,7 @@ msgid SendASync (VChannelPtr vc, void *data, int size, int *error)
   if (VERBOSE)
   {
     printf("%4d: ASEND dst=%2d id=%5d data=%8x size=%7d\n",me,GETPROC(vc),GETID(vc),data,size);
+    fflush(stdout);
   }
   info = pvm_send(tids[GETPROC(vc)],GETID(vc));
   if (info<0)
@@ -689,6 +695,7 @@ int InfoASend (VChannelPtr vc, msgid m)
   if (VERBOSE)
   {
     printf("%4d: ISEND dst=%2d id=%5d msid=%8x\n",me,GETPROC(vc),GETID(vc),m);
+    fflush(stdout);
   }
   return(1);
 }
@@ -726,6 +733,7 @@ msgid RecvASync (VChannelPtr vc, void *data, int size, int *error)
   if (VERBOSE)
   {
     printf("%4d: ARECV src=%2d id=%5d data=%8x size=%7d msid=%8x\n",me,GETPROC(vc),GETID(vc),data,size,mess);
+    fflush(stdout);
   }
 
   return(mess);
@@ -810,6 +818,7 @@ int InfoARecv (VChannelPtr vc, msgid m)
   if (VERBOSE)
   {
     printf("%4d: IRECV src=%2d id=%5d msid=%8x stat=%1d\n",me,GETPROC(vc),GETID(vc),m,Case);
+    fflush(stdout);
   }
   return(1);
 
@@ -817,6 +826,7 @@ contexit: /* continue polling */
   if (VERBOSE)
   {
     printf("%4d: IRECV src=%2d id=%5d msid=%8x stat=%1d\n",me,GETPROC(vc),GETID(vc),m,Case);
+    fflush(stdout);
   }
   /* busy wait to prevent to many calls to the pvmd */
   i = 0;
@@ -863,6 +873,7 @@ int SendMail (int destId, int reqId, void *data, int size)
   if (VERBOSE)
   {
     printf("%4d: SNDM  dst=%2d id=%5d data=%8x size=%7d\n",me,destId,reqId+RANDOMID,data,size);
+    fflush(stdout);
   }
   error = pvm_send(tids[destId],reqId+RANDOMID);
   if (error<0)
@@ -893,6 +904,7 @@ int GetMail (int *sourceId, int *reqId, void *data, int *size)
   if (VERBOSE)
   {
     printf("%4d: GETM  src=%2d id=%5d data=%8x size=%d\n",me,*sourceId,msgtag,data,bytes);
+    fflush(stdout);
   }
   error = pvm_recv(tid,msgtag);
   if (error<0)
