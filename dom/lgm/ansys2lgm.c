@@ -142,6 +142,12 @@ static INT zaehler;   /*wird verwendet in Ansys2lgmCreateTriaNeighbourhoodsAndOr
 static DOMAIN_INFO_TYP DomainInfo;
 static DOMAIN_INFO_TYP *DomainInfo_Pointer;
 
+static char ProblemName[31];
+
+INT	komponentenzaehler;
+INT *KomponentenIndexArray; 
+char *KomponentenNamenArray;
+
 static HEAP *theHeap;
 
 static INT ansysfilepathes_set;
@@ -263,6 +269,120 @@ char* stringconvert(INT i,char **string)
 }
 
 /*// ReadLine already exists in ANSI-C twice : getline() or fgets() !!!*/
+
+
+
+
+/************************************************************************************/
+/*	INPUT  : linebuffer,  current line  of the CADOutputFile 						*/
+/* purpose: function reads names for SUbdomains resp. CAD-components				*/
+/************************************************************************************/
+int KomponentFct(char *linebuffer)
+{
+	INT z,w,u;
+	INT index,elem_surf_cond;
+	char *endp,*s;
+	
+	INT help,ind,already,i,offset,stop;
+	DOUBLE aid;
+
+	index = 1;
+	elem_surf_cond = 0;
+	
+
+	endp = &(linebuffer[index]);
+	
+	s = &(endp[1]);
+	komponentenzaehler++;
+	if(komponentenzaehler == MAX_NUB_OF_SBDMS)
+	{
+		PrintErrorMessage('E',"cadconvert"," Komponentenzaehler bigger than MAX_NUB_OF_SBDMS");
+	}
+	KomponentenIndexArray[komponentenzaehler]=(INT)(strtol(s,&endp,10)); 
+
+	s = &(endp[1]);
+	offset = komponentenzaehler * 31;
+	
+	/*KomponentenNamenArray[komponentenzaehler * 31]=String einlesen;*/
+
+	i=0;
+	stop =0;
+
+	while((s[i] != '\n') && (stop == 0))
+	{
+		if (i == 30)
+		{
+			PrintErrorMessage('W',"cadconvert"," KomponentName in ansFile is too long=> use first 30 bytes");
+			KomponentenNamenArray[offset]  = '\0';
+			i++;
+			stop = 1;
+		}
+		else
+		{
+			KomponentenNamenArray[offset]  = (s[i]);
+			offset++;
+			i++;
+		}
+	}
+	if(stop==0)
+	{
+		KomponentenNamenArray[offset]  = '\0';
+	}	
+	return(0);
+}
+
+
+
+/************************************************************************************/
+/*	INPUT  : linebuffer,  current line  of the CADOutputFile 						*/
+/*	changed Parameter: 												*/
+/* purpose: function reads problemname 											*/
+/************************************************************************************/
+INT ProbNameFct(char *linebuffer)
+{
+	INT index,xyz,i,stop;
+	char *endp,*s;
+		
+	
+	index = 0;
+	xyz = 0;
+	
+	do
+	{
+		index++;
+	}
+	while(linebuffer[index] != ',');
+	index++;
+
+	i=0;
+	stop =0;
+
+	while((linebuffer[index] != '\n') && (stop == 0))
+	{
+		if (i == 30)
+		{
+			PrintErrorMessage('W',"cadconvert"," Problemname in ansFile is too long=> use first 30 bytes");
+			ProblemName[i] = '\0';
+			i++;
+			stop = 1;
+		}
+		else
+		{
+			ProblemName[i] = (linebuffer[index]);
+			index++;
+			i++;
+		}
+	}
+	if(stop==0)
+	{
+		ProblemName[i] = '\0';
+	}	
+
+	
+	return(0);
+}
+
+
 
 /************************************************************************************/
 /*	INPUT  : linebuffer,  current line  of the CADOutputFile 						*/
@@ -501,6 +621,20 @@ INT ReadCADFile(char *CADOutputFileName, INT *statistik, DOUBLE *abx,INT *condit
 	{
 		switch(linebuffer[0])
 		{
+			case 'K':	
+						if ((rgw =KomponentFct(linebuffer)) != 0)
+						{
+							 PrintErrorMessage('E',"KomponentFct","execution failed");
+							 return(1);
+						}
+						break;
+			case 'P':	
+						if ((rgw =ProbNameFct(linebuffer)) != 0)
+						{
+							 PrintErrorMessage('E',"ProbNameFct","execution failed");
+							 return(1);
+						}
+						break;
 			case 'N':	nz++;
 						if ((rgw =NodeLineFct(nz,n_koord_array,linebuffer)) != 0)
 						{
@@ -956,6 +1090,23 @@ memset(UGID_NdPtrarray,NULL,(statistik[0]+1)*sizeof(NODE*));
 /*              */
 /* ... <--- Get memory for different  arrays for the "IntermediateFormat*/
 /************************************************************************/
+/*Neu Initialisierung der Variablen fuer die SubdomainIdentifizierung mit Namen*/
+komponentenzaehler = 0;
+KomponentenIndexArray = GetTmpMem(theHeap,(MAX_NUB_OF_SBDMS)*sizeof(INT)); 
+if ( KomponentenIndexArray == NULL ) 
+{ 
+	PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
+	return(1);
+}
+memset(KomponentenIndexArray,-1,(MAX_NUB_OF_SBDMS)*sizeof(INT));
+KomponentenNamenArray = GetTmpMem(theHeap,(MAX_NUB_OF_SBDMS)*31*sizeof(char));
+if ( KomponentenNamenArray == NULL ) 
+{ 
+	PrintErrorMessage('E',"cadconvert"," ERROR: No memory !!! error in cadconvertfunction <ConvertCADGrid>");
+	return(1);
+}
+/*An der Stelle 0 des KomponentenNamenArray den NotSet-String eintragen :*/
+KomponentenNamenArray = "< NOT SET IN ANSYS-FILE >";
 
 
 
@@ -4796,12 +4947,12 @@ INT Ansys2lgmUpdateSbdmIDs()
 {
 	SD_TYP *sd_pointer;
 	SFC_TYP *scf_of_sbdm;
-	int i, bisherige_ID;
+	int i, bisherige_ID,hlp;
 	SF_TYP *lauf_sfce;
 	
 	UserWrite("\n");
 	UserWrite("-------------------------------------------\n");
-	UserWrite("CAD-Subdomain-ID   ===>  LGM-Subdomain-ID :\n");
+	UserWrite("CAD-Subdomain-ID =>LGM-Subdomain-ID => Identifierstring :\n");
 
 	sd_pointer = EXCHNG_TYP2_ROOT_SBD(ExchangeVar_2_Pointer);
 	/*laufe ueber alle Subdomains*/
@@ -4811,7 +4962,20 @@ INT Ansys2lgmUpdateSbdmIDs()
 		{
 			bisherige_ID = SD_NAME(sd_pointer);
 			SD_NAME(sd_pointer) = i; /*Zuweisung der neuen UG-verstaendlichen ID*/
-			UserWriteF("    %d                     %d\n",bisherige_ID,i); 
+			/*laufe ueber KomponentenIndexArray und suche die bisherige ID:*/
+			hlp = 1;
+			while((KomponentenIndexArray[hlp] != -1) && (KomponentenIndexArray[hlp] != bisherige_ID))
+			{
+				hlp++;
+			}
+			if(KomponentenIndexArray[hlp] == -1)
+			{
+				UserWriteF("  %d                 %d                       %s\n",bisherige_ID,i,&(KomponentenNamenArray[0])); 
+			}
+			else
+			{
+				UserWriteF("  %d                 %d                       %s\n",bisherige_ID,i,&(KomponentenNamenArray[hlp*31])); 
+			}
 		}
 		else
 		{
@@ -5025,7 +5189,20 @@ int LGM_ANSYS_ReadDomain (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_in
     
     strcpy(domain_info->Name,filename);
     
-    strcpy(domain_info->ProblemName,"elder_problem");
+
+	if (ProblemName[0] == '\0')
+    {
+		UserWrite("Warning: in LGM_ANSYS_ReadDomain no problemname defined in ANSYS-File\n");
+		UserWrite("Warning: using elder_problem as default value\n");
+    	strcpy(domain_info->ProblemName,"elder_problem");
+    }
+    else
+    {
+    	strcpy(domain_info->ProblemName,ProblemName);
+    }
+
+    
+    
     
     domain_info->Dimension = 3;
 	
