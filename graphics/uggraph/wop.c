@@ -12954,7 +12954,7 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 					if (LEVEL(theElement)<0 || LEVEL(theElement)>EE3D_NProperty) 
 						return (1);
                     #ifndef ModelP
-					DO_2l(theDO) = egdecolor = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
+					DO_2l(theDO) = edgecolor = EE3D_PropertyColor[(int)LEVEL(theElement)]; 
 				    #else
 					DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1];
 				    #endif
