@@ -1,8 +1,8 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  ugm.c                                                                                                                 */
+/*                                                                          */
+/* File:      ugm.c                                                         */
 /*																			*/
 /* Purpose:   unstructured grid manager                                                                         */
 /*																			*/
@@ -200,23 +200,15 @@ static PeriodicBoundaryInfoProcPtr PeriodicBoundaryInfo = NULL;
 
 
 /****************************************************************************/
-/*D
-   GetFreeOBJT - Get an object type id not occupied in theMG
-
-   SYNOPSIS:
-   INT GetFreeOBJT ();
-
-   PARAMETERS:
-   .  void
-
-   DESCRIPTION:
-   This function gets an object type id not occupied in theMG.
-
-   RETURN VALUE:
-   INT
-   .n    id of object type if ok
-   .n   -1 when error occured.
-   D*/
+/** \brief Get an object type id not occupied in theMG
+ *
+ * This function gets an object type id not occupied in theMG.
+ *
+ * @return <ul>
+ *   <li> id of object type if ok </li>
+ *   <li> -1 when error occurred </li>
+ * </ul>
+ */
 /****************************************************************************/
 
 INT GetFreeOBJT ()
@@ -238,8 +230,7 @@ INT GetFreeOBJT ()
 }
 
 /****************************************************************************/
-/*D
-   ReleaseOBJT - Release an object type id not needed anymore
+/** \brief Release an object type id not needed anymore
 
    SYNOPSIS:
    INT ReleaseOBJT (INT type);
@@ -250,11 +241,11 @@ INT GetFreeOBJT ()
    DESCRIPTION:
    This function releases an object type id not needed anymore.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT ReleaseOBJT (INT type)
@@ -272,8 +263,8 @@ INT ReleaseOBJT (INT type)
 }
 
 /****************************************************************************/
-/*D
-   GetMemoryForObject - Get an object from free list if possible
+/** \brief Get an object from free list if possible
+   \fn GetMemoryForObject
 
    SYNOPSIS:
    void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type);
@@ -287,11 +278,11 @@ INT ReleaseOBJT (INT type)
    This function gets an object of type `type` from free list if possible,
    otherwise it allocates memory from the multigrid heap using 'GetMem'.
 
-   RETURN VALUE:
+   @return
    void *
    .n   pointer to an object of the requested type
    .n   NULL if object of requested type is not available
-   D*/
+ */
 /****************************************************************************/
 
 #ifdef ModelP
@@ -365,8 +356,8 @@ void *GetMemoryForObjectNew (HEAP *theHeap, INT size, INT type)
 #endif
 
 /****************************************************************************/
-/*D
-   PutFreeObject - Put an object in the free list
+/** \brief  Put an object in the free list
+   \fn PutFreeObject
 
    SYNOPSIS:
    INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type);
@@ -380,11 +371,11 @@ void *GetMemoryForObjectNew (HEAP *theHeap, INT size, INT type)
    DESCRIPTION:
    This function puts an object in the free list.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if ok
    .n   1 when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 #ifdef ModelP
@@ -457,24 +448,18 @@ INT PutFreeObjectNew (HEAP *theHeap, void *object, INT size, INT type)
 #endif
 
 /****************************************************************************/
-/*D
-   CreateBoundaryVertex - Return pointer to a new boundary vertex structure
-
-   SYNOPSIS:
-   static VERTEX *CreateBoundaryVertex (GRID *theGrid);
-
-   PARAMETERS:
-   .  theGrid - grid where vertex should be inserted
-
-   DESCRIPTION:
-   This function creates and initializes a new boundary vertex structure
-        and returns a pointer to it.
-
-   RETURN VALUE:
-   VERTEX *
-   .n   pointer to requested object
-   .n   NULL if out of memory
-   D*/
+/** \brief Return pointer to a new boundary vertex structure
+ *
+ * @param theGrid grid where vertex should be inserted
+ *
+ * This function creates and initializes a new boundary vertex structure
+ * and returns a pointer to it.
+ *
+ * @return <ul>
+ *    <li> pointer to requested object </li>
+ *    <li> NULL if out of memory </li>
+ * </ul>
+ */
 /****************************************************************************/
 
 static VERTEX *CreateBoundaryVertex (GRID *theGrid)
@@ -518,24 +503,17 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid)
 }
 
 /****************************************************************************/
-/*D
-   CreateInnerVertex - Return pointer to a new inner vertex structure
-
-   SYNOPSIS:
-   static VERTEX *CreateInnerVertex (GRID *theGrid);
-
-   PARAMETERS:
-   .  theGrid - grid where vertex should be inserted
-
-   DESCRIPTION:
-   This function creates and initializes a new inner vertex structure
-   and returns a pointer to it.
-
-   RETURN VALUE:
-   VERTEX *
+/** \brief Return pointer to a new inner vertex structure
+ *
+ * @param theGrid grid where vertex should be inserted
+ *
+ * This function creates and initializes a new inner vertex structure
+ * and returns a pointer to it.
+ *
+ * @return
    .n   pointer to requested object
    .n   NULL if out of memory
-   D*/
+ */
 /****************************************************************************/
 
 static VERTEX *CreateInnerVertex (GRID *theGrid)
@@ -578,12 +556,7 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
 }
 
 /****************************************************************************/
-/*D
-   CreateNode - Return pointer to a new node structure
-
-   SYNOPSIS:
-   static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
-   GEOM_OBJECT *Father, INT NodeType, INT with_vector);
+/** \brief Return pointer to a new node structure
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
@@ -596,11 +569,11 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
    This function creates and initializes a new node structure
    and returns a pointer to it.
 
-   RETURN VALUE:
+   @return
    NODE *
    .n   pointer to requested object
    .n   NULL if out of memory
-   D*/
+ */
 /****************************************************************************/
 
 static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
@@ -686,11 +659,7 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
 }
 
 /****************************************************************************/
-/*D
-   CreateSonNode - Return pointer to a new node structure on an edge
-
-   SYNOPSIS:
-   NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode);
+/** \brief Return pointer to a new node structure on an edge
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
@@ -700,11 +669,10 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
    This function creates and initializes a new node structure
    at the midpoint of an element edge and returns a pointer to it.
 
-   RETURN VALUE:
-   NODE *
+   @return
    .n   pointer to requested object
    .n   NULL if out of memory
-   D*/
+ */
 /****************************************************************************/
 
 NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
@@ -727,11 +695,7 @@ NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
 }
 
 /****************************************************************************/
-/*D
-   CreateMidNode - Return pointer to a new node structure on an edge
-
-   SYNOPSIS:
-   NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT edge);
+/** \brief Return pointer to a new node structure on an edge
 
    PARAMETERS:
    .  theGrid - grid where node should be inserted
@@ -739,15 +703,13 @@ NODE *CreateSonNode (GRID *theGrid, NODE *FatherNode)
    .  theVertex - pointer to vertex if already existing
    .  edge - id of an element edge
 
-   DESCRIPTION:
    This function creates and initializes a new node structure
    at the midpoint of an element edge and returns a pointer to it.
 
-   RETURN VALUE:
-   NODE *
+   @return
    .n   pointer to requested object
    .n   NULL if out of memory
-   D*/
+ */
 /****************************************************************************/
 
 NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT edge)
@@ -853,24 +815,6 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT 
 }
 
 
-/****************************************************************************/
-/*
-   GetMidNode -
-
-   SYNOPSIS:
-   NODE *GetMidNode (ELEMENT *theElement, INT edge);
-
-   PARAMETERS:
-   .  theElement
-   .  edge
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   NODE
- */
-/****************************************************************************/
-
 NODE *GetMidNode (ELEMENT *theElement, INT edge)
 {
   EDGE *theEdge;
@@ -900,20 +844,7 @@ NODE *GetMidNode (ELEMENT *theElement, INT edge)
 
 
 /****************************************************************************/
-/*
-   SideOfNbElement -
-
-   SYNOPSIS:
-   static INT SideOfNbElement(ELEMENT *theElement, INT side);
-
-   PARAMETERS:
-   .  theElement
-   .  side
-
-   DESCRIPTION:
-
-   RETURN VALUE:
-   INT
+/** \brief ???
  */
 /****************************************************************************/
 
@@ -948,11 +879,7 @@ static INT SideOfNbElement(ELEMENT *theElement, INT side)
 
 
 /****************************************************************************/
-/*D
-   CreateSideNode - Return pointer to a new node structure on a side (3d)
-
-   SYNOPSIS:
-   NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT side);
+/** \brief Return pointer to a new node structure on a side (3d)
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
@@ -960,15 +887,13 @@ static INT SideOfNbElement(ELEMENT *theElement, INT side)
    .  theVertex - pointer vertex
    .  side - id of an element side
 
-   DESCRIPTION:
    This function creates and initializes a new node structure
    at the midpoint of an element side and returns a pointer to it.
 
-   RETURN VALUE:
-   NODE *
+   @return
    .n   pointer to requested object
    .n   NULL if out of memory
-   D*/
+ */
 /****************************************************************************/
 
 NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT side)
@@ -1072,7 +997,7 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    NODE
  */
 /****************************************************************************/
@@ -1332,20 +1257,14 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
 }
 
 /****************************************************************************/
-/*
-   GetSideIDFromScratch -
-
-   SYNOPSIS:
-   INT GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode);
-
+/** \brief ???
    PARAMETERS:
    .  theElement
    .  theNode
 
    DESCRIPTION:
 
-   RETURN VALUE:
-   INT
+   @return ???
  */
 /****************************************************************************/
 
@@ -1423,23 +1342,14 @@ INT GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
 
 
 /****************************************************************************/
-/*D
-   GetCenterNode - Get the center node of an element of next finer level
+/** \brief Get the center node of an element of next finer level
+ *
+ * This function gets the center node of an element of next finer level
 
-   SYNOPSIS:
-   NODE *GetCenterNode (ELEMENT *theElement);
-
-   PARAMETERS:
-   .  theElement
-
-   DESCRIPTION:
-   This function gets the center node of an element of next finer level
-
-   RETURN VALUE:
-   NODE *
+   @return
    .n   pointer to center node
    .n   NULL  no node found
-   D*/
+ */
 /****************************************************************************/
 
 NODE *GetCenterNode (ELEMENT *theElement)
@@ -1469,15 +1379,14 @@ NODE *GetCenterNode (ELEMENT *theElement)
 }
 
 /****************************************************************************/
-/*																			*/
-/* Function:  CreateCenterNode	                                                                                        */
-/*																			*/
-/* Purpose:   allocate a new node on an side of an element. Includes vertex */
-/*			  best fit boundary coordinates and local coordinates.			*/
-/*																			*/
-/* return:	  NODE* : pointer to new node									*/
-/*			  NULL	: could not allocate									*/
-/*																			*/
+/** \brief Allocate a new node on a side of an element
+ *
+ * Includes vertex
+ * best fit boundary coordinates and local coordinates.
+ *
+ * @return:  pointer to new node
+ *			  NULL	: could not allocate
+ */
 /****************************************************************************/
 /* #define MOVE_MIDNODE */
 NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex)
@@ -1601,25 +1510,19 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex)
 
 
 /****************************************************************************/
-/*D
-   GetNodeContext - get all nodes related to this element on next level
-
-   SYNOPSIS:
-   INT GetNodeContext (ELEMENT *theElement, NODE **theElementContext)
+/** \brief Get all nodes related to this element on next level
 
    PARAMETERS:
    .  theElement - element for context
    .  theElementContext - node context of this element
 
-   DESCRIPTION:
    This function returns the nodes related to the element on the next
    finer level. The ordering is according to the reference numbering.
 
-   RETURN VALUE:
-   INT
+   @return
    .n   GM_OK    if ok
    .n   != GM_OK if not ok
-   D*/
+ */
 /****************************************************************************/
 
 INT GetNodeContext (ELEMENT *theElement, NODE **theElementContext)
@@ -1681,11 +1584,7 @@ INT GetNodeContext (ELEMENT *theElement, NODE **theElementContext)
 }
 
 /****************************************************************************/
-/*D
-   GetNbSideByNodes - return matching side of the neighboring element
-
-   SYNOPSIS:
-   void GetNbSideByNodes (ELEMENT *theNeighbor, INT *nbside, ELEMENT *theElement, INT side);
+/** \brief Return matching side of the neighboring element
 
    PARAMETERS:
    .  theNeighbor - element to test for matching side
@@ -1693,12 +1592,9 @@ INT GetNodeContext (ELEMENT *theElement, NODE **theElementContext)
    .  theElement - element with side to match
    .  side - side of element to match
 
-   DESCRIPTION:
    This function computes the matching side of neighboring element.
 
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
 void GetNbSideByNodes (ELEMENT *theNeighbor, INT *nbside, ELEMENT *theElement, INT side)
@@ -1736,23 +1632,16 @@ void GetNbSideByNodes (ELEMENT *theNeighbor, INT *nbside, ELEMENT *theElement, I
 }
 
 /****************************************************************************/
-/*D
-   SonEdge - Return pointer to son edge if it exists
-
-   SYNOPSIS:
-   EDGE *SonEdge (EDGE *theEdge);
-
-   PARAMETERS:
-   .  theEdge - edge for which son is searched
-
-   DESCRIPTION:
-   This function returns the pointer to the son edge if it exists.
-
-   RETURN VALUE:
-   EDGE *
+/** \brief Return pointer to son edge if it exists
+ *
+ * @param theEdge edge for which son is searched
+ *
+ * This function returns the pointer to the son edge if it exists.
+ *
+ * @return
    .n   pointer to specified object
    .n   NULL if not found
-   D*/
+ */
 /****************************************************************************/
 
 EDGE *GetSonEdge (EDGE *theEdge)
@@ -1774,7 +1663,7 @@ EDGE *GetSonEdge (EDGE *theEdge)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    GetSonEdges - Return pointer to son edges if it exists
 
    SYNOPSIS:
@@ -1787,10 +1676,10 @@ EDGE *GetSonEdge (EDGE *theEdge)
    DESCRIPTION:
    This function returns the pointer to the son edges if existing.
 
-   RETURN VALUE:
+   @return
    INT
    .n   number of found edges (0,1,2)
-   D*/
+ */
 /****************************************************************************/
 
 INT GetSonEdges (EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES])
@@ -1843,7 +1732,7 @@ INT GetSonEdges (EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES])
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    GetFatherEdge - Return pointer to father edge if it exists
 
    SYNOPSIS:
@@ -1855,11 +1744,11 @@ INT GetSonEdges (EDGE *theEdge, EDGE *SonEdges[MAX_SON_EDGES])
    DESCRIPTION:
    This function returns the pointer to the father edge if it exists.
 
-   RETURN VALUE:
+   @return
    EDGE *
    .n   pointer to specified object
    .n   NULL if not found
-   D*/
+ */
 /****************************************************************************/
 
 EDGE *GetFatherEdge (EDGE *theEdge)
@@ -1917,7 +1806,7 @@ EDGE *GetFatherEdge (EDGE *theEdge)
 #ifdef __THREEDIM__
 
 /****************************************************************************/
-/*D
+/** \brief
    FatherEdge - Return pointer to father edge if it exists
 
    SYNOPSIS:
@@ -1932,11 +1821,11 @@ EDGE *GetFatherEdge (EDGE *theEdge)
    DESCRIPTION:
    This function returns the pointer to the father edge if it exists.
 
-   RETURN VALUE:
+   @return
    EDGE *
    .n   pointer to specified object
    .n   NULL if not found
-   D*/
+ */
 /****************************************************************************/
 
 EDGE *FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge)
@@ -2063,7 +1952,7 @@ EDGE *FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge)
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    GetEdge - Return pointer to edge if it exists
 
    SYNOPSIS:
@@ -2076,11 +1965,11 @@ EDGE *FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge)
    DESCRIPTION:
    This function returns the pointer to the specified edge if it exists.
 
-   RETURN VALUE:
+   @return
    EDGE *
    .n   pointer to specified object
    .n   NULL if not found
-   D*/
+ */
 /****************************************************************************/
 
 EDGE *GetEdge (NODE *from, NODE *to)
@@ -2097,7 +1986,7 @@ EDGE *GetEdge (NODE *from, NODE *to)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    CreateEdge - Return pointer to a new edge structure
 
    SYNOPSIS:
@@ -2112,11 +2001,11 @@ EDGE *GetEdge (NODE *from, NODE *to)
    DESCRIPTION:
    This function returns a pointer to a new edge structure.
 
-   RETURN VALUE:
+   @return
    EDGE *
    .n   pointer to requested object
    .n   NULL if out of memory
-   D*/
+ */
 /****************************************************************************/
 
 #ifndef ModelP
@@ -2365,7 +2254,7 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    GetLink - Return pointer to link if it exists
 
    SYNOPSIS:
@@ -2378,11 +2267,11 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
    DESCRIPTION:
    This function returns the pointer to the specified link if it exists.
 
-   RETURN VALUE:
+   @return
    INT
    .n   pointer to specified link
    .n   NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 LINK *GetLink (NODE *from, NODE *to)
@@ -2399,7 +2288,7 @@ LINK *GetLink (NODE *from, NODE *to)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    CreateElement - Return a pointer to  a new element structure
 
    SYNOPSIS:
@@ -2417,11 +2306,11 @@ LINK *GetLink (NODE *from, NODE *to)
    DESCRIPTION:
    This function creates and initializes a new element and returns a pointer to it.
 
-   RETURN VALUE:
+   @return
    ELEMENT *
    .n   pointer to requested object
    .n   NULL if out of memory
-   D*/
+ */
 /****************************************************************************/
 
 ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
@@ -2535,7 +2424,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    CreateSonElementSide - creates the element sides of son elements
 
    SYNOPSIS:
@@ -2558,11 +2447,11 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
    'CreateSonElementSide' will finally call 'GridCreateConnection' to reinstall
    the connections of the side-vector.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
@@ -2657,7 +2546,7 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    CreateNewLevel - Return pointer to new grid structure
 
    SYNOPSIS:
@@ -2670,11 +2559,11 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
    This function creates and initialized a new grid structure for top level + 1
    and returns a pointer to it.
 
-   RETURN VALUE:
+   @return
    GRID *
    .n   pointer to requested object
    .n   NULL if out of memory
-   D*/
+ */
 /****************************************************************************/
 
 GRID *CreateNewLevel (MULTIGRID *theMG, INT algebraic)
@@ -2742,7 +2631,7 @@ GRID *CreateNewLevel (MULTIGRID *theMG, INT algebraic)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    CreateNewLevelAMG - Create new amg level
 
    SYNOPSIS:
@@ -2755,11 +2644,11 @@ GRID *CreateNewLevel (MULTIGRID *theMG, INT algebraic)
    This function creates and initialized a new grid structure for bottomLevel - 1
    and returns a pointer to it.
 
-   RETURN VALUE:
+   @return
    GRID *
    .n   pointer to requested object
    .n   NULL if out of memory
-   D*/
+ */
 /****************************************************************************/
 
 GRID *CreateNewLevelAMG (MULTIGRID *theMG)
@@ -2808,7 +2697,7 @@ GRID *CreateNewLevelAMG (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    MakeMGItem - Create a multigrid environment item
 
    SYNOPSIS:
@@ -2820,11 +2709,11 @@ GRID *CreateNewLevelAMG (MULTIGRID *theMG)
    DESCRIPTION:
    This function creates a multigrid environment directory.
 
-   RETURN VALUE:
+   @return
    MULTIGRID *
    .n   pointer to new MULTIGRID
    .n   NULL if error occured
-   D*/
+ */
 /****************************************************************************/
 
 MULTIGRID *MakeMGItem (const char *name)
@@ -2854,7 +2743,7 @@ MULTIGRID *MakeMGItem (const char *name)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -2919,7 +2808,7 @@ INT ClearMultiGridUsedFlags (MULTIGRID *theMG, INT FromLevel, INT ToLevel, INT m
 
 
 /****************************************************************************/
-/*D
+/** \brief
    GetMultigrid - Find the multigrid environment item with name
 
    SYNOPSIS:
@@ -2932,11 +2821,11 @@ INT ClearMultiGridUsedFlags (MULTIGRID *theMG, INT FromLevel, INT ToLevel, INT m
    This function find the multigrid environment item with `name` and
    returns a pointer to the multigrid structure.
 
-   RETURN VALUE:
+   @return
    MULTIGRID *
    .n   pointer to MULTIGRID
    .n   NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 MULTIGRID *GetMultigrid (const char *name)
@@ -2946,7 +2835,7 @@ MULTIGRID *GetMultigrid (const char *name)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    GetFirstMultigrid - Return a pointer to the first multigrid
 
    SYNOPSIS:
@@ -2959,11 +2848,11 @@ MULTIGRID *GetMultigrid (const char *name)
    This function returns a pointer to the first multigrid in the /Multigrids
    directory.
 
-   RETURN VALUE:
+   @return
    MULTIGRID *
    .n   pointer to MULTIGRID
    .n   NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 MULTIGRID *GetFirstMultigrid ()
@@ -2988,7 +2877,7 @@ MULTIGRID *GetFirstMultigrid ()
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    GetNextMultigrid - Return a pointer to the next multigrid
 
    SYNOPSIS:
@@ -3001,11 +2890,11 @@ MULTIGRID *GetFirstMultigrid ()
    This function returns a pointer to the next multigrid in the /Multigrids
    directory.
 
-   RETURN VALUE:
+   @return
    MULTIGRID *
    .n   pointer to MULTIGRID
    .n   NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 MULTIGRID *GetNextMultigrid (const MULTIGRID *theMG)
@@ -3025,7 +2914,7 @@ MULTIGRID *GetNextMultigrid (const MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    CreateMultiGrid - Return a pointer to new multigrid structure
 
    SYNOPSIS:
@@ -3045,11 +2934,11 @@ MULTIGRID *GetNextMultigrid (const MULTIGRID *theMG)
    allocation of heap, combining the domain and the boundary conditions
    and creation of the fixed corners of the domain.
 
-   RETURN VALUE:
+   @return
    MULTIGRID *
    .n   pointer to new object
    .n   NULL if an error occured.
-   D*/
+ */
 /****************************************************************************/
 
 MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
@@ -3230,7 +3119,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    DisposeEdge - Remove edge from the data structure
 
    SYNOPSIS:
@@ -3244,11 +3133,11 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
    This function remove an edge from the data structure including its
    vector (if one) and inserts them into the free list.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if ok
    .n   1 if an error occured.
-   D*/
+ */
 /****************************************************************************/
 
 static INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
@@ -3327,7 +3216,7 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    DisposeNode - Remove node including its edges from the data structure
 
    SYNOPSIS:
@@ -3341,11 +3230,11 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
    This function removes node including its edges and vector (if one)
    from the data structure and inserts all objects into the free list.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if ok
    .n   1 when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT DisposeNode (GRID *theGrid, NODE *theNode)
@@ -3450,7 +3339,7 @@ INT DisposeNode (GRID *theGrid, NODE *theNode)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    DisposeVertex - Remove vertex from the data structure
 
    SYNOPSIS:
@@ -3464,11 +3353,11 @@ INT DisposeNode (GRID *theGrid, NODE *theNode)
    This function removes a vertex from the data structure
    and puts it into the free list.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if ok
    .n   1 no valid object number
-   D*/
+ */
 /****************************************************************************/
 
 static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
@@ -3495,7 +3384,7 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    DisposeElement - Remove element from the data structure
 
    SYNOPSIS:
@@ -3511,11 +3400,11 @@ static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
    into the free list. This includes all elementsides, sidevectors and the
    elementvector if they exist.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if ok
    .n   1 no valid object number.
-   D*/
+ */
 /****************************************************************************/
 
 INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
@@ -3859,7 +3748,7 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    Collapse - construct coarse grid from surface
 
    SYNOPSIS:
@@ -3872,12 +3761,12 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
    This function constructs coarse grid from surface. ATTENTION: Use refine $g
    to cover always the whole domain with the grid on each level.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if ok
    .n   1 no valid object number
    .n   2 grid structure not empty or level 0
-   D*/
+ */
 /****************************************************************************/
 
 INT Collapse (MULTIGRID *theMG)
@@ -4025,7 +3914,7 @@ INT Collapse (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    DisposeTopLevel - Remove top level grid from multigrid  structure
 
    SYNOPSIS:
@@ -4037,12 +3926,12 @@ INT Collapse (MULTIGRID *theMG)
    DESCRIPTION:
    This function removes the top level grid from multigrid structure.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if ok
    .n   1 no valid object number
    .n   2 grid structure not empty or level 0
-   D*/
+ */
 /****************************************************************************/
 
 INT DisposeTopLevel (MULTIGRID *theMG)
@@ -4082,7 +3971,7 @@ INT DisposeTopLevel (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    DisposeGrid - dispose top level grid
 
    SYNOPSIS:
@@ -4094,12 +3983,12 @@ INT DisposeTopLevel (MULTIGRID *theMG)
    DESCRIPTION:
    This function removes the top level grid from multigrid structure.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if ok
    .n   1 no valid object number
    .n   2 grid structure not empty or level 0
-   D*/
+ */
 /****************************************************************************/
 
 INT DisposeGrid (GRID *theGrid)
@@ -4149,7 +4038,7 @@ INT DisposeGrid (GRID *theGrid)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    DisposeAMGLevel - dispose bottom AMG level
 
    SYNOPSIS:
@@ -4161,12 +4050,12 @@ INT DisposeGrid (GRID *theGrid)
    DESCRIPTION:
    This function removes the bottom AMG level from multigrid structure.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if ok
    .n   1 no valid object number
    .n   2 no AMG levels
-   D*/
+ */
 /****************************************************************************/
 
 static INT DisposeAMGLevel (MULTIGRID *theMG)
@@ -4210,7 +4099,7 @@ static INT DisposeAMGLevel (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    DisposeAMGLevels - dispose all AMG level
 
    SYNOPSIS:
@@ -4222,11 +4111,11 @@ static INT DisposeAMGLevel (MULTIGRID *theMG)
    DESCRIPTION:
    This function removes all AMG level from multigrid structure.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if ok
    .n   1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT DisposeAMGLevels (MULTIGRID *theMG)
@@ -4236,7 +4125,7 @@ INT DisposeAMGLevels (MULTIGRID *theMG)
         #ifdef ModelP
   /* tell DDD that we will 'inconsistently' delete objects.
      this is a dangerous mode as it switches DDD warnings off. */
-  /*DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_OFF);*/
+  /** \briefDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_OFF);*/
   DDD_XferBegin();
     #ifdef DDDOBJMGR
   DDD_ObjMgrBegin();
@@ -4268,7 +4157,7 @@ INT DisposeAMGLevels (MULTIGRID *theMG)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    DisposeMultiGrid - Release memory for the whole multigrid  structure
 
    SYNOPSIS:
@@ -4280,11 +4169,11 @@ INT DisposeAMGLevels (MULTIGRID *theMG)
    DESCRIPTION:
    This function releases the memory for the whole multigrid  structure.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT DisposeMultiGrid (MULTIGRID *theMG)
@@ -4353,7 +4242,7 @@ INT DisposeMultiGrid (MULTIGRID *theMG)
    DESCRIPTION:
    This function defines a relation for lexicographic ordering
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -4404,7 +4293,7 @@ static INT LexCompare (NODE **pnode1, NODE **pnode2)
    DESCRIPTION:
    This function defines a relation for lexicographic ordering of links
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -4423,7 +4312,7 @@ static int LinkCompare (LINK **LinkHandle1, LINK **LinkHandle2)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    OrderNodesInGrid - reorder double linked 'NODE' list
 
    SYNOPSIS:
@@ -4440,11 +4329,11 @@ static int LinkCompare (LINK **LinkHandle1, LINK **LinkHandle2)
    qsort and order criteria LexCompare(). If specified the 'LINK's are ordered
    corresponding to the 'NODE' order.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if ok
    .n   >0 when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT AlsoOrderLinks)
@@ -4542,7 +4431,7 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT Also
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    PutAtEndOfList - reorder a given set of elements and put them first in the list
 
    SYNOPSIS:
@@ -4556,10 +4445,10 @@ INT OrderNodesInGrid (GRID *theGrid, const INT *order, const INT *sign, INT Also
    DESCRIPTION:
    This function reorders a given set of elements and put them last in the list.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
-   D*/
+ */
 /****************************************************************************/
 
 INT PutAtEndOfList (GRID *theGrid, INT cnt, ELEMENT **elemList)
@@ -4612,7 +4501,7 @@ INT PutAtEndOfList (GRID *theGrid, INT cnt, ELEMENT **elemList)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    FindNeighborElement - Determine neighbor and side of neighbor that goes back to elem
 
    SYNOPSIS:
@@ -4627,11 +4516,11 @@ INT PutAtEndOfList (GRID *theGrid, INT cnt, ELEMENT **elemList)
    DESCRIPTION:
    This function determines the neighbor and side of the neighbor that goes back to elem.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if ok
    .n   1 when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT FindNeighborElement (const ELEMENT *theElement, INT Side, ELEMENT **theNeighbor, INT *NeighborSide)
@@ -4658,7 +4547,7 @@ INT FindNeighborElement (const ELEMENT *theElement, INT Side, ELEMENT **theNeigh
 
 
 /****************************************************************************/
-/*D
+/** \brief
    InsertInnerNode - Insert a inner node
 
    SYNOPSIS:
@@ -4671,11 +4560,11 @@ INT FindNeighborElement (const ELEMENT *theElement, INT Side, ELEMENT **theNeigh
    DESCRIPTION:
    This function inserts a inner node into level 0.
 
-   RETURN VALUE:
+   @return
    INT
    .n   pointer to a node if ok
    .n   NULL when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 NODE *InsertInnerNode (GRID *theGrid, DOUBLE *pos)
@@ -4707,7 +4596,7 @@ NODE *InsertInnerNode (GRID *theGrid, DOUBLE *pos)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    InsertBoundaryNode - Insert a boundary node
 
    SYNOPSIS:
@@ -4720,11 +4609,11 @@ NODE *InsertInnerNode (GRID *theGrid, DOUBLE *pos)
    DESCRIPTION:
    This function inserts a boundary node into level 0.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 NODE *InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
@@ -4779,7 +4668,7 @@ NODE *InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    DeleteNode - Delete a node
 
    SYNOPSIS:
@@ -4792,11 +4681,11 @@ NODE *InsertBoundaryNode (GRID *theGrid, BNDP *bndp)
    DESCRIPTION:
    This function deletes a node from level 0.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT DeleteNode (GRID *theGrid, NODE *theNode)
@@ -4835,7 +4724,7 @@ INT DeleteNode (GRID *theGrid, NODE *theNode)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    DeleteNodeWithID - Delete the node with id
 
    SYNOPSIS:
@@ -4848,11 +4737,11 @@ INT DeleteNode (GRID *theGrid, NODE *theNode)
    DESCRIPTION:
    This function deletes the node with id `id`.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT DeleteNodeWithID (GRID *theGrid, INT id)
@@ -4871,7 +4760,7 @@ INT DeleteNodeWithID (GRID *theGrid, INT id)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    FindFather - Find the new father element
 
    SYNOPSIS:
@@ -4885,11 +4774,11 @@ INT DeleteNodeWithID (GRID *theGrid, INT id)
    It assumes that the  new father is one of the neighbors of the
    old father element.
 
-   RETURN VALUE:
+   @return
    ELEMENT *
    .n     pointer to an element
    .n     NULL if none or no correct father is found or vertex is level 0
-   D*/
+ */
 /****************************************************************************/
 
 ELEMENT *FindFather (VERTEX *theVertex)
@@ -4919,7 +4808,7 @@ ELEMENT *FindFather (VERTEX *theVertex)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    RecreateBNDSofNode - searche the boundary sides and recreate the corresponding BNDS
 
    SYNOPSIS:
@@ -4934,11 +4823,11 @@ ELEMENT *FindFather (VERTEX *theVertex)
    the corresponding BNDSs of these sides.
    It assumes that 'theNode' and the neighbour boundary nodes are in the same patch.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 static INT RecreateBNDSofNode (MULTIGRID *theMG, NODE *theNode)
@@ -5007,7 +4896,7 @@ static INT RecreateBNDSofNode (MULTIGRID *theMG, NODE *theNode)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    MoveBndMidNode - set new position for a midnode on a boundary
 
    SYNOPSIS:
@@ -5021,11 +4910,11 @@ static INT RecreateBNDSofNode (MULTIGRID *theMG, NODE *theNode)
    This function moves a given boundary vertex according to ist actual local
    coordinates. This function should only be called by MoveMidNode.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK when ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT MoveBndMidNode (MULTIGRID *theMG, VERTEX *theVertex)
@@ -5122,7 +5011,7 @@ INT MoveBndMidNode (MULTIGRID *theMG, VERTEX *theVertex)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    MoveMidNode - set new position for a midnode
 
    SYNOPSIS:
@@ -5139,11 +5028,11 @@ INT MoveBndMidNode (MULTIGRID *theMG, VERTEX *theVertex)
    multigrid structure is moved hierachically, that all global coordinates
    of nodes are updated in order to reflect the changes on coarser grids.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK when ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda, INT update)
@@ -5218,7 +5107,7 @@ INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda, INT update)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    MoveCenterNode - set new position for a centernode
 
    SYNOPSIS:
@@ -5234,11 +5123,11 @@ INT MoveMidNode (MULTIGRID *theMG, NODE *theNode, DOUBLE lambda, INT update)
    multigrid structure is moved hierachically, that all global coordinates
    of nodes are updated in order to reflect the changes on coarser grids.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK when ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda)
@@ -5289,7 +5178,7 @@ INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    MoveSideNode - set new position for a sidenode
 
    SYNOPSIS:
@@ -5305,11 +5194,11 @@ INT MoveCenterNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda)
    multigrid structure is moved hierachically, that all global coordinates
    of nodes are updated in order to reflect the changes on coarser grids.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK when ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 #ifdef __THREEDIM__
@@ -5398,7 +5287,7 @@ INT MoveSideNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda)
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    MoveNode - Let user enter a new position for an inner node
 
    SYNOPSIS:
@@ -5415,11 +5304,11 @@ INT MoveSideNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda)
    multigrid structure is moved hierachically, that all global coordinates
    of nodes are updated in order to reflect the changes on coarser grids.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK when ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos, INT update)
@@ -5492,7 +5381,7 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos, INT update)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    SetVertexGlobalAndLocal - assign new local and global coords to a vertex
 
    SYNOPSIS:
@@ -5507,11 +5396,11 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos, INT update)
    This function assigns new global and local coordinates to a vertex (MOVE==DIM).
    It is meant for restoring former consistent positions.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK when ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT SetVertexGlobalAndLocal (VERTEX *vert, const DOUBLE *global, const DOUBLE *local)
@@ -5529,7 +5418,7 @@ INT SetVertexGlobalAndLocal (VERTEX *vert, const DOUBLE *global, const DOUBLE *l
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    MoveFreeBoundaryVertex - move a vertex on a free boundary
 
    SYNOPSIS:
@@ -5547,14 +5436,14 @@ INT SetVertexGlobalAndLocal (VERTEX *vert, const DOUBLE *global, const DOUBLE *l
    To this end the function 'FinishMovingFreeBoundaryVertices' has to be
    called after having done the last call of 'MoveFreeBoundaryVertex'.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK when ok
    .n   GM_ERROR when error occured.
 
    SEE ALSO:
    FinishMovingFreeBoundaryVertices
-   D*/
+ */
 /****************************************************************************/
 
 INT MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, const DOUBLE *newPos)
@@ -5580,7 +5469,7 @@ INT MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, const DOUBLE *newPos
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    FinishMovingFreeBoundaryVertices - finish moving of free boundary vertices
 
    SYNOPSIS:
@@ -5593,14 +5482,14 @@ INT MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, const DOUBLE *newPos
    The complete multigrid structure is moved hierachically such that all global coordinates
    of nodes are updated in order to reflect the changes on coarser grids.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK when ok
    .n   GM_ERROR when error occured.
 
    SEE ALSO:
    MoveFreeBoundaryVertex
-   D*/
+ */
 /****************************************************************************/
 
 INT FinishMovingFreeBoundaryVertices (MULTIGRID *theMG)
@@ -5639,7 +5528,7 @@ INT FinishMovingFreeBoundaryVertices (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    GetMidNodeParam - Get local position of a midnode on an edge
 
    SYNOPSIS:
@@ -5654,11 +5543,11 @@ INT FinishMovingFreeBoundaryVertices (MULTIGRID *theMG)
    (0 < lambda < 1). The function is called by SmoothGrid and can only be applied
    in 2D.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK when ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT GetMidNodeParam (NODE * theNode, DOUBLE *lambda)
@@ -5748,7 +5637,7 @@ INT GetMidNodeParam (NODE * theNode, DOUBLE *lambda)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -5791,7 +5680,7 @@ INT CheckOrientation (INT n, VERTEX **vertices)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -5831,7 +5720,7 @@ INT CheckOrientation (INT n, VERTEX **vertices)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -5875,7 +5764,7 @@ INT CheckOrientationInGrid (GRID *theGrid)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -5897,7 +5786,7 @@ static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, E
       sideNode[j] = Node[CORNER_OF_SIDE_REF(n,i,j)];                  /* into sideNode*/
     }
 
-    /*CAD*/
+    /*CA*/
     j=0;
 
     /*fill interestingElements with elements of first node:*/
@@ -5955,7 +5844,7 @@ static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, E
 
     theElement = interestingElements[0];
 
-    /*CAD*/
+    /*CA*/
 
     if (theElement != NULL)
     {
@@ -6025,7 +5914,7 @@ static INT NeighborSearch_O_n(INT n, NODE **Node, MULTIGRID *theMG, INT *NbrS, E
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -6107,7 +5996,7 @@ static INT NeighborSearch_O_nn(INT n, NODE **Node, GRID *theGrid, INT *NghbrSide
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -6116,7 +6005,7 @@ static INT NdElPtrArray_evalIndexes(INT n, INT *cornerID, MULTIGRID *theMG, INT 
 {
   INT retval, j, IndexOfDivPart, IndexOfModPart, Index, merkeIndex, helpIndex;
 
-  /*CAD*/
+  /*CA*/
   /*evaluate indexes for "Insert in NodeElementMatrix"*/
   /*check if ELEMS_OF_NODE_MAX is too small */
   /* O(n)InsertElement  . . . */
@@ -6190,7 +6079,7 @@ static INT NdElPtrArray_evalIndexes(INT n, INT *cornerID, MULTIGRID *theMG, INT 
     if (MGNDELEMPTRARRAY(theMG) == NULL)
       j = CORNERS_OF_REF(n);
   }
-  /*CAD*/
+  /*CA*/
   return(0);
 } /* of static INT NdElPtrArray_evalIndexes() */
 
@@ -6212,7 +6101,7 @@ static INT NdElPtrArray_evalIndexes(INT n, INT *cornerID, MULTIGRID *theMG, INT 
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -6299,7 +6188,7 @@ static INT NdElPtrArray_GetMemAndCheckIDs(INT n, MULTIGRID *theMG, INT *h_ID, NO
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -6333,7 +6222,7 @@ static INT Neighbor_Direct_Insert(INT n, ELEMENT **ElemList, INT *NbgSdList, INT
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -6342,7 +6231,7 @@ static INT NdElPtrArray_Update(INT *MIndex, INT *MBlock, ELEMENT *theElement, MU
 {
   INT j;
 
-  /*CAD*/
+  /*CA*/
   /* "Insert in NodeElementMatrix"*/
   /* evaluated indexes now are used */
   for(j=0; j<MAX_CORNERS_OF_ELEM; j++)
@@ -6357,7 +6246,7 @@ static INT NdElPtrArray_Update(INT *MIndex, INT *MBlock, ELEMENT *theElement, MU
 
 
 /****************************************************************************/
-/*D
+/** \brief
    InsertElement - Insert an element
 
    SYNOPSIS:
@@ -6374,9 +6263,9 @@ static INT NdElPtrArray_Update(INT *MIndex, INT *MBlock, ELEMENT *theElement, MU
    DESCRIPTION:
    This function inserts an element
 
-   RETURN VALUE:
+   @return
    INT
-   D*/
+ */
 /****************************************************************************/
 
 ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, INT *NbgSdList, INT *bnds_flag)
@@ -6696,7 +6585,7 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    InsertElementFromIDs - Insert element with node ids
 
    SYNOPSIS:
@@ -6711,11 +6600,11 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
    This function inserts an element with nodes that have the ids
    given in `idList`,  on level 0.
 
-   RETURN VALUE:
+   @return
    INT
    .n   pointer to an element if ok
    .n   NULL when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 ELEMENT *InsertElementFromIDs (GRID *theGrid, INT n, INT *idList, INT *bnds_flag)
@@ -6771,7 +6660,7 @@ ELEMENT *InsertElementFromIDs (GRID *theGrid, INT n, INT *idList, INT *bnds_flag
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    DeleteElement - Delete an element
 
    SYNOPSIS:
@@ -6784,11 +6673,11 @@ ELEMENT *InsertElementFromIDs (GRID *theGrid, INT n, INT *idList, INT *bnds_flag
    DESCRIPTION:
    This function deletes an element from level 0.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT DeleteElement (MULTIGRID *theMG, ELEMENT *theElement) /* 3D VERSION */
@@ -6843,7 +6732,7 @@ INT DeleteElement (MULTIGRID *theMG, ELEMENT *theElement) /* 3D VERSION */
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -6874,7 +6763,7 @@ INT DeleteElementWithID (MULTIGRID *theMG, INT id)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    InsertMesh - Insert a mesh described by the domain
 
    SYNOPSIS:
@@ -6887,11 +6776,11 @@ INT DeleteElementWithID (MULTIGRID *theMG, INT id)
    DESCRIPTION:
    This function inserts all nodes and elements given by the mesh.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR when error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
@@ -7015,7 +6904,7 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    FindNodeFromId - Find a node with given id
 
    SYNOPSIS:
@@ -7027,11 +6916,11 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
    DESCRIPTION:
    This function finds a node with given id.
 
-   RETURN VALUE:
+   @return
    NODE *
    .n   pointer to that NODE
    .n   NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 NODE *FindNodeFromId (GRID *theGrid, INT id)
@@ -7046,7 +6935,7 @@ NODE *FindNodeFromId (GRID *theGrid, INT id)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    FindNodeFromPosition - Find node from position
 
    SYNOPSIS:
@@ -7060,11 +6949,11 @@ NODE *FindNodeFromId (GRID *theGrid, INT id)
    DESCRIPTION:
    This function finds the first node within `tol` from `pos` in 1-norm.
 
-   RETURN VALUE:
+   @return
    NODE *
    .n   pointer to NODE
    .n   NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 NODE *FindNodeFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol)
@@ -7084,7 +6973,7 @@ NODE *FindNodeFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    FindVectorFromPosition - Find vector from position
 
    SYNOPSIS:
@@ -7098,11 +6987,11 @@ NODE *FindNodeFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol)
    DESCRIPTION:
    This function finds the first vector within `tol` from `pos` in 1-norm.
 
-   RETURN VALUE:
+   @return
    NODE *
    .n   pointer to NODE
    .n   NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 VECTOR *FindVectorFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol)
@@ -7124,7 +7013,7 @@ VECTOR *FindVectorFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    FindVectorFromIndex - Find vector from Index
 
    SYNOPSIS:
@@ -7137,11 +7026,11 @@ VECTOR *FindVectorFromPosition (GRID *theGrid, DOUBLE *pos, DOUBLE *tol)
    DESCRIPTION:
    This function finds the first vector with index.
 
-   RETURN VALUE:
+   @return
    NODE *
    .n   pointer to VECTOR
    .n   NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 VECTOR *FindVectorFromIndex (GRID *theGrid, INT index)
@@ -7156,7 +7045,7 @@ VECTOR *FindVectorFromIndex (GRID *theGrid, INT index)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    FindElementFromId - Find element with id
 
    SYNOPSIS:
@@ -7170,11 +7059,11 @@ VECTOR *FindVectorFromIndex (GRID *theGrid, INT index)
    This function finds an element with the identification `id`. In parallel
    also ghost elements are searched.
 
-   RETURN VALUE:
+   @return
    ELEMENT *
    .n   pointer to that ELEMENT
    .n   NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 ELEMENT *FindElementFromId (GRID *theGrid, INT id)
@@ -7189,7 +7078,7 @@ ELEMENT *FindElementFromId (GRID *theGrid, INT id)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    PointInElement - Determine whether point is contained in element
 
    SYNOPSIS:
@@ -7203,7 +7092,7 @@ ELEMENT *FindElementFromId (GRID *theGrid, INT id)
    This function determines whether a given point specified by coordinates `x`
    is contained in an element.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 an error occurred
    .n   1 point is contained in the element
@@ -7211,7 +7100,7 @@ ELEMENT *FindElementFromId (GRID *theGrid, INT id)
    .n   3 point is nearly on one edge of the the element
    .n   4 point is nearly one of the corners of the the element
    .n   5 point is not contained in the element
-   D*/
+ */
 /****************************************************************************/
 
 #ifdef __TWODIM__
@@ -7270,7 +7159,7 @@ INT PointInElement (const DOUBLE *global, const ELEMENT *theElement)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    PointOnSide - Determine whether point is on an element side
 
    SYNOPSIS:
@@ -7288,11 +7177,11 @@ INT PointInElement (const DOUBLE *global, const ELEMENT *theElement)
    Beware:  The function only tests if the Point is in the plane spawned by the element side.
    The point could be outside the element side area.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 not on side
    .n   1 x is on side
-   D*/
+ */
 /****************************************************************************/
 
 #ifdef __TWODIM__
@@ -7344,7 +7233,7 @@ INT PointOnSide(const DOUBLE *global, const ELEMENT *theElement, INT side)
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    DOUBLESide - Determine distance of a point to an element side
 
    SYNOPSIS:
@@ -7362,11 +7251,11 @@ INT PointOnSide(const DOUBLE *global, const ELEMENT *theElement, INT side)
    Beware:  The function only tests if the Point is in the plane spawned by the element side.
    The point could be outside the element side area.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 not on side
    .n   1 x is on side
-   D*/
+ */
 /****************************************************************************/
 
 #ifdef __TWODIM__
@@ -7414,7 +7303,7 @@ DOUBLE DistanceFromSide(const DOUBLE *global, const ELEMENT *theElement, INT sid
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    FindElementFromPosition - Find element containing position
 
    SYNOPSIS:
@@ -7427,11 +7316,11 @@ DOUBLE DistanceFromSide(const DOUBLE *global, const ELEMENT *theElement, INT sid
    DESCRIPTION:
    This function finds the first element containing the position `pos`.
 
-   RETURN VALUE:
+   @return
    ELEMENT *
    .n   pointer to ELEMENT
    .n   NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 ELEMENT *FindElementFromPosition (GRID *theGrid, DOUBLE *pos)
@@ -7467,7 +7356,7 @@ ELEMENT *FindElementFromPosition (GRID *theGrid, DOUBLE *pos)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    FindElementFromPosition - Find element containing position
 
    SYNOPSIS:
@@ -7480,11 +7369,11 @@ ELEMENT *FindElementFromPosition (GRID *theGrid, DOUBLE *pos)
    DESCRIPTION:
    This function finds the first element containing the position `pos`.
 
-   RETURN VALUE:
+   @return
    ELEMENT *
    .n   pointer to ELEMENT
    .n   NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 ELEMENT *FindElementOnSurface (MULTIGRID *theMG, DOUBLE *global)
@@ -7501,7 +7390,7 @@ ELEMENT *FindElementOnSurface (MULTIGRID *theMG, DOUBLE *global)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    FindElementOnSurfaceCached - Find element containing position
 
    SYNOPSIS:
@@ -7514,11 +7403,11 @@ ELEMENT *FindElementOnSurface (MULTIGRID *theMG, DOUBLE *global)
    DESCRIPTION:
    This function finds the first element containing the position `pos`.
 
-   RETURN VALUE:
+   @return
    ELEMENT *
    .n   pointer to ELEMENT
    .n   NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 ELEMENT *FindElementOnSurfaceCached (MULTIGRID *theMG, DOUBLE *global)
@@ -7565,7 +7454,7 @@ ELEMENT *FindElementOnSurfaceCached (MULTIGRID *theMG, DOUBLE *global)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -7584,7 +7473,7 @@ INT InnerBoundary (ELEMENT *t, INT side)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    NeighbourElement - get the neighbouring element
 
    SYNOPSIS:
@@ -7597,11 +7486,11 @@ INT InnerBoundary (ELEMENT *t, INT side)
    DESCRIPTION:
    This function returns a pointer to the element on the given side.
 
-   RETURN VALUE:
+   @return
    ELEMENT *
    .n    pointer to an element
    .n    NULL if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 ELEMENT *NeighbourElement (ELEMENT *t, INT side)
@@ -7647,7 +7536,7 @@ ELEMENT *NeighbourElement (ELEMENT *t, INT side)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    CalculateCenterOfMass - Calculate the center of mass for an element
 
    SYNOPSIS:
@@ -7664,9 +7553,9 @@ ELEMENT *NeighbourElement (ELEMENT *t, INT side)
    SEE ALSO:
    DOUBLE_VECTOR, ELEMENT
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
@@ -7687,7 +7576,7 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    CalculateCenterOfMass - Calculate the center of mass for an element
 
    SYNOPSIS:
@@ -7706,9 +7595,9 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
    SEE ALSO:
    DOUBLE_VECTOR, ELEMENT
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 void CalculateCenterOfMassOfSide(ELEMENT *theElement, int side, DOUBLE_VECTOR global, DOUBLE_VECTOR local)
@@ -7734,7 +7623,7 @@ void CalculateCenterOfMassOfSide(ELEMENT *theElement, int side, DOUBLE_VECTOR gl
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    KeyForObject - calculate an (hopefully) unique key for the geometric object
 
    SYNOPSIS:
@@ -7760,9 +7649,9 @@ void CalculateCenterOfMassOfSide(ELEMENT *theElement, int side, DOUBLE_VECTOR gl
    SEE ALSO:
    VERTEX, ELEMENT, NODE, EDGE, VECTOR
 
-   RETURN VALUE:
+   @return
    INT - the resulting key
-   D*/
+ */
 /****************************************************************************/
 
 INT KeyForObject( KEY_OBJECT *obj )
@@ -7829,7 +7718,7 @@ INT KeyForObject( KEY_OBJECT *obj )
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ListMultiGrid - List general information about multigrid structure
 
    SYNOPSIS:
@@ -7843,9 +7732,9 @@ INT KeyForObject( KEY_OBJECT *obj )
    DESCRIPTION:
    This function lists general information about a multigrid structure.
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 void ListMultiGridHeader (const INT longformat)
@@ -7878,7 +7767,7 @@ void ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const INT longformat)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    MultiGridStatus - List information about refinement type distribution
 
    SYNOPSIS:
@@ -7894,9 +7783,9 @@ void ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const INT longformat)
    DESCRIPTION:
    This function lists information about multigrids element types.
 
-   RETURN VALUE:
+   @return
    INT
-   D*/
+ */
 /****************************************************************************/
 
 INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, INT verbose)
@@ -8357,7 +8246,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ListGrids - list general information about grids of multigrid
 
    SYNOPSIS:
@@ -8369,9 +8258,9 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
    DESCRIPTION:
    This function lists general information about the grids of a multigrid.
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 void ListGrids (const MULTIGRID *theMG)
@@ -8670,7 +8559,7 @@ void ListGrids (const MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ListNode - List information about node in multigrid
 
    SYNOPSIS:
@@ -8687,9 +8576,9 @@ void ListGrids (const MULTIGRID *theMG)
    DESCRIPTION:
    This function lists information about a node in a multigrid.
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt, INT vopt)
@@ -8802,7 +8691,7 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
 
 
 /****************************************************************************/
-/*D
+/** \brief
    ListNodeSelection - List information about all nodes in selection
 
    SYNOPSIS:
@@ -8818,9 +8707,9 @@ void ListNode (MULTIGRID *theMG, NODE *theNode, INT dataopt, INT bopt, INT nbopt
    DESCRIPTION:
    This function lists information about all nodes in the selection.
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 void ListNodeSelection (MULTIGRID *theMG, INT dataopt, INT bopt, INT nbopt, INT vopt)
@@ -8842,7 +8731,7 @@ void ListNodeSelection (MULTIGRID *theMG, INT dataopt, INT bopt, INT nbopt, INT 
 
 
 /****************************************************************************/
-/*D
+/** \brief
    IsNodeSelected - Check if element is in selection list
 
    SYNOPSIS:
@@ -8855,11 +8744,11 @@ void ListNodeSelection (MULTIGRID *theMG, INT dataopt, INT bopt, INT nbopt, INT 
    DESCRIPTION:
    This function checks if an element is in the selection list.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if NOT in list
    .n   1 if in list.
-   D*/
+ */
 /****************************************************************************/
 
 INT IsNodeSelected (MULTIGRID *theMG, NODE *theNode)
@@ -8875,7 +8764,7 @@ INT IsNodeSelected (MULTIGRID *theMG, NODE *theNode)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    ListNodeRange - List information about nodes in given range of ids
 
    SYNOPSIS:
@@ -8894,9 +8783,9 @@ INT IsNodeSelected (MULTIGRID *theMG, NODE *theNode)
    DESCRIPTION:
    This function list information about all nodes in a given range of ids.
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataopt, INT bopt, INT nbopt, INT vopt)
@@ -8932,7 +8821,7 @@ void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataopt, 
 
 
 /****************************************************************************/
-/*D
+/** \brief
    ListElement - List information about element
 
    SYNOPSIS:
@@ -8947,9 +8836,9 @@ void ListNodeRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataopt, 
    DESCRIPTION:
    This function lists information about an element
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, INT nbopt, INT vopt)
@@ -9059,7 +8948,7 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
 
 
 /****************************************************************************/
-/*D
+/** \brief
     ListElementSelection - list information about elements in selection
 
    SYNOPSIS:
@@ -9073,9 +8962,9 @@ void ListElement (MULTIGRID *theMG, ELEMENT *theElement, INT dataopt, INT bopt, 
    DESCRIPTION:
    This function lists information about all elements in the selection.
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 void ListElementSelection (MULTIGRID *theMG, INT dataopt, INT bopt, INT nbopt, INT vopt)
@@ -9098,7 +8987,7 @@ void ListElementSelection (MULTIGRID *theMG, INT dataopt, INT bopt, INT nbopt, I
 
 
 /****************************************************************************/
-/*D
+/** \brief
    IsElementSelected - Check whether element is in selection list
 
    SYNOPSIS:
@@ -9111,11 +9000,11 @@ void ListElementSelection (MULTIGRID *theMG, INT dataopt, INT bopt, INT nbopt, I
    DESCRIPTION:
    This function checks whether an element is in the selection list.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if NOT in list
    .n   1 if in list.
-   D*/
+ */
 /****************************************************************************/
 
 INT IsElementSelected (MULTIGRID *theMG, ELEMENT *theElement)
@@ -9131,7 +9020,7 @@ INT IsElementSelected (MULTIGRID *theMG, ELEMENT *theElement)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    ListElementRange - List information about elements in range of ids
 
    SYNOPSIS:
@@ -9148,9 +9037,9 @@ INT IsElementSelected (MULTIGRID *theMG, ELEMENT *theElement)
    DESCRIPTION:
    This function lists information about all elements in a range of ids.
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataopt, INT bopt, INT nbopt, INT vopt, INT lopt)
@@ -9194,7 +9083,7 @@ void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataop
 
 
 /****************************************************************************/
-/*D
+/** \brief
    ListVector - List information about vector
 
    SYNOPSIS:
@@ -9210,9 +9099,9 @@ void ListElementRange (MULTIGRID *theMG, INT from, INT to, INT idopt, INT dataop
    DESCRIPTION:
    This function lists information about a vector.
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt, INT modifiers)
@@ -9347,7 +9236,7 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ListVectorOfElementSelection - List info about vectors of elements in selection
 
    SYNOPSIS:
@@ -9362,9 +9251,9 @@ void ListVector (MULTIGRID *theMG, VECTOR *theVector, INT matrixopt, INT dataopt
    DESCRIPTION:
    This function lists info about all vectors of elements in the selection.
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modifiers)
@@ -9410,7 +9299,7 @@ void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt,
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ListVectorSelection - list information about vectors in selection
 
    SYNOPSIS:
@@ -9425,9 +9314,9 @@ void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt,
    DESCRIPTION:
    This function lists information about all elements in the selection.
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modifiers)
@@ -9449,7 +9338,7 @@ void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modi
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    IsVectorSelected - Check whether vector is in selection list
 
    SYNOPSIS:
@@ -9462,11 +9351,11 @@ void ListVectorSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt, INT modi
    DESCRIPTION:
    This function checks whether an element is in the selection list.
 
-   RETURN VALUE:
+   @return
    INT
    .n   0 if NOT in list
    .n   1 if in list.
-   D*/
+ */
 /****************************************************************************/
 
 INT IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
@@ -9481,7 +9370,7 @@ INT IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ListVectorRange - list information about vectors in range of ids
 
    SYNOPSIS:
@@ -9501,9 +9390,9 @@ INT IsVectorSelected (MULTIGRID *theMG, VECTOR *theVector)
    DESCRIPTION:
    This function lists information about all vectors in a given range of indices.
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT idopt, INT matrixopt, INT dataopt, INT datatypes, INT modifiers)
@@ -9556,7 +9445,7 @@ void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT id
  */
 
 /****************************************************************************/
-/*D
+/** \brief
    ClearSelection - Clear selection buffer
 
    SYNOPSIS:
@@ -9568,9 +9457,9 @@ void ListVectorRange (MULTIGRID *theMG, INT fl, INT tl, INT from, INT to, INT id
    DESCRIPTION:
    This function clears the selection buffer of a multigrid.
 
-   RETURN VALUE:
+   @return
    void
-   D*/
+ */
 /****************************************************************************/
 
 
@@ -9581,7 +9470,7 @@ void ClearSelection (MULTIGRID *theMG)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    AddNodeToSelection - Add node to selection buffer
 
    SYNOPSIS:
@@ -9595,11 +9484,11 @@ void ClearSelection (MULTIGRID *theMG)
    This function adds an node to the selection buffer or removes it if it is already
    in the list.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if an  error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT AddNodeToSelection (MULTIGRID *theMG, NODE *theNode)
@@ -9632,7 +9521,7 @@ INT AddNodeToSelection (MULTIGRID *theMG, NODE *theNode)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    AddElementToSelection - Add element to selection buffer
 
    SYNOPSIS:
@@ -9646,11 +9535,11 @@ INT AddNodeToSelection (MULTIGRID *theMG, NODE *theNode)
    This function adds an element to the selection buffer or removes it if it is already
    in the list.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if an  error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT AddElementToSelection (MULTIGRID *theMG, ELEMENT *theElement)
@@ -9683,7 +9572,7 @@ INT AddElementToSelection (MULTIGRID *theMG, ELEMENT *theElement)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    AddVectorToSelection - Add vector to selection buffer
 
    SYNOPSIS:
@@ -9697,11 +9586,11 @@ INT AddElementToSelection (MULTIGRID *theMG, ELEMENT *theElement)
    This function adds a vector to the selection buffer or removes it if it is already
    in the list.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if an  error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT AddVectorToSelection (MULTIGRID *theMG, VECTOR *theVector)
@@ -9746,7 +9635,7 @@ INT AddVectorToSelection (MULTIGRID *theMG, VECTOR *theVector)
    DESCRIPTION:
    This function removes an node from the selection buffer.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if an error occured.
@@ -9797,7 +9686,7 @@ INT RemoveNodeFromSelection (MULTIGRID *theMG, NODE *theNode)
    DESCRIPTION:
    This function removes an element from the selection buffer.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if an error occured.
@@ -9847,7 +9736,7 @@ INT RemoveElementFromSelection (MULTIGRID *theMG, ELEMENT *theElement)
    DESCRIPTION:
    This function removes a vector from the selection buffer.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if an error occured.
@@ -9896,7 +9785,7 @@ INT RemoveVectorFromSelection (MULTIGRID *theMG, VECTOR *theVector)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -9936,7 +9825,7 @@ static INT GetAngle(DOUBLE *angle,DOUBLE *n1, DOUBLE *n2)
 
    DESCRIPTION:
 
-   RETURN VALUE:
+   @return
    INT
  */
 /****************************************************************************/
@@ -9968,7 +9857,7 @@ static INT SetNormal(DOUBLE *n, DOUBLE **x, INT nc)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    MinMaxAngle - Determine min and max angle in degrees
 
    SYNOPSIS:
@@ -9982,11 +9871,11 @@ static INT SetNormal(DOUBLE *n, DOUBLE **x, INT nc)
    DESCRIPTION:
    This function determines min and max angle in degrees.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if an error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
@@ -10066,7 +9955,7 @@ INT MinMaxEdge (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    DefineMGUDBlock - Define block in general MG user data space
 
    SYNOPSIS:
@@ -10079,11 +9968,11 @@ INT MinMaxEdge (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
    DESCRIPTION:
    This function defines a block in the general MG user data space.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if an  error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT DefineMGUDBlock (BLOCK_ID id, MEM size)
@@ -10096,7 +9985,7 @@ INT DefineMGUDBlock (BLOCK_ID id, MEM size)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    FreeMGUDBlock - Free block in general MG user data space
 
    SYNOPSIS:
@@ -10108,11 +9997,11 @@ INT DefineMGUDBlock (BLOCK_ID id, MEM size)
    DESCRIPTION:
    This function frees a block in the general MG user data space.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if an error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT FreeMGUDBlock (BLOCK_ID id)
@@ -10124,7 +10013,7 @@ INT FreeMGUDBlock (BLOCK_ID id)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    GetMGUDBlockDescriptor - Return pointer to block descriptor with id
 
    SYNOPSIS:
@@ -10136,11 +10025,11 @@ INT FreeMGUDBlock (BLOCK_ID id)
    DESCRIPTION:
    This function returns a pointer to the block descriptor with id.
 
-   RETURN VALUE:
+   @return
    BLOCK_DESC *
    .n   pointer to BLOCK_DESC
    .n   NULL if an error occured.
-   D*/
+ */
 /****************************************************************************/
 
 BLOCK_DESC      *GetMGUDBlockDescriptor (BLOCK_ID id)
@@ -10154,7 +10043,7 @@ VIRT_HEAP_MGMT *GetGenMGUDM()
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    MaxNodeClass - Returns highest Node class of a dof on next level
 
    SYNOPSIS:
@@ -10167,11 +10056,11 @@ VIRT_HEAP_MGMT *GetGenMGUDM()
    This function returns highest 'NCLASS' of a Node associated with the
    element.
 
-   RETURN VALUE:
+   @return
    INT
    .n    0 if ok
    .n    1 if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 static INT MaxNodeClass (ELEMENT *theElement)
@@ -10189,7 +10078,7 @@ static INT MaxNodeClass (ELEMENT *theElement)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    MaxNextNodeClass - Returns highest Node class of a dof on next level
 
    SYNOPSIS:
@@ -10202,11 +10091,11 @@ static INT MaxNodeClass (ELEMENT *theElement)
    This function returns highest 'NNCLASS' of a Node associated with the
    element.
 
-   RETURN VALUE:
+   @return
    INT
    .n    0 if ok
    .n    1 if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT MaxNextNodeClass (ELEMENT *theElement)
@@ -10252,7 +10141,7 @@ INT MaxPeriodicNextNodeClass (ELEMENT *theElement)
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    MinNodeClass - Returns minimal Node class of a dof on next level
 
    SYNOPSIS:
@@ -10265,11 +10154,11 @@ INT MaxPeriodicNextNodeClass (ELEMENT *theElement)
    This function returns highest 'NNCLASS' of a Node associated with the
    element.
 
-   RETURN VALUE:
+   @return
    INT
    .n    0 if ok
    .n    1 if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT MinNodeClass (ELEMENT *theElement)
@@ -10287,7 +10176,7 @@ INT MinNodeClass (ELEMENT *theElement)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    MinNextNodeClass - Returns minimal Node class of a dof on next level
 
    SYNOPSIS:
@@ -10300,11 +10189,11 @@ INT MinNodeClass (ELEMENT *theElement)
    This function returns highest 'NNCLASS' of a Node associated with the
    element.
 
-   RETURN VALUE:
+   @return
    INT
    .n    0 if ok
    .n    1 if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT MinNextNodeClass (ELEMENT *theElement)
@@ -10322,7 +10211,7 @@ INT MinNextNodeClass (ELEMENT *theElement)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    SeedNodeClasses - Initialize node classes
 
    SYNOPSIS:
@@ -10335,11 +10224,11 @@ INT MinNextNodeClass (ELEMENT *theElement)
    DESCRIPTION:
    Initialize Node class in all nodes associated with given element with 3.
 
-   RETURN VALUE:
+   @return
    INT
    .n    0 if ok
    .n    1 if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT SeedNodeClasses (ELEMENT *theElement)
@@ -10353,7 +10242,7 @@ INT SeedNodeClasses (ELEMENT *theElement)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ClearNodeClasses - Reset node classes
 
    SYNOPSIS:
@@ -10365,11 +10254,11 @@ INT SeedNodeClasses (ELEMENT *theElement)
    DESCRIPTION:
    Reset all node classes in all nodes of given grid to 0.
 
-   RETURN VALUE:
+   @return
    INT
    .n     0 if ok
    .n     1 if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT ClearNodeClasses (GRID *theGrid)
@@ -10383,7 +10272,7 @@ INT ClearNodeClasses (GRID *theGrid)
   return(0);
 }
 /****************************************************************************/
-/*D
+/** \brief
    PropagateNodeClasses - Compute Node classes after initialization
 
    SYNOPSIS:
@@ -10396,11 +10285,11 @@ INT ClearNodeClasses (GRID *theGrid)
    After Node classes have been reset and initialized, this function
    now computes the class 2 and class 1 Nodes.
 
-   RETURN VALUE:
+   @return
    INT
    .n      0 if ok
    .n      1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 #ifdef ModelP
@@ -10625,7 +10514,7 @@ INT PropagateNodeClasses (GRID *theGrid)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    ClearNextNodeClasses - Reset class of the Nodes on the next level
 
    SYNOPSIS:
@@ -10639,11 +10528,11 @@ INT PropagateNodeClasses (GRID *theGrid)
    compute the class of the dofs on the *NEXT* level, which
    is also the basis for determining copies.
 
-   RETURN VALUE:
+   @return
    INT
    .n     0 if ok
    .n     1 if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT ClearNextNodeClasses (GRID *theGrid)
@@ -10660,7 +10549,7 @@ INT ClearNextNodeClasses (GRID *theGrid)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    SeedNextNodeClasses - Set 'NNCLASS' in all Nodes associated with element
 
    SYNOPSIS:
@@ -10672,11 +10561,11 @@ INT ClearNextNodeClasses (GRID *theGrid)
    DESCRIPTION:
    Set 'NNCLASS' in all nodes associated with the element to 3.
 
-   RETURN VALUE:
+   @return
    INT
    .n     0 if ok
    .n     1 if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT SeedNextNodeClasses (ELEMENT *theElement)
@@ -10690,7 +10579,7 @@ INT SeedNextNodeClasses (ELEMENT *theElement)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    PropagateNextNodeClasses - Compute 'NNCLASS' in all Nodes of a grid level
 
    SYNOPSIS:
@@ -10702,11 +10591,11 @@ INT SeedNextNodeClasses (ELEMENT *theElement)
    DESCRIPTION:
    Computes values of 'NNCLASS' field in all nodes after seed.
 
-   RETURN VALUE:
+   @return
    INT
    .n    0 if ok
    .n    1 if error occured
-   D*/
+ */
 /****************************************************************************/
 
 #ifdef ModelP
@@ -10922,7 +10811,7 @@ INT PropagateNextNodeClasses (GRID *theGrid)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    SetEdgeAndNodeSubdomainFromElements - set subdomain id on level 0 edges
 
    SYNOPSIS:
@@ -10934,11 +10823,11 @@ INT PropagateNextNodeClasses (GRID *theGrid)
    DESCRIPTION:
    This function sets the subdomain id taken from the elements for level 0 edges.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 static INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
@@ -11010,7 +10899,7 @@ static INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    RemoveSpuriousBoundarySides - remove boundary side of element and neighbour
 
    SYNOPSIS:
@@ -11023,11 +10912,11 @@ static INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
    DESCRIPTION:
    This function removes the boundary side of element and neighbour.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 static INT RemoveSpuriousBoundarySides (HEAP *heap, ELEMENT *elem, INT side)
@@ -11065,7 +10954,7 @@ static INT RemoveSpuriousBoundarySides (HEAP *heap, ELEMENT *elem, INT side)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    BElem2IElem - replace boundary by inner element
 
    SYNOPSIS:
@@ -11078,11 +10967,11 @@ static INT RemoveSpuriousBoundarySides (HEAP *heap, ELEMENT *elem, INT side)
    DESCRIPTION:
    This function replaces a boundary by an inner element.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 static INT BElem2IElem (GRID *grid, ELEMENT **elemH)
@@ -11133,7 +11022,7 @@ static INT BElem2IElem (GRID *grid, ELEMENT **elemH)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    FinishGrid - remove erroneously introduced bsides and propagate sub domain IDs
 
    SYNOPSIS:
@@ -11145,11 +11034,11 @@ static INT BElem2IElem (GRID *grid, ELEMENT **elemH)
    DESCRIPTION:
    This function removes erroneously introduced bsides and propagates sub domain IDs.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 static INT FinishGrid (MULTIGRID *mg)
@@ -11406,7 +11295,7 @@ static INT FinishGrid (MULTIGRID *mg)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    SetSubdomainIDfromBndInfo - set subdomain id on level 0 elements and edges
 
    SYNOPSIS:
@@ -11418,11 +11307,11 @@ static INT FinishGrid (MULTIGRID *mg)
    DESCRIPTION:
    This function sets the subdomain for level 0 elements and edges.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
@@ -12830,7 +12719,7 @@ INT Grid_GeometricToPeriodic (GRID *g)
 
 
 /****************************************************************************/
-/*D
+/** \brief
    MG_GeometricToPeriodic - identify vectors on periodic boundaries
 
    SYNOPSIS:
@@ -12845,11 +12734,11 @@ INT Grid_GeometricToPeriodic (GRID *g)
    The vector points to one of the nodes, which points to the single
    periodic vector.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT MG_GeometricToPeriodic (MULTIGRID *mg, INT fl, INT tl)
@@ -12867,7 +12756,7 @@ INT MG_GeometricToPeriodic (MULTIGRID *mg, INT fl, INT tl)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    Grid_CheckPeriodicity - check if periodicity is correct
 
    SYNOPSIS:
@@ -12879,11 +12768,11 @@ INT MG_GeometricToPeriodic (MULTIGRID *mg, INT fl, INT tl)
    DESCRIPTION:
    This function checks all connections at periodic boundaries.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT Grid_CheckPeriodicity (GRID *grid)
@@ -13059,7 +12948,7 @@ static INT Grid_ListPeriodicPos (GRID *g, DOUBLE_VECTOR pos)
 }
 
 /****************************************************************************/
-/*D
+/** \brief
    MG_ListPeriodicPos - list periodic positions and node-vector(-proc) info
 
    SYNOPSIS:
@@ -13073,11 +12962,11 @@ static INT Grid_ListPeriodicPos (GRID *g, DOUBLE_VECTOR pos)
    of all periodic boundaries. In parallel also proclist are printed.
    This should give a clear view onto the periodic data structure.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT MG_ListPeriodicPos (MULTIGRID *mg, INT fl, INT tl, DOUBLE_VECTOR pos)
@@ -13106,7 +12995,7 @@ INT MG_ListPeriodicPos (MULTIGRID *mg, INT fl, INT tl, DOUBLE_VECTOR pos)
 #endif
 
 /****************************************************************************/
-/*D
+/** \brief
    FixCoarseGrid - do all that is necessary to complete the coarse grid
 
    SYNOPSIS:
@@ -13119,11 +13008,11 @@ INT MG_ListPeriodicPos (MULTIGRID *mg, INT fl, INT tl, DOUBLE_VECTOR pos)
    This function does all that is necessary to complete the coarse grid.
    Finally the MG_COARSE_FIXED flag is set.
 
-   RETURN VALUE:
+   @return
    INT
    .n   GM_OK if ok
    .n   GM_ERROR if error occured
-   D*/
+ */
 /****************************************************************************/
 
 INT FixCoarseGrid (MULTIGRID *theMG)
@@ -13155,23 +13044,15 @@ INT FixCoarseGrid (MULTIGRID *theMG)
 }
 
 /****************************************************************************/
-/*D
-   InitUGManager - Init what is necessary
-
-   SYNOPSIS:
-   INT InitUGManager ();
-
-   PARAMETERS:
-   .  void
-
-   DESCRIPTION:
-   This function initializes the grid manager.
-
-   RETURN VALUE:
-   INT
-   .n   GM_OK if ok
-   .n   > 0 line in which error occured.
-   D*/
+/** \brief Init what is necessary
+ *
+ *  This function initializes the grid manager.
+ *
+ *  @return <ul>
+ *     <li> GM_OK if ok </li>
+ *     <li> > 0 line in which error occured </li>
+ *  </ul>
+ */
 /****************************************************************************/
 
 INT InitUGManager ()
