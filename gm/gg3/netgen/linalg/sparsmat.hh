@@ -9,6 +9,7 @@
 /* Date:   01. Oct. 94                                                    */
 /* *************************************************************************/
 
+#include "../general/bitarray.hh"
 
 /**
    The graph of a sparse matrix.
