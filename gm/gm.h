@@ -50,26 +50,11 @@
 #include <time.h>
 #include <math.h>
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
-
-#ifndef __HEAPS__
 #include "heaps.h"
-#endif
-
-#ifndef __UGENV__
 #include "ugenv.h"
-#endif
-
-#ifndef __MISC__
 #include "misc.h"
-#endif
-
-#ifndef __DEBUG__
 #include "debug.h"
-#endif
-
 #include "domain.h"
 #include "pargm.h"
 
@@ -3037,12 +3022,10 @@ extern INT reference2tag[MAX_CORNERS_OF_ELEM+1];
 /****************************************************************************/
 
 /* predefined blockvector description formats */
-#if 0
 extern const BV_DESC_FORMAT DH_bvdf;            /* bvdf for domain halfening    */
 extern const BV_DESC_FORMAT one_level_bvdf;     /* bvdf for only 1 blocklevel   */
 extern const BV_DESC_FORMAT two_level_bvdf;     /* bvdf for 2 blocklevels               */
 extern const BV_DESC_FORMAT three_level_bvdf;   /* bvdf for 3 blocklevels       */
-#endif
 
 #if defined ModelP && defined __OVERLAP2__
 extern INT ce_NO_DELETE_OVERLAP2;
