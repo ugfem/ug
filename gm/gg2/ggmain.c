@@ -2696,7 +2696,8 @@ INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh,
 
   if (display>0) UserWrite("\n");
 
-  TerminateAccel(theMG, 0);
+  if (doAngle || doEdge)
+    TerminateAccel(theMG, 0);
   return (0);
 }
 
