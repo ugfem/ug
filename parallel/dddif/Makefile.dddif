@@ -16,7 +16,7 @@ include	../machines/mk.$(ARCHDIR)
 include ../ug.conf
 
 # local C compiler flags
-LCFLAGS = -I../low -I../gm -I../dddif
+LCFLAGS = -I../low -I../gm -I../dddif -I../dom
 
 # object files
 OBJECTS = initddd.o memmgr.o handler.o test.o debugger.o

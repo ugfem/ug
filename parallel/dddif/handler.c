@@ -40,6 +40,7 @@
 #include <stdio.h>
 
 #include "compiler.h"
+#include "domain.h"
 #include "gm.h"
 #include "parallel.h"
 #include "heaps.h"
@@ -471,6 +472,7 @@ void BVertexXferCopy (OBJECT obj, int proc, int prio)
 void BVertexGatherVSegment (OBJECT ver, int cnt, DDD_TYPE type_id, void *Data)
 {
 	char *data;
+    INT id;
 	VSEGMENT *vseg;
 
 	data = (char *)Data;
@@ -483,7 +485,8 @@ void BVertexGatherVSegment (OBJECT ver, int cnt, DDD_TYPE type_id, void *Data)
 
 		memcpy(data,vseg,sizeof(VSEGMENT));
 		/* copy segment id too */
-		memcpy(data+sizeof(VSEGMENT),&SEGID(BSEGDESC(vseg)),sizeof(INT));
+        id = Patch_GetPatchID(VS_PATCH(vseg));
+		memcpy(data+sizeof(VSEGMENT),&id,sizeof(INT));
 		data += CEIL(sizeof(VSEGMENT)+sizeof(INT));
 	}
 }
@@ -507,7 +510,7 @@ void BVertexScatterVSegment (OBJECT ver, int cnt, DDD_TYPE type_id, void *Data)
 	memcpy(vseg,data,sizeof(VSEGMENT));
 	memcpy(&segmentid,data+sizeof(VSEGMENT),sizeof(INT));
 	data += CEIL(sizeof(VSEGMENT)+sizeof(INT));
-	BSEGDESC(vseg) = &DDD_currMG->segments[segmentid]; 
+	VS_PATCH(vseg) = Patch_GetPatchByID(DDD_currMG->theBVP,segmentid); 
 
 	for (i=1,VSEG((VERTEX *)ver)=vseg; i<cnt; i++,NEXTSEG(prev)=vseg)
 	{
@@ -518,7 +521,7 @@ void BVertexScatterVSegment (OBJECT ver, int cnt, DDD_TYPE type_id, void *Data)
 		memcpy(vseg,data,sizeof(VSEGMENT));
 		memcpy(&segmentid,data+sizeof(VSEGMENT),sizeof(INT));
 		data += CEIL(sizeof(VSEGMENT)+sizeof(INT));
-		BSEGDESC(vseg) = &DDD_currMG->segments[segmentid]; 
+		VS_PATCH(vseg) = Patch_GetPatchByID(DDD_currMG->theBVP,segmentid); 
 	}
 	
 	MNEXT(vseg) = NULL;
@@ -971,6 +974,7 @@ void ElemGatherElemSide (OBJECT obj, int cnt, DDD_TYPE type_id, void *Data)
 {
 	int i;
 	char *data;
+    INT id;
 	ELEMENTSIDE *elemside;
 	ELEMENT  *pe	=	(ELEMENT *)obj;
 
@@ -982,10 +986,11 @@ void ElemGatherElemSide (OBJECT obj, int cnt, DDD_TYPE type_id, void *Data)
 	{
 		if (SIDE(pe,i) != NULL) 
 		{
-			PRINTDEBUG(dddif,4,("%2d:  ElemGatherElemSide(): e=%x elemside=%x side=%d segid=%d\n",me,pe,SIDE(pe,i),i,SEGID(SEGDESC(SIDE(pe,i)))))
+			id = Patch_GetPatchID(VS_PATCH(SIDE(pe,i)));
+			PRINTDEBUG(dddif,4,("%2d:  ElemGatherElemSide(): e=%x elemside=%x side=%d segid=%d\n",me,pe,SIDE(pe,i),i,id))
 			memcpy(data,SIDE(pe,i),sizeof(ELEMENTSIDE));
 			/* copy segment id too */
-			memcpy(data+sizeof(ELEMENTSIDE),&SEGID(SEGDESC(SIDE(pe,i))),sizeof(INT));
+            memcpy(data+sizeof(ELEMENTSIDE),&id,sizeof(INT));
 			data += CEIL(sizeof(ELEMENTSIDE)+sizeof(INT));
 		}
 	}
@@ -1016,10 +1021,10 @@ void ElemScatterElemSide (OBJECT obj, int cnt, DDD_TYPE type_id, void *Data)
 			memcpy(elemside,data,sizeof(ELEMENTSIDE));
 			memcpy(&segmentid,data+sizeof(ELEMENTSIDE),sizeof(INT));
 			data += CEIL(sizeof(ELEMENTSIDE)+sizeof(INT));
-			SEGDESC(elemside) = &DDD_currMG->segments[segmentid]; 
+			VS_PATCH(elemside) = Patch_GetPatchByID(DDD_currMG->theBVP,segmentid); 
 			SET_SIDE(pe,i,elemside);
 
-			PRINTDEBUG(dddif,4,("%2d:  ElemScatterElemSide(): e=%x elemside=%x side=%d segid=%d\n",me,pe,SIDE(pe,i),i,SEGID(SEGDESC(SIDE(pe,i)))))
+			PRINTDEBUG(dddif,4,("%2d:  ElemScatterElemSide(): e=%x elemside=%x side=%d segid=%d\n",me,pe,SIDE(pe,i),i,segmentid))
 
 			/* put into double linked list */
 			PREDS(elemside) = NULL;

@@ -321,7 +321,7 @@ void ddd_structInit (void)
 
   TypeVSegment = DDD_StructRegister("VSegment", NULL, &vs,
                                     EL_GDATA,  &vs.control,
-                                    EL_LDATA,  &vs.segdesc,
+                                    EL_LDATA,  &vs.thePatch,
                                     EL_GDATA,  &vs.lambda,
                                     EL_LDATA,  &vs.next,
                                     EL_GDATA,  &vs+1, /* add a dummy containing segment id */
@@ -363,7 +363,7 @@ void ddd_structInit (void)
 
   TypeElementSide = DDD_StructRegister("ElementSide", NULL, &es,
                                        EL_GDATA,  &es.control,
-                                       EL_LDATA,  &es.segdesc,
+                                       EL_LDATA,  &es.thePatch,
                                        EL_GDATA,  &es.lambda[0][0],
                                        EL_LDATA,  &es.pred,
                                        EL_LDATA,  &es.succ,
@@ -378,8 +378,8 @@ void ddd_structInit (void)
 /* Function:  ddd_ifInit                                                                                                        */
 /*																			*/
 /* Purpose:   defines the communication interfaces needed in ug for             */
-/*		      management by DDD
-   /*																			*/
+/*		      management by DDD                                             */
+/*																			*/
 /* Input:     void                                                              */
 /*																			*/
 /* Output:    void                                                                                                              */
@@ -426,8 +426,13 @@ void ddd_ifInit (void)
 /*																			*/
 /****************************************************************************/
 
-
 int InitParallel (int argc, char **argv)
+{
+  DDD_Init(argc, argv);
+  return(0);
+}
+
+int InitParallelOLD (int argc, char **argv)
 {
   DDD_Init(argc, argv);
 
