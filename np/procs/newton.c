@@ -292,7 +292,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
 
   /* compute single norm */
   s = 0.0; for (i=0; i<n_unk; i++) s += defect[i]*defect[i];s = sqrt(s);
-  sred = 1.0E10; for (i=0; i<n_unk; i++) sred = MIN(sred,nls->reduction[i]);
+  sred = 1.0E10; for (i=0; i<n_unk; i++) sred = MIN(sred,reduction[i]);
   s2reach = s*sred;
   if (newton->lineSearch)
   {
@@ -330,8 +330,6 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
       l_dset(GRID_ON_LEVEL(mg,i),newton->v,EVERY_CLASS,0.0);
     if (reassemble)
     {
-      for (i=0; i<=level; i++)
-        l_dmatset(GRID_ON_LEVEL(mg,i),newton->J,0.0);
       if ((*ass->NLAssembleMatrix)(ass,0,level,x,newton->d,newton->v,newton->J,&error)) {
         res->error_code = __LINE__;
         return(res->error_code);
@@ -359,7 +357,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
       res->error_code = __LINE__;
       goto exit;
     }
-    if ((*newton->solve->Solver)(newton->solve,level,newton->v,newton->d,newton->J,abslimit,linred,&lr))
+    if ((*newton->solve->Solver)(newton->solve,level,newton->v,newton->d,newton->J,newton->solve->abslimit,linred,&lr))
     {
       res->error_code = __LINE__;
       goto exit;
@@ -378,7 +376,7 @@ static INT NewtonSolver      (NP_NL_SOLVER *nls, INT level, VECDATA_DESC *x,
     /* if linear solver did not converge, return here */
     if (!lr.converged) {
       UserWrite("\nLinear solver did not converge in Newton method\n");
-      res->error_code = __LINE__;
+      res->error_code = 0;                   /* no error but exit */
       goto exit;
     }
 
