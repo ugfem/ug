@@ -77,6 +77,7 @@
 static OUTPUTDEVICE *CurrentOutputDevice;               /* current output device	*/
 static COORD_POINT CurrCursor;                                  /* current cursor position	*/
 static SHORT CurrTextSize;                                              /* current text size		*/
+static SHORT CurrLineWidth;                                             /* current line width		*/
 
 static DOUBLE currClipRegionMaxX;               /* corner of ViewPort having the	*/
 static DOUBLE currClipRegionMaxY;               /*largest values for each component */
@@ -86,6 +87,7 @@ static DOUBLE currClipRegionMinY;               /*smallest values for each compo
 static COORD_POINT currClipRegionCorner[4];     /* corners of the view port */
 
 static DOUBLE TextFactor=1;
+static DOUBLE LineFactor=1;
 
 static char buffer[256];                                                /* general purpose text buff*/
 
@@ -1454,7 +1456,9 @@ void UgSetLineWidth (short width)
   if (me != master)
     return;
         #endif
-  (*CurrentOutputDevice->SetLineWidth)(width);
+
+  CurrLineWidth = LineFactor*width;
+  (*CurrentOutputDevice->SetLineWidth)(LineFactor*width);
 }
 
 /****************************************************************************/
@@ -1588,4 +1592,29 @@ INT SetTextFactor (DOUBLE textfactor)
 DOUBLE GetTextFactor (void)
 {
   return (TextFactor);
+}
+
+/****************************************************************************/
+/*D
+   SetLineFactor - change the factor all line widths are multiply with
+
+   SYNOPSIS:
+   INT SetLineFactor (DOUBLE linefactor)
+
+   PARAMETERS:
+   .  linefactor - factor all line widths are multiply with
+
+   DESCRIPTION:
+   This function changes the factor all line widths are multiply with.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   D*/
+/****************************************************************************/
+
+INT SetLineFactor (DOUBLE linefactor)
+{
+  LineFactor = linefactor;
+  return (0);
 }
