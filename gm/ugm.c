@@ -344,7 +344,7 @@ static VERTEX *CreateBoundaryVertex (GRID *theGrid)
   SETONEDGE(pv,0);
   SETMOVE(pv,DIM_OF_BND);
         #ifdef ModelP
-  DDD_AttrSet(PARHDRV(pv),theGrid->level);
+  DDD_AttrSet(PARHDRV(pv),GRID_ATTR(theGrid));
   SETVXPRIO(pv,PrioMaster);
         #endif
 
@@ -404,7 +404,7 @@ static VERTEX *CreateInnerVertex (GRID *theGrid)
         #endif
   SETMOVE(pv,DIM);
         #ifdef ModelP
-  DDD_AttrSet(PARHDRV(pv),theGrid->level);
+  DDD_AttrSet(PARHDRV(pv),GRID_ATTR(theGrid));
   SETVXPRIO(pv,PrioMaster);
         #endif
   for (i=0; i<DIM; i++) LCVECT(pv)[i] = 0.0;
@@ -458,7 +458,7 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex, NODE *FatherNode, INT No
   SETCLASS(pn,4);
   SETLEVEL(pn,theGrid->level);
         #ifdef ModelP
-  DDD_AttrSet(PARHDR(pn),theGrid->level);
+  DDD_AttrSet(PARHDR(pn),GRID_ATTR(theGrid));
   SETPRIO(pn,PrioMaster);
         #endif
   ID(pn) = (theGrid->mg->nodeIdCounter)++;
@@ -1538,7 +1538,7 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to, INT with_vector, INT subd
   SETLOFFSET(link1,1);
   SETLEVEL(pe,theGrid->level);
         #if (defined ModelP) && (defined __THREEDIM__)
-  DDD_AttrSet(PARHDR(pe),theGrid->level);
+  DDD_AttrSet(PARHDR(pe), GRID_ATTR(theGrid));
   SETPRIO(pe,PrioMaster);
         #endif
   NBNODE(link0) = to;
@@ -1658,7 +1658,7 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
   SETTAG(pe,tag);
   SETLEVEL(pe,theGrid->level);
         #ifdef ModelP
-  DDD_AttrSet(PARHDRE(pe),theGrid->level);
+  DDD_AttrSet(PARHDRE(pe),GRID_ATTR(theGrid));
   SETEPRIO(pe,PrioMaster);
   PARTITION(pe) = me;
         #endif

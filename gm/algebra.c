@@ -712,14 +712,14 @@ static INT CreateVectorInPart (GRID *theGrid, INT DomPart, INT VectorObjType, GE
   SETVBUILDCON(pv,1);
   SETVNEW(pv,1);
   SETVCNEW(pv,1);
+  SETPRIO(pv,PrioMaster);
 
     #ifdef __BLOCK_VECTOR_DESC__
   BVD_INIT( &VBVD( pv ) );
     #endif
 
         #ifdef ModelP
-  DDD_AttrSet(PARHDR(pv),theGrid->level);
-  DDD_PrioritySet(PARHDR(pv),PrioMaster);
+  DDD_AttrSet(PARHDR(pv),GRID_ATTR(theGrid));
         #endif
 
   VOBJECT(pv) = object;
@@ -3918,8 +3918,13 @@ static INT LexCompare (VECTOR **pvec1, VECTOR **pvec2)
   DOUBLE_VECTOR pv1,pv2;
   DOUBLE diff[DIM];
 
+  PRINTDEBUG(gm,1,("%d: LexCompare %4d %4d",
+                   me,VINDEX(*pvec1),VINDEX(*pvec2)));
+
   if (SkipV)
   {
+    PRINTDEBUG(gm,1,(" vecskip %4d %4d\n",
+                     VECSKIP(*pvec1),VECSKIP(*pvec2)));
     if (VECSKIP(*pvec1) && !VECSKIP(*pvec2))
       if (SkipV==GM_PUT_AT_BEGIN)
         return (-1);
@@ -3937,6 +3942,10 @@ static INT LexCompare (VECTOR **pvec1, VECTOR **pvec2)
 
   V_DIM_SUBTRACT(pv2,pv1,diff);
   V_DIM_SCALE(InvMeshSize,diff);
+
+        #ifdef __THREEDIM__
+  PRINTDEBUG(gm,1,(" diff %f %f %f\n",diff[0],diff[1],diff[2]));
+        #endif
 
   if (fabs(diff[Order[DIM-1]])<=ORDERRES)
   {
@@ -3962,8 +3971,8 @@ static int MatrixCompare (MATRIX **MatHandle1, MATRIX **MatHandle2)
 {
   INT IND1,IND2;
 
-  IND1 = INDEX(MDEST(*MatHandle1));
-  IND2 = INDEX(MDEST(*MatHandle2));
+  IND1 = VINDEX(MDEST(*MatHandle1));
+  IND2 = VINDEX(MDEST(*MatHandle2));
 
   if (IND1>IND2)
     return ( 1);
@@ -4038,9 +4047,10 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
   /* fill array of pointers to nodes */
   entries = 0;
   for (theVec=FIRSTVECTOR(theGrid); theVec!=NULL; theVec=SUCCVC(theVec))
-    if ((takeSkip && VECSKIP(theVec))||(takeNonSkip && !VECSKIP(theVec)))
+    if ((takeSkip && VECSKIP(theVec))||(takeNonSkip && !VECSKIP(theVec))) {
+      VINDEX(theVec) = entries;
       table[entries++] = theVec;
-
+    }
   /* sort array of pointers */
   Order = order;
   Sign  = sign;

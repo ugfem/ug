@@ -710,7 +710,7 @@ static int Scatter_ElemSideandEdgePattern (DDD_OBJ obj, void *data)
 static INT ExchangePatterns (GRID *theGrid)
 {
 	/* exchange sidepattern of edges */
-	DDD_IFAOneway(ElementIF,IF_FORWARD,GLEVEL(theGrid),5*sizeof(INT),
+	DDD_IFAOneway(ElementIF,IF_FORWARD,GRID_ATTR(theGrid),5*sizeof(INT),
 		Gather_ElemSideandEdgePattern, Scatter_ElemSideandEdgePattern);
 
 	return(GM_OK);
@@ -755,11 +755,11 @@ static int Scatter_ElemSidePattern (DDD_OBJ obj, void *data)
 static INT ExchangePatterns (GRID *theGrid)
 {
 	/* exchange patterns of edges */
-	DDD_IFAOneway(EdgeHIF,IF_FORWARD,GLEVEL(theGrid),sizeof(INT),
+	DDD_IFAOneway(EdgeHIF,IF_FORWARD,GRID_ATTR(theGrid),sizeof(INT),
 		Gather_EdgePattern, Scatter_EdgePattern);
 
 	/* exchange sidepattern of edges */
-	DDD_IFAOneway(ElementIF,IF_FORWARD,GLEVEL(theGrid),sizeof(INT),
+	DDD_IFAOneway(ElementIF,IF_FORWARD,GRID_ATTR(theGrid),sizeof(INT),
 		Gather_ElemSidePattern, Scatter_ElemSidePattern);
 
 	return(GM_OK);
@@ -1169,7 +1169,7 @@ static int Scatter_AddEdgePattern (DDD_OBJ obj, void *data)
 static INT ExchangeAddPatterns (GRID *theGrid)
 {
 	/* exchange addpatterns of edges */
-	DDD_IFAOneway(ElementIF,IF_FORWARD,GLEVEL(theGrid),4*sizeof(INT),
+	DDD_IFAOneway(ElementIF,IF_FORWARD,GRID_ATTR(theGrid),4*sizeof(INT),
 		Gather_AddEdgePattern, Scatter_AddEdgePattern);
 
 	return(GM_OK);
@@ -1196,7 +1196,7 @@ static int Scatter_EdgeAddPattern (DDD_OBJ obj, void *data)
 static INT ExchangeAddPatterns (GRID *theGrid)
 {
 	/* exchange addpatterns of edges */
-	DDD_IFAOneway(EdgeHIF,IF_FORWARD,GLEVEL(theGrid),sizeof(INT),
+	DDD_IFAOneway(EdgeHIF,IF_FORWARD,GRID_ATTR(theGrid),sizeof(INT),
 		Gather_EdgeAddPattern, Scatter_EdgeAddPattern);
 
 	return(GM_OK);

@@ -14504,7 +14504,7 @@ static void ComputeOS_Data(MULTIGRID *mg)
 			N_LOCAL_SONS(p)  = n;
 			N_GLOBAL_SONS(p) = n;
 		}
-		DDD_IFAOneway(ElementVIF, i, IF_BACKWARD, 2*sizeof(INT),
+		DDD_IFAOneway(ElementVIF, GRID_ATTR(grid), IF_BACKWARD, 2*sizeof(INT),
 					  GatherOS_Data, ScatterOS_Data);
 	}
     DDD_IFOneway(ElementVIF, IF_FORWARD, 2*sizeof(INT),
@@ -14546,10 +14546,10 @@ static void NumberElements(ELEMENT **table, INT n, INT start)
    DistributePlotIDs - send plot ids from Master to VGhosts
 
    SYNOPSIS:
-   static void DistributePlotIDs(INT level)
+   static void DistributePlotIDs (GRID *theGrid)
 
    PARAMETERS:
-   level - multigrid level
+   theGrid - pointer to grid
 
    DESCRIPTION:
    Send plot ids from Master to VGhosts. Needed for hierarchical ordering.
@@ -14575,9 +14575,9 @@ static INT ScatterPlotID(DDD_OBJ obj, void *data)
 	PLOT_ID(p) = *(INT *)data;
 }
 
-static void DistributePlotIDs(INT level)
+static void DistributePlotIDs(GRID *theGrid)
 {
-	DDD_IFAOneway(ElementVIF, level, IF_FORWARD, sizeof(INT),
+	DDD_IFAOneway(ElementVIF, GRID_ATTR(theGrid), IF_FORWARD, sizeof(INT),
 				  GatherPlotID, ScatterPlotID);
 }
 
@@ -14714,10 +14714,11 @@ static int ScatterGraphs(DDD_OBJ obj, void *data)
 	}
 }
 
-static INT CollectGraphs(INT level)
+static INT CollectGraphs (GRID *theGrid)
 {
 	OE_Error = 0;
-	DDD_IFAOneway(ElementVIF, level, IF_BACKWARD, GLEN*sizeof(INT),
+	DDD_IFAOneway(ElementVIF, GRID_ATTR(theGrid), 
+				  IF_BACKWARD, GLEN*sizeof(INT),
 				  GatherGraphs, ScatterGraphs);
 	return UG_GlobalMaxINT(OE_Error);
 }
@@ -14816,10 +14817,10 @@ static INT OrderRemoteSons(ELEMENT *p)
    DistributeOrdering - distribute plot ids for remotely ordered ons
 
    SYNOPSIS:
-   static void DistributeOrdering(INT level)
+   static void DistributeOrdering (GRID *theGrid);
 
    PARAMETERS:
-   level - multigrid level
+   theGrid - pointer to grid
  
    DESCRIPTION:
    Plot ids for sons that are ordered by their remote master father 
@@ -14884,9 +14885,10 @@ static INT ScatterOrdering(DDD_OBJ obj, void *data)
 	}
 }
 
-static void DistributeOrdering(INT level)
+static void DistributeOrdering (GRID *theGrid)
 {
-	DDD_IFAOneway(ElementVIF, level, IF_FORWARD, 2*MAX_SONS*sizeof(INT),
+	DDD_IFAOneway(ElementVIF, GRID_ATTR(theGrid), 
+				  IF_FORWARD, 2*MAX_SONS*sizeof(INT),
 				  GatherOrdering, ScatterOrdering);
 }
 
@@ -15354,7 +15356,7 @@ static INT OrderHirarchically(MULTIGRID *mg)
 		Mark(heap, FROM_TOP);
 
 		/* collect graphs describing remote sons */
-		if (CollectGraphs(i)) {
+		if (CollectGraphs(grid)) {
 			Release(heap, FROM_TOP);
 			return 1;
 		}
@@ -15374,10 +15376,10 @@ static INT OrderHirarchically(MULTIGRID *mg)
 		}
 
 		/* tell remote sons their ordering */
-		DistributeOrdering(i);
+		DistributeOrdering(grid);
 
 		/* tell VGhosts their Master's plot id */
-		DistributePlotIDs(i+1);
+		DistributePlotIDs(GRID_ON_LEVEL(mg,i+1));
 
 		Release(heap, FROM_TOP);
 		#endif
@@ -15506,7 +15508,7 @@ static INT OrderCoarseGrid(MULTIGRID *mg)
 	if (err == 0) {
 		Broadcast(table, 2*n*sizeof(INT));
 		NumberCoarseGrid(table, mg);
-		DistributePlotIDs(0);
+		DistributePlotIDs(GRID_ON_LEVEL(mg,0));
 	}
 	#endif
 
