@@ -13285,7 +13285,7 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 					DO_2l(theDO) = edgecolor = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO)
 				}
 
-				if (EE3D_EdgeColor == 1 && edgecolor != -1)
+				if (EE3D_EdgeColor & 1 && edgecolor != -1)
 				{
 					DO_2l(theDO) = edgecolor;
 					DO_inc(theDO);
@@ -13340,7 +13340,7 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 					DO_2l(theDO) = edgecolor = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
 				}
 
-				if (EE3D_EdgeColor == 1 && edgecolor != -1)
+				if (EE3D_EdgeColor & 1 && edgecolor != -1)
 				{
 					DO_2l(theDO) = edgecolor;
 					DO_inc(theDO);
@@ -13522,7 +13522,7 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 					DO_2c(theDO) = n; DO_inc(theDO) 
 					DO_2l(theDO) = edgecolor = EE3D_Color[COLOR_LOWER_LEVEL]; DO_inc(theDO);
 				}
-				if (EE3D_EdgeColor == 1 && edgecolor != -1)
+				if (EE3D_EdgeColor & 1 && edgecolor != -1)
 				{
 					DO_2l(theDO) = edgecolor;
 					DO_inc(theDO);
@@ -13575,7 +13575,7 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 					DO_2l(theDO) = edgecolor = EE3D_Color[ECLASS(theElement)]; DO_inc(theDO);
 				}
 
-				if (EE3D_EdgeColor == 1 && edgecolor != -1)
+				if (EE3D_EdgeColor & 1 && edgecolor != -1)
 				{
 					DO_2l(theDO) = edgecolor;
 					DO_inc(theDO);
@@ -13660,7 +13660,7 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 						#else
 						DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1]; DO_inc(theDO);
 						#endif
-						if (EE3D_EdgeColor == 1 && edgecolor != -1)
+						if (EE3D_EdgeColor & 2 && edgecolor != -1)
 						{
 							DO_2l(theDO) = edgecolor;
 							DO_inc(theDO);
@@ -13727,7 +13727,7 @@ static INT EW_ElementEval3D_old(ELEMENT *theElement, DRAWINGOBJ *theDO)
 						#else
 						DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1]; DO_inc(theDO);
 						#endif
-						if (EE3D_EdgeColor == 1 && edgecolor != -1)
+						if (EE3D_EdgeColor & 2 && edgecolor != -1)
 						{
 							DO_2l(theDO) = edgecolor;
 							DO_inc(theDO);
@@ -13957,7 +13957,7 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				}
 				*theDO = intensity; DO_inc(theDO);
 
-				if (EE3D_EdgeColor == 1 && edgecolor != -1)
+				if (EE3D_EdgeColor & 1 && edgecolor != -1)
 				{
 					DO_2l(theDO) = edgecolor;
 					DO_inc(theDO);
@@ -14044,7 +14044,7 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				}
 				*theDO = intensity; DO_inc(theDO);
 
-				if (EE3D_EdgeColor == 1 && edgecolor != -1)
+				if (EE3D_EdgeColor & 1 && edgecolor != -1)
 				{
 					DO_2l(theDO) = edgecolor;
 					DO_inc(theDO);
@@ -14252,7 +14252,7 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				}
 				*theDO = intensity; DO_inc(theDO);
 
-				if (EE3D_EdgeColor == 1 && edgecolor != -1)
+				if (EE3D_EdgeColor & 1 && edgecolor != -1)
 				{
 					DO_2l(theDO) = edgecolor;
 					DO_inc(theDO);
@@ -14307,7 +14307,7 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 				}
 				*theDO = intensity; DO_inc(theDO);
 
-				if (EE3D_EdgeColor == 1 && edgecolor != -1)
+				if (EE3D_EdgeColor & 1 && edgecolor != -1)
 				{
 					DO_2l(theDO) = edgecolor;
 					DO_inc(theDO);
@@ -14391,7 +14391,7 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 						#else
 						DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1]; DO_inc(theDO);
 						#endif
-						if (EE3D_EdgeColor == 1 && edgecolor != -1)
+						if (EE3D_EdgeColor & 2 && edgecolor != -1)
 						{
 							DO_2l(theDO) = edgecolor;
 							DO_inc(theDO);
@@ -14460,7 +14460,7 @@ static INT EW_ElementEval3D_new(ELEMENT *theElement, DRAWINGOBJ *theDO)
 						#else
 						DO_2l(theDO) = edgecolor = EE3D_PropertyColor[me+1]; DO_inc(theDO);
 						#endif
-						if (EE3D_EdgeColor == 1 && edgecolor != -1)
+						if (EE3D_EdgeColor & 2 && edgecolor != -1)
 						{
 							DO_2l(theDO) = edgecolor;
 							DO_inc(theDO);
