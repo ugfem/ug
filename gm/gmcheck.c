@@ -77,12 +77,12 @@ using namespace UG3d;
 
 /****************************************************************************/
 /*                                                                          */
-/* defines in the following order											*/
+/* defines in the following order                                           */
 /*                                                                          */
-/*		  compile time constants defining static data size (i.e. arrays)	*/
+/* compile time constants defining static data size (i.e. arrays)           */
 /*		  other constants													*/
 /*		  macros															*/
-/*																			*/
+/*                                                                          */
 /****************************************************************************/
 
 #define RESOLUTION       20     /* resolution for creating boundary midnode */
@@ -92,11 +92,24 @@ using namespace UG3d;
 #define LINKTABLESIZE	32		/* max number of inks per node for ordering	*/
 
 /****************************************************************************/
-/*																			*/
-/* data structures used in this source file (exported data structures are	*/
+/*                                                                          */
+/* data structures used in this source file (exported data structures are   */
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
+
+/** \brief Predefined control words */
+extern CONTROL_ENTRY
+        control_entries[MAX_CONTROL_ENTRIES];
+
+extern INT n_offset[TAGS];
+extern INT father_offset[TAGS];
+extern INT sons_offset[TAGS];
+extern INT nb_offset[TAGS];
+extern INT evector_offset[TAGS];
+extern INT svector_offset[TAGS];
+extern INT side_offset[TAGS];
+extern INT data_offset[TAGS];
 
 /****************************************************************************/
 /*																			*/
@@ -1781,7 +1794,7 @@ PAR(				&& EPRIO(theElement)==EPRIO(PREDE(theElement)) )ENDPAR )
 	return (0);
 }
 
-INT CheckLists (GRID *theGrid)
+INT NS_PREFIX CheckLists (GRID *theGrid)
 {
 	int objs = 0;
 

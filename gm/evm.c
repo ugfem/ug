@@ -1,11 +1,11 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  evm.c                                                                                                                 */
+/*                                                                          */
+/* File:      evm.c                                                         */
 /*																			*/
 /* Purpose:   elementary vector manipulations								*/
-/*																			*/
+/*                                                                          */
 /* Author:	  Klaus Johannsen												*/
 /*			  Institut fuer Computeranwendungen                                                     */
 /*			  Universitaet Stuttgart										*/
@@ -67,7 +67,7 @@ using namespace UG3d;
 /*																			*/
 /****************************************************************************/
 
-
+extern INT n_offset[TAGS];
 
 /****************************************************************************/
 /*																			*/

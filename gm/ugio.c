@@ -128,6 +128,15 @@ using namespace UG3d;
 extern CONTROL_ENTRY
   control_entries[MAX_CONTROL_ENTRIES];
 
+extern INT n_offset[TAGS];
+extern INT father_offset[TAGS];
+extern INT sons_offset[TAGS];
+extern INT nb_offset[TAGS];
+extern INT evector_offset[TAGS];
+extern INT svector_offset[TAGS];
+extern INT side_offset[TAGS];
+extern INT data_offset[TAGS];
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported global variables									*/

@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
+/*                                                                          */
 /* File:	  initnp.c			                                                                                */
 /*																			*/
 /* Purpose:   call the init routines of the numerics module		                        */
@@ -68,6 +68,14 @@
 
 #ifdef USE_FAMG
 #include "ug-famg.h"
+#endif
+
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
 #endif
 
 /****************************************************************************/

@@ -67,6 +67,14 @@
 #include "ug-famg.h"
 #endif
 
+#ifdef __cplusplus
+#ifdef __TWODIM__
+using namespace UG2d;
+#else
+using namespace UG3d;
+#endif
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -139,6 +147,8 @@ enum LU_REGULARIZE {
 /*		  in the corresponding include file!)								*/
 /*																			*/
 /****************************************************************************/
+
+extern const BV_DESC_FORMAT three_level_bvdf;   /* bvdf for 3 blocklevels       */
 
 struct np_smoother {
 
@@ -668,7 +678,7 @@ INT DPrintVector (MULTIGRID *mg, VECDATA_DESC *x)
   return(NUM_OK);
 }
 
-INT NPIterInit (NP_ITER *np, INT argc , char **argv)
+INT NS_PREFIX NPIterInit (NP_ITER *np, INT argc , char **argv)
 {
   np->A = ReadArgvMatDesc(np->base.mg,"A",argc,argv);
   np->c = ReadArgvVecDesc(np->base.mg,"c",argc,argv);
@@ -680,7 +690,7 @@ INT NPIterInit (NP_ITER *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NPIterDisplay (NP_ITER *np)
+INT NS_PREFIX NPIterDisplay (NP_ITER *np)
 {
   if ((np->A == NULL) && (np->b == NULL) && (np->c == NULL))
     return(0);
@@ -696,7 +706,7 @@ INT NPIterDisplay (NP_ITER *np)
   return(0);
 }
 
-INT NPIterExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_PREFIX NPIterExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_ITER *np;
   INT result,bl,level;
