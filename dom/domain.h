@@ -110,6 +110,13 @@ enum DOM_IN_PARAMS {
 #define PERIODIC      2
 #define NON_PERIODIC  3
 
+/* status for mesh */
+#define MESHSTAT_NOTINIT     0
+#define MESHSTAT_EMPTY       1
+#define MESHSTAT_CNODES      2
+#define MESHSTAT_SURFMESH    3
+#define MESHSTAT_MESH        4
+
 /* function formats */
 typedef INT (*ConfigProcPtr)(INT argc, char **argv);
 typedef INT (*CoeffProcPtr)(DOUBLE *, DOUBLE *);
@@ -161,6 +168,7 @@ typedef struct BVP_Descriptor BVP_DESC;
 
 struct mesh
 {
+  INT mesh_status;                                       /* status see above					*/
   INT nBndP;                         /* nb. of boundary points              */
   BNDP **theBndPs;                                       /* list of boundary points	            */
   INT nInnP;                         /* nb. of inner nodes                  */
