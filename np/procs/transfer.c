@@ -590,7 +590,7 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT fl, INT tl,
         result[0] = __LINE__;
         return (1);
       }
-      if (l_matrix_consistent(theGrid,np->L,MAT_DIAG_CONS) != NUM_OK) {
+      if (l_matrix_consistent(theGrid,np->L,MAT_GHOST_DIAG_CONS) != NUM_OK) {
         result[0] = __LINE__;
         return (1);
       }
