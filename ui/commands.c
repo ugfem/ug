@@ -10624,7 +10624,7 @@ static INT FindRangeCommand (INT argc, char **argv)
   W_FINDRANGE_WORK(theWork)->max = max;
         #endif
 
-  UserWriteF(" FR_min = %10.3g\n FR_max = %10.3g\n",(float)min,(float)max);
+  UserWriteF(" FR_min = %20.16e\n FR_max = %20.16e\n",min,max);
 
   if (put)
     if (InvalidatePicture(thePic))
