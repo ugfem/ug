@@ -12,7 +12,7 @@ include ../ug.conf
 OBJECTS = algebra.o enrol.o evm.o mgio.o ugio.o\
 		 ugm.o cw.o initgm.o elements.o\
 		 shapes.o evalproc.o rm.o refine.o smooth.o \
-		 dlmgr.o gmcheck.o
+		 dlmgr.o gmcheck.o er.o
 
 all: GG Makefile.gm
 	make -f Makefile.gm $(UG_LIB) 
