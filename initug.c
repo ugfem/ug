@@ -38,6 +38,9 @@
 /* devices module */
 #include "devices.h"
 
+/* domain module */
+#include "domain.h"
+
 /* grid manager module */
 #include "initgm.h"
 #include "switch.h"
@@ -105,6 +108,16 @@ INT InitUg (int argc, char **argv)
   if ((err=InitDevices(argc,argv))!=0)
   {
     printf("ERROR in InitUg while InitDevices (line %d): called routine line %d\n",
+           (int) HiWrd(err), (int) LoWrd(err));
+    printf ("aborting ug\n");
+
+    return (1);
+  }
+
+  /* init the domain module */
+  if ((err=InitDom())!=0)
+  {
+    printf("ERROR in InitDom while InitDom (line %d): called routine line %d\n",
            (int) HiWrd(err), (int) LoWrd(err));
     printf ("aborting ug\n");
 
