@@ -45,6 +45,7 @@
 #include "defaults.h"
 #include "general.h"
 #include "debug.h"
+#include "evm.h"
 
 /* dev modules */
 #include "devices.h"
