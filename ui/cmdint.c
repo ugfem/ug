@@ -66,7 +66,7 @@
 /*																			*/
 /****************************************************************************/
 
-#define VERSION         "This is ug 3.2 from $Date$\n"
+#define VERSION         "This is "UG_VERSION " from $Date$\n"
 
 /* for interpreter */
 #define DONE                            0
@@ -2387,7 +2387,8 @@ void CommandLoop (int argc, char **argv)
 {
   INT error;
   int i,j,k,kerr;
-  char c,inpLine[MAXCMDSIZE],errLine[256],spcLine[256], ver[100];
+  char c,inpLine[MAXCMDSIZE],errLine[256],spcLine[256], ver[128];
+  char buffer[MAXCMDSIZE];
   char *strStart;
 
         #ifdef ModelP
@@ -2410,11 +2411,16 @@ void CommandLoop (int argc, char **argv)
       ver[j-6-k] = ver[j];
     if (ver[j] == '\0') break;
   }
-
+  /* print version */
   UserWrite(ver);
+
   /* execute init script */
-  if (GetDefaultValue(DEFAULTSFILENAME,"initscript",inpLine)==0)
-    InterpretCommand(strcat("execute ",inpLine));
+  if (GetDefaultValue(DEFAULTSFILENAME,"initscript",buffer)==0)
+  {
+    strcpy(inpLine,"execute ");
+    strcat(inpLine,buffer);
+    InterpretCommand(inpLine);
+  }
 
   /* TODO: delete this old code
      if (argc<2 || argv[1][1] == 's') */
