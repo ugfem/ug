@@ -1,0 +1,28 @@
+##############################################################################
+#																			 #
+#	Makefile for parallel ug version										 #
+#																			 #
+#	created 17 August 1992													 #
+#																			 #
+##############################################################################
+
+
+
+# include configuration and all makefile macro definitions
+include ../../ug.conf
+
+OBJECTS = remote.o
+
+# local C compiler flags
+LCFLAGS = -I../../include
+
+all : $(OBJECTS) Makefile.rif
+	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libdev.a $(OBJECTS) 
+
+.c.o:
+	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
+
+clean:
+	rm -f $(OBJECTS)
+
+
