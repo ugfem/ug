@@ -12041,6 +12041,9 @@ static INT D3fCommand (INT argc, char **argv)
 {
   NO_OPTION_CHECK(argc,argv);
 
+        #ifdef ModelP
+  if (me == master)
+        #endif
   Main_ControlPanel();
 
   return(0);
