@@ -10916,6 +10916,357 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
   return (GM_OK);
 }
 
+#ifdef __PERIODIC_BOUNDARY__
+
+#define SMALL_DOUBLE 1e-6
+
+/* maximal count of periodic objects */
+#define MAX_PERIODIC_OBJ        DIM+1
+
+typedef struct periodic_entries
+{
+  NODE *node;
+  DOUBLE_VECTOR coord;
+  INT periodic_id;
+}
+PERIODIC_ENTRIES;
+
+static PeriodicBoundaryInfoProcPtr PeriodicBoundaryInfo = NULL;
+
+#ifdef __TWODIM__
+#define MIN_COORD(a,b) (((*a)[0]< (*b)[0]) ? (a) : (((*a)[1] < (*b)[1]) ? (a) : (b)))
+#else
+#define MIN_COORD(a,b) (((*a)[0]< (*b)[0]) ? (a) : (((*a)[1] < (*b)[1]) ? (a) : (((*a)[2] < (*b)[2]) ? (a) : (b))))
+#endif
+
+static int sort_entries (const void *e1, const void *e2)
+{
+  PERIODIC_ENTRIES *v1 = (PERIODIC_ENTRIES *)e1;
+  PERIODIC_ENTRIES *v2 = (PERIODIC_ENTRIES *)e2;
+
+  if (v1->coord[0] < v2->coord[0] - SMALL_DOUBLE) return (-1);
+  if (v1->coord[0] > v2->coord[0] + SMALL_DOUBLE) return (1);
+
+  if (v1->coord[1] < v2->coord[1] - SMALL_DOUBLE) return (-1);
+  if (v1->coord[1] > v2->coord[1] + SMALL_DOUBLE) return (1);
+        #ifdef __THREEDIM__
+  /* y coordinates almost equal compare z now */
+  if (v1->coord[2] < v2->coord[2] - SMALL_DOUBLE) return (-1);
+  if (v1->coord[2] > v2->coord[2] + SMALL_DOUBLE) return (1);
+        #endif
+
+  /* periodic ids */
+  if (v1->periodic_id < v2->periodic_id) return (-1);
+  if (v1->periodic_id > v2->periodic_id) return (1);
+
+  return (0);
+}
+
+static INT PositionsMatch(DOUBLE_VECTOR pos1, DOUBLE_VECTOR pos2)
+{
+  if (ABS(pos1[0]-pos2[0])>SMALL_DOUBLE)
+    return (1);
+  if (ABS(pos1[1]-pos2[1])>SMALL_DOUBLE)
+    return (1);
+  #ifdef __THREEDIM__
+  if (ABS(pos1[2]-pos2[2])>SMALL_DOUBLE)
+    return (1);
+  #endif
+
+  return (0);
+}
+
+static INT ModifyVectorPointer (GRID *g, PERIODIC_ENTRIES *list, INT i, INT j)
+{
+  MATRIX *m,*n;
+  VECTOR *d,*w,*v;
+
+  v = NVECTOR(list[i].node);
+  w = NVECTOR(list[j].node);
+
+  /* only node vectors implemented */
+  if (VOTYPE(v) != NODEVEC) assert(0);
+  if (VOTYPE(w) != NODEVEC) assert(0);
+
+  /* same node or vectors already identified */
+  if (v == w) return(0);
+
+  m = START(w);
+  n = START(v);
+  for (m=NEXT(m); m != NULL; m=NEXT(m))
+  {
+    INT periodic_ids[MAX_PERIODIC_OBJ];
+    DOUBLE_VECTOR own_coord, periodic_coords[MAX_PERIODIC_OBJ];
+    INT nbnd,IsOnSamePerBnd;
+    VERTEX *vtx;
+
+    IsOnSamePerBnd=FALSE;
+    d = MDEST(m);
+
+    vtx = MYVERTEX((NODE*)VOBJECT(d));
+
+    /* is d on periodic boundary */
+    nbnd = 0;
+    if ((*PeriodicBoundaryInfo)(vtx,&nbnd,periodic_ids,own_coord,periodic_coords))
+    {
+      INT k;
+
+      for (k=0; k<nbnd; k++)
+        if (periodic_ids[k]==list[i].periodic_id)
+        {
+          IsOnSamePerBnd=TRUE;
+          break;
+        }
+    }
+
+    if (IsOnSamePerBnd)
+    {
+      continue;
+    }
+
+    n = GetMatrix(v,d);
+    if (n == NULL)
+    {
+      /* create connection only to vectors not belonging to bnd with same periodic_id */
+      n = CreateConnection(g,v,d);
+      if (n == NULL) assert(0);
+    }
+  }
+  return(0);
+}
+
+
+static INT DisposeAndModVector(GRID *grid, PERIODIC_ENTRIES *list, INT i, INT j)
+{
+  VECTOR *vec;
+  MATRIX *m;
+
+  /* dispose this vector*/
+  vec = NVECTOR(list[j].node);
+
+  if (vec == NVECTOR(list[i].node))
+    /* nothing to do */
+    return (0);
+
+  /* modify vector pointer */
+  NVECTOR(list[j].node) = NVECTOR(list[i].node);
+
+  /* dispose vector */
+  if (0)
+  {
+    m = START(vec);
+    for (m=NEXT(m); m != NULL; m=NEXT(m))
+      MDEST(MADJ(m)) = NVECTOR(list[i].node);
+  }
+
+  UserWriteF("DisposeAndModVector vtx=%d node=%d vec=%d\n",
+             ID(MYVERTEX(list[j].node)),ID(list[j].node),VINDEX(vec));
+
+  if (DisposeVector(grid,vec))
+    return(1);
+
+  return (0);
+}
+
+INT SetPeriodicBoundaryInfoProcPtr (PeriodicBoundaryInfoProcPtr PBI)
+{
+  PeriodicBoundaryInfo = PBI;
+
+  return(0);
+}
+
+INT GetPeriodicBoundaryInfoProcPtr (PeriodicBoundaryInfoProcPtr *PBI)
+{
+  *PBI = PeriodicBoundaryInfo;
+
+  return(0);
+}
+
+
+static INT Grid_GeometricToPeriodic (GRID *g)
+{
+  NODE *node;
+  PERIODIC_ENTRIES *coordlist;
+  INT MarkKey,nn,i;
+
+  PRINTDEBUG(gm,0,("Grid_GeometricToPeriodic\n"))
+
+  if (PeriodicBoundaryInfo == NULL)
+  {
+    UserWriteF("Grid_GeometricToPeriodic: no function *PeriodicBoundaryInfo\n");
+    return(GM_OK);
+  }
+
+  /* count vector-node pairs to identify */
+  nn = 0;
+  for (node=PFIRSTNODE(g); node!=NULL; node=SUCCN(node))
+  {
+    VERTEX *vtx;
+    DOUBLE_VECTOR own_coord, periodic_coords[MAX_PERIODIC_OBJ];
+    INT n,periodic_ids[MAX_PERIODIC_OBJ];
+
+    vtx = MYVERTEX(node);
+
+    if (OBJT(vtx)!=BVOBJ) continue;
+
+    /* only boundary vertices */
+    n = 0;
+    if ((*PeriodicBoundaryInfo)(vtx,&n,periodic_ids,own_coord,periodic_coords)) nn += n;
+  }
+
+  /* allocate arrays */
+  MarkTmpMem(MGHEAP(MYMG(g)),&MarkKey);
+
+  coordlist = (PERIODIC_ENTRIES *)GetTmpMem(MGHEAP(MYMG(g)),nn * sizeof(PERIODIC_ENTRIES),MarkKey);
+
+  nn=0;
+  for (node=PFIRSTNODE(g); node!=NULL; node=SUCCN(node))
+  {
+    VERTEX *vtx;
+    DOUBLE_VECTOR own_coord, periodic_coords[MAX_PERIODIC_OBJ];
+    DOUBLE diff;
+    INT n,periodic_ids[MAX_PERIODIC_OBJ];
+
+    vtx=MYVERTEX(node);
+
+    if (OBJT(vtx)!=BVOBJ) continue;
+
+    /* only boundary vertices */
+    n = 0;
+    if ((*PeriodicBoundaryInfo)(vtx,&n,periodic_ids,own_coord,periodic_coords))
+    {
+      INT i;
+
+      for (i=0; i<n; i++)
+      {
+        DOUBLE_VECTOR *coord;
+
+        coord = MIN_COORD(&own_coord,&periodic_coords[i]);
+
+        V_DIM_EUKLIDNORM_OF_DIFF(own_coord,periodic_coords[i],diff);
+
+        /* equal coordinates nothing to do */
+        if (diff < SMALL_DOUBLE) continue;
+
+        V_DIM_COPY(*coord,coordlist[nn].coord);
+
+        PRINTDEBUG(gm,0,("coordlist identify v=%d c0 %lf %lf %lf c1 %lf %lf %lf\n",
+                         ID(vtx),
+                         own_coord[0],own_coord[1],own_coord[2],
+                         periodic_coords[i][0],periodic_coords[i][1],periodic_coords[i][2]))
+
+
+        coordlist[nn].node = node;
+        coordlist[nn].periodic_id = periodic_ids[i];
+        nn++;
+      }
+    }
+  }
+
+  PRINTDEBUG(gm,0,("Grid_GeometricToPeriodic identify nn=%d\n",nn))
+
+  /* sort list */
+  qsort(coordlist,nn,sizeof(PERIODIC_ENTRIES),sort_entries);
+
+  for (i=0; i<nn; i++)
+  {
+    UserWriteF("%d vtx=%d node=%d c %lf %lf %lf\n",
+               i,ID(MYVERTEX(coordlist[i].node)),
+               ID(coordlist[i].node),
+               coordlist[i].coord[0],
+               coordlist[i].coord[1],
+               coordlist[i].coord[2]
+               );
+  }
+
+        #ifndef ModelP
+  assert(nn%2==0);
+        #endif
+
+  /* identify */
+  for (i=0; i<nn; i+=2)
+  {
+    DOUBLE diff;
+
+    V_DIM_EUKLIDNORM_OF_DIFF(coordlist[i].coord,coordlist[i+1].coord,diff);
+    if (diff > SMALL_DOUBLE) assert(0);
+
+    V_DIM_EUKLIDNORM_OF_DIFF(coordlist[i].coord,CVECT(MYVERTEX(coordlist[i].node)),diff);
+    if (diff < SMALL_DOUBLE)
+    {
+      if (ModifyVectorPointer(g, coordlist, i,i+1))
+        return (1);
+    }
+    else
+    if (ModifyVectorPointer(g, coordlist, i+1,i))
+      return (1);
+  }
+
+  /* dispose vectors */
+  for (i=0; i<nn; i+=2)
+  {
+    DOUBLE diff;
+
+    V_DIM_EUKLIDNORM_OF_DIFF(coordlist[i].coord,CVECT(MYVERTEX(coordlist[i].node)),diff);
+    if (diff < SMALL_DOUBLE)
+    {
+      if (DisposeAndModVector(g, coordlist,i,i+1))
+        return (1);
+    }
+    else
+    if (DisposeAndModVector(g, coordlist,i+1,i))
+      return (1);
+  }
+
+  ReleaseTmpMem(MGHEAP(MYMG(g)),MarkKey);
+
+  return (GM_OK);
+}
+
+
+/****************************************************************************/
+/*D
+   MG_GeometricToPeriodic - identify vectors on periodic boundaries
+
+   SYNOPSIS:
+   INT MG_GeometricToPeriodic (MULTIGRID *mg)
+
+   PARAMETERS:
+   .  mg - multigrid to work on
+
+   DESCRIPTION:
+   This function does all that is necessary to identity vectors on
+   periodic boundaries. The node-vector pointers are unsymmetic.
+   The vector points to one of the nodes, which point to the single
+   periodic vector.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   GM_ERROR if error occured
+   D*/
+/****************************************************************************/
+
+static INT MG_GeometricToPeriodic (MULTIGRID *mg)
+{
+  INT level;
+
+  /* reset NEW flags */
+  if (PrepareAlgebraModification(mg))
+    return (GM_ERROR);
+
+  for (level=0; level<=TOPLEVEL(mg); level++)
+  {
+    GRID *g = GRID_ON_LEVEL(mg,level);
+
+    if (Grid_GeometricToPeriodic(g)) return(GM_ERROR);
+  }
+
+  return (GM_OK);
+}
+
+#endif
+
 /****************************************************************************/
 /*D
    FixCoarseGrid - do all that is necessary to complete the coarse grid
@@ -10952,6 +11303,11 @@ INT FixCoarseGrid (MULTIGRID *theMG)
   /* set this flag here because it is checked by CreateAlgebra */
   if (CreateAlgebra(theMG) != GM_OK)
     REP_ERR_RETURN (GM_ERROR);
+
+#ifdef __PERIODIC_BOUNDARY__
+  if (MG_GeometricToPeriodic(theMG))
+    REP_ERR_RETURN (GM_ERROR);
+#endif
 
   /* here all temp memory since CreateMultiGrid is released */
   ReleaseTmpMem(MGHEAP(theMG),MG_MARK_KEY(theMG));
