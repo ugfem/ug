@@ -660,8 +660,9 @@ NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after)
 {
   ELEMENTSIDE *theSide;
   COORD x,y;
-  COORD r[2],lambda1,lambda0,z;
-  COORD lambda,dlambda,s,lambdaopt,smin;
+  COORD r[2],z;
+  COORD lambda,s,lambdaopt,smin;
+  DOUBLE dlambda,lambda1,lambda0;
   INT i,n;
   VERTEX *theVertex;
   VSEGMENT *vsnew;
@@ -683,13 +684,14 @@ NODE *CreateMidNode (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after)
     smin = 1.0E30;
     lambda0 = PARAM(theSide,0,0);
     lambda1 = PARAM(theSide,1,0);
-    dlambda = (lambda1-lambda0)/((COORD) RESOLUTION);
+    dlambda = (lambda1-lambda0)/((DOUBLE) RESOLUTION);
     lambda = lambda0;
+    z = SIGNUM(dlambda);
     for (i=1; i<RESOLUTION; i++)
     {
       lambda += dlambda;
       /* TODO: quick fix */
-      if (lambda>lambda1) break;
+      if (z*lambda>z*lambda1) break;
       if (Patch_local2global(thePatch,&lambda,r)) return(NULL);
       s = (r[0]-x)*(r[0]-x)+(r[1]-y)*(r[1]-y);
       if (s<smin)
