@@ -262,6 +262,7 @@ static INT EE2D_RefMark;                /* 1 if plot refinement marks				*/
 static long EE2D_ColorRefMark;  /* color of refinement marks				*/
 static INT EE2D_IndMark;                /* 1 if plot indicator marks				*/
 static long EE2D_ColorIndMark;  /* color of indicator marks	                        */
+static DOUBLE EE2D_ShrinkFactor; /* shrink factor, 1.0 if normal plot		*/
 
 
 /* 3D */
@@ -269,6 +270,7 @@ static INT EE3D_Elem2Plot[10];          /* 1 if element has to be plotted			*/
 static long EE3D_NoColor[10];   /* 1 if no color (background color) used	*/
 static long EE3D_Color[10];             /* colors used								*/
 static INT EE3D_MaxLevel;               /* level considered to be the top level         */
+static DOUBLE EE3D_ShrinkFactor; /* shrink factor, 1.0 if normal plot		*/
 
 
 /*---------- working variables of 'NW_NodesEval2D' -------------------------*/
@@ -4747,6 +4749,7 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
   EE2D_ElemID                                     = 0;
   if (theGpo->PlotElemID == YES)
     EE2D_ElemID                             = 1;
+  EE2D_ShrinkFactor                               = theGpo->ShrinkFactor;
 
   /* mark surface elements */
   EE2D_MaxLevel = CURRENTLEVEL(theMG);
@@ -6532,7 +6535,7 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
   INT i, j;
   COORD *x[MAX_CORNERS_OF_ELEM];
-  COORD_VECTOR MidPoint;
+  COORD_VECTOR MidPoint, help;
   INT coe,rule;
   void *data;
 
@@ -6546,55 +6549,118 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     GetRefinementMark ((const ELEMENT *)theElement,&rule,data);
 
   /* store viewable sides on drawing obj */
-  if (LEVEL(theElement)<EE2D_MaxLevel)
+  if (EE2D_ShrinkFactor==1.0)
   {
-    if (((EE2D_NoColor[COLOR_LOWER_LEVEL] && !EE2D_IndMark)) ||
-        (((rule != RED) && EE2D_IndMark)) )
+    if (LEVEL(theElement)<EE2D_MaxLevel)
     {
-      DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO)
-      DO_2c(theDO) = coe; DO_inc(theDO)
+      if (((EE2D_NoColor[COLOR_LOWER_LEVEL] && !EE2D_IndMark)) ||
+          (((rule != RED) && EE2D_IndMark)) )
+      {
+        DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO)
+        DO_2c(theDO) = coe; DO_inc(theDO)
+      }
+      else
+      {
+        DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO)
+        DO_2c(theDO) = coe; DO_inc(theDO)
+        if (EE2D_IndMark)
+          DO_2l(theDO) = EE2D_ColorIndMark;
+        else
+          DO_2l(theDO) = EE2D_Color[COLOR_LOWER_LEVEL];
+        DO_inc(theDO);
+      }
+      DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
+      for (j=0; j<coe; j++)
+      {
+        V2_COPY(x[j],DO_2Cp(theDO));
+        DO_inc_n(theDO,2);
+      }
     }
     else
     {
-      DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO)
-      DO_2c(theDO) = coe; DO_inc(theDO)
-      if (EE2D_IndMark)
-        DO_2l(theDO) = EE2D_ColorIndMark;
+      if (((EE2D_NoColor[ECLASS(theElement)] && !EE2D_IndMark)) ||
+          (((rule != RED) && EE2D_IndMark)) )
+      {
+        DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO)
+        DO_2c(theDO) = coe; DO_inc(theDO)
+      }
       else
-        DO_2l(theDO) = EE2D_Color[COLOR_LOWER_LEVEL];
-      DO_inc(theDO);
-    }
-    DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
-    for (j=0; j<coe; j++)
-    {
-      V2_COPY(x[j],DO_2Cp(theDO));
-      DO_inc_n(theDO,2);
+      {
+        DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO)
+        DO_2c(theDO) = coe; DO_inc(theDO)
+        if (EE2D_IndMark)
+          DO_2l(theDO) = EE2D_ColorIndMark;
+        else
+          DO_2l(theDO) = EE2D_Color[ECLASS(theElement)];
+        DO_inc(theDO);
+      }
+      DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
+      for (j=0; j<coe; j++)
+      {
+        V2_COPY(x[j],DO_2Cp(theDO));
+        DO_inc_n(theDO,2);
+      }
     }
   }
   else
   {
-    if (((EE2D_NoColor[ECLASS(theElement)] && !EE2D_IndMark)) ||
-        (((rule != RED) && EE2D_IndMark)) )
-    {
-      DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO)
-      DO_2c(theDO) = coe; DO_inc(theDO)
-    }
-    else
-    {
-      DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO)
-      DO_2c(theDO) = coe; DO_inc(theDO)
-      if (EE2D_IndMark)
-        DO_2l(theDO) = EE2D_ColorIndMark;
+    V2_CLEAR(MidPoint)
+    for (i=0; i<coe; i++)
+      V2_ADD(MidPoint,x[i],MidPoint)
+      V2_SCALE(1.0/(COORD)i,MidPoint)
+
+      if (LEVEL(theElement)<EE2D_MaxLevel)
+      {
+        if (((EE2D_NoColor[COLOR_LOWER_LEVEL] && !EE2D_IndMark)) ||
+            (((rule != RED) && EE2D_IndMark)) )
+        {
+          DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO)
+          DO_2c(theDO) = coe; DO_inc(theDO)
+        }
+        else
+        {
+          DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO)
+          DO_2c(theDO) = coe; DO_inc(theDO)
+          if (EE2D_IndMark)
+            DO_2l(theDO) = EE2D_ColorIndMark;
+          else
+            DO_2l(theDO) = EE2D_Color[COLOR_LOWER_LEVEL];
+          DO_inc(theDO);
+        }
+        DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
+        for (j=0; j<coe; j++)
+        {
+          V2_LINCOMB(EE2D_ShrinkFactor,x[j],1.0-EE2D_ShrinkFactor,MidPoint,help)
+          V2_COPY(help,DO_2Cp(theDO));
+          DO_inc_n(theDO,2);
+        }
+      }
       else
-        DO_2l(theDO) = EE2D_Color[ECLASS(theElement)];
-      DO_inc(theDO);
-    }
-    DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
-    for (j=0; j<coe; j++)
-    {
-      V2_COPY(x[j],DO_2Cp(theDO));
-      DO_inc_n(theDO,2);
-    }
+      {
+        if (((EE2D_NoColor[ECLASS(theElement)] && !EE2D_IndMark)) ||
+            (((rule != RED) && EE2D_IndMark)) )
+        {
+          DO_2c(theDO) = DO_ERASE_SURRPOLYGON; DO_inc(theDO)
+          DO_2c(theDO) = coe; DO_inc(theDO)
+        }
+        else
+        {
+          DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO)
+          DO_2c(theDO) = coe; DO_inc(theDO)
+          if (EE2D_IndMark)
+            DO_2l(theDO) = EE2D_ColorIndMark;
+          else
+            DO_2l(theDO) = EE2D_Color[ECLASS(theElement)];
+          DO_inc(theDO);
+        }
+        DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
+        for (j=0; j<coe; j++)
+        {
+          V2_LINCOMB(EE2D_ShrinkFactor,x[j],1.0-EE2D_ShrinkFactor,MidPoint,help)
+          V2_COPY(help,DO_2Cp(theDO));
+          DO_inc_n(theDO,2);
+        }
+      }
   }
 
   /* plot refinement mark */
@@ -9782,6 +9848,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   INT i, j, NodeOrder, n;
   COORD *x[MAX_CORNERS_OF_ELEM], z[MAX_CORNERS_OF_ELEM];
   COORD_VECTOR Polygon[MAX_POINTS_OF_POLY];
+  COORD_VECTOR sx[MAX_CORNERS_OF_ELEM], MidPoint;
   INT Viewable[MAX_SIDES_OF_ELEM];
 
   DO_2c(theDO) = DO_NO_INST;
@@ -9793,27 +9860,45 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     /* determine viewable sides */
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
       Viewable[i] = VIEWABLE(theElement,i);
-    if (EE3D_Elem2Plot[PLOT_ALL])
+
+    if (EE3D_ShrinkFactor==1.0)
     {
-      /* plot only parts lying on the boundary */
-      if (OBJT(theElement)==BEOBJ)
+      if (EE3D_Elem2Plot[PLOT_ALL])
       {
-        for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-          if (INNER_SIDE(theElement,i))
-            Viewable[i] = 0;
+        /* plot only parts lying on the boundary */
+        if (OBJT(theElement)==BEOBJ)
+        {
+          for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+            if (INNER_SIDE(theElement,i))
+              Viewable[i] = 0;
+        }
+        else
+          return (0);
       }
       else
-        return (0);
+        for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+          if (NBELEM(theElement,i) != NULL)
+            if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
+              Viewable[i] = 0;
+
+      /* get coordinates of corners of the element */
+      for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+        x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
     }
     else
-      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-        if (NBELEM(theElement,i) != NULL)
-          if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
-            Viewable[i] = 0;
+    {
+      /* get coordinates of corners of the element */
+      V3_CLEAR(MidPoint)
+      for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+        V3_ADD(CVECT(MYVERTEX(CORNER(theElement,i))),MidPoint,MidPoint)
+        V3_SCALE(1.0/CORNERS_OF_ELEM(theElement),MidPoint)
 
-    /* get coordinates of corners of the element */
-    for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-      x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
+        for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+        {
+          V3_LINCOMB(EE3D_ShrinkFactor,CVECT(MYVERTEX(CORNER(theElement,i))),1.0-EE3D_ShrinkFactor,MidPoint,sx[i])
+          x[i] = sx[i];
+        }
+    }
 
     /* store viewable sides on drawing obj */
     if (LEVEL(theElement)<EE3D_MaxLevel)
@@ -9881,30 +9966,49 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     /* determine viewable sides */
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
       Viewable[i] = VIEWABLE(theElement,i);
-    if (EE3D_Elem2Plot[PLOT_ALL])
+
+    if (EE3D_ShrinkFactor==1.0)
     {
-      /* only sides lying on the boundary are visible */
-      if (OBJT(theElement)==BEOBJ)
+      if (EE3D_Elem2Plot[PLOT_ALL])
       {
-        for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-          if (INNER_SIDE(theElement,i))
+        /* only sides lying on the boundary are visible */
+        if (OBJT(theElement)==BEOBJ)
+        {
+          for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+            if (INNER_SIDE(theElement,i))
+              Viewable[i] = 0;
+        }
+        else
+          for (i=0; i<SIDES_OF_ELEM(theElement); i++)
             Viewable[i] = 0;
       }
       else
         for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-          Viewable[i] = 0;
+          if (NBELEM(theElement,i) != NULL)
+            if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
+              Viewable[i] = 0;
+
+      /* get coordinates of corners of the element and their z coordinates in cut system */
+      for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+      {
+        x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
+        V3_TRAFO4_SC(x[i],CutTrafo,z[i])
+      }
     }
     else
-      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-        if (NBELEM(theElement,i) != NULL)
-          if (EE3D_Elem2Plot[ECLASS(NBELEM(theElement,i))])
-            Viewable[i] = 0;
-
-    /* get coordinates of corners of the element and their z coordinates in cut system */
-    for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     {
-      x[i] = CVECT(MYVERTEX(CORNER(theElement,i)));
-      V3_TRAFO4_SC(x[i],CutTrafo,z[i])
+      /* get coordinates of corners of the element */
+      V3_CLEAR(MidPoint)
+      for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+        V3_ADD(CVECT(MYVERTEX(CORNER(theElement,i))),MidPoint,MidPoint)
+        V3_SCALE(1.0/CORNERS_OF_ELEM(theElement),MidPoint)
+
+        for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+        {
+          V3_LINCOMB(EE3D_ShrinkFactor,CVECT(MYVERTEX(CORNER(theElement,i))),1.0-EE3D_ShrinkFactor,MidPoint,sx[i])
+          x[i] = sx[i];
+          V3_TRAFO4_SC(x[i],CutTrafo,z[i])
+        }
     }
 
     /* get node order */
@@ -11056,11 +11160,12 @@ static INT OrderElements_3D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
  */
 /****************************************************************************/
 
-static INT OrderNodes (MULTIGRID *theMG)
+static INT OrderNodes (MULTIGRID *theMG, DOUBLE ShrinkFactor)
 {
   ELEMENT *theElement;
   COORD z[MAX_CORNERS_OF_ELEM], zm;
   INT i, j, order[MAX_CORNERS_OF_ELEM], imax, jm,jj;
+  COORD_VECTOR MidPoint, help;
 
   /* check if nodes are allready ordered w.r.t current cut */
   /*...*/
@@ -11070,27 +11175,39 @@ static INT OrderNodes (MULTIGRID *theMG)
   {
     for (theElement=FIRSTELEMENT(theMG->grids[j]); theElement!= NULL; theElement=SUCCE(theElement))
     {
-      /* calculate Z-coordinates in the cutting VRS of corners */
+      V3_CLEAR(MidPoint)
       for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-        V3_TRAFO4_SC(CVECT(MYVERTEX(CORNER(theElement,i))),CutTrafo,z[i])
+        V3_ADD(CVECT(MYVERTEX(CORNER(theElement,i))),MidPoint,MidPoint)
+        V3_SCALE(1.0/CORNERS_OF_ELEM(theElement),MidPoint)
 
-        if (TAG(theElement)==TETRAHEDRON)
-        {
-          i = ((z[0]>=z[1])<<5) + ((z[0]>=z[2])<<4) + ((z[0]>=z[3])<<3)
-              + ((z[1]>=z[2])<<2) + ((z[1]>=z[3])<<1) +  (z[2]>=z[3]);
+        /* calculate Z-coordinates in the cutting VRS of corners */
+        if (ShrinkFactor==1.0)
+          for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+            V3_TRAFO4_SC(CVECT(MYVERTEX(CORNER(theElement,i))),CutTrafo,z[i])
+            else
+              for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
+              {
+                V3_LINCOMB(ShrinkFactor,CVECT(MYVERTEX(CORNER(theElement,i))),1.0-ShrinkFactor,MidPoint,help)
+                V3_TRAFO4_SC(help,CutTrafo,z[i])
+              }
 
-          if (OrderIndex[i] == -1)
-            return(1);
+      if (TAG(theElement)==TETRAHEDRON)
+      {
+        i = ((z[0]>=z[1])<<5) + ((z[0]>=z[2])<<4) + ((z[0]>=z[3])<<3)
+            + ((z[1]>=z[2])<<2) + ((z[1]>=z[3])<<1) +  (z[2]>=z[3]);
 
-          /* set flags in element */
-          SETNORDER(theElement,OrderIndex[i]);
-          if (z[CornerIndex[OrderIndex[i]][0]] < -SMALL_C)
-            SETCUTMODE(theElement,CM_BEHIND);
-          else if (z[CornerIndex[OrderIndex[i]][3]] > SMALL_C)
-            SETCUTMODE(theElement,CM_INFRONT);
-          else
-            SETCUTMODE(theElement,CM_INTERSECT);
-        }
+        if (OrderIndex[i] == -1)
+          return(1);
+
+        /* set flags in element */
+        SETNORDER(theElement,OrderIndex[i]);
+        if (z[CornerIndex[OrderIndex[i]][0]] < -SMALL_C)
+          SETCUTMODE(theElement,CM_BEHIND);
+        else if (z[CornerIndex[OrderIndex[i]][3]] > SMALL_C)
+          SETCUTMODE(theElement,CM_INFRONT);
+        else
+          SETCUTMODE(theElement,CM_INTERSECT);
+      }
 
       if (TAG(theElement)==HEXAHEDRON || TAG(theElement)==PYRAMID)
       {
@@ -11203,6 +11320,8 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
   EE3D_Elem2Plot[PLOT_IRR]                = 0;
   EE3D_Elem2Plot[PLOT_REG]                = 0;
 
+  EE3D_ShrinkFactor                               = theGpo->ShrinkFactor;
+
 
   switch (theGpo->WhichElem)
   {
@@ -11223,7 +11342,7 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 
   /* order nodes if */
   if (theGpo->theCut.status==ACTIVE)
-    if (OrderNodes(theMG)) return (1);
+    if (OrderNodes(theMG,EE3D_ShrinkFactor)) return (1);
 
   /* mark surface elements */
   EE3D_MaxLevel = CURRENTLEVEL(theMG);
@@ -11319,7 +11438,7 @@ static INT EW_PreProcess_EScalar3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 
   /* order nodes if */
   if (theEspo->theCut.status==ACTIVE)
-    if (OrderNodes(theMG)) return (1);
+    if (OrderNodes(theMG,1.0)) return (1);
 
   /* mark suface elements on boundary and cut if */
   if (theEspo->mode == PO_COLOR)
@@ -11373,7 +11492,7 @@ static INT EW_PreProcess_CutBnd3D (PICTURE *thePicture, WORK *theWork)
   if (BuildCutTrafo(&(theEspo->theCut),OBS_ViewDirection)) return (1);
 
   /* order nodes */
-  if (OrderNodes(theMG)) return (1);
+  if (OrderNodes(theMG,1.0)) return (1);
 
   /* mark suface elements on boundary which are cut */
   if (MarkElements_MGS_Bnd_and_Cut(theMG,0,CURRENTLEVEL(theMG))) return (1);
@@ -11437,7 +11556,7 @@ static INT EW_PreProcess_EVector3D_BackGrid (PICTURE *thePicture, WORK *theWork)
 
   /* order nodes if */
   if (theEvpo->theCut.status==ACTIVE)
-    if (OrderNodes(theMG)) return (1);
+    if (OrderNodes(theMG,1.0)) return (1);
 
   /* mark suface elements on boundary and cut */
   if (MarkElements_MGS_Bnd_Cut(theMG,0,CURRENTLEVEL(theMG))) return (1);
@@ -11553,7 +11672,7 @@ static INT EW_PreProcess_EScalar3D_FR (PICTURE *thePicture, WORK *theWork)
   if (BuildCutTrafo(&(theEspo->theCut),OBS_ViewDirection)) return (1);
 
   /* order nodes */
-  if (OrderNodes(theMG)) return (1);
+  if (OrderNodes(theMG,1.0)) return (1);
 
   /* mark suface elements on boundary */
   if (MarkElements_MGS_Cut(theMG,0,CURRENTLEVEL(theMG))) return (1);
