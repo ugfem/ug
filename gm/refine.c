@@ -3670,7 +3670,7 @@ static int compare_node (const void *e0, const void *e1)
 \param[out] Sons_of_Side Number of topological sons of the element side
 \param[in,out] SonList[MAX_SONS] Output elements
 \param[out] SonSides Output element side numbers
-\param[in] NeedSons If this is true, the correct list of sons is expected to be
+\param[in] NeedSons If this is false, the correct list of sons is expected to be
   provided in SonList.  If not it is recomputed.
 
   For a given side of an element, this routine computes all element sides
