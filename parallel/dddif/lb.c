@@ -129,7 +129,7 @@ void ddd_test (char *argv, MULTIGRID *theMG)
   UserWriteF(PFMT "ddd_test() param=%d",me,param);
   if (n > 1)
     UserWriteF(" fromlevel=%d",fromlevel);
-  if (n > 1)
+  if (n > 2)
     UserWriteF(" tolevel=%d",tolevel);
   UserWriteF("\n");
 
@@ -203,9 +203,11 @@ void ddd_test (char *argv, MULTIGRID *theMG)
     break;
 
   case (5) :
-    if (sscanf(argv,"%d %d",&param,&part,&dest) != 3) break;
+    if (sscanf(argv,"%d %d %d",&param,&part,&dest) != 3) break;
     fromlevel = CURRENTLEVEL(theMG);
     CollectElementsNearSegment(theMG,fromlevel,part,dest);
+    UserWriteF(PFMT "ddd_test() collect from part %d to proc %d\n",
+               me,part,dest);
     break;
 
   /* dies erzeugt eine regelmaessige Domain Decomposition */
