@@ -38,7 +38,7 @@ you choose. This is one of
 					many supercomputers 
 	SHMEMT3D		Cray T3D (shmem)
 	NX				Intel Paragon (nx)
-	NXLIB			Intel Paragon (nxlib)
+	NXLIB			workstation clusters (simulating nx)
 	PARIX			Parsytec computers:
 					Supercluster, CC
 	SEQ				serial version (default)
@@ -124,7 +124,7 @@ to start the application 'simple' on 2 processors, enter:
 5. Modify your scripts
 
 A script should contain the command
-	'cont $a'
+	'context $a'
 so that following skript commands are executed on
 all processors.
 
@@ -135,3 +135,4 @@ processors.
 
 Now hopefully all works and you have fun with 
 your parallel UG version.
+
