@@ -95,6 +95,9 @@
 /*  n_node = 100*8 (8 max_node_of_elem) 100 probably elements per node)				*/
 #define PROCLISTSIZE            ELEMPROCLISTSIZE*MAX_SONS
 
+/* orphan condition for elements */
+#define EORPHAN(e)              (EFATHER(e)==NULL || THEFLAG(e))
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -414,6 +417,7 @@ INT OrphanCons(MULTIGRID *theMG)
     theGrid = GRID_ON_LEVEL(theMG,i);
     for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
     {
+      SETTHEFLAG(theElement,0);
       orphan = 0;
       for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
       {
@@ -466,23 +470,28 @@ INT OrphanCons(MULTIGRID *theMG)
           ELEMENT *Next = NULL;
           ASSERT(index!=-1 && index<2);
 
-          if (SON(theFather,index) == theElement)
+          /* this is an orphan */
+          SETTHEFLAG(theElement,1);
+          if (0)
           {
-            if (succe != NULL)
+            if (SON(theFather,index) == theElement)
             {
-              if (EFATHER(succe)==theFather)
-                if (EPRIO(succe) == EPRIO(theElement))
-                {
-                  Next = succe;
-                }
+              if (succe != NULL)
+              {
+                if (EFATHER(succe)==theFather)
+                  if (EPRIO(succe) == EPRIO(theElement))
+                  {
+                    Next = succe;
+                  }
+              }
+              SET_SON(theFather,index,Next);
             }
-            SET_SON(theFather,index,Next);
-          }
 
-          SETNSONS(theFather,NSONS(theFather)-1);
-          SET_EFATHER(theElement,NULL);
-          GRID_UNLINK_ELEMENT(theGrid,theElement);
-          GRID_LINK_ELEMENT(theGrid,theElement,EPRIO(theElement));
+            SETNSONS(theFather,NSONS(theFather)-1);
+            SET_EFATHER(theElement,NULL);
+            GRID_UNLINK_ELEMENT(theGrid,theElement);
+            GRID_LINK_ELEMENT(theGrid,theElement,EPRIO(theElement));
+          }
           PRINTDEBUG(gm,1,(PFMT "OrphanCons(): new orphan elem=" EID_FMTX "\n",
                            me,EID_PRTX(theElement)));
         }
@@ -647,7 +656,7 @@ static INT SetRefinement (ELEMENT *theElement, NODE **NodeContext, ELEMENT *SonL
       sonex |= (1<<i);
       if (WriteElementParInfo(SonList[i],&refinement->pinfo[i])) return (1);
       for (j=0; j<SIDES_OF_ELEM(SonList[i]); j++)
-        if (NBELEM(SonList[i],j)!=NULL && EFATHER(NBELEM(SonList[i],j))==NULL)
+        if (NBELEM(SonList[i],j)!=NULL && EORPHAN(NBELEM(SonList[i],j)))
         {
           refinement->nbid_ex |= (1<<i);
           refinement->nbid[i][j] = ID(NBELEM(SonList[i],j));
@@ -690,6 +699,37 @@ static INT CheckNodeContext (ELEMENT *theElement, NODE ** NodeContext)
   return (0);
 }
 
+static INT RemoveOrphanSons (ELEMENT **SonList, INT *nmax)
+{
+  INT i,max;
+
+  if (nmax != NULL)
+  {
+    for (max=0,i=0; i<*nmax; i++)
+    {
+      if (SonList[i]!=NULL)
+        if (THEFLAG(SonList[i]))
+          SonList[i] = NULL;
+        else
+          max = i+1;
+    }
+    *nmax = max;
+  }
+  else
+  {
+    for (i=0; SonList[i]!=NULL; i++)
+      if (SonList[i]!=NULL && THEFLAG(SonList[i])) SonList[i] = NULL;
+    for (max=0,i=0; i<MAX_SONS; i++)
+      if (SonList[i]!=NULL)
+      {
+        if (max<i) SonList[max] = SonList[i];
+        max++;
+      }
+  }
+
+  return(0);
+}
+
 static INT SetHierRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, INT *RefRuleOffset)
 {
   INT i,nmax;
@@ -701,6 +741,7 @@ static INT SetHierRefinement (ELEMENT *theElement, MGIO_REFINEMENT *refinement, 
   if (REFINE(theElement)==NO_REFINEMENT) return (0);
   if (GetNodeContext(theElement,NodeContext)) return (1);
   if (GetOrderedSons(theElement,NodeContext,SonList,&nmax)) return (1);
+  if (RemoveOrphanSons(SonList,&nmax)) return(1);
   if (nmax==0) return (0);
   if (SetRefinement (theElement,NodeContext,SonList,nmax,refinement,RefRuleOffset)) return (1);
   if (Write_Refinement (refinement,rr_rules)) return (1);
@@ -724,6 +765,7 @@ static INT nHierElements (ELEMENT *theElement, INT *n)
 
   if (REFINE(theElement)==NO_REFINEMENT) return (0);
   if (GetAllSons(theElement,SonList)) return (1);
+  if (RemoveOrphanSons(SonList,NULL)) return(1);
   if (SonList[0]==NULL) return (0);
   (*n)++;
   for (i=0; SonList[i]!=NULL; i++)
@@ -844,7 +886,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   MGIO_REFINEMENT *refinement;
   MGIO_BD_GENERAL bd_general;
   MGIO_PARINFO cg_pinfo;
-  INT i,j,k,niv,nbv,nie,nbe,n,nhe,hr_max,mode,level,n_inc,n_max,id,foid,non,tl,Err;
+  INT i,j,k,niv,nbv,nie,nbe,n,nhe,hr_max,mode,level,n_inc,n_max,id,foid,non,tl,Err,saved;
   INT RefRuleOffset[TAGS];
   int *vidlist,ftype,error,*cg_ident;
   char *p,*f,*s,*l;
@@ -859,7 +901,11 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   MarkTmpMem(theHeap);
 
   /* something to do ? */
-  if (MG_SAVED(theMG))
+  saved = MG_SAVED(theMG);
+#ifdef ModelP
+  saved = UG_GlobalMinINT(saved);
+#endif
+  if (saved)
   {
     UserWriteF("WARNING: multigrid already saved as %s\n",MG_FILENAME(theMG));
   }
@@ -877,6 +923,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
       l = strtok(NULL,".");           if (l==NULL) return (1);
       l = strtok(NULL,".");           if (l==NULL) return (1);
       l = strtok(NULL,".");           if (l==NULL) return (1);
+      strtok(l,"/");
       if (sscanf(s,"%d",&lastnumber)!=1) return (1);if (lastnumber<0) return (1);lastnumber++;
       strcpy(itype,l);
       sprintf(buf,".%04d",lastnumber);
@@ -941,6 +988,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (1);
   mg_general.mode                 = mode;
   mg_general.dim                  = DIM;
+  Broadcast(&MG_MAGIC_COOKIE(theMG),sizeof(INT));
   mg_general.magic_cookie = MG_MAGIC_COOKIE(theMG);
   mg_general.heapsize             = MGHEAP(theMG)->size/1024;
   mg_general.nLevel               = TOPLEVEL(theMG) + 1;
@@ -1058,7 +1106,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
       cge = MGIO_CG_ELEMENT_PS(cg_element,i);
 
       /* only orphan elements */
-      if (EFATHER(theElement)!=NULL) continue;
+      if (!EORPHAN(theElement)) continue;
       assert(id==ID(theElement));
       assert(id<n);
 
@@ -1116,7 +1164,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
     cg_pinfo.proclist = ProcList;
     for (level=0; level<=TOPLEVEL(theMG); level++)
       for (theElement = PFIRSTELEMENT(GRID_ON_LEVEL(theMG,level)); theElement!=NULL; theElement=SUCCE(theElement))
-        if (EFATHER(theElement)==NULL)
+        if (EORPHAN(theElement))
         {
           if (WriteElementParInfo(theElement,&cg_pinfo)) RETURN (1);
           if (Write_pinfo (TAG(theElement),&cg_pinfo)) RETURN (1);
@@ -1132,7 +1180,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   for (level=0; level<=tl; level++)
     for (theElement = PFIRSTELEMENT(GRID_ON_LEVEL(theMG,level)); theElement!=NULL; theElement=SUCCE(theElement))
     {
-      if (EFATHER(theElement)!=NULL) continue;
+      if (!EORPHAN(theElement)) continue;
       assert(id==ID(theElement));
       if (SetHierRefinement (theElement,refinement,RefRuleOffset)) return (1);
       id++;
@@ -1720,6 +1768,9 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
     else
     if (Read_MG_General(&mg_general))                                                               {CloseMGFile (); nparfiles = -1;}
     nparfiles = mg_general.nparfiles;
+    if (mg_general.nparfiles>procs)                                                                         {UserWrite("ERROR: too many processors needed\n");CloseMGFile (); nparfiles = -1;}
+    assert(mg_general.me == me);
+
   }
   else if(MGIO_filetype(filename) == FT_FILE)
   {
@@ -1778,10 +1829,6 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   }
   if (mg_general.dim!=DIM)                                                                                        {UserWrite("ERROR: wrong dimension\n");CloseMGFile (); return (NULL);}
   if (strcmp(mg_general.version,MGIO_VERSION)!=0 && force==0)                                             {UserWrite("ERROR: wrong version\n");CloseMGFile (); return (NULL);}
-
-  /* parallel part */
-  if (mg_general.nparfiles>procs)                                                                         {UserWrite("ERROR: too many processors needed\n");CloseMGFile (); return (NULL);}
-  assert(mg_general.me == me);
 
   /* BVP and format */
   if (BVPName==NULL) strcpy(BndValName,mg_general.DomainName);
