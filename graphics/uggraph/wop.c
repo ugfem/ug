@@ -20495,6 +20495,9 @@ INT InitWOP (void)
 		theEXW->EXT_ExecuteProc					= Draw2D;
 		theEXW->EXT_PostProcessProc				= NULL;
 
+		/* findrange work */
+		POH_NBCYCLES(thePOH,FINDRANGE_WORK) = 0;
+	
 
 		/* create WorkHandling for 'EScalar' */
 		if ((thePOH=CreatePlotObjHandling ("EScalar"))	   == NULL) return (__LINE__);
@@ -20800,6 +20803,8 @@ INT InitWOP (void)
 		theEWW->EW_ExecuteProc					= EW_SelectVec3D;
 		theEWW->EW_PostProcessProc				= NULL;
 
+		/* findrange work */
+		POH_NBCYCLES(thePOH,FINDRANGE_WORK) = 0;
 		
 		/* create WorkHandling for 'EScalar' */
 		if ((thePOH=CreatePlotObjHandling ("EScalar"))	== NULL) return (__LINE__);
