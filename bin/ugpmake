@@ -37,6 +37,9 @@ case $HOSTTYPE in
     SR2201)
         PMAKE="make -j 3"
         ;;
+    i586)
+        PMAKE="make -j 2"
+        ;;
     macintosh)
         PMAKE="make -j 6"
         ;;
