@@ -324,12 +324,17 @@ typedef struct {
 #define NMBOFCNDS                       30
 
 #define CORNERS_OF_BND_SEG      3
+#define CORNERS_OF_BND_SIDE     3
+#define CORNERS_OF_ELEMENT      4
+
 #define SEG_TRI                         1
 
 
 #define MAX_NUB_OF_SBDMS        101
 
 #define USE_SFC_DETECTOR        1
+
+#define DIMENSION           3
 
 /*#define STATISTICAL_INFORMATIONS      1*/
 /* if defined  ===> characteristic values of the hashtable
@@ -346,8 +351,8 @@ typedef struct {
 /****************************************************************************/
 int LGM_ANSYS_ReadDomain                        (HEAP *Heap, char *filename, LGM_DOMAIN_INFO *domain_info, INT MarkKey);
 int LGM_ANSYS_ReadSizes                         (LGM_SIZES *lgm_sizes);
-int LGM_ANSYS_ReadSubDomain                     (int i, LGM_SUBDOMAIN_INFO *subdom_info);
+int LGM_ANSYS_ReadSubDomain         (int i, LGM_SUBDOMAIN_INFO *subdom_info);
 int LGM_ANSYS_ReadLines                         (int i, LGM_LINE_INFO *line_info);
 int LGM_ANSYS_ReadPoints                        (LGM_POINT_INFO *lgm_point_info);
 int LGM_ANSYS_ReadSurface                       (int i, LGM_SURFACE_INFO *surface_info);
-int LGM_ANSYS_ReadMesh                          (HEAP *theHeap, LGM_MESH_INFO *theMesh);
+int LGM_ANSYS_ReadMesh              (HEAP *Heappointer, LGM_MESH_INFO *theMesh, int MarkKey);
