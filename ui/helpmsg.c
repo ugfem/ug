@@ -43,7 +43,9 @@
 #include "general.h"
 #include "debug.h"
 
+#ifdef ModelP
 #include "parallel.h"
+#endif
 
 /****************************************************************************/
 /*																			*/

@@ -1971,7 +1971,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     for (i=0; i<mg_general.nLevel; i++)
     {
       if (CreateNewLevel(theMG,0)==NULL)                                                              {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+            #ifdef ModelP
       ConstructConsistentGrid(GRID_ON_LEVEL(theMG,i));
+            #endif
     }
     if (CreateAlgebra (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
