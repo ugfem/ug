@@ -4014,18 +4014,62 @@ INT l_bdpreprocess (GRID *g, VECDATA_DESC *x,
                     MATDATA_DESC *A, MATDATA_DESC *L)
 {
   ELEMENT *e;
+  VECTOR *v;
+
+  dmatset(MYMG(g),LEVEL(g),LEVEL(g),ALL_VECTORS,L,0.0);
 
   for (e=FIRSTELEMENT(g); e!=NULL; e=SUCCE(e)) {
     VECTOR *v[MAX_NODAL_VECTORS];
     INT cnt = GetAllVectorsOfElementOfType(e,v,x);
     DOUBLE mat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
     DOUBLE imat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
+    DOUBLE rmat[MAX_NODAL_VALUES*MAX_NODAL_VALUES];
     INT m = GetVlistMValues(cnt,v,A,mat);
+    INT i,j,k;
+
+    /*
+       for (i=0; i<m; i++)
+        for (j=0; j<m; j++)
+                rmat[i*m+j] = 0.0;
+
+       for (j=0; j<m; j++)
+        rmat[j*m+j] = 1.0;
+     */
 
     if (InvertFullMatrix_piv(m,mat,imat))
       return(1);
 
-    SetVlistMValues(g,cnt,v,L,imat);
+    GetVlistMValues(cnt,v,L,rmat);
+
+    for (i=0; i<m*m; i++)
+      imat[i] -= rmat[i];
+
+    AddVlistMValues(g,cnt,v,L,imat);
+  }
+  for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+  {
+    INT type = VTYPE(v);
+    INT ncomp = VD_NCMPS_IN_TYPE (x,type);
+    INT i,j;
+
+    if (ncomp == 0) continue;
+    for (j=0; j<ncomp; j++)
+      if (VECSKIP(v) & (1<<j))
+      {
+        MATRIX *m = VSTART(v);
+
+        for (i=j*ncomp; i<(j+1)*ncomp; i++)
+          MVALUE(m,MD_MCMP_OF_RT_CT(L,type,type,i)) = 0.0;
+        for (m=MNEXT(m); m!=NULL; m=MNEXT(m))
+        {
+          INT dtype = MDESTTYPE(m);
+          INT dcomp = VD_NCMPS_IN_TYPE (x,dtype);
+
+          if (dcomp == 0) continue;
+          for (i=j*dcomp; i<(j+1)*dcomp; i++)
+            MVALUE(m,MD_MCMP_OF_RT_CT(L,type,dtype,i)) = 0.0;
+        }
+      }
   }
 
   return (0);
@@ -4043,7 +4087,7 @@ static INT BDPreProcess (NP_ITER *theNP, INT level,
   if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK)
     NP_RETURN(1,result[0]);
         #ifdef ModelP
-  if (l_matrix_consistent(theGrid,np->L,np->smoother.cons_mode)
+  if (l_matrix_consistent(theGrid,np->L,np->cons_mode)
       != NUM_OK)
     NP_RETURN(1,result[0]);
         #endif
@@ -4062,7 +4106,7 @@ static INT BDStep (NP_SMOOTHER *theNP, INT level,
   GRID *theGrid = NP_GRID(theNP,level);
 
     #ifdef ModelP
-  if (np->smoother.cons_mode == MAT_MASTER_CONS) {
+  if (theNP->cons_mode == MAT_MASTER_CONS) {
     if (l_vector_collect(theGrid,b)!=NUM_OK)
       NP_RETURN(1,result[0]);
   }
