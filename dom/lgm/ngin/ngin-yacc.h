@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 
 typedef union

@@ -39,7 +39,7 @@
 
 #include "namespace.h"
 
-USING_UG_NAMESPACES
+USING_UGDIM_NAMESPACE
 
 static FILE *stream;
 static INT lgmdomainpathes_set;

@@ -44,7 +44,7 @@
 
 #include "namespace.h"
 
-USING_UG_NAMESPACES
+USING_UGDIM_NAMESPACE
 
 
 /****************************************************************************/

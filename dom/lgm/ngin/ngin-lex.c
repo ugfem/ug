@@ -397,7 +397,7 @@ char *ngtext;
 
 #include "namespace.h"
 
-USING_UG_NAMESPACES
+USING_UGDIM_NAMESPACE
 
 
 static int noline=1;

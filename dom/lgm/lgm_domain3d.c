@@ -56,7 +56,7 @@
 
 #include "namespace.h"
 
-USING_UG_NAMESPACES
+USING_UGDIM_NAMESPACE
 
 
 /****************************************************************************/
@@ -108,7 +108,7 @@ static DOUBLE cosAngle;         /* Winkel zwischen Inputdreiecken */
 static DOUBLE Triangle_Angle2 = 40.0;
 static DOUBLE EPS = 0.1;
 
-/* INT NS_PREFIX Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);*/
+/* INT NS_DIM_PREFIX Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);*/
 INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE *n);
 
 static INT Get_NBNDS_Per_Subdomain              (HEAP *Heap, LGM_DOMAIN *theDomain, INT **sizes, DOUBLE h);
@@ -192,7 +192,7 @@ static INT ResetSurfaceFlags (LGM_DOMAIN *theDomain)
   return (0);
 }
 
-LGM_SURFACE *NS_PREFIX FirstSurface (LGM_DOMAIN *theDomain)
+LGM_SURFACE *NS_DIM_PREFIX FirstSurface (LGM_DOMAIN *theDomain)
 {
   LGM_SURFACE *theSurface;
 
@@ -229,7 +229,7 @@ static LGM_SURFACE *helpNextSurface (LGM_DOMAIN *theDomain)
   return (NULL);
 }
 
-LGM_SURFACE *NS_PREFIX NextSurface (LGM_DOMAIN *theDomain)
+LGM_SURFACE *NS_DIM_PREFIX NextSurface (LGM_DOMAIN *theDomain)
 {
   LGM_SURFACE *theSurface;
 
@@ -269,7 +269,7 @@ static INT ResetLineFlags (LGM_DOMAIN *theDomain)
   return (0);
 }
 
-LGM_LINE *NS_PREFIX
+LGM_LINE *NS_DIM_PREFIX
 FirstLine (LGM_DOMAIN *theDomain)
 {
   LGM_LINE *theLine;
@@ -318,7 +318,7 @@ static LGM_LINE *helpNextLine (LGM_DOMAIN *theDomain)
   return (NULL);
 }
 
-LGM_LINE *NS_PREFIX
+LGM_LINE *NS_DIM_PREFIX
 NextLine (LGM_DOMAIN *theDomain)
 {
   LGM_LINE *theLine;
@@ -506,7 +506,7 @@ static INT Line_Local2Global (LGM_LINE *theLine, DOUBLE *global, INT i)
   return(0);
 }
 
-INT NS_PREFIX Line_Local2GlobalNew (LGM_LINE *theLine, DOUBLE *global, DOUBLE local)
+INT NS_DIM_PREFIX Line_Local2GlobalNew (LGM_LINE *theLine, DOUBLE *global, DOUBLE local)
 {
   DOUBLE slocal;
   INT ilocal;
@@ -5491,7 +5491,7 @@ INT TEST(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
   return(0);
 }
 
-INT NS_PREFIX Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
+INT NS_DIM_PREFIX Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local)
 {
   INT i, ilocal,ilocal1,id;
   DOUBLE slocal[2],sloc;
@@ -5546,7 +5546,7 @@ INT NS_PREFIX Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOU
 }
 
 /* domain interface function: for description see domain.h */
-INT NS_PREFIX BNDP_Global (BNDP *aBndP, DOUBLE *global)
+INT NS_DIM_PREFIX BNDP_Global (BNDP *aBndP, DOUBLE *global)
 {
   LGM_SURFACE *theSurface;
   LGM_BNDP *theBndP;

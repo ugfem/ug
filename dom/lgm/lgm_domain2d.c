@@ -46,7 +46,7 @@
 
 #include "namespace.h"
 
-USING_UG_NAMESPACES
+USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -120,7 +120,7 @@ static INT ResetLineFlags (LGM_DOMAIN *theDomain)
   return (0);
 }
 
-LGM_LINE * NS_PREFIX FirstLine (LGM_DOMAIN *theDomain)
+LGM_LINE * NS_DIM_PREFIX FirstLine (LGM_DOMAIN *theDomain)
 {
   LGM_LINE *theLine;
 
@@ -155,7 +155,7 @@ static LGM_LINE *helpNextLine (LGM_DOMAIN *theDomain)
   return (NULL);
 }
 
-LGM_LINE * NS_PREFIX NextLine (LGM_DOMAIN *theDomain)
+LGM_LINE * NS_DIM_PREFIX NextLine (LGM_DOMAIN *theDomain)
 {
   LGM_LINE *theLine;
 
@@ -1077,7 +1077,7 @@ BNDP *BNDP_LoadBndP_Ext (void)
 /****************************************************************************/
 
 /* domain interface function: for description see domain.h */
-INT NS_PREFIX BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
+INT NS_DIM_PREFIX BNDS_Global (BNDS *aBndS, DOUBLE *local, DOUBLE *global)
 {
   LGM_BNDS *theBndS;
   LGM_LINE *theLine;
