@@ -9053,11 +9053,6 @@ static INT ZoomCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   float factor;
 
-
-        #ifdef ModelP
-  if (me!=master) return (OKCODE);
-        #endif
-
   NO_OPTION_CHECK(argc,argv);
 
   /* current picture */
@@ -9178,11 +9173,6 @@ static INT RotateCommand (INT argc, char **argv)
 
   /* following variables: keep type for sscanf */
   float angle;
-
-
-        #ifdef ModelP
-  if (me!=master) return (OKCODE);
-        #endif
 
   NO_OPTION_CHECK(argc,argv);
 
