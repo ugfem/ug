@@ -21,9 +21,24 @@ if ( $1 == "-h" ) then
 set timescale = 3600; shift;
 endif
 
+rm -f t.li;
+rm -f dt.li;
 set PREFIX = $1
-ugmgs $PREFIX.ug.data.* | awk 'BEGIN   {i=0;} $1=="Time:"     {print i,$2/(ts+0);i++;}' ts=$timescale - > tmp.gnu
-echo 'set parametric; set grid; plot "tmp.gnu" w l; pause -1; set terminal postscript; set output "gnu.ps"; plot "tmp.gnu" w l;' > load.gnu;
-gnuplot "load.gnu";
-rm tmp.gnu;
-rm load.gnu;
+@ i = 0
+while ( $i <= 10000 )
+	set nr = `echo $i | awk '{printf("%04d.ug.data.bin",$1);}' - `
+	if (! -f $PREFIX.$nr ) break;
+	echo "extracting data from file" $PREFIX.$nr
+	ugmgs $PREFIX.$nr | awk '$1=="Time:"     {print awk_i,$2/(ts+0);i++;}' ts=$timescale awk_i=$i  - >> t.li
+	ugmgs $PREFIX.$nr | awk '$1=="TimeStep:" {print awk_i,$2/(ts+0);i++;}' ts=$timescale awk_i=$i  - >> dt.li
+	@ i = $i + 1
+end
+
+echo 'set parametric; set grid; plot "t.li" w l; pause -1; set terminal postscript; set output "t.ps"; plot "t.li" w l;' > t.gnu;
+gnuplot "t.gnu";
+echo 'set parametric; set grid; plot "dt.li" w l; pause -1; set terminal postscript; set output "dt.ps"; plot "dt.li" w l;' > dt.gnu;
+gnuplot "dt.gnu";
+rm t.li;
+rm dt.li;
+rm t.gnu;
+rm dt.gnu;
