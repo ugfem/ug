@@ -162,6 +162,42 @@ static int ReadMatrix(double *&entry, int *&index, int *&start, int &n, int
     return 0;
 }
 
+static int WriteSOL(double *&sol, int n, int argc, char **argv)
+{
+    double val;
+    int i, res;
+    char solname[32];
+
+    if(argc > 3)
+    {
+	    res= sscanf(argv[3],"%s",solname);
+        if (res< 1) 
+        {
+            cout << "output name not found." <<endl;
+            return 1;
+        }
+        ofstream solfile(solname,ios::out);
+        if (!solfile) 
+        {
+            cout << "can not open file for writing the solution." << endl;
+            return 1;
+        }
+    
+		for(i = 0; i < n; i++)
+		{
+			solfile << i+firsti << "\t" << sol[i] << endl;
+		}
+    }
+    else
+    {
+        cout << "No output file name given\n";
+    }
+
+
+    return 0;
+            
+}
+
 static int WriteMatrix(double *&entry, int *&index, int *&start, int &n, int &nl, double *rhs)
 {
     int ii, i;
@@ -370,12 +406,30 @@ int FAMGParameter::Read()
 }    
 
 
+static int CreateOneVectorFile()
+{
+	int i;
+	ofstream solfile("m_4.rhs",ios::out);
+	if (!solfile) 
+	{
+		cout << "can not open file for writing vector" << endl;
+		return 1;
+	}
+    
+	for(i = 1; i <= 289; i++)
+	{
+		solfile << i << "\t" << 1 << endl;
+	}
+}
+		
 
 main(int argc, char **argv)
 {
     double *entry, *rhs;
     int *index, *start, n, nl, status, i;
 	struct FAMG_Interface my_famg_parameter;
+	
+	//CreateOneVectorFile(); cout "vector created\n"; return 0;	// only for testing
 	
     if (ReadMatrix(entry,index,start,n,nl,argc,argv)) return 1;
     if (ReadRHS(rhs,n,argc,argv)) return 1;
@@ -408,8 +462,6 @@ main(int argc, char **argv)
    FAMGDeconstruct();
 
    FAMGDeconstructParameter();
-
-
 
     delete [] entry; 
     delete [] index; 
