@@ -2,7 +2,7 @@
 /*																			*/
 /* File:      famg_approx.C													*/
 /*																			*/
-/* Purpose:   famg graph classes functions									*/
+/* Purpose:   famg parents selection process                                */
 /*																			*/
 /* Author:    Christian Wagner												*/
 /*			  Institut fuer Computeranwendungen  III						*/
@@ -18,6 +18,13 @@
 /* Remarks:																	*/
 /*																			*/
 /****************************************************************************/
+
+/*     
+This is a pretty old version of the famg parents selection process !
+A new version will be checked in soon !
+*/
+
+
 #include <iostream.h>
 #include <strstream.h>
 #include <math.h>
