@@ -126,10 +126,10 @@
 #endif
 
 #ifdef GRAPEF
-#define HAVE_GRAPE "OFF"
+#define GRAPE_SUPPORT "OFF"
 #endif
 #ifdef GRAPET
-#define HAVE_GRAPE "ON"
+#define GRAPE_SUPPORT "ON"
 #endif
 
 #ifdef NETGENF
