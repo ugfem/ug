@@ -592,7 +592,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
   DOUBLE *local,*x[MAX_CORNERS_OF_ELEM];
   DOUBLE_VECTOR bnd_global,global;
   DOUBLE diff;
-  INT n,co0,co1;
+  INT n,co0,co1,move,part;
 
   co0 = CORNER_OF_EDGE(theElement,edge,0);
   co1 = CORNER_OF_EDGE(theElement,edge,1);
@@ -617,6 +617,9 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge)
         return(NULL);
       if (BNDP_Global(bndp,bnd_global))
         return(NULL);
+      if (BNDP_BndPDesc(bndp,&move,&part))
+        return(NULL);
+      SETMOVE(theVertex,move);
       V_BNDP(theVertex) = bndp;
       V_DIM_COPY(bnd_global,CVECT(theVertex));
       local = LCVECT(theVertex);
@@ -764,7 +767,7 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
   BNDP *bndp;
   BNDS *bnds;
   DOUBLE fac, diff;
-  INT n,j,k;
+  INT n,j,k,move,part;
 
   n = CORNERS_OF_SIDE(theElement,side);
   fac = 1.0 / n;
@@ -795,6 +798,9 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
         theVertex = CreateBoundaryVertex(theGrid);
         if (theVertex == NULL)
           return(NULL);
+        if (BNDP_BndPDesc(bndp,&move,&part))
+          return(NULL);
+        SETMOVE(theVertex,move);
         if (BNDP_Global(bndp,bnd_global))
           return(NULL);
         V_BNDP(theVertex) = bndp;
@@ -844,7 +850,7 @@ NODE *GetSideNode (ELEMENT *theElement, INT side)
   VERTEX *theVertex;
   LINK *theLink0,*theLink1,*theLink2,*theLink3;
   DOUBLE fac,*local;
-  INT i,j,n,m;
+  INT i,n,m;
 
   m = EDGES_OF_SIDE(theElement,side);
   n = 0;
@@ -1178,7 +1184,6 @@ INT GetNodeContext (ELEMENT *theElement, NODE **theElementContext)
   INT i,Corner0, Corner1;
         #ifdef __THREEDIM__
   NODE **SideNodes;
-  NODE *theNode0, *theNode1;
         #endif
 
   /* reset context */
@@ -2043,7 +2048,6 @@ INT ClearMultiGridUsedFlags (MULTIGRID *theMG, INT FromLevel, INT ToLevel, INT m
   ELEMENT *theElement;
   NODE *theNode;
   EDGE *theEdge;
-  VERTEX *theVertex;
   VECTOR *theVector;
   MATRIX *theMatrix;
 
@@ -3317,7 +3321,7 @@ INT DisposeMultiGrid (MULTIGRID *theMG)
 /*                                                                                                                                                              */
 /************************************************************************************/
 
-INT RenumberNodes (MULTIGRID *theMG, INT *foid, INT *non)
+static INT RenumberNodes (MULTIGRID *theMG, INT *foid, INT *non)
 {
   INT i,nid;
   NODE *theNode;
@@ -4479,6 +4483,104 @@ INT MoveNode (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos)
 
 /****************************************************************************/
 /*D
+   MoveFreeBoundaryVertex - move a vertex on a free boundary
+
+   SYNOPSIS:
+   INT MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, DOUBLE *newPos)
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+   .  vert - vertex to move
+   .  newPos - global coordinate for new position
+
+   DESCRIPTION:
+   This function moves a given vertex to a new position. The complete
+   multigrid structure is moved hierachically, that all global coordinates
+   of nodes are updated in order to reflect the changes on coarser grids.
+   To this end the function 'FinishMovingFreeBoundaryVertices' has to be
+   called after having done the last call of 'MoveFreeBoundaryVertex'.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK when ok
+   .n   GM_ERROR when error occured.
+
+   SEE ALSO:
+   FinishMovingFreeBoundaryVertices
+   D*/
+/****************************************************************************/
+
+INT MoveFreeBoundaryVertex (MULTIGRID *theMG, VERTEX *vert, DOUBLE *newPos)
+{
+  ELEMENT *theElement;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM];
+  INT n;
+
+  if (OBJT(vert) != BVOBJ)
+    REP_ERR_RETURN(GM_ERROR);
+  if (MOVE(vert)!=DIM)
+    REP_ERR_RETURN(GM_ERROR);
+
+  V_DIM_COPY(newPos,CVECT(vert));
+  if (LEVEL(vert) > 0)
+  {
+    if (BNDP_Move(V_BNDP(vert),newPos))
+      REP_ERR_RETURN(GM_ERROR);
+    theElement = VFATHER(vert);
+    if (theElement == NULL)
+      REP_ERR_RETURN(GM_ERROR)
+      else
+      {
+        CORNER_COORDINATES(theElement,n,x);
+        UG_GlobalToLocal(n,(const DOUBLE **)x,newPos,LCVECT(vert));
+      }
+  }
+
+  return(GM_OK);
+}
+
+/****************************************************************************/
+/*D
+   FinishMovingFreeBoundaryVertices - finish moving of free boundary vertices
+
+   SYNOPSIS:
+   INT FinishMovingFreeBoundaryVertices (MULTIGRID *theMG)
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+
+   DESCRIPTION:
+   The complete multigrid structure is moved hierachically such that all global coordinates
+   of nodes are updated in order to reflect the changes on coarser grids.
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK when ok
+   .n   GM_ERROR when error occured.
+
+   SEE ALSO:
+   MoveFreeBoundaryVertex
+   D*/
+/****************************************************************************/
+
+INT FinishMovingFreeBoundaryVertices (MULTIGRID *theMG)
+{
+  VERTEX *vert;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM];
+  INT n,lev;
+
+  for(lev=1; lev<=TOPLEVEL(theMG); lev++)
+    for (vert=FIRSTVERTEX(GRID_ON_LEVEL(theMG,lev)); vert!=NULL; vert=SUCCV(vert))
+      if ((OBJT(vert) != BVOBJ))
+      {
+        CORNER_COORDINATES(VFATHER(vert),n,x);
+        LOCAL_TO_GLOBAL(n,x,LCVECT(vert),CVECT(vert));
+      }
+  return(GM_OK);
+}
+
+/****************************************************************************/
+/*D
    GetMidNodeParam - Get local position of a midnode on an edge
 
    SYNOPSIS:
@@ -4624,7 +4726,7 @@ INT CheckOrientation (INT n, VERTEX **vertices)
 
   /* TODO: this case */
   if (n == 8 || n==6)
-    return(0);
+    return(1);
 
   for (i=1; i<n; i++)
     V3_SUBTRACT(CVECT(vertices[i]),CVECT(vertices[0]),diff[i-1]);
@@ -5038,7 +5140,6 @@ ELEMENT *InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMENT **ElemList, I
   INT cornerID[2*MAX_CORNERS_OF_ELEM];
   INT MIndex[MAX_CORNERS_OF_ELEM];
   INT MBlock[MAX_CORNERS_OF_ELEM];
-  HEAP *theHeap;
   INT highestid;
         #ifdef __TWODIM__
   VERTEX           *theVertex;
@@ -5517,10 +5618,10 @@ INT DeleteElementWithID (MULTIGRID *theMG, INT id)
 INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
 {
   GRID *theGrid;
-  ELEMENT **EList,*nbList[MAX_SIDES_OF_ELEM],*theElement;
-  NODE **NList,*Nodes[MAX_CORNERS_OF_ELEM],*theNode,*ListNode;
+  ELEMENT *theElement;
+  NODE **NList,*Nodes[MAX_CORNERS_OF_ELEM],*ListNode;
   VERTEX **VList;
-  INT sid,i,nel,nnd,k,n,nid,eid,nv,j,maxlevel,l;
+  INT i,k,n,nv,j,maxlevel,l,move,part;
 
   if (theMesh == NULL) return(GM_OK);
   if (theMesh->nElements == NULL)
@@ -5554,6 +5655,9 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
       VList[i] = CreateBoundaryVertex(theGrid);
       assert(VList[i]!=NULL);
       if (BNDP_Global(theMesh->theBndPs[i],CVECT(VList[i]))) assert(0);
+      if (BNDP_BndPDesc(theMesh->theBndPs[i],&move,&part))
+        return(NULL);
+      SETMOVE(VList[i],move);
       V_BNDP(VList[i]) = theMesh->theBndPs[i];
       maxlevel = MAX(maxlevel,theMesh->VertexLevel[i]);
     }
@@ -5573,6 +5677,9 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
       VList[i] = CreateBoundaryVertex(theGrid);
       assert(VList[i]!=NULL);
       if (BNDP_Global(theMesh->theBndPs[i],CVECT(VList[i]))) assert(0);
+      if (BNDP_BndPDesc(theMesh->theBndPs[i],&move,&part))
+        return(NULL);
+      SETMOVE(VList[i],move);
       V_BNDP(VList[i]) = theMesh->theBndPs[i];
     }
     for (i=theMesh->nBndP; i<nv; i++)
@@ -7982,7 +8089,7 @@ VIRT_HEAP_MGMT *GetGenMGUDM()
    D*/
 /****************************************************************************/
 
-INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
+static INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
 {
   ELEMENT *theElement;
   NODE *n0,*n1;

@@ -2613,6 +2613,8 @@ INT         MoveCenterNode          (MULTIGRID *theMG, NODE *theNode, DOUBLE *la
 INT         MoveSideNode             (MULTIGRID *theMG, NODE *theNode, DOUBLE *lambda);
 #endif
 INT         MoveNode                (MULTIGRID *theMG, NODE *theNode, DOUBLE *newPos);
+INT                     MoveFreeBoundaryVertex  (MULTIGRID *theMG, VERTEX *vert, DOUBLE *newPos);
+INT                     FinishMovingFreeBoundaryVertices (MULTIGRID *theMG);
 INT             SmoothMultiGrid                 (MULTIGRID *theMG, INT niter, INT bdryFlag);
 INT         SmoothGrid              (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const INT ForceLevelSet, const INT bnd_num, const INT *bnd);
 INT         SmoothGridReset         (GRID *theGrid, INT *MoveInfo);
