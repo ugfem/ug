@@ -62,6 +62,7 @@
 #include "initnp.h"
 #include "numproc.h"
 #include "amg_ug.h"
+#include "slu.h"
 
 #ifdef USE_FAMG
 #include "ug-famg.h"
@@ -246,6 +247,12 @@ INT InitNumerics ()
 
   /* init reinit numprocs */
   if ((err=InitReinit())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* init slu */
+  if ((err=InitSLU())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }

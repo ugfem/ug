@@ -10,7 +10,7 @@
 include $(UGROOT)/ug.conf
 
 # the following list may be extended
-MODULES = PROCS ALGEBRA UDM FIELD AMGLIB
+MODULES = PROCS ALGEBRA UDM FIELD AMGLIB SLU
 
 # object files for both dimensions
 OBJECTS = initnp.o
@@ -44,6 +44,9 @@ FIELD:
 
 AMGLIB:
 	cd amglib; make -f Makefile.amglib; cd ..;
+
+SLU:
+	cd slu; make -f Makefile.slu; cd ..;
 
 .SUFFIXES: .o .c
 
