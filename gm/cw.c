@@ -36,7 +36,8 @@
 #include "cw.h"
 
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
+  USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -104,8 +105,8 @@ typedef struct {
 /*                                                                          */
 /****************************************************************************/
 
-CONTROL_WORD NS_PREFIX control_words[MAX_CONTROL_WORDS];
-CONTROL_ENTRY NS_PREFIX control_entries[MAX_CONTROL_ENTRIES];
+CONTROL_WORD NS_DIM_PREFIX control_words[MAX_CONTROL_WORDS];
+CONTROL_ENTRY NS_DIM_PREFIX control_entries[MAX_CONTROL_ENTRIES];
 
 /****************************************************************************/
 /*                                                                          */
@@ -249,7 +250,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /****************************************************************************/
 
-void NS_PREFIX ListCWofObject (const void *obj, INT offset)
+void NS_DIM_PREFIX ListCWofObject (const void *obj, INT offset)
 {
   INT i,n,ce,last_ce,sub,min,cw_objt,oiw;
 
@@ -301,7 +302,7 @@ void NS_PREFIX ListCWofObject (const void *obj, INT offset)
  */
 /****************************************************************************/
 
-void NS_PREFIX ListAllCWsOfObject (const void *obj)
+void NS_DIM_PREFIX ListAllCWsOfObject (const void *obj)
 {
   INT i,cw,last_cw,sub,min,cw_objt,offset;
 
@@ -462,7 +463,7 @@ static void ListAllCWsOfObjectType (INT objt, PrintfProcPtr myprintf)
  */
 /****************************************************************************/
 
-void NS_PREFIX ListAllCWsOfAllObjectTypes (PrintfProcPtr myprintf)
+void NS_DIM_PREFIX ListAllCWsOfAllObjectTypes (PrintfProcPtr myprintf)
 {
   ListAllCWsOfObjectType(IVOBJ,myprintf);
   ListAllCWsOfObjectType(IEOBJ,myprintf);
@@ -647,7 +648,7 @@ static INT InitPredefinedControlEntries (void)
  */
 /****************************************************************************/
 
-void NS_PREFIX ResetCEstatistics (void)
+void NS_DIM_PREFIX ResetCEstatistics()
 {
         #ifndef _DEBUG_CW_
   PrintErrorMessage('W',"ResetCEstatistics","compile with #ifdef _DEBUG_CW_ in gm.h!");
@@ -700,7 +701,7 @@ static void PrintSingleCEStatistics (INT i)
  */
 /****************************************************************************/
 
-void NS_PREFIX PrintCEstatistics (void)
+void NS_DIM_PREFIX PrintCEstatistics (void)
 {
         #ifndef _DEBUG_CW_
   PrintErrorMessage('W',"PrintCEstatistics","compile with #ifdef _DEBUG_CW_ in gm.h!");
@@ -763,7 +764,7 @@ void NS_PREFIX PrintCEstatistics (void)
  */
 /****************************************************************************/
 
-unsigned INT NS_PREFIX ReadCW (const void *obj, INT ceID)
+unsigned INT NS_DIM_PREFIX ReadCW (const void *obj, INT ceID)
 {
   CONTROL_ENTRY *ce;
   unsigned INT off_in_obj,mask,i,off_in_wrd,cw,cw_objt;
@@ -835,7 +836,7 @@ unsigned INT NS_PREFIX ReadCW (const void *obj, INT ceID)
  */
 /****************************************************************************/
 
-void NS_PREFIX WriteCW (void *obj, INT ceID, INT n)
+void NS_DIM_PREFIX WriteCW (void *obj, INT ceID, INT n)
 {
   CONTROL_ENTRY *ce;
   unsigned INT off_in_obj,mask,i,j,off_in_wrd,cw_objt,xmsk;
@@ -953,7 +954,7 @@ void NS_PREFIX WriteCW (void *obj, INT ceID, INT n)
  */
 /****************************************************************************/
 
-INT NS_PREFIX AllocateControlEntry (INT cw_id, INT length, INT *ce_id)
+INT NS_DIM_PREFIX AllocateControlEntry (INT cw_id, INT length, INT *ce_id)
 {
   INT free, i, offset;
   CONTROL_ENTRY *ce;
@@ -1019,7 +1020,7 @@ INT NS_PREFIX AllocateControlEntry (INT cw_id, INT length, INT *ce_id)
  */
 /****************************************************************************/
 
-INT NS_PREFIX FreeControlEntry (INT ce_id)
+INT NS_DIM_PREFIX FreeControlEntry (INT ce_id)
 {
   CONTROL_ENTRY *ce;
   CONTROL_WORD *cw;
@@ -1055,7 +1056,7 @@ INT NS_PREFIX FreeControlEntry (INT ce_id)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitCW (void)
+INT NS_DIM_PREFIX InitCW (void)
 {
   if (InitPredefinedControlWords())
     return (__LINE__);

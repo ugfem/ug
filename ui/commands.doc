@@ -546,7 +546,7 @@ Then, the file 'exp.proto' will consist of the string
  \section Description
    This command closes the current (or all) open multigrid(s),
    frees their heaps and closes all the pictures belonging to them,
-   calling 'DisposeMultiGrid' and 'DisposePicture'.
+   calling DisposeMultiGrid() and DisposePicture().
 
 \section Syntax
    'close [$a]'

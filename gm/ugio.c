@@ -73,7 +73,8 @@
 #include "er.h"
 #include "cw.h"
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
+  USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -673,7 +674,7 @@ static INT OrphanCons(MULTIGRID *theMG)
   return(error);
 }
 
-INT NS_PREFIX RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, NODE ***vid_n, INT *foid, INT *non, INT MarkKey)
+INT NS_DIM_PREFIX RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *niov, NODE ***vid_n, INT *foid, INT *non, INT MarkKey)
 {
   NODE *theNode;
   ELEMENT *theElement;
@@ -1660,7 +1661,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   return (0);
 }
 
-INT NS_PREFIX SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave, INT rename)
+INT NS_DIM_PREFIX SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave, INT rename)
 {
   /* check name convention */
   if (name==NULL || strcmp(name+strlen(name)-4,".scr")!=0)
@@ -2676,7 +2677,7 @@ static INT CheckCGKeys (INT ne, ELEMENT** eid_e, MGIO_CG_ELEMENT *cg_elem)
 }
 #endif
 
-MULTIGRID * NS_PREFIX LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize, INT force, INT optimizedIE, INT autosave)
+MULTIGRID * NS_DIM_PREFIX LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVPName, char *format, unsigned long heapSize, INT force, INT optimizedIE, INT autosave)
 /* Documentation of the intended programm flow resp. communication requirements.
    Functions introducing a global communication (all processors without any exception)
    are:
@@ -3435,7 +3436,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
  */
 /****************************************************************************/
 
-INT NS_PREFIX SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, char *tag)
+INT NS_DIM_PREFIX SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plotprocName, char *tag)
 {
   ELEMENT *theElement;
   VERTEX *theVertex;
@@ -3603,7 +3604,7 @@ INT NS_PREFIX SaveCnomGridAndValues (MULTIGRID *theMG, char *docName, char *plot
 }
 #endif
 
-INT NS_PREFIX InitUgio ()
+INT NS_DIM_PREFIX InitUgio ()
 {
   /* read gridpaths from defaults file (iff) */
   gridpaths_set = FALSE;

@@ -287,7 +287,7 @@ static INT MySolveSmallBlock (SHORT n, const SHORT *scomp, DOUBLE *sol, const SH
 /****************************************************************************/
 /****************************************************************************/
 
-INT NS_PREFIX NPNLIterInit (NP_NL_ITER *np, INT argc , char **argv)
+INT NS_DIM_PREFIX NPNLIterInit (NP_NL_ITER *np, INT argc , char **argv)
 {
   np->A = ReadArgvMatDesc(np->base.mg,"A",argc,argv);
   np->x = ReadArgvVecDesc(np->base.mg,"x",argc,argv);
@@ -304,7 +304,7 @@ INT NS_PREFIX NPNLIterInit (NP_NL_ITER *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NS_PREFIX NPNLIterDisplay (NP_NL_ITER *np)
+INT NS_DIM_PREFIX NPNLIterDisplay (NP_NL_ITER *np)
 {
   if ((np->A == NULL) && (np->x == NULL) && (np->b == NULL))
     return(0);
@@ -320,7 +320,7 @@ INT NS_PREFIX NPNLIterDisplay (NP_NL_ITER *np)
   return(0);
 }
 
-INT NS_PREFIX NPNLIterExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_DIM_PREFIX NPNLIterExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_NL_ITER *np;
   INT result,bl,level;
@@ -708,7 +708,7 @@ static INT NLGSConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX InitNLIter (void)
+INT NS_DIM_PREFIX InitNLIter()
 {
   INT i;
 

@@ -201,7 +201,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_setindex (GRID *g)
+INT NS_DIM_PREFIX l_setindex (GRID *g)
 {
 #ifdef _SPARSE_
   if (Mark_and_Sort_Matrix(g, 0)<0)
@@ -241,7 +241,7 @@ INT NS_PREFIX l_setindex (GRID *g)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_ordervtypes (GRID *g, const SHORT TypeOrder[NVECTYPES])
+INT NS_DIM_PREFIX l_ordervtypes (GRID *g, const SHORT TypeOrder[NVECTYPES])
 {
   VECTOR *v,*first_v,*last_v_of_type[NVECTYPES];
   INT type,order,Types[NVECTYPES];
@@ -316,7 +316,7 @@ INT NS_PREFIX l_ordervtypes (GRID *g, const SHORT TypeOrder[NVECTYPES])
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_jac (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT NS_DIM_PREFIX l_jac (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*first_vec;
   INT rtype,err;
@@ -411,7 +411,7 @@ INT NS_PREFIX l_jac (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, cons
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX jacBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT K_comp, INT u_comp, INT f_comp )
+INT NS_DIM_PREFIX jacBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT K_comp, INT u_comp, INT f_comp )
 {
   VECTOR *v, *end_v, *first_v;
 
@@ -458,7 +458,7 @@ INT NS_PREFIX jacBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_F
 /****************************************************************************/
 
 #ifdef _SPARSE_
-INT NS_PREFIX l_lgs (GRID *grid, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, VECDATA_DESC *diag)
+INT NS_DIM_PREFIX l_lgs (GRID *grid, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, VECDATA_DESC *diag)
 {
   if (MG_Matrix_Loop(grid->mg, grid->level, grid->level,
                      ((ALL_VECTORS&BLAS_SURFACE)<<BLAS_MODE_SHIFT) |
@@ -472,7 +472,7 @@ INT NS_PREFIX l_lgs (GRID *grid, const VECDATA_DESC *v, const MATDATA_DESC *M, c
 }
 #else /* not _SPARSE_ */
 
-INT NS_PREFIX l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, VECDATA_DESC *diag)
+INT NS_DIM_PREFIX l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*first_vec;
   INT rtype,ctype,myindex,err;
@@ -676,7 +676,7 @@ INT NS_PREFIX l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, cons
   return (NUM_OK);
 }
 
-INT NS_PREFIX l_lgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT NS_DIM_PREFIX l_lgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*end_vec;
   INT myindex,err,first_index;
@@ -723,7 +723,7 @@ INT NS_PREFIX l_lgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA
   REP_ERR_RETURN (__LINE__);
 }
 
-INT NS_PREFIX l_tplgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT NS_DIM_PREFIX l_tplgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*end_vec;
   INT myindex,err,last_index;
@@ -799,7 +799,7 @@ INT NS_PREFIX l_tplgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDA
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT NS_DIM_PREFIX l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*last_vec;
   INT rtype,ctype,myindex,err;
@@ -995,7 +995,7 @@ INT NS_PREFIX l_ugs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, cons
   return (NUM_OK);
 }
 
-INT NS_PREFIX l_ugs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT NS_DIM_PREFIX l_ugs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*last_vec,*end_vec;
   INT myindex,err,last_index;
@@ -1070,7 +1070,7 @@ INT NS_PREFIX l_ugs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT NS_DIM_PREFIX l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w;
   BLOCKVECTOR *theBV;
@@ -1320,7 +1320,7 @@ INT NS_PREFIX l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, con
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX gs_solveBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, DOUBLE eps, INT max_it, INT K_comp, INT u_comp, INT f_comp, INT aux_comp, INT verbose, INT eps_relative )
+INT NS_DIM_PREFIX gs_solveBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, DOUBLE eps, INT max_it, INT K_comp, INT u_comp, INT f_comp, INT aux_comp, INT verbose, INT eps_relative )
 {
   VECTOR *v, *end_v, *first_v, *w;
   register SHORT it;
@@ -1426,8 +1426,8 @@ INT NS_PREFIX gs_solveBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_D
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-                      const VECDATA_DESC *d, const DOUBLE *omega, VECDATA_DESC *diag)
+INT NS_DIM_PREFIX l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
+                          const VECDATA_DESC *d, const DOUBLE *omega, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*first_vec;
   INT rtype,ctype,myindex,err;
@@ -1645,8 +1645,8 @@ INT NS_PREFIX l_lsor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
   return (NUM_OK);
 }
 
-INT NS_PREFIX l_usor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-                      const VECDATA_DESC *d, const DOUBLE *omega, VECDATA_DESC *diag)
+INT NS_DIM_PREFIX l_usor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
+                          const VECDATA_DESC *d, const DOUBLE *omega, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*last_vec;
   INT rtype,ctype,myindex,err;
@@ -1858,8 +1858,8 @@ INT NS_PREFIX l_usor (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
   return (NUM_OK);
 }
 
-INT NS_PREFIX l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
-                         const VECDATA_DESC *d, VECDATA_DESC *omega, VECDATA_DESC *diag)
+INT NS_DIM_PREFIX l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
+                             const VECDATA_DESC *d, VECDATA_DESC *omega, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*last_vec;
   INT rtype,ctype,myindex,err;
@@ -2101,7 +2101,7 @@ INT NS_PREFIX l_usor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, const VECDATA_DESC *damp, VECDATA_DESC *diag)
+INT NS_DIM_PREFIX l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d, const VECDATA_DESC *damp, VECDATA_DESC *diag)
 {
   VECTOR *vec,*w,*first_vec;
   INT rtype,ctype,myindex,err;
@@ -2347,7 +2347,7 @@ INT NS_PREFIX l_lsor_ld (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, 
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VEC_SCALAR threshold, const VECDATA_DESC *VD_rest, const VEC_SCALAR oldrestthresh)
+INT NS_DIM_PREFIX l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VEC_SCALAR threshold, const VECDATA_DESC *VD_rest, const VEC_SCALAR oldrestthresh)
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
@@ -2722,7 +2722,7 @@ INT NS_PREFIX l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR b
   return (NUM_OK);
 }
 
-INT NS_PREFIX l_ilubdecomp_SB (BLOCKVECTOR *theBV, const MATDATA_DESC *M, const VEC_SCALAR beta)
+INT NS_DIM_PREFIX l_ilubdecomp_SB (BLOCKVECTOR *theBV, const MATDATA_DESC *M, const VEC_SCALAR beta)
 {
   VECTOR *vi,*vj,*vk,*first_vec,*last_vec;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
@@ -2955,7 +2955,7 @@ static INT SquareRootOfSmallBlock(SHORT n, const SHORT *mcomp,
   REP_ERR_RETURN(1);
 }
 
-INT NS_PREFIX l_icdecomp (GRID *g, const MATDATA_DESC *M)
+INT NS_DIM_PREFIX l_icdecomp (GRID *g, const MATDATA_DESC *M)
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mjk,*Mik;
@@ -3243,7 +3243,7 @@ INT NS_PREFIX l_icdecomp (GRID *g, const MATDATA_DESC *M)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VECDATA_DESC *t, INT mode, const VEC_SCALAR oldrestthresh)
+INT NS_DIM_PREFIX l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VECDATA_DESC *t, INT mode, const VEC_SCALAR oldrestthresh)
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
@@ -3773,7 +3773,7 @@ INT NS_PREFIX l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR be
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_lrdecomp (GRID *g, const MATDATA_DESC *M)
+INT NS_DIM_PREFIX l_lrdecomp (GRID *g, const MATDATA_DESC *M)
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
@@ -4041,7 +4041,7 @@ INT NS_PREFIX l_lrdecomp (GRID *g, const MATDATA_DESC *M)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX LUDecomposeDiagBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT A_comp, GRID *grid )
+INT NS_DIM_PREFIX LUDecomposeDiagBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT A_comp, GRID *grid )
 {
   register VECTOR *vi, *end_vi, *vj, *vk;
   register DOUBLE aii, aji, ajk_corr;
@@ -4147,7 +4147,7 @@ INT NS_PREFIX LUDecomposeDiagBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, cons
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_lrregularize (GRID *theGrid, const MATDATA_DESC *M, INT restore)
+INT NS_DIM_PREFIX l_lrregularize (GRID *theGrid, const MATDATA_DESC *M, INT restore)
 {
   INT type,found,ncmp,i,l,cmp,singComp,matComp;
   DOUBLE value, min, InvMat[MAX_SINGLE_MAT_COMP];
@@ -4307,7 +4307,7 @@ static INT l_lrregularizeB (GRID *theGrid, VECTOR *vec, const MATDATA_DESC *M)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_lrdecompB (GRID *g, const MATDATA_DESC *M)
+INT NS_DIM_PREFIX l_lrdecompB (GRID *g, const MATDATA_DESC *M)
 {
   VECTOR *vi,*vj,*vk,*vec;
   BLOCKVECTOR *theBV;
@@ -4599,7 +4599,7 @@ INT NS_PREFIX l_lrdecompB (GRID *g, const MATDATA_DESC *M)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT NS_DIM_PREFIX l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*last_vec;
   INT rtype,ctype,myindex,err;
@@ -4952,7 +4952,7 @@ INT NS_PREFIX l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, c
   return (NUM_OK);
 }
 
-INT NS_PREFIX l_luiter_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT NS_DIM_PREFIX l_luiter_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*last_vec;
   INT myindex,err,first_index,last_index;
@@ -5016,7 +5016,7 @@ INT NS_PREFIX l_luiter_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATD
   REP_ERR_RETURN (1);
 }
 
-INT NS_PREFIX l_tpluiter_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT NS_DIM_PREFIX l_tpluiter_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*last_vec;
   INT myindex,err,first_index,last_index;
@@ -5123,7 +5123,7 @@ INT NS_PREFIX l_tpluiter_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MA
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX solveLUMatBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT dest_comp, INT LU_comp, INT source_comp )
+INT NS_DIM_PREFIX solveLUMatBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT dest_comp, INT LU_comp, INT source_comp )
 {
   register VECTOR *vi, *end_v, *vj;
   register MATRIX *m;
@@ -5226,7 +5226,7 @@ INT NS_PREFIX solveLUMatBS( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT NS_DIM_PREFIX l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*last_vec;
   INT rtype,ctype,myindex,err,bvn,maxBVmembers;
@@ -5605,7 +5605,7 @@ INT NS_PREFIX l_luiterB (GRID *g, const BLOCKVECTOR *bv, const VECDATA_DESC *v, 
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT NS_DIM_PREFIX l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*last_vec;
   INT rtype,ctype,myindex,err;
@@ -5929,7 +5929,7 @@ INT NS_PREFIX l_lltiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, 
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VEC_SCALAR threshold, const VECDATA_DESC *VD_rest, const VEC_SCALAR oldrestthresh)
+INT NS_DIM_PREFIX l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const VEC_SCALAR threshold, const VECDATA_DESC *VD_rest, const VEC_SCALAR oldrestthresh)
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *Mij,*Mji,*Mjk,*Mik;
@@ -6330,7 +6330,7 @@ INT NS_PREFIX l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCA
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT NS_DIM_PREFIX l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec,*last_vec;
   INT rtype,ctype,myindex,err;
@@ -6979,9 +6979,9 @@ static INT ElementJAC (GRID *g, const VECDATA_DESC *v,
   return (NUM_OK);
 }
 
-INT NS_PREFIX l_pgs (GRID *g, const VECDATA_DESC *v,
-                     const MATDATA_DESC *M, const VECDATA_DESC *d,
-                     INT depth, INT mode, DOUBLE vdamp)
+INT NS_DIM_PREFIX l_pgs (GRID *g, const VECDATA_DESC *v,
+                         const MATDATA_DESC *M, const VECDATA_DESC *d,
+                         INT depth, INT mode, DOUBLE vdamp)
 {
   ELEMENT *theElement;
   VECTOR *vec,*vlist[MAX_DEPTH],*w;
@@ -7383,7 +7383,7 @@ static INT SolveInverseSparseBlock (SPARSE_MATRIX *sm, MATRIX *mat,
    .n    __LINE__ line where an error occured.
    D*/
 /****************************************************************************/
-INT NS_PREFIX l_iluspbldecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta)
+INT NS_DIM_PREFIX l_iluspbldecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta)
 {
 #ifdef _SPARSE_
   VECTOR *vi,*vj,*vk;
@@ -7597,7 +7597,7 @@ INT NS_PREFIX l_iluspbldecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR 
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX l_iluspbliter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+INT NS_DIM_PREFIX l_iluspbliter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
 #ifdef _SPARSE_
   VECTOR *vec,*w,*first_vec,*last_vec;

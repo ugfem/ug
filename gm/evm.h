@@ -45,7 +45,7 @@ $Header$
 #include "debug.h"
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */

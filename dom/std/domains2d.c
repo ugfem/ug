@@ -4,9 +4,9 @@
 /*                                                                          */
 /* File:      domains2d.c                                                   */
 /*                                                                          */
-/* Purpose:   domain definitions                                                */
+/* Purpose:   domain definitions                                            */
 /*                                                                          */
-/* Author:	  Christian Wieners                                                                             */
+/* Author:    Christian Wieners                                             */
 /*			  Institut fuer Computeranwendungen III                                                 */
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
@@ -5466,7 +5466,7 @@ static INT InitChannelNoParts (void)
 
 /* configuring a domain */
 
-INT NS_PREFIX STD_BVP_Configure (INT argc, char **argv)
+INT NS_DIM_PREFIX STD_BVP_Configure (INT argc, char **argv)
 {
   STD_BVP *theBVP;
   DOMAIN *theDomain;

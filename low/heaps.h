@@ -52,7 +52,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UG_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */

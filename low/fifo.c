@@ -32,7 +32,7 @@
 #include "general.h"
 #include "fifo.h"
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -44,25 +44,18 @@ USING_UG_NAMESPACES
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*D
-   fifo_init - Initialize fifo data structure
+/** \brief Initialize fifo data structure
 
-   SYNOPSIS:
-   INT fifo_init (FIFO *myfifo, void *buffer, INT size)
+   \param myfifo - pointer to a fifo record
+   \param buffer - pointer to a memory area for the fifo
+   \param size -   size of the buffer in bytes
 
-   PARAMETERS:
-   .  myfifo - pointer to a fifo record
-   .  buffer - pointer to a memory area for the fifo
-   .  size -   size of the buffer in bytes
-
-   DESCRIPTION:
    This function initializes 'fifo' (first in, first out) data structure.
 
    RETURN VALUE:
-   INT
    .n     size of fifo record
    .n     0 if size lower or equal to zero
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX fifo_init (FIFO *myfifo, void *buffer, INT size)
@@ -75,21 +68,12 @@ INT NS_PREFIX fifo_init (FIFO *myfifo, void *buffer, INT size)
 }
 
 /****************************************************************************/
-/*D
-   fifo_clear - Reset a previously initialized FIFO structure
+/** \brief Reset a previously initialized FIFO structure
 
-   SYNOPSIS:
-   void fifo_clear (FIFO *myfifo)
+   \param myfifo - pointer to FIFO structure
 
-   PARAMETERS:
-   .  myfifo - pointer to FIFO structure
-
-   DESCRIPTION:
    This function resets a previously initialized FIFO structure.
-
-   RETURN VALUE:
-   void
-   D*/
+ */
 /****************************************************************************/
 
 void NS_PREFIX fifo_clear (FIFO *myfifo)
@@ -98,23 +82,16 @@ void NS_PREFIX fifo_clear (FIFO *myfifo)
 }
 
 /****************************************************************************/
-/*D
-   fifo_empty - Test if fifo is empty
+/** \brief Test if fifo is empty
 
-   SYNOPSIS:
-   INT fifo_empty (const FIFO *myfifo)
+   \param myfifo - pointer to fifo structure
 
-   PARAMETERS:
-   .  myfifo - pointer to fifo structure
-
-   DESCRIPTION:
    This function tests if fifo is empty.
 
    RETURN VALUE:
-   INT
    .n     0 if fifo is not empty
    .n     1 if fifo is empty
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX fifo_empty (const FIFO *myfifo)
@@ -126,23 +103,16 @@ INT NS_PREFIX fifo_empty (const FIFO *myfifo)
 }
 
 /****************************************************************************/
-/*D
-   fifo_full - Test if fifo is full
+/** \brief Test if fifo is full
 
-   SYNOPSIS:
-   INT fifo_full (const FIFO *myfifo)
+   \param myfifo - pointer to FIFO structure
 
-   PARAMETERS:
-   .  myfifo - pointer to FIFO structure
-
-   DESCRIPTION:
    This function tests if fifo is full.
 
    RETURN VALUE:
-   INT
    .n     0 if fifo is not empty
    .n     1 if fifo is empty
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX fifo_full (const FIFO *myfifo)
@@ -154,24 +124,17 @@ INT NS_PREFIX fifo_full (const FIFO *myfifo)
 }
 
 /****************************************************************************/
-/*D
-   fifo_in - Insert an element in the fifo
+/** \brief Insert an element in the fifo
 
-   SYNOPSIS:
-   INT fifo_in (FIFO *myfifo, void *newelement)
+   \param myfifo - pointer to FIFO structure
+   \param newelement - pointer to the new element (any type!)
 
-   PARAMETERS:
-   .  myfifo - pointer to FIFO structure
-   .  newelement - pointer to the new element (any type!)
-
-   DESCRIPTION:
    This function inserts an element in the fifo.
 
    RETURN VALUE:
-   INT
    .n     1 if error occurred.
    .n     0 if OK
-   D*/
+ */
 /****************************************************************************/
 
 INT NS_PREFIX fifo_in (FIFO *myfifo, void *newelement)
@@ -188,23 +151,16 @@ INT NS_PREFIX fifo_in (FIFO *myfifo, void *newelement)
 }
 
 /****************************************************************************/
-/*D
-   fifo_out - Get an element from the fifo
+/** \brief Get an element from the fifo
 
-   SYNOPSIS:
-   void *fifo_out (FIFO *myfifo)
+   \param myfifo - pointer to fifo structure
 
-   PARAMETERS:
-   .  myfifo - pointer to fifo structure
-
-   DESCRIPTION:
    This function gets an element from the fifo.
 
    RETURN VALUE:
-   void *
    .n        pointer to the element to take out from the fifo
    .n        NULL if fifo is empty
-   D*/
+ */
 /****************************************************************************/
 
 void *NS_PREFIX fifo_out (FIFO *myfifo)

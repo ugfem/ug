@@ -4,9 +4,9 @@
 /*                                                                          */
 /* File:      domains3d.c                                                   */
 /*                                                                          */
-/* Purpose:   domain definitions                                                */
+/* Purpose:   domain definitions                                            */
 /*                                                                          */
-/* Author:	  Christian Wieners                                                                             */
+/* Author:    Christian Wieners                                             */
 /*			  Institut fuer Computeranwendungen III                                                 */
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
@@ -51,7 +51,8 @@
 
 #include "namespace.h"
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
+  USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -4328,7 +4329,7 @@ static INT InitSQcylinder (void)
  */
 /****************************************************************************/
 
-INT NS_PREFIX STD_BVP_Configure (INT argc, char **argv)
+INT NS_DIM_PREFIX STD_BVP_Configure (INT argc, char **argv)
 {
   STD_BVP *theBVP;
   DOMAIN *theDomain;

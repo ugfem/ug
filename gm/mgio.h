@@ -55,7 +55,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -436,7 +436,7 @@ int             Write_BD_General        (MGIO_BD_GENERAL *bd_general);
 int             Read_pinfo                      (int ge, MGIO_PARINFO *pinfo);
 int             Write_pinfo                     (int ge, MGIO_PARINFO *pinfo);
 int             MGIO_filetype           (char *filename);
-int             Read_PBndDesc           (BVP *theBVP, HEAP *theHeap, int n, BNDP **BndPList);
+int             Read_PBndDesc           (BVP *theBVP, NS_PREFIX HEAP *theHeap, int n, BNDP **BndPList);
 int             Write_PBndDesc          (int n, BNDP **BndPList);
 #endif
 

@@ -762,7 +762,7 @@ static INT BEConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitTStep (void)
+INT NS_DIM_PREFIX InitTStep (void)
 {
   INT error=0;
 

@@ -41,7 +41,8 @@
 
 #include "elements.h"
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
+  USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -69,11 +70,11 @@ USING_UG_NAMESPACES
 /****************************************************************************/
 
 #ifdef __TWODIM__
-const DOUBLE NS_PREFIX unit_vec[DIM][DIM]={{1,0},{0,1}};
+const DOUBLE NS_DIM_PREFIX unit_vec[DIM][DIM]={{1,0},{0,1}};
 #endif
 
 #ifdef __THREEDIM__
-const DOUBLE NS_PREFIX unit_vec[DIM][DIM]={{1,0,0},{0,1,0},{0,0,1}};
+const DOUBLE NS_DIM_PREFIX unit_vec[DIM][DIM]={{1,0,0},{0,1,0},{0,0,1}};
 #endif
 
 /****************************************************************************/
@@ -131,7 +132,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX ClipRectangleAgainstRectangle (const DOUBLE *r1min, const DOUBLE *r1max, DOUBLE *r2min, DOUBLE *r2max)
+INT NS_DIM_PREFIX ClipRectangleAgainstRectangle (const DOUBLE *r1min, const DOUBLE *r1max, DOUBLE *r2min, DOUBLE *r2max)
 {
   if (r2min[0] < r1min[0]) r2min[0] = r1min[0];
   if (r2min[1] < r1min[1]) r2min[1] = r1min[1];
@@ -167,7 +168,7 @@ INT NS_PREFIX ClipRectangleAgainstRectangle (const DOUBLE *r1min, const DOUBLE *
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX CheckRectagleIntersection (const DOUBLE *r1min, const DOUBLE *r1max, const DOUBLE *r2min, const DOUBLE *r2max)
+INT NS_DIM_PREFIX CheckRectagleIntersection (const DOUBLE *r1min, const DOUBLE *r1max, const DOUBLE *r2min, const DOUBLE *r2max)
 {
   if (r1max[0] < r2min[0]) return(0);
   if (r2max[0] < r1min[0]) return(0);
@@ -201,7 +202,7 @@ INT NS_PREFIX CheckRectagleIntersection (const DOUBLE *r1min, const DOUBLE *r1ma
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX CheckRectangle (const DOUBLE *rmin, const DOUBLE *rmax, const DOUBLE minsize)
+INT NS_DIM_PREFIX CheckRectangle (const DOUBLE *rmin, const DOUBLE *rmax, const DOUBLE minsize)
 {
   if (rmax[0] <= rmin[0]+minsize) return(1);
   if (rmax[1] <= rmin[1]+minsize) return(1);
@@ -242,7 +243,7 @@ INT NS_PREFIX CheckRectangle (const DOUBLE *rmin, const DOUBLE *rmax, const DOUB
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX PointInTriangle (const COORD_POINT *Points, const COORD_POINT Point)
+INT NS_DIM_PREFIX PointInTriangle (const COORD_POINT *Points, const COORD_POINT Point)
 {
   DOUBLE M[9], Inverse[9], rhs[3], lambda[3];
 
@@ -301,7 +302,7 @@ INT NS_PREFIX PointInTriangle (const COORD_POINT *Points, const COORD_POINT Poin
 
 #define POLYMAX         8
 
-INT NS_PREFIX PointInPolygon (const COORD_POINT *Points, INT n, COORD_POINT Point)
+INT NS_DIM_PREFIX PointInPolygon (const COORD_POINT *Points, INT n, COORD_POINT Point)
 {
   DOUBLE D[POLYMAX] ,tau[POLYMAX],xa,ya,xe,ye;
   int i, left, right;
@@ -348,7 +349,7 @@ INT NS_PREFIX PointInPolygon (const COORD_POINT *Points, INT n, COORD_POINT Poin
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX PointInPolygonC (const DOUBLE_VECTOR_2D *Points, INT n, const DOUBLE_VECTOR_2D Point)
+INT NS_DIM_PREFIX PointInPolygonC (const DOUBLE_VECTOR_2D *Points, INT n, const DOUBLE_VECTOR_2D Point)
 {
   DOUBLE tau[POLYMAX],xa,ya,xe,ye;
   int i, left, right;
@@ -393,7 +394,7 @@ INT NS_PREFIX PointInPolygonC (const DOUBLE_VECTOR_2D *Points, INT n, const DOUB
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX PolyArea (INT n, DOUBLE_VECTOR_2D *Polygon, DOUBLE *Area)
+INT NS_DIM_PREFIX PolyArea (INT n, DOUBLE_VECTOR_2D *Polygon, DOUBLE *Area)
 {
   INT i;
   DOUBLE c;
@@ -452,7 +453,7 @@ INT NS_PREFIX PolyArea (INT n, DOUBLE_VECTOR_2D *Polygon, DOUBLE *Area)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX M2_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
+INT NS_DIM_PREFIX M2_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
 {
   DOUBLE det;
 
@@ -495,7 +496,7 @@ INT NS_PREFIX M2_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX M3_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
+INT NS_DIM_PREFIX M3_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
 {
   DOUBLE determinant,invdet;
   INT i,i1,i2, j,j1,j2;
@@ -547,7 +548,7 @@ INT NS_PREFIX M3_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX V2_Normalize (DOUBLE *a)
+INT NS_DIM_PREFIX V2_Normalize (DOUBLE *a)
 {
   DOUBLE norm;
 
@@ -579,7 +580,7 @@ INT NS_PREFIX V2_Normalize (DOUBLE *a)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX V2_Rotate (DOUBLE *vector, DOUBLE alpha)
+INT NS_DIM_PREFIX V2_Rotate (DOUBLE *vector, DOUBLE alpha)
 {
   DOUBLE help[2];
   DOUBLE calpha, salpha;
@@ -619,7 +620,7 @@ INT NS_PREFIX V2_Rotate (DOUBLE *vector, DOUBLE alpha)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX V2_IntersectLineSegments (const DOUBLE_VECTOR a0, const DOUBLE_VECTOR a1, const DOUBLE_VECTOR b0, const DOUBLE_VECTOR b1, DOUBLE *lambda)
+INT NS_DIM_PREFIX V2_IntersectLineSegments (const DOUBLE_VECTOR a0, const DOUBLE_VECTOR a1, const DOUBLE_VECTOR b0, const DOUBLE_VECTOR b1, DOUBLE *lambda)
 {
   DOUBLE_VECTOR ta,tb,coeff,r,M[DIM],MI[DIM];
   DOUBLE det;
@@ -676,7 +677,7 @@ INT NS_PREFIX V2_IntersectLineSegments (const DOUBLE_VECTOR a0, const DOUBLE_VEC
    D*/
 /****************************************************************************/
 
-DOUBLE NS_PREFIX vp (const DOUBLE x1, const DOUBLE y1, const DOUBLE x2, const DOUBLE y2)
+DOUBLE NS_DIM_PREFIX vp (const DOUBLE x1, const DOUBLE y1, const DOUBLE x2, const DOUBLE y2)
 {
   DOUBLE l1,l2;
 
@@ -708,7 +709,7 @@ DOUBLE NS_PREFIX vp (const DOUBLE x1, const DOUBLE y1, const DOUBLE x2, const DO
    D*/
 /****************************************************************************/
 
-DOUBLE NS_PREFIX tarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2)
+DOUBLE NS_DIM_PREFIX tarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2)
 {
   return(0.5*fabs((y1-y0)*(x2-x0)-(x1-x0)*(y2-y0)));
 }
@@ -733,7 +734,7 @@ DOUBLE NS_PREFIX tarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE
    DOUBLE area
    D*/
 /****************************************************************************/
-DOUBLE NS_PREFIX qarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBLE x3,DOUBLE y3)
+DOUBLE NS_DIM_PREFIX qarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBLE x3,DOUBLE y3)
 {
   return( 0.5*fabs( (y3-y1)*(x2-x0)-(x3-x1)*(y2-y0) ) );
 }
@@ -756,7 +757,7 @@ DOUBLE NS_PREFIX qarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE
    DOUBLE area
    D*/
 /****************************************************************************/
-DOUBLE NS_PREFIX  c_tarea (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2)
+DOUBLE NS_DIM_PREFIX  c_tarea (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2)
 {
   return(0.5*fabs((x1[_Y_]-x0[_Y_])*(x2[_X_]-x0[_X_])-(x1[_X_]-x0[_X_])*(x2[_Y_]-x0[_Y_])));
 }
@@ -780,7 +781,7 @@ DOUBLE NS_PREFIX  c_tarea (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2)
    DOUBLE area
    D*/
 /****************************************************************************/
-DOUBLE NS_PREFIX c_qarea (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2, const DOUBLE *x3)
+DOUBLE NS_DIM_PREFIX c_qarea (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2, const DOUBLE *x3)
 {
   return( 0.5*fabs( (x3[_Y_]-x1[_Y_])*(x2[_X_]-x0[_X_])-(x3[_X_]-x1[_X_])*(x2[_Y_]-x0[_Y_]) ) );
 }
@@ -805,7 +806,7 @@ DOUBLE NS_PREFIX c_qarea (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2, 
    D*/
 /****************************************************************************/
 
-DOUBLE NS_PREFIX ctarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2)
+DOUBLE NS_DIM_PREFIX ctarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2)
 {
   return((y0+y1+y2) * fabs((y1-y0)*(x2-x0)-(x1-x0)*(y2-y0)) / 6);
 }
@@ -830,7 +831,7 @@ DOUBLE NS_PREFIX ctarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBL
    DOUBLE
    D*/
 /****************************************************************************/
-DOUBLE NS_PREFIX cqarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBLE x3,DOUBLE y3)
+DOUBLE NS_DIM_PREFIX cqarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBLE x3,DOUBLE y3)
 {
   return(
            ((y0+y1+y2) * fabs((y1-y0)*(x2-x0)-(x1-x0)*(y2-y0)) +
@@ -868,7 +869,7 @@ DOUBLE NS_PREFIX cqarea (DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBL
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX V3_Normalize (DOUBLE *a)
+INT NS_DIM_PREFIX V3_Normalize (DOUBLE *a)
 {
   DOUBLE norm;
 
@@ -901,7 +902,7 @@ INT NS_PREFIX V3_Normalize (DOUBLE *a)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX V3_NormVectorProduct (const DOUBLE *a, const DOUBLE *b, DOUBLE *result)
+INT NS_DIM_PREFIX V3_NormVectorProduct (const DOUBLE *a, const DOUBLE *b, DOUBLE *result)
 {
   DOUBLE VectorPrd[3];
 
@@ -934,7 +935,7 @@ INT NS_PREFIX V3_NormVectorProduct (const DOUBLE *a, const DOUBLE *b, DOUBLE *re
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX V3_Rotate (DOUBLE *vector, const DOUBLE *axis, DOUBLE alpha)
+INT NS_DIM_PREFIX V3_Rotate (DOUBLE *vector, const DOUBLE *axis, DOUBLE alpha)
 {
   DOUBLE RotationAxis[3], help[3];
   DOUBLE scalarprd, calpha, salpha;
@@ -976,7 +977,7 @@ INT NS_PREFIX V3_Rotate (DOUBLE *vector, const DOUBLE *axis, DOUBLE alpha)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX V3_Angle (const DOUBLE *a, const DOUBLE *b, DOUBLE *result)
+INT NS_DIM_PREFIX V3_Angle (const DOUBLE *a, const DOUBLE *b, DOUBLE *result)
 {
   DOUBLE c, sc, n1, n2;
 
@@ -1022,7 +1023,7 @@ INT NS_PREFIX V3_Angle (const DOUBLE *a, const DOUBLE *b, DOUBLE *result)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX V3_Orthogonalize (const DOUBLE *a, const DOUBLE *b, DOUBLE *r)
+INT NS_DIM_PREFIX V3_Orthogonalize (const DOUBLE *a, const DOUBLE *b, DOUBLE *r)
 {
   DOUBLE normb, scprd;
 
@@ -1060,7 +1061,7 @@ INT NS_PREFIX V3_Orthogonalize (const DOUBLE *a, const DOUBLE *b, DOUBLE *r)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX V3_Project (const DOUBLE *a, const DOUBLE *b, DOUBLE *r)
+INT NS_DIM_PREFIX V3_Project (const DOUBLE *a, const DOUBLE *b, DOUBLE *r)
 {
   DOUBLE normb, scprd;
 
@@ -1108,7 +1109,7 @@ INT NS_PREFIX V3_Project (const DOUBLE *a, const DOUBLE *b, DOUBLE *r)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX M4_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
+INT NS_DIM_PREFIX M4_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
 {
   DOUBLE d,dinv;
   INT i,i1,i2,i3, j,j1,j2,j3,sign;
@@ -1176,7 +1177,7 @@ INT NS_PREFIX M4_Invert (DOUBLE *Inverse, const DOUBLE *Matrix)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX QuadraticFittedMin (DOUBLE *x, DOUBLE *y, INT n, DOUBLE *minx)
+INT NS_DIM_PREFIX QuadraticFittedMin (DOUBLE *x, DOUBLE *y, INT n, DOUBLE *minx)
 {
   INT i,j,k;
   DOUBLE mat[50][3],rhs[3],qm[9],qmi[9],coeff[3];
@@ -1210,8 +1211,8 @@ INT NS_PREFIX QuadraticFittedMin (DOUBLE *x, DOUBLE *y, INT n, DOUBLE *minx)
 }
 
 /* volume computations, orientation is same as in general element definition ! */
-DOUBLE NS_PREFIX V_te (const DOUBLE *x0, const DOUBLE *x1,
-                       const DOUBLE *x2, const DOUBLE *x3)
+DOUBLE NS_DIM_PREFIX V_te (const DOUBLE *x0, const DOUBLE *x1,
+                           const DOUBLE *x2, const DOUBLE *x3)
 {
   DOUBLE_VECTOR a, b, h, n;
 
@@ -1223,8 +1224,8 @@ DOUBLE NS_PREFIX V_te (const DOUBLE *x0, const DOUBLE *x1,
   return(OneSixth*V3_SCAL_PROD(n,h));
 }
 
-DOUBLE NS_PREFIX V_py (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
-                       const DOUBLE *x3, const DOUBLE *x4)
+DOUBLE NS_DIM_PREFIX V_py (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
+                           const DOUBLE *x3, const DOUBLE *x4)
 {
   DOUBLE_VECTOR a,b,h,n;
 
@@ -1236,8 +1237,8 @@ DOUBLE NS_PREFIX V_py (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
   return(OneSixth*V3_SCAL_PROD(n,h));
 }
 
-DOUBLE NS_PREFIX V_pr (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
-                       const DOUBLE *x3, const DOUBLE *x4, const DOUBLE *x5)
+DOUBLE NS_DIM_PREFIX V_pr (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
+                           const DOUBLE *x3, const DOUBLE *x4, const DOUBLE *x5)
 {
   DOUBLE_VECTOR a,b,c,d,e,m,n;
 
@@ -1259,13 +1260,13 @@ DOUBLE NS_PREFIX V_pr (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
   return(OneSixth*V3_SCAL_PROD(n,e));
 }
 
-DOUBLE NS_PREFIX V_he (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2, const DOUBLE *x3,
-                       const DOUBLE *x4, const DOUBLE *x5, const DOUBLE *x6, const DOUBLE *x7)
+DOUBLE NS_DIM_PREFIX V_he (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2, const DOUBLE *x3,
+                           const DOUBLE *x4, const DOUBLE *x5, const DOUBLE *x6, const DOUBLE *x7)
 {
   return(V_pr(x0,x1,x2,x4,x5,x6)+V_pr(x0,x2,x3,x4,x6,x7));
 }
 
-DOUBLE NS_PREFIX GeneralElementVolume (INT tag, DOUBLE *x_co[])
+DOUBLE NS_DIM_PREFIX GeneralElementVolume (INT tag, DOUBLE *x_co[])
 {
   switch (tag)
   {
@@ -1297,7 +1298,7 @@ DOUBLE NS_PREFIX GeneralElementVolume (INT tag, DOUBLE *x_co[])
   }
 }
 
-DOUBLE NS_PREFIX ElementVolume (const ELEMENT *elem)
+DOUBLE NS_DIM_PREFIX ElementVolume (const ELEMENT *elem)
 {
   DOUBLE *x_co[MAX_CORNERS_OF_ELEM];
   INT i;
@@ -1333,7 +1334,7 @@ DOUBLE NS_PREFIX ElementVolume (const ELEMENT *elem)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX EXDecomposeMatrixFLOAT (FLOAT *Mat, INT bw, INT n)
+INT NS_DIM_PREFIX EXDecomposeMatrixFLOAT (FLOAT *Mat, INT bw, INT n)
 {
   INT i,j,k;
   FLOAT f,d;
@@ -1378,7 +1379,7 @@ INT NS_PREFIX EXDecomposeMatrixFLOAT (FLOAT *Mat, INT bw, INT n)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX EXDecomposeMatrixDOUBLE (DOUBLE *Mat, INT bw, INT n)
+INT NS_DIM_PREFIX EXDecomposeMatrixDOUBLE (DOUBLE *Mat, INT bw, INT n)
 {
   INT i,j,k;
   DOUBLE f,d;
@@ -1426,7 +1427,7 @@ INT NS_PREFIX EXDecomposeMatrixDOUBLE (DOUBLE *Mat, INT bw, INT n)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX EXApplyLUFLOAT (FLOAT *Mat, INT bw, INT n, DOUBLE *Vec)
+INT NS_DIM_PREFIX EXApplyLUFLOAT (FLOAT *Mat, INT bw, INT n, DOUBLE *Vec)
 {
   INT i,j;
 
@@ -1471,7 +1472,7 @@ INT NS_PREFIX EXApplyLUFLOAT (FLOAT *Mat, INT bw, INT n, DOUBLE *Vec)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX EXApplyLUDOUBLE (DOUBLE *Mat, INT bw, INT n, DOUBLE *Vec)
+INT NS_DIM_PREFIX EXApplyLUDOUBLE (DOUBLE *Mat, INT bw, INT n, DOUBLE *Vec)
 {
   INT i,j;
 
@@ -1514,7 +1515,7 @@ INT NS_PREFIX EXApplyLUDOUBLE (DOUBLE *Mat, INT bw, INT n, DOUBLE *Vec)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX LineISTriangle3D (const DOUBLE *c1, const DOUBLE *c2, const DOUBLE *c3, const DOUBLE *p1, const DOUBLE *p2, DOUBLE *lamda)
+INT NS_DIM_PREFIX LineISTriangle3D (const DOUBLE *c1, const DOUBLE *c2, const DOUBLE *c3, const DOUBLE *p1, const DOUBLE *p2, DOUBLE *lamda)
 {
   DOUBLE M[9],Inv[9],sol[3],rhs[3];
 
@@ -1552,7 +1553,7 @@ INT NS_PREFIX LineISTriangle3D (const DOUBLE *c1, const DOUBLE *c2, const DOUBLE
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX V2_apbmin2c (const DOUBLE *a, const DOUBLE *b, const DOUBLE *c, DOUBLE *d, DOUBLE *r)
+INT NS_DIM_PREFIX V2_apbmin2c (const DOUBLE *a, const DOUBLE *b, const DOUBLE *c, DOUBLE *d, DOUBLE *r)
 {
   DOUBLE normb, scprd;
   DOUBLE_VECTOR diff;
@@ -1595,7 +1596,7 @@ INT NS_PREFIX V2_apbmin2c (const DOUBLE *a, const DOUBLE *b, const DOUBLE *c, DO
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX Yams (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
+INT NS_DIM_PREFIX Yams (INT n, DOUBLE *sol, DOUBLE *mat, DOUBLE *rhs)
 {
   register DOUBLE dinv,piv,sum;
   register INT i,j,k;

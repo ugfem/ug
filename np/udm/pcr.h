@@ -45,7 +45,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -58,17 +58,17 @@ START_NAMESPACE
 /****************************************************************************/
 
 /* DisplayModes for PrintConvergenceRate */
-#define PCR_NO_DISPLAY                  0
-#define PCR_RED_DISPLAY                 1
-#define PCR_FULL_DISPLAY                2
+enum DisplayMode {PCR_NO_DISPLAY,
+                  PCR_RED_DISPLAY,
+                  PCR_FULL_DISPLAY };
 
 /* printmode PrintConvergenceRate */
-#define PCR_CRATE                               0
-#define PCR_AVERAGE                             1
-#define PCR_INTERN                              2
-#define PCR_CRATE_SD                    3
-#define PCR_AVERAGE_SD                  4
-#define PCR_INTERN_SD                   5
+enum PrintMode {PCR_CRATE,
+                PCR_AVERAGE,
+                PCR_INTERN,
+                PCR_CRATE_SD,
+                PCR_AVERAGE_SD,
+                PCR_INTERN_SD};
 
 /****************************************************************************/
 /*                                                                                                                                                      */

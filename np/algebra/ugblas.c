@@ -209,7 +209,7 @@ REP_ERR_FILE;
 /*                                                                          */
 /****************************************************************************/
 
-INT NS_PREFIX TraceUGBlas (INT trace)
+INT NS_DIM_PREFIX TraceUGBlas (INT trace)
 {
   return (trace_ugblas = trace);
 }
@@ -229,7 +229,7 @@ INT NS_PREFIX TraceUGBlas (INT trace)
  */
 /****************************************************************************/
 
-INT NS_PREFIX VecCheckConsistency (const VECDATA_DESC *x, const VECDATA_DESC *y)
+INT NS_DIM_PREFIX VecCheckConsistency (const VECDATA_DESC *x, const VECDATA_DESC *y)
 {
   INT vtype;
 
@@ -266,7 +266,7 @@ INT NS_PREFIX VecCheckConsistency (const VECDATA_DESC *x, const VECDATA_DESC *y)
  */
 /****************************************************************************/
 
-INT NS_PREFIX MatmulCheckConsistency (const VECDATA_DESC *x, const MATDATA_DESC *M, const VECDATA_DESC *y)
+INT NS_DIM_PREFIX MatmulCheckConsistency (const VECDATA_DESC *x, const MATDATA_DESC *M, const VECDATA_DESC *y)
 {
   INT rtype,ctype,mtype,maxsmallblock;
 
@@ -596,7 +596,7 @@ INT l_vector_consistent_noskip (GRID *g, const VECDATA_DESC *x)
  */
 /****************************************************************************/
 
-INT NS_PREFIX a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
+INT NS_DIM_PREFIX a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 {
   INT level,tp,m;
 
@@ -619,7 +619,7 @@ INT NS_PREFIX a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_
   return (NUM_OK);
 }
 
-INT NS_PREFIX a_vector_consistent_noskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
+INT NS_DIM_PREFIX a_vector_consistent_noskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 {
   INT level,tp,m;
 
@@ -686,7 +686,7 @@ static int Scatter_VectorCompBS (DDD_OBJ obj, void *data)
  */
 /****************************************************************************/
 
-INT NS_PREFIX l_vector_consistentBS (GRID *g, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT x)
+INT NS_DIM_PREFIX l_vector_consistentBS (GRID *g, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT x)
 {
   ConsBvd = bvd;
   ConsBvdf = bvdf;
@@ -739,7 +739,7 @@ static int Scatter_GhostVectorComp (DDD_OBJ obj, void *data)
  */
 /****************************************************************************/
 
-INT NS_PREFIX l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x)
+INT NS_DIM_PREFIX l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x)
 {
   INT tp,m;
 
@@ -773,8 +773,8 @@ INT NS_PREFIX l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x)
  */
 /****************************************************************************/
 
-INT NS_PREFIX a_outervector_consistent (MULTIGRID *mg, INT fl, INT tl,
-                                        const VECDATA_DESC *x)
+INT NS_DIM_PREFIX a_outervector_consistent (MULTIGRID *mg, INT fl, INT tl,
+                                            const VECDATA_DESC *x)
 {
   INT tp,m,level;
 
@@ -833,7 +833,7 @@ static int Scatter_EData (DDD_OBJ obj, void *data)
    .n    NUM_ERROR   if error occurrs
  */
 /****************************************************************************/
-INT NS_PREFIX a_elementdata_consistent (MULTIGRID *mg, INT fl, INT tl)
+INT NS_DIM_PREFIX a_elementdata_consistent (MULTIGRID *mg, INT fl, INT tl)
 {
   INT level;
 
@@ -889,7 +889,7 @@ static int Scatter_NData (DDD_OBJ obj, void *data)
    .n    NUM_ERROR   if error occurrs
  */
 /****************************************************************************/
-INT NS_PREFIX a_nodedata_consistent (MULTIGRID *mg, INT fl, INT tl)
+INT NS_DIM_PREFIX a_nodedata_consistent (MULTIGRID *mg, INT fl, INT tl)
 {
   INT level;
 
@@ -975,7 +975,7 @@ static int Scatter_ProjectVectorComp (DDD_OBJ obj, void *data)
  */
 /****************************************************************************/
 
-INT NS_PREFIX l_ghostvector_project (GRID *g, const VECDATA_DESC *x)
+INT NS_DIM_PREFIX l_ghostvector_project (GRID *g, const VECDATA_DESC *x)
 {
   INT tp,m;
 
@@ -1034,7 +1034,7 @@ static int Gather_VectorCompCollect (DDD_OBJ obj, void *data)
    .n    NUM_ERROR   if error occurrs
  */
 /****************************************************************************/
-INT NS_PREFIX l_vector_collect (GRID *g, const VECDATA_DESC *x)
+INT NS_DIM_PREFIX l_vector_collect (GRID *g, const VECDATA_DESC *x)
 {
   INT tp,m;
 
@@ -1068,7 +1068,7 @@ INT NS_PREFIX l_vector_collect (GRID *g, const VECDATA_DESC *x)
  */
 /****************************************************************************/
 
-INT NS_PREFIX a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
+INT NS_DIM_PREFIX a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 {
   INT level,tp,m;
 
@@ -1091,7 +1091,7 @@ INT NS_PREFIX a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DES
   return (NUM_OK);
 }
 
-INT NS_PREFIX a_vector_collect_noskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
+INT NS_DIM_PREFIX a_vector_collect_noskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 {
   INT level,tp,m;
 
@@ -1216,7 +1216,7 @@ static int Scatter_GhostVectorVecskip (DDD_OBJ obj, void *data)
  */
 /****************************************************************************/
 
-INT NS_PREFIX a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
+INT NS_DIM_PREFIX a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 {
   INT level,tp,m;
 
@@ -1273,7 +1273,7 @@ INT NS_PREFIX a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DES
  */
 /****************************************************************************/
 
-INT NS_PREFIX l_ghostvector_collect (GRID *g, const VECDATA_DESC *x)
+INT NS_DIM_PREFIX l_ghostvector_collect (GRID *g, const VECDATA_DESC *x)
 {
   INT tp,m;
 
@@ -1342,7 +1342,7 @@ static int Scatter_MatrixCollect (DDD_OBJ obj, void *data)
  */
 /****************************************************************************/
 
-INT NS_PREFIX l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A)
+INT NS_DIM_PREFIX l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A)
 {
   INT rtp,m;
 
@@ -1594,7 +1594,7 @@ static int CountAndSortMatrices (DDD_OBJ obj)
  */
 /****************************************************************************/
 
-INT NS_PREFIX l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A)
+INT NS_DIM_PREFIX l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A)
 {
   INT mt;
   size_t sizePerVector;
@@ -1635,7 +1635,7 @@ INT NS_PREFIX l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A)
 }
 
 
-int NS_PREFIX DDD_InfoPrioCopies (DDD_HDR hdr)
+int NS_DIM_PREFIX DDD_InfoPrioCopies (DDD_HDR hdr)
 {
   INT i,n;
   int *proclist;
@@ -1706,7 +1706,7 @@ static INT l_vector_average (GRID *g, const VECDATA_DESC *x)
  */
 /****************************************************************************/
 
-INT NS_PREFIX l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
+INT NS_DIM_PREFIX l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
 {
   INT tp,m;
 
@@ -1742,7 +1742,7 @@ INT NS_PREFIX l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
  */
 /****************************************************************************/
 
-INT NS_PREFIX a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
+INT NS_DIM_PREFIX a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 {
   INT level,tp,m;
 
@@ -2175,7 +2175,7 @@ static int CountAndSortInconsMatrices (DDD_OBJ obj)
    .n    NUM_ERROR   if error occurrs
  */
 /****************************************************************************/
-INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
+INT NS_DIM_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 {
   INT mt;
   size_t sizePerVector;
@@ -2294,7 +2294,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
  */
 /****************************************************************************/
 
-#define T_FUNCNAME      NS_PREFIX dset
+#define T_FUNCNAME      NS_DIM_PREFIX dset
 #define T_ARGS          ,DOUBLE a
 #define T_PR_DBG                (" a=%e",(double)a)
 #define T_PR_IN                 PRINTVEC(x)
@@ -2359,7 +2359,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
  */
 /****************************************************************************/
 
-#define T_FUNCNAME      NS_PREFIX dcopy
+#define T_FUNCNAME      NS_DIM_PREFIX dcopy
 #define T_ARGS          ,const VECDATA_DESC *y
 #define T_PR_DBG                (" y=%s",ENVITEM_NAME(y))
 #define T_PR_IN                 {PRINTVEC(x); PRINTVEC(y)}
@@ -2377,7 +2377,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 #include "vecfunc.ct"
 
 
-#define T_FUNCNAME      NS_PREFIX dpdot
+#define T_FUNCNAME      NS_DIM_PREFIX dpdot
 #define T_ARGS          ,const VECDATA_DESC *y
 #define T_PR_DBG                (" y=%s",ENVITEM_NAME(y))
 #define T_PR_IN                 {PRINTVEC(x); PRINTVEC(y)}
@@ -2394,7 +2394,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #include "vecfunc.ct"
 
-#define T_FUNCNAME      NS_PREFIX dm0dot
+#define T_FUNCNAME      NS_DIM_PREFIX dm0dot
 #define T_ARGS          ,const VECDATA_DESC *y
 #define T_PR_DBG        (" y=%s",ENVITEM_NAME(y))
 #define T_PR_IN         {PRINTVEC(x); PRINTVEC(y)}
@@ -2468,7 +2468,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
  */
 /****************************************************************************/
 
-#define T_FUNCNAME      NS_PREFIX dscal
+#define T_FUNCNAME      NS_DIM_PREFIX dscal
 #define T_ARGS          ,DOUBLE a
 #define T_PR_DBG                (" a=%e",(double)a)
 #define T_PR_IN                 PRINTVEC(x)
@@ -2513,7 +2513,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
  */
 /****************************************************************************/
 
-#define T_FUNCNAME      NS_PREFIX dscalx
+#define T_FUNCNAME      NS_DIM_PREFIX dscalx
 #define T_ARGS          ,const VEC_SCALAR a
 #define T_PR_DBG                (" a=VS")
 #define T_PR_IN                 PRINTVEC(x)
@@ -2589,7 +2589,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
  */
 /****************************************************************************/
 
-#define T_FUNCNAME      NS_PREFIX dadd
+#define T_FUNCNAME      NS_DIM_PREFIX dadd
 #define T_ARGS          ,const VECDATA_DESC *y
 #define T_PR_DBG                (" y=%s",ENVITEM_NAME(y))
 #define T_PR_IN                 {PRINTVEC(x); PRINTVEC(y)}
@@ -2606,7 +2606,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 
 #include "vecfunc.ct"
 
-#define T_FUNCNAME      NS_PREFIX dm0add
+#define T_FUNCNAME      NS_DIM_PREFIX dm0add
 #define T_ARGS          ,const MATDATA_DESC *A
 #define T_PR_DBG                (" A=%s",ENVITEM_NAME(A))
 #define T_CONFIG        DEFINE_MD_CMPS(m)
@@ -2679,7 +2679,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
  */
 /****************************************************************************/
 
-#define T_FUNCNAME      NS_PREFIX dsub
+#define T_FUNCNAME      NS_DIM_PREFIX dsub
 #define T_ARGS          ,const VECDATA_DESC *y
 #define T_PR_DBG                (" y=%s",ENVITEM_NAME(y))
 #define T_PR_IN                 {PRINTVEC(x); PRINTVEC(y)}
@@ -2752,7 +2752,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
  */
 /****************************************************************************/
 
-#define T_FUNCNAME      NS_PREFIX dminusadd
+#define T_FUNCNAME      NS_DIM_PREFIX dminusadd
 #define T_ARGS          ,const VECDATA_DESC *y
 #define T_PR_DBG                (" y=%s",ENVITEM_NAME(y))
 #define T_PR_IN                 {PRINTVEC(x); PRINTVEC(y)}
@@ -2801,7 +2801,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
  */
 /****************************************************************************/
 
-#define T_FUNCNAME      NS_PREFIX daxpyx
+#define T_FUNCNAME      NS_DIM_PREFIX daxpyx
 #define T_ARGS          ,const VEC_SCALAR a,const VECDATA_DESC *y
 #define T_PR_DBG                (" a=VS y=%s",ENVITEM_NAME(y))
 #define T_PR_IN                 {PRINTVEC(x); PRINTVEC(y)}
@@ -2878,7 +2878,7 @@ INT NS_PREFIX l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
  */
 /****************************************************************************/
 
-#define T_FUNCNAME      NS_PREFIX daxpy
+#define T_FUNCNAME      NS_DIM_PREFIX daxpy
 #define T_ARGS          ,DOUBLE a,const VECDATA_DESC *y
 #define T_PR_DBG                (" a=%e y=%s",(double)a,ENVITEM_NAME(y))
 #define T_PR_IN                 {PRINTVEC(x); PRINTVEC(y)}
@@ -2949,7 +2949,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
   return(0);
 }
 
-#define T_FUNCNAME      NS_PREFIX ddotx
+#define T_FUNCNAME      NS_DIM_PREFIX ddotx
 #define T_ARGS          ,const VECDATA_DESC *y,VEC_SCALAR a
 #define T_PR_DBG                (" y=%s a=VS",ENVITEM_NAME(y))
 #define T_PR_IN                 {PRINTVEC(x); PRINTVEC(y)}
@@ -2972,7 +2972,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 
 
 
-#define T_FUNCNAME      NS_PREFIX ddotx_range
+#define T_FUNCNAME      NS_DIM_PREFIX ddotx_range
 #define T_ARGS          ,const VECDATA_DESC *y,DOUBLE *ll, DOUBLE *ur, VEC_SCALAR a
 #define T_PR_DBG                (" y=%s a=VS",ENVITEM_NAME(y))
 #define T_PR_IN                 {PRINTVEC(x); PRINTVEC(y)}
@@ -3026,7 +3026,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
  */
 /****************************************************************************/
 
-#define T_FUNCNAME      NS_PREFIX ddotw
+#define T_FUNCNAME      NS_DIM_PREFIX ddotw
 #define T_ARGS          ,const VECDATA_DESC *y,const VEC_SCALAR w,DOUBLE *s
 #define T_PR_DBG                (" y=%s w=VS",ENVITEM_NAME(y))
 #define T_PR_IN                 {PRINTVEC(x); PRINTVEC(y)}
@@ -3107,7 +3107,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
  */
 /****************************************************************************/
 
-#define T_FUNCNAME      NS_PREFIX ddot
+#define T_FUNCNAME      NS_DIM_PREFIX ddot
 #define T_ARGS          ,const VECDATA_DESC *y,DOUBLE *a
 #define T_PR_DBG                (" y=%s",ENVITEM_NAME(y))
 #define T_PR_IN                 {PRINTVEC(x); PRINTVEC(y)}
@@ -3159,7 +3159,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
  */
 /****************************************************************************/
 
-#define T_FUNCNAME      NS_PREFIX dnrm2x
+#define T_FUNCNAME      NS_DIM_PREFIX dnrm2x
 #define T_ARGS          ,VEC_SCALAR a
 #define T_PR_DBG                (" a=VS")
 #define T_PR_IN                 PRINTVEC(x)
@@ -3239,7 +3239,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
  */
 /****************************************************************************/
 
-#define T_FUNCNAME      NS_PREFIX dnrm2
+#define T_FUNCNAME      NS_DIM_PREFIX dnrm2
 #define T_ARGS          ,DOUBLE *a
 #define T_CONFIG        register DOUBLE s, sum = 0.0;
 #define T_PR_IN                 PRINTVEC(x)
@@ -3276,7 +3276,7 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
  */
 /****************************************************************************/
 
-INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M)
+INT NS_DIM_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M)
 {
   if (MG_Matrix_Loop (mg, fl, tl,
                       ( ( (mode&1)<<BLAS_MODE_SHIFT) | (BLAS_LOOP_M<<BLAS_LOOP_SHIFT) |
@@ -3345,7 +3345,7 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
  */
 /****************************************************************************/
 
-#define T_FUNCNAME     NS_PREFIX dmatset
+#define T_FUNCNAME     NS_DIM_PREFIX dmatset
 #define T_ARGS         ,const MATDATA_DESC *M,DOUBLE a
 #define T_PR_DBG                (" M=%s a=%e",ENVITEM_NAME(M),(double)a)
 #define T_ARGS_BV      ,INT mc,DOUBLE a
@@ -3530,7 +3530,7 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
  */
 /****************************************************************************/
 
-#define T_FUNCNAME     NS_PREFIX dmatcopy
+#define T_FUNCNAME     NS_DIM_PREFIX dmatcopy
 #define T_ARGS         ,const MATDATA_DESC *M,const MATDATA_DESC *N
 #define T_PR_DBG                (" M=%s N=%s",ENVITEM_NAME(M),ENVITEM_NAME(N))
 #define T_ARGS_BV      ,INT mc,INT nc
@@ -3655,7 +3655,7 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
  */
 /****************************************************************************/
 
-#define T_FUNCNAME     NS_PREFIX dmatadd
+#define T_FUNCNAME     NS_DIM_PREFIX dmatadd
 #define T_ARGS         ,const MATDATA_DESC *M,const MATDATA_DESC *N
 #define T_PR_DBG                (" M=%s N=%s",ENVITEM_NAME(M),ENVITEM_NAME(N))
 #define T_ARGS_BV      ,INT mc,INT nc
@@ -3789,7 +3789,7 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
         return(dmatmul_add(mg,fl,tl,mode,x,M,y));
    }*/
 
-#define T_FUNCNAME     NS_PREFIX dmatmul
+#define T_FUNCNAME     NS_DIM_PREFIX dmatmul
 #define T_ARGS         ,const VECDATA_DESC *x,const MATDATA_DESC *M,const VECDATA_DESC *y
 #define T_PR_DBG                (" x=%s M=%s y=%s",ENVITEM_NAME(x),ENVITEM_NAME(M),ENVITEM_NAME(y))
 #define T_ARGS_BV      ,INT xc,INT mc,INT yc
@@ -3896,7 +3896,7 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
  */
 /****************************************************************************/
 
-#define T_FUNCNAME     NS_PREFIX dmatmul_add
+#define T_FUNCNAME     NS_DIM_PREFIX dmatmul_add
 #define T_ARGS         ,const VECDATA_DESC *x,const MATDATA_DESC *M,const VECDATA_DESC *y
 #define T_PR_DBG                (" x=%s M=%s y=%s",ENVITEM_NAME(x),ENVITEM_NAME(M),ENVITEM_NAME(y))
 #define T_ARGS_BV      ,INT xc,INT mc,INT yc
@@ -4004,7 +4004,7 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
  */
 /****************************************************************************/
 
-#define T_FUNCNAME     NS_PREFIX dmatmul_minus
+#define T_FUNCNAME     NS_DIM_PREFIX dmatmul_minus
 #define T_ARGS         ,const VECDATA_DESC *x,const MATDATA_DESC *M,const VECDATA_DESC *y
 #define T_PR_DBG                (" x=%s M=%s y=%s",ENVITEM_NAME(x),ENVITEM_NAME(M),ENVITEM_NAME(y))
 #define T_ARGS_BV      ,INT xc,INT mc,INT yc
@@ -4074,7 +4074,7 @@ INT NS_PREFIX dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_
  */
 /****************************************************************************/
 
-INT NS_PREFIX l_dsetrandom (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
+INT NS_DIM_PREFIX l_dsetrandom (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 {
   VECTOR *first_v;
   register VECTOR *v;
@@ -4130,7 +4130,7 @@ INT NS_PREFIX l_dsetrandom (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a
   return (NUM_OK);
 }
 
-INT NS_PREFIX l_dsetrandom2 (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE from, DOUBLE to, INT skip)
+INT NS_DIM_PREFIX l_dsetrandom2 (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE from, DOUBLE to, INT skip)
 {
   VECTOR *first_v;
   register VECTOR *v;
@@ -4269,7 +4269,7 @@ INT NS_PREFIX l_dsetrandom2 (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE 
  */
 /****************************************************************************/
 
-INT NS_PREFIX l_dsetnonskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
+INT NS_DIM_PREFIX l_dsetnonskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 {
   VECTOR *first_v;
   register VECTOR *v;
@@ -4348,7 +4348,7 @@ INT NS_PREFIX l_dsetnonskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE 
  */
 /****************************************************************************/
 
-INT NS_PREFIX a_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE a)
+INT NS_DIM_PREFIX a_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 {
   register VECTOR *v;
   register SHORT i;
@@ -4423,7 +4423,7 @@ INT NS_PREFIX a_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *
  */
 /****************************************************************************/
 
-INT NS_PREFIX s_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE a)
+INT NS_DIM_PREFIX s_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, DOUBLE a)
 {
   register VECTOR *v;
   register SHORT i;
@@ -4514,7 +4514,7 @@ INT NS_PREFIX s_dsetnonskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *
  */
 /****************************************************************************/
 
-INT NS_PREFIX l_dsetskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
+INT NS_DIM_PREFIX l_dsetskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
 {
   VECTOR *first_v;
   register VECTOR *v;
@@ -4596,7 +4596,7 @@ INT NS_PREFIX l_dsetskip (GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE a)
  */
 /****************************************************************************/
 
-INT NS_PREFIX l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFunc)
+INT NS_DIM_PREFIX l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFunc)
 {
   VECTOR *first_v;
   DOUBLE val[MAX_SINGLE_VEC_COMP];
@@ -4675,7 +4675,7 @@ INT NS_PREFIX l_dsetfunc (GRID *g, const VECDATA_DESC *x, INT xclass, SetFuncPro
   return (NUM_OK);
 }
 
-INT NS_PREFIX l_dcopy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y)
+INT NS_DIM_PREFIX l_dcopy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y)
 {
   VECTOR *first_v,*end_v;
   register VECTOR *v;
@@ -4733,7 +4733,7 @@ INT NS_PREFIX l_dcopy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass,
   return (NUM_OK);
 }
 
-INT NS_PREFIX l_dscale_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const DOUBLE *a)
+INT NS_DIM_PREFIX l_dscale_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const DOUBLE *a)
 {
   VECTOR *first_v,*end_v;
   const DOUBLE *value;
@@ -4789,7 +4789,7 @@ INT NS_PREFIX l_dscale_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass
   return (NUM_OK);
 }
 
-INT NS_PREFIX l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y)
+INT NS_DIM_PREFIX l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y)
 {
   VECTOR *first_v,*end_v;
   const DOUBLE *value;
@@ -4880,7 +4880,7 @@ INT NS_PREFIX l_daxpy_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *x, INT xclass,
  */
 /****************************************************************************/
 
-INT NS_PREFIX l_mean (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *sp)
+INT NS_DIM_PREFIX l_mean (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *sp)
 {
   DOUBLE *value;
   VECTOR *v,*first_v;
@@ -4940,7 +4940,7 @@ INT NS_PREFIX l_mean (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *
   return (NUM_OK);
 }
 
-INT NS_PREFIX l_dmatset_SB (BLOCKVECTOR *dest, BLOCKVECTOR *source,const MATDATA_DESC *M, DOUBLE a)
+INT NS_DIM_PREFIX l_dmatset_SB (BLOCKVECTOR *dest, BLOCKVECTOR *source,const MATDATA_DESC *M, DOUBLE a)
 {
   register VECTOR *v,*first_v, *end_v;
   register MATRIX *m;
@@ -5065,7 +5065,7 @@ INT NS_PREFIX l_dmatset_SB (BLOCKVECTOR *dest, BLOCKVECTOR *source,const MATDATA
  */
 /****************************************************************************/
 
-INT NS_PREFIX l_dmattranspose (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
+INT NS_DIM_PREFIX l_dmattranspose (GRID *g, const MATDATA_DESC *M1, const MATDATA_DESC *M2)
 {
   register VECTOR *v,*first_v;
   register MATRIX *m;
@@ -5198,7 +5198,7 @@ INT NS_PREFIX l_dmattranspose (GRID *g, const MATDATA_DESC *M1, const MATDATA_DE
   return (NUM_OK);
 }
 
-INT NS_PREFIX l_dmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
+INT NS_DIM_PREFIX l_dmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
 {
   register VECTOR *v,*w,*first_v,*end_v;
   register MATRIX *mat;
@@ -5245,7 +5245,7 @@ INT NS_PREFIX l_dmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xcla
   return (NUM_ERROR);
 }
 
-INT NS_PREFIX l_dtpmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
+INT NS_DIM_PREFIX l_dtpmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
 {
   register VECTOR *v,*w,*first_v,*end_v;
   register MATRIX *mat;
@@ -5292,7 +5292,7 @@ INT NS_PREFIX l_dtpmatmul_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xc
   return (NUM_ERROR);
 }
 
-INT NS_PREFIX l_dmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
+INT NS_DIM_PREFIX l_dmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
 {
   register VECTOR *v,*w,*first_v,*end_v;
   register MATRIX *mat;
@@ -5339,7 +5339,7 @@ INT NS_PREFIX l_dmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT 
   return (NUM_ERROR);
 }
 
-INT NS_PREFIX l_dtpmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
+INT NS_DIM_PREFIX l_dtpmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
 {
   register VECTOR *v,*w,*first_v,*end_v;
   register MATRIX *mat;
@@ -5386,7 +5386,7 @@ INT NS_PREFIX l_dtpmatmul_set_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, IN
   return (NUM_ERROR);
 }
 
-INT NS_PREFIX l_dmatmul_minus_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
+INT NS_DIM_PREFIX l_dmatmul_minus_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, BLOCKVECTOR *theBVY, const VECDATA_DESC *y, INT yclass)
 {
   register VECTOR *v,*w,*first_v,*end_v;
   register MATRIX *mat;
@@ -5433,7 +5433,7 @@ INT NS_PREFIX l_dmatmul_minus_SB (BLOCKVECTOR *theBVX, const VECDATA_DESC *x, IN
   return (NUM_ERROR);
 }
 
-INT NS_PREFIX s_dtpmatmul_set (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass)
+INT NS_DIM_PREFIX s_dtpmatmul_set (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass)
 {
   register VECTOR *v,*w;
   register MATRIX *mat;
@@ -5764,7 +5764,7 @@ INT NS_PREFIX s_dtpmatmul_set (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC
  */
 /****************************************************************************/
 
-INT NS_PREFIX l_dtpmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass)
+INT NS_DIM_PREFIX l_dtpmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass)
 {
   register VECTOR *v,*w,*first_v;
   register MATRIX *mat;
@@ -5846,7 +5846,7 @@ INT NS_PREFIX l_dtpmatmul (GRID *g, const VECDATA_DESC *x, INT xclass, const MAT
  */
 /****************************************************************************/
 
-INT NS_PREFIX d2matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, GRID *grid )
+INT NS_DIM_PREFIX d2matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, GRID *grid )
 {
   register VECTOR *vi, *vj, *vk, *end_v;
   register MATRIX *mik, *mkj, *mij;
@@ -5931,7 +5931,7 @@ INT NS_PREFIX d2matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, 
  */
 /****************************************************************************/
 
-INT NS_PREFIX d2matmul_minusBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, GRID *grid )
+INT NS_DIM_PREFIX d2matmul_minusBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, GRID *grid )
 {
   register VECTOR *vi, *vj, *vk, *end_v;
   register MATRIX *mik, *mkj, *mij;
@@ -6020,7 +6020,7 @@ INT NS_PREFIX d2matmul_minusBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_
  */
 /****************************************************************************/
 
-INT NS_PREFIX d3matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC *bvd_col3, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, INT M3comp, GRID *grid )
+INT NS_DIM_PREFIX d3matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC *bvd_col3, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, INT M3comp, GRID *grid )
 {
   register VECTOR *vi, *vj, *vk, *vl, *end_v;
   register MATRIX *mik, *mkl, *mlj, *mij;
@@ -6115,7 +6115,7 @@ INT NS_PREFIX d3matmulBS ( const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, 
  */
 /****************************************************************************/
 
-DOUBLE NS_PREFIX CalculateDefectAndNormBS( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT d_comp, INT f_comp, INT K_comp, INT u_comp )
+DOUBLE NS_DIM_PREFIX CalculateDefectAndNormBS( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT d_comp, INT f_comp, INT K_comp, INT u_comp )
 {
   register VECTOR *v, *end_v;
   register MATRIX *m;
@@ -6142,7 +6142,7 @@ DOUBLE NS_PREFIX CalculateDefectAndNormBS( const BLOCKVECTOR *bv_row, const BV_D
 }
 #endif /* __BLOCK_VECTOR_DESC__ */
 
-INT NS_PREFIX l_matflset (GRID *g, INT f)
+INT NS_DIM_PREFIX l_matflset (GRID *g, INT f)
 {
   VECTOR *v;
   MATRIX *m;

@@ -30,7 +30,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -39,7 +39,7 @@ START_NAMESPACE
 /****************************************************************************/
 
 /* initialisation of the numerics module */
-INT InitNumerics (void);
+INT InitNumerics();
 
 END_NAMESPACE
 

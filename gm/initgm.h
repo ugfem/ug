@@ -39,7 +39,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -48,7 +48,7 @@ START_NAMESPACE
 /****************************************************************************/
 
 /* initialisation of the low module */
-INT InitGm (void);
+INT InitGm ();
 
 END_NAMESPACE
 

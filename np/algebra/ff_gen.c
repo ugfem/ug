@@ -77,43 +77,43 @@ USING_UG_NAMESPACES
 /****************************************************************************/
 
 /* mute level for FFs */
-INT NS_PREFIX mute_level  = 0;
+INT NS_DIM_PREFIX mute_level  = 0;
 
 /* value below them a division is refused calculating a testvector */
-DOUBLE NS_PREFIX FFsmallTV = 1e-3;
+DOUBLE NS_DIM_PREFIX FFsmallTV = 1e-3;
 
 /* ratio for a jump to be detected */
-DOUBLE NS_PREFIX FFmuchBigger = 100.0;
+DOUBLE NS_DIM_PREFIX FFmuchBigger = 100.0;
 
 /* value below them a number is considered as 0.0 */
-DOUBLE NS_PREFIX FFEPS = 1e-16;
+DOUBLE NS_DIM_PREFIX FFEPS = 1e-16;
 
 /* value below them an approximation error is considered as ok */
-DOUBLE NS_PREFIX FFaccuracy = 1e-10;
+DOUBLE NS_DIM_PREFIX FFaccuracy = 1e-10;
 
 /* global array to hold the matrix hierarchy */
-INT NS_PREFIX FF_Mats[FF_MAX_MATS];
-MATDATA_DESC *NS_PREFIX FF_MATDATA_DESC_ARRAY[FF_MAX_MATS];
+INT NS_DIM_PREFIX FF_Mats[FF_MAX_MATS];
+MATDATA_DESC *NS_DIM_PREFIX FF_MATDATA_DESC_ARRAY[FF_MAX_MATS];
 
 /* global array to hold the auxiliary vectors */
-INT NS_PREFIX FF_Vecs[FF_MAX_VECS];
-INT NS_PREFIX TOS_FF_Vecs = 0;
+INT NS_DIM_PREFIX FF_Vecs[FF_MAX_VECS];
+INT NS_DIM_PREFIX TOS_FF_Vecs = 0;
 
 
 /* auxiliary component; only for checking the results (if CHECK_CALCULATION is on) */
-INT NS_PREFIX aux2_COMP = DUMMY_COMP;
+INT NS_DIM_PREFIX aux2_COMP = DUMMY_COMP;
 
 /* auxiliary component; only for checking the results (if CHECK_CALCULATION is on) */
-INT NS_PREFIX aux3_COMP = DUMMY_COMP;
+INT NS_DIM_PREFIX aux3_COMP = DUMMY_COMP;
 
 /* auxiliary component; only for checking the results (if CHECK_CALCULATION is on) */
-INT NS_PREFIX aux4_COMP = DUMMY_COMP;
+INT NS_DIM_PREFIX aux4_COMP = DUMMY_COMP;
 
 /* auxiliary component; only for checking the results (if CHECK_CALCULATION is on) */
-INT NS_PREFIX aux5_COMP = DUMMY_COMP;
+INT NS_DIM_PREFIX aux5_COMP = DUMMY_COMP;
 
 /* auxiliary component; only for checking the results (if CHECK_CALCULATION is on) */
-INT NS_PREFIX aux6_COMP = DUMMY_COMP;
+INT NS_DIM_PREFIX aux6_COMP = DUMMY_COMP;
 
 #ifdef ModelP
 PEInfo *PEInfoArray = NULL;     /* dyn. allocacted array for each slave pe */
@@ -151,7 +151,7 @@ REP_ERR_FILE;
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX storeVectorBS( BLOCKVECTOR *bv, INT x_comp, GRID *grid )
+INT NS_DIM_PREFIX storeVectorBS( BLOCKVECTOR *bv, INT x_comp, GRID *grid )
 /* store the given vector in an allocated buffer in the blockvector */
 {
   register DOUBLE *mem;
@@ -185,7 +185,7 @@ INT NS_PREFIX storeVectorBS( BLOCKVECTOR *bv, INT x_comp, GRID *grid )
 }
 
 
-INT NS_PREFIX restoreVectorBS( BLOCKVECTOR *bv, INT x_comp )
+INT NS_DIM_PREFIX restoreVectorBS( BLOCKVECTOR *bv, INT x_comp )
 /* restore the given vector from an allocated buffer in the blockvector */
 {
   register DOUBLE *mem;
@@ -253,7 +253,7 @@ static INT HasDirichletNeighbour( const VECTOR *v )
 }
 #endif /* NIE_DAA */
 
-void NS_PREFIX printv( INT x_nr )
+void NS_DIM_PREFIX printv( INT x_nr )
 /* for calling from a debugger */
 {
   register VECTOR *v;
@@ -282,7 +282,7 @@ void NS_PREFIX printv( INT x_nr )
   return;
 }
 
-void NS_PREFIX printvgrid( GRID *g, INT x_nr )
+void NS_DIM_PREFIX printvgrid( GRID *g, INT x_nr )
 /* for calling from a debugger */
 {
   register VECTOR *v;
@@ -308,7 +308,7 @@ void NS_PREFIX printvgrid( GRID *g, INT x_nr )
   return;
 }
 
-void NS_PREFIX printvBS( const BLOCKVECTOR *bv, INT x_nr )
+void NS_DIM_PREFIX printvBS( const BLOCKVECTOR *bv, INT x_nr )
 /* for calling from a debugger */
 {
   register VECTOR *v;
@@ -334,7 +334,7 @@ void NS_PREFIX printvBS( const BLOCKVECTOR *bv, INT x_nr )
   return;
 }
 
-void NS_PREFIX printm( INT m_nr )
+void NS_DIM_PREFIX printm( INT m_nr )
 /* for calling from a debugger */
 {
   register VECTOR *v, *w;
@@ -369,7 +369,7 @@ void NS_PREFIX printm( INT m_nr )
   return;
 }
 
-void NS_PREFIX printmgrid( GRID *g, INT m_nr )
+void NS_DIM_PREFIX printmgrid( GRID *g, INT m_nr )
 /* for calling from a debugger */
 {
   register VECTOR *v, *w;
@@ -401,7 +401,7 @@ void NS_PREFIX printmgrid( GRID *g, INT m_nr )
   return;
 }
 
-void NS_PREFIX printmMG( MULTIGRID *theMG, INT m_nr )
+void NS_DIM_PREFIX printmMG( MULTIGRID *theMG, INT m_nr )
 /* for calling from a debugger */
 {
   register VECTOR *v, *w;
@@ -435,7 +435,7 @@ void NS_PREFIX printmMG( MULTIGRID *theMG, INT m_nr )
   return;
 }
 
-void NS_PREFIX printmBS( const BLOCKVECTOR *bv_row, const BLOCKVECTOR *bv_col, INT m_nr )
+void NS_DIM_PREFIX printmBS( const BLOCKVECTOR *bv_row, const BLOCKVECTOR *bv_col, INT m_nr )
 /* for calling from a debugger */
 {
   register VECTOR *v, *w;
@@ -475,7 +475,7 @@ void NS_PREFIX printmBS( const BLOCKVECTOR *bv_row, const BLOCKVECTOR *bv_col, I
 }
 
 
-void NS_PREFIX printPatternBS( const BLOCKVECTOR *bv_row, const BLOCKVECTOR *bv_col, INT m_nr )
+void NS_DIM_PREFIX printPatternBS( const BLOCKVECTOR *bv_row, const BLOCKVECTOR *bv_col, INT m_nr )
 /* for calling from a debugger */
 {
   register VECTOR *v, *w;
@@ -581,7 +581,7 @@ static void printBVrec( BLOCKVECTOR *bv_first, char *indent, const BV_DESC *bvd_
   return;
 }
 
-void NS_PREFIX printBV( const BV_DESC_FORMAT *bvdf )
+void NS_DIM_PREFIX printBV( const BV_DESC_FORMAT *bvdf )
 {
   BLOCKVECTOR *bv;
   BV_DESC bvd;
@@ -603,7 +603,7 @@ void NS_PREFIX printBV( const BV_DESC_FORMAT *bvdf )
 }
 
 
-void NS_PREFIX printBVgrid( GRID *grid, const BV_DESC_FORMAT *bvdf )
+void NS_DIM_PREFIX printBVgrid( GRID *grid, const BV_DESC_FORMAT *bvdf )
 {
   BLOCKVECTOR *bv;
   BV_DESC bvd;
@@ -625,7 +625,7 @@ void NS_PREFIX printBVgrid( GRID *grid, const BV_DESC_FORMAT *bvdf )
 }
 
 
-DOUBLE NS_PREFIX FFMeshwidthOfGrid( GRID *grid )
+DOUBLE NS_DIM_PREFIX FFMeshwidthOfGrid( GRID *grid )
 /* determine the meshwidth for a regular mesh */
 {
   VERTEX *vertex1, *vertex2;
@@ -656,7 +656,7 @@ DOUBLE NS_PREFIX FFMeshwidthOfGrid( GRID *grid )
   return meshwidth;
 }
 
-INT NS_PREFIX FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_comp, INT b_comp, const BV_DESC_FORMAT *bvdf )
+INT NS_DIM_PREFIX FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_comp, INT x_comp, INT b_comp, const BV_DESC_FORMAT *bvdf )
 /* traditional FF solver for stripewise decomposition */
 /* points must be ordered lexicographic, boundary nodes at the end of the list */
 /* must be a square grid */
@@ -840,7 +840,7 @@ INT NS_PREFIX FF_PrepareGrid( GRID *grid, DOUBLE *meshwidth, INT init, INT K_com
    D*/
 /*************************************************************************/
 
-void NS_PREFIX FFConstructTestvector( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, DOUBLE wavenr_3D )
+void NS_DIM_PREFIX FFConstructTestvector( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, DOUBLE wavenr_3D )
 {
   register DOUBLE hkpi, pos;
   register VECTOR *v, *end_v;
@@ -1074,7 +1074,7 @@ static void CalculateTv_loc_linesegments( const BLOCKVECTOR *bv, INT tv_comp, DO
    D*/
 /*************************************************************************/
 
-void NS_PREFIX FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, DOUBLE wavenr_3D )
+void NS_DIM_PREFIX FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp, DOUBLE wavenr, DOUBLE wavenr_3D )
 {
   register DOUBLE tensor, pos, hkpi, plane_hkpi, plane_pos;
   register VECTOR *v, *end_v;
@@ -1215,7 +1215,7 @@ void NS_PREFIX FFConstructTestvector_loc( const BLOCKVECTOR *bv, INT tv_comp, DO
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT y_comp, INT x_comp )
+INT NS_DIM_PREFIX FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT y_comp, INT x_comp )
 {
   register BLOCKVECTOR *bv_i, *bv_ip1, *bv_stop;
   register BV_DESC *bvd_i, *bvd_ip1, *bvd_temp;
@@ -1355,7 +1355,7 @@ INT NS_PREFIX FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_D
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX FFMultWithMInv(
+INT NS_DIM_PREFIX FFMultWithMInv(
   const BLOCKVECTOR *bv,
   const BV_DESC *bvd,
   const BV_DESC_FORMAT *bvdf,
@@ -1606,10 +1606,10 @@ INT NS_PREFIX FFMultWithMInv(
 }
 
 #ifdef QQQQQQQQQQQQ
-INT NS_PREFIX FFMultWithMInvDD( GRID *grid,
-                                const BV_DESC_FORMAT *bvdf,
-                                const VECDATA_DESC *v,
-                                const VECDATA_DESC *b )
+INT NS_DIM_PREFIX FFMultWithMInvDD( GRID *grid,
+                                    const BV_DESC_FORMAT *bvdf,
+                                    const VECDATA_DESC *v,
+                                    const VECDATA_DESC *b )
 {
   register BLOCKVECTOR *bv_subdom, *bv_lines;
   BV_DESC bvd_subdom, bvd_lines;

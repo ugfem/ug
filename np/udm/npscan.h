@@ -41,11 +41,11 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* defines in the following order                                                                                       */
+/*                                                                          */
+/* defines in the following order                                           */
 /*                                                                                                                                                      */
 /*                compile time constants defining static data size (i.e. arrays)        */
 /*                other constants                                                                                                       */

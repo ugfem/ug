@@ -82,7 +82,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX deset (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a)
+INT NS_DIM_PREFIX deset (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a)
 {
   INT i,ret,level;
 
@@ -93,7 +93,7 @@ INT NS_PREFIX deset (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, 
   return NUM_OK;
 }
 
-INT NS_PREFIX deadd (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y)
+INT NS_DIM_PREFIX deadd (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y)
 {
   INT i,ret,level;
 
@@ -104,7 +104,7 @@ INT NS_PREFIX deadd (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, 
   return NUM_OK;
 }
 
-INT NS_PREFIX decopy (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y)
+INT NS_DIM_PREFIX decopy (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y)
 {
   INT i,ret,level;
 
@@ -115,7 +115,7 @@ INT NS_PREFIX decopy (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x,
   return NUM_OK;
 }
 
-INT NS_PREFIX dedotx (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y, EVEC_SCALAR a)
+INT NS_DIM_PREFIX dedotx (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EVECDATA_DESC *y, EVEC_SCALAR a)
 {
   INT i,n,ret;
 
@@ -127,7 +127,7 @@ INT NS_PREFIX dedotx (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x,
   return NUM_OK;
 }
 
-INT NS_PREFIX dedotw (MULTIGRID *mg, INT fl, INT tl, INT mode, const EVECDATA_DESC *x, const EVECDATA_DESC *y, const EVEC_SCALAR w, DOUBLE *a)
+INT NS_DIM_PREFIX dedotw (MULTIGRID *mg, INT fl, INT tl, INT mode, const EVECDATA_DESC *x, const EVECDATA_DESC *y, const EVEC_SCALAR w, DOUBLE *a)
 {
   INT i,n,ret;
 
@@ -139,7 +139,7 @@ INT NS_PREFIX dedotw (MULTIGRID *mg, INT fl, INT tl, INT mode, const EVECDATA_DE
   return NUM_OK;
 }
 
-INT NS_PREFIX denrm2x (MULTIGRID *mg, INT fl, INT tl, INT mode, const EVECDATA_DESC *x, EVEC_SCALAR a)
+INT NS_DIM_PREFIX denrm2x (MULTIGRID *mg, INT fl, INT tl, INT mode, const EVECDATA_DESC *x, EVEC_SCALAR a)
 {
   INT i,n,ret;
 
@@ -150,7 +150,7 @@ INT NS_PREFIX denrm2x (MULTIGRID *mg, INT fl, INT tl, INT mode, const EVECDATA_D
   return NUM_OK;
 }
 
-INT NS_PREFIX descal (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a)
+INT NS_DIM_PREFIX descal (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a)
 {
   INT ret,level,i;
 
@@ -161,7 +161,7 @@ INT NS_PREFIX descal (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x,
   return NUM_OK;
 }
 
-INT NS_PREFIX deaxpy (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a, const EVECDATA_DESC *y)
+INT NS_DIM_PREFIX deaxpy (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, DOUBLE a, const EVECDATA_DESC *y)
 {
   INT i,level,ret;
 
@@ -178,7 +178,7 @@ INT NS_PREFIX deaxpy (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x,
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX dematmul_minus (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EMATDATA_DESC *M, const EVECDATA_DESC *y)
+INT NS_DIM_PREFIX dematmul_minus (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EMATDATA_DESC *M, const EVECDATA_DESC *y)
 {
   INT i,j,n,ret,level;
   DOUBLE a;
@@ -197,7 +197,7 @@ INT NS_PREFIX dematmul_minus (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_
   return NUM_OK;
 }
 
-INT NS_PREFIX dematmul (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EMATDATA_DESC *M, const EVECDATA_DESC *y)
+INT NS_DIM_PREFIX dematmul (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *x, const EMATDATA_DESC *M, const EVECDATA_DESC *y)
 {
   INT i,j,n,ret,level;
   DOUBLE a;
@@ -216,7 +216,7 @@ INT NS_PREFIX dematmul (MULTIGRID *mg, INT fl, INT tl, INT mode, EVECDATA_DESC *
   return NUM_OK;
 }
 
-INT NS_PREFIX dematset (MULTIGRID *mg, INT fl, INT tl, INT mode, EMATDATA_DESC *M, DOUBLE a)
+INT NS_DIM_PREFIX dematset (MULTIGRID *mg, INT fl, INT tl, INT mode, EMATDATA_DESC *M, DOUBLE a)
 {
   INT i,ret,level;
 

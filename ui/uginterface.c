@@ -215,7 +215,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /****************************************************************************/
 
-INT NS_PREFIX SetCurrentPicture (PICTURE *thePicture)
+INT NS_DIM_PREFIX SetCurrentPicture (PICTURE *thePicture)
 {
   if (thePicture!=currPicture)
   {
@@ -255,7 +255,7 @@ INT NS_PREFIX SetCurrentPicture (PICTURE *thePicture)
    D*/
 /****************************************************************************/
 
-PICTURE * NS_PREFIX GetCurrentPicture (void)
+PICTURE * NS_DIM_PREFIX GetCurrentPicture (void)
 {
   return (currPicture);
 }
@@ -280,7 +280,7 @@ PICTURE * NS_PREFIX GetCurrentPicture (void)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX SetCurrentUgWindow (UGWINDOW *theUgWindow)
+INT NS_DIM_PREFIX SetCurrentUgWindow (UGWINDOW *theUgWindow)
 {
   UGWINDOW *win;
 
@@ -317,7 +317,7 @@ INT NS_PREFIX SetCurrentUgWindow (UGWINDOW *theUgWindow)
    D*/
 /****************************************************************************/
 
-UGWINDOW * NS_PREFIX GetCurrentUgWindow (void)
+UGWINDOW * NS_DIM_PREFIX GetCurrentUgWindow (void)
 {
   return (currUgWindow);
 }
@@ -385,7 +385,7 @@ static INT DoCmdKey (char c, char *String)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX SetCmdKey (char c, const char *Comment, INT ShowBar, const char *String)
+INT NS_DIM_PREFIX SetCmdKey (char c, const char *Comment, INT ShowBar, const char *String)
 
 {
   CMDKEY *theCmdKey;
@@ -440,7 +440,7 @@ INT NS_PREFIX SetCmdKey (char c, const char *Comment, INT ShowBar, const char *S
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX DelCmdKey (char c)
+INT NS_DIM_PREFIX DelCmdKey (char c)
 {
   CMDKEY *theCmdKey;
   char theCmdKeyName[2];
@@ -491,7 +491,7 @@ INT NS_PREFIX DelCmdKey (char c)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX ListCmdKeys (INT Long)
+INT NS_DIM_PREFIX ListCmdKeys (INT Long)
 {
   CMDKEY *theCmdKey;
   ENVDIR *theDir;
@@ -547,7 +547,7 @@ INT NS_PREFIX ListCmdKeys (INT Long)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX DelAllCmdKeys (void)
+INT NS_DIM_PREFIX DelAllCmdKeys (void)
 {
   CMDKEY *theCmdKey;
   ENVDIR *theDir;
@@ -1140,7 +1140,7 @@ static INT ProcessEvent (char *String, INT EventMask)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX UserInterrupt (const char *text)
+INT NS_DIM_PREFIX UserInterrupt (const char *text)
 {
   INT Code,EventMask,mutelevel;
   char buffer[128];
@@ -1194,7 +1194,7 @@ INT NS_PREFIX UserInterrupt (const char *text)
 
 #ifdef ModelP
 
-int NS_PREFIX ParExecCommand (char *s)
+int NS_DIM_PREFIX ParExecCommand (char *s)
 {
   int error;
   int l,n;
@@ -1257,7 +1257,7 @@ int NS_PREFIX ParExecCommand (char *s)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX UserIn (char *String)
+INT NS_DIM_PREFIX UserIn (char *String)
 {
   INT Code,EventMask;
 
@@ -1305,7 +1305,7 @@ INT NS_PREFIX UserIn (char *String)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX UserRead (char *String)
+INT NS_DIM_PREFIX UserRead (char *String)
 {
   INT Code,EventMask;
 
@@ -1354,7 +1354,7 @@ INT NS_PREFIX UserRead (char *String)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX SetRefreshState (INT status, INT bullet, DOUBLE factor)
+INT NS_DIM_PREFIX SetRefreshState (INT status, INT bullet, DOUBLE factor)
 {
   autoRefresh = status;
   use_bullet = bullet;
@@ -1385,7 +1385,7 @@ INT NS_PREFIX SetRefreshState (INT status, INT bullet, DOUBLE factor)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX InitUgInterface ()
+INT NS_DIM_PREFIX InitUgInterface ()
 {
   /* install the /Cmd Keys directory */
   if (ChangeEnvDir("/")==NULL)

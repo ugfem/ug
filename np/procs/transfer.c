@@ -291,7 +291,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX NPTransferInit (NP_TRANSFER *np, INT argc , char **argv)
+INT NS_DIM_PREFIX NPTransferInit (NP_TRANSFER *np, INT argc , char **argv)
 {
   INT i;
 
@@ -312,7 +312,7 @@ INT NS_PREFIX NPTransferInit (NP_TRANSFER *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NS_PREFIX NPTransferDisplay (NP_TRANSFER *np)
+INT NS_DIM_PREFIX NPTransferDisplay (NP_TRANSFER *np)
 {
   if ((np->A == NULL) && (np->x == NULL) && (np->b == NULL) && (np->c == NULL))
     return(0);
@@ -336,7 +336,7 @@ INT NS_PREFIX NPTransferDisplay (NP_TRANSFER *np)
   return(0);
 }
 
-INT NS_PREFIX NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_DIM_PREFIX NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_TRANSFER *np;
   INT result,level;
@@ -483,8 +483,8 @@ INT NS_PREFIX NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
   return(0);
 }
 
-INT NS_PREFIX MinimizeLevel (GRID *theGrid, VECDATA_DESC *c, VECDATA_DESC *b,
-                             MATDATA_DESC *A, VECDATA_DESC *t, INT display)
+INT NS_DIM_PREFIX MinimizeLevel (GRID *theGrid, VECDATA_DESC *c, VECDATA_DESC *b,
+                                 MATDATA_DESC *A, VECDATA_DESC *t, INT display)
 {
   MULTIGRID *mg;
   DOUBLE a0,a1;
@@ -1657,7 +1657,7 @@ static INT PartTransferConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitTransfer ()
+INT NS_DIM_PREFIX InitTransfer ()
 {
   if (CreateClass(TRANSFER_CLASS_NAME ".transfer",
                   sizeof(NP_STANDARD_TRANSFER),TransferConstruct))

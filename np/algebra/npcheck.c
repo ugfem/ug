@@ -82,7 +82,7 @@ static INT pcheck;
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
-INT NS_PREFIX CheckSymmetryOfMatrix (GRID *theGrid, MATDATA_DESC *A)
+INT NS_DIM_PREFIX CheckSymmetryOfMatrix (GRID *theGrid, MATDATA_DESC *A)
 {
   MATRIX *m,*mt;
   VECTOR *v,*w;
@@ -331,7 +331,7 @@ static int Scatter_VectorFlags (DDD_OBJ obj, void *data)
 }
 #endif
 
-INT NS_PREFIX CheckNP (MULTIGRID *theMG, INT argc, char **argv)
+INT NS_DIM_PREFIX CheckNP (MULTIGRID *theMG, INT argc, char **argv)
 {
   MATDATA_DESC *A;
   VECDATA_DESC *x,*y;

@@ -46,7 +46,8 @@
 #include "gg3d.h"
 #include "cw.h"
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
+USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */

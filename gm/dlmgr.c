@@ -15,7 +15,7 @@
 /*            phone: 0049-(0)711-685-7003                                   */
 /*            fax  : 0049-(0)711-685-7000                                   */
 /*                                                                          */
-/* History:   961216 sl  start of dynamic list management					*/
+/* History:   961216 sl  start of dynamic list management                   */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*            Management of dynamic linked lists, which consist of          */

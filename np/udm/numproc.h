@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:	numproc.h                                                       */
+/* File:        numproc.h                                                       */
 /*                                                                          */
 /* Purpose: definition of the basic num proc type                           */
 /*                                                                          */
@@ -38,16 +38,16 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
 /*                                                                          */
-/* compile time constants defining static data size (i.e. arrays)			*/
-/* other constants															*/
-/* macros																	*/
-/*																			*/
+/* compile time constants defining static data size (i.e. arrays)                       */
+/* other constants                                                                                                                      */
+/* macros                                                                                                                                       */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 /* status for num procs  */
@@ -67,17 +67,17 @@ START_NAMESPACE
 #define NP_EXECUTE(p)   (((NP_BASE*)(p))->Execute)
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* definition of exported data structures                                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* definition of exported data structures                                   */
+/*                                                                          */
 /****************************************************************************/
 
 struct np_base {
 
   /* data */
-  ENVVAR v;                             /* is an environment variable					*/
+  NS_PREFIX ENVVAR v;                             /* is an environment variable                                   */
   MULTIGRID *mg;                        /* associated multigrid                         */
-  INT status;                           /* has a status, NO type and size...			*/
+  INT status;                           /* has a status, NO type and size...                    */
 
   /* functions */
   INT (*Init)(struct np_base *, INT, char **);    /* initializing routine   */
@@ -94,15 +94,15 @@ typedef INT (*ConstructorProcPtr)(NP_BASE *);
 
 typedef struct
 {
-  ENVVAR v;                             /* class name                           */
-  INT size;                             /* size of the object                   */
-  ConstructorProcPtr Construct;         /* construct one object of this class   */
+  NS_PREFIX ENVVAR v;                         /* class name                           */
+  INT size;                         /* size of the object                   */
+  ConstructorProcPtr Construct;     /* construct one object of this class   */
 } NP_CONSTRUCTOR;
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported functions											*/
-/*																			*/
+/*                                                                                                                                                      */
+/* definition of exported functions                                                                                     */
+/*                                                                                                                                                      */
 /****************************************************************************/
 
 INT                             CreateClass                     (const char *classname, INT size, ConstructorProcPtr Construct);

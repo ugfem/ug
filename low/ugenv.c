@@ -38,7 +38,7 @@
 /** \todo this is a hierarchy conflict, remove. (VR) */
 #include "ugdevices.h"
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */

@@ -48,12 +48,12 @@
 #include "commands.h"
 #include "mgheapmgr.h"
 #include "namespace.h"
-USING_UG_NAMESPACES
-NS_PREFIX MULTIGRID * NS_PREFIX GetCurrentMultigrid (void);
+USING_UG_NAMESPACE
+NS_DIM_PREFIX MULTIGRID * NS_DIM_PREFIX GetCurrentMultigrid();
 #else
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
 #endif
-
+USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */

@@ -39,7 +39,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -64,7 +64,7 @@ START_NAMESPACE
 /****************************************************************************/
 
 /* create standard LinearSolver num proc type */
-INT InitNewtonSolver (void);
+INT InitNewtonSolver();
 
 END_NAMESPACE
 

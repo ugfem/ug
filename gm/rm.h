@@ -43,7 +43,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -300,7 +300,7 @@ START_NAMESPACE
 /****************************************************************************/
 /*                                                                          */
 /* data structures exported by the corresponding source file                */
-/*                                                                                                                                                      */
+/*                                                                          */
 /****************************************************************************/
 
 typedef INT (*FULLREFRULEPTR)(ELEMENT *);

@@ -25,7 +25,7 @@
 #include "compiler.h"
 #include "bbtree.h"
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
 
 /*****************************************************************************
 * defines in the following order                                            *

@@ -201,7 +201,7 @@ static INT LinCombCoordPoint (DOUBLE lambdaa, COORD_POINT a, DOUBLE lambdab, COO
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX PrepareGraph (const PICTURE *thePicture)
+INT NS_DIM_PREFIX PrepareGraph (const PICTURE *thePicture)
 {
   /* set current output device */
   CurrentOutputDevice = PIC_OUTPUTDEV(thePicture);
@@ -240,7 +240,7 @@ INT NS_PREFIX PrepareGraph (const PICTURE *thePicture)
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX PrepareGraphWindow (const UGWINDOW *theWindow)
+INT NS_DIM_PREFIX PrepareGraphWindow (const UGWINDOW *theWindow)
 {
   /* set current output device */
   CurrentOutputDevice = UGW_OUTPUTDEV(theWindow);
@@ -730,7 +730,7 @@ static INT ClipPolygon (COORD_POINT *in, INT nin,
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgMove (COORD_POINT in)
+void NS_DIM_PREFIX UgMove (COORD_POINT in)
 {
         #ifdef ModelP
   if (me != master)
@@ -759,7 +759,7 @@ void NS_PREFIX UgMove (COORD_POINT in)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgDraw (COORD_POINT point)
+void NS_DIM_PREFIX UgDraw (COORD_POINT point)
 {
   SHORT_POINT out1,out2;
   INT reject,dummy;
@@ -797,7 +797,7 @@ void NS_PREFIX UgDraw (COORD_POINT point)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgLine (COORD_POINT point1, COORD_POINT point2)
+void NS_DIM_PREFIX UgLine (COORD_POINT point1, COORD_POINT point2)
 {
   SHORT_POINT out1,out2;
   INT reject,dummy;
@@ -839,7 +839,7 @@ void NS_PREFIX UgLine (COORD_POINT point1, COORD_POINT point2)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgStyledLine (COORD_POINT point1, COORD_POINT point2, DOUBLE dash_length, DOUBLE space_length )
+void NS_DIM_PREFIX UgStyledLine (COORD_POINT point1, COORD_POINT point2, DOUBLE dash_length, DOUBLE space_length )
 {
   SHORT_POINT out1,out2, end;
   INT reject,dummy;
@@ -925,7 +925,7 @@ void NS_PREFIX UgStyledLine (COORD_POINT point1, COORD_POINT point2, DOUBLE dash
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgInverseLine (COORD_POINT point1, COORD_POINT point2)
+void NS_DIM_PREFIX UgInverseLine (COORD_POINT point1, COORD_POINT point2)
 {
   SHORT_POINT out[2];
   INT reject,dummy;
@@ -958,7 +958,7 @@ void NS_PREFIX UgInverseLine (COORD_POINT point1, COORD_POINT point2)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgPolyLine (COORD_POINT *points, INT n)
+void NS_DIM_PREFIX UgPolyLine (COORD_POINT *points, INT n)
 {
   SHORT_POINT out1,out2;
   INT reject,dummy,k;
@@ -997,7 +997,7 @@ void NS_PREFIX UgPolyLine (COORD_POINT *points, INT n)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgPolygon (COORD_POINT *points, INT n)
+void NS_DIM_PREFIX UgPolygon (COORD_POINT *points, INT n)
 {
   INT nout;
   SHORT_POINT out[MAX_POINTS_OF_POLY];
@@ -1031,7 +1031,7 @@ void NS_PREFIX UgPolygon (COORD_POINT *points, INT n)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgShadedPolygon (COORD_POINT *points, INT n, DOUBLE intensity)
+void NS_DIM_PREFIX UgShadedPolygon (COORD_POINT *points, INT n, DOUBLE intensity)
 {
   INT nout;
   SHORT_POINT out[MAX_POINTS_OF_POLY];
@@ -1064,7 +1064,7 @@ void NS_PREFIX UgShadedPolygon (COORD_POINT *points, INT n, DOUBLE intensity)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgInversePolygon (COORD_POINT *points, INT n)
+void NS_DIM_PREFIX UgInversePolygon (COORD_POINT *points, INT n)
 {
   INT nout;
   SHORT_POINT out[MAX_POINTS_OF_POLY];
@@ -1098,7 +1098,7 @@ void NS_PREFIX UgInversePolygon (COORD_POINT *points, INT n)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgErasePolygon (COORD_POINT *points, INT n)
+void NS_DIM_PREFIX UgErasePolygon (COORD_POINT *points, INT n)
 {
   INT nout;
   SHORT_POINT out[MAX_POINTS_OF_POLY];
@@ -1133,7 +1133,7 @@ void NS_PREFIX UgErasePolygon (COORD_POINT *points, INT n)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgPolymark (COORD_POINT *points, INT n)
+void NS_DIM_PREFIX UgPolymark (COORD_POINT *points, INT n)
 {
   INT k,reject;
   SHORT_POINT out;
@@ -1170,7 +1170,7 @@ void NS_PREFIX UgPolymark (COORD_POINT *points, INT n)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgInvPolymark (COORD_POINT *points, INT n)
+void NS_DIM_PREFIX UgInvPolymark (COORD_POINT *points, INT n)
 {
   INT k,reject;
   SHORT_POINT out;
@@ -1207,7 +1207,7 @@ void NS_PREFIX UgInvPolymark (COORD_POINT *points, INT n)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgText (const char *s, INT mode)
+void NS_DIM_PREFIX UgText (const char *s, INT mode)
 {
   INT reject;
   SHORT_POINT out;
@@ -1304,7 +1304,7 @@ void NS_PREFIX UgText (const char *s, INT mode)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgCenteredText (COORD_POINT point, const char *s, INT mode)
+void NS_DIM_PREFIX UgCenteredText (COORD_POINT point, const char *s, INT mode)
 {
   INT reject;
   SHORT_POINT out;
@@ -1339,7 +1339,7 @@ void NS_PREFIX UgCenteredText (COORD_POINT point, const char *s, INT mode)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgSetColor (long colorIndex)
+void NS_DIM_PREFIX UgSetColor (long colorIndex)
 {
         #ifdef ModelP
   if (me != master)
@@ -1367,7 +1367,7 @@ void NS_PREFIX UgSetColor (long colorIndex)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgSetMarker (short index)
+void NS_DIM_PREFIX UgSetMarker (short index)
 {
         #ifdef ModelP
   if (me != master)
@@ -1395,7 +1395,7 @@ void NS_PREFIX UgSetMarker (short index)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgSetMarkerSize (short Index)
+void NS_DIM_PREFIX UgSetMarkerSize (short Index)
 {
         #ifdef ModelP
   if (me != master)
@@ -1423,7 +1423,7 @@ void NS_PREFIX UgSetMarkerSize (short Index)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgSetTextSize (short size)
+void NS_DIM_PREFIX UgSetTextSize (short size)
 {
         #ifdef ModelP
   if (me != master)
@@ -1452,7 +1452,7 @@ void NS_PREFIX UgSetTextSize (short size)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgSetLineWidth (short width)
+void NS_DIM_PREFIX UgSetLineWidth (short width)
 {
         #ifdef ModelP
   if (me != master)
@@ -1481,7 +1481,7 @@ void NS_PREFIX UgSetLineWidth (short width)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgClearViewPort (void)
+void NS_DIM_PREFIX UgClearViewPort (void)
 {
         #ifdef ModelP
   if (me != master)
@@ -1509,7 +1509,7 @@ void NS_PREFIX UgClearViewPort (void)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgFlush (void)
+void NS_DIM_PREFIX UgFlush (void)
 {
         #ifdef ModelP
   if (me != master)
@@ -1537,7 +1537,7 @@ void NS_PREFIX UgFlush (void)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX UgWait (DOUBLE wait)
+void NS_DIM_PREFIX UgWait (DOUBLE wait)
 {
   time_t end,time,delta;
 
@@ -1569,7 +1569,7 @@ void NS_PREFIX UgWait (DOUBLE wait)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX SetTextFactor (DOUBLE textfactor)
+INT NS_DIM_PREFIX SetTextFactor (DOUBLE textfactor)
 {
   TextFactor = textfactor;
   return (0);
@@ -1591,7 +1591,7 @@ INT NS_PREFIX SetTextFactor (DOUBLE textfactor)
    D*/
 /****************************************************************************/
 
-DOUBLE NS_PREFIX GetTextFactor (void)
+DOUBLE NS_DIM_PREFIX GetTextFactor (void)
 {
   return (TextFactor);
 }
@@ -1611,7 +1611,7 @@ DOUBLE NS_PREFIX GetTextFactor (void)
  */
 /****************************************************************************/
 
-INT NS_PREFIX SetLineFactor (DOUBLE linefactor)
+INT NS_DIM_PREFIX SetLineFactor (DOUBLE linefactor)
 {
   LineFactor = linefactor;
   return (0);

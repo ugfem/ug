@@ -39,7 +39,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /** \brief Number of different element types    */
 #define TAGS 8

@@ -40,14 +40,14 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 #ifdef DYNAMIC_MEMORY_ALLOCMODEL
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* defines in the following order                                                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
 /*                compile time constants defining static data size (i.e. arrays)        */
 /*                other constants                                                                                                       */
 /*                macros                                                                                                                        */

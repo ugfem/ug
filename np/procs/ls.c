@@ -1,17 +1,17 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
-/* File:	  ls.c	                                                                                                        */
-/*																			*/
-/* Purpose:   linear solver num procs                                           */
-/*																			*/
-/* Author:	  Christian Wieners                                                                             */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
+/*                                                                          */
+/* File:      ls.c                                                          */
+/*                                                                          */
+/* Purpose:   linear solver num procs                                       */
+/*                                                                          */
+/* Author:    Christian Wieners                                             */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/* email: ug@ica3.uni-stuttgart.de						        */
 /*																			*/
 /* History:   November 29, 1996                                                                         */
 /*																			*/
@@ -376,7 +376,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX NPLinearSolverInit (NP_LINEAR_SOLVER *np, INT argc , char **argv)
+INT NS_DIM_PREFIX NPLinearSolverInit (NP_LINEAR_SOLVER *np, INT argc , char **argv)
 {
   INT i;
 
@@ -406,7 +406,7 @@ INT NS_PREFIX NPLinearSolverInit (NP_LINEAR_SOLVER *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NS_PREFIX NPLinearSolverDisplay (NP_LINEAR_SOLVER *np)
+INT NS_DIM_PREFIX NPLinearSolverDisplay (NP_LINEAR_SOLVER *np)
 {
   if ((np->x != NULL) || (np->b != NULL) || (np->A != NULL)) {
     UserWrite("symbolic user data:\n");
@@ -430,7 +430,7 @@ INT NS_PREFIX NPLinearSolverDisplay (NP_LINEAR_SOLVER *np)
   return(0);
 }
 
-INT NS_PREFIX NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_DIM_PREFIX NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_LINEAR_SOLVER *np;
   LRESULT lresult;
@@ -676,6 +676,17 @@ static INT LinearSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VE
   if (sc_cmp(lresult->first_defect,abslimit,b)) lresult->converged = 1;
   else lresult->converged = 0;
   lresult->number_of_linear_iterations = 0;
+
+  /* BUG?? The following two lines fix a bug in Prof. R. Krause's
+     contact solver code.  I don't know, though, if they should
+     always be here or if they are specific to Prof. Krause's
+     code.  Maybe someone with more insight than me could verify
+     this one day.  O. Sander */
+  /*
+     if (np->ls.Residuum == EnergyResiduum)
+      lresult->converged = 0;
+   */
+
   for (i=0; i<np->maxiter; i++)
   {
     if (lresult->converged) break;
@@ -3549,7 +3560,7 @@ static INT LDCSConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitLinearSolver ()
+INT NS_DIM_PREFIX InitLinearSolver ()
 {
   if (CreateClass(LINEAR_SOLVER_CLASS_NAME ".ls",sizeof(NP_LS),LSConstruct))
     REP_ERR_RETURN (__LINE__);

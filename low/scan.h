@@ -7,8 +7,8 @@
 /* Purpose:   header file for scanning routines for npinit calls            */
 /*                                                                          */
 /* Author:    Christian Wieners                                             */
-/*            Institut fuer Computeranwendungen III                                                 */
-/*            Universitaet Stuttgart                                                                                */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
 /*            Pfaffenwaldring 27                                                                                    */
 /*            70569 Stuttgart                                                                                               */
 /*            email: ug@ica3.uni-stuttgart.de                                                               */
@@ -39,7 +39,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UG_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */

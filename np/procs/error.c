@@ -173,7 +173,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX NPErrorInit (NP_ERROR *np, INT argc , char **argv)
+INT NS_DIM_PREFIX NPErrorInit (NP_ERROR *np, INT argc , char **argv)
 {
   np->x = ReadArgvVecDesc(np->base.mg,"x",argc,argv);
   np->o = ReadArgvVecDesc(np->base.mg,"o",argc,argv);
@@ -184,7 +184,7 @@ INT NS_PREFIX NPErrorInit (NP_ERROR *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NS_PREFIX NPErrorDisplay (NP_ERROR *np)
+INT NS_DIM_PREFIX NPErrorDisplay (NP_ERROR *np)
 {
   if ((np->x == NULL) && (np->o == NULL))
     return(0);
@@ -198,7 +198,7 @@ INT NS_PREFIX NPErrorDisplay (NP_ERROR *np)
   return(0);
 }
 
-INT NS_PREFIX NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_DIM_PREFIX NPErrorExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_ERROR *np;
   DOUBLE Time,step;
@@ -390,9 +390,9 @@ static DOUBLE ElementIndicator_minmax (ELEMENT *t, INT ncomp,
   return(theMax-theMin);
 }
 
-INT NS_PREFIX SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
-                                DOUBLE refine, DOUBLE coarse, INT project,
-                                INT from, INT to, INT clear, ERESULT *eresult)
+INT NS_DIM_PREFIX SurfaceIndicator (MULTIGRID *theMG, VECDATA_DESC *theVD,
+                                    DOUBLE refine, DOUBLE coarse, INT project,
+                                    INT from, INT to, INT clear, ERESULT *eresult)
 {
   ELEMENT *t;
   DOUBLE *List,min,max,est,rf,cr;
@@ -682,7 +682,7 @@ static INT IndicatorConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitError (void)
+INT NS_DIM_PREFIX InitError (void)
 {
   if (CreateClass (ERROR_CLASS_NAME ".indicator",
                    sizeof(NP_INDICATOR), IndicatorConstruct))

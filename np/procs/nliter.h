@@ -33,7 +33,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -57,9 +57,9 @@ START_NAMESPACE
  */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* definition of exported data structures                                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* definition of exported data structures                                   */
+/*                                                                          */
 /****************************************************************************/
 
 struct np_nl_iter {

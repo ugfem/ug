@@ -9,22 +9,22 @@
 /* Author:    Peter Bastian/Klaus Johannsen                                 */
 /*            Institut fuer Computeranwendungen III                         */
 /*            Universitaet Stuttgart                                        */
-/*            Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						        */
-/*																			*/
-/* History:   29.01.92 begin, ug version 2.0								*/
-/*																			*/
-/* Remarks:   was "devices.c" in earlier versions of UG						*/
-/*																			*/
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/* email:     ug@ica3.uni-stuttgart.de                                      */
+/*                                                                          */
+/* History:   29.01.92 begin, ug version 2.0                                */
+/*                                                                          */
+/* Remarks:   was "devices.c" in earlier versions of UG                     */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*															*/
+/*                                                                          */
 /* include files															*/
 /*			  system include files											*/
 /*			  application include files                                                                     */
-/*																			*/
+/*                                                                          */
 /****************************************************************************/
 
 #include <stdlib.h>
@@ -47,23 +47,23 @@
 #include "ugdevices.h"
 #include "initdev.h"
 
-
+#include "namespace.h"
 
 /* dddif module */
 #ifdef ModelP
 #include "ppif.h"
 #endif
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
 /* defines in the following order                                           */
 /*                                                                          */
-/*		  compile time constants defining static data size (i.e. arrays)	*/
-/*		  other constants													*/
-/*		  macros															*/
-/*																			*/
+/*    compile time constants defining static data size (i.e. arrays)        */
+/*    other constants                                                       */
+/*    macros                                                                */
+/*                                                                          */
 /****************************************************************************/
 
 

@@ -152,12 +152,12 @@ INT InitFF( void );
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
-                                 const BLOCKVECTOR *bv_source,
-                                 const BV_DESC *bvd_dest,
-                                 const BV_DESC *bvd_source,
-                                 const BV_DESC_FORMAT *bvdf,
-                                 INT tv_comp )
+INT NS_DIM_PREFIX TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
+                                     const BLOCKVECTOR *bv_source,
+                                     const BV_DESC *bvd_dest,
+                                     const BV_DESC *bvd_source,
+                                     const BV_DESC_FORMAT *bvdf,
+                                     INT tv_comp )
 {
   register VECTOR *v_dest, *v_source, *end_dest, *pred_dest, *pred_source, *succ_dest, *succ_source, *start_dest;
   register DOUBLE val, pred_val, succ_val;
@@ -372,14 +372,14 @@ INT NS_PREFIX TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
-                                         const BLOCKVECTOR *bv_source,
-                                         const BV_DESC *bvd_dest,
-                                         const BV_DESC *bvd_source,
-                                         const BV_DESC_FORMAT *bvdf,
-                                         INT tv1_comp,
-                                         INT tv2_comp,
-                                         GRID *grid)
+INT NS_DIM_PREFIX FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
+                                             const BLOCKVECTOR *bv_source,
+                                             const BV_DESC *bvd_dest,
+                                             const BV_DESC *bvd_source,
+                                             const BV_DESC_FORMAT *bvdf,
+                                             INT tv1_comp,
+                                             INT tv2_comp,
+                                             GRID *grid)
 {
   register VECTOR *vi, *vip1, *end_v;
   register DOUBLE e1i, e2i, e1ip1, e2ip1, a1, a2, det, off_val;
@@ -661,7 +661,7 @@ static INT FFO0CalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX TFFUpdateDiagBlock( const BLOCKVECTOR *bv_dest, const BV_DESC *bvd_dest, const BV_DESC *bvd_source, const BV_DESC_FORMAT *bvdf, INT T, INT DL, INT Theta, GRID *grid )
+INT NS_DIM_PREFIX TFFUpdateDiagBlock( const BLOCKVECTOR *bv_dest, const BV_DESC *bvd_dest, const BV_DESC *bvd_source, const BV_DESC_FORMAT *bvdf, INT T, INT DL, INT Theta, GRID *grid )
 {
   /* T_dest += Theta_(dest,source)*T_source*Theta_(source,dest) */
   d3matmulBS( bv_dest, bvd_source, bvd_source, bvd_dest, bvdf, T, Theta, T, Theta, grid );
@@ -745,13 +745,13 @@ INT NS_PREFIX TFFUpdateDiagBlock( const BLOCKVECTOR *bv_dest, const BV_DESC *bvd
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX TFFDecomp( DOUBLE wavenr,
-                         DOUBLE wavenr3D,
-                         const BLOCKVECTOR *bv,
-                         const BV_DESC *bvd,
-                         const BV_DESC_FORMAT *bvdf,
-                         INT tv_comp,
-                         GRID *grid )
+INT NS_DIM_PREFIX TFFDecomp( DOUBLE wavenr,
+                             DOUBLE wavenr3D,
+                             const BLOCKVECTOR *bv,
+                             const BV_DESC *bvd,
+                             const BV_DESC_FORMAT *bvdf,
+                             INT tv_comp,
+                             GRID *grid )
 {
   register BLOCKVECTOR *bv_i, *bv_im1, *bv_end;
   register BV_DESC *bvd_i, *bvd_im1, *bvd_temp;
@@ -1007,14 +1007,14 @@ INT NS_PREFIX TFFDecomp( DOUBLE wavenr,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX FFDecomp( DOUBLE wavenr,
-                        DOUBLE wavenr3D,
-                        const BLOCKVECTOR *bv,
-                        const BV_DESC *bvd,
-                        const BV_DESC_FORMAT *bvdf,
-                        INT tv1_comp,
-                        INT tv2_comp,
-                        GRID *grid )
+INT NS_DIM_PREFIX FFDecomp( DOUBLE wavenr,
+                            DOUBLE wavenr3D,
+                            const BLOCKVECTOR *bv,
+                            const BV_DESC *bvd,
+                            const BV_DESC_FORMAT *bvdf,
+                            INT tv1_comp,
+                            INT tv2_comp,
+                            GRID *grid )
 {
   register BLOCKVECTOR *bv_i, *bv_im1, *bv_end;
   register BV_DESC *bvd_i, *bvd_im1, *bvd_temp;
@@ -1266,7 +1266,7 @@ INT NS_PREFIX FFDecomp( DOUBLE wavenr,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT K_comp, INT u_comp, INT f_comp, INT cor_comp, INT FF_comp, INT LU_comp, INT tv_comp, INT aux_comp, INT auxsub_comp, INT FFsub_comp, DOUBLE meshwidth, DOUBLE eps, GRID *grid )
+INT NS_DIM_PREFIX TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf, INT K_comp, INT u_comp, INT f_comp, INT cor_comp, INT FF_comp, INT LU_comp, INT tv_comp, INT aux_comp, INT auxsub_comp, INT FFsub_comp, DOUBLE meshwidth, DOUBLE eps, GRID *grid )
 /* not necessary for the new np */
 {
   DOUBLE old_norm, new_norm, start_norm, step_norm, final_acc;

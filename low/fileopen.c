@@ -77,7 +77,7 @@
 #include <dirent.h>
 #endif
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -106,7 +106,7 @@ USING_UG_NAMESPACES
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
 /*		  in the corresponding include file!)								*/
-/*																			*/
+/*                                                                          */
 /****************************************************************************/
 
 typedef char PATH[MAXPATHLENGTH];

@@ -1777,7 +1777,7 @@ PAR(				&& EPRIO(theElement)==EPRIO(PREDE(theElement)) )ENDPAR )
 	return (0);
 }
 
-INT NS_PREFIX CheckLists (GRID *theGrid)
+INT NS_DIM_PREFIX CheckLists (GRID *theGrid)
 {
 	int objs = 0;
 
@@ -1818,9 +1818,9 @@ D*/
 /****************************************************************************/
 
 #ifndef ModelP
-INT NS_PREFIX CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists)
+INT NS_DIM_PREFIX CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists)
 #else
-INT NS_PREFIX CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
+INT NS_DIM_PREFIX CheckGrid (GRID *theGrid, INT checkgeom, INT checkalgebra, INT checklists,
 			   INT checkif)
 #endif
 {

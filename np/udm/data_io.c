@@ -314,7 +314,7 @@ static INT SaveEdgeData (MULTIGRID *theMG, VECDATA_DESC *v)
    D*/
 /****************************************************************************/
 
-MULTIGRID * NS_PREFIX OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *DataFileName, MEM heapSize)
+MULTIGRID * NS_DIM_PREFIX OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *DataFileName, MEM heapSize)
 {
   MULTIGRID *mg;
   DIO_GENERAL dio_general;
@@ -403,7 +403,7 @@ MULTIGRID * NS_PREFIX OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *ty
   return (mg);
 }
 
-INT NS_PREFIX LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDATA_DESC **theVDList)
+INT NS_DIM_PREFIX LoadData (MULTIGRID *theMG, char *name, char *type, INT number, INT n, VECDATA_DESC **theVDList)
 {
   INT i,j,ncomp,s,*entry,copied_until,copy_until,still_to_read,read,nvec,id,nparfiles;
   unsigned long m;
@@ -645,7 +645,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX SaveData (MULTIGRID *theMG, char *name, INT rename, INT save_without_mg, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec, char **NameList)
+INT NS_DIM_PREFIX SaveData (MULTIGRID *theMG, char *name, INT rename, INT save_without_mg, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec, char **NameList)
 {
   INT i,j,k,l,ncomp,s,t,*entry,nNode,store_from_eval,id,tag,coe,q,mode,nparfiles;
   DIO_GENERAL dio_general;

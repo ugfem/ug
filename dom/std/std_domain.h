@@ -53,7 +53,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 
 /****************************************************************************/
@@ -261,7 +261,7 @@ typedef struct {
 struct domain {
 
   /** \brief Fields for environment directory */
-  ENVDIR d;
+  NS_PREFIX ENVDIR d;
 
   /** \brief A point in the middle of the domain */
   DOUBLE MidPoint[DIM];
@@ -293,7 +293,7 @@ struct domain {
 struct boundary_segment {
 
   /** \brief Field for environment directory */
-  ENVVAR v;
+  NS_PREFIX ENVVAR v;
 
   /** @name Fields for boundary segment */
   /*@{*/
@@ -332,7 +332,7 @@ struct boundary_segment {
 struct linear_segment {
 
   /** \brief Field for environment directory */
-  ENVVAR v;
+  NS_PREFIX ENVVAR v;
 
   /* fields for boundary segment */
   /** \brief  Number of left and right subdomain */
@@ -376,7 +376,7 @@ struct problem {
    * of the domain where this problem corresponds to. d also contains the
    * name of the problem.
    */
-  ENVDIR d;
+  NS_PREFIX ENVDIR d;
 
   /* fields for problem */
   /** \brief Used to identify problem type
@@ -428,7 +428,7 @@ struct problem {
 struct bndcond {
 
   /** \brief Field for environment variable */
-  ENVVAR v;
+  NS_PREFIX ENVVAR v;
 
   /* fields for boundary condition */
   /** \brief Corresponds to boundary segment id ! */
@@ -453,7 +453,7 @@ struct bndcond {
 struct std_BoundaryValueProblem
 {
   /** \brief Fields for environment directory */
-  ENVDIR d;
+  NS_PREFIX ENVDIR d;
 
   /* init */
   INT type;
@@ -841,7 +841,7 @@ typedef struct marc_bnds M_BNDS;
 /****************************************************************************/
 
 # ifdef __THREEDIM__
-INT RepairMesh (HEAP *Heap, INT MarkKey, MESH *mesh);
+INT RepairMesh (NS_PREFIX HEAP *Heap, INT MarkKey, MESH *mesh);
 INT CheckPrisms (INT *corner, INT n0, INT n1 , INT n2, INT n3);
 # endif
 void SetBVPType(INT type);

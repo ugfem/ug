@@ -46,7 +46,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -89,7 +89,7 @@ START_NAMESPACE
 /****************************************************************************/
 /*                                                                                                                                                      */
 /* function declarations                                                                                                        */
-/*                                                                                                                                                      */
+/*                                                                          */
 /****************************************************************************/
 
 /* init */
@@ -122,7 +122,7 @@ INT              FindNeighborElement    (const ELEMENT *theElement, INT Side, EL
 INT              PointInElement                 (const DOUBLE*, const ELEMENT *theElement);
 INT          PointOnSide            (const DOUBLE *global, const ELEMENT *theElement, INT side);
 DOUBLE       DistanceFromSide       (const DOUBLE *global, const ELEMENT *theElement, INT side);
-VIRT_HEAP_MGMT *GetGenMGUDM             (void);
+NS_PREFIX VIRT_HEAP_MGMT *GetGenMGUDM             (void);
 INT             CheckOrientation                (INT n, VERTEX **vertices);
 INT             CheckOrientationInGrid  (GRID *theGrid);
 
@@ -142,13 +142,13 @@ void            GetNbSideByNodes                (ELEMENT *theNeighbor, INT *nbsi
 
 
 #if defined(ModelP) && !defined(DYNAMIC_MEMORY_ALLOCMODEL)
-void *GetMemoryForObject_par (HEAP *theHeap, INT size, INT type);
-INT PutFreeObject_par (HEAP *theHeap, void *object, INT size, INT type);
+void *GetMemoryForObject_par (NS_PREFIX HEAP *theHeap, INT size, INT type);
+INT PutFreeObject_par (NS_PREFIX HEAP *theHeap, void *object, INT size, INT type);
 #endif
 
 #ifdef DYNAMIC_MEMORY_ALLOCMODEL
-void *GetMemoryForObjectNew (HEAP *theHeap, INT size, INT type);
-INT PutFreeObjectNew (HEAP *theHeap, void *object, INT size, INT type);
+void *GetMemoryForObjectNew (NS_PREFIX HEAP *theHeap, INT size, INT type);
+INT PutFreeObjectNew (NS_PREFIX HEAP *theHeap, void *object, INT size, INT type);
 
 /* determination of node classes */
 INT             ClearNodeClasses                        (GRID *theGrid);

@@ -36,7 +36,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                              */
@@ -85,7 +85,7 @@ struct np_stoch_field
   INT inttype;
   INT initial;
   DOUBLE *Fld;
-  MEM FldSize;                          /* current allocation size of Fld in byte               */
+  NS_PREFIX MEM FldSize;                          /* current allocation size of Fld in byte               */
 };
 
 

@@ -45,7 +45,7 @@
 #include "ugstruct.h"
 
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -59,12 +59,12 @@ USING_UG_NAMESPACES
 
 #define qErr -1
 
-#define MAXENVPATH              32              /* max depth of the environment tree		*/
+#define MAXENVPATH              32              /* max depth of the environment tree */
 #define STRUCTSEP ":"
 #define STRUCTSEPC ':'
 
 /****************************************************************************/
-/*																			*/
+/*                                                                          */
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/

@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
+/*                                                                          */
 /* File:	  pcr.c	                                                                                                        */
 /*																			*/
 /* Purpose:   print convergence rates                                                                           */
@@ -109,7 +109,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX GetStrINTinRange (const char *str, INT min, INT max, INT *value)
+INT NS_DIM_PREFIX GetStrINTinRange (const char *str, INT min, INT max, INT *value)
 {
   int iValue;
 
@@ -147,7 +147,7 @@ INT NS_PREFIX GetStrINTinRange (const char *str, INT min, INT max, INT *value)
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX GetStrDOUBLEinRange (const char *str, DOUBLE min, DOUBLE max, DOUBLE *value)
+INT NS_DIM_PREFIX GetStrDOUBLEinRange (const char *str, DOUBLE min, DOUBLE max, DOUBLE *value)
 {
   float fValue;
 
@@ -193,7 +193,7 @@ INT NS_PREFIX GetStrDOUBLEinRange (const char *str, DOUBLE min, DOUBLE max, DOUB
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX WriteVEC_SCALAR (const VECDATA_DESC *theVDT, const VEC_SCALAR Scalar, const char *structdir)
+INT NS_DIM_PREFIX WriteVEC_SCALAR (const VECDATA_DESC *theVDT, const VEC_SCALAR Scalar, const char *structdir)
 {
   INT i;
   char name[2];
@@ -262,7 +262,7 @@ static void PrintHeaderIff (INT i)
   }
 }
 
-INT NS_PREFIX PreparePCR (VECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
+INT NS_DIM_PREFIX PreparePCR (VECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
 {
   INT i,j;
 
@@ -326,7 +326,7 @@ INT NS_PREFIX PreparePCR (VECDATA_DESC *Vsym, INT DispMode, const char *text, IN
   return (0);
 }
 
-INT NS_PREFIX PrepareEPCR (EVECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
+INT NS_DIM_PREFIX PrepareEPCR (EVECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
 {
   INT i,j;
 
@@ -412,7 +412,7 @@ INT NS_PREFIX PrepareEPCR (EVECDATA_DESC *Vsym, INT DispMode, const char *text, 
  */
 /*************************************************************************/
 
-INT NS_PREFIX PostPCR (INT ID, char *path)
+INT NS_DIM_PREFIX PostPCR (INT ID, char *path)
 {
   INT i;
   char name[10];
@@ -504,7 +504,7 @@ static INT NormIdentVS_of_VS (const VEC_SCALAR in, SHORT ncmp, SHORT nid, SHORT 
   return (0);
 }
 
-INT NS_PREFIX DoPCR (INT ID, VEC_SCALAR InDefect, INT PrintMode)
+INT NS_DIM_PREFIX DoPCR (INT ID, VEC_SCALAR InDefect, INT PrintMode)
 {
   VEC_SCALAR Defect;
   DOUBLE d,s;

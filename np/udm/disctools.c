@@ -102,7 +102,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-CoeffProcPtr NS_PREFIX MG_GetCoeffFct (const MULTIGRID *theMG, INT n)
+CoeffProcPtr NS_DIM_PREFIX MG_GetCoeffFct (const MULTIGRID *theMG, INT n)
 {
   BVP *myBVP;
   const BVP_DESC *BVP_desc;
@@ -138,7 +138,7 @@ CoeffProcPtr NS_PREFIX MG_GetCoeffFct (const MULTIGRID *theMG, INT n)
    D*/
 /****************************************************************************/
 
-UserProcPtr NS_PREFIX MG_GetUserFct (MULTIGRID *theMG, INT n)
+UserProcPtr NS_DIM_PREFIX MG_GetUserFct (MULTIGRID *theMG, INT n)
 {
   BVP *myBVP;
   BVP_DESC *BVP_desc;
@@ -169,8 +169,8 @@ UserProcPtr NS_PREFIX MG_GetUserFct (MULTIGRID *theMG, INT n)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetAllVectorsOfElementOfType (ELEMENT *theElement, VECTOR **vec,
-                                            const VECDATA_DESC *theVD)
+INT NS_DIM_PREFIX GetAllVectorsOfElementOfType (ELEMENT *theElement, VECTOR **vec,
+                                                const VECDATA_DESC *theVD)
 {
   INT cnt;
 
@@ -180,9 +180,9 @@ INT NS_PREFIX GetAllVectorsOfElementOfType (ELEMENT *theElement, VECTOR **vec,
   return (cnt);
 }
 
-INT NS_PREFIX GetAllVectorsOfElementsideOfType (ELEMENT *theElement, INT side,
-                                                VECTOR **vec,
-                                                const VECDATA_DESC *theVD)
+INT NS_DIM_PREFIX GetAllVectorsOfElementsideOfType (ELEMENT *theElement, INT side,
+                                                    VECTOR **vec,
+                                                    const VECDATA_DESC *theVD)
 {
   VECTOR *v,*vv[MAX_CORNERS_OF_ELEM];
   INT i,n;
@@ -252,8 +252,8 @@ INT NS_PREFIX GetAllVectorsOfElementsideOfType (ELEMENT *theElement, INT side,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetElementsideIndices (ELEMENT *theElement, INT side,
-                                     const VECDATA_DESC *theVD, INT *index)
+INT NS_DIM_PREFIX GetElementsideIndices (ELEMENT *theElement, INT side,
+                                         const VECDATA_DESC *theVD, INT *index)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
   INT vncomp;
@@ -330,7 +330,7 @@ INT NS_PREFIX GetElementsideIndices (ELEMENT *theElement, INT side,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetElementVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD, DOUBLE **vptr)
+INT NS_DIM_PREFIX GetElementVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD, DOUBLE **vptr)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
   INT i,j,m,cnt,vtype;
@@ -374,8 +374,8 @@ INT NS_PREFIX GetElementVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD, D
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
-                                 DOUBLE *value)
+INT NS_DIM_PREFIX GetElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
+                                     DOUBLE *value)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
   DOUBLE *vptr;
@@ -422,8 +422,8 @@ INT NS_PREFIX GetElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX AddElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
-                                 DOUBLE *value)
+INT NS_DIM_PREFIX AddElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
+                                     DOUBLE *value)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
   DOUBLE *vptr;
@@ -471,8 +471,8 @@ INT NS_PREFIX AddElementVValues (ELEMENT *theElement, const VECDATA_DESC *theVD,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC *theVD,
-                               INT *vecskip)
+INT NS_DIM_PREFIX GetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC *theVD,
+                                   INT *vecskip)
 {
   INT i,j,m,vtype;
 
@@ -511,8 +511,8 @@ INT NS_PREFIX GetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC *the
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX SetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC *theVD,
-                               INT *vecskip)
+INT NS_DIM_PREFIX SetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC *theVD,
+                                   INT *vecskip)
 {
   INT i,j,m,vtype;
 
@@ -552,8 +552,8 @@ INT NS_PREFIX SetVlistVecskip (INT cnt, VECTOR **theVec, const VECDATA_DESC *the
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetVlistVValues (INT cnt, VECTOR **theVec,
-                               const VECDATA_DESC *theVD, DOUBLE *value)
+INT NS_DIM_PREFIX GetVlistVValues (INT cnt, VECTOR **theVec,
+                                   const VECDATA_DESC *theVD, DOUBLE *value)
 {
   DOUBLE *vptr;
   INT i,j,m,vtype;
@@ -595,8 +595,8 @@ INT NS_PREFIX GetVlistVValues (INT cnt, VECTOR **theVec,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX AddVlistVValues (INT cnt, VECTOR **theVec,
-                               const VECDATA_DESC *theVD, DOUBLE *value)
+INT NS_DIM_PREFIX AddVlistVValues (INT cnt, VECTOR **theVec,
+                                   const VECDATA_DESC *theVD, DOUBLE *value)
 {
   DOUBLE *vptr;
   INT i,j,m,vtype;
@@ -638,8 +638,8 @@ INT NS_PREFIX AddVlistVValues (INT cnt, VECTOR **theVec,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX SetVlistVValues (INT cnt, VECTOR **theVec,
-                               const VECDATA_DESC *theVD, DOUBLE *value)
+INT NS_DIM_PREFIX SetVlistVValues (INT cnt, VECTOR **theVec,
+                                   const VECDATA_DESC *theVD, DOUBLE *value)
 {
   DOUBLE *vptr;
   INT i,j,m,vtype;
@@ -681,8 +681,8 @@ INT NS_PREFIX SetVlistVValues (INT cnt, VECTOR **theVec,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetElementVPtrsVecskip (ELEMENT *theElement, const VECDATA_DESC *theVD,
-                                      DOUBLE **vptr, INT *vecskip)
+INT NS_DIM_PREFIX GetElementVPtrsVecskip (ELEMENT *theElement, const VECDATA_DESC *theVD,
+                                          DOUBLE **vptr, INT *vecskip)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
   INT i,j,m,cnt,vtype;
@@ -731,8 +731,8 @@ INT NS_PREFIX GetElementVPtrsVecskip (ELEMENT *theElement, const VECDATA_DESC *t
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetElementNewVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD,
-                                  DOUBLE **vptr, INT *newField)
+INT NS_DIM_PREFIX GetElementNewVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD,
+                                      DOUBLE **vptr, INT *newField)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
   INT i,j,m,cnt,vtype,found;
@@ -783,8 +783,8 @@ INT NS_PREFIX GetElementNewVPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetElementMPtrs (ELEMENT *theElement, const MATDATA_DESC *md,
-                               DOUBLE **mptr)
+INT NS_DIM_PREFIX GetElementMPtrs (ELEMENT *theElement, const MATDATA_DESC *md,
+                                   DOUBLE **mptr)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
   MATRIX *theMatrix;
@@ -867,8 +867,8 @@ INT NS_PREFIX GetElementMPtrs (ELEMENT *theElement, const MATDATA_DESC *md,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetVlistMValues (INT cnt, VECTOR **theVec,
-                               const MATDATA_DESC *theMD, DOUBLE *value)
+INT NS_DIM_PREFIX GetVlistMValues (INT cnt, VECTOR **theVec,
+                                   const MATDATA_DESC *theMD, DOUBLE *value)
 {
   MATRIX *theMatrix;
   INT vncomp[MAX_NODAL_VECTORS];
@@ -948,8 +948,8 @@ INT NS_PREFIX GetVlistMValues (INT cnt, VECTOR **theVec,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX AddVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
-                               const MATDATA_DESC *theMD, DOUBLE *value)
+INT NS_DIM_PREFIX AddVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
+                                   const MATDATA_DESC *theMD, DOUBLE *value)
 {
   MATRIX *theMatrix;
   INT vncomp[MAX_NODAL_VECTORS];
@@ -1035,8 +1035,8 @@ INT NS_PREFIX AddVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
   return (m);
 }
 
-INT NS_PREFIX SetVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
-                               const MATDATA_DESC *theMD, DOUBLE *value)
+INT NS_DIM_PREFIX SetVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
+                                   const MATDATA_DESC *theMD, DOUBLE *value)
 {
   MATRIX *theMatrix;
   INT vncomp[MAX_NODAL_VECTORS];
@@ -1149,9 +1149,9 @@ INT NS_PREFIX SetVlistMValues (GRID *theGrid, INT cnt, VECTOR **theVec,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetElementVMPtrs (ELEMENT *theElement,
-                                const VECDATA_DESC *theVD, const MATDATA_DESC *md,
-                                DOUBLE **vptr, DOUBLE **mptr)
+INT NS_DIM_PREFIX GetElementVMPtrs (ELEMENT *theElement,
+                                    const VECDATA_DESC *theVD, const MATDATA_DESC *md,
+                                    DOUBLE **vptr, DOUBLE **mptr)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
   MATRIX *theMatrix;
@@ -1238,10 +1238,10 @@ INT NS_PREFIX GetElementVMPtrs (ELEMENT *theElement,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD1,
-                                 const VECDATA_DESC *theVD2, const MATDATA_DESC *md,
-                                 DOUBLE **vptr1, DOUBLE **vptr2, DOUBLE **mptr,
-                                 INT *vecskip)
+INT NS_DIM_PREFIX GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD1,
+                                     const VECDATA_DESC *theVD2, const MATDATA_DESC *md,
+                                     DOUBLE **vptr1, DOUBLE **vptr2, DOUBLE **mptr,
+                                     INT *vecskip)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
   MATRIX *theMatrix;
@@ -1584,7 +1584,7 @@ static INT GetMultipleVMPtrs (const MVM_DESC *mvmd, INT cnt, VECTOR *VecList[],
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
+INT NS_DIM_PREFIX PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
 {
   return (PrepareMultipleVMPtrs(mvmd));
 }
@@ -1628,10 +1628,10 @@ INT NS_PREFIX PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
-                                        DOUBLE **vptrlist[MAXVD],
-                                        DOUBLE **mptrlist[MAXMD],
-                                        INT *vecskip, INT *vtype, INT nvec[MAXVD])
+INT NS_DIM_PREFIX GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
+                                            DOUBLE **vptrlist[MAXVD],
+                                            DOUBLE **mptrlist[MAXMD],
+                                            INT *vecskip, INT *vtype, INT nvec[MAXVD])
 {
   VECTOR *VecList[MAX_NODAL_VECTORS];
   INT cnt;
@@ -1668,7 +1668,7 @@ INT NS_PREFIX GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX PrepareBndVecMultipleVMPtrs (GRID *theGrid, MVM_DESC *mvmd)
+INT NS_DIM_PREFIX PrepareBndVecMultipleVMPtrs (GRID *theGrid, MVM_DESC *mvmd)
 {
   INT MaxListLen;
 
@@ -1732,12 +1732,12 @@ INT NS_PREFIX PrepareBndVecMultipleVMPtrs (GRID *theGrid, MVM_DESC *mvmd)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetBndVecMultipleVMPtrs (const MVM_DESC *mvmd,
-                                       INT *cnt,
-                                       VECTOR *VecList[],
-                                       DOUBLE **vptrlist[MAXVD],
-                                       DOUBLE **mptrlist[MAXMD],
-                                       INT *vecskip, INT *vtype, INT nvec[MAXVD])
+INT NS_DIM_PREFIX GetBndVecMultipleVMPtrs (const MVM_DESC *mvmd,
+                                           INT *cnt,
+                                           VECTOR *VecList[],
+                                           DOUBLE **vptrlist[MAXVD],
+                                           DOUBLE **mptrlist[MAXMD],
+                                           INT *vecskip, INT *vtype, INT nvec[MAXVD])
 {
   if (GetBoundaryNeighbourVectors(MVMD_DATATYPES(mvmd),MVMD_OBJTYPES(mvmd),cnt,VecList)!=GM_OK)
     REP_ERR_RETURN (1);
@@ -1745,14 +1745,14 @@ INT NS_PREFIX GetBndVecMultipleVMPtrs (const MVM_DESC *mvmd,
   return (GetMultipleVMPtrs(mvmd,*cnt,VecList,vptrlist,mptrlist,vecskip,vtype,nvec));
 }
 
-INT NS_PREFIX ResetBndVecMultipleVMPtrs (void)
+INT NS_DIM_PREFIX ResetBndVecMultipleVMPtrs (void)
 {
   if (ResetGetBoundaryNeighbourVectors())
     REP_ERR_RETURN (1);
   return (0);
 }
 
-INT NS_PREFIX FinishBndVecMultipleVMPtrs (void)
+INT NS_DIM_PREFIX FinishBndVecMultipleVMPtrs (void)
 {
   if (FinishBoundaryNeighbourVectors()!=GM_OK)
     REP_ERR_RETURN (1);
@@ -1780,7 +1780,7 @@ INT NS_PREFIX FinishBndVecMultipleVMPtrs (void)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX ClearVecskipFlags (GRID *theGrid, const VECDATA_DESC *theVD)
+INT NS_DIM_PREFIX ClearVecskipFlags (GRID *theGrid, const VECDATA_DESC *theVD)
 {
   VECTOR *theVector;
   INT j,n;
@@ -1822,9 +1822,9 @@ INT NS_PREFIX ClearVecskipFlags (GRID *theGrid, const VECDATA_DESC *theVD)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX ComputePartVecskip (const VECDATA_DESC *vd, const VECDATA_DESC *vds,
-                                  INT typeskip[NVECTYPES],
-                                  INT co_typeskip[NVECTYPES])
+INT NS_DIM_PREFIX ComputePartVecskip (const VECDATA_DESC *vd, const VECDATA_DESC *vds,
+                                      INT typeskip[NVECTYPES],
+                                      INT co_typeskip[NVECTYPES])
 {
   INT tp,n,ns,i,j,cmp;
 
@@ -1890,7 +1890,7 @@ INT NS_PREFIX ComputePartVecskip (const VECDATA_DESC *vd, const VECDATA_DESC *vd
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX ClearPartVecskipFlags (GRID *theGrid, const INT typeskip[NVECTYPES])
+INT NS_DIM_PREFIX ClearPartVecskipFlags (GRID *theGrid, const INT typeskip[NVECTYPES])
 {
   VECTOR *theVector;
   INT pattern[NVECTYPES];
@@ -1930,8 +1930,8 @@ INT NS_PREFIX ClearPartVecskipFlags (GRID *theGrid, const INT typeskip[NVECTYPES
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX GetElementDirichletFlags (ELEMENT *theElement, const VECDATA_DESC *theVD,
-                                        INT *vecskip)
+INT NS_DIM_PREFIX GetElementDirichletFlags (ELEMENT *theElement, const VECDATA_DESC *theVD,
+                                            INT *vecskip)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
   INT i,j,m,cnt,vtype;
@@ -1976,8 +1976,8 @@ INT NS_PREFIX GetElementDirichletFlags (ELEMENT *theElement, const VECDATA_DESC 
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX SetElementDirichletFlags (ELEMENT *theElement, const VECDATA_DESC *theVD,
-                                        INT *vecskip)
+INT NS_DIM_PREFIX SetElementDirichletFlags (ELEMENT *theElement, const VECDATA_DESC *theVD,
+                                            INT *vecskip)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS];
   INT i,j,m,cnt,vtype;
@@ -2021,7 +2021,7 @@ INT NS_PREFIX SetElementDirichletFlags (ELEMENT *theElement, const VECDATA_DESC 
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX ClearDirichletValues (GRID *theGrid, VECDATA_DESC *x)
+INT NS_DIM_PREFIX ClearDirichletValues (GRID *theGrid, VECDATA_DESC *x)
 {
   VECTOR *theVector;
   INT j,type,ncomp;
@@ -2065,8 +2065,8 @@ INT NS_PREFIX ClearDirichletValues (GRID *theGrid, VECDATA_DESC *x)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX AssembleDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
-                                         const VECDATA_DESC *Sol, const VECDATA_DESC *Rhs)
+INT NS_DIM_PREFIX AssembleDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
+                                             const VECDATA_DESC *Sol, const VECDATA_DESC *Rhs)
 {
   VECTOR *theVector;
   MATRIX *theMatrix;
@@ -2127,7 +2127,7 @@ INT NS_PREFIX AssembleDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX ModifyDirichletMatrix (GRID *theGrid, const MATDATA_DESC *Mat)
+INT NS_DIM_PREFIX ModifyDirichletMatrix (GRID *theGrid, const MATDATA_DESC *Mat)
 {
   VECTOR *theVector;
   MATRIX *theMatrix;
@@ -2181,7 +2181,7 @@ INT NS_PREFIX ModifyDirichletMatrix (GRID *theGrid, const MATDATA_DESC *Mat)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX ModifyDirichletDefect (GRID *theGrid, const VECDATA_DESC *Cor)
+INT NS_DIM_PREFIX ModifyDirichletDefect (GRID *theGrid, const VECDATA_DESC *Cor)
 {
   VECTOR *theVec;
   INT j,comp1,ncomp,type;
@@ -2228,9 +2228,9 @@ INT NS_PREFIX ModifyDirichletDefect (GRID *theGrid, const VECDATA_DESC *Cor)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
-                                              const VECDATA_DESC *Sol,
-                                              const VECDATA_DESC *Rhs)
+INT NS_DIM_PREFIX AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC *Mat,
+                                                  const VECDATA_DESC *Sol,
+                                                  const VECDATA_DESC *Rhs)
 {
   VECTOR *theVector;
   INT i,j;
@@ -2319,9 +2319,9 @@ INT NS_PREFIX AssembleTotalDirichletBoundary (GRID *theGrid, const MATDATA_DESC 
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
-                             MATDATA_DESC *A, INT symmetric,
-                             int *pn, int **pia, int **pja, double **pa)
+INT NS_DIM_PREFIX ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
+                                 MATDATA_DESC *A, INT symmetric,
+                                 int *pn, int **pia, int **pja, double **pa)
 {
   VECTOR *v;
   MATRIX *m;
@@ -2455,7 +2455,7 @@ static void PrintSingleVectorX (const VECTOR *v, const VECDATA_DESC *X, INT vcla
   return;
 }
 
-INT NS_PREFIX PrintVectorListX (const VECTOR *vlist[], const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf)
+INT NS_DIM_PREFIX PrintVectorListX (const VECTOR *vlist[], const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf)
 {
   INT info=FALSE;
 
@@ -2467,7 +2467,7 @@ INT NS_PREFIX PrintVectorListX (const VECTOR *vlist[], const VECDATA_DESC *X, IN
   return(NUM_OK);
 }
 
-INT NS_PREFIX PrintVectorX (const GRID *g, const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf)
+INT NS_DIM_PREFIX PrintVectorX (const GRID *g, const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf)
 {
   const VECTOR *v;
   INT info=FALSE;
@@ -2480,12 +2480,12 @@ INT NS_PREFIX PrintVectorX (const GRID *g, const VECDATA_DESC *X, INT vclass, IN
   return(NUM_OK);
 }
 
-INT NS_PREFIX PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
+INT NS_DIM_PREFIX PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
 {
   return (PrintVectorX(g,X,vclass,vnclass,UserWriteF));
 }
 
-INT NS_PREFIX PrintSVector (MULTIGRID *mg, VECDATA_DESC *X)
+INT NS_DIM_PREFIX PrintSVector (MULTIGRID *mg, VECDATA_DESC *X)
 {
   VECTOR *v;
   DOUBLE_VECTOR pos;
@@ -2549,7 +2549,7 @@ INT NS_PREFIX PrintSVector (MULTIGRID *mg, VECDATA_DESC *X)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX PrintMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
+INT NS_DIM_PREFIX PrintMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
 {
   VECTOR *v;
   MATRIX *m;
@@ -2581,7 +2581,7 @@ INT NS_PREFIX PrintMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
   return(NUM_OK);
 }
 
-INT NS_PREFIX PrintTMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
+INT NS_DIM_PREFIX PrintTMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
 {
   VECTOR *v;
   MATRIX *m;
@@ -2610,7 +2610,7 @@ INT NS_PREFIX PrintTMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
   return(NUM_OK);
 }
 
-INT NS_PREFIX PrintDiagMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
+INT NS_DIM_PREFIX PrintDiagMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vnclass)
 {
   char buffer[256];
   VECTOR *v;
@@ -2691,7 +2691,7 @@ INT NS_PREFIX PrintDiagMatrix (GRID *g, MATDATA_DESC *Mat, INT vclass, INT vncla
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX PrintIMatrix (GRID *g, VECDATA_DESC *V, INT vclass, INT vnclass)
+INT NS_DIM_PREFIX PrintIMatrix (GRID *g, VECDATA_DESC *V, INT vclass, INT vnclass)
 {
   VECTOR *v;
   MATRIX *m;

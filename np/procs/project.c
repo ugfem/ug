@@ -105,7 +105,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX Project_Init (NP_PROJECT *theNP, INT argc, char **argv)
+INT NS_DIM_PREFIX Project_Init (NP_PROJECT *theNP, INT argc, char **argv)
 {
   MULTIGRID *theMG;
   theMG = theNP->base.mg ;
@@ -117,7 +117,7 @@ INT NS_PREFIX Project_Init (NP_PROJECT *theNP, INT argc, char **argv)
   return (NP_ACTIVE);
 }
 
-INT NS_PREFIX Project_Display (NP_PROJECT *theNP)
+INT NS_DIM_PREFIX Project_Display (NP_PROJECT *theNP)
 {
 
   if ((theNP->x) != NULL)
@@ -531,7 +531,7 @@ static INT PEN_Construct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX InitProject (void)
+INT NS_DIM_PREFIX InitProject (void)
 {
 
   if (CreateClass(PROJECT_CLASS_NAME ".pln",sizeof(NP_PRJ),

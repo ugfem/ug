@@ -46,7 +46,8 @@
 #endif
 
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
+  USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -105,7 +106,7 @@ USING_UG_NAMESPACES
 /*																			*/
 /****************************************************************************/
 
-int NS_PREFIX mgpathes_set;                             /* pathes used in ug			*/
+int NS_DIM_PREFIX mgpathes_set;                         /* pathes used in ug			*/
 
 
 /****************************************************************************/
@@ -162,7 +163,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 #ifdef __MGIO_USE_IN_UG__
-int NS_PREFIX MGIO_dircreate (char *filename, int rename)
+int NS_DIM_PREFIX MGIO_dircreate (char *filename, int rename)
 {
 
   if (mgpathes_set) return(DirCreateUsingSearchPaths_r(filename,"mgpaths",rename));
@@ -196,7 +197,7 @@ int NS_PREFIX MGIO_dircreate (char *filename, int rename)
 /****************************************************************************/
 
 #ifdef __MGIO_USE_IN_UG__
-int NS_PREFIX MGIO_filetype (char *filename)
+int NS_DIM_PREFIX MGIO_filetype (char *filename)
 {
 
   if (mgpathes_set) return(FileTypeUsingSearchPaths(filename,"mgpaths"));
@@ -227,7 +228,7 @@ int NS_PREFIX MGIO_filetype (char *filename)
    D*/
 /****************************************************************************/
 
-int NS_PREFIX Read_OpenMGFile (char *filename)
+int NS_DIM_PREFIX Read_OpenMGFile (char *filename)
 {
 
 #ifdef __MGIO_USE_IN_UG__
@@ -266,7 +267,7 @@ int NS_PREFIX Read_OpenMGFile (char *filename)
    D*/
 /****************************************************************************/
 
-int NS_PREFIX Write_OpenMGFile (char *filename, int rename)
+int NS_DIM_PREFIX Write_OpenMGFile (char *filename, int rename)
 {
 
 #ifdef __MGIO_USE_IN_UG__
@@ -302,7 +303,7 @@ int NS_PREFIX Write_OpenMGFile (char *filename, int rename)
  */
 /****************************************************************************/
 
-int NS_PREFIX Read_MG_General (MGIO_MG_GENERAL *mg_general)
+int NS_DIM_PREFIX Read_MG_General (MGIO_MG_GENERAL *mg_general)
 {
   /* initialize basic i/o */
   if (Bio_Initialize(stream,BIO_ASCII,'r')) return (1);
@@ -368,7 +369,7 @@ int NS_PREFIX Read_MG_General (MGIO_MG_GENERAL *mg_general)
  */
 /****************************************************************************/
 
-int NS_PREFIX Write_MG_General (MGIO_MG_GENERAL *mg_general)
+int NS_DIM_PREFIX Write_MG_General (MGIO_MG_GENERAL *mg_general)
 {
   /* initialize basic i/o */
   if (Bio_Initialize(stream,BIO_ASCII,'w')) return (1);
@@ -428,7 +429,7 @@ int NS_PREFIX Write_MG_General (MGIO_MG_GENERAL *mg_general)
  */
 /****************************************************************************/
 
-int NS_PREFIX Read_GE_General (MGIO_GE_GENERAL *ge_general)
+int NS_DIM_PREFIX Read_GE_General (MGIO_GE_GENERAL *ge_general)
 {
   if (Bio_Read_mint(1,intList)) return (1);
   ge_general->nGenElement = intList[0];
@@ -458,7 +459,7 @@ int NS_PREFIX Read_GE_General (MGIO_GE_GENERAL *ge_general)
  */
 /****************************************************************************/
 
-int NS_PREFIX Write_GE_General (MGIO_GE_GENERAL *ge_general)
+int NS_DIM_PREFIX Write_GE_General (MGIO_GE_GENERAL *ge_general)
 {
   intList[0] = ge_general->nGenElement;
   if (Bio_Write_mint(1,intList)) return (1);
@@ -489,7 +490,7 @@ int NS_PREFIX Write_GE_General (MGIO_GE_GENERAL *ge_general)
  */
 /****************************************************************************/
 
-int NS_PREFIX Read_GE_Elements (int n, MGIO_GE_ELEMENT *ge_element)
+int NS_DIM_PREFIX Read_GE_Elements (int n, MGIO_GE_ELEMENT *ge_element)
 {
   int i,j,s;
   MGIO_GE_ELEMENT *pge;
@@ -547,7 +548,7 @@ int NS_PREFIX Read_GE_Elements (int n, MGIO_GE_ELEMENT *ge_element)
  */
 /****************************************************************************/
 
-int NS_PREFIX Write_GE_Elements (int n, MGIO_GE_ELEMENT *ge_element)
+int NS_DIM_PREFIX Write_GE_Elements (int n, MGIO_GE_ELEMENT *ge_element)
 {
   int i,j,s;
   MGIO_GE_ELEMENT *pge;
@@ -602,7 +603,7 @@ int NS_PREFIX Write_GE_Elements (int n, MGIO_GE_ELEMENT *ge_element)
  */
 /****************************************************************************/
 
-int NS_PREFIX Read_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
+int NS_DIM_PREFIX Read_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
 {
   int i,s;
 
@@ -637,7 +638,7 @@ int NS_PREFIX Read_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
  */
 /****************************************************************************/
 
-int NS_PREFIX Write_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
+int NS_DIM_PREFIX Write_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
 {
   int i,s;
 
@@ -673,7 +674,7 @@ int NS_PREFIX Write_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
  */
 /****************************************************************************/
 
-int NS_PREFIX Read_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
+int NS_DIM_PREFIX Read_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
 {
   int i,j,k,m,s;
   MGIO_RR_RULE *prr;
@@ -732,7 +733,7 @@ int NS_PREFIX Read_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
  */
 /****************************************************************************/
 
-int NS_PREFIX Write_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
+int NS_DIM_PREFIX Write_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
 {
   int i,j,k,s;
   MGIO_RR_RULE *prr;
@@ -789,7 +790,7 @@ int NS_PREFIX Write_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
  */
 /****************************************************************************/
 
-int NS_PREFIX Read_CG_General (MGIO_CG_GENERAL *cg_general)
+int NS_DIM_PREFIX Read_CG_General (MGIO_CG_GENERAL *cg_general)
 {
   if (Bio_Read_mint(6,intList)) return (1);
   cg_general->nPoint                      = intList[0];
@@ -824,7 +825,7 @@ int NS_PREFIX Read_CG_General (MGIO_CG_GENERAL *cg_general)
  */
 /****************************************************************************/
 
-int NS_PREFIX Write_CG_General (MGIO_CG_GENERAL *cg_general)
+int NS_DIM_PREFIX Write_CG_General (MGIO_CG_GENERAL *cg_general)
 {
   intList[0] = cg_general->nPoint;
   intList[1] = cg_general->nBndPoint;
@@ -860,7 +861,7 @@ int NS_PREFIX Write_CG_General (MGIO_CG_GENERAL *cg_general)
  */
 /****************************************************************************/
 
-int NS_PREFIX Read_CG_Points (int n, MGIO_CG_POINT *cg_point)
+int NS_DIM_PREFIX Read_CG_Points (int n, MGIO_CG_POINT *cg_point)
 {
   int i,j;
   MGIO_CG_POINT *cgp;
@@ -905,7 +906,7 @@ int NS_PREFIX Read_CG_Points (int n, MGIO_CG_POINT *cg_point)
  */
 /****************************************************************************/
 
-int NS_PREFIX Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
+int NS_DIM_PREFIX Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
 {
   int i,j;
   MGIO_CG_POINT *cgp;
@@ -936,7 +937,7 @@ int NS_PREFIX Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
  */
 /****************************************************************************/
 
-int NS_PREFIX Read_pinfo (int ge, MGIO_PARINFO *pinfo)
+int NS_DIM_PREFIX Read_pinfo (int ge, MGIO_PARINFO *pinfo)
 {
   int i,m,s,np;
   char buffer[28];
@@ -1007,7 +1008,7 @@ int NS_PREFIX Read_pinfo (int ge, MGIO_PARINFO *pinfo)
  */
 /****************************************************************************/
 
-int NS_PREFIX Write_pinfo (int ge, MGIO_PARINFO *pinfo)
+int NS_DIM_PREFIX Write_pinfo (int ge, MGIO_PARINFO *pinfo)
 {
   int i,s,np;
 
@@ -1076,7 +1077,7 @@ int NS_PREFIX Write_pinfo (int ge, MGIO_PARINFO *pinfo)
  */
 /****************************************************************************/
 
-int NS_PREFIX Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
+int NS_DIM_PREFIX Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 {
   int i,j,m,s;
   MGIO_CG_ELEMENT *pe;
@@ -1145,7 +1146,7 @@ int NS_PREFIX Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
  */
 /****************************************************************************/
 
-int NS_PREFIX Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
+int NS_DIM_PREFIX Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 {
   int i,j,s;
   MGIO_CG_ELEMENT *pe;
@@ -1213,7 +1214,7 @@ int NS_PREFIX Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
  */
 /****************************************************************************/
 
-int NS_PREFIX Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
+int NS_DIM_PREFIX Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
 {
   int j,k,s,tag;
   unsigned int ctrl;
@@ -1350,7 +1351,7 @@ int NS_PREFIX Read_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
  */
 /****************************************************************************/
 
-int NS_PREFIX Write_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
+int NS_DIM_PREFIX Write_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
 {
   int j,k,s,t,tag;
   static int g_count;
@@ -1485,7 +1486,7 @@ int NS_PREFIX Write_Refinement (MGIO_REFINEMENT *pr, MGIO_RR_RULE *rr_rules)
  */
 /****************************************************************************/
 
-int NS_PREFIX Read_BD_General (MGIO_BD_GENERAL *bd_general)
+int NS_DIM_PREFIX Read_BD_General (MGIO_BD_GENERAL *bd_general)
 {
   if (Bio_Read_mint(1,intList)) return (1);
   bd_general->nBndP = intList[0];
@@ -1515,7 +1516,7 @@ int NS_PREFIX Read_BD_General (MGIO_BD_GENERAL *bd_general)
  */
 /****************************************************************************/
 
-int NS_PREFIX Write_BD_General (MGIO_BD_GENERAL *bd_general)
+int NS_DIM_PREFIX Write_BD_General (MGIO_BD_GENERAL *bd_general)
 {
   intList[0] = bd_general->nBndP;
   if (Bio_Write_mint(1,intList)) return (1);
@@ -1549,7 +1550,7 @@ int NS_PREFIX Write_BD_General (MGIO_BD_GENERAL *bd_general)
 
 #ifdef __MGIO_USE_IN_UG__
 
-int NS_PREFIX Read_PBndDesc (BVP *theBVP, HEAP *theHeap, int n, BNDP **BndPList)
+int NS_DIM_PREFIX Read_PBndDesc (BVP *theBVP, HEAP *theHeap, int n, BNDP **BndPList)
 {
   int i;
 
@@ -1600,7 +1601,7 @@ int NS_PREFIX Read_PBndDesc (BVP *theBVP, HEAP *theHeap, int n, BNDP **BndPList)
 
 #ifdef __MGIO_USE_IN_UG__
 
-int NS_PREFIX Write_PBndDesc (int n, BNDP **BndPList)
+int NS_DIM_PREFIX Write_PBndDesc (int n, BNDP **BndPList)
 {
   int i;
 
@@ -1641,7 +1642,7 @@ int NS_PREFIX Write_PBndDesc (int n, BNDP **BndPList)
  */
 /****************************************************************************/
 
-int NS_PREFIX CloseMGFile (void)
+int NS_DIM_PREFIX CloseMGFile (void)
 {
   if (fclose(stream)!=0) return (1);
   return (0);
@@ -1668,7 +1669,7 @@ int NS_PREFIX CloseMGFile (void)
  */
 /****************************************************************************/
 
-int NS_PREFIX MGIO_Init ()
+int NS_DIM_PREFIX MGIO_Init ()
 {
 
 #ifdef __MGIO_USE_IN_UG__

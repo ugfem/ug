@@ -41,7 +41,7 @@
 #include "general.h"
 
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -77,9 +77,9 @@ USING_UG_NAMESPACES
 #define TRFMY(pt) (((float)(pt.x))*myx + ((float)(pt.y))*myy + ty)
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 typedef struct {

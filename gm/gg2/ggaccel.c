@@ -119,7 +119,7 @@ static INT InitAccelObjs (MULTIGRID *theMG)
 /*                                                                          */
 /****************************************************************************/
 
-INT NS_PREFIX TerminateAccel (MULTIGRID *theMG, INT flag)
+INT NS_DIM_PREFIX TerminateAccel (MULTIGRID *theMG, INT flag)
 {
   ReleaseOBJT(QuObj);
   ReleaseOBJT(ScObj);
@@ -1712,7 +1712,7 @@ static void BaseTreeUpdate( FRONTCOMP* P, FRONTCOMP* Q, FRONTCOMP* S, int ch,
  */
 /****************************************************************************/
 
-void NS_PREFIX AccelUpdate( FRONTCOMP* theFC,  FRONTCOMP* thenewFC, FRONTCOMP* the_old_succ, int cas,  int anglecrit,  int edgecrit )
+void NS_DIM_PREFIX AccelUpdate( FRONTCOMP* theFC,  FRONTCOMP* thenewFC, FRONTCOMP* the_old_succ, int cas,  int anglecrit,  int edgecrit )
 {
   switch (cas)
   {
@@ -1861,7 +1861,7 @@ void NS_PREFIX AccelUpdate( FRONTCOMP* theFC,  FRONTCOMP* thenewFC, FRONTCOMP* t
 /****************************************************************************/
 
 
-int NS_PREFIX AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
+int NS_DIM_PREFIX AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
 {
   int l;
   BVP *theBVP;
@@ -1965,9 +1965,9 @@ int NS_PREFIX AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *p
    D*/
 /****************************************************************************/
 
-int NS_PREFIX AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOINTS],
-                                FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS], DOUBLE xt[3],
-                                DOUBLE yt[3], DOUBLE searchradis)
+int NS_DIM_PREFIX AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOINTS],
+                                    FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS], DOUBLE xt[3],
+                                    DOUBLE yt[3], DOUBLE searchradis)
 {
   SOURCETYP *srce;
   SOURCETYP *search_sq_ld, *search_sq_ru;
@@ -2083,7 +2083,7 @@ int NS_PREFIX AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoint
 /****************************************************************************/
 
 
-FRONTCOMP* NS_PREFIX AccelBaseTreeSearch(FRONTLIST** myList)
+FRONTCOMP* NS_DIM_PREFIX AccelBaseTreeSearch(FRONTLIST** myList)
 {
   BALTREETYP* p;
   p = btree_rootpointer;

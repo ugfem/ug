@@ -103,16 +103,16 @@ USING_UG_NAMESPACES
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX MaxRules[TAGS] = {0,0,0,0,0,0,0,0};
-INT NS_PREFIX MaxNewCorners[TAGS] = {0,0,0,0,0,0,0,0};
-INT NS_PREFIX MaxNewEdges[TAGS] = {0,0,0,0,0,0,0,0};
-INT NS_PREFIX CenterNodeIndex[TAGS] = {0,0,0,0,0,0,0,0};
-REFRULE * NS_PREFIX RefRules[TAGS] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
-SHORT   * NS_PREFIX Pattern2Rule[TAGS] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
+INT NS_DIM_PREFIX MaxRules[TAGS] = {0,0,0,0,0,0,0,0};
+INT NS_DIM_PREFIX MaxNewCorners[TAGS] = {0,0,0,0,0,0,0,0};
+INT NS_DIM_PREFIX MaxNewEdges[TAGS] = {0,0,0,0,0,0,0,0};
+INT NS_DIM_PREFIX CenterNodeIndex[TAGS] = {0,0,0,0,0,0,0,0};
+REFRULE * NS_DIM_PREFIX RefRules[TAGS] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
+SHORT   * NS_DIM_PREFIX Pattern2Rule[TAGS] = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 
 #ifdef __THREEDIM__
 /* define the standard regular rules for tetrahedrons */
-FULLREFRULEPTR NS_PREFIX theFullRefRule;
+FULLREFRULEPTR NS_DIM_PREFIX theFullRefRule;
 static ElementVectorProcPtr theDirectionElemEval;
 #endif
 
@@ -2292,7 +2292,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING) ;
 
 #ifdef __THREEDIM__
 
-INT NS_PREFIX GetRule_AnisotropicRed (ELEMENT *theElement, INT *Rule)
+INT NS_DIM_PREFIX GetRule_AnisotropicRed (ELEMENT *theElement, INT *Rule)
 {
   DOUBLE area,norm;
   DOUBLE_VECTOR a,b,c;
@@ -3024,7 +3024,7 @@ static INT YAlignment (ELEMENT *theElement)
  */
 /****************************************************************************/
 
-INT NS_PREFIX MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
+INT NS_DIM_PREFIX MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
 {
         #ifdef __TWODIM__
   INT side;
@@ -3370,7 +3370,7 @@ INT NS_PREFIX MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
   return(GM_OK);
 }
 
-INT NS_PREFIX MarkForRefinementX (ELEMENT *e, INT fl, INT tl, INT rule, void *data)
+INT NS_DIM_PREFIX MarkForRefinementX (ELEMENT *e, INT fl, INT tl, INT rule, void *data)
 {
   ELEMENT *t = ELEMENT_TO_MARK(e);
 
@@ -3397,7 +3397,7 @@ INT NS_PREFIX MarkForRefinementX (ELEMENT *e, INT fl, INT tl, INT rule, void *da
  */
 /****************************************************************************/
 
-INT NS_PREFIX EstimateHere (ELEMENT *theElement)
+INT NS_DIM_PREFIX EstimateHere (ELEMENT *theElement)
 {
         #ifdef ModelP
   if (EGHOST(theElement)) return(0);
@@ -3421,7 +3421,7 @@ INT NS_PREFIX EstimateHere (ELEMENT *theElement)
  */
 /****************************************************************************/
 
-INT NS_PREFIX ClearMarksOnLevel (GRID *theGrid, INT ClearType)
+INT NS_DIM_PREFIX ClearMarksOnLevel (GRID *theGrid, INT ClearType)
 {
   ELEMENT *theElement;
   INT MarkType;
@@ -3452,7 +3452,7 @@ INT NS_PREFIX ClearMarksOnLevel (GRID *theGrid, INT ClearType)
  */
 /****************************************************************************/
 
-INT NS_PREFIX Patterns2Rules(ELEMENT *theElement, INT pattern)
+INT NS_DIM_PREFIX Patterns2Rules(ELEMENT *theElement, INT pattern)
 {
         #ifdef __TWODIM__
   switch (TAG(theElement)) {
@@ -3635,7 +3635,7 @@ INT NS_PREFIX Patterns2Rules(ELEMENT *theElement, INT pattern)
  */
 /****************************************************************************/
 
-ELEMENT * NS_PREFIX ELEMENT_TO_MARK (ELEMENT *theElement)
+ELEMENT * NS_DIM_PREFIX ELEMENT_TO_MARK (ELEMENT *theElement)
 {
   if (IS_REFINED(theElement)) return(NULL);
 
@@ -3675,7 +3675,7 @@ ELEMENT * NS_PREFIX ELEMENT_TO_MARK (ELEMENT *theElement)
  */
 /****************************************************************************/
 
-INT NS_PREFIX GetRefinementMark (ELEMENT *theElement, INT *rule, void *data)
+INT NS_DIM_PREFIX GetRefinementMark (ELEMENT *theElement, INT *rule, void *data)
 {
   INT *side = (INT*)data;
   INT mark;
@@ -3745,7 +3745,7 @@ INT NS_PREFIX GetRefinementMark (ELEMENT *theElement, INT *rule, void *data)
  */
 /****************************************************************************/
 
-INT NS_PREFIX GetRefinementMarkType (ELEMENT *theElement)
+INT NS_DIM_PREFIX GetRefinementMarkType (ELEMENT *theElement)
 {
   INT rule;
   INT side;
@@ -3873,7 +3873,7 @@ static INT PrintSonData (struct sondata theSonData, PrintfProcPtr Printf)
  */
 /****************************************************************************/
 
-INT NS_PREFIX ShowRefRuleX (INT tag, INT nb, PrintfProcPtr Printf)
+INT NS_DIM_PREFIX ShowRefRuleX (INT tag, INT nb, PrintfProcPtr Printf)
 {
   INT i;
   REFRULE *theRule;
@@ -3935,7 +3935,7 @@ INT NS_PREFIX ShowRefRuleX (INT tag, INT nb, PrintfProcPtr Printf)
   return (0);
 }
 
-INT NS_PREFIX ShowRefRule (INT tag, INT nb)
+INT NS_DIM_PREFIX ShowRefRule (INT tag, INT nb)
 {
   return (ShowRefRuleX(tag,nb,UserWriteF));
 }
@@ -4707,7 +4707,7 @@ static INT InitRuleManager3D (void)
  */
 /****************************************************************************/
 
-INT NS_PREFIX SetAlignmentPtr (MULTIGRID *theMG, EVECTOR *direction)
+INT NS_DIM_PREFIX SetAlignmentPtr (MULTIGRID *theMG, EVECTOR *direction)
 {
   if (direction != NULL)
   {
@@ -4853,7 +4853,7 @@ static INT InitRuleManager2D (void)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitRuleManager (void)
+INT NS_DIM_PREFIX InitRuleManager (void)
 {
   INT err;
 

@@ -41,7 +41,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -495,7 +495,7 @@ struct ViewedObj {
 
 struct PICture {
 
-  ENVVAR v;                                                                             /* envitem of the picture                                                                               */
+  NS_PREFIX ENVVAR v;                                                                         /* envitem of the picture                                                                               */
 
   /* specification of the picture */
   struct UgWindow *theUgWindow;                                 /* window of that canvas                                                                                */
@@ -507,10 +507,11 @@ struct PICture {
 
 struct UgWindow {
 
-  ENVDIR d;                                                                             /* envitem of the UgWindow                                                                              */
+  NS_PREFIX ENVDIR d;                                                                         /* envitem of the UgWindow                                                                              */
 
-  struct outputdevice *theOutputDevice;                 /* corresponding Output Device                                                                  */
-  WINDOWID theIFWindow;                                                 /* identification of interface window                                                   */
+  /*struct outputdevice *theOutputDevice;*/           /* corresponding Output Device                                                                  */
+  NS_PREFIX OUTPUTDEVICE *theOutputDevice;
+  NS_PREFIX WINDOWID theIFWindow;                                             /* identification of interface window                                                   */
   INT Valid;                                                                            /* YES or NO                                                                                                    */
   INT NbPictures;                                                               /* number of pictures for that ugwindow                                                 */
   INT Global_LL[2], Global_UR[2];                               /* size of Ugwindow w.r.t. parent i.e.the ug-screen pixelspace  */
@@ -531,7 +532,7 @@ typedef INT (*UnsetPlotObjProcPtr)(union PlotObj *thePlotObj);
 
 struct PlotObjType {
 
-  ENVVAR v;                                                                             /* envitem of the UgWindow                                      */
+  NS_PREFIX ENVVAR v;                                                                         /* envitem of the UgWindow                                      */
 
   INT Dimension;                                                                /* see above                                                            */
   SetPlotObjProcPtr SetPlotObjProc;                             /* proc for initializing the PlotObj            */
@@ -591,7 +592,7 @@ typedef struct PlotObjHead PO_HEAD;
 /****************************************************************************/
 
 /* create/dispose/first/next ... */
-UGWINDOW           *CreateUgWindow                                      (OUTPUTDEVICE *theOutputDevice, const char *UgWindowName, INT rename, INT x, INT y, INT width, INT height);
+UGWINDOW           *CreateUgWindow        (NS_PREFIX OUTPUTDEVICE *theOutputDevice, const char *UgWindowName, INT rename, INT x, INT y, INT width, INT height);
 INT                     DisposeUgWindow                                 (UGWINDOW *theUgWindow);
 UGWINDOW           *GetFirstUgWindow                            (void);
 UGWINDOW           *GetNextUgWindow                             (const UGWINDOW *theUgWindow);
@@ -600,7 +601,7 @@ INT                     DisposePicture                                  (PICTURE
 PICTURE            *GetFirstPicture                             (const UGWINDOW *theUgWindow);
 PICTURE            *GetNextPicture                                      (const PICTURE *thePicture);
 INT                     PlacePictures                               (PLACEMENT_TASK *task, PLACEMENT_REAL *real);
-UGWINDOW *      OpenPlacedPictures              (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task, INT rename);
+UGWINDOW *      OpenPlacedPictures         (NS_PREFIX OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task, INT rename);
 
 
 /* validate/invalidate ... */
@@ -632,7 +633,7 @@ INT                     SpecifyPlotObjOfViewedObject    (PICTURE *thePicture, MU
 INT                     DisplayObject                                   (PLOTOBJ *thePlotObj);
 
 /* miscellaneous */
-UGWINDOW           *WinID2UgWindow                                      (WINDOWID theIFWindowID);
+UGWINDOW           *WinID2UgWindow                                      (NS_PREFIX WINDOWID theIFWindowID);
 UGWINDOW           *GetUgWindow                                         (const char *name);
 void                    ListUgWindow                                    (const UGWINDOW *theUgWindow, INT current);
 PICTURE            *GetUgPicture                                        (const UGWINDOW *theUgWindow, const char *name);

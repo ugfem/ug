@@ -34,7 +34,8 @@
 
 #include "elements.h"
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
+USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*																			*/
@@ -59,18 +60,18 @@ USING_UG_NAMESPACES
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX n_offset[TAGS];
-INT NS_PREFIX father_offset[TAGS];
-INT NS_PREFIX sons_offset[TAGS];
-INT NS_PREFIX nb_offset[TAGS];
-INT NS_PREFIX evector_offset[TAGS];
-INT NS_PREFIX svector_offset[TAGS];
-INT NS_PREFIX side_offset[TAGS];
-INT NS_PREFIX data_offset[TAGS];
+INT NS_DIM_PREFIX n_offset[TAGS];
+INT NS_DIM_PREFIX father_offset[TAGS];
+INT NS_DIM_PREFIX sons_offset[TAGS];
+INT NS_DIM_PREFIX nb_offset[TAGS];
+INT NS_DIM_PREFIX evector_offset[TAGS];
+INT NS_DIM_PREFIX svector_offset[TAGS];
+INT NS_DIM_PREFIX side_offset[TAGS];
+INT NS_DIM_PREFIX data_offset[TAGS];
 
-GENERAL_ELEMENT * NS_PREFIX element_descriptors[TAGS];
-GENERAL_ELEMENT * NS_PREFIX reference_descriptors[MAX_CORNERS_OF_ELEM+1];
-INT NS_PREFIX reference2tag[MAX_CORNERS_OF_ELEM+1];
+GENERAL_ELEMENT * NS_DIM_PREFIX element_descriptors[TAGS];
+GENERAL_ELEMENT * NS_DIM_PREFIX reference_descriptors[MAX_CORNERS_OF_ELEM+1];
+INT NS_DIM_PREFIX reference2tag[MAX_CORNERS_OF_ELEM+1];
 
 #ifndef ModelP
 static INT nOBJT, OBJT4Elements[MAXOBJECTS];
@@ -925,7 +926,7 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX PreInitElementTypes (void)
+INT NS_DIM_PREFIX PreInitElementTypes (void)
 {
   INT err;
 
@@ -972,7 +973,7 @@ INT NS_PREFIX PreInitElementTypes (void)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX InitElementTypes (MULTIGRID *theMG)
+INT NS_DIM_PREFIX InitElementTypes (MULTIGRID *theMG)
 {
   INT i,err;
 

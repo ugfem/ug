@@ -126,7 +126,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 
 
-INT NS_PREFIX InitGraphics (void)
+INT NS_DIM_PREFIX InitGraphics (void)
 {
   INT error;
 
@@ -153,7 +153,7 @@ INT NS_PREFIX InitGraphics (void)
 
 
 
-INT NS_PREFIX ExitGraphics (void)
+INT NS_DIM_PREFIX ExitGraphics (void)
 {
         #ifdef _COVISE
   INT error;

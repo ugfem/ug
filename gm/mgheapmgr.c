@@ -61,8 +61,8 @@ USING_UG_NAMESPACES
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX usefreelistmemory = 1;
-INT NS_PREFIX freelist_end_mark = 0;
+INT NS_DIM_PREFIX usefreelistmemory = 1;
+INT NS_DIM_PREFIX freelist_end_mark = 0;
 
 /****************************************************************************/
 /*																			*/
@@ -96,7 +96,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX DisposeBottomHeapTmpMemory (MULTIGRID *theMG)
+INT NS_DIM_PREFIX DisposeBottomHeapTmpMemory (MULTIGRID *theMG)
 {
 
   if (DisposeAMGLevels(theMG)) REP_ERR_RETURN(1);

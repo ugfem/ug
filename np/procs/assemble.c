@@ -232,7 +232,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX NPAssembleInit (NP_BASE *theNP, INT argc , char **argv)
+INT NS_DIM_PREFIX NPAssembleInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_ASSEMBLE *np;
 
@@ -247,7 +247,7 @@ INT NS_PREFIX NPAssembleInit (NP_BASE *theNP, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NS_PREFIX NPAssembleDisplay (NP_BASE *theNP)
+INT NS_DIM_PREFIX NPAssembleDisplay (NP_BASE *theNP)
 {
   NP_ASSEMBLE *np;
 
@@ -402,7 +402,7 @@ INT NPAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX NPNLAssembleInit (NP_BASE *theNP, INT argc , char **argv)
+INT NS_DIM_PREFIX NPNLAssembleInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_NL_ASSEMBLE *np;
 
@@ -418,7 +418,7 @@ INT NS_PREFIX NPNLAssembleInit (NP_BASE *theNP, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NS_PREFIX NPNLAssembleDisplay (NP_BASE *theNP)
+INT NS_DIM_PREFIX NPNLAssembleDisplay (NP_BASE *theNP)
 {
   NP_NL_ASSEMBLE *np;
 
@@ -439,7 +439,7 @@ INT NS_PREFIX NPNLAssembleDisplay (NP_BASE *theNP)
   return(0);
 }
 
-INT NS_PREFIX NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_DIM_PREFIX NPNLAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_NL_ASSEMBLE *np;
   INT result,level;
@@ -810,17 +810,17 @@ INT NPLocalAssembleConstruct (NP_ASSEMBLE *np)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX NPTAssembleInit (NP_BASE *theNP, INT argc , char **argv)
+INT NS_DIM_PREFIX NPTAssembleInit (NP_BASE *theNP, INT argc , char **argv)
 {
   return(NP_ACTIVE);
 }
 
-INT NS_PREFIX NPTAssembleDisplay (NP_BASE *theNP)
+INT NS_DIM_PREFIX NPTAssembleDisplay (NP_BASE *theNP)
 {
   return(0);
 }
 
-INT NS_PREFIX NPTAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_DIM_PREFIX NPTAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   REP_ERR_RETURN(1);   /* never executable */
 }
@@ -860,10 +860,10 @@ INT NS_PREFIX NPTAssembleExecute (NP_BASE *theNP, INT argc , char **argv)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX SetPartassParams (PARTASS_PARAMS *pp,
-                                DOUBLE s_a, DOUBLE s_m, DOUBLE t, DOUBLE dt, DOUBLE dt_old,
-                                VECDATA_DESC *s, VECDATA_DESC *r, VECDATA_DESC *o,
-                                VECDATA_DESC *c, VECDATA_DESC *g, MATDATA_DESC *A)
+INT NS_DIM_PREFIX SetPartassParams (PARTASS_PARAMS *pp,
+                                    DOUBLE s_a, DOUBLE s_m, DOUBLE t, DOUBLE dt, DOUBLE dt_old,
+                                    VECDATA_DESC *s, VECDATA_DESC *r, VECDATA_DESC *o,
+                                    VECDATA_DESC *c, VECDATA_DESC *g, MATDATA_DESC *A)
 {
   int i;
 
@@ -934,10 +934,10 @@ INT NS_PREFIX SetPartassParams (PARTASS_PARAMS *pp,
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX SetPartassParamsX (PARTASS_PARAMS *pp, const VEC_TEMPLATE *vt, INT sub,
-                                 DOUBLE s_a, DOUBLE s_m, DOUBLE t, DOUBLE dt, DOUBLE dt_old,
-                                 VECDATA_DESC *s, VECDATA_DESC *r, VECDATA_DESC *o,
-                                 VECDATA_DESC *c, VECDATA_DESC *g, MATDATA_DESC *A)
+INT NS_DIM_PREFIX SetPartassParamsX (PARTASS_PARAMS *pp, const VEC_TEMPLATE *vt, INT sub,
+                                     DOUBLE s_a, DOUBLE s_m, DOUBLE t, DOUBLE dt, DOUBLE dt_old,
+                                     VECDATA_DESC *s, VECDATA_DESC *r, VECDATA_DESC *o,
+                                     VECDATA_DESC *c, VECDATA_DESC *g, MATDATA_DESC *A)
 {
   /* checks */
   if (s==NULL)
@@ -1626,7 +1626,7 @@ static INT TPartAssConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX NPNLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
+INT NS_DIM_PREFIX NPNLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_NL_PARTASS *np       = (NP_NL_PARTASS *) theNP;
   MULTIGRID *mg           = NP_MG(theNP);
@@ -1644,7 +1644,7 @@ INT NS_PREFIX NPNLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NS_PREFIX NPNLPartAssDisplay (NP_BASE *theNP)
+INT NS_DIM_PREFIX NPNLPartAssDisplay (NP_BASE *theNP)
 {
   NP_NL_PARTASS *np       = (NP_NL_PARTASS *) theNP;
 
@@ -1667,7 +1667,7 @@ INT NS_PREFIX NPNLPartAssDisplay (NP_BASE *theNP)
   return (0);
 }
 
-INT NS_PREFIX NPNLPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
+INT NS_DIM_PREFIX NPNLPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
 {
   NP_NL_PARTASS *np       = (NP_NL_PARTASS *) theNP;
   INT result                  = NUM_OK;
@@ -1780,12 +1780,12 @@ INT NS_PREFIX NPNLPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX NPTPartAssInit (NP_BASE *theNP, INT argc, char **argv)
+INT NS_DIM_PREFIX NPTPartAssInit (NP_BASE *theNP, INT argc, char **argv)
 {
   return(NP_ACTIVE);
 }
 
-INT NS_PREFIX NPTPartAssDisplay (NP_BASE *theNP)
+INT NS_DIM_PREFIX NPTPartAssDisplay (NP_BASE *theNP)
 {
   NP_NL_PARTASS *np       = (NP_NL_PARTASS *) theNP;
 
@@ -1796,7 +1796,7 @@ INT NS_PREFIX NPTPartAssDisplay (NP_BASE *theNP)
   return(0);
 }
 
-INT NS_PREFIX NPTPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
+INT NS_DIM_PREFIX NPTPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
 {
   /* never executable */
   REP_ERR_RETURN(1);
@@ -1824,7 +1824,7 @@ INT NS_PREFIX NPTPartAssExecute (NP_BASE *theNP, INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-const char *NS_PREFIX pp_action2str (const PARTASS_PARAMS *pp)
+const char *NS_DIM_PREFIX pp_action2str (const PARTASS_PARAMS *pp)
 {
   pp_action_str[0] = '\0';
 
@@ -1867,7 +1867,7 @@ const char *NS_PREFIX pp_action2str (const PARTASS_PARAMS *pp)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX InitAssemble (void)
+INT NS_DIM_PREFIX InitAssemble (void)
 {
   /* create partass class */
   if (CreateClass(NL_ASSEMBLE_CLASS_NAME ".nlpass",

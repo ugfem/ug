@@ -223,7 +223,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX NPEWSolverInit (NP_EW_SOLVER *np, INT argc , char **argv)
+INT NS_DIM_PREFIX NPEWSolverInit (NP_EW_SOLVER *np, INT argc , char **argv)
 {
   INT i;
   int n;
@@ -275,7 +275,7 @@ INT NS_PREFIX NPEWSolverInit (NP_EW_SOLVER *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NS_PREFIX NPEWSolverDisplay (NP_EW_SOLVER *np)
+INT NS_DIM_PREFIX NPEWSolverDisplay (NP_EW_SOLVER *np)
 {
   INT i;
 
@@ -1660,7 +1660,7 @@ static INT EW1Construct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitEW ()
+INT NS_DIM_PREFIX InitEW ()
 {
   INT i;
 

@@ -150,12 +150,12 @@ REP_ERR_FILE;
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*																			*/
+/*                                                                          */
 /* forward declarations of functions used before they are defined			*/
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX NPEIterInit (NP_EITER *np, INT argc , char **argv)
+INT NS_DIM_PREFIX NPEIterInit (NP_EITER *np, INT argc , char **argv)
 {
   np->A = ReadArgvEMatDesc(np->base.mg,"A",argc,argv);
   np->c = ReadArgvEVecDesc(np->base.mg,"c",argc,argv);
@@ -167,7 +167,7 @@ INT NS_PREFIX NPEIterInit (NP_EITER *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NS_PREFIX NPEIterDisplay (NP_EITER *np)
+INT NS_DIM_PREFIX NPEIterDisplay (NP_EITER *np)
 {
   if ((np->A == NULL) && (np->b == NULL) && (np->c == NULL))
     return(0);
@@ -184,7 +184,7 @@ INT NS_PREFIX NPEIterDisplay (NP_EITER *np)
 }
 
 
-INT NS_PREFIX NPEIterExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_DIM_PREFIX NPEIterExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   REP_ERR_RETURN (1);
 }
@@ -881,7 +881,7 @@ static INT EEXConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitEIter ()
+INT NS_DIM_PREFIX InitEIter ()
 {
   INT i;
 

@@ -218,7 +218,7 @@ static DOUBLE F_q (DOUBLE *x0, DOUBLE *x1, DOUBLE *x2, DOUBLE *x3)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
+INT NS_DIM_PREFIX EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
 {
   INT i,j,k,l,n,coe,eoe;
   VERTEX *v;
@@ -694,7 +694,7 @@ static INT TriangleIsCut (INT tag, INT c1, INT c2, INT c3, const DOUBLE_VECTOR *
 }
 #endif
 
-INT NS_PREFIX SideIsCut (INT tag,  const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, const DOUBLE_VECTOR vel, INT side, DOUBLE_VECTOR y)
+INT NS_DIM_PREFIX SideIsCut (INT tag,  const DOUBLE_VECTOR *x, const DOUBLE_VECTOR ip, const DOUBLE_VECTOR vel, INT side, DOUBLE_VECTOR y)
 {
 #       ifdef __TWODIM__
   DOUBLE_VECTOR v,r,coeff,M[DIM],MI[DIM];
@@ -2186,7 +2186,7 @@ static INT FillLocalCoords (INT tag)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX InitFiniteVolumeGeom (void)
+INT NS_DIM_PREFIX InitFiniteVolumeGeom (void)
 {
   if (DIM==2)
   {

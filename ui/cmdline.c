@@ -119,7 +119,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-COMMAND * NS_PREFIX CreateCommand (const char *name, CommandProcPtr cmdProc)
+COMMAND * NS_DIM_PREFIX CreateCommand (const char *name, CommandProcPtr cmdProc)
 {
   COMMAND *newCommand;
 
@@ -158,7 +158,7 @@ COMMAND * NS_PREFIX CreateCommand (const char *name, CommandProcPtr cmdProc)
    D*/
 /****************************************************************************/
 
-COMMAND * NS_PREFIX GetCommand (const char *name)
+COMMAND * NS_DIM_PREFIX GetCommand (const char *name)
 {
   COMMAND *cmd;
 
@@ -188,7 +188,7 @@ COMMAND * NS_PREFIX GetCommand (const char *name)
    D*/
 /****************************************************************************/
 
-COMMAND * NS_PREFIX GetFirstCommand ()
+COMMAND * NS_DIM_PREFIX GetFirstCommand ()
 {
   ENVITEM *cmd;
 
@@ -221,7 +221,7 @@ COMMAND * NS_PREFIX GetFirstCommand ()
    D*/
 /****************************************************************************/
 
-COMMAND * NS_PREFIX GetNextCommand (const COMMAND *cmd)
+COMMAND * NS_DIM_PREFIX GetNextCommand (const COMMAND *cmd)
 {
   ENVITEM *nextCmd;
 
@@ -281,7 +281,7 @@ static int Str1inStr2 (const char *name1, const char *name2)
    D*/
 /********************************************************************************/
 
-COMMAND * NS_PREFIX SearchUgCmd (const char *cmdName)
+COMMAND * NS_DIM_PREFIX SearchUgCmd (const char *cmdName)
 {
   ENVDIR *currentDir;
   COMMAND *Cmd;
@@ -342,7 +342,7 @@ COMMAND * NS_PREFIX SearchUgCmd (const char *cmdName)
    D*/
 /****************************************************************************/
 
-COMMAND * NS_PREFIX ReplaceCommand (const char *name, CommandProcPtr cmdProc)
+COMMAND * NS_DIM_PREFIX ReplaceCommand (const char *name, CommandProcPtr cmdProc)
 {
   COMMAND *theCommand;
 
@@ -383,7 +383,7 @@ COMMAND * NS_PREFIX ReplaceCommand (const char *name, CommandProcPtr cmdProc)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX ExecCommand (char *cmdLine)
+INT NS_DIM_PREFIX ExecCommand (char *cmdLine)
 {
   char *s,*token,commandstr[NAMESIZE];
   int i,j,error;
@@ -475,7 +475,7 @@ INT NS_PREFIX ExecCommand (char *cmdLine)
   return(error);
 }
 
-INT NS_PREFIX InitCmdline ()
+INT NS_DIM_PREFIX InitCmdline ()
 {
   /* install the /Menu directory */
   if (ChangeEnvDir("/")==NULL)

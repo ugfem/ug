@@ -893,7 +893,7 @@ static INT SPSConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitPStep (void)
+INT NS_DIM_PREFIX InitPStep (void)
 {
   if (CreateClass (P_STEP_CLASS_NAME ".sps",sizeof(NP_SPS), SPSConstruct)) return (__LINE__);
 

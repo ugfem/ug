@@ -41,7 +41,8 @@
 #include "general.h"
 
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
+USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -167,7 +168,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 */
 /****************************************************************************/
 
-INT  NS_PREFIX LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *result)
+INT  NS_DIM_PREFIX LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *result)
 {
 	V_DIM_COPY(LOCAL_COORD_OF_TAG(tag,corner),result);
 
@@ -193,7 +194,7 @@ INT  NS_PREFIX LocalCornerCoordinates (INT dim, INT tag, INT corner, DOUBLE *res
 */
 /****************************************************************************/
 
-INT  NS_PREFIX InterpolateFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
+INT  NS_DIM_PREFIX InterpolateFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
         DOUBLE nodal_values[MAX_CORNERS_OF_ELEM], DOUBLE *result)
 {
     if (dim==1)
@@ -281,7 +282,7 @@ INT  NS_PREFIX InterpolateFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
 */
 /****************************************************************************/
 
-INT  NS_PREFIX LinearTrafo (INT dim, INT tag)
+INT  NS_DIM_PREFIX LinearTrafo (INT dim, INT tag)
 {
 	if (dim==2)
 	{
@@ -326,7 +327,7 @@ INT  NS_PREFIX LinearTrafo (INT dim, INT tag)
 */
 /****************************************************************************/
 
-INT  NS_PREFIX JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
+INT  NS_DIM_PREFIX JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
        DOUBLE ip_local[DIM], DOUBLE Jinv[DIM][DIM], DOUBLE *detJ)
 {
 	DOUBLE det;
@@ -481,7 +482,7 @@ INT  NS_PREFIX JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNERS_O
 */
 /****************************************************************************/
 
-INT  NS_PREFIX GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM], 
+INT  NS_DIM_PREFIX GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM], 
        DOUBLE Jinv[DIM][DIM], DOUBLE nodal_values[MAX_CORNERS_OF_ELEM],
        DOUBLE result[DIM])
 {
@@ -586,7 +587,7 @@ INT  NS_PREFIX GradientFEFunction (INT dim, INT tag, DOUBLE ip_local[DIM],
 */
 /****************************************************************************/
 
-INT  NS_PREFIX SurfaceElement (INT dim, INT nc, 
+INT  NS_DIM_PREFIX SurfaceElement (INT dim, INT nc, 
 					DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM],
 					DOUBLE ip_local[DIM], DOUBLE *result)
 {
@@ -651,7 +652,7 @@ INT  NS_PREFIX SurfaceElement (INT dim, INT nc,
 */   
 /****************************************************************************/
 
-DOUBLE  NS_PREFIX GN (INT n, INT i, const DOUBLE *ip_local)
+DOUBLE  NS_DIM_PREFIX GN (INT n, INT i, const DOUBLE *ip_local)
 {
     #ifdef __TWODIM__
     switch (n)
@@ -767,7 +768,7 @@ DOUBLE  NS_PREFIX GN (INT n, INT i, const DOUBLE *ip_local)
 */   
 /****************************************************************************/
 
-INT  NS_PREFIX GNs (INT n, const DOUBLE *ip_local, DOUBLE *result)
+INT  NS_DIM_PREFIX GNs (INT n, const DOUBLE *ip_local, DOUBLE *result)
 {
     #ifdef __TWODIM__
     switch (n)
@@ -867,7 +868,7 @@ INT  NS_PREFIX GNs (INT n, const DOUBLE *ip_local, DOUBLE *result)
 */   
 /****************************************************************************/
 
-INT  NS_PREFIX DimGNs (INT dim, INT n, const DOUBLE *ip_local, DOUBLE *result)
+INT  NS_DIM_PREFIX DimGNs (INT dim, INT n, const DOUBLE *ip_local, DOUBLE *result)
 {
 	switch (dim)
 	{
@@ -972,7 +973,7 @@ INT  NS_PREFIX DimGNs (INT dim, INT n, const DOUBLE *ip_local, DOUBLE *result)
 */   
 /****************************************************************************/
 
-INT  NS_PREFIX D_GN (INT n, INT i, const DOUBLE *ip_local, DOUBLE *derivative)
+INT  NS_DIM_PREFIX D_GN (INT n, INT i, const DOUBLE *ip_local, DOUBLE *derivative)
 {
     #ifdef __TWODIM__
 	switch (n)
@@ -1215,7 +1216,7 @@ INT  NS_PREFIX D_GN (INT n, INT i, const DOUBLE *ip_local, DOUBLE *derivative)
 */   
 /****************************************************************************/
 
-DOUBLE * NS_PREFIX LMP (INT n)
+DOUBLE * NS_DIM_PREFIX LMP (INT n)
 {
 #ifdef __TWODIM__
 	switch (n)
@@ -1262,7 +1263,7 @@ DOUBLE * NS_PREFIX LMP (INT n)
 */
 /****************************************************************************/
 
-INT NS_PREFIX UG_GlobalToLocal (INT n, const DOUBLE **Corners, 
+INT NS_DIM_PREFIX UG_GlobalToLocal (INT n, const DOUBLE **Corners, 
 				   const DOUBLE *EvalPoint, DOUBLE *LocalCoord)
 {
 	DOUBLE_VECTOR tmp,diff,M[DIM],IM[DIM];
@@ -1326,7 +1327,7 @@ INT NS_PREFIX UG_GlobalToLocal (INT n, const DOUBLE **Corners,
 */
 /****************************************************************************/
 
-INT NS_PREFIX UG_GlobalToLocalBnd (INT n, const DOUBLE **Corners, 
+INT NS_DIM_PREFIX UG_GlobalToLocalBnd (INT n, const DOUBLE **Corners, 
 				   const DOUBLE *EvalPoint, DOUBLE *LocalCoord)
 {
 #	ifdef __TWODIM__
@@ -1397,7 +1398,7 @@ INT NS_PREFIX UG_GlobalToLocalBnd (INT n, const DOUBLE **Corners,
 /****************************************************************************/
 
 #ifdef __TWODIM__
-DOUBLE  NS_PREFIX dNds (INT n, INT i, DOUBLE s, DOUBLE t)
+DOUBLE  NS_DIM_PREFIX dNds (INT n, INT i, DOUBLE s, DOUBLE t)
 {
 	if (n==3)
 	{
@@ -1448,7 +1449,7 @@ DOUBLE  NS_PREFIX dNds (INT n, INT i, DOUBLE s, DOUBLE t)
 /****************************************************************************/
 
 #ifdef __TWODIM__
-DOUBLE  NS_PREFIX dNdt (INT n, INT i, DOUBLE s, DOUBLE t)
+DOUBLE  NS_DIM_PREFIX dNdt (INT n, INT i, DOUBLE s, DOUBLE t)
 {
 	if (n==3)
 	{
@@ -1510,7 +1511,7 @@ DOUBLE  NS_PREFIX dNdt (INT n, INT i, DOUBLE s, DOUBLE t)
 /****************************************************************************/
 
 #ifdef __TWODIM__
-INT  NS_PREFIX Derivatives (INT n, const DOUBLE *px, const DOUBLE *py, DOUBLE ips, DOUBLE ipt, DOUBLE *dNdx, DOUBLE *dNdy, DOUBLE *DetJ)
+INT  NS_DIM_PREFIX Derivatives (INT n, const DOUBLE *px, const DOUBLE *py, DOUBLE ips, DOUBLE ipt, DOUBLE *dNdx, DOUBLE *dNdy, DOUBLE *DetJ)
 {
 	DOUBLE dydt,dyds,dxdt,dxds,detJ;
 	INT j;
@@ -1561,7 +1562,7 @@ INT  NS_PREFIX Derivatives (INT n, const DOUBLE *px, const DOUBLE *py, DOUBLE ip
 /****************************************************************************/
 
 #ifdef __TWODIM__
-INT  NS_PREFIX Gradients (INT n, const DOUBLE **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_VECTOR Gradient[MAX_CORNERS_OF_ELEM], DOUBLE *DetJ)
+INT  NS_DIM_PREFIX Gradients (INT n, const DOUBLE **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_VECTOR Gradient[MAX_CORNERS_OF_ELEM], DOUBLE *DetJ)
 {
 	DOUBLE dydt,dyds,dxdt,dxds,detJ;
 	int j;
@@ -1610,7 +1611,7 @@ INT  NS_PREFIX Gradients (INT n, const DOUBLE **theCorners, DOUBLE ips, DOUBLE i
 /****************************************************************************/
 
 #ifdef __TWODIM__
-INT  NS_PREFIX L2GDerivative2d (INT n, const DOUBLE **Corners, const DOUBLE_VECTOR EvalPoint, DOUBLE *Derivative)
+INT  NS_DIM_PREFIX L2GDerivative2d (INT n, const DOUBLE **Corners, const DOUBLE_VECTOR EvalPoint, DOUBLE *Derivative)
 {
 	DOUBLE dNds0,dNds1,dNds2,dNds3;
 	DOUBLE dNdt0,dNdt1,dNdt2,dNdt3;
@@ -1673,7 +1674,7 @@ INT  NS_PREFIX L2GDerivative2d (INT n, const DOUBLE **Corners, const DOUBLE_VECT
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT NS_PREFIX TetraSideNormals (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE_VECTOR theNormals[MAX_SIDES_OF_ELEM])
+INT NS_DIM_PREFIX TetraSideNormals (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE_VECTOR theNormals[MAX_SIDES_OF_ELEM])
 {
    	ELEMENT e;
 	DOUBLE_VECTOR a, b;
@@ -1723,7 +1724,7 @@ INT NS_PREFIX TetraSideNormals (ELEMENT *theElement, DOUBLE **theCorners, DOUBLE
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT  NS_PREFIX TetMaxSideAngle (ELEMENT *theElement, const DOUBLE **theCorners, DOUBLE *MaxAngle)
+INT  NS_DIM_PREFIX TetMaxSideAngle (ELEMENT *theElement, const DOUBLE **theCorners, DOUBLE *MaxAngle)
 {
 	DOUBLE_VECTOR theNormal[MAX_SIDES_OF_ELEM];
 	DOUBLE max,help;
@@ -1767,7 +1768,7 @@ INT  NS_PREFIX TetMaxSideAngle (ELEMENT *theElement, const DOUBLE **theCorners, 
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT  NS_PREFIX TetAngleAndLength (ELEMENT *theElement, const DOUBLE **theCorners, DOUBLE *Angle, DOUBLE *Length)
+INT  NS_DIM_PREFIX TetAngleAndLength (ELEMENT *theElement, const DOUBLE **theCorners, DOUBLE *Angle, DOUBLE *Length)
 {
 	DOUBLE_VECTOR theNormals[MAX_SIDES_OF_ELEM],theEdge[MAX_EDGES_OF_ELEM];
 	DOUBLE h;
@@ -1823,7 +1824,7 @@ INT  NS_PREFIX TetAngleAndLength (ELEMENT *theElement, const DOUBLE **theCorners
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT  NS_PREFIX TetraDerivative (ELEMENT *theElement, const DOUBLE **theCorners, DOUBLE_VECTOR theGradient[MAX_CORNERS_OF_ELEM])
+INT  NS_DIM_PREFIX TetraDerivative (ELEMENT *theElement, const DOUBLE **theCorners, DOUBLE_VECTOR theGradient[MAX_CORNERS_OF_ELEM])
 {
 	DOUBLE_VECTOR a, b;
 	DOUBLE h;
@@ -1867,7 +1868,7 @@ INT  NS_PREFIX TetraDerivative (ELEMENT *theElement, const DOUBLE **theCorners, 
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT  NS_PREFIX TetraVolume (const DOUBLE **theCorners, DOUBLE *volume)
+INT  NS_DIM_PREFIX TetraVolume (const DOUBLE **theCorners, DOUBLE *volume)
 {
 	DOUBLE_VECTOR a, b, n;
 
@@ -1909,7 +1910,7 @@ INT  NS_PREFIX TetraVolume (const DOUBLE **theCorners, DOUBLE *volume)
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT  NS_PREFIX FV_TetInfo (const DOUBLE **theCorners, DOUBLE_VECTOR Area[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR GIP[MAX_EDGES_OF_ELEM])
+INT  NS_DIM_PREFIX FV_TetInfo (const DOUBLE **theCorners, DOUBLE_VECTOR Area[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR GIP[MAX_EDGES_OF_ELEM])
 {
    	ELEMENT e;
 	DOUBLE_VECTOR emp[MAX_EDGES_OF_ELEM], diff, a, b;
@@ -2047,7 +2048,7 @@ static INT OppositeCorner[4] = {3,0,1,2};
 /* the indices of opposite sides for each corner */
 static INT OppositeSide[4] = {1,2,3,0};
 
-INT  NS_PREFIX FV_AliTetInfo (const DOUBLE **CornerPoints, DOUBLE_VECTOR Area[6], DOUBLE_VECTOR conv, DOUBLE_VECTOR GIP[6], DOUBLE_VECTOR LIP[6])
+INT  NS_DIM_PREFIX FV_AliTetInfo (const DOUBLE **CornerPoints, DOUBLE_VECTOR Area[6], DOUBLE_VECTOR conv, DOUBLE_VECTOR GIP[6], DOUBLE_VECTOR LIP[6])
 {
 	DOUBLE sp, alpha, check[2], M[9], Inv[9];
 	DOUBLE_VECTOR a, b, c, d, e, cm, normal, param, EdgeMidPoints[6], SideMidPoints[4];
@@ -2934,7 +2935,7 @@ INT FV_TetInfo_for_conv (ELEMENT *theElement, const DOUBLE **CornerPoints, DOUBL
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT  NS_PREFIX Side_TetInfo (DOUBLE **theCorners, INT side, DOUBLE_VECTOR Area, DOUBLE_VECTOR GIP[3])
+INT  NS_DIM_PREFIX Side_TetInfo (DOUBLE **theCorners, INT side, DOUBLE_VECTOR Area, DOUBLE_VECTOR GIP[3])
 {
    	ELEMENT e;
 	DOUBLE_VECTOR a,b,c;
@@ -3000,7 +3001,7 @@ INT  NS_PREFIX Side_TetInfo (DOUBLE **theCorners, INT side, DOUBLE_VECTOR Area, 
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT  NS_PREFIX GetSkewedUIP (const DOUBLE_VECTOR *theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], const DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT  NS_DIM_PREFIX GetSkewedUIP (const DOUBLE_VECTOR *theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], const DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM])
 {
 	DOUBLE_VECTOR lconv;
 	DOUBLE alpha;
@@ -3202,7 +3203,7 @@ INT  NS_PREFIX GetSkewedUIP (const DOUBLE_VECTOR *theCorners, const DOUBLE_VECTO
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT  NS_PREFIX GFUIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT  NS_DIM_PREFIX GFUIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM])
 {
 	DOUBLE_VECTOR lconv;
 	DOUBLE sp, min;
@@ -3269,7 +3270,7 @@ INT  NS_PREFIX GFUIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDG
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT  NS_PREFIX GCUIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT  NS_DIM_PREFIX GCUIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM])
 {
 	DOUBLE_VECTOR a, lconv, SUIP;
 	DOUBLE alpha, sp, min;
@@ -3483,7 +3484,7 @@ INT  NS_PREFIX GCUIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDG
 /****************************************************************************/
 
 #ifdef __THREEDIM__						 
-INT  NS_PREFIX COPYIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT  NS_DIM_PREFIX COPYIP (const DOUBLE **theCorners, const DOUBLE_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR LUIP[MAX_EDGES_OF_ELEM])
 {
 	INT i;
 	

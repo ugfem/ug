@@ -45,7 +45,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -143,7 +143,7 @@ typedef INT (*TransGridProcPtr)(GRID *, const VECDATA_DESC *, const VECDATA_DESC
 typedef INT (*InterpolateNewVectorsProcPtr)(GRID *, const VECDATA_DESC *);
 
 /****************************************************************************/
-/*                                                                                                                                                      */
+/*                                                                          */
 /* function declarations                                                                                                        */
 /*                                                                                                                                                      */
 /****************************************************************************/

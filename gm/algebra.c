@@ -90,7 +90,8 @@
 
 #include "namespace.h"
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
+  USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -141,7 +142,7 @@ static INT ce_VCSTRONG;
 /*                                                                          */
 /****************************************************************************/
 
-const char* NS_PREFIX ObjTypeName[MAXVOBJECTS];
+const char* NS_DIM_PREFIX ObjTypeName[MAXVOBJECTS];
 
 /****************************************************************************/
 /*                                                                          */
@@ -170,7 +171,7 @@ static INT GBNV_MarkKey;                        /* key for Mark/Release					*/
 /****************************************************************************/
 
 /* 2 often used blockvector description formats */
-const BV_DESC_FORMAT NS_PREFIX DH_bvdf =
+const BV_DESC_FORMAT NS_DIM_PREFIX DH_bvdf =
 { 2, 16,
   { (BVD_ENTRY_TYPE)0x03,        (BVD_ENTRY_TYPE)0x0f,
             (BVD_ENTRY_TYPE)0x03f,       (BVD_ENTRY_TYPE)0x0ff,
@@ -226,7 +227,7 @@ const BV_DESC_FORMAT one_level_bvdf =
   { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
-const BV_DESC_FORMAT NS_PREFIX two_level_bvdf =
+const BV_DESC_FORMAT NS_DIM_PREFIX two_level_bvdf =
 { 16, 2,
   {     (BVD_ENTRY_TYPE)0x0000ffff, (BVD_ENTRY_TYPE)0xffffffff,
                 (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
@@ -247,7 +248,7 @@ const BV_DESC_FORMAT NS_PREFIX two_level_bvdf =
   { (BVD_ENTRY_TYPE)0xffff0000, (BVD_ENTRY_TYPE)0x0000ffff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
-const BV_DESC_FORMAT NS_PREFIX three_level_bvdf =
+const BV_DESC_FORMAT NS_DIM_PREFIX three_level_bvdf =
 { 10, 3,
   {     (BVD_ENTRY_TYPE)0x000003ff, (BVD_ENTRY_TYPE)0x000fffff,
                 (BVD_ENTRY_TYPE)0x3fffffff, (BVD_ENTRY_TYPE)0xffffffff,
@@ -384,7 +385,7 @@ static void CheckMatrixList (VECTOR *theVector)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitBVDF( BV_DESC_FORMAT *bvdf, BLOCKNUMBER max_blocks )
+INT NS_DIM_PREFIX InitBVDF( BV_DESC_FORMAT *bvdf, BLOCKNUMBER max_blocks )
 {
   INT bits;
   INT level;
@@ -449,7 +450,7 @@ INT NS_PREFIX InitBVDF( BV_DESC_FORMAT *bvdf, BLOCKNUMBER max_blocks )
  */
 /****************************************************************************/
 
-INT NS_PREFIX PushEntry( BV_DESC *bvd, BLOCKNUMBER bnr, const BV_DESC_FORMAT *bvdf )
+INT NS_DIM_PREFIX PushEntry( BV_DESC *bvd, BLOCKNUMBER bnr, const BV_DESC_FORMAT *bvdf )
 {
   /* exist, if there is no space for a further number */
   if ( bvd->current >= bvdf->max_level )
@@ -481,7 +482,7 @@ INT NS_PREFIX PushEntry( BV_DESC *bvd, BLOCKNUMBER bnr, const BV_DESC_FORMAT *bv
  */
 /****************************************************************************/
 
-BLOCKVECTOR *NS_PREFIX FindBV( const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf )
+BLOCKVECTOR *NS_DIM_PREFIX FindBV( const GRID *grid, const BV_DESC *bvd, const BV_DESC_FORMAT *bvdf )
 {
   register BLOCKVECTOR *bv;
   register BLOCKNUMBER nr;
@@ -532,7 +533,7 @@ BLOCKVECTOR *NS_PREFIX FindBV( const GRID *grid, const BV_DESC *bvd, const BV_DE
  */
 /****************************************************************************/
 
-INT NS_PREFIX GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side)
+INT NS_DIM_PREFIX GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side)
 {
   NODE *nd,*n0,*n1;
   EDGE *ed;
@@ -548,7 +549,7 @@ INT NS_PREFIX GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side)
     v0 = MYVERTEX(nd);
     if (OBJT(v0)==IVOBJ) {
       subdom = NSUBDOM(nd);
-      ASSERT(subdom>0);
+      /*ASSERT(subdom>0);*/
       part = s2p[subdom];
     }
     else
@@ -623,7 +624,7 @@ INT NS_PREFIX GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side)
 }
 
 #ifdef ModelP
-INT NS_PREFIX GetVectorSize (GRID *theGrid, INT VectorObjType, GEOM_OBJECT *object)
+INT NS_DIM_PREFIX GetVectorSize (GRID *theGrid, INT VectorObjType, GEOM_OBJECT *object)
 {
   MULTIGRID *mg;
   INT part,vtype;
@@ -742,7 +743,7 @@ static INT CreateVectorInPart (GRID *theGrid, INT DomPart, INT VectorObjType,
  */
 /****************************************************************************/
 
-INT NS_PREFIX CreateVector (GRID *theGrid, INT VectorObjType, GEOM_OBJECT *object, VECTOR **vHandle)
+INT NS_DIM_PREFIX CreateVector (GRID *theGrid, INT VectorObjType, GEOM_OBJECT *object, VECTOR **vHandle)
 {
   MULTIGRID *mg;
   INT part;
@@ -772,7 +773,7 @@ INT NS_PREFIX CreateVector (GRID *theGrid, INT VectorObjType, GEOM_OBJECT *objec
     return (0);
 }
 
-INT NS_PREFIX CreateSideVector (GRID *theGrid, INT side, GEOM_OBJECT *object, VECTOR **vHandle)
+INT NS_DIM_PREFIX CreateSideVector (GRID *theGrid, INT side, GEOM_OBJECT *object, VECTOR **vHandle)
 {
   MULTIGRID *mg;
   INT part;
@@ -811,7 +812,7 @@ INT NS_PREFIX CreateSideVector (GRID *theGrid, INT side, GEOM_OBJECT *object, VE
  */
 /****************************************************************************/
 
-INT NS_PREFIX CreateBlockvector( GRID *theGrid, BLOCKVECTOR **BVHandle )
+INT NS_DIM_PREFIX CreateBlockvector( GRID *theGrid, BLOCKVECTOR **BVHandle )
 {
   MULTIGRID *theMG;
   BLOCKVECTOR *bv;
@@ -889,7 +890,7 @@ static INT InsertBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *insertBV, BLOCKVECT
   return (GM_OK);
 }
 
-INT NS_PREFIX CreateBlockvector_l0 (GRID *theGrid, BLOCKVECTOR **BVHandle, BLOCKVECTOR *insertBV, INT after)
+INT NS_DIM_PREFIX CreateBlockvector_l0 (GRID *theGrid, BLOCKVECTOR **BVHandle, BLOCKVECTOR *insertBV, INT after)
 {
   BLOCKVECTOR *theBV;
 
@@ -957,7 +958,7 @@ static INT CutBlockvector_l0 (GRID *theGrid, BLOCKVECTOR *theBV, INT makeVC)
  */
 /****************************************************************************/
 
-CONNECTION * NS_PREFIX CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to)
+CONNECTION * NS_DIM_PREFIX CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to)
 {
   MULTIGRID *theMG;
   HEAP *theHeap;
@@ -1089,7 +1090,7 @@ CONNECTION * NS_PREFIX CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to
  */
 /****************************************************************************/
 
-CONNECTION      *NS_PREFIX CreateExtraConnection        (GRID *theGrid, VECTOR *from, VECTOR *to)
+CONNECTION      *NS_DIM_PREFIX CreateExtraConnection    (GRID *theGrid, VECTOR *from, VECTOR *to)
 {
   CONNECTION *pc;
 
@@ -1099,7 +1100,7 @@ CONNECTION      *NS_PREFIX CreateExtraConnection        (GRID *theGrid, VECTOR *
   return(pc);
 }
 
-INT NS_PREFIX CreateElementList (GRID *theGrid, NODE *theNode, ELEMENT *theElement)
+INT NS_DIM_PREFIX CreateElementList (GRID *theGrid, NODE *theNode, ELEMENT *theElement)
 {
   ELEMENTLIST *pel;
 
@@ -1135,7 +1136,7 @@ INT NS_PREFIX CreateElementList (GRID *theGrid, NODE *theNode, ELEMENT *theEleme
  */
 /****************************************************************************/
 
-INT NS_PREFIX DisposeVector (GRID *theGrid, VECTOR *theVector)
+INT NS_DIM_PREFIX DisposeVector (GRID *theGrid, VECTOR *theVector)
 {
   MATRIX *theMatrix, *next;
   INT Size;
@@ -1214,7 +1215,7 @@ INT NS_PREFIX DisposeVector (GRID *theGrid, VECTOR *theVector)
  */
 /****************************************************************************/
 
-INT NS_PREFIX ReinspectSonSideVector (GRID *g, ELEMENT *elem, INT side, VECTOR **vHandle)
+INT NS_DIM_PREFIX ReinspectSonSideVector (GRID *g, ELEMENT *elem, INT side, VECTOR **vHandle)
 {
   MULTIGRID *mg;
   VECTOR *vold,*vnew;
@@ -1299,7 +1300,7 @@ INT NS_PREFIX ReinspectSonSideVector (GRID *g, ELEMENT *elem, INT side, VECTOR *
  */
 /****************************************************************************/
 
-INT NS_PREFIX DisposeBlockvector( GRID *theGrid, BLOCKVECTOR *bv )
+INT NS_DIM_PREFIX DisposeBlockvector( GRID *theGrid, BLOCKVECTOR *bv )
 {
   if ( bv == NULL ) return 0;
   return PutFreeObject( MYMG(theGrid), bv,sizeof(BLOCKVECTOR),BLOCKVOBJ);
@@ -1357,7 +1358,7 @@ static void FreeBVList (GRID *grid, BLOCKVECTOR *bv)
  */
 /****************************************************************************/
 
-void NS_PREFIX FreeAllBV (GRID *grid)
+void NS_DIM_PREFIX FreeAllBV (GRID *grid)
 {
   FreeBVList( grid, GFIRSTBV( grid ) );
   GFIRSTBV( grid ) = NULL;
@@ -1381,7 +1382,7 @@ void NS_PREFIX FreeAllBV (GRID *grid)
  */
 /****************************************************************************/
 
-INT NS_PREFIX DisposeConnection (GRID *theGrid, CONNECTION *theConnection)
+INT NS_DIM_PREFIX DisposeConnection (GRID *theGrid, CONNECTION *theConnection)
 {
   VECTOR *from, *to;
   MATRIX *Matrix, *ReverseMatrix, *SearchMatrix;
@@ -1443,7 +1444,7 @@ INT NS_PREFIX DisposeConnection (GRID *theGrid, CONNECTION *theConnection)
 /****************************************************************************/
 
 #ifdef __THREEDIM__
-INT NS_PREFIX DisposeDoubledSideVector (GRID *theGrid, ELEMENT *Elem0, INT Side0, ELEMENT *Elem1, INT Side1)
+INT NS_DIM_PREFIX DisposeDoubledSideVector (GRID *theGrid, ELEMENT *Elem0, INT Side0, ELEMENT *Elem1, INT Side1)
 {
   VECTOR *Vector0, *Vector1;
   int vc0,vc1;
@@ -1501,7 +1502,7 @@ INT NS_PREFIX DisposeDoubledSideVector (GRID *theGrid, ELEMENT *Elem0, INT Side0
  */
 /****************************************************************************/
 
-INT NS_PREFIX DisposeConnectionFromVector (GRID *theGrid, VECTOR *theVector)
+INT NS_DIM_PREFIX DisposeConnectionFromVector (GRID *theGrid, VECTOR *theVector)
 {
   while(VSTART(theVector) != NULL)
     if (DisposeConnection (theGrid,MMYCON(VSTART(theVector))))
@@ -1527,7 +1528,7 @@ INT NS_PREFIX DisposeConnectionFromVector (GRID *theGrid, VECTOR *theVector)
  */
 /****************************************************************************/
 
-INT NS_PREFIX DisposeConnectionFromElement (GRID *theGrid, ELEMENT *theElement)
+INT NS_DIM_PREFIX DisposeConnectionFromElement (GRID *theGrid, ELEMENT *theElement)
 {
   INT i;
   VECTOR *vList[20];
@@ -1621,14 +1622,14 @@ static INT DisposeConnectionFromElementInNeighborhood (GRID *theGrid, ELEMENT *t
   RETURN (GM_OK);
 }
 
-INT NS_PREFIX DisposeConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
+INT NS_DIM_PREFIX DisposeConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
 {
   INT Depth;
   Depth = (INT)(floor(0.5*(double)FMT_CONN_DEPTH_MAX(MGFORMAT(MYMG(theGrid)))));
   return(DisposeConnectionFromElementInNeighborhood(theGrid,theElement,Depth));
 }
 
-INT NS_PREFIX DisposeConnectionsFromMultiGrid (MULTIGRID *theMG)
+INT NS_DIM_PREFIX DisposeConnectionsFromMultiGrid (MULTIGRID *theMG)
 {
   INT i;
 
@@ -1654,8 +1655,8 @@ INT NS_PREFIX DisposeConnectionsFromMultiGrid (MULTIGRID *theMG)
   return(0);
 }
 
-INT NS_PREFIX DisposeElementFromElementList (GRID *theGrid, NODE *theNode,
-                                             ELEMENT *theElement)
+INT NS_DIM_PREFIX DisposeElementFromElementList (GRID *theGrid, NODE *theNode,
+                                                 ELEMENT *theElement)
 {
   ELEMENTLIST *pel,*next;
 
@@ -1678,7 +1679,7 @@ INT NS_PREFIX DisposeElementFromElementList (GRID *theGrid, NODE *theNode,
   return(0);
 }
 
-INT NS_PREFIX DisposeElementList (GRID *theGrid, NODE *theNode)
+INT NS_DIM_PREFIX DisposeElementList (GRID *theGrid, NODE *theNode)
 {
   ELEMENTLIST *pel,*next;
 
@@ -1711,7 +1712,7 @@ INT NS_PREFIX DisposeElementList (GRID *theGrid, NODE *theNode)
  */
 /****************************************************************************/
 
-MATRIX * NS_PREFIX GetMatrix (const VECTOR *FromVector, const VECTOR *ToVector)
+MATRIX * NS_DIM_PREFIX GetMatrix (const VECTOR *FromVector, const VECTOR *ToVector)
 {
   MATRIX *theMatrix;
 
@@ -1723,7 +1724,7 @@ MATRIX * NS_PREFIX GetMatrix (const VECTOR *FromVector, const VECTOR *ToVector)
   return (NULL);
 }
 
-MATRIX *NS_PREFIX GetOrderedMatrix (const VECTOR *FromVector, const VECTOR *ToVector)
+MATRIX *NS_DIM_PREFIX GetOrderedMatrix (const VECTOR *FromVector, const VECTOR *ToVector)
 {
   MATRIX *theMatrix;
 
@@ -1761,7 +1762,7 @@ MATRIX *NS_PREFIX GetOrderedMatrix (const VECTOR *FromVector, const VECTOR *ToVe
  */
 /****************************************************************************/
 
-CONNECTION * NS_PREFIX GetConnection (const VECTOR *FromVector, const VECTOR *ToVector)
+CONNECTION * NS_DIM_PREFIX GetConnection (const VECTOR *FromVector, const VECTOR *ToVector)
 {
   MATRIX *Matrix;
 
@@ -1790,7 +1791,7 @@ CONNECTION * NS_PREFIX GetConnection (const VECTOR *FromVector, const VECTOR *To
  */
 /****************************************************************************/
 
-INT NS_PREFIX GetVectorsOfElement (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
+INT NS_DIM_PREFIX GetVectorsOfElement (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 {
   *cnt = 0;
   if (EVECTOR(theElement) != NULL)
@@ -1823,7 +1824,7 @@ INT NS_PREFIX GetVectorsOfElement (const ELEMENT *theElement, INT *cnt, VECTOR *
 /****************************************************************************/
 
 #ifdef __THREEDIM__
-INT NS_PREFIX GetVectorsOfSides (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
+INT NS_DIM_PREFIX GetVectorsOfSides (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 {
   INT i;
 
@@ -1860,7 +1861,7 @@ INT NS_PREFIX GetVectorsOfSides (const ELEMENT *theElement, INT *cnt, VECTOR **v
  */
 /****************************************************************************/
 
-INT NS_PREFIX GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
+INT NS_DIM_PREFIX GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 {
   EDGE *theEdge;
   INT i;
@@ -1899,7 +1900,7 @@ INT NS_PREFIX GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **v
  */
 /****************************************************************************/
 
-INT NS_PREFIX GetVectorsOfNodes (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
+INT NS_DIM_PREFIX GetVectorsOfNodes (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 {
   INT i;
 
@@ -1935,7 +1936,7 @@ INT NS_PREFIX GetVectorsOfNodes (const ELEMENT *theElement, INT *cnt, VECTOR **v
  */
 /****************************************************************************/
 
-INT NS_PREFIX GetVectorsOfOType (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vList)
+INT NS_DIM_PREFIX GetVectorsOfOType (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vList)
 {
   switch (type)
   {
@@ -1967,7 +1968,7 @@ INT NS_PREFIX GetVectorsOfOType (const ELEMENT *theElement, INT type, INT *cnt, 
  */
 /****************************************************************************/
 
-INT NS_PREFIX DataTypeFilterVList (INT dt, VECTOR **vec, INT *cnt)
+INT NS_DIM_PREFIX DataTypeFilterVList (INT dt, VECTOR **vec, INT *cnt)
 {
   INT i,n;
 
@@ -1997,7 +1998,7 @@ INT NS_PREFIX DataTypeFilterVList (INT dt, VECTOR **vec, INT *cnt)
  */
 /****************************************************************************/
 
-INT NS_PREFIX GetVectorsOfDataTypesInObjects (const ELEMENT *theElement, INT dt, INT obj, INT *cnt, VECTOR *VecList[])
+INT NS_DIM_PREFIX GetVectorsOfDataTypesInObjects (const ELEMENT *theElement, INT dt, INT obj, INT *cnt, VECTOR *VecList[])
 {
   INT i,n;
 
@@ -2081,7 +2082,7 @@ static void PrintVectorTriple (int i)
   PrintDebug("2: VTYPE=%d XC=%.5g YC=%.5g\n",VTYPE(vec2),XC(vtx2),YC(vtx2));
 }
 
-INT NS_PREFIX PrepareGetBoundaryNeighbourVectors (GRID *theGrid, INT *MaxListLen)
+INT NS_DIM_PREFIX PrepareGetBoundaryNeighbourVectors (GRID *theGrid, INT *MaxListLen)
 {
 #ifdef __TWODIM__
   ELEMENT *elem;
@@ -2173,7 +2174,7 @@ INT NS_PREFIX PrepareGetBoundaryNeighbourVectors (GRID *theGrid, INT *MaxListLen
  */
 /****************************************************************************/
 
-INT NS_PREFIX ResetGetBoundaryNeighbourVectors (void)
+INT NS_DIM_PREFIX ResetGetBoundaryNeighbourVectors (void)
 {
   if (GBNV_list==NULL)
     REP_ERR_RETURN(1);
@@ -2208,7 +2209,7 @@ INT NS_PREFIX ResetGetBoundaryNeighbourVectors (void)
  */
 /****************************************************************************/
 
-INT NS_PREFIX GetBoundaryNeighbourVectors (INT dt, INT obj, INT *cnt, VECTOR *VecList[])
+INT NS_DIM_PREFIX GetBoundaryNeighbourVectors (INT dt, INT obj, INT *cnt, VECTOR *VecList[])
 {
   VECTOR *vec;
 
@@ -2259,7 +2260,7 @@ INT NS_PREFIX GetBoundaryNeighbourVectors (INT dt, INT obj, INT *cnt, VECTOR *Ve
  */
 /****************************************************************************/
 
-INT NS_PREFIX FinishBoundaryNeighbourVectors (void)
+INT NS_DIM_PREFIX FinishBoundaryNeighbourVectors (void)
 {
         #ifdef __TWODIM
   if (ReleaseTmpMem(MGHEAP(GBNV_mg)),GBNV_MarkKey)
@@ -2286,7 +2287,7 @@ INT NS_PREFIX FinishBoundaryNeighbourVectors (void)
  */
 /****************************************************************************/
 
-INT NS_PREFIX GetAllVectorsOfElement (GRID *theGrid, ELEMENT *theElement, VECTOR **vec)
+INT NS_DIM_PREFIX GetAllVectorsOfElement (GRID *theGrid, ELEMENT *theElement, VECTOR **vec)
 {
   INT i;
   INT cnt;
@@ -2336,7 +2337,7 @@ INT NS_PREFIX GetAllVectorsOfElement (GRID *theGrid, ELEMENT *theElement, VECTOR
  */
 /****************************************************************************/
 
-INT NS_PREFIX DisposeExtraConnections (GRID *theGrid)
+INT NS_DIM_PREFIX DisposeExtraConnections (GRID *theGrid)
 {
   VECTOR *theVector;
   MATRIX *theMatrix, *nextMatrix;
@@ -2356,7 +2357,7 @@ INT NS_PREFIX DisposeExtraConnections (GRID *theGrid)
   return(GM_OK);
 }
 
-INT NS_PREFIX DisposeConnectionsInGrid (GRID *theGrid)
+INT NS_DIM_PREFIX DisposeConnectionsInGrid (GRID *theGrid)
 {
   VECTOR *theVector;
   MATRIX *theMatrix, *nextMatrix;
@@ -2482,7 +2483,7 @@ static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0, ELEMEN
 /****************************************************************************/
 
 #ifdef __THREEDIM__
-INT NS_PREFIX GetElementInfoFromSideVector (const VECTOR *theVector, ELEMENT **Elements, INT *Sides)
+INT NS_DIM_PREFIX GetElementInfoFromSideVector (const VECTOR *theVector, ELEMENT **Elements, INT *Sides)
 {
   INT i;
   ELEMENT *theNeighbor;
@@ -2584,7 +2585,7 @@ static INT ConnectWithNeighborhood (ELEMENT *theElement, GRID *theGrid, ELEMENT 
  */
 /****************************************************************************/
 
-INT NS_PREFIX CreateConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
+INT NS_DIM_PREFIX CreateConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
 {
   FORMAT *theFormat;
   INT MaxDepth;
@@ -2657,7 +2658,7 @@ static INT ConnectInsertedWithNeighborhood (ELEMENT *theElement, GRID *theGrid, 
  */
 /****************************************************************************/
 
-INT NS_PREFIX InsertedElementCreateConnection (GRID *theGrid, ELEMENT *theElement)
+INT NS_DIM_PREFIX InsertedElementCreateConnection (GRID *theGrid, ELEMENT *theElement)
 {
   FORMAT *theFormat;
   INT MaxDepth;
@@ -2694,7 +2695,7 @@ INT NS_PREFIX InsertedElementCreateConnection (GRID *theGrid, ELEMENT *theElemen
  */
 /****************************************************************************/
 
-INT NS_PREFIX GridCreateConnection (GRID *theGrid)
+INT NS_DIM_PREFIX GridCreateConnection (GRID *theGrid)
 {
   ELEMENT *theElement;
   VECTOR *vList[20];
@@ -2818,7 +2819,7 @@ static int Scatter_GhostVectorVNew (DDD_OBJ obj, void *data)
 }
 #endif
 
-INT NS_PREFIX SetSurfaceClasses (MULTIGRID *theMG)
+INT NS_DIM_PREFIX SetSurfaceClasses (MULTIGRID *theMG)
 {
   GRID *theGrid;
   ELEMENT *theElement;        VECTOR *v;
@@ -2925,7 +2926,7 @@ INT NS_PREFIX SetSurfaceClasses (MULTIGRID *theMG)
  */
 /****************************************************************************/
 
-INT NS_PREFIX CreateAlgebra (MULTIGRID *theMG)
+INT NS_DIM_PREFIX CreateAlgebra (MULTIGRID *theMG)
 {
   GRID *g;
   FORMAT *fmt;
@@ -3044,7 +3045,7 @@ INT NS_PREFIX CreateAlgebra (MULTIGRID *theMG)
  */
 /****************************************************************************/
 
-INT NS_PREFIX MGCreateConnection (MULTIGRID *theMG)
+INT NS_DIM_PREFIX MGCreateConnection (MULTIGRID *theMG)
 {
   INT i;
   GRID *theGrid;
@@ -3091,7 +3092,7 @@ INT NS_PREFIX MGCreateConnection (MULTIGRID *theMG)
  */
 /****************************************************************************/
 
-INT NS_PREFIX PrepareAlgebraModification (MULTIGRID *theMG)
+INT NS_DIM_PREFIX PrepareAlgebraModification (MULTIGRID *theMG)
 {
   int j,k;
   ELEMENT *theElement;
@@ -3291,7 +3292,7 @@ static INT CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *cente
  */
 /****************************************************************************/
 
-INT NS_PREFIX ElementCheckConnection (GRID *theGrid, ELEMENT *theElement)
+INT NS_DIM_PREFIX ElementCheckConnection (GRID *theGrid, ELEMENT *theElement)
 {
   FORMAT *theFormat;
   INT MaxDepth;
@@ -3549,7 +3550,7 @@ static INT CheckVector (const FORMAT *fmt, const INT s2p[], GEOM_OBJECT *theObje
  */
 /****************************************************************************/
 
-INT NS_PREFIX CheckAlgebra (GRID *theGrid)
+INT NS_DIM_PREFIX CheckAlgebra (GRID *theGrid)
 {
   FORMAT *fmt;
   ELEMENT *theElement;
@@ -3768,7 +3769,7 @@ INT NS_PREFIX CheckAlgebra (GRID *theGrid)
  */
 /****************************************************************************/
 
-INT NS_PREFIX VectorInElement (ELEMENT *theElement, VECTOR *theVector)
+INT NS_DIM_PREFIX VectorInElement (ELEMENT *theElement, VECTOR *theVector)
 {
   INT i;
   VECTOR *vList[20];
@@ -3819,7 +3820,7 @@ INT NS_PREFIX VectorInElement (ELEMENT *theElement, VECTOR *theVector)
  */
 /****************************************************************************/
 
-INT NS_PREFIX VectorPosition (const VECTOR *theVector, DOUBLE *position)
+INT NS_DIM_PREFIX VectorPosition (const VECTOR *theVector, DOUBLE *position)
 {
   INT i;
   EDGE *theEdge;
@@ -3892,7 +3893,7 @@ INT NS_PREFIX VectorPosition (const VECTOR *theVector, DOUBLE *position)
  */
 /****************************************************************************/
 
-INT NS_PREFIX SeedVectorClasses (GRID *theGrid, ELEMENT *theElement)
+INT NS_DIM_PREFIX SeedVectorClasses (GRID *theGrid, ELEMENT *theElement)
 {
   INT i;
   VECTOR *vList[20];
@@ -3936,7 +3937,7 @@ INT NS_PREFIX SeedVectorClasses (GRID *theGrid, ELEMENT *theElement)
  */
 /****************************************************************************/
 
-INT NS_PREFIX ClearVectorClasses (GRID *theGrid)
+INT NS_DIM_PREFIX ClearVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
 
@@ -4067,7 +4068,7 @@ static INT PropagateVectorClassX (GRID *theGrid, INT vclass)
  *   <li>     1 if error occured
  */
 /****************************************************************************/
-INT NS_PREFIX PropagateVectorClasses (GRID *theGrid)
+INT NS_DIM_PREFIX PropagateVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
   MATRIX *theMatrix;
@@ -4154,7 +4155,7 @@ INT NS_PREFIX PropagateVectorClasses (GRID *theGrid)
  */
 /****************************************************************************/
 
-INT NS_PREFIX ClearNextVectorClasses (GRID *theGrid)
+INT NS_DIM_PREFIX ClearNextVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
 
@@ -4181,7 +4182,7 @@ INT NS_PREFIX ClearNextVectorClasses (GRID *theGrid)
  */
 /****************************************************************************/
 
-INT NS_PREFIX SeedNextVectorClasses (GRID *theGrid, ELEMENT *theElement)
+INT NS_DIM_PREFIX SeedNextVectorClasses (GRID *theGrid, ELEMENT *theElement)
 {
   INT i;
   VECTOR *vList[20];
@@ -4340,7 +4341,7 @@ static INT PropagatePeriodicNextVectorClass (GRID *theGrid)
  *   <li>   1 if error occured
  */
 /****************************************************************************/
-INT NS_PREFIX PropagateNextVectorClasses (GRID *theGrid)
+INT NS_DIM_PREFIX PropagateNextVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
   MATRIX *theMatrix;
@@ -4419,7 +4420,7 @@ INT NS_PREFIX PropagateNextVectorClasses (GRID *theGrid)
  */
 /****************************************************************************/
 
-INT NS_PREFIX MaxNextVectorClass (GRID *theGrid, ELEMENT *theElement)
+INT NS_DIM_PREFIX MaxNextVectorClass (GRID *theGrid, ELEMENT *theElement)
 {
   INT i,m;
   VECTOR *vList[20];
@@ -4614,7 +4615,7 @@ static int MatrixCompare (MATRIX **MatHandle1, MATRIX **MatHandle2)
  */
 /****************************************************************************/
 
-INT NS_PREFIX LexOrderVectorsInGrid (GRID *theGrid, INT mode, const INT *order, const INT *sign, INT which, INT SpecSkipVecs, INT AlsoOrderMatrices)
+INT NS_DIM_PREFIX LexOrderVectorsInGrid (GRID *theGrid, INT mode, const INT *order, const INT *sign, INT which, INT SpecSkipVecs, INT AlsoOrderMatrices)
 {
   MULTIGRID *theMG;
   VECTOR **table,*theVec;
@@ -4736,7 +4737,7 @@ INT NS_PREFIX LexOrderVectorsInGrid (GRID *theGrid, INT mode, const INT *order, 
  */
 /****************************************************************************/
 
-FIND_CUT * NS_PREFIX CreateFindCutProc (char *name, FindCutProcPtr FindCutProc)
+FIND_CUT * NS_DIM_PREFIX CreateFindCutProc (char *name, FindCutProcPtr FindCutProc)
 {
   FIND_CUT *newFindCut;
 
@@ -4767,7 +4768,7 @@ FIND_CUT * NS_PREFIX CreateFindCutProc (char *name, FindCutProcPtr FindCutProc)
  */
 /****************************************************************************/
 
-ALG_DEP * NS_PREFIX CreateAlgebraicDependency (char *name, DependencyProcPtr DependencyProc)
+ALG_DEP * NS_DIM_PREFIX CreateAlgebraicDependency (char *name, DependencyProcPtr DependencyProc)
 {
   ALG_DEP *newAlgDep;
 
@@ -4942,7 +4943,7 @@ static INT OrderMatrices (VECTOR *vec, INT Sense)
  */
 /****************************************************************************/
 
-INT NS_PREFIX ShellOrderVectors (GRID *theGrid, VECTOR *seed)
+INT NS_DIM_PREFIX ShellOrderVectors (GRID *theGrid, VECTOR *seed)
 {
   FIFO myfifo;
   void *buffer;
@@ -5504,7 +5505,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
  */
 /****************************************************************************/
 
-INT NS_PREFIX OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat, const char *dependency, const char *dep_options, const char *findcut)
+INT NS_DIM_PREFIX OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat, const char *dependency, const char *dep_options, const char *findcut)
 {
   INT i, currlevel, baselevel;
   ALG_DEP *theAlgDep;
@@ -6166,7 +6167,7 @@ static INT LineOrderVectorsAlgebraic (GRID *theGrid, INT verboselevel)
  */
 /****************************************************************************/
 
-INT NS_PREFIX LineOrderVectors (MULTIGRID *theMG, INT levels, const char *dependency, const char *dep_options, const char *findcut, INT verboselevel)
+INT NS_DIM_PREFIX LineOrderVectors (MULTIGRID *theMG, INT levels, const char *dependency, const char *dep_options, const char *findcut, INT verboselevel)
 {
   INT i, currlevel, baselevel;
   ALG_DEP *theAlgDep;
@@ -6254,7 +6255,7 @@ INT NS_PREFIX LineOrderVectors (MULTIGRID *theMG, INT levels, const char *depend
  */
 /****************************************************************************/
 
-INT NS_PREFIX PrepareForLineorderVectors (GRID *theGrid)
+INT NS_DIM_PREFIX PrepareForLineorderVectors (GRID *theGrid)
 {
   VECTOR *vec;
 
@@ -6283,7 +6284,7 @@ INT NS_PREFIX PrepareForLineorderVectors (GRID *theGrid)
  */
 /****************************************************************************/
 
-INT NS_PREFIX MarkBeginEndForLineorderVectors (ELEMENT *elem, INT dt, INT ot, const INT *mark)
+INT NS_DIM_PREFIX MarkBeginEndForLineorderVectors (ELEMENT *elem, INT dt, INT ot, const INT *mark)
 {
   VECTOR *vList[MAX_ELEM_VECTORS];
   INT i,cnt;
@@ -6314,7 +6315,7 @@ INT NS_PREFIX MarkBeginEndForLineorderVectors (ELEMENT *elem, INT dt, INT ot, co
  */
 /****************************************************************************/
 
-INT NS_PREFIX RevertVecOrder (GRID *theGrid)
+INT NS_DIM_PREFIX RevertVecOrder (GRID *theGrid)
 {
   VECTOR *vec,*tmp;
   BLOCKVECTOR     *bv;
@@ -6698,7 +6699,7 @@ static INT StrongLexAlgDep (GRID *theGrid, const char *data)
  */
 /****************************************************************************/
 
-void NS_PREFIX SetLevelnumberBV( BLOCKVECTOR *bv, INT level )
+void NS_DIM_PREFIX SetLevelnumberBV( BLOCKVECTOR *bv, INT level )
 {
   ASSERT( level < (1<<BVLEVEL_LEN) );           /* increase BVLEVEL_LEN in gm.h */
 
@@ -6900,7 +6901,7 @@ static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, cons
  */
 /****************************************************************************/
 
-INT NS_PREFIX CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_stripe )
+INT NS_DIM_PREFIX CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_stripe )
 {
 #ifdef __BLOCK_VECTOR_DESC__
   BLOCKVECTOR *bv_inner, *bv_boundary;
@@ -7011,7 +7012,7 @@ INT NS_PREFIX CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_stripe 
  */
 /****************************************************************************/
 
-INT NS_PREFIX CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT vectors_per_stripe )
+INT NS_DIM_PREFIX CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT vectors_per_stripe )
 {
 #ifdef __BLOCK_VECTOR_DESC__
   BLOCKVECTOR *bv_inner, *bv_boundary, *bv_plane, *prev;
@@ -7164,7 +7165,7 @@ INT NS_PREFIX CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_p
 /****************************************************************************/
 
 #ifndef ModelP
-INT NS_PREFIX CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
+INT NS_DIM_PREFIX CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
 {
 #ifdef __BLOCK_VECTOR_DESC__
   BLOCKVECTOR *bv;
@@ -7436,7 +7437,7 @@ static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, IN
  */
 /****************************************************************************/
 
-INT NS_PREFIX MoveVector (GRID *theGrid, VECTOR *moveVector, VECTOR *destVector, INT after)
+INT NS_DIM_PREFIX MoveVector (GRID *theGrid, VECTOR *moveVector, VECTOR *destVector, INT after)
 {
   if (theGrid==NULL || moveVector==NULL) return (1);
   if (moveVector==destVector) return (0);
@@ -7507,7 +7508,7 @@ INT NS_PREFIX MoveVector (GRID *theGrid, VECTOR *moveVector, VECTOR *destVector,
  */
 /****************************************************************************/
 
-MATRIX *NS_PREFIX CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
+MATRIX *NS_DIM_PREFIX CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
 {
   MULTIGRID *theMG;
   HEAP *theHeap;
@@ -7582,7 +7583,7 @@ static INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix)
   return(0);
 }
 
-INT NS_PREFIX DisposeIMatrixList (GRID *theGrid, VECTOR *theVector)
+INT NS_DIM_PREFIX DisposeIMatrixList (GRID *theGrid, VECTOR *theVector)
 {
   if (DisposeIMatrices(theGrid,VISTART(theVector)))
     RETURN (1);
@@ -7590,7 +7591,7 @@ INT NS_PREFIX DisposeIMatrixList (GRID *theGrid, VECTOR *theVector)
   return (0);
 }
 
-INT NS_PREFIX DisposeIMatricesInGrid (GRID *theGrid)
+INT NS_DIM_PREFIX DisposeIMatricesInGrid (GRID *theGrid)
 {
   VECTOR *theV;
 
@@ -7603,7 +7604,7 @@ INT NS_PREFIX DisposeIMatricesInGrid (GRID *theGrid)
   return (0);
 }
 
-INT NS_PREFIX DisposeIMatricesInMultiGrid (MULTIGRID *theMG)
+INT NS_DIM_PREFIX DisposeIMatricesInMultiGrid (MULTIGRID *theMG)
 {
   INT i;
   GRID *theGrid;
@@ -7633,7 +7634,7 @@ INT NS_PREFIX DisposeIMatricesInMultiGrid (MULTIGRID *theMG)
  */
 /****************************************************************************/
 
-MATRIX *NS_PREFIX GetIMatrix (VECTOR *FineVector, VECTOR *CoarseVector)
+MATRIX *NS_DIM_PREFIX GetIMatrix (VECTOR *FineVector, VECTOR *CoarseVector)
 {
   MATRIX *theMatrix;
 
@@ -7660,7 +7661,7 @@ MATRIX *NS_PREFIX GetIMatrix (VECTOR *FineVector, VECTOR *CoarseVector)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitAlgebra (void)
+INT NS_DIM_PREFIX InitAlgebra (void)
 {
   INT i, j, n;
 

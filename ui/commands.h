@@ -43,7 +43,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /** I need this in DUNE
    maybe only temporarily. */

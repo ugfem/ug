@@ -2764,7 +2764,7 @@ static INT PrintFront(MULTIGRID *theMG)
 
 static INT debug;
 
-INT NS_PREFIX GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh, CoeffProcPtr coeff, INT Single_Mode, INT display)
+INT NS_DIM_PREFIX GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh, CoeffProcPtr coeff, INT Single_Mode, INT display)
 {
   GRID *theGrid;
   INDEPFRONTLIST *theIFL,*nextIFL;
@@ -3278,7 +3278,7 @@ INT NS_PREFIX GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, M
 /*                                                                          */
 /****************************************************************************/
 
-INT NS_PREFIX InitGG ()
+INT NS_DIM_PREFIX InitGG ()
 {
   if (MakeStruct(":gg")!=0) return(__LINE__);
 

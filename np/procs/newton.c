@@ -897,7 +897,7 @@ static INT NewtonConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitNewtonSolver (void)
+INT NS_DIM_PREFIX InitNewtonSolver (void)
 {
   if (CreateClass (NL_SOLVER_CLASS_NAME ".newton",
                    sizeof(NP_NEWTON), NewtonConstruct))

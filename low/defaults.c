@@ -42,7 +42,7 @@
 #include "ppif.h"
 #endif
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */

@@ -41,12 +41,12 @@
 #include "general.h"
 
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
 
 /****************************************************************************/
-/*																			*/
-/* defines in the following order											*/
-/*																			*/
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
 /*		  compile time constants defining static data size (i.e. arrays)	*/
 /*		  other constants													*/
 /*		  macros															*/

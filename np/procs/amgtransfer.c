@@ -294,7 +294,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
+INT NS_DIM_PREFIX AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
 {
   INT i,schurType=0;
   NP_AMG_TRANSFER *np;
@@ -560,7 +560,7 @@ INT NS_PREFIX AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
 }
 
 
-INT NS_PREFIX AMGTransferDisplay (NP_BASE *theNP)
+INT NS_DIM_PREFIX AMGTransferDisplay (NP_BASE *theNP)
 {
   NP_AMG_TRANSFER *np;
 
@@ -732,9 +732,9 @@ INT NS_PREFIX AMGTransferDisplay (NP_BASE *theNP)
   return (0);
 }
 
-INT NS_PREFIX AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
-                                     VECDATA_DESC *x, VECDATA_DESC *b,
-                                     MATDATA_DESC *A, INT *result)
+INT NS_DIM_PREFIX AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
+                                         VECDATA_DESC *x, VECDATA_DESC *b,
+                                         MATDATA_DESC *A, INT *result)
 {
   NP_AMG_TRANSFER *np;
   MULTIGRID *theMG;
@@ -1201,7 +1201,7 @@ static INT AMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   return(0);
 }
 
-INT NS_PREFIX AMGTransferExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_DIM_PREFIX AMGTransferExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_TRANSFER *np;
   NP_AMG_TRANSFER *npa;
@@ -1278,7 +1278,7 @@ INT NS_PREFIX AMGTransferExecute (NP_BASE *theNP, INT argc , char **argv)
   return(0);
 }
 
-INT NS_PREFIX AMGTransferConstruct (NP_BASE *theNP)
+INT NS_DIM_PREFIX AMGTransferConstruct (NP_BASE *theNP)
 {
   NP_TRANSFER *np;
 
@@ -1350,7 +1350,7 @@ static INT ClusterAMGConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitAMGTransfer ()
+INT NS_DIM_PREFIX InitAMGTransfer ()
 {
   if (CreateClass(TRANSFER_CLASS_NAME ".selectionAMG",
                   sizeof(NP_AMG_TRANSFER),SelectionAMGConstruct))

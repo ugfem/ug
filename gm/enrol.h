@@ -44,7 +44,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -77,7 +77,7 @@ START_NAMESPACE
 /*                                                                                                                                                      */
 /****************************************************************************/
 
-INT InitEnrol                   (void);
+INT InitEnrol();
 
 END_NAMESPACE
 

@@ -58,7 +58,8 @@
 #include "initgm.h"
 
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
+USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -89,7 +90,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitGm ()
+INT NS_DIM_PREFIX InitGm ()
 {
   INT err;
 

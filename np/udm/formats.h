@@ -40,7 +40,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -134,7 +134,7 @@ typedef struct
 typedef struct
 {
 
-  ENVITEM v;                    /*!< environment item                             */
+  NS_PREFIX ENVITEM v;                      /*!< environment item */
 
   SHORT Comp[NVECTYPES];        /*!< number of comps per type             */
   char CompNames[V_COMP_NAMES];         /*!< comp names (one char each)   */
@@ -163,7 +163,7 @@ typedef struct
 typedef struct
 {
 
-  ENVITEM v;                    /*!< environment item                             */
+  NS_PREFIX ENVITEM v;                      /*!< environment item */
 
   SHORT RComp[NMATTYPES];       /*!< number of comps per type             */
   SHORT CComp[NMATTYPES];       /*!< number of col comps per type */

@@ -76,7 +76,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*                                                                          */
 /****************************************************************************/
 
-INT NS_PREFIX REINIT_Display (NP_BASE *base)
+INT NS_DIM_PREFIX REINIT_Display (NP_BASE *base)
 {
   NP_REINIT *reinit;
   INT i;
@@ -109,7 +109,7 @@ INT NS_PREFIX REINIT_Display (NP_BASE *base)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitReinit ()
+INT NS_DIM_PREFIX InitReinit ()
 {
   return (0);
 }

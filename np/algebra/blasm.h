@@ -85,7 +85,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /* loop type */
 #define BLAS_LOOP_M     0x0000

@@ -100,7 +100,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*                                                                          */
 /****************************************************************************/
 
-INT NS_PREFIX SetFlagsfortemporaryGGObjects(INT IflObject,INT FlObject,INT FcObject)
+INT NS_DIM_PREFIX SetFlagsfortemporaryGGObjects(INT IflObject,INT FlObject,INT FcObject)
 {
   IflObj = IflObject;
   FlObj  = FlObject;
@@ -129,7 +129,7 @@ INT NS_PREFIX SetFlagsfortemporaryGGObjects(INT IflObject,INT FlObject,INT FcObj
 /*                                                                          */
 /****************************************************************************/
 
-INDEPFRONTLIST* NS_PREFIX CreateIndepFrontList (GRID *theGrid)
+INDEPFRONTLIST* NS_DIM_PREFIX CreateIndepFrontList (GRID *theGrid)
 {
   INDEPFRONTLIST *ipfl;
 
@@ -172,7 +172,7 @@ INDEPFRONTLIST* NS_PREFIX CreateIndepFrontList (GRID *theGrid)
 /*                                                                          */
 /****************************************************************************/
 
-FRONTLIST* NS_PREFIX CreateFrontList (INDEPFRONTLIST *myIFL, INT SubdomainID)
+FRONTLIST* NS_DIM_PREFIX CreateFrontList (INDEPFRONTLIST *myIFL, INT SubdomainID)
 {
   FRONTLIST *pfl;
 
@@ -216,7 +216,7 @@ FRONTLIST* NS_PREFIX CreateFrontList (INDEPFRONTLIST *myIFL, INT SubdomainID)
 /*                                                                          */
 /****************************************************************************/
 
-FRONTCOMP* NS_PREFIX CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, INT ncomp, NODE **NodeHandle)
+FRONTCOMP* NS_DIM_PREFIX CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, INT ncomp, NODE **NodeHandle)
 {
   MULTIGRID *theMG;
   FRONTCOMP *pfc,*FChandle;
@@ -347,7 +347,7 @@ FRONTCOMP* NS_PREFIX CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, INT n
 /*                                                                          */
 /****************************************************************************/
 
-INT NS_PREFIX DisposeADVfront (GRID *theGrid)
+INT NS_DIM_PREFIX DisposeADVfront (GRID *theGrid)
 {
   INDEPFRONTLIST *theIFL,*nextIFL;
 
@@ -378,7 +378,7 @@ INT NS_PREFIX DisposeADVfront (GRID *theGrid)
 /*                                                                          */
 /****************************************************************************/
 
-INT NS_PREFIX DisposeIndepFrontList (INDEPFRONTLIST *theIFL)
+INT NS_DIM_PREFIX DisposeIndepFrontList (INDEPFRONTLIST *theIFL)
 {
   GRID *theGrid;
   FRONTLIST *theFL;
@@ -424,7 +424,7 @@ INT NS_PREFIX DisposeIndepFrontList (INDEPFRONTLIST *theIFL)
 /*                                                                          */
 /****************************************************************************/
 
-INT NS_PREFIX DisposeFrontComp (FRONTLIST *myList, FRONTCOMP *theFC)
+INT NS_DIM_PREFIX DisposeFrontComp (FRONTLIST *myList, FRONTCOMP *theFC)
 {
   HEAPFAULT(theFC);
 
@@ -461,7 +461,7 @@ INT NS_PREFIX DisposeFrontComp (FRONTLIST *myList, FRONTCOMP *theFC)
 /*                                                                          */
 /****************************************************************************/
 
-INT NS_PREFIX DisposeFrontList (FRONTLIST *theFL)
+INT NS_DIM_PREFIX DisposeFrontList (FRONTLIST *theFL)
 {
   MULTIGRID *theMG;
   INDEPFRONTLIST *myIFL;
@@ -507,7 +507,7 @@ INT NS_PREFIX DisposeFrontList (FRONTLIST *theFL)
 /*                                                                          */
 /****************************************************************************/
 
-MG_GGDATA* NS_PREFIX GetMGdataPointer (MULTIGRID *theMG)
+MG_GGDATA* NS_DIM_PREFIX GetMGdataPointer (MULTIGRID *theMG)
 {
   myMGdata  = &MGdata;
 

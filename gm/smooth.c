@@ -1642,8 +1642,8 @@ static INT SplineSmooth(NODE *theNode, DOUBLE *newPos)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX SmoothGrid (MULTIGRID *theMG, INT fl, INT tl, const DOUBLE LimitLocDis,
-                          const INT bnd_num, const INT *bnd, const INT option)
+INT NS_DIM_PREFIX SmoothGrid (MULTIGRID *theMG, INT fl, INT tl, const DOUBLE LimitLocDis,
+                              const INT bnd_num, const INT *bnd, const INT option)
 {
   GRID *theGrid;
   ELEMENT *fatherElement, *nbElement[MAX_SIDES_OF_ELEM], *Level0Father, *boundaryFather;
@@ -2014,7 +2014,7 @@ exit:
  */
 /****************************************************************************/
 
-INT NS_PREFIX SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
+INT NS_DIM_PREFIX SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
 {
   GRID *theGrid;
   ELEMENT *fatherElement;
@@ -2156,7 +2156,7 @@ INT NS_PREFIX SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
+INT NS_DIM_PREFIX SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
 {
   INT l,i,n,m,k;
   DOUBLE N;

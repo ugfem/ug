@@ -3056,7 +3056,7 @@ static QUADRATURE Quadrature3D_Hex_P11_N90 = {
    D*/
 /****************************************************************************/
 
-QUADRATURE *NS_PREFIX GetQuadrature(INT dim, INT n, INT order)
+QUADRATURE *NS_DIM_PREFIX GetQuadrature(INT dim, INT n, INT order)
 {
   switch (dim)
   {
@@ -3553,7 +3553,7 @@ static void TestQuadratureRules( void )
 
 }
 
-INT NS_PREFIX GaussPoints(INT dim, INT n, INT order, DOUBLE_VECTOR *x, GAUSS_POINT *gp)
+INT NS_DIM_PREFIX GaussPoints(INT dim, INT n, INT order, DOUBLE_VECTOR *x, GAUSS_POINT *gp)
 {
   DOUBLE Jdet,area;
   INT ip,nip;

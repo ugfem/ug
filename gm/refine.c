@@ -344,7 +344,7 @@ typedef NODE *ELEMENTCONTEXT[MAX_CORNERS_OF_ELEM+MAX_NEW_CORNERS_DIM];
 /****************************************************************************/
 
 /* information used by the estimator and refine*/ 
-REFINEINFO NS_PREFIX refine_info;
+REFINEINFO NS_DIM_PREFIX refine_info;
 
 #ifdef ModelP
 /* control words for identiftication of new nodes and edges */
@@ -424,7 +424,7 @@ void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel,
 */
 /****************************************************************************/
 
-INT NS_PREFIX SetRefineInfo (MULTIGRID *theMG)
+INT NS_DIM_PREFIX SetRefineInfo (MULTIGRID *theMG)
 {
 	if (MultiGridStatus(theMG,1,0,0,0) != GM_OK)	return(GM_ERROR);	
 
@@ -443,7 +443,7 @@ INT NS_PREFIX SetRefineInfo (MULTIGRID *theMG)
 */
 /****************************************************************************/
 
-INT NS_PREFIX TestRefineInfo (MULTIGRID *theMG)
+INT NS_DIM_PREFIX TestRefineInfo (MULTIGRID *theMG)
 {
 	if (PREDNEW0(REFINEINFO(theMG)) > PREDMAX(REFINEINFO(theMG)))
 		return(GM_ERROR);
@@ -523,17 +523,17 @@ static INT DropMarks (MULTIGRID *theMG)
 */
 /****************************************************************************/
 
-int NS_PREFIX GetEdgePatternOfElement (OBJECT obj, void *data)
+int NS_DIM_PREFIX GetEdgePatternOfElement (OBJECT obj, void *data)
 {
 }
 
-int NS_PREFIX PutEdgePatternOfElement (OBJECT obj, void *data)
+int NS_DIM_PREFIX PutEdgePatternOfElement (OBJECT obj, void *data)
 {
 }
 
 /* TODO: perhaps it is better to exchange the PATTERN to check that they are */
 /*       consistent then use the name ExchangePatternOfMasterToSlaves        */
-void NS_PREFIX SendPatternFromMasterToSlaves(int level)
+void NS_DIM_PREFIX SendPatternFromMasterToSlaves(int level)
 {
 	int id;
 
@@ -802,7 +802,7 @@ static INT PrintEdgeInfo (GRID *theGrid, char* string, INT level)
 */
 /****************************************************************************/
 
-INT NS_PREFIX Refinement_Changes (ELEMENT *theElement)
+INT NS_DIM_PREFIX Refinement_Changes (ELEMENT *theElement)
 {
 	return(REFINEMENT_CHANGES(theElement));
 }
@@ -967,7 +967,7 @@ static int Scatter_ElementClosureInfo (DDD_OBJ obj, void *data, DDD_PROC proc, D
 	return(GM_OK);
 }
 
-INT NS_PREFIX ExchangeElementClosureInfo (GRID *theGrid)
+INT NS_DIM_PREFIX ExchangeElementClosureInfo (GRID *theGrid)
 {
 	/* exchange information of elements to compute closure */
 	DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
@@ -1005,7 +1005,7 @@ static int Scatter_ElementRefine (DDD_OBJ obj, void *data, DDD_PROC proc, DDD_PR
 	return(GM_OK);
 }
 
-INT NS_PREFIX ExchangeElementRefine (GRID *theGrid)
+INT NS_DIM_PREFIX ExchangeElementRefine (GRID *theGrid)
 {
 	/* exchange information of elements to compute closure */
 	DDD_IFAOnewayX(ElementSymmVHIF,GRID_ATTR(theGrid),IF_FORWARD,2*sizeof(INT),
@@ -2364,7 +2364,7 @@ static INT GetNeighborSons (ELEMENT *theElement, ELEMENT *theSon,
 */
 /****************************************************************************/
 
-INT NS_PREFIX GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
+INT NS_DIM_PREFIX GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 {
 	ELEMENT *son;
 	int SonID,i;
@@ -2428,7 +2428,7 @@ INT NS_PREFIX GetAllSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 */
 /****************************************************************************/
 
-INT NS_PREFIX GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
+INT NS_DIM_PREFIX GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
 {
 	int SonID;
 	ELEMENT *son;
@@ -3535,7 +3535,7 @@ typedef struct compare_record COMPARE_RECORD;
 */
 /****************************************************************************/
 
-INT NS_PREFIX GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, 
+INT NS_DIM_PREFIX GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes, 
 					 NODE *SideNodes[MAX_SIDE_NODES], INT ioflag)
 {
 	INT i,ncorners,nedges;
@@ -3686,7 +3686,7 @@ static int compare_node (const void *e0, const void *e1)
 */
 /****************************************************************************/
 
-INT NS_PREFIX Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
+INT NS_DIM_PREFIX Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side,
 							 ELEMENT *SonList[MAX_SONS], INT *SonSides, 
 							 INT NeedSons, INT ioflag)
 {
@@ -4129,7 +4129,7 @@ static int compare_nodes (const void *ce0, const void *ce1)
 */
 /****************************************************************************/
 
-INT NS_PREFIX Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT ioflag)
+INT NS_DIM_PREFIX Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, INT Sons_of_Side, ELEMENT **Sons_of_Side_List, INT *SonSides, INT ioflag)
 {
 	COMPARE_RECORD ElemSonTable[MAX_SONS];
 	COMPARE_RECORD NbSonTable[MAX_SONS];
@@ -6194,7 +6194,7 @@ if (0) CheckGrid(FinerGrid,1,0,1,1);
 */
 /****************************************************************************/
 
-void NS_PREFIX CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, int *check)
+void NS_DIM_PREFIX CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, int *check)
 {
 	GRID *theGrid = GRID_ON_LEVEL(theMG,level);
 
@@ -6233,7 +6233,7 @@ static INT CheckMultiGrid (MULTIGRID *theMG)
 
 
 #ifdef STAT_OUT
-void NS_PREFIX Manage_Adapt_Timer (int alloc)
+void NS_DIM_PREFIX Manage_Adapt_Timer (int alloc)
 {
 	if (alloc)
 	{
@@ -6261,7 +6261,7 @@ void NS_PREFIX Manage_Adapt_Timer (int alloc)
 	}
 }
 
-void NS_PREFIX Print_Adapt_Timer (int total_adapted)
+void NS_DIM_PREFIX Print_Adapt_Timer (int total_adapted)
 {
 	UserWriteF("ADAPT: total_adapted=%d t_adapt=%.2f: t_closure=%.2f t_gridadapt=%.2f t_gridadapti=%.2f "
 		"t_gridadaptl=%.2f t_overlap=%.2f t_ident=%.2f t_gridcons=%.2f t_algebra=%.2f\n",
@@ -6531,7 +6531,7 @@ if (GetVecDataDescByName(theMG,"sol") != NULL)
 */ 
 /****************************************************************************/
 
-INT  NS_PREFIX AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest)
+INT  NS_DIM_PREFIX AdaptMultiGrid (MULTIGRID *theMG, INT flag, INT seq, INT mgtest)
 {
 	INT level,toplevel,nrefined,nadapted;
 	INT newlevel;

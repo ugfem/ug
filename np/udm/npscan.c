@@ -122,7 +122,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE *pos)
+INT NS_DIM_PREFIX ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE *pos)
 {
   INT i;
   char option[OPTIONLEN];
@@ -213,8 +213,8 @@ INT NS_PREFIX ReadArgvPosition (const char *name, INT argc, char **argv, DOUBLE 
    D*/
 /****************************************************************************/
 
-VECDATA_DESC * NS_PREFIX ReadArgvVecDescX (MULTIGRID *theMG, const char *name,
-                                           INT argc, char **argv, INT CreateIfNonExistent)
+VECDATA_DESC * NS_DIM_PREFIX ReadArgvVecDescX (MULTIGRID *theMG, const char *name,
+                                               INT argc, char **argv, INT CreateIfNonExistent)
 {
   VECDATA_DESC *vd;
   char value[VALUELEN],vdname[NAMESIZE],tname[NAMESIZE];
@@ -275,7 +275,7 @@ VECDATA_DESC * NS_PREFIX ReadArgvVecDescX (MULTIGRID *theMG, const char *name,
    D*/
 /****************************************************************************/
 
-EVECDATA_DESC * NS_PREFIX ReadArgvEVecDescX (MULTIGRID *theMG, const char *name, INT argc, char **argv, INT CreateIfNonExistent)
+EVECDATA_DESC * NS_DIM_PREFIX ReadArgvEVecDescX (MULTIGRID *theMG, const char *name, INT argc, char **argv, INT CreateIfNonExistent)
 {
   VECDATA_DESC *vd;
   EVECDATA_DESC *evd;
@@ -317,7 +317,7 @@ EVECDATA_DESC * NS_PREFIX ReadArgvEVecDescX (MULTIGRID *theMG, const char *name,
    D*/
 /****************************************************************************/
 
-EMATDATA_DESC * NS_PREFIX ReadArgvEMatDescX (MULTIGRID *theMG, const char *name, INT argc, char **argv, INT CreateIfNonExistent)
+EMATDATA_DESC * NS_DIM_PREFIX ReadArgvEMatDescX (MULTIGRID *theMG, const char *name, INT argc, char **argv, INT CreateIfNonExistent)
 {
   MATDATA_DESC *md;
   EMATDATA_DESC *emd;
@@ -356,8 +356,8 @@ EMATDATA_DESC * NS_PREFIX ReadArgvEMatDescX (MULTIGRID *theMG, const char *name,
    D*/
 /****************************************************************************/
 
-VEC_TEMPLATE * NS_PREFIX ReadArgvVecTemplate (const FORMAT *fmt, const char *name,
-                                              INT argc, char **argv)
+VEC_TEMPLATE * NS_DIM_PREFIX ReadArgvVecTemplate (const FORMAT *fmt, const char *name,
+                                                  INT argc, char **argv)
 {
   char value[VALUELEN],vtname[NAMESIZE];
 
@@ -401,8 +401,8 @@ VEC_TEMPLATE * NS_PREFIX ReadArgvVecTemplate (const FORMAT *fmt, const char *nam
    D*/
 /****************************************************************************/
 
-VEC_TEMPLATE * NS_PREFIX ReadArgvVecTemplateSub (const FORMAT *fmt, const char *name,
-                                                 INT argc, char **argv, INT *sub)
+VEC_TEMPLATE * NS_DIM_PREFIX ReadArgvVecTemplateSub (const FORMAT *fmt, const char *name,
+                                                     INT argc, char **argv, INT *sub)
 {
   VEC_TEMPLATE *vt;
   INT i,res;
@@ -467,8 +467,8 @@ VEC_TEMPLATE * NS_PREFIX ReadArgvVecTemplateSub (const FORMAT *fmt, const char *
    D*/
 /****************************************************************************/
 
-MAT_TEMPLATE * NS_PREFIX ReadArgvMatTemplateSub (const FORMAT *fmt, const char *name,
-                                                 INT argc, char **argv, INT *sub)
+MAT_TEMPLATE * NS_DIM_PREFIX ReadArgvMatTemplateSub (const FORMAT *fmt, const char *name,
+                                                     INT argc, char **argv, INT *sub)
 {
   MAT_TEMPLATE *mt;
   INT i,res;
@@ -556,8 +556,8 @@ MAT_TEMPLATE * NS_PREFIX ReadArgvMatTemplateSub (const FORMAT *fmt, const char *
    D*/
 /****************************************************************************/
 
-MATDATA_DESC * NS_PREFIX ReadArgvMatDescX (MULTIGRID *theMG, const char *name,
-                                           INT argc, char **argv, INT CreateIfNonExistent)
+MATDATA_DESC * NS_DIM_PREFIX ReadArgvMatDescX (MULTIGRID *theMG, const char *name,
+                                               INT argc, char **argv, INT CreateIfNonExistent)
 {
   MATDATA_DESC *md;
   char value[VALUELEN],mdname[NAMESIZE],tname[NAMESIZE];
@@ -614,8 +614,8 @@ MATDATA_DESC * NS_PREFIX ReadArgvMatDescX (MULTIGRID *theMG, const char *name,
    D*/
 /****************************************************************************/
 
-NP_BASE * NS_PREFIX ReadArgvNumProc (MULTIGRID *theMG, const char *name, const char *npclass,
-                                     INT argc, char **argv)
+NP_BASE * NS_DIM_PREFIX ReadArgvNumProc (MULTIGRID *theMG, const char *name, const char *npclass,
+                                         INT argc, char **argv)
 {
   char value[VALUELEN];
 
@@ -649,7 +649,7 @@ NP_BASE * NS_PREFIX ReadArgvNumProc (MULTIGRID *theMG, const char *name, const c
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX ReadArgvDisplay (INT argc, char **argv)
+INT NS_DIM_PREFIX ReadArgvDisplay (INT argc, char **argv)
 {
   INT i;
   char value[VALUELEN];
@@ -702,7 +702,7 @@ INT NS_PREFIX ReadArgvDisplay (INT argc, char **argv)
  */
 /****************************************************************************/
 
-INT NS_PREFIX ReadVecTypeINTs (const FORMAT *fmt, char *str, INT n, INT nINT[MAXVECTORS], INT theINTs[][MAXVECTORS])
+INT NS_DIM_PREFIX ReadVecTypeINTs (const FORMAT *fmt, char *str, INT n, INT nINT[MAXVECTORS], INT theINTs[][MAXVECTORS])
 {
   char *s,*tok,*typetok[MAXVECTORS];
   INT type;
@@ -778,7 +778,7 @@ INT NS_PREFIX ReadVecTypeINTs (const FORMAT *fmt, char *str, INT n, INT nINT[MAX
  */
 /****************************************************************************/
 
-INT NS_PREFIX ReadVecTypeDOUBLEs (const FORMAT *fmt, char *str, INT n, INT nDOUBLE[MAXVECTORS], DOUBLE theDOUBLEs[][MAXVECTORS])
+INT NS_DIM_PREFIX ReadVecTypeDOUBLEs (const FORMAT *fmt, char *str, INT n, INT nDOUBLE[MAXVECTORS], DOUBLE theDOUBLEs[][MAXVECTORS])
 {
   char *s,*tok,*typetok[MAXVECTORS],*notypetok;
   INT type,found;
@@ -883,7 +883,7 @@ INT NS_PREFIX ReadVecTypeDOUBLEs (const FORMAT *fmt, char *str, INT n, INT nDOUB
  */
 /****************************************************************************/
 
-INT NS_PREFIX ReadVecTypeOrder (const FORMAT *fmt, char *str, INT n, INT MaxPerType, INT *nOrder, INT theOrder[])
+INT NS_DIM_PREFIX ReadVecTypeOrder (const FORMAT *fmt, char *str, INT n, INT MaxPerType, INT *nOrder, INT theOrder[])
 {
   char *token,c;
   INT ni,tp;
@@ -949,7 +949,7 @@ INT NS_PREFIX ReadVecTypeOrder (const FORMAT *fmt, char *str, INT n, INT MaxPerT
  */
 /****************************************************************************/
 
-INT NS_PREFIX ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, char *class_name, INT n, INT nNUMPROC[MAXVECTORS], NP_BASE *theNUMPROCs[][MAXVECTORS])
+INT NS_DIM_PREFIX ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, char *class_name, INT n, INT nNUMPROC[MAXVECTORS], NP_BASE *theNUMPROCs[][MAXVECTORS])
 {
   FORMAT *fmt;
   char *s,*tok,*typetok[MAXVECTORS];
@@ -1022,7 +1022,7 @@ INT NS_PREFIX ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, char *clas
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX sc_cmp (VEC_SCALAR x, const VEC_SCALAR y, const VECDATA_DESC *theVD)
+INT NS_DIM_PREFIX sc_cmp (VEC_SCALAR x, const VEC_SCALAR y, const VECDATA_DESC *theVD)
 {
   INT i;
 
@@ -1054,7 +1054,7 @@ INT NS_PREFIX sc_cmp (VEC_SCALAR x, const VEC_SCALAR y, const VECDATA_DESC *theV
   return (1);
 }
 
-INT NS_PREFIX esc_cmp (EVEC_SCALAR x, const EVEC_SCALAR y, const EVECDATA_DESC *theVD)
+INT NS_DIM_PREFIX esc_cmp (EVEC_SCALAR x, const EVEC_SCALAR y, const EVECDATA_DESC *theVD)
 {
   INT i;
 
@@ -1090,7 +1090,7 @@ INT NS_PREFIX esc_cmp (EVEC_SCALAR x, const EVEC_SCALAR y, const EVECDATA_DESC *
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX sc_eq (VEC_SCALAR x, const VEC_SCALAR y, DOUBLE ac, const VECDATA_DESC *theVD)
+INT NS_DIM_PREFIX sc_eq (VEC_SCALAR x, const VEC_SCALAR y, DOUBLE ac, const VECDATA_DESC *theVD)
 {
   INT i;
 
@@ -1101,7 +1101,7 @@ INT NS_PREFIX sc_eq (VEC_SCALAR x, const VEC_SCALAR y, DOUBLE ac, const VECDATA_
   return (1);
 }
 
-INT NS_PREFIX esc_eq (EVEC_SCALAR x, const EVEC_SCALAR y, DOUBLE ac, const EVECDATA_DESC *theVD)
+INT NS_DIM_PREFIX esc_eq (EVEC_SCALAR x, const EVEC_SCALAR y, DOUBLE ac, const EVECDATA_DESC *theVD)
 {
   INT i;
 
@@ -1136,7 +1136,7 @@ INT NS_PREFIX esc_eq (EVEC_SCALAR x, const EVEC_SCALAR y, DOUBLE ac, const EVECD
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX sc_mul (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z, const VECDATA_DESC *theVD)
+INT NS_DIM_PREFIX sc_mul (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z, const VECDATA_DESC *theVD)
 {
   INT i;
 
@@ -1146,7 +1146,7 @@ INT NS_PREFIX sc_mul (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z, cons
   return (NUM_OK);
 }
 
-INT NS_PREFIX sc_mul_check (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z, const VECDATA_DESC *theVD)
+INT NS_DIM_PREFIX sc_mul_check (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z, const VECDATA_DESC *theVD)
 {
   INT i;
 
@@ -1158,7 +1158,7 @@ INT NS_PREFIX sc_mul_check (VEC_SCALAR x, const VEC_SCALAR y, const VEC_SCALAR z
   return (NUM_OK);
 }
 
-INT NS_PREFIX esc_mul (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, const EVECDATA_DESC *theVD)
+INT NS_DIM_PREFIX esc_mul (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, const EVECDATA_DESC *theVD)
 {
   INT i;
 
@@ -1168,7 +1168,7 @@ INT NS_PREFIX esc_mul (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, 
   return (NUM_OK);
 }
 
-INT NS_PREFIX esc_mul_check (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, const EVECDATA_DESC *theVD)
+INT NS_DIM_PREFIX esc_mul_check (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCALAR z, const EVECDATA_DESC *theVD)
 {
   INT i;
 
@@ -1206,7 +1206,7 @@ INT NS_PREFIX esc_mul_check (EVEC_SCALAR x, const EVEC_SCALAR y, const EVEC_SCAL
 #define VALUELEN                        64
 #define VALUELENSTR                     "63"
 
-INT NS_PREFIX sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const char *name, INT argc, char **argv)
+INT NS_DIM_PREFIX sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const char *name, INT argc, char **argv)
 {
   char option[OPTIONLEN],value[VALUELEN];
   INT i, n, found, type, err;
@@ -1274,7 +1274,7 @@ INT NS_PREFIX sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theV
   return (NUM_OK);
 }
 
-INT NS_PREFIX esc_read (EVEC_SCALAR x, const FORMAT *fmt, const EVECDATA_DESC *theVD, const char *name, INT argc, char **argv)
+INT NS_DIM_PREFIX esc_read (EVEC_SCALAR x, const FORMAT *fmt, const EVECDATA_DESC *theVD, const char *name, INT argc, char **argv)
 {
   if (theVD!=NULL) return(sc_read(x,fmt,theVD->vd,name,argc,argv));
   else return(sc_read(x,fmt,NULL,name,argc,argv));
@@ -1303,7 +1303,7 @@ INT NS_PREFIX esc_read (EVEC_SCALAR x, const FORMAT *fmt, const EVECDATA_DESC *t
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX sc_disp (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name)
+INT NS_DIM_PREFIX sc_disp (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name)
 {
   const FORMAT *fmt;
   INT i, n, j, k;
@@ -1342,7 +1342,7 @@ INT NS_PREFIX sc_disp (VEC_SCALAR x, const VECDATA_DESC *theVD, const char *name
   return (NUM_OK);
 }
 
-INT NS_PREFIX esc_disp (EVEC_SCALAR x, const EVECDATA_DESC *theVD, const char *name)
+INT NS_DIM_PREFIX esc_disp (EVEC_SCALAR x, const EVECDATA_DESC *theVD, const char *name)
 {
   sc_disp(x,theVD->vd,name);
   return(NUM_OK);

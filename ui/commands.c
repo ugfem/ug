@@ -338,7 +338,7 @@ MULTIGRID *ConvertCADGrid  (char *theFormat, char *CADOutputFileName,unsigned lo
  */
 /****************************************************************************/
 
-MULTIGRID * NS_PREFIX GetCurrentMultigrid (void)
+MULTIGRID * NS_DIM_PREFIX GetCurrentMultigrid (void)
 {
   return (currMG);
 }
@@ -359,7 +359,7 @@ MULTIGRID * NS_PREFIX GetCurrentMultigrid (void)
  */
 /****************************************************************************/
 
-INT NS_PREFIX SetCurrentMultigrid (MULTIGRID *theMG)
+INT NS_DIM_PREFIX SetCurrentMultigrid (MULTIGRID *theMG)
 {
   MULTIGRID *mg;
 
@@ -1466,7 +1466,7 @@ static INT CnomCommand (INT argc, char **argv)
 #ifndef __cplusplus
 static
 #endif
-INT NS_PREFIX ConfigureCommand (INT argc, char **argv)
+INT NS_DIM_PREFIX ConfigureCommand (INT argc, char **argv)
 {
   BVP *theBVP;
   BVP_DESC theBVPDesc;
@@ -1580,7 +1580,7 @@ static INT CloseCommand (INT argc, char **argv)
 #ifndef __cplusplus
 static
 #endif
-INT NS_PREFIX NewCommand (INT argc, char **argv)
+INT NS_DIM_PREFIX NewCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   char Multigrid[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE];
@@ -6561,7 +6561,7 @@ static INT CheckCommand (INT argc, char **argv)
  */
 /****************************************************************************/
 
-INT NS_PREFIX QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
+INT NS_DIM_PREFIX QualityElement (MULTIGRID *theMG, ELEMENT *theElement)
 {
   INT error;
 
@@ -11725,7 +11725,7 @@ static INT MakePeriodicCommand (INT argc, char **argv)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitCommands ()
+INT NS_DIM_PREFIX InitCommands ()
 {
   /* quick hack */
 #ifdef __PERIODIC_BOUNDARY__

@@ -824,7 +824,7 @@ static INT EWNConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitEWN ()
+INT NS_DIM_PREFIX InitEWN ()
 {
   INT i;
 

@@ -56,7 +56,8 @@
 /* domain module */
 #include "std_domain.h"
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
+  USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -96,15 +97,15 @@ USING_UG_NAMESPACES
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of exported global variables									*/
-/*																			*/
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
-/* definition of variables global to this source file only (static!)		*/
-/*																			*/
+/*                                                                          */
+/* definition of variables global to this source file only (static!)        */
+/*                                                                          */
 /****************************************************************************/
 
 static INT theProblemDirID;             /* env type for Problem dir                     */
@@ -170,7 +171,7 @@ static REFERENCE_ELEMENT Hexahedron = {
    {2,3,7,6},{3,0,4,7},{4,5,6,7}}
 };
 
-INT NS_PREFIX CheckPrisms (INT *corner, INT n0, INT n1 , INT n2, INT n3)
+INT NS_DIM_PREFIX CheckPrisms (INT *corner, INT n0, INT n1 , INT n2, INT n3)
 {
   INT i,j,k,m,s[4];
 
@@ -308,7 +309,7 @@ static INT CheckOrientation (INT i, INT n,
 
 #ifdef __THREEDIM__
 
-INT NS_PREFIX RepairMesh (HEAP *Heap, INT MarkKey, MESH *Mesh)
+INT NS_DIM_PREFIX RepairMesh (HEAP *Heap, INT MarkKey, MESH *Mesh)
 {
   INT i,sd;
   DOUBLE **pos = Mesh->Position;

@@ -37,7 +37,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -466,7 +466,7 @@ INT MarkOffDiagWithoutDirichlet (GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, I
 INT MarkAbsolute          (GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp);
 INT MarkRelative          (GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp);
 INT MarkVanek             (GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp);
-INT SetupInitialList      (GRID *theGrid, HEAP *theHeap, AVECTOR **initialSH, AVECTOR **initialEH, INT MarkKey);
+INT SetupInitialList      (GRID *theGrid, NS_PREFIX HEAP *theHeap, AVECTOR **initialSH, AVECTOR **initialEH, INT MarkKey);
 INT DistributeInitialList (AVECTOR **La, AVECTOR **Le, AVECTOR **Ta, AVECTOR **Te, AVECTOR **Ua, AVECTOR **Ue);
 INT CountStrongNeighbors  (AVECTOR *initialS, DOUBLE *avNrOfStrongNbsHnd, INT *maxNeighbors);
 INT GeometricCoarsening   (GRID *theGrid);

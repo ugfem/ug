@@ -111,7 +111,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX CreateClass (const char *classname, INT size, ConstructorProcPtr Construct)
+INT NS_DIM_PREFIX CreateClass (const char *classname, INT size, ConstructorProcPtr Construct)
 {
   NP_CONSTRUCTOR *constructor;
 
@@ -152,7 +152,7 @@ INT NS_PREFIX CreateClass (const char *classname, INT size, ConstructorProcPtr C
    D*/
 /****************************************************************************/
 
-NP_CONSTRUCTOR * NS_PREFIX GetConstructor (const char *classname)
+NP_CONSTRUCTOR * NS_DIM_PREFIX GetConstructor (const char *classname)
 {
   ENVITEM *item;
   INT m,i;
@@ -199,7 +199,7 @@ NP_CONSTRUCTOR * NS_PREFIX GetConstructor (const char *classname)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX CreateObject (MULTIGRID *theMG, const char *objectname, const char *classname)
+INT NS_DIM_PREFIX CreateObject (MULTIGRID *theMG, const char *objectname, const char *classname)
 {
   NP_CONSTRUCTOR *constructor;
   NP_BASE *object;
@@ -266,7 +266,7 @@ INT NS_PREFIX CreateObject (MULTIGRID *theMG, const char *objectname, const char
    D*/
 /****************************************************************************/
 
-NP_BASE * NS_PREFIX GetNumProcByName (const MULTIGRID *theMG, const char *object_name, const char *abstract_class_name)
+NP_BASE * NS_DIM_PREFIX GetNumProcByName (const MULTIGRID *theMG, const char *object_name, const char *abstract_class_name)
 {
   ENVITEM *item;
   INT n,m,i;
@@ -324,7 +324,7 @@ NP_BASE * NS_PREFIX GetNumProcByName (const MULTIGRID *theMG, const char *object
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX MGListNPClasses (const MULTIGRID *theMG)
+INT NS_DIM_PREFIX MGListNPClasses (const MULTIGRID *theMG)
 {
   ENVITEM *item;
   INT n,i;
@@ -385,7 +385,7 @@ INT NS_PREFIX MGListNPClasses (const MULTIGRID *theMG)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassName)
+INT NS_DIM_PREFIX MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassName)
 {
   ENVITEM *item;
   INT n;
@@ -430,7 +430,7 @@ INT NS_PREFIX MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassName)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX MGListAllNPs (const MULTIGRID *theMG)
+INT NS_DIM_PREFIX MGListAllNPs (const MULTIGRID *theMG)
 {
   ENVITEM *item;
 
@@ -471,7 +471,7 @@ INT NS_PREFIX MGListAllNPs (const MULTIGRID *theMG)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX ListNumProc (NP_BASE *np)
+INT NS_DIM_PREFIX ListNumProc (NP_BASE *np)
 {
   char headline[DISPLAY_WIDTH+4];
 
@@ -518,7 +518,7 @@ INT NS_PREFIX ListNumProc (NP_BASE *np)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitNumProcManager ()
+INT NS_DIM_PREFIX InitNumProcManager ()
 {
   ClassDirID  = GetNewEnvDirID();
   ObjectDirID = GetNewEnvDirID();

@@ -61,7 +61,8 @@
 #include "misc.h"
 #include "enrol.h"
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
+USING_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -87,7 +88,7 @@ USING_UG_NAMESPACES
 /****************************************************************************/
 
 /****************************************************************************/
-/*																			*/
+/*                                                                          */
 /* definition of variables global to this source file only (static!)		*/
 /*																			*/
 /****************************************************************************/
@@ -196,13 +197,13 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-FORMAT * NS_PREFIX CreateFormat (char *name, INT sVertex, INT sMultiGrid,
-                                 ConversionProcPtr PrintVertex, ConversionProcPtr PrintGrid,
-                                 ConversionProcPtr PrintMultigrid,
-                                 TaggedConversionProcPtr PrintVector, TaggedConversionProcPtr PrintMatrix,
-                                 INT nvDesc, VectorDescriptor *vDesc, INT nmDesc, MatrixDescriptor *mDesc,
-                                 SHORT ImatTypes[], INT po2t[MAXDOMPARTS][MAXVOBJECTS],
-                                 INT nodeelementlist, INT edata, INT ndata)
+FORMAT * NS_DIM_PREFIX CreateFormat (char *name, INT sVertex, INT sMultiGrid,
+                                     ConversionProcPtr PrintVertex, ConversionProcPtr PrintGrid,
+                                     ConversionProcPtr PrintMultigrid,
+                                     TaggedConversionProcPtr PrintVector, TaggedConversionProcPtr PrintMatrix,
+                                     INT nvDesc, VectorDescriptor *vDesc, INT nmDesc, MatrixDescriptor *mDesc,
+                                     SHORT ImatTypes[], INT po2t[MAXDOMPARTS][MAXVOBJECTS],
+                                     INT nodeelementlist, INT edata, INT ndata)
 {
   FORMAT *fmt;
   INT i, j, type, type2, part, obj, MaxDepth, NeighborhoodDepth, MaxType;
@@ -376,7 +377,7 @@ FORMAT * NS_PREFIX CreateFormat (char *name, INT sVertex, INT sMultiGrid,
    D*/
 /****************************************************/
 
-INT NS_PREFIX DeleteFormat (const char *name)
+INT NS_DIM_PREFIX DeleteFormat (const char *name)
 {
   FORMAT *fmt;
 
@@ -413,7 +414,7 @@ INT NS_PREFIX DeleteFormat (const char *name)
    D*/
 /****************************************************/
 
-FORMAT * NS_PREFIX GetFormat (const char *name)
+FORMAT* NS_DIM_PREFIX GetFormat (const char *name)
 {
   return((FORMAT *) SearchEnv(name,"/Formats",theFormatDirID,theFormatDirID));
 }
@@ -438,7 +439,7 @@ FORMAT * NS_PREFIX GetFormat (const char *name)
    D*/
 /****************************************************************************/
 
-FORMAT * NS_PREFIX GetFirstFormat (void)
+FORMAT * NS_DIM_PREFIX GetFirstFormat (void)
 {
   ENVITEM *fmt;
 
@@ -470,7 +471,7 @@ FORMAT * NS_PREFIX GetFirstFormat (void)
    D*/
 /****************************************************************************/
 
-FORMAT * NS_PREFIX GetNextFormat (FORMAT *fmt)
+FORMAT * NS_DIM_PREFIX GetNextFormat (FORMAT *fmt)
 {
   ENVITEM *nextfmt;
 
@@ -502,7 +503,7 @@ FORMAT * NS_PREFIX GetNextFormat (FORMAT *fmt)
    D*/
 /****************************************************/
 
-INT NS_PREFIX ChangeToFormatDir (const char *name)
+INT NS_DIM_PREFIX ChangeToFormatDir (const char *name)
 {
   if (ChangeEnvDir("/Formats")==NULL)
     REP_ERR_RETURN (1);
@@ -533,7 +534,7 @@ INT NS_PREFIX ChangeToFormatDir (const char *name)
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX InitEnrol ()
+INT NS_DIM_PREFIX InitEnrol ()
 {
   /* install the /Formats directory */
   if (ChangeEnvDir("/")==NULL)

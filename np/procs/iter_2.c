@@ -565,7 +565,7 @@ static INT ILU_A_Construct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitIter_2 ()
+INT NS_DIM_PREFIX InitIter_2 ()
 {
   INT i;
 

@@ -83,7 +83,7 @@ typedef struct {
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX BulletDim;
+INT NS_DIM_PREFIX BulletDim;
 
 /****************************************************************************/
 /*																			*/
@@ -147,7 +147,7 @@ static void DrawLine(POINT p1, DOUBLE z1, POINT p2, DOUBLE z2, char c);
    D*/
 /****************************************************************************/
 
-INT NS_PREFIX BulletOpen(PICTURE *picture, DOUBLE factor)
+INT NS_DIM_PREFIX BulletOpen(PICTURE *picture, DOUBLE factor)
 {
   HEAP *heap;
   ZTYP *z;
@@ -229,7 +229,7 @@ INT NS_PREFIX BulletOpen(PICTURE *picture, DOUBLE factor)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX BulletClose(void)
+void NS_DIM_PREFIX BulletClose(void)
 {
   HEAP *heap;
 
@@ -309,7 +309,7 @@ static void FramePicture(void)
   DrawLine(p1, -FAR_AWAY, p2, -FAR_AWAY, OutputDevice->black);
 }
 
-void NS_PREFIX BulletPlot(void)
+void NS_DIM_PREFIX BulletPlot(void)
 {
   INT son;
   void *scratch;
@@ -586,7 +586,7 @@ static void DrawTriangle(POINT p1, DOUBLE z1, POINT p2, DOUBLE z2,
    D*/
 /****************************************************************************/
 
-void NS_PREFIX BulletLine(DOUBLE *point1, DOUBLE *point2, long color)
+void NS_DIM_PREFIX BulletLine(DOUBLE *point1, DOUBLE *point2, long color)
 {
   POINT p1, p2;
   DOUBLE z1, z2;
@@ -624,7 +624,7 @@ void NS_PREFIX BulletLine(DOUBLE *point1, DOUBLE *point2, long color)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX BulletPolyLine(DOUBLE *points, INT nb, long color)
+void NS_DIM_PREFIX BulletPolyLine(DOUBLE *points, INT nb, long color)
 {
   DOUBLE *p0, *p1;
   INT i;
@@ -659,7 +659,7 @@ void NS_PREFIX BulletPolyLine(DOUBLE *points, INT nb, long color)
    D*/
 /****************************************************************************/
 
-void NS_PREFIX BulletPolygon(DOUBLE *points, INT nb, DOUBLE intensity, long color)
+void NS_DIM_PREFIX BulletPolygon(DOUBLE *points, INT nb, DOUBLE intensity, long color)
 {
   DOUBLE z0, z1, z2;
   POINT p0, p1, p2;

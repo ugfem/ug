@@ -671,7 +671,7 @@ INT DPrintVector (MULTIGRID *mg, VECDATA_DESC *x)
   return(NUM_OK);
 }
 
-INT NS_PREFIX NPIterInit (NP_ITER *np, INT argc , char **argv)
+INT NS_DIM_PREFIX NPIterInit (NP_ITER *np, INT argc , char **argv)
 {
   np->A = ReadArgvMatDesc(np->base.mg,"A",argc,argv);
   np->c = ReadArgvVecDesc(np->base.mg,"c",argc,argv);
@@ -683,7 +683,7 @@ INT NS_PREFIX NPIterInit (NP_ITER *np, INT argc , char **argv)
   return(NP_EXECUTABLE);
 }
 
-INT NS_PREFIX NPIterDisplay (NP_ITER *np)
+INT NS_DIM_PREFIX NPIterDisplay (NP_ITER *np)
 {
   if ((np->A == NULL) && (np->b == NULL) && (np->c == NULL))
     return(0);
@@ -699,7 +699,7 @@ INT NS_PREFIX NPIterDisplay (NP_ITER *np)
   return(0);
 }
 
-INT NS_PREFIX NPIterExecute (NP_BASE *theNP, INT argc , char **argv)
+INT NS_DIM_PREFIX NPIterExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_ITER *np;
   INT result,bl,level;
@@ -10357,7 +10357,7 @@ static INT IMConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitIter ()
+INT NS_DIM_PREFIX InitIter ()
 {
   INT i;
 

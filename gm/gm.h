@@ -145,7 +145,7 @@
 #define DEBUG_MODE "OFF"
 #endif
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -518,7 +518,7 @@ typedef INT (*TaggedConversionProcPtr)(INT,            /**< Tag for data identif
 struct format {
 
   /** \brief fields for environment variable */
-  ENVDIR d;
+  NS_PREFIX ENVDIR d;
 
   /* variables of format */
   /** \brief size of vertex user data struc. in bytes*/
@@ -1309,7 +1309,7 @@ struct grid {
 struct multigrid {
 
   /** \brief env item */
-  ENVDIR v;
+  NS_PREFIX ENVDIR v;
 
   /* variables */
   /** \brief Multigrid status word */
@@ -1354,7 +1354,7 @@ struct multigrid {
   struct format *theFormat;
 
   /** \brief associated heap structure                    */
-  HEAP *theHeap;
+  NS_PREFIX HEAP *theHeap;
 
   /** \brief max nb of properties used in elements*/
   INT nProperty;
@@ -1390,7 +1390,7 @@ struct multigrid {
   void *GenData;
 
   /** \brief user heap                                                    */
-  HEAP *UserHeap;
+  NS_PREFIX HEAP *UserHeap;
 
   /** \brief general purpose pointer                              */
   void *genpurp;
@@ -1448,7 +1448,7 @@ typedef DOUBLE (*MatrixEvalProcPtr)(const MATRIX *);
 struct elementvalues {
 
   /* fields for enironment list variable */
-  ENVVAR v;
+  NS_PREFIX ENVVAR v;
 
   PreprocessingProcPtr PreprocessProc;                  /* prepare eval values                                  */
   ElementEvalProcPtr EvalProc;                                  /* pointer to corresponding function    */
@@ -1457,7 +1457,7 @@ struct elementvalues {
 struct elementvector {
 
   /* fields for enironment list variable */
-  ENVVAR v;
+  NS_PREFIX ENVVAR v;
 
   PreprocessingProcPtr PreprocessProc;                  /* prepare eval values                                  */
   ElementVectorProcPtr EvalProc;                                /* pointer to corresponding function    */
@@ -1467,7 +1467,7 @@ struct elementvector {
 struct matrixvalues {
 
   /* fields for enironment list variable */
-  ENVVAR v;
+  NS_PREFIX ENVVAR v;
 
   PreprocessingProcPtr PreprocessProc;                  /* prepare eval values                                  */
   MatrixEvalProcPtr EvalProc;                                   /* pointer to corresponding function    */
@@ -1488,7 +1488,7 @@ typedef INT (*DependencyProcPtr)(GRID *, const char *);
 struct AlgebraicDependency {
 
   /* fields for enironment list variable */
-  ENVVAR v;
+  NS_PREFIX ENVVAR v;
 
   DependencyProcPtr DependencyProc;             /* pointer to dependency function                       */
 };
@@ -1535,7 +1535,7 @@ typedef VECTOR *(*FindCutProcPtr)(GRID *, VECTOR *, INT *);
 typedef struct {
 
   /* fields for enironment list variable */
-  ENVVAR v;
+  NS_PREFIX ENVVAR v;
 
   FindCutProcPtr FindCutProc;           /* pointer to find cut function                         */
 
@@ -2641,10 +2641,10 @@ typedef struct {
 
 END_NAMESPACE
 
-/* TODO: move this to include section, when other general element stuff is separated */
+/** \todo move this to include section, when other general element stuff is separated */
 #include "elements.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -3126,8 +3126,10 @@ FORMAT                   *CreateFormat (char *name, INT sVertex, INT sMultiGrid,
 
 /* create, saving and disposing a multigrid structure */
 MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
-                            char *format, MEM heapSize, INT optimizedIE, INT insertMesh);
-MULTIGRID   *OpenMGFromDataFile(MULTIGRID *theMG, INT number, char *type, char *DataFileName, MEM heapSize);
+                            char *format, NS_PREFIX MEM heapSize,
+                            INT optimizedIE, INT insertMesh);
+MULTIGRID *OpenMGFromDataFile(MULTIGRID *theMG, INT number, char *type,
+                              char *DataFileName, NS_PREFIX MEM heapSize);
 MULTIGRID       *LoadMultiGrid  (char *MultigridName, char *name, char *type,
                                  char *BndValProblem, char *format,
                                  unsigned long heapSize,INT force,INT optimizedIE, INT autosave);
@@ -3301,9 +3303,9 @@ unsigned INT ReadCW                                     (const void *obj, INT ce
 void            WriteCW                                 (void *obj, INT ce, INT n);
 void            ResetCEstatistics               (void);
 void            PrintCEstatistics               (void);
-INT             DefineMGUDBlock                 (BLOCK_ID id, MEM size);
-INT             FreeMGUDBlock                   (BLOCK_ID id);
-BLOCK_DESC      *GetMGUDBlockDescriptor (BLOCK_ID id);
+INT             DefineMGUDBlock                 (NS_PREFIX BLOCK_ID id, NS_PREFIX MEM size);
+INT             FreeMGUDBlock                   (NS_PREFIX BLOCK_ID id);
+NS_PREFIX BLOCK_DESC      *GetMGUDBlockDescriptor (NS_PREFIX BLOCK_ID id);
 
 /* ordering of degrees of freedom */
 ALG_DEP         *CreateAlgebraicDependency              (char *name, DependencyProcPtr DependencyProc);

@@ -34,22 +34,13 @@
 #define __WOP__
 
 #include "compiler.h"
-
-#ifndef __GM__
 #include "gm.h"
-#endif
-
-#ifndef __WPM__
 #include "wpm.h"
-#endif
-
-#ifndef __EVM__
 #include "evm.h"
-#endif
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */

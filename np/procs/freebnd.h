@@ -38,7 +38,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -69,9 +69,9 @@ START_NAMESPACE
 
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* function declarations                                                                                                        */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* function declarations                                                    */
+/*                                                                          */
 /****************************************************************************/
 
 INT MoveFreeBoundary            (MULTIGRID *mg, INT level, const VECDATA_DESC *vd);

@@ -41,7 +41,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -222,7 +222,7 @@ enum DISP_DATA_DESC_MODIF
 typedef struct {
 
   /** \brief Fields for environment list variable */
-  ENVVAR v;
+  NS_PREFIX ENVVAR v;
 
   /** \brief Locked for dynamic allocation */
   SHORT locked;
@@ -281,7 +281,7 @@ typedef struct {
 typedef struct {
 
   /** \brief Inheritance from environment variable class */
-  ENVVAR v;
+  NS_PREFIX ENVVAR v;
 
   /** \brief Locked for dynamic allocation        */
   SHORT locked;
@@ -378,7 +378,7 @@ typedef struct {
 typedef struct {
 
   /** \brief Fields for environment list variable */
-  ENVVAR v;
+  NS_PREFIX ENVVAR v;
 
   /** \brief Locked for dynamic allocation        */
   SHORT locked;
@@ -400,7 +400,7 @@ typedef struct {
 typedef struct {
 
   /** \brief Fields for environment list variable */
-  ENVVAR v;
+  NS_PREFIX ENVVAR v;
 
   /** \brief Locked for dynamic allocation        */
   SHORT locked;

@@ -45,7 +45,7 @@
 /**  \todo (HRR 971105): hierarchy conflict */
 #include "ugdevices.h"
 
-USING_UG_NAMESPACES
+USING_UG_NAMESPACE
 
 /****************************************************************************/
 /*																			*/

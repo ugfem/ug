@@ -1180,7 +1180,7 @@ static void correct (DOUBLE *Feld, INT *NOfN, DOUBLE wantedMean, DOUBLE wantedVa
  */
 /************************************************************************/
 
-INT NS_PREFIX Field_genStochField(NP_STOCH_FIELD *np)
+INT NS_DIM_PREFIX Field_genStochField(NP_STOCH_FIELD *np)
 {
   DOUBLE *FieldH;
   DOUBLE F[DIM], Cor[DIM+1];       /* the last one is the product of the others */
@@ -1546,7 +1546,7 @@ static INT NPStochFieldDisplay(NP_BASE *theNP)
   return(0);
 }
 
-INT NS_PREFIX Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
+INT NS_DIM_PREFIX Field_RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 {
   NP_STOCH_FIELD *np;
   INT i, node[DIM];
@@ -1808,7 +1808,7 @@ static INT NPGetFieldDisplay(NP_BASE *theNP)
   return(0);
 }
 
-INT NS_PREFIX Field_GetFieldAtPoint (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
+INT NS_DIM_PREFIX Field_GetFieldAtPoint (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 {
   NP_GET_FIELD *np;
   NP_FIELD *npsd;
@@ -1960,7 +1960,7 @@ static INT NPanisoFldDisplay(NP_BASE *theNP)
   return(0);
 }
 
-INT NS_PREFIX Field_RotateAndGetField (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
+INT NS_DIM_PREFIX Field_RotateAndGetField (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 {
   NP_ANISO_FIELD  *np;
   DOUBLE transX[DIM];
@@ -2035,7 +2035,7 @@ static INT GetAnisoFieldConstruct       (NP_BASE *theNP)
   return(0);
 }
 
-INT NS_PREFIX InitStochField (void)
+INT NS_DIM_PREFIX InitStochField (void)
 {
   if (CreateClass(FIELD_CLASS_NAME ".stoch",sizeof(NP_STOCH_FIELD),StochFieldConstruct)) return(__LINE__);
   if (CreateClass(FIELD_CLASS_NAME ".scale",sizeof(NP_GET_FIELD),GetFieldConstruct)) return(__LINE__);

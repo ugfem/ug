@@ -87,12 +87,12 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 /****************************************************************************/
 
-INT NS_PREFIX BDFPreProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, INT *res)
+INT NS_DIM_PREFIX BDFPreProcess (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x, INT *res)
 {
   return(0);
 }
 
-INT NS_PREFIX BDFAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, INT *res)
+INT NS_DIM_PREFIX BDFAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -106,7 +106,7 @@ INT NS_PREFIX BDFAssembleSolution (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_
   return((*tass->TAssembleSolution)(tass,fl,tl,bdf->t_p1,u,res));
 }
 
-INT NS_PREFIX BDFAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
+INT NS_DIM_PREFIX BDFAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -142,7 +142,7 @@ INT NS_PREFIX BDFAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DE
   return( (*tass->TAssembleDefect)(tass,fl,tl,bdf->t_p1,s_m,s_a,u,d,J,res) );
 }
 
-INT NS_PREFIX BDFAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
+INT NS_DIM_PREFIX BDFAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *u, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -175,7 +175,7 @@ INT NS_PREFIX BDFAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DE
   return( (*tass->TAssembleMatrix)(tass,fl,tl,bdf->t_p1,s_a,u,d,v,J,res) );
 }
 
-INT NS_PREFIX BDFNAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, NODE *n, VECDATA_DESC *u, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
+INT NS_DIM_PREFIX BDFNAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, NODE *n, VECDATA_DESC *u, VECDATA_DESC *d, VECDATA_DESC *v, MATDATA_DESC *J, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -208,7 +208,7 @@ INT NS_PREFIX BDFNAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, NODE *n, 
   return( (*tass->TNAssembleMatrix)(tass,fl,tl,n,bdf->t_p1,s_a,u,d,v,J,res) );
 }
 
-INT NS_PREFIX BDFPostProcess
+INT NS_DIM_PREFIX BDFPostProcess
   (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA_DESC *x,
   VECDATA_DESC *d, MATDATA_DESC *J, INT *res)
 {
@@ -223,7 +223,7 @@ INT NS_PREFIX BDFPostProcess
 /****************************************************************************/
 /****************************************************************************/
 
-INT NS_PREFIX BDFTimePreProcess (NP_T_SOLVER *ts, INT level, INT *res)
+INT NS_DIM_PREFIX BDFTimePreProcess (NP_T_SOLVER *ts, INT level, INT *res)
 {
   NP_BDF *bdf;
 
@@ -246,7 +246,7 @@ INT NS_PREFIX BDFTimePreProcess (NP_T_SOLVER *ts, INT level, INT *res)
   return(0);
 }
 
-INT NS_PREFIX BDFTimeInit (NP_T_SOLVER *ts, INT level, INT *res)
+INT NS_DIM_PREFIX BDFTimeInit (NP_T_SOLVER *ts, INT level, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -889,7 +889,7 @@ output:         /* output */
 }
 
 
-INT NS_PREFIX BDFTimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
+INT NS_DIM_PREFIX BDFTimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -930,7 +930,7 @@ INT NS_PREFIX BDFTimePostProcess (NP_T_SOLVER *ts, INT level, INT *res)
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX BDFInit (NP_BASE *base, INT argc, char **argv)
+INT NS_DIM_PREFIX BDFInit (NP_BASE *base, INT argc, char **argv)
 {
   NP_BDF *bdf;
   VECDATA_DESC *tmp;
@@ -1095,7 +1095,7 @@ INT NS_PREFIX BDFInit (NP_BASE *base, INT argc, char **argv)
 /*																			*/
 /****************************************************************************/
 
-INT NS_PREFIX BDFDisplay (NP_BASE *theNumProc)
+INT NS_DIM_PREFIX BDFDisplay (NP_BASE *theNumProc)
 {
   NP_BDF *bdf;
 
@@ -1467,7 +1467,7 @@ static INT BDFConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT NS_PREFIX InitBDFSolver (void)
+INT NS_DIM_PREFIX InitBDFSolver (void)
 {
   INT error=0;
 

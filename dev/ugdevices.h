@@ -42,7 +42,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UG_NAMESPACE
 
 /****************************************************************************/
 /*                                                                          */
@@ -94,21 +94,34 @@ START_NAMESPACE
 #define INPUTBUFFERLEN                  4096
 
 /* event types */
-#define EVENT_ERROR                     0
+// #define EVENT_ERROR                     0
 
-#define EVERY_EVENT                     1
+// #define EVERY_EVENT                     1
 
-#define NO_EVENT                                2
-#define TERM_GOAWAY                     3
-#define TERM_CMDKEY                     4
-#define TERM_STRING                     5
-#define DOC_GOAWAY                              6
-#define DOC_ACTIVATE                    7
-#define DOC_DRAG                                8
-#define DOC_GROW                                9
-#define DOC_CHANGETOOL                  10
-#define DOC_CONTENTCLICK                11
-#define DOC_UPDATE                              12
+// #define NO_EVENT                                2
+// #define TERM_GOAWAY                     3
+// #define TERM_CMDKEY                     4
+// #define TERM_STRING                     5
+// #define DOC_GOAWAY                              6
+// #define DOC_ACTIVATE                    7
+// #define DOC_DRAG                                8
+// #define DOC_GROW                                9
+// #define DOC_CHANGETOOL                  10
+// #define DOC_CONTENTCLICK                11
+// #define DOC_UPDATE                              12
+enum EventType {EVENT_ERROR,
+                EVERY_EVENT,
+                NO_EVENT,
+                TERM_GOAWAY,
+                TERM_CMDKEY,
+                TERM_STRING,
+                DOC_GOAWAY,
+                DOC_ACTIVATE,
+                DOC_DRAG,
+                DOC_GROW,
+                DOC_CHANGETOOL,
+                DOC_CONTENTCLICK,
+                DOC_UPDATE};
 
 enum UG_PALETTE {
 

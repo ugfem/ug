@@ -42,7 +42,7 @@
 
 #include "namespace.h"
 
-START_NAMESPACE
+START_UGDIM_NAMESPACE
 
 /****************************************************************************/
 /*                                                                                                                                                      */
@@ -67,16 +67,16 @@ START_NAMESPACE
 #define OPTIONBUFFERLEN 16384   /* length of option buffer                                      */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* data structures exported by the corresponding source file                            */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* data structures exported by the corresponding source file                */
+/*                                                                          */
 /****************************************************************************/
 
 typedef INT (*CommandProcPtr)(INT,char **);
 
 typedef struct {                                /* executable command variable                          */
-  ENVVAR v;                                             /* this is an environment variable                      */
-  CommandProcPtr cmdProc;               /* function to be executed                                      */
+  NS_PREFIX ENVVAR v;                                         /* this is an environment variable                      */
+  CommandProcPtr cmdProc;           /* function to be executed                                      */
 } COMMAND ;
 
 /****************************************************************************/
