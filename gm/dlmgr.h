@@ -129,12 +129,16 @@
   {\
     if (PRED(Object)!=NULL) \
       SUCC(PRED(Object)) = SUCC(Object);\
-    else \
+    else {\
       FIRST ## OTYPE(Grid) = SUCC(Object);\
+      PRED(SUCC(Object)) = NULL;\
+    }\
     if (SUCC(Object)!=NULL) \
       PRED(SUCC(Object)) = PRED(Object);\
-    else \
+    else {\
       LAST ## OTYPE(Grid) = PRED(Object);\
+      SUCC(PRED(Object)) = NULL;\
+    }\
   }
 #endif
 
@@ -238,24 +242,17 @@
     OTYPE *after;\
 \
     after = LAST ## OTYPE(Grid);\
-    if (after==NULL) {\
-      SUCC(Object) = FIRST ## OTYPE(Grid);\
-      PRED(Object) = NULL;\
-      if (SUCC(Object)!=NULL)\
-        PRED(SUCC(Object)) = Object;\
-      else \
-        LAST ## OTYPE(Grid) = Object;\
-      FIRST ## OTYPE(Grid) = Object;\
-    }\
-    else {\
-      SUCC(Object) = SUCC(after);\
-      PRED(Object) = after;\
-      if (SUCC(Object)!=NULL)\
-        PRED(SUCC(Object)) = Object;\
-      else\
-        LAST ## OTYPE(Grid) = Object;\
-      SUCC(after) = Object;\
-    }\
+    SUCC(Object) = NULL;
+if (after==NULL) {\
+  PRED(Object) = NULL;\
+  LAST ## OTYPE(Grid) = Object;\
+  FIRST ## OTYPE(Grid) = Object;\
+}\
+  else {\
+  PRED(Object) = after;\
+  LAST ## OTYPE(Grid) = Object;\
+  SUCC(after) = Object;\
+  }\
   }
 #endif
 
