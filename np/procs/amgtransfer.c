@@ -208,7 +208,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    .  $vRedLimit - stop if vectReduction<vRedLimit
    .  $mRedLimit - stop if matReduction<mRedLimit
    .  $levelLimit - stop if level<=levelLimit (numbers<=0)
-   .  $agglomLimit - agglomerate to one processor if level<=aggLimit.
+   .  $aggLimit - agglomerate to one processor if level<=aggLimit.
    .  $explicit - clear AMG levels only by npexecute
    .  $hold - holds AMG levels after solving
 
@@ -231,10 +231,10 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    .  $i - preprocess, rebuilds AMG levels
    .  $p - postprocess, clear AMG levels
 
-   The usage of agglomLimit is useful only for the parallel version;
+   The usage of aggLimit is useful only for the parallel version;
    it must be set to a value less than or equal to 0.  The coarsest
-   grid will be agglomerated on all levels <= agglomLimit. Coarse grid
-   agglomeration can be turned off by setting agglomLimit to a value
+   grid will be agglomerated on all levels <= aggLimit. Coarse grid
+   agglomeration can be turned off by setting aggLimit to a value
    smaller than levelLimit.
 
    APPLICABILITY:
@@ -420,10 +420,8 @@ INT AMGTransferInit (NP_BASE *theNP, INT argc , char **argv)
   }
 
   /* Default value for aggLimit is aggLimit = levelLimit */
-  np->aggLimit = -MAXLEVEL-1;
-  ReadArgvINT("agglomLimit",&(np->aggLimit),argc,argv);
-  if (np->aggLimit == -MAXLEVEL-1)
-    np->aggLimit = np->levelLimit;
+  np->aggLimit = np->levelLimit;
+  ReadArgvINT("aggLimit",&(np->aggLimit),argc,argv);
 
   np->display = ReadArgvDisplay(argc,argv);
 
@@ -573,7 +571,7 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   char varname[32];
   char text[DISPLAY_WIDTH+4];
 
-  /* Set flag to inidcate that everything is stored on one processor
+  /* Set flag to indicate that everything is stored on one processor
      on this level (and below). */
   unifiedlevel = -MAXLEVEL-1;
 
