@@ -2500,6 +2500,13 @@ static INT ScanTypeOptions (INT argc, char **argv, INT po2t[][MAXVOBJECTS], INT 
   for (opt=1; opt<argc; opt++)
     if (argv[opt][0]=='T')
     {
+      if (max>=(1<<VTYPE_LEN))
+      {
+        printf("I would love to define another type for you, but control flags are rare... (in '$%s')",argv[opt]);
+        ASSERT(FALSE);
+        REP_ERR_RETURN(1);
+      }
+
       found++;
 
       /* scan type name */
