@@ -152,11 +152,12 @@ static void ResetIdentFlags (GRID *UpGrid)
   LINK *theLink;
 
   /* clear all IDENT flags */
-  for (theNode=FIRSTNODE(UpGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
-
+  for (theNode=FIRSTNODE(UpGrid); theNode!=NULL; theNode=SUCCN(theNode))
+  {
     SETNIDENT(theNode,CLEAR);
 
-    for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink)) {
+    for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
+    {
       theEdge = MYEDGE(theLink);
       SETEDIDENT(theEdge,CLEAR);
     }
@@ -166,7 +167,8 @@ static void ResetIdentFlags (GRID *UpGrid)
 #endif
 
 #ifdef Debug
-static INT Print_Identify_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject, int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident)
+static INT Print_Identify_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
+                                      int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident)
 {
   INT i;
 
@@ -183,20 +185,20 @@ static INT Print_Identify_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject, int 
 
   /* print the objects used for identify */
   PrintDebug ("    IdentHdr:");
-  for (i=0; i<nident; i++) {
+  for (i=0; i<nident; i++)
     PrintDebug (" %d",DDD_InfoGlobalId(IdentHdr[i]));
-  }
 
   /* print type of objects to identify */
   PrintDebug ("    IdentObjectType:");
-  for (i=0; i<nobject; i++) {
+  for (i=0; i<nobject; i++)
     PrintDebug (" %d",DDD_InfoType(IdentObjectHdr[i]));
-  }
 
   /* print the proclist to identify to */
   PrintDebug ("    ProcList: %d",me);
-  while (*proclist != -1) {
-    if (*(proclist+1) == skiptag) {
+  while (*proclist != -1)
+  {
+    if (*(proclist+1) == skiptag)
+    {
       proclist += 2;
       continue;
     }
@@ -210,9 +212,8 @@ static INT Print_Identify_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject, int 
 
   /* print the objects to identify */
   PrintDebug ("    IdentObjectHdr:");
-  for (i=0; i<nobject; i++) {
+  for (i=0; i<nobject; i++)
     PrintDebug (" %d",DDD_InfoGlobalId(IdentObjectHdr[i]));
-  }
 
   PrintDebug ("\n");
 
@@ -222,7 +223,8 @@ static INT Print_Identify_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject, int 
 #endif
 
 #ifdef Debug
-static INT Print_Identified_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject, int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident)
+static INT Print_Identified_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
+                                        int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident)
 {
   INT i;
 
@@ -236,20 +238,20 @@ static INT Print_Identified_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject, in
 
   /* print the objects to identify */
   PrintDebug ("%d: l=%d   IdentObjectHdr:",me,identlevel);
-  for (i=0; i<nobject; i++) {
+  for (i=0; i<nobject; i++)
     PrintDebug (" %d",DDD_InfoGlobalId(IdentObjectHdr[i]));
-  }
 
   /* print the objects used for identify */
   PrintDebug ("    IdentHdr:");
-  for (i=0; i<nident; i++) {
+  for (i=0; i<nident; i++)
     PrintDebug (" %d",DDD_InfoGlobalId(IdentHdr[i]));
-  }
 
   /* print the proclist to identify to */
   PrintDebug ("    ProcList: %d",me);
-  while (*proclist != -1) {
-    if (*(proclist+1) == skiptag) {
+  while (*proclist != -1)
+  {
+    if (*(proclist+1) == skiptag)
+    {
       proclist += 2;
       continue;
     }
@@ -263,9 +265,9 @@ static INT Print_Identified_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject, in
 
   /* print type of objects to identify */
   PrintDebug ("    IdentObjectType:");
-  for (i=0; i<nobject; i++) {
+  for (i=0; i<nobject; i++)
     PrintDebug (" %d",DDD_InfoType(IdentObjectHdr[i]));
-  }
+
   PrintDebug ("\n");
 
   return;
@@ -273,7 +275,8 @@ static INT Print_Identified_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject, in
 }
 #endif
 
-static INT Identify_by_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject, int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident)
+static INT Identify_by_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject,
+                                   int *proclist, int skiptag, DDD_HDR *IdentHdr, INT nident)
 {
   INT i,j,n;
 
@@ -282,30 +285,31 @@ static INT Identify_by_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject, int *pr
   ASSERT(*proclist!=-1);
 
   IFDEBUG(dddif,5)
-  Print_Identify_ObjectList(IdentObjectHdr,nobject,proclist,skiptag,IdentHdr,nident);
+  Print_Identify_ObjectList(IdentObjectHdr,nobject,proclist,skiptag,
+                            IdentHdr,nident);
   ENDDEBUG
 
     n = 0;
-  while (*proclist != -1) {
+  while (*proclist != -1)
+  {
     ASSERT(n<procs);
 
-    if (*(proclist+1) == skiptag) {
+    if (*(proclist+1) == skiptag)
+    {
       proclist += 2;
       continue;
     }
 
     /* identify the object */
-    for (j=0; j<nobject; j++) {
-      for (i=0; i<nident; i++) {
-
-        PRINTDEBUG(dddif,5,("%d: Identify_by_ObjectList(): Type=%d" \
+    for (j=0; j<nobject; j++)
+    {
+      for (i=0; i<nident; i++)
+      {
+        PRINTDEBUG(dddif,5,("%d: Identify_by_ObjectList(): Type=%d"
                             " IdentObjectHdr=%08x proclist=%d IdentHdr=%08x me=%d\n",
-                            me,
-                            DDD_InfoType(IdentObjectHdr[j]),
+                            me,DDD_InfoType(IdentObjectHdr[j]),
                             DDD_InfoGlobalId(IdentObjectHdr[j]),
-                            *proclist,
-                            DDD_InfoGlobalId(IdentHdr[i]),
-                            me));
+                            *proclist,DDD_InfoGlobalId(IdentHdr[i]),me));
 
         /* hand identification hdr to ddd */
         DDD_IdentifyObject(IdentObjectHdr[j], *proclist, IdentHdr[i]);
@@ -322,7 +326,8 @@ static INT Identify_by_ObjectList (DDD_HDR *IdentObjectHdr, INT nobject, int *pr
 }
 
 #ifdef __THREEDIM__
-static INT IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor, ELEMENT *Son, INT SonSide)
+static INT IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor,
+                               ELEMENT *Son, INT SonSide)
 {
   INT k,nident;
   DDD_HDR IdentObjectHdr[MAX_OBJECT];
@@ -337,7 +342,8 @@ static INT IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor, ELEMEN
   proclist = DDD_InfoProcList(PARHDRE(theNeighbor));
 
   /* identify using corner nodes */
-  for (k=0; k<CORNERS_OF_SIDE(Son,SonSide); k++) {
+  for (k=0; k<CORNERS_OF_SIDE(Son,SonSide); k++)
+  {
     theNode = CORNER(Son,CORNER_OF_SIDE(Son,SonSide,k));
     if (NFATHER(theNode) != NULL)
       IdentHdr[nident++] = PARHDR(NFATHER(theNode));
@@ -347,13 +353,13 @@ static INT IdentifySideVector (ELEMENT* theElement, ELEMENT *theNeighbor, ELEMEN
 
   proclist = DDD_InfoProcList(PARHDRE(theNeighbor));
 
-  Ident_FctPtr(IdentObjectHdr, 1,
-               proclist+2, PrioGhost, IdentHdr, nident);
+  Ident_FctPtr(IdentObjectHdr,1,proclist+2,PrioGhost,IdentHdr,nident);
 
 }
 #endif
 
-static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode, NODE *Nodes[MAX_SIDE_NODES], INT node, INT ncorners, INT Vec)
+static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode,
+                          NODE *Nodes[MAX_SIDE_NODES], INT node, INT ncorners, INT Vec)
 {
   INT nobject,nident;
   DDD_HDR IdentObjectHdr[MAX_OBJECT];
@@ -371,12 +377,14 @@ static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode, NODE *Nodes[MAX_S
   /* return if already identified */
   if (NIDENT(theNode) == IDENT) return;
 
-  switch (NTYPE(theNode)) {
+  switch (NTYPE(theNode))
+  {
     int *proclist;
 
   case (CORNER_NODE) :
 
-    PRINTDEBUG(dddif,1,("%d: Identify CORNERNODE gid=%08x node=%d vec=%d\n",
+    PRINTDEBUG(dddif,1,("%d: Identify CORNERNODE gid=%08x node=%d "
+                        "vec=%d\n",
                         me, DDD_InfoGlobalId(PARHDR(theNode)), node, Vec));
 
     IdentObjectHdr[nobject++] = PARHDR(theNode);
@@ -394,8 +402,8 @@ static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode, NODE *Nodes[MAX_S
 
     break;
 
-  case (MID_NODE) : {
-
+  case (MID_NODE) :
+  {
                         #ifdef __TWODIM__
     NODE **EdgeNodes;
     EdgeNodes = Nodes;
@@ -454,8 +462,8 @@ static void IdentifyNode (ELEMENT *theNeighbor, NODE *theNode, NODE *Nodes[MAX_S
   }
 
                 #ifdef __THREEDIM__
-  case (SIDE_NODE) : {
-
+  case (SIDE_NODE) :
+  {
     INT i;
 
     PRINTDEBUG(dddif,1,("%d: Identify SIDENODE gid=%08x node=%d Vec=%d\n",
@@ -519,27 +527,27 @@ EDGE *FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge)
   }
   ASSERT(pos0<MAX_SIDE_NODES);
 
-  for (pos1=0; pos1<MAX_SIDE_NODES; pos1++) {
+  for (pos1=0; pos1<MAX_SIDE_NODES; pos1++)
     if (SideNodes[pos1] == Nodes[1])
       break;
-  }
   ASSERT(pos1<MAX_SIDE_NODES);
 
-  switch (NTYPE(Nodes[0])) {
-
+  switch (NTYPE(Nodes[0]))
+  {
   case (CORNER_NODE) :
 
     ASSERT(pos0<ncorners);
     if ( ((pos0+1)%ncorners == pos1) ||
-         (pos0+ncorners == pos1) ) {
-
-      fatherEdge = GetEdge(NFATHER(Nodes[0]),NFATHER(SideNodes[(pos0+1)%ncorners]));
+         (pos0+ncorners == pos1) )
+    {
+      fatherEdge = GetEdge(NFATHER(Nodes[0]),
+                           NFATHER(SideNodes[(pos0+1)%ncorners]));
       ASSERT(fatherEdge!=NULL);
     }
 
     if ( ((pos0-1+ncorners)%ncorners == pos1) ||
-         ((pos0-1+ncorners)%ncorners+ncorners == pos1) ) {
-
+         ((pos0-1+ncorners)%ncorners+ncorners == pos1) )
+    {
       fatherEdge = GetEdge(NFATHER(Nodes[0]),
                            NFATHER(SideNodes[(pos0-1+ncorners)%ncorners]));
       ASSERT(fatherEdge!=NULL);
@@ -552,15 +560,15 @@ EDGE *FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge)
     ASSERT(pos0>=ncorners);
     ASSERT(pos0<2*ncorners);
 
-    if ((pos0+1)%ncorners == pos1) {
-
+    if ((pos0+1)%ncorners == pos1)
+    {
       fatherEdge = GetEdge(NFATHER(SideNodes[pos0%ncorners]),
                            NFATHER(Nodes[1]));
       ASSERT(fatherEdge!=NULL);
     }
 
-    if (pos0%ncorners == pos1) {
-
+    if (pos0%ncorners == pos1)
+    {
       fatherEdge = GetEdge(NFATHER(SideNodes[(pos0+1)%ncorners]),
                            NFATHER(Nodes[1]));
       ASSERT(fatherEdge!=NULL);
@@ -586,16 +594,18 @@ EDGE *FatherEdge (NODE **SideNodes, INT ncorners, NODE **Nodes, EDGE *theEdge)
   edge0 = edge1 = NULL;
 
   /* test whether theEdge lies above fatherEdge */
-  if (MIDNODE(fatherEdge) != NULL) {
+  if (MIDNODE(fatherEdge) != NULL)
+  {
     edge0 = GetEdge(MIDNODE(fatherEdge),SONNODE(NBNODE(LINK0(fatherEdge))));
     edge1 = GetEdge(MIDNODE(fatherEdge),SONNODE(NBNODE(LINK1(fatherEdge))));
   }
-  else {
-    edge0 = GetEdge(SONNODE(NBNODE(LINK0(fatherEdge))),SONNODE(NBNODE(LINK1(fatherEdge))));
-  }
+  else
+    edge0 = GetEdge(SONNODE(NBNODE(LINK0(fatherEdge))),
+                    SONNODE(NBNODE(LINK1(fatherEdge))));
 
   IFDEBUG(dddif,5)
-  UserWriteF("%4d: fatherEdge=%x theEdge=%x edge0=%x edge1=%x\n",me,fatherEdge,theEdge,edge0,edge1);
+  UserWriteF("%4d: fatherEdge=%x theEdge=%x edge0=%x edge1=%x\n",me,
+             fatherEdge,theEdge,edge0,edge1);
   UserWriteF("%4d: Nodes[0]=%d Nodes[1]=%d\n",me,ID(Nodes[0]),ID(Nodes[1]));
 
   UserWriteF("SideNodes\n");
@@ -640,7 +650,8 @@ static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor, NODE **SideN
 
   Nodes[0] = CORNER(Son,corner0);
   Nodes[1] = CORNER(Son,corner1);
-  PRINTDEBUG(dddif,5,("%4d: edge=%d corner0=%d corner1=%d Nodes[0]=%d Nodes[1]=%d\n",
+  PRINTDEBUG(dddif,5,("%4d: edge=%d corner0=%d corner1=%d Nodes[0]=%d "
+                      "Nodes[1]=%d\n",
                       me,edge, corner0, corner1, ID(Nodes[0]), ID(Nodes[1])));
         #endif
 
@@ -718,7 +729,8 @@ static INT IdentifyEdge (ELEMENT *theElement, ELEMENT *theNeighbor, NODE **SideN
 }
 
 
-static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement, INT i, ELEMENT *theNeighbor)
+static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement,
+                                        INT i, ELEMENT *theNeighbor)
 {
   INT nodes,j;
   NODE *SideNodes[MAX_SIDE_NODES];
@@ -728,11 +740,12 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement, INT 
   GetSonSideNodes(theElement,i,&nodes,SideNodes);
   ncorners = CORNERS_OF_SIDE(theElement,i);
 
-  PRINTDEBUG(dddif,1,("%d: IdentifyObjectsOfElementSide():identify NODES ncorners=%d nodes=%d\n",me,
-                      ncorners,nodes));
+  PRINTDEBUG(dddif,1,("%d: IdentifyObjectsOfElementSide():identify NODES "
+                      "ncorners=%d nodes=%d\n",me,ncorners,nodes));
 
   /* identify nodes, vertices and node vectors of son elements */
-  for (j=0; j<nodes; j++) {
+  for (j=0; j<nodes; j++)
+  {
     INT prio;
 
     theNode = SideNodes[j];
@@ -744,13 +757,14 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement, INT 
   }
 
   /* identify edge vectors (2D); edges, edge and side vectors (3D) */
-  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR) || DIM==3) {
-
+  if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR) || DIM==3)
+  {
     ELEMENT *SonList[MAX_SONS];
     INT SonsOfSide,SonSides[MAX_SONS];
     INT j;
 
-    PRINTDEBUG(dddif,1,("%d: IdentifyObjectsOfElementSide(): identify EDGES and VECTORS\n",me));
+    PRINTDEBUG(dddif,1,("%d: IdentifyObjectsOfElementSide(): identify "
+                        "EDGES and VECTORS\n",me));
 
     if (Get_Sons_of_ElementSide(theElement,i,&SonsOfSide,
                                 SonList,SonSides,1)!=GM_OK)
@@ -758,8 +772,8 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement, INT 
 
     for (j=0; j<SonsOfSide; j++) {
 
-      if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR) || DIM==3) {
-
+      if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR) || DIM==3)
+      {
         INT edgeofside;
         INT nedges = EDGES_OF_SIDE(SonList[j],SonSides[j]);
 
@@ -772,10 +786,8 @@ static INT IdentifyObjectsOfElementSide(GRID *theGrid, ELEMENT *theElement, INT 
       }
 
                         #ifdef __THREEDIM__
-      if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR)) {
-
+      if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
         IdentifySideVector(theElement,theNeighbor,SonList[j],SonSides[j]);
-      }
                         #endif
     }
   }
@@ -788,13 +800,14 @@ INT     IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel
   NODE *theNode;
   GRID *theGrid;
 
-  PRINTDEBUG(dddif,1,("%d: IdentifyDistributedObjects(): FromLevel=%d ToLevel=%d\n",
-                      me,FromLevel,ToLevel));
+  PRINTDEBUG(dddif,1,("%d: IdentifyDistributedObjects(): FromLevel=%d "
+                      "ToLevel=%d\n",me,FromLevel,ToLevel));
 
   /* identify distributed objects */
-  for (l=FromLevel; l<ToLevel; l++) {
-
-    PRINTDEBUG(dddif,1,("%d: IdentifyDistributedObjects(): identification level=%d\n",me,l));
+  for (l=FromLevel; l<ToLevel; l++)
+  {
+    PRINTDEBUG(dddif,1,("%d: IdentifyDistributedObjects(): identification "
+                        "level=%d\n",me,l));
 
     theGrid = GRID_ON_LEVEL(theMG,l);
 
@@ -808,15 +821,18 @@ INT     IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel
       ResetIdentFlags(GRID_ON_LEVEL(theMG,l+1));
                 #endif
 
-    for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement)) {
+    for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
+         theElement=SUCCE(theElement))
+    {
 
       if (!IS_REFINED(theElement) ||
-          (prio = DDD_InfoPriority(PARHDRE(theElement))) == PrioGhost) {
+          (prio = DDD_InfoPriority(PARHDRE(theElement))) == PrioGhost)
+      {
         continue;
       }
 
-      for (i=0; i<SIDES_OF_ELEM(theElement); i++) {
-
+      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
+      {
         theNeighbor = NBELEM(theElement,i);
         if (theNeighbor == NULL) continue;
 
@@ -824,9 +840,9 @@ INT     IdentifyDistributedObjects (MULTIGRID *theMG, INT FromLevel, INT ToLevel
             || NSONS(theNeighbor)!=0)
           continue;
 
-        PRINTDEBUG(dddif,1,("%d: Identify element: pe=%08x/%x eID=%d side=%d\n",me,
-                            DDD_InfoGlobalId(PARHDRE(theElement)),theElement,
-                            ID(theElement),i));
+        PRINTDEBUG(dddif,1,("%d: Identify element: pe=%08x/%x eID=%d "
+                            "side=%d\n",me,DDD_InfoGlobalId(PARHDRE(theElement)),
+                            theElement,ID(theElement),i));
 
         IdentifyObjectsOfElementSide(theGrid,theElement,i,theNeighbor);
       }
