@@ -2775,7 +2775,7 @@ START_NAMESPACE
 #define FIRSTELEMENT(p)         ((p)->elements[0])
 #define PFIRSTELEMENT(p)        FIRSTELEMENT(p)
 #define LASTELEMENT(p)          ((p)->lastelement[0])
-#define PLASTELEMENT(p)         LASTELMENT(p)
+#define PLASTELEMENT(p)         LASTELEMENT(p)
 #endif
 
 #ifdef ModelP
