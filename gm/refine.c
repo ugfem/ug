@@ -83,7 +83,7 @@
 #include "rm.h"
 #include "ugm.h"
 
-/* paralllel modules */
+/* parallel modules */
 #ifdef ModelP
 #include "ppif.h"
 #include "ddd.h"
@@ -141,6 +141,12 @@
 #else
 #define NEWGREEN(e)					(TAG(e)==HEXAHEDRON || TAG(e)== PRISM || \
 									TAG(e)==PYRAMID || TAG(e)== TETRAHEDRON)
+#endif
+
+#ifdef __MWCW__
+#define UserWrite					PrintDebug
+#define UserWriteF					PrintDebug
+#define printf						PrintDebug
 #endif
 
 /* marked elem with new green refinement (without rule, only 3D) */
@@ -3513,7 +3519,6 @@ static INT compare_node (const void *e0, const void *e1)
 	return(0);
 }
 
-
 /****************************************************************************/
 /*
    Get_Sons_of_ElementSide - 
@@ -3951,7 +3956,6 @@ static int compare_nodes (const void *ce0, const void *ce1)
 #pragma optimization_level 1
 #endif
 
-
 /****************************************************************************/
 /*
    Connect_Sons_of_ElementSide - 
@@ -4048,8 +4052,10 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
 	/* get sons of neighbor to connect */
 	Get_Sons_of_ElementSide(theNeighbor,nbside,&Sons_of_NbSide,
 		Sons_of_NbSide_List,NbSonSides,1,0);
-
+	
+	#ifdef ModelP
 	if (!ioflag)
+	#endif
 		/* match exactly */
 		ASSERT(Sons_of_Side == Sons_of_NbSide && Sons_of_NbSide>0 
 			   && Sons_of_NbSide<6);
