@@ -2,18 +2,17 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*																			*/
-/* File:	  ew.c	                                                                                                        */
+/* File:	  enw.c	                                                                                                        */
 /*																			*/
-/* Purpose:   eigenvalue solver num procs                                       */
+/* Purpose:   solver for generalized eigenvalue problems					*/
 /*																			*/
-/* Author:	  Christian Wieners                                                                             */
-/*			  Institut fuer Computeranwendungen III                                                 */
-/*			  Universitaet Stuttgart										*/
-/*			  Pfaffenwaldring 27											*/
-/*			  70569 Stuttgart			                                                                */
-/*			  email: ug@ica3.uni-stuttgart.de						        */
+/* Author:	  Klaus Johannsen	                                                                                */
+/*			  IWR/Technical Simulation										*/
+/*			  Universitaet Heidelberg										*/
+/*			  In Neuenheimer Feld 368										*/
+/*			  69120 Heidelberg			                                                                */
 /*																			*/
-/* History:   Januar 7, 1997                                                                            */
+/* History:   June, 2001	                                                                        */
 /*																			*/
 /* Remarks:                                                                                                                             */
 /*																			*/
@@ -551,7 +550,7 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
   DOUBLE old_re[MAX_NUMBER_EW],old_im[MAX_NUMBER_EW],norm,diff,sign;
   DOUBLE* table[MAX_NUMBER_EW];
   INT index[MAX_NUMBER_EW];
-  INT bl = level;
+  INT bl = 0;
 
   ewresult->error_code = 0;
   CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'§',"\n"); UserWrite(text);
@@ -591,7 +590,6 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
     }
     for (i=0; i<New; i++)
     {
-      //if ((*np->LS->Solver)(np->LS,level,np->t,ev[i],np->M, abslimit,reduction, &ewresult->lresult[i])) NP_RETURN(1,ewresult->error_code);
       if (dmatmul (theMG,0,level,ON_SURFACE,np->t,np->M,ev[i]) != NUM_OK) NP_RETURN(1,ewresult->error_code);
       for (j=0; j<New; j++)
         if (ddotw(theMG,0,level,ON_SURFACE,np->t,ev[j],np->weight,&A[i][j])) NP_RETURN(1,ewresult->error_code);
