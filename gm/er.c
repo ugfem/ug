@@ -135,8 +135,15 @@ enum NB_STATUS {
   (long)REFINE(e),                                                                                                                        \
   (int)NSONS(e),                                                                                                                          \
   (int)ns
+
+#ifdef Debug
 #define PD_ERR(l,x,e)                   {PRINTDEBUG(gm,l,x); e++; /* ASSERT(FALSE);*/}
 #define PD(x)                                   {PrintDebug x;}
+#else
+#define PD_ERR(l,x,e)                   /* no debug */
+#define PD(x)                                   /* no debug */
+#define PrintDebug              printf
+#endif
 
 /****************************************************************************/
 /*																			*/
