@@ -4707,37 +4707,6 @@ static INT RefineCommand (INT argc, char **argv)
    D*/
 /****************************************************************************/
 
-/****************************************************************************/
-/*
-   MarkCommand - Mark element with refinement type
-
-   SYNOPSIS:
-   static INT MarkCommand (INT argc, char **argv);
-
-   PARAMETERS:
-   .  argc - number of arguments (incl. its own name)
-   .  argv - array of strings giving the arguments
-
-   DESCRIPTION:
-   This function marks element with refinement type.
-   It marks one (or several) elements for refinement.
-
-   mark [$h | {[<rule> [<side>]] [$a | $i <Id> | $s]} | $c]
-
-   .  <rule>                 - specify a refinement rule ("red" is default)
-   .  <side>                 - has to be specified if the corresponding rule can be applied in several orientations
-   .  $a                     - refine all (leave) elements
-   .  $i <Id>                - refine the element with <Id>
-   .  $s                     - refine all elements from the current selection
-   .  $h                     - show available rules
-
-   RETURN VALUE:
-   INT
-   .n    0 if ok
-   .n    1 if error occured.
- */
-/****************************************************************************/
-
 static INT MarkCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
@@ -4781,55 +4750,57 @@ static INT MarkCommand (INT argc, char **argv)
     return(OKCODE);
   }
 
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='z')
+    #ifdef __THREEDIM__
+  if (ReadArgvDOUBLE("z",&z,argc, argv)==0)
+  {
+    for (l=0; l<=TOPLEVEL(theMG); l++)
+      for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+           theElement!=NULL; theElement=SUCCE(theElement))
+        if (EstimateHere(theElement))
+          for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+            if (ZC(MYVERTEX(CORNER(theElement,j))) < z)
+              MarkForRefinement(theElement,RED,NULL);
+
+    UserWriteF("all elements in z < %f marked for refinement\n",
+               (float) z);
+
+    return(OKCODE);
+  }
+    #endif
+
+  if (ReadArgvPosition("pos",argc,argv,global)==0)
+  {
+    theElement = FindElementOnSurface(theMG,global);
+    if (theElement != NULL)
     {
-#ifdef __THREEDIM__
-      if (ReadArgvDOUBLE("z",&z,argc, argv)==NULL)
-      {
-        for (l=0; l<=TOPLEVEL(theMG); l++)
-          for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
-               theElement!=NULL; theElement=SUCCE(theElement))
-            if (EstimateHere(theElement))
-              for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
-                if (ZC(MYVERTEX(CORNER(theElement,j))) < z)
-                  MarkForRefinement(theElement,RED,NULL);
-
-        UserWriteF("all elements in z < %f marked for refinement\n",
-                   (float) z);
-
-        return(OKCODE);
-      }
-#endif
-    }
-
-  for (i=1; i<argc; i++)
-    if (argv[i][0]=='p')
-    {
-#ifdef __TWODIM__
-      if (sscanf(argv[i],"pos %f %f",x,x+1) != 2)
-        return (CMDERRORCODE);
-      global[0] = x[0];
-      global[1] = x[1];
-#endif
-
-#ifdef __THREEDIM__
-      if (sscanf(argv[i],"pos %f %f %f",x,x+1,x+2) != 3)
-        return (CMDERRORCODE);
-      global[0] = x[0];
-      global[1] = x[1];
-      global[2] = x[2];
-#endif
-
-      theElement = FindElementOnSurface(theMG,global);
-      if (theElement == NULL)
-        return(PARAMERRORCODE);
       MarkForRefinement(theElement,RED,NULL);
-
-      UserWriteF("element %d marked for refinement\n",ID(theElement));
-
-      return (OKCODE);
+        #ifdef ModelP
+      j = (INT) UG_GlobalSumDOUBLE(1.0);
+      i = ID(theElement);
     }
+    else
+    {
+      j = (INT) UG_GlobalSumDOUBLE(0.0);
+      i = -1;
+    }
+    if (j == 0)
+      return(PARAMERRORCODE);
+
+    for (l=0; l<j; l++)
+    {
+      rv = UG_GlobalMaxINT(i);
+      UserWriteF("element %d marked for refinement\n",rv);
+      if (rv == i) i = -1;
+    }
+        #else
+      UserWriteF("element %d marked for refinement\n",ID(theElement));
+    }
+    else
+      return(PARAMERRORCODE);
+            #endif
+
+    return (OKCODE);
+  }
 
   /* first check help option */
   for (i=1; i<argc; i++)
