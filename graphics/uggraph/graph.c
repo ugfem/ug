@@ -88,7 +88,7 @@ static COORD_POINT currClipRegionCorner[4];     /* corners of the view port */
 static char buffer[256];                                                /* general purpose text buff*/
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/

@@ -36,8 +36,10 @@
 /* ug includes */
 #include "defs.h"
 #include "gm.h"
+#include "devices.h"
 #include "evm.h"
 #include "general.h"
+#include "connectuggrape.h"
 
 int CallGrape (MULTIGRID *theMG)
 {
