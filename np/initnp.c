@@ -125,10 +125,12 @@ INT InitNumerics ()
     SetHiWrd(err,__LINE__);
     return (err);
   }
-  if ((err=InitEW())!=0) {
-    SetHiWrd(err,__LINE__);
-    return (err);
-  }
+  /*
+          if ((err=InitEW())!=0) {
+                  SetHiWrd(err,__LINE__);
+                  return (err);
+          }
+   */
 
   /* init finite volumes */
   if ((err=InitFiniteVolumeGeom())!=0) {

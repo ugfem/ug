@@ -5226,7 +5226,7 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
 
       /* check coarse grid position */
       if (VTYPE(vi)==NODEVECTOR)
-        if (NFATHER(VMYNODE(vi))!=NULL) continue;                         /* skip coarse grid node */
+        if (CORNERTYPE(VMYNODE(vi))) continue;                         /* skip coarse grid node */
 
       /* now we are at line i */
       diag = MVALUE(VSTART(vi),mc);                                     /* diagonal element */
@@ -5304,7 +5304,7 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
 
     /* check coarse grid position */
     if (VTYPE(vi)==NODEVECTOR)
-      if (NFATHER(VMYNODE(vi))!=NULL) continue;                   /* skip coarse grid node */
+      if (CORNERTYPE(VMYNODE(vi))) continue;                   /* skip coarse grid node */
 
     i = VINDEX(vi);
 
@@ -5544,7 +5544,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
     {
       /* check coarse grid position */
       if (VTYPE(vec)==NODEVECTOR)
-        if (NFATHER(VMYNODE(vec))!=NULL) {
+        if (CORNERTYPE(VMYNODE(vec))) {
           VVALUE(vec,vc) = 0.0;                                 /* no correction */
           continue;                                                             /* skip coarse grid node */
         }
@@ -5568,7 +5568,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
     {
       /* check coarse grid position */
       if (VTYPE(vec)==NODEVECTOR)
-        if (NFATHER(VMYNODE(vec))!=NULL) {
+        if (CORNERTYPE(VMYNODE(vec))) {
           VVALUE(vec,vc) = 0.0;                                 /* no correction */
           continue;                                                             /* skip coarse grid node */
         }
@@ -5606,7 +5606,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
 
     /* check coarse grid position */
     if (rtype==NODEVECTOR)
-      if (NFATHER(VMYNODE(vec))!=NULL) {
+      if (CORNERTYPE(VMYNODE(vec))) {
         vcomp = VD_CMPPTR_OF_TYPE(v,rtype);
         vmat  = VVALPTR(vec);
         for (i=0; i<n; i++) vmat[vcomp[i]] = 0.0;
@@ -5743,7 +5743,7 @@ INT l_luiter_fine (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const 
 
     /* check coarse grid position */
     if (rtype==NODEVECTOR)
-      if (NFATHER(VMYNODE(vec))!=NULL) {
+      if (CORNERTYPE(VMYNODE(vec))) {
         vcomp = VD_CMPPTR_OF_TYPE(v,rtype);
         vmat  = VVALPTR(vec);
         for (i=0; i<n; i++) vmat[vcomp[i]] = 0.0;

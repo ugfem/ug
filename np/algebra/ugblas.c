@@ -458,7 +458,7 @@ INT l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x)
 	for (tp=0; tp<NVECTYPES; tp++)
  	    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
-	DDD_IFAOneway(OuterVectorIF, GLEVEL(g), IF_FORWARD, m * sizeof(DOUBLE),
+	DDD_IFAOneway(VectorVIF, GLEVEL(g), IF_FORWARD, m * sizeof(DOUBLE),
 				  Gather_VectorComp, Scatter_GhostVectorComp);
 
 	return (NUM_OK);
@@ -496,7 +496,7 @@ static int Gather_ProjectVectorComp (DDD_OBJ obj, void *data)
 
 	((INT *)data)[0] = 1;
 	if (VTYPE(pv) == NODEVECTOR) {
-	    theNode = SONNODE(MYNODE(pv));
+	    theNode = SONNODE(VMYNODE(pv));
 		if (theNode != NULL)
 		    if (DDD_InfoPriority(PARHDR(NVECTOR(theNode))) == PrioMaster) 
 			    ((INT *)data)[0] = 0;
@@ -549,11 +549,7 @@ INT l_ghostvector_project (GRID *g, const VECDATA_DESC *x)
  	    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 	m++;
 
-	DDD_IFAOneway(OuterVectorIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
-				  Gather_ProjectVectorComp, Scatter_ProjectVectorComp);
-	DDD_IFAOneway(OuterVectorIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
-				  Gather_ProjectVectorComp, Scatter_ProjectVectorComp);
-	DDD_IFAOneway(OuterVectorIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
+	DDD_IFAOneway(VectorVAllIF, GLEVEL(g), IF_FORWARD, m * sizeof(DOUBLE),
 				  Gather_ProjectVectorComp, Scatter_ProjectVectorComp);
 
 	return (NUM_OK);
@@ -811,7 +807,7 @@ INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x)
 	for (tp=0; tp<NVECTYPES; tp++)
 	  m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
-	DDD_IFAOneway(OuterVectorIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
+	DDD_IFAOneway(VectorVIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
 				  Gather_VectorCompCollect, Scatter_VectorComp);
 
 	return (NUM_OK);

@@ -147,7 +147,7 @@ static INT StandardRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
     v = NVECTOR(theNode);
     if (VCLASS(v)<NEWDEF_CLASS) continue;
 
-    if (NFATHER(theNode)!=NULL)
+    if (CORNERTYPE(theNode))
     {
       vc = NVECTOR(NFATHER(theNode));
       vecskip = VECSKIP(vc);
@@ -239,7 +239,7 @@ static INT StandardIntCorNodeVector (GRID *FineGrid, const VECDATA_DESC *to, con
         skip = FALSE;
     if (skip) continue;                         /* skip only if all flags are TRUE */
 
-    if (NFATHER(theNode)!=NULL)
+    if (CORNERTYPE(theNode))
     {
       vc = NVECTOR(NFATHER(theNode));
       for (i=0; i<ncomp; i++)
@@ -311,7 +311,7 @@ static INT StandardIntNewNodeVector (GRID *FineGrid, const VECDATA_DESC *Cor)
     v = NVECTOR(theNode);
     if (!VNEW(v)) continue;
 
-    if (NFATHER(theNode)!=NULL)
+    if (CORNERTYPE(theNode))
     {
       vc = NVECTOR(NFATHER(theNode));
       for (i=0; i<ncomp; i++)
@@ -1833,7 +1833,7 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
     /* fine grid diagonal block */
     Dfine = &(MVALUE(VSTART(vf),A));
 
-    if (NFATHER(theNode)!=NULL)             /* This node is also in the coarse grid */
+    if (CORNERTYPE(theNode))             /* This node is also in the coarse grid */
     {
       vc = NVECTOR(NFATHER(theNode));
 

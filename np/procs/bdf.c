@@ -452,7 +452,7 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
         if (bdf->Break) return(0);
 Continue:
         if (eresult.refine + eresult.coarse > 0) {
-          if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL) != GM_OK)
+          if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL,GM_REFINE_PARALLEL) != GM_OK)
             NP_RETURN(1,res[0]);
           level = TOPLEVEL(mg);
           k = level - 1;

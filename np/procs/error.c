@@ -531,7 +531,7 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x,
   i = 0;
   if (np->update) {
     i = 1;
-    if (RefineMultiGrid(theMG,GM_REFINE_TRULY_LOCAL) != GM_OK) NP_RETURN(1,eresult->error_code);
+    if (RefineMultiGrid(theMG,GM_REFINE_TRULY_LOCAL,GM_REFINE_PARALLEL) != GM_OK) NP_RETURN(1,eresult->error_code);
     UserWrite("[r]");
   }
   if (np->interpolate) {
