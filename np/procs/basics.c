@@ -287,12 +287,12 @@ static INT EU_Init (NP_BASE *theNP, INT argc, char **argv)
   INT i;
 
   theEU   = (NP_EUNORM_VEC*)theNP;
-  strcpy(EU_STRDIR(theEU),"---");
+  EU_STRDIR(theEU)[0] = '\0';
   for (i=1; i<argc; i++)
     if (argv[i][0]=='s')
     {
       if (sscanf(argv[i],"s %s",EU_STRDIR(theEU))!=1)
-        strcpy(EU_STRDIR(theEU),"---");
+        EU_STRDIR(theEU)[0] = '\0';
       break;
     }
 
@@ -313,7 +313,10 @@ static INT EU_Display (NP_BASE *theNP)
   if (theEU->x != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(theEU->x));
   UserWrite("configuration parameters:\n");
-  UserWriteF(DISPLAY_NP_FORMAT_SS,"structdir",EU_STRDIR(theEU));
+  if (EU_STRDIR(theEU)[0]!='\0')
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"structdir",EU_STRDIR(theEU));
+  else
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"structdir","---");
 
   return (0);
 }
