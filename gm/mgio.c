@@ -38,6 +38,8 @@
 
 #endif
 
+#undef __MGIO_CONTRO_OUT__
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -48,13 +50,20 @@
 /*																			*/
 /****************************************************************************/
 
-#define MGIO_TITLE_LINE                 "#### sparse mg storage format ####\n"
-#define MGIO_DATA_LINE                  "######### data following #########\n"
-#define MGIO_NEW_LINE                   "\n"
-#define MGIO_SEP_LINE                   "##################################\n"
+#define MGIO_TITLE_LINE                 "####.sparse.mg.storage.format.####"
+#define MGIO_DATA_LINE                  "#########.data.following.#########"
+#define MGIO_SEP_LINE                   "##################################"
 
 #define MGIO_ASCII                                      0
 #define MGIO_BIN                                        1
+
+#define MGIO_INTSIZE                            100
+#define MGIO_DOUBLESIZE                         100
+#define MGIO_BUFFERSIZE                         1024
+
+#define MGIO_CHECK_INTSIZE(n)           if ((n)>MGIO_INTSIZE) return (1)
+#define MGIO_CHECK_DOUBLESIZE(n)        if ((n)>MGIO_DOUBLESIZE) return (1)
+#define MGIO_CHECK_BUFFERIZE(s)         if (strlen(s)>MGIO_BUFFERSIZE) return (1)
 
 /****************************************************************************/
 /*																			*/
@@ -64,7 +73,7 @@
 /****************************************************************************/
 
 typedef int (*RW_mint_proc)(int n, int *intList);
-typedef int (*RW_mfloat_proc)(int n, float *floatList);
+typedef int (*RW_mdouble_proc)(int n, double *doubleList);
 typedef int (*RW_string_proc)(char *string);
 
 /****************************************************************************/
@@ -81,17 +90,21 @@ typedef int (*RW_string_proc)(char *string);
 /*																			*/
 /****************************************************************************/
 
-static FILE *stream;                    /* file                                                 */
-static int gridpathes_set;              /* pathes used in ug			*/
-static int rw_mode;                             /* ASCII or ... (see header)	*/
-static char buffer[1024];               /* general purpose buffer		*/
-static int intList[100];                /* general purpose integer list */
-static float floatList[100];    /* general purpose float list   */
+static FILE *stream;                            /* file                                                 */
+static int gridpathes_set;                      /* pathes used in ug			*/
+static int rw_mode;                                     /* ASCII or ... (see header)	*/
+static char buffer[MGIO_BUFFERSIZE]; /* general purpose buffer		*/
+static int intList[MGIO_INTSIZE];       /* general purpose integer list */
+static double doubleList[MGIO_DOUBLESIZE]; /* general purpose double list*/
 
 /* low level read/write functions */
 static RW_mint_proc Read_mint, Write_mint;
-static RW_mfloat_proc Read_mfloat, Write_mfloat;
+static RW_mdouble_proc Read_mdouble, Write_mdouble;
 static RW_string_proc Read_string, Write_string;
+
+/* local storage of general elements */
+static MGIO_GE_ELEMENT lge[MGIO_TAGS];
+
 
 #ifdef __MGIO_USE_IN_UG__
 
@@ -118,7 +131,7 @@ static int ASCII_Read_mint (int n, int *intList)
   int i;
 
   for (i=0; i<n; i++)
-    if (fscanf(stream,"%d",intList+i)!=1) return (1);
+    if (fscanf(stream," %d",intList+i)!=1) return (1);
   return (0);
 }
 
@@ -127,39 +140,41 @@ static int ASCII_Write_mint (int n, int *intList)
   int i;
 
   for (i=0; i<n; i++)
-    if (fprintf(stream,"%d",intList[i])<0) return (1);
+    if (fprintf(stream," %d",intList[i])<0) return (1);
   return (0);
 }
 
-static int ASCII_Read_mfloat (int n, float *floatList)
+static int ASCII_Read_mdouble (int n, double *doubleList)
 {
   int i;
-  float fValue;
+  double dValue;
 
   for (i=0; i<n; i++)
-    if (fscanf(stream,"%f",floatList+i)!=1) return (1);
+    if (fscanf(stream," %lf",doubleList+i)!=1) return (1);
   return (0);
 }
 
-static int ASCII_Write_mfloat (int n, float *floatList)
+static int ASCII_Write_mdouble (int n, double *doubleList)
 {
   int i;
-  float fValue;
+  double fValue;
 
   for (i=0; i<n; i++)
-    if (fprintf(stream,"%f",floatList+i)<0) return (1);
+    if (fprintf(stream," %lf",doubleList[i])<0) return (1);
   return (0);
 }
 
 static int ASCII_Read_string (char *string)
 {
   if (fscanf(stream,"%s",string)!=1) return (1);
+  if (fscanf(stream,"\n")!=0) return (1);
   return (0);
 }
 
 static int ASCII_Write_string (char *string)
 {
   if (fprintf(stream,"%s",string)<0) return (1);
+  if (fprintf(stream,"\n")<0) return (1);
   return (0);
 }
 
@@ -196,7 +211,6 @@ int Read_OpenFile (char *filename)
 #endif
 
   if (stream==NULL) return (1);
-
   return (0);
 }
 
@@ -233,7 +247,6 @@ int Write_OpenFile (char *filename)
 #endif
 
   if (stream==NULL) return (1);
-
   return (0);
 }
 
@@ -264,17 +277,17 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
   if (ASCII_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_SEP_LINE)!=0) return (1);
   if (ASCII_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_TITLE_LINE)!=0) return (1);
   if (ASCII_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_SEP_LINE)!=0) return (1);
-  if (ASCII_Read_mint(5,intList)) return (1);
+  if (ASCII_Read_mint(6,intList)) return (1);
   mg_general->mode                = intList[0];
   mg_general->nLevel              = intList[1];
   mg_general->nNode               = intList[2];
   mg_general->nPoint              = intList[3];
   mg_general->nElement    = intList[4];
+  mg_general->nHierElem   = intList[5];
   if (ASCII_Read_string(mg_general->DomainName)) return (1);
   if (ASCII_Read_string(mg_general->Formatname)) return (1);
   if (ASCII_Read_mint(1,intList)) return (1);
   mg_general->VectorTypes = intList[0];
-  if (ASCII_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_NEW_LINE)!=0) return (1);
   if (ASCII_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_SEP_LINE)!=0) return (1);
   if (ASCII_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_DATA_LINE)!=0) return (1);
   if (ASCII_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_SEP_LINE)!=0) return (1);
@@ -284,12 +297,12 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
   {
   case MGIO_ASCII :
     Read_mint       = ASCII_Read_mint;
-    Read_mfloat = ASCII_Read_mfloat;
+    Read_mdouble = ASCII_Read_mdouble;
     Read_string = ASCII_Read_string;
     break;
   case MGIO_BIN :
     Read_mint       = ASCII_Read_mint;
-    Read_mfloat = ASCII_Read_mfloat;
+    Read_mdouble = ASCII_Read_mdouble;
     Read_string = ASCII_Read_string;
     break;
   default :
@@ -331,12 +344,12 @@ int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
   intList[2] = mg_general->nNode;
   intList[3] = mg_general->nPoint;
   intList[4] = mg_general->nElement;
-  if (ASCII_Write_mint(5,intList)) return (1);
+  intList[5] = mg_general->nHierElem;
+  if (ASCII_Write_mint(6,intList)) return (1);
   if (ASCII_Write_string(mg_general->DomainName)) return (1);
   if (ASCII_Write_string(mg_general->Formatname)) return (1);
   intList[0] = mg_general->VectorTypes;
   if (ASCII_Write_mint(1,intList)) return (1);
-  if (ASCII_Write_string(MGIO_NEW_LINE)) return (1);
   if (ASCII_Write_string(MGIO_SEP_LINE)) return (1);
   if (ASCII_Write_string(MGIO_DATA_LINE)) return (1);
   if (ASCII_Write_string(MGIO_SEP_LINE)) return (1);
@@ -346,12 +359,12 @@ int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
   {
   case MGIO_ASCII :
     Write_mint              = ASCII_Write_mint;
-    Write_mfloat    = ASCII_Write_mfloat;
+    Write_mdouble   = ASCII_Write_mdouble;
     Write_string    = ASCII_Write_string;
     break;
   case MGIO_BIN :
     Write_mint              = ASCII_Write_mint;
-    Write_mfloat    = ASCII_Write_mfloat;
+    Write_mdouble   = ASCII_Write_mdouble;
     Write_string    = ASCII_Write_string;
     break;
   default :
@@ -415,6 +428,11 @@ int     Read_GE_General (MGIO_GE_GENERAL *ge_general)
 
 int     Write_GE_General (MGIO_GE_GENERAL *ge_general)
 {
+
+#ifdef  __MGIO_CONTRO_OUT__
+  if ((*Write_string)("##### ge general #####")) return (1);
+#endif
+
   intList[0] = ge_general->nGenElement;
   if ((*Write_mint)(1,intList)) return (1);
 
@@ -446,30 +464,29 @@ int     Write_GE_General (MGIO_GE_GENERAL *ge_general)
 
 int     Read_GE_Elements (int n, MGIO_GE_ELEMENT *ge_element)
 {
-  int i,j,s,m;
+  int i,j,s;
   MGIO_GE_ELEMENT *pge;
 
   pge = ge_element;
-  m = 4 + 6*MGIO_MAX_EDGES_OF_ELEM;
   for (i=0; i<n; i++)
   {
-    if ((*Read_mint)(m,intList)) return (1);
-    s=0;
-    pge->tag                = intList[s++];
-    pge->nCorner    = intList[s++];
-    pge->nEdge              = intList[s++];
-    pge->nSide              = intList[s++];
-    for (j=0; j<MGIO_MAX_EDGES_OF_ELEM; j++)
+    if ((*Read_mint)(4,intList)) return (1);s=0;
+    pge->tag                = lge[i].tag            = intList[s++];
+    pge->nCorner    = lge[i].nCorner        = intList[s++];
+    pge->nEdge              = lge[i].nEdge          = intList[s++];
+    pge->nSide              = lge[i].nSide          = intList[s++];
+    if ((*Read_mint)(2*pge->nEdge+4*pge->nSide,intList)) return (1);s=0;
+    for (j=0; j<pge->nEdge; j++)
     {
-      pge->CornerOfEdge[j][0] = intList[s++];
-      pge->CornerOfEdge[j][1] = intList[s++];
+      pge->CornerOfEdge[j][0] = lge[i].CornerOfEdge[j][0] = intList[s++];
+      pge->CornerOfEdge[j][1] = lge[i].CornerOfEdge[j][1] = intList[s++];
     }
-    for (j=0; j<MGIO_MAX_EDGES_OF_ELEM; j++)
+    for (j=0; j<pge->nSide; j++)
     {
-      pge->CornerOfSide[j][0] = intList[s++];
-      pge->CornerOfSide[j][1] = intList[s++];
-      pge->CornerOfSide[j][2] = intList[s++];
-      pge->CornerOfSide[j][3] = intList[s++];
+      pge->CornerOfSide[j][0] = lge[i].CornerOfSide[j][0] = intList[s++];
+      pge->CornerOfSide[j][1] = lge[i].CornerOfSide[j][1] = intList[s++];
+      pge->CornerOfSide[j][2] = lge[i].CornerOfSide[j][2] = intList[s++];
+      pge->CornerOfSide[j][3] = lge[i].CornerOfSide[j][3] = intList[s++];
     }
     pge++;
   }
@@ -505,26 +522,31 @@ int     Write_GE_Elements (int n, MGIO_GE_ELEMENT *ge_element)
   int i,j,s;
   MGIO_GE_ELEMENT *pge;
 
+#ifdef  __MGIO_CONTRO_OUT__
+  if ((*Write_string)("##### ge elements #####")) return (1);
+#endif
+
   pge = ge_element;
   for (i=0; i<n; i++)
   {
     s=0;
-    intList[s++] = pge->tag;
-    intList[s++] = pge->nCorner;
-    intList[s++] = pge->nEdge;
-    intList[s++] = pge->nSide;
-    for (j=0; j<MGIO_MAX_EDGES_OF_ELEM; j++)
+    intList[s++] = lge[i].tag = pge->tag;
+    intList[s++] = lge[i].nCorner = pge->nCorner;
+    intList[s++] = lge[i].nEdge = pge->nEdge;
+    intList[s++] = lge[i].nSide = pge->nSide;
+    for (j=0; j<pge->nEdge; j++)
     {
-      intList[s++] = pge->CornerOfEdge[j][0];
-      intList[s++] = pge->CornerOfEdge[j][1];
+      intList[s++] = lge[i].CornerOfEdge[j][0] = pge->CornerOfEdge[j][0];
+      intList[s++] = lge[i].CornerOfEdge[j][1] = pge->CornerOfEdge[j][1];
     }
-    for (j=0; j<MGIO_MAX_EDGES_OF_ELEM; j++)
+    for (j=0; j<pge->nSide; j++)
     {
-      intList[s++] = pge->CornerOfSide[j][0];
-      intList[s++] = pge->CornerOfSide[j][1];
-      intList[s++] = pge->CornerOfSide[j][2];
-      intList[s++] = pge->CornerOfSide[j][3];
+      intList[s++] = lge[i].CornerOfSide[j][0] = pge->CornerOfSide[j][0];
+      intList[s++] = lge[i].CornerOfSide[j][1] = pge->CornerOfSide[j][1];
+      intList[s++] = lge[i].CornerOfSide[j][2] = pge->CornerOfSide[j][2];
+      intList[s++] = lge[i].CornerOfSide[j][3] = pge->CornerOfSide[j][3];
     }
+    MGIO_CHECK_INTSIZE(s);
     if ((*Write_mint)(s,intList)) return (1);
     pge++;
   }
@@ -586,6 +608,11 @@ int     Read_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
 
 int     Write_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
 {
+
+#ifdef  __MGIO_CONTRO_OUT__
+  if ((*Write_string)("##### rr general #####")) return (1);
+#endif
+
   intList[0] = mgio_rr_general->nRules;
   if ((*Write_mint)(1,intList)) return (1);
 
@@ -678,6 +705,10 @@ int     Write_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
   int i,j,k,m,s;
   MGIO_RR_RULE *prr;
 
+#ifdef  __MGIO_CONTRO_OUT__
+  if ((*Write_string)("##### rr rules #####")) return (1);
+#endif
+
   m = 2+MGIO_MAX_NEW_CORNERS+2*MGIO_MAX_NEW_CORNERS+MGIO_MAX_SONS_OF_ELEM*(1+MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_SIDES_OF_ELEM+1);
   prr = rr_rules;
   for (i=0; i<n; i++)
@@ -701,6 +732,7 @@ int     Write_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
         intList[s++] = prr->sons[j].nb[k];
       intList[s++] = prr->sons[j].path;
     }
+    MGIO_CHECK_INTSIZE(s);
     if ((*Write_mint)(s,intList)) return (1);
     prr++;
   }
@@ -767,6 +799,11 @@ int Read_CG_General (MGIO_CG_GENERAL *cg_general)
 
 int Write_CG_General (MGIO_CG_GENERAL *cg_general)
 {
+
+#ifdef  __MGIO_CONTRO_OUT__
+  if ((*Write_string)("##### cg general #####")) return (1);
+#endif
+
   intList[0] = cg_general->nPoint;
   intList[1] = cg_general->nBndPoint;
   intList[2] = cg_general->nInnerPoint;
@@ -803,18 +840,22 @@ int Write_CG_General (MGIO_CG_GENERAL *cg_general)
 
 int Read_CG_Points (int n, MGIO_CG_POINT *cg_point)
 {
-  int i,j,m,s;
-  MGIO_CG_POINT *pp;
+  int i,j,s,nmax,read,copy_until,still_to_read;
 
-  m = MGIO_DIM*n;
-  pp = cg_point;
-  if ((*Read_mfloat)(m,floatList)) return (1);
-  s=0;
+  s=copy_until=0; still_to_read=n;
+  nmax = MGIO_DOUBLESIZE-MGIO_DOUBLESIZE%MGIO_DIM; nmax /= MGIO_DIM;
   for(i=0; i<n; i++)
   {
+    if (i>=copy_until)
+    {
+      if (still_to_read<=nmax) read=still_to_read;
+      else read=nmax;
+      if ((*Read_mdouble)(MGIO_DIM*read,doubleList)) return (1);
+      still_to_read -= read;
+      copy_until += read;
+    }
     for(j=0; j<MGIO_DIM; j++)
-      pp[i].position[j] = floatList[s++];
-    pp++;
+      cg_point[i].position[j] = doubleList[s++];
   }
 
   return (0);
@@ -846,17 +887,23 @@ int Read_CG_Points (int n, MGIO_CG_POINT *cg_point)
 int Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
 {
   int i,j,s;
-  MGIO_CG_POINT *pp;
 
-  pp = cg_point;
+#ifdef  __MGIO_CONTRO_OUT__
+  if ((*Write_string)("##### cg points #####")) return (1);
+#endif
+
   s=0;
   for(i=0; i<n; i++)
   {
     for(j=0; j<MGIO_DIM; j++)
-      floatList[s++] = pp[i].position[j];
-    pp++;
+      doubleList[s++] = cg_point[i].position[j];
+    if (s>MGIO_DOUBLESIZE-MGIO_DIM)
+    {
+      if ((*Write_mdouble)(s,doubleList)) return (1);
+      s=0;
+    }
   }
-  if ((*Write_mfloat)(s,floatList)) return (1);
+  if ((*Write_mdouble)(s,doubleList)) return (1);
 
   return (0);
 }
@@ -889,29 +936,31 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
   int i,j,k,m,s;
   MGIO_CG_ELEMENT *pe;
 
-  m = 1+MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_SIDES_OF_ELEM+2+MGIO_MAX_NEW_CORNERS;
   pe = cg_element;
   for (i=0; i<n; i++)
   {
+    if ((*Read_mint)(1,intList)) return (1);
+    pe->ge = intList[0];
+    m=lge[pe->ge].nCorner+lge[pe->ge].nSide+2;
     if ((*Read_mint)(m,intList)) return (1);
     s=0;
-    pe->ge = intList[s++];
-    for (j=0; j<MGIO_MAX_CORNERS_OF_ELEM; j++)
+    for (j=0; j<lge[pe->ge].nCorner; j++)
       pe->cornerid[j] = intList[s++];
-    for (j=0; j<MGIO_MAX_SIDES_OF_ELEM; j++)
+    for (j=0; j<lge[pe->ge].nSide; j++)
       pe->nbid[j] = intList[s++];
     pe->refrule = intList[s++];
     pe->nmoved = intList[s++];
-    for (j=0; j<MGIO_MAX_NEW_CORNERS; j++)
-      pe->moved[j] = intList[s++];
-    m = MGIO_DIM*pe->nmoved;
-    if ((*Read_mfloat)(m,floatList)) return (1);
-    s=0;
-    for (j=0; j<MGIO_MAX_NEW_CORNERS; j++)
+    if (pe->nmoved>0)
     {
-      if (!pe->moved[j]) continue;
-      for (k=0; k<MGIO_DIM; k++)
-        pe->newposition[j].position[k] = floatList[s++];
+      if ((*Read_mint)(pe->nmoved,intList)) return (1);
+      s=0;
+      for (j=0; j<pe->nmoved; j++)
+        pe->mvcorner[j].id = intList[s++];
+      if ((*Read_mdouble)(MGIO_DIM*pe->nmoved,doubleList)) return (1);
+      s=0;
+      for (j=0; j<pe->nmoved; j++)
+        for (k=0; k<MGIO_DIM; k++)
+          pe->mvcorner[j].position[k] = doubleList[s++];
     }
     pe++;
   }
@@ -947,29 +996,32 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
   int i,j,k,m,s;
   MGIO_CG_ELEMENT *pe;
 
+#ifdef  __MGIO_CONTRO_OUT__
+  if ((*Write_string)("##### cg elements #####")) return (1);
+#endif
+
   m = 1+MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_SIDES_OF_ELEM+2+MGIO_MAX_NEW_CORNERS;
   pe = cg_element;
   for (i=0; i<n; i++)
   {
     s=0;
     intList[s++] = pe->ge;
-    for (j=0; j<MGIO_MAX_CORNERS_OF_ELEM; j++)
+    for (j=0; j<lge[pe->ge].nCorner; j++)
       intList[s++] = pe->cornerid[j];
-    for (j=0; j<MGIO_MAX_SIDES_OF_ELEM; j++)
+    for (j=0; j<lge[pe->ge].nSide; j++)
       intList[s++] = pe->nbid[j];
     intList[s++] = pe->refrule;
     intList[s++] = pe->nmoved;
-    for (j=0; j<MGIO_MAX_NEW_CORNERS; j++)
-      intList[s++] = pe->moved[j];
+    for (j=0; j<pe->nmoved; j++)
+      intList[s++] = pe->mvcorner[j].id;
+    MGIO_CHECK_INTSIZE(s);
     if ((*Write_mint)(s,intList)) return (1);
     s=0;
-    for (j=0; j<MGIO_MAX_NEW_CORNERS; j++)
-    {
-      if (!pe->moved[j]) continue;
+    for (j=0; j<pe->nmoved; j++)
       for (k=0; k<MGIO_DIM; k++)
-        floatList[s++] = pe->newposition[j].position[k];
-    }
-    if ((*Write_mfloat)(s,floatList)) return (1);
+        doubleList[s++] = pe->mvcorner[j].position[k];
+    MGIO_CHECK_DOUBLESIZE(s);
+    if (s>0) if ((*Write_mdouble)(s,doubleList)) return (1);
     pe++;
   }
 
@@ -1056,15 +1108,8 @@ int Write_HE_Refinement (int n, MGIO_HE_ELEMENT *he_element)
 
 int Read_BD_General (MGIO_BD_GENERAL *bd_general)
 {
-  int i,s;
-
-  if ((*Read_mint)(2*MGIO_MAXLEVEL,intList)) return (1);
-  s=0;
-  for (i=0; i<MGIO_MAXLEVEL; i++)
-  {
-    bd_general->nBndP[i] = intList[s++];
-    bd_general->nBndS[i] = intList[s++];
-  }
+  if ((*Read_mint)(1,intList)) return (1);
+  bd_general->nBndP = intList[0];
 
   return (0);
 }
@@ -1093,15 +1138,8 @@ int Read_BD_General (MGIO_BD_GENERAL *bd_general)
 
 int Write_BD_General (MGIO_BD_GENERAL *bd_general)
 {
-  int i,s;
-
-  s=0;
-  for (i=0; i<MGIO_MAXLEVEL; i++)
-  {
-    intList[s++] = bd_general->nBndP[i];
-    intList[s++] = bd_general->nBndS[i];
-  }
-  if ((*Write_mint)(s,intList)) return (1);
+  intList[0] = bd_general->nBndP;
+  if ((*Write_mint)(1,intList)) return (1);
 
   return (0);
 }
@@ -1132,24 +1170,17 @@ int Write_BD_General (MGIO_BD_GENERAL *bd_general)
 
 #ifdef __MGIO_USE_IN_UG__
 
-int Read_PBndDesc (MGIO_HEAP *theHeap, int n, BNDP **BndPList)
+int Read_PBndDesc (BVP *theBVP, HEAP *theHeap, int n, BNDP **BndPList)
 {
   int i;
 
   if (theHeap==NULL) return (1);
   for (i=0; i<n; i++)
   {
-    BndPList[i] = BNDP_LoadBndP (theHeap,stream);
+    BndPList[i] = BNDP_LoadBndP (theBVP,theHeap,stream);
     if (BndPList[i]==NULL) return (1);
   }
   return (0);
-}
-
-#else
-
-int Read_PBndDesc (MGIO_HEAP *theHeap, int n, BNDP **BndPList)
-{
-  return (1);
 }
 
 #endif
@@ -1186,104 +1217,6 @@ int Write_PBndDesc (int n, BNDP **BndPList)
   for (i=0; i<n; i++)
     if (BNDP_SaveBndP (BndPList[i],stream)) return (1);
   return (0);
-}
-
-#else
-
-int Write_PBndDesc (int n, BNDP **BndPList)
-{
-  return (1);
-}
-
-#endif
-
-/****************************************************************************/
-/*
-   Read_SBndDesc - reads BNDSs
-
-   SYNOPSIS:
-   int Read_SBndDesc (MGIO_HEAP *theHeap, int n, BNDS **BndSList);
-
-   PARAMETERS:
-   .  theHeap - heap
-   .  n - nb of BndP to read
-   .  BndSList - list of ptrs to BndS
-
-   DESCRIPTION:
-   function reads BNDSs
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if read error.
-
-   SEE ALSO:
- */
-/****************************************************************************/
-
-#ifdef __MGIO_USE_IN_UG__
-
-int Read_SBndDesc (MGIO_HEAP *theHeap, int n, BNDP **BndSList)
-{
-  int i;
-
-  if (theHeap==NULL) return (1);
-  for (i=0; i<n; i++)
-  {
-    BndSList[i] = BNDS_LoadBndS (theHeap,stream);
-    if (BndSList[i]==NULL) return (1);
-  }
-  return (0);
-}
-
-#else
-
-int Read_SBndDesc (MGIO_HEAP *theHeap, int n, BNDS **BndSList)
-{
-  return (1);
-}
-
-#endif
-
-/****************************************************************************/
-/*
-   Write_SBndDesc - write BNDSs
-
-   SYNOPSIS:
-   int Write_SBndDesc (int n, BNDS **BndSList);
-
-   PARAMETERS:
-   .  n - nb of BndS to write
-   .  BndPList - list of ptrs to BndS
-
-   DESCRIPTION:
-   function writes BNDSs
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if read error.
-
-   SEE ALSO:
- */
-/****************************************************************************/
-
-#ifdef __MGIO_USE_IN_UG__
-
-int Write_SBndDesc (int n, BNDS **BndSList)
-{
-  int i;
-
-  for (i=0; i<n; i++)
-    if (BNDS_SaveBndS (BndSList[i],stream)) return (1);
-  return (0);
-}
-
-#else
-
-int Write_SBndDesc (int n, BNDS **BndSList)
-{
-  return (1);
 }
 
 #endif

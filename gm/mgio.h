@@ -60,8 +60,6 @@
         #include "rm.h"
         #include "domain.h"
 
-        #define MGIO_COORD                                                      COORD
-        #define MGIO_HEAP                                                       HEAP
         #define MGIO_BNDP                                                       BNDP
         #define MGIO_BNDS                                                       BNDS
 
@@ -75,15 +73,12 @@
         #define MGIO_MAX_CORNERS_OF_SIDE            MAX_CORNERS_OF_SIDE
 
         #define MGIO_MAXLEVEL                                           MAXLEVEL
+        #define MGIO_TAGS                                                       TAGS
 
 #else
 
-        #define MGIO_COORD                                                      float
-        #define MGIO_HEAP                                                       char
-        #define MGIO_BNDP                                                       char
-        #define MGIO_BNDS                                                       char
-
         #define MGIO_MAXLEVEL                                           32
+        #define MGIO_TAGS                                                       8
 
         #if (MGIO_DIM==2)
                 #define MGIO_MAX_SONS_OF_ELEM                   4
@@ -133,6 +128,7 @@ struct mgio_mg_general {
   int nNode;                                    /* nb of nodes, i.e. corners of elements		*/
   int nPoint;                                   /* nb of points, i.e. diff node locations in mg	*/
   int nElement;                         /* nb of elements in mg							*/
+  int nHierElem;                        /* nb of son elements							*/
 
   /* information on geometry */
   char DomainName[MGIO_NAMELEN];                /* name of domain in ug				*/
@@ -193,7 +189,13 @@ struct mgio_cg_general {
 
 struct mgio_cg_point {
 
-  MGIO_COORD position[MGIO_DIM];                /* position of the point							*/
+  double position[MGIO_DIM];                            /* position of the point							*/
+};
+
+struct mgio_movedcorner {
+
+  int id;                                                               /* local id of moved corner							*/
+  double position[MGIO_DIM];                            /* position of the point							*/
 };
 
 struct mgio_cg_element {
@@ -203,23 +205,20 @@ struct mgio_cg_element {
   int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
   int refrule;                                                                  /* id of refinement rule					*/
   int nmoved;                                                                           /* n new corners moved						*/
-  int moved[MGIO_MAX_NEW_CORNERS];                              /* local ids of corners moved				*/
-  struct mgio_cg_point newposition[MGIO_MAX_NEW_CORNERS];       /* new positions of moved corne */
+  struct mgio_movedcorner mvcorner[MGIO_MAX_NEW_CORNERS];       /* array of moved corners					*/
 };
 
 struct mgio_he_element {
 
-  int ge;                                                                               /* id of general element					*/
   int refrule;                                                                  /* id of refinement rule					*/
   int nmoved;                                                                           /* n new corners moved						*/
-  int moved[MGIO_MAX_NEW_CORNERS];                              /* local ids of corners moved				*/
-  struct mgio_cg_point newposition[MGIO_MAX_NEW_CORNERS];       /* new positions of moved corne */
+  struct mgio_movedcorner mvcorner[1];                  /* array of moved corners					*/
 };
 
 struct mgio_bd_general {
 
-  int nBndP[MGIO_MAXLEVEL];                                             /* n BNDP per level, only ug				*/
-  int nBndS[MGIO_MAXLEVEL];                                             /* n BNDS per level, only ug				*/
+  int nBndP;                                                                            /* n BNDP in mg, only ug					*/
+  int nBndS;                                                                            /* n BNDS in mg, only ug					*/
 };
 
 typedef struct mgio_mg_general MGIO_MG_GENERAL;
@@ -257,10 +256,8 @@ int             Read_RR_Rules           (int n, MGIO_RR_RULE    *rr_rules);
 int     Read_CG_General         (MGIO_CG_GENERAL *cg_general);
 int             Read_CG_Points          (int n, MGIO_CG_POINT   *cg_point);
 int             Read_CG_Elements        (int n, MGIO_CG_ELEMENT *cg_element);
-int     Read_HE_Refinement      (int n, MGIO_HE_ELEMENT *he_element);
+int     Read_HE_Element         (int n, MGIO_HE_ELEMENT *he_element);
 int             Read_BD_General         (MGIO_BD_GENERAL *bd_general);
-int             Read_PBndDesc           (MGIO_HEAP *theHeap, int n, BNDP **BndPList);
-int             Read_EBndDesc           (MGIO_HEAP *theHeap, int n, BNDS **BndSList);
 
 /* write functions */
 int             Write_OpenFile          (char *filename);
@@ -272,10 +269,13 @@ int             Write_RR_Rules          (int n, MGIO_RR_RULE    *rr_rules);
 int     Write_CG_General        (MGIO_CG_GENERAL *cg_general);
 int             Write_CG_Points         (int n, MGIO_CG_POINT   *cg_point);
 int             Write_CG_Elements       (int n, MGIO_CG_ELEMENT *cg_element);
-int     Write_HE_Refinement     (int n, MGIO_HE_ELEMENT *he_element);
+int     Write_HE_Element        (int n, MGIO_HE_ELEMENT *he_element);
 int             Write_BD_General        (MGIO_BD_GENERAL *bd_general);
+
+#ifdef __MGIO_USE_IN_UG__
+int             Read_PBndDesc           (BVP *theBVP, HEAP *theHeap, int n, BNDP **BndPList);
 int             Write_PBndDesc          (int n, BNDP **BndPList);
-int             Write_EBndDesc          (int n, BNDS **BndSList);
+#endif
 
 /* general functions */
 int     CloseFile                       ();
