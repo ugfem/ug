@@ -94,7 +94,7 @@ static INT theFormatDirID;                      /* env type for Format dir				*/
 static INT theSymbolVarID;                      /* env type for Format vars                     */
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*D

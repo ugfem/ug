@@ -618,9 +618,9 @@
 /*																			*/
 /****************************************************************************/
 
-DOUBLE 		GN 		(INT n, INT i, COORD *ip_local);
-INT 		GNs 	(INT n, COORD *ip_local, DOUBLE *result);
-INT 		D_GN 	(INT n, INT i, COORD *ip_local, DOUBLE *derivative);
+DOUBLE 		GN 		(INT n, INT i, const COORD *ip_local);
+INT 		GNs 	(INT n, const COORD *ip_local, DOUBLE *result);
+INT 		D_GN 	(INT n, INT i, const COORD *ip_local, DOUBLE *derivative);
 COORD 	   *LMP 	(INT n);
 INT 	    UG_GlobalToLocal   (INT n, const COORD **Corners, const COORD *EvalPoint, COORD *LocalCoord);
 

@@ -133,7 +133,7 @@ static GG_PARAM *myPars;
 
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 static INT IflObj;
 static INT FlObj;
@@ -369,7 +369,7 @@ static INT AssembleFrontLists (MULTIGRID *theMG, MESH *mesh)
   GRID *theGrid;
   NODE *theNode,**Nodes;
   INDEPFRONTLIST *theIFL;
-  INT numOfSubdomains,SubdomainID,numOfBndP,numOfBndS,i,n;
+  INT numOfSubdomains,SubdomainID,numOfBndP,i;
 
   theGrid = GRID_ON_LEVEL(theMG,0);
   numOfSubdomains = mesh->nSubDomains;
@@ -2319,7 +2319,6 @@ static INT debug;
 INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param, MESH *mesh, CoeffProcPtr coeff)
 {
   GRID *theGrid;
-  NODE *theNode;
   INDEPFRONTLIST *theIFL,*nextIFL;
   FRONTLIST *myList;
   FRONTCOMP *theFC,*thesuccFC,*thenewFC;

@@ -104,7 +104,7 @@
 static INT gridpaths_set=FALSE;
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -191,12 +191,12 @@ INT SaveMultiGrid (MULTIGRID *theMG, char *name, char *comment)
   NODE *theNode;
   ELEMENT *theElement;
   VERTEX *theVertex;
-  COORD *lambda,*global;
+  COORD *global;
   time_t Time;
   char *fmt;
   char buffer[BUFFERSIZE];
   BVP_DESC theBVPDesc;
-  INT i,k,id,move;
+  INT i,id,move;
 
   if (gridpaths_set)
     /* this way grids are stored to path[0] */

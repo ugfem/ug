@@ -98,7 +98,7 @@ static struct Coubling_CoeffProc_Name Couple_for_ElemValue;
 static struct Coubling_CoeffProc_Name Couple_for_ElemVector;
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -486,8 +486,11 @@ static DOUBLE CoeffProcElementValueEvalProc (const ELEMENT *theElement,const COO
   n = CORNERS_OF_ELEM(theElement);
   V_DIM_CLEAR(EvalPoint)
   for (i=0; i<n; i++)
-    V_DIM_LINCOMB(1.0,EvalPoint,GN(n,i,LocalCoord),CornersCoord[i],EvalPoint)
-      (*Couple_for_ElemValue.theActualCoeffProc) (EvalPoint,&phi);
+  {
+    phi = GN(n,i,LocalCoord);
+    V_DIM_LINCOMB(1.0,EvalPoint,phi,CornersCoord[i],EvalPoint)
+  }
+  (*Couple_for_ElemValue.theActualCoeffProc)(EvalPoint,&phi);
 
   return(phi);
 }

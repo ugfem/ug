@@ -70,7 +70,7 @@ static MG_GGDATA *myMGdata;
 static GG_PARAM *myPars;
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 static INT QuObj;
 static INT ScObj;
