@@ -1306,6 +1306,8 @@ static INT SetCommand (INT argc, char **argv)
     break;
   }
 
+  free(buffer);
+
   if (rv==0)
     return (OKCODE);
   else
@@ -6972,14 +6974,7 @@ static INT OpenWindowCommand (INT argc, char **argv)
   }
 
   /* check options */
-        #ifdef ModelP
-  if (me == master)
-        #endif
   theOutDev  = GetDefaultOutputDevice();
-        #ifdef ModelP
-  else
-    theOutDev  = GetDefaultOutputDevice();
-        #endif
 
   winname[0] = '\0';
   for (i=1; i<argc; i++)
@@ -10864,6 +10859,7 @@ static INT PStatCommand (INT argc, char **argv)
 }
 
 
+#ifdef CHACOT
 /****************************************************************************/
 /*                                                                          */
 /* Function:  LB4Command                                                    */
@@ -11038,6 +11034,7 @@ static INT LB4Command (INT argc, char **argv)
 
   return(OKCODE);
 }
+#endif /* CHACOT */
 
 #endif /* ModelP */
 
