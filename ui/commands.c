@@ -6940,9 +6940,6 @@ static INT OpenWindowCommand (INT argc, char **argv)
         PrintErrorMessage('E',"openwindow","specify device name with d option");
         return (PARAMERRORCODE);
       }
-                                #ifdef ModelP
-      if (me == master)
-                                #endif
       if ((theOutDev=GetOutputDevice(devname))==NULL)
       {
         sprintf(buffer,"there is no device named '%s'",devname);
