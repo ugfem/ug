@@ -64,7 +64,7 @@
 
 #ifdef CurrentTime
 #undef CurrentTime
-#error ****    CurrentTime defined before ****
+/* #error ****    CurrentTime defined before **** */
 #endif
 
 #ifdef __cplusplus
