@@ -10,7 +10,7 @@
 # include configuration and all makefile macro definitions
 include ../../../ug.conf
 
-OBJECTS = lgm.o nginterface3d.o surface.o
+OBJECTS = lgm.o nginterface3d.o surface.o gt.o
 
 .PRECIOUS:   .cc
 .SUFFIXES:   .cc

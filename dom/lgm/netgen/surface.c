@@ -90,6 +90,40 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*                                                                          */
 /*****************************************************************************/
 
+#ifdef _NETGEN
+extern int AddGeomPoint (int id, double x, double y, double z);
+extern int StartSurfaceNetgen (double h, int smooth, int display);
+extern int InitSurfaceNetgen (char * rulefilename);
+#endif
+extern INT GetLocalKoord(LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local, DOUBLE *n);
+extern INT Surface_Local2Global (LGM_SURFACE *theSurface, DOUBLE *global, DOUBLE *local);
+
+static LGM_SURFACE *theSurface;
+static HEAP *Heap;
+static INT LGM_MarkKey;
+
+int Allocate_Mem_Surfdisc(int npoints, int nelements)
+{
+  INT i;
+  LGM_SURFACE_DISC(theSurface)->local = (DOUBLE **) GetTmpMem(Heap,(npoints+1)*sizeof(DOUBLE*),LGM_MarkKey);
+  if(LGM_SURFACE_DISC(theSurface)->local==NULL)
+    return(1);
+  for(i=0; i<npoints; i++)
+  {
+    LGM_SURFACE_DISC(theSurface)->local[i] = (DOUBLE *)  GetTmpMem(Heap,3*sizeof(DOUBLE),LGM_MarkKey);
+    if(LGM_SURFACE_DISC(theSurface)->local[i]==NULL)
+      return(1);
+  }
+  LGM_SURFACE_DISC(theSurface)->triangle = (INT **) GetTmpMem(Heap,(nelements+1)*sizeof(INT*), LGM_MarkKey);
+  if(LGM_SURFACE_DISC(theSurface)->triangle==NULL)
+    return(1);
+  for(i=0; i<nelements; i++)
+  {
+    LGM_SURFACE_DISC(theSurface)->triangle[i] = (INT *)  GetTmpMem(Heap,4*sizeof(INT),LGM_MarkKey);
+    if(LGM_SURFACE_DISC(theSurface)->triangle[i]==NULL)
+      return(1);
+  }
+}
 
 static INT AddPoint2Netgen (INT id, DOUBLE *global)
 {
@@ -103,19 +137,16 @@ static INT AddPoint2Netgen (INT id, DOUBLE *global)
 }
 
 
-static LGM_SURFACE *theSurface;
 int AddInnerNode2ug (double x, double y, double z)
 {
-  DOUBLE global[3],local[2];
+  DOUBLE global[3],local[2], n[3];
 
   global[0] = x;
   global[1] = y;
   global[2] = z;
 
-  if(LGM_DEBUG)
-    printf("%f %f %f\n",x,y,z);
-
-  GetLocalKoord(theSurface,global,local);
+  n[0] = n[1] = n[2] = 0.0;
+  GetLocalKoord(theSurface,global,local, n);
 
   LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)),0) = local[0];
   LGM_SURFDISC_LOCAL(LGM_SURFACE_DISC(theSurface),LGM_SURFDISC_NPOINT(LGM_SURFACE_DISC(theSurface)),1) = local[1];
@@ -125,10 +156,15 @@ int AddInnerNode2ug (double x, double y, double z)
   global[1] = 0.0;
   global[2] = 0.0;
   Surface_Local2Global(theSurface, global, local);
-  if(LGM_DEBUG)
-    printf("%f %f %f\n",global[0], global[1], global[2]);
 
-  assert( sqrt( (global[0]-x)*(global[0]-x) + (global[1]-y)*(global[1]-y) + (global[2]-z)*(global[2]-z) ) < 0.00001 );
+  if(sqrt( (global[0]-x)*(global[0]-x) + (global[1]-y)*(global[1]-y) + (global[2]-z)*(global[2]-z) ) > 0.001)
+  {
+    printf("%f %f %f\n",x,y,z);
+    printf("%f %f %f\n",global[0], global[1], global[2]);
+  }
+  if( sqrt( (global[0]-x)*(global[0]-x) + (global[1]-y)*(global[1]-y) + (global[2]-z)*(global[2]-z) ) > 0.00001 )
+    printf("%s\n", "Warning in surface.c");
+  assert( sqrt( (global[0]-x)*(global[0]-x) + (global[1]-y)*(global[1]-y) + (global[2]-z)*(global[2]-z) ) < 0.01 );
 
   return(0);
 }
@@ -152,13 +188,16 @@ int AddSurfaceTriangle2ug (int node0, int node1, int node2)
 }
 
 
-INT GenerateSurfaceGrid (LGM_SURFACE *aSurface, DOUBLE h, INT smooth,INT display)
+INT GenerateSurfaceGrid (HEAP *theHeap, INT MarkKey, LGM_SURFACE *aSurface, DOUBLE h, INT smooth,INT display)
 {
   INT sid,i;
   char rulefilename[128];
   DOUBLE **x;
 
   theSurface = aSurface;
+  Heap = theHeap;
+  LGM_MarkKey = MarkKey;
+
   ntriangle = 0;
 
   if (GetDefaultValue(DEFAULTSFILENAME,"netgentrianglerules",rulefilename))

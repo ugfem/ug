@@ -33,13 +33,72 @@ public:
      virtual geompoint3d * EndPI () const { return p2; }*/
 };
 
-/*class INPUTElement : public Element
-   {
-   int neighbour[4];
-   public:
-   int & Neighbour (int i) { return neighbour[i-1]; }
+class InputElement : public Element
+{
+  int neighbour[4];
+public:
+  int & Neighbour (int i) { return neighbour[i-1]; }
+};
 
-   }*/
+class surfacemeshing
+{
+  ADFRONT2 * adfront;
+  ARRAY<netrule*> rules;
+  ARRAY<int> ruleused;
+  double cxx, cyy, czz, cxy, cxz, cyz, cx, cy, cz, c1;
+  Vec3d ex, ey, ez;
+  Point3d globp1;
 
-extern void LoadGeo (char * filename, ARRAY<geompoint3d> & geompoints,
-                     ARRAY<splinesegment3d*> & splines, double & elto0);
+public:
+  surfacemeshing (char * rulefilename);
+  virtual ~surfacemeshing ();
+
+  void LoadRules (char * filename);
+  void Mesh (double gh);
+
+  void ImproveMesh (ARRAY<Point3d> & points, const ARRAY<Element> & elements,
+                    int improveedges, int numboundarypoints, double h, int steps, int err2);
+
+  void AddPoint (const Point3d & p, INDEX globind);
+  void AddBoundaryElement (INDEX i1, INDEX i2, int surfind);
+  virtual void TestPoint (const Point3d & /* p */,int flag) { };
+
+  virtual int SavePoint (const Point3d & p);
+  virtual void SaveElement (const Element & elem);
+
+  //  friend int StartNetgen (double h, int smooth, int display);
+
+protected:
+  virtual void StartMesh ();
+  virtual void EndMesh ();
+  virtual int DefineTransformation (INDEX surfind, Point3d & p1, Point3d & p2);
+  virtual int DefineTransformation_OLD (INDEX surfind, Point3d & p1, Point3d & p2);
+  virtual void TransformToPlain (INDEX ind, const Point3d & locpoint,
+                                 Point2d & plainpoint, double h);
+  virtual void TransformFromPlain (INDEX surfind, Point2d & plainpoint,
+                                   Point3d & locpoint, double h);
+public:
+  virtual void ProjectPoint (INDEX surfind, Point3d & p) const;
+  virtual void ProjectPointold (INDEX surfind, Point3d & p) const;
+  virtual void ProjectPoint2 (INDEX surfind, INDEX surfind2, Point3d & p) const;
+  virtual void GetNormalVector(INDEX surfind, const Point3d & p, Vec3d & n) const;
+  virtual void GetNormalVectorold(INDEX surfind, const Point3d & p, Vec3d & n) const;
+
+  virtual double CalcLocalH (const Point3d & p, int surfind, double gh) const;
+};
+
+
+void LoadGeo (char * filename, ARRAY<geompoint3d> & geompoints,ARRAY<splinesegment3d*> & splines, double & elto0);
+GetEdgeId(const Point3d & ep1, Point3d & ep2);
+Calc_Coord_Vectors(const Point3d p1,const Point3d p2,const int mi,Vec3d & nx,Vec3d & ny,Vec3d & nz);
+Project_Point2Surface(Point3d &inpoint, Point3d &outpoint);
+int GenerateTriangle(ARRAY<Point2d> & lpoints, ARRAY<ILINE> & llines,ARRAY<Element> & elements, ARRAY<INDEX> & dellines,double h);
+void BFGS (Vector & x, double (*f)(const Vector & x, Vector & g));
+int Project_Point2Surface_2(Point3d &inpoint, Point3d &outpoint, Vec3d n);
+int GetEdgeId(const Point3d & ep1, Point3d & ep2);
+void Smooth_SurfaceMesh (ARRAY<Point3d> & points, const ARRAY<Element> & elements, int numboundarypoints, int steps);
+Vec3d NormalVector(InputElement e);
+double Project2Plane(Point3d & p,Vec3d & np,Point3d & p0,Vec3d & n0,Vec3d & n1,Vec3d & n2);
+int Calc_Vectors(const Point3d p0,const Point3d p1,const Point3d p2,Vec3d & n0,Vec3d & n1,Vec3d & n2);
+double Calc_Angle(InputElement e1, InputElement e2);
+double Calc_Local_Coordinates(const Point3d p0,const Point3d p1,const Point3d p2,const Point3d p,double & lam0,double & lam1,double & lam2);
