@@ -90,7 +90,7 @@ RCSID("$Header$",UG_RCS_STRING)
  */
 
 
-static int dddif_ComputeBorderPrios (DDD_OBJ obj)
+static int dddif_ComputeNodeBorderPrios (DDD_OBJ obj)
 {
   NODE    *node  = (NODE *)obj;
   int     *plist = DDD_InfoProcList(PARHDR(node));
@@ -113,12 +113,37 @@ static int dddif_ComputeBorderPrios (DDD_OBJ obj)
     DDD_PrioritySet(PARHDR(node), PrioBorder);
 }
 
+static int dddif_ComputeVectorBorderPrios (DDD_OBJ obj)
+{
+  VECTOR  *vector  = (VECTOR *)obj;
+  int     *plist = DDD_InfoProcList(PARHDR(vector));
+  int i, min_proc = procs;
+
+  /*
+          minimum processor number will get Master-node,
+          all others get Border-nodes
+   */
+  for(i=0; plist[i]>=0; i+=2)
+  {
+    if (plist[i+1]==PrioMaster && plist[i]<min_proc)
+      min_proc = plist[i];
+  }
+
+  if (min_proc==procs)
+    return;
+
+  if (me!=min_proc)
+    DDD_PrioritySet(PARHDR(vector), PrioBorder);
+}
+
 
 void dddif_SetBorderPriorities (GRID *theGrid)
 {
   DDD_XferBegin();
   DDD_IFAExecLocal(BorderNodeSymmIF, GLEVEL(theGrid),
-                   dddif_ComputeBorderPrios);
+                   dddif_ComputeNodeBorderPrios);
+  DDD_IFAExecLocal(BorderVectorSymmIF, GLEVEL(theGrid),
+                   dddif_ComputeVectorBorderPrios);
   DDD_XferEnd();
 }
 
