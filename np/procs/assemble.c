@@ -838,9 +838,13 @@ static INT NLPartAssAssembleDefect (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA
                                     VECDATA_DESC *r, MATDATA_DESC *A, INT *res)
 {
   NP_NL_PARTASS *thePA;
-  INT i;
+  INT i,l;
 
   thePA   = (NP_NL_PARTASS*)ass;
+
+  /* first clear skip flags of global problem */
+  for (l=fl; l<=tl; l++)
+    ClearVecskipFlags(GRID_ON_LEVEL(NP_MG(ass),l),s);
 
   /* call assemble defect routines */
   for (i=0; i<PA_NASS(thePA); i++)
@@ -858,7 +862,7 @@ static INT NLPartAssAssembleMatrix (NP_NL_ASSEMBLE *ass, INT fl, INT tl, VECDATA
 
   thePA   = (NP_NL_PARTASS*)ass;
 
-  /* call assemble defect routines */
+  /* call assemble matrix routines */
   for (i=0; i<PA_NASS(thePA); i++)
     if (NPANL_ASSMAT(PA_ASS(thePA,i)) (PA_ASS(thePA,i),fl,tl,s,d,v,A,res))
       REP_ERR_RETURN(1);
