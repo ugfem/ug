@@ -87,7 +87,7 @@
 static ShellWindow shell;                                       /* our only shell window		*/
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -188,23 +188,31 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
 {
   XEvent report;
   XWindowAttributes xwa;
+  Window root,child;
+  INT root_x,root_y;
   char *s;
   GraphWindow *gw;
   int where_x,where_y,tool;
+  INT pt[2];
   int x,y,w,h;
   int cmdKey, onlyCmdKey;
   int flag;
+  unsigned int keys_buttons;
+  static int count = 0;
 
   /* no event as default */
   theEvent->Type = NO_EVENT;
   theEvent->NoEvent.InterfaceEvent = 0;
+  theEvent->NoEvent.GraphWinActive = 0;
+  /*if (!XQueryPointer(display,report.xmotion.window,&root,&child,
+                                     &root_x,&root_y,&where_x,&where_y,&keys_buttons))*/
 
   /* event loop */
   switch (Eventmask)
   {
   case EVERY_EVENT :
     if (!XCheckIfEvent(display,&report,callback,s)) return(0);
-    PRINTDEBUG(dev,1,("XCheckIfEvent(): matching event found\n"));
+    PRINTDEBUG(dev,1,("XCheckIfEvent(): matching event found count=%d\n",count++));
     onlyCmdKey = 0;
     break;
   case TERM_STRING :
@@ -352,13 +360,15 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
                         #endif /* USE_XAW */
     gw = WhichGW(report.xbutton.window);
     if (gw==NULL) break;
-    where_x = report.xbutton.x;
-    where_y = report.xbutton.y;
-    if (WhichTool(gw,where_x,where_y,&tool))
+    pt[0] = where_x = report.xbutton.x;
+    pt[1] = where_y = report.xbutton.y;
+    if (WhichTool((WINDOWID)gw,pt,&tool))
     {
       theEvent->Type = DOC_CHANGETOOL;
       theEvent->DocChangeTool.win = (WINDOWID) gw;
       theEvent->DocChangeTool.Tool = tool;
+      theEvent->DocChangeTool.MousePosition[0] = where_x;
+      theEvent->DocChangeTool.MousePosition[1] = where_y;
       IFDEBUG(dev,1)
       printf("reporting DOC_CHANGETOOL tool=%d\n",tool);
       ENDDEBUG
@@ -417,6 +427,21 @@ INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
     }
     theEvent->Type = TERM_STRING;
     strcpy(theEvent->TermString.String,s);
+    break;
+
+  case MotionNotify :
+    while (XCheckMaskEvent(display,PointerMotionMask,&report)) ;
+    if (!XQueryPointer(display,report.xmotion.window,&root,&child,
+                       &root_x,&root_y,&where_x,&where_y,&keys_buttons))
+      break;
+
+    gw = WhichGW(report.xmotion.window);
+    if (gw!=NULL)
+    {
+      theEvent->NoEvent.GraphWinActive = (WINDOWID) gw;
+      theEvent->NoEvent.Mouse[0] = where_x;
+      theEvent->NoEvent.Mouse[1] = where_y;
+    }
     break;
 
   default :

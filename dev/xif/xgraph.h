@@ -99,7 +99,6 @@ unsigned long   UGBlack                         (void);
 unsigned long   UGWhite                         (void);
 int                     DrawControls            (GraphWindow *gw);
 int                     InitControls            (Window win);
-int                     WhichTool                       (GraphWindow *gwin, int x, int y, int *tool);
 int                     DrawRegion                      (GraphWindow *gwin, int x, int y);
 GraphWindow     *WhichGW                        (Window win);
 void                    SetCurrentGW            (GraphWindow *g);

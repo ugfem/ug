@@ -750,14 +750,17 @@ int InitControls (Window win)
  */
 /****************************************************************************/
 
-int WhichTool (GraphWindow *gwin, int x, int y, int *tool)
+INT WhichTool (WINDOWID win, const INT mouse[2], INT *tool)
 {
+  GraphWindow *gwin;
   int xx,yy,w,h,i;
+
+  gwin = (GraphWindow *)(win);
 
   xx = gwin->window_width-NTOOLS*CONTROLSIZE;
   yy = gwin->window_height-CONTROLSIZE;
-  w = x-xx;
-  h = y-yy;
+  w = mouse[0]-xx;
+  h = mouse[1]-yy;
 
   if ((h<0)||(h>=CONTROLSIZE)||(w<0)) return(0);
   i = w/CONTROLSIZE;
@@ -791,6 +794,45 @@ int DrawRegion (GraphWindow *gwin, int x, int y)
   if ((x<0)||(x>xx)) return(0);
   if ((y<0)||(y>yy)) return(0);
   return(1);
+}
+
+void DrawInfoBox (WINDOWID win, const char *info)
+{
+  GraphWindow *gwin;
+  XRectangle rect;
+  int h,x,y,w;
+  int ts;
+
+  /*char buffer[INFO_SIZE];
+     strncpy(buffer,info,INFO_SIZE);
+     buffer[INFO_LEN] = '\0';*/
+
+  gw = gwin = (GraphWindow *)(win);
+
+  /* set clipping region to info box */
+  rect.x = x = 0;
+  rect.y = y = gwin->window_height-CONTROLSIZE;
+  rect.width = w = gwin->window_width-NTOOLS*CONTROLSIZE;
+  rect.height = h = CONTROLSIZE-1;
+  XSetClipRectangles(display,gwin->gc,0,0,&rect,1,YSorted);
+
+  /* erase info box */
+  XClearArea(display,gwin->win,x,y,w,h,0);
+
+  /* draw info string */
+  IFSetColor(X11OutputDevice->black);
+  x = (gwin->window_width-NTOOLS*CONTROLSIZE)/2;
+  y = gwin->window_height-(CONTROLSIZE/2);
+  w = XTextWidth(gwin->font_info,info,strlen(info));
+  ts = gwin->font_height;
+  XDrawString(display,gwin->win,gwin->gc,x-w/2,y+ts/2,info,strlen(info));
+
+  /* restore clipping region */
+  rect.x = 0;
+  rect.y = 0;
+  rect.width = gwin->window_width;
+  rect.height = gwin->window_height-CONTROLSIZE-1;
+  XSetClipRectangles(display,gwin->gc,0,0,&rect,1,YSorted);
 }
 
 /*==========================================================================*/
@@ -926,7 +968,7 @@ int GraphOpen (GraphWindow *gw, char *window_name, int x, int y, int width, int 
                    &size_hints,&wm_hints,&class_hints);
 
   /* select event types that will be received */
-  XSelectInput(display,gw->win,EnterWindowMask|ExposureMask|KeyPressMask|
+  XSelectInput(display,gw->win,EnterWindowMask|ExposureMask|KeyPressMask|PointerMotionMask|
                ButtonPressMask|StructureNotifyMask|ButtonReleaseMask|ButtonMotionMask|PointerMotionHintMask);
 
   /* prepare graphics context */
@@ -1166,7 +1208,7 @@ INT X11_UpdateOutput (WINDOWID win, char *s, INT tool)
   y = gwin->window_height-(CONTROLSIZE/2);
   w = XTextWidth(gwin->font_info,s,strlen(s));
   ts = gwin->font_height;
-  XDrawString(display,gwin->win,gwin->gc,x-w/2,y+ts/2,s,strlen(s));
+  /*XDrawString(display,gwin->win,gwin->gc,x-w/2,y+ts/2,s,strlen(s));*/
 
   /* draw separation line */
   y = gwin->window_height-CONTROLSIZE-1;
