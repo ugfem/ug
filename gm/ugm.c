@@ -101,7 +101,6 @@
 /*																			*/
 /****************************************************************************/
 
-
 /****************************************************************************/
 /*																			*/
 /* definition of variables global to this source file only (static!)		*/
@@ -1601,7 +1600,10 @@ EDGE *GetFatherEdge (EDGE *theEdge)
   /* both nodes are corner nodes -> try to get the edge */
   if (CORNERTYPE(theNode0) && CORNERTYPE(theNode1))
   {
-    return (GetEdge(NFATHER(theNode0),NFATHER(theNode1)));
+    if (NFATHER(theNode0)!=NULL && NFATHER(theNode1)!=NULL)
+      return(GetEdge(NFATHER(theNode0),NFATHER(theNode1)));
+    else
+      return(NULL);
   }
 
   /* one case not considered */
@@ -1835,6 +1837,7 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
       INC_NO_OF_ELEM(pe);
     else
       ASSERT(0);
+
     return(pe);
   }
 
@@ -7012,7 +7015,8 @@ INT KeyForObject( KEY_OBJECT *obj )
     return LEVEL(obj)+COORDINATE_TO_KEY(coord,&dummy);
 
   /* edge */
-  case EDOBJ :     return LEVEL(obj)+COORDINATE_TO_KEY(CVECT(MYVERTEX(MIDNODE((EDGE*)obj))),&dummy);
+  case EDOBJ :     if (MIDNODE((EDGE*)obj)!=NULL) return LEVEL(obj)+COORDINATE_TO_KEY(CVECT(MYVERTEX(MIDNODE((EDGE*)obj))),&dummy);
+    else return (0);
 
   default :        sprintf( buffer, "unrecognized object type %d", OBJT(obj) );
     PrintErrorMessage('E',"KeyForObject",buffer);
