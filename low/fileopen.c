@@ -256,7 +256,7 @@ static const char *ConvertFileName (const char *fname)
 
 const char *BasedConvertedFilename (const char *fname)
 {
-  if (fname[0]!='/')                    /* use BasePath only if no absolute path specified */
+  if (fname[0]!='/' && fname[0]!='~')                   /* use BasePath only if no absolute path specified */
   {
     static char based_filename[MAXPATHLENGTH];
 
