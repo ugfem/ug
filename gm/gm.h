@@ -243,7 +243,7 @@ typedef struct {
 
 /* data structure for BlockvectorDescription */
 typedef unsigned INT BVD_ENTRY_TYPE;    /* memory providing storage for level numbers */
-typedef unsigned SHORT BLOCKNUMBER;     /* valid numbers are 0..MAX_BV_NUMBER */
+typedef unsigned INT BLOCKNUMBER;       /* valid numbers are 0..MAX_BV_NUMBER */
 typedef unsigned char BLOCKLEVEL;       /* valid levels are 0..MAX_BV_LEVEL */
 
 struct blockvector_description_format           /* describes how a struct of type
@@ -887,6 +887,9 @@ extern CONTROL_ENTRY
 /*																			*/
 /* vectors:                                                                                                                             */
 /* VTYPE	 |0 - 1 |*| | node-,edge-,side- or elemvector					*/
+/* VCFLAG	 |3		|*| | flag for general use								*/
+/* VCUSED	 |4		|*| | flag for general use								*/
+/* VCOUNT	 |5-6	|*| |                                                                                                   */
 /* VECTORSIDE|7 - 9 |*| | nb of side the side vect corr. to (in object elem)*/
 /* VCLASS	 |11-12 |*| | class of v. (3: if corr. to red/green elem)		*/
 /*					  (2: if corr. to first algebraic nb.)					*/
@@ -899,6 +902,8 @@ extern CONTROL_ENTRY
 /*							3: red or green elem							*/
 /* VNEW          |19	|*| | 1 if vector is new								*/
 /* VCNEW	 |20	|*| | 1 if vector has a new connection					*/
+/* VCNB		 |21-25	|*| |                                                                                                   */
+/* VCCUT	 |26	|*| |                                                                                                   */
 /*																			*/
 /* matrices:																*/
 /* MOFFSET	 |0     | |*| 0 if first matrix in connection else 1			*/
@@ -942,6 +947,12 @@ extern CONTROL_ENTRY
 #define VTYPE_LEN                                       2
 #define VTYPE(p)                                        CW_READ(p,VTYPE_CE)
 #define SETVTYPE(p,n)                           CW_WRITE(p,VTYPE_CE,n)
+
+#define VCFLAG_CE                                       36
+#define VCFLAG_SHIFT                            3
+#define VCFLAG_LEN                                      1
+#define VCFLAG(p)                                       CW_READ(p,VCFLAG_CE)
+#define SETVCFLAG(p,n)                          CW_WRITE(p,VCFLAG_CE,n)
 
 #define VCUSED_CE                                       64
 #define VCUSED_SHIFT                            4
@@ -1149,6 +1160,7 @@ extern CONTROL_ENTRY
 #define MVALUE(m,n)                             ((m)->value[n])
 #define MVALUEPTR(m,n)                          (&((m)->value[n]))
 #define MDESTINDEX(m)                           ((m)->vect->index)
+#define MSTRONG(p)                                      (MDOWN(p) && MUP(p))
 
 /****************************************************************************/
 /*																			*/
@@ -1216,6 +1228,7 @@ extern CONTROL_ENTRY
 #define BVDOWNBV(bv)                                    ((bv)->first_son)
 #define BVDOWNBVLAST(bv)                                ((bv)->last_son)
 #define BVDOWNBVEND(bv)                                 (BVSUCC(BVDOWNBVLAST(bv)))
+
 #define BV_GEN_F                                                0
 #define BV_GEN_L                                                1
 #define BV_GEN_C                                                2
@@ -1223,6 +1236,10 @@ extern CONTROL_ENTRY
 #define BV_IS_GC(bv,gen,cyc)                    (BVNUMBER(bv)%3==(gen) && BVNUMBER(bv)/3==(cyc))
 #define BV_GEN(bv)                                              (BVNUMBER(bv)%3)                        /* gen.: FLC    */
 #define BV_CYC(bv)                                              (BVNUMBER(bv)/3)                        /* nb. of cycle */
+#define SET_ORD_GCL(n,flc,cyc,line)             {SetLoWrd(n,3*(cyc)+(flc)); SetHiWrd(n,line);}
+#define ORD_GEN(n)                                              (LoWrd(n)%3)            /* gen.: FLC    */
+#define ORD_CYC(n)                                              (LoWrd(n)/3)            /* nb. of cycle */
+#define ORD_LIN(n)                                              HiWrd(n)
 
 /* operations on struct block */
 #define BV_IS_LEAF_BV(bv)                               (BVDOWNTYPE(bv)==BVDOWNTYPEVECTOR)
@@ -2065,6 +2082,8 @@ FIND_CUT        *CreateFindCutProc              (char *name, FindCutProcPtr Find
 INT                     LexOrderVectorsInGrid   (GRID *theGrid, const INT *order, const INT *sign, INT which, INT SpecSkipVecs, INT AlsoOrderMatrices);
 INT             OrderVectors                    (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat, const char *dependency, const char *dep_options, const char *findcut);
 INT                     ShellOrderVectors               (GRID *theGrid, VECTOR *seed);
+INT                     LineOrderVectors                (MULTIGRID *theMG, INT levels, const char *dependency, const char *dep_options, const char *findcut, INT verboselevel);
+INT                     RevertVecOrder                  (GRID *theGrid);
 
 /* functions for evaluation-fct management */
 INT              InitEvalProc                                                           (void);
