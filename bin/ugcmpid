@@ -26,6 +26,7 @@ BINPATH=$UGROOT/bin
 # extract relevant info
 # this done using a pipe with filters and sorters
 # cat files matching $1* to stout
+echo using files: $1.[0-9]*
 cat $1.[0-9]* | \
 \
 # get interesting lines
@@ -40,5 +41,8 @@ sed 's/^[0-9]*:[ ]*//' | \
 # sort lines 
 sort | \
 # sort IdentHdr and ProcList fields and write to file
-$AWK -f $BINPATH/ugckid.awk - > $1.id
+$AWK -f $BINPATH/ugcmpid.awk - | \
+\
+# sort and write to file
+sort > $1.id
 
