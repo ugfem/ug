@@ -21,8 +21,15 @@ $Header$
 */
 
 #ifdef T_MOD_SCAL
-if (MD_IS_SCALAR(M)) {
-	register SHORT xc = VD_SCALCMP(x);
+if (MD_IS_SCALAR(M)
+	#ifdef T_USE_X
+    && VD_IS_SCALAR(x)
+	#endif
+	#ifdef T_USE_Y
+    && VD_IS_SCALAR(y)
+	#endif
+) {
+	register SHORT mc = MD_SCALCMP(M);
 	register SHORT rmask = MD_SCAL_RTYPEMASK(M);
 	register SHORT cmask = MD_SCAL_CTYPEMASK(M);
 	#ifdef T_USE_X
@@ -35,69 +42,331 @@ if (MD_IS_SCALAR(M)) {
 	#ifdef T_PREP_SCAL
 	T_PREP_SCAL;
 	#endif
+	#ifdef T_LOOP_SCAL
+	#define T_LOOP T_LOOP_SCAL
+	#endif
+	#ifdef T_POST_SCAL
+    #define T_POST_MATRIX T_POST_SCAL
+	#endif
 
     #define T_MOD_MATRIX T_MOD_SCAL
-	#define T_VEC_RTYPE	VDATATYPE(v)&mask
-    #include "vecloop.ct"	
+	#define T_RTYPE	VDATATYPE(v)&rmask
+	#ifdef T_USE_Y
+	#define T_CTYPE	VDATATYPE(w)&cmask
+	#else
+	#define T_CTYPE	VDATATYPE(MDEST(mat))&cmask
+	#endif
+
+    #include "matloop.ct"	
 }
 else 
 #endif
 {
-	for (vtype=VD_MINTYPE(x); vtype<=VD_MAXTYPE(x); vtype++)
-		if (VD_ISDEF_IN_TYPE(x,vtype)) {
-			#ifdef T_PREP_SWITCH
-			T_PREP_SWITCH;
-			#endif
-			switch (VD_NCMPS_IN_TYPE(x,vtype))
-			{	
-			#ifdef T_MOD_VECTOR_1
-			case 1:
-				SET_VD_CMP_1(cx,x,vtype);
-                #ifdef T_USE_Y
-                SET_VD_CMP_1(cy,y,vtype);
-              	#endif
+	for (rtype=0; rtype<NVECTYPES; rtype++) {
+		nr = MD_ROWS_IN_RT_CT(M,rtype,ctype);
+		if (nr > 0)
+			for (ctype=0; ctype<NVECTYPES; ctype++) 
+				if (MD_ISDEF_IN_RT_CT(M,rtype,ctype)) {
+                    #ifdef T_PREP_SWITCH
+					T_PREP_SWITCH;
+			        #endif
+					switch (MAT_RCKIND(M,rtype,ctype))
+					{
+                        #ifdef T_MOD_11
+						case R1C1:
+                            #ifdef T_USE_X
+							SET_VD_CMP_1(cx,x,rtype);
+                            #endif
+                            #ifdef T_USE_Y
+							SET_VD_CMP_1(cy,y,ctype);
+			                #endif
+							SET_MD_CMP_11(m,M,rtype,ctype);
 
-				#ifdef T_PREP_1
-				T_PREP_1;
-				#endif
-       	        #define T_MOD_VECTOR T_MOD_VECTOR_1
-                #define T_VEC_TYPE	 VTYPE(v)==vtype
-				#include "vecloop.ct"
-				break;
-			case 2:
-				SET_VD_CMP_2(cx,x,vtype);
-                #ifdef T_USE_Y
-                SET_VD_CMP_2(cy,y,vtype);
-              	#endif
-				#ifdef T_PREP_2
-				T_PREP_2;
-				#endif
-       	        #define T_MOD_VECTOR T_MOD_VECTOR_1 T_MOD_VECTOR_2
-				#define T_VEC_TYPE	 VTYPE(v)==vtype
-				#include "vecloop.ct"
-				break;
-			case 3:
-				SET_VD_CMP_3(cx,x,vtype);
-                #ifdef T_USE_Y
-                SET_VD_CMP_3(cy,y,vtype);
-              	#endif
+                            #ifdef T_PREP_11
+							T_PREP_11;
+	                        #endif
+                            #ifdef T_LOOP_11
+	                        #define T_LOOP T_LOOP_11
+	                        #endif
+                            #ifdef T_POST_11
+                            #define T_POST_MATRIX T_POST_11
+	                        #endif
 
-				#ifdef T_PREP_3
-				T_PREP_3;
-				#endif
-       	        #define T_MOD_VECTOR T_MOD_VECTOR_1 T_MOD_VECTOR_2 T_MOD_VECTOR_3
-				#define T_VEC_TYPE	 VTYPE(v)==vtype
-				#include "vecloop.ct"
-				break;
-			#endif
-			default:
-				ncomp = VD_NCMPS_IN_TYPE(x,vtype);
-				#ifdef T_PREP_N
-				T_PREP_N;
-				#endif
-       	        #define T_MOD_VECTOR T_MOD_VECTOR_N
-				#define T_VEC_TYPE	 VTYPE(v)==vtype
-				#include "vecloop.ct"
-			}	
-		}	
+                            #define T_MOD_MATRIX T_MOD_11
+	                        #define T_RTYPE	VTYPE(v)==rtype
+	                        #ifdef T_USE_Y
+	                        #define T_CTYPE	VTYPE(w)==ctype
+	                        #else
+	                        #define T_CTYPE	VTYPE(MDEST(mat))==ctype
+	                        #endif
+
+                            #include "matloop.ct"	
+							break;
+						
+						case R1C2:
+                            #ifdef T_USE_X
+							SET_VD_CMP_1(cx,x,rtype);
+                            #endif
+                            #ifdef T_USE_Y
+							SET_VD_CMP_2(cy,y,ctype);
+			                #endif
+							SET_MD_CMP_12(m,M,rtype,ctype);
+
+                            #ifdef T_PREP_12
+							T_PREP_12;
+	                        #endif
+                            #ifdef T_LOOP_12
+	                        #define T_LOOP T_LOOP_12
+	                        #endif
+                            #ifdef T_POST_12
+                            #define T_POST_MATRIX T_POST_12
+	                        #endif
+
+                            #define T_MOD_MATRIX T_MOD_12
+	                        #define T_RTYPE	VTYPE(v)==rtype
+	                        #ifdef T_USE_Y
+	                        #define T_CTYPE	VTYPE(w)==ctype
+	                        #else
+	                        #define T_CTYPE	VTYPE(MDEST(mat))==ctype
+	                        #endif
+
+                            #include "matloop.ct"	
+							break;
+							
+						case R1C3:
+                            #ifdef T_USE_X
+							SET_VD_CMP_1(cx,x,rtype);
+                            #endif
+                            #ifdef T_USE_Y
+							SET_VD_CMP_3(cy,y,ctype);
+			                #endif
+							SET_MD_CMP_13(m,M,rtype,ctype);
+
+                            #ifdef T_PREP_13
+							T_PREP_13;
+	                        #endif
+                            #ifdef T_LOOP_13
+	                        #define T_LOOP T_LOOP_13
+	                        #endif
+                            #ifdef T_POST_13
+                            #define T_POST_MATRIX T_POST_13
+	                        #endif
+
+                            #define T_MOD_MATRIX T_MOD_13
+	                        #define T_RTYPE	VTYPE(v)==rtype
+	                        #ifdef T_USE_Y
+	                        #define T_CTYPE	VTYPE(w)==ctype
+	                        #else
+	                        #define T_CTYPE	VTYPE(MDEST(mat))==ctype
+	                        #endif
+
+                            #include "matloop.ct"	
+							break;
+						
+						case R2C1:
+                            #ifdef T_USE_X
+							SET_VD_CMP_2(cx,x,rtype);
+                            #endif
+                            #ifdef T_USE_Y
+							SET_VD_CMP_1(cy,y,ctype);
+			                #endif
+							SET_MD_CMP_21(m,M,rtype,ctype);
+
+                            #ifdef T_PREP_21
+							T_PREP_21;
+	                        #endif
+                            #ifdef T_LOOP_21
+	                        #define T_LOOP T_LOOP_21
+	                        #endif
+                            #ifdef T_POST_21
+                            #define T_POST_MATRIX T_POST_21
+	                        #endif
+
+                            #define T_MOD_MATRIX T_MOD_21
+	                        #define T_RTYPE	VTYPE(v)==rtype
+	                        #ifdef T_USE_Y
+	                        #define T_CTYPE	VTYPE(w)==ctype
+	                        #else
+	                        #define T_CTYPE	VTYPE(MDEST(mat))==ctype
+	                        #endif
+
+                            #include "matloop.ct"	
+							break;
+						
+						case R2C2:
+                            #ifdef T_USE_X
+							SET_VD_CMP_2(cx,x,rtype);
+                            #endif
+                            #ifdef T_USE_Y
+							SET_VD_CMP_2(cy,y,ctype);
+			                #endif
+							SET_MD_CMP_22(m,M,rtype,ctype);
+
+                            #ifdef T_PREP_22
+							T_PREP_22;
+	                        #endif
+                            #ifdef T_LOOP_22
+	                        #define T_LOOP T_LOOP_22
+	                        #endif
+                            #ifdef T_POST_22
+                            #define T_POST_MATRIX T_POST_22
+	                        #endif
+
+                            #define T_MOD_MATRIX T_MOD_22
+	                        #define T_RTYPE	VTYPE(v)==rtype
+	                        #ifdef T_USE_Y
+	                        #define T_CTYPE	VTYPE(w)==ctype
+	                        #else
+	                        #define T_CTYPE	VTYPE(MDEST(mat))==ctype
+	                        #endif
+
+                            #include "matloop.ct"	
+							break;
+						
+						case R2C3:
+                            #ifdef T_USE_X
+							SET_VD_CMP_2(cx,x,rtype);
+                            #endif
+                            #ifdef T_USE_Y
+							SET_VD_CMP_3(cy,y,ctype);
+			                #endif
+							SET_MD_CMP_23(m,M,rtype,ctype);
+
+                            #ifdef T_PREP_23
+							T_PREP_23;
+	                        #endif
+                            #ifdef T_LOOP_23
+	                        #define T_LOOP T_LOOP_23
+	                        #endif
+                            #ifdef T_POST_23
+                            #define T_POST_MATRIX T_POST_23
+	                        #endif
+
+                            #define T_MOD_MATRIX T_MOD_23
+	                        #define T_RTYPE	VTYPE(v)==rtype
+	                        #ifdef T_USE_Y
+	                        #define T_CTYPE	VTYPE(w)==ctype
+	                        #else
+	                        #define T_CTYPE	VTYPE(MDEST(mat))==ctype
+	                        #endif
+
+                            #include "matloop.ct"	
+							break;
+						
+						case R3C1:
+                            #ifdef T_USE_X
+							SET_VD_CMP_3(cx,x,rtype);
+                            #endif
+                            #ifdef T_USE_Y
+							SET_VD_CMP_1(cy,y,ctype);
+			                #endif
+							SET_MD_CMP_31(m,M,rtype,ctype);
+
+                            #ifdef T_PREP_31
+							T_PREP_31;
+	                        #endif
+                            #ifdef T_LOOP_31
+	                        #define T_LOOP T_LOOP_31
+	                        #endif
+                            #ifdef T_POST_31
+                            #define T_POST_MATRIX T_POST_31
+	                        #endif
+
+                            #define T_MOD_MATRIX T_MOD_31
+	                        #define T_RTYPE	VTYPE(v)==rtype
+	                        #ifdef T_USE_Y
+	                        #define T_CTYPE	VTYPE(w)==ctype
+	                        #else
+	                        #define T_CTYPE	VTYPE(MDEST(mat))==ctype
+	                        #endif
+
+                            #include "matloop.ct"	
+							break;
+						
+						case R3C2:
+                            #ifdef T_USE_X
+							SET_VD_CMP_3(cx,x,rtype);
+                            #endif
+                            #ifdef T_USE_Y
+							SET_VD_CMP_2(cy,y,ctype);
+			                #endif
+							SET_MD_CMP_32(m,M,rtype,ctype);
+
+                            #ifdef T_PREP_32
+							T_PREP_32;
+	                        #endif
+                            #ifdef T_LOOP_32
+	                        #define T_LOOP T_LOOP_32
+	                        #endif
+                            #ifdef T_POST_32
+                            #define T_POST_MATRIX T_POST_32
+	                        #endif
+
+                            #define T_MOD_MATRIX T_MOD_32
+	                        #define T_RTYPE	VTYPE(v)==rtype
+	                        #ifdef T_USE_Y
+	                        #define T_CTYPE	VTYPE(w)==ctype
+	                        #else
+	                        #define T_CTYPE	VTYPE(MDEST(mat))==ctype
+	                        #endif
+
+                            #include "matloop.ct"	
+							break;
+						
+						case R3C3:
+                            #ifdef T_USE_X
+							SET_VD_CMP_3(cx,x,rtype);
+                            #endif
+                            #ifdef T_USE_Y
+							SET_VD_CMP_3(cy,y,ctype);
+			                #endif
+							SET_MD_CMP_33(m,M,rtype,ctype);
+
+                            #ifdef T_PREP_33
+							T_PREP_33;
+	                        #endif
+                            #ifdef T_LOOP_33
+	                        #define T_LOOP T_LOOP_33
+	                        #endif
+                            #ifdef T_POST_33
+                            #define T_POST_MATRIX T_POST_33
+	                        #endif
+
+                            #define T_MOD_MATRIX T_MOD_33
+	                        #define T_RTYPE	VTYPE(v)==rtype
+	                        #ifdef T_USE_Y
+	                        #define T_CTYPE	VTYPE(w)==ctype
+	                        #else
+	                        #define T_CTYPE	VTYPE(MDEST(mat))==ctype
+	                        #endif
+
+                            #include "matloop.ct"	
+							break;						
+
+						#endif	
+						default:
+							nc = MD_COLS_IN_RT_CT(M,rtype,ctype);
+
+                            #ifdef T_PREP_N
+							T_PREP_N;
+	                        #endif
+                            #ifdef T_LOOP_N
+	                        #define T_LOOP T_LOOP_N
+	                        #endif
+                            #ifdef T_POST_N
+                            #define T_POST_MATRIX T_POST_N
+	                        #endif
+
+                            #define T_MOD_MATRIX T_MOD_N
+	                        #define T_RTYPE	VTYPE(v)==rtype
+	                        #ifdef T_USE_Y
+	                        #define T_CTYPE	VTYPE(w)==ctype
+	                        #else
+	                        #define T_CTYPE	VTYPE(MDEST(mat))==ctype
+	                        #endif
+
+                            #include "matloop.ct"	
+					}
+				}
+	}
 }

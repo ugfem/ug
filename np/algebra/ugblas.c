@@ -2197,7 +2197,7 @@ D*/
 #define T_MOD_VECTOR_3  VVALUE(v,cx2) += value[2] * VVALUE(v,cy2);
 #define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                               \
                             VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i))               \
-                              += value[i] * VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
+                            += value[i] * VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
 
 #include "vecfunc.ct"
 
@@ -2270,7 +2270,7 @@ D*/
 D*/
 /****************************************************************************/
 
-static void UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
+static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 {
 	DOUBLE a1[NVECTYPES+1];
 	INT i;
@@ -2280,15 +2280,16 @@ static void UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 	for (i=0; i<ncomp; i++)
 	    a1[i] = a[i];
 	a1[ncomp] = (DOUBLE) rep_err_count;
-	UG_GlobalSumNDOUBLE(ncomp+1, sp1);
+	UG_GlobalSumNDOUBLE(ncomp+1,a);
 	if (a1[ncomp] > 0.0)
-	    return(NUM_ERROR);
+	    return(1);
 	for (i=0; i<ncomp; i++)
 	    a[i] = a1[i];
 	#else
-	UG_GlobalSumNDOUBLE(ncomp, a);
+	UG_GlobalSumNDOUBLE(ncomp,a);
 	#endif
 	#endif
+	return(0);
 }
 
 #define T_FUNCNAME      ddotx
@@ -2305,7 +2306,8 @@ static void UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 #define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                               \
 							value[i] += VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) * \
 								VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
-#define T_POST_PAR      UG_GlobalSumNDOUBLE_X(VD_NCOMP(x),a);
+#define T_POST_PAR      if (UG_GlobalSumNDOUBLE_X(VD_NCOMP(x),a))             \
+                            REP_ERR_RETURN(NUM_ERROR);
 
 #include "vecfunc.ct"
 
@@ -2348,7 +2350,8 @@ D*/
 #define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++)                               \
 							*a += VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) *       \
 							    VVALUE(v,VD_CMP_OF_TYPE(y,vtype,i));
-#define T_POST_PAR      UG_GlobalSumNDOUBLE_X(1,a);
+#define T_POST_PAR      if (UG_GlobalSumNDOUBLE_X(1,a))                       \
+                            REP_ERR_RETURN(NUM_ERROR);
 
 #include "vecfunc.ct"
 
@@ -2389,10 +2392,11 @@ D*/
 #define T_MOD_VECTOR_1  s = VVALUE(v,cx0); value[0] += s*s;
 #define T_MOD_VECTOR_2  s = VVALUE(v,cx1); value[1] += s*s;
 #define T_MOD_VECTOR_3  s = VVALUE(v,cx2); value[2] += s*s;
-#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++) {                              \
-						   s = VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i));            \
+#define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++) {                             \
+						   s = VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i));           \
 						   value[i] += s*s; }
-#define T_POST_PAR      UG_GlobalSumNDOUBLE_X(VD_NCOMP(x),a);
+#define T_POST_PAR      if (UG_GlobalSumNDOUBLE_X(VD_NCOMP(x),a))             \
+                            REP_ERR_RETURN(NUM_ERROR);
 #define T_POST          for (i=0; i<VD_NCOMP(x); i++) a[i] = SQRT(a[i]);
 
 #include "vecfunc.ct"
@@ -2434,7 +2438,8 @@ D*/
 #define T_MOD_VECTOR_N  for (i=0; i<ncomp; i++) {                              \
 						   s = VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i));            \
 						   *a += s*s; }
-#define T_POST_PAR      UG_GlobalSumNDOUBLE_X(1,a);
+#define T_POST_PAR      if (UG_GlobalSumNDOUBLE_X(1,a))                       \
+                            REP_ERR_RETURN(NUM_ERROR);
 #define T_POST          *a = SQRT(*a);
 
 #include "vecfunc.ct"

@@ -1,8 +1,8 @@
 /****************************************************************************/
 /*																			*/
-/* File:	  vecloop.ct													*/
+/* File:	  matloop.ct													*/
 /*																			*/
-/* Purpose:   vector loop template          								*/
+/* Purpose:   matrix loop template          								*/
 /*																			*/
 /* Author:	  Henrik Rentz-Reichert 										*/
 /*			  Institut fuer Computeranwendungen III 						*/
@@ -23,30 +23,84 @@ $Header$
 	for (lev= FULLREFINELEVEL(mg); lev<tl; lev++)
 		for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); v!=NULL; v=SUCCVC(v))
 			if (FINE_GRID_DOF(v)) 
-				#ifdef T_VEC_TYPE
-				if (T_VEC_TYPE) 
+				#ifdef T_RTYPE
+				if (T_RTYPE) 
 				#endif
 				{
-					T_MOD_VECTOR
-				}	
+					#ifdef T_LOOP
+					T_LOOP 
+					#endif
+					for (mat=VSTART(v); mat!=NULL; mat = MNEXT(mat))
+					{	
+						#ifdef T_USE_Y
+						w = MDEST(mat);
+						#endif
+						#ifdef T_RTYPE
+						if (T_CTYPE) 
+						#endif
+						{
+							T_MOD_MATRIX
+						}
+	                #ifdef T_POST_MATRIX
+    	            T_POST_MATRIX
+        	        #endif
+					}	
+				}		
 	for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,tl)); v!=NULL; v=SUCCVC(v)) 
 		if (NEW_DEFECT(v)) 	
-			#ifdef T_VEC_TYPE
-			if (T_VEC_TYPE) 
+			#ifdef T_RTYPE
+			if (T_RTYPE) 
 			#endif
 			{
-				T_MOD_VECTOR
-			}
+				#ifdef T_LOOP
+				T_LOOP 
+				#endif
+				for (mat=VSTART(v); mat!=NULL; mat = MNEXT(mat))
+				{	
+					#ifdef T_USE_Y
+					w = MDEST(mat);
+					#endif
+					#ifdef T_RTYPE
+					if (T_CTYPE) 
+					#endif
+					{
+						T_MOD_MATRIX
+					}	
+				}
+                #ifdef T_POST_MATRIX
+                T_POST_MATRIX
+                #endif
+			}	
 	#else
 	for (lev=fl; lev<=tl; lev++)
 		for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,lev)); v != NULL; v = SUCCVC(v)) 
-   			#ifdef T_VEC_TYPE
-			if (T_VEC_TYPE) 
+			#ifdef T_RTYPE
+			if (T_RTYPE) 
 			#endif
 			{
-				T_MOD_VECTOR
-			}
+				#ifdef T_LOOP
+				T_LOOP 
+				#endif
+				for (mat=VSTART(v); mat!=NULL; mat = MNEXT(mat))
+				{	
+					#ifdef T_USE_Y
+					w = MDEST(mat);
+					#endif
+					#ifdef T_RTYPE
+					if (T_CTYPE) 
+					#endif
+					{
+						T_MOD_MATRIX
+					}
+				}	
+                #ifdef T_POST_MATRIX
+                T_POST_MATRIX
+                #endif
+			}	
 	#endif
 
-#undef T_MOD_VECTOR
-#undef T_VEC_TYPE
+#undef T_RTYPE
+#undef T_CTYPE
+#undef T_LOOP
+#undef T_MOD_MATRIX
+#undef T_POST_MATRIX
