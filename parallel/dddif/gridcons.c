@@ -425,6 +425,16 @@ void ConstructConsistentGrid (GRID *theGrid)
           break;
         }
         VFATHER(theVertex) = theFather;
+
+        if (OBJT(theVertex) == BVOBJ)
+          if (MOVED(theVertex)) {
+            INT n;
+            DOUBLE *x[MAX_CORNERS_OF_ELEM];
+
+            CORNER_COORDINATES(pe,n,x);
+            UG_GlobalToLocal(n,(const DOUBLE **)x,
+                             CVECT(theVertex),LCVECT(theVertex));
+          }
       }
     }
   }
