@@ -876,7 +876,7 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
         if ((*np->LS->Defect)(np->LS,level,ev[i],np->r,np->M,
                               &ewresult->error_code))
           NP_RETURN(1,ewresult->error_code);
-        if ((*np->LS->Residuum)(np->LS,level,level,ev[i],np->r,np->M,
+        if ((*np->LS->Residuum)(np->LS,0,level,ev[i],np->r,np->M,
                                 &ewresult->lresult[i]))
           NP_RETURN(1,ewresult->error_code);
         if ((*np->LS->Solver)(np->LS,level,ev[i],np->r,np->M,
