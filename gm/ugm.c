@@ -1665,12 +1665,12 @@ EDGE *GetEdge (NODE *from, NODE *to)
    CreateEdge - Return pointer to a new edge structure
 
    SYNOPSIS:
-   EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector);
+   EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector);
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
    .  theElement - pointer to element
-   .  i - number of edge
+   .  edge - number of edge
    .  with_vector - also create vector for edge (TRUE/FALSE)
 
    DESCRIPTION:
@@ -1686,7 +1686,7 @@ EDGE *GetEdge (NODE *from, NODE *to)
 #ifndef ModelP
 static
 #endif
-EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
+EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
 {
   ELEMENT *theFather;
   EDGE *pe,*father_edge;
@@ -1696,8 +1696,8 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT i, INT with_vector)
   VECTOR *pv;
   INT j,k,side,found,part,sc;
 
-  from = CORNER(theElement,CORNER_OF_EDGE(theElement,i,0));
-  to = CORNER(theElement,CORNER_OF_EDGE(theElement,i,1));
+  from = CORNER(theElement,CORNER_OF_EDGE(theElement,edge,0));
+  to = CORNER(theElement,CORNER_OF_EDGE(theElement,edge,1));
 
   /* check if edge exists already */
   if( (pe = GetEdge(from, to)) != NULL ) {
@@ -7278,6 +7278,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
       mych = ConnSync(master,3917);
       SendSync(mych,(void *)lbinfo[me],(MAXLEVEL+1)*ELEMENT_PRIOS*sizeof(INT));
       DiscSync(mych);
+      ReleaseTmpMem(MGHEAP(theMG),MarkKey);
       return(GM_OK);
     }
 
