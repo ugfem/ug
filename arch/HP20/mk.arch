@@ -18,8 +18,8 @@ ARCH_LIBS     = -lm -lc
 ARCH_PLIBS    = /usr/lib/libV3.a
 
 #ARCH_CFLAGS   = -y -z -Aa +w2 -D_HPUX_SOURCE -g
-#ARCH_CFLAGS   =  +O2 +Onolimit -z -Aa +w2 -D_HPUX_SOURCE 
-ARCH_CFLAGS   =  -g -z -Aa +w2 -D_HPUX_SOURCE 
+ARCH_CFLAGS   =  +O2 -z -Aa +w2 -D_HPUX_SOURCE 
+#ARCH_CFLAGS   =  -g -z -Aa +w2 -D_HPUX_SOURCE 
 ARCH_C++FLAGS = -y -Aa -g
 ARCH_LFLAGS   = -z +O2 -p /opt/langtools/lib/end.o
 ARCH_ARFLAGS  = ru
