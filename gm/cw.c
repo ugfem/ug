@@ -92,6 +92,7 @@ typedef struct {
 
   INT read;                                                             /* number of accesses to read		*/
   INT write;                                                            /* number of accesses to write		*/
+  INT max;                                                              /* max value assigned to ce			*/
 
 } CE_USAGE;
 
@@ -386,11 +387,12 @@ void ListAllCWsOfObject (const void *obj)
    ListCWofObjectType	- print used pattern of all control entries of an object types control word
 
    SYNOPSIS:
-   static void ListCWofObjectType (INT objt, INT offset)
+   static void ListCWofObjectType (INT objt, INT offset, PrintfProcPtr myprintf)
 
    PARAMETERS:
    .  obj - object pointer
    .  offset - controlword offset in (unsigned INT) in object
+   .  myprintf - pointer to a printf function (maybe UserWriteF)
 
    DESCRIPTION:
    This function prints the used pattern of all control entries of an object types control word at a
@@ -401,7 +403,7 @@ void ListAllCWsOfObject (const void *obj)
    D*/
 /****************************************************************************/
 
-static void ListCWofObjectType (INT objt, INT offset)
+static void ListCWofObjectType (INT objt, INT offset, PrintfProcPtr myprintf)
 {
   INT i,ce,last_ce,sub,min,cw_objt,oiw;
   char bitpat[33];
@@ -432,18 +434,18 @@ static void ListCWofObjectType (INT objt, INT offset)
       break;
 
     INT_2_bitpattern(control_entries[ce].mask,bitpat);
-    printf("  ce %-20s offset in cw %3d, len %3d: %s\n",
-           control_entries[ce].name,
-           control_entries[ce].offset_in_word,
-           control_entries[ce].length,
-           bitpat);
+    myprintf("  ce %-20s offset in cw %3d, len %3d: %s\n",
+             control_entries[ce].name,
+             control_entries[ce].offset_in_word,
+             control_entries[ce].length,
+             bitpat);
     sub = min;
     last_ce = ce;
   }
   while (TRUE);
 
   if (sub==-1)
-    printf(" --- no ce found with objt %d\n",objt);
+    myprintf(" --- no ce found with objt %d\n",objt);
 }
 
 /****************************************************************************/
@@ -452,10 +454,11 @@ static void ListCWofObjectType (INT objt, INT offset)
                                                                 control words of an object type
 
    SYNOPSIS:
-   static void ListAllCWsOfObjectType (INT objt)
+   static void ListAllCWsOfObjectType (INT objt, PrintfProcPtr myprintf)
 
    PARAMETERS:
    .  obj - object pointer
+   .  myprintf - pointer to a printf function (maybe UserWriteF)
 
    DESCRIPTION:
    This function prints the used pattern of all control entries of all control words
@@ -466,7 +469,7 @@ static void ListCWofObjectType (INT objt, INT offset)
    D*/
 /****************************************************************************/
 
-static void ListAllCWsOfObjectType (INT objt)
+static void ListAllCWsOfObjectType (INT objt, PrintfProcPtr myprintf)
 {
   INT i,cw,last_cw,sub,min,cw_objt,offset;
 
@@ -494,8 +497,8 @@ static void ListAllCWsOfObjectType (INT objt)
     if (min==MAX_I)
       break;
 
-    printf("cw %-20s with offset in object %3d (unsigned INTs):\n",control_words[cw].name,min);
-    ListCWofObjectType(objt,min);
+    myprintf("cw %-20s with offset in object %3d (unsigned INTs):\n",control_words[cw].name,min);
+    ListCWofObjectType(objt,min,myprintf);
     sub = min;
     last_cw = cw;
   }
@@ -503,6 +506,40 @@ static void ListAllCWsOfObjectType (INT objt)
 
   if (sub==-1)
     printf(" --- no cw found with objt %d\n",objt);
+}
+
+/****************************************************************************/
+/*D
+   ListAllCWsOfAllObjectTypes	- print used pattern of all control entries of all
+                                                                        control words of all object types
+
+   SYNOPSIS:
+   void ListAllCWsOfAllObjectTypes (PrintfProcPtr myprintf)
+
+   PARAMETERS:
+   .  obj - object pointer
+   .  myprintf - pointer to a printf function (maybe UserWriteF)
+
+   DESCRIPTION:
+   This function prints the used pattern of all control entries of all control words
+   of all object types. 'ListAllCWsOfObjectType' is called.
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void ListAllCWsOfAllObjectTypes (PrintfProcPtr myprintf)
+{
+  ListAllCWsOfObjectType(IVOBJ,myprintf);
+  ListAllCWsOfObjectType(IEOBJ,myprintf);
+  ListAllCWsOfObjectType(EDOBJ,myprintf);
+  ListAllCWsOfObjectType(NDOBJ,myprintf);
+  ListAllCWsOfObjectType(VEOBJ,myprintf);
+  ListAllCWsOfObjectType(MAOBJ,myprintf);
+  ListAllCWsOfObjectType(BLOCKVOBJ,myprintf);
+  ListAllCWsOfObjectType(GROBJ,myprintf);
+  ListAllCWsOfObjectType(MGOBJ,myprintf);
 }
 
 /****************************************************************************/
@@ -664,17 +701,8 @@ static INT InitPredefinedControlEntries (void)
     }
 
   IFDEBUG(gm,1)
-  if (me == master) {
-    ListAllCWsOfObjectType(IVOBJ);
-    ListAllCWsOfObjectType(IEOBJ);
-    ListAllCWsOfObjectType(EDOBJ);
-    ListAllCWsOfObjectType(NDOBJ);
-    ListAllCWsOfObjectType(VEOBJ);
-    ListAllCWsOfObjectType(MAOBJ);
-    ListAllCWsOfObjectType(BLOCKVOBJ);
-    ListAllCWsOfObjectType(GROBJ);
-    ListAllCWsOfObjectType(MGOBJ);
-  }
+  if (me == master)
+    ListAllCWsOfAllObjectTypes(printf);
   ENDDEBUG
 
   /* TODO: enable next lines for error control */
@@ -733,8 +761,8 @@ void ResetCEstatistics (void)
    .  void -
 
    DESCRIPTION:
-   This function prints all counters for read/write control word access
-   (only if at least one of them is nonzero).
+   This function prints all counters for read/write control word access.
+   It also checks the number of bits actually used for a control entry.
    This is only possible if the code is compiled with #define _DEBUG_CW_
    in gm.h. (Maybe it makes sense to do that only for part of the code.
    Then the warnings should be removed.)
@@ -744,20 +772,71 @@ void ResetCEstatistics (void)
    D*/
 /****************************************************************************/
 
+static void PrintSingleCEStatistics (INT i)
+{
+  INT maxAvail,maxUsed,l;
+
+  maxAvail = POW2(control_entries[i].length)-1;
+  maxUsed  = ce_usage[i].max;
+  if (control_entries[i].name!=NULL)
+    UserWriteF("ce %-20s: read %8d write %8d, max %8d of %8d",
+               control_entries[i].name,
+               ce_usage[i].read,
+               ce_usage[i].write,
+               maxUsed,
+               maxAvail);
+  else
+    UserWriteF("ce %-20d: read %10d write %10d, max %3d of %3d",
+               i,
+               ce_usage[i].read,
+               ce_usage[i].write,
+               maxUsed,
+               maxAvail);
+
+  /* check number of bits used */
+  for (l=1; l<32; l++)
+    if ((POW2(l)-1) > maxUsed)
+      break;
+  if ((maxUsed>0) && (l<control_entries[i].length))
+    UserWriteF(" (used %2d bits of %2d allocated)\n",l,control_entries[i].length);
+  else
+    UserWrite("\n");
+}
+
 void PrintCEstatistics (void)
 {
-  INT i;
-
         #ifndef _DEBUG_CW_
   PrintErrorMessage('W',"PrintCEstatistics","compile with #ifdef _DEBUG_CW_ in gm.h!");
         #else
+  INT i;
+
+  /* those having had read and write access */
+  UserWrite("control entries having had read and write access\n");
   for (i=0; i<MAX_CONTROL_ENTRIES; i++)
     if (control_entries[i].used)
-      if (ce_usage[i].read || ce_usage[i].write)
-        if (control_entries[i].name!=NULL)
-          UserWriteF("ce %-20s: read %10d write %10d\n",control_entries[i].name,ce_usage[i].read,ce_usage[i].write);
-        else
-          UserWriteF("ce %20d: read %10d write %10d\n",i,ce_usage[i].read,ce_usage[i].write);
+      if (ce_usage[i].read && ce_usage[i].write)
+        PrintSingleCEStatistics(i);
+
+  /* those having had read access only */
+  UserWrite("\ncontrol entries having had read access only\n");
+  for (i=0; i<MAX_CONTROL_ENTRIES; i++)
+    if (control_entries[i].used)
+      if (ce_usage[i].read && !ce_usage[i].write)
+        PrintSingleCEStatistics(i);
+
+  /* those having had write access only */
+  UserWrite("\ncontrol entries having had write access only\n");
+  for (i=0; i<MAX_CONTROL_ENTRIES; i++)
+    if (control_entries[i].used)
+      if (!ce_usage[i].read && ce_usage[i].write)
+        PrintSingleCEStatistics(i);
+
+  /* those having had neither read nor write access */
+  UserWrite("\nunused control entries since last reset of counters\n");
+  for (i=0; i<MAX_CONTROL_ENTRIES; i++)
+    if (control_entries[i].used)
+      if (!ce_usage[i].read && !ce_usage[i].write)
+        PrintSingleCEStatistics(i);
         #endif
 }
 
@@ -779,12 +858,12 @@ void PrintCEstatistics (void)
    .n   HEAPFAULT
    .n   ceID in valid range
    .n   control entry used
-   .n   if ce uses a geom object the object type is checked
+   .n   the object type is checked (with the natural exception of the first SETOBJ access)
    Additionally the read accesses to a control entry are counted.
 
    CAUTION:
    set #define _DEBUG_CW_ to replace CW_READ by ReadCW but be aware of the
-   terribble slowing down of the program in this case (no large problems!).
+   slowing down of the program in this case (no large problems!).
 
    RETURN VALUE:
    unsigned INT
@@ -805,6 +884,7 @@ unsigned INT ReadCW (const void *obj, INT ceID)
     assert(FALSE);
   }
 
+  /* update statistics */
   ce_usage[ceID].read++;
 
   ce = control_entries+ceID;
@@ -818,7 +898,10 @@ unsigned INT ReadCW (const void *obj, INT ceID)
   cw_objt = BITWISE_TYPE(OBJT(obj));
   if (!(cw_objt & ce->objt_used))
   {
-    printf("ReadCW: invalid objt %d for ce %s\n",OBJT(obj),ce->name);
+    if (ce->name!=NULL)
+      printf("ReadCW: invalid objt %d for ce %s\n",OBJT(obj),ce->name);
+    else
+      printf("ReadCW: invalid objt %d for ce %d\n",OBJT(obj),ceID);
     assert(FALSE);
   }
 
@@ -851,13 +934,13 @@ unsigned INT ReadCW (const void *obj, INT ceID)
    .n   HEAPFAULT
    .n   ceID in valid range
    .n   control entry used
-   .n   if ce uses a geom object the object type is checked
+   .n   the object type is checked
    .n   n small enough for length of control entry
    Additionally the write accesses to a control entry are counted.
 
    CAUTION:
    set #define _DEBUG_CW_ to replace CW_WRITE by WriteCW but be aware of the
-   terribble slowing down of the program in this case (no large problems!).
+   slowing down of the program in this case (no large problems!).
 
    RETURN VALUE:
    unsigned INT
@@ -879,7 +962,9 @@ void WriteCW (void *obj, INT ceID, INT n)
     assert(FALSE);
   }
 
+  /* update statistics */
   ce_usage[ceID].write++;
+  ce_usage[ceID].max = MAX(n,ce_usage[ceID].max);
 
   ce = control_entries+ceID;
 
@@ -891,17 +976,25 @@ void WriteCW (void *obj, INT ceID, INT n)
 
   cw_objt = BITWISE_TYPE(OBJT(obj));
 
-  /* special: SETOBJT cannot be checked */
-  if (cw_objt==BITWISE_TYPE(0)) {
+  /* special: SETOBJT cannot be checked since at this point the OBJT is unknown of course */
+  if (cw_objt==BITWISE_TYPE(0))
+  {
     if (ceID!=OBJ_CE)
-      if (cw_objt != ce->objt_used) {
-        printf("WriteCW: objt 0 but no SETOBJT access\n");
+      if (cw_objt != ce->objt_used)
+      {
+        if (ce->name!=NULL)
+          printf("WriteCW: objt 0 but %s rather than expected SETOBJT access\n",ce->name);
+        else
+          printf("WriteCW: objt 0 but %d rather than expected SETOBJT access\n",ceID);
         assert(FALSE);
       }
   }
   else if (!(cw_objt & ce->objt_used))
   {
-    printf("WriteCW: invalid objt %d for ce %s\n",OBJT(obj),ce->name);
+    if (ce->name!=NULL)
+      printf("WriteCW: invalid objt %d for ce %s\n",OBJT(obj),ce->name);
+    else
+      printf("WriteCW: invalid objt %d for ce %d\n",OBJT(obj),ceID);
     assert(FALSE);
   }
 
@@ -915,8 +1008,12 @@ void WriteCW (void *obj, INT ceID, INT n)
 
   if (j>mask)
   {
-    printf("WriteCW: value=%d exceeds max=%d for %d\n",
-           n,POW2(ce->length)-1,ce->name);
+    if (ce->name!=NULL)
+      printf("WriteCW: value=%d exceeds max=%d for %s\n",
+             n,POW2(ce->length)-1,ce->name);
+    else
+      printf("WriteCW: value=%d exceeds max=%d for %d\n",
+             n,POW2(ce->length)-1,ceID);
     assert(FALSE);
   }
 
@@ -1069,22 +1166,6 @@ INT FreeControlEntry (INT ce_id)
   /* ok, exit */
   return(GM_OK);
 }
-
-INT PrintCW (void)
-{
-  INT i;
-  CONTROL_ENTRY *ce;
-
-  for (i=0; i<MAX_CONTROL_ENTRIES; i++)
-    if (control_entries[i].used)
-    {
-      ce = control_entries+i;
-      UserWriteF("ce %-20s in cw %-20s offset %3d length %3d\n",
-                 ce->name,control_words[ce->control_word].name,ce->offset_in_object,ce->length);
-    }
-  return(GM_OK);
-}
-
 
 /****************************************************************************/
 /*D
