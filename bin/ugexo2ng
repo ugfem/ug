@@ -816,7 +816,7 @@ sub GetLocalCoordinates
 	## last check ##	
 	for($i=0;$i<3;$i++){
 		if( ($lambda[$i] > (1.0+$EPS_LOC)) || ($lambda[$i] < (0-$EPS_LOC)) ){
-# 			print "lambda[$i]=$lambda[$i] <0 || > 1 $!\n";
+#  			print "lambda[$i]=$lambda[$i] <0 || > 1 $!\n";
  			return 0;	
 	   }
 	}
@@ -859,7 +859,7 @@ if (0)
 
 	## point lies not inside extruded triangle area
 	if(!(GetLocalCoordinates(\@p0,\@p1,\@p2,$x,\$xi,\$eta))){
-# 		printf ("error1 in GetLocalCoordinates()\n");
+#  		printf ("error1 in GetLocalCoordinates()\n");
 		return $HUGE;
 	}
 	
@@ -932,37 +932,10 @@ if (0)
 	}
 
 	# compute local coordinates
-if (0)
-{
-	for($i=0;$i<$DIM;$i++){
-		$p01[$i]=$obj->{p1}[$i]-$obj->{p0}[$i];
-		$p02[$i]=$obj->{p2}[$i]-$obj->{p0}[$i];
-		$pp[$i] = $obj->{p_proj}->[$i]-$obj->{p0}[$i];
-	}
-	$loc0 = DotProduct(\@p01,\@pp)/DotProduct(\@p01,\@p01);
-	$loc1 = DotProduct(\@p02,\@pp)/DotProduct(\@p02,\@p02);	
-	$local0 = $loc0;
-	$local1 = $loc1;
-
- 	$obj->{loc0} = $loc0;
- 	$obj->{loc1} = $loc1;
-}
-else
-{
-if (0) 
-{
-	if (!GetLocalCoordinates(\@p0,\@p1,\@p2,$obj->{p_proj},\$xi,\$eta))
-	{
-		printf ("error2 in GetLocalCoordinates()\n");
-		return $HUGE;
-	}
-}
-
-	$local0 = $xi;
-	$local1 = $eta;
+#	$local0 = $xi;
+#	$local1 = $eta;
  	$obj->{loc0} = $xi;
  	$obj->{loc1} = $eta;
-}
 
 if (0)
 {
@@ -1110,7 +1083,7 @@ LOOP:		foreach $np (1 .. $cdf{$numns}{1})
 					$local0 = $local1 = 2.0;
  					$d = BBT_TreePointDistance($lgm{$ttree},\@p,\$robj,\&Tri_Callback,$HUGE);
 
-# 					printf ("node=%d surfdist=%lf\n",$node,$d);
+#  					printf ("node=%d surfdist=%lf\n",$node,$d);
 					if ($d < $HUGE)
 					{
 						%obj = %$robj;
@@ -1128,20 +1101,12 @@ LOOP:		foreach $np (1 .. $cdf{$numns}{1})
 
 					$cdf{bndcoord}{$node}{tri}
 						{$cdf{bndcoord}{$node}{nsurf}} = $obj{tri};
-if (0)
-{
-					$cdf{bndcoord}{$node}{loc0}
-						{$cdf{bndcoord}{$node}{nsurf}} = $local0; # $obj{loc0};
-					$cdf{bndcoord}{$node}{loc1}
-						{$cdf{bndcoord}{$node}{nsurf}} = $local1; # $obj{loc1};
-}
-else
-{
+
 					$cdf{bndcoord}{$node}{loc0}
 						{$cdf{bndcoord}{$node}{nsurf}} = $obj{loc0};
 					$cdf{bndcoord}{$node}{loc1}
 						{$cdf{bndcoord}{$node}{nsurf}} = $obj{loc1};
-}
+
 					$cdf{bndcoord}{$node}{sdist}
 						{$cdf{bndcoord}{$node}{nsurf}} = $d;
 
