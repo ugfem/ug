@@ -81,8 +81,8 @@ appl2 ()
 
     if test -d $UGROOT/../df
 	then
-	    ugmake dom GSF
-		ugconf GSF_DOMAIN
+	    ugmake dom LGM
+		ugconf LGM_DOMAIN
 		ugmake df
 	    ugmake dom STD
 		ugconf STD_DOMAIN
