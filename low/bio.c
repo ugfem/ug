@@ -100,7 +100,13 @@ static int XDR_Read_mint (int n, int *intList)
   int i;
 
   for (i=0; i<n; i++)
-    if (!xdr_int(&xdrs,&(intList[i]))) return (1);
+  {
+    /*if (!xdr_int(&xdrs,&(intList[i]))) return (1); quick hack to cure Cray's xdr_int error Christian Wrobel 980529*/
+    if (!xdr_u_int(&xdrs,(unsigned int*)&(intList[i]))) return (1);
+#if defined __T3D__ || defined __T3E__
+    intList[i] = (short int) intList[i];            /* sign extension due to xdr_u_int, 4/8 Byte conversion and bug in Cray's xdr on certain platforms; Christian Wrobel 980529 */
+#endif
+  }
   return (0);
 }
 
@@ -110,7 +116,9 @@ static int XDR_Write_mint (int n, int *intList)
 
   for (i=0; i<n; i++)
   {
-    if (!xdr_int(&xdrs,&(intList[i]))) return (1);
+    /*if (!xdr_int(&xdrs,&(intList[i]))) return (1); quick hack to cure Cray's
+       xdr_int error Christian Wrobel 980529*/
+    if (!xdr_u_int(&xdrs,(unsigned int*)&(intList[i]))) return (1);
     n_byte += 4;
   }
   return (0);
