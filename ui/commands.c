@@ -6370,7 +6370,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
 
   if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))
   {
-    PRINTDEBUG(dom,0,("  lev ret  %d\n",i));
+    UserWriteF("makegrid: cannot dispose coarse grid\n");
     DisposeMultiGrid(theMG);
     return (CMDERRORCODE);
   }
@@ -10326,8 +10326,6 @@ static INT LBCommand (INT argc, char **argv)
   char levelarg[32];
   MULTIGRID *theMG;
 
-  return(OKCODE);
-
                 #ifndef ModelP
   /* dummy command in seriell version */
   return(OKCODE);
@@ -10452,6 +10450,11 @@ static INT LBCommand (INT argc, char **argv)
   if (cmd_error) return(CMDERRORCODE);
 
                 #ifdef CHACOT
+  PRINTDEBUG(ui,1,("mg %x minlevel %d cluster_depth %d threshold %d\n"
+                   "Const %d n %d c %d strategy %d eigen %d loc %d\n"
+                   "dims %d weights %d coarse %d mode %d iopt %d\n",
+                   theMG,minlevel,cluster_depth,threshold,Const,n,c,
+                   strategy,eigen,loc,dims,weights,coarse,mode,iopt));
   error = Balance_CCPTM(theMG,minlevel,cluster_depth,threshold,Const,n,c,
                         strategy,eigen,loc,dims,weights,coarse,mode,iopt);
                 #endif
