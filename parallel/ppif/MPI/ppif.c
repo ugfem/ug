@@ -78,7 +78,7 @@
 #define RAND_MSG_SIZE   128     /* max size of random messages              */
 #define MAXT            15      /* maximum number of downtree nodes max     */
                                 /* log2(P)                                  */
-#define MAXVCHAN        256     /* maximum number of channels               */
+#define MAXVCHAN        1024 /* maximum number of channels               */
 #define PTYPE_ANY       -1L     /* process type: any process                */
 
 #define ID_ARRAY        100     /* channel id: array                        */
@@ -216,7 +216,8 @@ static VChannelPtr NewVChan (int p, int id)
   }
   else
   {
-    printf ("%d: no more VChannels in NewVChan(), dest=%d, id=%d\n",me,p,id);
+    printf ("%d: PPIF-error, no more VChannels in NewVChan()"
+            ", dest=%d, id=%d\n", me, p, id);
 
     return (NULL);
   }

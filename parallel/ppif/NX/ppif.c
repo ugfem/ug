@@ -74,7 +74,7 @@
 
 #define MAXT        15      /* maximum number of downtree nodes max log2(P) */
 
-#define MAXVCHAN    512         /* maximum number of channels                                   */
+#define MAXVCHAN    1024        /* maximum number of channels                                   */
 
 #define PTYPE_ANY   -1L         /* process type: any process					*/
 
