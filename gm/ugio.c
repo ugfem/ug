@@ -118,6 +118,7 @@
 /*																			*/
 /****************************************************************************/
 
+REP_ERR_FILE;
 static INT gridpaths_set=FALSE;
 static MGIO_RR_RULE *rr_rules;
 static unsigned short *ProcList, *ActProcListPos;
