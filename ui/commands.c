@@ -3370,7 +3370,10 @@ static INT VMListCommand (INT argc, char **argv)
     break;
 
   case DO_SELECTION :
-    ListVectorSelection(theMG,matrixopt,dataopt);
+    if (SELECTIONMODE(theMG)==elementSelection)
+      ListVectorOfElementSelection(theMG,matrixopt,dataopt);
+    else
+      ListVectorSelection(theMG,matrixopt,dataopt);
     break;
 
   default :
@@ -3627,6 +3630,11 @@ static INT DeleteNodeCommand (INT argc, char **argv)
           PrintErrorMessage('E',"deln","deleting the node failed");
           return (CMDERRORCODE);
         }
+    ClearSelection(theMG);
+    InvalidatePicturesOfMG(theMG);
+    InvalidateUgWindowsOfMG(theMG);
+
+    return (OKCODE);
   }
 
   if (sscanf(argv[0],"deln %d",&id)!=1)
@@ -3916,7 +3924,11 @@ static INT InsertElementCommand (INT argc, char **argv)
       return (CMDERRORCODE);
     }
     else
+    {
+      InvalidatePicturesOfMG(theMG);
+      InvalidateUgWindowsOfMG(theMG);
       return (OKCODE);
+    }
   }
 
   /* set vstr after 'ie' */
@@ -4037,9 +4049,14 @@ static INT DeleteElementCommand (INT argc, char **argv)
       for (i=0; i<SELECTIONSIZE(theMG); i++)
         if (DeleteElement(theMG,(ELEMENT *)SELECTIONOBJECT(theMG,i))!=GM_OK)
         {
-          PrintErrorMessage('E',"deln","deleting the node failed");
+          PrintErrorMessage('E',"dele","deleting the element failed");
           return (CMDERRORCODE);
         }
+    ClearSelection(theMG);
+    InvalidatePicturesOfMG(theMG);
+    InvalidateUgWindowsOfMG(theMG);
+
+    return (OKCODE);
   }
 
   if (sscanf(argv[0],"dele %d",&id)!=1)
@@ -4172,7 +4189,6 @@ static INT RefineCommand (INT argc, char **argv)
    .  $i <Id>                - refine the element with <Id>
    .  $s                     - refine all elements from the current selection
    .  $h                     - show available rules
-   .  $c                     - clear all refinement tags
    D*/
 /****************************************************************************/
 
@@ -4199,7 +4215,6 @@ static INT RefineCommand (INT argc, char **argv)
    .  $i <Id>                - refine the element with <Id>
    .  $s                     - refine all elements from the current selection
    .  $h                     - show available rules
-   .  $c                     - clear all refinement tags
 
    RETURN VALUE:
    INT
@@ -4650,6 +4665,174 @@ static INT OrderNodesCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
+
+/****************************************************************************/
+/*D
+   lexorderv - order the vectors lexicographically
+
+
+   DESCRIPTION:
+   This command orders the vectors lexicographically according to the user
+   specified directions.
+   It orders the vectors of the current multigrid, calling the function
+   'LexOrderVectorsInGrid'.
+
+   'lexorderv '
+
+   .  $m FFCCLL | FCFCLL     - possible modes are FFCCLL or FCFCLL
+   .  $d <dep-proc>          - the ordering algorithm uses this dependency procedure...
+   .  $o <dep-proc options>  - ...and passes these options to it
+   .  $a                     - order all levels of the current multigrid
+   D*/
+/****************************************************************************/
+
+static INT LexOrderVectorsCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  GRID *theGrid;
+  INT i,res,level,fromLevel,toLevel;
+  INT sign[DIM],order[DIM],xused,yused,zused,error,AlsoOrderMatrices,SpecialTreatSkipVecs;
+  char ord[3];
+
+  theMG = GetCurrentMultigrid();
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"lexorderv","no open multigrid");
+    return (CMDERRORCODE);
+  }
+  fromLevel = 0;
+  toLevel   = TOPLEVEL(theMG);
+
+  /* read ordering directions */
+        #ifdef __TWODIM__
+  res = sscanf(argv[0],expandfmt("lexorderv %2[rlud]"),ord);
+        #else
+  res = sscanf(argv[0],expandfmt("lexorderv %2[rlbfud]"),ord);
+        #endif
+  if (res!=1)
+  {
+    PrintHelp("lexorderv",HELPITEM," (could not read order type)");
+    return(PARAMERRORCODE);
+  }
+  if (strlen(ord)!=DIM)
+  {
+    PrintHelp("lexorderv",HELPITEM," (specify DIM chars out of 'rlud' or 'rlbfud' resp.)");
+    return(PARAMERRORCODE);
+  }
+  error = xused = yused = zused = FALSE;
+  for (i=0; i<DIM; i++)
+    switch (ord[i])
+    {
+    case 'r' :
+      if (xused) error = TRUE;
+      xused = TRUE;
+      order[i] = _X_; sign[i] =  1; break;
+    case 'l' :
+      if (xused) error = TRUE;
+      xused = TRUE;
+      order[i] = _X_; sign[i] = -1; break;
+
+                        #ifdef __TWODIM__
+    case 'u' :
+      if (yused) error = TRUE;
+      yused = TRUE;
+      order[i] = _Y_; sign[i] =  1; break;
+    case 'd' :
+      if (yused) error = TRUE;
+      yused = TRUE;
+      order[i] = _Y_; sign[i] = -1; break;
+                        #else
+    case 'b' :
+      if (yused) error = TRUE;
+      yused = TRUE;
+      order[i] = _Y_; sign[i] =  1; break;
+    case 'f' :
+      if (yused) error = TRUE;
+      yused = TRUE;
+      order[i] = _Y_; sign[i] = -1; break;
+
+    case 'u' :
+      if (zused) error = TRUE;
+      zused = TRUE;
+      order[i] = _Z_; sign[i] =  1; break;
+    case 'd' :
+      if (zused) error = TRUE;
+      zused = TRUE;
+      order[i] = _Z_; sign[i] = -1; break;
+                        #endif
+    }
+  if (error)
+  {
+    PrintHelp("lexorderv",HELPITEM," (bad combination of 'rludr' or 'rlbfud' resp.)");
+    return(PARAMERRORCODE);
+  }
+
+  /* check options */
+  AlsoOrderMatrices = SpecialTreatSkipVecs = FALSE;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'l' :
+      res = sscanf(argv[i],"l %d",&level);
+      if (res!=1)
+      {
+        PrintErrorMessage('E',"lexorderv","could not read level");
+        return(PARAMERRORCODE);
+      }
+      if ((level>=fromLevel)&&(level<=toLevel))
+        fromLevel = toLevel = level;
+      else
+      {
+        PrintErrorMessage('E',"lexorderv","level out of range");
+        return(PARAMERRORCODE);
+      }
+      break;
+
+    case 'm' :
+      AlsoOrderMatrices = TRUE;
+      break;
+
+    case 's' :
+      if              (strchr(argv[i],'<')!=NULL)
+        SpecialTreatSkipVecs = GM_PUT_AT_BEGIN;
+      else if (strchr(argv[i],'>')!=NULL)
+        SpecialTreatSkipVecs = GM_PUT_AT_END;
+      else if (strchr(argv[i],'0')!=NULL)
+        SpecialTreatSkipVecs = FALSE;
+      else
+      {
+        PrintErrorMessage('E',"lexorderv","use < or > with s-option");
+        return(PARAMERRORCODE);
+      }
+      break;
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintHelp("lexorderv",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
+
+  /* now we reorder the vectors on the specified levels */
+  for (level=fromLevel; level<=toLevel; level++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,level);
+
+    sprintf(buffer," [%d:",level);
+    UserWrite(buffer);
+
+    if (LexOrderVectorsInGrid(theGrid,order,sign,SpecialTreatSkipVecs,AlsoOrderMatrices)!=GM_OK)
+    {
+      PrintErrorMessage('E',"lexorderv","LexOrderVectorsInGrid failed");
+      return (CMDERRORCODE);
+    }
+    UserWrite("ov]");
+  }
+
+  UserWrite("\n");
+
+  return (OKCODE);
+}
+
 /****************************************************************************/
 /*D
    orderv - order the vectors according to the user provided dependencies
@@ -4660,7 +4843,7 @@ static INT OrderNodesCommand (INT argc, char **argv)
    It orders the vectors of the current multigrid, calling the function
    'OrderVectors'.
 
-   'orderv $m FFCCLL | FCFCLL $d <dep-proc> $o dep-proc options> [$a]'
+   'orderv $m FFCCLL | FCFCLL $d <dep-proc> $o <dep-proc options> $c <find-cut-proc> [$a]'
 
    .  $m FFCCLL | FCFCLL     - possible modes are FFCCLL or FCFCLL
    .  $d <dep-proc>          - the ordering algorithm uses this dependency procedure...
@@ -4702,8 +4885,9 @@ static INT OrderVectorsCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   char modestr[7];              /* <-- with change of size also change format string in sscanf! */
-  char *dep,*dep_opt;
-  INT mode,i,levels;
+  char *dep,*dep_opt,*cut;
+  INT mode,i,levels,PutSkipFirst,SkipPat;
+  int iValue;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -4712,9 +4896,10 @@ static INT OrderVectorsCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  levels = GM_CURRENT_LEVEL;
-  mode   = FALSE;
-  dep    = dep_opt = NULL;
+  levels           = GM_CURRENT_LEVEL;
+  mode             = FALSE;
+  dep              = dep_opt = cut = NULL;
+  PutSkipFirst = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -4749,6 +4934,23 @@ static INT OrderVectorsCommand (INT argc, char **argv)
         dep_opt++;
       break;
 
+    case 'c' :
+      /* skip leading blanks */
+      cut = argv[i]+1;
+      while ((*cut!='\0') && (strchr(WHITESPACE,*cut)!=NULL))
+        cut++;
+      break;
+
+    case 's' :
+      PutSkipFirst = TRUE;
+      if (sscanf(argv[i],"s %x",&iValue)!=1)
+      {
+        PrintErrorMessage('E',"orderv","could not read skip pattern");
+        return(PARAMERRORCODE);
+      }
+      SkipPat = iValue;
+      break;
+
     case 'a' :
       levels = GM_ALL_LEVELS;
       break;
@@ -4777,7 +4979,7 @@ static INT OrderVectorsCommand (INT argc, char **argv)
     return (PARAMERRORCODE);
   }
 
-  if (OrderVectors(theMG,levels,mode,dep,dep_opt)!=GM_OK)
+  if (OrderVectors(theMG,levels,mode,PutSkipFirst,SkipPat,dep,dep_opt,cut)!=GM_OK)
   {
     PrintErrorMessage('E',"orderv","order vectors failed");
     return (CMDERRORCODE);
@@ -4824,10 +5026,11 @@ static INT OrderVectorsCommand (INT argc, char **argv)
    This function finds (& selects) a node (element) from a given position (+tol).
    It finds a node (element) on the current level of the current multigrid.
 
-   find <x> <y> <z> {$n <tol> | $e} [$s]
+   find <x> <y> <z> {$n <tol> | $v <tol> | $e} [$s]
 
    .  <x> <y> <z>            - specify as much coordinates as the space has dimensions
    .  $n <tol>               - find a node maching the position with tolerance <tol>
+   .  $v <tol>               - find a vector maching the position with tolerance <tol>
    .  $e                     - find an element maching the position
    .  $s                     - add the selected node (element) to the selection buffer
                           - (if not specified the node is just listed)
@@ -4844,9 +5047,10 @@ static INT FindCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   GRID *theGrid;
   NODE *theNode;
+  VECTOR *theVector;
   ELEMENT *theElement;
   COORD xc[DIM],tolc[DIM];
-  INT i,j,select,isNode,isElement;
+  INT i,j,select,isNode,isElement,isVector;
 
   /* following variables: keep type for sscanf */
   float x[DIM_MAX],tol;
@@ -4869,7 +5073,7 @@ static INT FindCommand (INT argc, char **argv)
     xc[i] = x[i];
 
   /* check options */
-  select = isNode = isElement = FALSE;
+  select = isNode = isElement = isVector = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -4888,6 +5092,23 @@ static INT FindCommand (INT argc, char **argv)
         return (OKCODE);
       }
       isNode = TRUE;
+      break;
+
+    case 'v' :
+      if (sscanf(argv[i],"v %f",&tol)!=1)
+      {
+        PrintHelp("find",HELPITEM," (could not read tolerance)");
+        return (PARAMERRORCODE);
+      }
+      for (j=0; j<DIM; j++)
+        tolc[j] = tol;
+      theVector = FindVectorFromPosition(theGrid,xc,tolc);
+      if (theVector==NULL)
+      {
+        PrintErrorMessage('W',"find","no vector is matching");
+        return (OKCODE);
+      }
+      isVector = TRUE;
       break;
 
     case 'e' :
@@ -4919,6 +5140,13 @@ static INT FindCommand (INT argc, char **argv)
         return (CMDERRORCODE);
       }
 
+    if (isVector)
+      if (AddVectorToSelection(theMG,theVector)!=GM_OK)
+      {
+        PrintErrorMessage('E',"find","selecting the vector failed");
+        return (CMDERRORCODE);
+      }
+
     if (isElement)
       if (AddElementToSelection(theMG,theElement)!=GM_OK)
       {
@@ -4931,6 +5159,9 @@ static INT FindCommand (INT argc, char **argv)
     if (isNode)
       ListNode(theMG,theNode,FALSE,FALSE,FALSE,FALSE);
 
+    if (isVector)
+      ListVector(theMG,theVector,FALSE,FALSE);
+
     if (isElement)
       ListElement(theMG,theElement,FALSE,FALSE,FALSE,FALSE);
   }
@@ -4940,12 +5171,12 @@ static INT FindCommand (INT argc, char **argv)
 
 /****************************************************************************/
 /*D
-   select - select a node or  element from a given position
+   select - select a node or element from a given position
 
    DESCRIPTION:
    This function finds (and selects) a node (element) from a given position,
-   where some toerance can be specified.
-   It adds/removes nodes/elements from the selction buffer of the current
+   where some tolerance can be specified.
+   It adds/removes nodes/elements from the selection buffer of the current
    multigrid, using the functions
    'FindNodeFromId', 'FindElementFromId'
    'AddNodeToSelection', 'RemoveNodeFromSelection',
@@ -6083,6 +6314,92 @@ static INT SetCurrentWindowCommand (INT argc, char **argv)
   }
 
   SetCurrentUgWindow(theWin);
+
+  return (OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   drawtext - draw text in a ug window
+
+   DESCRIPTION:
+   This command draws text into a ug window.
+
+   'drawtext <xpos> <ypos> <text> [$w <window name>] [$c] [$i]'
+
+   .  <xpos>                 - x-coordinate in pixels (origin is the lower left corner)
+   .  <ypos>                 - y-coordinate in pixels (origin is the lower left corner)
+   .  <text>                 - text to draw
+   .  $w~<window~name>       - draw text into this window (default: current window)
+   .  $i                     - draw text inverse
+   .  $c                     - center text at <xpos> <ypos>
+   .  $s~<size>              - text size
+   D*/
+/****************************************************************************/
+
+static INT DrawTextCommand (INT argc, char **argv)
+{
+  UGWINDOW *theWin;
+  char winname[NAMESIZE],text[NAMESIZE];
+  COORD_POINT pos;
+  INT i,invopt,centeropt,size;
+
+  theWin = GetCurrentUgWindow();
+  if (theWin==NULL)
+  {
+    PrintErrorMessage('E',"drawtext","there's no window draw text");
+    return (CMDERRORCODE);
+  }
+
+  if (sscanf(argv[0],expandfmt(CONCAT3("drawtext %f %f %",NAMELENSTR,"[ -~]")),&pos.x,&pos.y,text)!=3)
+  {
+    PrintErrorMessage('E',"drawtext","specify position with two integers and then the text");
+    return (CMDERRORCODE);
+  }
+
+  /* check options */
+  invopt = centeropt = FALSE;
+  size   = 0;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'w' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("w %",NAMELENSTR,"[a-zA-Z0-9_]")),winname)!=1)
+      {
+        PrintErrorMessage('E',"drawtext","specify a window name with w option");
+        return (PARAMERRORCODE);
+      }
+      if ((theWin=GetUgWindow(winname))==NULL)
+      {
+        sprintf(buffer,"there is no window named '%s'",winname);
+        PrintErrorMessage('E',"drawtext",buffer);
+        return (PARAMERRORCODE);
+      }
+      break;
+
+    case 's' :
+      if (sscanf(argv[i],"s %d",&size)!=1)
+      {
+        PrintErrorMessage('E',"drawtext","specify a size with s option");
+        return (PARAMERRORCODE);
+      }
+      break;
+
+    case 'i' :
+      invopt = TRUE;
+      break;
+
+    case 'c' :
+      centeropt = TRUE;
+      break;
+
+    default :
+      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      PrintHelp("drawtext",HELPITEM,buffer);
+      return (PARAMERRORCODE);
+    }
+
+  DrawWindowText(theWin,pos,text,size,centeropt,invopt);
 
   return (OKCODE);
 }
@@ -7791,7 +8108,7 @@ static INT ClearCommand (INT argc, char **argv)
       break;
 
     case 'v' :
-      if (sscanf(argv[i],"v %f",value)!=1)
+      if (sscanf(argv[i],"v %f",&value)!=1)
       {
         PrintErrorMessage('E',"clear","could not read value");
         return(CMDERRORCODE);
@@ -8412,6 +8729,14 @@ static INT SetCurrentNumProcCommand (INT argc, char **argv)
    Typing <alt> and then 'r' refines all elements on a UNIX system,
    <cmd>+<r> on a Macintosh.
 
+   NOTICE:
+   When the command sequence contains a @ character, the following token is interpreted
+   as string variable and expanded as usual instantaneously when the command key is created.
+   If the sequence contains a ? instead of the @, the string variable will be expanded with its current
+   contents at execution time of the command sequence.
+
+   The special character ? is limited however to the 'setkey' command.
+
    SEE ALSO:
    'setkey', 'delkey'
    D*/
@@ -8894,6 +9219,7 @@ INT InitCommands ()
   if (CreateCommand("renumber",           RenumberMGCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("smooth",             SmoothMGCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("ordernodes",         OrderNodesCommand                               )==NULL) return (__LINE__);
+  if (CreateCommand("lexorderv",          LexOrderVectorsCommand                  )==NULL) return (__LINE__);
   if (CreateCommand("orderv",             OrderVectorsCommand                     )==NULL) return (__LINE__);
   if (CreateCommand("check",                      CheckCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("in",                         InsertInnerNodeCommand                  )==NULL) return (__LINE__);
@@ -8924,6 +9250,7 @@ INT InitCommands ()
   if (CreateCommand("openwindow",         OpenWindowCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("closewindow",        CloseWindowCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("setcurrwindow",      SetCurrentWindowCommand                 )==NULL) return (__LINE__);
+  if (CreateCommand("drawtext",           DrawTextCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("openpicture",        OpenPictureCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("closepicture",       ClosePictureCommand                     )==NULL) return (__LINE__);
   if (CreateCommand("clearpicture",       ClearPictureCommand                     )==NULL) return (__LINE__);
