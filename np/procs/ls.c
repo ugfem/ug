@@ -414,7 +414,16 @@ INT NPLinearSolverExecute (NP_BASE *theNP, INT argc , char **argv)
   INT result,level,bl;
 
   np = (NP_LINEAR_SOLVER *) theNP;
+
+#ifdef USE_FAMG
+  if (ReadArgvOption("t",argc,argv))
+    level = -1;
+  else
+    level = CURRENTLEVEL(theNP->mg);
+#else
   level = CURRENTLEVEL(theNP->mg);
+#endif
+
   result = 0;
   bl = 0;
 
