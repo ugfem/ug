@@ -6,22 +6,43 @@
 #          ".../public_html/.../Sites" that the web server may display
 #          the latest test results
 
-# set the "dash_root" and the "site_root" variable: that are the 
-# directories where the HTML files are created
+set TEST = ${DART_HOME}/Source/Server/UG/Testing/HTML/TestingResults/;
+set TEST_BOARD = ${TEST}/Dashboard;
+set TEST_SITES = ${TEST}/Sites;
+set WEB = ${HOME}/public_html/;
+set INCOMING = ${HOME}/incoming;
 
-set TESTING_ROOT1 = $DART_HOME/Source/Server/UG/Testing/HTML/TestingResults/Sites/speedo;
-set TESTING_ROOT2 = $DART_HOME/Source/Server/UG/Testing/HTML/TestingResults/Dashboard;
+# update the directories in WEB
+cp -r -u -f  ${TEST} ${WEB};
 
-# set the "web" variable: that is the directory to be updated
+# remove not needed directories in TEST
+cd ${TEST_BOARD};
+foreach i ( `ls -l ./` )
+	if { test -d ${i} } then
+		rm -r ${i};
+	else if { test -f ${i} } then
+		rm ${i};
+	endif
+end
 
-set WEB1 = $HOME/public_html/TestingResults/Sites/speedo;
-set WEB2 = $HOME/public_html/TestingResults/Dashboard;
+cd ${TEST_SITES};
+foreach i ( `ls -l ./` )
+	if { test -d ${i} } then
+		rm -r ${i};
+	else if { test -f ${i} } then
+		rm ${i};
+	endif
+end
 
-# update the directories
+cd ${INCOMING};
+foreach i ( `ls -l ./` )
+	if { test -d ${i} } then
+		rm -r ${i};
+	else if { test -f ${i} } then
+		rm ${i};
+	endif
+end
 
-cp -r -f  $TESTING_ROOT1/* $WEB1;
-cp -r -f  $TESTING_ROOT2/* $WEB2;
-
-# delete outdated Dahsboards
-
+# delete outdated Dahsboards in WEB
 ug_dart_manage_html.pl
+
