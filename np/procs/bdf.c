@@ -628,7 +628,7 @@ noabort:
           a_outervector_consistent(mg,0,level,bdf->y_0);
 #endif
           if ((*bdf->error->TimeError)
-                (bdf->error,level,bdf->t_p1,&dt_0,bdf->y_p1,bdf->y_0,
+                (bdf->error,level,bdf->t_p1,&dt_p1,bdf->y_p1,bdf->y_0,
                 ts,&eresult))
             NP_RETURN(1,res[0]);
           if (nlsolve->PostProcess!=NULL)
@@ -839,12 +839,13 @@ Continue:
         if (eresult.step <=bdf->dtmax)
         {
           bdf->dt = eresult.step;
-          UserWrite("time step modified\n");
+          UserWrite("            Time step modified by step control \n");
         }
         if (eresult.step >=bdf->dtmax)
         {
           bdf->dt = bdf->dtmax;
-          UserWrite("time step modified, dt= dtmax\n");
+          UserWrite("            Time step modified by step control \n");
+          UserWrite("            WARNING: dt = dtmax \n");
         }
       }
   }
@@ -854,12 +855,13 @@ Continue:
     if ( eresult.step < bdf->dtmin)
     {
       bdf->dt = bdf->dtmin;
-      UserWrite("time step modified, \n WARNING dt = dtmin\n");
+      UserWrite("            Time step modified by step control \n");
+      UserWrite("            WARNING: dt = dtmin\n");
     }
     if ( eresult.step >= bdf->dtmin)
     {
       bdf->dt = eresult.step;
-      UserWrite("time step modified\n");
+      UserWrite("            Time step modified by step control \n");
     }
   }
 
