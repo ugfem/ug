@@ -7700,7 +7700,11 @@ static INT SetCurrentPictureCommand (INT argc, char **argv)
   INT i;
 
         #ifdef ModelP
-  if (me!=master) return (OKCODE);
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: OpenPictureCommand(): me not in Context,"\
+                     " no picture stucture allocated\n",me))
+    return(OKCODE);
+  }
         #endif
 
   theWin = GetCurrentUgWindow();
