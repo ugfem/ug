@@ -7476,9 +7476,9 @@ INT MinMaxAngle (ELEMENT *theElement, DOUBLE *amin, DOUBLE *amax)
 #endif
 
 #ifdef __THREEDIM__
-static INT QualityElement (int type, ELEMENT *element, DOUBLE *angle)
+static INT QualityElement (INT type, ELEMENT *element, DOUBLE *angle)
 {
-  int i,j,k,errorcode;
+  INT i,j,k,errorcode;
   COORD *x[MAX_CORNERS_OF_ELEM];
   COORD delta[3][DIM],s[DIM],t[DIM];
   COORD help,Scalarprdst,Scalarprd01,Scalarprd02,Scalarprd12;
@@ -7540,7 +7540,7 @@ static INT QualityElement (int type, ELEMENT *element, DOUBLE *angle)
     angle[i] /= 4*PI;
   }
   if (TetraSideNormals (element,x,theNormal)) return (2);
-  for (i=0; i<MAX_EDGES_OF_ELEM; i++)
+  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
   {
     V3_SCALAR_PRODUCT(theNormal[SIDE_WITH_EDGE(element,i,0)],theNormal[SIDE_WITH_EDGE(element,i,1)],help);
     help = MAX(help,-1.0);
