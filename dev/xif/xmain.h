@@ -47,11 +47,13 @@
 #define CUI             0x2
 #define GUI             0x4
 #define XGUI            0x5
+#define CGUI            0x6
 
-#define XUI_STRING      "xui"
-#define CUI_STRING      "cui"
-#define GUI_STRING      "gui"
-#define XGUI_STRING     "xgui"
+#define XUI_STRING      "x"
+#define CUI_STRING      "c"
+#define GUI_STRING      "g"
+#define XGUI_STRING     "xg"
+#define CGUI_STRING     "cg"
 
 #define CUI_ON          (user_interface & CUI)
 #define XUI_ON          (user_interface & XUI)

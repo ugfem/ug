@@ -197,6 +197,26 @@ static Bool callback (Display *d, XEvent *report, char *arg)
  */
 /****************************************************************************/
 
+INT GetNextUGEvent_SIF (EVENT *theEvent, INT EventMask)
+{
+  char *s;
+  int cmdKey, onlyCmdKey;
+
+  /* no event as default */
+  theEvent->Type = NO_EVENT;
+  theEvent->NoEvent.InterfaceEvent = 0;
+
+  /* we have no command keys */
+  if (EventMask==TERM_CMDKEY) return(0);
+
+  /* read in a string from the user and store it in event structure */
+  gets(theEvent->TermString.String);
+  theEvent->Type = TERM_STRING;
+
+  /* ready */
+  return(0);
+}
+
 INT GetNextUGEvent (EVENT *theEvent, INT Eventmask)
 {
   XEvent report;
@@ -523,7 +543,7 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
   OUTPUTDEVICE *d;
   char buf[128];
   char buffer[128];
-  int i;
+  int i,j;
         #ifdef USE_XAW
   int n;
   Arg args[20];
@@ -539,19 +559,36 @@ OUTPUTDEVICE *InitScreen (int *argcp, char **argv, INT *error)
   argv[0] = buf;
 
   /* now set user interface */
-  for (i=1; i<if_argc; i++)
-    if (strcmp(if_argv[i],"-ui")==0)
+  for (i=1; i<*argcp; i++)
+    if (strcmp(argv[i],"-ui")==0)
     {
-      if (sscanf(if_argv[i+1],"%s",buffer)!=1)
+      int ok = 0;
+      if (sscanf(argv[i+1],"%s",buffer)!=1)
       {
-        fprintf(stderr,"%s: invalid option -ui [selected_ui]\n",prog_name);
-        fprintf(stderr,"%s: choose for option -ui [xui|cui|gui|xgui]\n",prog_name);
+        fprintf(stderr,"%s: invalid use of option -ui [selected_ui]\n",prog_name);
+        fprintf(stderr,"%s: choose for option -ui [" XUI_STRING "|" CUI_STRING "|"
+                GUI_STRING "|" XGUI_STRING "|" CGUI_STRING "]\n",prog_name);
         exit(-1);
       }
-      if (strcmp(buffer,XUI_STRING)==0) user_interface = XUI;
-      if (strcmp(buffer,CUI_STRING)==0) user_interface = CUI;
-      if (strcmp(buffer,GUI_STRING)==0) user_interface = GUI;
-      if (strcmp(buffer,XGUI_STRING)==0) user_interface = XGUI;
+
+      if (strcmp(buffer,XUI_STRING)==0)       { user_interface = XUI; ok = 1; }
+      if (strcmp(buffer,CUI_STRING)==0)       { user_interface = CUI; ok = 1; }
+      if (strcmp(buffer,GUI_STRING)==0)       { user_interface = GUI; ok = 1; }
+      if (strcmp(buffer,XGUI_STRING)==0)      { user_interface = XGUI; ok = 1; }
+      if (strcmp(buffer,CGUI_STRING)==0)      { user_interface = CGUI; ok = 1; }
+
+      if (!ok)
+      {
+        fprintf(stderr,"%s: invalid use of option -ui [selected_ui]\n",prog_name);
+        fprintf(stderr,"%s: choose for option -ui [" XUI_STRING "|" CUI_STRING "|"
+                GUI_STRING "|" XGUI_STRING "|" CGUI_STRING "]\n",prog_name);
+        exit(-1);
+      }
+
+      /* erase arguments from arglist */
+      for (j=i+2; j<*argcp; j++) argv[j-2] = argv[j];
+      i -= 1;
+      *argcp -= 2;
     }
 
         #ifdef USE_XAW
