@@ -60,51 +60,51 @@ then
         case $1 in
         dc2d)
 			cd $UGROOT/../ns/appl2d
-			ugrun ns2d $PROC ugdemo.scr
+			ugrun ns2d $PROC ugdemo.scr -noquit
 			;;
         dc3d)
 			cd $UGROOT/../ns/appl3d
-			ugrun ns3d $PROC DrivenCavity.scr
+			ugrun ns3d $PROC DrivenCavity.scr -noquit
 			;;
         pm2d)
 			cd $UGROOT/../sc/appl2d
-			ugrun scalar2d $PROC ugdemo.scr
+			ugrun scalar2d $PROC ugdemo.scr -noquit
 			;;
         df2d)
 			cd $UGROOT/../df/gen/appl
-			ugrun df2d $PROC ugdemo.scr
+			ugrun df2d $PROC ugdemo.scr -noquit
 			;;
         ep2d)
 			cd $UGROOT/../fe/appl
-			ugrun fe2d $PROC gpd.scr
+			ugrun fe2d $PROC gpd.scr -noquit
 			;;
         ep3d)
 			cd $UGROOT/../fe/appl
-			ugrun fe3d $PROC lame.scr
+			ugrun fe3d $PROC lame.scr -noquit
 			;;
         ball)
 			cd $UGROOT/../fe/appl
-			ugrun fe3d $PROC ugdemo3d.scr
+			ugrun fe3d $PROC ugdemo3d.scr -noquit
 			;;
         diff)
 			cd $UGROOT/../fe/appl
-			ugrun fe2d $PROC simple.scr
+			ugrun fe2d $PROC simple.scr -noquit
 			;;
         disc)
 			cd $UGROOT/../fe/appl
-			ugrun fe2d $PROC ugdemo2d.scr
+			ugrun fe2d $PROC ugdemo2d.scr -noquit
 			;;
         ew2d)
 			cd $UGROOT/../fe/appl
-			ugrun fe2d $PROC wolfgangsee.scr
+			ugrun fe2d $PROC wolfgangsee.scr -noquit
 			;;
         er2d)
 			cd $UGROOT/../fe/appl
-			ugrun fe2d $PROC emden.scr
+			ugrun fe2d $PROC emden.scr -noquit
 			;;
         tu2d)
 			cd $UGROOT/../sc/appl2d
-			ugrun scalar2d $PROC tutorial.scr
+			ugrun scalar2d $PROC tutorial.scr -noquit
 			;;
         *)
                 echo "target $1 not found";
