@@ -113,7 +113,7 @@ if ("$ARCH" == "SGI") then
         set junk = `du -s $file.rgb | cat`
 	    @ sizea = $junk[1]
 	  end
-	  ugkillall $file
+	  ugkillall ugv
 	  @ iin += $fi
 	  @ iout++
 	end
