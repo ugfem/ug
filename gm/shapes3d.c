@@ -1426,7 +1426,7 @@ INT Side_TetInfo (COORD **theCorners, INT side, COORD_VECTOR Area, COORD_VECTOR 
 D*/			
 /****************************************************************************/
 
-INT GetSkewedUIP (COORD_VECTOR *theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
+INT GetSkewedUIP (COORD **theCorners, COORD_VECTOR LIP[MAX_EDGES_OF_ELEM], DOUBLE_VECTOR conv[MAX_EDGES_OF_ELEM], COORD_VECTOR LUIP[MAX_EDGES_OF_ELEM])
 {
 	COORD_VECTOR lconv;
 	COORD alpha;
