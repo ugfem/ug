@@ -116,6 +116,7 @@
 #define PO_MIDPOINT(p)                  ((p)->theHead.theMidPoint)
 #define PO_RADIUS(p)                    ((p)->theHead.theRadius)
 #define PO_MG(p)                                ((p)->theHead.theMG)
+#define PO_PIC(p)                               ((p)->theHead.pic)
 #define PO_NAME(p)                              ((p)->theHead.name)
 #define PO_USESCUT(p)                   ((p)->theHead.UsesCut)
 #define PO_DIM(p)                               (((p)->theHead.thePlotObjType==NULL) ? (NOT_DEFINED) : ((p)->theHead.thePlotObjType->Dimension))
@@ -213,6 +214,7 @@ struct PlotObjHead {                                            /* head of all P
   INT status;                                                           /* see above									*/
   struct PlotObjType *thePlotObjType;           /* type of PlotObj								*/
   MULTIGRID *theMG;                                                     /* the data base								*/
+  struct PICture *pic;                                          /* my picture									*/
   DOUBLE theMidPoint[3];                                        /* MidPoint of covering 2/3D sphere                     */
   DOUBLE theRadius;                                                     /* radius of covering 2/3D sphere				*/
   INT clearBeforeDraw;                                          /* YES or NO									*/

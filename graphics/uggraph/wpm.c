@@ -1439,7 +1439,8 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
 {
   VIEWEDOBJ *theViewedObj;
   PLOTOBJ *thePlotObj;
-  DOUBLE DefaultVP[3], DefaultVT[3], DefaultVTOld[3], DefaultPMP[3], DefaultPXD[3], DefaultPYD[3], DefaultPJ, DefaultSXD[3], DefaultSYD[3], DefaultSZD[3], DefaultScale[3];
+  DOUBLE DefaultVP[3], DefaultVT[3], DefaultVTOld[3], DefaultPMP[3],
+         DefaultPXD[3], DefaultPYD[3], DefaultPJ, DefaultSXD[3], DefaultSYD[3], DefaultScale[3];
   DOUBLE ViewDirection[3], ViewDirectionOld[3], CanvasRatio, RotationAxis[3];
   DOUBLE angle, norm;
   INT ViewedObjNotInit, viewpointcorrect;
@@ -1458,7 +1459,8 @@ INT SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBLE *targetP
     UserWrite("specify object first\n");
     return (0);
   }
-  CanvasRatio = ABS(((DOUBLE)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1]))/((DOUBLE)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
+  CanvasRatio = ABS(((DOUBLE)(PIC_GLL(thePicture)[1]-PIC_GUR(thePicture)[1]))
+                    / ((DOUBLE)(PIC_GLL(thePicture)[0]-PIC_GUR(thePicture)[0])));
 
   /* set values */
   switch (PO_DIM(thePlotObj))
@@ -2390,6 +2392,7 @@ INT SpecifyPlotObjOfViewedObject (PICTURE *thePicture, MULTIGRID *theMG, const c
   if (thePicture == NULL) return (1);
   theViewedObj = PIC_VO(thePicture);
   thePlotObj = VO_PO(theViewedObj);
+  PO_PIC(thePlotObj) = thePicture;
 
   /* store */
   thePlotObjType = PO_POT(thePlotObj);
@@ -3577,6 +3580,7 @@ static INT DisplayScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj)
 static INT InitVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 {
   BVP_DESC *theBVPDesc;
+  PICTURE *pic;
   struct ElemVectorPlotObj2D *theEvpo;
   char buffer[64];
   INT i, ret;
@@ -3587,6 +3591,7 @@ static INT InitVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
   theBVPDesc = MG_BVPD(PO_MG(thePlotObj));
   V2_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
   PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
+  pic = PO_PIC(thePlotObj);
   ret = ACTIVE;
 
   /* defaults */
@@ -3633,6 +3638,17 @@ static INT InitVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
     {
       if (sscanf(argv[i],"r %g",&fValue)!=1)
         break;
+      if (fValue<3.)
+      {
+        /* TODO (HRR 971010): replace this by {PrintErrorMessage(); ret =NOT_ACTIVE;} once all scripts are changed */
+        printf("ERROR: die Rasterweite von EVector in 2D muss in --> PIXELN <-- angegeben werden\n");
+        ASSERT(FALSE);
+      }
+      if (fValue>MIN(fabs(PIC_GLL(pic)[_X_]-PIC_GUR(pic)[_X_]),fabs(PIC_GLL(pic)[_Y_]-PIC_GUR(pic)[_Y_]))/2)
+      {
+        PrintErrorMessage('E',"InitVectorFieldPlotObject_2D","rastersize > half picture size");
+        ret =NOT_ACTIVE;
+      }
       theEvpo->RasterSize = fValue;
       break;
     }
@@ -4551,7 +4567,6 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
     sprintf(buffer,"vobject %s",ObjTypeName[i]);
     UserWriteF(DISPLAY_PO_FORMAT_SS,buffer,BOOL_2_YN(theGpo->OType[i]));
   }
-  UserWrite(buffer);
   UserWrite("\n");
 
   return (0);
