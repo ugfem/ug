@@ -965,12 +965,14 @@ INT GetSons (ELEMENT *theElement, ELEMENT *SonList[MAX_SONS])
     }
     break;
   case (PYRAMID) :
-    IFDEBUG(gm,0)
-    if (REFINECLASS(theElement)==GREEN_CLASS || REFINECLASS(theElement)==RED_CLASS)
-      UserWriteF("GetSons(): ERROR PYRAMID has REFINECLASS=%d and MARK=%d\n",REFINECLASS(theElement),MARK(theElement));
-    ENDDEBUG
-      SonList[0] = SON(theElement,0);
-    break;
+  /* TODO: delete this
+     IFDEBUG(gm,0)
+     if (REFINECLASS(theElement)==GREEN_CLASS || REFINECLASS(theElement)==RED_CLASS)
+          UserWriteF("GetSons(): ERROR PYRAMID has REFINECLASS=%d and MARK=%d\n",REFINECLASS(theElement),MARK(theElement));
+     ENDDEBUG
+     SonList[0] = SON(theElement,0);
+     break;
+   */
   case (HEXAHEDRON) :
     SonList[0] = SON(theElement,0);
 

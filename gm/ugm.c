@@ -3573,6 +3573,8 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList, INT
     #ifdef __THREEDIM__
   if (n == 4)
     tag = TETRAHEDRON;
+  else if ( n == 5)
+    tag = PYRAMID;
   else if ( n == 8)
     tag = HEXAHEDRON;
   else
