@@ -2311,6 +2311,14 @@ static INT InterpretString (void)
         if (strchr(terminators,(int) (c=*cmdPtr))!=NULL)
           c=(char) 0;
 
+        if (c=='#')
+        {
+          /* comment: skip end of line */
+          do
+            cmdPtr++;
+          while (((c=*cmdPtr)!='\n') && (c!=(char) 0));
+        }
+
         if (c!=(char) 0)
           cmdPtr++;
 
