@@ -115,10 +115,10 @@ static double u0 (double x, double y)
 
 #define CHECKER_XL      0.1
 #define CHECKER_YL      0.1
-#define CHECKER_K1      1.0E4
-#define CHECKER_K2      1.0E0
-#define CHECKER_K3      1.0E-4
-#define CHECKER_K4      1.0E0
+#define CHECKER_K1      1000.0
+#define CHECKER_K2      0.001
+#define CHECKER_K3      10.0
+#define CHECKER_K4      0.1
 
 static double k_het (double x, double y)
 {
@@ -523,20 +523,20 @@ int main (int argc, char *argv[])
   if ((N<0)||(N>10000000)) return(1);
 
   AMG_Print("Setting up system\n");
-  if (SetupSystem3D(N))
+  if (SetupSystem2D(N))
     AMG_Print("Error in setup\n");
   /*AMG_PrintMatrix(A0,"A initially");*/
 
   /* coarsen context */
   cc.alpha = 0.33333333;
-  cc.beta = 1.0E-3;
-  cc.mincluster=8;
-  cc.maxcluster=10;
-  cc.maxdistance=3;
+  cc.beta = 1.0E-5;
+  cc.mincluster=4;
+  cc.maxcluster=6;
+  cc.maxdistance=2;
   cc.maxconnectivity=15;
   cc.verbose=1;
   cc.depthtarget=20;
-  cc.coarsentarget=25;
+  cc.coarsentarget=200;
   cc.coarsenrate=1.2;
   cc.major=-1;
   cc.dependency=AMG_SYM;
@@ -546,7 +546,7 @@ int main (int argc, char *argv[])
   sc.solver=AMG_CG;
   sc.preconditioner=AMG_MGC;
   sc.maxit=800;
-  sc.red_factor=1.0E-6;
+  sc.red_factor=1.0E-8;
   sc.dnorm_min=1.0E-15;
   sc.coarse_smoother=AMG_EX;
   sc.coarse_maxit=200;
