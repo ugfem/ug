@@ -158,7 +158,7 @@ INT GrowShellWindow (EventRecord *theEvent)
   Rect r,sizeRect,beforeRect,afterRect,viewRect;
   WindowPtr theWindow;
 
-  /* get eventä */
+  /* get event */
   theWindow = MAC_WIN(shell);
   SetPort(theWindow);
 

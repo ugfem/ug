@@ -492,18 +492,23 @@ else
 void PrintErrorMessage (char type, const char *procName, const char *text)
 {
   char classText[32];
+  INT oldmutelevel;
 
+  oldmutelevel = mutelevel;
   switch (type)
   {
   case 'W' :
     strcpy(classText,"WARNING");
     break;
+
   case 'E' :
     strcpy(classText,"ERROR");
+    mutelevel = 0;
     break;
 
   case 'F' :
     strcpy(classText,"FATAL");
+    mutelevel = 0;
     break;
 
   default :
@@ -511,6 +516,7 @@ void PrintErrorMessage (char type, const char *procName, const char *text)
     break;
   }
   UserWriteF("%s in %.20s: %.200s\n",classText,procName,text);
+  mutelevel = oldmutelevel;
 }
 
 /****************************************************************************/

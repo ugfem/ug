@@ -541,7 +541,7 @@ static void InitMetaPort (OUTPUTDEVICE *thePort)
     b -= delta;
     red[i] = r; green[i] = g; blue[i++] = b;
   }                                                             /* 128 = green */
-  /* gr¸een nach gelb */
+  /* gruen nach gelb */
   for (j=0; j<res; j++)
   {
     r += delta;
