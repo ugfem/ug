@@ -473,7 +473,7 @@ char  *mm_typecode_to_str(MM_typecode matcode)
    D*/
 /****************************************************************************/
 
-static ReadMMCommand(INT argc, char **argv)
+static INT ReadMMCommand(INT argc, char **argv)
 {
   MULTIGRID *theMG;
   HEAP *theHeap;
