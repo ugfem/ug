@@ -521,6 +521,7 @@ INT CreateVector (GRID *theGrid, VECTOR *After, INT VectorType, VECTOR **VectorH
     #endif
 
         #ifdef ModelP
+  DDD_AttrSet(PARHDR(pv),theGrid->level);
   DDD_PrioritySet(PARHDR(pv),PrioVector);
         #endif
 

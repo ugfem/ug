@@ -463,6 +463,7 @@ VERTEX *CreateBoundaryVertex (GRID *theGrid, VERTEX *after)
   SETONEDGE(pv,0);
   SETMOVE(pv,DIM_OF_BND);
         #ifdef ModelP
+  DDD_AttrSet(PARHDRV(pv),theGrid->level);
   DDD_PrioritySet(PARHDRV(pv),PrioVertex);
         #endif
 
@@ -537,6 +538,7 @@ VERTEX *CreateInnerVertex (GRID *theGrid, VERTEX *after)
   TOPNODE(pv) = NULL;
   SETMOVE(pv,DIM);
         #ifdef ModelP
+  DDD_AttrSet(PARHDRV(pv),theGrid->level);
   DDD_PrioritySet(PARHDRV(pv),PrioVertex);
         #endif
   for (i=0; i<DIM; i++) LCVECT(pv)[i] = 0.0;
@@ -620,6 +622,7 @@ NODE *CreateNode (GRID *theGrid, NODE *after)
   SETCLASS(pn,4);
   SETLEVEL(pn,theGrid->level);
         #ifdef ModelP
+  DDD_AttrSet(PARHDR(pn),theGrid->level);
   DDD_PrioritySet(PARHDR(pn),PrioNode);
         #endif
   ID(pn) = (theGrid->mg->nodeIdCounter)++;
