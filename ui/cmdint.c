@@ -2520,7 +2520,7 @@ void CommandLoop (int argc, char **argv)
       {
         if (i+1<argc)
         {
-          sprintf(inpLine,"set %s\n",(argv[i+1]));
+          sprintf(inpLine,"%s\n",(argv[i+1]));
           InterpretCommand(inpLine);
           i++;
         }
