@@ -4147,6 +4147,10 @@ static INT GEN_PostProcess_Scalar_FR (PICTURE *thePicture, WORK *theWork)
 
   FR_Work = W_FINDRANGE_WORK(theWork);
 
+        #ifdef ModelP
+  Broadcast(&GEN_FR_min,sizeof(double));
+  Broadcast(&GEN_FR_max,sizeof(double));
+        #endif
   if (GEN_FR_min>GEN_FR_max)
   {
     UserWrite("findrange failed\n");

@@ -8987,7 +8987,11 @@ static INT FindRangeCommand (INT argc, char **argv)
   float zoom;
 
         #ifdef ModelP
-  if (me!=master) return(OKCODE);
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: FindRangeCommand(): me not in Context,"\
+                     " range found\n",me))
+    return(OKCODE);
+  }
         #endif
 
   theWork = &myWork;
@@ -9043,7 +9047,16 @@ static INT FindRangeCommand (INT argc, char **argv)
 
   /* read out min and max */
   min = W_FINDRANGE_WORK(theWork)->min;
+        #ifdef ModelP
+  Broadcast(&min,sizeof(double));
+  W_FINDRANGE_WORK(theWork)->min = min;
+        #endif
+
   max = W_FINDRANGE_WORK(theWork)->max;
+        #ifdef ModelP
+  Broadcast(&max,sizeof(double));
+  W_FINDRANGE_WORK(theWork)->max = max;
+        #endif
 
   sprintf(buffer," FR_min = %10.3g\n FR_max = %10.3g\n",(float)min,(float)max);
   UserWrite(buffer);
