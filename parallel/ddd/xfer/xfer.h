@@ -375,14 +375,17 @@ typedef struct
   DDD_GID gid;
   int offset;                     /* offset from beginObjMem */
   DDD_TYPE typ;                   /* type of object */
-  DDD_PRIO prio;                  /* priority of object */
+  DDD_PRIO prio;                  /* new priority of object */
   DDD_ATTR attr;                  /* attr of object */
   int addLen;                     /* length of additional data */
   size_t size;                    /* size of object, ==desc->len for
                                       fixed-sized objects */
 
   DDD_HDR hdr;                /* TODO this is probably not used on sender side */
-  int is_new;                 /* TODO this flag is only needed by receiver */
+
+  /* TODO: the following data is only used on receiver side */
+  int is_new;
+  DDD_PRIO oldprio;
 } OBJTAB_ENTRY;
 
 

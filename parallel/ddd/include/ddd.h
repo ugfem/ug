@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/*            DDD V1.7                                                      */
+/*            DDD V1.7.1                                                    */
 /*                                                                          */
 /* File:      ddd.h                                                         */
 /*                                                                          */
@@ -62,7 +62,7 @@ extern "C" {
  #endif
 #endif
 
-#define DDD_VERSION    "1.7"
+#define DDD_VERSION    "1.7.1"
 
 
 /* F77SYM(lsym,usym) macro is defined in compiler.h. 961127 KB */
@@ -370,52 +370,53 @@ void     DDD_IdentifyObject (DDD_TYPE *, DDD_OBJ *, DDD_PROC *, DDD_TYPE *, DDD_
 #ifdef C_FRONTEND
 DDD_IF   DDD_IFDefine (int, DDD_TYPE O[], int, DDD_PRIO A[], int, DDD_PRIO B[]);
 void     DDD_IFDisplay (void);
-void     DDD_IFExchange (DDD_IF, size_t, ComProcPtr, ComProcPtr);
-void     DDD_IFOneway (DDD_IF, int, size_t, ComProcPtr, ComProcPtr);
 
-void     DDD_IFExecLocal (DDD_IF, ExecProcPtr);
-void     DDD_IFAExecLocal (DDD_IF, DDD_ATTR, ExecProcPtr);
+void     DDD_IFExchange   (DDD_IF,             size_t, ComProcPtr,ComProcPtr);
+void     DDD_IFOneway     (DDD_IF,         int,size_t, ComProcPtr,ComProcPtr);
+void     DDD_IFExecLocal  (DDD_IF,                     ExecProcPtr);
+void     DDD_IFAExchange  (DDD_IF,DDD_ATTR,    size_t, ComProcPtr,ComProcPtr);
+void     DDD_IFAOneway    (DDD_IF,DDD_ATTR,int,size_t, ComProcPtr,ComProcPtr);
+void     DDD_IFAExecLocal (DDD_IF,DDD_ATTR,            ExecProcPtr);
+void     DDD_IFExchangeX  (DDD_IF,             size_t, ComProcXPtr,ComProcXPtr);
+void     DDD_IFOnewayX    (DDD_IF,         int,size_t, ComProcXPtr,ComProcXPtr);
+void     DDD_IFExecLocalX (DDD_IF,                     ExecProcXPtr);
+void     DDD_IFAExchangeX (DDD_IF,DDD_ATTR,    size_t, ComProcXPtr,ComProcXPtr);
+void     DDD_IFAOnewayX   (DDD_IF,DDD_ATTR,int,size_t, ComProcXPtr,ComProcXPtr);
+void     DDD_IFAExecLocalX(DDD_IF,DDD_ATTR,            ExecProcXPtr);
+
 
 #else
 
 void     DDD_IFDefine (int *, DDD_TYPE *, int *, DDD_PRIO *, int *, DDD_PRIO *, DDD_IF *);
 void     DDD_IFDisplay (void);
-void     DDD_IFExchange (DDD_IF *, size_t *, ComProcPtr, ComProcPtr);
-void     DDD_IFOneway (DDD_IF *, int*, size_t *, ComProcPtr, ComProcPtr);
 
-void     DDD_IFExecLocal (DDD_IF *, ExecProcPtr);
-void     DDD_IFAExecLocal (DDD_IF *, DDD_ATTR *, ExecProcPtr);
+void     DDD_IFExchange   (DDD_IF *,                 size_t *, ComProcPtr,ComProcPtr);
+void     DDD_IFOneway     (DDD_IF *,           int *,size_t *, ComProcPtr,ComProcPtr);
+void     DDD_IFExecLocal  (DDD_IF *,                           ExecProcPtr);
+void     DDD_IFAExchange  (DDD_IF *,DDD_ATTR *,      size_t *, ComProcPtr,ComProcPtr);
+void     DDD_IFAOneway    (DDD_IF *,DDD_ATTR *,int *,size_t *, ComProcPtr,ComProcPtr);
+void     DDD_IFAExecLocal (DDD_IF *,DDD_ATTR *,                ExecProcPtr);
+void     DDD_IFExchangeX  (DDD_IF *,                 size_t *, ComProcXPtr,ComProcXPtr);
+void     DDD_IFOnewayX    (DDD_IF *,           int *,size_t *, ComProcXPtr,ComProcXPtr);
+void     DDD_IFExecLocalX (DDD_IF *,                           ExecProcXPtr);
+void     DDD_IFAExchangeX (DDD_IF *,DDD_ATTR *,      size_t *, ComProcXPtr,ComProcXPtr);
+void     DDD_IFAOnewayX   (DDD_IF *,DDD_ATTR *,int *,size_t *, ComProcXPtr,ComProcXPtr);
+void     DDD_IFAExecLocalX(DDD_IF *,DDD_ATTR *,                ExecProcXPtr);
 
 #define DDD_IFDefine     F77SYM(ddd_ifdefine,DDD_IFDEFINE)
 #define DDD_IFDisplay    F77SYM(ddd_ifdisplay,DDD_IFDISPLAY)
 #define DDD_IFExchange   F77SYM(ddd_ifexchange,DDD_IFEXCHANGE)
 #define DDD_IFOneway     F77SYM(ddd_ifoneway,DDD_IFONEWAY)
 #define DDD_IFExecLocal  F77SYM(ddd_ifexeclocal,DDD_IFEXECLOCAL)
-#define DDD_IFAExecLocal  F77SYM(ddd_ifaexeclocal,DDD_IFAEXECLOCAL)
-#endif
-
-
-
-/*
-        Attr-oriented communication, new in V1.1
- */
-void     DDD_IFAExchange (DDD_IF, DDD_ATTR,
-                          size_t, ComProcPtr GatherP, ComProcPtr ScatterP);
-void     DDD_IFAOneway (DDD_IF, DDD_ATTR, int dir,
-                        size_t, ComProcPtr GatherP, ComProcPtr ScatterP);
-
-/*
-        Extended communication, new in V1.1
- */
-void     DDD_IFExchangeX (DDD_IF,
-                          size_t, ComProcXPtr GatherP, ComProcXPtr ScatterP);
-void     DDD_IFOnewayX (DDD_IF, int dir,
-                        size_t, ComProcXPtr GatherP, ComProcXPtr ScatterP);
-
-void     DDD_IFAExchangeX (DDD_IF, DDD_ATTR,
-                           size_t, ComProcXPtr GatherP, ComProcXPtr ScatterP);
-#ifdef C_FRONTEND
-void     DDD_IFAExecLocalX (DDD_IF, DDD_ATTR, ExecProcXPtr);
+#define DDD_IFAExchange  F77SYM(ddd_ifaexchange,DDD_IFAEXCHANGE)
+#define DDD_IFAOneway    F77SYM(ddd_ifaoneway,DDD_IFAONEWAY)
+#define DDD_IFAExecLocal F77SYM(ddd_ifaexeclocal,DDD_IFAEXECLOCAL)
+#define DDD_IFExchangeX   F77SYM(ddd_ifexchangex,DDD_IFEXCHANGEX)
+#define DDD_IFOnewayX     F77SYM(ddd_ifonewayx,DDD_IFONEWAYX)
+#define DDD_IFExecLocalX  F77SYM(ddd_ifexeclocalx,DDD_IFEXECLOCALX)
+#define DDD_IFAExchangeX  F77SYM(ddd_ifaexchangex,DDD_IFAEXCHANGEX)
+#define DDD_IFAOnewayX    F77SYM(ddd_ifaonewayx,DDD_IFAONEWAYX)
+#define DDD_IFAExecLocalX F77SYM(ddd_ifaexeclocalx,DDD_IFAEXECLOCALX)
 #endif
 
 

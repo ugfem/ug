@@ -462,7 +462,7 @@ static void AcceptObjFromMsg (
       /* object already here, compare priorities */
       int wpw = WhichPrioWins(ote->prio, OBJ_PRIO(localCplObjs[j]));
 
-      if (wpw==1)
+      if (wpw==1)                    /* incoming is higher or equal */
       {
         DDD_OBJ copy;
 
@@ -482,7 +482,7 @@ static void AcceptObjFromMsg (
         OBJ_PRIO(localCplObjs[j]) = ote->prio;
         ote->is_new = PARTNEW;
       }
-      else
+      else                    /* existing is higher than incoming */
       {
 #                               if DebugUnpack<=1
         sprintf(cBuffer, "%4d: OldPrio wins. %07x\n",me,
@@ -1132,6 +1132,46 @@ static void UnpackSingleMsg (LC_MSGHANDLE xm,
       PutDepData(data, desc, obj, theSymTab);
     }
   }
+
+
+
+  /*
+          if RULE C3a has been applied, the old object's priority
+          was lower than the incoming object's priority. the object
+          has been marked PARTNEW and the two copies have been merged.
+          in order to allow application reactions on this priority
+          upgrade, the SETPRIORITY-handler is called.
+
+          TODO: is this really a reason for calling SETPRIORITY? or
+          should there be a separate handler for this task?
+
+          NOTE: due to the current implementation, the new priority
+          has already been set in the local object's DDD_HEADER.
+          but the SETPRIORITY-handler has to get the old priority inside
+          the object and the new one as second argument. so we restore
+          the old prio before calling the handler and set the newprio
+          afterwards.
+   */
+  for(i=0; i<lenObjTab; i++)               /* for all message items */
+  {
+    if (theObjTab[i].is_new==PARTNEW)
+    {
+      TYPE_DESC *desc = &theTypeDefs[theObjTab[i].typ];
+      DDD_OBJ obj   = HDR2OBJ(theObjTab[i].hdr, desc);
+
+      /* call application handler for object consistency */
+      if (desc->handler[HANDLER_SETPRIORITY]!=NULL)
+      {
+        /* restore old priority in object */
+        OBJ_PRIO(theObjTab[i].hdr) = theObjTab[i].oldprio;
+        desc->handler[HANDLER_SETPRIORITY](obj, theObjTab[i].prio);
+
+        /* restore new priority */
+        OBJ_PRIO(theObjTab[i].hdr) = theObjTab[i].prio;
+      }
+    }
+  }
+
 
 
   /* initialize new objects corresponding to application: consistency */

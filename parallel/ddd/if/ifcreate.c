@@ -427,6 +427,7 @@ void IFCreateFromScratch (DDD_IF ifId)
       ifHead = NewIFHead();
       ifHead->nItems = 0;
       ifHead->cpl    = cplp;
+      ifHead->obj    = NULL;
       ifHead->nAB    = ifHead->nBA   = ifHead->nABA   = 0;
       ifHead->cplAB  = ifHead->cplBA = ifHead->cplABA = NULL;
       ifHead->proc   = cpl->proc;

@@ -310,7 +310,13 @@ void IFExecLoopCplX (ExecProcXPtr LoopProc, COUPLING **cpl, int nItems)
 
   for(i=0; i<nItems; i++)
   {
+#ifdef C_FRONTEND
     error = (*LoopProc)(OBJ_OBJ(cpl[i]->obj), cpl[i]->proc, cpl[i]->prio);
+#else
+    error = (*LoopProc)((DDD_OBJ *) &(OBJ_INDEX(cpl[i]->obj)),
+                        (DDD_PROC *) &(cpl[i]->proc),
+                        (DDD_PRIO *) &(cpl[i]->prio));
+#endif
     /* TODO error abfrage */
   }
 }

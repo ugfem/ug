@@ -194,6 +194,7 @@ ifuse.o: $(SrcPth)/dddi.h	\
 
 ifcmds.o: $(SrcPth)/dddi.h	\
 		$(IfPth)/if.h	\
+		$(IfPth)/ifcmd.ct	\
 		$(IfPth)/ifcmds.c
 	$(ARCH_CC) $(SrcOpt) $(IfPth)/ifcmds.c
 

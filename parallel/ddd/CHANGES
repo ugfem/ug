@@ -1,5 +1,37 @@
 ---------------------------
 
+CHANGES 1.7 -> 1.7.1
+
+---------------------------
+970110 kb
+re-implementation of current interface functionality.
+	- only one implementation for 24 DDD_IFxxx interface functions
+	  (via templates).
+	- the following possibilities can be used now:
+	    { C_FRONTEND, F_FRONTEND} x
+	    { Exchange, Oneway, ExecLocal} x
+	    { one DDD_ATTR, all DDD_ATTRs } x
+	    { normal gather/scatter-params, extended gather/scatter-params }
+	- the next step will be implementation of maskable DDD_ATTRs.
+970110 kb
+standard interface cannot be used for communication.
+	- user must define an interface in order to communicate.
+	  the standard interface is only used for creating
+	  the user interfaces and cannot be used with DDD_IF..
+	  commands anymore.
+	- object shortcuts will not be computed for the standard
+	  interface.
+970110 kb
+added second call to handler HANDLER_SETPRIORITY.
+	- now the SETPRIORITY-handler is called when a local
+	  object's priority is set by DDD_PrioritySet() and when
+	  an object's priority is upgraded due to an incoming object
+	  with same gid, but higher (or equal) priority.
+	- this feature is a temporary setting. in some later version,
+	  we will rework all handler calls during xfer-unpack in order
+	  to clean up "historical" developments.
+---------------------------
+
 CHANGES 1.6.10 -> 1.7
 
 ---------------------------

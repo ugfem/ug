@@ -102,6 +102,10 @@ void IFCreateObjShortcut (DDD_IF ifId)
   IF_PROC     *ifHead;
   int i;
 
+  /* dont create shortcuts for STD_INTERFACE */
+  if (ifId==STD_INTERFACE)
+    return;
+
   /* are there any items? */
   if (theIF[ifId].nItems == 0)
     return;
@@ -153,6 +157,9 @@ void IFInvalidateShortcuts (DDD_TYPE invalid_type)
   /* test all interfaces */
   for(i=0; i<nIFs; i++)
   {
+    if (i==STD_INTERFACE)
+      continue;
+
     if (theIF[i].objValid)
     {
       /* determine whether object belongs to IF */
@@ -175,6 +182,9 @@ void IFInvalidateShortcuts (DDD_TYPE invalid_type)
  */
 void IFCheckShortcuts (DDD_IF ifId)
 {
+  if (ifId==STD_INTERFACE)
+    return;
+
   if (! theIF[ifId].objValid)
   {
     /*
