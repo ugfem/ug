@@ -4104,12 +4104,10 @@ static INT RefineCommand (INT argc, char **argv)
 
     case 's' :
       seq = GM_REFINE_SEQUENTIAL;
+      break;
 
     case 't' :
       mgtest = GM_REFINE_HEAPTEST;
-
-    case 'x' :
-      mode = mode | GM_USE_HEXAHEDRA;
       break;
 
     default :
