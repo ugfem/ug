@@ -844,10 +844,10 @@ INT NS_PREFIX MemoryParameters (void)
   UserWriteF("    for integer types\n");
   UserWriteF("         type | %25s | %25s | %25s\n","<type>_MIN","<type>_MAX","U<type>_MAX");
   UserWriteF("         -------%.25s---%.25s---%.25s\n",hline,hline,hline);
-  UserWriteF("         CHAR | %25d | %25d | %25d\n",CHAR_MIN,CHAR_MAX,UCHAR_MAX);
-  UserWriteF("        SHORT | %25d | %25d | %25d\n",SHRT_MIN,SHRT_MAX,USHRT_MAX);
-  UserWriteF("          INT | %25d | %25d | %25d\n",INT_MIN,INT_MAX,UINT_MAX);
-  UserWriteF("         LONG | %25d | %25d | %25d\n",LONG_MIN,LONG_MAX,ULONG_MAX);
+  UserWriteF("         CHAR | %25d | %25d | %25u\n",CHAR_MIN,CHAR_MAX,UCHAR_MAX);
+  UserWriteF("        SHORT | %25d | %25d | %25u\n",SHRT_MIN,SHRT_MAX,USHRT_MAX);
+  UserWriteF("          INT | %25d | %25d | %25u\n",INT_MIN,INT_MAX,UINT_MAX);
+  UserWriteF("         LONG | %25ld | %25ld | %25lu\n",LONG_MIN,LONG_MAX,ULONG_MAX);
 
   UserWriteF("    for floating point types\n");
   UserWriteF("         type | %25s | %25s\n","<type>_MIN","<type>_MAX");
