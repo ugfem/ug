@@ -110,11 +110,23 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 		assert(0);
 #endif
 	
+#ifdef PROTOCOLNUMERIC
+    cout<<"FAMGGrid::Restriction: defect before JacobiSmoothFG "<<fgdefect*fgdefect<<endl;
+    cout<<"FAMGGrid::Restriction: sol before JacobiSmoothFG "<<fgsolution*fgsolution<<endl;
+    cout<<"FAMGGrid::Restriction: defect*sol before JacobiSmoothFG "<<fgdefect*fgsolution<<endl;
+#endif
+	
 	// jacobi smoothing for the fine nodes
     fgsolution.JacobiSmoothFG( *GetConsMatrix(), fgdefect );
 #ifdef ModelP
 	if (l_vector_consistent(mygrid,((FAMGugVector&)fgsolution).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
+#endif
+	
+#ifdef PROTOCOLNUMERIC
+    cout<<"FAMGGrid::Restriction: defect after JacobiSmoothFG "<<fgdefect*fgdefect<<endl;
+    cout<<"FAMGGrid::Restriction: sol after JacobiSmoothFG "<<fgsolution*fgsolution<<endl;
+    cout<<"FAMGGrid::Restriction: defect*sol after JacobiSmoothFG "<<fgdefect*fgsolution<<endl;
 #endif
 	
 	// correct defect
@@ -124,6 +136,12 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 		assert(0);
 #endif
 
+#ifdef PROTOCOLNUMERIC
+    cout<<"FAMGGrid::Restriction: defect after defect "<<fgdefect*fgdefect<<endl;
+    cout<<"FAMGGrid::Restriction: sol after defect "<<fgsolution*fgsolution<<endl;
+    cout<<"FAMGGrid::Restriction: defect*sol after defect "<<fgdefect*fgsolution<<endl;
+#endif
+	
 	cgdefect = 0.0;
 	
 	FAMGVectorIter fiter(GetGridVector());
@@ -137,6 +155,10 @@ void FAMGGrid::Restriction(FAMGVector &fgsolution, FAMGVector &fgdefect, FAMGVec
 #ifdef ModelP
 	if (l_vector_collectAll(DOWNGRID(mygrid),((FAMGugVector&)cgdefect).GetUgVecDesc())!=NUM_OK) 
 		assert(0);
+#endif
+	
+#ifdef PROTOCOLNUMERIC
+    cout<<"FAMGGrid::Restriction: defect after gridtransfer "<<cgdefect*cgdefect<<endl;
 #endif
 	
     return;
