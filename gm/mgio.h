@@ -128,7 +128,6 @@ struct mgio_mg_general {
   int nNode;                                    /* nb of nodes, i.e. corners of elements		*/
   int nPoint;                                   /* nb of points, i.e. diff node locations in mg	*/
   int nElement;                         /* nb of elements in mg							*/
-  int nHierElem;                        /* nb of son elements							*/
 
   /* information on geometry */
   int dim;                                                              /* dimension						*/
@@ -199,6 +198,14 @@ struct mgio_movedcorner {
   double position[MGIO_DIM];                            /* position of the point							*/
 };
 
+struct mgio_cg_element {
+
+  int ge;                                                                               /* id of general element					*/
+  int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of corners							*/
+  int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
+  int nhe;                                                                              /* nb of he_elements of this element		*/
+};
+
 struct mgio_refinement {
 
   int refrule;                                                                  /* id of refinement rule					*/
@@ -206,16 +213,6 @@ struct mgio_refinement {
   int newcornerid[MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_NEW_CORNERS];      /* ids of new corners    */
   int nmoved;                                                                           /* nmoved new corners moved					*/
   struct mgio_movedcorner mvcorner[MGIO_MAX_NEW_CORNERS];       /* array of moved corners		*/
-};
-
-struct mgio_cg_element {
-
-  int ge;                                                                               /* id of general element					*/
-  int cornerid[MGIO_MAX_CORNERS_OF_ELEM];               /* ids of corners							*/
-  int nbid[MGIO_MAX_SIDES_OF_ELEM];                             /* ids of neighbor elements                             */
-  int nhe;                                                                              /* nb of he_elements of this element		*/
-
-  struct mgio_refinement ref;                                           /* the refinement							*/
 };
 
 struct mgio_bd_general {

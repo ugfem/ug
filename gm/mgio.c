@@ -28,6 +28,7 @@
 /****************************************************************************/
 
 #include <stdio.h>
+#include "bio.h"
 #include "mgio.h"
 
 #ifdef __MGIO_USE_IN_UG__
@@ -49,9 +50,6 @@
 /****************************************************************************/
 
 #define MGIO_TITLE_LINE                 "####.sparse.mg.storage.format.####"
-
-#define MGIO_ASCII                                      0
-#define MGIO_BIN                                        1
 
 #define MGIO_INTSIZE                            1000    /* minimal 497 !!!		*/
 #define MGIO_DOUBLESIZE                         200
@@ -98,11 +96,6 @@ static char buffer[MGIO_BUFFERSIZE]; /* general purpose buffer		*/
 static int intList[MGIO_INTSIZE];       /* general purpose integer list */
 static double doubleList[MGIO_DOUBLESIZE]; /* general purpose double list*/
 
-/* low level read/write functions */
-static RW_mint_proc Read_mint, Write_mint;
-static RW_mdouble_proc Read_mdouble, Write_mdouble;
-static RW_string_proc Read_string, Write_string;
-
 /* local storage of general elements */
 static MGIO_GE_ELEMENT lge[MGIO_TAGS];
 
@@ -110,8 +103,11 @@ static MGIO_GE_ELEMENT lge[MGIO_TAGS];
 #ifdef __MGIO_USE_IN_UG__
 
 /* RCS string */
+#ifdef __MGIO_USE_IN_UG__
+
 RCSID("$Header$",UG_RCS_STRING)
 
+#endif
 #endif
 
 /****************************************************************************/
@@ -120,98 +116,6 @@ RCSID("$Header$",UG_RCS_STRING)
 /*																			*/
 /****************************************************************************/
 
-
-/****************************************************************************/
-/*************                                              *****************/
-/*************  low level io functions                      *****************/
-/*************                                              *****************/
-/****************************************************************************/
-
-static int ASCII_Read_mint (int n, int *intList)
-{
-  int i;
-
-  for (i=0; i<n; i++)
-    if (fscanf(stream,"%d ",intList+i)!=1) return (1);
-  return (0);
-}
-
-static int ASCII_Write_mint (int n, int *intList)
-{
-  int i;
-
-  for (i=0; i<n; i++)
-    if (fprintf(stream,"%d ",intList[i])<0) return (1);
-  return (0);
-}
-
-static int ASCII_Read_mdouble (int n, double *doubleList)
-{
-  int i;
-  double dValue;
-
-  for (i=0; i<n; i++)
-    if (fscanf(stream,"%lf ",doubleList+i)!=1) return (1);
-  return (0);
-}
-
-static int ASCII_Write_mdouble (int n, double *doubleList)
-{
-  int i;
-  double fValue;
-
-  for (i=0; i<n; i++)
-    if (fprintf(stream,"%lf ",doubleList[i])<0) return (1);
-  return (0);
-}
-
-static int ASCII_Read_string (char *string)
-{
-  if (fscanf(stream,"%s ",string)!=1) return (1);
-  return (0);
-}
-
-static int ASCII_Write_string (char *string)
-{
-  if (fprintf(stream,"%s ",string)<0) return (1);
-  return (0);
-}
-
-static int BIN_Read_mint (int n, int *intList)
-{
-  if (fread((void*)intList,sizeof(int)*n,1,stream)!=1) return (1);
-  return (0);
-}
-
-static int BIN_Write_mint (int n, int *intList)
-{
-  if (fwrite((void*)intList,sizeof(int)*n,1,stream)!=1) return (1);
-  return (0);
-}
-
-static int BIN_Read_mdouble (int n, double *doubleList)
-{
-  if (fread((void*)doubleList,sizeof(double)*n,1,stream)!=1) return (1);
-  return (0);
-}
-
-static int BIN_Write_mdouble (int n, double *doubleList)
-{
-  if (fwrite((void*)doubleList,sizeof(double)*n,1,stream)!=1) return (1);
-  return (0);
-}
-
-static int BIN_Read_string (char *string)
-{
-  if (fscanf(stream,"%s ",string)!=1) return (1);
-  return (0);
-}
-
-static int BIN_Write_string (char *string)
-{
-  if (fprintf(stream,"%s ",string)<0) return (1);
-  return (0);
-}
 
 /****************************************************************************/
 /*D
@@ -246,6 +150,7 @@ int Read_OpenFile (char *filename)
 #endif
 
   if (stream==NULL) return (1);
+
   return (0);
 }
 
@@ -309,39 +214,27 @@ int Write_OpenFile (char *filename)
 
 int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
 {
+  /* initialize basic i/o */
+  if (Bio_Initialize(stream,BIO_ASCII)) return (1);
+
   /* head always in ACSII */
-  if (ASCII_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_TITLE_LINE)!=0) return (1);
-  if (ASCII_Read_mint(1,intList)) return (1);
+  if (Bio_Read_string(buffer)) return (1);if (strcmp(buffer,MGIO_TITLE_LINE)!=0) return (1);
+  if (Bio_Read_mint(1,intList)) return (1);
   mg_general->mode                = intList[0];
 
-  /* set the read functions */
-  switch (mg_general->mode)
-  {
-  case MGIO_ASCII :
-    Read_mint       = ASCII_Read_mint;
-    Read_mdouble = ASCII_Read_mdouble;
-    Read_string = ASCII_Read_string;
-    break;
-  case MGIO_BIN :
-    Read_mint       = BIN_Read_mint;
-    Read_mdouble = BIN_Read_mdouble;
-    Read_string = BIN_Read_string;
-    break;
-  default :
-    return (1);
-  }
+  /* re-initialize basic i/o */
+  if (Bio_Initialize(stream,mg_general->mode)) return (1);
 
   /* now special mode */
-  if ((*Read_string)(mg_general->DomainName)) return (1);
-  if ((*Read_string)(mg_general->Formatname)) return (1);
-  if ((*Read_mint)(7,intList)) return (1);
+  if (Bio_Read_string(mg_general->DomainName)) return (1);
+  if (Bio_Read_string(mg_general->Formatname)) return (1);
+  if (Bio_Read_mint(6,intList)) return (1);
   mg_general->dim                 = intList[0];
   mg_general->nLevel              = intList[1];
   mg_general->nNode               = intList[2];
   mg_general->nPoint              = intList[3];
   mg_general->nElement    = intList[4];
-  mg_general->nHierElem   = intList[5];
-  mg_general->VectorTypes = intList[6];
+  mg_general->VectorTypes = intList[5];
 
   return (0);
 }
@@ -370,39 +263,27 @@ int     Read_MG_General (MGIO_MG_GENERAL *mg_general)
 
 int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
 {
-  /* head always in ACSII */
-  if (ASCII_Write_string(MGIO_TITLE_LINE)) return (1);
-  intList[0] = mg_general->mode;
-  if (ASCII_Write_mint(1,intList)) return (1);
+  /* initialize basic i/o */
+  if (Bio_Initialize(stream,BIO_ASCII)) return (1);
 
-  /* set the write functions */
-  switch (mg_general->mode)
-  {
-  case MGIO_ASCII :
-    Write_mint              = ASCII_Write_mint;
-    Write_mdouble   = ASCII_Write_mdouble;
-    Write_string    = ASCII_Write_string;
-    break;
-  case MGIO_BIN :
-    Write_mint              = BIN_Write_mint;
-    Write_mdouble   = BIN_Write_mdouble;
-    Write_string    = BIN_Write_string;
-    break;
-  default :
-    return (1);
-  }
+  /* head always in ACSII */
+  if (Bio_Write_string(MGIO_TITLE_LINE)) return (1);
+  intList[0] = mg_general->mode;
+  if (Bio_Write_mint(1,intList)) return (1);
+
+  /* initialize basic i/o */
+  if (Bio_Initialize(stream,mg_general->mode)) return (1);
 
   /* now special mode */
-  if ((*Write_string)(mg_general->DomainName)) return (1);
-  if ((*Write_string)(mg_general->Formatname)) return (1);
+  if (Bio_Write_string(mg_general->DomainName)) return (1);
+  if (Bio_Write_string(mg_general->Formatname)) return (1);
   intList[0] = mg_general->dim;
   intList[1] = mg_general->nLevel;
   intList[2] = mg_general->nNode;
   intList[3] = mg_general->nPoint;
   intList[4] = mg_general->nElement;
-  intList[5] = mg_general->nHierElem;
-  intList[6] = mg_general->VectorTypes;
-  if ((*Write_mint)(7,intList)) return (1);
+  intList[5] = mg_general->VectorTypes;
+  if (Bio_Write_mint(6,intList)) return (1);
 
   return (0);
 }
@@ -431,7 +312,7 @@ int     Write_MG_General (MGIO_MG_GENERAL *mg_general)
 
 int     Read_GE_General (MGIO_GE_GENERAL *ge_general)
 {
-  if ((*Read_mint)(1,intList)) return (1);
+  if (Bio_Read_mint(1,intList)) return (1);
   ge_general->nGenElement = intList[0];
 
   return (0);
@@ -462,7 +343,7 @@ int     Read_GE_General (MGIO_GE_GENERAL *ge_general)
 int     Write_GE_General (MGIO_GE_GENERAL *ge_general)
 {
   intList[0] = ge_general->nGenElement;
-  if ((*Write_mint)(1,intList)) return (1);
+  if (Bio_Write_mint(1,intList)) return (1);
 
   return (0);
 }
@@ -498,14 +379,14 @@ int     Read_GE_Elements (int n, MGIO_GE_ELEMENT *ge_element)
   pge = ge_element;
   for (i=0; i<n; i++)
   {
-    if ((*Read_mint)(4,intList)) return (1);s=0;
+    if (Bio_Read_mint(4,intList)) return (1);s=0;
     pge->tag                = lge[i].tag            = intList[s++];
     pge->nCorner    = lge[i].nCorner        = intList[s++];
     pge->nEdge              = lge[i].nEdge          = intList[s++];
     pge->nSide              = lge[i].nSide          = intList[s++];
     if (pge->nEdge>0 || pge->nSide>0)
     {
-      if ((*Read_mint)(2*pge->nEdge+4*pge->nSide,intList)) return (1);s=0;
+      if (Bio_Read_mint(2*pge->nEdge+4*pge->nSide,intList)) return (1);s=0;
       for (j=0; j<pge->nEdge; j++)
       {
         pge->CornerOfEdge[j][0] = lge[i].CornerOfEdge[j][0] = intList[s++];
@@ -574,7 +455,7 @@ int     Write_GE_Elements (int n, MGIO_GE_ELEMENT *ge_element)
       intList[s++] = lge[i].CornerOfSide[j][3] = pge->CornerOfSide[j][3];
     }
     MGIO_CHECK_INTSIZE(s);
-    if ((*Write_mint)(s,intList)) return (1);
+    if (Bio_Write_mint(s,intList)) return (1);
     pge++;
   }
 
@@ -605,7 +486,7 @@ int     Write_GE_Elements (int n, MGIO_GE_ELEMENT *ge_element)
 
 int     Read_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
 {
-  if ((*Read_mint)(1,intList)) return (1);
+  if (Bio_Read_mint(1,intList)) return (1);
   mgio_rr_general->nRules = intList[0];
 
   return (0);
@@ -636,7 +517,7 @@ int     Read_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
 int     Write_RR_General (MGIO_RR_GENERAL *mgio_rr_general)
 {
   intList[0] = mgio_rr_general->nRules;
-  if ((*Write_mint)(1,intList)) return (1);
+  if (Bio_Write_mint(1,intList)) return (1);
 
   return (0);
 }
@@ -673,7 +554,7 @@ int     Read_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
   prr = rr_rules;
   for (i=0; i<n; i++)
   {
-    if ((*Read_mint)(m,intList)) return (1);
+    if (Bio_Read_mint(m,intList)) return (1);
     s=0;
     prr->class = intList[s++];
     prr->nsons = intList[s++];
@@ -751,7 +632,7 @@ int     Write_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
       intList[s++] = prr->sons[j].path;
     }
     MGIO_CHECK_INTSIZE(s);
-    if ((*Write_mint)(s,intList)) return (1);
+    if (Bio_Write_mint(s,intList)) return (1);
     prr++;
   }
 
@@ -782,7 +663,7 @@ int     Write_RR_Rules (int n, MGIO_RR_RULE *rr_rules)
 
 int Read_CG_General (MGIO_CG_GENERAL *cg_general)
 {
-  if ((*Read_mint)(6,intList)) return (1);
+  if (Bio_Read_mint(6,intList)) return (1);
   cg_general->nPoint                      = intList[0];
   cg_general->nBndPoint           = intList[1];
   cg_general->nInnerPoint         = intList[2];
@@ -824,7 +705,7 @@ int Write_CG_General (MGIO_CG_GENERAL *cg_general)
   intList[3] = cg_general->nElement;
   intList[4] = cg_general->nBndElement;
   intList[5] = cg_general->nInnerElement;
-  if ((*Write_mint)(6,intList)) return (1);
+  if (Bio_Write_mint(6,intList)) return (1);
 
   return (0);
 }
@@ -864,7 +745,7 @@ int Read_CG_Points (int n, MGIO_CG_POINT *cg_point)
     {
       if (still_to_read<=nmax) read=still_to_read;
       else read=nmax;
-      if ((*Read_mdouble)(MGIO_DIM*read,doubleList)) return (1);
+      if (Bio_Read_mdouble(MGIO_DIM*read,doubleList)) return (1);
       still_to_read -= read;
       copy_until += read;
       s=0;
@@ -910,11 +791,108 @@ int Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
       doubleList[s++] = cg_point[i].position[j];
     if (s>MGIO_DOUBLESIZE-MGIO_DIM)
     {
-      if ((*Write_mdouble)(s,doubleList)) return (1);
+      if (Bio_Write_mdouble(s,doubleList)) return (1);
       s=0;
     }
   }
-  if ((*Write_mdouble)(s,doubleList)) return (1);
+  if (Bio_Write_mdouble(s,doubleList)) return (1);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
+   Read_CG_Elements - reads coarse grid elements
+
+   SYNOPSIS:
+   int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element);
+
+   PARAMETERS:
+   .  n - nb of coarse grid elements to read
+   .  cg_element - first coarse grid element
+
+   DESCRIPTION:
+   function reads coarse grid elements
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if read error.
+
+   SEE ALSO:
+ */
+/****************************************************************************/
+
+int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
+{
+  int i,j,k,m,s;
+  unsigned int ctrl;
+  MGIO_CG_ELEMENT *pe;
+
+  pe = cg_element;
+  for (i=0; i<n; i++)
+  {
+    /* coarse grid part */
+    if (Bio_Read_mint(1,&pe->ge)) return (1);
+    m=lge[pe->ge].nCorner+lge[pe->ge].nSide+1;
+    if (Bio_Read_mint(m,intList)) return (1);
+    s=0;
+    pe->nhe = intList[s++];
+    for (j=0; j<lge[pe->ge].nCorner; j++)
+      pe->cornerid[j] = intList[s++];
+    for (j=0; j<lge[pe->ge].nSide; j++)
+      pe->nbid[j] = intList[s++];
+
+    pe++;
+  }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
+   Write_CG_Elements - writes coarse grid elements
+
+   SYNOPSIS:
+   int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element);
+
+   PARAMETERS:
+   .  n - nb of coarse grid elements to write
+   .  rr_rules - first coarse grid element
+
+   DESCRIPTION:
+   function writes coarse grid elements
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if read error.
+
+   SEE ALSO:
+ */
+/****************************************************************************/
+
+int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
+{
+  int i,j,k,s;
+  MGIO_CG_ELEMENT *pe;
+
+  pe = cg_element;
+  for (i=0; i<n; i++)
+  {
+    /* coarse grid part */
+    s=0;
+    intList[s++] = pe->ge;
+    intList[s++] = pe->nhe;
+    for (j=0; j<lge[pe->ge].nCorner; j++)
+      intList[s++] = pe->cornerid[j];
+    for (j=0; j<lge[pe->ge].nSide; j++)
+      intList[s++] = pe->nbid[j];
+    MGIO_CHECK_INTSIZE(s);
+    if (Bio_Write_mint(s,intList)) return (1);
+
+    pe++;
+  }
 
   return (0);
 }
@@ -951,7 +929,7 @@ int Read_Refinement (int n, MGIO_REFINEMENT *refinement)
   pr = refinement;
   for (i=0; i<n; i++)
   {
-    if ((*Read_mint)(1,intList)) return (1);
+    if (Bio_Read_mint(1,intList)) return (1);
     ctrl = intList[0];
     pr->refrule = MGIO_ECTRL_REF(ctrl)-1;
     if (pr->refrule>-1)
@@ -959,7 +937,7 @@ int Read_Refinement (int n, MGIO_REFINEMENT *refinement)
       pr->nnewcorners = MGIO_ECTRL_NC(ctrl);
       pr->nmoved = MGIO_ECTRL_NM(ctrl);
       if (pr->nnewcorners+pr->nmoved>0)
-        if ((*Read_mint)(pr->nnewcorners+pr->nmoved,intList)) return (1);
+        if (Bio_Read_mint(pr->nnewcorners+pr->nmoved,intList)) return (1);
       s=0;
       for (j=0; j<pr->nnewcorners; j++)
         pr->newcornerid[j] = intList[s++];
@@ -967,7 +945,7 @@ int Read_Refinement (int n, MGIO_REFINEMENT *refinement)
         pr->mvcorner[j].id = intList[s++];
       if (pr->nmoved>0)
       {
-        if ((*Read_mdouble)(MGIO_DIM*pr->nmoved,doubleList)) return (1);
+        if (Bio_Read_mdouble(MGIO_DIM*pr->nmoved,doubleList)) return (1);
         s=0;
         for (j=0; j<pr->nmoved; j++)
           for (k=0; k<MGIO_DIM; k++)
@@ -1025,114 +1003,11 @@ int Write_Refinement (int n, MGIO_REFINEMENT *refinement)
     }
 
     MGIO_CHECK_INTSIZE(s);
-    if ((*Write_mint)(s,intList)) return (1);
+    if (Bio_Write_mint(s,intList)) return (1);
     MGIO_CHECK_DOUBLESIZE(t);
-    if (t>0) if ((*Write_mdouble)(t,doubleList)) return (1);
+    if (t>0) if (Bio_Write_mdouble(t,doubleList)) return (1);
 
     pr++;
-  }
-
-  return (0);
-}
-
-/****************************************************************************/
-/*
-   Read_CG_Elements - reads coarse grid elements
-
-   SYNOPSIS:
-   int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element);
-
-   PARAMETERS:
-   .  n - nb of coarse grid elements to read
-   .  cg_element - first coarse grid element
-
-   DESCRIPTION:
-   function reads coarse grid elements
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if read error.
-
-   SEE ALSO:
- */
-/****************************************************************************/
-
-int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
-{
-  int i,j,k,m,s;
-  unsigned int ctrl;
-  MGIO_CG_ELEMENT *pe;
-
-  pe = cg_element;
-  for (i=0; i<n; i++)
-  {
-    /* coarse grid part */
-    if ((*Read_mint)(1,&pe->ge)) return (1);
-    m=lge[pe->ge].nCorner+lge[pe->ge].nSide+1;
-    if ((*Read_mint)(m,intList)) return (1);
-    s=0;
-    pe->nhe = intList[s++];
-    for (j=0; j<lge[pe->ge].nCorner; j++)
-      pe->cornerid[j] = intList[s++];
-    for (j=0; j<lge[pe->ge].nSide; j++)
-      pe->nbid[j] = intList[s++];
-
-    /* hierarchical part */
-    if (Read_Refinement (1,&(pe->ref))) return (1);
-
-    pe++;
-  }
-
-  return (0);
-}
-
-/****************************************************************************/
-/*
-   Write_CG_Elements - writes coarse grid elements
-
-   SYNOPSIS:
-   int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element);
-
-   PARAMETERS:
-   .  n - nb of coarse grid elements to write
-   .  rr_rules - first coarse grid element
-
-   DESCRIPTION:
-   function writes coarse grid elements
-
-   RETURN VALUE:
-   INT
-   .n      0 if ok
-   .n      1 if read error.
-
-   SEE ALSO:
- */
-/****************************************************************************/
-
-int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
-{
-  int i,j,k,s;
-  MGIO_CG_ELEMENT *pe;
-
-  pe = cg_element;
-  for (i=0; i<n; i++)
-  {
-    /* coarse grid part */
-    s=0;
-    intList[s++] = pe->ge;
-    intList[s++] = pe->nhe;
-    for (j=0; j<lge[pe->ge].nCorner; j++)
-      intList[s++] = pe->cornerid[j];
-    for (j=0; j<lge[pe->ge].nSide; j++)
-      intList[s++] = pe->nbid[j];
-    MGIO_CHECK_INTSIZE(s);
-    if ((*Write_mint)(s,intList)) return (1);
-
-    /* hierarchical part */
-    if (Write_Refinement (1,&(pe->ref))) return (1);
-
-    pe++;
   }
 
   return (0);
@@ -1162,7 +1037,7 @@ int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 
 int Read_BD_General (MGIO_BD_GENERAL *bd_general)
 {
-  if ((*Read_mint)(1,intList)) return (1);
+  if (Bio_Read_mint(1,intList)) return (1);
   bd_general->nBndP = intList[0];
 
   return (0);
@@ -1193,7 +1068,7 @@ int Read_BD_General (MGIO_BD_GENERAL *bd_general)
 int Write_BD_General (MGIO_BD_GENERAL *bd_general)
 {
   intList[0] = bd_general->nBndP;
-  if ((*Write_mint)(1,intList)) return (1);
+  if (Bio_Write_mint(1,intList)) return (1);
 
   return (0);
 }
