@@ -155,7 +155,7 @@ INT GetScreenSize (INT size[2])
   size[0] = display_width;
   size[1] = display_height;
 
-  return (0);
+  return (TRUE);
 }
 
 /****************************************************************************/
