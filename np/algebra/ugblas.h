@@ -94,8 +94,8 @@
   for (v=last_v; v!= NULL; v=PREDVC(v))                           \
     if (VCLASS(v)>=c)
 
-#define PL_REVERSE_VLOOP__CLASS(p,v,last_v,c)                                                           \
-  for (v=last_v; v!= NULL; v=PPREDVC(p,v))                        \
+#define L_REVERSE_VLOOP__CLASS(v,last_v,c)                                                              \
+  for (v=last_v; v!= NULL; v=PREDVC(v))                       \
     if (VCLASS(v)>=c)
 
 #define A_VLOOP__TYPE_CLASS(l,fl,tl,v,mg,t,c)                                                           \

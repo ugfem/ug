@@ -3709,7 +3709,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
     }
 
     /* solve UpperTriangle(v)=d */
-    for (vec=last_vec; vec!= NULL; vec=PPREDVC(g,vec))
+    for (vec=last_vec; vec!= NULL; vec=PREDVC(vec))
     {
       myindex = VINDEX(vec);
       if ( (VDATATYPE(vec)&mask) && (VCLASS(vec)>=ACTIVE_CLASS) )
@@ -3870,7 +3870,7 @@ INT l_luiter (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDA
   last_vec = LASTVECTOR(g);
 
   /* solve upper triangle */
-  PL_REVERSE_VLOOP__CLASS(g,vec,last_vec,ACTIVE_CLASS)
+  L_REVERSE_VLOOP__CLASS(vec,last_vec,ACTIVE_CLASS)
   {
     rtype = VTYPE(vec);
 
