@@ -9,7 +9,7 @@
 # This skript won't work if the option list for ar contains more than
 # one item.
 
-if ( $ENV{'OSTYPE'}!='rhapsody' )
+if ( $ENV{'OSTYPE'}!='rhapsody' || $ENV{'OSTYPE'}!='mach' )
 {
     print "This command is only needed for MacOS X systems\n";
     exit 0;
