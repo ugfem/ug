@@ -140,5 +140,6 @@ INT NPEWSolverExecute (NP_BASE *theNP, INT argc , char **argv);
 
 /* create standard LinearSolver num proc type */
 INT InitEW (void);
+INT InitEWN (void);
 
 #endif
