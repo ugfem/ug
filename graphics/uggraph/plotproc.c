@@ -72,7 +72,8 @@
 /*																			*/
 /****************************************************************************/
 
-static INT nodecomp;
+static INT NodeValueComp;
+static INT NodeVectorComp;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -120,7 +121,7 @@ static INT PreprocessNodeValue (const char *name, MULTIGRID *theMG)
   if (VD_NCMPS_IN_TYPE(theVD,NODEVECTOR)<1)
     return (1);
 
-  nodecomp = VD_CMP_OF_TYPE(theVD,NODEVECTOR,0);
+  NodeValueComp = VD_CMP_OF_TYPE(theVD,NODEVECTOR,0);
 
   return (0);
 }
@@ -134,7 +135,7 @@ static DOUBLE NodeValue (const ELEMENT *theElement,
   n = CORNERS_OF_ELEM(theElement);
   phi = 0.0;
   for (i=0; i<n; i++)
-    phi += GN(n,i,LocalCoord)*VVALUE(NVECTOR(CORNER(theElement,i)),nodecomp);
+    phi += GN(n,i,LocalCoord)*VVALUE(NVECTOR(CORNER(theElement,i)),NodeValueComp);
 
   return(phi);
 }
@@ -176,10 +177,10 @@ static INT PreprocessNodeVector (const char *name, MULTIGRID *theMG)
   if (VD_NCMPS_IN_TYPE(theVD,NODEVECTOR)<DIM)
     return (1);
 
-  nodecomp = VD_CMP_OF_TYPE(theVD,NODEVECTOR,0);
+  NodeVectorComp = VD_CMP_OF_TYPE(theVD,NODEVECTOR,0);
 
   for (i=1; i<DIM; i++)
-    if ((nodecomp+i) != VD_CMP_OF_TYPE(theVD,NODEVECTOR,i))
+    if ((NodeVectorComp+i) != VD_CMP_OF_TYPE(theVD,NODEVECTOR,i))
       return (1);
 
   return (0);
@@ -200,7 +201,7 @@ static void NodeVector (const ELEMENT *theElement, const DOUBLE **theCorners,
     v = NVECTOR(CORNER(theElement,i));
     s = GN(n,i,LocalCoord);
     for (j=0; j<DIM; j++)
-      values[j] += s*VVALUE(v,nodecomp+j);
+      values[j] += s*VVALUE(v,NodeVectorComp+j);
   }
 
   return;
