@@ -7621,7 +7621,7 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
    CalculateCenterOfMass - Calculate the center of mass for an element
 
    SYNOPSIS:
-   void CalculateCenterOfMassOfSide(ELEMENT *theElement, int side, DOUBLE_VECTOR center_of_mass)
+   void CalculateCenterOfMassOfSide(ELEMENT *theElement, int side, DOUBLE_VECTOR global, DOUBLE_VECTOR local)
 
    PARAMETERS:
    .  theElement - the element
@@ -7631,6 +7631,7 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
    DESCRIPTION:
    This function calculates the center of mass for an arbitrary element
    side. DOUBLE_VECTOR is an array for a 2D resp. 3D coordinate.
+   The function calculates the center of mass in global and local coordinats.
 
    SEE ALSO:
    DOUBLE_VECTOR, ELEMENT
@@ -7640,21 +7641,26 @@ void CalculateCenterOfMass(ELEMENT *theElement, DOUBLE_VECTOR center_of_mass)
    D*/
 /****************************************************************************/
 
-void CalculateCenterOfMassOfSide(ELEMENT *theElement, int side, DOUBLE_VECTOR position)
+void CalculateCenterOfMassOfSide(ELEMENT *theElement, int side, DOUBLE_VECTOR global, DOUBLE_VECTOR local)
 {
   DOUBLE *corner;
+  DOUBLE *l_corner;
   INT i, nr_corners;
 
   nr_corners = CORNERS_OF_SIDE(theElement,side);
-  V_DIM_CLEAR(position);
+  V_DIM_CLEAR(global);
+  V_DIM_CLEAR(local);
 
   for (i=0; i<nr_corners; i++)
   {
-    corner = CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_SIDE(theElement,side,i))));
-    V_DIM_ADD(position,corner,position);
+    corner   = CVECT(MYVERTEX(CORNER(theElement,CORNER_OF_SIDE(theElement,side,i))));
+    l_corner = LCVECT(MYVERTEX(CORNER(theElement,CORNER_OF_SIDE(theElement,side,i))));
+    V_DIM_ADD(global,corner,global);
+    V_DIM_ADD(local,corner,local);
   }
 
-  V_DIM_SCALE(1.0/nr_corners,position);
+  V_DIM_SCALE(1.0/nr_corners,global);
+  V_DIM_SCALE(1.0/nr_corners,local);
 }
 
 /****************************************************************************/
