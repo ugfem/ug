@@ -145,7 +145,7 @@ static INT check_distributed_objects_errors = 0;
  */
 /****************************************************************************/
 
-static INT CheckProcListCons (int *proclist, int uniqueTag)
+INT CheckProcListCons (int *proclist, int uniqueTag)
 {
   int nunique = 0;
 
