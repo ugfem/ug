@@ -3830,6 +3830,9 @@ INT Collapse (MULTIGRID *theMG)
       REP_ERR_RETURN(1);
         #endif
 
+  if( DisposeAMGLevels(theMG) )
+    REP_ERR_RETURN(1);
+
 #ifdef ModelP
   DDD_XferBegin();
 #endif
