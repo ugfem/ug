@@ -16,7 +16,7 @@ ARCH_POSTLINK = true
 ARCH_LIBS     = -lm -lc
 ARCH_PLIBS    = /usr/lib/libV3.a
 
-ARCH_CFLAGS   = -y -z -Aa +w2 -g 
+ARCH_CFLAGS   = -y -z -Aa +w2 -D_HPUX_SOURCE -g 
 ARCH_C++FLAGS = -y -Aa -g
 ARCH_LFLAGS   = -z /usr/lib/end.o
 # ARCH_LFLAGS   = -z /opt/langtools/lib/end.o # for HPUX 10 
