@@ -6210,7 +6210,10 @@ void SetLevelnumberBV( BLOCKVECTOR *bv, INT level )
   if ( bv == NULL )
     return;
 
-  SETBVLEVEL(bv,level);
+  if ( level >= 0 )
+    SETBVLEVEL(bv,level);
+  else
+    SETBVLEVEL(bv,0);
 
   if ( !BV_IS_LEAF_BV( bv ) )
     for ( bv = BVDOWNBV(bv); bv != NULL; bv = BVSUCC(bv) )
@@ -6292,6 +6295,8 @@ static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, cons
     return GM_OUT_OF_MEM;
 
   SETBVDOWNTYPE( *bv_plane, BVDOWNTYPEBV );             /* further blocks follow */
+  SETBVTVTYPE( *bv_plane, BV1DTV );
+  SETBVORIENTATION( *bv_plane, BVNOORIENTATION );
   BVFIRSTVECTOR( *bv_plane ) = *v;
 
   /* construct for each stripe a blockvector */
@@ -6317,6 +6322,8 @@ static INT CreateBVPlane( BLOCKVECTOR **bv_plane, const BV_DESC *bvd_plane, cons
     prev = bv;                                                          /* prepare for the next loop */
 
     SETBVDOWNTYPE( bv, BVDOWNTYPEVECTOR );              /* block is at last block level */
+    SETBVTVTYPE( bv, BV1DTV );
+    SETBVORIENTATION( bv, BVHORIZONTAL );
     BVNUMBER( bv ) = i;
 
     /* let the blockvector point to the vector */
@@ -6455,6 +6462,8 @@ INT CreateBVStripe2D( GRID *grid, INT vectors, INT vectors_per_stripe )
   BVSUCC( bv_boundary ) = NULL;
   BVNUMBER( bv_boundary ) = 1;
   SETBVDOWNTYPE( bv_boundary, BVDOWNTYPEVECTOR );       /* block is at last block level */
+  SETBVTVTYPE( bv_boundary, BV1DTV );
+  SETBVORIENTATION( bv_boundary, BVNOORIENTATION );
   BVNUMBEROFVECTORS( bv_boundary ) = NVEC( grid ) - BVNUMBEROFVECTORS( bv_inner );
   BVFIRSTVECTOR( bv_boundary ) = v;
   BVLASTVECTOR( bv_boundary ) = LASTVECTOR( grid );
@@ -6562,12 +6571,16 @@ INT CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT 
   BVSUCC( bv_inner ) = bv_boundary;
   BVNUMBER( bv_inner ) = 0;
   SETBVDOWNTYPE( bv_inner, BVDOWNTYPEBV );              /* block is parent for all planes */
+  SETBVTVTYPE( bv_inner, BV1DTV );
+  SETBVORIENTATION( bv_inner, BVNOORIENTATION );
   BVFIRSTVECTOR( bv_inner ) = v;
 
   BVPRED( bv_boundary ) = bv_inner;
   BVSUCC( bv_boundary ) = NULL;
   BVNUMBER( bv_boundary ) = 1;
   SETBVDOWNTYPE( bv_boundary, BVDOWNTYPEVECTOR );       /* block is at last block level */
+  SETBVTVTYPE( bv_boundary, BV1DTV );
+  SETBVORIENTATION( bv_boundary, BVNOORIENTATION );
 
   /* construct for each plane a blockvector-tree */
   BVD_INIT( &bvd );
@@ -6580,6 +6593,7 @@ INT CreateBVStripe3D( GRID *grid, INT inner_vectors, INT stripes_per_plane, INT 
       v = SUCCVC( v );                   /* set v from the last vector of the previous block to the first of the current block */
 
     ret = CreateBVPlane( &bv_plane, &bvd, &three_level_bvdf, &v, stripes_per_plane, vectors_per_stripe, grid );
+    SETBVTVTYPE( bv_plane, BV2DTV );                    /* use tensor product testvector (full 2D testvector) */
     if ( ret == GM_OUT_OF_MEM )
     {
       FreeAllBV( grid );
@@ -6700,6 +6714,7 @@ INT CreateBVDomainHalfening( GRID *grid, INT side, INT leaf_size )
   GFIRSTBV( grid ) = bv;
   GLASTBV( grid ) = bv;
   SETBVDOWNTYPE( bv, BVDOWNTYPEVECTOR );
+  SETBVTVTYPE( bv, BV1DTV );
   BVDOWNVECTOR( bv ) = FIRSTVECTOR( grid );
   BVPRED( bv ) = NULL;
   BVSUCC( bv ) = NULL;
@@ -6795,6 +6810,7 @@ static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, IN
 
   BVPRED( bv0 ) = NULL;
   SETBVDOWNTYPE( bv0, BVDOWNTYPEVECTOR );
+  SETBVTVTYPE( bv0, BV1DTV );
   BVNUMBER( bv0 ) = 0;
   v0 = &BVDOWNVECTOR( bv0 );
 
@@ -6807,6 +6823,7 @@ static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, IN
   BVSUCC( bv0 ) = bv1;
   BVPRED( bv1 ) = bv0;
   SETBVDOWNTYPE( bv1, BVDOWNTYPEVECTOR );
+  SETBVTVTYPE( bv1, BV1DTV );
   BVNUMBER( bv1 ) = 1;
   v1 = &BVDOWNVECTOR( bv1 );
 
@@ -6820,12 +6837,14 @@ static INT BlockHalfening( GRID *grid, BLOCKVECTOR *bv, INT left, INT bottom, IN
   BVSUCC( bv1 ) = bvi;
   BVPRED( bvi ) = bv1;
   SETBVDOWNTYPE( bvi, BVDOWNTYPEVECTOR );
+  SETBVTVTYPE( bvi, BV1DTV );
   BVNUMBER( bvi ) = 2;
   BVSUCC( bvi ) = NULL;
   vi = &BVDOWNVECTOR( bvi );
 
   /* all necessary memory allocated; insert new block list in father block */
   SETBVDOWNTYPE( bv, BVDOWNTYPEBV );
+  SETBVTVTYPE( bv, BV1DTV );
   BVDOWNBV( bv ) = bv0;
   BVDOWNBVLAST( bv ) = bvi;
 

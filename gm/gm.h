@@ -269,8 +269,11 @@
 #define BVDOWNTYPEVECTOR        0       /* symbolic value for BVDOWNTYPE */
 #define BVDOWNTYPEBV            1       /* symbolic value for BVDOWNTYPE */
 #define BVDOWNTYPEDIAG          2       /* symbolic value for BVDOWNTYPE */
-#define BV1DTV                  0       /* symbolic value for BVTVTYPE */
-#define BV2DTV                  1       /* symbolic value for BVTVTYPE */
+#define BV1DTV                          0       /* symbolic value for BVTVTYPE */
+#define BV2DTV                          1       /* symbolic value for BVTVTYPE */
+#define BVNOORIENTATION         0       /* no special orientation */
+#define BVHORIZONTAL            1       /* vectors form a horizontal line */
+#define BVVERTICAL                      2       /* vectors form a vertical line */
 
 
 /****************************************************************************/
@@ -1269,6 +1272,7 @@ enum GM_CE {
   BVDOWNTYPE_CE,
   BVLEVEL_CE,
   BVTVTYPE_CE,
+  BVORIENTATION_CE,
   OBJ_CE,
   USED_CE,
   TAG_CE,
@@ -1647,6 +1651,11 @@ enum GM_CE {
 #define BVTVTYPE_LEN                                    1
 #define BVTVTYPE(bv)                                    CW_READ_STATIC(bv,BVTVTYPE_,BLOCKVECTOR_)
 #define SETBVTVTYPE(bv,n)                               CW_WRITE_STATIC(bv,BVTVTYPE_,BLOCKVECTOR_,n)
+
+#define BVORIENTATION_SHIFT                             7
+#define BVORIENTATION_LEN                               2
+#define BVORIENTATION(bv)                               CW_READ_STATIC(bv,BVORIENTATION_,BLOCKVECTOR_)
+#define SETBVORIENTATION(bv,n)                  CW_WRITE_STATIC(bv,BVORIENTATION_,BLOCKVECTOR_,n)
 
 /* access to members of struct blockvector */
 #define BVNUMBER(bv)                                    ((bv)->number)
