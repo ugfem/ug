@@ -1022,7 +1022,7 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 #if (MGIO_DIM==2)
       m=lge[pe->ge].nCorner+2;
 #else
-      m=lge[pe->ge].nCorner+[pe->ge].nEdge+2;
+      m=lge[pe->ge].nCorner+lge[pe->ge].nEdge+2;
 #endif
       if (Bio_Read_mint(m,intList)) return (1);
       s=0;
