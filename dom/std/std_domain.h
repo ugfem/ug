@@ -96,6 +96,9 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define STD_BVP_SIDEOFFSET(p)                   ((p)->sideoffset)
 #define STD_BVP_PATCHES(p)                              ((p)->patches)
 #define STD_BVP_PATCH(p,i)                              ((p)->patches[i])
+#define STD_BVP_CORNERPATCH(p,i)                ((p)->patches[i])
+#define STD_BVP_LINEPATCH(p,i)                  ((p)->patches[i+STD_BVP_NCORNER(p)])
+#define STD_BVP_SIDEPATCH(p,i)                  ((p)->patches[i+STD_BVP_SIDEOFFSET(p)])
 
 #define STD_BVP_NSUBDOM(p)                              ((p)->numOfSubdomains)
 #define STD_BVP_NDOMPART(p)                             ((p)->nDomainParts)
@@ -112,11 +115,38 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 
 /****************************************************************************/
 /*																			*/
+/* macros for boundary segments												*/
+/*																			*/
+/****************************************************************************/
+
+#define SEG_LEFT(p)                                             ((p)->left)
+#define SEG_RIGHT(p)                                    ((p)->right)
+#define SEG_ID(p)                                               ((p)->id)
+#define SEG_TYPE(p)                                             ((p)->segType)
+#define SEG_POINTS(p)                                   ((p)->points)
+#define SEG_POINT(p,i)                                  ((p)->points[i])
+#define SEG_RESOLUTION(p)                               ((p)->resolution)
+#define SEG_ALPHA(p)                                    ((p)->alpha)
+#define SEG_FROM(p,i)                                   ((p)->alpha[i])
+#define SEG_BETA(p)                                             ((p)->beta)
+#define SEG_TO(p,i)                                             ((p)->beta[i])
+#define SEG_FUNC(p)                                             ((p)->BndSegFunc)
+#define SEG_DATA(p)                                             ((p)->data)
+
+/****************************************************************************/
+/*																			*/
 /* macros for patches														*/
 /*																			*/
 /****************************************************************************/
 
+#define PATCH_FIXED                             0
+#define PATCH_BND_OF_FREE               1
+#define PATCH_FREE                              2
+
 #define PATCH_TYPE(p)           (p)->ge.type
+#define PATCH_STATE(p)          (p)->ge.state
+#define PATCH_IS_FREE(p)                ((p)->ge.state==PATCH_FREE)
+#define PATCH_IS_FIXED(p)               ((p)->ge.state==PATCH_FIXED)
 #define PATCH_ID(p)             (p)->ge.id
 #define POINT_PATCH_N(p)        (p)->po.npatches
 #define POINT_PATCH_PID(p,i)    (p)->po.pop[i].patch_id
@@ -141,9 +171,10 @@ typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 #define LINEAR_PATCH_POINTS(p,i) (p)->lp.points[i]
 #define LINEAR_PATCH_POS(p,i)    (p)->lp.pos[i]
 
-#define BND_PATCH_ID(p)         ((BND_PS *)p)->patch_id
-#define BND_N(p)                ((BND_PS *)p)->n
-#define BND_LOCAL(p,i)          ((BND_PS *)p)->local[i]
+#define BND_PATCH_ID(p)         (((BND_PS *)p)->patch_id)
+#define BND_DATA(p)             (((BND_PS *)p)->data)
+#define BND_N(p)                (((BND_PS *)p)->n)
+#define BND_LOCAL(p,i)          (((BND_PS *)p)->local[i])
 #define BND_SIZE(p)             ((((BND_PS *)p)->n-1)*sizeof(COORD_BND_VECTOR)+sizeof(BND_PS))
 
 /****************************************************************************/
@@ -307,6 +338,7 @@ struct std_BoundaryValueProblem
 struct generic_patch {
 
   INT type;                         /* patch type                           */
+  INT state;                        /* fixed/bnd of free/free               */
   INT id;                           /* unique id used for load/store        */
 };
 
@@ -319,6 +351,7 @@ struct point_on_patch {
 struct point_patch {
 
   INT type;                         /* patch type                           */
+  INT state;                        /* fixed/bnd of free/free               */
   INT id;                           /* unique id used for load/store        */
 
   INT npatches;                     /* number of patches                    */
@@ -335,6 +368,7 @@ struct line_on_patch {
 struct line_patch {
 
   INT type;                         /* patch type                           */
+  INT state;                        /* fixed/bnd of free/free               */
   INT id;                           /* unique id used for load/store        */
 
   INT npatches;                     /* number of patches                    */
@@ -347,7 +381,9 @@ struct line_patch {
 struct linear_patch {
 
   INT type;                         /* patch type                           */
+  INT state;                        /* fixed/bnd of free/free               */
   INT id;                           /* unique id used for load/store        */
+
   INT left,right;                                       /* id of left and right subdomain       */
   INT corners;                      /* number of corners                    */
   INT points[MAX_CORNERS_OF_LINEAR_PATCH];    /* ids of points              */
@@ -357,6 +393,7 @@ struct linear_patch {
 struct parameter_patch {
 
   INT type;                         /* patch type                           */
+  INT state;                        /* fixed/bnd of free/free               */
   INT id;                           /* unique id used for load/store        */
 
   INT left,right;                                       /* id of left and right subdomain       */
@@ -374,6 +411,7 @@ struct parameter_patch {
 struct bnd_ps {
 
   INT patch_id;                     /* associated patch                     */
+  void *data;                                           /* e.g. global coordiantes, pointers...	*/
   INT n;                            /* number of arguments                  */
   COORD_BND_VECTOR local[1];        /* parameter range                      */
 };
