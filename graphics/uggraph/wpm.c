@@ -3238,9 +3238,22 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
       if (sscanf(argv[i],"e %s",buffer)!=1)
         break;
       if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(PO_NAME(theEspo),buffer);
       theEspo->EvalFct = GetElementValueEvalProc(buffer);
       break;
     }
+
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='s')
+    {
+      if (sscanf(argv[i],"s %s",buffer)!=1)
+        break;
+      if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(PO_NAME(theEspo),buffer);
+      theEspo->EvalFct = GetElementValueEvalProc("nvalue");
+      break;
+    }
+
   if (theEspo->EvalFct == NULL)
   {
     UserWrite("cannot find plot procedure\n");
@@ -3442,9 +3455,22 @@ static INT InitVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
       if (sscanf(argv[i],"e %s",buffer)!=1)
         break;
       if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(PO_NAME(theEvpo),buffer);
       theEvpo->EvalFct = GetElementVectorEvalProc(buffer);
       break;
     }
+
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='s')
+    {
+      if (sscanf(argv[i],"s %s",buffer)!=1)
+        break;
+      if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(PO_NAME(theEvpo),buffer);
+      theEvpo->EvalFct = GetElementVectorEvalProc("nvector");
+      break;
+    }
+
   if (theEvpo->EvalFct == NULL)
   {
     UserWrite("cannot find plot procedure\n");
@@ -3657,6 +3683,7 @@ static INT InitLinePlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
       if (sscanf(argv[i],"e %s",buffer)!=1)
         break;
       if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(PO_NAME(theLpo),buffer);
       theLpo->EvalFct = GetElementValueEvalProc(buffer);
       break;
     }
@@ -4099,9 +4126,22 @@ static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
       if (sscanf(argv[i],"e %s",buffer)!=1)
         break;
       if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(PO_NAME(theEspo),buffer);
       theEspo->EvalFct = GetElementValueEvalProc(buffer);
       break;
     }
+
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='s')
+    {
+      if (sscanf(argv[i],"s %s",buffer)!=1)
+        break;
+      if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(PO_NAME(theEspo),buffer);
+      theEspo->EvalFct = GetElementValueEvalProc("nvalue");
+      break;
+    }
+
   if (theEspo->EvalFct == NULL)
   {
     UserWrite("cannot find plot procedure\n");
@@ -4299,9 +4339,22 @@ static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
       if (sscanf(argv[i],"e %s",buffer)!=1)
         break;
       if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(PO_NAME(theEvpo),buffer);
       theEvpo->EvalFct = GetElementVectorEvalProc(buffer);
       break;
     }
+
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='s')
+    {
+      if (sscanf(argv[i],"s %s",buffer)!=1)
+        break;
+      if (strlen(buffer)>=NAMESIZE) break;
+      strcpy(PO_NAME(theEvpo),buffer);
+      theEvpo->EvalFct = GetElementVectorEvalProc("nvector");
+      break;
+    }
+
   if (theEvpo->EvalFct == NULL)
   {
     UserWrite("cannot find plot procedure\n");

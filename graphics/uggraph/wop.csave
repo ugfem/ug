@@ -7004,7 +7004,7 @@ static INT EW_PreProcess_EScalar2D (PICTURE *thePicture, WORK *theWork)
 	
 	/* prepare evaluation routine */
 	if (theEspo->EvalFct->PreprocessProc!=NULL)
-		if ((*theEspo->EvalFct->PreprocessProc)(ENVITEM_NAME(theEspo->EvalFct),theMG)) 
+		if ((*theEspo->EvalFct->PreprocessProc)(PO_NAME(theEspo),theMG)) 
 			return (1);;
 
 	return (0);
@@ -7063,7 +7063,7 @@ static INT EW_PreProcess_Line2D (PICTURE *thePicture, WORK *theWork)
 	
 	/* prepare evaluation routine */
 	if (theLpo->EvalFct->PreprocessProc!=NULL)
-		if ((*theLpo->EvalFct->PreprocessProc)(ENVITEM_NAME(theLpo->EvalFct),theMG)) 
+		if ((*theLpo->EvalFct->PreprocessProc)(PO_NAME(theLpo),theMG)) 
 			return (1);
 
 	return (0);
@@ -7869,7 +7869,7 @@ static INT EW_PreProcess_EVector2D (PICTURE *thePicture, WORK *theWork)
 	
 	/* prepare evaluation routine */
 	if (theEvpo->EvalFct->PreprocessProc!=NULL)
-		if ((*theEvpo->EvalFct->PreprocessProc)(ENVITEM_NAME(theEvpo->EvalFct),theMG))
+		if ((*theEvpo->EvalFct->PreprocessProc)(PO_NAME(theEvpo),theMG))
 			return (1);
 
 	return (0);
@@ -12163,7 +12163,7 @@ static INT EW_PreProcess_EScalar3D (PICTURE *thePicture, WORK *theWork)
 	
 	/* prepare evaluation routine */
 	if (theEspo->EvalFct->PreprocessProc != NULL)
-		if ((*theEspo->EvalFct->PreprocessProc)(ENVITEM_NAME(theEspo->EvalFct),theMG)) return (1);
+		if ((*theEspo->EvalFct->PreprocessProc)(PO_NAME(theEspo),theMG)) return (1);
 
 	return (0);
 }
@@ -12218,7 +12218,7 @@ static INT EW_PreProcess_EScalar3D_FR (PICTURE *thePicture, WORK *theWork)
 	
 	/* prepare evaluation routine */
 	if (theEspo->EvalFct->PreprocessProc != NULL)
-		if ((*theEspo->EvalFct->PreprocessProc)(ENVITEM_NAME(theEspo->EvalFct),theMG)) return (1);
+		if ((*theEspo->EvalFct->PreprocessProc)(PO_NAME(theEspo),theMG)) return (1);
 
 	/* reset min and max values */
 	GEN_FR_put = W_FINDRANGE_WORK(theWork)->put;
@@ -12277,7 +12277,7 @@ static INT EW_PreProcess_EVector3D (PICTURE *thePicture, WORK *theWork)
 	
 	/* prepare evaluation routine */
 	if (theEvpo->EvalFct->PreprocessProc!=NULL)
-		if ((*theEvpo->EvalFct->PreprocessProc)(ENVITEM_NAME(theEvpo->EvalFct),theMG)) return (1);;
+		if ((*theEvpo->EvalFct->PreprocessProc)(PO_NAME(theEvpo),theMG)) return (1);;
 
 	return (0);
 }

@@ -29,18 +29,10 @@
 #define __WPM__
 
 #include "compiler.h"
-
-#ifndef __DEVICESH__
 #include "devices.h"
-#endif
-
-#ifndef __GM__
+#include "ugenv.h"
 #include "gm.h"
-#endif
-
-#ifndef __NUM__
 #include "num.h"
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -112,6 +104,7 @@
 #define PO_MIDPOINT(p)                  ((p)->theHead.theMidPoint)
 #define PO_RADIUS(p)                    ((p)->theHead.theRadius)
 #define PO_MG(p)                                ((p)->theHead.theMG)
+#define PO_NAME(p)                              ((p)->theHead.name)
 #define PO_DIM(p)                               (((p)->theHead.thePlotObjType==NULL) ? (NOT_DEFINED) : ((p)->theHead.thePlotObjType->Dimension))
 
 /****************************************************************************/
@@ -199,6 +192,7 @@ struct PlotObjHead {                                            /* head of all P
   COORD theMidPoint[3];                                         /* MidPoint of covering 2/3D sphere                     */
   COORD theRadius;                                                      /* radius of covering 2/3D sphere				*/
   INT clearBeforeDraw;                                          /* YES or NO									*/
+  char name[NAMESIZE];
 };
 
 /*----------- application dimension independent PlotObj ---------------------*/
