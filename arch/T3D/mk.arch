@@ -3,11 +3,20 @@
 #
 #	for Cray T3D
 #
+##########################################################
+#
+# ADDITIONAL INFORMATION
+#
+# for starting the debugger, call executable with option
+# -debug and in background (&), afterwards start debugger
+# with 'totalview'.
+#
 
 ARCH_TYPE     = __T3D__
 
 ARCH_CC       = cc
-ARCH_LINK     = mppld
+ARCH_LINK     = /mpp/bin/mppld
+ARCH_F77      = cf77
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = true
@@ -19,6 +28,7 @@ ARCH_CFLAGS   = -I /usr/include/mpp -O   # -g
 #ARCH_CFLAGS  = -g
 #ARCH_CFLAGS  = -hinline2,scalar2
 #ARCH_CFLAGS  = -happrentice
+ARCH_FFLAGS   = -Wf,
 ARCH_C++FLAGS =
 ARCH_LFLAGS   = # -g
 ARCH_ARFLAGS  = ru

@@ -1,20 +1,23 @@
 #
 #	ARCH MAKEFILE OPTIONS
 #
-#	for Cray T3D
+#	for Cray T3E
 #
 
-ARCH_TYPE     = __T3D__
+ARCH_TYPE     = __T3E__
 
 ARCH_CC       = cc
-ARCH_LINK     = mppld
+ARCH_LINK     = cc
+ARCH_F77      = f90
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lc -lm
+ARCH_FLIBS    =
 
-ARCH_CFLAGS   = -I /usr/include/mpp -O   # -g 
+ARCH_CFLAGS   = -I /usr/include/mpp -g   # -O 
+ARCH_FFLAGS   = -g
 #ARCH_CFLAGS  = -hinline3,scalar3
 #ARCH_CFLAGS  = -g
 #ARCH_CFLAGS  = -hinline2,scalar2

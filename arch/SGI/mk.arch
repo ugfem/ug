@@ -8,6 +8,7 @@ ARCH_TYPE     = __SGI__
 
 ARCH_CC       = cc
 ARCH_C++      = DCC
+ARCH_F77      = f77 -g
 ARCH_LINK     = cc
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
@@ -15,12 +16,14 @@ ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lm
 ARCH_PLIBS    =
+ARCH_FLIBS    = -lftn
 
 
 # add -mips2 for invoking R4000 specific extensions
 ARCH_CFLAGS   = -mips2 -g # -g -O2
 ARCH_C++FLAGS = -mips2 -g # -g -O2
 ARCH_LFLAGS   = -mips2
+ARCH_FFLAGS   = -Wf,
 ARCH_ARFLAGS  = ru
 ARCH_EXFLAGS  = xo
 

@@ -15,9 +15,11 @@ ARCH_SUFFIX   =
 ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lm
+ARCH_FLIBS     = -lf
 
 ARCH_CFLAGS   = -O1 -Mallow_spacing -Xc # -g -Mnoperfmon -Mvect
 ARCH_C++FLAGS =
+ARCH_FFLAGS =
 ARCH_LFLAGS   = # -Mdebug -Mframe -O0
 ARCH_ARFLAGS  = ru
 

@@ -9,12 +9,14 @@ ARCH_TYPE     = __NECSX4__
 ARCH_CC       = cc
 ARCH_C++      = CC 
 ARCH_LINK     = cc
+ARCH_F77      = f77 -g 
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lm -lc
 ARCH_PLIBS    = -lpthread
+ARCH_FLIBS    =
 #   -D_MALLOC64       enable patch to allocate more then 2GB memory
 #   -pvctl,nomsg      switch off messages from vectorizer
 #   -h2               optimization
@@ -24,7 +26,9 @@ ARCH_PLIBS    = -lpthread
 #ARCH_CFLAGS   = -D_MALLOC64 -Xc -pvctl,nomsg -h2,acct
 # -Xa temporary neccessary because of malloc > 2 GB (long long)
 ARCH_CFLAGS   = -D_MALLOC64 -Xa -pvctl,nomsg -h2,acct
+ARCH_PCFLAGS  = -h2,pthread_specific
 ARCH_C++FLAGS = 
+ARCH_FFLAGS   = -Wf,
 ARCH_LFLAGS   = -D_MALLOC64 -h2,acct
 ARCH_ARFLAGS  = ru
 
