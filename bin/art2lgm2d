@@ -2,7 +2,7 @@
 
 # convert ART grids to LGM domains + grids in 2D.
 
-$debug = 100;
+$debug = 0;
 
 # globals
 $pass = 0;
@@ -269,6 +269,7 @@ sub ReadVertices {
 			$vertex[$i]{x} = $vtmp[0];
 			$vertex[$i]{y} = $vtmp[1];
 			$vertex[$i]{nginfo} = "I $vertex[$i]{x} $vertex[$i]{y}";
+			$vertex[$i]{ngid} = 0;		# id in .ng file context.
 			$i++;
 		}
 		if (/\$/) {
@@ -722,9 +723,13 @@ sub WriteLGMNet {
 	
 	print "    Writing LGM grid points (boundary points ";
 	
+	local($counter);
+	$counter = 0;
 	for ($v=0; $v<$vertices; $v++) {
 		if ( substr($vertex[$v]{nginfo},0,1) eq "B" )	{
 			print LGMNET $vertex[$v]{nginfo},";\n";
+			$vertex[$v]{ngid} = $counter;
+			$counter++;
 		}
 	}
 	
@@ -734,27 +739,36 @@ sub WriteLGMNet {
 	for ($v=0; $v<$vertices; $v++) {
 		if ( substr($vertex[$v]{nginfo},0,1) ne "B" )	{
 			print LGMNET $vertex[$v]{nginfo},";\n";
+			$vertex[$v]{ngid} = $counter;
+			$counter++;
 		}
 	}
 	
+	local($from,$to);
 	print "    Writing LGM elements\n";
 	for ($f=0; $f<$faces; $f++)	{
 		print LGMNET "E ", $face[$f]{id}, " ";
-
-		print LGMNET $face[$f]{vertex1}, " ";
-		print LGMNET $face[$f]{vertex2}, " ";
-		print LGMNET $face[$f]{vertex3};
+		
+		print LGMNET $vertex[ $face[$f]{vertex1} ]{ngid}, " ";
+		print LGMNET $vertex[ $face[$f]{vertex2} ]{ngid}, " ";
+		print LGMNET $vertex[ $face[$f]{vertex3} ]{ngid};
 		if ( $edge[ $face[$f]{edge1} ]{id} ne 0 )	{
-			print LGMNET "  S ", $edge[ $face[$f]{edge1} ]{from}, " ";
-			print LGMNET       $edge[ $face[$f]{edge1} ]{to};
+			$from = $edge[ $face[$f]{edge1} ]{from};
+			$to = $edge[ $face[$f]{edge1} ]{to};
+			print LGMNET "  S ", $vertex[$from]{ngid}, " ";
+			print LGMNET         $vertex[$to]{ngid};
 		}
 		if ( $edge[ $face[$f]{edge2} ]{id} ne 0 )	{
-			print LGMNET "  S ", $edge[ $face[$f]{edge2} ]{from}, " ";
-			print LGMNET       $edge[ $face[$f]{edge2} ]{to};
+			$from = $edge[ $face[$f]{edge2} ]{from};
+			$to = $edge[ $face[$f]{edge2} ]{to};
+			print LGMNET "  S ", $vertex[$from]{ngid}, " ";
+			print LGMNET         $vertex[$to]{ngid};
 		}
 		if ( $edge[ $face[$f]{edge3} ]{id} ne 0 )	{
-			print LGMNET "  S ", $edge[ $face[$f]{edge3} ]{from}, " ";
-			print LGMNET       $edge[ $face[$f]{edge3} ]{to};
+			$from = $edge[ $face[$f]{edge3} ]{from};
+			$to = $edge[ $face[$f]{edge3} ]{to};
+			print LGMNET "  S ", $vertex[$from]{ngid}, " ";
+			print LGMNET         $vertex[$to]{ngid};
 		}
 		print LGMNET ";\n";
 	}
