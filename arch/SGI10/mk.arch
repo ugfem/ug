@@ -7,36 +7,38 @@
 ARCH_TYPE     = __SGI10__
 
 ARCH_MAKE     = make
-ARCH_CC       = gcc
-ARCH_C++      = gcc
+ARCH_CC       = cc
+ARCH_C++      = CC
 ARCH_F77      = f77 -g
-ARCH_LINK     = gcc
+ARCH_LINK     = CC
 ARCH_AR       = ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = true
 
-ARCH_LIBS     = -L/usr/local/lib/gcc-lib -lstdc++ -lm
-#ARCH_LIBS     = -lm -lc
+#ARCH_LIBS     = -L/usr/local/lib/gcc-lib -lstdc++ -lm
+ARCH_LIBS     = -lm -lc
 ARCH_PLIBS    =
 ARCH_FLIBS    = -lftn
 
 # define shell used for executing makefile commands
 SHELL = /bin/sh
 
-#ARCH_CFLAGS   =  -g -n32 -mips4 -r10000
-ARCH_CFLAGS   =  -g
-#ARCH_C++FLAGS =  -g -n32 -mips4 -r10000
-ARCH_C++FLAGS =  -g
-#ARCH_COFLAGS =  -g -n32 -mips4 -r10000 
-ARCH_COFLAGS =  -g
+ARCH_CFLAGS  = -g -n32 -mips4 -r10000
+#ARCH_CFLAGS  = -O -n32 -mips4 -r10000
+ARCH_C++FLAGS = -g -n32 -mips4 -r10000
+#ARCH_C++FLAGS = -O -n32 -mips4 -r10000
+ARCH_COFLAGS = -g -n32 -mips4 -r10000 
+#ARCH_COFLAGS = -O -n32 -mips4 -r10000
 ARCH_NOOPTIM  = -g
-ARCH_OPTIM    = -O2
-ARCH_LFLAGS   = -g
-#ARCH_LFLAGS   =  -n32 -mips4 -r10000 -O
+#ARCH_OPTIM    = -O2
+#ARCH_LFLAGS   = -g
+ARCH_LFLAGS = -g -n32 -mips4 -r10000 
+#ARCH_LFLAGS = -O -n32 -mips4 -r10000
 ARCH_FFLAGS   = -Wf,
 ARCH_ARFLAGS  = ru
 ARCH_EXFLAGS  = xo
 
 ARCH_XINCLUDES =
 ARCH_XLIBS     = -lX11 -lXt -lXaw -lXmu -lXext
+
 
