@@ -6604,7 +6604,7 @@ static INT CheckCommand (INT argc, char **argv)
 {
   MULTIGRID *theMG;
   GRID *theGrid;
-  INT checkconn,level,err,i;
+  INT checkconn,level,err,i,checkbvp;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -6614,7 +6614,7 @@ static INT CheckCommand (INT argc, char **argv)
   }
 
   /* check options */
-  checkconn = FALSE;
+  checkconn = checkbvp = FALSE;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -6622,13 +6622,22 @@ static INT CheckCommand (INT argc, char **argv)
       checkconn = TRUE;
       break;
 
+    case 'b' :
+      checkbvp = TRUE;
+      break;
+
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("check",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
-
   err = 0;
+
+  /* check BVP if */
+  if (checkbvp==TRUE)
+    if (BVP_Check (MG_BVP(theMG)))
+      err++;
+
   for (level=0; level<=TOPLEVEL(theMG); level++)
   {
     theGrid = GRID_ON_LEVEL(theMG,level);
