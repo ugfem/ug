@@ -4678,7 +4678,7 @@ static INT RefineCommand (INT argc, char **argv)
    This command marks elements with refinement type,
    calling the function 'MarkForRefinement'.
 
-   'mark [$h | {[<rule> [<side>]] [$a | $i <Id> | $s]} | $c] [$pos <x y [z]>]'
+   'mark [$h | {[<rule> [<side>]] [$a | $i <Id> | $s]} | $c] [$pos <x y [z]>] [$z <z>]'
 
    .  <rule>                 - specify a refinement rule ("red" is default)
    .  <side>                 - has to be specified if the corresponding rule can be applied in several orientations
@@ -4686,6 +4686,7 @@ static INT RefineCommand (INT argc, char **argv)
    .  $i <Id>                - refine the element with <Id>
    .  $s                     - refine all elements from the current selection
    .  $h                     - show available rules
+   .  $z                     - marks elements with corner[2] < z
    D*/
 /****************************************************************************/
 
@@ -4727,6 +4728,7 @@ static INT MarkCommand (INT argc, char **argv)
   char rulename[32];
   INT i,j,l,mode,rv,Rule;
   COORD_VECTOR global;
+  DOUBLE z;
   long nmarked;
 
   /* following variables: keep type for sscanf */
@@ -4761,6 +4763,28 @@ static INT MarkCommand (INT argc, char **argv)
 
     return(OKCODE);
   }
+
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='z')
+    {
+#ifdef __THREEDIM__
+      if (ReadArgvDOUBLE("z",&z,argc, argv)==NULL)
+      {
+        for (l=0; l<=TOPLEVEL(theMG); l++)
+          for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+               theElement!=NULL; theElement=SUCCE(theElement))
+            if (EstimateHere(theElement))
+              for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+                if (ZC(MYVERTEX(CORNER(theElement,j))) < z)
+                  MarkForRefinement(theElement,RED,NULL);
+
+        UserWriteF("all elements in z < %f marked for refinement\n",
+                   (float) z);
+
+        return(OKCODE);
+      }
+#endif
+    }
 
   for (i=1; i<argc; i++)
     if (argv[i][0]=='p')
@@ -6792,7 +6816,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
         #endif
 
         #ifdef __THREEDIM__
-        #ifdef NETGENT
+        #ifdef _NETGEN
     if (ReadArgvINT("s",&smooth,argc,argv))
       smooth = 0;
     if (ReadArgvDOUBLE("h",&h,argc,argv))
