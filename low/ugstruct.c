@@ -443,7 +443,7 @@ INT GetStringValue (const char *name, double *value)
     return(1);                  /* structure directory not found */
 
   if ((myVar=FindStringVar(theDir,lastname))==NULL)
-    return(NULL);
+    return(1);
 
   if (sscanf(myVar->s,"%lf",value)!=1)
     return (1);
