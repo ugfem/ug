@@ -310,7 +310,8 @@ static INT LinearSolverInit (NP_BASE *theNP, INT argc , char **argv)
     return(NP_NOT_ACTIVE);
 
   np->display = ReadArgvDisplay(argc,argv);
-  np->Iter = (NP_ITER *)ReadArgvNumProc(theNP->mg,"I",argc,argv);
+  np->Iter = (NP_ITER *)
+             ReadArgvNumProc(theNP->mg,"I",ITER_CLASS_NAME,argc,argv);
   if (np->Iter == NULL)
     return(NP_NOT_ACTIVE);
   np->baselevel = 0;
@@ -530,7 +531,8 @@ INT InitLinearSolver ()
 {
   INT i;
 
-  if (CreateClass ("ls", sizeof(NP_LS), LSConstruct))
+  if (CreateClass (LINEAR_SOLVER_CLASS_NAME ".ls",
+                   sizeof(NP_LS), LSConstruct))
     return (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;

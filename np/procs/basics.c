@@ -448,13 +448,14 @@ static INT COPYV_Construct (NP_BASE *theNP)
 
 INT InitBasics (void)
 {
-  if (CreateClass ("cv", sizeof(NP_CLEAR_VEC), CV_Construct))
+  if (CreateClass(BASE_CLASS_NAME ".cv",sizeof(NP_CLEAR_VEC),CV_Construct))
     return (__LINE__);
-  if (CreateClass ("cm", sizeof(NP_CLEAR_MAT), CM_Construct))
+  if (CreateClass(BASE_CLASS_NAME ".cm",sizeof(NP_CLEAR_MAT),CM_Construct))
     return (__LINE__);
-  if (CreateClass ("eu", sizeof(NP_EUNORM_VEC), EU_Construct))
+  if (CreateClass(BASE_CLASS_NAME ".eu",sizeof(NP_EUNORM_VEC),EU_Construct))
     return (__LINE__);
-  if (CreateClass ("copyv", sizeof(NP_COPY_VEC), COPYV_Construct))
+  if (CreateClass(BASE_CLASS_NAME ".copyv",sizeof(NP_COPY_VEC),
+                  COPYV_Construct))
     return (__LINE__);
 
   return (0);

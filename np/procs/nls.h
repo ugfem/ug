@@ -41,6 +41,14 @@
 /*																			*/
 /****************************************************************************/
 
+#define NL_SOLVER_CLASS_NAME "nl_solver"
+
+/****************************************************************************/
+/*																			*/
+/* definition of exported data structures									*/
+/*																			*/
+/****************************************************************************/
+
 /* a data type for returning the status of the computation                  */
 typedef struct {
   INT error_code;                           /* error code                       */

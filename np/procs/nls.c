@@ -151,7 +151,8 @@ INT NPNLSolverInit (NP_NL_SOLVER *np, INT argc , char **argv)
       np->abslimit[i] = 1.0;
   if (sc_read(np->reduction,NULL,"red",argc,argv))
     return(NP_ACTIVE);
-  np->Assemble = (NP_ASSEMBLE *)ReadArgvNumProc(np->base.mg,"A",argc,argv);
+  np->Assemble = (NP_ASSEMBLE *)
+                 ReadArgvNumProc(np->base.mg,"A",ASSEMBLE_CLASS_NAME,argc,argv);
 
   if ((np->x == NULL) || (np->Assemble == NULL))
     return(NP_ACTIVE);
@@ -314,7 +315,8 @@ INT InitNonlinearSolver ()
 {
   INT i;
 
-  if (CreateClass ("newton", sizeof(NP_NEWTON), NewtonConstruct))
+  if (CreateClass (NL_SOLVER_CLASS_NAME "newton",
+                   sizeof(NP_NEWTON), NewtonConstruct))
     return (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;

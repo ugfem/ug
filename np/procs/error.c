@@ -546,7 +546,8 @@ static INT IndicatorConstruct (NP_BASE *theNP)
 
 INT InitError (void)
 {
-  if (CreateClass ("indicator", sizeof(NP_INDICATOR), IndicatorConstruct))
+  if (CreateClass (ERROR_CLASS_NAME "indicator",
+                   sizeof(NP_INDICATOR), IndicatorConstruct))
     return (__LINE__);
 
   if (MakeStruct(":indicator"))

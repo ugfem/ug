@@ -447,7 +447,7 @@ static INT ILUConstruct (NP_BASE *theNP)
    .vb
    npinit [$c <cor>] [$b <rhs>] [$A <mat>]
        $S <pre post base> $T <transfer>
-       $b <baselevel> $g <gamma> [$n1 <it>] [$n2 <it>]
+       [$b <baselevel>] [$g <gamma>] [$n1 <it>] [$n2 <it>]
    .ve
 
    .  $c~<sol> - correction vector
@@ -491,14 +491,18 @@ static INT LmgcInit (NP_BASE *theNP, INT argc , char **argv)
   np = (NP_LMGC *) theNP;
 
   np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
-  np->Transfer = (NP_TRANSFER *)ReadArgvNumProc(theNP->mg,"T",argc,argv);
+  np->Transfer = (NP_TRANSFER *)
+                 ReadArgvNumProc(theNP->mg,"T",TRANSFER_CLASS_NAME,argc,argv);
   for (i=1; i<argc; i++)
     if (argv[i][0]=='s') {
       if (sscanf(argv[i],"s %s %s %s",pre,post,base)!=3)
         continue;
-      np->PreSmooth = (NP_ITER *)GetNumProcFromName(pre);
-      np->PostSmooth = (NP_ITER *)GetNumProcFromName(post);
-      np->BaseSolver = (NP_LINEAR_SOLVER *)GetNumProcFromName(base);
+      np->PreSmooth = (NP_ITER *)
+                      GetNumProcByName(theNP->mg,pre,ITER_CLASS_NAME);
+      np->PostSmooth = (NP_ITER *)
+                       GetNumProcByName(theNP->mg,post,ITER_CLASS_NAME);
+      np->BaseSolver = (NP_LINEAR_SOLVER *)
+                       GetNumProcByName(theNP->mg,base,LINEAR_SOLVER_CLASS_NAME);
       break;
     }
 
@@ -736,9 +740,9 @@ INT InitIter ()
 {
   INT i;
 
-  if (CreateClass ("ilu", sizeof(NP_ILU), ILUConstruct))
+  if (CreateClass(ITER_CLASS_NAME "ilu", sizeof(NP_ILU), ILUConstruct))
     return (__LINE__);
-  if (CreateClass ("lmgc", sizeof(NP_LMGC), LmgcConstruct))
+  if (CreateClass(ITER_CLASS_NAME "lmgc", sizeof(NP_LMGC), LmgcConstruct))
     return (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
