@@ -11,7 +11,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 368										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de					*/
+/*			  email: ug@ica3.uni-stuttgart.de	                                        */
 /*																			*/
 /* History:   09.03.92 begin, ug version 2.0								*/
 /*																			*/
@@ -1165,6 +1165,11 @@ GRID *CreateNewLevel (MULTIGRID *theMG)
   theGrid->nSide = 0;
   theGrid->nVector = 0;
   theGrid->nCon = 0;
+
+#ifdef __INTERPOLATION_MATRIX__
+  theGrid->nIMat = 0;
+#endif
+
   theGrid->status       = 0;
   theGrid->elements = NULL;
   theGrid->lastelement = NULL;
@@ -1344,7 +1349,7 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, ch
   BOUNDARY_CONDITION *theBndCond;
   VERTEX **pv;
   NODE *pn;
-  int i,j,k,n,ds,l,FatalError;
+  INT i,j,k,n,ds,l,FatalError;
   COORD cvect[DIM];
   DOUBLE pardist;
   VSEGMENT *vs;
@@ -1437,6 +1442,12 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *domain, char *problem, ch
   for (i=0; i<MAXOBJECTS; i++) theMG->freeObjects[i] = NULL;
   for (i=0; i<MAXVECTORS; i++) theMG->freeVectors[i] = NULL;
   for (i=0; i<MAXCONNECTIONS; i++) theMG->freeConnections[i] = NULL;
+
+#ifdef __INTERPOLATION_MATRIX__
+  for (i=0; i<MAXVECTORS; i++)
+    for (j=0; j<MAXVECTORS; j++)
+      theMG->freeIMatrices[i][j] = NULL;
+#endif
 
   /* allocate level 0 grid */
   theGrid = CreateNewLevel(theMG);
@@ -2196,7 +2207,7 @@ INT RenumberMultiGrid (MULTIGRID *theMG)
  */
 /****************************************************************************/
 
-static int LexCompare (NODE **pnode1, NODE **pnode2)
+static INT LexCompare (NODE **pnode1, NODE **pnode2)
 {
   VERTEX *pv1,*pv2;
   COORD diff[DIM];

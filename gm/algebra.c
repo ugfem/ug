@@ -11,7 +11,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 294										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de                            */
+/*			  email: ug@ica3.uni-stuttgart.de                                               */
 /*																			*/
 /*			  blockvector data structure:									*/
 /*			  Christian Wrobel                                                                              */
@@ -19,7 +19,7 @@
 /*			  Universitaet Stuttgart										*/
 /*			  Pfaffenwaldring 27											*/
 /*			  70569 Stuttgart												*/
-/*			  email: ug@ica3.uni-stuttgart.de						*/
+/*			  email: ug@ica3.uni-stuttgart.de						        */
 /*																			*/
 /* History:    1.12.93 begin, ug 3d                                                                             */
 /*			  26.10.94 begin combination 2D/3D version						*/
@@ -493,6 +493,7 @@ static VECTOR *GetFreeVector (MULTIGRID *theMG, INT VectorType)
   theMG->freeVectors[VectorType] = ptr[0];
   return((VECTOR *)ptr);
 }
+
 /****************************************************************************/
 /*D
    GetFreeConnection - Get an object from free list if possible
@@ -535,6 +536,41 @@ static CONNECTION *GetFreeConnection (MULTIGRID *theMG, INT Diag, INT RootType, 
 
 /****************************************************************************/
 /*D
+   GetFreeIMatrix - Get an object from free list if possible
+
+   SYNOPSIS:
+   static MATRIX *GetFreeIMatrix (MULTIGRID *theMG, INT RootType, INT DestType);
+
+   PARAMETERS:
+   .  theMG - multigrid structure to extend
+   .  RootType - type of source vector
+   .  DestType - type of destination vector
+
+   DESCRIPTION:
+   This function gets an object from free list of free connections if possible.
+   RETURN VALUE:
+   CONNECTION *
+   .n          pointer to object
+   .n          NULL if no object available.
+
+   D*/
+/****************************************************************************/
+
+#ifdef __INTERPOLATION_MATRIX__
+static MATRIX *GetFreeIMatrix (MULTIGRID *theMG, INT RootType, INT DestType)
+{
+  void **ptr;
+
+  if (theMG->freeIMatrices[RootType][DestType]==NULL)
+    return(NULL);
+  ptr = (void **) theMG->freeIMatrices[RootType][DestType];
+  theMG->freeIMatrices[RootType][DestType] = ptr[0];
+  return((MATRIX *)ptr);
+}
+#endif
+
+/****************************************************************************/
+/*D
    PutFreeVector - Put an object in the free list
 
    SYNOPSIS:
@@ -571,6 +607,7 @@ static INT PutFreeVector (MULTIGRID *theMG, VECTOR *object)
   theMG->freeVectors[VectorType] = (void *)object;
   return(0);
 }
+
 /****************************************************************************/
 /*D
    PutFreeConnection -  Put an object in the free list
@@ -592,6 +629,7 @@ static INT PutFreeVector (MULTIGRID *theMG, VECTOR *object)
    .n     INT>0 if no valid object number.
    D*/
 /****************************************************************************/
+
 static INT PutFreeConnection (MULTIGRID *theMG, CONNECTION *object)
 {
   void **ptr;
@@ -611,6 +649,40 @@ static INT PutFreeConnection (MULTIGRID *theMG, CONNECTION *object)
   theMG->freeConnections[ConType] = (void *)object;
   return(0);
 }
+
+/****************************************************************************/
+/*D
+   PutFreeIMatrix -  Put an object in the free list
+
+   SYNOPSIS:
+   static INT PutFreeIMatrix (MULTIGRID *theMG, MATRIX *object);
+
+   PARAMETERS:
+   .  theMG - mg structure to extend
+   .  object - Pointer to 'MATRIX' to be freed.
+
+   DESCRIPTION:
+   This function puts an object in the free list.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     INT>0 if no valid object number.
+   D*/
+/****************************************************************************/
+
+#ifdef __INTERPOLATION_MATRIX__
+static INT PutFreeIMatrix (MULTIGRID *theMG, MATRIX *object)
+{
+  void **ptr;
+
+  ptr = (void **) object;
+  ptr[0] = theMG->freeIMatrices[MROOTTYPE(object)][MDESTTYPE(object)];
+  theMG->freeIMatrices[MROOTTYPE(object)][MDESTTYPE(object)]
+    = (void *)object;
+  return(0);
+}
+#endif
 
 /****************************************************************************/
 /*D
@@ -679,6 +751,10 @@ INT CreateVector (GRID *theGrid, VECTOR *After, INT VectorType, VECTOR **VectorH
   pv->index  = (long)theGrid->nVector;
   pv->skip   = 0;
   pv->start  = NULL;
+
+#ifdef __INTERPOLATION_MATRIX__
+  VISTART(pv) = NULL;
+#endif
 
   /* insert in vector list */
   if (After==NULL)
@@ -758,6 +834,79 @@ INT CreateBlockvector( GRID *theGrid, BLOCKVECTOR **BVHandle )
   return GM_OK;
 }
 
+/****************************************************************************/
+/*D
+   CreateIMatrix -  Return pointer to a new interpolation matrix structure
+
+   SYNOPSIS:
+   MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec);
+
+   PARAMETERS:
+   .  TheGrid - grid where matrix should be inserted
+   .  fvec - fine grid vector
+   .  cvec - coarse grid vector
+
+   DESCRIPTION:
+   This function allocates a new 'MATRIX' structures in the
+   'imatrix' list of 'fvec'.
+
+   RETURN VALUE:
+   MATRIX *
+   .n    pointer to the new matrix
+   .n    NULL if error occured.
+   D*/
+/****************************************************************************/
+
+#ifdef __INTERPOLATION_MATRIX__
+MATRIX *CreateIMatrix (GRID *theGrid, VECTOR *fvec, VECTOR *cvec)
+{
+  MULTIGRID *theMG;
+  HEAP *theHeap;
+  MATRIX *pm,*m;
+  INT RootType, DestType, MType, ds, Diag, Size;
+
+  pm = GetIMatrix(fvec,cvec);
+  if (pm != NULL)
+    return(pm);
+
+  RootType = VTYPE(fvec);
+  DestType = VTYPE(cvec);
+  MType = MatrixType[RootType][DestType];
+
+  /* check expected size */
+  theMG = MYMG(theGrid);
+  theHeap = theMG->theHeap;
+  ds = theMG->theFormat->IMatrixSizes[MType];
+  if (ds == 0)
+    return (NULL);
+  Size = sizeof(MATRIX)-sizeof(DOUBLE)+ds;
+  assert (Size % ALIGNMENT == 0);
+
+  pm = GetFreeIMatrix (theMG,RootType,DestType);
+  if (pm==NULL)
+  {
+    if (MSIZEMAX<Size) return (NULL);
+    pm = (MATRIX*)GetMem(theHeap,Size,FROM_BOTTOM);
+    if (pm==NULL)
+      return (NULL);
+  }
+  memset(pm,0,Size);
+
+  CTRL(pm) = 0;
+  SETMTYPE(pm,MType);
+  SETMROOTTYPE(pm,RootType);
+  SETMDESTTYPE(pm,DestType);
+  SETMSIZE(pm,Size);
+  MDEST(pm) = cvec;
+  MNEXT(pm) = VISTART(fvec);
+  VISTART(fvec) = pm;
+
+  /* counters */
+  theGrid->nIMat++;
+
+  return(pm);
+}
+#endif
 
 /****************************************************************************/
 /*D
@@ -778,9 +927,9 @@ INT CreateBlockvector( GRID *theGrid, BLOCKVECTOR **BVHandle )
    is not important.
 
    RETURN VALUE:
-   INT
+   CONNECTION *
+   .n    pointer to the new connection
    .n    NULL if error occured.
-   .n    else a pointer to the new 'CONNECTION' is returned.
    D*/
 /****************************************************************************/
 
@@ -944,6 +1093,48 @@ CONNECTION      *CreateExtraConnection  (GRID *theGrid, VECTOR *from, VECTOR *to
 
 /****************************************************************************/
 /*D
+   DisposeIMatrices - Remove interpolation matrix from the data structure
+
+   SYNOPSIS:
+   INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix);
+
+   PARAMETERS:
+   .  theGrid - the grid to remove from
+   .  theMatrix - start of matrix list to dispose
+
+   DESCRIPTION:
+   This function removes an interpolation  matrix list from the data
+   structure.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
+/****************************************************************************/
+
+#ifdef __INTERPOLATION_MATRIX__
+INT DisposeIMatrices (GRID *theGrid, MATRIX *theMatrix)
+{
+  VECTOR *from, *to;
+  MATRIX *Matrix, *NextMatrix;
+
+  for (Matrix=theMatrix; Matrix!=NULL; )
+  {
+    NextMatrix = NEXT(Matrix);
+    /* free connection object */
+    if (PutFreeIMatrix(theGrid->mg,Matrix))
+      return(1);
+    theGrid->nIMat--;
+    Matrix = NextMatrix;
+  }
+
+  return(0);
+}
+#endif
+
+/****************************************************************************/
+/*D
    DisposeVector - Remove vector from the data structure
 
    SYNOPSIS:
@@ -969,9 +1160,15 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
   MATRIX *theMatrix;
 
   /* remove all connections concerning the vector */
-  for (theMatrix=VSTART(theVector); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
+  for (theMatrix=VSTART(theVector); theMatrix!=NULL;
+       theMatrix=MNEXT(theMatrix))
     if (DisposeConnection(theGrid,MMYCON(theMatrix)))
       return (1);
+
+#ifdef __INTERPOLATION_MATRIX__
+  if (DisposeIMatrices(theGrid,VISTART(theVector)))
+    return (1);
+#endif
 
   /* now remove vector from vector list */
   if (PREDVC(theVector)!=NULL)
@@ -1096,7 +1293,6 @@ void FreeBVList( GRID *grid, BLOCKVECTOR *bv )
     bv = bv_h;
   }
 }
-
 
 /****************************************************************************/
 /*D
@@ -1367,7 +1563,6 @@ INT DisposeConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
   return(DisposeConnectionFromElementInNeighborhood(theGrid,theElement,Depth));
 }
 
-
 /****************************************************************************/
 /*D
    GetMatrix - Return pointer to matrix if it exists
@@ -1402,6 +1597,42 @@ MATRIX *GetMatrix (const VECTOR *FromVector, const VECTOR *ToVector)
   /* return not found */
   return (NULL);
 }
+
+/****************************************************************************/
+/*D
+   GetIMatrix - Return pointer to interpolation matrix if it exists
+
+   SYNOPSIS:
+   MATRIX *GetIMatrix (VECTOR *FineVector, VECTOR *CoarseVector);
+
+   PARAMETERS:
+   .  FineVector - fine grid vector
+   .  CoarseVector - coarse grid vector
+
+   DESCRIPTION:
+   This function returns pointer to interpolation matrix.
+   If it does not exist already, it retruns NULL.
+
+   RETURN VALUE:
+   MATRIX *
+   .n       pointer to Matrix,
+   .n       NULL if no Matrix exists.
+   D*/
+/****************************************************************************/
+
+#ifdef __INTERPOLATION_MATRIX__
+MATRIX *GetIMatrix (VECTOR *FineVector, VECTOR *CoarseVector)
+{
+  MATRIX *theMatrix;
+
+  for (theMatrix=VISTART(FineVector); theMatrix!=NULL;
+       theMatrix = MNEXT(theMatrix))
+    if (MDEST(theMatrix)==CoarseVector)
+      return (theMatrix);
+
+  return (NULL);
+}
+#endif
 
 /****************************************************************************/
 /*D

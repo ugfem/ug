@@ -11,7 +11,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 368										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de					*/
+/*			  email: ug@ica3.uni-stuttgart.de					            */
 /*																			*/
 /* History:   29.01.92 begin, ug version 2.0								*/
 /*																			*/
@@ -723,6 +723,12 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *domain, cha
   for (i=0; i<MAXOBJECTS; i++) theMG->freeObjects[i] = NULL;
   for (i=0; i<MAXVECTORS; i++) theMG->freeVectors[i] = NULL;
   for (i=0; i<MAXCONNECTIONS; i++) theMG->freeConnections[i] = NULL;
+
+#ifdef __INTERPOLATION_MATRIX__
+  for (i=0; i<MAXVECTORS; i++)
+    for (j=0; j<MAXVECTORS; j++)
+      theMG->freeIMatrices[i][j] = NULL;
+#endif
 
   /* allocate boundary descriptors */
   n = theDomain->numOfSegments;

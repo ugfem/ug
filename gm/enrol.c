@@ -786,6 +786,11 @@ FORMAT *Ugly_CreateFormat (char *name,
     for (j=0; j<MAXVECTORS; j++)
       newFormat->PrintMatrix[i][j] = PrintMatrix[i][j];
 
+#ifdef __INTERPOLATION_MATRIX__
+  for (i=0; i<MAXMATRICES; i++)
+    newFormat->IMatrixSizes[i] = 0;
+#endif
+
   if (ChangeEnvDir(name)==NULL) return(NULL);
   UserWrite("format "); UserWrite(name); UserWrite(" installed\n");
 
