@@ -650,8 +650,8 @@ static INT GetNodeNextToCut (INT tag, const DOUBLE_VECTOR *x, const DOUBLE_VECTO
   return (0);
 }
 
-static INT Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const DOUBLE_VECTOR pt,
-                        INT *Side, DOUBLE lambda[DIM_OF_BND])
+INT Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const DOUBLE_VECTOR pt,
+                 INT *Side, DOUBLE lambda[DIM_OF_BND])
 {
   DOUBLE_VECTOR v,r,coeff,M[DIM],MI[DIM];
   DOUBLE det;
