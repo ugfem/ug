@@ -1,0 +1,11 @@
+20040115:
+	1. introduce cp into testboard for web page
+	2. switching compilers
+	3. integration of test into UG Makefile mechanism
+	4. distinction between not applicable (NA) tests and failed builds (NOTRUN)
+		-> may modifications in Dart/Source/Client/test.tcl  and Dart/Source/Server/Dashboard.xsl
+			are necessary
+	5. restructuring of BUILD TEST SUBMIT cycle
+		-> perform all possible builds + perform all possible test
+		-> this avoids 4.
+	6. script for EXPERIMENTAL builds and tests
