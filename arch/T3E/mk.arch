@@ -21,9 +21,11 @@ ARCH_FLIBS    =
 ARCH_CFLAGS   = -g
 ARCH_FFLAGS   = -g
 ARCH_C++FLAGS =
-ARCH_LFLAGS   =  -g
+#ARCH_LFLAGS   = -L /opt/ctl/mpt/mpt/lib # -g
+ARCH_LFLAGS   =  -L /opt/ctl/mpt/mpt/lib -L/opt/ctl/craylibs/craylibs -lsma -g #sma
+#ARCH_LFLAGS   =  -g
 ARCH_ARFLAGS  = ru
 
-ARCH_XINCLUDES =
-ARCH_XLIBS     = 
+ARCH_XINCLUDES = -I /usr/include
+ARCH_XLIBS     = -L /usr/lib -lX11 -lXt -lXaw -lXmu -lXext -lSM -lICE
 
