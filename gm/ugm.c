@@ -6362,6 +6362,7 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
         for (l=0; l<SIDES_OF_REF(n); l++) ElemSideOnBnd[l] = (theMesh->ElemSideOnBnd[j][k]&(1<<l));
         theElement = InsertElement (theGrid,n,Nodes,NULL,NULL,ElemSideOnBnd);
       }
+      SETSUBDOMAIN(theElement,j);
     }
 
   return(GM_OK);
