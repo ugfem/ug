@@ -1,0 +1,12 @@
+#!/usr/bin/perl -w
+
+@ARGV==3 or die "usage: lgm_insertline <geometry> <node1> <node2>\n";
+$geometry=$ARGV[0]; 
+$n1=$ARGV[1];
+$n2=$ARGV[2];
+
+`split_line $geometry $n1 > /tmp/g1`;
+`split_line /tmp/g1 $n1 > /tmp/g2`;
+print `split_subdomain /tmp/g2 $n1 $n2`;
+
+

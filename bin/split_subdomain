@@ -1,0 +1,236 @@
+#!/usr/bin/perl -w
+
+@ARGV==3 or die "usage: t <geometry> <node1> <node2>\n";
+$geometry=$ARGV[0]; 
+$node1=$ARGV[1]; 
+$node2=$ARGV[2]; 
+
+
+
+sub float
+{
+    my $real='[+-]?\d+\.?\d*[eE]?[+-]?\d+|[+-]?\d*\.?\d+[eE]?[+-]?\d+|[+-]?\d+';
+    my (@list,$f,$s,$in);
+
+    if (@_==1) { @list=grep /$real/,split /($real)/,$_[0]; }
+    elsif (@_==2)
+    {
+        $in=' '.$_[1];
+        ($f,$s)=split /$_[0]/,$in,2;
+        @list=grep /$real/,split /($real)/,$s;
+    }
+    else
+    {
+        $in=' '.$_[2];
+        ($f,$s)=split /$_[0]/,$in,2;
+        @list=grep /$real/,split /($real)/,$s;
+        if ($_[1]>=@list || $_[1]<0) { return undef;}
+        for ($s=0; $s<$_[1]; $s++) { shift @list; }
+    }
+    return wantarray ? @list : $list[0];
+}
+
+sub Get_Lines_For_Node
+{
+	my $n=shift;
+	my (@out,@p,$nl);
+
+	$nl=0;
+	for ($i=0; $i<$nlines; $i++)
+	{
+		@p=float 'points:',$l[$i];
+		if ($p[0]==$n) { push @out,$i; }
+		if ($p[@p-1]==$n) { push @out,$i; }
+	}
+	return @out;
+}
+
+sub Get_Sd_Line
+{
+	my ($nb,$left,$right);
+	my $line=shift;
+
+	($nb,$left,$right)=float $l[$line];
+	return ($left,$right);
+}
+
+
+sub Get_SE_Line
+{
+    my ($nb,@p);
+    my $line=shift;
+
+    @p=float 'points:',$l[$line];
+    return ($p[0],$p[@p-1]);
+}
+
+# scan 'Unit-Info'
+open(IN,$geometry);
+while($line=<IN>) { $line=~/Unit-Info/ and last; }
+@p=();
+while($line=<IN>)
+{
+	$line!~/unit/ and last;
+	@sd=float $line;
+	@p=(@p,@sd);
+}
+@sd=@p;
+@sd=sort { $a<=>$b } @sd;
+for ($i=1; $i<@sd; $i++) { $i==$sd[$i-1] or die "ERROR: something wrong with subdomain information in dection 'Unit-Info'\n"; } 
+$nsd=$sd[@sd-1];
+$sd_new=$nsd+1;
+
+
+# scan 'Line-Info'
+while($line=<IN>) { $line=~/Line-Info/ and last; }
+$nlines=0;
+while($line=<IN>)
+{
+	$line=~/line/ or last;
+	$l[$nlines++]=$line;
+}
+$line_new=$nlines;
+
+# get common subdomain
+@l1=Get_Lines_For_Node($node1);
+@l2=Get_Lines_For_Node($node2);
+@sd1=();
+for ($i=0; $i<@l1; $i++)
+{
+	($left,$right)=Get_Sd_Line($l1[$i]);
+	$found=0;
+	for ($j=0; $j<@sd1; $j++) { if ($sd1[$j]==$left) { $found=1; last; } }
+	if (!$found and $left!=0) { push @sd1,$left; }
+	$found=0;
+	for ($j=0; $j<@sd1; $j++) { if ($sd1[$j]==$right) { $found=1; last; } }
+	if (!$found and $right!=0) { push @sd1,$right; }
+}
+@sd2=();
+for ($i=0; $i<@l2; $i++)
+{
+    ($left,$right)=Get_Sd_Line($l2[$i]);
+    $found=0;
+    for ($j=0; $j<@sd2; $j++) { if ($sd2[$j]==$left) { $found=1; last; } }
+    if (!$found and $left!=0) { push @sd2,$left; }
+    $found=0;
+    for ($j=0; $j<@sd2; $j++) { if ($sd2[$j]==$right) { $found=1; last; } }
+    if (!$found and $right!=0) { push @sd2,$right; }
+}
+$found=0;
+for ($i=0; $i<@sd1; $i++)
+{
+	for ($j=0; $j<@sd2; $j++)
+	{
+		if ($sd1[$i]==$sd2[$j]) { $found++; $sdcom=$sd1[$i]; }
+	}
+}
+if ($found!=1) { die "ERROR in split_subdomain: cannot determine common subdomain\n"; } 
+
+# run lines starting from node1
+@lwsd=();
+for ($i=0; $i<$nlines; $i++)
+{
+	($left,$right)=Get_Sd_Line($i);
+	if ($left!=$sdcom and $right!=$sdcom) { next; }
+    push @lwsd,$i;
+}
+for ($i=0; $i<@lwsd; $i++)
+{
+	($start,$end)=Get_SE_Line($lwsd[$i]);
+	if ($start==$node1) { last; }
+	if ($end==$node1) { last; }
+}
+@ltc=();
+$line=$lwsd[$i]; 
+($nx_left,$nx_right)=Get_Sd_Line($line);
+if ($nx_left==$sdcom) { $nx_left=$sd_new; }
+if ($nx_right==$sdcom) { $nx_right=$sd_new; }
+($nx_start,$nx_end)=Get_SE_Line($line);
+$act=$node1;
+push @ltc,$line;
+while(1)
+{
+	($start,$end)=Get_SE_Line($line);
+	if ($start==$act) { $act=$end; } 
+	elsif ($end==$act) { $act=$start; } 
+	for ($i=0; $i<@lwsd; $i++)
+	{
+		if ($lwsd[$i]==$line) { next; } 
+		($start,$end)=Get_SE_Line($lwsd[$i]);
+		if ($start==$act) { $line=$lwsd[$i]; last; }
+		if ($end==$act) { $line=$lwsd[$i]; last; }
+	}
+	push @ltc,$line;
+	if ($start==$node2) { last; }
+	if ($end==$node2) { last; }
+}
+
+# parse geometry
+open(IN,$geometry);
+while($line=<IN>)
+{
+	print $line;
+	if ($line=~/Unit-Info/) { last; }
+}
+while($line=<IN>)
+{
+	if ($line=~/unit/)
+	{
+		@p=float $line;
+		for ($i=0; $i<@p; $i++) { if ($sdcom==$p[$i]) { $line=~s/ $sdcom / $sdcom $sd_new /g; }}
+	}
+	print $line;
+	if ($line=~/Line-Info/) { last; }
+}
+while($line=<IN>)
+{
+    if ($line!~/line/) { last; }
+	($id,$left,$right)=float $line;
+	for ($i=0; $i<@ltc; $i++) 
+	{ 
+		if ($id==$ltc[$i]) 
+		{ 
+			$line=~s/=\s*$sdcom;/=$sd_new;/g;
+			last;
+		}
+	}
+	print $line;
+}
+if ($nx_start==$node1)
+{
+	$left=$nx_right;
+	$right=$nx_left;
+}
+elsif ($nx_end==$node1)
+{
+	$right=$nx_right;
+	$left=$nx_left;
+}
+else
+{
+	die "ERROR in split_subdomain: Huh\n";
+}
+if ($left!=$sd_new) { $left=$sdcom; }
+if ($right!=$sd_new) { $right=$sdcom; }
+print "line $line_new: left=$left; right=$right; points: $node1 $node2;\n\n";
+
+while($line=<IN>)
+{
+    print $line;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

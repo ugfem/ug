@@ -1,0 +1,109 @@
+#!/usr/bin/perl -w
+
+@ARGV==2 or die "usage: split_line <geometry> <node>\n";
+$geometry=$ARGV[0]; 
+$node=$ARGV[1]; 
+
+
+
+sub float
+{
+    my $real='[+-]?\d+\.?\d*[eE]?[+-]?\d+|[+-]?\d*\.?\d+[eE]?[+-]?\d+|[+-]?\d+';
+    my (@list,$f,$s,$in);
+
+    if (@_==1) { @list=grep /$real/,split /($real)/,$_[0]; }
+    elsif (@_==2)
+    {
+        $in=' '.$_[1];
+        ($f,$s)=split /$_[0]/,$in,2;
+        @list=grep /$real/,split /($real)/,$s;
+    }
+    else
+    {
+        $in=' '.$_[2];
+        ($f,$s)=split /$_[0]/,$in,2;
+        @list=grep /$real/,split /($real)/,$s;
+        if ($_[1]>=@list || $_[1]<0) { return undef;}
+        for ($s=0; $s<$_[1]; $s++) { shift @list; }
+    }
+    return wantarray ? @list : $list[0];
+}
+
+# scan 'Unit-Info'
+open(IN,$geometry);
+while($line=<IN>) { $line=~/Unit-Info/ and last; }
+@p=();
+while($line=<IN>)
+{
+	$line!~/unit/ and last;
+	@sd=float $line;
+	@p=(@p,@sd);
+}
+@sd=@p;
+@sd=sort { $a<=>$b } @sd;
+for ($i=1; $i<@sd; $i++) { $i==$sd[$i-1] or die "ERROR: something wrong with subdomain information in dection 'Unit-Info'\n"; } 
+
+
+# scan 'Line-Info'
+while($line=<IN>) { $line=~/Line-Info/ and last; }
+$nlines=0;
+while($line=<IN>)
+{
+	$line=~/line/ or last;
+	$l[$nlines++]=$line;
+}
+$line_new=$nlines;
+
+# find lines containing 'node'
+$nfound=0;
+for ($i=0; $i<$nlines; $i++)
+{
+	@p=float 'points:',$l[$i];
+	$found=0;
+	for ($j=0; $j<@p; $j++) { if ($p[$j]==$node) { $found=1; last; } }
+	if ($found) { $nfound++; $ifound=$i; }
+}
+if ($nfound==0) { die "ERROR: no line containg node $node found\n"; }
+elsif($nfound>1) { print `cat $geometry`; exit 0; }
+else
+{
+	$i=$ifound;
+	@p=float 'points:',$l[$i];
+	@p1=@p2=(); $flag=0;
+	for ($i=0; $i<@p; $i++)
+	{
+		if ($flag==0) { push @p1,$p[$i]; }
+		if ($p[$i]==$node) { $flag=1; }
+		if ($flag==1) { push @p2,$p[$i]; }
+	}
+	$p1=join ' ',@p1; 
+	$p2=join ' ',@p2; 
+
+	$line=$l[$ifound]; 
+	($nb,$left,$right)=float $line;
+	$line1="line $nb: left=$left; right=$right; points: $p1;\n";
+	$line2="line $line_new: left=$left; right=$right; points: $p2;\n";
+
+	$nline_end=$nlines-1;
+	open(IN,$geometry);
+	while($line=<IN>)
+	{
+		$line=~/$l[$ifound]/ and $line=$line1;
+		print $line;
+		if ($line=~/line $nline_end/) { print $line2; } 
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
