@@ -198,7 +198,7 @@ VECDATA_DESC *ReadArgvVecDesc (MULTIGRID *theMG, const char *name,
   }
   if (vd == NULL) return(NULL);
 
-  VM_LOCKED(vd) = 1;
+  if (LockVD(vd)) REP_ERR_RETURN (NULL);
 
   return(vd);
 }
@@ -264,9 +264,10 @@ VEC_TEMPLATE *ReadArgvVecTemplate (const FORMAT *fmt, const char *name,
    This function reads a vector template name and the name of one of its sub descriptors
    from the command strings and returns a pointer to the corresponding vector template plus
    the index of the sub descriptor in the template.
+   If the sub descriptor is omitted the template itself is meant and sub will contain FULL_TPLT.
 
    SYNTAX:
-   '$<name> <vec template name> <sub descriptor name>'
+   '$<name> <vec template name> [<sub descriptor name>]'
 
    RETURN VALUE:
    VECDATA_DESC *
@@ -279,18 +280,25 @@ VEC_TEMPLATE *ReadArgvVecTemplateSub (const FORMAT *fmt, const char *name,
                                       INT argc, char **argv, INT *sub)
 {
   VEC_TEMPLATE *vt;
-  INT i;
+  INT i,res;
   char value[VALUELEN],vtname[NAMESIZE],subname[NAMESIZE];
 
   if (ReadArgvChar(name,value,argc,argv))
     return(NULL);
 
-  if (sscanf(value,expandfmt(CONCAT5("%",NAMELENSTR,"[a-zA-Z0-9_] %",NAMELENSTR,"[a-zA-Z0-9_]")),vtname,subname)!=2)
+  res = sscanf(value,expandfmt(CONCAT5("%",NAMELENSTR,"[a-zA-Z0-9_] %",NAMELENSTR,"[a-zA-Z0-9_]")),vtname,subname);
+  if (res<1)
     return (NULL);
 
   vt = GetVectorTemplate(fmt,vtname);
   if (vt==NULL)
     return(NULL);
+
+  if (res==1)
+  {
+    *sub = FULL_TPLT;
+    return (vt);
+  }
 
   for (i=0; i<VT_NSUB(vt); i++)
     if (strcmp(SUBV_NAME(VT_SUB(vt,i)),subname)==0)
@@ -322,6 +330,7 @@ VEC_TEMPLATE *ReadArgvVecTemplateSub (const FORMAT *fmt, const char *name,
    This function reads a vector template name and the name of one of its sub descriptors
    from the command strings and returns a pointer to the corresponding vector template plus
    the index of the sub descriptor in the template.
+   If the sub descriptor is omitted the template itself is meant and sub will contain FULL_TPLT.
 
    SYNTAX:
    '$<name> <vec template name> <sub descriptor name>'
@@ -337,18 +346,25 @@ MAT_TEMPLATE *ReadArgvMatTemplateSub (const FORMAT *fmt, const char *name,
                                       INT argc, char **argv, INT *sub)
 {
   MAT_TEMPLATE *mt;
-  INT i;
+  INT i,res;
   char value[VALUELEN],mtname[NAMESIZE],subname[NAMESIZE];
 
   if (ReadArgvChar(name,value,argc,argv))
     return (NULL);
 
-  if (sscanf(value,expandfmt(CONCAT5("%",NAMELENSTR,"[a-zA-Z0-9_] %",NAMELENSTR,"[a-zA-Z0-9_]")),mtname,subname)!=2)
+  res = sscanf(value,expandfmt(CONCAT5("%",NAMELENSTR,"[a-zA-Z0-9_] %",NAMELENSTR,"[a-zA-Z0-9_]")),mtname,subname);
+  if (res<1)
     return (NULL);
 
   mt = GetMatrixTemplate(fmt,mtname);
   if (mt==NULL)
     return(NULL);
+
+  if (res==1)
+  {
+    *sub = FULL_TPLT;
+    return (mt);
+  }
 
   for (i=0; i<MT_NSUB(mt); i++)
     if (strcmp(SUBM_NAME(MT_SUB(mt,i)),subname)==0)
@@ -412,7 +428,7 @@ MATDATA_DESC *ReadArgvMatDesc (MULTIGRID *theMG, const char *name,
   }
   if (md == NULL) return (NULL);
 
-  VM_LOCKED(md) = 1;
+  if (LockMD(md)) REP_ERR_RETURN(NULL);
 
   return(md);
 }
@@ -544,7 +560,10 @@ INT ReadVecTypeINTs (const FORMAT *fmt, char *str, INT n, INT nINT[MAXVECTORS], 
       if (strchr(BLANKS,*s)==NULL)
         break;
     if (!isalpha(*s) || ((type = FMT_N2T(fmt,*s))==NOVTYPE))
+    {
+      PrintErrorMessageF('E',"ReadVecTypeINTs","could not read type specifier or invalid type (in '%s')\n",str);
       REP_ERR_RETURN (1);
+    }
     typetok[type] = ++s;
     if (isalpha(*s))
     {
@@ -558,10 +577,17 @@ INT ReadVecTypeINTs (const FORMAT *fmt, char *str, INT n, INT nINT[MAXVECTORS], 
     if (typetok[type]!=NULL)
       for (tok=strtok(typetok[type],COMPSEP); tok!=NULL; tok=strtok(NULL,COMPSEP))
       {
-        if (nINT[type]>=n) REP_ERR_RETURN (2);
+        if (nINT[type]>=n)
+        {
+          PrintErrorMessageF('E',"ReadVecTypeINTs","max number of INTs exceeded (in '%s')\n",str);
+          REP_ERR_RETURN (3);
+        }
 
         if (sscanf(tok,"%d",&iValue)!=1)
+        {
+          PrintErrorMessageF('E',"ReadVecTypeINTs","could not scan INT (in '%s')\n",str);
           return (3);
+        }
         else
           theINTs[nINT[type]++][type] = (INT) iValue;
       }
@@ -635,10 +661,17 @@ INT ReadVecTypeDOUBLEs (const FORMAT *fmt, char *str, INT n, INT nDOUBLE[MAXVECT
       for (tok=strtok(typetok[type],COMPSEP); tok!=NULL; tok=strtok(NULL,COMPSEP))
       {
         found++;
-        if (nDOUBLE[type]>=n) REP_ERR_RETURN (2);
+        if (nDOUBLE[type]>=n)
+        {
+          PrintErrorMessageF('E',"ReadVecTypeDOUBLEs","max number of DOUBLEs exceeded (in '%s')\n",str);
+          REP_ERR_RETURN (3);
+        }
 
         if (sscanf(tok,"%lf",&lfValue)!=1)
+        {
+          PrintErrorMessageF('E',"ReadVecTypeDOUBLEs","could not scan DOUBLE (in '%s')\n",str);
           return (3);
+        }
         else
           theDOUBLEs[nDOUBLE[type]++][type] = (DOUBLE) lfValue;
       }
@@ -646,18 +679,24 @@ INT ReadVecTypeDOUBLEs (const FORMAT *fmt, char *str, INT n, INT nDOUBLE[MAXVECT
   if (notypetok!=NULL)
   {
     if (found)
+    {
+      PrintErrorMessageF('E',"ReadVecTypeDOUBLEs","type specifier missing (in '%s')\n",str);
       REP_ERR_RETURN (NUM_ERROR);
+    }
 
-    /* there is only one token witout type label */
+    /* there is only one token without type label */
 
     /* is there only one value? */
     found = 0;
     for (tok=strtok(notypetok,COMPSEP); tok!=NULL; tok=strtok(NULL,COMPSEP))
       found++;
     if (found!=1)
-      REP_ERR_RETURN (NUM_ERROR)
-      else
-        return (NUM_TYPE_MISSING);
+    {
+      PrintErrorMessageF('E',"ReadVecTypeDOUBLEs","type specifier missing but several values given (in '%s')\n",str);
+      REP_ERR_RETURN (NUM_ERROR);
+    }
+    else
+      return (NUM_TYPE_MISSING);
   }
 
   return (NUM_OK);
@@ -701,14 +740,21 @@ INT ReadVecTypeOrder (const FORMAT *fmt, char *str, INT n, INT MaxPerType, INT *
   ni = 0;
   for (token=strtok(str,COMPSEP); token!=NULL; token=strtok(NULL,COMPSEP))
   {
-    if (ni>=n) REP_ERR_RETURN (1);
+    if (ni>=n)
+    {
+      PrintErrorMessageF('E',"ReadVecTypeOrder","max number of values exceeded (in '%s')\n",str);
+      REP_ERR_RETURN (3);
+    }
 
     if              ((sscanf(token,"%c%d",&c,&iValue)==2) && (iValue<MaxPerType))
     {
       if ((tp=FMT_N2T(fmt,c))==NOVTYPE)
-        REP_ERR_RETURN (2)
-        else
-          theOrder[ni++] = tp*MaxPerType + (INT) iValue;
+      {
+        PrintErrorMessageF('E',"ReadVecTypeOrder","invalid type specified (in '%s')\n",str);
+        REP_ERR_RETURN (2);
+      }
+      else
+        theOrder[ni++] = tp*MaxPerType + (INT) iValue;
     }
     else
     {
@@ -767,7 +813,10 @@ INT ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, char *class_name, IN
       if (strchr(BLANKS,*s)==NULL)
         break;
     if (!isalpha(*s) || ((type = FMT_N2T(fmt,*s))==NOVTYPE))
+    {
+      PrintErrorMessageF('E',"ReadVecTypeNUMPROCs","could not read type specifier or invalid type (in '%s')\n",str);
       REP_ERR_RETURN (1);
+    }
     typetok[type] = ++s;
     if (isalpha(*s))
     {
@@ -781,10 +830,17 @@ INT ReadVecTypeNUMPROCs (const MULTIGRID *theMG, char *str, char *class_name, IN
     if (typetok[type]!=NULL)
       for (tok=strtok(typetok[type],COMPSEP); tok!=NULL; tok=strtok(NULL,COMPSEP))
       {
-        if (nNUMPROC[type]>=n) REP_ERR_RETURN (2);
+        if (nNUMPROC[type]>=n)
+        {
+          PrintErrorMessageF('E',"ReadVecTypeNUMPROCs","max number of NUMPROCs exceeded (in '%s')\n",str);
+          REP_ERR_RETURN (3);
+        }
 
         if ((theNUMPROCs[nNUMPROC[type]++][type]=GetNumProcByName(theMG,tok,class_name))==NULL)
+        {
+          PrintErrorMessageF('E',"ReadVecTypeNUMPROCs","NUMPROC '%s' not found (in '%s')\n",tok,str);
           REP_ERR_RETURN (3);
+        }
       }
 
   return (NUM_OK);
@@ -957,7 +1013,10 @@ INT sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const c
     {
       /* iff no type is specified in the value string, scan one value for all */
       if (sscanf(value,"%lf",&lfValue)!=1)
+      {
+        PrintErrorMessageF('E',"sc_read","could not scan single value (in '%s')\n",value);
         REP_ERR_RETURN (3);
+      }
       for (n=0; n<MAX_VEC_COMP; n++)
         x[n] = lfValue;
       return (NUM_OK);
@@ -970,13 +1029,19 @@ INT sc_read (VEC_SCALAR x, const FORMAT *fmt, const VECDATA_DESC *theVD, const c
   {
     if (theVD!=NULL)
       if (n!=offset[type])
+      {
+        PrintErrorMessageF('E',"sc_read","number of values per type does not coincide with vd (in '%s')\n",value);
         REP_ERR_RETURN (4);
+      }
     for (i=0; i<nDOUBLEs[type]; i++)
       x[n++] = theDOUBLEs[i][type];
   }
   if (theVD!=NULL)
     if (n!=offset[type])
+    {
+      PrintErrorMessageF('E',"sc_read","total number of values does not coincide with vd (in '%s')\n",value);
       REP_ERR_RETURN (4);
+    }
 
   return (NUM_OK);
 }
