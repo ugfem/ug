@@ -39,6 +39,7 @@
 #include "misc.h"
 #include "fileopen.h"
 #include "general.h"
+#include "debug.h"
 
 /****************************************************************************/
 /*																			*/
@@ -51,14 +52,24 @@
 /****************************************************************************/
 
 /* for help functions */
-#define BUFFERSIZE              256
-#define LONGBUFFSIZE    1024
+#define BUFFERSIZE                      256
+#define LONGBUFFSIZE            1024
 
-#define HELPSEP                 '-'     /* sperator of help pages					*/
-#define KEWORDCHAR              '>'     /* seperator for keyword list				*/
-#define FILENAMESEP     " \t"   /* token seperators for help filenames		*/
-#define MAXHELPFILES    8               /* max number of helpfiles					*/
-#define NOTFOUNDMESSAGE "sorry, no message file available\n"
+#define HELPSEP                         '-'     /* sperator of help pages				*/
+#define KEWORDCHAR                      '>'     /* seperator for keyword list			*/
+#define FILENAMESEP             " \t"   /* token seperators for help filenames	*/
+#define MAXHELPFILES            8               /* max number of helpfiles				*/
+
+#define REPLACE_DOT                     " "
+#define REPLACE_DOT_N           "  "
+#define REPLACE_TILDE           ' '
+#define INDENT_VERBATIM         "|   "
+#define TAB_SIZE                        4
+
+#define DOC_TEXT_BEGIN(s)       ((s[0]=='/') && (s[1]=='*') && (s[2]=='D'))
+#define DOC_TEXT_END(s)         ((s[0]=='D') && (s[1]=='*') && (s[2]=='/'))
+#define BEGIN_VERBATIM(s)       ((s[0]=='.') && (s[1]=='v') && (s[2]=='b'))
+#define END_VERBATIM(s)         ((s[0]=='.') && (s[1]=='v') && (s[2]=='e'))
 
 /****************************************************************************/
 /*																			*/
@@ -82,10 +93,14 @@
 /* general purpose text buffer */
 static char longbuff[LONGBUFFSIZE];     /* this way Mac output is way faster*/
 static char buffer[BUFFERSIZE];
+static char buffer2[BUFFERSIZE];
+static char LowerBuffer[BUFFERSIZE];
 
 /* for help functions */
 static FILE *HelpFile[MAXHELPFILES];    /* the help messages files			*/
 static int NHelpFiles;                                  /* no of open helpfiles                         */
+
+REP_ERR_FILE;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -95,6 +110,89 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /* forward declarations of functions used before they are defined			*/
 /*																			*/
 /****************************************************************************/
+
+static char *ToLower (char *s)
+{
+  char *p;
+
+  p = LowerBuffer;
+  while (*s!='\0')
+    *p++ = tolower(*s++);
+
+  *p = '\0';
+
+  return (LowerBuffer);
+}
+
+static void WriteFormatted (const char *text)
+{
+  char buffer[LONGBUFFSIZE];
+  INT tp,bp;
+  static INT verbatim = FALSE;
+
+  tp = bp = 0;
+  buffer[0] = '\0';
+
+  /* consider begin of line */
+  if (verbatim)
+  {
+    if (END_VERBATIM(text))
+    {
+      verbatim = FALSE;
+
+      /* end verbatim: skip this line */
+      return;
+    }
+    strcat(buffer,INDENT_VERBATIM);
+    bp = strlen(INDENT_VERBATIM);
+  }
+  else if (text[0]=='.')
+  {
+    if (text[1]=='n')
+    {
+      strcat(buffer,REPLACE_DOT_N);
+      tp = 2;
+      bp = strlen(REPLACE_DOT_N);
+    }
+    else if (BEGIN_VERBATIM(text))
+    {
+      verbatim = TRUE;
+
+      /* begin verbatim: skip this line */
+      return;
+    }
+    else
+    {
+      strcat(buffer,REPLACE_DOT);
+      tp = 1;
+      bp = strlen(REPLACE_DOT);
+    }
+  }
+
+  /* copy text, replace tilde and replace tabs by runs of spaces */
+  while (text[tp]!='\0')
+  {
+    switch (text[tp])
+    {
+    case '\t' :
+      do
+        buffer[bp++] = ' ';
+      while (bp%TAB_SIZE);
+      break;
+    case '~' :
+      buffer[bp++] = REPLACE_TILDE;
+      break;
+    default :
+      buffer[bp++] = text[tp];
+    }
+    tp++;
+  }
+
+  /* terminate string */
+  buffer[bp] = '\0';
+
+  UserWrite(buffer);
+}
 
 /****************************************************************************/
 /*D
@@ -124,7 +222,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT PrintHelp (const char *HelpFor,int mode, const char *addText)
+static INT PrintHelpOld (const char *HelpFor,int mode, const char *addText)
 {
   char *s,HelpItem[64],helpfor[BUFFERSIZE];
   INT i,len,found;
@@ -216,6 +314,120 @@ INT PrintHelp (const char *HelpFor,int mode, const char *addText)
   return (HELP_NOT_FOUND);
 }
 
+INT PrintHelp (const char *HelpFor,int mode, const char *addText)
+{
+  char *s,HelpItem[64],helpfor[BUFFERSIZE];
+  INT i,len,found;
+
+  if (strlen(HelpFor)==0)
+    return (HELP_STRING_EMPTY);
+  if (strlen(HelpFor)>BUFFERSIZE-1)
+    return (HELP_STRING_TOO_LONG);
+
+  /* case INSENSITIVE: convert HelpFor to lower case */
+  strcpy(helpfor,HelpFor);
+  s = helpfor;
+  while ((*s=tolower(*(s)))!='\0') s++;
+
+  if (mode==KEYWORD)
+  {
+    /* print first lines of all help pages with helpfor in keyword list
+       (not necessary entire word) */
+    found = 0;
+    for (i=0; i<NHelpFiles; i++)
+    {
+      if (HelpFile[i]==NULL) continue;
+
+      rewind(HelpFile[i]);
+
+      while (fgets(buffer,BUFFERSIZE-1,HelpFile[i])!=NULL)
+        if (DOC_TEXT_BEGIN(buffer))
+        {
+          /* move on to next line */
+          if (fgets(buffer,BUFFERSIZE-1,HelpFile[i])==NULL)
+            REP_ERR_RETURN(1);
+
+          if ((sscanf(ToLower(buffer),"%s",HelpItem)==1)&&(strstr(HelpItem,helpfor)!=NULL))
+          {
+            /* matching: print line */
+            found++;
+            WriteFormatted(buffer);
+          }
+          else
+          {
+            /* search KEYWORDS line */
+            while ((fgets(buffer2,BUFFERSIZE-1,HelpFile[i])!=NULL) && !DOC_TEXT_END(buffer2))
+              if (strstr(buffer2,"KEYWORDS")!=NULL)
+              {
+                /* move on to next line and check it */
+                if (fgets(buffer2,BUFFERSIZE-1,HelpFile[i])==NULL)
+                  REP_ERR_RETURN(1);
+                if (strstr(ToLower(buffer),helpfor)!=NULL)
+                {
+                  /* got it: print first line */
+                  found++;
+                  WriteFormatted(buffer);
+                }
+                break;
+              }
+          }
+          /* move on to end of doc text */
+          do
+            if (DOC_TEXT_END(buffer))
+              break;
+          while (fgets(buffer,BUFFERSIZE-1,HelpFile[i])!=NULL);
+        }
+    }
+
+    if (found)
+      return (HELP_OK);
+    else
+      return (HELP_NOT_FOUND);
+  }
+  else
+  {
+    /* print help page with help item helpfor */
+    longbuff[0] = '\0';
+    len = 0;
+    for (i=0; i<NHelpFiles; i++)
+    {
+      if (HelpFile[i]==NULL) continue;
+
+      rewind(HelpFile[i]);
+
+      while (fgets(buffer,BUFFERSIZE-1,HelpFile[i])!=NULL)
+        if (DOC_TEXT_BEGIN(buffer))
+        {
+          /* move on to next line */
+          if (fgets(buffer,BUFFERSIZE-1,HelpFile[i])==NULL)
+            REP_ERR_RETURN(1);
+
+          /* scan first word */
+          if ((sscanf(ToLower(buffer),"%s",HelpItem)==1)&&(strcmp(HelpItem,helpfor)==0))
+          {
+            /* print help text including first line */
+            do
+              WriteFormatted(buffer);
+            while ((fgets(buffer,BUFFERSIZE-1,HelpFile[i])!=NULL) && !DOC_TEXT_END(buffer));
+
+            if (addText!=NULL) {UserWrite(addText); UserWrite("\n");}
+
+            return (HELP_OK);
+          }
+        }
+    }
+  }
+
+  /* help not found */
+  if (addText!=NULL)
+  {
+    UserWrite(addText);
+    UserWrite("\n");
+  }
+
+  return (HELP_NOT_FOUND);
+}
+
 /****************************************************************************/
 /*D
    CheckHelp - Check if all commands have a help message
@@ -229,7 +441,7 @@ INT PrintHelp (const char *HelpFor,int mode, const char *addText)
    DESCRIPTION:
    This command checks whether all UG commands have a corresponding
    entry in any of the help files. All commands without entry
-   are lsted.
+   are listed.
 
    RETURN VALUE:
    INT
@@ -238,13 +450,9 @@ INT PrintHelp (const char *HelpFor,int mode, const char *addText)
    D*/
 /****************************************************************************/
 
-INT CheckHelp ()
+static INT CheckHelpOld ()
 {
   COMMAND *theCmd;
-#ifdef __NUMERICS__
-  NP_TYPE *theNP;
-  char npname[NAMESIZE];
-#endif
   char HelpItem[128],cmdname[NAMESIZE],*s;
   int i,found,rv;
 
@@ -288,17 +496,26 @@ INT CheckHelp ()
   else
     UserWrite("for all commands on-line help is available\n\n");
 
-#ifdef __NUMERICS__
-  /* loop num proc types */
-  UserWrite("checking num proc types...\n");
+
+  return (rv);
+}
+
+INT CheckHelp ()
+{
+  COMMAND *theCmd;
+  char HelpItem[128],cmdname[NAMESIZE],*s;
+  int i,found,rv;
+
+  /* loop commands */
+  UserWrite("checking commands...\n");
   rv = 0;
-  for (theNP=GetFirstNumProcType(); theNP!=NULL; theNP=GetNextNumProcType(theNP))
+  for (theCmd=GetFirstCommand(); theCmd!=NULL; theCmd=GetNextCommand(theCmd))
   {
     found = FALSE;
-    strcpy(npname,ENVITEM_NAME(theNP));
+    strcpy(cmdname,ENVITEM_NAME(theCmd));
 
     /* case INSENSITIVE: convert the command name to lower case */
-    s = npname;
+    s = cmdname;
     while ((*s=tolower(*(s)))!='\0') s++;
 
     for (i=0; i<NHelpFiles; i++)
@@ -308,27 +525,36 @@ INT CheckHelp ()
       rewind(HelpFile[i]);
 
       while (fgets(buffer,BUFFERSIZE-1,HelpFile[i])!=NULL)
-        if (buffer[0]==HELPSEP)
-          if ((sscanf(buffer+1,"%s",HelpItem)==1)&&(strcmp(HelpItem,npname)==0))
+        if (DOC_TEXT_BEGIN(buffer))
+        {
+          /* move on to next line */
+          if (fgets(buffer,BUFFERSIZE-1,HelpFile[i])==NULL)
+            REP_ERR_RETURN(1);
+
+          /* scan first word */
+          if ((sscanf(ToLower(buffer),"%s",HelpItem)==1)&&(strcmp(HelpItem,cmdname)==0))
           {
             found = TRUE;
             break;
           }
-
+        }
       if (found)
         break;
     }
     if (!found)
     {
+      if (rv==0)
+        UserWrite("no help found for:\n");
+
       rv = 1;
-      UserWriteF("no help found for '%s'\n",ENVITEM_NAME(theNP));
+      UserWriteF("    '%s'\n",ENVITEM_NAME(theCmd));
     }
   }
   if (rv)
-    UserWrite("for all other num proc types on-line help is available\n");
+    UserWrite("for all other commands on-line help is available\n\n");
   else
-    UserWrite("for all num proc types on-line help is available\n");
-#endif
+    UserWrite("for all commands on-line help is available\n\n");
+
 
   return (rv);
 }
