@@ -729,7 +729,7 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge, NODE *after)
               return (NULL);
 
             /* check if moved */
-            V3_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
+            V_DIM_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
             if (diff > MAX_PAR_DIST)
             {
               if (moved)
