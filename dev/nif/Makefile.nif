@@ -6,29 +6,29 @@
 #																			 #
 ##############################################################################
 
-
+.SUFFIXES : .c .m
 
 # include configuration and all makefile macro definitions
 include ../../ug.conf
 
-OBJECTS = NeXTMain.o NeXTGraph.o UGshell.o
+OBJECTS = NeXTInterface.o UGShellWindow.o UGGraphWindow.o
 
 # local C compiler flags
-LCFLAGS = -I../../include
+LCFLAGS = -I../../include -no-precomp -D_NEXT_SOURCE
 
 all : $(OBJECTS) Makefile.nif
 	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libdevN.a $(OBJECTS) 
 
-.c.o:
+.c.o :
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
 
-.m.o:
+.m.o :
 	$(ARCH_CC) $(UG_CFLAGS) $(LCFLAGS) $<
 
-clean:
-	rm -f *.o
+clean :
+	rm -f *.o ../../lib/libdevN.a
 
-extract:
+extract :
 	$(ARCH_AR) $(ARCH_EXFLAGS) ../../lib/libdevN.a $(OBJECTS)
 
-xmc: extract all clean
+xmc : extract all clean
