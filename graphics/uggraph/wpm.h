@@ -42,6 +42,10 @@
 #include "gm.h"
 #endif
 
+#ifndef __NUM__
+#include "num.h"
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the arbitrary order											*/
@@ -255,12 +259,32 @@ struct GridPlotObj2D {
 
   /* data for 2D-View of grid */
   INT PlotElemID;                                                       /* YES or NO									*/
+  INT PlotRefMarks;                                                     /* YES or NO									*/
   INT PlotNodeID;                                                       /* YES or NO									*/
   INT PlotNodes;                                                        /* YES or NO									*/
   INT PlotBoundary;                                                     /* YES or NO									*/
   INT PlotSegmentIDs;                                                   /* YES or NO									*/
   INT WhichElem;                                                        /* see above									*/
   INT ElemColored;                                                      /* YES or NO									*/
+};
+
+struct VecMatPlotObj2D {
+
+  struct PlotObjHead theHead;                           /* the head                                                                     */
+
+  /* data for 2D-View of vector-matrix graph */
+  INT Marker;                                                                   /* YES or NO									*/
+  INT Type[MAXVECTORS];                                         /* YES or NO									*/
+  INT Connections;                                                      /* YES or NO									*/
+  INT Extra;                                                                    /* YES or NO									*/
+  INT Idx;                                                                      /* YES or NO									*/
+  INT Order;                                                                    /* YES or NO									*/
+  INT Dependency;                                                       /* YES or NO									*/
+  INT Boundary;                                                         /* YES or NO									*/
+  INT VecData;                                                          /* YES or NO									*/
+  INT MatData;                                                          /* YES or NO									*/
+  TYPE_VEC_DESC vec;                                                    /* meaningful if VecData YES					*/
+  TYPE_MAT_DESC mat;                                                    /* meaningful if MatData YES					*/
 };
 
 /*----------- application dimension 3 PlotObjs -----------------------------*/
@@ -322,6 +346,7 @@ union PlotObj {
   struct ElemScalarPlotObj2D theEspo;
   struct ElemVectorPlotObj2D theEvpo;
   struct GridPlotObj2D theGpo;
+  struct VecMatPlotObj2D theVmo;
 #endif
 
 #ifdef __THREEDIM__

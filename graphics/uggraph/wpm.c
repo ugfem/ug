@@ -37,6 +37,7 @@
 #include "misc.h"
 #include "plotproc.h"
 #include "evm.h"
+#include "num.h"
 #include "wpm.h"
 
 /****************************************************************************/
@@ -2396,6 +2397,19 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
       break;
     }
 
+  /* set refinement mark option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='r')
+    {
+      if (sscanf(argv[i],"r %d",&iValue)!=1)
+        break;
+      if (iValue==1)
+        theGpo->PlotRefMarks = YES;
+      else if (iValue==0)
+        theGpo->PlotRefMarks = NO;
+      break;
+    }
+
   /* set elem id option */
   for (i=1; i<argc; i++)
     if (argv[i][0]=='e')
@@ -2484,6 +2498,12 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"Node markers","NO");
   UserWrite(buffer);
 
+  if (theGpo->PlotRefMarks == YES)
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"ref marks","YES");
+  else
+    sprintf(buffer,DISPLAY_PO_FORMAT_SS,"ref marks","NO");
+  UserWrite(buffer);
+
   if (theGpo->PlotElemID == YES)
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"ElemID","YES");
   else
@@ -2518,6 +2538,264 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
   else
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"COLORED","NO");
   UserWrite(buffer);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*
+   InitVecMat_2D - Initialization of 2D vector-matrix graph object
+
+   SYNOPSIS:
+   static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv);
+
+   PARAMETERS:
+   .  thePlotObj - the 'PLOTOBJ' to be initialized.
+   .  argc, argv -
+
+   DESCRIPTION:
+   This function does initialization of 2D vector-matrix graph object.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if error occured.
+ */
+/****************************************************************************/
+
+static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
+{
+  DOMAIN *theDomain;
+  FORMAT *theFormat;
+  struct VecMatPlotObj2D *theVmo;
+  INT i,rt,ct;
+  int iValue;
+
+  theVmo = &(thePlotObj->theVmo);
+  theDomain = MGDOMAIN(PO_MG(thePlotObj));
+  theFormat = MGFORMAT(PO_MG(thePlotObj));
+  if (theDomain == NULL) return (NOT_INIT);
+  V2_COPY(theDomain->MidPoint,PO_MIDPOINT(thePlotObj))
+  PO_RADIUS(thePlotObj) = theDomain->radius;
+
+  /* defaults */
+  if (PO_STATUS(thePlotObj)==NOT_INIT)
+  {
+    theVmo->Marker                          = NO;
+    theVmo->Type[NODEVECTOR]        = YES;
+    theVmo->Type[EDGEVECTOR]        = YES;
+    theVmo->Type[ELEMVECTOR]        = YES;
+    theVmo->Connections                     = YES;
+    theVmo->Extra                           = NO;
+    theVmo->Idx                                     = NO;
+    theVmo->Order                           = NO;
+    theVmo->Dependency                      = NO;
+    theVmo->Boundary                        = YES;
+    theVmo->VecData                         = NO;
+    theVmo->MatData                         = NO;
+  }
+
+  /* color mode */
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'm' :
+      if (sscanf(argv[i],"m %d",&iValue)!=1)
+        break;
+      if              (iValue==1) theVmo->Marker = YES;
+      else if (iValue==0) theVmo->Marker = NO;
+      break;
+
+    case 't' :
+      if (strstr(argv[i],"nd")!=NULL) theVmo->Type[NODEVECTOR] = YES;
+      else theVmo->Type[NODEVECTOR] = NO;
+      if (strstr(argv[i],"ed")!=NULL) theVmo->Type[EDGEVECTOR] = YES;
+      else theVmo->Type[EDGEVECTOR] = NO;
+      if (strstr(argv[i],"el")!=NULL) theVmo->Type[ELEMVECTOR] = YES;
+      else theVmo->Type[ELEMVECTOR] = NO;
+      break;
+
+    case 'c' :
+      if (sscanf(argv[i],"c %d",&iValue)!=1)
+        break;
+      if              (iValue==1) theVmo->Connections = YES;
+      else if (iValue==0) theVmo->Connections = NO;
+      break;
+
+    case 'e' :
+      if (sscanf(argv[i],"e %d",&iValue)!=1)
+        break;
+      if              (iValue==1) theVmo->Extra = YES;
+      else if (iValue==0) theVmo->Extra = NO;
+      break;
+
+    case 'i' :
+      if (sscanf(argv[i],"i %d",&iValue)!=1)
+        break;
+      if              (iValue==1) theVmo->Idx = YES;
+      else if (iValue==0) theVmo->Idx = NO;
+      break;
+
+    case 'd' :
+      if (sscanf(argv[i],"d %d",&iValue)!=1)
+        break;
+      if              (iValue==1) theVmo->Dependency = YES;
+      else if (iValue==0) theVmo->Dependency = NO;
+      break;
+
+    case 'o' :
+      if (sscanf(argv[i],"o %d",&iValue)!=1)
+        break;
+      if              (iValue==1) theVmo->Order = YES;
+      else if (iValue==0) theVmo->Order = NO;
+      break;
+
+    case 'b' :
+      if (sscanf(argv[i],"b %d",&iValue)!=1)
+        break;
+      if              (iValue==1) theVmo->Boundary = YES;
+      else if (iValue==0) theVmo->Boundary = NO;
+      break;
+
+    case 'V' :
+      if (ReadTypeVecDescOfFormat(theFormat,&(theVmo->vec),"V",argc,argv))
+      {
+        UserWrite("no vector symbol specified, vec data switched off\n");
+        theVmo->VecData = NO;
+      }
+      else
+        theVmo->VecData = YES;
+      break;
+
+    case 'M' :
+      if (ReadTypeMatDescOfFormat(theFormat,&(theVmo->mat),"M",argc,argv))
+      {
+        UserWrite("no matrix symbol specified, mat data switched off\n");
+        theVmo->MatData = NO;
+      }
+      else
+        theVmo->MatData = YES;
+      break;
+    }
+
+  /* check compatibility of vec and mat desc */
+  if (theVmo->VecData || theVmo->MatData)
+    for (rt=0; rt<NVECTYPES; rt++)
+      if (theVmo->Type[rt])
+      {
+        if (theVmo->VecData)
+          if (!VDT_VECTYPE(&(theVmo->vec),rt))
+          {
+            UserWrite("vec desc does not include types of specified types\n");
+            return (NOT_ACTIVE);
+          }
+        if (theVmo->MatData)
+          for (ct=0; ct<NVECTYPES; ct++)
+            if (theVmo->Type[ct])
+            {
+              if (!M_MATTYPE(&(theVmo->mat),rt,ct))
+              {
+                UserWrite("mat desc does not include column types of specified types\n");
+                return (NOT_ACTIVE);
+              }
+              if (theVmo->VecData)
+                if (VDT_DESCNCOMP(&(theVmo->vec),ct)!=MDT_NROWCOMP(&(theVmo->mat),rt,ct))
+                {
+                  UserWrite("vec desc and mat desc incompatible\n");
+                  return (NOT_ACTIVE);
+                }
+            }
+      }
+
+  return (ACTIVE);
+}
+
+/****************************************************************************/
+/*
+   DisplayVecMat_2D - Display content of 2D vector-matrix graph object
+
+   SYNOPSIS:
+   static INT DisplayVecMat_2D (PLOTOBJ *thePlotObj);
+
+   PARAMETERS:
+   .  thePlotObj -
+
+   DESCRIPTION:
+   This function displays content of 2D vector-matrix graph object.
+
+   RETURN VALUE:
+   INT
+   .n     0 if ok
+   .n     1 if error occured.
+ */
+/****************************************************************************/
+
+static INT DisplayVecMat_2D (PLOTOBJ *thePlotObj)
+{
+  struct VecMatPlotObj2D *theVmo;
+
+  theVmo = &(thePlotObj->theVmo);
+
+  /* print content */
+  if (theVmo->Marker == YES)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"marker","YES");
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"marker","NO");
+
+  if (theVmo->Type[NODEVECTOR] == YES)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"node-vecs","YES");
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"node-vecs","NO");
+
+  if (theVmo->Type[EDGEVECTOR] == YES)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"edge-vecs","YES");
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"edge-vecs","NO");
+
+  if (theVmo->Type[ELEMVECTOR] == YES)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"elem-vecs","YES");
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"elem-vecs","NO");
+
+  if (theVmo->Idx == YES)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"index","YES");
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"index","NO");
+
+  if (theVmo->Connections == YES)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"connections","YES");
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"connections","NO");
+
+  if (theVmo->Extra == YES)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"extra","YES");
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"extra","NO");
+
+  if (theVmo->Order == YES)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"order","YES");
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"order","NO");
+
+  if (theVmo->Dependency == YES)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"dependency","YES");
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"dependency","NO");
+
+  if (theVmo->Boundary == YES)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"boundary","YES");
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"boundary","NO");
+
+  if (theVmo->VecData == YES)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"vec data","YES");
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"vec data","NO");
+
+  if (theVmo->MatData == YES)
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"mat data","YES");
+  else
+    UserWriteF(DISPLAY_PO_FORMAT_SS,"mat data","NO");
 
   return (0);
 }
@@ -3594,6 +3872,11 @@ INT InitPlotObjTypes (void)
   thePOT->Dimension                               = TYPE_2D;
   thePOT->SetPlotObjProc                  = InitGridPlotObject_2D;
   thePOT->DispPlotObjProc                 = DisplayGridPlotObject_2D;
+
+  if ((thePOT=GetPlotObjType("VecMat"))  == NULL) return (1);
+  thePOT->Dimension                               = TYPE_2D;
+  thePOT->SetPlotObjProc                  = InitVecMat_2D;
+  thePOT->DispPlotObjProc                 = DisplayVecMat_2D;
         #endif
 
         #ifdef __THREEDIM__
