@@ -2170,7 +2170,7 @@ static FRONTCOMP *CreateOrSelectFC (
 /*                                                                          */
 /****************************************************************************/
 
-static int FillElementContext(INT FlgForAccel, ELEMENT_CONTEXT* theElementContext, FRONTCOMP* theFC, FRONTCOMP* thenewFC, FRONTCOMP* the_old_succ)
+static INT FillElementContext(INT FlgForAccel, ELEMENT_CONTEXT* theElementContext, FRONTCOMP* theFC, FRONTCOMP* thenewFC, FRONTCOMP* the_old_succ)
 {
   theElementContext->theNode[0] = FRONTN(theFC);
   theElementContext->theNode[1] = FRONTN(the_old_succ);
@@ -2252,7 +2252,7 @@ static int FillElementContext(INT FlgForAccel, ELEMENT_CONTEXT* theElementContex
 /*																			*/
 /****************************************************************************/
 
-static int FrontcomponentUpdate(INT FlgForAccel, FRONTCOMP* theFC, FRONTCOMP* the_old_succ, FRONTCOMP* thenewFC, ELEMENT_CONTEXT* theElementContext )
+static INT FrontcomponentUpdate(INT FlgForAccel, FRONTCOMP* theFC, FRONTCOMP* the_old_succ, FRONTCOMP* thenewFC, ELEMENT_CONTEXT* theElementContext )
 {
   /* 1.) theFC : */
   FCNGB(theFC) = theElementContext->thenewElement;
@@ -2282,7 +2282,7 @@ static int FrontcomponentUpdate(INT FlgForAccel, FRONTCOMP* theFC, FRONTCOMP* th
 /*																			*/
 /****************************************************************************/
 
-static int FL_FC_Disposer(FRONTCOMP *disp_FC, FRONTLIST *disp_FL)
+static INT FL_FC_Disposer(FRONTCOMP *disp_FC, FRONTLIST *disp_FL)
 {
   if (disp_FC != NULL)
     DisposeFrontComp (disp_FL, disp_FC);

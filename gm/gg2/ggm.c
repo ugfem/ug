@@ -213,11 +213,11 @@ FRONTLIST *CreateFrontList (INDEPFRONTLIST *myIFL, INT SubdomainID)
 /*                                                                          */
 /****************************************************************************/
 
-FRONTCOMP *CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, int ncomp, NODE **NodeHandle)
+FRONTCOMP *CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, INT ncomp, NODE **NodeHandle)
 {
   MULTIGRID *theMG;
   FRONTCOMP *pfc,*FChandle;
-  int i;
+  INT i;
 
   theMG = MYMG(MYGRID(mylist));
 
