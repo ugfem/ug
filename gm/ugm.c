@@ -6159,8 +6159,16 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
                         #endif
     }
     sum = red + green + yellow;
-    sum_div_red = sum / red;
-    redplusgreen_div_red = ((float)(red+green)) / red;
+    if (red > 0)
+    {
+      sum_div_red = sum / red;
+      redplusgreen_div_red = ((float)(red+green)) / red;
+    }
+    else
+    {
+      sum_div_red = 0.0;
+      redplusgreen_div_red = 0.0;
+    }
 
     if (verbose && gridflag)
       UserWriteF("   %2d  %9d %9d %9d  %9.0f    %2.3f      %2.3f\n",
@@ -6171,8 +6179,16 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
     mg_yellow       += yellow;
     mg_sum          += sum;
   }
-  mg_sum_div_red                  = mg_sum / mg_red;
-  mg_redplusgreen_div_red = ((float)(mg_red + mg_green)) / mg_red;
+  if (mg_red > 0)
+  {
+    mg_sum_div_red                  = mg_sum / mg_red;
+    mg_redplusgreen_div_red = ((float)(mg_red + mg_green)) / mg_red;
+  }
+  else
+  {
+    mg_sum_div_red                  = 0.0;
+    mg_redplusgreen_div_red = 0.0;
+  }
 
   if (verbose && gridflag)
     UserWriteF("  ALL  %9d %9d %9d  %9.0f    %2.3f      %2.3f\n",
@@ -6185,11 +6201,28 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
     used = HeapUsed(MGHEAP(theMG))-heap;
     free_bytes = (HeapSize(MGHEAP(theMG))-used)>>10;
     mg_sum_size = used>>10;
-    mg_red_size = mg_sum_size*mg_red/mg_sum;
-    mg_green_size = mg_sum_size*mg_green/mg_sum;
-    mg_yellow_size = (float)mg_sum_size*mg_yellow/mg_sum;
-    mg_sum_size_div_red = ((float)mg_sum_size)/mg_red;
-    mg_redplusgreen_size_div_red = ((float)(mg_red_size+mg_green_size))/mg_red;
+    if (mg_sum > 0)
+    {
+      mg_red_size = mg_sum_size*mg_red/mg_sum;
+      mg_green_size = mg_sum_size*mg_green/mg_sum;
+      mg_yellow_size = (float)mg_sum_size*mg_yellow/mg_sum;
+    }
+    else
+    {
+      mg_red_size = 0.0;
+      mg_green_size = 0.0;
+      mg_yellow_size = 0.0;
+    }
+    if (mg_red > 0)
+    {
+      mg_sum_size_div_red = ((float)mg_sum_size)/mg_red;
+      mg_redplusgreen_size_div_red = ((float)(mg_red_size+mg_green_size))/mg_red;
+    }
+    else
+    {
+      mg_sum_size_div_red = 0.0;
+      mg_redplusgreen_size_div_red = 0.0;
+    }
   }
 
   /* set heap info in refine info */
@@ -6197,6 +6230,7 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
   {
     float new;
     float newpergreen;
+    float predmax;
 
     SETMARKCOUNT(REFINEINFO(theMG),markcount[MAXLEVEL]);
 
@@ -6211,20 +6245,49 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
     SETPREDNEW1(REFINEINFO(theMG),new);
 
     SETREAL(REFINEINFO(theMG),mg_sum);
-    SETPREDMAX(REFINEINFO(theMG),free_bytes/mg_sum_size_div_red);
+    if (mg_sum_size_div_red > 0.0)
+      predmax = free_bytes/mg_sum_size_div_red;
+    else
+      predmax = free_bytes/
+#ifdef __TWODIM__
+                sizeof(struct quadrilateral);
+#else
+                sizeof(struct hexahedron);
+#endif
+    SETPREDMAX(REFINEINFO(theMG),predmax);
   }
 
   /* list heap info */
   if (verbose && gridflag)
   {
+    float predmax0,predmax1;
+
     UserWriteF(" HEAP  %7dKB %7dKB %7dKB  %7dKB    %2.3fKB    %2.3fKB\n",
                mg_red_size,mg_green_size,mg_yellow_size,mg_sum_size,
                mg_sum_size_div_red,mg_redplusgreen_size_div_red);
 
+    if (mg_sum_size_div_red > 0.0)
+      predmax0 = free_bytes/mg_sum_size_div_red;
+    else
+      predmax0 = free_bytes/
+#ifdef __TWODIMM__
+                 sizeof(struct quadrilateral);
+#else
+                 sizeof(struct hexahedron);
+#endif
+    if (mg_redplusgreen_size_div_red > 0.0)
+      predmax0 = free_bytes/mg_redplusgreen_size_div_red;
+    else
+      predmax0 = free_bytes/
+#ifdef __TWODIM__
+                 sizeof(struct quadrilateral);
+#else
+                 sizeof(struct hexahedron);
+#endif
+
     UserWriteF(" EST  FREE=%7dKB  MAXNEWELEMENTS free_bytes/(SUM/RED)=%9.0f "
                "FREE/((RED+GREEN)/RED)=%9.0f\n",
-               free_bytes,free_bytes/mg_sum_size_div_red,
-               free_bytes/mg_redplusgreen_size_div_red);
+               free_bytes,predmax0,predmax1);
     UserWriteF(" EST %2d  ELEMS=%9.0f MARKCOUNT=%9.0f PRED_NEW0=%9.0f PRED_NEW1=%9.0f PRED_MAX=%9.0f\n",
                REFINESTEP(REFINEINFO(theMG)),REAL(REFINEINFO(theMG)),MARKCOUNT(REFINEINFO(theMG)),
                PREDNEW0(REFINEINFO(theMG)),PREDNEW1(REFINEINFO(theMG)),PREDMAX(REFINEINFO(theMG)));
@@ -6259,7 +6322,8 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
     }
     UserWriteF("    ALL %9d %9d         %2.3f",mg_greenrulesons[MAXLEVEL][MAX_SONS],
                mg_greenrules[MAXLEVEL],
-               ((float)mg_greenrulesons[MAXLEVEL][MAX_SONS])/mg_greenrules[MAXLEVEL]);
+               (mg_greenrules[MAXLEVEL]) ? ((float)mg_greenrulesons[MAXLEVEL][MAX_SONS])/
+               mg_greenrules[MAXLEVEL] : 0.0);
     for (j=0; j<maxsons; j++)
     {
       UserWriteF(" %9d",mg_greenrulesons[MAXLEVEL][j]);
@@ -6329,13 +6393,18 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
 
     if (lbflag >= 2)
     {
+      float memeff;
+
       UserWriteF("%5s %9s %9s %9s %9s %6s\n","LEVEL","SUM","MASTER","HGHOST","VGHOST","MEMEFF");
       for (i=0; i<=TOPLEVEL(theMG); i++)
       {
         sum_elements = lbinfo[procs][3*i]+lbinfo[procs][3*i+1]+lbinfo[procs][3*i+2];
+        if (sum_elements > 0)
+          memeff = ((float)lbinfo[procs][3*i])/sum_elements*100;
+        else
+          memeff = 0.0;
         UserWriteF("%4d %9d %9d %9d %9d  %3.2f\n",i,sum_elements,
-                   lbinfo[procs][3*i],lbinfo[procs][3*i+1],lbinfo[procs][3*i+2],
-                   ((float)lbinfo[procs][3*i])/sum_elements*100);
+                   lbinfo[procs][3*i],lbinfo[procs][3*i+1],lbinfo[procs][3*i+2],memeff);
       }
       UserWrite("\n");
 
@@ -6343,15 +6412,20 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
       for (i=0; i<procs; i++)
       {
         sum_elements = lbinfo[i][3*MAXLEVEL]+lbinfo[i][3*MAXLEVEL+1]+lbinfo[i][3*MAXLEVEL+2];
+        if (sum_elements > 0)
+          memeff = ((float)lbinfo[i][3*MAXLEVEL])/sum_elements*100;
+        else
+          memeff = 0.0;
         UserWriteF("%4d %9d %9d %9d %9d  %3.2f\n",i,sum_elements,
-                   lbinfo[i][3*MAXLEVEL],lbinfo[i][3*MAXLEVEL+1],lbinfo[i][3*MAXLEVEL+2],
-                   ((float)lbinfo[i][3*MAXLEVEL])/sum_elements*100);
+                   lbinfo[i][3*MAXLEVEL],lbinfo[i][3*MAXLEVEL+1],lbinfo[i][3*MAXLEVEL+2],memeff);
       }
       UserWrite("\n");
     }
 
     if (lbflag >= 1)
     {
+      float memeff;
+
       for (i=0; i<procs; i++)
       {
         master_elements += lbinfo[i][3*MAXLEVEL];
@@ -6359,10 +6433,13 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
         vghost_elements += lbinfo[i][3*MAXLEVEL+2];
       }
       total_elements = master_elements + hghost_elements + vghost_elements;
-
+      if (total_elements > 0)
+        memeff = ((float)master_elements)/total_elements*100;
+      else
+        memeff = 0.0;
       UserWriteF("%9s %9s %9s %9s %6s\n","TOTAL","MASTER","HGHOST","VGHOST","MEMEFF");
       UserWriteF("%9d %9d %9d %9d  %3.2f\n",total_elements,master_elements,hghost_elements,
-                 vghost_elements,((float)master_elements)/total_elements*100);
+                 vghost_elements,memeff);
     }
 
   }
