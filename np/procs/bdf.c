@@ -634,12 +634,10 @@ Continue:
       ret = QuadraticFittedMin (bdf->list_dt,bdf->list_work,bdf->list_n,&qfm_dt);
       if (ret==0)
       {
-        UserWriteF("QUADRATIC_FITTED MIN:         %f\n",(float)(qfm_dt*3.17098e-8));
         qfm_dt = MAX(0.5*bdf->dt,qfm_dt);
         qfm_dt = MIN(2.0*bdf->dt,qfm_dt);
         qfm_dt = MAX(bdf->dtmin,qfm_dt);
         qfm_dt = MIN(bdf->dtmax,qfm_dt);
-        UserWriteF("QUADRATIC_FITTED MIN (REST.): %f\n",(float)(qfm_dt*3.17098e-8));
         bdf->dt = qfm_dt;
         qfm = 1;
       }
