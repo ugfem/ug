@@ -4738,7 +4738,8 @@ static INT MarkCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   ELEMENT *theElement;
   char rulename[32];
-  INT i,j,l,mode,rv,Rule,sid;
+  INT i,j,l,mode,rv,sid;
+  enum RefinementRule Rule;
   DOUBLE_VECTOR global;
   DOUBLE x,X,y,Y;
   long nmarked;
@@ -4785,16 +4786,16 @@ static INT MarkCommand (INT argc, char **argv)
   {
     /* set the default rule */
     strcpy(rulename,myMR[0].RuleName);
-    Rule = myMR[0].RuleId;
+    Rule = (enum RefinementRule)myMR[0].RuleId;
     Side = NO_SIDE_SPECIFIED;
   }
   else
   {
-    Rule = NO_RULE_SPECIFIED;
+    Rule = (enum RefinementRule)NO_RULE_SPECIFIED;
     for (i=0; i<NO_OF_RULES; i++)
       if (strcmp(rulename,myMR[i].RuleName)==0)
       {
-        Rule = myMR[i].RuleId;
+        Rule = (enum RefinementRule)myMR[i].RuleId;
         break;
       }
 
