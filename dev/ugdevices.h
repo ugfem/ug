@@ -91,7 +91,7 @@
 #define TEXT_INDEXED                    2
 
 /* buffer space for command line input */
-#define INPUTBUFFERLEN                  256
+#define INPUTBUFFERLEN                  4096
 
 /* event types */
 #define EVENT_ERROR                     0
