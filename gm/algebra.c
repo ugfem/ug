@@ -3274,7 +3274,8 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
   MULTIGRID *theMG;
   VECTOR **table,*theVec;
   MATRIX *theMat,*MatTable[MATTABLESIZE];
-  DOMAIN *theDomain;
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
   INT i,entries,nm;
   HEAP *theHeap;
 
@@ -3282,9 +3283,9 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
   entries = NVEC(theGrid);
 
   /* calculate the diameter of the bounding rectangle of the domain */
-  theDomain = MGDOMAIN(theMG);
-  if (theDomain==NULL) return (1);
-  InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / theDomain->radius;
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
+  InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / BVPD_RADIUS(theBVPDesc);
 
   /* allocate memory for the node list */
   theHeap = MGHEAP(theMG);
@@ -4310,7 +4311,6 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT 
 static INT LexAlgDep (GRID *theGrid, const char *data)
 {
   MULTIGRID *theMG;
-  DOMAIN *theDomain;
   VECTOR *theVector,*NBVector;
   MATRIX *theMatrix;
   COORD_VECTOR pos,nbpos;
@@ -4319,6 +4319,8 @@ static INT LexAlgDep (GRID *theGrid, const char *data)
   INT i,order,res;
   INT Sign[DIM],Order[DIM],xused,yused,zused,error,SpecialTreatSkipVecs;
   char ord[3];
+  BVP *theBVP;
+  BVP_DESC theBVPDesc;
 
   /* read ordering directions */
         #ifdef __TWODIM__
@@ -4398,9 +4400,9 @@ static INT LexAlgDep (GRID *theGrid, const char *data)
   theMG   = MYMG(theGrid);
 
   /* find an approximate measure for the mesh size */
-  theDomain = MGDOMAIN(theMG);
-  if (theDomain==NULL) return (1);
-  InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / theDomain->radius;
+  theBVP = MG_BVP(theMG);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
+  InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / BVPD_RADIUS(theBVPDesc);
 
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
   {
