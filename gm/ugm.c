@@ -6310,11 +6310,13 @@ void ListVectorOfElementSelection (MULTIGRID *theMG, INT matrixopt, INT dataopt)
       GetVectorsOfEdges(theElement,&cnt,vList);
       for (i=0; i<cnt; i++) ListVector(theMG,vList[i],matrixopt,dataopt);
     }
+                #ifdef __THREEDIM__
     if (TYPE_DEF_IN_MG(theMG,SIDEVECTOR))
     {
       GetVectorsOfSides(theElement,&cnt,vList);
       for (i=0; i<cnt; i++) ListVector(theMG,vList[i],matrixopt,dataopt);
     }
+                #endif
     if (TYPE_DEF_IN_MG(theMG,ELEMVECTOR))
     {
       GetVectorsOfElement(theElement,&cnt,vList);

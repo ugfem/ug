@@ -297,11 +297,13 @@ static INT ProcessElementDescription (MULTIGRID *theMG, GENERAL_ELEMENT *el)
 
   /* side vector */
   svector_offset[tag] = 0;
-  if (TYPE_DEF_IN_MG(theMG,ELEMVECTOR))
+        #ifdef __THREEDIM__
+  if (TYPE_DEF_IN_MG(theMG,SIDEVECTOR))
   {
     svector_offset[tag] = p_count;
     p_count += el->sides_of_elem;
   }
+        #endif
 
   /* so far for an inner element */
   el->inner_size = sizeof(struct generic_element) + (p_count-1)*sizeof(void *);
