@@ -935,7 +935,7 @@ static INT CreateCornerPoints (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp)
 }
 
 /* domain interface function: for description see domain.h */
-BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
+BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
 {
   STD_BVP *theBVP;
   DOMAIN *theDomain;
@@ -953,6 +953,8 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   theBVP = (STD_BVP *)BVP_GetByName(name);
   if (theBVP == NULL)
     return(NULL);
+  currBVP = theBVP;
+
   theDomain = theBVP->Domain;
   if (theDomain == NULL)
     return(NULL);
@@ -969,18 +971,18 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
 
   /* create parameter patches */
   maxSubDomains = 0;
-  sides = (PATCH **)GetTmpMem(Heap,nsides*sizeof(PATCH *));
+  sides = (PATCH **)GetTmpMem(Heap,nsides*sizeof(PATCH *),MarkKey);
   for (i=0; i<nsides; i++)
     sides[i] = NULL;
 
   if (sides == NULL)
-    return(NULL);
+    return (NULL);
   theBVP->nsides = nsides;
   for (theSegment=GetFirstBoundarySegment(theDomain); theSegment!=NULL;
        theSegment = GetNextBoundarySegment(theSegment))
   {
     if ((theSegment->id<0)||(theSegment->id>=nsides))
-      return(NULL);
+      return (NULL);
     thePatch=(PATCH *)GetFreelistMemory(Heap,sizeof(PARAMETER_PATCH));
     if (thePatch == NULL)
       return (NULL);
@@ -1017,7 +1019,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   for (theLinSegment=GetFirstLinearSegment(theDomain); theLinSegment!=NULL;
        theLinSegment = GetNextLinearSegment(theLinSegment)) {
     if ((theLinSegment->id<0)||(theLinSegment->id>=nsides))
-      return(NULL);
+      return (NULL);
     thePatch=(PATCH *)GetFreelistMemory(Heap,sizeof(LINEAR_PATCH));
     if (thePatch == NULL)
       return (NULL);
@@ -1041,14 +1043,14 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
     /* TODO: why this here??? (CVS-merge mess-up?) */
     if (theProblem != NULL) {
       UserWrite("Use CreateBoundaryValueProblem!");
-      return(NULL);
+      return (NULL);
     }
   }
   theBVP->numOfSubdomains = maxSubDomains;
   PRINTDEBUG(dom,1,(" bvp nsubcf %x\n",theBVP->numOfSubdomains));
   for (i=0; i<nsides; i++)
     if (sides[i] == NULL)
-      return(NULL);
+      return (NULL);
 
   if (theProblem != NULL)
     for (theBndCond=GetFirstBoundaryCondition(theProblem);
@@ -1056,16 +1058,16 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
     {
       i = theBndCond->id;
       if ((i<0)||(i>=nsides))
-        return(NULL);
+        return (NULL);
       thePatch = sides[i];
       PARAM_PATCH_BC(thePatch) = theBndCond->BndCond;
       PARAM_PATCH_BCD(thePatch) = theBndCond->data;
     }
 
   /* create point patches */
-  corners = (PATCH **)GetTmpMem(Heap,ncorners*sizeof(PATCH *));
+  corners = (PATCH **)GetTmpMem(Heap,ncorners*sizeof(PATCH *),MarkKey);
   if (corners == NULL)
-    return(NULL);
+    return (NULL);
   theBVP->ncorners = ncorners;
   for (i=0; i<ncorners; i++)
   {
@@ -1134,7 +1136,7 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   /* create line patches */
   nlines = 0;
     #ifdef __THREEDIM__
-  lines = (PATCH **)GetTmpMem(Heap,ncorners*ncorners*sizeof(PATCH *));
+  lines = (PATCH **)GetTmpMem(Heap,ncorners*ncorners*sizeof(PATCH *),MarkKey);
   if (lines == NULL)
     return(NULL);
   err = 0;
@@ -1266,19 +1268,18 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
   Mesh->VertexPrio = NULL;
   Mesh->ElementLevel = NULL;
   Mesh->ElementPrio = NULL;
-  Mesh->theBndPs = (BNDP **) GetTmpMem(Heap,n*sizeof(BNDP *));
+  Mesh->theBndPs = (BNDP **) GetTmpMem(Heap,n*sizeof(BNDP *),MarkKey);
   if (Mesh->theBndPs == NULL)
-    return(NULL);
+    return (NULL);
 
   if (CreateCornerPoints(Heap,theBVP,Mesh->theBndPs))
-    return(NULL);
+    return (NULL);
 
   PRINTDEBUG(dom,1,("mesh n %d\n",Mesh->nBndP));
   for (i=0; i<theBVP->ncorners; i++)
     PRINTDEBUG(dom,1,(" id %d\n",
                       BND_PATCH_ID((BND_PS*)(Mesh->theBndPs[i]))));
 
-  currBVP = theBVP;
 
   /* allocate s2p table */
   STD_BVP_NDOMPART(theBVP) = DOMAIN_NPARTS(theDomain);
@@ -1948,7 +1949,7 @@ static INT GenerateBnodes (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
 
 #ifdef __TWODIM__
 static INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
-                             INT *sides, INT ***corners, DOUBLE h)
+                             INT *sides, INT ***corners, DOUBLE h, INT MarkKey)
 {
   INT i,j,m,n,nside,left,right;
   DOUBLE length,plength,step;
@@ -2369,7 +2370,7 @@ static INT TriangulatePatch (HEAP *Heap, PATCH *p, BNDP **bndp,
 
 #ifdef __THREEDIM__
 static INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
-                             INT *sides, INT ***corners, DOUBLE h)
+                             INT *sides, INT ***corners, DOUBLE h, INT MarkKey)
 {
   INT i,j,n,from,to,k;
   DOUBLE step;
@@ -2386,7 +2387,7 @@ static INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
   nodeid = nc;
   if (bndp == NULL)
   {
-    vlist = (INT*) GetTmpMem(Heap,nc*nc*sizeof(INT));
+    vlist = (INT*) GetTmpMem(Heap,nc*nc*sizeof(INT),MarkKey);
     if (vlist == NULL)
       return(nc);
   }
@@ -2499,7 +2500,7 @@ static INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
 }
 #endif
 
-MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
+MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv, INT MarkKey)
 {
   STD_BVP *theBVP;
   INT i,j,m,n;
@@ -2514,9 +2515,9 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   for (i=currBVP->sideoffset; i<currBVP->sideoffset+theBVP->nsides; i++)
     PRINTDEBUG(dom,1,(" addr %x\n",PARAM_PATCH_BS(currBVP->patches[i])));
 
-  mesh = (MESH *) GetTmpMem(Heap,sizeof(MESH));
+  mesh = (MESH *) GetMem(Heap,sizeof(MESH),FROM_BOTTOM);
   if (mesh == NULL)
-    return(NULL);
+    return (NULL);
 
   coeff = NULL;
   h = 0.0;
@@ -2539,32 +2540,32 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   mesh->Element_corner_ids = NULL;
   mesh->nSubDomains = theBVP->numOfSubdomains;
   mesh->nSides =
-    (INT *) GetTmpMem(Heap,(theBVP->numOfSubdomains+1)*sizeof(INT));
+    (INT *) GetMem(Heap,(theBVP->numOfSubdomains+1)*sizeof(INT),FROM_BOTTOM);
   if (mesh->nSides == NULL)
-    return(NULL);
+    return (NULL);
   for (i=0; i<=mesh->nSubDomains; i++)
     mesh->nSides[i] = 0;
   mesh->Side_corners =
-    (INT **) GetTmpMem(Heap,(theBVP->numOfSubdomains+1)*sizeof(INT*));
+    (INT **) GetMem(Heap,(theBVP->numOfSubdomains+1)*sizeof(INT*),FROM_BOTTOM);
   if (mesh->Side_corners == NULL)
-    return(NULL);
+    return (NULL);
   mesh->Side_corner_ids =
-    (INT ***) GetTmpMem(Heap,(theBVP->numOfSubdomains+1)*sizeof(INT**));
+    (INT ***) GetMem(Heap,(theBVP->numOfSubdomains+1)*sizeof(INT**),FROM_BOTTOM);
   if (mesh->Side_corner_ids == NULL)
-    return(NULL);
+    return (NULL);
 
   n = theBVP->ncorners;
   if (coeff != NULL)
     n = GenerateBnodes(Heap,theBVP,NULL,mesh->nSides,NULL,coeff);
   else if (h>0)
-    n = GenerateBnodes_h(Heap,theBVP,NULL,mesh->nSides,NULL,(DOUBLE) h);
+    n = GenerateBnodes_h(Heap,theBVP,NULL,mesh->nSides,NULL,(DOUBLE) h,MarkKey);
 
   if (n == -1)
-    return(NULL);
+    return (NULL);
   mesh->nBndP = n;
-  mesh->theBndPs = (BNDP **) GetTmpMem(Heap,n*sizeof(BNDP *));
+  mesh->theBndPs = (BNDP **) GetMem(Heap,n*sizeof(BNDP *),FROM_BOTTOM);
   if (mesh->theBndPs == NULL)
-    return(NULL);
+    return (NULL);
 
   for (i=0; i<=mesh->nSubDomains; i++)
     PRINTDEBUG(dom,1,("mesh sd i %d m %d\n",i,mesh->nSides[i]));
@@ -2574,7 +2575,7 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
     PRINTDEBUG(dom,1,(" id %d\n",PATCH_ID(theBVP->patches[i])));
 
   if (CreateCornerPoints(Heap,theBVP,mesh->theBndPs))
-    return(NULL);
+    return (NULL);
 
   for (i=0; i<theBVP->ncorners; i++)
     PRINTDEBUG(dom,1,("   i %d  patch id %d\n",i,
@@ -2590,12 +2591,12 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
     }
     else
     {
-      mesh->Side_corners[i] = (INT *) GetTmpMem(Heap,m*sizeof(INT));
+      mesh->Side_corners[i] = (INT *) GetMem(Heap,m*sizeof(INT),FROM_BOTTOM);
       if (mesh->Side_corners[i] == NULL)
-        return(NULL);
-      mesh->Side_corner_ids[i] = (INT **) GetTmpMem(Heap,m*sizeof(INT*));
+        return (NULL);
+      mesh->Side_corner_ids[i] = (INT **) GetMem(Heap,m*sizeof(INT*),FROM_BOTTOM);
       if (mesh->Side_corner_ids[i] == NULL)
-        return(NULL);
+        return (NULL);
     }
     for (j=0; j<m; j++)
     {
@@ -2605,9 +2606,9 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
                         mesh->Side_corners[i][j]));
 
       mesh->Side_corner_ids[i][j] =
-        (INT *)GetTmpMem(Heap,DIM*sizeof(INT));
+        (INT *)GetMem(Heap,DIM*sizeof(INT),FROM_BOTTOM);
       if (mesh->Side_corner_ids[i][j] == NULL)
-        return(NULL);
+        return (NULL);
     }
   }
 
@@ -2616,9 +2617,9 @@ MESH *BVP_GenerateMesh (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
                        mesh->nSides,mesh->Side_corner_ids,coeff);
   else if (h>0)
     n = GenerateBnodes_h(Heap,theBVP,mesh->theBndPs,
-                         mesh->nSides,mesh->Side_corner_ids,(DOUBLE) h);
+                         mesh->nSides,mesh->Side_corner_ids,(DOUBLE) h,MarkKey);
   if (n == -1)
-    return(NULL);
+    return (NULL);
 
   for (i=0; i<=mesh->nSubDomains; i++)
   {
@@ -2817,7 +2818,7 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
 {
   BND_PS *ps;
   PATCH *p;
-  DOUBLE lambda[DIM_OF_BND+1],global[DIM+1];
+  DOUBLE lambda[DOM_N_IN_PARAMS],global[DOM_N_IN_PARAMS];
   INT i;
 
   PRINTDEBUG(dom,1,(" BndCond loc %f\n",local[0]));
@@ -2846,12 +2847,11 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
         return(1);
     }
     /* besides gobal coordinates return also whether element lies left or right of boundary */
-    global[DIM] = (SideIsCooriented(ps)) ? ELEM_IS_LEFT : ELEM_IS_RIGHT;
+    global[DOM_EVAL_FOR_SD] = (SideIsCooriented(ps)) ? PARAM_PATCH_LEFT(p) : PARAM_PATCH_RIGHT(p);
     if (in == NULL)
       return((*(currBVP->GeneralBndCond))(NULL,NULL,global,value,type));
 
-    /* TODO: copy left/right (s.a.) also to in? (calling function has to provide enough storage) */
-    for (i=0; i<DIM; i++)
+    for (i=0; i<DOM_N_IN_PARAMS; i++)
       in[i] = global[i];
 
     return((*(currBVP->GeneralBndCond))(NULL,NULL,in,value,type));
@@ -2861,12 +2861,11 @@ INT BNDS_BndCond (BNDS *aBndS, DOUBLE *local, DOUBLE *in, DOUBLE *value, INT *ty
     return (1);
 
   /* besides parametric coordinates return also whether element lies left or right of boundary */
-  lambda[DIM_OF_BND] = (SideIsCooriented(ps)) ? ELEM_IS_LEFT : ELEM_IS_RIGHT;
+  lambda[DOM_EVAL_FOR_SD] = (SideIsCooriented(ps)) ? PARAM_PATCH_LEFT(p) : PARAM_PATCH_RIGHT(p);
   if (in == NULL)
     return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,lambda,value,type));
 
-  /* TODO: copy left/right (s.a.) also to in? (calling function has to provide enough storage) */
-  for (i=0; i<DIM_OF_BND; i++)
+  for (i=0; i<DOM_N_IN_PARAMS; i++)
     in[i] = lambda[i];
   return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,in,value,type));
 }
@@ -3466,7 +3465,7 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
 {
   BND_PS *ps;
   PATCH *p;
-  DOUBLE global[DIM];
+  DOUBLE global[DOM_N_IN_PARAMS];
   DOUBLE *local;
 
   if (i < 0)
@@ -3519,24 +3518,32 @@ INT BNDP_BndCond (BNDP *aBndP, INT *n, INT i, DOUBLE *in, DOUBLE *value, INT *ty
       /* copy globals */
       for (i=0; i<DIM; i++)
         global[i] = pos[i];
-      return (0);
     }
     else
     if (PatchGlobal(p,local,global))
       return(1);
 
+    global[DOM_EVAL_FOR_SD] = DOM_EVAL_SD_UNKNOWN;
     if (in == NULL)
       return((*(currBVP->GeneralBndCond))(NULL,NULL,global,value,type));
     for (i=0; i<DIM; i++)
       in[i] = global[i];
+    /* maybe the user has set in[DOM_EVAL_FOR_SD]: don't erase it */
     return((*(currBVP->GeneralBndCond))(NULL,NULL,in,value,type));
   }
 
   if (in == NULL)
+  {
+    DOUBLE loc[DOM_N_IN_PARAMS];
+    for (i=0; i<DIM_OF_BND; i++)
+      loc[i] = local[i];
+    loc[DOM_EVAL_FOR_SD] = DOM_EVAL_SD_UNKNOWN;
     return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,local,value,type));
+  }
 
   for (i=0; i<DIM_OF_BND; i++)
     in[i] = local[i];
+  /* maybe the user has set in[DOM_EVAL_FOR_SD]: don't erase it */
   return((*PARAM_PATCH_BC (p))(PARAM_PATCH_BCD(p),NULL,in,value,type));
 }
 
