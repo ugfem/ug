@@ -25,7 +25,10 @@ extern void MyError (char * ch);
 typedef int INDEX;
 typedef int BOOL;
 
-class twoint { public: int i1, i2; twoint() {}; };
+class twoint {
+public: int i1, i2; twoint() {};
+  twoint(int ii1, int ii2) {i1 = ii1; i2 = ii2;}
+};
 class threeint { public: int i1, i2, i3; threeint() {}; };
 class fourint { public: int i1, i2, i3, i4; fourint() {}; };
 
