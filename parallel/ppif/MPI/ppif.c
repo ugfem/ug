@@ -63,7 +63,7 @@
 
 #include "../ppif_general.h"
 
-#include "compiler.h"
+/*#include "compiler.h"*/
 
 /****************************************************************************/
 /*                                                                          */
@@ -120,7 +120,7 @@ typedef int      *msgid;
 /****************************************************************************/
 
 /* Revision Control System string */
-RCSID("$Header$",PPIF_RCS_STRING)
+/*RCSID("$Header$",PPIF_RCS_STRING)*/
 
 
 /****************************************************************************/
@@ -436,7 +436,7 @@ int Concentrate (void *data, int size)
 
 {
   if (me != master)
-    if (SendSync (uptree, data, size) < NULL) return (PPIF_FAILURE);
+    if (SendSync (uptree, data, size) < 0) return (PPIF_FAILURE);
 
   return (PPIF_SUCCESS);
 }
@@ -447,7 +447,7 @@ int GetConcentrate (int slave, void *data, int size)
   VChannel *chan;
 
   if (slave < degree)
-    if (RecvSync (downtree[slave], data, size) < NULL) return (PPIF_FAILURE);
+    if (RecvSync (downtree[slave], data, size) < 0) return (PPIF_FAILURE);
 
   return (PPIF_SUCCESS);
 }
@@ -456,7 +456,7 @@ int Spread (int slave, void *data, int size)
 
 {
   if (slave < degree)
-    if (SendSync (downtree[slave], data, size) < NULL) return (PPIF_FAILURE);
+    if (SendSync (downtree[slave], data, 0) < 0) return (PPIF_FAILURE);
 
   return (PPIF_SUCCESS);
 }
@@ -465,7 +465,7 @@ int GetSpread (void *data, int size)
 
 {
   if (me!=master)
-    if (RecvSync (uptree, data, size) < NULL) return (PPIF_FAILURE);
+    if (RecvSync (uptree, data, size) < 0) return (PPIF_FAILURE);
 
   return (PPIF_SUCCESS);
 }
