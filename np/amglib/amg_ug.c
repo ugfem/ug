@@ -123,6 +123,8 @@ typedef struct
    $Header$
  */
 
+static INT amg_MarkKey;
+
 /****************************************************************************/
 /*																			*/
 /* forward declarations of functions used before they are defined			*/
@@ -219,7 +221,7 @@ static INT AMGSolverPreProcess (NP_LINEAR_SOLVER *theNP, INT level,
   theGrid = GRID_ON_LEVEL(theMG,level);
 
   /* mark heap for use by amg */
-  Mark(MGHEAP(theMG),FROM_BOTTOM);
+  Mark(MGHEAP(theMG),FROM_BOTTOM,&amg_MarkKey);
   mark_counter++;
 
   /* initialize sp package */
@@ -346,7 +348,7 @@ static INT AMGSolverPreProcess (NP_LINEAR_SOLVER *theNP, INT level,
 
 exit: /* error */
   if (mark_counter>0) {
-    Release(MGHEAP(theMG),FROM_BOTTOM);
+    Release(MGHEAP(theMG),FROM_BOTTOM,amg_MarkKey);
     mark_counter--;
   }
   return(1);
@@ -551,7 +553,7 @@ static INT AMGSolverPostProcess (NP_LINEAR_SOLVER *theNP,
                                  INT *result)
 {
   if (mark_counter>0) {
-    Release(MGHEAP(theNP->base.mg),FROM_BOTTOM);
+    Release(MGHEAP(theNP->base.mg),FROM_BOTTOM,amg_MarkKey);
     mark_counter--;
   }
 
