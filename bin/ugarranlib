@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
 # This command is used to call 'ranlib' after 'ar' commands.
 # (ranlib has to be invoked on MacOS X systems)
@@ -9,7 +9,7 @@
 # This skript won't work if the option list for ar contains more than
 # one item.
 
-if ( $ENV{'OSTYPE'}!='rhapsody' || $ENV{'OSTYPE'}!='mach' )
+if ( $ENV{'OSTYPE'} ne "macos" && $ENV{'OSTYPE'} ne "rhapsody" && $ENV{'OSTYPE'} ne "darwin" && $ENV{'OSTYPE'} ne "mach" )
 {
     print "This command is only needed for MacOS X systems\n";
     exit 0;
@@ -21,16 +21,18 @@ if (!@ARGV) {die "usage: ugarranlib <ar> <ar-options> <library> object-file ...\
 
 $n=@ARGV;
 
-$arcall    = $ARGV[0] . ' ';
-$ranlibcall= 'ranlib ' . $ARGV[2];
+$arcall    = $ARGV[0] . " ";
+$ranlibcall= "ranlib " . $ARGV[2];
 
 for ($i=1; $i<$n; $i++)
 {
-    $arcall = $arcall . $ARGV[$i] . ' ';
+    $arcall = $arcall . $ARGV[$i] . " ";
 }
 
-print "$arcall \n";
-system($arcall);
+print "    $arcall \n";
+system("$arcall");
 
-print "$ranlibcall \n";
-system($ranlibcall);
+print "    $ranlibcall \n";
+system("$ranlibcall");
+
+exit(0);
