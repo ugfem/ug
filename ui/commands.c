@@ -539,7 +539,6 @@ static INT CheckHelpCommand (INT argc, char **argv)
    step = 0;
    steps = 100;
    @frame;
-   scnp tnl;
    repeat {
     print "STEP ", step;
     @mysolve;
