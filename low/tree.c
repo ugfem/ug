@@ -26,6 +26,7 @@
 /****************************************************************************/
 
 #include <limits.h>
+#include <sys/types.h>
 
 #include "compiler.h"
 #include "general.h"
