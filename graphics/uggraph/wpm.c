@@ -4019,7 +4019,7 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
       theEspo->depth = iValue;
       break;
     }
-  if (theEspo->depth<0 || theEspo->depth>4)
+  if (theEspo->depth<0 || theEspo->depth>20)
   {
     UserWrite("depth is not valid\n");
     ret = NOT_ACTIVE;
