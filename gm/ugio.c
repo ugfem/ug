@@ -117,6 +117,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
+static INT IO_Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side, ELEMENT *SonList[MAX_SONS], INT SonSides[MAX_SONS], INT dummy);
+
 /****************************************************************************/
 /*																			*/
 /* Function:  MGSetVectorClasses											*/
@@ -1027,7 +1029,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   return (0);
 }
 
-INT IO_Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side, ELEMENT *SonList[MAX_SONS], INT SonSides[MAX_SONS], INT dummy)
+static INT IO_Get_Sons_of_ElementSide (ELEMENT *theElement, INT side, INT *Sons_of_Side, ELEMENT *SonList[MAX_SONS], INT SonSides[MAX_SONS], INT dummy)
 {
   INT i,j;
   MGIO_RR_RULE *theRule;
