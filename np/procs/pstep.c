@@ -251,6 +251,36 @@ INT SPS_ENLAssembleDefect (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *
 
 #define PARAMETER_EPS                   1e-08
 
+#ifdef ModelP
+static INT l_vector_makeinconsistent_pstep (GRID *g, const VECDATA_DESC *x)
+{
+  VECTOR *v;
+  INT vc,i,type,mask,n;
+  const SHORT *Comp;
+
+  if (VD_IS_SCALAR(x)) {
+    mask = VD_SCALTYPEMASK(x);
+    vc = VD_SCALCMP(x);
+    for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v))
+      if ((mask & VDATATYPE(v)) &&
+          (DDD_InfoPriority(PARHDR(v)) != PrioMaster))
+        VVALUE(v,vc) = 0.0;
+  }
+  else
+    for (v=FIRSTVECTOR(g); v!= NULL; v=SUCCVC(v)) {
+      type = VTYPE(v);
+      n = VD_NCMPS_IN_TYPE(x,type);
+      if (n == 0) continue;
+      if (DDD_InfoPriority(PARHDR(v)) == PrioMaster) continue;
+      Comp = VD_CMPPTR_OF_TYPE(x,type);
+      for (i=0; i<n; i++)
+        VVALUE(v,Comp[i]) = 0.0;
+    }
+
+  return(NUM_OK);
+}
+#endif
+
 INT SPS_ENLAssembleMatrix (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *u, EVECDATA_DESC *d, EVECDATA_DESC *v, EMATDATA_DESC *J, INT *res)
 {
   INT i,j;
@@ -282,13 +312,14 @@ INT SPS_ENLAssembleMatrix (NP_ENL_ASSEMBLE *ass, INT fl, INT tl, EVECDATA_DESC *
     if ((*reinit->ReinitProblem)(reinit,sps->name[i],u->e[i],&reinit_res)) return(1);
     if (daxpy(NP_MG(sps),fl,tl,ALL_VECTORS,J->me[i],-1.0,J->em[0])) return(1);
     if (dscal(NP_MG(sps),fl,tl,ALL_VECTORS,J->me[i],1.0/PARAMETER_EPS/u->e[i])) return(1);
-#ifdef ModelP
-    if (a_vector_consistent(NP_MG(sps),fl,tl,J->me[i])) return(1);
-#endif
   }
   for (i=0; i<u->n; i++)
   {
     if (dcopy(NP_MG(sps),fl,tl,ALL_VECTORS,J->em[i],sps->sol_t->vd)) return(1);
+#ifdef ModelP
+    for (j=fl; j<tl; j++)
+      if (l_vector_makeinconsistent_pstep(GRID_ON_LEVEL(NP_MG(sps),j),J->me[i])) return(1);
+#endif
   }
   return ((*tass->TAssembleMatrix)(tass,fl,tl,TIME_INFTY,-TIME_INFTY,u->vd,d->vd,v->vd,J->mm,res));
 }
@@ -386,6 +417,7 @@ static INT SPS_Step (NP_P_STEP *pstep, INT level, EVECDATA_DESC *sol_p0, EVECDAT
     do_nls=0;
   else
     do_nls=1;
+  if (sps->n_step>0) do_nls=0;
 
   /* assemble */
   current_pstep = pstep;
