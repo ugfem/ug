@@ -4579,7 +4579,7 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 	int newlevel;
 INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 	GRID *theGrid, *FinerGrid;
-	int j,k,r;
+	ELEMENT *theElement;
 
 	DEBUG_TIME(0);
 
@@ -4608,41 +4608,41 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 
 	REFINE_MULTIGRID_LIST(1,theMG,"RefineMultiGrid()","","")
 	
-	j = TOPLEVEL(theMG);
+	/* compute modification of coarser levels from above */
 	for (level=toplevel; level>0; level--)
 	{
 		theGrid = GRID_ON_LEVEL(theMG,level);
 		
-	for (k=j; k>0; k--)
+		if (hFlag)
 		{
-		theGrid = GRID_ON_LEVEL(theMG,k);
+			PRINTDEBUG(gm,1,("Begin GridClosure(%d,down):\n",level))
 
 			if ((nrefined = GridClosure(GRID_ON_LEVEL(theMG,level)))<0)
 			{
-			PRINTDEBUG(gm,1,("Begin GridClosure(%d):\n",k))
+			PRINTDEBUG(gm,1,("Begin GridClosure(%d):\n",level))
 				RETURN(GM_ERROR);
-			if ((r = GridClosure(GRID_ON_LEVEL(theMG,k)))<0)
+			}
 
 			REFINE_GRID_LIST(1,theMG,level,("End GridClosure(%d,down):\n",level),"");
 		}
 
 		/* restrict marks on next lower grid level */
-			REFINE_GRID_LIST(1,theMG,k,"End GridClosure(%d):\n","");
+			REFINE_GRID_LIST(1,theMG,level,"End GridClosure(%d):\n","");
 
 		REFINE_GRID_LIST(1,theMG,level-1,("End RestrictMarks(%d,down):\n",level),"");
 	}
-		if (RestrictMarks(GRID_ON_LEVEL(theMG,k-1))!=GM_OK) RETURN(GM_ERROR);
+
 	#ifdef ModelP
-		REFINE_GRID_LIST(1,theMG,k-1,"End RestrictMarks(%d):\n","");
+		REFINE_GRID_LIST(1,theMG,level-1,"End RestrictMarks(%d):\n","");
 	#endif
 
 
-	for (k=0; k<=j; k++)
+		theGrid = GRID_ON_LEVEL(theMG,level);
 		if (level<toplevel) FinerGrid = GRID_ON_LEVEL(theMG,level+1); else FinerGrid = NULL;
 
 		/* reset MODIFIED flags for grid and nodes */
-		theGrid = GRID_ON_LEVEL(theMG,k);
-		if (k<j) FinerGrid = GRID_ON_LEVEL(theMG,k+1); else FinerGrid = NULL;
+		SETMODIFIED(theGrid,0);
+		for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) SETMODIFIED(theNode,0);
 
 		if (hFlag)
 		{
@@ -4657,16 +4657,16 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 
 			/* determine regular and irregular elements on next level */
 			if ((nrefined = GridClosure(theGrid))<0)
-			PRINTDEBUG(gm,1,("Begin 2. GridClosure(%d):\n",k));
+			PRINTDEBUG(gm,1,("Begin 2. GridClosure(%d):\n",level));
 				PrintErrorMessage('E',"RefineMultiGrid","error in 2. GridClosure");
 				RETURN(GM_ERROR);
-			if ((r = GridClosure(theGrid))<0)
+			}
 
 			REFINE_GRID_LIST(1,theMG,level,("End GridClosure(%d,up):\n",level),"");
 		}
 
 		nrefined += ComputeCopies(theGrid);
-			REFINE_GRID_LIST(1,theMG,k,"End 2. GridClosure(%d):\n","");
+			REFINE_GRID_LIST(1,theMG,level,"End 2. GridClosure(%d):\n","");
 		if (hFlag)
 		{
 		ComputeCopies(theGrid);
@@ -4676,7 +4676,7 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 			{
 				for (theElement=FIRSTELEMENT(FinerGrid); theElement!=NULL; theElement=SUCCE(theElement))
 				{
-			if (k<j)
+					ASSERT(EFATHER(theElement) != NULL);
 					if (REFINE(EFATHER(theElement))!=MARK(EFATHER(theElement))) 
 						if (DisposeConnectionsInNeighborhood(FinerGrid,theElement)!=GM_OK)
 							RETURN(GM_FATAL);
@@ -4694,28 +4694,28 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 		}
 
 		/* create a new grid level, if at least one element is refined on finest level */		
-			r = 1;
+		if (nrefined>0 && level==toplevel)	newlevel = 1;
 #ifdef ModelP
 		newlevel = UG_GlobalMaxINT(newlevel); 
 #endif
-		if ( (r>0) && (k==j) )
+		if (nrefined>0 && level==toplevel)
 		
 			newlevel = 1;
 			if (CreateNewLevel(theMG,0)==NULL)
 				RETURN(GM_FATAL);
-			FinerGrid = GRID_ON_LEVEL(theMG,j+1);
+			me,toplevel,nrefined,newlevel));
 
 
-		PRINTDEBUG(gm,1,(PFMT "RefineMultiGrid(): r=%d newlevel=%d\n",me,r,newlevel));
+		PRINTDEBUG(gm,1,(PFMT "RefineMultiGrid(): nrefined=%d newlevel=%d\n",me,nrefined,newlevel));
 		DDD_XferBegin();
 #ifdef ModelP
-		if ( k<j || newlevel )
+		DDD_XferEnd();
 			if (RefineGrid(theGrid)!=GM_OK) 
 				RETURN(GM_FATAL);
 			
 		/* TODO: delete special debug */ PRINTELEMID(-1)
 			/* This flag has been set either by GridDisposeConnection or by CreateElement	*/
-		if ((k<j)||(newlevel))
+			if (GridCreateConnection(FinerGrid)) RETURN(GM_FATAL);
 			
 			/* and compute the vector classes on the new (or changed) level */
 			ClearVectorClasses(FinerGrid);
@@ -4758,7 +4758,7 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag, INT seq)
 	{
 		INT Max_TopLevel = UG_GlobalMaxINT(TOPLEVEL(theMG)); 
 
-		for (k=TOPLEVEL(theMG); k<Max_TopLevel; k++)
+		for (level=TOPLEVEL(theMG); level<Max_TopLevel; level++)
 		{
 			PRINTDEBUG(gm,1,("CreateNewLevel toplevel=%d", TOPLEVEL(theMG)));
 
