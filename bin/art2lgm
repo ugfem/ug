@@ -4,7 +4,7 @@
 
 #$real='[+-]*\d+\.*\d*e[+-]\d+|[+-]*\d+\.\d*|\d+';
 
-$debug = 100;
+$debug = 0;
 
 # globals
 $pass = 0;
@@ -27,6 +27,7 @@ $lgmdomfaces = 0; # number of surfaces in LGM domain
 #   vertex[$n][3]  ID in LGM context
 #   vertex[$n][4]  string with line and surface information
 #                  e.g. "L 0 1  S 1 0 0 1  L 8 0"
+#   vertex[$n][5]  string id's of faces this vertex lies on
 # 
 # edge:
 #   edge[$n][0]  control word of edge $n
@@ -79,7 +80,10 @@ sub ConvertFile	{
 	ReadFaces($artfile);
 	ReadElements($artfile);
 	
+	RepairVertexList();
+	
 	WriteLGMDomain($artfile);
+	if ($debug>0) { PrintElementList(); }
 	WriteLGMNet($artfile);
 }
 
@@ -141,6 +145,7 @@ sub ReadVertices {
 			@vtmp = split (" ", $_);
 			# the next field is intended for line/face/element information
 			push(@vtmp,"-1");
+			push(@vtmp," ");
 			push(@vtmp," ");
 			push(@vtmp," ");
 			push @vertex, [ @vtmp];
@@ -582,8 +587,8 @@ sub WriteLGMDomain {
 
 	# first pass: Set id in boundary points
 	for ($v=0; $v<$vertices; $v++) {
-		if ( $vertex[$v][4] =~ m/\d/ ) {
-			# true if $vertex[$v][4] contains a number
+		if ( $vertex[$v][5] =~ m/\d/ ) {
+			# true if $vertex[$v][5] contains an integer
 			$vertex[$v][3] = $lgmdomvertices++;
 		}
 	}
@@ -784,6 +789,7 @@ sub WriteLGMNet {
 	print LGMNET "\# $elements elements\n";
 	
 	for ($e = 0; $e<$elements; $e++) {
+		print LGMNET "# element $e\n";
 		print LGMNET "E ", $element[$e][0];
 		
 		# look at each side and write the vertex ids of the side vertices
@@ -804,7 +810,7 @@ sub WriteLGMNet {
 		@unique = grep { ! $seen{$_} ++ } @multiple;
 		
 		for $item (@unique) {
-			print LGMNET " ", $item;
+			print LGMNET " ", $vertex[$item][3];
 		}
 		
 		# write boundary side info
@@ -812,16 +818,107 @@ sub WriteLGMNet {
 			$faceid = $element[$e][$s];
 			if ( $face[$faceid][4]<$lgmdomfaces ) {
 				# this is a boundary face
-				print LGMNET "\n\tF ",$face[$faceid][6];
+			    print LGMNET "\n\tF ";
+			    @artvertices = split(" ",$face[$faceid][6]);
+			    for $artid (@artvertices) {
+					print LGMNET " ",$vertex[$artid][3];
+				}
 			}
 		}
 		
 		
-		print LGMNET ";\n";
+		print LGMNET ";\n\n";
 	}
 	
 	close(LGMNET)  or die "can't close $lgmnetfile";
 
+	
+}
+
+######################################################################
+######################################################################
+# RepairVertexList
+#   remove vertices with no connection to elements
+#   set file [5] of $vertex list
+sub RepairVertexList {
+	
+	local($e, $f, $ed, $v, $vid);
+	
+	for $v (0 .. $vertices-1)	{
+		$vertex[$v][5] = "";
+	}
+	
+	# loop over all elements and write element id
+	# to field 5 of the vertex
+	for $e (0 .. $elements-1) {
+		for $f (1 .. 4)	{
+			for $ed (1 .. 3 )	{
+				for $v (1 .. 2)	{
+					$vid = $edge[ $face[ $element[$e][$f] ][$ed] ][$v];
+					$vertex[$vid][5] = $vertex[$vid][5] . " " . $e;
+				}
+			}
+		}
+	}
+	
+	if ($debug>0) { PrintVertexList(); }
+
+	local( $repair);
+	$repair = 0;
+	for $v (0 .. $vertices-1) {
+		# if field 5 is empty then the vertex is not part of any element
+		if ( !($vertex[$v][5] =~ /\d/) )	{
+			print " !! Vertex $v doesnt belong to any element !!\n";
+			$vertex[$v][5] = -1;
+			$repair = 1;
+		}
+	}
+	
+	if ($repair) {
+		print "Repairing vertices...";
+		for $v (0 .. $vertices-1) {
+			if ( $vertex[$v][5] == -1 )	{
+				print "$i . ";
+			}
+		}
+		print "\n";
+	}
+	else {
+		print "No detached vertices\n";
+	}
+	# now we can reuse field 5 of $vertex field
+	
+	for $v (0 .. $vertices-1)	{
+		$vertex[$v][5] = "";
+	}
+	
+	for $f (0 .. $faces-1)	{
+		if ( $face[$f][0]!=0 )	{
+			for $e (1 .. 3)	{
+				for $v (1 .. 2)	{
+					$vid = $edge[ $face[$f][$e] ][$v];
+					$vertex[$vid][5] = $vertex[$vid][5] . "$f ";
+				}
+			}
+		}
+	}
+	
+	# make facelist unique
+	for $v (0 .. $vertices-1)	{
+		@multiple = split (" ", $vertex[$v][5]);
+		
+		# extract unique items from @multiple
+		# perl cookbook page 102
+		%seen = ();
+		@unique = grep { ! $seen{$_} ++ } @multiple;
+		
+		$vertex[$v][5] = "";
+		for $item (@unique) {
+			$vertex[$v][5] .= "$item ";
+		}
+	}
+	
+	if ($debug>10) { PrintVertexList(); }
 	
 }
 
@@ -875,6 +972,23 @@ sub PrintFaceList {
 		print "]\n";
 	}
 	
+}
+
+######################################################################
+######################################################################
+sub PrintElementList {
+
+    print " $elements elements\n";
+    for ($n=0; $n<$elements; $n++) {
+        print "    element $n ";
+        print "control word ",$face[$n][0],"   ";
+        print "faces ",$element[$n][1]," ";
+        print $element[$n][2],"   ";
+        print $element[$n][3],"   ";
+        print $element[$n][4];
+        print "\n";
+    }
+
 }
 
 ######################################################################
