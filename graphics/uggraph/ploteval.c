@@ -11,7 +11,7 @@
 /*			  Universitaet Heidelberg										*/
 /*			  Im Neuenheimer Feld 368										*/
 /*			  6900 Heidelberg												*/
-/*			  internet: ug@ica3.uni-stuttgart.de					*/
+/*			  internet: ug@ica3.uni-stuttgart.de			                        */
 /*																			*/
 /* History:   31.03.92 begin, ug version 2.0								*/
 /*																			*/
@@ -101,7 +101,7 @@ static char rcsid[] = "$Header$";
 
 
 /****************************************************************************/
-/*D
+/*
    CreateElementValuePlotProc - Create element value plot proceedure in evironement
 
    SYNOPSIS:
@@ -120,7 +120,7 @@ static char rcsid[] = "$Header$";
    EVALUES *
    .n     pointer to
    .n     Null if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 EVALUES *CreateElementValuePlotProc (const char *name, PreprocessingProcPtr PreProc, ElementPlotProcPtr PlotProc)
@@ -145,7 +145,7 @@ EVALUES *CreateElementValuePlotProc (const char *name, PreprocessingProcPtr PreP
 }
 
 /****************************************************************************/
-/*D
+/*
    GetElementValuePlotProc - Get element value plot proceedure in evironement from name
 
    SYNOPSIS:
@@ -161,7 +161,7 @@ EVALUES *CreateElementValuePlotProc (const char *name, PreprocessingProcPtr PreP
    EVALUES *
    .n     pointer to
    .n     NULL if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 EVALUES *GetElementValuePlotProc (const char *name)
@@ -171,7 +171,7 @@ EVALUES *GetElementValuePlotProc (const char *name)
 }
 
 /****************************************************************************/
-/*D
+/*
    CreateElementVectorPlotProc - Create element vector plot proceedure in evironement
 
    SYNOPSIS:
@@ -191,7 +191,7 @@ EVALUES *GetElementValuePlotProc (const char *name)
    EVECTOR *
    .n      pointer to EVECTOR *
    .n      Null if not found.
-   D*/
+ */
 /****************************************************************************/
 
 EVECTOR *CreateElementVectorPlotProc (const char *name, PreprocessingProcPtr PreProc, ElementVectorProcPtr PlotProc, INT d)
@@ -216,7 +216,7 @@ EVECTOR *CreateElementVectorPlotProc (const char *name, PreprocessingProcPtr Pre
 }
 
 /****************************************************************************/
-/*D
+/*
    GetElementVectorPlotProc -
 
    SYNOPSIS:
@@ -232,7 +232,7 @@ EVECTOR *CreateElementVectorPlotProc (const char *name, PreprocessingProcPtr Pre
    EVECTOR *
    .n      pointer to
    .n      NULL if not found.
-   D*/
+ */
 /****************************************************************************/
 
 EVECTOR *GetElementVectorPlotProc (const char *name)
@@ -242,7 +242,7 @@ EVECTOR *GetElementVectorPlotProc (const char *name)
 }
 
 /****************************************************************************/
-/*D
+/*
    CreateMatrixValuePlotProc - Create matrix value plot proceedure in evironement
 
    SYNOPSIS:
@@ -261,7 +261,7 @@ EVECTOR *GetElementVectorPlotProc (const char *name)
    MVALUES *
    .n      pointer to
    .n      NULL, if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 MVALUES *CreateMatrixValuePlotProc (const char *name, PreprocessingProcPtr PreProc, MatrixPlotProcPtr PlotProc)
@@ -285,7 +285,7 @@ MVALUES *CreateMatrixValuePlotProc (const char *name, PreprocessingProcPtr PrePr
 }
 
 /****************************************************************************/
-/*D
+/*
    GetMatrixValuePlotProc - Get matrix value plot proceedure in evironement from name
 
    SYNOPSIS:
@@ -301,7 +301,7 @@ MVALUES *CreateMatrixValuePlotProc (const char *name, PreprocessingProcPtr PrePr
    MVALUES *
    .n      pointer to
    .n      NULL if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 MVALUES *GetMatrixValuePlotProc (const char *name)
@@ -355,7 +355,7 @@ static INT PreprocessNodeIndex (const char *name, MULTIGRID *theMG)
   return (0);
 }
 /**************************************************************************/
-/*D
+/*
    NodeIndex -
 
    SYNOPSIS:
@@ -372,7 +372,7 @@ static INT PreprocessNodeIndex (const char *name, MULTIGRID *theMG)
 
    RETURN VALUE:
    DOUBLE
-   D*/
+ */
 /*************************************************************************/
 static DOUBLE NodeIndex (const ELEMENT *theElement,const COORD **CornersCoord, COORD *LocalCoord)
 {
@@ -390,7 +390,7 @@ static DOUBLE NodeIndex (const ELEMENT *theElement,const COORD **CornersCoord, C
 }
 
 /**************************************************************************/
-/*D
+/*
    GradNodeIndex -
 
    SYNOPSIS:
@@ -408,7 +408,7 @@ static DOUBLE NodeIndex (const ELEMENT *theElement,const COORD **CornersCoord, C
 
    RETURN VALUE:
    void
-   D*/
+ */
 /*************************************************************************/
 
 #ifdef __TWODIM__
@@ -452,7 +452,7 @@ static void GradNodeIndex (const ELEMENT *theElement, const COORD **theCorners, 
 #endif
 
 /****************************************************************************/
-/*D
+/*
    InitPlotproc	- Init this file
 
    SYNOPSIS:
@@ -468,7 +468,7 @@ static void GradNodeIndex (const ELEMENT *theElement, const COORD **theCorners, 
    INT
    .n    0 if ok
    .n    1 if error occured.
-   D*/
+ */
 /****************************************************************************/
 
 INT InitPlotproc ()
