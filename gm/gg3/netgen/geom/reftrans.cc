@@ -1,14 +1,5 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-/************************************************************************/
-/*                                                                      */
-/* This file is a part of NETGEN                                        */
-/*                                                                      */
-/* File:   reftrans.cc                                                  */
-/* Author: Joachim Schoeberl                                            */
-/*                                                                      */
-/************************************************************************/
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream.h>
@@ -24,11 +15,9 @@
 #include <geom/reftrans.hh>
 
 
-extern ostream * testout;
 
-
-void referencetransform :: Set (const POINT3D & p1, const POINT3D & p2,
-                                const POINT3D & p3, double ah)
+void referencetransform :: Set (const Point3d & p1, const Point3d & p2,
+                                const Point3d & p3, double ah)
 {
   ex = p2 - p1;
   ex /= ex.Length();
@@ -48,19 +37,19 @@ void referencetransform :: Set (const POINT3D & p1, const POINT3D & p2,
   ez_h = ah * ez;
 }
 
-void referencetransform :: ToPlain (const POINT3D & p, POINT3D & pp) const
+void referencetransform :: ToPlain (const Point3d & p, Point3d & pp) const
 {
-  VEC3D v;
+  Vec3d v;
   v = p - rp;
   pp.X() = (ex_h * v);
   pp.Y() = (ey_h * v);
   pp.Z() = (ez_h * v);
 }
 
-void referencetransform :: ToPlain (const ARRAY<POINT3D> & p,
-                                    ARRAY<POINT3D> & pp) const
+void referencetransform :: ToPlain (const ARRAY<Point3d> & p,
+                                    ARRAY<Point3d> & pp) const
 {
-  VEC3D v;
+  Vec3d v;
   int i;
 
   pp.SetSize (p.Size());
@@ -73,9 +62,9 @@ void referencetransform :: ToPlain (const ARRAY<POINT3D> & p,
   }
 }
 
-void referencetransform :: FromPlain (const POINT3D & pp, POINT3D & p) const
+void referencetransform :: FromPlain (const Point3d & pp, Point3d & p) const
 {
-  VEC3D v;
+  Vec3d v;
   //  v = (h * pp.X()) * ex + (h * pp.Y()) * ey + (h * pp.Z()) * ez;
   //  p = rp + v;
   v.X() = pp.X() * exh.X() + pp.Y() * eyh.X() + pp.Z() * ezh.X();
