@@ -192,6 +192,7 @@ MEM          HeapUsed               (const HEAP *theHeap);
 MEM                      HeapFree                               (const HEAP *theHeap);
 MEM          HeapFreelistUsed       (const HEAP *theHeap);
 MEM                      HeapTotalFree                  (const HEAP *theHeap);
+void             HeapStat                               (const HEAP *theHeap);
 
 /* functions for the virtual heap management */
 INT          InitVirtualHeapManagement(VIRT_HEAP_MGMT *theVHM, MEM TotalSize);
