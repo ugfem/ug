@@ -95,45 +95,6 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
-/* Function:  CenterInPattern												*/
-/*																			*/
-/* Purpose:   fill str up to PatLen with pattern and center text in it.		*/
-/*			  Terminate the str with end									*/
-/*																			*/
-/* Input:	  s.a															*/
-/*																			*/
-/* Output:	  INT 0: ok														*/
-/*				  1: error													*/
-/*																			*/
-/****************************************************************************/
-
-INT CenterInPattern (char *str, INT PatLen, const char *text, char p, const char *end)
-{
-  INT i,TextBegin,TextEnd,TextLen;
-
-  TextLen   = strlen(text);
-  TextBegin = (PatLen-TextLen)/2;
-  TextEnd   = TextBegin+TextLen;
-
-  if (TextLen>PatLen)
-    return (CenterInPattern(str,PatLen," text too long ",p,end));
-
-  for (i=0; i<TextBegin-1; i++)
-    str[i] = p;
-  str[i] = ' ';
-  for (i=TextBegin; i<TextEnd; i++)
-    str[i] = *(text++);
-  str[i++] = ' ';
-  for (; i<PatLen; i++)
-    str[i] = p;
-  str[PatLen] = '\0';
-  strcat(str,end);
-
-  return (0);
-}
-
-/****************************************************************************/
-/*																			*/
 /* Function:  GetStrINTinRange												*/
 /*																			*/
 /* Purpose:   get INT value from str and check wether it is lying in the	*/
