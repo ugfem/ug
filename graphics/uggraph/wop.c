@@ -1084,10 +1084,6 @@ static ELEMENT *EW_GetNextElement_hor_bw_down (ELEMENT *theElement)
 
 static ELEMENT *EW_GetNextElement_vert_fw_up (ELEMENT *theElement)
 {
-  printf("%4d: EW_GetNextElement_vert_fw_up %08x\n",
-         me, DDD_InfoGlobalId(PARHDRE(theElement)));
-  fflush(stdout);
-
   do
   {
     /* something above? */
@@ -1105,12 +1101,7 @@ static ELEMENT *EW_GetNextElement_vert_fw_up (ELEMENT *theElement)
       /* descent while all sons of the father are processed */
       while ((LEVEL(theElement)>GElem_fromLevel)
              && ((SUCCE(theElement)==NULL) || (EFATHER(SUCCE(theElement))!=EFATHER(theElement))))
-      {
-        printf("%4d:           Element_vert_ FATH %08x LEVEL %d\n",
-               me, DDD_InfoGlobalId(PARHDRE(EFATHER(theElement))), LEVEL(EFATHER(theElement)));
-        fflush(stdout);
         theElement = EFATHER(theElement);
-      }
 
       theElement = SUCCE(theElement);
       if (theElement==NULL)
