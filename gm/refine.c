@@ -4736,7 +4736,7 @@ static INT	ConnectNewOverlap (MULTIGRID *theMG, INT FromLevel)
 	
 #ifdef ModelP
 	/* check and restrict partitioning of elements */
-		return (GM_ERROR);
+	if (CheckPartitioning(theMG))
 	
 	/* set info for refinement prediction */
 	SetRefineInfo(theMG);
