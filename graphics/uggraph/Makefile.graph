@@ -30,11 +30,9 @@ OBJECTS3 =
 # main rules
 2Dversion : $(OBJECTS) $(OBJECTS2) Makefile.graph
 	ar $(ARFLAGS) ../lib/libug$(LIBSUFFIX).a $(OBJECTS) 
-	@touch 2Dversion
 
 3Dversion : $(OBJECTS) $(OBJECTS3) Makefile.graph
 	ar $(ARFLAGS) ../lib/libug$(LIBSUFFIX).a $(OBJECTS) 
-	@touch 3Dversion
 
 # default rule
 .c.o:
