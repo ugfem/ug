@@ -180,7 +180,7 @@ static INT CheckVertex (ELEMENT *theElement, NODE* theNode, VERTEX *theVertex)
 		if (diff > MAX_PAR_DIST) {
 			nerrors++;
 			#ifdef ModelP
-			if (CORNERTYPE(theNode))
+			if (CORNERTYPE(theNode) || GHOST(theNode))
 			{
 				nerrors = 0;
 				IFDEBUG(gm,1)

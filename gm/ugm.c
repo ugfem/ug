@@ -5997,14 +5997,11 @@ ELEMENT *FindElementFromPosition (GRID *theGrid, DOUBLE *pos)
   }
   theFather = FindElementFromPosition(DOWNGRID(theGrid),pos);
   if (theFather == NULL) {
-    if (OBJT(theElement) == IEOBJ) return(NULL);
-    else {
-      for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
-           theElement=SUCCE(theElement))
-        if (PointInElement(pos,theElement) == 1)
-          return(theElement);
-      return(NULL);
-    }
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
+         theElement=SUCCE(theElement))
+      if (PointInElement(pos,theElement) == 1)
+        return(theElement);
+    return(NULL);
   }
   if (GetSons(theFather,Sons)) {
     ASSERT(0);
