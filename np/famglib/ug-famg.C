@@ -1748,10 +1748,12 @@ INT FAMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 //prm(mg->bottomLevel,0);
 	if( np->coarsegridagglo )
 	{
+		DOUBLE time = CURRENT_TIME;
 		AMGAgglomerate(mg);
 		l_amgmatrix_collect(GRID_ON_LEVEL(mg,mg->bottomLevel),A);
-		UserWrite("coarse grid agglomerated\n");
-		printf("%d: coarse grid agglomerated\n", me);
+		time = CURRENT_TIME - time;
+		if( me == master )
+			UserWriteF("coarse grid agglomerated in %g sec\n",time);
 	}
 //prm(mg->bottomLevel,0);
 #endif
