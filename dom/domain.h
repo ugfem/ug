@@ -82,6 +82,8 @@
 #endif
 #endif
 
+/* offset of additional parameters for boundary condition function call */
+#define DOM_PARAM_OFFSET        (DIM+1)
 
 /* boundary types */
 #define FIXED         0
