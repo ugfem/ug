@@ -636,8 +636,11 @@ INT InitDevices (int *argcp, char **argv)
 {
   ENVDIR *DevDir;
   ENVITEM *dev;
-  INT error=0,i, with_defaultOuputDevice;
+  INT error=0,i;
   char sv[32];
+#       ifdef ModelP
+  INT with_defaultOuputDevice;
+#       endif
 
   /* install the /Output Devices directory */
   if (ChangeEnvDir("/")==NULL)
