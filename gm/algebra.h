@@ -126,6 +126,7 @@ INT             GetElementInfoFromSideVector    (const VECTOR *theVector, ELEMEN
 
 /* gridwise functions */
 INT             GridCreateConnection                    (GRID *theGrid);
+INT         CreateAlgebra                               (GRID *theGrid);
 
 /* check algebra */
 ELEMENT         *ElementCheckConnection                 (GRID *theGrid, ELEMENT *theElement);

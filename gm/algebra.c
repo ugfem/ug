@@ -2293,6 +2293,30 @@ INT GridCreateConnection (GRID *theGrid)
 
 /****************************************************************************/
 /*D
+   CreateAlgebra - Creates the algebra for a grid
+
+   SYNOPSIS:
+   INT CreateAlgrbra (GRID *theGrid);
+
+   PARAMETERS:
+   .  theGrid - pointer to grid
+
+   DESCRIPTION:
+   This function creates nothing (up to now).
+
+   RETURN VALUE:
+   INT
+   .n     GM_OK if ok
+   D*/
+/****************************************************************************/
+
+INT CreateAlgebra (GRID *theGrid)
+{
+  return(GM_OK);
+}
+
+/****************************************************************************/
+/*D
    MGCreateConnection - Create all connections in multigrid
 
    SYNOPSIS:
