@@ -33,27 +33,36 @@
 #include <stdlib.h>
 #include <math.h>
 
+/* low */
 #include "compiler.h"
-#include "devices.h"
-#include "gm.h"
-#include "ggm.h"
-#include "heaps.h"
-#include "misc.h"
-#include "ugm.h"
-#include "refine.h"
-#include "algebra.h"
-#include "ugstruct.h"
-#include "uginterface.h"
-#include "disctools.h"
-#include "evm.h"
 #include "general.h"
 #include "debug.h"
-#include "domain.h"
+#include "heaps.h"
+#include "misc.h"
+#include "ugstruct.h"
 
+/* dev */
+#include "devices.h"
 #ifdef __MPW32__
 #include "MacGui.h"
 #endif
 
+/* dom */
+#include "domain.h"
+
+/* gm */
+#include "gm.h"
+#include "ggm.h"
+#include "ugm.h"
+#include "refine.h"
+#include "algebra.h"
+#include "evm.h"
+
+/* TODO: hierarchy conflict due to UserRead, UserInterrupt */
+#include "uginterface.h"
+
+
+/* gg2 */
 #include "ggm.h"
 #include "ggaccel.h" /* header file for accelerator */
 
