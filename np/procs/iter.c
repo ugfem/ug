@@ -2765,7 +2765,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
     if (Lmgc(theNP,level-1,c,b,A,result))
       return(1);
   if ((*np->Transfer->InterpolateCorrection)
-        (np->Transfer,level,np->t,c,A,Factor_One,result))
+        (np->Transfer,level,np->t,c,A,np->Transfer->damp,result))
     return(1);
   if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK) NP_RETURN(1,result[0]);
   if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,np->t,EVERY_CLASS) != NUM_OK) NP_RETURN(1,result[0]);
