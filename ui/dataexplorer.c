@@ -157,6 +157,14 @@ static void LocallyUniqueIDs (MULTIGRID *mg)
 
 #endif
 
+static double clampf(double x)
+{
+  if (x < (double)FLT_MIN && x > (double)(-FLT_MIN))
+    return 0.0;
+  else
+    return x;
+}
+
 /****************************************************************************/
 /*D
    dataexplorer - file output in DataExplorer format
@@ -485,9 +493,10 @@ static INT DataExplorerCommand (INT argc, char **argv)
 
         /* write the thing */
 #ifdef __TWODIM__
-        sprintf(it,"\t%g\t%g\n", XC(vx), YC(vx));
+        sprintf(it,"\t%g\t%g\n", clampf(XC(vx)), clampf(YC(vx)));
 #else
-        sprintf(it,"\t%g\t%g\t%g\n", XC(vx), YC(vx), ZC(vx));
+        sprintf(it,"\t%g\t%g\t%g\n", clampf(XC(vx)), clampf(YC(vx)),
+                clampf(ZC(vx)));
 #endif
         pfile_tagged_puts(pf,it,counter+ov);
         counter++;
@@ -645,7 +654,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
           /* scalar components */
           eval_s = es[v]->EvalProc;
           value = eval_s(el,(const DOUBLE **)CornersCoord,LocalCoord);
-          sprintf(it,"\t%g\n",value);
+          sprintf(it,"\t%g\n",clampf(value));
           strcpy(item+ic,it); ic+=strlen(it);
           pfile_tagged_puts(pf,item,counter+ov); ic=0;
           counter++;
@@ -712,9 +721,10 @@ static INT DataExplorerCommand (INT argc, char **argv)
           eval_v = ev[v]->EvalProc;
           eval_v(el,(const DOUBLE **)CornersCoord,LocalCoord,vval);
 #ifdef __TWODIM__
-          sprintf(it,"\t%g\t%g\n",vval[0],vval[1]);
+          sprintf(it,"\t%g\t%g\n",clampf(vval[0]),clampf(vval[1]));
 #else
-          sprintf(it,"\t%g\t%g\t%g\n",vval[0],vval[1],vval[2]);
+          sprintf(it,"\t%g\t%g\t%g\n",clampf(vval[0]),clampf(vval[1]),
+                  clampf(vval[2]));
 #endif
           strcpy(item+ic,it); ic+=strlen(it);
           pfile_tagged_puts(pf,item,counter+ov); ic=0;
@@ -781,7 +791,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
         /* scalar component	*/
         eval_s = es_cell[v]->EvalProc;
         value = eval_s(el,(const DOUBLE **)CornersCoord,LocalCoord);
-        sprintf(it,"\t%g\n",value);
+        sprintf(it,"\t%g\n",clampf(value));
         strcpy(item+ic,it); ic+=strlen(it);
         pfile_tagged_puts(pf,item,counter+oe); ic=0;
         counter++;
@@ -844,9 +854,10 @@ static INT DataExplorerCommand (INT argc, char **argv)
         eval_v = ev_cell[v]->EvalProc;
         eval_v(el,(const DOUBLE **)CornersCoord,LocalCoord,vval);
 #ifdef __TWODIM__
-        sprintf(it,"\t%g\t%g\n",vval[0],vval[1]);
+        sprintf(it,"\t%g\t%g\n",clampf(vval[0]),clampf(vval[1]));
 #else
-        sprintf(it,"\t%g\t%g\t%g\n",vval[0],vval[1],vval[2]);
+        sprintf(it,"\t%g\t%g\t%g\n",clampf(vval[0]),clampf(vval[1]),
+                clampf(vval[2]));
 #endif
         strcpy(item+ic,it); ic+=strlen(it);
 
