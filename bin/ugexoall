@@ -1,0 +1,31 @@
+#!/bin/tcsh
+# start date: 031104 
+# author: Stefan Lang
+
+set help = "usage: ugexoall <modelname>"
+
+if ( $#argv != 1 ) then
+    echo "$help"
+    exit
+endif
+
+set model = $argv[1]
+
+echo $model;
+
+# create cubit surface (lgm) and volume (ng) file
+cubit -nographics -batch -input ${model}_lgm.jou
+cubit -nographics -batch -input ${model}_ng.jou
+
+# transform into ascii
+ncdump ${model}_lgm.gen  > ${model}_lgm.gen.txt
+ncdump ${model}_ng.gen  > ${model}_ng.gen.txt
+
+# add info for surfaces left/right and volume ids
+ugexo2lgm_amd ${model}.log ${model}_lgm.gen.txt
+
+# generate lgm file
+ugexo2lgm ${model}_lgm.gen.txt ${model}.lgm ${model}.map 
+
+# generate ng file
+ugexo2ng ${model}_ng.gen.txt ${model}.lgm ${model}.map ${model}.ng
