@@ -1507,8 +1507,11 @@ static INT SSORDisplay (NP_BASE *theNP)
   if (np->smoother.iter.b != NULL)
     if (sc_disp(np->omega,np->smoother.iter.b,"omega"))
       REP_ERR_RETURN (1);
-  if (np->t != NULL)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+  if (np->t != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"t","---");
+  if (np->smoother.DampVector != NULL) UserWriteF(DISPLAY_NP_FORMAT_SS,"dv",ENVITEM_NAME(np->smoother.DampVector));
+  else UserWriteF(DISPLAY_NP_FORMAT_SS,"dv","---");
+
 
   return (0);
 }
