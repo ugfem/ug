@@ -45,6 +45,7 @@
 #include "misc.h"
 #include "np.h"
 #include "ugm.h"
+#include "algebra.h"
 #include "fifo.h"
 #ifdef ModelP
 #include "pargm.h"
@@ -383,7 +384,7 @@ static INT GenerateNewGrid(GRID *theGrid)
   PRINTDEBUG(np,1,("%d: noc * nof %d\n",me,m));
         #endif
   if (m == 0)
-    return(DONE);
+    return(1);
 
   theMG=MYMG(theGrid);
   if ((newGrid=CreateNewLevelAMG(theMG))==NULL)
@@ -731,24 +732,24 @@ INT CoarsenAverage (GRID *theGrid)
   FIFO myfifo;
   void *buffer;
   VECTOR *theV,*theW;
+  NODE *theNode;
   MATRIX *theM;
   HEAP *theHeap;
-  INT n,m,d,dmin;
+  INT n,m,d,dmin,dmax;
 
-  m = 0;
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    VINDEX(theV) = m++;
-    SETVCUSED(theV,0);
-  }
-  n = m;
+  n = 0;
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) n++;
   dmin = n;
   PRINTDEBUG(np,3,("d "));
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    if (VECSKIP(theV) == 0) continue;
-    d = 0;
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) d++;
-    PRINTDEBUG(np,3,("%d:%d ",VINDEX(theV),d));
-    dmin = MIN(d,dmin);
+    if (VECSKIP(theV) == 0)
+      VINDEX(theV) = -1;
+    else {
+      d = 0;
+      for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) d++;
+      VINDEX(theV) = d;
+      dmin = MIN(d,dmin);
+    }
   }
   PRINTDEBUG(np,3,("\ndmin %d\n",dmin));
   theHeap = MGHEAP(MYMG(theGrid));
@@ -759,27 +760,51 @@ INT CoarsenAverage (GRID *theGrid)
     return(1);
   }
   fifo_init(&myfifo,buffer,sizeof(void *) * n);
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    if (VECSKIP(theV) == 0) continue;
-    d = 0;
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) d++;
-    if (d == dmin)
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    if (VINDEX(theV) == dmin)
       fifo_in(&myfifo,(void *)theV);
-  }
-  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
-    if (VECSKIP(theV) == 0) continue;
-    d = 0;
-    for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) d++;
-    if (d > dmin)
+  dmin++;
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    if (VINDEX(theV) == dmin)
       fifo_in(&myfifo,(void *)theV);
-  }
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    if (VINDEX(theV) > dmin)
+      fifo_in(&myfifo,(void *)theV);
     #ifdef ModelP
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
     if (VECSKIP(theV) == 0)
       if (DDD_InfoPrioCopies(PARHDR(theV)) > 0)
         fifo_in(&myfifo,(void *)theV);
         #endif
-  m = n;
+  dmax = 0;
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
+    VINDEX(theV) = n;
+    if (VECSKIP(theV) != 0) continue;
+    if (VOTYPE(theV) != NODEVEC) continue;
+    theNode = (NODE *) VOBJECT(theV);
+    if (theNode == NULL) continue;
+    if (OBJT(MYVERTEX(theNode)) == BVOBJ) {
+      d = 0;
+      for (theM=MNEXT(VSTART(theV)); theM!=NULL; theM=MNEXT(theM)) d++;
+      VINDEX(theV) = d;
+      dmax = MAX(d,dmax);
+    }
+  }
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    if (VINDEX(theV) == dmax)
+      fifo_in(&myfifo,(void *)theV);
+  dmax--;
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    if (VINDEX(theV) == dmax)
+      fifo_in(&myfifo,(void *)theV);
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
+    if (VINDEX(theV) < dmax)
+      fifo_in(&myfifo,(void *)theV);
+  m = 0;
+  for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
+    VINDEX(theV) = m++;
+    SETVCUSED(theV,0);
+  }
   while(!fifo_empty(&myfifo)) {
     theV = (VECTOR *)fifo_out(&myfifo);
     if (VCUSED(theV)) {
@@ -838,7 +863,7 @@ INT CoarsenAverage (GRID *theGrid)
   if (m != 0)
     return(1);
   error = GenerateNewGrid(theGrid);
-  REP_ERR_RETURN(error);
+  return(error);
 }
 
 /****************************************************************************/
@@ -1102,6 +1127,7 @@ static INT GenerateClusters(AVECTOR **Ua, AVECTOR **Ue, GRID *theGrid, GRID *new
       SETNEW_DEFECT(newVect,1);
       SETFINE_GRID_DOF(newVect,0);
       VINDEX(newVect)=nc;
+      VOBJECT(newVect) = VOBJECT(vect);
 
       /* generate the cluster as imatrices to newVect */
       for (avect=Ca; avect!=NULL; avect=avect->succ)
@@ -1295,10 +1321,23 @@ INT CoarsenVanek(GRID *theGrid)
 /*                                                                          */
 /****************************************************************************/
 
+static DOUBLE Dist (VECTOR *v, VECTOR *w)
+{
+  DOUBLE_VECTOR a,b;
+  DOUBLE s;
+
+  VectorPosition(v,a);
+  VectorPosition(w,b);
+
+  V_DIM_EUKLIDNORM_OF_DIFF(a,b,s);
+
+  return(s);
+}
+
 INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
   INT ncomp,i,j,n,nmax;
-  DOUBLE s;
+  DOUBLE s,sum;
   GRID *newGrid;
   VECTOR *vect,*dest,*newVect;
   MATRIX *mat,*imat;
@@ -1353,7 +1392,15 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
                           "can't build Interpolation matrix (n = 0)");
         REP_ERR_RETURN(1);
       }
-      s = 1.0 / n;
+      /*
+         sum = 0.0;
+         for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
+          if (!MUSED(mat)) continue;
+          dest = MDEST(mat);
+              sum += Dist(vect,dest);
+         }
+         sum = 1.0 / sum;
+       */
       for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat)) {
         if (!MUSED(mat)) continue;
         dest = MDEST(mat);
@@ -1372,7 +1419,8 @@ INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
           REP_ERR_RETURN(1);
         }
         SETMDIAG(imat,1);
-        MVALUE(imat,0) = s;
+        /* s = sum * Dist(vect,dest); */
+        s = 1.0 / n;
         for (i=0; i<ncomp; i++)
           for (j=0; j<ncomp; j++)
             if (i == j) MVALUE(imat,i*ncomp + j) = s;
