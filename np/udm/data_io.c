@@ -44,6 +44,8 @@
 #include "np.h"
 #include "ugm.h"
 
+#include "data_io.h"
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -76,7 +78,7 @@
 /****************************************************************************/
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*																			*/
@@ -112,16 +114,19 @@ RCSID("$Header$",UG_RCS_STRING)
 
 INT LoadData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList)
 {
-  INT i,j,ncomp,s,*entry,copied_until,copy_until,still_to_read,read,zip;
+  INT i,j,ncomp,s,*entry,copied_until,copy_until,still_to_read,read;
   unsigned long m;
   DIO_GENERAL dio_general;
   HEAP *theHeap;
-  char sysCom[NAMESIZE];
-  char *p;
   double *data;
   VECTOR *theV;
   GRID *theGrid;
   NODE *theNode;
+#       ifndef __MWCW__
+  char sysCom[NAMESIZE];
+  char *p;
+  INT zip;
+#       endif
 
   if (theMG==NULL) return (1);
   theHeap = MGHEAP(theMG);
@@ -255,16 +260,19 @@ INT LoadData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList)
 
 INT SaveData (MULTIGRID *theMG, char *FileName, INT n, VECDATA_DESC **theVDList)
 {
-  INT i,j,ncomp,s,*entry,nDouble,zip;
+  INT i,j,ncomp,s,*entry,nDouble;
   unsigned long m;
   DIO_GENERAL dio_general;
   HEAP *theHeap;
   char *p;
-  char sysCom[NAMESIZE];
   double *data;
   VECTOR *theV;
   GRID *theGrid;
   NODE *theNode;
+#       ifndef __MWCW__
+  char sysCom[NAMESIZE];
+  INT zip;
+#       endif
 
   /* init */
   if (theMG==NULL) return (1);
