@@ -39,6 +39,9 @@ cd $UGROOT;
 cvs admin -agabi numerics 2>> $ERRORFILE;
 
 cd $UGROOT;
+cvs admin -aniko np 2>> $ERRORFILE;
+
+cd $UGROOT;
 cvs admin -e bin 2>> $ERRORFILE;
 cvs admin -abirken,wieners,stefan,peter,henrik bin 2>> $ERRORFILE;
 
