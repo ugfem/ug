@@ -112,6 +112,7 @@ typedef struct
 /****************************************************************************/
 
 static VEC_SCALAR Factor_One;
+static INT global;
 
 REP_ERR_FILE;
 
@@ -371,6 +372,9 @@ static INT RayleighQuotientQ (MULTIGRID *theMG,
   bl = 0;
   tl = CURRENTLEVEL(theMG);
 
+  for (i=tl-1; i>=bl; i--)
+    if (StandardProject(GRID_ON_LEVEL(theMG,i),r,r))
+      return(1);
   for (i=bl; i<=tl; i++) {
     theGrid = GRID_ON_LEVEL(theMG,i);
     if (l_dset(theGrid,t,EVERY_CLASS,0.0) != NUM_OK)
@@ -380,6 +384,7 @@ static INT RayleighQuotientQ (MULTIGRID *theMG,
     if (l_dmatmul(theGrid,q,EVERY_CLASS,M,x,EVERY_CLASS) != NUM_OK)
       return(1);
   }
+
   for (i=tl-1; i>=bl; i--)
     if (StandardProject(GRID_ON_LEVEL(theMG,i),q,q))
       return(1);
@@ -388,19 +393,62 @@ static INT RayleighQuotientQ (MULTIGRID *theMG,
         != NUM_OK)
       return(1);
   }
+
+  /*for (i=bl; i<=tl; i++) {
+      theGrid = GRID_ON_LEVEL(theMG,i);
+
+          UserWrite("q\n");
+          PrintVector(theGrid,q,3,3);
+     }
+     PrintSVector(theMG,q);*/
+
+  for (i=tl-1; i>=bl; i--)
+    if (StandardProject(GRID_ON_LEVEL(theMG,i),t,t))
+      return(1);
+
+
   IFDEBUG(np,2)
+
+  UserWrite("M level\n");
+  PrintMatrix(GRID_ON_LEVEL(theMG,tl),M,3,3);
+  UserWrite("M surface\n");
+  PrintSMatrix(theMG,M);
+
+
+
+  if (l_ddot(GRID_ON_LEVEL(theMG,tl),t,EVERY_CLASS,x,scal1) != NUM_OK)
+    return(1);
+  a[0] = 0.0;
+  for (i=0; i<VD_NCOMP(t); i++)
+    a[0] += scal1[i];
+  PRINTDEBUG(np,2,("\n (a0(t) %f) ",a[0]));
+  if (l_ddot(GRID_ON_LEVEL(theMG,tl),q,EVERY_CLASS,q,scal1) != NUM_OK)
+    return(1);
+  a[0] = 0.0;
+  for (i=0; i<VD_NCOMP(t); i++)
+    a[0] += scal1[i];
+  PRINTDEBUG(np,2,("   a0(tl) %f\n ",a[0]));
+
   if (s_ddot(theMG,bl,tl,t,x,scal1) != NUM_OK)
     return(1);
   a[0] = 0.0;
   for (i=0; i<VD_NCOMP(t); i++)
     a[0] += scal1[i];
-  PRINTDEBUG(np,2,("\n (a0 %f) ",a[0]));
+  PRINTDEBUG(np,2,("\n (a0(s) %f) ",a[0]));
   ENDDEBUG
 
   if (s_ddot(theMG,bl,tl,q,q,scal1) != NUM_OK)
     return(1);
   if (s_ddot(theMG,bl,tl,r,x,scal2) != NUM_OK)
     return(1);
+
+  if (global) {
+    if (l_ddot(GRID_ON_LEVEL(theMG,tl),q,EVERY_CLASS,q,scal1) != NUM_OK)
+      return(1);
+    if (l_ddot(GRID_ON_LEVEL(theMG,tl),r,EVERY_CLASS,x,scal2) != NUM_OK)
+      return(1);
+  }
+
   a[0] = a[1] = 0.0;
   for (i=0; i<VD_NCOMP(t); i++) {
     a[0] += scal1[i];
@@ -421,6 +469,15 @@ static INT RayleighDefect (MULTIGRID *theMG, VECDATA_DESC *r,
 
   for (i=0; i<VD_NCOMP(r); i++)
     scal[i] = -1.0 * rq;
+
+  if (global) {
+    if (l_daxpy(GRID_ON_LEVEL(theMG,tl),t,EVERY_CLASS,scal,r) != NUM_OK)
+      return(1);
+    if (l_eunorm(GRID_ON_LEVEL(theMG,tl),t,EVERY_CLASS,defect) != NUM_OK)
+      return(1);
+
+    return (0);
+  }
 
   if (s_daxpy (theMG,bl,tl,t,scal,r))
     return(1);
@@ -717,31 +774,94 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
         return(1);
       for (j=0; j<VD_NCOMP(np->r); j++)
         scal[j] = rq;
-      if (s_dscale(theMG,0,level,np->r,scal) != NUM_OK)
+      if (a_dscale(theMG,0,level,np->r,EVERY_CLASS,scal) != NUM_OK)
         NP_RETURN(1,ewresult->error_code);
       /* solve */
+      /*if (np->Quadratic) {
+              if ((*np->Transfer->ProjectSolution)
+                      (np->Transfer,bl,level,ev[i],&ewresult->error_code))
+                  NP_RETURN(1,ewresult->error_code);
+              if (a_dcopy (theMG,bl,level,np->t,EVERY_CLASS,ev[i]) != NUM_OK)
+                  NP_RETURN(1,ewresult->error_code);
+              if (a_dcopy (theMG,bl,level,np->r,EVERY_CLASS,ev[i]) != NUM_OK)
+                  NP_RETURN(1,ewresult->error_code);
+              if ((*np->Transfer->ProjectSolution)
+                      (np->Transfer,bl,level,np->r,&ewresult->error_code))
+                  NP_RETURN(1,ewresult->error_code);
+          if ((*np->LS->Defect)(np->LS,level,np->t,np->r,np->M,
+                                                        &ewresult->error_code))
+                  return (1);
+              if ((*np->LS->Residuum)(np->LS,level,level,np->t,np->r,np->M,
+                                                              &ewresult->lresult[i]))
+                  return (1);
+
+              PRINTDEBUG(np,2,("res1 %f\n",
+                                               ewresult->lresult[0].last_defect[0]));
+
+          if ((*np->LS->Solver)(np->LS,level,np->t,np->r,np->M,
+                                                        abslimit,reduction,
+                                                        &ewresult->lresult[i]))
+                  return (1);
+              if ((*np->Transfer->ProjectSolution)
+                      (np->Transfer,bl,level,np->t,&ewresult->error_code))
+                  NP_RETURN(1,ewresult->error_code);
+              if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,
+                                                                                np->t,np->r,np->M,
+                                                                                &ewresult->error_code))
+                  return(1);
+          if ((*np->LS->Defect)(np->LS,level,ev[i],np->r,np->M,
+                                                        &ewresult->error_code))
+                  return (1);
+              if ((*np->LS->Residuum)(np->LS,level,level,ev[i],np->r,np->M,
+                                                              &ewresult->lresult[i]))
+                  return (1);
+
+              PRINTDEBUG(np,2,("res2 %f\n",
+                                               ewresult->lresult[0].last_defect[0]));
+
+              if ((*np->LS->Solver)(np->LS,level,ev[i],np->r,np->M,
+                                                        abslimit,reduction,
+                                                        &ewresult->lresult[i]))
+                  return (1);
+              if (FreeVD(theMG,bl,level,np->t))
+                  NP_RETURN(1,ewresult->error_code);
+         } */
       if (np->Quadratic) {
-        if (s_dcopy (theMG,bl,level,np->t,ev[i]) != NUM_OK)
+        if (a_dcopy (theMG,bl,level,np->t,EVERY_CLASS,ev[i]) != NUM_OK)
+          NP_RETURN(1,ewresult->error_code);
+        if ((*np->Transfer->ProjectSolution)
+              (np->Transfer,bl,level,ev[i],&ewresult->error_code))
+          NP_RETURN(1,ewresult->error_code);
+        if ((*np->Transfer->ProjectSolution)
+              (np->Transfer,bl,level,np->r,&ewresult->error_code))
           NP_RETURN(1,ewresult->error_code);
         if ((*np->LS->Defect)(np->LS,level,np->t,np->r,np->M,
                               &ewresult->error_code))
           return (1);
-        if ((*np->Transfer->ProjectSolution)
-              (np->Transfer,bl,level,np->t,&ewresult->error_code))
-          NP_RETURN(1,ewresult->error_code);
         if ((*np->LS->Residuum)(np->LS,level,level,np->t,np->r,np->M,
                                 &ewresult->lresult[i]))
           return (1);
+
+        PRINTDEBUG(np,2,("res1 %f\n",
+                         ewresult->lresult[0].last_defect[0]));
+
         if ((*np->LS->Solver)(np->LS,level,np->t,np->r,np->M,
                               abslimit,reduction,
                               &ewresult->lresult[i]))
           return (1);
+        if ((*np->Transfer->ProjectSolution)
+              (np->Transfer,bl,level,np->t,&ewresult->error_code))
+          NP_RETURN(1,ewresult->error_code);
         if ((*np->LS->Defect)(np->LS,level,ev[i],np->t,np->M,
                               &ewresult->error_code))
           return (1);
         if ((*np->LS->Residuum)(np->LS,level,level,ev[i],np->t,np->M,
                                 &ewresult->lresult[i]))
           return (1);
+
+        PRINTDEBUG(np,2,("res2 %f\n",
+                         ewresult->lresult[0].last_defect[0]));
+
         if ((*np->LS->Solver)(np->LS,level,ev[i],np->t,np->M,
                               abslimit,reduction,
                               &ewresult->lresult[i]))
@@ -953,6 +1073,7 @@ static INT EWExecute (NP_BASE *theNP, INT argc , char **argv)
   np->assemble = ReadArgvOption("a",argc,argv);
   np->interpolate = ReadArgvOption("i",argc,argv);
   np->reset = ReadArgvOption("r",argc,argv);
+  global = ReadArgvOption("g",argc,argv);
   if (np->reset && np->interpolate) {
     PrintErrorMessage('E',"EWExecute",
                       "Only one option $r or $i can be specified.\n");

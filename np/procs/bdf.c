@@ -243,7 +243,7 @@ static INT TimePreProcess (NP_T_SOLVER *ts, INT level, INT *res)
   return(0);
 }
 
-static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
+static INT TimeInit (NP_T_SOLVER *ts, INT level, DOUBLE t, DOUBLE dt, INT *res)
 {
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
@@ -254,15 +254,16 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
   tass = bdf->tsolver.tass;
 
   /* initialize bdf local variables */
-  bdf->dt = bdf->dtstart;
+  bdf->dt = dt;
   bdf->step = 0;
-  bdf->t_0 = 0.0;       /* we always start with t = 0 ! */
-  bdf->t_m1 = - bdf->dt;
+  bdf->t_0 = t;
+  bdf->t_m1 = t - dt;
 
   /* set initial values and boundary conditions in y_0 */
   *res = 1;
-  if ( (*tass->TAssembleInitial)(tass,0,level,bdf->y_0,res) )
-    return(1);
+  if (tass->TAssembleInitial != NULL)
+    if ( (*tass->TAssembleInitial)(tass,0,level,bdf->t_0,bdf->y_0,res) )
+      return(1);
   if ( (*tass->TAssembleSolution)(tass,0,level,bdf->t_0,bdf->y_0,res) )
     return(1);
 
@@ -632,6 +633,7 @@ static INT BDFExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_BDF *bdf;
   NP_T_SOLVER *np;
+  DOUBLE initialtime,dtime;
   INT result,level;
 
   /* get numprocs ... */
@@ -666,14 +668,26 @@ static INT BDFExecute (NP_BASE *theNP, INT argc , char **argv)
   }
 
   /* set initial values */
-  if (ReadArgvOption("init",argc,argv)) {
-    if (np->TimeInit != NULL)
-      if ((*np->TimeInit)(np,level,&result)) {
-        UserWriteF("NPTSolverExecute: TimeInit failed, error code %d\n",
-                   result);
+  if (ReadArgvOption("init",argc,argv))
+    if (np->TimeInit != NULL) {
+      if (ReadArgvDOUBLE("t",&initialtime,argc,argv)) {
+        if ((*np->TimeInit)(np,level,0.0,bdf->dtstart,&result)) {
+          UserWriteF("NPTSolverExecute: TimeInit failed, error code %d\n",result);
+          return (1);
+        }
+      }
+      else if (ReadArgvDOUBLE("T",&dtime,argc,argv)) {
+        if ((*np->TimeInit)(np,level,initialtime,bdf->dtstart,&result)) {
+          UserWriteF("NPTSolverExecute: TimeInit failed, error code %d\n",result);
+          return (1);
+        }
+      }
+      else
+      if ((*np->TimeInit)(np,level,initialtime,dtime,&result)) {
+        UserWriteF("NPTSolverExecute: TimeInit failed, error code %d\n",result);
         return (1);
       }
-  }
+    }
 
   /* execute bdf1, nonnested */
   if (ReadArgvOption("bdf1",argc,argv)) {

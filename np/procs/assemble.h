@@ -292,6 +292,7 @@ struct np_t_assemble {
     (struct np_t_assemble *,                 /* pointer to (derived) object     */
     INT,                                         /* from level                      */
     INT,                                         /* to level                        */
+    DOUBLE,                                                              /* time value t					*/
     VECDATA_DESC *,                              /* solution vector at time t       */
     INT *);                                      /* result                          */
   INT (*TAssembleSolution)               /* set dirichlet conditions in sol.*/
