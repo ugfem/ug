@@ -87,7 +87,7 @@ endif
 @ i = 0
 while ($i <= 1000000)
 
-	set DataFileSuffix = `echo $i | awk '{printf("%06d.ug.data.bin",$1);}' - `
+	set DataFileSuffix = `echo $i | awk '{printf("%06d.ug.data.xdr",$1);}' - `
 	set DataFile = $PREFIX.$DataFileSuffix
 	if (! -f $DataFile ) break;
 
