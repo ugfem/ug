@@ -91,7 +91,7 @@ INT InitGm ()
   INT err;
 
   /* cw.c */
-  if ((err=InitPredefinedControlEntries())!=0)
+  if ((err=InitCW())!=0)
   {
     SetHiWrd(err,__LINE__);
     return (err);
