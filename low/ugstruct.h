@@ -55,6 +55,14 @@
 #define STRUCTSEP ":"
 #define STRUCTSEPC ':'
 
+enum SV_NOTIFY
+{
+  SV_ERROR,
+  SV_CREATED,
+  SV_CHANGED,
+  SV_NOT_CHANGED
+};
+
 /****************************************************************************/
 /*																			*/
 /* data structures exported by the corresponding source file				*/
@@ -83,6 +91,7 @@ STRVAR  *FindStringVar                          (const ENVDIR *where, const char
 ENVDIR  *FindStructure                          (const ENVDIR *where, const char *name);
 INT              RemoveStringVar                        (ENVDIR *homeDir, STRVAR *theVar);
 INT      SetStringVar                           (const char *name, char *sval);
+INT              SetStringVarNotify                     (const char *name, const char *sval);
 INT      SetnStringVar                          (const char *name, const char *sval, int n);
 char    *GetStringVar                           (const char *name);
 INT              GetStringValue                         (const char *name, double *value);

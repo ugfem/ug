@@ -1004,26 +1004,22 @@ INT SetStringVar (const char *name, char *sval)
 
 /****************************************************************************/
 /*D
-   SetnStringVar - Set a string variable to a given string
+   SetStringVarNotify - Set a string variable to a given string and notify if changed
 
    SYNOPSIS:
-   INT SetnStringVar (const char *name, const char *sval, int n);
+   INT SetStringVarNotify (const char *name, const char *sval);
 
    PARAMETERS:
    .  name - variable name
    .  sval - address of the string
-   .  n - length of string
 
    DESCRIPTION:
    This function searches a string variable and sets it to the given string.
    If the string variable does not yet exist it is created, if it is
    too short for the string, it is removed and newly created.
 
-   The difference to 'SetStringVar' is that the string is not terminated
-   by '\0'.
-
    SEE ALSO:
-   SetStringVar, FindStructDir, FindStringVar, RemoveStringVar, MakeStructItem
+   FindStructDir, FindStringVar, RemoveStringVar, MakeStructItem
 
    RETURN VALUE:
    INT
@@ -1033,18 +1029,19 @@ INT SetStringVar (const char *name, char *sval)
    D*/
 /****************************************************************************/
 
-INT SetnStringVar (const char *name, const char *sval, int n)
+INT SetStringVarNotify (const char *name, const char *sval)
 {
   char *lastname;
   ENVDIR *theDir;
   STRVAR *myVar;
+  int notify = SV_NOT_CHANGED;
 
   if ((theDir=FindStructDir(name,&lastname))==NULL)
-    return(1);                  /* structure directory not found */
+    return SV_ERROR;                    /* structure directory not found */
 
   myVar=FindStringVar(theDir,lastname);
 
-  if ((myVar!=NULL) && (myVar->length<=n))
+  if ((myVar!=NULL) && (myVar->length<=strlen(sval)))
   {
     RemoveStringVar(theDir, myVar);
     myVar=NULL;
@@ -1052,15 +1049,17 @@ INT SetnStringVar (const char *name, const char *sval, int n)
 
   if (myVar==NULL)
   {
-    myVar = (STRVAR *) MakeStructItem(theDir,lastname,theStringVarID,n);
+    myVar = (STRVAR *) MakeStructItem(theDir,lastname,theStringVarID,strlen(sval));
     if (myVar==NULL)
-      return(2);                        /* could not allocate variable */
+      return SV_ERROR;                          /* could not allocate variable */
+    notify = SV_CREATED;
   }
 
-  strncpy(myVar->s,sval,(size_t) n);
-  myVar->s[n] = '\0';
+  if (notify==SV_NOT_CHANGED && strcmp(myVar->s,sval))
+    notify = SV_CHANGED;
+  strcpy(myVar->s,sval);
 
-  return(0);
+  return notify;
 }
 
 /****************************************************************************/
