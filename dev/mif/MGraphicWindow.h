@@ -26,9 +26,7 @@
 #include "compiler.h"
 #endif
 
-#ifndef __DEVICESH__
 #include "ugdevices.h"
-#endif
 
 #include "MGraphicView.h"
 
