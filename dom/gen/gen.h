@@ -57,9 +57,10 @@
 typedef struct {
 
   int id;
-  int segment;
   int property;
   double x[MAX_DIM];
+  int n;
+  int segment[1];
 
 } BP;
 
@@ -67,9 +68,11 @@ typedef struct {
 
   int id;
   int segment;
+  int in;
+  int out;
   int property;
   int n;
-  BP bp[MAX_BP];
+  DOUBLE x[MAX_BP][DIM];
 
 } BS;
 
@@ -120,7 +123,7 @@ typedef struct {
 typedef struct {
 
   int id;
-  int nS;
+  int n;
   int S[MAX_SEGMENTS];
 
 } LINE;
@@ -131,12 +134,13 @@ typedef struct {
   int in;
   int out;
   int property;
+  int geo;
 
 } SEGMENT;
 
 
-typedef INT (*BndCondProcPtr)(int, int, DOUBLE *, DOUBLE *, DOUBLE *);
-typedef INT (*BndGeomProcPtr)(int, int, DOUBLE *, DOUBLE *, DOUBLE *);
+typedef INT (*BndPropProcPtr)(int);
+typedef INT (*BndGeomProcPtr)(int, DOUBLE *, DOUBLE *, DOUBLE, DOUBLE *);
 
 typedef struct {
 
@@ -157,8 +161,8 @@ typedef struct {
   int nX;
   XPOINT *X;
 
-  BndCondProcPtr c;
-  BndGeomProcPtr g;
+  BndPropProcPtr Prop;
+  BndGeomProcPtr Geom;
   INT *s2p;
 
 } GEOMETRY;

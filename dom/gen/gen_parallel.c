@@ -154,18 +154,19 @@ void BElementScatterBndS (BNDS **bnds, int n, int cnt, char *data)
 
 void BVertexXferBndP (BNDP *bndp, int proc, int prio)
 {
+  BP *bp = (BP *)bndp;
   INT size;
 
-  size = sizeof(BP);
+  size = sizeof(BP)+(bp->n-1)*sizeof(int);
 
   DDD_XferAddData(size,DDD_DOMAIN_DATA);
 }
 
 void BVertexGatherBndP (BNDP *bndp, int cnt, char *data)
 {
-  ASSERT(cnt == sizeof(BP));
-
   memcpy(data,bndp,cnt);
+
+  ASSERT(cnt == sizeof(BP)+(((BP *)bndp)->n-1)*sizeof(int));
 }
 
 void BVertexScatterBndP (BNDP **bndp, int cnt, char *data)
