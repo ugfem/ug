@@ -141,6 +141,7 @@ typedef INT (*InterpolateNewVectorsProcPtr)(GRID *, const VECDATA_DESC *);
 INT l_vector_consistent (GRID *g, const VECDATA_DESC *x);
 INT a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
 INT l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x);
+INT l_ghostvector_project (GRID *g, const VECDATA_DESC *x);
 INT l_vector_collect (GRID *g, const VECDATA_DESC *x);
 INT a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
 INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode);

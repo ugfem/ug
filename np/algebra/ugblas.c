@@ -407,10 +407,10 @@ INT a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 
 /****************************************************************************/
 /*D
-   l_vector_ghostconsistent - copy values of masters to ghosts
+   l_ghostvector_consistent - copy values of masters to ghosts
 
    SYNOPSIS:
-   INT l_vector_consistent (GRID *g, const VECDATA_DESC *x);
+   INT l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x);
 
    PARAMETERS:
 .  g - pointer to grid 
@@ -435,8 +435,7 @@ static int Scatter_GhostVectorComp (DDD_OBJ obj, void *data)
 
 	if (VD_IS_SCALAR(ConsVector)) {
   	    if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
-		    if (!VECSKIP(pv))
-			    VVALUE(pv,VD_SCALCMP(ConsVector)) = *((DOUBLE *)data);
+		    VVALUE(pv,VD_SCALCMP(ConsVector)) = *((DOUBLE *)data);
 
 		return (NUM_OK);
 	}
@@ -449,7 +448,7 @@ static int Scatter_GhostVectorComp (DDD_OBJ obj, void *data)
 	return (NUM_OK);
 }
 
-INT l_vector_ghostconsistent (GRID *g, const VECDATA_DESC *x)
+INT l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x)
 {
     INT tp,m; 
 
@@ -457,9 +456,50 @@ INT l_vector_ghostconsistent (GRID *g, const VECDATA_DESC *x)
 
 	m = 0;
 	for (tp=0; tp<NVECTYPES; tp++)
-	  m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+ 	    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
 
 	DDD_IFAOneway(OuterVectorIF, GLEVEL(g), IF_FORWARD, m * sizeof(DOUBLE),
+				  Gather_VectorComp, Scatter_GhostVectorComp);
+
+	return (NUM_OK);
+}
+#endif
+
+/****************************************************************************/
+/*D
+   l_ghostvector_project - copy values of ghosts to masters
+
+   SYNOPSIS:
+   INT l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x);
+
+   PARAMETERS:
+.  g - pointer to grid 
+.  x - vector data descriptor
+
+   DESCRIPTION:
+   This function copies the vector values of master vectors to ghost vectors.
+
+   RETURN VALUE:
+   INT
+.n    NUM_OK      if ok
+.n    NUM_ERROR   if error occurrs
+D*/
+/****************************************************************************/
+
+#ifdef ModelP
+INT l_ghostvector_project (GRID *g, const VECDATA_DESC *x)
+{
+    INT tp,m; 
+
+    ConsVector = (VECDATA_DESC *)x;
+
+	m = 0;
+	for (tp=0; tp<NVECTYPES; tp++)
+ 	    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+
+	DDD_IFAOneway(OuterVectorIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
+				  Gather_VectorComp, Scatter_GhostVectorComp);
+	DDD_IFAOneway(OuterVectorIF, GLEVEL(g), IF_BACKWARD, m * sizeof(DOUBLE),
 				  Gather_VectorComp, Scatter_GhostVectorComp);
 
 	return (NUM_OK);
