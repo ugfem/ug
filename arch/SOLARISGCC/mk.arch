@@ -1,0 +1,27 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for SUN Sparc 5 Workstations (SOLARIS 5.3)
+#
+#   for mpi: -lmpi -lsocket -lnsl
+
+ARCH_TYPE     = __SUN__
+
+ARCH_MAKE     = make
+ARCH_CC       = gcc
+ARCH_C++      = g++
+ARCH_LINK     = gcc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK = true
+
+ARCH_LIBS     = -lm -lc
+
+ARCH_CFLAGS   = -g
+ARCH_C++FLAGS = -g
+ARCH_LFLAGS   = -g
+ARCH_ARFLAGS  = ru
+
+ARCH_XINCLUDES = -I/usr/openwin/share/include 
+ARCH_XLIBS     = -L/usr/openwin/lib -L. -lX11 -lXt -lXaw -lXmu -lXext
+
