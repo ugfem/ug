@@ -43,6 +43,9 @@ init: $(OBJECTS)
 $(UG_LIB): $(OBJECTS)
 	$(ARCH_AR) $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS) 
 
+build: clean_all all
+
+
 ##############################################################################
 
 LOWtarget: include
@@ -106,6 +109,9 @@ clean: $(MODEL_TARGET)_clean
 	cd np && make -f Makefile.np clean
 	cd graphics && make -f Makefile.graphics clean
 	cd ui && make -f Makefile.ui clean
+
+clean_all: clean
+	rm -rf include
 
 ar: 
 	cd gm && make -f Makefile.gm ar
