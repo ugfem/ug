@@ -36,7 +36,7 @@ OBJECTS3 =
 
 # default rule
 .c.o:
-	$(CC) $(UGDEFINES) $(CFLAGS) $(LCFLAGS) $<
+	$(CC) $(UGDEFINES) $(GRAPEDEFINE) $(CFLAGS) $(LCFLAGS) $<
 
 # clean up
 clean:
