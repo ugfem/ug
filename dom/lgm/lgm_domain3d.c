@@ -525,7 +525,7 @@ INT Line_Local2GlobalNew (LGM_LINE *theLine, DOUBLE *global, DOUBLE local)
 
 INT Line_Global2Local (LGM_LINE *theLine, DOUBLE *global, DOUBLE *local)
 {
-  DOUBLE slocal, start[3], end[3], lambda[3], globalnew[3], d, n[3], len, lam, p[3], gl[3], new[3], dist, min_dist;
+  DOUBLE slocal, start[3], end[3], lambda[3], globalnew[3], d, n[3], len, lam, p[3], gl[3], _new[3], dist, min_dist;
   INT i, j, ilocal, id[3], r, l, lambda_counter;
 
   *local = -1.0;
@@ -1068,7 +1068,7 @@ INT BVP_Check (BVP *aBVP)
 
         memsize_variable = LGM_SURFACE_NPOINT(theSF)*sizeof(LGM_POINT*);
 
-        if ((TemporaryPointArray = GetTmpMem(lgmd->theHeap,memsize_variable,MarkKey))==NULL)
+        if ((TemporaryPointArray = (LGM_POINT **)GetTmpMem(lgmd->theHeap,memsize_variable,MarkKey))==NULL)
         {
           PrintErrorMessage('E',"BVP_Check","  ERROR: No memory for TemporaryPointArray");
           ReleaseTmpMem(lgmd->theHeap,MarkKey);
@@ -5991,7 +5991,7 @@ static DOUBLE LinePointDistance_local(LGM_LINE *theLine, DOUBLE *globalp1, DOUBL
 }
 
 
-static Find_Midpoint(LGM_LINE *theLine, DOUBLE *globalp1, DOUBLE *globalp2, DOUBLE *global, DOUBLE *start_local, DOUBLE *end_local)
+static int Find_Midpoint(LGM_LINE *theLine, DOUBLE *globalp1, DOUBLE *globalp2, DOUBLE *global, DOUBLE *start_local, DOUBLE *end_local)
 {
   int i, start_i, end_i, help_i;
   DOUBLE length_of_segment, start_s, end_s, help_s;
