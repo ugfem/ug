@@ -5,7 +5,7 @@
 * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
 /* Compute the binary reflected Gray code of a value. */
-int gray(i)
+int _gray_(i)
 int i;
 {
   return((i>>1)^i);
