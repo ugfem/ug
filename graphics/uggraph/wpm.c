@@ -914,6 +914,57 @@ INT InvalidateUgWindowsOfMG (MULTIGRID *theMG)
 
 /****************************************************************************/
 /*D
+   MovePictureToNewWindow - create a new window and move the picture to it
+
+   SYNOPSIS:
+   INT MovePictureToNewWindow (PICTURE *pic)
+
+   PARAMETERS:
+   .  pic - picture to be moved
+
+   DESCRIPTION:
+   This function creates a new window with appropriate size and moves the picture to it.
+
+   RETURN VALUE:
+   INT
+   .n     0: ok
+   .n     1: could not create new window
+   D*/
+/****************************************************************************/
+
+INT MovePictureToNewWindow (PICTURE *pic)
+{
+  UGWINDOW *oldWin,*newWin;
+  INT x,y,w,h;
+
+  oldWin = PIC_UGW(pic);
+  x = 10;
+  y = 10;
+  w = fabs(PIC_GUR(pic)[0] - PIC_GLL(pic)[0]);
+  h = fabs(PIC_GUR(pic)[1] - PIC_GLL(pic)[1]);
+  if ((newWin=CreateUgWindow(UGW_OUTPUTDEV(oldWin),PIC_NAME(pic),x,y,w,h))==NULL)
+    return (1);
+
+  /* move picture to new window */
+  MoveEnvItem((ENVITEM*)pic,(ENVDIR*)oldWin,(ENVDIR*)newWin);
+  PIC_UGW(pic) = newWin;
+  UGW_NPIC(oldWin)--;
+  UGW_NPIC(newWin)++;
+
+  /* set new coordinates of the picture */
+  V2_COPY(UGW_LLL(newWin),PIC_GLL(pic));
+  V2_COPY(UGW_LUR(newWin),PIC_GUR(pic));
+
+  /* remove old window if empty */
+  if (UGW_NPIC(oldWin)==NULL)
+    if (DisposeUgWindow(oldWin))
+      return (2);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    GetPlotObjType - Get PLOTOBJTYPE from name
 
    SYNOPSIS:
@@ -1341,10 +1392,69 @@ INT SetView (PICTURE *thePicture, const COORD *viewPoint, const COORD *targetPoi
 
 /****************************************************************************/
 /*D
+   PrintViewSettings - print current view settings of a picture
+
+   SYNOPSIS:
+   INT PrintViewSettings (const PICTURE *thePicture)
+
+   PARAMETERS:
+   .  thePicture - display the view of that picture
+
+   DESCRIPTION:
+   This function displays the view ('viewPoint', 'targetPoint', 'perspective', 'xAxis') stored
+   in the 'VIEWEDOBJ' as setview command which would yield the same result.
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   1 if not active
+   D*/
+/****************************************************************************/
+
+INT PrintViewSettings (const PICTURE *thePicture)
+{
+  const VIEWEDOBJ *theViewedObj;
+  const COORD *obs,*tgt,*pxd;
+
+  theViewedObj = PIC_VO(thePicture);
+
+  if (VO_STATUS(theViewedObj)!=ACTIVE)
+  {
+    UserWrite("plotobject not active\n");
+    return (1);
+  }
+
+  tgt = VO_VT(theViewedObj);
+  pxd = VO_PXD(theViewedObj);
+  obs = VO_VP(theViewedObj);
+
+  switch (PO_DIM(PIC_PO(thePicture)))
+  {
+  case TYPE_2D :
+    UserWriteF("setview $i $t %g %g $x %g %g\n",
+               tgt[_X_],tgt[_Y_],
+               pxd[_X_],pxd[_Y_]);
+    break;
+
+  case TYPE_3D :
+    UserWriteF("setview $i $o %g %g %g $t %g %g %g $x %g %g %g $p %c\n",
+               obs[_X_],obs[_Y_],obs[_Z_],
+               tgt[_X_],tgt[_Y_],tgt[_Z_],
+               pxd[_X_],pxd[_Y_],pxd[_Z_],
+               (VO_PERSPECTIVE(theViewedObj)) ? '<' : '=');
+    UserWrite("sorry, not implemented\n");
+    break;
+  }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    DisplayViewOfViewedObject - Display the view
 
    SYNOPSIS:
-   INT DisplayViewOfViewedObject (PICTURE *thePicture);
+   INT DisplayViewOfViewedObject (const PICTURE *thePicture);
 
    PARAMETERS:
    .  thePicture - display the view of that picture
@@ -1360,7 +1470,7 @@ INT SetView (PICTURE *thePicture, const COORD *viewPoint, const COORD *targetPoi
    D*/
 /****************************************************************************/
 
-INT DisplayViewOfViewedObject (PICTURE *thePicture)
+INT DisplayViewOfViewedObject (const PICTURE *thePicture)
 {
   COORD width;
   char buffer[128];
@@ -2104,6 +2214,7 @@ static INT InitMatrixPlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theMpo->log                     = FALSE;
     theMpo->conn            = TRUE;
     theMpo->extra           = FALSE;
+    theMpo->rel                     = FALSE;
     theMpo->EvalFct         = NULL;
     theMpo->Matrix          = NULL;
   }
@@ -2136,6 +2247,24 @@ static INT InitMatrixPlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
         theMpo->log = YES;
       else if (iValue==0)
         theMpo->log = NO;
+      break;
+
+    case 'B' :
+      if (sscanf(argv[i],"BV %d",&iValue)!=1)
+        break;
+      if (iValue==1)
+        theMpo->BV = YES;
+      else if (iValue==0)
+        theMpo->BV = NO;
+      break;
+
+    case 'r' :
+      if (sscanf(argv[i],"r %d",&iValue)!=1)
+        break;
+      if (iValue==1)
+        theMpo->rel = YES;
+      else if (iValue==0)
+        theMpo->rel = NO;
       break;
 
     case 'C' :
@@ -2171,12 +2300,9 @@ static INT InitMatrixPlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
       if (sscanf(argv[i],"M %s",buffer)!=1)
         break;
       theMpo->Matrix = GetMatSymbol(ENVITEM_NAME(MGFORMAT(PO_MG(thePlotObj))),buffer);
-      if (theMpo->Matrix!=NULL)
-        if (!MD_IS_SCALAR(SYM_MAT_DESC(theMpo->Matrix)))
-          theMpo->Matrix = NULL;
       if (theMpo->Matrix == NULL)
       {
-        UserWrite("cannot find scalar matrix symbol\n");
+        UserWrite("cannot find matrix symbol\n");
         return (NOT_ACTIVE);
       }
       break;
@@ -2214,7 +2340,9 @@ static INT DisplayMatrixPlotObject (PLOTOBJ *thePlotObj)
   UserWriteF(DISPLAY_PO_FORMAT_SS,"regular conn.",(theMpo->conn) ? "YES" : "NO");
   UserWriteF(DISPLAY_PO_FORMAT_SS,"extra   conn.",(theMpo->extra) ? "YES" : "NO");
   UserWriteF(DISPLAY_PO_FORMAT_SS,"use log",(theMpo->log) ? "YES" : "NO");
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"rel values",(theMpo->rel) ? "YES" : "NO");
   UserWriteF(DISPLAY_PO_FORMAT_SF,"Thresh",(float)theMpo->thresh);
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"BV blocks",(theMpo->BV) ? "YES" : "NO");
 
   /* print procedure name */
   if (theMpo->EvalFct!=NULL)
@@ -2703,15 +2831,17 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
       break;
 
     case 'c' :
-      if (strcmp(argv[i],"connect")==0)
-      {
-        theVmo->ConnectVectors = YES;
-        break;
-      }
       if (sscanf(argv[i],"c %d",&iValue)!=1)
         break;
       if              (iValue==1) theVmo->Connections = YES;
       else if (iValue==0) theVmo->Connections = NO;
+      break;
+
+    case 'C' :
+      if (sscanf(argv[i],"C %d",&iValue)!=1)
+        break;
+      if              (iValue==1) theVmo->ConnectVectors = YES;
+      else if (iValue==0) theVmo->ConnectVectors = NO;
       break;
 
     case 'e' :
@@ -2869,9 +2999,9 @@ static INT DisplayVecMat_2D (PLOTOBJ *thePlotObj)
 
   switch (theVmo->Order)
   {
-  case 1 : UserWriteF(DISPLAY_PO_FORMAT_SS,"order","1: vector order"); break;
+  case 1 : UserWriteF(DISPLAY_PO_FORMAT_SS,"order","1: blockvector order"); break;
   case 2 : UserWriteF(DISPLAY_PO_FORMAT_SS,"order","2: vector order, cuts black"); break;
-  case 3 : UserWriteF(DISPLAY_PO_FORMAT_SS,"order","3: blockvector order"); break;
+  case 3 : UserWriteF(DISPLAY_PO_FORMAT_SS,"order","3: line order"); break;
   }
 
   if (theVmo->Dependency == YES)
@@ -3166,11 +3296,25 @@ static INT InitVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
   /* defaults */
   if (PO_STATUS(thePlotObj)==NOT_INIT)
   {
+    theEvpo->PlotGrid               = NO;
     theEvpo->max                    = 1.0;
     theEvpo->CutVectors     = YES;
     theEvpo->RasterSize     = PO_RADIUS(thePlotObj)/10.0;
     theEvpo->CutLenFactor   = 1.0;
   }
+
+  /* set plot grid option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='g')
+    {
+      if (sscanf(argv[i],"g %d",&iValue)!=1)
+        break;
+      if (iValue==1)
+        theEvpo->PlotGrid = YES;
+      else if (iValue==0)
+        theEvpo->PlotGrid = NO;
+      break;
+    }
 
   /* set to option */
   for (i=1; i<argc; i++)
@@ -3278,6 +3422,7 @@ static INT DisplayVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj)
   theEvpo = &(thePlotObj->theEvpo);
 
   /* print content */
+  UserWriteF(DISPLAY_PO_FORMAT_SS,"Grid",(theEvpo->PlotGrid) ? "YES" : "NO");
   sprintf(buffer,DISPLAY_PO_FORMAT_SF,"maxValue",(float)theEvpo->max);
   UserWrite(buffer);
   sprintf(buffer,DISPLAY_PO_FORMAT_SF,"RasterSize",(float)theEvpo->RasterSize);

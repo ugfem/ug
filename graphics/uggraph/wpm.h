@@ -210,6 +210,8 @@ struct MatrixPlotObj {
   /* data for 2D-View of matrix */
   MVALUES *EvalFct;                                                     /* evaluation proceedure						*/
   INT log;                                                                      /* use log of absolute value					*/
+  INT rel;                                                                      /* values relative to diagonal entry			*/
+  INT BV;                                                                       /* plot blockvector blocks						*/
   DOUBLE thresh;                                                        /* plot entries only if |.|>thresh				*/
   INT conn;                                                                     /* plot connections								*/
   INT extra;                                                                    /* plot extra connections						*/
@@ -247,6 +249,7 @@ struct ElemVectorPlotObj2D {
 
   /* data for 2D-View of elem vector field */
   EVECTOR *EvalFct;                                                     /* evaluation proceedure						*/
+  INT PlotGrid;                                                         /* plot grid together with scalar field			*/
   DOUBLE max;                                                           /* range										*/
   COORD RasterSize;                                                     /* size of raster used for arrows				*/
   INT CutVectors;                                                        /* YES or NO									*/
@@ -469,7 +472,8 @@ INT                             InvalidateUgWindowsOfMG                 (MULTIGR
 
 /* initializing/changing view */
 INT                     SetView                                                 (PICTURE *thePicture, const COORD *viewPoint, const COORD *targetPoint, const COORD *xAxis, const INT *perspective);
-INT                     DisplayViewOfViewedObject               (PICTURE *thePicture);
+INT                             PrintViewSettings                               (const PICTURE *thePicture);
+INT                     DisplayViewOfViewedObject               (const PICTURE *thePicture);
 INT                     Walk                                                    (PICTURE *thePicture, const COORD *vrsDelta);
 INT                     RunAroundTargetPoint                    (PICTURE *thePicture, COORD vrsDirectionAngle, COORD vrsAngle);
 INT                     Zoom                                                    (PICTURE *thePicture, COORD factor);
@@ -486,6 +490,7 @@ UGWINDOW           *GetUgWindow                                         (const c
 void                    ListUgWindow                                    (const UGWINDOW *theUgWindow, INT current);
 PICTURE            *GetUgPicture                                        (const UGWINDOW *theUgWindow, const char *name);
 void                    ListPicture                                             (const PICTURE *thePicture, INT current);
+INT                             MovePictureToNewWindow                  (PICTURE *pic);
 PICTURE            *Mouse2Picture                                       (const UGWINDOW *theUgWindow, INT *MousePosition);
 PLOTOBJTYPE    *GetPlotObjType                                  (const char *PlotObjTypeName);
 PLOTOBJTYPE    *CreatePlotObjType                               (const char *PlotObjTypeName, INT size);
