@@ -426,7 +426,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
    D*/
 /****************************************************************************/
 
-INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec)
+INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec, char **NameList)
 {
   INT i,j,k,l,ncomp,s,t,*entry,nNode,store_from_eval,id,tag,coe,q,mode,nparfiles;
   DIO_GENERAL dio_general;
@@ -555,7 +555,8 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
   {
     if (theVDList[i]!=NULL)
     {
-      strcpy(dio_general.VDname[i],ENVITEM_NAME(theVDList[i]));
+      if (NameList==NULL) strcpy(dio_general.VDname[i],ENVITEM_NAME(theVDList[i]));
+      else strcpy(dio_general.VDname[i],NameList[i]);
       ncomp += dio_general.VDncomp[i] = ncmp[i];
       if (dio_general.VDncomp[i]==3)
         dio_general.VDtype[i] = DIO_VECTOR;
@@ -569,7 +570,8 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
     }
     else if (theEVal[i]!=NULL)
     {
-      strcpy(dio_general.VDname[i],ENVITEM_NAME(theEVal[i]));
+      if (NameList==NULL) strcpy(dio_general.VDname[i],ENVITEM_NAME(theEVal[i]));
+      else strcpy(dio_general.VDname[i],NameList[i]);
       dio_general.VDncomp[i] = 1;
       ncomp += 1;
       store_from_eval = 1;
@@ -578,7 +580,8 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
     }
     else if (theEVec[i]!=NULL)
     {
-      strcpy(dio_general.VDname[i],ENVITEM_NAME(theEVec[i]));
+      if (NameList==NULL) strcpy(dio_general.VDname[i],ENVITEM_NAME(theEVec[i]));
+      else strcpy(dio_general.VDname[i],NameList[i]);
       dio_general.VDncomp[i] = DIM;
       ncomp += DIM;
       store_from_eval = 1;
