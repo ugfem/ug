@@ -1,7 +1,6 @@
 /***********************************************************/
 /** \page commands Commands - User commands for the ug shell script
 	
-	DESCRIPTION:	
 	Commands are used on the shell or in a script to perform ug functions
     and to pass parameters, e. g. 
 
@@ -13,11 +12,11 @@
 	specifies the value.
 	
 	All ug commands can be found in 'commands.c'. On the shell,
-	'help <command>' will give information on the command,
+	'help \<command\>' will give information on the command,
 	'checkhelp' prints a list of all commands where the help entry is 
     missing.
 
-	HOW TO CREATE USER COMMANDS:
+\section How to Create User Commands
 	To include a new command to `ug3` one has to provide a 
 	Command funcion. The Command function has a fixed form.
 	The fixed form in detail is described in the example below. 
@@ -34,7 +33,7 @@
 	There the user has to include the new command with the 'CreateCommand' 
 	function.
 	
-	EXAMPLE:
+\section Example
 	As guided example the embedding of the 'MakeStructCommand' is 
 	demonstrated step by step.	
 	
@@ -86,12 +85,12 @@ INT InitCommands ()
 /****************************************************************************/
 /*! \page quit quit - Quits UG
 
-   DESCRIPTION:
    This command quits the program and closes the shell.
 
+\section Syntax
    'quit'
    
-   KEYWORDS:
+ \section Keywords
    exit, terminate, bye
 */
 /****************************************************************************/
@@ -100,12 +99,12 @@ INT InitCommands ()
 /****************************************************************************/
 /** \page   exitug  exitug - Exits UG
 
-   DESCRIPTION:
    This command exits the current application and closes the shell.
 
+\section Syntax
    'exitug'
    
-   KEYWORDS:
+ \section Keywords
    terminate, bye, tschuess
 */
 /****************************************************************************/
@@ -113,13 +112,13 @@ INT InitCommands ()
 /****************************************************************************/
 /** \page mute mute - Set mutelevel
 
-   DESCRIPTION:
    This command sets a mutelevel. 
    The default value is 0 and all skript lines will be printed on the shell.
    This will be suppressed by mutelevel -1.
    Smaller muteleveles should reduce the output further.
    A mutelevel of -1000 supresses all output to shell.
 
+\section Syntax
    'mute \<value>'
 .   \<value> - integer which gives the mutelevel
 
@@ -127,7 +126,7 @@ INT InitCommands ()
    Formally, this is not an ug command, 'mute' is checked in 
    'InterpretString'.
    
-   KEYWORDS:
+ \section Keywords
    verbose, quiet, silent
 */
 /****************************************************************************/
@@ -135,18 +134,18 @@ INT InitCommands ()
 /****************************************************************************/
 /** \page   help help - Print help for a command or keyword
 
-   DESCRIPTION:
    This command prints help for a given helpitem, e.g. a command. The helpitem
    is looked up case insensitive. Command names can be abbreviated as if they
    where called from the shell window.
 
+\section Syntax
    help [[\<helpitem>] $k]
 
 .   no~option      - this is  equivalent to 'help help'
 .   \<helpitem>     - print help for \<helpitem> (string)
 .   $k             - search for keyword \<helpitem> (multiple occurence)
 
-   EXAMPLE:
+ \section Example
    'help PlotObj'
    
    prints help for the plotobject command.
@@ -161,7 +160,7 @@ INT InitCommands ()
 /****************************************************************************/
 /** \page   checkhelp checkhelp - Check wether all commands in /menu have a help item
 
-   DESCRIPTION:
+ \section Description
    This function checks wether for all commands in /menu a help item exists.
    It also checks wether for all num proc types a help item exists.
    
@@ -169,10 +168,10 @@ INT InitCommands ()
  
    It calls the funtion 'CheckHelp'.
 
-   EXAMPLE:
+\section Syntax
    'checkhelp'
    
-   KEYWORDS:
+ \section Keywords
    check
 */
 /****************************************************************************/
@@ -181,17 +180,18 @@ INT InitCommands ()
 /****************************************************************************/
 /** \page   cmfn cmfn - Creates a metafile name
 
-   DESCRIPTION:
+ \section Description
    This command creates a metafile names.
    It creates a string containing the name of a metafile name for
    animation by xugv.
 
+\section Syntax
    'cmfn \<name> \<var>'
 
 .  \<name> - first part of the metafile names
 .  \<var> - the contents of var will be appended to the name
 
-   EXAMPLE:
+ \section Example
 .vb
 frame="
     cmfn film step;
@@ -218,7 +218,7 @@ repeat {
    This runs 'mysolve' 100 times and 
    creates metafiles 'film.0000', 'film.0001', 'film.0002', ... 'film.0100'.
    
-   KEYWORDS:
+ \section Keywords
    movie, film
 */
 /****************************************************************************/
@@ -226,31 +226,32 @@ repeat {
 /****************************************************************************/
 /** \page   readclock readclock - Print execution time
 
-   DESCRIPTION:
+ \section Description
    This command is for measuring the time used.
    It prints the execution time since the last 'resetclock' to
    string variable ':CLOCK'.
 
+\section Syntax
    'readclock'   
    
-   KEYWORDS:
+ \section Keywords
    time, stopwatch, clock
    
-   SEE ALSO:
-   resetclock;
+   \sa resetclock
 */
 /****************************************************************************/
 
 /****************************************************************************/
 /** \page   resetclock resetclock - Start the time mesuring
 
-   DESCRIPTION:
+ \section Description
    This command starts the time mesuring. 
    It sets the global variable 'Time0' to zero.
 
+\section Syntax
    'resetclock'
    
-   KEYWORDS:
+ \section Keywords
    time, stopwatch, clock
    
  * \sa readclock
@@ -260,36 +261,37 @@ repeat {
 /****************************************************************************/
 /** \page   date date - Prints the date
 
-   DESCRIPTION:
+ \section Description
    This command prints the date to the shell resp. 
    writes it in the string variable ':date'.
 
+\section Syntax
    'date [$s] [$S]'
 
 .  no~option - print the date to the shell
 .  $s  		 -  put in the string variable ':date'.
 .  $S   	 -  use short format of the form yy.mm.dd
    
-   KEYWORDS:
+ \section Keywords
    time, calendar
    
-   SEE ALSO:
-   'resetclock', 'readclock'
+   \sa resetclock, readclock
 */
 /****************************************************************************/
 
 /****************************************************************************/
 /** \page   ls ls - Lists the content of an environment directory.
 
-   DESCRIPTION:
+ \section Description
    This command lists the content of an environment directory.
 
+\section Syntax
    'ls [\<path>]'
 
 .  no~option - lists the content of the current directory.
 .  \<path>    - contains the relative or absolute path in UNIX-style
    
-   KEYWORDS:
+ \section Keywords
    environment, directory, list
 */
 /****************************************************************************/
@@ -297,16 +299,17 @@ repeat {
 /****************************************************************************/
 /** \page cd  cd - Change the current environment directory.
 
-   DESCRIPTION:
+ \section Description
    This command changes the current environment directory.
    It uses the function 'ChangeEnvDir'.
 
+\section Syntax
    'cd [\<path>]'
 
 .  no~option - cd to root (cd /)
 .  \<path>	 - \<path> contains the relative or absolute path in UNIX-style
    
-   KEYWORDS:
+ \section Keywords
    environment, directory, working
 */
 /****************************************************************************/
@@ -314,13 +317,14 @@ repeat {
 /****************************************************************************/
 /** \page   pwd pwd - Print the current environment directory
 
-   DESCRIPTION:
+ \section Description
    This command print the current environment directory to the shell.
    It uses the function 'CangeEnvDir'.
 
+\section Syntax
    'pwd'
    
-   KEYWORDS:
+ \section Keywords
    environment, directory, working
 */
 /****************************************************************************/
@@ -328,12 +332,13 @@ repeat {
 /****************************************************************************/
 /** \page   envinfo envinfo - Print total size and used memory
 
-   DESCRIPTION:
+ \section Description
    This command prints total size and used memory of the emvironment to shell.
 
+\section Syntax
    'envinfo'
    
-   KEYWORDS:
+ \section Keywords
    environment, size, heap, memory
 */
 /****************************************************************************/
@@ -341,11 +346,12 @@ repeat {
 /****************************************************************************/
 /** \page   set set - Set (or print) a string variable struct	
 
-   DESCRIPTION:
+ \section Description
    This command sets (or prints) a string variable struct.
    If it is not existing it is also created.
    It sets or prints the contents of a struct or struct directory.
 
+\section Syntax
    'set {\<struct> \<value>} | {[\<structdir> | \<struct>] [$r]}'
 
 .  \<struct>~\<value>   			- assign \<value> (just a string of arbitrary length) to \<struct>
@@ -353,7 +359,7 @@ repeat {
 .n                                (default: current struct dir)
 .  $r        					- specifies the directory, its contents is listed recursively
    
-   KEYWORDS:
+ \section Keywords
    variable, create, set, assign, value, struct, show, display, print
 
   \sa structpath
@@ -363,15 +369,16 @@ repeat {
 /****************************************************************************/
 /** \page   dv dv - Delete an existing string variable
 
-   DESCRIPTION:
+ \section Description
    This command deletes an existing string variable from the environment.
 
+\section Syntax
    dv \<variable name>
 
 .  \<variable name>    - \<variable name> consists of a complete path related to the
                         current struct dir or the structure root directory in the environment
    
-   KEYWORDS:
+ \section Keywords
    variable, remove, delete
 
    SEE ALSO:
@@ -382,16 +389,17 @@ repeat {
 /****************************************************************************/
 /** \page   ms ms  - Create a structure
 
-   DESCRIPTION:
+ \section Description
    This commands creates a new string variable struct.
    It calls the function 'MakeStruct'.
 
+\section Syntax
    'ms \<structdir>'
 
 .  \<structdir>     - the \<structdir> consists of a complete path related to the
                      current struct dir or the string variable root in the environment
    
-   KEYWORDS:
+ \section Keywords
    variable, create, struct
 
    SEE ALSO:
@@ -402,16 +410,17 @@ repeat {
 /****************************************************************************/
 /** \page cs  cs  - Change to a struct directory
  *
-   DESCRIPTION:
+ \section Description
    This commands changes to a struct directory.
    It calls the function 'ChangeStructDir'.
 
+\section Syntax
    'cs \<structdir>'
 
 .  \<structdir>   - the \<structdir> consists of a complete path related to the
                    current struct dir or the string variable root in the environment
    
-   KEYWORDS:
+ \section Keywords
    variable, struct, change
 */
 /****************************************************************************/
@@ -419,13 +428,14 @@ repeat {
 /****************************************************************************/
 /** \page   pws  pws  - Print the current struct path
 
-   DESCRIPTION:
+ \section Description
    This commands calls the function 'GetStructPathName' and 
    prints the result to the shell.
 
+\section Syntax
    'pws'
    
-   KEYWORDS:
+ \section Keywords
    variable, print, display, show, struct
 */
 /****************************************************************************/
@@ -433,15 +443,16 @@ repeat {
 /****************************************************************************/
 /** \page   ds ds  - Deletes a struct 
 
-   DESCRIPTION:
+ \section Description
    This commands calls the function 'DeleteStruct' to remove a struct.
 
+\section Syntax
    'ds \<structdir>'
 
 .  \<structdir>   - the \<structdir> consists of a complete path related to the
 .n                 current struct dir or the string variable root in the environment
    
-   KEYWORDS:
+ \section Keywords
    variable, delete, remove, struct
    
    SEE ALSO:
@@ -454,10 +465,12 @@ repeat {
 /****************************************************************************/
 /** \page protocol protocol - Print strings to the protocol file
 
-   DESCRIPTION:
+  \section Description
+
    This command prints strings to protocol file.
    It writes formatted output to the open protocol file.
 
+\section Syntax
    'protocol {$i[ ]\<verbatim text> | $n[ ]\<verbatim text> | $t[ ]\<verbatim text> | $f}*'
 
 .   $%i   - append \<verbatim text> to protocol file
@@ -466,7 +479,7 @@ repeat {
 .n          NOTE: the first space (if there) following the option character is skipped
 .   $%f   - flush the file buffer
 
-   EXAMPLE:
+  \section Example
 .vb
 x = exp(1);
 protoOn exp.proto;
@@ -480,20 +493,20 @@ Then, the file 'exp.proto' will consist of the string
 "the value of exp(1) is\t2.7182818\nyou can use $s in protocol"
 .ve
    
-   KEYWORDS:
+   \section Keywords
    protocol, file, output, format
   
-   SEE ALSO:
-  'protoOn', 'protoOff'
+   \sa protoOn, protoOff
 */
 /****************************************************************************/
 
 /****************************************************************************/
 /** \page   protoOn protoOn - Open protocol file where specially formatted output is saved
   
-   DESCRIPTION:
+ \section Description
    This command opens protocol file where specially formatted output is saved.
 
+\section Syntax
    'protoOn \<filename> [$r[!] | $a]'
 
 .   \<filename>  - name of the protocol file      
@@ -502,7 +515,7 @@ Then, the file 'exp.proto' will consist of the string
 .   $r          - like above but proceed even if renaming fails
 .   $a          - append to existing file named \<filename>
    
-   KEYWORDS:
+ \section Keywords
    protocol, file, open, output, format
 
    SEE ALSO:
@@ -511,14 +524,15 @@ Then, the file 'exp.proto' will consist of the string
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   protoOff - close protocol file 
+/** \page   protoOff protoOff - close protocol file 
   
-   DESCRIPTION:
+ \section Description
    This command closes the protocol file.
 
+\section Syntax
    'protoOff'
    
-   KEYWORDS:
+ \section Keywords
    protocol, file, close, output, format
 
    SEE ALSO:
@@ -527,11 +541,12 @@ Then, the file 'exp.proto' will consist of the string
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page logon logon - open log file where all shell output is saved
+/** \page logon logon - Open log file where all shell output is saved
   
-   DESCRIPTION:
+ \section Description
    This command opens a log file where all shell output is saved.
 
+\section Syntax
    'logon \<logfilename> [$p] [$e] [$a] [$f] [$r [0|1]]'
 
 .   \<filename>  - name of logfile
@@ -541,7 +556,7 @@ Then, the file 'exp.proto' will consist of the string
 .   $f			- force (close open logfile iff)
 .   $r~[0|1]	- 0: replace (default), 1: rename existing log file (using modification date)
    
-   KEYWORDS:
+ \section Keywords
    protocol, file, open, output
 
    SEE ALSO:
@@ -550,16 +565,17 @@ Then, the file 'exp.proto' will consist of the string
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page logoff logoff - close logfile
+/** \page logoff logoff - Close logfile
   
-   DESCRIPTION:
+ \section Description
    This command closes the logfile.
 
+\section Syntax
    'logoff $p'
    
 .  $p - logging is detached from open protocol file
 
-   KEYWORDS:
+ \section Keywords
    protocol, file, close, output
 
  * \sa logon
@@ -568,52 +584,55 @@ Then, the file 'exp.proto' will consist of the string
 /****************************************************************************/
 
 /****************************************************************************/
-/* \page cnom cnom - write a cnom output file	
+/* \page cnom cnom - Write a cnom output file	
 
-   DESCRIPTION:
+ \section Description
    This function writes data in a format suitable for the program cnom 2.0
    written by Susanne Kroemker of the IWR, Heidelberg.
    
+\section Syntax
    'cnom ...'
    
-   KEYWORDS:
+ \section Keywords
    file, open, output, data
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   configure - configure a BVP
+/** \page   configure configure - Configure a BVP
 
-   DESCRIPTION:
+ \section Description
    This command configures the BPV, calling BVP_Configure.
    The arguments depend on the domain module.
 
+\section Syntax
    'configure \<BVP name> ...'
 
-   EXAMPLE:
+ \section Example
    'configure test $d Quadrilateral $P 2 1.1 1.3'
 
    In the 2D standard domain module, the BVP test will be coupled with
    a quadrilateral with corners (0,0), (1,0), (1.1,1.3) and (0,1).
    
-   KEYWORDS:
+ \section Keywords
    boundary value problem, change
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   close - close current multigrid
+/** \page  close  close - Close current multigrid
 
-   DESCRIPTION:
+ \section Description
    This command closes the current (or all) open multigrid(s),
    frees their heaps and closes all the pictures belonging to them,
    calling 'DisposeMultiGrid' and 'DisposePicture'.
 
+\section Syntax
    'close [$a]'
 
 .   $a  - close all multigrids
    
-   KEYWORDS:
+ \section Keywords
    multigrid, close
 */
 /****************************************************************************/
@@ -621,12 +640,14 @@ Then, the file 'exp.proto' will consist of the string
 /****************************************************************************/
 /** \page   new new - Allocate a new multigrid
 
+\section Description
    This command allocates a new multigrid, using the function CreateMultiGrid(). 
    It allocates heap and a new multigrid structure.
    The specification of the boundary value problem must be supplied by
    the user with the functions CreateProblem() and CreateDomain().
    It also creates the corner vertices and nodes of the domain.
 
+\section Syntax
    'new [\<mgname>] $b \<boundary value problem> $f \<format> $h \<heapsize> [$n] [$e]'
 
  <ul>
@@ -639,14 +660,14 @@ Then, the file 'exp.proto' will consist of the string
 			    "K" for kilobyte, "M" for megabyte, "G" for gigabyte)  </li>
  </ul>
 
-   EXAMPLES:
+\section Examples
    'new $p TestProblem $f nc $h 30000000;'
    
    'new $b TestProblem $f nc $h 30000K;'
    
    'new $b TestProblem $f nc $h 30M;'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, new, create
 
    Implemented in the function NewCommand()
@@ -654,15 +675,16 @@ Then, the file 'exp.proto' will consist of the string
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   open - load a new multigrid from a data file	
+/** \page  open open - Load a new multigrid from a data file	
 
-   DESCRIPTION:
+ \section Description
    This command loads a new multigrid, using the function 'LoadMultiGrid'. 
    Usually, this file should be generated by the 'save' command. 
    It allocates the heap and a new multigrid structure.
    The specification of the problem and the domain must be supplied by
    the user with the functions 'CreateProblem' and 'CreateDomain'.
 
+\section Syntax
    'open \<filename> [$t \<type>] [$m \<mg name>] [$b \<problem>] [$f \<format>] [$h \<heapsize>]'
 
 .  \<filename>             		- the name of the multigrid file (the fule name will be composed
@@ -676,7 +698,7 @@ Then, the file 'exp.proto' will consist of the string
 .  $h~\<heapsize>          		- the heapsize to be allocated
 									(overrides saved one)
    
-   KEYWORDS:
+ \section Keywords
    multigrid, new, open, file
 
    SEE ALSO:
@@ -685,11 +707,12 @@ Then, the file 'exp.proto' will consist of the string
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   save - save a multigrid structure in a file
+/** \page  save save - Save a multigrid structure in a file
 
-   DESCRIPTION:
+ \section Description
    This command writes the current multigrid structure in a file. 
 
+\section Syntax
    'save [\<name>] [$t \<type>] [$r [0|1]] [$c \<comment>]'
 
 .  \<name>                  - name to save with (default is the mgname)
@@ -700,7 +723,7 @@ Then, the file 'exp.proto' will consist of the string
 .  $c~\<comment>            - optionally specify a comment string
 .  $r~[0|1]                - 0: replace (default), 1: rename existing mg file (using modification date)
    
-   KEYWORDS:
+ \section Keywords
    multigrid, save, write, data, file, output
 
    SEE ALSO:
@@ -709,28 +732,27 @@ Then, the file 'exp.proto' will consist of the string
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   savedomain - save domain structure in a file
+/** \page  savedomain savedomain - Save domain structure in a file
 
-   DESCRIPTION:
+ \section Description
    This command saves the domain structure of the current multigrid in a file.
    All arguments are passed to the current domain module interface function.
 
+\section Syntax
    'savedomain ...'
    
    SEE ALSO:
    'open'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, domain, save, write, data, file, output
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page average  average, freeaverage
- *
-   average, freeaverage - average result of a plot proc to nodal vector
+/** \page average average - Average result of a plot proc to nodal vector
 
-   DESCRIPTION:
+ \section Description
    The average command takes a plot procedure (scalar or vector), allocates
    a vec data desc with nodal components and computes a conforming
    approximation of the function via a box-volume weighted average.
@@ -738,10 +760,10 @@ Then, the file 'exp.proto' will consist of the string
    freeaverage command is called with same arguments and deallocates the vec data
    descs. The vec data descs are not locked!
 
+\section Syntax
    'average {$ns \<scalar plot proc> [$s \<sym>] | $nv \<vector plot proc> [$s \<sym>]}*'
-   'freeaverage {$ns \<scalar plot proc> [$s \<sym>] | $nv \<vector plot proc> [$s \<sym>]}*'
 
-   EXAMPLE:
+ \section Example
 .vb
 average $nv uwTrans $s sol $nv unTrans $s sol;
 savedata air3d $t xdr $n \@step $T \@TIME $a sol $b uwTrans $c unTrans;
@@ -749,19 +771,49 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .ve
 
 
-   KEYWORDS:
+ \section Keywords
    file, output
 
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   savedata - save multigrid data in a file
+/** \page freeaverage freeaverage - Average result of a plot proc to nodal vector
 
-   DESCRIPTION:
+ \section Description
+   The average command takes a plot procedure (scalar or vector), allocates
+   a vec data desc with nodal components and computes a conforming
+   approximation of the function via a box-volume weighted average.
+   The vec data desc will be given the same name as the plot procedure. The
+   freeaverage command is called with same arguments and deallocates the vec data
+   descs. The vec data descs are not locked!
+
+\section Syntax
+   'freeaverage {$ns \<scalar plot proc> [$s \<sym>] | $nv \<vector plot proc> [$s \<sym>]}*'
+
+ \section Example
+.vb
+average $nv uwTrans $s sol $nv unTrans $s sol;
+savedata air3d $t xdr $n \@step $T \@TIME $a sol $b uwTrans $c unTrans;
+freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
+.ve
+
+
+ \section Keywords
+   file, output
+
+*/
+/****************************************************************************/
+
+
+/****************************************************************************/
+/** \page savedata  savedata - Save multigrid data in a file
+
+ \section Description
    This function saves multigrid data from the current multigrid in a file.
    The multigrid has to be saved before.
 
+\section Syntax
    'savedata \<filename> [$t \<type>] [$n \<number>] [$T \<time>] [$r [0|1]] [$a \<vd name> [$b \<vd name>[$c \<vd name>[$d \<vd name>[$e \<vd name>]]]]]'
    
 .  \<filename>		- the filename will be composed to \<filename>.ug.data.\<type>
@@ -771,7 +823,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  $a~\<vd name>...	- read data from this vec data descriptors
 .  $r~[0|1]			- 0: replace (default), 1: rename existing data file (using modification date)
    
-   KEYWORDS:
+ \section Keywords
    multigrid, save, write, data, file, output
 
    SEE ALSO:
@@ -780,11 +832,12 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   loaddata - load multigrid data from a file
+/** \page loaddata  loaddata - Load multigrid data from a file
 
-   DESCRIPTION:
+ \section Description
    This function loads multigrid data from a file. 
 
+\section Syntax
    'loaddata \<filename> [$t \<type>] [$n \<number>] [$f [$h \<heapsize>]] [$a \<vd name> [$b \<vd name>[$c \<vd name>[$d \<vd name>[$e \<vd name>]]]]]'
    
 .  \<filename>		- the filename will be composed to \<filename>.ug.data.\<type>
@@ -796,7 +849,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  $a~\<vd name>...	- save data to this vec data descriptors
 .  $r 				- read data in current multigrid
    
-   KEYWORDS:
+ \section Keywords
    multigrid, load, read, file, data
 
    SEE ALSO:
@@ -805,16 +858,17 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page changemc  changemc - change magic cookie of multigrid
+/** \page changemc  changemc - Change magic cookie of multigrid
 
-   DESCRIPTION:
+ \section Description
    This function changes the magic cookie of multigrid.
 
+\section Syntax
    'changemc \<mc>'
    
 .  \<mc>				- new magic cookie
    
-   KEYWORDS:
+ \section Keywords
    multigrid, load, read, file, data
 
    SEE ALSO:
@@ -823,33 +877,35 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   level - select another current level
+/** \page  level level - Select another current level
 
-   DESCRIPTION:
+ \section Description
    This command changes another current level of the current multigrid.
 
+\section Syntax
    level \<level> | + | -
 
 .  \<level> - go to level \<level>
 .  +       - go to the next finer level 
 .  -       - go to the next coarser level 
    
-   KEYWORDS:
+ \section Keywords
    multigrid, current
 */ 
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   renumber - reassign the object IDs in the multigrid	
+/** \page  renumber renumber - Reassign the object IDs in the multigrid	
 
 
-   DESCRIPTION:
+ \section Description
    This command reassigns the object IDs in the multigrid 
    subsequently to fill the gaps, calling the function 'RenumberMultiGrid'.
 
+\section Syntax
    'renumber'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, id
 */
 /****************************************************************************/
@@ -857,55 +913,59 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 /** \page wplist  wplist - List information on all windows and pictures
 
-   DESCRIPTION:
+ \section Description
    This command lists information on all windows and pictures, calling
    the functions 'ListWindowPictureHeader', 'ListPicture' and 
    'ListUGWindow'.
 
+\section Syntax
    'wplist'
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, list, display, show
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   mglist - list information on all multigrids
+/** \page  mglist mglist - List information on all multigrids
 
-   DESCRIPTION:
+ \section Description
    This command lists information on all multigrids, calling
    the functions 'ListMultiGridHeader' and 'ListMultiGrid'.
 
+\section Syntax
    'mglist [$s]'
 
 .  $s - short format for less information
    
-   KEYWORDS:
+ \section Keywords
    multigrid, list, display, show
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   glist - list information on the current multigrid
+/** \page  glist glist - List information on the current multigrid
 
-   DESCRIPTION:
+ \section Description
    This command lists information on the current multigrid, calling
    the function 'ListGrids'.
 
+\section Syntax
    'glist'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, list, display, show
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   nlist - list information on specified nodes
+/** \page  nlist nlist - List information on specified nodes
 
-   DESCRIPTION:
+ \section Description
    This command lists information on specified nodes, calling
    the functions 'ListNodeRange' and 'ListNodeSelection'.
 
+\section Syntax
    'nlist {$s | $i \<fromID> [\<toID>] | $g \<global id> | $k \<key>} [$d] [$b] [$n] [$v] [$a]'
 
 .  $s  - list info for the selected nodes
@@ -920,18 +980,19 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  $v  - print extended info (verbose mode)
 .  $a  - list all nodes
    
-   KEYWORDS:
+ \section Keywords
    multigrid, node, link, list, display, show
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page elist - list information on specified elements
+/** \page   elist elist - List information on specified elements
 
-   DESCRIPTION:
+ \section Description
    This command lists information on specified elements, calling
    the functions 'ListElementRange' and 'ListElementSelection'.
 
+\section Syntax
    'elist $s | {$i \<fromID> [\<toID>]} [$d] [$b] [$n] [$v] [$a]'
 
 .  $s  - list info for the selected elements
@@ -947,19 +1008,20 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  $l  - list only elements of current level
 .  $a  - list all elements
    
-   KEYWORDS:
+ \section Keywords
    multigrid, element, list, display, show
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   slist - list information on all selected nodes or elements
+/** \page  slist  slist - List information on all selected nodes or elements
 
-   DESCRIPTION:
+ \section Description
    This command lists information on selected nodes or elements, calling
    the functions 'ListNodeSelection', 'ListElementSelection'.
    (Listing of selected vectors is not implemented.)
 
+\section Syntax
    'slist [$d] [$b] [$n] [$v]'
 
 .   $d  - up to version 2.3 ONLY: list also user data space
@@ -967,7 +1029,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .   $n  - list also neighbours of each node/element
 .   $v  - print extended info (verbose mode)
    
-   KEYWORDS:
+ \section Keywords
    multigrid, selection, list, display, show
 
    SEE ALSO:
@@ -976,17 +1038,18 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   rlist - list rule records of element type for refinement
+/** \page  rlist rlist - List rule records of element type for refinement
 
-   DESCRIPTION:
+ \section Description
    This command lists the rule record of a refinement rule for an element type,
    if an integer is given or all records for this element type, if all-option is set.
 
+\section Syntax
    'rlist [tri|qua|tet|hex] {[rulenumber] | [$a]}'
 
 .  $a  - list all rules for element type
    
-   KEYWORDS:
+ \section Keywords
    multigrid, element, rule, type, list, display, show
 */
 /****************************************************************************/
@@ -997,6 +1060,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
    This command lists information on specified vectors and matrices, calling
    the functions ListVectorRange() and ListVectorSelection().
 
+\section Syntax
    'vmlist {$s | $i \<fromID> [\<toID>] | $g \<global id> | $k \<key>} [$t \<dt-list>] [$m] [$d] [$a] [$l \<f> \<t>] [$pos 0|1] [$obj 0|1]'
 
   <ul>
@@ -1016,7 +1080,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
      <li> $obj~0|1		- show vector object related info (default 1) </li>
   </ul>   
 
-   KEYWORDS:
+ \section Keywords
    multigrid, vector, matrix, userdata, list, display, show
 
    Implemented in VMListCommand()
@@ -1029,6 +1093,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
    This command converts a matrix into a sparse format,
    prints it out or svae it to a file.
    
+\section Syntax
    `convert \<mat> [$p] [$f \<name>]`
   <ul>
     <li> \<mat> - matrix symbol </li>
@@ -1040,30 +1105,32 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   in - insert an inner node and vertex
+/** \page  in  in - Insert an inner node and vertex
 
-   DESCRIPTION:
+ \section Description
    This command inserts an inner node and the corresponding vertex
    into a multigrid with only level 0, calling the function
    'InsertInnerNode'.
 
+\section Syntax
    'in \<x> \<y> [\<z>]'
 
 .  \<x>~\<y>~[\<z>] - specify as much coordinates as the space has dimensions
    
-   KEYWORDS:
+ \section Keywords
    multigrid, insert, create, node, edit
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   bn - insert a boundary node and vertex
+/** \page  bn bn - Insert a boundary node and vertex
 
-   DESCRIPTION:
+ \section Description
    This command inserts an boundary node and the corresponding vertex
    into a multigrid with only level 0, calling the function
    'InsertBoubdaryNode'. The options are passed to the domain module function BVP_InsertBndP.
 
+\section Syntax
    'bn...'
 
    for the domain module std .... is
@@ -1071,56 +1138,59 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  \<Id>        	- insert a boundary node on the patch with \<Id>
 .  \<s>~[\<t>]    - specify as much patch coordinates as the boundary has dimensions
    
-   KEYWORDS:
+ \section Keywords
    multigrid, insert, create, node, edit
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   gn - insertion of a boundary/inner node and vertex from global coordinates
+/** \page  gn gn - Insertion of a boundary/inner node and vertex from global coordinates
 
-   DESCRIPTION:
+ \section Description
    This command inserts a boundary node if a position can be found matching the
    global point with prescribed or default accuracy. Otherwise an inner node
    is inserted at the global position.
    CAUTION: some domain module maybe does not support insertion of boundary
    nodes from global coordinates!
    
+\section Syntax
    'gn \<x> \<y> [\<z>] [$r \<res>]'
    
 .  \<x>~\<y>~[\<z>]		- global coordinates 
 .  $r~\<res>				- resolution
 
-   KEYWORDS:
+ \section Keywords
    multigrid, insert, create, node, edit
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   deln - delete a node and vertex
+/** \page  deln  deln - Delete a node and vertex
 
-   DESCRIPTION:
+ \section Description
    This command deletes a node and the corresponding vertex
    of the current multigrid, calling the function 'DeleteNode'.
 
+\section Syntax
    'deln \<Id> | $s'
 
 .  \<Id>  - ID of the node to be deleted
 .  $s    - delete ALL nodes from the selection
    
-   KEYWORDS:
+ \section Keywords
    multigrid, delete, remove, node, edit
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   move - move a node and vertex
+/** \page  move move - Move a node and vertex
 
-   DESCRIPTION:
+ \section Description
    This command moves a node and the corresponding vertex 
    of the current multigrid to a new position, 
    calling the functions 'MoveInnerNode' and 'MoveBoundaryNode'.
 
+\section Syntax
    'move {\<Id> | $s} {$i \<x> \<y> [\<z>] | $b \<SegId> \<s> [\<t>]}'
 
 .  \<Id>                - Id of the node to be moved
@@ -1128,42 +1198,44 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  $b~\<Id>~\<s>~[\<t>]   - in the current implementation (domain module dependent)
 		 				 boundary nodes can not be moved
    
-   KEYWORDS:
+ \section Keywords
    multigrid, move, node, edit
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   ie - insert an element
+/** \page  ie ie - Insert an element
 
-   DESCRIPTION:
+ \section Description
    This command inserts an element into a multigrid with only level 0, 
    calling the function 'InsertElement'.
 
 
+\section Syntax
    'ie {\<Id>}+ | $s'
 
 .  {\<Id>}+  - specify at least three (2d) or four (3d) corner nodes, the corresponding (unique) element will be created
 .  $s 		- taking selected nodes 
    
-   KEYWORDS:
+ \section Keywords
    multigrid, insert, create, element, edit
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   dele - delete an element
+/** \page  dele  dele - Delete an element
 
-   DESCRIPTION:
+ \section Description
    This command deletes the specified  element of a multigrid 
    with only level 0, calling the function 'DeleteElement'.
 
+\section Syntax
    'dele \<Id> | $s'
 
 .  \<Id> - ID of the element to be deleted
 .  $s   - delete all elements from the selection
    
-   KEYWORDS:
+ \section Keywords
    multigrid, delete, remove, element, edit
 */
 /****************************************************************************/
@@ -1171,11 +1243,12 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 /** \page adapt adapt - Adapt the current multigrid
 
-   DESCRIPTION:
+ \section Description
    This command adapt the multigrid according to the refinement marks 
    set in the elements, calling the function 'AdaptMultiGrid'.
    If coarsen marks are set refinements are deleted.
 
+\section Syntax
    'adapt [$g] [$a] [$h] [$x] [$d \<vector plot proc>]'
 
 .  no~option				- only local refinement
@@ -1186,46 +1259,46 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  $h						- refine not closed (not implemented yet)
 .  $x						- use hexahedra (not implemented yet)
    
-   KEYWORDS:
+ \section Keywords
    multigrid, adapt, mark
 */
 /****************************************************************************/
 
 
 /****************************************************************************/
-/** \page   fixcoarsegrid - marks the end of corse grid generation
+/** \page  fixcoarsegrid fixcoarsegrid - Marks the end of corse grid generation
 
-   DESCRIPTION:
+ \section Description
    If the coarse grid is build interactively by 'ie', this command 
    terminates this process and calls 'FixCoarseGrid'.
 
-   SYNTAX:
+\section Syntax
    'fixcoarsegrid'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, edit, finish
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   collapse - construct coarse grid from surface
+/** \page  collapse collapse - Construct coarse grid from surface
 
-   DESCRIPTION:
+ \section Description
    The coarse grid is build from all surface elements.
 
-   SYNTAX:
+\section Syntax
    'collapse'
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   mark - mark elements with refinement type 
+/** \page  mark  mark - Mark elements with refinement type 
 
-   DESCRIPTION:
+ \section Description
    This command marks elements with refinement type,
-   calling the function 'MarkForRefinement'.
+   calling the function MarkForRefinement().
 
-   SYNTAX:
+\section Syntax
    'mark [$h | {[\<rule> [\<side>]] [$a | $i \<Id> | $s]} | $c] [$pos \<x y [z]>] [$x \<x>] [$y \<y>] [$z \<z>]'
 
 .  \<rule>     - specify a refinement rule ("red" is default)
@@ -1239,7 +1312,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  $y         - marks elements with corner[1] \< y
 .  $z         - marks elements with corner[2] \< z
    
-   KEYWORDS:
+ \section Keywords
    multigrid, refine, adapt, rule, type, mark
    
    SEE ALSO:
@@ -1248,29 +1321,32 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   smooth - invoke hierarchical multigrid smoother
+/** \page  smooth smooth - Invoke hierarchical multigrid smoother
 
-   DESCRIPTION:
+ \section Description
    This command invokes hierarchical multigrid smoother, 
    calling the function 'SmoothMultiGrid'.
 
-   SYNTAX:
+\section Syntax
    'smooth \<nIt\> [$b] [$nc]'
 
 .    \<nIt>   - number of iterations
 .    $b      - also smooth boundary nodes
 .    $nc     - improvement for nonconvex domains
    
-   KEYWORDS:
+ \section Keywords
    multigrid
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   smoothgrid - resize quadrilaterals and triangles on surface levels according to 
+/** \page  smoothgrid  smoothgrid - Resize quadrilaterals and triangles on surface levels according to 
               the element sizes on level l-1
 
-   DESCRIPTION:
+ \section Description
+
+
+\section Syntax
    'smoothgrid [$limit \<value>] [$reset] [$f \<value>]  [$b] [($ortho0 || $ortho1) \<val0> \<val1> ... \<valN>]'
 
 . $limit~\<value>       - give maximum displacement of the vertices in local coordinates
@@ -1284,49 +1360,51 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 . $spline              - additionaly smooth elements using spline functions
 . $spline0             - smooth elements using spline functions only 
    
-   KEYWORDS:
+ \section Keywords
    multigrid, anisotropy
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   ordernodes - order the nodes lexicographically according to the specified directions
+/** \page  ordernodes  ordernodes - Order the nodes lexicographically according to the specified directions
 
 
-   DESCRIPTION:
+ \section Description
    This command orders the nodes according to the user provided dependencies.
    It orders the nodes of the current multigrid, calling the function
    'OrderNodesInGrid' on all levels.
    
    If specified the links are ordered in the corresponding order.
 
+\section Syntax
    'ordernodes ur|ul|dr|dl|ru|rd|lu|ld [$l \<level>] [$L]'
 
 .   $l~\<level> - only on level \<level>
 .n   			   u=up, d=down, r=right, l=left
 .   $L		   - also order links
 
-    EXAMPLE:
+  \section Example
 	'ordernodes rd $l2'
 
    Order nodes of grid level 2 lexicographically in horizontal lines from
    left to right and the lines vertical from top down.
    
-   KEYWORDS:
+ \section Keywords
    multigrid, order
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   lexorderv - order the vectors lexicographically
+/** \page  lexorderv lexorderv - Order the vectors lexicographically
 
 
-   DESCRIPTION:
+ \section Description
    This command orders the vectors lexicographically according to the user
    specified directions.
    It orders the vectors of the current multigrid, calling the function
    'LexOrderVectorsInGrid'.
 
+\section Syntax
    'lexorderv ur|ul|dr|dl|ru|rd|lu|ld [$l \<level>] [$m] [$w s|n] [$s \<|>]'
 
 .   $l~\<level> - only on level \<level>
@@ -1335,39 +1413,41 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .   $w~s|n	   - order skip or nonskip vectors resp.
 .   $s \<|>	   - put skip vectors at begin or end of the list resp.
    
-   KEYWORDS:
+ \section Keywords
    multigrid, order
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   shellorderv - order the vectors shell by shell
+/** \page  shellorderv shellorderv - Order the vectors shell by shell
 
 
-   DESCRIPTION:
+ \section Description
    This command orders the vectors of the current level of the current
    multigrid in shells starting from a seed.
 
+\section Syntax
    'shellorderv f | l | s'
 
 .  f - take first vector as seed
 .  l - take last vector as seed
 .  s - take selected vector as seed
 
-   KEYWORDS:
+ \section Keywords
    multigrid, order, shell
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   orderv - order the vectors according to the user provided dependencies
+/** \page  orderv orderv - Order the vectors according to the user provided dependencies
 
 
-   DESCRIPTION:
+ \section Description
    This command orders the vectors according to the user provided dependencies.
    It orders the vectors of the current multigrid, calling the function
    'OrderVectors'.
 
+\section Syntax
    'orderv $m FFCCLL | FCFCLL $d \<dep-proc> $o \<dep-proc options> $c \<find-cut-proc> [$a]'
 
 .  $m FFCCLL | FCFCLL     - possible modes are FFCCLL or FCFCLL
@@ -1378,36 +1458,38 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
    SEE ALSO:
    'lineorderv'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, order, downstream
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   revvecorder - revert the vector order
+/** \page  revvecorder revvecorder - Revert the vector order
 
 
-   DESCRIPTION:
+ \section Description
    This command reverts the order of the vector list.
    
+\section Syntax
    'revvecorder [$a]'
 
 .  $a  - reorder all levels of the current multigrid
    
-   KEYWORDS:
+ \section Keywords
    multigrid, order, reverse
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   lineorderv - order the vectors in lines according to the user provided dependencies
+/** \page  lineorderv lineorderv - Order the vectors in lines according to the user provided dependencies
 
 
-   DESCRIPTION:
+ \section Description
    This command orders the vectors in lines according to the user provided dependencies.
    It orders the vectors of the current multigrid, calling the function
    'LineOrderVectors'.
 
+\section Syntax
    'lineorderv $d \<dep-proc> $o \<dep-proc options> $c \<find-cut-proc> [$a] [$v \<level>]'
 
 .  $d \<dep-proc>          - the ordering algorithm uses this dependency procedure...
@@ -1419,26 +1501,26 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
    SEE ALSO:
    'orderv'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, order, downstream, lines
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   setindex - set vector index in ascending order
+/** \page  setindex setindex - Set vector index in ascending order
 
-   DESCRIPTION:
+ \section Description
    'setindex' sets the vector index in ascending order.
    
-   KEYWORDS:
+ \section Keywords
    multigrid, vector, index
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   find - find (and select) a node (element) from a given position 
+/** \page  find find - Find (and select) a node (element) from a given position 
 
-   DESCRIPTION:
+ \section Description
    This function finds (and selects) a node (element) from a given position,
    where some tolerance can be specified.
    It finds a node (element) on the current level of the current multigrid, 
@@ -1447,6 +1529,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
    'AddNodeToSelection', 'RemoveNodeFromSelection',
    'AddElementToSelection' and 'RemoveElementFromSelection'
 
+\section Syntax
    find \<x> \<y> \<z> {$n \<tol> | $v \<tol> | $e} [$s]
 
 .  \<x> \<y> \<z> - specify as much coordinates as the space has dimensions
@@ -1456,15 +1539,15 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  $s          - add the selected node (element) to the selection buffer
                	 (if not specified the node is just listed)
    
-   KEYWORDS:
+ \section Keywords
    multigrid, node, element, position, find, select
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   select - select a node or element from a given position 
+/** \page   select select - Select a node or element from a given position 
 
-   DESCRIPTION:
+ \section Description
    This function finds (and selects) a node (element) from a given position,
    where some tolerance can be specified.
    It adds/removes nodes/elements from the selection buffer of the current 
@@ -1473,6 +1556,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
    'AddNodeToSelection', 'RemoveNodeFromSelection',
    'AddElementToSelection' and 'RemoveElementFromSelection'
 
+\section Syntax
    'select $i | $c | $n {+|-} \<Id> | $e {+|-} \<Id>'
 
 .  $i				- print type and number of list members
@@ -1480,36 +1564,39 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  $n~{+|-}~\<Id>    - add (+) or remove (-) the node with \<Id> to (from) the selection buffer
 .  $e~{+|-}~\<Id>    - add (+) or remove (-) the element with \<Id> to (from) the selection buffer
    
-   KEYWORDS:
+ \section Keywords
    multigrid, select, element, node
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   extracon - display number of (and delete) extra connections
+/** \page   extracon extracon - Display number of (and delete) extra connections
 
-   DESCRIPTION:
-   This command displays the number extra connections.(and deletes them if specified).
+ \section Description
+   This command displays the number of extra connections 
+   (and deletes them if specified).
    Extra connection extend the usual sparsity pattern.
 
+\section Syntax
    'extracon [$d]'
 
 .  $c - also check the connections
    
-   KEYWORDS:
+ \section Keywords
    multigrid, matrices, connections, pattern, delete, remove
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page check check - check consistency of the data structure
+/** \page check check - Check consistency of the data structure
 
-   DESCRIPTION:
+ \section Description
    This command checks consistency of the data structure, using
    the function 'CheckGrid'. Dependent on the options are called inside
    'CheckGrid' one or more of 'CheckGeometry' 'CheckAlgebra', 'CheckLists'
    and 'CheckInterfaces'. Default check is 'CheckGeometry'.
 
+\section Syntax
    'check {$a | $g | $c | $l | $i | $w}* [$n]'
 
 .  $a - all possible checks are done
@@ -1521,20 +1608,21 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  $n - also check the numerical part of data structures
 .  $w - print a list of all control words of object types with control entries to stdout
    
-   KEYWORDS:
+ \section Keywords
    multigrid, check, consistency, data structure, algebra, counters, interfaces
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   quality - calculate minimal and maximal angle of specified elements
+/** \page  quality quality - Calculate minimal and maximal angle of specified elements
 
-   DESCRIPTION:
+ \section Description
    This command calculates the minimal and maximal angle
    between sides of the specified elements
-   and lists elements with angle \< or > given angles.
+   and lists elements with angle \< or \> given angles.
    It calls the functions 'QualityElement'.
 
+\section Syntax
    'quality $a | $s | {$i \<fromID> [\<toID>]} [$\< \<angle>] [$> \<angle>]'
 
 .    $a          - check angles of all elements in the multigrid
@@ -1547,21 +1635,22 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 
      (angles in degree 0-360)
    
-   KEYWORDS:
+ \section Keywords
    multigrid, element, quality, angles, find
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   makegrid - generate grid
+/** \page  makegrid  makegrid - Generate grid
    
    2D advancing front generator:
    
-   DESCRIPTION:
+ \section Description
    This command generates the grid. First, the command bnodes must be called.
    It reads the environment variables ':gg:RelRasterSize', ':gg:h_global',	
    ':gg:searchconst', ':gg:angle', ':gg:epsi'.
 
+\section Syntax
    'makegrid ${W|w|K|k} [$E] [$h \<val>] [$m \<no>] [$S \<search>] [$A \<angle>] [$d \<subdom>]'
 
 .  ${W|w|K|k}	- W resp. K are using the quadtree accellerator, 
@@ -1575,13 +1664,13 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  $A~\<angle>	- try to avoid angle smaller than \<angle>
 .  $d~\<subdom>	- restrict grid generation to subdomain with id \<subdom>
 
-   EXAMPLE:
+ \section Example
    'makegrid $k $h 1.0;'
    
    
    3D advancing front generator (by J. Schoeberl):
    
-   DESCRIPTION:
+ \section Description
    This command invokes the advancing front tetrahedral grid generator.
    
    'makegrid [$s] [$h \<meshsize>] [$d]'
@@ -1590,33 +1679,35 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .   $h \<meshsize>	- preferred meshsize (default 1.0)
 .   $d				- ?
    
-   KEYWORDS:
+ \section Keywords
    multigrid, generate, create, mesh, net, grid, coarse, advancing front
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   status - show status about (parallel) multigrid
+/** \page  status  status - Show status about (parallel) multigrid
    
-   DESCRIPTION:
+ \section Description
    This command outputs some statistics about red,green yellow element 
    distribution and some loadbalacing measures for parallel.
 
+\section Syntax
 .  ${W|w|K|k}	- W resp. K are using the quadtree accellerator, 
 
-   KEYWORDS:
+ \section Keywords
    multigrid, loadbalancing, mesh, net, grid, adaptive refinement, estimator 
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   cadconvert - convert predefined CADgrid
+/** \page  cadconvert cadconvert - Convert predefined CADgrid
 
-   DESCRIPTION:
+ \section Description
    This command converts a predefined CADgrid to an UG-multigrid.
    The complete boundary descriptions are created automatically.
    Additionally boundary conditions can be chosen from a boundary condition class library.
 
+\section Syntax
    'cadconvert $\<filename> $h\<heapsize>'
 
 .  $ \<filename>  - filename = name of CADOutputfile ("*.ans", ANSYS/PREP7-Format) 
@@ -1624,10 +1715,10 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  $h \<heapsize> - the heapsize to be allocated
 
 
-   EXAMPLE:
+ \section Example
    'cadconvert $ wuerfel.ans $h 12000;'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, generate, create, mesh, net, grid, coarse, CAD, ANSYS, PREP7
 */
 /****************************************************************************/
@@ -1635,53 +1726,55 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 /** \page grape grape - Switch to interactive grape mode
 
-   DESCRIPTION:
+ \section Description
    This command switches to interactive grape mode. Quitting grape returns to ug.
 
-   'screensize'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, graphics, GRAPE, plot
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   covise - enable covise interface
+/** \page  covise covise - Enable covise interface
 
-   DESCRIPTION:
+ \section Description
    This command enables docking of a Covise user interface by a remote
    workstation.
 
+\section Syntax
 .  hostname		- hostname of workstation which runs Covise
 
-   KEYWORDS:
+ \section Keywords
    multigrid, graphics, Covise, plot
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   screensize - print the size of the monitor screen in pixels
+/** \page  screensize screensize - Print the size of the monitor screen in pixels
 
-   DESCRIPTION:
+ \section Description
    This command prints the size of the monitor screen in pixels.
    It prints the size in pixels of the screen (if there) on the shell
    and in the variables ':screensize:width', ':screensize:height'
 
+\section Syntax
    'screensize'
    
-   KEYWORDS:
+ \section Keywords
    screen, size, width, height
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   openwindow - open a new window
+/** \page  openwindow openwindow - Open a new window
 
-   DESCRIPTION:
+ \section Description
    This command opens an ug-window on an outputdevice 
    (this will be the current window then).
    It calls the function 'CreateUGWindow'.
 
+\section Syntax
    'openwindow \<h> \<v> \<dh> \<dv> [$d \<output device>] [$n \<window name>]'
 
 .  \<h>~\<v>                - the lower left corner of the plotting region in the 'standardRefSys'
@@ -1693,26 +1786,27 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
    SEE ALSO:
    'closewindow', 'openpicture', 'closepicture'
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, open, create
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   closewindow - close the current ug-window
+/** \page  closewindow closewindow - Close the current UG-window
 
-   DESCRIPTION:
+ \section Description
    This command closes one (or all) ug-window(s) 
    (including the pictures residing there, of course),
    calling the functions 'DisposeMultiGrid' and 'DisposePicture'.
 
+\section Syntax
    'closewindow [$n \<window name> | $a]'
 
 .  $n~\<window~name>  - close the window with the specified name
 .n      	             (default: the current window)
 .  $a                - close all open windows
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, close, remove
    
    SEE ALSO:
@@ -1721,17 +1815,18 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   setcurrwindow - set the current window
+/** \page  setcurrwindow setcurrwindow - Set the current window
 
-   DESCRIPTION:
+ \section Description
    This command makes a window the current window.	
    It calls the function 'GetUGWindow'.
 
+\section Syntax
    'setcurrwindow \<window name>'
 
 .  \<window~name> - name of a window
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, current, active
 
    SEE ALSO:
@@ -1740,11 +1835,12 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   drawtext - draw text in a ug window
+/** \page  drawtext drawtext - Draw text in a ug window
 
-   DESCRIPTION:
+ \section Description
    This command draws text into a ug window.
 
+\section Syntax
    'drawtext \<xpos> \<ypos> \<text> [$w \<window name>] [$c] [$i]'
 
 .  \<xpos>                 - x-coordinate in pixels (origin is the lower left corner)
@@ -1755,7 +1851,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  $c                     - center text at \<xpos> \<ypos>
 .  $s~\<size>              - text size
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, text
    
    SEE ALSO:
@@ -1764,13 +1860,14 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   openpicture - open a new picture
+/** \page  openpicture openpicture - Open a new picture
 
-   DESCRIPTION:
+ \section Description
    This command opens a picture on a window 
    (these will be the current window and picture resp. then).
    It calls the function 'CreatePicture'.
 
+\section Syntax
    'openpicture [$w \<window name>] [$s \<h> \<v> \<dh> \<dv>] [$n \<picture name>]'
 
 .  $w~\<window~name>       - open a picture on this window (default: current window)
@@ -1780,7 +1877,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 
 .  $n~\<picture~name>      - optionally you can specify the picture name
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, open, create
    
    SEE ALSO:
@@ -1789,16 +1886,17 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   openppic - open a new window with placed pictures
+/** \page  openppic  openppic - Open a new window with placed pictures
 
-   DESCRIPTION:
+ \section Description
    ???
 
+\section Syntax
    'openppic ??? [$R [0|1]]'
 
 .  $R~[0|1]               - if not default device: 0: replace (default), 1: rename existing graphics file (using modification date)
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, open, create
    
    SEE ALSO:
@@ -1807,12 +1905,13 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   closepicture - close a picture
+/** \page  closepicture closepicture - Close a picture
 
-   DESCRIPTION:
+ \section Description
    This command closes one (or all) picture(s) on a window.
    It calls the function 'DeletePicture'.
 
+\section Syntax
    'closepicture [$a | {$w \<window name> {\<picture name> | $a}}]'
 
 .  $w~\<window~name>        - close a picture of this window 
@@ -1820,7 +1919,7 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 .  $a                      - close all pictures of the current window
 .  {\<picture~name>~|~$a}   - close the picture with the specified name or all pictures of that window
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, close, remove
    
    SEE ALSO:
@@ -1829,17 +1928,18 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   setcurrpicture - make a picture the current picture
+/** \page  setcurrpicture setcurrpicture - Make a picture the current picture
 
-   DESCRIPTION:
+ \section Description
    This command makes a picture the current picture.
 
+\section Syntax
    'setcurrpicture \<picture name> [$w \<window name>]'
 
 .  \<picture~name>         - name of the picture
 .  $w~\<window~name>       - picture resides in this window (default: current window)
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, current, active
    
    SEE ALSO:
@@ -1848,15 +1948,16 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   picwin - move the current picture to a new window
+/** \page  picwin picwin - Move the current picture to a new window
 
-   DESCRIPTION:
+ \section Description
    This command moves the current picture to a newly created window. All
    settings will be kept.
 
+\section Syntax
    'picwin'
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, move
    
    SEE ALSO:
@@ -1865,15 +1966,16 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   clearpicture - clear current picture
+/** \page  clearpicture clearpicture - Clear current picture
 
-   DESCRIPTION:
+ \section Description
    This command clears current picture.
    It calls the function 'ErasePicture'.
 
+\section Syntax
    'clearpicture'
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, clear, erase
    
    SEE ALSO:
@@ -1882,18 +1984,18 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   picframe - toggle framing of pictures
+/** \page  picframe picframe - Toggle framing of pictures
 
-   DESCRIPTION:
+ \section Description
    This command toggles the framing of pictures. If on a black frame is drawn
    around each picture to show its bounds. The current picture is indicated
    by an orange frame, while the frame of a currently drawn picture turns red.
    It is recommended to switch off framing for other devices than 'screen'.
    
-   SYMTAX:
+\section Syntax
    'picframe 0|1'
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, frame
    
    SEE ALSO:
@@ -1902,19 +2004,21 @@ freeaverage $nv uwTrans $s sol $nv unTrans $s sol;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   setview - specifies the view on the object
+/** \page  setview setview - Specifies the view on the object
 
-   DESCRIPTION:
+ \section Description
    This command specifies or changes the observer view of the object 
    of the current picture.
-   It calls the function 'SetView'.
+   It calls the function SetView().
 
-    in 2D:~
+\section Syntax
+
+ \subsection  In 2D
 .vb
 setview [$i] [$t \<x> \<y>] [$x  \<x> \<y>]
 .ve
 
-    in 3D:~
+ \subsection  In 3D
 .vb
 setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< | =]
               {$C | $R | {$P \<x> \<y> \<z> $N \<x> \<y> \<z>}}
@@ -1941,7 +2045,7 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
    
    For first definition of cut specify either C-option or both P- and N-option.
     
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, view, cutting plane
    
    SEE ALSO:
@@ -1950,19 +2054,20 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   vdisplay - display view of current picture
+/** \page  vdisplay vdisplay - Display view of current picture
 
-   DESCRIPTION:
+ \section Description
    This command displays view of current picture.
    It calls the function 'DisplayViewOfDisplayedObject'.
 
+\section Syntax
    'vdisplay [$s]'
    
 .   $s		- print settings in 'setview'-command style. This is especially
 				useful after interactive zoom and pan. Pasting the output into
 				a script file will reproduce the current view of the picture.
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, view, cutting plane, display, show, print
 
    SEE ALSO:
@@ -1971,18 +2076,19 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   cpview - copy view settings of current picture to other ones
+/** \page  cpview cpview - Copy view settings of current picture to other ones
 
-   DESCRIPTION:
+ \section Description
    This command copies the view settings of current picture to all other pictures of
    the same window (default) or all windows provided that they belong to the
    same MG and they have the same dimension.
 
+\section Syntax
    'cpview [$a] [$c]'
 .  a - set views of all pictures in all windows
 .  c - set also cut (if defined for plot object)
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, view, cutting plane, copy
 
    SEE ALSO:
@@ -1991,17 +2097,18 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   walk - let the observer walk relative to the viewRefSys
+/** \page  walk walk - Let the observer walk relative to the viewRefSys
 
-   DESCRIPTION:
+ \section Description
    This command lets the observer walk relative to the 'viewRefSys'
    in the current picture. It calls the function 'walk'.
 
+\section Syntax
    'walk \<x> \<y> [\<z>]'
 
 .   \<x>~\<y>~[\<z>] - coordinates
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, view, observer, move
 
    SEE ALSO:
@@ -2010,12 +2117,13 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   walkaround - let the observer walk on a sphere around the target point
+/** \page  walkaround walkaround - Let the observer walk on a sphere around the target point
 
-   DESCRIPTION:
+ \section Description
    This command lets the observer walk on a sphere around the target point.
    It calls the function 'RunAroundTargetPoint'.
 
+\section Syntax
    'walkaround \<viewplane angle> \<rotation angle>'
 
 .  \<viewplane~angle>      - this angle runs in the view plane math pos from the x-axis and defines
@@ -2025,7 +2133,7 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 
    (angles in degree 0 - 360)
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, view, observer, move, rotate
 
    SEE ALSO:
@@ -2035,18 +2143,19 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 
 
 /****************************************************************************/
-/** \page zoom zoom - zoom the current picture
+/** \page zoom zoom - Zoom the current picture
 
-   DESCRIPTION:
+ \section Description
    This command zooms the current picture.
    the zoom factor is always relative to the current setting.
    It calls the function 'Zoom'.
 
+\section Syntax
    'zoom \<factor>'
 
 .  \<factor>  - values \< 1 magnify picture 
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, view, zoom, magnify
 
    SEE ALSO:
@@ -2055,18 +2164,19 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   drag - drag the projection plane of the current picture
+/** \page  drag drag - Drag the projection plane of the current picture
 
-   DESCRIPTION:
+ \section Description
    This command drags the projection plane of the current picture relative 
    to its x-axis.
    It calls the function 'DragProjectionPlane'.
 
+\section Syntax
    'drag \<dx> \<dy>'
 
 .  \<dx>~\<dy>  - displacement vector 
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, view, observer, pan, move
 
    SEE ALSO:
@@ -2075,18 +2185,19 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   rotate - rotate the projection plane of the current picture
+/** \page  rotate rotate - Rotate the projection plane of the current picture
 
-   DESCRIPTION:
+ \section Description
    This command rotates the projection plane of the current picture around 
    the target point.
    It calls the function 'RotateProjectionPlane'.
 
+\section Syntax
    'rotate \<angle>'
 
 .  \<angle>  - \<angle> runs in the view plane math pos from the x-axis
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, view, observer, rotate
 
    SEE ALSO:
@@ -2095,40 +2206,41 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   textfac - set factor to zoom text sizes
+/** \page  textfac textfac - Set factor to zoom text sizes
 
-   DESCRIPTION:
+ \section Description
    This command sets factor to zoom text sizes (default 1).
    
-   SYMTAX:
+\section Syntax
    'textfac \<factor>'
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, view, textsize
 */
 /****************************************************************************/
 /****************************************************************************/
-/** \page   linefac - set factor to zoom line width
+/** \page  linefac linefac - Set factor to zoom line width
 
-   DESCRIPTION:
+ \section Description
    This command sets factor to zoom line width (default 1).
    
-   SYMTAX:
+\section Syntax
    'linefac \<factor>'
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, view, linewidth
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   setplotobject - set plotting specification 
+/** \page  setplotobject setplotobject - Set plotting specification 
 
-   DESCRIPTION:
+ \section Description
    This command specifies the object which will be plotted in the current
    picture and associates the current multigrid with it (if not done yet).
    It calls the function 'SpecifyPlotObjOfViewedObject'.
 
+\section Syntax
    'setplotobject [\<object type name>] [$a] ... '
 
 .    \<object~type~name>   - possible are:
@@ -2151,7 +2263,7 @@ setview [$i] [$o \<x> \<y> \<z> $t \<x> \<y> \<z>] [$x \<x> \<y> [\<z>]] [$p \< 
    The remaining options depend on which object you specified.
    See the help for one of the abobe plotobjects for further help.
 
-   EXAMPLE:
+ \section Example
 .vb
 openpicture $n p0 $s 5 5  300 300;
 setplotobject Grid $b 1 $n 0 $e 0 $c 1 $w a;
@@ -2167,7 +2279,7 @@ openpicture $n p2 $s 5 615 300 300;
 setplotobject EScalar $e v_sol $d 1;
 .ve
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, view, plotobject
    
    SEE ALSO:
@@ -2175,15 +2287,16 @@ setplotobject EScalar $e v_sol $d 1;
 */
 
 /****************************************************************************/
-/** \page   polist - print the specifications of the object
+/** \page  polist polist - Print the specifications of the object
 
-   DESCRIPTION:
+ \section Description
    This command prints the specifications of the object defined in the 
    current picture. It calls the function 'DisplayObject'.
 
+\section Syntax
    'polist'
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, plotobject, list, show, print, display
    
    SEE ALSO:
@@ -2192,40 +2305,42 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   plot - plot an object
+/** \page  plot plot - Plot an object
 
-   DESCRIPTION:
+ \section Description
    This command plots the object of the current picture according to 
    its specifications.
    It calls the function 'WorkOnPicture'.
 
+\section Syntax
    'plot [$o [0|1|2]] [$b [\<factor>]] [$a]'
 
 .   $o	- ordering strategy (only used for 3D hidden surface)
 .   $b  - use bullet plotter
 .   $a  - plot all pictures in all windows
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, plotobject, draw
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   findrange - find the range of values to be plotted
+/** \page  findrange findrange - Find the range of values to be plotted
 
-   DESCRIPTION:
+ \section Description
    This command computes the range of  values to be plotted for the object 
    in the current picture. The result will be printed and 
    stored into :findrange:min and :findrange:max.
    It calls the function 'WorkOnPicture'.
 
+\section Syntax
    'findrange [$z \<zoom factor>] [$s] [$p]'
 
 .  $z~\<zoom factor>       - zoom the range by this factor
 .  $s                     - symmetrize the range (min=max)
 .  $p                     - store range in plot object
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, plotobject, range, values
 
    SEE ALSO:
@@ -2234,16 +2349,17 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   setcurrmg - change the current multigrid
+/** \page  setcurrmg setcurrmg - Change the current multigrid
 
-   DESCRIPTION:
+ \section Description
    This command sets the current multigrid.
 
+\section Syntax
    'setcurrmg \<mgname>'
 
 .  \<mgname>  - name of the open multigrid which will be made the current one
    
-   KEYWORDS:
+ \section Keywords
    multigrid, current, active
 
    SEE ALSO:
@@ -2252,31 +2368,33 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   updateDoc - reset the windows and pictures of the current multigrid to invalid
+/** \page  updateDoc updateDoc - Reset the windows and pictures of the current multigrid to invalid
 
-   DESCRIPTION:
+ \section Description
    This command runs 'InvalidatePicturesOfMG' and 
    'InvalidateUgWindowsOfMG'.
    If the refresh state is on, the pictures will be replotted.
 
+\section Syntax
    'updateDoc'
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, plotobject, invalidate
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   rotmode - rotation mode for 3D pictures (arrow tool)
+/** \page  rotmode rotmode - Rotation mode for 3D pictures (arrow tool)
 
-   DESCRIPTION:
+ \section Description
    This command toggles the rotation mode for 3D plot objects between
    Euler angle mode and Virtual Sphere. Just try both to find the most
    convenient one.
 
+\section Syntax
    'rotmode E[uler] | S[phere]'
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, plotobject, arrowtool
    
    SEE ALSO:
@@ -2285,34 +2403,36 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   setpalette - switch palette of default device
+/** \page  setpalette setpalette - Switch palette of default device
 
-   DESCRIPTION:
+ \section Description
    This command switches the palette of the default device.
 
+\section Syntax
    'setpalette c|bw|g [$d \<device>]'
 .  $d~\<device>     - specify the name of an output device (default: screen)
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, device
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   clear - assign a value to a symbolic vector
+/** \page  clear clear - Assign a value to a symbolic vector
 
-   DESCRIPTION:
+ \section Description
    This function sets the values of a grid function specified by a vec data descriptor.
    The data descriptor is created if it does not exist yet.
    It clears or assigns a constant value.
 
+\section Syntax
    'clear \<symbol name> [$a] [$u] [$v \<value>] [$x] [$y] [$z]'
 
 .  $a         - from level 0 through current level (default: current level only)
 .  $s         - do not change skip (Dirichlet) values
 .  $v~\<value> - assign this value (instead of 0.0)
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, clear, set
 
    SEE ALSO:
@@ -2321,27 +2441,29 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   makevdsub - make a sub descriptor for a vector descriptor
+/** \page  makevdsub makevdsub - Make a sub descriptor for a vector descriptor
 
-   DESCRIPTION:
+ \section Description
    This function makes a sub descriptor for a vector descriptor.
 
+\section Syntax
    'makevdsub \<vd> $sub \<vt> \<sub>'
 
 .  \<vd>				- existing descriptor
 .  $sub~\<vt>~\<sub>	- template and name of sub of this template
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, descriptor
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   mflops - floating point speed measuring
+/** \page  mflops mflops - Floating point speed measuring
 
-   DESCRIPTION:
+ \section Description
    This function tests the performance of the UG specific blas routines.
 
+\section Syntax
    'mflops $x \<vec> [$y \<tmp>] [$A \<mat>] [$l \<loop>]'
 
 .  $x~\<vec>   - vector
@@ -2356,12 +2478,13 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   rand - assign a value to a symbolic vector
+/** \page  rand rand - Assign a value to a symbolic vector
 
-   DESCRIPTION:
+ \section Description
    This function sets the random values of a grid function specified by a vec data descriptor.
    The data descriptor is created if it does not exist yet.
 
+\section Syntax
    'rand \<symbol name> [$a] [$s] [$f \<value>] [$t \<value>]'
 
 .  $a         - from level 0 through current level (default: current level only)
@@ -2369,7 +2492,7 @@ setplotobject EScalar $e v_sol $d 1;
 .  $f~\<value> - low bound of random range, default is 0
 .  $t~\<value> - upper bound of random range, default is 1
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, clear, set
 
    SEE ALSO:
@@ -2378,22 +2501,23 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   copy - copy from one vector symbol to another one
+/** \page  copy copy - Copy from one vector symbol to another one
 
-   DESCRIPTION:
+ \section Description
    This command copies from one vector symbol to another one.
    The data descriptor is created if it does not exist yet.
 
+\section Syntax
    'copy $f \<from vec sym> $t \<to vec sym> [$a]'
 
 .  $f~\<from~vec~sym>      - from vector symbol
 .  $t~\<from~vec~sym>      - to vector symbol
 .  $a                     - all levels
 
-   EXAMPLE:
+ \section Example
    'copy $f sol $t old;'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, copy, set
 
    SEE ALSO:
@@ -2404,19 +2528,20 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 /** \page add add - Add two vector symbols
 
-   DESCRIPTION:
+ \section Description
    This command adds two vectors (x = x + y).
 
+\section Syntax
    'add $x \<vec sym> $y \<vec sym> [$a]'
 
 .  $x~\<vec~sym>      - vector symbol 
 .  $y~\<vec~sym>      - vector symbol
 .  $a                - all levels
 
-   EXAMPLE:
+ \section Example
    'add $x sol $y old;'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, copy, set
 
    SEE ALSO:
@@ -2425,21 +2550,22 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   sub - subtract two vector symbols
+/** \page  sub sub - Subtract two vector symbols
 
-   DESCRIPTION:
+ \section Description
    This command subtracts two vectors (x = x - y).
 
+\section Syntax
    'sub $x \<vec sym> $y \<vec sym> [$a]'
 
 .  $x~\<vec~sym>      - vector symbol 
 .  $y~\<vec~sym>      - vector symbol
 .  $a                - all levels
 
-   EXAMPLE:
+ \section Example
    'sub $x sol $y old;'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, copy, set
 
    SEE ALSO:
@@ -2448,12 +2574,13 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   homotopy - convex combination of two vector symbols
+/** \page  homotopy homotopy - Convex combination of two vector symbols
 
-   DESCRIPTION:
+ \section Description
 
    This command sets 'x := (1-v)*x + v*y'.
 
+\section Syntax
    'homotopy $v \<val> $x \<x vec sym> $y \<y vec sym> [$a]'
 
 .  $v~\<val>               - value
@@ -2461,10 +2588,10 @@ setplotobject EScalar $e v_sol $d 1;
 .  $y~\<y~vec~sym>         - vector symbol
 .  $a                     - all levels
 
-   EXAMPLE:
+ \section Example
    'homotopy $v 0.5 $x sol $y old;'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, weighted sum, interpolate
 
    SEE ALSO:
@@ -2473,19 +2600,20 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   interpolate - (standard) interpolate a vector symbol to new vectors on the current level
+/** \page  interpolate interpolate - Interpolate a vector symbol to new vectors on the current level
 
-   DESCRIPTION:
+ \section Description
    The data descriptor is created if it does not exist yet.
 
+\section Syntax
    'interpolate \<vec sym>'
 
 . \<vec~sym>  - vector symbol to be interpolated
 
-   EXAMPLE:
+ \section Example
    'interpolate sol;'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, interpolate, prolongate
 
    SEE ALSO:
@@ -2494,47 +2622,51 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   reinit - reinitialize a boundary value problem
+/** \page  reinit reinit - Reinitialize a boundary value problem
 
-   DESCRIPTION:
+ \section Description
    This command reinitializes the problem with the user defined reinit of the 
    problem. All arguments are passed to the reinit function
 
+\section Syntax
    'reinit [$b \<boundary value problem>] ...'
 
 .  $b~\<boundary~value~problem> - problem to initialize
 							     (default is the problem of the current mg)
    
-   KEYWORDS:
+ \section Keywords
    multigrid, boundary value problem, configure, change
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   delformat - delete a previously enroled format
+/** \page  delformat delformat - Delete a previously enroled format
 
-   DESCRIPTION:
+ \section Description
    This command deletes a previously enroled format.
 
+\section Syntax
    'delformat \<format name>'
 
 .  \<format~name> - name of the fomat
    
-   KEYWORDS:
+ \section Keywords
    storage, format
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page	setpf -  command to change current settings of the data
+/** \page setpf setpf -  Change current settings of the data
 					listing functions of a format
-	
-	SYNTAX:
+
+ \section Description
+
+   For a format previously enroled by use of the 'newformat' command the 'setpf'
+	command specifies the symbols that are displayed when 'vmlist' is called 
+
+ \section Syntax
 	setpf \<format_name> [$V{0 | {+|-} {\<vecsym_name>}+}]+ [$M{0 | {+|-} {\<matsym_name>}+}]+
 	
-	DESCRIPTION:
-	For a format previously enroled by use of the 'newformat' command the 'setpf'
-	command specifies the symbols that are displayed when 'vmlist' is called with
 	'$d' (list vector data) or '$d $m' (list vector and matrix data).
 	'0' clears the list of symbols, '+' adds further symbols, and '-'
 	removes symbols from that list.
@@ -2559,7 +2691,7 @@ setplotobject EScalar $e v_sol $d 1;
 	vmlist $i 12 $m $d;
 .ve
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, matdata, print, show, display
 	
 	SEE ALSO:
@@ -2568,15 +2700,16 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page	showpf - command to display current settings of data
+/** \page showpf showpf - Display current settings of data
 					listing functions
 	
 	DESCRIPTION:
 	This command shows which user data will bbe listed by vml $d $m...
 	
+ \section Syntax
 	'showpf'
    
-    KEYWORDS:
+  \section Keywords
     multigrid, numerics, userdata, vecdata, matdata, print, show, display
 	
 	SEE ALSO:
@@ -2585,16 +2718,17 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   npexecute npexecute - execute a NumProc
+/** \page   npexecute npexecute - Execute a NumProc
  *
  * This command executes a NumProc.
  * It calls the function 'ExecuteNumProc'.
 
+ \section Syntax
    'npexecute [\<num proc name>] \<argument list to be passed>'
 
 .  \<num~proc~name> - name of an existing NumProc
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, matdata, numproc, execute
 
    * \sa numerics, NUM_PROC
@@ -2602,19 +2736,20 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   npdisplay - display a NumProc
+/** \page  npdisplay npdisplay - Display a NumProc
 
-   DESCRIPTION:
+ \section Description
    This command displays a NumProc.
    It calls the function 'DisplayNumProc'.
 
+ \section Syntax
    'npdisplay [\<num proc name>] [$c [\<class>] | $a]'
 
 .  \<num~proc~name> - name of an existing NumProc (default is the current NumProc)
 .  $c~[\<class>]    - list all num procs of \<class> or list classes if \<class> omitted
 .  $a              - list all num procs
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, matdata, numproc, display, show, print
 
    SEE ALSO:
@@ -2623,18 +2758,19 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   npcreate - creating a NumProc
+/** \page  npcreate npcreate - Create a NumProc
 
-   DESCRIPTION:
+ \section Description
    This command creates a NumProc for the current multigrid with a given constructor.
-   It calls the function 'CreateNumProc'.
+   It calls the function CreateNumProc().
 
+ \section Syntax
    'npcreate \<num proc name> $c \<constructor>'
 
 .  \<num~proc~name> 		- name of the new NumProc
 .  $c~\<num~proc~type>	- name of an existing constructor
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, matdata, numproc, create, install
 
    SEE ALSO:
@@ -2643,15 +2779,16 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   npinit - inizialize a NumProc
+/** \page  npinit npinit - Inizialize a NumProc
 
-   DESCRIPTION:
+ \section Description
    This command inizializes a NumProc.
    It calls the function 'SetNumProc'.
 
+ \section Syntax
    'npinit \<argument list to be passed>'
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, matdata, numproc, initialize, parameters, configure
 
    SEE ALSO:
@@ -2660,18 +2797,19 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   scnp - make a NumProc the current NumProc
+/** \page  scnp  scnp - Make a NumProc the current NumProc
 
-   DESCRIPTION:
+ \section Description
    This command makes a NumProc the current NumProc.
    It sets current num proc.
    It calls the function 'GetNumProcFromName'.
 
+ \section Syntax
    'scnp \<num proc name>'
 
 . \<num~proc~name> - name of an existing NumProc
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, matdata, numproc, active, current
 
    SEE ALSO:
@@ -2680,19 +2818,20 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   createvector - construct vector descriptors
+/** \page  createvector createvector - Construct vector descriptor
 
-   DESCRIPTION:
+ \section Description
    This function creates vector descriptors using templates defined
    in the format.
 
+ \section Syntax
    'createvector \<v1> [\<v2> ...] [$t \<template>] [$m \<name>]'
 
 .  v1 		- vector name
 .  template - template name (default is the first vector template)
 .  name 	- multigrid name (default is the current multigrid)
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, create
 
    SEE ALS0:
@@ -2701,19 +2840,20 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   creatematrix - construct matrix
+/** \page  createMatrix creatematrix - Construct matrix descriptor
 
-   DESCRIPTION:
+ \section Description
    This function creates matrix descriptors using templates defined
    in the format.
 
+ \section Syntax
    'creatematrix \<M1> [\<M2> ...] [$t \<template>] [$m \<name>]'
 
 .  M1 		- matrix name
 .  template - template name (default is the first matrix template)
 .  name 	- multigrid name (default is the current multigrid)
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, matdata, create
 
    SEE ALS0:
@@ -2722,17 +2862,18 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   freematrix - free matrix
+/** \page  freematrix freematrix - Free matrix
 
-   DESCRIPTION:
+ \section Description
    This function frees matrix descriptors.
 
+ \section Syntax
    'freematrix \<M1> [\<M2> ...] [$m \<name>]'
 
 .  M1 		- matrix name
 .  name 	- multigrid name (default is the current multigrid)
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, matdata, create
 
    SEE ALS0:
@@ -2741,12 +2882,13 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   symlist - list contents of vector and matrix symbols
+/** \page  symlist symlist - List contents of vector and matrix symbols
 
-   DESCRIPTION:
+ \section Description
    This command lists the contents of vector and matrix data descriptors of the
    current multigrid
 
+ \section Syntax
    'symlist {$V [\<vd>] | $M [\<md>]  [$alloc] [$scal]}'
 
 	Specify either option V or M with or without:~
@@ -2758,7 +2900,7 @@ setplotobject EScalar $e v_sol $d 1;
 .  \<alloc> - is descriptor allocated and/or locked
 .  \<scal> - is descriptor scalar or not
    
-   KEYWORDS:
+ \section Keywords
    multigrid, numerics, userdata, vecdata, matdata, list, show, display, print
 
    SEE ALSO:
@@ -2767,12 +2909,13 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   setkey - associate a command key with a ug command 
+/** \page  setkey setkey - Associate a command key with a ug command 
 
-   DESCRIPTION:
+ \section Description
    This command associates a command key with a ug command.
    It calls the function 'SetCmdKey'.
 
+ \section Syntax
    'setkey $\<command char> [$c \<comment text>] [$-] $"\<command sequence>"*'
 
 .  $k~\<command~char>      - specifiy a single character which will be the command key
@@ -2780,7 +2923,7 @@ setplotobject EScalar $e v_sol $d 1;
 .  $-                     - keylist prints a hor bar befor this key
 .  $"\<command~sequence>"  - give an arbitrary sequence of statements which is to be executed when the command key is pressed
 
-   EXAMPLE:
+ \section Example
    'setkey $r $"mark $a" $"refine";'
 
    Typing \<alt> and then 'r' refines all elements on a UNIX system,
@@ -2794,7 +2937,7 @@ setplotobject EScalar $e v_sol $d 1;
    
    The special character ? is limited however to the 'setkey' command.
    
-   KEYWORDS:
+ \section Keywords
    shortcut, hotkey, create, define
 
    SEE ALSO:
@@ -2803,18 +2946,19 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   delkey - delete an existing command key
+/** \page  delkey delkey - Delete an existing command key
 
-   DESCRIPTION:
+ \section Description
    This command deletes an existing command key.
    It calls the function 'DelCmdKey'.
 
+ \section Syntax
    'delkey $all | $\<command char>'
 
 .  $all                   - delete all command keys allocated before
 .  $\<command~char>        - delete only the command key associated with \<command char>
    
-   KEYWORDS:
+ \section Keywords
    shortcut, hotkey, remove, undefine
 
    SEE ALSO:
@@ -2823,17 +2967,18 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   keylist - list all existing command keys
+/** \page  keylist keylist - List all existing command keys
 
-   DESCRIPTION:
+ \section Description
    This command lists all existing command keys.
    It calls the function 'ListCmdKeys'.
 
+ \section Syntax
    'keylist [$l]'
 
 .  $l - show commands and comment (iff)
    
-   KEYWORDS:
+ \section Keywords
    shortcut, hotkey, list, show, display, print
 
    SEE ALSO:
@@ -2842,17 +2987,18 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   refreshon - sets the refresh state on
+/** \page  refreshon refreshon - Sets the refresh state on
 
-   DESCRIPTION:
+ \section Description
    This command sets the refresh state on: The pictures on the screen 
    device will be updated instantaneously.
 
+ \section Syntax
    'refreshon [$b [factor]]'
    
 .  $b - use bullet plotter for refresh
 
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, plotobject, invalid, update
 
     SEE ALSO:
@@ -2861,14 +3007,15 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   refreshoff - sets the refresh state off
+/** \page  refreshoff refreshoff - Sets the refresh state off
 
-   DESCRIPTION:
+ \section Description
    This command sets the refresh state off.
 
+ \section Syntax
    'refreshoff'
    
-   KEYWORDS:
+ \section Keywords
    graphics, plot, window, picture, plotobject, invalid, update
 
    SEE ALSO:
@@ -2877,14 +3024,15 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   resetCEstat - reset counters of control entry usage
+/** \page  resetCEstat resetCEstat - Reset counters of control entry usage
 
-   DESCRIPTION:
+ \section Description
    This command resets the counters of control entry usage.
 
+ \section Syntax
    'resetCEstat'
    
-   KEYWORDS:
+ \section Keywords
    control entries
 
    SEE ALSO:
@@ -2893,14 +3041,15 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   printCEstat - print counters of control entry usage
+/** \page  printCEstat printCEstat - Print counters of control entry usage
 
-   DESCRIPTION:
+ \section Description
    This command prints the counters of control entry usage.
 
+ \section Syntax
    'printCEstat'
    
-   KEYWORDS:
+ \section Keywords
    control entries
 
    SEE ALSO:
@@ -2909,45 +3058,47 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   heapstat - list information about heap of current multigrid
+/** \page  heapstat heapstat - List information about heap of current multigrid
 
-   DESCRIPTION:
+ \section Description
    This command lists information on the heap of the current multigrid, calling
    the function 'HeapStat'.
 
+ \section Syntax
    'heapstat'
    
-   KEYWORDS:
+ \section Keywords
    heap, multigrid, freelists 
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   getheapused - put size of used heap of current multigrid into environment variabl :HEAPUSED
+/** \page  getheapused getheapused - Get size of used heap of current multigrid
 
-   DESCRIPTION:
+ \section Description
    This command gets the size of used heap of the current multigrid and puts
    the result in the environment variable :HEAPUSED.
 
+ \section Syntax
    'getheapused'
    
-   KEYWORDS:
+ \section Keywords
    heap, multigrid, freelists, memory, used, get, free 
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page
-   lb - a simple load balancing front end to chaco
+/** \page lb  lb - A simple load balancing front end to chaco
    			based on the clustering technique
 
-   DESCRIPTION:
+ \section Description
    The lb command performs load balancing.  If not run on a parallel machine
    it will do nothing.  If run on a parallel machine it will try to use Chaco,
    provided the CHACO option for ug was turned on.  If Chaco is not available
    a simple RCB load balancing will be employed.  In the latter case some of
    the optional arguments will be ignored.
    
+ \section Syntax
    'lb  [\<strategy>] [$c \<minlevel>] [$d \<depth>] [$f \<maxlevel>] [$e \<minelem>]'
 
 .  \<strategy>		- load balancing strategy 
@@ -2956,52 +3107,55 @@ setplotobject EScalar $e v_sol $d 1;
 .  $f \<maxlevel>	- no load balancing above this level
 .  $e \<minelem>		- minimal number of elements on each processor
 
-   KEYWORDS:
+ \section Keywords
    parallel, processors, load balance, chaco
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page lbs lbs - simple or special load balancing functionality
+/** \page lbs lbs - Simple or special load balancing functionality
 
-   DESCRIPTION:
+ \section Description
    ...
    
+ \section Syntax
    'lbs ...'
 
-   KEYWORDS:
+ \section Keywords
    parallel, processors, check, load balancing
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page context  context - manipulate current processor context
+/** \page context  context - Manipulate current processor context
 
-   DESCRIPTION:
+ \section Description
    This command adds/removes processors from the current context.
    
-   'context <processor> | $a | $e'
+ \section Syntax
+   'context \<processor\> | $a | $e'
    
 .  \<processor>		- processor id
 .  $a				- add all processors
 .  $e				- remove all processors (empty context)
    
-   KEYWORDS:
+ \section Keywords
    parallel, processors, display, show, print, DDD, configure
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page pstat  pstat - gives information about parallel data structures
+/** \page pstat  pstat - Gives information about parallel data structures
 
-   DESCRIPTION:
+ \section Description
    ...
    
+ \section Syntax
    'pstat ...'
 
    first argument will be passed to DDD
    
-   KEYWORDS:
+ \section Keywords
    parallel, processors, display, show, print, DDD, status, interfaces
 */
 /****************************************************************************/
@@ -3010,13 +3164,14 @@ setplotobject EScalar $e v_sol $d 1;
 /** \page
    dlb_eval - gives information current load balancing situation
 
-   DESCRIPTION:
+ \section Description
    information on the current load balancing situation of MultiGrid
    
+ \section Syntax
    'dlb_eval $v \<0-n>'
 
    
-   KEYWORDS:
+ \section Keywords
    load balancing, status, load, interfaces, partition graph
 */
 /****************************************************************************/
@@ -3026,22 +3181,24 @@ setplotobject EScalar $e v_sol $d 1;
    lb4 - load balancer using different (high level) strategies
    			based on the clustering technique
 
-   DESCRIPTION:
+ \section Description
    ...
    
+ \section Syntax
    'lb4 ...'
    
-   KEYWORDS:
+ \section Keywords
    parallel, processors, load balance, chaco
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   debug - set or display debug level for ug kernel subsystem
+/** \page  debug debug - Set or display debug level for ug kernel subsystem
 
-   DESCRIPTION:
+ \section Description
    This command sets the debug level for a ug kernel subsystem.
    
+ \section Syntax
    'debug $\<module> [$\<level>]'
 
 .   $\<module>	- module can be one of
@@ -3061,73 +3218,77 @@ setplotobject EScalar $e v_sol $d 1;
 .   $\<level>	- assign this level (if omitted display current level for the
 					specified module)
    
-   KEYWORDS:
+ \section Keywords
    debug, configure, set, display, show, print
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   trace - trace a module
+/** \page  trace trace - Trace a module
 
-   DESCRIPTION:
+ \section Description
    This command sets the trace level of modules (blas only up to now).
 
+ \section Syntax
    'trace [$blas \<n>]'
 .   $blas~\<n>	- 0: off, 1: show parameters (default),
 					2: parameters and vector contents (blas level 1)
    
-   KEYWORDS:
+ \section Keywords
    debug, trace, ugblas
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   reperr - prints the error stack
+/** \page  reperr reperr - Prints the error stack
 
-   DESCRIPTION:
+ \section Description
    This command prints the error stack which is created when functios use
    the REP_ERR_RETURN macro. The stack is cleared before each call of a ug-command.
    
    File and line of the returning functions are printed.
 
+ \section Syntax
    'reperr'
    
-   KEYWORDS:
+ \section Keywords
    debug, stack, error, display, show, print
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   timing - prints time history
+/** \page   timing timing - Prints time history
 
-   DESCRIPTION:
+ \section Description
    File, line and times are printed.
 
+ \section Syntax
    'timing'
    
-   KEYWORDS:
+ \section Keywords
    debug
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   showconfig - show the main configuration settings of this ug-program
+/** \page   showconfig showconfig - Show the main configuration settings of this ug-program
 
-   DESCRIPTION:
+ \section Description
    This command shows the main configuration options having been active
    when this ug was compiled.
    
+ \section Syntax
    'showconfig'
    
-   KEYWORDS:
+ \section Keywords
    debug, check, configure, show, display, print
 */
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   array - family of ug-commands to handle n-dimensional arrays of doubles
+/** \page   array array - Family of ug-commands to handle n-dimensional arrays of doubles
 
-   DESCRIPTION:
+ \section Description
    Each array is a struct in the directory '/Array'. Besides some
    administrational information it contains an ordinary, n-dimensional array
    of doubles as a 'double[n_1][n_2]...[n_k]' definition in C would allocate.
@@ -3150,7 +3311,7 @@ setplotobject EScalar $e v_sol $d 1;
 .  saar~$n~\<name>					 - save array to file '\<name>.array'
 .  loar~$n~\<name>					 - load array from file '\<name>.array'
 
-   EXAMPLE:
+ \section Example
    Use the array commands to realize a consecutively numbering of logfiles 
    across several runs of the programm.
 .vb
@@ -3174,7 +3335,7 @@ setplotobject EScalar $e v_sol $d 1;
        logon \@logname;
 .ve
    
-   KEYWORDS:
+ \section Keywords
    values, array, manipulate, load, store, data, indexed
    
    SEE ALSO:
@@ -3183,27 +3344,28 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   crar - create a new array structure
+/** \page  crar crar - Create a new array structure
 
-   DESCRIPTION:
+ \section Description
    Allocate a new array structure in the directory '/Array' and
    allocate the data field of the specified size with the function
    'CreateArray'. The data field is the same as a 'double[n_1][n_2]...[n_k]'
    definition in C would allocate. The maximum number 'k' of dimensions
    is 'AR_NVAR_MAX'. Give the 'n_i' only for the dimensions 'i' you need.
 
+ \section Syntax
    'crar $n \<name> {$\<n_i>}+'
 
 .  \<name> - name of the array structure
 .  \<n_i>  - extension in the i.th dimension, 1 \<= i \<= 'AR_NVAR_MAX'
 
-   EXAMPLE:
+ \section Example
 .vb
    # Create a 3x7 (2-dimensional) array
    crar $n example_array $3$7;
 .ve
    
-   KEYWORDS:
+ \section Keywords
    values, array, manipulate, load, store, data, indexed
 
    SEE ALSO:
@@ -3212,17 +3374,18 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   dear - delete an existing array structure
+/** \page  dear dear - Delete an existing array structure
 
-   DESCRIPTION:
+ \section Description
    Delete the already existing array. The entry in the directory '/Array'
    is removed and the data field of the array is freed.
 
+ \section Syntax
    'dear $n \<name>'
 
 .  \<name> - name of the array structure
    
-   KEYWORDS:
+ \section Keywords
    values, array, manipulate, load, store, data, indexed
 
    SEE ALSO:
@@ -3231,12 +3394,13 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   saar - save an array to file
+/** \page  saar saar - Save an array to file
 
-   DESCRIPTION:
+ \section Description
    Store the content of the array into a file with name '\<array name>.array'.
    The 'arraypathes' entry in the 'defaults' file is considered.
 
+ \section Syntax
    'saar $n \<name>'
 
 .  \<name> - name of the array structure
@@ -3245,7 +3409,7 @@ setplotobject EScalar $e v_sol $d 1;
    The file is written in the binary mode, thus be careful when exchanging
    the computer architecture.
    
-   KEYWORDS:
+ \section Keywords
    values, array, manipulate, load, store, data, indexed
 
    SEE ALSO:
@@ -3254,13 +3418,14 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   loar - load and allocates an array from file
+/** \page  loar loar - Load and allocates an array from file
 
-   DESCRIPTION:
+ \section Description
    Load the content of the array from the file with name '\<array name>.array'.
    The 'arraypathes' entry in the 'defaults' file is considered. A new array
    structure with the given name is allocated in the directory '/Array'.
 
+ \section Syntax
    'loar $n \<name>'
 
 .  \<name> - name of the array structure
@@ -3269,7 +3434,7 @@ setplotobject EScalar $e v_sol $d 1;
    The file is written in the binary mode, thus be careful when exchanging
    the computer architecture.
    
-   KEYWORDS:
+ \section Keywords
    values, array, manipulate, load, store, data, indexed
 
    SEE ALSO:
@@ -3278,11 +3443,12 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page wrar wrar - write value into one single entry of the array
+/** \page wrar wrar - Write value into one single entry of the array
 
-   DESCRIPTION:
+ \section Description
    Write the given double-value into the specified entry of the array.
 
+ \section Syntax
    'wrar $n \<name> {$\<n_i>}+ $v \<value>'
 
 .  \<name>  - name of the array structure
@@ -3294,13 +3460,13 @@ setplotobject EScalar $e v_sol $d 1;
    the valid indices for writing are 0,..,'n'-1. An index outside this
    range causes an error. Give coordinate for all allocated dimensions.
 
-   EXAMPLE:
+ \section Example
 .vb
    # perform array[2][5] := 1.0
    wrar $n example_array $2$5 $v 1.0;
 .ve
    
-   KEYWORDS:
+ \section Keywords
    values, array, manipulate, load, store, data, indexed
 
    SEE ALSO:
@@ -3309,12 +3475,13 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   rear - read the value from one single entry of the array
+/** \page  rear rear - Read the value from one single entry of the array
 
-   DESCRIPTION:
+ \section Description
    Read the the specified value from the array and store it in the
    environment variable ':ARRAY_VALUE'.
 
+ \section Syntax
    'rear $n \<name> {$\<n_i>}+'
 
 .  \<name>  - name of the array structure
@@ -3325,7 +3492,7 @@ setplotobject EScalar $e v_sol $d 1;
    the valid indices for reading are 0,..,'n'-1. An index outside this
    range causes an error. Give coordinate for all allocated dimensions.
 
-   EXAMPLE:
+ \section Example
 .vb
    # retrieve array[2][5]
    rear $n example_array $2$5;
@@ -3333,7 +3500,7 @@ setplotobject EScalar $e v_sol $d 1;
    set :ARRAY_VALUE;
 .ve
    
-   KEYWORDS:
+ \section Keywords
    values, array, manipulate, load, store, data, indexed
 
    SEE ALSO:
@@ -3342,16 +3509,17 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   clar - set all entries of the array to 0.0
+/** \page  clar clar - Set all entries of the array to 0.0
 
-   DESCRIPTION:
+ \section Description
    Set all entries of the data field contained in the array structure to 0.0.
 
+ \section Syntax
    'clar $n \<name>'
 
 .  \<name> - name of the array structure
    
-   KEYWORDS:
+ \section Keywords
    values, array, manipulate, load, store, data, indexed
 
    SEE ALSO:
@@ -3360,16 +3528,17 @@ setplotobject EScalar $e v_sol $d 1;
 /****************************************************************************/
 
 /****************************************************************************/
-/** \page   dumpalg - dumps the surface algebra to the interface
+/** \page  dumpalg dumpalg - Dumps the surface algebra to the interface
 
-   DESCRIPTION:
+ \section Description
    Dumps the surface algebra
 
+ \section Syntax
    'dumpalg \<name\>'
 
 .  \<name\> - file name
    
-   KEYWORDS:
+ \section Keywords
    data, io
 
 */
