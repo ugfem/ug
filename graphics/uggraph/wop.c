@@ -875,8 +875,8 @@ static INT WOP_More     [WOP_DOWN_CHANNELS+1]; /* more to receive from channel i
 static INT WOP_Count    [WOP_DOWN_CHANNELS+1]; /* slots used in buffer i           */
 static INT WOP_Front    [WOP_DOWN_CHANNELS+1]; /* next free slot in buffer i       */
 static INT WOP_Rear     [WOP_DOWN_CHANNELS+1]; /* first nonempty slot in buffer i  */
-static INT WOP_SError   [WOP_DOWN_CHANNELS+1]; /* error for sending on channel i   */
-static INT WOP_RError   [WOP_DOWN_CHANNELS];   /* error for receiving on channel i */
+static int WOP_SError   [WOP_DOWN_CHANNELS+1]; /* error for sending on channel i   */ 
+static int WOP_RError   [WOP_DOWN_CHANNELS];   /* error for receiving on channel i */ 
 static msgid WOP_Outmsg [WOP_DOWN_CHANNELS+1]; /* IDs for messages being sent      */
 static msgid WOP_Inmsg  [WOP_DOWN_CHANNELS];   /* IDs for messages being received  */
 static INT WOP_CurrDoLen;                      /* length of current DO             */ 
@@ -15673,7 +15673,7 @@ static INT CompareQuadrilaterals (DOUBLE_VECTOR Triangle[2][4], COORD_POINT Scre
 */
 /****************************************************************************/
 
-static INT CompareElements (const void *ElementHandle0, 
+static int CompareElements (const void *ElementHandle0, 
 							const void *ElementHandle1)
 {
 	ELEMENT *theElement[2];
@@ -15863,7 +15863,7 @@ static COORD ZCoordInEyeSystem(DOUBLE *p)
            );
 }
 
-static INT CompareZCoord(const void *p, const void *q)
+static int CompareZCoord(const void *p, const void *q)
 {
     ELEMENT *p1, *q1;
 
@@ -16065,7 +16065,7 @@ static INT CompareIDs (const void *p, const void *q)
 
 #else
 
-static INT CompareGIDs(const void *p, const void *q)
+static int CompareGIDs(const void *p, const void *q)
 {
 	INT a, b;
 
@@ -16736,7 +16736,7 @@ static INT OrderFathersXSH(MULTIGRID *mg, ELEMENT **table)
 
 #else
 
-static INT compare_gid(const void *p, const void *q)
+static int compare_gid(const void *p, const void *q)
 {
 	INT gid1, gid2;
 
@@ -16942,7 +16942,7 @@ static INT OrderFathersXSH (MULTIGRID *mg, INT *table)
 
 #ifdef ModelP
 
-static INT GatherOS_Data(DDD_OBJ obj, void *data)
+static int GatherOS_Data(DDD_OBJ obj, void *data) 
 {
 	ELEMENT *p;
 	INT *d;
@@ -16955,7 +16955,7 @@ static INT GatherOS_Data(DDD_OBJ obj, void *data)
 	return (0);
 }
 
-static INT ScatterOS_Data(DDD_OBJ obj, void *data)
+static int ScatterOS_Data(DDD_OBJ obj, void *data) 
 {
 	ELEMENT *p;
 	INT *d;
@@ -16968,7 +16968,7 @@ static INT ScatterOS_Data(DDD_OBJ obj, void *data)
 	return (0);
 }
 
-static INT GatherOS_Data2(DDD_OBJ obj, void *data)
+static int GatherOS_Data2(DDD_OBJ obj, void *data) 
 {
 	ELEMENT *p;
 	INT *d;
@@ -16981,7 +16981,7 @@ static INT GatherOS_Data2(DDD_OBJ obj, void *data)
 	return (0);
 }
 
-static INT ScatterOS_Data2(DDD_OBJ obj, void *data)
+static int ScatterOS_Data2(DDD_OBJ obj, void *data) 
 {
 	ELEMENT *p;
 	INT *d;
@@ -17074,7 +17074,7 @@ static void NumberElements(ELEMENT **table, INT n, INT start)
 */
 /****************************************************************************/
 
-static INT GatherPlotID(DDD_OBJ obj, void *data)
+static int GatherPlotID(DDD_OBJ obj, void *data) 
 {
 	ELEMENT *p;
 
@@ -17084,7 +17084,7 @@ static INT GatherPlotID(DDD_OBJ obj, void *data)
 	return (0);
 }
 
-static INT ScatterPlotID(DDD_OBJ obj, void *data)
+static int ScatterPlotID(DDD_OBJ obj, void *data) 
 {
 	ELEMENT *p;
 
@@ -17397,7 +17397,7 @@ static INT OrderRemoteSons (ELEMENT *p, INT MarkKey)
 */
 /****************************************************************************/
 
-static INT GatherOrdering(DDD_OBJ obj, void *data)
+static int GatherOrdering(DDD_OBJ obj, void *data) 
 {
 	ELEMENT *p;
 	INT *d, i, k, pid, gid;
@@ -17421,7 +17421,7 @@ static INT GatherOrdering(DDD_OBJ obj, void *data)
 	return (0);
 }
 
-static INT ScatterOrdering(DDD_OBJ obj, void *data)
+static int ScatterOrdering(DDD_OBJ obj, void *data) 
 {
 	ELEMENT *p, *son, *sonList[MAX_SONS];
 	INT *d, htab[HT_LEN], pid[HT_LEN], gid, i, k;
@@ -17482,7 +17482,7 @@ static void DistributeOrdering (GRID *theGrid)
 */
 /****************************************************************************/
 
-static INT CmpIDs(const void *pp, const void *qq)
+static int CmpIDs(const void *pp, const void *qq) 
 {
 	ELEMENT *p, *q;
 
@@ -17573,7 +17573,7 @@ static INT SortLevelsLocally(MULTIGRID *mg)
 */
 /****************************************************************************/
 
-static INT cmp_gid(const void *p, const void *q)
+static int cmp_gid(const void *p, const void *q) 
 {
     INT gid1, gid2;
     
@@ -17659,9 +17659,9 @@ static INT CollectCoarseGrid(MULTIGRID *mg, INT MarkKeyMaster)
 	INT receiving[WOP_DOWN_CHANNELS], sending[WOP_DOWN_CHANNELS+1], 
 		nbTokens[WOP_DOWN_CHANNELS], more[WOP_DOWN_CHANNELS+1], 
 		count[WOP_DOWN_CHANNELS+1], front[WOP_DOWN_CHANNELS+1], 
-		rear[WOP_DOWN_CHANNELS+1], serror[WOP_DOWN_CHANNELS+1], 
-		rerror[WOP_DOWN_CHANNELS], outmsg[WOP_DOWN_CHANNELS+1], 
-		inmsg[WOP_DOWN_CHANNELS];
+		rear[WOP_DOWN_CHANNELS+1];
+	int serror[WOP_DOWN_CHANNELS+1], rerror[WOP_DOWN_CHANNELS];  
+	msgid outmsg[WOP_DOWN_CHANNELS+1], inmsg[WOP_DOWN_CHANNELS]; 
 
 	/* init */
 	elem = FIRSTELEMENT(GRID_ON_LEVEL(mg,0));
@@ -20542,7 +20542,7 @@ static void ConnectWopTree(void)
 static void NumberOfDesc(void)
 {
 	msgid umid, dmid[WOP_DOWN_CHANNELS];
-	INT   uerr, derr[WOP_DOWN_CHANNELS];
+	int   uerr, derr[WOP_DOWN_CHANNELS];  
 	INT   sum;
 	INT   i, noDesc;
 

@@ -1,0 +1,27 @@
+#
+#	ARCH MAKEFILE OPTIONS
+#
+#	for Linuxia64 with ecc
+#
+
+ARCH_TYPE     = __LINUXIA64__
+
+ARCH_MAKE     = make
+ARCH_CC       = ecc
+ARCH_C++      =
+ARCH_LINK     = ecc
+ARCH_AR       = ar
+ARCH_SUFFIX   = 
+ARCH_POSTLINK = true
+
+ARCH_LIBS     = 
+
+ARCH_CFLAGS   = -O3 -ip # ecc beta: leave it exactly as it is and recompile
+ARCH_NOOPTIM  =         # ug/np/algebra/fvgeom.c and ug/parallel/ddd/basic/lowcomm.c
+ARCH_OPTIM    =         # by hand with -O2 -ip only (Sep 2001) !!!
+ARCH_C++FLAGS =
+ARCH_LFLAGS   = -Wl,-relax
+ARCH_ARFLAGS  = rus
+
+ARCH_XINCLUDES = 
+ARCH_XLIBS     = #-L/usr/X11R6/lib -lXaw -lXt -lXmu -lXpm -lXext -lX11 -lSM -lICE

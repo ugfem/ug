@@ -187,7 +187,7 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
       /* send son to all elements where theNeighbor is master, vghost or vhghost */
       if (0)
       {
-        INT *proclist = EPROCLIST(theNeighbor);
+        int *proclist = EPROCLIST(theNeighbor);
         proclist += 2;
         while (*proclist != -1)
         {

@@ -228,11 +228,11 @@ INT GetNextUGEvent_XUI (EVENT *theEvent, INT Eventmask)
   XEvent report;
   XWindowAttributes xwa;
   Window root,child;
-  INT root_x,root_y;
+  int root_x,root_y;
   char *s;
   GraphWindow *gw;
-  int where_x,where_y,tool;
-  INT pt[2];
+  int where_x,where_y;
+  INT tool,pt[2];
   int x,y,w,h;
   int cmdKey, onlyCmdKey;
   int flag;

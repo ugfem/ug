@@ -487,8 +487,8 @@ static INT ReadMMCommand(INT argc, char **argv)
   FILE *stream;
   char filename[NAMESIZE];
 
-  INT comp, i, k, M, N, nz, nvec, dof, dofsq, err_code;
-  int from, to, from_vec, to_vec;
+  INT comp, i, k, nvec, dof, dofsq, err_code;
+  int from, to, from_vec, to_vec, M, N, nz;
   INT blocked;
   INT MarkKey;
   double value;

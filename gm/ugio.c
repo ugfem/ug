@@ -1930,7 +1930,8 @@ static INT SpreadGridNodeTypes(GRID *theGrid)
 
 static INT IO_GridCons(MULTIGRID *theMG)
 {
-  INT i,*proclist;
+  INT i;
+  int     *proclist;
   GRID    *theGrid;
   ELEMENT *theElement;
   VECTOR  *theVector;
@@ -2581,7 +2582,7 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
 }
 
 #ifdef ModelP
-static INT Gather_EClasses (DDD_OBJ obj, void *data)
+static int Gather_EClasses (DDD_OBJ obj, void *data)
 {
   ELEMENT *p;
   int *d;
@@ -2591,7 +2592,7 @@ static INT Gather_EClasses (DDD_OBJ obj, void *data)
   *d = ECLASS(p);
 }
 
-static INT Scatter_EClasses(DDD_OBJ obj, void *data)
+static int Scatter_EClasses(DDD_OBJ obj, void *data)
 {
   ELEMENT *p;
   int *d;

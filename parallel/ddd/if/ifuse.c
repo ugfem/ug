@@ -196,7 +196,7 @@ int IFPollSend (DDD_IF ifId)
     /* poll send calls */
     ForIF(ifId,ifHead)
     {
-      if ((! BufferIsEmpty(ifHead->bufOut)) && ifHead->msgOut!=-1)
+      if ((! BufferIsEmpty(ifHead->bufOut)) && ifHead->msgOut!=-1L)
       {
         int error = InfoASend(ifHead->vc, ifHead->msgOut);
         if (error==-1)
@@ -211,7 +211,7 @@ int IFPollSend (DDD_IF ifId)
         if (error==1)
         {
           send_mesgs--;
-          ifHead->msgOut=-1;
+          ifHead->msgOut=-1L;
 
                                         #ifdef CtrlTimeoutsDetailed
           printf("%4d: IFCTRL %02d send-completed    to "

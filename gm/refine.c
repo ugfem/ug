@@ -398,7 +398,8 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /*																			*/
 /****************************************************************************/
 
-void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, INT *check);
+void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, int *check);
+
 
 /****************************************************************************/
 /*
@@ -3516,7 +3517,7 @@ INT GetSonSideNodes (ELEMENT *theElement, INT side, INT *nodes,
 */
 /****************************************************************************/
 
-static INT compare_node (const void *e0, const void *e1)
+static int compare_node (const void *e0, const void *e1)
 {
 	NODE *n0, *n1;
 
@@ -6039,7 +6040,7 @@ if (0) CheckGrid(FinerGrid,1,0,1,1);
 */
 /****************************************************************************/
 
-void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, INT *check)
+void CheckConsistency (MULTIGRID *theMG, INT level ,INT debugstart, INT gmlevel, int *check)
 {
 	GRID *theGrid = GRID_ON_LEVEL(theMG,level);
 

@@ -692,7 +692,8 @@ INT GeometricCoarsening(GRID *theGrid)
 
 INT CoarsenRugeStueben(GRID *theGrid)
 {
-  int flag,i,k,maxNeighbors;
+  int flag,i,k;
+  INT maxNeighbors;
   INT error;
   DOUBLE avNosN;
   MULTIGRID *theMG;

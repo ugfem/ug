@@ -85,6 +85,7 @@ extern "C" {
 /*          __OPENSTEP__ OPENSTEP                                           */
 /*          __LINUXPPC__                                                    */
 /*          __LINUXAXP__                                                    */
+/*          __LINUXIA64__                                                   */
 /*                                                                          */
 /* #define this if you are using NXLib                                      */
 /*          __NXLIB__    NXLIB Paragon Library                              */
@@ -531,6 +532,39 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 #undef __MWCW__
 
 #define ARCHNAME        "LINUXAXP"
+
+/* basic types */
+#define SHORT  short
+#define INT    long                     /* sizeof(int) != sizeof(void *) !! */
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  float
+#define SCREEN_COORD  float
+#define __SWAPBYTES__ 1
+
+/* memory */
+#define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
+#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym) lsym
+
+/* current time as DOUBLE value */
+#undef CURRENT_TIME
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
+
+#endif
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for LINUXIA64                                                */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __LINUXIA64__
+#undef __MWCW__
+
+#define ARCHNAME        "LINUXIA64"
 
 /* basic types */
 #define SHORT  short

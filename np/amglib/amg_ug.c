@@ -451,7 +451,8 @@ static INT AMGSolver (NP_LINEAR_SOLVER *theNP, INT level,
   int xcomp,bcomp;
   VECTOR *theVector;
   int k;
-  int nComp_x,nComp_b,blocksize;
+  INT nComp_x,nComp_b;
+  int blocksize;
   double ti;
   int ii;
         #ifdef ModelP
