@@ -384,6 +384,45 @@ static INT SetUnsymmetric (MULTIGRID *mg, INT fl, INT tl,
   return (NUM_OK);
 }
 
+static INT ProjectLaplaceNeumann (MULTIGRID *mg, INT fl, INT tl,
+                                  const VECDATA_DESC *x)
+{
+  VECTOR *v;
+  DOUBLE mean;
+  INT l,vtype,ncomp,comp,j,cnt;
+
+  /* calc mean */
+  mean = 0.0;
+  cnt = 0;
+  for (l=fl; l<=tl; l++)
+    for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,l)); v!=NULL; v=SUCCVC(v)) {
+      vtype = VTYPE(v);
+      ncomp = VD_NCMPS_IN_TYPE(x,vtype);
+      if (ncomp == 0) continue;
+      comp = VD_CMP_OF_TYPE(x,vtype,0);
+      for (j=0; j<ncomp; j++)
+        mean += VVALUE(v,comp+j);
+      cnt += ncomp;
+    }
+        #ifdef ModelP
+  mean = UG_GlobalSumDOUBLE(mean);
+  cnt = UG_GlobalSumINT(cnt);
+        #endif
+  if (cnt == 0) return(NUM_OK);
+  mean /= cnt;
+  for (l=fl; l<=tl; l++)
+    for (v=FIRSTVECTOR(GRID_ON_LEVEL(mg,l)); v!=NULL; v=SUCCVC(v)) {
+      vtype = VTYPE(v);
+      ncomp = VD_NCMPS_IN_TYPE(x,vtype);
+      if (ncomp == 0) continue;
+      comp = VD_CMP_OF_TYPE(x,vtype,0);
+      for (j=0; j<ncomp; j++)
+        VVALUE(v,comp+j) -= mean;
+    }
+
+  return (NUM_OK);
+}
+
 static INT RayleighQuotient (MULTIGRID *theMG,
                              MATDATA_DESC *M, VECDATA_DESC *x,
                              VECDATA_DESC *r, VECDATA_DESC *t, DOUBLE *a)
@@ -800,7 +839,7 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
         if ((*np->LS->Defect)(np->LS,level,np->t,np->r,np->M,
                               &ewresult->error_code))
           return (1);
-        if ((*np->LS->Residuum)(np->LS,level,level,np->t,np->r,np->M,
+        if ((*np->LS->Residuum)(np->LS,0,level,np->t,np->r,np->M,
                                 &ewresult->lresult[i]))
           NP_RETURN(1,ewresult->error_code);
 
