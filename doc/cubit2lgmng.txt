@@ -2,17 +2,26 @@ This file describes how to create lgm and ng files for UG
 using the cubit mesh generation toolkit.
 
 1. How to create a lgm domain file with cubit
+=============================================
 
 This involves four steps
 
-1.1 Here is a sample cubit journal file which 
-creates two files:
+1.1 Create a consistent geometry
+--------------------------------
+
+Consistent in this context means that each
+vertex, curve, surface lying on the border of
+two volumes is uniquely represented.
+
+Here is a sample cubit journal file "geom.jou",
+which creates two files:
 - a surface mesh file cyli_lgm.gen and
 - a log file with necessary information which
 	cannot be reconstructed from the surface mesh
 	file. The information includes volumes ids and 
 	curve information of surfaces.
 
+##########  cyli_geom.jou   ########################
 # construct a consistent geometry
 import iges '../models/cylinder_in_box_asm.igs'
 body all scale 0.001
@@ -20,6 +29,42 @@ imprint body all #keep
 body 1 copy
 subtract body 3 from 2
 merge all
+
+# logfile with additional information
+logging on file 'cyli.log'
+list volume all
+list surface all
+###################################################
+
+This file can be executed by cubit
+
+%> cubit -batch -input cyli_geom.jou 
+
+
+
+1.2 Set surface normal in unique way 
+------------------------------------
+
+Now assign the surface normals uniquely. This is
+needed to get the correct left/right assignment 
+in the lgm file.
+
+%> ugexo2lgm_usn cyli.log cyli_usn.jou
+
+
+
+1.3 Mesh the surface of the geometry
+------------------------------------
+
+Generate a surface mesh file with node associativity.
+Therefore a relationships of nodes to vertices, curves
+and/or surfaces are explicitly stored. This allows
+for save reconstruction.
+
+############## cyli_lgm.jou #########################
+# construct a consistent geometry
+playback 'cyli_geom.jou'
+playback 'cyli_usn.
 
 # mesh the surfaces
 curve all size 1
@@ -33,29 +78,107 @@ set nodeset Associativity Complete on
 # write the surface mesh file 
 # in netcdf exodus II format
 export genesis 'cyli_lgm.gen'
+###################################################
 
-# logfile with additional information
-logging on file 'cyli.log'
-list volume all
-list surface all
+%> cubit -batch -input cyli_lgm.jou 
 
 
-1.2 Transform the surface mesh file in readable format
+
+1.4 Transform the surface mesh file in ASCI format
+-----------------------------------------------------
 	
-This uses the netcdf tools ncdump
-ncdump cyli_lgm.gen > cyli_lgm.gen.txt
+This uses the netcdf tool ncdump
+%> ncdump cyli_lgm.gen > cyli_lgm.gen.txt
 
 
-1.3 Add logfile info to the surface mesh file
 
-ugexo2lgm_amd cyli.log cyli_lgm.gen.txt
+1.5 Add logfile info to the surface mesh file
+---------------------------------------------
+
+This is needed to have left and right volumes
+for the surfaces and all volumes present in the geometry.
+
+%> ugexo2lgm_amd cyli.log cyli_lgm.gen.txt
 
 
-1.4 Create a lgm domain file
 
-ugexo2lgm cyli_lgm.gen.txt cyli.lgm
+1.6 Create a lgm domain file and map file
+-----------------------------------------
+
+%> ugexo2lgm cyli_lgm.gen.txt cyli.lgm cyli.map
+
+The map file stores how cubit line/surface ids  
+are mapped onto lgm line/surface ids
+
+
 
 
 2. How to create a ng file with cubit
+=====================================
+
+This involves several steps.
+
+2.1 Create a volume mesh for the geometry
+-----------------------------------------
+
+###############  cyli_ng.jou  ####################
+# mesh volumes
+curve all size 1
+surface all scheme trimesh
+volume all scheme tetmesh
+mesh volume all
+
+# output mesh 
+set nodeset associativity on
+set nodeset associativity complete on
+set sideset  associativity on
+
+logging on file 'units_ng.log'
+export genesis 'cyli_ng.gen'
+###################################################
+
+
+
+2.2. Generate cubit journal file for sidesets
+---------------------------------------------
+
+%> ugexo2ng_sss units_ng.log cyli_ngss.jou
+
+
+
+2.3 Create and store volume mesh with both sideset  
+---------------------------------------------------
+
+###############  cyli_ng.jou  ####################
+# mesh volumes
+curve all size 1
+surface all scheme trimesh
+volume all scheme tetmesh
+mesh volume all
+
+# output mesh 
+set nodeset associativity on
+set nodeset associativity complete on
+
+playback 'cyli_ngss.jou'
+
+export genesis 'cyli_ng.gen'
+
+###################################################
+
+
+
+2.4 Transform the volume mesh file in ASCI format
+-----------------------------------------------------
+	
+This uses the netcdf tool ncdump
+%> ncdump cyli_ng.gen > cyli_ng.gen.txt
+
+
+
+2.5 Generate a ng file 
+------------------------
+
+%> ugexo2ng cyli_ng.gen.txt cyli.lgm cyli.map cyli.ng
 
 
