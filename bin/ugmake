@@ -59,6 +59,7 @@ then
 			cd $UGROOT/../diff2d;
 		else 
 			echo "no directory for diff2d found!";
+			exit 1;
 		fi				
 	fi			
 			
@@ -69,6 +70,7 @@ then
 			cd $UGROOT/../cd3d;
 		else 
 			echo "no directory for cd3d found!";
+			exit 1;
 		fi				
 	fi			
 			
@@ -79,6 +81,7 @@ then
 			cd $UGROOT/../fem;
 		else 
 			echo "no directory for cd3d found!";
+			exit 1;
 		fi				
 	fi			
 			
@@ -98,9 +101,10 @@ then
 	if test `ls Makefile*|wc -l` -eq 1 
 	then
 		make -f `ls Makefile*` $*;
-		exit 0;
+		exit $?;
 	else
 		echo "$0: Makefile not found or not unique!"; 
+		exit 1;
 	fi
 fi
 
