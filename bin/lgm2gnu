@@ -2,6 +2,7 @@
 
 @ARGV==1 or die "usage: lgm2gnu <geometry>\n";
 $real='[+-]*\d+\.*\d*e[+-]\d+|[+-]*\d+\.\d*|\d+';
+$debug=0;
 
 # admin
 if (-e "gnu") {system("rm -r gnu");}
@@ -50,7 +51,7 @@ if ($dim==2)
 			$n[$l]=0;
 			if (!($line=~/left=(\d+);\s*right=(\d+)/)) {die "ERROR: cannot read left/right info\n";}
 			$left[$l]=$1; $right[$l]=$2;
-			if ($left[$l]==$right[$l]) {die "ERROR: line $l references subdomain $$right[$l] on both sides\n";}
+			if ($left[$l]==$right[$l]) {die "ERROR: line $l references subdomain $right[$l] on both sides\n";}
 			$sd_max=max($sd_max,$1,$2);
 			$sd_min=min($sd_min,$1,$2);
 			$line=~s/line\s*\d+:\s*left=\d+;\s*right=\d+;\s*points:\s*//g;
@@ -175,7 +176,146 @@ if ($dim==2)
 
 if ($dim==3)
 {
-	print "sorry, not implemented yet\n";
+    # admin
+    open(IN,$ARGV[0]);
+    $sd_min=1000000; $sd_max=-1;
+
+    # get lines
+    $l=0;
+    while($line=<IN>)
+    {
+        if ($line=~/points:/)
+        {
+            $n[$l]=0;
+            $line=~s/line\s*\d+:\s*points:\s*//g;
+            while(1)
+            {
+                if ($line=~/(\d+)\s*/)
+                {
+                    $lp[$l][$n[$l]++]=$1;
+                    $line=~s/\d+\s*//;
+                }
+                else
+                {
+                    last;
+                }
+            }
+            $l++;
+        }
+        if ($line=~/Surface-Info/) {last;}
+    }
+
+	# get surfaces
+	$s=0;
+	while($line=<IN>)
+	{
+		if ($line=~/surface/)		
+		{
+            $nsl[$s]=$nst[$s]=0;
+            if (!($line=~/left=(\d+);\s*right=(\d+)/)) {die "ERROR: cannot read left/right info\n";}
+            $left[$s]=$1; $right[$s]=$2;
+            if ($left[$s]==$right[$s]) {die "ERROR: surface $s references subdomain $right[$s] on both sides\n";}
+            $sd_max=max($sd_max,$1,$2);
+            $sd_min=min($sd_min,$1,$2);
+            $line=~s/.*lines:\s*//g;
+			if ($debug) {print $line;}
+            while(1)
+            {
+                if ($line=~/^(\d+)\s*/)
+                {
+                    $sl[$s][$nsl[$s]++]=$1;
+                    $line=~s/\d+\s*//;
+                }
+                else
+                {
+                    last;
+                }
+            }
+			$line=~s/.*triangles:\s*//g;
+			while(1)
+            {
+                if ($line=~/^(\d+)\s+(\d+)\s+(\d+)\s*;\s*/)
+                {
+                    $st[$s][$nst[$s]][0]=$1;
+                    $st[$s][$nst[$s]][1]=$2;
+                    $st[$s][$nst[$s]++][2]=$3;
+                    $line=~s/^\d+\s+\d+\s+\d+\s*;\s*//;
+                }
+                else
+                {
+                    last;
+                }
+            }
+
+			if ($debug) {print "surface $s: lines: ";
+			for ($i=0; $i<$nsl[$s]; $i++) {print "$sl[$s][$i] ";}
+			print "triangles: ";
+			for ($i=0; $i<$nst[$s]; $i++) {print "$st[$s][$i][0] $st[$s][$i][1] $st[$s][$i][2], ";}
+			print "\n";}
+
+            $s++;
+		}
+
+		if ($line=~/Point-Info/) {last;}
+	}
+
+    # get points
+    $m=0;
+    while($line=<IN>)
+    {
+        if ($line=~/\s*($real)\s+($real)\s+($real)/)
+        {
+            $p[$m][0]=$1; $p[$m][1]=$2; $p[$m][2]=$3; $p_ref[$m]=0;
+            $m++;
+        }
+    }
+    close(IN);
+    if ($m<3) {print "ERROR: $m points detected\n";}
+    else {print "$m points detected\n";}
+
+    # check point references
+    for ($i=0; $i<$s; $i++)
+    {
+        for ($j=0; $j<$nst[$i]; $j++)
+        {
+            $p_ref[$st[$i][$j][0]]=1;
+            $p_ref[$st[$i][$j][1]]=1;
+            $p_ref[$st[$i][$j][2]]=1;
+        }
+    }
+    $err=0;
+    for ($i=0; $i<$m; $i++)
+    {
+        if ($p_ref[$i]==0)
+        {
+            $err=1;
+            print "ERROR: point $i not referenced\n";
+        }
+    }
+    if (!$err) {$i=$m-1; print "point 0 ... $i referenced correctly\n";}
+
+    # check subdomains
+    $err=0; for ($i=0; $i<=$sd_max; $i++) {$sd_ref[$i]=0;}
+    for ($i=0; $i<$s; $i++) {$sd_ref[$left[$i]]=1; $sd_ref[$right[$i]]=1;}
+	for ($i=0; $i<=$sd_max; $i++)
+    {
+        if (!$sd_ref[$i]) {print "ERROR: subdomain $i not referenced\n";$err=1;}
+	}
+    if (!$err) {print "subdomain 0 ... $sd_max: ok\n";}
+
+    # output
+    open(FULL,">gnu/full");
+	print FULL "0 0 0\n\n";
+    for ($i=0; $i<$l; $i++)
+    {
+        for ($j=0; $j<$n[$i]; $j++)
+        {
+            $idx=$lp[$i][$j];
+            print FULL "$p[$idx][0] $p[$idx][1] $p[$idx][2];\n";
+        }
+        print FULL "\n";
+    }
+    close(FULL);
 }
 
 
