@@ -1638,6 +1638,12 @@ static void UnrefineElement (GRID *theGrid, ELEMENT *theElement, ElementContext 
     }
   }
 
+  /* remove son elements */
+  for (i=0; i<NSONS(theElement); i++)
+    DisposeElement(theGrid,SON(theElement,i));
+  SETNSONS(theElement,0);
+  for (i=0; i<SONS_OF_ELEM(theElement); i++) SET_SON(theElement,i,NULL);
+
   /* remove interior node, only if not needed in new refinement */
   if ((Nodes[8]!=NULL)&&(n==4))
   {
@@ -1650,12 +1656,6 @@ static void UnrefineElement (GRID *theGrid, ELEMENT *theElement, ElementContext 
       theContext->Interior = NULL;
     }
   }
-
-  /* remove son elements */
-  for (i=0; i<NSONS(theElement); i++)
-    DisposeElement(theGrid,SON(theElement,i));
-  SETNSONS(theElement,0);
-  for (i=0; i<SONS_OF_ELEM(theElement); i++) SET_SON(theElement,i,NULL);
 
   /* set pointers in neighbors to NULL */
   for (i=0; i<2*n; i++)
@@ -2126,6 +2126,7 @@ INT RefineMultiGrid (MULTIGRID *theMG, INT flag)
   }
 
   DisposeTopLevel(theMG);       /* is only done when highest level is empty !*/
+
   return(GM_OK);
 }
 
@@ -2421,8 +2422,6 @@ INT InitRefine2d (void)
   SON_DATA *bSond,*sond;
   INT i,j,k,l,m,n,s,BRule,Rule,Side;
   INT class,followRule,followVariant,cPattern,cPattern0,nrVar;
-
-  if (InitPredefinedControlEntries()!=GM_OK) return(__LINE__);
 
   Rule=0;
 
