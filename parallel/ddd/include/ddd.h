@@ -48,7 +48,7 @@
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.13"
+#define DDD_VERSION    "1.8.14"
 
 
 /****************************************************************************/
@@ -234,7 +234,13 @@ enum XferConstants {
   XFER_DOWNGRADE,
 
   /* object is totally new */
-  XFER_NEW
+  XFER_NEW,
+
+
+  /* return value for DDD_XferObjIsPruned */
+  XFER_PRUNED_TRUE = 0x9100,
+  XFER_PRUNED_FALSE,
+  XFER_PRUNED_ERROR
 };
 
 
@@ -1054,6 +1060,7 @@ void     DDD_IFAExecLocalX(DDD_IF _FPTR,DDD_ATTR _FPTR,                        E
 int      DDD_XferWithAddData (void);
 void     DDD_XferAddData (int _FPTR, DDD_TYPE _FPTR);
 void     DDD_XferAddDataX (int _FPTR, DDD_TYPE _FPTR, size_t sizes[]);
+int      DDD_XferIsPrunedDelete (_OBJREF);
 #endif
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
 void     DDD_XferBegin (void);

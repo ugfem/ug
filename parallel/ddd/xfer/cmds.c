@@ -1367,6 +1367,44 @@ void DDD_XferBegin (void)
 }
 
 
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  DDD_XferIsPrunedDelete                                        */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+    Returns information about pruned DDD_XferDeleteObj() command.
+    If a \funk{XferDeleteObj} command has been pruned (i.e., option
+    OPT_XFER_PRUNE_DELETE is set to OPT_ON and another processor issued
+    a \funk{XferCopyObj}, command which sends an object copy to the
+    local processor), then this function will return XFER_PRUNED_TRUE,
+    otherwise it returns XFER_PRUNED_FALSE. If an error condition
+    occurs (e.g., when it is called at the wrong time), the function
+    returns XFER_PRUNED_ERROR.
+
+
+   @param hdr   DDD local object which has to be deleted.
+   @return  one of XFER_PRUNED_xxx
+ */
+
+#ifdef C_FRONTEND
+int DDD_XferIsPrunedDelete (DDD_HDR hdr)
+{
+  if (XferMode() != XMODE_BUSY)
+  {
+    return(XFER_PRUNED_ERROR);
+  }
+
+  if (OBJ_PRUNED(hdr))
+    return(XFER_PRUNED_TRUE);
+
+  return(XFER_PRUNED_FALSE);
+}
+#endif
+
+
 /****************************************************************************/
 
 #undef _FADR

@@ -1,5 +1,14 @@
 ---------------------------
 
+CHANGES 1.8.13 -> 1.8.14
+
+---------------------------
+980313 kb
+new command DDD_XferIsPrunedDelete().
+	- returns XFER_PRUNED_TRUE for objects with pruned DDD_XferDeleteObj()
+	  commands, XFER_PRUNED_FALSE otherwise.
+---------------------------
+
 CHANGES 1.8.12 -> 1.8.13
 
 ---------------------------
