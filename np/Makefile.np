@@ -60,6 +60,7 @@ clean:
 	cd udm && make -f Makefile.udm clean
 	cd field && make -f Makefile.field clean
 	cd amglib && make -f Makefile.amglib clean
+	cd slu && make -f Makefile.slu clean
 
 extract:
 	$(ARCH_AR) $(ARCH_EXFLAGS) $(UGROOT)/lib/libug$(UG_LIBSUFFIX).a $(OBJECTS)
