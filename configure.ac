@@ -158,6 +158,7 @@ AC_DEFINE(AUTOTOOLS_BUILD, 1, [switch headers to autoconf-support])
 AM_CONDITIONAL(MACOS, test x$build_vendor = xapple)
 
 AC_CONFIG_FILES([Makefile
+                 arch/Makefile
                  dev/Makefile
 		 dev/meta/Makefile
 		 dev/mif/Makefile
@@ -196,16 +197,14 @@ AC_CONFIG_FILES([Makefile
 ])
 AC_OUTPUT
 
+dnl Still missing:
+dnl
 dnl                  dev/mif/Makefile
 dnl                  gm/gg3/netgen/general/makefile
 dnl                  gm/gg3/netgen/geom/makefile
 dnl                  gm/gg3/netgen/linalg/makefile
 dnl                  gm/gg3/netgen/meshing/makefile
 dnl                  gm/gg3/netgen/opti/makefile
-dnl                  np/amglib/Makefile
-dnl                  np/famglib/makefile
-dnl                  np/slu/cblas/Makefile
-dnl                  np/slu/src/Makefile
 dnl                  parallel/chaco/assign/Makefile
 dnl                  parallel/chaco/bpmatch/Makefile
 dnl                  parallel/chaco/coarsen/Makefile
