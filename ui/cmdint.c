@@ -98,9 +98,9 @@
 #define ISNUMBER(c)                      isdigit((int)c)
 
 static char blanks[]                    = " \t\n";
-static char normalBlanks[]              = " \t";
+/* static char normalBlanks[]		= " \t"; */
 static char seperators[]                = ";{}";
-static char tokenseperators[]   = " \n\t;{}()";
+/* static char tokenseperators[]	= " \n\t;{}()"; */
 static char terminators[]               = "\n;}";               /* terminators for commands */
 
 static INT scriptpaths_set=FALSE;
@@ -146,12 +146,11 @@ typedef union Operand OPERAND;
 static int doneFlag;
 
 /* variables for command interpreter */
-static char *cmdPtr,*cmdStart,*argPtr;
+static char *cmdPtr,*cmdStart;
 static long executebufsize=EXECUTEBUFSIZE;
 static long executePos=0;
 static char *executeBuffer;
 static INT programFlag=FALSE;
-static int programLength=0;
 static long programbufsize=PROGRAMBUFSIZE;
 static char *programBuffer;
 static char fileBuffer[FILEBUFSIZE+1];
@@ -233,36 +232,37 @@ static char SkipBlanks()
    DESCRIPTION:
    This function moves the command pointer `cmdPtr` until it encounters the first
    non-blank. This includes comments of the form '#....EOL' but not the `\n`-character
+   At the moment it is not used.
 
    RETURN VALUE:
    char
    .n The final non-blank character.
    D*/
 /****************************************************************************/
+/*
+   static char SkipNormalBlanks()
+   {
+        char c;
 
-static char SkipNormalBlanks()
-{
-  char c;
+        while ((c=*cmdPtr)!=(char) 0)
+        {
+                if (c=='#')
+                {
+                        while ((c=*(++cmdPtr))!='\n')
+                                if (c==(char) 0) return(c);
+                }
+                else
+                {
+                        if (strchr(normalBlanks,(int) c)!=NULL)
+                                cmdPtr++;
+                        else
+                                break;
+                }
+        }
 
-  while ((c=*cmdPtr)!=(char) 0)
-  {
-    if (c=='#')
-    {
-      /* comment: skip end of line */
-      while ((c=*(++cmdPtr))!='\n')
-        if (c==(char) 0) return(c);
-    }
-    else
-    {
-      if (strchr(normalBlanks,(int) c)!=NULL)
-        cmdPtr++;
-      else
-        break;
-    }
-  }
-
-  return(c);
-}
+        return(c);
+   }
+ */
 
 /****************************************************************************/
 /*
@@ -1386,8 +1386,6 @@ static INT GetEquation (OPERAND *result)
     }
     return(DONE);
 
-    break;
-
   }             /* switch */
 
   if (term2.ro.type==EMPTYID)
@@ -2399,7 +2397,7 @@ static INT InterpretString()
 void CommandLoop (int argc, char **argv)
 {
   INT error;
-  int i,j,k,kerr, tabCount;
+  int i,j,k,kerr;
   char c,inpLine[256],errLine[256],spcLine[256], ver[100];
   char *strStart;
 
