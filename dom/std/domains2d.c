@@ -40,6 +40,7 @@
 #include "defaults.h"
 #include "general.h"
 #include "debug.h"
+#include "scan.h"
 
 /* dev modules */
 #include "devices.h"
@@ -65,8 +66,6 @@
 /*        in the corresponding include file!)                               */
 /*                                                                          */
 /****************************************************************************/
-
-typedef DOUBLE DOUBLE_VECTOR[DIM];
 
 /****************************************************************************/
 /*                                                                          */
@@ -1132,29 +1131,6 @@ static INT InitWolfgangsee (void)
    .n    1 if error occured
    D*/
 /****************************************************************************/
-
-static INT ReadArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
-{
-  INT i;
-  char option[OPTIONLEN];
-  float x,y;
-
-  for (i=0; i<argc; i++)
-    if (argv[i][0]==name[0])
-    {
-      if (sscanf(argv[i],"%s %f %f",option,&x,&y)!=3)
-        continue;
-      if (strcmp(option,name) == 0)
-      {
-        pos[0] = x;
-        pos[1] = y;
-        UserWriteF("set %s to (%f,%f)\n",name,x,y);
-        return(0);
-      }
-    }
-
-  return(1);
-}
 
 INT STD_BVP_Configure (INT argc, char **argv)
 {
