@@ -74,6 +74,7 @@
 
 static INT NodeValueComp;
 static INT NodeVectorComp;
+static INT GradientFlag;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -168,21 +169,19 @@ static INT PreprocessNodeVector (const char *name, MULTIGRID *theMG)
   INT i;
 
   theVD = GetVecDataDescByName(theMG,(char *)name);
-
   if (theVD == NULL) {
     PrintErrorMessage('E',"PreprocessNodeVector","cannot find symbol");
     return (1);
   }
-
-  if (VD_NCMPS_IN_TYPE(theVD,NODEVECTOR)<DIM)
-    return (1);
-
   NodeVectorComp = VD_CMP_OF_TYPE(theVD,NODEVECTOR,0);
-
-  for (i=1; i<DIM; i++)
-    if ((NodeVectorComp+i) != VD_CMP_OF_TYPE(theVD,NODEVECTOR,i))
-      return (1);
-
+  if (VD_NCMPS_IN_TYPE(theVD,NODEVECTOR)<DIM)
+    GradientFlag = 1;
+  else {
+    GradientFlag = 0;
+    for (i=1; i<DIM; i++)
+      if ((NodeVectorComp+i) != VD_CMP_OF_TYPE(theVD,NODEVECTOR,i))
+        return (1);
+  }
   return (0);
 }
 
@@ -192,17 +191,26 @@ static void NodeVector (const ELEMENT *theElement, const DOUBLE **theCorners,
   VECTOR *v;
   INT i,j,n;
   DOUBLE s;
+  DOUBLE_VECTOR grad;
 
   n = CORNERS_OF_ELEM(theElement);
   V_DIM_CLEAR(values);
 
-  for (i=0; i<n; i++)
-  {
-    v = NVECTOR(CORNER(theElement,i));
-    s = GN(n,i,LocalCoord);
-    for (j=0; j<DIM; j++)
-      values[j] += s*VVALUE(v,NodeVectorComp+j);
-  }
+  if (GradientFlag)
+    for (i=0; i<n; i++) {
+      v = NVECTOR(CORNER(theElement,i));
+      D_GN(n,i,LocalCoord,grad);
+      s = VVALUE(v,NodeVectorComp);
+      V_DIM_SCALE(s,grad);
+      V_DIM_ADD(grad,values,values);
+    }
+  else
+    for (i=0; i<n; i++) {
+      v = NVECTOR(CORNER(theElement,i));
+      s = GN(n,i,LocalCoord);
+      for (j=0; j<DIM; j++)
+        values[j] += s * VVALUE(v,NodeVectorComp+j);
+    }
 
   return;
 }
