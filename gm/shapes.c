@@ -492,14 +492,14 @@ INT JacobianInverse (INT dim, INT tag, DOUBLE co_global[MAX_CORNERS_OF_ELEM][DIM
 				  }
 			  case PRISM:
 				J11=-(1.0-Mu)*X0+(1.0-Mu)*X1     -Mu*X3+Mu*X4;
-				J21=-(1.0-Mu)*X0+(1.0-Mu)*X2     -Mu*X3+Mu*X4;
-				J31=-(1.0-Xi-Eta)*X0-Xi*X1-Eta*X2+(1.0-Xi-Eta)*X3+Xi*X4+Eta*X4;
+				J21=-(1.0-Mu)*X0+(1.0-Mu)*X2     -Mu*X3+Mu*X5;
+				J31=-(1.0-Xi-Eta)*X0-Xi*X1-Eta*X2+(1.0-Xi-Eta)*X3+Xi*X4+Eta*X5;
 				J12=-(1.0-Mu)*Y0+(1.0-Mu)*Y1     -Mu*Y3+Mu*Y4;
-				J22=-(1.0-Mu)*Y0+(1.0-Mu)*Y2     -Mu*Y3+Mu*Y4;
-				J32=-(1.0-Xi-Eta)*Y0-Xi*Y1-Eta*Y2+(1.0-Xi-Eta)*Y3+Xi*Y4+Eta*Y4;
+				J22=-(1.0-Mu)*Y0+(1.0-Mu)*Y2     -Mu*Y3+Mu*Y5;
+				J32=-(1.0-Xi-Eta)*Y0-Xi*Y1-Eta*Y2+(1.0-Xi-Eta)*Y3+Xi*Y4+Eta*Y5;
 				J13=-(1.0-Mu)*Z0+(1.0-Mu)*Z1     -Mu*Z3+Mu*Z4;
-				J23=-(1.0-Mu)*Z0+(1.0-Mu)*Z2     -Mu*Z3+Mu*Z4;
-				J33=-(1.0-Xi-Eta)*Z0-Xi*Z1-Eta*Z2+(1.0-Xi-Eta)*Z3+Xi*Z4+Eta*Z4;
+				J23=-(1.0-Mu)*Z0+(1.0-Mu)*Z2     -Mu*Z3+Mu*Z5;
+				J33=-(1.0-Xi-Eta)*Z0-Xi*Z1-Eta*Z2+(1.0-Xi-Eta)*Z3+Xi*Z4+Eta*Z5;
 				break;
 			case HEXAHEDRON:
 				sub0123 = X0-X1+X2-X3;
