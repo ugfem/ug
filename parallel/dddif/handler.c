@@ -1431,7 +1431,9 @@ static void ElemScatterEdge (ELEMENT *pe, int cnt, char *data, int newness)
   /* XFER_REJECT:   only case where edges must not be unpacked */
   /* XFER_NEW:      there are still no edges -> unpack         */
   /* XFER_UPGRADE:  new MIDNODE pointers might be non NULL     */
-  if (newness == XFER_REJECT) return;
+  /* this is not correct, since newness XFER_REJECT might have */
+  /* non NULL midnode pointers in the edges (971007 s.l.)      */
+  /* if (newness == XFER_REJECT) return; */
 
   /* retrieve edges from message */
   for (i=0; i<cnt; i++)
