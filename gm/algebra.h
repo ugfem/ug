@@ -156,6 +156,7 @@ INT         GetVectorSize                   (GRID *theGrid, INT VectorObjType, G
 
 /* gridwise functions */
 INT             GridCreateConnection                    (GRID *theGrid);
+INT             SetSurfaceClasses                               (MULTIGRID *theMG);
 INT         CreateAlgebra                               (MULTIGRID *theMG);
 
 /* check algebra */

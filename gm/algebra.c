@@ -2677,7 +2677,7 @@ INT GridCreateConnection (GRID *theGrid)
    D*/
 /****************************************************************************/
 
-static INT SetSurfaceClasses (MULTIGRID *theMG)
+INT SetSurfaceClasses (MULTIGRID *theMG)
 {
   VECTOR *v;
   INT level,fullrefine;

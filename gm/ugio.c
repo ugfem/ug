@@ -2017,9 +2017,12 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     PropagateNextVectorClasses(theGrid);
   }
 
+  /* set DOFs on vectors */
+  if (SetSurfaceClasses (theMG))                                                                                                          {DisposeMultiGrid(theMG); return (NULL);}
+
   /* close file */
   ReleaseTmpMem(theHeap);
-  if (CloseMGFile ())                                                                                                     {DisposeMultiGrid(theMG); return (NULL);}
+  if (CloseMGFile ())                                                                                                                             {DisposeMultiGrid(theMG); return (NULL);}
 
   /* saved */
   MG_SAVED(theMG) = 1;
