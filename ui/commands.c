@@ -4461,7 +4461,7 @@ static INT MarkCommand (INT argc, char **argv)
   {
   case MARK_ALL :
     for (l=0; l<=TOPLEVEL(theMG); l++)
-      for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
+      for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l));
            theElement!=NULL; theElement=SUCCE(theElement)) {
         if (EstimateHere(theElement))
           if ((rv = MarkForRefinement(theElement,
@@ -4514,6 +4514,9 @@ static INT MarkCommand (INT argc, char **argv)
     break;
   }
 
+        #ifdef ModelP
+  nmarked = UG_GlobalSumINT(nmarked);
+        #endif
   UserWriteF(" %ld elements marked for refinement\n",nmarked);
 
   if (rv && theElement)
