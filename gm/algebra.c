@@ -932,7 +932,7 @@ CONNECTION      *CreateExtraConnection  (GRID *theGrid, VECTOR *from, VECTOR *to
   return(pc);
 }
 
-static INT CreateElementList (GRID *theGrid, NODE *theNode, ELEMENT *theElement)
+INT CreateElementList (GRID *theGrid, NODE *theNode, ELEMENT *theElement)
 {
   ELEMENTLIST *pel;
 
@@ -1418,13 +1418,38 @@ INT DisposeConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
   return(DisposeConnectionFromElementInNeighborhood(theGrid,theElement,Depth));
 }
 
+INT     DisposeElementFromElementList (GRID *theGrid, NODE *theNode,
+                                       ELEMENT *theElement)
+{
+  ELEMENTLIST *pel,*next;
+
+  pel = NODE_ELEMENT_LIST(theNode);
+  if (pel == NULL) return(0);
+  if (pel->el == theElement) {
+    NDATA(theNode) = (void *) pel->next;
+    if (PutFreeObject(theGrid->mg,pel,sizeof(ELEMENTLIST),-1))
+      return(1);
+  }
+  next = pel->next;
+  while (next != NULL) {
+    if (next->el == theElement) {
+      pel->next = next->next;
+      return(PutFreeObject(theGrid->mg,pel,sizeof(ELEMENTLIST),-1));
+    }
+    pel = next;
+    next = pel->next;
+  }
+
+  return(0);
+}
+
 INT     DisposeElementList (GRID *theGrid, NODE *theNode)
 {
   ELEMENTLIST *pel,*next;
 
   pel = NODE_ELEMENT_LIST(theNode);
   while (pel != NULL) {
-    next = pel->next;
+
     if (PutFreeObject(theGrid->mg,pel,sizeof(ELEMENTLIST),-1))
       return(1);
     pel = next;

@@ -1787,6 +1787,11 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
       DEC_NO_OF_ELEM(theEdge);
   }
 
+  if (NELIST_DEF_IN_GRID(theGrid))
+    for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+      DisposeElementFromElementList(theGrid,
+                                    CORNER(theElement,j),theElement);
+
   for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
   {
     theNode = CORNER(theElement,j);

@@ -98,6 +98,7 @@ extern INT MatrixType[MAXVECTORS][MAXVECTORS];
 VECTOR      *CreateVector                   (GRID *theGrid, INT VectorType, GEOM_OBJECT *object);
 VECTOR      *CreateSideVector               (GRID *theGrid, INT side, GEOM_OBJECT *object);
 CONNECTION      *CreateConnection                               (GRID *theGrid, VECTOR *from, VECTOR *to);
+INT         CreateElementList               (GRID *theGrid, NODE *theNode, ELEMENT *theElement);
 INT             DisposeVector                                   (GRID *theGrid, VECTOR *theVector);
 INT             DisposeConnection                               (GRID *theGrid, CONNECTION *theConnection);
 
@@ -112,6 +113,7 @@ INT             DisposeConnectionsInNeighborhood(GRID *theGrid, ELEMENT *theElem
 INT             DisposeDoubledSideVector                (GRID *theGrid, ELEMENT *Elem0, INT Side0, ELEMENT *Elem1, INT Side1);
 #endif
 INT             DisposeElementList(GRID *theGrid, NODE *theNode);
+INT             DisposeElementFromElementList (GRID *theGrid, NODE *theNode, ELEMENT *theElement);
 
 /* query functions */
 INT             GetVectorsOfElement                     (const ELEMENT *theElement, INT *cnt, VECTOR **vList);
