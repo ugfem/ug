@@ -2733,39 +2733,38 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
   /* TODO: possibly some son cannot be reached by GetAllSons, */
   /* because their father has not been on this proc and       */
   /* they lost their father pointers                          */
-  if (0)
-    if (NSONS(theElement)>0)
+  if (NSONS(theElement)>0)
+  {
+    INT i,j,k,l,m,o;
+    DOUBLE fac,*local;
+    ELEMENT *SonList[MAX_SONS];
+
+    if (GetAllSons(theElement,SonList)) RETURN(GM_FATAL);
+
+    i = 0;
+    while (SonList[i] != NULL)
     {
-      INT i,j,k,l,m,o;
-      DOUBLE fac,*local;
-      ELEMENT *SonList[MAX_SONS];
-
-      if (GetAllSons(theElement,SonList)) RETURN(GM_FATAL);
-
-      i = 0;
-      while (SonList[i] != NULL)
-      {
-        PRINTDEBUG(gm,2,(PFMT "DisposeElement(): elem=" EID_FMTX
-                         " deleting fatherpointer of son=" EID_FMTX "\n",
-                         me,EID_PRTX(theElement),EID_PRTX(SonList[i])));
-        SET_EFATHER(SonList[i],NULL);
+      PRINTDEBUG(gm,2,(PFMT "DisposeElement(): elem=" EID_FMTX
+                       " deleting fatherpointer of son=" EID_FMTX "\n",
+                       me,EID_PRTX(theElement),EID_PRTX(SonList[i])));
+      SET_EFATHER(SonList[i],NULL);
 
                         #ifdef __THREEDIM__
-        /* reset VFATHER of centernode vertex */
-        for (j=0; j<CORNERS_OF_ELEM(SonList[i]); j++)
-        {
-          theNode = CORNER(SonList[i],j);
-          if (NTYPE(theNode) != CENTER_NODE) continue;
+      /* reset VFATHER of centernode vertex */
+      for (j=0; j<CORNERS_OF_ELEM(SonList[i]); j++)
+      {
+        theNode = CORNER(SonList[i],j);
+        if (NTYPE(theNode) != CENTER_NODE) continue;
 
-          theVertex = MYVERTEX(theNode);
-          if (VFATHER(theVertex) != NULL && VFATHER(theVertex) == theElement)
-            VFATHER(theVertex) = NULL;
-        }
+        theVertex = MYVERTEX(theNode);
+        if (VFATHER(theVertex) != NULL && VFATHER(theVertex) == theElement)
+          VFATHER(theVertex) = NULL;
+      }
                         #endif
 
-        i++;
-      }
+      i++;
     }
+  }
         #endif
 
   /* remove element sides if it's a boundary element */
@@ -6285,9 +6284,9 @@ INT MultiGridStatus (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, 
                  sizeof(struct hexahedron);
 #endif
     if (mg_redplusgreen_size_div_red > 0.0)
-      predmax0 = free_bytes/mg_redplusgreen_size_div_red;
+      predmax1 = free_bytes/mg_redplusgreen_size_div_red;
     else
-      predmax0 = free_bytes/
+      predmax1 = free_bytes/
 #ifdef __TWODIM__
                  sizeof(struct quadrilateral);
 #else
