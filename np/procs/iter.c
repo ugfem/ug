@@ -909,7 +909,7 @@ static INT Lmgc (NP_ITER *theNP, INT level,
 
   if (level <= np->baselevel) {
     if ((*np->BaseSolver->Residuum)
-          (np->BaseSolver,level,c,b,A,&lresult))
+          (np->BaseSolver,np->baselevel,level,c,b,A,&lresult))
       return(1);
     if ((*np->BaseSolver->Solver)(np->BaseSolver,level,c,b,A,
                                   np->BaseSolver->abslimit,
