@@ -32,6 +32,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "compiler.h"
 #include "heaps.h"
@@ -516,7 +517,12 @@ void *GetFreelistMemory (HEAP *theHeap, INT size)
   if (obj == NULL)
     obj = GetMem(theHeap,size,FROM_BOTTOM);
 
-  ASSERT(obj != NULL);
+  if (obj == NULL)
+  {
+    printf( "ERROR in low/heaps.c/GetFreelistMemory: not enough memory for %d bytes.\n", size );
+    fprintf( stderr, "ERROR in low/heaps.c/GetFreelistMemory: not enough memory for %d bytes.\n", size );
+    UserWriteF( stderr, "ERROR in low/heaps.c/GetFreelistMemory: not enough memory for %d bytes.\n", size );
+  }
 
   if (obj != NULL)
     memset(obj,0,size);
