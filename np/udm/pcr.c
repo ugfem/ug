@@ -265,14 +265,32 @@ INT WriteVEC_SCALAR (VECDATA_DESC *theVDT, VEC_SCALAR Scalar, char *structdir)
  */
 /****************************************************************************/
 
-static INT PCR_IDAdmin, PCR_DispMode[32], PCR_nb[32], PCR_nComp[32];
+static INT PCR_IDAdmin, PCR_DispMode[32], PCR_nb[32], PCR_nComp[32], PCR_printed[32];
 static char PCR_compNames[32][MAX_VEC_COMP];
+static const char *PCR_header[32];
 static DOUBLE PCR_InitDefect[32][MAX_VEC_COMP], PCR_OldDefect[32][MAX_VEC_COMP];
 static DOUBLE PCR_InitNorm[32],PCR_OldNorm[32];
 
+static void PrintHeaderIff (INT i)
+{
+  INT j;
+
+  if (PCR_header[i]==NULL)
+    return;
+
+  for (j=i+1; j<32; j++)
+    if (PCR_printed[j])
+      break;
+  if (j<32)
+  {
+    UserWrite("\n");
+    UserWrite(PCR_header[i]);
+  }
+}
+
 INT PreparePCR (VECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
 {
-  INT i;
+  INT i,j;
 
   /* get new ID */
   for (i=0; i<32; i++)
@@ -291,6 +309,8 @@ INT PreparePCR (VECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
   /* init */
   PCR_nb[i]   = 0;
   PCR_DispMode[i] = DispMode;
+  PCR_header[i] = text;
+  for (j=i; j<32; j++) PCR_printed[j] = FALSE;
 
   /* print head line */
   if (text!=NULL && DispMode!=PCR_NO_DISPLAY)
@@ -427,6 +447,7 @@ INT DoPCR (INT ID, VEC_SCALAR Defect, INT PrintMode)
       PCR_InitNorm[ID] = s;
       if (PCR_DispMode[ID]==PCR_FULL_DISPLAY)
       {
+        PCR_printed[ID] = TRUE;
         sprintf(buffer," %-3d  %c: %-12.7e   %-12.7s\n",PCR_nb[ID],PCR_compNames[ID][0],Defect[0],"---");
         UserWrite(buffer);
         for (i=1; i<PCR_nComp[ID]; i++)
@@ -441,6 +462,8 @@ INT DoPCR (INT ID, VEC_SCALAR Defect, INT PrintMode)
     }
     else if (PCR_DispMode[ID]==PCR_FULL_DISPLAY)
     {
+      PCR_printed[ID] = TRUE;
+      PrintHeaderIff(ID);
       if (PCR_OldDefect[ID][0]!=0.0)
         sprintf(buffer," %-3d  %c: %-12.7e   %-12.7e\n",PCR_nb[ID],PCR_compNames[ID][0],Defect[0],Defect[0]/PCR_OldDefect[ID][0]);
       else
@@ -466,6 +489,8 @@ INT DoPCR (INT ID, VEC_SCALAR Defect, INT PrintMode)
   case PCR_AVERAGE_SD :
     if (PCR_nb[ID]<2) return (0);
     if (PCR_DispMode[ID]==PCR_NO_DISPLAY) break;
+    PCR_printed[ID] = TRUE;
+    PrintHeaderIff(ID);
     if (PCR_DispMode[ID]==PCR_FULL_DISPLAY) UserWrite("\n");
     if (PCR_InitDefect[ID][0]!=0.0)
       sprintf(buffer," %-3d avg:  %c: %-12.7e   %-12.7e   %-12.7e\n",PCR_nb[ID]-1,PCR_compNames[ID][0],PCR_InitDefect[ID][0],Defect[0],POW(Defect[0]/PCR_InitDefect[ID][0],1.0/(PCR_nb[ID]-1)));
