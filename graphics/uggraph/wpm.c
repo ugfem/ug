@@ -214,6 +214,9 @@ UGWINDOW *CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *UgWindowNam
   INT error;
 
   /* check outputdevice */
+        #ifdef ModelP
+  if (me == master)
+        #endif
   if (theOutputDevice == NULL) return (NULL);
 
   /* allocate UgWindow envItem */
@@ -222,6 +225,16 @@ UGWINDOW *CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *UgWindowNam
   if ((theWindow = (UGWINDOW *) MakeEnvItem(UgWindowName,theUgWinDirID,sizeof(UGWINDOW))) == NULL) return (NULL);
 
   /* open window on device and set sizes */
+        #ifdef ModelP
+  {
+    INT size,l;
+    INT *data;
+    size = 8*sizeof(INT);
+    data = (INT *)malloc(size);
+
+    if (me == master)
+    {
+        #endif
   winID = (*theOutputDevice->OpenOutput)(UgWindowName, x, y, width, height, UGW_GLL(theWindow), UGW_GUR(theWindow), UGW_LLL(theWindow), UGW_LUR(theWindow), &error);
   if (error)
   {
@@ -233,6 +246,25 @@ UGWINDOW *CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *UgWindowNam
     UserWrite("cannot open IFWindow\n");
     return (NULL);
   }
+        #ifdef ModelP
+  memcpy((void *)data,(void *)UGW_GLL(theWindow),size);
+
+  /* spread coordinates to slaves */
+  for(l=0; l<degree; l++)
+    Spread(l,(void *)data,size);
+}
+else {
+  GetSpread((void *)data,size);
+
+  memcpy((void *)UGW_GLL(theWindow),(void *)data,size);
+
+  /* get coordinates from master */
+  for(l=0; l<degree; l++)
+    Spread(l,(void *)data,size);
+}
+free(data);
+}
+        #endif
 
   /* set the other stuff */
   ENVITEM_LOCKED(theWindow)       = NO;
