@@ -4634,11 +4634,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, INT mode, const INT *order, const INT 
 
   for (i=0; i<entries; i++) {
     VINDEX(table[i]) = i;
-        #ifdef ModelP
     GRID_LINK_VECTOR(theGrid,table[i],PRIO(table[i]));
-        #else
-    GRID_LINK_VECTOR(theGrid,table[i],PrioMaster);
-            #endif
   }
   if (!AlsoOrderMatrices) {
     ReleaseTmpMem(theHeap,MarkKey);
@@ -4977,7 +4973,7 @@ INT ShellOrderVectors (GRID *theGrid, VECTOR *seed)
 
   /* reorder vector list in grid */
   for (i=0; i<n; i++) GRID_UNLINK_VECTOR(theGrid,vlist[i]);
-  for (i=0; i<n; i++) GRID_LINK_VECTOR(theGrid,vlist[i],PrioMaster);
+  for (i=0; i<n; i++) GRID_LINK_VECTOR(theGrid,vlist[i],PRIO(vlist[i]));
 
   ReleaseTmpMem(theHeap,MarkKey);
 
