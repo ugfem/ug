@@ -161,8 +161,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {1,COARSEN_CE,          FLAG_CW,        COARSEN_SHIFT,          COARSEN_LEN             },
   {1,EBUILDCON_CE,        FLAG_CW,        EBUILDCON_SHIFT,        EBUILDCON_LEN   },
   {1,DECOUPLED_CE,        FLAG_CW,        DECOUPLED_SHIFT,        DECOUPLED_LEN   },
-  /* TODO: delete next line */
-  /*	{1,EDGEPATTERN_CE,	FLAG_CW,	EDGEPATTERN_SHIFT,	EDGEPATTERN_LEN	}, */
+  {1,UPDATE_GREEN_CE,     FLAG_CW,        UPDATE_GREEN_SHIFT,     UPDATE_GREEN_LEN},
   {1,SIDEPATTERN_CE,      FLAG_CW,        SIDEPATTERN_SHIFT,      SIDEPATTERN_LEN },
   {1,MARKCLASS_CE,        FLAG_CW,        MARKCLASS_SHIFT,        MARKCLASS_LEN   },
 
