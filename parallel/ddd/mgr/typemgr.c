@@ -1799,7 +1799,7 @@ void DDD_Library::ddd_TypeMgrInit (void)
                    EL_GDATA, &hdr->typ,     sizeof(hdr->typ),
                    EL_LDATA, &hdr->prio,    sizeof(hdr->prio),
                    EL_GDATA, &hdr->attr,    sizeof(hdr->attr),
-                   EL_GDATA, &hdr->flags,   sizeof(hdr->flags),
+                   EL_LDATA, &hdr->flags,   sizeof(hdr->flags),
                    EL_LDATA, &hdr->myIndex, sizeof(hdr->myIndex),
                    EL_GDATA, &hdr->gid,     sizeof(hdr->gid),
 

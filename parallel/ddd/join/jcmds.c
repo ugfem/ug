@@ -359,6 +359,11 @@ static void UnpackPhase1Msgs (LC_MSGHANDLE *theMsgs, int nRecvMsgs,
   }
 
 
+  /* return immediately if no join-objects have been found */
+  if (nJoinObjs==0)
+    return;
+
+
   /* allocate array of objects, which has been contacted by a join */
   joinObjs = (JIPartner *) AllocTmp(sizeof(JIPartner) * nJoinObjs);
   if (joinObjs==NULL)
