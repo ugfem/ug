@@ -63,6 +63,10 @@
 #define IDENT_ONLY_NEW
 #endif
 
+/* define this if you want to apply anistropic rules */
+/* #define __ANISOTROPIC__ */
+
+
 /****************************************************************************/
 /*																			*/
 /* control word definitions                                                                                             */
