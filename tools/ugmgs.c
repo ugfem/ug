@@ -187,6 +187,7 @@ int PrintDataFileInfo (char *filename, int *magic_cookie)
     return (0);
   }
   printf("Version:        %s\n",dio_general.version);
+  printf("Identification: %s\n",dio_general.ident);
   printf("MG File:        %s\n",dio_general.mgfile);
   printf("Time:           %f\n",(float)dio_general.time);
   printf("TimeStep:       %f\n",(float)dio_general.dt);
