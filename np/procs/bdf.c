@@ -719,7 +719,7 @@ Continue:
   /* readjust enabled time-step, if */
   if (bdf->TimeControl != NULL)
   {
-    if (bdf->disabled_timestep>0.0)
+    if (bdf->disabled_timestep>0.0 && (!bad))
     {
       bdf->dt = bdf->disabled_timestep;
       bdf->t_p1 = bdf->t_0 + bdf->dt;
