@@ -382,7 +382,7 @@ void ConstructConsistentGrid (GRID *theGrid)
       theVertex = MYVERTEX(theNode);
       theFather = EFATHER(theElement);
 
-      if (VFATHER(theVertex)==NULL || EHGHOST(VFATHER(theVertex)))
+      if (VFATHER(theVertex)==NULL || EPRIO(VFATHER(theVertex))==PrioGhost)
       {
         switch (NTYPE(theNode))
         {
