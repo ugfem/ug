@@ -1292,6 +1292,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
 {
   GRID *theGrid;
   NODE *theNode;
+  EDGE *theEdge;
   ELEMENT *theElement;
   HEAP *theHeap;
   MGIO_MG_GENERAL mg_general;
@@ -1577,11 +1578,18 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
           cge->nbid[j] = ID(NBELEM(theElement,j));
         else
           cge->nbid[j] = -1;
-      cge->side_on_bnd = 0;
+      cge->se_on_bnd = 0;
       if (OBJT(theElement)==BEOBJ)
         for (j=0; j<SIDES_OF_ELEM(theElement); j++)
           if (SIDE_ON_BND(theElement,j))
-            cge->side_on_bnd |= (1<<j);
+            cge->se_on_bnd |= (1<<j);
+      for (j=0; j<EDGES_OF_ELEM(theElement); j++)
+      {
+        theEdge=GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),CORNER_OF_EDGE_PTR(theElement,j,1));
+        assert(theEdge!=NULL);
+        if (EDSUBDOM(theEdge)==0)
+          cge->se_on_bnd |= (1<<(SIDES_OF_ELEM(theElement)+j));
+      }
       cge->subdomain = SUBDOMAIN(theElement);
 
 #if (MGIO_DEBUG>0)
@@ -2740,6 +2748,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   GRID *theGrid;
   ELEMENT *theElement,*ENext;
   NODE *theNode;
+  EDGE *theEdge;
   VECTOR *theVector;
   HEAP *theHeap;
   MGIO_MG_GENERAL mg_general;
@@ -3114,7 +3123,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     max = MAX(max,ge_element[cge->ge].nSide);
     if (MGIO_PARFILE) theMesh.ElementLevel[1][i] = cge->level;
     else theMesh.ElementLevel[1][i] = 0;
-    Element_SideOnBnd_uniq_subdom[i] = cge->side_on_bnd;
+    Element_SideOnBnd_uniq_subdom[i] = cge->se_on_bnd;
   }
   Ecusdp[1] = Element_corner_uniq_subdom;
   theMesh.Element_corners = Ecusdp;
@@ -3184,27 +3193,17 @@ nparfiles = UG_GlobalMinINT(nparfiles);
       }
       for (j=0; j<EDGES_OF_ELEM(theElement); j++)
       {
-        SETEDSUBDOM(GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),CORNER_OF_EDGE_PTR(theElement,j,1)),cge->subdomain);
+        theEdge=GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),CORNER_OF_EDGE_PTR(theElement,j,1));
+        ASSERT(theEdge!=NULL);
+        if ((cge->se_on_bnd & (1<<(SIDES_OF_ELEM(theElement)+j))))
+          SETEDSUBDOM(theEdge,0);
+        else
+          SETEDSUBDOM(theEdge,cge->subdomain);
       }
     }
-  for (i=0; i<=TOPLEVEL(theMG); i++)
-    for (theElement = PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
-      if (OBJT(theElement)==BEOBJ)
-#ifdef __TWODIM__
-        for (j=0; j<EDGES_OF_ELEM(theElement); j++)
-          if (EDGE_ON_BND(theElement,j))
-            SETEDSUBDOM(GetEdge(CORNER_OF_EDGE_PTR(theElement,j,0),CORNER_OF_EDGE_PTR(theElement,j,1)),0);
 
-#endif
-#ifdef __THREEDIM__
-        for (j=0; j<SIDES_OF_ELEM(theElement); j++)
-          if (SIDE_ON_BND(theElement,j))
-            for (k=0; k<EDGES_OF_SIDE(theElement,j); k++)
-              SETEDSUBDOM(GetEdge(CORNER_OF_EDGE_PTR(theElement,EDGE_OF_SIDE(theElement,j,k),0),CORNER_OF_EDGE_PTR(theElement,EDGE_OF_SIDE(theElement,j,k),1)),0);
-
-#endif
-        /* now CreateAlgebra  is necessary to have the coarse grid nodevectors for DDD identification in Evaluate_pinfo */
-        if (CreateAlgebra (theMG))                                              {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
+  /* now CreateAlgebra  is necessary to have the coarse grid nodevectors for DDD identification in Evaluate_pinfo */
+  if (CreateAlgebra (theMG))                                              {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
   if (PrepareAlgebraModification(theMG))                  {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
   i = MG_ELEMUSED | MG_NODEUSED | MG_EDGEUSED | MG_VERTEXUSED |  MG_VECTORUSED;
