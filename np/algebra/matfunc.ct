@@ -47,6 +47,9 @@ $Header$
 
 INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode T_ARGS)
 {
+#ifdef _SPARSE_
+	T_SPARSE_CALL
+#else
 	register VECTOR *v;
 	register MATRIX *mat;
 	INT lev,rtype,ctype,nr,nc,i;
@@ -94,8 +97,12 @@ INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode T_ARGS)
 	#ifdef T_POST
 	T_POST;
     #endif
+#endif
+
 	return(NUM_OK);
 }
+
+#undef T_SPARSE_CALL
 
 #if defined(T_MOD_SCAL) && !defined(T_NO_BV_FUNC) && defined __BLOCK_VECTOR_DESC__ 
 

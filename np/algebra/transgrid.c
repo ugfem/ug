@@ -135,7 +135,7 @@ static INT StandardRestrictNodeVector (GRID *FineGrid, const VECDATA_DESC *to, c
 
   toComp    = VD_ncmp_cmpptr_of_otype_mod(to,NODEVEC,&ncomp,NON_STRICT);
   fromComp  = VD_cmpptr_of_otype_mod(from,NODEVEC,NON_STRICT);
-  edComp   = VD_ncmp_cmpptr_of_otype(to,EDGEVEC,&edcomp);
+  edComp   = VD_ncmp_cmpptr_of_otype_mod(to,EDGEVEC,&edcomp,NON_STRICT);
   if (ncomp <= 0)
     return(NUM_ERROR);
   if (ncomp>MAX_SINGLE_VEC_COMP)
@@ -252,7 +252,7 @@ static INT StandardIntCorNodeVector (GRID *FineGrid, const VECDATA_DESC *to, con
   CoarseGrid = DOWNGRID(FineGrid);
 
   toComp   = VD_ncmp_cmpptr_of_otype_mod(to,NODEVEC,&ncomp,NON_STRICT);
-  edComp   = VD_ncmp_cmpptr_of_otype(to,EDGEVEC,&edcomp);
+  edComp   = VD_ncmp_cmpptr_of_otype_mod(to,EDGEVEC,&edcomp,NON_STRICT);
   fromComp = VD_cmpptr_of_otype_mod(from,NODEVEC,NON_STRICT);
   if (ncomp <= 0)
     return(NUM_ERROR);
@@ -369,7 +369,7 @@ static INT StandardIntNewNodeVector (GRID *FineGrid, const VECDATA_DESC *Cor)
   CoarseGrid = DOWNGRID(FineGrid);
 
   Comp   = VD_ncmp_cmpptr_of_otype_mod(Cor,NODEVEC,&ncomp,NON_STRICT);
-  edComp   = VD_ncmp_cmpptr_of_otype(Cor,EDGEVEC,&edcomp);
+  edComp   = VD_ncmp_cmpptr_of_otype_mod(Cor,EDGEVEC,&edcomp,NON_STRICT);
   if (ncomp <= 0)
     return(NUM_ERROR);
   if (ncomp < edcomp)
@@ -690,7 +690,7 @@ INT StandardProject (GRID *CoarseGrid, const VECDATA_DESC *to,
         #endif
 
   toComp   = VD_ncmp_cmpptr_of_otype_mod(to,NODEVEC,&ncomp,NON_STRICT);
-  edComp   = VD_ncmp_cmpptr_of_otype(to,EDGEVEC,&edcomp);
+  edComp   = VD_ncmp_cmpptr_of_otype_mod(to,EDGEVEC,&edcomp,NON_STRICT);
   fromComp = VD_ncmp_cmpptr_of_otype_mod(from,NODEVEC,&nfrom,NON_STRICT);
 
   if (ncomp <= 0)

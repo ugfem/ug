@@ -149,7 +149,7 @@ INT MarkAbsolute(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
     REP_ERR_RETURN(error);
   }
   mcomp=MD_MCMP_OF_MTYPE(A,0,0);
-  if (vcomp>MD_ROWS_IN_MTYPE(A,0)) {
+  if ( vcomp >= MD_ROWS_IN_MTYPE(A,0) ) {
     PrintErrorMessage('E',"MarkAbsolute","vcomp too large");
     REP_ERR_RETURN(error);
   }
@@ -185,28 +185,23 @@ INT MarkRelative(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
   VECTOR *vect,*vect2;
   MATRIX *matD,*mat;
   INT mcomp;
-  DOUBLE s,threshold;
+  DOUBLE s,threshold,norm_ij;
 
   /* Check that only mtype=0x0 (for other, AMG is unclear anyhow).        */
   /* Define and set the variables scalar,blockN,blockNN, and error. */
   BLOCK_SETUP(A);
   if (error) {
-    PrintErrorMessage('E',"MarkAbsolute","not yet for general matrices");
+    PrintErrorMessage('E',"MarkRelative","not yet for general matrices");
     REP_ERR_RETURN(error);
   }
 
   mcomp=MD_MCMP_OF_MTYPE(A,0,0);
-  if (vcomp>MD_ROWS_IN_MTYPE(A,0)) {
+  if (vcomp >= MD_ROWS_IN_MTYPE(A,0)) {
     PrintErrorMessage('E',"MarkRelative","vcomp too large");
     REP_ERR_RETURN(error);
   }
   if (vcomp>=0)
     mcomp += vcomp*(MD_COLS_IN_MTYPE(A,0)+1);
-  else
-  {
-    PrintErrorMessage('E',"MarkRelative","whole block handling not implemented for this marking");
-    REP_ERR_RETURN(error);
-  }
 
   for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
   {
@@ -216,14 +211,20 @@ INT MarkRelative(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
     matD=VSTART(vect);
     /* the diagonal is special anyhow, we don't mark it... */
 
-    /* find maximum of -a_{ij} */
+    /* find maximum of -a_{ij} or of Norm(a_{ij}) */
     s=0.0;
     for (mat=MNEXT(matD); mat!=NULL; mat=MNEXT(mat))
     {
       vect2=MDEST(mat);
       if (VECSKIP(vect2)==0)
-        if (s < -MVALUE(mat,mcomp))
-          s = -MVALUE(mat,mcomp);
+      {
+        if (vcomp<0)
+        {BLOCK_NORM(&(MVALUE(mat,mcomp)),norm_ij);}
+        else
+          norm_ij=-MVALUE(mat,mcomp);
+        if (s < norm_ij)
+          s = norm_ij;
+      }
     }
     threshold=s*theta;
     for (mat=MNEXT(matD); mat!=NULL; mat=MNEXT(mat))
@@ -231,8 +232,14 @@ INT MarkRelative(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
       /* we also say there is no strong influence from Dirichlet vectors
          so that they wont't be used for coarse grid vectors */
       if (VECSKIP(MDEST(mat))==0)
-        if (-MVALUE(mat,mcomp)>=threshold)
+      {
+        if (vcomp<0)
+        {BLOCK_NORM(&(MVALUE(mat,mcomp)),norm_ij);}
+        else
+          norm_ij=-MVALUE(mat,mcomp);
+        if (norm_ij>=threshold)
           SETSTRONG(mat,1);
+      }
     }
   }
 
@@ -250,11 +257,11 @@ INT MarkVanek(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
   /* Define and set the variables scalar,blockN,blockNN, and error. */
   BLOCK_SETUP(A);
   if (error) {
-    PrintErrorMessage('E',"MarkAbsolute","not yet for general matrices");
+    PrintErrorMessage('E',"MarkVanek","not yet for general matrices");
     REP_ERR_RETURN(error);
   }
-  if (vcomp>MD_ROWS_IN_MTYPE(A,0)) {
-    PrintErrorMessage('E',"MarkAbsolute","vcomp too large");
+  if (vcomp >= MD_ROWS_IN_MTYPE(A,0)) {
+    PrintErrorMessage('E',"MarkVanek","vcomp too large");
     REP_ERR_RETURN(error);
   }
 
@@ -343,18 +350,22 @@ INT DistributeInitialList(AVECTOR **La, AVECTOR **Le, AVECTOR **Da, AVECTOR **De
 {
   INT i;
   AVECTOR *avect;
+  MATRIX *mat;
 
-  /* we sort the avects according to the number of points they influence
-     we also put Dirichlet values straight away in the final tested fine grid */
   while ((avect=*La)!=NULL)
   {
     ELIMINATE_LIST2(*La,*Le,avect);
-    if (VECSKIP(VECT(avect)) != 0)
+    /* if the point is not influenced, it can be left in the fine grid,
+       since a smoother should be able to handle the defect there */
+    if (STRONG_IN(avect) == 0)
     {
       SETAVFINE(avect,1);
       SETAVTESTED(avect,1);
       SETAVSKIP(avect,1);
       ADDATEND_LIST2(*Da,*De,avect);
+      /* we also "disconnect" it from the rest of the grid
+         for (mat=VSTART(VECT(avect)); mat!=NULL; mat=MNEXT(mat))
+              SETSTRONG(mat,0); */
     }
                 #ifdef ModelP
     else if (DDD_InfoNCopies(PARHDR(VECT(avect))) > 0)
@@ -367,6 +378,8 @@ INT DistributeInitialList(AVECTOR **La, AVECTOR **Le, AVECTOR **Da, AVECTOR **De
                 #endif
     else
     {
+      /* we sort the avects according to the number of points
+         they influence */
       i=STRONG_OUT(avect);
       ADDATEND_LIST2(Ua[i],Ue[i],avect);
     }
@@ -781,12 +794,13 @@ INT CoarsenRugeStueben(GRID *theGrid)
 
     vect=VECT(avect);
     for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat))
-    {
-      vect2=MDEST(mat);
-      avect2=(AVECTOR *) VISTART(vect2);
-      if (AVCOARSE(avect2))
-        SETVCUSED(vect2,1);                             /* is in coarse neighborhood of vect */
-    }
+      if (STRONG(mat))                  /*08.04.98*/
+      {
+        vect2=MDEST(mat);
+        avect2=(AVECTOR *) VISTART(vect2);
+        if (AVCOARSE(avect2))
+          SETVCUSED(vect2,1);                                   /* is in coarse neighborhood of vect */
+      }
 
     testCoarse=NULL;
     for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat))
@@ -1423,15 +1437,30 @@ exit:
 
 /****************************************************************************/
 /*D
-        CoarsenGreedy -
+   CoarsenGreedy - do a "greedy" independent set labeling
 
-        DESCRIPTION:
+   SYNOPSIS:
+   INT CoarsenGreedy (GRID *theGrid)
 
-        .vb
-        .ve
+   PARAMETERS:
+   .  theGrid - pointer to grid data structure.
 
-        SEE ALSO:
-        D*/
+   DESCRIPTION:
+   We force the coarse vectors to form an independent set by labeling a
+   vector vi coarse only if all other vectors vj in N_i (neighborhood of
+   vector vi) are either not yet labeled (VCUSED-flag) or already labeled
+   fine. Otherwise vi is labeled fine.
+
+   The algorithm is "greedy" in the sense that a decision made is never changed.
+
+
+   RETURN VALUE:
+   INT
+   .n    0      if ok
+   .n    error  if GenerateNewGrid failed
+
+   SEE ALSO:
+   D*/
 /****************************************************************************/
 
 INT CoarsenGreedy (GRID *theGrid)
@@ -1873,6 +1902,14 @@ static INT GenerateClusters(AVECTOR **Ua, AVECTOR **Ue, GRID *theGrid, GRID *new
       VINDEX(newVect)=nc;
       VOBJECT(newVect) = VOBJECT(vect);
 
+      /* create also a diagonal connection */
+      if (CreateConnection(newGrid,newVect,newVect) == NULL)
+      {
+        PrintErrorMessage('E',"GenerateClusters",
+                          "could not create diag matrix");
+        REP_ERR_RETURN(1);
+      }
+
       /* generate the cluster as imatrices to newVect */
       for (avect=Ca; avect!=NULL; avect=avect->succ)
       {
@@ -1948,7 +1985,7 @@ INT CoarsenVanek(GRID *theGrid)
 
   if ((newGrid=CreateNewLevelAMG(theMG))==NULL)
   {
-    PrintErrorMessage('E',"CoarsenCommand","could not create new amg level");
+    PrintErrorMessage('E',"CoarsenVanek","could not create new amg level");
     ReleaseTmpMem(theHeap,MarkKey);
     REP_ERR_RETURN(1);
   }
@@ -2192,7 +2229,6 @@ INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
   INT icomp,mcomp,vskip,nCoarse;
   DOUBLE modDiag[MAX_MAT_COMP],modDiagInv[MAX_MAT_COMP];
   DOUBLE sum[MAX_MAT_COMP],sumInv[MAX_MAT_COMP],factor[MAX_MAT_COMP];
-  GRID *newGrid;
   VECTOR *vect,*vect2,*vect3,*newVect;
   MATRIX *mat,*mat2,*imat,*imat2;
 
@@ -2207,8 +2243,6 @@ INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 
   icomp = 0;       /* preliminary, later this should be obtained via I */
   mcomp=MD_MCMP_OF_MTYPE(A,0,0);
-
-  newGrid=theGrid->coarser;
 
   /*    For the fine grid points we have to solve for e_i:
           0 == a_{ii} e_i + \sum_{j \in C_i} a_{ij} e_j +
@@ -2233,7 +2267,7 @@ INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
         {
           vect2=MDEST(mat);
           assert(VCUSED(vect2)==0);
-          if (VCCOARSE(vect2)==1)
+          if ((VCCOARSE(vect2)==1) && STRONG(mat))                      /*08.04.98*/
           {
             SETVCUSED(vect2,1);                                 /* is coarse in neighborhood of vect */
             BLOCK_COPY(&(MVALUE(mat,mcomp)),&(MVALUE(VISTART(vect2),icomp)));
@@ -2271,7 +2305,7 @@ INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 #ifdef DebugAMG
               UserWriteF("(%d)%f, ",ID(VMYNODE(vect2)),sum);
 #endif
-              BLOCK_INVERT(sum,sumInv);
+              BLOCK_INVERT(sum, sumInv);
               BLOCK_MUL(&(MVALUE(mat,mcomp)),sumInv,factor);
               for (mat2=MNEXT(VSTART(vect2)); mat2!=NULL; mat2=MNEXT(mat2))
               {
@@ -2304,7 +2338,7 @@ INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
             REP_ERR_RETURN(1);
           }
           /* in Average: {BLOCK_SCALIDENTITY(1/((DOUBLE) nCoarse), &(MVALUE(imat2,icomp)));} */
-          BLOCK_MUL_NNN(modDiagInv, &(MVALUE(imat,icomp)), &(MVALUE(imat2,icomp)));
+          BLOCK_MUL_NNT(modDiagInv, &(MVALUE(imat,icomp)), &(MVALUE(imat2,icomp)));
         }
       }
     }
@@ -2324,15 +2358,19 @@ INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 
 /****************************************************************************/
 /*D
-   IpSchurMG - Create interpolation matrices and store rest/prol weights
+   IpSchurMG - Create interpolation matrices and store rest/prol weights for SchurMG
 
    SYNOPSIS:
-   static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag)
+   static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag, INT reducedFFGraph,
+                        INT decoupled, INT redInt)
 
    PARAMETERS:
    .  theGrid - pointer to grid.
    .  A - matrix descriptor for stiffness matrix.
    .  RWflag - flag denoting type of lumping: REUSKEN - simple lump; WAGNER - matdep lump
+   .  reducedFFGraph - if set a reduced fine-fine-graph (only STRONG connections) is considered.
+   .  decoupled - version avoiding "intermixing of components.
+   .  redInt - interpolate fine j from reduced set of coarse neighbors k.
 
 
    DESCRIPTION:
@@ -2341,18 +2379,22 @@ INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
    fine neighbors j, then in the same way find j's coarse neighbors k.
    Replace in the i's equation these fine j's by a mean (arithmetic for "REUSKEN",
    matrix-coefficent weighted for the "WAGNER" case) of the coarse k's.
-   This corresponds to new entries appearing in the fine-coarse block of the stiffness
-   matrix which are not actually built.
+   This corresponds to new entries appearing in the lumped fine-coarse block ~A_fc
+   ("~" means "lumped") of the stiffness matrix (which is not actually built).
+
+   The effects of lumping: 1. ~A_ff is diagonal, 2. ~A_fc contains additional connections,
+   3. A_cf and A_cc are unchanged.
 
    According to the entries in the lumped matrix we then create the interpolation
    matrices, and compute and store restriction/prolongation weights.
 
-   We build a reduced matrix before lumping:
-   Weak fine-fine connections A_ij are lumped (sorry, a second kind of lumping) to A_ii,
-   e.g., such a weakly coupled fine vector vj in N_i is NOT substituted by the described
-   (arithmetic or matrix dependent) mean of coarse vectors vk in N_j!
+   If reducedFFGraph option is set we build a reduced matrix before lumping:
+   Weak fine-fine connections [A_ff]_ij are lumped (sorry, a second kind of lumping)
+   to the diagonal [A_ff]_ii, e.g., such a weakly coupled fine vector vj in N_i is
+   NOT substituted by the described (arithmetic or matrix dependent) mean of
+   coarse vectors vk in N_j so reducing the amount of fill in in ~A_ff!
 
-   The restriction operator is build due to (~ means "lumped")
+   The restriction operator is build due to
    .vb
    restr = [-A_cf*Inv(~A_ff), I].
    .ve
@@ -2379,13 +2421,14 @@ INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
    D*/
 /****************************************************************************/
 
-static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag)
+static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag, INT reducedFFGraph,
+                     INT decoupled, INT redInt)
 {
   INT icomp,mcomp,rcomp,nCoarse;
   INT arithmetic_lump,vsmask;
+  DOUBLE modDiag[MAX_MAT_COMP];
   DOUBLE Sum_jk[MAX_MAT_COMP], Weight_ik[MAX_MAT_COMP];
   DOUBLE InvSum_jk[MAX_MAT_COMP], Inv_ii[MAX_MAT_COMP];
-  GRID *newGrid;
   VECTOR *vi,*vj,*vk,*newVect;
   MATRIX *mij,*mjk,*imat,*imat2;
 
@@ -2403,8 +2446,6 @@ static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag)
   icomp = 0;       /* preliminary, later this should be obtained via I?? */
   rcomp = blockNN;
   mcomp=MD_MCMP_OF_MTYPE(A,0,0);
-
-  newGrid=theGrid->coarser;
 
   /*    For the fine grid points we have to solve for e_i:
           0 == A_{ii} e_i + \sum_{j \in C_i} A_{ij} e_j +
@@ -2435,8 +2476,12 @@ static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag)
         continue;
 
 #ifdef DebugAMG
-      UserWriteF("NID=%d: A_ii[%d]=%f, ",ID(VMYNODE(vi)),mcomp,MVALUE(VSTART(vi),mcomp));
+      UserWriteF("A_ii at vi %d (NID=%d)\n ", VINDEX(vi), ID(VMYNODE(vi)));
+      BLOCK_MATWRITE( &(MVALUE(VSTART(vi))) );
 #endif
+
+      /* store diagonal entry for possible modification */
+      BLOCK_COPY(&(MVALUE(VSTART(vi),mcomp)), modDiag);
 
       /* compute lumped fine-coarse block ~A_fc and
          store result in direct Imats */
@@ -2447,9 +2492,10 @@ static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag)
         {BLOCK_ADD1( &(MVALUE(mij,mcomp)), &(MVALUE(VISTART(vj),icomp)) );}
         else
         {
-          if (STRONG(mij))
+          if ( (!reducedFFGraph) || STRONG(mij) )
           {
-            /* do lumping: compute \sum_{k \in C_j} A_{jk} or nb of coarse neighbors */
+            /* do lumping: compute \sum_{k \in C_j} A_{jk} or nb of coarse neighbors
+                                       or if redInt-flag set only a subset of this */
             BLOCK_CLEAR(Sum_jk);
 
             nCoarse = 0;
@@ -2458,14 +2504,27 @@ static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag)
               vk=MDEST(mjk);
               if (VCCOARSE(vk))
               {
-                nCoarse++;
-                if (RWflag==WAGNER)
-                  BLOCK_ADD1( &(MVALUE(mjk,mcomp)), Sum_jk );
+                if ( (!redInt) || STRONG(mjk) )
+                {
+                  nCoarse++;
+                  if (RWflag==WAGNER)
+                    BLOCK_ADD1( &(MVALUE(mjk,mcomp)), Sum_jk );
+                }
               }
             }
 
             if (RWflag==WAGNER)
-              BLOCK_INVERT(Sum_jk,InvSum_jk);
+            {
+              BLOCK_INVERT_X(Sum_jk,InvSum_jk, decoupled);
+#ifdef DebugAMG
+              if (error)
+              {
+                PrintErrorMessage('W',"IpSchurMG","inversion of Sum_jk failed!");
+                BLOCK_MATWRITE( Sum_jk );
+                UserWriteF("    vi %d, level %d\n", VINDEX(vi), GLEVEL(theGrid));
+              }
+#endif
+            }
 
             /* use arithmetic average for REUSKEN, if BLOCK_INVERT returned error!=0,
                or if Wagner's cut criterion is fulfilled */
@@ -2475,7 +2534,8 @@ static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag)
             else
               arithmetic_lump = 0;
 #ifdef DebugAMG
-            UserWriteF("Sum_jk[0] (%d)%f, ",ID(VMYNODE(vj)),Sum_jk[0]);
+            UserWrite("Sum_jk:\n");
+            BLOCK_MATWRITE( Sum_jk );
 #endif
 
             if ( arithmetic_lump )
@@ -2484,8 +2544,10 @@ static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag)
               BLOCK_SCALE( 1.0 /((DOUBLE) nCoarse), &(MVALUE(mij,mcomp)), Weight_ik );
             }
             else
+            {
               /* Weight_ik = Aff_ij*InvSum_jk (in this order!): */
-              BLOCK_MUL( &(MVALUE(mij,mcomp)), InvSum_jk, Weight_ik );
+              BLOCK_MUL_X( &(MVALUE(mij,mcomp)), InvSum_jk, Weight_ik, decoupled );
+            }
 
             /* lumped fine-coarse block ~A_fc*/
             for (mjk=MNEXT(VSTART(vj)); mjk!=NULL; mjk=MNEXT(mjk))
@@ -2496,14 +2558,16 @@ static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag)
                 if ( arithmetic_lump )
                 {BLOCK_ADD1( Weight_ik, &(MVALUE(VISTART(vk),icomp)) );}
                 else
-                  BLOCK_MUL_ADD( Weight_ik, &(MVALUE(mjk,mcomp)), &(MVALUE(VISTART(vk),icomp)) );
+                {
+                  BLOCK_MUL_ADD_X( Weight_ik, &(MVALUE(mjk,mcomp)), &(MVALUE(VISTART(vk),icomp)), decoupled );
+                }
               }
             }
-          }                                  /* end if STRONG(mij) */
+          }                                  /* end if not reducedFFGraph or STRONG(mij) */
           else
           {
             /* lump weak fine-fine connections A_ij on A_ii */
-            BLOCK_ADD1( &(MVALUE(mij,mcomp)),&(MVALUE(VSTART(vi),mcomp)) );
+            BLOCK_ADD1( &(MVALUE(mij,mcomp)), modDiag );
           }
         }                                /* end is fine */
       }
@@ -2511,14 +2575,17 @@ static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag)
       UserWrite("\n");
 #endif
 
-      BLOCK_INVERT( &(MVALUE(VSTART(vi),mcomp)), Inv_ii );
+      BLOCK_INVERT_X( modDiag, Inv_ii, decoupled );
       if (error)
       {
-        PrintErrorMessage('E',"IpSchurMG","inversion of Aff_ii failed!");
-        BLOCK_WRITEOUT( &(MVALUE(VSTART(vi),mcomp)) );
+        PrintErrorMessage('E',"IpSchurMG","inversion of (modified) Aff_ii failed!");
+        BLOCK_MATWRITE( modDiag );
         UserWriteF("    vi %d, level %d\n", VINDEX(vi), GLEVEL(theGrid));
+        BLOCK_MATWRITE( Inv_ii );
+        REP_ERR_RETURN(-1);
       }
       BLOCK_SCALE1( -1.0, Inv_ii );
+
       /* now we create the interpolation matrices */
       for (mij=MNEXT(VSTART(vi)); mij!=NULL; mij=MNEXT(mij))
       {
@@ -2534,15 +2601,15 @@ static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag)
             PrintErrorMessage('E',"IpSchurMG","could not create interpolation matrix");
             REP_ERR_RETURN(1);
           }
-          BLOCK_MUL_ADD_NNT( Inv_ii, &(MVALUE(imat,icomp)), &(MVALUE(imat2,icomp)) );
-          BLOCK_MUL_ADD_NNT( &(MVALUE(MADJ(mij),mcomp)), Inv_ii, &(MVALUE(imat2,rcomp)) );
+          BLOCK_MUL_ADD_NNT_X( Inv_ii, &(MVALUE(imat,icomp)), &(MVALUE(imat2,icomp)), decoupled );
+          BLOCK_MUL_ADD_NNN_X( &(MVALUE(MADJ(mij),mcomp)), Inv_ii, &(MVALUE(imat2,rcomp)), decoupled );
           SETVCUSED(vj,1);
         }
       }
 
       /* once again to handle additional connections */
       for (mij=MNEXT(VSTART(vi)); mij!=NULL; mij=MNEXT(mij))
-        if (STRONG(mij))
+        if ( (!reducedFFGraph) || STRONG(mij) )
         {
           vj=MDEST(mij);
           if ( VCCOARSE(vj)==0 )
@@ -2552,16 +2619,19 @@ static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag)
               vk=MDEST(mjk);
               if ( (VCCOARSE(vk)==1) && (VCUSED(vk)==0) )
               {
-                imat=VISTART(vk);
-                newVect=MDEST(imat);
-                if ((imat2=CreateIMatrix(theGrid,vi,newVect))==NULL)
+                if ( (!redInt) || STRONG(mjk) )
                 {
-                  PrintErrorMessage('E',"IpSchurMG","could not create interpolation matrix");
-                  REP_ERR_RETURN(1);
+                  imat=VISTART(vk);
+                  newVect=MDEST(imat);
+                  if ((imat2=CreateIMatrix(theGrid,vi,newVect))==NULL)
+                  {
+                    PrintErrorMessage('E',"IpSchurMG","could not create interpolation matrix");
+                    REP_ERR_RETURN(1);
+                  }
+                  BLOCK_MUL_ADD_NNT_X( Inv_ii, &(MVALUE(imat,icomp)), &(MVALUE(imat2,icomp)), decoupled );
+                  BLOCK_CLEAR( &(MVALUE(imat2,rcomp)) );                                                       /* restriction contains no extra conn's! */
+                  SETVCUSED(vk,1);
                 }
-                BLOCK_MUL_ADD_NNT( Inv_ii, &(MVALUE(imat,icomp)), &(MVALUE(imat2,icomp)) );
-                BLOCK_CLEAR( &(MVALUE(imat2,rcomp)) );                                                 /* restriction contains no extra conn's! */
-                SETVCUSED(vk,1);
               }
             }
           }
@@ -2614,12 +2684,140 @@ static INT IpSchurMG(GRID *theGrid, MATDATA_DESC *A, INT RWflag)
 
 INT IpReusken(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
-  return (IpSchurMG(theGrid,A,REUSKEN));
+  return (IpSchurMG(theGrid,A,REUSKEN,0,0,0));
 }
 
 INT IpWagner(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
-  return (IpSchurMG(theGrid,A,WAGNER));
+  return (IpSchurMG(theGrid,A,WAGNER,0,0,0));
+}
+
+/* Test: Work on a reduced graph by considering only strong connections.
+   Lump weak fine-fine connections to to diagonal before interpolation: */
+INT IpReuskenReducedFFGraph(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+{
+  return (IpSchurMG(theGrid,A,REUSKEN,1,0,0));
+}
+
+INT IpWagnerReducedFFGraph(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+{
+  return (IpSchurMG(theGrid,A,WAGNER,1,0,0));
+}
+
+/* Test:Version with no mixing of components: */
+INT IpReuskenDecoupled(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+{
+  return (IpSchurMG(theGrid,A,REUSKEN,0,1,0));
+}
+
+INT IpWagnerDecoupled(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+{
+  return (IpSchurMG(theGrid,A,WAGNER,0,1,0));
+}
+
+/* Test: Work on a reduced set of fine-coarse neighbors vj --> vk in
+   interpolating/lumping vj in equation i: */
+/****************************************************************************/
+/* A routine marking nearest fine-coarse connections used in SchurMG-lumping*/
+/****************************************************************************/
+#define BIG_DISTANCE 1.0e9
+INT MarkNearestFineCoarseConns(GRID *theGrid, MATDATA_DESC *A, DOUBLE theta, INT vcomp)
+{
+  VECTOR *vj,*vk,*vkmin;
+  MATRIX *mjj,*mjk, *mjk1, *mjk2;
+  DOUBLE dist, mindist;
+  INT vsmask;
+
+  /* Check that only mtype=0x0 (for other, AMG is unclear anyhow).        */
+  /* Define and set the variables scalar,blockN,blockNN, and error. */
+  BLOCK_SETUP(A);
+  if (error) {
+    PrintErrorMessage('E',"MarkAbsolute","not yet for general matrices");
+    REP_ERR_RETURN(error);
+  }
+
+  vsmask=(1<<blockN)-1;
+  for (vj=FIRSTVECTOR(theGrid); vj!=NULL; vj=SUCCVC(vj))
+    if (VCCOARSE(vj)==0)
+    {
+      /* skip, if SKIP flags are set for all components */
+      if ((VECSKIP(vj) & vsmask) == vsmask)
+        continue;                         /* oder alle conn's STRONG setzen */
+      mindist = BIG_DISTANCE;
+      mjk1=mjk2=NULL;
+      mjj=VSTART(vj);
+
+      /* determine first parent: */
+      for (mjk=MNEXT(mjj); mjk!=NULL; mjk=MNEXT(mjk))
+      {
+        vk = MDEST(mjk);
+        if (VCCOARSE(vk)==1)
+        {
+          SETSTRONG(mjk,0);                               /* reset STRONG flag */
+          dist = Dist(vj,vk);
+          if ( dist < mindist )
+          {
+            mindist = dist;
+            mjk1 = mjk;
+            vkmin = vk;
+          }
+        }
+      }
+      if (mjk1==NULL)
+      {
+        PrintErrorMessage('E',"MarkNearestFineCoarseConns","mjk1 = NULL");
+        REP_ERR_RETURN(1);
+      }
+      UserWriteF("vk %d (nid %d) used as first parent for vj %d (nid %d)!\n",VINDEX(vkmin),ID(VMYNODE(vkmin)),VINDEX(vj),ID(VMYNODE(vj)));
+      UserWriteF("distance vj --> vk: %lg!\n",mindist);
+
+      /* determine second parent: */
+      mindist = BIG_DISTANCE;
+      for (mjk=MNEXT(mjj); mjk!=NULL; mjk=MNEXT(mjk))
+      {
+        vk = MDEST(mjk);
+        if (VCCOARSE(vk)==1)
+        {
+          SETSTRONG(mjk,0);                               /* reset STRONG flag */
+          if ( mjk == mjk1 ) continue;
+          dist = Dist(vj,vk);
+          if ( dist < mindist )
+          {
+            mindist = dist;
+            mjk2 = mjk;
+            vkmin = vk;
+          }
+        }
+      }
+      if (mjk2==NULL)
+      {
+        PrintErrorMessage('E',"MarkNearestFineCoarseConns","mjk2 = NULL");
+        REP_ERR_RETURN(1);
+      }
+      UserWriteF("vk %d (nid %d) used as sec. parent for vj %d (nid %d)!\n",VINDEX(vkmin),ID(VMYNODE(vkmin)),VINDEX(vj),ID(VMYNODE(vj)));
+      UserWriteF("distance vj --> vk: %lg!\n",mindist);
+
+      SETSTRONG(mjk1,1);
+      SETSTRONG(mjk2,1);
+    }
+
+  return(0);
+}
+
+INT IpReuskenReducedInterpol(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+{
+  INT error;
+  error = MarkNearestFineCoarseConns(theGrid, A, 0.0, 0);
+  error += IpSchurMG(theGrid,A,REUSKEN,0,0,1);
+  return (error);
+}
+
+INT IpWagnerReducedInterpol(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+{
+  INT error;
+  error = MarkNearestFineCoarseConns(theGrid, A, 0.0, 0);
+  error += IpSchurMG(theGrid,A,WAGNER,0,0,1);
+  return (error);
 }
 
 /****************************************************************************/
@@ -2633,10 +2831,14 @@ INT IpWagner(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 
    SYNOPSIS:
    INT NBFineGridCorrection (GRID *theGrid, const VECDATA_DESC *to,
-                             const VECDATA_DESC *from)
+                             const VECDATA_DESC *from, const MATDATA_DESC *A, INT decoupled)
 
    PARAMETERS:
    .  theGrid - pointer to grid
+   .  to, from - locations in vector data field
+   .  Mat - locations in stiffness resp. lumped matrix
+   .  decoupled - version avoiding "intermixing of components.
+
 
    DESCRIPTION:
    .vb
@@ -2654,7 +2856,7 @@ INT IpWagner(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 /****************************************************************************/
 
 INT NBFineGridCorrection (GRID *theGrid, const VECDATA_DESC *to,const VECDATA_DESC *from,
-                          const MATDATA_DESC *A)
+                          const MATDATA_DESC *A, INT decoupled)
 {
   VECTOR *vi;
   DOUBLE Inv_ii[MAX_MAT_COMP];
@@ -2663,7 +2865,7 @@ INT NBFineGridCorrection (GRID *theGrid, const VECDATA_DESC *to,const VECDATA_DE
   register SHORT mcomp;                 /* mat-component(s)     */
   register SHORT tvcomp,fvcomp;         /* #vector-component(s) */
 
-  /* Check that only mtype=0x0 (for other, AMG is unclear anyhow).        */
+  /* Check that only mtype=0x0 (for other, AMG is unclear anyhow).    */
   /* Define and set the variables scalar, blockN, blockNN, and error. */
   BLOCK_SETUP(A);
   if (error) {
@@ -2680,17 +2882,21 @@ INT NBFineGridCorrection (GRID *theGrid, const VECDATA_DESC *to,const VECDATA_DE
     {
       if ((VECSKIP(vi) & vsmask) == vsmask)
         continue;
-      BLOCK_INVERT( &(MVALUE(VSTART(vi),mcomp)), Inv_ii );
+      BLOCK_INVERT_X( &(MVALUE(VSTART(vi),mcomp)), Inv_ii, decoupled );
       if ( error )
       {
         PrintErrorMessage('E',"NBFineGridCorrection","inversion of Aff_ii failed!");
-        BLOCK_WRITEOUT( &(MVALUE(VSTART(vi),mcomp)) );
-        UserWriteF("   vi %d\n", VINDEX(vi));
+        BLOCK_MATWRITE( &(MVALUE(VSTART(vi),mcomp)) );
+        UserWriteF("   vi %d, on level %d\n", VINDEX(vi), GLEVEL(theGrid));
+        REP_ERR_RETURN(-1);
         return (1);
       }
       else
-        BLOCK_MATVECADD( Inv_ii, &(VVALUE(vi,fvcomp)),&(VVALUE(vi,tvcomp)) );
+      {
+        BLOCK_MATVECADD_X( Inv_ii, &(VVALUE(vi,fvcomp)),&(VVALUE(vi,tvcomp)), decoupled );
+      }
     }
+
   return (NUM_OK);
 
 }
@@ -2701,26 +2907,29 @@ INT NBFineGridCorrection (GRID *theGrid, const VECDATA_DESC *to,const VECDATA_DE
 
    SYNOPSIS:
    INT NBTransformDefect (GRID *theGrid, const VECDATA_DESC *to,
-   const VECDATA_DESC *from, const MATDATA_DESC *Mat)
+   const VECDATA_DESC *from, const MATDATA_DESC *Mat, INT reducedFFGraph, INT decoupled)
 
    PARAMETERS:
    .  theGrid - pointer to grid
    .  to, from - locations in vector data field
    .  Mat - locations in stiffness resp. lumped matrix
+   .  reducedFFGraph - if set a reduced fine-fine-graph (only STRONG connections) is considered.
+   .  decoupled - version avoiding "intermixing of components.
 
    DESCRIPTION:
-   In Schur complement mg with matrix dependent lumping the defect in the fine vectors has to be
-   transformed according to
+   In Schur complement mg with matrix dependent lumping the defect in the
+   fine vectors has to be transformed according to (transformed defect is
+   labeled by "~"):
    .vb
-   (F*d)_f = {2*I - A_ff*Inv(~A_ff)}*d_f,
-   .ve
-   The defect in the coarse vectors remains unchanged.
-   .vb
-   (F*d)_c =  d_c.
+   ~d_f = (F*d)_f = {2*I - A_ff*Inv(~A_ff)}*d_f.
    .ve
    In components:
    .vb
    [(F*d)_f]_i = 2*[d_f]_i - Sum_j{[A_ff]_ij * [Inv(~A_ff)]_jj * [d_f]_j
+   .ve
+   The defect in the coarse vectors remains unchanged:
+   .vb
+   ~d_c = (F*d)_c =  d_c.
    .ve
 
    RETURN VALUE:
@@ -2731,7 +2940,7 @@ INT NBFineGridCorrection (GRID *theGrid, const VECDATA_DESC *to,const VECDATA_DE
 /****************************************************************************/
 
 INT NBTransformDefect (GRID *theGrid, const VECDATA_DESC *to, const VECDATA_DESC *from,
-                       const MATDATA_DESC *A)
+                       const MATDATA_DESC *A, INT reducedFFGraph, INT decoupled)
 {
   VECTOR *vi, *vj;
   MATRIX *mij;
@@ -2743,7 +2952,7 @@ INT NBTransformDefect (GRID *theGrid, const VECDATA_DESC *to, const VECDATA_DESC
   register SHORT mcomp;                 /* mat-component(s)    */
   register SHORT tvcomp,fvcomp;         /* vector-component(s) */
 
-  /* Check that only mtype=0x0 (for other, AMG is unclear anyhow).        */
+  /* Check that only mtype=0x0 (for other, AMG is unclear anyhow).    */
   /* Define and set the variables scalar, blockN ,blockNN, and error. */
   BLOCK_SETUP(A);
   if (error) {
@@ -2762,29 +2971,32 @@ INT NBTransformDefect (GRID *theGrid, const VECDATA_DESC *to, const VECDATA_DESC
         continue;
 
       /*sum_j = 0.0;*/
-      BLOCK_VECCLEAR(sum_j)
-      for (mij=VSTART(vi); mij!=NULL; mij=MNEXT(mij))
+      BLOCK_VECCLEAR(sum_j);
+      for (mij=MNEXT(VSTART(vi)); mij!=NULL; mij=MNEXT(mij))
       {
         vj = MDEST(mij);
         if ( VCCOARSE(vj)==0 )
-        {
-          BLOCK_INVERT( &(MVALUE(VSTART(vj),mcomp)), Inv_jj );
-          if ( error )
+          if ( (!reducedFFGraph) || STRONG(mij) )
           {
-            PrintErrorMessage('E',"NBTransformDefect","inversion of Aff_jj failed!");
-            BLOCK_WRITEOUT( &(MVALUE(VSTART(vj),mcomp)) );
-            UserWriteF("    vi %d --> vj %d\n", VINDEX(vi),VINDEX(vj));
-            return (NUM_ERROR);
+            BLOCK_INVERT_X( &(MVALUE(VSTART(vj),mcomp)), Inv_jj, decoupled);
+            if ( error )
+            {
+              PrintErrorMessage('E',"NBTransformDefect","inversion of Aff_jj failed!");
+              BLOCK_MATWRITE( &(MVALUE(VSTART(vj),mcomp)) );
+              UserWriteF("    vi %d --> vj %d, on level %d\n", VINDEX(vi),VINDEX(vj), GLEVEL(theGrid));
+              REP_ERR_RETURN(-1);
+            }
+            /* sum_j = Sum_{j} (Matff_ij * InvLumpff_jj * defect_j) */
+            BLOCK_MUL_X( &(MVALUE(mij,mcomp)),Inv_jj,Weight_ij, decoupled );
+            BLOCK_MATVECADD_X( Weight_ij, &(VVALUE(vj,fvcomp)),sum_j, decoupled);
           }
-          /* sum_j = Sum_{j} (Matff_ij * InvLumpff_jj * defect_j) */
-          BLOCK_MUL( &(MVALUE(mij,mcomp)),Inv_jj,Weight_ij );
-          BLOCK_MATVECADD( Weight_ij, &(VVALUE(vj,fvcomp)),sum_j)
-        }
       }
-      /* ~defect_i = 2.0*defect_i - sum_j */
-      BLOCK_VECSCALE( 2.0, &(VVALUE(vi,fvcomp)), &(VVALUE(vi,tvcomp)) );
-      BLOCK_VECSUB1( sum_j, &(VVALUE(vi,tvcomp)) );
-
+      /* ~defect_i = defect_i - sum_{j, j \ne i} */
+      BLOCK_VECSUB( &(VVALUE(vi,fvcomp)), sum_j, &(VVALUE(vi,tvcomp)) );
+    }
+    else
+    {
+      BLOCK_VECCOPY( &(VVALUE(vi,fvcomp)), &(VVALUE(vi,tvcomp)) );
     }
 
   return (NUM_OK);
@@ -2927,15 +3139,15 @@ INT FastGalerkinFromInterpolation(GRID *theGrid, MATDATA_DESC *A,
   icomp = 0;
   mcomp = MD_MCMP_OF_MTYPE(A,0,0);
 
-
   coarseGrid=theGrid->coarser;
 
   /* even if this should not be necessary for newly generated AMG grids */
   for (cvi=FIRSTVECTOR(coarseGrid); cvi!=NULL; cvi=SUCCVC(cvi))
     if (VISTART(cvi)!=NULL)
     {
-      PrintErrorMessage('E',"FastGalerkinFromInterpolation","VISTART not empty on coarse grid");
-      REP_ERR_RETURN(NUM_ERROR);
+      UserWrite("\n"); PrintErrorMessage('W',"FastGalerkinFromInterpolation","VISTART not empty on coarse grid");
+      UserWriteF("    cvi %d (nid %d), level %d\n",VINDEX(cvi),ID(VMYNODE(cvi)),GLEVEL(coarseGrid));
+      break;
     }
 
   /* this sums up all R_ik*A_kl*P_lj */

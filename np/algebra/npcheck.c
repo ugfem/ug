@@ -120,8 +120,7 @@ static INT CheckVector (GRID *theGrid, VECTOR *v)
 
   /* get format */
   theFormat = MGFORMAT(MYMG(theGrid));
-  if (FMT_S_MATPTR(theFormat)[MatrixType[VTYPE(v)][VTYPE(v)]]
-      && (!GHOST(v))) {
+  if ((FMT_S_MAT_TP(theFormat,DIAGMATRIXTYPE(VTYPE(v)))>0) && (!GHOST(v))) {
     if (VSTART(v) == NULL) {
       UserWriteF(PFMT "ERROR: no diagonal matrix vec=" VINDEX_FMTX "\n",
                  me,VINDEX_PRTX(v));

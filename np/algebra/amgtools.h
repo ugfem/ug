@@ -113,8 +113,8 @@
 #define BLOCK_SETUP(md) INT error;\
   register int scalar,blockN,blockNN;\
   blockN=MD_ROWS_IN_MTYPE(md,0);\
-  {register int mt; for (mt=1; mt<NMATTYPES; mt++) if (MD_ROWS_IN_MTYPE(md,mt)!=0) break;\
-   if ((blockN==0) || (mt!=NMATTYPES)) error=1;\
+  {register int mt; for (mt=1; mt<NVECTYPES*NVECTYPES; mt++) if (MD_ROWS_IN_MTYPE(md,mt)!=0) break;\
+   if ((blockN==0) || (mt!=NVECTYPES*NVECTYPES)) error=1;\
    else if ((MD_SUCC_COMP(md))==0) error=2;\
    else {error=0; blockNN = blockN*blockN;\
          if (blockN==1) scalar=1;else scalar=0;} }
@@ -190,7 +190,7 @@
                                                       A_2=A_; B_2=B_; s=0.0;\
                                                       for (k=blockN; k>0; k--) {s += (*A_2) * (*B_2); A_2+=blockN; B_2+=blockN;}\
                                                       *C_++ OPERAND s; B_++;\
-                                                    } A_++;\
+                                                    } A_++; B_ -=blockN;\
                                                   } } }
 
 #define BLOCK_MUL_TTN_TMPLT(A,B,C,OPERAND) {if (scalar) *C OPERAND (*A) * (*B);\
@@ -200,12 +200,16 @@
                                                     for (j=blockN; j>0; j--) {\
                                                       A_2=A_; B_2=B_; s=0.0;\
                                                       for (k=blockN; k>0; k--) {s += (*A_2) * (*B_2++); A_2+=blockN;}\
-                                                      *C_++ OPERAND s; A_++;\
-                                                    } B_ += blockN; A_ -=blockN;\
+                                                      *C_++ OPERAND s; B_ += blockN;\
+                                                    } B_ -= blockNN; A_++;\
                                                   } } }
 
-#define BLOCK_MUL(A,B,C) BLOCK_MUL_NNN_TMPLT(A,B,C,=)
+#define BLOCK_MUL(A,B,C)     BLOCK_MUL_NNN_TMPLT(A,B,C,=)
 #define BLOCK_MUL_NNN(A,B,C) BLOCK_MUL(A,B,C)
+/*new*/
+#define BLOCK_MUL_X(A,B,C,cp)   BLOCK_MUL_NNN_TMPLT_X(A,B,C,=,cp)
+#define BLOCK_MUL_NNN_X(A,B,C,cp) BLOCK_MUL_X(A,B,C,cp)
+
 #define BLOCK_MUL_TNN(A,B,C) BLOCK_MUL_TNN_TMPLT(A,B,C,=)
 #define BLOCK_MUL_NTN(A,B,C) BLOCK_MUL_NTN_TMPLT(A,B,C,=)
 #define BLOCK_MUL_TTN(A,B,C) BLOCK_MUL_TTN_TMPLT(A,B,C,=)
@@ -214,12 +218,23 @@
 #define BLOCK_MUL_NTT(A,B,C) BLOCK_MUL_NTN(B,A,C)
 #define BLOCK_MUL_TTT(A,B,C) BLOCK_MUL_NNN(B,A,C)
 
-#define BLOCK_MUL_ADD(A,B,C) BLOCK_MUL_NNN_TMPLT(A,B,C,+=)
+
+#define BLOCK_MUL_ADD(A,B,C)     BLOCK_MUL_NNN_TMPLT(A,B,C,+=)
 #define BLOCK_MUL_ADD_NNN(A,B,C) BLOCK_MUL_ADD(A,B,C)
+/*new*/
+#define BLOCK_MUL_ADD_X(A,B,C,cp) BLOCK_MUL_NNN_TMPLT_X(A,B,C,+=,cp)
+#define BLOCK_MUL_ADD_NNN_X(A,B,C,cp) BLOCK_MUL_ADD_X(A,B,C,cp)
+
 #define BLOCK_MUL_ADD_TNN(A,B,C) BLOCK_MUL_TNN_TMPLT(A,B,C,+=)
 #define BLOCK_MUL_ADD_NTN(A,B,C) BLOCK_MUL_NTN_TMPLT(A,B,C,+=)
 #define BLOCK_MUL_ADD_TTN(A,B,C) BLOCK_MUL_TTN_TMPLT(A,B,C,+=)
+/*new*/
+#define BLOCK_MUL_ADD_TTN_X(A,B,C,cp) BLOCK_MUL_TTN_TMPLT_X(A,B,C,+=,cp)
+
 #define BLOCK_MUL_ADD_NNT(A,B,C) BLOCK_MUL_ADD_TTN(B,A,C)
+/*new*/
+#define BLOCK_MUL_ADD_NNT_X(A,B,C,cp) BLOCK_MUL_ADD_TTN_X(B,A,C,cp)
+
 #define BLOCK_MUL_ADD_TNT(A,B,C) BLOCK_MUL_ADD_TNN(B,A,C)
 #define BLOCK_MUL_ADD_NTT(A,B,C) BLOCK_MUL_ADD_NTN(B,A,C)
 #define BLOCK_MUL_ADD_TTT(A,B,C) BLOCK_MUL_ADD_NNN(B,A,C)
@@ -236,13 +251,13 @@
 #define BLOCK_TRANSPOSE(A,B) {register DOUBLE *A_=A,*B_=B;\
                               if (scalar) *B_=*A_;\
                               else {register int i,j; register DOUBLE s;\
-                                    for (i=blockN; i>0; i--) for (j=i+1; j>0; j--)\
-                                      {s=A_[i*N+j]; B_[i*N+j]=A_[j*N+i]; B_[j*N+i]=s;}} }
+                                    for (i=blockN; i>0; i--) for (j=i-1; j>0; j--)\
+                                      {s=A_[i*blockN+j]; B_[i*blockN+j]=A_[j*blockN+i]; B_[j*blockN+i]=s;}} }
 
 #define BLOCK_TRANSPOSE1(A) {if (!scalar)\
                              {register int i,j; register DOUBLE s; register DOUBLE *A_=A;\
-                              for (i=blockN; i>0; i--) for (j=i+1; j>0; j--)\
-                                {s=A_[i*N+j]; A_[i*N+j]=A_[j*N+i]; A_[j*N+i]=s;}} }
+                              for (i=blockN; i>0; i--) for (j=i-1; j>0; j--)\
+                                {s=A_[i*blockN+j]; A_[i*blockN+j]=A_[j*blockN+i]; A_[j*blockN+i]=s;}} }
 
 #define BLOCK_SKIP_N(skip,A) {register INT skip_=skip; register DOUBLE *A_=A;\
                               if (scalar) {if (skip_&1) *A_=0.0;}\
@@ -261,7 +276,6 @@
                                         A_ -= blockNN;\
                                       } skip_=skip_>>1; A_++;} } }
 
-/*ih*/
 #define BLOCK_VECCLEAR(a) {if (scalar) *a=0.0;\
                            else {register int i; register DOUBLE *a_=a;\
                                  for (i=blockN; i>0; i--) *a_++ = 0.0;}}
@@ -283,6 +297,10 @@
                             else {register int i; register DOUBLE *a_=a, *b_=b;\
                                   for (i=blockN; i>0; i--) *b_++ += *a_++;}}
 
+#define BLOCK_VECSUB(a,b,c) {if (scalar) *c = *a - *b;\
+                             else {register int i; register DOUBLE *a_=a, *b_=b, *c_=c;\
+                                   for (i=blockN; i>0; i--) *c_++ = (*a_++) - (*b_++);}}
+
 #define BLOCK_VECSUB1(a,b) {if (scalar) *b -= *a;\
                             else {register int i; register DOUBLE *a_=a, *b_=b;\
                                   for (i=blockN; i>0; i--) *b_++ -= *a_++;}}
@@ -300,15 +318,111 @@
                                       for (i=blockN; i>0; i--) {\
                                         b_2=b_; s=0.0;\
                                         for (j=blockN; j>0; j--) {s += (*A_++) * (*b_2++);}\
-                                        *c_++ += s;};\
-                                } }
+                                        *c_++ += s;\
+                                      } } }
 
-#define BLOCK_WRITEOUT(A) {if (scalar) UserWriteF("A = %g\n",*A);\
+#define BLOCK_MATWRITE(A) {if (scalar) UserWriteF("A = %g\n",*A);\
                            else {register int i,j,m=0; register DOUBLE *A_=A;\
                                  for (i=blockN; i>0; i--) {\
                                    for (j=blockN; j>0; j--) UserWriteF("A[%d] = %g\n",m++,*A_++);\
                                    UserWrite("\n");\
                                  } } }
+
+#define BLOCK_VECWRITE(a) {if (scalar) UserWriteF("a = %lg\n",*a);\
+                           else {register int i,m=0; register DOUBLE *a_=a;\
+                                 for (i=blockN; i>0; i--) UserWriteF("a[%d] = %lg\t",m++,*a_++);\
+                                 UserWrite("\n");\
+                           } }
+
+#define BLOCK_WRITEOUT(A) BLOCK_MATWRITE(A)
+
+/* Test-Macros for component-wise handling */
+/* Invert diagonal of small block: */
+#define BLOCK_INVERT_X(A,C,cp) {register DOUBLE *A_=A,*C_=C;\
+                                if (scalar) {if ((error=(*A_==0.0))==0) *C_=1.0/(*A_);}\
+                                else {if (!cp) {\
+                                        if (blockN==2) {\
+                                          register DOUBLE det; det=A_[0]*A_[3]-A_[1]*A_[2];\
+                                          if ((error=(det==0.0))==0)\
+                                          {det=1.0/det; *C_++=A_[3]*det; *C_++=-A_[1]*det;\
+                                           *C_++=-A_[2]*det; *C_=A_[0]*det;}\
+                                        } else error=InvertFullMatrix_piv(blockN,A_,C_);\
+                                      } else {register int i,j;\
+                                              if ((error=((*A_)==0.0))==0) (*C_++) = 1.0/(*A_++);\
+                                              for (i=blockN-1; i>0; i--) {\
+                                                for (j=blockN; j>0; j--) {*C_++ = 0.0; A_++;}\
+                                                if ((error=((*A_)==0.0))==0) (*C_++) = 1.0/(*A_++);} }}}
+
+#define BLOCK_INVERT_DEC(A,C) {register DOUBLE *A_=A,*C_=C;\
+                               if (scalar) {if ((error=(*A_==0.0))==0) *C_ = 1.0/(*A_);}\
+                               else {register int i,j;\
+                                     if ((error=((*A_)==0.0))==0) (*C_++) = 1.0/(*A_++);\
+                                     for (i=blockN-1; i>0; i--) {\
+                                       for (j=blockN; j>0; j--) {*C_++ = 0.0; A_++;}\
+                                       if ((error=((*A_)==0.0))==0) (*C_++) = 1.0/(*A_++);}}}
+
+#define BLOCK_MUL_NNN_TMPLT_X(A,B,C,OPERAND,cp)  {if (scalar) *C OPERAND (*A) * (*B);\
+                                                  else {if (!cp) {register int i,j,k; register DOUBLE s, *A_=A, *B_=B, *C_=C, *A_2, *B_2;\
+                                                                  for (i=blockN; i>0; i--) {\
+                                                                    for (j=blockN; j>0; j--) {\
+                                                                      A_2=A_; B_2=B_; s=0.0;\
+                                                                      for (k=blockN; k>0; k--) {s += (*A_2++) * (*B_2); B_2+=blockN;\
+                                                                      } *C_++ OPERAND s; B_++;\
+                                                                    } A_ += blockN; B_ -=blockN;}\
+                                                        } else {register int i,j; register DOUBLE *A_=A, *B_=B, *C_=C;\
+                                                                *C_++ OPERAND (*A_++) * (*B_++);\
+                                                                for (i=blockN-1; i>0; i--) {\
+                                                                  for (j=blockN; j>0; j--) {*C_++; A_++; B_++;}\
+                                                                  *C_++ OPERAND (*A_++) * (*B_++); } } }}
+
+#define BLOCK_MUL_TTN_TMPLT_X(A,B,C,OPERAND,cp) {if (scalar) *C OPERAND (*A) * (*B);\
+                                                 else {if (!cp) {register int i,j,k; register DOUBLE s, *A_=A, *B_=B, *C_=C, *A_2, *B_2;\
+                                                                 for (i=blockN; i>0; i--) {\
+                                                                   for (j=blockN; j>0; j--) {\
+                                                                     A_2=A_; B_2=B_; s=0.0;\
+                                                                     for (k=blockN; k>0; k--) {s += (*A_2) * (*B_2++); A_2+=blockN;}\
+                                                                     *C_++ OPERAND s; B_ += blockN;\
+                                                                   } B_ -= blockNN; A_++;}\
+                                                       } else {register int i,j; register DOUBLE *A_=A, *B_=B, *C_=C;\
+                                                               *C_++ OPERAND (*A_++) * (*B_++);\
+                                                               for (i=blockN-1; i>0; i--) {\
+                                                                 for (j=blockN; j>0; j--) {*C_++; A_++; B_++;}\
+                                                                 *C_++ OPERAND (*A_++) * (*B_++); } } }}
+
+#define BLOCK_MUL_DEC(A,B,C) {if (scalar) (*C) = (*A) * (*B);\
+                              else {register int i,j; register DOUBLE *A_=A, *B_=B, *C_=C;\
+                                    *C_++ = (*A_++) * (*B_++);\
+                                    for (i=blockN-1; i>0; i--) {\
+                                      for (j=blockN; j>0; j--) {*C_++ = 0.0; A_++; B_++;}\
+                                      *C_++ = (*A_++) * (*B_++); }}}
+
+#define BLOCK_MUL_ADD_DEC(A,B,C) {if (scalar) (*C) += (*A) * (*B);\
+                                  else {register int i,j; register DOUBLE *A_=A, *B_=B, *C_=C;\
+                                        *C_++ += (*A_++) * (*B_++);\
+                                        for (i=blockN-1; i>0; i--) {\
+                                          for (j=blockN; j>0; j--) {*C_++; A_++; B_++;}\
+                                          *C_++ += (*A_++) * (*B_++); }}}
+
+/* multiply diagonal of small block with vector: */
+#define BLOCK_MATVECADD_X(A,b,c,cp) {if (scalar) *c += (*A) * (*b);\
+                                     else {if (!cp) {register int i,j; register DOUBLE s, *A_=A, *b_=b, *c_=c, *b_2;\
+                                                     for (i=blockN; i>0; i--) {\
+                                                       b_2=b_; s=0.0;\
+                                                       for (j=blockN; j>0; j--) {s += (*A_++) * (*b_2++);}\
+                                                       *c_++ += s;\
+                                                     }\
+                                           } else {register int i,j; register DOUBLE *A_=A, *b_=b, *c_=c;\
+                                                   *c_++ += (*A_++) * (*b_++);\
+                                                   for (i=blockN-1; i>0; i--) {\
+                                                     for (j=blockN; j>0; j--) A_++;\
+                                                     *c_++ += (*A_++) * (*b_++); }} }}
+
+#define BLOCK_MATVECADD_DEC(A,b,c) {if (scalar) *c += (*A) * (*b);\
+                                    else {register int i,j; register DOUBLE *A_=A, *b_=b, *c_=c;\
+                                          *c_++ += (*A_++) * (*b_++);\
+                                          for (i=blockN-1; i>0; i--) {\
+                                            for (j=blockN; j>0; j--) A_++;\
+                                            *c_++ += (*A_++) * (*b_++); }}}
 
 /****************************************************************************/
 /*																			*/
@@ -354,14 +468,24 @@ INT CountStrongNeighbors  (AVECTOR *initialS, DOUBLE *avNrOfStrongNbsHnd, INT *m
 INT GeometricCoarsening   (GRID *theGrid);
 INT CoarsenGreedy         (GRID *theGrid);
 INT CoarsenGreedyWithBndLoop(GRID *theGrid);
+
 INT CoarsenBreadthFirst   (GRID *theGrid);
 INT CoarsenRugeStueben    (GRID *theGrid);
 INT CoarsenVanek          (GRID *theGrid);
 INT CoarsenAverage        (GRID *theGrid);
 INT IpAverage             (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT IpRugeStueben         (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
+
 INT IpReusken             (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
+INT IpReuskenReducedFFGraph (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
+INT IpReuskenReducedInterpol(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
+INT IpReuskenDecoupled     (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
+
 INT IpWagner              (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
+INT IpWagnerReducedFFGraph (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
+INT IpWagnerReducedInterpol(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
+INT IpWagnerDecoupled     (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
+
 INT IpPiecewiseConstant   (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT IpVanek               (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT FastGalerkinFromInterpolation(GRID *theGrid, MATDATA_DESC *A,
@@ -373,8 +497,8 @@ INT ReorderFineGrid       (GRID *theGrid, INT orderType);
 
 INT NBTransformDefect     (GRID *theGrid, const VECDATA_DESC *to,
                            const VECDATA_DESC *from,
-                           const MATDATA_DESC *Mat);
+                           const MATDATA_DESC *Mat, INT algebraic, INT decoupled);
 INT NBFineGridCorrection  (GRID *theGrid, const VECDATA_DESC *to,
                            const VECDATA_DESC *from,
-                           const MATDATA_DESC *Mat);
+                           const MATDATA_DESC *Mat, INT decoupled);
 #endif

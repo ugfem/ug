@@ -10,7 +10,7 @@
 include $(UGROOT)/ug.conf
 
 OBJECTS = ugblas.o ugiter.o transgrid.o block.o quadrature.o fvgeom.o fegeom.o\
-	  ff_gen.o ff.o amgtools.o npcheck.o
+	  ff_gen.o ff.o amgtools.o npcheck.o sm.o blasm.o
 
 $(UG_LIB) : $(OBJECTS) Makefile.algebra
 	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
@@ -19,6 +19,9 @@ ar :
 	$(ARCH_AR)  $(ARCH_ARFLAGS) $(UG_LIB) $(OBJECTS)
 
 .SUFFIXES: .o .c
+
+blasm.o:
+	$(ARCH_CC) $(UG_COFLAGS) blasm.c
 
 .c.o:
 	$(ARCH_CC) $(UG_CFLAGS) $<

@@ -60,6 +60,7 @@
 #include "np.h"
 #include "disctools.h"
 #include "ugblas.h"
+#include "blasm.h"
 
 /****************************************************************************/
 /*																			*/
@@ -70,6 +71,8 @@
 /*		  macros															*/
 /*																			*/
 /****************************************************************************/
+
+#define _SPARSE_
 
 #define VERBOSE_BLAS    10
 
@@ -252,34 +255,28 @@ INT VecCheckConsistency (const VECDATA_DESC *x, const VECDATA_DESC *y)
 
 INT MatmulCheckConsistency (const VECDATA_DESC *x, const MATDATA_DESC *M, const VECDATA_DESC *y)
 {
-  INT rtype,ctype,maxsmallblock,found;
+  INT rtype,ctype,mtype,maxsmallblock;
 
-  /* consistency check */
+  /* consistency check: the formats should match */
   maxsmallblock = 0;
-  for (rtype=0; rtype<NVECTYPES; rtype++)
-    if (VD_ISDEF_IN_TYPE(x,rtype))
+  for (mtype=0; mtype<NMATTYPES; mtype++)
+    if (MD_ISDEF_IN_MTYPE(M,mtype)>0)
     {
-      maxsmallblock = MAX(maxsmallblock,VD_NCMPS_IN_TYPE(x,rtype));
-      found = FALSE;
-      for (ctype=0; ctype<NVECTYPES; ctype++)
-        if (MD_ISDEF_IN_RT_CT(M,rtype,ctype))
-        {
-          found = TRUE;
-          if (!VD_ISDEF_IN_TYPE(y,ctype))
-            REP_ERR_RETURN (NUM_DESC_MISMATCH);
-          maxsmallblock = MAX(maxsmallblock,VD_NCMPS_IN_TYPE(y,ctype));
+      rtype = MTYPE_RT(mtype);
+      ctype = MTYPE_CT(mtype);
+      if (MD_ROWS_IN_MTYPE(M,mtype) != VD_NCMPS_IN_TYPE(x,rtype))
+        REP_ERR_RETURN (NUM_DESC_MISMATCH);
+      if (MD_COLS_IN_MTYPE(M,mtype) != VD_NCMPS_IN_TYPE(y,ctype))
+        REP_ERR_RETURN (NUM_DESC_MISMATCH);
 
-          /* consistency check: the M-nRow/ColComp should match the nComps of x,y resp. */
-          if (MD_ROWS_IN_RT_CT(M,rtype,ctype) != VD_NCMPS_IN_TYPE(x,rtype))
-            REP_ERR_RETURN (NUM_DESC_MISMATCH);
-          if (MD_COLS_IN_RT_CT(M,rtype,ctype) != VD_NCMPS_IN_TYPE(y,ctype))
-            REP_ERR_RETURN (NUM_DESC_MISMATCH);
-        }
-      if (!found) REP_ERR_RETURN (NUM_DESC_MISMATCH);
+      maxsmallblock = MAX(maxsmallblock, VD_NCMPS_IN_TYPE(x,rtype));
+      maxsmallblock = MAX(maxsmallblock, VD_NCMPS_IN_TYPE(y,ctype));
     }
 
-  /* check size of the largest small block */
-  assert (maxsmallblock <= MAX_SINGLE_VEC_COMP);        /* if too little: increase MAX_SINGLE_VEC_COMP and recompile */
+  /* check size of the largest small block, if too small:
+     increase MAX_SINGLE_VEC_COMP and recompile */
+  assert (maxsmallblock <= MAX_SINGLE_VEC_COMP);
+
         #ifdef NDEBUG
   /* check also in case NDEBUG is defined (assert off)	*/
   if (maxsmallblock > MAX_SINGLE_VEC_COMP)
@@ -306,6 +303,14 @@ INT MatmulCheckConsistency (const VECDATA_DESC *x, const MATDATA_DESC *M, const 
 /*																			*/
 /****************************************************************************/
 
+
+/****************************************************************************/
+/****************************************************************************/
+/* first parallel routines													*/
+/****************************************************************************/
+/****************************************************************************/
+
+#ifdef ModelP
 /****************************************************************************/
 /*D
    l_vector_consistent - builds the sum of the vector values on all copies
@@ -327,7 +332,6 @@ INT MatmulCheckConsistency (const VECDATA_DESC *x, const MATDATA_DESC *M, const 
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
 static int Gather_VectorComp (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
@@ -391,7 +395,6 @@ INT l_vector_consistent (GRID *g, const VECDATA_DESC *x)
                   Gather_VectorComp, Scatter_VectorComp);
   return (NUM_OK);
 }
-#endif
 
 /****************************************************************************/
 /*D
@@ -416,7 +419,6 @@ INT l_vector_consistent (GRID *g, const VECDATA_DESC *x)
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
 INT a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 {
   INT level,tp,m;
@@ -439,7 +441,6 @@ INT a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 
   return (NUM_OK);
 }
-#endif
 
 /****************************************************************************/
 /*D
@@ -466,7 +467,7 @@ INT a_vector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
    D*/
 /****************************************************************************/
 
-#if (defined ModelP) && (defined __BLOCK_VECTOR_DESC__)
+#ifdef __BLOCK_VECTOR_DESC__
 static int Gather_VectorCompBS (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
@@ -527,7 +528,6 @@ INT l_vector_consistentBS (GRID *g, const BV_DESC *bvd, const BV_DESC_FORMAT *bv
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
 static int Scatter_GhostVectorComp (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
@@ -564,7 +564,6 @@ INT l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x)
 
   return (NUM_OK);
 }
-#endif
 
 /****************************************************************************/
 /*D
@@ -591,7 +590,6 @@ INT l_ghostvector_consistent (GRID *g, const VECDATA_DESC *x)
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
 INT a_outervector_consistent (MULTIGRID *mg, INT fl, INT tl,
                               const VECDATA_DESC *x)
 {
@@ -615,7 +613,6 @@ INT a_outervector_consistent (MULTIGRID *mg, INT fl, INT tl,
 
   return (NUM_OK);
 }
-#endif
 
 /****************************************************************************/
 /*D
@@ -640,7 +637,6 @@ INT a_outervector_consistent (MULTIGRID *mg, INT fl, INT tl,
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
 static int Gather_EData (DDD_OBJ obj, void *data)
 {
   ELEMENT *pe = (ELEMENT *)obj;
@@ -677,7 +673,6 @@ INT a_elementdata_consistent (MULTIGRID *mg, INT fl, INT tl)
 
   return (NUM_OK);
 }
-#endif
 
 /****************************************************************************/
 /*D
@@ -700,7 +695,6 @@ INT a_elementdata_consistent (MULTIGRID *mg, INT fl, INT tl)
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
 static int Gather_ProjectVectorComp (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
@@ -769,7 +763,6 @@ INT l_ghostvector_project (GRID *g, const VECDATA_DESC *x)
 
   return (NUM_OK);
 }
-#endif
 
 /****************************************************************************/
 /*D
@@ -793,7 +786,6 @@ INT l_ghostvector_project (GRID *g, const VECDATA_DESC *x)
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
 static int Gather_VectorCompCollect (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
@@ -834,7 +826,6 @@ INT l_vector_collect (GRID *g, const VECDATA_DESC *x)
 
   return (NUM_OK);
 }
-#endif
 
 /****************************************************************************/
 /*D
@@ -860,7 +851,6 @@ INT l_vector_collect (GRID *g, const VECDATA_DESC *x)
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
 INT a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 {
   INT level,tp,m;
@@ -883,7 +873,6 @@ INT a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 
   return (NUM_OK);
 }
-#endif
 
 /****************************************************************************/
 /*D
@@ -908,7 +897,6 @@ INT a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
 static int Gather_VectorVecskip (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
@@ -1033,7 +1021,6 @@ INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 
   return (NUM_OK);
 }
-#endif
 
 /****************************************************************************/
 /*D
@@ -1057,7 +1044,6 @@ INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
 INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x)
 {
   INT tp,m;
@@ -1073,7 +1059,6 @@ INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x)
 
   return (NUM_OK);
 }
-#endif
 
 /****************************************************************************/
 /*D
@@ -1097,7 +1082,7 @@ INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x)
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
+/* !!! */
 static int Gather_MatrixCollect (DDD_OBJ obj, void *data)
 {
   ELEMENT *pe = (ELEMENT *)obj;
@@ -1117,6 +1102,7 @@ static int Gather_MatrixCollect (DDD_OBJ obj, void *data)
   return (NUM_OK);
 }
 
+/* !!! */
 static int Scatter_MatrixCollect (DDD_OBJ obj, void *data)
 {
   ELEMENT *pe = (ELEMENT *)obj;
@@ -1132,6 +1118,7 @@ static int Scatter_MatrixCollect (DDD_OBJ obj, void *data)
   return (NUM_OK);
 }
 
+/* !!! */
 INT l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A)
 {
   INT rtp,m;
@@ -1149,7 +1136,6 @@ INT l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A)
 
   return (NUM_OK);
 }
-#endif
 
 /****************************************************************************/
 /*D
@@ -1174,8 +1160,7 @@ INT l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A)
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
-
+/* !!! */
 static int Gather_AMGMatrixCollect (DDD_OBJ obj, void *data)
 {
   VECTOR  *pv = (VECTOR *)obj;
@@ -1236,6 +1221,7 @@ static int Gather_AMGMatrixCollect (DDD_OBJ obj, void *data)
   return (NUM_OK);
 }
 
+/* !!! */
 static int Scatter_AMGMatrixCollect (DDD_OBJ obj, void *data)
 {
   VECTOR  *pv = (VECTOR *)obj;
@@ -1389,6 +1375,7 @@ static int CountAndSortMatrices (DDD_OBJ obj)
   return(0);
 }
 
+/* !!! */
 INT l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A)
 {
   INT mt;
@@ -1428,7 +1415,6 @@ INT l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A)
 
   return (NUM_OK);
 }
-#endif
 
 /****************************************************************************/
 /*D
@@ -1451,7 +1437,6 @@ INT l_amgmatrix_collect (GRID *g, const MATDATA_DESC *A)
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
 int DDD_InfoPrioCopies (DDD_HDR hdr)
 {
   INT i,n;
@@ -1526,7 +1511,6 @@ INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
 
   return (NUM_OK);
 }
-#endif
 
 /****************************************************************************/
 /*D
@@ -1551,7 +1535,6 @@ INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x)
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
 INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 {
   INT level,tp,m;
@@ -1578,7 +1561,6 @@ INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
 
   return (NUM_OK);
 }
-#endif
 
 /****************************************************************************/
 /*D
@@ -1604,13 +1586,13 @@ INT a_vector_meanvalue (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
    D*/
 /****************************************************************************/
 
-#ifdef ModelP
+/* !?! */
 static int Gather_DiagMatrixComp (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
   MATRIX *m;
   INT i,vtype,mtype;
-  const SHORT *Comp;
+  SPARSE_MATRIX *sm;
 
   if (MD_IS_SCALAR(ConsMatrix)) {
     if (MD_SCAL_RTYPEMASK(ConsMatrix) & VDATATYPE(pv))
@@ -1619,56 +1601,58 @@ static int Gather_DiagMatrixComp (DDD_OBJ obj, void *data)
   }
 
   vtype = VTYPE(pv);
-  mtype = MTP(vtype,vtype);
-  Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
+  mtype = DMTP(vtype);
   m = VSTART(pv);
-  for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
-       *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++)
-    ((DOUBLE *)data)[i] = MVALUE(m,Comp[i]);
+  sm = MD_SM(ConsMatrix,mtype);
+
+  for (i=0; i<sm->N; i++)
+    ((DOUBLE *)data)[i] = MVALUE(m, sm->offset[i]);
 
   return (NUM_OK);
 }
 
+/* !?! */
 static int Scatter_DiagMatrixComp (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
   MATRIX *m;
-  INT i,j,vtype,mtype,ncomp,vecskip;
-  const SHORT *Comp;
+  INT i,j,vtype,mtype,vecskip;
+  SPARSE_MATRIX *sm;
 
-  if (MD_IS_SCALAR(ConsMatrix)) {
+  if (MD_IS_SCALAR(ConsMatrix))
+  {
     if (MD_SCAL_RTYPEMASK(ConsMatrix) & VDATATYPE(pv))
       if (!VECSKIP(pv))
-        MVALUE(VSTART(pv),MD_SCALCMP(ConsMatrix)) += *((DOUBLE *)data);
+        MVALUE(VSTART(pv), MD_SCALCMP(ConsMatrix)) += *((DOUBLE *)data);
     return (NUM_OK);
   }
 
   vtype = VTYPE(pv);
-  mtype = MTP(vtype,vtype);
-  Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
+  mtype = DMTP(vtype);
   m = VSTART(pv);
+  sm = MD_SM(ConsMatrix, mtype);
   vecskip = VECSKIP(pv);
   if (vecskip == 0)
-    for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
-         *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++)
-      MVALUE(m,Comp[i]) += ((DOUBLE *)data)[i];
-  else {
-    ncomp = MD_COLS_IN_MTYPE(ConsMatrix,mtype);
-    for (i=0; i<MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++)
+    for (i=0; i<sm->N; i++)
+      MVALUE(m,sm->offset[i]) += ((DOUBLE *)data)[i];
+  else
+  {
+    for (i=0; i<sm->nrows; i++)
       if (!(vecskip & (1<<i)))
-        for (j=i*ncomp; j<(i+1)*ncomp; j++)
-          MVALUE(m,Comp[j]) += ((DOUBLE *)data)[j];
+        for (j=sm->row_start[i]; j<sm->row_start[i+1]; j++)
+          MVALUE(m, sm->offset[j]) += ((DOUBLE *)data)[j];
   }
 
   return (NUM_OK);
 }
 
+/* !?! */
 static int Scatter_GhostDiagMatrixComp (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
   MATRIX *m;
-  INT i,vtype,mtype;
-  const SHORT *Comp;
+  INT i, vtype, mtype;
+  SPARSE_MATRIX *sm;
 
   m = VSTART(pv);
   if (m == NULL)
@@ -1676,22 +1660,24 @@ static int Scatter_GhostDiagMatrixComp (DDD_OBJ obj, void *data)
   if (m == NULL)
     return(1);
 
-  if (MD_IS_SCALAR(ConsMatrix)) {
+  if (MD_IS_SCALAR(ConsMatrix))
+  {
     if (MD_SCAL_RTYPEMASK(ConsMatrix) & VDATATYPE(pv))
-      MVALUE(m,MD_SCALCMP(ConsMatrix)) = *((DOUBLE *)data);
-    return (NUM_OK);
+      MVALUE(m, MD_SCALCMP(ConsMatrix)) = *((DOUBLE *)data);
   }
-
-  vtype = VTYPE(pv);
-  mtype = MTP(vtype,vtype);
-  Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
-  for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
-       *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++)
-    MVALUE(m,Comp[i]) = ((DOUBLE *)data)[i];
+  else
+  {
+    vtype = VTYPE(pv);
+    mtype = DMTP(vtype);
+    sm = MD_SM(ConsMatrix, mtype);
+    for (i=0; i<sm->N; i++)
+      MVALUE(m, sm->offset[i]) = ((DOUBLE *)data)[i];
+  }
 
   return (NUM_OK);
 }
 
+/* !?! */
 static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
                                      DDD_PROC proc, DDD_PRIO prio)
 {
@@ -1701,36 +1687,12 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
   INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
   DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
   int i, *proclist,mc,vtype,mtype,masc;
-  const SHORT *Comp;
+  SPARSE_MATRIX *sm;
 
   *maxgid = 0;
 
-  if (VSTART(pv) == NULL) return (NUM_OK);
-  if (MD_IS_SCALAR(ConsMatrix)) {
-    if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv)) {
-      if (VECSKIP(pv) != 0) return (NUM_OK);
-      mc = MD_SCALCMP(ConsMatrix);
-      masc =MD_SCAL_CTYPEMASK(ConsMatrix);
-      for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
-        if (XFERMATX(m)==0) break;
-        if (masc  & VDATATYPE(MDEST(m))) {
-          proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
-          for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc; i+=2)
-            ;
-          if (((DDD_PROC)proclist[i])==proc &&
-              (!GHOSTPRIO(proclist[i+1])))
-          {
-            *msgbuf = MVALUE(m,mc);
-            msgbuf++;
-
-            gidbuf[*maxgid] = DDD_InfoGlobalId(PARHDR(MDEST(m)));
-            (*maxgid)++;
-          }
-        }
-      }
-    }
+  if (VSTART(pv) == NULL)
     return (NUM_OK);
-  }
 
   vtype = VTYPE(pv);
   for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
@@ -1741,12 +1703,11 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
     if (((DDD_PROC)proclist[i])==proc &&
         (!GHOSTPRIO(proclist[i+1])))
     {
-      mtype = MTP(vtype,MDESTTYPE(m));
-      Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
-      for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
-           *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++)
-        msgbuf[i] = MVALUE(m,Comp[i]);
-      msgbuf+=MaxBlockSize;
+      mtype = MTP(vtype, MDESTTYPE(m));
+      sm = MD_SM(ConsMatrix, mtype);
+      for (i=0; i<sm->N; i++)
+        msgbuf[i] = MVALUE(m, sm->offset[i]);
+      msgbuf += MaxBlockSize;
 
       gidbuf[*maxgid] = DDD_InfoGlobalId(PARHDR(MDEST(m)));
       (*maxgid)++;
@@ -1756,6 +1717,7 @@ static int Gather_OffDiagMatrixComp (DDD_OBJ obj, void *data,
   return (NUM_OK);
 }
 
+/* !?! */
 static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
                                             DDD_PROC proc, DDD_PRIO prio)
 {
@@ -1765,42 +1727,12 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
   INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
   DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
   int i, *proclist,mc,vtype,mtype,masc;
-  const SHORT *Comp;
+  SPARSE_MATRIX *sm;
 
   *maxgid = 0;
 
-  if (VSTART(pv) == NULL) return (NUM_OK);
-  if (MD_IS_SCALAR(ConsMatrix)) {
-    if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv)) {
-      if (VECSKIP(pv) != 0) return (NUM_OK);
-      mc = MD_SCALCMP(ConsMatrix);
-      masc =MD_SCAL_CTYPEMASK(ConsMatrix);
-      for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
-      {
-        if (XFERMATX(m)==0) break;
-
-        if (masc  & VDATATYPE(MDEST(m))) {
-          proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
-          for(i=2; proclist[i]>=0 && ((DDD_PROC)proclist[i])!=proc;
-              i+=2)
-            ;
-          if (((DDD_PROC)proclist[i])==proc &&
-              (!GHOSTPRIO(proclist[i+1])))
-          {
-            *msgbuf = MVALUE(m,mc);
-            msgbuf++;
-
-            gidbuf[*maxgid] = DDD_InfoGlobalId(PARHDR(MDEST(m)));
-            (*maxgid)++;
-          }
-        }
-      }
-      for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
-        if (masc  & VDATATYPE(MDEST(m)))
-          MVALUE(m,mc) = 0.0;
-    }
+  if (VSTART(pv) == NULL)
     return (NUM_OK);
-  }
 
   vtype = VTYPE(pv);
   for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
@@ -1812,28 +1744,23 @@ static int Gather_OffDiagMatrixCompCollect (DDD_OBJ obj, void *data,
         (!GHOSTPRIO(proclist[i+1])))
     {
       mtype = MTP(vtype,MDESTTYPE(m));
-      Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
-      for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
-           *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++)
-        msgbuf[i] = MVALUE(m,Comp[i]);
+      sm = MD_SM(ConsMatrix, mtype);
+      for (i=0; i<sm->N; i++)
+      {
+        msgbuf[i] = MVALUE(m, sm->offset[i]);
+        MVALUE(m, sm->offset[i]) = 0.0;
+      }
       msgbuf+=MaxBlockSize;
 
       gidbuf[*maxgid] = DDD_InfoGlobalId(PARHDR(MDEST(m)));
       (*maxgid)++;
     }
   }
-  for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
-    mtype = MTP(vtype,MDESTTYPE(m));
-    Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
-    for (i=0; i<MD_COLS_IN_MTYPE(ConsMatrix,mtype)
-         *MD_ROWS_IN_MTYPE(ConsMatrix,mtype); i++)
-      MVALUE(m,Comp[i]) = 0.0;
-  }
-
 
   return (NUM_OK);
 }
 
+/* !?! */
 static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
                                       DDD_PROC proc, DDD_PRIO prio)
 {
@@ -1845,53 +1772,19 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
   INT igid = 0;
   int i,j,k, *proclist,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
   const SHORT *Comp;
+  SPARSE_MATRIX *sm;
 
   PRINTDEBUG(np,2,("%d: Scatter_OffDiagMatrixComp %d: maxgid %d\n",
                    me,GID(pv),*maxgid));
 
-  if (VSTART(pv) == NULL) return (NUM_OK);
-  if (MD_IS_SCALAR(ConsMatrix)) {
-    if (MD_SCAL_RTYPEMASK(ConsMatrix)  & VDATATYPE(pv))
-    {
-      if (VECSKIP(pv) != 0) return (NUM_OK);
-      mc = MD_SCALCMP(ConsMatrix);
-      masc =MD_SCAL_CTYPEMASK(ConsMatrix);
-      for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m))
-      {
-        if (XFERMATX(m)==0) break;
-        if (masc  & VDATATYPE(MDEST(m))) {
-          proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
-          for(i=2; proclist[i]>=0 &&
-              ((DDD_PROC)proclist[i])!=proc; i+=2)
-            ;
-          if (((DDD_PROC)proclist[i])==proc &&
-              (!GHOSTPRIO(proclist[i+1])))
-          {
-            DDD_GID dest = DDD_InfoGlobalId(PARHDR(MDEST(m)));
-
-            while (igid<*maxgid && (gidbuf[igid]<dest))
-            {
-              msgbuf++;
-              igid++;
-            }
-
-            if (igid<*maxgid && (gidbuf[igid]==dest))
-            {
-              MVALUE(m,mc) += *msgbuf;
-              msgbuf++;
-              igid++;
-            }
-          }
-        }
-      }
-    }
+  if (VSTART(pv) == NULL)
     return (NUM_OK);
-  }
 
   vtype = VTYPE(pv);
   vecskip = VECSKIP(pv);
   rcomp = MD_ROWS_IN_MTYPE(ConsMatrix,MTP(vtype,vtype));
   if (vecskip == 0)
+  {
     for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
       if (XFERMATX(m)==0) break;
       proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
@@ -1911,15 +1804,17 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
         if (igid<*maxgid && (gidbuf[igid]==dest))
         {
           mtype = MTP(vtype,MDESTTYPE(m));
-          Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
-          for (j=0; j<MD_COLS_IN_MTYPE(ConsMatrix,mtype)*rcomp; j++)
-            MVALUE(m,Comp[j]) += msgbuf[j];
-          msgbuf+=MaxBlockSize;
+          sm = MD_SM(ConsMatrix, mtype);
+          for (j=0; j<sm->N; j++)
+            MVALUE(m,sm->offset[j]) += msgbuf[j];
+          msgbuf += MaxBlockSize;
           igid++;
         }
       }
     }
+  }
   else
+  {
     for (m=MNEXT(VSTART(pv)); m!=NULL; m=MNEXT(m)) {
       if (XFERMATX(m)==0) break;
       proclist = DDD_InfoProcList(PARHDR(MDEST(m)));
@@ -1932,24 +1827,24 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 
         while (igid<*maxgid && (gidbuf[igid]<dest))
         {
-          msgbuf+=MaxBlockSize;
+          msgbuf += MaxBlockSize;
           igid++;
         }
 
         if (igid<*maxgid && (gidbuf[igid]==dest))
         {
           mtype = MTP(vtype,MDESTTYPE(m));
-          ncomp = MD_COLS_IN_MTYPE(ConsMatrix,mtype);
-          Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
-          for (k=0; k<rcomp; k++)
+          sm = MD_SM(ConsMatrix, mtype);
+          for (k=0; k<sm->nrows; k++)
             if (!(vecskip & (1<<k)))
-              for (j=k*ncomp; j<(k+1)*ncomp; j++)
-                MVALUE(m,Comp[j]) += msgbuf[j];
-          msgbuf+=MaxBlockSize;
+              for (j=sm->row_start[k]; j<sm->row_start[k+1]; j++)
+                MVALUE(m, sm->offset[j]) += msgbuf[j];
+          msgbuf += MaxBlockSize;
           igid++;
         }
       }
     }
+  }
 
   IFDEBUG(np,2)
   igid = 0;
@@ -1966,7 +1861,7 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
 
       while (igid<*maxgid && (gidbuf[igid]<dest))
       {
-        msgbuf+=MaxBlockSize;
+        msgbuf += MaxBlockSize;
         igid++;
       }
 
@@ -1974,58 +1869,19 @@ static int Scatter_OffDiagMatrixComp (DDD_OBJ obj, void *data,
       {
         printf("%d: %d->%d:",me,GID(pv),GID(MDEST(m)));
         mtype = MTP(vtype,MDESTTYPE(m));
+        sm = MD_SM(ConsMatrix, mtype);
         ncomp = MD_COLS_IN_MTYPE(ConsMatrix,mtype);
         Comp = MD_MCMPPTR_OF_MTYPE(ConsMatrix,mtype);
-        for (k=0; k<rcomp; k++)
-          for (j=k*ncomp; j<(k+1)*ncomp; j++)
-            printf(" %f",MVALUE(m,Comp[j]));
-        msgbuf+=MaxBlockSize;
+        for (k=0; k<sm->nrows; k++)
+          for (j=sm->row_start[k]; j<sm->row_start[k+1]; j++)
+            printf(" %f", MVALUE(m, sm->offset[j]));
+        msgbuf += MaxBlockSize;
         igid++;
         printf("\n");
       }
     }
   }
   ENDDEBUG
-
-  return (NUM_OK);
-}
-
-static int ClearOffDiagCompOfCopies (GRID *theGrid, const MATDATA_DESC *M)
-{
-  VECTOR *v;
-  MATRIX *m;
-  INT j,mc,vtype,mtype,rcomp,vecskip,masc;
-  const SHORT *Comp;
-
-  if (MD_IS_SCALAR(M)) {
-    for (v=FIRSTVECTOR(theGrid); v!=NULL; v=PREDVC(v)) {
-      if (VSTART(v) == NULL) continue;
-      if (!MASTER(v)) continue;
-      if (MD_SCAL_RTYPEMASK(M)  & VDATATYPE(v)) {
-        if (VECSKIP(v) != 0) continue;
-        mc = MD_SCALCMP(M);
-        masc =MD_SCAL_CTYPEMASK(M);
-        for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m))
-          if (masc  & VDATATYPE(MDEST(m)))
-            MVALUE(m,mc) = 0.0;
-      }
-    }
-    return (NUM_OK);
-  }
-
-  for (v=FIRSTVECTOR(theGrid); v!=NULL; v=PREDVC(v)) {
-    if (VSTART(v) == NULL) continue;
-    if (!MASTER(v)) continue;
-    vtype = VTYPE(v);
-    vecskip = VECSKIP(v);
-    rcomp = MD_ROWS_IN_MTYPE(M,MTP(vtype,vtype));
-    for (m=MNEXT(VSTART(v)); m!=NULL; m=MNEXT(m)) {
-      mtype = MTP(vtype,MDESTTYPE(m));
-      Comp = MD_MCMPPTR_OF_MTYPE(M,mtype);
-      for (j=0; j<MD_COLS_IN_MTYPE(M,mtype)*rcomp; j++)
-        MVALUE(m,Comp[j]) = 0.0;
-    }
-  }
 
   return (NUM_OK);
 }
@@ -2099,8 +1955,7 @@ static int CountAndSortInconsMatrices (DDD_OBJ obj)
 
 /* TODO: perhaps it would make sense to have two routines,
         one for diagonal matrix entries only and the other for
-        diag. and off-diag. matrix entries.
- */
+        diag. and off-diag. matrix entries. */
 
 INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
 {
@@ -2160,6 +2015,12 @@ INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode)
   return (NUM_OK);
 }
 #endif /* ModelP */
+
+/****************************************************************************/
+/****************************************************************************/
+/* end of parallel routines													*/
+/****************************************************************************/
+/****************************************************************************/
 
 /****************************************************************************/
 /*																			*/
@@ -3127,6 +2988,26 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 #pragma mark *** blas_level_2 ***
 #endif
 
+
+/****************************************************************************/
+/*D
+   dmatclear - Initialize a matrix with zero.
+
+   SYNOPSIS:
+   INT dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M);
+   D*/
+/****************************************************************************/
+
+INT dmatclear (MULTIGRID *mg, INT fl, INT tl, INT mode, const MATDATA_DESC *M)
+{
+  if (MG_Matrix_Loop (mg, fl, tl,
+                      ( ( (mode&1)<<BLAS_MODE_SHIFT) | (BLAS_LOOP_M<<BLAS_LOOP_SHIFT) |
+                        (MBLAS_ALL<<MBLAS_MTYPE_SHIFT) | (BLAS_M_CLEAR<<BLAS_OP_SHIFT) ),
+                      M, NULL, NULL, NULL, 0, NULL, NULL)
+      < 0) REP_ERR_RETURN (-1);
+  return 0;
+}
+
 /****************************************************************************/
 /*D
    dmatset - initialize a matrix with a given value
@@ -3213,6 +3094,20 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 #define T_PREP_N       mcomp = nr * nc;
 #define T_MOD_N        for (i=0; i<mcomp; i++)                                 \
     MVALUE(mat,MD_MCMP_OF_RT_CT(M,rtype,ctype,i)) = a;
+
+#define T_SPARSE_CALL \
+  int i, size = 0;\
+  DOUBLE value[MAX_MAT_COMP];\
+  SPARSE_MATRIX *sm;\
+  for (i=0; i<NMATTYPES; i++)\
+    if ((sm=MD_SM(M,i))!=NULL)\
+      size += SM_Compute_Reduced_Size(sm);\
+  for (i=0; i<size; i++) value[i]=a;\
+  if (MG_Matrix_Loop(mg, fl, tl,\
+                     ( ( (mode&1)<<BLAS_MODE_SHIFT) | (BLAS_LOOP_M<<BLAS_LOOP_SHIFT) |\
+                       (MBLAS_ALL<<MBLAS_MTYPE_SHIFT) | (BLAS_M_SET<<BLAS_OP_SHIFT) ),\
+                     M, NULL, NULL, NULL, size, value, NULL)\
+      < 0) REP_ERR_RETURN (-1);
 
 #include "matfunc.ct"
 
@@ -3332,6 +3227,12 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
     MVALUE(mat,MD_MCMP_OF_RT_CT(M,rtype,ctype,i)) =     \
       MVALUE(mat,MD_MCMP_OF_RT_CT(N,rtype,ctype,i));
 
+#define T_SPARSE_CALL if (MG_Matrix_Loop(mg, fl, tl,\
+                                         ( ( (mode&1)<<BLAS_MODE_SHIFT) | (BLAS_LOOP_MN<<BLAS_LOOP_SHIFT) |\
+                                           (MBLAS_ALL<<MBLAS_MTYPE_SHIFT) | (BLAS_M_COPY<<BLAS_OP_SHIFT) ),\
+                                         M, N, NULL, NULL, 0, NULL, NULL)\
+                          < 0) REP_ERR_RETURN (-1);
+
 #include "matfunc.ct"
 
 /****************************************************************************/
@@ -3450,6 +3351,11 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 #define T_MOD_N        for (i=0; i<mcomp; i++)                                 \
     MVALUE(mat,MD_MCMP_OF_RT_CT(M,rtype,ctype,i)) +=    \
       MVALUE(mat,MD_MCMP_OF_RT_CT(N,rtype,ctype,i));
+#define T_SPARSE_CALL if (MG_Matrix_Loop(mg, fl, tl,\
+                                         ( ( (mode&1)<<BLAS_MODE_SHIFT) | (BLAS_LOOP_MN<<BLAS_LOOP_SHIFT) |\
+                                           (MBLAS_ALL<<MBLAS_MTYPE_SHIFT) | (BLAS_M_ADD1<<BLAS_OP_SHIFT) ),\
+                                         M, N, NULL, NULL, 0, NULL, NULL)\
+                          < 0) REP_ERR_RETURN (-1);
 
 #include "matfunc.ct"
 
@@ -3561,6 +3467,11 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
               VVALUE(w,VD_CMP_OF_TYPE(y,ctype,j));
 #define T_POST_N           for (i=0; i<nr; i++)                                   \
     VVALUE(v,VD_CMP_OF_TYPE(x,rtype,i)) += s[i];
+#define T_SPARSE_CALL if (MG_Matrix_Loop(mg, fl, tl,\
+                                         ( ( (mode&1)<<BLAS_MODE_SHIFT) | (BLAS_LOOP_Mxy<<BLAS_LOOP_SHIFT) |\
+                                           (MBLAS_ALL<<MBLAS_MTYPE_SHIFT) | (BLAS_MV_MUL<<BLAS_OP_SHIFT) ),\
+                                         M, NULL, x, y, 0, NULL, NULL)\
+                          < 0) REP_ERR_RETURN (-1);
 
 #include "matfunc.ct"
 
@@ -3663,6 +3574,13 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
 #define T_POST_N           for (i=0; i<nr; i++)                                   \
     VVALUE(v,VD_CMP_OF_TYPE(x,rtype,i)) += s[i];
 
+#define T_SPARSE_CALL \
+  if (MG_Matrix_Loop(mg, fl, tl,\
+                     ( ( (mode&1)<<BLAS_MODE_SHIFT) | (BLAS_LOOP_Mxy<<BLAS_LOOP_SHIFT) |\
+                       (MBLAS_ALL<<MBLAS_MTYPE_SHIFT) | (BLAS_MV_MULADD<<BLAS_OP_SHIFT) ),\
+                     M, NULL, x, y, 0, NULL, NULL)\
+      < 0) REP_ERR_RETURN (-1);
+
 #include "matfunc.ct"
 
 /****************************************************************************/
@@ -3763,6 +3681,13 @@ static INT UG_GlobalSumNDOUBLE_X (INT ncomp, DOUBLE *a)
               VVALUE(w,VD_CMP_OF_TYPE(y,ctype,j));
 #define T_POST_N           for (i=0; i<nr; i++)                                   \
     VVALUE(v,VD_CMP_OF_TYPE(x,rtype,i)) -= s[i];
+
+#define T_SPARSE_CALL \
+  if (MG_Matrix_Loop(mg, fl, tl,\
+                     ( ( (mode&1)<<BLAS_MODE_SHIFT) | (BLAS_LOOP_Mxy<<BLAS_LOOP_SHIFT) |\
+                       (MBLAS_ALL<<MBLAS_MTYPE_SHIFT) | (BLAS_MV_MULMINUS<<BLAS_OP_SHIFT) ),\
+                     M, NULL, x, y, 0, NULL, NULL)\
+      < 0) REP_ERR_RETURN (-1);
 
 #include "matfunc.ct"
 

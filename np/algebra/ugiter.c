@@ -43,6 +43,7 @@
 
 #include "np.h"
 #include "ugblas.h"
+#include "blasm.h"
 #include "block.h"
 
 /****************************************************************************/
@@ -54,6 +55,9 @@
 /*		  macros															*/
 /*																			*/
 /****************************************************************************/
+
+/* switch on blasm calls */
+#define _SPARSE_
 
 #define SMALL_DET                       1e-15
 #define MAX_DEPTH           MAX_NODAL_VECTORS
@@ -187,6 +191,10 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 INT l_setindex (GRID *g)
 {
+#ifdef _SPARSE_
+  if (Mark_and_Sort_Matrix(g, 0)<0)
+    REP_ERR_RETURN(-1);
+#else
   VECTOR *v,*first_v;
   INT i;
 
@@ -196,7 +204,7 @@ INT l_setindex (GRID *g)
   i = 1;
   L_VLOOP__CLASS(v,first_v,EVERY_CLASS)
   VINDEX(v) = i++;
-
+#endif
   return (NUM_OK);
 }
 
@@ -437,6 +445,21 @@ INT jacBS ( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *bvd
    D*/
 /****************************************************************************/
 
+#ifdef _SPARSE_
+INT l_lgs (GRID *grid, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
+{
+  if (MG_Matrix_Loop(grid->mg, grid->level, grid->level,
+                     ((ALL_VECTORS&BLAS_SURFACE)<<BLAS_MODE_SHIFT) |
+                     (BLAS_MACTIVE<<BLAS_MODE_SHIFT) |
+                     (BLAS_LOOP_Mxy<<BLAS_LOOP_SHIFT) |
+                     (MBLAS_NOT_UPPER<<MBLAS_MTYPE_SHIFT) |
+                     (BLAS_MV_LGS<<BLAS_OP_SHIFT),
+                     M, NULL, d, v, 0, NULL, NULL)
+      < 0) REP_ERR_RETURN (-1);
+  return(0);
+}
+#else /* not _SPARSE_ */
+
 INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_DESC *d)
 {
   VECTOR *vec,*w,*first_vec;
@@ -618,7 +641,6 @@ INT l_lgs (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA_
                   s[i] -= MVALUE(mat,mcomp[i*nc+j]) * wmat[wcomp[j]];
         }
 
-    /* solve */
     if (SolveSmallBlock(n,VD_CMPPTR_OF_TYPE(v,rtype),VVALPTR(vec),
                         MD_MCMPPTR_OF_RT_CT(M,rtype,rtype),
                         MVALPTR(VSTART(vec)),s)!=0)
@@ -721,6 +743,7 @@ INT l_tplgs_SB (BLOCKVECTOR *theBV, const VECDATA_DESC *v, const MATDATA_DESC *M
 
   REP_ERR_RETURN (__LINE__);
 }
+#endif /* not _SPARSE_ */
 
 /****************************************************************************/
 /*D
