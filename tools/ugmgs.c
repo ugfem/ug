@@ -106,32 +106,24 @@
 /*																			*/
 /****************************************************************************/
 
-int main (int argc, char **argv)
+int PrintMGFileInfo (char *filename, int *magic_cookie)
 {
   MGIO_MG_GENERAL mg_general;
-  DIO_GENERAL dio_general;
 
-  if (argc!=2 && argc!=3)
+  /* open file and check for mg-file */
+  if (Read_OpenMGFile (filename))
   {
-    printf("usage: ugmgs <mg-file> [<data-file>]\n");
+    printf("ERROR: cannot open file %s\n",filename);
     return (0);
-  }
-
-  /* open file */
-  if (Read_OpenMGFile (argv[1]))
-  {
-    printf("ERROR: cannot open file %s\n",argv[1]);
-    return (1);
   }
   if (Read_MG_General(&mg_general))
   {
-    printf("ERROR: file %s is probably not an i/o-file\n",argv[1]);
     CloseMGFile();
-    return (1);
+    return (2);
   }
 
-  /* print specification */
-  printf("\n############# ug-i/o specification ###########\n\n");
+  /* print info for mg-file */
+  printf("\n############# mg-file ###############\n\n");
   switch (mg_general.mode)
   {
   case BIO_DEBUG :
@@ -145,13 +137,13 @@ int main (int argc, char **argv)
     break;
   default :
     CloseMGFile();
-    return (1);
+    return (0);
   }
   printf("Version:        %s\n",mg_general.version);
   printf("Identification: %s\n",mg_general.ident);
   printf("\n");
   printf("Dimension:      %d\n",mg_general.dim);
-  printf("Domain:         %s\n",mg_general.DomainName);
+  printf("BVP:            %s\n",mg_general.DomainName);
   printf("MG-Name:        %s\n",mg_general.MultiGridName);
   printf("Format-Name:    %s\n",mg_general.Formatname);
   printf("Heapsize:       %d\n",mg_general.heapsize);
@@ -162,33 +154,123 @@ int main (int argc, char **argv)
   printf("# Element:      %d\n",mg_general.nElement);
   printf("\n");
 
+  /* set magic_cookie */
+  *magic_cookie = mg_general.magic_cookie;
+
   /* close file */
-  if (CloseMGFile ()) return (1);
+  if (CloseMGFile ()) return (0);
 
-  /* return if only mg-file */
-  if (argc == 2) return (0);
+  return (1);
+}
 
-  /* open file */
-  if (Read_OpenDTFile (argv[2]))
+int PrintDataFileInfo (char *filename, int *magic_cookie)
+{
+  int i,j;
+  DIO_GENERAL dio_general;
+
+  if (Read_OpenDTFile (filename))
   {
-    printf("ERROR: cannot open file %s\n",argv[2]);
-    return (1);
+    printf("ERROR: cannot open file %s\n",filename);
+    return (0);
   }
 
   /* read general information */
   if (Read_DT_General (&dio_general))
   {
-    printf("ERROR: file %s is probably not an data-file\n",argv[2]);
     CloseDTFile();
-    return (1);
+    return (2);
   }
 
-  /* output */
-  printf("--------------- consistency ------------------\n\n");
-  if (mg_general.magic_cookie == dio_general.magic_cookie)
-    printf("<%s> and <%s> ARE consistent\n",argv[1],argv[2]);
-  else
-    printf("<%s> and <%s> ARE NOT consistent\n",argv[1],argv[2]);
+  /* print info for data-file */
+  printf("\n############# data-file  #############\n\n");
+  switch (dio_general.mode)
+  {
+  case BIO_DEBUG :
+    printf("Mode:           DEBUG\n");
+    break;
+  case BIO_ASCII :
+    printf("Mode:           ASCII\n");
+    break;
+  case BIO_BIN :
+    printf("Mode:           BINARY\n");
+    break;
+  default :
+    CloseDTFile();
+    return (0);
+  }
+  printf("Version:        %s\n",dio_general.version);
+  printf("\n");
+  printf("# VecData:      %d\n",dio_general.nVD);
+  printf("\n");
+  printf("    # comp  |  name\n");
+  printf("  ----------+-----------\n");
+  for (i=0; i<dio_general.nVD; i++)
+    printf("    %3d     |  %s\n",dio_general.VDncomp[i],dio_general.VDname[i]);
+  printf("\n");
+
+  /* set magic_cookie */
+  *magic_cookie = dio_general.magic_cookie;
+
+  CloseDTFile();
+  return (1);
+}
+
+int main (int argc, char **argv)
+{
+  int i,ret,j;
+  int mgmc[20], datamc[20], mglist[20], datalist[20], nmg, ndata, mc;
+
+  if (argc<2 || argc>20)
+  {
+    printf("usage: ugmgs <file1> [<file2> <file3> ...]\n");
+    return (0);
+  }
+
+  nmg = ndata = 0;
+  for (i=1; i<argc; i++)
+  {
+    /* print mg-file info if */
+    ret = PrintMGFileInfo (argv[i],mgmc+nmg);
+    if (ret == 0) return (0);
+    if (ret == 1)
+    {
+      mglist[nmg++] = i;
+      continue;
+    }
+
+    /* print data-file info if */
+    ret = PrintDataFileInfo (argv[i],datamc+ndata);
+    if (ret == 0) return (1);
+    if (ret == 1)
+    {
+      datalist[ndata++] = i;
+      continue;
+    }
+
+    return (0);
+  }
+
+  if (nmg==0 || ndata==0) return (0);
+
+  /* check consistency */
+  printf("\n############# consistency  #############\n\n");
+  printf("           |");
+  for (j=0; j<ndata; j++)
+    printf("%15s",argv[datalist[j]]);
+  printf("\n------------");
+  for (j=0; j<ndata; j++)
+    printf("---------------");
+  printf("\n");
+  for (i=0; i<nmg; i++)
+  {
+    printf("%10s |",argv[mglist[i]]);
+    for (j=0; j<ndata; j++)
+      if (mgmc[i]==datamc[j])
+        printf("       C       ");
+      else
+        printf("       -       ");
+    printf("\n");
+  }
   printf("\n");
 
   return (0);
