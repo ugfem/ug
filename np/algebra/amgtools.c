@@ -69,7 +69,7 @@
 #define REUSKEN 0
 #define WAGNER 1
 
-#define LEN_MAX DIM*DIM*DIM
+#define LEN_MAX DIM*DIM
 
 /****************************************************************************/
 /*																			*/
@@ -541,7 +541,7 @@ static INT GenerateNewGrid(GRID *theGrid)
   m = noc * nof;
     #ifdef ModelP
   m = UG_GlobalMaxINT(m);
-  PRINTDEBUG(np,3,("%d: noc * nof max %d\n",me,m));
+  PRINTDEBUG(np,1,("%d: noc * nof max %d\n",me,m));
         #endif
   if (m == 0)
     REP_ERR_RETURN(1);
@@ -629,7 +629,7 @@ static INT GenerateNewGrid(GRID *theGrid)
   DDD_IdentifyEnd();
         #endif
 
-  PRINTDEBUG(np,1,("%d: IdentifyEnd %d\n",me,GLEVEL(theGrid)));
+  PRINTDEBUG(np,2,("%d: IdentifyEnd %d\n",me,GLEVEL(theGrid)));
 
   return(DONE);
 }
@@ -1317,7 +1317,9 @@ INT CoarsenAverage (GRID *theGrid)
   for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV)) {
     n++;
     assert(VSTART(theV) != NULL);
+    assert(VOBJECT(theV) != NULL);
   }
+  PRINTDEBUG(np,1,("%d: Aver %d\n",me,n));
   MarkTmpMem(theHeap,&MarkKey);
   buffer=(void *)GetTmpMem(theHeap,sizeof(VECTOR*)*n,MarkKey);
   if (buffer == NULL) {
@@ -1405,6 +1407,8 @@ INT CoarsenAverage (GRID *theGrid)
     SETVCUSED(theV,0);
   }
 exit:
+  PRINTDEBUG(np,1,("%d: Aver exit %d\n",me,n));
+
   ReleaseTmpMem(theHeap,MarkKey);
   return(GenerateNewGrid(theGrid));
 }
