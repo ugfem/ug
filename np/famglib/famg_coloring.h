@@ -28,8 +28,8 @@
 
 #ifdef ModelP
 
-#define FAMGColorMaxNb 50
 #define FAMGColorMaxProcs 512
+#define FAMGColorMaxNb FAMGColorMaxProcs
 
 typedef int FAMGColor;
 
