@@ -70,6 +70,25 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /* some useful functions by Peter Bastian, from ugp/ug/ugcom.c */
 
+/****************************************************************************/
+/*D
+   UG_GlobalMaxINT - get maximum for INT value
+
+   SYNOPSIS:
+   INT UG_GlobalMaxINT (INT i)
+
+   PARAMETERS:
+   .  i - calculate maximum for this value
+
+   DESCRIPTION:
+   This function calculates the maximum of i over all processors.
+
+   RETURN VALUE:
+   The maximum value of i over all processors.
+
+   D*/
+/****************************************************************************/
+
 INT UG_GlobalMaxINT (INT i)
 {
   int l;
@@ -84,6 +103,25 @@ INT UG_GlobalMaxINT (INT i)
   Broadcast(&i,sizeof(INT));
   return(i);
 }
+
+/****************************************************************************/
+/*D
+   UG_GlobalMinINT - get global minimum for INT value
+
+   SYNOPSIS:
+   INT UG_GlobalMaxINT (INT i)
+
+   PARAMETERS:
+   .  i - calculate minimum for this value
+
+   DESCRIPTION:
+   This function calculates the minimum of i over all processors.
+
+   RETURN VALUE:
+   The minimum value of i over all processors
+
+   D*/
+/****************************************************************************/
 
 INT UG_GlobalMinINT (INT i)
 {
@@ -100,50 +138,24 @@ INT UG_GlobalMinINT (INT i)
   return(i);
 }
 
-DOUBLE UG_GlobalMaxDOUBLE (DOUBLE i)
-{
-  int l;
-  DOUBLE n;
+/****************************************************************************/
+/*D
+   UG_GlobalSumINT - get global sum for INT value
 
-  for (l=degree-1; l>=0; l--)
-  {
-    GetConcentrate(l,&n,sizeof(DOUBLE));
-    i = MAX(i,n);
-  }
-  Concentrate(&i,sizeof(DOUBLE));
-  Broadcast(&i,sizeof(DOUBLE));
-  return(i);
-}
+   SYNOPSIS:
+   INT UG_GlobalSumINT (INT i)
 
-DOUBLE UG_GlobalMinDOUBLE (DOUBLE i)
-{
-  int l;
-  DOUBLE n;
+   PARAMETERS:
+   .  i - calculate sum for this variable
 
-  for (l=degree-1; l>=0; l--)
-  {
-    GetConcentrate(l,&n,sizeof(DOUBLE));
-    i = MIN(i,n);
-  }
-  Concentrate(&i,sizeof(DOUBLE));
-  Broadcast(&i,sizeof(DOUBLE));
-  return(i);
-}
+   DESCRIPTION:
+   This function calculates the sum of i over all processors.
 
-DOUBLE UG_GlobalSumDOUBLE (DOUBLE x)
-{
-  int l;
-  DOUBLE y;
+   RETURN VALUE:
+   The sum of i over all processors
 
-  for (l=degree-1; l>=0; l--)
-  {
-    GetConcentrate(l,&y,sizeof(DOUBLE));
-    x += y;
-  }
-  Concentrate(&x,sizeof(DOUBLE));
-  Broadcast(&x,sizeof(DOUBLE));
-  return(x);
-}
+   D*/
+/****************************************************************************/
 
 INT UG_GlobalSumINT (INT x)
 {
@@ -160,18 +172,124 @@ INT UG_GlobalSumINT (INT x)
   return(x);
 }
 
-void UG_GlobalSumNDOUBLE (INT n, DOUBLE *xs)
-{
-  int l, i, size=sizeof(DOUBLE)*n;
-  DOUBLE *ys;
+/****************************************************************************/
+/*D
+   UG_GlobalMaxNINT - get maximum for n integer values
 
-  ys = (DOUBLE *)memmgr_AllocTMEM(size);
+   SYNOPSIS:
+   void UG_GlobalMaxNINT (INT n, INT *x)
+
+   PARAMETERS:
+   .  n - number of elements in array x to be used
+   .  x - array of size n
+
+   DESCRIPTION:
+   This function calculates the maximum of x[i] over all processors for all
+   i from 0 to n-1. x is overwritten with the maximum value.
+
+   RETURN VALUE:
+   none
+
+   D*/
+/****************************************************************************/
+
+void UG_GlobalMaxNINT (INT n, INT *x)
+{
+  int i,l,size;
+  INT *y;
+
+  size = sizeof(INT)*n;
+  y = (INT *)memmgr_AllocTMEM(size);
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,y,size);
+    for (i=0; i<n; i++)
+      x[i] = MAX(x[i],y[i]);
+  }
+  Concentrate(x,size);
+  Broadcast(x,size);
+
+  memmgr_FreeTMEM(y);
+
+  return;
+}
+
+/****************************************************************************/
+/*D
+   UG_GlobalMinNINT - get minimum for n integer values
+
+   SYNOPSIS:
+   void UG_GlobalMinNINT (INT n, INT *x)
+
+   PARAMETERS:
+   .  n - number of elements in array x to be used
+   .  x - array of size n
+
+   DESCRIPTION:
+   This function calculates the minimum of x[i] over all processors for all
+   i from 0 to n-1. x is overwritten with the minimum value.
+
+   RETURN VALUE:
+   none
+
+   D*/
+/****************************************************************************/
+
+void UG_GlobalMinNINT (INT n, INT *x)
+{
+  int i,l,size;
+  INT *y;
+
+  size = sizeof(INT)*n;
+  y = (INT *)memmgr_AllocTMEM(size);
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,y,size);
+    for (i=0; i<n; i++)
+      x[i] = MIN(x[i],y[i]);
+  }
+  Concentrate(x,size);
+  Broadcast(x,size);
+
+  memmgr_FreeTMEM(y);
+
+  return;
+}
+
+/****************************************************************************/
+/*D
+   UG_GlobalSumNINT - calculate global sum for n integer values
+
+   SYNOPSIS:
+   void UG_GlobalSumNINT (INT n, INT *x)
+
+   PARAMETERS:
+   .  n - number of elements in array x to be used
+   .  x - array of size n
+
+   DESCRIPTION:
+   This function calculates the sum of x[i] over all processors for each
+   i from 0 to n-1. x is overwritten with the result.
+
+   RETURN VALUE:
+   none
+
+   D*/
+/****************************************************************************/
+
+void UG_GlobalSumNINT (INT n, INT *xs)
+{
+  int l, i, size=sizeof(INT)*n;
+  INT *ys;
+
+  ys = (INT *)memmgr_AllocTMEM(size);
 
   for (l=degree-1; l>=0; l--)
   {
     GetConcentrate(l,ys,size);
 
-    /* execute reduction operation */
     for(i=0; i<n; i++)
       xs[i] += ys[i];
   }
@@ -179,4 +297,232 @@ void UG_GlobalSumNDOUBLE (INT n, DOUBLE *xs)
   Broadcast(xs,size);
 
   memmgr_FreeTMEM(ys);
+}
+
+/****************************************************************************/
+/*D
+   UG_GlobalMaxDOUBLE - get global maximum for DOUBLE value
+
+   SYNOPSIS:
+   DOUBLE UG_GlobalMaxDOUBLE (DOUBLE x)
+
+   PARAMETERS:
+   .  x - calculate maximum for this value
+
+   DESCRIPTION:
+   This function calculates the maximum of x over all processors.
+
+   RETURN VALUE:
+   The maximum value of x over all processors.
+
+   D*/
+/****************************************************************************/
+
+DOUBLE UG_GlobalMaxDOUBLE (DOUBLE x)
+{
+  int l;
+  DOUBLE n;
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,&n,sizeof(DOUBLE));
+    x = MAX(x,n);
+  }
+  Concentrate(&x,sizeof(DOUBLE));
+  Broadcast(&x,sizeof(DOUBLE));
+  return(x);
+}
+
+/****************************************************************************/
+/*D
+   UG_GlobalMinDOUBLE - get global minimum for DOUBLE value
+
+   SYNOPSIS:
+   DOUBLE UG_GlobalMinDOUBLE (DOUBLE x)
+
+   PARAMETERS:
+   .  x - calculate minimum for this value
+
+   DESCRIPTION:
+   This function calculates the minimum of x over all processors.
+
+   RETURN VALUE:
+   The minimum value of x over all processors.
+
+   D*/
+/****************************************************************************/
+
+DOUBLE UG_GlobalMinDOUBLE (DOUBLE x)
+{
+  int l;
+  DOUBLE y;
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,&y,sizeof(DOUBLE));
+    x = MIN(x,y);
+  }
+  Concentrate(&x,sizeof(DOUBLE));
+  Broadcast(&x,sizeof(DOUBLE));
+  return(x);
+}
+
+/****************************************************************************/
+/*D
+   UG_GlobalSumDOUBLE - get global sum for DOUBLE value
+
+   SYNOPSIS:
+   DOUBLE UG_GlobalSumDOUBLE (DOUBLE i)
+
+   PARAMETERS:
+   .  i - calculate sum for this variable
+
+   DESCRIPTION:
+   This function calculates the sum of i over all processors.
+
+   RETURN VALUE:
+   The sum of i over all processors
+
+   D*/
+/****************************************************************************/
+
+DOUBLE UG_GlobalSumDOUBLE (DOUBLE x)
+{
+  int l;
+  DOUBLE y;
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,&y,sizeof(DOUBLE));
+    x += y;
+  }
+  Concentrate(&x,sizeof(DOUBLE));
+  Broadcast(&x,sizeof(DOUBLE));
+  return(x);
+}
+
+/****************************************************************************/
+/*D
+   UG_GlobalMaxNDOUBLE - get maximum over n integer values
+
+   SYNOPSIS:
+   void UG_GlobalMaxNDOUBLE (INT n, DOUBLE *x)
+
+   PARAMETERS:
+   .  n - number of elements in array x to be used
+   .  x - array of size n
+
+   DESCRIPTION:
+   This function calculates the maximum of x[i] over all processors for all
+   i from 0 to n-1. x is overwritten with the maximum value.
+
+   RETURN VALUE:
+   none
+
+   D*/
+/****************************************************************************/
+
+void UG_GlobalMaxNDOUBLE (INT n, DOUBLE *x)
+{
+  int i,l,size;
+  DOUBLE *y;
+
+  size = sizeof(DOUBLE)*n;
+  y = (DOUBLE *)memmgr_AllocTMEM(size);
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,y,size);
+    for (i=0; i<n; i++)
+      x[i] = MAX(x[i],y[i]);
+  }
+  Concentrate(x,size);
+  Broadcast(x,size);
+
+  memmgr_FreeTMEM(y);
+
+  return;
+}
+
+/****************************************************************************/
+/*D
+   UG_GlobalMinNDOUBLE - get minimum over n integer values
+
+   SYNOPSIS:
+   void UG_GlobalMinNDOUBLE (INT n, DOUBLE *x)
+
+   PARAMETERS:
+   .  n - number of elements in array x to be used
+   .  x - array of size n
+
+   DESCRIPTION:
+   This function calculates the minimum of x[i] over all processors for all
+   i from 0 to n-1. x is overwritten with the minimum value.
+
+   RETURN VALUE:
+   none
+
+   D*/
+/****************************************************************************/
+
+void UG_GlobalMinNDOUBLE (INT n, DOUBLE *x)
+{
+  int i,l,size;
+  DOUBLE *y;
+
+  size = sizeof(DOUBLE)*n;
+  y = (DOUBLE *)memmgr_AllocTMEM(size);
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,y,size);
+    for (i=0; i<n; i++)
+      x[i] = MIN(x[i],y[i]);
+  }
+  Concentrate(x,size);
+  Broadcast(x,size);
+
+  memmgr_FreeTMEM(y);
+
+  return;
+}
+
+/****************************************************************************/
+/*D
+   UG_GlobalSumNDOUBLE - calculate global sum for n DOUBLE values
+
+   SYNOPSIS:
+   void UG_GlobalSumNDOUBLE (INT n, DOUBLE *x)
+
+   PARAMETERS:
+   .  n - number of elements in array x to be used
+   .  x - array of size n
+
+   DESCRIPTION:
+   This function calculates the sum of x[i] over all processors for each
+   i from 0 to n-1. x is overwritten with the result.
+
+   RETURN VALUE:
+   none
+
+   D*/
+/****************************************************************************/
+
+void UG_GlobalSumNDOUBLE (INT n, DOUBLE *x)
+{
+  int l, i, size=sizeof(DOUBLE)*n;
+  DOUBLE *y;
+
+  y = (DOUBLE *)memmgr_AllocTMEM(size);
+
+  for (l=degree-1; l>=0; l--)
+  {
+    GetConcentrate(l,y,size);
+    for(i=0; i<n; i++)
+      x[i] += y[i];
+  }
+  Concentrate(x,size);
+  Broadcast(x,size);
+
+  memmgr_FreeTMEM(y);
 }
