@@ -58,7 +58,7 @@ int part_type;
    int simple_type;		/* which type of simple partitioning to use */
    
    void make_connected(), print_connected(), coarsen_kl(), eigensolve();
-   void assign(), make_unconnected(), inertial(), rcb(), klspiff(), simple_part();
+   void assign(), make_unconnected(), inertial(), rcbi(), klspiff(), simple_part();
    double find_maxdeg();
 
    using_vwgts = (vwsqrt != NULL);
@@ -248,7 +248,7 @@ extern int DEBUG_GRAPH;
       if (!MEM_OK) return;
    }
    else if (rcb) {
-      rcb(graph, nvtxs, ndims, igeom, coords, assignment, goal, 
+      rcbi(graph, nvtxs, ndims, igeom, coords, assignment, goal, 
 	           using_vwgts, part_type);
       if (!MEM_OK) return;
    }

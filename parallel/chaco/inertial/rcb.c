@@ -10,8 +10,8 @@
 #include "../main/defs.h"
 
 
-void rcb(graph, nvtxs, ndims, igeom, coords, sets, goal, using_vwgts,
-         part_type)
+void rcbi(graph, nvtxs, ndims, igeom, coords, sets, goal, using_vwgts,
+          part_type)
 struct vtx_data **graph;        /* graph data structure */
 int nvtxs;                      /* number of vtxs in graph */
 int ndims;                      /* number of cuts to make at once */
