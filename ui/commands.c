@@ -2085,6 +2085,91 @@ static INT LogOffCommand (INT argc, char **argv)
   return(OKCODE);
 }
 
+#ifdef __TWODIM__
+
+/****************************************************************************/
+/*
+   CnomCommand - write a cnom output file
+
+   SYNOPSIS:
+   static INT CNomCommand (INT argc, char **argv);
+
+   PARAMETERS:
+   .  argc - number of arguments (incl. its own name)
+   .  argv - array of strings giving the arguments
+
+   DESCRIPTION:
+   This function writes data in a format suitable for the program cnom 2.0
+   written by Susanne Kroemker of the IWR, Heidelberg.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+ */
+/****************************************************************************/
+static INT CnomCommand (INT argc, char **argv)
+{
+  char docName[32],plotprocName[NAMESIZE],tagName[NAMESIZE];
+  INT error;
+  int flag;
+
+  if (currMG==NULL)
+  {
+    PrintErrorMessage('E',"cnom","no multigrid active");
+    return(CMDERRORCODE);
+  }
+
+  /* get document name */
+  docName[0] = (char) 0;
+  sscanf(argv[0]," cnom %31[ -~]",docName);
+  if (strlen(docName)==0)
+  {
+    PrintErrorMessage('E',"cnom","no document name");
+    return(PARAMERRORCODE);
+  }
+  if (argc!=2)
+  {
+    PrintHelp("cnom",HELPITEM,buffer);
+    return(PARAMERRORCODE);
+  }
+
+  flag=0;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'p' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("p %",NAMELENSTR,"[ -~]")),plotprocName)!=1)
+      {
+        PrintErrorMessage('E',"cnom","can't read plotprocName");
+        return(PARAMERRORCODE);
+      }
+      flag=flag|1;
+      break;
+    case 't' :
+      if (sscanf(argv[i],expandfmt(CONCAT3("t %",NAMELENSTR,"[ -~]")),tagName)!=1)
+      {
+        PrintErrorMessage('E',"cnom","can't read tagName");
+        return(PARAMERRORCODE);
+      }
+      flag=flag|2;
+      break;
+    default :
+      flag=flag|4;
+      break;
+    }
+
+  if (flag!=3)
+  {
+    PrintHelp("cnom",HELPITEM,buffer);
+    return (PARAMERRORCODE);
+  }
+
+
+  return(SaveCnomGridAndValues(currMG,docName,plotprocName,tagName));
+}
+#endif
+
 /****************************************************************************/
 /*D
    new - allocate a new multigrid
@@ -4430,7 +4515,7 @@ static INT MarkCommand (INT argc, char **argv)
       for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i));
            theElement!=NULL; theElement=SUCCE(theElement))
         if (EstimateHere(theElement))
-          MarkForRefinement(theElement,NO_REFINEMENT,0);
+          MarkForRefinement(theElement,NO_REFINEMENT,NULL);
 
     UserWrite("all refinement marks removed\n");
 
@@ -4458,7 +4543,7 @@ static INT MarkCommand (INT argc, char **argv)
       theElement = FindElementOnSurface(theMG,global);
       if (theElement == NULL)
         return(PARAMERRORCODE);
-      MarkForRefinement(theElement,RED,1);
+      MarkForRefinement(theElement,RED,NULL);
 
       UserWriteF("element %d marked for refinement\n",ID(theElement));
 
@@ -10506,7 +10591,9 @@ INT InitCommands ()
   if (CreateCommand("protocol",           ProtocolCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("logon",                      LogOnCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("logoff",             LogOffCommand                                   )==NULL) return (__LINE__);
-
+        #ifdef __TWODIM__
+  if (CreateCommand("cnom",                       CnomCommand                                             )==NULL) return (__LINE__);
+        #endif
 
   /* commands for grid management */
   if (CreateCommand("setcurrmg",          SetCurrentMultigridCommand              )==NULL) return (__LINE__);
