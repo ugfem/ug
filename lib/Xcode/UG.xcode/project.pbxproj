@@ -18,7 +18,7 @@
 				INSTALL_PATH = ../../..;
 				OPTIMIZATION_CFLAGS = "-O0";
 				OTHER_C_FLAGS = "-DDebug -D__MACOSX__";
-				ZERO_LINK = YES;
+				ZERO_LINK = NO;
 			};
 			isa = PBXBuildStyle;
 			name = "Debug, No Optimization";
@@ -3469,7 +3469,7 @@
 				OTHER_CFLAGS = "-D_3 $(OTHER_C_FLAGS)";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = domL2;
+				PRODUCT_NAME = domL3;
 				SECTORDER_FLAGS = "";
 				WARNING_CFLAGS = "-Wmost";
 			};
@@ -3528,7 +3528,7 @@
 			explicitFileType = archive.ar;
 			includeInIndex = 0;
 			isa = PBXFileReference;
-			path = libdomL2.a;
+			path = libdomL3.a;
 			refType = 3;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
@@ -3546,7 +3546,7 @@
 				OTHER_CFLAGS = "-D_3 $(OTHER_C_FLAGS)";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = domS2;
+				PRODUCT_NAME = domS3;
 				SECTORDER_FLAGS = "";
 				WARNING_CFLAGS = "-Wmost";
 			};
@@ -3600,7 +3600,7 @@
 			explicitFileType = archive.ar;
 			includeInIndex = 0;
 			isa = PBXFileReference;
-			path = libdomS2.a;
+			path = libdomS3.a;
 			refType = 3;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
