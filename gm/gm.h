@@ -368,86 +368,43 @@ enum {nodeSelection=1,         /**< Objects selected are nodes */
 
 /** @name Possible values for rule in MarkForRefinement */
 /*@{*/
-/*
-   #define NO_REFINEMENT           0
-   #define COPY                            1
-   #define RED                                     2
-   #define BLUE                            3
-   #define COARSE                          4
-   #ifdef __TWODIM__
-   #define BISECTION_1             5
-   #define BISECTION_2_Q           6
-   #define BISECTION_2_T1          7
-   #define BISECTION_2_T2          8
-   #define BISECTION_3             9
-   #endif
-   #ifdef __THREEDIM__
-
-   #define TETRA_RED_HEX           5
-
-   #define PRISM_BISECT_1_2    9
-   #define PRISM_QUADSECT          7
-   #define PRISM_BISECT_HEX0   5
-   #define PRISM_BISECT_HEX1   8
-   #define PRISM_BISECT_HEX2   6
-   #define PRISM_ROTATE_LEFT   10
-   #define PRISM_ROTATE_RGHT   11
-   #define PRISM_QUADSECT_HEXPRI0 14
-   #define PRISM_RED_HEX		15
-
-   #define HEX_BISECT_0_1          5
-   #define HEX_BISECT_0_2          6
-   #define HEX_BISECT_0_3          7
-   #define HEX_TRISECT_0           8
-   #define HEX_TRISECT_5           9
-   #define HEX_QUADSECT_0          12
-   #define HEX_QUADSECT_1          13
-   #define HEX_QUADSECT_2          14
-   #define HEX_BISECT_HEXPRI0      15
-   #define HEX_BISECT_HEXPRI1      16
-
-   #endif
- */
-/*@}*/
-
-/** @name Possible values for rule in MarkForRefinement */
-/*@{*/
-enum {NO_REFINEMENT = 0,
-      COPY = 1,
-      RED =  2,
-      BLUE = 3,
-      COARSE = 4,
+enum RefinementRule
+{NO_REFINEMENT = 0,
+ COPY = 1,
+ RED =  2,
+ BLUE = 3,
+ COARSE = 4,
 #ifdef __TWODIM__
-      BISECTION_1 = 5,
-      BISECTION_2_Q = 6,
-      BISECTION_2_T1 = 7,
-      BISECTION_2_T2 = 8,
-      BISECTION_3 = 9
+ BISECTION_1 = 5,
+ BISECTION_2_Q = 6,
+ BISECTION_2_T1 = 7,
+ BISECTION_2_T2 = 8,
+ BISECTION_3 = 9
 #endif
 #ifdef __THREEDIM__
 
-      TETRA_RED_HEX = 5,
+ TETRA_RED_HEX = 5,
 
-      PRISM_BISECT_1_2 = 9,
-      PRISM_QUADSECT = 7,
-      PRISM_BISECT_HEX0 = 5,
-      PRISM_BISECT_HEX1 = 8,
-      PRISM_BISECT_HEX2 = 6,
-      PRISM_ROTATE_LEFT = 10,
-      PRISM_ROTATE_RGHT = 11,
-      PRISM_QUADSECT_HEXPRI0 = 14,
-      PRISM_RED_HEX = 15,
+ PRISM_BISECT_1_2 = 9,
+ PRISM_QUADSECT = 7,
+ PRISM_BISECT_HEX0 = 5,
+ PRISM_BISECT_HEX1 = 8,
+ PRISM_BISECT_HEX2 = 6,
+ PRISM_ROTATE_LEFT = 10,
+ PRISM_ROTATE_RGHT = 11,
+ PRISM_QUADSECT_HEXPRI0 = 14,
+ PRISM_RED_HEX = 15,
 
-      HEX_BISECT_0_1 = 5,
-      HEX_BISECT_0_2 = 6,
-      HEX_BISECT_0_3 = 7,
-      HEX_TRISECT_0 = 8,
-      HEX_TRISECT_5 = 9,
-      HEX_QUADSECT_0 = 12,
-      HEX_QUADSECT_1 = 13,
-      HEX_QUADSECT_2 = 14,
-      HEX_BISECT_HEXPRI0 = 15,
-      HEX_BISECT_HEXPRI1 = 16
+ HEX_BISECT_0_1 = 5,
+ HEX_BISECT_0_2 = 6,
+ HEX_BISECT_0_3 = 7,
+ HEX_TRISECT_0 = 8,
+ HEX_TRISECT_5 = 9,
+ HEX_QUADSECT_0 = 12,
+ HEX_QUADSECT_1 = 13,
+ HEX_QUADSECT_2 = 14,
+ HEX_BISECT_HEXPRI0 = 15,
+ HEX_BISECT_HEXPRI1 = 16
 
 #endif
 };
@@ -3210,9 +3167,9 @@ INT             DeleteElement                   (MULTIGRID *theMG, ELEMENT *theE
 
 /* refinement */
 INT             EstimateHere                    (ELEMENT *theElement);
-INT         MarkForRefinement       (ELEMENT *theElement, INT rule, void *data);
+INT         MarkForRefinement       (ELEMENT *theElement, enum RefinementRule rule, void *data);
 INT         MarkForRefinementX      (ELEMENT *theElement,
-                                     INT fl, INT tl, INT rule, void *data);
+                                     INT fl, INT tl, enum RefinementRule rule, void *data);
 INT             GetRefinementMark               (ELEMENT *theElement, INT *rule, void *data);
 INT             GetRefinementMarkType   (ELEMENT *theElement);
 INT             AdaptMultiGrid                  (MULTIGRID *theMG, INT flag, INT seq, INT mgtest);

@@ -3024,7 +3024,7 @@ static INT YAlignment (ELEMENT *theElement)
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
+INT NS_DIM_PREFIX MarkForRefinement (ELEMENT *theElement, enum RefinementRule rule, void *data)
 {
         #ifdef __TWODIM__
   INT side;
@@ -3370,7 +3370,7 @@ INT NS_DIM_PREFIX MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
   return(GM_OK);
 }
 
-INT NS_DIM_PREFIX MarkForRefinementX (ELEMENT *e, INT fl, INT tl, INT rule, void *data)
+INT NS_DIM_PREFIX MarkForRefinementX (ELEMENT *e, INT fl, INT tl, enum RefinementRule rule, void *data)
 {
   ELEMENT *t = ELEMENT_TO_MARK(e);
 
