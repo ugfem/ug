@@ -50,7 +50,7 @@ void CAT(GRID_UNLINK_, OTYPE ) (GRID *Grid, OTYPE *Object)
 
 		if (listpart<0 || listpart>LASTPART_OF_LIST(OTYPE)) {
 			printf("%d: GRID_UNLINK_" STR(OTYPE) "(): ERROR " STR(OTYPE)
-				" has no valid listpart=%d for prio=%dn",me,listpart,Prio);
+				" has no valid listpart=%d for prio=%d\n",me,listpart,Prio);
 			fflush(stdout);
 			ASSERT(0);
 		}
@@ -58,20 +58,30 @@ void CAT(GRID_UNLINK_, OTYPE ) (GRID *Grid, OTYPE *Object)
 		switch (listpart) {
 
 			case FIRSTPART_OF_LIST:
+
 				if (PRED(Object)!=NULL)
 					SUCC(PRED(Object)) = SUCC(Object);
-				else
-					CAT(LISTPART_FIRST,OTYPE(Grid,FIRSTPART_OF_LIST)) = SUCC(Object);
 
-				if (Object != CAT(LISTPART_LAST,OTYPE(Grid,FIRSTPART_OF_LIST))) {
-					if (SUCC(Object) !=NULL)
+				if (CAT(LISTPART_LAST,OTYPE(Grid,listpart)) != Object) {
+
+					if (CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) == Object)
+						CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) = SUCC(Object);
+
+					if (SUCC(Object)!=NULL) 
 						PRED(SUCC(Object)) = PRED(Object);
 				}
-				else
-					CAT(LISTPART_LAST,OTYPE(Grid,FIRSTPART_OF_LIST)) = PRED(Object);
+				else {
+
+					if (CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) == Object)
+						CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) = NULL;
+
+					CAT(LISTPART_LAST,OTYPE(Grid,listpart)) = PRED(Object);
+				}
+
 				break;
 	
 			case LASTPART_OF_LIST(OTYPE):
+
 				if (PRED(Object)!=NULL) 
 					SUCC(PRED(Object)) = SUCC(Object);
 				else {
@@ -96,6 +106,7 @@ void CAT(GRID_UNLINK_, OTYPE ) (GRID *Grid, OTYPE *Object)
 				break;
 	
 			default:
+
 				/* unlink in middle of list */
 				if (PRED(Object)!=NULL) 
 					SUCC(PRED(Object)) = SUCC(Object);
@@ -114,20 +125,44 @@ void CAT(GRID_UNLINK_, OTYPE ) (GRID *Grid, OTYPE *Object)
 						SUCC(Object1) = SUCC(Object);
 				}
 				if (CAT(LISTPART_LAST,OTYPE(Grid,listpart)) != Object) {
-					CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) = SUCC(Object);
-					PRED(SUCC(Object)) = PRED(Object);
+
+					if (CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) == Object)
+						CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) = SUCC(Object);
+
+					if (SUCC(Object)!=NULL) 
+						PRED(SUCC(Object)) = PRED(Object);
 				}
 				else {
-					CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) = NULL;
-					CAT(LISTPART_LAST,OTYPE(Grid,listpart)) = NULL;
+
+					if (CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) == Object)
+						CAT(LISTPART_FIRST,OTYPE(Grid,listpart)) = NULL;
+
+					CAT(LISTPART_LAST,OTYPE(Grid,listpart)) = PRED(Object);
 				}
 
-				if (Object == CAT(LISTPART_LAST,OTYPE(Grid,listpart)))
-					CAT(LISTPART_LAST,OTYPE(Grid,listpart)) = PRED(Object);
 				break;
 		}
 		SUCC(Object) = PRED(Object) = NULL;
+
+	/* debug loop in list */
+	{
+		INT n = 0;
+		for (Object1 = CAT(LISTPART_FIRST,OTYPE(Grid,FIRSTPART_OF_LIST));
+			 Object1 != NULL;
+			 Object1 = SUCC(Object1))
+		{
+			n++;	
+			if (n>10000) {
+				printf("%d: GRID_UNLINK_" STR(OTYPE) "():" STR(OTYPE) 
+					" has loop listpart=%d for prio=%d\n",me,listpart,Prio);
+				fflush(stdout);
+				assert(0);
+			}
+		
+		}
+
 	}
+}
 
 #else
 
@@ -169,14 +204,17 @@ void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
 
 		if (listpart<0 || listpart>LASTPART_OF_LIST(OTYPE)) {
 			printf("%d: GRID_LINK_" STR(OTYPE) "(): ERROR " STR(OTYPE) 
-				" has no valid listpart=%d for prio=%dn",me,listpart,Prio);
+				" has no valid listpart=%d for prio=%d\n",me,listpart,Prio);
 			fflush(stdout);
 			ASSERT(0);
 		}
 
+		PRED(Object) = SUCC(Object) = NULL;
+
 		switch  (listpart) {
 
 			case FIRSTPART_OF_LIST:
+
 				Object1 = CAT(LISTPART_FIRST,OTYPE(Grid,FIRSTPART_OF_LIST));
 				PRED(Object) = NULL;
 				CAT(LISTPART_FIRST,OTYPE(Grid,FIRSTPART_OF_LIST)) = Object;
@@ -196,6 +234,7 @@ void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
 				break;
 
 			case LASTPART_OF_LIST(OTYPE): 
+
 				Object1 = CAT(LISTPART_LAST,OTYPE(Grid,LASTPART_OF_LIST(OTYPE)));
 				SUCC(Object) = NULL;
 				CAT(LISTPART_LAST,OTYPE(Grid,LASTPART_OF_LIST(OTYPE))) = Object;
@@ -221,6 +260,7 @@ void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
 				break;
 
 			default: 
+
 				/* link in middle of list */
 				Object1 = CAT(LISTPART_FIRST,OTYPE(Grid,listpart));
 
@@ -251,8 +291,28 @@ void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
 					SUCC(Object1) = Object;
 				break;
 		}
+	/* debug loop in list */
+	{
+		INT n = 0;
+		for (Object1 = CAT(LISTPART_FIRST,OTYPE(Grid,FIRSTPART_OF_LIST));
+			 Object1 != NULL;
+			 Object1 = SUCC(Object1))
+		{
+			n++;	
+			if (n>10000) {
+				printf("%d: GRID_LINK_" STR(OTYPE) "():" STR(OTYPE) 
+					" has loop listpart=%d for prio=%d\n",me,listpart,Prio);
+				fflush(stdout);
+				assert(0);
+			}
+		
+		}
+
 	}
+}
+
 #else
+
 void CAT(GRID_LINK_,OTYPE) (GRID *Grid, OTYPE *Object, INT Prio)
 	{
 		OTYPE *after;
