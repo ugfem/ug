@@ -1955,39 +1955,16 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     if (me < nparfiles)
       mg_general.me = me;
   }
-  if (me >= nparfiles)
-  {
-    /* BVP and format */
-    if (BVPName==NULL) strcpy(BndValName,mg_general.DomainName);
-    else strcpy(BndValName,BVPName);
-    if (MultigridName==NULL) strcpy(MGName,mg_general.MultiGridName);
-    else strcpy(MGName,MultigridName);
-    if (format==NULL) strcpy(FormatName,mg_general.Formatname);
-    else strcpy(FormatName,format);
-    if (heapSize==0) heapSize = mg_general.heapsize * KBYTE;
-
-    /* create a virginenal multigrid on the BVP */
-    theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize,TRUE);
-    if (theMG==NULL)                                                                                                        {UserWrite("ERROR(ugio): cannot create multigrid\n"); CloseMGFile (); return (NULL);}
-    MG_MAGIC_COOKIE(theMG) = mg_general.magic_cookie;
-    if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-    for (i=0; i<mg_general.nLevel; i++)
-    {
-      if (CreateNewLevel(theMG,0)==NULL)                                                              {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-#ifdef ModelP
-      ConstructConsistentGrid(GRID_ON_LEVEL(theMG,i));
-#endif
-    }
-    if (CreateAlgebra (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-    /* saved */
-    MG_SAVED(theMG) = 1;
-    strcpy(MG_FILENAME(theMG),filename);
-
-    return (theMG);
+  if (mg_general.dim!=DIM) {
+    UserWrite("ERROR: wrong dimension\n");
+    CloseMGFile ();
+    return (NULL);
   }
-  if (mg_general.dim!=DIM)                                                                                        {UserWrite("ERROR: wrong dimension\n");CloseMGFile (); return (NULL);}
-  if (strcmp(mg_general.version,MGIO_VERSION)!=0 && force==0)                                             {UserWrite("ERROR: wrong version\n");CloseMGFile (); return (NULL);}
-
+  if (strcmp(mg_general.version,MGIO_VERSION)!=0 && force==0) {
+    UserWrite("ERROR: wrong version\n");
+    CloseMGFile ();
+    return (NULL);
+  }
   /* BVP and format */
   if (BVPName==NULL) strcpy(BndValName,mg_general.DomainName);
   else strcpy(BndValName,BVPName);
@@ -1999,8 +1976,46 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 
   /* create a virginenal multigrid on the BVP */
   theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize,TRUE);
-  if (theMG==NULL)                                                                                                        {UserWrite("ERROR(ugio): cannot create multigrid\n"); CloseMGFile (); return (NULL);}
+  if (theMG==NULL) {
+    UserWrite("ERROR(ugio): cannot create multigrid\n");
+    CloseMGFile ();
+    return (NULL);
+  }
   MG_MAGIC_COOKIE(theMG) = mg_general.magic_cookie;
+
+  if (me >= nparfiles)
+  {
+    if (DisposeGrid(GRID_ON_LEVEL(theMG,0))) {
+      CloseMGFile ();
+      DisposeMultiGrid(theMG);
+      return (NULL);
+    }
+    for (i=0; i<mg_general.nLevel; i++)
+      if (CreateNewLevel(theMG,0)==NULL) {
+        CloseMGFile ();
+        DisposeMultiGrid(theMG);
+        return (NULL);
+      }
+        #ifdef ModelP
+    DDD_IdentifyBegin();
+    DDD_IdentifyEnd();
+    if (MGIO_PARFILE)
+      for (i=0; i<mg_general.nLevel; i++)
+        ConstructConsistentGrid(GRID_ON_LEVEL(theMG,i));
+
+        #endif
+    if (CreateAlgebra (theMG)) {
+      CloseMGFile ();
+      DisposeMultiGrid(theMG);
+      return (NULL);
+    }
+    /* saved */
+    MG_SAVED(theMG) = 1;
+    strcpy(MG_FILENAME(theMG),filename);
+
+    return (theMG);
+
+  }             /* else if (me < nparfiles) */
   theHeap = MGHEAP(theMG);
   MarkTmpMem(theHeap);
   if (DisposeGrid(GRID_ON_LEVEL(theMG,0)))                                                        {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
@@ -2037,9 +2052,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     for (i=1; i<mg_general.nLevel; i++)
     {
       if (CreateNewLevel(theMG,0)==NULL)      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-#ifdef ModelP
       ConstructConsistentGrid(GRID_ON_LEVEL(theMG,i));
-#endif
     }
 
     /* saved */
