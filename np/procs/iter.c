@@ -85,6 +85,7 @@
 #define NPFF_ALLFREQ(p)                 ((p)->all_freq)
 #define NPFF_DISPLAY(p)                 ((p)->display)
 #define NPFF_BVDF(p)                    (&(p)->bvdf)
+#define NPFF_ParSim(p)                  ((p)->par_sim)
 
 /* macros for the symmetric Gauss-Seidel smoother */
 #define NP_SGS_t(p)                             ((p)->t)
@@ -217,6 +218,7 @@ typedef struct
   DOUBLE wave_nr_rel3D;         /* wavenumber for the testing frequency; only for 3D */
   INT all_freq;                         /* flag; TRUE == smooth for all relevant frequencies */
   INT display;
+  INT par_sim;                          /* temp for: simulating parallel algo on SEQ */
 #ifdef __BLOCK_VECTOR_DESC__
   BV_DESC_FORMAT bvdf;
 #endif
@@ -2657,12 +2659,11 @@ static INT FFInit (NP_BASE *theNP, INT argc , char **argv)
   }
 
 #ifdef __THREEDIM__
-  if ( ReadArgvChar ( "wr3D", buffer, argc, argv) )
+  if ( ReadArgvDOUBLE ( "wr3D", &NPFF_WaveNrRel3D(np), argc, argv) )
   {
     PrintErrorMessage('E',"FFInit", "Option $wr3D mandatory");
     REP_ERR_RETURN(1);
   }
-  sscanf(buffer,"%lf", &NPFF_WaveNrRel3D(np) );
 #else
   NPFF_WaveNrRel3D(np) = -1.0;
 #endif
@@ -2708,8 +2709,19 @@ static INT FFInit (NP_BASE *theNP, INT argc , char **argv)
     }
   }
 
+  NPFF_ParSim(np) = FALSE;
+  if ( ReadArgvINT ( "parsim", &NPFF_ParSim(np), argc, argv) )
+  {
+    NPFF_ParSim(np) = FALSE;
+  }
+  else
+    NPFF_ParSim(np) = (NPFF_ParSim(np)==1);
+
 #ifdef __TWODIM__
-  *NPFF_BVDF(np) = two_level_bvdf;
+  if ( NPFF_ParSim(np) )
+    (void)InitBVDF( NPFF_BVDF(np), 64 );
+  else
+    *NPFF_BVDF(np) = two_level_bvdf;
 #else
   *NPFF_BVDF(np) = three_level_bvdf;
 #endif
@@ -2797,6 +2809,8 @@ static INT FFDisplay (NP_BASE *theNP)
   else if (NPFF_DISPLAY(np) == PCR_FULL_DISPLAY)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","FULL_DISPLAY");
 
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"ParSim",(int)NPFF_ParSim(np));
+
   return (0);
 }
 
@@ -2851,9 +2865,6 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
 
   np = (NP_FF *) theNP;
   theGrid = NP_GRID(theNP,level);
-
-  BVD_INIT( &bvd );
-  BVD_PUSH_ENTRY( &bvd, 0, NPFF_BVDF(np) );
 
   /* store passed XXXDATA_DESCs */
   NPIT_A(theNP) = A;
@@ -2990,6 +3001,8 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
   if ( NPFF_DO_FF(np) )
     n *= 2;
 
+  n+=10; /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! temp fuer CHECK_CALCS */
+
   for( i=0; i<n; i++ )
   {
     if (AllocVDFromVD(theNP->base.mg,level,level,x,FF_VECDATA_DESC_ARRAY+i))
@@ -3003,12 +3016,35 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
     NP_RETURN(1,result[0]);
   UserWrite(" [d]\n");
 
+#ifdef FF_PARALLEL_SIMULATION
+  if ( NPFF_ParSim(np) )
+  {
+    if ( PTFFPrepareSolver( theGrid, &meshwidth, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
+    {
+      PrintErrorMessage('E',"FFPreProcess","preparation of the grid failed for ParSim");
+      NP_RETURN(1,result[0]);
+    }
+  }
+  else
+  {
+    if ( FF_PrepareGrid( theGrid, &meshwidth, TRUE, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
+    {
+      PrintErrorMessage('E',"FFPreProcess","preparation of the grid failed");
+      NP_RETURN(1,result[0]);
+    }
+  }
+#else
   if (FF_PrepareGrid( theGrid, &meshwidth, TRUE, MD_SCALCMP( A ), VD_SCALCMP( x ), VD_SCALCMP( b ), NPFF_BVDF(np) )!=NUM_OK)
   {
     PrintErrorMessage('E',"FFPreProcess","preparation of the grid failed");
     NP_RETURN(1,result[0]);
   }
+#endif /* FF_PARALLEL_SIMULATION */
+
   NPFF_MESHWIDTH(np) = meshwidth;
+
+  BVD_INIT( &bvd );
+  BVD_PUSH_ENTRY( &bvd, BVNUMBER(GFIRSTBV(theGrid)), NPFF_BVDF(np) );
 
   if ( !NPFF_ALLFREQ(np) )
   {
@@ -3172,10 +3208,10 @@ static INT FFIter (NP_ITER *theNP, INT level,
   DOUBLE end_wave, wavenr, start_norm, new_norm;
 
   np = (NP_FF *) theNP;
-  BVD_INIT( &bvd );
-  BVD_PUSH_ENTRY( &bvd, 0, NPFF_BVDF(np) );
-
   theGrid = NP_GRID(theNP,level);
+
+  BVD_INIT( &bvd );
+  BVD_PUSH_ENTRY( &bvd, BVNUMBER(GFIRSTBV(theGrid)), NPFF_BVDF(np) );
 
   /* make a copy for displaying */
   np->smoother.iter.c = x;
@@ -3221,7 +3257,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
       else if (NPFF_DO_FF(np))
       {
         /*if (wavenr == 2.0) wavenr = 3.0;*/ /* wavenr==2 already in the last step */
-        printf("wavenr %g\n", wavenr);
+        /*printf("wavenr %g\n", wavenr);*/
         if (FFDecomp( wavenr, wavenr, GFIRSTBV(theGrid), &bvd,
                       NPFF_BVDF(np),
                       VD_SCALCMP( NPFF_tv(np) ),
