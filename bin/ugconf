@@ -17,6 +17,7 @@ list_options_arch()
 	echo "         hardware & compiler (in alphabetical order)";
 	echo "             AIX (set ARCH = AIX)";
 	echo "             AIXGCC (set ARCH = AIXGCC)";
+	echo "             AMD64 (set ARCH = AMD64)";
 	echo "             C90 (set ARCH = C90)";
 	echo "             CC (set ARCH = CC)";
 	echo "             CYGWIN (set ARCH = CYGWIN)";
@@ -490,6 +491,9 @@ edit_ugconf()
 		;;
 	ORIGIN)
 		sed 's/^ARCH.*$/ARCH = ORIGIN/' $1 > $1.tmp
+		;;
+	AMD64)
+		sed 's/^ARCH.*$/ARCH = AMD64/' $1 > $1.tmp
 		;;
 	SEQ)
 		sed 's/^MODEL[ \t].*$/MODEL = SEQ/' $1 > $1.tmp
