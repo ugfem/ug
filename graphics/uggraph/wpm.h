@@ -554,7 +554,7 @@ typedef struct PlotObjHead PO_HEAD;
 /****************************************************************************/
 
 /* create/dispose/first/next ... */
-UGWINDOW           *CreateUgWindow                                      (OUTPUTDEVICE *theOutputDevice, const char *UgWindowName, INT x, INT y, INT width, INT height);
+UGWINDOW           *CreateUgWindow                                      (OUTPUTDEVICE *theOutputDevice, const char *UgWindowName, INT rename, INT x, INT y, INT width, INT height);
 INT                     DisposeUgWindow                                 (UGWINDOW *theUgWindow);
 UGWINDOW           *GetFirstUgWindow                            (void);
 UGWINDOW           *GetNextUgWindow                             (const UGWINDOW *theUgWindow);
@@ -563,7 +563,7 @@ INT                     DisposePicture                                  (PICTURE
 PICTURE            *GetFirstPicture                             (const UGWINDOW *theUgWindow);
 PICTURE            *GetNextPicture                                      (const PICTURE *thePicture);
 INT                     PlacePictures                               (PLACEMENT_TASK *task, PLACEMENT_REAL *real);
-UGWINDOW *      OpenPlacedPictures              (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task);
+UGWINDOW *      OpenPlacedPictures              (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task, INT rename);
 
 
 /* validate/invalidate ... */

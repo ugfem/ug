@@ -230,7 +230,7 @@ void ResetToolBoxState (UGWINDOW *ugw)
    D*/
 /****************************************************************************/
 
-UGWINDOW *CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *UgWindowName, INT x, INT y, INT width, INT height)
+UGWINDOW *CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *UgWindowName, INT rename, INT x, INT y, INT width, INT height)
 {
   UGWINDOW *theWindow;
   WINDOWID winID;
@@ -258,7 +258,7 @@ UGWINDOW *CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *UgWindowNam
     if (me == master)
     {
         #endif
-  winID = (*theOutputDevice->OpenOutput)(UgWindowName, x, y, width, height, UGW_GLL(theWindow), UGW_GUR(theWindow), UGW_LLL(theWindow), UGW_LUR(theWindow), &error);
+  winID = (*theOutputDevice->OpenOutput)(UgWindowName, rename, x, y, width, height, UGW_GLL(theWindow), UGW_GUR(theWindow), UGW_LLL(theWindow), UGW_LUR(theWindow), &error);
   if (error)
   {
     if (DisposeUgWindow(theWindow))
@@ -359,7 +359,7 @@ free(data);
    }
  */
 
-UGWINDOW *OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task)
+UGWINDOW *OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task, INT rename)
 {
   INT i,j;
   PLACEMENT_REAL real;
@@ -373,7 +373,7 @@ UGWINDOW *OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *tas
   if (PlacePictures(task,&real)) return (NULL);
 
   /* realize pictures */
-  theWin = CreateUgWindow(theOutputDevice,task->win_name,real.winLL[0],real.winLL[1],real.winUR[0]-real.winLL[0],real.winUR[1]-real.winLL[1]);
+  theWin = CreateUgWindow(theOutputDevice,task->win_name,rename,real.winLL[0],real.winLL[1],real.winUR[0]-real.winLL[0],real.winUR[1]-real.winLL[1]);
   if (theWin==NULL) return (NULL);
   for (i=0; i<task->n; i++)
   {
@@ -1060,7 +1060,7 @@ INT MovePictureToNewWindow (PICTURE *pic)
   y = 10;
   w = fabs(PIC_GUR(pic)[0] - PIC_GLL(pic)[0]);
   h = fabs(PIC_GUR(pic)[1] - PIC_GLL(pic)[1]);
-  if ((newWin=CreateUgWindow(UGW_OUTPUTDEV(oldWin),PIC_NAME(pic),x,y,w,h))==NULL)
+  if ((newWin=CreateUgWindow(UGW_OUTPUTDEV(oldWin),PIC_NAME(pic),0,x,y,w,h))==NULL)
     return (1);
 
   /* move picture to new window */
