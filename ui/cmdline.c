@@ -459,6 +459,15 @@ INT ExecCommand (char *cmdLine)
   if (error!=OKCODE && error!=QUITCODE)
     UserWrite("ERROR in command execution\n");
 
+  IFDEBUG(ui,0)
+  if ((error==OKCODE) && REP_ERR_ENCOUNTERED && strcmp("reperr",options[0])!=0)
+  {
+    PrintErrorMessageF('E',"ExecCommand","Huh??? %s returns OKCODE but rep err encountered",ENVITEM_NAME(commandItem));
+    PrintRepErrStack(printf);
+    return (FATAL);
+  }
+  ENDDEBUG
+
   return(error);
 }
 
