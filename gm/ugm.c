@@ -2401,6 +2401,19 @@ if (0)
 	#endif
 }
 
+
+{
+int si;
+
+/*if ((ID(theElement) == 949) ||(ID(theElement) == 953))*/ {
+	UserWriteF("\n el %d ", ID(theElement));
+	for (si=0; si<SIDES_OF_ELEM(theElement); si++)
+		if (NBELEM(theElement,si) != NULL) 
+				UserWriteF(" nb %d: %d  ",si,ID(NBELEM(theElement,si)));
+	UserWriteF("\n");
+}
+}
+
 	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 	{
 		ELEMENT *theNeighbor = NBELEM(theElement,i);
@@ -6458,15 +6471,14 @@ static INT CheckEdge (ELEMENT *theElement, EDGE* theEdge, INT i)
 	theNode = MIDNODE(theEdge);
 	if (theNode == NULL)
 	{
-		if (REFINE(theElement) == RED)
-		{
-			UserWriteF(PFMT "elem=" EID_FMTX " edge%d=" EDID_FMTX " midnode NID=NULL" 
+		if (((REFINE(theElement) == RED) && (TAG(theElement) != TETRAHEDRON))
+		  || ((TAG(theElement) == TETRAHEDRON) && (NSONS(theElement) == 8))) {
+				UserWriteF(PFMT "elem=" EID_FMTX " edge%d=" EDID_FMTX " midnode NID=NULL" 
 				" BUT REFINE(elem)=RED\n",me,EID_PRTX(theElement),i,EDID_PRTX(theEdge));
 			return(nerrors++);
 		}
 		else
 			return(nerrors);
-		
 	}
 
 	if (HEAPCHECK(theNode))
@@ -6522,6 +6534,21 @@ static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT
 		UserWriteF(PFMT "elem=" EID_FMTX " ERROR level=%2d but gridlevel=%2d\n",
 				me,EID_PRTX(theElement),LEVEL(theElement),LEVEL(theGrid));
 
+
+{
+int si;
+
+if ((ID(theElement) == 949) ||(ID(theElement) == 953)) {
+	UserWriteF("\n el %d ", ID(theElement));
+	for (si=0; si<SIDES_OF_ELEM(theElement); si++)
+		if (NBELEM(theElement,si) != NULL) 
+				UserWriteF(" nb %d: %d ",si,ID(NBELEM(theElement,si)));
+	UserWriteF("\n");
+}
+}
+
+
+
 	/* check side information */
 	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 	{
@@ -6534,7 +6561,6 @@ static INT CheckElement (GRID *theGrid, ELEMENT *theElement, INT *SideError, INT
 					break;
 			if (j == SIDES_OF_ELEM(NbElement))
 				*SideError |= (1<<i);
-
 
 			if (ECLASS(theElement)!=YELLOW_CLASS) 
 			{
