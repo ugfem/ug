@@ -13,14 +13,11 @@
    a makefile in directory ui/ would be named Makefile.ui. 
 
 .  version~dependencies -
-   Version dependencies like dimension (2 or 3) and positions of dregrees 
-   of freedom are to be specified in the file $UGROOT/ug.conf. Herein a library 
+   Version dependency (i.e. dimension 2 or 3) 
+   is to be specified in the file $UGROOT/ug.conf. Herein a library 
    name suffix $(LIBSUFFIX) is created, which will be added to a name of a
-   library by a local makefile. One example library suffix shall be given as 
-   lib2TFFF, with the number 2 indicating the dimension and the following 
-   four letters indicating which degrees of freedom (NODEDATA, EDGEDATA, 
-   SIDEDATA, and ELEMDATA) are used in the corresponding geometric object.
-   T stands for TRUE while F matches FALSE.
+   library by a local makefile. One example library suffix is
+   libug2, with the number 2 indicating the dimension.
 
 .  includes -
    Three basic files are included by any local makefile in `ug`,

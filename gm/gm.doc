@@ -1297,9 +1297,7 @@ struct node {                   // level dependent part of a vertex
     union vertex *myvertex;     // corresponding vertex structure       
     
     // associated vector if 
-    #ifdef __NODEDATA__
-    VECTOR *vector;             // associated vector                    
-    #endif
+    VECTOR *vector;             // only allocated if there is data at nodes!                   
 
 } ;
 
@@ -1335,9 +1333,6 @@ the node on the next coarser ('father') and finer ('son') grid levels.
 . myvertex - Pointer to the 'VERTEX' associated with the node.
 
 . vector - Pointer to a 'VECTOR' containing degrees of freedom associated with the node.
-Whether the 'NODE's are allowed to have degrees of freedom is selected at compile time
-in the 'makefiles'. The setting of the makefile switches is reflected by the '__NODEDATA__'
-define.
 
 MACROS:
 
@@ -1534,14 +1529,8 @@ struct edge {                   // undirected edge of the grid graph
     // variables 
     struct link links[2];       // two links                            
     
-    #ifdef __MIDNODE__
-    struct node *midnode;       // pointer to mid node on next finer grid
-    #endif
-    
     // associated vector if 
-    #ifdef __EDGEDATA__
-    VECTOR *vector;             // associated vector                    
-    #endif
+    VECTOR *vector;             // this pointer is only there if there is edge data                    
 } ;
 
 typedef struct edge EDGE;
@@ -1562,8 +1551,7 @@ and in consecutive memory locations. This allows to switch easily from a given
 needed during refinement (This is because many elements share an edge in 3D).
 
 . vector - Pointer to a 'VECTOR' structure of appropriate size declared in the
-'FORMAT'. '__EDGEDATA__' is defined if the appropriate makefile switches
-have been set at compile time.
+'FORMAT'.
 
 MACROS:
 
@@ -1676,9 +1664,7 @@ struct triangle {
     union element *nb[3];           // dual graph                           
     
     // associated vector if 
-    #ifdef __ELEMDATA__
-    VECTOR *vector;                 // associated vector                    
-    #endif
+    VECTOR *vector;                 // only allocated if there is element data                  
 
     struct elementside *side[3];    // only on bnd, NULL if interior side   
 } ;
@@ -1699,10 +1685,8 @@ struct quadrilateral {
     union element *nb[4];           // dual graph                           
     
     // associated vector if 
-    #ifdef __ELEMDATA__
-    VECTOR *vector;                 // associated vector                    
-    #endif
-
+    VECTOR *vector;                 // only allocated if there is element data                 
+ 
     struct elementside *side[4];    // only on bnd, NULL if interior side   
 } ;
 
@@ -1722,14 +1706,10 @@ struct tetrahedron {
     union element *nb[4];           // dual graph                           
     
     // associated vector if 
-    #ifdef __ELEMDATA__
-    VECTOR *vector;                 // associated vector                    
-    #endif
+    VECTOR *vector;                 // only allocated if there is element data                
 
     // associated vector if 
-    #ifdef __SIDEDATA__
-    VECTOR *sidevector[4];          // associated vectors for sides         
-    #endif
+    VECTOR *sidevector[4];          // only allocated if there is side data        
 
     struct elementside *side[4];    // only on bnd, NULL if interior side   
 } ;

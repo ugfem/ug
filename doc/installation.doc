@@ -166,22 +166,8 @@ COMPILING UG:
    calculations can be done. You can not change the dimension at any
    other place in the software.
 
-.  NODEDATA - If set to 'T' this allows that degrees of freedom may be specified
-   in the nodes of the grid structure. The actual number can be specified at
-   run-time. If set to 'F' no degrees of freedom are allowed in the nodes.
-
-.  EDGEDATA - If set to 'T' this allows that degrees of freedom may be specified
-   in the edges of the grid structure. The actual number can be specified at
-   run-time. If set to 'F' no degrees of freedom are allowed in the edges.
-
-.  SIDEDATA - If set to 'T' this allows that degrees of freedom may be specified
-   in the sides (faces) of the grid structure. The actual number can be specified at
-   run-time. If set to 'F' no degrees of freedom are allowed in the sides (faces).
-
-.  ELEMDATA - If set to 'T' this allows that degrees of freedom may be specified
-   in the elements of the grid structure. The actual number can be specified at
-   run-time. If set to 'F' no degrees of freedom are allowed in the elements.
-
+   The NODEDATA,EDGEDATA, SIDEDATA, ELEMDATA switches have been removed
+   to allow more flexibility.
 
 DEPENDENCIES:
 .  gm.h - This is the `key file` for the ug3 software. Without haveing it 

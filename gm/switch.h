@@ -44,16 +44,6 @@
    can be used for conditional compilation.
 
    .vb
-   __NODEDATA__
-   __EDGEDATA__
-   __SIDEDATA__
-   __ELEMDATA__
-   .ve
-
-   If defined, these constants indicate that degrees of freedom are allowed
-   in the respective object.
-
-   .vb
    __TWODIM__
    __THREEDIM__
    .ve
