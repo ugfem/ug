@@ -247,11 +247,19 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh)
 
   if ((theDomain = (LGM_DOMAIN *)BVP_GetByName(name))==NULL)
   {
-    if ((theDomain = LGM_LoadDomain(name,name,Heap,theLGMDomainVarID))==NULL) return (NULL);
+    if ((theDomain = LGM_LoadDomain(name,name,Heap,theLGMDomainVarID))==NULL)
+    {
+      UserWrite("ERROR in BVP_Init: cannot load domain\n");
+      return (NULL);
+    }
 
     /* set problem */
     theProblem = Lgm_Problem_GetByName(LGM_DOMAIN_PROBLEMNAME(theDomain));
-    if (theProblem==NULL) return (NULL);
+    if (theProblem==NULL)
+    {
+      UserWrite("ERROR in BVP_Init: cannot find problem\n");
+      return (NULL);
+    }
     LGM_DOMAIN_PROBLEM(theDomain) = theProblem;
 
     /* set boundary conditions */

@@ -168,7 +168,11 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   }
 
   /* read general information */
-  if ((*ReadDomain)(filename,&theDomInfo)) return (NULL);
+  if ((*ReadDomain)(filename,&theDomInfo))
+  {
+    UserWrite("ERROR in LGM_LoadDomain: ReadDomain failed\n");
+    return (NULL);
+  }
 
   /* allocate and initialize the LGM_DOMAIN */
   if (ChangeEnvDir("/LGM_BVP")==NULL) return (NULL);
@@ -188,7 +192,12 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   /* read sizes */
   if ((lgm_sizes.Subdom_nLine=(int*)GetTmpMem(theHeap,sizeof(int)*(theDomInfo.nSubDomain+1))) == NULL) return (NULL);
   if ((lgm_sizes.Polyline_nPoint=(int*)GetTmpMem(theHeap,sizeof(int)*theDomInfo.nPolyline)) == NULL) return (NULL);
-  if ((*ReadSizes)(&lgm_sizes)) return (NULL);
+  if ((*ReadSizes)(&lgm_sizes))
+  {
+    UserWrite("ERROR in LGM_LoadDomain: ReadSizes failed\n");
+    return (NULL);
+  }
+
 
   /* prepare for LGM_DOMAIN_SUBDOM and LGM_LINE_INFO */
   MaxLinePerSubdom = 0;
@@ -206,7 +215,11 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   for (i=0; i<theDomInfo.nPolyline; i++)
   {
     if ((LinePtrList[i]=(LGM_LINE*)GetFreelistMemory(theHeap,sizeof(LGM_LINE)+(lgm_sizes.Polyline_nPoint[i]-1)*sizeof(LGM_POINT))) == NULL) return (NULL);
-    if ((*ReadLines)(i,&theLineInfo)) return (NULL);
+    if ((*ReadLines)(i,&theLineInfo))
+    {
+      UserWrite("ERROR in LGM_LoadDomain: ReadLines failed\n");
+      return (NULL);
+    }
     LGM_LINE_ID(LinePtrList[i])     = i;
     LGM_LINE_NPOINT(LinePtrList[i]) = lgm_sizes.Polyline_nPoint[i];
     LGM_LINE_LEFT(LinePtrList[i]) = theLineInfo.left;
@@ -229,8 +242,15 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   LGM_DOMAIN_SUBDOM(theDomain,0) = NULL;
   for (i=1; i<=theDomInfo.nSubDomain; i++)
   {
-    if ((*ReadSubDomain)(i,&theSubdomInfo)) return (NULL);
-    if ((theSubdom=(LGM_SUBDOMAIN*)GetFreelistMemory(theHeap,sizeof(LGM_SUBDOMAIN)+(lgm_sizes.Subdom_nLine[i]-1)*sizeof(void*)))==NULL) return (NULL);
+    if ((*ReadSubDomain)(i,&theSubdomInfo))
+    {
+      UserWrite("ERROR in LGM_LoadDomain: ReadSubDomain failed\n");
+      return (NULL);
+    }
+    if ((theSubdom=(LGM_SUBDOMAIN*)GetFreelistMemory(theHeap,sizeof(LGM_SUBDOMAIN)+(lgm_sizes.Subdom_nLine[i]-1)*sizeof(void*)))==NULL)
+    {
+      return (NULL);
+    }
     LGM_DOMAIN_SUBDOM(theDomain,i)          = theSubdom;
     LGM_SUBDOMAIN_ID(theSubdom)                     = i;
     LGM_SUBDOMAIN_SDDATA(theSubdom)         = NULL;             /* to fill later */
@@ -241,8 +261,11 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
 
   /* read points */
   if ((piptr=(LGM_POINT_INFO*)GetTmpMem(theHeap,sizeof(LGM_POINT_INFO)*theDomInfo.nPoint)) == NULL) return (NULL);
-  if ((*ReadPoints)(piptr)) return (NULL);
-
+  if ((*ReadPoints)(piptr))
+  {
+    UserWrite("ERROR in LGM_LoadDomain: ReadPoints failed\n");
+    return (NULL);
+  }
   /* set positions of points on the lines */
   for (i=0; i<theDomInfo.nPolyline; i++)
   {
