@@ -86,7 +86,7 @@ clean:
 	cd graph; make -f Makefile.graph clean; cd ..;
 	cd ui; make -f Makefile.ui clean; cd ..;
 	cd gg; make -f Makefile.gg clean; cd ..;
-	cd gg3d; make -f Makefile.gg clean; cd ..;
+	cd gg3d; make -f Makefile.gg3d clean; cd ..;
 #	cd machines/$(ARCHDIR); make clean; cd ..;
 
 ifdef:
