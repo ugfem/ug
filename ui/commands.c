@@ -5986,13 +5986,16 @@ static INT ExtraConnectionCommand (INT argc, char **argv)
    'CheckGrid' one or more of 'CheckGeometry' 'CheckAlgebra', 'CheckLists'
    and 'CheckInterfaces'. Default check is 'CheckGeometry'.
 
-   'check {$a | $g | $c | $l | $i}* [$n]'
+   'check {$a | $g | $c | $l | $i | $w}* [$n]'
 
    .  $a - all possible checks are done
    .  $g - check the geometric part of data structures (default)
    .  $c - also check the algebraic part of data structures
    .  $l - also check the lists of objects and counters of a grid
    .  $i - also check interfaces (only parallel version)
+   .  $b - also check boundary value problems
+   .  $n - also check the numerical part of data structures
+   .  $w - print a list of all control words of object types with control entries to stdout
 
    KEYWORDS:
    multigrid, check, consistency, data structure, algebra, counters, interfaces
@@ -6034,12 +6037,12 @@ static INT CheckCommand (INT argc, char **argv)
                                 #endif
       break;
 
-    case 'c' :
-      checkalgebra = TRUE;
-      break;
-
     case 'g' :
       checkgeom = TRUE;
+      break;
+
+    case 'c' :
+      checkalgebra = TRUE;
       break;
 
     case 'l' :
@@ -6061,7 +6064,7 @@ static INT CheckCommand (INT argc, char **argv)
       break;
 
     case 'w' :
-      PrintCW();
+      ListAllCWsOfAllObjectTypes(UserWriteF);
       break;
 
     default :
@@ -6095,7 +6098,8 @@ static INT CheckCommand (INT argc, char **argv)
   UserWrite("\n");
 
   if (checknp)
-    CheckNP(theMG,argc,argv);
+    if (CheckNP(theMG,argc,argv))
+      err++;
 
   if (err)
     return (CMDERRORCODE);
