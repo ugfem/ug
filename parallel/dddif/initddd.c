@@ -106,7 +106,7 @@ DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF,
        VectorVIF, VectorVAllIF;
 DDD_IF VertexIF;
 #ifdef __THREEDIM__
-DDD_IF EdgeIF, BorderEdgeSymmIF;
+DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF;
 #endif
 
 
@@ -741,6 +741,11 @@ static void ddd_IfInit (void)
   B[0] = PrioMaster; B[1] = PrioBorder;
   BorderEdgeSymmIF = DDD_IFDefine(1,O,2,A,2,B);
   DDD_IFSetName(BorderEdgeSymmIF, "BorderEdgeSymmIF: Master/Border");
+
+  A[0] = PrioMaster; A[1] = PrioBorder;
+  B[0] = PrioMaster; B[1] = PrioBorder; B[2] = PrioGhost;
+  EdgeHIF = DDD_IFDefine(1,O,2,A,3,B);
+  DDD_IFSetName(EdgeHIF, "EdgeHIF: Master/Border");
 
         #endif
 }
