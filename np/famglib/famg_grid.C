@@ -90,7 +90,7 @@ void FAMGGrid::Restriction(FAMGGrid *cg) const
     return;
 }
     
-void FAMGGrid::Prolongation(const FAMGGrid *cg, FAMGVector *c = NULL)
+void FAMGGrid::Prolongation(const FAMGGrid *cg, FAMGVector *c)
 // adds the prolongued solution-update to the fine grid solution
 // including smoothing of fine nodes
 {
@@ -113,7 +113,7 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, FAMGVector *c = NULL)
 	}
 
     
-// prepare defect for jacobi smoothing
+	// prepare defect for jacobi smoothing
 	Defect();
 	
 	if(c == NULL)
