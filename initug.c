@@ -41,6 +41,7 @@
 /* parallelization module */
 #ifdef ModelP
 #include "parallel.h"
+#include "ppif.h"
 #endif
 
 /* devices module */
@@ -119,11 +120,15 @@ INT InitUg (int *argcp, char ***argvp)
         #endif
   int ival;
 
-  /* get cmdintbufsize from defaults file */
-  if (GetDefaultValue(DEFAULTSFILENAME,"mutelevel",buffer)==0) {
-    sscanf(buffer," %d ",&ival);
-    SetMuteLevel ((INT) ival);
+        #ifdef ModelP
+  if ((err=InitPPIF(argcp, argvp)) != PPIF_SUCCESS)
+  {
+    printf("ERROR in InitUg while InitPPIF.\n");
+    printf ("aborting ug\n");
+
+    return (1);
   }
+    #endif
 
   /* init the low module */
   if ((err=InitLow())!=0)
@@ -138,7 +143,7 @@ INT InitUg (int *argcp, char ***argvp)
   /* init parallelization module */
         #ifdef ModelP
   PRINTDEBUG(init,1,("%d:     InitParallel()...\n",me))
-  if ((err=InitParallel(argcp, argvp))!=0)
+  if ((err=InitParallel())!=0)
   {
     printf("ERROR in InitUg while InitParallel (line %d): called routine line %d\n",(int) HiWrd(err), (int) LoWrd(err));
     printf ("aborting ug\n");
@@ -181,6 +186,12 @@ INT InitUg (int *argcp, char ***argvp)
     printf ("aborting ug\n");
 
     return (1);
+  }
+
+  /* get cmdintbufsize from defaults file */
+  if (GetDefaultValue(DEFAULTSFILENAME,"mutelevel",buffer)==0) {
+    sscanf(buffer," %d ",&ival);
+    SetMuteLevel ((INT) ival);
   }
 
         #if (defined Debug && defined __MWCW__)

@@ -239,7 +239,7 @@ extern DDD_CTRL dddctrl;
 #ifdef ModelP
 
 /* from initddd.c */
-int  InitParallel (int *, char ***);
+int  InitParallel (void);
 int  ExitParallel (void);
 void InitDDDTypes (void);
 void InitCurrMG (MULTIGRID *);
