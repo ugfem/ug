@@ -807,6 +807,40 @@ BVP *CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
   return ((BVP*)theBVP);
 }
 
+static INT GetNumberOfPatches(PATCH *p)
+{
+  switch (PATCH_TYPE(p))
+  {
+  case PARAMETRIC_PATCH_TYPE :
+  case LINEAR_PATCH_TYPE :
+    return(1);
+  case POINT_PATCH_TYPE :
+    return(POINT_PATCH_N(p));
+      #ifdef __THREEDIM__
+  case LINE_PATCH_TYPE :
+    return(LINE_PATCH_N(p));
+      #endif
+  }
+
+  return(-1);
+}
+
+static INT GetPatchId (PATCH *p, INT i)
+{
+  switch (PATCH_TYPE(p))
+  {
+  case PARAMETRIC_PATCH_TYPE :
+    return(PATCH_ID(p));
+  case POINT_PATCH_TYPE :
+    return(POINT_PATCH_PID(p,i));
+      #ifdef __THREEDIM__
+  case LINE_PATCH_TYPE :
+    return(LINE_PATCH_PID(p,i));
+      #endif
+  }
+
+  return(-1);
+}
 
 /****************************************************************************/
 /*D
@@ -830,102 +864,118 @@ BVP *CreateBVP (char *BVPName, char *DomainName, char *ProblemName)
    D*/
 /****************************************************************************/
 
-static INT CreateCornerPoints (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp)
+static BNDP *CreateBndPOnPoint (HEAP *Heap, PATCH *p)
 {
   BND_PS *ps;
-  PATCH *p,*pp;
-  INT i,j,m;
+  PATCH *pp;
+  INT j,l,m;
 
-  for (i=0; i<theBVP->ncorners; i++) {
-    p = theBVP->patches[i];
-    m = POINT_PATCH_N(p);
-    ps = (BND_PS *)GetFreelistMemory(Heap,sizeof(BND_PS)
-                                     +(m-1)*sizeof(COORD_BND_VECTOR));
-    if (ps == NULL)
-      return(1);
-    ps->n = m;
-    ps->patch_id = PATCH_ID(p);
+  if (PATCH_TYPE(p) != POINT_PATCH_TYPE)
+    return(NULL);
 
-    for (j=0; j<m; j++) {
-      pp = theBVP->patches[POINT_PATCH_PID(p,j)];
-      if (PATCH_TYPE(pp) == PARAMETRIC_PATCH_TYPE) {
-        PRINTDEBUG(dom,1,("cp i %d r %f %f %f %f\n",i,
-                          PARAM_PATCH_RANGE(pp)[0][0],
-                          PARAM_PATCH_RANGE(pp)[0][1],
-                          PARAM_PATCH_RANGE(pp)[1][0],
-                          PARAM_PATCH_RANGE(pp)[1][1]));
-        switch (POINT_PATCH_CID(p,j)) {
-                #ifdef __TWODIM__
-        case 0 :
-          ps->local[j][0] = PARAM_PATCH_RANGE(pp)[0][0];
-          break;
-        case 1 :
-          ps->local[j][0] = PARAM_PATCH_RANGE(pp)[1][0];
-          break;
-                #endif
-                #ifdef __THREEDIM__
-        case 0 :
-          ps->local[j][0] = PARAM_PATCH_RANGE(pp)[0][0];
-          ps->local[j][1] = PARAM_PATCH_RANGE(pp)[0][1];
-          break;
-        case 1 :
-          ps->local[j][0] = PARAM_PATCH_RANGE(pp)[1][0];
-          ps->local[j][1] = PARAM_PATCH_RANGE(pp)[0][1];
-          break;
-        case 2 :
-          ps->local[j][0] = PARAM_PATCH_RANGE(pp)[1][0];
-          ps->local[j][1] = PARAM_PATCH_RANGE(pp)[1][1];
-          break;
-        case 3 :
-          ps->local[j][0] = PARAM_PATCH_RANGE(pp)[0][0];
-          ps->local[j][1] = PARAM_PATCH_RANGE(pp)[1][1];
-          break;
-                #endif
-        }
-        PRINTDEBUG(dom,1,("mesh loc j %d pid %d cid %d loc %f %f\n",
-                          j,
-                          POINT_PATCH_PID(p,j),
-                          POINT_PATCH_CID(p,j),
-                          ps->local[j][0],ps->local[j][1]));
+  PRINTDEBUG(dom,1,("    p %d\n",PATCH_ID(p)));
+  for (l=0; l<GetNumberOfPatches(p); l++)
+    PRINTDEBUG(dom,1,("    bp pid %d\n",GetPatchId(p,l)));
+
+  m = POINT_PATCH_N(p);
+  ps = (BND_PS *)GetFreelistMemory(Heap,sizeof(BND_PS)
+                                   +(m-1)*sizeof(COORD_BND_VECTOR));
+  if (ps == NULL)
+    REP_ERR_RETURN(NULL);
+  ps->n = m;
+  ps->patch_id = PATCH_ID(p);
+
+  for (j=0; j<m; j++) {
+    pp = currBVP->patches[POINT_PATCH_PID(p,j)];
+    if (PATCH_TYPE(pp) == PARAMETRIC_PATCH_TYPE) {
+      PRINTDEBUG(dom,1,("cp r %f %f %f %f\n",
+                        PARAM_PATCH_RANGE(pp)[0][0],
+                        PARAM_PATCH_RANGE(pp)[0][1],
+                        PARAM_PATCH_RANGE(pp)[1][0],
+                        PARAM_PATCH_RANGE(pp)[1][1]));
+      switch (POINT_PATCH_CID(p,j)) {
+            #ifdef __TWODIM__
+      case 0 :
+        ps->local[j][0] = PARAM_PATCH_RANGE(pp)[0][0];
+        break;
+      case 1 :
+        ps->local[j][0] = PARAM_PATCH_RANGE(pp)[1][0];
+        break;
+            #endif
+            #ifdef __THREEDIM__
+      case 0 :
+        ps->local[j][0] = PARAM_PATCH_RANGE(pp)[0][0];
+        ps->local[j][1] = PARAM_PATCH_RANGE(pp)[0][1];
+        break;
+      case 1 :
+        ps->local[j][0] = PARAM_PATCH_RANGE(pp)[1][0];
+        ps->local[j][1] = PARAM_PATCH_RANGE(pp)[0][1];
+        break;
+      case 2 :
+        ps->local[j][0] = PARAM_PATCH_RANGE(pp)[1][0];
+        ps->local[j][1] = PARAM_PATCH_RANGE(pp)[1][1];
+        break;
+      case 3 :
+        ps->local[j][0] = PARAM_PATCH_RANGE(pp)[0][0];
+        ps->local[j][1] = PARAM_PATCH_RANGE(pp)[1][1];
+        break;
+            #endif
       }
-      else if (PATCH_TYPE(pp) == LINEAR_PATCH_TYPE) {
-        switch (POINT_PATCH_CID(p,j)) {
-                #ifdef __TWODIM__
-        case 0 :
-          ps->local[j][0] = 0.0;
-          break;
-        case 1 :
-          ps->local[j][0] = 1.0;
-          break;
-                #endif
-                #ifdef __THREEDIM__
-        case 0 :
-          ps->local[j][0] = 0.0;
-          ps->local[j][1] = 0.0;
-          break;
-        case 1 :
-          ps->local[j][0] = 1.0;
-          ps->local[j][1] = 0.0;
-          break;
-        case 2 :
-          ps->local[j][0] = 0.0;
-          ps->local[j][1] = 1.0;
-          break;
-                #endif
-        }
+      PRINTDEBUG(dom,1,("mesh loc j %d pid %d cid %d loc %f %f\n",
+                        j,
+                        POINT_PATCH_PID(p,j),
+                        POINT_PATCH_CID(p,j),
+                        ps->local[j][0],ps->local[j][1]));
+    }
+    else if (PATCH_TYPE(pp) == LINEAR_PATCH_TYPE) {
+      switch (POINT_PATCH_CID(p,j)) {
+            #ifdef __TWODIM__
+      case 0 :
+        ps->local[j][0] = 0.0;
+        break;
+      case 1 :
+        ps->local[j][0] = 1.0;
+        break;
+            #endif
+            #ifdef __THREEDIM__
+      case 0 :
+        ps->local[j][0] = 0.0;
+        ps->local[j][1] = 0.0;
+        break;
+      case 1 :
+        ps->local[j][0] = 1.0;
+        ps->local[j][1] = 0.0;
+        break;
+      case 2 :
+        ps->local[j][0] = 0.0;
+        ps->local[j][1] = 1.0;
+        break;
+            #endif
       }
     }
-    if (!PATCH_IS_FIXED(p))
-    {
-      /* store global coordinates */
-      BND_DATA(ps) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
-      if (BND_DATA(ps)==NULL)
-        return (1);
+  }
+  if (!PATCH_IS_FIXED(p))
+  {
+    /* store global coordinates */
+    BND_DATA(ps) = GetFreelistMemory(Heap,DIM*sizeof(DOUBLE));
+    if (BND_DATA(ps)==NULL)
+      REP_ERR_RETURN (NULL);
 
-      if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
-        return (1);
-    }
-    bndp[i] = (BNDP *)ps;
+    if (BndPointGlobal((BNDP *)ps,BND_DATA(ps)))
+      REP_ERR_RETURN (NULL);
+  }
+  return((BNDP *)ps);
+}
+
+static INT CreateCornerPoints (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp)
+{
+  int i;
+
+  for (i=0; i<theBVP->ncorners; i++)
+  {
+    bndp[i] = CreateBndPOnPoint(Heap,theBVP->patches[i]);
+    if (bndp[i]==NULL)
+      REP_ERR_RETURN(1);
   }
 
   for (i=0; i<theBVP->ncorners; i++)
@@ -1261,26 +1311,28 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
   for (i=0; i<theBVP->ncorners; i++)
     PRINTDEBUG(dom,1,("   id %d\n",PATCH_ID(theBVP->patches[i])));
 
-  Mesh->nBndP = theBVP->ncorners;
-  Mesh->nInnP = 0;
-  Mesh->nElements = NULL;
-  Mesh->VertexLevel = NULL;
-  Mesh->VertexPrio = NULL;
-  Mesh->ElementLevel = NULL;
-  Mesh->ElementPrio = NULL;
-  Mesh->ElemSideOnBnd = NULL;
-  Mesh->theBndPs = (BNDP **) GetTmpMem(Heap,n*sizeof(BNDP *),MarkKey);
-  if (Mesh->theBndPs == NULL)
-    return (NULL);
+  if (Mesh!=NULL)
+  {
+    Mesh->nBndP = theBVP->ncorners;
+    Mesh->nInnP = 0;
+    Mesh->nElements = NULL;
+    Mesh->VertexLevel = NULL;
+    Mesh->VertexPrio = NULL;
+    Mesh->ElementLevel = NULL;
+    Mesh->ElementPrio = NULL;
+    Mesh->ElemSideOnBnd = NULL;
+    Mesh->theBndPs = (BNDP **) GetTmpMem(Heap,n*sizeof(BNDP *),MarkKey);
+    if (Mesh->theBndPs == NULL)
+      return (NULL);
 
-  if (CreateCornerPoints(Heap,theBVP,Mesh->theBndPs))
-    return (NULL);
+    if (CreateCornerPoints(Heap,theBVP,Mesh->theBndPs))
+      return (NULL);
 
-  PRINTDEBUG(dom,1,("mesh n %d\n",Mesh->nBndP));
-  for (i=0; i<theBVP->ncorners; i++)
-    PRINTDEBUG(dom,1,(" id %d\n",
-                      BND_PATCH_ID((BND_PS*)(Mesh->theBndPs[i]))));
-
+    PRINTDEBUG(dom,1,("mesh n %d\n",Mesh->nBndP));
+    for (i=0; i<theBVP->ncorners; i++)
+      PRINTDEBUG(dom,1,(" id %d\n",
+                        BND_PATCH_ID((BND_PS*)(Mesh->theBndPs[i]))));
+  }
 
   /* allocate s2p table */
   STD_BVP_NDOMPART(theBVP) = DOMAIN_NPARTS(theDomain);
@@ -1421,42 +1473,6 @@ INT BVP_Check (BVP *aBVP)
   UserWrite("BVP_Check: not implemented\n");
 
   return (0);
-}
-
-/* domain interface function: for description see domain.h */
-static INT GetNumberOfPatches(PATCH *p)
-{
-  switch (PATCH_TYPE(p))
-  {
-  case PARAMETRIC_PATCH_TYPE :
-  case LINEAR_PATCH_TYPE :
-    return(1);
-  case POINT_PATCH_TYPE :
-    return(POINT_PATCH_N(p));
-      #ifdef __THREEDIM__
-  case LINE_PATCH_TYPE :
-    return(LINE_PATCH_N(p));
-      #endif
-  }
-
-  return(-1);
-}
-
-static INT GetPatchId (PATCH *p, INT i)
-{
-  switch (PATCH_TYPE(p))
-  {
-  case PARAMETRIC_PATCH_TYPE :
-    return(PATCH_ID(p));
-  case POINT_PATCH_TYPE :
-    return(POINT_PATCH_PID(p,i));
-      #ifdef __THREEDIM__
-  case LINE_PATCH_TYPE :
-    return(LINE_PATCH_PID(p,i));
-      #endif
-  }
-
-  return(-1);
 }
 
 static INT GetNumberOfCommonPatches (PATCH *p0, PATCH *p1, INT *Pid)
@@ -1690,10 +1706,15 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   p = theBVP->patches[pid];
 
     #ifdef __THREEDIM__
+  /* check point on line or on point patch */
   if (ABS(pos[0] - PARAM_PATCH_RANGE(p)[0][0]) < SMALL_DIFF)
   {
     lc =  (pos[1] - PARAM_PATCH_RANGE(p)[0][1])
          / (PARAM_PATCH_RANGE(p)[1][1] - PARAM_PATCH_RANGE(p)[0][1]);
+    if (ABS(lc) < SMALL_DIFF)
+      return(CreateBndPOnPoint(Heap,currBVP->patches[PARAM_PATCH_POINTS(p,0)]));
+    else if (ABS(lc-1.) < SMALL_DIFF)
+      return(CreateBndPOnPoint(Heap,currBVP->patches[PARAM_PATCH_POINTS(p,3)]));
     return(CreateBndPOnLine(Heap,
                             currBVP->patches[PARAM_PATCH_POINTS(p,0)],
                             currBVP->patches[PARAM_PATCH_POINTS(p,3)],lc));
@@ -1702,6 +1723,10 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   {
     lc =  (pos[1] - PARAM_PATCH_RANGE(p)[0][1])
          / (PARAM_PATCH_RANGE(p)[1][1] - PARAM_PATCH_RANGE(p)[0][1]);
+    if (ABS(lc) < SMALL_DIFF)
+      return(CreateBndPOnPoint(Heap,currBVP->patches[PARAM_PATCH_POINTS(p,1)]));
+    else if (ABS(lc-1.) < SMALL_DIFF)
+      return(CreateBndPOnPoint(Heap,currBVP->patches[PARAM_PATCH_POINTS(p,2)]));
     return(CreateBndPOnLine(Heap,
                             currBVP->patches[PARAM_PATCH_POINTS(p,1)],
                             currBVP->patches[PARAM_PATCH_POINTS(p,2)],lc));
@@ -1710,6 +1735,10 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   {
     lc =  (pos[0] - PARAM_PATCH_RANGE(p)[0][0])
          / (PARAM_PATCH_RANGE(p)[1][0] - PARAM_PATCH_RANGE(p)[0][0]);
+    if (ABS(lc) < SMALL_DIFF)
+      return(CreateBndPOnPoint(Heap,currBVP->patches[PARAM_PATCH_POINTS(p,0)]));
+    else if (ABS(lc-1.) < SMALL_DIFF)
+      return(CreateBndPOnPoint(Heap,currBVP->patches[PARAM_PATCH_POINTS(p,1)]));
     return(CreateBndPOnLine(Heap,
                             currBVP->patches[PARAM_PATCH_POINTS(p,0)],
                             currBVP->patches[PARAM_PATCH_POINTS(p,1)],lc));
@@ -1718,11 +1747,22 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   {
     lc =  (pos[0] - PARAM_PATCH_RANGE(p)[0][0])
          / (PARAM_PATCH_RANGE(p)[1][0] - PARAM_PATCH_RANGE(p)[0][0]);
+    if (ABS(lc) < SMALL_DIFF)
+      return(CreateBndPOnPoint(Heap,currBVP->patches[PARAM_PATCH_POINTS(p,3)]));
+    else if (ABS(lc-1.) < SMALL_DIFF)
+      return(CreateBndPOnPoint(Heap,currBVP->patches[PARAM_PATCH_POINTS(p,2)]));
     return(CreateBndPOnLine(Heap,
                             currBVP->patches[PARAM_PATCH_POINTS(p,3)],
                             currBVP->patches[PARAM_PATCH_POINTS(p,2)],lc));
   }
     #endif
+    #ifdef __TWODIM__
+  /* check point on point patch */
+  if (ABS(pos[0] - PARAM_PATCH_RANGE(p)[0][0]) < SMALL_DIFF)
+    return(CreateBndPOnPoint(Heap,currBVP->patches[PARAM_PATCH_POINTS(p,0)]));
+  else if (ABS(pos[1] - PARAM_PATCH_RANGE(p)[0][1]) < SMALL_DIFF)
+    return(CreateBndPOnPoint(Heap,currBVP->patches[PARAM_PATCH_POINTS(p,1)]));
+        #endif
 
   if (PATCH_TYPE(p) == PARAMETRIC_PATCH_TYPE)
   {
