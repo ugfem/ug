@@ -3743,8 +3743,8 @@
 			isa = PBXGroup;
 			name = low;
 			path = ../../low;
-			refType = 4;
-			sourceTree = "<group>";
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
 		};
 		1184E3FF06425BED00210118 = {
 			fileEncoding = 30;
@@ -4218,8 +4218,8 @@
 			isa = PBXGroup;
 			name = dom;
 			path = ../../dom;
-			refType = 4;
-			sourceTree = "<group>";
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
 		};
 		1184E44406425C4000210118 = {
 			children = (
@@ -4625,9 +4625,9 @@
 			);
 			isa = PBXGroup;
 			name = dev;
-			path = ../../../../UG/ug/dev;
-			refType = 4;
-			sourceTree = "<group>";
+			path = ../../dev;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
 		};
 		1184E4B706425C9F00210118 = {
 			children = (
@@ -5163,8 +5163,9 @@
 			);
 			isa = PBXGroup;
 			name = arch;
-			refType = 4;
-			sourceTree = "<group>";
+			path = "";
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
 		};
 		1184E57B06425F1D00210118 = {
 			fileEncoding = 30;
@@ -5224,8 +5225,8 @@
 			isa = PBXGroup;
 			name = gm;
 			path = ../../gm;
-			refType = 4;
-			sourceTree = "<group>";
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
 		};
 		1184E5DA06425F7600210118 = {
 			fileEncoding = 30;
@@ -5517,8 +5518,8 @@
 			isa = PBXGroup;
 			name = graphics;
 			path = ../../graphics;
-			refType = 4;
-			sourceTree = "<group>";
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
 		};
 		1184E60706425F7600210118 = {
 			fileEncoding = 30;
@@ -5713,8 +5714,8 @@
 			isa = PBXGroup;
 			name = np;
 			path = ../../np;
-			refType = 4;
-			sourceTree = "<group>";
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
 		};
 		1184E62506425F7600210118 = {
 			children = (
@@ -7425,8 +7426,8 @@
 			isa = PBXGroup;
 			name = ui;
 			path = ../../ui;
-			refType = 4;
-			sourceTree = "<group>";
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
 		};
 		1184E72806425F7700210118 = {
 			fileEncoding = 30;
@@ -9159,8 +9160,8 @@
 			isa = PBXGroup;
 			name = parallel;
 			path = ../../parallel;
-			refType = 4;
-			sourceTree = "<group>";
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
 		};
 		1184F7780642711600210118 = {
 			children = (
