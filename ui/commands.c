@@ -12759,8 +12759,8 @@ static INT HeapStatCommand (INT argc, char **argv)
 
         #ifdef ModelP
   if (!CONTEXT(me)) {
-    PRINTDEBUG(ui,0,("%2d: GListCommand(): me not in Context,"\
-                     " no listing of grid\n",me))
+    PRINTDEBUG(ui,0,("%2d: HeapStatCommand(): me not in Context,"\
+                     " no heap stat\n",me))
     return(OKCODE);
   }
         #endif
@@ -12779,6 +12779,56 @@ static INT HeapStatCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
+/****************************************************************************/
+/*D
+   getheapused - put size of used heap of current multigrid into environment variabl :HEAPUSED
+
+   DESCRIPTION:
+   This command gets the size of used heap of the current multigrid and puts
+   the result in the environment variable :HEAPUSED.
+
+   'getheapused'
+
+   KEYWORDS:
+   heap, multigrid, freelists, memory, used, get, free
+   D*/
+/****************************************************************************/
+
+static INT GetHeapUsedCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  INT used;
+
+        #ifdef ModelP
+  if (!CONTEXT(me)) {
+    PRINTDEBUG(ui,0,("%2d: GetHeapUsedCommand(): me not in Context,"\
+                     " no heap info\n",me))
+    return(OKCODE);
+  }
+        #endif
+
+  NO_OPTION_CHECK(argc,argv);
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    UserWrite("no multigrid open\n");
+    return (OKCODE);
+  }
+
+  used = (INT)HeapUsed(MGHEAP(theMG));
+
+        #ifdef ModelP
+  used = UG_GlobalMaxINT(used);
+        #endif
+
+  if (SetStringValue(":HEAPUSED",used)!=0) {
+    PrintErrorMessage('E',"getheapused","could not get string variable :HEAPUSED");
+    return (CMDERRORCODE);
+  }
+
+  return (OKCODE);
+}
 /****************************************************************************/
 /*
    InitFindRange - create struct where findrange stores results (min and max)
@@ -14658,6 +14708,7 @@ INT InitCommands ()
   if (CreateCommand("resetCEstat",        ResetCEstatCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("printCEstat",        PrintCEstatCommand                              )==NULL) return (__LINE__);
   if (CreateCommand("heapstat",           HeapStatCommand                             )==NULL) return (__LINE__);
+  if (CreateCommand("getheapused",        GetHeapUsedCommand                          )==NULL) return (__LINE__);
 
   /* commands for debugging */
         #ifdef Debug
