@@ -51,7 +51,7 @@
 #define GRID_UNLINK_OBJECT(Grid,Object,Prio,OTYPE,PRED,SUCC)\
   {\
     INT listpart = PRIO2LISTPART(OTYPE ## _LIST,Prio);\
-    IFDEBUG(gm,0) \
+    IFDEBUG(gm,1) \
     printf("%d: GRID_UNLINK_" # OTYPE "():" # Object \
            " has listpart=%d for prio=%d\n",me,listpart,Prio);\
     fflush(stdout);\
@@ -148,7 +148,7 @@
     ASSERT(Object != NULL);\
     ASSERT(Prio >= 0);\
 \
-    IFDEBUG(gm,0) \
+    IFDEBUG(gm,1) \
     printf("%d: GRID_LINK_" # OTYPE "():" # Object \
            " has listpart=%d for prio=%d\n",me,listpart,Prio);\
     fflush(stdout);\
