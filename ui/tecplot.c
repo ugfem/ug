@@ -188,7 +188,7 @@ static INT TecplotCommand (INT argc, char **argv)
   EVALUES *ev[MAXVARIABLES];            /* pointers to eval function descriptors	*/
   char ev_name[MAXVARIABLES][NAMESIZE];         /* names for eval functions     */
   char s[NAMESIZE];                             /* name of eval proc						*/
-  char zonename[NAMESIZE+7] = {};               /* name for zone (initialized to
+  char zonename[NAMESIZE+7] = "";               /* name for zone (initialized to
                                                                                 empty string)						*/
   INT numNodes;                                 /* number of data points					*/
   INT numElements;                              /* number of elements						*/
