@@ -1536,15 +1536,15 @@ static INT ConstructSchurComplement (GRID *theGrid,
         w == NULL;
     }
     while (w != NULL) {
-      if (extra) {
-        m = GetMatrix(v,w);
-        if (m == NULL)
-          m = CreateExtraConnection(theGrid,v,w);
-        ASSERT(m != NULL);
-      }
       wtype = VTYPE(w);
       wncomp = MD_COLS_IN_RT_CT(upA,vtype,wtype);
       if (wncomp > 0) {
+        if (extra) {
+          m = GetMatrix(v,w);
+          if (m == NULL)
+            m = CreateExtraConnection(theGrid,v,w);
+          ASSERT(m != NULL);
+        }
         s = MD_MCMPPTR_OF_RT_CT(S,vtype,wtype);
         sval = MVALUEPTR(m,0);
         for (m0=START(v); m0!=NULL; m0=NEXT(m0)) {
