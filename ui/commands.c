@@ -91,6 +91,7 @@
 #include "wop.h"
 #include "graph.h"
 #include "connectuggrape.h"
+#include "coviseif.h"
 
 /* user interface module */
 #include "uginterface.h"
@@ -7163,6 +7164,51 @@ static INT CallGrapeCommand (INT argc, char **argv)
   return (OKCODE);
 }
 
+
+#ifdef _COVISE
+/****************************************************************************/
+/*D
+   covise - enable covise interface
+
+   DESCRIPTION:
+   This command enables docking of a Covise user interface by a remote
+   workstation.
+
+   .  hostname		- hostname of workstation which runs Covise
+
+   KEYWORDS:
+   multigrid, graphics, Covise, plot
+   D*/
+/****************************************************************************/
+
+static INT CoviseCommand (INT argc, char **argv)
+{
+  MULTIGRID *theCurrMG;
+  char hostname[NAMESIZE];
+
+  /* see if multigrid exists */
+  theCurrMG = currMG;
+  if (theCurrMG==NULL)
+  {
+    UserWrite("cannot start covise without multigrid\n");
+    return (CMDERRORCODE);
+  }
+
+
+  if (sscanf(argv[0],"covise %s",hostname)!=1)
+  {
+    UserWrite("covise: specify hostname to connect to!\n");
+    return(PARAMERRORCODE);
+  }
+
+  /* call covise */
+  if (ConnectCovise(theCurrMG, hostname)) return (CMDERRORCODE);
+
+  return (OKCODE);
+}
+#endif
+
+
 /****************************************************************************/
 /*D
    screensize - print the size of the monitor screen in pixels
@@ -13006,6 +13052,10 @@ INT InitCommands ()
 
   /* commands for grape */
   if (CreateCommand("grape",                      CallGrapeCommand                                )==NULL) return (__LINE__);
+#ifdef _COVISE
+  /* commands for covise */
+  if (CreateCommand("covise",                     CoviseCommand                                   )==NULL) return (__LINE__);
+#endif
 
   /* commands for window and picture management */
   if (CreateCommand("screensize",         ScreenSizeCommand                               )==NULL) return (__LINE__);
