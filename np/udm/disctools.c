@@ -1090,16 +1090,16 @@ INT GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD1,
 
 /****************************************************************************/
 /*D
-   PrepareElementMultipleVMPtrs - prepare execution of GetElementMultipleVMPtrs
+   PrepareMultipleVMPtrs - prepare execution of GetMultipleVMPtrs
 
    SYNOPSIS:
-   INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
+   INT PrepareMultipleVMPtrs (MVM_DESC *mvmd)
 
    PARAMETERS:
-   .  MVM_DESC - multiple VM data structure, partially to be filled before call
+   .  mvmd - multiple VM data structure, partially to be filled before call
 
    DESCRIPTION:
-   This function prepares the execution of GetElementMultipleVMPtrs in an element
+   This function prepares the execution of GetMultipleVMPtrs in a
    loop. It has to be called once before running the loop. The types needed are
    evaluated and it is checked, whether the components described by the
    XXXDATA_DESCs passed are in subsequent order. In this case ONLY a pointer to
@@ -1111,14 +1111,14 @@ INT GetElementVVMPtrs (ELEMENT *theElement, const VECDATA_DESC *theVD1,
    .n    0
 
    SEE ALSO:
-   GetElementMultipleVMPtrs
+   GetMultipleVMPtrs
    D*/
 /****************************************************************************/
 
-INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
+static INT PrepareMultipleVMPtrs (MVM_DESC *mvmd)
 {
   FORMAT *fmt;
-  INT tp,ctp,j,k,n,def;
+  INT tp,dt,ot,j;
 
   /* get format */
   if (MVMD_NVD(mvmd)>0)
@@ -1129,119 +1129,88 @@ INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
     /* no XXXDATA_DESCs defined at all */
     REP_ERR_RETURN (1);
 
-  for (j=0; j<MVMD_NVD(mvmd); j++) MVMD_VDSUBSEQ(mvmd,j) = TRUE;
-  for (j=0; j<MVMD_NMD(mvmd); j++) MVMD_MDSUBSEQ(mvmd,j) = TRUE;
-
-  for (tp=0; tp<NVECTYPES; tp++)
+  dt = ot = 0;
+  for (j=0; j<MVMD_NVD(mvmd); j++)
   {
-    def = FALSE;
-    for (j=0; j<MVMD_NVD(mvmd); j++)
-      if (VD_ISDEF_IN_TYPE(MVMD_VD(mvmd,j),tp))
-      {
-        def = TRUE;
-        if (MVMD_VDSUBSEQ(mvmd,j))
-        {
-          /* check whether components are arranged subsequently in VECTORs of tp */
-          n = VD_NCMPS_IN_TYPE(MVMD_VD(mvmd,j),tp)-1;
-          for (k=0; k<n; k++)
-            if (VD_CMP_OF_TYPE(MVMD_VD(mvmd,j),tp,k+1)!=VD_CMP_OF_TYPE(MVMD_VD(mvmd,j),tp,k)+1)
-            {
-              MVMD_VDSUBSEQ(mvmd,j) = FALSE;
-              break;
-            }
-        }
-      }
-    for (j=0; j<MVMD_NMD(mvmd); j++)
-      if (MD_ISDEF_IN_RT_CT(MVMD_MD(mvmd,j),tp,tp))
-      {
-        def = TRUE;
-        if (MVMD_VDSUBSEQ(mvmd,j))
-          for (ctp=0; ctp<NVECTYPES; ctp++)
-          {
-            /* check whether components are arranged subsequently in MATRIXs of tp,ctp */
-            n = MD_ROWS_IN_RT_CT(MVMD_MD(mvmd,j),tp,ctp)*MD_COLS_IN_RT_CT(MVMD_MD(mvmd,j),tp,ctp)
-                -1;
-            for (k=0; k<n; k++)
-              if (MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,j),tp,ctp,k+1)!=MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,j),tp,ctp,k)+1)
-              {
-                MVMD_MDSUBSEQ(mvmd,j) = FALSE;
-                break;
-              }
-          }
-      }
-
-    MVMD_TYPE(mvmd,tp) = def;
+    MVMD_VDSUBSEQ(mvmd,j) = VD_SUCC_COMP(MVMD_VD(mvmd,j));
+    dt |= VD_DATA_TYPES(MVMD_VD(mvmd,j));
+    ot |= VD_OBJ_USED(MVMD_VD(mvmd,j));
   }
+  for (j=0; j<MVMD_NMD(mvmd); j++)
+  {
+    MVMD_MDSUBSEQ(mvmd,j) = MD_SUCC_COMP(MVMD_MD(mvmd,j));
+    dt |= MD_ROW_DATA_TYPES(MVMD_MD(mvmd,j));
+    dt |= MD_COL_DATA_TYPES(MVMD_MD(mvmd,j));
+    ot |= MD_ROW_OBJ_USED(MVMD_MD(mvmd,j));
+    ot |= MD_COL_OBJ_USED(MVMD_MD(mvmd,j));
+  }
+  MVMD_DATATYPES(mvmd) = dt;
+  MVMD_OBJTYPES(mvmd)  = ot;
 
-  /* fill data and object types */
-  MVMD_DATATYPES(mvmd) = MVMD_OBJTYPES(mvmd) = 0;
+  /* set vtypes used */
   for (tp=0; tp<NVECTYPES; tp++)
-    if (MVMD_TYPE(mvmd,tp))
-    {
-      MVMD_DATATYPES(mvmd) |= BITWISE_TYPE(tp);
-      MVMD_OBJTYPES(mvmd)  |= FMT_T2O(fmt,tp);
-    }
+    if (READ_FLAG(dt,BITWISE_TYPE(tp)))
+      MVMD_TYPE(mvmd,tp) = TRUE;
+    else
+      MVMD_TYPE(mvmd,tp) = FALSE;
+
+  MVMD_M_OF_1_ONLY(mvmd) = FALSE;
 
   return (0);
 }
 
 /****************************************************************************/
 /*D
-   GetElementMultipleVMPtrs - get list of DOUBLE pointers for vectors and matrices
+   GetMultipleVMPtrs - get list of DOUBLE pointers for vectors and matrices
 
    SYNOPSIS:
-   INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
+   INT GetMultipleVMPtrs (const MVM_DESC *mvmd, INT cnt, VECTOR *VecList[],
                                                                                          DOUBLE **vptrlist[MAXVD],
                                                                                          DOUBLE **mptrlist[MAXMD],
                                                                                          INT *vecskip, INT *vtype, INT nvec[MAXVD])
 
 
    PARAMETERS:
-   .  elem - pointer to an element
+   input variables:~
    .  mvmd - data filled by PrepareElementMultipleVMPtrs
+   .  cnt - number of vectors to extract pointers from
+   .  VecList - list of vectors to extract pointers from
+
+   output variables:~
    .  vptrlist - pointer to lists of double values corresponding the  VECDATA_DESC-list
    .  mptrlist - pointer to lists of double values corresponding the  MATDATA_DESC-list
-   .  vptr1 - pointer to double values corresponding to the local right hand side
-   .  vptr2 - pointer to double values corresponding to the local right hand side
    .  vecskip - set 1 for DIRICHLET boundary, 0 else (ordering corresponds to the first
                                 VECDATA_DESC)
-   .  nvec - number of vectors involved from this element
+   .  vtype - types of vectors collected for first vd
+   .  nvec - number of vectors involved from per vd of mvmd
 
    DESCRIPTION:
    This functions returns pointers to the data fields described in a VECDATA_DESC-list
    and a MATDATA_DESC-list passed in the mvmd argument. Before call of this function
-   in an element loop PrepareElementMultipleVMPtrs has to be called with mvmd.
+   in a loop PrepareMultipleVMPtrs has to be called with mvmd.
 
    In the case that components are ordered subsequently only a pointer to the first
    DOUBLE value is returned. The pointers can be incremented by the user.
 
-   The non-subsequent case is NOT IMPLEMENTED yet.
-
    RETURN VALUE:
    INT
-   .n    total number of components if ok
-   .n    -1: error in GetAllVectorsOfElementOfType
-   .n    -2: vecdata descriptors of different size
-   .n    -3: could not get matrix
+   .n    0 if ok
+   .n    >0: error
 
    SEE ALSO:
-   PrepareElementMultipleVMPtrs
+   PrepareMultipleVMPtrs
    D*/
 /****************************************************************************/
 
-INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
+static INT GetMultipleVMPtrs (const MVM_DESC *mvmd, INT cnt, VECTOR *VecList[],
                               DOUBLE **vptrlist[MAXVD],
                               DOUBLE **mptrlist[MAXMD],
                               INT *vecskip, INT *vtype, INT nvec[MAXVD])
 {
-  VECTOR *theVec[MAX_NODAL_VECTORS],*rv,*cv;
+  VECTOR *rv,*cv;
   MATRIX *mat;
-  INT i,j,k,l,nskip,cnt,rt,ct;
+  INT i,j,k,l,nskip,rt,ct;
   INT vc[MAXVD],mc[MAXMD];
-
-
-  if (GetVectorsOfDataTypesInObjects(elem,MVMD_DATATYPES(mvmd),MVMD_OBJTYPES(mvmd),&cnt,theVec)!=GM_OK)
-    return (-1);
 
   for (i=0; i<MAXVD; i++)
     nvec[i] = 0;
@@ -1251,7 +1220,7 @@ INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
   for (l=0; l<MVMD_NMD(mvmd); l++) mc[l] = 0;
   for (i=0; i<cnt; i++)
   {
-    rv = theVec[i];
+    rv = VecList[i];
     rt = VTYPE(rv);
 
     /* read skip flags */
@@ -1286,6 +1255,9 @@ INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
     if (MVMD_NMD(mvmd)<=0)
       continue;
 
+    if (MVMD_M_OF_1_ONLY(mvmd) && (i>0))
+      continue;
+
     /* now connections */
 
     /* diag first */
@@ -1305,45 +1277,268 @@ INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
         }
 
     /* off diag follows */
-    for (j=0; j<i; j++)
-    {
-      cv = theVec[j];
-      ct = VTYPE(cv);
+    if (MVMD_M_OF_1_ONLY(mvmd))
+      for (j=1; j<cnt; j++)
+      {
+        cv = VecList[j];
+        ct = VTYPE(cv);
 
-      mat = GetMatrix(rv,cv);
-      if (mat==NULL) REP_ERR_RETURN(1);
-      for (l=0; l<MVMD_NMD(mvmd); l++)
-        if (MD_ISDEF_IN_RT_CT(MVMD_MD(mvmd,l),rt,ct))
-          if (MVMD_MDSUBSEQ(mvmd,l))
-          {
-            /* by convention only return ptr to first component */
-            mptrlist[l][mc[l]++] = MVALUEPTR(mat,MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,l),rt,ct,0));
-          }
-          else
-          {
-            /* fill DOUBLE pointers, subsequently all needed in mat */
-            for (k=0; k<MD_NCMPS_IN_RT_CT(MVMD_MD(mvmd,l),rt,ct); k++)
-              mptrlist[l][mc[l]++] = MVALUEPTR(mat,MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,l),rt,ct,k));
-          }
+        mat = GetMatrix(rv,cv);
+        if (mat==NULL) REP_ERR_RETURN(1);
 
-      /* adjoint matrix */
-      mat = MADJ(mat);
-      for (l=0; l<MVMD_NMD(mvmd); l++)
-        if (MD_ISDEF_IN_RT_CT(MVMD_MD(mvmd,l),ct,rt))
-          if (MVMD_MDSUBSEQ(mvmd,l))
-          {
-            /* by convention only return ptr to first component */
-            mptrlist[l][mc[l]++] = MVALUEPTR(mat,MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,l),ct,rt,0));
-          }
-          else
-          {
-            /* fill DOUBLE pointers, subsequently all needed in mat */
-            for (k=0; k<MD_NCMPS_IN_RT_CT(MVMD_MD(mvmd,l),ct,rt); k++)
-              mptrlist[l][mc[l]++] = MVALUEPTR(mat,MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,l),ct,rt,k));
-          }
-    }
+        for (l=0; l<MVMD_NMD(mvmd); l++)
+          if (MD_ISDEF_IN_RT_CT(MVMD_MD(mvmd,l),rt,ct))
+            if (MVMD_MDSUBSEQ(mvmd,l))
+            {
+              /* by convention only return ptr to first component */
+              mptrlist[l][mc[l]++] = MVALUEPTR(mat,MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,l),rt,ct,0));
+            }
+            else
+            {
+              /* fill DOUBLE pointers, subsequently all needed in mat */
+              for (k=0; k<MD_NCMPS_IN_RT_CT(MVMD_MD(mvmd,l),rt,ct); k++)
+                mptrlist[l][mc[l]++] = MVALUEPTR(mat,MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,l),rt,ct,k));
+            }
+
+        /* no adjoint matrix */
+      }
+    else
+      for (j=0; j<i; j++)
+      {
+        cv = VecList[j];
+        ct = VTYPE(cv);
+
+        mat = GetMatrix(rv,cv);
+        if (mat==NULL) REP_ERR_RETURN(1);
+
+        for (l=0; l<MVMD_NMD(mvmd); l++)
+          if (MD_ISDEF_IN_RT_CT(MVMD_MD(mvmd,l),rt,ct))
+            if (MVMD_MDSUBSEQ(mvmd,l))
+            {
+              /* by convention only return ptr to first component */
+              mptrlist[l][mc[l]++] = MVALUEPTR(mat,MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,l),rt,ct,0));
+            }
+            else
+            {
+              /* fill DOUBLE pointers, subsequently all needed in mat */
+              for (k=0; k<MD_NCMPS_IN_RT_CT(MVMD_MD(mvmd,l),rt,ct); k++)
+                mptrlist[l][mc[l]++] = MVALUEPTR(mat,MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,l),rt,ct,k));
+            }
+
+        /* adjoint matrix */
+        mat = MADJ(mat);
+        for (l=0; l<MVMD_NMD(mvmd); l++)
+          if (MD_ISDEF_IN_RT_CT(MVMD_MD(mvmd,l),ct,rt))
+            if (MVMD_MDSUBSEQ(mvmd,l))
+            {
+              /* by convention only return ptr to first component */
+              mptrlist[l][mc[l]++] = MVALUEPTR(mat,MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,l),ct,rt,0));
+            }
+            else
+            {
+              /* fill DOUBLE pointers, subsequently all needed in mat */
+              for (k=0; k<MD_NCMPS_IN_RT_CT(MVMD_MD(mvmd,l),ct,rt); k++)
+                mptrlist[l][mc[l]++] = MVALUEPTR(mat,MD_MCMP_OF_RT_CT(MVMD_MD(mvmd,l),ct,rt,k));
+            }
+      }
   }
 
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   PrepareElementMultipleVMPtrs - prepare execution of GetElementMultipleVMPtrs
+
+   SYNOPSIS:
+   INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
+
+   PARAMETERS:
+   .  mvmd - multiple VM data structure, partially to be filled before call
+
+   DESCRIPTION:
+   This function prepares the execution of GetElementMultipleVMPtrs in an element
+   loop. It has to be called once before running the loop.
+   For further description see 'PrepareMultipleVMPtrs'.
+
+   RETURN VALUE:
+   INT
+   .n    0
+
+   SEE ALSO:
+   PrepareMultipleVMPtrs, GetElementMultipleVMPtrs
+   D*/
+/****************************************************************************/
+
+INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
+{
+  return (PrepareMultipleVMPtrs(mvmd));
+}
+
+/****************************************************************************/
+/*D
+   GetElementMultipleVMPtrs - get list of DOUBLE pointers for vectors and matrices
+
+   SYNOPSIS:
+   INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
+                                                                                         DOUBLE **vptrlist[MAXVD],
+                                                                                         DOUBLE **mptrlist[MAXMD],
+                                                                                         INT *vecskip, INT *vtype, INT nvec[MAXVD])
+
+
+   PARAMETERS:
+   .  elem - pointer to an element
+   .  mvmd - data filled by PrepareElementMultipleVMPtrs
+   .  vptrlist - pointer to lists of double values corresponding the  VECDATA_DESC-list
+   .  mptrlist - pointer to lists of double values corresponding the  MATDATA_DESC-list
+   .  vecskip - set 1 for DIRICHLET boundary, 0 else (ordering corresponds to the first
+                                VECDATA_DESC)
+   .  vtype - types of vectors collected for first vd
+   .  nvec - number of vectors involved from this element
+
+   DESCRIPTION:
+   This functions returns pointers to the data fields described in a VECDATA_DESC-list
+   and a MATDATA_DESC-list passed in the mvmd argument. Before call of this function
+   in an element loop PrepareElementMultipleVMPtrs has to be called with mvmd.
+
+   In the case that components are ordered subsequently only a pointer to the first
+   DOUBLE value is returned. The pointers can be incremented by the user.
+
+   RETURN VALUE:
+   INT
+   .n    0: ok
+   .n    >0: error
+
+   SEE ALSO:
+   GetMultipleVMPtrs,PrepareElementMultipleVMPtrs
+   D*/
+/****************************************************************************/
+
+INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
+                              DOUBLE **vptrlist[MAXVD],
+                              DOUBLE **mptrlist[MAXMD],
+                              INT *vecskip, INT *vtype, INT nvec[MAXVD])
+{
+  VECTOR *VecList[MAX_NODAL_VECTORS];
+  INT cnt;
+
+
+  if (GetVectorsOfDataTypesInObjects(elem,MVMD_DATATYPES(mvmd),MVMD_OBJTYPES(mvmd),&cnt,VecList)!=GM_OK)
+    REP_ERR_RETURN (1);
+
+  return (GetMultipleVMPtrs(mvmd,cnt,VecList,vptrlist,mptrlist,vecskip,vtype,nvec));
+}
+
+/****************************************************************************/
+/*D
+   PrepareBndVecMultipleVMPtrs - prepare execution of GetBndVecMultipleVMPtrs
+
+   SYNOPSIS:
+   INT PrepareBndVecMultipleVMPtrs (GRID *theGrid, MVM_DESC *mvmd)
+
+   PARAMETERS:
+   .  theGrid - grid level
+   .  mvmd - multiple VM data structure, partially to be filled before call
+
+   DESCRIPTION:
+   This function prepares the execution of GetBndVecMultipleVMPtrs in an element
+   loop. It has to be called once before running the loop.
+   For further description see 'PrepareMultipleVMPtrs'.
+
+   RETURN VALUE:
+   INT
+   .n    0
+
+   SEE ALSO:
+   PrepareMultipleVMPtrs, GetBndVecMultipleVMPtrs
+   D*/
+/****************************************************************************/
+
+INT PrepareBndVecMultipleVMPtrs (GRID *theGrid, MVM_DESC *mvmd)
+{
+  INT MaxListLen;
+
+  if (PrepareMultipleVMPtrs(mvmd))
+    REP_ERR_RETURN (1);
+
+  if (MVMD_OBJTYPES(mvmd)!=BITWISE_TYPE(NODEVEC))
+    REP_ERR_RETURN (1);
+
+  if (PrepareGetBoundaryNeighbourVectors(theGrid,&MaxListLen))
+    REP_ERR_RETURN (1);
+
+  if (MaxListLen>MAX_BND_VECTORS)
+    REP_ERR_RETURN (1);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   GetBndVecMultipleVMPtrs - get list of DOUBLE pointers for vectors and matrices
+
+   SYNOPSIS:
+   INT GetBndVecMultipleVMPtrs (const MVM_DESC *mvmd,
+                                                                                         INT *cnt,
+                                                                                         VECTOR *VecList[],
+                                                                                         DOUBLE **vptrlist[MAXVD],
+                                                                                         DOUBLE **mptrlist[MAXMD],
+                                                                                         INT *vecskip, INT *vtype, INT nvec[MAXVD])
+
+
+   PARAMETERS:
+   .  mvmd - data filled by PrepareBndVecMultipleVMPtrs
+   .  cnt - items in the vector list
+   .  VecList - list of local boundary vector neighborhood
+   .  vptrlist - pointer to lists of double values corresponding the  VECDATA_DESC-list
+   .  mptrlist - pointer to lists of double values corresponding the  MATDATA_DESC-list
+   .  vecskip - set 1 for DIRICHLET boundary, 0 else (ordering corresponds to the first
+                                VECDATA_DESC)
+   .  vtype - types of vectors collected for first vd
+   .  nvec - number of vectors involved from this element
+
+   DESCRIPTION:
+   This functions returns pointers to the data fields described in a VECDATA_DESC-list
+   and a MATDATA_DESC-list passed in the mvmd argument. Before call of this function
+   in an element loop PrepareBndVecMultipleVMPtrs has to be called with mvmd.
+
+   In the case that components are ordered subsequently only a pointer to the first
+   DOUBLE value is returned. The pointers can be incremented by the user.
+
+   RETURN VALUE:
+   INT
+   .n    0: ok
+   .n    >0: error
+
+   SEE ALSO:
+   GetMultipleVMPtrs,PrepareBndVecMultipleVMPtrs
+   D*/
+/****************************************************************************/
+
+INT GetBndVecMultipleVMPtrs (const MVM_DESC *mvmd,
+                             INT *cnt,
+                             VECTOR *VecList[],
+                             DOUBLE **vptrlist[MAXVD],
+                             DOUBLE **mptrlist[MAXMD],
+                             INT *vecskip, INT *vtype, INT nvec[MAXVD], INT *end)
+{
+  if (GetBoundaryNeighbourVectors(MVMD_DATATYPES(mvmd),MVMD_OBJTYPES(mvmd),cnt,VecList,end)!=GM_OK)
+    REP_ERR_RETURN (1);
+
+  return (GetMultipleVMPtrs(mvmd,*cnt,VecList,vptrlist,mptrlist,vecskip,vtype,nvec));
+}
+
+INT ResetBndVecMultipleVMPtrs (void)
+{
+  if (ResetGetBoundaryNeighbourVectors())
+    REP_ERR_RETURN (1);
+  return (0);
+}
+
+INT FinishBndVecMultipleVMPtrs (void)
+{
+  if (FinishBoundaryNeighbourVectors()!=GM_OK)
+    REP_ERR_RETURN (1);
   return (0);
 }
 
