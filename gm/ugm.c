@@ -7301,7 +7301,7 @@ INT PointOnSide(const DOUBLE *global, const ELEMENT *theElement, INT side)
   INT n;
   DOUBLE *x[MAX_CORNERS_OF_ELEM];
   DOUBLE M[DIM+DIM];
-  DOUBLE *a, *b, *c;
+  DOUBLE *a, *b;
   DOUBLE det;
 
   a = &M[0];
@@ -7310,7 +7310,7 @@ INT PointOnSide(const DOUBLE *global, const ELEMENT *theElement, INT side)
   CORNER_COORDINATES(theElement,n,x);
 
   V2_SUBTRACT(x[CORNER_OF_SIDE(theElement,side,1)], x[CORNER_OF_SIDE(theElement,side,0)], a);
-  V2_SUBTRACT(global, x[CORNER_OF_SIDE(theElement,side,0)], c);
+  V2_SUBTRACT(global, x[CORNER_OF_SIDE(theElement,side,0)], b);
   det = M2_DET(M);
   if (fabs(det) < SMALL_C)
     return 1;
@@ -7340,6 +7340,76 @@ INT PointOnSide(const DOUBLE *global, const ELEMENT *theElement, INT side)
     return 1;
 
   return 0;
+}
+#endif
+
+/****************************************************************************/
+/*D
+   DOUBLESide - Determine distance of a point to an element side
+
+   SYNOPSIS:
+   DOUBLE DOUBLEElement (const DOUBLE *x, const ELEMENT *theElement, INT side);
+
+   PARAMETERS:
+   .  x - coordinates of given point
+   .  theElement - element to scan
+   .  side - the element side
+
+   DESCRIPTION:
+   This function determines the distance of a given point specified by coordinates `x`
+   from an element side.
+
+   Beware:  The function only tests if the Point is in the plane spawned by the element side.
+   The point could be outside the element side area.
+
+   RETURN VALUE:
+   INT
+   .n   0 not on side
+   .n   1 x is on side
+   D*/
+/****************************************************************************/
+
+#ifdef __TWODIM__
+DOUBLE DistanceFromSide(const DOUBLE *global, const ELEMENT *theElement, INT side)
+{
+  INT n;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM];
+  DOUBLE M[DIM+DIM];
+  DOUBLE *a, *b;
+  DOUBLE det;
+
+  a = &M[0];
+  b = &M[DIM];
+
+  CORNER_COORDINATES(theElement,n,x);
+
+  V2_SUBTRACT(x[CORNER_OF_SIDE(theElement,side,1)], x[CORNER_OF_SIDE(theElement,side,0)], a);
+  V2_SUBTRACT(global, x[CORNER_OF_SIDE(theElement,side,0)], b);
+  det = M2_DET(M);
+
+  return det;
+}
+#else
+DOUBLE DistanceFromSide(const DOUBLE *global, const ELEMENT *theElement, INT side)
+{
+  INT n;
+  DOUBLE *x[MAX_CORNERS_OF_ELEM];
+  DOUBLE M[DIM*DIM];
+  DOUBLE *a, *b, *c;
+  DOUBLE det;
+
+  a = &M[0];
+  b = &M[DIM];
+  c = &M[2*DIM];
+
+  CORNER_COORDINATES(theElement,n,x);
+
+  V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,side,1)], x[CORNER_OF_SIDE(theElement,side,0)], a);
+  V3_SUBTRACT(x[CORNER_OF_SIDE(theElement,side,2)], x[CORNER_OF_SIDE(theElement,side,0)], b);
+  V3_SUBTRACT(global, x[CORNER_OF_SIDE(theElement,side,0)], c);
+  det = M3_DET(M);
+
+  return det;
 }
 #endif
 
