@@ -69,6 +69,10 @@
 #include "pargm.h"
 #include "ugstruct.h"
 
+#ifdef ModelP
+#include "identify.h"
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -1941,7 +1945,8 @@ EDGE *CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector)
   /*SETPRIO(pe,PrioMaster);*/
         #endif
         #ifdef IDENT_ONLY_NEW
-  SETNEW_EDIDENT(pe,1);
+  if (GET_IDENT_MODE() == IDENT_ON)
+    SETNEW_EDIDENT(pe,1);
         #endif
   NBNODE(link0) = to;
   NBNODE(link1) = from;

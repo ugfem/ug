@@ -5846,6 +5846,7 @@ static int AdaptGrid (GRID *theGrid, INT toplevel, INT level, INT newlevel, INT 
 	#endif
 
 	DDD_IdentifyBegin();
+	SET_IDENT_MODE(IDENT_ON);
 	DDD_XferBegin();
 
 DDD_CONSCHECK;
@@ -5884,7 +5885,10 @@ if (0) {
 	if (*nadapted == 0)
 	{
 		if (!IDENT_IN_STEPS)
+		{
+			SET_IDENT_MODE(IDENT_OFF);
 			DDD_IdentifyEnd();
+		}
 
 		SUM_TIMER(gridadapti_timer)
 
@@ -5908,6 +5912,7 @@ if (0) {
 	Synchronize();
 }
 
+	SET_IDENT_MODE(IDENT_OFF);
 	DDD_IdentifyEnd();
 
 	SUM_TIMER(ident_timer)
