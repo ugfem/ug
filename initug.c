@@ -122,6 +122,7 @@ INT InitUg (int argc, char **argv)
     return (1);
   }
 
+    #ifdef __TWODIM__
   /* init the gg module */
   if ((err=InitGG())!=0)
   {
@@ -131,6 +132,7 @@ INT InitUg (int argc, char **argv)
 
     return (1);
   }
+    #endif
 
   /* init the numerics module */
   if ((err=InitNumerics())!=0)
