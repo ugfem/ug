@@ -1988,7 +1988,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     theGrid = GRID_ON_LEVEL(theMG,i);
 
 #ifdef __THREEDIM__
-    if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
+    if (VEC_DEF_IN_OBJ_OF_MG(MYMG(theGrid),SIDEVEC))
       for (theElement = FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
         for (j=0; j<SIDES_OF_ELEM(theElement); j++)
         {
