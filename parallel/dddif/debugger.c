@@ -140,6 +140,45 @@ void ddd_pstat (char *arg)
     SYNC_END;
     break;
 
+  case 't' :
+    if (me==master)
+    {
+      /* display ddd types */
+      DDD_TypeDisplay(TypeVector);
+      DDD_TypeDisplay(TypeIVertex);
+      DDD_TypeDisplay(TypeBVertex);
+      DDD_TypeDisplay(TypeNode);
+                                #ifdef __THREEDIM__
+      DDD_TypeDisplay(TypeEdge);
+                                #endif
+
+                                #ifdef __TWODIM__
+      DDD_TypeDisplay(TypeTrElem);
+      DDD_TypeDisplay(TypeTrBElem);
+      DDD_TypeDisplay(TypeQuElem);
+      DDD_TypeDisplay(TypeQuBElem);
+                                #endif
+
+                                #ifdef __THREEDIM__
+      DDD_TypeDisplay(TypeTeElem);
+      DDD_TypeDisplay(TypeTeBElem);
+      DDD_TypeDisplay(TypePyElem);
+      DDD_TypeDisplay(TypePyBElem);
+      DDD_TypeDisplay(TypePrElem);
+      DDD_TypeDisplay(TypePrBElem);
+      DDD_TypeDisplay(TypeHeElem);
+      DDD_TypeDisplay(TypeHeBElem);
+                                #endif
+
+      /* display dependent types */
+      DDD_TypeDisplay(TypeMatrix);
+                                #ifdef __TWODIM__
+      DDD_TypeDisplay(TypeEdge);
+                                #endif
+    }
+    break;
+
+
   case 'i' :
   {
     DDD_IF ifId = atoi(arg+1);
