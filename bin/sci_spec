@@ -1,0 +1,88 @@
+#!/usr/bin/perl -I/home/klaus/UG/ug/pm -w
+
+use la;
+
+# subs
+sub float
+{
+    my $real='[+-]?\d+\.?\d*[eE]?[+-]?\d+|[+-]?\d*\.?\d+[eE]?[+-]?\d+|[+-]?\d+';
+	my (@list,$f,$s);
+
+	if (@_==1) { @list=grep /$real/,split /($real)/,$_[0]; }
+	else
+	{
+	    ($f,$s)=split /$_[0]/,$_[1],2;
+	    @list=grep /$real/,split /($real)/,$s;
+	}
+	return wantarray ? @list : $list[0];
+}
+
+sub EV
+{
+	my ($s,$i,$j,$n,$c);
+	my $re=shift;
+	my $im=shift;
+
+	$n=$#{$re}+1;
+	for ($j=0; $j<$n; $j++)
+	{
+		for ($i=$c=0; $i<$n; $i++) { if ($im->[$i][$j]!=0) { $c=1; last; } }
+		if ($c)
+		{
+			for ($i=0; $i<$n; $i++) { $s->[$i][$j]=$re->[$i][$j]; }
+			$j++;
+			for ($i=$c=0; $i<$n; $i++) { if ($im->[$i][$j]!=0) { $c=1; last; } }
+			$c==1 or die "Huh: complex pairs do not match\n";
+			for ($i=0; $i<$n; $i++) { $s->[$i][$j]=$im->[$i][$j]; }
+		}
+		else
+		{
+			for ($i=0; $i<$n; $i++) { $s->[$i][$j]=$re->[$i][$j]; }
+		}
+	}
+	return $s;
+}
+
+# scan A
+$i=0;
+open(IN,"/tmp/Sci_A");
+while($line=<IN>)
+{
+	@a=float $line;
+	for ($j=0; $j<@a; $j++)
+	{
+		$ma->[$i][$j]=$a[$j];
+	}
+	$i++;
+}
+$n=$i;
+
+# scan B
+$i=0;
+open(IN,"/tmp/Sci_B");
+while($line=<IN>)
+{
+	@a=float $line;
+	for ($j=0; $j<@a; $j++)
+	{
+		$mb->[$i][$j]=$a[$j];
+	}
+	$i++;
+}
+$n=$i;
+
+# solve EVP
+($re,$im,$evr,$evi)=la_spec_z $ma,$mb;
+open(OUT,">/tmp/Sci_S");
+print OUT la_p $re;
+print OUT la_p $im;
+close(OUT);
+open(OUT,">/tmp/Sci_E");
+$s=EV($evr,$evi);
+print OUT la_p $s;
+close(OUT);
+
+
+
+
+
