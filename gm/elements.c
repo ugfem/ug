@@ -20,9 +20,6 @@
 /*																			*/
 /****************************************************************************/
 
-/* define this to exclude extern definition of global arrays */
-#define __COMPILE_EL__
-
 #include <assert.h>
 
 #include "general.h"
