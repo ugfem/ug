@@ -108,6 +108,10 @@ INT InitNumerics ()
     SetHiWrd(err,__LINE__);
     return (err);
   }
+  if ((err=InitAssemble())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
   if ((err=InitBDFSolver())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
