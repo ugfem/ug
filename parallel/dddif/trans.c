@@ -64,7 +64,6 @@ enum GhostCmds { GC_Keep, GC_ToMaster, GC_Delete };
                BND_SIZE_TAG(TAG(elem)) :   \
                INNER_SIZE_TAG(TAG(elem)));  }
 
-
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -78,7 +77,6 @@ enum GhostCmds { GC_Keep, GC_ToMaster, GC_Delete };
 /* definition of exported global variables									*/
 /*																			*/
 /****************************************************************************/
-
 
 
 /****************************************************************************/
@@ -507,20 +505,28 @@ static int ComputeGhostCmds (MULTIGRID *theMG)
  */
 /****************************************************************************/
 
-static void XferGridWithOverlap (GRID *theGrid)
+static int XferGridWithOverlap (GRID *theGrid)
 {
   ELEMENT *theElement, *theFather, *theNeighbor;
   ELEMENT *SonList[MAX_SONS];
   NODE    *theNode;
-  INT i,j,overlap_elem;
+  INT i,j,overlap_elem,part;
+  INT migrated = 0;
 
 
   for(theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
   {
-    /* create Master copy */
-    XferElement(theElement, PARTITION(theElement), PrioMaster);
-  }
+    /* goal processor */
+    part = PARTITION(theElement);
 
+    /* create Master copy */
+    XferElement(theElement, part, PrioMaster);
+
+                #ifdef STAT_OUT
+    /* count elems */
+    if (part != me) migrated++;
+                #endif
+  }
 
   /* create grid overlap */
   for(theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
@@ -612,6 +618,8 @@ static void XferGridWithOverlap (GRID *theGrid)
       }
     }
   }
+
+  return(migrated);
 }
 
 
@@ -677,11 +685,12 @@ static void InheritPartitionBottomTop (ELEMENT *e)
 
 int TransferGridFromLevel (MULTIGRID *theMG, INT level)
 {
-  HEAP *theHeap = theMG->theHeap;
   GRID *theGrid = GRID_ON_LEVEL(theMG,level);       /* transfer grid starting at*/
-  ELEMENT *e;
-  int i, son;
-  int g;
+  INT g;
+  INT migrated = 0;       /* number of elements moved */
+  DOUBLE trans_begin, trans_end, cons_end;
+
+  trans_begin = CURRENT_TIME;
 
   /* dispose negative levels */
   if (level < 1)
@@ -703,25 +712,32 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
     ComputeGhostCmds(theMG);
 
     /* send all grids */
-    for(g=TOPLEVEL(theMG); g>=0; g--)
+    /*		for (g=TOPLEVEL(theMG); g>=0; g--) */
+    for (g=0; g<=TOPLEVEL(theMG); g++)
     {
-      GRID *grid = GRID_ON_LEVEL(theMG,g);
-      if (NT(grid)>0) XferGridWithOverlap(grid);
+      GRID *theGrid = GRID_ON_LEVEL(theMG,g);
+      if (NT(theGrid)>0) migrated += XferGridWithOverlap(theGrid);
     }
   }
+
   DDD_XferEnd();
+
+  trans_end = CURRENT_TIME;
 
   /* set priorities of border nodes */
   /* TODO this is an extra communication. eventually integrate this
               with grid distribution phase. */
+        #ifdef NEW_GRIDCONS_STYLE
+  ConstructConsistentMultiGrid(theMG);
+        #else
   {
-    int g;
     for(g=0; g<=TOPLEVEL(theMG); g++)
     {
-      GRID *grid = GRID_ON_LEVEL(theMG,g);
-      ConstructConsistentGrid(grid);
+      GRID *theGrid = GRID_ON_LEVEL(theMG,g);
+      ConstructConsistentGrid(theGrid);
     }
   }
+        #endif
 
     #ifndef __EXCHANGE_CONNECTIONS__
   MGCreateConnection(theMG);
@@ -730,7 +746,19 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
   /* the grid has changed at least on one processor, thus reset MGSTATUS on all processors */
   RESETMGSTATUS(theMG);
 
+  cons_end = CURRENT_TIME;
+
+        #ifdef STAT_OUT
+  /* sum up moved elements */
+  migrated = UG_GlobalSumINT(migrated);
+
+  UserWriteF("MIGRATION: migrated=%d t_migrate=%.2f t_cons=%.2f\n",
+             migrated,trans_end-trans_begin,cons_end-trans_end);
+        #endif
+
+        #ifdef Debug
   DDD_ConsCheck();
+        #endif
 
   return 0;
 }
