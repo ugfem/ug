@@ -37,6 +37,7 @@
 #include "general.h"
 #include "debug.h"
 #include "ugstruct.h"
+#include "misc.h"
 #include "gm.h"
 #include "scan.h"
 #include "numproc.h"
@@ -91,7 +92,8 @@ typedef struct
   INT nested;                                                            /* use nested iteration                        */
   INT nlinterpolate;                                             /* nonlinear interpolation			*/
   INT optnlsteps;                                            /* optimal number of nonlin. steps */
-  INT rep;                                                       /* for repeat solver after grid changed */
+  INT ctn;                                                               /* change to nested iteration		*/
+  INT rep;                               /* for repeat solver after grid changed */
   INT Break;                                                     /* break after error estimator         */
   INT Continue;                                              /* continue after error estimator  */
   INT copyall;                                               /* refine copy all                 */
@@ -310,8 +312,8 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
   DOUBLE dt_p1,dt_0,g_p1,g_0,g_m1;
   DOUBLE Factor[MAX_VEC_COMP];
   INT n_unk;
-  INT i,k,mg_changed;
-  INT low,nlinterpolate,last_number_of_nonlinear_iterations;
+  INT i,k,mg_changed,changed;
+  INT low,llow,nlinterpolate,last_number_of_nonlinear_iterations;
   INT verygood,bad;
   NLRESULT nlresult;
   ERESULT eresult;
@@ -380,175 +382,188 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
     if (bdf->trans->PreProcessProject!=NULL)
       if ((*bdf->trans->PreProcessProject)(bdf->trans,0,level,res))
         return(__LINE__);
-    for (k=low; k<=level; k++)
+    for (llow=low,changed=0;;)
     {
-      if (bdf->nested) UserWriteF("Nested Iteration on level %d (%d)\n",k,level);
-
-      /* prepare constant part of defect */
-      dset(mg,0,k,ALL_VECTORS,bdf->b,0.0);
-      if (bdf->order==1)
+      for (k=llow; k<=level; k++)
       {
-        if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_0,-1.0,0.0,bdf->y_0,bdf->b,NULL,res) )
-          return(__LINE__);
-      }
-      else
-      {
-        if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_0,g_0/g_p1,0.0,bdf->y_0,bdf->b,NULL,res) )
-          return(__LINE__);
-        if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_m1,g_m1/g_p1,0.0,bdf->y_m1,bdf->b,NULL,res) )
-          return(__LINE__);
-      }
+        if (bdf->nested || changed) UserWriteF("Nested Iteration on level %d (%d)\n",k,level);
 
-      /* solve nonlinear problem on level k */
-      if (nlsolve->PreProcess!=NULL)
-        if ( (*nlsolve->PreProcess)(nlsolve,k,bdf->y_p1,res) )
-          return(__LINE__);
-      if ( (*nlsolve->Solver)(nlsolve,k,bdf->y_p1,&bdf->tsolver.nlass,nlsolve->abslimit,nlsolve->reduction,&nlresult) )
-        return(__LINE__);
-
-      /* update statisitics */
-      bdf->number_of_nonlinear_iterations += nlresult.number_of_nonlinear_iterations;
-      bdf->total_linear_iterations += nlresult.total_linear_iterations;
-      bdf->max_linear_iterations = MAX(bdf->max_linear_iterations,nlresult.max_linear_iterations);
-      bdf->exec_time += nlresult.exec_time;
-
-      if (nlsolve->PostProcess!=NULL)
-        if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
-          return(__LINE__);
-      if (!nlresult.converged)
-      {
-        bdf->dt *= 0.5;                         /* reduce time step     */
-        if (bdf->dt<bdf->dtmin) {
-          UserWrite("time step too small -- aborting\n");
-          return(__LINE__);
+        /* prepare constant part of defect */
+        dset(mg,0,k,ALL_VECTORS,bdf->b,0.0);
+        if (bdf->order==1)
+        {
+          if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_0,-1.0,0.0,bdf->y_0,bdf->b,NULL,res) )
+            return(__LINE__);
         }
-        UserWrite("reduced time step\n");
-        bad=1;
-        break;                               /* and try all over again  */
-      }
-      else {
-        if (nlresult.rho_first<=bdf->rhogood)
-          verygood=1;
         else
-          verygood=0;
-      }
+        {
+          if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_0,g_0/g_p1,0.0,bdf->y_0,bdf->b,NULL,res) )
+            return(__LINE__);
+          if ( (*tass->TAssembleDefect)(tass,0,k,bdf->t_m1,g_m1/g_p1,0.0,bdf->y_m1,bdf->b,NULL,res) )
+            return(__LINE__);
+        }
 
-      /* interpolate up */
-      if (k<level)
-      {
-        for (i=0; i<n_unk; i++) Factor[i] = 1.0;
-        if ((*bdf->trans->InterpolateCorrection)(bdf->trans,k+1,bdf->y_p1,bdf->y_p1,NULL,Factor,res))
+        /* solve nonlinear problem on level k */
+        if (nlsolve->PreProcess!=NULL)
+          if ( (*nlsolve->PreProcess)(nlsolve,k,bdf->y_p1,res) )
+            return(__LINE__);
+        if ( (*nlsolve->Solver)(nlsolve,k,bdf->y_p1,&bdf->tsolver.nlass,nlsolve->abslimit,nlsolve->reduction,&nlresult) )
           return(__LINE__);
-        /* set Dirichlet conditions in predicted solution */
-        if ( (*tass->TAssembleSolution)(tass,k+1,k+1,bdf->t_p1,bdf->y_p1,res) )
-          return(__LINE__);
-      }
-      else if (nlinterpolate > 0) {
-        if (bdf->error->PreProcess != NULL)
-          if ((*bdf->error->PreProcess)(bdf->error,level,res))
-            NP_RETURN(1,res[0]);
-        if (bdf->error->TimeError == NULL)
-          NP_RETURN(1,res[0]);
-#ifdef ModelP
-        a_outervector_consistent(mg,0,level,bdf->y_p1);
-        a_outervector_consistent(mg,0,level,bdf->y_0);
-#endif
-        if ((*bdf->error->TimeError)
-              (bdf->error,level,bdf->t_p1,&dt_0,bdf->y_p1,bdf->y_0,
-              ts,&eresult))
-          NP_RETURN(1,res[0]);
+
+        /* update statisitics */
+        bdf->number_of_nonlinear_iterations += nlresult.number_of_nonlinear_iterations;
+        bdf->total_linear_iterations += nlresult.total_linear_iterations;
+        bdf->max_linear_iterations = MAX(bdf->max_linear_iterations,nlresult.max_linear_iterations);
+        bdf->exec_time += nlresult.exec_time;
+
         if (nlsolve->PostProcess!=NULL)
           if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
-            NP_RETURN(1,res[0]);
-        if (bdf->error->PostProcess != NULL)
-          if ((*bdf->error->PostProcess)(bdf->error,level,res))
-            NP_RETURN(1,res[0]);
-        if (bdf->Break) return(0);
-Continue:
-        if (eresult.refine + eresult.coarse > 0)
+            return(__LINE__);
+        if (!nlresult.converged)
         {
-          if (bdf->err_toplevel>=0)
-            for (i=bdf->err_toplevel; i<=TOPLEVEL(mg); i++)
-              if (ClearMarksOnLevel(GRID_ON_LEVEL(mg,i),1)!=GM_OK)
-                return(__LINE__);
-          if (bdf->err_baselevel>=0)
-            for (i=0; i<=bdf->err_baselevel; i++)
-              if (ClearMarksOnLevel(GRID_ON_LEVEL(mg,i),-1)!=GM_OK)
-                return(__LINE__);
+          bdf->dt *= 0.5;                               /* reduce time step     */
+          if (bdf->dt<bdf->dtmin) {
+            UserWrite("time step too small -- aborting\n");
+            return(__LINE__);
+          }
+          UserWrite("reduced time step\n");
+          bad=1;
+          break;                                     /* and try all over again  */
+        }
+        else {
+          if (nlresult.rho_first<=bdf->rhogood)
+            verygood=1;
+          else
+            verygood=0;
+        }
 
-          if (bdf->copyall) {
-            if (RefineMultiGrid(mg,GM_COPY_ALL,
+        /* interpolate up */
+        if (k<level)
+        {
+          for (i=0; i<n_unk; i++) Factor[i] = 1.0;
+          if ((*bdf->trans->InterpolateCorrection)(bdf->trans,k+1,bdf->y_p1,bdf->y_p1,NULL,Factor,res))
+            return(__LINE__);
+          /* set Dirichlet conditions in predicted solution */
+          if ( (*tass->TAssembleSolution)(tass,k+1,k+1,bdf->t_p1,bdf->y_p1,res) )
+            return(__LINE__);
+        }
+        else if (nlinterpolate > 0) {
+          if (bdf->error->PreProcess != NULL)
+            if ((*bdf->error->PreProcess)(bdf->error,level,res))
+              NP_RETURN(1,res[0]);
+          if (bdf->error->TimeError == NULL)
+            NP_RETURN(1,res[0]);
+#ifdef ModelP
+          a_outervector_consistent(mg,0,level,bdf->y_p1);
+          a_outervector_consistent(mg,0,level,bdf->y_0);
+#endif
+          if ((*bdf->error->TimeError)
+                (bdf->error,level,bdf->t_p1,&dt_0,bdf->y_p1,bdf->y_0,
+                ts,&eresult))
+            NP_RETURN(1,res[0]);
+          if (nlsolve->PostProcess!=NULL)
+            if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
+              NP_RETURN(1,res[0]);
+          if (bdf->error->PostProcess != NULL)
+            if ((*bdf->error->PostProcess)(bdf->error,level,res))
+              NP_RETURN(1,res[0]);
+          if (bdf->Break) return(0);
+Continue:
+          if (eresult.refine + eresult.coarse > 0)
+          {
+            if (bdf->err_toplevel>=0)
+              for (i=bdf->err_toplevel; i<=TOPLEVEL(mg); i++)
+                if (ClearMarksOnLevel(GRID_ON_LEVEL(mg,i),1)!=GM_OK)
+                  return(__LINE__);
+            if (bdf->err_baselevel>=0)
+              for (i=0; i<=bdf->err_baselevel; i++)
+                if (ClearMarksOnLevel(GRID_ON_LEVEL(mg,i),-1)!=GM_OK)
+                  return(__LINE__);
+
+            if (bdf->copyall) {
+              if (RefineMultiGrid(mg,GM_COPY_ALL,
+                                  GM_REFINE_PARALLEL,
+                                  GM_REFINE_NOHEAPTEST) != GM_OK)
+                NP_RETURN(1,res[0]);
+            }
+            else
+            if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL,
                                 GM_REFINE_PARALLEL,
                                 GM_REFINE_NOHEAPTEST) != GM_OK)
               NP_RETURN(1,res[0]);
           }
-          else
-          if (RefineMultiGrid(mg,GM_REFINE_TRULY_LOCAL,
-                              GM_REFINE_PARALLEL,
-                              GM_REFINE_NOHEAPTEST) != GM_OK)
-            NP_RETURN(1,res[0]);
-        }
-        if (level != TOPLEVEL(mg)) {
-          if (level < TOPLEVEL(mg)) {
-            if (InterpolateVDAllocation(mg,bdf->y_m1))
-              NP_RETURN(1,res[0]);
-            if (InterpolateVDAllocation(mg,bdf->y_0))
-              NP_RETURN(1,res[0]);
-            if (InterpolateVDAllocation(mg,bdf->y_p1))
-              NP_RETURN(1,res[0]);
-            if (InterpolateVDAllocation(mg,bdf->b))
-              NP_RETURN(1,res[0]);
-          }
-          level = TOPLEVEL(mg);
-          mg_changed = 1;
-        }
-        else {
-          mg_changed = 0;
-          for (i=0; i<=level; i++)
-            if (GSTATUS(GRID_ON_LEVEL(mg,i),GSTATUS_BDF))
-            {
-              RESETGSTATUS(GRID_ON_LEVEL(mg,i),GSTATUS_BDF);
-              mg_changed = 1;
+          if (level != TOPLEVEL(mg)) {
+            if (level < TOPLEVEL(mg)) {
+              if (InterpolateVDAllocation(mg,bdf->y_m1))
+                NP_RETURN(1,res[0]);
+              if (InterpolateVDAllocation(mg,bdf->y_0))
+                NP_RETURN(1,res[0]);
+              if (InterpolateVDAllocation(mg,bdf->y_p1))
+                NP_RETURN(1,res[0]);
+              if (InterpolateVDAllocation(mg,bdf->b))
+                NP_RETURN(1,res[0]);
             }
-        }
-        if (mg_changed)
-        {
-          k = level - 1;
-          if (bdf->trans->PreProcessSolution != NULL)
-            if ((*bdf->trans->PreProcessSolution)
+            level = TOPLEVEL(mg);
+            mg_changed = 1;
+          }
+          else {
+            mg_changed = 0;
+            for (i=0; i<=level; i++)
+              if (GSTATUS(GRID_ON_LEVEL(mg,i),GSTATUS_BDF))
+              {
+                RESETGSTATUS(GRID_ON_LEVEL(mg,i),GSTATUS_BDF);
+                mg_changed = 1;
+              }
+          }
+          if (mg_changed)
+          {
+            k = level - 1;
+            if (bdf->trans->PreProcessSolution != NULL)
+              if ((*bdf->trans->PreProcessSolution)
+                    (bdf->trans,0,level,bdf->y_p1,res))
+                NP_RETURN(1,res[0]);
+            if ((*bdf->trans->InterpolateNewVectors)
+                  (bdf->trans,0,level,bdf->y_m1,res))
+              NP_RETURN(1,res[0]);
+            if ((*bdf->trans->InterpolateNewVectors)
+                  (bdf->trans,0,level,bdf->y_0,res))
+              NP_RETURN(1,res[0]);
+            if ((*bdf->trans->InterpolateNewVectors)
                   (bdf->trans,0,level,bdf->y_p1,res))
               NP_RETURN(1,res[0]);
-          if ((*bdf->trans->InterpolateNewVectors)
-                (bdf->trans,0,level,bdf->y_m1,res))
-            NP_RETURN(1,res[0]);
-          if ((*bdf->trans->InterpolateNewVectors)
-                (bdf->trans,0,level,bdf->y_0,res))
-            NP_RETURN(1,res[0]);
-          if ((*bdf->trans->InterpolateNewVectors)
-                (bdf->trans,0,level,bdf->y_p1,res))
-            NP_RETURN(1,res[0]);
-          if (bdf->trans->PostProcessSolution != NULL)
-            if ((*bdf->trans->PostProcessSolution)
-                  (bdf->trans,0,level,bdf->y_p1,res))
-              NP_RETURN(1,res[0]);
-          nlinterpolate--;
-          if(bdf->rep ==0) {
+            if (bdf->trans->PostProcessSolution != NULL)
+              if ((*bdf->trans->PostProcessSolution)
+                    (bdf->trans,0,level,bdf->y_p1,res))
+                NP_RETURN(1,res[0]);
+            nlinterpolate--;
+            if(bdf->rep ==0) {
+              k = level;
+              nlinterpolate = 0;
+              if (nlsolve->PostProcess!=NULL)
+                if ((*nlsolve->PostProcess)
+                      (nlsolve,k,bdf->y_p1,res))
+                  NP_RETURN(1,res[0]);
+            }
+          }
+          else {
             k = level;
             nlinterpolate = 0;
             if (nlsolve->PostProcess!=NULL)
-              if ((*nlsolve->PostProcess)
-                    (nlsolve,k,bdf->y_p1,res))
+              if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
                 NP_RETURN(1,res[0]);
           }
         }
-        else {
-          k = level;
-          nlinterpolate = 0;
-          if (nlsolve->PostProcess!=NULL)
-            if ( (*nlsolve->PostProcess)(nlsolve,k,bdf->y_p1,res) )
-              NP_RETURN(1,res[0]);
-        }
       }
+
+      /* switch to nested? */
+      if (!nlresult.converged && bdf->ctn && llow==level && bdf->baselevel<llow)
+      {
+        llow = bdf->baselevel;
+        changed=1;
+        UserWrite("Change to Nested Iteration\n");
+      }
+      else
+        break;
     }
     if (bdf->trans->PostProcessProject!=NULL)
       if ((*bdf->trans->PostProcessProject)(bdf->trans,0,level,res))
@@ -735,6 +750,12 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
     bdf->nested=0;
   }
   if ((bdf->nested<0)||(bdf->nested>1)) return(NP_NOT_ACTIVE);
+  if (ReadArgvINT("ctn",&(bdf->ctn),argc,argv))
+  {
+    UserWrite("default: change to nested: OFF\n");
+    bdf->ctn=0;
+  }
+  if ((bdf->nested<0)||(bdf->nested>1)) return(NP_NOT_ACTIVE);
   if (ReadArgvINT("optnlsteps",&(bdf->optnlsteps),argc,argv))
     bdf->optnlsteps = 0;
   if (bdf->optnlsteps < 0) return(NP_NOT_ACTIVE);
@@ -844,6 +865,7 @@ static INT BDFDisplay (NP_BASE *theNumProc)
   UserWriteF(DISPLAY_NP_FORMAT_SF,"dtmin",(float)bdf->dtmin);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"dtmax",(float)bdf->dtmax);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"nested",(int)bdf->nested);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"ctn",(int)bdf->ctn);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"nlinterpolate",(int)bdf->nlinterpolate);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"optnlsteps",(int)bdf->optnlsteps);
   UserWriteF(DISPLAY_NP_FORMAT_SF,"dtscale",(float)bdf->dtscale);
