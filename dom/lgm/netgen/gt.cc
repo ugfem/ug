@@ -15,7 +15,7 @@
 #include <meshing/global.hh>
 #include <meshing/ruler2.hh>
 
-static double MAXDOUBLE = 1.0e37;
+static double maxdouble = 1.0e37;
 static double SMALLDOUBLE = 1.0e-6;
 
 static int CalcNewPoint(double xt[3],double yt[3],double h)
@@ -133,8 +133,8 @@ double Calc_Circumcircusmidpoint(double xt[3],double yt[3],double *midp)
               (sqrt( (cp20[0]-cp01[0])*(cp20[0]-cp01[0]) + (cp20[1]-cp01[1])*(cp20[1]-cp01[1]) )>SMALLDOUBLE))
           {
                   printf("%s\n", "ERROR");
-                  midp[0] = MAXDOUBLE;
-                  midp[1] = MAXDOUBLE;
+                  midp[0] = maxdouble;
+                  midp[1] = maxdouble;
           }
           else
           {
@@ -161,7 +161,7 @@ int GenerateTriangle (ARRAY<Point2d> & lpoints, ARRAY<ILINE> & llines,
   elements.SetSize (0);
   dellines.SetSize (0);
 
-  min_circ = MAXDOUBLE;
+  min_circ = maxdouble;
   point_i = -1;
 
   xt[0] = lpoints[llines[1].I1()].X();
@@ -180,7 +180,7 @@ int GenerateTriangle (ARRAY<Point2d> & lpoints, ARRAY<ILINE> & llines,
     np[1] = yt[2];
   }
   else
-    np_circ = MAXDOUBLE;
+    np_circ = maxdouble;
 
   for(i=2; i<=lpoints.Size(); i++)
   {
