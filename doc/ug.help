@@ -141,7 +141,10 @@ new [<mgname>] $d <domain> $p <problem> $f <format> $h <heapsize>
     <mgname>               # the name of the multigrid (default is 'untitled-<nb>')
     $b <BVP name>          # one of the enroled boundary value problems
     $f <format>            # one of the enroled formats matching with <problem>
-    $h <heapsize>          # the heapsize to be allocated
+    $h <heapsize>          # the heapsize to be allocated in byte or use suffix
+                           # "K" or "k" for kilobyte
+                           # "M" or "m" for megabyte
+                           # "G" or "g" for gigabyte
 
 -open > grid multigrid
 open             # allocate heap and new multigrid structure
