@@ -324,6 +324,9 @@ static INT EvalFAMGGraph1 (DRAWINGOBJ *theDO, VECTOR *vec)
 
     DO_2c(theDO) = DO_NO_INST;
 
+	#ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
             
     return(0);
 }
@@ -371,6 +374,10 @@ static INT EvalFAMGGraph2 (DRAWINGOBJ *theDO, VECTOR *vec)
 
      DO_2c(theDO) = DO_NO_INST;
 
+	#ifdef ModelP
+	WOP_DObjPnt = theDO;
+	#endif
+            
     return(0);
     
 }
