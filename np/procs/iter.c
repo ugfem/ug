@@ -69,7 +69,8 @@
 #define NPFF_FF(p)                              (((p)->FF))
 #define NPFF_FF3D(p)                    (((p)->FF3D))
 #define NPFF_aux(p)                             (((p)->aux))
-#define NPFF_aux3D(p)                   (((p)->aux3D))
+#define NPFF_aux3D(p)                   (((p)->aux2_3D))
+#define NPFF_aux2_3D(p)                 (((p)->aux3D))
 #define NPFF_aux2(p)                    (((p)->aux2))
 #define NPFF_aux3(p)                    (((p)->aux3))
 #define NPFF_aux4(p)                    (((p)->aux4))
@@ -180,6 +181,7 @@ typedef struct
   MATDATA_DESC *FF3D;                   /* frequency filtered matrix; only for 3D */
   VECDATA_DESC *aux;                    /* auxiliary vector */
   VECDATA_DESC *aux3D;          /* auxiliary vector; only for 3D */
+  VECDATA_DESC *aux2_3D;        /* auxiliary vector; only for 3D and FF */
   VECDATA_DESC *aux2;                   /* auxiliary vector; for FF or for checks */
   VECDATA_DESC *aux3;                   /* auxiliary vector; only for checks */
   VECDATA_DESC *aux4;                   /* auxiliary vector; only for checks */
@@ -1916,7 +1918,7 @@ static INT LUConstruct (NP_BASE *theNP)
    .vb
    npinit $FF <FF-mat sym> $FF3D <3D FF-mat sym> $L <LU mat sym> $aux <temp sym>
            $tv <testvector sym> $tv2 <2. testvector sym>
-           $aux3D <3D temp sym> $t <update for correction sym>
+           $aux3D <3D temp sym> $aux2_3D <2. 3D temp sym> $t <update for correction sym>
            $display {no|red|full} $wr <"all"|number> $wr3D <number> $type <FF|TFF>
            $aux2 <temp2 sym> $aux3 <temp3 sym> $aux4 <temp4 sym>
            $aux5 <temp5 sym> $aux6 <temp6 sym>
@@ -1930,6 +1932,7 @@ static INT LUConstruct (NP_BASE *theNP)
    .  $tv2~<2.~testvector~sym> - symbol for the second testvector if neccessary
    .  $aux~<temp~sym> - symbol for a temporary vector
    .  $aux3D~<3D~temp~sym> - additional temporary symbol for the testvector for 3D
+   .  $aux2_3D~<2.~3D~temp~sym> - additional temporary symbol for the 2. testvector for 3D and FF
    .  $t~<update~for~correction~sym> - temp. vector
    .  $type~<type of frequency filter> - "TFF" for Wagners or "FF" for Wittums
    .  $aux2~<temp2~sym> - symbol for a further temporary vector (neccessary for FF)
@@ -2003,6 +2006,8 @@ static INT FFInit (NP_BASE *theNP, INT argc , char **argv)
 #ifdef __THREEDIM__
   NPFF_FF3D(np) = ReadArgvMatDesc(theMG,"FF3D",argc,argv);
   NPFF_aux3D(np) = ReadArgvVecDesc(theMG,"aux3D",argc,argv);
+  NPFF_aux2_3D(np) = ReadArgvVecDesc(theMG,"aux2_3D",argc,argv);
+
   if ( ReadArgvChar ( "wr3D", buffer, argc, argv) )
   {
     PrintErrorMessage('E',"FFInit", "Option $wr3D mandatory");
@@ -2012,6 +2017,7 @@ static INT FFInit (NP_BASE *theNP, INT argc , char **argv)
 #else
   NPFF_FF3D(np) = NULL;
   NPFF_aux3D(np) = NULL;
+  NPFF_aux2_3D(np) = NULL;
   NPFF_WaveNrRel3D(np) = -1.0;
 #endif
 
@@ -2118,6 +2124,8 @@ static INT FFDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"FF3D",ENVITEM_NAME(NPFF_FF3D(np)));
   if (NPFF_aux3D(np) != NULL)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"aux3D",ENVITEM_NAME(NPFF_aux3D(np)));
+  if (NPFF_aux2_3D(np) != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"aux2_3D",ENVITEM_NAME(NPFF_aux2_3D(np)));
 #endif
 
   if (NPFF_aux(np) != NULL)
@@ -2246,6 +2254,10 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
       NP_RETURN(1,result[0]);
     if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPFF_aux2(np)))
       NP_RETURN(1,result[0]);
+                #ifdef __THREEDIM__
+    if (AllocVDFromVD(theNP->base.mg,level,level,x,&NPFF_aux2_3D(np)))
+      NP_RETURN(1,result[0]);
+                #endif
   }
 
   /* check if all objects are valid and scalar */
@@ -2363,6 +2375,19 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
       PrintErrorMessage( 'E', "FFPreProcess", "Symbol aux2 is not scalar" );
       NP_RETURN(1,result[0]);
     }
+
+                #ifdef __THREEDIM__
+    if ( NPFF_aux2_3D(np) == NULL )
+    {
+      PrintErrorMessage( 'E', "FFPreProcess", "Symbol aux2_3D is not defined" );
+      NP_RETURN(1,result[0]);
+    }
+    if ( !VD_IS_SCALAR( NPFF_aux2_3D(np) ) )
+    {
+      PrintErrorMessage( 'E', "FFPreProcess", "Symbol aux2_3D is not scalar" );
+      NP_RETURN(1,result[0]);
+    }
+                #endif
   }
 
 #ifdef __THREEDIM__
@@ -2415,7 +2440,7 @@ static INT FFPreProcess (NP_ITER *theNP, INT level,
                                          VD_SCALCMP( NPFF_aux(np) ),
                                          VD_SCALCMP( NPFF_aux2(np) ),
                                          NPFF_aux3D(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux3D(np) ),
-                                         NPFF_aux3(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux3(np) ),
+                                         NPFF_aux2_3D(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux2_3D(np) ),
                                          NPFF_FF3D(np)==NULL ? -1 : MD_SCALCMP( NPFF_FF3D(np) ),
                                          theGrid ) != NUM_OK )
     {
@@ -2488,6 +2513,8 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
     FreeVD(theMG,level,level,NPFF_aux2(np));
   if (NPFF_aux3D(np) != NULL)
     FreeVD(theMG,level,level,NPFF_aux3D(np));
+  if (NPFF_aux2_3D(np) != NULL)
+    FreeVD(theMG,level,level,NPFF_aux2_3D(np));
 
   FreeAllBV( GRID_ON_LEVEL(theMG,level) );
   if (MGCreateConnection(theMG))        /* restore the disposed connections */
@@ -2610,6 +2637,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
       else if (NPFF_DO_FF(np))
       {
         /*if (wavenr == 2.0) wavenr = 3.0;*/ /* wavenr==2 already in the last step */
+        printf("wavenr %g\n", wavenr);
         if (FFDecomp( wavenr, wavenr, GFIRSTBV(theGrid), &bvd,
                       NPFF_BVDF(np),
                       MD_SCALCMP( np->smoother.L ),
@@ -2620,7 +2648,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
                       VD_SCALCMP( NPFF_aux(np) ),
                       VD_SCALCMP( NPFF_aux2(np) ),
                       NPFF_aux3D(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux3D(np) ),
-                      NPFF_aux3(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux3(np) ),
+                      NPFF_aux2_3D(np)==NULL ? -1 : VD_SCALCMP( NPFF_aux2_3D(np) ),
                       NPFF_FF3D(np)==NULL ? -1 : MD_SCALCMP( NPFF_FF3D(np) ),
                       theGrid ) != NUM_OK )
         {
