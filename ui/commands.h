@@ -45,12 +45,13 @@
 
 START_UGDIM_NAMESPACE
 
-/** I need this in DUNE
-   maybe only temporarily. */
+/** I need this in DUNE */
 #ifdef __cplusplus
 INT NewCommand(INT argc, char **argv);
 
 INT ConfigureCommand (INT argc, char **argv);
+
+INT LBCommand (INT argc, char **argv);
 #endif
 
 
@@ -73,15 +74,15 @@ INT ConfigureCommand (INT argc, char **argv);
   }
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* data structures exported by the corresponding source file                            */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* data structures exported by the corresponding source file                */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* definition of exported global variables                                                                      */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/

@@ -10551,7 +10551,13 @@ static INT InitScreenSize (void)
 
 #ifdef ModelP
 /** \brief Implementation of \ref lb. */
-static INT LBCommand (INT argc, char **argv)
+INT
+#ifdef __cplusplus
+NS_DIM_PREFIX
+#else
+static
+#endif
+LBCommand (INT argc, char **argv)
 {
                 #ifndef ModelP
   /* dummy command in seriell version */
