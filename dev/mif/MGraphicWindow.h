@@ -38,18 +38,21 @@
   NSTextView          *statusText;              // Information about window status goes here.
 
   NSBezierPath        *path;                            // Bezier path for drawing primitives.
-  NSColor                     *color;                           // Current color for drawing primitives.
+  NSColor                     *currentColor;            // Current color for drawing primitives.
   NSColor                     *backgroundColor;         // Background color of graphic windows.
   NSColor                     *textColor;                       // Color of status text.
   float textsize;                                               // Current text size.
+
+  NSPanel                 *toolPanel;                           // Select tools from this panel
 
   /* drawing parameters */
   short marker_size;                                            // size of markers in pixels
   short marker_id;                                              // number of marker
   short textSize;                                               // text size
 
-  INT currTool;                                                 // the current tool
-  int moveto_x, moveto_y;                               // value is set in moveToPoint method
+  INT currTool;                                                 // The current tool.
+  int moveto_x, moveto_y;                               // Value is set in moveToPoint method.
+  int viewHeight;                                               // Height of the view.
 
 }
 
@@ -83,7 +86,7 @@
 
 - (void) clearView;
 
-- (void) setColor:(NSColor*)col;
+- (void) setColorRed:(float)r green:(float)g blue:(float)b;
 - (void) setLineWidth:(short)width;
 - (void) setTextSize:(short)h;
 

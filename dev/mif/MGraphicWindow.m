@@ -17,6 +17,7 @@
 
 #import "MShell.h"
 #import "MGraphicWindow.h"
+#import "MToolPanel.h"
 
 #define BORDERSIZE 2
 #define BOTTOMBORDERSIZE 2
@@ -53,8 +54,10 @@ static NSMutableDictionary *textAttributes;
                                      contentRect.size.height)];
     [[self contentView] addSubview:theView];
 
+    viewHeight = contentRect.size.height;
+    
 	// set default colors
-    color = [NSColor blackColor];
+    currentColor = [NSColor blackColor];
     backgroundColor = [NSColor whiteColor];
     textColor = [NSColor whiteColor];
 
@@ -76,11 +79,13 @@ static NSMutableDictionary *textAttributes;
     [statusText insertText:@"Status"];
     [statusText setEditable:NO];    
     [statusText display];
-    
+
+    //toolPanel = [MToolPanel sharedToolPanel];
+        
 	[self display];
     [self orderFront:self];
-    [self makeFirstResponder:theView];
     [self setDelegate:[[MShell instantiate] window]];
+    [self makeFirstResponder:theView];
 
     /* Let the graphics window accept mouse moved events (for tracking of
        x and y coordinates).  Default is NO for NSWindow objects.*/
@@ -92,6 +97,8 @@ static NSMutableDictionary *textAttributes;
                             [NSFont boldSystemFontOfSize:10.0], NSFontAttributeName,
                             nil];
     textsize = 10.0;
+
+    path = [NSBezierPath bezierPath];
     
     return self;
 }
@@ -117,15 +124,17 @@ static NSMutableDictionary *textAttributes;
 - (void) moveToPoint:(SHORT_POINT)point
 {
 	moveto_x = point.x;
-	moveto_y = point.y;
+	moveto_y = viewHeight-point.y;
 }
 
 - (void) drawLineTo:(SHORT_POINT)point
 {
 	[theView lockFocus];
-    [NSBezierPath strokeLineFromPoint:(NSPoint){moveto_x, moveto_y}
-                      toPoint:(NSPoint){point.x, point.y}];
-	//PSmoveto(moveto_x, moveto_y);
+    [path moveToPoint:(NSPoint){moveto_x, moveto_y}];
+    [path lineToPoint:(NSPoint){point.x, viewHeight-point.y}];
+    [path stroke];
+    [path removeAllPoints];
+    //PSmoveto(moveto_x, moveto_y);
 	//PSlineto(point.x, point.y);
 	//PSstroke();
 	[theView unlockFocus];
@@ -139,10 +148,16 @@ static NSMutableDictionary *textAttributes;
 	if (n<2) return;
 
 	[theView lockFocus];
-	PSmoveto(points[0].x, points[0].y);
+    [path moveToPoint:(NSPoint){points[0].x, viewHeight-points[0].y}];
+    for (i=1; i<n; i++)
+        [path lineToPoint:(NSPoint){points[i].x, viewHeight-points[i].y}];
+    [path stroke];
+    [path removeAllPoints];
+
+	/*PSmoveto(points[0].x, points[0].y);
 	for (i=1; i<n; i++) 
 		PSlineto(points[i].x, points[i].y);
-	PSstroke();
+	PSstroke();*/
 	[theView unlockFocus];
 }
 
@@ -150,15 +165,16 @@ static NSMutableDictionary *textAttributes;
 - (void) drawInversePolyLine:(SHORT_POINT *)points noOfPoints:(INT)n
 {
 	int i;
+    // EXPERIMENTAL! (TODO: Is this still used?)
     printf("drawInversePolyLine\n");
     [theView lockFocus];
     [[NSColor blueColor] set];
-    [path moveToPoint:(NSPoint){points[0].x, points[0].y}];
-    for (i=1; i<n; i++) [path lineToPoint:(NSPoint){points[i].x, points[i].y}];
+    [path moveToPoint:(NSPoint){points[0].x, viewHeight-points[0].y}];
+    for (i=1; i<n; i++) [path lineToPoint:(NSPoint){points[i].x, viewHeight-points[i].y}];
     [path closePath];
-    [path fill];
+    [path stroke];
     [path removeAllPoints];	// There is no 'reset' method, though the manual says so...
-    //[color set];
+    [currentColor set];
     [theView unlockFocus];
 	return;
 }
@@ -170,8 +186,8 @@ static NSMutableDictionary *textAttributes;
 	if (n<3) return;
 
     [theView lockFocus];
-    [path moveToPoint:(NSPoint){points[0].x, points[0].y}];
-    for (i=1; i<n; i++) [path lineToPoint:(NSPoint){points[i].x, points[i].y}];
+    [path moveToPoint:(NSPoint){points[0].x, viewHeight-points[0].y}];
+    for (i=1; i<n; i++) [path lineToPoint:(NSPoint){points[i].x, viewHeight-points[i].y}];
     [path closePath];
     [path fill];
     [path removeAllPoints];	// There is no 'reset' method, though the manual says so...
@@ -192,12 +208,12 @@ static NSMutableDictionary *textAttributes;
     printf("drawInversePolygon\n");
     [theView lockFocus];
     [[NSColor greenColor] set];
-    [path moveToPoint:(NSPoint){points[0].x, points[0].y}];
-    for (i=1; i<n; i++) [path lineToPoint:(NSPoint){points[i].x, points[i].y}];
+    [path moveToPoint:(NSPoint){points[0].x, viewHeight-points[0].y}];
+    for (i=1; i<n; i++) [path lineToPoint:(NSPoint){points[i].x, viewHeight-points[i].y}];
     [path closePath];
     [path fill];
     [path removeAllPoints];	// There is no 'reset' method, though the manual says so...
-    //[color set];
+    [currentColor set];
     [theView unlockFocus];
     return;
 }
@@ -207,20 +223,19 @@ static NSMutableDictionary *textAttributes;
 {
     int i;
     [theView lockFocus];
-    [backgroundColor set];
-    /*[path moveToPoint:(NSPoint){points[0].x, points[0].y}];
-    for (i=1; i<n; i++) [path lineToPoint:(NSPoint){points[i].x, points[i].y}];
-    [path closePath];
-    [path stroke];
-    [path removeAllPoints];	// There is no 'reset' method, though the manual says so...
-	*/
-    PSmoveto(points[0].x, points[0].y);
+    /*PSmoveto(points[0].x, points[0].y);
     for (i=1; i<n; i++) PSlineto (points[i].x, points[i].y);
     PSclosepath();
     PSfill();
-	//PSstroke();
+    PSstroke();*/
+    [backgroundColor set];
+    [path moveToPoint:(NSPoint){points[0].x, viewHeight-points[0].y}];
+    for (i=1; i<n; i++) [path lineToPoint:(NSPoint){points[i].x, viewHeight-points[i].y}];
+    [path closePath];
+    [path fill];
+    [path removeAllPoints];	// There is no 'reset' method, though the manual says so...
     [theView unlockFocus];
-    //[color set];
+    [currentColor set];
 	return;
 }
 
@@ -228,21 +243,16 @@ static NSMutableDictionary *textAttributes;
 - (void) setMarkerSize:(short)width
 {
     printf("setMarkerSize\n");
+    marker_size = width;
     return;
 }
 
-- (void) setMarker:(short)width
+- (void) setMarker:(short)n
 {
     printf("setMarker\n");
+    marker_id = n;
     return;
 }
-
-- (void) marker
-{
-    printf("marker\n");
-	return;
-}
-
 
 - (void) polyMark:(SHORT_POINT *)points noOfPoints:(INT)n
 {
@@ -269,20 +279,27 @@ static NSMutableDictionary *textAttributes;
 {
     NSAttributedString *s = [[NSAttributedString alloc] initWithString:[NSString stringWithCString:text]
                                    attributes:textAttributes];
+    [textColor set];
     [theView lockFocus];
-	[s drawAtPoint:(NSPoint){moveto_x,moveto_y}];
+    [s drawAtPoint:(NSPoint){moveto_x,moveto_y}];
     [theView unlockFocus];
+    [currentColor set];
     //printf("drawText, mode %d: <%s>\n", m, text);
 	return;
 }
 
 - (void) drawCenteredText:(const char*) text atPoint:(SHORT_POINT)point mode:(INT)m
 {
+    float w,h;
     NSAttributedString *s = [[NSAttributedString alloc] initWithString:[NSString stringWithCString:text]
                                    attributes:textAttributes];
+    w = [s size].width;
+    h = [s size].height;
+    [textColor set];
     [theView lockFocus];
-    [s drawAtPoint:(NSPoint){moveto_x+40,moveto_y}];
+    [s drawInRect:NSMakeRect(point.x+w/2,viewHeight-point.y,w,h)];
     [theView unlockFocus];
+    [currentColor set];
     //printf("drawCenteredText: <%s>\n", text);
 	return;
 }
@@ -298,9 +315,14 @@ static NSMutableDictionary *textAttributes;
 	return;
 }
 
-- (void) setColor:(NSColor*)col
+- (void) setColorRed:(float)r green:(float)g blue:(float)b
 {
-	/* dummy */
+    [currentColor release];
+    currentColor = [NSColor colorWithDeviceRed:r
+                                         green:g
+                                          blue:b
+                                         alpha:1.0];
+    [currentColor set];
 }
 
 - (void) setLineWidth:(short)width
@@ -337,7 +359,8 @@ static NSMutableDictionary *textAttributes;
 - (void) flush
 {
     [theView lockFocus];
-	PSstroke();
+    [path stroke];
+    [path removeAllPoints];
 	[self flushWindow];
 	[theView unlockFocus];
 	return;

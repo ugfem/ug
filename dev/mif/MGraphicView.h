@@ -24,12 +24,24 @@
 
 @interface MGraphicView : NSView
 {
-  MShellTextView *theShellTextView;
+  MShellTextView      *theShellTextView;
+
+  NSCursor            *currentCursor;
+
+  NSCursor            *arrowCursor;
+  NSCursor            *magnifyCursor;
+
+  NSImage                     *arrowImage;
+  NSImage                     *magnifyImage;
 }
 
+- (id)   initWithFrame:(NSRect)frameRect;
 - (void) drawRect:(NSRect)aRect;
 - (void) keyDown: (NSEvent *)theEvent;
-
+- (void) mouseEntered:(NSEvent *)anEvent;
+- (void) mouseExited:(NSEvent *)theEvent;
+- (BOOL) acceptsFirstResponder;
+- (void) resetCursorRects;
 @end
 
 #endif

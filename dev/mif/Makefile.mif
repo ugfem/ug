@@ -12,7 +12,7 @@
 include ../../ug.conf
 
 OBJECTS = MGraphicWindow.o MShellTextView.o MAppController.o MInterface.o \
-          MShellView.o MGraphicView.o MShell.o MShellWindow.o
+          MShellView.o MGraphicView.o MShell.o MShellWindow.o MToolPanel.o
 
 
 # local C compiler flags

@@ -67,7 +67,7 @@ extern MShell *theUGshell;
 - (id) _init  // construction and configuration of the view hierarchy
 {
     NSSize contentSize;
-    theScrollView =[[[NSScrollView alloc] initWithFrame:[self bounds]] autorelease];
+    theScrollView =[[NSScrollView alloc] initWithFrame:[self bounds]];
     contentSize = [theScrollView contentSize];
 
     [theScrollView setBorderType:NSNoBorder];

@@ -18,10 +18,11 @@ English_RESOURCES = UG_MacOSXServer.nib
 LANGUAGES = English
 
 CLASSES = MAppController.m MGraphicView.m MGraphicWindow.m MShell.m\
-          MShellTextView.m MShellView.m MShellWindow.m
+          MShellTextView.m MShellView.m MShellWindow.m MToolPanel.m
 
 HFILES = MAppController.h MGraphicView.h MGraphicWindow.h MInterface.h\
-         MShell.h MShellTextView.h MShellView.h MShellWindow.h
+         MShell.h MShellTextView.h MShellView.h MShellWindow.h\
+         MToolPanel.h
 
 MFILES = MInterface.m
 

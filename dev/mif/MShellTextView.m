@@ -32,26 +32,8 @@ extern MShell *theUGshell;
 - (id) initWithFrame:(NSRect)frameRect
 {
     unsigned int i;
-    
-    [super initWithFrame:frameRect];
-    if ( self==nil ) return nil;
-
-    commandCount = currCommandNumber = 0;
-    theCommandList = [NSMutableArray arrayWithCapacity:MAX_BUFFERED_COMMANDS];
-    for ( i=0; i<MAX_BUFFERED_COMMANDS; i++ )
-        [theCommandList insertObject: @"" atIndex:i];
-
-    currentLine = [NSMutableString string];
-	
-    [self setRichText:YES];
-	[self setFont:[NSFont userFixedPitchFontOfSize:10.0]];
-        
-    /*[self setFont:[NSFont userFixedPitchFontOfSize:10]
-          range:NSMakeRange(0,[[self string] length])];
-
-    printf ("4 Desired font is %s, ", [[[NSFont userFixedPitchFontOfSize:18] displayName] lossyCString]);
-    printf ("Current font is %s ", [[[self font] displayName] lossyCString]);
-    printf ("at size %f\n", [[self font] pointSize]);*/
+    NSLayoutManager *layoutManager;
+    NSTextContainer *container;
 
     textAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
         					[NSColor blackColor],NSForegroundColorAttributeName,
@@ -76,9 +58,42 @@ extern MShell *theUGshell;
                             [NSColor whiteColor],NSBackgroundColorAttributeName,
                             [NSFont userFixedPitchFontOfSize:10.0], NSFontAttributeName,
                             nil];
+	
+    /*theTextStore = [[NSTextStorage alloc] initWithString:@"" attributes:textAttributes];
+
+    layoutManager = [[NSLayoutManager alloc] init];
+    [theTextStore addLayoutManager:layoutManager];
+    [layoutManager release];
+
+    container = [[NSTextContainer alloc] initWithContainerSize:frameRect.size];
+    [layoutManager addTextContainer:container];
+    [container release];*/
+
+    //[super initWithFrame:frameRect textContainer:container];
+    [super initWithFrame:frameRect];
+    if ( self==nil ) return nil;
 
     theTextStore = [self textStorage];
+        
+    commandCount = currCommandNumber = 0;
+    theCommandList = [NSMutableArray arrayWithCapacity:MAX_BUFFERED_COMMANDS];
+    for ( i=0; i<MAX_BUFFERED_COMMANDS; i++ )
+        [theCommandList insertObject: @"" atIndex:i];
 
+    currentLine = [NSMutableString string];
+
+    [self setRichText:YES];
+    [self setFont:[NSFont userFixedPitchFontOfSize:10.0]];
+
+    /*[self setFont:[NSFont userFixedPitchFontOfSize:10]
+          range:NSMakeRange(0,[[self string] length])];
+
+    printf ("4 Desired font is %s, ", [[[NSFont userFixedPitchFontOfSize:18] displayName] lossyCString]);
+    printf ("Current font is %s ", [[[self font] displayName] lossyCString]);
+    printf ("at size %f\n", [[self font] pointSize]);*/
+        
+    [self setTypingAttributes:textAttributes];
+    
     if ([self shouldChangeTextInRange:NSMakeRange(0,[[self string] length])
                     replacementString:nil])
     {
@@ -89,8 +104,8 @@ extern MShell *theUGshell;
         [self didChangeText];
 	}
     
-    printf ("5 Current font is %s ", [[[self font] displayName] lossyCString]);
-    printf ("at size %f\n", [[self font] pointSize]);
+    /*printf ("5 Current font is %s ", [[[self font] displayName] lossyCString]);
+    printf ("at size %f\n", [[self font] pointSize]);*/
 
     return self;
 }
@@ -124,10 +139,20 @@ extern MShell *theUGshell;
     static int i;
 
     [self moveToEndOfDocument:self];
+    /* this changes the font back to Helvetica! 
+    [theTextStore
+            replaceCharactersInRange:NSMakeRange([theTextStore length], 0)
+            			  withString:str];*/
     [self insertText:str];
     [self didChangeText];
 
-    if (++i%32==0 ) [self displayIfNeeded];
+    /* This was the recommended way.  Font problem, too. */
+    /*[[self textStorage] replaceCharactersInRange:NSMakeRange([[self textStorage] length],0)
+                                      withString:str];
+    [self scrollRangeToVisible:NSMakeRange([[self textStorage] length], 0)];*/
+
+    if (++i%4==0 )
+        [self displayIfNeeded];
     
     return;
 }

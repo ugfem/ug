@@ -54,6 +54,8 @@
 
 - (MShellWindow*) window;
 - (MShellTextView*)     textview;
+- (BOOL)applicationShouldTerminate:(NSApplication *)sender;
+
 /*- (BOOL)textView:(NSTextView *)aTextView shouldChangeTextInRange:(NSRange)affectedCharRange replacementString:(NSString *)replacementString;
    - (NSRange)textView:(NSTextView *)aTextView willChangeSelectionFromCharacterRange:(NSRange)oldSelectedCharRange toCharacterRange:(NSRange)newSelectedCharRange;*/
 @end

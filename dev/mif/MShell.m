@@ -208,5 +208,11 @@ static MShell	*singleInstance = nil;
 {
     return theTextView;
 }
+
+- (BOOL)applicationShouldTerminate:(NSApplication *)sender
+{
+    printf("applicationShouldTerminate=YES\n");
+    return YES;
+}
 @end
 

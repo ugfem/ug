@@ -10,7 +10,8 @@
             MShell.m, 
             MShellTextView.m, 
             MShellView.m, 
-            MShellWindow.m
+            MShellWindow.m, 
+            MToolPanel.m
         ); 
         English_INTERFACES = (UG_MacOSXServer.nib); 
         FRAMEWORKS = (AppKit.framework, Foundation.framework); 
@@ -22,7 +23,8 @@
             MShell.h, 
             MShellTextView.h, 
             MShellView.h, 
-            MShellWindow.h
+            MShellWindow.h, 
+            MToolPanel.h
         ); 
         INTERFACES = (); 
         OTHER_LINKED = (MInterface.m); 

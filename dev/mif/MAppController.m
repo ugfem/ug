@@ -13,6 +13,9 @@
 /*																			*/
 /****************************************************************************/
 
+#include <unistd.h>
+#include <sys/param.h>
+
 #import "MAppController.h"
 #import "MShell.h"
 
@@ -40,14 +43,19 @@ extern MShell *theUGshell;
 {
     NSOpenPanel *openPanel = [NSOpenPanel openPanel];
     int runModalResult;
-
+    char *buffer = malloc(MAXPATHLEN*sizeof(char));
+    buffer = getwd(buffer);
+    if (!_openPanelPath) _openPanelPath = [NSString stringWithCString:buffer];
+    
     // Configure the OpenPanel
-    [openPanel setTitle:NSLocalizedString(@"Run script", @"Select an UG script file to run.")];
+    [openPanel setTitle:NSLocalizedString(@"Run UG script", @"Select an UG script file to run.")];
     [openPanel setTreatsFilePackagesAsDirectories:NO];
     [openPanel setAllowsMultipleSelection:NO];
     [openPanel setCanChooseDirectories:NO];
     [openPanel setCanChooseFiles:YES];
-    [openPanel setDirectory:(_openPanelPath ? _openPanelPath : NSHomeDirectory())];
+	[openPanel setDirectory:_openPanelPath];
+    //printf("%s\n", [_openPanelPath lossyCString]);
+    free(buffer);
 
     // Run the panel
     runModalResult = [openPanel runModal];
