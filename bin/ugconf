@@ -36,6 +36,15 @@ then
 	exit 1;
 fi
 
+if test $# -eq 0
+then 
+	echo "current ug configuration is:";
+	grep -e '^[ ]*ARCH' -e '^[ ]*MODEL' -e '^[ ]*DIM'\
+		 -e '^[ ]*GRAPE' -e '^[ ]*NETGEN' -e '^[ ]*DOM_MODULE'\
+		 -e '^[ ]*DEBUG_MODE' $UGROOT/ug.conf;
+	exit 0;
+fi
+
 if test "$1" = "save"
 then
 	if test -d $UGROOT/ug.conf
