@@ -2221,12 +2221,25 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispose_connections)
     if (START(theNode) == NULL) {
       if (NTYPE(theNode)==MID_NODE) {
         ELEMENT *father;
+        INT edge,i;
 
         father = EFATHER(theElement);
-        theEdge = GetEdge(CORNER(father,
-                                 CORNER_OF_EDGE(father,ONEDGE(MYVERTEX(theNode)),0)),
-                          CORNER(father,
-                                 CORNER_OF_EDGE(father,ONEDGE(MYVERTEX(theNode)),1)));
+        edge = ONEDGE(MYVERTEX(theNode));
+        for (i=0; i<EDGES_OF_ELEM(father); i++) {
+          theEdge = GetEdge(CORNER(father,
+                                   CORNER_OF_EDGE(father,i,0)),
+                            CORNER(father,
+                                   CORNER_OF_EDGE(father,i,1)));
+          ASSERT(theEdge!=NULL);
+          if (MIDNODE(theEdge)==theNode) break;
+        }
+        ASSERT(i<EDGES_OF_ELEM(father));
+        UserWriteF("RESETTING edgepointer for ID(father)=%d and i=%d ONEDGE=%d "
+                   "ID(Node)=%d ID(Vertex)=%d EDNODE0=%d EDNODE1=%d\n",ID(father),i,edge,
+                   ID(theNode),ID(MYVERTEX(theNode)),
+                   ID(CORNER(father,CORNER_OF_EDGE(father,edge,0))),
+                   ID(CORNER(father,CORNER_OF_EDGE(father,edge,1))));
+        ASSERT(MIDNODE(theEdge)==theNode);
         MIDNODE(theEdge) = NULL;
       }
 
