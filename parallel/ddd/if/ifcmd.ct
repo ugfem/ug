@@ -415,7 +415,7 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 		/* poll receive calls */
 		ForIF(aIF,ifHead)
 		{
-			if ((! BufferIsEmpty(ifHead->bufIn)) && ifHead->msgIn!=(msgid)-1)
+			if ((! BufferIsEmpty(ifHead->bufIn)) && ifHead->msgIn!=NO_MSGID)
 			{
 				int error = InfoARecv(ifHead->vc, ifHead->msgIn);
 				if (error==-1)
@@ -451,7 +451,7 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 					#endif
 
 					recv_mesgs--;
-					ifHead->msgIn=(msgid)-1;
+					ifHead->msgIn=NO_MSGID;
 
 					#ifdef IF_WITH_ATTR
 					FIND_ATTR; /* find ifAttr */
@@ -493,7 +493,7 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 
 		ForIF(aIF,ifHead)
 		{
-			if ((! BufferIsEmpty(ifHead->bufIn)) && ifHead->msgIn!=(msgid)-1)
+			if ((! BufferIsEmpty(ifHead->bufIn)) && ifHead->msgIn!=NO_MSGID)
 			{
 				sprintf(cBuffer,
 					"  waiting for message (from proc %d, size %ld)",
@@ -516,7 +516,7 @@ void IF_FUNCNAME (DDD_IF *_aIF,
 
 			ForIF(aIF,ifHead)
 			{
-				if ((! BufferIsEmpty(ifHead->bufOut)) && ifHead->msgOut!=(msgid)-1)
+				if ((! BufferIsEmpty(ifHead->bufOut)) && ifHead->msgOut!=NO_MSGID)
 				{
 					sprintf(cBuffer,
 						"  waiting for send completion (to proc %d, size %ld)",
