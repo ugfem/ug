@@ -2453,7 +2453,7 @@ static INT InitMatrixPlotObject (PLOTOBJ *thePlotObj, INT argc, char **argv)
   char buffer[64];
 
   theMpo = &(thePlotObj->theMpo);
-  theGrid = PO_MG(thePlotObj)->grids[PO_MG(thePlotObj)->currentLevel];
+  theGrid = GRID_ON_LEVEL(PO_MG(thePlotObj),PO_MG(thePlotObj)->currentLevel);
   if (theGrid == NULL) return (NOT_INIT);
   PO_MIDPOINT(thePlotObj)[0] = PO_MIDPOINT(thePlotObj)[1] = NVEC(theGrid)/2.0;
   PO_RADIUS(thePlotObj) = NVEC(theGrid)/2.0;

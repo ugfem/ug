@@ -133,7 +133,7 @@ static INT GloballyUniqueIDs (MULTIGRID *theMG)
   j = theMG->topLevel;
   for (k=0; k<=j; k++)
   {
-    theGrid = theMG->grids[k];
+    theGrid = GRID_ON_LEVEL(theMG,k);
 
     /* vertices */
     for (theVertex=FIRSTVERTEX(theGrid); theVertex!=NULL; theVertex=SUCCV(theVertex))
@@ -158,7 +158,7 @@ static INT GloballyUniqueIDs (MULTIGRID *theMG)
 
   for (k=0; k<=j; k++)
   {
-    theGrid = theMG->grids[k];
+    theGrid = GRID_ON_LEVEL(theMG,k);
 
     /* vertices */
     for (theVertex=FIRSTVERTEX(theGrid); theVertex!=NULL; theVertex=SUCCV(theVertex))

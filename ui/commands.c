@@ -6370,7 +6370,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (CreateNewLevel(theMG)==NULL)
+  if (CreateNewLevel(theMG,0)==NULL)
   {
     DisposeMultiGrid(theMG);
     return (CMDERRORCODE);

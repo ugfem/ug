@@ -2115,13 +2115,13 @@ static INT MarkElements_MGS (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	toLevel = MIN(toLevel,CURRENTLEVEL(theMG));
 	
 	for (i=fromLevel; i<toLevel; i++)
-		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 			if (!IS_REFINED(theElement))
 				SETUSED(theElement,1);
 			else
 				SETUSED(theElement,0);
 	
-	for (theElement=FIRSTELEMENT(theMG->grids[toLevel]); theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,toLevel)); theElement!=NULL; theElement=SUCCE(theElement))
 		SETUSED(theElement,1);
 				
 	return (0);
@@ -2177,13 +2177,13 @@ static INT MarkElements_MGS_On_Line (MULTIGRID *theMG, INT fromLevel, INT toLeve
 	toLevel = MIN(toLevel,CURRENTLEVEL(theMG));
 	
 	for (i=fromLevel; i<toLevel; i++)
-		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 			if (!IS_REFINED(theElement) && ElementISLine2D(theElement,p1,p2))
 				SETUSED(theElement,1);
 			else
 				SETUSED(theElement,0);
 	
-	for (theElement=FIRSTELEMENT(theMG->grids[toLevel]); theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,toLevel)); theElement!=NULL; theElement=SUCCE(theElement))
 		if (ElementISLine2D(theElement,p1,p2))
 			SETUSED(theElement,1);
 		else
@@ -2219,7 +2219,7 @@ static INT MarkElements_ID (MULTIGRID *theMG, INT id)
 	INT i;
 	
 	for (i=0; i<=TOPLEVEL(theMG); i++)
-		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 			if (ID(theElement)==id)
 				SETUSED(theElement,1);
 			else
@@ -2261,7 +2261,7 @@ static INT MarkElements2D (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	if (EE2D_Elem2Plot[PLOT_ALL])
 	{
 		for (i=fromLevel; i<toLevel; i++)
-			for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+			for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 				if (!IS_REFINED(theElement) && EE2D_Elem2Plot[ECLASS(theElement)])
 					SETUSED(theElement,1);
 				else
@@ -2270,18 +2270,18 @@ static INT MarkElements2D (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	else
 	{
 		for (i=fromLevel; i<toLevel; i++)
-			for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+			for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 				SETUSED(theElement,0);
 	}
 	
-	for (theElement=FIRSTELEMENT(theMG->grids[toLevel]); theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,toLevel)); theElement!=NULL; theElement=SUCCE(theElement))
 		if (EE2D_Elem2Plot[ECLASS(theElement)])
 			SETUSED(theElement,1);
 		else
 			SETUSED(theElement,0);
 				
 	for (i=toLevel+1; i<=TOPLEVEL(theMG); i++)
-		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 			SETUSED(theElement,0);
 
 	return (0);
@@ -2320,7 +2320,7 @@ static INT MarkElements3D (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	if (EE3D_Elem2Plot[PLOT_ALL])
 	{
 		for (i=fromLevel; i<toLevel; i++)
-			for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+			for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 				if (!IS_REFINED(theElement) && EE3D_Elem2Plot[ECLASS(theElement)])
 					SETUSED(theElement,1);
 				else
@@ -2329,18 +2329,18 @@ static INT MarkElements3D (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	else
 	{
 		for (i=fromLevel; i<toLevel; i++)
-			for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+			for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 				SETUSED(theElement,0);
 	}
 	
-	for (theElement=FIRSTELEMENT(theMG->grids[toLevel]); theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,toLevel)); theElement!=NULL; theElement=SUCCE(theElement))
 		if (EE3D_Elem2Plot[ECLASS(theElement)])
 			SETUSED(theElement,1);
 		else
 			SETUSED(theElement,0);
 				
 	for (i=toLevel+1; i<=TOPLEVEL(theMG); i++)
-		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 			SETUSED(theElement,0);
 
 	return (0);
@@ -2376,10 +2376,10 @@ static INT MarkElements_Level (MULTIGRID *theMG, INT level)
 	level = MIN(level,CURRENTLEVEL(theMG));
 	
 	for (i=0; i<level; i++)
-		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 			SETUSED(theElement,0);
 	
-	for (theElement=FIRSTELEMENT(theMG->grids[level]); theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,level)); theElement!=NULL; theElement=SUCCE(theElement))
 		SETUSED(theElement,1);
 				
 	return (0);
@@ -2416,13 +2416,13 @@ static INT MarkElements_MGS_Bnd (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	toLevel = MIN(toLevel,CURRENTLEVEL(theMG));
 	
 	for (i=fromLevel; i<toLevel; i++)
-		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 			if (!IS_REFINED(theElement) && OBJT(theElement)==BEOBJ)
 				SETUSED(theElement,1);
 			else
 				SETUSED(theElement,0);
 	
-	for (theElement=FIRSTELEMENT(theMG->grids[toLevel]); theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,toLevel)); theElement!=NULL; theElement=SUCCE(theElement))
 			if (OBJT(theElement)==BEOBJ)
 				SETUSED(theElement,1);
 			else
@@ -2463,13 +2463,13 @@ static INT MarkElements_MGS_Bnd_Cut (MULTIGRID *theMG, INT fromLevel, INT toLeve
 	toLevel = MIN(toLevel,CURRENTLEVEL(theMG));
 	
 	for (i=fromLevel; i<toLevel; i++)
-		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 			if (!IS_REFINED(theElement) && (OBJT(theElement)==BEOBJ || CUTMODE(theElement)==CM_INTERSECT))
 				SETUSED(theElement,1);
 			else
 				SETUSED(theElement,0);
 	
-	for (theElement=FIRSTELEMENT(theMG->grids[toLevel]); theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,toLevel)); theElement!=NULL; theElement=SUCCE(theElement))
 			if (OBJT(theElement)==BEOBJ || CUTMODE(theElement)==CM_INTERSECT)
 				SETUSED(theElement,1);
 			else
@@ -2510,13 +2510,13 @@ static INT MarkElements_MGS_Bnd_and_Cut (MULTIGRID *theMG, INT fromLevel, INT to
 	toLevel = MIN(toLevel,CURRENTLEVEL(theMG));
 	
 	for (i=fromLevel; i<toLevel; i++)
-		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 			if (!IS_REFINED(theElement) && OBJT(theElement)==BEOBJ && CUTMODE(theElement)==CM_INTERSECT)
 				SETUSED(theElement,1);
 			else
 				SETUSED(theElement,0);
 	
-	for (theElement=FIRSTELEMENT(theMG->grids[toLevel]); theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,toLevel)); theElement!=NULL; theElement=SUCCE(theElement))
 			if (OBJT(theElement)==BEOBJ && CUTMODE(theElement)==CM_INTERSECT)
 				SETUSED(theElement,1);
 			else
@@ -2556,13 +2556,13 @@ static INT MarkElements_MGS_Cut (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	toLevel = MIN(toLevel,CURRENTLEVEL(theMG));
 	
 	for (i=fromLevel; i<toLevel; i++)
-		for (theElement=FIRSTELEMENT(theMG->grids[i]); theElement!=NULL; theElement=SUCCE(theElement))
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
 			if (!IS_REFINED(theElement) && CUTMODE(theElement)==CM_INTERSECT)
 				SETUSED(theElement,1);
 			else
 				SETUSED(theElement,0);
 	
-	for (theElement=FIRSTELEMENT(theMG->grids[toLevel]); theElement!=NULL; theElement=SUCCE(theElement))
+	for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,toLevel)); theElement!=NULL; theElement=SUCCE(theElement))
 		if (CUTMODE(theElement)==CM_INTERSECT)
 			SETUSED(theElement,1);
 		else
@@ -2888,13 +2888,13 @@ static INT MarkNodes_MGS (MULTIGRID *theMG, INT fromLevel, INT toLevel)
 	toLevel = MIN(toLevel,CURRENTLEVEL(theMG));
 	
 	for (i=fromLevel; i<toLevel; i++)
-		for (theNode=FIRSTNODE(theMG->grids[i]); theNode!=NULL; theNode=SUCCN(theNode))
+		for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
 			if (SONNODE(theNode)==NULL)
 				SETUSED(theNode,1);
 			else
 				SETUSED(theNode,0);
 	
-	for (theNode=FIRSTNODE(theMG->grids[toLevel]); theNode!=NULL; theNode=SUCCN(theNode))
+	for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,toLevel)); theNode!=NULL; theNode=SUCCN(theNode))
 		SETUSED(theNode,1);
 				
 	return (0);
@@ -2935,7 +2935,7 @@ static INT MarkNodes_OfMarkedElem (MULTIGRID *theMG, INT fromLevel, INT toLevel,
 	{
 		case MARKMODE_ALL:
 			for (i=fromLevel; i<=toLevel; i++)
-				for (theNode=FIRSTNODE(theMG->grids[i]); theNode!=NULL; theNode=SUCCN(theNode))
+				for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
 					SETUSED(theNode,1);
 			break;
 		case MARKMODE_REG:
@@ -2945,9 +2945,9 @@ static INT MarkNodes_OfMarkedElem (MULTIGRID *theMG, INT fromLevel, INT toLevel,
 		case MARKMODE_COPY:
 			limit = MAX(limit,YELLOW_CLASS);
 			for (i=fromLevel; i<=toLevel; i++)
-				for (theNode=FIRSTNODE(theMG->grids[i]); theNode!=NULL; theNode=SUCCN(theNode))
+				for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
 					SETUSED(theNode,0);
-			for (theElement=FIRSTELEMENT(theMG->grids[toLevel]); theElement!=NULL; theElement=SUCCE(theElement))
+			for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,toLevel)); theElement!=NULL; theElement=SUCCE(theElement))
 				if (ECLASS(theElement)>=limit)
 					for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
 						SETUSED(CORNER(theElement,j),1);
@@ -2958,13 +2958,13 @@ static INT MarkNodes_OfMarkedElem (MULTIGRID *theMG, INT fromLevel, INT toLevel,
 	
 	/* only marks on surface count */
 	for (i=fromLevel; i<toLevel; i++)
-		for (theNode=FIRSTNODE(theMG->grids[i]); theNode!=NULL; theNode=SUCCN(theNode))
+		for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
 			if (SONNODE(theNode)!=NULL)
 				SETUSED(theNode,0);
 	
 	/* skip upper levels */
 	for (i=toLevel+1; i<=TOPLEVEL(theMG); i++)
-		for (theNode=FIRSTNODE(theMG->grids[i]); theNode!=NULL; theNode=SUCCN(theNode))
+		for (theNode=FIRSTNODE(GRID_ON_LEVEL(theMG,i)); theNode!=NULL; theNode=SUCCN(theNode))
 			SETUSED(theNode,0);
 	
 	return (0);
@@ -14990,7 +14990,7 @@ static INT OrderNodes (MULTIGRID *theMG, DOUBLE ShrinkFactor)
 	/* calculate the node order of all elements on all levels */
 	for (j=0; j<=theMG->topLevel; j++)
 	{	
-		for (theElement=FIRSTELEMENT(theMG->grids[j]); theElement!= NULL; theElement=SUCCE(theElement))
+		for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,j)); theElement!= NULL; theElement=SUCCE(theElement))
 		{
 			V3_CLEAR(MidPoint)
 			for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
