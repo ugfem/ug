@@ -10,7 +10,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#ifndef __MACOSXSERVER__
 #include <malloc.h>
+#endif
 #include <ctype.h>
 
 #include "mmio.h"
