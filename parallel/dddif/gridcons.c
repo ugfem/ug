@@ -776,7 +776,7 @@ INT CheckElementPrio (ELEMENT *theElement)
 	/* master copy has to be unique */
 	if ((nmaster = CheckProcListCons(EPROCLIST(theElement),PrioMaster)) != 1)	
 	{
-		UserWriteF("ELEM=" EID_FMTX " ERROR: master copy not unique, nmaster:",
+		UserWriteF("ELEM=" EID_FMTX " ERROR: master copy not unique, nmaster=%d:",
 			EID_PRTX(theElement),nmaster);
 		ListProcList(EPROCLIST(theElement),PrioMaster);
 		UserWriteF("\n");
