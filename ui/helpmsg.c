@@ -37,6 +37,7 @@
 
 #include "helpmsg.h"
 #include "cmdline.h"
+#include "num.h"
 #include "devices.h"
 #include "misc.h"
 #include "fileopen.h"
@@ -241,10 +242,12 @@ INT PrintHelp (const char *HelpFor,int mode, const char *addText)
 INT CheckHelp ()
 {
   COMMAND *theCmd;
-  char HelpItem[128],cmdname[NAMESIZE],*s;
+  NP_TYPE *theNP;
+  char HelpItem[128],cmdname[NAMESIZE],npname[NAMESIZE],*s;
   int i,found,rv;
 
   /* loop commands */
+  UserWrite("checking commands...\n");
   rv = 0;
   for (theCmd=GetFirstCommand(); theCmd!=NULL; theCmd=GetNextCommand(theCmd))
   {
@@ -275,14 +278,55 @@ INT CheckHelp ()
     if (!found)
     {
       rv = 1;
-      sprintf(buffer,"no help found for '%s'\n",theCmd->v.name);
+      sprintf(buffer,"no help found for '%s'\n",ENVITEM_NAME(theCmd));
       UserWrite(buffer);
     }
   }
   if (rv)
-    UserWrite("for all other commands on-line help is available\n");
+    UserWrite("for all other commands on-line help is available\n\n");
   else
-    UserWrite("for all commands on-line help is available\n");
+    UserWrite("for all commands on-line help is available\n\n");
+
+  /* loop num proc types */
+  UserWrite("checking num proc types...\n");
+  rv = 0;
+  for (theNP=GetFirstNumProcType(); theNP!=NULL; theNP=GetNextNumProcType(theNP))
+  {
+    found = FALSE;
+    strcpy(npname,ENVITEM_NAME(theNP));
+
+    /* case INSENSITIVE: convert the command name to lower case */
+    s = npname;
+    while ((*s=tolower(*(s)))!='\0') s++;
+
+    for (i=0; i<NHelpFiles; i++)
+    {
+      if (HelpFile[i]==NULL) continue;
+
+      rewind(HelpFile[i]);
+
+      while (fgets(buffer,BUFFERSIZE-1,HelpFile[i])!=NULL)
+        if (buffer[0]==HELPSEP)
+          if ((sscanf(buffer+1,"%s",HelpItem)==1)&&(strcmp(HelpItem,npname)==0))
+          {
+            found = TRUE;
+            break;
+          }
+
+      if (found)
+        break;
+    }
+    if (!found)
+    {
+      rv = 1;
+      sprintf(buffer,"no help found for '%s'\n",ENVITEM_NAME(theNP));
+      UserWrite(buffer);
+    }
+  }
+  if (rv)
+    UserWrite("for all other num proc types on-line help is available\n");
+  else
+    UserWrite("for all num proc types on-line help is available\n");
 
   return (rv);
 }
