@@ -58,7 +58,12 @@
 #define CLEAR_DR_VEC_FLAG(p,vt,i)       CLEAR_FLAG((p)->data_status.VecReserv[vt][(i)/32],1<<((i)%32))
 #define CLEAR_DR_MAT_FLAG(p,vt,i)       CLEAR_FLAG((p)->data_status.MatReserv[vt][(i)/32],1<<((i)%32))
 
-#define A_REASONABLE_NUMBER             100
+#define A_REASONABLE_NUMBER                     100
+
+/* vm decriptor lock status */
+#define VM_LOCKED(p)               ((p)->locked)
+#define VM_IS_UNLOCKED                          0
+#define VM_IS_LOCKED                            1
 
 /* for SwapPartInterfaceData */
 #define SWAP_VEC_DATA(v,pf,pt)          {tmp = VVALUE(v,*pf); VVALUE(v,*pf) = VVALUE(v,*pt); VVALUE(v,*pt) = tmp;}
@@ -936,6 +941,62 @@ INT AllocVDFromVD (MULTIGRID *theMG, INT fl, INT tl,
 
 /****************************************************************************/
 /*D
+   LockVD - protect vector against removal or deallocation
+
+   SYNOPSIS:
+   INT LockVD (VECDATA_DESC *vd)
+
+   PARAMETERS:
+   .  vd - vector descriptor
+
+   DESCRIPTION:
+   This function locks a vector against removal or deallocation.
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occurred
+ */
+/****************************************************************************/
+
+INT LockVD (VECDATA_DESC *vd)
+{
+  VM_LOCKED(vd) = VM_IS_LOCKED;
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   TransmitLockStatusVD - ...
+
+   SYNOPSIS:
+   INT TransmitLockStatusVD (const VECDATA_DESC *vd, VECDATA_DESC *svd)
+
+   PARAMETERS:
+   .  vd  - vector descriptor
+   .  svd - sub vector descriptor
+
+   DESCRIPTION:
+   This function ...
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occurred
+ */
+/****************************************************************************/
+
+INT TransmitLockStatusVD (const VECDATA_DESC *vd, VECDATA_DESC *svd)
+{
+  if (!VM_LOCKED(vd) && VM_LOCKED(svd))
+    REP_ERR_RETURN(1);
+  VM_LOCKED(svd) = VM_LOCKED(vd);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    FreeVD - dynamic vector deallocation
 
    SYNOPSIS:
@@ -1172,7 +1233,18 @@ INT VDinterfaceDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DE
 {
   SHORT SubComp[MAX_VEC_COMP],SubNCmp[NVECTYPES];
   INT i,k,n,ns,tp;
-  char SubName[MAX_VEC_COMP];
+  char SubName[MAX_VEC_COMP],buffer[NAMESIZE];
+
+  /* generate name and see if desc already exists */
+  strcpy(buffer,ENVITEM_NAME(vds));
+  strcat(buffer,GENERATED_NAMES_SEPERATOR);
+  strcat(buffer,"i");
+  *vdi = GetVecDataDescByName(MD_MG(vd),buffer);
+  if (*vdi != NULL) {
+    if (TransmitLockStatusVD(vds,*vdi))
+      REP_ERR_RETURN(1);
+    return(0);
+  }
 
   k = 0;
   for (tp=0; tp<NVECTYPES; tp++)
@@ -1209,9 +1281,11 @@ INT VDinterfaceDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DE
       /* no components here */
       SubNCmp[tp] = 0;
 
-  *vdi = CreateSubVecDesc(VD_MG(vd),NULL,SubNCmp,SubComp,SubName);
+  *vdi = CreateSubVecDesc(VD_MG(vd),buffer,SubNCmp,SubComp,SubName);
   if (*vdi == NULL)
     REP_ERR_RETURN (1);
+  if (TransmitLockStatusVD(vd,*vdi))
+    REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -1243,8 +1317,19 @@ INT VDinterfaceDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DE
 INT VDinterfaceCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
 {
   SHORT SubComp[MAX_VEC_COMP],SubNCmp[NVECTYPES];
-  INT i,j,k,n,ns,tp,cmp;
-  char SubName[MAX_VEC_COMP];
+  INT i,j,k,n,ns,tp,cmp,ncmp;
+  char SubName[MAX_VEC_COMP],buffer[NAMESIZE];
+
+  /* generate name and see if desc already exists */
+  strcpy(buffer,ENVITEM_NAME(vds));
+  strcat(buffer,GENERATED_NAMES_SEPERATOR);
+  strcat(buffer,"ico");
+  *vdi = GetVecDataDescByName(MD_MG(vd),buffer);
+  if (*vdi != NULL) {
+    if (TransmitLockStatusVD(vds,*vdi))
+      REP_ERR_RETURN(1);
+    return(0);
+  }
 
   k = 0;
   for (tp=0; tp<NVECTYPES; tp++)
@@ -1258,6 +1343,7 @@ INT VDinterfaceCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_
       if (ns<n)
       {
         /* copy all components from vd not in vds */
+        ncmp = 0;
         for (i=0; i<n; i++)
         {
           cmp = VD_CMP_OF_TYPE(vd,tp,i);
@@ -1273,8 +1359,9 @@ INT VDinterfaceCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_
           SubComp[k] = cmp;
           SubName[k] = VM_COMP_NAME(vd,VD_OFFSET(vd,tp)+i);
           k++;
+          ncmp++;
         }
-        SubNCmp[tp] = ns;
+        SubNCmp[tp] = ncmp;
       }
       else if (ns==n)
       {
@@ -1289,9 +1376,120 @@ INT VDinterfaceCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_
       /* no components here */
       SubNCmp[tp] = 0;
 
-  *vdi = CreateSubVecDesc(VD_MG(vd),NULL,SubNCmp,SubComp,SubName);
+  *vdi = CreateSubVecDesc(VD_MG(vd),buffer,SubNCmp,SubComp,SubName);
   if (*vdi == NULL)
     REP_ERR_RETURN (1);
+  if (TransmitLockStatusVD(vd,*vdi))
+    REP_ERR_RETURN(1);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+        VDCoDesc - a co-VECDATA_DESC is created
+
+        SYNOPSIS:
+        INT VDCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
+
+    PARAMETERS:
+   .   vd			- make a sub desc of this VECDATA_DESC
+   .   vds			- an existing sub desc of vd
+   .   vdi			- handle to new interface desc
+
+        DESCRIPTION:
+        This function creates a sub descriptor to a given VECDATA_DESC vd such that it is
+        the complement of another given descriptor vds (which is also sub to vd).
+
+        RETURN VALUE:
+        INT
+   .n   0: ok
+   .n      n: if an error occured
+   D*/
+/****************************************************************************/
+
+INT VDCoDesc (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi)
+{
+  SHORT SubComp[MAX_VEC_COMP],SubNCmp[NVECTYPES];
+  INT i,j,k,n,ns,tp,cmp,ncmp;
+  char SubName[MAX_VEC_COMP],buffer[NAMESIZE];
+
+  /* generate name and see if desc already exists */
+  strcpy(buffer,ENVITEM_NAME(vds));
+  strcat(buffer,GENERATED_NAMES_SEPERATOR);
+  strcat(buffer,"co");
+  *vdi = GetVecDataDescByName(MD_MG(vd),buffer);
+  if (*vdi != NULL) {
+    if (TransmitLockStatusVD(vds,*vdi))
+      REP_ERR_RETURN(1);
+    return(0);
+  }
+
+  k = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (VD_ISDEF_IN_TYPE(vd,tp))
+    {
+      if (VD_ISDEF_IN_TYPE(vds,tp))
+      {
+
+        n  = VD_NCMPS_IN_TYPE(vd,tp);
+        ns = VD_NCMPS_IN_TYPE(vds,tp);
+        if (ns<n)
+        {
+          /* copy all components from vd not in vds */
+          ncmp = 0;
+          for (i=0; i<n; i++)
+          {
+            cmp = VD_CMP_OF_TYPE(vd,tp,i);
+            for (j=0; j<ns; j++)
+              if (VD_CMP_OF_TYPE(vds,tp,j)==cmp)
+                break;
+            if (j<ns)
+              /* cmp contained in vds */
+              continue;
+
+            ASSERT(k<MAX_MAT_COMP);
+
+            SubComp[k] = cmp;
+            SubName[k] = VM_COMP_NAME(vd,VD_OFFSET(vd,tp)+i);
+            k++;
+            ncmp++;
+          }
+          SubNCmp[tp] = ncmp;
+        }
+        else if (ns==n)
+        {
+          /* no components here */
+          SubNCmp[tp] = 0;
+        }
+        else
+          /* vd does not contain vds */
+          REP_ERR_RETURN (1);
+      }
+      else
+      {
+        /* copy all components from vd not in vds */
+        n  = VD_NCMPS_IN_TYPE(vd,tp);
+        for (i=0; i<n; i++)
+        {
+          ASSERT(k<MAX_MAT_COMP);
+
+          SubComp[k] = VD_CMP_OF_TYPE(vd,tp,i);
+          SubName[k] = VM_COMP_NAME(vd,VD_OFFSET(vd,tp)+i);
+          k++;
+        }
+        SubNCmp[tp] = n;
+      }
+    }
+    else
+      /* no components here */
+      SubNCmp[tp] = 0;
+
+  *vdi = CreateSubVecDesc(VD_MG(vd),buffer,SubNCmp,SubComp,SubName);
+  if (*vdi == NULL)
+    REP_ERR_RETURN (1);
+  if (TransmitLockStatusVD(vd,*vdi))
+    REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -2409,6 +2607,62 @@ INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
 
 /****************************************************************************/
 /*D
+   LockMD - protect matrix against removal or deallocation
+
+   SYNOPSIS:
+   INT LockMD (MATDATA_DESC *md)
+
+   PARAMETERS:
+   .  md - matrix descriptor
+
+   DESCRIPTION:
+   This function protects a matrix against removal or deallocation.
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occurred
+ */
+/****************************************************************************/
+
+INT LockMD (MATDATA_DESC *md)
+{
+  VM_LOCKED(md) = VM_IS_LOCKED;
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   TransmitLockStatusMD - ...
+
+   SYNOPSIS:
+   INT TransmitLockStatusMD (const MATDATA_DESC *md, MATDATA_DESC *smd)
+
+   PARAMETERS:
+   .  md  - matrix descriptor
+   .  smd - sub matrix descriptor
+
+   DESCRIPTION:
+   This function ...
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if error occurred
+ */
+/****************************************************************************/
+
+INT TransmitLockStatusMD (const MATDATA_DESC *md, MATDATA_DESC *smd)
+{
+  if (!VM_LOCKED(md) && VM_LOCKED(smd))
+    REP_ERR_RETURN(1);
+  VM_LOCKED(smd) = VM_LOCKED(md);
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    FreeMD - dynamic matrix deallocation
 
    SYNOPSIS:
@@ -2513,7 +2767,18 @@ INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DE
 {
   SHORT SubComp[MAX_MAT_COMP],SubRCmp[NMATTYPES],SubCCmp[NMATTYPES];
   INT i,k,l,n,ns,tp;
-  char SubName[2*MAX_MAT_COMP];
+  char SubName[2*MAX_MAT_COMP],buffer[NAMESIZE];
+
+  /* generate name and see if desc already exists */
+  strcpy(buffer,ENVITEM_NAME(mds));
+  strcat(buffer,GENERATED_NAMES_SEPERATOR);
+  strcat(buffer,"i");
+  *mdi = GetMatDataDescByName(MD_MG(md),buffer);
+  if (*mdi != NULL) {
+    if (TransmitLockStatusMD(mds,*mdi))
+      REP_ERR_RETURN(1);
+    return(0);
+  }
 
   k = 0;
   for (tp=0; tp<NMATTYPES; tp++)
@@ -2548,9 +2813,11 @@ INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DE
     }
   }
 
-  *mdi = CreateSubMatDesc(MD_MG(md),NULL,SubRCmp,SubCCmp,SubComp,SubName);
+  *mdi = CreateSubMatDesc(MD_MG(md),buffer,SubRCmp,SubCCmp,SubComp,SubName);
   if (*mdi == NULL)
     REP_ERR_RETURN (1);
+  if (TransmitLockStatusMD(md,*mdi))
+    REP_ERR_RETURN(1);
 
   return (0);
 }
@@ -2582,63 +2849,129 @@ INT MDinterfaceDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DE
 INT MDinterfaceCoCoupleDesc (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi)
 {
   SHORT SubComp[MAX_MAT_COMP],SubRCmp[NMATTYPES],SubCCmp[NMATTYPES];
-  INT i,j,k,l,n,ns,nr,nc,nc_co,tp,cmp;
-  char SubName[2*MAX_MAT_COMP];
+  INT i,j,jj,k,l,n,ns,nr,co_nr,nc,rt,ct,cmp;
+  INT RowUsed[MAX_VEC_COMP];
+  char SubName[2*MAX_MAT_COMP],buffer[NAMESIZE];
 
-  k = 0;
-  for (tp=0; tp<NMATTYPES; tp++)
-  {
-    SubRCmp[tp] = SubCCmp[tp] = 0;
-    if (MD_ISDEF_IN_MTYPE(mds,tp))
-    {
-      if (!MD_ISDEF_IN_MTYPE(md,tp))
-        REP_ERR_RETURN (1);
-
-      n  = MD_NCMPS_IN_MTYPE(md,tp);
-      ns = MD_NCMPS_IN_MTYPE(mds,tp);
-      if (ns<n)
-      {
-        /* this is the interface */
-        /* copy all components from md with same rows as mds but NOT in mds */
-        nr = MD_ROWS_IN_MTYPE(md,tp);
-        nc = MD_COLS_IN_MTYPE(md,tp);
-        for (i=0; i<nr; i++)
-        {
-          nc_co = 0;
-          for (j=0; j<nc; j++)
-          {
-            cmp = MD_IJ_CMP_OF_MTYPE(md,tp,i,j);
-            for (j=0; j<ns; j++)
-              if (MD_MCMP_OF_MTYPE(mds,tp,j)==cmp)
-                break;
-            if (j<ns)
-              /* cmp contained in vds */
-              continue;
-
-            ASSERT(k<MAX_MAT_COMP);
-
-            SubComp[k] = cmp;
-            l = MD_MTYPE_OFFSET(md,tp)+i*nr+j;
-            SubName[2*k]   = VM_COMP_NAME(md,2*l);
-            SubName[2*k+1] = VM_COMP_NAME(md,2*l+1);
-            k++;
-            nc_co++;
-          }
-          if (nc_co==nc)
-            k -= nc_co;
-        }
-        SubRCmp[tp] = nr;
-        SubCCmp[tp] = nc_co;
-      }
-      else if (ns!=n)
-        /* md does not contain mds */
-        REP_ERR_RETURN (1);
-    }
+  /* generate name and see if desc already exists */
+  strcpy(buffer,ENVITEM_NAME(mds));
+  strcat(buffer,GENERATED_NAMES_SEPERATOR);
+  strcat(buffer,"icc");
+  *mdi = GetMatDataDescByName(MD_MG(md),buffer);
+  if (*mdi != NULL) {
+    if (TransmitLockStatusMD(mds,*mdi))
+      REP_ERR_RETURN(1);
+    return(0);
   }
 
-  *mdi = CreateSubMatDesc(MD_MG(md),NULL,SubRCmp,SubCCmp,SubComp,SubName);
+  k = 0;
+  for (rt=0; rt<NVECTYPES; rt++)
+  {
+    for (ct=0; ct<NVECTYPES; ct++)
+      SubRCmp[MTP(rt,ct)] = SubCCmp[MTP(rt,ct)] = 0;
+
+    /* find type rows used my mds */
+    for (ct=0; ct<NVECTYPES; ct++)
+      if (MD_ISDEF_IN_RT_CT(mds,rt,ct))
+        break;
+    if (ct>=NVECTYPES)
+      continue;
+
+    /* find rows in (rt,ct) used by mds relative to md */
+    for (ct=0; ct<NVECTYPES; ct++)
+      if (MD_ISDEF_IN_RT_CT(mds,rt,ct))
+      {
+        if (!MD_ISDEF_IN_RT_CT(md,rt,ct))
+          REP_ERR_RETURN(1);
+
+        n  = MD_NCMPS_IN_RT_CT(md,rt,ct);
+        ns = MD_NCMPS_IN_RT_CT(mds,rt,ct);
+        if (n==ns)
+          continue;
+        if (ns>n)
+          REP_ERR_RETURN(1);
+
+        nr = MD_ROWS_IN_RT_CT(md,rt,ct);
+        nc = MD_COLS_IN_RT_CT(md,rt,ct);
+        for (i=0; i<nr; i++)
+          RowUsed[i] = FALSE;
+        for (jj=0; jj<ns; jj++)
+        {
+          cmp = MD_MCMP_OF_RT_CT(mds,rt,ct,jj);
+          for (i=0; i<nr; i++)
+            for (j=0; j<nc; j++)
+              if (cmp==MD_IJ_CMP_OF_RT_CT(md,rt,ct,i,j))
+                RowUsed[i] = TRUE;
+        }
+      }
+    co_nr = 0;
+    for (i=0; i<nr; i++)
+      if (RowUsed[i])
+        co_nr++;
+
+    /* now copy all md-comps from used rows not in mds */
+    for (ct=0; ct<NVECTYPES; ct++)
+      if (MD_ISDEF_IN_RT_CT(md,rt,ct))
+      {
+        nr = MD_ROWS_IN_RT_CT(md,rt,ct);
+        nc = MD_COLS_IN_RT_CT(md,rt,ct);
+        if (!MD_ISDEF_IN_RT_CT(mds,rt,ct))
+        {
+          /* copy all comps of used rows */
+          for (i=0; i<nr; i++)
+            if (RowUsed[i])
+              for (j=0; j<nc; j++)
+              {
+                ASSERT(k<MAX_MAT_COMP);
+
+                SubComp[k] = MD_IJ_CMP_OF_RT_CT(md,rt,ct,i,j);
+                l = MD_MTYPE_OFFSET(md,MTP(rt,ct))+i*nr+j;
+                SubName[2*k]   = VM_COMP_NAME(md,2*l);
+                SubName[2*k+1] = VM_COMP_NAME(md,2*l+1);
+                k++;
+              }
+          SubRCmp[MTP(rt,ct)] = co_nr;
+          SubCCmp[MTP(rt,ct)] = nc;
+        }
+        else
+        {
+          if (nc==MD_COLS_IN_RT_CT(mds,rt,ct))
+            /* no comps to copy */
+            continue;
+
+          /* copy all comps of used rows not in mds */
+          ns = MD_NCMPS_IN_RT_CT(mds,rt,ct);
+          for (i=0; i<nr; i++)
+            if (RowUsed[i])
+              for (j=0; j<nc; j++)
+              {
+                cmp = MD_IJ_CMP_OF_RT_CT(md,rt,ct,i,j);
+
+                for (jj=0; jj<ns; jj++)
+                  if (cmp==MD_MCMP_OF_RT_CT(mds,rt,ct,jj))
+                    break;
+                if (jj<ns)
+                  continue;
+
+                ASSERT(k<MAX_MAT_COMP);
+
+                SubComp[k] = cmp;
+                l = MD_MTYPE_OFFSET(md,MTP(rt,ct))+i*nr+j;
+                SubName[2*k]   = VM_COMP_NAME(md,2*l);
+                SubName[2*k+1] = VM_COMP_NAME(md,2*l+1);
+                k++;
+              }
+          SubRCmp[MTP(rt,ct)] = co_nr;
+          SubCCmp[MTP(rt,ct)] = nc-MD_COLS_IN_RT_CT(mds,rt,ct);
+        }
+      }
+  }
+
+  *mdi = CreateSubMatDesc(MD_MG(md),buffer,SubRCmp,SubCCmp,SubComp,SubName);
   if (*mdi == NULL)
     REP_ERR_RETURN (1);
+  if (TransmitLockStatusMD(md,*mdi))
+    REP_ERR_RETURN(1);
 
   return (0);
 }

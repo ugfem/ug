@@ -58,6 +58,9 @@
 #define DEFAULT_NAMES "uvwzpqrst"   /* of size MAX_VEC_COMP                 */
 
 #define NO_IDENT                        -1              /* no identification of components		*/
+#define FULL_TPLT                       -1              /* full template rather than sub		*/
+
+#define GENERATED_NAMES_SEPERATOR               "_"
 
 /* defines for getting object type specific information from XXXDATA_DESCs	*/
 #define STRICT                  123
@@ -135,7 +138,9 @@
 #define VM_COMP_NAMEPTR(p)                 ((p)->compNames)
 #define VM_COMP_NAME(p,i)                  (VM_COMP_NAMEPTR(p)[i])
 #define VM_COMPPTR(p)                      ((p)->Components)
-#define VM_LOCKED(p)                       ((p)->locked)
+/* we remove this for security reasons: please use function calls
+   #define VM_LOCKED(p)                       ((p)->locked)
+ */
 
 /* swapping part interface data */
 #define SPID_NVD_MAX            4
@@ -232,10 +237,6 @@ typedef struct {
 
 typedef DOUBLE VEC_SCALAR[MAX_VEC_COMP];
 
-/* special const pointers */
-typedef const VECDATA_DESC *CONST_VECDATA_DESC_PTR;
-typedef const MATDATA_DESC *CONST_MATDATA_DESC_PTR;
-
 typedef struct {
 
   INT nvd;                                                      /* number of vec data descriptors		*/
@@ -305,6 +306,14 @@ INT AllocMDFromVD (MULTIGRID *theMG, INT fl, INT tl,
 INT AllocMDFromMD (MULTIGRID *theMG, INT fl, INT tl,
                    const MATDATA_DESC *template_desc, MATDATA_DESC **new_desc);
 
+/* locking of vector and matrix descriptors */
+INT LockVD (VECDATA_DESC *vd);
+INT LockMD (MATDATA_DESC *md);
+
+/* */
+INT TransmitLockStatusVD (const VECDATA_DESC *vd, VECDATA_DESC *svd);
+INT TransmitLockStatusMD (const MATDATA_DESC *md, MATDATA_DESC *smd);
+
 /* freeing of vector and matrix descriptors */
 INT FreeVD        (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *x);
 INT FreeMD        (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *A);
@@ -317,10 +326,11 @@ INT DisposeVD     (VECDATA_DESC *vd);
 INT DisposeMD     (MATDATA_DESC *md);
 
 /* constructing part interface descriptors */
-INT VDinterfaceDesc                                             (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi);
-INT VDinterfaceCoDesc                                   (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi);
-INT MDinterfaceDesc                                             (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi);
-INT MDinterfaceCoCoupleDesc                             (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi);
+INT VDinterfaceDesc                             (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi);
+INT VDinterfaceCoDesc                   (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi);
+INT VDCoDesc                                    (const VECDATA_DESC *vd, const VECDATA_DESC *vds, VECDATA_DESC **vdi);
+INT MDinterfaceDesc                             (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi);
+INT MDinterfaceCoCoupleDesc             (const MATDATA_DESC *md, const MATDATA_DESC *mds, MATDATA_DESC **mdi);
 
 INT ConstructVecOffsets         (const SHORT *NCmpInType, SHORT *offset);
 INT ConstructMatOffsets         (const SHORT *RowsInType, const SHORT *ColsInType, SHORT *offset);
