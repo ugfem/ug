@@ -264,7 +264,7 @@ static INT AVSCommand (INT argc, char **argv)
   if (displacement != NULL) {
     if (VD_NCMPS_IN_TYPE(displacement,NODEVECTOR) < DIM)
       return(CMDERRORCODE);
-    comp = VD_CMPPTR_OF_TYPE(displacement,NODEVECTOR,0);
+    comp = VD_CMPPTR_OF_TYPE(displacement,NODEVECTOR);
     if (ReadArgvDOUBLE("scale",&scale,argc,argv))
       scale = 1.0;
   }
