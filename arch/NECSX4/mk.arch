@@ -3,6 +3,12 @@
 #
 #	for NEC SX4
 #
+#
+#   debugging for parallel programs with MPISX:
+#   - set DISPLAY; xhost+ on local workstation
+#   - start with  'mpisx -p <procs> -debug -e <executable>'
+#   - a window with pdbx will be started for each processor
+#
 
 ARCH_TYPE     = __NECSX4__
 
