@@ -1,15 +1,3 @@
 #!/bin/tcsh
 
-ug_dart.pl Client PC 2 DEBUG NOOPTIM
-ug_dart.pl Client PC 3 DEBUG NOOPTIM
-ug_dart.pl Client PC 2 NODEBUG OPTIM
-ug_dart.pl Client PC 3 NODEBUG OPTIM
-ug_dart.pl Client PCI 2 DEBUG NOOPTIM
-ug_dart.pl Client PCI 3 DEBUG NOOPTIM
-ug_dart.pl Client PCI 2 NODEBUG OPTIM
-ug_dart.pl Client PCI 3 NODEBUG OPTIM
-ug_dart.pl Client PCGCOV 2 DEBUG NOOPTIM
-ug_dart.pl Client PCGCOV 3 DEBUG NOOPTIM
-ug_dart.pl Client PCGCOV 2 NODEBUG OPTIM
-ug_dart.pl Client PCGCOV 3 NODEBUG OPTIM
-
+ug_dart.pl -e all -t Nightly

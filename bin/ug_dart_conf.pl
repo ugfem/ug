@@ -5,277 +5,33 @@
 # purpose: build the "DartConfiguration.tcl" file which includes the 
 #          configuration for the dart test cycle
 
+###############################################################################
+# modules
+###############################################################################
+use Getopt::Std;
 
-##############################################################################
+###############################################################################
 # defining several subroutines
-##############################################################################
-
-
-sub config
-{
-	my ($ConfParams,$BuildParams) = ("","");
-	my @control_params;
-	my $arch_type = splice(@_,0,1);
-	for(my $i=0;$i<=13;$i++)
-	{
-		$control_params[$i]=0;
-	}
-	foreach $param (@_)
-	{
-    		if($param eq "SEQ" || $param eq "MPI" || $param eq "PVM" ||
-		   $param eq "NX" || $param eq "NXLIB" || $param eq "SHMEM" ||
-		   $param eq "SHMEMT3D" || $param eq "PARIX")
-		{
-			$ConfParams=join(' ',$ConfParams,$param);
-			unless($param eq "SEQ")
-			{
-				$BuildParams=join('-',$BuildParams,$param);
-			}
-			$control_params[0]=1;
-		}
-		elsif($param eq "2" || $param eq "3")
-		{
-			$ConfParams=join(' ',$ConfParams,$param);
-			unless($param eq "2")
-			{
-				$BuildParams=join('-',$BuildParams,$param);
-			}	
-			$control_params[1]=1;
-		}
-		elsif($param eq "GRAPE" || $param eq "NOGRAPE")
-		{
-			$ConfParams=join(' ',$ConfParams,$param);
-			unless($param eq "NOGRAPE")
-			{
-				$BuildParams=join('-',$BuildParams,$param);
-			}	
-			$control_params[2]=1;
-		}
-		elsif($param eq "COVISE" || $param eq "NOCOVISE")
-		{
-			$ConfParams=join(' ',$ConfParams,$param);
-			unless($param eq "NOCOVISE")
-			{
-				$BuildParams=join('-',$BuildParams,$param);
-			}	
-			$control_params[3]=1;
-		}
-		elsif($param eq "PV3" || $param eq "NOPV3")
-		{
-			$ConfParams=join(' ',$ConfParams,$param);
-			unless($param eq "NOPV3")
-			{
-				$BuildParams=join('-',$BuildParams,$param);
-			}	
-			$control_params[4]=1;
-		}
-		elsif($param eq "NETGEN" || $param eq "NONETGEN")
-		{
-			$ConfParams=join(' ',$ConfParams,$param);
-			unless($param eq "NONETGEN")
-			{
-				$BuildParams=join('-',$BuildParams,$param);
-			}	
-			$control_params[5]=1;
-		}
-		elsif($param eq "RIF" || $param eq "NORIF")
-		{
-			$ConfParams=join(' ',$ConfParams,$param);
-			unless($param eq "NORIF")
-			{
-				$BuildParams=join('-',$BuildParams,$param);
-			}	
-			$control_params[6]=1;
-		}
-		elsif($param eq "SIF" || $param eq "XIF" || $param eq "MIF" ||
-		       $param eq "RIF" || $param eq "XRIF" || $param eq "NORIF")
-		{
-			$ConfParams=join(' ',$ConfParams,$param);
-			unless($param eq "XIF")
-			{
-				$BuildParams=join('-',$BuildParams,$param);
-			}	
-			$control_params[7]=1;
-		}
-		elsif($param eq "GUI" || $param eq "NOGUI")
-		{
-			$ConfParams=join(' ',$ConfParams,$param);
-			unless($param eq "NOGUI")
-			{
-				$BuildParams=join('-',$BuildParams,$param);
-			}	
-			$control_params[8]=1;
-		}
-		elsif($param eq "STD_DOMAIN" || $param eq "LGM_DOMAIN")
-		{
-			$ConfParams=join(' ',$ConfParams,$param);
-			unless($param eq "STD_DOMAIN")
-			{
-				$BuildParams=join('-',$BuildParams,$param);
-			}	
-			$control_params[9]=1;
-		}
-		elsif($param eq "DEBUG" || $param eq "NODEBUG")
-		{
-			$ConfParams=join(' ',$ConfParams,$param);
-			unless($param eq "DEBUG")
-			{
-				$BuildParams=join('-',$BuildParams,$param);
-			}	
-			$control_params[10]=1;
-		}
-		elsif($param eq "OPTIM" || $param eq "NOOPTIM")
-		{
-			if($arch_type =~ /GCOV/)
-			{
-				$ConfParams=join(' ',$ConfParams,"NOOPTIM");
-				print "\n\nOptimimization can't be used with code coverage!\n\n";
-			}
-			else
-			{
-				$ConfParams=join(' ',$ConfParams,$param);
-			}
-			unless($param eq "NOOPTIM")
-			{
-				$BuildParams=join('-',$BuildParams,$param);
-			}	
-			$control_params[11]=1;
-		}
-		elsif($param eq "CHACO" || $param eq "NOCHACO")
-		{
-			$ConfParams=join(' ',$ConfParams,$param);
-			unless($param eq "NOCHACO")
-			{
-				$BuildParams=join('-',$BuildParams,$param);
-			}	
-			$control_params[12]=1;
-		}
-		elsif($param eq "CAD" || $param eq "NOCAD")
-		{
-			$ConfParams=join(' ',$ConfParams,$param);
-			unless($param eq "NOCAD")
-			{
-				$BuildParams=join('-',$BuildParams,$param);
-			}	
-			$control_params[13]=1;
-		}
-	}
-	for(my $i=0;$i<=13;$i++)
-	{
-		if($control_params[$i]==0)
-		{
-			if($i==0)
-			{
-				$ConfParams=join(' ',$ConfParams,'SEQ');
-			}				
-			elsif($i==1)
-			{
-				$ConfParams=join(' ',$ConfParams,'2');
-			}				
-			elsif($i==2)
-			{
-				$ConfParams=join(' ',$ConfParams,'NOGRAPE');
-			}				
-			elsif($i==3)
-			{
-				$ConfParams=join(' ',$ConfParams,'NOCOVISE');
-			}				
-			elsif($i==4)
-			{
-				$ConfParams=join(' ',$ConfParams,'NOPV3');
-			}				
-			elsif($i==5)
-			{
-				$ConfParams=join(' ',$ConfParams,'NONETGEN');
-			}				
-			elsif($i==6)
-			{
-				$ConfParams=join(' ',$ConfParams,'NORIF');
-			}				
-			elsif($i==7)
-			{
-				$ConfParams=join(' ',$ConfParams,'XIF');
-			}				
-			elsif($i==8)
-			{
-				$ConfParams=join(' ',$ConfParams,'NOGUI');
-			}				
-			elsif($i==9)
-			{
-				$ConfParams=join(' ',$ConfParams,'STD_DOMAIN');
-			}				
-			elsif($i==10)
-			{
-				$ConfParams=join(' ',$ConfParams,'DEBUG');
-			}				
-			elsif($i==11)
-			{
-				if($arch_type =~ /GCOV/)
-				{
-					$ConfParams=join(' ',$ConfParams,'NOOPTIM');
-				}
-				else
-				{
-					$ConfParams=join(' ',$ConfParams,'OPTIM');
-				}
-			}				
-			elsif($i==12)
-			{
-				$ConfParams=join(' ',$ConfParams,'NOCHACO');
-			}				
-			elsif($i==13)
-			{
-				$ConfParams=join(' ',$ConfParams,'NOCAD');
-			}				
-		}
-	}
-	if($BuildParams eq "")
-	{
-		$BuildParams="-default";
-	}
-	my @output;
-	push(@output,$ConfParams);
-	push(@output,$BuildParams);
-	return(@output);
-}
-
-# creating the "DartRoot" dart variable for "DartConfiguration.tcl"
-sub dartroot
+###############################################################################
+# creating the "DartRoot" dart variable 
+sub dartroot # argument: dartroot directory
 {
 	return(join(' ','DartRoot:',$_[0]));
 }
-
-# creating the "SourceDirectory" dart variable for "DartConfiguration.tcl"
-sub sourcedir
+# creating the "SourceDirectory" dart variable
+sub sourcedir # argument: test directory
 {
-	if($_[2] eq "")
-	{
-		return(join('','SourceDirectory: ',$_[0],'/Source/',$_[1],'/UG'));
-	}
-	else
-	{
-		return(join('','SourceDirectory: ',$_[0],'/Source/',$_[1],'/UG/',$_[2]));
-	}
+    return(join('','SourceDirectory: ',$_[0]));
 }
-
-# creating the "BuildDirectory" dart variable for "DartConfiguration.tcl"
-sub builddir
+# creating the "BuildDirectory" dart variable
+sub builddir #argument: test directory
 {
-	if($_[2] eq "")
-	{
-		return(join('','BuildDirectory: ',$_[0],'/Source/',$_[1],'/UG'));
-	}
-	else
-	{
-		return(join('','BuildDirectory: ',$_[0],'/Source/',$_[1],'/UG/',$_[2]));
-	}
+    return(join('','BuildDirectory: ',$_[0]));
 }
-
-# creating the "Site" dart variable for "DartConfiguration.tcl"
+# creating the "Site" dart variable 
 sub site
 {
 	my $site;
-	
 	system("uname -n > ./temp.txt");
 	open TEMP, "./temp.txt";
 	while (<TEMP>)
@@ -285,22 +41,21 @@ sub site
 	system("rm ./temp.txt");
 	return(join(' ','Site:',$site));
 }
-
-# creating the "BuildName" dart variable for "DartConfiguration.tcl"
-sub buildname
+# creating the "BuildName" dart variable 
+sub buildname # arguments: test identifier, ugroot directory, architecture  
 {
 	my ($string,$kernel_name,$os_release,$compiler);
-        $string = '[A-Za-z]\w*';
-        # setting the compiler
-        open ARCHFILE, (join('',$_[0],'/arch/',$_[1],'/mk.arch'))
-         or die "\nArchitecture doesn't exist!\n";
-        while (<ARCHFILE>)
-        {
-        	if ( $_ =~ /ARCH_CC\s*=\s*($string)/ )
-                {
-			$compiler = $1;
-		}
-        }
+  $string = '[A-Za-z]\w*';
+  # setting the compiler
+  open ARCHFILE, (join('',$_[1],'/arch/',$_[2],'/mk.arch'))
+      or die "\nArchitecture doesn't exist!\n";
+  while (<ARCHFILE>)
+  {
+      if ( $_ =~ /ARCH_CC\s*=\s*($string)/ )
+      {
+          $compiler = $1;
+      }
+  }
 	system("uname -s > ./temp.txt");
 	open TEMP, "./temp.txt";
 	while (<TEMP>)
@@ -314,101 +69,90 @@ sub buildname
     		$os_release=substr $_, 0, (index $_, "\n");
 	}
 	system("rm ./temp.txt");
-	if($_[3] eq "")
-	{
-		return(join('','BuildName: UGlib-',$kernel_name,'-',$os_release,'-',$compiler,'-',$_[1],,$_[2]));
-	}
-	else
-	{
-		return(join('','BuildName: Test-',$kernel_name,'-',$os_release,'-',$compiler,'-',$_[1],,$_[2]));
-	}		
+	return(join('','BuildName: ',$_[0],'-',$kernel_name,'-',$os_release,'-',$compiler));
 }
-
-# creating the "ConfigureCommand" dart variable for "DartConfiguration.tcl"
-sub confcomm
+# creating the "ConfigureCommand" dart variable 
+sub confcomm # arguments: architecture, ugconf parameter
 {
-	my $ConfComm=join('','ConfigureCommand: ',$_[0],'/bin/ugconf',' ',$_[1],$_[2]);
-	return($ConfComm);
+    my $ConfComm=join('','ConfigureCommand: ugconf -v',' ',$_[0],' ',$_[1]);
+    return($ConfComm);
+}
+# creating the "MakeCommand" dart variable
+sub makecomm
+{
+    if($_[0] eq "UGLib")
+    {
+        $makecomm = "MakeCommand: ugpart";
+    }
+    else
+    {
+        $makecomm = "MakeCommand: make build";
+    }
+} 
+# print the help message
+sub help
+{
+    print "usage:	ug_dart_conf.pl [-b build_dir_suffix] [-m mode] [-i test id]\n"; 
+    print "[-a architecture] [-c ugconf options]\n";
+    print "-b: Specifying another build directory than .../UG by entering the\n";
+    print "    sub directory, e.g. cd/appl\n"; 
+    print "-i: Test identifier\n";
+    print "-a: Architecture, e.g. PC\n";
+    print "-c: Options which ugconf would accept except the architecture\n";
+    print "\n";
+    print "purpose: running all scripts which are necessary for a complete dart\n";
+    print "         build/test/submit cycle\n";
 }
 
-##############################################################################
-# main 
-##############################################################################
-
-# setting the "dartroot" variable
+###############################################################################
+# main
+###############################################################################
+# read the command line parameters
+%option = ();
+getopts("b:i:a:c:h", \%option);
+# print help message if the parameter -h is given
+if($option{h})
+{
+    help();
+    exit 0;
+}
+# exit if no architecture is given
+unless($option{a})
+{
+    die "No architecture specified!";
+}
+# set up some variables
+# dartroot
 my $dartroot = $ENV {"DART_HOME"};
-
-# setting the build directory suffix
-my $build_dir_suffix = ""; # default
-if($#ARGV > 0 && $ARGV[0] eq "-bd")
-{
-	splice(@ARGV,0,1);
-	$build_dir_suffix = splice(@ARGV,0,1);
-}
-
-# setting the make command
-if($build_dir_suffix eq "")
-{
-	$makecomm = "MakeCommand: ugpart";
-}
-else
-{
-	$makecomm = "MakeCommand: make build";
-}
-
-# detect whether this script runs on the server or the client(default: client)
-my $mode = "Client"; # default
-if($#ARGV > 0 && ($ARGV[0] eq "Client" || $ARGV[0] eq "Server"))
-{
-	$mode = splice(@ARGV,0,1);
-}
-
-# setting the "ugroot" variable
-my $ugroot = join('',$dartroot,'/Source/',$mode,'/UG/ug');
-
-# setting the arch variable
-my $arch = splice(@ARGV,0,1);
-
-# generating the parameters for ugconf and for the BuildName variable
-my @config_output=config($arch,@ARGV);
-my $ugconf_params=$config_output[0];
-my $build_params=$config_output[1];
-
+# ugroot
+my $ugroot = join('',$dartroot,'/Source/Client/UG/ug');
+# write DartConfiguration.tcl
 # open the "DartConfiguration.tcl.proto" file for reading
-open IN, (join('',$dartroot,'/Source/',$mode,'/UG/DartConfiguration.tcl.proto'));
-
-# open the "DartConfiguration.tcl" file for writingi
-if($build_dir_suffix eq "")
-{
-	open OUT, (join('','>',$dartroot,'/Source/',$mode,'/UG/DartConfiguration.tcl'));
-}
-else
-{
-	open OUT, (join('','>',$dartroot,'/Source/',$mode,'/UG/',$build_dir_suffix,'/DartConfiguration.tcl'));
-}	
-
+open IN, (join('',$dartroot,'/Source/Client/UG/DartConfiguration.tcl.proto'));
+# open the "DartConfiguration.tcl" file for writing
+open OUT, (join('','>',$option{b},'/DartConfiguration.tcl'));
 # copy the content of IN to OUT and write the dart variables into OUT
 while (<IN>)
 {
     if ( $_=~ /DartRoot: ---/)
     {
-	print OUT dartroot($dartroot),"\n";
+        print OUT dartroot($dartroot),"\n";
     }
     elsif ( $_=~ /SourceDirectory: ---/)
     {
-	print OUT sourcedir($dartroot,$mode,$build_dir_suffix),"\n";
+        print OUT sourcedir($option{b}),"\n";
     }
     elsif ( $_=~ /BuildDirectory: ---/)
     {
-	print OUT builddir($dartroot,$mode,$build_dir_suffix),"\n";
+        print OUT builddir($option{b}),"\n";
     }
     elsif ( $_=~ /BuildName: ---/)
     {
-	print OUT buildname($ugroot,$arch,$build_params,$build_dir_suffix),"\n";
+        print OUT buildname($option{i},$ugroot,$option{a}),"\n";
     }
     elsif ( $_=~ /ConfigureCommand: ---/)
     {
-        print OUT confcomm($ugroot,$arch,$ugconf_params),"\n";
+        print OUT confcomm($option{a},$option{c}),"\n";
     }
     elsif ( $_=~ /Site: ---/)
     {
@@ -416,10 +160,15 @@ while (<IN>)
     }
     elsif ( $_=~ /MakeCommand: ---/)
     {
-	print OUT $makecomm,"\n";
+        print OUT makecomm($option{i}),"\n";
     } 
     else
     {
         print OUT $_;
     }
 }
+
+
+
+
+
