@@ -378,11 +378,6 @@ INT NPLinearSolverInit (NP_LINEAR_SOLVER *np, INT argc , char **argv)
   if (sc_read(np->abslimit,NP_FMT(np),np->x,"abslimit",argc,argv))
     for (i=0; i<MAX_VEC_COMP; i++)
       np->abslimit[i] = ABS_LIMIT;
-  if (sc_read(np->reduction,NP_FMT(np),NULL,"red",argc,argv))
-    return(NP_ACTIVE);
-
-  if ((np->x == NULL) || (np->b == NULL) || (np->A == NULL))
-    return(NP_ACTIVE);
 
   if (ReadArgvINT("setbasetime",&NPLS_setbasetime(np),argc,argv))
   {
@@ -393,6 +388,12 @@ INT NPLinearSolverInit (NP_LINEAR_SOLVER *np, INT argc , char **argv)
   {
     NPLS_printbasetime(np) = 0;
   }
+
+  if (sc_read(np->reduction,NP_FMT(np),NULL,"red",argc,argv))
+    return(NP_ACTIVE);
+
+  if ((np->x == NULL) || (np->b == NULL) || (np->A == NULL))
+    return(NP_ACTIVE);
 
   return(NP_EXECUTABLE);
 }
