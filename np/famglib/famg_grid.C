@@ -693,12 +693,6 @@ int FAMGGrid::InitLevel0(const class FAMGSystem &system)
 	
 #ifdef USE_UG_DS
 	SetugGrid(system.GetFineGrid());
-	#ifdef WEG
-	//#ifdef ModelP
-	GetNrMasterVectors() = -1;		// default
-	GetNrBorderVectors() = -1;		// default
-	GetNrGhostVectors() = -1;		// default
-	#endif
 #else
     SetFather(NULL);
 #endif
@@ -769,13 +763,6 @@ int FAMGGrid::Init(int nn, const FAMGGrid& grid_pattern)
 	}
 	else
 		Consmatrix = matrix;
-	
-	#ifdef WEG
-	//#ifdef ModelP
-	GetNrMasterVectors() = -1;		// default
-	GetNrBorderVectors() = -1;		// default
-	GetNrGhostVectors() = -1;		// default
-	#endif
 #else	
     matrix = (FAMGMatrix *) FAMGGetMem(sizeof(FAMGMatrix),FAMG_FROM_TOP);
     if(matrix == NULL)
@@ -1471,32 +1458,10 @@ ASSERT(!DDD_ConsCheck());
 		DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), SendToOverlap1 );
 	DDD_XferEnd();
 	
-#ifdef WEG
-	// count & set number of vectors
-	mv = FIRSTVECTOR(mygrid);
-	i = 0;
-	GetNrMasterVectors()=0;
-	GetNrBorderVectors()=0;
-	GetNrGhostVectors()=0;
-	for( vec=PFIRSTVECTOR(mygrid); vec!=mv; vec=SUCCVC(vec))
-	{
-		VINDEX(vec) = i++;
-		GetNrGhostVectors()++;
-	}
-	for( ; vec!=NULL; vec=SUCCVC(vec))
-	{
-		VINDEX(vec) = i++;
-		if( IS_FAMG_MASTER(vec) )
-			GetNrMasterVectors()++;
-		else
-			GetNrBorderVectors()++;
-	}
-#else
 	// renumber vector list
 	i = 0;
 	for( vec=PFIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec))
 		VINDEX(vec) = i++;
-#endif
 	
 	n = NVEC(mygrid);
 	assert(i==n);	// otherwise the vectorlist became inconsistent
