@@ -60,8 +60,12 @@ extern "C" {
    CURRENT_TIME should be the most accurate time (usually in micro seconds)
    CURRENT_TIME_LONG should be a time which measures some days without overflow
  */
+/* define LONG_TIMER for measuring intervals above 30 min,
+   resolution in seconds
+ #define ARCH_LONG_TIMER */
 #define CURRENT_TIME            ((DOUBLE)0.0)
 #define CURRENT_TIME_LONG       CURRENT_TIME
+#define ARCH_DIFF_TIMER(x,y) ((x)-(y))
 
 /* ANSI-printf does not support %lX, where x is eEgGf */
 #define _fmt_le                 "le"
@@ -90,6 +94,7 @@ extern "C" {
 /*          __YMP__      CRAY YMP version                                   */
 /*          __NECSX4__   NEC SX4                                            */
 /*          __SR2201__   Hitachi SR2201                                     */
+/*          __SR8K__     Hitachi SR8000                                     */
 /*          __MACOSXSERVER__   MacOS X Server                               */
 /*          __MACOSX__   Mac OS X                                                   */
 /*          __MWCW__     Apple Power Macintosh  (Metrowerks CodeWarrior)    */
@@ -505,7 +510,13 @@ DOUBLE aix_highres_clock( void );               /* implementation in misc.c */
 
 /* current time as DOUBLE value */
 #undef CURRENT_TIME
+#ifndef ARCH_LONG_TIMER
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
+#else
+#define CURRENT_TIME   ((double)time(NULL))
+#undef ARCH_DIFF_TIMER
+#define ARCH_DIFF_TIMER(x,y) (difftime((time_t)(x),(time_t)(y)))
+#endif
 
 #endif
 
@@ -954,6 +965,39 @@ DOUBLE nec_clock( void );               /* implementation in mics.c */
 #undef __MWCW__
 
 #define ARCHNAME        "SR2201"
+
+/* basic types */
+#define SHORT  short
+#define INT    long    /* sizeof(int) != sizeof(void *) !! */
+#define FLOAT  float
+#define DOUBLE double
+#define COORD  double
+#define SCREEN_COORD  float
+
+/* memory */
+#define ALIGNMENT 8                     /* power of 2 and >= sizeof(int) !  */
+#define ALIGNMASK 0xFFFFFFF8            /* compatible to alignment          */
+
+/* fortran interfacing */
+#define F77SYM(lsym,usym)  lsym ## _
+
+/* current time as DOUBLE value */
+#undef CURRENT_TIME
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
+
+#endif
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Definitions for Hitachi SR8000                                           */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef __SR8K__
+#undef __MWCW__
+
+#define ARCHNAME        "SR8K"
 
 /* basic types */
 #define SHORT  short
