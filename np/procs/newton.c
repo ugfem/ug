@@ -72,10 +72,19 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /* variables for timing measurement		*/
 static int defect_c, newton_c, linear_c;
 static double defect_t, newton_t, linear_t;
+
+#ifdef ModelP
+#include "ppif.h"
+static double clock_start;
+
+#define CSTART()    clock_start=CurrentTime()
+#define CSTOP(t,c)  t+=(CurrentTime()-clock_start);c++
+#else
 static clock_t clock_start;
 
-#define CSTART()        clock_start=clock()
+#define CSTART()    clock_start=clock()
 #define CSTOP(t,c)  t+=((double)(clock()-clock_start))/((double)CLOCKS_PER_SEC);c++
+#endif
 
 /****************************************************************************/
 /*                                                                          */
