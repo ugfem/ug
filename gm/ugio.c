@@ -2533,8 +2533,8 @@ nparfiles = UG_GlobalMinINT(nparfiles);
 #ifdef __THREEDIM__
         for (j=0; j<SIDES_OF_ELEM(theElement); j++)
           if (SIDE_ON_BND(theElement,j))
-            for (k=0; k<EDGES_OF_SIDE(theElement,j)
-                 SETEDSUBDOM(GetEdge(CORNER_OF_EDGE_PTR(theElement,EDGE_OF_SIDE(theElement,j,k),0),CORNER_OF_EDGE_PTR(theElement,EDGE_OF_SIDE(theElement,j,k),1)),0);
+            for (k=0; k<EDGES_OF_SIDE(theElement,j); k++)
+              SETEDSUBDOM(GetEdge(CORNER_OF_EDGE_PTR(theElement,EDGE_OF_SIDE(theElement,j,k),0),CORNER_OF_EDGE_PTR(theElement,EDGE_OF_SIDE(theElement,j,k),1)),0);
 
 #endif
         if (CreateAlgebra (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
