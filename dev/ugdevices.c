@@ -31,6 +31,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <assert.h>
 
 /* low module */
 #include "compiler.h"
@@ -774,7 +775,7 @@ INT InitDevices (int *argcp, char **argv)
         #endif
 
   defaultOuputDevice = InitScreen(argcp,argv,&error);
-  if (error) return(1);
+  assert(!error);               /*if (error) return(1);*/
 
         #ifdef ModelP
   /* send number of command line arguments after InitScreen() */
