@@ -101,12 +101,8 @@ INT         CreateSonElementSide    (GRID *theGrid, ELEMENT *theElement,
 GRID            *CreateNewLevel                 (MULTIGRID *theMG);
 
 /* dispose basic objects */
-INT              DisposeNode                    (GRID *theGrid, NODE *theNode);
-INT              DisposeVertex                  (GRID *theGrid, VERTEX *theVertex);
-INT              DisposeElementSide             (GRID *theGrid, ELEMENTSIDE *theElementSide);
 INT              DisposeElement                 (GRID *theGrid, ELEMENT *theElement);
 INT              DisposeTopLevel                (MULTIGRID *theMG);
-INT                      DisposeEdgesFromElement(GRID *theGrid, ELEMENT *theElement);
 
 /* miscellaneous */
 INT              FindNeighborElement    (const ELEMENT *theElement, INT Side, ELEMENT **theNeighbor, INT *NeighborSide);

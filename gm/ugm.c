@@ -126,6 +126,8 @@ RCSID("$Header$",UG_RCS_STRING)
 /*																			*/
 /****************************************************************************/
 
+static INT DisposeNode (GRID *theGrid, NODE *theNode);
+static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex);
 static INT DisposeEdge (GRID *theGrid, EDGE *theEdge);
 
 /****************************************************************************/
@@ -1992,7 +1994,7 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
    DisposeNode - Remove node including its edges from the data structure
 
    SYNOPSIS:
-   INT DisposeNode (GRID *theGrid, NODE *theNode);
+   static INT DisposeNode (GRID *theGrid, NODE *theNode);
 
    PARAMETERS:
    .  theGrid - grid to remove from
@@ -2009,16 +2011,18 @@ static INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
    D*/
 /****************************************************************************/
 
-INT DisposeNode (GRID *theGrid, NODE *theNode)
+static INT DisposeNode (GRID *theGrid, NODE *theNode)
 {
   LINK *link0,*link1,*pl;
   EDGE *pe;
-  NODE *to;
+  VERTEX *theVertex;
+  NODE *to,*father;
 
   HEAPFAULT(theNode);
 
   /* call DisposeElement first! */
   assert(START(theNode) == NULL);
+  assert(SONNODE(theNode) == NULL);
 
   /* remove node from node list */
   if (PREDN(theNode)!=NULL)
@@ -2029,6 +2033,16 @@ INT DisposeNode (GRID *theGrid, NODE *theNode)
     PREDN(SUCCN(theNode)) = PREDN(theNode);
   else
     theGrid->lastNode = PREDN(theNode);
+  theVertex = MYVERTEX(theNode);
+  father = NFATHER(theNode);
+  if (father != NULL)
+  {
+    SONNODE(father) = NULL;
+    if (theVertex != NULL)
+      TOPNODE(theVertex) = father;
+  }
+  else if (theVertex != NULL)
+    DisposeVertex(theGrid,theVertex);
 
   /* dispose vector and its matrices from node-vector */
   if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
@@ -2050,7 +2064,7 @@ INT DisposeNode (GRID *theGrid, NODE *theNode)
    DisposeVertex - Remove vertex from the data structure
 
    SYNOPSIS:
-   INT DisposeVertex (GRID *theGrid, VERTEX *theVertex);
+   static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex);
 
    PARAMETERS:
    .  theGrid - grid to remove from
@@ -2067,7 +2081,7 @@ INT DisposeNode (GRID *theGrid, NODE *theNode)
    D*/
 /****************************************************************************/
 
-INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
+static INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
 {
   VSEGMENT *theVSeg;
 
@@ -2128,6 +2142,7 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement)
 {
   INT i,j,tag;
   VECTOR *theVector;
+  NODE *theNode;
   EDGE *theEdge;
   ELEMENTSIDE *theElementSide;
   ELEMENT *theNeighbor;
@@ -2174,6 +2189,13 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement)
       DisposeEdge(theGrid,theEdge);
     else
       DEC_NO_OF_ELEM(theEdge);
+  }
+
+  for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
+  {
+    theNode = CORNER(theElement,j);
+    if (START(theNode) == NULL)
+      DisposeNode(theGrid,theNode);
   }
 
   /* dispose matrices from element-vector */
@@ -2842,6 +2864,20 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
     RETURN(GM_ERROR);
   }
   Patch_local2global(thePatch,pos,CVECT(theVertex));
+  SETMOVE(theVertex,DIM_OF_BND);
+
+  vs = CreateVertexSegment(theGrid,theVertex);
+  if (vs==NULL)
+  {
+    DisposeVertex(theGrid,theVertex);
+    PrintErrorMessage('E',"InsertBoundaryNodeFromPatch",
+                      "cannot create vertexsegment");
+    RETURN(GM_ERROR);
+  }
+  /* fill data into the first vertexsegment */
+  for(i=0; i<DIM_OF_BND; i++)
+    LAMBDA(vs,i) =        pos[i];
+  VS_PATCH(vs) = thePatch;
 
   theNode = CreateNode(theGrid,NULL);
   if (theNode==NULL)
@@ -2851,20 +2887,7 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
                       "cannot create node");
     RETURN(GM_ERROR);
   }
-
-  vs = CreateVertexSegment(theGrid,theVertex);
-  if (vs==NULL)
-  {
-    DisposeVertex(theGrid,theVertex);
-    DisposeNode(theGrid, theNode);
-    PrintErrorMessage('E',"InsertBoundaryNodeFromPatch",
-                      "cannot create vertexsegment");
-    RETURN(GM_ERROR);
-  }
-
-  /* fill data into the first vertexsegment */
-  for(i=0; i<DIM_OF_BND; i++) LAMBDA(vs,i) =      pos[i];
-  VS_PATCH(vs) = thePatch;
+  MYVERTEX(theNode) = theVertex;
 
   /* check if the vertex is on an edge of the patch */
         #ifdef __THREEDIM__
@@ -2910,7 +2933,6 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
               vs = CreateVertexSegment(theGrid,theVertex);
               if (vs==NULL)
               {
-                DisposeVertex(theGrid,theVertex);
                 DisposeNode(theGrid, theNode);
                 PrintErrorMessage('E',
                                   "InsertBoundaryNodeFromPatch",
@@ -2947,8 +2969,6 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
 
   /* fill data into node/vertex */
   INDEX(theNode) = 0;
-  MYVERTEX(theNode) = theVertex;
-  SETMOVE(theVertex,DIM_OF_BND);
 
   return(GM_OK);
 }
@@ -3042,7 +3062,6 @@ INT DeleteNode (MULTIGRID *theMG, NODE *theNode)
       }
 
   /* now allowed to delete */
-  DisposeVertex(theGrid,theVertex);
   DisposeNode(theGrid,theNode);
 
   return(GM_OK);
@@ -4545,15 +4564,6 @@ INT DeleteElement (MULTIGRID *theMG, ELEMENT *theElement) /* 3D VERSION */
     RETURN(GM_ERROR);
   }
   theGrid = GRID_ON_LEVEL(theMG,0);
-
-  /* delete all EXTRA edges */
-  for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-    for (theLink=START(CORNER(theElement,i)); theLink!=NULL;
-         theLink=NEXT(theLink))
-    {
-      theEdge=MYEDGE(theLink);
-      if (EXTRA(theEdge)) DisposeEdge(theGrid,theEdge);
-    }
 
   /* delete pointers in neighbors */
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)

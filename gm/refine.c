@@ -1386,9 +1386,7 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 			{
 				if (NodeNeededOnlyFor(theElementContext[i],theElementContext))
 				{
-					DisposeNode(theGrid,theElementContext[i]);
 					theElementContext[i] = NULL; 
-					SONNODE(CORNER(theElement,i)) = NULL;
 				}
 			}
 	
@@ -1445,8 +1443,6 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 			/* elements sharing that edge have been visited.			   */
 			if (START(MidNodes[i]) == NULL)
 			{
-				DisposeVertex(theGrid,MYVERTEX(MidNodes[i]));
-				DisposeNode(theGrid,MidNodes[i]);
 				MidNodes[i] = NULL;
 				theEdge = GetEdge(CORNER(theElement,Corner0),CORNER(theElement,Corner1));
 				MIDNODE(theEdge) = NULL;
@@ -1547,8 +1543,6 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 				/* this node has no links any more delete it */
 				if (START(SideNodes[i])==NULL)
 				{
-					DisposeVertex(theGrid,MYVERTEX(SideNodes[i]));
-					DisposeNode(theGrid,SideNodes[i]);
 					SideNodes[i] = NULL;
 				}
 			}
@@ -1671,8 +1665,6 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 	if (toDelete)
 	{
 		/* existing center node has to be removed */
-		DisposeVertex(theGrid,MYVERTEX(CenterNode[0]));
-		DisposeNode(theGrid,CenterNode[0]);
 		CenterNode[0] = NULL;
 	}
 
