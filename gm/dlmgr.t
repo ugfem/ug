@@ -338,6 +338,7 @@ LINK(OTYPE)
 	/* increment counter */
 	CAT(COUNT,OTYPE(Grid))++;
 
+	IFDEBUG(gm,2)
 	/* debug loop in list */
 	{
 		INT n = 0;
@@ -366,6 +367,7 @@ LINK(OTYPE)
 		}
 
 	}
+	ENDDEBUG
 }
 
 #else
