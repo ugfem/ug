@@ -62,6 +62,7 @@
 
 #include "dlmgr.h"
 #include "gm.h"
+#include "refine.h"
 #include "ugm.h"
 #include "evm.h"
 #include "misc.h"

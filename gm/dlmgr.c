@@ -38,6 +38,7 @@
 
 #include "dlmgr.h"
 #include "gm.h"
+#include "refine.h"
 
 #ifdef ModelP
 #include "parallel.h"
