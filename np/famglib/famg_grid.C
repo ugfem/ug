@@ -1185,7 +1185,24 @@ int FAMGGrid::Reorder()
 ///////////////////////////////////////////////////////////////////////////////
 
 #ifdef ModelP
-int SendToMaster( DDD_OBJ obj)
+
+static void TransferVector( VECTOR *v, DDD_PROC dest_pe, DDD_PRIO dest_prio, int size )
+{
+	DDD_XferCopyObjX(PARHDR(v), dest_pe, dest_prio, size);
+	
+	/* for debugging purpose send the node too */
+	/* TODO: be sure that this isn't done for production runs */
+	IFDEBUG(np,0)
+	GEOM_OBJECT *obj = VOBJECT(v);
+	if( obj != NULL )
+		if (VOTYPE(v) == NODEVEC)
+			DDD_XferCopyObj(PARHDR((NODE*)obj), dest_pe, dest_prio);
+		else
+			assert(0); /* unrecognized vector type; extend code if necessary */
+	ENDDEBUG
+}
+
+static int SendToMaster( DDD_OBJ obj)
 {
 	VECTOR *vec = (VECTOR *)obj, *w;
 	MATRIX *mat;
@@ -1217,7 +1234,7 @@ int SendToMaster( DDD_OBJ obj)
 	// It seems to be necessary to send also the vec itself to let new 
 	// connection be constructed from both (vec and its neighbor)
 	size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
-	DDD_XferCopyObjX(PARHDR(vec), masterPe, PrioMaster, size);
+	TransferVector(vec, masterPe, PrioMaster, size);
 	PRINTDEBUG(np,1,("%d: SendToMaster %d: myself "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(vec)));
 	
 	for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
@@ -1237,7 +1254,7 @@ int SendToMaster( DDD_OBJ obj)
 		if( !found )	// if it has no copy send w to masterPe
 		{
 			size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(w));
-			DDD_XferCopyObjX(PARHDR(w), masterPe, PrioBorder, size);
+			TransferVector(w, masterPe, PrioBorder, size);
 			PRINTDEBUG(np,1,("%d: SendToMaster %d:     -> "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(w)));
 		}
 		else
@@ -1247,7 +1264,7 @@ int SendToMaster( DDD_OBJ obj)
 	return 0;
 }
 
-int SendToOverlap1( DDD_OBJ obj)
+static int SendToOverlap1( DDD_OBJ obj)
 // every master sends itself to each processor where a neighbor has a border copy
 {
 	VECTOR *vec = (VECTOR *)obj, *w, *wn;
@@ -1288,7 +1305,7 @@ int SendToOverlap1( DDD_OBJ obj)
 		//temp weg if( !found )	// if it has no copy send vec
 			{
 				size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
-				DDD_XferCopyObjX(PARHDR(vec), proclist_w[0], PrioBorder, size);
+				TransferVector(vec, proclist_w[0], PrioBorder, size);
 				// s.u. size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(w));
 				// wird unten mit gemacht DDD_XferCopyObjX(PARHDR(w), proclist_w[0], proclist_w[1], size);
 				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,proclist_w[0],VINDEX_PRTX(w)));
@@ -1298,7 +1315,7 @@ int SendToOverlap1( DDD_OBJ obj)
 			{
 				wn = MDEST(matw);
                 size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(wn));
-				DDD_XferCopyObjX(PARHDR(wn), proclist_w[0], PrioBorder, size);
+				TransferVector(wn, proclist_w[0], PrioBorder, size);
 				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,proclist_w[0],VINDEX_PRTX(wn)));
 			}
 		}
