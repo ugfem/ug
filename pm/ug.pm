@@ -163,8 +163,10 @@ sub ug
 sub float
 {
 	my $real='[+-]?\d*\.?\d*[eE]?[+-]?\d*';
-	$_[0]=~/($real)/;
-	return $1;
+	my @list;
+
+	@list=split /\s+/,$_[0];
+	return wantarray ? @list : $list[0];
 }
 
 1;
