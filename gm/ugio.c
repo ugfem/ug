@@ -23,7 +23,7 @@
 #pragma segment ugio
 #endif
 
-#define EXTRACT_RULES           0       /* 1: use er.c, 0: use old version			*/
+#define EXTRACT_RULES           1       /* 1: use er.c, 0: use old version			*/
 
 /****************************************************************************/
 /*																			*/
@@ -1739,6 +1739,7 @@ static INT Evaluate_pinfo (GRID *theGrid, ELEMENT *theElement, MGIO_PARINFO *pin
         SETPRIO(theEdge,prio);
         if (edvec)
         {
+          theVector = EVECTOR(theElement);
           GRID_UNLINK_VECTOR(theGrid,theVector);
           SETPRIO(EDVECTOR(theEdge),prio);
           GRID_LINK_VECTOR(theGrid,theVector,prio);
