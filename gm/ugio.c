@@ -823,7 +823,7 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
   INT i,j,n,sonRefined,sonex,nex,refined;
   ELEMENT *SonSonList[MAX_SONS];
 
-  if (nmax==0) return (0);
+  refinement->refclass = REFINECLASS(theElement);
   refinement->refrule = REFINE(theElement) + RefRuleOffset[TAG(theElement)];
   theRule = RefRules[TAG(theElement)] + REFINE(theElement);
 
@@ -843,8 +843,9 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
   for (i=0; i<CORNERS_OF_ELEM(theElement)+EDGES_OF_ELEM(theElement)+SIDES_OF_ELEM(theElement); i++)
     if (NodeContext[i]!=NULL && ((nex>>i)&0x1))
       refinement->newcornerid[n++] = ID(NodeContext[i]);
-  if (NodeContext[CORNERS_OF_ELEM(theElement)+CENTER_NODE_INDEX(theElement)]!=NULL)
-    refinement->newcornerid[n++] = ID(NodeContext[CORNERS_OF_ELEM(theElement)+CENTER_NODE_INDEX(theElement)]);
+  i = CORNERS_OF_ELEM(theElement)+CENTER_NODE_INDEX(theElement);
+  if (NodeContext[i]!=NULL && ((nex>>i)&0x1))
+    refinement->newcornerid[n++] = ID(NodeContext[i]);
   refinement->nnewcorners = n;
 
   /* sons are refined ? */
@@ -901,7 +902,7 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
       }
     }
     i = CORNERS_OF_ELEM(theElement)+CENTER_NODE_INDEX(theElement);
-    if (NodeContext[i]!=NULL)
+    if (NodeContext[i]!=NULL && ((nex>>i)&0x1))
     {
       if (LEVEL(NodeContext[i])<LEVEL(vid_n[ID(MYVERTEX(NodeContext[i]))])
           && ID(MYVERTEX(NodeContext[i]))<nov)
@@ -915,10 +916,6 @@ static INT SetRefinement (GRID *theGrid, ELEMENT *theElement,
       }
     }
   }
-
-  /* set refinement class */
-  if (nmax>0)
-    refinement->refclass = ECLASS(SonList[nmax-1]);
 
   return (0);
 }
@@ -989,7 +986,6 @@ static INT SetHierRefinement (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMEN
   if (GetNodeContext(theElement,NodeContext)) REP_ERR_RETURN(1);
   if (GetOrderedSons(theElement,NodeContext,SonList,&nmax)) REP_ERR_RETURN(1);
   if (RemoveOrphanSons(SonList,&nmax)) REP_ERR_RETURN(1);
-  if (nmax==0) return (0);
   if (SetRefinement (theGrid,theElement,NodeContext,SonList,nmax,refinement,RefRuleOffset)) REP_ERR_RETURN(1);
   if (Write_Refinement (refinement,rr_rules)) REP_ERR_RETURN(1);
 
@@ -1014,7 +1010,6 @@ static INT nHierElements (ELEMENT *theElement, INT *n)
   if (REFINE(theElement)==NO_REFINEMENT) return (0);
   if (GetAllSons(theElement,SonList)) REP_ERR_RETURN(1);
   if (RemoveOrphanSons(SonList,NULL)) REP_ERR_RETURN(1);
-  if (SonList[0]==NULL) return (0);
   (*n)++;
   for (i=0; SonList[i]!=NULL; i++)
     if (nHierElements(SonList[i],n)) REP_ERR_RETURN(1);
@@ -1851,10 +1846,12 @@ static INT InsertLocalTree (GRID *theGrid, ELEMENT *theElement, MGIO_REFINEMENT 
   struct mgio_sondata *SonData;
   INT nbside,nex;
 
-  /*PRINTDEBUG(gm,0,(PFMT "InsertLocalTree(): level=%d elem=" EID_FMTX "\n",me,LEVEL(theGrid),EID_PRTX(theElement)));*/
 
   /* read refinement */
   if (Read_Refinement(ref,rr_rules)) REP_ERR_RETURN(1);
+
+  /*PRINTDEBUG(gm,0,(PFMT "InsertLocalTree(): level=%d elem=" EID_FMTX " REFINECLASS %d\n",me,LEVEL(theGrid),EID_PRTX(theElement),ref->refclass));*/
+
 
   /* init */
   if (ref->refrule==-1) REP_ERR_RETURN(1);
