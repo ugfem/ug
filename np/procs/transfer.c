@@ -582,10 +582,12 @@ static INT InterpolateNewVectors (NP_TRANSFER *theNP,  INT fl, INT tl,
   INT i;
 
   np = (NP_STANDARD_TRANSFER *) theNP;
-  for (i=fl+1; i<=fl; i++)
+  for (i=fl+1; i<=tl; i++) {
     result[0] = (*np->intnew)(GRID_ON_LEVEL(theNP->base.mg,i),x);
+    if (result[0]) NP_RETURN(1,result[0]);
+  }
 
-  return(result[0]);
+  return(0);
 }
 
 static INT ProjectSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
@@ -594,10 +596,12 @@ static INT ProjectSolution (NP_TRANSFER *theNP,  INT fl, INT tl,
   INT i;
 
   result[0] = 0;
-  for (i=tl-1; i>=fl; i--)
+  for (i=tl-1; i>=fl; i--) {
     result[0] = StandardProject(GRID_ON_LEVEL(theNP->base.mg,i),x,x);
+    if (result[0]) NP_RETURN(1,result[0]);
+  }
 
-  return(result[0]);
+  return(0);
 }
 
 static INT AdaptCorrection (NP_TRANSFER *theNP, INT level,
