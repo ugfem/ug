@@ -51,7 +51,7 @@
 #ifdef ModelP
 
 #define FIRSTPART_OF_LIST               0
-#define LASTPART_OF_LIST(OTYPE) ((CAT(OTYPE,PRIOS)) -1)
+#define LASTPART_OF_LIST(OTYPE) ((CAT(OTYPE,_LISTPARTS)) -1)
 
 /* define DDD_HDR macros */
 #define HDRELEMENT      PARHDRE

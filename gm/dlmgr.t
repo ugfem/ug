@@ -69,7 +69,7 @@ UNLINK(OTYPE)
 				printf(PFMT " nob=%d o=" CAT(FORMAT(OTYPE),FMTX) "\n",
 					me,n,CAT(FORMAT(OTYPE),PRTX(Object1)));
 	 		}
-			CAT(PRINT_LIST_STARTS_,OTYPE)(Grid,CAT(OTYPE,PRIOS));
+			CAT(PRINT_LIST_STARTS_,OTYPE)(Grid,CAT(OTYPE,_LISTPARTS));
 		}
 		ENDDEBUG
 
@@ -193,7 +193,7 @@ UNLINK(OTYPE)
 			}
 		}
 
-		CAT(PRINT_LIST_STARTS_,OTYPE)(Grid,CAT(OTYPE,PRIOS));
+		CAT(PRINT_LIST_STARTS_,OTYPE)(Grid,CAT(OTYPE,_LISTPARTS));
 
 		/* object number error detection */
 		if (n != CAT(COUNT,OTYPE(Grid)))
@@ -617,7 +617,7 @@ CHECK(OTYPE)
 	PRINTDEBUG(gm,2,(PFMT " GRID_CHECK_" STR(OTYPE) "_LIST:\n",me));
 
 	IFDEBUG(gm,2)	
-	CAT(PRINT_LIST_STARTS_,OTYPE)(Grid,CAT(OTYPE,PRIOS));
+	CAT(PRINT_LIST_STARTS_,OTYPE)(Grid,CAT(OTYPE,_LISTPARTS));
 	ENDDEBUG
 
 	for (Object = CAT(PFIRST,OTYPE(Grid));
@@ -636,7 +636,7 @@ CHECK(OTYPE)
 		 i<=LASTPART_OF_LIST(OTYPE);
 		 i++)
 	{
-		INT prios[MAXPRIOS],j,prio_error; 
+		INT prios[MAX_LISTPARTS],j,prio_error; 
 
 		LISTPART2PRIO(CAT(OTYPE,_LIST),i,prios);
 
@@ -650,7 +650,7 @@ CHECK(OTYPE)
 
 			objs++;
 			prio_error = 1;
-			for (j=0; j<MAXPRIOS; j++)
+			for (j=0; j<MAX_LISTPARTS; j++)
 				if (prios[j] == prio)
 				{
 					prio_error = 0;
