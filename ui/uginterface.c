@@ -1202,6 +1202,7 @@ int ParExecCommand (char *s)
   s[cmdintbufsize-1] = (char) 0;
   if (me == 0) n = strlen(s);
   Broadcast(&n,sizeof(int));
+  PRINTDEBUG(ui,4,("%d: strlen s %d\n",me,n));
   Broadcast(s,n+1);
 
   /* execute command on each processor */
