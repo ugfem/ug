@@ -699,7 +699,7 @@ INT a_outervector_consistent (MULTIGRID *mg, INT fl, INT tl,
    a_elementdata_consistent - makes element data  consistent
 
    SYNOPSIS:
-   INT a__elementdata_consistent (MULTIGRID *mg, INT fl, INT tl);
+   INT a_elementdata_consistent (MULTIGRID *mg, INT fl, INT tl);
 
    PARAMETERS:
    .  mg - pointer to multigrid
@@ -750,6 +750,67 @@ INT a_elementdata_consistent (MULTIGRID *mg, INT fl, INT tl)
       DDD_IFAOneway(ElementVHIF,GRID_ATTR(GRID_ON_LEVEL(mg,level)),
                     IF_FORWARD, DataSizePerElement,
                     Gather_EData, Scatter_EData);
+
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*D
+   a_nodedata_consistent - makes element data  consistent
+
+   SYNOPSIS:
+   INT a_nodedata_consistent (MULTIGRID *mg, INT fl, INT tl);
+
+   PARAMETERS:
+   .  mg - pointer to multigrid
+   .  fl - from level
+   .  tl - from level
+
+   DESCRIPTION:
+   This function adds the node data field form all borders and masters.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK      if ok
+   .n    NUM_ERROR   if error occurrs
+   D*/
+/****************************************************************************/
+
+static INT DataSizePerNode;
+
+static int Gather_NData (DDD_OBJ obj, void *data)
+{
+  NODE *pn = (NODE *)obj;
+
+  memcpy(data,NDATA(pn),DataSizePerNode);
+
+  return (0);
+}
+
+static int Scatter_NData (DDD_OBJ obj, void *data)
+{
+  NODE *pn = (NODE *)obj;
+
+  memcpy(NDATA(pn),data,DataSizePerNode);
+
+  return (0);
+}
+
+INT a_nodedata_consistent (MULTIGRID *mg, INT fl, INT tl)
+{
+  INT level;
+
+  DataSizePerNode = NDATA_DEF_IN_MG(mg);
+  if (DataSizePerNode <= 0) return(NUM_OK);
+
+  if ((fl==BOTTOMLEVEL(mg)) && (tl==TOPLEVEL(mg)))
+    DDD_IFExchange(BorderNodeSymmIF, DataSizePerNode,
+                   Gather_NData, Scatter_NData);
+  else
+    for (level=fl; level<=tl; level++)
+      DDD_IFAExchange(BorderNodeSymmIF,
+                      GRID_ATTR(GRID_ON_LEVEL(mg,level)), DataSizePerNode,
+                      Gather_NData, Scatter_NData);
 
   return (NUM_OK);
 }
