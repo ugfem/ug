@@ -104,16 +104,13 @@
 
 #define MAXZOOM         6000.0          /* maximum zoom factor						*/
 
-#define NO_TOOL_CHOSEN  -1              /* possible return value of GET_CHOSEN_TOOL */
-#define BOX_INVALID     -2              /* indicates that info-box has to be redrawn*/
-
 
 #define HiWrd(aLong) (((aLong) >> 16) & 0xFFFF)
 #define LoWrd(aLong) ((aLong) & 0xFFFF)
 
-#define GET_CHOSEN_TOOL(val,rect,pt)    {\
-    if (((int)pt[1]<rect.bottom-16) || ((int)pt[1]>rect.bottom) \
-        || (((val=floor(pt[0]-(rect.right-119))/15)<0) || (val>=nboftools))) val =      NO_TOOL_CHOSEN;}
+#define GET_CHOSEN_TOOL(val,rect,m)     {\
+    if (((int)m[1]<rect.bottom-16) || ((int)m[1]>rect.bottom) || ((int)m[0]-(rect.right-119)<0) \
+        || (((val=floor(m[0]-(rect.right-119))/15)<0) || (val>=nboftools))) val =       NO_TOOL_CHOSEN;}
 
 /****************************************************************************/
 /*																			*/
@@ -591,15 +588,15 @@ static void DrawToolBox (GRAPH_WINDOW *gw, INT tool)
 /*																			*/
 /* Function:  DrawInfoBox													*/
 /*																			*/
-/* Purpose:   draw info box in theWindow									*/
+/* Purpose:   draw info box													*/
 /*																			*/
-/* Input:	  GRAPH_WINDOW *gw, info string									*/
+/* Input:	  WINDOWID win, info string										*/
 /*																			*/
 /* Output:	  none															*/
 /*																			*/
 /****************************************************************************/
 
-void DrawInfoBox (GRAPH_WINDOW *gw)
+void DrawInfoBox (WINDOWID win, const char *info)
 {
   WindowPtr theMacWindow;
   Rect r,box,WinRect;
@@ -607,27 +604,14 @@ void DrawInfoBox (GRAPH_WINDOW *gw)
   Rect myClipRect;
   char buffer[INFO_SIZE];
   short w;
-  Point pt;
-  short MouseLocation[2];
-  int i;
+  GRAPH_WINDOW *gw;
 
-  GetMouse(&pt);
-  MouseLocation[0] = pt.h;
-  MouseLocation[1] = pt.v;
-
+  gw = (GRAPH_WINDOW *)win;
   theMacWindow = MAC_WIN(gw);
   WinRect = theMacWindow->portRect;
-  GET_CHOSEN_TOOL(i,WinRect,MouseLocation);
 
-  if ((gw->InfoBoxState!=BOX_INVALID) && (gw->InfoBoxState==i))
-    return;
-
-  gw->InfoBoxState = i;
-
-  if ((i<nboftools) && (i>=0))
-    strcpy(buffer,GetToolName(i));
-  else
-    strcpy(buffer,gw->info);
+  strncpy(buffer,info,INFO_SIZE);
+  buffer[INFO_LEN] = '\0';
 
   /* set port */
   myPort = (GrafPtr) theMacWindow;
@@ -692,8 +676,6 @@ static INT ActivateMacWin (GRAPH_WINDOW *gw, INT tool)
   case gnoedelTool :       SetMyCursor(gnoedelCurs);       break;
   }
 
-  gw->InfoBoxState = BOX_INVALID;
-
   return (0);
 }
 
@@ -712,19 +694,22 @@ static INT ActivateMacWin (GRAPH_WINDOW *gw, INT tool)
 /*				  1: error													*/
 /****************************************************************************/
 
-INT GetTool (WindowPtr theWindow, INT *MouseLocation, INT *ChosenToolPtr)
+INT WhichTool (WINDOWID win, const INT mp[2], INT *ChosenToolPtr)
 {
   INT i;
   Rect WinRect;
+  WindowPtr theWindow;
+
+  theWindow = MAC_WIN((GRAPH_WINDOW*)win);
 
   WinRect = theWindow->portRect;
 
-  GET_CHOSEN_TOOL(i,WinRect,MouseLocation);
+  GET_CHOSEN_TOOL(i,WinRect,mp);
+
+  *ChosenToolPtr = i;
 
   if (i==NO_TOOL_CHOSEN)
     return (0);
-
-  *ChosenToolPtr = i;
 
   return(1);
 }
@@ -806,8 +791,6 @@ INT GrowGraphWindow (GRAPH_WINDOW *gw, EventRecord *theEvent, DOC_GROW_EVENT *do
     myClipRect.top    = gw->Local_UR[1];
 
     ClipRect(&myClipRect);
-
-    gw->InfoBoxState = BOX_INVALID;
 
     return (POS_CHANGE);
   }
@@ -954,10 +937,7 @@ static WINDOWID Mac_OpenOutput (
   gw->next   = windowList;
   windowList = gw;
 
-  /* init stuff */
-  gw->info[0] = '\0';
   gw->currTool = arrowTool;
-  gw->InfoBoxState = BOX_INVALID;
 
   /* x,y,width,height is in coordinate system with x to the right and y up*/
   /* clip requested window against screen                                                               */
@@ -1109,13 +1089,6 @@ INT Mac_UpdateOutput (WINDOWID win, char *s, INT tool)
   gw = (GRAPH_WINDOW *) win;
   theWindow = MAC_WIN(gw);
 
-  if (s!=NULL)
-  {
-    strncpy(gw->info,s,INFO_LEN);
-    gw->info[INFO_LEN] = '\0';
-  }
-  else
-    gw->info[0] = '\0';
   gw->currTool = tool;
 
   SetPort(theWindow);
@@ -1133,10 +1106,8 @@ INT Mac_UpdateOutput (WINDOWID win, char *s, INT tool)
   if (theWindow == FrontWindow())
     ActivateMacWin (gw,tool);
 
-  gw->InfoBoxState = BOX_INVALID;
   DrawGrowIcon(theWindow);
   DrawToolBox(gw,tool);
-  DrawInfoBox(gw);
 
   /* reset clipping rectangle */
   myClipRect.left   = portRect->left;

@@ -197,6 +197,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
 {
   WindowPtr whichWindow;
   GRAPH_WINDOW *gw;
+  Point pt;
   INT WhereIn,rv;
   char *s;
   short MacEventMask;
@@ -228,6 +229,7 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
   /* no event as default */
   reportEvent->Type = NO_EVENT;
   reportEvent->NoEvent.InterfaceEvent = 0;
+  reportEvent->NoEvent.GraphWinActive = (WINDOWID) 0;
 
   /* do system tasks */
   SystemTask();
@@ -237,11 +239,13 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
   {
     if (whichWindow==(WindowPtr)&(shell.theRecord))
       IdleShellWindow();
-    if (whichWindow!=NULL)
+    gw = WhichGW(whichWindow);
+    if (gw!=NULL)
     {
-      gw = WhichGW(whichWindow);
-      if (gw!=NULL)
-        DrawInfoBox(gw);
+      GetMouse(&pt);
+      reportEvent->NoEvent.GraphWinActive = (WINDOWID) gw;
+      reportEvent->NoEvent.Mouse[0] = pt.h;
+      reportEvent->NoEvent.Mouse[1] = pt.v;
     }
   }
 
@@ -412,11 +416,13 @@ INT GetNextUGEvent (EVENT *reportEvent, INT EventMask)
             GlobalToLocal(&(theEvent.where));
             MouseLocation[0] = (INT)theEvent.where.h;
             MouseLocation[1] = (INT)theEvent.where.v;
-            if (GetTool(whichWindow,MouseLocation,&ChosenTool))
+            if (WhichTool((WINDOWID) gw,MouseLocation,&ChosenTool))
             {
               reportEvent->Type                               = DOC_CHANGETOOL;
               reportEvent->DocChangeTool.win  = (WINDOWID) gw;
               reportEvent->DocChangeTool.Tool = ChosenTool;
+              reportEvent->DocChangeTool.MousePosition[0]   = MouseLocation[0];
+              reportEvent->DocChangeTool.MousePosition[1]   = MouseLocation[1];
             }
             else
             {
