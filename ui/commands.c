@@ -2549,14 +2549,14 @@ static INT LoadDataCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   char FileName[NAMESIZE],type[NAMESIZE];
   VECDATA_DESC *theVDList[5];
-  INT i,m,n,number,force,Force;
+  INT i,m,n,number,force;
   int iValue;
 
   /* scan filename */
   if (sscanf(argv[0],expandfmt(CONCAT3(" loaddata %",NAMELENSTR,"[ -~]")),FileName)!=1) { PrintErrorMessage('E',"save","cannot read filename"); return (CMDERRORCODE);}
 
   strcpy(type,"asc");
-  Force=force=0;
+  force=0;
   number = -1;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
@@ -2571,10 +2571,6 @@ static INT LoadDataCommand (INT argc, char **argv)
 
     case 'f' :
       force=1;
-      break;
-
-    case 'F' :
-      Force=1;
       break;
 
     case 'n' :
@@ -2594,7 +2590,7 @@ static INT LoadDataCommand (INT argc, char **argv)
   /* open or reopen multigrid */
   if (force)
   {
-    currMG = OpenMGFromDataFile(currMG,number,type,FileName,Force);
+    currMG = OpenMGFromDataFile(currMG,number,type,FileName);
     if (currMG==NULL)
     {
       PrintErrorMessage('E',"loaddata","cannot open multigrid");
@@ -2617,8 +2613,48 @@ static INT LoadDataCommand (INT argc, char **argv)
       m = i+1;
 
   if (m<=0) return (PARAMERRORCODE);
-  if (LoadData(currMG,FileName,type,number,m,theVDList,Force)) return (PARAMERRORCODE);
+  if (LoadData(currMG,FileName,type,number,m,theVDList)) return (PARAMERRORCODE);
 
+  return(OKCODE);
+}
+
+/****************************************************************************/
+/*D
+   changemc - change magic cookie of multigrid
+
+   DESCRIPTION:
+   This function changes the magic cookie of multigrid.
+
+   'changemc <mc>'
+
+   .  <mc>				- new magic cookie
+
+   KEYWORDS:
+   multigrid, load, read, file, data
+
+   SEE ALSO:
+   'save'
+   D*/
+/****************************************************************************/
+
+static INT ChangeMagicCookieCommand (INT argc, char **argv)
+{
+  MULTIGRID *theMG;
+  int iValue;
+
+  theMG = currMG;
+  if (theMG==NULL)
+  {
+    PrintErrorMessage('E',"changemc","no open multigrid");
+    return (CMDERRORCODE);
+  }
+
+  if (sscanf(argv[0]," changemc %d",&iValue)!=1)
+  {
+    PrintErrorMessage('E',"changemc","cannot read magic-cookie");
+    return (CMDERRORCODE);
+  }
+  MG_MAGIC_COOKIE(theMG) = iValue;
   return(OKCODE);
 }
 
@@ -12127,6 +12163,7 @@ INT InitCommands ()
   if (CreateCommand("savedomain",         SaveDomainCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("savedata",           SaveDataCommand                                 )==NULL) return (__LINE__);
   if (CreateCommand("loaddata",           LoadDataCommand                                 )==NULL) return (__LINE__);
+  if (CreateCommand("changemc",           ChangeMagicCookieCommand                )==NULL) return (__LINE__);
   if (CreateCommand("level",                      LevelCommand                                    )==NULL) return (__LINE__);
   if (CreateCommand("renumber",           RenumberMGCommand                               )==NULL) return (__LINE__);
   if (CreateCommand("smooth",             SmoothMGCommand                                 )==NULL) return (__LINE__);
