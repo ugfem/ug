@@ -17,5 +17,4 @@ ui/avs.c
 ui/commands.c
 ui/interpreter.doc
 ui/tecplot.c
-ui/teti.c
 ui/uginterface.c
