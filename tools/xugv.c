@@ -4,7 +4,7 @@
 /*									                                                                                */
 /* File:      xugv.c														*/
 /*									                                                                                */
-/* Purpose:   ug metafile display program for X windows		                        */
+/* Purpose:   ug metafile display program for X11                                       */
 /*									                                                                                */
 /* Author:    Peter Bastian						                                                        */
 /*	    Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen                 */
@@ -23,7 +23,7 @@
 /*									                                                                                */
 /* History:   22.10.93 begin												*/
 /*									                                                                                */
-/* Remarks:   up to this time xugv need a color screen		                        */
+/* Remarks:   up to this time xugv needs a color screen		                        */
 /*									                                                                                */
 /****************************************************************************/
 
@@ -115,12 +115,11 @@
 #define XUGV_MAX(a,b) ((a)<(b)) ? (b) : (a)
 #define XUGV_MIN(a,b) ((a)<(b)) ? (a) : (b)
 
-/* defines for windowsize */
-#define WIN_HEIGHT              600
-#define WIN_WIDTH               600
+/* defines for max. initial windowsize */
+#define WIN_HEIGHT                864
+#define WIN_WIDTH                1152
 
 /* class name of the application */
-
 #define APPL_KLASSE    "Xugview"
 
 /* RCS string */
@@ -172,6 +171,11 @@ static int run_max, run_count;
 static unsigned int sleep_seconds = 1;
 
 static int littleEndian = 1; /* needed for check LITTLE/BIG-ENDIAN */
+
+/* pixel structure for true color visual */
+unsigned long red_mask, green_mask, blue_mask;
+int red_shift, green_shift, blue_shift;
+int true_color;
 
 /* pixmaps for shading patterns */
 static Pixmap pattern[NO_PATTERNS];
@@ -288,6 +292,17 @@ int GetFileScreen (FILE *stream, short *fx, short *fy)
   }
 }
 
+int get_component_shift(unsigned long mask)
+{
+  int shift;
+
+  shift=0;
+  while (!(mask & 1)) {
+    shift++;
+    mask >>= 1;
+  }
+  return shift;
+}
 
 void createGraphics(void)
 {
@@ -295,14 +310,28 @@ void createGraphics(void)
   int ncolors;
   XColor colors[CSIZE];
   XGCValues gcv;
-  XVisualInfo info;
+  Visual *visual;
   XPoint edges[4];
 
   if (VERBOSE)
     printf("createGraphics():");
 
   /* get default screen */
-  screen = DefaultScreen( display);
+  screen = DefaultScreen(display);
+
+  /* test if true color visual */
+  visual = DefaultVisual(display, screen);
+  true_color = (visual->class == TrueColor);
+
+  /* get info on pixel structure */
+  if (true_color) {
+    red_mask   = visual->red_mask;
+    green_mask = visual->green_mask;
+    blue_mask  = visual->blue_mask;
+    red_shift  = get_component_shift(red_mask);
+    green_shift= get_component_shift(green_mask);
+    blue_shift = get_component_shift(blue_mask);
+  }
 
   /* get one supported visual type and create colormap */
   ncolors = DisplayCells(display, screen);
@@ -340,9 +369,10 @@ void createGraphics(void)
                Convex, CoordModeOrigin);
 
   /* make stipples for shading */
-  for (i = 0; i < NO_PATTERNS; i++)
-    pattern[i] = XCreateBitmapFromData(display,XtWindow(picture), pattern_data[i],
-                                       PATTERN_SIZE, PATTERN_SIZE);
+  if (!true_color)
+    for (i = 0; i < NO_PATTERNS; i++)
+      pattern[i] = XCreateBitmapFromData(display,XtWindow(picture),
+                                         pattern_data[i], PATTERN_SIZE, PATTERN_SIZE);
 }
 
 
@@ -354,7 +384,8 @@ void exposeCB (Widget widget, XtPointer client_data, XEvent *event, Boolean *con
 
 /* createcolors creates or changes the colormapping table. For each color  */
 /* requested the pixelvalue of the corresponding color in the colormap is  */
-/* stored in the colormapping table.					    */
+/* stored in the colormapping table.					                   */
+
 void createColors(XColor colors[CSIZE], short x, short y)
 {
   short i, j, strip, alloc;
@@ -376,7 +407,7 @@ void createColors(XColor colors[CSIZE], short x, short y)
   /* loop until very modest color request */
   while (mask)
   {
-    printf("trying to allocate colors with %d stripped bits:\n", strip);
+    /* printf("trying to allocate colors with %d stripped bits:\n", strip); */
 
     /* all current color requests */
     for (i=x; i<=y; i++)
@@ -454,15 +485,18 @@ void createColors(XColor colors[CSIZE], short x, short y)
     {
       /* color request was sucessfull, store color values
                  in colortable */
-      printf("colorrequest was sucessfull:\n %d bits stripped...\n", strip);
-      printf("storing allocated colors in internal colortable!\n");
+      if (strip)
+        printf("colorrequest was sucessfull:\n %d bits stripped...\n", strip);
+      /* printf("storing allocated colors in internal colortable!\n"); */
 
       for(--i; i>=0; i--)
       {
         colortable[i].pixel = colors[i].pixel;
-        colortable[i].red = ctab[colors[i].pixel].red;
-        colortable[i].green = ctab[colors[i].pixel].green;
-        colortable[i].blue = ctab[colors[i].pixel].blue;
+        if (!true_color) {
+          colortable[i].red = ctab[colors[i].pixel].red;
+          colortable[i].green = ctab[colors[i].pixel].green;
+          colortable[i].blue = ctab[colors[i].pixel].blue;
+        }
       }
       return;
     }
@@ -592,15 +626,16 @@ int RasterizeFile(FILE *stream)
         {
           memcpy(yy+k,data,STD_SHORT);
           STD2NAT(yy[k],STD_SHORT);
+          yy[k] = fy-yy[k];
           data += STD_SHORT;
         }
 
         for (j=1; j<n; j++)
           XDrawLine(display, pixmap, gc,
                     xx[j-1],yy[j-1],
-                    fy-yy[j],fy-yy[j]);
+                    yy[j],yy[j]);
         x_cur = xx[n-1];
-        y_cur = fy-yy[n-1];
+        y_cur = yy[n-1];
         break;
 
       case opPolygon :
@@ -619,13 +654,14 @@ int RasterizeFile(FILE *stream)
         {
           memcpy(yy+k,data,STD_SHORT);
           STD2NAT(yy[k],STD_SHORT);
+          yy[k] = fy-yy[k];
           data += STD_SHORT;
         }
 
         if (n<3) break;
         for (j=0; j<n; j++) {
           xy[j].x = xx[j];
-          xy[j].y = fy-yy[j];
+          xy[j].y = yy[j];
         }
 
         XFillPolygon(display, pixmap, gc,
@@ -650,12 +686,13 @@ int RasterizeFile(FILE *stream)
         {
           memcpy(yy+k,data,STD_SHORT);
           STD2NAT(yy[k],STD_SHORT);
+          yy[k] = fy-yy[k];
           data += STD_SHORT;
         }
 
-        for (j=0; j<n; j++) Marker(m,ms,xx[j],fy-yy[j]);
+        for (j=0; j<n; j++) Marker(m,ms,xx[j],yy[j]);
         x_cur = xx[n-1];
-        y_cur = fy-yy[n-1];
+        y_cur = yy[n-1];
 
         break;
 
@@ -991,22 +1028,43 @@ int RasterizeFile(FILE *stream)
         {
           memcpy(yy+k,data,STD_SHORT);
           STD2NAT(yy[k],STD_SHORT);
+          yy[k] = fy-yy[k];
           data += STD_SHORT;
         }
 
         if (n<3) break;
         for (j=0; j<n; j++) {
           xy[j].x = xx[j];
-          xy[j].y = fy-yy[j];
+          xy[j].y = yy[j];
         }
-        snb = (int)(0.5+(float)(NO_PATTERNS-1)*(float)(shd)/1000.0);
-        XSetBackground(display ,gc, BlackPixel(display, screen));
-        XSetFillStyle(display, gc, FillOpaqueStippled);
-        XSetStipple(display, gc, pattern[snb]);
-        XFillPolygon(display, pixmap, gc,
-                     xy, n, Convex, CoordModeOrigin);
-        XSetFillStyle(display, gc, FillSolid);
-        XSetBackground(display ,gc, WhitePixel(display, screen));
+        if (!true_color) {
+          snb = (int)(0.5+(NO_PATTERNS-1)*shd/1000.0);
+          XSetBackground(display ,gc, BlackPixel(display, screen));
+          XSetFillStyle(display, gc, FillOpaqueStippled);
+          XSetStipple(display, gc, pattern[snb]);
+          XFillPolygon(display, pixmap, gc,
+                       xy, n, Convex, CoordModeOrigin);
+          XSetFillStyle(display, gc, FillSolid);
+          XSetBackground(display ,gc, WhitePixel(display, screen));
+        }
+        else {
+          unsigned long pixel;
+          float red, green, blue;
+
+          pixel = colortable[ac].pixel;
+          red   = (pixel & red_mask  ) >> red_shift;
+          green = (pixel & green_mask) >> green_shift;
+          blue  = (pixel & blue_mask ) >> blue_shift;
+          red   *= shd/1000.0;
+          green *= shd/1000.0;
+          blue  *= shd/1000.0;
+          pixel = ((unsigned long)(red  +0.5) << red_shift  ) +
+                  ((unsigned long)(green+0.5) << green_shift) +
+                  ((unsigned long)(blue +0.5) << blue_shift );
+          XSetForeground(display, gc, pixel);
+          XFillPolygon(display, pixmap, gc, xy, n, Convex, CoordModeOrigin);
+          XSetForeground(display, gc, colortable[ac].pixel);
+        }
         x_cur = xy[n-1].x;
         y_cur = xy[n-1].y;
         break;
@@ -1105,7 +1163,7 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
         data += STD_SHORT;
         memcpy(&y_cur,data,STD_SHORT);
         STD2NAT(y_cur,STD_SHORT);
-        y_cur = fy - y_cur;
+        y_cur = fy-y_cur;
         y_cur += y_offset;
         data += STD_SHORT;
         break;
@@ -1117,7 +1175,7 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
         data += STD_SHORT;
         memcpy(&y,data,STD_SHORT);
         STD2NAT(y,STD_SHORT);
-        y = fy - y;
+        y = fy-y;
         y += y_offset;
         data += STD_SHORT;
 
@@ -1144,6 +1202,7 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
         {
           memcpy(yy+k,data,STD_SHORT);
           STD2NAT(yy[k],STD_SHORT);
+          yy[k] = fy-yy[k];
           yy[k] += y_offset;
           data += STD_SHORT;
         }
@@ -1151,9 +1210,9 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
         for (j=1; j<n; j++)
           XDrawLine(display, pixmap, gc,
                     xx[j-1],yy[j-1],
-                    fy-yy[j],fy-yy[j]);
+                    xx[j],yy[j]);
         x_cur = xx[n-1];
-        y_cur = fy-yy[n-1];
+        y_cur = yy[n-1];
         break;
 
       case opPolygon :
@@ -1173,6 +1232,7 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
         {
           memcpy(yy+k,data,STD_SHORT);
           STD2NAT(yy[k],STD_SHORT);
+          yy[k] = fy-yy[k];
           yy[k] += y_offset;
           data += STD_SHORT;
         }
@@ -1180,7 +1240,7 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
         if (n<3) break;
         for (j=0; j<n; j++) {
           xy[j].x = xx[j];
-          xy[j].y = fy-yy[j];
+          xy[j].y = yy[j];
         }
 
         XFillPolygon(display, pixmap, gc,
@@ -1206,13 +1266,14 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
         {
           memcpy(yy+k,data,STD_SHORT);
           STD2NAT(yy[k],STD_SHORT);
+          yy[k] = fy-yy[k];
           yy[k] += y_offset;
           data += STD_SHORT;
         }
 
-        for (j=0; j<n; j++) Marker(m,ms,xx[j],fy-yy[j]);
+        for (j=0; j<n; j++) Marker(m,ms,xx[j],yy[j]);
         x_cur = xx[n-1];
-        y_cur = fy-yy[n-1];
+        y_cur = yy[n-1];
 
         break;
 
@@ -1235,7 +1296,7 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
         data += STD_SHORT;
         memcpy(&y,data,STD_SHORT);
         STD2NAT(y,STD_SHORT);
-        y = fy - y;
+        y = fy-y;
         y += y_offset;
         data += STD_SHORT;
         memcpy(&n,data,STD_SHORT);
@@ -1281,8 +1342,6 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
         data += STD_SHORT;
         m = n;
         break;
-
-
 
       case opSetMarkerSize :
         memcpy(&n,data,STD_SHORT);
@@ -1558,28 +1617,51 @@ int RasterizePositionedFile(FILE *stream, long x_offset, long y_offset)
         {
           memcpy(xx+k,data,STD_SHORT);
           STD2NAT(xx[k],STD_SHORT);
+          xx[k] += x_offset;
           data += STD_SHORT;
         }
         for (k=0; k<n; k++)
         {
           memcpy(yy+k,data,STD_SHORT);
           STD2NAT(yy[k],STD_SHORT);
+          yy[k] = fy-yy[k];
+          yy[k] += y_offset;
           data += STD_SHORT;
         }
 
         if (n<3) break;
         for (j=0; j<n; j++) {
           xy[j].x = xx[j];
-          xy[j].y = fy-yy[j];
+          xy[j].y = yy[j];
         }
-        snb = (int)(0.5+(float)(NO_PATTERNS-1)*(float)(shd)/1000.0);
-        XSetBackground(display ,gc, BlackPixel(display, screen));
-        XSetFillStyle(display, gc, FillOpaqueStippled);
-        XSetStipple(display, gc, pattern[snb]);
-        XFillPolygon(display, pixmap, gc,
-                     xy, n, Convex, CoordModeOrigin);
-        XSetFillStyle(display, gc, FillSolid);
-        XSetBackground(display ,gc, WhitePixel(display, screen));
+        if (!true_color) {
+          snb = (int)(0.5+(float)(NO_PATTERNS-1)*(float)(shd)/1000.0);
+          XSetBackground(display ,gc, BlackPixel(display, screen));
+          XSetFillStyle(display, gc, FillOpaqueStippled);
+          XSetStipple(display, gc, pattern[snb]);
+          XFillPolygon(display, pixmap, gc,
+                       xy, n, Convex, CoordModeOrigin);
+          XSetFillStyle(display, gc, FillSolid);
+          XSetBackground(display ,gc, WhitePixel(display, screen));
+        }
+        else {
+          unsigned long pixel;
+          float red, green, blue;
+
+          pixel = colortable[ac].pixel;
+          red   = (pixel & red_mask  ) >> red_shift;
+          green = (pixel & green_mask) >> green_shift;
+          blue  = (pixel & blue_mask ) >> blue_shift;
+          red   *= shd/1000.0;
+          green *= shd/1000.0;
+          blue  *= shd/1000.0;
+          pixel = ((unsigned long)(red  +0.5) << red_shift  ) +
+                  ((unsigned long)(green+0.5) << green_shift) +
+                  ((unsigned long)(blue +0.5) << blue_shift );
+          XSetForeground(display, gc, pixel);
+          XFillPolygon(display, pixmap, gc, xy, n, Convex, CoordModeOrigin);
+          XSetForeground(display, gc, colortable[ac].pixel);
+        }
         x_cur = xy[n-1].x;
         y_cur = xy[n-1].y;
         break;
@@ -1828,13 +1910,9 @@ static Boolean run_film (void)
 
   /* the first frame has already been displayed by main() */
 
-  if ((outopt)&&(!through))
-  {
-    sprintf(command,"xwd -out %s.%04d.xwd -name xugv\n",file,frame_number);
-    system(command);
-    sprintf(command,"imconv %s.%04d.xwd %s.%04d.%s\n",file,frame_number,file,frame_number,outext);
-    system(command);
-    sprintf(command,"rm %s.%04d.xwd\n",file,frame_number);
+  if (outopt) {
+    sprintf(command, "xwd -name xugv -silent | xwdtopnm >%s_.%04d 2>/dev/null",
+            file, frame_number);
     system(command);
   }
 
@@ -1851,7 +1929,7 @@ static Boolean run_film (void)
 
   if (frame_number>last)
   {
-    through=1;
+    if (outopt) exit(0);
     if (stoploop) frame_number-=incr;
     else frame_number=first;
     if (count)
@@ -1960,8 +2038,8 @@ char* argv[];
   display = XtDisplay (applShell);
 
   /* enough colorcells */
-  dispcells = DisplayCells(display, DefaultScreen(display));
-  printf("%d color cells available\n",dispcells);
+  dispcells = XUGV_MIN(DisplayCells(display, DefaultScreen(display)), CSIZE);
+  /* printf("%d color cells available\n",dispcells); */
   if (dispcells <= 0)
   {
     printf("%s: This program requires a color or greyscale monitor\n", argv[0]);
@@ -1969,7 +2047,7 @@ char* argv[];
   }
 
   if (argc < 2) {
-    printf("usage: xugv [<nb of files>] file [file2] [file3] ... [-v[n]] [-f first last] [-q increment] [-o extension] [-c] [-s] [-N <nBreak>] [-n]\n");
+    printf("usage: xugv [<nb of files>] file [file2] [file3] ... [-v[n]] [-f first last] [-q increment] [-o] [-c] [-s] [-N <nBreak>] [-n]\n");
     exit(-1);
   }
 
@@ -2024,13 +2102,8 @@ char* argv[];
     }
     if (argv[i][1]=='o')
     {
-      if (i+1>=argc) {
-        printf("not enough arguments for output option\n");
-        exit(-1);
-      }
-      sscanf(argv[i+1],"%s",outext);
       outopt=1;
-      i+=2;
+      i++;
       continue;
     }
     if (argv[i][1]=='N')
@@ -2095,18 +2168,15 @@ char* argv[];
 
     /* initialize viewport window */
     n = 0;
-    XtSetArg(args[n], XtNwidth, WIN_WIDTH); n++;
-    XtSetArg(args[n], XtNheight, WIN_HEIGHT); n++;
+    XtSetArg(args[n], XtNwidth,  XUGV_MIN(pwidth,  WIN_WIDTH )); n++;
+    XtSetArg(args[n], XtNheight, XUGV_MIN(pheight, WIN_HEIGHT)); n++;
     XtSetArg(args[n], XtNallowHoriz, True); n++;
-    XtSetArg(args[n], XtNallowVert, True); n++;
+    XtSetArg(args[n], XtNallowVert, True);  n++;
 
 
     /* create viewport widget */
     viewport = XtCreateManagedWidget ("viewport", viewportWidgetClass,
                                       applShell, args, n);
-
-    pwidth = XUGV_MAX(pwidth,WIN_WIDTH);
-    pheight = XUGV_MAX(pheight,WIN_HEIGHT);
 
     /* set size of drawing widget */
     n = 0;
@@ -2118,26 +2188,24 @@ char* argv[];
     picture = XtCreateManagedWidget ("picture", simpleWidgetClass,
                                      viewport, args, n);
 
-    /* initialize dialog widget */
-    n = 0;
-    XtSetArg(args[n], XtNlabel, "new filename:\n  \n"); n++;
-    XtSetArg(args[n], XtNvalue, ".meta"); n++;
+    /* initialize dialog widget: deactivated, doesn't work anyway. (ml)
+       n = 0;
+       XtSetArg(args[n], XtNlabel, "new filename:\n  \n"); n++;
+       XtSetArg(args[n], XtNvalue, ".meta"); n++;
 
+       dial = XtCreateWidget ("dial", dialogWidgetClass,
+                                 viewport, args, n);
 
-    /* create this dialog widget */
-    dial = XtCreateWidget ("dial", dialogWidgetClass,
-                           viewport, args, n);
-
-    /* add some buttons to dialog */
-    XawDialogAddButton(dial, "confirm", dialog_confirm, (XtPointer)NULL);
-    XawDialogAddButton(dial, "cancel", dialog_cancel, (XtPointer)NULL);
-
+       XawDialogAddButton(dial, "confirm", dialog_confirm, (XtPointer)NULL);
+       XawDialogAddButton(dial, "cancel", dialog_cancel, (XtPointer)NULL);
+     */
 
     /* establish exit dialog */
     n = 0;
     XtSetArg(args[n], XtNlabel, "Do you really want\n to exit xugv?"); n++;
-    XtSetArg(args[n], XtNx, WIN_WIDTH/2-50); n++;
-    XtSetArg(args[n], XtNy, WIN_HEIGHT/2-30); n++;
+
+    XtSetArg(args[n], XtNx, 25); n++;
+    XtSetArg(args[n], XtNy, 25); n++;
 
     xexit = XtCreateWidget ("exit", dialogWidgetClass,
                             viewport, args, n);
@@ -2150,22 +2218,25 @@ char* argv[];
     XtAddEventHandler( picture, ExposureMask, FALSE, (XtEventHandler) exposeCB, (XtPointer)NULL);
 
     /* add event handler for button press event */
-    XtAddEventHandler(viewport, ButtonPressMask, FALSE, (XtEventHandler) manage_dial, (XtPointer)NULL);
+
+    /* deactivated, doesn't work anyway. (ml)
+       XtAddEventHandler(viewport, ButtonPressMask, FALSE, (XtEventHandler) manage_dial, (XtPointer)NULL);
+     */
 
     XtAddEventHandler(viewport, ButtonPressMask, FALSE, (XtEventHandler) exit_dial, (XtPointer)NULL);
 
     /* realize widget tree */
     XtRealizeWidget (applShell);
 
-    /* use backing store for window */
-    {
-      XSetWindowAttributes attr;
-      unsigned long mask;
+    /* use backing store for window
+       {
+            XSetWindowAttributes attr;
+            unsigned long mask;
 
-      attr.backing_store = Always;
-      mask = CWBackingStore;
-      XChangeWindowAttributes(display, XtWindow(picture), mask, &attr);
-    }
+       attr.backing_store = Always;
+       mask = CWBackingStore;
+       XChangeWindowAttributes(display, XtWindow(picture), mask, &attr);
+       } */
 
     /* create colormap and graphic context */
     createGraphics();
@@ -2238,8 +2309,8 @@ char* argv[];
 
     /* initialize viewport window */
     n = 0;
-    XtSetArg(args[n], XtNwidth, fx); n++;
-    XtSetArg(args[n], XtNheight, fy); n++;
+    XtSetArg(args[n], XtNwidth,  XUGV_MIN(pwidth,  WIN_WIDTH )); n++;
+    XtSetArg(args[n], XtNheight, XUGV_MIN(pheight, WIN_HEIGHT)); n++;
     XtSetArg(args[n], XtNallowHoriz, True); n++;
     XtSetArg(args[n], XtNallowVert, True); n++;
 
@@ -2247,9 +2318,6 @@ char* argv[];
     /* create viewport widget */
     viewport = XtCreateManagedWidget ("viewport", viewportWidgetClass,
                                       applShell, args, n);
-
-    pwidth = XUGV_MAX(pwidth,WIN_WIDTH);
-    pheight = XUGV_MAX(pheight,WIN_HEIGHT);
 
     /* set size of drawing widget */
     n = 0;
@@ -2264,8 +2332,8 @@ char* argv[];
     /* establish exit dialog */
     n = 0;
     XtSetArg(args[n], XtNlabel, "Do you really want\n to exit xugv?"); n++;
-    XtSetArg(args[n], XtNx, WIN_WIDTH/2-50); n++;
-    XtSetArg(args[n], XtNy, WIN_HEIGHT/2-30); n++;
+    XtSetArg(args[n], XtNx, 25); n++;
+    XtSetArg(args[n], XtNy, 25); n++;
 
     xexit = XtCreateWidget ("exit", dialogWidgetClass,
                             viewport, args, n);
@@ -2286,15 +2354,15 @@ char* argv[];
     /* realize widget tree */
     XtRealizeWidget (applShell);
 
-    /* use backing store for window */
-    {
-      XSetWindowAttributes attr;
-      unsigned long mask;
+    /* use backing store for window
+       {
+            XSetWindowAttributes attr;
+            unsigned long mask;
 
-      attr.backing_store = Always;
-      mask = CWBackingStore;
-      XChangeWindowAttributes(display, XtWindow(picture), mask, &attr);
-    }
+       attr.backing_store = Always;
+       mask = CWBackingStore;
+       XChangeWindowAttributes(display, XtWindow(picture), mask, &attr);
+       } */
 
     /* create colormap and graphic context */
     createGraphics();
