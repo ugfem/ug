@@ -364,6 +364,8 @@ static void IFSetMarker (short s)
 
 static void IFSetColor (long index)
 {
+  if (index<0 || index>=CSIZE)
+    return;
   XSetForeground(display,gw->gc,ctab[(int)index].pixel);
 }
 
