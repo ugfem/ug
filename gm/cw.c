@@ -106,7 +106,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {2,VNCLASS_CE,          VECTOR_CW,      VNCLASS_SHIFT,          VNCLASS_LEN     },
   {2,VNEW_CE,             VECTOR_CW,      VNEW_SHIFT,             VNEW_LEN        },
   {2,VCNEW_CE,            VECTOR_CW,      VCNEW_SHIFT,            VCNEW_LEN       },
-  {2,VCNB_CE,                     VECTOR_CW,      VCNB_SHIFT,                     VCNB_LEN                },
+  {2,VCNB_CE,         VECTOR_CW,  VCNB_SHIFT,             VCNB_LEN        },
   {2,VCCUT_CE,            VECTOR_CW,      VCCUT_SHIFT,            VCCUT_LEN               },
 
   {2,MOFFSET_CE,          MATRIX_CW,      MOFFSET_SHIFT,          MOFFSET_LEN             },
@@ -122,6 +122,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {2,MUP_CE,              MATRIX_CW,      MUP_SHIFT,              MUP_LEN                 },
 
   {1,BVDOWNTYPE_CE,       BLOCKVECTOR_CW, BVDOWNTYPE_SHIFT,       BVDOWNTYPE_LEN  },
+  {1,BVLEVEL_CE,          BLOCKVECTOR_CW, BVLEVEL_SHIFT,          BVLEVEL_LEN             },
 
   {2,OBJ_CE,              GENERAL_CW,     OBJ_SHIFT,              OBJ_LEN                 },
   {2,USED_CE,             GENERAL_CW,     USED_SHIFT,             USED_LEN                },
@@ -192,8 +193,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {0,0,0,0,0},
   {0,0,0,0,0},
   {0,0,0,0,0},
-  {0,0,0,0,0},
-}; /* last entry used: 77 for PROP_CE */
+}; /* last entry used: 78 for BVLEVEL_CE */
 
 /****************************************************************************/
 /*                                                                          */
