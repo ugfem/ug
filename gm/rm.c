@@ -2153,6 +2153,42 @@ INT EstimateHere (ELEMENT *theElement)
 
 /****************************************************************************/
 /*																			*/
+/* Function:  ClearMarksOnLevel                                                                                         */
+/*																			*/
+/* Purpose:   clear refinement on level										*/
+/*																			*/
+/* Param:	  GRID *theGrid: level											*/
+/*			  INT ClearType: 0: clear all									*/
+/*							 1: clear refinements							*/
+/*						    -1: clear coarsenings							*/
+/*																			*/
+/* return:	  INT GM_OK: ok													*/
+/*				  GM_ERROR: error											*/
+/*																			*/
+/****************************************************************************/
+
+INT ClearMarksOnLevel (GRID *theGrid, INT ClearType)
+{
+  ELEMENT *theElement;
+  INT MarkType;
+
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+    if (EstimateHere(theElement))
+    {
+      MarkType = GetRefinementMarkType(theElement);
+      if (ClearType*MarkType>=0)
+        if (MarkForRefinement (theElement,NO_REFINEMENT,NULL)==GM_ERROR)
+          return(GM_ERROR);
+    }
+
+  return (GM_OK);
+}
+
+
+
+
+/****************************************************************************/
+/*																			*/
 /* Function:  Patterns2Rules												*/
 /*																			*/
 /* Purpose:   return mark of rule for a specific pattern                                        */
