@@ -48,37 +48,92 @@ then
 	# check whether first  option is ug module 
 	case $1 in
 	ug)
-		cd $UGROOT
+		if test -d $UGROOT 
+		then
+			cd $UGROOT;
+		else
+			exit 1;
+		fi
 		;;
 	dev | dom | gm | graphics | low | numerics | parallel | ui | np)
-		cd $UGROOT/$1
+		if test -d $UGROOT/$1
+		then
+			cd $UGROOT/$1;
+		else
+			exit 1;
+		fi
 		;;
 	meta | xif | ps | sif)
-		cd $UGROOT/dev/$1
+		if test -d $UGROOT/dev/$1
+		then
+			cd $UGROOT/dev/$1;
+		else
+			exit 1;
+		fi
 		;;
 	udm | algebra | procs | field)
-		cd $UGROOT/np/$1
+                if test -d $UGROOT/np/$1
+                then
+                        cd $UGROOT/np/$1;
+                else
+                        exit 1;
+                fi
 		;;
 	std)
-		cd $UGROOT/dom/$1
+                if test -d $UGROOT/dom/$1
+                then
+                        cd $UGROOT/dom/$1;
+                else
+                        exit 1;
+                fi
 		;;
 	gg2 | gg3)
-		cd $UGROOT/gm/$1
+                if test -d $UGROOT/gm/$1
+                then
+                        cd $UGROOT/gm/$1;
+                else
+                        exit 1;
+                fi
 		;;
 	netgen)
-		cd $UGROOT/gm/gg3/$1
+                if test -d $UGROOT/gm/gg3/$1
+                then
+                        cd $UGROOT/gm/gg3/$1;
+                else
+                        exit 1;
+                fi
 		;;
 	uggraph | grape)
-		cd $UGROOT/graphics/$1
+                if test -d $UGROOT/graphics/$1
+                then
+                        cd $UGROOT/graphics/$1;
+                else
+                        exit 1;
+                fi
 		;;
 	dddif)
-		cd $UGROOT/parallel/$1
+                if test -d $UGROOT/parallel/$1
+                then
+                        cd $UGROOT/parallel/$1;
+                else
+                        exit 1;
+                fi
 		;;
 	ddd)
-		cd $UGROOT/parallel/dddobj
+                if test -d $UGROOT/parallel/dddobj
+                then
+                        cd $UGROOT/parallel/dddobj; 
+                else
+                        exit 1;
+                fi
 		;;
 	chaco)
-		cd $UGROOT/parallel/chaco
+                if test -d $UGROOT/parallel/chaco
+                then
+                        cd $UGROOT/parallel/chaco;
+                else
+                        exit 1;
+                fi
 		;;
 	links)
 		ugmakelinks;
@@ -89,40 +144,100 @@ then
 		exit 0;
 		;;
 	simple)
-		cd $UGROOT/../simple;
+                if test -d $UGROOT/../simple
+                then
+                        cd $UGROOT/../simple;
+                else
+                        exit 1;
+                fi
 		;;
 	diff2d)
-		cd $UGROOT/../diff2d/pclib;
+                if test -d $UGROOT/../diff2d/pclib
+                then
+                        cd $UGROOT/../diff2d/pclib;
+                else
+                        exit 1;
+                fi
 		;;
 	diff2da)
-		cd $UGROOT/../diff2d/appl;
+                if test -d $UGROOT/../diff2d/appl
+                then
+                        cd $UGROOT/../diff2d/appl;
+                else
+                        exit 1;
+                fi
 		;;
 	ns)
-		cd $UGROOT/../ns/pclib;
+                if test -d $UGROOT/../ns/pclib
+                then
+                        cd $UGROOT/../ns/pclib;
+                else
+                        exit 1;
+                fi
 		;;
 	ns2d)
-		cd $UGROOT/../ns/appl2d;
+                if test -d $UGROOT/../ns/appl2d
+                then
+                        cd $UGROOT/../ns/appl2d;
+                else
+                        exit 1;
+                fi
 		;;
 	ns3d)
-		cd $UGROOT/../ns/appl3d;
+                if test -d $UGROOT/../ns/appl3d
+                then
+                        cd $UGROOT/../ns/appl3d;
+                else
+                        exit 1;
+                fi
 		;;
 	fe)
-		cd $UGROOT/../fe/appl;
+                if test -d $UGROOT/../fe/appl
+                then
+                        cd $UGROOT/../fe/appl;
+                else
+                        exit 1;
+                fi
 		;;
 	sc)
-		cd $UGROOT/../sc/pclib;
+                if test -d $UGROOT/../sc/pclib
+                then
+                        cd $UGROOT/../sc/pclib;
+                else
+                        exit 1;
+                fi
 		;;
 	sc2d)
-		cd $UGROOT/../sc/appl2d;
+                if test -d $UGROOT../sc/appl2d
+                then
+                        cd $UGROOT/../sc/appl2d;
+                else
+                        exit 1;
+                fi
 		;;
 	sc3d)
-		cd $UGROOT/../sc/appl3d;
+                if test -d $UGROOT/../sc/appl3d
+                then
+                        cd $UGROOT/../sc/appl3d;
+                else
+                        exit 1;
+                fi
 		;;
 	tools)
-		cd $UGROOT/tools;
+                if test -d $UGROOT/tools 
+                then
+                        cd $UGROOT/tools; 
+                else
+                        exit 1;
+                fi
 		;;
 	df)
-		cd $UGROOT/../df/gen;
+                if test -d $UGROOT/../df/gen
+                then
+                        cd $UGROOT/../df/gen;
+                else
+                        exit 1;
+                fi
 		;;
 	*)
 		echo "target $1 not found";
