@@ -1,22 +1,22 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* File:          commands.h                                                                                                    */
-/*                                                                                                                                                      */
-/* Purpose:   command for ug command line interface                                             */
-/*                                                                                                                                                      */
-/* Author:        Peter Bastian                                                                                                 */
-/*                        Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
-/*                        Universitaet Heidelberg                                                                               */
-/*                        Im Neuenheimer Feld 368                                                                               */
-/*                        6900 Heidelberg                                                                                               */
-/*                                                                                                                                                      */
-/* History:   18.02.92 begin, ug version 2.0                                                            */
-/*                        05 Sep 1992, split cmd.c into cmdint.c and commands.c                 */
-/*                                                                                                                                                      */
-/* Remarks:                                                                                                                             */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* File:      commands.h                                                    */
+/*                                                                          */
+/* Purpose:   command for ug command line interface                         */
+/*                                                                          */
+/* Author:    Peter Bastian                                                 */
+/*            Interdisziplinaeres Zentrum fuer Wissenschaftliches Rechnen   */
+/*            Universitaet Heidelberg                                       */
+/*            Im Neuenheimer Feld 368                                       */
+/*            6900 Heidelberg                                               */
+/*                                                                          */
+/* History:   18.02.92 begin, ug version 2.0                                */
+/*            05 Sep 1992, split cmd.c into cmdint.c and commands.c         */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -36,21 +36,10 @@
 #include <stdio.h>
 
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
-
-#ifndef __DEVICESH__
 #include "ugdevices.h"
-#endif
-
-#ifndef __CMDLINE__
 #include "cmdline.h"
-#endif
-
-#ifndef __GM__
 #include "gm.h"
-#endif
 
 /**************************************************/
 /* A namespace for the c++ version                */
@@ -63,14 +52,23 @@ namespace UG3d {
 #endif
 #endif
 
+/** I need this in DUNE
+   maybe only temporarily. */
+#ifdef __cplusplus
+INT NewCommand(INT argc, char **argv);
+
+INT ConfigureCommand (INT argc, char **argv);
+#endif
+
+
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* defines in the following order                                                                                       */
-/*                                                                                                                                                      */
-/*                compile time constants defining static data size (i.e. arrays)        */
-/*                other constants                                                                                                       */
-/*                macros                                                                                                                        */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*    compile time constants defining static data size (i.e. arrays)        */
+/*    other constants                                                       */
+/*    macros                                                                */
+/*                                                                          */
 /****************************************************************************/
 
 #define NO_OPTION_CHECK(argc,argv)      if (argc>1)                                                     \
