@@ -5227,32 +5227,14 @@ static INT EW_PreProcess_VecMatBnd2D (PICTURE *thePicture, WORK *theWork)
   return (0);
 }
 
-
-
-/* will disappear next week */
-
-
-#define SIDE(p,i)               ((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)])
-#define SET_SIDE(p,i,q)         (p)->ge.refs[side_offset[TAG(p)]+(i)] = q
-#define SUCCS(p)                (p)->succ
-#define PREDS(p)                (p)->pred
-#define ES_PATCH(p)             (p)->thePatch
-#define PARAM(p,i,j)    (p)->lambda[i][j]
-#define PARAMPTR(p,i)   (p)->lambda[i]
-
-
-
-
 static INT EW_BndEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
   COORD alpha,beta,delta,lambda;
   INT res;
   COORD_VECTOR x0,x1;
   long Color;
-  PATCH *thePatch;
-  PATCH_DESC thePatchDesc;
-  ELEMENTSIDE *theSide;
-  INT i,j;
+  BNDS *theSide;
+  INT i,j,left,right;
 
   if (!BND_PlotBoundary)
   {
@@ -5263,31 +5245,29 @@ static INT EW_BndEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   /* plot boundary segments and their ids (if) */
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
-    theSide = SIDE(theElement,i);
+    theSide = ELEM_BNDS(theElement,i);
     if (theSide == NULL)
       continue;
-    thePatch = ES_PATCH(theSide);
-    if (Patch_GetPatchDesc(thePatch,&thePatchDesc))
-      return (1);
-    if ((PATCH_LEFT(thePatchDesc)==0) || (PATCH_RIGHT(thePatchDesc)==0))
+    BNDS_BndSDesc(theSide,&left,&right);
+    if ((left==0)||(right==0))
       Color = BND_BndColor;
     else
       Color = BND_InnerBndColor;
-    alpha  = PARAM(theSide,0,0);
-    beta   = PARAM(theSide,1,0);
+    alpha  = 0.0;
+    beta   = 1.0;
     res    = BND_Resolution;
     delta  = (beta - alpha) / ((COORD)res);
 
     /* plot boundary with resolution */
     lambda = alpha;
-    if (Patch_local2global(thePatch,&lambda,x0))
+    if (BNDS_Global(theSide,&lambda,x0))
       return (1);
     for (j=1; j<=res; j++)
     {
       lambda += delta;
       if (j==res)
         lambda = beta;
-      if (Patch_local2global(thePatch,&lambda,x1))
+      if (BNDS_Global(theSide,&lambda,x1))
         return (1);
       DO_2c(theDO) = DO_LINE; DO_inc(theDO)
       DO_2l(theDO) = Color; DO_inc(theDO);
@@ -5698,7 +5678,6 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
 static INT EXT_PreProcess_InsertNode2D (PICTURE *thePicture, WORK *theWork)
 {
   return (1);
-
 }
 
 static INT EXT_PreProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
@@ -5786,9 +5765,8 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
   COORD pos[2];
   COORD len,l,la,le,dl,bestDist2;
   INT MousePos[2];
-  PATCH *thePatch;
   ELEMENT *theElement;
-  ELEMENTSIDE *theSide;
+  BNDS *theSide;
   INT i;
 
   if (MouseStillDown())
@@ -5846,40 +5824,38 @@ static INT EXT_MoveNodeEval2D (DRAWINGOBJ *theDO, INT *end)
         MN_accept = FALSE;
         return(0);
       }
-      thePatch = VS_PATCH(VSEG(theVertex));
-      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-      {
-        theSide = SIDE(theElement,i);
-        if (theSide != NULL)
-          if (ES_PATCH(theSide) == thePatch)
-            break;
-      }
-      if (theSide == NULL)
-      {
-        DO_2c(theDO) = DO_NO_INST;
-        MN_accept = FALSE;
-        return(0);
-      }
-      la = PARAM(theSide,0,0);
-      le = PARAM(theSide,1,0);
-      dl = (le - la) / MN_Resolution;
-
       /* scan resolution points of the segment */
       bestDist2 = MAX_C;
-      l = la;
-      for (i=1; i<MN_Resolution; i++)
+      for (i=0; i<SIDES_OF_ELEM(theElement); i++)
       {
-        l += dl;
-        if (Patch_local2global(thePatch,&l,pos)) return(1);
-        V2_EUKLIDNORM_OF_DIFF(pos,MN_pos,len);
-        if (len < bestDist2)
+        theSide = ELEM_BNDS(theElement,i);
+        if (theSide == NULL)
+          continue;
+        la = 0.0;
+        le = 1.0;
+        dl = (le - la) / MN_Resolution;
+
+        l = la;
+        for (i=1; i<MN_Resolution; i++)
         {
-          bestDist2 = len;
-          MN_lambda = (l-la) / (le-la);
+          l += dl;
+          if (BNDS_Global(theSide,&l,pos)) return(1);
+          V2_EUKLIDNORM_OF_DIFF(pos,MN_pos,len);
+          if (len < bestDist2)
+          {
+            bestDist2 = len;
+            MN_lambda = (l-la) / (le-la);
+          }
         }
       }
     }
 
+    if (bestDist2 == MAX_C)
+    {
+      DO_2c(theDO) = DO_NO_INST;
+      MN_accept = FALSE;
+      return(0);
+    }
 
     /* plot links inverse */
     for (theLink=START(MN_Node); theLink!=NULL; theLink=NEXT(theLink))
