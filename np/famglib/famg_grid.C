@@ -1311,7 +1311,7 @@ int FAMGGrid::ConstructTransfer()
     // test
     // FGSSmoothTV();
     
-	GetMatrix()->MarkStrongLinks(*this);
+	GetTmpMatrix()->MarkStrongLinks(*this);
 
     if (graph->Init(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
     if (graph->Construct(this)) { FAMGReleaseHeap(FAMG_FROM_BOTTOM); RETURN(1);}
