@@ -14,8 +14,12 @@ ARCH_SUFFIX   =
 ARCH_POSTLINK = true
 
 ARCH_LIBS     = -lm -lc
+ARCH_PLIBS    = -lpthread
 
-ARCH_CFLAGS   = -Xc -pvctl,nomsg
+#   -pvctl,nomsg     switch off messages from vectorizer
+#   -h2               optimization
+#   pthread_specific  every thread its own data area
+ARCH_CFLAGS   = -Xc -pvctl,nomsg -h2,pthread_specific
 ARCH_C++FLAGS = 
 ARCH_LFLAGS   = 
 ARCH_ARFLAGS  = ru
