@@ -461,10 +461,12 @@ void memmgr_FreeTMEM (void *buffer)
 
 /****************************************************************************/
 
+static INT theMarkKey;
+
 void *memmgr_AllocHMEM (size_t size)
 {
   void *buffer;
-  buffer = GetTmpMem(MGHEAP(dddctrl.currMG), size);
+  buffer = GetTmpMem(MGHEAP(dddctrl.currMG), size, theMarkKey);
 
   return(buffer);
 }
@@ -474,12 +476,12 @@ void memmgr_FreeHMEM (void *buffer)
 
 void memmgr_MarkHMEM (void)
 {
-  MarkTmpMem(MGHEAP(dddctrl.currMG));
+  MarkTmpMem(MGHEAP(dddctrl.currMG), &theMarkKey);
 }
 
 void memmgr_ReleaseHMEM (void)
 {
-  ReleaseTmpMem(MGHEAP(dddctrl.currMG));
+  ReleaseTmpMem(MGHEAP(dddctrl.currMG), theMarkKey);
 }
 
 
@@ -536,9 +538,9 @@ void memmgr_Init (void)
   }
         #else
   /* check for allocatable memory */
+  printf("%4d: MemMgr. size of allocatable memory: %ld\n", me,
+         (unsigned long)MemFree());
   /*
-     printf("%4d: MemMgr. size of allocatable memory: %ld\n", me,
-          (unsigned long)MemFree());
    */
         #endif
 
