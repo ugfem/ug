@@ -1213,39 +1213,6 @@ COORD *LMP (INT n)
 
 /****************************************************************************/
 /*D
-   LocalToGlobal - Transform local coordinates to global 	 
-
-   SYNOPSIS:
-   INT LocalToGlobal (INT n, const COORD **Corners, 
-   const COORD *EvalPoint, COORD *GlobalCoord);
-
-   PARAMETERS:
-.  n - number of corners
-.  Corners - coordinates of corners
-.  EvalPoint - local coordinates
-.  GlobalCoord - resulting global coordinates
-
-   DESCRIPTION:
-   This function computes the shape functions in an evaluated point and 
-   transforms the local coordinates to global coordinates.
-
-   RETURN VALUE:
-   INT
-.n    0 if ok 
-.n    1 if error occured.
-D*/
-/****************************************************************************/
-
-INT LocalToGlobal (INT n, const COORD **Corners, 
-				   const COORD *EvalPoint, COORD *GlobalCoord)
-{
-    LOCAL_TO_GLOBAL(n,Corners,EvalPoint,GlobalCoord);
-
-	return (0);
-}
-
-/****************************************************************************/
-/*D
    GlobalToLocal - Transform global coordinates to local
 
    SYNOPSIS:
@@ -1303,85 +1270,6 @@ INT GlobalToLocal (INT n, const COORD **Corners,
 
 	return(1);
 }
-
-/****************************************************************************/
-/*D
-   N - Shape function
-
-   SYNOPSIS:
-   DOUBLE N (int n, int i, DOUBLE s, DOUBLE t);
-
-   PARAMETERS:
-.  n - number of sides (3 for triangle, 4 for quadrangle)
-.  i - corner number (corner number [0..n-1])
-.  s,t - local DOUBLEinates
-
-   DESCRIPTION:
-   This function finds the linear shape functions Ni(s,t) to approximate the
-   solution u in the integration point ip for triangles and quadrilaterals
-   
-.n   uip(s,t) = SUM Ni(s,t)*ui
-
-   where the sum runs over all nodes of the element to which the considered
-   ip belongs. The shape function is defined as
-   
-   - for all elements who do not have the node i as a corner
-.n   Ni = 0
-
-   - for the elements
-.n   Ni(node i) = 1
-.n   Ni(node k) = 0, if k is not equal i.
-   
-   RETURN VALUE:
-   DOUBLE
-.n          value
-D*/   
-/****************************************************************************/
-
-#ifdef __TWODIM__
-DOUBLE N (int n, int i, DOUBLE s, DOUBLE t)
-{
-	if (n==3)
-	{
-		switch (i)
-		{
-			case 0 : return(1-s-t);
-			case 1 : return(s);
-			case 2 : return(t);
-		}
-	}
-	else if (n==4)
-	{
-		switch (i)
-		{
-			case 0 : return((1-s)*(1-t));
-			case 1 : return(s*(1-t));
-			case 2 : return(s*t);
-			case 3 : return((1-s)*t);
-		}
-	}
-	
-	/* ERROR: i<0 || i>=n */
-	return (-1.0);
-}
-#endif
-
-#ifdef __THREEDIM__						 
-DOUBLE N (const INT i, const COORD *LocalCoord)
-{
-	switch (i)
-	{
-		case 0 : return((DOUBLE)(1.0-LocalCoord[0]-LocalCoord[1]-LocalCoord[2]));
-		case 1 : return((DOUBLE)LocalCoord[0]);
-		case 2 : return((DOUBLE)LocalCoord[1]);
-		case 3 : return((DOUBLE)LocalCoord[2]);
-	}
-	
-	/* error */
-	assert(FALSE);
-	return (-1);
-}
-#endif
 
 /****************************************************************************/
 /*D
@@ -1595,7 +1483,7 @@ INT Gradients (INT n, const COORD **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_V
 
 /****************************************************************************/
 /*D
-   L2GDerivative2d - Derivative of LocalToGlobal2d
+   L2GDerivative2d - Derivative of LOCAL_TO_GLOBAL
 
    SYNOPSIS:
    INT L2GDerivative2d (INT n, const COORD **Corners,
@@ -1616,9 +1504,6 @@ INT Gradients (INT n, const COORD **theCorners, DOUBLE ips, DOUBLE ipt, DOUBLE_V
    INT
 .n    0 if ok
 .n    1 if error occured.
-
-   SEE ALSO:
-   LocalToGlobal2d
 D*/
 /****************************************************************************/
 

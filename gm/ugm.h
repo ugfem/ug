@@ -82,6 +82,7 @@ INT              GetFreeOBJT                    (void);
 INT              ReleaseOBJT                    (INT type);
 void            *GetMemoryForObject             (MULTIGRID *theMG, INT size, INT type);
 INT              PutFreeObject                  (MULTIGRID *theMG, void *object, INT size, INT type);
+INT          MGMemory               (MULTIGRID *theMG, INT *used, INT *free);
 #ifdef ModelP
 void            *GetMemoryLocal                 (MULTIGRID *theMG, INT size, INT type);
 INT              PutFreeObjectLocal             (MULTIGRID *theMG, void *object, INT size, INT type);

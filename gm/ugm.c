@@ -258,7 +258,6 @@ void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
 {
   void **ptr, *obj;
   INT i,j,k,l;
-  FORMAT *theFormat;
 
   if (size == 0)
     return(NULL);
@@ -350,7 +349,6 @@ INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type)
 {
   void **ptr;
   INT i,j,k,l;
-  FORMAT *theFormat;
 
   memset(object,0,size);
   ((int *)object)[1] = -1;
@@ -385,6 +383,52 @@ INT PutFreeObject (MULTIGRID *theMG, void *object, INT size, INT type)
   UserWrite("PutFreeObject: increase MAXFREEOBJECTS\n");
 
   RETURN(1);
+}
+
+/****************************************************************************/
+/*D
+   MGMemory - computes free and used memory of multigrid heap
+
+   SYNOPSIS:
+   INT MGMemory (MULTIGRID *theMG, INT *used, INT *free);
+
+   PARAMETERS:
+   .  theMG - pointer to multigrid
+   .  used - used memory of multigrid heap in bytes
+   .  free - free memory of multigrid heap in bytes
+
+   DESCRIPTION:
+   This function computes the amount of memory in the freeObject lists of the
+   multigrid and adds it to the free memory of the multigrid heap.
+
+   RETURN VALUE:
+   INT
+   .n   0 if ok
+   .n   1 when error occured.
+   D*/
+/****************************************************************************/
+
+INT MGMemory (MULTIGRID *theMG, INT *used, INT *free)
+{
+  void *ptr;
+  INT i,j,k,l;
+
+  *used = HeapSize(MGHEAP(theMG));
+  *free = *used - HeapUsed(MGHEAP(theMG));
+  for (j=0; j<MAXFREEOBJECTS; j++)
+  {
+    k = 0;
+    ptr = theMG->freeObjects[k];
+    while (ptr != NULL)
+    {
+      k++;
+      ptr = ((void **) ptr)[0];
+    }
+    *free += k * theMG->SizeOfFreeObjects[k];
+  }
+
+  *used -= *free;
+  return(0);
 }
 
 /****************************************************************************/
@@ -4432,7 +4476,7 @@ void ListGrids (const MULTIGRID *theMG)
   char c;
   COORD hmin,hmax,h;
   INT l,cl,minl,i,soe,eos,coe,side,e;
-  INT nn,ne,nt,ns,nvec,nc;
+  INT nn,ne,nt,ns,nvec,nc,free,used;
 
   cl = CURRENTLEVEL(theMG);
 
@@ -4562,10 +4606,13 @@ void ListGrids (const MULTIGRID *theMG)
              (long)ns,(long)nvec,(long)nc,(float)hmin,(float)hmax);
 
   /* storage */
-  sprintf(buffer,"\n%lu bytes used out of %lu allocated\n",HeapUsed(MGHEAP(theMG)),HeapSize(MGHEAP(theMG)));
-  UserWrite(buffer);
+  MGMemory((MULTIGRID *)theMG,&used,&free);
+  if (used == (INT)HeapUsed(MGHEAP(theMG)))
+    UserWriteF("\n%d bytes used out of %d allocated\n",used,used+free);
+  else
+    UserWriteF("\n%d+%d bytes used out of %d allocated\n",
+               used,(INT)HeapUsed(MGHEAP(theMG))-used,used+free);
 }
-
 
 /****************************************************************************/
 /*D
