@@ -1347,7 +1347,7 @@ static INT GetCommonPatchId (PATCH *p0, PATCH *p1, INT k)
 #ifdef __THREEDIM__
 static INT GetCommonLinePatchId (PATCH *p0, PATCH *p1)
 {
-  INT i,j,k,l,cnt,cnt1;
+  INT i,k,l,cnt,cnt1;
   PATCH *p;
 
   if (PATCH_TYPE(p0) == LINE_PATCH_TYPE)
@@ -1377,7 +1377,7 @@ static INT GetCommonLinePatchId (PATCH *p0, PATCH *p1)
   return(-1);
 }
 
-BNDP *CreateBndPOnLine (HEAP *Heap, PATCH *p0, PATCH *p1, DOUBLE lcoord)
+static BNDP *CreateBndPOnLine (HEAP *Heap, PATCH *p0, PATCH *p1, DOUBLE lcoord)
 {
   BND_PS *bp;
   PATCH *p,*pp;
@@ -2147,13 +2147,12 @@ static INT TriangulatePatch (HEAP *Heap, PATCH *p, BNDP **bndp,
 static INT GenerateBnodes_h (HEAP *Heap, STD_BVP *theBVP, BNDP **bndp,
                              INT *sides, INT ***corners, DOUBLE h)
 {
-  INT i,j,m,n,nside,left,right,from,to,k;
-  DOUBLE length,plength,step,step1;
+  INT i,j,n,from,to,k;
+  DOUBLE step;
   DOUBLE lambda;
   DOUBLE dist, global[CORNERS_OF_BND_SEG][DIM];
   DOUBLE local[CORNERS_OF_BND_SEG][DIM-1];
   PATCH *p;
-  BND_PS *ps;
   BNDP *bp;
   INT *vlist;
   INT cornerid[CORNERS_OF_BND_SEG],npc;
