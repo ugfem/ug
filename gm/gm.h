@@ -2241,6 +2241,8 @@ extern const BV_DESC_FORMAT three_level_bvdf;   /* bvdf for 3 blocklevels	*/
 #define GM_USE_HEXAHEDRA                        8
 #define GM_REFINE_PARALLEL                      0
 #define GM_REFINE_SEQUENTIAL            1
+#define GM_REFINE_NOHEAPTEST            0
+#define GM_REFINE_HEAPTEST                      1
 #define GM_FCFCLL                                       1
 #define GM_FFCCLL                                       2
 #define GM_FFLLCC                                       3
@@ -2307,7 +2309,8 @@ INT             DeleteElement                   (MULTIGRID *theMG, ELEMENT *theE
 INT             EstimateHere                    (ELEMENT *theElement);
 INT         MarkForRefinement       (ELEMENT *theElement, INT rule, void *data);
 INT             GetRefinementMark               (const ELEMENT *theElement, INT *rule, void *data);
-INT             RefineMultiGrid                 (MULTIGRID *theMG, INT flag, INT seq);
+INT             GetRefinementMarkType   (const ELEMENT *theElement);
+INT             RefineMultiGrid                 (MULTIGRID *theMG, INT flag, INT seq, INT mgtest);
 NODE            *GetFineNodeOnEdge              (const ELEMENT *theElement, INT side);
 /*INT			GetFineSidesTouchingCoarseSide (const ELEMENT *theElement, INT side, INT *nfine, ELEMENT *Elements[MAX_SIDES_TOUCHING], INT Sides[MAX_SIDES_TOUCHING]);*/
 
@@ -2375,7 +2378,7 @@ BLOCKVECTOR *FindBV                                     (const GRID *grid, const
 /* list */
 void            ListMultiGridHeader     (const INT longformat);
 void            ListMultiGrid                   (MULTIGRID *theMG, const INT isCurrent, const INT longformat);
-INT         MultiGridStatus         (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag);
+INT         MultiGridStatus         (MULTIGRID *theMG, INT gridflag, INT greenflag, INT lbflag, INT verbose);
 void            ListGrids                               (const MULTIGRID *theMG);
 void            ListNode                                (MULTIGRID *theMG, NODE *theNode,               INT dataopt, INT bopt, INT nbopt, INT vopt);
 void            ListNodeSelection               (MULTIGRID *theMG,                                              INT dataopt, INT bopt, INT nbopt, INT vopt);
