@@ -2993,9 +2993,11 @@ BVP_Init (char *name, HEAP * Heap, MESH * Mesh, INT MarkKey)
   {
     const DOMAIN_PART_INFO *dpi;
 
-    if (DOMAIN_NPARTS (theDomain) >= (1 << VPART_LEN))
+    if (DOMAIN_NPARTS (theDomain) > (1 << VPART_LEN))
     {
-      printf ("too many parts for control entry in vector\n");
+      UserWriteF("Too many parts for control entry in vector\n");
+      UserWriteF("Domain requests %d parts, but only %d are possible!\n",
+                 DOMAIN_NPARTS (theDomain), (1 << VPART_LEN));
       ASSERT (FALSE);
       return (NULL);
     }
