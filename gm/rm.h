@@ -48,9 +48,7 @@
 
 /* uncomment this if you want to use the fule rule set for tetrahedra */
 /* -> recompile rm.c refine.c ugm.c commands.c                        */
-/*
-   #define TET_RULESET
- */
+#define TET_RULESET
 
 /* defines for edge types */
 #define INNER_EDGE          1
@@ -120,12 +118,15 @@
 
 #define IS_REFINED(e)           (REFINE(e)!=NO_REFINEMENT)
 #define LEAFELEM(e)                     (!IS_REFINED(e))
+
+#define RESTRICT_BY_FUNCTION
+#ifndef RESTRICT_BY_FUNCTION
 #define ELEMENT_TO_MARK(e)  ((IS_REFINED(e)) ? NULL :                                         \
                              (ECLASS(e) == RED_CLASS) ? e :                                    \
                              (ECLASS(EFATHER(e)) == RED_CLASS) ?  EFATHER(e) :                 \
                              (ECLASS(EFATHER(EFATHER(e))) == RED_CLASS) ? EFATHER(EFATHER(e)) :\
                              EFATHER(EFATHER(EFATHER(e))))
-
+#endif
 
 /* indices of rules in rule array */
 #define T_NOREF                         0
@@ -171,6 +172,10 @@
 #define FULL_REFRULE_0_5    (Pattern2Rule[TETRAHEDRON][0x3F]+1)
 #define FULL_REFRULE_1_3    (Pattern2Rule[TETRAHEDRON][0x3F]+2)
 #define FULL_REFRULE_2_4    (Pattern2Rule[TETRAHEDRON][0x3F]+0)
+#define TET_RED                         FULL_REFRULE
+#define TET_RED_0_5                     FULL_REFRULE_0_5
+#define TET_RED_1_3                     FULL_REFRULE_1_3
+#define TET_RED_2_4                     FULL_REFRULE_2_4
 #else
 #define TET_RED                         2
 #define TET_RED_0_5                     3
@@ -319,8 +324,11 @@ extern FULLREFRULEPTR theFullRefRule;
 
 INT ShowRefRule (INT tag, INT nb);
 
-INT InitRuleManager (void);
-INT Patterns2Rules(ELEMENT *theElement,INT pattern);
+INT                     InitRuleManager                 (void);
+INT                     Patterns2Rules                  (ELEMENT *theElement,INT pattern);
+#ifdef RESTRICT_BY_FUNCTION
+ELEMENT         *ELEMENT_TO_MARK                (ELEMENT *theElement);
+#endif
 
 #ifdef __THREEDIM__
 INT SetAlignmentPtr (MULTIGRID *theMG, EVECTOR *direction);
