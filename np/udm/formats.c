@@ -2343,12 +2343,13 @@ static INT ScanMatOption (      INT argc, char **argv,                  /* optio
       while ((token=strtok(NULL,BLANKS))!=NULL);
 
       /* check next arg for storage allocation */
-      if (sscanf(argv[opt+1],"alloc %d",&ns)==1)
-      {
-        opt++;
-        for (type=0; type<NMATTYPES; type++)
-          MatStorageNeeded[type] += ns*SUBM_RCOMP(subm,type)*SUBM_CCOMP(subm,type);
-      }
+      if (opt+1<argc)
+        if (sscanf(argv[opt+1],"alloc %d",&ns)==1)
+        {
+          opt++;
+          for (type=0; type<NMATTYPES; type++)
+            MatStorageNeeded[type] += ns*SUBM_RCOMP(subm,type)*SUBM_CCOMP(subm,type);
+        }
     }
 
 
