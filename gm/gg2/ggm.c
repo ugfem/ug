@@ -279,7 +279,7 @@ FRONTCOMP *CreateFrontComp (FRONTLIST *mylist, FRONTCOMP *after, int ncomp, NODE
     FRONTN(&(FChandle[i])) = NodeHandle[i];
     MYFL(&(FChandle[i])) = mylist;
     FCNGB(&(FChandle[i])) = NULL;
-    FCNGBS(&(FChandle[i])) = NULL;
+    FCNGBS(&(FChandle[i])) = 0;
   }
 
   /* create pointer connections */

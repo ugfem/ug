@@ -808,7 +808,6 @@ CONNECTION *CreateConnection (GRID *theGrid, VECTOR *from, VECTOR *to)
     return (NULL);
   Size = sizeof(MATRIX)-sizeof(DOUBLE)+ds;
   if (MSIZEMAX<Size) return (NULL);
-  assert (Size % ALIGNMENT == 0);
 
   /* is there already the desired connection ? */
   pc = GetConnection(from,to);
