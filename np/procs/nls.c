@@ -270,6 +270,8 @@ INT NPENLSolverInit (NP_ENL_SOLVER *np, INT argc , char **argv)
   /* reduction factor is required for execution */
   if (esc_read(np->reduction,NP_FMT(np),np->x,"red",argc,argv))
     for (i=0; i<MAX_VEC_COMP+EXTENSION_MAX; i++) np->reduction[i] = 1.0E-10;             /* default */
+  if (!ReadArgvDOUBLE("ered",&s,argc,argv))
+    for (i=VD_NCOMP(np->x->vd); i<VD_NCOMP(np->x->vd)+np->x->n; i++) np->reduction[i] = s;
 
   /* assemble numproc is required for execution */
   np->Assemble = (NP_ENL_ASSEMBLE *)
