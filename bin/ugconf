@@ -18,6 +18,8 @@ then
 	echo "         XIF (set IF=X, REMOTE_IF = OFF)";
 	echo "         XRIF (set IF=X, REMOTE_IF = ON)";
 	echo "         NORIF (set REMOTE_IF = OFF)";
+	echo "         GUI (set GUI = ON)";
+	echo "         NOGUI (set GUI = OFF)";
 	echo "         HP (set ARCH = HP)";
 	echo "         HP20 (set ARCH = HP20)";
 	echo "         HPUX9 (set ARCH = HPUX9)";
@@ -102,7 +104,7 @@ PACKSUFFIX=Z
 
 grep_valid_entries()
 {
-	egrep '^[ ]*ARCH|^[ ]*MODEL |^[ ]*DIM|^[ ]*GRAPE |^[ ]*COVISE|^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE|^[ ]*CHACO|^[ ]*CAD' $1;
+	egrep '^[ ]*ARCH|^[ ]*MODEL |^[ ]*DIM|^[ ]*GRAPE |^[ ]*COVISE|^[ ]*NETGEN|^[ ]*REMOTE_IF|^[ ]*IF|^[ ]*DOM_MODULE|^[ ]*DEBUG_MODE|^[ ]*CHACO|^[ ]*CAD|^[ ]*GUI' $1;
 }
 
 
@@ -250,6 +252,12 @@ edit_ugconf()
 		;;
 	NORIF)
 		sed 's/^REMOTE_IF.*$/REMOTE_IF = OFF/' $1 > $1.tmp
+		;;
+	GUI)
+		sed 's/^GUI.*$/GUI = ON/' $1 > $1.tmp
+		;;
+	NOGUI)
+		sed 's/^GUI.*$/GUI = OFF/' $1 > $1.tmp
 		;;
 	HP)
 		sed 's/^ARCH.*$/ARCH = HP/' $1 > $1.tmp
