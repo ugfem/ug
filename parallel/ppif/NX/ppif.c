@@ -74,7 +74,7 @@
 
 #define MAXT        15      /* maximum number of downtree nodes max log2(P) */
 
-#define MAXVCHAN    256         /* maximum number of channels                                   */
+#define MAXVCHAN    512         /* maximum number of channels                                   */
 
 #define PTYPE_ANY   -1L         /* process type: any process					*/
 
@@ -206,8 +206,11 @@ VChannelPtr NewVChan (int p, int id)
     vc_count++;
     vc_free = (vc_free+1)%MAXVCHAN;
     return(myChan);
-  } else {
-    printf("%d: no more VChannels in NewVChan(), dest=%d, id=%d\n",me,p,id);
+  }
+  else
+  {
+    printf("%4d: PPIF-error, no more VChannels in NewVChan(), "
+           "dest=%d, id=%d\n", me, p, id);
     return(NULL);
   }
 }
@@ -285,11 +288,12 @@ int InitPPIF (int *argcp, char ***argvp)
 
   if (myptype()!=0L) {
     setptype(0L);
-    printf(" %4d: corrected PTYPE to 0\n", me);
+    printf("%4d: PPIF-warning: corrected PTYPE to 0\n", me);
   }
 
-  if (!InitVChan()) {
-    printf(" %4d: Couldn't get VChannel memory!\n",me);
+  if (!InitVChan())
+  {
+    printf("%4d: PPIF-error: couldn't get VChannel memory!\n", me);
   }
 
   /* 3D array configuration */
@@ -605,7 +609,9 @@ int InfoASend (VChannelPtr vc, msgid m)
     return(0);
 
   default :                             /* error during transfer							*/
-    printf("    %d: IS      ERROR!  (errno=%ld)\n", me, errno);
+    fprintf(stdout,
+            "%4d: PPIF-error in InfoASend(), errno=%ld (see errno.h)\n",
+            me, (long)errno);
     return(-1);
   }
 }
@@ -625,7 +631,9 @@ int InfoARecv (VChannelPtr vc, msgid m)
     return(0);
 
   default :                             /* error during transfer							*/
-    printf("    %d: IR      ERROR!  (errno=%ld)\n", me, errno);
+    fprintf(stdout,
+            "%4d: PPIF-error in InfoARecv(), errno=%ld (see errno.h)\n",
+            me, (long)errno);
     return(-1);
   }
   return(0);
@@ -660,7 +668,7 @@ int GetMail (int *sourceId, int *reqId, void *data, int *size)
 
   ret = _crecv(ID_MAIL, (char *)data, (long)RAND_MSG_SIZE);
   if (ret==-1L) {
-    printf("GetMail: %d no mesg! (%d)\n", me, (int)errno);
+    printf("GetMail: %d no mesg! errno=%d (see errno.h)\n", me, (int)errno);
     return(-1);
   }
 
