@@ -1760,7 +1760,7 @@ BNDP *BVP_InsertBndP (HEAP *Heap, BVP *aBVP, INT argc, char **argv)
   /* check point on point patch */
   if (ABS(pos[0] - PARAM_PATCH_RANGE(p)[0][0]) < SMALL_DIFF)
     return(CreateBndPOnPoint(Heap,currBVP->patches[PARAM_PATCH_POINTS(p,0)]));
-  else if (ABS(pos[1] - PARAM_PATCH_RANGE(p)[0][1]) < SMALL_DIFF)
+  else if (ABS(pos[0] - PARAM_PATCH_RANGE(p)[0][1]) < SMALL_DIFF)
     return(CreateBndPOnPoint(Heap,currBVP->patches[PARAM_PATCH_POINTS(p,1)]));
         #endif
 
