@@ -2748,16 +2748,21 @@ MULTIGRID *CreateMultiGrid (char *MultigridName, char *BndValProblem,
   }
 
   /* allocate predefined mesh, e. g. corner vertices pointers */
-        #ifdef ModelP
-  if (me==master)
-        #endif
   if (insertMesh)
   {
+                #ifdef ModelP
+    if (me==master)
+    {
+                #endif
     if (InsertMesh(theMG,&mesh))
     {
       DisposeMultiGrid(theMG);
       return(NULL);
     }
+                #ifdef ModelP
+  }
+                #endif
+
     ASSERT(mesh.mesh_status!=MESHSTAT_NOTINIT);
     if (mesh.mesh_status==MESHSTAT_MESH)
       if (FixCoarseGrid(theMG))
