@@ -35,6 +35,7 @@ extern "C"
 }
 
 #include "famg_coloring.h"
+#include "famg_ugalgebra.h"
 
 /* RCS_ID
 $Header$
@@ -53,16 +54,39 @@ static int NrNb = 0;				// number of valid entries in Nb
 static int *helpNbPtr= NULL;
 
 static int DetermineNbs( DDD_OBJ obj)
+// relevant are only the vectors which are at the border 
+// (this may be the border of the core partition or the direct neighbors
+//  of them in the overlap)
+// the grid already must have the correct overlap
 {
 	VECTOR *vec = (VECTOR *)obj;
-	int *proclist, i;
-
-	PRINTDEBUG(np,2,("%d: "VINDEX_FMTX" has copies: ", me,VINDEX_PRTX(vec)));
-	proclist = DDD_InfoProcList(PARHDR(vec));
-	for( i = 2; proclist[i] != -1	; i += 2 )
+	int *proclist, found, myStatus;
+	MATRIX *mat;
+	
+	// search for neighbor vector with inverse IS_FAMG_MASTER status
+	myStatus = IS_FAMG_MASTER(vec);
+	mat = VSTART(vec);
+	assert( mat!=NULL );
+	found = 0;
+	for( mat=MNEXT(mat); mat != NULL; mat = MNEXT(mat) )	// skip diagonal entry
+		if( IS_FAMG_MASTER(MDEST(mat)) != myStatus )
+		{
+			found = 1;
+			break;
+		}
+	if( !found )
 	{
-		helpNbPtr[proclist[i]] = 1;		// perhaps to much neighbors because of counting ghost-copies
-		PRINTDEBUG(np,2,("%d ",proclist[i]));
+		PRINTDEBUG(np,2,("%d: "VINDEX_FMTX" is not at the border\n", me,VINDEX_PRTX(vec)));
+		return 0;
+	}
+	// now vec has found a neighbor with inverse IS_FAMG_MASTER status; thus vec is at the border
+	
+	PRINTDEBUG(np,2,("%d: "VINDEX_FMTX" at border and has copies: ", me,VINDEX_PRTX(vec)));
+	proclist = DDD_InfoProcList(PARHDR(vec));
+	for( proclist += 2; *proclist != -1; proclist += 2 )
+	{
+		helpNbPtr[*proclist] = 1;
+		PRINTDEBUG(np,2,("%d ",*proclist));
 	}
 	PRINTDEBUG(np,2,("\n"));
 	return 0;
