@@ -62,14 +62,13 @@ typedef struct
 
   TransGridProcPtr res;
   TransGridProcPtr intcor;
-  InterpolateSolutionProcPtr intnew;
+  InterpolateNewVectorsProcPtr intnew;
 
   VECDATA_DESC *t;
   INT display;                                 /* display modus                 */
   INT level;                                   /* level optimization            */
   INT meanvalue;                               /* in parallel for nonconforming */
   /* interpolation                 */
-
 } NP_STANDARD_TRANSFER;
 
 /****************************************************************************/
@@ -299,45 +298,34 @@ INT NPTransferExecute (NP_BASE *theNP, INT argc , char **argv)
 
 /****************************************************************************/
 /*D
-   ilu - numproc for point block beta-modified ilu smoother
+   transfer - num proc for grid transfer configuration
 
    DESCRIPTION:
-   This numproc executes a point block ilu smoother, using the blas routines
-   'l_ilubthdecomp' and 'l_luiter'. It can be used in 'lmgc'.
+   This numproc configures the grid transfer.
+   It can be used in 'lmgc'.
 
    .vb
-   npinit [$c <cor>] [$b <rhs>] [$A <mat>]
-       $n <it> $damp <sc double list> $beta <sc double list>
+   npinit [$x <sol>] [$c <cor>] [$b <rhs>] [$A <mat>]
+       [$M] [$L] [$m] [$d {full|red|no}]
    .ve
 
+   .  $x~<sol> - solution vector
    .  $c~<sol> - correction vector
    .  $b~<rhs> - right hand side vector
    .  $A~<mat> - stiffness matrix
-   .  $n~<it> - number of iterations
-   .  $damp~<sc~double~list> - damping factors for each component
-   .  $beta~<sc~double~list> - parameter for modification of the diagonal
+   .  $M - use iterpolation matrix for transfer (default: standard transfer)
+   .  $m - parallel nonconforming interpolation
+   .  $L - level optimization
+   .  $d - display modus
 
-   .  <sc~double~list>  - [nd <double  list>] | [ed <double  list>] | [el <double  list>] | [si <double  list>]
-   .n     nd = nodedata, ed = edgedata, el =  elemdata, si = sidedata
-
-   'npexecute <name> [$i] [$s] [$p]'
+   'npexecute <name> [$i] [$R] [$I] [$N] [$P] [$p]'
 
    .  $i - preprocess
-   .  $s - smooth
+   .  $R - restrict defect
+   .  $I - interpolate correction
+   .  $N - interpolate new vectors
+   .  $P - project solution
    .  $p - postprocess
-
-   EXAMPLE:
-   .vb
-   npcreate sm $t ilu;
-    npinit $n 1 $damp 1.0 $beta 0.0;
-   npcreate base $t ls;
-    npinit $m 10 $i ilu $d no $red 1e-4;
-   npcreate mgc $t lmgc;
-    npinit $g 1 $S sm sm base;
-   npcreate solver $t ls;
-    npinit $x x $b b $A MAT $m 20 $i mgc $d full $red 1e-4;
-
-   npexecute solver $i $d $r $s $p;
    .ve
    D*/
 /****************************************************************************/
@@ -376,14 +364,18 @@ static INT TransferDisplay (NP_BASE *theNP)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Restrict","StandardRestrict");
   if (np->res == RestrictByMatrix)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"Restrict","RestrictByMatrix");
-  if (np->intcor = StandardInterpolateCorrection)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"InterpolateCor","StandardInterpolateCorrection");
+  if (np->intcor == StandardInterpolateCorrection)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"InterpolateCor",
+               "StandardInterpolateCorrection");
   if (np->intcor == InterpolateCorrectionByMatrix)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"InterpolateCor","InterpolateCorrectionByMatrix");
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"InterpolateCor",
+               "InterpolateCorrectionByMatrix");
   if (np->intnew == StandardInterpolateNewVectors)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"InterpolateNew","StandardInterpolateNewVectors");
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"InterpolateNew",
+               "StandardInterpolateNewVectors");
   if (np->intnew == InterpolateNewVectorsByMatrix)
-    UserWriteF(DISPLAY_NP_FORMAT_SS,"InterpolateNew","StandardRestrict");
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"InterpolateNew",
+               "InterpolateNewVectorsByMatrix");
 
   UserWriteF(DISPLAY_NP_FORMAT_SI,"meanvalue",(int)np->meanvalue);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"level",(int)np->level);
@@ -552,12 +544,14 @@ static INT TransferConstruct (NP_BASE *theNP)
 
   np = (NP_TRANSFER *) theNP;
   np->PreProcess = TransferPreProcess;
+  np->PreProcessProject = NULL;
   np->RestrictDefect = RestrictDefect;
   np->InterpolateCorrection = InterpolateCorrection;
   np->InterpolateNewVectors = InterpolateNewVectors;
   np->ProjectSolution = ProjectSolution;
   np->AdaptCorrection = AdaptCorrection;
   np->PostProcess = TransferPostProcess;
+  np->PostProcessProject = NULL;
 
   return(0);
 }

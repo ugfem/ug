@@ -184,7 +184,7 @@ INT NPLinearSolverDisplay (NP_LINEAR_SOLVER *np)
     if (np->x != NULL)
       UserWriteF(DISPLAY_NP_FORMAT_SS,"x",ENVITEM_NAME(np->x));
     if (np->b != NULL)
-      UserWriteF(DISPLAY_NP_FORMAT_SS,"b",ENVITEM_NAME(np->x));
+      UserWriteF(DISPLAY_NP_FORMAT_SS,"b",ENVITEM_NAME(np->b));
     UserWrite("\n");
   }
   UserWrite("configuration parameters:\n");

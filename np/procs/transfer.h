@@ -68,6 +68,11 @@ struct np_transfer {
     MATDATA_DESC *,                              /* matrix                          */
     INT *,                                       /* baselevel                       */
     INT *);                                      /* result                          */
+  INT (*PreProcessProject)
+    (struct np_transfer *,                   /* pointer to (derived) object     */
+    INT,                                         /* level                           */
+    INT *,                                       /* baselevel                       */
+    INT *);                                      /* result                          */
   INT (*InterpolateCorrection)
     (struct np_transfer *,                   /* pointer to (derived) object     */
     INT,                                         /* level                           */
@@ -108,6 +113,10 @@ struct np_transfer {
     VECDATA_DESC *,                              /* defect vector                   */
     MATDATA_DESC *,                              /* matrix                          */
     INT *);                                      /* result                          */
+  INT (*PostProcessProject)
+    (struct np_transfer *,                   /* pointer to (derived) object     */
+    INT,                                         /* level                           */
+    INT *);                                      /* result                          */
 };
 typedef struct np_transfer NP_TRANSFER;
 
@@ -118,7 +127,7 @@ typedef INT (*InterpolateCorrectionProcPtr)                                 \
   (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, DOUBLE *, INT *);
 typedef INT (*RestrictDefectProcPtr)                                        \
   (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, DOUBLE *, INT *);
-typedef INT (*InterpolateNewVectorsProcPtr)                                 \
+typedef INT (*InterpolateSolutionProcPtr)                                   \
   (NP_TRANSFER *, INT, VECDATA_DESC *, INT *);
 typedef INT (*ProjectSolutionProcPtr)                                       \
   (NP_TRANSFER *, INT, VECDATA_DESC *, INT *);
