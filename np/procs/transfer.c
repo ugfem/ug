@@ -123,6 +123,7 @@ typedef struct
   DOUBLE cut;                                                              /* cut value for scaled mg		*/
   INT display;                                 /* display modus                 */
   INT level;                                   /* level optimization            */
+  INT dirichlet;                               /* modify matrux for Dirichlet b.*/
   INT meanvalue;                               /* in parallel for nonconforming */
   /* interpolation                 */
 } NP_STANDARD_TRANSFER;
@@ -564,6 +565,7 @@ static INT TransferInit (NP_BASE *theNP, INT argc , char **argv)
   }
   np->meanvalue = ReadArgvOption("m",argc,argv);
   np->level = ReadArgvOption("L",argc,argv);
+  np->dirichlet = ReadArgvOption("D",argc,argv);
   np->display = ReadArgvDisplay(argc,argv);
 
   if (ReadArgvOption("S",argc,argv))
@@ -611,6 +613,7 @@ static INT TransferDisplay (NP_BASE *theNP)
 
   UserWriteF(DISPLAY_NP_FORMAT_SI,"meanvalue",(int)np->meanvalue);
   UserWriteF(DISPLAY_NP_FORMAT_SI,"level",(int)np->level);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"D",(int)np->dirichlet);
 
   if (np->display == PCR_NO_DISPLAY)
     UserWriteF(DISPLAY_NP_FORMAT_SS,"DispMode","NO_DISPLAY");
@@ -646,6 +649,8 @@ static INT TransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     if (*fl <= 0)
       if (np->amg->PreProcess(np->amg,fl,0,x,b,A,result))
         REP_ERR_RETURN(1);
+  }
+  if (np->dirichlet) {
         #ifdef ModelP
     if (a_vector_vecskip(theMG,*fl,tl,x) != NUM_OK)
       NP_RETURN(1,result[0]);
