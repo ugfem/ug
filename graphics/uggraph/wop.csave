@@ -12209,7 +12209,8 @@ static INT EW_EScalar3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
   {
     glob[0]=Poly[i][0]; glob[1]=Poly[i][1]; glob[2]=Poly[i][2];
     loc[0]=loc[1]=loc[2]=0.5;
-    if (GlobalToLocal3d(CORNERS_OF_ELEM(theElement),x,glob,loc)!=0)
+    if (GlobalToLocal3d(CORNERS_OF_ELEM(theElement),
+                        (const COORD **)x,glob,loc)!=0)
       return(1);
     PolyLoc[i][0]=loc[0]; PolyLoc[i][1]=loc[1]; PolyLoc[i][2]=loc[2];
   }
