@@ -6626,7 +6626,7 @@ ELEMENT *FindElementFromPosition (GRID *theGrid, DOUBLE *pos)
     ASSERT(0);
     return(NULL);
   }
-  for (i=0; i<NSONS(theFather); i++)
+  for (i=0; Sons[i]!=NULL; i++)
     if (PointInElement(pos,Sons[i]) == 1)
       return(Sons[i]);
 
@@ -6866,6 +6866,7 @@ INT KeyForObject( KEY_OBJECT *obj )
 
   default :        sprintf( buffer, "unrecognized object type %d", OBJT(obj) );
     PrintErrorMessage('E',"KeyForObject",buffer);
+    return(0);
     assert(0);
   }
   return (GM_ERROR);
