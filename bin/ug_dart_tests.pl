@@ -2,149 +2,92 @@
 # ug_dart_tests.pl
 #
 # findind "DartTestfile.txt" files which declare tests
-# and create all other neede "DartTestfile.txt" files
+# and create all other needed "DartTestfile.txt" files
 
 # use the following modules
 use File::Find ();
-use File::Copy;
 
-# reading and saving the Dart install directory 
+# reading and saving the Dart root directory 
 my $dartdir = $ENV {"DART_HOME"};
 
-# defining start directory and saving its "length"
-my $i = 0;
-$startdir = join('',$dartdir,'/Source/Client/UG');
-foreach $byte (split //,$startdir)
+# defining the start directory 
+my $startdir = join('',$dartdir,'/Source/Client/UG'); # default
+if($#ARGV > 0)
 {
-	$i++;
+    $startdir = join('/',$startdir,$ARGV[0]);
 }
 
-#*****************************************************************************
-# searching for existing "DartTestfile.txt" files and saving the directories
-# in which they reside in the variable "@testdirs" 
-#*****************************************************************************
+# saving the length of "startdir"
+my $i = 0;
+foreach $byte (split //,$startdir)
+{
+    $i++;
+}
 
-# searching for "DartTestfile.txt" files and writing the directories
-# in which they reside to "@temptestdirs"
+# finding all subdirectories of "$startdir" and saving them in "@dirs"
 sub find(&@) { &File::Find::find }
 *name = *File::Find::name;
 find { push(@dirs, $name) if -d } $startdir;
+
+# finding all directories whith a "DartTestfile.txt" file in it and saving them
+# in "@temptestdirs"
 foreach $dir (@dirs)
 {
-	opendir(DIR,$dir);
-	while(defined($file = readdir(DIR)))
+    opendir(DIR,$dir);
+    while(defined($file = readdir(DIR)))
+    {
+	if($file eq "DartTestfile.txt")
 	{
-		if($file eq "DartTestfile.txt")
-		{
-			push(@temptestdirs,$dir);
-		}
+            push(@temptestdirs, substr($dir,$i+1));
 	}
-	closedir(DIR);
+    }
+    closedir(DIR);
 }
 
-# prevent from writing some directories multiple times to "@testdirs"
-# and writing directories to "@testdirs"
-my ($l,$savedir,$tempdir) = (0,"","");
-foreach $dir (@temptestdirs)
+# saving only the whole path to the "DartTestfile.txt" files in which tests are
+# defined in "@testdirs" 
+my $check = 0;
+foreach $dir1 (@temptestdirs)
 {
-	$l++;
-	if($l != 1)
+    foreach $dir2 (@temptestdirs)
+    {
+	if($dir2 =~/$dir1/)
 	{
-        	if($dir =~ /$savedir/)
-		{
-			$tempdir = $dir;
-		}
-		else
-		{
-			push(@testdirs,$tempdir);
-			$tempdir = $dir;
-		}			
+	    $check++;
+	}
+    }
+    if($check < 2)
+    {
+	push(@testdirs, $dir1);
+    }
+    $check = 0;
+}
+
+# creating the input of the "DartTestfile.txt" file which resides in the 
+# build directory and creating the other needed files
+my $root_testfile_input = "SUBDIRS(";
+foreach $dir (@testdirs)
+{
+    my @part_dirs = split '/', $dir;
+    my $j = 0;
+    foreach $part_dir (@part_dirs)
+    {
+	$j++;
+	if($j == 1)
+	{
+	    $sub_dir = $part_dir;
 	}
 	else
 	{
-		$tempdir = $dir;
+	    $sub_dir = join('/',$sub_dir,$part_dir);
 	}
-	$savedir = $dir;
+	$write_file = join('/',$startdir,$sub_dir,'DartTestfile.txt');
+	system("touch $write_file");
+        $root_testfile_input = join(' ',$root_testfile_input,$sub_dir);
+    }
 }
-if(l == 1)
-{
-	push(@testdirs,$savedir);
-}
-else
-{
-	push(@testdirs,$savedir);
-}
+$root_testfile_input = join(' ',$root_testfile_input,')');
 
-#*****************************************************************************
-# extracting the subdirectories from every directory in "@testdirs" and 
-# creating the directories which are necessary
-#*****************************************************************************
-
-foreach $dir (@testdirs)
-{
-	my ($j,$k,@I) = (0,0,());
-	my $partdir = substr($dir,$i);
-	print $partdir,"\n";
-	# searching for backslashs in the directory name "$dir"
-	foreach $byte (split //,$partdir)
-	{
-	        $j++;
-		if($byte eq "/")
-		{
-			push(@I,$j);
-		}
-	}
-	# extracting the subdirectories between the backslashs
-	foreach $index (@I)
-	{
-	        $k++;
-		if($k != 1)
-		{
-			$count = $index - $offset - 1;
-			push(@partdirs,substr($partdir,$offset,$count));
-		}
-		$offset = $index;
-	}
-	$count = $j - $offset;
-	push(@partdirs,substr($partdir,$offset,$count)); 
-	$l = 0;
-	$tempdir2 = $startdir;
-	# building the several subdirectories
-	foreach $dir (@partdirs)
-	{
-#		print $dir,"\n\n";
-		$l++;
-		if($l == 1)
-		{
-			$tempdir1 = $dir;
-		}
-		else
-		{
-			$tempdir1 = join('/',$tempdir1,$dir);
-		}	
-		$tempdir2 = join('/',$tempdir2,$dir);
-		push(@subdirs,$tempdir1);
-		push(@tempdirs,$tempdir2);
-	}
-}
-
-#*****************************************************************************
-# creating the needed "DartTestfile.txt" files and the SUB_DIRS command which
-# is needed in "DartTestfile.txt" file which resides in the BuildDirectory
-#*****************************************************************************
-
-foreach $dir (@tempdirs)
-{
-      	$testfile = join('/',$dir,'DartTestfile.txt');
-	system("touch $testfile");
-}
-$SUB_DIRS = "SUBDIRS(";
-foreach $dir (@subdirs)
-{
-	$SUB_DIRS = join(' ',$SUB_DIRS,$dir);
-}
-$SUB_DIRS = join(' ',$SUB_DIRS,')');
-$testfile = join('/',$startdir,'DartTestfile.txt');
-system("touch $testfile");
-open(TEST,join('','>',$testfile));
-print TEST $SUB_DIRS
+# creating the "DartTestfile.txt" file which resides in the build directory
+open(ROOT_TESTFILE, join('','>',$startdir,'/DartTestfile.txt'));
+print ROOT_TESTFILE $root_testfile_input;
