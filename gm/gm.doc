@@ -63,13 +63,6 @@ type from which other objects can be reached locally. The variable element
 concept allows several element types (e.g. triangles and quadrilaterals) in one mesh.
 Elements give you access to the corresponding nodes and to neighboring elements.
 
-. ELEMENTSIDE - When a side of an element is part of the external or internal
-boundary of the domain, this side has a corresponding 'ELEMENTSIDE' object
-describing the position on the boundary.
-
-. BNDSEGDESC - Combines pointers to 'BOUNDARY_SEGMENT' and 'BOUNDARY_CONDITION'
-in order to save memory.
-
 . NODE - Corners of the elements are described by the 'NODE' structure. Only the
 information that is different per level is stored here. E.g. geometric information 
 for a node e.g. is stored only once in a 'VERTEX' object. Several 'NODE' objects share
@@ -78,10 +71,6 @@ share one 'VERTEX' if they are at the same position on different levels.
 . VERTEX - Geometric data of a 'NODE'. This contains x,y (,z), i.e global
 coordinates, the position in the coarser grid level (local coordinates) and
 boundary information if the node is on the boundary (see 'VSEGMENT').
-
-. VSEGMENT - A boundary vertex can reside on several boundary segments, especially when
-internal boundaries are defined. Therefore it stores a list of 'VSEGMENT'
-structures, one for each position on a boundary segment.
 
 . LINK - The mesh structure implies a neighbor relationship on the 'NODE'
 objects (the `mesh graph`). 
@@ -933,9 +922,6 @@ For the vertices in the coarsest grid (level 0) this pointer is 'NULL'.
 to the 'NODE' on the highest level. This pointer will probably `not` be supported
 in the next version, its use is not recommended!
 
-. vseg - (Boundary vertex only) Pointer to a list of 'VSEGMENT' structures, each
-describing a position of the 'VERTEX' on a boundary segment (see also 'BOUNDARY_SEGMENT').
-
 MACROS:
 
 .vb
@@ -987,34 +973,6 @@ NODE *TOPNODE (VERTEX *p);
 Returns pointer to the highest 'NODE' using that 'VERTEX'. The use of this
 component is not recommended since it will not be supported in the future.
 
-`Macros for boundary vertices only`
-
-.vb
-VSEGMENT *VSEG (VERTEX *p);
-.ve
-Pointer to the first 'VSEGMENT' structure of the list.
-
-.vb
-BNDSEGDESC *FIRSTSEGDESC (VERTEX *p);
-.ve
-Returns a pointer to the 'BNDSEGDESC' structure used by the first 'VSEGMENT'
-structure of the list. See the 'BNDSEGDESC' page for more information
-on that structure.
-
-.vb
-DOUBLE BVLAMBDA (VERTEX *p);
-DOUBLE FIRSTLAMBDA (VERTEX *p);
-.ve
-Returns the parameter for the first boundary segment this vertex lies on. Both
-macros do the same thing and 'BVLAMBDA' is provided for compatibility reasons.
-
-.vb
-DOUBLE *FIRSTPVECT (VERTEX *p);
-.ve
-Returns a pointer to the array containing the parameter for the first boundary
-where this vertex lies on. The first boundary segment is accessible
-via 'FIRSTSEGDESC'.
-
 CONTROL WORDS:
 
 The first word of many UG data structure is used bitwise for various purposes.
@@ -1059,222 +1017,6 @@ void SETONEDGE (VERTEX *p, INT n);            on which this vertex resides.
                                               2D: only valid for boundary vertex!
 -----------------------------------------------------------------------------
 .ve
-
-SEE ALSO:
-
-'VSEGMENT', 'BNDSEGDESC'.
-
-D*/
-
-/*D
-VSEGMENT - Data type storing position of vertex on boundary segment.
-
-STRUCTURES:
-
-.vb
-struct vsegment {
-
-    unsigned INT control;         // object identification, various flags 
-    struct bndsegdesc *segdesc;   // pointer to boundary segment desc     
-    DOUBLE lambda[DIM_OF_BND];     // position of vertex on boundary segmen
-
-    #ifdef __TWODIM__
-    DOUBLE zeta;                   // local coord. of vertex  in father edg
-                                  // Def.: l = (1-z)*l0 + z*l1            
-    #endif
-
-    struct vsegment *next;
-};
-
-typedef struct vsegment VSEGMENT;
-.ve
-
-DESCRIPTION:
-
-Each 'VERTEX' on the boundary has a list of 'VSEGMENT' structures, each
-storing one possible position on a boundary segment. Most vertices are only
-on one boundary segment. Only a vertex whose parameter is at the boundary
-of the parameter interval can reside on more than one boundary segment.
-
-. control - As in almost all UG objects this word is used bitwise for various
-purposes.
-
-. segdesc - Pointer to 'BNDSEGDESC' structure combining references to
-'BOUNDARY_SEGMENT' and 'BOUNDARY_CONDITION'.
-
-. lambda - Array containing parameter value. This parameter is with respect
-to the boundary segment given by 'segdesc'.
-
-. zeta - (2D only) This component is only provided for compatibility reasons.
-Its use is not recommended.
-
-. next - Pointer to next list element. A 'NULL' pointer indicates the
-end of the list.
-
-MACROS:
-
-.vb
-VSEGMENT *NEXTSEG (VSEGMENT *p);
-.ve
-
-Returns pointer to next vertex segment.
-
-.vb
-BNDSEGDESC *BSEG (VSEGMENT *p);
-BNDSEGDESC *BSEGDESC (VSEGMENT *p);
-.ve
-
-Both return a pointer to the 'BNDSEGDESC' structure referenced by the vertex segment.
-'BSEG' is the old version and should not be used anymore.
-
-.vb
-DOUBLE *PVECT (VSEGMENT *p);
-.ve 
-
-Returns array of parameter values with respect to the segment given by 'BSEGDESC'.
-
-.vb
-DOUBLE LAMBDA (VSEGMENT *p,INT i);
-.ve
-
-Provides access to the individual components of the parameter value.
-
-.vb
-DOUBLE ZETA (VSEGMENT *p);
-.ve
-
-Access to 'zeta' component.
-
-
-CONTROL WORDS:
-
-`General macros available for all objects`
-.vb
-Macro name                            Pos Len Purpose
------------------------------------------------------------------------------
-INT OBJT (VSEGMENT *p);               27  5   Object type value: VSOBJ   
-void SETOBJT (VSEGMENT *p, INT n);    
------------------------------------------------------------------------------
-.ve
-
-`Macros specific to the 'VSEGMENT' structure`
-
-no entries.
-
-SEE ALSO:
-
-'VERTEX', 'BNDSEGDESC'.
-
-D*/
-
-/*D
-BNDSEGDESC - Data type combining access to boundary segments and boundary conditions
-
-STRUCTURES:
-
-.vb
-struct bndsegdesc {                         // descriptor for one boundary segment  
-    unsigned INT control;                   // object identification, various flags 
-    INT id;                                 // unique id used for load/store        
-    struct boundary_segment *theSegment;    // (1) coordinate definition            
-    struct bndcond *theBoundaryCondition;   // (2) boundary condition definition    
-} ;
-
-typedef struct bndsegdesc BNDSEGDESC;
-.ve
-
-DESCRIPTION:
-The only purpose of this data structure is to combine the references to
-the 'BOUNDARY_SEGMENT' structure and the 'BOUNDARY_CONDITION' structure with
-the same id. When a new 'MULTIGRID' structure is created with
-either 'CreateMultiGrid' or 'LoadMultiGrid' the list of boundary segments
-and boundary conditions is combined and the 'BNDSEGDESC' structures are
-created. The 'VSEGMENT' and 'ELEMENTSIDE' structures use the 'BNDSEGDESC'
-to reference a boundary segment or boundary conditions. Therefore all access
-to boundary information during computation is made over the 'BNDSEGDESC' structure.
-There are macros (see below) providing immediate access to the components
-of the 'BOUNDARY_SEGMENT' and 'BOUNDARY_CONDITION' structures through the 
-'BNDSEGDESC' structure.
-
-MACROS:
-
-.vb
-INT SEGID (BNDSEGDESC *p);
-.ve
-
-Get segment id.
-
-.vb
-INT LEFT (BNDSEGDESC *p);
-INT RIGHT (BNDSEGDESC *p);
-.ve
-
-Get number of left and right subdomain.
-
-.vb
-INT SEGTYPE (BNDSEGDESC *p);
-.ve 
-
-Get number of subdomain.
-
-.vb
-INT POINT (BNDSEGDESC *p, INT i);
-.ve
-
-Return global numbers of the corners of the parameter space. 'i' is the
-local number of the corner (2D: 0 or 1 for the start or end point resp.,
-3D: 0-3 for the corners of the patch).
-
-.vb
-INT RES (BNDSEGDESC *p);
-.ve
-
-Return the resolution parameter of the boundary segment.
-
-.vb
-BndSegFuncPtr BNDSEGFUNC (BNDSEGDESC *p);
-.ve
-
-Returns a pointer to the C-function providing the mapping from parameter
-space to `d`-dimensional space.
-
-.vb
-void *SEGDATA (BNDSEGDESC *p);
-void *BNDDATA (BNDSEGDESC *p);
-.ve
-
-Returns the 'data' pointer  of the 'BOUNDARY_SEGMENT' structure. 'SEGDATA'
-is provided for compatibility reasons.
-
-.vb
-BndCondProcPtr BNDCONDFUNC (BNDSEGDESC *p);
-.ve
-
-Returns a pointer to the C-function providing boundary conditions
-for the selected problem.
-
-.vb
-void *CONDDATA (BNDSEGDESC *p);
-.ve
-
-Returns the 'data' pointer from the 'BOUNDARY_CONDITION' structure.
-
-.vb
-DOUBLE ALPHA (BNDSEGDESC *p, INT i);
-DOUBLE BETA (BNDSEGDESC *p, INT i);
-.ve
-
-Returns the parameter interval that is used by the functions returned
-by 'BNDSEGFUNC' and 'BNDCONDFUNC'.
-
-CONTROL WORDS:
-
-No control word entries are used by the 'BNDSEGDESC' structure.
-
-SEE ALSO:
-
-'BOUNDARY_SEGMENT', 'BOUNDARY_CONDITION', 'VSEGMENT', 'ELEMENTSIDE'.
-
 D*/
 
 /*D
@@ -1735,8 +1477,8 @@ for illustration and debugging purposes. Internally only the 'generic_element'
 is used. The 'TAG' field in the control word is used to identify the
 element type at run-time, therefore the limitation to eight element types.
 Memory requirements are also higher for elements having at least one
-side on the boundary because additional pointers to boundary information (the
-'ELEMENTSIDE' structure) is stored.
+side on the boundary because additional pointers to boundary information
+is stored.
 In 3D, degrees of freedom can be associated also with the sides of an element.
 Since there is no data type to represent sides, the degrees of freedom associated
 with a side of an element are accessed via the element (a side is shared by exactly
@@ -1778,11 +1520,6 @@ through appropriate makefile switches.
 . sidevector - Array of pointers to 'VECTOR's associated with the sides of an element.
 This option is available only in 3D. Whether 'VECTOR's are allowed in sides is determined
 through switches in the makefiles at compile-time.
-
-. side - Array of pointers to 'ELEMENTSIDE' structures. An 'ELEMENTSIDE' structure
-is allocated for a side of an element that is part of a boundary segment (either
-internal or external boundary). If no side of an element is on the boundary then
-no 'side' array is available.
 
 MACROS:
 
@@ -1932,17 +1669,6 @@ Returns a pointer to neighboring element over side 'i'. 'i' should be less
 than 'SIDES_OF_ELEM(p)'.
 
 .vb
-ELEMENTSIDE *SIDE (ELEMENT *p,INT i);
-.ve
-
-Returns a pointer to an 'ELEMENTSIDE' structure which describes the position of
-side 'i' of 'p' with respect to a boundary segment. 'i' should be less
-than 'SIDES_OF_ELEM(p)'. If no side of 'p' is part of the boundary (determined by
-the 'OBJT', see below) then the 'SIDE' macro should not be used. If 'p' has
-at least one side on a boundary then 'SIDE(p,i)' returns a 'NULL' pointer, if
-side 'i' is not part of the boundary.
-
-.vb
 VECTOR *EVECTOR (ELEMENT *p);
 .ve
 
@@ -2021,86 +1747,6 @@ void SETPROP (ELEMENT *p,INT n);
 SEE ALSO:
 
 'ELEMENT SIDE', 'NODE', 'VECTOR'.
-
-D*/
-
-/*D
-ELEMENTSIDE - Data type for side of an element on the boundary
-
-STRUCTURES:
-
-.vb
-struct elementside {
-
-    // variables 
-    unsigned INT control;               // object identification, various flags 
-    struct bndsegdesc *segdesc;         // pointer to boundary segment desc     
-    DOUBLE lambda[MAX_CORNERS_OF_SIDE]   // parameter of side corners            
-                        [DIM_OF_BND];
-    // pointers 
-	struct elementside *pred,*succ;     // double linked list
-} ;
-
-typedef struct elementside ELEMENTSIDE;
-.ve
-
-DESCRIPTION:
-
-If an element has a side on the boundary an 'ELEMENTSIDE' structure
-is allocated for that side, that stores the exact position of that
-side with respect to a boundary segment.
-
-. control - As in almost all UG objects this word is used bitwise for various
-purposes.
-
-. segdesc - Pointer to a 'BNDSEGDESC' structure giving access to the
-boundary segment and boundary conditions.
-
-. lambda - Array with parameter values for each corner of the side. The index
-of the corner is with respect to the numbering within the side.
-
-. pred,succ - Double linked list of 'ELEMENTSIDE' structures.
-
-MACROS:
-
-.vb
-ELEMENTSIDE *SUCCS (ELEMENTSIDE *p);
-ELEMENTSIDE *PREDS (ELEMENTSIDE *p);
-.ve
-
-Returns pointer to next and previous 'ELEMENTSIDE' structures.
-
-.vb
-BNDSEGDESC *SEGDESC (ELEMENTSIDE *p);
-.ve
-
-Returns a pointer to a 'BNDSEGDESC' structure giving access to 
-boundary segment and boundary condition information.
-
-.vb
-DOUBLE PARAM (ELEMENTSIDE *p,INT i,INT j);
-.ve
-
-Returns component 'j' of parameter of corner 'i' with respect to the boundary segment given by 
-'SEGDESC(p)'.
-
-CONTROL WORDS:
-
-`General macros available for all objects`
-
-.vb
-Macro name                            Pos Len Purpose
------------------------------------------------------------------------------
-INT OBJT (ELEMENTSIDE *p);            27  5   Object type ESOBJ for an element
-void SETOBJT (ELEMENTSIDE *p, INT n);         with at least one side on a boundary
------------------------------------------------------------------------------
-.ve
-
-`no private control word entries are used`
-
-SEE ALSO:
-
-'ELEMENT', 'BNDSEGDESC'.
 
 D*/
 
@@ -3165,14 +2811,10 @@ problem class, e.g. to store whether the grid level is assembled or not.
 
 . nCon - Number of 'CONNECTION' objects used on that grid level.
 
-. nSide - Number of 'ELEMENTSIDE' objects used on that grid level.
-
 . elements,lastelement - Pointers to first and last element of the
 'ELEMENT' list.
 
 . vertices,lastvertex - Pointers to first and last 'VERTEX' of that grid level.
-
-. sides - Pointer to first element of the 'ELEMENTSIDE' list.
 
 . firstNode,lastNode - Pointers to first and last 'NODE' on that level.
 
@@ -3226,12 +2868,6 @@ VERTEX *LASTVERTEX (GRID *p);
 Return pointers to first and last 'VERTEX' of the 'GRID'.
 
 .vb
-ELEMENTSIDE *FIRSTELEMSIDE (GRID *p);
-.ve
-
-Return pointer to first element of the 'ELEMENTSIDE' list.
-
-.vb
 NODE *FIRSTNODE (GRID *p);
 NODE *LASTNODE (GRID *p);
 .ve
@@ -3275,8 +2911,7 @@ INT NVEC (GRID *p);
 INT NC (GRID *p);
 .ve
 
-Return number of 'VERTEX' ('NV'), 'NODE' ('NN'), 'ELEMENT' ('NT'), 'EDGE' ('NE'), 'ELEMENTSIDE'
-('NS'), 'VECTOR' ('NVEC') and 'CONNECTION' ('NC') objects allocated on that grid level.
+Return number of 'VERTEX' ('NV'), 'NODE' ('NN'), 'ELEMENT' ('NT'), 'EDGE' ('NE'), 'VECTOR' ('NVEC') and 'CONNECTION' ('NC') objects allocated on that grid level.
 
 CONTROL WORDS:
 
@@ -3284,7 +2919,7 @@ No entries of the control word are currently used.
 
 SEE ALSO:
 
-'MULTIGRID', 'ELEMENT', 'NODE', 'VERTEX', 'ELEMENTSIDE', 'VECTOR', 'MATRIX'.
+'MULTIGRID', 'ELEMENT', 'NODE', 'VERTEX', 'VECTOR', 'MATRIX'.
 
 D*/
 
