@@ -206,7 +206,7 @@ const BV_DESC_FORMAT NS_DIM_PREFIX DH_bvdf =
             (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
             (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff}};
 
-const BV_DESC_FORMAT one_level_bvdf =
+const BV_DESC_FORMAT NS_DIM_PREFIX one_level_bvdf =
 { 32, 1,
   {     (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,
                 (BVD_ENTRY_TYPE)0xffffffff, (BVD_ENTRY_TYPE)0xffffffff,

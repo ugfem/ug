@@ -121,7 +121,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-INT MoveFreeBoundary (MULTIGRID *mg, INT level, const VECDATA_DESC *vd)
+INT NS_DIM_PREFIX MoveFreeBoundary (MULTIGRID *mg, INT level, const VECDATA_DESC *vd)
 {
   VECTOR *vec;
   VERTEX *vert;
@@ -197,7 +197,7 @@ INT MoveFreeBoundary (MULTIGRID *mg, INT level, const VECDATA_DESC *vd)
    D*/
 /****************************************************************************/
 
-INT StoreMGgeom (const MULTIGRID *mg, const VECDATA_DESC *vd)
+INT NS_DIM_PREFIX StoreMGgeom (const MULTIGRID *mg, const VECDATA_DESC *vd)
 {
   NODE *nd;
   VECTOR *vec;
@@ -254,7 +254,7 @@ INT StoreMGgeom (const MULTIGRID *mg, const VECDATA_DESC *vd)
    D*/
 /****************************************************************************/
 
-INT RestoreMGgeom (MULTIGRID *mg, const VECDATA_DESC *vd)
+INT NS_DIM_PREFIX RestoreMGgeom (MULTIGRID *mg, const VECDATA_DESC *vd)
 {
   VERTEX *vtx;
   NODE *nd;
@@ -320,7 +320,7 @@ INT RestoreMGgeom (MULTIGRID *mg, const VECDATA_DESC *vd)
    D*/
 /****************************************************************************/
 
-INT ComputeBoundaryVelocity (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *VD_p_0, const VECDATA_DESC *VD_p_m1, DOUBLE dt, const VECDATA_DESC *VD_vel)
+INT NS_DIM_PREFIX ComputeBoundaryVelocity (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *VD_p_0, const VECDATA_DESC *VD_p_m1, DOUBLE dt, const VECDATA_DESC *VD_vel)
 {
   DOUBLE inv_dt;
 

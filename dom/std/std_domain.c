@@ -1647,9 +1647,9 @@ M_BNDS_Dispose (HEAP * Heap, BNDS * theBndS)
 /****************************************************************************/
 
 PROBLEM *
-CreateProblem (char *domain, char *name, int id, ConfigProcPtr config,
-               int numOfCoefficients, CoeffProcPtr coeffs[],
-               int numOfUserFct, UserProcPtr userfct[])
+NS_DIM_PREFIX CreateProblem (char *domain, char *name, int id, ConfigProcPtr config,
+                             int numOfCoefficients, CoeffProcPtr coeffs[],
+                             int numOfUserFct, UserProcPtr userfct[])
 {
   PROBLEM *newProblem;
   int i;

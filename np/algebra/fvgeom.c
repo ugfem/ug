@@ -446,7 +446,7 @@ INT NS_DIM_PREFIX EvaluateFVGeometry (const ELEMENT *e, FVElementGeometry *geo)
 }
 
 #       ifdef __TWODIM__
-INT EvaluateAFVGeometry (const ELEMENT *e, const DOUBLE *conv, FVElementGeometry *geo)
+INT NS_DIM_PREFIX EvaluateAFVGeometry (const ELEMENT *e, const DOUBLE *conv, FVElementGeometry *geo)
 {
   INT i,j,k,l,n,coe,eoe;
   VERTEX *v;
@@ -619,7 +619,7 @@ INT EvaluateAFVGeometry (const ELEMENT *e, const DOUBLE *conv, FVElementGeometry
 #       endif
 
 #       ifdef __THREEDIM__
-INT EvaluateAFVGeometry (const ELEMENT *e, const DOUBLE *conf, FVElementGeometry *geo)
+INT NS_DIM_PREFIX EvaluateAFVGeometry (const ELEMENT *e, const DOUBLE *conf, FVElementGeometry *geo)
 {
   assert(0);
 }
@@ -946,8 +946,8 @@ static INT Intersect2d_old (INT nCorners, const DOUBLE_VECTOR Corners[], const D
   return (2);
 }
 
-INT Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const DOUBLE_VECTOR pt,
-                 INT *Side, DOUBLE lambda[DIM_OF_BND])
+INT NS_DIM_PREFIX Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const DOUBLE_VECTOR pt,
+                               INT *Side, DOUBLE lambda[DIM_OF_BND])
 {
   DOUBLE_VECTOR v,r,coeff,M[DIM],MI[DIM];
   DOUBLE det;
@@ -1009,7 +1009,7 @@ INT Intersect2d (INT nco, const DOUBLE_VECTOR *x, const DOUBLE_VECTOR vel, const
    D*/
 /****************************************************************************/
 
-INT GetFullUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
+INT NS_DIM_PREFIX GetFullUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
 {
   DOUBLE sp;
   INT ip,corn;
@@ -1051,7 +1051,7 @@ INT GetFullUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel
    D*/
 /****************************************************************************/
 
-INT GetSkewedUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
+INT NS_DIM_PREFIX GetSkewedUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
 {
   const DOUBLE_VECTOR *x;
   INT ip,corn,tag;
@@ -1095,7 +1095,7 @@ INT GetSkewedUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPV
    D*/
 /****************************************************************************/
 
-INT GetLPSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
+INT NS_DIM_PREFIX GetLPSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
 {
   const DOUBLE_VECTOR *x=FVG_GCOPTR(geo);
   DOUBLE_VECTOR y,local;
@@ -1181,7 +1181,7 @@ INT GetLPSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[
    D*/
 /****************************************************************************/
 
-INT GetMWSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
+INT NS_DIM_PREFIX GetMWSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF], DOUBLE Shape[MAXF][MAXNC])
 {
   SubControlVolumeFace *scvf;
   INT from,to,ip,nip,corn,nco;
@@ -1278,8 +1278,8 @@ INT GetMWSUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[
    D*/
 /****************************************************************************/
 
-INT GetMJRawRegularUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF],
-                                 DOUBLE NodalShape[MAXF][MAXNC], DOUBLE IPShape[MAXF][MAXF])
+INT NS_DIM_PREFIX GetMJRawRegularUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF],
+                                               DOUBLE NodalShape[MAXF][MAXNC], DOUBLE IPShape[MAXF][MAXF])
 {
 #       ifdef __TWODIM__
 
@@ -1533,8 +1533,8 @@ static INT OLD_GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, const
   return (0);
 }
 
-INT GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF],
-                                  DOUBLE NodalShape[MAXF][MAXNC], DOUBLE IPShape[MAXF][MAXF])
+INT NS_DIM_PREFIX GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VECTOR IPVel[MAXF],
+                                                DOUBLE NodalShape[MAXF][MAXNC], DOUBLE IPShape[MAXF][MAXF])
 {
   DOUBLE dimlessflow,ipflow[MAXF];
   DOUBLE vel,len;
@@ -1660,7 +1660,7 @@ INT GetMJRawPositiveUpwindShapes (const FVElementGeometry *geo, const DOUBLE_VEC
    D*/
 /****************************************************************************/
 
-INT AFVGeometry (const ELEMENT *theElement, FVElementGeometry *geo, DOUBLE_VECTOR Convection)
+INT NS_DIM_PREFIX AFVGeometry (const ELEMENT *theElement, FVElementGeometry *geo, DOUBLE_VECTOR Convection)
 {
   SubControlVolumeFace *scvf;
   SD_VALUES *sdv;
@@ -1854,7 +1854,7 @@ INT AFVGeometry (const ELEMENT *theElement, FVElementGeometry *geo, DOUBLE_VECTO
    D*/
 /****************************************************************************/
 
-INT EvaluateShapesAndDerivatives (FVElementGeometry *geo, INT flags)
+INT NS_DIM_PREFIX EvaluateShapesAndDerivatives (FVElementGeometry *geo, INT flags)
 {
   SD_VALUES *sdv,*sdv0;
   const SubControlVolumeFace *scvf;
