@@ -245,9 +245,9 @@ BNDS* BNDP_CreateBndS (HEAP *Heap, BNDP **theBndP, INT n)
   bs->segment = 0;
   bs->property = 0;
   for (k=0; k<n; k++) {
-    bs->bp[k] = (BP *)theBndP;
-    bs->segment = MAX(bs->segment,bs->bp[k]->segment);
-    bs->property = MAX(bs->property,bs->bp[k]->property);
+    memcpy(&(bs->bp[k]),theBndP,sizeof(BP));
+    bs->segment = MAX(bs->segment,bs->bp[k].segment);
+    bs->property = MAX(bs->property,bs->bp[k].property);
   }
   return((BNDS *)bs);
 }
@@ -326,17 +326,17 @@ BNDP* BNDS_CreateBndP (HEAP *Heap, BNDS *theBndS, DOUBLE *local)
 
   if (bs->n ==2)
   {
-    BP *b0 = bs->bp[0];
-    BP *b1 = bs->bp[1];
+    BP *b0 = &(bs->bp[0]);
+    BP *b1 = &(bs->bp[1]);
 
     for (k=0; k<DIM; k++)
       bp->x[k] = (1.0 - local[0]) * b0->x[k] + local[0] * b1->x[k];
   }
   else if (bs->n ==3)
   {
-    BP *b0 = bs->bp[0];
-    BP *b1 = bs->bp[1];
-    BP *b2 = bs->bp[2];
+    BP *b0 = &(bs->bp[0]);
+    BP *b1 = &(bs->bp[1]);
+    BP *b2 = &(bs->bp[2]);
 
     for (k=0; k<DIM; k++)
       bp->x[k] = (1.0 - local[0] - local[1]) * b0->x[k]
@@ -344,10 +344,10 @@ BNDP* BNDS_CreateBndP (HEAP *Heap, BNDS *theBndS, DOUBLE *local)
   }
   else if (bs->n == 4)
   {
-    BP *b0 = bs->bp[0];
-    BP *b1 = bs->bp[1];
-    BP *b2 = bs->bp[2];
-    BP *b3 = bs->bp[3];
+    BP *b0 = &(bs->bp[0]);
+    BP *b1 = &(bs->bp[1]);
+    BP *b2 = &(bs->bp[2]);
+    BP *b3 = &(bs->bp[3]);
 
     for (k=0; k<DIM; k++)
       bp->x[k] = (1.0 - local[0]) * (1.0 - local[1]) * b0->x[k]
@@ -421,7 +421,8 @@ INT InitGeometry (HEAP *Heap, GEOMETRY *G)
           G->C[i].bs[j]->property = 0;
           G->C[i].bs[j]->n = ncfaces[j];
           for (k=0; k<G->C[i].bs[j]->n; k++)
-            G->C[i].bs[j]->bp[k] = G->P[G->C[i].P[faces[j][k]]].bp;
+            memcpy(&(G->C[i].bs[j]->bp[k]),
+                   G->P[G->C[i].P[faces[j][k]]].bp,sizeof(BP));
         }
         else
           G->C[i].bs[j] = NULL;

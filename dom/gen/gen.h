@@ -69,7 +69,7 @@ typedef struct {
   int segment;
   int property;
   int n;
-  BP *bp[MAX_BP];
+  BP bp[MAX_BP];
 
 } BS;
 
