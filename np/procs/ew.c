@@ -315,7 +315,6 @@ INT NPEWSolverExecute (NP_BASE *theNP, INT argc , char **argv)
     PrintErrorMessage('E',"NPEWSolverExecute","no assemble num proc");
     return (1);
   }
-
   if (ReadArgvOption("i",argc,argv)) {
     if (*np->PreProcess == NULL) {
       PrintErrorMessage('E',"NPEWSolverExecute","no PreProcess");
@@ -1092,10 +1091,24 @@ static INT EWExecute (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_EW *np;
   EWRESULT ewresult;
-  INT i,result,level;
+  INT i,result,level,nev,m;
 
   np = (NP_EW *) theNP;
   level = CURRENTLEVEL(theNP->mg);
+
+  nev = np->ew.nev;       /* voreingestellte Anzahl EWe sichern */
+  if (ReadArgvINT("m",&m,argc,argv))
+    UserWriteF("EWExecute: $m not defined - working with maximum %d EV\n",
+               nev);
+  else {
+    if (0 < m && m < nev)
+      np->ew.nev = m;          /* Anzahl EWe reduzieren */
+    else
+      UserWriteF("EWExecute: "
+                 "$m %d out of range - working with maximum %d EV\n",
+                 m,nev);
+  }
+
 
   if (np->ew.Assemble == NULL) {
     PrintErrorMessage('E',"EWExecute","no assemble num proc");
@@ -1138,6 +1151,7 @@ static INT EWExecute (NP_BASE *theNP, INT argc , char **argv)
   }
   if (ChangeStructDir(":")==NULL)
     return (1);
+  np->ew.nev = nev;       /* restore old value */
 
   return(0);
 }
