@@ -137,7 +137,7 @@ INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd);
 INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
                               DOUBLE **vptrlist[MAXVD],
                               DOUBLE **mptrlist[MAXMD],
-                              INT *vecskip);
+                              INT *vecskip, INT *nvec);
 
 INT ClearVecskipFlags           (GRID *theGrid);
 INT GetElementDirichletFlags    (ELEMENT *theElement, const VECDATA_DESC *theTVD,

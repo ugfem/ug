@@ -1193,7 +1193,7 @@ INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
    INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
                                                                                          DOUBLE **vptrlist[MAXVD],
                                                                                          DOUBLE **mptrlist[MAXMD],
-                                                                                         INT *vecskip)
+                                                                                         INT *vecskip, INT *nvec)
 
 
    PARAMETERS:
@@ -1205,6 +1205,7 @@ INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
    .  vptr2 - pointer to double values corresponding to the local right hand side
    .  vecskip - set 1 for DIRICHLET boundary, 0 else (ordering corresponds to the first
                                 VECDATA_DESC)
+   .  nvec - number of vectors involved from this element
 
    DESCRIPTION:
    This functions returns pointers to the data fields described in a VECDATA_DESC-list
@@ -1231,7 +1232,7 @@ INT PrepareElementMultipleVMPtrs (MVM_DESC *mvmd)
 INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
                               DOUBLE **vptrlist[MAXVD],
                               DOUBLE **mptrlist[MAXMD],
-                              INT *vecskip)
+                              INT *vecskip, INT *nvec)
 {
   VECTOR *theVec[MAX_NODAL_VECTORS],*rv,*cv;
   MATRIX *mat;
@@ -1241,6 +1242,8 @@ INT GetElementMultipleVMPtrs (ELEMENT *elem, const MVM_DESC *mvmd,
 
   if (GetVectorsOfDataTypesInObjects(elem,MVMD_DATATYPES(mvmd),MVMD_OBJTYPES(mvmd),&cnt,theVec)!=GM_OK)
     return (-1);
+
+  *nvec = cnt;
 
   nskip = 0;
   for (l=0; l<MVMD_NVD(mvmd); l++) vc[l] = 0;
