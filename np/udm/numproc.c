@@ -306,11 +306,10 @@ NP_BASE *GetNumProcByName (const MULTIGRID *theMG, const char *object_name, cons
    MGListNPClasses - display classes using general print format function
 
    SYNOPSIS:
-   INT MGListNPClasses (const MULTIGRID *theMG, PrintfProcPtr PrintF)
+   INT MGListNPClasses (const MULTIGRID *theMG)
 
    PARAMETERS:
    .  theMG - numproc objects are now associated with a multigrid
-   .  PrintF - general print format function
 
    DESCRIPTION:
    This function lists all abstract classes of numerical procedures enroled for
@@ -323,7 +322,7 @@ NP_BASE *GetNumProcByName (const MULTIGRID *theMG, const char *object_name, cons
    D*/
 /****************************************************************************/
 
-INT MGListNPClasses (const MULTIGRID *theMG, PrintfProcPtr PrintF)
+INT MGListNPClasses (const MULTIGRID *theMG)
 {
   ENVITEM *item;
   INT n,i;
@@ -358,7 +357,7 @@ INT MGListNPClasses (const MULTIGRID *theMG, PrintfProcPtr PrintF)
 
   /* list class names */
   for (i=0; i<n; i++)
-    PrintF("%s\n",classlist[i]);
+    UserWriteF("%s\n",classlist[i]);
 
   return(0);
 }
@@ -368,12 +367,11 @@ INT MGListNPClasses (const MULTIGRID *theMG, PrintfProcPtr PrintF)
    MGListNPsOfClass - display num proc contents of all num procs of given class
 
    SYNOPSIS:
-   INT MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassName, PrintfProcPtr PrintF)
+   INT MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassName)
 
    PARAMETERS:
    .  theMG - numproc objects are now associated with a multigrid
    .  ClassName - list num procs of this class
-   .  PrintF - general print format function
 
    DESCRIPTION:
    This function displays the num proc contents of all num procs of a given class.
@@ -385,7 +383,7 @@ INT MGListNPClasses (const MULTIGRID *theMG, PrintfProcPtr PrintF)
    D*/
 /****************************************************************************/
 
-INT MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassName, PrintfProcPtr PrintF)
+INT MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassName)
 {
   ENVITEM *item;
   INT n;
@@ -402,10 +400,9 @@ INT MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassName, PrintfProcP
     if (ENVITEM_TYPE(item) == ObjectVarID)
       if (strncmp(ENVITEM_NAME(item),ClassName,n)==0)
       {
-        PrintF("\n=================================================\n"
-               "contents of num proc '%s':\n",ENVITEM_NAME(item));
-        if (((*((NP_BASE*)item)->Display)((NP_BASE*)item)))
+        if (ListNumProc((NP_BASE*)item))
           return (__LINE__);
+        UserWrite("\n");
       }
 
   return(0);
@@ -416,11 +413,10 @@ INT MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassName, PrintfProcP
    MGListAllNPs - display num proc contents of all num procs
 
    SYNOPSIS:
-   INT MGListAllNPs (const MULTIGRID *theMG, PrintfProcPtr PrintF)
+   INT MGListAllNPs (const MULTIGRID *theMG)
 
    PARAMETERS:
    .  theMG - numproc objects are now associated with a multigrid
-   .  PrintF - general print format function
 
    DESCRIPTION:
    This function displays the num proc contents of all num procs.
@@ -432,7 +428,7 @@ INT MGListNPsOfClass (const MULTIGRID *theMG, const char *ClassName, PrintfProcP
    D*/
 /****************************************************************************/
 
-INT MGListAllNPs (const MULTIGRID *theMG, PrintfProcPtr PrintF)
+INT MGListAllNPs (const MULTIGRID *theMG)
 {
   ENVITEM *item;
 
@@ -446,12 +442,58 @@ INT MGListAllNPs (const MULTIGRID *theMG, PrintfProcPtr PrintF)
   for (item=ENVITEM_DOWN(item); item!=NULL; item=NEXT_ENVITEM(item))
     if (ENVITEM_TYPE(item) == ObjectVarID)
     {
-      PrintF("\n=================================================\n"
-             "contents of num proc '%s':\n",ENVITEM_NAME(item));
-      if (((*((NP_BASE*)item)->Display)((NP_BASE*)item)))
+      if (ListNumProc((NP_BASE*)item))
         return (__LINE__);
+      UserWrite("\n");
     }
   return(0);
+}
+
+/****************************************************************************/
+/*D
+   MGListAllNPs - display num proc contents of all num procs
+
+   SYNOPSIS:
+   INT MGListAllNPs (const MULTIGRID *theMG)
+
+   PARAMETERS:
+   .  theMG - numproc objects are now associated with a multigrid
+
+   DESCRIPTION:
+   This function displays the num proc contents of all num procs.
+
+   RETURN VALUE:
+   INT
+   .n    0 no error.
+   .n     __LINE__ error, usually memory overflow in environment or something not found.
+   D*/
+/****************************************************************************/
+
+INT ListNumProc (NP_BASE *np)
+{
+  char headline[DISPLAY_WIDTH+4];
+
+  CenterInPattern(headline,DISPLAY_WIDTH,ENVITEM_NAME(np),'=',"\n");
+  UserWrite(headline);
+  switch (np->status)
+  {
+  case NP_NOT_INIT :
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"status","not init"); break;
+  case NP_NOT_ACTIVE :
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"status","not active"); break;
+  case NP_ACTIVE :
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"status","active"); break;
+  case NP_EXECUTABLE :
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"status","executable"); break;
+  default :
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"status","unknown"); break;
+  }
+  UserWriteF(DISPLAY_NP_BAR);
+
+  if (((*np->Display)(np)))
+    return (__LINE__);
+
+  return (0);
 }
 
 /****************************************************************************/

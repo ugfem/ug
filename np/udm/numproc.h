@@ -106,9 +106,10 @@ NP_CONSTRUCTOR *GetConstructor          (const char *classname);
 INT                             CreateObject            (MULTIGRID *theMG, const char *objectname, const char *classname);
 
 NP_BASE            *GetNumProcByName    (const MULTIGRID *theMG, const char *objectname, const char *classname);
-INT                             MGListNPClasses         (const MULTIGRID *theMG, PrintfProcPtr PrintF);
-INT                             MGListNPsOfClass        (const MULTIGRID *theMG, const char *ClassName, PrintfProcPtr PrintF);
-INT                             MGListAllNPs            (const MULTIGRID *theMG, PrintfProcPtr PrintF);
+INT                             MGListNPClasses         (const MULTIGRID *theMG);
+INT                             MGListNPsOfClass        (const MULTIGRID *theMG, const char *ClassName);
+INT                             MGListAllNPs            (const MULTIGRID *theMG);
+INT                             ListNumProc                     (NP_BASE *np);
 
 INT                             InitNumProcManager      (void);
 
