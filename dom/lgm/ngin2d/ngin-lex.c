@@ -387,7 +387,7 @@ char *ngtext;
 /****************************************************************************/
 
 #include <stdlib.h>
-#include "ng.h"
+#include "ng2d.h"
 #include "ngin-yacc.h"
 
 static int noline=1;

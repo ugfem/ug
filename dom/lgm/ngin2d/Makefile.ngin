@@ -24,7 +24,7 @@ OBJECTS = $(PNAME)-lex.o $(PNAME)-yacc.o ng.o
 
 # main rule
 NPIN : $(OBJECTS) 
-	$(ARCH_AR) $(ARCH_ARFLAGS) ../../../lib/libdomL3.a $(OBJECTS)
+	$(ARCH_AR) $(ARCH_ARFLAGS) ../../../lib/libdomL2.a $(OBJECTS)
 
 
 # rule: generate object file from lex&yacc-generated source files

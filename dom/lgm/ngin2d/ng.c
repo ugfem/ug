@@ -32,7 +32,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "ng.h"
+#include "ng2d.h"
 #ifdef __USE_IN_UG__
         #include "general.h"
         #include "fileopen.h"
