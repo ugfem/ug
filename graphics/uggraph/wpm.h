@@ -263,6 +263,9 @@ struct GridPlotObj2D {
 
   /* data for 2D-View of grid */
   DOUBLE ShrinkFactor;                                          /* YES or NO									*/
+        #ifdef ModelP
+  DOUBLE PartShrinkFactor;                                      /* YES or NO									*/
+        #endif
   INT PlotElemID;                                                       /* YES or NO									*/
   INT PlotRefMarks;                                                     /* YES or NO									*/
   INT PlotIndMarks;                                                     /* YES or NO									*/
@@ -349,6 +352,9 @@ struct GridPlotObj3D {
 
   /* data for 3D-View of grid */
   DOUBLE ShrinkFactor;                                          /* YES or NO									*/
+        #ifdef ModelP
+  DOUBLE PartShrinkFactor;                                      /* YES or NO									*/
+        #endif
   struct Cut theCut;                                                    /* description of the cut						*/
   INT ElemColored;                                                      /* YES or NO									*/
   INT WhichElem;                                                        /* see above									*/

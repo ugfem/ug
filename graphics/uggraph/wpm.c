@@ -2570,15 +2570,18 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   /* defaults */
   if (PO_STATUS(thePlotObj)==NOT_INIT)
   {
-    theGpo->ShrinkFactor    = 1.0;
-    theGpo->ElemColored     = 1;
-    theGpo->WhichElem               = PO_ALL;
-    theGpo->PlotBoundary    = YES;
-    theGpo->PlotElemID              = NO;
-    theGpo->PlotNodeID              = NO;
-    theGpo->PlotNodes               = NO;
-    theGpo->PlotRefMarks    = NO;
-    theGpo->PlotIndMarks    = NO;
+    theGpo->ShrinkFactor            = 1.0;
+                #ifdef ModelP
+    theGpo->PartShrinkFactor        = 1.0;
+                #endif
+    theGpo->ElemColored             = 1;
+    theGpo->WhichElem                       = PO_ALL;
+    theGpo->PlotBoundary            = YES;
+    theGpo->PlotElemID                      = NO;
+    theGpo->PlotNodeID                      = NO;
+    theGpo->PlotNodes                       = NO;
+    theGpo->PlotRefMarks            = NO;
+    theGpo->PlotIndMarks            = NO;
   }
 
   /* color mode */
@@ -2631,6 +2634,20 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     }
   if (theGpo->ShrinkFactor<=0.0 || theGpo->ShrinkFactor>1.0)
     return (NOT_ACTIVE);
+
+        #ifdef ModelP
+  /* set partition shrink option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='p')
+    {
+      if (sscanf(argv[i],"p %f",&fValue)!=1)
+        break;
+      theGpo->PartShrinkFactor = fValue;
+      break;
+    }
+  if (theGpo->PartShrinkFactor<=0.0 || theGpo->PartShrinkFactor>1.0)
+    return (NOT_ACTIVE);
+        #endif
 
   /* set refinement mark option */
   for (i=1; i<argc; i++)
@@ -2739,6 +2756,9 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
 
   /* print content */
   UserWriteF(DISPLAY_PO_FORMAT_SF,"ShrinkFactor",(float)theGpo->ShrinkFactor);
+        #ifdef ModelP
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"PartShrinkFactor",(float)theGpo->PartShrinkFactor);
+        #endif
   if (theGpo->PlotBoundary == YES)
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"BND","YES");
   else
@@ -3824,10 +3844,13 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   /* defaults */
   if (PO_STATUS(thePlotObj)==NOT_INIT)
   {
-    theGpo->ShrinkFactor    = 1.0;
-    theGpo->ElemColored     = NO;
-    theGpo->WhichElem               = PO_ALL;
-    CUT_STATUS(theCut)              = NOT_INIT;
+    theGpo->ShrinkFactor            = 1.0;
+                #ifdef ModelP
+    theGpo->PartShrinkFactor        = 1.0;
+                #endif
+    theGpo->ElemColored             = NO;
+    theGpo->WhichElem                       = PO_ALL;
+    CUT_STATUS(theCut)                      = NOT_INIT;
   }
 
   /* set shrink option */
@@ -3841,6 +3864,20 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     }
   if (theGpo->ShrinkFactor<=0.0 || theGpo->ShrinkFactor>1.0)
     return (NOT_ACTIVE);
+
+        #ifdef ModelP
+  /* set shrink option */
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='p')
+    {
+      if (sscanf(argv[i],"p %f",&fValue)!=1)
+        break;
+      theGpo->PartShrinkFactor = fValue;
+      break;
+    }
+  if (theGpo->PartitonShrinkFactor<=0.0 || theGpo->PartShrinkFactor>1.0)
+    return (NOT_ACTIVE);
+        #endif
 
   /* color mode */
   for (i=1; i<argc; i++)
@@ -3909,6 +3946,9 @@ static INT DisplayGridPlotObject_3D (PLOTOBJ *thePlotObj)
 
   /* print content */
   UserWriteF(DISPLAY_PO_FORMAT_SF,"ShrinkFactor",(float)theGpo->ShrinkFactor);
+        #ifdef ModelP
+  UserWriteF(DISPLAY_PO_FORMAT_SF,"PartShrinkFactor",(float)theGpo->PartShrinkFactor);
+        #endif
   if (theGpo->ElemColored == YES)
     sprintf(buffer,DISPLAY_PO_FORMAT_SS,"COLORED","YES");
   else
