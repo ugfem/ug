@@ -40,13 +40,18 @@ extern "C" {
 /*                                                                          */
 /****************************************************************************/
 
-#define __MWCW__  /* this is the default */
-
 /* SMALL..: least number s.t. 1 + SMALL../SMALL_FAC != 1 */
 #define SMALL_FAC            10
 
 /* current time as DOUBLE value */
 #define CURRENT_TIME   ((DOUBLE)0.0)
+
+/* ANSI-printf does not support %lX, where x is eEgGf */
+#define _fmt_le                 "le"
+#define _fmt_lE                 "lE"
+#define _fmt_lg                 "lg"
+#define _fmt_lG                 "lG"
+#define _fmt_lf                 "lf"
 
 /****************************************************************************/
 /*                                                                          */
@@ -838,6 +843,17 @@ extern "C" {
 /* current time as DOUBLE value */
 #undef CURRENT_TIME
 #define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
+
+#undef _fmt_lg
+#undef _fmt_lG
+#undef _fmt_le
+#undef _fmt_lE
+#undef _fmt_lf
+#define _fmt_lg                 "%g"
+#define _fmt_lG                 "%G"
+#define _fmt_le                 "%e"
+#define _fmt_lE                 "%E"
+#define _fmt_lf                 "%f"
 
 #endif
 
