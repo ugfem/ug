@@ -31,8 +31,8 @@
 /* History:   17 Aug 1992, begin                                            */
 /*            18 Feb 1993, Indigo version                                   */
 /*            02 Jun 1993, Paragon OSF/1 version                            */
-/*            14 Sep 1995, MPI version
-   /*                                                                          */
+/*            14 Sep 1995, MPI version                                      */
+/*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
 /****************************************************************************/
