@@ -88,6 +88,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
 }
 
 static int OverlapForLevel0;
+static int NrMasterForOverlap;
 static int* CopyPEBuffer = NULL;
 #endif
 
@@ -940,7 +941,14 @@ void FAMGGrid::Stencil()
 	ostrstream ostr; 
 	
 	ostr << "unknowns: " << nn << "\t";
-	ostr << "avg. stencil: " << (double)nl/(double)nn;
+	if( nn == 0 )
+	{
+		ostr << "avg. stencil: 0.0";
+	}
+	else
+	{
+		ostr << "avg. stencil: " << (double)nl/(double)nn;
+	}	
 #ifdef	USE_UG_DS
 	ostr << " level " << GLEVEL(GetugGrid());
 #endif
@@ -2077,8 +2085,11 @@ static int SendToMaster( DDD_OBJ obj)
 	int *proclist, i, found, size;
 	
 	if( IS_FAMG_MASTER(vec) )
+	{
+		NrMasterForOverlap++;
 		return 0;		// we want only border vectors here
-	
+	}
+
 	PRINTDEBUG(np,1,("%d: SendToMaster: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 	
 	// We cannot restrict the actions on overlap1 (the meaning of the following block)
@@ -2295,7 +2306,14 @@ void FAMGGrid::ConstructOverlap()
     #ifdef DDDOBJMGR
     DDD_ObjMgrBegin();
     #endif
+		NrMasterForOverlap = 0;
 		DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), SendToMaster );
+
+		if( NrMasterForOverlap==0 )
+		{	// delete all border (and ghost) if no more master vectors exist
+			for( vec=PFIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec) )
+				DDD_XferDeleteObj(PARHDR(vec));
+		}
 #ifdef XFERTIMING
 	t1 = CURRENT_TIME;
 	XFERTIMING_algtime += t1-XFERTIMING_algtime_start;
