@@ -49,6 +49,9 @@
 /****************************************************************************/
 
 #define SMALLDOUBLE     1e-6
+#ifdef MAXDOUBLE
+#undef MAXDOUBLE
+#endif
 #define MAXDOUBLE 999.0
 #define EPSI 0.0003
 #define MAXWIDTH 8.0
