@@ -729,18 +729,15 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 	theVertex = NULL;
 	
 	/* check if boundary vertex */
-	if (OBJT(theElement) == BEOBJ)
-	  {
+	if (OBJT(theElement) == BEOBJ) {
 		bnds = ELEM_BNDS(theElement,side);
-		if (bnds != NULL)
-		  {
+		if (bnds != NULL) {
 			if (n == 3)
 			  bnd_local[0] = bnd_local[1] = 0.33333333333333;
 			else if (n == 4)
 			  bnd_local[0] = bnd_local[1] = 0.5;
 			bndp = BNDS_CreateBndP(MGHEAP(MYMG(theGrid)),bnds,bnd_local);
-			if (bndp != NULL)
-			  {
+			if (bndp != NULL) {
 				theVertex = CreateBoundaryVertex(theGrid);
 				if (theVertex == NULL) 
 				  return(NULL);
@@ -749,17 +746,14 @@ NODE *CreateSideNode (GRID *theGrid, ELEMENT *theElement, INT side)
 				V_BNDP(theVertex) = bndp;
 				V_DIM_COPY(bnd_global,CVECT(theVertex));
 				V_DIM_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
-				if (diff > MAX_PAR_DIST)
-				  {
+				if (diff > MAX_PAR_DIST) {
 					SETMOVED(theVertex,1);
-					CORNER_COORDINATES(theElement,n,x);
-					UG_GlobalToLocal(n,(const DOUBLE **)x,global,local);
-				  }
-				else
-				  V_DIM_COPY(local,LCVECT(theVertex));
-			  }
-		  }
-	  }
+					CORNER_COORDINATES(theElement,k,x);
+					UG_GlobalToLocal(k,(const DOUBLE **)x,bnd_global,local);
+				}
+			}
+		}
+	}
 
 	if (theVertex == NULL)
 	  {
