@@ -3080,7 +3080,7 @@ static INT SaveDataCommand (INT argc, char **argv)
   EVECTOR *theEVector[5];
   INT i,j,n,ret,number,rename;
   int iValue;
-  float fValue[3];
+  double Value[3];
   DOUBLE t[3];
 
   theMG = currMG;
@@ -3119,13 +3119,14 @@ static INT SaveDataCommand (INT argc, char **argv)
       break;
 
     case 'T' :
-      ret = sscanf(argv[i],"T %f %f %f",fValue,fValue+1,fValue+2);
+      ret = sscanf(argv[i],"T %lf %lf %lf",Value,Value+1,Value+2);
       if (ret<1 || ret>3)
       {
         PrintHelp("savedata",HELPITEM," (cannot read TIME specification)");
         return(PARAMERRORCODE);
       }
-      for (j=0; j<ret; j++) t[j] = fValue[j];
+      for (j=0; j<ret; j++)
+        t[j] = Value[j];
       if (t[0]<0.0)
       {
         PrintHelp("savedata",HELPITEM," (TIME out of range ]-inf, 0.0[)");
@@ -4585,9 +4586,6 @@ static INT InsertInnerNodeCommand (INT argc, char **argv)
   DOUBLE xc[DIM];
   INT i;
 
-  /* following variables: keep type for sscanf */
-  float x[DIM_MAX];
-
         #ifdef ModelP
   if (me!=master) return (OKCODE);
         #endif
@@ -4601,13 +4599,11 @@ static INT InsertInnerNodeCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (sscanf(argv[0],"in %f %f %f",x,x+1,x+2)!=DIM)
+  if (sscanf(argv[0],"in %lf %lf %lf",xc,xc+1,xc+2)!=DIM)
   {
     PrintErrorMessageF('E',"in","specify %d coordinates for an inner node",(int)DIM);
     return (PARAMERRORCODE);
   }
-  for (i=0; i<DIM; i++)
-    xc[i] = x[i];
 
   /* NB: toplevel=0 is checked by InsertInnerNode() */
   if (InsertInnerNode(GRID_ON_LEVEL(theMG,0),xc)==NULL)
@@ -4766,11 +4762,11 @@ static INT InsertGlobalNodeCommand (INT argc, char **argv)
   bndp = BVP_InsertBndP (MGHEAP(theMG),MG_BVP(theMG),my_argc,my_argv);
   if (bndp == NULL)
   {
-    float x[DIM_MAX];
+    double x[DIM_MAX];
     DOUBLE xc[DIM];
 
     /* failed: try inserting an inner node */
-    if (sscanf(argv[0],"gn %f %f %f",x,x+1,x+2)!=DIM)
+    if (sscanf(argv[0],"gn %lf %lf %lf",x,x+1,x+2)!=DIM)
     {
       PrintErrorMessageF('E',"gn","specify %d global coordinates",(int)DIM);
       err = PARAMERRORCODE;
@@ -4922,7 +4918,7 @@ static INT MoveNodeCommand (INT argc, char **argv)
   INT type,i,j,level,relative;
 
   /* following variables: keep type for sscanf */
-  float x[DIM_MAX];
+  double x[DIM_MAX];
   int id,segid;
 
   theMG = currMG;
@@ -4974,7 +4970,7 @@ static INT MoveNodeCommand (INT argc, char **argv)
         return (CMDERRORCODE);
       }
       type = IVOBJ;
-      if (sscanf(argv[i],"i %f %f %f",x,x+1,x+2)!=DIM)
+      if (sscanf(argv[i],"i %lf %lf %lf",x,x+1,x+2)!=DIM)
       {
         PrintErrorMessageF('E',"move","specify %d new coordinates for an inner node",(int)DIM);
         return (PARAMERRORCODE);
@@ -4990,7 +4986,7 @@ static INT MoveNodeCommand (INT argc, char **argv)
         return (CMDERRORCODE);
       }
       type = BVOBJ;
-      if (sscanf(argv[i],"b %d %f %f",&segid,x,x+1)!=1+DIM_OF_BND)
+      if (sscanf(argv[i],"b %d %lf %lf",&segid,x,x+1)!=1+DIM_OF_BND)
       {
         PrintErrorMessageF('E',"move","specify the segment if and %d new coordinates for a boundary node",(int)DIM_OF_BND);
         return (PARAMERRORCODE);
@@ -5989,7 +5985,7 @@ static INT SmoothGridCommand (INT argc, char **argv)
   DOUBLE LimitLocDis;
   INT i,GridReset,FirstSurLev,lowLevel;
   INT bnd_num,bnd[10],fl,option,dummy;
-  float fValue;
+  double Value;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -6026,12 +6022,12 @@ static INT SmoothGridCommand (INT argc, char **argv)
       }
       break;
     case 'l' :
-      if (sscanf(argv[i],"limit %f",&fValue)!=1)
+      if (sscanf(argv[i],"limit %lf",&Value)!=1)
       {
         PrintErrorMessageF('E',"smoothgrid","(invalid option '%s')",argv[i]);
         return (PARAMERRORCODE);
       }
-      LimitLocDis = (DOUBLE) fValue;
+      LimitLocDis = (DOUBLE) Value;
       if (LimitLocDis>=0.5 || LimitLocDis <=0)
       {
         PrintErrorMessage('E',"smoothgrid","specify a local limit between 0 and 0.5 (default 0.3)");
@@ -6958,7 +6954,7 @@ static INT FindCommand (INT argc, char **argv)
   INT i,j,select,isNode,isElement,isVector;
 
   /* following variables: keep type for sscanf */
-  float x[DIM_MAX],tol;
+  double x[DIM_MAX],tol;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -6969,7 +6965,7 @@ static INT FindCommand (INT argc, char **argv)
   theGrid = GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
 
   /* check pararmeters */
-  if (sscanf(argv[0],"find %f %f %f",x,x+1,x+2)!=DIM)
+  if (sscanf(argv[0],"find %lf %lf %lf",x,x+1,x+2)!=DIM)
   {
     PrintHelp("find",HELPITEM," (could not get coordinates)");
     return (PARAMERRORCODE);
@@ -6983,7 +6979,7 @@ static INT FindCommand (INT argc, char **argv)
     switch (argv[i][0])
     {
     case 'n' :
-      if (sscanf(argv[i],"n %f",&tol)!=1)
+      if (sscanf(argv[i],"n %lf",&tol)!=1)
       {
         PrintHelp("find",HELPITEM," (could not read tolerance)");
         return (PARAMERRORCODE);
@@ -7000,7 +6996,7 @@ static INT FindCommand (INT argc, char **argv)
       break;
 
     case 'v' :
-      if (sscanf(argv[i],"v %f",&tol)!=1)
+      if (sscanf(argv[i],"v %lf",&tol)!=1)
       {
         PrintHelp("find",HELPITEM," (could not read tolerance)");
         return (PARAMERRORCODE);
@@ -7560,7 +7556,7 @@ static INT QualityCommand (INT argc, char **argv)
   INT error,i,fromE,toE,res,mode;
 
   /* following variables: keep type for sscanf */
-  float angle;
+  double angle;
   long f,t;
 
   theMG = currMG;
@@ -7610,7 +7606,7 @@ static INT QualityCommand (INT argc, char **argv)
 
     case '<' :
       lessopt = TRUE;
-      if (sscanf(argv[i],"< %f",&angle)!=1)
+      if (sscanf(argv[i],"< %lf",&angle)!=1)
       {
         PrintErrorMessage('E',"quality","could not get angle of < option");
         return (CMDERRORCODE);
@@ -7620,7 +7616,7 @@ static INT QualityCommand (INT argc, char **argv)
 
     case '>' :
       greateropt = TRUE;
-      if (sscanf(argv[i],"> %f",&angle)!=1)
+      if (sscanf(argv[i],"> %lf",&angle)!=1)
       {
         PrintErrorMessage('E',"quality","could not get angle of > option");
         return (CMDERRORCODE);
@@ -7748,7 +7744,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
   INT smooth;
   long ElemID,m;
   int iValue;
-  float tmp;
+  double tmp;
 #endif
 #if defined __THREEDIM__ && defined _NETGEN
   INT smooth, from, to, prism, save;
@@ -7884,7 +7880,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
         coeff = MG_GetCoeffFct(theMG,m);
         break;
       case 'h' :
-        if (sscanf(argv[i],"h %f",&tmp)!=1)
+        if (sscanf(argv[i],"h %lf",&tmp)!=1)
         {
           PrintHelp("makegrid",HELPITEM," (could not read <element id>)");
           return (PARAMERRORCODE);
@@ -7892,7 +7888,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
         if (tmp > 0) params.h_global = tmp;
         break;
       case 'A' :
-        if (sscanf(argv[i],"A %f",&tmp)!=1)
+        if (sscanf(argv[i],"A %lf",&tmp)!=1)
         {
           PrintHelp("makegrid",HELPITEM," (could not read <element id>)");
           return (PARAMERRORCODE);
@@ -7900,7 +7896,7 @@ static INT MakeGridCommand  (INT argc, char **argv)
         if ((tmp > 0) && (tmp < 90)) params.CheckCos = cos(tmp*PI/180.0);
         break;
       case 'S' :
-        if (sscanf(argv[i],"S %f",&tmp)!=1)
+        if (sscanf(argv[i],"S %lf",&tmp)!=1)
         {
           PrintHelp("makegrid",HELPITEM," (could not read <element id>)");
           return (PARAMERRORCODE);
@@ -8591,7 +8587,7 @@ static INT DrawTextCommand (INT argc, char **argv)
   char winname[NAMESIZE],text[NAMESIZE];
   COORD_POINT pos;
   INT i,mode,centeropt,size;
-  float x,y;
+  double x,y;
 
         #ifdef ModelP
   if (me!=master) return (OKCODE);
@@ -8604,7 +8600,7 @@ static INT DrawTextCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (sscanf(argv[0],expandfmt(CONCAT3("drawtext %f %f %",NAMELENSTR,"[ -~]")),&x,&y,text)!=3)
+  if (sscanf(argv[0],expandfmt(CONCAT3("drawtext %lf %lf %",NAMELENSTR,"[ -~]")),&x,&y,text)!=3)
   {
     PrintErrorMessage('E',"drawtext","specify position with two integers and then the text");
     return (CMDERRORCODE);
@@ -9341,7 +9337,7 @@ static INT SetViewCommand (INT argc, char **argv)
   INT i,j,veclen,res,RemoveCut;
 
   /* following variables: keep type for sscanf */
-  float x[3],help[3];
+  double x[3],help[3];
 
         #ifdef ModelP
   if (!CONTEXT(me)) {
@@ -9377,7 +9373,7 @@ static INT SetViewCommand (INT argc, char **argv)
         PrintErrorMessage('E',"setview","the o option applies ONLY with 3D objects");
         return (PARAMERRORCODE);
       }
-      if (sscanf(argv[i],"o %f %f %f",x,x+1,x+2)!=veclen)
+      if (sscanf(argv[i],"o %lf %lf %lf",x,x+1,x+2)!=veclen)
       {
         PrintErrorMessageF('E',"setview","o option: %d coordinates required for a %dD object",(int)veclen,(int)veclen);
         return (PARAMERRORCODE);
@@ -9388,7 +9384,7 @@ static INT SetViewCommand (INT argc, char **argv)
       break;
 
     case 't' :
-      if (sscanf(argv[i],"t %f %f %f",x,x+1,x+2)!=veclen)
+      if (sscanf(argv[i],"t %lf %lf %lf",x,x+1,x+2)!=veclen)
       {
         PrintErrorMessageF('E',"setview","t option: %d coordinates required for a %dD object",(int)veclen,(int)veclen);
         return (PARAMERRORCODE);
@@ -9399,7 +9395,7 @@ static INT SetViewCommand (INT argc, char **argv)
       break;
 
     case 's' :
-      if (sscanf(argv[i],"s %f %f %f",x,x+1,x+2)!=veclen)
+      if (sscanf(argv[i],"s %lf %lf %lf",x,x+1,x+2)!=veclen)
       {
         PrintErrorMessageF('E',"setview","s option: %d scalings required for a %dD object",(int)veclen,(int)veclen);
         return (PARAMERRORCODE);
@@ -9410,7 +9406,7 @@ static INT SetViewCommand (INT argc, char **argv)
       break;
 
     case 'x' :
-      if (sscanf(argv[i],"x %f %f %f",x,x+1,x+2)!=veclen)
+      if (sscanf(argv[i],"x %lf %lf %lf",x,x+1,x+2)!=veclen)
       {
         PrintErrorMessageF('E',"setview","x option: %d coordinates required for a %dD object",(int)veclen,(int)veclen);
         return (PARAMERRORCODE);
@@ -9468,7 +9464,7 @@ static INT SetViewCommand (INT argc, char **argv)
         PrintErrorMessage('E',"setview","plot object does not use a cut");
         return(PARAMERRORCODE);
       }
-      res = sscanf(argv[i],"P %g %g %g",help, help+1, help+2);
+      res = sscanf(argv[i],"P %lg %lg %lg",help, help+1, help+2);
       if (res!=3)
       {
         PrintErrorMessage('E',"setview","specify three values for cut plane point");
@@ -9484,7 +9480,7 @@ static INT SetViewCommand (INT argc, char **argv)
         PrintErrorMessage('E',"setview","plot object does not use a cut");
         return(PARAMERRORCODE);
       }
-      res = sscanf(argv[i],"N %g %g %g",help, help+1, help+2);
+      res = sscanf(argv[i],"N %lg %lg %lg",help, help+1, help+2);
       if (res!=3)
       {
         PrintErrorMessage('E',"setview","specify three values for cut normal point");
@@ -9667,7 +9663,7 @@ static INT WalkCommand (INT argc, char **argv)
   INT i,veclen;
 
   /* following variables: keep type for sscanf */
-  float x[3];
+  double x[3];
 
 
         #ifdef ModelP
@@ -9687,7 +9683,7 @@ static INT WalkCommand (INT argc, char **argv)
   theViewedObj = PIC_VO(thePic);
   veclen = (VO_DIM(theViewedObj)==TYPE_2D) ? 2 : 3;
 
-  if (sscanf(argv[0],"walk %f %f %f",x,x+1,x+2)!=veclen)
+  if (sscanf(argv[0],"walk %lf %lf %lf",x,x+1,x+2)!=veclen)
   {
     PrintErrorMessageF('E',"walk","%d coordinates required for a %dD object",(int)veclen,(int)veclen);
     return (PARAMERRORCODE);
@@ -9769,7 +9765,7 @@ static INT WalkAroundCommand (INT argc, char **argv)
   VIEWEDOBJ *theViewedObj;
 
   /* following variables: keep type for sscanf */
-  float dirAngle,Angle;
+  double dirAngle,Angle;
 
 
         #ifdef ModelP
@@ -9794,7 +9790,7 @@ static INT WalkAroundCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (sscanf(argv[0],"walkaround %f %f",&dirAngle,&Angle)!=2)
+  if (sscanf(argv[0],"walkaround %lf %lf",&dirAngle,&Angle)!=2)
   {
     PrintErrorMessage('E',"walkaround","2 angles required");
     return (PARAMERRORCODE);
@@ -9843,7 +9839,7 @@ static INT ZoomCommand (INT argc, char **argv)
   PICTURE *thePic;
 
   /* following variables: keep type for sscanf */
-  float factor;
+  double factor;
 
   NO_OPTION_CHECK(argc,argv);
 
@@ -9855,7 +9851,7 @@ static INT ZoomCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (sscanf(argv[0],"zoom %f",&factor)!=1)
+  if (sscanf(argv[0],"zoom %lf",&factor)!=1)
   {
     PrintErrorMessage('E',"zoom","zoom factor required");
     return (PARAMERRORCODE);
@@ -9900,7 +9896,7 @@ static INT DragCommand (INT argc, char **argv)
   PICTURE *thePic;
 
   /* following variables: keep type for sscanf */
-  float dx,dy;
+  double dx,dy;
 
     #ifdef ModelP
   if (me!=master) return (OKCODE);
@@ -9916,7 +9912,7 @@ static INT DragCommand (INT argc, char **argv)
     return (CMDERRORCODE);
   }
 
-  if (sscanf(argv[0],"drag %f %f",&dx,&dy)!=2)
+  if (sscanf(argv[0],"drag %lf %lf",&dx,&dy)!=2)
   {
     PrintErrorMessage('E',"drag","dx, dy required");
     return (PARAMERRORCODE);
@@ -9963,7 +9959,7 @@ static INT RotateCommand (INT argc, char **argv)
   DOUBLE ex,ey,norm;
 
   /* following variables: keep type for sscanf */
-  float angle;
+  double angle;
 
   NO_OPTION_CHECK(argc,argv);
 
@@ -9976,7 +9972,7 @@ static INT RotateCommand (INT argc, char **argv)
   }
   theVO=PIC_VO(thePic);
 
-  if (sscanf(argv[0],"rotate %f",&angle)!=1)
+  if (sscanf(argv[0],"rotate %lf",&angle)!=1)
   {
     V_DIM_EUKLIDNORM(VO_PXD(theVO),norm);
     if (norm==0.0) return(CMDERRORCODE);
@@ -10022,7 +10018,7 @@ static INT RotateCommand (INT argc, char **argv)
 
 static INT TextFacCommand (INT argc, char **argv)
 {
-  float fValue;
+  double Value;
 
         #ifdef ModelP
   if (me!=master) return (OKCODE);
@@ -10030,13 +10026,13 @@ static INT TextFacCommand (INT argc, char **argv)
 
   NO_OPTION_CHECK(argc,argv);
 
-  if (sscanf(argv[0],"textfac %f",&fValue)!=1)
+  if (sscanf(argv[0],"textfac %lf",&Value)!=1)
   {
     PrintErrorMessage('E',"textfac","specify a factor");
     return (PARAMERRORCODE);
   }
 
-  SetTextFactor(fValue);
+  SetTextFactor(Value);
 
   InvalidatePicturesOfMG(currMG);
 
@@ -10356,7 +10352,7 @@ static INT FindRangeCommand (INT argc, char **argv)
   DOUBLE min,max;
 
   /* following variables: keep type for sscanf */
-  float zoom;
+  double zoom;
 
         #ifdef ModelP
   if (!CONTEXT(me)) {
@@ -10391,7 +10387,7 @@ static INT FindRangeCommand (INT argc, char **argv)
       break;
 
     case 'z' :
-      if (sscanf(argv[i],"z %f",&zoom)!=1)
+      if (sscanf(argv[i],"z %lf",&zoom)!=1)
       {
         PrintErrorMessage('E',"findrange","specify a zoom factor with z option");
         return (PARAMERRORCODE);
@@ -10659,7 +10655,7 @@ static INT ClearCommand (INT argc, char **argv)
   VECTOR *v;
   INT i,fl,tl,n,skip;
   int j;
-  float value;
+  double value;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -10709,7 +10705,7 @@ static INT ClearCommand (INT argc, char **argv)
       break;
 
     case 'v' :
-      if (sscanf(argv[i],"v %f",&value)!=1)
+      if (sscanf(argv[i],"v %lf",&value)!=1)
       {
         PrintErrorMessage('E',"clear","could not read value");
         return(CMDERRORCODE);
@@ -10931,7 +10927,7 @@ static INT RandCommand (INT argc, char **argv)
   GRID *g;
   VECDATA_DESC *theVD;
   INT i,fl,tl,skip;
-  float from_value,to_value;
+  double from_value,to_value;
 
   theMG = currMG;
   if (theMG==NULL)
@@ -10957,7 +10953,7 @@ static INT RandCommand (INT argc, char **argv)
       break;
 
     case 'f' :
-      if (sscanf(argv[i],"f %f",&from_value)!=1)
+      if (sscanf(argv[i],"f %lf",&from_value)!=1)
       {
         PrintErrorMessage('E',"rand","could not read from value");
         return(CMDERRORCODE);
@@ -10965,7 +10961,7 @@ static INT RandCommand (INT argc, char **argv)
       break;
 
     case 't' :
-      if (sscanf(argv[i],"t %f",&to_value)!=1)
+      if (sscanf(argv[i],"t %lf",&to_value)!=1)
       {
         PrintErrorMessage('E',"rand","could not read to value");
         return(CMDERRORCODE);
@@ -13845,7 +13841,7 @@ static INT WriteArrayCommand (INT argc, char **argv)
 {
   INT i, Point[AR_NVAR_MAX];
   int iValue;
-  float fValue;
+  double Value;
   char name[128];
   ARRAY *theAR;
 
@@ -13878,9 +13874,9 @@ static INT WriteArrayCommand (INT argc, char **argv)
   }
 
   /* write */
-  if (sscanf(argv[argc-1],"v %f",&fValue)!=1)
+  if (sscanf(argv[argc-1],"v %lf",&Value)!=1)
     return (CMDERRORCODE);
-  if (WriteArray(theAR,Point,(DOUBLE)fValue))
+  if (WriteArray(theAR,Point,(DOUBLE)Value))
     return (CMDERRORCODE);
 
   return (OKCODE);
