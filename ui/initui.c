@@ -42,6 +42,7 @@
 #include "cmdint.h"
 #include "ugstruct.h"
 #include "commands.h"
+#include "tecplot.h"
 
 /* own header */
 #include "initui.h"
@@ -140,6 +141,13 @@ INT InitUi ()
 
   /* init commands of ug's command line interface */
   if ((err=InitCommands())!=0)
+  {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* tecplot output */
+  if ((err=InitTecplot())!=0)
   {
     SetHiWrd(err,__LINE__);
     return (err);
