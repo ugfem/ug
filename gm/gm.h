@@ -161,11 +161,10 @@ typedef DOUBLE DOUBLE_VECTOR_3D[3];
 #define UNREFINE                        9
 
 /* values for element class */
-#define COPY_CLASS              0
-#define IRREGULAR_CLASS 1
-#define REGULAR_CLASS   2
-#define YELLOW                  0
-#define GREEN                   1
+#define NO_CLASS                0
+#define YELLOW_CLASS            1
+#define GREEN_CLASS             2
+#define RED_CLASS               3
 
 /* values for node types (relative to the father element of the vertex) */
 #define CORNER_NODE             0
