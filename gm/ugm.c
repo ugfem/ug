@@ -5308,6 +5308,149 @@ void ListMultiGrid (MULTIGRID *theMG, const INT isCurrent, const INT longformat)
 	return;
 }
 
+/****************************************************************************/
+/*D
+   MultiGridStatus - List information about refinement type distribution
+
+   SYNOPSIS:
+   INT MultiGridStatus (MULTIGRID *theMG)
+
+   PARAMETERS:
+.  theMG - structure to list
+.  green - statistic about green elements
+.  load  - statistic about load balancing
+
+   DESCRIPTION:
+   This function lists information about multigrid's element types
+
+   RETURN VALUE:
+   INT
+D*/
+/****************************************************************************/
+
+INT MultiGridStatus (MULTIGRID *theMG, INT greenflag, INT loadflag)
+{
+	INT		i,j,sons,maxsons,heap,used;
+	INT		red, green, yellow; 
+	INT		mg_red,mg_green,mg_yellow;
+	INT		mg_greenrulesons[MAXLEVEL+1][MAX_SONS+1],mg_greenrules[MAXLEVEL+1];
+	INT		mg_red_size,mg_green_size,mg_yellow_size,mg_sum_size;
+	FLOAT	sum,sum_div_red,redplusgreen_div_red;
+	FLOAT	mg_sum,mg_sum_div_red,mg_redplusgreen_div_red;
+	FLOAT	mg_sum_size_div_red,mg_redplusgreen_size_div_red;
+	FLOAT	avg_greenrule,mg_avg_green_rule;
+	ELEMENT *theElement;
+	GRID	*theGrid;
+
+	mg_red = mg_green = mg_yellow = mg_sum = 0;
+	mg_sum_div_red = mg_redplusgreen_div_red = 0.0;
+
+	if (greenflag)
+		for (i=0; i<MAXLEVEL+1; i++)
+		{
+			mg_greenrules[i] = 0;
+			for (j=0; j<MAX_SONS+1; j++) mg_greenrulesons[i][j] = 0;
+			maxsons = 0;
+		}
+
+	UserWriteF("MULTIGRID STATISTICS:\n");
+	UserWriteF("LEVEL      RED     GREEN    YELLOW        SUM     SUM/RED (RED+GREEN)/RED\n");
+
+	for (i=0; i<=TOPLEVEL(theMG); i++)
+	{
+		theGrid = GRID_ON_LEVEL(theMG,i);
+		red = green = yellow = 0;
+		sum = sum_div_red = redplusgreen_div_red = 0.0;
+
+		for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; 
+			 theElement=SUCCE(theElement))
+		{
+			switch (ECLASS(theElement))
+			{
+				case RED_CLASS:		red++;		break;
+				case GREEN_CLASS:	green++;	break;
+				case YELLOW_CLASS:	yellow++;	break;
+				default:			assert(0);
+			}
+			if (greenflag)
+				switch (REFINECLASS(theElement))
+				{
+					case GREEN_CLASS:	
+										sons = NSONS(theElement);
+										mg_greenrulesons[i][sons]++; 
+										mg_greenrulesons[i][MAX_SONS]+=sons; 
+										mg_greenrules[i]++;
+										mg_greenrulesons[MAXLEVEL][sons]++;
+										mg_greenrulesons[MAXLEVEL][MAX_SONS]+=sons;
+										mg_greenrules[MAXLEVEL]++;
+										if (maxsons < sons) maxsons = sons;
+										break;
+					default:			break;
+				}
+		}
+		sum = red + green + yellow;
+		sum_div_red = sum / red;
+		redplusgreen_div_red = ((float)(red+green)) / red;
+
+		UserWriteF("   %2d  %9d %9d %9d  %9.0f    %2.3f      %2.3f\n",
+			i,red,green,yellow,sum,sum_div_red,redplusgreen_div_red);
+
+		mg_red		+= red;
+		mg_green	+= green;
+		mg_yellow	+= yellow;
+		mg_sum		+= sum;
+	}
+	mg_sum_div_red 			= mg_sum / mg_red; 
+	mg_redplusgreen_div_red	= ((float)(mg_red + mg_green)) / mg_red;
+
+	UserWriteF("  ALL  %9d %9d %9d  %9.0f    %2.3f      %2.3f\n",
+		mg_red,mg_green,mg_yellow,mg_sum,mg_sum_div_red,mg_redplusgreen_div_red);
+	
+	heap = HeapFreelistUsed(MGHEAP(theMG));
+	used = HeapUsed(MGHEAP(theMG))-heap;
+	mg_sum_size = used>>10;
+	mg_red_size = mg_sum_size*mg_red/mg_sum;
+	mg_green_size = mg_sum_size*mg_green/mg_sum;
+	mg_yellow_size = (float)mg_sum_size*mg_yellow/mg_sum;
+	mg_sum_size_div_red = ((float)mg_sum_size)/mg_red;
+	mg_redplusgreen_size_div_red = ((float)(mg_red_size+mg_green_size))/mg_red;
+	UserWriteF(" HEAP  %7dKB %7dKB %7dKB  %7dKB    %2.3fKB    %2.3fKB\n",
+		mg_red_size,mg_green_size,mg_yellow_size,mg_sum_size,
+		mg_sum_size_div_red,mg_redplusgreen_size_div_red);
+	
+
+	if (greenflag)
+	{
+		UserWriteF("GREEN RULE STATISTICS:\n");
+		UserWriteF("  LEVEL GREENSONS     RULES GREENSONS/RUL");
+		for (j=0; j<8 && j<maxsons; j++) UserWriteF("   %9d",j);
+		UserWriteF("\n");
+
+		for (i=0; i<=TOPLEVEL(theMG); i++)
+		{
+			UserWriteF("     %2d %9d %9d         %2.3f",i,mg_greenrulesons[i][MAX_SONS],
+				mg_greenrules[i],
+				(mg_greenrules[i]!=0)?((float)mg_greenrulesons[i][MAX_SONS])/mg_greenrules[i]:0);
+			for (j=0; j<maxsons; j++)
+			{
+				UserWriteF("   %9d",mg_greenrulesons[i][j]);
+				if ((j+1)%8 == 0) UserWriteF("\n                              ");
+			}
+			UserWriteF("\n");
+		}
+		UserWriteF("    ALL %9d %9d         %2.3f",mg_greenrulesons[MAXLEVEL][MAX_SONS],
+			mg_greenrules[MAXLEVEL],
+			((float)mg_greenrulesons[MAXLEVEL][MAX_SONS])/mg_greenrules[MAXLEVEL]);
+		for (j=0; j<maxsons; j++)
+		{
+			UserWriteF("   %9d",mg_greenrulesons[MAXLEVEL][j]);
+			if ((j+1)%8 == 0) UserWriteF("\n                              ");
+		}
+		UserWriteF("\n");
+	}
+
+	return (GM_OK);
+}
 
 /****************************************************************************/
 /*D
