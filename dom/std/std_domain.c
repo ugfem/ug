@@ -2947,7 +2947,7 @@ static BNDP *CreateBndPOnLine (HEAP *Heap, PATCH *p0, PATCH *p1, DOUBLE lcoord)
     if (BND_DATA(bp)==NULL)
       return (NULL);
 
-    if (BndPointGlobal((BNDP *)bp,BND_DATA(bp)))
+    if (BndPointGlobal((BNDP *)bp,(DOUBLE *)BND_DATA(bp)))
       return (NULL);
   }
 
@@ -4838,7 +4838,7 @@ BNDP *BNDP_CreateBndP (HEAP *Heap, BNDP *aBndP0, BNDP *aBndP1, DOUBLE lcoord)
       if (BND_DATA(bp)==NULL)
         return (NULL);
 
-      if (BNDP_Global((BNDP *)bp,BND_DATA(bp)))
+      if (BNDP_Global((BNDP *)bp,(DOUBLE *)BND_DATA(bp)))
         return (NULL);
     }
     return((BNDP *)bp);
