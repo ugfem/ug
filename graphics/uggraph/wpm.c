@@ -1075,7 +1075,7 @@ INT MovePictureToNewWindow (PICTURE *pic)
   V2_COPY(UGW_LUR(newWin),PIC_GUR(pic));
 
   /* remove old window if empty */
-  if (UGW_NPIC(oldWin)==NULL)
+  if (UGW_NPIC(oldWin)==0)
     if (DisposeUgWindow(oldWin))
       return (2);
 

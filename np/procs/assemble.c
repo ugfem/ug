@@ -1044,7 +1044,7 @@ static INT NLPartAssInit (NP_BASE *theNP, INT argc, char **argv)
   r = NPNLAssembleInit(theNP,argc,argv);
 
   /* get name of main vector template */
-  if (ReadArgvChar("m",buffer,argc,argv)!=NULL)
+  if (ReadArgvChar("m",buffer,argc,argv)!=0)
   {
     PrintErrorMessage('E',"NLPartAssInit","m option with main vector template not found");
     REP_ERR_RETURN (NP_NOT_ACTIVE);
@@ -1304,7 +1304,7 @@ static INT TPartAssInit (NP_BASE *theNP, INT argc, char **argv)
   r = NPTAssembleInit(theNP,argc,argv);
 
   /* get name of main vector template */
-  if (ReadArgvChar("m",buffer,argc,argv)!=NULL)
+  if (ReadArgvChar("m",buffer,argc,argv)!=0)
   {
     PrintErrorMessage('E',"NLPartAssInit","m option with main vector template not found");
     REP_ERR_RETURN (NP_NOT_ACTIVE);

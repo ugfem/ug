@@ -901,7 +901,7 @@ static INT PartTransferInit (NP_BASE *theNP, INT argc , char **argv)
   thePT = (NP_PART_TRANSFER *) theNP;
 
   /* get name of main vector template */
-  if (ReadArgvChar("m",buffer,argc,argv)!=NULL)
+  if (ReadArgvChar("m",buffer,argc,argv)!=0)
   {
     PrintErrorMessage('E',"PartTransferInit","m option with main vector template not found");
     REP_ERR_RETURN (NP_NOT_ACTIVE);
