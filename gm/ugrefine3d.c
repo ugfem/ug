@@ -61,6 +61,7 @@
 #include "ugrefine.h"
 #include "ugrefine3d.h"
 #include "simplex.h"
+#include "shapes.h"
 #include "shapes3d.h"
 #include "cw.h"
 
