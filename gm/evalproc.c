@@ -31,6 +31,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "general.h"
+
 #include "gm.h"
 #include "ugenv.h"
 #include "evm.h"
@@ -92,8 +94,8 @@ static INT theElemVectorVarID;
 static struct Coubling_CoeffProc_Name Couple_for_ElemValue;
 static struct Coubling_CoeffProc_Name Couple_for_ElemVector;
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

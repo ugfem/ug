@@ -25,6 +25,8 @@
 
 #include <assert.h>
 
+#include "general.h"
+
 #include "devices.h"
 
 #include "switch.h"
@@ -167,8 +169,8 @@ static GENERAL_ELEMENT def_hexahedron = {
 } ;
 #endif
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*D

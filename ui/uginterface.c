@@ -41,6 +41,7 @@
 #include "uginterface.h"
 #include "cmdint.h"
 #include "debug.h"
+#include "general.h"
 
 /****************************************************************************/
 /*																			*/
@@ -100,8 +101,8 @@ static INT theCmdKeyVarID;                              /* env ID for the /Cmd K
 
 static OUTPUTDEVICE *DefaultDevice;     /* our default ouput device             */
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*D

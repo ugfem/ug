@@ -49,6 +49,7 @@
 #include "compiler.h"
 #include "heaps.h"
 #include "ugenv.h"
+#include "general.h"
 
 /* devices module */
 #include "devices.h"
@@ -92,8 +93,8 @@
 static INT theFormatDirID;                      /* env type for Format dir				*/
 static INT theSymbolVarID;                      /* env type for Format vars                     */
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*D

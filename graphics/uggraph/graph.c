@@ -38,6 +38,7 @@
 #include "wpm.h"
 #include "devices.h"
 #include "misc.h"
+#include "general.h"
 
 /****************************************************************************/
 /*																			*/
@@ -78,8 +79,8 @@ static COORD currClipRegionMinY;                /*smallest values for each compo
 
 static COORD_POINT currClipRegionCorner[4];     /* corners of the view port */
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

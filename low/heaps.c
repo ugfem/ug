@@ -34,6 +34,7 @@
 #include <assert.h>
 
 #include "compiler.h"
+#include "general.h"
 #include "heaps.h"
 #include "misc.h"
 
@@ -64,8 +65,8 @@
 /*                                                                          */
 /****************************************************************************/
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*D

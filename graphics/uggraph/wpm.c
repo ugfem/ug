@@ -39,6 +39,7 @@
 #include "gm.h"
 #include "num.h"
 #include "wpm.h"
+#include "general.h"
 
 /****************************************************************************/
 /*																			*/
@@ -68,8 +69,8 @@ static INT thePicVarID;
 static INT thePlotObjTypesDirID;
 static INT thePlotObjTypesVarID;
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*D

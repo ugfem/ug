@@ -37,9 +37,10 @@
 #include <stdio.h>
 
 #include "compiler.h"
-#include "ugenv.h"
+#include "general.h"
 #include "heaps.h"
 #include "misc.h"
+#include "ugenv.h"
 
 #include "ugstruct.h"
 
@@ -71,8 +72,8 @@ static INT pathIndex;
 static INT theStringDirID;                      /* env type for String dirs                     */
 static INT theStringVarID;                      /* env type for String vars                     */
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*D

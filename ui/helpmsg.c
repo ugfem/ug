@@ -39,6 +39,7 @@
 #include "devices.h"
 #include "misc.h"
 #include "fileopen.h"
+#include "general.h"
 
 /****************************************************************************/
 /*																			*/
@@ -87,8 +88,8 @@ static char buffer[BUFFERSIZE];
 static FILE *HelpFile[MAXHELPFILES];    /* the help messages files			*/
 static int NHelpFiles;                                  /* no of open helpfiles                         */
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

@@ -38,6 +38,7 @@
 #include "ugenv.h"
 #include "cmdline.h"
 #include "devices.h"
+#include "general.h"
 
 /****************************************************************************/
 /*																			*/
@@ -81,8 +82,8 @@ static char optionBuffer[OPTIONBUFFERLEN]; /* buffer to assemble options	*/
 static char *options[MAXOPTIONS];               /* array of pointers to strings         */
 static INT optionCount=0;                               /* number of options incl. cmd name */
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

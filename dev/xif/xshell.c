@@ -60,6 +60,7 @@
 #include "devices.h"
 #include "initdev.h"
 #include "defaults.h"
+#include "general.h"
 
 /* Xif includes */
 #include "xmain.h"
@@ -151,8 +152,8 @@ static int LineFirst=0;
 static int LineInsert=0;
 #endif
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

@@ -38,6 +38,7 @@
 #include "compiler.h"
 #include "heaps.h"
 #include "ugenv.h"
+#include "general.h"
 
 /* domain module */
 #include "domain.h"
@@ -77,8 +78,8 @@
 /*																			*/
 /****************************************************************************/
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

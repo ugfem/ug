@@ -37,6 +37,7 @@
 
 #define COMPILE_MISC_H
 #include "compiler.h"
+#include "general.h"
 #include "misc.h"
 
 /****************************************************************************/
@@ -72,8 +73,8 @@ int UG_math_error = 0; /* This will be non zero after a math error occured  */
 /*                                                                            */
 /****************************************************************************/
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*                                                                            */

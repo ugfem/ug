@@ -121,6 +121,26 @@
 #endif
 #endif
 
+#ifdef GRAPEF
+#define GRAPE "OFF"
+#endif
+#ifdef GRAPET
+#define GRAPE "ON"
+#endif
+
+#ifdef NETGENF
+#define NETGEN "OFF"
+#endif
+#ifdef NETGENT
+#define NETGEN "ON"
+#endif
+
+#ifdef Debug
+#define DEBUG_MODE "ON"
+#else
+#define DEBUG_MODE "OFF"
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* basic switch-defines for:												*/

@@ -36,6 +36,9 @@
 
 #include "devices.h"
 
+#include "general.h"
+
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -86,8 +89,8 @@ extern int me, master;
 
 PrintDebugProcPtr printdebug=printf;
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

@@ -63,6 +63,7 @@
 #include "devices.h"
 #include "initdev.h"
 #include "debug.h"
+#include "general.h"
 
 /* Xif includes */
 #include "xshell.h"
@@ -87,8 +88,8 @@
 
 static ShellWindow shell;                                       /* our only shell window		*/
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

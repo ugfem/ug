@@ -41,6 +41,7 @@
 #include "fileopen.h"
 #include "heaps.h"
 #include "defaults.h"
+#include "general.h"
 
 #include "devices.h"
 
@@ -139,8 +140,8 @@
 
 static INT gridpaths_set=FALSE;
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

@@ -46,6 +46,7 @@
 #include "ugm.h"
 #include "num.h"
 #include "shapes.h"
+#include "general.h"
 
 /****************************************************************************/
 /*																			*/
@@ -513,8 +514,8 @@ static VW_GetNextVectorProcPtr WOP_VW_GetNextVectorProc;
 static VW_EvaluateProcPtr WOP_VW_EvaluateProc;
 static EXT_EvaluateProcPtr WOP_EXT_EvaluateProc;
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

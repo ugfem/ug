@@ -51,6 +51,7 @@
 #include "compiler.h"
 #include "devices.h"
 #include "initdev.h"
+#include "general.h"
 
 /* Xif includes */
 #include "xmain.h"
@@ -113,8 +114,8 @@ int MoveMouse = 1;                                              /* some local va
 int StoredMousePos = 0;
 int MouseX,MouseY;
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

@@ -31,9 +31,10 @@
 #include <stdio.h>
 
 #include "compiler.h"
-#include "ugenv.h"
 #include "heaps.h"
+#include "general.h"
 #include "misc.h"
+#include "ugenv.h"
 
 /****************************************************************************/
 /*                                                                            */
@@ -57,8 +58,8 @@ static HEAP *envHeap=NULL;                /* heap used for the environment    */
 static ENVDIR *path[MAXENVPATH];        /* path to current directory        */
 static int pathIndex;                    /* entry to path array                */
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*D

@@ -34,6 +34,7 @@
 /* low module */
 #include "misc.h"
 #include "initlow.h"
+#include "general.h"
 
 /* parallelization module */
 #ifdef ModelP
@@ -74,8 +75,8 @@
 /*                                                                          */
 /****************************************************************************/
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*D

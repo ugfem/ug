@@ -7,7 +7,10 @@
 
 
 #include "parallel.h"
+#include "general.h"
 
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 int TransferGrid (MULTIGRID *theMG)
 {

@@ -35,6 +35,7 @@
 #include "compiler.h"
 #include "misc.h"
 #include "defaults.h"
+#include "general.h"
 
 /* gm module */
 #include "switch.h"
@@ -57,8 +58,8 @@
 /*                                                                          */
 /****************************************************************************/
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*

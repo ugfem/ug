@@ -1783,7 +1783,7 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
     break;
   default :
     PrintErrorMessage('E',"Patterns2Rules","Elementtype not found!");
-    return(-1);
+    assert(0); return(-1);
   }
         #endif
         #ifdef __THREEDIM__
@@ -1804,7 +1804,7 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
     return(Pattern2Rule[TAG(theElement)][pattern]);
 
   case (PYRAMID) :
-    if (MARKCLASS(theElement) == RED) return(-1);
+    if (MARKCLASS(theElement) == RED) { assert(0); return(-1);}
 
     /* no further red or green refinement of pyramid so far */
     return(0);
@@ -1815,7 +1815,7 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
       return(0);
     default :
       PrintErrorMessage('E',"Patterns2Rules","no mapping for PYRAMID and this pattern!");
-      return(-1);
+      assert(0); return(-1);
     }
     break;
 
@@ -1832,17 +1832,17 @@ INT Patterns2Rules(ELEMENT *theElement, INT pattern)
     default :
       PrintErrorMessage('E',"Patterns2Rules","no mapping for HEXAHEDRON and this pattern!");
       UserWriteF("pattern=%d\n",pattern);
-      return(-1);
+      assert(0); return(-1);
     }
     break;
 
   default :
     PrintErrorMessage('E',"Patterns2Rules","Elementtype not found!");
-    return(-1);
+    assert(0); return(-1);
   }
         #endif
   PrintErrorMessage('E',"Patterns2Rules","Elementtype not found!");
-  return(-1);
+  assert(0); return(-1);
 }
 
 /****************************************************************************/

@@ -44,6 +44,7 @@
 #include "algebra.h"
 #include "ugstruct.h"
 #include "uginterface.h"
+#include "general.h"
 
 #include "memory.h"
 
@@ -138,8 +139,8 @@ static MG_GGDATA *myMGdata;
 static GG_PARAM *myPars;
 
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 static INT IflObj;
 static INT FlObj;

@@ -37,6 +37,7 @@
 #include "gm.h"
 #include "evm.h"
 #include "shapes.h"
+#include "general.h"
 
 /****************************************************************************/
 /*																			*/
@@ -130,8 +131,8 @@ static COORD_VECTOR_3D LMP_Pyramid   		= {0.5, 0.5, 0.33333333333333333};
 static COORD_VECTOR_3D LMP_Prism    		= {0.33333333333,0.3333333333,0.5};
 static COORD_VECTOR_3D LMP_Hexahedron		= {0.5, 0.5, 0.5};
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

@@ -36,6 +36,7 @@
 #include "fileopen.h"
 #include "devices.h"
 #include "initdev.h"
+#include "general.h"
 
 /****************************************************************************/
 /*																			*/
@@ -98,9 +99,8 @@ static short red[256];
 static short green[256];
 static short blue[256];
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
-
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

@@ -33,6 +33,7 @@
 #include <math.h>
 
 #include "fileopen.h"
+#include "general.h"
 #include "misc.h"
 #include "defaults.h"
 
@@ -42,8 +43,8 @@
 /*                                                                          */
 /****************************************************************************/
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*D

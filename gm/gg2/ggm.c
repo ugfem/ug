@@ -38,6 +38,7 @@
 #include "heaps.h"
 #include "misc.h"
 #include "ugm.h"
+#include "general.h"
 
 #include "ggm.h"
 
@@ -78,8 +79,8 @@ static INT IflObj;
 static INT FlObj;
 static INT FcObj;
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*                                                                          */

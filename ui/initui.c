@@ -34,6 +34,7 @@
 /* low module */
 #include "misc.h"
 #include "defaults.h"
+#include "general.h"
 
 /* user interface module */
 #include "uginterface.h"
@@ -80,8 +81,8 @@
 /*																			*/
 /****************************************************************************/
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

@@ -29,6 +29,7 @@
 #include  "gm.h"
 #include  "ugm.h"
 #include  "ggm.h"
+#include "general.h"
 
 /****************************************************************************/
 /*                                                                          */
@@ -68,8 +69,8 @@ static int del_edg_fnd;
 static MG_GGDATA *myMGdata;
 static GG_PARAM *myPars;
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 static INT QuObj;
 static INT ScObj;

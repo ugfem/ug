@@ -68,6 +68,7 @@
 #include "debug.h"
 #include "heaps.h"
 #include "misc.h"
+#include "general.h"
 
 /* dev module */
 #include "devices.h"
@@ -174,8 +175,8 @@ static INT TriSectionEdge[64][2] = {  {-1,-1},{-1,-1},{-1,-1},{ 1, 0},{-1,-1},{ 
 /* the indices of the edges of each side */
 static INT  CondensedEdgeOfSide[4] = {0x07,0x32,0x2C,0x19};
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

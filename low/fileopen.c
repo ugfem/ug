@@ -34,6 +34,7 @@
 /* low module */
 #include "compiler.h"
 #include "defaults.h"
+#include "general.h"
 #include "ugenv.h"
 
 #include "fileopen.h"
@@ -82,8 +83,8 @@ typedef struct
 static INT thePathsDirID;
 static INT thePathsVarID;
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

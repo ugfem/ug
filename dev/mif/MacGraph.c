@@ -70,6 +70,7 @@
 #include "misc.h"
 #include "heaps.h"
 #include "defaults.h"
+#include "general.h"
 
 /* interface includes */
 #include "devices.h"
@@ -128,8 +129,8 @@ static long guiHeapSize=32000;  /* size of system heap						*/
 static HEAP *guiHeap=NULL;              /* system heap structure					*/
 static char buffer[255];
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

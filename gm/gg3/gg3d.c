@@ -38,6 +38,7 @@
 #include "gm.h"
 #include "evm.h"
 #include "uginterface.h"
+#include "general.h"
 
 #include "gg3d.h"
 
@@ -78,6 +79,9 @@ static INT left;
 static INT right;
 static MULTIGRID *currMG;
 static double h_global;
+
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*                                                                          */

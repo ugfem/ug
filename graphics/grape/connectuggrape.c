@@ -31,6 +31,7 @@
 #include "gm.h"
 #include "evm.h"
 #include "simplex.h"
+#include "general.h"
 
 
 #if (DIM == 3)
@@ -185,6 +186,9 @@ static HELEMENT_DESCRIPTION tetra_description =
           { {{1,hi0,hd1},{1,hi2,hd1},{1,hi3,hd1},{2,hi01,hd01}},
             {{1,hi1,hd1},{1,hi2,hd1},{1,hi3,hd1},{2,hi01,hd01}}  } };
  */
+
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /******************* routines to handle the list of HELEMENT3D s *************/
 /*                                                                           */

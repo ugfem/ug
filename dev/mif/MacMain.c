@@ -72,6 +72,7 @@
 #include "devices.h"
 #include "initdev.h"
 #include "heaps.h"
+#include "general.h"
 
 /* mif includes */
 #include "MacMain.m"
@@ -113,8 +114,8 @@ static INT ChosenTool;                  /* last chosen tool                     
 
 static OUTPUTDEVICE *MacOutputDevice;   /* ptr to MacOutputDevice			*/
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

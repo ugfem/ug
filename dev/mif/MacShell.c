@@ -66,6 +66,7 @@
 /* low module */
 #include "misc.h"
 #include "defaults.h"
+#include "general.h"
 
 /* interface includes */
 #include "devices.h"
@@ -135,8 +136,8 @@ typedef ProcPtr ControlActionUPP;         /* this one works */
 
 static ControlActionUPP MyShellScrollActionPtr;
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

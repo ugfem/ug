@@ -38,6 +38,8 @@
 #include "fileopen.h"
 #include "devices.h"
 #include "initdev.h"
+#include "general.h"
+
 
 /****************************************************************************/
 /*																			*/
@@ -105,9 +107,8 @@ static float red[COLORS];
 static float green[COLORS];
 static float blue[COLORS];
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
-
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

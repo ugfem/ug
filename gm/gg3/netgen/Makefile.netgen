@@ -22,8 +22,8 @@ default:
 
 # clean up
 clean:
-	rm meshing/*.o;
-	rm general/*.o;
-	rm linalg/*.o;
-	rm geom/*.o;
-	rm opti/*.o;
+	rm -f meshing/*.o;
+	rm -f general/*.o;
+	rm -f linalg/*.o;
+	rm -f geom/*.o;
+	rm -f opti/*.o;

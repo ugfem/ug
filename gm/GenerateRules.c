@@ -27,6 +27,8 @@
 #include "simplex.h"
 #include "ugrefine3d.h"
 
+#include "general.h"
+
 /* only compile for 3D version */
 #ifdef __THREEDIM__
 
@@ -110,8 +112,8 @@ static REFRULE EmptyRule =
           {{0,0,0,0},{NOTDONE,NOTDONE,NOTDONE,NOTDONE},0},
           {{0,0,0,0},{NOTDONE,NOTDONE,NOTDONE,NOTDONE},0}}};
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

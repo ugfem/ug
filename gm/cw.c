@@ -24,6 +24,7 @@
 
 #include "devices.h"
 #include "debug.h"
+#include "general.h"
 
 #include "switch.h"
 #include "gm.h"
@@ -200,8 +201,8 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
 /*                                                                          */
 /****************************************************************************/
 
-/* data for CVS */
-static char rcsid[] = "/hosts/dom/cvs/ug3/ug/gm/cw.c,v 1.1.1.1 1995/04/28 10:07:41 stefan Exp";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*D

@@ -39,6 +39,7 @@
 #include "heaps.h"
 #include "ugenv.h"
 #include "misc.h"
+#include "general.h"
 
 /* dev modules */
 #include "devices.h"
@@ -114,8 +115,8 @@ static INT theBVPDirID;                         /* env type for BVP dir					*/
 static INT thePatchVarID;                       /* env type for patch vars				*/
 static INT theTmpVarID;                         /* env type for temporary use           */
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

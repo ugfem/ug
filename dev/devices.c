@@ -40,6 +40,7 @@
 #include "defaults.h"
 #include "debug.h"
 #include "ugstruct.h"
+#include "general.h"
 
 /* dev module */
 #include "devices.h"
@@ -97,8 +98,8 @@ static INT theOutputDevVarID;                   /* env type for Output Device va
 
 static char ToolName[nboftools][NAMESIZE]; /* array of tool names			*/
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*																			*/

@@ -49,6 +49,7 @@
 #include "heaps.h"
 #include "ugenv.h"
 #include "debug.h"
+#include "general.h"
 
 #include "devices.h"
 
@@ -116,8 +117,8 @@ static INT UsedOBJT;                            /* for the dynamic OBJECT manage
 static const INT *Order,*Sign;
 static DOUBLE InvMeshSize;
 
-/* data for CVS */
-static char rcsid[] = "$Header$";
+/* RCS string */
+RCSID("$Header$",UG_RCS_STRING)
 
 /****************************************************************************/
 /*D
