@@ -47,6 +47,9 @@
 
 #define NEW_TIMER(n)    { new_timer(&(n)); }
 #define DEL_TIMER(n)    { ug_timer[(n)].used = 0; }
+#define RESET_TIMER(n)  { ug_timer[(n)].start= 0.0; \
+                          ug_timer[(n)].stop = 0.0; \
+                          ug_timer[(n)].sum = 0.0; }
 #define START_TIMER(n)  { ug_timer[(n)].start = CURRENT_TIME; }
 #define STOP_TIMER(n)   { ug_timer[(n)].stop = CURRENT_TIME; }
 #define DIFF_TIMER(n)   (ug_timer[(n)].stop-ug_timer[(n)].start)
