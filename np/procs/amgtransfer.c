@@ -548,110 +548,102 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
     result[0]=0;
     return(0);
   }
-  /* clear AMG levels */
-  if (DisposeAMGLevels(theMG)!=0) {
-    PrintErrorMessage('E',"AMGTransferPreProcess",
-                      "could not dispose AMG levels");
-    result[0]=1;
-    REP_ERR_RETURN(result[0]);
-  }
-  theGrid=GRID_ON_LEVEL(theMG,0);
-
-  SetStringValue(":amg:blevel",0);
-  SetStringValue(":amg:vect0",(double)theGrid->nVector);
-  SetStringValue(":amg:con0",(double)theGrid->nCon);
-  if (np->display == PCR_FULL_DISPLAY) {
-    CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
-    UserWrite(text);
-    UserWrite(DISPLAY_NP_AMG_STRING);
-    UserWriteF(DISPLAY_NP_AMG_FORMAT,0,(int)theGrid->nVector,
-               (int)theGrid->nCon,0);
-  }
-  /* coarsen until criteria are fulfilled */
-  while (theMG->bottomLevel>np->levelLimit) {
-    level=theMG->bottomLevel;
-    theGrid=GRID_ON_LEVEL(theMG,level);
-    nVect=theGrid->nVector;
-    nMat=2*theGrid->nCon;
-
-    if (np->vectLimit!=0)
-      if (nVect<=np->vectLimit)
-        break;
-
-    if (np->matLimit!=0)
-      if (nMat<=np->matLimit)
-        break;
-
-    if (np->bandLimit!=0.0)
-      if ((DOUBLE)nMat/(DOUBLE)nVect>np->bandLimit)
-        break;
-
-    if (np->MarkStrong != NULL) {
-      UnmarkAll(theGrid,NULL,0.0);
-      if ((result[0]=(np->MarkStrong)(theGrid,A,np->thetaS))!=0)
-        REP_ERR_RETURN(result[0]);
-    }
-    if ((result[0]=(np->Coarsen)(theGrid))!=0)
-      break;
-
-    newGrid=theGrid->coarser;
-    if (newGrid==NULL)
-      break;
-
-    if ((result[0]=(np->SetupIR)(theGrid,A,NULL /* preliminary!! */))!=0)
+  theGrid = GRID_ON_LEVEL(theMG,0);
+  if ((theGrid->coarser == NULL) || (np->hold == 0)) {
+    /* clear AMG levels */
+    if (DisposeAMGLevels(theMG)!=0) {
+      PrintErrorMessage('E',"AMGTransferPreProcess",
+                        "could not dispose AMG levels");
+      result[0]=1;
       REP_ERR_RETURN(result[0]);
+    }
+    SetStringValue(":amg:blevel",0);
+    SetStringValue(":amg:vect0",(double)theGrid->nVector);
+    SetStringValue(":amg:con0",(double)theGrid->nCon);
+    if (np->display == PCR_FULL_DISPLAY) {
+      CenterInPattern(text,DISPLAY_WIDTH,ENVITEM_NAME(np),'*',"\n");
+      UserWrite(text);
+      UserWrite(DISPLAY_NP_AMG_STRING);
+      UserWriteF(DISPLAY_NP_AMG_FORMAT,0,(int)theGrid->nVector,
+                 (int)theGrid->nCon,0);
+    }
+    /* coarsen until criteria are fulfilled */
+    while (theMG->bottomLevel>np->levelLimit) {
+      level=theMG->bottomLevel;
+      theGrid=GRID_ON_LEVEL(theMG,level);
+      nVect=theGrid->nVector;
+      nMat=2*theGrid->nCon;
+      if (np->vectLimit!=0)
+        if (nVect<=np->vectLimit)
+          break;
+      if (np->matLimit!=0)
+        if (nMat<=np->matLimit)
+          break;
+      if (np->bandLimit!=0.0)
+        if ((DOUBLE)nMat/(DOUBLE)nVect>np->bandLimit)
+          break;
+      if (np->MarkStrong != NULL) {
+        UnmarkAll(theGrid,NULL,0.0);
+        if ((result[0]=(np->MarkStrong)(theGrid,A,np->thetaS))!=0)
+          REP_ERR_RETURN(result[0]);
+      }
+      if ((result[0]=(np->Coarsen)(theGrid))!=0)
+        break;
+      newGrid=theGrid->coarser;
+      if (newGrid==NULL)
+        break;
+            #ifdef ModelP
+      if (a_vector_vecskip(theMG,level-1,level-1,x) != NUM_OK)
+        REP_ERR_RETURN(1);
+            #endif
+      if ((result[0]=(np->SetupIR)(theGrid,A,NULL /*preliminary!*/))!=0)
+        REP_ERR_RETURN(result[0]);
+      if (np->MarkKeep!=NULL) {
+        UnmarkAll(newGrid,NULL,0.0);
+        if ((result[0]=(np->MarkKeep)(newGrid,A,np->thetaK))!=0)
+          REP_ERR_RETURN(result[0]);
+        if ((result[0]=SparsenCGMatrix(newGrid,A,np->sparsenFlag))!=0)
+          REP_ERR_RETURN(result[0]);
+      }
+      if (np->reorderFlag!=0) {
+        if ((result[0]=ReorderFineGrid(theGrid,np->reorderFlag))!=0)
+          REP_ERR_RETURN(result[0]);
+        /* it is important to reset the index field accordingly */
+        l_setindex(theGrid);
+      }
+      /* set the index field on the new grid
+         (even if the ordering might be changed again) */
+      l_setindex(newGrid);
+      if (np->display == PCR_FULL_DISPLAY)
+        UserWriteF(DISPLAY_NP_AMG_FORMAT,
+                   (int)theMG->bottomLevel,(int)newGrid->nVector,
+                   (int)newGrid->nCon,(int)theGrid->nIMat);
 
+      sprintf(varname,":amg:vect%d",-theMG->bottomLevel);
+      SetStringValue(varname,(double)newGrid->nVector);
+      sprintf(varname,":amg:con%d",-theMG->bottomLevel);
+      SetStringValue(varname,(double)newGrid->nCon);
+      sprintf(varname,":amg:imat%d",1-theMG->bottomLevel);
+      SetStringValue(varname,(double)theGrid->nIMat);
+      SetStringValue(":amg:blevel",(double)theMG->bottomLevel);
+
+      if (np->vRedLimit!=0.0)
+        if ((DOUBLE)newGrid->nVector/(DOUBLE)nVect > np->vRedLimit)
+          break;
+      if (np->mRedLimit!=0.0)
+        if ((DOUBLE)2*newGrid->nCon/(DOUBLE)nVect > np->mRedLimit)
+          break;
+    }
+  }
+  for (level=0; level>theMG->bottomLevel; level--) {
     if (AllocMDFromMD(theMG,level-1,level-1,A,&A))
       REP_ERR_RETURN(1);
-    if (AssembleGalerkinByMatrix(theGrid,A,np->symmetric))
+    if (l_dmatset(GRID_ON_LEVEL(theMG,level-1),A,0.0) != NUM_OK)
       REP_ERR_RETURN(1);
-        #ifdef ModelP
-    if (a_vector_vecskip(theMG,level-1,level-1,x) != NUM_OK)
+    if (AssembleGalerkinByMatrix(GRID_ON_LEVEL(theMG,level),
+                                 A,np->symmetric))
       REP_ERR_RETURN(1);
-        #endif
-
-    if (np->MarkKeep!=NULL)
-    {
-      UnmarkAll(newGrid,NULL,0.0);
-      if ((result[0]=(np->MarkKeep)(newGrid,A,np->thetaK))!=0)
-        REP_ERR_RETURN(result[0]);
-      if ((result[0]=SparsenCGMatrix(newGrid,A,np->sparsenFlag))!=0)
-        REP_ERR_RETURN(result[0]);
-    }
-
-    if (np->reorderFlag!=0)
-    {
-      if ((result[0]=ReorderFineGrid(theGrid,np->reorderFlag))!=0)
-        REP_ERR_RETURN(result[0]);
-      /* it is important to reset the index field accordingly */
-      l_setindex(theGrid);
-    }
-
-    /* set the index field on the new grid
-       (even if the ordering might be changed again) */
-    l_setindex(newGrid);
-
-    if (np->display == PCR_FULL_DISPLAY)
-      UserWriteF(DISPLAY_NP_AMG_FORMAT,
-                 (int)theMG->bottomLevel,(int)newGrid->nVector,
-                 (int)newGrid->nCon,(int)theGrid->nIMat);
-
-    sprintf(varname,":amg:vect%d",-theMG->bottomLevel);
-    SetStringValue(varname,(double)newGrid->nVector);
-    sprintf(varname,":amg:con%d",-theMG->bottomLevel);
-    SetStringValue(varname,(double)newGrid->nCon);
-    sprintf(varname,":amg:imat%d",1-theMG->bottomLevel);
-    SetStringValue(varname,(double)theGrid->nIMat);
-    SetStringValue(":amg:blevel",(double)theMG->bottomLevel);
-
-    if (np->vRedLimit!=0.0)
-      if ((DOUBLE)newGrid->nVector/(DOUBLE)nVect > np->vRedLimit)
-        break;
-
-    if (np->mRedLimit!=0.0)
-      if ((DOUBLE)2*newGrid->nCon/(DOUBLE)nVect > np->mRedLimit)
-        break;
-  };
+  }
   for (level=0; level>= theMG->bottomLevel; level--)
     if (AssembleDirichletBoundary (GRID_ON_LEVEL(theMG,level),A,x,b))
       REP_ERR_RETURN(1);
@@ -699,10 +691,15 @@ static INT AMGTransferPostProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 {
   MULTIGRID *theMG;
   NP_AMG_TRANSFER *np;
+  INT level;
 
   result[0]=0;
   np = (NP_AMG_TRANSFER *) theNP;
   theMG = theNP->base.mg;
+
+  for (level=-1; level>=theMG->bottomLevel; level--)
+    if (FreeMD(theMG,level,level,A))
+      REP_ERR_RETURN(1);
 
   /* are levels to be built up and destroyed only
      by explicit calls of 'npexecute'? */
