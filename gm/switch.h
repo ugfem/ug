@@ -120,7 +120,7 @@
 #define __GRAPE_TRUE__
 #endif
 
-#ifdef GRAPE
+#ifdef _GRAPE
 #define GRAPE_SUPPORT "ON"
 #else
 #define GRAPE_SUPPORT "OFF"
