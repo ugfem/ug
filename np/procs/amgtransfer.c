@@ -564,13 +564,9 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
   NP_AMG_TRANSFER *np;
   MULTIGRID *theMG;
   GRID *theGrid,*newGrid;
-  INT level,nVect,nMat,agglevel,breakflag;
+  INT level,nVect,nMat,breakflag;
   char varname[32];
   char text[DISPLAY_WIDTH+4];
-
-  /* Set flag to indicate that everything is stored on one processor
-     on this level (and below). */
-  agglevel = -MAXLEVEL-1;
 
   if (tl!=0) {
     PrintErrorMessage('E',"AMGTransferPreProcess",
@@ -597,6 +593,11 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       result[0]=1;
       REP_ERR_RETURN(result[0]);
     }
+
+    /* Set flag to indicate that everything is stored on one processor
+       on this level (and below). */
+    np->agglevel = -MAXLEVEL-1;
+
     SetStringValue(":amg:blevel",0);
     SetStringValue(":amg:vect0",(double)theGrid->nVector);
     SetStringValue(":amg:con0",(double)theGrid->nCon);
@@ -647,11 +648,11 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         /* Do agglomeration only if it hasn't been done yet and if
                aggLimit has been set to a value that indicates that
                coarse grid agglomeration is desired. */
-        if (level>agglevel && np->levelLimit>=np->aggLimit) {
+        if (level>np->agglevel && np->levelLimit>=np->aggLimit) {
           PRINTDEBUG(np,1,("%d: start aggl on level %d\n",me,level));
           AMGAgglomerate(theMG);
           l_amgmatrix_collect(theGrid,A);
-          agglevel = level;
+          np->agglevel = level;
           PRINTDEBUG(np,1,("%3d: Coarse Grid agglomeration",me));
           PRINTDEBUG(np,1,(" on level %d\n",level));
         }
@@ -659,7 +660,8 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
         break;
       }
 
-      PRINTDEBUG(np,1,("%d: AGG %d agglev %d\n",me,level-1,agglevel));
+      PRINTDEBUG(np,1,("%d: AGG %d agglev %d\n",
+                       me,level-1,np->agglevel));
 
       if (np->MarkStrong != NULL) {
         UnmarkAll(theGrid,NULL,0.0);
@@ -730,12 +732,12 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
 
                         #ifdef ModelP
       /* Do agglomeration (only if it has not been done yet). */
-      if (level-1==np->aggLimit && agglevel<-MAXLEVEL) {
+      if (level-1==np->aggLimit && np->agglevel<-MAXLEVEL) {
         PRINTDEBUG(np,1,("%d: AGG %d\n",me,level-1));
         AMGAgglomerate(theMG);
         PRINTDEBUG(np,1,("%d: amg_collect\n",me));
         l_amgmatrix_collect(newGrid,A);
-        agglevel = level;
+        np->agglevel = level;
         PRINTDEBUG(np,1,("%3d: Coarse Grid agglomeration"
                          " on level %d due to aggLimit criterion\n",
                          me,level-1));
@@ -775,9 +777,8 @@ INT AMGTransferPreProcess (NP_TRANSFER *theNP, INT *fl, INT tl,
       if (np->display == PCR_FULL_DISPLAY)
         UserWriteF(" [%d:g]",level);
                         #ifdef ModelP
-      if (level-1==np->aggLimit) {
+      if (level-1==np->agglevel) {
         l_amgmatrix_collect(GRID_ON_LEVEL(theMG,level-1),A);
-        agglevel = level;
         PRINTDEBUG(np,1,("%3d: Coarse Grid agglomeration"
                          " on level %d due to aggLimit criterion\n",
                          me,level-1));
