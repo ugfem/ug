@@ -49,7 +49,7 @@
 #include "ts.h"
 #include "bdf.h"
 #include "ew.h"
-#include "field.h"
+#include "field/field.h"
 #include "db.h"
 #include "fas.h"
 #include "nliter.h"
@@ -63,8 +63,8 @@
 
 #include "initnp.h"
 #include "numproc.h"
-#include "amg_ug.h"
-#include "slu.h"
+#include "amglib/amg_ug.h"
+#include "slu/slu.h"
 
 #ifdef USE_FAMG
 #include "ug-famg.h"

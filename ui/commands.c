@@ -85,11 +85,11 @@
 
 /* grid generator module */
 #ifdef __TWODIM__
-#include "ggm.h"
-#include "ggmain.h"
+#include "gm/gg2/ggm.h"
+#include "gm/gg2/ggmain.h"
 #endif
 #if defined __THREEDIM__ && defined _NETGEN
-#include "gg3d.h"
+#include "gm/gg3/gg3d.h"
 #endif
 
 /* numerics module */
@@ -106,9 +106,9 @@
 #include "wpm.h"
 #include "wop.h"
 #include "graph.h"
-#include "connectuggrape.h"
+#include "graphics/grape/connectuggrape.h"
 #ifdef _COVISE
-#include "coviseif.h"
+#include "graphics/covise/coviseif.h"
 #endif
 
 /* user interface module */

@@ -51,7 +51,7 @@
 
 #ifdef __TWODIM__
 /* grid generator module */
-#include "ggmain.h"
+#include "gg2/ggmain.h"
 #endif
 
 /* own header */

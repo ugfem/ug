@@ -57,28 +57,28 @@
 #endif
 
 /* devices module */
-#include "ugdevices.h"
+#include "dev/ugdevices.h"
 
 /* domain module */
-#include "domain.h"
+#include "dom/domain.h"
 
 /* grid manager module */
-#include "initgm.h"
+#include "gm/initgm.h"
 
 /* numerics module */
-#include "initnumerics.h"
+#include "np/initnumerics.h"
 
 /* graphics module */
-#include "graphics.h"
+#include "graphics/graphics.h"
 
 /* user interface module */
-#include "initui.h"
+#include "ui/initui.h"
 
 /* own header */
 #include "initug.h"
 
 /** \todo delete this */
-#include "debug.h"
+#include "low/debug.h"
 
 
 USING_UG_NAMESPACES

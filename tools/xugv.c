@@ -48,7 +48,7 @@
 #include <X11/Xaw/Label.h>
 #include <X11/Xaw/Dialog.h>
 #include <X11/Xaw/Command.h>
-#include "shades.h"
+#include "dev/xif/shades.h" /* !!! */
 #include "general.h"
 
 /* defines for opCodes */
