@@ -83,7 +83,7 @@
 
 #define NTOOLS                  7                               /* this is the number of tools		*/
 
-#define LITTLE_ENDIAN   (*(char *) &WhichEndian)
+#define _LITTLE_ENDIAN   (*(char *) &WhichEndian)
 
 /* bitmaps for icons */
 #include "view-icon"
@@ -115,14 +115,22 @@ static int default_depth;
 static Pixmap tools[NTOOLS];                    /* bitmaps for toolbox				*/
 static Cursor cursors[NTOOLS];                  /* id in cursor font				*/
 
-int MoveMouse = 1;                                              /* some local vars for mouse ops	*/
-int StoredMousePos = 0;
-int MouseX,MouseY;
+static int MoveMouse = 1;                               /* some local vars for mouse ops	*/
+static int StoredMousePos = 0;
+static int MouseX,MouseY;
 
 static int WhichEndian = 1;             /* to get byte order                */
 
+static Colormap our_cmap;             /* may be a private one               */
+static int true_color;                /* whether we have true color visual  */
+static int current_color;             /* index to current foreground color  */
+
 /* pixmaps for shading patterns */
 static Pixmap pattern[NO_PATTERNS];
+
+/* pixel structure for true color visual */
+static unsigned long red_mask, green_mask, blue_mask;
+static int red_shift, green_shift, blue_shift;
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -184,7 +192,7 @@ static void IFInversePolyline (SHORT_POINT *points, INT n)
   XGetGCValues(display,gw->gc,valuemask,&values_return);
   function = values_return.function;
   XSetFunction(display,gw->gc,GXinvert);
-  XSetPlaneMask(display,gw->gc,0x00000001);
+  XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
   XDrawLines(display,gw->win,gw->gc,(XPoint *)points,n,CoordModeOrigin);
   if (!gw->backing_store)
     XDrawLines(display,gw->pixmap,gw->gc,(XPoint *)points,n,CoordModeOrigin);
@@ -201,17 +209,39 @@ static void IFPolygon (SHORT_POINT *points, INT n)
 
 static void IFShadedPolygon(SHORT_POINT *points, INT n, DOUBLE intensity)
 {
-  int s;
+  if (!true_color) {
+    int s;
 
-  XSetBackground(display,gw->gc,ctab[X11OutputDevice->black].pixel);
-  s = (int)(0.5 + intensity * (DOUBLE)(NO_PATTERNS-1));
-  XSetFillStyle(display, gw->gc, FillOpaqueStippled);
-  XSetStipple(display, gw->gc, pattern[s]);
-  XFillPolygon(display,gw->win,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
-  if (!gw->backing_store)
-    XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
-  XSetFillStyle(display, gw->gc, FillSolid);
-  XSetBackground(display,gw->gc,ctab[X11OutputDevice->white].pixel);
+    XSetBackground(display,gw->gc,ctab[X11OutputDevice->black].pixel);
+    s = (int)(0.5 + intensity * (DOUBLE)(NO_PATTERNS-1));
+    XSetFillStyle(display, gw->gc, FillOpaqueStippled);
+    XSetStipple(display, gw->gc, pattern[s]);
+    XFillPolygon(display,gw->win,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
+    if (!gw->backing_store)
+      XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
+    XSetFillStyle(display, gw->gc, FillSolid);
+    XSetBackground(display,gw->gc,ctab[X11OutputDevice->white].pixel);
+  }
+  else {
+    unsigned long pixel;
+    DOUBLE red, green, blue;
+
+    pixel = ctab[current_color].pixel;
+    red   = (pixel & red_mask  ) >> red_shift;
+    green = (pixel & green_mask) >> green_shift;
+    blue  = (pixel & blue_mask ) >> blue_shift;
+    red   *= intensity;
+    green *= intensity;
+    blue  *= intensity;
+    pixel = ((unsigned long)(red  +0.5) << red_shift  ) +
+            ((unsigned long)(green+0.5) << green_shift) +
+            ((unsigned long)(blue +0.5) << blue_shift );
+    XSetForeground(display, gw->gc, pixel);
+    XFillPolygon(display, gw->win, gw->gc, (XPoint *)points, n, Convex, CoordModeOrigin);
+    if (!gw->backing_store)
+      XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
+    XSetForeground(display, gw->gc, ctab[current_color].pixel);
+  }
 }
 
 static void IFInversePolygon (SHORT_POINT *points, INT n)
@@ -227,7 +257,7 @@ static void IFInversePolygon (SHORT_POINT *points, INT n)
   XGetGCValues(display,gw->gc,valuemask,&values_return);
   function = values_return.function;
   XSetFunction(display,gw->gc,GXinvert);
-  XSetPlaneMask(display,gw->gc,0x00000073);
+  XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
   XFillPolygon(display,gw->win,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
   if (!gw->backing_store)
     XFillPolygon(display,gw->pixmap,gw->gc,(XPoint *)points,n,Convex,CoordModeOrigin);
@@ -384,43 +414,43 @@ static void InvMarker (short n, short s, SHORT_POINT point)
   switch (n)
   {
   case EMPTY_SQUARE_MARKER :
-    XSetPlaneMask(display,gw->gc,0x00000001);
+    XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
     XDrawRectangle(display, gw->win, gw->gc, left, top, s, s);
     if (!gw->backing_store)
       XDrawRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
     break;
   case GRAY_SQUARE_MARKER :
-    XSetPlaneMask(display,gw->gc,0x00000001);
+    XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
     XDrawRectangle(display, gw->win, gw->gc, left, top, s, s);
     if (!gw->backing_store)
       XDrawRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
     break;
   case FILLED_SQUARE_MARKER :
-    XSetPlaneMask(display,gw->gc,0x00000073);
+    XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
     XFillRectangle(display, gw->win, gw->gc, left, top, s, s);
     if (!gw->backing_store)
       XFillRectangle(display, gw->pixmap, gw->gc, left, top, s, s);
     break;
   case EMPTY_CIRCLE_MARKER :
-    XSetPlaneMask(display,gw->gc,0x00000001);
+    XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
     XDrawArc( display, gw->win, gw->gc, left, top, s, s, 0, 360*64);
     if (!gw->backing_store)
       XDrawArc( display, gw->pixmap, gw->gc, left, top, s, s, 0, 360*64);
     break;
   case GRAY_CIRCLE_MARKER :
-    XSetPlaneMask(display,gw->gc,0x00000001);
+    XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
     XDrawArc( display, gw->win, gw->gc, left, top, s, s, 0, 360*64);
     if (!gw->backing_store)
       XDrawArc( display, gw->pixmap, gw->gc, left, top, s, s, 0, 360*64);
     break;
   case FILLED_CIRCLE_MARKER :
-    XSetPlaneMask(display,gw->gc,0x00000073);
+    XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
     XFillArc( display, gw->win, gw->gc, left, top, s+1, s+1, 0, 360*64);
     if (!gw->backing_store)
       XFillArc( display, gw->pixmap, gw->gc, left, top, s+1, s+1, 0, 360*64);
     break;
   case EMPTY_RHOMBUS_MARKER :
-    XSetPlaneMask(display,gw->gc,0x00000001);
+    XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
     XDrawLine( display, gw->win, gw->gc, x, y+s/2, x+s/2, y);
     XDrawLine( display, gw->win, gw->gc, x+s/2, y, x, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x, y-s/2, x-s/2, y);
@@ -433,7 +463,7 @@ static void InvMarker (short n, short s, SHORT_POINT point)
     }
     break;
   case GRAY_RHOMBUS_MARKER :
-    XSetPlaneMask(display,gw->gc,0x00000001);
+    XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
     XDrawLine( display, gw->win, gw->gc, x, y+s/2, x+s/2, y);
     XDrawLine( display, gw->win, gw->gc, x+s/2, y, x, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x, y-s/2, x-s/2, y);
@@ -446,7 +476,7 @@ static void InvMarker (short n, short s, SHORT_POINT point)
     }
     break;
   case FILLED_RHOMBUS_MARKER :
-    XSetPlaneMask(display,gw->gc,0x00000001);
+    XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
     XDrawLine( display, gw->win, gw->gc, x, y+s/2, x+s/2, y);
     XDrawLine( display, gw->win, gw->gc, x+s/2, y, x, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x, y-s/2, x-s/2, y);
@@ -459,7 +489,7 @@ static void InvMarker (short n, short s, SHORT_POINT point)
     }
     break;
   case PLUS_MARKER :
-    XSetPlaneMask(display,gw->gc,0x00000001);
+    XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
     XDrawLine( display, gw->win, gw->gc, x, y+s/2, x, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x-s/2, y, x+s/2, y);
     if (!gw->backing_store) {
@@ -468,7 +498,7 @@ static void InvMarker (short n, short s, SHORT_POINT point)
     }
     break;
   case CROSS_MARKER :
-    XSetPlaneMask(display,gw->gc,0x00000001);
+    XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
     XDrawLine( display, gw->win, gw->gc, x-s/2, y+s/2, x+s/2, y-s/2);
     XDrawLine( display, gw->win, gw->gc, x-s/2, y-s/2, x+s/2, y+s/2);
     if (!gw->backing_store) {
@@ -511,7 +541,7 @@ static void IFDrawText (const char *s, INT mode)
     XGetGCValues(display,gw->gc,valuemask,&values_return);
     function = values_return.function;
     XSetFunction(display,gw->gc,GXinvert);
-    XSetPlaneMask(display,gw->gc,0x00000001);
+    XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
     XDrawString(display,gw->win,gw->gc,gw->x,gw->y,s,strlen(s));
     if (!gw->backing_store)
       XDrawString(display,gw->pixmap,gw->gc,gw->x,gw->y,s,strlen(s));
@@ -544,7 +574,7 @@ static void IFCenteredText (SHORT_POINT point, const char *s, INT mode)
     XGetGCValues(display,gw->gc,valuemask,&values_return);
     function = values_return.function;
     XSetFunction(display,gw->gc,GXinvert);
-    XSetPlaneMask(display,gw->gc,0x00000001);
+    XSetPlaneMask(display,gw->gc,0xFFFFFFFF);
     XDrawString(display,gw->win,gw->gc,((int)point.x)-w/2,((int)point.y)+ts/2,s,strlen(s));
     if (!gw->backing_store)
       XDrawString(display,gw->pixmap,gw->gc,((int)point.x)-w/2,((int)point.y)+ts/2,s,strlen(s));
@@ -590,6 +620,7 @@ static void IFSetColor (long index)
   if (index<0 || index>=CSIZE)
     return;
   XSetForeground(display,gw->gc,ctab[(int)index].pixel);
+  current_color = index;
 }
 
 static void IFSetPaletteEntry (long index, short r, short g, short b)
@@ -673,7 +704,7 @@ static void IFPlotPixelBuffer(void *buffer, void *data, INT len, int x, int y, i
     }
     else {
       q0 = data;
-      if (LITTLE_ENDIAN)
+      if (_LITTLE_ENDIAN)
         for (i=0; i<len; i++) {
           pixel = ctab[*p++].pixel;
           *q0++ = pixel & 0x00FF;
@@ -701,7 +732,7 @@ static void IFPlotPixelBuffer(void *buffer, void *data, INT len, int x, int y, i
     }
     else {
       q0 = data;
-      if (LITTLE_ENDIAN)
+      if (_LITTLE_ENDIAN)
         for (i=0; i<len; i++) {
           pixel = ctab[*p++].pixel;
           *q0++ = pixel & 0x000000FF;
@@ -731,6 +762,20 @@ static void IFPlotPixelBuffer(void *buffer, void *data, INT len, int x, int y, i
   if (mem_allocated) ReleaseTmpMem(heap, key);
 }
 
+/*--------------------------------------------------------------------------*/
+
+int get_component_shift(unsigned long mask)
+{
+  int shift;
+
+  shift=0;
+  while (!(mask & 1)) {
+    shift++;
+    mask >>= 1;
+  }
+  return shift;
+}
+
 /****************************************************************************/
 /*
    InitXPort - implement basic drawing functions by X11
@@ -751,10 +796,8 @@ static void IFPlotPixelBuffer(void *buffer, void *data, INT len, int x, int y, i
 
 void InitXPort (OUTPUTDEVICE *thePort)
 {
-  XColor exact_def;
   Colormap default_cmap;
-  XVisualInfo visual_info;
-  int i,j;
+  int i,j,private;
   unsigned short res,delta,max,r,g,b;
 
   if (ncolors!=0) return;
@@ -781,6 +824,19 @@ void InitXPort (OUTPUTDEVICE *thePort)
   case StaticColor : printf("visual=%s depth=%d\n","StaticColor",default_depth); break;
   default : printf("visual=%s depth=%d\n","unknown",default_depth); break;
   }
+
+  /* get info on pixel structure if true color */
+  if (true_color = (default_visual->class == TrueColor)) {
+    red_mask   = default_visual->red_mask;
+    green_mask = default_visual->green_mask;
+    blue_mask  = default_visual->blue_mask;
+
+    red_shift  = get_component_shift(red_mask);
+    green_shift= get_component_shift(green_mask);
+    blue_shift = get_component_shift(blue_mask);
+  }
+
+  our_cmap = default_cmap;
 
   /* check for B&W */
   if (default_depth==1)
@@ -821,11 +877,11 @@ void InitXPort (OUTPUTDEVICE *thePort)
       ctab[63-i].red = 1024*i;
       ctab[63-i].green = 1024*i;
       ctab[63-i].blue = 1024*i;
-      if (XAllocColor(display,default_cmap,&(ctab[i]))==0)
+      if (XAllocColor(display,our_cmap,&(ctab[i]))==0)
       {
         ncolors = 0;
         for (j=0; j<i; j++) pixels[j] = ctab[j].pixel;
-        XFreeColors(display,default_cmap,pixels,i,0);
+        XFreeColors(display,our_cmap,pixels,i,0);
         break;
       }
     }
@@ -856,11 +912,11 @@ void InitXPort (OUTPUTDEVICE *thePort)
       ctab[15-i].red = 4096*i;
       ctab[15-i].green = 4096*i;
       ctab[15-i].blue = 4096*i;
-      if (XAllocColor(display,default_cmap,&(ctab[i]))==0)
+      if (XAllocColor(display,our_cmap,&(ctab[i]))==0)
       {
         ncolors = 0;
         for (j=0; j<i; j++) pixels[j] = ctab[j].pixel;
-        XFreeColors(display,default_cmap,pixels,i,0);
+        XFreeColors(display,our_cmap,pixels,i,0);
         break;
       }
     }
@@ -949,17 +1005,19 @@ void InitXPort (OUTPUTDEVICE *thePort)
     thePort->spectrumEnd = i-1;
 
     ncolors = i;
+    private = NO;
+
     for (i=0; i<ncolors; i++)
-    {
-      if (XAllocColor(display,default_cmap,&(ctab[i]))==0)
-      {
-        ncolors = 0;
-        for (j=0; j<i; j++) pixels[j] = ctab[j].pixel;
-        XFreeColors(display,default_cmap,pixels,i,0);
-        break;
+      if (!XAllocColor(display, our_cmap, &ctab[i])) {
+        private = YES;
+        our_cmap = XCopyColormapAndFree(display, our_cmap);
+        i--;                          /* allocate the color that failed again! */
       }
-    }
-    if (ncolors>0) printf("Using color map with %d entries\n",ncolors);
+
+    if (private)
+      printf("Using private color map with %d entries\n",ncolors);
+    else
+      printf("Using color map with %d entries\n",ncolors);
   }
 
   if (ncolors==0)
@@ -1073,9 +1131,10 @@ int InitControls (Window win)
   cursors[6] = XCreateFontCursor(display,XC_box_spiral);
 
   /* make stipples for shading */
-  for (i = 0; i < NO_PATTERNS; i++)
-    pattern[i] = XCreateBitmapFromData(display, win, pattern_data[i],
-                                       PATTERN_SIZE, PATTERN_SIZE);
+  if (!true_color)
+    for (i = 0; i < NO_PATTERNS; i++)
+      pattern[i] = XCreateBitmapFromData(display, win, pattern_data[i],
+                                         PATTERN_SIZE, PATTERN_SIZE);
   return 0;
 }
 
@@ -1175,7 +1234,7 @@ void DrawInfoBox (WINDOWID win, const char *info)
   w = XTextWidth(gwin->font_info,info,strlen(info));
   ts = gwin->font_height;
   XDrawString(display,gwin->win,gwin->gc,x-w/2,y+ts/2,info,strlen(info));
-  if (!gw->backing_store)
+  if (!gwin->backing_store)
     XDrawString(display,gwin->pixmap,gwin->gc,x-w/2,y+ts/2,info,strlen(info));
   /* restore clipping region */
   rect.x = 0;
@@ -1302,8 +1361,11 @@ int GraphOpen (GraphWindow *gw, char *window_name, int x, int y, int width, int 
     }
   }
 
+  /* set the window's color map (may be a private one) */
+  XSetWindowColormap(display, gw->win, our_cmap);
+
+  /* create a pixmap with white background	*/
   if (!gw->backing_store) {
-    /* create a pixmap with white background	*/
     gw->pixmap_depth=DefaultDepth(display,screen_num);
     gw->pixmap_width=gw->window_width;
     gw->pixmap_height=gw->window_height;
@@ -1537,8 +1599,8 @@ INT X11_UpdateOutput (WINDOWID win, INT tool)
   fg = gcv.foreground;
   bg = gcv.background;
 
-  if (!gw->backing_store) {
-    /* check window and pixmap size */
+  /* check window and pixmap size */
+  if (!gwin->backing_store) {
     if((gwin->window_width!=gwin->pixmap_width)||(gwin->window_height!=gwin->pixmap_height))
     {                   /* window size has changed, create a new empty pixmap with the new size */
       XFreePixmap(display,gwin->pixmap);
@@ -1583,7 +1645,7 @@ INT X11_UpdateOutput (WINDOWID win, INT tool)
   {
     x = gwin->window_width-(NTOOLS-i)*CONTROLSIZE;
     XCopyPlane(display,tools[i],gwin->win,gwin->gc,0,0,w,h,x,y,1);
-    if (!gw->backing_store)
+    if (!gwin->backing_store)
       XCopyPlane(display,tools[i],gwin->pixmap,gwin->gc,0,0,w,h,x,y,1);
   }
 
@@ -1608,7 +1670,7 @@ INT X11_UpdateOutput (WINDOWID win, INT tool)
   y = gwin->window_height-CONTROLSIZE-1;
   w = gwin->window_width;
   XDrawLine(display,gwin->win,gwin->gc,0,y,w-1,y);
-  if (!gw->backing_store)
+  if (!gwin->backing_store)
     XDrawLine(display,gwin->pixmap,gwin->gc,0,y,w-1,y);
 
   /* restore GC */
@@ -1777,7 +1839,7 @@ INT MouseStillDown (void)
   Window root,child;
   unsigned int keys_buttons;
 
-  /* if button has been released aready */
+  /* if button has been released already */
   if (MoveMouse==0)
   {
     MoveMouse = 1;
