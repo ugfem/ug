@@ -1113,7 +1113,7 @@ static int Scatter_MatrixCollect (DDD_OBJ obj, void *data)
 
 INT l_ghostmatrix_collect (GRID *g, const MATDATA_DESC *A)
 {
-  INT rtp,ctp,m;
+  INT rtp,m;
 
   ConsMatrix = (MATDATA_DESC *)A;
   m = 0;
@@ -1162,7 +1162,7 @@ static int Gather_AMGMatrixCollect (DDD_OBJ obj, void *data)
   DOUBLE  *msgbuf = (DOUBLE *)           data;
   INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
   DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
-  int i, *proclist,mc,vtype,mtype,masc;
+  int i,mc,vtype,mtype,masc;
   const SHORT *Comp;
 
   *maxgid = 0;
@@ -1223,7 +1223,7 @@ static int Scatter_AMGMatrixCollect (DDD_OBJ obj, void *data)
   INT     *maxgid = (INT *)    (((char *)data)+DataSizePerVector);
   DDD_GID *gidbuf = (DDD_GID *)(((char *)data)+DataSizePerVector+sizeof(INT));
   INT igid = 0;
-  int i,j,k, *proclist,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
+  int j,k,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
   const SHORT *Comp;
 
 
@@ -1589,7 +1589,7 @@ static int Gather_DiagMatrixComp (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
   MATRIX *m;
-  INT mc,i,vtype,mtype;
+  INT i,vtype,mtype;
   const SHORT *Comp;
 
   if (MD_IS_SCALAR(ConsMatrix)) {
@@ -1613,7 +1613,7 @@ static int Scatter_DiagMatrixComp (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
   MATRIX *m;
-  INT mc,i,j,vtype,mtype,ncomp,vecskip;
+  INT i,j,vtype,mtype,ncomp,vecskip;
   const SHORT *Comp;
 
   if (MD_IS_SCALAR(ConsMatrix)) {
@@ -1647,7 +1647,7 @@ static int Scatter_GhostDiagMatrixComp (DDD_OBJ obj, void *data)
 {
   VECTOR *pv = (VECTOR *)obj;
   MATRIX *m;
-  INT mc,i,j,vtype,mtype,ncomp,vecskip;
+  INT i,vtype,mtype;
   const SHORT *Comp;
 
   m = VSTART(pv);
@@ -1974,7 +1974,7 @@ static int ClearOffDiagCompOfCopies (GRID *theGrid, const MATDATA_DESC *M)
 {
   VECTOR *v;
   MATRIX *m;
-  INT i,j,k,mc,vtype,mtype,ncomp,rcomp,vecskip,masc;
+  INT j,mc,vtype,mtype,rcomp,vecskip,masc;
   const SHORT *Comp;
 
   if (MD_IS_SCALAR(M)) {
@@ -2073,6 +2073,7 @@ static int CountAndSortInconsMatrices (DDD_OBJ obj)
           Kopie von MDEST auf processor proc, hier vernachlaessigt. */
   if (MaximumInconsMatrices<nRemote)
     MaximumInconsMatrices = nRemote;
+  return (0);
 }
 
 

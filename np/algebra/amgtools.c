@@ -1396,8 +1396,7 @@ static INT bfs (FIFO *Fifo, VECTOR *theSeedVector,
 {
   VECTOR *vi,*vj,*vk;
   MATRIX *mij,*mjk;
-
-  INT no_coarse_neighbor,nCoarseNeighbors;
+  INT no_coarse_neighbor;
 
   /* label seed vector */
   if (MNEXT(VSTART(theSeedVector))==NULL)
@@ -1548,7 +1547,7 @@ INT CoarsenBreadthFirst (GRID *theGrid)
     if (theSeedVector==NULL) break;
 
     nFine = nCoarse = nIsolated = 0;
-    if (error = bfs (&myFifo,theSeedVector,&nFine,&nCoarse,&nIsolated))
+    if ((error = bfs (&myFifo,theSeedVector,&nFine,&nCoarse,&nIsolated))!=0)
     {
       PrintErrorMessage('E',"CoarsenBreadthFirst",
                         "bfs failed");
@@ -1853,8 +1852,8 @@ static DOUBLE Dist (VECTOR *v, VECTOR *w)
 
 INT IpAverage (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
-  INT ncomp,i,j,n,nmax;
-  DOUBLE s /*sum*/;
+  INT ncomp,/*j,*/ n,nmax;
+  /*DOUBLE s;  //sum*/
   GRID *newGrid;
   VECTOR *vect,*dest,*newVect;
   MATRIX *mat,*imat;
@@ -2437,8 +2436,7 @@ INT NBFineGridCorrection (GRID *theGrid, const VECDATA_DESC *to,const VECDATA_DE
                           const MATDATA_DESC *A)
 {
   VECTOR *vi;
-  DOUBLE Inv_ii[MAX_MAT_COMP],Weight_ij[MAX_MAT_COMP];
-  DOUBLE sum_j[MAX_VEC_COMP];
+  DOUBLE Inv_ii[MAX_MAT_COMP];
 
   INT vsmask;                           /* vec skip mask        */
   register SHORT mcomp;                 /* mat-component(s)     */
@@ -2844,9 +2842,9 @@ INT SparsenCGMatrix(GRID *theGrid, MATDATA_DESC *A, INT lumpFlag)
 
 INT ReorderFineGrid(GRID *theGrid, INT orderType)
 {
+    #ifndef ModelP
   VECTOR *vect,*CaV,*CeV,*FaV,*FeV,*TaV,*TeV;
 
-    #ifndef ModelP
   switch (orderType)
   {
   case ASBEFORE : break;

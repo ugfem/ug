@@ -593,12 +593,16 @@ INT StandardInterpolateNewVectors (GRID *FineGrid, const VECDATA_DESC *Sol)
 INT StandardProject (GRID *CoarseGrid, const VECDATA_DESC *to,
                      const VECDATA_DESC *from)
 {
-  ELEMENT *t;
-  VECTOR *v,*v0[MAX_NODAL_VECTORS],*v1[MAX_NODAL_VECTORS];
+  VECTOR *v;
   NODE *theNode;
   DOUBLE *val;
   const SHORT *toComp,*fromComp,*edComp;
-  INT i,j,m,ncomp,edcomp,nfrom,dt;
+  INT i,ncomp,edcomp,nfrom,dt;
+    #ifndef ModelP
+  ELEMENT *t;
+  VECTOR *v0[MAX_NODAL_VECTORS],*v1[MAX_NODAL_VECTORS];
+  INT j,m;
+        #endif
 
   toComp   = VD_ncmp_cmpptr_of_otype_mod(to,NODEVEC,&ncomp,NON_STRICT);
   edComp   = VD_ncmp_cmpptr_of_otype(to,EDGEVEC,&edcomp);
