@@ -22,10 +22,10 @@ ugmake cda -i clean
 ugmake fema -i clean
 ugmake ns2d -i clean
 ugmake ns2da -i clean
-rm -f -r $UGROOT/include
 
 if test "$1" = "all"
 then
 	rm -f lib/*.a
+	rm -f -r $UGROOT/include
 fi
 
