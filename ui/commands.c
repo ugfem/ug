@@ -54,6 +54,7 @@
 #include "ugstruct.h"
 #include "fileopen.h"
 #include "ugenv.h"
+#include "debug.h"
 
 /* devices module */
 #include "devices.h"
@@ -64,11 +65,12 @@
 
 /* grid manager module */
 #include "gm.h"
+#include "rm.h"
 #include "evm.h"
-#include "formats.h"
 
 /* numerics module */
 #include "num.h"
+#include "formats.h"
 
 /* graph module */
 #include "wpm.h"
@@ -83,11 +85,6 @@
 
 /* own header */
 #include "commands.h"
-
-/* includes for 3D application */
-#ifdef __THREEDIM__
-#include "ugm3d.h"
-#endif
 
 /****************************************************************************/
 /*																			*/
@@ -4227,23 +4224,34 @@ static INT RefineCommand (INT argc, char **argv)
     switch (argv[i][0])
     {
     case 'g' :
-      mode = GM_COPY_ALL;
+      mode = mode | GM_COPY_ALL;
       break;
-#ifdef __THREEDIM__
+    case 'h' :
+      mode = mode | GM_REFINE_NOT_CLOSED;
+      break;
+    case 'x' :
+      mode = mode | GM_USE_HEXAHEDRA;
+      break;
+            #ifdef __THREEDIM__
     case 'a' :
       if (sscanf(argv[i],"a %s",buffer)==1)
         theElemEvalDirection = GetElementVectorEvalProc(buffer);
       if (theElemEvalDirection==NULL)
         UserWrite("direction eval fct not found: taking shortest interior edge\n");
       break;
-#endif
+                        #endif
     default :
       sprintf(buffer,"(invalid option '%s')",argv[i]);
       PrintHelp("refine",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
 
-  rv = RefineMultiGrid(theMG,mode,theElemEvalDirection);
+  /* get velocity */
+        #ifdef __THREEDIM__
+  SetAlignementPtr (theMG, theElemEvalDirection);
+        #endif
+
+  rv = RefineMultiGrid(theMG,mode);
 
   InvalidatePicturesOfMG(theMG);
   InvalidateUgWindowsOfMG(theMG);
@@ -4332,7 +4340,7 @@ static INT MarkCommand (INT argc, char **argv)
   long nmarked;
 
   /* following variables: keep type for sscanf */
-  int id,Side;
+  int id,idfrom,idto,Side;
 
 
   /* first check help option */
@@ -4406,11 +4414,13 @@ static INT MarkCommand (INT argc, char **argv)
         return (PARAMERRORCODE);
       }
       mode = MARK_ID;
-      if (sscanf(argv[i],"i %d ", &id)!=1)
+      j = sscanf(argv[i],"i %d %d", &idfrom, &idto);
+      if (j<1 || j>2)
       {
-        PrintErrorMessage('E',"mark","cannot scan id");
+        PrintErrorMessage('E',"mark","cannot scan id(s)");
         return (PARAMERRORCODE);
       }
+      if (j == 1) idto = idfrom;
       break;
 
     case 's' :
@@ -4448,32 +4458,35 @@ static INT MarkCommand (INT argc, char **argv)
     for (l=0; l<=TOPLEVEL(theMG); l++)
       for (theElement=FIRSTELEMENT(GRID_ON_LEVEL(theMG,l)); theElement!=NULL; theElement=SUCCE(theElement))
         if (EstimateHere(theElement))
-        {
-          if ((rv = MarkForRefinement(theElement,Rule,Side))!=0)
+          if ((rv = MarkForRefinement(theElement,Rule,(void *)Side))!=0)
           {
             l = TOPLEVEL(theMG);
             break;
           }
           else
             nmarked++;
-        }
     break;
 
   case MARK_ID :
-    for (l=0; l<=TOPLEVEL(theMG); l++)
-      if ((theElement=FindElementFromId(GRID_ON_LEVEL(theMG,l),id))!=NULL)
-        break;
-      else
-        nmarked++;
+    theElement = NULL;
+    for (id=idfrom; id<=idto; id++) {
+      for (l=0; l<=TOPLEVEL(theMG); l++)
+        if ((theElement=FindElementFromId(GRID_ON_LEVEL(theMG,l),id))!=NULL)
+          break;
 
-    if (theElement == NULL)
-    {
-      PrintErrorMessage('E',"mark","no element with this id");
-      return (PARAMERRORCODE);
+      if (theElement==NULL)
+      {
+        sprintf(buffer,"element with ID %ld could not be found, nothing marked",id);
+        PrintErrorMessage('W',"mark",buffer);
+        return (CMDERRORCODE);
+      }
+
+      if (EstimateHere(theElement))
+        if ((rv = MarkForRefinement(theElement,Rule,(void *)Side))!=0)
+          break;
+        else
+          nmarked++;
     }
-
-    if (EstimateHere(theElement))
-      rv = MarkForRefinement(theElement,Rule,Side);
     break;
 
   case MARK_SELECTION :
@@ -4483,7 +4496,7 @@ static INT MarkCommand (INT argc, char **argv)
         theElement = (ELEMENT *)SELECTIONOBJECT(theMG,i);
         if (EstimateHere(theElement))
         {
-          if ((rv = MarkForRefinement(theElement,Rule,Side))!=0)
+          if ((rv = MarkForRefinement(theElement,Rule,(void *)Side))!=0)
             break;
           else
             nmarked++;
@@ -10125,6 +10138,162 @@ static INT CheckParityCommand (INT argc, char **argv)
 
 #endif
 
+#ifdef ModelP
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  PTestCommand                                                                                              */
+/*                                                                          */
+/* Purpose:   simple testbed for parallel implementations, t.b. removed     */
+/*                                                                          */
+/* Input:     INT argc: number of arguments (incl. its own name)            */
+/*            char **argv: array of strings giving the arguments            */
+/*                                                                          */
+/* Output:    INT return code see header file                               */
+/*                                                                          */
+/****************************************************************************/
+
+static INT PTestCommand (INT argc, char **argv)
+{
+  MULTIGRID *theCurrMG;
+
+  theCurrMG = GetCurrentMultigrid();
+  if (theCurrMG==NULL)
+  {
+    PrintErrorMessage('W',"mglist","no multigrid open\n");
+    return (OKCODE);
+  }
+
+
+  if (argc!=2)
+    return (CMDERRORCODE);
+
+  ddd_test(atoi(argv[1]), theCurrMG);
+  return(OKCODE);
+}
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  FocusCommand                                                                                      */
+/*                                                                          */
+/* Purpose:   set current processor focus				                        */
+/*                                                                          */
+/* Input:     INT argc: number of arguments (incl. its own name)            */
+/*            char **argv: array of strings giving the arguments            */
+/*                                                                          */
+/* Output:    INT return code see header file                               */
+/*                                                                          */
+/****************************************************************************/
+
+static INT FocusCommand (INT argc, char **argv)
+{
+  char buffer[20];
+
+  if (argc>2)
+    return (CMDERRORCODE);
+  if (argc==1)
+  {
+    sprintf(buffer,"DebugProc = %d\n",theDebugProc);
+    UserWrite(buffer);
+  }
+
+  theDebugProc = atoi(argv[1]);
+  return(OKCODE);
+}
+
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  PStatCommand                                                                                              */
+/*                                                                          */
+/* Purpose:   gives information about parallel data structures				*/
+/*                                                                          */
+/* Input:     INT argc: number of arguments (incl. its own name)            */
+/*            char **argv: array of strings giving the arguments            */
+/*                                                                          */
+/* Output:    INT return code see header file                               */
+/*                                                                          */
+/****************************************************************************/
+
+static INT PStatCommand (INT argc, char **argv)
+{
+  if (argc!=2)
+    return (CMDERRORCODE);
+
+  ddd_pstat(argv[1][0]);
+  return(OKCODE);
+}
+
+#endif /* ModelP */
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  DebugCommand                                                                                              */
+/*                                                                          */
+/* Purpose:   set or show debugging level for modules                                   */
+/*                                                                          */
+/* Input:     INT argc: number of arguments (incl. its own name)            */
+/*            char **argv: array of strings giving the arguments            */
+/*                                                                          */
+/* Output:    INT return code see header file                               */
+/*                                                                          */
+/****************************************************************************/
+
+#ifdef Debug
+static INT DebugCommand (INT argc, char **argv)
+{
+  char buffer[128];
+  char *module;
+  int l;
+
+  if (argc<2 || argc>3)
+  {
+    UserWriteF("usage: debug $<module> [$<level>]\n");
+    return (CMDERRORCODE);
+  }
+
+  if (argc==3)
+  {
+    if (strcmp("init",argv[1])==0) Debuginit               = atoi(argv[2]);
+    else if (strcmp("dddif",argv[1])==0) Debugdddif              = atoi(argv[2]);
+    else if (strcmp("dev",argv[1])==0) Debugdev                = atoi(argv[2]);
+    else if (strcmp("gm",argv[1])==0) Debuggm                 = atoi(argv[2]);
+    else if (strcmp("graph",argv[1])==0) Debuggraph              = atoi(argv[2]);
+    else if (strcmp("low",argv[1])==0) Debuglow                = atoi(argv[2]);
+    else if (strcmp("machines",argv[1])==0) Debugmachines   = atoi(argv[2]);
+    else if (strcmp("numerics",argv[1])==0) Debugnumerics   = atoi(argv[2]);
+    else if (strcmp("ui",argv[1])==0) Debugui                 = atoi(argv[2]);
+    else
+    {
+      UserWriteF("no debug variable for module %s found!\n",argv[1]);
+      return (CMDERRORCODE);
+    }
+    UserWriteF("set debuglevel for module %s to %d\n",argv[1],atoi(argv[2]));
+  }
+  else
+  {
+    if (strcmp("init",argv[1])==0)                  {module="init";         l=Debuginit;}
+    else if (strcmp("dddif",argv[1])==0)    {module="dddif";        l=Debugdddif;}
+    else if (strcmp("dev",argv[1])==0)              {module="dev";          l=Debugdev;}
+    else if (strcmp("gm",argv[1])==0)               {module="gm";           l=Debuggm;}
+    else if (strcmp("graph",argv[1])==0)    {module="graph";        l=Debuggraph;}
+    else if (strcmp("low",argv[1])==0)              {module="low";          l=Debuglow;}
+    else if (strcmp("machines",argv[1])==0) {module="machines";     l=Debugmachines;}
+    else if (strcmp("numerics",argv[1])==0) {module="numerics";     l=Debugnumerics;}
+    else if (strcmp("ui",argv[1])==0)               {module="ui";           l=Debugui;}
+    else
+    {
+      UserWriteF("no debug variable for module %s found!\n",argv[1]);
+      return (CMDERRORCODE);
+    }
+
+    UserWriteF("debuglevel for module %s is set to %d\n",module,l);
+  }
+  return(OKCODE);
+}
+#endif
+
 /****************************************************************************/
 /*D
    InitCommands - Initialization of the commands
@@ -10281,6 +10450,18 @@ INT InitCommands ()
         #ifdef __THREEDIM__
   if (CreateCommand("checkparity",        CheckParityCommand                              )==NULL) return (__LINE__);
         #endif
+
+  /* debugging */
+        #ifdef Debug
+  if (CreateCommand("debug",                      DebugCommand                                )==NULL) return (__LINE__);
+        #endif
+
+#ifdef ModelP
+  /* commands for parallel version */
+  if (CreateCommand("ptest",                      PTestCommand                                )==NULL) return (__LINE__);
+  if (CreateCommand("focus",                      FocusCommand                                )==NULL) return (__LINE__);
+  if (CreateCommand("pstat",                      PStatCommand                                )==NULL) return (__LINE__);
+#endif /* ModelP */
 
   if (InitClock()                 !=0) return (__LINE__);
   if (InitFindRange()     !=0) return (__LINE__);
