@@ -3,26 +3,26 @@
 /****************************************************************************/
 /*	                                                                        */
 /* File:      misc.h                                                        */
-/*                                                                            */
+/*                                                                          */
 /* Purpose:   header for misc.c                                             */
-/*                                                                            */
-/* Author:      Henrik Rentz-Reichert                                         */
-/*              Institut fuer Computeranwendungen                             */
-/*              Universitaet Stuttgart                                        */
-/*              Pfaffenwaldring 27                                            */
-/*              70569 Stuttgart                                                */
-/*              internet: ug@ica3.uni-stuttgart.de                        */
-/*                                                                            */
-/* History:   23.02.95 ug3-version                                            */
-/*                                                                            */
+/*                                                                          */
+/* Author:      Henrik Rentz-Reichert                                       */
+/*              Institut fuer Computeranwendungen                           */
+/*              Universitaet Stuttgart                                      */
+/*              Pfaffenwaldring 27                                          */
+/*              70569 Stuttgart                                             */
+/*              internet: ug@ica3.uni-stuttgart.de                          */
+/*                                                                          */
+/* History:   23.02.95 ug3-version                                          */
+/*                                                                          */
 /* Revision:  07.09.95                                                      */
-/*                                                                            */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*                                                                            */
-/* auto include mechanism and other include files                            */
-/*                                                                            */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __MISC__
@@ -34,13 +34,13 @@
 #endif
 
 /****************************************************************************/
-/*                                                                            */
-/* defines in the following order                                            */
-/*                                                                            */
-/*          compile time constants defining static data size (i.e. arrays)    */
-/*          other constants                                                    */
-/*          macros                                                            */
-/*                                                                            */
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*          compile time constants defining static data size (i.e. arrays)  */
+/*          other constants                                                 */
+/*          macros                                                          */
+/*                                                                          */
 /****************************************************************************/
 
 #define PI                       3.141592653589793238462643383279
@@ -115,9 +115,10 @@ extern int UG_math_error;
 
 #ifndef ModelP
 extern int me;          /* to have in the serial case this variable as a dummy */
+extern int master;  /* to have in the serial case this variable as a dummy */
 extern int procs;       /* to have in the serial case this variable as a dummy */
-extern int _proclist_;  /* to have in the serial case this variable as a dummy */
-extern int _partition_; /* to have in the serial case this variable as a dummy */
+extern int _proclist_; /* to have in the serial case this variable as a dummy*/
+extern int _partition_; /* to have in the serial case this variable as a dummy*/
 #endif
 
 /****************************************************************************/

@@ -43,51 +43,52 @@
 #include "misc.h"
 
 /****************************************************************************/
-/*                                                                            */
-/* defines in the following order                                            */
-/*                                                                            */
-/*          compile time constants defining static data size (i.e. arrays)    */
-/*          other constants                                                    */
-/*          macros                                                            */
-/*                                                                            */
+/*                                                                          */
+/* defines in the following order                                           */
+/*                                                                          */
+/*          compile time constants defining static data size (i.e. arrays)  */
+/*          other constants                                                 */
+/*          macros                                                          */
+/*                                                                          */
 /****************************************************************************/
 
 /****************************************************************************/
-/*                                                                            */
-/* data structures used in this source file (exported data structures are    */
-/*          in the corresponding include file!)                                */
-/*                                                                            */
+/*                                                                          */
+/* data structures used in this source file (exported data structures are   */
+/*          in the corresponding include file!)                             */
+/*                                                                          */
 /****************************************************************************/
 
 
 
 /****************************************************************************/
-/*                                                                            */
-/* definition of exported global variables                                    */
-/*                                                                            */
+/*                                                                          */
+/* definition of exported global variables                                  */
+/*                                                                          */
 /****************************************************************************/
 
 int UG_math_error = 0; /* This will be non zero after a math error occured  */
 #ifndef ModelP
-int me = 0;                             /* to have in the serial case this variable as a dummy */
-int procs = 1;                          /* to have in the serial case this variable as a dummy */
-int _proclist_ = -1;                    /* to have in the serial case this variable as a dummy */
-int _partition_ = 0;                    /* to have in the serial case this variable as a dummy */
+int me = 0;                     /* to have in the serial case this variable as a dummy */
+int master = 0;         /* to have in the serial case this variable as a dummy */
+int procs = 1;          /* to have in the serial case this variable as a dummy */
+int _proclist_ = -1; /* to have in the serial case this variable as a dummy */
+int _partition_ = 0; /* to have in the serial case this variable as a dummy */
 #endif
 
 /****************************************************************************/
-/*                                                                            */
+/*                                                                          */
 /* definition of variables global to this source file only (static!)        */
-/*                                                                            */
+/*                                                                          */
 /****************************************************************************/
 
 /* RCS string */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
-/*                                                                            */
-/* forward declarations of macros                                            */
-/*                                                                            */
+/*                                                                          */
+/* forward declarations of macros                                           */
+/*                                                                          */
 /****************************************************************************/
 
 #define MIN_DETERMINANT                 1e-8
@@ -95,9 +96,9 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
-/****                                                                     ****/
-/****        general routines                                             ****/
-/****                                                                     ****/
+/****                                                                    ****/
+/****        general routines                                            ****/
+/****                                                                    ****/
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
