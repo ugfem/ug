@@ -578,6 +578,9 @@ extern "C" {
 #ifdef __NECSX4__
 #undef __MWCW__
 
+#include <time.h>
+
+
 /* basic types */
 #define SHORT  short
 #define INT    long    /* sizeof(int) != sizeof(void *) !! */
@@ -594,7 +597,7 @@ extern "C" {
 #define F77SYM(lsym,usym)  lsym ## _
 
 /* current time as DOUBLE value */
-#define CURRENT_TIME   ((DOUBLE)0.0)
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
 #endif
 
