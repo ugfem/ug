@@ -627,7 +627,9 @@ INT PutFreelistMemory (HEAP *theHeap, void *object, INT size)
   INT i,j,k,l;
 
   memset(object,0,size);
+#ifdef Debug
   SETHEAPFAULT(object,-1);              /* this is to check heap faults */
+#endif
   ptr = (void **) object;
 
   /* 'ptr' will be set equal to 'object' but with different inter-		*/
