@@ -638,7 +638,7 @@ INT InitDevices (int *argcp, char **argv)
 {
   ENVDIR *DevDir;
   ENVITEM *dev;
-  INT error=0,i;
+  INT error=0,i, with_defaultOuputDevice;
   char sv[32];
 
   /* install the /Output Devices directory */
@@ -667,6 +667,8 @@ INT InitDevices (int *argcp, char **argv)
         #ifdef ModelP
   /* send number of command line arguments after InitScreen() */
   Broadcast(argcp, sizeof(int));
+
+  with_defaultOuputDevice = (defaultOuputDevice!=NULL);
 }
 else {
   int l, i, new_argc;
@@ -683,14 +685,26 @@ else {
     }
     if (*argcp > 1) (*argcp)--;
   }
-
-
-  defaultOuputDevice = malloc(sizeof(OUTPUTDEVICE));
-  /* TODO:  set function pointers to NULL */
 }
-Broadcast((void *)defaultOuputDevice,sizeof(OUTPUTDEVICE));
 
+Broadcast(&with_defaultOuputDevice, sizeof(int));
+if (with_defaultOuputDevice)
+{
+  if (me!=master)
+  {
+    defaultOuputDevice = malloc(sizeof(OUTPUTDEVICE));
+    /* TODO:  set function pointers to NULL */
+  }
+
+  Broadcast((void *)defaultOuputDevice,sizeof(OUTPUTDEVICE));
+}
+else
+{
+  if (me!=master)
+    defaultOuputDevice = NULL;
+}
         #endif
+
 
   /* init metafile device */
   if (InitMeta()!=0)
