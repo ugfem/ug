@@ -2183,7 +2183,7 @@ static INT OpenCommand (INT argc, char **argv)
   char Multigrid[NAMESIZE],File[NAMESIZE],BVPName[NAMESIZE],Format[NAMESIZE],type[NAMESIZE];
   char *theBVP,*theFormat,*theMGName;
   unsigned long heapSize;
-  INT i,force,IEopt;
+  INT i,force,IEopt,autosave;
 
   /* get multigrid name */
   if ((sscanf(argv[0],expandfmt(CONCAT3(" open %",NAMELENSTR,"[ -~]")),File)!=1) || (strlen(File)==0))
@@ -2195,10 +2195,14 @@ static INT OpenCommand (INT argc, char **argv)
   /* get problem and format */
   strcpy(type,"asc");
   theBVP = theFormat = theMGName = NULL;
-  heapSize = force = 0;
+  heapSize = force = autosave = 0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
+    case 'a' :
+      autosave = 1;
+      break;
+
     case 'b' :
       if (sscanf(argv[i],expandfmt(CONCAT3("b %",NAMELENSTR,"[ -~]")),BVPName)!=1)
       {
@@ -2258,7 +2262,7 @@ static INT OpenCommand (INT argc, char **argv)
 
   /* allocate the multigrid structure */
   theMG = LoadMultiGrid(theMGName,File,type,theBVP,theFormat,
-                        heapSize,force,IEopt);
+                        heapSize,force,IEopt,autosave);
   if (theMG==NULL)
   {
     PrintErrorMessage('E',"open","could not open multigrid");
