@@ -1,4 +1,4 @@
 # this file is for internal ug configuration. don't change it!
 
-CHACO_CFLAGS = -DCHACOF
+CHACO_CFLAGS = 
 CHACO_LFLAGS =
