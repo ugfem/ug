@@ -64,6 +64,10 @@
 #define ODD(i)                   ((i%2))
 #define SWAP(a,b,temp)           {(temp) = (a); (a) = (b); (b) = (temp);}
 
+#define SET_FLAG(flag,bitpattern)               (flag |=  (bitpattern))
+#define CLEAR_FLAG(flag,bitpattern)     (flag &= ~(bitpattern))
+#define READ_FLAG(flag,bitpattern)              ((flag & (bitpattern))>0)
+
 #define HiWrd(aLong)             (((aLong) >> 16) & 0xFFFF)
 #define LoWrd(aLong)             ((aLong) & 0xFFFF)
 
