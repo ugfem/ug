@@ -1957,6 +1957,12 @@ extern GENERAL_ELEMENT *element_descriptors[TAGS], *reference_descriptors[MAX_CO
 #define Vertex_BndCond(p,w,i,v,t)     BNDP_BndCond(V_BNDP(p),w,i,NULL,v,t)
 
 
+/* macros to access corner pointers directly */
+
+#define CORNER_OF_EDGE_PTR(e,i,j)               (CORNER(e,CORNER_OF_EDGE(e,i,j)))
+#define CORNER_OF_SIDE_PTR(e,i,j)               (CORNER(e,CORNER_OF_SIDE(e,i,j)))
+
+
 /* macros to access element descriptors by element tags	*/
 
 #define INNER_SIZE_TAG(t)                       (element_descriptors[t]->inner_size)
