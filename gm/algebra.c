@@ -574,6 +574,7 @@ INT GetDomainPart (const INT s2p[], const GEOM_OBJECT *obj, INT side)
       /* get part info from domain module */
       if (BNDP_BndPDesc(V_BNDP(v0),&move,&part))
         REP_ERR_RETURN(-2);
+      ASSERT(NSUBDOM(nd) == 0);
     }
     break;
 

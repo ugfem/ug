@@ -477,7 +477,9 @@ static NODE *CreateNode (GRID *theGrid, VERTEX *vertex,
       Father = NULL;
   SETNFATHER(pn,Father);
   SETNTYPE(pn,NodeType);
-  if (VFATHER(vertex) != NULL)
+  if (OBJT(vertex) == BVOBJ)
+    SETNSUBDOM(pn,0);
+  else if (VFATHER(vertex) != NULL)
     SETNSUBDOM(pn,SUBDOMAIN(VFATHER(vertex)));
   else if (Father != NULL) {
     if (OBJT(Father) == NDOBJ)
@@ -604,6 +606,10 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT 
   v1 = MYVERTEX(CORNER(theElement,co1));
   V_DIM_LINCOMB(0.5, CVECT(v0), 0.5, CVECT(v1), global);
 
+  /* set MIDNODE pointer */
+  theEdge = GetEdge(CORNER(theElement,co0),CORNER(theElement,co1));
+  ASSERT(theEdge!=NULL);
+
   /* allocate vertex */
   vertex_null = (theVertex==NULL);
   if (theVertex==NULL)
@@ -612,6 +618,9 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT 
 #ifdef __TWODIM__
       if (OBJT(theElement) == BEOBJ)
         if (SIDE_ON_BND(theElement,edge))
+#endif
+#ifdef __THREEDIM__
+      if (EDSUBDOM(theEdge) == 0)
 #endif
     {
       bndp = BNDP_CreateBndP(MGHEAP(MYMG(theGrid)),V_BNDP(v0),V_BNDP(v1),0.5);
@@ -653,11 +662,6 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, VERTEX *theVertex, INT 
     VFATHER(theVertex) = theElement;
     SETONEDGE(theVertex,edge);
   }
-
-  /* set MIDNODE pointer */
-  theEdge = GetEdge(CORNER(theElement,co0),CORNER(theElement,co1));
-  ASSERT(theEdge!=NULL);
-
   /* allocate node */
   theNode = CreateNode(theGrid,theVertex,(GEOM_OBJECT *)theEdge,MID_NODE,1);
   if (theNode==NULL && vertex_null)
@@ -1875,10 +1879,11 @@ ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype, NODE **nodes,
 INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
                           ELEMENT *theSon, INT son_side)
 {
-  INT n,i;
+  INT n,i,k;
   BNDS *bnds;
   BNDP *bndp[MAX_CORNERS_OF_ELEM];
   VECTOR *vec;
+  EDGE *theEdge;
 
   ASSERT (OBJT(theElement) == BEOBJ);
 
@@ -1899,6 +1904,14 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
     vec = SVECTOR(theSon,son_side);
     ReinspectSonSideVector(theGrid,theSon,son_side,&vec);
     SET_SVECTOR(theSon,son_side,vec);
+  }
+  /* TODO: is this necessary? */
+  for (i=0; i<EDGES_OF_SIDE(theSon,son_side); i++) {
+    k  = EDGE_OF_SIDE(theElement,son_side,i);
+    theEdge = GetEdge(CORNER(theSon,CORNER_OF_EDGE(theSon,k,0)),
+                      CORNER(theSon,CORNER_OF_EDGE(theSon,k,1)));
+    ASSERT(theEdge != NULL);
+    SETEDSUBDOM(theEdge,0);
   }
 
   return(GM_OK);
@@ -8481,7 +8494,7 @@ static INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
       SETNSUBDOM(CORNER(theElement,i),s_id);
   }
 
-  /* now change subdomain id for boundary edges to 0 */
+  /* now change subdomain id for boundary edges and nodes to 0 */
   for (theElement=PFIRSTELEMENT(theGrid); theElement!=NULL;
        theElement=SUCCE(theElement))
     if (OBJT(theElement)==BEOBJ)
@@ -8495,6 +8508,8 @@ static INT SetEdgeAndNodeSubdomainFromElements (GRID *theGrid)
           k  = EDGE_OF_SIDE(theElement,s,i);
           n0 = CORNER(theElement,CORNER_OF_EDGE(theElement,k,0));
           n1 = CORNER(theElement,CORNER_OF_EDGE(theElement,k,1));
+          SETNSUBDOM(n0,0);
+          SETNSUBDOM(n1,0);
           ed = GetEdge(n0,n1);
           ASSERT(ed!=NULL);
           SETEDSUBDOM(ed,0);

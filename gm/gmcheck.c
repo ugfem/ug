@@ -595,6 +595,30 @@ PAR(
 	/* check side information */
 	for (i=0; i<SIDES_OF_ELEM(theElement); i++)
 	{
+		if (OBJT(theElement) == BEOBJ)
+			if (ELEM_BNDS(theElement,i) != NULL) {
+				for (j=0; j<CORNERS_OF_SIDE(theElement,i); j++) 
+					if (NSUBDOM(CORNER(theElement,i)) != 0) {
+						UserWriteF(PFMT "wrong subdomain id on boundary node,"
+								   "el =  " EID_FMTX "\n",
+								   me,EID_PRTX(theElement));
+						bserror |= (1<<i);
+					}
+				for (j=0; j<EDGES_OF_SIDE(theElement,i); j++) {
+					k  = EDGE_OF_SIDE(theElement,i,j);
+					theEdge = GetEdge(CORNER(theElement,
+											 CORNER_OF_EDGE(theElement,k,0)),
+									  CORNER(theElement,
+											 CORNER_OF_EDGE(theElement,k,1)));
+					ASSERT(theEdge != NULL);
+					if (EDSUBDOM(theEdge) != 0) {
+						UserWriteF(PFMT "wrong subdomain id on boundary edge,"
+								   "el =  " EID_FMTX "\n",
+								   me,EID_PRTX(theElement));
+						bserror |= (1<<i);
+					}
+				}
+			}
 		NbElement = NBELEM(theElement,i);
 		if (NbElement != NULL)
 		{
