@@ -949,6 +949,7 @@ int MergeMultigrid (MG_DESC *mgdesc, DATA_MAP *map)
       {
         if (o_element[j].nref==0) {refinement[i][j]=NULL; continue;}
         refinement[i][j]=(MERGE_REFINEMENT*)ht_malloc(o_element[j].nref*sizeof(MERGE_REFINEMENT),"refinement");
+        if (refinement[i][j]==NULL) {printf("ERROR in 'MergeMultigrid': cannot allocate %d bytes for 'refinement' \n");return (1);}
         ref=&loc_ref;
         for (l=0; l<MGIO_MAX_SONS_OF_ELEM; l++)
           ref->pinfo[l].proclist=ProcList;
