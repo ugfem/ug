@@ -10,7 +10,7 @@
 # include configuration and all makefile macro definitions
 include ../ug.conf
 
-OBJECTS = uginterface.o initui.o cmdint.o cmdline.o commands.o helpmsg.o tecplot.o
+OBJECTS = avs.o uginterface.o initui.o cmdint.o cmdline.o commands.o helpmsg.o tecplot.o
 
 # local C compiler flags
 LCFLAGS = -I../include

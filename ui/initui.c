@@ -43,6 +43,7 @@
 #include "ugstruct.h"
 #include "commands.h"
 #include "tecplot.h"
+#include "avs.h"
 
 /* own header */
 #include "initui.h"
@@ -148,6 +149,13 @@ INT InitUi ()
 
   /* tecplot output */
   if ((err=InitTecplot())!=0)
+  {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+
+  /* avs output */
+  if ((err=InitAVS())!=0)
   {
     SetHiWrd(err,__LINE__);
     return (err);
