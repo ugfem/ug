@@ -66,6 +66,10 @@
 #include "domain.h"
 #endif
 
+#ifndef __PARALLEL_H__
+#include "parallel.h"
+#endif
+
 /* if interpolation matrix is stored */
 #define __INTERPOLATION_MATRIX__
 
@@ -81,9 +85,6 @@
 
 /* necessary for most C runtime libraries */
 #undef DOMAIN
-
-/* serial version */
-#define DDD_OFFSET 0
 
 /* some size parameters */
 #define MAXLEVEL                                32      /* maximum depth of triangulation		*/
@@ -1084,13 +1085,6 @@ extern CONTROL_ENTRY
 #define XFERMATX(p)                             CW_READ(p,XFERMATX_CE)
 #define SETXFERMATX(p,n)                        CW_WRITE(p,XFERMATX_CE,n)
 #endif /* NOT ModelP */
-
-#define MSIZE_CE                                        15
-#define MSIZE_SHIFT                             13
-#define MSIZE_LEN                                       15
-#define MSIZEMAX                                        (POW2(MSIZE_LEN)-1)
-#define MSIZE(p)                                        CW_READ(p,MSIZE_CE)
-#define SETMSIZE(p,n)                           CW_WRITE(p,MSIZE_CE,n)
 
 #define MNEW_CE                                         16
 #define MNEW_SHIFT                                      28

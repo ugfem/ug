@@ -171,7 +171,7 @@ static char rcsid[] = "$Header$";
 /*																			*/
 /****************************************************************************/
 
-#ifdef ModelP
+#ifdef ModelPTest
 /****************************************************************************/
 /*																			*/
 /* Function:  MakeRefMarkandMarkClassConsistent								*/
@@ -256,7 +256,7 @@ static INT DropMarks (MULTIGRID *theMG)
 				SETMARK(FatherElement,Mark);
 				SETMARKCLASS(FatherElement,RED);
 
-				#ifdef ModelP
+				#ifdef ModelPTest
 				MakeRefMarkandMarkClassConsistent(k);
 				#endif
 			}
@@ -264,7 +264,7 @@ static INT DropMarks (MULTIGRID *theMG)
 	return (0);
 }
 
-#ifdef ModelP
+#ifdef ModelPTest
 /****************************************************************************/
 /*																			*/
 /* Function:  ExchangePatternOfMasterAndSlaves 								*/
@@ -490,7 +490,7 @@ FIFOSTART:
 		}
 	}
 
-	#ifdef ModelP
+	#ifdef ModelPTest
 	/* send the PATTERN flag from master to slave elements */
 	SendPatternFromMasterToSlaves(GLEVEL(theGrid));
 	#endif
@@ -698,7 +698,7 @@ FIFOSTART:
 		}
 	}	
 
-	#ifdef ModelP
+	#ifdef ModelPTest
 	/* send MARKCLASS from slave to masters */
 	IF_S2M_MARKCLASS(GLEVEL(grid));
 	#endif
