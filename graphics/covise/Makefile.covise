@@ -13,7 +13,7 @@ include ../../ug.conf
 OBJECTS = coviseif.o
 
 # local C compiler flags
-LCFLAGS = -I../../include -I$(HOME)/covise/src/covise_lib
+LCFLAGS = -I../../include -I/usr/local/covise/src/covise_lib
 
 all : $(OBJECTS) Makefile.covise
 	$(ARCH_AR)  $(ARCH_ARFLAGS) ../../lib/libcovise$(DIM).a $(OBJECTS) 
