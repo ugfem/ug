@@ -90,6 +90,10 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
 
+/* current time as DOUBLE value */
+#define CURRENT_TIME   ((DOUBLE)0.0)
+
+
 /* Diese bloeden const pointer gehen immer noch nicht ! P.B. 27.7.95 */
 #define const
 
@@ -105,6 +109,8 @@ extern "C" {
 #ifdef __SGI__
 #undef __MWCW__
 
+#include <time.h>
+
 /* basic types */
 #define SHORT  short
 #define INT    int
@@ -119,6 +125,9 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym ## _
+
+/* current time as DOUBLE value */
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
 #endif
 
@@ -147,6 +156,9 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
+
+/* current time as DOUBLE value */
+#define CURRENT_TIME   (((DOUBLE)TimeNow())/((DOUBLE)CLOCK_TICK))
 
 #endif
 
@@ -177,6 +189,9 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
 
+/* current time as DOUBLE value */
+#define CURRENT_TIME   ((DOUBLE)0.0)
+
 #endif
 
 
@@ -188,6 +203,8 @@ extern "C" {
 
 #ifdef __PARAGON__
 #undef __MWCW__
+
+#include <nx.h>
 
 /* basic types */
 #define SHORT  short
@@ -204,6 +221,9 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym ## _
+
+/* current time as DOUBLE value */
+#define CURRENT_TIME   ((DOUBLE)dclock())
 
 #endif
 
@@ -233,6 +253,9 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
 
+/* current time as DOUBLE value */
+#define CURRENT_TIME   ((DOUBLE)0.0)
+
 #endif
 
 /****************************************************************************/
@@ -260,6 +283,9 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
 
+/* current time as DOUBLE value */
+#define CURRENT_TIME   ((DOUBLE)0.0)
+
 #endif
 
 
@@ -271,6 +297,8 @@ extern "C" {
 
 #ifdef __HP__
 #undef __MWCW__
+
+#include <time.h>
 
 /* basic types */
 #define SHORT  short
@@ -286,6 +314,9 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
+
+/* current time as DOUBLE value */
+#define CURRENT_TIME   (((DOUBLE)clock())/((DOUBLE)CLOCKS_PER_SEC))
 
 #endif
 
@@ -314,6 +345,9 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
 
+/* current time as DOUBLE value */
+#define CURRENT_TIME   ((DOUBLE)0.0)
+
 #endif
 
 
@@ -340,6 +374,9 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
+
+/* current time as DOUBLE value */
+#define CURRENT_TIME   ((DOUBLE)0.0)
 
 #endif
 
@@ -369,6 +406,9 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
 
+/* current time as DOUBLE value */
+#define CURRENT_TIME   ((DOUBLE)0.0)
+
 #endif
 
 
@@ -395,6 +435,9 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  usym
+
+/* current time as DOUBLE value */
+#define CURRENT_TIME ((DOUBLE)(((double)rtclock())/((double)sysconf(_SC_CLK_TCK))))
 
 #endif
 
@@ -424,6 +467,9 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  usym
 
+/* current time as DOUBLE value */
+#define CURRENT_TIME ((DOUBLE)(((double)rtclock())/((double)sysconf(_SC_CLK_TCK))))
+
 #endif
 
 
@@ -450,6 +496,9 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
+
+/* current time as DOUBLE value */
+#define CURRENT_TIME   ((DOUBLE)0.0)
 
 #endif
 
@@ -480,6 +529,9 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
 
+/* current time as DOUBLE value */
+#define CURRENT_TIME   ((DOUBLE)0.0)
+
 #endif
 
 
@@ -507,6 +559,9 @@ extern "C" {
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
 
+/* current time as DOUBLE value */
+#define CURRENT_TIME   ((DOUBLE)0.0)
+
 #endif
 
 
@@ -533,6 +588,9 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym ## _
+
+/* current time as DOUBLE value */
+#define CURRENT_TIME   ((DOUBLE)0.0)
 
 #endif
 
@@ -570,6 +628,9 @@ extern "C" {
 
 /* fortran interfacing */
 #define F77SYM(lsym,usym)  lsym
+
+/* current time as DOUBLE value */
+#define CURRENT_TIME   ((DOUBLE)0.0)
 
 #endif
 
