@@ -3225,7 +3225,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
     if (AllocVDFromVD(NP_MG(theNP),level,level,x,&NPFF_t(np))) NP_RETURN(1,result[0]);
 
     if ( NPFF_DISPLAY(np) != PCR_NO_DISPLAY )
-      if(eunormBS( GFIRSTBV(theGrid), VD_SCALCMP( b ), &new_norm ) ) NP_RETURN(1,result[0]);
+      if(dnrm2BS( GFIRSTBV(theGrid), VD_SCALCMP( b ), &new_norm ) ) NP_RETURN(1,result[0]);
 
     end_wave = 1.0 / NPFF_MESHWIDTH(np) - 0.5;             /* rounding */
     for ( wavenr = 1.0; wavenr < end_wave; wavenr *= 2.0 )
@@ -3276,7 +3276,7 @@ static INT FFIter (NP_ITER *theNP, INT level,
       if ( NPFF_DISPLAY(np) != PCR_NO_DISPLAY )
       {
         start_norm = new_norm;
-        if(eunormBS( GFIRSTBV(theGrid), VD_SCALCMP( b ), &new_norm ) ) NP_RETURN(1,result[0]);
+        if(dnrm2BS( GFIRSTBV(theGrid), VD_SCALCMP( b ), &new_norm ) ) NP_RETURN(1,result[0]);
 
         UserWriteF( "Wnr plane = %4g Wnr line = %4g new defect = %12lg "
                     "conv. rate = %12lg\n", wavenr, wavenr, new_norm,

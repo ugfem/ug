@@ -176,7 +176,7 @@ INT TFFCalculateTheta( const BLOCKVECTOR *bv_dest,
 
   /* aux_source := L_(source,dest) * tv_dest */
   dsetBS( bv_source, aux_comp, 0.0 );
-  dmatmulBS( bv_source, bvd_dest, bvdf, aux_comp, L_comp, tv_comp );
+  dmatmul_addBS( bv_source, bvd_dest, bvdf, aux_comp, L_comp, tv_comp );
 
   /* aux_source = (T_source)^-1 * aux_source */
 #ifdef THETA_EXACT
@@ -407,8 +407,8 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
   /* aux_i := L_(i,i+1) * tv_i+1 */
   dsetBS( bv_source, aux1_comp, 0.0 );
   dsetBS( bv_source, aux2_comp, 0.0 );
-  dmatmulBS( bv_source, bvd_dest, bvdf, aux1_comp, K_comp, tv1_comp );
-  dmatmulBS( bv_source, bvd_dest, bvdf, aux2_comp, K_comp, tv2_comp );
+  dmatmul_addBS( bv_source, bvd_dest, bvdf, aux1_comp, K_comp, tv1_comp );
+  dmatmul_addBS( bv_source, bvd_dest, bvdf, aux2_comp, K_comp, tv2_comp );
 
   /* aux_i = (T_i)^-1 * aux_i */
   FFMultWithMInv( bv_source, bvd_source, bvdf, aux1_comp, aux1_comp );
@@ -417,8 +417,8 @@ INT FFCalculateThetaAndUpdate( const BLOCKVECTOR *bv_dest,
   /* aux_i+1 := L_(i+1,i) * aux_i */
   dsetBS( bv_dest, aux1_comp, 0.0 );
   dsetBS( bv_dest, aux2_comp, 0.0 );
-  dmatmulBS( bv_dest, bvd_source, bvdf, aux1_comp, K_comp, aux1_comp );
-  dmatmulBS( bv_dest, bvd_source, bvdf, aux2_comp, K_comp, aux2_comp );
+  dmatmul_addBS( bv_dest, bvd_source, bvdf, aux1_comp, K_comp, aux1_comp );
+  dmatmul_addBS( bv_dest, bvd_source, bvdf, aux2_comp, K_comp, aux2_comp );
 
 
   /* calculate Theta */
@@ -718,8 +718,10 @@ INT TFFDecomp( DOUBLE wavenr,
     dmatsetBS( bv_im1, bvd_i, bvdf, FF_comp, 1.0/li );
     /*printf("theta = %g\n", 1.0 / li );*/
     li = lambda - 1.0 / li;
-#elif defined FF_PARALLEL_SIMULATION
-    BoxTFFCalculateTheta( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv_comp, grid );
+    /*
+       #elif defined FF_PARALLEL_SIMULATION
+                    BoxTFFCalculateTheta( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv_comp, grid );
+     */
 #else
     TFFCalculateTheta( bv_i, bv_im1, bvd_i, bvd_im1, bvdf, tv_comp );
 #endif
@@ -764,13 +766,13 @@ INT TFFDecomp( DOUBLE wavenr,
 
     /* aux := K * tv */
     dsetBS( bv, aux_comp, 0.0 );
-    dmatmulBS( bv, bvd, bvdf, aux_comp, K_comp, tv_comp );
+    dmatmul_addBS( bv, bvd, bvdf, aux_comp, K_comp, tv_comp );
 
     /* aux2 -= aux */
     dsubBS( bv, aux2_COMP, aux_comp );
 
     /* norm of aux2 */
-    eunormBS( bv, aux2_COMP, &norm );
+    dnrm2BS( bv, aux2_COMP, &norm );
 
     if ( norm > FFaccuracy )
     {
@@ -1130,7 +1132,7 @@ INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *
 
       /* aux2 := K * tv */
       dsetBS( bv, aux2_COMP, 0.0 );
-      dmatmulBS( bv, bvd, bvdf, aux2_COMP, K_comp, tv_comp );
+      dmatmul_addBS( bv, bvd, bvdf, aux2_COMP, K_comp, tv_comp );
 
       /* aux2 := M^-1 * aux2 */
       FFMultWithMInv( bv, bvd, bvdf, aux2_COMP, K_comp, LU_comp, aux2_COMP, aux3_COMP, auxsub_comp, FF_comp );
@@ -1139,7 +1141,7 @@ INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *
       dsubBS( bv, aux2_COMP, tv_comp );
 
       /* norm of aux2 */
-      eunormBS( bv, aux2_COMP, &norm );
+      dnrm2BS( bv, aux2_COMP, &norm );
 
       if ( norm > FFaccuracy )
       {
@@ -1166,7 +1168,7 @@ INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *
       dsubBS( bv, aux2_COMP, tv_comp );
 
       /* norm of aux2 */
-      eunormBS( bv, aux2_COMP, &norm );
+      dnrm2BS( bv, aux2_COMP, &norm );
 
       if ( norm > FFaccuracy )
       {
@@ -1193,7 +1195,7 @@ INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *
       dsubBS( bv, aux2_COMP, tv_comp );
 
       /* norm of aux2 */
-      eunormBS( bv, aux2_COMP, &norm );
+      dnrm2BS( bv, aux2_COMP, &norm );
 
       if ( norm > FFaccuracy )
       {
@@ -1215,13 +1217,13 @@ INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *
 
       /* aux2 := K * aux3 */
       dsetBS( bv, aux2_COMP, 0.0 );
-      dmatmulBS( bv, bvd, bvdf, aux2_COMP, K_comp, aux3_COMP );
+      dmatmul_addBS( bv, bvd, bvdf, aux2_COMP, K_comp, aux3_COMP );
 
       /* aux2 -= tv */
       dsubBS( bv, aux2_COMP, tv_comp );
 
       /* norm of aux2 */
-      eunormBS( bv, aux2_COMP, &norm );
+      dnrm2BS( bv, aux2_COMP, &norm );
 
       if ( norm > FFaccuracy )
       {
@@ -1243,13 +1245,13 @@ INT  TFFSolve( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT *
 
         /* aux2 := K * cor */
         dsetBS( bv, aux2_COMP, 0.0 );
-        dmatmulBS( bv, bvd, bvdf, aux2_COMP, K_comp, cor_comp );
+        dmatmul_addBS( bv, bvd, bvdf, aux2_COMP, K_comp, cor_comp );
 
         /* aux2 -= aux */
         dsubBS( bv, aux2_COMP, aux_comp );
 
         /* norm of aux2 */
-        eunormBS( bv, aux2_COMP, &norm );
+        dnrm2BS( bv, aux2_COMP, &norm );
 
         if ( norm > FFaccuracy )
         {

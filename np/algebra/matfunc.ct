@@ -36,6 +36,9 @@ INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode T_ARGS)
 	#ifdef Debug
 	ASSERT(fl<=tl);
 	ASSERT((mode != ON_SURFACE) || (fl <= FULLREFINELEVEL(mg)));
+	#if defined T_USE_X && defined T_USE_Y
+	ASSERT(VDequal(x,y)==NO);	/* if x==y, the results will be wrong! */
+	#endif
 	#ifdef T_CONS_CHECK
 	T_CONS_CHECK;
 	#endif
@@ -60,11 +63,89 @@ INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode T_ARGS)
 	return(NUM_OK);
 }
 
+#if defined(T_MOD_SCAL) && !defined(T_NO_BV_FUNC) && defined __BLOCK_VECTOR_DESC__ 
+
+#ifdef T_ARGS
+	#ifndef T_ARGS_BV
+		#define T_ARGS_BV T_ARGS
+	#endif
+#endif
+
+#ifdef T_CONFIG
+	#ifndef T_CONFIG_BV
+		#define T_CONFIG_BV T_CONFIG
+	#endif
+#endif
+
+INT CAT(T_FUNCNAME,BS) (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf T_ARGS_BV)
+{
+	register VECTOR *v, *end_v;
+	register MATRIX *mat;
+
+	#ifdef T_USE_Y
+	register VECTOR *w;	
+	#endif
+	
+	#ifdef T_CONFIG_BV
+	T_CONFIG_BV;
+	#endif
+
+	#ifdef Debug
+	ASSERT(mc>=0);
+	#ifdef T_USE_X
+	ASSERT(xc>=0);
+	#endif
+	#ifdef T_USE_Y
+	ASSERT(yc>=0);
+	#endif
+	#if defined T_USE_X && defined T_USE_Y
+	if(xc==yc)
+	{
+		ASSERT(!VMATCH(BVFIRSTVECTOR(bv_row),bvd_col,bvdf));	/* if xc==yc (in the same BLOCKVECTOR), the results will be wrong! */
+	}
+	#endif
+	#ifdef T_CONS_CHECK
+	T_CONS_CHECK;
+	#endif
+	#endif
+
+	end_v=BVENDVECTOR(bv_row);
+	for (v=BVFIRSTVECTOR(bv_row); v!=end_v; v=SUCCVC(v)) 
+	{
+		#ifdef T_LOOP_SCAL
+		T_LOOP_SCAL 
+		#endif
+		for (mat=VSTART(v); mat!=NULL; mat=MNEXT(mat))
+		{       
+			#ifdef T_USE_Y
+				w = MDEST(mat);
+				if ( VMATCH(w, bvd_col, bvdf) )
+			#else
+				if ( VMATCH(MDEST(mat), bvd_col, bvdf) )
+			#endif
+			{
+				T_MOD_SCAL
+			}
+		}       
+		#ifdef T_POST_SCAL
+		T_POST_SCAL
+		#endif
+	}       
+	
+	#ifdef T_POST
+	T_POST;
+    #endif
+	return(NUM_OK);
+}
+#endif
+
 #undef T_FUNCNAME 
 #undef T_ARGS 
+#undef T_ARGS_BV 
 #undef T_USE_X
 #undef T_USE_Y
 #undef T_CONFIG
+#undef T_CONFIG_BV
 #undef T_CONS_CHECK 
 #undef T_PREP_SCAL
 #undef T_LOOP_SCAL

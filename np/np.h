@@ -54,7 +54,7 @@
 /****************************************************************************/
 
 /* if FF_PARALLEL_SIMULATION is defined, special functions from fe/ff are linked */
-/*#define FF_PARALLEL_SIMULATION*/
+#define FF_PARALLEL_SIMULATION
 
 /* return codes of the numerics routines									*/
 #define NUM_OK                                  0       /* everything ok						*/
@@ -325,92 +325,39 @@ INT l_dsetfunc          (GRID *g,                                               
 INT l_mean                      (const GRID *g, const VECDATA_DESC *x, INT xclass, DOUBLE *sp);
 
 /* blas level 1 (BLOCKVECTOR operations) on one gridlevel */
-INT dsetB                       (                                  const BLOCKVECTOR *bv,                                                         const VECDATA_DESC *x, INT xclass, DOUBLE a);
-INT dsetG                       (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, const VECDATA_DESC *x, INT xclass, DOUBLE a);
-INT dsetBS                      (                                  const BLOCKVECTOR *bv,                                                         INT xcomp,                                              DOUBLE a);
-INT dsetGS                      (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, INT xcomp,                                                  DOUBLE a);
+INT dsetBS                      ( const BLOCKVECTOR *bv, INT xc, DOUBLE a);
+INT dcopyBS             ( const BLOCKVECTOR *bv, INT xc, INT yc);
+INT dscalBS             ( const BLOCKVECTOR *bv, INT xc, DOUBLE a);
+INT daddBS                      ( const BLOCKVECTOR *bv, INT xc, INT yc);
+INT dsubBS                      ( const BLOCKVECTOR *bv, INT xc, INT yc);
+INT dminusaddBS         ( const BLOCKVECTOR *bv, INT xc, INT yc);
+INT daxpyBS             ( const BLOCKVECTOR *bv, INT xc, DOUBLE a, INT yc);
+INT ddotBS                      ( const BLOCKVECTOR *bv, INT xc, INT yc,   DOUBLE *a);
+INT dnrm2BS             ( const BLOCKVECTOR *bv, INT xc, DOUBLE *a);
 
-INT dsetfuncB           (                                  const BLOCKVECTOR *bv,                                                         const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFunc);
-INT dsetfuncG           (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, const VECDATA_DESC *x, INT xclass, SetFuncProcPtr SetFunc);
-INT dsetfuncBS          (                                  const BLOCKVECTOR *bv,                                                 INT xcomp,                                              SetFuncProcPtr SetFunc);
-INT dsetfuncGS          (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, INT xcomp,                                                  SetFuncProcPtr SetFunc);
+/* blas level 2 (matrix (BLOCKVECTOR) operations) on one gridlevel */
+INT dmatsetBS           ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT mc, DOUBLE a);
+INT dmatcopyBS          ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT mc, INT nc);
+INT dmataddBS           ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT mc, INT nc);
+INT dmatmulBS           ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
+INT dmatmul_addBS       ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
+INT dmatmul_minusBS     ( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT xc, INT mc, INT yc);
 
-INT dcopyB                      (                                  const BLOCKVECTOR *bv,                                                         const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y);
-INT dcopyG                      (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y);
-INT dcopyBS             (                                  const BLOCKVECTOR *bv,                                                         INT xcomp,                                              INT ycomp);
-INT dcopyGS             (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, INT xcomp,                                                  INT ycomp);
-
-INT dscaleB             (                                  const BLOCKVECTOR *bv,                                                         const VECDATA_DESC *x, INT xclass, const DOUBLE *a);
-INT dscaleG             (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, const VECDATA_DESC *x, INT xclass, const DOUBLE *a);
-INT dscaleBS            (                                  const BLOCKVECTOR *bv,                                                         INT xcomp,                                              DOUBLE a);
-INT dscaleGS            (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, INT xcomp,                                                  DOUBLE a);
-
-INT daddBS                      (                                       const BLOCKVECTOR *bv,                                                    INT xcomp,                                                                               INT ycomp);
-INT dsubBS                      (                                       const BLOCKVECTOR *bv,                                                    INT xcomp,                                                                               INT ycomp);
-INT dminusaddBS         (                                       const BLOCKVECTOR *bv,                                                    INT xcomp,                                                                               INT ycomp);
-
-INT daxpyB                      (                                  const BLOCKVECTOR *bv,                                                         const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
-INT daxpyG                      (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
-INT daxpyBS             (                                  const BLOCKVECTOR *bv,                                                         INT xcomp,                                              DOUBLE a,                INT ycomp);
-INT daxpyGS             (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, INT xcomp,                                                  DOUBLE a,                INT ycomp);
-
-INT dxdyB                       (                                  const BLOCKVECTOR *bv,                                                         const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
-INT dxdyG                       (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
-INT dxdyBS                      (                                  const BLOCKVECTOR *bv,                                                         INT xcomp,                                              DOUBLE a,        INT ycomp);
-INT dxdyGS                      (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, INT xcomp,                                                  DOUBLE a,        INT ycomp);
-
-INT ddotB                       (                                  const BLOCKVECTOR *bv,                                                         const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
-INT ddotG                       (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y, DOUBLE *sp);
-INT ddotBS                      (                                  const BLOCKVECTOR *bv,                                                         INT xcomp,                                              INT ycomp,                      DOUBLE *sp);
-INT ddotGS                      (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, INT xcomp,                                                  INT ycomp,                      DOUBLE *sp);
-
-INT eunormB             (                                  const BLOCKVECTOR *bv,                                                         const VECDATA_DESC *x, INT xclass, DOUBLE *eu);
-INT eunormG             (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, const VECDATA_DESC *x, INT xclass, DOUBLE *eu);
-INT eunormBS            (                                  const BLOCKVECTOR *bv,                                                         INT xcomp,                                              DOUBLE *eu);
-INT eunormGS            (const GRID *grid, const BV_DESC *bvd,            const BV_DESC_FORMAT *bvdf, INT xcomp,                                                  DOUBLE *eu);
-
+INT d2matmulBS          (const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, GRID *grid );
+INT d2matmul_minusBS(const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, GRID *grid );
+INT d3matmulBS          (const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC *bvd_col3, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, INT M3comp, GRID *grid );
+DOUBLE CalculateDefectAndNormBS( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT d_comp, INT f_comp, INT K_comp, INT u_comp );
 
 /* blas level 1 (Simple BLOCKVECTOR operations) on one gridlevel */
 INT l_dcopy_SB          (BLOCKVECTOR *bv,                               const VECDATA_DESC *x, INT xclass, const VECDATA_DESC *y);
 INT l_dscale_SB         (BLOCKVECTOR *bv,                               const VECDATA_DESC *x, INT xclass, const DOUBLE *a);
 INT l_daxpy_SB          (BLOCKVECTOR *theBV,                    const VECDATA_DESC *x, INT xclass, const DOUBLE *a, const VECDATA_DESC *y);
 
-
 /* blas level 2 (matrix (vector) operations) */
 INT l_dmattranspose (GRID *g,                                           const MATDATA_DESC *M1, const MATDATA_DESC *M2);
 INT s_dtpmatmul_set     (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x,                     const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
 
 INT l_dtpmatmul         (GRID *g,                                               const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
-
-/* blas level 2 (matrix (BLOCKVECTOR) operations) on one gridlevel */
-INT dmatsetB            (                                  const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, const MATDATA_DESC *M, DOUBLE a);
-INT dmatsetG            (const GRID *grid, const BV_DESC *bvd_row,        const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, const MATDATA_DESC *M, DOUBLE a);
-INT dmatsetBS           (                                  const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT mcomp,                            DOUBLE a);
-INT dmatsetGS           (const GRID *grid, const BV_DESC *bvd_row,        const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT mcomp,                                DOUBLE a);
-
-INT dmatcopyB           (                                  const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, const MATDATA_DESC *M1, const MATDATA_DESC *M2);
-INT dmatcopyG           (const GRID *grid, const BV_DESC *bvd_row,        const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, const MATDATA_DESC *M1, const MATDATA_DESC *M2);
-INT dmatcopyBS          (                                  const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT m1comp,                    INT m2comp);
-INT dmatcopyGS          (const GRID *grid, const BV_DESC *bvd_row,        const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT m1comp,                        INT m2comp);
-
-INT dmatcopyTransBS (const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT dest_comp, INT source_comp);
-
-INT dmatmulB            (                                  const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
-INT dmatmulG            (const GRID *grid, const BV_DESC *bvd_row,        const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
-INT dmatmulBS           (                                  const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT xcomp,                                                    INT mcomp,                              INT ycomp);
-INT dmatmulGS           (const GRID *grid, const BV_DESC *bvd_row,        const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT xcomp,                                                        INT mcomp,                              INT ycomp);
-
-INT dmatmul_minusB      (                                  const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
-INT dmatmul_minusG      (const GRID *grid, const BV_DESC *bvd_row,        const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, const VECDATA_DESC *x, INT xclass, const MATDATA_DESC *M, const VECDATA_DESC *y, INT yclass);
-INT dmatmul_minusBS     (                                  const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT xcomp,                                                    INT mcomp,                              INT ycomp);
-INT dmatmul_minusGS     (const GRID *grid, const BV_DESC *bvd_row,        const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT xcomp,                                                        INT mcomp,                              INT ycomp);
-
-DOUBLE CalculateDefectAndNormBS( const BLOCKVECTOR *bv_row, const BV_DESC *bvd_col, const BV_DESC_FORMAT *bvdf, INT d_comp, INT f_comp, INT K_comp, INT u_comp );
-
-INT d2matmulBS          (const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, GRID *grid );
-INT d2matmul_minusBS(const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, GRID *grid );
-
-INT d3matmulBS          (const BLOCKVECTOR *bv_row1, const BV_DESC *bvd_col1, const BV_DESC *bvd_col2, const BV_DESC *bvd_col3, const BV_DESC_FORMAT *bvdf, INT M_res_comp, INT M1comp, INT M2comp, INT M3comp, GRID *grid );
 
 /* blas level 2 (matrix (Simple BLOCKVECTOR) operations) on one gridlevel */
 INT l_dmatset_SB        (BLOCKVECTOR *dest,     BLOCKVECTOR *source,const MATDATA_DESC *M, DOUBLE a);

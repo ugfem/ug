@@ -20,7 +20,7 @@
 $Header$
 */
 
-INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x T_ARGS)
+INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode,const VECDATA_DESC *x T_ARGS)
 {
 	register VECTOR *v;
 	INT lev,vtype,ncomp,i;
@@ -60,11 +60,54 @@ INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x T_ARGS)
 	return(NUM_OK);
 }
 
+#if defined(T_MOD_SCAL) && !defined(T_NO_BV_FUNC)
+
+#ifdef T_ARGS
+	#ifndef T_ARGS_BV
+		#define T_ARGS_BV T_ARGS
+	#endif
+#endif
+
+INT CAT(T_FUNCNAME,BS) (const BLOCKVECTOR *bv, INT xc T_ARGS_BV)
+{
+	register VECTOR *v, *end_v;
+	#ifdef T_CONFIG
+	T_CONFIG;
+	#endif
+
+	#ifdef Debug
+	ASSERT(xc>=0);
+	#ifdef T_USE_Y
+		ASSERT(yc>=0);
+	#endif
+	#ifdef T_CONS_CHECK_BV
+		T_CONS_CHECK_BV;
+	#endif
+	#endif
+	
+	end_v = BVENDVECTOR( bv );
+	for (v=BVFIRSTVECTOR(bv); v!= end_v; v=SUCCVC(v))
+	{
+        #ifdef T_PREP_SCAL
+	    T_PREP_SCAL
+		#endif
+		T_MOD_SCAL;
+	}
+	#ifdef T_POST
+	T_POST;
+    #endif
+	return(NUM_OK);
+}
+
+#endif
+
 #undef T_FUNCNAME 
 #undef T_ARGS 
+#undef T_ARGS_BV
 #undef T_USE_Y
 #undef T_CONFIG
 #undef T_CONS_CHECK 
+#undef T_CONS_CHECK_BV 
 #undef T_PREP_SCAL
 #undef T_MOD_SCAL
 #undef T_PREP_SWITCH
@@ -78,3 +121,4 @@ INT T_FUNCNAME (MULTIGRID *mg, INT fl, INT tl, INT mode, VECDATA_DESC *x T_ARGS)
 #undef T_MOD_VECTOR_N
 #undef T_POST_PAR
 #undef T_POST
+#undef T_NO_BV_FUNC

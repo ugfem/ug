@@ -1179,7 +1179,7 @@ INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
     dsetBS( bv_i, aux_comp, 0.0 );
 
     /* aux_i += U_(i,i+1) * x_i+1 */
-    dmatmulBS( bv_i, bvd_ip1, bvdf, aux_comp, L_comp, x_comp );
+    dmatmul_addBS( bv_i, bvd_ip1, bvdf, aux_comp, L_comp, x_comp );
 
     /* aux_i := (T_i)^-1 * aux_i */
     FFMultWithMInv( bv_i, bvd_i, bvdf, aux_comp, aux_comp );
@@ -1213,10 +1213,10 @@ INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
     dsetBS( bv_ip1, y_comp, 0.0 );
 
     /* y_i+1 += T_i+1 * aux_i+1 */
-    dmatmulBS( bv_ip1, bvd_ip1, bvdf, y_comp, T_comp, aux_comp );
+    dmatmul_addBS( bv_ip1, bvd_ip1, bvdf, y_comp, T_comp, aux_comp );
 
     /* y_i+1 += L_(i+1,i) * aux_i */
-    dmatmulBS( bv_ip1, bvd_i, bvdf, y_comp, L_comp, aux_comp );
+    dmatmul_addBS( bv_ip1, bvd_i, bvdf, y_comp, L_comp, aux_comp );
 
     /* prepare BVDs for next loop */
     SWAP( bvd_i, bvd_ip1, bvd_temp );
@@ -1226,7 +1226,7 @@ INT FFMultWithM( const BLOCKVECTOR *bv, const BV_DESC *bvd, const BV_DESC_FORMAT
   dsetBS( bv_ip1, y_comp, 0.0 );
 
   /* y_0 += T_0 * aux_0 */
-  dmatmulBS( bv_ip1, bvd_ip1, bvdf, y_comp, T_comp, aux_comp );
+  dmatmul_addBS( bv_ip1, bvd_ip1, bvdf, y_comp, T_comp, aux_comp );
 
   FREE_AUX_VEC(aux_comp);
 
@@ -1435,7 +1435,7 @@ INT FFMultWithMInv( const BLOCKVECTOR *bv,
   {
     /* v_i := L_(i,i+1) * v_i+1 */
     dsetBS( bv_i, v_comp, 0.0 );
-    dmatmulBS( bv_i, bvd_ip1, bvdf, v_comp, L_comp, v_comp );
+    dmatmul_addBS( bv_i, bvd_ip1, bvdf, v_comp, L_comp, v_comp );
 
     /* v_i := (T_i)^-1 * v_i */
 #ifdef MINV_2D_EXACT

@@ -1040,7 +1040,7 @@ INT l_lgsB (GRID *g, const VECDATA_DESC *v, const MATDATA_DESC *M, const VECDATA
   }
 
   /* first copy rhs to v, then solve for v in place */
-  if (l_dcopy(g,v,ACTIVE_CLASS,d)!=0)
+  if (l_dcopy(g,(VECDATA_DESC*)v,ACTIVE_CLASS,(VECDATA_DESC*)d)!=0)
     REP_ERR_RETURN (__LINE__);
 
   if (MD_IS_SCALAR(M))
@@ -1679,7 +1679,7 @@ INT l_ilubthdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const
 
   /* clear VD_rest iff */
   if (VD_rest!=NULL)
-    l_dset(g,VD_rest,EVERY_CLASS,0.0);
+    l_dset(g,(VECDATA_DESC*)VD_rest,EVERY_CLASS,0.0);
 
   /* decompose the matrix */
   if (MD_IS_SCALAR(M))
@@ -2559,7 +2559,7 @@ INT l_iluspdecomp (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, const 
     SETVCUSED(vi,0);
 
   /* clear temp (here we acumulate the rowsums of the rest matrix) */
-  if (l_dset(g,t,EVERY_CLASS,0.0)) REP_ERR_RETURN (__LINE__);
+  if (l_dset(g,(VECDATA_DESC*)t,EVERY_CLASS,0.0)) REP_ERR_RETURN (__LINE__);
 
 
   /* decompose the matrix */
@@ -5217,7 +5217,7 @@ INT l_ilubthdecomp_fine (GRID *g, const MATDATA_DESC *M, const VEC_SCALAR beta, 
 
   /* clear VD_rest iff */
   if (VD_rest!=NULL)
-    l_dset(g,VD_rest,EVERY_CLASS,0.0);
+    l_dset(g,(VECDATA_DESC*)VD_rest,EVERY_CLASS,0.0);
 
   /* decompose the matrix */
   if (MD_IS_SCALAR(M))
