@@ -1886,6 +1886,10 @@ INT MarkForRefinement (ELEMENT *theElement, INT rule, void *data)
 
   if (rule != COARSE)
     theElement = ELEMENT_TO_MARK(theElement);
+  ASSERT(theElement!=NULL);
+
+  PRINTDEBUG(gm,4,(PFMT "MarkForRefinement() e=" EID_FMTX "rule=%d\n",
+                   me,EID_PRTX(theElement),rule))
 
   /* choose dimension */
   switch (DIM)
