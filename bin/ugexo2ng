@@ -1424,12 +1424,76 @@ sub write_bnd_side
 		}
 		printf NG " %d %d %d", $n0, $n1, $n2;
 	}
+	# hexahedral case
+	elsif ($nn == 8)
+	{
+		if ($side == 1)
+		{
+				$n0 = nmap($cdf{$connect}{get_con_id($nn,$ne,1)});
+				$n1 = nmap($cdf{$connect}{get_con_id($nn,$ne,2)});
+				$n2 = nmap($cdf{$connect}{get_con_id($nn,$ne,6)});
+				$n3 = nmap($cdf{$connect}{get_con_id($nn,$ne,5)});
+		}
+		elsif ($side == 2)
+		{
+				$n0 = nmap($cdf{$connect}{get_con_id($nn,$ne,2)});
+				$n1 = nmap($cdf{$connect}{get_con_id($nn,$ne,3)});
+				$n2 = nmap($cdf{$connect}{get_con_id($nn,$ne,7)});
+				$n3 = nmap($cdf{$connect}{get_con_id($nn,$ne,6)});
+		}
+		elsif ($side == 3)
+		{
+				$n0 = nmap($cdf{$connect}{get_con_id($nn,$ne,3)});
+				$n1 = nmap($cdf{$connect}{get_con_id($nn,$ne,4)});
+				$n2 = nmap($cdf{$connect}{get_con_id($nn,$ne,8)});
+				$n3 = nmap($cdf{$connect}{get_con_id($nn,$ne,7)});
+		}
+		elsif ($side == 4)
+		{
+				$n0 = nmap($cdf{$connect}{get_con_id($nn,$ne,4)});
+				$n1 = nmap($cdf{$connect}{get_con_id($nn,$ne,1)});
+				$n2 = nmap($cdf{$connect}{get_con_id($nn,$ne,5)});
+				$n3 = nmap($cdf{$connect}{get_con_id($nn,$ne,8)});
+		}
+		elsif ($side == 5)
+		{
+				$n0 = nmap($cdf{$connect}{get_con_id($nn,$ne,1)});
+				$n1 = nmap($cdf{$connect}{get_con_id($nn,$ne,4)});
+				$n2 = nmap($cdf{$connect}{get_con_id($nn,$ne,3)});
+				$n3 = nmap($cdf{$connect}{get_con_id($nn,$ne,2)});
+		}
+		elsif ($side == 6)
+		{
+				$n0 = nmap($cdf{$connect}{get_con_id($nn,$ne,5)});
+				$n1 = nmap($cdf{$connect}{get_con_id($nn,$ne,6)});
+				$n2 = nmap($cdf{$connect}{get_con_id($nn,$ne,7)});
+				$n3 = nmap($cdf{$connect}{get_con_id($nn,$ne,8)});
+		}
+		else
+		{
+			printf "ERROR no valid side of tet\n";
+			exit;
+		}
+		printf NG " %d %d %d %d", $n0, $n1, $n2, $n3;
+	}
 	else
 	{
-		printf "ERROR no valid element node number \n";
+		printf "ERROR no valid element node number=%d e=%d\n",$nn,$ne;
 		exit;
 	}
 }
+
+
+sub get_con_id
+{
+	my ($nodpe,$ne,$nod) = @_;
+	my $con_id = -1;
+	
+	$con_id = $nodpe*$ne-($nodpe-$nod);
+
+	return($con_id);
+}
+
 
 sub write_elements
 {
@@ -1449,6 +1513,9 @@ sub write_elements
 
 			# number of elements in block $ncon
 			$numne = sprintf "num_el_in_blk%d",$nconnect; 
+			# number of nodes per element in block $ncon
+			$npe = sprintf "num_nod_per_el%d",$nconnect; 
+			$nodpe = $cdf{$npe}{1};
 			# hash of elements
 			$connect = sprintf "connect%d",$nconnect; 
 			printf("nconnect=$nconnect numne=$cdf{$numne}{1} connect=$connect\n");
@@ -1461,18 +1528,23 @@ sub write_elements
 				# TODO: implement other element types
 				printf NG "# %d\n",$neid-1;
 				printf NG "E %d",$volume;
-				printf NG " %d", nmap($cdf{$connect}{4*$ne-3});
-				printf NG " %d", nmap($cdf{$connect}{4*$ne-2});
-				printf NG " %d", nmap($cdf{$connect}{4*$ne-1});
-				printf NG " %d", nmap($cdf{$connect}{4*$ne-0});
+				foreach $nod (1 .. $nodpe)
+				{
+					$con_id = get_con_id($nodpe,$ne,$nod);
+					printf NG " %d", nmap($cdf{$connect}{$con_id});
+				}
+#					printf NG " %d", nmap($cdf{$connect}{4*$ne-3});
+#					printf NG " %d", nmap($cdf{$connect}{4*$ne-2});
+#					printf NG " %d", nmap($cdf{$connect}{4*$ne-1});
+#					printf NG " %d", nmap($cdf{$connect}{4*$ne-0});
 
 				# print boundary side
-				$nn = 4;
+#				$nn = 4;
 				if (defined($cdf{bnd_elem_nside}{$neid}))
 				{
 					foreach $ns (0 .. $cdf{bnd_elem_nside}{$neid}-1)
 					{
-  						write_bnd_side($connect,$ne,$nn,$neid,$ns)
+  						write_bnd_side($connect,$ne,$nodpe,$neid,$ns)
 					}
 				}
 				print NG ";\n";
