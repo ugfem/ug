@@ -51,6 +51,9 @@
 #include "parallel.h"
 #endif
 
+#ifdef LGM_ACCELERATE
+#include "lgm_accel.h"
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -374,6 +377,7 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   LGM_LINE_INFO theLineInfo;
   char *p;
 
+  if (LGM_VERBOSE) UserWrite("\nlgm geometry:\n");
   /* set transfer functions */
   p = filename + strlen(filename) - 4;
   if (strcmp(p,".lgm")==0 || strcmp(filename,"geometry")==0)
@@ -403,8 +407,10 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   }
 
   /* read general information */
+  if (LGM_VERBOSE) UserWriteF("Reading domain '%s'.",filename);
   if ((*ReadDomain)(theHeap,filename,&theDomInfo,MarkKey))
     return (NULL);
+  if (LGM_VERBOSE) UserWrite("\n");
 
   /* allocate and initialize the LGM_DOMAIN */
   if (ChangeEnvDir("/LGM_BVP")==NULL) return (NULL);
@@ -428,8 +434,10 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   if ((lgm_sizes.Surf_nPoint=(int*)GetTmpMem(theHeap,sizeof(int)*(theDomInfo.nSurface+1),MarkKey)) == NULL) return (NULL);
   if ((lgm_sizes.Polyline_nPoint=(int*)GetTmpMem(theHeap,sizeof(int)*(theDomInfo.nPolyline+1),MarkKey)) == NULL) return (NULL);
 
+  if (LGM_VERBOSE) UserWrite("Reading sizes.");
   if ((*ReadSizes)(&lgm_sizes))
     return (NULL);
+  if (LGM_VERBOSE) UserWrite("\n");
 
   /* prepare for LGM_DOMAIN_SUBDOM and LGM_LINE_INFO */
 
@@ -469,10 +477,12 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
       return(NULL);
 
   /* allocate lines */
+  if (LGM_VERBOSE) UserWrite("Reading lines.");
   if ((LinePtrList=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL) return (NULL);
         #ifdef ModelP
   if ((LinePtrArray=(LGM_LINE**)GetFreelistMemory(theHeap,sizeof(LGM_LINE*)*theDomInfo.nPolyline)) == NULL) return (NULL);
         #endif
+
   for (i=0; i<theDomInfo.nPolyline; i++)
   {
     size = sizeof(LGM_LINE) + (lgm_sizes.Polyline_nPoint[i]-1)*sizeof(LGM_POINT);
@@ -501,7 +511,9 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     LinePtrArray[i] = LinePtrList[i];
                 #endif
   }
+  if (LGM_VERBOSE) UserWrite("\n");
 
+  if (LGM_VERBOSE) UserWrite("Reading surfaces.");
   /* allocate surfaces */
   if ((SurfacePtrList=(LGM_SURFACE**)GetFreelistMemory(theHeap,sizeof(LGM_SURFACE*)*theDomInfo.nSurface)) == NULL)
     return (NULL);
@@ -563,8 +575,11 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     SurfacePtrArray[i] = SurfacePtrList[i];
                 #endif
   }
+  if (LGM_VERBOSE) UserWrite("\n");
+
 
   /* allocate and initialize subdomains */
+  if (LGM_VERBOSE) UserWrite("Reading subdomains.");
   LGM_DOMAIN_SUBDOM(theDomain,0) = NULL;
   for (i=1; i<=theDomInfo.nSubDomain; i++)
   {
@@ -582,15 +597,19 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     for (j=0; j<lgm_sizes.Subdom_nSurf[i]; j++)
       LGM_SUBDOMAIN_SURFACE(theSubdom,j)      = SurfacePtrList[theSubdomInfo.SurfaceNumber[j]];
   }
+  if (LGM_VERBOSE) UserWrite("\n");
 
   /* read points */
+  if (LGM_VERBOSE) UserWrite("Reading points.");
   if ((piptr=(LGM_POINT_INFO*)GetFreelistMemory(theHeap,sizeof(LGM_POINT_INFO)*theDomInfo.nPoint)) == NULL)
     return (NULL);
 
   if ((*ReadPoints)(piptr))
     return (NULL);
+  if (LGM_VERBOSE) UserWrite("\n");
 
   /* set positions of points on the lines */
+  if (LGM_VERBOSE) UserWrite("Processing points on lines.");
   for (i=0; i<theDomInfo.nPolyline; i++)
   {
     for (j=0; j<lgm_sizes.Polyline_nPoint[i]; j++)
@@ -606,8 +625,10 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     }
     if (LGM_DEBUG) printf("\n");
   }
+  if (LGM_VERBOSE) UserWrite("\n");
 
   /* the surfaces */
+  if (LGM_VERBOSE) UserWrite("Processing points on surfaces.");
   for (i=0; i<theDomInfo.nSurface; i++)
   {
     for (j=0; j<lgm_sizes.Surf_nPoint[i]; j++)
@@ -624,9 +645,13 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     }
     if (LGM_DEBUG) printf("\n");
   }
+  if (LGM_VERBOSE) UserWrite("\n");
 
+  /*  :-(    This is an O(n^2)-algorithm, n=#LGM_POINTS on surface */
+  if (LGM_VERBOSE) UserWrite("Linking triangle corners to points.\n");
   for (i=0; i<theDomInfo.nSurface; i++)
   {
+    if (LGM_VERBOSE) UserWriteF("  Processing surface: %d/%d\r",i+1,theDomInfo.nSurface);
     for (j=0; j<LGM_SURFACE_NTRIANGLE(SurfacePtrList[i]); j++)
     {
       for (k=0; k<3; k++)
@@ -651,6 +676,12 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
     }
   }
 
+  /* OS_CHANGED */
+        #ifdef LGM_ACCELERATE
+  if (LGM_InitAcceleration(theHeap, SurfacePtrList, theDomInfo.nSurface))
+    return(NULL);
+        #endif
+  if (LGM_VERBOSE) UserWrite("lgm geometry done.\n\n");
   return (theDomain);
 }
 
@@ -660,10 +691,8 @@ INT LGM_LoadMesh (char *name, HEAP *theHeap, MESH *theMesh, LGM_DOMAIN *theDomai
   INT i;
   /*new variables*/
   INT size,j,the__id;
-  LGM_SURFACE *helppointer;
   LGM_SURFACE *theSurface;
   INT lauf,k;
-  INT lfv;
   LGM_LINE *theLine;
 
         #ifdef NO_PROJECT
