@@ -310,7 +310,7 @@ static INT NewtonConstruct (NP_BASE *theNP)
  */
 /****************************************************************************/
 
-INT InitLinearSolver ()
+INT InitNonlinearSolver ()
 {
   INT i;
 
