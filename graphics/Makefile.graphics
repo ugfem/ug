@@ -39,5 +39,3 @@ extract:
 	cd grape; make -f Makefile.grape extract; cd ..;
 
 xmc: extract all clean
-	cd uggraph; make -f Makefile.uggraph xmc; cd ..;
-	cd grape; make -f Makefile.grape xmc; cd ..;
