@@ -107,6 +107,8 @@
 
 #define MAX_SIDES_TOUCHING              10                      /* max #fine sides touching a coarse*/
 
+#define MAX_ELEM_VECTORS                (MAX_CORNERS_OF_ELEM+MAX_EDGES_OF_ELEM+1+MAX_SIDES_OF_ELEM)
+
 /* some useful variables */
 typedef COORD COORD_VECTOR[DIM];
 typedef COORD COORD_VECTOR_2D[2];
@@ -1355,11 +1357,6 @@ extern CONTROL_ENTRY
 /*																			*/
 /****************************************************************************/
 
-/* macros for handling of flags, not recommended to use anymore ! */
-#define SET_FLAG(flag,bitpattern)               (flag |=  (bitpattern))
-#define CLEAR_FLAG(flag,bitpattern)     (flag &= ~(bitpattern))
-#define READ_FLAG(flag,bitpattern)              ((flag & (bitpattern))>0)
-
 /* control word identifier */
 #define GENERAL_CW                                      2
 #define GENERAL_OFFSET                          0
@@ -2050,6 +2047,8 @@ extern const BV_DESC_FORMAT three_level_bvdf;   /* bvdf for 3 blocklevels	*/
 #define GM_FFLLCC                                       3
 #define GM_FFLCLC                                       4
 #define GM_CCFFLL                                       5
+#define GM_LOV_BEGIN                            1
+#define GM_LOV_END                                      2
 #define GM_GEN_FIRST                            0
 #define GM_GEN_LAST                                     1
 #define GM_GEN_CUT                                      2
@@ -2207,13 +2206,15 @@ INT             FreeMGUDBlock                   (BLOCK_ID id);
 BLOCK_DESC      *GetMGUDBlockDescriptor (BLOCK_ID id);
 
 /* ordering of degrees of freedom */
-ALG_DEP         *CreateAlgebraicDependency (char *name, DependencyProcPtr DependencyProc);
-FIND_CUT        *CreateFindCutProc              (char *name, FindCutProcPtr FindCutProc);
-INT                     LexOrderVectorsInGrid   (GRID *theGrid, const INT *order, const INT *sign, INT which, INT SpecSkipVecs, INT AlsoOrderMatrices);
-INT             OrderVectors                    (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat, const char *dependency, const char *dep_options, const char *findcut);
-INT                     ShellOrderVectors               (GRID *theGrid, VECTOR *seed);
-INT                     LineOrderVectors                (MULTIGRID *theMG, INT levels, const char *dependency, const char *dep_options, const char *findcut, INT verboselevel);
-INT                     RevertVecOrder                  (GRID *theGrid);
+ALG_DEP         *CreateAlgebraicDependency              (char *name, DependencyProcPtr DependencyProc);
+FIND_CUT        *CreateFindCutProc                              (char *name, FindCutProcPtr FindCutProc);
+INT                     LexOrderVectorsInGrid                   (GRID *theGrid, const INT *order, const INT *sign, INT which, INT SpecSkipVecs, INT AlsoOrderMatrices);
+INT             OrderVectors                                    (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT SkipPat, const char *dependency, const char *dep_options, const char *findcut);
+INT                     ShellOrderVectors                               (GRID *theGrid, VECTOR *seed);
+INT                     PrepareForLineorderVectors              (GRID *theGrid);
+INT                     MarkBeginEndForLineorderVectors (ELEMENT *elem, const INT *type, const INT *mark);
+INT                     LineOrderVectors                                (MULTIGRID *theMG, INT levels, const char *dependency, const char *dep_options, const char *findcut, INT verboselevel);
+INT                     RevertVecOrder                                  (GRID *theGrid);
 
 /* functions for evaluation-fct management */
 INT              InitEvalProc                                                           (void);
