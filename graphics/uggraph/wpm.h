@@ -284,6 +284,7 @@ struct GridPlotObj2D {
   INT PlotNodeID;                                                       /* YES or NO									*/
   INT PlotNodes;                                                        /* YES or NO									*/
   INT PlotBoundary;                                                     /* YES or NO									*/
+  INT PlotSubdomain;                                                    /* YES or NO									*/
   INT WhichElem;                                                        /* see above									*/
   INT ElemColored;                                                      /* YES or NO									*/
 };
@@ -298,6 +299,7 @@ struct VecMatPlotObj2D {
   INT Connections;                                                      /* YES or NO									*/
   INT Extra;                                                                    /* YES or NO									*/
   INT Idx;                                                                      /* YES or NO									*/
+  INT Part;                                                                     /* YES or NO									*/
   INT Order;                                                                    /* YES or NO									*/
   INT Dependency;                                                       /* YES or NO									*/
   INT ConnectVectors;                                                   /* YES or NO									*/
@@ -384,7 +386,7 @@ struct GridPlotObj3D {
   INT NodeIndex;                                                        /* plot node indices (only together with marker)*/
   INT Vectors;                                                          /* plot vectors (mutually exclusive with nodes)	*/
   INT VecIndex;                                                         /* plot vector indices							*/
-  INT Type[MAXVECTORS];                                         /* which types if Vectors set					*/
+  INT OType[MAXVOBJECTS];                                       /* which object types if Vectors set			*/
   INT ElemColored;                                                      /* YES or NO									*/
   INT WhichElem;                                                        /* see above									*/
 };
