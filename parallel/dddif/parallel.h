@@ -227,6 +227,7 @@ typedef struct
 {
   /* data from ug */
   MULTIGRID *currMG;
+  FORMAT    *currFormat;
   int nodeData;
   int edgeData;
   int elemData;
@@ -261,7 +262,6 @@ extern DDD_CTRL dddctrl;
 /* from initddd.c */
 int             InitParallel    (void);
 int             ExitParallel    (void);
-void    InitDDDTypes    (void);
 void    InitCurrMG              (MULTIGRID *);
 
 /* from debugger.c */

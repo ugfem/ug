@@ -827,7 +827,7 @@ static void ddd_IfInit (void)
    InitDDDTypes - define DDD_TYPEs
 
    SYNOPSIS:
-   void InitDDDTypes (void);
+   static void InitDDDTypes (void);
 
    PARAMETERS:
    .  void
@@ -840,7 +840,7 @@ static void ddd_IfInit (void)
  */
 /****************************************************************************/
 
-void InitDDDTypes (void)
+static void InitDDDTypes (void)
 {
   /* prevent from multiple execution */
   if (dddctrl.allTypesDefined)
@@ -916,8 +916,14 @@ void InitCurrMG (MULTIGRID *MG)
   dddctrl.edgeData = VEC_DEF_IN_OBJ_OF_MG(dddctrl.currMG,EDGEVEC);
   dddctrl.elemData = VEC_DEF_IN_OBJ_OF_MG(dddctrl.currMG,ELEMVEC);
   dddctrl.sideData = VEC_DEF_IN_OBJ_OF_MG(dddctrl.currMG,SIDEVEC);
-}
 
+  if (dddctrl.currFormat == NULL) {
+    InitDDDTypes();
+    dddctrl.currFormat = MGFORMAT(MG);
+  }
+  else if (dddctrl.currFormat !=  MGFORMAT(MG))
+    assert(0);
+}
 
 /****************************************************************************/
 /*
@@ -1040,7 +1046,7 @@ int InitParallel (void)
   {
     dddctrl.ugtypes[i] = -1;
   }
-
+  dddctrl.currFormat = NULL;
 
   /* declare DDD_TYPES, definition must be done later */
   ddd_DeclareTypes();
