@@ -56,9 +56,11 @@
 /*																			*/
 /****************************************************************************/
 
-#ifndef __MWCW__
-
+#ifdef __MWCW__
+#define ASCII  /* only ASCII */
+#else
 #undef ASCII   /* use ACSII or XDR */
+#endif
 
 #define MAGIC    "UGFI"
 #define MAXVAR   50
@@ -84,7 +86,9 @@
 
 typedef struct {
   FILE *file;
+#ifndef ASCII
   XDR xdr;
+#endif
 } STREAM;
 
 typedef struct {
@@ -787,10 +791,8 @@ static INT LoadFieldCommand(INT argc, char **argv)
     }
     if (BBoxR(&stream, src_bbox)) goto failed;
     for (j = 0; j < DIM; j++)
-      if (src_bbox[j][0] > dest_bbox[j][1] || dest_bbox[j][0] > src_bbox[j][1]) {
-        fclose(stream.file);
-        continue;
-      }
+      if (src_bbox[j][0] > dest_bbox[j][1] || dest_bbox[j][0] > src_bbox[j][1])
+        goto skip;
     if (ReadInt(&stream, &no_src_vertices)) goto failed;
     MarkTmpMem(heap, &key2);
     src_vertices = (VT_ARRAY *)GetTmpMem(heap, no_src_vertices*sizeof(VT_ARRAY), key2);
@@ -816,6 +818,7 @@ static INT LoadFieldCommand(INT argc, char **argv)
                              no_dest_es, dest_es,
                              no_dest_ev, dest_ev)) goto failed;
     ReleaseTmpMem(heap, key2);
+skip:
     fclose(stream.file);
   }
   ReleaseTmpMem(heap, key);
@@ -826,18 +829,14 @@ failed:
 }
 
 /******************************************************************************/
-#endif /* MWCW */
 
 INT InitFieldIO(void)
 {
-#ifndef __MWCW__
   if (CreateCommand("savefield", SaveFieldCommand) == NULL) return __LINE__;
   if (CreateCommand("loadfield", LoadFieldCommand) == NULL) return __LINE__;
-#endif
   return 0;
 }
 
-#ifndef __MWCW__
 /*** EOF ***/
 
 /*******************************************************************************
@@ -949,5 +948,3 @@ static double AreaOfIntersection(COORD_POINT * a, int na, COORD_POINT * b, int n
   return 1.0; /* just for fun ... */
 #endif
 }
-
-#endif /* MWCW */
