@@ -308,6 +308,9 @@ enum Priorities
 /* dummies for elements */
 #define EMASTER(p)              1
 #define EGHOST(p)               0
+#define EHGHOST(p)              0
+#define EVGHOST(p)              0
+#define EPRIO(p)                0
 #define SETEPRIO(p,i)   ;
 #define EMASTERPRIO(p)  1
 #define EPROCLIST(p)    (&_proclist_)
@@ -317,6 +320,9 @@ enum Priorities
 /* dummies for nodes, vectors, edges */
 #define MASTER(p)               1
 #define GHOST(p)                0
+#define HGHOST(p)               0
+#define VGHOST(p)               0
+#define PRIO(p)                 0
 #define SETPRIO(p,i)    ;
 #define PROCLIST(p)             (&_proclist_)
 #define NCOPIES(p)              1
@@ -343,7 +349,8 @@ enum Priorities
 extern DDD_IF ElementIF, ElementSymmIF, ElementVIF, ElementSymmVIF,
               ElementVHIF, ElementSymmVHIF;
 extern DDD_IF BorderNodeIF, BorderNodeSymmIF, OuterNodeIF, NodeVIF;
-extern DDD_IF BorderVectorIF, BorderVectorSymmIF, OuterVectorIF,
+extern DDD_IF BorderVectorIF, BorderVectorSymmIF,
+              OuterVectorIF, OuterVectorSymmIF,
               VectorVIF, VectorVAllIF;
 #ifdef __THREEDIM__
 extern DDD_IF EdgeIF, BorderEdgeSymmIF, EdgeHIF;
