@@ -236,6 +236,11 @@ static MARKRULE myMR[NO_OF_RULES]=      /* name and ID of available rules	*/
                                          #endif
  /* rules for prisms */
  {"pri_quadsect",PRISM_QUADSECT},
+ {"pri_bisect_hex0",PRISM_BISECT_HEX0},
+ {"pri_bisect_hex1",PRISM_BISECT_HEX1},
+ {"pri_bisect_hex2",PRISM_BISECT_HEX2},
+ {"pri_rot_l",PRISM_ROTATE_LEFT},
+ {"pri_rot_r",PRISM_ROTATE_RGHT},
  /* rules for tetrahedra */
  {"hex_bisect_eins",HEX_BISECT_0_1},
  {"hex_bisect_zwei",HEX_BISECT_0_2},
@@ -5809,7 +5814,7 @@ static INT MarkCommand (INT argc, char **argv)
 
   /* scan parameters */
   /*rv = sscanf(argv[0],"mark %31[redbluecopycoarsnoi_123qtpritet2hex] %d",rulename,&Side);*/
-  rv = sscanf(argv[0],"mark %31[a-z_1-9] %d",rulename,&Side);
+  rv = sscanf(argv[0],"mark %31[a-z_0-9] %d",rulename,&Side);
   if (rv<1)
   {
     /* set the default rule */

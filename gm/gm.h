@@ -334,8 +334,13 @@
 
 #define TETRA_RED_HEX           5
 
-#define PRISM_BISECT_1_2    6
+#define PRISM_BISECT_1_2    9
 #define PRISM_QUADSECT          7
+#define PRISM_BISECT_HEX0   5
+#define PRISM_BISECT_HEX1   8
+#define PRISM_BISECT_HEX2   6
+#define PRISM_ROTATE_LEFT   10
+#define PRISM_ROTATE_RGHT   11
 
 #define HEX_BISECT_0_1          5
 #define HEX_BISECT_0_2          6

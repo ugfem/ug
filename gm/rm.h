@@ -216,7 +216,12 @@
 #define PRI_RED                         2
 #define PRI_QUADSECT            3
 #define PRI_BISECT_1_2      7
-#define PRI_RED_HEX                     9
+#define PRI_BISECT_HEX0         8
+#define PRI_BISECT_HEX1         9
+#define PRI_BISECT_HEX2         10
+#define PRI_RED_HEX                     11
+#define PRI_ROT_L                       12
+#define PRI_ROT_R                       13
 
 #define HEXA_COPY                       1
 #define HEXA_RED                        2
