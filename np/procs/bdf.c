@@ -110,6 +110,7 @@ typedef struct
   DOUBLE rhogood;                                                /* threshold for step doubling		*/
   NP_TRANSFER *trans;                                            /* uses transgrid for nested iter  */
   NP_ERROR *error;                       /* error indicator                 */
+  NP_ERROR *initerror;                       /* error indicator for error in initial conditions                */
   INT ctn;                                                               /* change to nested iteration		*/
   INT hist;
   INT list_i;
@@ -311,13 +312,18 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
   NP_BDF *bdf;
   NP_T_ASSEMBLE *tass;
   void *data;
-  INT n;
+  INT n,i;
+  INT indicatorstep;
   DOUBLE *ddata;
+  ERESULT eresult;
+  MULTIGRID *mg;
   char buffer[128];
 
   /* get numprocs ... */
   bdf = (NP_BDF *) ts;
   tass = bdf->tsolver.tass;
+  mg = tass->base.mg;
+
 
   /* initialize bdf local variables */
   bdf->step = 0;
@@ -347,6 +353,61 @@ static INT TimeInit (NP_T_SOLVER *ts, INT level, INT *res)
       return(1);
   if ( (*tass->TAssembleSolution)(tass,0,level,bdf->t_0,bdf->y_0,res) )
     return(1);
+
+
+  /* grid adaption ? */
+  if (bdf->initerror != NULL)
+    for (indicatorstep = bdf->presteps; indicatorstep > 0; indicatorstep --)
+    {
+      if (bdf->initerror->PreProcess != NULL)
+        if ((*bdf->initerror->PreProcess)(bdf->initerror,level,res))
+          NP_RETURN(1,res[0]);
+      if (bdf->initerror->TimeError == NULL)
+        NP_RETURN(1,res[0]);
+      if ((*bdf->initerror->TimeError)
+            (bdf->initerror,level,bdf->t_0,&bdf->dt,bdf->y_0,bdf->y_0,ts,&eresult))
+        NP_RETURN(1,res[0]);
+      if (bdf->initerror->PostProcess != NULL)
+        if ((*bdf->initerror->PostProcess)(bdf->initerror,level,res))
+          NP_RETURN(1,res[0]);
+      if (eresult.refine + eresult.coarse > 0)
+      {
+        for (i=0; i<=level; i++)
+          RESETGSTATUS(GRID_ON_LEVEL(mg,i),GSTATUS_BDF);
+        if (RefineMultiGrid(mg,bdf->refarg,
+                            GM_REFINE_PARALLEL,
+                            GM_REFINE_NOHEAPTEST) != GM_OK)
+          NP_RETURN(1,res[0]);
+        if (level != TOPLEVEL(mg))
+        {
+          if (level < TOPLEVEL(mg))
+          {
+            if (InterpolateVDAllocation(mg,bdf->y_m1))
+              NP_RETURN(1,res[0]);
+            if (InterpolateVDAllocation(mg,bdf->y_0))
+              NP_RETURN(1,res[0]);
+            if (InterpolateVDAllocation(mg,bdf->y_p1))
+              NP_RETURN(1,res[0]);
+            if (InterpolateVDAllocation(mg,bdf->b))
+              NP_RETURN(1,res[0]);
+          }
+        }
+        level = TOPLEVEL(mg);
+        /* set initial values and boundary conditions in y_0 */
+        *res = 1;
+        if (tass->TAssembleInitial != NULL)
+          if ( (*tass->TAssembleInitial)(tass,0,level,bdf->t_0,bdf->y_0,res) )
+            return(1);
+        if ( (*tass->TAssembleSolution)(tass,0,level,bdf->t_0,bdf->y_0,res) )
+          return(1);
+      }
+      else
+        break;
+    }
+
+
+
+
 
   /* write time to shell */
   sprintf(buffer,"%12.4lE",bdf->t_0);
@@ -432,8 +493,6 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
     /* grid adaption ? */
     if (bdf->error != NULL) nlinterpolate = bdf->nlinterpolate;
     else nlinterpolate = 0;
-    if (bdf->error !=NULL && bdf->step== 0 && bdf->presteps >=0)
-      nlinterpolate = bdf->presteps;
 
     /* predict to new time step on level low */
     dcopy(mg,0,low,ALL_VECTORS,bdf->y_p1,bdf->y_0);
@@ -597,12 +656,11 @@ Continue:
             }
             if (mg_changed)
             {
-
-              for (i=0; i<=level; i++)
                                   #ifdef ModelP
+              for (i=0; i<=level; i++)
                 CheckGrid(GRID_ON_LEVEL(mg,i),1,1,1,1);
                                   #endif
-                k = level - 1;
+              k = level - 1;
               if (bdf->trans->PreProcessSolution != NULL)
                 if ((*bdf->trans->PreProcessSolution)
                       (bdf->trans,0,level,bdf->y_p1,res))
@@ -635,7 +693,7 @@ Continue:
                       (bdf->trans,0,level,bdf->y_p1,res))
                   NP_RETURN(1,res[0]);
               nlinterpolate--;
-              if(bdf->rep ==0&& bdf->step != 0) {
+              if(bdf->rep ==0) {
                 k = level;
                 nlinterpolate = 0;
                 if (nlsolve->PostProcess!=NULL)
@@ -921,6 +979,7 @@ static INT BDFInit (NP_BASE *base, INT argc, char **argv)
     UserWrite("no indicator active\n");
   }
   bdf->TimeControl = (NP_DATA_BASE *) ReadArgvNumProc(base->mg,"TimeControl",DATA_BASE_CLASS_NAME,argc,argv);
+  bdf->initerror = (NP_ERROR *) ReadArgvNumProc(base->mg,"IE",ERROR_CLASS_NAME,argc,argv);
 
   /* set configuration parameters */
   if (ReadArgvINT("baselevel",&(bdf->baselevel),argc,argv))
