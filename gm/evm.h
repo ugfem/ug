@@ -45,6 +45,8 @@ $Header$
 
 #include "debug.h"
 
+#include "np.h"
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -392,6 +394,9 @@ $Header$
 										 (B)[8] = 0.0; (B)[9] = 0.0; (B)[10] = 0.0; (B)[11] = 0.0; \
 										 (B)[12] = 0.0; (B)[13] = 0.0; (B)[14] = 0.0; (B)[15] = 0.0;}
 
+/* macros for exact solver (EX) */
+#define EX_MAT(m,b,i,j)			((m)[2*(b)*(i) + (j)])
+
 /****************************************************************************/
 /*																			*/
 /* typedef of DIM-routines													*/
@@ -564,6 +569,12 @@ INT 		PointInPolygon						(const COORD_POINT *Points, INT n, COORD_POINT Point);
 INT 		PointInPolygonC 					(const DOUBLE_VECTOR_2D *Points, INT n, const DOUBLE_VECTOR_2D Point);
 INT 		PolyArea 							(INT n, DOUBLE_VECTOR_2D *Polygon, DOUBLE *Area);
 INT 		QuadraticFittedMin 					(DOUBLE *x, DOUBLE *y, INT n, DOUBLE *minx);
+INT 		EXCopyMatrixFLOAT 					(GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, INT bw, FLOAT *Mat);
+INT 		EXCopyMatrixDOUBLE 					(GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, INT bw, DOUBLE *Mat);
+INT 		EXDecomposeMatrixFLOAT 				(FLOAT *Mat, INT bw, INT n);
+INT 		EXDecomposeMatrixDOUBLE 			(DOUBLE *Mat, INT bw, INT n);
+INT 		EXApplyLUFLOAT 						(FLOAT *Mat, INT bw, INT n, DOUBLE *Vec);
+INT 		EXApplyLUDOUBLE 					(DOUBLE *Mat, INT bw, INT n, DOUBLE *Vec);
 
 
 /* 2D routines */

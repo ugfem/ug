@@ -46,6 +46,7 @@
 #include "pcr.h"
 #include "debug.h"
 #include "fifo.h"
+#include "evm.h"
 #include "misc.h"
 
 #include "transfer.h"
@@ -3181,7 +3182,11 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
 
 #ifdef FF_ModelP
   FFFinishComm( BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level)))), FFFinishDeallocBuffer, FFCommNone, num_buffers );
-  FFFinishComm( BVSUCC(BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level))))), FFFinishDeallocBuffer, FFCommNone, num_buffers );
+  #ifdef FFCOMM
+  FFInitCrossComm( BVSUCC(BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level))))) );       /* cross */
+  #else
+  FFFinishComm( BVSUCC(BVSUCC(BVDOWNBV(GFIRSTBV(GRID_ON_LEVEL(theMG,level))))), FFFinishDeallocBuffer, FFCommNone, num_buffers );       /* cross */
+  #endif
 #endif
 
   FreeAllBV( GRID_ON_LEVEL(theMG,level) );
@@ -3982,136 +3987,6 @@ static INT EXDisplay (NP_BASE *theNP)
   return (0);
 }
 
-#define EX_MAT(m,b,i,j)                 ((m)[2*(b)*(i) + (j)])
-
-static INT EXCopyMatrixFLOAT (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, INT bw, FLOAT *Mat)
-{
-  INT ment,index,rindex,rtype,rcomp,cindex,ctype,ccomp,i,j;
-  VECTOR *theV,*theW;
-  MATRIX *theM;
-  SHORT *comp;
-
-        #ifdef ModelP
-  if (FIRSTELEMENT(theGrid) == NULL)
-    return(0);
-        #endif
-
-  if (MD_IS_SCALAR(A))
-  {
-    ment = MD_SCALCMP(A);
-    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-    {
-      index = VINDEX(theV);
-      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
-        EX_MAT(Mat,bw,index,MDESTINDEX(theM)) = MVALUE(theM,ment);
-    }
-  }
-  else
-  {
-    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-    {
-      rindex = VINDEX(theV);
-      rtype = VTYPE(theV);
-      rcomp = VD_NCMPS_IN_TYPE(x,rtype);
-      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
-      {
-        theW = MDEST(theM);
-        cindex = VINDEX(theW);
-        ctype = VTYPE(theW);
-        ccomp = VD_NCMPS_IN_TYPE(x,ctype);
-        comp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
-        for (i=0; i<rcomp; i++)
-          for (j=0; j<ccomp; j++)
-            EX_MAT(Mat,bw,rindex+i,cindex+j) = MVALUE(theM,comp[i*ccomp+j]);
-      }
-    }
-  }
-  return (0);
-}
-
-static INT EXCopyMatrixDOUBLE (GRID *theGrid, VECDATA_DESC *x, MATDATA_DESC *A, INT bw, DOUBLE *Mat)
-{
-  INT ment,index,rindex,rtype,rcomp,cindex,ctype,ccomp,i,j;
-  VECTOR *theV,*theW;
-  MATRIX *theM;
-  SHORT *comp;
-
-        #ifdef ModelP
-  if (FIRSTELEMENT(theGrid) == NULL)
-    return(0);
-        #endif
-
-  if (MD_IS_SCALAR(A))
-  {
-    ment = MD_SCALCMP(A);
-    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-    {
-      index = VINDEX(theV);
-      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
-        EX_MAT(Mat,bw,index,MDESTINDEX(theM)) = MVALUE(theM,ment);
-    }
-  }
-  else
-  {
-    for (theV=FIRSTVECTOR(theGrid); theV!=NULL; theV=SUCCVC(theV))
-    {
-      rindex = VINDEX(theV);
-      rtype = VTYPE(theV);
-      rcomp = VD_NCMPS_IN_TYPE(x,rtype);
-      for (theM=VSTART(theV); theM!=NULL; theM=MNEXT(theM))
-      {
-        theW = MDEST(theM);
-        cindex = VINDEX(theW);
-        ctype = VTYPE(theW);
-        ccomp = VD_NCMPS_IN_TYPE(x,ctype);
-        comp = MD_MCMPPTR_OF_RT_CT(A,rtype,ctype);
-        for (i=0; i<rcomp; i++)
-          for (j=0; j<ccomp; j++)
-            EX_MAT(Mat,bw,rindex+i,cindex+j) = MVALUE(theM,comp[i*ccomp+j]);
-      }
-    }
-  }
-  return (0);
-}
-
-static INT EXDecomposeMatrixFLOAT (FLOAT *Mat, INT bw, INT n)
-{
-  INT i,j,k;
-  DOUBLE f;
-
-  for (i=0; i<n-1; i++)
-  {
-    if (EX_MAT(Mat,bw,i,i)==0.0) return (1);
-    for (j=i+1; j<=MIN(i+bw,n-1); j++)
-    {
-      f = EX_MAT(Mat,bw,j,i)/EX_MAT(Mat,bw,i,i);
-      EX_MAT(Mat,bw,j,i) = f;
-      for (k=i+1; k<=MIN(i+bw,n-1); k++)
-        EX_MAT(Mat,bw,j,k) -= f*EX_MAT(Mat,bw,i,k);
-    }
-  }
-  return (0);
-}
-
-static INT EXDecomposeMatrixDOUBLE (DOUBLE *Mat, INT bw, INT n)
-{
-  INT i,j,k;
-  DOUBLE f;
-
-  for (i=0; i<n-1; i++)
-  {
-    if (EX_MAT(Mat,bw,i,i)==0.0) return (1);
-    for (j=i+1; j<=MIN(i+bw,n-1); j++)
-    {
-      f = EX_MAT(Mat,bw,j,i)/EX_MAT(Mat,bw,i,i);
-      EX_MAT(Mat,bw,j,i) = f;
-      for (k=i+1; k<=MIN(i+bw,n-1); k++)
-        EX_MAT(Mat,bw,j,k) -= f*EX_MAT(Mat,bw,i,k);
-    }
-  }
-  return (0);
-}
-
 static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A, INT *baselevel, INT *result)
 {
   NP_EX *np;
@@ -4240,44 +4115,6 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
     if (EXDecomposeMatrixDOUBLE (np->DMat,np->bw,np->nv)) REP_ERR_RETURN(1);
   }
 
-  return (0);
-}
-
-static INT EXApplyLUFLOAT (FLOAT *Mat, INT bw, INT n, DOUBLE *Vec)
-{
-  INT i,j;
-
-  /* invert lower */
-  for (i=1; i<n; i++)
-    for (j=MAX(i-bw,0); j<i; j++)
-      Vec[i] -= EX_MAT(Mat,bw,i,j)*Vec[j];
-
-  /* invert upper */
-  for (i=n-1; i>=0; i--)
-  {
-    for (j=i+1; j<=MIN(i+bw,n-1); j++)
-      Vec[i] -= EX_MAT(Mat,bw,i,j)*Vec[j];
-    Vec[i] /= EX_MAT(Mat,bw,i,i);
-  }
-  return (0);
-}
-
-static INT EXApplyLUDOUBLE (DOUBLE *Mat, INT bw, INT n, DOUBLE *Vec)
-{
-  INT i,j;
-
-  /* invert lower */
-  for (i=1; i<n; i++)
-    for (j=MAX(i-bw,0); j<i; j++)
-      Vec[i] -= EX_MAT(Mat,bw,i,j)*Vec[j];
-
-  /* invert upper */
-  for (i=n-1; i>=0; i--)
-  {
-    for (j=i+1; j<=MIN(i+bw,n-1); j++)
-      Vec[i] -= EX_MAT(Mat,bw,i,j)*Vec[j];
-    Vec[i] /= EX_MAT(Mat,bw,i,i);
-  }
   return (0);
 }
 
