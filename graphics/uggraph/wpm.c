@@ -177,6 +177,14 @@ INT DisposePicture (PICTURE *thePicture)
   return (0);
 }
 
+void ResetToolBoxState (UGWINDOW *ugw)
+{
+  UGW_CURRTOOL(ugw)               = arrowTool;
+  UGW_CURRFUNC(ugw)               = 0;
+  UGW_INFOTEXT(ugw)[0]    = '\0';
+  UGW_BOXSTATE(ugw)               = BOX_INVALID;
+}
+
 /****************************************************************************/
 /*D
    CreateUgWindow - Allocate a new UGWINDOW
@@ -270,7 +278,6 @@ free(data);
   ENVITEM_LOCKED(theWindow)       = NO;
   UGW_NPIC(theWindow)             = 0;
   UGW_OUTPUTDEV(theWindow)        = theOutputDevice;
-  UGW_CURRTOOL(theWindow)         = arrowTool;
   UGW_VALID(theWindow)            = NO;
   UGW_IFWINDOW(theWindow)         = winID;
 
@@ -1110,6 +1117,8 @@ PLOTOBJTYPE *GetNextPlotObjType (const PLOTOBJTYPE *thePlotObjType)
 
 PLOTOBJTYPE *CreatePlotObjType (const char *PlotObjTypeName, INT size)
 {
+  PLOTOBJTYPE *pot;
+
   /* change to directory */
   if (ChangeEnvDir("/PlotObjTypes")==NULL)
     return(NULL);
@@ -1118,7 +1127,11 @@ PLOTOBJTYPE *CreatePlotObjType (const char *PlotObjTypeName, INT size)
     return (NULL);
 
   /* allocate structure */
-  return ((PLOTOBJTYPE*) MakeEnvItem (PlotObjTypeName,thePlotObjTypesVarID,size));
+  pot = (PLOTOBJTYPE*) MakeEnvItem (PlotObjTypeName,thePlotObjTypesVarID,size);
+  if (pot==NULL)
+    return (NULL);
+
+  return (pot);
 }
 
 /****************************************************************************/

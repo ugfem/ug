@@ -166,9 +166,20 @@
 /*																			*/
 /****************************************************************************/
 
-#define POH_PLOTOBJTYPE(p)                              ((p)->thePlotObjType)
-#define POH_NBCYCLES(p,m)                               ((p)->NbOfCycles[m])
-#define POH_WORKPROGS(p,m,n)                    (&((p)->theWorkProcs[m][n]))
+#define NTOOLFCTS                       10      /* max number of tool functions				*/
+
+#define PIC_POH(p)                                      ((PLOTOBJHANDLING*)PIC_POT(p))
+
+#define POH_PLOTOBJTYPE(p)                      ((p)->thePlotObjType)
+#define POH_NBCYCLES(p,m)                       ((p)->NbOfCycles[m])
+#define POH_WORKPROGS(p,m,n)            (&((p)->theWorkProcs[m][n]))
+
+#define POH_NTOOLFUNC(p,t)                      ((p)->ntoolfcts[t])
+#define POH_TOOLNAME(p,t,f)                     ((p)->toolnames[t][f])
+#define POH_DYNAMIC_INFO(p)                     ((p)->DynamicInfo)
+#define POH_DYNAMIC_INFO_AVAIL(p)       (POH_DYNAMIC_INFO(p)!=NULL)
+#define POH_CLICKACTION(p)                      ((p)->ActionOnClick)
+#define POH_CLICKACTION_AVAIL(p)        (POH_CLICKACTION(p)!=NULL)
 
 /****************************************************************************/
 /*																			*/
@@ -414,9 +425,20 @@ union WorkProcs {
   struct RecursiveWork RecursiveWorkProcs;                              /* procedures for extern work						*/
 };
 
+typedef INT (*DynamicInfoFct)(struct PICture *pic, INT tool, INT fct, const INT mp[2], char *text);
+typedef INT (*ActionOnClickFct)(struct PICture *pic, INT tool, INT fct, const INT mp[2]);
+
 struct PlotObjHandling {
 
   PLOTOBJTYPE thePlotObjType;                                                                                   /* abstract object definition		*/
+
+  /* toolbox functionality */
+  INT ntoolfcts[nboftools];                                     /* 0 means disabled							*/
+  char toolnames[nboftools][NTOOLFCTS][INFO_SIZE];  /* names of the tool-functions			*/
+  DynamicInfoFct DynamicInfo;                                   /* function to return dynamic info text		*/
+  ActionOnClickFct ActionOnClick;                               /* function to act on click into picture	*/
+
+  /* works */
   INT NbOfCycles[NB_WORK];                                                                                      /* number of working cycles             */
   union WorkProcs theWorkProcs[NB_WORK][MAX_NO_CYCLES];                                 /* work procs						*/
 };

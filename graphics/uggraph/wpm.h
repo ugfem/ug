@@ -69,6 +69,13 @@
 #define NOT_ACTIVE                              1
 #define ACTIVE                                  2
 
+/* info box status in UGWINDOW */
+#define BOX_INVALID             -2      /* indicates that info-box has to be redrawn*/
+#define NO_INFO_AVAILABLE       -3      /* no information avaiable to be printed	*/
+#define MOUSE_IN_CURR_PIC       -4      /* mouse in current picture of active graphw*/
+#define MOUSE_OUT_CURR_PIC      -5      /* mouse in current picture of active graphw*/
+#define STATIC_TEXT                     -6      /* static text instead of dynamic info		*/
+
 /****************************************************************************/
 /*																			*/
 /* Defines and Macros for CUT												*/
@@ -123,6 +130,9 @@
 #define VO_PXD(p)                               ((p)->PlaneXDir)
 #define VO_PYD(p)                               ((p)->PlaneYDir)
 
+#define VO_TRAFO(p)                             ((p)->ObsTrafo)
+#define VO_INVTRAFO(p)                  ((p)->InvObsTrafo)
+
 /****************************************************************************/
 /*																			*/
 /* Defines and Macros for PICTURE											*/
@@ -155,9 +165,12 @@
 #define UGW_LLL(p)                                      ((p)->Local_LL)
 #define UGW_LUR(p)                                      ((p)->Local_UR)
 #define UGW_NPIC(p)                             ((p)->NbPictures)
-#define UGW_CURRTOOL(p)                         ((p)->currTool)
 #define UGW_NAME(p)                             ((p)->d.name)
 #define UGW_VALID(p)                            ((p)->Valid)
+#define UGW_CURRTOOL(p)                         ((p)->currTool)
+#define UGW_CURRFUNC(p)                         ((p)->currFunc)
+#define UGW_INFOTEXT(p)                         ((p)->info)
+#define UGW_BOXSTATE(p)                         ((p)->InfoBoxState)
 
 /****************************************************************************/
 /*																			*/
@@ -393,6 +406,9 @@ struct ViewedObj {
   DOUBLE ViewTarget[3];                                         /* View target point							*/
   DOUBLE PlaneMidpoint[3];                                      /* description of projection plane (the infinite*/
   DOUBLE PlaneXDir[3], PlaneYDir[3];            /* extension touches the ViewTarget)			*/
+
+  DOUBLE ObsTrafo[16];
+  DOUBLE InvObsTrafo[16];
 };
 
 struct PICture {
@@ -415,9 +431,14 @@ struct UgWindow {
   WINDOWID theIFWindow;                                                 /* identification of interface window							*/
   INT Valid;                                                                            /* YES or NO													*/
   INT NbPictures;                                                               /* number of pictures for that ugwindow                                                 */
-  INT currTool;                                                                 /* current tool chosen											*/
   INT Global_LL[2], Global_UR[2];                               /* size of Ugwindow w.r.t. parent i.e.the ug-screen pixelspace	*/
   INT Local_LL[2], Local_UR[2];                                 /* real pixelrange of UgWindow, given by LowerLeft, UpperRight	*/
+
+  /* info and tool box */
+  INT currTool;
+  INT currFunc;
+  INT InfoBoxState;
+  char info[INFO_SIZE];
 };
 
 /*----------- typedef for functions ----------------------------------------*/
@@ -427,11 +448,11 @@ typedef INT (*SetPlotObjProcPtr)(union PlotObj *thePlotObj, INT argc, char **arg
 
 struct PlotObjType {
 
-  ENVVAR v;                                                                             /* envitem of the UgWindow										*/
+  ENVVAR v;                                                                             /* envitem of the UgWindow					*/
 
-  INT Dimension;                                                                /* see above													*/
-  SetPlotObjProcPtr SetPlotObjProc;                             /* proc for initializing the PlotObj							*/
-  DispPlotObjProcPtr DispPlotObjProc;                   /* proc for displaying the PlotObj								*/
+  INT Dimension;                                                                /* see above								*/
+  SetPlotObjProcPtr SetPlotObjProc;                             /* proc for initializing the PlotObj		*/
+  DispPlotObjProcPtr DispPlotObjProc;                   /* proc for displaying the PlotObj			*/
 };
 
 /****************************************************************************/
@@ -470,6 +491,7 @@ INT                     InvalidatePicturesOfUgWindow    (UGWINDOW *theUgW);
 INT                     UpdateUgWindow                                  (UGWINDOW *theUgWindow, const PICTURE *EvalPicture);
 INT                     InvalidateUgWindow                              (UGWINDOW *theUgW);
 INT                             InvalidateUgWindowsOfMG                 (MULTIGRID *theMG);
+void                    ResetToolBoxState                               (UGWINDOW *ugw);
 
 /* copy ViewedObject */
 /*INT                   CopyViewedObjToPicture			(PICTURE *thePicture, VIEWEDOBJ *theViewedObj);*/

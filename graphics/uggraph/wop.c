@@ -599,8 +599,24 @@ D*/
 
 static PLOTOBJHANDLING	*CreatePlotObjHandling (char *PlotObjTypeName)
 {
+	PLOTOBJHANDLING *poh;
+	INT i;
+	
 	/* allocate PLOTOBJHANDLING envItem */
-	return ((PLOTOBJHANDLING*) CreatePlotObjType (PlotObjTypeName,sizeof(PLOTOBJHANDLING)));
+	poh = (PLOTOBJHANDLING*) CreatePlotObjType (PlotObjTypeName,sizeof(PLOTOBJHANDLING));
+	if (poh==NULL)
+		return (NULL);
+	
+	/* init defaults */
+	for (i=0; i<nboftools; i++)
+		POH_NTOOLFUNC(poh,i) = 0;
+	POH_DYNAMIC_INFO(poh) = NULL;
+	POH_CLICKACTION(poh)  = NULL;
+	
+	/* reset all works */
+	for (i=0; i<NB_WORK; i++) POH_NBCYCLES(poh,i) = 0;
+	
+	return (poh);
 }
 
 /****************************************************************************/
@@ -794,6 +810,8 @@ static INT BuildObsTrafo (PICTURE *thePicture)
 		default:
 			RETURN(1);
 	}
+	M4_COPY(ObsTrafo,VO_TRAFO(theViewedObj));
+	M4_COPY(InvObsTrafo,VO_INVTRAFO(theViewedObj));
 	
 	return (0);
 }
@@ -860,10 +878,13 @@ static INT BuildCutTrafo (CUT *theCut, DOUBLE *theViewDir)
 
 static INT MousePullFrame (PICTURE *thePicture, INT OldMousePos[2], DOUBLE *frame_xmin, DOUBLE *frame_xmax, DOUBLE *frame_ymin, DOUBLE *frame_ymax)
 {
+	UGWINDOW *ugw;
 	COORD_POINT FrameLL,FrameLR,FrameUR,FrameUL;
 	DOUBLE xmin,xmax,ymin,ymax;
 	INT MousePos[2],LastMousePos[2];
 	INT status;
+	INT state;
+	char buffer[128];
 	
 	xmin	= MIN(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
 	xmax	= MAX(PIC_GLL(thePicture)[_X_],PIC_GUR(thePicture)[_X_]);
@@ -888,10 +909,10 @@ static INT MousePullFrame (PICTURE *thePicture, INT OldMousePos[2], DOUBLE *fram
 		if (status==MOUSE_MOVED)
 		{
 			/* invert last frame */
-			UgInverseLine(FrameLL,FrameLR); 		
-			UgInverseLine(FrameLR,FrameUR); 		
-			UgInverseLine(FrameUR,FrameUL); 		
-			UgInverseLine(FrameUL,FrameLL); 		
+			UgInverseLine(FrameLL,FrameLR);
+			UgInverseLine(FrameLR,FrameUR);
+			UgInverseLine(FrameUR,FrameUL);
+			UgInverseLine(FrameUL,FrameLL);
 		}
 		
 		V2_COPY(MousePos,LastMousePos);
@@ -905,10 +926,30 @@ static INT MousePullFrame (PICTURE *thePicture, INT OldMousePos[2], DOUBLE *fram
 		FrameUL.y = FrameUR.y = OldMousePos[_Y_];
 		
 		/* invert new frame */
-		UgInverseLine(FrameLL,FrameLR); 		
+		UgInverseLine(FrameLL,FrameLR);
 		UgInverseLine(FrameLR,FrameUR); 		
-		UgInverseLine(FrameUR,FrameUL); 		
-		UgInverseLine(FrameUL,FrameLL); 		
+		UgInverseLine(FrameUR,FrameUL);
+		UgInverseLine(FrameUL,FrameLL);
+		
+		/* print dynamic info iff */
+		ugw = PIC_UGW(thePicture);
+		if ((VO_STATUS(PIC_VO(thePicture)) == ACTIVE) && POH_DYNAMIC_INFO_AVAIL(PIC_POH(thePicture)))
+		{
+			if (POH_DYNAMIC_INFO(PIC_POH(thePicture))(thePicture,UGW_CURRTOOL(ugw),UGW_CURRFUNC(ugw),MousePos,buffer)==0)
+				state = MOUSE_IN_CURR_PIC;
+			else
+				state = STATIC_TEXT;
+			if (!((state==STATIC_TEXT) && (UGW_BOXSTATE(ugw)==STATIC_TEXT)))
+				DrawInfoBox(UGW_IFWINDOW(ugw),buffer);
+			UGW_BOXSTATE(ugw) = state;
+		}
+		else if (UGW_BOXSTATE(ugw)!=STATIC_TEXT)
+		{
+			sprintf(buffer,"no dynamic info");
+			DrawInfoBox(UGW_IFWINDOW(ugw),buffer);
+			UGW_BOXSTATE(ugw) = STATIC_TEXT;
+		}
+		
 		UgFlush();
 	}
 	
@@ -4271,6 +4312,61 @@ static INT GEN_PostProcess_Scalar_FR (PICTURE *thePicture, WORK *theWork)
 /************************************ Part for 2D and 3D Version ******************************************/
 /**********************************************************************************************************/
 
+/****************************************************************************/
+/*
+   DynInfo_Grid2D - print dynamic info for Matrix for infobox of ugwindow
+
+   SYNOPSIS:
+   INT DynInfo_Matrix (PICTURE *pic, INT tool, INT fct, const INT mp[2], char *text)
+
+   PARAMETERS:
+.  pic  - print info for this picture
+.  tool - current tool
+.  fct  - currenr tool function
+.  mp   - mouse position in window
+.  text - resulting info text
+
+   DESCRIPTION:
+   The position of the mouse is given as index of matrix entry.
+
+   RETURN VALUE:
+   INT
+.n   0 if text will change with mouse position
+.n   1 if text is static
+*/
+/****************************************************************************/
+
+static INT DynInfo_Matrix (PICTURE *pic, INT tool, INT fct, const INT mp[2], char *text)
+{
+	struct MatrixPlotObj *theMpo;
+	MULTIGRID *theMG;
+	GRID *theGrid;
+	VIEWEDOBJ *vo;
+	DOUBLE cpt[2];
+	INT maxrow;
+	
+	if (PIC_VALID(pic) == NO)
+	{
+		strcpy(text,"pic invalid");
+		return (1);
+	}
+	
+	vo	   = PIC_VO(pic);
+	theMpo = &(PIC_PO(pic)->theMpo);
+	theMG  = PO_MG(PIC_PO(pic));
+	theGrid= GRID_ON_LEVEL(theMG,CURRENTLEVEL(theMG));
+	maxrow = NVEC(theGrid);
+	
+	V2_TRAFOM3_V2(mp,InvObsTrafo,cpt);
+	
+	cpt[0] = floor(cpt[0]) +1;
+	cpt[1] = floor(maxrow - cpt[1]) +1;
+	
+	sprintf(text,"(%5d,%5d)",(int)cpt[1],(int)cpt[0]);
+	
+	return (0);
+}
+
 static INT RECURSIVE_BVPreProcess (PICTURE *thePicture, WORK *theWork)
 {
 	struct MatrixPlotObj *theMpo;
@@ -4813,6 +4909,124 @@ static INT OrderElements_2D (MULTIGRID *theMG, VIEWEDOBJ *theViewedObj)
 {
 	return (0);
 }
+
+/****************************************************************************/
+/*
+   DynInfo_Grid2D - print dynamic info for 2D Grid for infobox of ugwindow
+
+   SYNOPSIS:
+   INT DynInfo_Grid2D (PICTURE *pic, INT tool, INT fct, const INT mp[2], char *text)
+
+   PARAMETERS:
+.  pic  - print info for this picture
+.  tool - current tool
+.  fct  - currenr tool function
+.  mp   - mouse position in window
+.  text - resulting info text
+
+   DESCRIPTION:
+   The position of the mouse is given in physical coordinates.
+
+   RETURN VALUE:
+   INT
+.n   0 if text will change with mouse position
+.n   1 if text is static
+*/
+/****************************************************************************/
+
+static INT DynInfo_Grid2D (PICTURE *pic, INT tool, INT fct, const INT mp[2], char *text)
+{
+	VIEWEDOBJ *vo;
+	DOUBLE cpt[2];
+	
+	if (PIC_VALID(pic) == NO)
+	{
+		strcpy(text,"pic invalid");
+		return (1);
+	}
+	
+	vo = PIC_VO(pic);
+	V2_TRAFOM3_V2(mp,InvObsTrafo,cpt);
+	
+	sprintf(text,"(%5.3e,%5.3e)",cpt[0],cpt[1]);
+	
+	return (0);
+}
+
+/****************************************************************************/
+/*
+   ClickAct_Grid2D - tool dependend act on click for 2D Grid
+
+   SYNOPSIS:
+   INT ClickAct_Grid2D (PICTURE *pic, INT tool, INT fct, const INT mp[2])
+
+   PARAMETERS:
+.  pic  - print info for this picture
+.  tool - current tool
+.  fct  - currenr tool function
+.  mp   - mouse position in window
+
+   DESCRIPTION:
+.  cross - insert boundary node
+.  choice - move node
+.  circle - insert inner node
+.  hand - select node
+.  heart - select element
+.  gnoedel - unmark, mark copy, mark red, mark blue depending on fct
+
+   RETURN VALUE:
+   INT
+.n   0 if ok
+.n   1 if action for this tool is not available
+.n   __LINE__ if an error occured
+*/
+/****************************************************************************/
+
+static INT ClickAct_Grid2D (PICTURE *pic, INT tool, INT fct, const INT mp[2])
+{
+	WORK theWork;
+	
+	switch (tool)
+	{
+		case crossTool:
+			W_ID(&theWork) = INSERTBNDNODE_WORK;
+			W_INSERTBNDNODE_WORK(&theWork)->PixelX = mp[0];
+			W_INSERTBNDNODE_WORK(&theWork)->PixelY = mp[1];
+			break;
+		case choiceTool:
+			W_ID(&theWork) = MOVENODE_WORK;
+			W_MOVENODE_WORK(&theWork)->PixelX = mp[0];
+			W_MOVENODE_WORK(&theWork)->PixelY = mp[1];
+			break;
+		case circleTool:
+			W_ID(&theWork) = INSERTNODE_WORK;
+			W_INSERTNODE_WORK(&theWork)->PixelX = mp[0];
+			W_INSERTNODE_WORK(&theWork)->PixelY = mp[1];
+			break;
+		case handTool:
+			W_ID(&theWork) = SELECTNODE_WORK;
+			W_SELECTNODE_WORK(&theWork)->PixelX = mp[0];
+			W_SELECTNODE_WORK(&theWork)->PixelY = mp[1];
+			break;
+		case heartTool:
+			W_ID(&theWork) = SELECTELEMENT_WORK;
+			W_SELECTELEMENT_WORK(&theWork)->PixelX = mp[0];
+			W_SELECTELEMENT_WORK(&theWork)->PixelY = mp[1];
+			break;
+		case gnoedelTool:
+			W_ID(&theWork) = MARKELEMENT_WORK;
+			W_MARKELEMENT_WORK(&theWork)->PixelX = mp[0];
+			W_MARKELEMENT_WORK(&theWork)->PixelY = mp[1];
+			W_MARKELEMENT_WORK(&theWork)->rule   = fct;
+			break;
+		default:
+			return (1);
+	}
+	if (WorkOnPicture(pic,&theWork))
+		return (__LINE__);
+	
+	return (0);
+}
 	
 /****************************************************************************/
 /*
@@ -4903,7 +5117,7 @@ static INT EW_PreProcess_PlotBlackBnd2D (PICTURE *thePicture, WORK *theWork)
 	
 	return (0);
 }
-	
+
 /****************************************************************************/
 /*
    EW_PreProcess_PlotElements2D - Initialize input variables of EW_ElementEval2D for GridPlot2D	
@@ -5648,6 +5862,93 @@ static INT NW_PreProcess_PlotNodes2D (PICTURE *thePicture, WORK *theWork)
 			RETURN(1);
 	}
 	if (MarkNodes_OfMarkedElem(theMG,0,CURRENTLEVEL(theMG),mode)) return (1);
+	
+	return (0);
+}
+
+/****************************************************************************/
+/*
+   DynInfo_VecMat2D - print dynamic info for 2D VecMat for infobox of ugwindow
+
+   SYNOPSIS:
+   INT DynInfo_VecMat2D (PICTURE *pic, INT tool, INT fct, const INT mp[2], char *text)
+
+   PARAMETERS:
+.  pic  - print info for this picture
+.  tool - current tool
+.  fct  - currenr tool function
+.  mp   - mouse position in window
+.  text - resulting info text
+
+   DESCRIPTION:
+   The position of the mouse is given in physical coordinates.
+
+   RETURN VALUE:
+   INT
+.n   0 if text will change with mouse position
+.n   1 if text is static
+*/
+/****************************************************************************/
+
+static INT DynInfo_VecMat2D (PICTURE *pic, INT tool, INT fct, const INT mp[2], char *text)
+{
+	VIEWEDOBJ *vo;
+	DOUBLE cpt[2];
+	
+	if (PIC_VALID(pic) == NO)
+	{
+		strcpy(text,"pic invalid");
+		return (1);
+	}
+	
+	vo = PIC_VO(pic);
+	V2_TRAFOM3_V2(mp,InvObsTrafo,cpt);
+	
+	sprintf(text,"(%5.3e,%5.3e)",cpt[0],cpt[1]);
+	
+	return (0);
+}
+
+/****************************************************************************/
+/*
+   ClickAct_VecMat2D - tool dependend act on click for 2D VecMat
+
+   SYNOPSIS:
+   INT ClickAct_VecMat2D (PICTURE *pic, INT tool, INT fct, const INT mp[2])
+
+   PARAMETERS:
+.  pic  - print info for this picture
+.  tool - current tool
+.  fct  - currenr tool function
+.  mp   - mouse position in window
+
+   DESCRIPTION:
+.  hand - select vector
+
+   RETURN VALUE:
+   INT
+.n   0 if ok
+.n   1 if action for this tool is not available
+.n   __LINE__ if an error occured
+*/
+/****************************************************************************/
+
+static INT ClickAct_VecMat2D (PICTURE *pic, INT tool, INT fct, const INT mp[2])
+{
+	WORK theWork;
+	
+	switch (tool)
+	{
+		case handTool:
+			W_ID(&theWork) = SELECTVECTOR_WORK;
+			W_SELECTNODE_WORK(&theWork)->PixelX = mp[0];
+			W_SELECTNODE_WORK(&theWork)->PixelY = mp[1];
+			break;
+		default:
+			return (1);
+	}
+	if (WorkOnPicture(pic,&theWork))
+		return (__LINE__);
 	
 	return (0);
 }
@@ -7236,7 +7537,50 @@ static INT EXT_NodesEval2D (DRAWINGOBJ *theDO, INT *end)
 
 /****************************************************************************/
 /*
-   EW_PreProcess_EScalar3D - Initialize for C(olor)C(ontour) plot
+   DynInfo_EScalar2D - print dynamic info for 2D EScalar for infobox of ugwindow
+
+   SYNOPSIS:
+   INT DynInfo_EScalar2D (PICTURE *pic, INT tool, INT fct, const INT mp[2], char *text)
+
+   PARAMETERS:
+.  pic  - print info for this picture
+.  tool - current tool
+.  fct  - currenr tool function
+.  mp   - mouse position in window
+.  text - resulting info text
+
+   DESCRIPTION:
+   The position of the mouse is given in physical coordinates.
+
+   RETURN VALUE:
+   INT
+.n   0 if text will change with mouse position
+.n   1 if text is static
+*/
+/****************************************************************************/
+
+static INT DynInfo_EScalar2D (PICTURE *pic, INT tool, INT fct, const INT mp[2], char *text)
+{
+	VIEWEDOBJ *vo;
+	DOUBLE cpt[2];
+	
+	if (PIC_VALID(pic) == NO)
+	{
+		strcpy(text,"pic invalid");
+		return (1);
+	}
+	
+	vo = PIC_VO(pic);
+	V2_TRAFOM3_V2(mp,InvObsTrafo,cpt);
+	
+	sprintf(text,"(%5.3e,%5.3e)",cpt[0],cpt[1]);
+	
+	return (0);
+}
+
+/****************************************************************************/
+/*
+   EW_PreProcess_EScalar2D - Initialize for C(olor)C(ontour) plot
 
    SYNOPSIS:
    static INT EW_PreProcess_EScalar2D (PICTURE *thePicture, WORK *theWork);
@@ -8382,6 +8726,49 @@ static INT EW_EVector2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
         #ifdef ModelP
 	WOP_DObjPnt = theDO;
 	#endif
+	
+	return (0);
+}
+
+/****************************************************************************/
+/*
+   DynInfo_EVector2D - print dynamic info for 2D EVector for infobox of ugwindow
+
+   SYNOPSIS:
+   INT DynInfo_EVector2D (PICTURE *pic, INT tool, INT fct, const INT mp[2], char *text)
+
+   PARAMETERS:
+.  pic  - print info for this picture
+.  tool - current tool
+.  fct  - currenr tool function
+.  mp   - mouse position in window
+.  text - resulting info text
+
+   DESCRIPTION:
+   The position of the mouse is given in physical coordinates.
+
+   RETURN VALUE:
+   INT
+.n   0 if text will change with mouse position
+.n   1 if text is static
+*/
+/****************************************************************************/
+
+static INT DynInfo_EVector2D (PICTURE *pic, INT tool, INT fct, const INT mp[2], char *text)
+{
+	VIEWEDOBJ *vo;
+	DOUBLE cpt[2];
+	
+	if (PIC_VALID(pic) == NO)
+	{
+		strcpy(text,"pic invalid");
+		return (1);
+	}
+	
+	vo = PIC_VO(pic);
+	V2_TRAFOM3_V2(mp,InvObsTrafo,cpt);
+	
+	sprintf(text,"(%5.3e,%5.3e)",cpt[0],cpt[1]);
 	
 	return (0);
 }
@@ -12208,6 +12595,49 @@ static INT EW_PreProcess_PlotGrid3D (PICTURE *thePicture, WORK *theWork)
 
 	return (0);
 }
+
+/****************************************************************************/
+/*
+   ClickAct_Grid3D - toll dependend act on click for 3D Grid
+
+   SYNOPSIS:
+   INT ClickAct_Grid3D (PICTURE *pic, INT tool, INT fct, const INT mp[2])
+
+   PARAMETERS:
+.  pic  - print info for this picture
+.  tool - current tool
+.  fct  - currenr tool function
+.  mp   - mouse position in window
+
+   DESCRIPTION:
+.  heart - select element
+
+   RETURN VALUE:
+   INT
+.n   0 if ok
+.n   __LINE__ if an error occured
+*/
+/****************************************************************************/
+
+static INT ClickAct_Grid3D (PICTURE *pic, INT tool, INT fct, const INT mp[2])
+{
+	WORK theWork;
+	
+	switch (tool)
+	{
+		case heartTool:
+			W_ID(&theWork) = SELECTELEMENT_WORK;
+			W_SELECTELEMENT_WORK(&theWork)->PixelX = mp[0];
+			W_SELECTELEMENT_WORK(&theWork)->PixelY = mp[1];
+			break;
+		default:
+			return (1);
+	}
+	if (WorkOnPicture(pic,&theWork))
+		return (__LINE__);
+	
+	return (0);
+}
 	
 /****************************************************************************/
 /*
@@ -13835,7 +14265,7 @@ void NumberOfDesc(INT *nbDesc)
 */
 /****************************************************************************/
 
-INT WorkEW()
+static INT WorkEW()
 {
   #ifndef ModelP
   
@@ -14089,7 +14519,7 @@ INT WorkEW()
 */
 /****************************************************************************/
 
-INT WorkNW()
+static INT WorkNW()
 {
   #ifndef ModelP
 
@@ -14343,7 +14773,7 @@ INT WorkNW()
 */
 /****************************************************************************/
 
-INT WorkVW()
+static INT WorkVW()
 {
   #ifndef ModelP
 
@@ -15136,7 +15566,6 @@ INT InitWOP (void)
 	WORKPROCS *theWP;
 	ELEMWISEWORK *theEWW;
 	VECTORWISEWORK *theVWW;
-	INT i;
     EXTERNWORK *theEXW;
     RECURSIVEWORK *theREW;
 	#ifdef __TWODIM__
@@ -15145,9 +15574,8 @@ INT InitWOP (void)
 	
 	/* create WorkHandling for 'Matrix' */
 	if ((thePOH=CreatePlotObjHandling ("Matrix"))	   == NULL) return (__LINE__);
-	
-	/* reset all works */
-	for (i=0; i<NB_WORK; i++) POH_NBCYCLES(thePOH,i) = 0;
+		
+	POH_DYNAMIC_INFO(thePOH) = DynInfo_Matrix;
 	
 	/* draw work */
 	POH_NBCYCLES(thePOH,DRAW_WORK) = 2;
@@ -15180,17 +15608,16 @@ INT InitWOP (void)
 	theVWW->VW_GetFirstVectorProcProc		= VW_GetFirstVector_Proc;
 	theVWW->VW_GetNextVectorProcProc		= VW_GetNextVector_Proc;
 	theVWW->VW_EvaluateProc 				= VW_MatrixEval;
-	#ifdef __TWODIM__
 	theVWW->VW_ExecuteProc					= FindRange2D;
-	#else
-	theVWW->VW_ExecuteProc					= FindRange3D;
-	#endif
 	theVWW->VW_PostProcessProc				= GEN_PostProcess_Matrix_FR;
 	
 	#ifdef __TWODIM__
 	
 		/* create WorkHandling for 'Grid' */
 		if ((thePOH=CreatePlotObjHandling ("Grid")) 	== NULL) return (__LINE__);
+		
+		POH_DYNAMIC_INFO(thePOH) = DynInfo_Grid2D;
+		POH_CLICKACTION(thePOH)  = ClickAct_Grid2D;
 		
 		/* draw work */
 		POH_NBCYCLES(thePOH,DRAW_WORK) = 4;
@@ -15235,10 +15662,10 @@ INT InitWOP (void)
 		theNWW->NW_ExecuteProc					= Draw2D;
 		theNWW->NW_PostProcessProc				= InvertNodeSelection2D;
 
-		/* findrange work */
-		POH_NBCYCLES(thePOH,FINDRANGE_WORK) = 0;
-
 		/* selectnode work */
+		POH_NTOOLFUNC(thePOH,handTool) = 1;
+		strcpy(POH_TOOLNAME(thePOH,handTool,0),"select node");
+		
 		POH_NBCYCLES(thePOH,SELECTNODE_WORK) = 1;
 
 		theWP = POH_WORKPROGS(thePOH,SELECTNODE_WORK,0);
@@ -15252,6 +15679,9 @@ INT InitWOP (void)
 		theNWW->NW_PostProcessProc				= NULL;
 
 		/* selectelement work */
+		POH_NTOOLFUNC(thePOH,heartTool) = 1;
+		strcpy(POH_TOOLNAME(thePOH,heartTool,0),"select element");
+		
 		POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 1;
 		
 		theWP = POH_WORKPROGS(thePOH,SELECTELEMENT_WORK,0);
@@ -15263,11 +15693,15 @@ INT InitWOP (void)
 		theEWW->EW_EvaluateProc 				= EW_ElementEval2D;
 		theEWW->EW_ExecuteProc					= EW_SelectElement2D;
 		theEWW->EW_PostProcessProc				= NULL;
-
-		/* selectvector work */
-		POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 0;
 		
 		/* markelement work */
+		POH_NTOOLFUNC(thePOH,gnoedelTool) = 5;
+		strcpy(POH_TOOLNAME(thePOH,gnoedelTool,0),"unmark");
+		strcpy(POH_TOOLNAME(thePOH,gnoedelTool,1),"mark copy");
+		strcpy(POH_TOOLNAME(thePOH,gnoedelTool,2),"mark red");
+		strcpy(POH_TOOLNAME(thePOH,gnoedelTool,3),"mark blue");
+		strcpy(POH_TOOLNAME(thePOH,gnoedelTool,4),"mark coarse");
+		
 		POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 1;
 		
 		theWP = POH_WORKPROGS(thePOH,MARKELEMENT_WORK,0);
@@ -15281,6 +15715,9 @@ INT InitWOP (void)
 		theEWW->EW_PostProcessProc				= NULL;
 		
 		/* insertnode work */
+		POH_NTOOLFUNC(thePOH,circleTool) = 1;
+		strcpy(POH_TOOLNAME(thePOH,circleTool,0),"insert node");
+		
 		POH_NBCYCLES(thePOH,INSERTNODE_WORK) = 1;
 		
 		theWP = POH_WORKPROGS(thePOH,INSERTNODE_WORK,0);
@@ -15292,6 +15729,9 @@ INT InitWOP (void)
 		theEXW->EXT_PostProcessProc				= NULL;
 
 		/* movenode work */
+		POH_NTOOLFUNC(thePOH,choiceTool) = 1;
+		strcpy(POH_TOOLNAME(thePOH,choiceTool,0),"move node");
+		
 		POH_NBCYCLES(thePOH,MOVENODE_WORK) = 1;
 		
 		theWP = POH_WORKPROGS(thePOH,MOVENODE_WORK,0);
@@ -15303,6 +15743,9 @@ INT InitWOP (void)
 		theEXW->EXT_PostProcessProc				= EXT_PostProcess_MoveNode2D;
 
 		/* insertbndnode work */
+		POH_NTOOLFUNC(thePOH,crossTool) = 1;
+		strcpy(POH_TOOLNAME(thePOH,crossTool,0),"insert bnd node");
+		
 		POH_NBCYCLES(thePOH,INSERTBNDNODE_WORK) = 1;
 		
 		theWP = POH_WORKPROGS(thePOH,INSERTBNDNODE_WORK,0);
@@ -15316,6 +15759,8 @@ INT InitWOP (void)
 
 		/* create WorkHandling for 'EScalar' */
 		if ((thePOH=CreatePlotObjHandling ("EScalar"))	   == NULL) return (__LINE__);
+		
+		POH_DYNAMIC_INFO(thePOH) = DynInfo_EScalar2D;
 		
 		/* draw work */
 		POH_NBCYCLES(thePOH,DRAW_WORK) = 4;
@@ -15374,31 +15819,10 @@ INT InitWOP (void)
 		theEWW->EW_PostProcessProc				= GEN_PostProcess_Scalar_FR;
 
 
-		/* selectnode work */
-		POH_NBCYCLES(thePOH,SELECTNODE_WORK) = 0;
-
-		/* selectelement work */
-		POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 0;
-
-		/* selectvector work */
-		POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 0;
-				
-		/* markelement work */
-		POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
-		
-		/* insertnode work */
-		POH_NBCYCLES(thePOH,INSERTNODE_WORK) = 0;
-
-		/* movenode work */
-		POH_NBCYCLES(thePOH,MOVENODE_WORK) = 0;
-
-		/* insertbndnode work */
-		POH_NBCYCLES(thePOH,INSERTBNDNODE_WORK) = 0;
-				
-
-
 		/* create WorkHandling for 'EVector' */
 		if ((thePOH=CreatePlotObjHandling ("EVector"))	== NULL) return (__LINE__);
+		
+		POH_DYNAMIC_INFO(thePOH) = DynInfo_EVector2D;
 		
 		/* draw work */
 		POH_NBCYCLES(thePOH,DRAW_WORK) = 3;
@@ -15445,32 +15869,13 @@ INT InitWOP (void)
 		theEWW->EW_EvaluateProc 				= EW_EVector2D;
 		theEWW->EW_ExecuteProc					= FindRange2D;
 		theEWW->EW_PostProcessProc				= GEN_PostProcess_Vector_FR;
-
-		/* selectnode work */
-		POH_NBCYCLES(thePOH,SELECTNODE_WORK) = 0;
-
-		/* selectelement work */
-		POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 0;
-
-		/* selectvector work */
-		POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 0;
-		
-		/* markelement work */
-		POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
-		
-		/* insertnode work */
-		POH_NBCYCLES(thePOH,INSERTNODE_WORK) = 0;
-
-		/* movenode work */
-		POH_NBCYCLES(thePOH,MOVENODE_WORK) = 0;
-
-		/* insertbndnode work */
-		POH_NBCYCLES(thePOH,INSERTBNDNODE_WORK) = 0;
-
 		
 		
 		/* create WorkHandling for 'VecMat' */
 		if ((thePOH=CreatePlotObjHandling ("VecMat"))	   == NULL) return (__LINE__);
+		
+		POH_DYNAMIC_INFO(thePOH) = DynInfo_VecMat2D;
+		POH_CLICKACTION(thePOH)  = ClickAct_VecMat2D;
 		
 		/* draw work */
 		POH_NBCYCLES(thePOH,DRAW_WORK) = 3;
@@ -15504,17 +15909,11 @@ INT InitWOP (void)
 		theVWW->VW_EvaluateProc 				= VW_VecEval;
 		theVWW->VW_ExecuteProc					= Draw2D;
 		theVWW->VW_PostProcessProc				= InvertVectorSelectionOrPlotVMData2D;
-
-		/* findrange work */
-		POH_NBCYCLES(thePOH,FINDRANGE_WORK) = 0;
-
-		/* selectnode work */
-		POH_NBCYCLES(thePOH,SELECTNODE_WORK) = 0;
-
-		/* selectelement work */
-		POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 0;
-
+		
 		/* selectvector work */
+		POH_NTOOLFUNC(thePOH,handTool) = 1;
+		strcpy(POH_TOOLNAME(thePOH,handTool,0),"select vector");
+		
 		POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 1;
 
 		theWP = POH_WORKPROGS(thePOH,SELECTVECTOR_WORK,0);
@@ -15527,20 +15926,6 @@ INT InitWOP (void)
 		theVWW->VW_ExecuteProc					= VW_SelectVector2D;
 		theVWW->VW_PostProcessProc				= NULL;
 				
-		/* markelement work */
-		POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
-		
-		/* insertnode work */
-		POH_NBCYCLES(thePOH,INSERTNODE_WORK) = 0;
-
-		/* movenode work */
-		POH_NBCYCLES(thePOH,MOVENODE_WORK) = 0;
-
-		/* insertbndnode work */
-		POH_NBCYCLES(thePOH,INSERTBNDNODE_WORK) = 0;
-
-		
-
 
 		/* create WorkHandling for 'Line' */
 		if ((thePOH=CreatePlotObjHandling ("Line"))	   == NULL) return (__LINE__);
@@ -15570,30 +15955,7 @@ INT InitWOP (void)
 		theEWW->EW_EvaluateProc 				= EW_LineElement2D;
 		theEWW->EW_ExecuteProc					= FindRange2D;
 		theEWW->EW_PostProcessProc				= GEN_PostProcess_Line_FR;
-
-
-		/* selectnode work */
-		POH_NBCYCLES(thePOH,SELECTNODE_WORK) = 0;
-
-		/* selectelement work */
-		POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 0;
-
-		/* selectvector work */
-		POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 0;
-				
-		/* markelement work */
-		POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
-		
-		/* insertnode work */
-		POH_NBCYCLES(thePOH,INSERTNODE_WORK) = 0;
-
-		/* movenode work */
-		POH_NBCYCLES(thePOH,MOVENODE_WORK) = 0;
-
-		/* insertbndnode work */
-		POH_NBCYCLES(thePOH,INSERTBNDNODE_WORK) = 0;
-
-
+	
 	#endif
 		
 		
@@ -15617,6 +15979,8 @@ INT InitWOP (void)
 		/* create WorkHandling for 'Grid' */
 		if ((thePOH=CreatePlotObjHandling ("Grid")) 	== NULL) return (__LINE__);
 		
+		POH_CLICKACTION(thePOH)  = ClickAct_Grid3D;
+		
 		/* draw work */
 		POH_NBCYCLES(thePOH,DRAW_WORK) = 1;
 		
@@ -15630,13 +15994,10 @@ INT InitWOP (void)
 		theEWW->EW_ExecuteProc					= Draw3D;
 		theEWW->EW_PostProcessProc				= NULL;
 
-		/* findrange work */
-		POH_NBCYCLES(thePOH,FINDRANGE_WORK) = 0;
-
-		/* selectnode work */
-		POH_NBCYCLES(thePOH,SELECTNODE_WORK) = 0;
-
 		/* selectelement work */
+		POH_NTOOLFUNC(thePOH,heartTool) = 1;
+		strcpy(POH_TOOLNAME(thePOH,heartTool,0),"select element");
+		
 		POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 1;
 		
 		theWP = POH_WORKPROGS(thePOH,SELECTELEMENT_WORK,0);
@@ -15648,23 +16009,6 @@ INT InitWOP (void)
 		theEWW->EW_EvaluateProc 				= EW_ElementEval3D;
 		theEWW->EW_ExecuteProc					= EW_SelectElement3D;
 		theEWW->EW_PostProcessProc				= NULL;
-
-		/* selectvector work */
-		POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 0;
-		
-		/* markelement work */
-		POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
-		
-		/* insertnode work */
-		POH_NBCYCLES(thePOH,INSERTNODE_WORK) = 0;
-
-		/* movenode work */
-		POH_NBCYCLES(thePOH,MOVENODE_WORK) = 0;
-
-		/* insertbndnode work */
-		POH_NBCYCLES(thePOH,INSERTBNDNODE_WORK) = 0;
-
-
 
 		
 		/* create WorkHandling for 'EScalar' */
@@ -15715,29 +16059,6 @@ INT InitWOP (void)
 		theEWW->EW_EvaluateProc 				= EW_EScalar3D;
 		theEWW->EW_ExecuteProc					= FindRange3D;
 		theEWW->EW_PostProcessProc				= GEN_PostProcess_Scalar_FR;
-
-		/* selectnode work */
-		POH_NBCYCLES(thePOH,SELECTNODE_WORK) = 0;
-
-		/* selectelement work */
-		POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 0;
-
-		/* selectvector work */
-		POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 0;
-		
-		/* markelement work */
-		POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
-		
-		/* insertnode work */
-		POH_NBCYCLES(thePOH,INSERTNODE_WORK) = 0;
-
-		/* movenode work */
-		POH_NBCYCLES(thePOH,MOVENODE_WORK) = 0;
-
-		/* insertbndnode work */
-		POH_NBCYCLES(thePOH,INSERTBNDNODE_WORK) = 0;
-		
-
 		
 		
 		/* create WorkHandling for 'EVector' */
@@ -15788,27 +16109,6 @@ INT InitWOP (void)
 		theEWW->EW_EvaluateProc 				= EW_EVector3D;
 		theEWW->EW_ExecuteProc					= FindRange3D;
 		theEWW->EW_PostProcessProc				= GEN_PostProcess_Vector_FR;
-
-		/* selectnode work */
-		POH_NBCYCLES(thePOH,SELECTNODE_WORK) = 0;
-
-		/* selectelement work */
-		POH_NBCYCLES(thePOH,SELECTELEMENT_WORK) = 0;
-
-		/* selectvector work */
-		POH_NBCYCLES(thePOH,SELECTVECTOR_WORK) = 0;
-		
-		/* markelement work */
-		POH_NBCYCLES(thePOH,MARKELEMENT_WORK) = 0;
-		
-		/* insertnode work */
-		POH_NBCYCLES(thePOH,INSERTNODE_WORK) = 0;
-
-		/* movenode work */
-		POH_NBCYCLES(thePOH,MOVENODE_WORK) = 0;
-
-		/* insertbndnode work */
-		POH_NBCYCLES(thePOH,INSERTBNDNODE_WORK) = 0;
 		
 	#endif
 		
