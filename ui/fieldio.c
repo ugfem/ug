@@ -615,28 +615,28 @@ static int ParseArgumentsR(int argc, char **argv, MULTIGRID *mg, char *fname,
     if (strncmp(argv[i],"ns",2) == 0) {
       vd = ReadArgvVecDescX(mg, "ns", argc, argv, NO);
       if (vd == NULL) return 1;
-      dset(mg, 0, TOPLEVEL(mg), ALL_VECTORS, vd, 0.0);
+      dset(mg, 0, TOPLEVEL(mg), ON_SURFACE, vd, 0.0);
       ns[*no_ns] = VD_ncmp_cmpptr_of_otype(vd, NODEVEC, &dummy)[0];
       (*no_ns)++;
     }
     else if (strncmp(argv[i],"nv",2) == 0) {
       vd = ReadArgvVecDescX(mg, "nv", argc, argv, NO);
       if (vd == NULL) return 1;
-      dset(mg, 0, TOPLEVEL(mg), ALL_VECTORS, vd, 0.0);
+      dset(mg, 0, TOPLEVEL(mg), ON_SURFACE, vd, 0.0);
       nv[*no_nv] = VD_ncmp_cmpptr_of_otype(vd, NODEVEC, &dummy)[0];
       (*no_nv)++;
     }
     else if (strncmp(argv[i],"es",2) == 0) {
       vd = ReadArgvVecDescX(mg, "es", argc, argv, NO);
       if (vd == NULL) return 1;
-      dset(mg, 0, TOPLEVEL(mg), ALL_VECTORS, vd, 0.0);
+      dset(mg, 0, TOPLEVEL(mg), ON_SURFACE, vd, 0.0);
       es[*no_es] = VD_ncmp_cmpptr_of_otype(vd, ELEMVEC, &dummy)[0];
       (*no_es)++;
     }
     else if (strncmp(argv[i],"ev",2) == 0) {
       vd = ReadArgvVecDescX(mg, "ev", argc, argv, NO);
       if (vd == NULL) return 1;
-      dset(mg, 0, TOPLEVEL(mg), ALL_VECTORS, vd, 0.0);
+      dset(mg, 0, TOPLEVEL(mg), ON_SURFACE, vd, 0.0);
       ev[*no_ev] = VD_ncmp_cmpptr_of_otype(vd, ELEMVEC, &dummy)[0];
       (*no_ev)++;
     }
@@ -771,8 +771,8 @@ static int IntegrateElementData(STREAM *stream, BOXTREE *tree, int no_elements,
     }
     for (j = 0; j < nc; j++)
       for (k = 0; k < DIM; k++) {
-        range[k][0] = MIN(range[0][0], data.p[j][k]);
-        range[k][1] = MAX(range[0][1], data.p[j][k]);
+        range[k][0] = MIN(range[k][0], data.p[j][k]);
+        range[k][1] = MAX(range[k][1], data.p[j][k]);
       }
     data.no_es = no_es;
     data.no_ev = no_ev;
