@@ -1267,6 +1267,70 @@ int FAMGGrid::Reorder()
 
 #ifdef ModelP
 
+void CountOverlap (GRID *g)	// only for testing; TODO: remove 
+{
+	VECTOR *vec, *nb;
+	MATRIX *mat;
+	int nrborder = NVEC_PRIO(g,PrioBorder), level, i;
+	int shelllevel[ 10000 ];
+	
+	for ( level = 0; level < 10000; level++ )
+		shelllevel[level] = 0;
+	
+	for( vec=PFIRSTVECTOR(g); vec!=NULL; vec=SUCCVC(vec))
+		VINDEX(vec) = 0;
+	
+	for( vec=PFIRSTVECTOR(g); vec!=NULL; vec=SUCCVC(vec))
+		if ( PRIO(vec)==PrioMaster )
+		{
+			for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+			{
+				nb = MDEST(mat);
+				if( PRIO(nb)!=PrioMaster )
+				{
+					assert(PRIO(nb)==PrioBorder);
+					if( VINDEX(nb) == 0 )
+					{
+						VINDEX(nb) = 1;
+						nrborder--;
+						shelllevel[1]++;
+					}
+				}
+			}
+		}
+	
+	level = 1;
+	while( nrborder > 0 )
+	{
+		for( vec=PFIRSTVECTOR(g); vec!=NULL; vec=SUCCVC(vec))
+			if ( PRIO(vec)==PrioBorder && VINDEX(vec) == level)
+			{
+				for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+				{
+					nb = MDEST(mat);
+					if( PRIO(nb)!=PrioMaster )
+					{
+						assert(PRIO(nb)==PrioBorder);
+						if( VINDEX(nb) == 0 )
+						{
+							VINDEX(nb) = level+1;
+							nrborder--;
+							shelllevel[level+1]++;
+						}
+					}
+				}
+			}
+		level++;
+		assert(level<10000);
+	}
+	assert( nrborder== 0 );
+	
+	printf (PFMT"GLEVEL %d : %d Bordervec on %d shelllevels:", me, GLEVEL(g), NVEC_PRIO(g,PrioBorder), level);
+	for( i = 1; i<= level; i++ )
+		printf (" [ %d ]= %d", i, shelllevel[i]);
+	printf ("\n");
+}
+
 static void TransferVector( VECTOR *v, DDD_PROC dest_pe, DDD_PRIO dest_prio, int size )
 {	
 	DDD_XferCopyObjX(PARHDR(v), dest_pe, dest_prio, size);
@@ -1458,6 +1522,8 @@ ASSERT(!DDD_ConsCheck());
 		DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), SendToOverlap1 );
 	DDD_XferEnd();
 	
+//CountOverlap (mygrid);	// TODO: remove; only for testing
+
 	// renumber vector list
 	i = 0;
 	for( vec=PFIRSTVECTOR(mygrid); vec!=NULL; vec=SUCCVC(vec))
