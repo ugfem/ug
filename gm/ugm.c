@@ -3389,7 +3389,7 @@ INT RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *n
   eid=n_ioe=n_boe=0;
   for (i=0; i<=TOPLEVEL(theMG); i++)
     for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
-      if (EFATHER(theElement)==NULL)
+      if (EFATHER(theElement)==NULL || THEFLAG(theElement)==1)
       {
         ID(theElement) = eid++;
         if (OBJT(theElement)==BEOBJ) n_boe++;
@@ -3403,9 +3403,10 @@ INT RenumberMultiGrid (MULTIGRID *theMG, INT *nboe, INT *nioe, INT *nbov, INT *n
         assert(i==0 || EGHOST(theElement));
                                 #endif
       }
+
   for (i=0; i<=TOPLEVEL(theMG); i++)
     for (theElement=PFIRSTELEMENT(GRID_ON_LEVEL(theMG,i)); theElement!=NULL; theElement=SUCCE(theElement))
-      if (EFATHER(theElement)!=NULL)
+      if (EFATHER(theElement)!=NULL && THEFLAG(theElement)==0)
         ID(theElement) = eid++;
   if (nboe!=NULL) *nboe = n_boe;
   if (nioe!=NULL) *nioe = n_ioe;
