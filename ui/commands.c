@@ -114,6 +114,8 @@
 /* own header */
 #include "commands.h"
 
+#include "initug.h"
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
@@ -383,6 +385,29 @@ static INT QuitCommand (INT argc, char **argv)
   NO_OPTION_CHECK(argc,argv);
   SetDoneFlag();
   return(QUITCODE);
+}
+
+/****************************************************************************/
+/*D
+   exitug - exitug command
+
+   DESCRIPTION:
+   This command exits the current application and closes the shell.
+
+   'exitug'
+
+   KEYWORDS:
+   terminate, bye, tschuess
+   D*/
+/****************************************************************************/
+
+static INT ExitUgCommand (INT argc, char **argv)
+{
+  NO_OPTION_CHECK(argc,argv);
+
+  ExitUg();
+
+  exit(0);
 }
 
 /****************************************************************************/
@@ -13209,6 +13234,7 @@ INT InitCommands ()
 {
   /* general commands */
   if (CreateCommand("quit",                       QuitCommand                                     )==NULL) return (__LINE__);
+  if (CreateCommand("exitug",                     ExitUgCommand                                   )==NULL) return (__LINE__);
   if (CreateCommand("help",                       HelpCommand                                     )==NULL) return (__LINE__);
   if (CreateCommand("checkhelp",          CheckHelpCommand                                )==NULL) return (__LINE__);
   if (CreateCommand("readclock",          ReadClockCommand                                )==NULL) return (__LINE__);
