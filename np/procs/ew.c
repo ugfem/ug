@@ -373,8 +373,13 @@ static INT SetUnsymmetric (MULTIGRID *mg, INT fl, INT tl,
       ncomp = VD_NCMPS_IN_TYPE(x,vtype);
       A_VLOOP__TYPE_CLASS(lev,fl,tl,v,mg,vtype,xclass)
       for (i=0; i<ncomp; i++)
-        VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = VINDEX(v) + i * 0.3;
+        VVALUE(v,VD_CMP_OF_TYPE(x,vtype,i)) = VINDEX(v) + i * 0.3 + 0.1;
     }
+
+        #ifdef ModelP
+  if (a_vector_consistent(mg,fl,tl,x))
+    return(NUM_ERROR);
+        #endif
 
   return (NUM_OK);
 }
@@ -394,6 +399,11 @@ static INT RayleighQuotient (MULTIGRID *theMG,
 
   if (s_dmatmul (theMG,bl,tl,t,M,x,EVERY_CLASS)!=NUM_OK)
     return(1);
+
+        #ifdef ModelP
+  if (a_vector_collect(theMG,bl,tl,t))
+    return(1);
+        #endif
 
   if (s_ddot (theMG,bl,tl,t,x,scal1)!=NUM_OK)
     return(1);
@@ -537,10 +547,6 @@ static INT RayleighDefect (MULTIGRID *theMG, VECDATA_DESC *r,
 
   if (s_daxpy (theMG,bl,tl,t,scal,r))
     return(1);
-        #ifdef ModelP
-  if (a_vector_collect(theMG,bl,tl,t))
-    return(1);
-        #endif
   if (s_eunorm(theMG,bl,tl,t,defect))
     return(1);
 
@@ -712,6 +718,11 @@ static INT Rayleigh (NP_EW_SOLVER *theNP, INT level,
   if ((*Assemble->NLAssembleDefect)(Assemble,0,level,ev,np->r,np->M,result))
     return(1);
 
+        #ifdef ModelP
+  if (a_vector_collect(theNP->base.mg,0,level,np->r))
+    return(1);
+        #endif
+
   IFDEBUG(np,5)
   UserWriteF("r\n");
   PrintVector(GRID_ON_LEVEL(theNP->base.mg,level),np->r,3,3);
@@ -765,6 +776,10 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
     if ((*Assemble->NLAssembleDefect)(Assemble,bl,level,ev[0],np->r,np->M,
                                       &ewresult->error_code))
       return(1);
+            #ifdef ModelP
+    if (a_vector_collect(theMG,bl,level,np->r))
+      NP_RETURN(1,ewresult->error_code);
+            #endif
     if (s_ddot(theMG,0,level,ev[0],np->r,scal) != NUM_OK)
       NP_RETURN(1,ewresult->error_code);
     a[1] = 0.0;
@@ -802,6 +817,11 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
       if (s_dmatmul (theMG,0,level,np->t,np->M,ev[i],EVERY_CLASS)
           != NUM_OK) NP_RETURN(1,ewresult->error_code);
     }
+            #ifdef ModelP
+    if (a_vector_collect(theMG,bl,level,np->t))
+      NP_RETURN(1,ewresult->error_code);
+            #endif
+
     if (Orthogonalize(theMG,level,i,ev,np->t,np->display))
       NP_RETURN(1,ewresult->error_code);
     if (Rayleigh(&(np->ew),level,ev[i],Assemble,a,&rq,
@@ -858,6 +878,11 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
         if (s_dmatmul (theMG,0,level,np->t,np->M,ev[i],EVERY_CLASS)
             != NUM_OK) NP_RETURN(1,ewresult->error_code);
       }
+
+            #ifdef ModelP
+      if (a_vector_collect(theMG,bl,level,np->t))
+        NP_RETURN(1,ewresult->error_code);
+            #endif
       if (Orthogonalize(theMG,level,i,ev,np->t,np->display))
         NP_RETURN(1,ewresult->error_code);
       if (Rayleigh(&(np->ew),level,ev[i],Assemble,a,&rq,
