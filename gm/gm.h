@@ -1864,32 +1864,32 @@ enum GM_OBJECTS {
 /* control word offset */
 #define NODE_OFFSET                                     0
 
-#define NSUBDOM_SHIFT                           0
-#define NSUBDOM_LEN                                     3
-#define NSUBDOM(p)                                      CW_READ_STATIC(p,NSUBDOM_,NODE_)
-#define SETNSUBDOM(p,n)                         CW_WRITE_STATIC(p,NSUBDOM_,NODE_,n)
-
-#define MODIFIED_SHIFT                          3
-#define MODIFIED_LEN                            1
-#define MODIFIED(p)                             CW_READ_STATIC(p,MODIFIED_,NODE_)
-#define SETMODIFIED(p,n)                        CW_WRITE_STATIC(p,MODIFIED_,NODE_,n)
-
-#define NTYPE_SHIFT                                     4
+#define NTYPE_SHIFT                                     0
 #define NTYPE_LEN                                       3
 #define NTYPE(p)                                        CW_READ_STATIC(p,NTYPE_,NODE_)
 #define SETNTYPE(p,n)                           CW_WRITE_STATIC(p,NTYPE_,NODE_,n)
 
-#define NPROP_SHIFT                 7
-#define NPROP_LEN                   4
-#define NPROP(p)                    CW_READ_STATIC(p,NPROP_,NODE_)
-#define SETNPROP(p,n)               CW_WRITE_STATIC(p,NPROP_,NODE_,n)
+#define NSUBDOM_SHIFT                           3
+#define NSUBDOM_LEN                                     6
+#define NSUBDOM(p)                                      CW_READ_STATIC(p,NSUBDOM_,NODE_)
+#define SETNSUBDOM(p,n)                         CW_WRITE_STATIC(p,NSUBDOM_,NODE_,n)
 
 #ifdef ModelP
-#define XFERNODE_SHIFT                          11
+#define XFERNODE_SHIFT                          9
 #define XFERNODE_LEN                            2
 #define XFERNODE(p)                             CW_READ_STATIC(p,XFERNODE_,NODE_)
 #define SETXFERNODE(p,n)                        CW_WRITE_STATIC(p,XFERNODE_,NODE_,n)
 #endif /* ModelP */
+
+#define NPROP_SHIFT                 11
+#define NPROP_LEN                   4
+#define NPROP(p)                    CW_READ_STATIC(p,NPROP_,NODE_)
+#define SETNPROP(p,n)               CW_WRITE_STATIC(p,NPROP_,NODE_,n)
+
+#define MODIFIED_SHIFT                          15
+#define MODIFIED_LEN                            1
+#define MODIFIED(p)                             CW_READ_STATIC(p,MODIFIED_,NODE_)
+#define SETMODIFIED(p,n)                        CW_WRITE_STATIC(p,MODIFIED_,NODE_,n)
 
 #define PREDN(p)        (p)->pred
 #define SUCCN(p)        (p)->succ
