@@ -91,8 +91,20 @@ static int TransferGridToMaster (MULTIGRID *theMG)
   return(0);
 }
 
-void ddd_test (int mode, MULTIGRID *theMG)
+void ddd_test (int param, MULTIGRID *theMG)
 {
+  int mode;
+
+  /* param>100 is used as switch for DDD xfer statistics */
+  if (param>=100)
+    mode = param-100;
+  else
+    mode = param;
+
+  /* switch DDD infos on */
+  if (param>=100)
+    DDD_SetOption(OPT_INFO_XFER, XFER_SHOW_MEMUSAGE);
+
   InitCurrMG(theMG);
   switch (mode) {
   /* dies balanciert ein GRID mit RCB */
@@ -113,6 +125,10 @@ void ddd_test (int mode, MULTIGRID *theMG)
 
   default : break;
   }
+
+  /* switch DDD infos off */
+  if (param>=100)
+    DDD_SetOption(OPT_INFO_XFER, XFER_SHOW_NONE);
 }
 
 #endif /* ModelP */
