@@ -630,13 +630,9 @@ void ShellUpdateTextBuffer (ShellWindow *sh,int i)
 
 void ShellInsertString (ShellWindow *sh, const char *s)
 {
-  int i;
     #ifdef USE_XAW
   XawTextPosition appendPos;
   XawTextBlock text;
-
-  const char *st = "\n";
-  const char *temp= &s[strlen(s)-1];
 
   text.firstPos = 0;
   text.length = strlen(s);
@@ -644,11 +640,13 @@ void ShellInsertString (ShellWindow *sh, const char *s)
   text.format = FMT8BIT;
 
   appendPos=XawTextGetInsertionPoint(sh->wid);
-  if(*temp==*st) ShellUpdateTextBuffer(sh,appendPos+text.length);
+  if( text.length!=0 && s[text.length-1]=='\n' )
+    ShellUpdateTextBuffer(sh,appendPos+text.length);
   XawTextSetInsertionPoint(sh->wid,appendPos);
   XawTextReplace(sh->wid,appendPos,appendPos+text.length,&text);
   XawTextSetInsertionPoint(sh->wid,appendPos+text.length);
     #else
+  int i;
   for (i=0; i<strlen(s); i++) ShellInsertChar(sh,s[i]);
     #endif
 }
