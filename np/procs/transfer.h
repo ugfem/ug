@@ -162,27 +162,29 @@ struct np_transfer {
 typedef struct np_transfer NP_TRANSFER;
 
 typedef INT (*PreProcessTransferProcPtr)                                    \
-  (NP_TRANSFER *, INT, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *,  \
-  INT *, INT *);
+  (NP_TRANSFER *, INT *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *,  \
+  INT *);
 typedef INT (*PreProcessSolutionProcPtr)                                    \
-  (NP_TRANSFER *, INT, INT, VECDATA_DESC *, INT *, INT *);
+  (NP_TRANSFER *, INT, INT, VECDATA_DESC *, INT *);
 typedef INT (*PreProcessProjectProcPtr)                                     \
   (NP_TRANSFER *, INT, INT, INT *);
 typedef INT (*InterpolateCorrectionProcPtr)                                 \
-  (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, DOUBLE *, INT *);
+  (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, VEC_SCALAR, INT *);
 typedef INT (*RestrictDefectProcPtr)                                        \
-  (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, DOUBLE *, INT *);
+  (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, VEC_SCALAR, INT *);
 typedef INT (*InterpolateSolutionProcPtr)                                   \
   (NP_TRANSFER *, INT, INT, VECDATA_DESC *, INT *);
 typedef INT (*ProjectSolutionProcPtr)                                       \
   (NP_TRANSFER *, INT, INT, VECDATA_DESC *, INT *);
+typedef INT (*AdaptCorrectionProcPtr)                                   \
+  (NP_TRANSFER *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *, INT *);
 typedef INT (*PostProcessTransferProcPtr)                                   \
   (NP_TRANSFER *, INT *, INT, VECDATA_DESC *, VECDATA_DESC *, MATDATA_DESC *,  \
   INT *);
 typedef INT (*PostProcessSolutionProcPtr)                                   \
   (NP_TRANSFER *, INT, INT, VECDATA_DESC *, INT *);
 typedef INT (*PostProcessProjectProcPtr)                                    \
-  (NP_TRANSFER *, INT, INT, INT *);
+  (NP_TRANSFER *, INT *, INT, INT *);
 
 /****************************************************************************/
 /*																			*/
