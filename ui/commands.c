@@ -45,7 +45,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include <values.h>
+/*#include <values.h>*/
 #include <assert.h>
 
 /* low module */
