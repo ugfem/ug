@@ -1,0 +1,68 @@
+HOWTO for UG
+============
+
+Purpose:
+	- explain gory practical or conceptual details when using UG 
+	- with growing contents it should be a helpful
+	  and time saving database
+
+Structure:
+	- explanations are structured in a module by module 
+	  manner
+
+Usage:
+	- grep this HOWTO via keywords or 
+    - try to find a section of interest concerning with
+	  the problem you have
+
+Extensions:
+	- evereyone using UG is welcome to contribute
+	- please document all problems, also these which seem
+	  to be "easy" or clear after you solved them.
+	  Our mind is a subtile thing.
+
+Mantainance:
+	- should get a small rework of its structure and
+	  content every few month(?)
+
+
+General:
+-------
+
+Which sources of information exist about UG?
+- UG homepage: http://cox.iwr.uni-heidelberg.de/~ug
+- ug tutorial
+- inline documentation in commands.c about ug script commands.
+
+
+UG/ug/graphics/uggraph:
+----------------------
+
+Vector plotobject:
+
+-	How can I change the size of vectors?
+
+	Use "setplotobject EVector $c 0 $t 0.1 $l <n>", 
+	where $c 0 indicated no cutting of vectors,
+	$l <n> is the cutlengthfactor between [0.1,10].  
+	Additionally use "findrange $z <f>"  <f> in [0.1,0.25]
+	to scale the values.
+	See also UG/ug/graphics/uggraph/wpm.c: EVector2D,EVector3D
+	See also UG/ug/graphics/uggraph/wop.c: EVector2D,EVector3D
+	
+
+UG/ug/tools:
+-----------
+
+ugpfm: 
+
+ugpfm is for merging parallel datafiles/directories into their
+sequential counterpart.
+To read in the sequential file(s) increase the heap size in the
+loaddata command with the $h option, since the file(s) contain
+the heap size allocated by a single of the former parallel 
+processes. This heap size is in most cases to small for the
+big sequential multigrid of the merged file(s) and the resulting 
+error gives no hint towards increasing the heap size.
+
+
