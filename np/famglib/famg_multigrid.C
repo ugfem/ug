@@ -103,7 +103,7 @@ int FAMGMultiGrid::Construct()
 {
     FAMGGrid *g, *cg;
     int level, nnc, nn, ilu, cgilu, leave;
-	DOUBLE coarsefrac = 0.0, time;
+	DOUBLE coarsefrac = 0.0, t, time, cgtime;
 	FAMGLeaveInfo myleaveinfo;
 
     // read parameter
@@ -221,6 +221,8 @@ int FAMGMultiGrid::Construct()
 		// 	RETURN(1);       
 #endif
 
+		cgtime = CURRENT_TIME;
+
         nnc = (g->GetN())-(g->GetNF());
         cg = (FAMGGrid *) FAMGGetMem(sizeof(FAMGGrid),FAMG_FROM_TOP);
         if(cg == NULL)
@@ -247,7 +249,10 @@ int FAMGMultiGrid::Construct()
 //if (l_matrix_consistent(tmpgrid,tmpACons,MAT_CONS) != NUM_OK) assert(0);
 //prvGeom(tmplevel,0); primGeom(tmplevel+1); prmGeom(tmplevel,MD_SCALCMP(tmpACons));
 
-		time = CURRENT_TIME - time;
+		t = CURRENT_TIME;
+		time = t - time;
+		cgtime = t - cgtime;
+
 #ifdef ModelP
 		cout << me << ": ";
 		nnc = cg->GetNrMasterVectors();	// we are interested only in the master vectors
@@ -255,7 +260,7 @@ int FAMGMultiGrid::Construct()
 		coarsefrac = (double)nnc/nn;
 		if( nnc <= 0 )
 			coarsefrac = 0.000000999;	// dummy
-		cout << "amglevel " << -level << " coarsening rate " << 1.0/coarsefrac << " time "<<time<<endl;
+		cout << "amglevel " << -level << " coarsening rate " << 1.0/coarsefrac << " time "<<time<<" cg "<<cgtime<<endl;
     }
 
 

@@ -40,9 +40,6 @@ extern "C"
 #ifdef ModelP
 #include "famg_coloring.h"
 
-//additional measurement and output
-#define XFERTIMING
-
 //#define EXTENDED_OUTPUT_FOR_DEBUG 
 
 // nodes are only useful for debugging to have geometric positions 
@@ -2223,7 +2220,7 @@ static int CountInterfaceLengthCB(DDD_OBJ obj)
 }
 
 /* only for testing
-static inline int CountInterfaceLenght(GRID *grid)
+static inline int CountInterfaceLength(GRID *grid)
 {
 	int *proclist, nr = 0, LocalNr1;
 	double t1, t2, t3, t4;
@@ -2267,7 +2264,7 @@ void FAMGGrid::ConstructOverlap()
 	FAMGMatrixAlg *matrix_tmp;
 	MATRIX *mat;
 #ifdef XFERTIMING
-	int i1,i2;
+	int i1,i2, N1, N2;
 	double t1,t2,t3;
 #endif
 
@@ -2296,9 +2293,7 @@ void FAMGGrid::ConstructOverlap()
 
 #ifdef XFERTIMING
 	t1 = CURRENT_TIME;
-	LocalNr=0;
-	DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), CountInterfaceLengthCB );
-	i1 = LocalNr;
+	N1 = NVEC(mygrid);
 #endif
 
 	DDD_XferBegin();
@@ -2312,11 +2307,12 @@ void FAMGGrid::ConstructOverlap()
 	DDD_XferEnd();
 	
 #ifdef XFERTIMING
-	t2 = CURRENT_TIME;
-
 	LocalNr=0;
 	DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), CountInterfaceLengthCB );
-	i2 = LocalNr;
+	i1 = LocalNr;
+
+	t2 = CURRENT_TIME;
+	N2 = NVEC(mygrid);
 #endif
 
 #ifdef FAMG_FULL_OVERLAP
@@ -2361,6 +2357,9 @@ void FAMGGrid::ConstructOverlap()
 #endif // FAMG_FULL_OVERLAP
 
 #ifdef XFERTIMING
+	LocalNr=0;
+	DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), CountInterfaceLengthCB );
+	i2 = LocalNr;
 	t3 = CURRENT_TIME;
 #endif
 
@@ -2392,7 +2391,7 @@ void FAMGGrid::ConstructOverlap()
 	}
 
 #ifdef XFERTIMING
-	cout <<me<<": Xfer lev="<<GLEVEL(mygrid)<<' '<<t2-t1<<' '<<t3-t2<<" IF "<<i1<<' '<<i2<<endl;
+	cout <<me<<": Xfer lev="<<GLEVEL(mygrid)<<' '<<t2-t1<<' '<<t3-t2<<' '<<N1<<' '<<N2<<' '<<i1<<' '<<i2<<endl;
 #endif
 
 	#ifdef DIAGMATWORKSAFTERPRIOCHANGE

@@ -31,6 +31,9 @@
    $Header$
  */
 
+//additional measurement and output
+#define XFERTIMING
+
 const int FAMGRHS=0;
 const int FAMGUNKNOWN=1;
 const int FAMGDEFECT=2;

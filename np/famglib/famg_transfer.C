@@ -275,6 +275,17 @@ int FAMGTransfer::SetEntries(const FAMGVectorEntry& fg_vec, const FAMGVectorEntr
 }
 #endif
 
+#ifdef ModelP
+#ifdef XFERTIMING
+static int LocalNr;
+static int CountInterfaceLengthCB(DDD_OBJ obj)
+{
+	LocalNr++;
+	return 0;
+}
+#endif
+#endif
+
 int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg )
 // until now, the destination of the tansferentries was a coarse vector in the fine grid;
 // now we must change the destination to the corresponding vector in the coarse grid
@@ -294,6 +305,11 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 	GRID *ugcg = cg.GetugGrid();
 
 	#ifdef ModelP
+
+	#ifdef XFERTIMING
+	DOUBLE time;
+	#endif
+
 	DDD_IdentifyBegin();
 	DDD_PrioBegin();	// SETPRIO needs it
 	#endif
@@ -382,10 +398,23 @@ int FAMGTransfer::SetDestinationToCoarse( const FAMGGrid &fg, const FAMGGrid &cg
 		}
 	}
 
-	#ifdef ModelP
+#ifdef ModelP
+	
+	#ifdef XFERTIMING
+	time = CURRENT_TIME;
+	#endif
+
 	DDD_PrioEnd();
 	DDD_IdentifyEnd();	// this constructs distributed objects; afterwards XferEnd to update prio info
+
+	#ifdef XFERTIMING
+	LocalNr=0;
+	DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid)-1, CountInterfaceLengthCB );
+	time = CURRENT_TIME - time;
+	cout <<me<<": Dest lev="<<GLEVEL(mygrid)<<' '<<time<<' '<<NVEC(mygrid)<<' '<<LocalNr<<endl;
 	#endif
+
+#endif
 	
 	cg.GetMatrix()->GetN() = nrVec;
 	cg.GetConsMatrix()->GetN() = nrVec;
