@@ -83,6 +83,7 @@ void VectorScatterConnX (DDD_OBJ obj, int cnt, DDD_TYPE type_id, char **Data, in
 }
 
 static int OverlapForLevel0;
+static int* CopyPEBuffer = NULL;
 #endif
 
 INT l_force_consistence (GRID *g, const VECDATA_DESC *x);
@@ -167,6 +168,25 @@ void FAMGGrid::Prolongation(const FAMGGrid *cg, FAMGVector *c)
 #ifdef PROTOCOLNUMERIC
 	FAMGVector &cgdefect = *(cg->GetVector(FAMGDEFECT));
 	cgdefect = 1.0;
+	
+	if( 0 )	// Test whether a constant vector is prolongated onto a constant vector
+	{
+		FAMGVectorIter fiterTest(GetGridVector());
+		while( fiterTest(fvec) )
+		{
+#ifdef ModelP
+			if(!IS_FAMG_MASTER(((FAMGugVectorEntryRef*)(fvec.GetPointer()))->myvector()))
+				continue;
+#endif		
+			sum = 0.0;
+		    for(transfg = transfer.GetFirstEntry(fvec); transfg != NULL; transfg = transfg->GetNext())
+        		sum += transfg->GetProlongation() * cgdefect[transfg->GetCol()];
+			fgsol[fvec] = sum;
+		}
+		prv(GLEVEL(GetugGrid()), VD_SCALCMP(fgsol.GetUgVecDesc()) );	// result should be constant 1
+		prv(GLEVEL(cg->GetugGrid()), VD_SCALCMP(cgdefect.GetUgVecDesc()) );	// should be constant 1
+	}
+	
 	#ifdef ModelP
 	FAMGVectorIter citer(cg->GetGridVector());
 	FAMGVectorEntry cvec;
@@ -997,7 +1017,7 @@ int FAMGGrid::ConstructTransfer()
 		
 	GraphColorTime = CURRENT_TIME - GraphColorTime;
 	BorderCycles = UG_GlobalMaxINT((int)FAMGMyColor);
-  cout <<me<<": level = "<<level<<" my color = "<<FAMGMyColor<<" max. color = "<<BorderCycles<<" ColoringMethod = "<<FAMGGetParameter()->GetColoringMethod()<<" NrNbPe = "<<NrNbPe<<endl;
+	cout <<me<<": level = "<<level<<" my color = "<<FAMGMyColor<<" max. color = "<<BorderCycles<<" ColoringMethod = "<<FAMGGetParameter()->GetColoringMethod()<<" NrNbPe = "<<NrNbPe<<endl;
 
 	BorderTime = CURRENT_TIME_LONG;
 	for ( int color = 0; color <= BorderCycles; color++)
@@ -1360,6 +1380,7 @@ static void TransferVector( VECTOR *v, DDD_PROC dest_pe, DDD_PRIO dest_prio, int
 #endif
 }
 
+
 static int SendToMaster( DDD_OBJ obj)
 {
 	VECTOR *vec = (VECTOR *)obj, *w;
@@ -1381,7 +1402,7 @@ static int SendToMaster( DDD_OBJ obj)
 	
 	proclist = DDD_InfoProcList(PARHDR(vec));
 	masterPe = (DDD_PROC)me;	// init with an unpossible value
-	for( i=0; proclist[i]!=-1; i+=2 )
+	for( i=2; proclist[i]!=-1; i+=2 )
 		if( proclist[i+1] == PrioMaster )
 		{
 			masterPe = proclist[i];
@@ -1400,83 +1421,86 @@ static int SendToMaster( DDD_OBJ obj)
 		w = MDEST(mat);
 		
 		// search whether w has a copy on masterPe
-		proclist = DDD_InfoProcList(PARHDR(w));
-		found = FALSE;
-		for( i=0; proclist[i]!=-1; i+=2 )
-			if( masterPe == proclist[i] )
-			{
-				found = TRUE;
-				break;
-			}
+		//proclist = DDD_InfoProcList(PARHDR(w)); FEHLER, nicht verschachteln!
+		//found = FALSE;
+		//for( i=0; proclist[i]!=-1; i+=2 )
+		//	if( masterPe == proclist[i] )
+		//	{
+		//		found = TRUE;
+		//		break;
+		//	}
 		
-		if( !found )	// if it has no copy send w to masterPe
-		{
+		//if( !found )	// if it has no copy send w to masterPe
+		//{
 			PRINTDEBUG(np,1,("%d: SendToMaster %d:     -> "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(w)));
 			size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(w));
 			TransferVector(w, masterPe, PrioBorder, size);
-		}
-		else
-			PRINTDEBUG(np,1,("%d: SendToMaster %d:     is "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(w)));
+		//}
+		//else
+		//	PRINTDEBUG(np,1,("%d: SendToMaster %d:     is "VINDEX_FMTX"\n",me,masterPe,VINDEX_PRTX(w)));
 	}
 	
 	return 0;
 }
 
 static int SendToOverlap1( DDD_OBJ obj)
-// every master sends itself to each processor where a neighbor has a border copy
+// every master sends itself and its neighbors to each processor where it is a border and a neighbor has a master copy
+// the reason: on that processor the vector is in overlap1 and must extend with its neighbors the overlap2
 {
-	VECTOR *vec = (VECTOR *)obj, *w, *wn;
-	MATRIX *mat, *matw;
-	int *proclist_vec, *proclist_w, i, size;
-//temp weg 	int found;
+	VECTOR *vec = (VECTOR *)obj, *w;
+	MATRIX *mat;
+	int *proclist_vec, *proclist_w, i, size, dest_pe, found, *destPE_vec_ptr;
 	
 	if( !IS_FAMG_MASTER(vec) )
-		return 0;		// we want only border vectors here
+		return 0;		// we want only master vectors here
 
 	PRINTDEBUG(np,1,("%d: SendToOverlap1: "VINDEX_FMTX"\n",me,VINDEX_PRTX(vec)));
 
+	// construct list of all pes where vec has a copy
+	destPE_vec_ptr = CopyPEBuffer;	// init
 	proclist_vec = DDD_InfoProcList(PARHDR(vec));
-	
-	for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+	proclist_vec += 2; 	// skip entry for me
+	while( (*destPE_vec_ptr++ = proclist_vec[0]) != -1 )
 	{
-		w = MDEST(mat);
+		proclist_vec += 2;
+	}
+	
+	// traverse all pes where vec has a border/ghost copy
+	for( destPE_vec_ptr = CopyPEBuffer; *destPE_vec_ptr!=-1; destPE_vec_ptr++ )
+	{
+		dest_pe = *destPE_vec_ptr;
 		
-		proclist_w = DDD_InfoProcList(PARHDR(w));
-		for( ; proclist_w[0]!=-1; proclist_w += 2 )
-		{		
-			// send only to all not-master copies
-			if( proclist_w[1] == PrioMaster )
-				continue;
+		// search whether vec has a neighbor w with a master copy on dest_pe 
+		for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
+		{
+			w = MDEST(mat);
+		
+			if( IS_FAMG_MASTER(w) )
+				continue;	// if w is master here, he can not be master on an other processor
 			
-			// don't send info to myself
-			if(proclist_w[0]==me)
-				continue;
-			
-			// search whether vec has already a copy on the PE of the neighbor border copy
-			//temp weg found = FALSE;
-			for( i=0; proclist_vec[i]!=-1; i+=2 )
-				if( proclist_w[0] == proclist_vec[i] )
+			// look if w has a master copy on dest_pe and thus vec's copy is there in overlap1
+			found = 0;
+			proclist_w = DDD_InfoProcList(PARHDR(w));
+			for( ; proclist_w[0]!=-1; proclist_w += 2 )
+				if( proclist_w[0] == dest_pe && proclist_w[1] == PrioMaster )
 				{
-					//temp weg found = TRUE;
+					found = 1;
 					break;
 				}
-		
-		//temp weg if( !found )	// if it has no copy send vec
-			{
-				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,proclist_w[0],VINDEX_PRTX(w)));
-				size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(vec));
-				TransferVector(vec, proclist_w[0], PrioBorder, size);
-				// s.u. size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(w));
-				// wird unten mit gemacht DDD_XferCopyObjX(PARHDR(w), proclist_w[0], proclist_w[1], size);
-			}
 
-			for( matw=VSTART(w); matw!=NULL; matw=MNEXT(matw) )
+			if( !found )
+				continue;	// check the next neighbor
+			
+			// now we found a pe that should receive the neighborhood of vec (incl. vec)
+			for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
 			{
-				wn = MDEST(matw);
-				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,proclist_w[0],VINDEX_PRTX(wn)));
-                size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(wn));
-				TransferVector(wn, proclist_w[0], PrioBorder, size);
+				w = MDEST(mat);
+				PRINTDEBUG(np,1,("%d: SendToOverlap1 %d:     -> "VINDEX_FMTX"\n",me,dest_pe,VINDEX_PRTX(w)));
+                size = sizeof(VECTOR)-sizeof(DOUBLE)+FMT_S_VEC_TP(MGFORMAT(dddctrl.currMG),VTYPE(w));
+				TransferVector(w, dest_pe, PrioBorder, size);
 			}
+			
+			break; // check next copy of vec
 		}
 	}
 
@@ -1493,22 +1517,7 @@ void FAMGGrid::ConstructOverlap()
 	MATRIX *mat;
 
 	if(GLEVEL(mygrid)==0)
-	{	
-		/* change ghosts to border */
-		DDD_XferBegin();
-		for( vec=PFIRSTVECTOR(mygrid); PRIO(vec) != PrioBorder && PRIO(vec) != PrioMaster; vec = SUCCVC(vec))
-		{
-			DDD_XferPrioChange( PARHDR((NODE*)VOBJECT(vec)), PrioBorder ); /* TODO: cancel this line; its only for beauty in checks */
-			DDD_XferPrioChange( PARHDR(vec), PrioBorder );
-
-			for( mat=VSTART(vec); mat!=NULL; mat=MNEXT(mat) )
-				MVALUE(mat,mc) = 0.0;
-		}
-		/* elements with old ghostprios cause errors in check; but that's ok */
-		DDD_XferEnd();
-		/* vectors which just become border have not set the VECSKIP flag correctly! 
-		   this flags will be corrected by the subsequent a_vector_vecskip */
-
+	{
 ASSERT(!DDD_ConsCheck());
 		OverlapForLevel0 = 1;
 	}
@@ -1516,14 +1525,24 @@ ASSERT(!DDD_ConsCheck());
 	{
 		OverlapForLevel0 = 0;
 	}
-
+	
+	FAMGMarkHeap(FAMG_FROM_BOTTOM);
+	CopyPEBuffer = (int *) FAMGGetMem((procs+1)*sizeof(int),FAMG_FROM_BOTTOM);
+	if( CopyPEBuffer==NULL )
+	{
+		cout << "FAMGGrid::ConstructOverlap ERROR not enough memory for CopyPEBuffer" << endl << fflush;
+		abort();
+	}
+	
 	DDD_XferBegin();
-		DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), SendToMaster );
+		DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), SendToMaster );
 	DDD_XferEnd();
 	
 	DDD_XferBegin();
-		DDD_IFAExecLocal( BorderVectorIF, GRID_ATTR(mygrid), SendToOverlap1 );
+		DDD_IFAExecLocal( OuterVectorSymmIF, GRID_ATTR(mygrid), SendToOverlap1 );
 	DDD_XferEnd();
+	
+	FAMGReleaseHeap(FAMG_FROM_BOTTOM);
 	
 //CountOverlap (mygrid);	// TODO: remove; only for testing
 
@@ -1553,7 +1572,7 @@ ASSERT(!DDD_ConsCheck());
 		// do modifications for dirichlet vectors (as coarsegrid solver)
 		// communicate vecskip flags and dirichlet values
 		if (a_vector_vecskip(MYMG(mygrid),0,0,((FAMGugVector*)GetVector(FAMGUNKNOWN))->GetUgVecDesc()) != NUM_OK)
-			abort();
+			abort();		
 		// set dirichlet modification in the matrix
 		if (AssembleDirichletBoundary (mygrid,((FAMGugMatrix*)GetMatrix())->GetMatDesc(),((FAMGugVector*)GetVector(FAMGUNKNOWN))->GetUgVecDesc(),((FAMGugVector*)GetVector(FAMGDEFECT))->GetUgVecDesc()))
 			abort();
