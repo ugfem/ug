@@ -1633,69 +1633,14 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 	}
 
 	if (toCreate)
-	{
-		/* we need an interior node */
-		if (DIM == 2)
-		{
-			CenterNode[0] = CreateNode(theGrid,NULL);
-			if (CenterNode[0]==NULL) {assert(0);return(GM_FATAL);}
+	  {
+		SETUSED(theNode,1);
+		if ((CenterNode[0] = CreateCenterNode(theGrid,theElement)) == NULL)
+		  RETURN(GM_FATAL);
+	  }
 
-			CenterVertex = CreateInnerVertex(theGrid,NULL);
-			if (CenterVertex==NULL) {assert(0);return(GM_FATAL);}
-
-			SETUSED(theNode,1);
-			theGrid->status |= 1;
-			sx = sy = 0.0;
-			for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
-			{
-				sx += XC(MYVERTEX(CORNER(theElement,j)));
-				sy += YC(MYVERTEX(CORNER(theElement,j)));
-			}
-			XC(CenterVertex) = 0.25*sx;
-			YC(CenterVertex) = 0.25*sy;
-			XI(CenterVertex) = 0.0;
-			ETA(CenterVertex) = 0.0;
-			VFATHER(CenterVertex) = theElement;
-			NFATHER(CenterNode[0]) = NULL;
-			MYVERTEX(CenterNode[0]) = CenterVertex;
-			TOPNODE(CenterVertex) = CenterNode[0];
-		}
-
-		/* there is no center node, but we need one: so allocate it */
-		if (DIM == 3)
-		{
-			CenterNode[0] = CreateNode(theGrid,NULL);
-			if (CenterNode[0] == NULL) {assert(0);return(GM_FATAL);}
-
-			/* allocate center vertex and init local and global position */
-			CenterVertex = CreateInnerVertex(theGrid,NULL); 
-			if (CenterVertex == NULL) {assert(0);return(GM_FATAL);}
-			x = CVECT(CenterVertex);
-			xi = LCVECT(CenterVertex);
-			V3_CLEAR(x)
-			V3_CLEAR(xi)
-			for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-			{
-				V3_LINCOMB(1.0, x, 1.0, CVECT(MYVERTEX(CORNER(theElement,i))), x);
-				V3_LINCOMB(1.0, xi, 1.0, LOCAL_COORD_OF_ELEM(theElement,i), xi)
-			}
-
-			V3_SCALE(1.0/CORNERS_OF_ELEM(theElement), x)
-			V3_SCALE(1.0/CORNERS_OF_ELEM(theElement), xi)
-			/* TODO: delete this
-			V3_SCALE(0.25, x)
-			V3_SCALE(0.25, xi) */
-			
-			/* init ptrs */
-			VFATHER(CenterVertex) = theElement;
-			TOPNODE(CenterVertex) = CenterNode[0];
-			MYVERTEX(CenterNode[0]) = CenterVertex;
-		}
-	}
-
-	return(0);
+	return(GM_OK);
 }
-
 
 /****************************************************************************/
 /*																			*/

@@ -54,6 +54,7 @@
 #include "compiler.h"
 #include "heaps.h"
 #include "ugenv.h"
+#include "debug.h"
 
 #include "devices.h"
 
@@ -917,11 +918,11 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
   /* remove all connections concerning the vector */
   for (theMatrix=VSTART(theVector); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
     if (DisposeConnection(theGrid,MMYCON(theMatrix)))
-      return (1);
+      RETURN (1);
 
 #ifdef __INTERPOLATION_MATRIX__
   if (DisposeIMatrices(theGrid,VISTART(theVector)))
-    return (1);
+    RETURN (1);
 #endif
 
   /* now remove vector from vector list */
@@ -942,7 +943,7 @@ INT DisposeVector (GRID *theGrid, VECTOR *theVector)
   Size = sizeof(VECTOR)-sizeof(DOUBLE)
          +theGrid->mg->theFormat->VectorSizes[VTYPE(theVector)];
   if (PutFreeObject(theGrid->mg,theVector,Size,VEOBJ))
-    return(1);
+    RETURN(1);
 
   theGrid->nVector--;
 
@@ -1159,20 +1160,20 @@ INT DisposeDoubledSideVector (GRID *theGrid, ELEMENT *Elem0, INT Side0, ELEMENT 
       SET_SVECTOR(Elem0,Side0,Vector1);
       SETVCOUNT(Vector1,2);
       if (DisposeVector (theGrid,Vector0))
-        return (1);
+        RETURN (1);
     }
     else
     {
       SET_SVECTOR(Elem1,Side1,Vector0);
       SETVCOUNT(Vector0,2);
       if (DisposeVector (theGrid,Vector1))
-        return (1);
+        RETURN (1);
     }
     return (0);
 
   }
 
-  return (1);
+  RETURN (1);
 }
 #endif
 
@@ -1241,7 +1242,7 @@ INT DisposeConnectionFromElement (GRID *theGrid, ELEMENT *theElement)
     GetVectorsOfElement(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
     {
-      if (DisposeConnectionFromVector(theGrid,vList[i])) return(GM_ERROR);
+      if (DisposeConnectionFromVector(theGrid,vList[i])) RETURN(GM_ERROR);
       SETVBUILDCON(vList[i],1);
     }
   }
@@ -1253,7 +1254,7 @@ INT DisposeConnectionFromElement (GRID *theGrid, ELEMENT *theElement)
       GetVectorsOfSides(theElement,&cnt,vList);
       for (i=0; i<cnt; i++)
       {
-        if (DisposeConnectionFromVector(theGrid,vList[i])) return(GM_ERROR);
+        if (DisposeConnectionFromVector(theGrid,vList[i])) RETURN(GM_ERROR);
         SETVBUILDCON(vList[i],1);
       }
     }
@@ -1264,7 +1265,7 @@ INT DisposeConnectionFromElement (GRID *theGrid, ELEMENT *theElement)
     GetVectorsOfEdges(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
     {
-      if (DisposeConnectionFromVector(theGrid,vList[i])) return(GM_ERROR);
+      if (DisposeConnectionFromVector(theGrid,vList[i])) RETURN(GM_ERROR);
       SETVBUILDCON(vList[i],1);
     }
   }
@@ -1273,7 +1274,7 @@ INT DisposeConnectionFromElement (GRID *theGrid, ELEMENT *theElement)
     GetVectorsOfNodes(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
     {
-      if (DisposeConnectionFromVector(theGrid,vList[i])) return(GM_ERROR);
+      if (DisposeConnectionFromVector(theGrid,vList[i])) RETURN(GM_ERROR);
       SETVBUILDCON(vList[i],1);
     }
   }
@@ -1311,12 +1312,12 @@ static INT DisposeConnectionFromElementInNeighborhood (GRID *theGrid, ELEMENT *t
 {
   INT i;
 
-  if (Depth < 0) return (GM_ERROR);
+  if (Depth < 0) RETURN (GM_ERROR);
 
   /* create connection at that depth */
   if(!EBUILDCON(theElement))
     if (DisposeConnectionFromElement(theGrid,theElement))
-      return (GM_ERROR);
+      RETURN (GM_ERROR);
   SETEBUILDCON(theElement,1);
 
   /* dispose connection in neighborhood */
@@ -1324,10 +1325,10 @@ static INT DisposeConnectionFromElementInNeighborhood (GRID *theGrid, ELEMENT *t
   {
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
       if (DisposeConnectionFromElementInNeighborhood(theGrid,NBELEM(theElement,i),Depth-1))
-        return (GM_ERROR);
+        RETURN (GM_ERROR);
   }
 
-  return (GM_OK);
+  RETURN (GM_OK);
 }
 
 INT DisposeConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
@@ -1432,13 +1433,13 @@ CONNECTION *GetConnection (const VECTOR *FromVector, const VECTOR *ToVector)
 
 INT GetVectorsOfElement (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
 {
-  *cnt = 0;
+  vList[0] = EVECTOR(theElement);
+  *cnt = 1;
 
-  if (EVECTOR(theElement) != NULL)
-  {
-    vList[0] = EVECTOR(theElement);
-    *cnt = 1;
-  }
+  IFDEBUG(gm,0)
+  assert(vList[0] != NULL);
+  assert(VTYPE(vList[0]) == ELEMVECTOR);
+  ENDDEBUG
 
   return(GM_OK);
 }
@@ -1471,11 +1472,18 @@ INT GetVectorsOfSides (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
   INT i;
 
   *cnt = 0;
-  if (DIM==2) return(GM_OK);
 
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
     if (SVECTOR(theElement,i) != NULL)
       vList[(*cnt)++] = SVECTOR(theElement,i);
+
+  IFDEBUG(gm,0)
+  for (i=0; i<(*cnt); i++)
+  {
+    assert(vList[i] != NULL);
+    assert(VTYPE(vList[i]) == SIDEVECTOR);
+  }
+  ENDDEBUG
 
   return(GM_OK);
 }
@@ -1513,8 +1521,15 @@ INT GetVectorsOfEdges (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
   {
     theEdge = GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,i,0)),
                       CORNER(theElement,CORNER_OF_EDGE(theElement,i,1)));
-    if (theEdge==NULL) continue;
-    if (EDVECTOR(theEdge) != NULL)
+
+    IFDEBUG(gm,0)
+    {
+      assert(theEdge != NULL);
+      assert(EDVECTOR(theEdge) != NULL);
+      assert(VTYPE(EDVECTOR(theEdge)) == EDGEVECTOR);
+    }
+    ENDDEBUG
+
       vList[(*cnt)++] = EDVECTOR(theEdge);
   }
 
@@ -1551,6 +1566,15 @@ INT GetVectorsOfNodes (const ELEMENT *theElement, INT *cnt, VECTOR **vList)
   for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
     if (NVECTOR(CORNER(theElement,i)) != NULL)
       vList[(*cnt)++] = NVECTOR(CORNER(theElement,i));
+
+  IFDEBUG(gm,0)
+  for (i=0; i<(*cnt); i++)
+  {
+    assert(vList[i] != NULL);
+    assert(VTYPE(vList[i]) == NODEVECTOR);
+  }
+  ENDDEBUG
+
   return (GM_OK);
 }
 
@@ -1592,7 +1616,7 @@ INT GetVectorsOfType (const ELEMENT *theElement, INT type, INT *cnt, VECTOR **vL
     return (GetVectorsOfSides(theElement,cnt,vList));
         #endif
   }
-  return (GM_ERROR);
+  RETURN (GM_ERROR);
 }
 
 
@@ -1627,26 +1651,26 @@ INT GetAllVectorsOfElement (GRID *theGrid, ELEMENT *theElement, VECTOR **vec)
   if (TYPE_DEF_IN_GRID(theGrid,NODEVECTOR))
   {
     if (GetVectorsOfNodes(theElement,&i,vec) == GM_ERROR)
-      return(-1);
+      RETURN(-1);
     cnt += i;
   }
   if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
   {
     if (GetVectorsOfEdges(theElement,&i,vec+cnt) == GM_ERROR)
-      return(-1);
+      RETURN(-1);
     cnt += i;
   }
   if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
   {
     if (GetVectorsOfElement(theElement,&i,vec+cnt) == GM_ERROR)
-      return(-1);
+      RETURN(-1);
     cnt += i;
   }
     #ifdef __THREEDIM__
   if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
   {
     if (GetVectorsOfSides(theElement,&i,vec+cnt) == GM_ERROR)
-      return(-1);
+      RETURN(-1);
     cnt += i;
   }
     #endif
@@ -1737,7 +1761,7 @@ static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0, ELEMEN
         if (MatSize[mtype] > 0)
           if (ActDepth <= ConDepth[mtype])
             if (CreateConnection(theGrid,vec0[i],vec0[j])==NULL)
-              return(GM_ERROR);
+              RETURN(GM_ERROR);
       }
     return (0);
   }
@@ -1750,7 +1774,7 @@ static INT ElementElementCreateConnection (GRID *theGrid, ELEMENT *Elem0, ELEMEN
       if (MatSize[mtype] > 0)
         if (ActDepth <= ConDepth[mtype])
           if (CreateConnection(theGrid,vec0[i],vec1[j])==NULL)
-            return(GM_ERROR);
+            RETURN(GM_ERROR);
     }
 
   return (0);
@@ -1789,7 +1813,7 @@ INT GetElementInfoFromSideVector (const VECTOR *theVector, ELEMENT **Elements, I
   ELEMENT *theNeighbor;
 
   if (VTYPE(theVector) != SIDEVECTOR)
-    return (1);
+    RETURN (1);
   Elements[0] = (ELEMENT *)VOBJECT(theVector);
   Sides[0] = VECTORSIDE(theVector);
 
@@ -1808,7 +1832,7 @@ INT GetElementInfoFromSideVector (const VECTOR *theVector, ELEMENT **Elements, I
     Sides[1] = i;
     return (0);
   }
-  return (1);
+  RETURN (1);
 }
 #endif
 
@@ -1850,7 +1874,7 @@ static INT ResetUsedFlagInNeighborhood (ELEMENT *theElement, INT ActDepth, INT M
   /* call all neighbors recursively */
   if (ActDepth<MaxDepth)
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-      if (ResetUsedFlagInNeighborhood(NBELEM(theElement,i),ActDepth+1,MaxDepth)) return (1);
+      if (ResetUsedFlagInNeighborhood(NBELEM(theElement,i),ActDepth+1,MaxDepth)) RETURN (1);
 
   return (0);
 }
@@ -1866,14 +1890,14 @@ static INT ConnectWithNeighborhood (ELEMENT *theElement, GRID *theGrid, ELEMENT 
   if (ActDepth>=0)
     if (ElementElementCreateConnection(theGrid,centerElement,theElement,
                                        ActDepth,ConDepth,MatSize))
-      return (1);
+      RETURN (1);
 
   /* call all neighbors recursively */
   if (ActDepth<MaxDepth)
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
       if (ConnectWithNeighborhood(NBELEM(theElement,i),theGrid,
                                   centerElement,ConDepth,MatSize,
-                                  ActDepth+1,MaxDepth)) return (1);
+                                  ActDepth+1,MaxDepth)) RETURN (1);
 
   return (0);
 }
@@ -1917,12 +1941,12 @@ INT CreateConnectionsInNeighborhood (GRID *theGrid, ELEMENT *theElement)
 
   /* reset used flags in neighborhood */
   if (ResetUsedFlagInNeighborhood(theElement,0,MaxDepth))
-    return (1);
+    RETURN (1);
 
   /* create connection in neighborhood */
   if (ConnectWithNeighborhood(theElement,theGrid,theElement,ConDepth,
                               MatSize,0,MaxDepth))
-    return (1);
+    RETURN (1);
 
   return (0);
 }
@@ -1962,12 +1986,12 @@ static INT ConnectInsertedWithNeighborhood (ELEMENT *theElement, GRID *theGrid, 
   /* action */
   if (ActDepth>=0)
     if (CreateConnectionsInNeighborhood(theGrid,theElement))
-      return (1);
+      RETURN (1);
 
   /* call all neighbors recursively */
   if (ActDepth<MaxDepth)
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-      if (ConnectInsertedWithNeighborhood(NBELEM(theElement,i),theGrid,ActDepth+1,MaxDepth)) return (1);
+      if (ConnectInsertedWithNeighborhood(NBELEM(theElement,i),theGrid,ActDepth+1,MaxDepth)) RETURN (1);
 
   return (0);
 }
@@ -2008,12 +2032,12 @@ INT InsertedElementCreateConnection (GRID *theGrid, ELEMENT *theElement)
 
   /* reset used flags in neighborhood */
   if (ResetUsedFlagInNeighborhood(theElement,0,MaxDepth))
-    return (1);
+    RETURN (1);
 
   /* call 'CreateConnectionsInNeighborhood'
      in a neighborhood of theElement */
   if (ConnectInsertedWithNeighborhood (theElement,theGrid,0,MaxDepth))
-    return (1);
+    RETURN (1);
 
   return (0);
 }
@@ -2082,7 +2106,7 @@ INT GridCreateConnection (GRID *theGrid)
   for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
     if (EBUILDCON(theElement))             /* this is the trigger ! */
       if (CreateConnectionsInNeighborhood(theGrid,theElement))
-        return (1);
+        RETURN (1);
 
   return(GM_OK);
 }
@@ -2118,7 +2142,7 @@ INT MGCreateConnection (MULTIGRID *theMG)
     theGrid = theMG->grids[i];
     for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
       SETEBUILDCON(theElement,1);
-    if (GridCreateConnection(theGrid)) return (1);
+    if (GridCreateConnection(theGrid)) RETURN (1);
   }
 
   return (0);
@@ -2215,7 +2239,7 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
   if (Elem0 == Elem1)
   {
     for (i=0; i<cnt0; i++)
-      for (j=i; j<cnt0; j++)
+      for (j=0; j<cnt0; j++)
       {
         mtype = MatrixType[VTYPE(vec0[i])][VTYPE(vec0[j])];
         if (MatSize[mtype] > 0)
@@ -2232,7 +2256,7 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
             else SETCUSED(theCon,1);
           }
       }
-    return (ReturnCode);
+    RETURN (ReturnCode);
   }
 
   cnt1 = GetAllVectorsOfElement(theGrid,Elem1,vec1);
@@ -2255,7 +2279,7 @@ static INT ElementElementCheck (GRID *theGrid, ELEMENT *Elem0, ELEMENT *Elem1, I
         }
     }
 
-  return (ReturnCode);
+  RETURN (ReturnCode);
 }
 
 static ELEMENT *CheckNeighborhood (GRID *theGrid, ELEMENT *theElement, ELEMENT *centerElement, INT *ConDepth, INT ActDepth, INT MaxDepth, INT *MatSize)
@@ -2385,27 +2409,27 @@ INT VectorInElement (ELEMENT *theElement, VECTOR *theVector)
   {
     GetVectorsOfElement(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
-      if (vList[i]==theVector) return(1);
+      if (vList[i]==theVector) RETURN(1);
   }
         #ifdef __THREEDIM__
   if (VTYPE(theVector) == SIDEVECTOR)
   {
     GetVectorsOfSides(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
-      if (vList[i]==theVector) return(1);
+      if (vList[i]==theVector) RETURN(1);
   }
     #endif
   if (VTYPE(theVector) == EDGEVECTOR)
   {
     GetVectorsOfEdges(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
-      if (vList[i]==theVector) return(1);
+      if (vList[i]==theVector) RETURN(1);
   }
   if (VTYPE(theVector) == NODEVECTOR)
   {
     GetVectorsOfNodes(theElement,&cnt,vList);
     for (i=0; i<cnt; i++)
-      if (vList[i]==theVector) return(1);
+      if (vList[i]==theVector) RETURN(1);
   }
 
   return (0);
@@ -2480,7 +2504,7 @@ INT VectorPosition (VECTOR *theVector, COORD *position)
     return (0);
   }
 
-  return (GM_ERROR);
+  RETURN (GM_ERROR);
 }
 
 
@@ -3330,7 +3354,7 @@ INT ShellOrderVectors (GRID *theGrid, VECTOR *seed)
   if (NVEC(theGrid) != i)
   {
     UserWrite("vectorstructure corrupted\n");
-    return (1);
+    RETURN (1);
   }
 
   /* check # members of pred list */
@@ -3339,7 +3363,7 @@ INT ShellOrderVectors (GRID *theGrid, VECTOR *seed)
   if (NVEC(theGrid) != i)
   {
     UserWrite("vectorstructure corrupted\n");
-    return (1);
+    RETURN (1);
   }
 
   return (0);
@@ -3409,13 +3433,13 @@ static INT CheckVectorList (GRID *theGrid)
   i=0;
   for (theVector=FIRSTVECTOR(theGrid); theVector!= NULL; theVector=SUCCVC(theVector)) i++;
   if (NVEC(theGrid) != i)
-    return (1);
+    RETURN (1);
 
   /* check # members of pred list */
   i=0;
   for (theVector=LASTVECTOR(theGrid); theVector!= NULL; theVector=PREDVC(theVector)) i++;
   if (NVEC(theGrid) != i)
-    return (1);
+    RETURN (1);
 
   return (0);
 }
@@ -3427,7 +3451,7 @@ static INT CheckBVList (GRID *theGrid)
   /* check # members of succ list */
   for (theBV=GFIRSTBV(theGrid); BVSUCC(theBV)!= NULL; theBV=BVSUCC(theBV))
     if (BVENDVECTOR(theBV)!=BVFIRSTVECTOR(BVSUCC(theBV)))
-      return (1);
+      RETURN (1);
 
   return (0);
 }
@@ -3531,7 +3555,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   /* store in BLOCKVECTOR */
   if (nFIRST>0)
   {
-    if (CreatBlockvector_l0(theGrid,&theBV,NULL,1)!=GM_OK) return (1);
+    if (CreatBlockvector_l0(theGrid,&theBV,NULL,1)!=GM_OK) RETURN (1);
     theFirstBV = theBV;
     BVNUMBER(theFirstBV)    = 3*cycle+0;
     BVFIRSTVECTOR(theFirstBV)       = BVPRED(&FIRST_handle);
@@ -3539,7 +3563,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
 
   if (nLAST>0)
   {
-    if (CreatBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) return (1);
+    if (CreatBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) RETURN (1);
     theLastBV = theBV;
     BVNUMBER(theLastBV)             = 3*cycle+1;
     BVFIRSTVECTOR(theLastBV)        = BVPRED(&LAST_handle);
@@ -3585,7 +3609,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
             k = VDOWN(theNbVector);
             /*assert(k>0);*/			/* if 0 is supposed to be VCUSED already */
             if (k<=0)
-              return (1);
+              RETURN (1);
             SETVDOWN(theNbVector,--k);
             if (k==0)
             {
@@ -3606,7 +3630,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     /* create first BLOCKVECTOR */
     if (nFIRST>0)
     {
-      if (CreatBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) return (1);
+      if (CreatBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) RETURN (1);
       theFirstBV = theBV;
       BVNUMBER(theFirstBV)            = 3*cycle+0;
       BVFIRSTVECTOR(theFirstBV)       = PREDVC(theFirstVector);
@@ -3644,7 +3668,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     /* create Last BLOCKVECTOR */
     if (nLAST>0)
     {
-      if (CreatBlockvector_l0(theGrid,&theBV,theLastBV,0)!=GM_OK) return (1);
+      if (CreatBlockvector_l0(theGrid,&theBV,theLastBV,0)!=GM_OK) RETURN (1);
       theLastBV = theBV;
       BVNUMBER(theLastBV)             = 3*cycle+1;
       BVFIRSTVECTOR(theLastBV)        = LAST_last_in;
@@ -3662,7 +3686,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     /* create cut BLOCKVECTOR */
     if (nCUT>0)
     {
-      if (CreatBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) return (1);
+      if (CreatBlockvector_l0(theGrid,&theBV,theFirstBV,1)!=GM_OK) RETURN (1);
       theCutBV = theBV;
       theFirstBV = theBV;
       BVNUMBER(theCutBV)                      = 3*(cycle+1)+2;
@@ -3726,10 +3750,10 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
       if (BVNUMBER(takeOut)%3==2)
       {
         if (CutBlockvector_l0(theGrid,takeOut,YES))
-          return (1);
+          RETURN (1);
 
         if (InsertBlockvector_l0(theGrid,takeOut,NULL,0,YES))
-          return (1);
+          RETURN (1);
 
         theBV = BVSUCC(theBV);
       }
@@ -3739,7 +3763,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   {
     theHeap = MYMG(theGrid)->theHeap;
     Mark(theHeap,FROM_TOP);
-    if ((FBVList=(BLOCKVECTOR **)GetMem(theHeap,3*(cycle+1)*sizeof(BLOCKVECTOR*),FROM_TOP))==NULL) return (1);
+    if ((FBVList=(BLOCKVECTOR **)GetMem(theHeap,3*(cycle+1)*sizeof(BLOCKVECTOR*),FROM_TOP))==NULL) RETURN (1);
     for (i=0; i<3*cycle+3; i++) FBVList[i]=NULL;
     LBVList = FBVList + cycle + 1;
     CBVList = LBVList + cycle + 1;
@@ -3755,9 +3779,9 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
     for (i=cycle; i>0; i--)
     {
       if (CBVList[i]==NULL) continue;
-      if (CutBlockvector_l0(theGrid,CBVList[i],YES)) return (1);
+      if (CutBlockvector_l0(theGrid,CBVList[i],YES)) RETURN (1);
       k=i-1; while (LBVList[k]==NULL && k>0) k--;
-      if (InsertBlockvector_l0(theGrid,CBVList[i],LBVList[k],0,YES)) return (1);
+      if (InsertBlockvector_l0(theGrid,CBVList[i],LBVList[k],0,YES)) RETURN (1);
     }
 
     Release(theHeap,FROM_TOP);
@@ -3771,10 +3795,10 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
       if (BVNUMBER(takeOut)%3==2)
       {
         if (CutBlockvector_l0(theGrid,takeOut,YES))
-          return (1);
+          RETURN (1);
 
         if (InsertBlockvector_l0(theGrid,takeOut,NULL,1,YES))
-          return (1);
+          RETURN (1);
 
         theBV = BVPRED(theBV);
       }
@@ -3801,7 +3825,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   if (NVEC(theGrid) != i)
   {
     UserWrite("vectorstructure corrupted\n");
-    return (1);
+    RETURN (1);
   }
 
   /* check # members of pred list */
@@ -3810,7 +3834,7 @@ static INT OrderVectorAlgebraic (GRID *theGrid, INT mode, INT putSkipFirst, INT 
   if (NVEC(theGrid) != i)
   {
     UserWrite("vectorstructure corrupted\n");
-    return (1);
+    RETURN (1);
   }
 
   /* set index w.r.t. new order, beginning with 1 */
@@ -3862,7 +3886,7 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT 
   if ((mode!=GM_FCFCLL)&&
       (mode!=GM_FFLLCC)&&
       (mode!=GM_FFLCLC)&&
-      (mode!=GM_CCFFLL)) return(GM_ERROR);
+      (mode!=GM_CCFFLL)) RETURN(GM_ERROR);
 
   /* current level */
   currlevel = theMG->currentLevel;
@@ -3875,13 +3899,13 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT 
     if (theAlgDep==NULL)
     {
       UserWrite("algebraic dependency not found\n");
-      return(GM_ERROR);
+      RETURN(GM_ERROR);
     }
     DependencyProc = theAlgDep->DependencyProc;
     if (DependencyProc==NULL)
     {
       UserWrite("don't be stupid: implement a dependency!\n");
-      return(GM_ERROR);
+      RETURN(GM_ERROR);
     }
   }
 
@@ -3897,13 +3921,13 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT 
     if (theFindCut==NULL)
     {
       UserWrite("find cut proc not found\n");
-      return(GM_ERROR);
+      RETURN(GM_ERROR);
     }
     FindCutSet = theFindCut->FindCutProc;
     if (FindCutSet==NULL)
     {
       UserWrite("don't be stupid: implement a find cut proc!\n");
-      return(GM_ERROR);
+      RETURN(GM_ERROR);
     }
   }
 
@@ -3916,12 +3940,12 @@ INT OrderVectors (MULTIGRID *theMG, INT levels, INT mode, INT PutSkipFirst, INT 
     for (i=baselevel; i<=currlevel; i++)
     {
       theGrid = theMG->grids[i];
-      if ((*DependencyProc)(theGrid,dep_options)) return(GM_ERROR);
+      if ((*DependencyProc)(theGrid,dep_options)) RETURN(GM_ERROR);
     }
   for (i=baselevel; i<=currlevel; i++)
   {
     theGrid = theMG->grids[i];
-    if (OrderVectorAlgebraic(theGrid,mode,PutSkipFirst,SkipPat)) return(GM_ERROR);
+    if (OrderVectorAlgebraic(theGrid,mode,PutSkipFirst,SkipPat)) RETURN(GM_ERROR);
   }
 
   return (GM_OK);
@@ -4040,7 +4064,7 @@ static INT LexAlgDep (GRID *theGrid, const char *data)
 
   /* find an approximate measure for the mesh size */
   theBVP = MG_BVP(theMG);
-  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (1);
+  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) RETURN (1);
   InvMeshSize = POW2(GLEVEL(theGrid)) * pow(NN(GRID_ON_LEVEL(theMG,0)),1.0/DIM) / BVPD_RADIUS(theBVPDesc);
 
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
@@ -4157,10 +4181,10 @@ static INT LexAlgDep_old (GRID *theGrid, const char *data)
 
   for (theVector=theGrid->firstVector; theVector!= NULL; theVector=SUCCVC(theVector))
   {
-    if (VectorPosition (theVector,begin)) return (1);
+    if (VectorPosition (theVector,begin)) RETURN (1);
     for (theMatrix=MNEXT(VSTART(theVector)); theMatrix!=NULL; theMatrix=MNEXT(theMatrix))
     {
-      if (VectorPosition (MDEST(theMatrix),end)) return (1);
+      if (VectorPosition (MDEST(theMatrix),end)) RETURN (1);
       SETMUP(theMatrix,0);
       SETMDOWN(theMatrix,0);
       flags = (begin[index[0]]<end[index[0]]);
@@ -4186,7 +4210,7 @@ static INT LexAlgDep_old (GRID *theGrid, const char *data)
         SETMUP(theMatrix,1);
         break;
       default :
-        return(1);
+        RETURN(1);
 
       }
     }
