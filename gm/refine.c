@@ -173,8 +173,14 @@ INT a_vector_vecskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
 #endif
 
 /* marked elem with new green refinement (without rule, only 3D) */
+#ifdef __ANISOTROPIC__
+#define MARKED_NEW_GREEN(elem)                                               \
+			(DIM==3 && ((NEWGREEN(elem) && MARKCLASS(elem)==GREEN_CLASS) ||  \
+			((TAG(elem)==PRISM && MARKCLASS(elem)==RED_CLASS && USED(elem)==1))))
+#else
 #define MARKED_NEW_GREEN(elem)                                               \
 			(DIM==3 && NEWGREEN(elem) && MARKCLASS(elem)==GREEN_CLASS)
+#endif
 
 /* refined elem with new green refinement (without rule, only 3D) */
 #define REFINED_NEW_GREEN(elem)                                              \
@@ -1434,8 +1440,10 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 		/* make edgepattern consistent with pattern of edges */
 		SETUSED(theElement,1);
 
+		#ifndef __ANISOTROPIC__
 		/* TODO: change this for red refinement of pyramids */
 		if (DIM==3 && TAG(theElement)==PYRAMID) continue;
+		#endif
 
 		/* make sidepattern consistent with neighbors	*/
 		for (i=0; i<SIDES_OF_ELEM(theElement); i++)
@@ -1536,6 +1544,22 @@ static INT SetElementRules (GRID *theGrid, ELEMENT *firstElement, INT *cnt)
 		else
 		{
 			/* refinement with closure (default) */
+			#ifdef __ANISOTROPIC__
+			if (MARKCLASS(theElement)==RED_CLASS && TAG(theElement)==PRISM)
+			{
+				ASSERT(USED(theElement)==1);
+				if (Mark==-1)
+				{
+					ASSERT(TAG(theElement)==PRISM);
+					/* to implement the anisotropic case for other elements */
+					/* and anisotropic refinements the initial anisotropic  */
+					/* rule is needed here. (980316 s.l.)                   */ 
+					Mark = PRI_QUADSECT;
+				}
+				else
+					SETUSED(theElement,0);
+			}
+			#endif
 			ASSERT(Mark != -1);
 
 			/* switch green class to red class? */
@@ -1816,7 +1840,16 @@ static INT BuildGreenClosure (GRID *theGrid)
 	{
 		/* TODO: delete special debug */ PRINTELEMID(11668)
 
+		#ifdef __ANISOTROPIC__
+		if (MARKCLASS(theElement)==RED_CLASS && 
+			!(TAG(theElement)==PRISM && MARK(theElement)==PRI_QUADSECT)) continue;
+
+		ASSERT(MARKCLASS(theElement)!=RED_CLASS ||
+			   (MARKCLASS(theElement)==RED_CLASS && TAG(theElement)==PRISM 
+			   && MARK(theElement)==PRI_QUADSECT));
+		#else
 		if (MARKCLASS(theElement)==RED_CLASS) continue;
+		#endif
 
 		SETUPDATE_GREEN(theElement,0);
 
@@ -1840,6 +1873,9 @@ static INT BuildGreenClosure (GRID *theGrid)
 #endif
 				{
 					/* set to no-empty rule, e.g. COPY rule */
+					#ifdef __ANISOTROPIC__
+					if (MARKCLASS(theElement) != RED_CLASS)
+					#endif
 					SETMARK(theElement,COPY);
 
 					/* no existing edge node renew green refinement */
@@ -1861,6 +1897,9 @@ static INT BuildGreenClosure (GRID *theGrid)
 					ENDDEBUG
 				}					
 
+				#ifdef __ANISOTROPIC__
+				if (MARKCLASS(theElement) != RED_CLASS)
+				#endif
 				SETMARKCLASS(theElement,GREEN_CLASS);
 			}
 			else
@@ -1903,6 +1942,9 @@ static INT BuildGreenClosure (GRID *theGrid)
 				if (TAG(theNeighbor)==TETRAHEDRON)
 					printf("ERROR: no side nodes for tetrahedra! side=%d\n",j);
 #endif
+				#ifdef __ANISOTROPIC__
+				if (MARKCLASS(theElement) != RED_CLASS)
+				#endif
 				SETMARKCLASS(theElement,GREEN_CLASS);
 			}
 
@@ -1934,6 +1976,13 @@ static INT BuildGreenClosure (GRID *theGrid)
 			/* do not renew green refinement */
 			SETUSED(theElement,0);
 		}
+		#ifdef __ANISOTROPIC__
+		if (MARKCLASS(theElement)==RED_CLASS && UPDATE_GREEN(theElement)==0)
+		{
+			ASSERT(TAG(theElement)==PRISM && MARK(theElement)==PRI_QUADSECT);
+			SETUSED(theElement,0);
+		}
+		#endif
 #endif
 	}	
 
@@ -2524,7 +2573,11 @@ static INT RestrictElementMark(ELEMENT *theElement)
 				SETMARK(theElement,PYR_RED);
 				break;
 			case PRISM:
+				#ifdef __ANISOTROPIC__
+				SETMARK(theElement,PRI_QUADSECT);
+				#else
 				SETMARK(theElement,PRI_RED);
+				#endif
 				break;
 			case HEXAHEDRON:
 				SETMARK(theElement,HEXA_RED);
@@ -2618,8 +2671,12 @@ static INT RestrictMarks (GRID *theGrid)
 			/* the only ones to coarsen                     */
 			if (REFINECLASS(theElement) == RED_CLASS)
 			{
+				#ifndef __ANISOTROPIC__
 				SETMARK(theElement,REFINE(theElement));
 				SETMARKCLASS(theElement,REFINECLASS(theElement));
+				#else
+				ASSERT(MARK(theElement)>=1);
+				#endif
 			}
 		}
 
@@ -2915,9 +2972,12 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 				MidNodes[i] = MIDNODE(theEdge);
 			}
 		}
+		#ifndef __ANISOTROPIC__
 		else
+		#endif
+		if (NODE_OF_RULE(theElement,Mark,i))
 		{
-			if (NODE_OF_RULE(theElement,Mark,i)) toBisect = 1;
+			toBisect = 1;
 		}
 
 		IFDEBUG(gm,2)
@@ -2995,7 +3055,10 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 				}
 			}
 		}
-		else if (NODE_OF_RULE(theElement,Mark,EDGES_OF_ELEM(theElement)+i))
+		#ifndef __ANISOTROPIC__
+		else
+		#endif
+		if (NODE_OF_RULE(theElement,Mark,EDGES_OF_ELEM(theElement)+i))
 		{
 			toCreate = 1;
 		}
@@ -3108,7 +3171,10 @@ static int UpdateContext (GRID *theGrid, ELEMENT *theElement, NODE **theElementC
 		{
 			toCreate = 1;
 		}
-		else if (NODE_OF_RULE(theElement,Mark,CENTER_NODE_INDEX(theElement)))
+		#ifndef __ANISOTROPIC__
+		else
+		#endif
+		if (NODE_OF_RULE(theElement,Mark,CENTER_NODE_INDEX(theElement)))
 		{
 			toCreate = 1;
 		}
@@ -5105,7 +5171,14 @@ static int RefineElementGreen (GRID *theGrid, ELEMENT *theElement, NODE **theCon
 			UserWriteF("\n"); 
 			ENDDEBUG
 
+			#ifdef __ANISOTROPIC__
+			if (MARK(theElement) != COPY)
+				SETECLASS(sons[i].theSon,RED_CLASS);
+			else
+				SETECLASS(sons[i].theSon,GREEN_CLASS);
+			#else
 			SETECLASS(sons[i].theSon,GREEN_CLASS);
+			#endif
 /* TODO: delete
 			SETNSONS(theElement,NSONS(theElement)+1);
 */
@@ -5450,6 +5523,9 @@ static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContex
 			break;
 
 		case (GREEN_CLASS):
+		#ifdef __ANISOTROPIC__
+		case (RED_CLASS):
+		#endif
 			if (MARKED_NEW_GREEN(theElement))
 			{
 				/* elements with incomplete rules set */
@@ -5464,10 +5540,12 @@ static INT RefineElement (GRID *UpGrid, ELEMENT *theElement,NODE** theNodeContex
 			}
 			break;
 
+		#ifndef __ANISOTROPIC__
 		case (RED_CLASS):
 			if (RefineElementRed(UpGrid,theElement,theNodeContext)!=GM_OK)
 				RETURN(GM_FATAL);
 			break;
+		#endif
 
 		default:
 			RETURN(GM_FATAL);
@@ -5655,7 +5733,11 @@ if (0)
 			}
 			#endif
 
-			if (USED(theElement) == 0)
+			#ifdef __ANISOTROPIC__
+			if (USED(theElement)==0 && MARKCLASS(theElement)==GREEN_CLASS)
+			#else
+			if (USED(theElement)==0)
+			#endif
 			{
 				/* count not updated green refinements */ 
 				No_Green_Update++;
