@@ -3068,7 +3068,7 @@ static INT CheckOrientation (INT n, VERTEX **vertices)
   INT i;
 
   /* TODO: this case */
-  if (n == 8)
+  if (n == 8 || n==6)
     return(0);
 
   for (i=1; i<n; i++)
@@ -3125,6 +3125,8 @@ ELEMENT *InsertElement (MULTIGRID *theMG, INT n, NODE **Node, ELEMENT **ElemList
     tag = TETRAHEDRON;
   else if ( n == 5)
     tag = PYRAMID;
+  else if ( n == 6)
+    tag = PRISM;
   else if ( n == 8)
     tag = HEXAHEDRON;
   else
