@@ -81,7 +81,6 @@
 
 static char NoVecNames[MAX_VEC_COMP];
 static char NoMatNames[2*MAX_MAT_COMP];
-static char TypeName[NVECTYPES][3];
 
 static INT VectorDirID;
 static INT MatrixDirID;
@@ -98,6 +97,135 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 /* forward declarations of functions used before they are defined			*/
 /*																			*/
 /****************************************************************************/
+
+/****************************************************************************/
+/*D
+   GetUniqueOTypeOfVType - get uniqe object type for vtype
+
+   SYNOPSIS:
+   INT GetUniqueOTypeOfVType (const FORMAT *fmt, INT vtype)
+
+   PARAMETERS:
+   .  fmt - FORMAT
+   .  vtype - check this vtype
+
+   DESCRIPTION:
+   This function checks whether vtype uses exactly one object type
+   and if so returns its ID.
+
+   RETURN VALUE:
+   INT
+   .n    number of object if unique
+   .n    -1 else
+   D*/
+/****************************************************************************/
+
+INT GetUniqueOTypeOfVType (const FORMAT *fmt, INT vtype)
+{
+  INT i,found,objs,obj;
+
+  objs = FMT_T2O(fmt,vtype);
+  found = 0;
+  for (i=0; i<MAXVOBJECTS; i++)
+    if (objs & (1<<i))
+    {
+      found++;
+      obj = i;
+    }
+
+  if (found==1)
+    return (obj);
+  else
+    REP_ERR_RETURN (-1);
+}
+
+/****************************************************************************/
+/*D
+   GetUniquePartOfVType - get uniqe part for vtype
+
+   SYNOPSIS:
+   INT GetUniquePartOfVType (const MULTIGRID *mg, INT vtype)
+
+   PARAMETERS:
+   .  mg - multigrid
+   .  vtype - check this vtype
+
+   DESCRIPTION:
+   This function checks whether vtype uses exactly one part
+   and if so returns its ID.
+
+   RETURN VALUE:
+   INT
+   .n    number of object if unique
+   .n    -1 else
+   D*/
+/****************************************************************************/
+
+INT GetUniquePartOfVType (const MULTIGRID *mg, INT vtype)
+{
+  FORMAT *fmt;
+  INT i,n,found,parts,part;
+
+  fmt = MGFORMAT(mg);
+  n = BVPD_NPARTS(MG_BVPD(mg));
+  parts = FMT_T2P(fmt,vtype);
+  found = 0;
+  for (i=0; i<n; i++)
+    if (parts & (1<<i))
+    {
+      found++;
+      part = i;
+    }
+
+  if (found==1)
+    return (part);
+  else
+    REP_ERR_RETURN (-1);
+}
+
+/****************************************************************************/
+/*D
+   FillCompsForOType - fill a vtype component vector for a certain object type
+
+   SYNOPSIS:
+   INT FillCompsForOType (const FORMAT *fmt, INT otype, INT n, SHORT cmps[])
+
+   PARAMETERS:
+   .  otype - want dofs in this object type
+   .  n - number of dofs
+   .  cmps - resulting component vector
+
+   DESCRIPTION:
+   This function fills a vtype component vector with n components in each vtype
+   using objects of 'otype'. The 'cmps' vector can be used for dynamic allocation
+   of a VECDATA_DESC.
+
+   EXAMPLE:
+   .vb
+   SHORT NComps[NVECTYPES];
+   VECDATA_DESC *vd;
+
+   FillCompsForOType(MGFORMAT(theMG),NODEVEC,1,NComps);
+   if (AllocVDfromNCmp(theMG,fl,tl,NComps,NULL,&vd)) return(error);
+   .ve
+
+   RETURN VALUE:
+   INT
+   .n    number of object if unique
+   .n    -1 else
+   D*/
+/****************************************************************************/
+
+INT FillCompsForOType (const FORMAT *fmt, INT otype, INT n, SHORT cmps[])
+{
+  INT tp,otp;
+
+  otp = 1<<otype;
+  for (tp=0; tp<NVECTYPES; tp++)
+    cmps[tp] = (FMT_T2O(fmt,tp) & otp) ? n : 0;
+
+  return (0);
+}
 
 /****************************************************************************/
 /****************************************************************************/
@@ -118,13 +246,12 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
 
    DESCRIPTION:
    This function calculates offsets in DOUBLE vector called 'VEC_SCALAR'.
-   It describes the number of components of each type.
+   It describes the number of components of each abstract type.
 
    .n      offset[0] = 0
-   .n      offset[1] - offset[0] number of NODEVECTOR components
-   .n      offset[2] - offset[1] number of EDGEVECTOR components
-   .n      offset[3] - offset[2] number of ELEMVECTOR components
-   .n      offset[4] - offset[3] number of SIDEVECTOR components
+   .n      offset[1] - offset[0] number of components in first type
+   .n      offset[2] - offset[1] number of components in second type
+   .n      etc.
 
    All components of a vector data descriptor are mapped uniquely to
    one of the DOUBLE values in the 'VEC_SCALAR'.
@@ -197,6 +324,24 @@ static INT SetScalVecSettings (VECDATA_DESC *vd)
   return (NUM_OK);
 }
 
+static INT SetCompactTypesOfVec (VECDATA_DESC *vd)
+{
+  FORMAT *fmt;
+  INT tp;
+
+  /* fill bitwise fields */
+  fmt = MGFORMAT(VD_MG(vd));
+  VD_DATA_TYPES(vd) = VD_OBJ_USED(vd) = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (VD_ISDEF_IN_TYPE(vd,tp))
+    {
+      VD_DATA_TYPES(vd) |= BITWISE_TYPE(tp);
+      VD_OBJ_USED(vd)   |= FMT_T2O(fmt,tp);
+    }
+
+  return (0);
+}
+
 /****************************************************************************/
 /*D
    FillRedundantComponentsOfVD - fill the redundant components of a VECDATA_DESC
@@ -220,6 +365,7 @@ static INT SetScalVecSettings (VECDATA_DESC *vd)
 INT FillRedundantComponentsOfVD (VECDATA_DESC *vd)
 {
   ConstructVecOffsets(VD_NCMPPTR(vd),VD_OFFSETPTR(vd));
+  SetCompactTypesOfVec(vd);
   SetScalVecSettings(vd);
 
   return (NUM_OK);
@@ -364,6 +510,7 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
     memcpy(VM_COMP_NAMEPTR(vd),compNames,MIN(ncmp,MAX_VEC_COMP));
 
   /* fill data in vec data desc */
+  VD_MG(vd) = theMG;
   i = 0;
   Comp = VM_COMPPTR(vd);
   for (tp=0; tp<NVECTYPES; tp++) {
@@ -371,7 +518,7 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
     VD_CMPPTR_OF_TYPE(vd,tp) = Comp + offset[tp];
     for (j=0; j<MAX_NDOF_MOD_32*32; j++) {
       if (i >= offset[tp+1]) break;
-      if (j*sizeof(DOUBLE) >= theMG->theFormat->VectorSizes[tp])
+      if (j*sizeof(DOUBLE) >= FMT_S_VEC_TP(MGFORMAT(theMG),tp))
         REP_ERR_RETURN (NULL);
       if (READ_DR_VEC_FLAG(theMG,tp,j)) continue;
       Comp[i++] = j;
@@ -387,6 +534,9 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
       PRINTDEBUG(np,1,(" %d",VD_CMP_OF_TYPE(vd,tp,i)));
   }
   PRINTDEBUG(np,1,("\n"));
+
+  /* fill bitwise fields */
+  SetCompactTypesOfVec(vd);
 
   /* fill fields with scalar properties */
   SetScalVecSettings(vd);
@@ -406,7 +556,7 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
    PARAMETERS:
    .  theMG - create vector for this multigrid
    .  theVD - given vector
-   .  name - create vecdesc with this name
+   .  name - create vecdesc with this name (maybe NULL for default name)
    .  NCmpInType - 'VECDATA_DESC' specification
    .  Comps - the Comps of theVD which make up the sub-vecdesc
    .  compNames - (optional) vector of component names (in the canonic type order)
@@ -429,6 +579,7 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const VECDATA_DESC *theVD, con
   SHORT offset[NVECOFFSETS];
   const SHORT *offptr;
   INT j,k,tp,ncmp,size;
+  char buffer[NAMESIZE];
 
   if (theMG == NULL)
     REP_ERR_RETURN (NULL);
@@ -441,10 +592,14 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const VECDATA_DESC *theVD, con
   offptr = VD_OFFSETPTR(theVD);
   if (ncmp <= 0) REP_ERR_RETURN (NULL);
   size = sizeof(VECDATA_DESC)+(ncmp-1)*sizeof(SHORT);
-  vd = (VECDATA_DESC *) MakeEnvItem (name,VectorVarID,size);
+  if (name != NULL)
+    strcpy(buffer,name);
+  else if (GetNewVectorName(theMG,buffer)) REP_ERR_RETURN (NULL);
+  vd = (VECDATA_DESC *) MakeEnvItem (buffer,VectorVarID,size);
   if (vd == NULL) REP_ERR_RETURN (NULL);
 
   /* fill data in vec data desc */
+  VD_MG(vd) = theMG;
   strncpy(VM_COMP_NAMEPTR(vd),CompNames,ncmp);
   k = 0;
   for (tp=0; tp<NVECTYPES; tp++) {
@@ -457,6 +612,9 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const VECDATA_DESC *theVD, con
   ASSERT(k==offset[NVECTYPES]);
   for (tp=0; tp<NVECOFFSETS; tp++)
     VD_OFFSET(vd,tp) = offset[tp];
+
+  /* fill bitwise fields */
+  SetCompactTypesOfVec(vd);
 
   /* fill fields with scalar properties */
   SetScalVecSettings(vd);
@@ -535,6 +693,9 @@ VECDATA_DESC *CombineVecDesc (MULTIGRID *theMG, const char *name, const VECDATA_
     offset += k;
   }
   VD_OFFSET(vd,type) = offset;       /* last one points to the end of the array */
+
+  /* fill bitwise fields */
+  SetCompactTypesOfVec(vd);
 
   /* fill fields with scalar properties */
   SetScalVecSettings(vd);
@@ -752,6 +913,7 @@ INT FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
    INT DisplayVecDataDesc (const VECDATA_DESC *vd, char *buffer)
 
    PARAMETERS:
+   .  fmt - associated format for names of abstract types
    .  vd - VECDATA_DESC to display
    .  buffer - print here
 
@@ -767,6 +929,7 @@ INT FreeVD (MULTIGRID *theMG, INT fl, INT tl, VECDATA_DESC *vd)
 
 INT DisplayVecDataDesc (const VECDATA_DESC *vd, char *buffer)
 {
+  const FORMAT *fmt;
   const SHORT *offset;
   const char *cn;
   INT rt,i;
@@ -775,6 +938,7 @@ INT DisplayVecDataDesc (const VECDATA_DESC *vd, char *buffer)
 
   buffer += sprintf(buffer,"contents of vector symbol '%s'\n",ENVITEM_NAME(vd));
 
+  fmt = MGFORMAT(VD_MG(vd));
   cn = VM_COMP_NAMEPTR(vd);
   offset = VD_OFFSETPTR(vd);
   for (rt=0; rt<NVECTYPES; rt++)
@@ -782,7 +946,7 @@ INT DisplayVecDataDesc (const VECDATA_DESC *vd, char *buffer)
     {
       buffer += sprintf(buffer,"-------\n");
       for (i=0; i<VD_NCMPS_IN_TYPE(vd,rt); i++)
-        buffer += sprintf(buffer,"%s %c %2d\n",(i) ? "  " : TypeName[rt],cn[offset[rt]+i],VD_CMP_OF_TYPE(vd,rt,i));
+        buffer += sprintf(buffer,"%c  %c %2d\n",(i) ? ' ' : FMT_VTYPE_NAME(fmt,rt),cn[offset[rt]+i],VD_CMP_OF_TYPE(vd,rt,i));
     }
   buffer += sprintf(buffer,"-------\n");
 
@@ -825,6 +989,198 @@ VECDATA_DESC *GetVecDataDescByName (const MULTIGRID *theMG, char *name)
   if (ChangeEnvDir(ENVITEM_NAME(theMG)) == NULL) return (NULL);
   return((VECDATA_DESC *) SearchEnv(name,"Vectors",
                                     VectorVarID,VectorDirID));
+}
+
+/****************************************************************************/
+/*D
+   VD_ncmps_in_otype - return number of comps in object if unique, -1 else
+
+   SYNOPSIS:
+   INT VD_ncmps_in_otype (const VECDATA_DESC *vd, INT otype)
+
+   PARAMETERS:
+   .  vd - data decsriptor
+   .  otype - object type
+
+   DESCRIPTION:
+   This function checks whether the number of components described in 'otype'
+   is the same for all vtypes using objects of 'otype' and returns it.
+   If the number is not unique a -1 is returned.
+   If not the whole domain is covered, a -2 is returned.
+   The uniqueness of comps is not checked here.
+
+   CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
+   are not defined at all!
+
+   RETURN VALUE:
+   INT
+   .n      number of components in objects of 'otype'
+   .n      -1 if not unique
+   .n      -2 if not the whole domain is covered
+   D*/
+/****************************************************************************/
+
+INT VD_ncmps_in_otype (const VECDATA_DESC *vd, INT otype)
+{
+  FORMAT *fmt;
+  INT tp,otp,ncmp,parts,i,n;
+
+  fmt = MGFORMAT(VD_MG(vd));
+  otp = 1<<otype;
+  ncmp = parts = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (VD_ISDEF_IN_TYPE(vd,tp))
+      if (otp & FMT_T2O(fmt,tp))
+      {
+        if (ncmp==0)
+          ncmp = VD_NCMPS_IN_TYPE(vd,tp);
+        else
+        if (VD_NCMPS_IN_TYPE(vd,tp)!=ncmp)
+          REP_ERR_RETURN (-1);
+        parts |= FMT_T2P(fmt,tp);
+      }
+
+  /* now check whether all parts are covered */
+  n = BVPD_NPARTS(MG_BVPD(VD_MG(vd)));
+  for (i=0; i<n; i++)
+    if (!(parts & (1<<i)))
+      REP_ERR_RETURN (-2);
+
+  return (ncmp);
+}
+
+/****************************************************************************/
+/*D
+   VD_cmp_of_otype - return comp in object if unique, -1 else
+
+   SYNOPSIS:
+   INT VD_cmp_of_otype (const VECDATA_DESC *vd, INT otype, INT i)
+
+   PARAMETERS:
+   .  vd - data decsriptor
+   .  otype - object type
+
+   DESCRIPTION:
+   This function checks whether the offset of component i described in 'otype'
+   is the same for all vtypes using objects of 'otype' and returns it.
+   If the offset is not unique a -1 is returned.
+
+   CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
+   are not defined at all!
+
+   RETURN VALUE:
+   INT
+   .n      number of components in objects of 'otype'
+   .n      -1 if not unique
+   D*/
+/****************************************************************************/
+
+INT VD_cmp_of_otype (const VECDATA_DESC *vd, INT otype, INT i)
+{
+  FORMAT *fmt;
+  INT tp,otp,ncmp,off,parts,j,n;
+
+  fmt = MGFORMAT(VD_MG(vd));
+  otp = 1<<otype;
+  ncmp = off = parts = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (VD_ISDEF_IN_TYPE(vd,tp))
+      if (otp & FMT_T2O(fmt,tp))
+      {
+        if (ncmp==0)
+        {
+          ncmp = VD_NCMPS_IN_TYPE(vd,tp);
+          off  = VD_CMP_OF_TYPE(vd,tp,i);
+          if (i>=ncmp)
+            REP_ERR_RETURN (-1);
+        }
+        else
+        {
+          if (VD_NCMPS_IN_TYPE(vd,tp)!=ncmp)
+            REP_ERR_RETURN (-1);
+          if (VD_CMP_OF_TYPE(vd,tp,i)!=off)
+            REP_ERR_RETURN (-1);
+        }
+        parts |= FMT_T2P(fmt,tp);
+      }
+
+  /* now check whether all parts are covered */
+  n = BVPD_NPARTS(MG_BVPD(VD_MG(vd)));
+  for (j=0; j<n; j++)
+    if (!(parts & (1<<j)))
+      REP_ERR_RETURN (-2);
+
+  return (off);
+}
+
+/****************************************************************************/
+/*D
+   VD_ncmp_cmpptr_of_otype - return comp in object if unique, -1 else
+
+   SYNOPSIS:
+   INT VD_ncmp_cmpptr_of_otype (const VECDATA_DESC *vd, INT otype, INT *ncomp)
+
+   PARAMETERS:
+   .  vd - data decsriptor
+   .  otype - object type
+   .  ncomp - number of components (may be NULL)
+
+   DESCRIPTION:
+   This function checks whether all components described in 'otype'
+   are the same for all vtypes using objects of 'otype' and returns a component pointer.
+   If the components are not unique a NULL is returned.
+
+   CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
+   are not defined at all!
+
+   RETURN VALUE:
+   SHORT *
+   .n      number of components in objects of 'otype'
+   .n      NULL if not unique
+   D*/
+/****************************************************************************/
+
+SHORT *VD_ncmp_cmpptr_of_otype (const VECDATA_DESC *vd, INT otype, INT *ncomp)
+{
+  FORMAT *fmt;
+  SHORT *cptr;
+  INT tp,otp,ncmp,i,parts,n;
+
+  if (ncomp!=NULL) *ncomp = -1;
+
+  fmt = MGFORMAT(VD_MG(vd));
+  otp = 1<<otype;
+  ncmp = parts = 0;
+  cptr = NULL;
+  for (tp=0; tp<NVECTYPES; tp++)
+    if (VD_ISDEF_IN_TYPE(vd,tp))
+      if (otp & FMT_T2O(fmt,tp))
+      {
+        if (ncmp==0)
+        {
+          ncmp = VD_NCMPS_IN_TYPE(vd,tp);
+          cptr = VD_CMPPTR_OF_TYPE(vd,tp);
+        }
+        else
+        {
+          if (VD_NCMPS_IN_TYPE(vd,tp)!=ncmp)
+            REP_ERR_RETURN (NULL);
+          for (i=0; i<ncmp; i++)
+            if (VD_CMP_OF_TYPE(vd,tp,i)!=cptr[i])
+              REP_ERR_RETURN (NULL);
+        }
+        parts |= FMT_T2P(fmt,tp);
+      }
+
+  /* now check whether all parts are covered */
+  n = BVPD_NPARTS(MG_BVPD(VD_MG(vd)));
+  for (i=0; i<n; i++)
+    if (!(parts & (1<<i)))
+      REP_ERR_RETURN (NULL);
+
+  if (ncomp!=NULL) *ncomp = ncmp;
+
+  return (cptr);
 }
 
 /****************************************************************************/
@@ -916,6 +1272,27 @@ static INT SetScalMatSettings (MATDATA_DESC *md)
   return (NUM_OK);
 }
 
+static INT SetCompactTypesOfMat (MATDATA_DESC *md)
+{
+  FORMAT *fmt;
+  INT rt,ct;
+
+  /* fill bitwise fields */
+  fmt = MGFORMAT(MD_MG(md));
+  MD_ROW_DATA_TYPES(md) = MD_COL_DATA_TYPES(md) =
+                            MD_ROW_OBJ_USED(md) = MD_COL_OBJ_USED(md) = 0;
+  for (rt=0; rt<NVECTYPES; rt++)
+    for (ct=0; ct<NVECTYPES; ct++)
+      if (MD_ISDEF_IN_RT_CT(md,rt,ct))
+      {
+        MD_ROW_DATA_TYPES(md) |= BITWISE_TYPE(rt);
+        MD_COL_DATA_TYPES(md) |= BITWISE_TYPE(ct);
+        MD_ROW_OBJ_USED(md)   |= FMT_T2O(fmt,rt);
+        MD_COL_OBJ_USED(md)   |= FMT_T2O(fmt,ct);
+      }
+  return (0);
+}
+
 /****************************************************************************/
 /*D
    FillRedundantComponentsOfMD - fill the redundant components of a MATDATA_DESC
@@ -939,6 +1316,7 @@ static INT SetScalMatSettings (MATDATA_DESC *md)
 INT FillRedundantComponentsOfMD (MATDATA_DESC *md)
 {
   ConstructMatOffsets(MD_ROWPTR(md),MD_COLPTR(md),MD_OFFSETPTR(md));
+  SetCompactTypesOfMat(md);
   SetScalMatSettings(md);
 
   return (NUM_OK);
@@ -1084,6 +1462,7 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *com
     memcpy(VM_COMP_NAMEPTR(md),compNames,2*MIN(ncmp,MAX_MAT_COMP));
 
   /* fill data in mat data desc */
+  MD_MG(md) = theMG;
   i = 0;
   Comp = VM_COMPPTR(md);
   for (tp=0; tp<NMATTYPES; tp++) {
@@ -1095,7 +1474,7 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *com
     for (j=0; j<MAX_NDOF_MOD_32*32; j++) {
       if (i >= offset[tp+1]) break;
       if (j*sizeof(DOUBLE) >=
-          theMG->theFormat->MatrixSizes[MatrixType[MTYPE_RT(tp)][MTYPE_CT(tp)]])
+          FMT_S_MAT_TP(MGFORMAT(theMG),MatrixType[MTYPE_RT(tp)][MTYPE_CT(tp)]))
         REP_ERR_RETURN (NULL);
       if (READ_DR_MAT_FLAG(theMG,tp,j)) continue;
       Comp[i++] = j;
@@ -1104,6 +1483,9 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *com
   }
   for (tp=0; tp<NMATOFFSETS; tp++)
     MD_MTYPE_OFFSET(md,tp) = offset[tp];
+
+  /* fill bitwise fields */
+  SetCompactTypesOfMat(md);
 
   /* fill fields with scalar properties */
   SetScalMatSettings(md);
@@ -1125,7 +1507,7 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *com
    PARAMETERS:
    .  theMG - create sub-matrix for this multigrid
    .  theMD - given matrix
-   .  name - create sub-matrix with this name
+   .  name - create sub-matrix with this name (maybe NULL for default name)
    .  RowsInType - 'MATDATA_DESC' specification
    .  ColsInType - 'MATDATA_DESC' specification
    .  Comps - the Comps of theMD which make up the sub-matdesc
@@ -1150,6 +1532,7 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
   SHORT offset[NMATOFFSETS];
   const SHORT *offptr;
   INT j,tp,ncmp,size;
+  char buffer[NAMESIZE];
 
   if (theMG == NULL)
     REP_ERR_RETURN (NULL);
@@ -1162,10 +1545,14 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
   offptr = MD_OFFSETPTR(theMD);
   if (ncmp <= 0) REP_ERR_RETURN (NULL);
   size = sizeof(MATDATA_DESC)+(ncmp-1)*sizeof(SHORT);
-  md = (MATDATA_DESC *) MakeEnvItem (name,MatrixVarID,size);
+  if (name != NULL)
+    strcpy(buffer,name);
+  else if (GetNewMatrixName(theMG,buffer)) REP_ERR_RETURN (NULL);
+  md = (MATDATA_DESC *) MakeEnvItem (buffer,MatrixVarID,size);
   if (md == NULL) REP_ERR_RETURN (NULL);
 
   /* fill data in mat data desc */
+  MD_MG(md) = theMG;
   strncpy(VM_COMP_NAMEPTR(md),CompNames,2*ncmp);
   for (tp=0; tp<NMATTYPES; tp++) {
     MD_ROWS_IN_MTYPE(md,tp) = RowsInType[tp];
@@ -1178,6 +1565,9 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
   }
   for (tp=0; tp<NMATOFFSETS; tp++)
     MD_MTYPE_OFFSET(md,tp) = offset[tp];
+
+  /* fill bitwise fields */
+  SetCompactTypesOfMat(md);
 
   /* fill fields with scalar properties */
   SetScalMatSettings(md);
@@ -1195,6 +1585,7 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
    INT DisplayMatDataDesc (const MATDATA_DESC *md, char *buffer)
 
    PARAMETERS:
+   .  fmt - associated format for names of abstract types
    .  md - MATDATA_DESC to display
    .  buffer - print here
 
@@ -1210,6 +1601,7 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
 
 INT DisplayMatDataDesc (const MATDATA_DESC *md, char *buffer)
 {
+  const FORMAT *fmt;
   const SHORT *offset;
   const char *cn;
   INT rt,ct,mtp,i,j,nc,maxr[NVECTYPES],maxc[NVECTYPES];
@@ -1218,6 +1610,7 @@ INT DisplayMatDataDesc (const MATDATA_DESC *md, char *buffer)
 
   buffer += sprintf(buffer,"contents of matrix symbol '%s'\n",ENVITEM_NAME(md));
 
+  fmt = MGFORMAT(MD_MG(md));
   cn = VM_COMP_NAMEPTR(md);
   offset = MD_OFFSETPTR(md);
   if (cn[0]==' ')
@@ -1246,7 +1639,7 @@ INT DisplayMatDataDesc (const MATDATA_DESC *md, char *buffer)
       if (MD_ISDEF_IN_RT_CT(md,rt,ct))
         maxc[ct] = MAX(maxc[ct],MD_COLS_IN_RT_CT(md,rt,ct));
     for (j=0; j<maxc[ct]; j++)
-      buffer += sprintf(buffer," %s%s",(j) ? "" : "|",(j) ? "  " : TypeName[ct]);
+      buffer += sprintf(buffer," %s%c ",(j) ? "" : "|",(j) ? ' ' : FMT_VTYPE_NAME(fmt,ct));
   }
   buffer += sprintf(buffer,"\n--");
   for (ct=0; ct<NVECTYPES; ct++)
@@ -1258,7 +1651,7 @@ INT DisplayMatDataDesc (const MATDATA_DESC *md, char *buffer)
     for (i=0; i<maxr[rt]; i++)
     {
       /* compname line */
-      buffer += sprintf(buffer,"\n%s",(i) ? "  " : TypeName[rt]);
+      buffer += sprintf(buffer,"\n%c ",(i) ? ' ' : FMT_VTYPE_NAME(fmt,rt));
       if (cn!=NULL)
       {
         for (ct=0; ct<NVECTYPES; ct++)
@@ -1656,6 +2049,365 @@ INT FreeMD (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *md)
 }
 
 /****************************************************************************/
+/*D
+   MD_rows_in_ro_co - return number of row comps in row/col object if unique, -1 else
+
+   SYNOPSIS:
+   INT MD_rows_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
+
+   PARAMETERS:
+   .  md - data decsriptor
+   .  rowobj - row object type
+   .  colobj - col object type
+
+   DESCRIPTION:
+   This function checks whether the number of row components described in 'rowobj'/'colobj'
+   is the same for all mtypes using objects of 'rowobj'/'colobj' and returns it.
+   If the number is not unique a -1 is returned.
+   If not the whole domain is covered, a -2 is returned.
+   The uniqueness of comps is not checked here.
+
+   CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
+   are not defined at all!
+
+   RETURN VALUE:
+   INT
+   .n      number of components in objects of 'otype'
+   .n      -1 if not unique
+   .n      -2 if not the whole domain is covered
+   D*/
+/****************************************************************************/
+
+INT MD_rows_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
+{
+  FORMAT *fmt;
+  INT rt,ct,rot,cot,nrow,src_parts,dst_parts,i,n;
+
+  fmt = MGFORMAT(MD_MG(md));
+  rot = 1<<rowobj;
+  cot = 1<<colobj;
+  nrow = src_parts = dst_parts = 0;
+  for (rt=0; rt<NVECTYPES; rt++)
+    for (ct=0; ct<NVECTYPES; ct++)
+      if (MD_ISDEF_IN_RT_CT(md,rt,ct))
+        if ((rot & FMT_T2O(fmt,rt)) && (cot & FMT_T2O(fmt,ct)))
+        {
+          if (nrow==0)
+            nrow = MD_ROWS_IN_RT_CT(md,rt,ct);
+          else
+          if (MD_ROWS_IN_RT_CT(md,rt,ct)!=nrow)
+            REP_ERR_RETURN (-1);
+          src_parts |= FMT_T2P(fmt,rt);
+          dst_parts |= FMT_T2P(fmt,ct);
+        }
+
+  /* now check whether all parts are covered */
+  src_parts &= dst_parts;
+  n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
+  for (i=0; i<n; i++)
+    if (!(src_parts & (1<<i)))
+      REP_ERR_RETURN (-2);
+
+  return (nrow);
+}
+
+/****************************************************************************/
+/*D
+   MD_cols_in_ro_co - return number of col comps in row/col object if unique, -1 else
+
+   SYNOPSIS:
+   INT MD_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
+
+   PARAMETERS:
+   .  md - data decsriptor
+   .  rowobj - row object type
+   .  colobj - col object type
+
+   DESCRIPTION:
+   This function checks whether the number of col components described in 'rowobj'/'colobj'
+   is the same for all mtypes using objects of 'rowobj'/'colobj' and returns it.
+   If the number is not unique a -1 is returned.
+   If not the whole domain is covered, a -2 is returned.
+   The uniqueness of comps is not checked here.
+
+   CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
+   are not defined at all!
+
+   RETURN VALUE:
+   INT
+   .n      number of components in objects of 'otype'
+   .n      -1 if not unique
+   .n      -2 if not the whole domain is covered
+   D*/
+/****************************************************************************/
+
+INT MD_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj)
+{
+  FORMAT *fmt;
+  INT rt,ct,rot,cot,ncol,src_parts,dst_parts,i,n;
+
+  fmt = MGFORMAT(MD_MG(md));
+  rot = 1<<rowobj;
+  cot = 1<<colobj;
+  ncol = src_parts = dst_parts = 0;
+  for (rt=0; rt<NVECTYPES; rt++)
+    for (ct=0; ct<NVECTYPES; ct++)
+      if (MD_ISDEF_IN_RT_CT(md,rt,ct))
+        if ((rot & FMT_T2O(fmt,rt)) && (cot & FMT_T2O(fmt,ct)))
+        {
+          if (ncol==0)
+            ncol = MD_COLS_IN_RT_CT(md,rt,ct);
+          else
+          if (MD_COLS_IN_RT_CT(md,rt,ct)!=ncol)
+            REP_ERR_RETURN (-1);
+          src_parts |= FMT_T2P(fmt,rt);
+          dst_parts |= FMT_T2P(fmt,ct);
+        }
+
+  /* now check whether all parts are covered */
+  src_parts &= dst_parts;
+  n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
+  for (i=0; i<n; i++)
+    if (!(src_parts & (1<<i)))
+      REP_ERR_RETURN (-2);
+
+  return (ncol);
+}
+
+/****************************************************************************/
+/*D
+   MD_rows_cols_in_ro_co - return number of row and col comps in row/col object if unique, -1 else
+
+   SYNOPSIS:
+   INT MD_rows_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc)
+
+   PARAMETERS:
+   .  md - data decsriptor
+   .  rowobj - row object type
+   .  colobj - col object type
+   .  nr - number of rows if unique, unchanged if error
+   .  nc - number of cols if unique, unchanged if error
+
+   DESCRIPTION:
+   This function checks whether the number of row and col components described in 'rowobj'/'colobj'
+   is the same for all mtypes using objects of 'rowobj'/'colobj'.
+   If the number is not unique 1 is returned.
+   If not the whole domain is covered, 2 is returned.
+   The uniqueness of comps is not checked here.
+
+   CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
+   are not defined at all!
+
+   RETURN VALUE:
+   INT
+   .n      0 if ok
+   .n      1 if not unique
+   .n      2 if not the whole domain is covered
+   D*/
+/****************************************************************************/
+
+INT MD_rows_cols_in_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc)
+{
+  FORMAT *fmt;
+  INT rt,ct,rot,cot,nrow,ncol,src_parts,dst_parts,i,n;
+
+  fmt = MGFORMAT(MD_MG(md));
+  rot = 1<<rowobj;
+  cot = 1<<colobj;
+  nrow = ncol = src_parts = dst_parts = 0;
+  for (rt=0; rt<NVECTYPES; rt++)
+    for (ct=0; ct<NVECTYPES; ct++)
+      if (MD_ISDEF_IN_RT_CT(md,rt,ct))
+        if ((rot & FMT_T2O(fmt,rt)) && (cot & FMT_T2O(fmt,ct)))
+        {
+          if (nrow==0)
+          {
+            nrow = MD_ROWS_IN_RT_CT(md,rt,ct);
+            ncol = MD_COLS_IN_RT_CT(md,rt,ct);
+          }
+          else
+          {
+            if (MD_ROWS_IN_RT_CT(md,rt,ct)!=nrow)
+              REP_ERR_RETURN (1);
+            if (MD_COLS_IN_RT_CT(md,rt,ct)!=ncol)
+              REP_ERR_RETURN (1);
+          }
+          src_parts |= FMT_T2P(fmt,rt);
+          dst_parts |= FMT_T2P(fmt,ct);
+        }
+
+  /* now check whether all parts are covered */
+  src_parts &= dst_parts;
+  n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
+  for (i=0; i<n; i++)
+    if (!(src_parts & (1<<i)))
+      REP_ERR_RETURN (2);
+
+  *nr = nrow;
+  *nc = ncol;
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
+   MD_mcmp_of_ro_co - return comp in row/col object if unique, -1 else
+
+   SYNOPSIS:
+   INT MD_mcmp_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i)
+
+   PARAMETERS:
+   .  md - data decsriptor
+   .  rowobj - row object type
+   .  colobj - col object type
+   .  i - component number
+
+   DESCRIPTION:
+   This function checks whether the offset of component number i described in 'rowobj'/'colobj'
+   is the same for all mtypes using objects of 'rowobj'/'colobj' and returns it.
+   If the offset is not unique a -1 is returned.
+   If not the whole domain is covered, a -2 is returned.
+
+   CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
+   are not defined at all!
+
+   RETURN VALUE:
+   INT
+   .n      number of components in objects of 'otype'
+   .n      -1 if not unique
+   .n      -2 if not the whole domain is covered
+   D*/
+/****************************************************************************/
+
+INT MD_mcmp_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i)
+{
+  FORMAT *fmt;
+  INT rt,ct,off,rot,cot,nrow,ncol,src_parts,dst_parts,j,n;
+
+  fmt = MGFORMAT(MD_MG(md));
+  rot = 1<<rowobj;
+  cot = 1<<colobj;
+  off = nrow = ncol = src_parts = dst_parts = 0;
+  for (rt=0; rt<NVECTYPES; rt++)
+    for (ct=0; ct<NVECTYPES; ct++)
+      if (MD_ISDEF_IN_RT_CT(md,rt,ct))
+        if ((rot & FMT_T2O(fmt,rt)) && (cot & FMT_T2O(fmt,ct)))
+        {
+          if (nrow==0)
+          {
+            nrow = MD_ROWS_IN_RT_CT(md,rt,ct);
+            ncol = MD_COLS_IN_RT_CT(md,rt,ct);
+            off  = MD_MCMP_OF_RT_CT(md,rt,ct,i);
+            if (i>=nrow*ncol)
+              REP_ERR_RETURN (-1);
+          }
+          else
+          {
+            if (MD_ROWS_IN_RT_CT(md,rt,ct)!=nrow)
+              REP_ERR_RETURN (-1);
+            if (MD_COLS_IN_RT_CT(md,rt,ct)!=ncol)
+              REP_ERR_RETURN (-1);
+            if (MD_MCMP_OF_RT_CT(md,rt,ct,i)!=off)
+              REP_ERR_RETURN (-1);
+          }
+          src_parts |= FMT_T2P(fmt,rt);
+          dst_parts |= FMT_T2P(fmt,ct);
+        }
+
+  /* now check whether all parts are covered */
+  src_parts &= dst_parts;
+  n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
+  for (j=0; j<n; j++)
+    if (!(src_parts & (1<<j)))
+      REP_ERR_RETURN (-2);
+
+  return (off);
+}
+
+/****************************************************************************/
+/*D
+   MD_nr_nc_mcmpptr_of_ro_co - return comp ptr for row/col object if unique, NULL else
+
+   SYNOPSIS:
+   SHORT *MD_nr_nc_mcmpptr_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc)
+
+   PARAMETERS:
+   .  md - data decsriptor
+   .  rowobj - row object type
+   .  colobj - col object type
+   .  nr - number of rows (may be NULL)
+   .  nc - number of cols (may be NULL)
+
+   DESCRIPTION:
+   This function checks whether all components described in 'rowobj'/'colobj'
+   are the same for all mtypes using objects of 'rowobj'/'colobj' and returns a component pointer.
+   If the components are not unique a NULL is returned.
+
+   CAUTION: it may happen that in parts of the domain vectors in objects of 'otype'
+   are not defined at all!
+
+   RETURN VALUE:
+   SHORT *
+   .n      number of components in objects of 'otype'
+   .n      NULL if not unique
+   .n      NULL if not the whole domain is covered
+   D*/
+/****************************************************************************/
+
+SHORT *MD_nr_nc_mcmpptr_of_ro_co (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc)
+{
+  FORMAT *fmt;
+  SHORT *cptr;
+  INT rt,ct,off,rot,cot,nrow,ncol,ncmp,src_parts,dst_parts,i,j,n;
+
+  if (nr!=NULL) *nr = -1;
+  if (nc!=NULL) *nc = -1;
+
+  fmt = MGFORMAT(MD_MG(md));
+  rot = 1<<rowobj;
+  cot = 1<<colobj;
+  off = nrow = ncol = src_parts = dst_parts = 0;
+  cptr = NULL;
+  for (rt=0; rt<NVECTYPES; rt++)
+    for (ct=0; ct<NVECTYPES; ct++)
+      if (MD_ISDEF_IN_RT_CT(md,rt,ct))
+        if ((rot & FMT_T2O(fmt,rt)) && (cot & FMT_T2O(fmt,ct)))
+        {
+          if (nrow==0)
+          {
+            nrow = MD_ROWS_IN_RT_CT(md,rt,ct);
+            ncol = MD_COLS_IN_RT_CT(md,rt,ct);
+            ncmp = nrow*ncol;
+            cptr = MD_MCMPPTR_OF_RT_CT(md,rt,ct);
+          }
+          else
+          {
+            if (MD_ROWS_IN_RT_CT(md,rt,ct)!=nrow)
+              REP_ERR_RETURN (NULL);
+            if (MD_COLS_IN_RT_CT(md,rt,ct)!=ncol)
+              REP_ERR_RETURN (NULL);
+            for (i=0; i<ncmp; i++)
+              if (MD_MCMP_OF_RT_CT(md,rt,ct,i)!=cptr[i])
+                REP_ERR_RETURN (NULL);
+          }
+          src_parts |= FMT_T2P(fmt,rt);
+          dst_parts |= FMT_T2P(fmt,ct);
+        }
+
+  /* now check whether all parts are covered */
+  src_parts &= dst_parts;
+  n = BVPD_NPARTS(MG_BVPD(VD_MG(md)));
+  for (j=0; j<n; j++)
+    if (!(src_parts & (1<<j)))
+      REP_ERR_RETURN (NULL);
+
+  if (nr!=NULL) *nr = nrow;
+  if (nc!=NULL) *nc = ncol;
+
+  return (cptr);
+}
+
+/****************************************************************************/
 /*
    InitUserDataManager - Init this file
 
@@ -1691,13 +2443,6 @@ INT InitUserDataManager ()
     NoVecNames[i] = names[i];
   for (i=0; i<2*MAX_MAT_COMP; i++)
     NoMatNames[i] = ' ';
-
-  strcpy(TypeName[NODEVECTOR],"nd");
-  strcpy(TypeName[EDGEVECTOR],"ed");
-  strcpy(TypeName[ELEMVECTOR],"el");
-        #ifdef __THREEDIM__
-  strcpy(TypeName[SIDEVECTOR],"si");
-        #endif
 
   return (NUM_OK);
 }

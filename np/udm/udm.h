@@ -53,11 +53,15 @@
 #define DEFAULT_NAMES "uvwzpqrst"   /* of size MAX_VEC_COMP                 */
 
 /* VECDATA_DESC */
+#define VD_MG(vd)                                                       ((vd)->mg)
 #define VD_ISDEF_IN_TYPE(vd,tp)             (VD_NCMPS_IN_TYPE(vd,tp)>0)
 #define VD_NCMPPTR(vd)                              ((vd)->NCmpInType)
 #define VD_NCMPS_IN_TYPE(vd,tp)             (VD_NCMPPTR(vd)[tp])
 #define VD_CMP_OF_TYPE(vd,tp,i)             ((vd)->CmpsInType[tp][i])
 #define VD_CMPPTR_OF_TYPE(vd,tp)            ((vd)->CmpsInType[tp])
+
+#define VD_DATA_TYPES(vd)                                       ((vd)->datatypes)
+#define VD_OBJ_USED(vd)                                         ((vd)->objused)
 
 #define VD_IS_SCALAR(vd)                    ((vd)->IsScalar)
 #define VD_SCALCMP(vd)                                          ((vd)->ScalComp)
@@ -74,6 +78,7 @@
 #define MCMP_I(mc,ncol)                                         ((mc)/(ncol))
 #define MCMP_J(mc,ncol)                                         ((mc)%(ncol))
 
+#define MD_MG(md)                                                       ((md)->mg)
 #define MD_ISDEF_IN_MTYPE(md,mtp)           (MD_ROWS_IN_MTYPE(md,mtp)>0)
 #define MD_ISDEF_IN_RT_CT(md,rt,ct)         MD_ISDEF_IN_MTYPE(md,MTP(rt,ct))
 #define MD_ROWPTR(md)                               ((md)->RowsInType)
@@ -82,7 +87,7 @@
 #define MD_COLPTR(md)                               ((md)->ColsInType)
 #define MD_COLS_IN_MTYPE(md,mtp)            (MD_COLPTR(md)[mtp])
 #define MD_COLS_IN_RT_CT(md,rt,ct)          MD_COLS_IN_MTYPE(md,MTP(rt,ct))
-#define MD_NCMPS_IN_MTYPE(md,mtp)           MD_ROWS_IN_MTYPE(md,mtp)*MD_COLS_IN_MTYPE(md,mtp)
+#define MD_NCMPS_IN_MTYPE(md,mtp)           (MD_ROWS_IN_MTYPE(md,mtp)*MD_COLS_IN_MTYPE(md,mtp))
 #define MD_NCMPS_IN_RT_CT(md,rt,ct)         MD_NCMPS_IN_MTYPE(md,MTP(rt,ct))
 #define MD_MCMPPTR_OF_MTYPE(md,mtp)         ((md)->CmpsInType[mtp])
 #define MD_MCMP_OF_MTYPE(md,mtp,i)          ((md)->CmpsInType[mtp][i])
@@ -90,6 +95,11 @@
 #define MD_MCMP_OF_RT_CT(md,rt,ct,i)        MD_MCMP_OF_MTYPE(md,MTP(rt,ct),i)
 #define MD_IJ_CMP_OF_MTYPE(md,mtp,i,j)      MD_MCMP_OF_MTYPE(md,mtp,MCMP(i,j,MD_COLS_IN_MTYPE(md,mtp)))
 #define MD_IJ_CMP_OF_RT_CT(md,rt,ct,i,j)    MD_IJ_CMP_OF_MTYPE(md,MTP(rt,ct),i,j)
+
+#define MD_ROW_DATA_TYPES(md)                           ((md)->rowdatatypes)
+#define MD_COL_DATA_TYPES(md)                           ((md)->coldatatypes)
+#define MD_ROW_OBJ_USED(md)                                     ((md)->rowobjused)
+#define MD_COL_OBJ_USED(md)                                     ((md)->colobjused)
 
 #define MD_IS_SCALAR(md)                    ((md)->IsScalar)
 #define MD_SCALCMP(md)                                          ((md)->ScalComp)
@@ -121,17 +131,23 @@ typedef struct {
   ENVVAR v;
 
   INT locked;                          /* locked for dynamic allocation         */
+  MULTIGRID *mg;                                   /* associated multigrid					*/
   char compNames[MAX_VEC_COMP];    /* names for symbol components           */
   SHORT NCmpInType[NVECTYPES];     /* number of components of a vector      */
                                    /* per type                              */
   SHORT *CmpsInType[NVECTYPES];    /* pointer to SHORT vector containing    */
   /*    the components                     */
+
   /* redundant (but frequently used) information                          */
   SHORT IsScalar;                  /* TRUE if desc is scalar:               */
                                    /*  same settings in all types           */
   SHORT ScalComp;                  /* location of scalar component          */
   INT ScalTypeMask;                /* mask for used vectypes                */
   SHORT offset[NVECOFFSETS];       /* offsets for VEC_SCALARs               */
+
+  INT datatypes;                                   /* compact form of vtypes (bitwise)		*/
+  INT objused;                                     /* compact form of otypes (bitwise)		*/
+
   SHORT Components[1];                 /* memory for component mapping	        */
 
 } VECDATA_DESC;
@@ -140,7 +156,8 @@ typedef struct {
 
   ENVVAR v;
 
-  INT locked;                           /* locked for dynamic allocation         */
+  INT locked;                           /* locked for dynamic allocation        */
+  MULTIGRID *mg;                                    /* associated multigrid					*/
   char compNames[2*MAX_MAT_COMP];   /* names for symbol components          */
   SHORT RowsInType[NMATTYPES];          /* number of rows of a matrix per type  */
   SHORT ColsInType[NMATTYPES];          /* number of columns of a matrix        */
@@ -155,6 +172,12 @@ typedef struct {
   INT ScalRowTypeMask;                  /* mask for used vectypes in rows       */
   INT ScalColTypeMask;                  /* mask for used vectypes in cols       */
   SHORT offset[NMATOFFSETS];            /* offsets for what ever you need it    */
+
+  INT rowdatatypes;                                /* compact form of row vtypes (bitwise)	*/
+  INT coldatatypes;                                /* compact form of col vtypes (bitwise)	*/
+  INT rowobjused;                                  /* compact form of row otypes (bitwise)	*/
+  INT colobjused;                                  /* compact form of col otypes (bitwise)	*/
+
   SHORT Components[1];                  /* memory for component mapping	        */
 
 } MATDATA_DESC;
@@ -224,6 +247,29 @@ INT FreeMD        (MULTIGRID *theMG, INT fl, INT tl, MATDATA_DESC *A);
 INT ConstructVecOffsets (const SHORT *NCmpInType, SHORT *offset);
 INT ConstructMatOffsets (const SHORT *RowsInType, const SHORT *ColsInType, SHORT *offset);
 
+
+/****************************************************************************/
+/*	getting object type specific information from XXXDATA_DESCs
+ */
+
+/* vtypes and object types */
+INT             GetUniqueOTypeOfVType           (const FORMAT *fmt, INT vtype);
+INT             GetUniquePartOfVType            (const MULTIGRID *mg, INT vtype);
+INT             FillCompsForOType                       (const FORMAT *fmt, INT otype, INT n, SHORT cmps[]);
+
+/* VECDATA_DESCs and object type */
+INT             VD_ncmps_in_otype                       (const VECDATA_DESC *vd, INT otype);
+INT             VD_cmp_of_otype                         (const VECDATA_DESC *vd, INT otype, INT i);
+#define VD_cmpptr_of_otype(vd,ot)       VD_ncmp_cmpptr_of_otype(vd,ot,NULL)
+SHORT   *VD_ncmp_cmpptr_of_otype        (const VECDATA_DESC *vd, INT otype, INT *ncmp);
+
+/* MATDATA_DESCs and object type */
+INT             MD_rows_in_ro_co                        (const MATDATA_DESC *md, INT rowobj, INT colobj);
+INT             MD_cols_in_ro_co                        (const MATDATA_DESC *md, INT rowobj, INT colobj);
+INT             MD_rows_cols_in_ro_co           (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nr, INT *nc);
+INT             MD_mcmp_of_ro_co                        (const MATDATA_DESC *md, INT rowobj, INT colobj, INT i);
+#define MD_mcmpptr_of_ro_co(md,ro,co)   MD_nr_nc_mcmpptr_of_ro_co(md,ro,co,NULL,NULL)
+SHORT   *MD_nr_nc_mcmpptr_of_ro_co      (const MATDATA_DESC *md, INT rowobj, INT colobj, INT *nrow, INT *ncol);
 
 /* init user data manager */
 INT InitUserDataManager (void);
