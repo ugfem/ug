@@ -1338,7 +1338,7 @@ int GetMgFromData (char *data, MG_DESC *mgdesc)
   return (0);
 }
 
-int MergeData (char *data, DATA_MAP *data_map)
+int MergeData (char *data, DATA_MAP *data_map, int step)
 {
   char *p,buffer[256],out[256];
   int i,j,k,key[2],nnodes,nnodes_out,ndata_pn,lid;
@@ -1375,6 +1375,13 @@ int MergeData (char *data, DATA_MAP *data_map)
   {
     /* check if data existing */
     if (data_map->in_lid2gid[i]==NULL) continue;
+
+    /* ask for step if */
+    if (step)
+    {
+      printf("start merging '%s' [press any key]\n");
+      getc(stdin);
+    }
 
     /* open data-file */
     sprintf(buffer,"%s/data.%04d",data,i);
@@ -1426,7 +1433,7 @@ int MergeData (char *data, DATA_MAP *data_map)
 
 int main (int argc, char **argv)
 {
-  int i,from,to,fopt;
+  int i,from,to,fopt,sopt;
   char in[128],last_merged_mg[128],name[128];
   MG_DESC mgdesc;
   DATA_MAP map;
@@ -1441,6 +1448,8 @@ int main (int argc, char **argv)
     if (from>to)                                                                            {printf("f-option: from <= to !!\n"); return (1);}
     fopt=1;
   }
+  sopt=0;
+  if (argc==6 && argv[5][1]=='s') sopt=1;
 
   last_merged_mg[0]='\0';
   map.init=0;
@@ -1455,7 +1464,7 @@ int main (int argc, char **argv)
       if (FreeDataMap(&map))                                                                  {printf("cannot free map\n");  return (1);}
       if (MergeMultigrid(&mgdesc,&map))                                               {printf("some error\n"); return (1);}
     }
-    if (MergeData (name,&map))                                                              {printf("cannot merge data\n");  return (1);}
+    if (MergeData (name,&map,sopt))                                                         {printf("cannot merge data\n");  return (1);}
   }
 
   return (0);
