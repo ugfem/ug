@@ -1007,7 +1007,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   mg_general.dim                  = DIM;
   Broadcast(&MG_MAGIC_COOKIE(theMG),sizeof(INT));
   mg_general.magic_cookie = MG_MAGIC_COOKIE(theMG);
-  mg_general.heapsize             = MGHEAP(theMG)->size/1024;
+  mg_general.heapsize             = MGHEAP(theMG)->size/KBYTE;
   mg_general.nLevel               = TOPLEVEL(theMG) + 1;
   mg_general.nNode = mg_general.nPoint = mg_general.nElement = 0;
   for (i=0; i<=TOPLEVEL(theMG); i++)
@@ -1898,7 +1898,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     else strcpy(MGName,MultigridName);
     if (format==NULL) strcpy(FormatName,mg_general.Formatname);
     else strcpy(FormatName,format);
-    if (heapSize==0) heapSize = mg_general.heapsize * 1024;
+    if (heapSize==0) heapSize = mg_general.heapsize * KBYTE;
 
     /* create a virginenal multigrid on the BVP */
     theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize,TRUE);
@@ -1920,7 +1920,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   else strcpy(MGName,MultigridName);
   if (format==NULL) strcpy(FormatName,mg_general.Formatname);
   else strcpy(FormatName,format);
-  if (heapSize==0) heapSize = mg_general.heapsize * 1024;
+  if (heapSize==0) heapSize = mg_general.heapsize * KBYTE;
 
   /* create a virginenal multigrid on the BVP */
   theMG = CreateMultiGrid(MGName,BndValName,FormatName,heapSize,TRUE);
