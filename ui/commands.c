@@ -2449,10 +2449,6 @@ static INT SaveDataCommand (INT argc, char **argv)
   float fValue[3];
   DOUBLE t[3];
 
-        #ifdef ModelP
-  if (me != master) return(OKCODE);
-        #endif
-
   theMG = currMG;
   if (theMG==NULL) {PrintErrorMessage('E',"savedata","no open multigrid"); return (CMDERRORCODE);}
 
@@ -2551,11 +2547,6 @@ static INT LoadDataCommand (INT argc, char **argv)
   VECDATA_DESC *theVDList[5];
   INT i,m,n,number,force;
   int iValue;
-
-        #ifdef ModelP
-  if (me != master) return(OKCODE);
-        #endif
-
 
   /* scan filename */
   if (sscanf(argv[0],expandfmt(CONCAT3(" loaddata %",NAMELENSTR,"[ -~]")),FileName)!=1) { PrintErrorMessage('E',"save","cannot read filename"); return (CMDERRORCODE);}
@@ -6436,10 +6427,6 @@ static INT MakeGridCommand  (INT argc, char **argv)
 #if defined __THREEDIM__ && defined _NETGEN
   DOUBLE h;
   INT coeff;
-#endif
-
-#ifdef ModelP
-  if (me!=master) return (OKCODE);
 #endif
 
   /* get current multigrid */
