@@ -73,6 +73,66 @@ REP_ERR_FILE;
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
 
+/****************************************************************************/
+/*D
+   HeapStat - Get information on heap
+
+   SYNOPSIS:
+   MEM HeapStat (const HEAP *theHeap)
+
+   PARAMETERS:
+   .  theHeap - heap to get information
+
+   DESCRIPTION:
+   This function gets information on heap (objects and memory in freelists).
+
+   RETURN VALUE:
+   void
+   D*/
+/****************************************************************************/
+
+void HeapStat (const HEAP *theHeap)
+{
+  INT i;
+  INT usedfreelistentries,size,found;
+  void ** ptr;
+
+  usedfreelistentries = 0;
+
+  UserWriteF("HeapStat: heap=%08x type=%d\n",theHeap,theHeap->type);
+        #ifdef Debug
+  UserWriteF("FreelistInfo:\n");
+        #endif
+  for (i=0; i<MAXFREEOBJECTS; i++)
+  {
+    size = theHeap->SizeOfFreeObjects[i];
+    if (size != -1)
+    {
+                        #ifdef Debug
+      /* inspect linked list */
+      ptr = (void **) theHeap->freeObjects[i];
+      found = 0;
+      while (ptr != NULL)
+      {
+        ptr = (void **)ptr[0];
+        found++;
+      }
+      UserWriteF("Entry %4d: objsize=%d objcount=%d entrymem=%d found=%d\n",
+                 i,size,theHeap->objcount[i],size*theHeap->objcount[i],found);
+                        #endif
+      usedfreelistentries++;
+    }
+                #ifdef Debug
+    else
+      assert(theHeap->freeObjects[i] == NULL);
+                #endif
+  }
+  UserWriteF("          size           =%d\n",theHeap->size);
+  UserWriteF("          used           =%d\n",theHeap->used);
+  UserWriteF("          freelistmem    =%d\n",theHeap->freelistmem);
+  UserWriteF("          MAXFREEOBJECTS =%d\n",MAXFREEOBJECTS);
+  UserWriteF("          usedfreelistent=%d\n",usedfreelistentries);
+}
 
 
 /****************************************************************************/
