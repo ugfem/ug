@@ -158,6 +158,7 @@ INT a_outervector_consistent (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC 
 INT l_ghostvector_project (GRID *g, const VECDATA_DESC *x);
 INT l_vector_collect (GRID *g, const VECDATA_DESC *x);
 INT a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
+INT a_vector_collect_noskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x);
 INT l_matrix_consistent (GRID *g, const MATDATA_DESC *M, INT mode);
 INT l_ghostvector_collect (GRID *g, const VECDATA_DESC *x);
 INT l_vector_meanvalue (GRID *g, const VECDATA_DESC *x);

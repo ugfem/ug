@@ -1015,6 +1015,29 @@ INT a_vector_collect (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
   return (NUM_OK);
 }
 
+INT a_vector_collect_noskip (MULTIGRID *mg, INT fl, INT tl, const VECDATA_DESC *x)
+{
+  INT level,tp,m;
+
+  ConsVector = (VECDATA_DESC *)x;
+
+  m = 0;
+  for (tp=0; tp<NVECTYPES; tp++)
+    m = MAX(m,VD_NCMPS_IN_TYPE(ConsVector,tp));
+
+  if ((fl==BOTTOMLEVEL(mg)) && (tl==TOPLEVEL(mg)))
+    DDD_IFOneway(BorderVectorIF, IF_FORWARD, m * sizeof(DOUBLE),
+                 Gather_VectorCompCollect, Scatter_VectorComp_noskip);
+  else
+    for (level=fl; level<=tl; level++)
+      DDD_IFAOneway(BorderVectorIF,
+                    GRID_ATTR(GRID_ON_LEVEL(mg,level)),
+                    IF_FORWARD, m * sizeof(DOUBLE),
+                    Gather_VectorCompCollect, Scatter_VectorComp_noskip);
+
+  return (NUM_OK);
+}
+
 /****************************************************************************/
 /*D
    a_vector_vecskip - checks vecskip flags
