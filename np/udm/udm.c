@@ -2215,6 +2215,7 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *com
   if (ChangeEnvDir("Matrices") == NULL) {
     MakeEnvItem("Matrices",MatrixDirID,sizeof(ENVDIR));
     if (ChangeEnvDir("Matrices") == NULL) REP_ERR_RETURN_PTR (NULL);
+
   }
   ConstructMatOffsets(RowsInType,ColsInType,offset);
   ncmp = offset[NMATTYPES];
@@ -4137,10 +4138,8 @@ INT InitUserDataManager ()
   VectorDirID = GetNewEnvDirID();
   MatrixVarID = GetNewEnvVarID();
   VectorVarID = GetNewEnvVarID();
-
   names = DEFAULT_NAMES;
-
-  for (i=0; i<MAX(MAX_VEC_COMP,strlen(DEFAULT_NAMES)); i++)
+  for (i=0; i<MIN(MAX_VEC_COMP,strlen(DEFAULT_NAMES)); i++)
     NoVecNames[i] = names[i];
   for (i=0; i<2*MAX_MAT_COMP; i++)
     NoMatNames[i] = ' ';
