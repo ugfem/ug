@@ -1950,8 +1950,6 @@ INT InstallScaledRestrictionMatrix (GRID *FineGrid, const MATDATA_DESC *Mat, DOU
   return (NUM_OK);
 }
 
-
-
 /****************************************************************************/
 /*D
    DiagonalScaleSystem - scale system of equations by point-block-diagonal
@@ -2087,40 +2085,60 @@ INT DiagonalScaleSystem (GRID *FineGrid, const MATDATA_DESC *Mat, const MATDATA_
    D*/
 /****************************************************************************/
 
-#define IS_COARSE(v)            NFATHER(VMYNODE(v))!=NULL
-#define V_COARSE(v)                     NVECTOR(NFATHER(VMYNODE(v)))
-
-INT CreateStandardNodeRestProl (GRID *fineGrid)
+INT CreateStandardNodeRestProl (GRID *FineGrid, INT ncomp)
 {
-  VECTOR *V,*VC;
-  MATRIX *M,*MI;
+  NODE *theNode;
+  VECTOR *vf,*vc;
+  INT i,j,k,n,l;
+  MATRIX *im;
+  ELEMENT *theElement;
+  VERTEX *theVertex;
+  DOUBLE c[MAX_CORNERS_OF_ELEM],s;
 
-  if (DOWNGRID(fineGrid)==NULL) return (1);
-  if (DisposeIMatricesInGrid (fineGrid)) return (1);
-
-  for (V=FIRSTVECTOR(fineGrid); V!= NULL;  V=SUCCVC(V))
+  for (theNode=FIRSTNODE(FineGrid); theNode!= NULL; theNode=SUCCN(theNode))
   {
-    if (IS_COARSE(V))
+    vf = NVECTOR(theNode);
+    if (NFATHER(theNode)!=NULL)             /* This node is also in the coarse grid */
     {
-      VC = V_COARSE(V);
-      MI = CreateIMatrix(fineGrid,V,VC);
-      MVALUE(MI,0) = 1.0;
+      vc = NVECTOR(NFATHER(theNode));
+      /* allocate restriction matrix entry */
+      im = GetIMatrix(vf,vc);
+      if (im==NULL) {
+        im = CreateIMatrix(FineGrid,vf,vc);
+        if (im==NULL) {
+          UserWrite("Could not create interpolation matrix\n");
+          return(__LINE__);
+        }
+      }
+      for (i=0; i<ncomp; i++)
+        for (j=0; j<ncomp; j++)
+          if (i == j) MVALUE(im,i*ncomp+j) = 1.0;
+          else MVALUE(im,i*ncomp+j) = 0.0;
     }
-    else
+    else             /* This node is only in fine grid */
     {
-      for (M=VSTART(V); M!=NULL; M=MNEXT(M))
+      theVertex  = MYVERTEX(theNode);
+      theElement = VFATHER(theVertex);
+      n = CORNERS_OF_ELEM(theElement);
+      GNs(n,LCVECT(theVertex),c);
+      for (l=0; l<n; l++)
       {
-        if (!IS_COARSE(MDEST(M))) continue;
-        VC = V_COARSE(MDEST(M));
-        MI = CreateIMatrix(fineGrid,V,VC);
-        MVALUE(MI,0) = 0.5;
+        vc = NVECTOR(CORNER(theElement,l));
+        im = GetIMatrix(vf,vc);
+        if (im==NULL) {
+          im = CreateIMatrix(FineGrid,vf,vc);
+          if (im==NULL) {
+            UserWrite("Could not create interpolation matrix\n");
+            return(__LINE__);
+          }
+        }
+        for (i=0; i<ncomp; i++)
+          for (j=0; j<ncomp; j++)
+            if (i == j) MVALUE(im,i*ncomp+j) = c[l];
+            else MVALUE(im,i*ncomp+j) = 0.0;
       }
     }
   }
-
-  return (0);
+  return (NUM_OK);
 }
-
-
-
 #endif /* interpolation matrix is defined */
