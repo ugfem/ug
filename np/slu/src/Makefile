@@ -57,9 +57,9 @@ double: $(DLUSRC) $(ALLAUX) $(DZLAUX)
 ##################################
 # Do not optimize this routine   #
 ##################################
-dlamch.o: dlamch.c ; $(CC) -c $(NOOPTS) $<
+dlamch.o: dlamch.c ; $(CC) -c $(NOOPTS) $(ARCH_CFLAGS) $<
 
-superlu_timer.o:  superlu_timer.c ; $(CC) -c $(NOOPTS) $<
+superlu_timer.o:  superlu_timer.c ; $(CC) -c $(NOOPTS) $(ARCH_CFLAGS) $<
 
 .c.o:
 	$(CC) $(CFLAGS) $(CDEFS) $(BLASDEF) -c $< $(VERBOSE)
