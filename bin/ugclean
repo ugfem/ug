@@ -33,5 +33,6 @@ then
 	rm -f $UGROOT/../*/pclib/*.a
 	rm -f -r $UGROOT/include
 	ugmake tools -i clean
+	ugmake diff2d -i cleanall
 fi
 
