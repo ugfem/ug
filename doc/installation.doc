@@ -89,18 +89,18 @@
 . `~` - For     
    C Shells (csh or tcsh) insert in the file '$HOME/.cshrc' respectively
    '$HOME/.tcshrc' the following 3 lines and update the environment
-.n	'~~~~~setenv UGROOT '`directory of the ug software` 
+.n	'~~~~~setenv UGROOT '<`directory of the pure ug`> 
 .n	'~~~~~setenv UGMAN $UGROOT/man'
 .n	'~~~~~set path = ( $path $UGROOT/bin )'
-.n	'~~~~~source $HOME/.cshrc' respectively 'source $HOME/.tcshrc' or start a new shell
+.n	'~~~~~'update: 'source $HOME/.cshrc' resp. 'source $HOME/.tcshrc' or start a new shell
 .n	'~~~~~'(first line in our example is 'setenv UGROOT /usr/ug3/ug').
 . `~` - For     
    POSIX or Bourne shells (sh), Korn shell (ksh) and Keyshell (keysh) insert
    in the file '$HOME/.profile' the following 3 lines and update the environment
-.n	'~~~~~export UGROOT='`directory of pure ug` 
+.n	'~~~~~export UGROOT='<`directory of the pure ug`> 
 .n	'~~~~~export UGMAN=$UGROOT/man'
 .n	'~~~~~export PATH=$PATH:$UGROOT/bin'
-.n	'~~~~~. $HOME/.profile' or start a new shell
+.n	'~~~~~'update: '. $HOME/.profile' or start a new shell
 .n	'~~~~~'(first line in in our example is 'export UGROOT=/usr/ug3/ug').
 
 .  `Fulfill~the~licence~regulations`
@@ -141,14 +141,14 @@
    '$HOME/.tcshrc' the following line `after` the corresponding line of 
    the pure ug and update the environment
 .n	'~~~~~setenv UGMAN $UGMAN:'`directory of the experimenting environment man pages` 
-.n	'~~~~~source $HOME/.cshrc' respectively 'source $HOME/.tcshrc' or start a new shell
+.n	'~~~~~'update: 'source $HOME/.cshrc' resp. 'source $HOME/.tcshrc' or start a new shell
 .n	'~~~~~'(e.g. 'setenv UGMAN $UGMAN:/usr/cd3d/man')      
 . `~` - For     
    POSIX or Bourne shells (sh), Korn shell (ksh) and Keyshell (keysh) insert
    in the file '$HOME/.profile' the following line `after` the corresponding
    line of the pure ug and update the environment
 .n	'~~~~~UGMAN=$UGMAN:'`directory of the experimenting environment man pages` 
-.n	'~~~~~. $HOME/.profile' or start a new shell
+.n	'~~~~~'update: '. $HOME/.profile' or start a new shell
 .n	'~~~~~'(e.g. 'UGMAN=$UGMAN:/usr/cd3d/man')      
 
 .  `Make` - You have to make first the problem class library and then the
