@@ -369,7 +369,7 @@ BVP        *BVP_GetNext           (BVP *theBVP);
  * @param name - name of file
  * @param argc, argv - command parameters
 
-   This function saves a BVP to file named <name>.
+   This function saves a BVP to file named \<name\>.
 
  * @return <ul>
  *   <li> 0 if ok </li>
@@ -385,7 +385,7 @@ INT         BVP_Save              (BVP *theBVP, char *name, char *mgname, HEAP *
  * @param name - name of file
  * @param argc, argv - command parameters
 
-   This function loads a BVP from file named <name>.
+   This function loads a BVP from file named \<name\>.
 
  * @return <ul>
  *   <li> pointer to BVP </li>
@@ -400,7 +400,7 @@ BVP        *BVP_Load              (char *name, INT argc, char **argv);
  *
  * @param name - name of BVP
 
-   This function returns the pointer to the BVP specified by its <name>.
+   This function returns the pointer to the BVP specified by its \<name\>.
 
  * @return <ul>
  *   <li> pointer to BVP </li>
@@ -425,7 +425,7 @@ BVP        *BVP_GetByName         (char *name);
  * </ul>
  */
 /****************************************************************************/
-BVP        *BVP_Init              (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey);
+BVP        *BVP_Init              (char *filename, HEAP *theHeap, MESH *Mesh, INT MarkKey);
 
 /****************************************************************************/
 /** \brief Dispose a BVP
@@ -495,7 +495,6 @@ INT         BVP_SetUserFct        (BVP *theBVP, INT n, UserProcPtr *UserFct);
 /** \brief Check consistency of BVP
  *
  * @param aBVP - BVP structure
- * @param CheckResult - 0 if ok, 1 if error detected
 
    This function checks consistency of BVP
 
@@ -512,7 +511,6 @@ INT             BVP_Check                         (BVP *aBVP);
  *
  * @param theBVP - BVP structure
  * @param argc, argv - command parameters
- * @param theBndP - the BNDP to set
 
    This function sets a BNDP from command input parameters.
    Options are implementation specific.
@@ -546,7 +544,7 @@ MESH       *BVP_GenerateMesh      (HEAP *Heap, BVP *aBVP, INT argc, char **argv,
 /****************************************************************************/
 /** \brief Return global coordinates of BNDP
  *
- * @param aBndP - BNDP structure
+ * @param theBndP - BNDP structure
  * @param global - global coordinates
 
    This function returns global coordinates of BNDP
@@ -578,7 +576,7 @@ INT         BNDP_Move                         (BNDP *aBndP, const DOUBLE global[
 /****************************************************************************/
 /** \brief Gets boundary conditions for a BNDP
  *
- * @param aBndP - BNDP structure
+ * @param theBndP - BNDP structure
  * @param i     - evaluate on patch i
  * @param n     - number of BNDS
  * @param in    - input vector (if !=NULL has to be allocated with >= DOM_N_IN_PARAMS DOUBLES)
@@ -597,7 +595,7 @@ INT         BNDP_BndCond          (BNDP *theBndP, INT *n, INT i, DOUBLE *in, DOU
 /****************************************************************************/
 /** \brief Sets descriptor for BNDP
  *
- * @param aBndP - BNDP structure
+ * @param theBndP - BNDP structure
  * @param move  - movable flag (0: no, 1:yes)
  * @param part  - domain part
 
@@ -613,8 +611,8 @@ INT         BNDP_BndPDesc         (BNDP *theBndP, INT *move, INT *part);
 /****************************************************************************/
 /** \brief Sets descriptor for BNDE (boundary edge)
  *
- * @param aBndP0 - first BNDP
- * @param aBndP1 - second BNDP
+ * @param theBndP0 - first BNDP
+ * @param theBndP1 - second BNDP
  * @param part   - domain part ID
 
    This function sets the descriptor for a BNDE.
@@ -630,8 +628,8 @@ INT         BNDP_BndEDesc         (BNDP *theBndP0, BNDP *theBndP1, INT *part);
 /** \brief Creates a BNDS from a nb of BNDPs
  *
  * @param Heap  - heap to allocate from
- * @param aBndP - ptr to list of BNDP structures
- * @param n     - nb of BNDPs
+ * @param theBndP - Pointer to list of BNDP structures
+ * @param n     - Number of BNDPs
 
    This function creates a BNDS from n BNDPs
 
@@ -645,8 +643,8 @@ BNDS*       BNDP_CreateBndS       (HEAP *Heap, BNDP **theBndP, INT n);
 /****************************************************************************/
 /** \brief Sets BNDP from a two of BNDPs
  *
- * @param aBndP0 - first BNDP
- * @param aBndP1 - second BNDP
+ * @param theBndP0 - first BNDP
+ * @param theBndP1 - second BNDP
  * @param lcoord - local coordinate between P0 and P1 where the BNDP will be created
 
    This function sets a BNDP from two BNDPs
@@ -662,7 +660,7 @@ BNDP*       BNDP_CreateBndP       (HEAP *Heap, BNDP *theBndP0, BNDP *theBndP1, D
 /** \brief Dispose a BNDP
  *
  * @param Heap - heap
- * @param aBndP - BNDP
+ * @param theBndP - BNDP
 
    This function disposes a BNDP
 
@@ -710,7 +708,7 @@ BNDP       *BNDP_LoadBndP_Ext     (void);
 /****************************************************************************/
 /** \brief Gets global coordinates of local position on BNDS
  *
- * @param aBndS  - BNDS structure
+ * @param theBndS  - BNDS structure
  * @param local  - local coordinate on BNDS
  * @param global - global coordinate
 
@@ -726,7 +724,7 @@ INT         BNDS_Global           (BNDS *theBndS, DOUBLE *local, DOUBLE *global)
 /****************************************************************************/
 /** \brief Gets boundary conditions of local position on BNDS
  *
- * @param aBndS - BNDS structure
+ * @param theBndS - BNDS structure
  * @param local - local coordinate on BNDS
  * @param in    - input vector (if !=NULL has to be allocated with >= DOM_N_IN_PARAMS DOUBLES)
  * @param type  - type of bnd cond
@@ -744,10 +742,9 @@ INT         BNDS_BndCond          (BNDS *theBndS, DOUBLE *local, DOUBLE *in, DOU
 /****************************************************************************/
 /** \brief Sets descriptor for BNDS
  *
- * @param aBndS - BNDS structure
+ * @param theBndS - BNDS structure
  * @param id  - subdomain ID of the element with aBndS
  * @param nbid  - subdomain ID of the neighbour element (across the boundary)
- * @param right - ID of right subdomain
  * @param part  - domain part
 
    This function sets the descriptor for a BNDS.
@@ -764,9 +761,8 @@ INT         BNDS_BndSDesc         (BNDS *theBndS, INT *id, INT *nbid, INT *part)
 /** \brief Create BNDP on BNDS
  *
  * @param Heap  - heap to allocate from
- * @param aBndS - BNDS structure
+ * @param theBndS - BNDS structure
  * @param local - local coordinate on BNDS
- * @param size  - size used for aBndP
 
    This function creates a boundary point (BNDP) on a BNDS
 
