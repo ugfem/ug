@@ -5309,7 +5309,9 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
           ne++;
     if (ne)
     {
+#ifdef Debug
       PrintDebug("WARNING: %d extra connections found by ex!\n",(int)ne);
+#endif
       PrintErrorMessageF('W',"EXPreProcess","%d extra connections found by ex!\n",(int)ne);
     }
     ENDDEBUG
