@@ -103,6 +103,7 @@ typedef struct
   INT c_d;                                                               /* up to c_d digits                */
   INT type;                                  /* usage of mass matrix            */
   DOUBLE shift;                                                  /* shift of center of inverse iter */
+  DOUBLE scale;                                                  /* scaling factor for eigenvalues  */
 
   /* dynamical data */
   VECDATA_DESC *r;                           /* help vector                     */
@@ -315,7 +316,10 @@ static INT EWInit (NP_BASE *theNP, INT argc , char **argv)
   if (strcmp(buffer,"std")==0) np->type=MD_STD;
   else if (strcmp(buffer,"0")==0) np->type=MD_0;
   else np->type=MD_UNDEF;
+  if (ReadArgvDOUBLE("scale",&np->scale,argc,argv)) np->scale=1.0;
+  if (np->scale<=0.0) return(NP_ACTIVE);
   if (ReadArgvDOUBLE("shift",&np->shift,argc,argv)) np->shift=0.0;
+  np->shift/=np->scale;
 
   return(NP_EXECUTABLE);
 }
@@ -583,16 +587,23 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
       if (FreeVD(theMG,bl,level,np->e[index[i]])) NP_RETURN(1,ewresult->error_code);
     }
 
+    /* scale/shift eigenvalues */
+    for (i=0; i<New; i++)
+    {
+      ew_re[i]=np->scale*(ew_re[i]+np->shift);
+      ew_im[i]=np->scale*ew_im[i];
+    }
+
     /* display */
     if (np->display > PCR_NO_DISPLAY)
     {
       for (i=0; i<np->ew.nev; i++)
         if (i==0)
-          UserWriteF(format1,(int)iter,(int)i,ew_re[i]+np->shift,ew_im[i]);
+          UserWriteF(format1,(int)iter,(int)i,ew_re[i],ew_im[i]);
         else if (i<np->c_n)
-          UserWriteF(format2,(int)i,ew_re[i]+np->shift,ew_im[i]);
+          UserWriteF(format2,(int)i,ew_re[i],ew_im[i]);
         else
-          UserWriteF(format3,(int)i,ew_re[i]+np->shift,ew_im[i]);
+          UserWriteF(format3,(int)i,ew_re[i],ew_im[i]);
       UserWriteF("\n");
     }
 
@@ -619,9 +630,9 @@ static INT EWNSolver (NP_EW_SOLVER *theNP, INT level, INT New, VECDATA_DESC **ev
   /* print result */
   for (i=0; i<np->c_n; i++)
     if (i==0)
-      UserWriteF(formatr1,(int)iter,(int)i,ew_re[i]+np->shift,ew_im[i]);
+      UserWriteF(formatr1,(int)iter,(int)i,ew_re[i],ew_im[i]);
     else
-      UserWriteF(formatr2,(int)i,ew_re[i]+np->shift,ew_im[i]);
+      UserWriteF(formatr2,(int)i,ew_re[i],ew_im[i]);
   UserWriteF("\n");
 
   return (0);
