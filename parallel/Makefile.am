@@ -1,5 +1,7 @@
 # $Id$
 
+SUBDIRS = util
+
 SOURCES = initparallel.c initparallel.h
 
 # noinst_LTLIBRARIES =

@@ -20,6 +20,9 @@ endif
 
 lib_LTLIBRARIES = $(LIB_2D) $(LIB_3D)
 
+# seems to miss...
+#                   ../parallel/util/libparutil.la
+
 libug2_la_SOURCES = ../initug.c
 libug2_la_CPPFLAGS = $(UG_2DFLAGS)
 libug2_la_LIBADD = ../gm/libug_gm2.la \

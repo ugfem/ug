@@ -28,6 +28,6 @@ libdomL2_la_SOURCES = $(SOURCES) lgm_transfer2d.c lgm_domain2d.c
 libdomL2_la_CPPFLAGS = $(UG_2DFLAGS)
 libdomL2_la_LIBADD = ngin2d/libngin2d.la
 
-libdomL3_la_SOURCES = $(SOURCES) lgm_transfer3d.c lgm_domain3d.c ansys2lgm.c
+libdomL3_la_SOURCES = $(SOURCES) lgm_transfer3d.c lgm_domain3d.c ansys2lgm.c lgm_accel.c lgm_accel.h
 libdomL3_la_CPPFLAGS = $(UG_3DFLAGS)
 libdomL3_la_LIBADD = ngin/libngin.la

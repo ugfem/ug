@@ -1,7 +1,7 @@
 # $Id$
 
 # !!! missing sourcefiles...
-SOURCES = idamax.c dasum.c daxpy.c dcopy.c ddot.c dnrm2.c drot.c dscal.c dgemv.c dsymv.c dtrsv.c dger.c dsyr2.c dmyblas2.c
+SOURCES = idamax.c dasum.c daxpy.c dcopy.c ddot.c dnrm2.c drot.c dscal.c dgemv.c dsymv.c dtrsv.c dger.c dsyr2.c dmyblas2.c f2c.h Cnames.h
 
 if BUILD2D
   LIB_2D = libcblas2.la

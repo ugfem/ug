@@ -1,6 +1,6 @@
 # $Id$
 
-SOURCES = dgssv.c dgssvx.c dsp_blas2.c dsp_blas3.c dgscon.c dlacon.c dlangs.c dgsequ.c dlaqgs.c dpivotgrowth.c dgsrfs.c dgstrf.c dgstrs.c dcopy_to_ucol.c dsnode_dfs.c dsnode_bmod.c dpanel_dfs.c dpanel_bmod.c dreadhb.c dcolumn_dfs.c dcolumn_bmod.c dpivotL.c dpruneL.c dmemory.c dutil.c superlu_timer.c lsame.c util.c memory.c get_perm_c.c mmd.c sp_coletree.c sp_preorder.c sp_ienv.c relax_snode.c xerbla.c colamd.c dlamch.c
+SOURCES = dgssv.c dgssvx.c dsp_blas2.c dsp_blas3.c dgscon.c dlacon.c dlangs.c dgsequ.c dlaqgs.c dpivotgrowth.c dgsrfs.c dgstrf.c dgstrs.c dcopy_to_ucol.c dsnode_dfs.c dsnode_bmod.c dpanel_dfs.c dpanel_bmod.c dreadhb.c dcolumn_dfs.c dcolumn_bmod.c dpivotL.c dpruneL.c dmemory.c dutil.c superlu_timer.c lsame.c util.c memory.c get_perm_c.c mmd.c sp_coletree.c sp_preorder.c sp_ienv.c relax_snode.c xerbla.c colamd.c dlamch.c Cnames.h dsp_defs.h util.h supermatrix.h colamd.h dcomplex.h
 
 if BUILD2D
   LIB_2D = librealslu2.la
