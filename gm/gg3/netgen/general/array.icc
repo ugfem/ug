@@ -72,7 +72,11 @@ inline const T & ARRAY<T> :: Get (INDEX i) const
 template <class T>
 inline void ARRAY<T> :: Set (INDEX i, const T & el)
   {
+  #if defined(__HP__) || defined(__HPUX9__)
+  ((T*)data)[i-1] = el;
+  #else
   ((T*)data)[i-1] = (T)el;
+  #endif
   }
 
 template <class T>
@@ -93,7 +97,11 @@ template <class T>
 inline INDEX ARRAY<T> :: Append (const T & el)
   {
   if (actsize == allocsize) ReSize (actsize+1, sizeof (T));
+  #if defined(__HP__) || defined(__HPUX9__)
+  ((T*)data)[actsize] = el;
+  #else
   ((T*)data)[actsize] = (T)el;
+  #endif
   actsize++;
   return actsize;
   }
