@@ -11584,7 +11584,7 @@ static INT TimingCommand (INT argc, char **argv)
     DEBUG_TIME_RESET;
     return (OKCODE);
   }
-  if (debug_time_count==0)
+  if (__debug_time_count==0)
     UserWrite("no timing\n");
   else
   {
@@ -11595,12 +11595,12 @@ static INT TimingCommand (INT argc, char **argv)
         #else
     fac = 1.0 / ((double)CLOCKS_PER_SEC);
         #endif
-    for (i=0; i<debug_time_count; i++) {
+    for (i=0; i<__debug_time_count; i++) {
       UserWriteF("%2d: File:%15s, Line:%5d elapsed time%10.4f",
-                 i,debug_time_file[i],debug_time_line[i],
-                 (debug_time[i]-debug_time[0])*fac);
+                 i,__debug_time_file[i],__debug_time_line[i],
+                 (__debug_time[i]-__debug_time[0])*fac);
       if (i > 0) UserWriteF(" diff%8.4f",
-                            (debug_time[i]-debug_time[i-1])*fac);
+                            (__debug_time[i]-__debug_time[i-1])*fac);
       UserWriteF("\n");
     }
   }
