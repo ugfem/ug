@@ -5042,10 +5042,14 @@ static INT UpdateElementOverlap (ELEMENT *theElement)
 		/* and the extra Xfer env around ConnectGridOverlap()      */
 		/* can be deleted (s.l. 971029)                            */
 		IFDEBUG(gm,0)
-			for (i=0; i<Sons_of_Side; i++)
+			{
+				INT ok = 0;
+				theSon = SonList[i];
+				if (!EHGHOST(theSon)) continue;
 				for (j=0; j<SIDES_OF_ELEM(theSon); j++)
 				{
-				theSon = Sons_of_Side_List[i];
+					if (NBELEM(theSon,j)!=NULL && EMASTER(NBELEM(theSon,j))) ok = 1;
+				}
 				if (!ok)
 				{
 					if (ECLASS(theSon) == YELLOW_CLASS)
