@@ -1040,7 +1040,7 @@ void ElementXferCopy (DDD_OBJ obj, int proc, int prio)
 				me, pe, node, i))
 
 ganz_haesslicher_fix = prio;
-		DDD_XferCopyObj(PARHDR(node), proc, PrioNode);
+		DDD_XferCopyObj(PARHDR(node), proc, prio);
 	}
 
 
