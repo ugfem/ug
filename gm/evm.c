@@ -37,6 +37,7 @@
 #include "misc.h"
 #include "evm.h"
 #include "general.h"
+#include "devices.h"
 
 /****************************************************************************/
 /*																			*/
@@ -47,6 +48,8 @@
 /*		  macros															*/
 /*																			*/
 /****************************************************************************/
+
+#define OneSixth 0.166666666666666667
 
 /****************************************************************************/
 /*																			*/
@@ -1131,6 +1134,104 @@ INT QuadraticFittedMin (DOUBLE *x, DOUBLE *y, INT n, DOUBLE *minx)
   return (0);
 }
 
+/* volume computations, orientation is same as in general element definition ! */
+DOUBLE V_te (const DOUBLE *x0, const DOUBLE *x1,
+             const DOUBLE *x2, const DOUBLE *x3)
+{
+  DOUBLE_VECTOR a, b, h, n;
+
+  V3_SUBTRACT(x1,x0,a);
+  V3_SUBTRACT(x2,x0,b);
+  V3_SUBTRACT(x3,x0,h);
+  V3_VECTOR_PRODUCT(a,b,n);
+
+  return(OneSixth*V3_SCAL_PROD(n,h));
+}
+
+DOUBLE V_py (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
+             const DOUBLE *x3, const DOUBLE *x4)
+{
+  DOUBLE_VECTOR a,b,h,n;
+
+  V3_SUBTRACT(x2,x0,a);
+  V3_SUBTRACT(x3,x1,b);
+  V3_SUBTRACT(x4,x0,h);
+  V3_VECTOR_PRODUCT(a,b,n);
+
+  return(OneSixth*V3_SCAL_PROD(n,h));
+}
+
+DOUBLE V_pr (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
+             const DOUBLE *x3, const DOUBLE *x4, const DOUBLE *x5)
+{
+  DOUBLE_VECTOR a,b,c,d,e,m,n;
+
+  V3_SUBTRACT(x4,x0,a);
+  V3_SUBTRACT(x1,x3,b);
+  V3_SUBTRACT(x1,x0,c);
+  V3_SUBTRACT(x2,x0,d);
+  V3_SUBTRACT(x5,x0,e);
+  a[0] = x4[0]-x0[0]; a[1] = x4[1]-x0[1]; a[2] = x4[2]-x0[2];
+  b[0] = x1[0]-x3[0]; b[1] = x1[1]-x3[1]; b[2] = x1[2]-x3[2];
+  c[0] = x1[0]-x0[0]; c[1] = x1[1]-x0[1]; c[2] = x1[2]-x0[2];
+  d[0] = x2[0]-x0[0]; d[1] = x2[1]-x0[1]; d[2] = x2[2]-x0[2];
+  e[0] = x5[0]-x0[0]; e[1] = x5[1]-x0[1]; e[2] = x5[2]-x0[2];
+
+  V3_VECTOR_PRODUCT(a,b,m);
+  V3_VECTOR_PRODUCT(c,d,n);
+  V3_ADD(n,m,n);
+
+  return(OneSixth*V3_SCAL_PROD(n,e));
+}
+
+DOUBLE V_he (const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2, const DOUBLE *x3,
+             const DOUBLE *x4, const DOUBLE *x5, const DOUBLE *x6, const DOUBLE *x7)
+{
+  return(V_pr(x0,x1,x2,x4,x5,x6)+V_pr(x0,x2,x3,x4,x6,x7));
+}
+
+DOUBLE GeneralElementVolume (INT tag, DOUBLE *x_co[])
+{
+  switch (tag)
+  {
+#               ifdef __TWODIM__
+  case TRIANGLE :
+    return(c_tarea (x_co[0],x_co[1],x_co[2]));
+
+  case QUADRILATERAL :
+    return(c_qarea (x_co[0],x_co[1],x_co[2],x_co[3]));
+#               endif
+
+#               ifdef __THREEDIM__
+  case TETRAHEDRON :
+    return(V_te(x_co[0],x_co[1],x_co[2],x_co[3]));
+
+  case PYRAMID :
+    return (V_py(x_co[0],x_co[1],x_co[2],x_co[3],x_co[4]));
+
+  case PRISM :
+    return (V_pr(x_co[0],x_co[1],x_co[2],x_co[3],x_co[4],x_co[5]));
+
+  case HEXAHEDRON :
+    return(V_he(x_co[0],x_co[1],x_co[2],x_co[3],x_co[4],x_co[5],x_co[6],x_co[7]));
+#                       endif
+
+  default :
+    PrintErrorMessage('E',"GeneralElementVolume","unknown element");
+    return(0.0);
+  }
+}
+
+DOUBLE ElementVolume (const ELEMENT *elem)
+{
+  DOUBLE *x_co[MAX_CORNERS_OF_ELEM];
+  INT i;
+
+  for (i=0; i<CORNERS_OF_ELEM(elem); i++)
+    x_co[i] = CVECT(MYVERTEX(CORNER(elem,i)));
+
+  return (GeneralElementVolume(TAG(elem),x_co));
+}
 
 /****************************************************************************/
 /*D

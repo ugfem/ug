@@ -586,6 +586,14 @@ DOUBLE		c_tarea								(const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2);
 DOUBLE		c_qarea								(const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2, const DOUBLE *x3);
 DOUBLE		ctarea								(DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2);
 DOUBLE		cqarea								(DOUBLE x0,DOUBLE y0,DOUBLE x1,DOUBLE y1,DOUBLE x2,DOUBLE y2,DOUBLE x3,DOUBLE y3);
+DOUBLE		V_te								(const DOUBLE *x0, const DOUBLE *x1,
+												 const DOUBLE *x2, const DOUBLE *x3);
+DOUBLE		V_py								(const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
+												 const DOUBLE *x3, const DOUBLE *x4);
+DOUBLE		V_pr								(const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2,
+												 const DOUBLE *x3, const DOUBLE *x4, const DOUBLE *x5);
+DOUBLE		V_he								(const DOUBLE *x0, const DOUBLE *x1, const DOUBLE *x2, const DOUBLE *x3,
+												 const DOUBLE *x4, const DOUBLE *x5, const DOUBLE *x6, const DOUBLE *x7);
 
 
 /* 3D routines */
@@ -600,5 +608,9 @@ INT 		V3_Project 							(const DOUBLE *a, const DOUBLE *b, DOUBLE *r);
 
 /* 4D routines */
 INT 		M4_Invert							(DOUBLE *Inverse, const DOUBLE *Matrix);
+
+/* volume calculations*/
+DOUBLE		GeneralElementVolume				(INT tag, DOUBLE *x_co[]);
+DOUBLE		ElementVolume						(const ELEMENT *elem);
 
 #endif
