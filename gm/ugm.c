@@ -1110,6 +1110,7 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
         moved += MOVED(VertexOnEdge[j]);
       }
     }
+                #ifndef ModelP
     if (moved == 1) {
       for (j=0; j<EDGES_OF_ELEM(theElement); j++)
         if (VertexOnEdge[j] != NULL)
@@ -1128,6 +1129,7 @@ NODE *CreateCenterNode (GRID *theGrid, ELEMENT *theElement)
         VFATHER(theVertex) = theElement;
       }
     }
+            #endif
   }
 
   theVertex = CreateInnerVertex(theGrid);
