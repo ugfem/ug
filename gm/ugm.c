@@ -6467,6 +6467,68 @@ INT RenumberNodeElem (MULTIGRID *theMG)
 
 /****************************************************************************/
 /*D
+   CheckEnumerationNodeElem - check if numeration is according to RenumberNodeElem
+
+   SYNOPSIS:
+   INT CheckEnumerationNodeElem (MULTIGRID *theMG);
+
+   PARAMETERS:
+   .  theMG - ptr to multigrid
+
+   DESCRIPTION:
+   This function checks numbers of nodes and elements;
+
+   RETURN VALUE:
+   INT
+   .n   GM_OK if ok
+   .n   > 0 line in which error occured.
+   D*/
+/****************************************************************************/
+
+INT CheckEnumerationNodeElem (MULTIGRID *theMG)
+{
+  INT i,nid,eid;
+  GRID *theGrid;
+  NODE *theNode;
+  ELEMENT *theElement;
+
+  nid=eid=0;
+  for (i=0; i<=TOPLEVEL(theMG); i++)
+  {
+    theGrid = GRID_ON_LEVEL(theMG,i);
+    for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL; theElement=SUCCE(theElement))
+    {
+      if (ID(theElement)!=eid) return (1);
+      eid++;
+    }
+    if (i==0)
+    {
+      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+        if (OBJT(MYVERTEX(theNode))==BVOBJ)
+        {
+          if (ID(theNode) != nid) return (1);
+          nid++;
+        }
+      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+        if (OBJT(MYVERTEX(theNode))==IVOBJ)
+        {
+          if (ID(theNode) != nid) return (1);
+          nid++;
+        }
+    }
+    else
+      for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
+      {
+        if (ID(theNode) != nid) return (1);
+        nid++;
+      }
+  }
+
+  return (0);
+}
+
+/****************************************************************************/
+/*D
    InitUGManager - Init what is neccessary
 
    SYNOPSIS:

@@ -103,6 +103,7 @@ INT              FindNeighborElement    (const ELEMENT *theElement, INT Side, EL
 INT              PointInElement                 (const DOUBLE*, const ELEMENT *theElement);
 VIRT_HEAP_MGMT *GetGenMGUDM             (void);
 INT              RenumberNodeElem               (MULTIGRID *theMG);
+INT              CheckEnumerationNodeElem (MULTIGRID *theMG);
 
 NODE        *CreateSonNode          (GRID *theGrid, NODE *FatherNode);
 NODE            *CreateMidNode                  (GRID *theGrid, ELEMENT *theElement, INT edge);
