@@ -10383,18 +10383,25 @@ static INT ExecuteNumProcCommand (INT argc, char **argv)
     theNumProc = GetCurrentNumProc();
     if (theNumProc == NULL)
     {
-      PrintErrorMessage('E',"npexecute","there is no current numerical procedure");
+      PrintErrorMessage('E',"npexecute",
+                        "there is no current numerical procedure");
       return (CMDERRORCODE);
     }
   }
   else
   {
-    theNumProc = GetNumProcByName (theMG,theNumProcName,NULL);
+    theNumProc = GetNumProcByName (theMG,theNumProcName,"");
     if (theNumProc == NULL)
     {
-      PrintErrorMessage('E',"npexecute","cannot find specified numerical procedure");
+      PrintErrorMessage('E',"npexecute",
+                        "cannot find specified numerical procedure");
       return (CMDERRORCODE);
     }
+  }
+  if (theNumProc->status != NP_EXECUTABLE) {
+    PrintErrorMessage('E',"npexecute",
+                      "the num proc is not executable");
+    return (CMDERRORCODE);
   }
   if ((err=((*theNumProc->Execute)(theNumProc,argc,argv)))!=0)
   {
@@ -10447,7 +10454,7 @@ static INT NumProcDisplayCommand (INT argc, char **argv)
   }
   else
   {
-    theNumProc = GetNumProcByName (theMG,theNumProcName,NULL);
+    theNumProc = GetNumProcByName (theMG,theNumProcName,"");
     if (theNumProc == NULL)
     {
       PrintErrorMessage('E',"npexecute","cannot find specified numerical procedure");
@@ -10514,7 +10521,7 @@ static INT NumProcCreateCommand (INT argc, char **argv)
                theNumProcName,err);
     return (CMDERRORCODE);
   }
-  theNumProc = GetNumProcByName(theMG,theNumProcName,NULL);
+  theNumProc = GetNumProcByName(theMG,theNumProcName,"");
   if (SetCurrentNumProc(theNumProc))
     return(PARAMERRORCODE);
 
@@ -10541,7 +10548,6 @@ static INT NumProcInitCommand (INT argc, char **argv)
   char theNumProcName[NAMESIZE];
   NP_BASE *theNumProc;
   MULTIGRID *theMG;
-  INT err;
 
   theMG = GetCurrentMultigrid();
   if (theMG==NULL)
@@ -10562,15 +10568,15 @@ static INT NumProcInitCommand (INT argc, char **argv)
   }
   else
   {
-    theNumProc = GetNumProcByName (theMG,theNumProcName,NULL);
+    theNumProc = GetNumProcByName (theMG,theNumProcName,"");
     if (theNumProc == NULL)
     {
       PrintErrorMessage('E',"npexecute","cannot find specified numerical procedure");
       return (CMDERRORCODE);
     }
   }
-  err = (*theNumProc->Init)(theNumProc,argc,argv);
-  switch (err) {
+  theNumProc->status = (*theNumProc->Init)(theNumProc,argc,argv);
+  switch (theNumProc->status) {
   case NP_NOT_INIT :
     UserWriteF("num proc %s has status NOT_INIT\n",theNumProcName);
   case NP_NOT_ACTIVE :
@@ -10619,7 +10625,7 @@ static INT SetCurrentNumProcCommand (INT argc, char **argv)
     PrintErrorMessage('E',"npexecute","there is no current multigrid\n");
     return (CMDERRORCODE);
   }
-  theNumProc = GetNumProcByName (theMG,npname,NULL);
+  theNumProc = GetNumProcByName (theMG,npname,"");
   if (theNumProc == NULL)
   {
     PrintErrorMessage('E',"npexecute","cannot find specified numerical procedure");
