@@ -5,7 +5,7 @@ use Exporter;
 $VERSION = 1.0;
 @ISA = qw(Exporter);
 
-@EXPORT = qw(la_mv la_inv la_p la_spec la_norm la_scale);
+@EXPORT = qw(la_add la_mv la_inv la_p la_spec la_norm la_scale la_spec_z);
 @EXPORT_OK = qw();
 %EXPORT_TAGS = qw();
 
@@ -117,7 +117,7 @@ sub la_p
     	{
 			for ($j=0; $j<$n; $j++)
 			{
-				$ret.=sprintf ("%15e ",$m->[$i][$j]);
+				$ret.=sprintf ("%32.16e ",$m->[$i][$j]);
 			}
 			$ret.="\n";
 		}
@@ -126,42 +126,141 @@ sub la_p
 	{
         for ($i=0; $i<$n; $i++)
         {
-			$ret.=sprintf ("%15e\n",$m->[$i]);
+			$ret.=sprintf ("%32.16e\n",$m->[$i]);
 		}
 	}
 	$ret.="\n";
 }
 
+sub la_add
+{
+    my ($i,$j,$n,$m,$mm,$sum,$ret);
+
+	$ret='';
+    $m=shift; 
+    $mm=shift; 
+    $n=$#{$m}+1; 
+	if (ref $m->[0])
+	{
+    	for ($i=0; $i<$n; $i++)
+    	{
+			for ($j=0; $j<$n; $j++)
+			{
+				$sum->[$i][$j]=$m->[$i][$j]+$mm->[$i][$j];
+			}
+		}
+	}
+	else
+	{
+        for ($i=0; $i<$n; $i++)
+        {
+			$sum->[$i]=$m->[$i]+$mm->[$i];
+		}
+	}
+	return $sum;
+}
+
 sub la_spec
 {
-    my ($i,$j,$ii,$jj,$m,$s,$n,$name,@r,@f,@real,@imag);
+	my ($s1,$s2,$s3,$i,$j,$m,$s,$n,$name,@r,@f,@real,@imag,$b);
 
-    $m=shift;
-    $n=$#{$m}+1;
-    $s='';
-    for ($i=0; $i<$n; $i++)
-    {
-        for ($j=0; $j<$n; $j++)
-        {
-            if ($m->[$i][$j]==0) { next; }
-            $ii=$i+1; $jj=$j+1;
-            $s.="a($ii,$jj)=$m->[$i][$j];\n";
-        }
-    }
-    $s.="\nspec(a)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"; $name="foo"; #tmpfile;
-    open(FOO,">$name"); print FOO $s; close(FOO);
-    $s=`cat $name | scilab -nw`; #`rm $name`;
-    ($s,$s)=split /ans/,$s; $s=~s/more \?//g;
-    $s=~s/\s+/ /g; $s=~s/! !/!/g; $s=~s/i//g; $s=~s/\+\s*//g; $s=~s/\-\s*/-/g;
-    @f=split /!/,$s; shift @f;
-    for ($i=0; $i<@f-1; $i++)
-    {
-        @r=float $f[$i];
-        if (@r==1) {$real[$i]=$r[0];$imag[$i]=0;}
-        elsif (@r==2) {$real[$i]=$r[0];$imag[$i]=$r[1];}
-        else {die "cannot evaluate spectrum from '$s'\n";}
-    }
-    return(\@real,\@imag);
+	$m=shift;
+	$b=shift; 
+	$n=$#{$m}+1;
+	$s='a={';
+	for ($i=0; $i<$n; $i++)
+	{
+		for ($j=0; $j<$n; $j++)
+		{
+			$s.="$m->[$i][$j]";
+			if ($j<$n-1) {$s.=','}
+			elsif ($i<$n-1 && $j==$n-1) {$s.=";\n"}
+		}
+	}
+	$s.="};\n";
+	if (defined $b)
+	{
+		$s.='b={';
+		for ($i=0; $i<$n; $i++)
+		{
+			for ($j=0; $j<$n; $j++)
+			{
+				$s.="$b->[$i][$j]";
+				if ($j<$n-1) {$s.=','}
+				elsif ($i<$n-1 && $j==$n-1) {$s.=";\n"}
+			}
+		}
+		$s.="};\n";
+	}
+	if (!defined $b)
+	{
+		$s.="spec(a)\n"; 
+	}
+	else
+	{
+		$s.="[x,y]=gspec(a,b);\nv=x./y;\nreal(v)\nimag(v)\n";
+	}
+	$name=tmpfile; open(FOO,">$name"); print FOO $s; close(FOO); 
+	$s=`cat $name | scilab -nw`; `rm $name`;
+	($s1,$s2,$s3)=split /ans/,$s;
+	$s2=~s/\-\s+/-/g; $s2=~s/\+\s+/+/g;
+	$s3=~s/\-\s+/-/g; $s3=~s/\+\s+/+/g;
+	@real=float $s2; @imag=float $s3;
+	return(\@real,\@imag);
+}
+
+sub la_spec_z
+{
+	my ($fac,$evr,$evi,$s1,$s2,$ii,$jj,$s3,$s4,$i,$j,$k,$m,$s,$n,$name,@r,@f,@ri,@real,@imag,$b);
+
+	$m=shift;
+	$b=shift; 
+	$n=$#{$m}+1;
+	$s='';
+	for ($i=0; $i<$n; $i++)
+	{
+		for ($j=0; $j<$n; $j++)
+		{
+			$ii=$i+1; $jj=$j+1;
+			$s.="a($ii,$jj)=$m->[$i][$j];\n";
+		}
+	}
+	if (defined $b)
+	{
+		for ($i=0; $i<$n; $i++)
+		{
+			for ($j=0; $j<$n; $j++)
+			{
+				$ii=$i+1; $jj=$j+1;
+				$s.="b($ii,$jj)=$b->[$i][$j];\n";
+			}
+		}
+	}
+	if (!defined $b)
+	{
+		$s.="v=spec(a);\nreal(v)\nimag(v)\n"; 
+	}
+	else
+	{
+		-e '/tmp/Sci_SR' and `rm /tmp/Sci_SR`;
+		-e '/tmp/Sci_SI' and `rm /tmp/Sci_SI`;
+		-e '/tmp/Sci_ER' and `rm /tmp/Sci_ER`;
+		-e '/tmp/Sci_EI' and `rm /tmp/Sci_EI`;
+		$s.="[x,y,z]=gspec(a,b); v=x./y; 
+		     write('/tmp/Sci_SR',real(v),'(e32.16)'); 
+			 write('/tmp/Sci_SI',imag(v),'(e32.16)'); 
+			 write('/tmp/Sci_ER',real(z),'($n(e32.16))'); 
+			 write('/tmp/Sci_EI',imag(z),'($n(e32.16))');";
+	}
+	open(FOO,">/tmp/Sci_script"); print FOO $s; close(FOO); 
+	`cat /tmp/Sci_script | scilab -nw`;  `rm /tmp/Sci_script`;
+	$s=`cat /tmp/Sci_SR`; @real=float $s;  `rm /tmp/Sci_SR`;
+	$s=`cat /tmp/Sci_SI`; @imag=float $s;  `rm /tmp/Sci_SI`;
+	$s=`cat /tmp/Sci_ER`; @ri=float $s;  `rm /tmp/Sci_ER`;
+	for ($i=$k=0; $i<$n; $i++) { for ($j=0; $j<$n; $j++) { $evr->[$i][$j]=$ri[$k++]; } }
+	$s=`cat /tmp/Sci_EI`; @ri=float $s;  `rm /tmp/Sci_EI`;
+	for ($i=$k=0; $i<$n; $i++) { for ($j=0; $j<$n; $j++) { $evi->[$i][$j]=$ri[$k++]; } }
+	return(\@real,\@imag,$evr,$evi);
 }
 
 sub la_norm
