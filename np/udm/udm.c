@@ -1029,6 +1029,7 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *com
 
   /* fill fields with scalar properties */
   SetScalMatSettings(md);
+  MD_SUCC_COMP(md) = TRUE;
   VM_LOCKED(md) = 0;
 
   return (md);
@@ -1102,6 +1103,7 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
 
   /* fill fields with scalar properties */
   SetScalMatSettings(md);
+  MD_SUCC_COMP(md) = FALSE;
   VM_LOCKED(md) = 0;
 
   return (md);

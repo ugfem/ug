@@ -98,6 +98,7 @@
 #define MD_OFFSETPTR(md)                        ((md)->offset)
 #define MD_MTYPE_OFFSET(md,mtp)             (MD_OFFSETPTR(md)[mtp])
 #define MD_RT_CT_OFFSET(md,mtp)             (MD_MTYPE_OFFSET(md,MTP(rt,ct)))
+#define MD_SUCC_COMP(md)                    ((md)->SuccComp)
 
 /* VEC_SCALAR */
 #define VS_CMP_AT_OFFSET(vs,os,i)                       (vs[(os)+(i)])
@@ -149,6 +150,7 @@ typedef struct {
   /* redundant (but frequently used) information                          */
   SHORT IsScalar;                       /* TRUE if desc is scalar:              */
   /* same settings in all types           */
+  SHORT SuccComp;                   /* successive components                */
   SHORT ScalComp;                       /* location of scalar component         */
   INT ScalRowTypeMask;                  /* mask for used vectypes in rows       */
   INT ScalColTypeMask;                  /* mask for used vectypes in cols       */
