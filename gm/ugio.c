@@ -99,11 +99,6 @@
 /* orphan condition for elements */
 #define EORPHAN(e)              (EFATHER(e)==NULL || THEFLAG(e))
 
-/* macro for test of degenerated load balancings */
-#ifdef ModelP
-#define PARALLEL_ONEPROC_HASGRID
-#endif
-
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -1122,7 +1117,7 @@ static INT SaveMultiGrid_SPF (MULTIGRID *theMG, char *name, char *type, char *co
   cg_general.nInnerElement = nie;
   if (Write_CG_General(&cg_general)) return (1);
 
-#ifdef PARALLEL_ONEPROC_HASGRID
+#ifdef ModelP
   /* this proc has no elements */
   if (cg_general.nElement == 0)
   {
@@ -1971,9 +1966,9 @@ nparfiles = UG_GlobalMinINT(nparfiles);
     for (i=0; i<mg_general.nLevel; i++)
     {
       if (CreateNewLevel(theMG,0)==NULL)                                                              {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
-            #ifdef ModelP
+#ifdef ModelP
       ConstructConsistentGrid(GRID_ON_LEVEL(theMG,i));
-            #endif
+#endif
     }
     if (CreateAlgebra (theMG))                                                                                      {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
@@ -2017,7 +2012,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
   /* read general information about coarse grid */
   if (Read_CG_General(&cg_general))                                                                       {CloseMGFile (); DisposeMultiGrid(theMG); return (NULL);}
 
-#ifdef PARALLEL_ONEPROC_HASGRID
+#ifdef ModelP
   /* this proc has no elements */
   if (cg_general.nElement == 0)
   {
