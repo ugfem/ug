@@ -46,6 +46,7 @@
 #include "misc.h"
 #include "evm.h"
 #include "cw.h"
+#include "elements.h"
 #include "graph.h"
 #include "gm.h"
 #include "defaults.h"
@@ -234,19 +235,6 @@ INT ce_ELEMORD;
 
 /* miscellanea */
 #define SMALL  1E-10
-
-extern INT n_offset[TAGS];
-extern INT father_offset[TAGS];
-extern INT sons_offset[TAGS];
-extern INT nb_offset[TAGS];
-extern INT evector_offset[TAGS];
-extern INT svector_offset[TAGS];
-extern INT side_offset[TAGS];
-extern INT data_offset[TAGS];
-
-/** \brief Predefined control words */
-extern CONTROL_ENTRY
-        control_entries[MAX_CONTROL_ENTRIES];
 
 /****************************************************************************/
 /*                                                                          */
@@ -6152,7 +6140,7 @@ static INT GEN_PostProcess_Vector_FR (PICTURE *thePicture, WORK *theWork)
 */
 /****************************************************************************/
 
-INT SetOrderStrategy (INT OrderStrategy)
+INT NS_PREFIX SetOrderStrategy (INT OrderStrategy)
 {
 	/* for valid range compare switch below */
 	if ((OrderStrategy<0) || (OrderStrategy>2))
@@ -20438,7 +20426,7 @@ static INT EW_LineElement3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 D*/
 /****************************************************************************/
 
-INT DrawWindowText (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT size, INT center, INT mode)
+INT NS_PREFIX DrawWindowText (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT size, INT center, INT mode)
 {
 	if (PrepareGraphWindow(theWin)) return (1);
 	
@@ -20489,7 +20477,7 @@ INT DrawWindowText (UGWINDOW *theWin, COORD_POINT pos, const char *text, INT siz
 D*/
 /****************************************************************************/
 
-INT SetDoFramePicture (INT mode)
+INT NS_PREFIX SetDoFramePicture (INT mode)
 {
 	DoFramePicture = mode;
 	return (0);
@@ -22081,7 +22069,7 @@ static INT BulletDrawWork(PICTURE *thePicture, WORK *theWork, DOUBLE zOffsetFact
 D*/
 /****************************************************************************/
 
-INT DragPicture (PICTURE *thePicture, const INT *StartMousePos)
+INT NS_PREFIX DragPicture (PICTURE *thePicture, const INT *StartMousePos)
 {
 	VIEWEDOBJ *theViewedObj;
 	COORD_POINT FrameLL,FrameLR,FrameUR,FrameUL;
@@ -22248,7 +22236,7 @@ INT DragPicture (PICTURE *thePicture, const INT *StartMousePos)
 D*/
 /****************************************************************************/
 
-INT ZoomPicture (PICTURE *thePicture, const INT *OldMousePos)
+INT NS_PREFIX ZoomPicture (PICTURE *thePicture, const INT *OldMousePos)
 {
 	VIEWEDOBJ *theViewedObj;
 	DOUBLE MidPoint[3],pos[3],shift[3];
@@ -22832,7 +22820,7 @@ static INT InitRotObsTrafo2d (const DOUBLE *mid,
 	return (0);
 }
 
-INT SetRotMode (INT mode)
+INT NS_PREFIX SetRotMode (INT mode)
 {
 	switch (mode)
 	{
@@ -22852,7 +22840,7 @@ INT SetRotMode (INT mode)
 	return (0);
 }
 
-INT RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
+INT NS_PREFIX RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
 {
 	VIEWEDOBJ *theViewedObj;
 	DOUBLE  RotMat[9],			/* rotation in view refrence frame */
@@ -23121,7 +23109,7 @@ INT RotatePicture (PICTURE *thePicture, const INT *OldMousePos)
 	return (0);
 }
 
-INT RotateCut (PICTURE *thePicture, const INT *OldMousePos)
+INT NS_PREFIX RotateCut (PICTURE *thePicture, const INT *OldMousePos)
 {
 	VIEWEDOBJ *theViewedObj;
 	CUT *theCut;
@@ -23328,7 +23316,7 @@ static void InvertSlider (DOUBLE xm, DOUBLE dx, DOUBLE ym, DOUBLE curr, DOUBLE N
 	DrawInfoBox(UGW_IFWINDOW(myWin),buffer);
 }
 
-INT MoveCut (PICTURE *thePicture, const INT *OldMousePos)
+INT NS_PREFIX MoveCut (PICTURE *thePicture, const INT *OldMousePos)
 {
 	VIEWEDOBJ *theViewedObj;
 	CUT *theCut;
@@ -23465,7 +23453,7 @@ INT MoveCut (PICTURE *thePicture, const INT *OldMousePos)
 D*/
 /****************************************************************************/
 
-INT DrawUgPicture (PICTURE *thePicture)
+INT NS_PREFIX DrawUgPicture (PICTURE *thePicture)
 {
 	WORK theWork;
 	
@@ -23475,7 +23463,7 @@ INT DrawUgPicture (PICTURE *thePicture)
 	return (0);
 }
 
-INT BulletDrawUgPicture(PICTURE *thePicture, DOUBLE zOffsetFactor)
+INT NS_PREFIX BulletDrawUgPicture(PICTURE *thePicture, DOUBLE zOffsetFactor)
 {
 	WORK theWork;
 	
@@ -23514,7 +23502,7 @@ INT BulletDrawUgPicture(PICTURE *thePicture, DOUBLE zOffsetFactor)
 D*/
 /****************************************************************************/
 
-INT InitWOP (void)
+INT NS_PREFIX InitWOP (void)
 {
 	PLOTOBJHANDLING *thePOH;
 	WORKPROCS *theWP;

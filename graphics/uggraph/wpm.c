@@ -212,7 +212,7 @@ INT NS_PREFIX DisposePicture (PICTURE *thePicture)
   return (0);
 }
 
-void ResetToolBoxState (UGWINDOW *ugw)
+void NS_PREFIX ResetToolBoxState (UGWINDOW *ugw)
 {
   UGW_CURRTOOL(ugw)               = arrowTool;
   UGW_CURRFUNC(ugw)               = 0;
@@ -371,7 +371,7 @@ UGWINDOW * NS_PREFIX CreateUgWindow (OUTPUTDEVICE *theOutputDevice, const char *
    }
  */
 
-UGWINDOW *OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task, INT rename)
+UGWINDOW * NS_PREFIX OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *task, INT rename)
 {
   INT i,j;
   PLACEMENT_REAL real;
@@ -428,7 +428,7 @@ UGWINDOW *OpenPlacedPictures (OUTPUTDEVICE *theOutputDevice, PLACEMENT_TASK *tas
    D*/
 /****************************************************************************/
 
-INT UpdateUgWindow (UGWINDOW *theUgWindow, const PICTURE *EvalPicture)
+INT NS_PREFIX UpdateUgWindow (UGWINDOW *theUgWindow, const PICTURE *EvalPicture)
 {
   int r;
 
@@ -522,7 +522,7 @@ INT NS_PREFIX DisposeUgWindow (UGWINDOW *theUgWindow)
    D*/
 /****************************************************************************/
 
-PICTURE *GetUgPicture (const UGWINDOW *theUgWindow, const char *name)
+PICTURE * NS_PREFIX GetUgPicture (const UGWINDOW *theUgWindow, const char *name)
 {
   if (ChangeEnvDir("/UgWindows")==NULL) return(NULL);
   if (ChangeEnvDir(ENVITEM_NAME(theUgWindow)) == NULL) return (NULL);
@@ -612,7 +612,7 @@ PICTURE * NS_PREFIX GetNextPicture (const PICTURE *thePicture)
 
 #define WPL_FORMAT                              "%-2.1s%-15.12s%-15.12s%-15.12s%-15.12s%-15.120s%-15.12s%-15.12s\n"
 
-void ListWindowPictureHeader (void)
+void NS_PREFIX ListWindowPictureHeader (void)
 {
   UserWriteF(WPL_FORMAT,"","UgWindow","Device","Picture","VO_Status","PlotObjType","PO_Status","Multigrid");
   UserWriteF(WPL_FORMAT,"","--------","------","-------","---------","-----------","---------","---------");
@@ -637,7 +637,7 @@ void ListWindowPictureHeader (void)
    void
    D*/
 /****************************************************************************/
-void ListUgWindow (const UGWINDOW *theUgWindow, INT current)
+void NS_PREFIX ListUgWindow (const UGWINDOW *theUgWindow, INT current)
 {
   if (current) UserWriteF(WPL_FORMAT,"#",ENVITEM_NAME(theUgWindow),ENVITEM_NAME(UGW_OUTPUTDEV(theUgWindow)),"","","","","");
   else UserWriteF(WPL_FORMAT,"",ENVITEM_NAME(theUgWindow),ENVITEM_NAME(UGW_OUTPUTDEV(theUgWindow)),"","","","","");
@@ -664,7 +664,7 @@ void ListUgWindow (const UGWINDOW *theUgWindow, INT current)
    void
    D*/
 /****************************************************************************/
-void ListPicture (const PICTURE *thePicture, INT current)
+void NS_PREFIX ListPicture (const PICTURE *thePicture, INT current)
 {
   UGWINDOW *theUgW;
   char b1[2], b2[11], b3[30], b4[30], b5[30];
@@ -747,7 +747,7 @@ void ListPicture (const PICTURE *thePicture, INT current)
    D*/
 /****************************************************************************/
 
-UGWINDOW *WinID2UgWindow (WINDOWID id)
+UGWINDOW * NS_PREFIX WinID2UgWindow (WINDOWID id)
 {
   ENVITEM *theUgWindow;
   ENVDIR *theUgWRoot;
@@ -781,7 +781,7 @@ UGWINDOW *WinID2UgWindow (WINDOWID id)
    D*/
 /****************************************************************************/
 
-UGWINDOW *GetUgWindow (const char *name)
+UGWINDOW * NS_PREFIX GetUgWindow (const char *name)
 {
   if (ChangeEnvDir("/UgWindows")==NULL) return(NULL);
   return((UGWINDOW*) SearchEnv(name,".",theUgWinDirID,SEARCHALL));
@@ -872,7 +872,7 @@ UGWINDOW * NS_PREFIX GetNextUgWindow (const UGWINDOW *theUgWindow)
    D*/
 /****************************************************************************/
 
-PICTURE *Mouse2Picture (const UGWINDOW *theUgWindow, INT *MousePosition)
+PICTURE * NS_PREFIX Mouse2Picture (const UGWINDOW *theUgWindow, INT *MousePosition)
 {
   PICTURE *thePicture;
   DOUBLE a;
@@ -913,7 +913,7 @@ PICTURE *Mouse2Picture (const UGWINDOW *theUgWindow, INT *MousePosition)
    D*/
 /****************************************************************************/
 
-INT InvalidatePicture (PICTURE *thePicture)
+INT NS_PREFIX InvalidatePicture (PICTURE *thePicture)
 {
   PIC_VALID(thePicture) = NO;
 
@@ -940,7 +940,7 @@ INT InvalidatePicture (PICTURE *thePicture)
    D*/
 /****************************************************************************/
 
-INT InvalidatePicturesOfUgWindow (UGWINDOW *theUgW)
+INT NS_PREFIX InvalidatePicturesOfUgWindow (UGWINDOW *theUgW)
 {
   PICTURE *thePicture;
 
@@ -971,7 +971,7 @@ INT InvalidatePicturesOfUgWindow (UGWINDOW *theUgW)
    D*/
 /************************************************************************/
 
-INT InvalidatePicturesOfMG (MULTIGRID *theMG)
+INT NS_PREFIX InvalidatePicturesOfMG (MULTIGRID *theMG)
 {
   UGWINDOW *theUgWindow;
   PICTURE *thePicture;
@@ -1005,7 +1005,7 @@ INT InvalidatePicturesOfMG (MULTIGRID *theMG)
    D*/
 /******************************************************************************/
 
-INT InvalidateUgWindow (UGWINDOW *theUgWindow)
+INT NS_PREFIX InvalidateUgWindow (UGWINDOW *theUgWindow)
 {
   UGW_VALID(theUgWindow) = NO;
   return (0);
@@ -1032,7 +1032,7 @@ INT InvalidateUgWindow (UGWINDOW *theUgWindow)
    D*/
 /****************************************************************************/
 
-INT InvalidateUgWindowsOfMG (MULTIGRID *theMG)
+INT NS_PREFIX InvalidateUgWindowsOfMG (MULTIGRID *theMG)
 {
   UGWINDOW *theUgW;
   PICTURE *thePic;
@@ -1076,7 +1076,7 @@ INT InvalidateUgWindowsOfMG (MULTIGRID *theMG)
    D*/
 /****************************************************************************/
 
-INT MovePictureToNewWindow (PICTURE *pic)
+INT NS_PREFIX MovePictureToNewWindow (PICTURE *pic)
 {
   UGWINDOW *oldWin,*newWin;
   INT x,y,w,h;
@@ -1155,7 +1155,7 @@ PLOTOBJTYPE * NS_PREFIX GetPlotObjType (const char *PlotObjTypeName)
    D*/
 /****************************************************************************/
 
-PLOTOBJTYPE *GetFirstPlotObjType (void)
+PLOTOBJTYPE * NS_PREFIX GetFirstPlotObjType (void)
 {
   ENVITEM *thePlotObj;
 
@@ -1188,7 +1188,7 @@ PLOTOBJTYPE *GetFirstPlotObjType (void)
    D*/
 /****************************************************************************/
 
-PLOTOBJTYPE *GetNextPlotObjType (const PLOTOBJTYPE *thePlotObjType)
+PLOTOBJTYPE * NS_PREFIX GetNextPlotObjType (const PLOTOBJTYPE *thePlotObjType)
 {
   ENVITEM *theNextPlotObj;
 
@@ -1220,7 +1220,7 @@ PLOTOBJTYPE *GetNextPlotObjType (const PLOTOBJTYPE *thePlotObjType)
    D*/
 /****************************************************************************/
 
-PLOTOBJTYPE *CreatePlotObjType (const char *PlotObjTypeName, INT size)
+PLOTOBJTYPE * NS_PREFIX CreatePlotObjType (const char *PlotObjTypeName, INT size)
 {
   PLOTOBJTYPE *pot;
 
@@ -1800,7 +1800,7 @@ INT NS_PREFIX SetView (PICTURE *thePicture, const DOUBLE *viewPoint, const DOUBL
   }
 }
 
-INT CopyView (const PICTURE *mypic, INT all, INT cut)
+INT NS_PREFIX CopyView (const PICTURE *mypic, INT all, INT cut)
 {
   UGWINDOW *myUGW,*theUGW;
   MULTIGRID *myMG;
@@ -1898,7 +1898,7 @@ INT CopyView (const PICTURE *mypic, INT all, INT cut)
    D*/
 /****************************************************************************/
 
-INT PrintViewSettings (const PICTURE *thePicture)
+INT NS_PREFIX PrintViewSettings (const PICTURE *thePicture)
 {
   const VIEWEDOBJ *theViewedObj;
   const DOUBLE *obs,*tgt,*pxd,*pp,*pn;
@@ -1965,7 +1965,7 @@ INT PrintViewSettings (const PICTURE *thePicture)
    D*/
 /****************************************************************************/
 
-INT DisplayViewOfViewedObject (const PICTURE *thePicture)
+INT NS_PREFIX DisplayViewOfViewedObject (const PICTURE *thePicture)
 {
   DOUBLE width;
 
@@ -2047,7 +2047,7 @@ INT DisplayViewOfViewedObject (const PICTURE *thePicture)
    D*/
 /****************************************************************************/
 
-INT ResizeViewPlane (VIEWEDOBJ *theVO, const INT *Pix_LL_old, const INT *Pix_UR_old, const INT *Pix_LL_new, const INT *Pix_UR_new)
+INT NS_PREFIX ResizeViewPlane (VIEWEDOBJ *theVO, const INT *Pix_LL_old, const INT *Pix_UR_old, const INT *Pix_LL_new, const INT *Pix_UR_new)
 {
   DOUBLE delta[3],q[2];
 
@@ -2104,7 +2104,7 @@ INT ResizeViewPlane (VIEWEDOBJ *theVO, const INT *Pix_LL_old, const INT *Pix_UR_
    D*/
 /****************************************************************************/
 
-INT Walk (PICTURE *thePicture, const DOUBLE *vrsDelta)
+INT NS_PREFIX Walk (PICTURE *thePicture, const DOUBLE *vrsDelta)
 {
   VIEWEDOBJ *theViewedObj;
   DOUBLE VP[3], XD[3], YD[3], ZD[3];
@@ -2175,7 +2175,7 @@ INT Walk (PICTURE *thePicture, const DOUBLE *vrsDelta)
    D*/
 /****************************************************************************/
 
-INT RunAroundTargetPoint (PICTURE *thePicture, DOUBLE vrsDirectionAngle, DOUBLE vrsAngle)
+INT NS_PREFIX RunAroundTargetPoint (PICTURE *thePicture, DOUBLE vrsDirectionAngle, DOUBLE vrsAngle)
 {
   VIEWEDOBJ *theViewedObj;
   DOUBLE VP[3], RotationAxis[3], ViewDirection[3], TurnDirection[3];
@@ -2232,7 +2232,7 @@ INT RunAroundTargetPoint (PICTURE *thePicture, DOUBLE vrsDirectionAngle, DOUBLE 
    D*/
 /****************************************************************************/
 
-INT Zoom (PICTURE *thePicture, DOUBLE factor)
+INT NS_PREFIX Zoom (PICTURE *thePicture, DOUBLE factor)
 {
   VIEWEDOBJ *theViewedObj;
 
@@ -2291,7 +2291,7 @@ INT Zoom (PICTURE *thePicture, DOUBLE factor)
    D*/
 /****************************************************************************/
 
-INT DragProjectionPlane (PICTURE *thePicture, DOUBLE vrsDeltaX, DOUBLE vrsDeltaY)
+INT NS_PREFIX DragProjectionPlane (PICTURE *thePicture, DOUBLE vrsDeltaX, DOUBLE vrsDeltaY)
 {
   VIEWEDOBJ *theViewedObj;
   DOUBLE DragVector[3], help[3];
@@ -2356,7 +2356,7 @@ INT DragProjectionPlane (PICTURE *thePicture, DOUBLE vrsDeltaX, DOUBLE vrsDeltaY
    D*/
 /****************************************************************************/
 
-INT RotateProjectionPlane (PICTURE *thePicture, DOUBLE vrsAngle)
+INT NS_PREFIX RotateProjectionPlane (PICTURE *thePicture, DOUBLE vrsAngle)
 {
   VIEWEDOBJ *theViewedObj;
   DOUBLE ViewDirection[3];
@@ -2522,7 +2522,7 @@ static INT SpecifyPlotObject (PLOTOBJ *thePlotObj, MULTIGRID *theMG, const char 
    D*/
 /****************************************************************************/
 
-INT SpecifyPlotObjOfViewedObject (PICTURE *thePicture, MULTIGRID *theMG, const char *PlotObjTypeName, INT argc, char **argv)
+INT NS_PREFIX SpecifyPlotObjOfViewedObject (PICTURE *thePicture, MULTIGRID *theMG, const char *PlotObjTypeName, INT argc, char **argv)
 {
   VIEWEDOBJ *theViewedObj;
   PLOTOBJ *thePlotObj;
@@ -2597,7 +2597,7 @@ INT SpecifyPlotObjOfViewedObject (PICTURE *thePicture, MULTIGRID *theMG, const c
    D*/
 /****************************************************************************/
 
-INT DisplayObject (PLOTOBJ *thePlotObj)
+INT NS_PREFIX DisplayObject (PLOTOBJ *thePlotObj)
 {
   PLOTOBJTYPE *thePOT;
 
@@ -5495,7 +5495,7 @@ static INT DisplayVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj)
    D*/
 /****************************************************************************/
 
-INT InitPlotObjTypes (void)
+INT NS_PREFIX InitPlotObjTypes (void)
 {
   PLOTOBJTYPE *thePOT;
 
@@ -5594,7 +5594,7 @@ INT InitPlotObjTypes (void)
    D*/
 /****************************************************************************/
 
-INT InitWPM (void)
+INT NS_PREFIX InitWPM (void)
 {
   /* install the /PlotObjTypes directory */
   if (ChangeEnvDir("/")==NULL)
