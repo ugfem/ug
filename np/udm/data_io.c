@@ -127,7 +127,7 @@ static char RCS_ID("$Header$",UG_RCS_STRING);
    D*/
 /****************************************************************************/
 
-MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *DataFileName)
+MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *DataFileName, MEM heapSize)
 {
   MULTIGRID *mg;
   DIO_GENERAL dio_general;
@@ -210,7 +210,7 @@ MULTIGRID *OpenMGFromDataFile (MULTIGRID *theMG, INT number, char *type, char *D
       mgtype = p;
       mgname = dio_general.mgfile;
     }
-    mg = LoadMultiGrid (NULL,mgname,mgtype,NULL,NULL,0,0,0,0);
+    mg = LoadMultiGrid (NULL,mgname,mgtype,NULL,NULL,heapSize,0,0,0);
   }
 
   return (mg);
@@ -425,7 +425,7 @@ nparfiles = UG_GlobalMinINT(nparfiles);
    D*/
 /****************************************************************************/
 
-INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec, char **NameList)
+INT SaveData (MULTIGRID *theMG, char *name, INT rename, char *type, INT number, DOUBLE time, DOUBLE dt, DOUBLE ndt, INT n, VECDATA_DESC **theVDList, EVALUES **theEVal, EVECTOR **theEVec, char **NameList)
 {
   INT i,j,k,l,ncomp,s,t,*entry,nNode,store_from_eval,id,tag,coe,q,mode,nparfiles;
   DIO_GENERAL dio_general;
@@ -455,7 +455,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
 #endif
   if (!saved)
   {
-    if (SaveMultiGrid (theMG,NULL,NULL,NULL,1))
+    if (SaveMultiGrid (theMG,NULL,NULL,NULL,1,rename))
     {
       UserWrite("ERROR: cannot autosave multigrid\n");
       return (1);
@@ -524,7 +524,7 @@ INT SaveData (MULTIGRID *theMG, char *name, char *type, INT number, DOUBLE time,
     strcat(FileName,buf);
   }
 #endif
-  if (Write_OpenDTFile (FileName)) return (1);
+  if (Write_OpenDTFile (FileName,(int)rename)) return (1);
 
   /* write general information */
   dio_general.mode = mode;

@@ -136,7 +136,7 @@ int             DTIO_filetype           (char *filename);
 #endif
 
 /* write functions */
-int             Write_OpenDTFile        (char *filename);
+int             Write_OpenDTFile        (char *filename, int rename);
 int             Write_DT_General        (DIO_GENERAL *dio_general);
 
 /* general functions */

@@ -159,11 +159,11 @@ int Read_OpenDTFile (char *filename)
    D*/
 /****************************************************************************/
 
-int Write_OpenDTFile (char *filename)
+int Write_OpenDTFile (char *filename, int rename)
 {
 
 #ifdef __MGIO_USE_IN_UG__
-  if (datapathes_set) stream = FileOpenUsingSearchPaths(filename,"w","datapaths");
+  if (datapathes_set) stream = FileOpenUsingSearchPaths_r(filename,"w","datapaths",rename);
   else stream = fileopen(filename,"w");
 #else
   stream = fopen(filename,"w");
