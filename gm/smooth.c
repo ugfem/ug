@@ -46,7 +46,7 @@
 
 #define SMALL_LOCAL    1.E-4
 
-#define LOCAL_EQUAL(A,V)     (ABS((A)-(V))< (5E-3))
+#define LOCAL_EQUAL(A,V)     (ABS((A)-(V))< (1E-3))
 #define IS_VALUE2(A,V)     (ABS((A)-(V))< (SMALL_C))
 #define IS_0_OR_1(V)   (LOCAL_EQUAL(V,0) || LOCAL_EQUAL(V,1))
 #define V2_LOCAL_EQUAL(A,B) ((ABS((A)[0]-(B)[0])<SMALL_LOCAL)&&(ABS((A)[1]-(B)[1])<SMALL_LOCAL))
@@ -297,7 +297,7 @@ static INT NewPosCurvedBoundary(ELEMENT *theElement, NODE *CenterNode, DOUBLE *M
     UG_GlobalToLocal(coe,(const DOUBLE **)CornerPtrs,global,LCVECT(MYVERTEX(theOppNode)));
 
     /* move this node with MoveNode instead with MoveMidNode */
-    SETTHEFLAG(theOppNode,1);
+    SETUSED(theOppNode,1);
 
     /* local coordinates of boundary node */
     newLambda = MidNodeLambdaNew[ID(MYVERTEX(theBndNode))];
@@ -339,7 +339,7 @@ static INT NewPosCurvedBoundary(ELEMENT *theElement, NODE *CenterNode, DOUBLE *M
   {
     V_DIM_ADD1(CenterDiff,CVECT(MYVERTEX(CenterNode)));
     UG_GlobalToLocal(coe,(const DOUBLE **)CornerPtrs,CVECT(MYVERTEX(CenterNode)),LCVECT(MYVERTEX(CenterNode)));
-    SETTHEFLAG(CenterNode,1);
+    SETUSED(CenterNode,1);
   }
   return(0);
 }
@@ -765,7 +765,7 @@ static INT DefaultPosCurvedBoundary(ELEMENT *theElement, NODE *CenterNode, INT L
     UG_GlobalToLocal(coe,(const DOUBLE **)CornerPtrs,global,LCVECT(MYVERTEX(theOppNode)));
 
     /* move this node with MoveNode instead with MoveMidNode */
-    SETTHEFLAG(theOppNode,1);
+    SETUSED(theOppNode,1);
 
     /* add diff of opposite node to center node */
     V_DIM_SCALEADD1(0.5,diff,CenterDiff)
@@ -777,7 +777,7 @@ static INT DefaultPosCurvedBoundary(ELEMENT *theElement, NODE *CenterNode, INT L
     V_DIM_SCALE(1./moved,CenterDiff);
     V_DIM_ADD1(CenterDiff,CVECT(MYVERTEX(CenterNode)));
     UG_GlobalToLocal(coe,(const DOUBLE **)CornerPtrs,CVECT(MYVERTEX(CenterNode)),LCVECT(MYVERTEX(CenterNode)));
-    SETTHEFLAG(CenterNode,1);
+    SETUSED(CenterNode,1);
   }
   return(0);
 }
@@ -1013,7 +1013,7 @@ static INT EqualDistBndElem(ELEMENT *fatherElement, INT bnd_side, NODE *CenterNo
   UG_GlobalToLocal(coe,(const DOUBLE **)CornerPtrs,CVECT(MYVERTEX(CenterNode)),
                    LCVECT(MYVERTEX(CenterNode)));
 
-  SETTHEFLAG(OppNode,1);
+  SETUSED(OppNode,1);
 
   return(0);
 }
@@ -1168,7 +1168,7 @@ static INT EqualDistInnerElem(ELEMENT *fatherElement,  ELEMENT *bndElement, INT 
   CORNER_COORDINATES(fatherElement2,coe,CornerPtrs);
   UG_GlobalToLocal(coe,(const DOUBLE **)CornerPtrs,CVECT(MYVERTEX(OppNode)),
                    LCVECT(MYVERTEX(OppNode)));
-  SETTHEFLAG(OppNode,1);
+  SETUSED(OppNode,1);
 
   return(0);
 }
@@ -1340,7 +1340,7 @@ static INT MoveNodesOnGrid (GRID *theGrid, DOUBLE_VECTOR *VertexCoord, DOUBLE_VE
     V_DIM_COPY(oldLPos,VertexLocal);
     V_DIM_COPY(oldPos,VertexGlobal);
 
-    if (THEFLAG(theNode)==1)
+    if (USED(theNode)==1)
     {
       if (!V2_LOCAL_EQUAL(newLPos,oldLPos))
       {
@@ -1496,14 +1496,9 @@ INT SmoothGrid (MULTIGRID *theMG, INT fl, INT tl, const DOUBLE LimitLocDis,
     memset(MidNodeLambdaOld,0.5,VIDCNT(theMG)*sizeof(DOUBLE));
     memset(MidNodeLambdaNew,0.5,VIDCNT(theMG)*sizeof(DOUBLE));
 
-    /* check node flags */
+    /* reset used flags */
     for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
-      if (THEFLAG(theNode))
-      {
-        PrintErrorMessage('E',"SmoothGrid","node flag already set");
-        ReleaseTmpMem(MGHEAP(theMG),MarkKey);
-        return(1);
-      }
+      SETUSED(theNode,0);
 
     if (option==3)
       goto option_b;
@@ -1681,9 +1676,9 @@ option_b:
       goto exit;
     }
 
-    /* reset node flag */
+    /* reset used flag */
     for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
-      SETTHEFLAG(theNode,0);
+      SETUSED(theNode,0);
   }
   ReleaseTmpMem(MGHEAP(theMG),MarkKey);
   return(0);
@@ -1692,9 +1687,9 @@ exit:
   for (lev=fl; lev<=tl; lev++)
   {
     theGrid=GRID_ON_LEVEL(theMG,lev);
-    /* reset node flag */
+    /* reset used flag */
     for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
-      SETTHEFLAG(theNode,0);
+      SETUSED(theNode,0);
   }
   ReleaseTmpMem(MGHEAP(theMG),MarkKey);
   return(1);
@@ -1750,13 +1745,9 @@ INT SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
       V_DIM_COPY(LCVECT(theVertex),VertexLCoord[ID(theVertex)]);
     }
 
-    /* check node flags */
+    /* reset used flags */
     for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
-      if (THEFLAG(theNode))
-      {
-        PrintErrorMessage('E',"SmoothGridReset","node flag already set");
-        return(1);
-      }
+      SETUSED(theNode,0);
 
     /*    re-move center nodes of quadrilaterals  */
     for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
@@ -1824,9 +1815,9 @@ INT SmoothGridReset (MULTIGRID *theMG, INT fl, INT tl)
       return(1);
     }
 
-    /* reset flag */
+    /* reset used flags */
     for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
-      SETTHEFLAG(theNode,0);
+      SETUSED(theNode,0);
   }
   ReleaseTmpMem(MGHEAP(theMG),MarkKey);
   return(0);
