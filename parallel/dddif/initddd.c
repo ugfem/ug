@@ -33,6 +33,7 @@
 #include "debug.h"
 #include "parallel.h"
 #include "general.h"
+#include "ugm.h"      /* for GetFreeOBJT() */
 #include "memmgr.h"
 
 /****************************************************************************/
@@ -48,6 +49,13 @@
 
 /* macro for easier definition of DDD_TYPEs */
 #define  ELDEF(comp)    &(comp),sizeof(comp)
+
+/* macro for easy definition of type mapping UG<->DDD */
+#define MAP_TYPES(ugt,dddt)   { int _ugt=(ugt); \
+                                dddctrl.ugtypes[(dddt)] = _ugt;     \
+                                dddctrl.types[_ugt] = (dddt);       \
+}
+
 
 /* #define DDD_PrioMergeDefault(x,y)*/	/* TODO: delete this define */
 
@@ -204,8 +212,7 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
     DDD_TypeDefine(dddType, ge, EL_END, desc->inner_size);
 
     /* init type mapping arrays */
-    dddctrl.ugtypes[dddType] = MAPPED_INNER_OBJT_TAG(tag);
-    dddctrl.types[MAPPED_INNER_OBJT_TAG(tag)] = dddType;
+    MAP_TYPES(MAPPED_INNER_OBJT_TAG(tag), dddType);
     dddctrl.dddObj[MAPPED_INNER_OBJT_TAG(tag)] = TRUE;
   }
   else
@@ -215,8 +222,7 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
                    EL_END, desc->bnd_size);
 
     /* init type mapping arrays */
-    dddctrl.ugtypes[dddType] = MAPPED_BND_OBJT_TAG(tag);
-    dddctrl.types[MAPPED_BND_OBJT_TAG(tag)] = dddType;
+    MAP_TYPES(MAPPED_BND_OBJT_TAG(tag), dddType);
     dddctrl.dddObj[MAPPED_BND_OBJT_TAG(tag)] = TRUE;
   }
 
@@ -276,23 +282,19 @@ static void ddd_DeclareTypes (void)
   /* 1. DDD objects (with DDD_HEADER) */
 
   TypeVector      = DDD_TypeDeclare("Vector");
-  dddctrl.ugtypes[TypeVector] = VEOBJ;
-  dddctrl.types[VEOBJ] = TypeVector;
+  MAP_TYPES(VEOBJ, TypeVector);
   dddctrl.dddObj[VEOBJ] = TRUE;
 
   TypeIVertex     = DDD_TypeDeclare("IVertex");
-  dddctrl.ugtypes[TypeIVertex] = IVOBJ;
-  dddctrl.types[IVOBJ] = TypeIVertex;
+  MAP_TYPES(IVOBJ, TypeIVertex);
   dddctrl.dddObj[IVOBJ] = TRUE;
 
   TypeBVertex     = DDD_TypeDeclare("BVertex");
-  dddctrl.ugtypes[TypeBVertex] = BVOBJ;
-  dddctrl.types[BVOBJ] = TypeBVertex;
+  MAP_TYPES(BVOBJ, TypeBVertex);
   dddctrl.dddObj[BVOBJ] = TRUE;
 
   TypeNode        = DDD_TypeDeclare("Node");
-  dddctrl.ugtypes[TypeNode] = NDOBJ;
-  dddctrl.types[NDOBJ] = TypeNode;
+  MAP_TYPES(NDOBJ, TypeNode);
   dddctrl.dddObj[NDOBJ] = TRUE;
 
         #ifdef __TWODIM__
@@ -317,8 +319,7 @@ static void ddd_DeclareTypes (void)
   /* edge is DDD object for 3D                */
   /* edge is DDD data object for 2D           */
   TypeEdge        = DDD_TypeDeclare("Edge");
-  dddctrl.ugtypes[TypeEdge] = EDOBJ;
-  dddctrl.types[EDOBJ] = TypeEdge;
+  MAP_TYPES(EDOBJ, TypeEdge);
         #ifdef __THREEDIM__
   dddctrl.dddObj[EDOBJ] = TRUE;
         #endif
@@ -326,16 +327,13 @@ static void ddd_DeclareTypes (void)
   /* 2. DDD data objects (without DDD_HEADER) */
 
   TypeMatrix  = DDD_TypeDeclare("Matrix");
-  dddctrl.ugtypes[TypeMatrix] = MAOBJ;
-  dddctrl.types[MAOBJ] = TypeMatrix;
+  MAP_TYPES(MAOBJ, TypeMatrix);
 
   TypeBndP    = DDD_TypeDeclare("BndP");
-  dddctrl.ugtypes[TypeBndP] = BPOBJ;
-  dddctrl.types[BPOBJ] = TypeBndP;
+  MAP_TYPES(GetFreeOBJT(), TypeBndP);
 
   TypeBndS = DDD_TypeDeclare("BndS");
-  dddctrl.ugtypes[TypeBndS] = BSOBJ;
-  dddctrl.types[BSOBJ] = TypeBndS;
+  MAP_TYPES(GetFreeOBJT(), TypeBndS);
 }
 
 
@@ -842,6 +840,57 @@ void InitCurrMG (MULTIGRID *MG)
   dddctrl.sideData = VEC_DEF_IN_OBJ_OF_MG(dddctrl.currMG,SIDEVEC);
 }
 
+
+
+/****************************************************************************/
+/*																			*/
+/* Function:  CheckInitParallel												*/
+/*																			*/
+/* Purpose:   performs checks for correct initialization of dddif subsystem */
+/*																			*/
+/* Input:     -                                                                 */
+/*																			*/
+/* Output:    int:   error value											*/
+/*																			*/
+/*																			*/
+/****************************************************************************/
+
+
+static int CheckInitParallel (void)
+{
+  int i;
+
+  /* check for valid UGTYPE for given DDD_TYPE */
+  if (OBJT_MAX == MAXOBJECTS)
+  {
+    printf("ERROR in InitParallel: OBJT_MAX!=MAXOBJECTS\n");
+    return(__LINE__);
+  }
+
+  for(i=1; i<MAXDDDTYPES && UGTYPE(i)>=0; i++)
+  {
+    /* check for valid UGTYPE for given DDD_TYPE */
+    if (UGTYPE(i) > OBJT_MAX)
+    {
+      printf("ERROR in InitParallel: OBJT=%d > OBJT_MAX=%d\n",
+             UGTYPE(i), OBJT_MAX);
+      return(__LINE__);
+    }
+
+    /* check for correct mapping and re-mapping */
+    if (DDDTYPE(UGTYPE(i))!=i)
+    {
+      printf("ERROR in InitParallel: invalid type mapping for OBJT=%d\n",
+             UGTYPE(i));
+      return(__LINE__);
+    }
+  }
+
+  /* no errors */
+  return(0);
+}
+
+
 /****************************************************************************/
 /*																			*/
 /* Function:  InitParallel                                                                                              */
@@ -863,6 +912,7 @@ void InitCurrMG (MULTIGRID *MG)
 
 int InitParallel (void)
 {
+  INT err;
   int i;
 
   memmgr_Init();
@@ -915,6 +965,13 @@ int InitParallel (void)
   DomInitParallel(TypeBndP,TypeBndS);
 
   ddd_IfInit();
+
+  /* check for correct initialization */
+  if ((err=CheckInitParallel())!=0)
+  {
+    SetHiWrd(err,__LINE__);
+    return(err);
+  }
 
   return 0;          /* no error */
 }
