@@ -1326,7 +1326,7 @@ static INT SetElementSidePatterns (GRID *theGrid, ELEMENT *firstElement)
 			if (_EID_(theElement) < _EID_(theNeighbor)) continue;
 
 			/* determine element for side correction by used flag    */
-/*
+/* TODO: delete this:
 			if (USED(theNeighbor)) continue;
 */
 
@@ -5335,11 +5335,13 @@ if (1)
 {
 		DDD_IdentifyEnd();
 
+/*
 if (level == 0)
 {
 	dddiflevel=Debugdddif;
 	Debugdddif = 0;
 }
+*/
 
 CheckConsistency(theMG,level,debugstart,gmlevel,&check);
 
