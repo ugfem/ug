@@ -1825,7 +1825,14 @@ void ElementObjMkCons (DDD_OBJ obj, int newness)
                           me,EID_PRTX(pe),ID_PRTX(theNode0),ID_PRTX(theNode1)))
 
       theEdge = GetEdge(theNode0,theNode1);
-      ASSERT(theEdge != NULL);
+      if (theEdge == NULL)
+      {
+        PRINTDEBUG(dddif,0,(PFMT " ElementObjMkCons(): pe=" EID_FMTX
+                            "/%d/%d INC_NO_OF_ELEM for n0=" ID_FMTX " n1=" ID_FMTX " FAILED\n",
+                            me,EID_PRTX(pe),ECLASS(pe),REFINE(EFATHER(pe)),
+                            ID_PRTX(theNode0),ID_PRTX(theNode1)))
+        assert(0);
+      }
 
       INC_NO_OF_ELEM(theEdge);
     }
