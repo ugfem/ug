@@ -26,7 +26,6 @@
 #include "debug.h"
 #include "general.h"
 
-#include "switch.h"
 #include "gm.h"
 #include "misc.h"
 #include "algebra.h"
@@ -95,7 +94,7 @@ CONTROL_ENTRY control_entries[MAX_CONTROL_ENTRIES];
                                      2 locked (do not modify) */
 
 predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
-  {2,VTYPE_CE,            VECTOR_CW,      VTYPE_SHIFT,            VTYPE_LEN               },
+  {2,VOTYPE_CE,           VECTOR_CW,      VOTYPE_SHIFT,           VOTYPE_LEN              },
   {2,VBUILDCON_CE,        VECTOR_CW,      VBUILDCON_SHIFT,        VBUILDCON_LEN   },
   {2,VCFLAG_CE,           VECTOR_CW,      VCFLAG_SHIFT,           VCFLAG_LEN              },
   {2,VCUSED_CE,           VECTOR_CW,      VCUSED_SHIFT,           VCUSED_LEN              },
@@ -108,6 +107,8 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {2,VCNEW_CE,            VECTOR_CW,      VCNEW_SHIFT,            VCNEW_LEN       },
   {2,VCNB_CE,         VECTOR_CW,  VCNB_SHIFT,             VCNB_LEN        },
   {2,VCCUT_CE,            VECTOR_CW,      VCCUT_SHIFT,            VCCUT_LEN               },
+  {2,VTYPE_CE,            VECTOR_CW,      VTYPE_SHIFT,            VTYPE_LEN               },
+  {2,VPART_CE,            VECTOR_CW,      VPART_SHIFT,            VPART_LEN               },
   {2,VCCOARSE_CE,         VECTOR_CW,      VCCOARSE_SHIFT,         VCCOARSE_LEN    },
 
   {2,MOFFSET_CE,          MATRIX_CW,      MOFFSET_SHIFT,          MOFFSET_LEN             },
@@ -157,6 +158,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {1,PATTERN_CE,          EDGE_CW,        PATTERN_SHIFT,          PATTERN_LEN             },
   {1,ADDPATTERN_CE,       EDGE_CW,        ADDPATTERN_SHIFT,       ADDPATTERN_LEN  },
   {1,EDGENEW_CE,          EDGE_CW,        EDGENEW_SHIFT,          EDGENEW_LEN             },
+  {1,EDSUBDOM_CE,         EDGE_CW,        EDSUBDOM_SHIFT,         EDSUBDOM_LEN    },
 
   {1,ELEMENT_GEN,         ELEMENT_CW,     GENERAL_SHIFT,          GENERAL_LEN             },
   {1,REFINE_CE,           ELEMENT_CW,     REFINE_SHIFT,           REFINE_LEN              },
@@ -191,9 +193,7 @@ predefined_control_entry predefines[MAX_CONTROL_ENTRIES] = {
   {0,0,0,0,0},
   {0,0,0,0,0},
   {0,0,0,0,0},
-  {0,0,0,0,0},
-  {0,0,0,0,0},
-}; /* last entry used: 81 for BVTVTYPE_CE */
+}; /* last entry used: 84 for BVTVTYPE_CE */
 
 /****************************************************************************/
 /*                                                                          */
@@ -247,7 +247,7 @@ INT InitPredefinedControlEntries (void)
     if (predefines[i].used)
     {
       pce = predefines+i;
-      assert(pce->control_entry_id<MAX_CONTROL_ENTRIES);
+      ASSERT(pce->control_entry_id<MAX_CONTROL_ENTRIES);
       ce = control_entries+pce->control_entry_id;
       if (ce->used)
       {
