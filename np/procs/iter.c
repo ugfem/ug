@@ -616,8 +616,14 @@ INT DPrintVector (MULTIGRID *mg, VECDATA_DESC *x)
     S_FINE_VLOOP__TYPE(CURRENTLEVEL(mg),v,mg,vtype)
     {
       VectorPosition(v,pos);
-      fprintf(c,"x=%5.2f y=%5.2f z=%5.2f c=%15.8e\n",pos[0],pos[1],pos[2],VVALUE(v,comp));
-      fprintf(p,"x=%5.2f y=%5.2f z=%5.2f c=%15.8e\n",pos[0],pos[1],pos[2],VVALUE(v,comp+1));
+#ifdef __TWODIM__
+      fprintf(c,"%15.8e %5.2f %5.2f\n",VVALUE(v,comp),pos[0],pos[1]);
+      fprintf(p,"%15.8e %5.2f %5.2f\n",VVALUE(v,comp+1),pos[0],pos[1]);
+#endif
+#ifdef __THREEDIM__
+      fprintf(c,"%15.8e %5.2f %5.2f %5.2f\n",VVALUE(v,comp),pos[0],pos[1],pos[2]);
+      fprintf(p,"%15.8e %5.2f %5.2f %5.2f\n",VVALUE(v,comp+1),pos[0],pos[1],pos[2]);
+#endif
     }
   }
   fclose(c);
@@ -4529,6 +4535,31 @@ static INT SetAutoDamp_Scalar (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VEC
   return(0);
 }
 
+static INT SetAutoDamp_HZ (GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv)
+{
+  INT i,n,comp,rtype;
+  SHORT *advcomp;
+  VECTOR *v;
+  MATRIX *m;
+  DOUBLE diag,sum;
+
+  advcomp = VD_ncmp_cmpptr_of_otype(adv,NODEVEC,&n);
+  for (v=FIRSTVECTOR(g); v!=NULL; v=SUCCVC(v))
+    for (i=0; i<n; i++)
+    {
+      comp = MD_MCMP_OF_RT_CT(A,NODEVEC,NODEVEC,i*(n+1));
+      diag=MVALUE(VSTART(v),comp);
+      if (diag==0.0) return(1);
+      sum=0.0;
+      for (m=VSTART(v); m!=NULL; m=MNEXT(m))
+        sum+=MVALUE(m,comp);
+      if (diag*sum>=0.0) VVALUE(v,advcomp[i])=damp[i];
+      else VVALUE(v,advcomp[i])=damp[i]*ABS(diag)/(ABS(diag)+ABS(sum));
+    }
+
+  return(0);
+}
+
 static INT SetAutoDamp_EV (NP_ITER *theNP, GRID *g, MATDATA_DESC *A, const DOUBLE *damp, VECDATA_DESC *adv, INT n)
 {
   NP_SMOOTHER *np = (NP_SMOOTHER *) theNP;
@@ -4580,6 +4611,9 @@ static INT SetAutoDamp (NP_ITER *theNP, GRID *g, INT mode, MATDATA_DESC *A, cons
     break;
   case 3 :
     r=SetAutoDamp_WSpec(g,A,damp,adv);
+    break;
+  case 4 :
+    r=SetAutoDamp_HZ(g,A,damp,adv);
     break;
   default :
     r=1;
