@@ -675,7 +675,7 @@ void NS_PREFIX SelectionSort (void *base, INT n, INT size, int (*cmp)(const void
 
   if (n<2) return;
 
-  if ((Smallest=malloc(size))==NULL)
+  if ((Smallest=(char*)malloc(size))==NULL)
     return;
 
   Base = (char*)base;
