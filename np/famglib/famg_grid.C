@@ -56,8 +56,6 @@ extern "C"
 $Header$
 */
 
-//#define PROTOCOLNUMERIC
-
 #ifdef ModelP
 // forward declaration for ug functions
 extern "C"{

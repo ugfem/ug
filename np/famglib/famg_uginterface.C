@@ -268,6 +268,11 @@ int FAMG_ProlongCorrection( int fine_level, VECDATA_DESC *to, VECDATA_DESC *from
 	fg.SetVector(FAMGRHS, &fgdef);		// rhs and defect are the same for smoothing/defect calculation 
 	cg.SetVector(FAMGUNKNOWN, &cgsol);
 	
+	#ifdef PROTOCOLNUMERIC
+	FAMGugVector cgdef(*(const FAMGugGridVector*)&cg.GetGridVector(),smooth_def);
+	cg.SetVector(FAMGDEFECT, &cgdef);
+	#endif	
+	
 	fg.Prolongation(&cg,&c);
 	
 	return 0;

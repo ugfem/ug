@@ -30,6 +30,7 @@
 // TODO: remove it:
 //#define SIMULATE_HALFENING
 
+//#define PROTOCOLNUMERIC
 
 // forward declarations
 class FAMGGraph;
