@@ -154,6 +154,8 @@ char frame[50];
 int outopt=0;
 char outext[80];
 int through=0;
+int stoploop = 0;
+int count = 0;
 
 static int littleEndian = 1; /* needed for check LITTLE/BIG-ENDIAN */
 
@@ -1190,10 +1192,28 @@ static Boolean run_film (void)
     getchar();
   }
 
+  if (count) {printf("[%d] ",frame_number); fflush(stdout);}
+
   /* next frame, please */
   frame_number+=incr;
 
-  if (frame_number>last) {frame_number=first; through=1;}
+  if (frame_number>last)
+  {
+    through=1;
+    if (stoploop) frame_number-=incr;
+    else frame_number=first;
+    if (count)
+    {
+      if (stoploop)
+      {
+        printf("\nFilm %s done, press <RETURN> to start again",file);
+        getchar();
+        frame_number = first;
+      }
+      else
+        printf("\n");
+    }
+  }
   sprintf(frame,"%s.%04d",file,frame_number);
 
   if ( NULL == (stream = fopen( frame, "r")) ) {
@@ -1275,19 +1295,23 @@ char* argv[];
   }
 
   if (argc < 2) {
-    printf("usage: xugv file [-v[n]] [-f first last] [-q increment] [-o extension]\n");
+    printf("usage: xugv file [-v[n]] [-f first last] [-q increment] [-o extension] [-c] [-s]\n");
     exit(-1);
   }
 
-  for (i=0; i<argc; i++) printf("%d %s\n",i,argv[i]);
+  /* for (i=0; i<argc; i++) printf("%d %s\n",i,argv[i]); */
 
   file = argv[1];
   film=0;
   option = "";
   i = 2;
+  count = 0;
+  stoploop = 0;
   while (i<argc)
   {
     if (argv[i][1]=='v') {option = argv[i]; i++; continue;}
+    if (argv[i][1]=='c') {count = 1; i++; continue;}
+    if (argv[i][1]=='s') {stoploop = 1; i++; continue;}
     if (argv[i][1]=='f')
     {
       if (i+2>=argc) {
