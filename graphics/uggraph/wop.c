@@ -4781,6 +4781,7 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 		
 		EE2D_PartShrinkFactor		= theGpo->PartShrinkFactor;
 		if (EE2D_PartShrinkFactor < 1.0)
+		{
 			nodes = 0;
 			V2_CLEAR(EE2D_PartMidPoint)
 			for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
@@ -4789,6 +4790,7 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 			}
 			if (nodes > 0)
 				V2_SCALE(1.0/(COORD)nodes,EE2D_PartMidPoint)
+		}
 	}
 	#endif
 	EE2D_Property = 0;
@@ -10617,6 +10619,7 @@ static void CalcViewableSides (ELEMENT *theElement)
 			break;
 
 		case (PYRAMID):
+		case (PRISM):
 			/* compute center of  mass */
 			V3_CLEAR(xc)
 			for( i=0; i<CORNERS_OF_ELEM(theElement); i++)
