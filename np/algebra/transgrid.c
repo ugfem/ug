@@ -502,8 +502,9 @@ INT StandardRestrict (GRID *FineGrid, const VECDATA_DESC *to, const VECDATA_DESC
                 return (rv);
         break;
       case EDGEVEC :
-        UserWrite("not implemented");
-        return (NUM_ERROR);
+        if ((rv=StandardRestrictNodeVector(FineGrid,to,from,damp+offset[otype]))!=NUM_OK)
+          return (rv);
+        break;
       case SIDEVEC :
         UserWrite("not implemented");
         return (NUM_ERROR);
@@ -575,8 +576,9 @@ INT StandardInterpolateCorrection (GRID *FineGrid, const VECDATA_DESC *to, const
                 return (rv);
         break;
       case EDGEVEC :
-        UserWrite("not implemented");
-        return (NUM_ERROR);
+        if ((rv=StandardIntCorNodeVector(FineGrid,to,from,damp+offset[otype]))!=NUM_OK)
+          return (rv);
+        break;
       case SIDEVEC :
         UserWrite("not implemented");
         return (NUM_ERROR);
