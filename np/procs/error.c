@@ -534,8 +534,8 @@ static INT Indicator (NP_ERROR *theNP, INT level, VECDATA_DESC *x,
   if (np->interpolate) {
     for (i=1; i<=TOPLEVEL(theMG); i++) {
       theGrid = GRID_ON_LEVEL(theMG,i);
-      if (GSTATUS(theGrid)&1) {
-        GSTATUS(theGrid) &= 0xFFFFFFFE;
+      if (GSTATUS(theGrid,GSTATUS_INTERPOLATE)) {
+        RESETGSTATUS(theGrid,GSTATUS_INTERPOLATE);
         if (StandardInterpolateNewVectors
               (theGrid,(const VECDATA_DESC *)x) != NUM_OK) NP_RETURN(1,eresult->error_code);
         UserWriteF(" [i%d]",i);
