@@ -7587,13 +7587,12 @@ static INT OpenPictureCommand (INT argc, char **argv)
 
 static INT OpenPlacedPicturesCommand (INT argc, char **argv)
 {
-  INT i,qPic,rPic,nPic,sopt,wopt,j;
+  INT i,qopt,ropt,nPic,sopt,wopt,j;
   PLACEMENT_TASK task;
   int iValue,v,h,dv,dh;
   float fValue;
   OUTPUTDEVICE *theOutDev;
-  char devname[NAMESIZE];
-  char *c,*c2;
+  char devname[NAMESIZE],qarray[NAMESIZE],rarray[NAMESIZE],buffer[NAMESIZE];
 
   /* get number of pictures */
   if (sscanf(argv[0],"openppic %d",&iValue)!=1)
@@ -7605,9 +7604,7 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
 
   /* check options */
   theOutDev  = GetDefaultOutputDevice();
-  sopt=wopt=0;
-  qPic=rPic=-1;
-  sopt = FALSE;
+  sopt=wopt=qopt=ropt=0;
   for (i=1; i<argc; i++)
     switch (argv[i][0])
     {
@@ -7621,66 +7618,20 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
       break;
 
     case 'q' :
-      c = argv[i]+2;
-      c2 = strtok(c," ");
-      if (c2==NULL || sscanf(c2,"%f",&fValue)!=1)
+      qopt=1;
+      if (sscanf(argv[i],expandfmt(CONCAT3("q %",NAMELENSTR,"[a-zA-Z0-9_]")),qarray)!=1)
       {
-        PrintErrorMessage('E',"openppic","specify aspect ratio for every picture with q option");
+        PrintErrorMessage('E',"openppic","specify an array name with q option");
         return (PARAMERRORCODE);
-      }
-      if (fValue<=0.0)
-      {
-        PrintErrorMessage('E',"openppic","specified aspect ratio out of range");
-        return (PARAMERRORCODE);
-      }
-      qPic=0;
-      task.apect_ratio[qPic++] = fValue;
-      for (j=1; j<nPic; j++)
-      {
-        c2 = strtok(NULL," ");
-        if (c2==NULL || sscanf(c2,"%f",&fValue)!=1)
-        {
-          PrintErrorMessage('E',"openppic","specify aspect ratio for every picture with q option");
-          return (PARAMERRORCODE);
-        }
-        if (fValue<=0.0)
-        {
-          PrintErrorMessage('E',"openppic","specified aspect ratio out of range");
-          return (PARAMERRORCODE);
-        }
-        task.apect_ratio[qPic++] = fValue;
       }
       break;
 
     case 'r' :
-      c = argv[i]+2;
-      c2 = strtok(c," ");
-      if (c2==NULL || sscanf(c2,"%f",&fValue)!=1)
+      ropt=1;
+      if (sscanf(argv[i],expandfmt(CONCAT3("r %",NAMELENSTR,"[a-zA-Z0-9_]")),rarray)!=1)
       {
-        PrintErrorMessage('E',"openppic","specify ratio for every picture with q option");
+        PrintErrorMessage('E',"openppic","specify an array name with q option");
         return (PARAMERRORCODE);
-      }
-      if (fValue<=0.0)
-      {
-        PrintErrorMessage('E',"openppic","specified ratio out of range");
-        return (PARAMERRORCODE);
-      }
-      rPic=0;
-      task.rel_size[rPic++] = fValue;
-      for (j=1; j<nPic; j++)
-      {
-        c2 = strtok(NULL," ");
-        if (c2==NULL || sscanf(c2,"%f",&fValue)!=1)
-        {
-          PrintErrorMessage('E',"openppic","specify ratio for every picture with q option");
-          return (PARAMERRORCODE);
-        }
-        if (fValue<=0.0)
-        {
-          PrintErrorMessage('E',"openppic","specified ratio out of range");
-          return (PARAMERRORCODE);
-        }
-        task.rel_size[rPic++] = fValue;
       }
       break;
 
@@ -7728,11 +7679,39 @@ static INT OpenPlacedPicturesCommand (INT argc, char **argv)
     return (PARAMERRORCODE);
   }
 
+  /* check if aspect-ratio-array name initialized */
+  if (!qopt)
+  {
+    PrintErrorMessage('E',"openppic","q-array name not specified");
+    return (PARAMERRORCODE);
+  }
+
+  /* check if ratio-array name initialized */
+  if (!ropt)
+  {
+    PrintErrorMessage('E',"openppic","r-array name not specified");
+    return (PARAMERRORCODE);
+  }
+
   task.n = nPic;
 
   /* set names of pictues */
   for (i=0; i<nPic; i++)
+  {
     sprintf(task.pic_name[i],"pic_%d",(int)i);
+    sprintf(buffer,"%s%d",qarray,i);
+    if (GetStringValueDouble (buffer,&(task.apect_ratio[i])))
+    {
+      PrintErrorMessage('E',"openppic","q-array entry not found");
+      return (PARAMERRORCODE);
+    }
+    sprintf(buffer,"%s%d",rarray,i);
+    if (GetStringValueDouble (buffer,&(task.rel_size[i])))
+    {
+      PrintErrorMessage('E',"openppic","r-array entry not found");
+      return (PARAMERRORCODE);
+    }
+  }
 
   /* check device */
   if (theOutDev==NULL)
