@@ -5108,8 +5108,6 @@ static INT EXPreProcess  (NP_ITER *theNP, INT level, VECDATA_DESC *x, VECDATA_DE
       UserWriteF("EX: cannot allocate %d bytes\n",np->mem);
       REP_ERR_RETURN(1);
     }
-    else
-      UserWriteF("EX: allocated %d bytes\n",np->mem);
     memset((void*)np->FMat,0,np->mem);
     if (EXCopyMatrixFLOAT (theGrid,x,A,np->bw,np->FMat))
       REP_ERR_RETURN(1);
