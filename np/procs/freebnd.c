@@ -31,7 +31,7 @@
 #include "compiler.h"
 
 /* dev */
-#include "ugdevices.h"
+#include "devices.h"
 
 /* gm */
 #include "gm.h"
