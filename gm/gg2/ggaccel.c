@@ -1755,18 +1755,31 @@ static void BaseTreeUpdate( FRONTCOMP* P, FRONTCOMP* Q, FRONTCOMP* S, int ch,
 
 
 
+
 /****************************************************************************/
-/*                                                                          */
-/* Function:  AccelUpdate                                                               */
-/*                                                                          */
-/* Purpose:   prepairs updating of the quadtree and the basetree            */
-/*			  distinguishs the different cases of new elemenmts             */
-/*                                                                          */
-/* Input:	  FRONTCOMP* theFC,thenewFC,the_old_succ : the concerning FC«s  */
-/*            int cas : flag for distinction of the different cases             */
-/*			  int anglecrit,edgecrit : flag for distinction of edge and     */
-/*									   angle criterion                      */
-/*                                                                          */
+/*D
+   AccelUpdate - updates the quadtree and the bintree
+
+   SYNOPSIS:
+   void AccelUpdate(FRONTCOMP* theFC,  FRONTCOMP* thenewFC,
+   FRONTCOMP* the_old_succ, int cas,  int anglecrit,
+   int edgecrit);
+
+   PARAMETERS:
+   .  theFC - pointer to left frontcomponent of the basical edge
+   .  thenewFC - pointer to new frontcomponent of the new element
+   .  the_old_succ - pointer to right frontcomponent of the basical edge
+   .  cas - flag to distinguish the different cases of new elemenmts
+   .  anglecrit - flag for the angle criterion
+   .  edgecrit - flag for the edge criterion
+
+   DESCRIPTION:
+   This function is responsible for updating the quadtree and the basetree
+   distinguishs the different cases of new elements.
+
+   RETURN VALUE:
+   void
+   D*/
 /****************************************************************************/
 
 void AccelUpdate( FRONTCOMP* theFC,  FRONTCOMP* thenewFC, FRONTCOMP* the_old_succ, int cas,  int anglecrit,  int edgecrit )
@@ -1893,22 +1906,35 @@ void AccelUpdate( FRONTCOMP* theFC,  FRONTCOMP* thenewFC, FRONTCOMP* the_old_suc
 /************************ end of function AccelUpdate **************************/
 
 
-
-
-
-
-
 /****************************************************************************/
-/*                                                                          */
-/* Function:  AccelInit                                                                 */
-/*                                                                          */
-/* Purpose:   Init function of the accelerator                              */
-/*                                                                          */
-/* Input:	  GRID *the_Grid : pointer at the Grid                          */
-/*            int anglecrit, edgecrit : flag for distinction of edge crit.  */
-/*										and angle criterion                 */
-/*                                                                          */
+/*D
+   AccelInit - initiates and prepairs the accelerator structures
+
+   SYNOPSIS:
+   INT AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params);
+
+   PARAMETERS:
+   .  the_Grid - pointer to grid, gives the Domain, necessary for surrounding quadrangle
+   .  anglecrit - flag for the angle criterion
+   .  edgecrit - flag for the edge criterion
+   .  params - pointer to necessary grid parameters
+
+   DESCRIPTION:
+   This function sets necessary start parameters of the accelerator structures
+   inserts all edges respectively all angles of the beginning advancing front
+   in the edgetree / angletree, it
+   creates a starting quadrangle, surrounding the domain, it
+   creates a quadtree based on this quadrangle and
+   inserts all frontcomponents of the beginning advancing
+   front in this quadtree.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
 /****************************************************************************/
+
 
 int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
 {
@@ -1993,41 +2019,43 @@ int AccelInit(GRID *the_Grid, int anglecrit, int edgecrit, GG_PARAM *params)
 /************************* end of function AccelInit ***************************/
 
 
-
-
-
-
-
-
-
-
-
-
-
 /****************************************************************************/
-/*                                                                          */
-/* Function:  AccelFCTreeSearch                                                 */
-/*                                                                          */
-/* Purpose:   prepairs the search for frontcomponents wich ar close or      */
-/*            within the suggested triangle									*/
-/*                                                                          */
-/* Input:     INDEPFRONTLIST *theIFL: the Independent Front List, the new   */
-/*									  suggested triangle belongs to         */
-/*			  FRONTCOMP* thefoundPoints[MAXNPOINTS] : Array for the FC«s,   */
-/*			                          found within the small searching      */
-/*									  rectangle								*/
-/*			  FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS] :  Array for   */
-/*									  the FC«s, found within the big        */
-/*									  searching rectangle - necessary to    */
-/*									  detect long cutting edges             */
-/*			  COORD xt[3], COORD yt[3] : coordinates of the sugg. triangle	*/
-/*			  COORD searchradis : radius of the circle around the new       */
-/*									  suggested node to detect also close   */
-/*									  cutting edges							*/
-/*																			*/
-/* Output:    returns the number of the interesting frontcomponents in the  */
-/*			  small searching rectangle										*/
-/*                                                                          */
+/*D
+   AccelFCTreeSearch - searchs problematic frontcomponents
+
+   SYNOPSIS:
+   INT AccelFCTreeSearch(INDEPFRONTLIST *theIFL,
+   FRONTCOMP* thefoundPoints[MAXNPOINTS],
+   FRONTCOMP *theIntersectfoundPoints[MAXNPOINTS],
+   COORD xt[3], COORD yt[3], COORD searchradis);
+
+   PARAMETERS:
+   .  theIFL - pointer to the concerning independant frontlist, in which the new
+            element is created
+   .  thefoundPoints[MAXNPOINTS] - array for frontcomponents,
+               which are very close to the suggested new element
+   .  theIntersectfoundPoints[MAXNPOINTS] - array for frontcomponents, which
+          possibly cut the suggested new element with their edges
+   .  xt[3] - x-coordinates of the eps-skin of the suggested triangle
+   .  yt[3] - y-coordinates of the eps-skin of the suggested triangle
+   .  searchradis - radius of a circle surrounding the new frontcomponent
+
+   DESCRIPTION:
+   Before completing and including a suggested element in the data structure of
+   the grid, 'AccelFCTreeSearch(...)' checks whether there is any other
+   frontcomponent of the advancing front (= 'AF') within or near the suggested
+   element. Therefore 'AccelFCTreeSearch(...)' puts several searching
+   rectangles
+   over the suggested triangle. AF-frontcomponents which lie within those
+   rectangles  are easily found by downtracing the quadtree and comparing
+   coordinates. Thereby 'AccelFCTreeSearch(...)' inserts problematic
+   frontcomponents in the two arrays dependant on the specific problem case.
+
+   RETURN VALUE:
+   INT
+   .n    0 if ok
+   .n    1 if error occured.
+   D*/
 /****************************************************************************/
 
 int AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOINTS],
@@ -2133,18 +2161,29 @@ int AccelFCTreeSearch(INDEPFRONTLIST *theIFL, FRONTCOMP* thefoundPoints[MAXNPOIN
 
 
 /****************************************************************************/
-/*                                                                          */
-/* Function:  AccelBaseTreeSearch                                               */
-/*                                                                          */
-/* Purpose:   delivers the FC with the smallest edge respectively the FC    */
-/*            with the smallest angle as the base node for the next tiangle */
-/*                                                                          */
-/* Output:    FRONTLIST *myList: reference parameter for the pointer at the */
-/*                               Frontlist of the found FC                      */
-/*                                                                          */
-/* Return:    the "ideal" FC for the next basis during the triangulation    */
-/*                                                                          */
+/*D
+   AccelBaseTreeSearch - delivers the ideal basis for the next element
+
+   SYNOPSIS:
+   FRONTCOMP* AccelBaseTreeSearch(FRONTLIST** myList);
+
+   PARAMETERS:
+   .  myList - reference value for the frontlist of the found frontcomponent
+
+   DESCRIPTION:
+   This function
+   delivers the FC (and its frontlist) with the smallest edge respectively
+   the FC with the smallest angle as the base node for the next tiangle
+   easily found by downtracing the bintree on the left. The most outside
+   left frontcomponent is the best one.
+
+   RETURN VALUE:
+   INT
+   .n    pointer to ideal frontcomponent if ok
+   .n    NULL if error occured.
+   D*/
 /****************************************************************************/
+
 
 FRONTCOMP* AccelBaseTreeSearch(FRONTLIST** myList)
 {

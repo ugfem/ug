@@ -4,11 +4,19 @@
 /*                                                                          */
 /* File:      ggm.c                                                         */
 /*                                                                          */
-/* Purpose:   manager for grid generator					                        */
+/* Purpose:   manager for grid generator                                                        */
 /*                                                                          */
-/* Author:    WH			                                                */
-/*                                                                          */
+/* Author:    Wolfgang Hoffmann, Henrik Renz-Reichert	                    */
+/*			  Institut fuer Computeranwendungen III                                                 */
+/*			  Universitaet Stuttgart										*/
+/*			  Pfaffenwaldring 27											*/
+/*			  70569 Stuttgart, Germany										*/
+/*			  email: wolfgang@ica3.uni-stuttgart.de							*/
+/*			  fon: 0049-(0)711-685-7005										*/
+/*			  fax: 0049-(0)711-685-7000										*/
+/*																			*/
 /* History:   08.03.94 begin, ug version 2.2                                */
+/*                15.10.95 implemented in ug31                                  */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */

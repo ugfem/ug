@@ -6,9 +6,17 @@
 /*                                                                          */
 /* Purpose:   central grid generator functions				                        */
 /*                                                                          */
-/* Author:    WH			                                                */
-/*                                                                          */
+/* Author:    Wolfgang Hoffmann, Henrik Renz-Reichert	                    */
+/*			  Institut fuer Computeranwendungen III                                                 */
+/*			  Universitaet Stuttgart										*/
+/*			  Pfaffenwaldring 27											*/
+/*			  70569 Stuttgart, Germany										*/
+/*			  email: wolfgang@ica3.uni-stuttgart.de							*/
+/*			  fon: 0049-(0)711-685-7005										*/
+/*			  fax: 0049-(0)711-685-7000										*/
+/*																			*/
 /* History:   08.03.94 begin, ug version 2.2                                */
+/*                15.10.95 implemented in ug31                                  */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -239,15 +247,28 @@ static INT CreateBNodeAndVertex (COORD lambda, BNDSEGDESC *theSegdesc, GRID *the
 }
 
 /****************************************************************************/
-/*                                                                          */
-/* Function:  GenerateBnodes                                                    */
-/*                                                                          */
-/* Purpose:                                                                                                                             */
-/*                                                                          */
-/* Input:     RelRasterSize										            */
-/*                                                                          */
-/* Output:    INT return                                                                        */
-/*                                                                          */
+/*D
+   GenerateBnodes - Generates boundary nodes for the grid generator
+
+   SYNOPSIS:
+   INT GenerateBnodes (MULTIGRID *theMG,COORD RelRasterSize,DOUBLE h_global,
+   INT meshsizecoeffno);
+
+    PARAMETERS:
+   .   theMG - pointer to the multigrid
+   .   RelRasterSize - approximation resolution of the boundary
+   .   h_global - global meshsize
+   .   meshsizecoeffno - defines the adress of the CoeffProcPtr as input for
+   .   the grid generator using a mesh control function
+
+    DESCRIPTION:
+        This function creates boundary nodes for the automatical grid generating.
+
+    RETURN VALUE:
+    INT
+   .n     0 if ok
+   .n     1 if error occured.
+   D*/
 /****************************************************************************/
 
 static DOUBLE H_global;
@@ -3095,16 +3116,25 @@ static int FrontcomponentUpdate(INT FlgForAccel, FRONTCOMP* theFC, FRONTCOMP* th
 }
 
 /****************************************************************************/
-/*                                                                          */
-/* Function:  GenerateGrid		                                                */
-/*                                                                          */
-/* Purpose:   create the advancing frontlists and generates the grid		*/
-/*                                                                          */
-/* Input:     INT argc: number of arguments (incl. its own name             */
-/*            char **argv: array of strings giving the arguments            */
-/*                                                                          */
-/* Output:    INT return code see header file                               */
-/*                                                                          */
+/*D
+   GenerateGrid - Create the advancing frontlists and generates the grid in 2d
+
+   SYNOPSIS:
+   INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param);
+
+    PARAMETERS:
+   .   theMG - pointer to the multigrid
+   .   MyArgs - structure for reading grid generator parameters
+   .   param -  structure for reading the grid generating control parameters
+
+    DESCRIPTION:
+        This function creates automatical the triangular grid in 2d.
+
+    RETURN VALUE:
+    INT
+   .n     0 if ok
+   .n     1 if error occured.
+   D*/
 /****************************************************************************/
 
 INT GenerateGrid (MULTIGRID *theMG, GG_ARG *MyArgs, GG_PARAM *param)

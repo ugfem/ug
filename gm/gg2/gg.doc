@@ -1,0 +1,153 @@
+/****************************************************************************/
+/*																			*/
+/* File:	  gg.doc											            */
+/*																			*/
+/* Purpose:   documentation for ug's grid generator      					*/
+/*																			*/
+/* Author:	  Wolfgang Hoffmann, Henrik Renz-Reichert, Dirk Feuchter		*/
+/*			  Institut fuer Computeranwendungen 							*/
+/*			  Universitaet Stuttgart										*/
+/*			  Pfaffenwaldring 27  									        */
+/*			  70569 Stuttgart, Germany										*/
+/*			  internet: wolfgang@ica3.uni-stuttgart.de						*/
+/*																			*/
+/* History:   18.03.94 begin, ug version 2.2								*/
+/*			  11.07.95 begin, ug version 2.3								*/
+/*			  15.10.95 begin, ug31                          				*/
+/*																			*/
+/****************************************************************************/
+
+/*D
+   GridGenerator - Description of UGs grid generator
+
+   SHORT DESCRIPTION:
+   The grid generator creates triangular grids in 2d for arbitrary planar domains, 
+   possibly divided into subdomains. The algorithm is based on a modified advancing front 
+   technique, first introduced by Peraire et. al. [1,2]. The concept of our grid generator
+   allows to produce elements with good shape regularity, guaranteed through the underlying
+   check functions. With our quadtree concept and the corresponding tree structure our
+   algorithm has a complexity of 'O(nlogn)'.
+   The input boundary can be implemented as a parametric function, polygon or any other boundary
+   description. The user can define a global meshsize for the whole domain or optimize the mesh
+   density with a problem dependent mesh control function. Further information is given below.
+      
+   
+   HOW TO USE THE GRIDGENERATOR:
+   The smallest mesh size defines the resolution of the domain. Inner objects not resolved by
+   the fine mesh size are detected from the grid generator. The user has the option to represent
+   the inner boundary through one triangle.
+   To describe the boundary through a polygon, the user has to consider the special input data
+   format. The input file ends with '*.poly', while one example is given in the application folder 
+   through the file 'example.poly'.
+   
+   For control of the grid generating process there exist two commands and a set of grid parameters.
+   For the commands and the grid parameters the user can define a script as shown below. But now we describe
+   the commands and control parameters.
+   
+
+.  bnodes -  The bnodes-command creates nodes on all boundaries of the domain. In this state the
+   grid generation can be manipulated by the user through adding or deleting nodes on
+   the boundary through mouse click. This final set of nodes form the initial advancing front. 
+   For more informations see the man pages.
+.  makegrid - The makegrid-command assembles the nodes on the boundary to the advancing front structure
+	and generates the grid with respect to the grid options. For more informations see the man pages.
+	
+	EXAMPLE:	
+	The following example realizes a grid generating procedure in the script language.
+	This script produces the final grid without the possiblity of adding nodes on the boundary.
+	For adding nodes on the boundary you have to cancel the line with the makegrid-command
+	and to type it on the 'ug'-shell after completing the boundary.
+
+.vb	   
+	:gg:RelRasterSize	= 0.05;
+	:gg:h_global		= 0.05;
+	:gg:searchconst		= 0.02;
+	:gg:angle			= 15;
+	:gg:epsi			= 0.0625;
+	:gg:meshsizecoeffno	= 3;
+
+	bnodes;
+	makegrid $E $W;		
+.ve
+
+   DESCRIPTION:
+   
+.vb
+   :gg:RelRasterSize:
+.ve
+.n	  controls the approximation resolution of the boundary
+.n    has to be smaller than the fine meshsize
+
+.vb
+   :gg:h_global
+.ve
+.n	  global mesh size
+.n    the mesh size is constant for the whole domain
+
+.vb
+   :gg:searchconst
+.ve
+.n	  parameter for grid quality optimization
+.n    controls the non-overlapping of triangles
+
+
+.vb
+   :gg:angle
+.ve
+.n	  parameter for grid quality optimization
+.n    avoids triangles on the boundary with angles smaller than 15 
+.n    (or another optional value) degrees
+
+.vb
+   :gg:epsi
+.ve
+.n	  parameter for grid quality optimization
+.n    avoids triangles with sharp angles
+
+.vb
+   :gg:meshsizecoeffno
+.ve
+.n	  defines the entry of the CoeffProcPtr, also used for initialization a 
+.n    problem, for the mesh size control function
+.n    the integer i means coeffs[i] in your Init-function of your problem
+
+   HOW TO DEFINE A MESHSIZE CONTROL FUNCTION:
+   
+   In your problem library you can define a mesh control function
+   as shown in the following. An example for this you can find in the
+   'fem' library in the 'cook' problem.
+   
+.vb   
+    static INT MeshCook (COORD *in, DOUBLE *out)
+    {
+	    DOUBLE x,y,a,b,c;
+	
+	    x = in[0]; y = in[1];
+
+	    a = (x-ULX)*(x-ULX) + (y-ULY)*(y-ULY);
+    	b = URX - x;
+	    a = 1.0 / (1.0 + 0.1 * a);
+    	b = 1.0 / (1.0 + 0.05 * b);
+
+    	c = 8.0 - 6.0 * a - 5.0 * b;
+	    if (c < 1.0) c = 1.0;
+	    out[0] = c;
+
+    	return(0);
+    }
+.ve
+
+	Then you have to define the adress for the mesh size in the
+	CoeffProcPtr with the parameter 'meshsizecoeffno'. You can find an
+	example in the 'fem' library in the 'CreateProblem' function.
+
+    REFERENCES:
+
+[1] J.Peraire, M.Vahdati, K.Morgan, and O.C.Zienkiewicz: Adaptive 
+Remeshing for Compressible Flow Computations.
+Journal of Computational Physics 72 (1987) 449-466
+
+[2] J.Peraire, J.Peiro, and K.Morgan: Adaptive Remeshing for 
+Three-Dimensional Compressible Flow Computations.
+Journal of Computational Physics 103 (1992) 269-285
+D*/
