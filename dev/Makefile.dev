@@ -14,7 +14,7 @@ include ../machines/mk.$(ARCHDIR)
 
 LCFLAGS = -I../low
 
-# the following list may be extended
+# select your devices: one of XIF or SIF, META is optional
 DEVICES = XIF META
 OBJECTS = devices.o
 
@@ -27,11 +27,15 @@ all : $(OBJECTS) $(DEVICES) Makefile.dev
 XIF:
 	cd xif; make -f Makefile.xif; cd ..;
 
+SIF:
+	cd sif; make -f Makefile.sif; cd ..;
+
 META:
 	cd meta; make -f Makefile.meta; cd ..;
 
 clean:
 	rm $(OBJECTS)
 	cd xif;  make -f Makefile.xif  clean; cd ..;
+	cd sif;  make -f Makefile.sif  clean; cd ..;
 	cd meta; make -f Makefile.meta clean; cd ..;
 
