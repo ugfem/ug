@@ -14,7 +14,7 @@
 /*			  70569 Stuttgart, Germany				*/
 /*			  email: ug@ica3.uni-stuttgart.de			*/
 /*										*/
-/* History:   27.5.97 begin, ug version 3.7	                                */
+/* History:   27.5.97 begin, ug version 3.7	                            */
 /*                                                                          */
 /* Remarks:                                                                 */
 /*                                                                          */
@@ -164,9 +164,12 @@ static INT ansysfilepathes_set;
 
 
 static INT numberofSFEs;
-
+static INT triangle_found; /*used in Create_RealSurfaces and Find_SFE_Triangle*/
 
 static char *TmpMemArray;
+
+static TRIANGLE_TYP *New_Triangle_List;
+INT nmb_of_triangles;
 
 /* data for CVS */
 static char RCS_ID("$Header$",UG_RCS_STRING);
@@ -2144,7 +2147,7 @@ SFE_KNOTEN_TYP *Hash_SFE(INT i, INT j, INT k, INT id4, DOUBLE s)
 			    (SFE_4ND_1(merke) == SFE_KNID_4_DEFAULT_VAL)       )
 			{
 				/*dieses SFE erhaelt somit seinen zweiten Identifier*/
-				/*Die beiden Identifier muesse folglich der Groesse nach aufsteigend*/
+				/*Die beiden Identifier muessen folglich der Groesse nach aufsteigend*/
 				/*in den SFE-Knoten eingetragen werden.*/
 				if(s > SFE_IDF_0(merke))
 				{
@@ -2594,6 +2597,12 @@ SF_TYP *GetMemandFillNewSF(DOUBLE *surfacename)
 	SF_LEFT_SBD(Surface)   = SF_RL_SBD_NOT_SET_YET;
 	SF_NMB_OF_POLYLINES(Surface) = 0;
 	SF_POLYLINES(Surface) = NULL;
+	/* SURFACEDETECTOR . . .  */
+	SF_NMB_OF_POLYLI_ZYK(Surface) = 0;
+	SF_NMB_OF_REALSFCS(Surface) =	0;
+	SF_POLYLI_ZYK(Surface) = NULL;
+	SF_REALSFCS(Surface) = NULL;
+	/* . . . SURFACEDETECTOR */
 
 	/*Update of statistical Domain Info*/
 	NMB_OF_SFCES(DomainInfo_Pointer) = NMB_OF_SFCES(DomainInfo_Pointer) + 1;
@@ -4510,6 +4519,1357 @@ INT Ansys2lgmCreatePloylines()
 
 /****************************************************************************/
 /*D
+   GetMemAndFillNewPlz - 	
+
+   SYNOPSIS:
+   INT GetMemAndFillNewPlz(&anfang,&rechtesMuster,theSurface,idl2)
+
+   PARAMETERS:
+.  anfang - reference parameter -> will be changed in this Fct
+.  rechtesMuster - reference parameter -> will be changed in this fct
+.  theSurface - Pointer to the correspomdinmg surface - itf features will be
+                changed in this fct.
+.  idl2 - value parameter
+
+   DESCRIPTION:
+   this function create a new Polylinecycle for surface theSurface.
+   
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT GetMemAndFillNewPlz(SFPL_TYP **anfang,SFPL_TYP **rechtesMuster,SF_TYP *theSurface,SFPL_TYP *idl2)
+{
+/* vergleiche PolylineSplit()*/
+	PLZ_TYP *merkeplzptr,*neuerPolylinezyk;
+	SFPL_TYP *lauf_PLZ,*endeabgespSF_PLs;
+	INT anzbersorPLs;
+	INT rv;
+	PL_LINE_TYP *last_Line_of_idl2, *last_Line_of_endeabgespSF_PLs;
+	
+	anzbersorPLs = 1;
+
+	lauf_PLZ = idl2;
+	while(lauf_PLZ != (*rechtesMuster))
+	{
+		lauf_PLZ = SFPL_NEXT(lauf_PLZ);
+		anzbersorPLs++;
+	}
+	
+
+	endeabgespSF_PLs = *rechtesMuster;
+			
+			
+	/*alte Surface->Polylines*/
+	/*=> *anfang, *rechtesMuster := ganz vorne usw. ... UPDATEN */
+	(*rechtesMuster) = SFPL_NEXT((*rechtesMuster));/*ganz vorne*/
+	if((*rechtesMuster) == NULL)
+	{
+		/*In diesen Teil laeuft das Programm nur im Falle, dass in Create_PLZN  mit dem verbleibenden Rest
+		  auch noch ein PLZ erzeugt wird.*/
+		if((*anfang) != NULL)
+		{
+			PrintErrorMessage('E',"GetMemAndFillNewPlz","anfang == NULL is not possible");
+			return (1);
+		}
+	}
+	else
+	{
+		(*anfang) = SFPL_NEXT((*rechtesMuster));
+	}
+	/* die Anzahl der Polyline lassen, da die Surface ja immer noch alle Polylines hat! */
+	/*SF_NMB_OF_POLYLINES(theSurface) = SF_NMB_OF_POLYLINES(theSurface) - anzbersorPLs;*/
+	SF_POLYLINES(theSurface) = *rechtesMuster;
+	
+	
+	
+	/*abgespaltete Surface->Polylines Teil2 ..*/
+	SFPL_NEXT(endeabgespSF_PLs) = NULL;
+	/*=> bereits sortierte SfcePlinelist aufabrbeiten (d.h.:NullPointer ans ende)*/
+	
+	/*mit der abgespaltenen eine neue anlegen ...*/
+	   /*laeuft von idl2 bis endeabgespSF_PLs.*/
+	merkeplzptr = SF_POLYLI_ZYK(theSurface);
+	if((neuerPolylinezyk = GetTmpMem(theHeap,sizeof(PLZ_TYP))) == NULL)
+	{
+		PrintErrorMessage('E',"GetMemAndFillNewPlz","got no mem for the new polylinecycle");
+		return (1);
+	} 
+	/*eingefuegt wird am Listenanfang*/
+	PLZ_NEXT(neuerPolylinezyk) = merkeplzptr;
+	PLZ_POLYLINES(neuerPolylinezyk) = idl2;
+	PLZ_NMB_OF_POLYLINES(neuerPolylinezyk) = anzbersorPLs;
+	SF_NMB_OF_POLYLI_ZYK(theSurface)++;
+	SF_POLYLI_ZYK(theSurface) = neuerPolylinezyk;
+	
+	
+	/*Probe: Ist der neue Polylinezyklus wirklich zyklisch ?*/
+	/*erste oder zweite LI_NDID der ersten Line muss einen Gemeinsamen besitzen mit
+	  der ersten oder zweiten LI_NDID der letzten Line sein . . .*/
+	last_Line_of_idl2 = PL_LINES(SFPL_PL(idl2));
+	while(PL_LINES_NXT(last_Line_of_idl2) != NULL)
+	{
+		last_Line_of_idl2 = PL_LINES_NXT(last_Line_of_idl2);
+	}
+	last_Line_of_endeabgespSF_PLs = PL_LINES(SFPL_PL(endeabgespSF_PLs));
+	while(PL_LINES_NXT(last_Line_of_endeabgespSF_PLs) != NULL)
+	{
+		last_Line_of_endeabgespSF_PLs = PL_LINES_NXT(last_Line_of_endeabgespSF_PLs);
+	}
+	if(
+	      (LI_NDID1(PL_LINES_LINE(PL_LINES(SFPL_PL(idl2)))) != LI_NDID1(PL_LINES_LINE(PL_LINES(SFPL_PL(endeabgespSF_PLs)))))
+	   && (LI_NDID1(PL_LINES_LINE(PL_LINES(SFPL_PL(idl2)))) != LI_NDID2(PL_LINES_LINE(last_Line_of_endeabgespSF_PLs)))
+	   && (LI_NDID2(PL_LINES_LINE(last_Line_of_idl2)) != LI_NDID1(PL_LINES_LINE(PL_LINES(SFPL_PL(endeabgespSF_PLs)))))
+	   && (LI_NDID2(PL_LINES_LINE(last_Line_of_idl2)) != LI_NDID2(PL_LINES_LINE(last_Line_of_endeabgespSF_PLs)))
+	  )
+	{
+		PrintErrorMessage('E',"Create_PLZN","Surface has got a PolylineZyklus which is not cyclic !");
+		return (1);
+	}
+
+	
+	return (0);
+}
+
+
+/****************************************************************************/
+/*D
+   Create_PLZN - 	
+
+   SYNOPSIS:
+   INT Create_PLZN(SF_TYP *theSurface)
+
+   PARAMETERS:
+.  theSurface - the Surface to detect its polylinecycles
+.  yyy - bla bla bla bla
+
+   DESCRIPTION:
+   this function detects the polylinecycles of a surface
+   a polylinecycle is a set of polylines, which can be combined to 
+   a close polygon.
+   Each surface has at leats one Polylinecycle.
+   The polylines itself are already sorted.
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT Create_PLZN(SF_TYP *theSurface)
+{
+
+	SFPL_TYP *idl, *idl2; /*Laufvariable durch die PolyLineliste*/
+	SFPL_TYP *idl_pred; /*Variable fuer den Vorgaenger von idl*/
+	SFPL_TYP *anfang; /*zeigt auf die erste Polyline der noch zu untersuchenden PolyLines*/
+	                     /*zeigt auf den Anfang der noch zu sortierenden PolyLineListe (Schwanz)*/
+	                     /*wenn anfang NULL wird, ist der Sortiervorgang beendet*/
+	SFPL_TYP *new_partnerline; /*Variable fuer die gefundene neue PartnerPolyline, die an den
+									Listenkopf eingefuegt werden soll und die dann als neues
+									Muster dienen soll*/
+	SFPL_TYP *new_partnerline_pred; /*Variable fuer den Vorgaenger der neuen PartnerPolyline*/
+	SFPL_TYP *mpll; /*MerkVariable fuer Polylines*/
+	SFPL_TYP *rechtesMuster; /*Polyline, die vor dem noch zu sortierenden Listenschwanz steht
+	                             also vor anfang ! Sie ist das Muster das nach rechts  verwendet wird -
+	                             und bestimmt somit die Reihenfolge der Polylinezyklen  
+	                              rechtesMuster steht immer vor anfang*/
+	
+	INT predlinefound; /*Flag, das angibt, ob eine Partner- bzw. VorgaengerPolyline gefunden wurde.*/
+	INT succlinefound; /*Flag, das angibt, ob eine Partner- bzw. NachfolgerPolyline RECHTS gefunden wurde.*/
+	INT merkeID; 
+	INT rv;
+	INT lff;
+	PL_LINE_TYP *polylinelinesofidl;
+
+	INT start_idl,start_idl2,start_rechtesMuster,end_idl,end_idl2,end_rechtesMuster;
+	
+		
+	
+	if((idl = SF_POLYLINES(theSurface)) == NULL)
+	{
+		PrintErrorMessage('E',"Create_PLZN","Surface has no PolyLineEntries !!!");
+		return (1);
+	}
+	/*wenn die Surface mind. 2 PolyLines besitzt ...*/
+	else if(SFPL_NEXT(idl) != NULL) /*otherwise not necessary to sort !!! only one Polyline!*/
+	{
+		rechtesMuster = idl;/*PolyLineListenelement vor anfang (Schwanz) merken, fuer den Fall
+		                     dass anfang nach vorne muss und new_partnerline_pred noch Null ist*/
+		
+		/*der erste PolyLineEintrag Idl der Surface ist das Muster
+		  Nun wird eine Partner-/NachbarLIne gesucht beginnend mit dem Anfang Idl-next*/
+		anfang = SFPL_NEXT(idl);
+		
+		/*Solange es noch etwas zu untersuchen gibt ...*/
+		while(anfang != NULL)
+		{
+			idl = anfang;
+			new_partnerline_pred = NULL;
+			idl_pred = NULL;
+			predlinefound = F;
+			succlinefound = F;
+			
+			/*Solange noch keine NachbarPolyline zum Muster gefunden ist UND 
+			  falls das Listenende noch nicht erreicht ist : VorgaengerPolyLineSuchen*/
+			while((idl != NULL)&&(predlinefound == F)&&(succlinefound == F))
+			{
+				idl2 = SF_POLYLINES(theSurface);
+				
+				/*Im folgenden werden die Start und Endpunkte der 3 betrachteten Polylines bestimmt*/
+				
+				start_idl = LI_NDID1(PL_LINES_LINE(PL_LINES(SFPL_PL(idl))));
+				
+				start_idl2 = LI_NDID1(PL_LINES_LINE(PL_LINES(SFPL_PL(idl2))));
+				
+				start_rechtesMuster = LI_NDID1(PL_LINES_LINE(PL_LINES(SFPL_PL(rechtesMuster))));
+				
+				polylinelinesofidl = PL_LINES(SFPL_PL(idl));
+				for (lff = 2; lff < PL_NMB_OF_POINTS(SFPL_PL(idl)); lff++) /*Lauf zur letzten Line dieser Polyline*/
+				{
+					polylinelinesofidl = PL_LINES_NXT(polylinelinesofidl);
+				}
+				end_idl = LI_NDID2(PL_LINES_LINE(polylinelinesofidl));
+				
+				
+				polylinelinesofidl = PL_LINES(SFPL_PL(idl2));
+				for (lff = 2; lff < PL_NMB_OF_POINTS(SFPL_PL(idl2)); lff++) /*Lauf zur letzten Line dieser Polyline*/
+				{
+					polylinelinesofidl = PL_LINES_NXT(polylinelinesofidl);
+				}
+				end_idl2 = LI_NDID2(PL_LINES_LINE(polylinelinesofidl));
+				
+				polylinelinesofidl = PL_LINES(SFPL_PL(rechtesMuster));
+				for (lff = 2; lff < PL_NMB_OF_POINTS(SFPL_PL(rechtesMuster)); lff++) /*Lauf zur letzten Line dieser Polyline*/
+				{
+					polylinelinesofidl = PL_LINES_NXT(polylinelinesofidl);
+				}
+				end_rechtesMuster = LI_NDID2(PL_LINES_LINE(polylinelinesofidl));
+				
+				
+				/*Ist die SfcePOlyLine idl der Vorgaenger der LINKKEN_SfcePolyLine 
+				   bzw. ist einer der vier STart-/Endpunkte bei beiden SFCPLYLNS vertreten ?*/
+				if(  (start_idl == start_idl2) ||
+				     (start_idl == end_idl2) ||
+				     (end_idl == end_idl2) ||
+				     (end_idl == start_idl2)    )
+				{
+					/*VorgaengerPolyline gefunden !*/
+					predlinefound = T;
+					new_partnerline = idl;
+					new_partnerline_pred = idl_pred;
+				}
+				/*... oder aber ein Nachfolger der RECHTEN PolyLine*/
+				else if(  (start_idl == start_rechtesMuster) ||
+				     (start_idl == end_rechtesMuster) ||
+				     (end_idl == end_rechtesMuster) ||
+				     (end_idl == start_rechtesMuster)    )
+				{
+					/*NachfolgerPolyline gefunden !*/
+					succlinefound = T;
+					new_partnerline = idl;
+					new_partnerline_pred = idl_pred;
+				}
+				idl_pred = idl;
+				idl = SFPL_NEXT(idl);
+			} /*while((idl != NULL)&&(predlinefound == F))*/
+			
+			/*wenn keine VorgaengerPolyline gefunden wurde ...*/
+			if(predlinefound == F)
+			{
+				/*wenn auch keine NachfolgerPolyline gefunden wurde ...*/
+				if(succlinefound == F)
+				{
+					if((rv = GetMemAndFillNewPlz(&anfang,&rechtesMuster,theSurface,idl2)) == 1)
+					{
+						PrintErrorMessage('E',"GetMemAndFillNewPlz","returned ERROR");
+						return(1);
+					}
+				}
+				else /*ein RECHTER Nachfolger wurde gefunden*/
+				{
+					
+					/* Fuer den FAll  dass (new_partnerline_pred == NULL) ist gilt:
+					  Reihenfolge der PolyLines kann in diesem Fall gleich bleiben
+					  Die gefundene neue PartnerPolyline liegt bereits an der richtigen
+					  Stelle: Sie ist der unmittelbare Nachfolger des RECHTEN Musters!
+					  
+					  Wenn nicht ...==>UPDATE DER LISTE ...*/
+					if(new_partnerline_pred != NULL)
+					{
+						/*gefundene PartnerPolyline an gef. Stelle entnehmen und RECHTS in Liste einhaengen 
+						  sowie Update an der Entnahmestelle und Update am RECHTEN Listenende durchfuehren :*/
+						mpll = SFPL_NEXT(rechtesMuster); /*Nachfolger des rechten Musters merken*/
+						SFPL_NEXT(rechtesMuster) = new_partnerline; /*neuer Nachfolger des rechten Musters ist 
+						                                                die gefundene PolyLine new_partnerline*/
+						SFPL_NEXT(new_partnerline_pred) = SFPL_NEXT(new_partnerline);/*Nachfolger der gefundenen PolyLine merken*/
+						SFPL_NEXT(new_partnerline) = mpll;
+					}                                       
+					
+					
+					/*Im Fall eines neuen RECHTEN Nachbars :*/
+					 /* Es muessen stets anfang und rechtes Muster jeweils um 1 weiter geschaltet werden*/
+					rechtesMuster = SFPL_NEXT(rechtesMuster);
+					/*ferner aendert sich in diesem Fall der Anfang des noch zu bearbeitenden Listenteils :*/
+					anfang = SFPL_NEXT(rechtesMuster);
+					
+				
+				} /* else . . . ein RECHTER Nachfolger wurde gefunden*/
+			}
+			else /*ein LINKER Vorgaenger wurde gefunden*/
+			{
+				/*wenn die gefundene PolyLine gleich dem Anfang des noch zu sortierenden 
+				  Teils (Schwanz) der PolyLineliste ist ...*/
+				if(new_partnerline_pred == NULL)
+				{
+					/*Da new_partnerline_pred NOCH NULL IST bzw die gefundene PolyLine == anfang ist,
+					  wird als new_partnerline_pred das erste Muster, d.h. der Listenkopf der unsortierten
+					  Liste verwendet.*/
+					new_partnerline_pred = rechtesMuster;
+					
+					/*ferner aendert sich in diesem Fall der Anfang des noch zu bearbeitenden Listenteils :*/
+					anfang = SFPL_NEXT(anfang);
+
+				}
+				
+				/*gefundene Partnerpolyline an gef. Stelle entnehmen und vorne in Liste einhaengen 
+				  sowie Update an der Entnahmestelle und Update am Listenkopf durchfuehren :*/
+				mpll = SF_POLYLINES(theSurface); /*Listenanfang merken*/
+				SF_POLYLINES(theSurface) = new_partnerline; /*neuer Listenkopf == gefundene PolyLine*/ 
+				SFPL_NEXT(new_partnerline_pred) = SFPL_NEXT(new_partnerline); /*Entnahmestelle ueberbruecken*/
+				SFPL_NEXT(new_partnerline) = mpll;/*der bisherige Listenkopf wird als Nachfolger vom neuen Listen-
+				                                       kopf eingetragen*/
+				/*anfang ist richtig gesetzt und wurde nur im obigen Falle 
+				  if(new_partnerline_pred == NULL)
+				  weitergeschaltet*/
+				  
+			
+			} /* else ein LINKER Vorgaenger wurde gefunden*/
+		}/* von while */
+	}/*von ... wenn die Surface mind. 2 PolyLines besitzt ...*/
+		
+	/*Erzeuge mit dem Rest auch noch einen PLZyklus - aber nur wenn es nicht der einzige ist ...*/
+	if(SF_NMB_OF_POLYLI_ZYK(theSurface) >0)
+	{
+		/* Achtung: idl2 benoetigt ein Update*/
+		idl2 = SF_POLYLINES(theSurface);
+		if((rv = GetMemAndFillNewPlz(&anfang,&rechtesMuster,theSurface,idl2)) == 1)
+		{
+			PrintErrorMessage('E',"GetMemAndFillNewPlz","returned ERROR");
+			return(1);
+		}
+	}
+	return(0);
+}
+
+
+
+
+/****************************************************************************/
+/*D
+   Find_SFE_Triangle - 	
+
+   SYNOPSIS:
+   SFE_KNOTEN_TYP *Find_SFE_Triangle(LI_KNOTEN_TYP *line,SF_TYP *theSurface)
+
+   PARAMETERS:
+.  line - pointer to the Line of a polyline
+.  theSurface - pointer to the Surface
+
+   DESCRIPTION:
+   This fct searches the (only!) correspondig SFE_Triangle of the Polyline-Line
+   line with the same surface identifiers like theSurface
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+SFE_KNOTEN_TYP *Find_SFE_Triangle(LI_KNOTEN_TYP *line,SF_TYP *theSurface)
+{
+	INT hw;
+	LI_KNOTEN_TYP *hp;
+	IDF_TYP *lfptr;
+	INT gefunden;
+	SFE_KNOTEN_TYP *returnSFETriangle;
+	
+	/*Hashwert/Schluessel berechnen*/
+	if(LI_NDID1(line) < LI_NDID2(line))
+	{
+		hw = the_LI_hashfunction(LI_NDID1(line),LI_NDID2(line));
+	}
+	else
+	{
+		hw = the_LI_hashfunction(LI_NDID2(line),LI_NDID1(line));
+	}
+	hp = (EXCHNG_TYP2_LI_HASHTAB(ExchangeVar_2_Pointer))[hw];
+	
+	/*Beim Hashwert den richtigen Listeneintrag suchen*/
+	if (hp != NULL)
+	{
+		while( (LI_NDID1(hp) != LI_NDID1(line)) && (LI_NDID2(hp) != LI_NDID2(line)) )
+		{
+			hp = LI_NEXT(hp);
+		}
+	}
+	
+	if(hp == NULL)
+	{
+		PrintErrorMessage('E',"Find_SFE_Triangle","could not find the Line in the LI-Hashtable");
+		return (NULL);
+	}	
+	
+	lfptr = LI_IDFS(hp);
+	if(lfptr == NULL) 
+	{
+		PrintErrorMessage('E',"Find_SFE_Triangle","the found LI-HashTable-Entry has no(!) IDF-Pointer!");
+		return (NULL);
+	}
+	
+	gefunden = F;
+	/* Laufe ueber alle Eintraege der Identifierliste der Line hp */
+	while( (lfptr != NULL) )
+	{
+		
+		/*wenn die Identifiers des zugehoerigen Triangles mit denen der Surface zusammenpassen*/
+		if ( (SFE_IDF_0(IDF_SFE_TRIA(lfptr)) == SF_NAME1(theSurface)) &&
+		     (SFE_IDF_1(IDF_SFE_TRIA(lfptr)) == SF_NAME2(theSurface))    )
+		{
+			if(gefunden == F)
+			{
+				gefunden = T;
+				returnSFETriangle = IDF_SFE_TRIA(lfptr);
+			}
+			else
+			{
+				PrintErrorMessage('E',"Find_SFE_Triangle","es wurden zwei(!!!) moegliche SFE_Triangles gefunden");
+				return (NULL);
+			}
+		}
+	
+		lfptr = LI_NEXT(lfptr);
+	}
+
+	if(gefunden == F)
+	{
+		PrintErrorMessage('E',"Find_SFE_Triangle","did not find the SFE_Triangle");
+		return(NULL);
+	}
+	else
+	{
+		/* SFE_Triangle wurde gefunden :*/
+		return(returnSFETriangle);
+	}
+}
+
+
+
+/****************************************************************************/
+/*D
+   TriangleNeighbourSearcher - 	
+
+   SYNOPSIS:
+   INT TriangleNeighbourSearcher(SFE_KNOTEN_TYP *SFE_search,SFE_KNOTEN_TYP *SFE_destination)
+
+   PARAMETERS:
+.  SFE_search - 
+.  SFE_destination - 
+
+   DESCRIPTION:
+   bla
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT TriangleNeighbourSearcher(SFE_KNOTEN_TYP *SFE_search,SFE_KNOTEN_TYP *SFE_destination)
+{
+	SFE_KNOTEN_TYP *Nachbar_SFE;
+	INT kante; /*Laufvariable ueber die 3 Kanten eines Dreiecks*/
+	INT neubesetzt[3];
+	INT rv,rgbwrt;
+	
+		
+	neubesetzt[0] = F; neubesetzt[1] = F; neubesetzt[2] = F;
+	
+	/* Laufe ueber die 3 Nachbarn von SFE_search */
+	for(kante = 0; kante < 3; kante++)
+	{
+		Nachbar_SFE =  SFE_NGHB(SFE_search,kante);
+		if(Nachbar_SFE != NULL)
+		{
+			/*natuerlich nur wenn dieser Nachbar nicht schon betrachtet wurde ...*/
+			if(SFE_ORIENTATION_FLAG(Nachbar_SFE) == F)
+			{
+				
+				SFE_ORIENTATION_FLAG(Nachbar_SFE) = T;
+				neubesetzt[kante] = T;
+				if(Nachbar_SFE == SFE_destination)
+				{
+					triangle_found = T;
+					return(FERTIG);
+				}
+				/*************************************************************/
+			}
+		}
+	} /* von for */
+	
+	/*weiterer Lauf ueber die 3 Nachbarn, um die RekursionsHierarchie etwas kleiner zu halten*/
+	for(kante = 0; kante < 3; kante++)
+	{
+		/*nur die soeben neu betrachteten Dreiecke sind fuer einen Rekursionschritt interessant*/
+		if(neubesetzt[kante] == T)
+		{
+			rgbwrt = TriangleNeighbourSearcher(SFE_NGHB(SFE_search,kante),SFE_destination);
+			if(triangle_found == T)
+			{
+				return(FERTIG);
+			}
+		}
+	} /* von for */
+	
+	return(FERTIG);
+	
+}
+
+
+
+
+/****************************************************************************/
+/*D
+   GetMemAndFillNewRlSfc - 	
+
+   SYNOPSIS:
+   INT GetMemAndFillNewRlSfc(PLZ_TYP **anfang,PLZ_TYP **rechtesMuster,SF_TYP *theSurface,PLZ_TYP *idl2)
+
+   PARAMETERS:
+.  anfang - reference parameter -> will be changed in this Fct
+.  rechtesMuster - reference parameter -> will be changed in this fct
+.  theSurface - Pointer to the correspomdinmg surface - itf features will be
+                changed in this fct.
+.  idl2 - value parameter
+
+   DESCRIPTION:
+   this function creates a new RealSurface with one or different PLZs for surface theSurface.
+   
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT GetMemAndFillNewRlSfc(PLZ_TYP **anfang,PLZ_TYP **rechtesMuster,SF_TYP *theSurface,PLZ_TYP *idl2)
+{
+/* vergleiche PolylineSplit()*/
+	RS_TYP *merkeplzptr,*neueRealSurface;
+	PLZ_TYP *lauf_PLZ,*endeabgespSF_PLZs;
+	INT anzbersorPLZs;
+	INT rv;
+	
+	
+	anzbersorPLZs = 1;
+
+	lauf_PLZ = idl2;
+	while(lauf_PLZ != (*rechtesMuster))
+	{
+		lauf_PLZ = SFPL_NEXT(lauf_PLZ);
+		anzbersorPLZs++;
+	}
+	
+
+	endeabgespSF_PLZs = *rechtesMuster;
+			
+			
+	/*alte Surface->Polylinecycles*/
+	/*=> *anfang, *rechtesMuster := ganz vorne usw. ... UPDATEN */
+	(*rechtesMuster) = PLZ_NEXT((*rechtesMuster));/*ganz vorne*/
+	if((*rechtesMuster) == NULL)
+	{
+		/*In diesen Teil laeuft das Programm nur im Falle, dass in Create_RealSurfaces mit dem verbleibenden Rest
+		  auch noch eine RS erzeugt wird.*/
+		if((*anfang) != NULL)
+		{
+			PrintErrorMessage('E',"GetMemAndFillNewRlSfc","anfang == NULL is not possible");
+			return (1);
+		}
+	}
+	else
+	{
+		(*anfang) = PLZ_NEXT((*rechtesMuster));
+	}
+	/* die Anzahl der Polylinezyklen belassen, da die Surface ja immer noch alle Polylinezyklen hat! */
+	/*SF_NMB_OF_POLYLI_ZYK(theSurface) = SF_NMB_OF_POLYLI_ZYK(theSurface) - anzbersorPLZs;*/
+	SF_POLYLI_ZYK(theSurface) = *rechtesMuster;
+	
+	
+	
+	/*abgespaltete Surface->Polylinezyklen Teil2 ..*/
+	PLZ_NEXT(endeabgespSF_PLZs) = NULL;
+	/*=> bereits sortierte SfcePlineCyclelist aufarbeiten (d.h.:NullPointer ans ende)*/
+	
+	/*mit der abgespaltenen eine neue anlegen ...*/
+	   /*laeuft von idl2 bis endeabgespSF_PLZs.*/
+	merkeplzptr = SF_REALSFCS(theSurface);
+	if((neueRealSurface = GetTmpMem(theHeap,sizeof(RS_TYP))) == NULL)
+	{
+		PrintErrorMessage('E',"GetMemAndFillNewRlSfc","got no mem for the new realsurface");
+		return (1);
+	} 
+	/*eingefuegt wird am Listenanfang*/
+	RS_NEXT(neueRealSurface) = merkeplzptr;
+	RS_PL_ZKLN(neueRealSurface) = idl2;
+	RS_NMB_OF_PL_ZKLN(neueRealSurface) = anzbersorPLZs;
+	SF_NMB_OF_REALSFCS(theSurface)++;
+	SF_REALSFCS(theSurface) = neueRealSurface;
+		
+	return (0);
+}
+
+
+
+/****************************************************************************/
+/*D
+   ReconstructSurfacePolylines - 	
+
+   SYNOPSIS:
+   INT ReconstructSurfacePolylines(SF_TYP *theSurface)
+
+   PARAMETERS:
+.  theSurface - pointer to the original surface which perhaps has to be splitted 
+.  yyy - bla bla bla bla
+
+   DESCRIPTION:
+   This function reconstructs the Surface->Polyline-Entries in the case of
+   no realsurfaces but different created polylinecycles 
+   Fct. tests whether all polylines have been put back.      
+   Fct. tests whether all polylinecycles do have all their polylines.      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT ReconstructSurfacePolylines(SF_TYP *theSurface)
+{
+	PLZ_TYP *laufvar_plz;
+	SFPL_TYP *lauf_sfce_polyline,*merkeSfceplanfang,*anfang, *ende;
+	INT nmbofplz;
+	INT i,numberofpolylinesofpolylinecycle,numberofpolylinesofsurface;
+	
+	/*laufe ueber alle Polylinezyklen von theSurface*/
+	nmbofplz = SF_NMB_OF_POLYLI_ZYK(theSurface);
+	if(nmbofplz < 2)
+	{
+		PrintErrorMessage('E',"ReconstructSurfacePolylines","Surface schoud have at least 2 PLZs");
+		return (1);
+	}
+	laufvar_plz = SF_POLYLI_ZYK(theSurface);
+	if(laufvar_plz == NULL)
+	{
+		PrintErrorMessage('E',"ReconstructSurfacePolylines","Surface has no PLZ  at all");
+		return (1);
+	}
+	numberofpolylinesofsurface =0;
+	for(i=1;i<=nmbofplz;i++)
+	{
+		if(laufvar_plz == NULL)
+		{
+			PrintErrorMessage('E',"ReconstructSurfacePolylines","Surface has not enough PLZs");
+			return (1);
+		}
+		
+		/*Wiedereinbauen der Polylines von laufvar_plz in Surface->Polylines*/
+		lauf_sfce_polyline = PLZ_POLYLINES(laufvar_plz);
+		anfang = lauf_sfce_polyline;
+		numberofpolylinesofpolylinecycle = 0;
+		while(lauf_sfce_polyline != NULL)
+		{
+			numberofpolylinesofpolylinecycle++;
+			ende = lauf_sfce_polyline;
+			lauf_sfce_polyline = SFPL_NEXT(lauf_sfce_polyline);
+			
+		}
+		/*Probe*/
+		if(numberofpolylinesofpolylinecycle != PLZ_NMB_OF_POLYLINES(laufvar_plz))
+		{
+			PrintErrorMessage('E',"ReconstructSurfacePolylines","A PLZ has too much or too less polylines");
+			return (1);
+		}
+		
+		numberofpolylinesofsurface += numberofpolylinesofpolylinecycle;
+		
+		merkeSfceplanfang = SF_POLYLINES(theSurface);
+		SF_POLYLINES(theSurface) = anfang;
+		SFPL_NEXT(ende) = merkeSfceplanfang; 
+		/*durch diese 3 Zeilen wurden alle Polylines des betrachteten Poylinezyklus laufvar_plz
+		  an die alte Stelle Surface->Polyline zurueckgehaengt.*/
+		
+		laufvar_plz = PLZ_NEXT(laufvar_plz);
+	}
+	
+	/*Probe*/
+	if(numberofpolylinesofsurface != SF_NMB_OF_POLYLINES(theSurface))
+	{
+		PrintErrorMessage('E',"ReconstructSurfacePolylines","Surface has reconstructed too much or too less polylines  with PLZs");
+		return (1);
+	}
+	
+	if(laufvar_plz != NULL)
+	{
+		PrintErrorMessage('E',"ReconstructSurfacePolylines","Surface has too much PLZs");
+		return (1);
+	}
+		/*... und haenge die Polylinelsten in die Surface->Polylines*/
+		/* ueberpruefe dabei die Anzahlen der Polylinelisten pointermaessig*/
+}
+
+
+
+
+
+/****************************************************************************/
+/*D
+   Create_RealSurfaces - 	
+
+   SYNOPSIS:
+   INT Create_RealSurfaces(SF_TYP *theOrigSfce)
+
+   PARAMETERS:
+.  theOrigSfce - pointer to the original surface which perhaps has to be splitted 
+.  yyy - bla bla bla bla
+
+   DESCRIPTION:
+   This fct splits the polylinecycles of a surface in one or several group(s)
+   of polylinecycles which describe a "real" surface.
+   idea: Any triangle T1 of a "real" surface can be reached from any other triangle T2
+         of the same "real" surface using triangleneighbourhoodrelations
+      
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT Create_RealSurfaces(SF_TYP *theOrigSfce)
+{
+
+	PLZ_TYP *idl, *idl2; /*Laufvariable durch die PolyLineZyklusliste*/
+	PLZ_TYP *idl_pred; /*Variable fuer den Vorgaenger von idl*/
+	PLZ_TYP *anfang; /*zeigt auf den ersten PolylineZyklus der noch zu untersuchenden PolyLineZyklen*/
+	                     /*zeigt auf den Anfang der noch zu sortierenden PolyLineZyklenListe (Schwanz)*/
+	                     /*wenn anfang NULL wird, ist der Sortiervorgang beendet*/
+	PLZ_TYP *new_partnerplz; /*Variable fuer den gefundenen neuen PartnerPolylineZyklus, der stets an den
+									Listenkopf eingefuegt wird  und der dann als neues
+									Muster dient*/
+	PLZ_TYP *new_partnerplz_pred; /*Variable fuer den Vorgaenger der neuen PartnerPolylineZyklus*/
+	PLZ_TYP *mpll; /*MerkVariable fuer PolylineZyklen*/
+	PLZ_TYP *rechtesMuster; /*Polylinezyklus, der vor dem noch zu sortierenden Listenschwanz steht
+	                             also vor anfang ! Er ist das Muster das nach rechts wird aber nie verwendet
+	                             da stets links am Listenanfang eingefuegt wird im Falle der Erzeugeung von RSs -
+	                              rechtesMuster steht immer vor anfang*/
+	
+	INT predplzfound; /*Flag, das angibt, ob ein Partner- bzw. VorgaengerPolylineZyklus gefunden wurde.*/
+	INT succplzfound; /*Flag, das angibt, ob ein Partner- bzw. NachfolgerPolylineZyklus RECHTS gefunden wurde.*/
+	INT merkeID; 
+	INT rv,rw;
+	INT lff;
+	PL_LINE_TYP *polylinelinesofidl;
+	
+	LI_KNOTEN_TYP *erste_line_von_idl,*erste_line_von_idl2;
+	SFE_KNOTEN_TYP *SFE_destination,*SFE_search;
+	TRIANGLE_TYP *lauf_tria; 
+
+	
+		
+	
+	if((idl = SF_POLYLI_ZYK(theOrigSfce)) == NULL)
+	{
+		PrintErrorMessage('E',"Create_RealSurfaces","Surface has no PolyLineCycles !!!");
+		return (1);
+	}
+	/*wenn die Surface mind. 2 PolyLineZyklen besitzt ...*/
+	else if(PLZ_NEXT(idl) != NULL) /*otherwise not necessary to sort !!! only one Polylinecycle!*/
+	{
+		rechtesMuster = idl;/*PolyLineZyklusListenelement vor anfang (Schwanz) merken, fuer den Fall
+		                     dass anfang nach vorne muss und new_partnerplz_pred noch Null ist*/
+		
+		/*der erste PolyLineZyklusEintrag Idl der Surface ist das Muster
+		  Nun wird eine Partner-/NachbarLIne gesucht beginnend mit dem Anfang Idl-next*/
+		anfang = PLZ_NEXT(idl);
+		
+		/*Solange es noch etwas zu untersuchen gibt ...*/
+		while(anfang != NULL)
+		{
+			idl = anfang;
+			new_partnerplz_pred = NULL;
+			idl_pred = NULL;
+			predplzfound = F;
+			
+			/*Solange noch kein NachbarPolylineZyklus zum Muster gefunden ist UND 
+			  falls das Listenende noch nicht erreicht ist : VorgaengerPolyLineZyklusSuchen*/
+			while((idl != NULL)&&(predplzfound == F))
+			{
+				idl2 = SF_POLYLI_ZYK(theOrigSfce);
+				
+				/*Ist der SfcePOlyLineZyklus idl der Vorgaenger ders LINKKEN_SfcePolyLinezyklus idl2 ?*/
+				
+				/* d.h. nehme erste Line von der ersten Polyline von idl*/
+				erste_line_von_idl = PL_LINES_LINE(PL_LINES(SFPL_PL(PLZ_POLYLINES(idl))));
+				
+				/* und ermiitle zugehoeriges SFE-Dreieck SFE_destination*/
+				if( (SFE_destination = Find_SFE_Triangle(erste_line_von_idl,theOrigSfce)) == NULL)
+				{
+					PrintErrorMessage('E',"Create_RealSurfaces","could not find SFE_destination with fct. Find_SFE_Triangle");
+					return (1);
+				}
+				
+				/* nehme erste Line von der ersten Polyline von idl2 */
+				erste_line_von_idl2 = PL_LINES_LINE(PL_LINES(SFPL_PL(PLZ_POLYLINES(idl2))));
+
+				/* und ermiitle zugehoeriges SFE-Dreieck SFE_search*/
+				if( (SFE_search = Find_SFE_Triangle(erste_line_von_idl2,theOrigSfce)) == NULL)
+				{
+					PrintErrorMessage('E',"Create_RealSurfaces","could not find SFE_search with fct. Find_SFE_Triangle");
+					return (1);
+				}
+				
+				SFE_ORIENTATION_FLAG(SFE_search) = T;
+				triangle_found = F;
+				/*Spez.fall: Stimmen womoeglich gleich die ersten beiden ueberein?*/
+				if(SFE_search == SFE_destination)
+				{
+					triangle_found = T;
+					SFE_ORIENTATION_FLAG(SFE_search) = F;
+				}
+				
+				/*Normalfall:*/
+				else if ( (rw = TriangleNeighbourSearcher(SFE_search,SFE_destination)) != FERTIG)  
+				{
+					PrintErrorMessage('E',"Create_RealSurfaces"," Returnvalue of TriangleNeighbourSearcher was not FERTIG - Problems with searching triangle");
+					return (1);
+				}
+				else
+				{
+					/*Achtung ! Update der orientationflags aller Dreiecke dieser Surface ist notwendig*/
+					/*SFE_ORIENTATION_FLAG*/
+					/*laufe ueber alle Dreiecke dieser Surface und setze das OrientationFlag wieder auf F*/
+					/* damit es fuer TriangleIDOrientations wieder stimmt*/
+					lauf_tria = SF_TRIAS(theOrigSfce);
+					while(lauf_tria != NULL)
+					{
+						SFE_ORIENTATION_FLAG(TRIA_SFE_KN(lauf_tria)) = F;
+						lauf_tria = TRIA_NEXT(lauf_tria);
+					}
+				}
+				
+				if(triangle_found == T)
+				{
+					/*VorgaengerPolylineZyklus gefunden !*/
+					predplzfound = T;
+					new_partnerplz = idl;
+					new_partnerplz_pred = idl_pred;
+				}
+
+				idl_pred = idl;
+				idl = SFPL_NEXT(idl);
+				
+				
+			} /*while((idl != NULL)&&(predplzfound == F))*/
+
+		
+			/*wenn kein VorgaengerPolylineZyklus gefunden wurde ...*/
+			if(predplzfound == F)
+			{
+				/*hier laeuft das Programm ldgl. bei der letzten RS nicht 'rein.*/
+				if((rv = GetMemAndFillNewRlSfc(&anfang,&rechtesMuster,theOrigSfce,idl2)) == 1)
+				{
+					PrintErrorMessage('E',"GetMemAndFillNewRlSfc","returned ERROR");
+					return(1);
+				}
+			}
+			else /*ein LINKER Vorgaenger wurde gefunden*/
+			{
+				/*wenn der gefundene PolyLineZyklus gleich dem Anfang des noch zu sortierenden 
+				  Teils (Schwanz) der PolyLineZyklusliste ist ...*/
+				if(new_partnerplz_pred == NULL)
+				{
+					/*Da new_partnerplz_pred NOCH NULL IST bzw der gefundene PolyLineZyklus == anfang ist,
+					  wird als new_partnerplz_pred das erste Muster, d.h. der Listenkopf der unsortierten
+					  Liste verwendet.*/
+					new_partnerplz_pred = rechtesMuster;
+					
+					/*ferner aendert sich in diesem Fall der Anfang des noch zu bearbeitenden Listenteils :*/
+					anfang = PLZ_NEXT(anfang);
+
+				}
+				
+				/*gefundener PartnerpolylineZyklus an gef. Stelle entnehmen und vorne in Liste einhaengen 
+				  sowie Update an der Entnahmestelle und Update am Listenkopf durchfuehren :*/
+				mpll = SF_POLYLI_ZYK(theOrigSfce); /*Listenanfang merken*/
+				SF_POLYLI_ZYK(theOrigSfce) = new_partnerplz; /*neuer Listenkopf == gefundener PolyLineZyklus*/ 
+				PLZ_NEXT(new_partnerplz_pred) = PLZ_NEXT(new_partnerplz); /*Entnahmestelle ueberbruecken*/
+				PLZ_NEXT(new_partnerplz) = mpll;/*der bisherige Listenkopf wird als Nachfolger vom neuen Listen-
+				                                       kopf eingetragen*/
+				/*anfang ist richtig gesetzt und wurde nur im obigen Falle 
+				  if(new_partnerplz_pred == NULL)
+				  weitergeschaltet*/
+				  
+			} /* else ein LINKER Vorgaenger wurde gefunden*/
+		}/* von while */
+	}/*von ... wenn die Surface mind. 2 PolyLineZyklen besitzt ...*/
+		
+	/*Erzeuge mit dem Rest auch noch eine RealSurface - aber nur wenn es nicht die einzige ist ...*/
+	if(SF_NMB_OF_REALSFCS(theOrigSfce) > 0)
+	{
+	     /* Achtung: idl2 benoetigt ein Update*/
+	      idl2 = SF_POLYLI_ZYK(theOrigSfce);
+
+		if((rv = GetMemAndFillNewRlSfc(&anfang,&rechtesMuster,theOrigSfce,idl2)) == 1)
+		{
+			PrintErrorMessage('E',"GetMemAndFillNewPlz","returned ERROR");
+			return(1);
+		}
+	}
+	else
+	{
+		/*Achtung, wenn nur eine einzige RealSurface entstehen wuerde dann muessen die Surface-Polylines 
+		  wieder angelegt werden einfach aus den PLZ heraus.*/				
+		if((rv = ReconstructSurfacePolylines(theOrigSfce)) == 1)
+		{
+			PrintErrorMessage('E',"Create_RealSurfaces","ReconstructSurfacePolylines returned ERROR");
+			return(1);
+		}
+	}
+	return(0);
+}
+
+
+
+
+/****************************************************************************/
+/*D
+   FetchAllTriangles - 	
+
+   SYNOPSIS:
+   INT FetchAllTriangles(TRIANGLE_TYP *dasDreieck)
+
+   PARAMETERS:
+.  dasDreieck - SFE, dessen drie Nachbarn durchlaufen werden und in die SurfaceListe
+                     eingetragen werden. 
+.  yyy - bla bla bla bla
+
+   DESCRIPTION:
+   Diese rekursive Funktion durchlaeuft alle Dreiecke einer Surface
+   mit HIlfe der schon bestehenden Nachbarschaftsbeziehungen zwischen
+   den Dreiecken. Dabei wird nach jedem ueberprueften resp. einge-
+   tragenen Dreieck die statische fuer die Funktion global verwendbare
+   Variable "nmb_of_triangles" inkrementiert. Im Gegensatz zur Fkt TRIANGLEIDORIENTATIONS
+   wird bei dieser Fkt. die gesamte Rekursionshierarchie durchlaufen.
+   Besuchte Dreiecke erhalten das Flag und werden dabei nich nochmals besucht.  
+   		
+      
+   RETURN VALUE:
+   INT
+.n    FERTIG if alle Dreiecke einmal besucht bzw. 
+      static INT zaehler == static INT nmb_of_trias_of_sf
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT FetchAllTriangles(SFE_KNOTEN_TYP *dasDreieck)
+{
+	SFE_KNOTEN_TYP *Nachbar_SFE;
+	INT kante; /*Laufvariable ueber die 3 Kanten eines Dreiecks*/
+	INT neubesetzt[3];
+	INT rv,rgbwrt;
+	TRIANGLE_TYP *merke_triangle_pointer;
+		
+	neubesetzt[0] = F; neubesetzt[1] = F; neubesetzt[2] = F;
+	
+	/* Laufe ueber die 3 Nachbarn von dasDreieck */
+	for(kante = 0; kante < 3; kante++)
+	{
+		Nachbar_SFE =  SFE_NGHB(dasDreieck,kante);
+		if(Nachbar_SFE != NULL)
+		{
+			/*natuerlich nur wenn dieser Nachbar nicht schon aufgenommen wurde ...*/
+			if(SFE_ORIENTATION_FLAG(Nachbar_SFE) == F)
+			{
+				/* Dreieck vorne in Liste einfuegen ... */
+				merke_triangle_pointer = New_Triangle_List;
+				if((New_Triangle_List = GetTmpMem(theHeap,sizeof(TRIANGLE_TYP))) == NULL)
+				{
+					PrintErrorMessage('E',"SplitSurface","got  no memory  for  New_Triangle_List !???!");
+					return(1);
+				}
+				TRIA_SFE_KN(New_Triangle_List) = Nachbar_SFE;
+				TRIA_NEXT(New_Triangle_List) = merke_triangle_pointer;
+				nmb_of_triangles++;
+
+
+
+				
+				/*************************************************************/
+				/* Dieser Nachbar ist nun in die New_Triangle_List eingefuegt, folglich . . . */
+				SFE_ORIENTATION_FLAG(Nachbar_SFE) = T;
+				neubesetzt[kante] = T;
+				/*************************************************************/
+			}
+		}
+	} /* von for */
+	
+	/*weiterer Lauf ueber die 3 Nachbarn, um die RekursionsHierarchie etwas kleiner zu halten*/
+	for(kante = 0; kante < 3; kante++)
+	{
+		/*nur die soeben neu besetzten Dreiecke sind fuer einen Rekursionschritt interessant*/
+		if(neubesetzt[kante] == T)
+		{
+			rgbwrt = FetchAllTriangles(SFE_NGHB(dasDreieck,kante));
+		}
+	} /* von for */
+	
+	return(FERTIG);
+	
+}
+
+
+
+
+/****************************************************************************/
+/*D
+   SplitSurface - 	
+
+   SYNOPSIS:
+   INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
+
+   PARAMETERS:
+.  theSurface - the Surface which must be spliited
+.  thePredSurface - the predecessor of the surface
+
+   DESCRIPTION:
+   fct splits surface theSurface using its realSurfaces
+   and delets the old surface 
+   all necessary aupdate are executed
+          
+   RETURN VALUE:
+   INT
+.n    0 if ok
+.n    1 if error occured.
+D*/
+/****************************************************************************/
+INT SplitSurface(SF_TYP *theSurface, SF_TYP *thePredSurface)
+{ 
+	SF_TYP *sf_lfv2;
+	SF_TYP *newSurface,*merkeSurface;
+	SD_TYP *the_sbd;
+	SFC_TYP *lauf_sd_sfces, *pred_sfc_OF_the_sbd,  *sf_of_sd_lauf, *neue_sfc_of_sbd;
+	INT sbdmid,lauf_rs,lauf_plz,numberofpolylinesofpolylinecycle,rv;
+	RS_TYP *theRealSurface;
+	PLZ_TYP *thePolylineCycle;
+	SFPL_TYP *lauf_sfce_polyline,*merkeSfceplanfang,*anfang, *ende;
+	LI_KNOTEN_TYP *ersteline;
+	SFE_KNOTEN_TYP *erstesdreieck;
+	INT dreiecksanzahl;
+	TRIANGLE_TYP *lauf_tria;
+	DOUBLE new_sfc_name;
+	TRIANGLE_TYP *lauf_sftria;
+	
+	/*suche Subdomain the_sbd der Surface*/
+	sbdmid = (int) (floor(SF_NAME1(theSurface)));
+	/* Suche die zugehoerige Subdomain : */
+	if((the_sbd = FindSubdomain(sbdmid)) == NULL)
+	{
+		PrintErrorMessage('E',"SplitSurface","no subdomain found: NULL returnd by FindSubdomain");
+		return (1);
+	}
+	
+	/*suche den Surfaceeintrag von the_sbd und ermittle dessen Vorgaenger pred_sfc_OF_the_sbd*/
+	pred_sfc_OF_the_sbd = NULL;
+	lauf_sd_sfces = SD_SFCS(the_sbd);
+	if(lauf_sd_sfces == NULL)
+	{
+		PrintErrorMessage('E',"SplitSurface","lauf_sd_sfces is NULL at begin and theSurface was not found yet ");
+		return (1);
+	}
+	while(SFC_SURF(lauf_sd_sfces) != theSurface)
+	{
+		pred_sfc_OF_the_sbd = lauf_sd_sfces;
+		lauf_sd_sfces = SFC_NEXT(lauf_sd_sfces);
+		if(lauf_sd_sfces == NULL)
+		{
+			PrintErrorMessage('E',"SplitSurface","lauf_sd_sfces has just become NULL and theSurface was not found yet ");
+			return (1);
+		}
+	}
+	
+	lauf_rs=0;	
+	theRealSurface = SF_REALSFCS(theSurface);
+	
+	dreiecksanzahl = 0;
+	
+	/*laufe ueber die real surfaces und erzeuge neue Surfaces*/
+	while(theRealSurface != NULL)
+	{
+		
+	
+		lauf_rs++;	
+		
+		/*erzeuge neue surface und trage sie vorne in SF-Liste ein.*/
+			merkeSurface = EXCHNG_TYP2_ROOT_SFC(ExchangeVar_2_Pointer);
+			if((newSurface = GetTmpMem(theHeap,sizeof(SF_TYP))) == NULL)
+			{
+				PrintErrorMessage('E',"SplitSurface","got  no memory  for  newSurface !???!");
+				return(1);
+			}
+			SF_NEXT(newSurface) = merkeSurface;
+			EXCHNG_TYP2_ROOT_SFC(ExchangeVar_2_Pointer) = newSurface;
+			
+			/*Attention! hier wird noch der alte Surfacename verwendet, da diese noc in Find_SFE_Triangle
+			  benoetigt wird und ausserdem alle zugehoerigen Dreiecke nach FetchAllTriangles den neuen
+			  SUrfacenamen erhalten sollten 
+			  TODO ?? Sollten auch die Lines d.h. die LI-Hashtabelle upgedatet werden ?
+			  Meiner Meinung <25.8.97> nach NICHT NOETIG, da es im UG Lines in meinem Verstaendnis
+			  nicht mehr gibt Triangles sehr wohl
+			  Die Triangle->SUrfaceNamen werden allerdings spaeter auch nicht mehr benoetigt 
+			  oder ?? In jedewm Fall besteht in dieser Funktion <siehe unten> ein gute Moeglichkeit
+			  zum Update ...*/
+			SF_NAME1(newSurface) = SF_NAME1(theSurface);
+			SF_NAME2(newSurface) = SF_NAME2(theSurface);
+			
+			SF_RIGHT_SBD(newSurface)  = SF_RIGHT_SBD(theSurface);
+			SF_LEFT_SBD(newSurface)   = SF_LEFT_SBD(theSurface);
+			/*Setzen der PolylineInformationen:*/
+			SF_NMB_OF_POLYLINES(newSurface) = 0;
+			SF_POLYLINES(newSurface) = NULL;
+			
+			thePolylineCycle = RS_PL_ZKLN(theRealSurface);
+			if(thePolylineCycle == NULL)
+			{
+				PrintErrorMessage('E',"SplitSurface","theRealSurface has no polylinecycle");
+				return(1);
+			}
+			lauf_plz = 0;
+			while(thePolylineCycle != NULL)
+			{
+				lauf_plz++;
+				SF_NMB_OF_POLYLINES(newSurface) += PLZ_NMB_OF_POLYLINES(thePolylineCycle);
+				
+				/*Einbauen der Polylines von thePolylineCycle in newSurface->Polylines*/
+				/* qwert */
+				lauf_sfce_polyline = PLZ_POLYLINES(thePolylineCycle);
+				anfang = lauf_sfce_polyline;
+				numberofpolylinesofpolylinecycle = 0;
+				while(lauf_sfce_polyline != NULL)
+				{
+					numberofpolylinesofpolylinecycle++;
+					ende = lauf_sfce_polyline;
+					lauf_sfce_polyline = SFPL_NEXT(lauf_sfce_polyline);
+					
+				}
+				/*Probe*/
+				if(numberofpolylinesofpolylinecycle != PLZ_NMB_OF_POLYLINES(thePolylineCycle))
+				{
+					PrintErrorMessage('E',"SplitSurface","A PLZ has too much or too less polylines");
+					return (1);
+				}
+								
+				merkeSfceplanfang = SF_POLYLINES(newSurface);
+				SF_POLYLINES(newSurface) = anfang;
+				SFPL_NEXT(ende) = merkeSfceplanfang; 
+				/*durch diese 3 Zeilen wurden alle Polylines des betrachteten Poylinezyklus laufvar_plz
+				  an die  Stelle newSurface->Polylines gehaengt.*/
+				
+				
+				thePolylineCycle = PLZ_NEXT(thePolylineCycle);
+			}
+			if(lauf_plz != RS_NMB_OF_PL_ZKLN(theRealSurface))
+			{
+				PrintErrorMessage('E',"SplitSurface","theRealSurface has too much or too less polylinecycles");
+				return (1);
+			}
+			
+			/* SURFACEDETECTOR . . .  werden hier wieder mit Nullen initialisiert.*/
+			SF_NMB_OF_POLYLI_ZYK(newSurface) = 0;
+			SF_NMB_OF_REALSFCS(newSurface) =	0;
+			SF_POLYLI_ZYK(newSurface) = NULL;
+			SF_REALSFCS(newSurface) = NULL;
+			/* . . . SURFACEDETECTOR */
+		
+			
+			/* erzeuge dabei Dreiecke der neuen Surface mit GetMem TRIANGLE_TYP*/
+			SF_TRIAS(newSurface) = NULL;
+			SF_NMB_OF_TRIAS(newSurface) = 0;
+			SF_NMB_OF_POINTS(newSurface) = 0;
+			
+			/*erstes Dreieck der ersten Line*/
+			ersteline = PL_LINES_LINE(PL_LINES(SFPL_PL(SF_POLYLINES(newSurface))));
+			if((erstesdreieck = Find_SFE_Triangle(ersteline,newSurface)) == NULL)
+			{
+				PrintErrorMessage('E',"SplitSurface","did not get a triangle out of Find_SFE_Triangle");
+				return (1);
+			}
+			
+			nmb_of_triangles = 0;
+			/*New_Triangle_List ist global und wird in der Funktion FetchAllTriangles weiter gefuellt*/
+			if((New_Triangle_List = GetTmpMem(theHeap,sizeof(TRIANGLE_TYP))) == NULL)
+			{
+				PrintErrorMessage('E',"SplitSurface","got  no memory  for  New_Triangle_List !???!");
+				return(1);
+			}
+			TRIA_SFE_KN(New_Triangle_List) = erstesdreieck;
+			TRIA_NEXT(New_Triangle_List) = NULL;
+			nmb_of_triangles++;
+		
+			SFE_ORIENTATION_FLAG(erstesdreieck) = T;
+			/*In der folg. Fkt werden die statics New_Triangle_List und nmb_of_triangles upgedatet*/
+			if((rv = FetchAllTriangles(erstesdreieck)) != FERTIG) 
+			{
+				PrintErrorMessage('E',"SplitSurface","ret-value of FetchAllTriangles was not FERTIG");
+				return(1);
+			}
+			
+			SF_TRIAS(newSurface) = New_Triangle_List;
+			SF_NMB_OF_TRIAS(newSurface) = nmb_of_triangles;
+		
+			/*Update des Surfacenamens von newSurface und dessen Dreiecken - bei den Lines wird auf ein Update verzichtet*/
+			new_sfc_name = SF_NAME1(newSurface) + (SPLIT_SURFACE_DISTINGUISH*lauf_rs);
+			SF_NAME1(newSurface) = new_sfc_name;
+			lauf_sftria = SF_TRIAS(newSurface);
+			while(lauf_sftria != NULL)
+			{
+				SFE_IDF_0(TRIA_SFE_KN(lauf_sftria)) = new_sfc_name;
+				lauf_sftria = TRIA_NEXT(lauf_sftria);
+			}
+			
+			
+			dreiecksanzahl = dreiecksanzahl + nmb_of_triangles;
+			
+			/* NOT TODO :	SF_NMB_OF_POINTS(newSurface) WIRD in EvalNmbOfPointsOfSfcs ermittelt*/
+
+			/*Update of statistical Domain Info es gibt eine Surface mehr*/
+			NMB_OF_SFCES(DomainInfo_Pointer) = NMB_OF_SFCES(DomainInfo_Pointer) + 1;
+
+
+			/*  das noch prgrammieren*/
+			/*trage neue surfaces auch bei the_sbd ein*/
+			/* the_sbd->NMBsurfaces ++*/
+			if((neue_sfc_of_sbd = GetTmpMem(theHeap,sizeof(SFC_TYP))) == NULL)
+			{
+				PrintErrorMessage('E',"SplitSurface","got  no SFC_TYP memory  for  neue_sfc_of_sbd !???!");
+				return(1);
+			}
+			SFC_SURF(neue_sfc_of_sbd) = newSurface;
+			SFC_NEXT(neue_sfc_of_sbd) = SD_SFCS(the_sbd);/*vorne einfuegen*/
+			SD_SFCS(the_sbd) = neue_sfc_of_sbd; /*neue Wurzel*/
+			SD_NMB_OF_SFCS(the_sbd) = SD_NMB_OF_SFCS(the_sbd) + 1;
+		
+		
+		theRealSurface = RS_NEXT(theRealSurface);
+	}/* von laufe ueber die real surfaces und erzeuge neue Surfaces*/
+	
+	
+	
+	/*Dreiecksflags wieder zuruecksetzen.!!!
+	  alle Dreiecke der alten Surface muessen gesetzt sein
+	  wenn es noch ein unbesetztes gibt ==>  ERROR*/
+	lauf_tria = SF_TRIAS(theSurface);
+	while(lauf_tria != NULL)
+	{
+		if(SFE_ORIENTATION_FLAG(TRIA_SFE_KN(lauf_tria)) == F) /*wenn dieses Dreieck nicht verwendet wurde*/
+		{
+			PrintErrorMessage('E',"SplitSurface","settting back flags : tria found, which was not used");
+			return(1);
+		}
+		SFE_ORIENTATION_FLAG(TRIA_SFE_KN(lauf_tria)) = F;
+		lauf_tria = TRIA_NEXT(lauf_tria);
+	}
+	  
+	  
+	  
+	/* Probe ANzahl der Dreieck = ANzahl der ehemealigen Gesamtdereeckke ?*/
+	if(dreiecksanzahl != SF_NMB_OF_TRIAS(theSurface))
+	{
+		PrintErrorMessage('E',"SplitSurface","total number of trias of real surfaces does not match SF_NMB_OF_TRIAS of theSurface");
+		return(1);
+	}
+	
+	if(lauf_rs != SF_NMB_OF_REALSFCS(theSurface))
+	{
+		PrintErrorMessage('E',"SplitSurface","number of real surfaces does not match SF_NMB_OF_REALSFCS");
+		return(1);
+	}
+	
+	/*loesche die gesplittete Surface aus der liste von  the_sbd:*/ 
+	SD_NMB_OF_SFCS(the_sbd) = SD_NMB_OF_SFCS(the_sbd) - 1;
+	if(pred_sfc_OF_the_sbd == NULL) /*d.h. die gesplittete Surface ist die allererste der Sbd->SurfaceListe*/
+	{
+		/* vorne sind aber bereits mind. 2 neue Surfaces in der Liste durch das Split
+		  oder aber schon viel mehr ...*/
+		sf_of_sd_lauf = SD_SFCS(the_sbd);
+		if(sf_of_sd_lauf == NULL)
+		{
+			PrintErrorMessage('E',"SplitSurface","sf_of_sd_lauf became NULL but theSurface was not found yet");
+			return(1);
+		}
+		/*laufe von der allerersten SUrface bis zur unmittelbar vor theSurface liegenden Surface*/
+		while(SFC_SURF(SFC_NEXT(sf_of_sd_lauf)) != theSurface)
+		{
+			sf_of_sd_lauf = SFC_NEXT(sf_of_sd_lauf);
+			if(sf_of_sd_lauf == NULL)
+			{
+				PrintErrorMessage('E',"SplitSurface","sf_of_sd_lauf became NULL but theSurface was not found yet");
+				return(1);
+			}
+		}
+		SFC_NEXT(sf_of_sd_lauf) = SFC_NEXT(SFC_NEXT(sf_of_sd_lauf));/*loeschen der alten gesplitteten sf_lfv aus der Surfaceliste*/
+	}
+	else
+	{
+		SFC_NEXT(pred_sfc_OF_the_sbd) = SFC_NEXT(SFC_NEXT(pred_sfc_OF_the_sbd));
+	}
+	
+	/*loesche die gesplittete Surface aus der Gesamtliste :*/ 
+	NMB_OF_SFCES(DomainInfo_Pointer) = NMB_OF_SFCES(DomainInfo_Pointer) - 1;
+	if(thePredSurface == NULL) /*d.h. die gesplittete Surface ist die allererste der alten SurfaceListe*/
+	{
+		/*vorne sind aber bereits mind 2 neue Surfaces in der Liste durch das Split eingetragen worden
+		  oder aber schon viel mehr ...*/
+		sf_lfv2 = EXCHNG_TYP2_ROOT_SFC(ExchangeVar_2_Pointer);
+		if(sf_lfv2 == NULL)
+		{
+			PrintErrorMessage('E',"SplitSurface","sf_lfv2 became NULL but theSurface was not found yet");
+			return(1);
+		}
+		/*laufe von der allerersten SUrface bis zur unmittelbar vor theSurface liegenden Surface*/
+		while(SF_NEXT(sf_lfv2) != theSurface)
+		{
+			sf_lfv2 = SF_NEXT(sf_lfv2);
+			if(sf_lfv2 == NULL)
+			{
+				PrintErrorMessage('E',"SplitSurface","sf_lfv2 became NULL but theSurface was not found yet");
+				return(1);
+			}
+		}
+		SF_NEXT(sf_lfv2) = SF_NEXT(theSurface);/*loeschen der alten gesplitteten sf_lfv aus der Surfaceliste*/
+	}
+	else
+	{
+		SF_NEXT(thePredSurface) = SF_NEXT(theSurface);
+	}
+	
+	
+	return(0);
+}
+
+
+
+/****************************************************************************/
+/*D
    Ansys2lgmSurfaceDetecting - 	
 
    SYNOPSIS:
@@ -4530,9 +5890,120 @@ D*/
 /****************************************************************************/
 INT Ansys2lgmSurfaceDetecting()
 {
-	PrintErrorMessage('W',"Ansys2lgmSurfaceDetecting","is not implemented yet !");
+	SF_TYP *sf_lfv, *sf_lfv2, *pred_sf_lfv;
+	INT rw, nmb_of_plzs_polylines, llf;
+	PLZ_TYP *lauf_plz;
+	
+	pred_sf_lfv = NULL;
+	sf_lfv = EXCHNG_TYP2_ROOT_SFC(ExchangeVar_2_Pointer);
+	while(sf_lfv != NULL)
+	{
+			/*Doppelsurfaces werden nicht gesplittet, folglich ...*/
+		/* wenn Surface nur einen SfcIdentifier besitzt ...*/
+		if(SF_NAME2(sf_lfv) == 0.0)
+		{
+			/*erzeuge die Polylinezyklen zu dieser Surface ...*/
+			if((rw = Create_PLZN(sf_lfv)) == 1)
+			{
+				PrintErrorMessage('E',"Ansys2lgmSurfaceDetecting","did receive ERROR from Create_PLZN");
+				return (1);
+			}
+			
+			/*Ist genau  ein Polylinezyklus entstanden ?*/
+			if(SF_NMB_OF_POLYLI_ZYK(sf_lfv) == 1)
+			{
+				PrintErrorMessage('E',"Ansys2lgmSurfaceDetecting","did receive exactly 1 PLZ from Create_PLZN but sfce must have at least 2 PLZs or none of it");
+				return (1);
+			}
+			
+			/*Ist mehr als ein Polylinezyklus entstanden ?*/
+			if(SF_NMB_OF_POLYLI_ZYK(sf_lfv) >1)
+			{
+				/*Probe1: Die Surface darf keine Polylines mehr uber dirketen Zugriff besitzen
+				         sondern muss alle ihre Polylines in den Polylinzyklen haben !*/
+				if(SF_POLYLINES(sf_lfv) != NULL)
+				{
+					PrintErrorMessage('E',"Ansys2lgmSurfaceDetecting","Surface->Polylines ist not NULL after successfull Create_PLZN");
+					return (1);
+				}
+				
+				/*Probe 2: Die Polylines existieren aber noch in den Polylinezyklen ==>
+				           Nun erfolgt ein quantitative Ueberpruefung, ob noch alle da sind.*/
+				nmb_of_plzs_polylines = 0;
+				lauf_plz = SF_POLYLI_ZYK(sf_lfv);
+				if(lauf_plz == NULL)
+				{
+					PrintErrorMessage('E',"Ansys2lgmSurfaceDetecting","Surface should have Polylinecycle<s>");
+					return (1);
+				}
+				nmb_of_plzs_polylines += PLZ_NMB_OF_POLYLINES(lauf_plz);
+				for(llf = 2; llf<=SF_NMB_OF_POLYLI_ZYK(sf_lfv); llf++)
+				{
+					lauf_plz = PLZ_NEXT(lauf_plz);
+					if(lauf_plz == NULL)
+					{
+						PrintErrorMessage('E',"Ansys2lgmSurfaceDetecting","Surface doesnt have all Polylinecycle<s>");
+						return (1);
+					}
+					nmb_of_plzs_polylines += PLZ_NMB_OF_POLYLINES(lauf_plz);
+				}
+				if(nmb_of_plzs_polylines != SF_NMB_OF_POLYLINES(sf_lfv))
+				{
+					PrintErrorMessage('E',"Ansys2lgmSurfaceDetecting","Surface doesnt have as much Polylines as all its PLZs together");
+					return (1);
+				}
+				
+				/* GOON HERE */
+				/*erzeuge die RealSurfaces aus den Polylinezyklen*/
+				if((rw = Create_RealSurfaces(sf_lfv)) == 1) 
+				{
+					PrintErrorMessage('E',"Ansys2lgmSurfaceDetecting","did receive ERROR from Create_RealSurfaces");
+					return (1);
+				}
+				
+				/*Ist mehr als eine RealSurface entstanden ?*/
+				if(SF_NMB_OF_REALSFCS(sf_lfv) >1)
+				{
+					/*die wahren Surfaces koennen nun erzeugt werden*/
+					if((rw = SplitSurface(sf_lfv,pred_sf_lfv)) == 1)
+					{
+						PrintErrorMessage('E',"Ansys2lgmSurfaceDetecting","did receive ERROR from SplitSurface");
+						return (1);
+					}
+					/*in diesem Fall pred_sf_lfv belassen und nur sf_lfv fortschalten,
+					  da <Splitten> bedeutet, dass sf_lfv raúsfaellt --> also muss man den 
+					  Vorgaenger pred_sf_lfv als Predescessor belassen !*/
+				}
+				else
+				{
+					if (SF_NMB_OF_REALSFCS(sf_lfv) ==1)
+					{
+						PrintErrorMessage('E',"Ansys2lgmSurfaceDetecting","SF_NMB_OF_REALSFCS(sf_lfv) == 1 ->impossible");
+						return (1);
+					}
+					/* else OK:  es wurden eben keine Realsurfaces erstellt : Surface-Polylines wurden in
+					Create_RealSurfaces ugdedatet.*/
+					pred_sf_lfv = sf_lfv;
+				}
+			}
+			else
+			{
+				pred_sf_lfv = sf_lfv;
+			}
+		}
+		else
+		{
+			pred_sf_lfv = sf_lfv;
+		}
+		
+		sf_lfv = SF_NEXT(sf_lfv);/*wird im Gegensatz zu pred_sf_lfv stets fortgeschaltet
+		  							pred_sf_lfv im Falle SplitSurface nicht !!!*/
+	}/*von while*/
+
+
 	return(0);
 }
+
 
 
 
@@ -4717,7 +6188,7 @@ INT TriangleIDOrientations(SFE_KNOTEN_TYP *Muster_SFE)
 		Nachbar_SFE =  SFE_NGHB(Muster_SFE,kante);
 		if(Nachbar_SFE != NULL)
 		{
-			/*natuerlich nur wenn diesewr Nachbar nicht schon orientiert wurde ...*/
+			/*natuerlich nur wenn dieser Nachbar nicht schon orientiert wurde ...*/
 			if(SFE_ORIENTATION_FLAG(Nachbar_SFE) == F)
 			{
 				if((rv = Ausrichtung(Muster_SFE, Nachbar_SFE, kante)) == 1)
@@ -5274,11 +6745,14 @@ INT Ansys2lgm  ()
 		return (1);
     }
 
+if(USE_SFC_DETECTOR == 1)
+{
 	if((rv = Ansys2lgmSurfaceDetecting()) == 1)
     {
 		UserWrite("ERROR: in Ansys2lgm : Ansys2lgmSurfaceDetecting returns ERROR.");
 		return (1);
     }
+}
 
 	if((rv = Ansys2lgmCreateTriaOrientations()) == 1)
     {
