@@ -10370,11 +10370,6 @@ static INT PlotCommand (INT argc, char **argv)
     {
     case 'o' :
       sscanf(argv[i],"o %d", &OrderStrategy);
-      if (SetOrderStrategy(OrderStrategy)!=0)
-      {
-        PrintErrorMessage('E',"plot","invalid order mode");
-        return (CMDERRORCODE);
-      }
       break;
     case 'a' :
       all = YES;
@@ -10390,6 +10385,11 @@ static INT PlotCommand (INT argc, char **argv)
     default :
       break;
     }
+  if (SetOrderStrategy(OrderStrategy)!=0)
+  {
+    PrintErrorMessage('E',"plot","invalid order mode");
+    return (CMDERRORCODE);
+  }
 
   if (all)
   {
