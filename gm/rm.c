@@ -783,7 +783,7 @@ static REFRULE HexahedronRules[3] =
 #endif
 
 /* data for CVS */
-static char rcsid[] = "$Header$";
+static char rcsid[] = "$Header$ Dim=$DIM ";
 
 
 /****************************************************************************/
