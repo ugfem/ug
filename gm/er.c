@@ -1292,16 +1292,16 @@ static void FindPathForNeighbours (MGIO_RR_RULE *rule, SHORT myID, SHORT Status[
   for (i=0; i<MAX_SIDES_OF_ELEM; i++)
     if (((nbID=rule->sons[myID].nb[i])<FATHER_SIDE_OFFSET) && (Status[nbID]==NB_NOTDONE))
     {
-      INT *nbPath;
+      INT nbPath;
       SHORT nbPathDepth;
 
       /* copy myPath to nbPath */
-      *nbPath = rule->sons[myID].path;
+      nbPath = rule->sons[myID].path;
 
       /* complete nbPath */
-      nbPathDepth = PATHDEPTH(*nbPath);
-      SETNEXTSIDE(*nbPath,nbPathDepth,i);
-      SETPATHDEPTH(*nbPath,++nbPathDepth);
+      nbPathDepth = PATHDEPTH(nbPath);
+      SETNEXTSIDE(nbPath,nbPathDepth,i);
+      SETPATHDEPTH(nbPath,++nbPathDepth);
       Status[nbID] = NB_TOUCHED;
     }
 
