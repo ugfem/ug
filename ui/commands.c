@@ -64,7 +64,7 @@
 /* grid generatormodule */
 #include "ggm.h"
 #include "ggmain.h"
-#include "gg3d.h"
+/*#include "gg3d.h"*/
 
 /* grid manager module */
 #include "gm.h"
@@ -80,6 +80,7 @@
 /* graph module */
 #include "wpm.h"
 #include "wop.h"
+#include "connectuggrape.h"
 
 /* user interface module */
 #include "uginterface.h"
@@ -227,7 +228,7 @@ static INT theArrayVarID;
 static INT arraypathes_set=FALSE;
 
 /* RCS string */
-RCSID("$Header$",UG_RCS_STRING)
+static char RCS_ID("$Header$",UG_RCS_STRING);
 
 /****************************************************************************/
 /*D
@@ -4717,7 +4718,6 @@ static INT MarkCommand (INT argc, char **argv)
   /* following variables: keep type for sscanf */
   int id,idfrom,idto;
   INT Side;
-  float x[DIM];
 
         #ifdef ModelP
   if (!CONTEXT(me)) {
@@ -6646,10 +6646,12 @@ static INT MakeGridCommand  (INT argc, char **argv)
   GG_PARAM params;
   MESH *mesh;
   CoeffProcPtr coeff;
-  INT smooth;
-  DOUBLE h;
   long ElemID,m;
   float tmp;
+    #ifdef __THREEDIM__
+  INT smooth;
+  DOUBLE h;
+        #endif
 
         #ifdef ModelP
   if (me!=master) return (OKCODE);
@@ -8105,7 +8107,6 @@ static INT SetViewCommand (INT argc, char **argv)
 static INT DisplayViewCommand (INT argc, char **argv)
 {
   PICTURE *thePic;
-  INT i;
 
         #ifdef ModelP
   if (me!=master) return (OKCODE);
@@ -8132,7 +8133,7 @@ static INT DisplayViewCommand (INT argc, char **argv)
   case 1 :
     if (argv[1][0]!='s')
     {
-      sprintf(buffer,"(invalid option '%s')",argv[i]);
+      sprintf(buffer,"(invalid option '%s')",argv[1]);
       PrintHelp("vdisplay",HELPITEM,buffer);
       return (PARAMERRORCODE);
     }
@@ -12071,9 +12072,6 @@ static INT ReadArrayCommand (INT argc, char **argv)
 
 static INT ClearArrayCommand (INT argc, char **argv)
 {
-  INT i, Point[AR_NVAR_MAX];
-  int iValue;
-  float fValue;
   char name[128];
   ARRAY *theAR;
 
