@@ -1194,7 +1194,12 @@ WINDOWID X11_OpenOutput (const char *title, INT x, INT y, INT width, INT height,
   if (y<0) y=0;
   if ((x)+(width)>display_width) width = display_width-x;
   if ((y)+(height)+CONTROLSIZE>display_height) height = display_height-y-CONTROLSIZE;
-  if ((width<DEFAULTMINX)||(height<DEFAULTMINY)) {*error=1; return(0);}
+  if ((width<DEFAULTMINX)||(height<DEFAULTMINY))
+  {
+    *error=1;
+    UserWriteF("X11_OpenOutput(): ERROR window size too big for screen\n");
+    return(0);
+  }
 
   /* open new window */
   /* the following (char *) cast is ugly, but can not really be avoided, since the
@@ -1202,6 +1207,7 @@ WINDOWID X11_OpenOutput (const char *title, INT x, INT y, INT width, INT height,
   if (GraphOpen(gw,(char *)title,x,display_height-y-height-CONTROLSIZE,width+1,height+CONTROLSIZE+2)>0)
   {
     *error=1;
+    UserWriteF("X11_OpenOutput(): ERROR failed to open window\n");
     return(0);
   }
 
