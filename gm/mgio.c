@@ -937,28 +937,37 @@ int Write_CG_Points (int n, MGIO_CG_POINT *cg_point)
  */
 /****************************************************************************/
 
+#define MGIO_ECTRL(ge,ref,nf,nm)                                ((ge)&15) | (((nf)&31)<<4) | (((nm)&31)<<9)  | (((ref)&131071)<<14)
+#define MGIO_ECTRL_GE(ctrl)                                             ((ctrl)&15)
+#define MGIO_ECTRL_NF(ctrl)                                             (((ctrl)>>4)&31)
+#define MGIO_ECTRL_NM(ctrl)                                             (((ctrl)>>9)&31)
+#define MGIO_ECTRL_REF(ctrl)                                    (((ctrl)>>14)&131071)
+
 int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 {
   int i,j,k,m,s;
+  unsigned int ctrl;
   MGIO_CG_ELEMENT *pe;
 
   pe = cg_element;
   for (i=0; i<n; i++)
   {
     if ((*Read_mint)(1,intList)) return (1);
-    pe->ge = intList[0];
-    m=lge[pe->ge].nCorner+lge[pe->ge].nSide+1;
+    ctrl = intList[0];
+    pe->ge = MGIO_ECTRL_GE(ctrl);
+    m=lge[pe->ge].nCorner+lge[pe->ge].nSide;
     if ((*Read_mint)(m,intList)) return (1);
     s=0;
     for (j=0; j<lge[pe->ge].nCorner; j++)
       pe->cornerid[j] = intList[s++];
     for (j=0; j<lge[pe->ge].nSide; j++)
       pe->nbid[j] = intList[s++];
-    pe->refrule = intList[s++];
+    pe->refrule = MGIO_ECTRL_REF(ctrl)-1;
     if (pe->refrule>-1)
     {
-      if ((*Read_mint)(1,intList)) return (1);
-      pe->nmoved = intList[0];
+      newcornerid
+
+      pe->nmoved = MGIO_ECTRL_NM(ctrl);
       if (pe->nmoved>0)
       {
         if ((*Read_mint)(pe->nmoved,intList)) return (1);
@@ -1003,23 +1012,20 @@ int Read_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 
 int Write_CG_Elements (int n, MGIO_CG_ELEMENT *cg_element)
 {
-  int i,j,k,m,s,t;
+  int i,j,k,s,t;
   MGIO_CG_ELEMENT *pe;
 
-  m = 1+MGIO_MAX_CORNERS_OF_ELEM+MGIO_MAX_SIDES_OF_ELEM+2+MGIO_MAX_NEW_CORNERS;
   pe = cg_element;
   for (i=0; i<n; i++)
   {
     s=0;
-    intList[s++] = pe->ge;
+    intList[s++] = MGIO_ECTRL(pe->ge,pe->refrule+1,0,pe->nmoved);
     for (j=0; j<lge[pe->ge].nCorner; j++)
       intList[s++] = pe->cornerid[j];
     for (j=0; j<lge[pe->ge].nSide; j++)
       intList[s++] = pe->nbid[j];
-    intList[s++] = pe->refrule;
     if (pe->refrule>-1)
     {
-      intList[s++] = pe->nmoved;
       for (j=0; j<pe->nmoved; j++)
         intList[s++] = pe->mvcorner[j].id;
       t=0;
