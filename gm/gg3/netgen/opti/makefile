@@ -1,4 +1,4 @@
-objects = bfgs.o linsuch.o
+objects = bfgs.o linsearch.o
 include ../makefile.inc
 #
 #
