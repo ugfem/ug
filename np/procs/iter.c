@@ -2905,6 +2905,7 @@ static INT FFPostProcess (NP_ITER *theNP, INT level,
    .n    1 if error occured.
    D*/
 /****************************************************************************/
+
 static INT FFIter (NP_ITER *theNP, INT level,
                    VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
                    INT *result)
@@ -3031,7 +3032,6 @@ static INT FFConstruct (NP_BASE *theNP)
 
   return(0);
 }
-
 
 /****************************************************************************/
 /*D
@@ -3295,6 +3295,223 @@ static INT LmgcConstruct (NP_BASE *theNP)
 }
 
 /****************************************************************************/
+/*D
+   addmgc - numproc for additive linear multigrid cycle
+
+   DESCRIPTION:
+   This numproc executes
+
+   .vb
+   npinit <name> [$c <cor>] [$r <rhs>] [$A <mat>]
+       $S <smooth> $T <transfer>
+       [$b <baselevel>] [$g <gamma>] [$n1 <it>] [$n2 <it>]
+   .ve
+
+   .  $c~<cor> - correction vector
+   .  $r~<rhs> - right hand side vector
+   .  $A~<mat> - stiffness matrix
+   .  $T~<transfer> - transfer numproc
+   .  $S~<smooth> - numproc for smoother
+   .  $b~<baselevel> - baselevel where the base solver is called
+   .  $g~<gamma> - number of iterations of Lmgc per level (default gamma = 1)
+   .  $n1~<it> - number of iterations of the presmoother (default n1 = 1)
+   .  $n2~<it> - number of iteration of the postsmoother (default n2 = 1)
+
+   'npexecute <name> [$i] [$s] [$p]'
+
+   .  $i - preprocess
+   .  $s - solve
+   .  $p - postprocess
+
+   SEE ALSO:
+   ls
+   D*/
+/****************************************************************************/
+
+static INT AddmgcInit (NP_BASE *theNP, INT argc , char **argv)
+{
+  NP_LMGC *np;
+  INT i;
+  char pre[VALUELEN];
+
+  np = (NP_LMGC *) theNP;
+
+  np->t = ReadArgvVecDesc(theNP->mg,"t",argc,argv);
+  np->Transfer = (NP_TRANSFER *)
+                 ReadArgvNumProc(theNP->mg,"T",TRANSFER_CLASS_NAME,argc,argv);
+  for (i=1; i<argc; i++)
+    if (argv[i][0]=='S') {
+      if (sscanf(argv[i],"S %s",pre)!=1)
+        continue;
+      np->PreSmooth = (NP_ITER *)
+                      GetNumProcByName(theNP->mg,pre,ITER_CLASS_NAME);
+      break;
+    }
+  if (ReadArgvINT("n1",&(np->nu1),argc,argv))
+    np->nu1 = 1;
+  if (ReadArgvINT("n2",&(np->nu2),argc,argv))
+    np->nu2 = 0;
+  np->nu1 += np->nu2;
+  if (ReadArgvINT("b",&(np->baselevel),argc,argv))
+    np->baselevel = 0;
+
+  if (np->Transfer == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (np->PreSmooth == NULL) REP_ERR_RETURN(NP_NOT_ACTIVE);
+
+  return (NPIterInit(&np->iter,argc,argv));
+}
+
+static INT AddmgcDisplay (NP_BASE *theNP)
+{
+  NP_LMGC *np;
+
+  np = (NP_LMGC *) theNP;
+
+  NPIterDisplay(&np->iter);
+
+  UserWrite("configuration parameters:\n");
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"n1",(int)np->nu1);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"b",(int)np->baselevel);
+
+  if (np->Transfer != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"T",ENVITEM_NAME(np->Transfer));
+  else
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"T","---");
+  if (np->PreSmooth != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"smooth",ENVITEM_NAME(np->PreSmooth));
+  else
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"smooth","---");
+
+  if (np->t != NULL)
+    UserWriteF(DISPLAY_NP_FORMAT_SS,"t",ENVITEM_NAME(np->t));
+
+  return (0);
+}
+
+static INT AddmgcPreProcess  (NP_ITER *theNP, INT level,
+                              VECDATA_DESC *x, VECDATA_DESC *b, MATDATA_DESC *A,
+                              INT *baselevel, INT *result)
+{
+  NP_LMGC *np;
+  INT i;
+
+  np = (NP_LMGC *) theNP;
+
+  if (np->Transfer->PreProcess != NULL)
+    if ((*np->Transfer->PreProcess)
+          (np->Transfer,np->baselevel,level,x,b,A,result))
+      REP_ERR_RETURN(1);
+
+  if (np->PreSmooth->PreProcess != NULL)
+    for (i = np->baselevel; i <= level; i++)
+      if ((*np->PreSmooth->PreProcess)
+            (np->PreSmooth,i,x,b,A,baselevel,result))
+        REP_ERR_RETURN(1);
+
+  *baselevel = MIN(np->baselevel,level);
+
+  return (0);
+}
+
+static INT Addmgc (NP_ITER *theNP, INT level,
+                   VECDATA_DESC *c, VECDATA_DESC *b, MATDATA_DESC *A,
+                   INT *result)
+{
+  NP_LMGC *np;
+  MULTIGRID *theMG;
+  GRID *theGrid;
+  LRESULT lresult;
+  INT i;
+  INT mylevel;
+
+  /* store passed XXXDATA_DESCs */
+  NPIT_A(theNP) = A;
+  NPIT_c(theNP) = c;
+  NPIT_b(theNP) = b;
+
+  np = (NP_LMGC *) theNP;
+  theMG = theNP->base.mg;
+  for (mylevel=level; mylevel > np->baselevel ; mylevel--)
+    if ((*np->Transfer->RestrictDefect)
+          (np->Transfer,mylevel,b,b,A,Factor_One,result))
+      REP_ERR_RETURN(1);
+    #ifdef ModelP
+  if (a_vector_collect(theMG,np->baselevel,level,b)!=NUM_OK)
+    NP_RETURN(1,result[0]);
+  /* TODO: supress collect and consistent routines in smoother */
+    #endif
+  for (mylevel=np->baselevel; mylevel < level ; mylevel++) ;{
+    theGrid = GRID_ON_LEVEL(theMG,mylevel);
+    if (AllocVDFromVD(theMG,mylevel,mylevel,c,&np->t))
+      NP_RETURN(1,result[0]);
+    for (i=0; i<np->nu1; i++) {
+      if ((*np->PreSmooth->Iter)
+            (np->PreSmooth,mylevel,np->t,b,A,result))
+        REP_ERR_RETURN(1);
+      if (l_daxpy(theGrid,c,ACTIVE_CLASS,Factor_One,np->t) != NUM_OK)
+        NP_RETURN(1,result[0]);
+    }
+    FreeVD(theNP->base.mg,mylevel,mylevel,np->t);
+  }
+    #ifdef ModelP
+  if (a_vector_consistent(theMG,np->baselevel,level,np->t) != NUM_OK)
+    NP_RETURN(1,result[0]);
+    #endif
+  for (mylevel=np->baselevel+1; mylevel<level ; mylevel++) {
+    if (AllocVDFromVD(theMG,mylevel,mylevel,c,&np->t))
+      NP_RETURN(1,result[0]);
+    if ((*np->Transfer->InterpolateCorrection)
+          (np->Transfer,mylevel,np->t,c,A,Factor_One,result))
+      REP_ERR_RETURN(1);
+    if (l_daxpy(theGrid,c,EVERY_CLASS,Factor_One,np->t) != NUM_OK)
+      NP_RETURN(1,result[0]);
+    if (l_dmatmul_minus(theGrid,b,NEWDEF_CLASS,A,np->t,EVERY_CLASS)
+        != NUM_OK) NP_RETURN(1,result[0]);
+    FreeVD(theNP->base.mg,mylevel,mylevel,np->t);
+  }
+  return (0);
+}
+
+static INT AddmgcPostProcess (NP_ITER *theNP, INT level,
+                              VECDATA_DESC *x, VECDATA_DESC *b,
+                              MATDATA_DESC *A, INT *result)
+{
+  NP_LMGC *np;
+  INT i;
+
+  np = (NP_LMGC *) theNP;
+
+  if (np->Transfer->PostProcess != NULL)
+    if ((*np->Transfer->PostProcess)
+          (np->Transfer,np->baselevel,level,x,b,A,result))
+      REP_ERR_RETURN(1);
+
+  if (np->PreSmooth->PostProcess != NULL)
+    for (i = np->baselevel+1; i <= level; i++)
+      if ((*np->PreSmooth->PostProcess)
+            (np->PreSmooth,i,x,b,A,result))
+        REP_ERR_RETURN(1);
+
+  return (0);
+}
+
+static INT AddmgcConstruct (NP_BASE *theNP)
+{
+  NP_ITER *np;
+
+  theNP->Init = AddmgcInit;
+  theNP->Display = AddmgcDisplay;
+  theNP->Execute = NPIterExecute;
+
+  np = (NP_ITER *) theNP;
+  np->PreProcess = AddmgcPreProcess;
+  np->Iter = Addmgc;
+  np->PostProcess = AddmgcPostProcess;
+
+  return(0);
+}
+
+/****************************************************************************/
 /*
    InitIter	- Init this file
 
@@ -3347,6 +3564,8 @@ INT InitIter ()
   if (CreateClass(ITER_CLASS_NAME ".lu",sizeof(NP_SMOOTHER),LUConstruct))
     REP_ERR_RETURN (__LINE__);
   if (CreateClass(ITER_CLASS_NAME ".lmgc",sizeof(NP_LMGC),LmgcConstruct))
+    REP_ERR_RETURN (__LINE__);
+  if (CreateClass(ITER_CLASS_NAME ".addmgc",sizeof(NP_LMGC),AddmgcConstruct))
     REP_ERR_RETURN (__LINE__);
 
   for (i=0; i<MAX_VEC_COMP; i++) Factor_One[i] = 1.0;
