@@ -21313,7 +21313,7 @@ static void PWorkEW_Evaluate(void)
 		/* set endmarker & length */
 		DO_2c(p) = DO_NO_INST;
 		DO_inc(p1);
-		DO_2INT(p1) = (INT)p-(INT)p1+2;
+		DO_2INT(p1) = (INT)p-(INT)p1+2*sizeof(DRAWINGOBJ);
 
 		/* book slot */
 		WOP_Count[i]++;
@@ -21510,7 +21510,7 @@ static void PWorkEW_Evaluate_3D(void)
 		DO_2c(p) = DO_NO_INST;
 		DO_2INT(p2) = WOP_lastID;
 		DO_inc(p2);
-		DO_2INT(p2) = (INT)p-(INT)p1+1;
+		DO_2INT(p2) = (INT)p-(INT)p1+sizeof(DRAWINGOBJ);;
 
 		/* book slot */
 		WOP_Count[i]++;
@@ -21566,7 +21566,7 @@ static void PWorkNW_Evaluate(void)
 				 > WOP_CurrDoLen);
 		DO_2c(p) = DO_NO_INST;
 		DO_inc(p1);
-		DO_2INT(p1) = (INT)p-(INT)p1+2;
+		DO_2INT(p1) = (INT)p-(INT)p1+2*sizeof(DRAWINGOBJ);
 		WOP_Count[i]++;
 		WOP_Front[i] = (WOP_Front[i] + 1) % DO_BUFFER_SLOTS;
 	}
@@ -21621,7 +21621,7 @@ static void PWorkVW_Evaluate(void)
 				 > WOP_CurrDoLen);
 		DO_2c(p) = DO_NO_INST;
 		DO_inc(p1);
-		DO_2INT(p1) = (INT)p-(INT)p1+2;
+		DO_2INT(p1) = (INT)p-(INT)p1+2*sizeof(DRAWINGOBJ);
 		WOP_Count[i]++;
 		WOP_Front[i] = (WOP_Front[i] + 1) % DO_BUFFER_SLOTS;
 	}
@@ -21676,7 +21676,7 @@ static void PWorkET_Evaluate(void)
 				 > WOP_CurrDoLen);
 		DO_2c(p) = DO_NO_INST;
 		DO_inc(p1);
-		DO_2INT(p1) = (INT)p-(INT)p1+2;
+		DO_2INT(p1) = (INT)p-(INT)p1+2*sizeof(DRAWINGOBJ);
 		WOP_Count[i]++;
 		WOP_Front[i] = (WOP_Front[i] + 1) % DO_BUFFER_SLOTS;
 	}
