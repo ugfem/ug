@@ -81,7 +81,13 @@
 /****************************************************************************/
 
 /* for LexAlgDep */
+#ifdef __SGI__
+/* qsort on SGI cannot handle nontransitive compare routines,               */
+/* resulting by rounding errors                                             */
+#define ORDERRES                0           /* resolution for LexAlgDep					*/
+#else
 #define ORDERRES                1e-3    /* resolution for LexAlgDep					*/
+#endif
 
 /* for LexOrderVectorsInGrid */
 #define MATTABLESIZE    32
@@ -2465,6 +2471,8 @@ INT VectorPosition (VECTOR *theVector, COORD *position)
   INT theSide;
         #endif
 
+  ASSERT(theVector != NULL);
+
   switch(VTYPE(theVector))
   {
   case (NODEVECTOR) :
@@ -2824,13 +2832,6 @@ INT MaxNextVectorClass (GRID *theGrid, ELEMENT *theElement)
 /*                                                                          */
 /* Function:  LexCompare													*/
 /*                                                                          */
-/* Purpose:   defines a relation for lexicographic ordering                 */
-/*                                                                          */
-/* Input:                                                                                                                               */
-/*                                                                          */
-/* Output:    -                                                             */
-/*                                                                          */
-/*                                                                          */
 /****************************************************************************/
 
 static INT LexCompare (VECTOR **pvec1, VECTOR **pvec2)
@@ -2858,22 +2859,22 @@ static INT LexCompare (VECTOR **pvec1, VECTOR **pvec2)
   V_DIM_SUBTRACT(pv2,pv1,diff);
   V_DIM_SCALE(InvMeshSize,diff);
 
-  if (fabs(diff[Order[DIM-1]])<ORDERRES)
+  if (fabs(diff[Order[DIM-1]])<=ORDERRES)
   {
                 #ifdef __THREEDIM__
-    if (fabs(diff[Order[DIM-2]])<ORDERRES)
+    if (fabs(diff[Order[DIM-2]])<=ORDERRES)
     {
-      if (diff[Order[DIM-3]]>0.0) return (-Sign[DIM-3]);
+      if (pv2[Order[DIM-3]]>pv1[Order[DIM-3]]) return (-Sign[DIM-3]);
       else return ( Sign[DIM-3]);
     }
     else
                 #endif
-    if (diff[Order[DIM-2]]>0.0) return (-Sign[DIM-2]);
+    if (pv2[Order[DIM-2]]>pv1[Order[DIM-2]]) return (-Sign[DIM-2]);
     else return ( Sign[DIM-2]);
   }
   else
   {
-    if (diff[Order[DIM-1]]>0.0) return (-Sign[DIM-1]);
+    if (pv2[Order[DIM-1]]>pv1[Order[DIM-1]]) return (-Sign[DIM-1]);
     else return ( Sign[DIM-1]);
   }
 }
@@ -2943,7 +2944,8 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
   if ((table=GetMem(theHeap,entries*sizeof(NODE *),FROM_TOP))==NULL)
   {
     Release(theHeap,FROM_TOP);
-    PrintErrorMessage('E',"LexOrderVectorsInGrid","could not allocate memory from the MGHeap");
+    PrintErrorMessage('E',"LexOrderVectorsInGrid",
+                      "could not allocate memory from the MGHeap");
     return (2);
   }
   if (which==0) return (99);
@@ -2951,6 +2953,7 @@ INT LexOrderVectorsInGrid (GRID *theGrid, const INT *order, const INT *sign, INT
   takeSkip        = which & GM_TAKE_SKIP;
   takeNonSkip     = which & GM_TAKE_NONSKIP;
 
+  ASSERT(entries == NVEC(theGrid));
   /* fill array of pointers to nodes */
   entries = 0;
   for (theVec=FIRSTVECTOR(theGrid); theVec!=NULL; theVec=SUCCVC(theVec))
