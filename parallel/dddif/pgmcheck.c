@@ -268,7 +268,17 @@ INT CheckNodePrio (ELEMENT *theElement, NODE *theNode)
 
   if (dddctrl.nodeData)
     if (NVECTOR(theNode) != NULL)
+    {
       nerrors += CheckVectorPrio(theElement,NVECTOR(theNode));
+#ifdef __PERIODIC_BOUNDARY__
+      if (PRIO(theNode) > PRIO(NVECTOR(theNode)) && GHOSTPRIO(PRIO(NVECTOR(theNode))))
+      {
+        UserWriteF("NODE=" ID_FMTX " ERROR: WRONG PRIO of VEC" VINDEX_FMTX,
+                   ID_PRTX(theNode),VINDEX_PRTX(NVECTOR(theNode)));
+        nerrors++;
+      }
+#endif
+    }
 
   return(nerrors);
 }

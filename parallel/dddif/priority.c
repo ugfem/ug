@@ -57,7 +57,13 @@
                       (THEFLAG(e)) ? PrioVGhost : (USED(e)) ?              \
                       PrioHGhost : (assert(0),0))
 
-/* macros for setting object priorities with related objects */
+#ifdef __PERIODIC_BOUNDARY__
+/* to set correct priority of periodic vectors having master nodes */
+#define SETPRIOPV SETPRIO
+#else
+#define SETPRIOPV SETPRIOX
+#endif
+
 /* macros for setting object priorities with related objects */
 #define NODE_PRIORITY_SET(g,n,prio)                                          \
   {                                                                    \
@@ -66,7 +72,7 @@
                                                                              \
     if (VEC_DEF_IN_OBJ_OF_GRID(g,NODEVEC))                           \
       if (NVECTOR(n) != NULL)                                      \
-        SETPRIOX(NVECTOR(n),prio);                               \
+        SETPRIOPV(NVECTOR(n),prio);                              \
   }
 
 #ifdef __TWODIM__

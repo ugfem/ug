@@ -34,6 +34,7 @@
 #include "parallel.h"
 #include "general.h"
 #include "ugm.h"
+#include "evm.h"
 #include "ugdevices.h"
 
 /****************************************************************************/
@@ -303,6 +304,109 @@ static int CreateDD(MULTIGRID *theMG, INT level, int hor_boxes, int vert_boxes )
   PartitionElementsForDD(theGrid, hor_boxes, vert_boxes );
 }
 
+static int BalanceBS (GRID *theGrid,  INT Procs)
+{
+  ELEMENT *theElement;
+  DOUBLE_VECTOR pog,c;
+  INT i,nrcorners;
+
+  c[0] = 9.0;
+  c[1] = 12.4;
+  c[2] = 50.0;
+
+  UserWriteF("BalanceBS: level=%d onto %d procs\n",GLEVEL(theGrid),procs);
+
+  for (theElement=FIRSTELEMENT(theGrid); theElement!=NULL;
+       theElement=SUCCE(theElement))
+  {
+    PARTITION(theElement) = 0;
+
+    V_DIM_CLEAR(pog);
+
+    nrcorners = CORNERS_OF_ELEM(theElement);
+    for( i=0; i<nrcorners; i++ )
+    {
+      V_DIM_ADD(pog,CVECT(MYVERTEX(CORNER(theElement,i))),pog);
+    }
+    V_DIM_SCALE(1.0/nrcorners,pog);
+
+    switch (Procs)
+    {
+    case 1 :
+      break;
+
+    case 2 :
+      if (pog[0] > c[0])
+        PARTITION(theElement) += 1;
+      break;
+
+    case 4 :
+      if (pog[0] > c[0])
+        PARTITION(theElement) += 1;
+      if (pog[1] > c[1])
+        PARTITION(theElement) += 2;
+      break;
+
+    case 8 :
+      if (pog[0] > c[0])
+        PARTITION(theElement) += 1;
+      if (pog[1] > c[1])
+        PARTITION(theElement) += 2;
+      if (pog[2] > c[2])
+        PARTITION(theElement) += 4;
+      break;
+
+    case 12 :
+      if (pog[0] > c[0])
+        PARTITION(theElement) += 1;
+      if (pog[1] > c[1])
+        PARTITION(theElement) += 2;
+      if (pog[2] > 47.6)
+        PARTITION(theElement) += 4;
+      if (pog[2] > 52.4)
+        PARTITION(theElement) += 4;
+      break;
+
+    case 24 :
+      if (pog[0] > c[0])
+        PARTITION(theElement) += 1;
+      if (pog[1] > 2.4)
+        PARTITION(theElement) += 2;
+      if (pog[1] > 7.4)
+        PARTITION(theElement) += 2;
+      if (pog[1] > 22.4)
+        PARTITION(theElement) += 2;
+      if (pog[2] > 47.6)
+        PARTITION(theElement) += 8;
+      if (pog[2] > 52.4)
+        PARTITION(theElement) += 8;
+      break;
+
+    default :
+      assert(0);
+    }
+
+#ifdef Debug
+    UserWriteF(PFMT "BalanceBS: pog0=%lf p=%d\n",me,pog[0],PARTITION(theElement));
+#endif
+  }
+
+  return(0);
+}
+
+static int MGBalanceBS (MULTIGRID *theMG,  INT Procs, INT from, INT to)
+{
+  INT i;
+
+  for (i=from; i<=to; i++)
+  {
+    GRID *theGrid = GRID_ON_LEVEL(theMG,i);
+    if (BalanceBS(theGrid,Procs)) return(1);
+  }
+
+  return(0);
+}
+
 /****************************************************************************/
 /*
    lbs -  interface for simple or special load balancing functionality
@@ -328,6 +432,7 @@ void lbs (char *argv, MULTIGRID *theMG)
   mode = param = fromlevel = tolevel = 0;
 
   n = sscanf(argv,"%d %d %d",&param,&fromlevel,&tolevel);
+
   UserWriteF(PFMT "lbs() param=%d",me,param);
   if (n > 1)
     UserWriteF(" fromlevel=%d",fromlevel);
@@ -424,6 +529,20 @@ void lbs (char *argv, MULTIGRID *theMG)
     fromlevel = TOPLEVEL(theMG);
     CreateDD(theMG,fromlevel,hor_boxes,vert_boxes);
     break;
+
+  case (7) :
+  {
+    INT Procs = procs;
+
+    if (sscanf(argv,"%d %d %d %d",&param,&Procs,&fromlevel,&tolevel) != 4) break;
+
+    assert(fromlevel>=0 && tolevel<=TOPLEVEL(theMG));
+    Procs = MIN(Procs,procs);
+
+    MGBalanceBS(theMG,Procs,fromlevel,tolevel);
+
+    break;
+  }
 
   default : break;
   }

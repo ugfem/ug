@@ -816,6 +816,10 @@ int TransferGridFromLevel (MULTIGRID *theMG, INT level)
   }
     #endif
 
+        #ifdef __PERIODIC_BOUNDARY__
+  if (MGSetPerVecCount(theMG)) assert(0);
+        #endif
+
   /* send new destination to ghost elements */
   UpdateGhostDests(theMG);
 
