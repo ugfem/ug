@@ -54,7 +54,7 @@ appl2 ()
 	then
 		ugmake ns2da
 	fi
-    if test -d $UGROOT/../scalar2d
+    if test -d $UGROOT/../scalar
 	then
 		ugmake scalar2d
 	fi
