@@ -695,56 +695,59 @@ NODE *CreateMidNode (GRID *theGrid, ELEMENT *theElement, INT edge, NODE *after)
   theVertex = NULL;
 
   /* allocate vertex */
-  if ((OBJT(theElement)==BEOBJ))
+  if (OBJT(v0) == BVOBJ && OBJT(v1) == BVOBJ)
   {
     moved = 0;
-    if (OBJT(v0) == BVOBJ && OBJT(v1) == BVOBJ)
-      for (vs0=VSEG(v0); vs0!=NULL; vs0=NEXTSEG(vs0))
-        for (vs1=VSEG(v1); vs1!=NULL; vs1=NEXTSEG(vs1))
-          if (VS_PATCH(vs0) == VS_PATCH(vs1))
+    /* check if boundary vertex */
+    for (vs0=VSEG(v0); vs0!=NULL; vs0=NEXTSEG(vs0))
+    {
+      thePatch = VS_PATCH(vs0);
+      for (vs1=VSEG(v1); vs1!=NULL; vs1=NEXTSEG(vs1))
+        if (VS_PATCH(vs1) == thePatch)
+        {
+          if (theVertex == NULL)
           {
-            if (theVertex == NULL)
-            {
-              theVertex = CreateBoundaryVertex(theGrid,NULL);
-              if (theVertex == NULL) return(NULL);
-              global = CVECT(theVertex);
-              local = LCVECT(theVertex);
-              V_DIM_LINCOMB(0.5, CVECT(v0), 0.5, CVECT(v1), global);
-              V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theElement,co0),
-                            0.5, LOCAL_COORD_OF_ELEM(theElement,co1),
-                            local);
-            }
-            if ((vs = CreateVertexSegment(theGrid,theVertex)) == NULL)
-            {
-              DisposeVertex(theGrid, theVertex);
-              return(NULL);
-            }
-            thePatch = VS_PATCH(vs) = VS_PATCH(vs0);
-            lambda = PVECT(vs);
-            lambda0 = PVECT(vs0);
-            lambda1 = PVECT(vs1);
-            for (i=0; i<DIM-1; i++)
-              lambda[i] = 0.5 * lambda0[i] + 0.5*lambda1[i];
-            if (Patch_local2global(thePatch,lambda,bnd_global))
-              return (NULL);
-
-            /* check if moved */
-            V_DIM_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
-            if (diff > MAX_PAR_DIST)
-            {
-              if (moved)
-                PrintErrorMessage('W',"CreateMidNode",
-                                  "inconsistent boundary parametrisation");
-              else
-              {
-                SETMOVED(theVertex,1);
-                moved = 1;
-                CORNER_COORDINATES(theElement,n,x);
-              }
-              V_DIM_COPY(bnd_global,global);
-              GlobalToLocal(n,(const COORD **)x,global,local);
-            }
+            theVertex = CreateBoundaryVertex(theGrid,NULL);
+            if (theVertex == NULL) return(NULL);
+            global = CVECT(theVertex);
+            local = LCVECT(theVertex);
+            V_DIM_LINCOMB(0.5, CVECT(v0), 0.5, CVECT(v1), global);
+            V_DIM_LINCOMB(0.5, LOCAL_COORD_OF_ELEM(theElement,co0),
+                          0.5, LOCAL_COORD_OF_ELEM(theElement,co1),
+                          local);
           }
+          if ((vs = CreateVertexSegment(theGrid,theVertex)) == NULL)
+          {
+            DisposeVertex(theGrid, theVertex);
+            return(NULL);
+          }
+          VS_PATCH(vs) = thePatch;
+          lambda = PVECT(vs);
+          lambda0 = PVECT(vs0);
+          lambda1 = PVECT(vs1);
+          for (i=0; i<DIM-1; i++)
+            lambda[i] = 0.5 * lambda0[i] + 0.5 * lambda1[i];
+          if (Patch_local2global(thePatch,lambda,bnd_global))
+            return (NULL);
+
+          /* check if moved */
+          V_DIM_EUKLIDNORM_OF_DIFF(bnd_global,global,diff);
+          if (diff > MAX_PAR_DIST)
+          {
+            if (moved)
+              PrintErrorMessage('W',"CreateMidNode",
+                                "inconsistent boundary parametrization");
+            else
+            {
+              SETMOVED(theVertex,1);
+              moved = 1;
+              CORNER_COORDINATES(theElement,n,x);
+            }
+            V_DIM_COPY(bnd_global,global);
+            GlobalToLocal(n,(const COORD **)x,global,local);
+          }
+        }
+    }
   }
 
   if (theVertex == NULL)
@@ -1456,7 +1459,7 @@ INT CreateSonElementSide (GRID *theGrid, ELEMENT *theElement, INT side,
     assert(vs!=NULL);
     lambda = PARAMPTR(newSide,i);
     for (j=0; j<DIM-1; j++)
-      lambda[j] =  LAMBDA(vs,j);
+      lambda[j] = LAMBDA(vs,j);
   }
 
   return(GM_OK);
