@@ -1818,6 +1818,7 @@ static int Scatter_DiagMatrixComp (DDD_OBJ obj, void *data)
   mtype = DMTP(vtype);
   m = VSTART(pv);
   sm = MD_SM(ConsMatrix, mtype);
+  vecskip = VECSKIP(pv);
   if (sm!=NULL)
   {
     for (i=0; i<sm->nrows; i++)
