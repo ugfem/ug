@@ -43,6 +43,8 @@
 #include "formats.h"
 #include "dio.h"
 #include "newton.h"
+#include "ts.h"
+#include "bdf.h"
 
 #include "initnp.h"
 #include "numproc.h"
@@ -95,6 +97,14 @@ INT InitNumerics ()
     return (err);
   }
   if ((err=InitNewtonSolver())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+  if ((err=InitBDFSolver())!=0) {
+    SetHiWrd(err,__LINE__);
+    return (err);
+  }
+  if ((err=InitTSolver())!=0) {
     SetHiWrd(err,__LINE__);
     return (err);
   }
