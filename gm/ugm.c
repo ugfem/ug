@@ -5559,6 +5559,7 @@ INT InsertMesh (MULTIGRID *theMG, MESH *theMesh)
     }
     for (i=theMesh->nBndP; i<nv; i++)
     {
+      theGrid = GRID_ON_LEVEL(theMG,theMesh->VertexLevel[i]);
       VList[i] = CreateInnerVertex(theGrid);
       V_DIM_COPY(theMesh->Position[i-theMesh->nBndP],CVECT(VList[i]));
       maxlevel = MAX(maxlevel,theMesh->VertexLevel[i]);
