@@ -62,11 +62,12 @@ sub gnuplot
 		# command 'start'
 		if ($command eq "start")
 		{
-			if(@_!=1)
+			if(@_!=1 && @_!=2)
         	{   
-        	    die "ERROR: provide no option with 'start'\n";
+        	    die "ERROR: provide no or one (command line) option with 'start'\n";
         	} 
-        	$pid=open(IN,"| gnuplot");
+        	if (@_==1) { $pid=open(IN,"| gnuplot"); }
+        	if (@_==2) { $pid=open(IN,"| gnuplot $_[1]"); }
 			$fh=select(IN);
 			$|=1;
 			select($fh);
