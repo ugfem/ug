@@ -225,7 +225,7 @@ echo Width Height $width $height     out
 sleep 2
 set MPEGNAME = "$base".mpg
 echo Name of MPEG-movie: $base.mpg
-mpeg -a $fs -b $iout -h $width -v $height $PF $base. -s $MPEGNAME
+mpeg -f 1 -g 1 -a $fs -b $iout -h $width -v $height $PF $base. -s $MPEGNAME
 #
 #  Clean up and instruct the user.
 #
