@@ -1365,6 +1365,8 @@ static INT BCGSPreProcess (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, 
 
   np = (NP_BCGS *) theNP;
 
+  np->baselevel = MIN(*baselevel,level);
+
   if (np->Iter!=NULL)
     if (np->Iter->PreProcess != NULL)
       if ((*np->Iter->PreProcess)(np->Iter,level,x,b,A,baselevel,result)) REP_ERR_RETURN(1);
@@ -1531,7 +1533,10 @@ static INT BCGSSolver (NP_LINEAR_SOLVER *theNP, INT level, VECDATA_DESC *x, VECD
     if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->t,np->t,np->weight,&tt)!=NUM_OK) REP_ERR_RETURN (1);
     if (s_ddot_sv (theNP->base.mg,np->baselevel,level,np->s,np->t,np->weight,&(np->omega))!=NUM_OK) REP_ERR_RETURN (1);
     PRINTDEBUG(np,2,("tt %f omega %f\n",tt,np->omega));
-    np->omega /= tt;
+    if (tt!=0.0)
+      np->omega /= tt;
+    else
+      np->omega /= 1.0E-20;
     for (j=0; j<VD_NCOMP(x); j++) scal[j]=np->omega;
     if (s_daxpy (theNP->base.mg,np->baselevel,level,x,scal,np->q)!= NUM_OK) REP_ERR_RETURN (1);
     if (s_dcopy(theNP->base.mg,np->baselevel,level,b,np->s)!= NUM_OK) NP_RETURN(1,lresult->error_code);
