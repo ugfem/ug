@@ -173,11 +173,11 @@ typedef char PATCH;
 
 /* functionallity for BVPs (BoundaryValueProblems) */
 BVP               *GetBVP                                                       (char *name);
-INT        BVP_GetBVPDesc                               (BVP *theBVP, BVP_DESC *theBVPDesc);
+INT        BVP_SetBVPDesc                               (BVP *theBVP, BVP_DESC *theBVPDesc);
 PATCH     *BVP_GetFirstPatch                            (BVP *theBVP);
 PATCH     *BVP_GetNextPatch                             (BVP *theBVP, PATCH *thePatch);
-INT                BVP_GetCoeffFct                                      (BVP *theBVP, INT n, CoeffProcPtr *CoeffFct);
-INT                BVP_GetUserFct                                       (BVP *theBVP, INT n, UserProcPtr *UserFct);
+INT                BVP_SetCoeffFct                                      (BVP *theBVP, INT n, CoeffProcPtr *CoeffFct);
+INT                BVP_SetUserFct                                       (BVP *theBVP, INT n, UserProcPtr *UserFct);
 
 /* functionallity for PATCHes */
 INT                Patch_GetPatchDesc                           (PATCH *thePatch, PATCH_DESC *thePatchDesc);

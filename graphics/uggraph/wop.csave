@@ -5166,7 +5166,7 @@ static INT EW_BndOfElemEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     n = CORNERS_OF_ELEM(theElement);
     for (i=0; i<n; i++)
     {
-      if (SIDE(theElement,i) == NULL) continue;
+      if (INNER_SIDE(theElement,i)) continue;
       DO_2c(theDO) = DO_LINE; DO_inc(theDO)
       DO_2l(theDO) = EE2D_Color[COLOR_BND]; DO_inc(theDO);
       V2_COPY(x[i],DO_2Cp(theDO)); DO_inc_n(theDO,2);
@@ -5223,6 +5223,22 @@ static INT EW_PreProcess_VecMatBnd2D (PICTURE *thePicture, WORK *theWork)
 
   return (0);
 }
+
+
+
+/* will disappear next week */
+
+
+#define SIDE(p,i)               ((ELEMENTSIDE *) (p)->ge.refs[side_offset[TAG(p)]+(i)])
+#define SET_SIDE(p,i,q)         (p)->ge.refs[side_offset[TAG(p)]+(i)] = q
+#define SUCCS(p)                (p)->succ
+#define PREDS(p)                (p)->pred
+#define ES_PATCH(p)             (p)->thePatch
+#define PARAM(p,i,j)    (p)->lambda[i][j]
+#define PARAMPTR(p,i)   (p)->lambda[i]
+
+
+
 
 static INT EW_BndEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
@@ -5678,157 +5694,8 @@ static INT VW_VecEval (VECTOR *vec, DRAWINGOBJ *theDO)
 
 static INT EXT_PreProcess_InsertNode2D (PICTURE *thePicture, WORK *theWork)
 {
-  struct GridPlotObj2D *theGpo;
-  OUTPUTDEVICE *theOD;
-  MULTIGRID *theMG;
-  GRID *theGrid;
-  COORD pt[2],pos[2];
-  COORD deltaScreen[2],zeroScreen[2],deltaVector[2],zeroVector[2],npos[2],apos[2],epos[2];
-  COORD delta,len,l,la,le,dl,MyLambda,dist2,bestDist2,sdl;
-  INT found;
-  BVP *theBVP;
-  BVP_DESC theBVPDesc;
-  PATCH *thePatch, *MyPatch;
-  PATCH_DESC thePatchDesc, MyPatchDesc;
+  return (1);
 
-  theGpo = &(PIC_PO(thePicture)->theGpo);
-  theOD  = PIC_OUTPUTDEV(thePicture);
-  theMG  = PO_MG(PIC_PO(thePicture));
-
-  if (TOPLEVEL(theMG)!=0)
-  {
-    PrintErrorMessage('E',"work","you can only insert nodes if TOPLEVEL=0");
-    return (1);
-  }
-
-  /* get BVP description */
-  theBVP = MG_BVP(theMG);
-  if (BVP_GetBVPDesc(theBVP,&theBVPDesc))
-  {
-    PrintErrorMessage('E',"MoveBoundaryNode","cannot evaluate BVP");
-    return(1);
-  }
-
-  NE_IDColor                                      = theOD->black;
-  NE_BndMarkerColor                       = theOD->red;
-  NE_CornerMarkerColor            = theOD->red;
-  NE_InnerMarkerColor             = theOD->red;
-  NE_InnerMarker                          = FILLED_CIRCLE_MARKER;
-  NE_BndMarker                            = FILLED_SQUARE_MARKER;
-  NE_CornerMarker                         = FILLED_RHOMBUS_MARKER;
-  NE_InnerMarkerSize                      = 4;
-  NE_BndMarkerSize                        = 4;
-  NE_CornerMarkerSize                     = 4;
-
-  NE_EvalNodeID                           = 0;
-  NE_EvalInnerNode                        = 0;
-  NE_EvalBndNode                          = 0;
-  if (theGpo->PlotNodeID == YES)
-    NE_EvalNodeID                   = 1;
-  if (theGpo->PlotNodes == YES)
-  {
-    NE_EvalInnerNode                = 1;
-    NE_EvalBndNode                  = 1;
-  }
-
-  /* get physical position */
-  pt[0] = W_INSERTNODE_WORK(theWork)->PixelX;
-  pt[1] = W_INSERTNODE_WORK(theWork)->PixelY;
-  V2_TRAFOM3_V2(pt,InvObsTrafo,pos);
-
-  if (W_ID(theWork)==INSERTBNDNODE_WORK)
-  {
-    /* find position on boundary and create node and vertex */
-
-    /* get physical zone around the MouseLocation corresponding to a zone of SMALLPIX pixels */
-    zeroScreen[0] = 0.0;    deltaScreen[0] = SMALLPIX;
-    zeroScreen[1] = 0.0;    deltaScreen[1] = SMALLPIX;
-    V2_TRAFOM3_V2(zeroScreen,InvObsTrafo,zeroVector);
-    V2_TRAFOM3_V2(deltaScreen,InvObsTrafo,deltaVector);
-    V2_EUKLIDNORM_OF_DIFF(deltaVector,zeroVector,delta);
-
-    theGrid = GRID_ON_LEVEL(theMG,0);
-
-    /* find position */
-    found = FALSE;
-    bestDist2 = MAX_C;
-    for (thePatch=BVP_GetFirstPatch(theBVP); thePatch!=NULL; thePatch=BVP_GetNextPatch(theBVP,thePatch))
-    {
-      if (Patch_GetPatchDesc(thePatch,&thePatchDesc)) return (1);
-      dl = (PATCH_LCVECT(thePatchDesc,1)[0]-PATCH_LCVECT(thePatchDesc,0)[0])/ PATCH_RES(thePatchDesc);
-
-      /* scan resolution points of the segment */
-      for (la=PATCH_LCVECT(thePatchDesc,1)[0]; la<=PATCH_LCVECT(thePatchDesc,0)[0]; la+=dl)
-      {
-        le = MIN(la+dl,PATCH_LCVECT(thePatchDesc,0)[0]);
-        if (Patch_local2global(thePatch,&la,apos)) return (1);
-        if (Patch_local2global(thePatch,&le,epos)) return (1);
-        V2_EUKLIDNORM_OF_DIFF(apos,epos,len);
-        sdl = len/MAX(10.0*len/delta,1.0);
-
-        /* scan part between resolution points */
-        for (l=la; l<le; l+=sdl)
-        {
-          if (Patch_local2global(thePatch,&l,npos)) return (1);
-          if ((fabs(npos[0]-pos[0]) < delta) &&  (fabs(npos[1]-pos[1]) < delta))
-          {
-            /* we are inside the pixel resolution */
-            found = TRUE;
-            V2_SUBTRACT(npos,pos,npos);
-            V2_SCALAR_PRODUCT(npos,npos,dist2);
-
-            /* find best fit */
-            if (dist2<bestDist2)
-            {
-              bestDist2 = dist2;
-              MyLambda  = l;
-              MyPatch = thePatch;
-            }
-          }
-          else if (found)
-          {
-            /* exit loops */
-            la = PATCH_LCVECT(thePatchDesc,0)[0] + dl;
-            thePatch=NULL;
-            break;
-          }
-        }
-      }
-    }
-    if (found)
-    {
-      /* we will insert a boundary vertex */
-      if (Patch_GetPatchDesc(MyPatch,&MyPatchDesc)) return (1);
-      if (InsertBoundaryNode(theMG,PATCH_ID(MyPatchDesc),&MyLambda)!=GM_OK)
-      {
-        PrintErrorMessage('E',"work","inserting a boundary node failed");
-        return (1);
-      }
-      UserWriteF("inserted boundary vertex on patch (ID=%d) at lambda = %g\n",(int)PATCH_ID(MyPatchDesc),(float)MyLambda);
-    }
-    else
-    {
-      PrintErrorMessage('E',"work","no matching boundary point found");
-      return (1);
-    }
-
-    NE_Node = FIRSTNODE(GRID_ON_LEVEL(theMG,0));
-  }
-  else if (W_ID(theWork)==INSERTNODE_WORK)
-  {
-    /* find position and create node and vertex */
-    if (InsertInnerNode(theMG,pos)!=GM_OK)
-    {
-      PrintErrorMessage('E',"work","inserting an inner node failed");
-      return (1);
-    }
-    NE_Node = FIRSTNODE(GRID_ON_LEVEL(theMG,0));
-    UserWriteF("inserted inner node at (%g,%g)\n",XC(MYVERTEX(NE_Node)),YC(MYVERTEX(NE_Node)));
-  }
-  else
-    return (1);
-
-  return (0);
 }
 
 static INT EXT_PreProcess_MoveNode2D (PICTURE *thePicture, WORK *theWork)
@@ -9932,7 +9799,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
       if (OBJT(theElement)==BEOBJ)
       {
         for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-          if (SIDE(theElement,i)==NULL)
+          if (INNER_SIDE(theElement,i))
             Viewable[i] = 0;
       }
       else
@@ -10020,7 +9887,7 @@ static INT EW_ElementEval3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
       if (OBJT(theElement)==BEOBJ)
       {
         for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-          if (SIDE(theElement,i)==NULL)
+          if (INNER_SIDE(theElement,i))
             Viewable[i] = 0;
       }
       else
@@ -10307,7 +10174,7 @@ static INT EW_ECutBnd3D (ELEMENT *theElement, DRAWINGOBJ *theDO)
     /* plot boundary side intersection with cut-plane */
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
     {
-      if (SIDE(theElement,i)==NULL) continue;
+      if (INNER_SIDE(theElement,i)) continue;
 
       /* determine line arising from intersection of side with cut plane */
       switch (TAG(theElement)) {

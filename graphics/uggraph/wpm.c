@@ -2562,7 +2562,7 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   int iValue;
 
   theGpo = &(thePlotObj->theGpo);
-  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  if (BVP_SetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
   V2_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
   PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
 
@@ -2820,7 +2820,7 @@ static INT InitVecMat_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
 
   theVmo = &(thePlotObj->theVmo);
   theFormat = MGFORMAT(PO_MG(thePlotObj));
-  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  if (BVP_SetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
   V2_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
   PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
 
@@ -3097,7 +3097,7 @@ static INT InitScalarFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
   float fValue;
 
   theEspo = &(thePlotObj->theEspo);
-  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  if (BVP_SetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
   V2_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
   PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
   ret = ACTIVE;
@@ -3320,7 +3320,7 @@ static INT InitVectorFieldPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **a
   float fValue;
 
   theEvpo = &(thePlotObj->theEvpo);
-  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  if (BVP_SetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
   V2_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
   PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
   ret = ACTIVE;
@@ -3509,7 +3509,7 @@ static INT InitLinePlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   char buffer[128];
 
   theLpo = &(thePlotObj->theLpo);
-  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  if (BVP_SetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
   PO_MIDPOINT(thePlotObj)[0] = PO_MIDPOINT(thePlotObj)[1] = 0.5;
   PO_RADIUS(thePlotObj) = 0.70711;
   ret = ACTIVE;
@@ -3718,7 +3718,7 @@ static INT InitDomainPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   int iValue;
 
   theDpo = &(thePlotObj->theDpo);
-  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  if (BVP_SetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
   V3_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
   PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
 
@@ -3806,7 +3806,7 @@ static INT InitGridObject_3D (PLOTOBJ *thePlotObj, INT argc, char **argv)
   char buffer[64];
 
   theGpo = &(thePlotObj->theGpo);
-  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  if (BVP_SetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
   V3_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
   PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
   theCut = &(theGpo->theCut);
@@ -3948,7 +3948,7 @@ static INT InitScalarFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
   float fValue;
 
   theEspo = &(thePlotObj->theEspo);
-  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  if (BVP_SetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
   V3_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
   PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
   theCut = &(theEspo->theCut);
@@ -4145,7 +4145,7 @@ static INT InitVectorFieldPlotObject_3D (PLOTOBJ *thePlotObj, INT argc, char **a
   float fValue;
 
   theEvpo = &(thePlotObj->theEvpo);
-  if (BVP_GetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
+  if (BVP_SetBVPDesc(MG_BVP(PO_MG(thePlotObj)),&theBVPDesc)) return (NOT_INIT);
   V3_COPY(BVPD_MIDPOINT(theBVPDesc),PO_MIDPOINT(thePlotObj))
   PO_RADIUS(thePlotObj) = BVPD_RADIUS(theBVPDesc);
   theCut = &(theEvpo->theCut);

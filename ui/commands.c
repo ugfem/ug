@@ -9445,7 +9445,7 @@ static INT ReInitCommand (INT argc, char **argv)
     }
     theBVP = MG_BVP(theMG);
   }
-  if (BVP_GetBVPDesc(theBVP,&theBVPDesc)) return (CMDERRORCODE);
+  if (BVP_SetBVPDesc(theBVP,&theBVPDesc)) return (CMDERRORCODE);
 
   /* reconfigure the problem */
   if (BVPD_CONFIG(theBVPDesc)==NULL)

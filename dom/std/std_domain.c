@@ -764,7 +764,7 @@ BVP     *GetBVP (char *name)
    D*/
 /****************************************************************************/
 
-INT BVP_GetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
+INT BVP_SetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
 {
   STD_BVP *theBVP;
   INT i;
@@ -812,7 +812,7 @@ INT BVP_GetBVPDesc (BVP *aBVP, BVP_DESC *theBVPDesc)
    D*/
 /****************************************************************************/
 
-INT BVP_GetCoeffFct (BVP *aBVP, INT n, CoeffProcPtr *CoeffFct)
+INT BVP_SetCoeffFct (BVP *aBVP, INT n, CoeffProcPtr *CoeffFct)
 {
   STD_BVP *theBVP;
   INT i;
@@ -854,7 +854,7 @@ INT BVP_GetCoeffFct (BVP *aBVP, INT n, CoeffProcPtr *CoeffFct)
    D*/
 /****************************************************************************/
 
-INT BVP_GetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
+INT BVP_SetUserFct (BVP *aBVP, INT n, UserProcPtr *UserFct)
 {
   STD_BVP *theBVP;
   INT i;
