@@ -2174,7 +2174,6 @@ INT ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
 
   return(NUM_OK);
 }
-
 /****************************************************************************/
 /*D
    PrintVector - print a vector list
@@ -2199,10 +2198,10 @@ INT ConvertMatrix (GRID *theGrid, HEAP *theHeap, INT MarkKey,
    D*/
 /****************************************************************************/
 
-INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
+INT PrintVectorX (const GRID *g, const VECDATA_DESC *X, INT vclass, INT vnclass, PrintfProcPtr Printf)
 {
   char buffer[256];
-  VECTOR *v;
+  const VECTOR *v;
   DOUBLE_VECTOR pos;
   INT comp,ncomp,i,j;
   INT info=FALSE;
@@ -2234,15 +2233,21 @@ INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
     for (j=0; j<ncomp; j++)
       i += sprintf(buffer+i,"%d ",((VECSKIP(v) & (1<<j))!=0));
     i += sprintf(buffer+i,"n %d t %d o %d\n",VNEW(v),VTYPE(v),VOTYPE(v));
-    UserWrite(buffer);
+    Printf(buffer);
 
-    PRINTDEBUG(np,1,("%d: %s",me,buffer));
+    if (Printf!=PrintDebug)
+      PRINTDEBUG(np,1,("%d: %s",me,buffer));
 
   }
 
-  if (info) UserWrite("NOTE: Geometrical information not available for some vectors.\n");
+  if (info) Printf("NOTE: Geometrical information not available for some vectors.\n");
 
   return(NUM_OK);
+}
+
+INT PrintVector (GRID *g, VECDATA_DESC *X, INT vclass, INT vnclass)
+{
+  return (PrintVectorX(g,X,vclass,vnclass,UserWriteF));
 }
 
 INT PrintSVector (MULTIGRID *mg, VECDATA_DESC *X)
