@@ -209,8 +209,10 @@ static Thread_t *rmThread=NULL;   /* random communication process			*/
 /****************************************************************************/
 
 #define ABS(i) (((i)<0) ? (-(i)) : (i))
+#ifndef __CC__
 int GetMailProcess (void);
 int SendMail (int destId, int reqId, void *data, int size);
+#endif
 
 /****************************************************************************/
 /*                                                                          */
@@ -528,7 +530,9 @@ int InitPPIF (int *argcp, char ***argvp)
   /* initialize random communication */
   InitSem(&rmSema,1);
   for (i=0; i<MAILBOXSIZE; i++) rm[i].used = 0;
+        #ifndef __CC__
   if ((rmThread=StartThread(GetMailProcess,RMSTACKSIZE,&error,0))==NULL) return(1);
+        #endif
 
   return(0);
 }
@@ -538,8 +542,11 @@ void ExitPPIF (void)
   int dummy;
 
   rmExit = 1;
+
+        #ifndef __CC__
   SendMail(me,1,&dummy,sizeof(int));
   WaitThread(rmThread,&dummy);
+        #endif
 
   return;
 }
@@ -911,7 +918,7 @@ int InfoARecv (VChannelPtr vc, msgid m)
 
 VChannelPtr ConnASync (int p, int id)
 {
-  int i,error;
+  int i, error;
   Slot_t *mySlot;
 
   /* find free slot */
@@ -1105,6 +1112,9 @@ int InfoADisc (VChannelPtr vc)
 /*                                                                          */
 /****************************************************************************/
 
+#ifndef __CC__
+/* PARIX on Parsytec CC machines doesn't support PutMessage/GetMessage */
+
 int SendMail (int destId, int reqId, void *data, int size)
 {
   if (size>RAND_MSG_SIZE) return(1);
@@ -1210,6 +1220,9 @@ int GetMail (int *sourceId, int *reqId, void *data, int *size)
   Signal(&rmSema);
   return(0);
 }
+
+#endif
+
 
 
 /****************************************************************************/
