@@ -2497,7 +2497,6 @@ INT InsertInnerNode (MULTIGRID *theMG, COORD *pos)
   return(GM_OK);
 }
 
-
 /****************************************************************************/
 /*D
    InsertBoundaryNode - Insert a boundary node
@@ -2525,9 +2524,14 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
   GRID *theGrid;
   NODE *theNode;
   VERTEX *theVertex;
-  VSEGMENT *vsnew1;
+  VSEGMENT *vs,*vs1;
+  PATCH *Patch;
   PATCH_DESC thePatchDesc;
-  INT i;
+  INT i,j,k,from,to,npc,node_on_edge;
+  COORD *from_local,*to_local;
+  COORD diff1[DIM_OF_BND],diff2[DIM_OF_BND],local[DIM_OF_BND];
+  COORD_VECTOR global;
+  DOUBLE val,lambda;
 
   /* check level */
   if ((CURRENTLEVEL(theMG)!=0)||(TOPLEVEL(theMG)!=0))
@@ -2543,14 +2547,6 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
     return(GM_ERROR);
   }
   if(Patch_GetPatchDesc(thePatch,&thePatchDesc)) return(GM_ERROR);
-
-  /* check range of parameters
-     for(i=0; i<DIM_OF_BND; i++)
-          if ( (pos[0]<PATCH_LCVECT(thePatchDesc,0)[i])||(pos[0]> PATCH_LCVECT(thePatchDesc,1)[i]) )
-          {
-                  PrintErrorMessage('E',"InsertBoundaryNodeFromPatch","parameter not in range of segment");
-                  return(GM_ERROR);
-          }*/
 
   /* check distance from corner */
   if (DIM==2)
@@ -2568,6 +2564,15 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
   }
   if (DIM==3)
   {
+    /* TODO: check range of parameters
+       for(i=0; i<DIM_OF_BND; i++)
+          if ((pos[0]<PATCH_LCVECT(thePatchDesc,0)[i])||(pos[0]> PATCH_LCVECT(thePatchDesc,1)[i]) )
+                {
+                  PrintErrorMessage('E',"InsertBoundaryNodeFromPatch",
+                                                        "parameter not in range of segment");
+                  return(GM_ERROR);
+                }*/
+
     i = 0;
     if (fabs(pos[0]-PATCH_LCVECT(thePatchDesc,0)[0])+fabs(pos[1]-PATCH_LCVECT(thePatchDesc,0)[1])<SMALL_C) i = 1;
     if (fabs(pos[0]-PATCH_LCVECT(thePatchDesc,1)[0])+fabs(pos[1]-PATCH_LCVECT(thePatchDesc,1)[1])<SMALL_C) i = 1;
@@ -2584,29 +2589,111 @@ INT InsertBoundaryNodeFromPatch (MULTIGRID *theMG, PATCH *thePatch, COORD *pos)
   theVertex = CreateBoundaryVertex(theGrid,NULL);
   if (theVertex==NULL)
   {
-    PrintErrorMessage('E',"InsertBoundaryNodeFromPatch","cannot create vertex");
+    PrintErrorMessage('E',"InsertBoundaryNodeFromPatch",
+                      "cannot create vertex");
     return(GM_ERROR);
   }
+  Patch_local2global(thePatch,pos,CVECT(theVertex));
+
   theNode = CreateNode(theGrid,NULL);
   if (theNode==NULL)
   {
     DisposeVertex(theGrid,theVertex);
-    PrintErrorMessage('E',"InsertBoundaryNodeFromPatch","cannot create node");
+    PrintErrorMessage('E',"InsertBoundaryNodeFromPatch",
+                      "cannot create node");
     return(GM_ERROR);
   }
-  vsnew1 = CreateVertexSegment(theGrid,theVertex);
-  if (vsnew1==NULL)
+
+  vs = CreateVertexSegment(theGrid,theVertex);
+  if (vs==NULL)
   {
     DisposeVertex(theGrid,theVertex);
     DisposeNode(theGrid, theNode);
-    PrintErrorMessage('E',"InsertBoundaryNodeFromPatch","cannot create vertexsegment");
+    PrintErrorMessage('E',"InsertBoundaryNodeFromPatch",
+                      "cannot create vertexsegment");
     return(GM_ERROR);
   }
 
   /* fill data into the first vertexsegment */
-  for(i=0; i<DIM_OF_BND; i++) LAMBDA(vsnew1,i) =  pos[i];
-  Patch_local2global(thePatch,pos,CVECT(theVertex));
-  VS_PATCH(vsnew1) = thePatch;
+  for(i=0; i<DIM_OF_BND; i++) LAMBDA(vs,i) =      pos[i];
+  VS_PATCH(vs) = thePatch;
+
+  /* check if the vertex is on an edge of the patch */
+  node_on_edge = FALSE;
+  npc = PATCH_N(thePatchDesc);
+  from = PATCH_CID(thePatchDesc,npc-1);
+  from_local =  PATCH_LCVECT(thePatchDesc,npc-1);
+  for (k=0; k<npc; k++ )
+  {
+    to = PATCH_CID(thePatchDesc,k);
+    to_local = PATCH_LCVECT(thePatchDesc,k);
+    V2_SUBTRACT (from_local,to_local,diff1);
+    V2_SUBTRACT (from_local,pos,diff2);
+    V2_VECTOR_PRODUCT(diff1,diff2,val);
+    if (ABS(val) < SMALL_C * 1000)
+    {
+      node_on_edge = TRUE;
+      break;
+    }
+    from = to;
+    from_local =  to_local;
+  }
+
+  /* fill vertex segment list */
+  if (node_on_edge)
+  {
+    V2_EUKLIDNORM(diff1,val);
+    V2_EUKLIDNORM(diff2,lambda);
+    lambda /= val;
+    for (vs1 = VSEG(theMG->corners[from]); vs1 != NULL; vs1 = NEXTSEG(vs1))
+    {
+      Patch = VS_PATCH(vs1);
+      if (Patch == thePatch)
+        continue;
+      if(Patch_GetPatchDesc(Patch,&thePatchDesc)) return(GM_ERROR);
+      npc = PATCH_N(thePatchDesc);
+      for (i=0; i < npc; i++)
+        if (to == PATCH_CID(thePatchDesc,i))
+        {
+          for (k=0; k < npc; k++)
+            if (from == PATCH_CID(thePatchDesc,k))
+            {
+              vs = CreateVertexSegment(theGrid,theVertex);
+              if (vs==NULL)
+              {
+                DisposeVertex(theGrid,theVertex);
+                DisposeNode(theGrid, theNode);
+                PrintErrorMessage('E',
+                                  "InsertBoundaryNodeFromPatch",
+                                  "cannot create vertexsegment");
+                return(GM_ERROR);
+              }
+              V2_LINCOMB(lambda,PATCH_LCVECT(thePatchDesc,k),
+                         (1.0-lambda),PATCH_LCVECT(thePatchDesc,i),
+                         local);
+              Patch_local2global(Patch,local,global);
+              V3_EUKLIDNORM_OF_DIFF(CVECT(theVertex),global,val);
+
+              /* fill data into the vertex segment */
+              if (ABS(val) < SMALL_C * 1000)
+              {
+                for(i=0; i<DIM_OF_BND; i++)
+                  LAMBDA(vs,i) = local[i];
+                VS_PATCH(vs) = Patch;
+              }
+              else
+              {
+                Patch_global2local(Patch,CVECT(theVertex),local);
+                for(i=0; i<DIM_OF_BND; i++)
+                  LAMBDA(vs,i) = local[i];
+                VS_PATCH(vs) = Patch;
+              }
+              break;
+            }
+          break;
+        }
+    }
+  }
 
   /* fill data into node/vertex */
   INDEX(theNode) = 0;
@@ -2620,7 +2707,6 @@ INT InsertBoundaryNode (MULTIGRID *theMG, INT patch_id, COORD *pos)
 {
   NODE *theNode;
   VERTEX *theVertex;
-  VSEGMENT *vsnew1;
   BVP *theBVP;
   BVP_DESC theBVPDesc;
   PATCH *thePatch;
