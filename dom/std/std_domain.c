@@ -855,6 +855,10 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
   if (Mesh == NULL)
     return ((BVP*)theBVP);
 
+        #ifdef ModelP
+  if (me == 0) {
+        #endif
+
   nPPatch = nLPatch = nTPatch = 0;
 
   /* read numbers of objects */
@@ -905,6 +909,16 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
 
   PRINTDEBUG(dom,1,("nCorners %d nBndP %d nElem %d nPPatch %d nTPatch %d\n",
                     nCorners,nBndP,nElem,nPPatch,nTPatch));
+
+
+        #ifdef ModelP
+}
+Broadcast(&nCorners,sizeof(INT));
+Broadcast(&nBndP,sizeof(INT));
+Broadcast(&nElem,sizeof(INT));
+Broadcast(&nPPatch,sizeof(INT));
+Broadcast(&nTPatch,sizeof(INT));
+        #endif
 
   /* fill mesh and patch infos */
   if (Mesh!=NULL) {
@@ -964,7 +978,6 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
     Mesh->ElementLevel = NULL;
     Mesh->ElementPrio = NULL;
   }
-
   theBVP->patches = (PATCH **)
                     GetFreelistMemory(Heap,(nPPatch+nTPatch)*sizeof(PATCH *));
   for (i=0; i<nPPatch; i++)
@@ -980,6 +993,10 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
 
   PRINTDEBUG(dom,1,("nCorners %d nBndP %d nElem %d nPPatch %d nTPatch %d\n",
                     nCorners,nBndP,nElem,nPPatch,nTPatch));
+
+        #ifdef ModelP
+  if (me == 0) {
+        #endif
 
   stream = fileopen(theBVP->bnd_file,"r");
   if (stream == NULL) return(NULL);
@@ -1019,6 +1036,18 @@ static BVP *Init_MarcBVP (STD_BVP *theBVP, HEAP *Heap, MESH *Mesh, INT MarkKey)
 #       ifdef __THREEDIM__
   RepairMesh(Heap,MarkKey,Mesh);
 #       endif
+
+
+        #ifdef ModelP
+}
+for (i=0; i<nPPatch; i++)
+  Broadcast(theBVP->patches[i],sizeof(M0_PATCH));
+for (i=nPPatch; i<nPPatch+nLPatch; i++)
+  Broadcast(theBVP->patches[i],sizeof(M1_PATCH));
+for (i=nPPatch+nLPatch; i<nPPatch+nLPatch+nTPatch; i++)
+  Broadcast(theBVP->patches[i],sizeof(M2_PATCH));
+        #endif
+
 
   STD_BVP_NDOMPART(theBVP) = 1;
   STD_BVP_NSUBDOM(theBVP) = 1;
