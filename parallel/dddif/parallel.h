@@ -268,8 +268,8 @@ void    InitCurrMG              (MULTIGRID *);
 void    ddd_pstat                       (char *);
 void    ddd_DisplayContext      (void);
 
-/* from test.c */
-void ddd_test (char *argv, MULTIGRID *theMG);
+/* from lb.c */
+void lbs (char *argv, MULTIGRID *theMG);
 
 /* from handler.c */
 void            ddd_HandlerInit (INT);

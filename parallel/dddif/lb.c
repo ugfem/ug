@@ -322,7 +322,7 @@ void lbs (char *argv, MULTIGRID *theMG)
   mode = param = fromlevel = tolevel = 0;
 
   n = sscanf(argv,"%d %d %d",&param,&fromlevel,&tolevel);
-  UserWriteF(PFMT "ddd_test() param=%d",me,param);
+  UserWriteF(PFMT "lbs() param=%d",me,param);
   if (n > 1)
     UserWriteF(" fromlevel=%d",fromlevel);
   if (n > 2)
@@ -374,7 +374,7 @@ void lbs (char *argv, MULTIGRID *theMG)
     }
     else
     {
-      UserWriteF(PFMT "ddd_test(): gridlevel=%d not "
+      UserWriteF(PFMT "lbs(): gridlevel=%d not "
                  "existent!\n",me,fromlevel);
     }
     break;
@@ -395,7 +395,7 @@ void lbs (char *argv, MULTIGRID *theMG)
     }
     else
     {
-      UserWriteF(PFMT "ddd_test(): ERROR fromlevel=%d "
+      UserWriteF(PFMT "lbs(): ERROR fromlevel=%d "
                  "tolevel=%d\n",me,fromlevel,tolevel);
     }
     break;
@@ -407,7 +407,7 @@ void lbs (char *argv, MULTIGRID *theMG)
     if (n < 4) fromlevel = CURRENTLEVEL(theMG);
     if (n < 3) break;
     CollectElementsNearSegment(theMG,fromlevel,tolevel,part,dest);
-    UserWriteF(PFMT "ddd_test() collect from part %d to proc %d\n",
+    UserWriteF(PFMT "lbs() collect from part %d to proc %d\n",
                me,part,dest);
     break;
 
