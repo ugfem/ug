@@ -31,6 +31,7 @@ list_options_arch()
 	echo "             LINUXIA64 (set ARCH = LINUXIA64)";
 	echo "             LINUXPPC (set ARCH = LINUXPPC)";	
 	echo "             MACOSX (set ARCH = MACOSX)";
+	echo "             MACCLUSTER (set ARCH = MACCLUSTER)";
 	echo "             MACOSXSERVER (set ARCH = MACOSXSERVER)";
 	echo "             MKLINUX (set ARCH = MKLINUX)";
 	echo "             NECSX4 (set ARCH = NECSX4)";

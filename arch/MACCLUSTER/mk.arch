@@ -9,9 +9,9 @@ ARCH_TYPE     = __MACOSX__
 
 ARCH_MAKE     = gnumake
 ARCH_PMAKE     = gnumake -j 4
-ARCH_CC       = mpicc
+ARCH_CC       = mpiCC
 ARCH_C++      = mpicxx
-ARCH_LINK     = mpicc
+ARCH_LINK     = mpiCC
 ARCH_AR       = ugarranlib ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = ugmacosxpostlink $(PROGNAME) $(APPL)
