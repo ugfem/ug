@@ -53,10 +53,16 @@
 
 typedef DOUBLE COORD_BND_VECTOR[DIM_OF_BND];
 
+#define BVP_STANDARD                     0
+#define BVP_MARC                         1
+
 #define POINT_PATCH_TYPE                 0
 #define LINE_PATCH_TYPE                  1
 #define LINEAR_PATCH_TYPE                2
 #define PARAMETRIC_PATCH_TYPE            3
+#define MARC_0_PATCH_TYPE                4
+#define MARC_1_PATCH_TYPE                5
+#define MARC_2_PATCH_TYPE                6
 
 /* macros for DOMAIN_PART_INFO */
 #define DPI_SD2P_PTR(p)                                 ((p)->sd2part)
@@ -302,6 +308,7 @@ struct std_BoundaryValueProblem
   ENVDIR d;
 
   /* init */
+  INT type;
   struct domain *Domain;             /* domain pointer                      */
   struct problem *Problem;           /* problem pointer                     */
 
@@ -408,12 +415,31 @@ struct parameter_patch {
   void *bc_data;                                    /* additional data for bnd cond             */
 };
 
-struct bnd_ps {
+struct marc_0_patch {
 
-  INT patch_id;                     /* associated patch                     */
-  void *data;                                           /* e.g. global coordiantes, pointers...	*/
-  INT n;                            /* number of arguments                  */
-  COORD_BND_VECTOR local[1];        /* parameter range                      */
+  INT type;                         /* patch type                           */
+  INT state;                        /* fixed/bnd of free/free               */
+  INT id;                           /* unique id used for load/store        */
+
+  DOUBLE pos[3];                        /* position                             */
+};
+
+struct marc_1_patch {
+
+  INT type;                         /* patch type                           */
+  INT state;                        /* fixed/bnd of free/free               */
+  INT id;                           /* unique id used for load/store        */
+
+  INT p[2];                             /* line between two points              */
+};
+
+struct marc_2_patch {
+
+  INT type;                         /* patch type                           */
+  INT state;                        /* fixed/bnd of free/free               */
+  INT id;                           /* unique id used for load/store        */
+
+  INT p[3];                             /* triangle of three points             */
 };
 
 union patch {
@@ -424,7 +450,30 @@ union patch {
     #ifdef __THREEDIM__
   struct line_patch li;
         #endif
+  struct marc_0_patch m0;
+  struct marc_1_patch m1;
+  struct marc_2_patch m2;
 } ;
+
+struct bnd_ps {
+
+  INT patch_id;                     /* associated patch                     */
+  void *data;                                           /* e.g. global coordiantes, pointers...	*/
+  INT n;                            /* number of arguments                  */
+  COORD_BND_VECTOR local[1];        /* parameter range                      */
+};
+
+struct marc_bndp {
+
+  INT patch_id;                     /* associated patch                     */
+  DOUBLE pos[3];                                /* position                             */
+};
+
+struct marc_bnds {
+
+  INT patch_id;                     /* associated patch                     */
+  DOUBLE pos[3];                                /* position                             */
+};
 
 /*----------- typedef for structs ------------------------------------------*/
 
@@ -442,7 +491,12 @@ typedef struct point_patch POINT_PATCH;
 typedef struct line_patch LINE_PATCH;
 typedef struct linear_patch LINEAR_PATCH;
 typedef struct parameter_patch PARAMETER_PATCH;
+typedef struct marc_0_patch M0_PATCH;
+typedef struct marc_1_patch M1_PATCH;
+typedef struct marc_2_patch M2_PATCH;
 typedef struct bnd_ps BND_PS;
+typedef struct marc_bndp M_BNDP;
+typedef struct marc_bnds M_BNDS;
 
 /****************************************************************************/
 /*																			*/
@@ -498,6 +552,9 @@ BVP   *CreateBoundaryValueProblem (char *BVPname, BndCondProcPtr theBndCond,
                                    int numOfCoeffFct, CoeffProcPtr coeffs[],
                                    int numOfUserFct, UserProcPtr userfct[]);
 BVP       *CreateBVP                              (char *BVP, char *Domain, char *Problem);
+BVP   *Create_MarcBVP             (char *BVPname, BndCondProcPtr theBndCond,
+                                   int numOfCoeffFct, CoeffProcPtr coeffs[],
+                                   int numOfUserFct, UserProcPtr userfct[]);
 
 /* scanning of coordinates */
 INT   ReadAndPrintArgvPosition    (char *name, INT argc, char **argv, DOUBLE *pos);
