@@ -104,6 +104,9 @@ USING_UG_NAMESPACE
 /* local refinement hack */
 #undef _SCHALE_X_
 
+/* macro for controlling debugging output by conditions on objects */
+#define UGM_CDBG(x,y)
+
 /****************************************************************************/
 /*                                                                          */
 /* data structures used in this source file (exported data structures are   */
@@ -304,7 +307,8 @@ void * NS_DIM_PREFIX GetMemoryForObject_par (HEAP *theHeap, INT size, INT type)
   void *obj = GetFreelistMemory(theHeap, size);
 
         #ifdef ModelP
-  ConstructDDDObject(obj,size,type);
+  if (type!=MAOBJ && type!=COOBJ)
+    ConstructDDDObject(obj,size,type);
         #endif
 
   return obj;
@@ -343,7 +347,8 @@ void * NS_DIM_PREFIX GetMemoryForObjectNew (HEAP *theHeap, INT size, INT type)
         #endif
 
         #ifdef ModelP
-  ConstructDDDObject(obj,size,type);
+  if (type!=MAOBJ && type!=COOBJ)
+    ConstructDDDObject(obj,size,type);
         #endif
 
   return obj;
@@ -388,7 +393,8 @@ void NS_DIM_PREFIX DestructDDDObject(void *object, INT type)
 INT NS_DIM_PREFIX PutFreeObject_par (HEAP *theHeap, void *object, INT size, INT type)
 {
         #ifdef ModelP
-  DestructDDDObject(object,type);
+  if (type!=MAOBJ && type!=COOBJ)
+    DestructDDDObject(object,type);
         #endif
 
   return (PutFreelistMemory(theHeap, object, size));
@@ -399,7 +405,8 @@ INT NS_DIM_PREFIX PutFreeObjectNew (HEAP *theHeap, void *object, INT size, INT t
   INT err;
 
         #ifdef ModelP
-  DestructDDDObject(object,type);
+  if (type!=MAOBJ && type!=COOBJ)
+    DestructDDDObject(object,type);
         #endif
 
         #ifdef Debug
@@ -810,8 +817,10 @@ NODE * NS_DIM_PREFIX GetMidNode (ELEMENT *theElement, INT edge)
   if (theEdge == NULL) return(NULL);
   theNode = MIDNODE(theEdge);
   if (theNode == NULL) return(NULL);
+
+  /* this is a bad place for the following code (s.l. 981015) */
   theVertex = MYVERTEX(theNode);
-  if (VFATHER(theVertex) == NULL) {
+  if (theVertex!=NULL && VFATHER(theVertex) == NULL) {
     VFATHER(theVertex) = theElement;
     SETONEDGE(theVertex,edge);
     V_DIM_LINCOMB(0.5,
@@ -1162,23 +1171,6 @@ NODE * NS_DIM_PREFIX GetSideNode (ELEMENT *theElement, INT side)
   DOUBLE fac,*local;
   INT i,k,n;
 
-  /*
-     if (NSONS(theElement) != 0)
-     {
-      ELEMENT *SonList[MAX_SONS],*theSon;
-
-          if (GetAllSons(theElement,SonList) == GM_OK)
-              for (i=0; SonList[i]!=NULL; i++) {
-                      theSon = SonList[i];
-                          for (k=0; k<CORNERS_OF_ELEM(theSon); k++) {
-                              theNode = CORNER(theSon,k);
-                                  if (NTYPE(theNode) != SIDE_NODE) continue;
-                                  if (side == GetSideIDFromScratch(theSon,theNode))
-                                      return(theNode);
-                          }
-                  }
-     }
-   */
   n = 0;
   for (i=0; i<EDGES_OF_SIDE(theElement,side); i++) {
     theNode = GetMidNode(theElement,EDGE_OF_SIDE(theElement,side,i));
@@ -1249,30 +1241,194 @@ NODE * NS_DIM_PREFIX GetSideNode (ELEMENT *theElement, INT side)
  */
 /****************************************************************************/
 
-INT NS_DIM_PREFIX GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
+static int CountSideNodes (ELEMENT *e)
+{
+  int i,side;
+  NODE *n;
+
+  side = 0;
+  for (i=0; i<CORNERS_OF_ELEM(e); i++)
+  {
+    n = CORNER(e,i);
+    if (SIDETYPE(n)) side++;
+  }
+  return(side);
+}
+
+int GetSideIDFromScratchSpecialRule17Pyr (ELEMENT *theElement, NODE *theNode)
+{
+  int i,k,l,nodes,cnodes,snodes;
+  ELEMENT *f = EFATHER(theElement);
+  NODE *fnode,*enode;
+  int side = SIDES_OF_ELEM(f);
+
+        #ifdef Debug
+  assert(TAG(theElement)==PYRAMID);
+  snodes = cnodes = 0;
+  for (l=0; l<CORNERS_OF_ELEM(theElement); l++)
+  {
+    enode = CORNER(theElement,l);
+    if (CORNERTYPE(enode)) cnodes++;
+    if (SIDETYPE(enode)) snodes++;
+  }
+  assert(snodes == 1);
+  assert(cnodes == 4);
+        #endif
+
+  for (i=0; i<SIDES_OF_ELEM(f); i++)
+  {
+    nodes = 0;
+    for (k=0; k<CORNERS_OF_SIDE(f,i); k++)
+    {
+      fnode = CORNER(f,CORNER_OF_SIDE(f,i,k));
+      for (l=0; l<CORNERS_OF_ELEM(theElement); l++)
+      {
+        enode = CORNER(theElement,l);
+        if (enode == SONNODE(fnode)) nodes++;
+      }
+    }
+    assert(nodes==0 || nodes==2 || nodes==4);
+                #ifdef Debug
+    if (nodes == 0) side = i;
+                #else
+    if (nodes == 0) return(i);
+                #endif
+  }
+
+  assert(side<SIDES_OF_ELEM(f));
+  return(side);
+}
+
+
+int GetSideIDFromScratchSpecialRule22Tet (ELEMENT *theElement, NODE *theNode)
+{
+  int i,k,l,nodes,cnodes,mnodes,snodes,midnodes;
+  ELEMENT *f = EFATHER(theElement);
+  NODE *fnode,*enode;
+  EDGE *edge;
+  int side = SIDES_OF_ELEM(f);
+
+        #ifdef Debug
+  assert(TAG(theElement)==TETRAHEDRON);
+  snodes = cnodes = mnodes = 0;
+  for (l=0; l<CORNERS_OF_ELEM(theElement); l++)
+  {
+    enode = CORNER(theElement,l);
+    if (CORNERTYPE(enode)) cnodes++;
+    if (MIDTYPE(enode)) mnodes++;
+    if (SIDETYPE(enode)) snodes++;
+  }
+  assert(cnodes == 2);
+  assert(mnodes == 1);
+  assert(snodes == 1);
+        #endif
+
+  for (i=0; i<SIDES_OF_ELEM(f); i++)
+  {
+    nodes = 0;
+    midnodes = 0;
+    for (k=0; k<CORNERS_OF_SIDE(f,i); k++)
+    {
+      fnode = CORNER(f,CORNER_OF_SIDE(f,i,k));
+
+      edge = GetEdge(CORNER_OF_SIDE_PTR(f,i,k),
+                     CORNER_OF_SIDE_PTR(f,i,(k+1)%CORNERS_OF_SIDE(f,i)));
+      assert(edge != NULL);
+
+      for (l=0; l<CORNERS_OF_ELEM(theElement); l++)
+      {
+        enode = CORNER(theElement,l);
+        if (enode == SONNODE(fnode)) nodes++;
+        if (enode == MIDNODE(edge)) midnodes++;
+      }
+    }
+    assert(nodes==0 || nodes==1 || nodes==2 || nodes==4);
+                #ifdef Debug
+    if (nodes==0 && midnodes==1) side = i;
+                #else
+    if (nodes==0 && midnodes==1) return(i);
+                #endif
+  }
+
+  assert(side<SIDES_OF_ELEM(f));
+  return(side);
+}
+
+
+INT GetSideIDFromScratchSpecialRule (ELEMENT *theElement, NODE *theNode)
+{
+  int j,l,side;
+  ELEMENT *f = EFATHER(theElement);
+
+  assert(TAG(f)==HEXAHEDRON);
+  assert(ECLASS(theElement)==GREEN_CLASS);
+  assert(NSONS(f)==9 || NSONS(f)==11 || EHGHOST(theElement));
+
+  if (TAG(theElement)==PYRAMID)
+  {
+    return(GetSideIDFromScratchSpecialRule17Pyr(theElement,theNode));
+  }
+
+  assert(TAG(theElement)==TETRAHEDRON);
+  /* centroid tetrahedron of special rule 22 */
+  if (CountSideNodes(theElement) == 2)
+  {
+    /* if side not found search over neighbor */
+    for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+    {
+      ELEMENT *nb = NBELEM(theElement,j);
+
+      if (nb == NULL) continue;
+
+      for (l=0; l<CORNERS_OF_ELEM(nb); l++)
+        if (theNode == CORNER(nb,l))
+          return(GetSideIDFromScratch(nb,theNode));
+    }
+  }
+
+  assert(CountSideNodes(theElement)==1);
+
+  return(GetSideIDFromScratchSpecialRule22Tet(theElement,theNode));
+}
+
+INT GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
 {
   ELEMENT *theFather;
   NODE *nd[MAX_EDGES_OF_ELEM];
+  EDGE *edge;
   INT i,j,k,l,cnt;
 
   ASSERT(NTYPE(theNode) == SIDE_NODE);
 
   theFather = EFATHER(theElement);
+
+  /* determine midnodes of father */
   for (i=0; i<EDGES_OF_ELEM(theFather); i++)
-    nd[i] = MIDNODE(
-      GetEdge(CORNER(theFather,CORNER_OF_EDGE(theFather,i,0)),
-              CORNER(theFather,CORNER_OF_EDGE(theFather,i,1))));
-  for (j=0; j<SIDES_OF_ELEM(theElement); j++) {
+  {
+    edge = GetEdge(CORNER_OF_EDGE_PTR(theFather,i,0),
+                   CORNER_OF_EDGE_PTR(theFather,i,1));
+    nd[i] = MIDNODE(edge);
+  }
+
+  for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+  {
     if (3 == CORNERS_OF_SIDE(theElement,j)) continue;
+
     for (l=0; l<CORNERS_OF_SIDE(theElement,j); l++)
       if (theNode == CORNER(theElement,CORNER_OF_SIDE(theElement,j,l)))
         break;
     if (l == CORNERS_OF_SIDE(theElement,j)) continue;
-    for (i=0; i<SIDES_OF_ELEM(theFather); i++) {
+
+    for (i=0; i<SIDES_OF_ELEM(theFather); i++)
+    {
+                        #ifdef TET_RULESET
       if (3 == CORNERS_OF_SIDE(theFather,i)) continue;
+                        #endif
+
       cnt = 0;
       for (k=0; k<EDGES_OF_SIDE(theFather,i); k++)
-        for (l=0; l<CORNERS_OF_SIDE(theElement,j); l++) {
+        for (l=0; l<CORNERS_OF_SIDE(theElement,j); l++)
+        {
           if (nd[EDGE_OF_SIDE(theFather,i,k)] ==
               CORNER(theElement,CORNER_OF_SIDE(theElement,j,l)))
             cnt++;
@@ -1281,17 +1437,24 @@ INT NS_DIM_PREFIX GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
         }
     }
   }
+
+
+  /* if side not found search over neighbor */
   for (j=0; j<SIDES_OF_ELEM(theElement); j++)
   {
     ELEMENT *nb = NBELEM(theElement,j);
 
-    if (3 == CORNERS_OF_SIDE(theElement,j)) continue;
+    if (3 == CORNERS_OF_SIDE(theElement,j))
+      continue;
+
     if (nb == NULL) continue;
 
     for (l=0; l<CORNERS_OF_ELEM(nb); l++)
       if (theNode == CORNER(nb,l))
         return(GetSideIDFromScratch(nb,theNode));
   }
+
+
   for (j=0; j<SIDES_OF_ELEM(theElement); j++)
   {
     if (4 != CORNERS_OF_SIDE(theElement,j)) continue;
@@ -1316,6 +1479,142 @@ INT NS_DIM_PREFIX GetSideIDFromScratch (ELEMENT *theElement, NODE *theNode)
       }
     }
   }
+
+  return(GetSideIDFromScratchSpecialRule(theElement,theNode));
+
+  return(SIDES_OF_ELEM(theFather));
+}
+
+INT GetSideIDFromScratchOld (ELEMENT *theElement, NODE *theNode)
+{
+  ELEMENT *theFather;
+  NODE *nd[MAX_EDGES_OF_ELEM];
+  EDGE *edge;
+  INT i,j,k,l,cnt;
+
+  ASSERT(NTYPE(theNode) == SIDE_NODE);
+
+  theFather = EFATHER(theElement);
+
+  /* determine midnodes of father */
+  for (i=0; i<EDGES_OF_ELEM(theFather); i++)
+  {
+    edge = GetEdge(CORNER_OF_EDGE_PTR(theFather,i,0),
+                   CORNER_OF_EDGE_PTR(theFather,i,1));
+    nd[i] = MIDNODE(edge);
+  }
+
+  for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+  {
+    if (3 == CORNERS_OF_SIDE(theElement,j)) continue;
+
+    for (l=0; l<CORNERS_OF_SIDE(theElement,j); l++)
+      if (theNode == CORNER(theElement,CORNER_OF_SIDE(theElement,j,l)))
+        break;
+    if (l == CORNERS_OF_SIDE(theElement,j)) continue;
+
+    for (i=0; i<SIDES_OF_ELEM(theFather); i++)
+    {
+      if (3 == CORNERS_OF_SIDE(theFather,i)) continue;
+
+      cnt = 0;
+      for (k=0; k<EDGES_OF_SIDE(theFather,i); k++)
+        for (l=0; l<CORNERS_OF_SIDE(theElement,j); l++)
+        {
+          if (nd[EDGE_OF_SIDE(theFather,i,k)] ==
+              CORNER(theElement,CORNER_OF_SIDE(theElement,j,l)))
+            cnt++;
+          if (cnt == 2)
+            return(i);
+        }
+    }
+  }
+
+
+  /* if side not found search over neighbor */
+  for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+  {
+    ELEMENT *nb = NBELEM(theElement,j);
+
+    if (3 == CORNERS_OF_SIDE(theElement,j))
+
+      /* treatment of special green rule 17 and 22 */
+      if ((((TAG(theElement)==PYRAMID && NSONS(theFather)==9) ||
+            (TAG(theElement)==TETRAHEDRON && NSONS(theFather)==11)
+            && 2==CountSideNodes(theElement))) &&
+          TAG(theFather)==HEXAHEDRON &&
+          ECLASS(theElement)==GREEN_CLASS)
+        /* not continue */;
+      else
+        continue;
+
+    if (nb == NULL) continue;
+
+    for (l=0; l<CORNERS_OF_ELEM(nb); l++)
+      if (theNode == CORNER(nb,l))
+        return(GetSideIDFromScratch(nb,theNode));
+  }
+
+
+  for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+  {
+    if (4 != CORNERS_OF_SIDE(theElement,j)) continue;
+    for (l=0; l<4; l++)
+      if (theNode == CORNER(theElement,CORNER_OF_SIDE(theElement,j,l)))
+        break;
+    if (l < 4)
+    {
+      INT l1 = (l+1) % 4;
+      INT l2 = (l+3) % 4;
+
+      for (i=0; i<SIDES_OF_ELEM(theFather); i++) {
+        if (3 == CORNERS_OF_SIDE(theFather,i)) continue;
+        for (k=0; k<EDGES_OF_SIDE(theFather,i); k++) {
+          if (nd[EDGE_OF_SIDE(theFather,i,k)] ==
+              CORNER(theElement,CORNER_OF_SIDE(theElement,j,l1)))
+            return(i);
+          if (nd[EDGE_OF_SIDE(theFather,i,k)] ==
+              CORNER(theElement,CORNER_OF_SIDE(theElement,j,l1)))
+            return(i);
+        }
+      }
+    }
+  }
+
+  /* treatment of special green rule 17 and 22 */
+  for (j=0; j<SIDES_OF_ELEM(theElement); j++)
+  {
+    for (l=0; l<CORNERS_OF_SIDE(theElement,j); l++)
+      if (theNode == CORNER(theElement,CORNER_OF_SIDE(theElement,j,l)))
+        break;
+    if (l == CORNERS_OF_SIDE(theElement,j)) continue;
+
+    for (i=0; i<SIDES_OF_ELEM(theFather); i++)
+    {
+      if (3 == CORNERS_OF_SIDE(theFather,i)) continue;
+
+      cnt = 0;
+      for (k=0; k<EDGES_OF_SIDE(theFather,i); k++)
+        for (l=0; l<CORNERS_OF_SIDE(theElement,j); l++)
+        {
+          if (nd[EDGE_OF_SIDE(theFather,i,k)] ==
+              CORNER(theElement,CORNER_OF_SIDE(theElement,j,l)))
+            cnt++;
+          if (cnt==1 && ECLASS(theElement)==GREEN_CLASS &&
+              TAG(theElement)==TETRAHEDRON &&
+              TAG(theFather)==HEXAHEDRON &&
+              (NSONS(theFather)==9 || NSONS(theFather)==11))
+          {
+            return(i);
+          }
+
+        }
+    }
+  }
+
+  UserWriteF("GetSideIDFromScratch(): e=" EID_FMTX " f=" EID_FMTX "\n",
+             EID_PRTX(theElement),EID_PRTX(theFather));
+  return(0);
   return(SIDES_OF_ELEM(theFather));
 }
 
@@ -1338,6 +1637,10 @@ NODE * NS_DIM_PREFIX GetCenterNode (ELEMENT *theElement)
   INT i,j;
   NODE    *theNode;
   ELEMENT *SonList[MAX_SONS],*theSon;
+
+        #ifdef __CENTERNODE__
+  return(CENTERNODE(theElement));
+        #endif
 
   theNode = NULL;
   if (GetAllSons(theElement,SonList) != GM_OK) assert(0);
@@ -2012,6 +2315,17 @@ EDGE * CreateEdge (GRID *theGrid, ELEMENT *theElement, INT edge, INT with_vector
   if (GET_IDENT_MODE() == IDENT_ON)
     SETNEW_EDIDENT(pe,1);
         #endif
+
+  UGM_CDBG(pe,
+           UserWriteF(PFMT "create edge=" EDID_FMTX " from=" ID_FMTX "tf=%d to=" ID_FMTX "tt=%d"
+                      "elem=" EID_FMTX "edge=%d\n",
+                      me,EDID_PRTX(pe),ID_PRTX(from),NTYPE(from),ID_PRTX(to),NTYPE(to),
+                      EID_PRTX(theElement),edge);
+           if (0)
+             UserWriteF(PFMT "nfatherf=" ID_FMTX "nfathert=" ID_FMTX " fatheredge=" EDID_FMTX "\n",
+                        me,ID_PRTX((NODE*)NFATHER(from)),ID_PRTX((NODE*)NFATHER(to)),
+                        EDID_PRTX(GetEdge((NODE*)NFATHER(from),(NODE*)NFATHER(to))));)
+
   NBNODE(link0) = to;
   NBNODE(link1) = from;
   SET_NO_OF_ELEM(pe,1);
@@ -2283,6 +2597,11 @@ ELEMENT * NS_DIM_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE
   /* subdomain id */
   s_id = (Father != NULL) ? SUBDOMAIN(Father) : 0;
   SETSUBDOMAIN(pe,s_id);
+
+        #ifdef __CENTERNODE__
+  SET_CENTERNODE(pe,NULL);
+        #endif
+
   SET_EFATHER(pe,Father);
 
   /* set corner nodes */
@@ -2295,6 +2614,23 @@ ELEMENT * NS_DIM_PREFIX CreateElement (GRID *theGrid, INT tag, INT objtype, NODE
       DisposeElement(theGrid,pe,TRUE);
       return(NULL);
     }
+
+  UGM_CDBG(pe,
+           UserWriteF(PFMT "create elem=" EID_FMTX,
+                      me,EID_PRTX(pe));
+           for (i=0; i<CORNERS_OF_ELEM(pe); i++)
+             UserWriteF(" n%d=" ID_FMTX, i,ID_PRTX(CORNER(pe,i)));
+           UserWriteF("\n");
+           for (i=0; i<EDGES_OF_ELEM(pe); i++)
+           {
+             EDGE *theEdge;
+
+             theEdge = GetEdge(CORNER_OF_EDGE_PTR(pe,i,0),
+                               CORNER_OF_EDGE_PTR(pe,i,1));
+             UserWriteF(" e%d=" EDID_FMTX, i,EDID_PRTX(theEdge));
+           }
+           UserWriteF("\n");)
+
 
   /* create element vector if */
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,ELEMVEC))
@@ -3147,6 +3483,13 @@ INT NS_DIM_PREFIX DisposeNode (GRID *theGrid, NODE *theNode)
       MIDNODE((EDGE *)father) = NULL;
       break;
 
+                        #ifdef __CENTERNODE__
+    case (CENTER_NODE) :
+      ASSERT(OBJT(father)==IEOBJ || OBJT(father)==BEOBJ);
+      SET_CENTERNODE((ELEMENT *)father,NULL);
+      break;
+                        #endif
+
     default :
       ASSERT(0);
       break;
@@ -3284,6 +3627,14 @@ INT NS_DIM_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispos
 
   GRID_UNLINK_ELEMENT(theGrid,theElement);
 
+        #ifdef __CENTERNODE__
+  {
+    theNode = CENTERNODE(theElement);
+
+    if (theNode != NULL) SETNFATHER(theNode,NULL);
+  }
+        #endif
+
   theFather = EFATHER(theElement);
 
   if (LEVEL(theElement)>0)
@@ -3351,6 +3702,10 @@ INT NS_DIM_PREFIX DisposeElement (GRID *theGrid, ELEMENT *theElement, INT dispos
       for (j=0; j<CORNERS_OF_ELEM(SonList[i]); j++)
       {
         theNode = CORNER(SonList[i],j);
+                                #ifndef __CENTERNODE__
+        if (CENTERTYPE(theNode) && NFATHER(theNode)!=NULL)
+          SET_NFATHER(theNode,NULL);
+                                #endif
         theVertex = MYVERTEX(theNode);
         if (VFATHER(theVertex) != NULL && VFATHER(theVertex) == theElement)
           VFATHER(theVertex) = NULL;
@@ -3916,6 +4271,11 @@ static INT DisposeAMGLevel (MULTIGRID *theMG)
     if (DisposeVector(theGrid,PFIRSTVECTOR(theGrid)))
       return(1);
   }
+
+        #ifdef ModelP
+  /* stop dangerous mode. from now on DDD will issue warnings again. */
+  DDD_SetOption(OPT_WARNING_DESTRUCT_HDR, OPT_ON);
+        #endif
 
   /* remove from grids array */
   theMG->grids[l] = NULL;
@@ -6160,7 +6520,7 @@ ELEMENT * NS_DIM_PREFIX InsertElement (GRID *theGrid, INT n, NODE **Node, ELEMEN
 
         for (i=0; i<NDELEM_BLKS_MAX; i++)
         {
-          printf("i=%d blk=%p\n",i,MGNDELEMBLK(theMG,i));
+          printf("i=%d blk=%08x\n",i,MGNDELEMBLK(theMG,i));
           fflush(stdout);
         }
       }
@@ -8121,7 +8481,7 @@ void NS_DIM_PREFIX ListGrids (const MULTIGRID *theMG)
     #ifdef ModelP
   used = used + heap;
   used = UG_GlobalMaxINT(used);
-  UserWriteF("%lu bytes used on some processor\n",used);
+  UserWriteF("%lu bytes used on some processor %lu bytes used on all\n",used,UG_GlobalSumINT(used));
     #endif
 }
 
@@ -9642,7 +10002,7 @@ INT NS_DIM_PREFIX ClearNodeClasses (GRID *theGrid)
   NODE *theNode;
 
   /* reset class of each Node to 0 */
-  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCVC(theNode))
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
     SETNCLASS(theNode,0);
 
   return(0);
@@ -9903,7 +10263,7 @@ INT NS_DIM_PREFIX ClearNextNodeClasses (GRID *theGrid)
   NODE *theNode;
 
   /* reset class of each Node to 0 */
-  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCVC(theNode))
+  for (theNode=PFIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode))
     SETNNCLASS(theNode,0);
 
   /* now the refinement algorithm will initialize the class 3 Nodes   */

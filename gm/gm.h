@@ -156,6 +156,9 @@ START_UGDIM_NAMESPACE
 /** \brief Define to have matrices > 4KB (control word too small, adds integer to matrix struct) */
 #define __XXL_MSIZE__
 
+/** \brief If pointer between element/centernode is stored */
+#define __CENTERNODE__
+
 /** \brief If interpolation matrix is stored */
 #define __INTERPOLATION_MATRIX__
 
@@ -390,6 +393,7 @@ enum {nodeSelection=1,         /**< Objects selected are nodes */
    #define PRISM_ROTATE_LEFT   10
    #define PRISM_ROTATE_RGHT   11
    #define PRISM_QUADSECT_HEXPRI0 14
+   #define PRISM_RED_HEX		15
 
    #define HEX_BISECT_0_1          5
    #define HEX_BISECT_0_2          6
@@ -976,6 +980,10 @@ struct generic_element {            /* no difference between inner and bndel*/
   /* double linked list of elements       */
   union element *pred, *succ;
 
+        #ifdef __CENTERNODE__
+  struct node *centernode;                      /* pointer to center node				*/
+        #endif
+
   /* variable length array managed by ug  */
   void *refs[1];
 
@@ -998,6 +1006,9 @@ struct triangle {
 
   /* pointers */
   union element *pred, *succ;           /* doubly linked list of elements               */
+        #ifdef __CENTERNODE__
+  struct node *centernode;                      /* pointer to center node				*/
+        #endif
   struct node *n[3];                                    /* corners of that element                              */
   union element *father;                        /* father element on coarser grid               */
         #ifdef ModelP
@@ -1038,6 +1049,9 @@ struct quadrilateral {
 
   /* pointers */
   union element *pred, *succ;           /* doubly linked list of elements               */
+        #ifdef __CENTERNODE__
+  struct node *centernode;                      /* pointer to center node				*/
+        #endif
   struct node *n[4];                                    /* corners of that element                              */
   union element *father;                        /* father element on coarser grid               */
         #ifdef ModelP
@@ -1078,6 +1092,9 @@ struct tetrahedron {
 
   /* pointers */
   union element *pred, *succ;           /* doubly linked list of elements               */
+        #ifdef __CENTERNODE__
+  struct node *centernode;                      /* pointer to center node				*/
+        #endif
   struct node *n[4];                                    /* corners of that element                              */
   union element *father;                        /* father element on coarser grid               */
         #ifdef ModelP
@@ -1121,6 +1138,9 @@ struct pyramid {
 
   /* pointers */
   union element *pred, *succ;           /* doubly linked list of elements               */
+        #ifdef __CENTERNODE__
+  struct node *centernode;                      /* pointer to center node				*/
+        #endif
   struct node *n[5];                                    /* corners of that element                              */
   union element *father;                        /* father element on coarser grid               */
         #ifdef ModelP
@@ -1164,6 +1184,9 @@ struct prism {
 
   /* pointers */
   union element *pred, *succ;           /* doubly linked list of elements               */
+        #ifdef __CENTERNODE__
+  struct node *centernode;                      /* pointer to center node				*/
+        #endif
   struct node *n[6];                                    /* corners of that element                              */
   union element *father;                        /* father element on coarser grid               */
         #ifdef ModelP
@@ -1207,6 +1230,9 @@ struct hexahedron {
 
   /* pointers */
   union element *pred, *succ;           /* doubly linked list of elements               */
+        #ifdef __CENTERNODE__
+  struct node *centernode;                      /* pointer to center node				*/
+        #endif
   struct node *n[8];                                    /* corners of that element                              */
   union element *father;                        /* father element on coarser grid               */
         #ifdef ModelP
@@ -2689,6 +2715,9 @@ START_UGDIM_NAMESPACE
 #define SUCCE(p)                ((p)->ge.succ)
 #define PREDE(p)                ((p)->ge.pred)
 
+#ifdef __CENTERNODE__
+#define CENTERNODE(p)   ((p)->ge.centernode)
+#endif
 #define CORNER(p,i)     ((NODE *) (p)->ge.refs[n_offset[TAG(p)]+(i)])
 #define EFATHER(p)              ((ELEMENT *) (p)->ge.refs[father_offset[TAG(p)]])
 #define SON(p,i)                ((ELEMENT *) (p)->ge.refs[sons_offset[TAG(p)]+(i)])
@@ -2714,6 +2743,9 @@ START_UGDIM_NAMESPACE
 
 /* use the following macros to assign values, since definition  */
 /* above is no proper lvalue. */
+#ifdef __CENTERNODE__
+#define SET_CENTERNODE(p,q) ((p)->ge.centernode = q)
+#endif
 #define SET_CORNER(p,i,q)       ((p)->ge.refs[n_offset[TAG(p)]+(i)] = q)
 #define SET_EFATHER(p,q)        ((p)->ge.refs[father_offset[TAG(p)]] = q)
 #define SET_SON(p,i,q)          ((p)->ge.refs[sons_offset[TAG(p)]+(i)] = q)
@@ -3138,6 +3170,7 @@ MULTIGRID       *LoadMultiGrid  (char *MultigridName, char *name, char *type,
 INT             SaveMultiGrid (MULTIGRID *theMG, char *name, char *type, char *comment, INT autosave, INT rename);
 INT         DisposeGrid             (GRID *theGrid);
 INT             DisposeMultiGrid                (MULTIGRID *theMG);
+INT         DisposeAMGLevel         (MULTIGRID *theMG);
 INT         DisposeAMGLevels        (MULTIGRID *theMG);
 INT         Collapse                (MULTIGRID *theMG);
 #ifdef __TWODIM__
