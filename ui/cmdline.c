@@ -441,7 +441,7 @@ INT ExecCommand (char *cmdLine)
         #endif
   }
 
-  REP_ERR_RESET;
+  if (strcmp("reperr",options[0])!=0) REP_ERR_RESET;
 
   error=(*commandItem->cmdProc)(optionCount,options);
   if (error==PARAMERRORCODE)
