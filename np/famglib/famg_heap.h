@@ -45,6 +45,9 @@ private:
   unsigned long top, bottom, info_max_bottom, info_max_top, info_min_free, info_size;
   int ntop, nbottom;
   unsigned long topstack[FAMGMAXSTACK], bottomstack[FAMGMAXSTACK];
+#ifdef USE_UG_DS
+  int FAMGHeapMarkKey;
+#endif
 };
 
 #define FAMGALIGNMENT 8

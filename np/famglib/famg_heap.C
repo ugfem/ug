@@ -25,6 +25,13 @@
 #include "famg_system.h"
 #include "famg_heap.h"
 
+#ifdef USE_UG_DS
+extern "C" {
+#include "gm.h"
+#include "commands.h"
+}
+#endif
+
 /* RCS_ID
 $Header$
 */
@@ -39,14 +46,23 @@ FAMGHeap *famgheapptr;
 
 FAMGHeap::~FAMGHeap()
 {
-    free(buffer);
+#ifdef USE_UG_DS
+	::ReleaseTmpMem(MGHEAP(GetCurrentMultigrid()),FAMGHeapMarkKey);
+#else
+	free(buffer);
+#endif
 }
 
 FAMGHeap::FAMGHeap(unsigned long size)
 {
 	ntop = nbottom = 0;
     size = FAMGCEIL(size);
+#ifdef USE_UG_DS
+	::MarkTmpMem(MGHEAP(GetCurrentMultigrid()),&FAMGHeapMarkKey);
+	buffer = GetTmpMem(MGHEAP(GetCurrentMultigrid()), size, FAMGHeapMarkKey );
+#else
     buffer = malloc(size);
+#endif
 	bottom = (unsigned long) buffer;
     if(buffer == NULL)
     {
