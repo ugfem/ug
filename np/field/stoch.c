@@ -204,7 +204,8 @@ REP_ERR_FILE;
    .  DOUBLE random number
  */
 /************************************************************************/
-DOUBLE getLinRnd()
+
+static DOUBLE getLinRnd()
 {
   static DOUBLE RND[97];
   static INT i, ix1, ix2, ix3;
@@ -263,7 +264,8 @@ DOUBLE getLinRnd()
    .  DOUBLE random number
  */
 /************************************************************************/
-DOUBLE getGaussRnd()
+
+static DOUBLE getGaussRnd()
 {
   DOUBLE ReLinRnd, ImLinRnd, AbsLinRnd;
   extern DOUBLE getLinRnd(void);
@@ -278,7 +280,7 @@ DOUBLE getGaussRnd()
   return( ReLinRnd * sqrt(-2.0*log(AbsLinRnd)/AbsLinRnd) );
 }
 
-void getGaussRnd2(DOUBLE *out)
+static void getGaussRnd2(DOUBLE *out)
 {
   DOUBLE ReLinRnd, ImLinRnd, AbsLinRnd;
   extern DOUBLE getLinRnd(void);
@@ -326,7 +328,8 @@ void getGaussRnd2(DOUBLE *out)
    .n zero if none
  */
 /************************************************************************/
-INT StochModel(INT i, INT j, INT k, DOUBLE *out, DOUBLE Var, DOUBLE Nug, DOUBLE *Cor, INT actype, DOUBLE *F)
+
+static INT StochModel(INT i, INT j, INT k, DOUBLE *out, DOUBLE Var, DOUBLE Nug, DOUBLE *Cor, INT actype, DOUBLE *F)
 {
   INT l, m, Counter;
   DOUBLE Frequence[DIM], NormOfWavelength, Weight;
@@ -412,7 +415,7 @@ INT StochModel(INT i, INT j, INT k, DOUBLE *out, DOUBLE Var, DOUBLE Nug, DOUBLE 
 /************************************************************************/
 
 #ifdef __THREEDIM__
-INT DoBetrag(DOUBLE *Feld, INT i, INT j, INT k, INT *NOfN)
+static INT DoBetrag(DOUBLE *Feld, INT i, INT j, INT k, INT *NOfN)
 {
   DOUBLE Value;
 
@@ -422,7 +425,7 @@ INT DoBetrag(DOUBLE *Feld, INT i, INT j, INT k, INT *NOfN)
   return(0);
 }
 #else
-INT DoBetrag(DOUBLE *Feld, INT i, INT j, INT *NOfN)
+static INT DoBetrag(DOUBLE *Feld, INT i, INT j, INT *NOfN)
 {
   DOUBLE Value;
 
@@ -484,8 +487,8 @@ INT DoBetrag(DOUBLE *Feld, INT i, INT j, INT *NOfN)
  */
 /************************************************************************/
 
-INT stochFourierFld(INT *NOfN, DOUBLE Var,
-                    DOUBLE Nug, DOUBLE *Cor, INT actype, DOUBLE *F)
+static INT stochFourierFld(INT *NOfN, DOUBLE Var,
+                           DOUBLE Nug, DOUBLE *Cor, INT actype, DOUBLE *F)
 {
 
   INT i,j;
@@ -680,19 +683,19 @@ INT stochFourierFld(INT *NOfN, DOUBLE Var,
  */
 /************************************************************************/
 
-void comAdd(DOUBLE *Summand1, DOUBLE *Summand2, DOUBLE *Summe)
+static void comAdd(DOUBLE *Summand1, DOUBLE *Summand2, DOUBLE *Summe)
 {
   Summe[0] = Summand1[0] + Summand2[0];
   Summe[1] = Summand1[1] + Summand2[1];
 }
 
-void comSub(DOUBLE *Summand1, DOUBLE *Summand2, DOUBLE *Summe)
+static void comSub(DOUBLE *Summand1, DOUBLE *Summand2, DOUBLE *Summe)
 {
   Summe[0] = Summand1[0] - Summand2[0];
   Summe[1] = Summand1[1] - Summand2[1];
 }
 
-void comMult(DOUBLE *Multiplikator, DOUBLE *Multiplikant, DOUBLE *Produkt)
+static void comMult(DOUBLE *Multiplikator, DOUBLE *Multiplikant, DOUBLE *Produkt)
 {
   Produkt[0] = Multiplikator[0] * Multiplikant[0] - Multiplikator[1] * Multiplikant[1];
   Produkt[1] = Multiplikator[0] * Multiplikant[1] + Multiplikator[1] * Multiplikant[0];
@@ -721,7 +724,7 @@ void comMult(DOUBLE *Multiplikator, DOUBLE *Multiplikant, DOUBLE *Produkt)
  */
 /************************************************************************/
 
-void EhochiPhi(DOUBLE Phi, DOUBLE *out)
+static void EhochiPhi(DOUBLE Phi, DOUBLE *out)
 {
   out[0] = cos(Phi);
   out[1] = sin(Phi);
@@ -751,7 +754,7 @@ void EhochiPhi(DOUBLE Phi, DOUBLE *out)
  */
 /************************************************************************/
 
-void comZuweisung(DOUBLE *in, DOUBLE *out)
+static void comZuweisung(DOUBLE *in, DOUBLE *out)
 {
   out[0] = in[0];
   out[1] = in[1];
@@ -787,7 +790,7 @@ void comZuweisung(DOUBLE *in, DOUBLE *out)
  */
 /************************************************************************/
 
-INT fFT(DOUBLE *Field, INT *N)
+static INT fFT(DOUBLE *Field, INT *N)
 {
 #ifdef __THREEDIM__
   INT Slice1, Slice2;
@@ -966,7 +969,8 @@ INT fFT(DOUBLE *Field, INT *N)
    .n The invers order bitfield.
  */
 /************************************************************************/
-INT Rho(INT Index, INT len, INT n)
+
+static INT Rho(INT Index, INT len, INT n)
 {
   INT Value;
   INT left, right;
@@ -1007,7 +1011,7 @@ INT Rho(INT Index, INT len, INT n)
  */
 /************************************************************************/
 
-void CopyTo(DOUBLE *inField, INT *NOfN, DOUBLE *outField)
+static void CopyTo(DOUBLE *inField, INT *NOfN, DOUBLE *outField)
 {
   INT log2[DIM];
 #ifdef __THREEDIM__
@@ -1061,7 +1065,7 @@ void CopyTo(DOUBLE *inField, INT *NOfN, DOUBLE *outField)
  */
 /************************************************************************/
 
-void add(DOUBLE *Feld, INT *NOfN, DOUBLE value)
+static void add(DOUBLE *Feld, INT *NOfN, DOUBLE value)
 {
 #ifdef __THREEDIM__
   int i,j,k;
@@ -1106,7 +1110,7 @@ void add(DOUBLE *Feld, INT *NOfN, DOUBLE value)
  */
 /************************************************************************/
 
-void mult (DOUBLE *Feld, INT *NOfN, DOUBLE factor)
+static void mult (DOUBLE *Feld, INT *NOfN, DOUBLE factor)
 {
 #ifdef __THREEDIM__
   int i,j,k;
@@ -1155,7 +1159,7 @@ void mult (DOUBLE *Feld, INT *NOfN, DOUBLE factor)
  */
 /************************************************************************/
 
-void correct (DOUBLE *Feld, INT *NOfN, DOUBLE wantedMean, DOUBLE wantedVariance)
+static void correct (DOUBLE *Feld, INT *NOfN, DOUBLE wantedMean, DOUBLE wantedVariance)
 {
   INT i,j, Anzahl;
 #ifdef __THREEDIM__
@@ -1230,7 +1234,7 @@ void correct (DOUBLE *Feld, INT *NOfN, DOUBLE wantedMean, DOUBLE wantedVariance)
  */
 /************************************************************************/
 
-INT genStochField(NP_STOCH_FIELD *np)
+static INT genStochField(NP_STOCH_FIELD *np)
 {
   DOUBLE *FieldH;
   DOUBLE F[DIM], Cor[DIM+1];       /* the last one is the product of the others */
@@ -1270,7 +1274,8 @@ INT genStochField(NP_STOCH_FIELD *np)
   ReleaseTmpMem(theHeap);
   return(0);
 }
-INT ReadArgvINTVec (const char *name,  INT *ivals, INT argc, char **argv)
+
+static INT ReadArgvINTVec (const char *name,  INT *ivals, INT argc, char **argv)
 {
   INT i;
   char option[OPTIONLEN];
@@ -1295,7 +1300,7 @@ INT ReadArgvINTVec (const char *name,  INT *ivals, INT argc, char **argv)
   REP_ERR_RETURN(1);
 }
 
-INT testPow2(INT number)
+static INT testPow2(INT number)
 {
   INT compare;
 
@@ -1335,7 +1340,7 @@ INT testPow2(INT number)
    D*/
 /****************************************************************************/
 
-INT NPStochFieldInit(NP_BASE *theNP, INT argc , char **argv)
+static INT NPStochFieldInit(NP_BASE *theNP, INT argc , char **argv)
 {
   NP_STOCH_FIELD *np;
   MULTIGRID *theMG;
@@ -1550,7 +1555,7 @@ INT NPStochFieldInit(NP_BASE *theNP, INT argc , char **argv)
   return(ret);
 }
 
-INT NPStochFieldDisplay(NP_BASE *theNP)
+static INT NPStochFieldDisplay(NP_BASE *theNP)
 {
   NP_STOCH_FIELD *np;
 
@@ -1593,7 +1598,7 @@ INT NPStochFieldDisplay(NP_BASE *theNP)
   return(0);
 }
 
-INT RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
+static INT RandomValues (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 {
   NP_STOCH_FIELD *np;
   INT i, node[DIM];
@@ -1723,7 +1728,7 @@ static INT StochFieldConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-INT NPGetFieldInit (NP_BASE *theNP, INT argc , char **argv)
+static INT NPGetFieldInit (NP_BASE *theNP, INT argc , char **argv)
 {
   NP_GET_FIELD *np;
   char field[VALUELEN];
@@ -1819,7 +1824,7 @@ INT NPGetFieldInit (NP_BASE *theNP, INT argc , char **argv)
   return(ret);
 }
 
-INT NPGetFieldDisplay(NP_BASE *theNP)
+static INT NPGetFieldDisplay(NP_BASE *theNP)
 {
   NP_GET_FIELD *np;
 
@@ -1839,7 +1844,7 @@ INT NPGetFieldDisplay(NP_BASE *theNP)
   return(0);
 }
 
-INT GetFieldAtPoint (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
+static INT GetFieldAtPoint (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 {
   NP_GET_FIELD *np;
   NP_FIELD *npsd;
@@ -1923,7 +1928,7 @@ static INT GetFieldConstruct (NP_BASE *theNP)
    D*/
 /****************************************************************************/
 
-INT NPanisoFldInit(NP_BASE *theNP, INT argc , char **argv)
+static INT NPanisoFldInit(NP_BASE *theNP, INT argc , char **argv)
 {
   NP_ANISO_FIELD *np;
   DOUBLE dval[DIM];
@@ -1970,7 +1975,7 @@ INT NPanisoFldInit(NP_BASE *theNP, INT argc , char **argv)
 }
 
 
-INT NPanisoFldDisplay(NP_BASE *theNP)
+static INT NPanisoFldDisplay(NP_BASE *theNP)
 {
   NP_ANISO_FIELD *np;
 
@@ -1988,7 +1993,7 @@ INT NPanisoFldDisplay(NP_BASE *theNP)
   return(0);
 }
 
-INT RotateAndGetField (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
+static INT RotateAndGetField (NP_FIELD *theField, DOUBLE *Pos, DOUBLE *out)
 {
   NP_GET_FIELD *theNP;
   NP_ANISO_FIELD  *np;
