@@ -65,6 +65,11 @@
 #define AVTESTED(p) (((*((unsigned int *)(p))) & AVTESTEDMASK)>>AVTESTEDSHIFT)
 #define SETAVTESTED(p,n) *((unsigned int *)(p)) = ((*((unsigned int *)(p)))&(~AVTESTEDMASK))|(((n)<<AVTESTEDSHIFT)&AVTESTEDMASK)
 
+#define AVSKIPMASK 0x00000008
+#define AVSKIPSHIFT 3
+#define AVSKIP(p) (((*((unsigned int *)(p))) & AVSKIPMASK)>>AVSKIPSHIFT)
+#define SETAVSKIP(p,n) *((unsigned int *)(p)) = ((*((unsigned int *)(p)))&(~AVSKIPMASK))|(((n)<<AVSKIPSHIFT)&AVSKIPMASK)
+
 #define STRONG_IN(p) ((p)->StronglyInfluencing)
 #define STRONG_OUT(p) ((p)->StronglyInfluenced)
 #define VECT(avect) (avect->vect)
@@ -127,6 +132,7 @@ INT CoarsenVanek          (GRID *theGrid);
 INT CoarsenAverage        (GRID *theGrid);
 INT IpAverage             (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT IpRugeStueben         (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
+INT IpPiecewiseConstant   (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT IpVanek               (GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT GalerkinCGMatrixFromInterpolation(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I);
 INT SparsenCGMatrix       (GRID *theGrid, MATDATA_DESC *A, INT lumpFlag);

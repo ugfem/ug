@@ -59,8 +59,6 @@
 /*																			*/
 /****************************************************************************/
 
-#undef DebugAMG
-
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -222,6 +220,7 @@ INT SetupInitialList(GRID *theGrid, HEAP *theHeap, AVECTOR **initialSH, AVECTOR 
     CTRL(avect)=0;
     SETAVCOARSE(avect,0);
     SETAVFINE(avect,0);
+    SETAVSKIP(avect,0);
     SETAVTESTED(avect,0);
     STRONG_IN(avect)=0;
     STRONG_OUT(avect)=0;
@@ -235,7 +234,7 @@ INT SetupInitialList(GRID *theGrid, HEAP *theHeap, AVECTOR **initialSH, AVECTOR 
   return(DONE);
 }
 
-INT DistributeInitialList(AVECTOR **La, AVECTOR **Le, AVECTOR **Ta, AVECTOR **Te, AVECTOR **Ua, AVECTOR **Ue)
+INT DistributeInitialList(AVECTOR **La, AVECTOR **Le, AVECTOR **Da, AVECTOR **De, AVECTOR **Ua, AVECTOR **Ue)
 {
   INT i;
   AVECTOR *avect;
@@ -249,17 +248,16 @@ INT DistributeInitialList(AVECTOR **La, AVECTOR **Le, AVECTOR **Ta, AVECTOR **Te
     {
       SETAVFINE(avect,1);
       SETAVTESTED(avect,1);
-      ADDATEND_LIST2(*Ta,*Te,avect);
+      SETAVSKIP(avect,1);
+      ADDATEND_LIST2(*Da,*De,avect);
     }
                 #ifdef ModelP
     else if (DDD_InfoNCopies(PARHDR(VECT(avect))) > 0)
     {
-
-      printf("border skiped\n");
-
       SETAVFINE(avect,1);
       SETAVTESTED(avect,1);
-      ADDATEND_LIST2(*Ta,*Te,avect);
+      SETAVSKIP(avect,1);
+      ADDATEND_LIST2(*Da,*De,avect);
     }
                 #endif
     else
@@ -424,7 +422,8 @@ INT CoarsenRugeStueben(GRID *theGrid)
   MULTIGRID *theMG;
   HEAP *theHeap;
   VECTOR *vect,*vect2,*vect3;
-  AVECTOR *avect,*avect2,*avect3,*testCoarse,*initialS,*initialE,*Ca,*Ce,*Fa,*Fe,*Ta,*Te;
+  AVECTOR *avect,*avect2,*avect3,*testCoarse;
+  AVECTOR *initialS,*initialE,*Ca,*Ce,*Da,*De,*Fa,*Fe,*Ta,*Te;
   AVECTOR *Ua[2*MAXNEIGHBORS+1],*Ue[2*MAXNEIGHBORS+1];
   MATRIX *mat,*mat2,*mat3;
 
@@ -455,11 +454,11 @@ INT CoarsenRugeStueben(GRID *theGrid)
     REP_ERR_RETURN(1);
   }
 
-  Ca=Ce=Fa=Fe=Ta=Te=NULL;
+  Ca=Ce=Fa=Fe=Ta=Te=Da=De=NULL;
   for (i=0; i<=2*maxNeighbors; i++)
     Ua[i]=Ue[i]=NULL;
 
-  if ((error=DistributeInitialList(&initialS,&initialE,&Ta,&Te,Ua,Ue))!=DONE)
+  if ((error=DistributeInitialList(&initialS,&initialE,&Da,&De,Ua,Ue))!=DONE)
   {
     Release(theHeap,FROM_TOP);
     REP_ERR_RETURN(error);
@@ -473,7 +472,6 @@ INT CoarsenRugeStueben(GRID *theGrid)
     {
       ELIMINATE_LIST2(Ua[i],Ue[i],avect);
       ADDATEND_LIST2(Ca,Ce,avect);
-      assert(VECSKIP(VECT(avect)) == 0);
       SETAVCOARSE(avect,1);
       vect=VECT(avect);
       for (mat=MNEXT(VSTART(vect)); mat!=NULL; mat=MNEXT(mat))
@@ -1165,6 +1163,29 @@ INT IpRugeStueben(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
   return(DONE);
 }
 
+
+INT IpPiecewiseConstant(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
+{
+  INT i,j,ncomp;
+  VECTOR *vect;
+  MATRIX *imat;
+
+  /* we set imat to piecewise constant on clusters */
+  for (vect=FIRSTVECTOR(theGrid); vect!=NULL; vect=SUCCVC(vect))
+    if ((imat=VISTART(vect))!=NULL)
+    {
+      ncomp = MD_COLS_IN_RT_CT(A,VTYPE(vect),VTYPE(vect));
+      SETMDIAG(imat,1);
+      MVALUE(imat,0) = 1.0;
+      for (i=0; i<ncomp; i++)
+        for (j=0; j<ncomp; j++)
+          if (i == j) MVALUE(imat,i*ncomp + j) = 1.0;
+          else MVALUE(imat,i*ncomp + j) = 0.0;
+
+    }
+
+  return(DONE);
+}
 
 INT IpVanek(GRID *theGrid, MATDATA_DESC *A, MATDATA_DESC *I)
 {
