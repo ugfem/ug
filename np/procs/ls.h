@@ -42,6 +42,13 @@
 
 #define LINEAR_SOLVER_CLASS_NAME "linear_solver"
 
+/* access macros */
+#define NPLS_A(p)                       (((NP_LINEAR_SOLVER*)(p))->A)
+#define NPLS_b(p)                       (((NP_LINEAR_SOLVER*)(p))->b)
+#define NPLS_x(p)                       (((NP_LINEAR_SOLVER*)(p))->x)
+#define NPLS_red(p)                     (((NP_LINEAR_SOLVER*)(p))->reduction)
+#define NPLS_abs(p)                     (((NP_LINEAR_SOLVER*)(p))->abslimit)
+
 /****************************************************************************/
 /*																			*/
 /* definition of exported data structures									*/
