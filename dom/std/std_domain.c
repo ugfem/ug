@@ -65,7 +65,7 @@
 #include "ugdevices.h"
 
 /* domain module */
-#include "std_domain.h"
+#include "std_internal.h"
 
 #include "namespace.h"
 
@@ -1646,7 +1646,7 @@ M_BNDS_Dispose (HEAP * Heap, BNDS * theBndS)
  */
 /****************************************************************************/
 
-PROBLEM *
+void *
 NS_DIM_PREFIX CreateProblem (char *domain, char *name, int id, ConfigProcPtr config,
                              int numOfCoefficients, CoeffProcPtr coeffs[],
                              int numOfUserFct, UserProcPtr userfct[])
@@ -1729,7 +1729,7 @@ GetProblem (const char *domain, const char *name)
  */
 /****************************************************************************/
 
-BOUNDARY_CONDITION * NS_DIM_PREFIX
+void * NS_DIM_PREFIX
 CreateBoundaryCondition (char *name, INT id, BndCondProcPtr theBndCond,
                          void *Data)
 {
@@ -1826,7 +1826,7 @@ GetFirstBoundaryCondition (PROBLEM * theProblem)
  */
 /****************************************************************************/
 
-DOMAIN * NS_DIM_PREFIX
+void * NS_DIM_PREFIX
 CreateDomainWithParts (char *name, DOUBLE * MidPoint, DOUBLE radius,
                        INT segments, INT corners, INT Convex, INT nParts,
                        const DOMAIN_PART_INFO * dpi)
@@ -1882,7 +1882,7 @@ CreateDomainWithParts (char *name, DOUBLE * MidPoint, DOUBLE radius,
  */
 /****************************************************************************/
 
-DOMAIN *NS_DIM_PREFIX
+void *NS_DIM_PREFIX
 CreateDomain (char *name, DOUBLE * MidPoint, DOUBLE radius, INT segments,
               INT corners, INT Convex)
 {
@@ -1937,7 +1937,7 @@ GetDomain (char *name)
  */
 /****************************************************************************/
 
-BOUNDARY_SEGMENT *NS_DIM_PREFIX
+void *NS_DIM_PREFIX
 CreateBoundarySegment (char *name,
                        INT left, INT right, INT id, enum BoundaryType type, INT res,
                        INT * point, DOUBLE * alpha, DOUBLE * beta,
@@ -2054,7 +2054,7 @@ GetFirstBoundarySegment (DOMAIN * theDomain)
  */
 /****************************************************************************/
 
-BOUNDARY_SEGMENT *NS_DIM_PREFIX
+void *NS_DIM_PREFIX
 CreateBoundarySegment2D (char *name, int left, int right,
                          int id, int from, int to, int res, DOUBLE alpha,
                          DOUBLE beta, BndSegFuncPtr BndSegFunc, void *data)

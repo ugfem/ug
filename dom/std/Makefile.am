@@ -1,6 +1,6 @@
 # $Id$
 
-SOURCES = std_domain.c std_parallel.c std_domain.h
+SOURCES = std_domain.c std_parallel.c std_domain.h std_internal.h
 # std_internal.h
 EXTRALIBS = ../../low/liblow.la ../../dev/libdevices.la
 

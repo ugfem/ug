@@ -45,7 +45,7 @@
 #include "ugdevices.h"
 
 /* domain module */
-#include "std_domain.h"
+#include "std_internal.h"
 
 #include "scan.h"
 

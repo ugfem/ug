@@ -54,7 +54,7 @@
 #include "ugdevices.h"
 
 /* domain module */
-#include "std_domain.h"
+#include "std_internal.h"
 
 USING_UG_NAMESPACE
   USING_UGDIM_NAMESPACE
