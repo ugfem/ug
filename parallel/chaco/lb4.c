@@ -1636,10 +1636,10 @@ stage1: /* compute total number of clusters or error */
 	/* transfer load */
 	/* error = LoadTransfer(mg,ne,elements,element_limit,channel_limit,iter);*/
 
-/*
 	TransferGridFromLevel(mg,minlevel);
-*/
+/*
 	TransferGridFromCoarse(mg);
+*/
 
 mem_err: /* if memory error has occured leave everything unchanged */
 	if (!MEM_OK) Release(MGHEAP(mg),FROM_BOTTOM);
