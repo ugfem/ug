@@ -8,9 +8,9 @@ ARCH_TYPE     = __PC__
 
 ARCH_MAKE     = make
 ARCH_CC       = mpicc
-ARCH_CC       = mpigcc
+ARCH_C++      = mpiCC
 ARCH_LINK     = mpicc
-ARCH_LINK     = mpiCC
+ARCH_AR       = ar
 ARCH_SUFFIX   = 
 ARCH_POSTLINK = true
 
