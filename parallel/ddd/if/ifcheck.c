@@ -79,36 +79,42 @@ static int DDD_CheckInterface (DDD_IF ifId)
   }
 
   nRecvs = DDD_Notify();
-
-  if (nRecvs!=theIF[ifId].nIfHeads)
+  if (nRecvs==ERROR)
   {
-    sprintf(cBuffer, ERRSTR "IF %02d not symmetric on proc %d (%d!=%d)\n",
-            ifId, me, nRecvs, theIF[ifId].nIfHeads);
+    sprintf(cBuffer, "Notify failed on proc %d\n", me);
     DDD_PrintLine(cBuffer);
     errors++;
   }
-
-  ForIF(ifId,h)
+  else
   {
-    for(k=0; k<nRecvs; k++)
+    if (nRecvs!=theIF[ifId].nIfHeads)
     {
-      if (msgs[k].proc==h->proc)
+      sprintf(cBuffer, ERRSTR "IF %02d not symmetric on proc %d (%d!=%d)\n",
+              ifId, me, nRecvs, theIF[ifId].nIfHeads);
+      DDD_PrintLine(cBuffer);
+      errors++;
+    }
+
+    ForIF(ifId,h)
+    {
+      for(k=0; k<nRecvs; k++)
       {
-        if (msgs[k].size!=h->nItems)
+        if (msgs[k].proc==h->proc)
         {
-          sprintf(cBuffer, ERRSTR
-                  "IF %02d proc %d->%d has non-symmetric items (%d!=%d)\n",
-                  ifId, me, msgs[k].proc, h->nItems, msgs[k].size);
-          DDD_PrintLine(cBuffer);
-          errors++;
+          if (msgs[k].size!=h->nItems)
+          {
+            sprintf(cBuffer, ERRSTR
+                    "IF %02d proc %d->%d has non-symmetric items (%d!=%d)\n",
+                    ifId, me, msgs[k].proc, h->nItems, msgs[k].size);
+            DDD_PrintLine(cBuffer);
+            errors++;
+          }
         }
       }
     }
   }
 
-
   DDD_NotifyEnd();
-
   return(errors);
 }
 

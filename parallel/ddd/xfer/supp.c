@@ -110,32 +110,41 @@ static SizesSegm   *segmSizes   = NULL;
  */
 #define T XICopyObj
 #include "sll.ct"
+#undef T
 
 #define T XIDelCmd
 #include "sll.ct"
+#undef T
 
 #define T XIDelObj
 #include "sll.ct"
+#undef T
 
 #define T XISetPrio
 #include "sll.ct"
+#undef T
 
 #define T XINewCpl
 #include "sll.ct"
+#undef T
 
 #define T XIOldCpl
 #include "sll.ct"
+#undef T
 
 
 
 #define T XIAddCpl
 #include "sll.ct"
+#undef T
 
 #define T XIDelCpl
 #include "sll.ct"
+#undef T
 
 #define T XIModCpl
 #include "sll.ct"
+#undef T
 
 
 

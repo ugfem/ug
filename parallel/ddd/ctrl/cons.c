@@ -127,7 +127,7 @@ static LC_MSGCOMP constab_id;
 void ddd_ConsInit (void)
 {
   consmsg_t = LC_NewMsgType("ConsCheckMsg");
-  constab_id = LC_NewMsgTable(consmsg_t, sizeof(CONS_INFO));
+  constab_id = LC_NewMsgTable("ConsTab", consmsg_t, sizeof(CONS_INFO));
 }
 
 
@@ -287,14 +287,14 @@ static int ConsCheckGlobalCpl (void)
 
 
   /* count overall number of couplings */
-  for(i=0, lenCplBuf=0; i<nCpls; i++)
+  for(i=0, lenCplBuf=0; i<NCPL_GET; i++)
     lenCplBuf += theCplN[i];
 
   /* get storage for messages */
   cplBuf = (CONS_INFO *) AllocTmp(lenCplBuf*sizeof(CONS_INFO));
 
   /* copy CONS_INFOs into message buffer */
-  for(i=0, j=0; i<nCpls; i++)
+  for(i=0, j=0; i<NCPL_GET; i++)
   {
     for(cpl=theCpl[i]; cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
@@ -302,7 +302,9 @@ static int ConsCheckGlobalCpl (void)
       {
         error_cnt++;
         sprintf(cBuffer, "%4d: DDD-GCC Warning: invalid proc=%d (%08x/%08x)\n",
-                me, cpl->proc, OBJ_GID(cpl->obj), OBJ_GID(theObj[i]));
+                me, cpl->proc, OBJ_GID(cpl->obj),
+                OBJ_GID(ddd_ObjTable[i])
+                );
         DDD_PrintLine(cBuffer);
       }
       cplBuf[j].gid  = OBJ_GID(cpl->obj);
@@ -477,14 +479,14 @@ static int Cons2CheckGlobalCpl (void)
   DDD_HDR      *locObjs = NULL;
 
   /* count overall number of couplings */
-  for(i=0, lenCplBuf=0; i<nCpls; i++)
+  for(i=0, lenCplBuf=0; i<NCPL_GET; i++)
     lenCplBuf += (theCplN[i] * (theCplN[i]+1));
 
   /* get storage for messages */
   cplBuf = (CONS_INFO *) AllocTmp(lenCplBuf*sizeof(CONS_INFO));
 
   /* copy CONS_INFOs into message buffer */
-  for(i=0, j=0; i<nCpls; i++)
+  for(i=0, j=0; i<NCPL_GET; i++)
   {
     for(cpl=theCpl[i]; cpl!=NULL; cpl=CPL_NEXT(cpl))
     {
@@ -563,7 +565,7 @@ static int ConsCheckDoubleObj (void)
 
   for(i=1; i<nObjs; i++)
   {
-    if (OBJ_GID(theObj[i-1])==OBJ_GID(theObj[i]))
+    if (OBJ_GID(locObjs[i-1])==OBJ_GID(locObjs[i]))
     {
       error_cnt++;
       sprintf(cBuffer, "    DDD-GCC Warning: obj %08x on %d doubled\n",
@@ -584,13 +586,26 @@ static int ConsCheckDoubleObj (void)
 /*                                                                          */
 /* Function:  DDD_ConsCheck                                                 */
 /*                                                                          */
-/* Purpose:   check consistency of ddd structures                           */
-/*                                                                          */
-/* Input:     -                                                             */
-/*                                                                          */
-/* Output:    total number of errors (sum of all procs)                     */
-/*                                                                          */
 /****************************************************************************/
+
+/**
+        Check DDD runtime consistency.
+        This function performs a combined local/global consistency
+        check on the object data structures and interfaces managed by DDD.
+        This may be used for debugging purposes; if errors are detected,
+        then some understanding of internal DDD structures will be useful.
+
+        The following single aspects will be checked:
+        \begin{itemize}
+        \item double existence of {\em global ID} numbers in each processor's
+                  set of local objects.
+        \item consistency of coupling lists and object copies
+        \item non-symmetric interfaces between processor pairs
+        \item non-symmetric number of items in each interface
+        \end{itemize}
+
+   @returns  total number of errors (sum of all procs)
+ */
 
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
 int DDD_ConsCheck (void)

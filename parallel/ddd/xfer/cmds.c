@@ -41,9 +41,6 @@
 #include "xfer.h"
 
 
-/*
-   #define DebugXfer 2
- */
 
 
 /****************************************************************************/
@@ -448,15 +445,15 @@ static int unify_XIModCpl (XIModCpl **i1p, XIModCpl **i2p)
 /*                                                                          */
 /* Function:  DDD_XferEnd                                                   */
 /*                                                                          */
-/* Purpose:   end xfer command phase, start real transfer phase             */
-/*            (i.e. transaction commit)                                     */
-/*                                                                          */
-/* Input:     -                                                             */
-/*                                                                          */
-/* Output:    -                                                             */
-/*                                                                          */
 /****************************************************************************/
 
+/**
+        End of transfer phase.
+        This function starts the object transfer process. After a call to
+        this function (on all processors) all {\bf Transfer}-commands since
+        the last call to \funk{XferBegin} are executed. This involves
+        a set of local communications between the processors.
+ */
 
 #ifdef C_FRONTEND
 void DDD_XferEnd (void)
@@ -639,6 +636,15 @@ void DDD_XferEnd (void)
           nothing more to do until incoming messages arrive
    */
 
+  /* display information about send-messages on lowcomm-level */
+  if (DDD_GetOption(OPT_INFO_XFER) & XFER_SHOW_MSGSALL)
+  {
+    DDD_SyncAll();
+    if (me==master)
+      DDD_PrintLine("DDD XFER_SHOW_MSGSALL: ObjMsg.Send\n");
+    LC_PrintSendMsgs();
+  }
+
 
   /* wait for communication-completion (send AND receive) */
   STAT_RESET;
@@ -664,11 +670,19 @@ void DDD_XferEnd (void)
     DDD_PrintLine(cBuffer);
   }
 
+  /* display information about recv-messages on lowcomm-level */
+  if (DDD_GetOption(OPT_INFO_XFER) & XFER_SHOW_MSGSALL)
+  {
+    DDD_SyncAll();
+    if (me==master)
+      DDD_PrintLine("DDD XFER_SHOW_MSGSALL: ObjMsg.Recv\n");
+    LC_PrintRecvMsgs();
+  }
 
   /* unpack messages */
   STAT_RESET;
   XferUnpack(recvMsgs, nRecvMsgs,
-             localCplObjs, nCpls,
+             localCplObjs, NCPL_GET,
              arrayXISetPrio, remXISetPrio,
              arrayXIDelObj, nXIDelObj,
              arrayXICopyObj, remXICopyObj,
@@ -713,7 +727,7 @@ void DDD_XferEnd (void)
   CommunicateCplMsgs(arrayXIDelCpl, remXIDelCpl,
                      arrayXIModCpl, remXIModCpl,
                      arrayXIAddCpl, nXIAddCpl,
-                     localCplObjs, nCpls);
+                     localCplObjs, NCPL_GET);
   STAT_TIMER(T_XFER_CPLMSG);
 
 
@@ -788,17 +802,26 @@ void DDD_XferEnd (void)
 
 /****************************************************************************/
 /*                                                                          */
-/* Function:  XferCopyObj                                                   */
-/*                                                                          */
-/* Purpose:   xfer command: create copy of obj on proc with priority prio   */
-/*                                                                          */
-/* Input:     hdr:  DDD-header of object to be copied                       */
-/*            proc: receiver of object                                      */
-/*            prio: local priority of copy                                  */
-/*                                                                          */
-/* Output:    -                                                             */
+/* Function:  DDD_XferPrioChange                                            */
 /*                                                                          */
 /****************************************************************************/
+
+/**
+        Consistent change of a local object's priority during DDD Transfer.
+        Local objects which are part of a distributed object must notify
+        other copies about local priority changes. This is accomplished
+        by issueing \funk{XferPrioChange}-commands during the transfer phase;
+        DDD will send appropriate messages to the owner processors of
+        the other copies.
+
+        This function is regarded as a {\bf Transfer}-operation due
+        to its influence on DDD management information on neighbouring
+        processors. Therefore the function has to be issued between
+        a starting \funk{XferBegin} and a final \funk{XferEnd} call.
+
+   @param hdr  DDD local object whose priority should be changed.
+   @param prio new priority of that local object.
+ */
 
 
 
@@ -911,8 +934,59 @@ static void XferInitCopyInfo (DDD_HDR hdr,
 
 
 
+/****************************************************************************/
+/*                                                                          */
+/* Function:  DDD_XferCopyObj                                               */
+/*                                                                          */
+/****************************************************************************/
 
+/**
+        Transfer-command for copying a local DDD object to another processor.
+        After an initial call to \funk{XferBegin}, this function
+        creates a copy of one local DDD object on another processor with a certain
+        priority. The necessary actions (packing/unpacking of object data, message
+        transfer) are executed via the final call to \funk{XferEnd}; therefore
+        a whole set of {\bf Transfer}-operations is accumulated.
 
+        Caution: As the original object data is not copied throughout this
+        call due to efficiency reasons (transferring a large number of objects
+        would result in a huge amount of memory copy operations),
+        the object may not be changed or deleted until the actual transfer
+        has happened. Otherwise the changes will be sent, too.
+
+        Two different mechanisms allow the transfer of data depending on the
+        stated object:
+
+        \begin{itemize}
+        \item Right after the function \funk{XferCopyObj} has been called,
+        the optional handler #HANDLER_XFERCOPY# is executed by DDD.
+        Basically this mechanism allows the transfer of dependent DDD objects
+        (or: hierarchies of objects), although arbitrary actions may occur
+        inside the handler.
+        No relationship between the {\em primary} object and the additional
+        objects can be expressed, as many different destination processors
+        might be involved.
+        %
+        \item Via an arbitrary number of additional calls to \funk{XferAddData}
+        arrays of {\em data objects} (i.e.~without the usual DDD object header)
+        may be sent.
+        Using this mechanism the data objects are strongly linked to the
+        {\em primary} object; all data objects are transferred to the same
+        destination processor.
+        \end{itemize}
+
+        After the object copy has been established on the destination processor,
+        first the optional handler #HANDLER_LDATACONSTRUCTOR# is called to
+        update the LDATA parts of that object (e.g.~locally linked lists).
+        Afterwards the optional handler #HANDLER_OBJMKCONS# is called
+        to establish consistency for that object (e.g.~backward references on
+        the new object copy). For handlers related to function
+        \funk{XferAddData} refer to its description.
+
+   @param hdr   DDD local object which has to be copied.
+   @param proc  destination processor which will receive the object copy.
+   @param prio  DDD priority of new object copy.
+ */
 
 #ifdef C_FRONTEND
 void DDD_XferCopyObj (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio)
@@ -956,7 +1030,28 @@ void DDD_XferCopyObj (DDD_TYPE *type, DDD_OBJ *obj, DDD_PROC *proc,
 
 
 
-/* XferCopyObj for variable sized objects, 950321 KB */
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  DDD_XferCopyObjX                                              */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+        Transfer-command for objects of varying sizes.
+        This function is an extension of \funk{XferCopyObj}.
+        For objects with same DDD type but with variable size in memory,
+        one can give the real size as forth parameter to \funk{XferCopyObjX}.
+        The DDD Transfer module will use that size value instead of using
+        the size computed in \funk{TypeDefine} after the definition of
+        the object's DDD type.
+
+   @param hdr   DDD local object which has to be copied.
+   @param proc  destination processor which will receive the object copy.
+   @param prio  DDD priority of new object copy.
+   @param size  real size of local object.
+ */
+
 
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 
@@ -990,6 +1085,40 @@ void DDD_XferCopyObjX (DDD_HDR hdr, DDD_PROC proc, DDD_PRIO prio, size_t size)
 #endif
 
 
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  DDD_XferAddData                                               */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+        Transfer array of additional data objects with a DDD local object.
+        This function transfers an array of additional data objects
+        corresponding to one DDD object to the same destination processor.
+        Therefore the latest call to \funk{XferCopyObj} defines the
+        {\em primary} object and the destination. An arbitrary number of
+        \funk{XferAddData}-calls may be issued to transfer various
+        data object arrays at once. This serves as a mechanism to send
+        object references which cannot be handled by the native DDD
+        pointer conversion technique.
+
+        Just before the actual {\bf Transfer}-operation is executed, the (optional)
+        handler #HANDLER_XFERGATHER# will be called to fill the data
+        object array into some reserved storage space.
+        After the {\bf Xfer}-operation the handler #HANDLER_XFERSCATTER# is
+        called on the receiving processor to rebuild the data objects.
+
+        As the data objects had to be registered and equipped with a
+        usual {\em type\_id} (as with the DDD objects), the
+        standard DDD pointer conversion will also take place for the data objects.
+
+   @param cnt  number of data objects in array (i.e.~array length).
+   @param typ  DDD type of data objects. All data objects inside one array
+        should have the same object type. This object type is defined by
+        registering the object structure via \funk{TypeDefine} as usual,
+        but without including the DDD object header.
+ */
 #ifdef C_FRONTEND
 void DDD_XferAddData (int cnt, DDD_TYPE typ)
 {
@@ -1028,6 +1157,17 @@ void DDD_XferAddData (int cnt, DDD_TYPE typ)
 }
 
 
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  DDD_XferAddDataX                                              */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+        Transfer array of additional, variable-sized data objects.
+        {\em not documented yet.}
+ */
 
 void DDD_XferAddDataX (int cnt, DDD_TYPE typ, size_t *sizes)
 {
@@ -1078,15 +1218,22 @@ void DDD_XferAddDataX (int cnt, DDD_TYPE typ, size_t *sizes)
 
 /****************************************************************************/
 /*                                                                          */
-/* Function:  XferDeleteObj                                                 */
-/*                                                                          */
-/* Purpose:   xfer command: delete local object                             */
-/*                                                                          */
-/* Input:     object to be deleted                                          */
-/*                                                                          */
-/* Output:    -                                                             */
+/* Function:  DDD_XferDeleteObj                                             */
 /*                                                                          */
 /****************************************************************************/
+
+/**
+        Transfer-command for deleting a local DDD object.
+        This function is regarded as a {\bf Transfer}-operation due
+        to its influence on DDD management information on neighbouring
+        processors. Therefore the function has to be issued between
+        a starting \funk{XferBegin} and a final \funk{XferEnd} call.
+
+        During the actual {\bf Transfer}-operation all data corresponding
+        to that object and the object memory itself will be deleted.
+
+   @param hdr   DDD local object which has to be deleted.
+ */
 
 #ifdef C_FRONTEND
 void DDD_XferDeleteObj (DDD_HDR hdr)
@@ -1153,13 +1300,15 @@ void DDD_XferDeleteObj (DDD_TYPE *type, DDD_OBJ *obj)
 /*                                                                          */
 /* Function:  DDD_XferBegin                                                 */
 /*                                                                          */
-/* Purpose:   start xfer command phase                                      */
-/*                                                                          */
-/* Input:     -                                                             */
-/*                                                                          */
-/* Output:    -                                                             */
-/*                                                                          */
 /****************************************************************************/
+
+/**
+        Starts transfer phase.
+        A call to this function establishes a global transfer operation.
+        It should be issued on all processors. After this call an arbitrary
+        series of {\bf Xfer}-commands may be issued. The global transfer operation
+        is carried out via a \funk{XferEnd} call on each processor.
+ */
 
 #ifdef C_FRONTEND
 void DDD_XferBegin (void)

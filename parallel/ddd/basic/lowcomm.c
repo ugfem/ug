@@ -55,6 +55,7 @@
 /* standard C library */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "dddi.h"
 #include "basic/lowcomm.h"
@@ -101,6 +102,7 @@ enum CompType {
 
 typedef struct _COMP_DESC
 {
+  char     *name;              /* textual description of component */
   int type;                    /* type of this component */
   size_t entry_size;           /* size per entry (for tables) */
 } COMP_DESC;
@@ -179,6 +181,7 @@ static LC_MSGHANDLE *theRecvArray;
 static MSG_DESC *LC_FreeMsgDescs;
 
 
+
 /****************************************************************************/
 /*                                                                          */
 /* routines                                                                 */
@@ -206,6 +209,7 @@ void LowCommExit (void)
 {
   /* TODO: free temporary data */
 }
+
 
 
 /****************************************************************************/
@@ -676,6 +680,12 @@ int LC_Connect (LC_MSGTYPE mtyp)
 
   /* inform message receivers */
   nRecvs = DDD_Notify();
+  if (nRecvs==ERROR)
+  {
+    DDD_PrintError('E', 6621, "Notify() failed in LC_Connect()");
+    HARD_EXIT;
+  }
+
 
   if (nRecvs<0 || nRecvs>procs-1)
   {
@@ -838,7 +848,7 @@ LC_MSGTYPE LC_NewMsgType (char *msgname)
 }
 
 
-LC_MSGCOMP LC_NewMsgChunk (LC_MSGTYPE mt)
+LC_MSGCOMP LC_NewMsgChunk (char *name, LC_MSGTYPE mt)
 {
   MSG_TYPE  *mtyp = (MSG_TYPE *)mt;
   LC_MSGCOMP id = mtyp->nComps++;
@@ -852,13 +862,14 @@ LC_MSGCOMP LC_NewMsgChunk (LC_MSGTYPE mt)
   }
 
   mtyp->comp[id].type = CT_CHUNK;
+  mtyp->comp[id].name = name;
 
   return(id);
 }
 
 
 
-LC_MSGCOMP LC_NewMsgTable (LC_MSGTYPE mt, size_t size)
+LC_MSGCOMP LC_NewMsgTable (char *name, LC_MSGTYPE mt, size_t size)
 {
   MSG_TYPE  *mtyp = (MSG_TYPE *)mt;
   LC_MSGCOMP id = mtyp->nComps++;
@@ -873,10 +884,131 @@ LC_MSGCOMP LC_NewMsgTable (LC_MSGTYPE mt, size_t size)
 
   mtyp->comp[id].type = CT_TABLE;
   mtyp->comp[id].entry_size = size;
+  mtyp->comp[id].name = name;
 
   return(id);
 }
 
+
+/****************************************************************************/
+
+
+#define LC_COLWIDTH   10
+#define LC_DFLTNAME   "<?>"
+
+/* construct name or default name */
+#define LC_NAME(n)   (((n)!=NULL) ? (n) : LC_DFLTNAME)
+
+
+static void LC_PrintMsgList (MSG_DESC *list)
+{
+  char buf[LC_COLWIDTH*2];
+  MSG_DESC *md;
+  MSG_TYPE *last_mt=NULL;
+  size_t sum, comp_size[MAX_COMPONENTS];
+  int i;
+
+  for(md=list; md!=NULL; md=md->next)
+  {
+    MSG_TYPE *mt = md->msgType;
+
+    if (mt!=last_mt)
+    {
+      /* msg-type changes, print new header */
+
+      /* first, close part of msg-list with summary */
+      if (last_mt!=NULL)
+      {
+        sprintf(cBuffer, "%4d:        = |", me);
+        sum = 0;
+        for(i=0; i<last_mt->nComps; i++)
+        {
+          sprintf(buf, "%9ld", comp_size[i]);
+          strcat(cBuffer, buf);
+
+          sum += comp_size[i];                                 /* horizontal sum */
+        }
+        sprintf(buf, "%9ld\n", sum); strcat(cBuffer, buf);
+        DDD_PrintLine(cBuffer);
+      }
+
+      /* then, construct header */
+      sprintf(cBuffer, "%4d:%9.9s |", me, LC_NAME(mt->name));
+      for(i=0; i<mt->nComps; i++)
+      {
+        if (mt->comp[i].name!=NULL)
+          sprintf(buf, "%9.9s", LC_NAME(mt->comp[i].name));
+        else
+          sprintf(buf, "%9d", i);
+        strcat(cBuffer, buf);
+
+        comp_size[i] = 0;
+      }
+      strcat(cBuffer, "        =\n"); DDD_PrintLine(cBuffer);
+      last_mt = mt;
+    }
+
+    /* construct info about message components */
+    sprintf(cBuffer, "%4d:%9d |", me, md->proc);
+    sum = 0;
+    for(i=0; i<mt->nComps; i++)
+    {
+      size_t s = md->chunks[i].size;
+
+      sprintf(buf, "%9ld", s);
+      strcat(cBuffer, buf);
+
+      sum          += s;                     /* horizontal sum */
+      comp_size[i] += s;                     /* vertical sum */
+    }
+    sprintf(buf, "%9ld\n", sum); strcat(cBuffer, buf);
+    DDD_PrintLine(cBuffer);
+  }
+
+  /* close last part of msg-list with summary */
+  if (last_mt!=NULL)
+  {
+    sprintf(cBuffer, "%4d:        = |", me);
+    sum = 0;
+    for(i=0; i<last_mt->nComps; i++)
+    {
+      sprintf(buf, "%9ld", comp_size[i]);
+      strcat(cBuffer, buf);
+
+      sum += comp_size[i];                     /* horizontal sum */
+    }
+    sprintf(buf, "%9ld\n", sum); strcat(cBuffer, buf);
+    DDD_PrintLine(cBuffer);
+  }
+
+}
+
+
+void LC_PrintSendMsgs (void)
+{
+  int p;
+
+  for(p=0; p<procs; p++)
+  {
+    DDD_SyncAll();
+    if (p==me)
+      LC_PrintMsgList(LC_SendQueue);
+  }
+  DDD_SyncAll();
+}
+
+void LC_PrintRecvMsgs (void)
+{
+  int p;
+
+  for(p=0; p<procs; p++)
+  {
+    DDD_SyncAll();
+    if (p==me)
+      LC_PrintMsgList(LC_RecvQueue);
+  }
+  DDD_SyncAll();
+}
 
 
 /****************************************************************************/

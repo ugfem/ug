@@ -246,6 +246,7 @@ void IFDeleteAll (DDD_IF ifId)
 
   /* reset pointers */
   theIF[ifId].ifHead = NULL;
+  theIF[ifId].nIfHeads = 0;
 }
 
 
@@ -314,7 +315,7 @@ static COUPLING ** IFCollectStdCouplings (void)
 
   /* collect couplings */
   n=0;
-  for(index=0; index<nCpls; index++)
+  for(index=0; index<NCPL_GET; index++)
   {
     COUPLING  *cpl;
 
@@ -361,16 +362,16 @@ static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
 
     /* collect relevant couplings into tmpcpl array */
     n=0;
-    for(index=0; index<nCpls; index++)
+    for(index=0; index<NCPL_GET; index++)
     {
       /* determine whether object belongs to IF */
-      if ((1<<OBJ_TYPE(theObj[index])) & theIF[ifId].maskO)
+      if ((1<<OBJ_TYPE(ddd_ObjTable[index])) & theIF[ifId].maskO)
       {
         int objInA, objInB;
 
-        objInA = is_elem(OBJ_PRIO(theObj[index]),
+        objInA = is_elem(OBJ_PRIO(ddd_ObjTable[index]),
                          theIF[ifId].nPrioA, theIF[ifId].A);
-        objInB = is_elem(OBJ_PRIO(theObj[index]),
+        objInB = is_elem(OBJ_PRIO(ddd_ObjTable[index]),
                          theIF[ifId].nPrioB, theIF[ifId].B);
 
         if (objInA || objInB)
@@ -571,6 +572,11 @@ static void IFCreateFromScratch (COUPLING **tmpcpl, DDD_IF ifId)
 
 
 /****************************************************************************/
+
+/**
+        Definition of a DDD Interface.
+        PDH.
+ */
 
 #ifdef C_FRONTEND
 DDD_IF DDD_IFDefine (

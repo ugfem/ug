@@ -20,6 +20,22 @@
 /*                                                                          */
 /****************************************************************************/
 
+/* RCS_ID
+   $Header$
+ */
+
+#ifndef __DDD_IF_H__
+#define __DDD_IF_H__
+
+
+/****************************************************************************/
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
+/****************************************************************************/
+
+#include "basic/memutil.h"
+
 
 /****************************************************************************/
 /*                                                                          */
@@ -39,7 +55,7 @@
 
 
 /* maximum number of interfaces */
-#define MAX_IF                  20
+#define MAX_IF                  32
 
 
 /* maximum length of interface description string */
@@ -116,10 +132,8 @@ typedef struct if_proc
   VChannelPtr vc;
   msgid msgIn;
   msgid msgOut;
-  char       *msgBufIn;
-  char       *msgBufOut;
-  int lenBufIn;
-  int lenBufOut;
+  Buffer bufIn;
+  Buffer bufOut;
 
 } IF_PROC;
 
@@ -202,3 +216,8 @@ void    IFExecLoopCplX (ExecProcXPtr, COUPLING **, int);
 /* ifobjsc.c */
 void IFCreateObjShortcut (DDD_IF);
 void IFCheckShortcuts (DDD_IF);
+
+
+/****************************************************************************/
+
+#endif

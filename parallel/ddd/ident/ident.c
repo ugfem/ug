@@ -25,6 +25,7 @@
 #define DebugIdent 10  /* 10 is off */
 
 
+/****************************************************************************/
 
 
 /*
@@ -291,7 +292,7 @@ static int IdentStepMode (int old)
 {
   if (identMode!=old)
   {
-    sprintf(cBuffer, "wrong ident-mode (currently in %s, expected %s)",
+    sprintf(cBuffer, ERR_ID_WRONG_MODE,
             IdentModeName(identMode), IdentModeName(old));
     DDD_PrintError('E', 3070, cBuffer);
     return FALSE;
@@ -491,8 +492,7 @@ static int sort_tupelOrder (const void *e1, const void *e2)
 
   if (el1hdr!=el2hdr)
   {
-    sprintf(cBuffer, "same identification tupel for objects %08x and %08x",
-            OBJ_GID(el1hdr), OBJ_GID(el2hdr));
+    sprintf(cBuffer, ERR_ID_SAME_TUPEL, OBJ_GID(el1hdr), OBJ_GID(el2hdr));
     DDD_PrintError('E', 3030, cBuffer);
 
     /*
@@ -529,8 +529,7 @@ static void SetLOI (IDENTINFO *ii, int loi)
   /* primitive cycle detection */
   if (tupel->loi > 64)
   {
-    sprintf(cBuffer, "IdentifyObject-cycle, objects %08x and %08x",
-            ii->msg.gid, ii->id.object);
+    sprintf(cBuffer, ERR_ID_OBJ_CYCLE, ii->msg.gid, ii->id.object);
     DDD_PrintError('E', 3310, cBuffer);
     HARD_EXIT;
   }
@@ -574,7 +573,7 @@ static void ResolveDependencies (
 
   refd = (IDENTINFO **) AllocTmp(sizeof(IDENTINFO *)*nIdentObjs);
   if (refd==NULL) {
-    DDD_PrintError('E', 3300, STR_NOMEM " in ResolveDependencies");
+    DDD_PrintError('E', 3300, ERR_ID_NOMEM_RESOLV);
     return;
   }
 
@@ -648,7 +647,7 @@ static void ResolveDependencies (
     for(rby=tupels[i].refd; rby!=NULL; rby=rby->next)
     {
       printf("%4d: %08x referenced by %08x\n",
-             me, tupels[i].msg.gid, rby->by->msg.gid);
+             me, tupels[i].infos[0]->msg.gid, rby->by->msg.gid);
     }
   }
 #       endif
@@ -760,7 +759,7 @@ static int IdentifySort (IDENTINFO **id, int nIds,
     break;
 
   default :
-    DDD_PrintError('E', 3330, "unknown OPT_IDENTIFY_MODE");
+    DDD_PrintError('E', 3330, ERR_ID_UNKNOWN_OPT);
     HARD_EXIT;
   }
   STAT_INCTIMER3(T_QSORT_TUPEL);
@@ -777,7 +776,7 @@ static int IdentifySort (IDENTINFO **id, int nIds,
   }
   tupels = (ID_TUPEL *) AllocTmp(sizeof(ID_TUPEL)*nTupels);
   if (tupels==NULL) {
-    DDD_PrintError('E', 3000, STR_NOMEM " in IdentifySort");
+    DDD_PrintError('E', 3000, ERR_ID_NOMEM_SORT);
     return(0);
   }
 
@@ -883,7 +882,7 @@ static int IdentifySort (IDENTINFO **id, int nIds,
      */
 #               if DebugIdent<=1
     printf("%4d: Ident dest=%d msg_idx[ %08x ] = %5d, loi=%d\n",
-           me, dest, tupels[j].infos[0]->msg.gid, j, tupels[j]->loi);
+           me, dest, tupels[j].infos[0]->msg.gid, j, tupels[j].loi);
 #               endif
 
     /*
@@ -966,6 +965,12 @@ static void idcons_CheckPairs (void)
 
   /* communicate */
   nRecvs = DDD_Notify();
+  if (nRecvs==ERROR)
+  {
+    DDD_PrintError('E', 3907, ERR_ID_NOTIFY_FAILED);
+    HARD_EXIT;
+  }
+
 
   /* perform checking */
   for(plist=thePLists; plist!=NULL; plist=plist->next)
@@ -978,9 +983,7 @@ static void idcons_CheckPairs (void)
 
     if (j==nRecvs)
     {
-      sprintf(cBuffer,
-              "Identify: no Ident-calls from proc %d, expected %d\n",
-              plist->proc, plist->entries);
+      sprintf(cBuffer, ERR_ID_DIFF_IDENT, plist->proc, plist->entries);
       DDD_PrintError('E', 3900, cBuffer);
       err=TRUE;
     }
@@ -988,8 +991,7 @@ static void idcons_CheckPairs (void)
     {
       if (msgs[j].size!=plist->entries)
       {
-        sprintf(cBuffer,
-                "Identify: %d Ident-calls from proc %d, expected %d\n",
+        sprintf(cBuffer, ERR_ID_DIFF_N_IDENT,
                 msgs[j].size, plist->proc, plist->entries);
         DDD_PrintError('E', 3901, cBuffer);
         err=TRUE;
@@ -1001,12 +1003,12 @@ static void idcons_CheckPairs (void)
 
   if (err)
   {
-    DDD_PrintError('E', 3908, "found errors in IdentifyEnd()");
+    DDD_PrintError('E', 3908, ERR_ID_ERRORS);
     HARD_EXIT;
   }
   else
   {
-    DDD_PrintError('W', 3909, "Ident-ConsCheck level 0: ok.");
+    DDD_PrintError('W', 3909, ERR_ID_OK);
   }
 }
 
@@ -1014,6 +1016,19 @@ static void idcons_CheckPairs (void)
 
 /****************************************************************************/
 
+/****************************************************************************/
+/*                                                                          */
+/* Function:  DDD_IdentifyEnd                                               */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+        End of identication phase.
+        This function starts the object identification process. After a call to
+        this function (on all processors) all {\bf Identify}-commands since the
+        last call to \funk{IdentifyBegin} are executed. This involves a set
+        of local communications between the processors.
+ */
 
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
 void DDD_IdentifyEnd (void)
@@ -1026,6 +1041,9 @@ void DDD_Library::IdentifyEnd (void)
   ID_ENTRY        *id;
   int i, cnt, j;
 
+  /* REMARK: dont use the id->msg.msg.prio fields until they
+          are explicitly set at line L1!                         */
+
   STAT_SET_MODULE(DDD_MODULE_IDENT);
   STAT_ZEROALL;
 
@@ -1037,7 +1055,7 @@ void DDD_Library::IdentifyEnd (void)
   /* step mode and check whether call to IdentifyEnd is valid */
   if (!IdentStepMode(IMODE_CMDS))
   {
-    DDD_PrintError('E', 3071, "DDD_IdentifyEnd() aborted.");
+    DDD_PrintError('E', 3071, ERR_ID_ABORT_END);
     HARD_EXIT;
   };
 
@@ -1062,7 +1080,7 @@ void DDD_Library::IdentifyEnd (void)
 
     if (plist->local_ids==NULL)
     {
-      DDD_PrintError('F',3100, STR_NOMEM " in DDD_IdentifyEnd");
+      DDD_PrintError('F',3100, ERR_ID_NOMEM_IDENT_END);
       HARD_EXIT;
     }
     plist->msgin  = (MSGITEM *) &plist->local_ids[plist->entries];
@@ -1070,8 +1088,13 @@ void DDD_Library::IdentifyEnd (void)
 
 
     /* construct pointer array to IDENTINFO structs */
+    /* AND: fill in current priority from object's header */
     for(id=plist->first, i=0; id!=NULL; id=id->next, i++)
+    {
       plist->local_ids[i] = &(id->msg);
+
+      id->msg.msg.prio = OBJ_PRIO(id->msg.hdr);                   /* L1 */
+    }
 
 
 
@@ -1132,11 +1155,9 @@ void DDD_Library::IdentifyEnd (void)
 #                                       endif
 
 #                                       if DebugIdent<=DebugIdentCons
-          if (msgout->infos[0]->tupel != msgin->tupel)
+          if (msgout->tId != msgin->tupel)
           {
-            sprintf(cBuffer, "inconsistent tupels, "
-                    "gid %08x on %d, gid %08x on %d,"
-                    " in DDD_IdentifyEnd()",
+            sprintf(cBuffer, ERR_ID_INCONS_TUPELS,
                     OBJ_GID(msgout->infos[0]->hdr), me,
                     msgin->gid, plist->proc);
             DDD_PrintError('E', 3920, cBuffer);
@@ -1163,9 +1184,7 @@ void DDD_Library::IdentifyEnd (void)
       {
         if (ret==-1)
         {
-          sprintf(cBuffer, "couldn't receive message from %d"
-                  " in DDD_IdentifyEnd()",
-                  plist->proc);
+          sprintf(cBuffer, ERR_ID_CANT_RECV, plist->proc);
           DDD_PrintError('E', 3921, cBuffer);
           HARD_EXIT;
         }
@@ -1226,21 +1245,20 @@ static void IdentifyIdEntry (DDD_HDR hdr, ID_ENTRY *id, DDD_PROC proc)
   /* step mode and check whether Identify-call is valid */
   if (!IdentActive())
   {
-    DDD_PrintError('E', 3072, "Missing DDD_IdentifyBegin(), aborted");
+    DDD_PrintError('E', 3072, ERR_ID_NO_BEGIN);
     HARD_EXIT;
   }
 
   if (proc==me)
   {
-    sprintf(cBuffer, "cannot identify %08x with myself", OBJ_GID(hdr));
+    sprintf(cBuffer, ERR_ID_NOT_WITH_ME, OBJ_GID(hdr));
     DDD_PrintError('E', 3060, cBuffer);
     HARD_EXIT;
   }
 
   if (proc>=procs)
   {
-    sprintf(cBuffer, "cannot identify %08x with processor %d",
-            OBJ_GID(hdr), proc);
+    sprintf(cBuffer, ERR_ID_NOT_WITH_PROC, OBJ_GID(hdr), proc);
     DDD_PrintError('E', 3061, cBuffer);
     HARD_EXIT;
   }
@@ -1265,7 +1283,13 @@ static void IdentifyIdEntry (DDD_HDR hdr, ID_ENTRY *id, DDD_PROC proc)
 
   id->msg.hdr      = hdr;
   id->msg.msg.gid  = OBJ_GID(hdr);
-  id->msg.msg.prio = OBJ_PRIO(hdr);
+
+  /* NOTE: priority can change between Identify-command and IdentifyEnd!
+     therefore, scan priorities at the beginning of IdentifyEnd.
+     KB 970730.
+
+          id->msg.msg.prio = OBJ_PRIO(hdr);
+   */
 
   id->next     = NULL;
   id->msg.entry= cntIdents++;
@@ -1281,7 +1305,7 @@ static void IdentifyIdEntry (DDD_HDR hdr, ID_ENTRY *id, DDD_PROC proc)
     /* get new id_plist record */
     pnew = (ID_PLIST *) AllocTmp(sizeof(ID_PLIST));
     if (pnew==NULL) {
-      DDD_PrintError('F', 3210, STR_NOMEM "in IdentifyIdEntry");
+      DDD_PrintError('F', 3210, ERR_ID_NOMEM_IDENTRY);
       return;
     }
 
@@ -1313,6 +1337,34 @@ static void IdentifyIdEntry (DDD_HDR hdr, ID_ENTRY *id, DDD_PROC proc)
 }
 
 
+/****************************************************************************/
+/*                                                                          */
+/* Function:  DDD_IdentifyNumber                                            */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+        DDD Object identification via integer number.
+        After an initial call to \funk{IdentifyBegin}, this function
+        identifies two object copies on separate processors. It has to be
+        called on both processors with the same identification value.
+        The necessary actions (e.g. message transfer) are executed via the
+        final call to \funk{IdentifyEnd}; therefore a whole set of
+        \funk{Identify}-operations is accumulated.
+
+        After the identification both objects have the same DDD global
+        object ID, which is build using the minimum of both local object IDs.
+
+        The identification specified here may be detailed even further by
+        additional calls to {\bf Identify}-operations with the same
+        local object. This will construct an identification tupel from
+        all {\bf Identify}-commands for this local object.
+
+   @param hdr   DDD local object which has to be identified with another object
+   @param proc  Owner (processor number) of corresponding local object. This processor has to issue a corresponding call to this {\bf DDD\_Identify}-function.
+   @param ident Identification value. This is an arbitrary number to identify two corresponding operations on different processors.
+ */
+
 #ifdef C_FRONTEND
 void DDD_IdentifyNumber (DDD_HDR hdr, DDD_PROC proc, int ident)
 {
@@ -1339,7 +1391,7 @@ ID_ENTRY        *id;
 
 id = (ID_ENTRY *) AllocTmp(sizeof(ID_ENTRY));
 if (id==NULL) {
-  DDD_PrintError('F', 3200, STR_NOMEM " in DDD_IdentifyNumber");
+  DDD_PrintError('F', 3200, ERR_ID_NOMEM_IDNUMBER);
   return;
 }
 
@@ -1351,6 +1403,33 @@ IdentifyIdEntry(hdr, id, proc);
 }
 
 
+/****************************************************************************/
+/*                                                                          */
+/* Function:  DDD_IdentifyString                                            */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+        DDD Object identification via character string.
+        After an initial call to \funk{IdentifyBegin}, this function
+        identifies two object copies on separate processors. It has to be
+        called on both processors with the same identification string.
+        The necessary actions (e.g. message transfer) are executed via the
+        final call to \funk{IdentifyEnd}; therefore a whole set of
+        \funk{Identify}-operations is accumulated.
+
+        After the identification both objects have the same DDD global
+        object ID, which is build using the minimum of both local object IDs.
+
+        The identification specified here may be detailed even further by
+        additional calls to {\bf Identify}-operations with the same
+        local object. This will construct an identification tupel from
+        all {\bf Identify}-commands for this local object.
+
+   @param hdr   DDD local object which has to be identified with another object
+   @param proc  Owner (processor number) of corresponding local object. This processor has to issue a corresponding call to this {\bf DDD\_Identify}-function.
+   @param ident Identification value. This is an arbitrary string to identify two corresponding operations on different processors.
+ */
 
 #ifdef C_FRONTEND
 void DDD_IdentifyString (DDD_HDR hdr, DDD_PROC proc, char *ident)
@@ -1378,7 +1457,7 @@ ID_ENTRY        *id;
 
 id = (ID_ENTRY *) AllocTmp(sizeof(ID_ENTRY));
 if (id==NULL) {
-  DDD_PrintError('F', 3201, STR_NOMEM "in DDD_IdentifyString");
+  DDD_PrintError('F', 3201, ERR_ID_NOMEM_IDNUMBER);
   return;
 }
 
@@ -1388,6 +1467,39 @@ id->msg.id.string = ident;
 IdentifyIdEntry(hdr, id, proc);
 }
 
+
+/****************************************************************************/
+/*                                                                          */
+/* Function:  DDD_IdentifyObject                                            */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+        DDD Object identification via another DDD Object.
+        After an initial call to \funk{IdentifyBegin}, this function
+        identifies two object copies on separate processors. It has to be
+        called on both processors with the same identification object.
+        The necessary actions (e.g. message transfer) are executed via the
+        final call to \funk{IdentifyEnd}; therefore a whole set of
+        \funk{Identify}-operations is accumulated.
+
+        After the identification both objects have the same DDD global
+        object ID, which is build using the minimum of both local object IDs.
+
+        The identification object {\em ident} must be either a distributed
+        object known to both processors issueing the \funk{IdentifyObject}-command
+        or a local object which is not known to these two processors, but which
+        will also be identified during the current {\bf Identify}-process.
+
+        The identification specified here may be detailed even further by
+        additional calls to {\bf Identify}-operations with the same
+        local object. This will construct an identification tupel from
+        all {\bf Identify}-commands for this local object.
+
+   @param hdr   DDD local object which has to be identified with another object
+   @param proc  Owner (processor number) of corresponding local object. This processor has to issue a corresponding call to this {\bf DDD\_Identify}-function.
+   @param ident Identification object. This is an arbitrary global object which is known to both processors involved to identify the two corresponding operations on these processors.
+ */
 
 #ifdef C_FRONTEND
 void DDD_IdentifyObject (DDD_HDR hdr, DDD_PROC proc, DDD_HDR ident)
@@ -1417,7 +1529,7 @@ ID_ENTRY        *id;
 
 id = (ID_ENTRY *) AllocTmp(sizeof(ID_ENTRY));
 if (id==NULL) {
-  DDD_PrintError('F', 3202, STR_NOMEM " in DDD_IdentifyObject");
+  DDD_PrintError('F', 3202, ERR_ID_NOMEM_IDOBJ);
   return;
 }
 
@@ -1435,6 +1547,42 @@ IdentifyIdEntry(hdr, id, proc);
 
 
 
+/****************************************************************************/
+/*                                                                          */
+/* Function:  DDD_IdentifyBegin                                             */
+/*                                                                          */
+/****************************************************************************/
+
+/**
+        Begin identification phase.
+        A call to this function establishes a global identification operation.
+        It should be issued on all processors. After this call an arbitrary
+        series of {\bf Identify}-commands may be issued. The global
+        identification operation is carried out via a \funk{IdentifyEnd}
+        call on each processor.
+
+        All identification commands given for one local object will be collected
+        into an {\em identification tupel}. Thus, object identificators can be
+        constructed from several simple identification calls. DDD option
+   #IDENTIFY_MODE# may be set before the \funk{IdentifyEnd} call
+        in order to specify how the order of simple identificators is
+        handled for each complex identification tupel:
+
+        \begin{description}
+        \item[#IDMODE_LISTS#:]%
+        The order of all identification commands for one local object is kept.
+        Both processors with corresponding complex identificators must issue
+        the identification commands in the same order.
+        %
+        \item[#IDMODE_SETS#:]%
+        The order of all identification commands for one local object is
+        not relevant. The DDD identification module sorts the commands
+        inside each complex identificator. Both processors with corresponding
+        identification tupels may issue the identification commands in any
+        order.
+        \end{description}
+ */
+
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
 void DDD_IdentifyBegin (void)
 #endif
@@ -1445,7 +1593,7 @@ void DDD_Library::IdentifyBegin (void)
   /* step mode and check whether call to IdentifyBegin is valid */
   if (!IdentStepMode(IMODE_IDLE))
   {
-    DDD_PrintError('E', 3073, "DDD_IdentifyBegin() aborted.");
+    DDD_PrintError('E', 3073, ERR_ID_ABORT_BEGIN);
     HARD_EXIT;
   }
 

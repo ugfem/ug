@@ -405,6 +405,19 @@ int DDD_Notify (void)
            lastInfo, theDescs[i].proc, theDescs[i].size);
 #               endif
 
+    if (theDescs[i].proc==me) {
+      sprintf(cBuffer, "proc %d is trying to send message to itself"
+              " in DDD_Notify()", me);
+      DDD_PrintError('E', 6310, cBuffer);
+      return(ERROR);
+    }
+    if (theDescs[i].proc>=procs) {
+      sprintf(cBuffer, "proc %d is trying to send message to proc %d"
+              " in DDD_Notify()", me, theDescs[i].proc);
+      DDD_PrintError('E', 6311, cBuffer);
+      return(ERROR);
+    }
+
     allInfos[lastInfo].from = me;
     allInfos[lastInfo].to   = theDescs[i].proc;
     allInfos[lastInfo].size = theDescs[i].size;

@@ -43,7 +43,6 @@
 #include "xfer.h"
 
 
-#define DebugCmdMsg  10  /* 10 is off */
 
 
 
@@ -98,7 +97,7 @@ static LC_MSGCOMP undelete_id;
 void CmdMsgInit (void)
 {
   cmdmsg_t = LC_NewMsgType("CmdMsg");
-  undelete_id = LC_NewMsgTable(cmdmsg_t, sizeof(DDD_GID));
+  undelete_id = LC_NewMsgTable("UndelTab", cmdmsg_t, sizeof(DDD_GID));
 }
 
 

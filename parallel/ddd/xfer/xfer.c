@@ -1008,18 +1008,18 @@ void ddd_XferInit (void)
   XferSetMode(XMODE_IDLE);
 
   xferGlobals.objmsg_t = LC_NewMsgType("XferMsg");
-  xferGlobals.symtab_id =
-    LC_NewMsgTable(xferGlobals.objmsg_t, sizeof(SYMTAB_ENTRY));
-  xferGlobals.objtab_id =
-    LC_NewMsgTable(xferGlobals.objmsg_t, sizeof(OBJTAB_ENTRY));
-  xferGlobals.newcpl_id =
-    LC_NewMsgTable(xferGlobals.objmsg_t, sizeof(TENewCpl));
-  xferGlobals.oldcpl_id =
-    LC_NewMsgTable(xferGlobals.objmsg_t, sizeof(TEOldCpl));
-  xferGlobals.objmem_id =
-    LC_NewMsgChunk(xferGlobals.objmsg_t);
+  xferGlobals.symtab_id = LC_NewMsgTable("SymTab",
+                                         xferGlobals.objmsg_t, sizeof(SYMTAB_ENTRY));
+  xferGlobals.objtab_id = LC_NewMsgTable("ObjTab",
+                                         xferGlobals.objmsg_t, sizeof(OBJTAB_ENTRY));
+  xferGlobals.newcpl_id = LC_NewMsgTable("NewCpl",
+                                         xferGlobals.objmsg_t, sizeof(TENewCpl));
+  xferGlobals.oldcpl_id = LC_NewMsgTable("OldCpl",
+                                         xferGlobals.objmsg_t, sizeof(TEOldCpl));
+  xferGlobals.objmem_id = LC_NewMsgChunk("ObjMem",
+                                         xferGlobals.objmsg_t);
 
-  /*
+  /* not used anymore
           xferGlobals.deltab_id =
                   LC_NewMsgTable(xferGlobals.objmsg_t, sizeof(DELTAB_ENTRY));
           xferGlobals.priotab_id =

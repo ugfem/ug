@@ -22,6 +22,11 @@
 /*                                                                          */
 /****************************************************************************/
 
+/* RCS_ID
+   $Header$
+ */
+
+
 /****************************************************************************/
 /*                                                                          */
 /* auto include mechanism and other include files                           */
@@ -32,7 +37,14 @@
 #define __XFER_H__
 
 
-#define DebugXfer  10  /* 0 is all, 10 is off */
+#define DebugXfer     10   /* 0 is all, 10 is off */
+#define DebugPack     6    /* off: 6 */
+#define DebugUnpack   5    /* off: 5 */
+#define DebugCmdMsg   10   /* off: 10 */
+#define DebugCplMsg   10   /* off: 10 */
+
+
+
 
 #include "basic/lowcomm.h"
 #include "sll.h"
@@ -117,6 +129,7 @@ typedef struct _XICopyObj
 /* include template */
 #define T XICopyObj
 #include "sll.ht"
+#undef T
 
 
 /* usage of flags in XICopyObj */
@@ -146,6 +159,7 @@ typedef struct _XIDelCmd
 /* include template */
 #define T XIDelCmd
 #include "sll.ht"
+#undef T
 
 
 /* XIDelObj represents an object-delete-action (cf. XferRegisterDelete()) */
@@ -164,6 +178,7 @@ typedef struct _XIDelObj
 /* include template */
 #define T XIDelObj
 #include "sll.ht"
+#undef T
 
 
 
@@ -186,6 +201,7 @@ typedef struct _XISetPrio
 /* include template */
 #define T XISetPrio
 #include "sll.ht"
+#undef T
 
 
 
@@ -215,6 +231,7 @@ typedef struct _XINewCpl
 /* include template */
 #define T XINewCpl
 #include "sll.ht"
+#undef T
 
 
 
@@ -242,6 +259,7 @@ typedef struct _XIOldCpl
 /* include template */
 #define T XIOldCpl
 #include "sll.ht"
+#undef T
 
 
 /****************************************************************************/
@@ -268,6 +286,7 @@ typedef struct _XIAddCpl
 /* include template */
 #define T XIAddCpl
 #include "sll.ht"
+#undef T
 
 
 
@@ -296,6 +315,7 @@ typedef struct _XIDelCpl
 /* include template */
 #define T XIDelCpl
 #include "sll.ht"
+#undef T
 
 
 
@@ -325,6 +345,7 @@ typedef struct _XIModCpl
 /* include template */
 #define T XIModCpl
 #include "sll.ht"
+#undef T
 
 
 /****************************************************************************/
@@ -414,17 +435,6 @@ typedef struct {
   DDD_GID gid;
   DDD_PROC proc;
 } DELTAB_ENTRY;
-
-
-/* TODO was soll diese datenstruktur?? */
-
-typedef struct _DELINFO
-{
-  DDD_GID gid;
-  DDD_PROC proc;
-  struct _DELINFO *next;
-} DELINFO;
-
 
 
 

@@ -1451,7 +1451,7 @@ void DDD_TypeDisplay (DDD_TYPE *idf)
                   cBuffer, e->type);
 #endif
 #ifdef CPP_FRONTEND
-          sprintf(cBuffer, "%srecursive type %s (type_id=%d)\n",
+          sprintf(cBuffer, "%srecursive type %s (typeId=%d)\n",
                   cBuffer,
                   theTypeDefs[e->type].name, e->type);
 #endif
@@ -1474,8 +1474,8 @@ void DDD_TypeDisplay (DDD_TYPE *idf)
 /*                                                                          */
 /* Purpose:   register handlers for given DDD_TYPE                          */
 /*                                                                          */
-/* Input:     type_id, handler_name, func_ptr, ... (last two repeated)      */
-/*            with: type_id: DDD_TYPE for which handlers will be registered */
+/* Input:     typeId, handler_name, func_ptr, ... (last two repeated)      */
+/*            with: typeId: DDD_TYPE for which handlers will be registered */
 /*                  handler_name:  one of HANDLER_xxx                       */
 /*                  func_ptr:      pointer to function implementing handler */
 /*            the argument list must be finished with HANDLER_END.          */
@@ -1561,17 +1561,39 @@ static void InitHandlers (TYPE_DESC *desc)
 
 
 
+/**
+        Registration of handler functions.
+
+        {\em This function is supported for downward compatibility only.
+        (Use new DDD\_SetHandlerXXX-functions instead. Advantage: static type
+        checking for handler functions).}
+
+        This function registers a list of handlers for a certain DDD
+        object type. The list may contain each handler type {\tt HANDLER\_}
+        as listed in this manual. Usually, \funk{HandlerRegister} will be called
+        once after initialization of the corresponding \cod{DDD\_TYPE}.
+
+        It is possible to define certain sets of handler functions and switch them
+        at runtime; \eg, a set for load migration and another set for distributed
+        grid refinement can be defined. Before executing the actual task, the
+        handler set must be registered.
+
+        variable argumentlist...
+
+   @param typeId  DDD type of object for which the handlers will be registered.
+ */
+
 #ifdef C_FRONTEND
-void DDD_HandlerRegister (DDD_TYPE type_id, ...)
+void DDD_HandlerRegister (DDD_TYPE typeId, ...)
 {
 #endif
 #ifdef F_FRONTEND
 void DDD_HandlerRegister (DDD_TYPE *fid, ...)
 {
-  DDD_TYPE type_id = *fid;
+  DDD_TYPE typeId = *fid;
 #endif
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
-TYPE_DESC *desc = &(theTypeDefs[type_id]);
+TYPE_DESC *desc = &(theTypeDefs[typeId]);
 int idx;
 va_list ap;
 
@@ -1588,7 +1610,7 @@ if (desc->mode != DDD_TYPE_DEFINED)
 
 /* read argument list, fill object structure definition */
         #ifdef C_FRONTEND
-va_start(ap, type_id);
+va_start(ap, typeId);
         #endif
         #ifdef F_FRONTEND
 va_start(ap, fid);
@@ -1701,7 +1723,7 @@ int DDD_InfoTypes (void)
 /* Purpose:   returns offset of DDD_HEADER for a given DDD_TYPE in bytes    */
 /*            NOTE: output will be invalid for DDD_TYPEs without header!    */
 /*                                                                          */
-/* Input:     type_id:  DDD_TYPE for which header offset is returned        */
+/* Input:     typeId:  DDD_TYPE for which header offset is returned        */
 /*                                                                          */
 /* Output:    nheader offset for given type                                 */
 /*                                                                          */
@@ -1709,9 +1731,9 @@ int DDD_InfoTypes (void)
 
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 
-int DDD_InfoHdrOffset (DDD_TYPE type_id)
+int DDD_InfoHdrOffset (DDD_TYPE typeId)
 {
-  TYPE_DESC *desc = &(theTypeDefs[type_id]);
+  TYPE_DESC *desc = &(theTypeDefs[typeId]);
 
   return desc->offsetHeader;
 }

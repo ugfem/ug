@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "dddi.h"
 
@@ -120,11 +121,11 @@ DDD_HDR *LocalObjectsList (void)
 
   locObjs = (DDD_HDR *) AllocTmp(nObjs*sizeof(DDD_HDR));
   if (locObjs==NULL) {
-    DDD_PrintError('E', 6520,  STR_NOMEM " in LocalObjectsList");
+    DDD_PrintError('E', 2210,  STR_NOMEM " in LocalObjectsList");
     return(NULL);
   }
 
-  memcpy(locObjs, theObj, nObjs*sizeof(DDD_HDR));
+  memcpy(locObjs, ddd_ObjTable, nObjs*sizeof(DDD_HDR));
   qsort(locObjs, nObjs, sizeof(DDD_HDR), sort_ObjListGID);
 
   return(locObjs);
@@ -135,17 +136,17 @@ DDD_HDR *LocalCoupledObjectsList (void)
 {
   DDD_HDR   *locObjs;
 
-  if (nCpls==0)
+  if (NCPL_GET==0)
     return(NULL);
 
-  locObjs = (DDD_HDR *) AllocTmp(nCpls*sizeof(DDD_HDR));
+  locObjs = (DDD_HDR *) AllocTmp(NCPL_GET*sizeof(DDD_HDR));
   if (locObjs==NULL) {
-    DDD_PrintError('E', 6521, STR_NOMEM " in LocalCoupledObjectsList");
+    DDD_PrintError('E', 2211, STR_NOMEM " in LocalCoupledObjectsList");
     return(NULL);
   }
 
-  memcpy(locObjs, theObj, nCpls*sizeof(DDD_HDR));
-  qsort(locObjs, nCpls, sizeof(DDD_HDR), sort_ObjListGID);
+  memcpy(locObjs, ddd_ObjTable, NCPL_GET*sizeof(DDD_HDR));
+  qsort(locObjs, NCPL_GET, sizeof(DDD_HDR), sort_ObjListGID);
 
   return(locObjs);
 }
@@ -315,16 +316,33 @@ void DDD_ObjDelete (DDD_OBJ obj, size_t size, DDD_TYPE typ)
 /*                                                                          */
 /* Function:  DDD_HdrConstructor                                            */
 /*                                                                          */
-/* Purpose:   initiate object-header for DDD management                     */
-/*                                                                          */
-/* Input:     hdr:   object header address                                  */
-/*            typ:   DDD_TYPE of object                                     */
-/*            prio:  DDD_PRIO of object                                     */
-/*            attr:  attribute of distributed object                        */
-/*                                                                          */
-/* Output:    -                                                             */
-/*                                                                          */
 /****************************************************************************/
+
+/**
+        Initiate object's DDD Header.
+        This function registers a DDD-object via constructing
+        its DDD-header. Each DDD-object is given a unique {\em global ID},
+        which is stored in the DDD-header together with the object's
+        properties (type\_id, prio, attr) and additional data used by DDD.
+
+        The function \funk{HdrConstructor} and its corresponding deletion
+        function \funk{HdrDestructor} form the ObjManager's
+        {\em constructor/destructor interface}. This interface will be
+        useful for C++ users, together with the {\em raw memory interface}
+        functions \funk{ObjNew} and \funk{ObjDelete}.
+        DDD users who use the language C may prefer the more
+        elaborate {\em application interface}, consisting of the functions
+        \funk{ObjGet} and \funk{ObjUnGet}.
+
+        Due to the construction of global IDs, an overflow error may occur
+        after many calls to \funk{HdrConstructor}
+        (\MaxUniqueGids\ times in \Version).
+
+   @param hdr   Pointer to the DDD Header which should be constructed
+   @param typ   DDD Type of DDD Object
+   @param prio  Priority of DDD Object
+   @param attr  Attribute of DDD Object
+ */
 
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
 void DDD_HdrConstructor (DDD_HDR hdr,DDD_TYPE typ,DDD_PRIO prio,DDD_ATTR attr)
@@ -371,6 +389,10 @@ if (prio>=MAX_PRIO)
   HARD_EXIT;
 }
 
+        #ifdef WithFullObjectTable
+/* in case of FullObjectTable, we register each header in the
+   global ddd_ObjTable. */
+
 /* check whether there are available objects */
 if (nObjs==MAX_OBJ)
 {
@@ -382,9 +404,16 @@ if (nObjs==MAX_OBJ)
 }
 
 /* insert into theObj array */
-theObj[nObjs] = hdr;
+ddd_ObjTable[nObjs] = hdr;
 OBJ_INDEX(hdr) = nObjs;
 nObjs++;
+        #else
+/* if we dont have WithFullObjectTable, pure local objects without
+   copies on other processors aren't registered by DDD. Therefore,
+   they don't have a valid OBJ_INDEX field. */
+MarkHdrLocal(hdr);
+        #endif
+
 
 /* init object header with defaults */
 OBJ_TYPE(hdr)  = typ;
@@ -430,13 +459,40 @@ DDD_IndexObject::DDD_IndexObject (DDD_TYPE typ,
 /*                                                                          */
 /* Function:  DDD_HdrDestructor                                             */
 /*                                                                          */
-/* Purpose:   remove object-header from DDD management                      */
-/*                                                                          */
-/* Input:     hdr: object header address                                    */
-/*                                                                          */
-/* Output:    -                                                             */
-/*                                                                          */
 /****************************************************************************/
+
+/**
+        Remove object's header from DDD management.
+        This function removes an object from DDD-management
+        via destructing its DDD-header.
+        {\em Note:} The DDD-object will be destructed, but its copies
+        on remote processors will not be informed by \funk{HdrDestructor}.
+        There are two consistent possibilities to delete DDD-objects which
+        have copies on remote processors:
+
+        \begin{itemize}
+        \item In order to delete only this local object copy, use
+        \funk{XferDelete} during a DDD Transfer-operation. This will
+        inform the remote copies of the deletion.
+        \item In order to delete a distributed object (\ie, all its
+        object copies), use function \funk{ObjUnGet} (when using the
+        {\em application interface})
+        or a combination of functions
+        \funk{HdrDestructor} / \funk{ObjDelete} (when not using
+        the {\em application interface}) for all copies.
+        \end{itemize}
+
+        The function \funk{HdrDestructor} and its corresponding creation
+        function \funk{HdrConstructor} form the ObjManager's
+        {\em constructor/destructor interface}. This interface will be
+        useful for C++ users, together with the {\em raw memory interface}
+        functions \funk{ObjNew} and \funk{ObjDelete}.
+        DDD users who use the language C may prefer the more
+        elaborate {\em application interface}, consisting of the functions
+        \funk{ObjGet} and \funk{ObjUnGet}.
+
+   @param hdr  the object's DDD Header
+ */
 
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
 /* in F_FRONTEND, DDD_HdrDestructor is used internally */
@@ -477,7 +533,7 @@ if (xfer_active)
 
 objIndex = OBJ_INDEX(hdr);
 
-if (objIndex<nCpls)
+if (objIndex<NCPL_GET)
 {
   /* this is an object with couplings */
   cpl = theCpl[objIndex];
@@ -496,34 +552,40 @@ if (objIndex<nCpls)
     }
   }
 
-  nCpls--;
+  NCPL_DECREMENT;
   nObjs--;
 
   /* fill slot of deleted obj with last cpl-obj */
-  theObj[objIndex] = theObj[nCpls];
-  theCpl[objIndex] = theCpl[nCpls];
-  theCplN[objIndex] = theCplN[nCpls];
-  OBJ_INDEX(theObj[objIndex]) = objIndex;
+  ddd_ObjTable[objIndex] = ddd_ObjTable[NCPL_GET];
+  theCpl[objIndex] = theCpl[NCPL_GET];
+  theCplN[objIndex] = theCplN[NCPL_GET];
+  OBJ_INDEX(ddd_ObjTable[objIndex]) = objIndex;
 
+                #ifdef WithFullObjectTable
   /* fill slot of last cpl-obj with last obj */
-  if (nCpls<nObjs)
+  if (NCPL_GET<nObjs)
   {
-    theObj[nCpls] = theObj[nObjs];
-    OBJ_INDEX(theObj[nCpls]) = nCpls;
+    ddd_ObjTable[NCPL_GET] = ddd_ObjTable[nObjs];
+    OBJ_INDEX(ddd_ObjTable[NCPL_GET]) = NCPL_GET;
   }
+                #else
+  assert(NCPL_GET==nObjs);
+                #endif
 
   /* dispose all couplings */
   DisposeCouplingList(cpl);
 }
 else
 {
+                #ifdef WithFullObjectTable
   /* this is an object without couplings */
   /* deletion is not dangerous (no consistency problem) */
   nObjs--;
 
   /* fill slot of deleted obj with last obj */
-  theObj[objIndex] = theObj[nObjs];
-  OBJ_INDEX(theObj[objIndex]) = objIndex;
+  ddd_ObjTable[objIndex] = ddd_ObjTable[nObjs];
+  OBJ_INDEX(ddd_ObjTable[objIndex]) = objIndex;
+                #endif
 }
 
 /* invalidate this DDD_HDR */
@@ -688,6 +750,7 @@ void DDD_HdrConstructorCopy (DDD_HDR newhdr, DDD_PRIO prio)
     HARD_EXIT;
   }
 
+        #ifdef WithFullObjectTable
   /* check whether there are available objects */
   if (nObjs==MAX_OBJ)
   {
@@ -698,9 +761,13 @@ void DDD_HdrConstructorCopy (DDD_HDR newhdr, DDD_PRIO prio)
   }
 
   /* insert into theObj array */
-  theObj[nObjs] = newhdr;
+  ddd_ObjTable[nObjs] = newhdr;
   OBJ_INDEX(newhdr) = nObjs;
   nObjs++;
+        #else
+  MarkHdrLocal(newhdr);
+  assert(nObjs==NCPL_GET);
+        #endif
 
   /* init LDATA components. GDATA components will be copied elsewhere */
   OBJ_PRIO(newhdr)  = prio;
@@ -747,10 +814,15 @@ void DDD_HdrConstructorMove (DDD_HDR newhdr, DDD_HDR oldhdr)
   /* change all references from DDD to oldhdr */
 
   /* change entry of theObj array */
-  theObj[objIndex] = newhdr;
+        #ifdef WithFullObjectTable
+  ddd_ObjTable[objIndex] = newhdr;
+        #else
+  if (objIndex<NCPL_GET)
+    ddd_ObjTable[objIndex] = newhdr;
+        #endif
 
   /* change pointers from couplings to object */
-  if (objIndex<nCpls)
+  if (objIndex<NCPL_GET)
   {
     COUPLING *cpl = theCpl[objIndex];
 
@@ -911,12 +983,12 @@ DDD_HDR DDD_SearchHdr (DDD_GID *_gid)
 int i;
 
 i=0;
-while (i<nObjs && OBJ_GID(theObj[i])!=gid)
+while (i<nObjs && OBJ_GID(ddd_ObjTable[i])!=gid)
   i++;
 
 if (i<nObjs)
 {
-  return(theObj[i]);
+  return(ddd_ObjTable[i]);
 }
 else
   return(NULL);

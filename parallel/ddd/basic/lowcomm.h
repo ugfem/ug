@@ -19,6 +19,12 @@
 /*                                                                          */
 /****************************************************************************/
 
+/* RCS_ID
+   $Header: /hosts/dom/cvs/ddd/src/dddi.h,v 1.3 1997/07/24 15:49:05 birken Exp
+   $
+ */
+
+
 /****************************************************************************/
 /*                                                                          */
 /* auto include mechanism and other include files                           */
@@ -69,9 +75,10 @@ typedef int LC_MSGCOMP;      /* component of message (dto) */
 void  LowCommInit (void);
 void  LowCommExit (void);
 
+
 LC_MSGTYPE LC_NewMsgType (char *);
-LC_MSGCOMP LC_NewMsgTable (LC_MSGTYPE, size_t);
-LC_MSGCOMP LC_NewMsgChunk (LC_MSGTYPE);
+LC_MSGCOMP LC_NewMsgTable (char *, LC_MSGTYPE, size_t);
+LC_MSGCOMP LC_NewMsgChunk (char *, LC_MSGTYPE);
 
 void       LC_MsgSend (LC_MSGHANDLE);
 
@@ -90,6 +97,9 @@ void     LC_SetChunkSize (LC_MSGHANDLE, LC_MSGCOMP, size_t);
 
 size_t   LC_GetBufferSize (LC_MSGHANDLE);
 
+
+void LC_PrintSendMsgs (void);
+void LC_PrintRecvMsgs (void);
 
 
 #endif

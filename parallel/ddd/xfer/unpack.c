@@ -47,7 +47,6 @@
 #define MERGE_MODE_IN_TESTZUSTAND
 
 
-#define DebugUnpack  5  /* off: 5 */
 
 /*#define DebugCouplingCons*/
 

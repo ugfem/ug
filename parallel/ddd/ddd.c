@@ -30,7 +30,7 @@
 /*                                                                          */
 /****************************************************************************/
 
-/* standard C library */
+/* standard C library  */
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -72,12 +72,12 @@ RCSID("$Header$",DDD_RCS_STRING)
 /*                                                                          */
 /****************************************************************************/
 
-DDD_HDR theObj[MAX_OBJ];
+DDD_HDR ddd_ObjTable[MAX_OBJ];
 int nObjs;
 
 COUPLING   *theCpl[MAX_CPL];
 int theCplN[MAX_CPL];
-int nCpls;
+int ddd_nCpls;
 int nCplItems;
 
 int theIdCount;             /* local unique ID count */
@@ -98,26 +98,46 @@ int theOptions[OPT_END];
 /****************************************************************************/
 
 
-
 /****************************************************************************/
 /*                                                                          */
 /* Function:  DDD_Init                                                      */
 /*                                                                          */
-/* Purpose:   initialize the DDD library                                    */
-/*                                                                          */
-/* Input:     argcp: pointer to argc (the applications parameter count)     */
-/*            argvp: pointer to argv (the applications parameter list)      */
-/*                                                                          */
-/* Output:    -                                                             */
-/*                                                                          */
 /****************************************************************************/
+
+/**
+        Initialisation of the DDD library.
+        This function has to be called before any other function
+        of the DDD library is called. It initializes the underlying
+        PPIF-library, sets all DDD options to their default values
+        and initiates all DDD subsystems.
+
+        As some of the memory handler calls will be initiated during
+        the execution of this function, the memory manager has to be
+        initialized before calling \funk{Init}.
+
+        Note: Not the actual arguments of the {\em main()}-function
+        are passed here (\ie, {\em argc} and {\em argv}), but {\em pointers}
+        to these arguments (\ie, {\em argcp} and {\em argvp}). This is
+        due to manipulation of the argument lists by certain underlying
+        message-passing-implementations (\eg, Argonne MPI).
+        The parameters are not needed for initialisation of the DDD
+        library itself, but will be passed to the PPIF-libraries
+        initialisation function \ppiffunk{InitPPIF}. If the first
+        parameter {\em argcp} is #NULL#, DDD assumes that the PPIF-library
+        has been initialized explicitly by the application program.
+
+   @param  argcp      pointer to argc (the application's parameter count)
+   @param  argvp      pointer to argv (the application's parameter list)
+ */
 
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
 void DDD_Init (int *argcp, char ***argvp)
 #endif
+
 #ifdef CPP_FRONTEND
 DDD_Library::DDD_Library (int *argcp, char ***argvp)
 #endif
+
 {
 #ifdef CPP_FRONTEND
   // check existence of another instance of DDD_Library
@@ -188,7 +208,7 @@ DDD_Library::DDD_Library (int *argcp, char ***argvp)
 
   /* reset all global counters */
   nObjs  = 0;
-  nCpls  = 0;
+  NCPL_INIT;
   nCplItems  = 0;
   theIdCount = 1;        /* start with 1, for debugging reasons */
 
@@ -220,13 +240,18 @@ DDD_Library::DDD_Library (int *argcp, char ***argvp)
 /*                                                                          */
 /* Function:  DDD_Exit                                                      */
 /*                                                                          */
-/* Purpose:   exit from DDD library                                         */
-/*                                                                          */
-/* Input:     -                                                             */
-/*                                                                          */
-/* Output:    -                                                             */
-/*                                                                          */
 /****************************************************************************/
+
+/**
+        Clean-up of the DDD library.
+        This function frees memory previously allocated by DDD and finally
+        finishes up the PPIF library. After the call to \funk{Exit}
+        further usage of the DDD library is no longer possible during this program
+        run.
+
+        The clean-up of the memory manager should happen afterwards and is left
+        to the DDD application programmer.
+ */
 
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
 void DDD_Exit (void)
@@ -264,13 +289,23 @@ DDD_Library::~DDD_Library (void)
 /*                                                                          */
 /* Function:  DDD_Status                                                    */
 /*                                                                          */
-/* Purpose:   print out background information about DDD library status     */
-/*                                                                          */
-/* Input:     -                                                             */
-/*                                                                          */
-/* Output:    -                                                             */
-/*                                                                          */
 /****************************************************************************/
+
+/**
+        Show global status information.
+        This function displays information concerning both
+        the compile-time parameters of the DDD-library and some important
+        runtime-variables. Overview of compile time parameters that will
+        be displayed:
+
+        \begin{tabular}{l|l}
+        Parameter       & Description\\ \hline
+        DDD-Version     & current library version number\\ ##
+   #MAX_TYPEDESC#  & maximum number of #DDD_TYPE# IDs\\ ##
+   #MAX_OBJ#       & maximum number of DDD-objects on one processor\\ ##
+   #MAX_CPL#       & maximum number of couplings on one processor\\ ##
+        \end{tabular}
+ */
 
 #if defined(C_FRONTEND) || defined(F_FRONTEND)
 void DDD_Status (void)
@@ -287,11 +322,15 @@ void DDD_Library::Status (void)
   sprintf(cBuffer, "|     MAX_PROCS    = %4d\n", MAX_PROCS);
   sprintf(cBuffer, "|     MAX_PRIO     = %4d\n", MAX_PRIO);
   DDD_PrintLine(cBuffer);
+#ifdef WithFullObjectTable
   sprintf(cBuffer, "|\n|     MAX_OBJ = %8d  MAX_CPL = %8d\n", MAX_OBJ, MAX_CPL);
+#else
+  sprintf(cBuffer, "|\n|     MAX_CPL = %8d\n", MAX_CPL);
+#endif
   DDD_PrintLine(cBuffer);
 
   sprintf(cBuffer, "|     nObjs   = %8d  nCpls   = %8d  nCplItems = %8d\n",
-          nObjs, nCpls, nCplItems);
+          nObjs, NCPL_GET, nCplItems);
   DDD_PrintLine(cBuffer);
   DDD_PrintLine("|\n|     Timeouts:\n");
   sprintf(cBuffer, "|        IFComm:  %12ld\n", (unsigned long)MAX_TRIES);
@@ -314,13 +353,22 @@ void DDD_Library::Status (void)
 /*                                                                          */
 /* Function:  DDD_LineOutRegister                                           */
 /*                                                                          */
-/* Purpose:   redirect DDD text output                                      */
-/*                                                                          */
-/* Input:     func: function which takes output string as an argument       */
-/*                                                                          */
-/* Output:    -                                                             */
-/*                                                                          */
 /****************************************************************************/
+
+/**
+        Redirect text output.
+        This function sets the DDD-textport to a given handler function.
+        The handler should be declared as follows:
+
+   #void func(char *line_of_text)#
+
+        Instead of printing text for error, debugging and info messages
+        directly to {\em standard output}, DDD will redirect all output
+        one line at a time and send it to the handler {\em func}.
+        This can be used to send each processor's output into a separate file.
+
+   @param  func  handler function which should be used for text redirection
+ */
 
 #ifdef C_FRONTEND
 void DDD_LineOutRegister (void (*func)(char *s))
@@ -341,28 +389,34 @@ void DDD_Library::LineOutRegister (void (*func)(char *))
 /*                                                                          */
 /* Function:  DDD_SetOption                                                 */
 /*                                                                          */
-/* Purpose:   set DDD runtime options                                       */
-/*                                                                          */
-/* Input:     option:  OptionType of option to be set                       */
-/*            val:     value of option                                      */
-/*                                                                          */
-/* Output:    -                                                             */
-/*                                                                          */
 /****************************************************************************/
 
+/**
+        Set a DDD-option to a given value.
+        The current behaviour of the DDD library can be configured
+        at runtime by setting a variety of options to given values.
+        For each option, there is a default setting and a set of
+        possible values. See \Ref{DDD Options} for a description
+        of all possible options with their default settings and
+        meaning.
+
+   @param option   DDD option specifier
+   @param value    option value, possible values depend on option specifier
+ */
+
 #ifdef C_FRONTEND
-void DDD_SetOption (DDD_OPTION option, int val)
+void DDD_SetOption (DDD_OPTION option, int value)
 {
 #endif
 #ifdef CPP_FRONTEND
-void DDD_Library::SetOption (DDD_OPTION option, int val)
+void DDD_Library::SetOption (DDD_OPTION option, int value)
 {
 #endif
 #ifdef F_FRONTEND
-void DDD_SetOption (DDD_OPTION *_option, int *_val)
+void DDD_SetOption (DDD_OPTION *_option, int *_value)
 {
   DDD_OPTION option = *_option;
-  int val = *_val;
+  int value = *_value;
 #endif
 if (option>=OPT_END)
 {
@@ -370,14 +424,14 @@ if (option>=OPT_END)
   return;
 }
 
-ddd_SetOption(option, val);
+ddd_SetOption(option, value);
 }
 
 
 
 /****************************************************************************/
 /*                                                                          */
-/* Function:  DDD_GetOption                                                 */
+/* Function:  DDD_GetOption (not exported)                                  */
 /*                                                                          */
 /* Purpose:   get DDD runtime options                                       */
 /*                                                                          */
@@ -404,6 +458,14 @@ int DDD_GetOption (DDD_OPTION option)
         transparent access to global variables from PPIF
  */
 
+/**
+        Get local processor number.
+        This function returns the local processor number, which is an
+        integer number between $0$ and \funk{InfoProcs}.
+
+   @return  local processor number
+ */
+
 #ifdef C_FRONTEND
 DDD_PROC DDD_InfoMe (void)
 {
@@ -418,6 +480,16 @@ DDD_PROC DDD_Library::InfoMe (void)
 #endif
 
 
+
+/**
+        Get master processor number.
+        This function returns the processor number of the
+        master processor. Processor numbers are always
+        integer numbers between $0$ and \funk{InfoProcs}.
+        Usually, processor $0$ is the master processor.
+
+   @return  master processor number
+ */
 #ifdef C_FRONTEND
 DDD_PROC DDD_InfoMaster (void)
 {
@@ -432,6 +504,11 @@ DDD_PROC DDD_Library::InfoMaster (void)
 #endif
 
 
+/**
+        Get total number of processors.
+
+   @return  total number of processors
+ */
 #ifdef C_FRONTEND
 DDD_PROC DDD_InfoProcs (void)
 {

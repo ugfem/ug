@@ -21,6 +21,9 @@
 /*                                                                          */
 /****************************************************************************/
 
+/* RCS_ID
+   $Header$
+ */
 
 
 /*
@@ -51,6 +54,7 @@
 #include "ppif.h"
 #include "ctrl/stat.h"
 
+#include "dddstr.h"
 #include "include/ddd.h"
 #include "include/dddio.h"
 
@@ -93,9 +97,15 @@
 #define MAX_ELEMDESC   64    /* max. number of elements per TYPE_DESC       */
 #define MAX_TYPEDESC   32    /* max. number of TYPE_DESC                    */
 #define MAX_PRIO       32    /* max. number of DDD_PRIO                     */
+#define MAX_CPL     50000    /* max. number of local objects with coupling  */
 
-#define MAX_OBJ    700000    /* max. number of locally registered objects   */
-#define MAX_CPL    200000    /* max. number of local objects with coupling  */
+#ifdef WithFullObjectTable
+#define MAX_OBJ    300000    /* max. number of locally registered objects   */
+#else
+#define MAX_OBJ    MAX_CPL
+#endif
+
+
 
 #define MAX_TRIES  50000000  /* max. number of tries til timeout in IF-comm */
 
@@ -173,12 +183,6 @@ enum PrioMergeVals {
    #define RCSIDAUX(header,module_rcs_string) static char rcsid[] = #header ## module_rcs_string;
  */
 #define RCSID(a,b)
-
-
-/* insert the following line literally into all source files */
-/* remove the question marks!! */
-/* RCSID????("$Header$",DDD_RCS_STRING) */
-
 
 
 
@@ -325,12 +329,12 @@ typedef struct _TYPE_DESC
 
 extern TYPE_DESC theTypeDefs[MAX_TYPEDESC];
 
-extern DDD_HDR theObj[MAX_OBJ];
+extern DDD_HDR ddd_ObjTable[MAX_OBJ];
 extern int nObjs;
 
 extern COUPLING   *theCpl[MAX_CPL];
 extern int theCplN[MAX_CPL];
-extern int nCpls;                        /* number of coupling lists */
+extern int ddd_nCpls;                    /* number of coupling lists */
 extern int nCplItems;                    /* number of couplings      */
 
 extern int        *iBuffer;
@@ -423,6 +427,9 @@ extern VChannelPtr *theTopology;
 #define OBJ_OBJ(hd)       HDR2OBJ(hd,&theTypeDefs[OBJ_TYPE(hd)])
 #endif
 
+
+/****************************************************************************/
+
 /* internal access of DDD_HEADER members */
 
 /* type of object */
@@ -444,10 +451,10 @@ extern VChannelPtr *theTopology;
 #define OBJ_FLAGS(o)    ((o)->flags)
 
 
-
+/****************************************************************************/
 
 /* get boolean: does object have couplings? */
-#define HAS_COUPLING(o) (OBJ_INDEX(o)<nCpls)
+#define HAS_COUPLING(o) (OBJ_INDEX(o)<ddd_nCpls)
 
 /* get #couplings per object */
 #define NCOUPLINGS(o) (HAS_COUPLING(o) ? theCplN[OBJ_INDEX(o)] : 0)
@@ -455,15 +462,31 @@ extern VChannelPtr *theTopology;
 /* get pointer to object's coupling list */
 #define THECOUPLING(o) (HAS_COUPLING(o) ? theCpl[OBJ_INDEX(o)] : NULL)
 
+/* increment/decrement number of coupled objects */
+/*
+   #define NCPL_INCREMENT    { ddd_nCpls++; printf("%4d: nCpls++ now %d, %s:%d\n",me,ddd_nCpls,__FILE__,__LINE__); }
+   #define NCPL_DECREMENT    { ddd_nCpls--; printf("%4d: nCpls-- now %d, %s:%d\n",me,ddd_nCpls,__FILE__,__LINE__); }
+ */
+#define NCPL_INCREMENT    ddd_nCpls++;
+#define NCPL_DECREMENT    ddd_nCpls--;
 
-/* get default VChan to processor p */
-#define VCHAN_TO(p)   (theTopology[(p)])
+#define NCPL_GET          ddd_nCpls
+#define NCPL_INIT         ddd_nCpls=0
 
 
 /* DDD_HDR may be invalid */
 #define MarkHdrInvalid(hdr)    OBJ_INDEX(hdr)=MAX_OBJ
 #define IsHdrInvalid(hdr)      OBJ_INDEX(hdr)==MAX_OBJ
 
+#ifndef WithFullObjectTable
+#define MarkHdrLocal(hdr)      OBJ_INDEX(hdr)=(MAX_OBJ+1)
+#define IsHdrLocal(hdr)     OBJ_INDEX(hdr)==(MAX_OBJ+1)
+#endif
+
+/****************************************************************************/
+
+/* get default VChan to processor p */
+#define VCHAN_TO(p)   (theTopology[(p)])
 
 
 /****************************************************************************/

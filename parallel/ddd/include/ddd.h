@@ -39,11 +39,15 @@
 /*                                                                          */
 /****************************************************************************/
 
+/* RCS_ID
+   $Header$
+ */
+
 #ifndef __DDD__
 #define __DDD__
 
 
-#define DDD_VERSION    "1.8.8"
+#define DDD_VERSION    "1.8.9"
 
 
 /****************************************************************************/
@@ -167,18 +171,22 @@ enum OptionType {
 
 
 /* NOTE: changes must be also done in fddd.f */
-enum SwitchType {
+enum OptConsts {
   OPT_OFF = 0,
-  OPT_ON,
-
-  IDMODE_LISTS = 10,        /* ordering of each identify-tupel is relevant      */
-  IDMODE_SETS,              /* ordering of each identify-tupel is not sensitive */
-
-  XFER_SHOW_NONE     = 0x0000,        /* show no statistical infos              */
-  XFER_SHOW_OBSOLETE = 0x0100,        /* show #obsolete xfer-commands           */
-  XFER_SHOW_MEMUSAGE = 0x0200         /* show sizes of message buffers          */
+  OPT_ON
 };
 
+enum OptConstIdent {
+  IDMODE_LISTS = 1,         /* ordering of each identify-tupel is relevant      */
+  IDMODE_SETS               /* ordering of each identify-tupel is not sensitive */
+};
+
+enum OptConstXfer {
+  XFER_SHOW_NONE     = 0x0000,        /* show no statistical infos              */
+  XFER_SHOW_OBSOLETE = 0x0001,        /* show #obsolete xfer-commands           */
+  XFER_SHOW_MEMUSAGE = 0x0002,        /* show sizes of message buffers          */
+  XFER_SHOW_MSGSALL  = 0x0004         /* show message contents by LowComm stats */
+};
 
 
 
@@ -418,15 +426,21 @@ typedef int (*ComProcXPtr)(DDD_OBJ _FPTR, void *, DDD_PROC _FPTR, DDD_PRIO _FPTR
 
 #ifdef CPP_FRONTEND
 
+/**
+        DDD Library class.
+        This is the DOKU for the single-instance DDD class.
+ */
+
 class DDD_Library
 {
 public:
   DDD_Library (int *, char ***);
   ~DDD_Library ();
 
-  // DDD_Library is a Singleton
+  /// DDD_Library is a Singleton
   static DDD_Library* Instance();
 
+  /// shows status of DDD library
   void Status (void);
   void SetOption (DDD_OPTION, int);
 
@@ -437,6 +451,7 @@ public:
     return InfoMe()==InfoMaster();
   }
 
+  /// redirect DDD stdout by registering callback function
   void LineOutRegister (void (*func)(char *s));
 
   // from TypeManager

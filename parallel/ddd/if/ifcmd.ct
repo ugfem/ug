@@ -112,6 +112,13 @@
 /****************************************************************************/
 
 
+/**
+	Interface communication function.
+	Executes a communication using a predefined DDD interface.
+
+@param ifId   DDD interface used for communication
+*/
+
 #if defined(C_FRONTEND) || defined(CPP_FRONTEND)
 void IF_FUNCNAME (
 #ifdef C_FRONTEND

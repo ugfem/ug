@@ -1,5 +1,29 @@
 ---------------------------
 
+CHANGES 1.8.8 -> 1.8.9
+
+---------------------------
+970909
+added inline documentation.
+	- in some later version, the DDD sources will be completely
+	  documented by inline descriptions in DOC++ (ZIB Berlin)
+	  style. This is work in progress.
+970908
+removed need for (very) large object table.
+	- in all earlier versions, DDD maintained on each processor
+	  a pointer array referencing all DDD objects on that processor.
+	  the need for these arrays has been removed in 1.8.9.
+	  Compile-switch WithFullObjectTable may be used to 
+	  enable the large object tables again, this might be useful
+	  for debugging.
+	  Without this compile-switch being set, DDD will _not_ have
+	  any knowledge about objects which do not have coupling
+	  (i.e. local objects). When copies of such objects are created,
+	  or those objects are involved in Identify-procedures, they
+	  will be put under DDD control. Otherwise, the application
+	  layer has to maintain the storage for these objects.
+---------------------------
+
 CHANGES 1.8.7 -> 1.8.8
 
 ---------------------------

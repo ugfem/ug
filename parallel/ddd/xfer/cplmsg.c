@@ -38,8 +38,6 @@
 #include "xfer.h"
 
 
-#define DebugCplMsg  10  /* 10 is off */
-
 
 
 /****************************************************************************/
@@ -100,9 +98,9 @@ static LC_MSGCOMP delcpl_id, modcpl_id, addcpl_id;
 void CplMsgInit (void)
 {
   cplmsg_t = LC_NewMsgType("CplMsg");
-  delcpl_id = LC_NewMsgTable(cplmsg_t, sizeof(TEDelCpl));
-  modcpl_id = LC_NewMsgTable(cplmsg_t, sizeof(TEModCpl));
-  addcpl_id = LC_NewMsgTable(cplmsg_t, sizeof(TEAddCpl));
+  delcpl_id = LC_NewMsgTable("DelCpl", cplmsg_t, sizeof(TEDelCpl));
+  modcpl_id = LC_NewMsgTable("ModCpl", cplmsg_t, sizeof(TEModCpl));
+  addcpl_id = LC_NewMsgTable("AddCpl", cplmsg_t, sizeof(TEAddCpl));
 }
 
 
@@ -452,8 +450,28 @@ void CommunicateCplMsgs (
   }
 
 
+  /* display information about send-messages on lowcomm-level */
+  if (DDD_GetOption(OPT_INFO_XFER) & XFER_SHOW_MSGSALL)
+  {
+    DDD_SyncAll();
+    if (me==master)
+      DDD_PrintLine("DDD XFER_SHOW_MSGSALL: CplMsg.Send\n");
+    LC_PrintSendMsgs();
+  }
+
+
   /* communicate set of messages (send AND receive) */
   recvMsgs = LC_Communicate();
+
+
+  /* display information about recv-messages on lowcomm-level */
+  if (DDD_GetOption(OPT_INFO_XFER) & XFER_SHOW_MSGSALL)
+  {
+    DDD_SyncAll();
+    if (me==master)
+      DDD_PrintLine("DDD XFER_SHOW_MSGSALL: CplMsg.Recv\n");
+    LC_PrintRecvMsgs();
+  }
 
 
   for(i=0; i<nRecvMsgs; i++)
