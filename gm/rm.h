@@ -212,6 +212,7 @@
 
 #define PRI_COPY                        1
 #define PRI_RED                         2
+#define PRI_QUADSECT            3
 
 #define HEXA_COPY                       1
 #define HEXA_RED                        2
