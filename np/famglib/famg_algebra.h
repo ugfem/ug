@@ -50,6 +50,7 @@ extern "C" int PrintLocal(char *);
 #else
 #define RETURN(rcode)   {return (rc);}
 #endif
+#endif
 
 
 // forward declarations
