@@ -14,6 +14,7 @@ fi
 
 # determine MODEL
 MODEL=`grep '^MODEL[ \t]' $UGROOT/ug.conf | awk '{ print $3 }' -`
+ARCH=`grep '^ARCH[ \t]' $UGROOT/ug.conf | awk '{ print $3 }' -` 
 
 # determine processor topology
 PROC=$2
@@ -24,9 +25,20 @@ case $MODEL in
 		$1 -sz $PROC 1;
 		;;
 	MPI)
-		echo mpirun -np $PROC	./$1;
-		mpirun -np $PROC	./$1;
-		## auf NEC: mpisx -p $PROC -e ./$1;
+	    case $ARCH in
+		NEC)
+			echo mpisx -p $PROC -e ./$1;
+			mpisx -p $PROC -e ./$1;
+			;;
+	    SP2)
+			echo poe $1 -procs $PROC -rmpool 0;
+			poe $1 -procs $PROC -rmpool 0
+			;;
+		*)
+			echo mpirun -np $PROC	./$1;
+			mpirun -np $PROC	./$1;
+			;;
+		esac;
         ;;
 	NX)
 		echo isub -sz $PROC   $1;
