@@ -96,7 +96,7 @@
                                    (x)[0]=CVECT(MYVERTEX(CORNER((e),0))); \
                                    (x)[1]=CVECT(MYVERTEX(CORNER((e),1))); \
                                    (x)[2]=CVECT(MYVERTEX(CORNER((e),2))); \
-                                   if(CORNERS_OF_ELEM((e))==3)                \
+                                   if(CORNERS_OF_ELEM((e))==4)                \
                                      (x)[3]=CVECT(MYVERTEX(CORNER((e),3)));}
 #define LOCAL_2_GLOBAL(x,local,global)                    \
   {(global)[0] = (1.0-(local)[0]-(local)[1])*(x)[0][0]     \
