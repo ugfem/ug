@@ -1346,7 +1346,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
           eval_v(el,(const DOUBLE **)CornersCoord,LocalCoord,vval);
 #ifdef __TWODIM__
           if (binaryOutput) {
-            buffer_FlOAT[0]=clampf(vval[0]);
+            buffer_FLOAT[0]=clampf(vval[0]);
             buffer_FLOAT[1]=clampf(vval[1]);
           } else
             sprintf(it,"\t%g\t%g\n",clampf(vval[0]),clampf(vval[1]));
@@ -1599,7 +1599,7 @@ static INT DataExplorerCommand (INT argc, char **argv)
         eval_v(el,(const DOUBLE **)CornersCoord,LocalCoord,vval);
 #ifdef __TWODIM__
         if (binaryOutput) {
-          buffer_FlOAT[0]=clampf(vval[0]);
+          buffer_FLOAT[0]=clampf(vval[0]);
           buffer_FLOAT[1]=clampf(vval[1]);
         } else
           sprintf(it,"\t%g\t%g\n",clampf(vval[0]),clampf(vval[1]));
