@@ -33,9 +33,14 @@
 #ifndef __LGM_TR__
 #define __LGM_TR__
 
+/* for FILE */
+#include <stdio.h>
+
 #ifndef __DOMAIN__
 #include "domain.h"
 #endif
+
+#include "dimension.h"
 
 #include "heaps.h"
 
