@@ -19,12 +19,6 @@ set MANAGER = "${DART_HOME}/Source/Client/DashboardManager.tcl"
 # coverage parameter
 set COVERAGE_PARAM = "$3";
 
-echo "cov:";
-echo "$3";
-echo "   ";
-echo "test:";
-echo "$4";
-
 ###############################################################################
 # read the command line arguments
 ###############################################################################
