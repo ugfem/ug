@@ -487,7 +487,7 @@ static HRID Hash_InsertRule (INT etag, INT key, const ERULE *er, const DOUBLE oc
                 +sizeof(DOUBLE)*
                 (2*ER_NSONS(er)                                 /* #DOUBLEs needed			*/
                  -MAX_SONS);                                            /* #DOUBLEs at end of HRULE	*/
-  HRULE *hr       = (HRULE*) GetMem(global.heap,size,FROM_BOTTOM);
+  HRULE *hr       = (HRULE*) GetMem(global.heap,size,FROM_TOP);
   HRID id         = global.maxrule[etag]++;
 
   if (hr==NULL)
@@ -1214,7 +1214,7 @@ static INT ExtractRules (MULTIGRID *mg)
     int max_list_len = 0;
 
     /* make tables of subsequent IDs */
-    global.hrule[0] = (HRULE**) GetMem(global.heap,global.maxrules*sizeof(HRULE*),FROM_BOTTOM);
+    global.hrule[0] = (HRULE**) GetMem(global.heap,global.maxrules*sizeof(HRULE*),FROM_TOP);
     if (global.hrule[0]==NULL)
       REP_ERR_RETURN(1);
     for (tag=1; tag<TAGS; tag++)
@@ -2107,7 +2107,7 @@ INT NEW_Write_RefRules (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR
 
   global.heap = MGHEAP(mg);
   PRINTDEBUG(gm,ER_DBG_GENERAL,("Write_RefRules (er): before any allocation: HeapFree is %ld bytes\n",(long)HeapFree(global.heap)));
-  if (Mark(global.heap,FROM_BOTTOM,&BotMarkKey))
+  if (Mark(global.heap,FROM_TOP,&BotMarkKey))
     REP_ERR_RETURN(1);
 
   /* init rule counters (continue with last rule IDs of rm) */
@@ -2170,7 +2170,7 @@ INT NEW_Write_RefRules (MULTIGRID *mg, INT RefRuleOffset[], INT MarkKey, MGIO_RR
   Write_RR_Rules(global.maxrules,*mrule_handle);
 
   /* free hrules and hrule table */
-  if (Release(global.heap,FROM_BOTTOM,BotMarkKey))
+  if (Release(global.heap,FROM_TOP,BotMarkKey))
     REP_ERR_RETURN(1);
 
   IFDEBUG(gm,ER_DBG_GENERAL)
