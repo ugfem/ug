@@ -2852,7 +2852,7 @@ static INT SORPreProcess  (NP_ITER *theNP, INT level,
         #ifdef ModelP
   if (AllocMDFromMD(NP_MG(theNP),level,level,A,&np->L)) NP_RETURN(1,result[0]);
   if (dmatcopy(NP_MG(theNP),level,level,ALL_VECTORS,np->L,A) != NUM_OK) NP_RETURN(1,result[0]);
-  if (l_matrix_consistent(theGrid,np->L,TRUE) != NUM_OK) NP_RETURN(1,result[0]);
+  if (l_matrix_consistent(theGrid,np->L,np->cons_mode) != NUM_OK) NP_RETURN(1,result[0]);
         #endif
   if (np->Order!=NULL)
     if ((*np->Order->Order)(np->Order,level,A,result)) NP_RETURN(1,result[0]);
@@ -2871,6 +2871,15 @@ static INT SORStep (NP_SMOOTHER *theNP, INT level,
   NP_SMOOTHER *np = (NP_SMOOTHER *) theNP;
 
     #ifdef ModelP
+  GRID *theGrid = NP_GRID(theNP,level);
+  if (np->cons_mode == MAT_MASTER_CONS) {
+    if (l_vector_collect(theGrid,b)!=NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
+  else {
+    if (l_vector_meanvalue(theGrid,b) != NUM_OK)
+      NP_RETURN(1,result[0]);
+  }
   if (np->AutoDamp)
   {
     if (l_lsor_ld(NP_GRID(theNP,level),x,L,b,np->DampVector) != NUM_OK)
