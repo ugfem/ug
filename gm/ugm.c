@@ -3837,7 +3837,8 @@ INT DisposeMultiGrid (MULTIGRID *theMG)
     free(MGHEAP(theMG));
 
   /* dispose BVP */
-  if (BVP_Dispose(MG_BVP(theMG))) return (GM_ERROR);
+  if (MG_BVP(theMG)!=NULL)
+    if (BVP_Dispose(MG_BVP(theMG))) return (GM_ERROR);
 
   /* first unlock the mg */
   ((ENVITEM*) theMG)->v.locked = FALSE;
