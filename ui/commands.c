@@ -2435,6 +2435,9 @@ static INT SaveDataCommand (INT argc, char **argv)
   MULTIGRID *theMG;
   char FileName[NAMESIZE],type[NAMESIZE];
   VECDATA_DESC *theVDList[5];
+  char NameList[5][NAMESIZE];
+  char **Names;
+  char *NamePtr[5];
   EVALUES *theEValues[5];
   EVECTOR *theEVector[5];
   INT i,j,n,ret,number;
@@ -2505,8 +2508,20 @@ static INT SaveDataCommand (INT argc, char **argv)
   ret = ReadSaveDataInput (theMG,argc,argv,"d",'D',theVDList+3,theEValues+3,theEVector+3);        if (ret) n++;
   ret = ReadSaveDataInput (theMG,argc,argv,"e",'E',theVDList+4,theEValues+4,theEVector+4);        if (ret) n++;
 
+  /* read names */
+  Names=NULL;
+  for (i=1; i<argc; i++)
+    switch (argv[i][0])
+    {
+    case 'N' :
+      if (sscanf(argv[i],"N %s %s %s %s %s",NameList[0],NameList[1],NameList[2],NameList[3],NameList[4])!=n) return (PARAMERRORCODE);
+      Names=NamePtr;
+      for (j=0; j<5; j++) NamePtr[j]=NameList[j];
+      break;
+    }
+
   if (n<=0) return (PARAMERRORCODE);
-  if (SaveData(theMG,FileName,type,number,t[0],t[1],t[2],n,theVDList,theEValues,theEVector)) return (PARAMERRORCODE);
+  if (SaveData(theMG,FileName,type,number,t[0],t[1],t[2],n,theVDList,theEValues,theEVector,Names)) return (PARAMERRORCODE);
 
   return(OKCODE);
 }
