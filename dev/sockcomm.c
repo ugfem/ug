@@ -28,9 +28,8 @@
 /*                                                                          */
 /****************************************************************************/
 
-#ifndef __COMPILER__
 #include "compiler.h"
-#endif
+#include "general.h"
 
 #include "sockcomm.h"
 
