@@ -28,6 +28,7 @@
 /****************************************************************************/
 
 #include <string.h>
+#include <math.h>
 
 #include "ugdevices.h"
 #include "ugenv.h"
@@ -68,6 +69,8 @@ typedef struct
   char name[NAMELEN];
   INT n;
   INT repeat;
+  INT divide;
+  INT frac;
   DOUBLE list[LIST_MAX_ENTRIES];
   DOUBLE regular_step;
 
@@ -205,7 +208,6 @@ static INT List_Init (NP_BASE *theNP, INT argc, char **argv)
     sprintf(buffer,"%s%d",np->name,(int)i);
     if (GetStringValue(buffer,np->list+i)) return (1);
   }
-
   /* sort list */
   if (np->n>1)
     qsort((void *)np->list,np->n,sizeof(DOUBLE),cmp_real);
@@ -239,8 +241,6 @@ static INT List_Display (NP_BASE *theNP)
   return (0);
 }
 
-/****************************************************************************/
-
 static INT List_Construct (NP_BASE *theNP)
 {
   NP_ORDERED_LIST *np;
@@ -268,6 +268,15 @@ static INT Table_Init (NP_BASE *theNP, INT argc, char **argv)
 
   np = (NP_LIST *)theNP;
   if (ReadArgvINT("n",&(np->n),argc,argv)) REP_ERR_RETURN(NP_NOT_ACTIVE);
+  if (ReadArgvINT("divide",&(np->divide),argc,argv))
+    np->divide=1;
+  if (np->divide%2 == 0)
+    np->frac = ReadArgvOption("frac",argc,argv);
+  if (np->divide <= 0) {
+    UserWriteF("ERROR in initialization of divide:"
+               " divide must be positive\n");
+    REP_ERR_RETURN(NP_NOT_ACTIVE);
+  }
   np->repeat = ReadArgvOption("R",argc,argv);
   if (np->n<0 || np->n>LIST_MAX_ENTRIES) {
     UserWriteF("ERROR in initialization of list:"
@@ -284,23 +293,50 @@ static INT Table_Init (NP_BASE *theNP, INT argc, char **argv)
   return (NP_ACTIVE);
 }
 
+static INT Table_Display (NP_BASE *theNP)
+{
+  NP_LIST *np;
+  INT i;
+  char buffer[16];
+
+  np = (NP_LIST *)theNP;
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"n",(int)np->n);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"divide",(int)np->divide);
+  UserWriteF(DISPLAY_NP_FORMAT_SI,"frac",(int)np->frac);
+  for (i=0; i<np->n; i++)
+  {
+    sprintf(buffer,"List[%d]",(int)i);
+    UserWriteF(DISPLAY_NP_FORMAT_SF,buffer,np->list[i]);
+  }
+
+  return (0);
+}
+
 static INT Table_GetListEntry_Index (NP_ORDERED_LIST *theNP,
                                      INT n, DOUBLE *Entry, INT *result)
 {
   NP_LIST *np = (NP_LIST *)theNP;
 
   if (np->repeat)
-    while (n >= np->n)
+    while (n >= np->n*np->divide)
       n-=np->n;
 
-  if (n<0 || n>=np->n)
+  if (n<0 || n>=np->n*np->divide)
   {
     *Entry = 0.0;
     *result = 0;
   }
   else
   {
-    *Entry = np->list[n];
+    INT i = n / np->divide;
+    INT j = (i+1) % np->n;
+    INT k = n % np->divide;
+    DOUBLE diff = (np->list[j] - np->list[i]) / np->divide;
+
+    if ((np->frac) && (n%2 == 1))
+      *Entry = np->list[i] + diff * (k - 3 + 2.0 * sqrt(2.0));
+    else
+      *Entry = np->list[i] + diff * k;
     *result = 1;
   }
 
@@ -312,7 +348,7 @@ static INT Table_Construct (NP_BASE *theNP)
   NP_ORDERED_LIST *np;
 
   theNP->Init = Table_Init;
-  theNP->Display = List_Display;
+  theNP->Display = Table_Display;
   theNP->Execute = NULL;
 
   np = (NP_ORDERED_LIST *)theNP;
