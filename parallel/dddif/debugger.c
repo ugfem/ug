@@ -196,14 +196,11 @@ static void buggy_ElemShow (ELEMENT *e)
   {
     for(i=0; SonList[i]!=NULL; i++)
     {
-      if (SON(e,i)!=NULL)
-      {
-        printf("%4d:    son[%d]=%08x prio=%d\n", me,
-               i,
-               DDD_InfoGlobalId(PARHDRE(SonList[i])),
-               DDD_InfoPriority(PARHDRE(SonList[i]))
-               );
-      }
+      printf("%4d:    son[%d]=%08x prio=%d\n", me,
+             i,
+             DDD_InfoGlobalId(PARHDRE(SonList[i])),
+             DDD_InfoPriority(PARHDRE(SonList[i]))
+             );
     }
   }
 }
