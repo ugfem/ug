@@ -870,17 +870,26 @@ static int Scatter_VectorVecskip (DDD_OBJ obj, void *data)
 
 	if (VD_IS_SCALAR(ConsVector)) {
   	    if (VD_SCALTYPEMASK(ConsVector) & VDATATYPE(pv))
-		    if (vecskip)
-			    VVALUE(pv,VD_SCALCMP(ConsVector)) = ((DOUBLE *)data)[1];
-
+		    if (vecskip) {
+                if (VECSKIP(pv))
+                    VVALUE(pv,VD_SCALCMP(ConsVector)) = MAX(VVALUE(pv,VD_SCALCMP(ConsVector)),((DOUBLE *)data)[1]);
+                else {
+                    VVALUE(pv,VD_SCALCMP(ConsVector)) = ((DOUBLE *)data)[1];
+                    VECSKIP(pv) = 1;
+                }
+            }
 		return(0);
 	}
 	type = VTYPE(pv);
 	Comp = VD_CMPPTR_OF_TYPE(ConsVector,type);
 	for (i=0; i<VD_NCMPS_IN_TYPE(ConsVector,type); i++)
-		if ((vecskip & (1<<i))) {				
-			VVALUE(pv,Comp[i]) = ((DOUBLE *)data)[i+1]; 
-			VECSKIP(pv) |= (1<<i);
+		if ((vecskip & (1<<i))) {
+            if ((VECSKIP(pv) & (1<<i))) 
+                VVALUE(pv,Comp[i]) = MAX(VVALUE(pv,Comp[i]),((DOUBLE *)data)[i+1]);
+            else {
+                VVALUE(pv,Comp[i]) = ((DOUBLE *)data)[i+1]; 
+                VECSKIP(pv) |= (1<<i);
+            }
 		}
 
 	return(0);
