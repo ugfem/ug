@@ -6157,6 +6157,14 @@ static INT	PostProcessAdaptMultiGrid(MULTIGRID *theMG)
 	if (CreateAlgebra(theMG)) REP_ERR_RETURN(1);
 	SUM_TIMER(algebra_timer)
 
+#ifdef __PERIODIC_BOUNDARY__
+{
+if (1)
+	MG_GeometricToPeriodic(theMG,TOPLEVEL(theMG),TOPLEVEL(theMG));
+}
+
+#endif
+
 	REFINE_MULTIGRID_LIST(1,theMG,"END AdaptMultiGrid():\n","","");
 
 /*

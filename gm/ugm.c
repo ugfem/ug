@@ -10944,6 +10944,10 @@ static int sort_entries (const void *e1, const void *e2)
   PERIODIC_ENTRIES *v1 = (PERIODIC_ENTRIES *)e1;
   PERIODIC_ENTRIES *v2 = (PERIODIC_ENTRIES *)e2;
 
+  /* periodic ids */
+  if (v1->periodic_id < v2->periodic_id) return (-1);
+  if (v1->periodic_id > v2->periodic_id) return (1);
+
   if (v1->coord[0] < v2->coord[0] - SMALL_DOUBLE) return (-1);
   if (v1->coord[0] > v2->coord[0] + SMALL_DOUBLE) return (1);
 
@@ -10954,10 +10958,6 @@ static int sort_entries (const void *e1, const void *e2)
   if (v1->coord[2] < v2->coord[2] - SMALL_DOUBLE) return (-1);
   if (v1->coord[2] > v2->coord[2] + SMALL_DOUBLE) return (1);
         #endif
-
-  /* periodic ids */
-  if (v1->periodic_id < v2->periodic_id) return (-1);
-  if (v1->periodic_id > v2->periodic_id) return (1);
 
   return (0);
 }
@@ -11006,22 +11006,25 @@ static INT ModifyVectorPointer (GRID *g, PERIODIC_ENTRIES *list, INT i, INT j)
     vtx = MYVERTEX((NODE*)VOBJECT(d));
 
     /* is d on periodic boundary */
-    nbnd = 0;
-    if ((*PeriodicBoundaryInfo)(vtx,&nbnd,periodic_ids,own_coord,periodic_coords))
+    if (OBJT(vtx) == BVOBJ)
     {
-      INT k;
+      nbnd = 0;
+      if ((*PeriodicBoundaryInfo)(vtx,&nbnd,periodic_ids,own_coord,periodic_coords))
+      {
+        INT k;
 
-      for (k=0; k<nbnd; k++)
-        if (periodic_ids[k]==list[i].periodic_id)
-        {
-          IsOnSamePerBnd=TRUE;
-          break;
-        }
-    }
+        for (k=0; k<nbnd; k++)
+          if (periodic_ids[k]==list[i].periodic_id)
+          {
+            IsOnSamePerBnd=TRUE;
+            break;
+          }
+      }
 
-    if (IsOnSamePerBnd)
-    {
-      continue;
+      if (IsOnSamePerBnd)
+      {
+        continue;
+      }
     }
 
     n = GetMatrix(v,d);
@@ -11170,8 +11173,9 @@ static INT Grid_GeometricToPeriodic (GRID *g)
 
   for (i=0; i<nn; i++)
   {
-    UserWriteF("%d vtx=%d node=%d c %lf %lf %lf\n",
-               i,ID(MYVERTEX(coordlist[i].node)),
+    UserWriteF("%d perid=%d vtx=%08d node=%08d c %lf %lf %lf\n",
+               i,coordlist[i].periodic_id,
+               ID(MYVERTEX(coordlist[i].node)),
                ID(coordlist[i].node),
                coordlist[i].coord[0],
                coordlist[i].coord[1],
@@ -11247,7 +11251,7 @@ static INT Grid_GeometricToPeriodic (GRID *g)
    D*/
 /****************************************************************************/
 
-static INT MG_GeometricToPeriodic (MULTIGRID *mg)
+INT MG_GeometricToPeriodic (MULTIGRID *mg, INT fl, INT tl)
 {
   INT level;
 
@@ -11255,7 +11259,7 @@ static INT MG_GeometricToPeriodic (MULTIGRID *mg)
   if (PrepareAlgebraModification(mg))
     return (GM_ERROR);
 
-  for (level=0; level<=TOPLEVEL(mg); level++)
+  for (level=fl; level<=tl; level++)
   {
     GRID *g = GRID_ON_LEVEL(mg,level);
 
@@ -11305,8 +11309,9 @@ INT FixCoarseGrid (MULTIGRID *theMG)
     REP_ERR_RETURN (GM_ERROR);
 
 #ifdef __PERIODIC_BOUNDARY__
-  if (MG_GeometricToPeriodic(theMG))
-    REP_ERR_RETURN (GM_ERROR);
+  if (1)
+    if (MG_GeometricToPeriodic(theMG,0,0))
+      REP_ERR_RETURN (GM_ERROR);
 #endif
 
   /* here all temp memory since CreateMultiGrid is released */
