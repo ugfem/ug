@@ -186,6 +186,9 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
                                 const char *name, const SHORT *RowsInType,
                                 const SHORT *ColsInType, const SHORT *Comps, const char *CompNames);
 
+INT FillRedundantComponentsOfVD (VECDATA_DESC *vd);
+INT FillRedundantComponentsOfMD (MATDATA_DESC *md);
+
 INT DisplayVecDataDesc (const VECDATA_DESC *vd, char *buffer);
 INT DisplayMatDataDesc (const MATDATA_DESC *md, char *buffer);
 

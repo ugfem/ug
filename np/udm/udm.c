@@ -199,6 +199,34 @@ static INT SetScalVecSettings (VECDATA_DESC *vd)
 
 /****************************************************************************/
 /*D
+   FillRedundantComponentsOfVD - fill the redundant components of a VECDATA_DESC
+
+   SYNOPSIS:
+   INT FillRedundantComponentsOfVD (VECDATA_DESC *vd)
+
+   PARAMETERS:
+   .  vd - VECDATA_DESC
+
+   DESCRIPTION:
+   This function fills the redundant components of a VECDATA_DESC.
+   The functions 'ConstructVecOffsets' and 'SetScalVecSettings' are called.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK
+   D*/
+/****************************************************************************/
+
+INT FillRedundantComponentsOfVD (VECDATA_DESC *vd)
+{
+  ConstructVecOffsets(VD_NCMPPTR(vd),VD_OFFSETPTR(vd));
+  SetScalVecSettings(vd);
+
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*D
    GetFirstVector - return first vector for a given multigrid
 
    SYNOPSIS:
@@ -331,9 +359,9 @@ VECDATA_DESC *CreateVecDesc (MULTIGRID *theMG, const char *name, const char *com
   vd = (VECDATA_DESC *) MakeEnvItem (buffer,VectorVarID,size);
   if (vd == NULL) REP_ERR_RETURN (NULL);
   if (compNames==NULL)
-    memcpy(VM_COMP_NAMEPTR(vd),NoVecNames,MAX(ncmp,MAX_VEC_COMP));
+    memcpy(VM_COMP_NAMEPTR(vd),NoVecNames,MIN(ncmp,MAX_VEC_COMP));
   else
-    memcpy(VM_COMP_NAMEPTR(vd),compNames,MAX(ncmp,MAX_VEC_COMP));
+    memcpy(VM_COMP_NAMEPTR(vd),compNames,MIN(ncmp,MAX_VEC_COMP));
 
   /* fill data in vec data desc */
   i = 0;
@@ -417,7 +445,7 @@ VECDATA_DESC *CreateSubVecDesc (MULTIGRID *theMG, const VECDATA_DESC *theVD, con
   if (vd == NULL) REP_ERR_RETURN (NULL);
 
   /* fill data in vec data desc */
-  strcpy(VM_COMP_NAMEPTR(vd),CompNames);
+  strncpy(VM_COMP_NAMEPTR(vd),CompNames,ncmp);
   k = 0;
   for (tp=0; tp<NVECTYPES; tp++) {
     VD_NCMPS_IN_TYPE(vd,tp) = NCmpInType[tp];
@@ -812,6 +840,34 @@ static INT SetScalMatSettings (MATDATA_DESC *md)
 
 /****************************************************************************/
 /*D
+   FillRedundantComponentsOfMD - fill the redundant components of a MATDATA_DESC
+
+   SYNOPSIS:
+   INT FillRedundantComponentsOfMD (MATDATA_DESC *md)
+
+   PARAMETERS:
+   .  md - MATDATA_DESC
+
+   DESCRIPTION:
+   This function fills the redundant components of a MATDATA_DESC.
+   The functions 'ConstructMatOffsets' and 'SetScalMatSettings' are called.
+
+   RETURN VALUE:
+   INT
+   .n    NUM_OK
+   D*/
+/****************************************************************************/
+
+INT FillRedundantComponentsOfMD (MATDATA_DESC *md)
+{
+  ConstructMatOffsets(MD_ROWPTR(md),MD_COLPTR(md),MD_OFFSETPTR(md));
+  SetScalMatSettings(md);
+
+  return (NUM_OK);
+}
+
+/****************************************************************************/
+/*D
    GetFirstMatrix - return first matrix for a given multigrid
 
    SYNOPSIS:
@@ -945,11 +1001,11 @@ MATDATA_DESC *CreateMatDesc (MULTIGRID *theMG, const char *name, const char *com
   md = (MATDATA_DESC *) MakeEnvItem (buffer,MatrixVarID,size);
   if (md == NULL) REP_ERR_RETURN (NULL);
   if (compNames==NULL)
-    memcpy(VM_COMP_NAMEPTR(md),NoMatNames,MAX(ncmp,MAX_MAT_COMP));
+    memcpy(VM_COMP_NAMEPTR(md),NoMatNames,2*MIN(ncmp,MAX_MAT_COMP));
   else
-    memcpy(VM_COMP_NAMEPTR(md),compNames,MAX(ncmp,MAX_MAT_COMP));
+    memcpy(VM_COMP_NAMEPTR(md),compNames,2*MIN(ncmp,MAX_MAT_COMP));
 
-  /* fill data in vec data desc */
+  /* fill data in mat data desc */
   i = 0;
   Comp = VM_COMPPTR(md);
   for (tp=0; tp<NMATTYPES; tp++) {
@@ -1030,16 +1086,13 @@ MATDATA_DESC *CreateSubMatDesc (MULTIGRID *theMG, const MATDATA_DESC *theMD,
   md = (MATDATA_DESC *) MakeEnvItem (name,MatrixVarID,size);
   if (md == NULL) REP_ERR_RETURN (NULL);
 
-  /* fill data in vec data desc */
+  /* fill data in mat data desc */
+  strncpy(VM_COMP_NAMEPTR(md),CompNames,2*ncmp);
   for (tp=0; tp<NMATTYPES; tp++) {
     MD_ROWS_IN_MTYPE(md,tp) = RowsInType[tp];
     MD_COLS_IN_MTYPE(md,tp) = ColsInType[tp];
     MD_MCMPPTR_OF_MTYPE(md,tp) = VM_COMPPTR(md) + offset[tp];
     for (j=0; j<RowsInType[tp]*ColsInType[tp]; j++) {
-      VM_COMP_NAME(md,offset[tp]+2*j) =
-        VM_COMP_NAME(theMD,offptr[tp]+Comps[tp]+2*j);
-      VM_COMP_NAME(md,offset[tp]+2*j+1) =
-        VM_COMP_NAME(theMD,offptr[tp]+Comps[tp]+2*j+1);
       MD_MCMP_OF_MTYPE(md,tp,j) =
         MD_MCMP_OF_MTYPE(theMD,tp,Comps[tp]+j);
     }
