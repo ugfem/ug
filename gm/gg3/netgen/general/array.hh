@@ -1,10 +1,16 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
-// Abstract data type ARRAY
+/************************************************************************/
+/*                                                                      */
+/* This file is a part of NETGEN                                        */
+/*                                                                      */
+/* File:   array.hh                                                     */
+/* Author: Joachim Schoeberl                                            */
+/*                                                                      */
+/************************************************************************/
 
-// by Joachim Schoeberl
-
-
+#ifndef FILE_ARRAY
+#define FILE_ARRAY
 
 
 
@@ -249,3 +255,6 @@ private:
   ARRAY (const ARRAY<T> &);
 
 };
+
+
+#endif

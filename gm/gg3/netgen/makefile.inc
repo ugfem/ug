@@ -15,10 +15,10 @@ include ../../../machines/mk.$(ARCHDIR)
 # load configuration switches
 include ../../../ug.conf
 
-
 default: $(objects) 
 	ar r ../../../lib/libnetgen.a $(objects)
 
+.PRECIOUS:   .cc
 # default rule
 .cc.o:
 	$(C++) $(C++FLAGS) -I../general -I.. $<

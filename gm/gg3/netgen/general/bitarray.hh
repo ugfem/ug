@@ -1,5 +1,18 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
+/************************************************************************/
+/*                                                                      */
+/* This file is a part of NETGEN                                        */
+/*                                                                      */
+/* File:   bitarray.hh                                                  */
+/* Author: Joachim Schoeberl                                            */
+/*                                                                      */
+/************************************************************************/
+
+#ifndef FILE_BITARRAY
+#define FILE_BITARRAY
+
+
 class BITARRAY
 
 {
@@ -119,3 +132,5 @@ int BITARRAY :: Test (INDEX i) const
   return (data[Addr(i)] & Mask(i)) ? 1 : 0;
 
 }
+
+#endif

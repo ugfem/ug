@@ -6,12 +6,18 @@
 #																			 #
 ##############################################################################
 
+# load architecture dependent makefile
+include ../../ug.arch
+
+# architecture-dependent makefile entries
+include ../../machines/mk.$(ARCHDIR)
+
 default:
-	cd meshing; make; cd ..;
-	cd general; make; cd ..;
-	cd linalg;  make; cd ..;
-	cd geom;    make; cd ..;
-	cd opti;    make; cd ..;
+	cd meshing; $(GMAKE); cd ..;
+	cd general; $(GMAKE); cd ..;
+	cd linalg;  $(GMAKE); cd ..;
+	cd geom;    $(GMAKE); cd ..;
+	cd opti;    $(GMAKE); cd ..;
 
 # clean up
 clean:
