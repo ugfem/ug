@@ -318,6 +318,7 @@ struct GridPlotObj2D {
   INT PlotSubdomain;                                                    /* YES or NO									*/
   INT WhichElem;                                                        /* see above									*/
   INT ElemColored;                                                      /* YES or NO									*/
+  INT EdgeColor;                                                        /* for coloring of edges                        */
   VECDATA_DESC *FreeBnd;                                        /* global coords of new free boundary			*/
 };
 

@@ -3211,6 +3211,7 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     theGpo->PartShrinkFactor        = 1.0;
                 #endif
     theGpo->ElemColored             = 1;
+    theGpo->EdgeColor                       = 0;
     theGpo->WhichElem                       = PO_ALL;
     theGpo->PlotBoundary            = YES;
     theGpo->PlotElemID                      = NO;
@@ -3234,6 +3235,7 @@ static INT InitGridPlotObject_2D (PLOTOBJ *thePlotObj, INT argc, char **argv)
     }
   ReadArgvDOUBLE("s",&theGpo->ShrinkFactor,       argc,argv);
   ReadArgvINT   ("c",&theGpo->ElemColored,        argc,argv);
+  ReadArgvINT   ("x",&theGpo->EdgeColor,          argc,argv);
   ReadArgvINT   ("b",&theGpo->PlotBoundary,       argc,argv);
   ReadArgvINT   ("r",&theGpo->PlotRefMarks,       argc,argv);
   ReadArgvINT   ("i",&theGpo->PlotIndMarks,       argc,argv);
@@ -3338,6 +3340,7 @@ static INT DisplayGridPlotObject_2D (PLOTOBJ *thePlotObj)
   }
 
   UserWriteF(DISPLAY_PO_FORMAT_SI,"COLORED",(int)theGpo->ElemColored);
+  UserWriteF(DISPLAY_PO_FORMAT_SI,"EDGECOLOR",(int)theGpo->EdgeColor);
 
   if (theGpo->FreeBnd!=NULL)
     UserWriteF(DISPLAY_PO_FORMAT_SS,"free bnd",ENVITEM_NAME(theGpo->FreeBnd));

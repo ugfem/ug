@@ -512,6 +512,7 @@ static INT EE2D_MaxLevel;		/* level considered to be the top level 	*/
 static INT EE2D_ElemID; 		/* 1 if element ID has to be plotted		*/
 static INT EE2D_Subdom; 		/* 1 if subdomain ID of element has to be pl*/
 static INT EE2D_RefMark;		/* 1 if plot refinement marks				*/
+static INT 	EE2D_EdgeColor;		/* 1 to color edges like elements */
 static long EE2D_ColorRefMark;	/* color of refinement marks				*/
 static INT EE2D_IndMark;		/* 1 if plot indicator marks				*/
 static long EE2D_ColorIndMark;	/* color of indicator marks	     			*/
@@ -6147,6 +6148,7 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 	EE2D_ElemID 					= theGpo->PlotElemID;
 	EE2D_Subdom 					= theGpo->PlotSubdomain;
 	EE2D_ShrinkFactor				= theGpo->ShrinkFactor;
+	EE2D_EdgeColor					= theGpo->EdgeColor;
 
 	EE2D_Property = 0;
 	if (theGpo->ElemColored==2)
@@ -8032,6 +8034,7 @@ static INT InvertVectorSelectionOrPlotVMData2D (PICTURE *thePicture, WORK *theWo
 static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 {
 	INT i, j;
+	long edgecolor = -1;
 	DOUBLE *x[MAX_CORNERS_OF_ELEM];
 	DOUBLE_VECTOR MidPoint,help;
 	INT coe,rule;
@@ -8056,9 +8059,9 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 		DO_2c(theDO) = coe; DO_inc(theDO) ;
 		#ifndef ModelP
 		if (SUBDOMAIN(theElement)<1 || SUBDOMAIN(theElement)>EE2D_NProperty) return (1);
-		DO_2l(theDO) = EE2D_PropertyColor[(int)SUBDOMAIN(theElement)];
+		DO_2l(theDO) = edgecolor = EE2D_PropertyColor[(int)SUBDOMAIN(theElement)];
 		#else
-		DO_2l(theDO) = EE2D_PropertyColor[me+1];
+		DO_2l(theDO) = edgecolor = EE2D_PropertyColor[me+1];
 		#endif
 		DO_inc(theDO);
 	}
@@ -8077,9 +8080,9 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
 				DO_2c(theDO) = coe; DO_inc(theDO) 
 				if (EE2D_IndMark)
-				  DO_2l(theDO) = EE2D_ColorIndMark;
+				  DO_2l(theDO) = edgecolor = EE2D_ColorIndMark;
 				else
-				  DO_2l(theDO) = EE2D_Color[COLOR_LOWER_LEVEL]; 
+				  DO_2l(theDO) = edgecolor = EE2D_Color[COLOR_LOWER_LEVEL]; 
 				DO_inc(theDO);
 			}
 		}
@@ -8096,15 +8099,28 @@ static INT EW_ElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 				DO_2c(theDO) = DO_SURRPOLYGON; DO_inc(theDO) 
 				DO_2c(theDO) = coe; DO_inc(theDO) 
 				if (EE2D_IndMark)
-				  DO_2l(theDO) = EE2D_ColorIndMark;
+				  DO_2l(theDO) = edgecolor = EE2D_ColorIndMark;
 				else
-				  DO_2l(theDO) = EE2D_Color[ECLASS(theElement)]; 
+				  DO_2l(theDO) = edgecolor = EE2D_Color[ECLASS(theElement)]; 
 				DO_inc(theDO);
 			}
 		}
 	}
 
-	DO_2l(theDO) = EE2D_Color[COLOR_EDGE]; DO_inc(theDO);
+	
+	if (EE2D_EdgeColor == 1)
+	{
+		if (edgecolor != -1)
+		{
+			DO_2l(theDO) = edgecolor;
+			DO_inc(theDO);
+		}
+	}
+	else
+	{
+		DO_2l(theDO) = EE2D_Color[COLOR_EDGE];
+		DO_inc(theDO);
+	}
 
 	/* now compute transformation of geomtric information */
 	/* as configured with setplotobject:                  */
