@@ -35,7 +35,7 @@ fi
 if test $# -ge 1 
 then
 	# check whether first  option is ug module 
-	if test "$1" = "ug" -o "$1" = "dev" -o "$1" = "meta" -o "$1" = "xif" -o "$1" = "gm" -o "$1" = "graph" -o "$1" = "low" -o "$1" = "numerics" -o "$1" = "ui" -o "$1" = "gg" -o "$1" = "gg3d" -o "$1" = "dom" -o "$1" = "std"
+	if test "$1" = "ug" -o "$1" = "dddif" -o "$1" = "dev" -o "$1" = "meta" -o "$1" = "xif" -o "$1" = "gm" -o "$1" = "graph" -o "$1" = "low" -o "$1" = "numerics" -o "$1" = "ui" -o "$1" = "gg" -o "$1" = "gg3d" -o "$1" = "dom" -o "$1" = "std"
 	then
 		if test "$1" = "ug"
 		then 
@@ -143,7 +143,7 @@ then
 		make -f `ls Makefile*` $*;
 		exit $?;
 	else
-		echo "$0: Makefile not found or not unique!"; 
+		echo "$0: Makefile not found or not unique in $PWD!"; 
 		exit 1;
 	fi
 fi
