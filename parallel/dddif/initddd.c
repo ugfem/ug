@@ -147,13 +147,13 @@ static void ddd_InitGenericElement (INT tag, DDD_TYPE dddType, int etype)
 
   DDD_TypeDefine(dddType, ge,
                  EL_OBJPTR, r+n_offset[tag],       ps*desc->corners_of_elem, TypeNode,
+                 EL_OBJPTR, r+father_offset[tag],  ps,                       dddType,
                 #ifdef __TWODIM__
                  EL_OBJPTR, r+sons_offset[tag],    ps*desc->max_sons_of_elem,dddType,
                 #endif
                 #ifdef __THREEDIM__
-                 EL_OBJPTR, r+father_offset[tag],  ps*1,                     dddType,
+                 EL_OBJPTR, r+sons_offset[tag],    ps*1,                     dddType,
                 #endif
-                 EL_OBJPTR, r+sons_offset[tag],    ps,dddType,
                  EL_OBJPTR, r+nb_offset[tag],      ps*desc->sides_of_elem,   dddType,
                  EL_CONTINUE);
 
@@ -658,6 +658,7 @@ int InitParallel (int *argc, char ***argv)
   int i;
 
   DDD_Init(argc, argv);
+  printf("%4d: bin da!\n", me);
 
   /* initialize context */
   /* TODO: malloc() should be replaced by HEAPs or ddd_memmgr */
