@@ -92,9 +92,8 @@ VERTEX          *CreateBoundaryVertex   (GRID *theGrid, VERTEX *after);
 VERTEX          *CreateInnerVertex              (GRID *theGrid, VERTEX *after);
 VSEGMENT        *CreateVertexSegment    (GRID *theGrid, VERTEX *vertex);
 NODE            *CreateNode                     (GRID *theGrid, NODE *after);
-EDGE            *CreateEdge                     (GRID *theGrid, NODE *from, NODE *to);
-ELEMENT         *CreateBoundaryElement  (GRID *theGrid, ELEMENT *after, INT tag);
-ELEMENT         *CreateInnerElement     (GRID *theGrid, ELEMENT *after, INT tag);
+ELEMENT     *CreateElement          (GRID *theGrid, INT tag, INT objtype,
+                                     NODE **nodes, ELEMENT *after);
 ELEMENTSIDE *CreateElementSide          (GRID *theGrid);
 INT         CreateSonElementSide    (GRID *theGrid, ELEMENT *theElement,
                                      INT side, ELEMENT *theSon, INT son_side);
@@ -118,13 +117,7 @@ VIRT_HEAP_MGMT *GetGenMGUDM             (void);
 NODE            *CreateMidNode                  (GRID *theGrid,ELEMENT *theElement,INT side,NODE *after);
 NODE        *CreateCenterNode       (GRID *theGrid, ELEMENT *theElement);
 
-#ifdef __TWODIM__
-EDGE            *CreateAuxEdge                  (GRID *theGrid, NODE *from, NODE *to);
-INT              DisposeAuxEdges                (GRID *theGrid);
-#endif
-
 #ifdef __THREEDIM__
-INT          DisposeEdgesFromElement(GRID *theGrid, ELEMENT *theElement);
 NODE            *CreateSideNode                 (GRID *theGrid, ELEMENT *theElement, INT side);
 #endif
 

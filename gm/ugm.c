@@ -219,6 +219,7 @@ void *GetMemoryForObject (MULTIGRID *theMG, INT size, INT type)
 
   if (obj!=NULL && type!=NOOBJ)
   {
+    memset(obj,0,size);
     /* link this object to DDD management */
     if (HAS_DDDHDR(type))
     {
@@ -1000,7 +1001,7 @@ EDGE *GetEdge (NODE *from, NODE *to)
    CreateEdge - Return pointer to a new edge structure
 
    SYNOPSIS:
-   EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to);
+   static EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to);
 
    PARAMETERS:
    .  theGrid - grid where vertex should be inserted
@@ -1017,14 +1018,21 @@ EDGE *GetEdge (NODE *from, NODE *to)
    D*/
 /****************************************************************************/
 
-EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to)
+static EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to)
 {
   EDGE *pe;
   LINK *link0,*link1;
   VECTOR *pv;
 
   /* check if edge exists already */
-  if( (pe = GetEdge(from, to)) != NULL ) return(pe);
+  if( (pe = GetEdge(from, to)) != NULL )
+  {
+    if (NO_OF_ELEM(pe)<NO_OF_ELEM_MAX-1)
+      INC_NO_OF_ELEM(pe);
+    else
+      return (NULL);
+    return(pe);
+  }
 
   if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
     pe = GetMemoryForObject(theGrid->mg,sizeof(EDGE),EDOBJ);
@@ -1043,12 +1051,10 @@ EDGE *CreateEdge (GRID *theGrid, NODE *from, NODE *to)
   PARSETLEVEL(pe,theGrid->level);
   NBNODE(link0) = to;
   NBNODE(link1) = from;
-        #ifdef __THREEDIM__
-  SET_NO_OF_ELEM(pe,0);
+  SET_NO_OF_ELEM(pe,1);
   PARSETTAG(pe,0);
   SETEDGENEW(pe,1);
-        #endif
-  MIDNODE(pe)=NULL;
+  MIDNODE(pe) = NULL;
 
   /* create vector if */
   if (TYPE_DEF_IN_GRID(theGrid,EDGEVECTOR))
@@ -1112,142 +1118,18 @@ LINK *GetLink (NODE *from, NODE *to)
 
 /****************************************************************************/
 /*D
-   CreateBoundaryElement - Allocate a new element structure
+   CreateElement - Return a pointer to  a new element structure
 
    SYNOPSIS:
-   ELEMENT *CreateBoundaryElement (GRID *theGrid, ELEMENT *after, INT tag);
+   ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
+   NODE **nodes, ELEMENT *after);
 
    PARAMETERS:
    .  theGrid - grid structure to extend
-   .  after - insert after that element (NULL if b.o.l.)
    .  tag - the element type
-
-   DESCRIPTION:
-   This function creates and initializes a new element of type `tag` and
-   returns a pointer to it.
-
-   RETURN VALUE:
-   ELEMENT *
-   .n   pointer to requested element
-   .n   NULL if out of memory
-   D*/
-/****************************************************************************/
-
-ELEMENT *CreateBoundaryElement (GRID *theGrid, ELEMENT *after, INT tag)
-{
-  ELEMENT *pe;
-  INT i;
-  MULTIGRID *theMG;
-  VECTOR *pv;
-
-  theMG = theGrid->mg;
-  i = MAPPED_BND_OBJT(tag);
-  pe = GetMemoryForObject(theMG,BND_SIZE(tag),i);
-  if (pe==NULL) return(NULL);
-
-  /* initialize data */
-  CTRL(pe) = 0;
-  CTRL2(pe) = 0;
-  PARSETOBJT(pe,BEOBJ);
-  PARSETTAG(pe,tag);
-  SETLEVEL(pe,theGrid->level);
-        #ifdef ModelP
-  DDD_AttrSet(PARHDRE(pe),theGrid->level);
-  DDD_PrioritySet(PARHDRE(pe),PrioMaster);
-        #endif
-  SETEBUILDCON(pe,1);
-        #ifdef __THREEDIM__
-  /* TODO: check control word:	SETNEWEL(pe,TRUE); */
-        #endif
-  ID(pe) = (theGrid->mg->elemIdCounter)++;
-  SET_EFATHER(pe,NULL);
-  for (i=0; i<CORNERS_OF_ELEM(pe); i++)
-  {
-    SET_CORNER(pe,i,NULL);
-  }
-  for (i=0; i<SIDES_OF_ELEM(pe); i++)
-  {
-    SET_NBELEM(pe,i,NULL);
-    SET_SIDE(pe,i,NULL);
-  }
-        #ifdef __TWODIM__
-  for (i=0; i<SONS_OF_ELEM(pe); i++) SET_SON(pe,i,NULL);
-        #endif
-        #ifdef __THREEDIM__
-  SET_SON(pe,0,NULL);
-        #endif
-
-  /* create element vector if */
-  if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
-  {
-    if (CreateVector (theGrid,NULL,ELEMVECTOR,&pv))
-    {
-      DisposeElement (theGrid,pe);
-      return (NULL);
-    }
-    assert (pv != NULL);
-    VOBJECT(pv) = (void*)pe;
-    SET_EVECTOR(pe,(void*)pv);
-  }
-
-  /* create side vectors if */
-        #ifdef __THREEDIM__
-  if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
-    for (i=0; i<SIDES_OF_ELEM(pe); i++)
-    {
-      if (CreateVector (theGrid,NULL,SIDEVECTOR,&pv))
-      {
-        DisposeElement (theGrid,pe);
-        return (NULL);
-      }
-      assert (pv != NULL);
-      VOBJECT(pv) = (void*)pe;
-      SET_SVECTOR(pe,i,(void*)pv);
-      SETVECTORSIDE(pv,i);
-      SETVCOUNT(pv,1);
-    }
-        #endif
-
-  /* insert in element list */
-  if (after==NULL)
-  {
-    SUCCE(pe) = theGrid->elements;
-    PREDE(pe) = NULL;
-    if (SUCCE(pe)!=NULL)
-      PREDE(SUCCE(pe)) = pe;
-    else
-      theGrid->lastelement = pe;
-    theGrid->elements = pe;
-  }
-  else
-  {
-    SUCCE(pe) = SUCCE(after);
-    PREDE(pe) = after;
-    if (SUCCE(pe)!=NULL)
-      PREDE(SUCCE(pe)) = pe;
-    else
-      theGrid->lastelement = pe;
-    SUCCE(after) = pe;
-  }
-
-  /* counters */
-  theGrid->nElem++;
-
-  /* return ok */
-  return(pe);
-}
-
-/****************************************************************************/
-/*D
-   CreateInnerElement - Return a pointer to  a new element structure
-
-   SYNOPSIS:
-   CreateInnerElement
-
-   PARAMETERS:
-   .  theGrid - grid structure to extend
+   .  objtype - inner element (IEOBJ) or boundary element (BEOBJ)
+   .  nodes - list of corner nodes in reference numbering
    .  after - insert after that element (NULL if b.o.l.)
-   .  tag - the element type
 
    DESCRIPTION:
    This function creates and initializes a new element and returns a pointer to it.
@@ -1259,21 +1141,24 @@ ELEMENT *CreateBoundaryElement (GRID *theGrid, ELEMENT *after, INT tag)
    D*/
 /****************************************************************************/
 
-ELEMENT *CreateInnerElement (GRID *theGrid, ELEMENT *after, INT tag)
+ELEMENT *CreateElement (GRID *theGrid, INT tag, INT objtype,
+                        NODE **nodes, ELEMENT *after)
 {
   ELEMENT *pe;
-  INT i;
+  INT i,j;
   VECTOR *pv;
 
-  pe = GetMemoryForObject(MYMG(theGrid),INNER_SIZE(tag),
-                          MAPPED_INNER_OBJT(tag));
+  if (objtype == IEOBJ)
+    pe = GetMemoryForObject(MYMG(theGrid),INNER_SIZE(tag),
+                            MAPPED_INNER_OBJT(tag));
+  else if (objtype == BEOBJ)
+    pe = GetMemoryForObject(MYMG(theGrid),BND_SIZE(tag),
+                            MAPPED_BND_OBJT(tag));
 
   if (pe==NULL) return(NULL);
 
   /* initialize data */
-  CTRL(pe) = 0;
-  CTRL2(pe) = 0;
-  PARSETOBJT(pe,IEOBJ);
+  PARSETOBJT(pe,objtype);
   PARSETTAG(pe,tag);
   SETLEVEL(pe,theGrid->level);
         #ifdef ModelP
@@ -1281,25 +1166,21 @@ ELEMENT *CreateInnerElement (GRID *theGrid, ELEMENT *after, INT tag)
   DDD_PrioritySet(PARHDRE(pe),PrioMaster);
         #endif
   SETEBUILDCON(pe,1);
-        #ifdef __THREEDIM__
-  /* TODO: check control word:	SETNEWEL(pe,TRUE); */
-        #endif
   ID(pe) = (theGrid->mg->elemIdCounter)++;
-  SET_EFATHER(pe,NULL);
+
+  /* set corner nodes */
   for (i=0; i<CORNERS_OF_ELEM(pe); i++)
-  {
-    SET_CORNER(pe,i,NULL);
-  }
-  for (i=0; i<SIDES_OF_ELEM(pe); i++)
-  {
-    SET_NBELEM(pe,i,NULL);
-  }
-        #ifdef __TWODIM__
-  for (i=0; i<SONS_OF_ELEM(pe); i++) SET_SON(pe,i,NULL);
-        #endif
-        #ifdef __THREEDIM__
-  SET_SON(pe,0,NULL);
-        #endif
+    SET_CORNER(pe,i,nodes[i]);
+
+  /* create edges */
+  for (i=0; i<EDGES_OF_ELEM(pe); i++)
+    if (CreateEdge(theGrid,
+                   nodes[CORNER_OF_EDGE(pe,i,0)],
+                   nodes[CORNER_OF_EDGE(pe,i,1)]) == NULL)
+    {
+      DisposeElement(theGrid,pe);
+      return(NULL);
+    }
 
   /* create element vector if */
   if (TYPE_DEF_IN_GRID(theGrid,ELEMVECTOR))
@@ -2095,41 +1976,6 @@ INT DisposeEdge (GRID *theGrid, EDGE *theEdge)
 }
 
 /****************************************************************************/
-/*																			*/
-/* Function:  DisposeEdgesFromElement										*/
-/*																			*/
-/* Purpose:   dispose all edge of element not needed otherwise				*/
-/*																			*/
-/* Input:	  GRID *theGrid: grid to remove from							*/
-/*			  ELEMENTSIDE *theElementSide: element side to remove			*/
-/*																			*/
-/* Output:	  INT 0: ok                                                                                                     */
-/*			  INT 1: edge with zero nb of elements found					*/
-/*																			*/
-/****************************************************************************/
-
-INT DisposeEdgesFromElement (GRID *theGrid, ELEMENT *theElement)
-{
-  INT i,j,ret;
-  EDGE *theEdge;
-
-  ret=GM_OK;
-  for (j=0; j<EDGES_OF_ELEM(theElement); j++)
-  {
-    theEdge=GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)),CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)));
-    assert (theEdge != NULL);
-
-    if (NO_OF_ELEM(theEdge)<1)
-      ret=GM_ERROR;
-    if (NO_OF_ELEM(theEdge)==1)
-      DisposeEdge(theGrid,theEdge);
-    else
-      DEC_NO_OF_ELEM(theEdge);
-  }
-  RETURN(ret);
-}
-
-/****************************************************************************/
 /*D
    DisposeNode - Remove node including its edges from the data structure
 
@@ -2286,43 +2132,6 @@ INT DisposeVertex (GRID *theGrid, VERTEX *theVertex)
 
 /****************************************************************************/
 /*D
-   DisposeElementSide - Put element side in free list
-
-   SYNOPSIS:
-   INT DisposeElementSide  (GRID *theGrid, ELEMENTSIDE *theElementSide);
-
-   PARAMETERS:
-   .  theGrid - grid to remove from
-   .  theElementSide - element side to remove
-
-   DESCRIPTION:
-   This function puts an element side into the free list.
-
-   RETURN VALUE:
-   INT
-   .n   0 if ok
-   .n   1 no valid object number
-   D*/
-/****************************************************************************/
-
-INT DisposeElementSide  (GRID *theGrid, ELEMENTSIDE *theElementSide)
-{
-  /* remove elementside from elementside list */
-  if (PREDS(theElementSide)!=NULL)
-    SUCCS(PREDS(theElementSide)) = SUCCS(theElementSide);
-  else
-    theGrid->sides = SUCCS(theElementSide);
-  if (SUCCS(theElementSide)!=NULL)
-    PREDS(SUCCS(theElementSide)) = PREDS(theElementSide);
-
-  PutFreeObject(theGrid->mg,theElementSide,sizeof(ELEMENTSIDE),ESOBJ);
-  theGrid->nSide--;
-  return(0);
-}
-
-
-/****************************************************************************/
-/*D
    DisposeElement - Remove element from the data structure
 
    SYNOPSIS:
@@ -2348,6 +2157,8 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement)
 {
   INT i,j,tag;
   VECTOR *theVector;
+  EDGE *theEdge;
+  ELEMENTSIDE *theElementSide;
   ELEMENT *theNeighbor;
 
   /* remove element from element list */
@@ -2363,8 +2174,34 @@ INT DisposeElement (GRID *theGrid, ELEMENT *theElement)
   /* remove element sides if it's a boundary element */
   if (OBJT(theElement)==BEOBJ)
     for (i=0; i<SIDES_OF_ELEM(theElement); i++)
-      if (SIDE(theElement,i)!=NULL)
-        DisposeElementSide(theGrid,SIDE(theElement,i));
+    {
+      theElementSide = SIDE(theElement,i);
+      if (theElementSide != NULL)
+      {
+        if (PREDS(theElementSide)!=NULL)
+          SUCCS(PREDS(theElementSide)) = SUCCS(theElementSide);
+        else
+          theGrid->sides = SUCCS(theElementSide);
+        if (SUCCS(theElementSide)!=NULL)
+          PREDS(SUCCS(theElementSide)) = PREDS(theElementSide);
+
+        PutFreeObject(theGrid->mg,
+                      theElementSide,sizeof(ELEMENTSIDE),ESOBJ);
+        theGrid->nSide--;
+      }
+    }
+
+  for (j=0; j<EDGES_OF_ELEM(theElement); j++)
+  {
+    theEdge=GetEdge(CORNER(theElement,CORNER_OF_EDGE(theElement,j,0)),
+                    CORNER(theElement,CORNER_OF_EDGE(theElement,j,1)));
+    if (NO_OF_ELEM(theEdge)<1)
+      RETURN(GM_ERROR);
+    if (NO_OF_ELEM(theEdge)==1)
+      DisposeEdge(theGrid,theEdge);
+    else
+      DEC_NO_OF_ELEM(theEdge);
+  }
 
   /* dispose matrices from element-vector */
   if (DisposeConnectionFromElement(theGrid,theElement))
@@ -4276,90 +4113,6 @@ INT  SmoothMultiGrid (MULTIGRID *theMG, INT niter, INT bdryFlag)
 
 /****************************************************************************/
 /*D
-   CreateAuxEdge - Inserts an 'EDGE' with AUXEDGE flag set
-
-   SYNOPSIS:
-   EDGE *CreateAuxEdge (GRID *theGrid, NODE *from, NODE *to);
-
-   PARAMETERS:
-   .  theGrid - grid to remove from
-   .  from - starting 'NODE'
-   .  to - destination 'NODE'
-
-   DESCRIPTION:
-   This function inserts a new edge between given nodes.
-   This function is useful only in version 2.3 compatibility mode which is
-   not documented.
-
-   RETURN VALUE:
-   INT
-   .n     NULL when alloc failed
-   .n     else it returns a pointer to the new edge
-   D*/
-/****************************************************************************/
-
-#ifdef __TWODIM__
-EDGE *CreateAuxEdge (GRID *theGrid, NODE *from, NODE *to)
-{
-  EDGE *theEdge;
-
-  theEdge = CreateEdge(theGrid,from,to);
-  if (theEdge==NULL) return(NULL);
-  SETEXTRA(theEdge,1);
-  SETAUXEDGE(theEdge,1);
-  return(theEdge);
-}
-#endif
-
-/****************************************************************************/
-/*D
-   DisposeAuxEdges - Remove edges with AUXEDGE flag set from theGrid
-
-   SYNOPSIS:
-   INT DisposeAuxEdges (GRID *theGrid);
-
-   PARAMETERS:
-   .  theGrid - pointer to grid
-
-   DESCRIPTION:
-   This function removes all 'EDGE' objects with AUXEDGE flag set from the
-   given grid level. This function is provided for compatibility with
-   version 2.3.
-
-   RETURN VALUE:
-   INT
-   .n    -1 in case of an error
-   .n    else it returns the number of edges that have been disposed
-   D*/
-/****************************************************************************/
-
-#ifdef __TWODIM__
-INT DisposeAuxEdges (GRID *theGrid)
-{
-  NODE *theNode;
-  LINK *theLink;
-  long cnt;
-
-  cnt = 0;
-
-  /* throw away the AUXEDGEs */
-  for (theNode=FIRSTNODE(theGrid); theNode!= NULL; theNode=SUCCN(theNode))
-    for (theLink=START(theNode); theLink!=NULL; theLink=NEXT(theLink))
-      if (AUXEDGE(MYEDGE(theLink)))
-        if (DisposeEdge(theGrid,MYEDGE(theLink)))
-          return (-1);
-        else
-          cnt++;
-
-  if (cnt)
-    GSTATUS(theGrid) = 1;
-
-  return (cnt);
-}
-#endif
-
-/****************************************************************************/
-/*D
    InsertElement - Insert an element
 
    SYNOPSIS:
@@ -4575,9 +4328,9 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
 
   /* create element */
   if (bndEdges>0)
-    theElement = CreateBoundaryElement(theGrid,NULL,n);
+    theElement = CreateBoundaryElement(theGrid,n,BEOBJ,Node,NULL);
   else
-    theElement = CreateInnerElement(theGrid,NULL,n);
+    theElement = CreateBoundaryElement(theGrid,n,IEOBJ,Node,NULL);
   if (theElement==NULL)
   {
     PrintErrorMessage('E',"InsertElement","could not create element");
@@ -4606,30 +4359,12 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
     }
   }
 
-  /* create edges */
-  for (i=0; i<n; i++)
-  {
-    aNode = Node[i]; bNode = Node[(i+1)%n];
-    theEdge = GetEdge(aNode,bNode);
-    if (theEdge==NULL)
-    {
-      theEdge = CreateEdge(theGrid,aNode,bNode);
-      if (theEdge==NULL)
-      {
-        PrintErrorMessage('E',"InsertElement","could not create edge");
-        DisposeElement(theGrid,theElement);
-        RETURN(GM_ERROR);
-      }
-    }
-  }
-
   /* fill element data */
   SETECLASS(theElement,RED);       /* this is a coarse grid element */
   PARSETTAG(theElement,n);
   SET_EFATHER(theElement,NULL);
   for (i=0; i<n; i++)
   {
-    SET_CORNER(theElement,i,Node[i]);
     SET_NBELEM(theElement,i,Neighbor[i]);
     if (Neighbor[i]!=NULL)
       SET_NBELEM(Neighbor[i],NeighborSide[i],theElement);
@@ -4850,10 +4585,10 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
       found++;
 
   /* create element */
-  if ( found )
-    theElement = CreateBoundaryElement(theGrid,NULL,tag);
+  if (found)
+    theElement = CreateElement(theGrid,tag,BEOBJ,Node,NULL);
   else
-    theElement = CreateInnerElement(theGrid,NULL,tag);
+    theElement = CreateElement(theGrid,tag,IEOBJ,Node,NULL);
   if (theElement==NULL)
   {
     PrintErrorMessage('E',"InsertElement","cannot allocate element");
@@ -4883,33 +4618,6 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
     }
   }
 
-  /* create edges */
-  for (i=0; i<EDGES_OF_ELEM(theElement); i++)
-  {
-    theEdge = GetEdge(Node[CORNER_OF_EDGE(theElement,i,0)],
-                      Node[CORNER_OF_EDGE(theElement,i,1)]);
-    if (theEdge==NULL)
-    {
-      theEdge = CreateEdge(theGrid,Node[CORNER_OF_EDGE(theElement,i,0)],
-                           Node[CORNER_OF_EDGE(theElement,i,1)]);
-      if (theEdge==NULL)
-      {
-        DisposeElement(theGrid,theElement);
-        /* including element sides */
-        PrintErrorMessage('E',"InsertElement","cannot allocate edge");
-        RETURN(GM_ERROR);
-      }
-      SET_NO_OF_ELEM(theEdge,1);
-    }
-    else
-    {
-      if (NO_OF_ELEM(theEdge)<NO_OF_ELEM_MAX-1)
-        INC_NO_OF_ELEM(theEdge);
-      else
-        RETURN(GM_ERROR);
-    }
-  }
-
   /* fill element data */
   for (i=0; i<SIDES_OF_ELEM(theElement); i++)
   {
@@ -4924,8 +4632,6 @@ INT InsertElement (MULTIGRID *theMG, INT n, NODE **Node)
             #endif
     }
   }
-  for (i=0; i<n; i++)
-    SET_CORNER(theElement,i,Node[i]);
   SETNSONS(theElement,0);
   SET_SON(theElement,0,NULL);
   SET_EFATHER(theElement,NULL);

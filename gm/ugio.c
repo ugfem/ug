@@ -498,10 +498,10 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
   GRID *theGrid;
   VERTEX *theVertex,**pv,**Vertices;
   VSEGMENT *vs;
-  NODE *theNode,**Nodes;
+  NODE *theNode,**Nodes,*ElementNodes[MAX_CORNERS_OF_ELEM];
   ELEMENT *theElement,**Elements;
-  LINK *theLink;
   EDGE *theEdge;
+  LINK *theLink;
   ELEMENTSIDE *theSide;
   HEAP *theHeap,*theUserHeap;
   MULTIGRID *theMG;
@@ -995,14 +995,6 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
       /* from and to */
       fscanf(stream," (%c%c %ld %ld",&c1,&c2,&i1,&i2);
 
-      theEdge = CreateEdge(theGrid,Nodes[i1],Nodes[i2]);
-      if (theEdge==NULL)
-      {
-        PrintErrorMessage('E',"LoadMultiGrid","cannot allocate edge");
-        DisposeMultiGrid(theMG);
-        fclose(stream); return(NULL);
-      }
-
       /* load ID from MidNode if */
                         #ifdef __TWODIM__
       MIDNODE(theEdge)=NULL;
@@ -1063,10 +1055,17 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
       {
         fscanf(stream," (%c%c %lx %lx %ld",&c1,&c2,&ul,&ul2,&i1);
       }
+      for (j=0; j<CORNERS_OF_ELEM(&ul); j++)
+      {
+        fscanf(stream," %ld",&l);
+        ElementNodes[j] = Nodes[l];
+      }
       if (c1=='B')
-        theElement = CreateBoundaryElement(theGrid,theElement,TAG(&ul));
+        theElement = CreateElement(theGrid,TAG(&ul),BEOBJ,
+                                   ElementNodes,theElement);
       else
-        theElement = CreateInnerElement(theGrid,theElement,TAG(&ul));
+        theElement = CreateElement(theGrid,TAG(&ul),IEOBJ,
+                                   ElementNodes,theElement);
       if (theElement==NULL)
       {
         PrintErrorMessage('E',"LoadMultiGrid","cannot allocate element");
@@ -1078,11 +1077,6 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
       CTRL(theElement) = (unsigned INT) ul;
       CTRL2(theElement) = (unsigned INT) ul2;
       Elements[i1] = theElement;
-      for (j=0; j<CORNERS_OF_ELEM(theElement); j++)
-      {
-        fscanf(stream," %ld",&l);
-        SET_CORNER(theElement,j,(NODE *) l);
-      }
       cw1 = CTRL(theElement); cw2 = CTRL2(theElement);
       if (version<21)
       {
@@ -1234,11 +1228,6 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *FileName, char *BVPName,
     /* elements */
     for (theElement=theGrid->elements; theElement!=NULL; theElement=SUCCE(theElement))
     {
-      for (i=0; i<CORNERS_OF_ELEM(theElement); i++)
-      {
-        l = ((long)CORNER(theElement,i));
-        SET_CORNER(theElement,i,Nodes[l]);
-      }
       l = ((long)EFATHER(theElement));
       if (l>=0)
         SET_EFATHER(theElement,Elements[l]);

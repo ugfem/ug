@@ -1954,8 +1954,6 @@ MATRIX      *GetIMatrix             (VECTOR *FineVector, VECTOR *CoarseVector);
 MATRIX      *CreateIMatrix          (GRID *theGrid, VECTOR *fvec, VECTOR *cvec);
 INT                     DisposeIMatrices                (GRID *theGrid, MATRIX *theMatrix);
 #endif
-EDGE            *CreateAuxEdge                  (GRID *theGrid, NODE *from, NODE *to);
-INT             DisposeAuxEdges                 (GRID *theGrid);
 INT         GetAllVectorsOfElement  (GRID *theGrid, ELEMENT *theElement,
                                      VECTOR **vec);
 
