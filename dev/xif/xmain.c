@@ -1,7 +1,7 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*																			*/
+/*																		*/
 /* File:	  xmain.c														*/
 /*																			*/
 /* Purpose:   main file for X11 interface									*/
@@ -73,6 +73,7 @@
 #include "gui.h"
 #endif
 
+USING_UG_NAMESPACES
 
 /****************************************************************************/
 /*																			*/
@@ -112,18 +113,18 @@ XawTextPosition CursorPos,
                 CutBeginPos = 0;
 #endif
 
-Display *display;                                                       /* the display					*/
-int screen_num;                                                         /* screen on display			*/
-char *prog_name;                                                        /* my own name					*/
-Screen *screen_ptr;                                             /* dont know for what			*/
-unsigned int display_width;                             /* size of screen if needed     */
-unsigned int display_height;
-int if_argc;                                                            /* command line args			*/
-char **if_argv;
+Display * NS_PREFIX display;                                                    /* the display					*/
+int NS_PREFIX screen_num;                                                       /* screen on display			*/
+char * NS_PREFIX prog_name;                                                     /* my own name					*/
+Screen * NS_PREFIX screen_ptr;                                          /* dont know for what			*/
+unsigned int NS_PREFIX display_width;                           /* size of screen if needed     */
+unsigned int NS_PREFIX display_height;
+int NS_PREFIX if_argc;                                                          /* command line args			*/
+char ** NS_PREFIX if_argv;
 #ifndef __GUI__
-int user_interface = XUI;                                       /* user interface to open       */
+int NS_PREFIX user_interface = XUI;                                     /* user interface to open       */
 #else
-int user_interface = GUI;                                       /* user interface to open       */
+int NS_PREFIX user_interface = GUI;                                     /* user interface to open       */
 #endif
 int cui = 0;                                /* reset toggle for cui         */
 

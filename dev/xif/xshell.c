@@ -71,6 +71,8 @@
 #include "xshell.h"
 #include "xgraph.h"
 
+USING_UG_NAMESPACES
+
 /****************************************************************************/
 /*																			*/
 /* defines in the following order											*/
