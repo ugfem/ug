@@ -1,3 +1,4 @@
+# -*- makefile -*-
 # this file is for internal ug configuration. don't change it!
 
 # central make option interface for ug and ug applications
@@ -61,6 +62,17 @@ include $(UGROOT)/configs/mk.cad.$(CAD)
 # include macro definitions for gui
 include $(UGROOT)/configs/mk.gui.$(GUI)
 
+# -- list of automatically provided includes
+
+# this is the compatible setting: use the include-directory with all
+# headers but also allow for absolute pathes like #include "dom/domain.h"
+UG_INCLUDES = -I$(UGROOT)/include -I$(UGROOT)
+
+# this is what I (Thimo) would like to reach: only the most basic
+# headers are provided automatically, everything else should be
+# addressed with a absolute or relative path. Hopefully then the
+# hierarchy conflicts will start to vanish...
+#UG_INCLUDES = -I$(UGROOT)/low -I$(UGROOT)/arch -I$(UGROOT)
 
 # construct new macro definitions from given ones
 UG_CFLAGS =	-c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
@@ -69,7 +81,7 @@ UG_CFLAGS =	-c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 			$(RIF_CFLAGS) $(CHACO_CFLAGS) \
 			$(NETGEN_CFLAGS) $(COVISE_CFLAGS) $(GRAPE_CFLAGS) \
 			$(PV3_CFLAGS) $(CAD_CFLAGS) $(GUI_CFLAGS) \
-			-I$(UGROOT)/include
+			$(UG_INCLUDES)
 
 UG_COFLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 			$(ARCH_CFLAGS) $(ARCH_OPTIM) $(PPIF_CFLAGS) $(MODEL_CFLAGS) \
@@ -77,10 +89,10 @@ UG_COFLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) \
 			$(RIF_CFLAGS) $(CHACO_CFLAGS) \
 			$(NETGEN_CFLAGS) $(COVISE_CFLAGS) $(GRAPE_CFLAGS) \
 			$(PV3_CFLAGS) $(CAD_CFLAGS) $(GUI_CFLAGS) \
-			-I$(UGROOT)/include
+			$(UG_INCLUDES)
 
 UG_C++FLAGS = -c -D_$(DIM) -D$(ARCH_TYPE) $(UGDEBUG_CFLAGS) $(UG_OFLAGS)\
-			$(ARCH_C++FLAGS) $(MODEL_CFLAGS) -I$(UGROOT)/include
+			$(ARCH_C++FLAGS) $(MODEL_CFLAGS) $(UG_INCLUDES)
 
 UG_FFLAGS = -c $(ARCH_FFLAGS)
 
