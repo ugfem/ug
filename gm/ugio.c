@@ -1791,9 +1791,7 @@ MULTIGRID *LoadMultiGrid (char *MultigridName, char *name, char *type, char *BVP
   INT i,j,*Element_corner_uniq_subdom, *Ecusdp[2],**Enusdp[2],**Ecidusdp[2],
   **Element_corner_ids_uniq_subdom,*Element_corner_ids,max,**Element_nb_uniq_subdom,
   *Element_nb_ids,id,level;
-  INT lastnumber;
   char buf[64],itype[10];
-  char *f,*s,*l;
   int *vidlist;
 #ifdef __THREEDIM__
   ELEMENT *theNeighbor;

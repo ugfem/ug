@@ -138,11 +138,12 @@ static DOUBLE OneSideMoveCP(DOUBLE *CenterPVertex, DOUBLE *sideMid,
 static INT NewPosCenterNodeCurved(ELEMENT *theElement, DOUBLE *LocCoord)
 {
   INT i,j,n,nmoved,found;
-  ELEMENT *sonElement, *fatherElement;
+  ELEMENT *sonElement;
   ELEMENT *SonList[MAX_SONS];
   NODE *theNode[MAX_SIDES_OF_ELEM];
   VERTEX *bndVertex[MAX_SIDES_OF_ELEM],*theVertex;
 #ifdef __TWODIM__
+  ELEMENT *fatherElement;
   NODE *cornerNode[MAX_CORNERS_OF_SIDE];
   DOUBLE lcorn0[DIM],lcorn1[DIM],*lmid,totalLocal,*theCorners[MAX_CORNERS_OF_ELEM];
   INT ncorn,edge,co0,co1;
@@ -1225,23 +1226,24 @@ INT SmoothGrid (GRID *theGrid, const DOUBLE LimitLocDis, INT *MoveInfo, const IN
                 const INT bnd_num, const INT *bnd)
 {
   MULTIGRID *theMG;
-  ELEMENT *fatherElement,*nbElement[MAX_SIDES_OF_ELEM],*Level0Father,*boundaryFather;
+  ELEMENT *fatherElement,*nbElement[MAX_SIDES_OF_ELEM];
   ELEMENT *SonList[MAX_SONS];
   VERTEX *theVertex;
-  NODE *theNode, *theSideNode[1];
+  NODE *theNode;
   DOUBLE *CornerPtrs[MAX_CORNERS_OF_ELEM];
   DOUBLE newPos[DIM],newLocal[DIM];
-  INT i,coe,numOfSides,OnlyRedSons,ortho_used;
+  INT i,coe,numOfSides,OnlyRedSons;
 #ifdef __TWODIM__
+  NODE *theSideNode[1];
   LINK *theLink;
   NODE *CornerNodes[2],*CenterNodes[2],*node0,*node1;
-  ELEMENT *oppositeElement;
+  ELEMENT *oppositeElement,*Level0Father,*boundaryFather;
   DOUBLE lambda,lambda0,lambda1,lambda_old,x1,x2;
-  INT coN,ceN,Eside,nlinks,j,type[3],side,sidefound,eqdist;
+  INT ceN,Eside,nlinks,j,type[3],side,sidefound,eqdist;
   DOUBLE dummyValues[10];
   DOUBLE CenterNodeCoord[DIM],SideNodeCoord[DIM];
   static DOUBLE local[] = {0.5};
-  INT edge,co0,co1;
+  INT edge,co0,co1,ortho_used;
 #endif
 
   theMG = MYMG(theGrid);
