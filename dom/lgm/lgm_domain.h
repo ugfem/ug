@@ -121,6 +121,7 @@
 #define LGM_LINE_BNDCOND(p)                                     ((p)->Bndcond)
 #define LGM_LINE_POINT(p,i)                                     ((p)->point+(i))
 #define LGM_LINE_POINTDIST(p,i,j)                       LGM_POINT_DIST(LGM_LINE_POINT(p,i),LGM_LINE_POINT(p,j))
+#define LGM_LINE_ID_2_LINE(i)                           (LinePtrArray[i])
 
 /* macros for LGM_SUBDOMAIN */
 #define LGM_SUBDOMAIN_ID(p)                                     ((p)->id)
@@ -206,6 +207,7 @@
 #define LGM_SURFACE_FPOINT(p)                           ((p)->point)
 #define LGM_SURFACE_FTRIANGLE(p)                        ((p)->triangle)
 #define LGM_SURFACE_LINE(p,i)                           ((p)->line[(i)])
+#define LGM_SURFACE_ID_2_SURFACE(i)                     (SurfacePtrArray[i])
 
 /* macros for LGM_SUBDOMAIN */
 #define LGM_SUBDOMAIN_ID(p)                                     ((p)->id)
@@ -227,9 +229,12 @@
 
 /* macros for LGM_BNDP */
 #define LGM_BNDP_N(p)                                           ((p)->n)
+#define LGM_BNDP_SURFACES(p,i)                          ((p)->Surf[(i)])
 #define LGM_BNDP_SURFACE(p,i)                           ((p)->Surf[(i)].theSurf)
 #define LGM_BNDP_TRIANGLE(p,i)                          ((p)->Surf[(i)].triangle)
 #define LGM_BNDP_LOCAL(p,i)                                     ((p)->Surf[(i)].local)
+#define LGM_BNDP_SURFACE_GSURFACE(p)            ((p).theSurf)
+#define LGM_BNDP_SURFACE_LOCAL(p)                       ((p).local)
 
 /* macros for LGM_BNDS */
 #define LGM_BNDS_N(p)                                           ((p)->nn)

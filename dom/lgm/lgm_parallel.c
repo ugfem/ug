@@ -60,6 +60,31 @@
 /*																			*/
 /****************************************************************************/
 
+#if (LGM_DIM==2)
+#define LGM_OBJECT                              LGM_LINE
+#define LGM_OBJECT_ID                   LGM_LINE_ID
+#define LGM_OBJECT_ID_2_OBJECT  LGM_LINE_ID_2_LINE
+#define LGM_BNDS_OBJECT                 LGM_BNDS_LINE
+#define LGM_BNDP_OBJECT                 LGM_BNDP_LINE
+#define LGM_BNDP_POBJECT                LGM_BNDP_PLINE
+#define LGM_OBJECT_ID_2_OBJECT  LGM_LINE_ID_2_LINE
+#define LGM_BNDP_OBJECTS                LGM_BNDP_LINES
+#define LGM_BNDP_OBJECT_GOBJECT LGM_BNDP_LINE_GLINE
+#define LGM_BNDP_OBJECT_LOCAL   LGM_BNDP_LINE_LOCAL
+#endif
+
+#if (LGM_DIM==3)
+#define LGM_OBJECT                              LGM_SURFACE
+#define LGM_OBJECT_ID                   LGM_SURFACE_ID
+#define LGM_OBJECT_ID_2_OBJECT  LGM_SURFACE_ID_2_SURFACE
+#define LGM_BNDS_OBJECT                 LGM_BNDS_SURFACE
+#define LGM_BNDP_OBJECT                 LGM_BNDP_SURFACE
+#define LGM_BNDP_POBJECT                LGM_BNDP_PSURFACE
+#define LGM_BNDP_OBJECTS                LGM_BNDP_SURFACES
+#define LGM_BNDP_OBJECT_GOBJECT LGM_BNDP_SURFACE_GSURFACE
+#define LGM_BNDP_OBJECT_LOCAL   LGM_BNDP_SURFACE_LOCAL
+#endif
+
 /****************************************************************************/
 /*																			*/
 /* data structures used in this source file (exported data structures are	*/
@@ -73,7 +98,13 @@
 /*																			*/
 /****************************************************************************/
 
-extern LGM_LINE **LinePtrArray;
+#if (LGM_DIM==2)
+extern LGM_LINE                        **LinePtrArray;
+#endif
+
+#if (LGM_DIM==3)
+extern LGM_SURFACE                     **SurfacePtrArray;
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -100,7 +131,9 @@ void BElementXferBndS (BNDS **Bnds, int n, int proc, int prio)
   PRINTDEBUG(dom,1,(PFMT "BElementXferBndS(): bnds=%x n=%d proc=%d prio=%x\n",
                     me,bnds,n,proc,prio));
 
+  /* to store end tag */
   size = sizeof(INT);
+
   for (i=0; i<n; i++)
     if (bnds[i] != NULL)
     {
@@ -108,8 +141,8 @@ void BElementXferBndS (BNDS **Bnds, int n, int proc, int prio)
       size += CEIL(size0) + CEIL(sizeof(INT));
 
       PRINTDEBUG(dom,2,(PFMT "BElementXferBndS(): Xfer i=%d bnds=%x "
-                        "lineid=%d size=%d\n",
-                        me,i,bnds[i],LGM_LINE_ID(LGM_BNDS_LINE(bnds[i])),size));
+                        "line/surfaceid=%d size=%d\n",
+                        me,i,bnds[i],LGM_OBJECT_ID(LGM_BNDS_OBJECT(bnds[i])),size));
     }
 
   DDD_XferAddData(size,DDD_DOMAIN_DATA);
@@ -126,12 +159,10 @@ void BElementGatherBndS (BNDS **Bnds, int n, int cnt, char *data)
   for (i=0; i<n; i++)
     if (bnds[i] != NULL)
     {
-
       PRINTDEBUG(dom,2,(PFMT "BElementGatherBndS(): i=%d bnds=%x "
-                        "lineid=%d size=%d\n",
-                        me,i,bnds[i],LGM_LINE_ID(LGM_BNDS_LINE(bnds[i])),
-                        LGM_BNDS_SIZE(bnds[i])));
-
+                        "line/surfaceid=%d size=%d\n",
+                        me,i,bnds[i],LGM_OBJECT_ID(LGM_BNDS_OBJECT(bnds[i])),
+                        sizeof(LGM_BNDS)));
       size = sizeof(*bnds[i]);
 
       memcpy(data,&i,sizeof(INT));
@@ -141,11 +172,12 @@ void BElementGatherBndS (BNDS **Bnds, int n, int cnt, char *data)
 
       /* substiute line pointer by line id */
       PRINTDEBUG(dom,3,(PFMT "BElementGatherBndS(): substituting "
-                        "lineptr=%x by lineid=%d\n",me,LGM_BNDS_LINE((LGM_BNDS *)data),
-                        LGM_LINE_ID(LGM_BNDS_LINE(bnds[i]))));
+                        "line/surfaceptr=%x by line/surfaceid=%d\n",me,LGM_BNDS_OBJECT((LGM_BNDS *)data),
+                        LGM_OBJECT_ID(LGM_BNDS_OBJECT(bnds[i]))));
 
-      LGM_BNDS_LINE((LGM_BNDS *)data) =
-        (LGM_LINE *) LGM_LINE_ID(LGM_BNDS_LINE(bnds[i]));
+      LGM_BNDS_OBJECT((LGM_BNDS *)data) =
+        (LGM_OBJECT *) LGM_OBJECT_ID(LGM_BNDS_OBJECT(bnds[i]));
+
       data += CEIL(size);
     }
 
@@ -181,12 +213,12 @@ void BElementScatterBndS (BNDS **Bnds, int n, int cnt, char *data)
 
       /* substitute line id by its local pointer */
       PRINTDEBUG(dom,3,(PFMT "BElementScatterBndS(): substituting "
-                        "lineid=%d by lineptr=%x\n",me,
-                        (INT) LGM_BNDS_LINE((LGM_BNDS *)data),
-                        LINE_ID_2_LINE((INT) LGM_BNDS_LINE((LGM_BNDS *)data))));
+                        "line/surfaceid=%d by line/surfaceptr=%x\n",me,
+                        (INT) LGM_BNDS_OBJECT((LGM_BNDS *)data),
+                        LGM_OBJECT_ID_2_OBJECT((INT) LGM_BNDS_OBJECT((LGM_BNDS *)data))));
 
-      LGM_BNDS_LINE(bs) =
-        LINE_ID_2_LINE((INT) LGM_BNDS_LINE((LGM_BNDS *)data));
+      LGM_BNDS_OBJECT(bs) =
+        LGM_OBJECT_ID_2_OBJECT((INT) LGM_BNDS_OBJECT((LGM_BNDS *)data));
     }
     else
       PRINTDEBUG(dom,2,(PFMT "BElementScatterBndS(): ignoring i=%d "
@@ -207,7 +239,8 @@ void BVertexXferBndP (BNDP *Bndp, int proc, int prio)
                     "prio=%d\n",me,bndp,proc,prio));
 
   n               = LGM_BNDP_N(bndp);
-  size    = CEIL(sizeof(INT))+CEIL(n*sizeof(LGM_BNDP_PLINE));
+
+  size    = CEIL(sizeof(INT))+CEIL(n*sizeof(LGM_BNDP_POBJECT));
 
   PRINTDEBUG(dom,1,(PFMT "BVertexXferBndP(): bndp=%x n=%d size=%d\n"
                     ,me,bndp,n,size));
@@ -227,34 +260,34 @@ void BVertexGatherBndP (BNDP *Bndp, int cnt, char *data)
                     me,bndp,cnt,data));
 
   n               = LGM_BNDP_N(bndp);
-  size    = CEIL(n*sizeof(LGM_BNDP_PLINE));
+  size    = CEIL(n*sizeof(LGM_BNDP_POBJECT));
 
   PRINTDEBUG(dom,1,(PFMT "BVertexGatherBndP(): bndp=%x n=%d size=%d\n"
                     ,me,bndp,n,size));
 
   memcpy(data,&n,sizeof(INT));
   data += CEIL(sizeof(INT));
-  memcpy(data,&LGM_BNDP_LINES(bndp,0),size);
+  memcpy(data,&LGM_BNDP_OBJECTS(bndp,0),size);
 
-  /* substitute the line pointer by their ids */
+  /* substitute the line/surface pointer by their ids */
   for (i=0; i<n; i++)
   {
     PRINTDEBUG(dom,3,(PFMT "BVertexGatherBndP(): substituting i=%d "
-                      "lineptr=%x by lineid=%d local=%11.4E\n",
-                      me,i,LGM_BNDP_LINE(bndp,i),
-                      LGM_LINE_ID(LGM_BNDP_LINE(bndp,i)),
+                      "line/surfaceptr=%x by line/surfaceid=%d local=%11.4E\n",
+                      me,i,LGM_BNDP_OBJECT(bndp,i),
+                      LGM_OBJECT_ID(LGM_BNDP_OBJECT(bndp,i)),
                       LGM_BNDP_LOCAL(bndp,i)));
     fflush(stdout);
 
-    LGM_BNDP_LINE_GLINE(((LGM_BNDP_PLINE*)data)[0]) =
-      (LGM_LINE *)LGM_LINE_ID(LGM_BNDP_LINE(bndp,i));
+    LGM_BNDP_OBJECT_GOBJECT(((LGM_BNDP_POBJECT *)data)[0]) =
+      (LGM_OBJECT *)LGM_OBJECT_ID(LGM_BNDP_OBJECT(bndp,i));
 
     PRINTDEBUG(dom,3,(PFMT "BVertexGatherBndP(): inside buffer: "
                       "line=%x local=%11.4E\n",me,
-                      LGM_BNDP_LINE_GLINE(((LGM_BNDP_PLINE*)data)[0]),
-                      LGM_BNDP_LINE_LOCAL(((LGM_BNDP_PLINE*)data)[0])));
+                      LGM_BNDP_OBJECT_GOBJECT(((LGM_BNDP_POBJECT *)data)[0]),
+                      LGM_BNDP_OBJECT_LOCAL(((LGM_BNDP_POBJECT *)data)[0])));
 
-    data += sizeof(LGM_BNDP_PLINE);
+    data += sizeof(LGM_BNDP_POBJECT);
   }
 }
 
@@ -270,10 +303,10 @@ void BVertexScatterBndP (BNDP **Bndp, int cnt, char *data)
   if (*bndp == NULL)
   {
     INT n           = LGM_BNDP_N((LGM_BNDP *)data);
-    INT size        = CEIL(n*sizeof(LGM_BNDP_PLINE));
+    INT size        = CEIL(n*sizeof(LGM_BNDP_POBJECT));
 
     *bndp = (LGM_BNDP *) memmgr_AllocOMEM(sizeof(LGM_BNDP)+(n-1)*
-                                          sizeof(struct lgm_bndp_line),TypeBndP,0,0);
+                                          sizeof(LGM_BNDP_POBJECT),TypeBndP,0,0);
     ASSERT(*bndp!=NULL);
 
     PRINTDEBUG(dom,2,(PFMT "BVertexScatterBndP(): scatter bndp=%x n=%d "
@@ -281,7 +314,7 @@ void BVertexScatterBndP (BNDP **Bndp, int cnt, char *data)
 
     memcpy(&LGM_BNDP_N(*bndp),&n,sizeof(INT));
     data += CEIL(sizeof(INT));
-    memcpy(&LGM_BNDP_LINES(*bndp,0),data,size);
+    memcpy(&LGM_BNDP_OBJECTS(*bndp,0),data,size);
 
     /* substitute the line ids by their pointers */
     for (i=0; i<n; i++)
@@ -289,21 +322,21 @@ void BVertexScatterBndP (BNDP **Bndp, int cnt, char *data)
       /* substitute line id by its local pointer */
       PRINTDEBUG(dom,3,(PFMT "BVertexScatterBndP(): substituting i=%d "
                         "lineid=%d by lineptr=%x local=%11.4E\n",
-                        me,i,(INT) LGM_BNDP_LINE_GLINE(((LGM_BNDP_PLINE *)data)[0]),
-                        LINE_ID_2_LINE((INT)
-                                       LGM_BNDP_LINE_GLINE(((LGM_BNDP_PLINE *)data)[0])),
-                        LGM_BNDP_LINE_LOCAL(((LGM_BNDP_PLINE *)data)[0])));
+                        me,i,(INT) LGM_BNDP_OBJECT_GOBJECT(((LGM_BNDP_POBJECT *)data)[0]),
+                        LGM_OBJECT_ID_2_OBJECT((INT)
+                                               LGM_BNDP_OBJECT_GOBJECT(((LGM_BNDP_POBJECT *)data)[0])),
+                        LGM_BNDP_OBJECT_LOCAL(((LGM_BNDP_POBJECT *)data)[0])));
 
-      LGM_BNDP_LINE(*bndp,i) =
-        LINE_ID_2_LINE((INT)
-                       LGM_BNDP_LINE_GLINE(((LGM_BNDP_PLINE *)data)[0]));
+      LGM_BNDP_OBJECT(*bndp,i) =
+        LGM_OBJECT_ID_2_OBJECT((INT)
+                               LGM_BNDP_OBJECT_GOBJECT(((LGM_BNDP_POBJECT *)data)[0]));
 
       PRINTDEBUG(dom,3,(PFMT "BVertexScatterBndP(): outside buffer: "
                         "line=%x local=%11.4E\n",me,
-                        LGM_BNDP_LINE(*((LGM_BNDP **)Bndp),i),
+                        LGM_BNDP_OBJECT(*((LGM_BNDP **)Bndp),i),
                         LGM_BNDP_LOCAL(*((LGM_BNDP **)Bndp),i)));
 
-      data += sizeof(LGM_BNDP_PLINE);
+      data += sizeof(LGM_BNDP_POBJECT);
     }
   }
   else

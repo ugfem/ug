@@ -79,7 +79,12 @@ typedef int (*ReadSurfaceProc)(int i, LGM_SURFACE_INFO *surface_info);
 /*																			*/
 /****************************************************************************/
 
-LGM_LINE **LinePtrArray = NULL;
+#if (LGM_DIM==2)
+LGM_LINE        **LinePtrArray          = NULL;
+#endif
+#if (LGM_DIM==3)
+LGM_SURFACE     **SurfacePtrArray       = NULL;
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -380,6 +385,10 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
   /* allocate surfaces */
   if ((SurfacePtrList=(LGM_SURFACE**)GetTmpMem(theHeap,sizeof(LGM_SURFACE*)*theDomInfo.nSurface)) == NULL)
     return (NULL);
+        #ifdef ModelP
+  if ((SurfacePtrArray=(LGM_SURFACE**)GetFreelistMemory(theHeap,sizeof(LGM_SURFACE*)*theDomInfo.nSurface)) == NULL)
+    return (NULL);
+        #endif
   for (i=0; i<theDomInfo.nSurface; i++)
   {
     size = sizeof(LGM_SURFACE)+(lgm_sizes.Surf_nPoint[i]-1)*sizeof(LGM_POINT);
@@ -429,6 +438,10 @@ LGM_DOMAIN *LGM_LoadDomain (char *filename, char *name, HEAP *theHeap, INT Domai
           theSurfaceInfo.Triangle[j].neighbor[k];
       }
     }
+                #ifdef ModelP
+    PRINTDEBUG(dom,3,(PFMT "LGM_LoadDomain(): i=%d surfaceptr=%x\n",me,i,SurfacePtrList[i]));
+    SurfacePtrArray[i] = SurfacePtrList[i];
+                #endif
   }
 
   /* allocate and initialize subdomains */
