@@ -159,7 +159,6 @@ static INT HierElement (FILE *stream, ELEMENT *el)
 static INT TetiCommand (INT argc, char **argv)
 {
   INT i,j,k,v;                                  /* counters etc.							*/
-  char buf[128];                                /* for messages								*/
   VERTEX *vx;                                           /* a vertex pointer							*/
   ELEMENT *el;                                  /* an element pointer						*/
 
@@ -209,8 +208,7 @@ static INT TetiCommand (INT argc, char **argv)
       es[ns] = GetElementValueEvalProc(s);
       if (es[ns]==NULL)
       {
-        sprintf(buf,"could not find scalar eval proc %s\n",s);
-        PrintErrorMessage('E',"teti:",buf);
+        PrintErrorMessageF('E',"teti:","could not find scalar eval proc %s\n",s);
         break;
       }
       ns++;

@@ -282,7 +282,6 @@ COMMAND *SearchUgCmd (const char *cmdName)
   ENVDIR *currentDir;
   COMMAND *Cmd;
   ENVITEM *theItem;
-  char text[128];
 
   if (ChangeEnvDir("/Menu")==NULL)
   {
@@ -301,8 +300,7 @@ COMMAND *SearchUgCmd (const char *cmdName)
       if (Str1inStr2(cmdName,theItem->v.name))
         if (Cmd!=NULL)
         {
-          sprintf(text," ambiguos: %s\n",cmdName);
-          UserWrite(text);
+          UserWriteF(" ambiguos: %s\n",cmdName);
           return (NULL);
         }
         else

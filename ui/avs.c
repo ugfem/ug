@@ -202,7 +202,6 @@ static INT AVSCommand (INT argc, char **argv)
 {
   INT i,j,k,v;                                  /* counters etc.							*/
   INT counter;                                  /* for formatting output					*/
-  char buf[128];                                /* for messages								*/
   char item[1024],it[256];              /* item buffers								*/
   INT ic=0;                                             /* item length								*/
   VERTEX *vx;                                           /* a vertex pointer							*/
@@ -281,8 +280,7 @@ static INT AVSCommand (INT argc, char **argv)
       zcoord = GetElementValueEvalProc(s);
       if (zcoord==NULL)
       {
-        sprintf(buf,"could not find scalar eval proc %s\n",s);
-        PrintErrorMessage('E',"avs:",buf);
+        PrintErrorMessageF('E',"avs:","could not find scalar eval proc %s\n",s);
         break;
       }
       if (sscanf(argv[i+1],"s %s", s) == 1)
@@ -305,8 +303,7 @@ static INT AVSCommand (INT argc, char **argv)
       es[ns] = GetElementValueEvalProc(s);
       if (es[ns]==NULL)
       {
-        sprintf(buf,"could not find scalar eval proc %s\n",s);
-        PrintErrorMessage('E',"avs:",buf);
+        PrintErrorMessageF('E',"avs:","could not find scalar eval proc %s\n",s);
         break;
       }
       if (sscanf(argv[i+1],"s %s", s) == 1)
@@ -330,8 +327,7 @@ static INT AVSCommand (INT argc, char **argv)
       ev[nv] = GetElementVectorEvalProc(s);
       if (ev[nv]==NULL)
       {
-        sprintf(buf,"could not find vector eval proc %s\n",s);
-        PrintErrorMessage('E',"avs:",buf);
+        PrintErrorMessageF('E',"avs:","could not find vector eval proc %s\n",s);
         break;
       }
       if (sscanf(argv[i+1],"s %s", s) == 1)
@@ -355,8 +351,7 @@ static INT AVSCommand (INT argc, char **argv)
       es_cell[ns_cell] = GetElementValueEvalProc(s);
       if (es_cell[ns_cell]==NULL)
       {
-        sprintf(buf,"could not find scalar eval proc %s\n",s);
-        PrintErrorMessage('E',"avs:",buf);
+        PrintErrorMessageF('E',"avs:","could not find scalar eval proc %s\n",s);
         break;
       }
       if (sscanf(argv[i+1],"s %s", s) == 1)
@@ -380,8 +375,7 @@ static INT AVSCommand (INT argc, char **argv)
       ev_cell[nv_cell] = GetElementVectorEvalProc(s);
       if (ev_cell[nv_cell]==NULL)
       {
-        sprintf(buf,"could not find vector eval proc %s\n",s);
-        PrintErrorMessage('E',"avs:",buf);
+        PrintErrorMessageF('E',"avs:","could not find vector eval proc %s\n",s);
         break;
       }
       if (sscanf(argv[i+1],"s %s", s) == 1)

@@ -2114,8 +2114,7 @@ static INT InterpretString (void)
         switch (result.ro.type)
         {
         case NUMBERID :
-          sprintf(stringBuffer,"%-.14g",result.ro.value);
-          UserWrite(stringBuffer);
+          UserWriteF("%-.14g",result.ro.value);
           break;
 
         case ALPHAID :
@@ -2591,9 +2590,7 @@ void CommandLoop (int argc, char **argv)
           i++;
         }
         else
-        {
           UserWrite("Error in command line option -S\n");
-        }
         i++;
         continue;
       }
@@ -2607,9 +2604,7 @@ void CommandLoop (int argc, char **argv)
           i++;
         }
         else
-        {
           UserWrite("Error in command line option -L\n");
-        }
         i++;
         continue;
       }
@@ -2661,9 +2656,7 @@ else
           i++;
         }
         else
-        {
           UserWrite("Error in command line option -S\n");
-        }
         i++;
         continue;
       }
@@ -2677,9 +2670,7 @@ else
           i++;
         }
         else
-        {
           UserWrite("Error in command line option -L\n");
-        }
         i++;
         continue;
       }

@@ -280,8 +280,7 @@ INT CheckHelp ()
     if (!found)
     {
       rv = 1;
-      sprintf(buffer,"no help found for '%s'\n",ENVITEM_NAME(theCmd));
-      UserWrite(buffer);
+      UserWriteF("no help found for '%s'\n",ENVITEM_NAME(theCmd));
     }
   }
   if (rv)
@@ -322,8 +321,7 @@ INT CheckHelp ()
     if (!found)
     {
       rv = 1;
-      sprintf(buffer,"no help found for '%s'\n",ENVITEM_NAME(theNP));
-      UserWrite(buffer);
+      UserWriteF("no help found for '%s'\n",ENVITEM_NAME(theNP));
     }
   }
   if (rv)

@@ -93,7 +93,6 @@ static INT TecplotCommand (INT argc, char **argv)
 {
   INT i,j,k,v;                                  /* counters etc.							*/
   INT counter;                                  /* for formatting output					*/
-  char buf[128];                                /* for messages								*/
   VECTOR *vc;                                           /* a vector pointer							*/
   ELEMENT *el;                                  /* an element pointer						*/
 
@@ -142,8 +141,7 @@ static INT TecplotCommand (INT argc, char **argv)
       ev[nv] = GetElementValueEvalProc(s);
       if (ev[nv]==NULL)
       {
-        sprintf(buf,"could not find eval proc %s\n",s);
-        PrintErrorMessage('E',"tecplot",buf);
+        PrintErrorMessageF('E',"tecplot","could not find eval proc %s\n",s);
         break;
       }
       if (sscanf(argv[i+1],"s %s", s) == 1)
