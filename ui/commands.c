@@ -14430,7 +14430,7 @@ static INT InitArray (void)
    D*/
 /****************************************************************************/
 
-static DumpAlgCommand(INT argc, char **argv)
+static INT DumpAlgCommand(INT argc, char **argv)
 {
   INT level, comp;
   VECTOR *v;
