@@ -5781,44 +5781,24 @@ static INT EW_PreProcess_PlotElements2D (PICTURE *thePicture, WORK *theWork)
 	{
 		INT i, nc;
 		ELEMENT *elem;
-		EE3D_PartShrinkFactor = theGpo->PartShrinkFactor;
-		if (EE3D_PartShrinkFactor < 1.0) {
+		EE2D_PartShrinkFactor = theGpo->PartShrinkFactor;
+		if (EE2D_PartShrinkFactor < 1.0) {
 			nc = 0;
-			V3_CLEAR(EE3D_PartMidPoint);
+			V2_CLEAR(EE2D_PartMidPoint);
 			for (elem = EW_GetFirstElement_vert_fw_up(theMG, 0, CURRENTLEVEL(theMG));
 				 elem != NULL;
 				 elem = EW_GetNextElement_vert_fw_up(elem))
 			{
 				for (i = 0; i < CORNERS_OF_ELEM(elem); i++) {
 					nc++;
-					V3_ADD(EE3D_PartMidPoint, CVECT(MYVERTEX(CORNER(elem, i))), 
-						   EE3D_PartMidPoint);
+					V2_ADD(EE2D_PartMidPoint, CVECT(MYVERTEX(CORNER(elem,i))), 
+						   EE2D_PartMidPoint);
 				}
 			}
-			V3_SCALE(1.0/(DOUBLE)nc, EE3D_PartMidPoint);
+			if (nc > 0)
+			    V2_SCALE(1.0/(DOUBLE)nc, EE2D_PartMidPoint);
 		}
 	}
-/* 
-	{
-		GRID *theGrid;
-		NODE *theNode;
-		INT  nodes;
-
-		EE3D_PartShrinkFactor			= theGpo->PartShrinkFactor;
-		if (EE3D_PartShrinkFactor < 1.0)
-		{
-			nodes = 0;
-			theGrid = GRID_ON_LEVEL(theMG, 0);
-			V3_CLEAR(EE3D_PartMidPoint)
-			for (theNode=FIRSTNODE(theGrid); theNode!=NULL; theNode=SUCCN(theNode)) {
-				V3_ADD(EE3D_PartMidPoint,CVECT(MYVERTEX(theNode)),EE3D_PartMidPoint)
-				nodes++;
-			}
-			if (nodes > 0)
-				V3_SCALE(1.0/(DOUBLE)nodes,EE3D_PartMidPoint)
-		}
-	}
-*/
 	#endif
 
 	return (0);
