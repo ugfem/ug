@@ -151,20 +151,20 @@ enum REFINE_CE {
 /* macros for refineinfo */
 #define RINFO_MAX                                               100
 #define REFINEINFO(mg)                                  refine_info
-#define REFINESTEP(r)                                   r.step
-#define SETREFINESTEP(r,s)                              r.step = (s%RINFO_MAX)
-#define MARKCOUNT(r)                                    r.markcount[r.step]
-#define SETMARKCOUNT(r,n)                               r.markcount[r.step] = n
-#define PREDNEW0(r)                                             r.predicted_new[r.step][0]
-#define SETPREDNEW0(r,n)                                r.predicted_new[r.step][0] = n
-#define PREDNEW1(r)                                             r.predicted_new[r.step][1]
-#define SETPREDNEW1(r,n)                                r.predicted_new[r.step][1] = n
-#define PREDNEW2(r)                                             r.predicted_new[r.step][2]
-#define SETPREDNEW2(r,n)                                r.predicted_new[r.step][2] = n
-#define REAL(r)                                                 r.real[r.step]
-#define SETREAL(r,n)                                    r.real[r.step] = n
-#define PREDMAX(r)                                              r.predicted_max[r.step]
-#define SETPREDMAX(r,n)                                 r.predicted_max[r.step] = n
+#define REFINESTEP(r)                                   (r).step
+#define SETREFINESTEP(r,s)                              (r).step = ((s)%RINFO_MAX)
+#define MARKCOUNT(r)                                    (r).markcount[(r).step]
+#define SETMARKCOUNT(r,n)                               (r).markcount[(r).step] = (n)
+#define PREDNEW0(r)                                             (r).predicted_new[(r).step][0]
+#define SETPREDNEW0(r,n)                                (r).predicted_new[(r).step][0] = (n)
+#define PREDNEW1(r)                                             (r).predicted_new[(r).step][1]
+#define SETPREDNEW1(r,n)                                (r).predicted_new[(r).step][1] = (n)
+#define PREDNEW2(r)                                             (r).predicted_new[(r).step][2]
+#define SETPREDNEW2(r,n)                                (r).predicted_new[(r).step][2] = (n)
+#define REAL(r)                                                 (r).real[(r).step]
+#define SETREAL(r,n)                                    (r).real[(r).step] = (n)
+#define PREDMAX(r)                                              (r).predicted_max[(r).step]
+#define SETPREDMAX(r,n)                                 (r).predicted_max[(r).step] = (n)
 
 /* macros for listing */
 #define REFINE_ELEMENT_LIST(d,e,s)                                           \
