@@ -1400,7 +1400,7 @@ static ELEMENT *EW_GetNextElement_vert_fw_up (ELEMENT *theElement)
 	ELEMENT *p;
 
 	/* get element with minimum plot id */
-	min = MAXINT;
+	min = INT_MAX;
 	k   = -1;
 	for (i = GElem_fromLevel; i <= GElem_toLevel; i++) {
 		p = GElem_NextInLevel[i];
@@ -17395,7 +17395,7 @@ void PWorkEW_Execute_3D()
 	{
 		/* check if all active buffers have a full slot 
 		   and determine the one with minimum ID */
-		min = MAXINT;
+		min = INT_MAX;
 		for (i = 0; i <= WOP_DOWN_CHANNELS; i++) {
 			if (WOP_Count[i] == 0) {
 				if (!WOP_More[i])
@@ -17409,7 +17409,7 @@ void PWorkEW_Execute_3D()
 				k   = i;
 			}
 		}
-		if (min == MAXINT) return;
+		if (min == INT_MAX) return;
 
 		/* execute DO from slot with minimum ID */
 		(*WOP_GEN_ExecuteProc)(WOP_DO_Buffer[k][WOP_Rear[k]]+2);
@@ -17429,7 +17429,7 @@ void PWorkEW_Execute_3D()
 		{
 			/* check if all active buffers have a full slot 
 			   and determine the one with minimum ID */
-			min = MAXINT;
+			min = INT_MAX;
 			for (i = 0; i <= WOP_DOWN_CHANNELS; i++) {
 				if (WOP_Count[i] == 0) {
 					if (!WOP_More[i])
@@ -17443,7 +17443,7 @@ void PWorkEW_Execute_3D()
 					k   = i;
 				}
 			}
-			if (min == MAXINT) return;
+			if (min == INT_MAX) return;
 
 			/* send DO from slot with minimum ID */
 			WOP_Sending[0] = k;
