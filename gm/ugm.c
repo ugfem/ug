@@ -7876,7 +7876,7 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
   FIFO myfifo;
 
   /* prepare */
-  if (TOPLEVEL(theMG)>0) REP_ERR_RETURN (GM_ERROR);
+  if (TOPLEVEL(theMG)<0) REP_ERR_RETURN (GM_ERROR);
   theGrid = GRID_ON_LEVEL(theMG,0);
   n = NT(theGrid);        if (n==0) return(0);
 
@@ -7901,6 +7901,7 @@ INT SetSubdomainIDfromBndInfo (MULTIGRID *theMG)
       /* set id from BNDS */
       if (BNDS_BndSDesc(ELEM_BNDS(theElement,i),&id,&nbid,&part))
         REP_ERR_RETURN (GM_ERROR);
+      assert(id>0);
       SETSUBDOMAIN(theElement,id);
       SETUSED(theElement,1);
       fifo_in(&myfifo,(void *)theElement);
