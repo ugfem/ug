@@ -6051,15 +6051,8 @@ static INT EW_MarkElementEval2D (ELEMENT *theElement, DRAWINGOBJ *theDO)
 	else
 	{
 		/* calculate center of mass */
-		coe = CORNERS_OF_ELEM(theElement);
-		V2_CLEAR(cm);
-		for (i=0; i<coe; i++)
-		{
-			corner = CVECT(MYVERTEX(CORNER(theElement,i)));
-			V2_ADD(cm,corner,cm);
-		}
-		V2_SCALE(1.0/coe,cm);
-		
+		CalculateCenterOfMass( theElement, cm );
+				
 		V2_TRAFOM3_V2(cm,ObsTrafo,help);
 		(*OBS_ProjectProc)(help,&a);
 		
@@ -13691,10 +13684,7 @@ static void CalcViewableSides(ELEMENT *theElement)
 		case (PYRAMID):
 		case (PRISM):
 			/* compute center of  mass */
-			V3_CLEAR(xc)
-			for( i=0; i<CORNERS_OF_ELEM(theElement); i++)
-				V3_ADD(x[i],xc,xc)
-			V3_SCALE(1.0/CORNERS_OF_ELEM(theElement),xc)
+			CalculateCenterOfMass( theElement, xc );
 
 			/* set view direction */
 			if (OBS_Perspective == YES)
@@ -13751,10 +13741,7 @@ static void CalcViewableSides(ELEMENT *theElement)
 
 		case (HEXAHEDRON):
 			/* compute center of  mass */
-			V3_CLEAR(xc)
-			for( i=0; i<CORNERS_OF_ELEM(theElement); i++)
-				V3_ADD(x[i],xc,xc)
-			V3_SCALE(0.125,xc)
+			CalculateCenterOfMass( theElement, xc );
 				
 			if (OBS_Perspective == YES)
 			{
