@@ -1515,6 +1515,8 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat)
                 if (!(VDATATYPE(jv)&cmask))
                   continue;
                 cm = GetMatrix(iv,jv);
+                if (cm == NULL)
+                  cm = CreateExtraConnection(FineGrid,iv,jv);
                 if (cm !=NULL)
                   MVALUE(cm,mc) += imvalue * mvalue * MVALUE(jm,0);
                 else                                   /* connection not in pattern */
@@ -1566,6 +1568,8 @@ INT AssembleGalerkinByMatrix (GRID *FineGrid, MATDATA_DESC *Mat)
           {
             jv = MDEST(jm);
             cm = GetMatrix(iv,jv);
+            if (cm == NULL)
+              cm = CreateExtraConnection(CoarseGrid,iv,jv);
             if (cm !=NULL)
             {
               cmtype = MTP(ivtype,VTYPE(jv));
