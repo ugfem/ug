@@ -281,7 +281,7 @@ void buggy (MULTIGRID *theMG)
 
   if (me==0)
   {
-    printf("%04d: started buggy.\n");
+    printf("%04d: started buggy.\n", me);
     fflush(stdout);
   }
 
