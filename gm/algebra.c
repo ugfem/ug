@@ -2855,8 +2855,10 @@ INT GridCreateConnection (GRID *theGrid)
     return (0);
 
     #ifdef ModelP
+        #ifdef __THREEDIM__
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
     DDD_XferBegin();
+        #endif
         #endif
 
   /* set EBUILDCON-flags also in elements accessing a vector with VBUILDCON true */
@@ -2876,8 +2878,10 @@ INT GridCreateConnection (GRID *theGrid)
           CreateVector(theGrid,EDGEVEC,(GEOM_OBJECT *)ed,vList);
           EDVECTOR(ed) = vList[0];
                     #ifdef ModelP
+                        #ifdef __THREEDIM__
           SETPRIO(EDVECTOR(ed),PRIO(ed));
                     #endif
+                        #endif
         }
       }
     }
@@ -2915,8 +2919,10 @@ INT GridCreateConnection (GRID *theGrid)
   }
 
     #ifdef ModelP
+        #ifdef __THREEDIM__
   if (VEC_DEF_IN_OBJ_OF_GRID(theGrid,EDGEVEC))
     DDD_XferEnd();
+        #endif
         #endif
 
   /* run over all elements with EBUILDCON true and build connections */
