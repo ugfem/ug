@@ -379,10 +379,25 @@ static INT RayleighQuotientQ (MULTIGRID *theMG,
       return(1);
     if (l_dmatmul(theGrid,q,EVERY_CLASS,M,x,EVERY_CLASS) != NUM_OK)
       return(1);
-    if (l_dmatmul(theGrid,t,EVERY_CLASS,M,q,EVERY_CLASS) != NUM_OK)
+  }
+  for (i=tl-1; i>=bl; i--)
+    if (StandardProject(GRID_ON_LEVEL(theMG,i),q,q))
+      return(1);
+  for (i=bl; i<=tl; i++) {
+    if (l_dmatmul(GRID_ON_LEVEL(theMG,i),t,EVERY_CLASS,M,q,EVERY_CLASS)
+        != NUM_OK)
       return(1);
   }
+  IFDEBUG(np,2)
   if (s_ddot(theMG,bl,tl,t,x,scal1) != NUM_OK)
+    return(1);
+  a[0] = 0.0;
+  for (i=0; i<VD_NCOMP(t); i++)
+    a[0] += scal1[i];
+  PRINTDEBUG(np,2,("\n (a0 %f) ",a[0]));
+  ENDDEBUG
+
+  if (s_ddot(theMG,bl,tl,q,q,scal1) != NUM_OK)
     return(1);
   if (s_ddot(theMG,bl,tl,r,x,scal2) != NUM_OK)
     return(1);
@@ -391,12 +406,6 @@ static INT RayleighQuotientQ (MULTIGRID *theMG,
     a[0] += scal1[i];
     a[1] += scal2[i];
   }
-
-  PRINTDEBUG(np,2,("\ns0 %f s1 %f ",scal1[0],scal1[1]));
-  if (s_ddot(theMG,bl,tl,q,q,scal1) != NUM_OK)
-    return(1);
-  PRINTDEBUG(np,2,("\ns0 %f s1 %f ",scal1[0],scal1[1]));
-
 
   return (0);
 }
@@ -717,6 +726,9 @@ static INT EWSolver (NP_EW_SOLVER *theNP, INT level, INT nev,
         if ((*np->LS->Defect)(np->LS,level,np->t,np->r,np->M,
                               &ewresult->error_code))
           return (1);
+        if ((*np->Transfer->ProjectSolution)
+              (np->Transfer,bl,level,np->t,&ewresult->error_code))
+          NP_RETURN(1,ewresult->error_code);
         if ((*np->LS->Residuum)(np->LS,level,level,np->t,np->r,np->M,
                                 &ewresult->lresult[i]))
           return (1);
