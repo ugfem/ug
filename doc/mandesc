@@ -2,9 +2,9 @@ no default sections
 1(1) ug Commands
 2(2) ug Administration
 3(3) ug Overview
-4(4) Functions of module dev
-5(5) Functions of modules gm and gg
-6(6) Functions of module graph
+4(4) Functions of module dev and dom
+5(5) Functions of modules gm
+6(6) Functions of module graphics
 7(7) Functions of module low
 8(8) Functions of module numerics
 9(9) Functions of module ui
