@@ -3765,7 +3765,7 @@ INT ClearNextVectorClasses (GRID *theGrid)
   VECTOR *theVector;
 
   /* reset class of each vector to 0 */
-  for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
+  for (theVector=PFIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
     SETVNCLASS(theVector,0);
 
   /* now the refinement algorithm will initialize the class 3 vectors */
@@ -3846,10 +3846,43 @@ INT SeedNextVectorClasses (GRID *theGrid, ELEMENT *theElement)
    D*/
 /****************************************************************************/
 
+#ifdef ModelP
+static int Gather_VectorVNClass (DDD_OBJ obj, void *data)
+{
+  VECTOR *theVector = (VECTOR *)obj;
+
+  PRINTDEBUG(gm,2,(PFMT "Gather_VectorVNClass(): v=" ID_FMTX " vnclass=%d\n",
+                   me,ID_PRTX(theVector),VNCLASS(theVector)))
+
+    ((INT *)data)[0] = VNCLASS(theVector);
+
+  return(GM_OK);
+}
+
+static int Scatter_VectorVNClass (DDD_OBJ obj, void *data)
+{
+  VECTOR *theVector = (VECTOR *)obj;
+
+  SETVNCLASS(theVector,MAX(VNCLASS(theVector),((INT *)data)[0]));
+
+  PRINTDEBUG(gm,2,(PFMT "Scatter_VectorVNClass(): v=" ID_FMTX " vnclass=%d\n",
+                   me,ID_PRTX(theVector),VNCLASS(theVector)))
+
+  return(GM_OK);
+}
+#endif
+
 INT PropagateNextVectorClasses (GRID *theGrid)
 {
   VECTOR *theVector;
   MATRIX *theMatrix;
+
+#ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 1. communication\n",me))
+  /* exchange VNCLASS of vectors */
+  DDD_IFAOneway(OuterVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+                Gather_VectorVNClass, Scatter_VectorVNClass);
+#endif
 
   /* set vector classes in the algebraic neighborhood to 2 */
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
@@ -3859,6 +3892,13 @@ INT PropagateNextVectorClasses (GRID *theGrid)
             &&(CEXTRA(MMYCON(theMatrix))!=1))
           SETVNCLASS(MDEST(theMatrix),2);
 
+#ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 2. communication\n",me))
+  /* exchange VNCLASS of vectors */
+  DDD_IFAOneway(OuterVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+                Gather_VectorVNClass, Scatter_VectorVNClass);
+#endif
+
   /* set vector classes in the algebraic neighborhood to 1 */
   for (theVector=FIRSTVECTOR(theGrid); theVector!=NULL; theVector=SUCCVC(theVector))
     if ((VNCLASS(theVector)==2)&&(VSTART(theVector)!=NULL))
@@ -3866,6 +3906,13 @@ INT PropagateNextVectorClasses (GRID *theGrid)
         if ((VNCLASS(MDEST(theMatrix))<2)
             &&(CEXTRA(MMYCON(theMatrix)) !=1))
           SETVNCLASS(MDEST(theMatrix),1);
+
+#ifdef ModelP
+  PRINTDEBUG(gm,1,("\n" PFMT "PropagateNextVectorClasses(): 3. communication\n",me))
+  /* exchange VNCLASS of vectors */
+  DDD_IFAOneway(OuterVectorSymmIF,GRID_ATTR(theGrid),IF_FORWARD,sizeof(INT),
+                Gather_VectorVNClass, Scatter_VectorVNClass);
+#endif
 
   return(0);
 }
