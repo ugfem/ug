@@ -11,8 +11,11 @@
 #include <stdio.h>
 #include <string.h>
 #ifndef __MACOSXSERVER__
+#ifndef __MWCW__
 #include <malloc.h>
 #endif
+#endif
+
 #include <ctype.h>
 
 #include "mmio.h"
@@ -27,6 +30,19 @@
 #include "udm.h"
 
 REP_ERR_FILE;
+
+/* MacOS doesn't support the non-standard (!) strdup function */
+#ifdef __MWCW__
+char *strdup(char *text);  /* forward declaration to make ANSI compilers happy */
+
+char *strdup(const char *text)
+{
+  char *c;
+  c = (char *)malloc( strlen(text)+1 );
+  return c;
+}
+#endif
+
 
 int mm_is_valid(MM_typecode matcode)
 {
