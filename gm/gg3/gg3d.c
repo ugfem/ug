@@ -282,6 +282,9 @@ INT GenerateGrid3d (MULTIGRID *theMG, MESH *mesh, DOUBLE h, INT smooth,
     strcpy(rulefilename,"tetra.rls");
     #ifdef _NETGEN
   InitNetgen(rulefilename);
+        #else
+  PrintErrorMessage('E',"GenerateGrid3d","no netgen");
+  return(1);
     #endif
 
   IFDEBUG(dom,1)
