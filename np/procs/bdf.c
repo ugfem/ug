@@ -445,6 +445,10 @@ static INT TimeStep (NP_T_SOLVER *ts, INT level, INT *res)
             NP_RETURN(1,res[0]);
         if (bdf->error->TimeError == NULL)
           NP_RETURN(1,res[0]);
+#ifdef ModelP
+        a_outervector_consistent(mg,0,level,bdf->y_p1);
+        a_outervector_consistent(mg,0,level,bdf->y_0);
+#endif
         if ((*bdf->error->TimeError)
               (bdf->error,level,bdf->t_p1,&dt_0,bdf->y_p1,bdf->y_0,
               ts,&eresult))
