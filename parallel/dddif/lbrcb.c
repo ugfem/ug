@@ -325,12 +325,13 @@ int BalanceGridRCB (MULTIGRID *theMG, int level)
     /* apply coordinate bisection strategy */
     theRCB(lbinfo, NT(theGrid), 0, 0, DimX, DimY, 0);
 
+    IFDEBUG(dddif,1)
     for (e=FIRSTELEMENT(theGrid); e!=NULL; e=SUCCE(e))
     {
       UserWriteF("elem %08x has dest=%d\n",
                  DDD_InfoGlobalId(PARHDRE(e)), PARTITION(e));
     }
-
+    ENDDEBUG
 
     Release(theHeap,FROM_TOP);
   }
