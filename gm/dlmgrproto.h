@@ -2,7 +2,7 @@
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
 /*                                                                          */
-/* File:      dlmgr.h                                                       */
+/* File:      dlmgrproto.h                                                  */
 /*                                                                          */
 /* Purpose:   defines for dynamic linked list management                    */
 /*                                                                          */
@@ -284,7 +284,9 @@ void CAT3(GRID_INIT_,OTYPE,_LIST(GRID *Grid))
 }
 #else
 void CAT3(GRID_INIT_,OTYPE,_LIST(GRID *Grid))
-CAT(FIRST,OTYPE(Grid)) = CAT(LAST,OTYPE(Grid)) = NULL;
+{
+  CAT(FIRST,OTYPE(Grid)) = CAT(LAST,OTYPE(Grid)) = NULL;
+}
 #endif
 
 #ifdef ModelP
