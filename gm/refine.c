@@ -2299,12 +2299,14 @@ INT Connect_Sons_of_ElementSide (GRID *theGrid, ELEMENT *theElement, INT side, I
                  NbSortTable[i]->elem);
       SET_NBELEM(NbSortTable[i]->elem,NbSortTable[i]->side,
                  ElemSortTable[i]->elem);
+#ifdef __THREEDIM__
       if (TYPE_DEF_IN_GRID(theGrid,SIDEVECTOR))
         if (DisposeDoubledSideVector(theGrid,ElemSortTable[i]->elem,
                                      ElemSortTable[i]->side,
                                      NbSortTable[i]->elem,
                                      NbSortTable[i]->side))
           RETURN(GM_FATAL);
+#endif
     }
 
   return(GM_OK);
