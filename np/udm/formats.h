@@ -51,6 +51,9 @@
 /* limits for XDATA_DESC handling */
 #define MAX_SUB                         10
 
+#define V_COMP_NAMES            (MAX_VEC_COMP*NVECTYPES)
+#define M_COMP_NAMES            (2*V_COMP_NAMES*V_COMP_NAMES)
+
 /* macros for SUBVEC */
 #define SUBV_NAME(s)            ((s)->Name)
 #define SUBV_NCOMPS(s)          ((s)->Comp)
@@ -70,6 +73,9 @@
 #define VT_COMP(vt,tp)          ((vt)->Comp[tp])
 #define VT_COMPNAMES(vt)        ((vt)->CompNames)
 #define VT_COMPNAME(vt,i)       ((vt)->CompNames[i])
+#define VT_NID(vt)                      ((vt)->nId)
+#define VT_IDENT_PTR(vt)        ((vt)->Ident)
+#define VT_IDENT(vt,i)          ((vt)->Ident[i])
 #define VT_SUB(vt,i)            ((vt)->SubVec[i])
 #define VT_NSUB(vt)                     ((vt)->nsub)
 
@@ -104,7 +110,10 @@ typedef struct {
   ENVITEM v;                                                                    /* environment item				*/
 
   SHORT Comp[NVECTYPES];                                        /* number of comps per type		*/
-  char CompNames[MAX_VEC_COMP];                         /* comp names (one char each)	*/
+  char CompNames[V_COMP_NAMES];                         /* comp names (one char each)	*/
+
+  SHORT nId;                                                            /* number of comps after ident	*/
+  SHORT Ident[V_COMP_NAMES];                            /* identification table			*/
 
   SHORT nsub;                                                           /* number of sub vectors		*/
   SUBVEC  *SubVec[MAX_SUB];                                     /* pointers to sub vectors		*/
@@ -128,7 +137,7 @@ typedef struct {
 
   SHORT RComp[NMATTYPES];                                       /* number of comps per type		*/
   SHORT CComp[NMATTYPES];                                       /* number of col comps per type	*/
-  char CompNames[2*MAX_MAT_COMP];                       /* comp names (two chars each)	*/
+  char CompNames[M_COMP_NAMES];                         /* comp names (two chars each)	*/
 
   SHORT nsub;                                                           /* number of sub matrices		*/
   SUBMAT  *SubMat[MAX_SUB];                                     /* pointers to sub matrices		*/

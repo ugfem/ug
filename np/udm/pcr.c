@@ -259,7 +259,8 @@ INT WriteVEC_SCALAR (VECDATA_DESC *theVDT, VEC_SCALAR Scalar, char *structdir)
  */
 /****************************************************************************/
 
-static INT PCR_IDAdmin, PCR_DispMode[32], PCR_nb[32], PCR_nComp[32], PCR_printed[32];
+static INT PCR_IDAdmin, PCR_DispMode[32], PCR_nb[32], PCR_nComp[32], PCR_allComp[32], PCR_printed[32], PCR_nid[32];
+static SHORT *PCR_ident[32];
 static char PCR_compNames[32][MAX_VEC_COMP];
 static const char *PCR_header[32];
 static DOUBLE PCR_InitDefect[32][MAX_VEC_COMP], PCR_OldDefect[32][MAX_VEC_COMP];
@@ -318,15 +319,22 @@ INT PreparePCR (VECDATA_DESC *Vsym, INT DispMode, const char *text, INT *ID)
     PCR_nComp[*ID] = VD_OFFSET(Vsym,NVECTYPES);
     if (PCR_nComp[*ID]>MAX_VEC_COMP) return (1);
     memcpy(PCR_compNames[*ID],VM_COMP_NAMEPTR(Vsym),MAX_VEC_COMP);
+    PCR_nid[*ID] = VD_NID(Vsym);
+    PCR_ident[*ID] = VD_IDENT_PTR(Vsym);
   }
   else if (*ID > 0) {
     PCR_nComp[*ID] = PCR_nComp[*ID-1];
     memcpy(PCR_compNames[*ID],PCR_compNames[*ID-1],MAX_VEC_COMP);
+    PCR_nid[*ID] = PCR_nid[*ID-1];
   }
   else {
     PCR_nComp[*ID] = MAX_VEC_COMP;
     memcpy(PCR_compNames[*ID],DEFAULT_NAMES,MAX_VEC_COMP);
+    PCR_nid[*ID] = NO_IDENT;
   }
+  PCR_allComp[*ID] = PCR_nComp[*ID];
+  if (PCR_nid[*ID]!=NO_IDENT)
+    PCR_nComp[*ID] = PCR_nid[*ID];
 
   return (0);
 }
@@ -414,13 +422,46 @@ INT PostPCR (INT ID, char *path)
  */
 /**************************************************************************/
 
-INT DoPCR (INT ID, VEC_SCALAR Defect, INT PrintMode)
+static INT NormIdentVS_of_VS (const VEC_SCALAR in, SHORT ncmp, SHORT nid, SHORT *ident, VEC_SCALAR out)
 {
+  INT i;
+
+  if (nid!=NO_IDENT)
+  {
+    /* root of squared sum over identified components */
+    DOUBLE sum;
+    INT j,n=0;
+
+    for (i=0; i<ncmp; i++)
+      if (ident[i]==i)
+      {
+        sum = 0;
+        for (j=0; j<ncmp; j++)
+          if (ident[j]==i)
+            sum += in[j]*in[j];
+        out[n++] = sqrt(sum);
+      }
+    ASSERT(n==nid);
+    return (0);
+  }
+
+  /* copy in --> out */
+  for (i=0; i<ncmp; i++)
+    out[i] = in[i];
+
+  return (1);
+}
+
+INT DoPCR (INT ID, VEC_SCALAR InDefect, INT PrintMode)
+{
+  VEC_SCALAR Defect;
   DOUBLE d,s;
   INT i, j;
 
   /* check input */
   if (ID>31 || ID<0 || (((PCR_IDAdmin>>ID)&1)==0)) return(1);
+
+  NormIdentVS_of_VS(InDefect,PCR_allComp[ID],PCR_nid[ID],PCR_ident[ID],Defect);
 
   /* calculate norm of defects */
   s = 0.0;

@@ -445,7 +445,7 @@ VECDATA_DESC *CreateVecDescOfTemplate (MULTIGRID *theMG,
                       "no vector template");
     REP_ERR_RETURN(NULL);
   }
-  vd = CreateVecDesc(theMG,name,VT_COMPNAMES(vt),VT_COMPS(vt));
+  vd = CreateVecDesc(theMG,name,VT_COMPNAMES(vt),VT_COMPS(vt),VT_NID(vt),VT_IDENT_PTR(vt));
   if (vd == NULL) {
     PrintErrorMessage('E',"CreateVecDescOfTemplate",
                       "cannot create vector descriptor");
@@ -1095,10 +1095,11 @@ static INT ScanVecOption (      INT argc, char **argv,                  /* optio
 {
   VEC_TEMPLATE *vt,*vv;
   SUBVEC *subv;
-  INT j,type,nsc[NMATTYPES];
+  INT i,j,type,nsc[NMATTYPES];
   INT opt;
   SHORT offset[NMATOFFSETS];
   char tpltname[NAMESIZE],*names,*token,tp;
+  char ident[V_COMP_NAMES];
   int n;
 
   opt = *curropt;
@@ -1173,6 +1174,37 @@ static INT ScanVecOption (      INT argc, char **argv,                  /* optio
                            "number of vector comp names != number of comps (in '$%s')",argv[opt]);
         REP_ERR_RETURN (1);
       }
+
+      /* check next arg for ident */
+      VT_NID(vt) = NO_IDENT;
+      if (opt+1 < argc)
+        if (strncmp(argv[opt+1],"ident",5)==0)
+        {
+          opt++;
+          if (sscanf(argv[opt],"ident %s",ident)!=1) {
+            PrintErrorMessageF('E',"newformat",
+                               "no vector comp names specified with ident option (in '$%s')",argv[opt]);
+            REP_ERR_RETURN (1);
+          }
+          if (strlen(ident)!=offset[NVECTYPES]) {
+            PrintErrorMessageF('E',"newformat",
+                               "number of ident comp names != number of comps (in '$%s')",argv[opt]);
+            REP_ERR_RETURN (1);
+          }
+
+          /* compute identification table */
+          VT_NID(vt) = 0;
+          for (i=0; i<offset[NVECTYPES]; i++)
+            for (j=0; j<=i; j++)
+              if (ident[i]==ident[j])
+              {
+                VT_IDENT(vt,i) = j;
+                if (i==j)
+                  VT_NID(vt)++;
+                break;
+              }
+        }
+
       /* check next args for subv */
       while ((opt+1<argc) && (strncmp(argv[opt+1],"sub",3)==0)) {
         opt++;
