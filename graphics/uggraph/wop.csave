@@ -46,6 +46,9 @@
 #include "num.h"
 #include "shapes.h"
 #include "general.h"
+#ifdef ModelP
+#include "parallel.h"
+#endif
 
 /****************************************************************************/
 /*																			*/
@@ -6841,7 +6844,14 @@ static INT NW_NodesEval2D (NODE *theNode, DRAWINGOBJ *theDO)
     DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO)
     DO_2s(theDO) = EE2D_TEXTSIZE; DO_inc(theDO);
     V2_COPY(CVECT(MYVERTEX(theNode)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
+                #ifdef ModelP
+    sprintf(DO_2cp(theDO),"%d/%x",
+            (int)ID(theNode),
+            (long)DDD_InfoGlobalId(PARHDR(theNode)));
+    DO_inc_str(theDO);
+                #else
     sprintf(DO_2cp(theDO),"%d",(int)ID(theNode)); DO_inc_str(theDO);
+                #endif
   }
 
   DO_2c(theDO) = DO_NO_INST;
@@ -6894,7 +6904,14 @@ static INT EXT_NodesEval2D (DRAWINGOBJ *theDO, INT *end)
     DO_2c(theDO) = TEXT_NOT_CENTERED; DO_inc(theDO)
     DO_2s(theDO) = EE2D_TEXTSIZE; DO_inc(theDO);
     V2_COPY(CVECT(MYVERTEX(NE_Node)),DO_2Cp(theDO)); DO_inc_n(theDO,2);
+                #ifdef ModelP
+    sprintf(DO_2cp(theDO),"%d/%x",
+            (int)ID(NE_Node),
+            (long)DDD_InfoGlobalId(PARHDR(NE_Node)));
+    DO_inc_str(theDO);
+                #else
     sprintf(DO_2cp(theDO),"%d",(int)ID(NE_Node)); DO_inc_str(theDO);
+                #endif
   }
 
   DO_2c(theDO) = DO_NO_INST;
