@@ -285,14 +285,17 @@ repeat {
  \section Description
    This command lists the content of an environment directory.
 
-\section Syntax
-   'ls [\<path>]'
+   'ls [\<path\>]'
 
-.  no~option - lists the content of the current directory.
-.  \<path>    - contains the relative or absolute path in UNIX-style
+   <ul>
+     <li>  no option - lists the content of the current directory. </li>
+     <li>  \<path\>    - contains the relative or absolute path in UNIX-style </li>
+   </ul>
    
  \section Keywords
    environment, directory, list
+
+   Implemented in \ref ListEnvCommand().
 */
 /****************************************************************************/
 
