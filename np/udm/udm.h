@@ -1,24 +1,24 @@
 // -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
 // vi: set et ts=4 sw=2 sts=2:
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* File:          udm.h                                                                                                                 */
-/*                                                                                                                                                      */
-/* Purpose:   user data manager (header file)                                                           */
-/*                                                                                                                                                      */
-/* Author:        Peter Bastian                                                                                                 */
-/*                                                                                                                                                      */
-/*                        Institut fuer Computeranwendungen III                                                 */
-/*                        Universitaet Stuttgart                                                                                */
-/*                        Pfaffenwaldring 27                                                                                    */
-/*                        70569 Stuttgart                                                                                               */
-/*                        email: ug@ica3.uni-stuttgart.de                                                       */
-/*                                                                                                                                                      */
-/*                                                                                                                                                      */
-/* History:   02.12.96 begin, ug version 3.4                                                            */
-/*                                                                                                                                                      */
-/* Remarks:                                                                                                                             */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* File:      udm.h                                                         */
+/*                                                                          */
+/* Purpose:   user data manager (header file)                               */
+/*                                                                          */
+/* Author:    Peter Bastian                                                 */
+/*                                                                          */
+/*            Institut fuer Computeranwendungen III                         */
+/*            Universitaet Stuttgart                                        */
+/*            Pfaffenwaldring 27                                            */
+/*            70569 Stuttgart                                               */
+/*            email: ug@ica3.uni-stuttgart.de                               */
+/*                                                                          */
+/*                                                                          */
+/* History:   02.12.96 begin, ug version 3.4                                */
+/*                                                                          */
+/* Remarks:                                                                 */
+/*                                                                          */
 /****************************************************************************/
 
 
@@ -27,9 +27,9 @@
  */
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* auto include mechanism and other include files                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* auto include mechanism and other include files                           */
+/*                                                                          */
 /****************************************************************************/
 
 #ifndef __UDM__
@@ -51,9 +51,9 @@ namespace UG3d {
 #endif
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* macros concerned with data descriptors                                                       */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* macros concerned with data descriptors                                   */
+/*                                                                          */
 /****************************************************************************/
 
 #define NVECTYPES                       MAXVECTORS
@@ -65,11 +65,16 @@ namespace UG3d {
 #define MTYPE_RT(mtp)       (((mtp)<NMATTYPES_NORMAL) ? (mtp)/NVECTYPES : (mtp)%NVECTYPES)
 #define MTYPE_CT(mtp)           ((mtp)%NVECTYPES)
 
-#define MAX_SINGLE_VEC_COMP             40      /* max nb of vec comps in one TYPE      */
-#define MAX_SINGLE_MAT_COMP       1600  /* max nb of mat comps in one TYPE              */
-#define MAX_VEC_COMP                40  /* max nb of comps in one VECDATA_DESC  */
-#define MAX_MAT_COMP              7000  /* max nb of comps in one MATDATA_DESC  */
-#define MAX_MAT_COMP_TOTAL        7000  /* max#(comp) in one MATDATA_DESC       */
+/*! max nb of vec comps in one TYPE      */
+#define MAX_SINGLE_VEC_COMP             40
+/*! max nb of mat comps in one TYPE              */
+#define MAX_SINGLE_MAT_COMP       1600
+/*! max nb of comps in one VECDATA_DESC  */
+#define MAX_VEC_COMP                40
+/*! max nb of comps in one MATDATA_DESC  */
+#define MAX_MAT_COMP              7000
+/*! max#(comp) in one MATDATA_DESC       */
+#define MAX_MAT_COMP_TOTAL        7000
 
 #define NVECOFFSETS                             (NVECTYPES+1)
 /* for offset component in VECDATA_DESC */
@@ -199,41 +204,67 @@ enum DISP_DATA_DESC_MODIF
 #define CLEAR_VEC_COLLECT__FLAG(p,vt,i) CLEAR_FLAG((p)->data_status.VecCollectStatus[vt][(i)/32],1<<((i)%32))
 
 /****************************************************************************/
-/*                                                                                                                                                      */
-/* data structures                                                                                                                      */
-/*                                                                                                                                                      */
+/*                                                                          */
+/* data structures                                                          */
+/*                                                                          */
 /****************************************************************************/
 
 typedef struct {
 
-  /* fields for environment list variable */
+  /** \brief Fields for environment list variable */
   ENVVAR v;
 
-  SHORT locked;                        /* locked for dynamic allocation         */
-  MULTIGRID *mg;                                   /* associated multigrid                                      */
-  char compNames[MAX_VEC_COMP];    /* names for symbol components           */
-  SHORT NCmpInType[NVECTYPES];     /* number of components of a vector      */
-                                   /* per type                              */
-  SHORT *CmpsInType[NVECTYPES];    /* pointer to SHORT vector containing    */
-  /*    the components                     */
+  /** \brief Locked for dynamic allocation */
+  SHORT locked;
 
-  /* redundant (but frequently used) information                          */
-  SHORT IsScalar;                  /* TRUE if desc is scalar:               */
-                                   /*  same settings in all types           */
-  SHORT SuccComp;                  /* successive components                 */
-  SHORT ScalComp;                  /* location of scalar component          */
-  SHORT ScalTypeMask;              /* mask for used vectypes                */
-  SHORT offset[NVECOFFSETS];       /* offsets for VEC_SCALARs               */
+  /** \brief Associated multigrid */
+  MULTIGRID *mg;
 
-  SHORT datatypes;                                 /* compact form of vtypes (bitwise)          */
-  SHORT objused;                                   /* compact form of otypes (bitwise)          */
-  SHORT mintype;                                   /* minimal used type                         */
-  SHORT maxtype;                                   /* maximal used type                         */
+  /** \brief Names for symbol components */
+  char compNames[MAX_VEC_COMP];
 
-  SHORT nId;                                               /* number of comps after ident                       */
-  SHORT *Ident;                                    /* identification table                                      */
+  /** \brief Number of components of a vector per type */
+  SHORT NCmpInType[NVECTYPES];
 
-  SHORT Components[1];                 /* memory for component mapping          */
+  /** \brief Pointer to SHORT vector containing the components */
+  SHORT *CmpsInType[NVECTYPES];
+
+  /* redundant (but frequently used) information */
+  /** \brief TRUE if desc is scalar: same settings in all types */
+  SHORT IsScalar;
+
+  /** \brief Successive components */
+  SHORT SuccComp;
+
+  /** \brief Location of scalar component */
+  SHORT ScalComp;
+
+  /** \brief Mask for used vectypes */
+  SHORT ScalTypeMask;
+
+  /** \brief Offsets for VEC_SCALARs */
+  SHORT offset[NVECOFFSETS];
+
+  /** \brief Compact form of vtypes (bitwise) */
+  SHORT datatypes;
+
+  /** \brief Compact form of otypes (bitwise) */
+  SHORT objused;
+
+  /** \brief Minimal used type */
+  SHORT mintype;
+
+  /** \brief Maximal used type */
+  SHORT maxtype;
+
+  /** \brief Number of comps after ident */
+  SHORT nId;
+
+  /** \brief Identification table */
+  SHORT *Ident;
+
+  /** \brief Memory for component mapping */
+  SHORT Components[1];
 
 } VECDATA_DESC;
 
