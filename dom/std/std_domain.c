@@ -1293,6 +1293,13 @@ BVP *BVP_Init (char *name, HEAP *Heap, MESH *Mesh, INT MarkKey)
   {
     const DOMAIN_PART_INFO *dpi;
 
+    if (DOMAIN_NPARTS(theDomain)>=(1<<VPART_LEN))
+    {
+      printf("too many parts for control entry in vector\n");
+      ASSERT(FALSE);
+      return (NULL);
+    }
+
     /* transfer from part info (NB: STD_BVP_NSUBDOM only counts inner subdomains) */
     dpi = DOMAIN_PARTINFO(theDomain);
     for (i=0; i<=STD_BVP_NSUBDOM(theBVP); i++)
@@ -3703,7 +3710,7 @@ INT ReadAndPrintArgvPosition (char *name, INT argc, char **argv, DOUBLE *pos)
    D*/
 /****************************************************************************/
 
-INT InitDom ()
+INT InitDom (void)
 {
 
   /* change to root directory */
